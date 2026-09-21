@@ -12586,6 +12586,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   '#tp155R4PanelHost[data-panel="coach"] .tp151-coach-recommendation{margin-top:10px!important}',
   '#tp155R4PanelHost[data-panel="quick"] .tp155-quick-panel>:is(.hero,.tp151-page-head){display:none!important}',
   '#tp155R4PanelHost[data-panel="quick"] .tp160-quick-context{font-size:15px!important;font-weight:850!important;line-height:1.2!important}',
+  'body.tp-home-view main.rf221-home{min-height:0!important;height:auto!important;max-height:none!important;padding-bottom:max(12px,env(safe-area-inset-bottom,0px))!important}',
   'main.rf221-home>.onboarding{padding:6px 11px 9px!important;gap:5px!important}',
   'main.rf221-home>.onboarding h2{margin:0!important}',
   'main.rf221-home>.onboarding p{margin:0!important}',
