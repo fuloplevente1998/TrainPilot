@@ -1,7 +1,8 @@
 const assert=require('node:assert/strict'),fs=require('node:fs');
 const baseFile=fs.existsSync('www/trainpilot-162-minor-ui.js')?'www/trainpilot-162-minor-ui.js':'www/app.js';
 const followFile=fs.existsSync('www/trainpilot-162-followup.js')?'www/trainpilot-162-followup.js':null;
-const app=fs.readFileSync(baseFile,'utf8')+(followFile?'\n'+fs.readFileSync(followFile,'utf8'):'');
+const base=fs.readFileSync(baseFile,'utf8'),followSource=followFile?fs.readFileSync(followFile,'utf8'):'';
+const app=base+(followSource?'\n'+followSource:'');
 const pkg=require('../package.json'),src=require('../SOURCE_VERSION.json'),gradle=fs.readFileSync('android/app/build.gradle','utf8');
 assert.equal(pkg.version,'1.6.2');assert.equal(src.version,'1.6.2');assert.equal(src.versionCode,2651);
 assert.match(gradle,/versionCode\s+2651/);assert.match(gradle,/versionName\s+"1\.6\.2"/);
@@ -20,7 +21,7 @@ for(const marker of [
  '[data-panel="calendar"] .tp155-planner-always-open{padding:7px!important}'
 ])assert.ok(app.includes(marker),'calendar regression marker changed: '+marker);
 
-const follow=app.slice(app.indexOf('// @section trainpilot-162-followup.js'),app.indexOf('// @endsection trainpilot-162-followup.js'));
+const follow=followSource||app.slice(app.indexOf('// @section trainpilot-162-followup.js'),app.indexOf('// @endsection trainpilot-162-followup.js'));
 assert.ok(follow.length>500,'1.6.2 follow-up section missing');
 assert.ok(app.includes("host?.dataset?.panel==='exercises'"),'Programs parent-state guard must remain in the 1.6.2 base patch');
 for(const marker of [
