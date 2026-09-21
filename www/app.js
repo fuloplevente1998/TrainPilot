@@ -12534,6 +12534,13 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   };
  }
 
+ // Workout landing card keeps a single Quick Workout title (no duplicate badge/title pair).
+ if(typeof tp150CompactQuickCard==='function'){
+  tp150CompactQuickCard=function(){
+   return '<div class="card tp150-quick-entry tp150-quick-entry-compact"><div class="tp150-quick-copy"><h2>'+esc(tp150qwT('cardTitle'))+'</h2><p class="small muted">'+esc(tp150qwT('cardHelp'))+'</p></div><button class="btn block" onclick="tp150QuickPicker()">'+esc(tp150qwT('start'))+'</button></div>';
+  };
+ }
+
  // Quick Workout keeps only the compact context title; legacy explanatory hero/page headers stay out.
  if(typeof window.tp155QuickPanelHtml==='function'){
   const quickHtmlBase=window.tp155QuickPanelHtml;
