@@ -1,0 +1,12 @@
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const app=fs.existsSync('www/trainpilot-142-photo-stopwatch-ui.js')?fs.readdirSync('www').filter(x=>x.endsWith('.js')).map(x=>fs.readFileSync('www/'+x,'utf8')).join('\n'):fs.readFileSync('www/app.js','utf8');
+const java=fs.readFileSync('android/app/src/main/java/com/repforge/app/WorkoutPhotosPlugin.java','utf8');
+const pkg=require('../package.json'),src=require('../SOURCE_VERSION.json'),gradle=fs.readFileSync('android/app/build.gradle','utf8');
+assert.ok(app.includes("const TP142_VERSION='1.4.2'"));
+assert.ok(app.includes("'Stop és rögzítés'"));
+assert.ok(app.includes("hero.insertAdjacentElement('afterend',card)"));
+assert.ok(app.includes("replaceAll('Progresszív terhelés 2.0','Progresszív edzés')"));
+assert.ok((java.match(/getBridge\(\)\.executeOnMainThread/g)||[]).length>=2);
+assert.equal(pkg.version,'1.6.0');assert.equal(src.version,'1.6.0');assert.equal(src.versionCode,2649);
+assert.match(gradle,/versionCode\s+2649/);assert.match(gradle,/versionName\s+"1\.6\.0"/);
+console.log('PASS TrainPilot 1.4.2 photo launch, stopwatch GUI and wording guards');

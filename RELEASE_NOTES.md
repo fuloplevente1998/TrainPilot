@@ -1,0 +1,152 @@
+# RepForge 1.6.0
+
+- Quick Workout: compact context/search header beside the shared close control.
+- Quick Workout: muscle and equipment menus stay anchored to their fields inside the panel.
+- Journal: date filter now uses the shared CSS disclosure arrow.
+- Navigation: removed the forced layout read, animated clip-path and full-screen backdrop blur; page/panel reveal is now lightweight.
+- Theme picker behavior is unchanged from the phone-tested 1.5.5 build.
+- Workout and Journal data formats remain compatible.
+
+# TrainPilot 1.5.5 – Egységes navigáció és lenyitó vezérlők
+
+- A felső 2×4 navigáció görgetéskor is ugyanazt a geometriát tartja; a Coach és a Beállítások nem zsugorodik össze és nem mozdul másik pozícióba.
+- A fő navigáció feliratai nagyobb, reszponzív betűméretet kaptak, hosszabb fordításoknál legfeljebb két sorban törhetnek.
+- A Programok, Edzésnapok, gyakorlatok, Beállítások, Napló és könyvtári kártyák lenyitói egységes, egyszerű fehér háromszöget használnak: zárt állapotban jobbra, nyitott állapotban lefelé mutat; a korábbi dupla jelölés megszűnt.
+- Az Egészség és Naptár oldal felső címsora vékony, lekerekített kártyakeretet kapott, a többi fő nézet vizuális rendszeréhez igazítva.
+- Android `versionCode 2648`, `versionName 1.5.5`.
+
+# TrainPilot 1.5.4 – Mobil navigáció és edzésfelület finomítás
+
+- A felső 8 fő művelet egységes 2×4-es mobilrácsot kapott: Kezdőlap, Edzés, Naptár, Programok / Napló, Egészség, Coach, Beállítások.
+- A TrainPilot név kisebb lett, az intelligens edzéstervező felirat ugyanabba a fejlécsorba került.
+- A Beállítások továbbra is ikon-only elem; a többi fő navigáció ikon + felirat formátumú.
+- A lenyitó nyilak az alkalmazás felületein egységes, keret nélküli, kártyába beleolvadó átmenetes hátteret kaptak.
+- A gyakorlat-videók play jelzése most biztosan a külső gombkereten belül marad.
+- Aktív edzésnél a rövid gyakorlatleírás és a „Bemutató megnyitása” visszakerült a felső kártyába egy kompakt, lenyitható Bemutató blokkban.
+- A korábbi alsó külön bemutató-kártya megszűnt, így a sorozatok és navigáció kompaktabb marad.
+- Javítva a pihenőidőzítő érintési rétege: a fix időzítő háttere nem nyeli el az alatta lévő edzésgombok koppintását, a „Kihagyás” gomb továbbra is használható.
+- Android `versionCode 2647`, `versionName 1.5.4`.
+
+# TrainPilot 1.5.3 – UI/funkcionális finomítások és regressziós javítások
+
+- A Coach Kezdőlapról és Egészségből azonos felületet használ, megjegyzi a nyitási helyet, és a kapcsolódó edzés/Health célokra közvetlenül navigál.
+- A testsúly, alvás és HRV statisztikák kattintható részleteket kaptak.
+- Az aktív edzés kompaktabb fejlécet, sűrűbb sorozatnézetet és laposabb videó/demó vezérlést kapott.
+- A Gyors edzés kompakt felületén helyreállt a gyakorlat hozzáadása és a helyes „Gyors edzés” fejléc.
+- A videómodal Android Vissza gombbal / gesztussal zárható, mielőtt az alkalmazás navigálna.
+- Az egyszerű sikeres műveletek több helyen nem blokkoló toast visszajelzést használnak.
+- A sticky navigáció kompakt módban egy sorban tartja a fő füleket és a Coach/Beállítások műveleteket.
+- Az alap témaszínek visszafogottabbak, az élénk színpaletta külön opcióként megmarad.
+- Javítva a kompakt saját időválasztó fókuszváltási hibája, amely begépelt órát vagy percet mentés előtt visszaállíthatott.
+- A teljes JavaScript- és Chromium UI regressziós csomag sikeresen lefutott a kiadási verzió előtt.
+- Android `versionCode 2646`, `versionName 1.5.3`.
+
+# TrainPilot 1.5.2 – hierarchikus UX és Android visszalépés
+
+- Az Edzés, Programok, Gyors edzés, személyes terv, Napló és Beállítások természetesebb, egymásba ágyazott lenyitható hierarchiát kaptak.
+- A lenyitható kártyák teljes fejlécfelülete használható; a külön művelet- és videógombok nem nyitják vagy zárják a szülőkártyát.
+- Az aktív program felépítése Program → edzésnap → gyakorlat, a gyakorlat szerkesztése helyben történik.
+- A Gyors edzés beállításai és a Napló edzésszerkesztése helyben nyílnak meg; a Programok napjai és a saját program napjai szintén hierarchikusak.
+- A személyes terv öt fő csoportra tagolódik, a kerülendő területek és az egyedi gyakorlatkizárások külön alcsoportok maradnak.
+- A kompakt saját dátum/idő választó fekvő, kis magasságú nézetben is megőrzi a beírt órát és percet.
+- Az Android rendszer Vissza gombja és visszahúzó gesztusa először a legbelső nyitott elemet zárja: időválasztó/dialógus → dropdown → inline szerkesztő → lenyitott panel → előző nézet → Kezdőlap.
+- A Kezdőlapon és a többi fő nézetben a Coach, Beállítások és mind a hat fő navigációs fül sticky marad görgetés közben; a TrainPilot márkanév/szlogen külön, görgethető fejlécben marad.
+- Az 1.5.2 teszt-APK csak a teljes JavaScript- és Chromium UI regressziós csomag sikeres lefutása után épül; a forráscsomag buildkor megkapja a pontos Git commit azonosítót.
+- Android `versionCode 2645`, `versionName 1.5.2`.
+
+# TrainPilot 1.5.1 – UNIFIED UI finomhangolás
+
+- A hat fő navigációs pont nagyobb feliratot és ikont kapott; az aktív elem szövegkontrasztja javult.
+- Az Egészség napi kártyáján az aktív energia megnevezése „Napi aktív kalória” lett.
+- Az időválasztó a nagy órarács helyett kompakt óra/perc választót használ.
+- A Beállítások oldal egységesebb, kompaktabb kártyadizájnt kapott; a nyelvválasztó zászlós jelölést használ.
+- A témaszíneknél külön visszafogott alapszín-paletta és élénk színpaletta választható.
+- Az Edzésnaptár gyorshivatkozása, a pihenőidő és a progresszív súlylépcsők kikerültek az általános Beállításokból.
+- A pihenőidő és progresszív súlylépcsők az Edzés oldalon, az aktív programhoz tartozó „Edzés beállításai” panelen kezelhetők.
+- A Gyakorlatok / Izomcsoportok kártyáin a videóindító és lenyitó nyíl az Edzés oldal programgyakorlatainak vezérlőstílusát követi.
+- Android `versionCode 2644`, `versionName 1.5.1`.
+
+# TrainPilot 1.4.6 – kompakt, egységesített felület
+
+- Az Edzés fül gyakorlatrészletei helyben lenyílnak; az A/B edzésnap címe teljes programnévvel jelenik meg.
+- A Napló összecsukott edzései és a Naptár tervezett edzései kompaktabb kártyákat kaptak.
+- A Naptárban a Törlés a Kihagyás fölé került, az eredeti veszély/szekunder színekkel.
+- A Kezdőlapon a következő edzés teljes programnap-neve nagyobb hangsúlyt kap.
+- Az Egészség / Mai állapot és Test és fittség kártyák kompaktabbak.
+- A naplófotó törlése már TrainPilot-saját megerősítő ablakot használ; a globális aktív confirm/prompt útvonalakat Chromium teszt ellenőrzi, hogy ne nyissanak natív WebView dialógust.
+- Android `versionCode 2630`, `versionName 1.4.6`.
+
+# TrainPilot 1.4.5 – UI / Health / WebView dialógus audit
+
+- A korábban natív, szürke WebView `confirm()` / `prompt()` ablakot használó aktív útvonalak TrainPilot-stílusú saját dialógust kaptak.
+- Lefedve többek között: testsúly szerkesztés/törlés, félbehagyott vagy részleges edzés, programműveletek, naptári áthelyezés, biztonsági mentés visszatöltés, Google-fiók és szinkronütközés.
+- Az Egészség / Test és fittség kártya Health Connect testsúly hiányában a kézzel rögzített testsúlyt mutatja.
+- Javítva a Kezdőlap → Segíts elkezdeni, valamint a Coach és Statisztikák görgetési állapota.
+- A Napló Health blokkja és az edzés időablakhoz kötött Health-adatok megjelenítése egységesebb.
+- Kamera, Xiaomi/helyi galéria, MediaStore, Drive fotószinkron és Progresszív edzés logika regressziós tesztekkel védett.
+- A `main` kiadás előtt a teljes regressziós és Chromium UI tesztcsomag, valamint a 2629 WebView dialógus audit zölden lefutott.
+- Android `versionCode 2629`, `versionName 1.4.5`.
+
+# TrainPilot 1.4.4 – Hivatalos Capacitor kamera/galéria
+
+- A Kamera és Kiválasztás gomb többé nem a saját `WorkoutPhotosPlugin.startActivityForResult()` útvonalat használja.
+- A natív felületet a hivatalos `@capacitor/camera` 7.0.5 plugin nyitja meg.
+- A kapott kép ezután visszakerül a saját `WorkoutPhotos.storeDataUrl()` folyamatba, ahol továbbra is privát app-tárhelyre kerül és JPEG-re normalizálódik.
+- `saveToGallery:false`: a fotózás nem ment külön példányt a telefon galériájába.
+- Drive-szinkron, meglévő naplófotók, stopper és Progresszív edzés logika változatlan.
+- Android `versionCode 2617`, `versionName 1.4.4`.
+
+# TrainPilot 1.4.3 – Képválasztó valódi készülékes javítása
+
+- A galéria `Kiválasztás` útvonala nem használja többé a problémás rendszer Photo Pickert.
+- Közvetlen `ACTION_OPEN_DOCUMENT` / Storage Access Framework indul `image/*` szűréssel; továbbra sincs teljes galéria- vagy tárhelyengedély.
+- A kamera, privát fotótárolás, JPEG-normalizálás, Drive-szinkron, stopper és Progresszív edzés logika változatlan.
+- Android `versionCode 2616`, `versionName 1.4.3`.
+
+# TrainPilot 1.4.2 – Fotóindítás + stopper GUI
+
+- Kamera és rendszer képválasztó indítása explicit Android főszálon; Photo Picker hiányakor megmarad az `ACTION_OPEN_DOCUMENT` fallback.
+- A stopper az aktív edzés tetejére került, nagyobb kijelzéssel és egyértelmű `Stop és rögzítés` / rögzítési visszajelzéssel.
+- A felhasználói `Progresszív terhelés 2.0` megnevezés `Progresszív edzés` lett; a progressziós döntési logika nem változott.
+- Android `versionCode 2615`, `versionName 1.4.2`.
+
+# TrainPilot 1.4.1 – Coach belépési hotfix
+
+- A Kezdőlap „Részletek” gombja ugyanazt a Coach nézetet nyitja meg, mint az Egészség fül.
+- A Coach megnyitásakor Health kontextus aktív, ezért a Kezdőlap-specifikus kompakt dekorátor és `overflow:hidden` nem kerül a Coach képernyőre.
+- Javítva a Kezdőlapról nyitott Coach eltérő kinézete és befagyó/nem görgethető állapota.
+- A Progresszív terhelés 2.0 logikája változatlan.
+- Android `versionCode 2614`, `versionName 1.4.1`.
+
+# TrainPilot 1.4.0 – Progresszív terhelés 2.0
+
+- Az utolsó 2–3 azonos gyakorlatot is figyelembe vevő, konzervatív progresszió.
+- Aktív program prescription elsőbbséget élvez a gyakorlatkönyvtár alapértékével szemben.
+- RIR célok külön parserágon futnak; a `2–3 RIR` nem értelmezhető 2–3 ismétlésnek.
+- `Túl könnyű` önmagában nem emel súlyt; automatikus emeléshez stabil felső teljesítés kell.
+- Kicsit nehéz / túl nehéz / fájdalom blokkolja az emelést.
+- Gyakorlat- és terheléstípus-specifikus súlylépcsők, megfigyelt korábbi lépcsők figyelembevételével.
+- Testsúlyos gyakorlatok ismétlés → stabil felső cél → variáció/tempó/ROM irányban haladnak.
+
+# TrainPilot 1.3.1 – fotógomb hotfix
+
+- Javítva a Napló „Fotó hozzáadása” gomb Android/WebView eseménykezelése.
+- A fotómodal gombjai explicit click-listenereket használnak az inline események helyett.
+- Kamera/képválasztó indításakor azonnali státusz-visszajelzés jelenik meg.
+- Az 1.3.0 összes fotó-, Drive- és Play-előkészítési funkciója változatlanul megmarad.
+- Android `versionCode 2612`, `versionName 1.3.1`.
+
+# TrainPilot 1.3.0 – Workout Photos + Play readiness
+
+- Edzésenként opcionális naplófotó: Edzés előtt / Edzés után / Egyéb.
+- Kamera vagy rendszer képválasztó, széles médiatár-jogosultság nélkül.
+- Privát, optimalizált JPEG tárolás legfeljebb 1600 px hosszú oldallal; az újramentés nem viszi tovább az eredeti EXIF/GPS metaadatot.
+- Naplóban lazy fotóelőnézet, teljes képes megnyitás és törlés.
+- Google Drive `appDataFolder` bináris fotófeltöltés, ellenőrzés, igény szerinti letöltés és törlés.
+- Fotómetaadat bekerül a meglévő edzésnapló/Drive szinkronba; a fotófájl nem kerül base64-ként a localStorage JSON-ba.
+- Fotóeltérés esetén a csak-fotó jellegű naplóváltozások összeolvaszthatók kézi konfliktus nélkül.
+- Android 16 / API 36 target előkészítés a 2026-os Google Play beküldéshez.
+- Play Store / OAuth / privacy dokumentációs checklist hozzáadva.
+- Android `versionCode 2611`, `versionName 1.3.0`.
+
+Fizikai telefonos kamera, Photo Picker, Google OAuth és Drive fotószinkron teszt szükséges a funkció végleges igazolásához.

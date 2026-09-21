@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">TrainPilot</string>
+    <string name="title_activity_main">TrainPilot</string>
+    <string name="package_name">com.repforge.app</string>
+    <string name="custom_url_scheme">com.repforge.app</string>
+</resources>

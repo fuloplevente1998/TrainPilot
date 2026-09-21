@@ -1,0 +1,90 @@
+const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict'),crypto=require('node:crypto').webcrypto;
+const values=new Map(),root={innerHTML:''};
+const ls={getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};
+// Seed a genuine 1.1.5-style state before loading the app.
+values.set('repforge:plan',JSON.stringify({A:['db-squat','db-floor-press','one-arm-row','rdl','db-curl','plank'],B:['reverse-lunge','db-ohp','barbell-row','pushup','oh-triceps','crunch']}));
+values.set('repforge:history',JSON.stringify([{workout:'B',started:'2026-09-06T16:00:00.000Z',finished:'2026-09-06T16:40:00.000Z',exercises:[]}]));
+values.set('repforge:scheduled',JSON.stringify([{id:'12345678-old',workout:'A',start:'2026-09-07T16:00:00.000Z',end:'2026-09-07T16:45:00.000Z',updatedAt:1,cancelled:false}]));
+const ctx=vm.createContext({localStorage:ls,document:{querySelector:()=>({...root,remove(){}}),querySelectorAll:()=>[],getElementById:()=>null,addEventListener(){}},window:{Capacitor:{isNativePlatform:()=>false},scrollTo(){}},navigator:{onLine:true},setInterval:()=>1,clearInterval(){},setTimeout:()=>1,clearTimeout(){},Date,crypto,TextEncoder,Blob:function(){},URL:{createObjectURL(){return''},revokeObjectURL(){}},alert(){},confirm:()=>true,prompt:()=>null,console});
+for(const f of ['backup.js','demos.js','cloud.js','app.js','v12.js','v13.js'])vm.runInContext(fs.readFileSync('www/'+f,'utf8'),ctx);
+const run=s=>vm.runInContext(s,ctx);
+
+const p={age:28,height:178,weight:80,goal:'muscle',experience:'beginner',activity:'mixed',minutes:45,location:'home',cadence:'alternate',split:'auto',excluded:[]};
+ctx.input=p;
+run("const generated=generatePersonalProgram(input)");
+assert.equal(run('generated.days.length'),2);
+assert.ok(run('generated.days[0].exercises.includes("plank")'));
+assert.equal(run('generated.prescriptions[generated.days[0].exercises[0]].sets'),2);
+assert.equal(run('exercises().filter(e=>!muscleGroups(e.id).length).length'),0);
+assert.equal(run('exercises().filter(e=>!demoInfo(e.id)).length'),0);
+assert.throws(()=>run('generatePersonalProgram({...input,age:0})'));
+assert.throws(()=>run('generatePersonalProgram({...input,excluded:["one-arm-row"]})'));
+for(const location of ['home','gym']) for(const split of ['full','upperlower','ppl']) for(const minutes of [20,30,45,60]) {
+ ctx.variant={...p,location,split,minutes};
+ assert.ok(run('generatePersonalProgram(variant).days.every(d=>d.exercises.length>=3&&new Set(d.exercises).size===d.exercises.length)'));
+}
+const old=values.get('repforge:exercises'),oldHistory=values.get('repforge:history');
+run("state.profilePreview=input;state.programPreview=generated;acceptPersonalProgram()");
+assert.equal(run('activeProgramId()'),run('generated.id'));
+assert.equal(values.get('repforge:exercises'),old);
+assert.equal(values.get('repforge:history'),oldHistory);
+assert.equal(run('plannerSettings().mode'),'alternate');
+run('startWorkout("A")');
+assert.equal(run('state.session.exercises[0].sets.length'),2);
+assert.equal(run('state.session.exercises[0].sets[0].weight'),'');
+assert.equal(run('state.session.exercises[0].prescription.reps'),'8–12');
+// Cancelled / empty workout must not mark a calendar item complete.
+run("state.session.scheduleId='12345678-old';finishWorkout()");
+assert.equal(run('scheduled()[0].status'),'planned');
+assert.ok(run('!!state.session'));
+run('state.session.exercises[0].sets[0].done=true;state.session.exercises[0].sets[0].reps="10";finishWorkout()');
+assert.equal(run('state.session'),null);
+assert.equal(run('scheduled()[0].status'),'completed');
+run('saveFeedback("hard")');
+assert.equal(run('history()[0].feedback.suggestion.action'),'reduce');
+run('applyProgression()');
+assert.equal(run('activeProgram().prescriptions[generated.days[0].exercises[0]].sets'),1);
+run('applyProgression()');
+assert.equal(run('activeProgram().prescriptions[generated.days[0].exercises[0]].sets'),1);
+const exported=run('makeBackup()');
+assert.equal(exported.appVersion,'1.3.1');
+assert.equal(exported.settings.profile.height,178);
+assert.ok(exported.programs.find(x=>x.generated).prescriptions);
+run('state.health.summary={activeCalories:100,averageHeartRate:120,sources:[]}');
+assert.equal(run('JSON.stringify(makeBackup()).includes("activeCalories")'),false);
+assert.equal(run('JSON.stringify(syncData()).includes("averageHeartRate")'),false);
+assert.equal(run('progressionSuggestion({exercises:[{sets:[{done:true,reps:10}]}]},"easy").action'),'reps');
+assert.equal(run('progressionSuggestion({exercises:[{sets:[{done:false,reps:10}]}]},"easy").action'),'none');
+assert.equal(run('progressionSuggestion({exercises:[{sets:[{done:true,reps:10}]}]},"pain").action'),'none');
+run('state.health.summary={source:"",sources:[],activeCalories:null,averageHeartRate:null}');
+assert.ok(run('healthSummaryHtml().includes("Nincs adat")'));
+run('restoreText(JSON.stringify(makeBackup()))');
+assert.equal(run('trainingProfile().height'),178);
+assert.ok(run('activeProgram().prescriptions'));
+console.log('PASS: profile validation, all split/equipment/time variants, exclusions, per-program prescriptions, non-destructive activation, cancelled finish, feedback idempotency, backup roundtrip and health privacy.');
+(async()=>{
+ const backupWithBadRx=run('makeBackup()');backupWithBadRx.programs.find(x=>x.generated).prescriptions['plank'].sets=100000;ctx.badBackup=backupWithBadRx;
+ assert.throws(()=>run('validateBackup(badBackup)'));
+ assert.match(run('historyScreen()'),/healthFromHistory/);
+ assert.match(run('historyScreen()'),/Visszajelzés/);
+ // A native read failure clears stale measurements; no imported value reaches backups.
+ const selected=run('history()[0].started');
+ ctx.document.querySelector=selector=>selector==='#healthWorkout'?{value:selected}:selector==='#healthSource'?{value:'com.sec.android.app.shealth'}:{innerHTML:'',remove(){}};
+ ctx.window.Capacitor={isNativePlatform:()=>true,Plugins:{HealthBridge:{readWorkout:async()=>{throw Error('Permission revoked');}}}};
+ run('state.health.summary={activeCalories:999}');
+ await run('readHealthWorkout()');
+ assert.equal(run('state.health.summary'),null);
+ assert.match(run('state.health.message'),/Permission revoked/);
+ ctx.window.Capacitor.Plugins.HealthBridge.readWorkout=async args=>{assert.equal(args.source,'com.sec.android.app.shealth');assert.equal(args.start,selected);return {source:args.source,sources:[args.source],activeCalories:null,averageHeartRate:null,heartRateSamples:0};};
+ await run('readHealthWorkout()');
+ assert.equal(run('state.health.summary.activeCalories'),null);
+ assert.match(run('healthSummaryHtml()'),/Nincs adat/);
+ assert.equal(run('JSON.stringify(makeBackup()).includes("heartRateSamples")'),false);
+ run('clearHealthView()');assert.equal(run('state.health.summary'),null);
+ console.log('PASS: health bridge error/success, stale-data clearing, selected source/time window, missing-data display, history access and malicious prescription rejection. Native API mocked.');
+})().catch(e=>{console.error(e);process.exitCode=1;});
+// Starting an older scheduled program must not inherit the active personal plan's volume.
+run("state.session=null;db.set('draft',null);startWorkout('A',null,'home-basic')");
+assert.equal(run('state.session.exercises[0].sets.length'),run('exercises().find(x=>x.id==="db-squat").sets'));
+assert.equal(run('state.session.programId'),'home-basic');
+run("state.session=null;db.set('draft',null)");

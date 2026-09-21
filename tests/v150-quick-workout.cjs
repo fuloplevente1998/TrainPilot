@@ -1,0 +1,16 @@
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const section='www/trainpilot-150-quick-workout.js';
+const app=fs.existsSync(section)?fs.readFileSync(section,'utf8'):fs.readFileSync('www/app.js','utf8');
+assert.ok(app.includes("const TP150QW_VERSION='1.5.0'"),'Quick Workout section missing');
+assert.ok(app.includes("const TP150QW_VERSION='1.5.0'"),'1.5.0 Quick Workout marker missing');
+for(const x of ['tp150StartQuickWorkout','tp150AddQuickExercise','tp150QuickPicker','tp150QuickResults','tp150IsQuick'])assert.ok(app.includes(x),'missing '+x);
+assert.ok(app.includes("type:'quick',quickWorkout:true"),'Quick Workout session type marker missing');
+assert.ok(app.includes("programId:null"),'Quick Workout must not pretend to belong to a program');
+assert.ok(app.includes("const prev=findLastExercise(id)"),'Quick Workout must inherit previous exercise loads');
+assert.ok(app.includes("typeof rf152Recommendation==='function'"),'Quick Workout must use the adaptive progression recommendation when available');
+assert.ok(app.includes("state.session.exercises.push(item)"),'Quick Workout must support adding exercises while active');
+assert.ok(app.includes("tp150HistoryTitleBase=tp149HistoryTitle"),'Quick Workout must integrate with localized Journal title');
+assert.ok(app.includes("x.type==='quick'||x.quickWorkout===true"),'Journal must recognize Quick Workout history entries');
+assert.ok(app.includes("const langs=['hu','en','de','ro','sk','pl']"),'Quick Workout translation audit must cover six languages');
+assert.ok(app.includes("const list=exercises().filter"),'Quick Workout picker must use the complete exercise collection, including custom exercises');
+console.log('PASS TrainPilot 1.5.0 Quick Workout structure, session model, history integration and six-language UI guards');

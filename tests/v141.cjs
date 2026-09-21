@@ -1,0 +1,16 @@
+const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict'),crypto=require('node:crypto').webcrypto;
+const values=new Map(),root={innerHTML:'',querySelector(){return null},prepend(){}};
+const ls={getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};
+const doc={querySelector:()=>root,querySelectorAll:()=>[],getElementById:()=>null,addEventListener(){},createElement:()=>({className:'',innerHTML:'',querySelector:()=>null,remove(){}}),body:{appendChild(){}}};
+const ctx=vm.createContext({localStorage:ls,document:doc,window:{Capacitor:{isNativePlatform:()=>false},scrollTo(){},open(){}},navigator:{onLine:true},setInterval:()=>1,clearInterval(){},setTimeout:()=>1,clearTimeout(){},Date,crypto,TextEncoder,Blob:function(){},URL:{createObjectURL(){return''},revokeObjectURL(){}},alert(){},confirm:()=>true,prompt:()=>null,console});
+for(const f of ['backup.js','demos.js','cloud.js','app.js','v12.js','catalog131.js','v13.js','library131.js','onboarding132.js','v14.js','v141.js'])vm.runInContext(fs.readFileSync('www/'+f,'utf8'),ctx);
+const run=s=>vm.runInContext(s,ctx);
+assert.equal(run('makeBackup().appVersion'),'1.4.1');
+assert.equal(run("rf141FmtDuration(435)"),'7 ó 15 p');
+assert.equal(run("rf141Median([40,20,30])"),30);
+assert.equal(run("rf141RecoverySignals({sleepMinutes:420,hrvRmssdMs:55}).length"),2);
+run("state.health.recovery={sleepMinutes:300,hrvRmssdMs:35,hrvBaselineMs:50}");
+assert.match(run('rf141RecoveryText()'),/alvás/i);
+assert.match(run('rf141RecoveryText()'),/HRV/i);
+assert.equal(run("RF141_VERSION"),'1.4.1');
+console.log('PASS: RepForge 1.4.1 version, recovery helpers, Health Connect recovery interpretation and backup version.');

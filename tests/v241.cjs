@@ -1,0 +1,11 @@
+const fs=require('fs');
+const assert=require('assert');
+const s=fs.readFileSync('www/v241.js','utf8');
+for(const x of ["RF241_VERSION='2.4.1'","rf241CompactHealth","rf241HealthDetails","rf241RefreshWorkoutHealth","rf241ScheduleHistoryRefresh","rf241QueueWorkoutSync","rf240SyncWorkout","health240","windowStart","windowEnd","Health Connect","Szinkronra vár","Egészségügyi adatok részletei","finishWorkout=function","rf142ReadHealthForWorkout=async function"])assert.ok(s.includes(x),'missing '+x);
+assert.ok(s.includes("rf240AttachRecentWorkouts(p,14,false)"),'history auto refresh missing');
+assert.ok(s.includes("rf240SyncWorkout(plugin,h,true)"),'manual/edit refresh must persist exact workout Health window');
+assert.ok(s.includes("d.windowStart!==h.started||d.windowEnd!==h.finished"),'stale workout-window Health data must be rejected');
+assert.ok(s.includes('averageHeartRate')&&s.includes('maxHeartRate')&&s.includes('activeCalories'),'workout summary metrics missing');
+assert.ok(s.includes('distanceMeters')&&s.includes('averageSpeedMps'),'optional workout movement metrics missing');
+assert.ok(!s.includes('oxygenSaturationPercent')&&!s.includes('vo2Max')&&!s.includes('bodyFatPercent')&&!s.includes('weightKg'),'daily wellness metrics must not be duplicated into each workout log card');
+console.log('PASS: TrainPilot 2.4.1 workout-linked Health log checks.');

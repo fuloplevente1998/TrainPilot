@@ -1,0 +1,17 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const ui=fs.readFileSync('www/trainpilot-110.js','utf8');
+assert.match(ui,/RF110_AUTO_HEALTH_MS=5\*60\*1000/);
+assert.match(ui,/RF110_RECOVERY_REFRESH_MS=6\*60\*60\*1000/);
+assert.match(ui,/rf250Sync\(\{plugin:p,manual:false\}\)/);
+assert.match(ui,/rf263Sync\(\{plugin:p,manual:false\}\)/);
+assert.match(ui,/setInterval\(\(\)=>rf110AutoHealthSync\(\),RF110_AUTO_HEALTH_MS\)/);
+assert.match(ui,/healthSettings=async function healthSettings\(\)/);
+assert.doesNotMatch(ui,/healthSettings=async function[\s\S]*?healthAction/);
+assert.match(ui,/await healthPlugin\(\)\.openSettings\(\)/);
+assert.match(ui,/card\.id='rf110Stopwatch'/);
+assert.match(ui,/Indítás/);assert.match(ui,/Szünet/);assert.match(ui,/Nullázás/);
+assert.match(ui,/String\(sessionExercise\?\.repUnit\|\|exercise\?\.repUnit\|\|exercise\?\.reps\|\|'\'\)\.includes\('mp'\)/);
+assert.match(ui,/row\.reps=sec>0\?String\(sec\):''/);
+assert.match(ui,/const rf110PaintBase=rf245Paint/);
+assert.match(ui,/if\(rf110AutoHealthFlight&&!rf250ActiveManual\)return/);

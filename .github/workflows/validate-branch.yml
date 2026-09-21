@@ -1,0 +1,38 @@
+name: Quick TrainPilot Validation
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trainpilot-quick-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  quick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: JavaScript syntax check
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in www/*.js; do node -c "$f"; done
+          for f in tests/*.cjs; do node -c "$f"; done
+      - name: Run fast TrainPilot regression suite
+        run: npm test

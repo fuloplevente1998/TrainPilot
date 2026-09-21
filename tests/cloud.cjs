@@ -1,0 +1,20 @@
+const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict'),crypto=require('node:crypto').webcrypto;
+const values=new Map(),alerts=[];let saved=null,eventWrites=[],files=[];
+const plugin={status:async()=>({profile:''}),driveList:async()=>({files}),driveRead:async()=>({data:saved}),driveWrite:async x=>{saved=x.data;return {verified:true}},calendarSync:async x=>{eventWrites=JSON.parse(x.events);return {count:eventWrites.length}}};
+const ctx=vm.createContext({localStorage:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)},document:{querySelector:()=>({innerHTML:'',remove(){}}),getElementById:()=>null,addEventListener(){}},window:{Capacitor:{isNativePlatform:()=>true,Plugins:{GoogleSync:plugin}},scrollTo(){}},navigator:{onLine:true},setInterval:()=>1,clearInterval(){},Date,crypto,TextEncoder,alert:t=>alerts.push(t),confirm:()=>true,console});
+for(const f of ['backup.js','demos.js','cloud.js','app.js'])vm.runInContext(fs.readFileSync('www/'+f,'utf8'),ctx);
+const run=s=>vm.runInContext(s,ctx);
+(async()=>{
+ await Promise.resolve();
+ assert.equal(run("buildSchedule('2026-09-14','18:00',[1,3,5],2,45,'A').map(x=>x.workout).join('')"),'ABABAB');assert.throws(()=>run("buildSchedule('2026-09-14','',[],2,45,'A')"));
+ run("let base=syncData();let remote=JSON.parse(JSON.stringify(base));remote.weights=[{kg:65,date:'2026-09-08T10:00:00.000Z'}];let local=JSON.parse(JSON.stringify(base));local.weights=[{kg:64,date:'2026-09-07T10:00:00.000Z'}];let merged=mergeSync(local,[remote],base,()=>{throw Error('unexpected conflict')})");assert.equal(run('merged.weights.length'),2);
+ run("remote.settings={rest:120};merged=mergeSync(local,[remote],base,()=>{throw Error('unexpected conflict')})");assert.equal(run('merged.settings.rest'),120);run('local.settings={rest:60}');assert.throws(()=>run("mergeSync(local,[remote],base,()=>{throw Error('conflict')})"),/conflict/);run('merged=mergeSync(local,[remote],base,(k,a,b)=>a)');assert.equal(run('merged.settings.rest'),60);
+ const id=await run("eventId('hello')");assert.equal(id,await run("eventId('hello')"));assert.match(id,/^rf[0-9a-f]{64}$/);
+ run("db.set('scheduled',buildSchedule('2026-09-14','18:00',[1],1,45,'A'));startWorkout('A',scheduled()[0].id);upd(0,0,'reps','10');toggleSet(0,0);state.session.started='2026-09-14T16:00:00.000Z';state.session.finished='2026-09-14T16:40:00.000Z';db.set('history',[state.session]);state.session=null;");const events=await run('calendarEvents()');assert.equal(events.length,1);assert.match(events[0].summary,/✓/);
+ run("cloudProfile={sub:'test',email:'test@example.com'}");await run('syncCloud()');assert.equal(JSON.parse(saved).owner,'test');assert.ok(values.has('repforge:cloudBase:test'));
+ files=[{id:'file',name:'repforge-sync-'+JSON.parse(saved).device+'-test.json',createdTime:'2026-09-08T10:00:00Z'}];const first=saved;await run('syncCloud()');assert.equal(saved,first);
+ const baseline=values.get('repforge:history');plugin.driveRead=async()=>({data:'{broken'});await run('syncCloud()');assert.equal(values.get('repforge:history'),baseline);assert.match(run('cloudMessage'),/JSON|position|property|Expected/);
+ plugin.driveRead=async()=>({data:saved});await run('syncCalendar()');assert.equal(eventWrites.length,1);
+ plugin.driveRead=async()=>{run("db.set('settings',{rest:180})");return {data:saved}};await run('syncCloud()');assert.equal(run('settings().rest'),180);assert.match(run('cloudMessage'),/Közben/);
+ console.log('PASS: A/B scheduling, three-way merge/conflicts, stable event IDs, completion updates planned event, cloud snapshot, corrupt remote and concurrent-edit protection. Google APIs mocked.');
+})().catch(e=>{console.error(e);process.exitCode=1});

@@ -1,0 +1,16 @@
+const fs=require('fs'),assert=require('node:assert/strict');
+const js=fs.readFileSync('www/v229.js','utf8');
+const workout=fs.readFileSync('www/v142.js','utf8');
+const index=fs.readFileSync('www/index.html','utf8');
+assert.ok(js.includes("const RF229_VERSION='2.2.9'"),'2.2.9 version missing');
+assert.ok(js.includes("db.get('recoveryHistory',[])"),'persistent recovery history missing');
+assert.ok(js.includes("db.set('recoveryHistory',rows)"),'recovery history is not persisted');
+assert.ok(!js.includes('slice(0,180)'),'recovery history must not be arbitrarily truncated');
+assert.ok(js.includes('sleepEnd'),'sleep must be assigned by sleep end/wake date');
+assert.ok(js.includes('rf229ReadRecoveryHistory(p,14)'),'14-day recovery backfill missing');
+assert.ok(js.includes('hrvBaselineMs:baseline'),'local HRV baseline missing');
+assert.ok(js.includes('recoveryHistory:rf229RecoveryHistory()'),'backup export missing recovery history');
+assert.ok(js.includes('const rf229RestoreText=restoreText'),'backup restore wrapper missing');
+assert.ok(workout.includes('readWorkout({start:h.started,end:h.finished,source})'),'workout Health data must use exact workout interval');
+assert.ok(index.includes('v229.js'),'v229 runtime layer not loaded');
+console.log('PASS v2.2.9 daily recovery persistence, backup and exact workout Health interval');

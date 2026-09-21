@@ -1,0 +1,11 @@
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const all=fs.readdirSync('www').filter(x=>x.endsWith('.js')).map(x=>fs.readFileSync('www/'+x,'utf8')).join('\n');
+const pkg=require('../package.json'),meta=require('../SOURCE_VERSION.json');
+const gradle=fs.readFileSync('android/app/build.gradle','utf8');
+assert.equal(pkg.version,'1.1.2');assert.equal(meta.version,'1.1.2');assert.equal(meta.versionCode,2609);
+assert.match(gradle,/versionCode\s+2609/);assert.match(gradle,/versionName\s+"1\.1\.2"/);
+assert.match(all,/healthFromHistory = function healthFromHistory\(i\)\{[^}]*go\('health'\)/);
+assert.match(all,/onclick=\"healthFromHistory\(\$\{originalIndex\}\)\">Health adatok<\/button>/);
+assert.doesNotMatch(all,/onclick=\"healthFromHistory\(\$\{originalIndex\}\)\">Órás adatok<\/button>/);
+assert.match(all,/healthScreen=function\(\)\{[\s\S]{0,260}return go\('health'\)/);
+assert.match(fs.readFileSync('www/sw.js','utf8'),/trainpilot-v112/);
