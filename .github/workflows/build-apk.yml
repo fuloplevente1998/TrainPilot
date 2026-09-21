@@ -127,6 +127,8 @@ jobs:
           cmp www/app.js /tmp/packaged-app.js
           cp "$APK" "TrainPilot-$VERSION.apk"
           git archive --format=zip -o "TrainPilot-$VERSION-source.zip" HEAD
+          zip -q -d "TrainPilot-$VERSION-source.zip" SOURCE_VERSION.json || true
+          zip -q "TrainPilot-$VERSION-source.zip" SOURCE_VERSION.json
           sha256sum "TrainPilot-$VERSION.apk" "TrainPilot-$VERSION-source.zip" > SHA256SUMS.txt
 
       - name: Remove temporary signing material
@@ -158,7 +160,7 @@ jobs:
       - name: Upload APK and source
         uses: actions/upload-artifact@v4
         with:
-          name: TrainPilot-${{ github.ref_name }}-${{ github.sha }}
+          name: TrainPilot-${{ github.run_id }}-${{ github.sha }}
           path: |
             TrainPilot-*.apk
             TrainPilot-*-source.zip
