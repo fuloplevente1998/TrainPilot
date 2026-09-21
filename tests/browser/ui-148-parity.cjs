@@ -16,7 +16,7 @@ function materializeBaseline(){
  for(const file of files){
   const out=path.join(dir,file);
   fs.mkdirSync(path.dirname(out),{recursive:true});
-  fs.writeFileSync(out,cp.execFileSync('git',['show',BASE+':'+file]));
+  fs.writeFileSync(out,cp.execFileSync('git',['show',BASE+':'+file],{maxBuffer:16*1024*1024}));
  }
  return {dir,root:path.join(dir,'www')};
 }
@@ -81,7 +81,7 @@ async function geometryAudit(page,label){
  const [baseServer,curServer]=await Promise.all([serve(baseline.root),serve(currentRoot)]);
  let browser;
  try{
-  const baseCss=cp.execFileSync('git',['show',BASE+':www/styles.css']);
+  const baseCss=cp.execFileSync('git',['show',BASE+':www/styles.css'],{maxBuffer:16*1024*1024});
   assert.deepEqual(fs.readFileSync('www/styles.css'),baseCss,'stable 1.4.7 styles.css must remain byte-identical');
 
   browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});
