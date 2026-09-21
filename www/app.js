@@ -12438,6 +12438,74 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
 })();
 // @endsection trainpilot-161-minor-fixes.js
 
+
+// @section trainpilot-162-minor-ui.js
+/* TrainPilot 1.6.2: minor phone UI polish and Home Health-count consistency. */
+(function(){
+ 'use strict';
+ const TP162_VERSION='1.6.2';
+ const dailyBase=rf223Daily;
+ window.tp162VisibleHealthSessions=function tp162VisibleHealthSessions(d){
+  const sessions=Array.isArray(d?.exerciseSessions)?d.exerciseSessions:[];
+  const local=(typeof history==='function'?history():[]).filter(function(h){return Number.isFinite(Date.parse(h?.started))&&Number.isFinite(Date.parse(h?.finished));});
+  const ownPackage='com.repforge.app',tolerance=5*60*1000;
+  return sessions.filter(function(s){
+   if(String(s?.source||'')!==ownPackage)return true;
+   const start=Date.parse(s?.start),end=Date.parse(s?.end);if(!Number.isFinite(start)||!Number.isFinite(end))return false;
+   return local.some(function(h){return Math.abs(Date.parse(h.started)-start)<=tolerance&&Math.abs(Date.parse(h.finished)-end)<=tolerance;});
+  });
+ };
+ rf223Daily=function(){const d=dailyBase.apply(this,arguments);if(!d)return d;const visible=window.tp162VisibleHealthSessions(d);return Object.assign({},d,{exerciseSessions:visible,exerciseSessionCount:visible.length});};
+
+ if(typeof window.tp155R4DecorateNavigation==='function'){
+  const decorateNavBase=window.tp155R4DecorateNavigation;
+  window.tp155R4DecorateNavigation=function(){
+   const out=decorateNavBase.apply(this,arguments),host=document.getElementById('tp155R4PanelHost');
+   if(host?.dataset?.panel==='exercises'){
+    const buttons=[...document.querySelectorAll('.top.tp154-nav-grid .tp151-nav-item')];
+    const programs=buttons.find(function(btn){return /go\(['"]programs['"]\)/.test(String(btn.getAttribute('onclick')||''))});
+    if(programs){programs.classList.add('active');programs.setAttribute('aria-expanded','true')}
+   }
+   return out;
+  };
+ }
+
+ const style=document.createElement('style');style.id='tp162MinorUiCss';style.textContent=[
+  '.tp-brand-strip{display:none!important}',
+  '.top.tp154-nav-grid{top:0!important}',
+  'main.rf221-home>.onboarding{margin:0!important;padding:9px 11px 10px!important;display:grid!important;gap:6px!important}',
+  'main.rf221-home>.onboarding h2{margin:0!important;line-height:1.15!important}',
+  'main.rf221-home>.onboarding p{margin:0!important;line-height:1.25!important}',
+  'main.rf221-home>.onboarding .btn{margin:0!important;min-height:40px!important;padding:8px 10px!important}',
+  'main.rf221-home{min-height:0!important}',
+  '#tp155R4PanelHost:is([data-panel="calendar"],[data-panel="coach"],[data-panel="settings"],[data-panel="exercises"]) .tp155-r4-panel-close{position:absolute!important;top:14px!important;right:14px!important;float:none!important;margin:0!important;z-index:9!important}',
+  '#tp155R4PanelHost:is([data-panel="calendar"],[data-panel="coach"],[data-panel="settings"],[data-panel="exercises"]) .tp155-r4-panel-content{clear:none!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-exercise-panel>.hero{margin:0!important;padding:5px 50px 5px 4px!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-exercise-panel>.hero h1{margin:0 0 3px!important;line-height:1.12!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-exercise-panel>.hero p{margin:0!important;line-height:1.25!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-library-filters{margin:6px 0!important;padding:7px!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-library-results>p.muted{margin:4px 0 6px!important;line-height:1.2!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-library-results .tp-library-card{margin:4px 0!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp-library-card>summary{padding:8px 10px!important;min-height:52px!important;gap:8px!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp-library-card>summary h3{margin:0 0 2px!important;line-height:1.12!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp-library-card>summary p{margin:0!important;line-height:1.18!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-library-results{scroll-padding-top:4px!important;padding-bottom:5px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .tp155-r4-calendar-frame{padding:7px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .calendar-head{min-height:40px!important;margin-bottom:6px!important;padding-right:50px!important;grid-template-columns:46px 1fr 46px!important;gap:6px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .calendar-head .btn{min-height:38px!important;padding:6px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .cal-weekdays{gap:2px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .cal-weekdays span{padding:3px 0!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .calendar-grid{gap:2px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .cal-cell{min-height:42px!important;padding:3px!important;border-radius:10px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .tp155-r4-planner-bottom{margin-top:7px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .tp155-planner-always-open{padding:7px!important}',
+  '@media(max-width:360px){#tp155R4PanelHost[data-panel="calendar"] .cal-cell{min-height:40px!important}#tp155R4PanelHost[data-panel="exercises"] .tp-library-card>summary{padding:7px 8px!important;min-height:50px!important}}'
+ ].join('');
+ document.head?.appendChild(style);
+ window.TrainPilot162={version:TP162_VERSION,staleOwnHealthCountGuard:true,compactHome:true,cleanTopNav:true,compactCalendar:true,compactExerciseLibrary:true,parentProgramsActive:true,insetPanelClose:true};
+})();
+// @endsection trainpilot-162-minor-ui.js
+
 // @section ready.js
 window.TrainPilotBoot.finish();
 // @endsection ready.js

@@ -22,8 +22,8 @@ A Google-funkciókhoz külön Google Cloud/OAuth konfiguráció szükséges. A H
 
 A jelenlegi kiadásra jelölt verzió:
 
-- verzió: **1.6.1**
-- Android `versionCode`: **2650**
+- verzió: **1.6.2**
+- Android `versionCode`: **2651**
 - Android package / application ID: `com.repforge.app`
 - kanonikus webalkalmazás-forrás: `www/app.js`
 
@@ -78,6 +78,6 @@ Signing kulcsot, jelszót, OAuth credentialt, `.env` fájlt vagy más titkos ada
 
 ## Google Play állapot
 
-A Play Store publikálás előkészítése folyamatban van. A release/signing workflow és a szükséges Secrets konfigurálva vannak; az aktuális 1.6.1 signed APK Release Gate ellenőrzése még folyamatban van. A Play App Signing, OAuth production konfiguráció, privacy/Data Safety/Health deklarációk és a fizikai készülékes integrációs tesztek külön kiadási feladatok.
+A Play Store publikálás előkészítése folyamatban van. A release/signing workflow és a szükséges Secrets konfigurálva vannak; az 1.6.1 stabil alap a `main` ágon; az 1.6.2 minor UI patch telefonos és Release Gate ellenőrzése következik. A Play App Signing, OAuth production konfiguráció, privacy/Data Safety/Health deklarációk és a fizikai készülékes integrációs tesztek külön kiadási feladatok.
 
 Lásd: `docs/PLAY_STORE_CHECKLIST_2026.md`.
