@@ -12506,6 +12506,102 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
 })();
 // @endsection trainpilot-162-minor-ui.js
 
+// @section trainpilot-162-followup.js
+/* TrainPilot 1.6.2 follow-up: isolated UI regression fixes. */
+(function(){
+ 'use strict';
+
+ const cleanupChrome=function(){
+  document.querySelectorAll('.tp-brand-strip').forEach(function(el){el.remove()});
+  if(state?.tab==='health'){
+   const health=document.querySelector('main.rf263-health');
+   health?.querySelector(':scope > .hero:first-child,:scope > .tp151-page-head:first-child')?.remove();
+  }
+ };
+ window.tp162CleanupChrome=cleanupChrome;
+
+ // Preserve parent navigation state for panel subviews.
+ if(typeof window.tp155R4DecorateNavigation==='function'){
+  const decorateBase=window.tp155R4DecorateNavigation;
+  window.tp155R4DecorateNavigation=function(){
+   const out=decorateBase.apply(this,arguments),host=document.getElementById('tp155R4PanelHost');
+   if(host?.dataset?.panel==='quick'){
+    const buttons=[...document.querySelectorAll('.top.tp154-nav-grid .tp151-nav-item')];
+    const workout=buttons.find(function(btn){return /go\(['"]plan['"]\)/.test(String(btn.getAttribute('onclick')||''))});
+    if(workout){workout.classList.add('active');workout.setAttribute('aria-expanded','true')}
+   }
+   return out;
+  };
+ }
+
+ // Quick Workout keeps only the compact context title; legacy explanatory hero/page headers stay out.
+ if(typeof window.tp155QuickPanelHtml==='function'){
+  const quickHtmlBase=window.tp155QuickPanelHtml;
+  window.tp155QuickPanelHtml=function(){
+   const html=String(quickHtmlBase.apply(this,arguments)||''),tpl=document.createElement('template');tpl.innerHTML=html;
+   const main=tpl.content.querySelector('main');
+   main?.querySelectorAll(':scope > .hero,:scope > .tp151-page-head').forEach(function(el){el.remove()});
+   return main?main.outerHTML:html;
+  };
+ }
+
+ // Visible product branding only; legacy package/storage/sync identifiers remain untouched.
+ if(typeof cloudPanel==='function'){
+  const cloudPanelBase162=cloudPanel;
+  cloudPanel=function(){return String(cloudPanelBase162.apply(this,arguments)).replace('RepForge → Google Naptár','TrainPilot → Google Naptár')};
+ }
+
+ // Theme picker: same selection logic/themes, compact two-column presentation.
+ const themeOptions162=function(keys){
+  const current=rf200ThemeKey();
+  return keys.map(function(key){
+   const theme=RF200_THEMES[key];
+   return '<button type="button" class="tp155-theme-option '+(key===current?'active':'')+'" data-theme="'+esc(key)+'" aria-pressed="'+(key===current?'true':'false')+'" onclick="tp155ChooseTheme(\''+esc(key)+'\')"><span class="tp155-theme-swatch" style="background:'+esc(theme.accent)+'"></span><span>'+esc(tp1511ThemeName(key))+'</span><i aria-hidden="true">✓</i></button>';
+  }).join('');
+ };
+ window.tp155ThemePickerHtml=function(){
+  const lang=typeof rf212Lang==='function'?rf212Lang():'hu';
+  const basic=tp1511T('basic'),vivid=lang==='hu'?'Élénk színek':tp1511T('vivid');
+  return '<div class="tp-modal-card tp-temporal-card tp155-theme-picker tp162-theme-picker" role="dialog" aria-modal="true" aria-labelledby="tp155ThemeTitle" onclick="event.stopPropagation()"><div class="tp-modal-head"><h2 id="tp155ThemeTitle">'+esc(tp152T('theme'))+'</h2><button type="button" class="btn danger tp-modal-close" onclick="tp155CloseThemePicker()">×</button></div><div class="tp155-theme-list tp162-theme-columns"><section class="tp162-theme-column"><div class="small muted tp155-theme-group">'+esc(basic)+'</div><div class="tp162-theme-options">'+themeOptions162(TP1511_BASIC)+'</div></section><section class="tp162-theme-column"><div class="small muted tp155-theme-group">'+esc(vivid)+'</div><div class="tp162-theme-options">'+themeOptions162(TP1511_VIVID)+'</div></section></div></div>';
+ };
+
+ // Run after the established render stack so removed chrome does not reserve any layout height.
+ const renderBase162=render;
+ render=function(custom){
+  const out=renderBase162.apply(this,arguments);
+  cleanupChrome();
+  return out;
+ };
+ cleanupChrome();
+
+ const style=document.createElement('style');style.id='tp162FollowupCss';style.textContent=[
+  '#tp155R4PanelHost:is([data-panel="calendar"],[data-panel="coach"],[data-panel="settings"],[data-panel="exercises"]) .tp155-r4-panel-close{position:sticky!important;top:18px!important;right:auto!important;float:right!important;margin:18px 14px -36px 8px!important;z-index:20!important}',
+  '#tp155R4PanelHost[data-panel="coach"] .tp151-coach-recommendation{margin-top:10px!important}',
+  '#tp155R4PanelHost[data-panel="quick"] .tp155-quick-panel>:is(.hero,.tp151-page-head){display:none!important}',
+  '#tp155R4PanelHost[data-panel="quick"] .tp160-quick-context{font-size:15px!important;font-weight:850!important;line-height:1.2!important}',
+  'main.rf221-home>.onboarding{padding:6px 11px 9px!important;gap:5px!important}',
+  'main.rf221-home>.onboarding h2{margin:0!important}',
+  'main.rf221-home>.onboarding p{margin:0!important}',
+  '.tp162-theme-picker{box-sizing:border-box!important;width:min(356px,calc(100vw - 24px))!important;max-width:calc(100vw - 24px)!important;padding:12px!important;border:1px solid var(--line)!important;border-radius:16px!important;background:var(--card)!important}',
+  '.tp162-theme-picker .tp-modal-head{margin:0 0 8px!important;min-height:40px!important;gap:8px!important}',
+  '.tp162-theme-picker .tp-modal-head h2{font-size:17px!important;margin:0!important}',
+  '.tp162-theme-columns{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;max-height:none!important;overflow:visible!important;padding:0!important}',
+  '.tp162-theme-column{min-width:0;border:1px solid var(--line);border-radius:12px;background:var(--card2);padding:7px}',
+  '.tp162-theme-column .tp155-theme-group{margin:0 0 6px!important;padding:0 2px!important;font-size:12px!important;font-weight:800!important}',
+  '.tp162-theme-options{display:grid;gap:5px}',
+  '.tp162-theme-picker .tp155-theme-option{box-sizing:border-box;min-width:0!important;min-height:40px!important;padding:6px 7px!important;gap:6px!important;border:1px solid var(--line)!important;border-radius:10px!important;background:var(--card)!important;font-size:12px!important;line-height:1.15!important;white-space:normal!important;text-align:left!important}',
+  '.tp162-theme-picker .tp155-theme-option>span:nth-child(2){min-width:0;overflow-wrap:anywhere}',
+  '.tp162-theme-picker .tp155-theme-option.active{border-color:var(--accent)!important;box-shadow:inset 0 0 0 1px var(--accent)!important;background:color-mix(in srgb,var(--accent) 12%,var(--card))!important}',
+  '.tp162-theme-picker .tp155-theme-option i{margin-left:auto!important}',
+  '.tp162-theme-picker .tp155-theme-swatch{flex:0 0 14px!important;width:14px!important;height:14px!important}',
+  '@media(max-width:340px){.tp162-theme-picker{width:calc(100vw - 16px)!important;max-width:calc(100vw - 16px)!important;padding:9px!important}.tp162-theme-columns{gap:6px!important}.tp162-theme-column{padding:6px!important}.tp162-theme-picker .tp155-theme-option{padding:5px 6px!important;font-size:11.5px!important}}'
+ ].join('');
+ document.head?.appendChild(style);
+
+ window.TrainPilot162Followup={stickyPanelClose:true,coachSpacing:true,quickWorkoutParent:true,quickTitleSingle:true,healthHeaderRemoved:true,brandStripRemoved:true,trainPilotCalendarBrand:true,twoColumnThemePicker:true,calendarGeometryUntouched:true};
+})();
+// @endsection trainpilot-162-followup.js
+
 // @section ready.js
 window.TrainPilotBoot.finish();
 // @endsection ready.js
