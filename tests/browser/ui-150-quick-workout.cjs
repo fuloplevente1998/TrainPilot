@@ -26,6 +26,8 @@ const base=()=>'http://127.0.0.1:'+server.address().port+'/';
   await page.evaluate(()=>{db.set('draft',null);state.session=null;state.workout=null;state.tab='plan';render()});
   await page.waitForSelector('.tp150-quick-entry');
   assert.equal(await page.locator('.tp150-quick-entry button').innerText(),'Gyors edzés indítása');
+  assert.equal(await page.locator('.tp150-quick-entry h2').innerText(),'Gyors edzés','Workout page must keep one normal Quick Workout block title');
+  assert.equal(await page.locator('.tp150-quick-entry .badge').count(),0,'duplicate Quick Workout badge/title must stay removed');
   assert.equal(await page.locator('.tp150-active-program').count(),1,'Active program must use the compact card');
   assert.equal(await page.locator('.tp150-plan-compact > .hero').count(),0,'Workout page must not restore the oversized active-program hero');
 
