@@ -59,7 +59,7 @@ public class GoogleSyncPlugin extends Plugin {
     if(Boolean.TRUE.equals(c.getBoolean("silent",false))){fail("Google-engedély szükséges. Indíts kézi szinkront.");return;}
     try{launcher.launch(new IntentSenderRequest.Builder(r.getPendingIntent().getIntentSender()).build());}catch(Exception e){fail("Nem nyitható meg a Google-engedélykérés.");}
    }else authorized(r);
-  }).addOnFailureListener(e->fail("A Google-kapcsolat nem sikerült. Ellenőrizd az internetet és a RepForge Google Cloud/OAuth beállítását.")));
+  }).addOnFailureListener(e->fail("A Google-kapcsolat nem sikerült. Ellenőrizd az internetet és a TrainPilot Google Cloud/OAuth beállítását.")));
  }
  private void authorized(AuthorizationResult r){
   token=r.getAccessToken();if(token==null){fail("A Google nem adott hozzáférést.");return;}
@@ -80,7 +80,7 @@ public class GoogleSyncPlugin extends Plugin {
     case "driveRead":
      String id=pending.getString("id","");if(!id.matches("[A-Za-z0-9_-]+"))throw new IOException("Hibás fájlazonosító.");
      JSONObject meta=request("GET","https://www.googleapis.com/drive/v3/files/"+id+"?fields=name",null);
-     if(!meta.optString("name").startsWith("repforge-sync-"))throw new IOException("Nem RepForge-fájl.");
+     if(!meta.optString("name").startsWith("repforge-sync-"))throw new IOException("Nem TrainPilot-kompatibilis mentés.");
      out.put("data",request("GET","https://www.googleapis.com/drive/v3/files/"+id+"?alt=media",null).toString());break;
     case "driveWrite":writeSnapshot(out);break;
     case "drivePhotoWrite":writePhoto(out);break;
@@ -133,7 +133,7 @@ public class GoogleSyncPlugin extends Plugin {
    JSONObject r=request("GET","https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=250"+(page.isEmpty()?"":"&pageToken="+enc(page)),null);
    JSONArray a=r.optJSONArray("items");if(a!=null)for(int i=0;i<a.length();i++){JSONObject c=a.getJSONObject(i);if(c.optString("description").equals("RepForge managed workout calendar v1")&&c.optString("accessRole").equals("owner"))id=c.getString("id");}page=r.optString("nextPageToken");
   }while(id.isEmpty()&&!page.isEmpty());
-  if(id.isEmpty()){JSONObject c=new JSONObject();c.put("summary","RepForge edzések");c.put("description","RepForge managed workout calendar v1");c.put("timeZone",TimeZone.getDefault().getID());id=request("POST","https://www.googleapis.com/calendar/v3/calendars",c).getString("id");}
+  if(id.isEmpty()){JSONObject c=new JSONObject();c.put("summary","TrainPilot edzések");c.put("description","RepForge managed workout calendar v1");c.put("timeZone",TimeZone.getDefault().getID());id=request("POST","https://www.googleapis.com/calendar/v3/calendars",c).getString("id");}
   prefs().edit().putString("calendar",id).apply();return id;
  }
  private void syncEvents(JSObject out)throws Exception{
