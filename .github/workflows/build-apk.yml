@@ -2,6 +2,9 @@ name: Release Gate + TrainPilot APK
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - test/1.6.1-minor-fixes
 
 permissions:
   contents: read
