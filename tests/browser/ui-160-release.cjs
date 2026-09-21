@@ -73,7 +73,17 @@ const {chromium}=require('playwright');
   assert.equal(motion.hostBlur,false,'full-screen panel backdrop blur must be removed');
   assert.equal(motion.forced,false,'motion path must not force synchronous layout');
   assert.equal(motion.clip,false,'motion path must not animate clip-path');
+  assert.equal(await page.locator('.tp-brand-strip').count(),0,'Home branding strip must be removed from layout, not only hidden');
+  const homeLayout=await page.evaluate(()=>({scrollWidth:document.documentElement.scrollWidth,clientWidth:document.documentElement.clientWidth,onboarding:document.querySelector('main.rf221-home>.onboarding')?.getBoundingClientRect().toJSON()}));
+  assert.ok(homeLayout.scrollWidth<=homeLayout.clientWidth+1,'Home must not introduce horizontal overflow: '+JSON.stringify(homeLayout));
+
+  await page.evaluate(()=>go('health'));await page.waitForSelector('main.rf263-health');
+  assert.equal(await page.locator('main.rf263-health > .hero,main.rf263-health > .tp151-page-head').count(),0,'Health must start directly with real content, without the large title/explanation block');
+  assert.equal(await page.locator('main.rf263-health > .rf263-sync-card').count(),1,'Health sync/content card must be the first functional Health block');
+  const healthOverflow=await page.evaluate(()=>({scrollWidth:document.documentElement.scrollWidth,clientWidth:document.documentElement.clientWidth}));
+  assert.ok(healthOverflow.scrollWidth<=healthOverflow.clientWidth+1,'Health must not introduce horizontal overflow: '+JSON.stringify(healthOverflow));
+
   assert.deepEqual(errors,[]);
-  console.log('RepForge 1.6 phone release checks passed');
+  console.log('TrainPilot 1.6 phone release checks passed');
  }finally{await browser?.close();await new Promise(resolve=>server.close(resolve))}
 })().catch(error=>{console.error(error);process.exit(1)});
