@@ -1,5 +1,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs');
-const app=fs.readFileSync(fs.existsSync('www/trainpilot-162-minor-ui.js')?'www/trainpilot-162-minor-ui.js':'www/app.js','utf8');
+const baseFile=fs.existsSync('www/trainpilot-162-minor-ui.js')?'www/trainpilot-162-minor-ui.js':'www/app.js';
+const followFile=fs.existsSync('www/trainpilot-162-followup.js')?'www/trainpilot-162-followup.js':null;
+const app=fs.readFileSync(baseFile,'utf8')+(followFile?'\n'+fs.readFileSync(followFile,'utf8'):'');
 const pkg=require('../package.json'),src=require('../SOURCE_VERSION.json'),gradle=fs.readFileSync('android/app/build.gradle','utf8');
 assert.equal(pkg.version,'1.6.2');assert.equal(src.version,'1.6.2');assert.equal(src.versionCode,2651);
 assert.match(gradle,/versionCode\s+2651/);assert.match(gradle,/versionName\s+"1\.6\.2"/);
