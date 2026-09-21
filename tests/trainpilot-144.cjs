@@ -17,5 +17,5 @@ assert.ok(!manifest.includes('android.permission.CAMERA'));
 assert.ok(!manifest.includes('READ_MEDIA_IMAGES'));
 assert.ok(google.includes('ExecutorService ioExecutor')&&google.includes('ioExecutor.submit(()->{try{'));
 assert.ok(!google.includes('getBridge().execute(()->{try{'));
-assert.equal(src.versionCode,2649);assert.match(gradle,/versionCode\s+2649/);
-console.log('PASS TrainPilot 2649 local gallery / MediaStore camera / queue isolation guards');
+assert.equal(src.versionCode,2650);assert.match(gradle,/versionCode\s+2650/);
+console.log('PASS TrainPilot 2650 local gallery / MediaStore camera / queue isolation guards');
