@@ -1,5 +1,5 @@
 {
-  "name": "repforge",
+  "name": "trainpilot",
   "version": "1.6.1",
   "private": true,
   "scripts": {
@@ -13,7 +13,7 @@
     "@capacitor/core": "7.4.3"
   },
   "devDependencies": {
-    "@capacitor/cli": "7.4.3",
+    "@capacitor/cli": "7.6.9",
     "playwright": "^1.63.0"
   }
 }

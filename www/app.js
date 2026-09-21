@@ -12441,6 +12441,3 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
 // @section ready.js
 window.TrainPilotBoot.finish();
 // @endsection ready.js
-
-
-
