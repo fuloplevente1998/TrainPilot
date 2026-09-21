@@ -1,4 +1,13 @@
-# RepForge 1.6.0
+# TrainPilot 1.6.1
+
+- Android keyboard/IME: Quick Workout panel stays below the fixed 2×4 navigation and follows the visual viewport.
+- Calendar, Coach and Settings panels sit closer to the navigation and no longer reserve a large blank row below the close button.
+- Bilateral `mp/oldal` stopwatch now presents left/right as two distinct small cards.
+- Left/right stopwatch values write back visibly to the active set row, persist in the workout draft, survive rerenders, and resetting one side leaves the other intact.
+- Development toolchain: Capacitor CLI updated to 7.6.9 to remove the vulnerable legacy `tar` dependency chain.
+- Android `versionCode 2650`, `versionName 1.6.1`.
+
+# TrainPilot 1.6.0
 
 - Quick Workout: compact context/search header beside the shared close control.
 - Quick Workout: muscle and equipment menus stay anchored to their fields inside the panel.

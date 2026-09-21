@@ -2,7 +2,8 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),http=require('node:http'),cp=require('node:child_process');
 const {chromium}=require('playwright');
 
-const BASE='295f79f3c5b4df9b0e01c79c786546bbd17a3e06';
+// Public TrainPilot history intentionally starts from the 1.6.0 clean base.
+const BASE='69cc9a0e51becd79a4758324c9f920812c90b528';
 
 function materializeBaseline(){
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'tp1481-'));
@@ -10,7 +11,7 @@ function materializeBaseline(){
  for(const file of files){
   const out=path.join(dir,file);
   fs.mkdirSync(path.dirname(out),{recursive:true});
-  fs.writeFileSync(out,cp.execFileSync('git',['show',BASE+':'+file]));
+  fs.writeFileSync(out,cp.execFileSync('git',['show',BASE+':'+file],{maxBuffer:16*1024*1024}));
  }
  return {dir,root:path.join(dir,'www')};
 }
@@ -75,7 +76,7 @@ async function geometryAudit(page,label){
  const [baseServer,curServer]=await Promise.all([serve(baseline.root),serve(currentRoot)]);
  let browser;
  try{
-  const baseCss=cp.execFileSync('git',['show',BASE+':www/styles.css']);
+  const baseCss=cp.execFileSync('git',['show',BASE+':www/styles.css'],{maxBuffer:16*1024*1024});
   assert.deepEqual(fs.readFileSync('www/styles.css'),baseCss,'hotfix 1.4.8.1 styles.css must remain byte-identical');
 
   browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});

@@ -12314,6 +12314,130 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
 })();
 // @endsection repforge-160-phone-release-polish.js
 
+// @section trainpilot-161-minor-fixes.js
+/* TrainPilot 1.6.1: Android panel/IME polish and bilateral stopwatch persistence/UI fixes. */
+(function(){
+ 'use strict';
+
+ const TP161_VERSION='1.6.1';
+
+ // Keep Calendar / Coach / Settings closer to the fixed 2x4 navigation and
+ // keep any open panel inside Android's visual viewport while the IME is visible.
+ window.tp161AdjustPanel=function tp161AdjustPanel(){
+  const host=document.getElementById('tp155R4PanelHost');if(!host)return;
+  const nav=document.querySelector('.top.tp154-nav-grid'),rect=nav?.getBoundingClientRect?.();
+  const vv=window.visualViewport;
+  const layoutHeight=Math.max(0,Number(window.innerHeight)||0);
+  const visualHeight=Math.max(0,Number(vv?.height)||layoutHeight);
+  const visualTop=Math.max(0,Number(vv?.offsetTop)||0);
+  const imeOpen=!!(vv&&layoutHeight>0&&(layoutHeight-visualHeight)>80);
+  const visualBottom=imeOpen?Math.max(0,layoutHeight-(visualTop+visualHeight)):0;
+  const compactPanel=/^(calendar|coach|settings)$/.test(String(host.dataset.panel||''));
+  const lift=compactPanel?4:0;
+  const navBottom=rect?Math.max(0,rect.bottom):0;
+  host.style.setProperty('top',Math.round(Math.max(0,navBottom+(imeOpen?visualTop:0)-lift))+'px','important');
+  host.style.setProperty('bottom',Math.round(visualBottom)+'px','important');
+  host.classList.toggle('tp161-ime-open',imeOpen);
+ };
+
+ const refreshBase=window.tp155R4RefreshPanel;
+ if(typeof refreshBase==='function')window.tp155R4RefreshPanel=function(){
+  const out=refreshBase.apply(this,arguments);window.tp161AdjustPanel();return out;
+ };
+ const openBase=window.tp155R4OpenPanel;
+ if(typeof openBase==='function')window.tp155R4OpenPanel=function(){
+  const out=openBase.apply(this,arguments);window.tp161AdjustPanel();
+  try{requestAnimationFrame(()=>window.tp161AdjustPanel())}catch(_){}
+  return out;
+ };
+
+ const adjustSoon=function(){try{requestAnimationFrame(()=>window.tp161AdjustPanel())}catch(_){window.tp161AdjustPanel()}};
+ window.addEventListener?.('resize',adjustSoon,{passive:true});
+ window.addEventListener?.('scroll',adjustSoon,{passive:true});
+ window.visualViewport?.addEventListener?.('resize',adjustSoon,{passive:true});
+ window.visualViewport?.addEventListener?.('scroll',adjustSoon,{passive:true});
+ document.addEventListener?.('focusin',function(e){
+  if(document.getElementById('tp155R4PanelHost')?.contains(e.target))setTimeout(adjustSoon,0);
+ });
+
+ // Make bilateral timing visibly write back to the active workout set row as
+ // well as to the draft data. This also gives the phone UI immediate feedback.
+ window.tp161SyncPerSideRow=function tp161SyncPerSideRow(setIndex){
+  const ex=state.session?.exercises?.[state.current];if(!ex||!tp1481IsPerSideTimed(ex))return;
+  const set=ex.sets?.[setIndex];if(!set)return;
+  const sides=tp1481SyncPerSideReps(set);
+  const row=[...document.querySelectorAll('main .row')][setIndex];
+  if(!row)return;
+  const input=[...row.querySelectorAll('input.field')].at(-1);
+  if(input&&document.activeElement!==input)input.value=set.reps||'';
+  if(input){
+   const left=sides.left||'—',right=sides.right||'—';
+   input.setAttribute('aria-label',(typeof tp149T==='function'?tp149T('stopwatch.leftShort'):'Bal')+' '+left+' / '+(typeof tp149T==='function'?tp149T('stopwatch.rightShort'):'Jobb')+' '+right);
+   if(!set.reps)input.placeholder=(typeof tp149T==='function'?tp149T('stopwatch.leftShort'):'Bal')+' '+left+' • '+(typeof tp149T==='function'?tp149T('stopwatch.rightShort'):'Jobb')+' '+right;
+  }
+ };
+
+ if(typeof tp1481PersistSide==='function'){
+  const persistSideBase=tp1481PersistSide;
+  tp1481PersistSide=function(sec){
+   const setIndex=tp1481SideStopwatch?.setIndex;
+   const out=persistSideBase.apply(this,arguments);
+   if(setIndex>=0)window.tp161SyncPerSideRow(setIndex);
+   return out;
+  };
+ }
+ if(typeof tp1481SetSideSeconds==='function'){
+  const setSideBase=tp1481SetSideSeconds;
+  tp1481SetSideSeconds=function(setIndex){
+   const out=setSideBase.apply(this,arguments);window.tp161SyncPerSideRow(setIndex);return out;
+  };
+ }
+ if(typeof tp1481ResetSide==='function'){
+  const resetSideBase=tp1481ResetSide;
+  tp1481ResetSide=function(){
+   const ex=state.session?.exercises?.[state.current],setIndex=ex?.sets?.findIndex?.(s=>!s.done);
+   const out=resetSideBase.apply(this,arguments);
+   if(setIndex>=0)window.tp161SyncPerSideRow(setIndex);
+   return out;
+  };
+ }
+ if(typeof tp1481DecoratePerSide==='function'){
+  const decorateSideBase=tp1481DecoratePerSide;
+  tp1481DecoratePerSide=function(){
+   const out=decorateSideBase.apply(this,arguments);
+   const host=document.querySelector('#rf110Stopwatch.tp1481-side-stopwatch');
+   if(host){
+    host.classList.add('tp161-side-stopwatch');host.classList.remove('card');
+    host.querySelectorAll('.tp1481-side-card').forEach(x=>x.classList.add('card','tp161-side-window'));
+    const ex=state.session?.exercises?.[state.current],setIndex=ex?.sets?.findIndex?.(s=>!s.done);
+    if(setIndex>=0)window.tp161SyncPerSideRow(setIndex);
+   }
+   return out;
+  };
+ }
+
+ const style=document.createElement('style');style.id='tp161MinorFixCss';style.textContent=[
+  '#tp155R4PanelHost:is([data-panel="calendar"],[data-panel="coach"],[data-panel="settings"]){padding-top:0!important}',
+  '#tp155R4PanelHost:is([data-panel="calendar"],[data-panel="coach"],[data-panel="settings"]) .tp155-r4-panel-close{position:absolute!important;top:10px!important;right:10px!important;float:none!important;margin:0!important}',
+  '#tp155R4PanelHost:is([data-panel="calendar"],[data-panel="coach"],[data-panel="settings"]) .tp155-r4-panel-content{clear:none!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .calendar-head{padding-right:48px!important;min-height:44px}',
+  '#tp155R4PanelHost[data-panel="coach"] .tp155-r4-panel-content>main>h1:first-child{margin-top:2px!important;padding-right:48px;min-height:40px;display:flex;align-items:center}',
+  '#tp155R4PanelHost[data-panel="settings"] .tp155-r4-panel-content>main>.hero:first-child{margin-top:0!important;padding-right:48px!important}',
+  '#tp155R4PanelHost.tp161-ime-open .tp155-r4-panel{max-height:100%!important}',
+  '.tp161-side-stopwatch{border:0!important;background:transparent!important;box-shadow:none!important;padding:0!important}',
+  '.tp161-side-stopwatch>.rf110-stopwatch-head{padding:0 2px 8px;margin:0}',
+  '.tp161-side-stopwatch>.tp1481-side-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px;margin-top:0}',
+  '.tp161-side-stopwatch .tp161-side-window{min-width:0;margin:0!important}',
+  '.tp161-side-stopwatch>#tp1481SideStatus{margin:10px 2px 0}',
+  '@media(max-width:340px){.tp161-side-stopwatch>.tp1481-side-grid{grid-template-columns:1fr!important}}'
+ ].join('');
+ document.head?.appendChild(style);
+
+ window.RepForge161={version:TP161_VERSION,visualViewportIme:true,compactPanels:true,separateSideCards:true,perSidePersistence:true};
+ window.tp161AdjustPanel();
+})();
+// @endsection trainpilot-161-minor-fixes.js
+
 // @section ready.js
 window.TrainPilotBoot.finish();
 // @endsection ready.js
