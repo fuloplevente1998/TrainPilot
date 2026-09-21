@@ -32,8 +32,14 @@ const {chromium}=require('playwright');
    assert.ok(g.panelTop<=g.navBottom+3&&g.panelTop>=g.navBottom-6,type+' visible panel edge should sit directly against the navigation: '+JSON.stringify(g));
    assert.equal(g.position,'absolute',type+' close button should keep its visual position without reserving a blank row');
    assert.equal(g.clear,'none',type+' content should not clear below the close button');
-   assert.ok(g.closeTop-g.panelTop>=7&&g.closeTop-g.panelTop<=14,type+' X vertical position changed unexpectedly: '+JSON.stringify(g));
-   assert.ok(Math.abs((g.panelRight-g.closeRight)-10)<=3,type+' X should stay at the current right inset');
+   const is162=await page.evaluate(()=>!!window.TrainPilot162);
+   if(is162){
+    assert.ok(g.closeTop-g.panelTop>=13&&g.closeTop-g.panelTop<=18,type+' 1.6.2 X should sit slightly lower inside the panel: '+JSON.stringify(g));
+    assert.ok(Math.abs((g.panelRight-g.closeRight)-14)<=3,type+' 1.6.2 X should sit further left inside the panel: '+JSON.stringify(g));
+   }else{
+    assert.ok(g.closeTop-g.panelTop>=7&&g.closeTop-g.panelTop<=14,type+' X vertical position changed unexpectedly: '+JSON.stringify(g));
+    assert.ok(Math.abs((g.panelRight-g.closeRight)-10)<=3,type+' X should stay at the current right inset');
+   }
    assert.ok(g.contentTop-g.panelTop<28,type+' panel content should start near the top instead of below a large empty gap');
    await page.evaluate(()=>window.tp155R4ClosePanel(false));
   }
