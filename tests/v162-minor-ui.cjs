@@ -3,5 +3,36 @@ const app=fs.readFileSync(fs.existsSync('www/trainpilot-162-minor-ui.js')?'www/t
 const pkg=require('../package.json'),src=require('../SOURCE_VERSION.json'),gradle=fs.readFileSync('android/app/build.gradle','utf8');
 assert.equal(pkg.version,'1.6.2');assert.equal(src.version,'1.6.2');assert.equal(src.versionCode,2651);
 assert.match(gradle,/versionCode\s+2651/);assert.match(gradle,/versionName\s+"1\.6\.2"/);
-for(const marker of ["window.TrainPilot162={version:TP162_VERSION","window.tp162VisibleHealthSessions","String(s?.source||'')!==ownPackage",".tp-brand-strip{display:none!important}","main.rf221-home>.onboarding",'[data-panel="exercises"] .tp155-exercise-panel>.hero','[data-panel="calendar"] .cal-cell{min-height:42px',"host?.dataset?.panel==='exercises'","top:14px!important;right:14px!important"])assert.ok(app.includes(marker),'missing 1.6.2 marker: '+marker);
-console.log('PASS TrainPilot 1.6.2 minor UI / stale Health-count guards');
+
+// Keep the 1.6.2 stale-session guard unchanged.
+for(const marker of ["window.tp162VisibleHealthSessions","String(s?.source||'')!==ownPackage","exerciseSessionCount:visible.length"])assert.ok(app.includes(marker),'missing Health-count guard: '+marker);
+
+// Calendar geometry is a protected 1.6.2 baseline.
+for(const marker of [
+ '[data-panel="calendar"] .tp155-r4-calendar-frame{padding:7px!important}',
+ '[data-panel="calendar"] .calendar-head{min-height:40px!important;margin-bottom:6px!important;padding-right:50px!important;grid-template-columns:46px 1fr 46px!important;gap:6px!important}',
+ '[data-panel="calendar"] .cal-weekdays{gap:2px!important}',
+ '[data-panel="calendar"] .calendar-grid{gap:2px!important}',
+ '[data-panel="calendar"] .cal-cell{min-height:42px!important;padding:3px!important;border-radius:10px!important}',
+ '[data-panel="calendar"] .tp155-r4-planner-bottom{margin-top:7px!important}',
+ '[data-panel="calendar"] .tp155-planner-always-open{padding:7px!important}'
+])assert.ok(app.includes(marker),'calendar regression marker changed: '+marker);
+
+const follow=app.slice(app.indexOf('// @section trainpilot-162-followup.js'),app.indexOf('// @endsection trainpilot-162-followup.js'));
+assert.ok(follow.length>500,'1.6.2 follow-up section missing');
+for(const marker of [
+ 'position:sticky!important;top:18px!important',
+ "host?.dataset?.panel==='quick'",
+ "host?.dataset?.panel==='exercises'",
+ "document.querySelectorAll('.tp-brand-strip').forEach(function(el){el.remove()})",
+ "main.rf263-health",
+ "RepForge → Google Naptár','TrainPilot → Google Naptár",
+ 'tp162-theme-columns',
+ 'grid-template-columns:repeat(2,minmax(0,1fr))!important',
+ 'overflow:visible!important',
+ "lang==='hu'?'Élénk színek'",
+ 'window.TrainPilot162Followup='
+])assert.ok(follow.includes(marker),'missing 1.6.2 follow-up marker: '+marker);
+assert.doesNotMatch(follow,/\.tp155-r4-panel-close\{[^}]*position:absolute!important/,'follow-up close control must not use absolute positioning');
+assert.ok(follow.includes('calendarGeometryUntouched:true'),'calendar geometry protection flag missing');
+console.log('PASS TrainPilot 1.6.2 isolated UI regression guards');
