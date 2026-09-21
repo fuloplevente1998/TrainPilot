@@ -25,7 +25,10 @@ assert.ok(follow.length>500,'1.6.2 follow-up section missing');
 assert.ok(app.includes("host?.dataset?.panel==='exercises'"),'Programs parent-state guard must remain in the 1.6.2 base patch');
 for(const marker of [
  'position:sticky!important;top:18px!important',
+ '[data-panel="coach"] .tp151-coach-recommendation{margin-top:10px!important}',
  "host?.dataset?.panel==='quick'",
+ 'Workout landing card keeps a single Quick Workout title',
+ 'body.tp-home-view main.rf221-home{min-height:0!important;height:auto!important;max-height:none!important',
  "document.querySelectorAll('.tp-brand-strip').forEach(function(el){el.remove()})",
  "main.rf263-health",
  "RepForge → Google Naptár','TrainPilot → Google Naptár",
