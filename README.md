@@ -78,6 +78,6 @@ Signing kulcsot, jelszót, OAuth credentialt, `.env` fájlt vagy más titkos ada
 
 ## Google Play állapot
 
-A Play Store publikálás előkészítése folyamatban van. A technikai release build és signing működik, de a Play App Signing, OAuth production konfiguráció, privacy/Data Safety/Health deklarációk és a fizikai készülékes integrációs tesztek külön kiadási feladatok.
+A Play Store publikálás előkészítése folyamatban van. A release/signing workflow és a szükséges Secrets konfigurálva vannak; az aktuális 1.6.1 signed APK Release Gate ellenőrzése még folyamatban van. A Play App Signing, OAuth production konfiguráció, privacy/Data Safety/Health deklarációk és a fizikai készülékes integrációs tesztek külön kiadási feladatok.
 
 Lásd: `docs/PLAY_STORE_CHECKLIST_2026.md`.
