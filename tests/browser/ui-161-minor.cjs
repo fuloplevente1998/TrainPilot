@@ -30,13 +30,20 @@ const {chromium}=require('playwright');
    },type);
    assert.ok(g.hostTop<=g.navBottom+1&&g.hostTop>=g.navBottom-9,type+' panel should sit directly under/slightly overlap the fixed navigation: '+JSON.stringify(g));
    assert.ok(g.panelTop<=g.navBottom+3&&g.panelTop>=g.navBottom-6,type+' visible panel edge should sit directly against the navigation: '+JSON.stringify(g));
-   assert.equal(g.position,'absolute',type+' close button should keep its visual position without reserving a blank row');
    assert.equal(g.clear,'none',type+' content should not clear below the close button');
-   const is162=await page.evaluate(()=>!!window.TrainPilot162);
+   const is162=await page.evaluate(()=>!!window.TrainPilot162Followup);
    if(is162){
-    assert.ok(g.closeTop-g.panelTop>=13&&g.closeTop-g.panelTop<=18,type+' 1.6.2 X should sit slightly lower inside the panel: '+JSON.stringify(g));
-    assert.ok(Math.abs((g.panelRight-g.closeRight)-14)<=3,type+' 1.6.2 X should sit further left inside the panel: '+JSON.stringify(g));
+    assert.equal(g.position,'sticky',type+' 1.6.2 X must remain sticky while the panel scrolls');
+    assert.ok(g.closeTop-g.panelTop>=15&&g.closeTop-g.panelTop<=23,type+' 1.6.2 X should sit only a few pixels lower inside the panel: '+JSON.stringify(g));
+    assert.ok(Math.abs((g.panelRight-g.closeRight)-14)<=3,type+' 1.6.2 X should keep the left-shifted 14px right inset: '+JSON.stringify(g));
+    const sticky=await page.evaluate(type=>{
+     const host=document.querySelector('#tp155R4PanelHost[data-panel="'+type+'"]'),panel=host.querySelector('.tp155-r4-panel'),close=host.querySelector('.tp155-r4-panel-close');
+     const before=close.getBoundingClientRect().top,max=Math.max(0,panel.scrollHeight-panel.clientHeight);panel.scrollTop=Math.min(120,max);
+     const after=close.getBoundingClientRect().top;return {before,after,scrollTop:panel.scrollTop,max};
+    },type);
+    if(sticky.scrollTop>0)assert.ok(Math.abs(sticky.after-sticky.before)<=2,type+' X must stay pinned during panel scroll: '+JSON.stringify(sticky));
    }else{
+    assert.equal(g.position,'absolute',type+' legacy close button position changed unexpectedly');
     assert.ok(g.closeTop-g.panelTop>=7&&g.closeTop-g.panelTop<=14,type+' X vertical position changed unexpectedly: '+JSON.stringify(g));
     assert.ok(Math.abs((g.panelRight-g.closeRight)-10)<=3,type+' X should stay at the current right inset');
    }
