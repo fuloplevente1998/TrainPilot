@@ -22,10 +22,10 @@ for(const marker of [
 
 const follow=app.slice(app.indexOf('// @section trainpilot-162-followup.js'),app.indexOf('// @endsection trainpilot-162-followup.js'));
 assert.ok(follow.length>500,'1.6.2 follow-up section missing');
+assert.ok(app.includes("host?.dataset?.panel==='exercises'"),'Programs parent-state guard must remain in the 1.6.2 base patch');
 for(const marker of [
  'position:sticky!important;top:18px!important',
  "host?.dataset?.panel==='quick'",
- "host?.dataset?.panel==='exercises'",
  "document.querySelectorAll('.tp-brand-strip').forEach(function(el){el.remove()})",
  "main.rf263-health",
  "RepForge → Google Naptár','TrainPilot → Google Naptár",
