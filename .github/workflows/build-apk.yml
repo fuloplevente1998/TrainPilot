@@ -2,9 +2,12 @@ name: Release Gate + TrainPilot APK
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: trainpilot-release-gate-${{ github.ref_name }}
@@ -18,7 +21,7 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -74,6 +77,10 @@ jobs:
           const versionCode=Number(gradle.match(/versionCode\s+(\d+)/)?.[1]);
           if(pkg.version!==src.version||pkg.version!==versionName) throw new Error('Version mismatch');
           if(Number(src.versionCode)!==versionCode) throw new Error('versionCode mismatch');
+          if(process.env.GITHUB_REF_TYPE==='tag'){
+            const expectedTag=`v${pkg.version}`;
+            if(process.env.GITHUB_REF_NAME!==expectedTag) throw new Error(`Tag/version mismatch: expected ${expectedTag}, got ${process.env.GITHUB_REF_NAME}`);
+          }
           console.log(`Version metadata OK: ${pkg.version} (${versionCode})`);
           NODE
 
@@ -126,6 +133,27 @@ jobs:
         if: always()
         shell: bash
         run: rm -f "$RUNNER_TEMP/trainpilot-release.jks"
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./package.json').version")"
+          TAG="$GITHUB_REF_NAME"
+          FILES=(
+            "TrainPilot-$VERSION.apk"
+            "TrainPilot-$VERSION-source.zip"
+            "SHA256SUMS.txt"
+            "apk-badging.txt"
+          )
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${FILES[@]}" --clobber
+          else
+            gh release create "$TAG" "${FILES[@]}"               --verify-tag               --generate-notes               --title "TrainPilot $VERSION"
+          fi
 
       - name: Upload APK and source
         uses: actions/upload-artifact@v4
