@@ -2,7 +2,8 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),http=require('node:http'),cp=require('node:child_process');
 const {chromium}=require('playwright');
 
-const BASE='295f79f3c5b4df9b0e01c79c786546bbd17a3e06';
+// Public TrainPilot history intentionally starts from the 1.6.0 clean base.
+const BASE='69cc9a0e51becd79a4758324c9f920812c90b528';
 
 function materializeBaseline(){
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'tp1481-'));
