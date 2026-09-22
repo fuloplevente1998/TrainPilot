@@ -5,12 +5,12 @@ const base=fs.readFileSync(baseFile,'utf8'),followSource=followFile?fs.readFileS
 const app=base+(followSource?'\n'+followSource:'');
 const pkg=require('../package.json'),src=require('../SOURCE_VERSION.json'),gradle=fs.readFileSync('android/app/build.gradle','utf8');
 assert.equal(pkg.version,'1.6.3');assert.equal(src.version,'1.6.3');assert.equal(src.versionCode,2652);
-assert.match(gradle,/versionCode\s+2651/);assert.match(gradle,/versionName\s+"1\.6\.2"/);
+assert.match(gradle,/versionCode\s+2652/);assert.match(gradle,/versionName\s+"1\.6\.2"/);
 
-// Keep the 1.6.2 stale-session guard unchanged.
+// Keep the 1.6.3 stale-session guard unchanged.
 for(const marker of ["window.tp162VisibleHealthSessions","String(s?.source||'')!==ownPackage","clientRecordId.indexOf('trainpilot:tpw_')===0","stableIds.has(clientRecordId)","exerciseSessionCount:visible.length","exerciseMinutes:minutes"])assert.ok(app.includes(marker),'missing Health-count guard: '+marker);
 
-// Calendar geometry is a protected 1.6.2 baseline.
+// Calendar geometry is a protected 1.6.3 baseline.
 for(const marker of [
  '[data-panel="calendar"] .tp155-r4-calendar-frame{padding:7px!important}',
  '[data-panel="calendar"] .calendar-head{min-height:40px!important;margin-bottom:6px!important;padding-right:50px!important;grid-template-columns:46px 1fr 46px!important;gap:6px!important}',
@@ -22,8 +22,8 @@ for(const marker of [
 ])assert.ok(app.includes(marker),'calendar regression marker changed: '+marker);
 
 const follow=followSource||app.slice(app.indexOf('// @section trainpilot-162-followup.js'),app.indexOf('// @endsection trainpilot-162-followup.js'));
-assert.ok(follow.length>500,'1.6.2 follow-up section missing');
-assert.ok(app.includes("host?.dataset?.panel==='exercises'"),'Programs parent-state guard must remain in the 1.6.2 base patch');
+assert.ok(follow.length>500,'1.6.3 follow-up section missing');
+assert.ok(app.includes("host?.dataset?.panel==='exercises'"),'Programs parent-state guard must remain in the 1.6.3 base patch');
 for(const marker of [
  'position:sticky!important;top:8px!important',
  '[data-panel="coach"] .tp151-coach-recommendation{margin-top:10px!important}',
@@ -44,7 +44,7 @@ for(const marker of [
  'floatingScrollableThemePicker:true',
  "lang==='hu'?'Élénk színek'",
  'window.TrainPilot162Followup='
-])assert.ok(follow.includes(marker),'missing 1.6.2 follow-up marker: '+marker);
+])assert.ok(follow.includes(marker),'missing 1.6.3 follow-up marker: '+marker);
 assert.doesNotMatch(follow,/\.tp155-r4-panel-close\{[^}]*position:absolute!important/,'follow-up close control must not use absolute positioning');
 assert.ok(follow.includes('calendarGeometryUntouched:true'),'calendar geometry protection flag missing');
-console.log('PASS TrainPilot 1.6.3 release metadata + 1.6.2 regression guards');
+console.log('PASS TrainPilot 1.6.3 release metadata + 1.6.3 regression guards');
