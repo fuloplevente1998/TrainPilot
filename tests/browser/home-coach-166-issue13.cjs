@@ -40,7 +40,7 @@ const listen=()=>new Promise(r=>server.listen(0,'127.0.0.1',r)),base=()=>'http:/
 
  // Long German text at a narrow phone width must wrap without horizontal overflow.
  await page.setViewportSize({width:320,height:740});
- await page.evaluate(()=>rf212SetLang('de'));await page.waitForTimeout(80);
+ await page.evaluate(()=>{rf212SetLang('de');go('home');});await page.waitForTimeout(80);
  await page.waitForFunction(()=>document.querySelector('#rf220CoachCard')?.classList.contains('tp166-home-coach'));
  const deCard=page.locator('#rf220CoachCard');
  assert.equal(await deCard.locator('button').count(),0);
