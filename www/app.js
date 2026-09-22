@@ -12965,7 +12965,7 @@ window.tp164DecoratePerSideRows();
 (function(){
  'use strict';
  const style=document.createElement('style');style.id='tp167Issue14WeightPanelCss';style.textContent=[
-  '#tp155R4PanelHost[data-panel="weight"] .tp155-r4-panel-close{position:sticky!important;top:8px!important;right:auto!important;float:right!important;margin:0 4px -36px 8px!important;z-index:20!important}',
+  '#tp155R4PanelHost[data-panel="weight"] .tp155-r4-panel-close{position:sticky!important;top:8px!important;right:auto!important;left:auto!important;float:none!important;margin:0 4px -36px auto!important;z-index:20!important}',
   '#tp155R4PanelHost[data-panel="weight"] .tp155-r4-panel-content{clear:none!important;min-width:0!important;max-width:100%!important}',
   '#tp155R4PanelHost[data-panel="weight"] .tp167-weight-panel-main{min-width:0!important;max-width:100%!important;overflow-x:hidden!important}',
   '#tp155R4PanelHost[data-panel="weight"] .tp151-page-head{padding-right:48px!important;min-height:40px!important;display:flex!important;align-items:center!important}',
