@@ -2,8 +2,8 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
 const app=fs.readFileSync('www/app.js','utf8'),index=fs.readFileSync('www/index.html','utf8');
 const pkg=require('../package.json'),meta=require('../SOURCE_VERSION.json');
 const gradle=fs.readFileSync('android/app/build.gradle','utf8'),sw=fs.readFileSync('www/sw.js','utf8');
-assert.equal(pkg.version,'1.6.4');assert.equal(meta.version,'1.6.4');assert.equal(meta.versionCode,2653);
-assert.match(gradle,/versionCode\s+2653/);assert.match(gradle,/versionName\s+"1\.6\.4"/);assert.match(sw,/trainpilot-v1481/);
+assert.equal(pkg.version,'1.6.5');assert.equal(meta.version,'1.6.5');assert.equal(meta.versionCode,2654);
+assert.match(gradle,/versionCode\s+2654/);assert.match(gradle,/versionName\s+"1\.6\.5"/);assert.match(sw,/trainpilot-v1481/);
 assert.deepEqual([...index.matchAll(/<script[^>]*src="([^"]+)"/g)].map(m=>m[1]),['app.js']);
 assert.equal(fs.readFileSync('www/runtime-manifest.txt','utf8').trim(),'app.js');
 assert.ok(app.includes("const TP120_VERSION='1.2.0'"),'1.2 clean runtime marker missing');
