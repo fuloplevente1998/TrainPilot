@@ -40,7 +40,7 @@ const {chromium}=require('playwright');
   assert.equal(await weight.evaluate(e=>e.classList.contains('tp168-open')),true,'weight journal must expand in place');
   assert.ok(await weight.locator('.tp169-body-inline .stat').count()>=4,'Body/Fitness values must move into the expanded weight journal');
   assert.match(await weight.locator('.tp169-body-inline').innerText(),/66[,.]5 kg/,'manual weight must remain visible inside Body/Fitness data');
-  assert.match(await weight.locator('.tp169-body-inline').innerText(),/18[,.]2|98|44/,'Body/Fitness Health values must remain visible');
+  const bodyText=await weight.locator('.tp169-body-inline').innerText();for(const label of ['Testsúly','Testzsír','SpO₂','VO₂max'])assert.ok(bodyText.includes(label),'Body/Fitness field must remain embedded: '+label);
   const weightPath=await weight.locator('.tp169-weight-curve path').getAttribute('d');assert.match(weightPath,/C/,'weight graph must use a smooth curve');
 
   await page.evaluate(()=>rf215WeightScreen());await page.waitForTimeout(60);
