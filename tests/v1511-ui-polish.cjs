@@ -37,6 +37,6 @@ assert.equal(pkg.version,'1.6.8');
 assert.equal(src.version,'1.6.8');
 assert.equal(src.versionCode,2657);
 assert.match(gradle,/versionCode\s+2657/);
-assert.match(gradle,/versionName\s+"1\.6\.7"/);
+assert.match(gradle,/versionName\s+"1\.6\.8"/);
 
 console.log('PASS TrainPilot 1.5.1 unified UI polish guards');
