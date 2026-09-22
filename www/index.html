@@ -110,18 +110,17 @@
  window.tp168SaveWeight=function(){const kg=Number(String(document.querySelector('#tp168WeightKg')?.value||'').replace(',','.')),raw=String(document.querySelector('#tp168WeightDate')?.value||'').trim(),fallback=typeof rf215Date==='function'?rf215Date():new Date().toISOString().slice(0,10),d=/^\d{4}-\d{2}-\d{2}$/.test(raw)?raw:fallback;if(!kg||kg<30||kg>300)return alert('30–300 kg');const w=weights();w.unshift({kg:Math.round(kg*10)/10,date:new Date(d+'T12:00:00').toISOString()});db.set('weights',w);window.TrainPilot168Health.weightOpen=true;decorate()};
  window.tp168EditWeight=function(date){window.TrainPilot168Health.weightOpen=true;return typeof rf215Edit==='function'?rf215Edit(date):undefined};
  window.tp168DeleteWeight=function(date){window.TrainPilot168Health.weightOpen=true;return typeof rf215Del==='function'?rf215Del(date):undefined};
- window.tp168OpenPulse=function(){const d=document.querySelector('main.rf263-health details.tp168-pulse-panel');if(!d)return;d.open=true;if(d.scrollIntoView)d.scrollIntoView({block:'center',behavior:'smooth'})};
+ window.tp168TogglePulse=function(){window.TrainPilot168Health.pulseOpen=!window.TrainPilot168Health.pulseOpen;decorate();setTimeout(()=>document.querySelector('.tp169-pulse-journal')?.scrollIntoView?.({block:'nearest',behavior:'smooth'}),0)};
+ window.tp168OpenPulse=function(){window.TrainPilot168Health.pulseOpen=true;decorate();setTimeout(()=>document.querySelector('.tp169-pulse-journal')?.scrollIntoView?.({block:'center',behavior:'smooth'}),0)};
  const recoveryBase=window.tp153OpenRecovery;
  window.tp153OpenRecovery=function(){
-  const main=document.querySelector('main.rf263-health');
-  const nested=main&&[...main.querySelectorAll('details')].find(x=>/Regenerációs előzmények|Recovery history|Regenerations|recuperare|Regenerationsverlauf|Istoric recuperare/i.test(String(x.querySelector(':scope > summary')?.textContent||'')));
-  if(nested){const outer=nested.parentElement?.closest?.('details.tp168-pulse-panel');if(outer)outer.open=true;nested.open=true;if(nested.scrollIntoView)nested.scrollIntoView({block:'center',behavior:'smooth'});return}
-  if(typeof recoveryBase==='function')return recoveryBase.apply(this,arguments);
+  window.TrainPilot168Health.pulseOpen=true;decorate();
+  setTimeout(()=>{
+   const nested=document.querySelector('.tp169-pulse-journal .tp168-recovery-history');
+   if(nested){nested.open=true;if(nested.scrollIntoView)nested.scrollIntoView({block:'center',behavior:'smooth'});return}
+   if(typeof recoveryBase==='function')recoveryBase.apply(this,arguments);
+  },0);
  };
- window.tp168ToggleBody=function(el){
-  const card=el?.closest?.('.tp168-body-card');if(!card)return;const open=!card.classList.contains('tp168-open');card.classList.toggle('tp168-open',open);el.setAttribute('aria-expanded',String(open));window.TrainPilot168Health.bodyOpen=open;
- };
-
  function disclosureSummary(details,name,subtitle,which){
   const summary=details?.querySelector(':scope > summary');if(!summary)return;
   summary.classList.add('tp168-row-head');
