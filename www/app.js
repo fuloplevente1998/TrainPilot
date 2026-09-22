@@ -12561,18 +12561,24 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   cloudPanel=function(){return String(cloudPanelBase162.apply(this,arguments)).replace('RepForge → Google Naptár','TrainPilot → Google Naptár')};
  }
 
- // Theme picker: same selection logic/themes, compact two-column presentation.
+ // Theme picker: inline dropdown matching the language selector interaction.
  const themeOptions162=function(keys){
   const current=rf200ThemeKey();
   return keys.map(function(key){
    const theme=RF200_THEMES[key];
-   return '<button type="button" class="tp155-theme-option '+(key===current?'active':'')+'" data-theme="'+esc(key)+'" aria-pressed="'+(key===current?'true':'false')+'" onclick="tp155ChooseTheme(\''+esc(key)+'\')"><span class="tp155-theme-swatch" style="background:'+esc(theme.accent)+'"></span><span>'+esc(tp1511ThemeName(key))+'</span><i aria-hidden="true">✓</i></button>';
+   return '<button type="button" class="tp155-theme-option '+(key===current?'active':'')+'" data-theme="'+esc(key)+'" aria-pressed="'+(key===current?'true':'false')+'" onclick="event.preventDefault();event.stopPropagation();tp162ChooseTheme(\''+esc(key)+'\')"><span class="tp155-theme-swatch" style="background:'+esc(theme.accent)+'"></span><span>'+esc(tp1511ThemeName(key))+'</span><i aria-hidden="true">✓</i></button>';
   }).join('');
  };
- window.tp155ThemePickerHtml=function(){
+ window.tp162ThemeDropdownHtml=function(){
   const lang=typeof rf212Lang==='function'?rf212Lang():'hu';
   const basic=lang==='hu'?'Alap színek':tp1511T('basic'),vivid=lang==='hu'?'Élénk színek':tp1511T('vivid');
-  return '<div class="tp-modal-card tp-temporal-card tp155-theme-picker tp162-theme-picker" role="dialog" aria-modal="true" aria-labelledby="tp155ThemeTitle" onclick="event.stopPropagation()"><div class="tp-modal-head"><h2 id="tp155ThemeTitle">'+esc(tp152T('theme'))+'</h2><button type="button" class="btn danger tp-modal-close" onclick="tp155CloseThemePicker()">×</button></div><div class="tp155-theme-list tp162-theme-columns"><section class="tp162-theme-column"><div class="small muted tp155-theme-group">'+esc(basic)+'</div><div class="tp162-theme-options">'+themeOptions162(TP1511_BASIC)+'</div></section><section class="tp162-theme-column"><div class="small muted tp155-theme-group">'+esc(vivid)+'</div><div class="tp162-theme-options">'+themeOptions162(TP1511_VIVID)+'</div></section></div></div>';
+  return '<div class="tp155-theme-list tp162-theme-columns"><section class="tp162-theme-column"><div class="small muted tp155-theme-group">'+esc(basic)+'</div><div class="tp162-theme-options">'+themeOptions162(TP1511_BASIC)+'</div></section><section class="tp162-theme-column"><div class="small muted tp155-theme-group">'+esc(vivid)+'</div><div class="tp162-theme-options">'+themeOptions162(TP1511_VIVID)+'</div></section></div>';
+ };
+ window.tp162ThemeToggle=function(el){state.tp162ThemeOpen=!!el?.open};
+ window.tp162ChooseTheme=function(key){if(!RF200_THEMES[key])return;state.tp162ThemeOpen=true;rf200SetTheme(key)};
+ rf200ThemePanel=function(){
+  const key=rf200ThemeKey(),theme=RF200_THEMES[key];
+  return '<div class="setting tp1511-card tp155-theme-setting tp162-theme-setting"><div class="tp1511-head"><b>◐</b><div><strong>'+esc(tp152T('theme'))+'</strong><p class="small muted">'+esc(tp1511T('themeHelp'))+'</p></div></div><details class="tp162-theme-dropdown" '+(state.tp162ThemeOpen?'open':'')+' ontoggle="tp162ThemeToggle(this)"><summary class="btn secondary block tp155-theme-open"><span class="tp155-theme-swatch" style="background:'+esc(theme.accent)+'"></span><span>'+esc(tp1511ThemeName(key))+'</span><i aria-hidden="true">⌄</i></summary>'+window.tp162ThemeDropdownHtml()+'</details></div>';
  };
 
  // Run after the established render stack so removed chrome does not reserve any layout height.
@@ -12593,23 +12599,21 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   'main.rf221-home>.onboarding{padding:6px 11px 9px!important;gap:5px!important}',
   'main.rf221-home>.onboarding h2{margin:0!important}',
   'main.rf221-home>.onboarding p{margin:0!important}',
-  '.tp162-theme-picker{box-sizing:border-box!important;width:min(356px,calc(100vw - 24px))!important;max-width:calc(100vw - 24px)!important;padding:12px!important;border:1px solid var(--line)!important;border-radius:16px!important;background:var(--card)!important}',
-  '.tp162-theme-picker .tp-modal-head{margin:0 0 8px!important;min-height:40px!important;gap:8px!important}',
-  '.tp162-theme-picker .tp-modal-head h2{font-size:17px!important;margin:0!important}',
-  '.tp162-theme-columns{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;max-height:none!important;overflow:visible!important;padding:0!important}',
+  '.tp162-theme-setting{overflow:visible!important}.tp162-theme-dropdown{position:relative;margin-top:8px}.tp162-theme-dropdown>summary{list-style:none;margin:0!important}.tp162-theme-dropdown>summary::-webkit-details-marker{display:none}.tp162-theme-dropdown[open] .tp155-theme-open{border-color:var(--accent)!important}.tp162-theme-dropdown[open] .tp155-theme-open i{transform:rotate(180deg)}',
+  '.tp162-theme-columns{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;max-height:none!important;overflow:visible!important;padding:8px 0 0!important}',
   '.tp162-theme-column{min-width:0;border:1px solid var(--line);border-radius:12px;background:var(--card2);padding:7px}',
   '.tp162-theme-column .tp155-theme-group{margin:0 0 6px!important;padding:0 2px!important;font-size:12px!important;font-weight:800!important}',
   '.tp162-theme-options{display:grid;gap:5px}',
-  '.tp162-theme-picker .tp155-theme-option{box-sizing:border-box;min-width:0!important;min-height:40px!important;padding:6px 7px!important;gap:6px!important;border:1px solid var(--line)!important;border-radius:10px!important;background:var(--card)!important;font-size:12px!important;line-height:1.15!important;white-space:normal!important;text-align:left!important}',
-  '.tp162-theme-picker .tp155-theme-option>span:nth-child(2){min-width:0;overflow-wrap:anywhere}',
-  '.tp162-theme-picker .tp155-theme-option.active{border-color:var(--accent)!important;box-shadow:inset 0 0 0 1px var(--accent)!important;background:color-mix(in srgb,var(--accent) 12%,var(--card))!important}',
-  '.tp162-theme-picker .tp155-theme-option i{margin-left:auto!important}',
-  '.tp162-theme-picker .tp155-theme-swatch{flex:0 0 14px!important;width:14px!important;height:14px!important}',
-  '@media(max-width:340px){.tp162-theme-picker{width:calc(100vw - 16px)!important;max-width:calc(100vw - 16px)!important;padding:9px!important}.tp162-theme-columns{gap:6px!important}.tp162-theme-column{padding:6px!important}.tp162-theme-picker .tp155-theme-option{padding:5px 6px!important;font-size:11.5px!important}}'
+  '.tp162-theme-dropdown .tp155-theme-option{box-sizing:border-box;min-width:0!important;min-height:40px!important;padding:6px 7px!important;gap:6px!important;border:1px solid var(--line)!important;border-radius:10px!important;background:var(--card)!important;font-size:12px!important;line-height:1.15!important;white-space:normal!important;text-align:left!important}',
+  '.tp162-theme-dropdown .tp155-theme-option>span:nth-child(2){min-width:0;overflow-wrap:anywhere}',
+  '.tp162-theme-dropdown .tp155-theme-option.active{border-color:var(--accent)!important;box-shadow:inset 0 0 0 1px var(--accent)!important;background:color-mix(in srgb,var(--accent) 12%,var(--card))!important}',
+  '.tp162-theme-dropdown .tp155-theme-option i{margin-left:auto!important}',
+  '.tp162-theme-dropdown .tp155-theme-swatch{flex:0 0 14px!important;width:14px!important;height:14px!important}',
+  '@media(max-width:340px){.tp162-theme-columns{gap:6px!important}.tp162-theme-column{padding:6px!important}.tp162-theme-dropdown .tp155-theme-option{padding:5px 6px!important;font-size:11.5px!important}}'
  ].join('');
  document.head?.appendChild(style);
 
- window.TrainPilot162Followup={stickyPanelClose:true,coachSpacing:true,quickWorkoutParent:true,quickTitleSingle:true,healthHeaderRemoved:true,brandStripRemoved:true,trainPilotCalendarBrand:true,twoColumnThemePicker:true,calendarGeometryUntouched:true};
+ window.TrainPilot162Followup={stickyPanelClose:true,coachSpacing:true,quickWorkoutParent:true,quickTitleSingle:true,healthHeaderRemoved:true,brandStripRemoved:true,trainPilotCalendarBrand:true,inlineTwoColumnThemePicker:true,calendarGeometryUntouched:true};
 })();
 // @endsection trainpilot-162-followup.js
 
