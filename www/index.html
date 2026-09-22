@@ -43,28 +43,65 @@
  function readiness(){try{return typeof rf220Readiness==='function'?rf220Readiness():{score:null,level:'unknown'}}catch(_){return {score:null,level:'unknown'}}}
  function readinessLabel(r){if(r.score==null)return c().noData;try{const t=typeof rf220L==='function'?rf220L():{};return t[r.level]||r.level||''}catch(_){return ''}}
  function trendValues(){const l=ledger(),days=l&&l.days&&typeof l.days==='object'?l.days:{};return Object.keys(days).sort().slice(-7).map(k=>n(days[k]?.averageHeartRate)).filter(v=>v!=null&&v>0)}
+ function smoothPath(pts){
+  if(!pts||pts.length<2)return '';
+  let d='M'+pts[0][0]+' '+pts[0][1];
+  for(let i=1;i<pts.length;i++){
+   const p0=pts[i-1],p1=pts[i],mx=((Number(p0[0])+Number(p1[0]))/2).toFixed(1);
+   d+=' C'+mx+' '+p0[1]+' '+mx+' '+p1[1]+' '+p1[0]+' '+p1[1];
+  }
+  return d;
+ }
+ function curvePoints(values,w,h,p,minSpan){
+  const a=(values||[]).map(Number).filter(Number.isFinite);if(a.length<2)return [];
+  const mn=Math.min(...a),mx=Math.max(...a),span=Math.max(minSpan||1,mx-mn);
+  return a.map((v,i)=>[(p+i*(w-2*p)/Math.max(1,a.length-1)).toFixed(1),(h-p-(v-mn)*(h-2*p)/span).toFixed(1)]);
+ }
  function sparkline(values){
-  if(values.length<2)return '<div class="tp168-spark-empty">•••</div>';
-  const w=132,h=34,p=3,min=Math.min(...values),max=Math.max(...values),span=Math.max(1,max-min);
-  const pts=values.map((v,i)=>[(p+i*(w-2*p)/Math.max(1,values.length-1)).toFixed(1),(h-p-(v-min)*(h-2*p)/span).toFixed(1)]);
-  const d=pts.map((q,i)=>(i?'L':'M')+q[0]+' '+q[1]).join(' '),last=pts[pts.length-1];
-  return '<svg class="tp168-spark" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" aria-hidden="true"><path d="'+d+'"/><circle cx="'+last[0]+'" cy="'+last[1]+'" r="2.6"/></svg>';
+  const pts=curvePoints(values,132,34,3,1);if(pts.length<2)return '<div class="tp168-spark-empty">•••</div>';
+  const d=smoothPath(pts),last=pts[pts.length-1];
+  return '<svg class="tp168-spark tp169-smooth-chart" viewBox="0 0 132 34" preserveAspectRatio="none" aria-hidden="true"><path d="'+d+'"/><circle cx="'+last[0]+'" cy="'+last[1]+'" r="2.6"/></svg>';
+ }
+ function largeCurve(values,kind){
+  const pts=curvePoints(values,300,108,10,kind==='weight'?.1:1);if(pts.length<2)return '<div class="tp168-weight-empty">'+escText(c().noData)+'</div>';
+  const d=smoothPath(pts),last=pts[pts.length-1],cls=kind==='weight'?'tp169-weight-curve':'tp169-pulse-curve';
+  return '<svg class="'+cls+' tp169-smooth-chart" viewBox="0 0 300 108" preserveAspectRatio="none" aria-hidden="true"><path d="'+d+'"/><circle cx="'+last[0]+'" cy="'+last[1]+'" r="3"/></svg>';
  }
  function dateText(){try{return new Intl.DateTimeFormat(locale(),{year:'numeric',month:'short',day:'numeric'}).format(new Date())}catch(_){return new Date().toLocaleDateString()}}
-
-
  function weightRows(){try{return typeof rf215All==='function'?rf215All():(weights()||[]).filter(x=>x&&x.date&&Number.isFinite(Number(x.kg))).slice().sort((a,b)=>new Date(a.date)-new Date(b.date))}catch(_){return []}}
  function weightRange(){try{return typeof rf215Range==='function'?rf215Range():(state.weightRange||'30')}catch(_){return '30'}}
  function weightData(){try{return typeof rf215Data==='function'?rf215Data():weightRows()}catch(_){return weightRows()}}
- function weightSparkline(values){const a=(values||[]).map(x=>n(x.kg)).filter(v=>v!=null);if(a.length<2)return '<div class="tp168-weight-spark-empty">•••</div>';const w=132,h=34,p=3,min=Math.min(...a),max=Math.max(...a),span=Math.max(.1,max-min),pts=a.map((v,i)=>[(p+i*(w-2*p)/Math.max(1,a.length-1)).toFixed(1),(h-p-(v-min)*(h-2*p)/span).toFixed(1)]),d=pts.map((q,i)=>(i?'L':'M')+q[0]+' '+q[1]).join(' '),last=pts[pts.length-1];return '<svg class="tp168-weight-spark" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" aria-hidden="true"><path d="'+d+'"/><circle cx="'+last[0]+'" cy="'+last[1]+'" r="2.6"/></svg>'}
- function weightJournal(){
+ function weightSparkline(values){const a=(values||[]).map(x=>n(x.kg)).filter(v=>v!=null),pts=curvePoints(a,132,34,3,.1);if(pts.length<2)return '<div class="tp168-weight-spark-empty">•••</div>';const d=smoothPath(pts),last=pts[pts.length-1];return '<svg class="tp168-weight-spark tp169-smooth-chart" viewBox="0 0 132 34" preserveAspectRatio="none" aria-hidden="true"><path d="'+d+'"/><circle cx="'+last[0]+'" cy="'+last[1]+'" r="2.6"/></svg>'}
+ function captureBody(card){
+  if(!card)return window.TrainPilot168Health?.bodyHtml||'';
+  const clone=card.cloneNode(true),source=clone.querySelector(':scope > .tp168-collapse-content')||clone;
+  source.querySelectorAll('h2,.rf251-weight-btn,#rf251WeightJournal,.tp168-row-head').forEach(x=>x.remove());
+  const html=source.innerHTML.trim();if(html)window.TrainPilot168Health.bodyHtml=html;return html||window.TrainPilot168Health?.bodyHtml||'';
+ }
+ function capturePulse(details){
+  if(!details)return window.TrainPilot168Health?.pulseHistory||'';
+  const clone=details.cloneNode(true),nested=clone.querySelector(':scope > .tp168-recovery-history');
+  let source=nested||clone;source.querySelector(':scope > summary')?.remove();
+  source.querySelectorAll(':scope > .tp168-pulse-grid,:scope > .tp168-row-head').forEach(x=>x.remove());
+  const html=source.innerHTML.trim();if(html)window.TrainPilot168Health.pulseHistory=html;return html||window.TrainPilot168Health?.pulseHistory||'';
+ }
+ function pulseJournal(d,trend,historyHtml){
+  const open=!!window.TrainPilot168Health?.pulseOpen,vals=[[c().avg,positive(d.averageHeartRate)],[c().resting,positive(d.restingHeartRate)],[c().max,positive(d.maxHeartRate)],[c().min,positive(d.minHeartRate)]];
+  return '<section class="tp169-pulse-journal '+(open?'tp169-open':'')+'"><button type="button" class="tp168-trend tp169-pulse-summary" aria-expanded="'+String(open)+'" onclick="tp168TogglePulse()">'+icon('trend')+'<span><strong>'+escText(c().trend)+'</strong><small>'+escText(trend.length>=3?c().trendEnough:c().trendFew)+'</small></span>'+sparkline(trend)+'<b aria-hidden="true">›</b></button><div class="tp169-pulse-body">'+
+   '<div class="tp168-pulse-grid">'+vals.map(x=>'<div><small>'+escText(x[0])+'</small><strong>'+escText(x[1]==null?'—':fmt(Math.round(x[1]))+' bpm')+'</strong></div>').join('')+'</div>'+
+   '<div class="tp169-pulse-chart">'+largeCurve(trend,'pulse')+'</div>'+
+   '<details class="tp168-recovery-history"><summary><strong>'+escText(c().recoveryHistory)+'</strong><span class="tp168-chevron" aria-hidden="true">›</span></summary>'+String(historyHtml||'')+'</details>'+
+  '</div></section>';
+ }
+ function weightJournal(bodyHtml){
   const a=weightRows(),d=weightData(),cur=a.at(-1)?.kg??null,start=a[0]?.kg??null,mn=a.length?Math.min(...a.map(x=>Number(x.kg))):null,mx=a.length?Math.max(...a.map(x=>Number(x.kg))):null,diff=cur!=null&&start!=null?Math.round((cur-start)*10)/10:null,open=!!window.TrainPilot168Health?.weightOpen;
   const diffText=diff==null?'—':(diff>0?'+':'')+fmt(diff)+' kg',range=weightRange();
   return '<section class="tp168-weight-journal '+(open?'tp168-open':'')+'"><button type="button" class="tp168-weight-summary" aria-expanded="'+String(open)+'" onclick="tp168ToggleWeight()">'+icon('weight')+'<span><strong>'+escText(c().weightLog)+'</strong><small>'+escText(cur==null?c().weightLogSub:fmt(cur)+' kg · '+c().weightLogSub)+'</small></span>'+weightSparkline(d)+'<b aria-hidden="true">›</b></button><div class="tp168-weight-body">'+
+   (bodyHtml?'<div class="tp169-body-inline"><div class="tp169-inline-heading"><strong>'+escText(c().body)+'</strong><small>'+escText(c().bodySub)+'</small></div>'+bodyHtml+'</div>':'')+
    '<div class="tp168-weight-stats"><div><small>'+escText(c().current)+'</small><strong>'+escText(cur==null?'—':fmt(cur)+' kg')+'</strong></div><div><small>'+escText(c().change)+'</small><strong>'+escText(diffText)+'</strong></div><div><small>'+escText(c().minMax)+'</small><strong>'+escText(mn==null?'—':fmt(mn)+' / '+fmt(mx)+' kg')+'</strong></div></div>'+
    '<div class="tp168-weight-form"><label>'+escText(c().weight)+'<input id="tp168WeightKg" class="field" type="number" inputmode="decimal" min="30" max="300" step="0.1" value="'+escText(cur??'')+'"></label><label>'+escText(c().date)+'<input id="tp168WeightDate" class="field" type="text" inputmode="numeric" pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}" value="'+escText(typeof rf215Date==='function'?rf215Date():new Date().toISOString().slice(0,10))+'"></label><button class="btn tp168-weight-save" type="button" onclick="tp168SaveWeight()">'+escText(c().save)+'</button></div>'+
    '<div class="tp168-weight-range">'+[['7','7d'],['30','30d'],['90','3m'],['365','1y'],['all','All']].map(x=>'<button type="button" class="'+(range===x[0]?'active':'')+'" onclick="tp168SetWeightRange(\''+x[0]+'\')">'+x[1]+'</button>').join('')+'</div>'+
-   '<div class="tp168-weight-chart">'+(typeof rf215Chart==='function'?rf215Chart(d):weightSparkline(d))+'</div>'+
+   '<div class="tp168-weight-chart">'+largeCurve(d.map(x=>Number(x.kg)),'weight')+'</div>'+
    (a.length?'<div class="tp168-weight-recent"><small>'+escText(c().recent)+'</small>'+a.slice().reverse().slice(0,3).map(x=>'<div><span><strong>'+escText(fmt(x.kg))+' kg</strong><small>'+escText(new Date(x.date).toLocaleDateString(locale()))+'</small></span><span><button type="button" onclick="tp168EditWeight(\''+escText(x.date)+'\')">'+escText(c().edit)+'</button><button type="button" class="danger" onclick="tp168DeleteWeight(\''+escText(x.date)+'\')">'+escText(c().del)+'</button></span></div>').join('')+'</div>':'<div class="tp168-weight-empty">'+escText(c().noData)+'</div>')+
   '</div></section>';
  }
