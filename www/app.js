@@ -13028,7 +13028,8 @@ window.tp164DecoratePerSideRows();
    let html=String(historyItemBase167.call(this,safe,originalIndex,visibleIndex));
    if(!window.tp167HistoryDateIso(safe.started)){
     const label=esc(window.tp167MissingDateText());
-    html=html.replace(/(<div class="history-date">)[\\s\\S]*?(<\\/div>)/,'$1'+label+'$2');
+    const open='<div class="history-date">',close='</div>',start=html.indexOf(open);
+    if(start>=0){const bodyStart=start+open.length,end=html.indexOf(close,bodyStart);if(end>=0)html=html.slice(0,bodyStart)+label+html.slice(end);}
    }
    return html;
   };
