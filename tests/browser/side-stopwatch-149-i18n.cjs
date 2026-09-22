@@ -30,6 +30,11 @@ const server=http.createServer((req,res)=>{
   const text=(await page.locator('#rf110Stopwatch').innerText()).replace(/\s+/g,' ');
   assert.match(text,/Linke Seite/);assert.match(text,/Rechte Seite/);
   assert.doesNotMatch(text,/Bal oldal|Jobb oldal|Másodperc|Nullázás/);
+  const lowerLabels=await page.locator('main .tp153-set-row').first().locator('.tp164-side-set-label').allTextContents();
+  assert.deepEqual(lowerLabels,['Linke Seite','Rechte Seite'],'lower bilateral fields must use the active app language');
+  assert.equal(await page.locator('main .tp153-set-row').first().locator('.tp164-side-set-input').count(),2);
+  const lowerOverflow=await page.locator('main .tp153-set-row').first().evaluate(row=>row.scrollWidth-row.clientWidth);
+  assert.ok(lowerOverflow<=2,'localized bilateral set row must not overflow horizontally');
   console.log('PASS: 1.4.9 keeps the 1.4.8.1 per-side stopwatch and localizes its UI.');
  }finally{if(browser)await browser.close();await new Promise(r=>server.close(r))}
 })().catch(e=>{console.error(e);process.exit(1)});

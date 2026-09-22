@@ -12639,3 +12639,113 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
 // @section ready.js
 window.TrainPilotBoot.finish();
 // @endsection ready.js
+
+
+// @section trainpilot-164-issue12-side-set-fields.js
+/* TrainPilot issue #12: keep bilateral timed set rows as two permanent side fields.
+ * The legacy compatibility reps value remains in session data for old consumers, but
+ * it is no longer rendered as the editable row value for mp/oldal exercises.
+ */
+(function(){
+ 'use strict';
+
+ const TP164_ISSUE12='1.6.4-issue12';
+
+ var tp164SideLabel=function(side){
+  const key=side==='right'?'stopwatch.right':'stopwatch.left';
+  const fallback=side==='right'?'Jobb oldal':'Bal oldal';
+  try{return typeof tp149T==='function'?tp149T(key):fallback}catch(_){return fallback}
+ };
+ var tp164SecondUnit=function(){
+  try{return typeof tp149T==='function'?tp149T('unit.second.short'):'mp'}catch(_){return 'mp'}
+ };
+ var tp164Rows=function(){
+  const main=document.querySelector('main.tp153-workout,main.tp149-workout,main');
+  if(!main)return [];
+  const modern=[...main.querySelectorAll('.tp153-set-row')];
+  return modern.length?modern:[...main.querySelectorAll('.row')];
+ };
+
+ window.tp164SyncPerSideRow=function tp164SyncPerSideRow(setIndex){
+  const ex=state.session?.exercises?.[state.current];if(!ex||!tp1481IsPerSideTimed(ex))return;
+  const set=ex.sets?.[setIndex],row=tp164Rows()[setIndex];if(!set||!row)return;
+  const sides=tp1481SyncPerSideReps(set);
+  for(const side of ['left','right']){
+   const input=row.querySelector('.tp164-side-set-input[data-side="'+side+'"]');
+   const stored=side==='right'?sides.right:sides.left;
+   if(input&&document.activeElement!==input)input.value=stored||'';
+   if(input){
+    input.setAttribute('aria-label',tp164SideLabel(side));
+    input.placeholder='—';
+   }
+  }
+  const check=row.querySelector('button.check');
+  if(check){
+   const ready=sides.left>0&&sides.right>0;
+   check.disabled=!set.done&&!ready;
+   check.setAttribute('aria-disabled',check.disabled?'true':'false');
+   check.title=!set.done&&!ready?(typeof tp149T==='function'?tp149T('stopwatch.sideBothRequired'):'Mindkét oldal ideje szükséges.'):'';
+  }
+ };
+
+ window.tp164SetSideSeconds=function tp164SetSideSeconds(setIndex,side,value){
+  const ex=state.session?.exercises?.[state.current];if(!ex||!tp1481IsPerSideTimed(ex))return;
+  const set=ex.sets?.[setIndex];if(!set)return;
+  tp1481SetSideSeconds(setIndex,side,value);
+  const sides=tp1481SyncPerSideReps(set);
+  if(set.done&&(sides.left<1||sides.right<1)){set.done=false;persistDraft();}
+  window.tp164SyncPerSideRow(setIndex);
+ };
+
+ window.tp164DecoratePerSideRows=function tp164DecoratePerSideRows(){
+  const ex=state.session?.exercises?.[state.current];if(!ex||!tp1481IsPerSideTimed(ex))return false;
+  const rows=tp164Rows();if(!rows.length)return false;
+  rows.forEach(function(row,setIndex){
+   const set=ex.sets?.[setIndex];if(!set)return;
+   row.classList.add('tp164-per-side-row');
+   let fields=row.querySelector('.tp164-side-set-fields');
+   if(!fields){
+    const repInput=[...row.querySelectorAll('input.field')].find(function(input){
+     return input.getAttribute('inputmode')==='numeric'&&String(input.getAttribute('oninput')||'').includes("'reps'");
+    })||row.querySelector('input.field[inputmode="numeric"]');
+    const oldLabel=repInput?.closest('label');if(!oldLabel)return;
+    fields=document.createElement('div');fields.className='tp164-side-set-fields';
+    fields.innerHTML=['left','right'].map(function(side){
+     const value=tp1481StoredSide(set,side)||'';
+     return '<label class="small tp164-side-set-field"><span class="tp164-side-set-label">'+esc(tp164SideLabel(side))+'</span><span class="tp164-side-set-unit">'+esc(tp164SecondUnit())+'</span><input class="field tp164-side-set-input" data-side="'+side+'" inputmode="numeric" pattern="[0-9]*" min="0" step="1" aria-label="'+esc(tp164SideLabel(side))+'" placeholder="—" value="'+esc(value)+'" oninput="tp164SetSideSeconds('+setIndex+',\''+side+'\',this.value)"></label>';
+    }).join('');
+    oldLabel.replaceWith(fields);
+   }
+   window.tp164SyncPerSideRow(setIndex);
+  });
+  return true;
+ };
+
+ // Existing 1.6.1 timer wrappers call this function dynamically, so replacing it
+ // prevents the old compatibility value from overwriting the visible right-side input.
+ window.tp161SyncPerSideRow=window.tp164SyncPerSideRow;
+
+ if(typeof renderWorkout==='function'){
+  const tp164RenderWorkoutBase=renderWorkout;
+  renderWorkout=function(){
+   const out=tp164RenderWorkoutBase.apply(this,arguments);
+   window.tp164DecoratePerSideRows();
+   return out;
+  };
+ }
+
+ const style=document.createElement('style');style.id='tp164Issue12Css';style.textContent=[
+  '.tp153-set-row.tp164-per-side-row{grid-template-columns:44px minmax(0,1fr) 52px!important;grid-template-areas:"num meta check" "fields fields fields";gap:7px 8px!important;align-items:center!important;padding-block:8px!important}',
+  '.tp164-per-side-row>.num{grid-area:num}.tp164-per-side-row>.tp153-bodyweight{grid-area:meta;min-width:0}.tp164-per-side-row>label:not(.tp164-side-set-field){grid-area:meta;min-width:0}.tp164-per-side-row>.check{grid-area:check;align-self:center}',
+  '.tp164-side-set-fields{grid-area:fields;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%;min-width:0}',
+  '.tp164-side-set-field{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"label unit" "input input";column-gap:6px;row-gap:5px;padding:8px 9px;border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));border-radius:11px;background:color-mix(in srgb,var(--accent) 5%,var(--card2))}',
+  '.tp164-side-set-label{grid-area:label;min-width:0;font-weight:800;white-space:normal;overflow-wrap:anywhere;line-height:1.15}.tp164-side-set-unit{grid-area:unit;color:var(--muted);font-size:11px;align-self:center}.tp164-side-set-field>.field{grid-area:input;width:100%;min-width:0;margin:0!important;text-align:center;font-variant-numeric:tabular-nums}',
+  '.tp164-per-side-row>.check:disabled{opacity:.42!important;filter:saturate(.55)!important;cursor:not-allowed!important}',
+  '@media(max-width:340px){.tp164-side-set-fields{grid-template-columns:1fr}.tp153-set-row.tp164-per-side-row{grid-template-columns:40px minmax(0,1fr) 48px!important}}'
+ ].join('');
+ document.head?.appendChild(style);
+
+ window.TrainPilot164Issue12={version:TP164_ISSUE12,separateSetSideFields:true,noCompatibilityOverwrite:true,bothSidesRequired:true};
+ window.tp164DecoratePerSideRows();
+})();
+// @endsection trainpilot-164-issue12-side-set-fields.js
