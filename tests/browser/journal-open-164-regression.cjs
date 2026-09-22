@@ -11,13 +11,14 @@ const listen=()=>new Promise(r=>server.listen(0,'127.0.0.1',r)),base=()=>'http:/
  await page.goto(base());await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
  await page.evaluate(()=>{
    const e=byId('side-plank'),now=new Date().toISOString();if(!e)throw Error('side-plank missing');
+   const valid={programId:'home-level2',programName:'Otthoni A/B – Haladó',dayId:'A',workout:'A',started:now,finished:now,exercises:[{id:e.id,hu:e.hu,en:e.en,loadType:e.loadType,repUnit:e.repUnit,effort:'good',sets:[{set:1,weight:0,reps:'16',leftSeconds:20,rightSeconds:16,done:true}]}]};
+   db.set('history',[valid]);state.tab='home';state.session=null;render();
    db.set('history',[
-    {programId:'home-level2',programName:'Otthoni A/B – Haladó',dayId:'A',workout:'A',started:now,finished:now,exercises:[{id:e.id,hu:e.hu,en:e.en,loadType:e.loadType,repUnit:e.repUnit,effort:'good',sets:[{set:1,weight:0,reps:'16',leftSeconds:20,rightSeconds:16,done:true}]}]},
+    valid,
     null,
     {started:now,finished:now,workout:'A',exercises:null},
     {started:now,finished:now,workout:'B',exercises:[null,{id:'side-plank',repUnit:'mp/oldal',sets:[null,{leftSeconds:'12',rightSeconds:'10',done:true}]}]}
    ]);
-   state.tab='home';state.session=null;render();
  });
  const nav=page.getByRole('button',{name:'Napló',exact:true}).first();assert.equal(await nav.count(),1,'Napló navigation button missing');
  await nav.click();await page.waitForTimeout(80);
