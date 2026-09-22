@@ -4,7 +4,7 @@ const followFile=fs.existsSync('www/trainpilot-162-followup.js')?'www/trainpilot
 const base=fs.readFileSync(baseFile,'utf8'),followSource=followFile?fs.readFileSync(followFile,'utf8'):'';
 const app=base+(followSource?'\n'+followSource:'');
 const pkg=require('../package.json'),src=require('../SOURCE_VERSION.json'),gradle=fs.readFileSync('android/app/build.gradle','utf8');
-assert.equal(pkg.version,'1.6.2');assert.equal(src.version,'1.6.2');assert.equal(src.versionCode,2651);
+assert.equal(pkg.version,'1.6.3');assert.equal(src.version,'1.6.3');assert.equal(src.versionCode,2652);
 assert.match(gradle,/versionCode\s+2651/);assert.match(gradle,/versionName\s+"1\.6\.2"/);
 
 // Keep the 1.6.2 stale-session guard unchanged.
@@ -47,4 +47,4 @@ for(const marker of [
 ])assert.ok(follow.includes(marker),'missing 1.6.2 follow-up marker: '+marker);
 assert.doesNotMatch(follow,/\.tp155-r4-panel-close\{[^}]*position:absolute!important/,'follow-up close control must not use absolute positioning');
 assert.ok(follow.includes('calendarGeometryUntouched:true'),'calendar geometry protection flag missing');
-console.log('PASS TrainPilot 1.6.2 isolated UI regression guards');
+console.log('PASS TrainPilot 1.6.3 release metadata + 1.6.2 regression guards');
