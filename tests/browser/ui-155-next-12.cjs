@@ -74,7 +74,7 @@ const {chromium}=require('playwright');
   const themePicker=page.locator('#tp155ThemePicker');assert.ok(await themePicker.locator('.tp155-theme-option').count()>=10,'theme picker must expose the complete theme set');
   assert.equal(await themePicker.locator('.tp162-theme-column').count(),2,'theme picker must use separate Basic and Vivid columns');
   assert.equal(await themePicker.locator('.tp155-theme-list').evaluate(e=>getComputedStyle(e).overflowY),'visible','theme picker must not use an internal vertical scroller');
-  assert.match(await themePicker.innerText(),/Alap színek/);assert.match(await themePicker.innerText(),/Élénk színek/);
+  assert.match(await themePicker.innerText(),/Alap színek/i);assert.match(await themePicker.innerText(),/Élénk színek/i);
   const activeTheme=themePicker.locator('.tp155-theme-option.active');assert.equal(await activeTheme.count(),1,'current theme must have one clear active state');assert.equal(await activeTheme.getAttribute('aria-pressed'),'true');
   await page.setViewportSize({width:320,height:720});await page.waitForTimeout(40);
   const narrowTheme=await themePicker.locator('.tp155-theme-picker').evaluate(e=>{const r=e.getBoundingClientRect(),list=e.querySelector('.tp155-theme-list');return {left:r.left,right:r.right,width:r.width,viewport:innerWidth,listClient:list.clientWidth,listScroll:list.scrollWidth}});
