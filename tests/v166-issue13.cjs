@@ -1,5 +1,6 @@
 const assert=require('node:assert/strict'),fs=require('node:fs');
-const app=fs.readFileSync('www/app.js','utf8');
+const section='www/trainpilot-166-issue13-home-coach-card.js';
+const app=fs.readFileSync(fs.existsSync(section)?section:'www/app.js','utf8');
 for(const marker of [
  'trainpilot-166-issue13-home-coach-card.js',
  'tp166HomeCoachMarkup',
