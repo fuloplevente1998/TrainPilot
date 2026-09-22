@@ -3,8 +3,6 @@ name: Release Gate + TrainPilot APK
 on:
   workflow_dispatch:
   push:
-    branches:
-      - 'fix/1.6.5-journal-recovery'
     tags:
       - 'v*'
 
