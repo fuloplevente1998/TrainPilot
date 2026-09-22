@@ -151,13 +151,13 @@
   h.innerHTML='<div><h1>'+escText(c().title)+'</h1><p>'+escText(c().subtitle)+'</p></div><div class="tp168-date"><span>'+escText(c().todayWord)+'</span><strong>'+escText(dateText())+'</strong></div>';
   main.prepend(h);
  }
- function rebuildToday(card,d,r){
+ function rebuildToday(card,d,r,bodyHtml,pulseHistory){
   if(!card)return;card.classList.add('tp168-today-card');card.classList.remove('tp146-health-compact');
   const ready=readiness(),rv=ready.score==null?'—':fmt(ready.score)+'/100',rest=positive(d.restingHeartRate),trend=trendValues();
   card.innerHTML='<div class="tp168-today-head">'+icon('health','tp168-health-heart')+'<div class="tp168-today-copy"><h2>'+escText(c().today)+'</h2><p>'+escText(c().todaySub)+'</p></div><time class="tp168-today-date" datetime="'+escText(new Date().toISOString().slice(0,10))+'">'+escText(dateText())+'</time></div>'+
    '<div class="tp168-metrics">'+metric('sleep',c().sleep,sleepText(r),'recovery')+metric('hrv',c().hrv,n(r.hrvRmssdMs)==null?'—':fmt(Math.round(n(r.hrvRmssdMs)))+' ms','recovery')+metric('pulse',c().pulse,positive(d.averageHeartRate)==null?'—':fmt(Math.round(positive(d.averageHeartRate)))+' bpm','pulse')+metric('steps',c().steps,n(d.steps)==null?'—':fmt(Math.round(n(d.steps))))+'</div>'+
    '<div class="tp168-status-grid"><button type="button" class="tp168-status tp168-recovery tp168-level-'+escText(ready.level||'unknown')+'" data-tp168-action="recovery">'+icon('leaf')+'<span><small>'+escText(c().recovery)+'</small><strong>'+escText(rv)+'</strong><em>'+escText(readinessLabel(ready))+'</em></span><b aria-hidden="true">›</b></button><button type="button" class="tp168-status tp168-resting" data-tp168-action="pulse">'+icon('pulse')+'<span><small>'+escText(c().resting)+'</small><strong>'+escText(rest==null?'—':fmt(Math.round(rest))+' bpm')+'</strong></span><b aria-hidden="true">›</b></button></div>'+
-   '<button type="button" class="tp168-trend" data-tp168-action="pulse">'+icon('trend')+'<span><strong>'+escText(c().trend)+'</strong><small>'+escText(trend.length>=3?c().trendEnough:c().trendFew)+'</small></span>'+sparkline(trend)+'<b aria-hidden="true">›</b></button>'+weightJournal();
+   pulseJournal(d,trend,pulseHistory)+weightJournal(bodyHtml);
   card.querySelectorAll('[data-tp168-action]').forEach(el=>{const run=()=>el.dataset.tp168Action==='recovery'?window.tp153OpenRecovery?.():window.tp168OpenPulse?.();el.onclick=run;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();run()}}});
  }
  function decorate(){
@@ -167,26 +167,32 @@
   if(!main)return;
   main.classList.add('tp168-health');
   main.querySelectorAll(':scope > .tp168-health-head,:scope > .tp168-health-note').forEach(x=>x.remove());
+
   const cards=[...main.querySelectorAll(':scope > .tp151-health-card')],today=cards[0],body=cards[1],d=day(),r=rec();
-  rebuildToday(today,d,r);decorateBody(body);
   const details=[...main.querySelectorAll(':scope > details.tp155-health-bottom-panel')];
   let more=details.find(x=>/További|More Health|Weitere|Mai multe/i.test(String(x.textContent||'')))||details[0];
   let recovery=details.find(x=>/Regenerációs|Recovery history|Regeneration|recuperare/i.test(String(x.textContent||'')))||details[1];
   let diag=details.find(x=>x.id==='rf263HealthDiagnostics')||details.find(x=>x!==more&&x!==recovery);
-  if(recovery)decoratePulse(recovery,d);
+
+  const bodyHtml=captureBody(body),pulseHistory=capturePulse(recovery);
+  rebuildToday(today,d,r,bodyHtml,pulseHistory);
+  if(body)body.remove();
+  if(recovery)recovery.remove();
+
   if(more){more.classList.add('tp168-more-panel');disclosureSummary(more,c().more,c().moreSub,'more')}
   if(diag){diag.classList.add('tp168-connect-panel');disclosureSummary(diag,c().connect,c().connectSub,'link')}
   const sync=main.querySelector(':scope > .rf263-sync-card');if(sync){sync.classList.add('tp168-sync-tail')}
-  [body,recovery,more,diag].filter(Boolean).forEach(x=>main.appendChild(x));
+  [more,diag].filter(Boolean).forEach(x=>main.appendChild(x));
   if(sync)main.appendChild(sync);
   const note=document.createElement('div');note.className='tp168-health-note';note.innerHTML='<span aria-hidden="true">ⓘ</span><p>'+escText(c().note)+'</p>';main.appendChild(note);
  }
+
 
  function unifyChevrons(root){
   const selectors=['.chev','.rf-history-health-chevron','.rf103-history-chevron','.tp146-exercise-chevron','.tp152-chevron','.tp152-program-chevron','.tp166-home-coach-chevron','.tp1511-training summary i'];
   root?.querySelectorAll?.(selectors.join(',')).forEach(el=>{if(el&&el.textContent!=='›')el.textContent='›'});
  }
- window.TrainPilot168Health={version:'1.6.9',bodyOpen:false,weightOpen:false,decorate};
+ window.TrainPilot168Health={version:'1.6.9',weightOpen:false,pulseOpen:false,bodyHtml:'',pulseHistory:'',decorate};
  const legacyWeightScreen=window.rf215WeightScreen;
  window.rf215WeightScreen=function(){
   window.TrainPilot168Health.weightOpen=true;
