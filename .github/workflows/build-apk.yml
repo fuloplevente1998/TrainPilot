@@ -3,6 +3,8 @@ name: Release Gate + TrainPilot APK
 on:
   workflow_dispatch:
   push:
+    branches:
+      - 'build/health-dashboard-apk-168'
     tags:
       - 'v*'
 
