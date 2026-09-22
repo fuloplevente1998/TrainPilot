@@ -9,7 +9,12 @@ for(const marker of [
  'window.tp161SyncPerSideRow=window.tp164SyncPerSideRow',
  'separateSetSideFields:true',
  'noCompatibilityOverwrite:true',
- 'bothSidesRequired:true'
+ 'bothSidesRequired:true',
+ 'coachPerSideTime:true',
+ 'coachPerSideStats:true',
+ 'timeBasedAdvice:true',
+ 'tp164PerSideStats',
+ 'tp164IsPerSideId'
 ])assert.ok(src.includes(marker),'missing #12 marker: '+marker);
 const section=standalone?src:src.slice(src.indexOf('// @section trainpilot-164-issue12-side-set-fields.js'),src.indexOf('// @endsection trainpilot-164-issue12-side-set-fields.js'));
 assert.match(section,/stopwatch\.left/);assert.match(section,/stopwatch\.right/);

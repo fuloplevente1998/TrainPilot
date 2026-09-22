@@ -12740,7 +12740,126 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  ].join('');
  document.head?.appendChild(style);
 
- window.TrainPilot164Issue12={version:TP164_ISSUE12,separateSetSideFields:true,noCompatibilityOverwrite:true,bothSidesRequired:true};
+
+ // Coach must treat mp/oldal as bilateral time, not as ordinary reps.
+ var tp164IsPerSideId=function(id){
+  const e=typeof byId==='function'?byId(id):null;
+  return String(e?.repUnit||'').replace(/\s+/g,'').toLowerCase()==='mp/oldal';
+ };
+ var tp164CoachCopy=function(){
+  const lang=typeof rf212Lang==='function'?rf212Lang():'hu';
+  const all={
+   hu:{last:'Legutóbbi',left:'Bal oldal',right:'Jobb oldal',leftBest:'Bal rekord',rightBest:'Jobb rekord',balanced:'Kiegyensúlyozott rekord',timeUp:'Idő növelése',hold:'Idő tartása',start:'Kezdés',startText:'Még nincs kétoldalas időelőzmény. Indulj kontrolláltan, és mindkét oldalt külön mérd.',partial:'A legutóbbi edzés részleges volt; előbb legyen mindkét oldal stabilan rögzítve.',pain:'Fájdalmat jeleztél; ne növeld a tartási időt, csak fájdalommentesen folytasd.',hard:'Legutóbb nehéz volt; tartsd a jelenlegi időt, és előbb legyen mindkét oldal stabil.',increase:'Következő cél: mindkét oldalon +5 mp, a gyengébb oldalhoz igazodva.',top:'Mindkét oldal elérte a célzónát; próbálj +5 mp-et oldalanként vagy nehezebb variációt.',steady:'Tartsd a jelenlegi időt; a gyengébb oldalt zárkóztasd fel a célzónába.',light:'Ma kezdd könnyebben; ne növeld a tartási időt.'},
+   en:{last:'Last',left:'Left side',right:'Right side',leftBest:'Left record',rightBest:'Right record',balanced:'Balanced record',timeUp:'Increase time',hold:'Hold time',start:'Start',startText:'No bilateral time history yet. Start controlled and time both sides separately.',partial:'The last workout was partial; first record both sides consistently.',pain:'You reported pain; do not increase hold time and continue only pain-free.',hard:'Last time was hard; hold the current duration until both sides are stable.',increase:'Next target: +5 sec on both sides, paced by the weaker side.',top:'Both sides reached the target zone; try +5 sec per side or a harder variation.',steady:'Keep the current duration and bring the weaker side into the target zone.',light:'Start lighter today; do not increase hold time.'},
+   de:{last:'Zuletzt',left:'Linke Seite',right:'Rechte Seite',leftBest:'Rekord links',rightBest:'Rekord rechts',balanced:'Ausgeglichener Rekord',timeUp:'Zeit steigern',hold:'Zeit halten',start:'Start',startText:'Noch keine beidseitige Zeit-Historie. Kontrolliert starten und beide Seiten getrennt messen.',partial:'Das letzte Training war unvollständig; zuerst beide Seiten zuverlässig erfassen.',pain:'Schmerz gemeldet; Haltezeit nicht erhöhen und nur schmerzfrei fortsetzen.',hard:'Zuletzt war es schwer; aktuelle Zeit halten, bis beide Seiten stabil sind.',increase:'Nächstes Ziel: auf beiden Seiten +5 Sek., orientiert an der schwächeren Seite.',top:'Beide Seiten liegen im Zielbereich; +5 Sek. je Seite oder schwierigere Variante versuchen.',steady:'Aktuelle Zeit halten und die schwächere Seite an den Zielbereich heranführen.',light:'Heute leichter beginnen; Haltezeit nicht erhöhen.'},
+   ro:{last:'Ultima',left:'Partea stângă',right:'Partea dreaptă',leftBest:'Record stânga',rightBest:'Record dreapta',balanced:'Record echilibrat',timeUp:'Crește timpul',hold:'Menține timpul',start:'Start',startText:'Nu există încă istoric bilateral. Începe controlat și cronometrează separat ambele părți.',partial:'Ultimul antrenament a fost parțial; înregistrează mai întâi stabil ambele părți.',pain:'Ai raportat durere; nu crește timpul și continuă doar fără durere.',hard:'Ultima dată a fost greu; menține timpul până când ambele părți sunt stabile.',increase:'Următoarea țintă: +5 sec pe ambele părți, după partea mai slabă.',top:'Ambele părți au atins zona țintă; încearcă +5 sec pe parte sau o variantă mai grea.',steady:'Menține timpul și adu partea mai slabă în zona țintă.',light:'Începe mai ușor astăzi; nu crește timpul.'}
+  };
+  return all[lang]||all.hu;
+ };
+ var tp164PairText=function(left,right){
+  const c=tp164CoachCopy(),unit=tp164SecondUnit();
+  return c.left+' '+(left||'—')+' '+unit+' • '+c.right+' '+(right||'—')+' '+unit;
+ };
+ window.tp164PerSideStats=function tp164PerSideStats(id){
+  if(!tp164IsPerSideId(id))return null;
+  const rows=[];
+  const hs=typeof rf220Hist==='function'?rf220Hist():(typeof history==='function'?history():[]);
+  for(const h of hs||[]){
+   const workoutTime=typeof rf220WorkoutTime==='function'?rf220WorkoutTime(h):Date.parse(h?.finished||h?.started||'')||0;
+   for(const e of h.exercises||[]){
+    if(e.id!==id)continue;
+    for(const s of e.sets||[]){
+     if(!s.done)continue;
+     const left=tp1481StoredSide(s,'left'),right=tp1481StoredSide(s,'right');
+     if(left>0&&right>0)rows.push({left,right,weak:Math.min(left,right),date:workoutTime});
+    }
+   }
+  }
+  if(!rows.length)return null;
+  const latest=rows[0],bestLeft=Math.max(...rows.map(x=>x.left)),bestRight=Math.max(...rows.map(x=>x.right)),bestBalanced=Math.max(...rows.map(x=>x.weak));
+  return {perSide:true,latestLeft:latest.left,latestRight:latest.right,bestLeft,bestRight,bestBalanced,count:rows.length,rows};
+ };
+ var tp164LastPerSide=function(id){
+  const last=typeof rf152Last==='function'?rf152Last(id):null,e=last?.exercise;
+  if(!e)return null;
+  const done=(e.sets||[]).filter(s=>s.done&&tp1481StoredSide(s,'left')>0&&tp1481StoredSide(s,'right')>0);
+  if(!done.length)return {last,e,all:typeof rf152AllDone==='function'?rf152AllDone(e):false,left:0,right:0,weak:0};
+  const s=done[done.length-1],left=tp1481StoredSide(s,'left'),right=tp1481StoredSide(s,'right');
+  return {last,e,all:typeof rf152AllDone==='function'?rf152AllDone(e):false,left,right,weak:Math.min(left,right)};
+ };
+
+ if(typeof rf152Recommendation==='function'){
+  const tp164RecommendationBase=rf152Recommendation;
+  rf152Recommendation=function(id){
+   if(!tp164IsPerSideId(id))return tp164RecommendationBase.apply(this,arguments);
+   const c=tp164CoachCopy(),lib=byId(id),info=tp164LastPerSide(id);
+   if(!info||!info.left||!info.right)return {action:'start',weight:0,perSide:true,text:c.startText};
+   const pair=c.last+': '+tp164PairText(info.left,info.right)+'. ';
+   const effort=info.e?.effort||null,range=typeof rf152RepRange==='function'?rf152RepRange(id):{max:null};
+   if(effort==='pain')return {action:'pain',weight:0,perSide:true,left:info.left,right:info.right,text:pair+c.pain};
+   if(!info.all)return {action:'hold',weight:0,perSide:true,left:info.left,right:info.right,text:pair+c.partial};
+   if(effort==='hard'||effort==='challenging')return {action:'hold',weight:0,perSide:true,left:info.left,right:info.right,text:pair+c.hard};
+   if(effort==='easy'||effort==='light')return {action:'reps',weight:0,perSide:true,left:info.left,right:info.right,text:pair+c.increase};
+   if(range?.max&&info.weak>=range.max)return {action:'reps',weight:0,perSide:true,left:info.left,right:info.right,text:pair+c.top};
+   return {action:'hold',weight:0,perSide:true,left:info.left,right:info.right,text:pair+c.steady};
+  };
+ }
+
+ if(typeof rf233ExerciseAdvice==='function'){
+  const tp164AdviceBase=rf233ExerciseAdvice;
+  rf233ExerciseAdvice=function(id,decision){
+   if(!tp164IsPerSideId(id))return tp164AdviceBase.apply(this,arguments);
+   const base=tp164AdviceBase.apply(this,arguments),rec=rf152Recommendation(id),c=tp164CoachCopy();
+   if(decision?.mode==='light'&&rec?.action!=='pain'){
+    const prefix=rec?.left&&rec?.right?c.last+': '+tp164PairText(rec.left,rec.right)+'. ':'';
+    return {...base,action:'easy',text:prefix+c.light,perSide:true};
+   }
+   const label=rec?.action==='reps'?c.timeUp:rec?.action==='hold'?c.hold:rec?.action==='start'?c.start:base?.label;
+   return {...base,action:rec?.action||base?.action,label,text:rec?.text||base?.text,perSide:true};
+  };
+ }
+
+ if(typeof window.tp155CoachShortAdvice==='function'){
+  const tp164ShortBase=window.tp155CoachShortAdvice;
+  window.tp155CoachShortAdvice=function(id,decision,existing){
+   if(!tp164IsPerSideId(id))return tp164ShortBase.apply(this,arguments);
+   let a=existing;try{if(!a)a=rf233ExerciseAdvice(id,decision||rf233Decision(rf220Readiness()))}catch(_){}
+   const rec=typeof rf152Recommendation==='function'?rf152Recommendation(id):null,c=tp164CoachCopy();
+   return {action:a?.action||rec?.action||'start',label:a?.label||'',text:a?.text||rec?.text||c.startText,perSide:true};
+  };
+ }
+
+ if(typeof rf220ExerciseStats==='function'){
+  const tp164StatsBase=rf220ExerciseStats;
+  rf220ExerciseStats=function(id){
+   if(!tp164IsPerSideId(id))return tp164StatsBase.apply(this,arguments);
+   const s=window.tp164PerSideStats(id);if(!s)return null;
+   return {...s,maxWeight:0,e1rm:0,best:{w:0,r:s.bestBalanced},maxVolume:0};
+  };
+ }
+ if(typeof rf220ProgressHtml==='function'){
+  rf220ProgressHtml=function(){
+   const t=rf220L(),rows=rf220ProgressRows();if(!rows.length)return '<div class="card"><h2>'+esc(t.progress)+'</h2><p class="muted">'+esc(t.noData)+'</p></div>';
+   return '<div class="card"><h2>'+esc(t.progress)+' • '+esc(t.records)+'</h2>'+rows.slice(0,12).map(function(row){
+    const id=row.id,s=row.s;if(s?.perSide){
+     const c=tp164CoachCopy(),unit=tp164SecondUnit();
+     return '<div class="weight-row tp164-coach-side-row" role="button" onclick="rf220Exercise(\''+esc(id)+'\')"><strong>'+esc(rf220ExerciseName(id))+'</strong><div class="small muted">'+esc(c.leftBest+': '+s.bestLeft+' '+unit+' • '+c.rightBest+': '+s.bestRight+' '+unit)+'</div></div>';
+    }
+    return '<div class="weight-row" role="button" onclick="rf220Exercise(\''+esc(id)+'\')"><strong>'+esc(rf220ExerciseName(id))+'</strong><div class="small muted">'+(s.maxWeight?esc(t.maxWeight+': '+s.maxWeight+' kg • '):'')+(s.e1rm?esc(t.e1rm+': '+s.e1rm.toFixed(1)+' kg'):'')+'</div></div>';
+   }).join('')+'</div>';
+  };
+ }
+ if(typeof rf220Exercise==='function'){
+  const tp164ExerciseBase=rf220Exercise;
+  rf220Exercise=function(id){
+   if(!tp164IsPerSideId(id))return tp164ExerciseBase.apply(this,arguments);
+   const t=rf220L(),s=rf220ExerciseStats(id);if(!s)return;
+   const c=tp164CoachCopy(),unit=tp164SecondUnit();
+   render(shell('<main><button class="btn secondary" onclick="rf220CoachScreen()">← '+esc(t.back)+'</button><div class="hero"><h1>'+esc(rf220ExerciseName(id))+'</h1><div class="muted">'+esc(t.progress)+'</div></div><div class="grid2"><div class="stat"><small>'+esc(c.left)+'</small><strong>'+s.latestLeft+' '+unit+'</strong></div><div class="stat"><small>'+esc(c.right)+'</small><strong>'+s.latestRight+' '+unit+'</strong></div><div class="stat"><small>'+esc(c.leftBest)+'</small><strong>'+s.bestLeft+' '+unit+'</strong></div><div class="stat"><small>'+esc(c.rightBest)+'</small><strong>'+s.bestRight+' '+unit+'</strong></div></div><div class="card"><strong>'+esc(c.balanced)+': '+s.bestBalanced+' '+unit+'</strong><p class="small muted">'+esc(tp164PairText(s.latestLeft,s.latestRight))+'</p></div></main>'));
+  };
+ }
+
+ window.TrainPilot164Issue12={version:TP164_ISSUE12,separateSetSideFields:true,noCompatibilityOverwrite:true,bothSidesRequired:true,coachPerSideTime:true,coachPerSideStats:true,timeBasedAdvice:true};
  window.tp164DecoratePerSideRows();
 })();
 // @endsection trainpilot-164-issue12-side-set-fields.js
