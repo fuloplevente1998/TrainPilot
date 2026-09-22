@@ -12806,9 +12806,9 @@ window.tp164DecoratePerSideRows();
   if(!Array.isArray(rows)||index<0||index>=rows.length)return;
   const remove=function(){const next=rows.slice();next.splice(index,1);db.set('history',next);if(typeof cloudChanged==='function')cloudChanged();render(historyScreen())};
   try{
-   const ask=typeof tp2628Confirm==='function'?tp2628Confirm('Törlöd ezt a sérült naplóbejegyzést?',{title:'Naplóbejegyzés törlése',confirmText:'Törlés',danger:true}):Promise.resolve(confirm('Törlöd ezt a sérült naplóbejegyzést?'));
+   const ask=typeof tp2628Confirm==='function'?tp2628Confirm('Törlöd ezt a sérült naplóbejegyzést?',{title:'Naplóbejegyzés törlése',confirmText:'Törlés',danger:true}):Promise.resolve(false);
    Promise.resolve(ask).then(function(ok){if(ok)remove()});
-  }catch(_){if(confirm('Törlöd ezt a sérült naplóbejegyzést?'))remove()}
+  }catch(error){try{console.error('[TrainPilot] Journal delete confirm unavailable',error)}catch(_){}}
  };
 
  const itemBase=rf263HistoryItem;
