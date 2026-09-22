@@ -4,26 +4,25 @@ Last updated: 2026-09-22
 
 This file is the current handoff/source-of-truth for continuing TrainPilot development across chats.
 
-## Stable release promotion
+## Current stable line
 
-- Approved version: **1.6.3**
+- Stable branch: `main`
+- Current version: **1.6.3**
 - Android versionCode: **2652**
-- Promotion source branch: `fix/1.6.2-minor-ui`
-- Base branch: `main`
-- PR: **#6**
-- User phone validation: **approved**
-- #2 and #11 are accepted for promotion to `main`.
+- PR **#6 – TrainPilot 1.6.3 validated patch**: **merged**
+- Merge commit: `aa53676af8700202996140c0b8cf1ff6c789cd5e`
+- Full signed Release Gate: **passed**
+- Phone validation: **passed**
 
-### Included accepted fixes
+### Completed in 1.6.3
 
 - **#2** – Coach: deleted Quick Workout no longer leaves a stale “today workout” count.
-- **#11** – Theme selector uses a floating, internally scrollable dropdown aligned with the Language selector behavior; opening it does not push lower Settings cards down.
-
-The 1.6.3 promotion must pass the full signed Release Gate before merging.
+- **#11** – Theme selector now uses a floating, internally scrollable dropdown aligned with the Language selector behavior. Opening it does not push lower Settings cards down.
+- Previously accepted 1.6.x minor UI polish included in PR #6 remains part of the stable baseline.
 
 ## Remaining work – strict order
 
-After 1.6.3 is on `main`, work on these **one at a time**, in this order:
+Work on these **one at a time**, in this order:
 
 1. **#12** – Side plank: right stopwatch overwrites lower set field; separate Left/Right time fields.
 2. **#13** – Home Coach card: Coach-page design, larger/full-card tap target, no redundant Details/Statistics actions.
@@ -57,6 +56,6 @@ Do not bundle #12–#16 into one large unreviewed change.
 
 When starting a new ChatGPT conversation, ask to continue TrainPilot development and read this file plus the currently open GitHub issues before making changes.
 
-Current sequence after the 1.6.3 promotion:
+Current sequence:
 
 **#12 → #13 → #14 → #15 → #16.**
