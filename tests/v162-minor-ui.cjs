@@ -8,7 +8,7 @@ assert.equal(pkg.version,'1.6.2');assert.equal(src.version,'1.6.2');assert.equal
 assert.match(gradle,/versionCode\s+2651/);assert.match(gradle,/versionName\s+"1\.6\.2"/);
 
 // Keep the 1.6.2 stale-session guard unchanged.
-for(const marker of ["window.tp162VisibleHealthSessions","String(s?.source||'')!==ownPackage","exerciseSessionCount:visible.length"])assert.ok(app.includes(marker),'missing Health-count guard: '+marker);
+for(const marker of ["window.tp162VisibleHealthSessions","String(s?.source||'')!==ownPackage","clientRecordId.indexOf('trainpilot:tpw_')===0","stableIds.has(clientRecordId)","exerciseSessionCount:visible.length","exerciseMinutes:minutes"])assert.ok(app.includes(marker),'missing Health-count guard: '+marker);
 
 // Calendar geometry is a protected 1.6.2 baseline.
 for(const marker of [

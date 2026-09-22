@@ -12446,16 +12446,19 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  const TP162_VERSION='1.6.2';
  const dailyBase=rf223Daily;
  window.tp162VisibleHealthSessions=function tp162VisibleHealthSessions(d){
-  const sessions=Array.isArray(d?.exerciseSessions)?d.exerciseSessions:[];
-  const local=(typeof history==='function'?history():[]).filter(function(h){return Number.isFinite(Date.parse(h?.started))&&Number.isFinite(Date.parse(h?.finished));});
-  const ownPackage='com.repforge.app',tolerance=5*60*1000;
-  return sessions.filter(function(s){
-   if(String(s?.source||'')!==ownPackage)return true;
-   const start=Date.parse(s?.start),end=Date.parse(s?.end);if(!Number.isFinite(start)||!Number.isFinite(end))return false;
-   return local.some(function(h){return Math.abs(Date.parse(h.started)-start)<=tolerance&&Math.abs(Date.parse(h.finished)-end)<=tolerance;});
-  });
+   const sessions=Array.isArray(d?.exerciseSessions)?d.exerciseSessions:[];
+   const local=(typeof history==='function'?history():[]).filter(function(h){return Number.isFinite(Date.parse(h?.started))&&Number.isFinite(Date.parse(h?.finished));});
+   const ownPackage='com.repforge.app',exactTolerance=1000;
+   const stableIds=new Set(local.map(function(h){return h?.healthStableId?'trainpilot:'+h.healthStableId:'';}).filter(Boolean));
+   return sessions.filter(function(s){
+     if(String(s?.source||'')!==ownPackage)return true;
+     const clientRecordId=String(s?.clientRecordId||'');
+     if(clientRecordId.indexOf('trainpilot:tpw_')===0)return stableIds.has(clientRecordId);
+     const start=Date.parse(s?.start),end=Date.parse(s?.end);if(!Number.isFinite(start)||!Number.isFinite(end))return false;
+     return local.some(function(h){return Math.abs(Date.parse(h.started)-start)<=exactTolerance&&Math.abs(Date.parse(h.finished)-end)<=exactTolerance;});
+   });
  };
- rf223Daily=function(){const d=dailyBase.apply(this,arguments);if(!d)return d;const visible=window.tp162VisibleHealthSessions(d);return Object.assign({},d,{exerciseSessions:visible,exerciseSessionCount:visible.length});};
+ rf223Daily=function(){const d=dailyBase.apply(this,arguments);if(!d)return d;const visible=window.tp162VisibleHealthSessions(d);const minutes=visible.reduce(function(sum,s){return sum+Math.max(0,Number(s?.durationMinutes)||0);},0);return Object.assign({},d,{exerciseSessions:visible,exerciseSessionCount:visible.length,exerciseMinutes:minutes});};
 
  if(typeof window.tp155R4DecorateNavigation==='function'){
   const decorateNavBase=window.tp155R4DecorateNavigation;
