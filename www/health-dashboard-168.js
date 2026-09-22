@@ -32,7 +32,7 @@
  const rec=()=>state?.health?.recovery||{};
 
  function icon(name,extra=''){return '<span class="tp168-icon '+extra+'">'+(ICON[name]||ICON.health)+'</span>'}
- function metric(kind,label,value,action){return '<div class="tp168-metric tp168-'+kind+'"'+(action?' role="button" tabindex="0" data-tp168-action="'+action+'"':'')+'>'+icon(kind)+'<span>'+escText(label)+'</span><strong>'+escText(value)+'</strong></div>'}
+ function metric(kind,label,value,action){const legacy=action==='recovery'?' data-tp153-link="recovery"':'';return '<div class="stat tp168-metric tp168-'+kind+'"'+legacy+(action?' role="button" tabindex="0" data-tp168-action="'+action+'"':'')+'>'+icon(kind)+'<span>'+escText(label)+'</span><strong>'+escText(value)+'</strong></div>'}
  function sleepText(r){try{return typeof tp149SleepText==='function'?tp149SleepText(r.sleepMinutes):(r.sleepMinutes==null?'—':(Math.round(r.sleepMinutes/6)/10)+' h')}catch(_){return '—'}}
  function readiness(){try{return typeof rf220Readiness==='function'?rf220Readiness():{score:null,level:'unknown'}}catch(_){return {score:null,level:'unknown'}}}
  function readinessLabel(r){if(r.score==null)return c().noData;try{const t=typeof rf220L==='function'?rf220L():{};return t[r.level]||r.level||''}catch(_){return ''}}
@@ -75,7 +75,7 @@
   head.onclick=()=>window.tp168ToggleBody(head);head.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();window.tp168ToggleBody(head)}};
  }
  function decoratePulse(details,d){
-  if(!details)return;details.classList.add('tp168-pulse-panel');
+  if(!details||details.classList.contains('tp168-pulse-panel'))return;details.classList.add('tp168-pulse-panel');
   const summary=details.querySelector(':scope > summary'),original=[...details.childNodes].filter(x=>x!==summary),nested=document.createElement('details');
   nested.className='tp168-recovery-history';nested.innerHTML='<summary><strong>'+escText(c().recoveryHistory)+'</strong></summary>';original.forEach(x=>nested.appendChild(x));
   const pulse=document.createElement('div');pulse.className='tp168-pulse-grid';
@@ -92,7 +92,7 @@
   if(!card)return;card.classList.add('tp168-today-card');card.classList.remove('tp146-health-compact');
   const ready=readiness(),rv=ready.score==null?'—':fmt(ready.score)+'/100',rest=n(d.restingHeartRate),trend=trendValues();
   card.innerHTML='<div class="tp168-today-head">'+icon('health','tp168-health-heart')+'<div><h2>'+escText(c().today)+'</h2><p>'+escText(c().todaySub)+'</p></div></div>'+
-   '<div class="tp168-metrics">'+metric('sleep',c().sleep,sleepText(r),'recovery')+metric('hrv',c().hrv,n(r.hrvRmssdMs)==null?'—':fmt(Math.round(n(r.hrvRmssdMs)))+' ms','recovery')+metric('pulse',c().pulse,n(d.averageHeartRate)==null?'—':fmt(Math.round(n(d.averageHeartRate)))+' avg','pulse')+metric('steps',c().steps,n(d.steps)==null?'—':fmt(Math.round(n(d.steps))))+'</div>'+
+   '<div class="tp168-metrics">'+metric('sleep',c().sleep,sleepText(r),'recovery')+metric('hrv',c().hrv,n(r.hrvRmssdMs)==null?'—':fmt(Math.round(n(r.hrvRmssdMs)))+' ms','recovery')+metric('pulse',c().pulse,n(d.averageHeartRate)==null?'—':fmt(Math.round(n(d.averageHeartRate)))+' bpm','pulse')+metric('steps',c().steps,n(d.steps)==null?'—':fmt(Math.round(n(d.steps))))+'</div>'+
    '<div class="tp168-status-grid"><button type="button" class="tp168-status tp168-recovery tp168-level-'+escText(ready.level||'unknown')+'" data-tp168-action="recovery">'+icon('leaf')+'<span><small>'+escText(c().recovery)+'</small><strong>'+escText(rv)+'</strong><em>'+escText(readinessLabel(ready))+'</em></span><b aria-hidden="true">›</b></button><button type="button" class="tp168-status tp168-resting" data-tp168-action="pulse">'+icon('pulse')+'<span><small>'+escText(c().resting)+'</small><strong>'+escText(rest==null?'—':fmt(Math.round(rest))+' bpm')+'</strong></span><b aria-hidden="true">›</b></button></div>'+
    '<button type="button" class="tp168-trend" data-tp168-action="pulse">'+icon('trend')+'<span><strong>'+escText(c().trend)+'</strong><small>'+escText(trend.length>=3?c().trendEnough:c().trendFew)+'</small></span>'+sparkline(trend)+'<b aria-hidden="true">›</b></button>';
   card.querySelectorAll('[data-tp168-action]').forEach(el=>{const run=()=>el.dataset.tp168Action==='recovery'?window.tp153OpenRecovery?.():window.tp168OpenPulse?.();el.onclick=run;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();run()}}});
