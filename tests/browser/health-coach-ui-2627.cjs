@@ -24,10 +24,11 @@ const {chromium}=require('playwright');
    return page.evaluate(()=>window.scrollY);
   };
 
-  // Actual Home Details button: opens the shared Coach panel while preserving Home underneath.
+  // #13: the whole Home Coach card opens the shared Coach panel while preserving Home underneath.
   await page.evaluate(()=>{state.tab='home';render();window.scrollTo(0,0)});
   await page.waitForTimeout(80);
-  await page.click('#rf220CoachCard .rf221-coach-actions button:first-child');
+  assert.equal(await page.locator('#rf220CoachCard button').count(),0,'#13 Home Coach must not restore separate action buttons');
+  await page.click('#rf220CoachCard');
   await page.waitForSelector('#tp155R4PanelHost[data-panel="coach"] .tp151-coach');
   const coach=await page.evaluate(()=>(
    {tab:state.tab,homeClass:document.querySelector('#app main')?.classList.contains('rf221-home'),panelOpen:document.body.classList.contains('tp155-r4-panel-open'),text:document.querySelector('#tp155R4PanelHost .tp151-coach')?.innerText||'',active:document.querySelector('.tp154-coach-action')?.classList.contains('active')}
@@ -40,10 +41,9 @@ const {chromium}=require('playwright');
   const coachScroll=await page.evaluate(async()=>{const panel=document.querySelector('#tp155R4PanelHost .tp155-r4-panel'),probe=document.createElement('div');probe.style.height='1600px';panel.querySelector('.tp155-r4-panel-content')?.appendChild(probe);panel.scrollTop=9999;await new Promise(r=>setTimeout(r,50));const y=panel.scrollTop;probe.remove();return y});
   assert.ok(coachScroll>0,'Coach panel must scroll internally when content is taller than viewport');
 
-  // Actual Home Statistics button: deterministic stats state, never Home scroll lock.
-  await page.evaluate(()=>{go('home');window.scrollTo(0,0)});
-  await page.waitForTimeout(80);
-  await page.click('#rf220CoachCard .rf221-coach-actions button:nth-child(2)');
+  // #13 removes Home statistics button; Statistics stays available through the
+  // established Journal/progress route and must keep the same deterministic state.
+  await page.evaluate(()=>{window.tp155R4ClosePanel?.(false);go('progress');window.scrollTo(0,0)});
   await page.waitForTimeout(80);
   const stats=await page.evaluate(()=>(
    {tab:state.tab,homeClass:document.querySelector('main')?.classList.contains('rf221-home'),overflow:getComputedStyle(document.body).overflow,text:document.querySelector('main')?.innerText||'',active:document.querySelector('.tab.active .tp151-nav-label')?.textContent?.trim()||[...document.querySelectorAll('.tab')].find(x=>x.classList.contains('active'))?.textContent?.trim()}
@@ -60,7 +60,7 @@ const {chromium}=require('playwright');
   await page.waitForTimeout(60);
   assert.equal(await page.evaluate(()=>state.tab),'stats');
 
-  console.log('PASS: TrainPilot 2627 Home Coach/Stats entries release scroll lock deterministically.');
+  console.log('PASS: TrainPilot 2627 #13 full-card Coach entry + retained Statistics route release scroll lock deterministically.');
  }finally{
   if(browser)await browser.close();
   await new Promise(r=>server.close(r));
