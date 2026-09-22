@@ -11429,7 +11429,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
 
  let currentPanel='',panelHost=null,panelTrigger=null,bodyOverflow='',panelOpenScrollY=0;
  const panelDomSupported=(()=>{try{const x=document?.createElement?.('div');return !!(x&&typeof x.addEventListener==='function'&&document?.body&&typeof document.body.appendChild==='function')}catch(_){return false}})();
- const PANEL_ROUTES=new Set(['calendar','coach','settings','quick','exercises']);
+ const PANEL_ROUTES=new Set(['calendar','coach','settings','quick','exercises','weight']);
  const FULL_ROUTES=new Set(['home','plan','health','programs','history']);
 
  const routeFromButton=function(btn){
@@ -11449,7 +11449,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   const order={home:1,plan:2,health:3,programs:4,history:5,calendar:6};
   buttons.forEach(function(btn){
    const route=routeFromButton(btn);if(order[route])btn.style.order=String(order[route]);
-   const active=!currentPanel&&(route===state.tab||(route==='history'&&state.tab==='stats')||(route==='home'&&state.tab==='profile'));
+   const active=(currentPanel==='weight'&&route==='health')||(!currentPanel&&(route===state.tab||(route==='history'&&state.tab==='stats')||(route==='home'&&state.tab==='profile')));
    btn.classList.toggle('active',!!active);
   });
   const coach=top.querySelector('.tp154-coach-action'),settings=top.querySelector('.tp154-settings-action');
@@ -11508,10 +11508,32 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   return main?main.outerHTML:'';
  };
 
+ const weightBase=rf215WeightScreen;
+ const weightHtml=function(){
+  const oldTab=state.tab,oldHealth=state.healthView;
+  const hadPage=typeof rf225HealthPage!=='undefined',oldPage=hadPage?rf225HealthPage:undefined;
+  const liveRender=render;let captured='';
+  try{
+   render=function(custom){captured=String(custom||'');return custom};
+   weightBase();
+  }catch(_){captured=''}
+  finally{
+   render=liveRender;state.tab=oldTab;state.healthView=oldHealth;
+   if(hadPage)rf225HealthPage=oldPage;
+  }
+  if(!captured)return '';
+  const t=document.createElement('template');t.innerHTML=captured;
+  const main=t.content.querySelector('main.tp151-weight')||t.content.querySelector('main');
+  main?.querySelector('.tp151-back-row')?.remove();
+  main?.classList.add('tp167-weight-panel-main');
+  return main?main.outerHTML:'';
+ };
+
  const panelHtml=function(type){
   if(type==='calendar')return calendarHtml();
   if(type==='settings')return settingsHtml();
   if(type==='coach')return coachHtml();
+  if(type==='weight')return weightHtml();
   if(type==='quick')return typeof window.tp155QuickPanelHtml==='function'?window.tp155QuickPanelHtml():'';
   if(type==='exercises')return typeof window.tp155ExercisePanelHtml==='function'?window.tp155ExercisePanelHtml():'';
   return '';
@@ -11590,6 +11612,17 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  rf233CoachScreen=function(){return panelDomSupported?window.tp155R4TogglePanel('coach',document.activeElement):coachBase.apply(this,arguments)};
  rf220CoachScreen=rf233CoachScreen;
 
+ // Health -> Weight log uses the same panel lifecycle as Coach/Calendar/Settings.
+ rf215WeightScreen=function(){
+  if(!panelDomSupported)return weightBase.apply(this,arguments);
+  if(state.tab!=='health'){
+   if(currentPanel)window.tp155R4ClosePanel(false);
+   go('health');
+  }
+  if(currentPanel==='weight'){window.tp155R4RefreshPanel();return true}
+  return window.tp155R4OpenPanel('weight',document.activeElement);
+ };
+
  if(typeof tp153OpenCoachTarget==='function'){
   const targetBase=tp153OpenCoachTarget;
   tp153OpenCoachTarget=function(){window.tp155R4ClosePanel(false);return targetBase.apply(this,arguments)};
@@ -11637,7 +11670,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  document.head.appendChild(style);
 
  window.tp155R4DecorateNavigation();
- window.TrainPilot155PanelNavigation={version:'1.5.5-round3-panels',order:['home','plan','health','programs','history','calendar','coach','settings'],calendarPanel:true,coachPanel:true,settingsSheet:true};
+ window.TrainPilot155PanelNavigation={version:'1.5.5-round3-panels',order:['home','plan','health','programs','history','calendar','coach','settings'],calendarPanel:true,coachPanel:true,settingsSheet:true,weightPanel:true};
 })();
 // @endsection trainpilot-155-round3-panel-navigation.js
 
@@ -12925,6 +12958,26 @@ window.tp164DecoratePerSideRows();
  window.tp166DecorateHomeCoach();
 })();
 // @endsection trainpilot-166-issue13-home-coach-card.js
+
+
+// @section trainpilot-167-issue14-weight-panel.js
+/* TrainPilot 1.6.7 #14: Health -> Weight log uses the shared panel shell. */
+(function(){
+ 'use strict';
+ const style=document.createElement('style');style.id='tp167Issue14WeightPanelCss';style.textContent=[
+  '#tp155R4PanelHost[data-panel="weight"] .tp155-r4-panel-close{position:sticky!important;top:8px!important;right:auto!important;float:right!important;margin:0 4px -36px 8px!important;z-index:20!important}',
+  '#tp155R4PanelHost[data-panel="weight"] .tp155-r4-panel-content{clear:none!important;min-width:0!important;max-width:100%!important}',
+  '#tp155R4PanelHost[data-panel="weight"] .tp167-weight-panel-main{min-width:0!important;max-width:100%!important;overflow-x:hidden!important}',
+  '#tp155R4PanelHost[data-panel="weight"] .tp151-page-head{padding-right:48px!important;min-height:40px!important;display:flex!important;align-items:center!important}',
+  '#tp155R4PanelHost[data-panel="weight"] .tp151-form-grid>*{min-width:0!important}',
+  '#tp155R4PanelHost[data-panel="weight"] .tp151-weight-row{min-width:0!important;max-width:100%!important}',
+  '#tp155R4PanelHost[data-panel="weight"] svg{max-width:100%!important}',
+  '@media(max-width:390px){#tp155R4PanelHost[data-panel="weight"] .tp151-form-grid{grid-template-columns:1fr!important}#tp155R4PanelHost[data-panel="weight"] .tp151-weight-stats{grid-template-columns:1fr!important}#tp155R4PanelHost[data-panel="weight"] .tp151-card-head{align-items:flex-start!important;flex-direction:column!important}}'
+ ].join('');
+ document.head?.appendChild(style);
+ window.TrainPilot167Issue14={version:'1.6.7',sharedPanel:true,healthParent:true,stickyDangerClose:true,androidBack:true,noLegacyBackButton:true,dataPreserved:true,responsive:true};
+})();
+// @endsection trainpilot-167-issue14-weight-panel.js
 
 // @section ready.js
 window.TrainPilotBoot.finish();

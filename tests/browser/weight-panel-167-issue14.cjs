@@ -1,0 +1,45 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path'),http=require('node:http');
+const {chromium}=require('playwright');
+const root=path.resolve('www');
+const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local').pathname;if(p==='/')p='/index.html';const file=path.resolve(root,'.'+p);if(!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return}fs.readFile(file,(e,d)=>{if(e){res.writeHead(404);res.end();return}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'text/plain');res.end(d)})});
+(async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;try{
+ browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});
+ const page=await browser.newPage({viewport:{width:393,height:720},locale:'hu-HU'});
+ await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
+ const seeded=Array.from({length:36},(_,i)=>({kg:70+i/10,date:new Date(Date.UTC(2026,7,1+i,12)).toISOString()}));
+ await page.evaluate(rows=>{db.set('language','hu');db.set('weights',rows);state.session=null;go('health')},seeded);
+ await page.waitForTimeout(80);
+ const open=page.locator('button[onclick="rf215WeightScreen()"]').first();assert.equal(await open.count(),1,'Health weight-log entry must exist');
+ await open.click();await page.waitForSelector('#tp155R4PanelHost[data-panel="weight"] main.tp167-weight-panel-main');
+ assert.equal(await page.evaluate(()=>state.tab),'health','Health must remain the parent route');
+ const active=await page.locator('.top.tp154-nav-grid .tp151-nav-item.active').evaluateAll(xs=>xs.map(x=>x.textContent.trim()));
+ assert.ok(active.some(x=>/Egészség|Health/i.test(x)),'Health navigation must stay active under Weight panel');
+ assert.equal(await page.locator('#tp155R4PanelHost[data-panel="weight"] .tp151-back-row').count(),0,'legacy large Back row must be removed');
+ const close=page.locator('#tp155R4PanelHost[data-panel="weight"] .tp155-r4-panel-close');
+ assert.equal(await close.count(),1,'shared close X must exist');
+ const closeBox=await close.boundingBox();assert.ok(closeBox&&closeBox.width>=34&&closeBox.height>=34,'close X must retain shared touch size');
+ assert.equal(await close.evaluate(el=>getComputedStyle(el).position),'sticky','Weight close X must stay sticky');
+ const before=await page.evaluate(()=>weights().length);
+ const panel=page.locator('#tp155R4PanelHost[data-panel="weight"] .tp155-r4-panel');
+ await panel.evaluate(el=>{el.scrollTop=el.scrollHeight});
+ await page.waitForTimeout(30);
+ const closeAfter=await close.boundingBox();assert.ok(closeAfter&&closeAfter.top>=0&&closeAfter.bottom<=720,'close X must remain reachable on long logs');
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth+1),false,'Weight panel must not overflow horizontally');
+ await page.evaluate(()=>window.TrainPilotAndroidBack());
+ await page.waitForTimeout(40);
+ assert.equal(await page.locator('#tp155R4PanelHost[data-panel="weight"]').count(),0,'Android Back must close Weight panel');
+ assert.equal(await page.evaluate(()=>state.tab),'health');
+ assert.equal(await page.evaluate(()=>weights().length),before,'open/close must not alter weight data');
+
+ await page.setViewportSize({width:320,height:650});
+ await page.evaluate(()=>{rf212SetLang('de');go('health')});await page.waitForTimeout(80);
+ await page.locator('button[onclick="rf215WeightScreen()"]').first().click();
+ await page.waitForSelector('#tp155R4PanelHost[data-panel="weight"]');
+ assert.equal(await page.locator('#tp155R4PanelHost[data-panel="weight"]').evaluate(el=>el.scrollWidth>el.clientWidth+1),false,'German Weight panel must fit 320px');
+ await close.click();await page.waitForTimeout(30);
+
+ await page.evaluate(()=>go('calendar'));await page.waitForSelector('#tp155R4PanelHost[data-panel="calendar"]');
+ assert.equal(await page.locator('#tp155R4PanelHost[data-panel="calendar"]').count(),1,'compact Calendar panel must remain unchanged');
+ console.log('PASS: #14 Weight log uses shared panel, sticky red X, Android Back, Health parent and responsive layout.');
+}finally{if(browser)await browser.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exit(1)});
