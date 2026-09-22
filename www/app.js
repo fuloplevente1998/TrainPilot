@@ -12782,6 +12782,14 @@ window.tp164DecoratePerSideRows();
   });
  };
 
+ const tp165HistoryBase=history;
+ window.tp165RawHistory=function tp165RawHistory(){
+  try{const rows=tp165HistoryBase();return Array.isArray(rows)?rows:[]}catch(_){return []}
+ };
+ history=function(){
+  return window.tp165RawHistory().map(function(row,index){return window.tp165SafeHistoryRecord(row,index)});
+ };
+
  const filteredBase=rf263FilteredHistory;
  rf263FilteredHistory=function(){
   try{
@@ -12794,7 +12802,7 @@ window.tp164DecoratePerSideRows();
  };
 
  window.tp165DeleteBrokenHistory=function tp165DeleteBrokenHistory(index){
-  const rows=typeof history==='function'?history():[];
+  const rows=typeof window.tp165RawHistory==='function'?window.tp165RawHistory():(typeof history==='function'?history():[]);
   if(!Array.isArray(rows)||index<0||index>=rows.length)return;
   const remove=function(){const next=rows.slice();next.splice(index,1);db.set('history',next);if(typeof cloudChanged==='function')cloudChanged();render(historyScreen())};
   try{
@@ -12813,7 +12821,7 @@ window.tp164DecoratePerSideRows();
   }
  };
 
- window.TrainPilot165JournalRecovery={version:'1.6.5',legacyRows:true,partialRows:true,rowIsolation:true};
+ window.TrainPilot165JournalRecovery={version:'1.6.5',legacyRows:true,partialRows:true,rowIsolation:true,safeHistoryReads:true};
 })();
 // @endsection trainpilot-165-journal-data-recovery.js
 

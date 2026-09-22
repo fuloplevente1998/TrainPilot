@@ -6,9 +6,13 @@ for(const marker of [
  'tp165DeleteBrokenHistory',
  'legacyRows:true',
  'partialRows:true',
- 'rowIsolation:true'
+ 'rowIsolation:true',
+ 'safeHistoryReads:true',
+ 'tp165RawHistory'
 ])assert.ok(app.includes(marker),'missing 1.6.5 Journal recovery marker: '+marker);
 assert.match(app,/Array\.isArray\(source\.exercises\)/);
 assert.match(app,/Array\.isArray\(e\.sets\)/);
 assert.match(app,/try\{return itemBase\.call/);
 console.log('PASS TrainPilot 1.6.5 legacy/partial Journal row isolation guards.');
+
+assert.match(app,/history=function\(\)\{\s*return window\.tp165RawHistory\(\)\.map/);
