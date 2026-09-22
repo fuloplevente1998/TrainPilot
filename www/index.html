@@ -2,15 +2,15 @@
 <html lang="hu" class="tp-booting"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0e1015"><title>TrainPilot</title><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="health-dashboard-168.css"><style>html,body{margin:0;min-height:100%;background:#0e1015}html.tp-booting #app{visibility:hidden}#tpBoot{position:fixed;inset:0;display:grid;place-items:center;background:#0e1015;color:#f6f8fb;font:900 25px/1.2 system-ui,sans-serif;z-index:999999}</style></head><body><div id="tpBoot" aria-label="Betöltés"></div><div id="app"></div>
 <script defer src="app.js"></script>
 <script>window.addEventListener("DOMContentLoaded",function(){
-/* TrainPilot 1.6.8 — Health dashboard visual refresh. */
+/* TrainPilot 1.6.9 — themed Health polish + inline body-weight journal. */
 (function(){
  'use strict';
 
  const COPY={
-  hu:{title:'Egészség',subtitle:'Jobb adatok. Tudatosabb döntések.',todayWord:'Ma',today:'Mai állapot',todaySub:'Az egészséged rövid áttekintése',sleep:'Alvás',hrv:'HRV',pulse:'Pulzus',steps:'Lépések',recovery:'Regenerációs adat',resting:'Nyugalmi pulzus',trend:'Pulzustrend',trendEnough:'Az elmúlt 7 nap mért átlagpulzusai.',trendFew:'A 7 napos trendhez még kevés adat áll rendelkezésre.',body:'Test és fittség',bodySub:'Testsúly, testzsír, SpO₂, VO₂max',pulseSub:'Átlag-, nyugalmi és szélsőértékek',more:'További Health-adatok',moreSub:'Vérnyomás, vércukor, légzésszám, távolság',connect:'Health Connect',connectSub:'Adatforrások, engedélyek és szinkron',recoveryHistory:'Regenerációs előzmények',avg:'Átlagpulzus',max:'Max. pulzus',min:'Min. pulzus',noData:'Nincs elég friss adat',note:'Az egészségügyi adatok tájékoztató jellegűek, és nem helyettesítik az orvosi tanácsot.'},
-  en:{title:'Health',subtitle:'Better data. Better-informed decisions.',todayWord:'Today',today:'Today status',todaySub:'A quick overview of your health',sleep:'Sleep',hrv:'HRV',pulse:'Heart rate',steps:'Steps',recovery:'Recovery status',resting:'Resting heart rate',trend:'Heart-rate trend',trendEnough:'Measured average heart rate over the last 7 days.',trendFew:'There is not enough data for a 7-day trend yet.',body:'Body and fitness',bodySub:'Weight, body fat, SpO₂, VO₂max',pulseSub:'Average, resting and range values',more:'More Health data',moreSub:'Blood pressure, glucose, respiratory rate, distance',connect:'Health Connect',connectSub:'Sources, permissions and sync',recoveryHistory:'Recovery history',avg:'Average heart rate',max:'Max heart rate',min:'Min heart rate',noData:'Not enough recent data',note:'Health data is informational and does not replace medical advice.'},
-  de:{title:'Gesundheit',subtitle:'Bessere Daten. Bewusstere Entscheidungen.',todayWord:'Heute',today:'Heutiger Status',todaySub:'Kurzer Überblick über deine Gesundheitsdaten',sleep:'Schlaf',hrv:'HRV',pulse:'Puls',steps:'Schritte',recovery:'Regenerationsstatus',resting:'Ruhepuls',trend:'Pulstrend',trendEnough:'Gemessener Durchschnittspuls der letzten 7 Tage.',trendFew:'Für einen 7-Tage-Trend liegen noch nicht genug Daten vor.',body:'Körper und Fitness',bodySub:'Gewicht, Körperfett, SpO₂, VO₂max',pulseSub:'Durchschnitt, Ruhepuls und Bereich',more:'Weitere Gesundheitsdaten',moreSub:'Blutdruck, Blutzucker, Atemfrequenz, Distanz',connect:'Health Connect',connectSub:'Quellen, Berechtigungen und Synchronisierung',recoveryHistory:'Regenerationsverlauf',avg:'Durchschnittspuls',max:'Max. Puls',min:'Min. Puls',noData:'Nicht genug aktuelle Daten',note:'Gesundheitsdaten dienen nur zur Information und ersetzen keine medizinische Beratung.'},
-  ro:{title:'Sănătate',subtitle:'Date mai bune. Decizii mai informate.',todayWord:'Azi',today:'Starea de azi',todaySub:'O privire rapidă asupra datelor de sănătate',sleep:'Somn',hrv:'HRV',pulse:'Puls',steps:'Pași',recovery:'Stare de recuperare',resting:'Puls de repaus',trend:'Tendința pulsului',trendEnough:'Pulsul mediu măsurat în ultimele 7 zile.',trendFew:'Nu sunt încă suficiente date pentru tendința pe 7 zile.',body:'Corp și fitness',bodySub:'Greutate, grăsime corporală, SpO₂, VO₂max',pulseSub:'Medie, repaus și valori extreme',more:'Mai multe date Health',moreSub:'Tensiune, glicemie, respirație, distanță',connect:'Health Connect',connectSub:'Surse, permisiuni și sincronizare',recoveryHistory:'Istoric recuperare',avg:'Puls mediu',max:'Puls maxim',min:'Puls minim',noData:'Nu sunt suficiente date recente',note:'Datele de sănătate sunt informative și nu înlocuiesc sfatul medical.'}
+  hu:{title:'Egészség',subtitle:'Jobb adatok. Tudatosabb döntések.',todayWord:'Ma',today:'Mai állapot',todaySub:'Az egészséged rövid áttekintése',sleep:'Alvás',hrv:'HRV',pulse:'Pulzus',steps:'Lépések',recovery:'Regenerációs adat',resting:'Nyugalmi pulzus',trend:'Pulzustrend',trendEnough:'Az elmúlt 7 nap mért átlagpulzusai.',trendFew:'A 7 napos trendhez még kevés adat áll rendelkezésre.',body:'Test és fittség',bodySub:'Testsúly, testzsír, SpO₂, VO₂max',pulseSub:'Átlag-, nyugalmi és szélsőértékek',more:'További Health-adatok',moreSub:'Vérnyomás, vércukor, légzésszám, távolság',connect:'Health Connect',connectSub:'Adatforrások, engedélyek és szinkron',recoveryHistory:'Regenerációs előzmények',avg:'Átlagpulzus',max:'Max. pulzus',min:'Min. pulzus',noData:'Nincs elég friss adat',weightLog:'Testsúlynapló',weightLogSub:'Mérés, változás és trend egy helyen',weight:'Testsúly',date:'Dátum',save:'Mentés',current:'Aktuális',change:'Változás',minMax:'Minimum / Maximum',recent:'Legutóbbi mérések',edit:'Szerkesztés',del:'Törlés',note:'Az egészségügyi adatok tájékoztató jellegűek, és nem helyettesítik az orvosi tanácsot.'},
+  en:{title:'Health',subtitle:'Better data. Better-informed decisions.',todayWord:'Today',today:'Today status',todaySub:'A quick overview of your health',sleep:'Sleep',hrv:'HRV',pulse:'Heart rate',steps:'Steps',recovery:'Recovery status',resting:'Resting heart rate',trend:'Heart-rate trend',trendEnough:'Measured average heart rate over the last 7 days.',trendFew:'There is not enough data for a 7-day trend yet.',body:'Body and fitness',bodySub:'Weight, body fat, SpO₂, VO₂max',pulseSub:'Average, resting and range values',more:'More Health data',moreSub:'Blood pressure, glucose, respiratory rate, distance',connect:'Health Connect',connectSub:'Sources, permissions and sync',recoveryHistory:'Recovery history',avg:'Average heart rate',max:'Max heart rate',min:'Min heart rate',noData:'Not enough recent data',weightLog:'Body weight log',weightLogSub:'Measurements, change and trend in one place',weight:'Body weight',date:'Date',save:'Save',current:'Current',change:'Change',minMax:'Minimum / Maximum',recent:'Recent measurements',edit:'Edit',del:'Delete',note:'Health data is informational and does not replace medical advice.'},
+  de:{title:'Gesundheit',subtitle:'Bessere Daten. Bewusstere Entscheidungen.',todayWord:'Heute',today:'Heutiger Status',todaySub:'Kurzer Überblick über deine Gesundheitsdaten',sleep:'Schlaf',hrv:'HRV',pulse:'Puls',steps:'Schritte',recovery:'Regenerationsstatus',resting:'Ruhepuls',trend:'Pulstrend',trendEnough:'Gemessener Durchschnittspuls der letzten 7 Tage.',trendFew:'Für einen 7-Tage-Trend liegen noch nicht genug Daten vor.',body:'Körper und Fitness',bodySub:'Gewicht, Körperfett, SpO₂, VO₂max',pulseSub:'Durchschnitt, Ruhepuls und Bereich',more:'Weitere Gesundheitsdaten',moreSub:'Blutdruck, Blutzucker, Atemfrequenz, Distanz',connect:'Health Connect',connectSub:'Quellen, Berechtigungen und Synchronisierung',recoveryHistory:'Regenerationsverlauf',avg:'Durchschnittspuls',max:'Max. Puls',min:'Min. Puls',noData:'Nicht genug aktuelle Daten',weightLog:'Gewichtsprotokoll',weightLogSub:'Messungen, Änderung und Verlauf an einem Ort',weight:'Körpergewicht',date:'Datum',save:'Speichern',current:'Aktuell',change:'Änderung',minMax:'Minimum / Maximum',recent:'Letzte Messungen',edit:'Bearbeiten',del:'Löschen',note:'Gesundheitsdaten dienen nur zur Information und ersetzen keine medizinische Beratung.'},
+  ro:{title:'Sănătate',subtitle:'Date mai bune. Decizii mai informate.',todayWord:'Azi',today:'Starea de azi',todaySub:'O privire rapidă asupra datelor de sănătate',sleep:'Somn',hrv:'HRV',pulse:'Puls',steps:'Pași',recovery:'Stare de recuperare',resting:'Puls de repaus',trend:'Tendința pulsului',trendEnough:'Pulsul mediu măsurat în ultimele 7 zile.',trendFew:'Nu sunt încă suficiente date pentru tendința pe 7 zile.',body:'Corp și fitness',bodySub:'Greutate, grăsime corporală, SpO₂, VO₂max',pulseSub:'Medie, repaus și valori extreme',more:'Mai multe date Health',moreSub:'Tensiune, glicemie, respirație, distanță',connect:'Health Connect',connectSub:'Surse, permisiuni și sincronizare',recoveryHistory:'Istoric recuperare',avg:'Puls mediu',max:'Puls maxim',min:'Puls minim',noData:'Nu sunt suficiente date recente',weightLog:'Jurnal greutate',weightLogSub:'Măsurători, schimbare și tendință într-un singur loc',weight:'Greutate',date:'Data',save:'Salvează',current:'Curentă',change:'Schimbare',minMax:'Minim / Maxim',recent:'Măsurători recente',edit:'Editează',del:'Șterge',note:'Datele de sănătate sunt informative și nu înlocuiesc sfatul medical.'}
  };
  const ICON={
   health:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.8a5.5 5.5 0 0 0-7.8 0L12 5.9l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.4a5.5 5.5 0 0 0 0-7.8Z"/></svg>',
@@ -22,7 +22,8 @@
   body:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16M17 4v16M4 8h6M14 8h6M4 16h6M14 16h6"/></svg>',
   more:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg>',
   link:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 1 0 12 20.1l1.1-1.1"/></svg>',
-  trend:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17l5-5 4 3 7-8M15 7h5v5"/></svg>'
+  trend:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17l5-5 4 3 7-8M15 7h5v5"/></svg>',
+  weight:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7.5A3.5 3.5 0 0 1 8.5 4h7A3.5 3.5 0 0 1 19 7.5V20H5V7.5Z"/><path d="M9 8.5a3 3 0 0 1 6 0M12 8.5l1.6-1.6"/></svg>'
  };
 
  const lang=()=>{try{return typeof rf212Lang==='function'?rf212Lang():(document.documentElement.lang||'hu').slice(0,2)}catch(_){return 'hu'}};
@@ -30,6 +31,7 @@
  const locale=()=>{try{return typeof rf233Locale==='function'?rf233Locale():({hu:'hu-HU',en:'en-US',de:'de-DE',ro:'ro-RO'}[lang()]||'hu-HU')}catch(_){return 'hu-HU'}};
  const escText=v=>String(v==null?'':v).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
  const n=v=>{v=Number(v);return Number.isFinite(v)?v:null};
+ const positive=v=>{const x=n(v);return x!=null&&x>0?x:null};
  const fmt=v=>{if(v==null)return '—';try{return typeof tp149FormatNumber==='function'?tp149FormatNumber(v):new Intl.NumberFormat(locale()).format(v)}catch(_){return String(v)}};
  const ledger=()=>{try{return typeof rf240Ledger==='function'?rf240Ledger():{days:{}}}catch(_){return {days:{}}}};
  const day=()=>{try{const l=ledger(),k=typeof rf240DayKey==='function'?rf240DayKey(new Date()):new Date().toISOString().slice(0,10);return l.days?.[k]||{}}catch(_){return {}}};
@@ -50,6 +52,27 @@
  }
  function dateText(){try{return new Intl.DateTimeFormat(locale(),{year:'numeric',month:'short',day:'numeric'}).format(new Date())}catch(_){return new Date().toLocaleDateString()}}
 
+
+ function weightRows(){try{return typeof rf215All==='function'?rf215All():(weights()||[]).filter(x=>x&&x.date&&Number.isFinite(Number(x.kg))).slice().sort((a,b)=>new Date(a.date)-new Date(b.date))}catch(_){return []}}
+ function weightRange(){try{return typeof rf215Range==='function'?rf215Range():(state.weightRange||'30')}catch(_){return '30'}}
+ function weightData(){try{return typeof rf215Data==='function'?rf215Data():weightRows()}catch(_){return weightRows()}}
+ function weightSparkline(values){const a=(values||[]).map(x=>n(x.kg)).filter(v=>v!=null);if(a.length<2)return '<div class="tp168-weight-spark-empty">•••</div>';const w=132,h=34,p=3,min=Math.min(...a),max=Math.max(...a),span=Math.max(.1,max-min),pts=a.map((v,i)=>[(p+i*(w-2*p)/Math.max(1,a.length-1)).toFixed(1),(h-p-(v-min)*(h-2*p)/span).toFixed(1)]),d=pts.map((q,i)=>(i?'L':'M')+q[0]+' '+q[1]).join(' '),last=pts[pts.length-1];return '<svg class="tp168-weight-spark" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" aria-hidden="true"><path d="'+d+'"/><circle cx="'+last[0]+'" cy="'+last[1]+'" r="2.6"/></svg>'}
+ function weightJournal(){
+  const a=weightRows(),d=weightData(),cur=a.at(-1)?.kg??null,start=a[0]?.kg??null,mn=a.length?Math.min(...a.map(x=>Number(x.kg))):null,mx=a.length?Math.max(...a.map(x=>Number(x.kg))):null,diff=cur!=null&&start!=null?Math.round((cur-start)*10)/10:null,open=!!window.TrainPilot168Health?.weightOpen;
+  const diffText=diff==null?'—':(diff>0?'+':'')+fmt(diff)+' kg',range=weightRange();
+  return '<section class="tp168-weight-journal '+(open?'tp168-open':'')+'"><button type="button" class="tp168-weight-summary" aria-expanded="'+String(open)+'" onclick="tp168ToggleWeight()">'+icon('weight')+'<span><strong>'+escText(c().weightLog)+'</strong><small>'+escText(cur==null?c().weightLogSub:fmt(cur)+' kg · '+c().weightLogSub)+'</small></span>'+weightSparkline(d)+'<b aria-hidden="true">›</b></button><div class="tp168-weight-body">'+
+   '<div class="tp168-weight-stats"><div><small>'+escText(c().current)+'</small><strong>'+escText(cur==null?'—':fmt(cur)+' kg')+'</strong></div><div><small>'+escText(c().change)+'</small><strong>'+escText(diffText)+'</strong></div><div><small>'+escText(c().minMax)+'</small><strong>'+escText(mn==null?'—':fmt(mn)+' / '+fmt(mx)+' kg')+'</strong></div></div>'+
+   '<div class="tp168-weight-form"><label>'+escText(c().weight)+'<input id="tp168WeightKg" class="field" type="number" inputmode="decimal" min="30" max="300" step="0.1" value="'+escText(cur??'')+'"></label><label>'+escText(c().date)+'<input id="tp168WeightDate" class="field" type="date" value="'+escText(typeof rf215Date==='function'?rf215Date():new Date().toISOString().slice(0,10))+'"></label><button class="btn tp168-weight-save" type="button" onclick="tp168SaveWeight()">'+escText(c().save)+'</button></div>'+
+   '<div class="tp168-weight-range">'+[['7','7d'],['30','30d'],['90','3m'],['365','1y'],['all','All']].map(x=>'<button type="button" class="'+(range===x[0]?'active':'')+'" onclick="tp168SetWeightRange(\''+x[0]+'\')">'+x[1]+'</button>').join('')+'</div>'+
+   '<div class="tp168-weight-chart">'+(typeof rf215Chart==='function'?rf215Chart(d):weightSparkline(d))+'</div>'+
+   (a.length?'<div class="tp168-weight-recent"><small>'+escText(c().recent)+'</small>'+a.slice().reverse().slice(0,3).map(x=>'<div><span><strong>'+escText(fmt(x.kg))+' kg</strong><small>'+escText(new Date(x.date).toLocaleDateString(locale()))+'</small></span><span><button type="button" onclick="tp168EditWeight(\''+escText(x.date)+'\')">'+escText(c().edit)+'</button><button type="button" class="danger" onclick="tp168DeleteWeight(\''+escText(x.date)+'\')">'+escText(c().del)+'</button></span></div>').join('')+'</div>':'<div class="tp168-weight-empty">'+escText(c().noData)+'</div>')+
+  '</div></section>';
+ }
+ window.tp168ToggleWeight=function(){window.TrainPilot168Health.weightOpen=!window.TrainPilot168Health.weightOpen;decorate();setTimeout(()=>document.querySelector('.tp168-weight-journal')?.scrollIntoView?.({block:'nearest',behavior:'smooth'}),0)};
+ window.tp168SetWeightRange=function(v){state.weightRange=v;window.TrainPilot168Health.weightOpen=true;decorate()};
+ window.tp168SaveWeight=function(){const kg=Number(String(document.querySelector('#tp168WeightKg')?.value||'').replace(',','.')),d=document.querySelector('#tp168WeightDate')?.value;if(!kg||kg<30||kg>300)return alert('30–300 kg');const w=weights();w.unshift({kg:Math.round(kg*10)/10,date:new Date((d||(typeof rf215Date==='function'?rf215Date():new Date().toISOString().slice(0,10)))+'T12:00:00').toISOString()});db.set('weights',w);window.TrainPilot168Health.weightOpen=true;decorate()};
+ window.tp168EditWeight=function(date){window.TrainPilot168Health.weightOpen=true;return typeof rf215Edit==='function'?rf215Edit(date):undefined};
+ window.tp168DeleteWeight=function(date){window.TrainPilot168Health.weightOpen=true;return typeof rf215Del==='function'?rf215Del(date):undefined};
  window.tp168OpenPulse=function(){const d=document.querySelector('main.rf263-health details.tp168-pulse-panel');if(!d)return;d.open=true;if(d.scrollIntoView)d.scrollIntoView({block:'center',behavior:'smooth'})};
  const recoveryBase=window.tp153OpenRecovery;
  window.tp153OpenRecovery=function(){
@@ -65,14 +88,14 @@
  function disclosureSummary(details,name,subtitle,which){
   const summary=details?.querySelector(':scope > summary');if(!summary)return;
   summary.classList.add('tp168-row-head');
-  summary.innerHTML=icon(which)+'<span class="tp168-row-copy"><strong>'+escText(name)+'</strong><small>'+escText(subtitle)+'</small></span><span class="tp168-chevron" aria-hidden="true">⌄</span>';
+  summary.innerHTML=icon(which)+'<span class="tp168-row-copy"><strong>'+escText(name)+'</strong><small>'+escText(subtitle)+'</small></span><span class="tp168-chevron" aria-hidden="true">›</span>';
  }
  function decorateBody(card){
   if(!card)return;card.classList.add('tp168-body-card');
   const h=card.querySelector(':scope > h2');if(!h)return;
   const nodes=[...card.childNodes].filter(x=>x!==h),head=document.createElement('div'),content=document.createElement('div');
   head.className='tp168-row-head tp168-body-head';head.setAttribute('role','button');head.setAttribute('tabindex','0');head.setAttribute('aria-expanded',String(!!window.TrainPilot168Health.bodyOpen));
-  head.innerHTML=icon('body')+'<span class="tp168-row-copy"></span><span class="tp168-chevron" aria-hidden="true">⌄</span>';
+  head.innerHTML=icon('body')+'<span class="tp168-row-copy"></span><span class="tp168-chevron" aria-hidden="true">›</span>';
   const copy=head.querySelector('.tp168-row-copy');copy.appendChild(h);const sub=document.createElement('small');sub.textContent=c().bodySub;copy.appendChild(sub);
   content.className='tp168-collapse-content';nodes.forEach(x=>content.appendChild(x));card.prepend(content);card.prepend(head);
   if(window.TrainPilot168Health.bodyOpen)card.classList.add('tp168-open');
@@ -83,7 +106,7 @@
   const summary=details.querySelector(':scope > summary'),original=[...details.childNodes].filter(x=>x!==summary),nested=document.createElement('details');
   nested.className='tp168-recovery-history';nested.innerHTML='<summary><strong>'+escText(c().recoveryHistory)+'</strong></summary>';original.forEach(x=>nested.appendChild(x));
   const pulse=document.createElement('div');pulse.className='tp168-pulse-grid';
-  const vals=[[c().avg,n(d.averageHeartRate)],[c().resting,n(d.restingHeartRate)],[c().max,n(d.maxHeartRate)],[c().min,n(d.minHeartRate)]];
+  const vals=[[c().avg,positive(d.averageHeartRate)],[c().resting,positive(d.restingHeartRate)],[c().max,positive(d.maxHeartRate)],[c().min,positive(d.minHeartRate)]];
   pulse.innerHTML=vals.map(x=>'<div><small>'+escText(x[0])+'</small><strong>'+escText(x[1]==null?'—':fmt(Math.round(x[1]))+' bpm')+'</strong></div>').join('');
   details.appendChild(pulse);details.appendChild(nested);disclosureSummary(details,c().pulse,c().pulseSub,'pulse');
  }
@@ -94,20 +117,20 @@
  }
  function rebuildToday(card,d,r){
   if(!card)return;card.classList.add('tp168-today-card');card.classList.remove('tp146-health-compact');
-  const ready=readiness(),rv=ready.score==null?'—':fmt(ready.score)+'/100',rest=n(d.restingHeartRate),trend=trendValues();
-  card.innerHTML='<div class="tp168-today-head">'+icon('health','tp168-health-heart')+'<div><h2>'+escText(c().today)+'</h2><p>'+escText(c().todaySub)+'</p></div></div>'+
-   '<div class="tp168-metrics">'+metric('sleep',c().sleep,sleepText(r),'recovery')+metric('hrv',c().hrv,n(r.hrvRmssdMs)==null?'—':fmt(Math.round(n(r.hrvRmssdMs)))+' ms','recovery')+metric('pulse',c().pulse,n(d.averageHeartRate)==null?'—':fmt(Math.round(n(d.averageHeartRate)))+' bpm','pulse')+metric('steps',c().steps,n(d.steps)==null?'—':fmt(Math.round(n(d.steps))))+'</div>'+
+  const ready=readiness(),rv=ready.score==null?'—':fmt(ready.score)+'/100',rest=positive(d.restingHeartRate),trend=trendValues();
+  card.innerHTML='<div class="tp168-today-head">'+icon('health','tp168-health-heart')+'<div class="tp168-today-copy"><h2>'+escText(c().today)+'</h2><p>'+escText(c().todaySub)+'</p></div><time class="tp168-today-date" datetime="'+escText(new Date().toISOString().slice(0,10))+'">'+escText(dateText())+'</time></div>'+
+   '<div class="tp168-metrics">'+metric('sleep',c().sleep,sleepText(r),'recovery')+metric('hrv',c().hrv,n(r.hrvRmssdMs)==null?'—':fmt(Math.round(n(r.hrvRmssdMs)))+' ms','recovery')+metric('pulse',c().pulse,positive(d.averageHeartRate)==null?'—':fmt(Math.round(positive(d.averageHeartRate)))+' bpm','pulse')+metric('steps',c().steps,n(d.steps)==null?'—':fmt(Math.round(n(d.steps))))+'</div>'+
    '<div class="tp168-status-grid"><button type="button" class="tp168-status tp168-recovery tp168-level-'+escText(ready.level||'unknown')+'" data-tp168-action="recovery">'+icon('leaf')+'<span><small>'+escText(c().recovery)+'</small><strong>'+escText(rv)+'</strong><em>'+escText(readinessLabel(ready))+'</em></span><b aria-hidden="true">›</b></button><button type="button" class="tp168-status tp168-resting" data-tp168-action="pulse">'+icon('pulse')+'<span><small>'+escText(c().resting)+'</small><strong>'+escText(rest==null?'—':fmt(Math.round(rest))+' bpm')+'</strong></span><b aria-hidden="true">›</b></button></div>'+
-   '<button type="button" class="tp168-trend" data-tp168-action="pulse">'+icon('trend')+'<span><strong>'+escText(c().trend)+'</strong><small>'+escText(trend.length>=3?c().trendEnough:c().trendFew)+'</small></span>'+sparkline(trend)+'<b aria-hidden="true">›</b></button>';
+   '<button type="button" class="tp168-trend" data-tp168-action="pulse">'+icon('trend')+'<span><strong>'+escText(c().trend)+'</strong><small>'+escText(trend.length>=3?c().trendEnough:c().trendFew)+'</small></span>'+sparkline(trend)+'<b aria-hidden="true">›</b></button>'+weightJournal();
   card.querySelectorAll('[data-tp168-action]').forEach(el=>{const run=()=>el.dataset.tp168Action==='recovery'?window.tp153OpenRecovery?.():window.tp168OpenPulse?.();el.onclick=run;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();run()}}});
  }
  function decorate(){
   const main=document.querySelector('main.rf263-health');
   const bodyClass=document.body&&document.body.classList;if(bodyClass){if(main)bodyClass.add('tp168-health-view');else bodyClass.remove('tp168-health-view');}
+  unifyChevrons(document);
   if(!main)return;
   main.classList.add('tp168-health');
   main.querySelectorAll(':scope > .tp168-health-head,:scope > .tp168-health-note').forEach(x=>x.remove());
-  healthHeader(main);
   const cards=[...main.querySelectorAll(':scope > .tp151-health-card')],today=cards[0],body=cards[1],d=day(),r=rec();
   rebuildToday(today,d,r);decorateBody(body);
   const details=[...main.querySelectorAll(':scope > details.tp155-health-bottom-panel')];
@@ -123,7 +146,21 @@
   const note=document.createElement('div');note.className='tp168-health-note';note.innerHTML='<span aria-hidden="true">ⓘ</span><p>'+escText(c().note)+'</p>';main.appendChild(note);
  }
 
- window.TrainPilot168Health={version:'1.6.8',bodyOpen:false,decorate};
+ function unifyChevrons(root){
+  const selectors=['.chev','.rf-history-health-chevron','.rf103-history-chevron','.tp146-exercise-chevron','.tp152-chevron','.tp152-program-chevron','.tp166-home-coach-chevron','.tp1511-training summary i'];
+  root?.querySelectorAll?.(selectors.join(',')).forEach(el=>{if(el&&el.textContent!=='›')el.textContent='›'});
+ }
+ window.TrainPilot168Health={version:'1.6.9',bodyOpen:false,weightOpen:false,decorate};
+ const legacyWeightScreen=window.rf215WeightScreen;
+ window.rf215WeightScreen=function(){
+  window.TrainPilot168Health.weightOpen=true;
+  if(state?.tab!=='health'||!document.querySelector('main.rf263-health')){
+   if(typeof go==='function')go('health');else if(typeof rf206HealthHub==='function')rf206HealthHub();
+  }else decorate();
+  setTimeout(()=>{decorate();document.querySelector('.tp168-weight-journal')?.scrollIntoView?.({block:'center',behavior:'smooth'})},0);
+  return true;
+ };
+
  const renderBase=window.render;
  if(typeof renderBase==='function')window.render=function(){const out=renderBase.apply(this,arguments);decorate();setTimeout(decorate,0);return out};
  decorate();setTimeout(decorate,0);
