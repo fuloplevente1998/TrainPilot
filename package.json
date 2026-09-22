@@ -1,12 +1,12 @@
 {
   "name": "trainpilot",
-  "version": "1.6.5",
+  "version": "1.6.6",
   "private": true,
   "scripts": {
     "sync": "cap sync android",
     "android": "cap open android",
     "test": "node scripts/test.cjs",
-    "test:ui": "node tests/browser/journal-open-164-regression.cjs && node tests/browser/ui-161-minor.cjs && node tests/browser/ui-160-release.cjs && node tests/browser/ui-155-next-12.cjs && node tests/browser/ui-155-nav-consistency.cjs && node tests/browser/ui-154-mobile-nav.cjs && node tests/browser/ui-152-ux.cjs && node tests/browser/ui-150-quick-workout.cjs && node tests/browser/journal-date.cjs && node tests/browser/progression-140.cjs && node tests/browser/coach-entry-141.cjs && node tests/browser/health-coach-ui-2627.cjs && node tests/browser/ui-health-dialogs-2628.cjs && node tests/browser/dialog-audit-2629.cjs && node tests/browser/inline-compact-2630.cjs && node tests/browser/ui-unify-dialogs-2630.cjs && node tests/browser/ui-148.cjs && node tests/browser/ui-149-hotfix-parity.cjs && node tests/browser/resume-draft-1481.cjs && node tests/browser/side-stopwatch-1481.cjs && node tests/browser/home-coach-overflow-1481.cjs && node tests/browser/ui-149-i18n.cjs && node tests/browser/side-stopwatch-149-i18n.cjs"
+    "test:ui": "node tests/browser/home-coach-166-issue13.cjs && node tests/browser/journal-open-164-regression.cjs && node tests/browser/ui-161-minor.cjs && node tests/browser/ui-160-release.cjs && node tests/browser/ui-155-next-12.cjs && node tests/browser/ui-155-nav-consistency.cjs && node tests/browser/ui-154-mobile-nav.cjs && node tests/browser/ui-152-ux.cjs && node tests/browser/ui-150-quick-workout.cjs && node tests/browser/journal-date.cjs && node tests/browser/progression-140.cjs && node tests/browser/coach-entry-141.cjs && node tests/browser/health-coach-ui-2627.cjs && node tests/browser/ui-health-dialogs-2628.cjs && node tests/browser/dialog-audit-2629.cjs && node tests/browser/inline-compact-2630.cjs && node tests/browser/ui-unify-dialogs-2630.cjs && node tests/browser/ui-148.cjs && node tests/browser/ui-149-hotfix-parity.cjs && node tests/browser/resume-draft-1481.cjs && node tests/browser/side-stopwatch-1481.cjs && node tests/browser/home-coach-overflow-1481.cjs && node tests/browser/ui-149-i18n.cjs && node tests/browser/side-stopwatch-149-i18n.cjs"
   },
   "dependencies": {
     "@capacitor/android": "7.4.3",

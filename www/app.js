@@ -12825,6 +12825,92 @@ window.tp164DecoratePerSideRows();
 })();
 // @endsection trainpilot-165-journal-data-recovery.js
 
+// @section trainpilot-166-issue13-home-coach-card.js
+/* TrainPilot #13: Home Coach mirrors the Coach recommendation card and the whole card opens Coach. */
+(function(){
+ 'use strict';
+ const TP166_ISSUE13='1.6.6-issue13';
+
+ window.tp166HomeCoachMarkup=function tp166HomeCoachMarkup(){
+  let plan=null;
+  try{plan=typeof rf233CoachPlan==='function'?rf233CoachPlan():null}catch(_){}
+  const t=typeof rf233L==='function'?rf233L():(typeof rf220L==='function'?rf220L():{coach:'TrainPilot Coach'});
+  const r=plan?.readiness||(typeof rf220Readiness==='function'?rf220Readiness():{score:null,level:'medium'});
+  const target=plan?.target||null;
+  const title=plan?.decision?.title||(t?.[r?.level]||t?.coach||'TrainPilot Coach');
+  const text=plan?.decision?.text||(typeof rf220CoachText==='function'?rf220CoachText(r):'');
+  const score=r?.score==null?'—':(typeof tp149FormatNumber==='function'?tp149FormatNumber(r.score):String(r.score));
+  let targetTitle='',targetName='',targetSub='';
+  try{
+   targetTitle=target&&typeof rf233TargetTitle==='function'?rf233TargetTitle(target):'';
+   targetSub=target&&typeof rf233TargetSub==='function'?rf233TargetSub(target):'';
+   if(target?.day)targetName=target.program&&typeof tp149ProgramDayName==='function'?tp149ProgramDayName(target.program,target.day):String(target.day.name||target.day.id||'');
+  }catch(_){}
+  const kicker=typeof tp151T==='function'?tp151T('todayAdvice'):(t?.today||t?.advice||'Mai javaslat');
+  const readiness=typeof tp149T==='function'?tp149T('coach.readiness'):(typeof rf220L==='function'?rf220L().readiness:'Mai készenlét');
+  const targetHtml=targetTitle?'<span><small>'+esc(targetTitle)+'</small><strong>'+esc(targetName||'—')+'</strong></span>':'';
+  return '<span class="tp151-kicker">'+esc(kicker)+'</span>'+
+   '<div class="tp166-home-coach-copy"><div><h2>'+esc(title)+'</h2><p>'+esc(text)+'</p></div><span class="tp166-home-coach-chevron" aria-hidden="true">›</span></div>'+
+   '<div class="tp151-coach-target tp166-home-coach-target"><span><small>'+esc(readiness)+'</small><strong>'+esc(score)+'/100</strong></span>'+targetHtml+'</div>'+
+   (targetSub?'<p class="small muted tp166-home-coach-sub">'+esc(targetSub)+'</p>':'');
+ };
+
+ window.tp166OpenHomeCoach=function tp166OpenHomeCoach(){
+  if(typeof rf220CoachScreen==='function')return rf220CoachScreen();
+  if(typeof rf233CoachScreen==='function')return rf233CoachScreen();
+  return false;
+ };
+
+ window.tp166DecorateHomeCoach=function tp166DecorateHomeCoach(){
+  if(state?.tab!=='home')return false;
+  const card=document.querySelector('#rf220CoachCard');if(!card)return false;
+  card.className='card tp151-coach-recommendation tp155-r4-accent-surface tp166-home-coach';
+  card.setAttribute('role','button');
+  card.setAttribute('tabindex','0');
+  card.setAttribute('aria-label',typeof tp149T==='function'?tp149T('coach.title'):'TrainPilot Coach');
+  card.innerHTML=window.tp166HomeCoachMarkup();
+  if(card.dataset.tp166Bound!=='1'){
+   card.dataset.tp166Bound='1';
+   let start=null,moved=false;
+   card.addEventListener('pointerdown',function(e){start={x:e.clientX,y:e.clientY};moved=false;});
+   card.addEventListener('pointermove',function(e){if(!start)return;if(Math.abs(e.clientX-start.x)>10||Math.abs(e.clientY-start.y)>10)moved=true;},{passive:true});
+   card.addEventListener('pointercancel',function(){start=null;moved=false;});
+   card.addEventListener('click',function(e){if(moved){moved=false;start=null;return;}start=null;e.preventDefault();window.tp166OpenHomeCoach();});
+   card.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();window.tp166OpenHomeCoach();}});
+  }
+  return true;
+ };
+
+ const renderBase=render;
+ render=function(){
+  const out=renderBase.apply(this,arguments);
+  window.tp166DecorateHomeCoach();
+  return out;
+ };
+
+ const style=document.createElement('style');style.id='tp166Issue13Css';style.textContent=[
+  '#rf220CoachCard.tp166-home-coach{cursor:pointer;touch-action:pan-y;user-select:none;overflow:visible!important;padding:12px 13px!important;transition:border-color .12s ease,background .12s ease,transform .08s ease}',
+  '#rf220CoachCard.tp166-home-coach:active{transform:scale(.995)}',
+  '#rf220CoachCard.tp166-home-coach:focus-visible{outline:2px solid color-mix(in srgb,var(--accent) 72%,white);outline-offset:2px}',
+  '#rf220CoachCard.tp166-home-coach .tp166-home-coach-copy{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:10px}',
+  '#rf220CoachCard.tp166-home-coach h2{margin:4px 0 5px!important;font-size:19px!important;line-height:1.2!important;overflow-wrap:anywhere}',
+  '#rf220CoachCard.tp166-home-coach .tp166-home-coach-copy p{margin:0!important;line-height:1.38!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important}',
+  '#rf220CoachCard.tp166-home-coach .tp166-home-coach-chevron{font-size:28px;line-height:1;color:var(--accent2);padding-top:2px}',
+  '#rf220CoachCard.tp166-home-coach .tp166-home-coach-target{margin-top:10px!important}',
+  '#rf220CoachCard.tp166-home-coach .tp166-home-coach-target>span{min-width:0}',
+  '#rf220CoachCard.tp166-home-coach .tp166-home-coach-target small,#rf220CoachCard.tp166-home-coach .tp166-home-coach-target strong{white-space:normal!important;overflow-wrap:anywhere}',
+  '#rf220CoachCard.tp166-home-coach .tp166-home-coach-sub{margin:8px 0 0!important;white-space:normal!important;overflow:visible!important}',
+  '#rf220CoachCard.tp166-home-coach .rf221-coach-actions,#rf220CoachCard.tp166-home-coach button{display:none!important}',
+  '@media(max-width:340px){#rf220CoachCard.tp166-home-coach{padding:10px 11px!important}#rf220CoachCard.tp166-home-coach .tp151-coach-target{grid-template-columns:1fr!important}#rf220CoachCard.tp166-home-coach h2{font-size:18px!important}}',
+  '@media(prefers-reduced-motion:reduce){#rf220CoachCard.tp166-home-coach{transition:none!important;transform:none!important}}'
+ ].join('');
+ document.head?.appendChild(style);
+
+ window.TrainPilot166Issue13={version:TP166_ISSUE13,fullCardTap:true,noHomeButtons:true,coachDesign:true,stableCoachPanel:true,scrollGestureGuard:true};
+ window.tp166DecorateHomeCoach();
+})();
+// @endsection trainpilot-166-issue13-home-coach-card.js
+
 // @section ready.js
 window.TrainPilotBoot.finish();
 // @endsection ready.js
