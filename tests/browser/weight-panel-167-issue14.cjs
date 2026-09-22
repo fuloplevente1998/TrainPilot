@@ -22,7 +22,10 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  assert.equal(await close.evaluate(el=>getComputedStyle(el).position),'sticky','Weight close X must stay sticky');
  const before=await page.evaluate(()=>weights().length);
  const panel=page.locator('#tp155R4PanelHost[data-panel="weight"] .tp155-r4-panel');
- await panel.evaluate(el=>{el.scrollTop=el.scrollHeight});
+ const content=page.locator('#tp155R4PanelHost[data-panel="weight"] .tp155-r4-panel-content');
+ assert.equal(await panel.evaluate(el=>getComputedStyle(el).overflowY),'hidden','Weight panel shell must keep the close X outside the scroll area');
+ assert.equal(await content.evaluate(el=>getComputedStyle(el).overflowY),'auto','Weight panel content must own vertical scrolling');
+ await content.evaluate(el=>{el.scrollTop=el.scrollHeight});
  await page.waitForTimeout(30);
  const closeAfter=await close.boundingBox();assert.ok(closeAfter&&closeAfter.top>=0&&closeAfter.bottom<=720,'close X must remain reachable on long logs');
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth+1),false,'Weight panel must not overflow horizontally');
