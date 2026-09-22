@@ -213,3 +213,67 @@ html[data-tp-theme-family="vivid"] body.tp168-health-view .top.tp154-nav-grid .t
 html[data-tp-theme-family="vivid"] body.tp168-health-view .top.tp154-nav-grid .tp151-top-icon.active{
  box-shadow:0 0 18px color-mix(in srgb,var(--accent) 34%,transparent)!important
 }
+
+
+/* 1.6.9 minor refresh — Pulse trend and Body/Fitness fold into the two dashboard disclosures. */
+.tp169-pulse-journal{
+ margin-top:8px;
+ border:1px solid color-mix(in srgb,var(--accent) 46%,var(--line));
+ border-radius:13px;
+ background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 10%,var(--card2)),var(--card));
+ overflow:hidden
+}
+.tp169-pulse-journal>.tp168-trend{margin:0!important;border:0!important;border-radius:0!important;background:transparent!important}
+.tp169-pulse-journal.tp169-open>.tp168-trend>b{transform:rotate(90deg)}
+.tp169-pulse-body{display:none;padding:9px;border-top:1px solid color-mix(in srgb,var(--accent) 22%,var(--line))}
+.tp169-pulse-journal.tp169-open>.tp169-pulse-body{display:block}
+.tp169-pulse-chart{height:108px;margin:4px 0 8px;overflow:hidden}
+.tp169-pulse-chart svg,.tp168-weight-chart svg{display:block;width:100%!important;height:108px!important}
+.tp169-smooth-chart path{fill:none;stroke:var(--accent)!important;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.tp169-smooth-chart circle{fill:var(--accent)!important;stroke:var(--accent2)!important;stroke-width:1.2}
+.tp169-pulse-body .tp168-pulse-grid{margin:0 0 7px}
+.tp169-pulse-body .tp168-pulse-grid>div{
+ border-color:color-mix(in srgb,var(--accent) 18%,var(--line))!important;
+ background:color-mix(in srgb,var(--accent) 3%,var(--card))!important
+}
+.tp169-pulse-body .tp168-recovery-history{
+ margin-top:5px;
+ border-top:1px solid color-mix(in srgb,var(--accent) 22%,var(--line))!important;
+ padding-top:6px
+}
+.tp169-pulse-body .tp168-recovery-history>summary{
+ list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px
+}
+.tp169-pulse-body .tp168-recovery-history>summary::-webkit-details-marker{display:none}
+.tp169-pulse-body .tp168-recovery-history>summary .tp168-chevron{width:28px;height:28px}
+.tp169-pulse-body .tp168-recovery-history[open]>summary .tp168-chevron{transform:rotate(90deg)!important}
+
+.tp169-body-inline{
+ margin:9px 0 8px;
+ padding:8px;
+ border:1px solid color-mix(in srgb,var(--accent) 20%,var(--line));
+ border-radius:12px;
+ background:color-mix(in srgb,var(--accent) 3%,var(--card))
+}
+.tp169-inline-heading{display:grid;gap:2px;margin-bottom:7px}
+.tp169-inline-heading strong{font-size:12px;color:var(--accent2)}
+.tp169-inline-heading small{font-size:9.5px;color:var(--muted)}
+.tp169-body-inline .grid2{gap:6px!important}
+.tp169-body-inline .stat{padding:7px 8px!important;min-height:0!important}
+.tp169-body-inline .stat small{font-size:9.5px!important}
+.tp169-body-inline .stat strong{font-size:13px!important}
+.tp169-body-inline .rf251-weight-btn,#rf251WeightJournal{display:none!important}
+
+/* Defensive: the absorbed legacy cards must never remain as duplicate standalone blocks. */
+main.tp168-health>.tp168-body-card,
+main.tp168-health>details.tp168-pulse-panel{display:none!important}
+
+@media(max-width:390px){
+ .tp169-pulse-journal>.tp168-trend{grid-template-columns:28px minmax(0,1fr) minmax(64px,92px) auto!important}
+ .tp169-pulse-body{padding:7px}
+ .tp169-body-inline{padding:7px}
+}
+@media(max-width:340px){
+ .tp169-pulse-journal>.tp168-trend{grid-template-columns:28px minmax(0,1fr) auto!important}
+ .tp169-pulse-journal>.tp168-trend .tp168-spark,.tp169-pulse-journal>.tp168-trend .tp168-spark-empty{display:none}
+}
