@@ -3,6 +3,8 @@ name: Release Gate + TrainPilot APK
 on:
   workflow_dispatch:
   push:
+    branches:
+      - 'build/issue14-apk-167'
     tags:
       - 'v*'
 
