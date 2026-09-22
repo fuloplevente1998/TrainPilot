@@ -20,15 +20,14 @@ const {chromium}=require('playwright');
    await page.waitForTimeout(120);
 
    const head=await page.evaluate(()=>{
-    const strip=document.querySelector('.tp-brand-strip'),row=strip?.querySelector('.rf208-brand-row'),tag=strip?.querySelector('.tag'),top=document.querySelector('.top');
-    if(!strip||!row||!tag||!top)return null;
-    const s=strip.getBoundingClientRect(),r=row.getBoundingClientRect(),t=tag.getBoundingClientRect(),n=top.getBoundingClientRect();
-    return {s:{top:s.top,bottom:s.bottom,height:s.height},r:{top:r.top,bottom:r.bottom,height:r.height},t:{top:t.top,bottom:t.bottom,height:t.height},n:{top:n.top,bottom:n.bottom}};
+    const strip=document.querySelector('.tp-brand-strip'),top=document.querySelector('.top');
+    if(!top)return null;
+    const n=top.getBoundingClientRect();
+    return {brandPresent:!!strip,n:{top:n.top,bottom:n.bottom}};
    });
-   assert.ok(head,'split header elements must exist');
-   assert.ok(head.t.top>=head.r.bottom+2,'version/tag line must sit below the brand row without overlap');
-   assert.ok(head.s.bottom>=head.t.bottom-0.5,'brand strip must contain the full version line');
-   assert.ok(head.n.top>=head.s.bottom-1,'sticky navigation must start below the brand/version strip');
+   assert.ok(head,'sticky navigation must exist');
+   assert.equal(head.brandPresent,false,'Home brand/version strip must be physically removed');
+   assert.ok(head.n.top<=1,'primary navigation must be the topmost Home chrome');
 
    await page.evaluate(()=>profileScreen());
    await page.waitForTimeout(80);
