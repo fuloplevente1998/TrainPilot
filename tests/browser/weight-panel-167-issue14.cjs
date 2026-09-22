@@ -27,7 +27,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  assert.equal(await content.evaluate(el=>getComputedStyle(el).overflowY),'auto','Weight panel content must own vertical scrolling');
  await content.evaluate(el=>{el.scrollTop=el.scrollHeight});
  await page.waitForTimeout(30);
- const closeAfter=await close.boundingBox();assert.ok(closeAfter&&closeAfter.top>=0&&closeAfter.bottom<=720,'close X must remain reachable on long logs');
+ const closeAfter=await close.boundingBox();assert.ok(closeAfter&&closeAfter.y>=0&&closeAfter.y+closeAfter.height<=720,'close X must remain reachable on long logs');
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth+1),false,'Weight panel must not overflow horizontally');
  await page.evaluate(()=>window.TrainPilotAndroidBack());
  await page.waitForTimeout(40);
