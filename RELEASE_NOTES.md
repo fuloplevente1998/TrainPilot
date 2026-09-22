@@ -1,3 +1,11 @@
+# TrainPilot 1.6.8 – Egészség dashboard vizuális frissítés
+
+- Az Egészség oldal új, kék kiemelésű sötét dashboardot kapott a jóváhagyott referencia alapján.
+- A Mai állapot blokk négy fő metrikát, regenerációs és nyugalmi pulzus státuszt, valamint valós 7 napos pulzustrendet jelenít meg.
+- A Test és fittség, Pulzus, További Health-adatok és Health Connect területek egységes, kompakt lenyitható felületet kaptak.
+- A Health Connect szinkron és engedélykezelés változatlanul elérhető; a #22–24 javítások megmaradnak.
+- Android `versionCode 2657`, `versionName 1.6.8`.
+
 # TrainPilot 1.6.2
 
 - Kezdőlap: kompaktabb Személyes edzéstervező kártya; a 2×4 fő navigáció a felső, egységes alkalmazáschrome.
