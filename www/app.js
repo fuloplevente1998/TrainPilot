@@ -12636,11 +12636,6 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
 })();
 // @endsection trainpilot-162-followup.js
 
-// @section ready.js
-window.TrainPilotBoot.finish();
-// @endsection ready.js
-
-
 // @section trainpilot-164-issue12-side-set-fields.js
 /* TrainPilot issue #12: keep bilateral timed set rows as two permanent side fields.
  * The legacy compatibility reps value remains in session data for old consumers, but
@@ -12749,3 +12744,9 @@ window.TrainPilotBoot.finish();
  window.tp164DecoratePerSideRows();
 })();
 // @endsection trainpilot-164-issue12-side-set-fields.js
+
+// @section ready.js
+window.TrainPilotBoot.finish();
+// @endsection ready.js
+
+
