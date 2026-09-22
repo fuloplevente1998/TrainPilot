@@ -12740,7 +12740,23 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  ].join('');
  document.head?.appendChild(style);
 
- window.TrainPilot164Issue12={version:TP164_ISSUE12,separateSetSideFields:true,noCompatibilityOverwrite:true,bothSidesRequired:true};
+
+ // Journal is a safe read-only detour during an active workout: persist the draft,
+ // then leave the in-memory session and open Journal immediately.
+ const tp164GoBase=go;
+ go=function(route){
+  const key=String(route||'home'),target=window.TrainPilotRoutes?.[key]||key;
+  if(state.session&&target==='history'){
+   try{persistDraft()}catch(_){}
+   state.session=null;
+   const out=tp164GoBase.apply(this,arguments);
+   return out;
+  }
+  return tp164GoBase.apply(this,arguments);
+ };
+ window.TrainPilotNavigate=go;
+
+ window.TrainPilot164Issue12={version:TP164_ISSUE12,separateSetSideFields:true,noCompatibilityOverwrite:true,bothSidesRequired:true,journalDuringWorkout:true};
  window.tp164DecoratePerSideRows();
 })();
 // @endsection trainpilot-164-issue12-side-set-fields.js

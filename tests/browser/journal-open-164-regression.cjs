@@ -25,7 +25,10 @@ const listen=()=>new Promise(r=>server.listen(0,'127.0.0.1',r)),base=()=>'http:/
  // Active-workout navigation must still be able to reach Journal after confirmation.
  await page.evaluate(()=>{const e=byId('plank');state.tab='plan';state.workout='A';state.session={workout:'A',dayId:'A',started:new Date().toISOString(),exercises:[{id:e.id,hu:e.hu,en:e.en,loadType:e.loadType,repUnit:e.repUnit||'mp',sets:[{set:1,weight:0,reps:'10',done:false}]}]};renderWorkout();});
  const workoutNav=page.getByRole('button',{name:'Napló',exact:true}).first();await workoutNav.click();await page.waitForTimeout(80);
- assert.equal(await page.getByText('Edzésnapló',{exact:true}).count()>0,true,'Journal must open from an active workout after confirmation');
+ assert.equal(await page.locator('#tp2628Dialog').count(),0,'Journal detour from active workout must not get stuck behind a leave-workout confirmation');
+ assert.equal(await page.getByText('Edzésnapló',{exact:true}).count()>0,true,'Journal must open immediately from an active workout');
+ assert.equal(await page.evaluate(()=>state.session===null),true,'active in-memory session must be parked before Journal opens');
+ assert.equal(await page.evaluate(()=>!!db.get('draft',null)?.session),true,'active workout must be preserved as a resumable draft before Journal opens');
  assert.equal(errors.length,0,'Journal navigation from active workout raised runtime error: '+errors.join('\n'));
  console.log('PASS: Journal opens from navigation, including bilateral history and active-workout route.');
  await page.close();
