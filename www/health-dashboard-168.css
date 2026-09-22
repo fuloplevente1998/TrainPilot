@@ -31,3 +31,165 @@ main.tp168-health .tp155-r4-accent-surface.tp168-today-card{border-color:var(--t
 main.tp168-health .tp168-metric.stat{display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:flex-start!important;padding:9px 7px!important;min-height:105px!important}
 @media(max-width:390px){main.tp168-health .tp168-metric.stat{min-height:97px!important;padding:7px 5px!important}}
 @media(max-width:340px){main.tp168-health .tp168-metric.stat{min-height:91px!important}}
+
+
+/* TrainPilot 1.6.9 — theme-aware Health surfaces, compact inline weight journal, unified chevrons. */
+main.tp168-health{
+ --tp168-blue:var(--accent);
+ --tp168-blue-2:var(--accent);
+ --tp168-soft:var(--accent2);
+ --tp168-line:color-mix(in srgb,var(--accent) 30%,var(--line));
+ --tp168-muted:var(--muted);
+}
+body.tp168-health-view{background:var(--bg)!important}
+html[data-tp-theme-family="vivid"] body.tp168-health-view{
+ background:radial-gradient(circle at 50% 0,color-mix(in srgb,var(--accent) 14%,transparent),transparent 36%),var(--bg)!important
+}
+
+/* Every cell in the 2x4 navigation uses the same active language. Basic themes stay matte. */
+html body .top.tp154-nav-grid .tp154-nav-cell.active,
+html body .top.tp154-nav-grid .tp151-nav-item.active,
+html body .top.tp154-nav-grid .tp151-top-icon.active{
+ background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 46%,var(--card2)),color-mix(in srgb,var(--accent) 30%,var(--card)))!important;
+ border:1px solid color-mix(in srgb,var(--accent) 62%,var(--line))!important;
+ color:var(--text)!important;
+ box-shadow:none!important
+}
+html body .top.tp154-nav-grid .tp154-nav-cell.active :is(.tp151-nav-icon,.tp151-nav-label,.tp154-nav-action-icon),
+html body .top.tp154-nav-grid .tp151-nav-item.active :is(.tp151-nav-icon,.tp151-nav-label,.tp154-nav-action-icon){
+ color:var(--text)!important
+}
+html[data-tp-theme-family="vivid"] body .top.tp154-nav-grid .tp154-nav-cell.active,
+html[data-tp-theme-family="vivid"] body .top.tp154-nav-grid .tp151-nav-item.active,
+html[data-tp-theme-family="vivid"] body .top.tp154-nav-grid .tp151-top-icon.active{
+ box-shadow:0 0 18px color-mix(in srgb,var(--accent) 34%,transparent)!important
+}
+
+/* The old standalone Health title/subtitle is intentionally gone. */
+main.tp168-health>.tp168-health-head{display:none!important}
+
+main.tp168-health>.tp168-today-card,
+main.tp168-health .tp155-r4-accent-surface.tp168-today-card{
+ border-color:color-mix(in srgb,var(--accent) 78%,var(--line))!important;
+ background:
+  radial-gradient(circle at 14% 0,color-mix(in srgb,var(--accent) 13%,transparent),transparent 40%),
+  linear-gradient(145deg,color-mix(in srgb,var(--accent) 8%,var(--card2)),var(--card))!important;
+ box-shadow:none!important
+}
+html[data-tp-theme-family="vivid"] main.tp168-health>.tp168-today-card,
+html[data-tp-theme-family="vivid"] main.tp168-health .tp155-r4-accent-surface.tp168-today-card{
+ box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 18%,transparent),0 0 22px color-mix(in srgb,var(--accent) 22%,transparent)!important
+}
+.tp168-today-head{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto;align-items:center!important}
+.tp168-today-copy{min-width:0}
+.tp168-today-date{align-self:start;color:var(--accent2);font-size:11px;font-weight:800;white-space:nowrap;padding-top:2px}
+.tp168-icon{
+ border-color:color-mix(in srgb,var(--accent) 35%,var(--line))!important;
+ background:color-mix(in srgb,var(--accent) 11%,transparent)!important;
+ color:var(--accent2)!important
+}
+.tp168-metric{
+ border-color:color-mix(in srgb,var(--accent) 18%,var(--line))!important;
+ background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 5%,var(--card2)),var(--card))!important
+}
+.tp168-metric .tp168-icon,
+.tp168-sleep .tp168-icon,.tp168-hrv .tp168-icon,.tp168-pulse .tp168-icon,.tp168-resting .tp168-icon,.tp168-steps .tp168-icon,
+.tp168-recovery .tp168-icon,.tp168-more-panel>.tp168-row-head .tp168-icon,.tp168-connect-panel>.tp168-row-head .tp168-icon{
+ color:var(--accent2)!important
+}
+.tp168-status{
+ border-color:color-mix(in srgb,var(--accent) 22%,var(--line))!important;
+ background:color-mix(in srgb,var(--accent) 5%,var(--card))!important
+}
+.tp168-status>b,.tp168-trend>b,.tp168-weight-summary>b{color:color-mix(in srgb,var(--accent2) 72%,var(--muted))!important}
+.tp168-trend{
+ border-color:color-mix(in srgb,var(--accent) 46%,var(--line))!important;
+ background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 10%,var(--card2)),var(--card))!important
+}
+.tp168-trend>span strong{color:var(--accent2)!important}
+.tp168-spark path,.tp168-weight-spark path{stroke:var(--accent)!important}
+.tp168-spark circle,.tp168-weight-spark circle{fill:var(--accent)!important;stroke:var(--accent2)!important}
+.tp168-chevron{
+ background:color-mix(in srgb,var(--accent) 9%,var(--card2))!important;
+ color:var(--accent2)!important;
+ transform:none!important
+}
+.tp168-body-card.tp168-open .tp168-chevron,details[open]>.tp168-row-head .tp168-chevron{transform:rotate(90deg)!important}
+.tp168-recovery-history[open]>summary{color:var(--accent2)!important}
+main.tp168-health>.tp168-health-note{
+ border-color:color-mix(in srgb,var(--accent) 28%,var(--line))!important;
+ background:color-mix(in srgb,var(--accent) 5%,var(--card))!important
+}
+.tp168-health-note>span{color:var(--accent2)!important}
+main.tp168-health>.tp168-sync-tail{background:color-mix(in srgb,var(--accent) 3%,var(--card))!important}
+.tp168-body-card .rf251-weight-btn{display:none!important}
+
+/* Compact weight journal lives inside Mai állapot; the legacy full page is no longer used. */
+.tp168-weight-journal{
+ margin-top:8px;
+ border:1px solid color-mix(in srgb,var(--accent) 34%,var(--line));
+ border-radius:13px;
+ background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 7%,var(--card2)),var(--card));
+ overflow:hidden
+}
+.tp168-weight-summary{
+ appearance:none;width:100%;border:0;background:transparent;color:var(--text);
+ padding:8px 9px;display:grid;grid-template-columns:32px minmax(0,1fr) minmax(88px,132px) auto;align-items:center;gap:8px;text-align:left
+}
+.tp168-weight-summary .tp168-icon{width:30px;height:30px;flex-basis:30px;border:0!important;background:transparent!important}
+.tp168-weight-summary>span{display:grid;gap:2px;min-width:0}
+.tp168-weight-summary>span strong{font-size:12px;color:var(--accent2)}
+.tp168-weight-summary>span small{font-size:10px;color:var(--tp168-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tp168-weight-summary>b{font-size:25px;font-weight:400;transition:transform .16s ease}
+.tp168-weight-journal.tp168-open .tp168-weight-summary>b{transform:rotate(90deg)}
+.tp168-weight-body{display:none;padding:0 9px 10px;border-top:1px solid color-mix(in srgb,var(--accent) 22%,var(--line))}
+.tp168-weight-journal.tp168-open .tp168-weight-body{display:block}
+.tp168-weight-spark{width:100%;height:34px;overflow:visible}.tp168-weight-spark path{fill:none;stroke-width:2.2;vector-effect:non-scaling-stroke}.tp168-weight-spark circle{stroke-width:1}
+.tp168-weight-spark-empty{height:34px;display:grid;place-items:center;color:var(--muted);letter-spacing:4px}
+.tp168-weight-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:9px 0}
+.tp168-weight-stats>div{padding:7px 8px;border:1px solid color-mix(in srgb,var(--accent) 17%,var(--line));border-radius:11px;background:color-mix(in srgb,var(--accent) 3%,var(--card));min-width:0}
+.tp168-weight-stats small{display:block;color:var(--muted);font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tp168-weight-stats strong{display:block;margin-top:3px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tp168-weight-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:6px;align-items:end}
+.tp168-weight-form label{display:grid;gap:4px;font-size:10px;color:var(--muted);min-width:0}
+.tp168-weight-form .field{min-height:38px;padding:8px 9px}
+.tp168-weight-save{min-height:38px;padding:8px 12px;background:var(--accent)!important;color:#10151c!important}
+.tp168-weight-range{display:flex;gap:5px;flex-wrap:wrap;margin:8px 0 2px}
+.tp168-weight-range button{appearance:none;border:1px solid var(--line);border-radius:10px;background:var(--card2);color:var(--text);padding:6px 8px;font-weight:800;font-size:11px}
+.tp168-weight-range button.active{border-color:color-mix(in srgb,var(--accent) 62%,var(--line));background:color-mix(in srgb,var(--accent) 17%,var(--card2));color:var(--accent2)}
+.tp168-weight-chart{height:108px;overflow:hidden;margin-top:2px}
+.tp168-weight-chart svg{width:100%!important;height:108px!important}.tp168-weight-chart svg text{font-size:18px}
+.tp168-weight-recent{display:grid;gap:5px;margin-top:8px}.tp168-weight-recent>small{color:var(--muted);font-size:10px;font-weight:800}
+.tp168-weight-recent>div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 8px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.tp168-weight-recent>div>span:first-child{display:grid;gap:1px}.tp168-weight-recent strong{font-size:12px}.tp168-weight-recent small{font-size:9px;color:var(--muted)}
+.tp168-weight-recent>div>span:last-child{display:flex;gap:5px}.tp168-weight-recent button{appearance:none;border:1px solid color-mix(in srgb,var(--accent) 32%,var(--line));border-radius:8px;background:color-mix(in srgb,var(--accent) 7%,var(--card2));color:var(--text);padding:5px 7px;font-size:9.5px;font-weight:800}
+.tp168-weight-recent button.danger{border-color:color-mix(in srgb,var(--bad) 45%,var(--line));background:color-mix(in srgb,var(--bad) 10%,var(--card2));color:#ffd9dc}
+.tp168-weight-empty{padding:16px 4px 6px;text-align:center;color:var(--muted);font-size:11px}
+
+/* Use the Mai állapot right-chevron language throughout the app. */
+.chev,.rf-history-health-chevron,.rf103-history-chevron,.tp146-exercise-chevron,.tp152-chevron,.tp152-program-chevron,.tp166-home-coach-chevron,.tp1511-training summary i{
+ color:var(--accent2)!important
+}
+details:not([open])>summary :is(.rf103-history-chevron,.tp146-exercise-chevron,.tp152-chevron,.tp152-program-chevron),
+details:not([open])>summary.tp152-day-summary>.tp152-chevron,
+details:not([open])>summary>.tp152-chevron{transform:none!important}
+details[open]>summary :is(.rf103-history-chevron,.tp146-exercise-chevron,.tp152-chevron,.tp152-program-chevron),
+details[open]>summary.tp152-day-summary>.tp152-chevron,
+details[open]>summary>.tp152-chevron{transform:rotate(90deg)!important}
+.rf-history-health-panel .rf-history-health-chevron{transform:rotate(90deg)!important}
+.rf-history-health-panel.collapsed .rf-history-health-chevron{transform:none!important}
+.tp-library-card>summary::after{content:'›'!important;transform:none!important}
+.tp-library-card[open]>summary::after{transform:rotate(90deg)!important}
+
+@media(max-width:390px){
+ .tp168-today-head{grid-template-columns:auto minmax(0,1fr)!important}
+ .tp168-today-date{grid-column:2;margin-top:2px}
+ .tp168-weight-summary{grid-template-columns:28px minmax(0,1fr) minmax(64px,92px) auto;padding:7px 6px;gap:5px}
+ .tp168-weight-summary .tp168-icon{width:27px;height:27px;flex-basis:27px}
+ .tp168-weight-form{grid-template-columns:1fr 1fr}.tp168-weight-save{grid-column:1/-1;width:100%}
+}
+@media(max-width:340px){
+ .tp168-weight-summary{grid-template-columns:28px minmax(0,1fr) auto}
+ .tp168-weight-summary .tp168-weight-spark,.tp168-weight-summary .tp168-weight-spark-empty{display:none}
+ .tp168-weight-stats{grid-template-columns:1fr 1fr}.tp168-weight-stats>div:last-child{grid-column:1/-1}
+}
