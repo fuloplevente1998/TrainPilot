@@ -7,7 +7,7 @@ const listen=()=>new Promise(r=>server.listen(0,'127.0.0.1',r)),base=()=>'http:/
 (async()=>{await listen();let browser;try{
  browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});
  const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU'});
- const errors=[];page.on('pageerror',e=>errors.push(String(e?.stack||e)));page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text())});
+ const errors=[];page.on('pageerror',e=>errors.push(String(e?.stack||e)));page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text())});page.on('dialog',d=>d.accept());
  await page.goto(base());await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
  await page.evaluate(()=>{
    const e=byId('side-plank'),now=new Date().toISOString();if(!e)throw Error('side-plank missing');
@@ -15,10 +15,18 @@ const listen=()=>new Promise(r=>server.listen(0,'127.0.0.1',r)),base=()=>'http:/
    state.tab='home';state.session=null;render();
  });
  const nav=page.getByRole('button',{name:'Napló',exact:true}).first();assert.equal(await nav.count(),1,'Napló navigation button missing');
- await nav.click();await page.waitForTimeout(100);
+ await nav.click();await page.waitForTimeout(80);
  assert.equal(errors.length,0,'opening Journal raised runtime error: '+errors.join('\n'));
  assert.equal(await page.getByText('Edzésnapló',{exact:true}).count()>0,true,'Journal title must render after clicking Napló');
- const main=await page.locator('main').innerText();assert.match(main,/Oldalsó plank/);assert.match(main,/Bal 20 mp/);assert.match(main,/Jobb 16 mp/);
- console.log('PASS: Journal opens from navigation with bilateral side-plank history.');
+ const first=page.locator('details.rf263-history').first();assert.equal(await first.count(),1,'saved workout must appear in Journal');
+ await first.locator('summary').click();await page.waitForTimeout(60);
+ const detail=await first.innerText();assert.match(detail,/Oldalsó plank/);assert.match(detail,/Bal 20 mp/);assert.match(detail,/Jobb 16 mp/);
+
+ // Active-workout navigation must still be able to reach Journal after confirmation.
+ await page.evaluate(()=>{const e=byId('plank');state.tab='plan';state.workout='A';state.session={workout:'A',dayId:'A',started:new Date().toISOString(),exercises:[{id:e.id,hu:e.hu,en:e.en,loadType:e.loadType,repUnit:e.repUnit||'mp',sets:[{set:1,weight:0,reps:'10',done:false}]}]};renderWorkout();});
+ const workoutNav=page.getByRole('button',{name:'Napló',exact:true}).first();await workoutNav.click();await page.waitForTimeout(80);
+ assert.equal(await page.getByText('Edzésnapló',{exact:true}).count()>0,true,'Journal must open from an active workout after confirmation');
+ assert.equal(errors.length,0,'Journal navigation from active workout raised runtime error: '+errors.join('\n'));
+ console.log('PASS: Journal opens from navigation, including bilateral history and active-workout route.');
  await page.close();
 }finally{if(browser)await browser.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exit(1)});
