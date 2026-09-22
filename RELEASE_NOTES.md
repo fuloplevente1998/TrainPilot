@@ -1,3 +1,13 @@
+# TrainPilot 1.6.9 – Egészség felület finomhangolás
+
+- Az Egészség oldal minden kiemelése az aktuális témaszínt követi; az alap témák mattak, glow/neon csak az élénk témáknál jelenik meg.
+- A külön Egészség fejléc és alcím kikerült; a Mai állapot kártya közvetlenül tartalmazza az aktuális dátumot.
+- A 2×4 fő navigáció minden aktív eleme ugyanazt a témaszínes kijelölési nyelvet használja.
+- A Mai állapot jobb oldali nyílstílusa egységesen terjed a fő lenyitható/navigációs nyilakra.
+- A testsúlynapló már nem nyit külön régi Health oldalt: a Pulzustrend alatt kompakt, lenyitható súlynapló jelenik meg, a meglévő mentési, szerkesztési és törlési adatok megtartásával.
+- A 0 bpm nyugalmi pulzus hiányzó adatként jelenik meg (—), nem valós mérésként.
+- Android `versionCode 2658`, `versionName 1.6.9`.
+
 # TrainPilot 1.6.8 – Egészség dashboard vizuális frissítés
 
 - Az Egészség oldal új, kék kiemelésű sötét dashboardot kapott a jóváhagyott referencia alapján.
