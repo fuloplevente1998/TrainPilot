@@ -35,10 +35,13 @@ for(const marker of [
  "RepForge → Google Naptár','TrainPilot → Google Naptár",
  'tp162-theme-columns',
  'grid-template-columns:repeat(2,minmax(0,1fr))!important',
- 'overflow:visible!important',
+ 'position:absolute!important',
+ 'overflow-y:auto!important',
  'tp162-theme-dropdown',
  'ontoggle="tp162ThemeToggle(this)"',
+ 'tp162CloseThemeDropdown',
  'inlineTwoColumnThemePicker:true',
+ 'floatingScrollableThemePicker:true',
  "lang==='hu'?'Élénk színek'",
  'window.TrainPilot162Followup='
 ])assert.ok(follow.includes(marker),'missing 1.6.2 follow-up marker: '+marker);
