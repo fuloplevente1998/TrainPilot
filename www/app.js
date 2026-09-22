@@ -12884,7 +12884,6 @@ window.tp164DecoratePerSideRows();
  render=function(){
   const out=renderBase.apply(this,arguments);
   window.tp166DecorateHomeCoach();
-  if(state?.tab==='home')setTimeout(window.tp166DecorateHomeCoach,0);
   return out;
  };
 
