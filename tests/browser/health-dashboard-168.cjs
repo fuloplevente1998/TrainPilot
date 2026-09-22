@@ -13,7 +13,7 @@ const {chromium}=require('playwright');
    const now=new Date(),k=rf240DayKey(now),days={};for(let i=6;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);days[rf240DayKey(d)]={averageHeartRate:68+i,restingHeartRate:i===0?58:57,maxHeartRate:118+i,minHeartRate:52+i,steps:10000+i*100}}
    db.set('weights',[{kg:65.9,date:new Date(Date.now()-20*86400000).toISOString()},{kg:66.3,date:new Date(Date.now()-10*86400000).toISOString()},{kg:66.5,date:new Date().toISOString()}]);
    window.__tp169LedgerBase=rf240Ledger;rf240Ledger=()=>({days,lastSyncAt:new Date().toISOString()});
-   state.health=state.health||{};state.health.wellness={bodyFatPercent:18.2,oxygenSaturationPercent:98,vo2Max:44};
+   state.health=state.health||{};const wellness={bodyFatPercent:18.2,oxygenSaturationPercent:98,vo2Max:44};state.health.wellness=wellness;db.set('wellnessLatest',wellness);
    rf200SetTheme('classicGreen');go('health');
   });
   await page.waitForSelector('main.rf263-health.tp168-health');await page.waitForTimeout(120);
