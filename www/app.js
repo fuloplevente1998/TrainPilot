@@ -12574,12 +12574,30 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   const basic=lang==='hu'?'Alap színek':tp1511T('basic'),vivid=lang==='hu'?'Élénk színek':tp1511T('vivid');
   return '<div class="tp155-theme-list tp162-theme-columns"><section class="tp162-theme-column"><div class="small muted tp155-theme-group">'+esc(basic)+'</div><div class="tp162-theme-options">'+themeOptions162(TP1511_BASIC)+'</div></section><section class="tp162-theme-column"><div class="small muted tp155-theme-group">'+esc(vivid)+'</div><div class="tp162-theme-options">'+themeOptions162(TP1511_VIVID)+'</div></section></div>';
  };
- window.tp162ThemeToggle=function(el){state.tp162ThemeOpen=!!el?.open};
- window.tp162ChooseTheme=function(key){if(!RF200_THEMES[key])return;state.tp162ThemeOpen=true;rf200SetTheme(key)};
+ window.tp162ThemeToggle=function(el){
+  state.tp162ThemeOpen=!!el?.open;
+  if(!el?.open)return;
+  requestAnimationFrame(function(){
+   const trigger=el.querySelector('summary'),menu=el.querySelector('.tp162-theme-columns');if(!trigger||!menu)return;
+   const r=trigger.getBoundingClientRect(),vh=window.visualViewport?.height||window.innerHeight||720;
+   const below=Math.max(0,vh-r.bottom-8),above=Math.max(0,r.top-8),openTop=below<220&&above>below,available=openTop?above:below;
+   menu.dataset.placement=openTop?'top':'bottom';
+   menu.style.setProperty('--tp162-theme-max-height',Math.max(120,Math.min(300,vh*.44,Math.max(120,available-8)))+'px');
+  });
+ };
+ window.tp162ChooseTheme=function(key){if(!RF200_THEMES[key])return;state.tp162ThemeOpen=false;rf200SetTheme(key)};
  rf200ThemePanel=function(){
   const key=rf200ThemeKey(),theme=RF200_THEMES[key];
   return '<div class="setting tp1511-card tp155-theme-setting tp162-theme-setting"><div class="tp1511-head"><b>◐</b><div><strong>'+esc(tp152T('theme'))+'</strong><p class="small muted">'+esc(tp1511T('themeHelp'))+'</p></div></div><details class="tp162-theme-dropdown" '+(state.tp162ThemeOpen?'open':'')+' ontoggle="tp162ThemeToggle(this)"><summary class="btn secondary block tp155-theme-open"><span class="tp155-theme-swatch" style="background:'+esc(theme.accent)+'"></span><span>'+esc(tp1511ThemeName(key))+'</span><i aria-hidden="true">⌄</i></summary>'+window.tp162ThemeDropdownHtml()+'</details></div>';
  };
+ window.tp162CloseThemeDropdown=function(){
+  const d=document.querySelector('.tp162-theme-dropdown[open]');if(!d)return false;d.open=false;state.tp162ThemeOpen=false;return true;
+ };
+ document.addEventListener('click',function(ev){const d=document.querySelector('.tp162-theme-dropdown[open]');if(d&&!d.contains(ev.target)){d.open=false;state.tp162ThemeOpen=false}});
+ if(typeof window.TrainPilotAndroidBack==='function'){
+  const tp162AndroidBackBase=window.TrainPilotAndroidBack;
+  window.TrainPilotAndroidBack=function(){if(tp162CloseThemeDropdown())return true;return tp162AndroidBackBase.apply(this,arguments)};
+ }
 
  // Run after the established render stack so removed chrome does not reserve any layout height.
  const renderBase162=render;
@@ -12599,8 +12617,9 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   'main.rf221-home>.onboarding{padding:6px 11px 9px!important;gap:5px!important}',
   'main.rf221-home>.onboarding h2{margin:0!important}',
   'main.rf221-home>.onboarding p{margin:0!important}',
-  '.tp162-theme-setting{overflow:visible!important}.tp162-theme-dropdown{position:relative;margin-top:8px}.tp162-theme-dropdown>summary{list-style:none;margin:0!important}.tp162-theme-dropdown>summary::-webkit-details-marker{display:none}.tp162-theme-dropdown[open] .tp155-theme-open{border-color:var(--accent)!important}.tp162-theme-dropdown[open] .tp155-theme-open i{transform:rotate(180deg)}',
-  '.tp162-theme-columns{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;max-height:none!important;overflow:visible!important;padding:8px 0 0!important}',
+  '.tp162-theme-setting{overflow:visible!important}.tp162-theme-dropdown{position:relative;margin-top:8px;z-index:21}.tp162-theme-dropdown>summary{list-style:none;margin:0!important}.tp162-theme-dropdown>summary::-webkit-details-marker{display:none}.tp162-theme-dropdown[open] .tp155-theme-open{border-color:var(--accent)!important;box-shadow:0 0 0 2px rgba(var(--accent-rgb),.18)!important}.tp162-theme-dropdown[open] .tp155-theme-open i{transform:rotate(180deg)}',
+  '.tp162-theme-columns{position:absolute!important;left:0!important;right:0!important;top:calc(100% + 4px)!important;z-index:10000!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;max-height:var(--tp162-theme-max-height,min(300px,44dvh))!important;overflow-y:auto!important;overflow-x:hidden!important;padding:8px!important;background:var(--tp-popover,var(--card))!important;border:1px solid rgba(var(--accent-rgb),.42)!important;border-radius:14px!important;box-shadow:0 18px 46px #000c!important;overscroll-behavior:contain!important}',
+  '.tp162-theme-columns[data-placement="top"]{top:auto!important;bottom:calc(100% + 4px)!important}',
   '.tp162-theme-column{min-width:0;border:1px solid var(--line);border-radius:12px;background:var(--card2);padding:7px}',
   '.tp162-theme-column .tp155-theme-group{margin:0 0 6px!important;padding:0 2px!important;font-size:12px!important;font-weight:800!important}',
   '.tp162-theme-options{display:grid;gap:5px}',
@@ -12613,7 +12632,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  ].join('');
  document.head?.appendChild(style);
 
- window.TrainPilot162Followup={stickyPanelClose:true,coachSpacing:true,quickWorkoutParent:true,quickTitleSingle:true,healthHeaderRemoved:true,brandStripRemoved:true,trainPilotCalendarBrand:true,inlineTwoColumnThemePicker:true,calendarGeometryUntouched:true};
+ window.TrainPilot162Followup={stickyPanelClose:true,coachSpacing:true,quickWorkoutParent:true,quickTitleSingle:true,healthHeaderRemoved:true,brandStripRemoved:true,trainPilotCalendarBrand:true,inlineTwoColumnThemePicker:true,floatingScrollableThemePicker:true,calendarGeometryUntouched:true};
 })();
 // @endsection trainpilot-162-followup.js
 
