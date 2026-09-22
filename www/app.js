@@ -12568,7 +12568,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  };
  window.tp155ThemePickerHtml=function(){
   const lang=typeof rf212Lang==='function'?rf212Lang():'hu';
-  const basic=tp1511T('basic'),vivid=lang==='hu'?'Élénk színek':tp1511T('vivid');
+  const basic=lang==='hu'?'Alap színek':tp1511T('basic'),vivid=lang==='hu'?'Élénk színek':tp1511T('vivid');
   return '<div class="tp-modal-card tp-temporal-card tp155-theme-picker tp162-theme-picker" role="dialog" aria-modal="true" aria-labelledby="tp155ThemeTitle" onclick="event.stopPropagation()"><div class="tp-modal-head"><h2 id="tp155ThemeTitle">'+esc(tp152T('theme'))+'</h2><button type="button" class="btn danger tp-modal-close" onclick="tp155CloseThemePicker()">×</button></div><div class="tp155-theme-list tp162-theme-columns"><section class="tp162-theme-column"><div class="small muted tp155-theme-group">'+esc(basic)+'</div><div class="tp162-theme-options">'+themeOptions162(TP1511_BASIC)+'</div></section><section class="tp162-theme-column"><div class="small muted tp155-theme-group">'+esc(vivid)+'</div><div class="tp162-theme-options">'+themeOptions162(TP1511_VIVID)+'</div></section></div></div>';
  };
 
