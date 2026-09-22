@@ -36,10 +36,10 @@ const {chromium}=require('playwright');
   assert.ok((await card.evaluate(e=>e.getBoundingClientRect().height))<240,'expanded selected-day card must stay compact');
 
   await page.evaluate(()=>rf263HealthHub());await page.waitForTimeout(80);
-  assert.ok(await page.locator('.tp151-health-card').count()>=2,'Today and Body/Fitness cards must use unified compact styling');
+  assert.equal(await page.locator('.tp151-health-card').count(),1,'Health must keep one Today card after Body/Fitness is embedded in the weight journal');
   assert.equal(await page.locator('.tp151-health > .hero').count(),0,'Health must not restore the oversized explanatory hero');
   assert.equal(await page.locator('#rf235HealthCoach,.rf235-health-coach,.tp151-health-coach').count(),0,'#23 Health must not render a duplicate Coach card');
-  const bottomPanels=page.locator('main.rf263-health > details.tp155-health-bottom-panel');assert.equal(await bottomPanels.count(),3,'Health bottom area must expose exactly three unified panels');
+  const bottomPanels=page.locator('main.rf263-health > details.tp155-health-bottom-panel');assert.equal(await bottomPanels.count(),2,'Health bottom area must keep only More Health and Health Connect after Pulse is embedded');
   const bottomGeometry=await bottomPanels.evaluateAll(es=>es.map(e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return {x:r.x,w:r.width,paddingLeft:s.paddingLeft,paddingRight:s.paddingRight}}));
   assert.ok(bottomGeometry.every(x=>Math.abs(x.x-bottomGeometry[0].x)<1),'Health bottom panels must start at the same left edge: '+JSON.stringify(bottomGeometry));
   assert.ok(bottomGeometry.every(x=>Math.abs(x.w-bottomGeometry[0].w)<1),'Health bottom panels must have the same width: '+JSON.stringify(bottomGeometry));
