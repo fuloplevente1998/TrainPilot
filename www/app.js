@@ -12926,6 +12926,151 @@ window.tp164DecoratePerSideRows();
 })();
 // @endsection trainpilot-166-issue13-home-coach-card.js
 
+// @section trainpilot-167-issues22-24-gui-journal.js
+/* TrainPilot 1.6.7: #22 compact Home Coach, #23 Health without duplicate Coach, #24 no epoch fallback in Journal. */
+(function(){
+ 'use strict';
+
+ // #22 — Home already shows the active program / next due workout above Coach.
+ // Keep only the Coach recommendation and readiness here.
+ window.tp166HomeCoachMarkup=function tp166HomeCoachMarkup(){
+  let plan=null;
+  try{plan=typeof rf233CoachPlan==='function'?rf233CoachPlan():null}catch(_){}
+  const t=typeof rf233L==='function'?rf233L():(typeof rf220L==='function'?rf220L():{coach:'TrainPilot Coach'});
+  const r=plan?.readiness||(typeof rf220Readiness==='function'?rf220Readiness():{score:null,level:'medium'});
+  const title=plan?.decision?.title||(t?.[r?.level]||t?.coach||'TrainPilot Coach');
+  const text=plan?.decision?.text||(typeof rf220CoachText==='function'?rf220CoachText(r):'');
+  const score=r?.score==null?'—':(typeof tp149FormatNumber==='function'?tp149FormatNumber(r.score):String(r.score));
+  const kicker=typeof tp151T==='function'?tp151T('todayAdvice'):(t?.today||t?.advice||'Mai javaslat');
+  const readiness=typeof tp149T==='function'?tp149T('coach.readiness'):(typeof rf220L==='function'?rf220L().readiness:'Mai készenlét');
+  return '<span class="tp151-kicker">'+esc(kicker)+'</span>'+
+   '<div class="tp166-home-coach-copy"><div><h2>'+esc(title)+'</h2><p>'+esc(text)+'</p></div><span class="tp166-home-coach-chevron" aria-hidden="true">›</span></div>'+
+   '<div class="tp151-coach-target tp166-home-coach-target tp167-home-coach-readiness"><span><small>'+esc(readiness)+'</small><strong>'+esc(score)+'/100</strong></span></div>';
+ };
+
+ // #23 — Coach remains available from Home and the dedicated Coach panel.
+ // Health should focus on health / recovery data only.
+ if(typeof rf235HealthCoachCard==='function'){
+  rf235HealthCoachCard=function(){return ''};
+ }
+ window.tp167RemoveHealthCoach=function tp167RemoveHealthCoach(){
+  if(state?.tab!=='health')return false;
+  const main=document.querySelector('main.rf263-health,main.tp151-health');
+  if(!main)return false;
+  main.querySelectorAll('#rf235HealthCoach,.rf235-health-coach').forEach(function(el){el.remove()});
+  return true;
+ };
+
+ // #24 — never manufacture Unix epoch as a workout date.
+ window.tp167HistoryDateIso=function tp167HistoryDateIso(value){
+  if(value==null||value==='')return '';
+  const d=value instanceof Date?value:new Date(value);
+  const ms=d.getTime();
+  if(!Number.isFinite(ms))return '';
+  const year=d.getUTCFullYear();
+  if(year<2000||year>2100)return '';
+  return d.toISOString();
+ };
+ window.tp167RecoverHistoryDate=function tp167RecoverHistoryDate(source){
+  const s=source&&typeof source==='object'?source:{};
+  const candidates=[s.started,s.finished,s.completedAt,s.endedAt,s.date,s.createdAt];
+  for(const value of candidates){
+   const iso=window.tp167HistoryDateIso(value);
+   if(iso)return iso;
+  }
+  return '';
+ };
+ window.tp167MissingDateText=function tp167MissingDateText(){
+  const lang=typeof rf212Lang==='function'?rf212Lang():'hu';
+  return ({hu:'Dátum nem elérhető',en:'Date unavailable',de:'Datum nicht verfügbar',ro:'Data indisponibilă'})[lang]||'Date unavailable';
+ };
+
+ window.tp165SafeHistoryRecord=function tp165SafeHistoryRecord(value,index){
+  const source=value&&typeof value==='object'&&!Array.isArray(value)?value:{};
+  const exercises=Array.isArray(source.exercises)?source.exercises:[];
+  const started=window.tp167RecoverHistoryDate(source);
+  const finished=window.tp167HistoryDateIso(source.finished);
+  return Object.assign({},source,{
+   started:started,
+   finished:finished||source.finished||'',
+   exercises:exercises.filter(function(e){return e&&typeof e==='object'}).map(function(e){
+    return Object.assign({},e,{
+     id:String(e.id||'legacy-exercise-'+index),
+     hu:String(e.hu||e.name||e.en||'Korábbi gyakorlat'),
+     en:String(e.en||''),
+     sets:Array.isArray(e.sets)?e.sets.filter(function(s){return s&&typeof s==='object'}):[]
+    });
+   })
+  });
+ };
+
+ if(typeof rf263HistoryDay==='function'){
+  const historyDayBase=rf263HistoryDay;
+  rf263HistoryDay=function(value){
+   const iso=window.tp167HistoryDateIso(value);
+   return iso?historyDayBase(iso):'';
+  };
+ }
+ if(typeof fmtDate==='function'){
+  const fmtDateBase=fmtDate;
+  fmtDate=function(value){
+   const iso=window.tp167HistoryDateIso(value);
+   return iso?fmtDateBase(iso):window.tp167MissingDateText();
+  };
+ }
+
+ // The current Journal card formatter uses tp149FormatDateTime directly.
+ // Normalize its final date cell too, so invalid legacy dates cannot surface as 1970 or a bare dash.
+ if(typeof rf263HistoryItem==='function'){
+  const historyItemBase167=rf263HistoryItem;
+  rf263HistoryItem=function(x,originalIndex,visibleIndex){
+   const safe=window.tp165SafeHistoryRecord(x,originalIndex);
+   let html=String(historyItemBase167.call(this,safe,originalIndex,visibleIndex));
+   if(!window.tp167HistoryDateIso(safe.started)){
+    const label=esc(window.tp167MissingDateText());
+    const open='<div class="history-date">',close='</div>',start=html.indexOf(open);
+    if(start>=0){const bodyStart=start+open.length,end=html.indexOf(close,bodyStart);if(end>=0)html=html.slice(0,bodyStart)+label+html.slice(end);}
+   }
+   return html;
+  };
+ }
+
+ // #23 also removes the now-obsolete Coach wording from the Health intro.
+ try{
+  if(typeof TP149_CATALOG!=='undefined'){
+   TP149_CATALOG.hu['health.intro']='Health Connect, regeneráció és Health-adatok egy helyen.';
+   TP149_CATALOG.en['health.intro']='Health Connect, recovery and health data in one place.';
+   TP149_CATALOG.de['health.intro']='Health Connect, Regeneration und Gesundheitsdaten an einem Ort.';
+   TP149_CATALOG.ro['health.intro']='Health Connect, recuperare și date de sănătate într-un singur loc.';
+  }
+ }catch(_){}
+
+ const afterRenderBase167=tp120AfterRender;
+ tp120AfterRender=function(){
+  const out=afterRenderBase167.apply(this,arguments);
+  window.tp167RemoveHealthCoach();
+  return out;
+ };
+
+ const style=document.createElement('style');style.id='tp167Issues2224Css';style.textContent=[
+  '#rf220CoachCard.tp166-home-coach .tp167-home-coach-readiness{grid-template-columns:1fr!important;margin-top:9px!important}',
+  '#rf220CoachCard.tp166-home-coach .tp167-home-coach-readiness>span{width:100%!important}',
+  'main.rf263-health #rf235HealthCoach,main.rf263-health .rf235-health-coach{display:none!important}',
+  '@media(max-width:340px){#rf220CoachCard.tp166-home-coach .tp167-home-coach-readiness{grid-template-columns:1fr!important}}'
+ ].join('');
+ document.head?.appendChild(style);
+
+ window.TrainPilot167Issues2224={
+  version:'1.6.7',
+  issue22:{duplicateProgramRemoved:true,readinessKept:true},
+  issue23:{healthCoachRemoved:true,coachLogicPreserved:true},
+  issue24:{epochFallbackRemoved:true,recoverRealDate:true,missingDateLabel:true,journalDateRendered:true}
+ };
+ window.tp166DecorateHomeCoach?.();
+ window.tp167RemoveHealthCoach();
+})();
+// @endsection trainpilot-167-issues22-24-gui-journal.js
+
 // @section ready.js
 window.TrainPilotBoot.finish();
 // @endsection ready.js

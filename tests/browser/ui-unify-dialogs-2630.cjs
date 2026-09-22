@@ -38,7 +38,7 @@ const {chromium}=require('playwright');
   await page.evaluate(()=>rf263HealthHub());await page.waitForTimeout(80);
   assert.ok(await page.locator('.tp151-health-card').count()>=2,'Today and Body/Fitness cards must use unified compact styling');
   assert.equal(await page.locator('.tp151-health > .hero').count(),0,'Health must not restore the oversized explanatory hero');
-  assert.equal(await page.locator('.tp151-health-coach .tp151-advice').count(),1,'Health Coach must emphasize the daily recommendation');
+  assert.equal(await page.locator('#rf235HealthCoach,.rf235-health-coach,.tp151-health-coach').count(),0,'#23 Health must not render a duplicate Coach card');
   const bottomPanels=page.locator('main.rf263-health > details.tp155-health-bottom-panel');assert.equal(await bottomPanels.count(),3,'Health bottom area must expose exactly three unified panels');
   const bottomGeometry=await bottomPanels.evaluateAll(es=>es.map(e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return {x:r.x,w:r.width,paddingLeft:s.paddingLeft,paddingRight:s.paddingRight}}));
   assert.ok(bottomGeometry.every(x=>Math.abs(x.x-bottomGeometry[0].x)<1),'Health bottom panels must start at the same left edge: '+JSON.stringify(bottomGeometry));
