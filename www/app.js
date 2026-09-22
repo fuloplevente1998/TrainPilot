@@ -12888,6 +12888,22 @@ window.tp164DecoratePerSideRows();
   return out;
  };
 
+ // Some validated legacy navigation wrappers keep an older render reference.
+ // Re-apply the #13 Home decoration after navigation so language changes/routes
+ // cannot restore the former Details/Statistics action row.
+ const goBase=go;
+ go=function(route){
+  const key=String(route||'home'),target=window.TrainPilotRoutes?.[key]||key;
+  const out=goBase.apply(this,arguments);
+  if(target==='home'){
+   window.tp166DecorateHomeCoach();
+   if(typeof requestAnimationFrame==='function')requestAnimationFrame(function(){window.tp166DecorateHomeCoach()});
+   setTimeout(function(){window.tp166DecorateHomeCoach()},0);
+  }
+  return out;
+ };
+ window.TrainPilotNavigate=go;
+
  const style=document.createElement('style');style.id='tp166Issue13Css';style.textContent=[
   '#rf220CoachCard.tp166-home-coach{cursor:pointer;touch-action:pan-y;user-select:none;overflow:visible!important;padding:12px 13px!important;transition:border-color .12s ease,background .12s ease,transform .08s ease}',
   '#rf220CoachCard.tp166-home-coach:active{transform:scale(.995)}',
@@ -12906,7 +12922,7 @@ window.tp164DecoratePerSideRows();
  ].join('');
  document.head?.appendChild(style);
 
- window.TrainPilot166Issue13={version:TP166_ISSUE13,fullCardTap:true,noHomeButtons:true,coachDesign:true,stableCoachPanel:true,scrollGestureGuard:true};
+ window.TrainPilot166Issue13={version:TP166_ISSUE13,fullCardTap:true,noHomeButtons:true,coachDesign:true,stableCoachPanel:true,scrollGestureGuard:true,navigationRefresh:true};
  window.tp166DecorateHomeCoach();
 })();
 // @endsection trainpilot-166-issue13-home-coach-card.js

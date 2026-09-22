@@ -7,7 +7,8 @@ for(const marker of [
  'fullCardTap:true',
  'noHomeButtons:true',
  'coachDesign:true',
- 'scrollGestureGuard:true'
+ 'scrollGestureGuard:true',
+ 'navigationRefresh:true'
 ])assert.ok(app.includes(marker),'missing #13 marker: '+marker);
 assert.match(app,/className='card tp151-coach-recommendation tp155-r4-accent-surface tp166-home-coach'/);
 assert.match(app,/card\.setAttribute\('role','button'\)/);
