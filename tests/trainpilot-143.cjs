@@ -9,5 +9,5 @@ assert.ok(java.includes('Intent.CATEGORY_OPENABLE'));
 assert.ok(java.includes('intent.setType("image/*")'));
 assert.ok(!java.includes('MediaStore.ACTION_PICK_IMAGES'));
 assert.equal(pkg.version,'1.6.6');assert.equal(src.version,'1.6.6');assert.equal(src.versionCode,2655);
-assert.match(gradle,/versionCode\s+2655/);assert.match(gradle,/versionName\s+"1\.6\.5"/);assert.ok(sw.includes('trainpilot-v1481'));
+assert.match(gradle,/versionCode\s+2655/);assert.match(gradle,/versionName\s+"1\.6\.6"/);assert.ok(sw.includes('trainpilot-v1481'));
 console.log('PASS TrainPilot 2652 local-only gallery picker guards');
