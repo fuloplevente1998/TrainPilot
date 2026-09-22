@@ -138,11 +138,9 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.locator('#tp155R4PanelHost').count(),0,'Calendar panel must close before changing route');
   assert.equal(await page.evaluate(()=>state.tab),'plan','closing Calendar panel must preserve the underlying route');
 
-  await page.evaluate(()=>go('health'));await page.waitForSelector('.tp151-health>.tp151-page-head');
-  const healthHead=await page.locator('.tp151-health>.tp151-page-head').evaluate(el=>{const s=getComputedStyle(el);return {border:s.borderTopWidth,radius:parseFloat(s.borderTopLeftRadius),bg:s.backgroundColor}});
-  assert.equal(healthHead.border,'1px','Health page header gets a thin card frame');
-  assert.ok(healthHead.radius>=14,'Health page header keeps card-like rounding');
-  assert.notEqual(healthHead.bg,'rgba(0, 0, 0, 0)','Health page header gets card background');
+  await page.evaluate(()=>go('health'));await page.waitForSelector('.tp151-health>.rf263-sync-card');
+  assert.equal(await page.locator('.tp151-health>.tp151-page-head,.tp151-health>.hero').count(),0,'Health page must not restore the removed large title/explanation block');
+  assert.equal(await page.locator('.tp151-health>.rf263-sync-card').count(),1,'Health functional content must begin directly with the sync card');
 
   await page.evaluate(()=>profileScreen());await page.waitForSelector('.rf148-profile-accordion');
   const exclusion=page.locator('.rf148-profile-accordion').first();
