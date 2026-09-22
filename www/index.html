@@ -1,4 +1,133 @@
 <!doctype html>
-<html lang="hu" class="tp-booting"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0e1015"><title>TrainPilot</title><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="styles.css"><style>html,body{margin:0;min-height:100%;background:#0e1015}html.tp-booting #app{visibility:hidden}#tpBoot{position:fixed;inset:0;display:grid;place-items:center;background:#0e1015;color:#f6f8fb;font:900 25px/1.2 system-ui,sans-serif;z-index:999999}</style></head><body><div id="tpBoot" aria-label="Betöltés"></div><div id="app"></div>
+<html lang="hu" class="tp-booting"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0e1015"><title>TrainPilot</title><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="health-dashboard-168.css"><style>html,body{margin:0;min-height:100%;background:#0e1015}html.tp-booting #app{visibility:hidden}#tpBoot{position:fixed;inset:0;display:grid;place-items:center;background:#0e1015;color:#f6f8fb;font:900 25px/1.2 system-ui,sans-serif;z-index:999999}</style></head><body><div id="tpBoot" aria-label="Betöltés"></div><div id="app"></div>
 <script defer src="app.js"></script>
+<script>window.addEventListener("DOMContentLoaded",function(){
+/* TrainPilot 1.6.8 — Health dashboard visual refresh. */
+(function(){
+ 'use strict';
+
+ const COPY={
+  hu:{title:'Egészség',subtitle:'Jobb adatok. Tudatosabb döntések.',todayWord:'Ma',today:'Mai állapot',todaySub:'Az egészséged rövid áttekintése',sleep:'Alvás',hrv:'HRV',pulse:'Pulzus',steps:'Lépések',recovery:'Regenerációs adat',resting:'Nyugalmi pulzus',trend:'Pulzustrend',trendEnough:'Az elmúlt 7 nap mért átlagpulzusai.',trendFew:'A 7 napos trendhez még kevés adat áll rendelkezésre.',body:'Test és fittség',bodySub:'Testsúly, testzsír, SpO₂, VO₂max',pulseSub:'Átlag-, nyugalmi és szélsőértékek',more:'További Health-adatok',moreSub:'Vérnyomás, vércukor, légzésszám, távolság',connect:'Health Connect',connectSub:'Adatforrások, engedélyek és szinkron',recoveryHistory:'Regenerációs előzmények',avg:'Átlagpulzus',max:'Max. pulzus',min:'Min. pulzus',noData:'Nincs elég friss adat',note:'Az egészségügyi adatok tájékoztató jellegűek, és nem helyettesítik az orvosi tanácsot.'},
+  en:{title:'Health',subtitle:'Better data. Better-informed decisions.',todayWord:'Today',today:'Today status',todaySub:'A quick overview of your health',sleep:'Sleep',hrv:'HRV',pulse:'Heart rate',steps:'Steps',recovery:'Recovery status',resting:'Resting heart rate',trend:'Heart-rate trend',trendEnough:'Measured average heart rate over the last 7 days.',trendFew:'There is not enough data for a 7-day trend yet.',body:'Body and fitness',bodySub:'Weight, body fat, SpO₂, VO₂max',pulseSub:'Average, resting and range values',more:'More Health data',moreSub:'Blood pressure, glucose, respiratory rate, distance',connect:'Health Connect',connectSub:'Sources, permissions and sync',recoveryHistory:'Recovery history',avg:'Average heart rate',max:'Max heart rate',min:'Min heart rate',noData:'Not enough recent data',note:'Health data is informational and does not replace medical advice.'},
+  de:{title:'Gesundheit',subtitle:'Bessere Daten. Bewusstere Entscheidungen.',todayWord:'Heute',today:'Heutiger Status',todaySub:'Kurzer Überblick über deine Gesundheitsdaten',sleep:'Schlaf',hrv:'HRV',pulse:'Puls',steps:'Schritte',recovery:'Regenerationsstatus',resting:'Ruhepuls',trend:'Pulstrend',trendEnough:'Gemessener Durchschnittspuls der letzten 7 Tage.',trendFew:'Für einen 7-Tage-Trend liegen noch nicht genug Daten vor.',body:'Körper und Fitness',bodySub:'Gewicht, Körperfett, SpO₂, VO₂max',pulseSub:'Durchschnitt, Ruhepuls und Bereich',more:'Weitere Gesundheitsdaten',moreSub:'Blutdruck, Blutzucker, Atemfrequenz, Distanz',connect:'Health Connect',connectSub:'Quellen, Berechtigungen und Synchronisierung',recoveryHistory:'Regenerationsverlauf',avg:'Durchschnittspuls',max:'Max. Puls',min:'Min. Puls',noData:'Nicht genug aktuelle Daten',note:'Gesundheitsdaten dienen nur zur Information und ersetzen keine medizinische Beratung.'},
+  ro:{title:'Sănătate',subtitle:'Date mai bune. Decizii mai informate.',todayWord:'Azi',today:'Starea de azi',todaySub:'O privire rapidă asupra datelor de sănătate',sleep:'Somn',hrv:'HRV',pulse:'Puls',steps:'Pași',recovery:'Stare de recuperare',resting:'Puls de repaus',trend:'Tendința pulsului',trendEnough:'Pulsul mediu măsurat în ultimele 7 zile.',trendFew:'Nu sunt încă suficiente date pentru tendința pe 7 zile.',body:'Corp și fitness',bodySub:'Greutate, grăsime corporală, SpO₂, VO₂max',pulseSub:'Medie, repaus și valori extreme',more:'Mai multe date Health',moreSub:'Tensiune, glicemie, respirație, distanță',connect:'Health Connect',connectSub:'Surse, permisiuni și sincronizare',recoveryHistory:'Istoric recuperare',avg:'Puls mediu',max:'Puls maxim',min:'Puls minim',noData:'Nu sunt suficiente date recente',note:'Datele de sănătate sunt informative și nu înlocuiesc sfatul medical.'}
+ };
+ const ICON={
+  health:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.8a5.5 5.5 0 0 0-7.8 0L12 5.9l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.4a5.5 5.5 0 0 0 0-7.8Z"/></svg>',
+  sleep:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4a8.5 8.5 0 1 0 11.5 11.5Z"/></svg>',
+  hrv:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h4l2.2-5.5L12 18l2.5-8 2 4H22"/></svg>',
+  pulse:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.8a5.5 5.5 0 0 0-7.8 0L12 5.9l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.4a5.5 5.5 0 0 0 0-7.8Z"/></svg>',
+  steps:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.2 3.2c1.8.4 2.8 2.2 2.3 4.2l-1 4.1c-.4 1.7-2 2.8-3.6 2.4-1.6-.4-2.5-2-2.1-3.7l1-4.1c.5-2 1.6-3.3 3.4-2.9Zm7.7 7.1c1.8.4 2.8 2.2 2.3 4.2l-.9 3.5c-.4 1.7-2 2.8-3.6 2.4-1.6-.4-2.5-2-2.1-3.7l.9-3.5c.5-2 1.6-3.3 3.4-2.9Z"/></svg>',
+  leaf:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5C13 3.8 7.4 6.5 5.2 11.1c-1.1 2.3-.7 4.8.7 6.4 1.7 1.9 4.6 2 6.8.5 4.3-2.9 6.5-8.4 7.8-14.5Z"/><path d="M4 21c2.1-4.7 5.7-8.3 10.8-10.9"/></svg>',
+  body:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16M17 4v16M4 8h6M14 8h6M4 16h6M14 16h6"/></svg>',
+  more:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg>',
+  link:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 1 0 12 20.1l1.1-1.1"/></svg>',
+  trend:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17l5-5 4 3 7-8M15 7h5v5"/></svg>'
+ };
+
+ const lang=()=>{try{return typeof rf212Lang==='function'?rf212Lang():(document.documentElement.lang||'hu').slice(0,2)}catch(_){return 'hu'}};
+ const c=()=>COPY[lang()]||COPY.hu;
+ const locale=()=>{try{return typeof rf233Locale==='function'?rf233Locale():({hu:'hu-HU',en:'en-US',de:'de-DE',ro:'ro-RO'}[lang()]||'hu-HU')}catch(_){return 'hu-HU'}};
+ const escText=v=>String(v==null?'':v).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ const n=v=>{v=Number(v);return Number.isFinite(v)?v:null};
+ const fmt=v=>{if(v==null)return '—';try{return typeof tp149FormatNumber==='function'?tp149FormatNumber(v):new Intl.NumberFormat(locale()).format(v)}catch(_){return String(v)}};
+ const ledger=()=>{try{return typeof rf240Ledger==='function'?rf240Ledger():{days:{}}}catch(_){return {days:{}}}};
+ const day=()=>{try{const l=ledger(),k=typeof rf240DayKey==='function'?rf240DayKey(new Date()):new Date().toISOString().slice(0,10);return l.days?.[k]||{}}catch(_){return {}}};
+ const rec=()=>state?.health?.recovery||{};
+
+ function icon(name,extra=''){return '<span class="tp168-icon '+extra+'">'+(ICON[name]||ICON.health)+'</span>'}
+ function metric(kind,label,value,action){const legacy=action==='recovery'?' data-tp153-link="recovery"':'';return '<div class="stat tp168-metric tp168-'+kind+'"'+legacy+(action?' role="button" tabindex="0" data-tp168-action="'+action+'"':'')+'>'+icon(kind)+'<span>'+escText(label)+'</span><strong>'+escText(value)+'</strong></div>'}
+ function sleepText(r){try{return typeof tp149SleepText==='function'?tp149SleepText(r.sleepMinutes):(r.sleepMinutes==null?'—':(Math.round(r.sleepMinutes/6)/10)+' h')}catch(_){return '—'}}
+ function readiness(){try{return typeof rf220Readiness==='function'?rf220Readiness():{score:null,level:'unknown'}}catch(_){return {score:null,level:'unknown'}}}
+ function readinessLabel(r){if(r.score==null)return c().noData;try{const t=typeof rf220L==='function'?rf220L():{};return t[r.level]||r.level||''}catch(_){return ''}}
+ function trendValues(){const l=ledger(),days=l&&l.days&&typeof l.days==='object'?l.days:{};return Object.keys(days).sort().slice(-7).map(k=>n(days[k]?.averageHeartRate)).filter(v=>v!=null&&v>0)}
+ function sparkline(values){
+  if(values.length<2)return '<div class="tp168-spark-empty">•••</div>';
+  const w=132,h=34,p=3,min=Math.min(...values),max=Math.max(...values),span=Math.max(1,max-min);
+  const pts=values.map((v,i)=>[(p+i*(w-2*p)/Math.max(1,values.length-1)).toFixed(1),(h-p-(v-min)*(h-2*p)/span).toFixed(1)]);
+  const d=pts.map((q,i)=>(i?'L':'M')+q[0]+' '+q[1]).join(' '),last=pts[pts.length-1];
+  return '<svg class="tp168-spark" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" aria-hidden="true"><path d="'+d+'"/><circle cx="'+last[0]+'" cy="'+last[1]+'" r="2.6"/></svg>';
+ }
+ function dateText(){try{return new Intl.DateTimeFormat(locale(),{year:'numeric',month:'short',day:'numeric'}).format(new Date())}catch(_){return new Date().toLocaleDateString()}}
+
+ window.tp168OpenPulse=function(){const d=document.querySelector('main.rf263-health details.tp168-pulse-panel');if(!d)return;d.open=true;if(d.scrollIntoView)d.scrollIntoView({block:'center',behavior:'smooth'})};
+ const recoveryBase=window.tp153OpenRecovery;
+ window.tp153OpenRecovery=function(){
+  const main=document.querySelector('main.rf263-health');
+  const nested=main&&[...main.querySelectorAll('details')].find(x=>/Regenerációs előzmények|Recovery history|Regenerations|recuperare|Regenerationsverlauf|Istoric recuperare/i.test(String(x.querySelector(':scope > summary')?.textContent||'')));
+  if(nested){const outer=nested.parentElement?.closest?.('details.tp168-pulse-panel');if(outer)outer.open=true;nested.open=true;if(nested.scrollIntoView)nested.scrollIntoView({block:'center',behavior:'smooth'});return}
+  if(typeof recoveryBase==='function')return recoveryBase.apply(this,arguments);
+ };
+ window.tp168ToggleBody=function(el){
+  const card=el?.closest?.('.tp168-body-card');if(!card)return;const open=!card.classList.contains('tp168-open');card.classList.toggle('tp168-open',open);el.setAttribute('aria-expanded',String(open));window.TrainPilot168Health.bodyOpen=open;
+ };
+
+ function disclosureSummary(details,name,subtitle,which){
+  const summary=details?.querySelector(':scope > summary');if(!summary)return;
+  summary.classList.add('tp168-row-head');
+  summary.innerHTML=icon(which)+'<span class="tp168-row-copy"><strong>'+escText(name)+'</strong><small>'+escText(subtitle)+'</small></span><span class="tp168-chevron" aria-hidden="true">⌄</span>';
+ }
+ function decorateBody(card){
+  if(!card)return;card.classList.add('tp168-body-card');
+  const h=card.querySelector(':scope > h2');if(!h)return;
+  const nodes=[...card.childNodes].filter(x=>x!==h),head=document.createElement('div'),content=document.createElement('div');
+  head.className='tp168-row-head tp168-body-head';head.setAttribute('role','button');head.setAttribute('tabindex','0');head.setAttribute('aria-expanded',String(!!window.TrainPilot168Health.bodyOpen));
+  head.innerHTML=icon('body')+'<span class="tp168-row-copy"></span><span class="tp168-chevron" aria-hidden="true">⌄</span>';
+  const copy=head.querySelector('.tp168-row-copy');copy.appendChild(h);const sub=document.createElement('small');sub.textContent=c().bodySub;copy.appendChild(sub);
+  content.className='tp168-collapse-content';nodes.forEach(x=>content.appendChild(x));card.prepend(content);card.prepend(head);
+  if(window.TrainPilot168Health.bodyOpen)card.classList.add('tp168-open');
+  head.onclick=()=>window.tp168ToggleBody(head);head.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();window.tp168ToggleBody(head)}};
+ }
+ function decoratePulse(details,d){
+  if(!details||details.classList.contains('tp168-pulse-panel'))return;details.classList.add('tp168-pulse-panel');
+  const summary=details.querySelector(':scope > summary'),original=[...details.childNodes].filter(x=>x!==summary),nested=document.createElement('details');
+  nested.className='tp168-recovery-history';nested.innerHTML='<summary><strong>'+escText(c().recoveryHistory)+'</strong></summary>';original.forEach(x=>nested.appendChild(x));
+  const pulse=document.createElement('div');pulse.className='tp168-pulse-grid';
+  const vals=[[c().avg,n(d.averageHeartRate)],[c().resting,n(d.restingHeartRate)],[c().max,n(d.maxHeartRate)],[c().min,n(d.minHeartRate)]];
+  pulse.innerHTML=vals.map(x=>'<div><small>'+escText(x[0])+'</small><strong>'+escText(x[1]==null?'—':fmt(Math.round(x[1]))+' bpm')+'</strong></div>').join('');
+  details.appendChild(pulse);details.appendChild(nested);disclosureSummary(details,c().pulse,c().pulseSub,'pulse');
+ }
+ function healthHeader(main){
+  const h=document.createElement('header');h.className='tp168-health-head';
+  h.innerHTML='<div><h1>'+escText(c().title)+'</h1><p>'+escText(c().subtitle)+'</p></div><div class="tp168-date"><span>'+escText(c().todayWord)+'</span><strong>'+escText(dateText())+'</strong></div>';
+  main.prepend(h);
+ }
+ function rebuildToday(card,d,r){
+  if(!card)return;card.classList.add('tp168-today-card');card.classList.remove('tp146-health-compact');
+  const ready=readiness(),rv=ready.score==null?'—':fmt(ready.score)+'/100',rest=n(d.restingHeartRate),trend=trendValues();
+  card.innerHTML='<div class="tp168-today-head">'+icon('health','tp168-health-heart')+'<div><h2>'+escText(c().today)+'</h2><p>'+escText(c().todaySub)+'</p></div></div>'+
+   '<div class="tp168-metrics">'+metric('sleep',c().sleep,sleepText(r),'recovery')+metric('hrv',c().hrv,n(r.hrvRmssdMs)==null?'—':fmt(Math.round(n(r.hrvRmssdMs)))+' ms','recovery')+metric('pulse',c().pulse,n(d.averageHeartRate)==null?'—':fmt(Math.round(n(d.averageHeartRate)))+' bpm','pulse')+metric('steps',c().steps,n(d.steps)==null?'—':fmt(Math.round(n(d.steps))))+'</div>'+
+   '<div class="tp168-status-grid"><button type="button" class="tp168-status tp168-recovery tp168-level-'+escText(ready.level||'unknown')+'" data-tp168-action="recovery">'+icon('leaf')+'<span><small>'+escText(c().recovery)+'</small><strong>'+escText(rv)+'</strong><em>'+escText(readinessLabel(ready))+'</em></span><b aria-hidden="true">›</b></button><button type="button" class="tp168-status tp168-resting" data-tp168-action="pulse">'+icon('pulse')+'<span><small>'+escText(c().resting)+'</small><strong>'+escText(rest==null?'—':fmt(Math.round(rest))+' bpm')+'</strong></span><b aria-hidden="true">›</b></button></div>'+
+   '<button type="button" class="tp168-trend" data-tp168-action="pulse">'+icon('trend')+'<span><strong>'+escText(c().trend)+'</strong><small>'+escText(trend.length>=3?c().trendEnough:c().trendFew)+'</small></span>'+sparkline(trend)+'<b aria-hidden="true">›</b></button>';
+  card.querySelectorAll('[data-tp168-action]').forEach(el=>{const run=()=>el.dataset.tp168Action==='recovery'?window.tp153OpenRecovery?.():window.tp168OpenPulse?.();el.onclick=run;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();run()}}});
+ }
+ function decorate(){
+  const main=document.querySelector('main.rf263-health');
+  const bodyClass=document.body&&document.body.classList;if(bodyClass){if(main)bodyClass.add('tp168-health-view');else bodyClass.remove('tp168-health-view');}
+  if(!main)return;
+  main.classList.add('tp168-health');
+  main.querySelectorAll(':scope > .tp168-health-head,:scope > .tp168-health-note').forEach(x=>x.remove());
+  healthHeader(main);
+  const cards=[...main.querySelectorAll(':scope > .tp151-health-card')],today=cards[0],body=cards[1],d=day(),r=rec();
+  rebuildToday(today,d,r);decorateBody(body);
+  const details=[...main.querySelectorAll(':scope > details.tp155-health-bottom-panel')];
+  let more=details.find(x=>/További|More Health|Weitere|Mai multe/i.test(String(x.textContent||'')))||details[0];
+  let recovery=details.find(x=>/Regenerációs|Recovery history|Regeneration|recuperare/i.test(String(x.textContent||'')))||details[1];
+  let diag=details.find(x=>x.id==='rf263HealthDiagnostics')||details.find(x=>x!==more&&x!==recovery);
+  if(recovery)decoratePulse(recovery,d);
+  if(more){more.classList.add('tp168-more-panel');disclosureSummary(more,c().more,c().moreSub,'more')}
+  if(diag){diag.classList.add('tp168-connect-panel');disclosureSummary(diag,c().connect,c().connectSub,'link')}
+  const sync=main.querySelector(':scope > .rf263-sync-card');if(sync){sync.classList.add('tp168-sync-tail')}
+  [body,recovery,more,diag].filter(Boolean).forEach(x=>main.appendChild(x));
+  if(sync)main.appendChild(sync);
+  const note=document.createElement('div');note.className='tp168-health-note';note.innerHTML='<span aria-hidden="true">ⓘ</span><p>'+escText(c().note)+'</p>';main.appendChild(note);
+ }
+
+ window.TrainPilot168Health={version:'1.6.8',bodyOpen:false,decorate};
+ const renderBase=window.render;
+ if(typeof renderBase==='function')window.render=function(){const out=renderBase.apply(this,arguments);decorate();setTimeout(decorate,0);return out};
+ decorate();setTimeout(decorate,0);
+})();
+
+});</script>
 </body></html>
