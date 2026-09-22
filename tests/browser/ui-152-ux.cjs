@@ -154,9 +154,10 @@ const server=http.createServer((req,res)=>{
   assert.notEqual(dangerStyle,safeStyle,'destructive actions must keep a distinct red danger treatment');
   assert.equal(await page.evaluate(()=>tp152T('historyEdit')),'Naplózott edzés módosítása');
   const settingsActive=page.locator('.rf208-settings-btn.active');assert.equal(await settingsActive.count(),1,'Settings grid cell must stay visibly active while its sheet is open');
-  await themePanel.locator('.tp155-theme-open').click();assert.equal(await page.locator('#tp155ThemePicker').count(),1,'Theme color must open as a list dialog');
-  assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),true);assert.equal(await page.locator('#tp155ThemePicker').count(),0,'Android back must close the Theme list first');
-  assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),true);assert.equal(await page.locator('#tp155R4PanelHost').count(),0,'next Android back must close the Settings sheet');
+  await themePanel.locator('.tp155-theme-open').click();assert.equal(await themePanel.locator('.tp162-theme-dropdown[open]').count(),1,'Theme color must open inline in Settings');
+  assert.equal(await page.locator('#tp155ThemePicker').count(),0,'legacy Theme modal must remain absent');
+  await themePanel.locator('.tp155-theme-open').click();assert.equal(await themePanel.locator('.tp162-theme-dropdown[open]').count(),0,'second tap must collapse the inline Theme list');
+  assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),true);assert.equal(await page.locator('#tp155R4PanelHost').count(),0,'Android back must close the Settings sheet');
   assert.equal(await page.evaluate(()=>state.tab),'profile','closing Settings sheet must preserve the underlying full page');
   await page.evaluate(()=>go('home'));await page.waitForSelector('main.rf221-home');
   assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),false,'Android back at Home root should be released to Android');
