@@ -1,5 +1,9 @@
 # TrainPilot 1.6.9 – Egészség felület finomhangolás
 
+- Minor frissítés: a Pulzustrend helyben lenyílik és átveszi a korábbi külön Pulzus panel adatait/regenerációs előzményeit.
+- A Test és fittség adatok a lenyíló Testsúlynaplóba költöztek; a külön Test és fittség kártya megszűnt.
+- A pulzus- és testsúlygrafikonok szögletes töréspontok helyett simított, íves görbét használnak.
+
 - Az Egészség oldal minden kiemelése az aktuális témaszínt követi; az alap témák mattak, glow/neon csak az élénk témáknál jelenik meg.
 - A külön Egészség fejléc és alcím kikerült; a Mai állapot kártya közvetlenül tartalmazza az aktuális dátumot.
 - A 2×4 fő navigáció minden aktív eleme ugyanazt a témaszínes kijelölési nyelvet használja.
