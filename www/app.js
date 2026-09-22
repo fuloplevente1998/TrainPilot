@@ -13019,6 +13019,31 @@ window.tp164DecoratePerSideRows();
   };
  }
 
+ // The current Journal card formatter uses tp149FormatDateTime directly.
+ // Normalize its final date cell too, so invalid legacy dates cannot surface as 1970 or a bare dash.
+ if(typeof rf263HistoryItem==='function'){
+  const historyItemBase167=rf263HistoryItem;
+  rf263HistoryItem=function(x,originalIndex,visibleIndex){
+   const safe=window.tp165SafeHistoryRecord(x,originalIndex);
+   let html=String(historyItemBase167.call(this,safe,originalIndex,visibleIndex));
+   if(!window.tp167HistoryDateIso(safe.started)){
+    const label=esc(window.tp167MissingDateText());
+    html=html.replace(/(<div class="history-date">)[\\s\\S]*?(<\\/div>)/,'$1'+label+'$2');
+   }
+   return html;
+  };
+ }
+
+ // #23 also removes the now-obsolete Coach wording from the Health intro.
+ try{
+  if(typeof TP149_CATALOG!=='undefined'){
+   TP149_CATALOG.hu['health.intro']='Health Connect, regeneráció és Health-adatok egy helyen.';
+   TP149_CATALOG.en['health.intro']='Health Connect, recovery and health data in one place.';
+   TP149_CATALOG.de['health.intro']='Health Connect, Regeneration und Gesundheitsdaten an einem Ort.';
+   TP149_CATALOG.ro['health.intro']='Health Connect, recuperare și date de sănătate într-un singur loc.';
+  }
+ }catch(_){}
+
  const afterRenderBase167=tp120AfterRender;
  tp120AfterRender=function(){
   const out=afterRenderBase167.apply(this,arguments);
@@ -13038,7 +13063,7 @@ window.tp164DecoratePerSideRows();
   version:'1.6.7',
   issue22:{duplicateProgramRemoved:true,readinessKept:true},
   issue23:{healthCoachRemoved:true,coachLogicPreserved:true},
-  issue24:{epochFallbackRemoved:true,recoverRealDate:true,missingDateLabel:true}
+  issue24:{epochFallbackRemoved:true,recoverRealDate:true,missingDateLabel:true,journalDateRendered:true}
  };
  window.tp166DecorateHomeCoach?.();
  window.tp167RemoveHealthCoach();

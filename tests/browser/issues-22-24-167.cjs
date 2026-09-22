@@ -21,6 +21,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  assert.equal(await page.locator('#rf235HealthCoach,.rf235-health-coach').count(),0,'Health must not render Coach card');
  assert.ok(await page.locator('main.rf263-health,main.tp151-health').count(),'Health page must still render');
  assert.ok(await page.locator('main .stat').count()>=2,'Health data cards must remain');
+ assert.doesNotMatch(await page.locator('main.rf263-health,main.tp151-health').first().innerText(),/Coach egy közös adatfolyamban|Coach in one unified flow|Coach in einem gemeinsamen Ablauf|Coach într-un singur flux/,'Health intro must not advertise removed Coach content');
 
  // #24 Journal: no 1970 fallback; recover finished date when possible, neutral label otherwise.
  const result=await page.evaluate(()=>{

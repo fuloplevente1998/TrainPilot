@@ -10,6 +10,7 @@ for(const marker of [
  'epochFallbackRemoved:true',
  'recoverRealDate:true',
  'missingDateLabel:true',
+ 'journalDateRendered:true',
  "rf235HealthCoachCard=function(){return ''}",
  'tp167RecoverHistoryDate',
  'Dátum nem elérhető'
