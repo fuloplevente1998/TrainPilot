@@ -12895,11 +12895,7 @@ window.tp164DecoratePerSideRows();
  go=function(route){
   const key=String(route||'home'),target=window.TrainPilotRoutes?.[key]||key;
   const out=goBase.apply(this,arguments);
-  if(target==='home'){
-   window.tp166DecorateHomeCoach();
-   if(typeof requestAnimationFrame==='function')requestAnimationFrame(function(){window.tp166DecorateHomeCoach()});
-   setTimeout(function(){window.tp166DecorateHomeCoach()},0);
-  }
+  if(target==='home')window.tp166DecorateHomeCoach();
   return out;
  };
  window.TrainPilotNavigate=go;
