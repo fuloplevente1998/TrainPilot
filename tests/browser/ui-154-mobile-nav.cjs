@@ -22,8 +22,8 @@ const server=http.createServer((req,res)=>{
    const cells=[...document.querySelectorAll('.top.tp154-nav-grid .tp154-nav-cell')].map(el=>{const r=el.getBoundingClientRect();return {text:(el.textContent||'').trim(),top:r.top,left:r.left,width:r.width,height:r.height,order:Number(getComputedStyle(el).order)||0,settings:el.classList.contains('tp154-settings-action')}});
    const sortedTops=[...cells].sort((a,b)=>a.top-b.top).map(x=>x.top),rows=[];
    for(const top of sortedTops){const row=rows.find(x=>Math.abs(x.top-top)<4);if(row)row.count++;else rows.push({top,count:1})}
-   const brand=document.querySelector('.tp154-brand'),tag=document.querySelector('.tp154-tagline'),br=brand?.getBoundingClientRect(),tr=tag?.getBoundingClientRect();
-   return {cells,rows,brand:{font:parseFloat(getComputedStyle(brand).fontSize),top:br?.top,height:br?.height},tag:{top:tr?.top,height:tr?.height},brandActions:getComputedStyle(document.querySelector('.tp152-brand-actions')).display};
+   const brand=document.querySelector('.tp154-brand'),tag=document.querySelector('.tp154-tagline'),brandActions=document.querySelector('.tp152-brand-actions');
+   return {cells,rows,brandPresent:!!brand,tagPresent:!!tag,brandActionsPresent:!!brandActions};
   });
   assert.equal(chrome.cells.length,8,'primary navigation must contain 8 controls');
   assert.deepEqual(chrome.rows.map(x=>x.count),[4,4],'primary navigation must be two rows of four controls');
@@ -32,9 +32,9 @@ const server=http.createServer((req,res)=>{
   assert.equal(chrome.cells.filter(x=>x.text.length>1).length,8,'all eight primary controls must carry a visible label');
   const ordered=[...chrome.cells].sort((a,b)=>a.order-b.order).map(x=>x.text.replace(/^[^A-Za-zÁÉÍÓÖŐÚÜŰ]+/,'').trim());
   assert.deepEqual(ordered.map(x=>x.split(/\s+/)[0]),['Kezdőlap','Edzés','Egészség','Programok','Napló','Naptár','Coach','Beállítások'],'2x4 order must place Health above Calendar and Calendar beside Journal');
-  assert.ok(chrome.brand.font<=20.5,'TrainPilot brand must be compact');
-  assert.ok(Math.abs(chrome.brand.top-chrome.tag.top)<10,'TrainPilot and intelligent planner tagline must sit on the same line');
-  assert.equal(chrome.brandActions,'none','duplicate Coach/Settings actions must be hidden from the brand strip');
+  assert.equal(chrome.brandPresent,false,'Home must not render the TrainPilot brand strip');
+  assert.equal(chrome.tagPresent,false,'Home must not render the old planner tagline');
+  assert.equal(chrome.brandActionsPresent,false,'removed brand strip must not leave duplicate Coach/Settings action chrome');
 
   await page.evaluate(()=>go('programs'));await page.waitForSelector('.tp152-program-card');
   const first=page.locator('.tp152-program-card').first();await first.locator(':scope > summary').click();
