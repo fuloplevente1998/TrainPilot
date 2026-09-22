@@ -1,3 +1,12 @@
+# TrainPilot 1.6.2
+
+- Kezdőlap: kompaktabb Személyes edzéstervező kártya; a 2×4 fő navigáció a felső, egységes alkalmazáschrome.
+- Naptár: kisebb függőleges térközök és alacsonyabb napcellák, hogy a tervezési CTA több telefonon görgetés nélkül elérhető legyen.
+- Coach / Naptár / Beállítások / Gyakorlatok panel: a piros bezáró X beljebb került, így nem takarja a panel keretét.
+- Programok → Gyakorlatok / Izomcsoportok: kompaktabb fejléc és gyakorlatkártyák; a Programok navigáció aktív marad az alnézetben.
+- Kezdőlap Health Connect összesítő: a törölt helyi edzéshez tartozó, TrainPilot által korábban Health Connectbe írt elavult session nem növeli tovább a mai edzésszámot.
+- Android `versionCode 2651`, `versionName 1.6.2`.
+
 # TrainPilot 1.6.1
 
 - Android keyboard/IME: Quick Workout panel stays below the fixed 2×4 navigation and follows the visual viewport.

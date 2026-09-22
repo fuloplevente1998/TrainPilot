@@ -33,11 +33,11 @@ const server=http.createServer((req,res)=>{
   assert.ok(Math.abs(stickyHome.top)<=1,'Home sticky header must remain pinned while scrolling');
   assert.equal(stickyHome.actions,2,'Coach and Settings must remain inside the sticky header');
   assert.equal(stickyHome.tabs,6,'all six main navigation tabs must remain inside the sticky header');
-  assert.equal(stickyHome.brandInStrip,true,'brand/title may scroll separately above the sticky controls');
+  assert.equal(stickyHome.brandInStrip,false,'Home brand/title must be physically removed instead of reserving layout space');
   const compactHeader=await page.evaluate(async()=>{const main=document.querySelector('main'),spacer=document.createElement('div');spacer.id='tp152CompactProbe';spacer.style.height='1600px';main.appendChild(spacer);window.scrollTo(0,600);await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));const nav=document.querySelector('.top .tp151-nav-dock'),actions=document.querySelector('.top .tp-sticky-actions-row'),brandActions=document.querySelector('.tp-brand-strip .tp152-brand-actions'),nr=nav?.getBoundingClientRect(),ar=actions?.getBoundingClientRect();const out={compact:document.documentElement.classList.contains('tp-nav-compact'),navTop:nr?.top,actionsTop:ar?.top,brandActionsDisplay:brandActions?getComputedStyle(brandActions).display:null};window.scrollTo(0,0);spacer.remove();await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));return out});
   assert.equal(compactHeader.compact,true,'real scroll must enter compact navigation mode');
   assert.ok(Math.abs(compactHeader.navTop-compactHeader.actionsTop)<12,'compact navigation and Coach/Settings actions must share one row: '+JSON.stringify(compactHeader));
-  assert.equal(compactHeader.brandActionsDisplay,'none','compact header must not duplicate Coach/Settings in the brand strip');
+  assert.equal(compactHeader.brandActionsDisplay,null,'removed brand strip must not retain duplicate Coach/Settings actions');
 
   const homeActive=page.locator('main.rf221-home > .hero.tp155-home-active-card');
   assert.equal(await homeActive.count(),1,'Home must expose one highlighted active-program card');assert.equal(await homeActive.evaluate(e=>e.classList.contains('tp155-r4-accent-surface')),true,'Home active program must use the shared highlighted surface');
@@ -154,8 +154,12 @@ const server=http.createServer((req,res)=>{
   assert.notEqual(dangerStyle,safeStyle,'destructive actions must keep a distinct red danger treatment');
   assert.equal(await page.evaluate(()=>tp152T('historyEdit')),'Naplózott edzés módosítása');
   const settingsActive=page.locator('.rf208-settings-btn.active');assert.equal(await settingsActive.count(),1,'Settings grid cell must stay visibly active while its sheet is open');
-  await themePanel.locator('.tp155-theme-open').click();assert.equal(await page.locator('#tp155ThemePicker').count(),1,'Theme color must open as a list dialog');
-  assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),true);assert.equal(await page.locator('#tp155ThemePicker').count(),0,'Android back must close the Theme list first');
+  await themePanel.locator('.tp155-theme-open').click();assert.equal(await themePanel.locator('.tp162-theme-dropdown[open]').count(),1,'Theme color must open as an attached floating dropdown');
+  assert.equal(await page.locator('#tp155ThemePicker').count(),0,'legacy Theme modal must remain absent');
+  const backupBeforeBack=await settingsHost.locator('.tp152-settings-backup').evaluate(e=>e.getBoundingClientRect().top);
+  assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),true);assert.equal(await themePanel.locator('.tp162-theme-dropdown[open]').count(),0,'Android back must close the Theme dropdown first');
+  assert.equal(await settingsHost.locator('.tp152-settings-backup').evaluate(e=>e.getBoundingClientRect().top),backupBeforeBack,'opening/closing Theme must not move lower Settings cards');
+  assert.equal(await page.locator('#tp155R4PanelHost[data-panel="settings"]').count(),1,'closing Theme must keep Settings open');
   assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),true);assert.equal(await page.locator('#tp155R4PanelHost').count(),0,'next Android back must close the Settings sheet');
   assert.equal(await page.evaluate(()=>state.tab),'profile','closing Settings sheet must preserve the underlying full page');
   await page.evaluate(()=>go('home'));await page.waitForSelector('main.rf221-home');

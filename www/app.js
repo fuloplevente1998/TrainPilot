@@ -12438,6 +12438,204 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
 })();
 // @endsection trainpilot-161-minor-fixes.js
 
+
+// @section trainpilot-162-minor-ui.js
+/* TrainPilot 1.6.2: minor phone UI polish and Home Health-count consistency. */
+(function(){
+ 'use strict';
+ const TP162_VERSION='1.6.2';
+ const dailyBase=rf223Daily;
+ window.tp162VisibleHealthSessions=function tp162VisibleHealthSessions(d){
+   const sessions=Array.isArray(d?.exerciseSessions)?d.exerciseSessions:[];
+   const local=(typeof history==='function'?history():[]).filter(function(h){return Number.isFinite(Date.parse(h?.started))&&Number.isFinite(Date.parse(h?.finished));});
+   const ownPackage='com.repforge.app',exactTolerance=1000;
+   const stableIds=new Set(local.map(function(h){return h?.healthStableId?'trainpilot:'+h.healthStableId:'';}).filter(Boolean));
+   return sessions.filter(function(s){
+     if(String(s?.source||'')!==ownPackage)return true;
+     const clientRecordId=String(s?.clientRecordId||'');
+     if(clientRecordId.indexOf('trainpilot:tpw_')===0)return stableIds.has(clientRecordId);
+     const start=Date.parse(s?.start),end=Date.parse(s?.end);if(!Number.isFinite(start)||!Number.isFinite(end))return false;
+     return local.some(function(h){return Math.abs(Date.parse(h.started)-start)<=exactTolerance&&Math.abs(Date.parse(h.finished)-end)<=exactTolerance;});
+   });
+ };
+ rf223Daily=function(){const d=dailyBase.apply(this,arguments);if(!d)return d;const visible=window.tp162VisibleHealthSessions(d);const minutes=visible.reduce(function(sum,s){return sum+Math.max(0,Number(s?.durationMinutes)||0);},0);return Object.assign({},d,{exerciseSessions:visible,exerciseSessionCount:visible.length,exerciseMinutes:minutes});};
+
+ if(typeof window.tp155R4DecorateNavigation==='function'){
+  const decorateNavBase=window.tp155R4DecorateNavigation;
+  window.tp155R4DecorateNavigation=function(){
+   const out=decorateNavBase.apply(this,arguments),host=document.getElementById('tp155R4PanelHost');
+   if(host?.dataset?.panel==='exercises'){
+    const buttons=[...document.querySelectorAll('.top.tp154-nav-grid .tp151-nav-item')];
+    const programs=buttons.find(function(btn){return /go\(['"]programs['"]\)/.test(String(btn.getAttribute('onclick')||''))});
+    if(programs){programs.classList.add('active');programs.setAttribute('aria-expanded','true')}
+   }
+   return out;
+  };
+ }
+
+ const style=document.createElement('style');style.id='tp162MinorUiCss';style.textContent=[
+  '.tp-brand-strip{display:none!important}',
+  '.top.tp154-nav-grid{top:0!important}',
+  'main.rf221-home>.onboarding{margin:0!important;padding:9px 11px 10px!important;display:grid!important;gap:6px!important}',
+  'main.rf221-home>.onboarding h2{margin:0!important;line-height:1.15!important}',
+  'main.rf221-home>.onboarding p{margin:0!important;line-height:1.25!important}',
+  'main.rf221-home>.onboarding .btn{margin:0!important;min-height:40px!important;padding:8px 10px!important}',
+  'main.rf221-home{min-height:0!important}',
+  '#tp155R4PanelHost:is([data-panel="calendar"],[data-panel="coach"],[data-panel="settings"],[data-panel="exercises"]) .tp155-r4-panel-close{position:absolute!important;top:14px!important;right:14px!important;float:none!important;margin:0!important;z-index:9!important}',
+  '#tp155R4PanelHost:is([data-panel="calendar"],[data-panel="coach"],[data-panel="settings"],[data-panel="exercises"]) .tp155-r4-panel-content{clear:none!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-exercise-panel>.hero{margin:0!important;padding:5px 50px 5px 4px!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-exercise-panel>.hero h1{margin:0 0 3px!important;line-height:1.12!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-exercise-panel>.hero p{margin:0!important;line-height:1.25!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-library-filters{margin:6px 0!important;padding:7px!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-library-results>p.muted{margin:4px 0 6px!important;line-height:1.2!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-library-results .tp-library-card{margin:4px 0!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp-library-card>summary{padding:8px 10px!important;min-height:52px!important;gap:8px!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp-library-card>summary h3{margin:0 0 2px!important;line-height:1.12!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp-library-card>summary p{margin:0!important;line-height:1.18!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-library-results{scroll-padding-top:4px!important;padding-bottom:5px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .tp155-r4-calendar-frame{padding:7px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .calendar-head{min-height:40px!important;margin-bottom:6px!important;padding-right:50px!important;grid-template-columns:46px 1fr 46px!important;gap:6px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .calendar-head .btn{min-height:38px!important;padding:6px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .cal-weekdays{gap:2px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .cal-weekdays span{padding:3px 0!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .calendar-grid{gap:2px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .cal-cell{min-height:42px!important;padding:3px!important;border-radius:10px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .tp155-r4-planner-bottom{margin-top:7px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .tp155-planner-always-open{padding:7px!important}',
+  '@media(max-width:360px){#tp155R4PanelHost[data-panel="calendar"] .cal-cell{min-height:40px!important}#tp155R4PanelHost[data-panel="exercises"] .tp-library-card>summary{padding:7px 8px!important;min-height:50px!important}}'
+ ].join('');
+ document.head?.appendChild(style);
+ window.TrainPilot162={version:TP162_VERSION,staleOwnHealthCountGuard:true,compactHome:true,cleanTopNav:true,compactCalendar:true,compactExerciseLibrary:true,parentProgramsActive:true,insetPanelClose:true};
+})();
+// @endsection trainpilot-162-minor-ui.js
+
+// @section trainpilot-162-followup.js
+/* TrainPilot 1.6.2 follow-up: isolated UI regression fixes. */
+(function(){
+ 'use strict';
+
+ const cleanupChrome=function(){
+  document.querySelectorAll('.tp-brand-strip').forEach(function(el){el.remove()});
+  if(state?.tab==='health'){
+   const health=document.querySelector('main.rf263-health');
+   health?.querySelector(':scope > .hero:first-child,:scope > .tp151-page-head:first-child')?.remove();
+  }
+ };
+ window.tp162CleanupChrome=cleanupChrome;
+
+ // Preserve parent navigation state for panel subviews.
+ if(typeof window.tp155R4DecorateNavigation==='function'){
+  const decorateBase=window.tp155R4DecorateNavigation;
+  window.tp155R4DecorateNavigation=function(){
+   const out=decorateBase.apply(this,arguments),host=document.getElementById('tp155R4PanelHost');
+   if(host?.dataset?.panel==='quick'){
+    const buttons=[...document.querySelectorAll('.top.tp154-nav-grid .tp151-nav-item')];
+    const workout=buttons.find(function(btn){return /go\(['"]plan['"]\)/.test(String(btn.getAttribute('onclick')||''))});
+    if(workout){workout.classList.add('active');workout.setAttribute('aria-expanded','true')}
+   }
+   return out;
+  };
+ }
+
+ // Workout landing card keeps a single Quick Workout title (no duplicate badge/title pair).
+ if(typeof tp150CompactQuickCard==='function'){
+  tp150CompactQuickCard=function(){
+   return '<div class="card tp150-quick-entry tp150-quick-entry-compact"><div class="tp150-quick-copy"><h2>'+esc(tp150qwT('cardTitle'))+'</h2><p class="small muted">'+esc(tp150qwT('cardHelp'))+'</p></div><button class="btn block" onclick="tp155R4TogglePanel(\'quick\',this)">'+esc(tp150qwT('start'))+'</button></div>';
+  };
+ }
+
+ // Quick Workout keeps only the compact context title; legacy explanatory hero/page headers stay out.
+ if(typeof window.tp155QuickPanelHtml==='function'){
+  const quickHtmlBase=window.tp155QuickPanelHtml;
+  window.tp155QuickPanelHtml=function(){
+   const html=String(quickHtmlBase.apply(this,arguments)||''),tpl=document.createElement('template');tpl.innerHTML=html;
+   const main=tpl.content.querySelector('main');
+   main?.querySelectorAll(':scope > .hero,:scope > .tp151-page-head').forEach(function(el){el.remove()});
+   return main?main.outerHTML:html;
+  };
+ }
+
+ // Visible product branding only; legacy package/storage/sync identifiers remain untouched.
+ if(typeof cloudPanel==='function'){
+  const cloudPanelBase162=cloudPanel;
+  cloudPanel=function(){return String(cloudPanelBase162.apply(this,arguments)).replace('RepForge → Google Naptár','TrainPilot → Google Naptár')};
+ }
+
+ // Theme picker: inline dropdown matching the language selector interaction.
+ const themeOptions162=function(keys){
+  const current=rf200ThemeKey();
+  return keys.map(function(key){
+   const theme=RF200_THEMES[key];
+   return '<button type="button" class="tp155-theme-option '+(key===current?'active':'')+'" data-theme="'+esc(key)+'" aria-pressed="'+(key===current?'true':'false')+'" onclick="event.preventDefault();event.stopPropagation();tp162ChooseTheme(\''+esc(key)+'\')"><span class="tp155-theme-swatch" style="background:'+esc(theme.accent)+'"></span><span>'+esc(tp1511ThemeName(key))+'</span><i aria-hidden="true">✓</i></button>';
+  }).join('');
+ };
+ window.tp162ThemeDropdownHtml=function(){
+  const lang=typeof rf212Lang==='function'?rf212Lang():'hu';
+  const basic=lang==='hu'?'Alap színek':tp1511T('basic'),vivid=lang==='hu'?'Élénk színek':tp1511T('vivid');
+  return '<div class="tp155-theme-list tp162-theme-columns"><section class="tp162-theme-column"><div class="small muted tp155-theme-group">'+esc(basic)+'</div><div class="tp162-theme-options">'+themeOptions162(TP1511_BASIC)+'</div></section><section class="tp162-theme-column"><div class="small muted tp155-theme-group">'+esc(vivid)+'</div><div class="tp162-theme-options">'+themeOptions162(TP1511_VIVID)+'</div></section></div>';
+ };
+ window.tp162ThemeToggle=function(el){
+  state.tp162ThemeOpen=!!el?.open;
+  if(!el?.open)return;
+  requestAnimationFrame(function(){
+   const trigger=el.querySelector('summary'),menu=el.querySelector('.tp162-theme-columns');if(!trigger||!menu)return;
+   const r=trigger.getBoundingClientRect(),vh=window.visualViewport?.height||window.innerHeight||720;
+   const below=Math.max(0,vh-r.bottom-8),above=Math.max(0,r.top-8),openTop=below<220&&above>below,available=openTop?above:below;
+   menu.dataset.placement=openTop?'top':'bottom';
+   menu.style.setProperty('--tp162-theme-max-height',Math.max(120,Math.min(300,vh*.44,Math.max(120,available-8)))+'px');
+  });
+ };
+ window.tp162ChooseTheme=function(key){if(!RF200_THEMES[key])return;state.tp162ThemeOpen=false;rf200SetTheme(key)};
+ rf200ThemePanel=function(){
+  const key=rf200ThemeKey(),theme=RF200_THEMES[key];
+  return '<div class="setting tp1511-card tp155-theme-setting tp162-theme-setting"><div class="tp1511-head"><b>◐</b><div><strong>'+esc(tp152T('theme'))+'</strong><p class="small muted">'+esc(tp1511T('themeHelp'))+'</p></div></div><details class="tp162-theme-dropdown" '+(state.tp162ThemeOpen?'open':'')+' ontoggle="tp162ThemeToggle(this)"><summary class="btn secondary block tp155-theme-open"><span class="tp155-theme-swatch" style="background:'+esc(theme.accent)+'"></span><span>'+esc(tp1511ThemeName(key))+'</span><i aria-hidden="true">⌄</i></summary>'+window.tp162ThemeDropdownHtml()+'</details></div>';
+ };
+ window.tp162CloseThemeDropdown=function(){
+  const d=document.querySelector('.tp162-theme-dropdown[open]');if(!d)return false;d.open=false;state.tp162ThemeOpen=false;return true;
+ };
+ document.addEventListener('click',function(ev){const d=document.querySelector('.tp162-theme-dropdown[open]');if(d&&!d.contains(ev.target)){d.open=false;state.tp162ThemeOpen=false}});
+ if(typeof window.TrainPilotAndroidBack==='function'){
+  const tp162AndroidBackBase=window.TrainPilotAndroidBack;
+  window.TrainPilotAndroidBack=function(){if(tp162CloseThemeDropdown())return true;return tp162AndroidBackBase.apply(this,arguments)};
+ }
+
+ // Run after the established render stack so removed chrome does not reserve any layout height.
+ const renderBase162=render;
+ render=function(custom){
+  const out=renderBase162.apply(this,arguments);
+  cleanupChrome();
+  return out;
+ };
+ cleanupChrome();
+
+ const style=document.createElement('style');style.id='tp162FollowupCss';style.textContent=[
+  '#tp155R4PanelHost:is([data-panel="calendar"],[data-panel="coach"],[data-panel="settings"],[data-panel="exercises"]) .tp155-r4-panel-close{position:sticky!important;top:8px!important;right:auto!important;float:right!important;margin:0 4px -36px 8px!important;z-index:20!important}',
+  '#tp155R4PanelHost[data-panel="coach"] .tp151-coach-recommendation{margin-top:10px!important}',
+  '#tp155R4PanelHost[data-panel="quick"] .tp155-quick-panel>:is(.hero,.tp151-page-head){display:none!important}',
+  '#tp155R4PanelHost[data-panel="quick"] .tp160-quick-context{font-size:15px!important;font-weight:850!important;line-height:1.2!important}',
+  'body.tp-home-view main.rf221-home{min-height:0!important;height:auto!important;max-height:none!important;padding-bottom:max(12px,env(safe-area-inset-bottom,0px))!important}',
+  'main.rf221-home>.onboarding{padding:6px 11px 9px!important;gap:5px!important}',
+  'main.rf221-home>.onboarding h2{margin:0!important}',
+  'main.rf221-home>.onboarding p{margin:0!important}',
+  '.tp162-theme-setting{overflow:visible!important}.tp162-theme-dropdown{position:relative;margin-top:8px;z-index:21}.tp162-theme-dropdown>summary{list-style:none;margin:0!important}.tp162-theme-dropdown>summary::-webkit-details-marker{display:none}.tp162-theme-dropdown[open] .tp155-theme-open{border-color:var(--accent)!important;box-shadow:0 0 0 2px rgba(var(--accent-rgb),.18)!important}.tp162-theme-dropdown[open] .tp155-theme-open i{transform:rotate(180deg)}',
+  '.tp162-theme-columns{position:absolute!important;left:0!important;right:0!important;top:calc(100% + 4px)!important;z-index:10000!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;max-height:var(--tp162-theme-max-height,min(300px,44dvh))!important;overflow-y:auto!important;overflow-x:hidden!important;padding:8px!important;background:var(--tp-popover,var(--card))!important;border:1px solid rgba(var(--accent-rgb),.42)!important;border-radius:14px!important;box-shadow:0 18px 46px #000c!important;overscroll-behavior:contain!important}',
+  '.tp162-theme-columns[data-placement="top"]{top:auto!important;bottom:calc(100% + 4px)!important}',
+  '.tp162-theme-column{min-width:0;border:1px solid var(--line);border-radius:12px;background:var(--card2);padding:7px}',
+  '.tp162-theme-column .tp155-theme-group{margin:0 0 6px!important;padding:0 2px!important;font-size:12px!important;font-weight:800!important}',
+  '.tp162-theme-options{display:grid;gap:5px}',
+  '.tp162-theme-dropdown .tp155-theme-option{box-sizing:border-box;min-width:0!important;min-height:40px!important;padding:6px 7px!important;gap:6px!important;border:1px solid var(--line)!important;border-radius:10px!important;background:var(--card)!important;font-size:12px!important;line-height:1.15!important;white-space:normal!important;text-align:left!important}',
+  '.tp162-theme-dropdown .tp155-theme-option>span:nth-child(2){min-width:0;overflow-wrap:anywhere}',
+  '.tp162-theme-dropdown .tp155-theme-option.active{border-color:var(--accent)!important;box-shadow:inset 0 0 0 1px var(--accent)!important;background:color-mix(in srgb,var(--accent) 12%,var(--card))!important}',
+  '.tp162-theme-dropdown .tp155-theme-option i{margin-left:auto!important}',
+  '.tp162-theme-dropdown .tp155-theme-swatch{flex:0 0 14px!important;width:14px!important;height:14px!important}',
+  '@media(max-width:340px){.tp162-theme-columns{gap:6px!important}.tp162-theme-column{padding:6px!important}.tp162-theme-dropdown .tp155-theme-option{padding:5px 6px!important;font-size:11.5px!important}}'
+ ].join('');
+ document.head?.appendChild(style);
+
+ window.TrainPilot162Followup={stickyPanelClose:true,coachSpacing:true,quickWorkoutParent:true,quickTitleSingle:true,healthHeaderRemoved:true,brandStripRemoved:true,trainPilotCalendarBrand:true,inlineTwoColumnThemePicker:true,floatingScrollableThemePicker:true,calendarGeometryUntouched:true};
+})();
+// @endsection trainpilot-162-followup.js
+
 // @section ready.js
 window.TrainPilotBoot.finish();
 // @endsection ready.js
