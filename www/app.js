@@ -12891,6 +12891,18 @@ window.tp164DecoratePerSideRows();
   return out;
  };
 
+ // The 1.4.9/1.5.0 localization compatibility layer intentionally repaints the
+ // non-Hungarian Home Coach on a zero-delay callback. Preserve that translation
+ // refresh, then immediately re-apply the #13 card contract to the fresh node.
+ if(typeof tp149RepaintLocalizedHomeCoach==='function'){
+  const localizedRepaintBase=tp149RepaintLocalizedHomeCoach;
+  tp149RepaintLocalizedHomeCoach=function(){
+   const out=localizedRepaintBase.apply(this,arguments);
+   window.tp166DecorateHomeCoach();
+   return out;
+  };
+ }
+
  const style=document.createElement('style');style.id='tp166Issue13Css';style.textContent=[
   '#rf220CoachCard.tp166-home-coach{cursor:pointer;touch-action:pan-y;user-select:none;overflow:visible!important;padding:12px 13px!important;transition:border-color .12s ease,background .12s ease,transform .08s ease}',
   '#rf220CoachCard.tp166-home-coach:active{transform:scale(.995)}',
@@ -12909,7 +12921,7 @@ window.tp164DecoratePerSideRows();
  ].join('');
  document.head?.appendChild(style);
 
- window.TrainPilot166Issue13={version:TP166_ISSUE13,fullCardTap:true,noHomeButtons:true,coachDesign:true,stableCoachPanel:true,scrollGestureGuard:true,synchronousAfterRender:true,paintStable:true};
+ window.TrainPilot166Issue13={version:TP166_ISSUE13,fullCardTap:true,noHomeButtons:true,coachDesign:true,stableCoachPanel:true,scrollGestureGuard:true,synchronousAfterRender:true,paintStable:true,localizedRepaintCompatible:true};
  window.tp166DecorateHomeCoach();
 })();
 // @endsection trainpilot-166-issue13-home-coach-card.js
