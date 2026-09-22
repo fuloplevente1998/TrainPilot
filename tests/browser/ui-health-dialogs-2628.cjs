@@ -28,10 +28,12 @@ const {chromium}=require('playwright');
    go('health');
   });
   await page.waitForTimeout(80);
-  const fitness=page.locator('main .card').filter({has:page.locator('h2', {hasText:/Test és fittség|Body|Fitness/i})}).filter({hasText:/66[,.]5 kg/}).first();
-  assert.equal(await fitness.count(),1,'Test/Fitness card with manual weight must exist');
+  const journal=page.locator('.tp168-weight-journal');assert.equal(await journal.count(),1,'inline weight journal must exist');
+  await journal.locator('.tp168-weight-summary').click();await page.waitForTimeout(30);
+  const fitness=journal.locator('.tp169-body-inline');
+  assert.equal(await fitness.count(),1,'Body/Fitness data must be embedded in the expanded weight journal');
   const fitnessText=await fitness.innerText();
-  assert.match(fitnessText,/66[,.]5 kg/,'manual 66.5 kg must appear in Health');
+  assert.match(fitnessText,/66[,.]5 kg/,'manual 66.5 kg must appear in embedded Body/Fitness data');
   assert.match(fitnessText,/Kézi adat|Local entry|Lokaler Eintrag|Înregistrare locală|Kézi testsúlynapló|Manual weight log|Manuelles Gewichtsprotokoll|Jurnal manual de greutate/,'manual weight fallback must identify its source in the active language');
 
   // Home -> Help me get started is a full scrollable subpage, never the compact
