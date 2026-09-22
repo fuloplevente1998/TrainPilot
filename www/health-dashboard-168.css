@@ -193,3 +193,23 @@ details[open]>summary>.tp152-chevron{transform:rotate(90deg)!important}
  .tp168-weight-summary .tp168-weight-spark,.tp168-weight-summary .tp168-weight-spark-empty{display:none}
  .tp168-weight-stats{grid-template-columns:1fr 1fr}.tp168-weight-stats>div:last-child{grid-column:1/-1}
 }
+
+
+/* 1.6.9 priority fix: override the older Health-only blue active-nav rule. */
+html body.tp168-health-view .top.tp154-nav-grid .tp154-nav-cell.active,
+html body.tp168-health-view .top.tp154-nav-grid .tp151-nav-item.active,
+html body.tp168-health-view .top.tp154-nav-grid .tp151-top-icon.active{
+ background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 46%,var(--card2)),color-mix(in srgb,var(--accent) 30%,var(--card)))!important;
+ border-color:color-mix(in srgb,var(--accent) 62%,var(--line))!important;
+ color:var(--text)!important;
+ box-shadow:none!important
+}
+html body.tp168-health-view .top.tp154-nav-grid .tp154-nav-cell.active :is(.tp151-nav-icon,.tp151-nav-label,.tp154-nav-action-icon),
+html body.tp168-health-view .top.tp154-nav-grid .tp151-nav-item.active :is(.tp151-nav-icon,.tp151-nav-label,.tp154-nav-action-icon){
+ color:var(--text)!important
+}
+html[data-tp-theme-family="vivid"] body.tp168-health-view .top.tp154-nav-grid .tp154-nav-cell.active,
+html[data-tp-theme-family="vivid"] body.tp168-health-view .top.tp154-nav-grid .tp151-nav-item.active,
+html[data-tp-theme-family="vivid"] body.tp168-health-view .top.tp154-nav-grid .tp151-top-icon.active{
+ box-shadow:0 0 18px color-mix(in srgb,var(--accent) 34%,transparent)!important
+}
