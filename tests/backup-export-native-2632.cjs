@@ -15,6 +15,6 @@ assert.match(java,/openOutputStream\(uri, "w"\)/,'selected SAF document must be 
 assert.match(java,/actual\.length <= 0 \|\| !Arrays\.equals\(expected, actual\)/,'0-byte or mismatched exports must fail verification');
 assert.match(java,/clearPendingSave\(source\)/,'temporary export data must be cleaned up after callback handling');
 const src=require('../SOURCE_VERSION.json');
-assert.equal(src.version,'1.6.4');
-assert.equal(src.versionCode,2653);
+assert.equal(src.version,'1.6.5');
+assert.equal(src.versionCode,2654);
 console.log('PASS: lifecycle-safe native backup export stages data internally, keeps Activity state small, verifies exact bytes, and cleans temp data.');

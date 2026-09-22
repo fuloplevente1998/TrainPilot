@@ -12756,13 +12756,76 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  };
  window.TrainPilotNavigate=go;
 
- window.TrainPilot164Issue12={version:TP164_ISSUE12,separateSetSideFields:true,noCompatibilityOverwrite:true,bothSidesRequired:true,journalDuringWorkout:true};
- window.tp164DecoratePerSideRows();
+window.TrainPilot164Issue12={version:TP164_ISSUE12,separateSetSideFields:true,noCompatibilityOverwrite:true,bothSidesRequired:true,journalDuringWorkout:true};
+window.tp164DecoratePerSideRows();
 })();
 // @endsection trainpilot-164-issue12-side-set-fields.js
+
+// @section trainpilot-165-journal-data-recovery.js
+/* TrainPilot 1.6.5: legacy/partial workout rows must never prevent Journal opening. */
+(function(){
+ 'use strict';
+
+ window.tp165SafeHistoryRecord=function tp165SafeHistoryRecord(value,index){
+  const source=value&&typeof value==='object'&&!Array.isArray(value)?value:{};
+  const exercises=Array.isArray(source.exercises)?source.exercises:[];
+  return Object.assign({},source,{
+   started:source.started||source.finished||new Date(0).toISOString(),
+   exercises:exercises.filter(function(e){return e&&typeof e==='object'}).map(function(e){
+    return Object.assign({},e,{
+     id:String(e.id||'legacy-exercise-'+index),
+     hu:String(e.hu||e.name||e.en||'Korábbi gyakorlat'),
+     en:String(e.en||''),
+     sets:Array.isArray(e.sets)?e.sets.filter(function(s){return s&&typeof s==='object'}):[]
+    });
+   })
+  });
+ };
+
+ const tp165HistoryBase=history;
+ window.tp165RawHistory=function tp165RawHistory(){
+  try{const rows=tp165HistoryBase();return Array.isArray(rows)?rows:[]}catch(_){return []}
+ };
+ history=function(){
+  return window.tp165RawHistory().map(function(row,index){return window.tp165SafeHistoryRecord(row,index)});
+ };
+
+ const filteredBase=rf263FilteredHistory;
+ rf263FilteredHistory=function(){
+  try{
+   const rows=filteredBase.apply(this,arguments);
+   return Array.isArray(rows)?rows.map(function(row){return {x:window.tp165SafeHistoryRecord(row?.x,row?.index),index:Number.isInteger(row?.index)?row.index:0}}):[];
+  }catch(_){
+   const rows=typeof history==='function'?history():[];
+   return (Array.isArray(rows)?rows:[]).map(function(x,index){return {x:window.tp165SafeHistoryRecord(x,index),index:index}});
+  }
+ };
+
+ window.tp165DeleteBrokenHistory=function tp165DeleteBrokenHistory(index){
+  const rows=typeof window.tp165RawHistory==='function'?window.tp165RawHistory():(typeof history==='function'?history():[]);
+  if(!Array.isArray(rows)||index<0||index>=rows.length)return;
+  const remove=function(){const next=rows.slice();next.splice(index,1);db.set('history',next);if(typeof cloudChanged==='function')cloudChanged();render(historyScreen())};
+  try{
+   const ask=typeof tp2628Confirm==='function'?tp2628Confirm('Törlöd ezt a sérült naplóbejegyzést?',{title:'Naplóbejegyzés törlése',confirmText:'Törlés',danger:true}):Promise.resolve(false);
+   Promise.resolve(ask).then(function(ok){if(ok)remove()});
+  }catch(error){try{console.error('[TrainPilot] Journal delete confirm unavailable',error)}catch(_){}}
+ };
+
+ const itemBase=rf263HistoryItem;
+ rf263HistoryItem=function(x,originalIndex,visibleIndex){
+  const safe=window.tp165SafeHistoryRecord(x,originalIndex);
+  try{return itemBase.call(this,safe,originalIndex,visibleIndex)}catch(error){
+   try{console.error('[TrainPilot] Journal row recovery',originalIndex,error)}catch(_){}
+   const date=typeof fmtDate==='function'?fmtDate(safe.started):'';
+   return '<div class="history card tp165-history-recovery" role="status"><strong>Korábbi naplóbejegyzés</strong><p class="small muted">'+esc(date)+'<br>Ez a régi bejegyzés hiányos, ezért egyszerűsített nézetben jelent meg. A többi naplóadat továbbra is elérhető.</p><button type="button" class="btn danger block" onclick="tp165DeleteBrokenHistory('+Number(originalIndex||0)+')">Sérült bejegyzés törlése</button></div>';
+  }
+ };
+
+ window.TrainPilot165JournalRecovery={version:'1.6.5',legacyRows:true,partialRows:true,rowIsolation:true,safeHistoryReads:true};
+})();
+// @endsection trainpilot-165-journal-data-recovery.js
 
 // @section ready.js
 window.TrainPilotBoot.finish();
 // @endsection ready.js
-
 

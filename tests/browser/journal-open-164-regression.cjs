@@ -9,15 +9,29 @@ const listen=()=>new Promise(r=>server.listen(0,'127.0.0.1',r)),base=()=>'http:/
  const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU'});
  const errors=[];page.on('pageerror',e=>errors.push(String(e?.stack||e)));page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text())});page.on('dialog',d=>d.accept());
  await page.goto(base());await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
- await page.evaluate(()=>{
+ const recoveryState=await page.evaluate(()=>{
    const e=byId('side-plank'),now=new Date().toISOString();if(!e)throw Error('side-plank missing');
-   db.set('history',[{programId:'home-level2',programName:'Otthoni A/B – Haladó',dayId:'A',workout:'A',started:now,finished:now,exercises:[{id:e.id,hu:e.hu,en:e.en,loadType:e.loadType,repUnit:e.repUnit,effort:'good',sets:[{set:1,weight:0,reps:'16',leftSeconds:20,rightSeconds:16,done:true}]}]}]);
+   const valid={programId:'home-level2',programName:'Otthoni A/B – Haladó',dayId:'A',workout:'A',started:now,finished:now,exercises:[{id:e.id,hu:e.hu,en:e.en,loadType:e.loadType,repUnit:e.repUnit,effort:'good',sets:[{set:1,weight:0,reps:'16',leftSeconds:20,rightSeconds:16,done:true}]}]};
+   db.set('history',[
+    valid,
+    null,
+    {started:now,finished:now,workout:'A',exercises:null},
+    {started:now,finished:now,workout:'B',exercises:[null,{id:'side-plank',repUnit:'mp/oldal',sets:[null,{leftSeconds:'12',rightSeconds:'10',done:true}]}]}
+   ]);
    state.tab='home';state.session=null;render();
+   const hs=history();
+   const recent=tp140Recent('side-plank','home-level2',3);
+   const coach=rf152Recommendation('side-plank');
+   return {len:hs.length,secondExercises:Array.isArray(hs[1]?.exercises),thirdExercises:Array.isArray(hs[2]?.exercises),recent:recent.length,coachText:String(coach?.text||'')};
  });
+ assert.deepEqual({len:recoveryState.len,secondExercises:recoveryState.secondExercises,thirdExercises:recoveryState.thirdExercises},{len:4,secondExercises:true,thirdExercises:true},'runtime history reads must normalize malformed rows without changing row indexes');
+ assert.ok(recoveryState.recent>=1,'progression history lookup must survive malformed rows');
+ assert.ok(recoveryState.coachText.length>0,'Coach recommendation lookup must survive malformed rows');
  const nav=page.getByRole('button',{name:'Napló',exact:true}).first();assert.equal(await nav.count(),1,'Napló navigation button missing');
  await nav.click();await page.waitForTimeout(80);
  assert.equal(errors.length,0,'opening Journal raised runtime error: '+errors.join('\n'));
  assert.equal(await page.getByText('Edzésnapló',{exact:true}).count()>0,true,'Journal title must render after clicking Napló');
+ assert.equal(await page.locator('details.rf263-history').count(),4,'legacy and partial rows must not prevent Journal rendering');
  const first=page.locator('details.rf263-history').first();assert.equal(await first.count(),1,'saved workout must appear in Journal');
  await first.locator('summary').click();await page.waitForTimeout(60);
  const detail=await first.innerText();assert.match(detail,/Oldalsó plank/);assert.match(detail,/Bal 20 mp/);assert.match(detail,/Jobb 16 mp/);
@@ -30,6 +44,6 @@ const listen=()=>new Promise(r=>server.listen(0,'127.0.0.1',r)),base=()=>'http:/
  assert.equal(await page.evaluate(()=>state.session===null),true,'active in-memory session must be parked before Journal opens');
  assert.equal(await page.evaluate(()=>!!db.get('draft',null)?.session),true,'active workout must be preserved as a resumable draft before Journal opens');
  assert.equal(errors.length,0,'Journal navigation from active workout raised runtime error: '+errors.join('\n'));
- console.log('PASS: Journal opens from navigation, including bilateral history and active-workout route.');
+ console.log('PASS: Journal opens with bilateral, legacy/partial history and active-workout navigation.');
  await page.close();
 }finally{if(browser)await browser.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exit(1)});
