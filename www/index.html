@@ -1325,7 +1325,40 @@
   '.tp5-weight-backdrop{padding:12px!important;align-items:center!important}.tp5-weight-dialog{box-sizing:border-box!important;width:min(100%,420px)!important;max-height:min(72vh,480px)!important;overflow:auto!important;padding:14px!important}.tp5-weight-title{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.tp5-weight-title h2{margin:0;font-size:18px}.tp5-weight-title p{margin:3px 0 0;font-size:12px;color:var(--muted)}.tp5-weight-x{flex:0 0 38px;width:38px;height:38px;border:0;border-radius:12px;background:color-mix(in srgb,#a33 30%,var(--card2));color:#fff;font-size:26px;line-height:1}.tp5-weight-field{display:grid;gap:6px;margin:14px 0 10px;font-size:12px;font-weight:700}.tp5-weight-input-wrap{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px}.tp5-weight-input-wrap .field{min-width:0;margin:0!important}.tp5-weight-input-wrap span{font-weight:800}.tp5-weight-date{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border:1px solid var(--line);border-radius:12px}.tp5-weight-date small{color:var(--muted)}.tp5-weight-error{min-height:18px;margin:6px 0 0;color:#e88;font-size:11px}.tp5-weight-actions{display:grid!important;grid-template-columns:auto 1fr 1fr!important;gap:7px!important;margin-top:8px!important}.tp5-weight-actions .btn{min-width:0!important;margin:0!important}',
   '@media(max-width:360px){.tp5-trend-mini{width:92px;flex-basis:92px}.tp5-pulse-days{gap:2px}.tp5-pulse-day strong{font-size:10px}.tp5-weight-actions{grid-template-columns:1fr 1fr!important}.tp5-weight-actions [data-tp5-delete]{grid-column:1/-1;grid-row:2}.tp5-weight-dialog{padding:11px!important}}'
  ].join('');document.head.appendChild(style);
- window.TrainPilotPhase5={version:TP5_VERSION,pulseSource:'healthLedgerV1.averageHeartRate',calendarDays:7,zeroPulseAsMissing:true,persistentWeightEdit:true,ownWeightDialog:true};
+
+ const tpGlobalChevronSelectors=[
+  '.chev','.rf-history-health-chevron','.rf103-history-chevron','.tp146-exercise-chevron',
+  '.tp152-chevron','.tp152-program-chevron','.tp166-home-coach-chevron',
+  '.tp1511-training summary i','.tp3-unified-chevron','.tp168-chevron',
+  '.tp168-status>b','.tp169-pulse-summary>b','.tp168-weight-summary>b'
+ ];
+ window.tpGlobalApplyChevrons=function(root=document){
+  const scope=root&&root.querySelectorAll?root:document;
+  scope.querySelectorAll(tpGlobalChevronSelectors.join(',')).forEach(el=>{
+   el.classList.add('tp-global-chevron');
+   el.setAttribute('aria-hidden','true');
+   if(el.textContent!=='›')el.textContent='›';
+   const summary=el.closest('summary'),details=summary?.parentElement?.matches?.('details')?summary.parentElement:null;
+   if(details||el.matches('.tp169-pulse-summary>b,.tp168-weight-summary>b')||el.closest('.rf-history-health-panel')){
+    el.classList.add('tp-global-chevron-rotates');
+   }
+  });
+  scope.querySelectorAll('.tp-library-card>summary').forEach(summary=>{
+   summary.classList.add('tp-global-chevron-host','tp-global-chevron-host-rotates');
+  });
+  return true;
+ };
+ const tp5ChevronRenderBase=window.render;
+ if(typeof tp5ChevronRenderBase==='function')window.render=function(){
+  const out=tp5ChevronRenderBase.apply(this,arguments);
+  window.tpGlobalApplyChevrons(document);
+  setTimeout(()=>window.tpGlobalApplyChevrons(document),0);
+  return out;
+ };
+ window.tpGlobalApplyChevrons(document);
+ setTimeout(()=>window.tpGlobalApplyChevrons(document),0);
+
+ window.TrainPilotPhase5={version:TP5_VERSION,pulseSource:'healthLedgerV1.averageHeartRate',calendarDays:7,zeroPulseAsMissing:true,persistentWeightEdit:true,ownWeightDialog:true ,globalChevron:true,themeAwareChevron:true,matteHealthBasic:true,pulseSafeZone:true};
  decoratePulse();setTimeout(decoratePulse,0);
 })();
 
