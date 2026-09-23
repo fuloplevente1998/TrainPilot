@@ -33,7 +33,7 @@ const listen=()=>new Promise(r=>server.listen(0,'127.0.0.1',r)),base=()=>'http:/
  assert.equal(await page.getByText('Edzésnapló',{exact:true}).count()>0,true,'Journal title must render after clicking Napló');
  assert.equal(await page.locator('details.rf263-history').count(),4,'legacy and partial rows must not prevent Journal rendering');
  const first=page.locator('details.rf263-history').first();assert.equal(await first.count(),1,'saved workout must appear in Journal');
- await first.locator('summary').click();await page.waitForTimeout(60);
+ await first.locator(':scope > summary').click();await page.waitForTimeout(60);
  const detail=await first.innerText();assert.match(detail,/Oldalsó plank/);assert.match(detail,/Bal 20 mp/);assert.match(detail,/Jobb 16 mp/);
 
  // Active-workout navigation must still be able to reach Journal after confirmation.

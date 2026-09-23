@@ -125,7 +125,8 @@ const server=http.createServer((req,res)=>{
   assert.ok(await programDay.locator('.tp152-program-exercise .meta').first().innerText(),'program exercise summary must include prescription details');
   assert.ok(await programDay.locator('.tp152-program-exercise .tp-play-btn').count()>0,'program exercise rows must retain video controls');
 
-  await page.evaluate(()=>profileScreen());await page.waitForSelector('.tp152-profile');
+  const plannerBackgroundTab=await page.evaluate(()=>state.tab);
+  await page.evaluate(()=>profileScreen());await page.waitForSelector('#tp3PlannerPanelHost .tp152-profile');
   assert.equal(await page.locator('.tp152-profile-group').count(),5,'personal planner must be grouped into five hierarchical sections');
   const goalGroup=page.locator('.tp152-profile-group').nth(1);
   assert.equal(await goalGroup.getAttribute('open'),null,'goal and experience group should start collapsed');
@@ -134,7 +135,8 @@ const server=http.createServer((req,res)=>{
   const profileSelect=goalGroup.locator('.tp-select').first();await profileSelect.locator('.tp-select-trigger').click();
   assert.equal(await profileSelect.evaluate(e=>e.classList.contains('open')),true,'custom dropdown must open');
   assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),true);assert.equal(await profileSelect.evaluate(e=>e.classList.contains('open')),false,'Android back must close an open dropdown before leaving the page');
-  assert.equal(await page.evaluate(()=>state.tab),'profile','closing a dropdown must keep the current page');
+  assert.equal(await page.evaluate(()=>state.tab),plannerBackgroundTab,'closing a planner dropdown must keep the unchanged background route');
+  assert.equal(await page.locator('#tp3PlannerPanelHost').count(),1,'closing a dropdown must keep the planner panel open');
 
   await page.evaluate(()=>go('settings'));await page.waitForSelector('#tp155R4PanelHost[data-panel="settings"] .tp152-settings');
   const settingsHost=page.locator('#tp155R4PanelHost[data-panel="settings"]');
@@ -161,7 +163,7 @@ const server=http.createServer((req,res)=>{
   assert.equal(await settingsHost.locator('.tp152-settings-backup').evaluate(e=>e.getBoundingClientRect().top),backupBeforeBack,'opening/closing Theme must not move lower Settings cards');
   assert.equal(await page.locator('#tp155R4PanelHost[data-panel="settings"]').count(),1,'closing Theme must keep Settings open');
   assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),true);assert.equal(await page.locator('#tp155R4PanelHost').count(),0,'next Android back must close the Settings sheet');
-  assert.equal(await page.evaluate(()=>state.tab),'profile','closing Settings sheet must preserve the underlying full page');
+  assert.equal(await page.evaluate(()=>state.tab),plannerBackgroundTab,'closing Settings sheet must preserve the same underlying full page that was behind the planner');
   await page.evaluate(()=>go('home'));await page.waitForSelector('main.rf221-home');
   assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),false,'Android back at Home root should be released to Android');
   await page.evaluate(()=>rf233CoachScreen());await page.waitForSelector('#tp155R4PanelHost[data-panel="coach"] .tp151-coach');

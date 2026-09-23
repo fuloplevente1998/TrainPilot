@@ -506,6 +506,7 @@
   const add=(src,archiveOnly)=>{
    if(!src||typeof src!=='object')return;
    const x=clone(src);
+   if(kind==='history'&&typeof window.tp3HistoryIsDeleted==='function'&&window.tp3HistoryIsDeleted(x))return;
    if(archiveOnly&&x.id)return; // old stable-ID records may have been explicitly deleted; only rescue legacy rows.
    if(x.id){
     const byId=items.findIndex(y=>y?.id===x.id);
@@ -616,6 +617,460 @@
  setTimeout(decorate,0);
  requestAnimationFrame?.(()=>requestAnimationFrame?.(decorate));
  window.TrainPilotHomeCoachStartup={version:'1',decorate};
+})();
+
+
+/* Phase 3 — #29 + #30 Journal polish and unified right-chevron language. */
+(function(){
+ 'use strict';
+ const TP3_VERSION='phase3-29-30-37-r6';
+ const lang=()=>typeof rf212Lang==='function'?rf212Lang():'hu';
+ const words={
+  hu:{photos:'Edzésfotók',photoCount:n=>n+' fotó',left:'Bal oldal – mp',right:'Jobb oldal – mp',sets:'Sorozatok',addSet:'Sorozat hozzáadása',remove:'Törlés',statsHint:'Koppints a részletekhez.',summary:'Edzés összegzés',trained:'Mit edzettél?',edit:'Szerkesztés',cancel:'Mégse',exercise:'gyakorlat',reps:'összes ismétlés',volume:'össz volumen',focus:'Fő fókusz',noFocus:'Teljes test',save:'Mentés',addExercise:'Gyakorlat hozzáadása',deleteExercise:'Gyakorlat törlése',deleteWorkout:'Edzés törlése'},
+  en:{photos:'Workout photos',photoCount:n=>n+' photos',left:'Left side – sec',right:'Right side – sec',sets:'Sets',addSet:'Add set',remove:'Delete',statsHint:'Tap for details.',summary:'Workout summary',trained:'What did you train?',edit:'Edit',cancel:'Cancel',exercise:'exercises',reps:'total reps',volume:'total volume',focus:'Main focus',noFocus:'Full body',save:'Save'},
+  de:{photos:'Trainingsfotos',photoCount:n=>n+' Fotos',left:'Linke Seite – Sek.',right:'Rechte Seite – Sek.',sets:'Sätze',addSet:'Satz hinzufügen',remove:'Löschen',statsHint:'Für Details tippen.',summary:'Trainingsübersicht',trained:'Was hast du trainiert?',edit:'Bearbeiten',cancel:'Abbrechen',exercise:'Übungen',reps:'Wiederholungen gesamt',volume:'Gesamtvolumen',focus:'Hauptfokus',noFocus:'Ganzkörper',save:'Speichern'},
+  ro:{photos:'Fotografii antrenament',photoCount:n=>n+' fotografii',left:'Partea stângă – sec',right:'Partea dreaptă – sec',sets:'Serii',addSet:'Adaugă serie',remove:'Șterge',statsHint:'Atinge pentru detalii.',summary:'Rezumat antrenament',trained:'Ce ai antrenat?',edit:'Editează',cancel:'Anulează',exercise:'exerciții',reps:'repetări totale',volume:'volum total',focus:'Focus principal',noFocus:'Tot corpul',save:'Salvează'}
+ };
+ const tx=()=>words[lang()]||words.hu;
+ const isBilateral=e=>String(e?.repUnit||'').toLowerCase()==='mp/oldal'||e?.id==='side-plank';
+ const sideValue=(s,k)=>{const v=Number(s?.[k]);if(Number.isFinite(v)&&v>0)return Math.round(v);const legacy=Number(s?.reps);return Number.isFinite(legacy)&&legacy>0?Math.round(legacy):''};
+ const normalizeLegacySides=x=>{for(const e of x?.exercises||[])if(isBilateral(e))for(const s of e.sets||[]){const legacy=Number(s.reps);if(!(Number(s.leftSeconds)>0)&&Number.isFinite(legacy)&&legacy>0)s.leftSeconds=Math.round(legacy);if(!(Number(s.rightSeconds)>0)&&Number.isFinite(legacy)&&legacy>0)s.rightSeconds=Math.round(legacy)}return x};
+ const setSummaryText=(e,s)=>{
+  if(isBilateral(e)){
+   const left=sideValue(s,'leftSeconds'),right=sideValue(s,'rightSeconds'),parts=[];
+   if(Number(s?.weight)>0&&e.loadType!=='bodyweight')parts.push((Number(s.weight)||0)+' '+tp149LoadLabel(e.loadType));
+   parts.push((lang()==='hu'?'Bal ':lang()==='de'?'Links ':lang()==='ro'?'Stg. ':'Left ')+(left||'—')+' mp');
+   parts.push((lang()==='hu'?'Jobb ':lang()==='de'?'Rechts ':lang()==='ro'?'Dr. ':'Right ')+(right||'—')+' mp');
+   return parts.join(' · ');
+  }
+  try{return formatSet(e,s)}catch(_){return String(s?.reps||'—')+' '+String(e?.repUnit||'')}
+ };
+ const exerciseSummaryText=e=>{
+  const sets=(e?.sets||[]).filter(s=>s&&s.done!==false);if(!sets.length)return (lang()==='hu'?'Nincs kész sorozat':'No completed set');
+  const groups=[];
+  for(const s of sets){const value=setSummaryText(e,s),last=groups.at(-1);if(last&&last.value===value)last.count++;else groups.push({value,count:1})}
+  return groups.map(g=>(g.count>1?g.count+'× ':'')+g.value).join(' · ');
+ };
+ const tp3WorkoutStats=x=>{
+  let reps=0,volume=0;const focus={},doneSets=[];
+  for(const raw of x?.exercises||[]){
+   const e=rf151SetMeta(raw),sets=(e.sets||[]).filter(s=>s&&s.done!==false);doneSets.push(...sets);
+   const timed=isBilateral(e)||/mp|sec/i.test(String(e.repUnit||''));
+   for(const s of sets){const r=Number(s.reps)||0,w=Number(s.weight)||0;if(!timed)reps+=r;if(w>0&&r>0)volume+=w*r}
+   for(const g of (typeof rf145Groups==='function'?rf145Groups(e.id):(typeof muscleGroups==='function'?muscleGroups(e.id):[])))focus[g]=(focus[g]||0)+sets.length;
+  }
+  const focusText=Object.entries(focus).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([g])=>typeof rf145MuscleLabel==='function'?rf145MuscleLabel(g):g).join(' · ');
+  return {exerciseCount:(x?.exercises||[]).length,setCount:doneSets.length,reps:Math.round(reps),volume:Math.round(volume),focus:focusText};
+ };
+ const tp3MetricIcon=name=>{
+  const path={
+   exercise:'<path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/>',
+   sets:'<path d="M12 3 4 7l8 4 8-4-8-4Zm-8 9 8 4 8-4M4 17l8 4 8-4"/>',
+   reps:'<path d="M20 7v5h-5M4 17v-5h5M6.2 8.5A7 7 0 0 1 18 6l2 1M18 15.5A7 7 0 0 1 6 18l-2-1"/>',
+   volume:'<path d="M5 20V14M10 20V10M15 20V6M20 20V3"/>'
+  }[name]||'';
+  return '<span class="tp3-metric-icon" aria-hidden="true"><svg viewBox="0 0 24 24">'+path+'</svg></span>';
+ };
+ const tp3ExerciseSummary=e=>{
+  const x=rf151SetMeta(e),sets=(x.sets||[]).filter(s=>s&&s.done!==false);
+  return (sets.length?sets.length+' '+tx().sets.toLowerCase()+' · ':'')+exerciseSummaryText(x);
+ };
+ const tp3KeepScroll=fn=>{const y=window.scrollY||0;fn();requestAnimationFrame(()=>{try{window.scrollTo(0,y)}catch(_){}})};
+ const tp3ExerciseState=()=>state.tp3HistoryExerciseEdit||null;
+ const tp3ClearExerciseState=()=>{state.tp3HistoryExerciseEdit=null};
+ const tp3ExerciseDetails=function(key,ei){
+  const workout=[...document.querySelectorAll('[data-tp152-history-key]')].find(n=>n.getAttribute('data-tp152-history-key')===String(key));
+  return workout?.querySelector('details.tp3-history-ex-item[data-tp3-ex-index="'+String(ei)+'"]')||null;
+ };
+ const tp3RefreshExerciseEditor=function(){
+  const st=tp3ExerciseState();if(!st||st.isNew)return false;
+  const el=tp3ExerciseDetails(st.key,st.index);if(!el)return false;
+  const html=tp3ExerciseEditorHtml(st.key,st.draft,st.index,false),old=el.querySelector(':scope > .tp3-exercise-inline-editor');
+  if(old)old.outerHTML=html;else el.insertAdjacentHTML('beforeend',html);
+  return true;
+ };
+ window.tp3OpenExerciseEditor=function(key,ei,el){
+  const cur=tp3ExerciseState();if(cur&&cur.key===key&&cur.index===ei&&!cur.isNew)return;
+  const i=rf142FindHistoryIndex(key),x=history()[i],raw=x?.exercises?.[ei];if(!raw)return;
+  const target=el||tp3ExerciseDetails(key,ei),workout=target?.closest?.('[data-tp152-history-key]');
+  tp3ClearExerciseState();
+  workout?.querySelectorAll?.('details.tp3-history-ex-item[open]').forEach(n=>{if(n!==target){n.querySelector(':scope > .tp3-exercise-inline-editor')?.remove();n.open=false}});
+  state.tp3HistoryExerciseEdit={key,index:ei,isNew:false,draft:normalizeLegacySides({exercises:[rf151Clone(raw)]}).exercises[0]};
+  state.tp3HistoryOpenKey=key;
+  if(target){
+   target.open=true;
+   target.querySelector(':scope > .tp3-exercise-inline-editor')?.remove();
+   target.insertAdjacentHTML('beforeend',tp3ExerciseEditorHtml(key,state.tp3HistoryExerciseEdit.draft,ei,false));
+   return;
+  }
+  tp3KeepScroll(()=>render());
+ };
+ window.tp3ExerciseToggle=function(el,key,ei){
+  if(!el)return;
+  const st=tp3ExerciseState();
+  if(el.open){if(!(st&&st.key===key&&!st.isNew&&st.index===ei))window.tp3OpenExerciseEditor(key,ei,el)}
+  else if(st&&st.key===key&&!st.isNew&&st.index===ei){tp3ClearExerciseState();el.querySelector(':scope > .tp3-exercise-inline-editor')?.remove()}
+ };
+ window.tp3CancelExerciseEdit=function(key){
+  const st=tp3ExerciseState();
+  if(st?.isNew){tp3ClearExerciseState();state.tp3HistoryOpenKey=key||state.tp3HistoryOpenKey;return tp3KeepScroll(()=>render())}
+  const el=st?tp3ExerciseDetails(st.key,st.index):null;
+  tp3ClearExerciseState();state.tp3HistoryOpenKey=key||state.tp3HistoryOpenKey;
+  if(el){el.querySelector(':scope > .tp3-exercise-inline-editor')?.remove();el.open=false;return}
+  tp3KeepScroll(()=>render());
+ };
+ window.tp3ExerciseSetValue=function(si,k,v){
+  const e=tp3ExerciseState()?.draft,s=e?.sets?.[si];if(!s)return;
+  if(k==='weight')s.weight=Math.max(0,Number(String(v).replace(',','.'))||0);
+  else s[k]=String(v);
+ };
+ window.tp3ExerciseSetSide=function(si,k,v){
+  const e=tp3ExerciseState()?.draft,s=e?.sets?.[si];if(!s||!['leftSeconds','rightSeconds'].includes(k))return;
+  const n=Math.max(0,Math.round(Number(String(v).replace(',','.'))||0));s[k]=n;
+  if(s.leftSeconds||s.rightSeconds)s.reps=String(Math.max(Number(s.leftSeconds)||0,Number(s.rightSeconds)||0)||'');
+ };
+ window.tp3ExerciseToggleDone=function(si){
+  const st=tp3ExerciseState(),s=st?.draft?.sets?.[si];if(!s)return;
+  s.done=!s.done;if(!tp3RefreshExerciseEditor())tp3KeepScroll(()=>render());
+ };
+ window.tp3ExerciseAddSet=function(){
+  const st=tp3ExerciseState(),e=st?.draft;if(!e)return;
+  e.sets=e.sets||[];e.sets.push(rf151NewSet(e,e.sets.length+1));if(!tp3RefreshExerciseEditor())tp3KeepScroll(()=>render());
+ };
+ window.tp3ExerciseRemoveSet=function(si){
+  const st=tp3ExerciseState(),e=st?.draft;if(!e)return;
+  if((e.sets||[]).length<=1){alert('Egy gyakorlatnál legalább 1 sorozat maradjon.');return}
+  e.sets.splice(si,1);rf151Renumber(e);if(!tp3RefreshExerciseEditor())tp3KeepScroll(()=>render());
+ };
+ window.tp3SaveExerciseEdit=function(){
+  const st=tp3ExerciseState();if(!st)return;
+  const i=rf142FindHistoryIndex(st.key),h=history();if(i<0)return;
+  const x=rf151Clone(h[i]),e=rf151Clone(st.draft);if(!(e.sets||[]).length){alert('Legalább 1 sorozat szükséges.');return}
+  rf151Renumber(e);
+  if(st.isNew)x.exercises.push(e);else if(x.exercises?.[st.index])x.exercises[st.index]=e;else return;
+  x.editedAt=new Date().toISOString();h[i]=x;h.sort((a,b)=>String(b.started||'').localeCompare(String(a.started||'')));db.set('history',h);
+  tp3ClearExerciseState();state.tp3HistoryOpenKey=rf142WorkoutKey(x);try{if(typeof cloudChanged==='function')cloudChanged()}catch(_){}
+  tp3KeepScroll(()=>render());
+ };
+ window.tp3DeleteExercise=async function(){
+  const st=tp3ExerciseState();if(!st)return;
+  if(st.isNew){return window.tp3CancelExerciseEdit(st.key)}
+  const i=rf142FindHistoryIndex(st.key),h=history(),x=h[i];if(i<0||!x)return;
+  if((x.exercises||[]).length<=1){alert('Az edzésben legalább 1 gyakorlatnak maradnia kell.');return}
+  const name=tp149ExerciseName(rf151SetMeta(x.exercises[st.index]||{}));
+  const ok=typeof tp2628Confirm==='function'?await tp2628Confirm('Törlöd ezt a gyakorlatot az edzésből?\n'+name,{title:'Gyakorlat törlése',confirmText:'Törlés',danger:true}):false;
+  if(!ok)return;
+  const copy=rf151Clone(x);copy.exercises.splice(st.index,1);copy.editedAt=new Date().toISOString();h[i]=copy;db.set('history',h);
+  tp3ClearExerciseState();state.tp3HistoryOpenKey=rf142WorkoutKey(copy);try{if(typeof cloudChanged==='function')cloudChanged()}catch(_){}
+  tp3KeepScroll(()=>render());
+ };
+ window.tp3StartAddExercise=function(key){
+  const i=rf142FindHistoryIndex(key),x=history()[i],sel=document.querySelector('[data-tp3-add-exercise="'+CSS.escape(String(key))+'"]');const id=sel?.value;
+  if(!x||!id)return;
+  if((x.exercises||[]).some(e=>e.id===id)){alert('Ez a gyakorlat már szerepel az edzésben. Adj hozzá inkább új sorozatot.');return}
+  const lib=byId(id);if(!lib)return;
+  const e={id,hu:lib.hu,en:lib.en,loadType:lib.loadType,repUnit:lib.repUnit,sets:[rf151NewSet(lib,1)]};
+  state.tp3HistoryExerciseEdit={key,index:(x.exercises||[]).length,isNew:true,draft:normalizeLegacySides({exercises:[e]}).exercises[0]};
+  state.tp3HistoryOpenKey=key;tp3KeepScroll(()=>render());
+ };
+ const tp3ExerciseEditorHtml=(key,e,ei,isNew)=>{
+  const w=tx(),meta=rf151SetMeta(e),bilateral=isBilateral(meta);
+  const rows=(meta.sets||[]).map((set,si)=>{
+   const load=meta.loadType==='bodyweight'
+    ?'<span class="small muted tp3-bodyweight">'+esc(tp149T('workout.bodyweight'))+'</span>'
+    :'<label class="small tp3-load">'+esc(tp149LoadLabel(meta.loadType))+'<input class="field" inputmode="decimal" value="'+esc(Number(set.weight)||0)+'" oninput="tp3ExerciseSetValue('+si+',\'weight\',this.value)"></label>';
+   const reps=bilateral
+    ?'<label class="small tp3-side">'+esc(w.left)+'<input class="field" inputmode="numeric" value="'+esc(sideValue(set,'leftSeconds'))+'" oninput="tp3ExerciseSetSide('+si+',\'leftSeconds\',this.value)"></label><label class="small tp3-side">'+esc(w.right)+'<input class="field" inputmode="numeric" value="'+esc(sideValue(set,'rightSeconds'))+'" oninput="tp3ExerciseSetSide('+si+',\'rightSeconds\',this.value)"></label>'
+    :'<label class="small tp3-reps">'+esc(meta.repUnit||'ism.')+'<input class="field" inputmode="numeric" value="'+esc(set.reps||'')+'" oninput="tp3ExerciseSetValue('+si+',\'reps\',this.value)"></label>';
+   return '<div class="tp3-set-row"><div class="num">'+(si+1)+'</div>'+load+reps+'<button type="button" class="check '+(set.done?'done':'')+'" aria-label="OK" onclick="event.stopPropagation();tp3ExerciseToggleDone('+si+')">'+(set.done?'✓':'OK')+'</button><button type="button" class="tp3-mini-delete" aria-label="'+esc(w.remove)+'" onclick="event.stopPropagation();tp3ExerciseRemoveSet('+si+')">−</button></div>';
+  }).join('');
+  return '<div class="tp3-exercise-inline-editor">'+rows+
+   '<div class="tp3-exercise-add-row"><button type="button" class="btn secondary block" onclick="event.stopPropagation();tp3ExerciseAddSet()">＋ '+esc(w.addSet)+'</button></div>'+
+   '<div class="tp3-exercise-actions"><button type="button" class="btn block tp3-ex-save" onclick="event.stopPropagation();tp3SaveExerciseEdit()">✓ '+esc(w.save)+'</button><button type="button" class="btn secondary" onclick="event.stopPropagation();tp3CancelExerciseEdit(\''+esc(key)+'\')">'+esc(w.cancel)+'</button><button type="button" class="btn danger" onclick="event.stopPropagation();tp3DeleteExercise()">'+esc(isNew?w.remove:w.deleteExercise)+'</button></div></div>';
+ };
+ const tp3ExerciseListHtml=(x,key)=>{
+  const w=tx(),st=tp3ExerciseState(),rows=(x.exercises||[]).map((raw,ei)=>{
+   const active=st&&st.key===key&&!st.isNew&&st.index===ei,e=active?st.draft:raw;
+   return '<details class="tp3-history-ex-item" data-tp3-ex-index="'+ei+'" '+(active?'open ':'')+'ontoggle="tp3ExerciseToggle(this,\''+esc(key)+'\','+ei+')"><summary><div class="tp3-history-ex-title"><strong>'+esc(tp149ExerciseName(rf151SetMeta(e)))+'</strong><span class="small muted">'+esc(tp3ExerciseSummary(e))+'</span></div><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary>'+(active?tp3ExerciseEditorHtml(key,e,ei,false):'')+'</details>';
+  }).join('');
+  const pending=st&&st.key===key&&st.isNew?'<details class="tp3-history-ex-item tp3-history-ex-new" open><summary><div class="tp3-history-ex-title"><strong>'+esc(tp149ExerciseName(rf151SetMeta(st.draft)))+'</strong><span class="small muted">'+esc(tp3ExerciseSummary(st.draft))+'</span></div><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary>'+tp3ExerciseEditorHtml(key,st.draft,st.index,true)+'</details>':'';
+  const opts=exercises().filter(e=>!(x.exercises||[]).some(v=>v.id===e.id));
+  const add='<details class="tp3-add-exercise"><summary><strong>＋ '+esc(w.addExercise)+'</strong><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary><div class="tp3-add-exercise-body"><select class="field" data-tp3-add-exercise="'+esc(key)+'"><option value="">—</option>'+opts.map(e=>'<option value="'+esc(e.id)+'">'+esc(tp149ExerciseName(e))+'</option>').join('')+'</select><button type="button" class="btn secondary block" '+(opts.length?'':'disabled')+' onclick="event.stopPropagation();tp3StartAddExercise(\''+esc(key)+'\')">＋ '+esc(w.addExercise)+'</button></div></details>';
+  return rows+pending+add;
+ };
+ const tp3WorkoutSummaryHtml=(x,key)=>{
+  const w=tx(),s=tp3WorkoutStats(x),volume=s.volume?tp149FormatNumber(s.volume)+' kg':'—';
+  return '<section class="tp3-workout-summary"><div class="tp3-summary-head"><div><strong class="tp3-summary-title">▥ '+esc(w.summary)+'</strong><div class="small muted">'+esc(w.focus+': '+(s.focus||w.noFocus))+'</div></div></div>'+
+   '<div class="tp3-summary-metrics"><div>'+tp3MetricIcon('exercise')+'<strong>'+esc(s.exerciseCount)+'</strong><span>'+esc(w.exercise)+'</span></div><div>'+tp3MetricIcon('sets')+'<strong>'+esc(s.setCount)+'</strong><span>'+esc(w.sets.toLowerCase())+'</span></div><div>'+tp3MetricIcon('reps')+'<strong>'+esc(s.reps)+'</strong><span>'+esc(w.reps)+'</span></div><div>'+tp3MetricIcon('volume')+'<strong>'+esc(volume)+'</strong><span>'+esc(w.volume)+'</span></div></div>'+
+   '<div class="tp3-trained-head"><strong>◎ '+esc(w.trained)+'</strong></div><div class="tp3-exercise-list">'+tp3ExerciseListHtml(x,key)+'</div></section>';
+ };
+
+ if(typeof rf130PhotoSection==='function'){
+  const photoBase=rf130PhotoSection;
+  rf130PhotoSection=function(x,key){
+   const photos=typeof rf130VisiblePhotos==='function'?rf130VisiblePhotos(x):[];
+   const w=tx();
+   return '<details class="tp3-photo-section"><summary><div><strong>'+esc(w.photos)+'</strong><span class="small muted"> • '+esc(w.photoCount(photos.length))+'</span></div><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary><div class="tp3-photo-body">'+photoBase(x,key)+'</div></details>';
+  };
+ }
+
+ window.tp3HistoryToggle=function(el,key){
+  if(!el)return;
+  if(el.open)state.tp3HistoryOpenKey=key;
+  else if(state.tp3HistoryOpenKey===key)state.tp3HistoryOpenKey=null;
+ };
+
+ rf263HistoryItem=function(x,originalIndex,visibleIndex){
+  const safe=typeof window.tp165SafeHistoryRecord==='function'?window.tp165SafeHistoryRecord(x,originalIndex):x;
+  try{
+   x=safe;
+   const key=rf142WorkoutKey(x),open=state.tp3HistoryOpenKey===key,c=completedSets(x);
+   const title=typeof tp149HistoryTitle==='function'?tp149HistoryTitle(x):(x.programName?x.programName+' • '+(x.dayId||x.workout):'Full Body '+x.workout);
+   const validDate=typeof window.tp167HistoryDateIso==='function'?window.tp167HistoryDateIso(x.started):x.started;
+   const dateText=validDate?(typeof tp149FormatDateTime==='function'?tp149FormatDateTime(validDate):fmtDate(validDate)):(typeof window.tp167MissingDateText==='function'?window.tp167MissingDateText():'Dátum nem elérhető');
+   const photoCount=typeof rf130VisiblePhotos==='function'?rf130VisiblePhotos(x).length:0;
+   const exerciseCount=typeof tp149T==='function'?tp149T('journal.exerciseCount',{count:x.exercises.length}):x.exercises.length+' gyakorlat';
+   const photoLabel=photoCount?(typeof tp149T==='function'?tp149T('journal.photoCount',{count:photoCount}):photoCount+' fotó'):'';
+   const calendarText=typeof tp149T==='function'?tp149T('journal.addCalendar'):'Naptárhoz adás';
+   const healthText=typeof tp149T==='function'?tp149T('journal.healthData'):'Health adatok';
+   const refreshText=typeof tp149T==='function'?tp149T('common.refresh'):'Frissítés';
+   const tools='<div class="tp3-history-aux"><button class="btn secondary block" type="button" onclick="event.stopPropagation();calendarIntent('+originalIndex+')">'+esc(calendarText)+'</button><button class="btn danger block tp155-history-delete" type="button" onclick="event.stopPropagation();tp3DeleteHistoryWorkout(\''+esc(key)+'\')">'+esc(tx().deleteWorkout)+'</button></div>';
+   const health='<div class="rf-history-health-panel" data-rf-history-health-panel="'+originalIndex+'"><button type="button" class="rf-history-health-toggle" aria-expanded="true" onclick="event.stopPropagation();rfHistoryHealthToggle('+originalIndex+')"><div class="tp3-health-toggle-copy"><strong>'+esc(healthText)+'</strong><span class="small muted"> • '+esc(rfHistoryHealthWindow(x))+'</span></div><span class="rf-history-health-chevron" aria-hidden="true">›</span></button><div class="rf-history-health-body"><div class="rf-history-health" data-rf-history-health="'+originalIndex+'">'+rfHistoryHealthHtml(originalIndex)+'</div><button type="button" class="btn secondary block rf-history-health-refresh" onclick="event.stopPropagation();healthFromHistory('+originalIndex+')">'+esc(refreshText)+'</button></div></div>';
+   const primary=tp3WorkoutSummaryHtml(x,key);
+   const body='<div class="history-body tp3-combined-history-body">'+primary+tools+health+rf130PhotoSection(x,key)+'</div>';
+   return '<details data-tp152-history-key="'+esc(key)+'" '+(open?'open ':'')+'class="history rf263-history rf103-history tp3-combined-history" ontoggle="if(this.open){rf130LoadHistoryPhotos(this);rfHistoryHealthEnsure('+originalIndex+')}tp3HistoryToggle(this,\''+esc(key)+'\')"><summary><div class="history-head"><div class="history-title-row"><div><div class="history-title">'+esc(title)+'</div><div class="history-date">'+esc(dateText)+'</div></div><div class="rf103-history-side"><span class="badge">'+esc(exerciseCount+(photoLabel?' • '+photoLabel:''))+'</span><span class="rf103-history-chevron" aria-hidden="true">›</span></div></div><div class="history-badges"><span class="history-badge">⏱ '+esc(sessionDuration(x))+'</span><span class="history-badge">✓ '+esc(typeof tp149T==='function'?tp149T('journal.setCount',{done:c.done,total:c.total}):c.done+'/'+c.total+' sorozat')+'</span></div></div></summary>'+body+'</details>';
+  }catch(error){
+   try{console.error('[TrainPilot] Phase 3 Journal row recovery',originalIndex,error)}catch(_){}
+   const date=typeof fmtDate==='function'?fmtDate(safe?.started):'';
+   return '<div class="history card tp165-history-recovery" role="status"><strong>Korábbi naplóbejegyzés</strong><p class="small muted">'+esc(date)+'<br>Ez a régi bejegyzés hiányos, ezért egyszerűsített nézetben jelent meg.</p></div>';
+  }
+ };
+
+ rf220ProgressHtml=function(){
+  const t=rf220L(),rows=rf220ProgressRows(),w=tx();
+  if(!rows.length)return '<div class="card"><h2>'+esc(t.progress)+'</h2><p class="muted">'+esc(t.noData)+'</p></div>';
+  return '<section class="card tp3-stats-card"><h2>'+esc(t.progress)+' • '+esc(t.records)+'</h2><p class="small muted tp3-stats-hint">'+esc(w.statsHint)+'</p><div class="tp3-stats-list">'+rows.slice(0,12).map(({id,s})=>{
+   const max=s.maxWeight?String(s.maxWeight)+' kg':'—',e1=s.e1rm?s.e1rm.toFixed(1)+' kg':'—',best=s.best?String(s.best.w||0)+' kg × '+String(s.best.r||0):'—',vol=s.maxVolume?Math.round(s.maxVolume)+' kg·rep':'—';
+   return '<details class="tp3-stat-row" data-tp3-stat="'+esc(id)+'"><summary><div class="tp3-stat-copy"><strong>'+esc(rf220ExerciseName(id))+'</strong><span class="small muted">'+(s.maxWeight?esc(t.maxWeight+': '+s.maxWeight+' kg'):'')+'</span></div><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary><div class="tp3-stat-detail"><div class="grid2"><div class="stat"><small>'+esc(t.maxWeight)+'</small><strong>'+esc(max)+'</strong></div><div class="stat"><small>'+esc(t.e1rm)+'</small><strong>'+esc(e1)+'</strong></div><div class="stat"><small>'+esc(t.bestSet)+'</small><strong>'+esc(best)+'</strong></div><div class="stat"><small>'+esc(t.volume)+'</small><strong>'+esc(vol)+'</strong></div></div><div class="small muted tp3-stat-note">'+esc(t.approx)+'</div></div></details>';
+  }).join('')+'</div></section>';
+ };
+
+
+ // Phase 3 phone follow-up: a local deletion tombstone prevents stale current Drive
+ // snapshots/cloudBase copies from resurrecting a workout that was explicitly deleted.
+ const TP3_HISTORY_TOMBSTONES='phase3HistoryTombstones';
+ const tp3HistoryIdentity=x=>{
+  const ids=[];
+  if(x?.id)ids.push(String(x.id));
+  try{const legacy=window.TrainPilotIssue18?.legacyId?.('history',x);if(legacy)ids.push(String(legacy))}catch(_){}
+  let key='';try{key=typeof rf142WorkoutKey==='function'?String(rf142WorkoutKey(x)||''):''}catch(_){}
+  return {ids:[...new Set(ids.filter(Boolean))],key};
+ };
+ const tp3HistoryTombstones=()=>{
+  const rows=db.get(TP3_HISTORY_TOMBSTONES,[]);
+  return Array.isArray(rows)?rows.filter(x=>x&&typeof x==='object'):[];
+ };
+ window.tp3HistoryIsDeleted=function(x){
+  const id=tp3HistoryIdentity(x);
+  if(!id.ids.length&&!id.key)return false;
+  return tp3HistoryTombstones().some(t=>{
+   const ids=Array.isArray(t.ids)?t.ids:[];
+   return (id.key&&t.key&&id.key===t.key)||id.ids.some(v=>ids.includes(v));
+  });
+ };
+ const tp3MarkHistoryDeleted=x=>{
+  const id=tp3HistoryIdentity(x),rows=tp3HistoryTombstones().filter(t=>{
+   const ids=Array.isArray(t.ids)?t.ids:[];
+   return !((id.key&&t.key&&id.key===t.key)||id.ids.some(v=>ids.includes(v)));
+  });
+  rows.push({ids:id.ids,key:id.key,deletedAt:Date.now()});
+  db.set(TP3_HISTORY_TOMBSTONES,rows.slice(-2000));
+ };
+
+ const tp3DeleteConfirm=(message)=>{
+  if(typeof tp2628DialogRemove==='function')tp2628DialogRemove();
+  return new Promise(resolve=>{
+   const modal=document.createElement('div');modal.id='tp2628Dialog';modal.className='tp2628-dialog-backdrop tp3-delete-dialog';
+   const escDialog=typeof tp2628DialogEscape==='function'?tp2628DialogEscape:esc;
+   modal.innerHTML='<div class="tp2628-dialog" role="dialog" aria-modal="true" aria-labelledby="tp2628DialogTitle"><h2 id="tp2628DialogTitle">'+escDialog('Edzés törlése')+'</h2><p class="tp2628-dialog-message">'+escDialog(message)+'</p><div class="tp2628-dialog-actions"><button type="button" class="btn secondary" data-tp2628-cancel>Mégse</button><button type="button" class="btn danger" data-tp2628-confirm>Törlés</button></div></div>';
+   let finished=false;
+   const key=e=>{if(e.key==='Escape'){e.preventDefault();finish(false)}else if(e.key==='Enter'){e.preventDefault();finish(true)}};
+   const finish=value=>{if(finished)return;finished=true;document.removeEventListener('keydown',key,true);modal.remove();resolve(value)};
+   const cancel=modal.querySelector('[data-tp2628-cancel]'),confirm=modal.querySelector('[data-tp2628-confirm]');
+   cancel.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();finish(false)});
+   const accept=e=>{e?.preventDefault?.();e?.stopPropagation?.();finish(true)};
+   confirm.addEventListener('pointerup',accept,{passive:false});
+   confirm.addEventListener('click',accept);
+   modal.addEventListener('click',e=>{if(e.target===modal)finish(false)});
+   document.addEventListener('keydown',key,true);
+   document.body.appendChild(modal);
+   try{if(typeof tp149TranslateFreshDom==='function')tp149TranslateFreshDom(modal)}catch(_){}
+   try{confirm.focus({preventScroll:true})}catch(_){confirm.focus?.()}
+  });
+ };
+
+ window.tp3DeleteHistoryWorkout=function(key){
+  const i=rf142FindHistoryIndex(key),h=history();
+  if(i<0){alert(typeof tp149T==='function'?tp149T('journal.none'):'Az edzés nem található.');return}
+  const x=h[i],message='Biztosan törlöd ezt az edzést?\n'+fmtDate(x.started)+' • '+sessionDuration(x);
+  void tp3DeleteConfirm(message).then(ok=>{
+   if(!ok)return;
+   const live=history(),index=live.findIndex(v=>rf142WorkoutKey(v)===key);
+   if(index<0)return;
+   const removed=live[index];
+   tp3MarkHistoryDeleted(removed);
+   live.splice(index,1);db.set('history',live);
+   if(removed.scheduleId){
+    const s=scheduled(),si=s.findIndex(v=>v.id===removed.scheduleId);
+    if(si>=0&&s[si].status==='completed'){s[si]={...s[si],status:'planned',updatedAt:Date.now()};db.set('scheduled',s)}
+   }
+   if(state.health?.workout===removed.started){state.health.workout='';state.health.summary=null}
+   if(state.rf151HistoryEdit?.key===key)state.rf151HistoryEdit=null;
+   try{if(typeof cloudChanged==='function')cloudChanged()}catch(_){}
+   state.tab='history';render();
+  });
+ };
+ deleteHistoryWorkout=window.tp3DeleteHistoryWorkout;
+
+ // #37 — the personal planner stays in the same accepted panel language as the
+ // other modern TrainPilot tools, without changing the background route while open.
+ let tp3PlannerHost=null,tp3PlannerTrigger=null,tp3PlannerBodyOverflow='',tp3PlannerBodyOverflowPriority='',tp3PlannerScrollY=0;
+ const tp3ProfileScreenBase=profileScreen,tp3ShowPersonalPreviewBase=showPersonalPreview,tp3AcceptPersonalProgramBase=acceptPersonalProgram;
+ const tp3PlannerOpen=()=>!!(tp3PlannerHost&&tp3PlannerHost.isConnected);
+ window.tp3PlannerPanelOpen=tp3PlannerOpen;
+ const tp3PlannerIntro=()=>{
+  const l=lang();
+  return ({hu:'Állítsd be az alapokat, és készítünk egy hozzád illő tervet.',en:'Set the basics and we will build a plan that fits you.',de:'Lege die Grundlagen fest, dann erstellen wir deinen passenden Plan.',ro:'Setează datele de bază și îți construim un plan potrivit.'}[l]||'Állítsd be az alapokat, és készítünk egy hozzád illő tervet.');
+ };
+ const tp3CapturePlannerMain=fn=>{
+  const liveRender=render,oldTab=state.tab,oldHealth=state.healthView;
+  const hadCoach=typeof rf245CoachVisible!=='undefined',oldCoach=hadCoach?rf245CoachVisible:undefined;
+  let captured='';
+  try{render=function(custom){captured=String(custom||'');return custom};fn()}
+  finally{
+   render=liveRender;state.tab=oldTab;state.healthView=oldHealth;
+   if(hadCoach)rf245CoachVisible=oldCoach;
+  }
+  const t=document.createElement('template');t.innerHTML=captured;
+  const main=t.content.querySelector('main');if(!main)return '';
+  main.querySelector(':scope > button.btn.secondary')?.remove();
+  main.classList.add('tp3-planner-main');
+  return main.outerHTML;
+ };
+ const tp3DecoratePlannerContent=(content,kind)=>{
+  const main=content.querySelector('main');if(!main)return;
+  if(kind==='profile'){
+   const intro=main.querySelector('.hero p');if(intro)intro.textContent=tp3PlannerIntro();
+   const icons=['👤','🎯','🏋','▦','⚙'];
+   [...main.querySelectorAll('.tp152-profile-group>summary')].forEach((summary,i)=>{
+    if(summary.querySelector('.tp3-planner-group-icon'))return;
+    summary.insertAdjacentHTML('afterbegin','<span class="tp3-planner-group-icon" aria-hidden="true">'+(icons[i]||'•')+'</span>');
+   });
+   const build=main.querySelector('.tp152-profile-build');if(build)build.classList.add('tp3-planner-primary');
+  }else{
+   main.classList.add('tp3-planner-preview');
+   const activate=main.querySelector('button.btn.block[onclick*="acceptPersonalProgram"]');if(activate)activate.classList.add('tp3-planner-primary');
+  }
+ };
+ window.tp3PlannerPosition=function(){
+  if(!tp3PlannerOpen())return;
+  const top=document.querySelector('.top.tp154-nav-grid'),r=top?.getBoundingClientRect?.();
+  const edge=r?Math.max(0,Math.min((window.innerHeight||720)-80,r.bottom)):0;
+  tp3PlannerHost.style.top=Math.round(edge)+'px';
+ };
+ window.tp3ClosePlannerPanel=function(restoreFocus=true){
+  if(!tp3PlannerOpen())return false;
+  const trigger=tp3PlannerTrigger,y=tp3PlannerScrollY;
+  tp3PlannerHost.remove();tp3PlannerHost=null;tp3PlannerTrigger=null;tp3PlannerScrollY=0;
+  document.documentElement.classList.remove('tp3-planner-open');document.body.classList.remove('tp3-planner-open');
+  if(tp3PlannerBodyOverflow)document.body.style.setProperty('overflow',tp3PlannerBodyOverflow,tp3PlannerBodyOverflowPriority);else document.body.style.removeProperty('overflow');tp3PlannerBodyOverflow='';tp3PlannerBodyOverflowPriority='';
+  if(restoreFocus&&Number.isFinite(y))try{window.scrollTo(0,y)}catch(_){}
+  if(restoreFocus&&trigger?.isConnected)try{trigger.focus({preventScroll:true})}catch(_){}
+  return true;
+ };
+ const tp3RenderPlannerPanel=(kind,fn)=>{
+  const html=tp3CapturePlannerMain(fn);if(!html)return false;
+  try{if(typeof window.tp155R4ClosePanel==='function')window.tp155R4ClosePanel(false)}catch(_){}
+  if(!tp3PlannerOpen()){
+   tp3PlannerTrigger=document.activeElement;tp3PlannerScrollY=window.scrollY||0;tp3PlannerBodyOverflow=document.body.style.getPropertyValue('overflow')||'';tp3PlannerBodyOverflowPriority=document.body.style.getPropertyPriority('overflow')||'';
+   tp3PlannerHost=document.createElement('div');tp3PlannerHost.id='tp3PlannerPanelHost';tp3PlannerHost.className='tp3-planner-host';tp3PlannerHost.dataset.panel='profile';
+   tp3PlannerHost.innerHTML='<section class="tp3-planner-panel" role="dialog" aria-modal="true" aria-label="'+esc(typeof tp149T==='function'?tp149T('planner.title'):'Személyes edzéstervező')+'"><button type="button" class="tp3-planner-close" aria-label="'+esc(typeof tp149T==='function'?tp149T('common.close'):'Bezárás')+'" onclick="tp3ClosePlannerPanel()">×</button><div class="tp3-planner-content"></div></section>';
+   tp3PlannerHost.addEventListener('click',e=>{if(e.target===tp3PlannerHost)window.tp3ClosePlannerPanel()});
+   document.body.appendChild(tp3PlannerHost);
+   document.documentElement.classList.add('tp3-planner-open');document.body.classList.add('tp3-planner-open');document.body.style.setProperty('overflow','hidden','important');
+  }
+  const content=tp3PlannerHost.querySelector('.tp3-planner-content');content.innerHTML=html;
+  try{if(typeof tp149TranslateFreshDom==='function')tp149TranslateFreshDom(content)}catch(_){}
+  tp3DecoratePlannerContent(content,kind);
+  try{if(typeof rf260EnhanceSelects==='function')rf260EnhanceSelects()}catch(_){}
+  try{if(typeof rf260EnhanceTemporalFields==='function')rf260EnhanceTemporalFields()}catch(_){}
+  window.tp3PlannerPosition();requestAnimationFrame(()=>window.tp3PlannerPosition());
+  try{tp3PlannerHost.querySelector('.tp3-planner-close')?.focus({preventScroll:true})}catch(_){}
+  return true;
+ };
+ profileScreen=function(){return tp3RenderPlannerPanel('profile',tp3ProfileScreenBase)};
+ showPersonalPreview=function(){return tp3PlannerOpen()?tp3RenderPlannerPanel('preview',tp3ShowPersonalPreviewBase):tp3ShowPersonalPreviewBase()};
+ acceptPersonalProgram=function(){if(tp3PlannerOpen())window.tp3ClosePlannerPanel(false);return tp3AcceptPersonalProgramBase.apply(this,arguments)};
+
+ const tp3GoBase=go;
+ go=function(){if(tp3PlannerOpen())window.tp3ClosePlannerPanel(false);return tp3GoBase.apply(this,arguments)};
+ window.TrainPilotNavigate=go;
+ window.addEventListener?.('resize',window.tp3PlannerPosition,{passive:true});
+
+ const tp3PlannerStyle=document.createElement('style');tp3PlannerStyle.id='tp3PlannerPanelCss';tp3PlannerStyle.textContent=[
+  'html.tp3-planner-open,body.tp3-planner-open{overflow:hidden!important;overscroll-behavior:none!important}',
+  'html.tp3-planner-open .top.tp154-nav-grid{position:fixed!important;left:0!important;right:0!important;top:0!important;width:auto!important;z-index:16000!important}',
+  '.tp3-planner-host{position:fixed;z-index:14520;left:0;right:0;bottom:0;padding:7px max(8px,env(safe-area-inset-right,0px)) max(8px,env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));background:rgba(3,7,11,.48);display:flex;align-items:flex-start;justify-content:center;overflow:hidden}',
+  '.tp3-planner-panel{position:relative;box-sizing:border-box;width:min(760px,100%);max-width:100%;max-height:calc(100% - 2px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;border:1px solid color-mix(in srgb,var(--line) 82%,var(--accent) 18%);border-radius:18px;background:color-mix(in srgb,var(--card) 97%,transparent);box-shadow:0 16px 36px rgba(5,10,20,.22);padding:10px 10px max(12px,env(safe-area-inset-bottom,0px))}',
+  '.tp3-planner-close{box-sizing:border-box;position:sticky;top:0;float:right;width:36px;height:36px;min-width:36px;min-height:36px;margin:0 0 -36px 8px;padding:0;display:grid;place-items:center;z-index:12;border:1px solid #744048;border-radius:11px;background:#472529;color:#ffd9dc;box-shadow:none;font:900 22px/1 sans-serif}',
+  '.tp3-planner-close:active{background:#a33c48;border-color:#d96873;color:#fff;transform:scale(.96)}',
+  '.tp3-planner-content{clear:both;width:100%;max-width:100%;min-width:0;box-sizing:border-box}.tp3-planner-content>.tp3-planner-main{width:100%!important;max-width:100%!important;min-width:0!important;min-height:0!important;margin:0!important;padding:2px 0 0!important;overflow-x:hidden!important}',
+  '.tp3-planner-main .hero{margin:0 42px 8px 0!important;padding:9px 10px!important;text-align:center!important}.tp3-planner-main .hero h1{font-size:clamp(22px,6vw,30px)!important;margin:0 0 4px!important}.tp3-planner-main .hero p,.tp3-planner-main .hero .muted{margin:0!important;font-size:12.5px!important;line-height:1.35!important}',
+  '.tp3-planner-main .tp152-profile-group{margin:6px 0!important;border-radius:14px!important}.tp3-planner-main .tp152-profile-group>summary{display:grid!important;grid-template-columns:32px minmax(0,1fr) 28px!important;align-items:center!important;gap:8px!important;min-height:44px!important;padding:6px 8px!important}.tp3-planner-group-icon{display:grid;place-items:center;width:30px;height:30px;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));border-radius:10px;background:color-mix(in srgb,var(--accent) 10%,var(--card2));font-size:16px}.tp3-planner-main .tp152-profile-group .tp152-accordion-body{padding:4px 8px 8px!important}',
+  '.tp3-planner-main .profile-grid{gap:7px!important}.tp3-planner-main label{font-size:11.5px!important}.tp3-planner-main .field{min-height:39px!important;padding:7px 8px!important;margin-top:3px!important}.tp3-planner-main .tp-select-trigger{min-height:39px!important;padding-block:7px!important}',
+  '.tp3-planner-main :is(.exclude-row,.rf148-gear-row):has(input[type="checkbox"]:checked){border-color:color-mix(in srgb,var(--accent) 70%,var(--line))!important;background:color-mix(in srgb,var(--accent) 13%,var(--card2))!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 38%,transparent)}',
+  '.tp3-planner-primary{display:block!important;width:min(360px,100%)!important;margin:10px auto 2px!important;min-height:44px!important;text-align:center!important}',
+  '.tp3-planner-preview>.section{margin:10px 0 5px!important}.tp3-planner-preview>.card{padding:10px!important;margin:6px 0!important}.tp3-planner-preview>.card p{margin:5px 0!important}.tp3-planner-preview .tp-play-btn{max-width:100%!important}',
+  '@media(min-width:560px){.tp3-planner-main .profile-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}',
+  '@media(max-width:559px) and (min-width:381px){.tp3-planner-main .profile-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}',
+  '@media(max-width:380px){.tp3-planner-host{padding-inline:6px}.tp3-planner-panel{padding-inline:8px;border-radius:15px}.tp3-planner-close{width:34px;height:34px;min-width:34px;min-height:34px}.tp3-planner-main .hero{margin-right:39px!important}.tp3-planner-main .profile-grid{grid-template-columns:1fr!important}.tp3-planner-main .tp152-profile-group>summary{grid-template-columns:30px minmax(0,1fr) 28px!important;gap:6px!important}}'
+ ].join('');document.head.appendChild(tp3PlannerStyle);
+
+ const backBase=window.TrainPilotAndroidBack;
+ window.TrainPilotAndroidBack=function(){
+  if(window.tp3PlannerPanelOpen?.()){
+   const host=document.getElementById('tp3PlannerPanelHost');
+   if(host?.querySelector?.('.tp-select.open')||document.querySelector?.('#tp2628Dialog,#tpTemporalPicker,.video-modal,.video-overlay'))return typeof backBase==='function'?backBase.apply(this,arguments):true;
+   return window.tp3ClosePlannerPanel();
+  }
+  if(state?.tab==='stats'){
+   const open=[...document.querySelectorAll('details.tp3-stat-row[open]')].at(-1);
+   if(open){open.open=false;open.querySelector('summary')?.focus?.();return true}
+  }
+  return typeof backBase==='function'?backBase.apply(this,arguments):false;
+ };
+
+ const style=document.createElement('style');style.id='tp3JournalPolishCss';style.textContent=[
+  '.tp3-history-editor{padding:12px!important;margin:8px 0 12px!important}.tp3-history-editor .section{margin:10px 0 5px!important}.tp3-time-grid{gap:7px!important}.tp3-time-grid label{font-size:11px!important}.tp3-time-grid .field{min-height:38px!important;padding:7px 8px!important}',
+  '.tp3-combined-history>summary{cursor:pointer}.tp3-combined-history-body{padding-top:6px!important}.tp3-history-placeholder{display:none!important}.tp3-workout-summary{margin:0 0 8px;padding:11px;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));border-radius:16px;background:color-mix(in srgb,var(--card2) 82%,transparent)}.tp3-summary-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.tp3-summary-title{display:block;font-size:15px}.tp3-summary-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:10px 0}.tp3-summary-metrics>div{display:grid;place-items:center;align-content:center;gap:1px;min-width:0;min-height:66px;padding:5px 2px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--card) 76%,transparent);text-align:center}.tp3-summary-metrics strong{font-size:16px;line-height:1.05;white-space:nowrap}.tp3-summary-metrics span{font-size:9px;color:var(--muted);line-height:1.1}.tp3-metric-icon{display:grid;place-items:center;width:20px;height:20px;color:var(--accent2)}.tp3-metric-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.tp3-trained-head{padding-top:8px;margin-top:2px;border-top:1px solid color-mix(in srgb,var(--line) 78%,transparent)}.tp3-exercise-list{display:grid;gap:5px;margin-top:6px}.tp3-history-ex-item,.tp3-add-exercise{border:1px solid color-mix(in srgb,var(--line) 88%,transparent);border-radius:13px;overflow:hidden;background:color-mix(in srgb,var(--card) 74%,transparent)}.tp3-history-ex-item>summary,.tp3-add-exercise>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px;padding:8px 9px;cursor:pointer}.tp3-history-ex-item>summary::-webkit-details-marker,.tp3-add-exercise>summary::-webkit-details-marker{display:none}.tp3-history-ex-title{display:grid;gap:1px;min-width:0}.tp3-history-ex-title strong{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tp3-history-ex-title .small{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tp3-exercise-inline-editor{padding:0 8px 8px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}.tp3-exercise-add-row{margin-top:7px}.tp3-exercise-actions{display:grid;grid-template-columns:1.15fr .8fr .8fr;gap:6px;margin-top:7px}.tp3-exercise-actions .btn{min-height:38px!important;padding:7px 7px!important}.tp3-add-exercise-body{padding:0 8px 8px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.tp3-add-exercise-body .field{min-width:0}.tp3-add-exercise-body .btn{width:auto!important;min-height:38px!important;padding:7px 9px!important}.tp3-history-aux{display:grid;grid-template-columns:1fr auto;gap:7px;margin:8px 0}.tp3-history-aux .btn{margin:0!important;min-height:38px!important;padding:7px 9px!important}',
+  '.tp3-history-ex{margin:6px 0!important;border-radius:14px!important}.tp3-history-ex>summary{min-height:48px!important;padding:8px 10px!important}.tp3-history-ex-title{display:grid;gap:1px;min-width:0}.tp3-history-ex-body{padding:0 8px 8px!important}',
+  '.tp3-set-row{display:grid;grid-template-columns:26px minmax(58px,.8fr) minmax(72px,1fr) 42px 34px;gap:5px;align-items:end;padding:6px 0;border-top:1px solid color-mix(in srgb,var(--line) 72%,transparent)}.tp3-set-row:first-child{border-top:0}.tp3-set-row label{margin:0!important;font-size:10px!important;min-width:0}.tp3-set-row .field{min-height:36px!important;height:36px!important;padding:6px 7px!important;margin-top:2px!important}.tp3-set-row .num{align-self:center;width:25px;height:25px}.tp3-set-row .check{width:38px!important;height:36px!important;min-height:36px!important;align-self:end}.tp3-mini-delete{width:34px;height:36px;border:1px solid color-mix(in srgb,#b64 45%,var(--line));border-radius:9px;background:transparent;color:var(--muted);font-size:20px;line-height:1}.tp3-bodyweight{align-self:center}.tp3-ex-actions{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:6px}.tp3-ex-actions .btn{min-height:38px!important;padding:7px 9px!important}.tp3-save-actions{display:grid;grid-template-columns:1.25fr .8fr .8fr;gap:7px;margin-top:9px}.tp3-save-actions .btn{min-height:42px!important;padding:8px 9px!important}.tp3-inline-add{margin:6px 0!important}',
+  '.rf-history-health-panel{margin:10px 0!important;border:1px solid var(--line)!important;border-radius:14px!important;overflow:hidden!important;background:color-mix(in srgb,var(--card2) 72%,transparent)!important}.rf-history-health-toggle{box-sizing:border-box!important;width:100%!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;min-height:48px!important;padding:9px 11px!important;border:0!important;background:transparent!important;color:inherit!important;text-align:left!important}.tp3-health-toggle-copy{display:flex;align-items:baseline;min-width:0;overflow:hidden}.tp3-health-toggle-copy strong{flex:0 0 auto}.tp3-health-toggle-copy .small{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rf-history-health-body{padding:0 8px 8px!important}.tp3-photo-section{margin:10px 0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:color-mix(in srgb,var(--card2) 72%,transparent)}.tp3-photo-section>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;padding:9px 11px;cursor:pointer}.tp3-photo-section>summary::-webkit-details-marker{display:none}.tp3-photo-body{padding:0 8px 8px}.tp3-photo-body>.rf130-photo-section{margin:0!important;padding:8px!important;border:0!important;border-radius:10px!important}.tp3-photo-body .rf130-photo-grid{margin-top:8px!important;gap:8px!important}.tp3-photo-body .rf130-photo-preview{aspect-ratio:16/10!important}.tp3-photo-body .btn{min-height:38px!important;padding:7px 9px!important}',
+  '.tp3-stats-card{padding:12px!important}.tp3-stats-card h2{margin:0 0 2px!important}.tp3-stats-hint{margin:0 0 8px!important}.tp3-stats-list{display:grid;gap:6px}.tp3-stat-row{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:color-mix(in srgb,var(--card2) 78%,transparent)}.tp3-stat-row>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;padding:9px 11px;cursor:pointer}.tp3-stat-row>summary::-webkit-details-marker{display:none}.tp3-stat-copy{display:grid;gap:2px;min-width:0}.tp3-stat-detail{padding:0 10px 10px}.tp3-stat-detail .grid2{gap:6px!important}.tp3-stat-detail .stat{min-height:0!important;padding:8px!important}.tp3-stat-note{margin-top:7px}',
+  '.tp3-unified-chevron,.rf103-history-chevron,.rf-history-health-chevron,.tp152-chevron,.tp146-exercise-chevron,.tp152-program-chevron,.tp166-home-coach-chevron,.tp1511-training summary i{box-sizing:border-box!important;display:inline-grid!important;place-items:center!important;flex:0 0 28px!important;width:28px!important;min-width:28px!important;max-width:28px!important;height:34px!important;min-height:34px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:var(--accent2)!important;font-family:Arial,sans-serif!important;font-size:0!important;font-weight:900!important;line-height:1!important;transition:transform .15s ease!important}',
+  '.tp3-unified-chevron::before,.rf103-history-chevron::before,.rf-history-health-chevron::before,.tp152-chevron::before,.tp146-exercise-chevron::before,.tp152-program-chevron::before,.tp166-home-coach-chevron::before,.tp1511-training summary i::before{content:"›"!important;font-size:34px!important;font-weight:900!important;line-height:.9!important;color:var(--accent2)!important}',
+  'details[open]>.tp3-unified-chevron,details[open]>summary .tp3-unified-chevron,details.rf263-history[open] .rf103-history-chevron,details.tp152-history-ex[open]>summary .tp152-chevron,details.tp152-inline-add[open]>summary .tp152-chevron,details.tp152-exercise[open]>summary .tp152-chevron,details.tp152-program-card[open]>summary .tp152-program-chevron,details.tp1511-training[open] summary i,.rf-history-health-panel:not(.collapsed) .rf-history-health-chevron{transform:rotate(90deg)!important}',
+  '@media(max-width:380px){.tp3-summary-metrics{gap:3px}.tp3-summary-metrics>div{min-height:60px;padding:4px 1px;border-radius:10px}.tp3-summary-metrics strong{font-size:14px}.tp3-summary-metrics span{font-size:8px}.tp3-metric-icon,.tp3-metric-icon svg{width:17px;height:17px}.tp3-set-row{grid-template-columns:24px minmax(52px,.7fr) minmax(64px,1fr) 38px 30px;gap:4px}.tp3-set-row:has(.tp3-side){grid-template-columns:22px minmax(52px,1fr) minmax(52px,1fr) 38px 30px}.tp3-set-row:has(.tp3-side) .tp3-bodyweight{display:none}.tp3-exercise-actions{grid-template-columns:1fr 1fr}.tp3-ex-save{grid-column:1/-1}.tp3-add-exercise-body{grid-template-columns:1fr}.tp3-history-aux{grid-template-columns:1fr auto}}'
+ ].join('');document.head.appendChild(style);
+
+ const normalizeChevrons=root=>{
+  const selectors=['.rf103-history-chevron','.rf-history-health-chevron','.tp152-chevron','.tp146-exercise-chevron','.tp152-program-chevron','.tp166-home-coach-chevron','.tp1511-training summary i','.tp3-unified-chevron'];
+  root?.querySelectorAll?.(selectors.join(',')).forEach(el=>{if(el.textContent!=='›')el.textContent='›'});
+ };
+ const renderBase=render;
+ render=function(){const out=renderBase.apply(this,arguments);normalizeChevrons(document);setTimeout(()=>normalizeChevrons(document),0);return out};
+ normalizeChevrons(document);
+ window.TrainPilotPhase3={version:TP3_VERSION,isBilateral,normalizeLegacySides,unifiedChevron:true,journalCompact:true,statsInline:true,historyTombstones:true,singleTapDelete:true,plannerPanel:true,journalAcceptedCard:true,exerciseInlineEditor:true,exerciseAdd:true,fastExerciseOpen:true,healthChevronAligned:true};
 })();
 
 });</script>

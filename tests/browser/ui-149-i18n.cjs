@@ -21,7 +21,7 @@ const expected={
 };
 async function boot(page){await page.goto(base());await page.waitForFunction(()=>window.TrainPilotBoot?.finished);await page.waitForTimeout(80)}
 async function setLang(page,lang){await page.evaluate(lang=>{db.set('language',lang);document.documentElement.lang=rf212Lang();render();},lang);await page.waitForTimeout(80)}
-async function text(page){return (await page.locator('#app').innerText()).replace(/\s+/g,' ').trim()}
+async function text(page){return (await page.locator('body').innerText()).replace(/\s+/g,' ').trim()}
 async function audit(page,label){
  await page.waitForTimeout(40);
  const data=await page.evaluate(()=>{
