@@ -51,6 +51,12 @@ assert.equal(merged.history[0].photos?.length,1,'duplicate photo metadata must m
 assert.equal(merged.history[0].photos?.[0]?.driveFileId,'drive-photo-1','richer photo metadata must survive');
 assert.equal(merged.history[0].health240?.score,2,'newer health enrichment must survive duplicate collapse');
 
+const driftA=h('8',{id:'tp18-h-drift-a',programId:'home-basic',dayId:'A',scheduleId:'old-plan',finished:'2025-01-01T11:00:00.000Z'});
+const driftB=h('8',{id:'tp18-h-drift-b',programId:'legacy-home',dayId:'workout-A',scheduleId:'new-plan',finished:'2025-01-01T11:02:30.000Z'});
+merged=api.mergeSync(shell([driftA],[]),[shell([driftB],[])],shell([],[]),()=>{throw Error('metadata-only snapshot drift must not conflict')},[]);
+assert.equal(merged.history.length,1,'same performed workout with historical finish/program metadata drift must collapse');
+
+
 merged=api.mergeSync(shell([h('8')],[]),[shell([h('9')],[])],shell([],[]),()=>{throw Error('distinct same-time workouts must not conflict')},[]);
 assert.equal(merged.history.length,2,'same timestamp with different performance must remain two distinct workouts');
 
