@@ -4,7 +4,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
 (async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;try{
  browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});
  const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU'}),errors=[];page.on('pageerror',e=>errors.push(String(e)));
- await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.TrainPilotPhase3?.version==='phase3-29-30-r2');
+ await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.TrainPilotPhase3?.version==='phase3-29-30-37-r3');
  const key=await page.evaluate(()=>{
   db.set('language','hu');
   const start='2026-09-22T09:36:00.000Z',finish='2026-09-22T10:20:00.000Z';
@@ -60,6 +60,58 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  const homeStyle=await homeArrow.evaluate(e=>{const s=getComputedStyle(e),b=getComputedStyle(e,'::before');return {border:s.borderTopWidth,color:b.color,size:b.fontSize,weight:b.fontWeight,text:e.textContent.trim()}});
  assert.deepEqual({border:homeStyle.border,color:homeStyle.color,size:homeStyle.size,weight:homeStyle.weight},{border:journalStyle.border,color:journalStyle.color,size:journalStyle.size,weight:journalStyle.weight},'Journal/Statistics chevrons must match Home reference arrow styling');
  assert.equal(homeStyle.text,'›');
+
+ // Phone follow-up: Journal delete must complete from one physical tap and stay deleted
+ // even if a stale current Drive snapshot still contains the workout.
+ const deleted=await page.evaluate(()=>{
+  const now=new Date(),row={id:'tp3-delete-phone',workout:'A',dayId:'A',programId:'home-basic',programName:'Törlendő teszt',started:new Date(now.getTime()-5*60000).toISOString(),finished:now.toISOString(),exercises:[{id:'db-squat',hu:'Guggolás',sets:[{set:1,weight:5,reps:'5',done:true}]}]};
+  db.set('history',[row,...history()]);state.tab='history';render();return {key:rf142WorkoutKey(row),row};
+ });
+ const deleteCard=page.locator('details.rf263-history').filter({hasText:'Törlendő teszt'}).first();
+ await deleteCard.locator(':scope > summary').click();await page.waitForTimeout(40);
+ await page.locator('details.rf263-history[open]').filter({hasText:'Törlendő teszt'}).locator('.tp155-history-delete').click();
+ const deleteDialog=page.locator('#tp2628Dialog');await deleteDialog.waitFor({state:'visible'});
+ await deleteDialog.locator('[data-tp2628-confirm]').dispatchEvent('pointerup',{pointerType:'touch',isPrimary:true});
+ await deleteDialog.waitFor({state:'detached'});
+ assert.equal(await page.evaluate(k=>history().some(x=>rf142WorkoutKey(x)===k),deleted.key),false,'one pointer tap must delete the Journal workout');
+ const deletionState=await page.evaluate(row=>{
+  const shell=(history=[])=>({history,weights:[],scheduled:[],settings:{rest:90},exercises:[],plan:{A:[],B:[]},programs:[],activeProgramId:'home-basic',plannerSettings:{}});
+  const merged=TrainPilotIssue18.mergeSync(shell([]),[shell([row])],shell([row]),()=>{throw Error('deleted Journal row must be filtered before conflict resolution')},[]);
+  return {tombstones:db.get('phase3HistoryTombstones',[]).length,merged:merged.history.length,isDeleted:tp3HistoryIsDeleted(row)};
+ },deleted.row);
+ assert.ok(deletionState.tombstones>=1,'deleting a workout must persist a local tombstone');
+ assert.equal(deletionState.isDeleted,true,'deleted workout identity must be recognized later');
+ assert.equal(deletionState.merged,0,'stale current Drive/cloudBase snapshots must not resurrect a deleted workout');
+
+ // #37: Personal planner remains over the Home route, uses compact panel chrome and
+ // survives the generator preview without falling back to a separate page.
+ await page.evaluate(()=>go('home'));await page.waitForTimeout(80);
+ const backgroundBefore=await page.evaluate(()=>state.tab);
+ await page.getByRole('button',{name:/Segíts elkezdeni|Help me get started/i}).click();
+ const planner=page.locator('#tp3PlannerPanelHost');await planner.waitFor({state:'visible'});
+ assert.equal(await page.evaluate(()=>state.tab),backgroundBefore,'opening personal planner must not change the background route');
+ assert.equal(await page.locator('main.rf221-home').count(),1,'Home must remain mounted behind the personal-planner panel');
+ assert.equal(await planner.locator('main.tp152-profile').count(),1,'personal planner form must render inside the panel');
+ assert.equal(await planner.locator('main.tp152-profile > button').filter({hasText:'←'}).count(),0,'separate in-page Back button must be removed');
+ assert.equal(await planner.locator('.tp3-planner-close').innerText(),'×','panel must expose the unified red X close action');
+ assert.equal(await planner.locator('.tp3-planner-group-icon').count(),5,'five planner sections must get compact health-style icon anchors');
+ const primary=planner.locator('.tp3-planner-primary').first();
+ const centering=await primary.evaluate((e)=>{const r=e.getBoundingClientRect(),p=e.closest('.tp3-planner-panel').getBoundingClientRect();return {w:r.width,delta:Math.abs((r.left+r.width/2)-(p.left+p.width/2))}});
+ assert.ok(centering.w<=361&&centering.delta<4,'primary planner action must be compact and centered: '+JSON.stringify(centering));
+ for(const width of [320,393,412]){
+  await page.setViewportSize({width,height:873});await page.waitForTimeout(25);
+  const fit=await planner.evaluate(e=>{const p=e.querySelector('.tp3-planner-panel'),m=e.querySelector('.tp3-planner-main');return {panel:p.scrollWidth-p.clientWidth,main:m.scrollWidth-m.clientWidth}});
+  assert.ok(fit.panel<=1&&fit.main<=1,'planner must not overflow horizontally at '+width+'px: '+JSON.stringify(fit));
+ }
+ await page.setViewportSize({width:393,height:873});
+ await page.evaluate(()=>{document.getElementById('pfAge').value='28';document.getElementById('pfHeight').value='180';document.getElementById('pfWeight').value='80';previewProfile()});
+ await page.waitForSelector('#tp3PlannerPanelHost main.tp3-planner-preview');
+ assert.equal(await page.evaluate(()=>state.tab),backgroundBefore,'planner preview must stay over the unchanged background route');
+ assert.equal(await planner.locator('main.tp3-planner-preview > button').filter({hasText:'←'}).count(),0,'preview must not reintroduce the separate Back button');
+ assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),true,'Android Back must consume and close the personal-planner panel');
+ await planner.waitFor({state:'detached'});
+ assert.equal(await page.evaluate(()=>state.tab),backgroundBefore,'closing the planner must restore the unchanged Home route');
+
  assert.deepEqual(errors,[],'page errors: '+errors.join('\n'));
- console.log('PASS Phase 3 browser: combined Journal summary/editor with performed-set stats, compact photos, bilateral side edit/save, inline Statistics + Back, unified reference chevrons.');
+ console.log('PASS Phase 3 browser: Journal edit/stats + persistent single-tap deletion, unified chevrons, and #37 personal-planner panel/Back/mobile fit.');
 }finally{await browser?.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exit(1)});
