@@ -1370,6 +1370,16 @@
   };
  }
  window.tpGlobalApplyChevrons(document);
+ // The exercise library injects its rows after render(); normalize at that
+ // synchronous entry point instead of scheduling a global DOM rewrite.
+ if(typeof window.muscleLibrary==='function'){
+  const tp5MuscleLibraryBase=window.muscleLibrary;
+  window.muscleLibrary=function(){
+   const result=tp5MuscleLibraryBase.apply(this,arguments);
+   window.tpGlobalApplyChevrons(document);
+   return result;
+  };
+ }
 
  window.TrainPilotPhase5={version:TP5_VERSION,pulseSource:'healthLedgerV1.averageHeartRate',calendarDays:7,zeroPulseAsMissing:true,persistentWeightEdit:true,ownWeightDialog:true ,globalChevron:true,themeAwareChevron:true,matteHealthBasic:true,pulseSafeZone:true};
  decoratePulse();setTimeout(decoratePulse,0);
