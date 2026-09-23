@@ -163,7 +163,7 @@ const server=http.createServer((req,res)=>{
   assert.equal(await settingsHost.locator('.tp152-settings-backup').evaluate(e=>e.getBoundingClientRect().top),backupBeforeBack,'opening/closing Theme must not move lower Settings cards');
   assert.equal(await page.locator('#tp155R4PanelHost[data-panel="settings"]').count(),1,'closing Theme must keep Settings open');
   assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),true);assert.equal(await page.locator('#tp155R4PanelHost').count(),0,'next Android back must close the Settings sheet');
-  assert.equal(await page.evaluate(()=>state.tab),'profile','closing Settings sheet must preserve the underlying full page');
+  assert.equal(await page.evaluate(()=>state.tab),plannerBackgroundTab,'closing Settings sheet must preserve the same underlying full page that was behind the planner');
   await page.evaluate(()=>go('home'));await page.waitForSelector('main.rf221-home');
   assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),false,'Android back at Home root should be released to Android');
   await page.evaluate(()=>rf233CoachScreen());await page.waitForSelector('#tp155R4PanelHost[data-panel="coach"] .tp151-coach');
