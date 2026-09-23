@@ -596,5 +596,27 @@
  window.TrainPilotIssue18={version:'18',mergeSync:tp18MergeSync,selectSnapshots:tp18SnapshotSelection,legacyId};
 })();
 
+
+/* Home Coach startup consistency: legacy compact repaint must not replace the accepted card after boot. */
+(function(){
+ 'use strict';
+ const decorate=()=>{try{if(state?.tab==='home')window.tp166DecorateHomeCoach?.()}catch(_){}};
+ if(typeof rf221CompactHome==='function'&&!rf221CompactHome.tpHomeCoachStable){
+  const base=rf221CompactHome;
+  const wrapped=function(){
+   const out=base.apply(this,arguments);
+   // rf221CompactHome contains an older zero-delay repaint. Run the accepted decorator after it.
+   setTimeout(decorate,0);
+   return out;
+  };
+  wrapped.tpHomeCoachStable=true;
+  rf221CompactHome=wrapped;
+ }
+ // Also repair the first boot, where the legacy timeout may already have been queued.
+ setTimeout(decorate,0);
+ requestAnimationFrame?.(()=>requestAnimationFrame?.(decorate));
+ window.TrainPilotHomeCoachStartup={version:'1',decorate};
+})();
+
 });</script>
 </body></html>
