@@ -901,6 +901,7 @@
  window.addEventListener?.('resize',window.tp3PlannerPosition,{passive:true});
 
  const tp3PlannerStyle=document.createElement('style');tp3PlannerStyle.id='tp3PlannerPanelCss';tp3PlannerStyle.textContent=[
+  'html.tp3-planner-open,body.tp3-planner-open{overflow:hidden!important;overscroll-behavior:none!important}',
   'html.tp3-planner-open .top.tp154-nav-grid{position:fixed!important;left:0!important;right:0!important;top:0!important;width:auto!important;z-index:16000!important}',
   '.tp3-planner-host{position:fixed;z-index:14520;left:0;right:0;bottom:0;padding:7px max(8px,env(safe-area-inset-right,0px)) max(8px,env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));background:rgba(3,7,11,.48);display:flex;align-items:flex-start;justify-content:center;overflow:hidden}',
   '.tp3-planner-panel{position:relative;box-sizing:border-box;width:min(760px,100%);max-width:100%;max-height:calc(100% - 2px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;border:1px solid color-mix(in srgb,var(--line) 82%,var(--accent) 18%);border-radius:18px;background:color-mix(in srgb,var(--card) 97%,transparent);box-shadow:0 16px 36px rgba(5,10,20,.22);padding:10px 10px max(12px,env(safe-area-inset-bottom,0px))}',
