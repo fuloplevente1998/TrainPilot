@@ -9,45 +9,63 @@ This file is the current handoff/source-of-truth for continuing TrainPilot devel
 - Stable branch: `main`
 - Current package version: **1.6.9**
 - Android versionCode: **2658**
-- Latest accepted development phase: **Phase 2 – #15 + #16 active-workout presentation/usability**
-- PR **#34 – Phase 1 part of original Phase 2: #15 unified exercise demo panel**: **merged**
-- PR **#35 – Phase 2 completion: #16 active workout sticky controls and rest timer**: **merged**
-- Phase 2 merge commit: `c1ec49f13153d3dc672a2bb6e9198cce9bb12fc3`
-- Phase 2 signed APK release gate: **passed**
-- Phase 2 full Node/regression suite: **passed**
-- Phase 2 full Chromium/UI regression suite: **passed**
-- Phase 2 APK/package/source verification: **passed**
-- Phase 2 physical-phone validation: **passed**
-- Post-merge `main` Quick TrainPilot Validation (run `35844880990`): **passed**
-- Issues **#15** and **#16**: **closed / completed**
+- Completed/accepted roadmap phases so far:
+  - **Phase 2 – #15 + #16 Demo / active-workout UI**: completed and phone-approved.
+  - **Original Phase 1 – #18 Drive sync and data protection**: completed and phone-approved.
+- PR **#34 – #15 unified exercise demo panel**: **merged**
+- PR **#35 – #16 active workout sticky controls and rest timer**: **merged**
+- PR **#36 – #18 Drive sync data-safety and legacy dedupe**: **merged**
+- #18 merge commit: `25e3deb7edc0480b86fb5a9380935a9c7adf33f4`
+- #18 signed APK release gate: **passed**
+- #18 full Node/regression suite: **passed**
+- #18 full Chromium/UI regression suite: **passed**
+- #18 APK/package/source verification: **passed**
+- #18 physical-phone validation: **passed**
+- #18 post-merge `main` Quick TrainPilot Validation (run `35856303959`): **passed**
+- Issues **#15, #16 and #18**: **closed / completed**
 - The current `main` is the only valid baseline for the next development step.
+- **Next development step: Phase 3 – #29 + #30 Journal full polish.**
 
-### Accepted Phase 2 behavior
+### Accepted #18 behavior
 
-- **Demo / instructions** opens the unified compact video + instructions panel in one tap.
-- The demo panel uses the shared dark-red TrainPilot X close treatment and Android Back / Escape closes it correctly.
-- Active workout uses large, separate sticky **Previous / Next** controls at the bottom.
-- The last exercise exposes **Finish workout** in the same sticky control area.
-- The bottom action area respects Android safe-area and visualViewport/keyboard changes.
-- The rest timer is a compact capsule near the workout header and remains visible below the top navigation while scrolling.
-- Countdown, Skip, exercise switching, side-plank timers, workout save/finish logic and persisted workout data remain regression-protected.
+- Old ID-less workout and body-weight records must not disappear because of legacy key collisions.
+- Truly distinct records that share an old date/time-style key must remain separate.
+- True duplicate copies originating from repeated Drive snapshots must collapse back to one logical record.
+- Legacy rows receive stable deterministic sync IDs.
+- `cloudBase` and bounded older snapshots may rescue missing legacy rows without resurrecting stable-ID rows that may have been explicitly deleted.
+- Drive merge remains three-way/conflict-aware for the existing scalar/settings data.
+- Home Coach startup and post-navigation rendering must remain visually identical; the accepted **Mai javaslat** card must not be replaced by the older compact Coach card after launch.
 
 ### Current six-phase roadmap and execution order
 
 The original six-phase roadmap is:
 
-1. **Drive sync and data protection** – issue **#18**
-2. **Demo and active workout** – issues **#15 + #16**
+1. **Drive sync and data protection** – issue **#18** ✅
+2. **Demo and active workout** – issues **#15 + #16** ✅
 3. **Journal full polish** – issues **#29 + #30**
 4. **Coach full exercise coverage** – issues **#17 + #21**
 5. **Health pulse-trend data source** – issue **#27**
 6. **Performance and smoothness** – issue **#19**
 
-Because development began with #15 before the original order was recovered, execution now intentionally proceeds:
+Because development began with Phase 2 before the original order was recovered, the actual completed order is:
 
-**Phase 2 (#15 + #16) → Phase 1 (#18) → Phase 3 (#29 + #30) → Phase 4 (#17 + #21) → Phase 5 (#27) → Phase 6 (#19).**
+**Phase 2 (#15 + #16) ✅ → Phase 1 (#18) ✅ → Phase 3 (#29 + #30) → Phase 4 (#17 + #21) → Phase 5 (#27) → Phase 6 (#19).**
 
-Phase 2 is now complete. The **next development step is original Phase 1: #18 Drive sync and data protection**, starting only from the current phone-approved `main`.
+The **next phase is Phase 3: #29 + #30 Journal full polish**, and it must start only from the current phone-approved `main`.
+
+### Phase 3 UI consistency requirement – unified right chevrons
+
+During Phase 3 Journal/UI polish, all right-facing navigation/detail chevrons that serve the same interaction role must be visually unified to the accepted Home **Mai javaslat** reference arrow.
+
+Reference behavior/style:
+- use the same **right-facing chevron form** as the Home card;
+- match its visual **shape, stroke/weight, size, accent/gold color and vertical alignment**;
+- use consistent right-side spacing/padding;
+- do not mix visually different triangle/play icons, thin glyphs or mismatched chevrons for equivalent “open details / navigate right” actions;
+- preserve accessibility, tappable hit area and existing navigation behavior;
+- this is a UI consistency change only and must not alter the underlying Journal/Statistics navigation logic.
+
+This requirement is part of **Phase 3 (#29 + #30)** unless explicitly moved later.
 
 ## Permanent TrainPilot development / release workflow – MANDATORY
 
