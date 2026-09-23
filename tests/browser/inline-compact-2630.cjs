@@ -87,7 +87,7 @@ const {chromium}=require('playwright');
   assert.equal(metrics.headPadding,'8px');
   assert.equal(metrics.badgesDisplay,'none','secondary journal stats stay hidden while collapsed');
 
-  await h.locator('summary').click();
+  await h.locator(':scope > summary').click();
   await page.waitForTimeout(30);
   const opened=await h.evaluate(el=>({open:el.open,badges:getComputedStyle(el.querySelector('.history-badges')).display}));
   assert.equal(opened.open,true);
