@@ -212,5 +212,106 @@
  decorate();setTimeout(decorate,0);
 })();
 
+
+/* #15 — One-tap, compact and accessible exercise demo panel. */
+(function(){
+ 'use strict';
+ const labels={
+  hu:{open:'Bemutató / leírás',guide:'Leírás és útmutató',empty:'Ehhez a gyakorlathoz nincs részletes leírás.',source:'Forrás',close:'Bemutató bezárása'},
+  en:{open:'Demo / instructions',guide:'Instructions',empty:'No detailed instructions are available for this exercise.',source:'Source',close:'Close exercise demo'},
+  de:{open:'Demo / Anleitung',guide:'Beschreibung und Anleitung',empty:'Für diese Übung ist keine ausführliche Anleitung verfügbar.',source:'Quelle',close:'Übungsdemo schließen'},
+  ro:{open:'Demonstrație / instrucțiuni',guide:'Descriere și instrucțiuni',empty:'Nu există instrucțiuni detaliate pentru acest exercițiu.',source:'Sursă',close:'Închide demonstrația'}
+ };
+ const copy=()=>labels[(typeof rf212Lang==='function'?rf212Lang():document.documentElement.lang)]||labels.hu;
+ let focusReturn=null;
+ const closeBase=window.closeDemo;
+ if(typeof closeBase==='function'){
+  window.closeDemo=function(){
+   const out=closeBase.apply(this,arguments);
+   const trigger=focusReturn;focusReturn=null;
+   if(trigger&&trigger.isConnected)try{trigger.focus({preventScroll:true})}catch(_){}
+   return out;
+  };
+ }
+
+ const openBase=window.openDemo;
+ if(typeof openBase!=='function')return;
+ window.openDemo=function(id){
+  const entry=typeof byId==='function'?byId(id):null;
+  const info=typeof demoInfo==='function'?demoInfo(id):null;
+  const note=entry?(entry.custom?String(entry.notes||''):typeof tp149ExerciseNote==='function'?tp149ExerciseNote(entry):String(entry.notes||'')):'';
+  const trigger=document.activeElement;
+  // Keep the established player URLs, native external-opening fallback and offline behavior.
+  const out=info?openBase.apply(this,arguments):undefined;
+  let modal=document.getElementById('videoModal');
+  if(!modal&&!info&&note){
+   modal=document.createElement('div');modal.id='videoModal';modal.className='video-modal';
+   const dialog=document.createElement('div');dialog.className='video-dialog';dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');
+   const title=document.createElement('h2');title.textContent=entry?(typeof tp149ExerciseName==='function'?tp149ExerciseName(entry):entry.hu||entry.en||id):id;
+   const close=document.createElement('button');close.type='button';close.textContent='×';close.className='btn secondary video-close';
+   close.addEventListener('click',()=>window.closeDemo());
+   dialog.append(close,title);modal.append(dialog);document.body.append(modal);
+  }
+  if(!modal)return out; // offline or source-only fallback preserves the old behavior
+  const dialog=modal.querySelector('.video-dialog');
+  if(!dialog)return out;
+  focusReturn=trigger&&trigger.isConnected?trigger:null;
+  const head=document.createElement('div');head.className='tp15-demo-header';
+  const title=dialog.querySelector(':scope > h2');
+  const close=dialog.querySelector(':scope > button');
+  if(title){title.id='tp15DemoTitle';head.append(title);dialog.setAttribute('aria-labelledby',title.id)}
+  if(close){
+   close.textContent='×';close.className='tp15-demo-close';close.type='button';
+   close.setAttribute('aria-label',copy().close);
+   close.setAttribute('data-tp-video-close','');
+   head.append(close);
+  }
+  dialog.prepend(head);
+  dialog.classList.add('tp15-demo-dialog');
+  modal.classList.add('tp15-demo-modal');
+  const player=dialog.querySelector('.video-player');
+  const guide=document.createElement('section');guide.className='tp15-demo-guide';
+  const heading=document.createElement('h3');heading.textContent=copy().guide;
+  const body=document.createElement('p');body.textContent=note||copy().empty;
+  guide.append(heading,body);
+  if(player)player.after(guide);else head.after(guide);
+  // Keep a single external action. The provider credit remains readable, not a second button.
+  const external=[...dialog.querySelectorAll(':scope > button')];
+  if(external.length){
+   external[0].classList.add('tp15-demo-external');
+   external.slice(1).forEach(button=>button.remove());
+  }
+  const source=dialog.querySelector('.small.muted');
+  if(source&&info)source.textContent=copy().source+': '+String(info.credit||info.provider||'');
+  modal.addEventListener('keydown',function(e){
+   if(e.key==='Escape'){e.preventDefault();e.stopPropagation();window.closeDemo()}
+  });
+  close?.focus({preventScroll:true});
+  return out;
+ };
+
+ function directWorkoutDemo(){
+  const guide=document.querySelector('main.tp153-workout .tp154-workout-guide');
+  if(!guide||!state?.session?.exercises?.length)return;
+  const id=state.session.exercises[Math.max(0,Math.min(Number(state.current)||0,state.session.exercises.length-1))]?.id;
+  if(!id)return;
+  const button=document.createElement('button');
+  button.type='button';button.className='btn secondary tp15-demo-launch';
+  button.textContent=copy().open;
+  button.addEventListener('click',()=>window.openDemo(id));
+  guide.replaceWith(button);
+ }
+ const workoutBase=window.renderWorkout;
+ if(typeof workoutBase==='function'){
+  window.renderWorkout=function(){
+   const out=workoutBase.apply(this,arguments);
+   directWorkoutDemo();
+   return out;
+  };
+ }
+ directWorkoutDemo();
+ window.TrainPilotDemo15={version:'15',decorateWorkout:directWorkoutDemo};
+})();
+
 });</script>
 </body></html>
