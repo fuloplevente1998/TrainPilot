@@ -313,5 +313,111 @@
  window.TrainPilotDemo15={version:'15',decorateWorkout:directWorkoutDemo};
 })();
 
+
+/* #16 — Active workout: compact header, floating rest capsule and sticky large controls. */
+(function(){
+ 'use strict';
+ const labels={
+  hu:{previous:'Előző gyakorlat',next:'Következő gyakorlat',finish:'Edzés befejezése'},
+  en:{previous:'Previous exercise',next:'Next exercise',finish:'Finish workout'},
+  de:{previous:'Vorherige Übung',next:'Nächste Übung',finish:'Training beenden'},
+  ro:{previous:'Exercițiul anterior',next:'Exercițiul următor',finish:'Finalizează antrenamentul'}
+ };
+ const copy=()=>labels[(typeof rf212Lang==='function'?rf212Lang():(document.documentElement.lang||'hu').slice(0,2))]||labels.hu;
+ let raf=0;
+
+ function visualBottomOffset(){
+  const vv=window.visualViewport;
+  if(!vv)return 0;
+  return Math.max(0,Math.round(window.innerHeight-vv.height-vv.offsetTop));
+ }
+ function topDockBottom(){
+  const top=document.querySelector('.top');
+  const vv=window.visualViewport;
+  const rect=top?.getBoundingClientRect?.();
+  return Math.max(vv?.offsetTop||0,rect?.bottom||0);
+ }
+ function syncGeometry(){
+  raf=0;
+  const main=document.querySelector('main.tp153-workout');
+  const actions=main?.querySelector('.tp153-workout-actions.tp16-workout-actions');
+  if(actions){
+   const h=Math.ceil(actions.getBoundingClientRect().height||0);
+   main.style.setProperty('--tp16-actions-height',Math.max(68,h)+'px');
+   actions.style.setProperty('--tp16-vv-bottom',visualBottomOffset()+'px');
+  }
+  const timer=document.querySelector('.timer.tp16-rest-timer');
+  const head=main?.querySelector('.tp153-workout-head');
+  if(!timer||!head)return;
+  const navBottom=topDockBottom(),headRect=head.getBoundingClientRect();
+  const shouldFloat=headRect.bottom<=navBottom+12;
+  timer.classList.toggle('tp16-rest-floating',shouldFloat);
+  timer.classList.toggle('tp16-rest-docked',!shouldFloat);
+  timer.style.setProperty('--tp16-rest-top',Math.round(navBottom+7)+'px');
+ }
+ function scheduleGeometry(){
+  if(raf)return;
+  raf=requestAnimationFrame(syncGeometry);
+ }
+ function decorateTimer(main){
+  const timer=document.querySelector('.timer');
+  if(!timer||!main)return;
+  timer.classList.add('tp16-rest-timer');
+  timer.setAttribute('role','status');
+  timer.setAttribute('aria-live','polite');
+  const muted=timer.querySelector('.muted');if(muted)muted.classList.add('tp16-rest-label');
+  const button=timer.querySelector('button');if(button)button.classList.add('tp16-rest-skip');
+  const head=main.querySelector('.tp153-workout-head');
+  if(head&&timer.parentElement!==head){
+   const line=head.querySelector('.tp153-workout-topline');
+   if(line)line.insertAdjacentElement('afterend',timer);else head.prepend(timer);
+  }
+ }
+ function decorateWorkout(){
+  const main=document.querySelector('main.tp153-workout');
+  if(!main||!state?.session?.exercises?.length)return false;
+  main.classList.add('tp16-workout');
+  const head=main.querySelector('.tp153-workout-head');if(head)head.classList.add('tp16-workout-head');
+  const actions=main.querySelector('.tp153-workout-actions');
+  if(actions){
+   actions.classList.add('tp16-workout-actions');
+   const next=actions.querySelector('[data-tp-workout-next]')||[...actions.querySelectorAll('button')].find(b=>String(b.getAttribute('onclick')||'').includes('nextExercise'));
+   const prev=[...actions.querySelectorAll('button')].find(b=>String(b.getAttribute('onclick')||'').includes('prevExercise'));
+   const last=(Number(state.current)||0)>=state.session.exercises.length-1;
+   if(prev){prev.classList.add('tp16-workout-prev');prev.textContent=copy().previous}
+   if(next){next.classList.add('tp16-workout-next');next.classList.toggle('tp16-workout-finish',last);next.textContent=last?copy().finish:copy().next}
+   actions.classList.toggle('tp16-actions-finish',last);
+  }
+  decorateTimer(main);
+  scheduleGeometry();
+  return true;
+ }
+
+ const workoutBase16=window.renderWorkout;
+ if(typeof workoutBase16==='function')window.renderWorkout=function(){
+  const out=workoutBase16.apply(this,arguments);
+  decorateWorkout();
+  return out;
+ };
+ window.addEventListener('scroll',scheduleGeometry,{passive:true});
+ window.addEventListener('resize',scheduleGeometry,{passive:true});
+ window.visualViewport?.addEventListener?.('resize',scheduleGeometry,{passive:true});
+ window.visualViewport?.addEventListener?.('scroll',scheduleGeometry,{passive:true});
+
+ const style=document.createElement('style');style.id='tp16ActiveWorkoutCss';style.textContent=[
+  'main.tp153-workout.tp16-workout{padding-top:8px!important;padding-bottom:calc(var(--tp16-actions-height,76px) + 22px + env(safe-area-inset-bottom,0px))!important;overflow-x:hidden!important}',
+  '.tp16-workout-head{position:relative!important;padding:10px 12px!important;margin-bottom:8px!important}.tp16-workout-head h1{font-size:clamp(23px,6.6vw,34px)!important;line-height:1.08!important;margin:5px 0 3px!important;overflow-wrap:anywhere}.tp16-workout-head .tp153-workout-prescription{margin-bottom:6px!important}.tp16-workout-head .tp155-workout-coach{margin:7px 0 2px!important;padding:8px 9px!important}.tp16-workout-head .tp15-demo-launch{margin:5px 0 6px!important}.tp16-workout-head .progress{margin:7px 0 0!important}',
+  '.tp16-workout-actions{position:fixed!important;left:50%!important;right:auto!important;bottom:calc(8px + env(safe-area-inset-bottom,0px) + var(--tp16-vv-bottom,0px))!important;transform:translateX(-50%)!important;width:min(748px,calc(100vw - 32px))!important;display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;grid-template-areas:"prev next"!important;gap:9px!important;margin:0!important;padding:8px!important;z-index:520!important;border:1px solid color-mix(in srgb,var(--accent) 34%,var(--line))!important;border-radius:16px!important;background:color-mix(in srgb,var(--bg) 92%,var(--card))!important;box-shadow:0 10px 30px #0009!important;backdrop-filter:blur(12px)!important}',
+  '.tp16-workout-actions .btn{min-width:0!important;min-height:52px!important;height:auto!important;margin:0!important;padding:9px 11px!important;white-space:normal!important;overflow-wrap:anywhere!important;line-height:1.14!important;font-size:13px!important}.tp16-workout-prev{grid-area:prev}.tp16-workout-next{grid-area:next}.tp16-workout-finish{border-color:color-mix(in srgb,var(--accent) 70%,var(--line))!important}',
+  '.timer.tp16-rest-timer{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:7px!important;width:max-content!important;max-width:min(94vw,260px)!important;min-height:42px!important;padding:5px 6px 5px 10px!important;border-radius:999px!important;background:color-mix(in srgb,var(--card) 94%,var(--bg))!important;border:1px solid color-mix(in srgb,var(--accent) 42%,var(--line))!important;box-shadow:0 8px 24px #0007!important;pointer-events:auto!important}.timer.tp16-rest-timer strong{font-size:22px!important;line-height:1!important;min-width:58px!important;font-variant-numeric:tabular-nums!important}.timer.tp16-rest-timer .tp16-rest-label{display:none!important}.timer.tp16-rest-timer .tp16-rest-skip{min-height:34px!important;padding:6px 10px!important;border-radius:999px!important;font-size:12px!important;white-space:nowrap!important}',
+  '.timer.tp16-rest-docked{position:relative!important;inset:auto!important;left:auto!important;right:auto!important;bottom:auto!important;top:auto!important;transform:none!important;margin:5px 0 4px auto!important;z-index:3!important}',
+  '.timer.tp16-rest-floating{position:fixed!important;left:50%!important;right:auto!important;top:var(--tp16-rest-top,70px)!important;bottom:auto!important;transform:translateX(-50%)!important;margin:0!important;z-index:700!important}',
+  '@media(max-width:340px){.tp16-workout-actions{grid-template-columns:1fr!important;grid-template-areas:"prev" "next"!important;gap:6px!important}.tp16-workout-actions .btn{min-height:48px!important}.timer.tp16-rest-timer{max-width:calc(100vw - 18px)!important}}',
+  '@media(max-height:520px) and (orientation:landscape){.tp16-workout-actions{padding:5px!important;gap:6px!important}.tp16-workout-actions .btn{min-height:46px!important;padding:7px 9px!important}.timer.tp16-rest-timer{min-height:38px!important;padding-block:3px!important}.timer.tp16-rest-timer .tp16-rest-skip{min-height:32px!important}}'
+ ].join('');document.head.appendChild(style);
+ decorateWorkout();
+ window.TrainPilotIssue16={version:'16',decorateWorkout,syncGeometry};
+})();
+
 });</script>
 </body></html>
