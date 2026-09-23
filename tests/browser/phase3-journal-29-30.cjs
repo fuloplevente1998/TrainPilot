@@ -4,7 +4,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
 (async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;try{
  browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});
  const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU'}),errors=[];page.on('pageerror',e=>errors.push(String(e)));
- await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.TrainPilotPhase3?.version==='phase3-29-30-37-r5');
+ await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.TrainPilotPhase3?.version==='phase3-29-30-37-r6');
  const key=await page.evaluate(()=>{
   db.set('language','hu');
   const start='2026-09-22T09:36:00.000Z',finish='2026-09-22T10:20:00.000Z';
@@ -40,6 +40,9 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  assert.match(summaryText,/Oldalsó plank.*Bal 20 mp.*Jobb 20 mp/,'expanded workout summary must contain bilateral performed time');
  assert.equal(await page.locator('.tp3-summary-edit').count(),0,'accepted Journal design must not show a top-level Edit button');
  assert.equal(await page.locator('.rf-history-health-panel').count(),1,'Health data must remain inside the expanded Journal card');
+ const healthArrowLayout=await page.evaluate(()=>{const h=document.querySelector('.rf-history-health-toggle'),ha=h?.querySelector('.rf-history-health-chevron'),p=document.querySelector('.tp3-photo-section>summary'),pa=p?.querySelector('.tp3-unified-chevron');if(!h||!ha||!p||!pa)return null;const hr=h.getBoundingClientRect(),har=ha.getBoundingClientRect(),pr=p.getBoundingClientRect(),par=pa.getBoundingClientRect();return {healthRight:hr.right-har.right,photoRight:pr.right-par.right,healthDisplay:getComputedStyle(h).display,justify:getComputedStyle(h).justifyContent}}); 
+ assert.ok(healthArrowLayout&&Math.abs(healthArrowLayout.healthRight-healthArrowLayout.photoRight)<=3,'Health chevron must align to the right like Workout photos: '+JSON.stringify(healthArrowLayout));
+ assert.equal(healthArrowLayout.healthDisplay,'flex');assert.equal(healthArrowLayout.justify,'space-between');
  const metrics=page.locator('.tp3-workout-summary .tp3-summary-metrics>div');
  assert.equal(await metrics.count(),4,'accepted summary must expose four compact metrics');
  const metricLayout=await page.locator('.tp3-summary-metrics').evaluate(e=>{const cs=getComputedStyle(e),children=[...e.children].map(x=>x.getBoundingClientRect());return {cols:cs.gridTemplateColumns.split(' ').length,tops:children.map(x=>Math.round(x.top)),overflow:e.scrollWidth-e.clientWidth,icons:e.querySelectorAll('.tp3-metric-icon').length}});
@@ -51,9 +54,11 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  const rows=page.locator('details.tp3-history-ex-item');
  assert.equal(await rows.count(),2,'each logged exercise must be its own collapsible Journal row');
  assert.equal(await page.locator('details.tp3-history-ex-item[open]').count(),0,'logged exercises must start collapsed');
+ await page.locator('details.rf263-history').evaluate(e=>e.dataset.tp3NoRenderProbe='kept');
  const side=rows.nth(1);await side.locator('summary').click();
  await page.waitForSelector('details.tp3-history-ex-item[open] .tp3-exercise-inline-editor');
  assert.equal(await page.locator('details.tp3-history-ex-item[open]').count(),1,'only the selected exercise should be open for editing');
+ assert.equal(await page.locator('details.rf263-history').getAttribute('data-tp3-no-render-probe'),'kept','opening an exercise editor must not re-render the whole Journal card');
  const sideLabels=(await side.locator('label').allInnerTexts()).join(' | ');assert.match(sideLabels,/Bal oldal – mp/);assert.match(sideLabels,/Jobb oldal – mp/);
  const sideInputs=side.locator('.tp3-side input');assert.equal(await sideInputs.count(),2);assert.equal(await sideInputs.nth(0).inputValue(),'20');assert.equal(await sideInputs.nth(1).inputValue(),'20','legacy mp/oldal must map compatibly to both side fields');
  await sideInputs.nth(0).fill('23');await sideInputs.nth(1).fill('19');
