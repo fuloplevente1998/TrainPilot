@@ -158,7 +158,7 @@ const {chromium}=require('playwright');
    await healthToggle.click();await page.waitForTimeout(180);
    assert.equal(await firstHistory.locator('.rf130-photo-section').count(),1,'expanded workout must expose the photo journal section');
    assert.equal(await firstHistory.locator('[data-rf130-photo-id]').count(),1,'photo metadata must render only inside the expanded workout');
-   assert.match(await firstHistory.locator('summary').innerText(),/1 fotó/,'collapsed journal header must show photo count');
+   assert.match(await firstHistory.locator(':scope > summary').innerText(),/1 fotó/,'collapsed journal header must show photo count');
    await page.evaluate(()=>{isNative=()=>true;rf130PhotoPlugin=()=>({pick:async()=>({cancelled:true}),capture:async()=>({cancelled:true})})});
    await firstHistory.locator('.rf130-photo-head button').click();
    await page.locator('#rf130PhotoModal').waitFor({state:'visible'});
