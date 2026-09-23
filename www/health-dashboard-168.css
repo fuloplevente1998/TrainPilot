@@ -514,3 +514,24 @@ html body .tp1511-training summary i.tp-global-chevron::before{
  opacity:1!important;
  visibility:visible!important
 }
+
+/* #41: Library disclosure uses the shared chevron, never the old clipped triangle. */
+.tp-library-card>summary.tp-global-chevron-host::after{
+ content:"›"!important;
+ display:inline-grid!important;
+ place-items:center!important;
+ width:30px!important;
+ height:36px!important;
+ min-width:30px!important;
+ min-height:36px!important;
+ margin:0!important;
+ padding:0!important;
+ color:var(--accent2,var(--accent))!important;
+ font:900 36px/.82 Arial,sans-serif!important;
+ clip-path:none!important;
+ background:none!important;
+ border:0!important;
+ box-shadow:none!important;
+ filter:none!important;
+ text-shadow:none!important
+}
