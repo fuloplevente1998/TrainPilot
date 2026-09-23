@@ -41,6 +41,25 @@ chooseCalls=0;
 merged=api.mergeSync(shell([old],[]),[shell([changed],[])],baseId,()=>{chooseCalls++;return old},[]);
 assert.equal(merged.history.length,1);assert.equal(merged.history[0].exercises[0].sets[0].reps,'9','three-way merge must accept remote change when phone equals base');assert.equal(chooseCalls,0);
 
+
+const duplicateA=h('8',{id:'tp18-h-old-a',photos:[{id:'photo-1',label:'after',updatedAt:1,driveFileId:null}],health240:{syncedAt:'2026-09-20T10:00:00Z',score:1}});
+const duplicateB=h('8',{id:'tp18-h-old-b',photos:[{id:'photo-1',label:'after',updatedAt:2,driveFileId:'drive-photo-1'}],health240:{syncedAt:'2026-09-21T10:00:00Z',score:2}});
+merged=api.mergeSync(shell([duplicateA],[]),[shell([duplicateB],[])],shell([],[]),()=>{throw Error('true duplicate must not conflict')},[]);
+assert.equal(merged.history.length,1,'same workout performance with metadata/photo drift must collapse to one row');
+assert.match(merged.history[0].id,/^tp18-h-/,'collapsed legacy duplicate keeps deterministic synthetic ID');
+assert.equal(merged.history[0].photos?.length,1,'duplicate photo metadata must merge, not duplicate the workout');
+assert.equal(merged.history[0].photos?.[0]?.driveFileId,'drive-photo-1','richer photo metadata must survive');
+assert.equal(merged.history[0].health240?.score,2,'newer health enrichment must survive duplicate collapse');
+
+const driftA=h('8',{id:'tp18-h-drift-a',programId:'home-basic',dayId:'A',scheduleId:'old-plan',finished:'2025-01-01T11:00:00.000Z'});
+const driftB=h('8',{id:'tp18-h-drift-b',programId:'legacy-home',dayId:'workout-A',scheduleId:'new-plan',finished:'2025-01-01T11:02:30.000Z'});
+merged=api.mergeSync(shell([driftA],[]),[shell([driftB],[])],shell([],[]),()=>{throw Error('metadata-only snapshot drift must not conflict')},[]);
+assert.equal(merged.history.length,1,'same performed workout with historical finish/program metadata drift must collapse');
+
+
+merged=api.mergeSync(shell([h('8')],[]),[shell([h('9')],[])],shell([],[]),()=>{throw Error('distinct same-time workouts must not conflict')},[]);
+assert.equal(merged.history.length,2,'same timestamp with different performance must remain two distinct workouts');
+
 const files=[];
 for(let i=0;i<60;i++)files.push({id:'a'+i,name:'repforge-sync-11111111-1111-1111-1111-111111111111-'+i+'.json',createdTime:new Date(2025,0,i+1).toISOString()});
 files.push({id:'b1',name:'repforge-sync-22222222-2222-2222-2222-222222222222-x.json',createdTime:'2025-01-01T00:00:00Z'});
