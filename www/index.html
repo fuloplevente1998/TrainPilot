@@ -427,7 +427,10 @@
  const stripId=x=>{const y=clone(x);delete y.id;return y};
  const hash32=(s,seed)=>{let h=seed>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;h^=h>>>13;}return h.toString(16).padStart(8,'0')};
  const workoutIdentity=x=>canonical({
-  started:x?.started||'',finished:x?.finished||'',workout:x?.workout||'',dayId:x?.dayId||'',programId:x?.programId||'',scheduleId:x?.scheduleId||'',
+  // A historical sync snapshot may disagree on finish time / program metadata while still representing
+  // the exact same workout session. Started + workout lane + performed exercise/set payload is the
+  // stable user-visible identity. Truly different workouts at the same timestamp still differ here.
+  started:x?.started||'',workout:x?.workout||'',
   exercises:(x?.exercises||[]).map(e=>({id:e?.id||'',sets:(e?.sets||[]).map(s=>({set:s?.set??null,weight:s?.weight??null,reps:s?.reps??null,leftSeconds:s?.leftSeconds??null,rightSeconds:s?.rightSeconds??null,done:!!s?.done}))}))
  });
  const weightIdentity=x=>canonical({date:x?.date||'',kg:x?.kg??null});
