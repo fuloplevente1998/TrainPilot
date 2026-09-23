@@ -3,7 +3,7 @@ const html=fs.readFileSync('www/index.html','utf8');
 const p=html.slice(html.indexOf('/* Phase 3 — #29 + #30'));
 assert.ok(p.length>5000,'Phase 3 runtime block missing');
 for(const marker of [
- "TP3_VERSION='phase3-29-30-37-r5'",
+ "TP3_VERSION='phase3-29-30-37-r6'",
  'tp3-history-ex-item',
  'tp3-photo-section',
  'tp3-stat-row',
@@ -24,6 +24,11 @@ for(const marker of [
  'journalAcceptedCard:true',
  'exerciseInlineEditor:true',
  'exerciseAdd:true',
+ 'fastExerciseOpen:true',
+ 'healthChevronAligned:true',
+ 'tp3ExerciseDetails',
+ 'tp3RefreshExerciseEditor',
+ 'tp3-health-toggle-copy',
  'tp3-combined-history',
  'phase3HistoryTombstones',
  'tp3DeleteHistoryWorkout',
@@ -44,6 +49,8 @@ assert.match(p,/tp3-add-exercise/,'Journal must allow adding a new exercise');
 assert.match(p,/tp3ExerciseAddSet/,'existing logged exercise must allow adding sets');
 assert.doesNotMatch(p,/scrollIntoView/,'opening/editing Journal must not use the old forced scrollIntoView jump');
 assert.match(p,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/,'Journal metrics must use a one-row 1x4 grid');
+assert.match(p,/target\.insertAdjacentHTML\('beforeend',tp3ExerciseEditorHtml/,'exercise editor must inject locally without whole-page render');
+assert.match(p,/\.rf-history-health-toggle\{[^}]*justify-content:space-between!important/,'Health toggle must align its chevron to the right like photos');
 assert.match(html,/kind==='history'&&typeof window\.tp3HistoryIsDeleted/,'Drive merge must filter explicitly deleted Journal records before stale snapshots can restore them');
 assert.match(p,/confirm\.addEventListener\('pointerup',accept/,'Journal delete confirmation must commit on the first physical pointer tap');
 assert.match(p,/profileScreen=function\(\)\{return tp3RenderPlannerPanel/,'personal planner must render into the Phase 3 panel instead of a separate route');
