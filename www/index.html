@@ -1169,8 +1169,9 @@
   return [programName,dayName,when].filter(Boolean).join(' • ');
  };
  window.tp4PolishCoachTarget=function(root=document){
-  const host=root?.querySelector?.('.tp151-coach')||root;
-  const strong=host?.querySelector?.('.tp153-coach-next strong')||host?.querySelector?.('.tp151-coach-target>:last-child strong');
+  const host=root?.matches?.('.tp151-coach')?root:root?.querySelector?.('.tp151-coach');
+  if(!host)return false;
+  const strong=host.querySelector('.tp153-coach-next strong')||host.querySelector('.tp151-coach-target>:last-child strong');
   if(!strong)return false;
   const target=rf233CoachPlan().target,full=targetSummary(target);strong.textContent=full;strong.classList.add('tp4-next-summary');
   const dup=host.querySelector?.('.tp151-coach-target + p.small.muted');if(dup){dup.textContent='';dup.classList.add('tp4-next-duplicate');dup.hidden=true}
