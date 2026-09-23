@@ -3,6 +3,8 @@ name: Release Gate + TrainPilot APK
 on:
   workflow_dispatch:
   push:
+    branches:
+      - feat/phase3-journal-29-30-unified-chevrons
     tags:
       - 'v*'
 
