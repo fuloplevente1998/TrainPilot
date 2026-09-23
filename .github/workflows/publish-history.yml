@@ -78,7 +78,6 @@ jobs:
             fi
 
             if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-              gh release upload "$TAG" "$RELEASE_APK" "$OUT/SHA256SUMS.txt" "$OUT/BUILD_INFO.txt" --repo "$GITHUB_REPOSITORY" --clobber
               gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TITLE" --notes "$NOTES"
             else
               gh release create "$TAG" "$RELEASE_APK" "$OUT/SHA256SUMS.txt" "$OUT/BUILD_INFO.txt" \
