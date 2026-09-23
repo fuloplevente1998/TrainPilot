@@ -419,5 +419,204 @@
  window.TrainPilotIssue16={version:'16',decorateWorkout,syncGeometry};
 })();
 
+
+/* #18 — Drive sync safety for legacy ID-less history / weight records. */
+(function(){
+ 'use strict';
+ const clone=x=>JSON.parse(JSON.stringify(x));
+ const stripId=x=>{const y=clone(x);delete y.id;return y};
+ const hash32=(s,seed)=>{let h=seed>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;h^=h>>>13;}return h.toString(16).padStart(8,'0')};
+ const workoutIdentity=x=>canonical({
+  // A historical sync snapshot may disagree on finish time / program metadata while still representing
+  // the exact same workout session. Started + workout lane + performed exercise/set payload is the
+  // stable user-visible identity. Truly different workouts at the same timestamp still differ here.
+  started:x?.started||'',workout:x?.workout||'',
+  exercises:(x?.exercises||[]).map(e=>({id:e?.id||'',sets:(e?.sets||[]).map(s=>({set:s?.set??null,weight:s?.weight??null,reps:s?.reps??null,leftSeconds:s?.leftSeconds??null,rightSeconds:s?.rightSeconds??null,done:!!s?.done}))}))
+ });
+ const weightIdentity=x=>canonical({date:x?.date||'',kg:x?.kg??null});
+ const identity=(kind,x)=>kind==='history'?workoutIdentity(x):kind==='weights'?weightIdentity(x):canonical(stripId(x));
+ const sameIdentity=(kind,a,b)=>identity(kind,a)===identity(kind,b);
+ const syntheticId=(kind,id)=>new RegExp('^tp18-'+(kind==='history'?'h':'w')+'-').test(String(id||''));
+ const legacyId=(kind,x)=>{const s=identity(kind,x);return 'tp18-'+(kind==='history'?'h':'w')+'-'+hash32(s,2166136261)+hash32(s,2246822519)+hash32(s,3266489917)};
+ const mergeHistoryVariant=(a,b)=>{
+  if(!sameIdentity('history',a,b))return null;
+  const merged=clone(a),incoming=clone(b);
+  for(const [k,v] of Object.entries(incoming)){
+   if(k==='id'||k==='photos'||v===undefined||v===null||v==='')continue;
+   if(k==='feedback'&&merged.feedback){
+    const at=Number(merged.feedback?.updatedAt)||0,bt=Number(v?.updatedAt)||0;if(bt<at)continue;
+   }
+   if(k==='health240'&&merged.health240){
+    const at=Date.parse(merged.health240?.syncedAt||'')||0,bt=Date.parse(v?.syncedAt||'')||0;if(bt<at)continue;
+   }
+   merged[k]=v;
+  }
+  if(a.photos||b.photos){
+   const by=new Map();
+   for(const p of [...(a.photos||[]),...(b.photos||[])]){
+    if(!p?.id)continue;
+    const old=by.get(p.id);
+    if(!old){by.set(p.id,clone(p));continue}
+    const newer=(Number(p.updatedAt)||0)>=(Number(old.updatedAt)||0)?p:old;
+    const photo={...old,...p,...newer};
+    photo.driveFileId=p.driveFileId||old.driveFileId||null;
+    photo.deletedAt=[p.deletedAt,old.deletedAt].filter(Boolean).sort().pop()||null;
+    photo.updatedAt=Math.max(Number(p.updatedAt)||0,Number(old.updatedAt)||0);
+    by.set(p.id,photo);
+   }
+   merged.photos=[...by.values()].sort((x,y)=>String(x.createdAt||'').localeCompare(String(y.createdAt||'')));
+  }
+  const real=[a.id,b.id].find(id=>id&&!syntheticId('history',id));merged.id=real||legacyId('history',merged);
+  return merged;
+ };
+ const stableConflict=(kind,a,b,baseRows,choose)=>{
+  if(canonical(a)===canonical(b))return a;
+  if(kind==='history'){const p=mergeHistoryVariant(a,b);if(p)return p}
+  const id=a?.id||b?.id,base=id?(baseRows||[]).find(x=>x?.id===id):null;
+  if(base){
+   const ac=canonical(a),bc=canonical(b),kc=canonical(base);
+   if(ac===kc&&bc!==kc)return b;
+   if(bc===kc&&ac!==kc)return a;
+  }
+  return choose(kind,a,b);
+ };
+ const ensureLegacyIds=(kind,rows)=>{
+  const used=new Map();
+  for(const src of rows){if(!src?.id||syntheticId(kind,src.id))continue;used.set(src.id,canonical(src))}
+  return rows.map(src=>{
+   const x=clone(src);if(x.id&&!syntheticId(kind,x.id))return x;
+   const root=legacyId(kind,x);let id=root,n=1,body=identity(kind,x);
+   while(used.has(id)&&used.get(id)!==body)id=root+'-'+(++n);
+   x.id=id;used.set(id,body);return x;
+  });
+ };
+ const mergeSafeRows=(kind,localRows,remoteSets,baseRows,archiveSets,choose)=>{
+  if(kind==='scheduled'){
+   const map=new Map((localRows||[]).map(x=>[recordKey(kind,x),clone(x)]));
+   for(const rows of remoteSets||[])for(const src of rows||[]){
+    const x=clone(src),key=recordKey(kind,x),old=map.get(key);
+    if(!old){map.set(key,x);continue}
+    if(canonical(old)===canonical(x))continue;
+    if((old.updatedAt||0)!==(x.updatedAt||0)){map.set(key,(old.updatedAt||0)>(x.updatedAt||0)?old:x);continue}
+    map.set(key,stableConflict(kind,old,x,baseRows,choose));
+   }
+   return [...map.values()].sort((a,b)=>String(b.start||'').localeCompare(String(a.start||'')));
+  }
+  const items=[];
+  const add=(src,archiveOnly)=>{
+   if(!src||typeof src!=='object')return;
+   const x=clone(src);
+   if(archiveOnly&&x.id)return; // old stable-ID records may have been explicitly deleted; only rescue legacy rows.
+   if(x.id){
+    const byId=items.findIndex(y=>y?.id===x.id);
+    if(byId>=0){if(!archiveOnly)items[byId]=stableConflict(kind,items[byId],x,baseRows,choose);return}
+   }
+   const same=items.findIndex(y=>sameIdentity(kind,y,x));
+   if(same>=0){
+    if(kind==='history')items[same]=mergeHistoryVariant(items[same],x)||items[same];
+    else {
+     const real=[items[same].id,x.id].find(id=>id&&!syntheticId(kind,id));
+     items[same]={...items[same],...x,id:real||legacyId(kind,x)};
+    }
+    return;
+   }
+   items.push(x);
+  };
+  for(const x of localRows||[])add(x,false);
+  for(const rows of remoteSets||[])for(const x of rows||[])add(x,false);
+  // cloudBase and selected older snapshots are preservation-only sources for legacy records.
+  for(const x of baseRows||[])add(x,true);
+  for(const rows of archiveSets||[])for(const x of rows||[])add(x,true);
+  return ensureLegacyIds(kind,items).sort((a,b)=>String(b.started||b.date||'').localeCompare(String(a.started||a.date||'')));
+ };
+ const tp18MergeSync=(local,remotes,base,choose,archives=[])=>{
+  const out=clone(local);
+  out.history=mergeSafeRows('history',local.history,(remotes||[]).map(x=>x.history),base?.history,(archives||[]).map(x=>x.history),choose);
+  out.weights=mergeSafeRows('weights',local.weights,(remotes||[]).map(x=>x.weights),base?.weights,(archives||[]).map(x=>x.weights),choose);
+  out.scheduled=mergeSafeRows('scheduled',local.scheduled,(remotes||[]).map(x=>x.scheduled),base?.scheduled,[],choose);
+  for(const key of ['settings','exercises','plan','programs','activeProgramId','plannerSettings']){
+   let selected=local[key];
+   for(const remote of remotes||[]){const x=remote[key];if(x===undefined||canonical(selected)===canonical(x))continue;if(base&&canonical(x)===canonical(base[key]))continue;if(base&&canonical(selected)===canonical(base[key]))selected=x;else selected=choose(key,selected,x)}
+   out[key]=selected;
+  }
+  return out;
+ };
+ const tp18SnapshotSelection=files=>{
+  const groups=new Map();
+  for(const f of files||[]){const m=/^repforge-sync-([a-z0-9-]{36})-/.exec(String(f?.name||''));if(!m)continue;(groups.get(m[1])||groups.set(m[1],[]).get(m[1])).push(f)}
+  const current=[],oldest=[],recent=[];
+  for(const rows of groups.values()){
+   rows.sort((a,b)=>String(a.createdTime||'').localeCompare(String(b.createdTime||'')));
+   if(!rows.length)continue;current.push(rows.at(-1));
+   const older=rows.slice(0,-1);if(older.length){oldest.push(older[0]);recent.push(...older.slice(1).reverse())}
+  }
+  const archive=[],seen=new Set(current.map(x=>x.id));
+  for(const f of [...oldest,...recent]){if(!f?.id||seen.has(f.id))continue;archive.push(f);seen.add(f.id);if(archive.length>=48)break}
+  return {current:current.sort((a,b)=>String(a.createdTime).localeCompare(String(b.createdTime))),archive};
+ };
+ mergeSync=function(local,remotes,base,choose){return tp18MergeSync(local,remotes,base,choose,[])};
+ syncCloud=async function(silent=false){
+  if(cloudBusy||!cloudProfile)return;
+  if(state.session){showCloudMessage(tp149T('cloud.driveAfterWorkout'));return}
+  if(navigator.onLine===false){showCloudMessage(tp149T('cloud.offlineDrive'));return}
+  cloudBusy=true;showCloudMessage(tp149T('cloud.syncingDrive'));
+  try{
+   const owner=cloudProfile.sub,bridge=googleBridge(),local=validateSync(syncData()),startState=canonicalSyncData(local),files=(await bridge.driveList({silent:silent})).files||[];
+   const selected=tp18SnapshotSelection(files),remotes=[],archives=[];
+   const readSnapshot=async(f,strict)=>{
+    try{
+     const snap=JSON.parse((await bridge.driveRead({id:f.id,silent:silent})).data);
+     if(snap.app!=='RepForgeSync'||snap.schema!==1||snap.owner!==owner)throw Error(tp149T('cloud.unknownBackup'));
+     return validateSync(snap.data);
+    }catch(e){if(strict)throw e;return null}
+   };
+   for(const f of selected.current){const d=await readSnapshot(f,true);if(d)remotes.push(d)}
+   for(const f of selected.archive){const d=await readSnapshot(f,false);if(d)archives.push(d)}
+   const base=db.get('cloudBase:'+owner,null);let merged,conflict=false;
+   const attempt=chooser=>validateSync(tp18MergeSync(local,remotes,base,chooser,archives));
+   try{merged=attempt(function(){conflict=true;throw Error('__TP18_CLOUD_CONFLICT__')})}
+   catch(e){if(e?.message!=='__TP18_CLOUD_CONFLICT__')throw e}
+   if(conflict){
+    if(silent)throw Error(tp149T('cloud.manualConflict'));
+    const phone=await tp2628Confirm(tp149T('cloud.conflict'),{title:tp149T('cloud.conflictTitle'),confirmText:tp149T('cloud.phone'),cancelText:tp149T('cloud.cloud')});
+    merged=attempt(function(){return phone});
+   }
+   if(typeof rf130SyncWorkoutPhotos==='function')await rf130SyncWorkoutPhotos(merged,bridge,silent);
+   if(state.session||canonicalSyncData(syncData())!==startState)throw Error(tp149T('cloud.changedDuringSync'));
+   let device=db.get('cloudDevice',null);if(!device){device=crypto.randomUUID();db.set('cloudDevice',device)}
+   if(!base||canonicalSyncData(merged)!==canonicalSyncData(base)||!files.length){
+    const r=await bridge.driveWrite({silent:silent,data:JSON.stringify({app:'RepForgeSync',schema:1,owner:owner,device:device,data:merged})});
+    if(!r.verified)throw Error(tp149T('cloud.verifyFailed'));
+   }
+   if(state.session||canonicalSyncData(syncData())!==startState)throw Error(tp149T('cloud.changedLocal'));
+   storeMerged(merged);db.set('cloudBase:'+owner,merged);db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{drive:new Date().toISOString()}));
+   showCloudMessage(tp149T('cloud.driveDone'));render();
+  }catch(e){showCloudMessage(e.message);if(!silent)alert(cloudMessage)}finally{finishCloud()}
+ };
+ window.TrainPilotIssue18={version:'18',mergeSync:tp18MergeSync,selectSnapshots:tp18SnapshotSelection,legacyId};
+})();
+
+
+/* Home Coach startup consistency: legacy compact repaint must not replace the accepted card after boot. */
+(function(){
+ 'use strict';
+ const decorate=()=>{try{if(state?.tab==='home')window.tp166DecorateHomeCoach?.()}catch(_){}};
+ if(typeof rf221CompactHome==='function'&&!rf221CompactHome.tpHomeCoachStable){
+  const base=rf221CompactHome;
+  const wrapped=function(){
+   const out=base.apply(this,arguments);
+   // rf221CompactHome contains an older zero-delay repaint. Run the accepted decorator after it.
+   setTimeout(decorate,0);
+   return out;
+  };
+  wrapped.tpHomeCoachStable=true;
+  rf221CompactHome=wrapped;
+ }
+ // Also repair the first boot, where the legacy timeout may already have been queued.
+ setTimeout(decorate,0);
+ requestAnimationFrame?.(()=>requestAnimationFrame?.(decorate));
+ window.TrainPilotHomeCoachStartup={version:'1',decorate};
+})();
+
 });</script>
 </body></html>
