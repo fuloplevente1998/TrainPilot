@@ -35,26 +35,31 @@ const {chromium}=require('playwright');
   assert.equal(await fitness.count(),1,'Body/Fitness data must be embedded in the expanded weight journal');
   assert.equal(await fitness.locator('.stat').count(),3,'embedded Body/Fitness must avoid duplicate weight tile');
 
-  // Home -> Help me get started is a full scrollable subpage, never the compact
-  // non-scrolling Home dashboard.
+  // Phase 3 #37: Home -> Help me get started stays in a compact scrollable panel
+  // over the unchanged Home route.
   await page.evaluate(()=>go('home'));
   await page.waitForTimeout(80);
   await page.getByRole('button',{name:/Segíts elkezdeni|Help me get started/i}).click();
-  await page.waitForTimeout(80);
+  await page.waitForSelector('#tp3PlannerPanelHost .tp152-profile');
   const profileState=await page.evaluate(()=>({
    tab:state.tab,
-   homeClass:document.querySelector('main')?.classList.contains('rf221-home'),
+   homeClass:document.querySelector('#app main')?.classList.contains('rf221-home'),
    overflow:getComputedStyle(document.body).overflow,
+   panel:!!document.getElementById('tp3PlannerPanelHost'),
    active:[...document.querySelectorAll('.tab.active')].map(x=>x.querySelector('.tp151-nav-label')?.textContent?.trim()||x.textContent.trim())
   }));
-  assert.equal(profileState.tab,'profile');
-  assert.equal(profileState.homeClass,false);
-  assert.notEqual(profileState.overflow,'hidden');
-  assert.ok(profileState.active.some(x=>/^(Kezdőlap|Home)$/.test(x)),'Home tab remains highlighted for profile');
+  assert.equal(profileState.tab,'home');
+  assert.equal(profileState.homeClass,true);
+  assert.equal(profileState.overflow,'hidden');
+  assert.equal(profileState.panel,true);
+  assert.ok(profileState.active.some(x=>/^(Kezdőlap|Home)$/.test(x)),'Home tab remains highlighted behind planner panel');
   const profileScroll=await page.evaluate(async()=>{
-   const main=document.querySelector('main'),probe=document.createElement('div');probe.id='tp2628ProfileScrollProbe';probe.style.height='1400px';main.appendChild(probe);window.scrollTo(0,9999);await new Promise(r=>setTimeout(r,50));return window.scrollY;
+   const panel=document.querySelector('.tp3-planner-panel'),main=panel.querySelector('main'),probe=document.createElement('div');probe.id='tp2628ProfileScrollProbe';probe.style.height='1400px';main.appendChild(probe);panel.scrollTop=9999;await new Promise(r=>setTimeout(r,50));return panel.scrollTop;
   });
-  assert.ok(profileScroll>0,'Help me get started must scroll');
+  assert.ok(profileScroll>0,'Help me get started panel must scroll');
+  assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),true,'Android Back must close personal planner panel');
+  await page.locator('#tp3PlannerPanelHost').waitFor({state:'detached'});
+  assert.equal(await page.evaluate(()=>state.tab),'home','closing planner keeps Home route');
 
   // Scheduled workout deletion must use TrainPilot UI, not native WebView confirm.
   const scheduleId=await page.evaluate(()=>{
