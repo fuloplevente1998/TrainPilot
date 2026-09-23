@@ -7,16 +7,26 @@ This file is the current handoff/source-of-truth for continuing TrainPilot devel
 ## Current stable line
 
 - Stable branch: `main`
-- Current package version: **1.7.0**
-- Android versionCode: **2659**
+- Current package version: **1.7.1**
+- Android versionCode: **2660**
 - Completed/accepted roadmap phases so far:
   - **Phase 2 – #15 + #16 Demo / active-workout UI**: completed and phone-approved.
   - **Original Phase 1 – #18 Drive sync and data protection**: completed and phone-approved.
   - **Phase 3 – #29 + #30 Journal full polish + #37 personal planner panel**: completed and user-approved for `main` after the final phone feedback fixes.
+  - **Phase 4 – #17 + #21 Coach full exercise coverage**: completed, phone-approved and merged to `main`.
 - PR **#34 – #15 unified exercise demo panel**: **merged**
 - PR **#35 – #16 active workout sticky controls and rest timer**: **merged**
 - PR **#36 – #18 Drive sync data-safety and legacy dedupe**: **merged**
 - PR **#38 – TrainPilot 1.7.0 Phase 3 Journal polish (#29 + #30 + #37)**: **merged**
+- PR **#39 – TrainPilot 1.7.1 Phase 4 Coach full exercise coverage (#17 + #21)**: **merged**
+- Phase 4 merge commit: `8424e5793c24d87be1edfc774e0fa7d475029de6`
+- Phase 4 signed APK Release Gate **#124**: **passed**
+- Phase 4 full Node/regression suite: **passed**
+- Phase 4 full Chromium/UI regression suite: **passed**
+- Phase 4 APK/package/source verification: **passed**
+- Phase 4 physical-phone validation: **passed**
+- Phase 4 post-merge `main` Quick TrainPilot Validation **#477**: **passed**
+- Issues **#17 and #21**: **closed / completed**
 - Phase 3 merge commit: `25a2cfbefaff63244a6e85875674eb884df87131`
 - Phase 3 signed APK Release Gate **#122**: **passed**
 - Phase 3 full Node/regression suite: **passed**
@@ -34,7 +44,7 @@ This file is the current handoff/source-of-truth for continuing TrainPilot devel
 - Issues **#15, #16 and #18**: **closed / completed**
 - The current `main` is the only valid baseline for the next development step.
 - **Phase 3 release gate #122**: full Node regression, full Chromium/UI regression, signed APK build and APK/package/source verification all passed.
-- **Next development step: Phase 4 – #17 + #21 Coach full exercise coverage.**
+- **Next development step: Phase 5 – #27 Health pulse-trend data source + weight-edit reliability.**
 
 ### Accepted #18 behavior
 
@@ -53,15 +63,27 @@ The original six-phase roadmap is:
 1. **Drive sync and data protection** – issue **#18** ✅
 2. **Demo and active workout** – issues **#15 + #16** ✅
 3. **Journal full polish** – issues **#29 + #30** ✅
-4. **Coach full exercise coverage** – issues **#17 + #21**
+4. **Coach full exercise coverage** – issues **#17 + #21** ✅
 5. **Health pulse-trend data source** – issue **#27**
 6. **Performance and smoothness** – issue **#19**
 
 Because development began with Phase 2 before the original order was recovered, the actual completed order is:
 
-**Phase 2 (#15 + #16) ✅ → Phase 1 (#18) ✅ → Phase 3 (#29 + #30, plus #37) ✅ → Phase 4 (#17 + #21) → Phase 5 (#27) → Phase 6 (#19).**
+**Phase 2 (#15 + #16) ✅ → Phase 1 (#18) ✅ → Phase 3 (#29 + #30, plus #37) ✅ → Phase 4 (#17 + #21) ✅ → Phase 5 (#27) → Phase 6 (#19).**
 
-The **next phase is Phase 4: #17 + #21 Coach full exercise coverage**, and it must start only from the newly accepted TrainPilot 1.7.0 `main`.
+The **current phase is Phase 5: #27 Health pulse-trend data source + weight-edit reliability**, started only from the newly accepted TrainPilot 1.7.1 `main` (`8424e5793c24d87be1edfc774e0fa7d475029de6`) after post-merge Quick Validation #477 passed.
+
+### Accepted Phase 4 / TrainPilot 1.7.1 behavior
+
+- Coach / Statistics lists every exercise with valid Journal history; the previous 12-item cap is gone.
+- Weighted, bodyweight/repetition, timed and bilateral `mp/oldal` exercises use load-appropriate statistics.
+- Bilateral side-plank history keeps separate left/right time semantics.
+- The next-workout Coach plan creates an advice row for every exercise in the target day, including meaningful fallback states with limited history.
+- Coach “Következő edzés” shows program name + workout day + planned date/time as the primary summary and wraps safely on 320–412 px widths.
+- Home Coach startup behavior remains unchanged from the previously accepted baseline.
+- TrainPilot 1.7.1 Release Gate #124 passed full Node regression, full Chromium/UI regression, signed APK build and APK/package/source verification.
+- Physical-phone validation passed before PR #39 was merged.
+- Post-merge `main` Quick TrainPilot Validation #477 passed.
 
 ### Accepted Phase 3 / TrainPilot 1.7.0 behavior
 
