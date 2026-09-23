@@ -684,6 +684,12 @@
   state.tp3HistoryExerciseEdit={key,index:ei,isNew:false,draft:normalizeLegacySides({exercises:[rf151Clone(raw)]}).exercises[0]};
   state.tp3HistoryOpenKey=key;tp3KeepScroll(()=>render());
  };
+ window.tp3ExerciseToggle=function(el,key,ei){
+  if(!el)return;
+  const st=tp3ExerciseState();
+  if(el.open){if(!(st&&st.key===key&&!st.isNew&&st.index===ei))window.tp3OpenExerciseEditor(key,ei)}
+  else if(st&&st.key===key&&!st.isNew&&st.index===ei)window.tp3CancelExerciseEdit(key);
+ };
  window.tp3CancelExerciseEdit=function(key){
   tp3ClearExerciseState();state.tp3HistoryOpenKey=key||state.tp3HistoryOpenKey;tp3KeepScroll(()=>render());
  };
@@ -720,13 +726,14 @@
   tp3ClearExerciseState();state.tp3HistoryOpenKey=rf142WorkoutKey(x);try{if(typeof cloudChanged==='function')cloudChanged()}catch(_){}
   tp3KeepScroll(()=>render());
  };
- window.tp3DeleteExercise=function(){
+ window.tp3DeleteExercise=async function(){
   const st=tp3ExerciseState();if(!st)return;
   if(st.isNew){return window.tp3CancelExerciseEdit(st.key)}
   const i=rf142FindHistoryIndex(st.key),h=history(),x=h[i];if(i<0||!x)return;
   if((x.exercises||[]).length<=1){alert('Az edzésben legalább 1 gyakorlatnak maradnia kell.');return}
   const name=tp149ExerciseName(rf151SetMeta(x.exercises[st.index]||{}));
-  if(!confirm('Törlöd ezt a gyakorlatot az edzésből?\n'+name))return;
+  const ok=typeof tp2628Confirm==='function'?await tp2628Confirm('Törlöd ezt a gyakorlatot az edzésből?\n'+name,{title:'Gyakorlat törlése',confirmText:'Törlés',danger:true}):false;
+  if(!ok)return;
   const copy=rf151Clone(x);copy.exercises.splice(st.index,1);copy.editedAt=new Date().toISOString();h[i]=copy;db.set('history',h);
   tp3ClearExerciseState();state.tp3HistoryOpenKey=rf142WorkoutKey(copy);try{if(typeof cloudChanged==='function')cloudChanged()}catch(_){}
   tp3KeepScroll(()=>render());
@@ -758,7 +765,7 @@
  const tp3ExerciseListHtml=(x,key)=>{
   const w=tx(),st=tp3ExerciseState(),rows=(x.exercises||[]).map((raw,ei)=>{
    const active=st&&st.key===key&&!st.isNew&&st.index===ei,e=active?st.draft:raw;
-   return '<details class="tp3-history-ex-item" data-tp3-ex-index="'+ei+'" '+(active?'open ':'')+'ontoggle="if(this.open)tp3OpenExerciseEditor(\''+esc(key)+'\','+ei+');else if(window.event?.isTrusted&&'+(active?'true':'false')+')tp3CancelExerciseEdit(\''+esc(key)+'\')"><summary><div class="tp3-history-ex-title"><strong>'+esc(tp149ExerciseName(rf151SetMeta(e)))+'</strong><span class="small muted">'+esc(tp3ExerciseSummary(e))+'</span></div><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary>'+(active?tp3ExerciseEditorHtml(key,e,ei,false):'')+'</details>';
+   return '<details class="tp3-history-ex-item" data-tp3-ex-index="'+ei+'" '+(active?'open ':'')+'ontoggle="tp3ExerciseToggle(this,\''+esc(key)+'\','+ei+')"><summary><div class="tp3-history-ex-title"><strong>'+esc(tp149ExerciseName(rf151SetMeta(e)))+'</strong><span class="small muted">'+esc(tp3ExerciseSummary(e))+'</span></div><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary>'+(active?tp3ExerciseEditorHtml(key,e,ei,false):'')+'</details>';
   }).join('');
   const pending=st&&st.key===key&&st.isNew?'<details class="tp3-history-ex-item tp3-history-ex-new" open><summary><div class="tp3-history-ex-title"><strong>'+esc(tp149ExerciseName(rf151SetMeta(st.draft)))+'</strong><span class="small muted">'+esc(tp3ExerciseSummary(st.draft))+'</span></div><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary>'+tp3ExerciseEditorHtml(key,st.draft,st.index,true)+'</details>':'';
   const opts=exercises().filter(e=>!(x.exercises||[]).some(v=>v.id===e.id));
