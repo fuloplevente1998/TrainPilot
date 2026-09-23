@@ -818,7 +818,7 @@
 
  // #37 — the personal planner stays in the same accepted panel language as the
  // other modern TrainPilot tools, without changing the background route while open.
- let tp3PlannerHost=null,tp3PlannerTrigger=null,tp3PlannerBodyOverflow='',tp3PlannerScrollY=0;
+ let tp3PlannerHost=null,tp3PlannerTrigger=null,tp3PlannerBodyOverflow='',tp3PlannerBodyOverflowPriority='',tp3PlannerScrollY=0;
  const tp3ProfileScreenBase=profileScreen,tp3ShowPersonalPreviewBase=showPersonalPreview,tp3AcceptPersonalProgramBase=acceptPersonalProgram;
  const tp3PlannerOpen=()=>!!(tp3PlannerHost&&tp3PlannerHost.isConnected);
  window.tp3PlannerPanelOpen=tp3PlannerOpen;
@@ -867,7 +867,7 @@
   const trigger=tp3PlannerTrigger,y=tp3PlannerScrollY;
   tp3PlannerHost.remove();tp3PlannerHost=null;tp3PlannerTrigger=null;tp3PlannerScrollY=0;
   document.documentElement.classList.remove('tp3-planner-open');document.body.classList.remove('tp3-planner-open');
-  document.body.style.overflow=tp3PlannerBodyOverflow;tp3PlannerBodyOverflow='';
+  if(tp3PlannerBodyOverflow)document.body.style.setProperty('overflow',tp3PlannerBodyOverflow,tp3PlannerBodyOverflowPriority);else document.body.style.removeProperty('overflow');tp3PlannerBodyOverflow='';tp3PlannerBodyOverflowPriority='';
   if(restoreFocus&&Number.isFinite(y))try{window.scrollTo(0,y)}catch(_){}
   if(restoreFocus&&trigger?.isConnected)try{trigger.focus({preventScroll:true})}catch(_){}
   return true;
@@ -876,12 +876,12 @@
   const html=tp3CapturePlannerMain(fn);if(!html)return false;
   try{if(typeof window.tp155R4ClosePanel==='function')window.tp155R4ClosePanel(false)}catch(_){}
   if(!tp3PlannerOpen()){
-   tp3PlannerTrigger=document.activeElement;tp3PlannerScrollY=window.scrollY||0;tp3PlannerBodyOverflow=document.body.style.overflow||'';
+   tp3PlannerTrigger=document.activeElement;tp3PlannerScrollY=window.scrollY||0;tp3PlannerBodyOverflow=document.body.style.getPropertyValue('overflow')||'';tp3PlannerBodyOverflowPriority=document.body.style.getPropertyPriority('overflow')||'';
    tp3PlannerHost=document.createElement('div');tp3PlannerHost.id='tp3PlannerPanelHost';tp3PlannerHost.className='tp3-planner-host';tp3PlannerHost.dataset.panel='profile';
    tp3PlannerHost.innerHTML='<section class="tp3-planner-panel" role="dialog" aria-modal="true" aria-label="'+esc(typeof tp149T==='function'?tp149T('planner.title'):'Személyes edzéstervező')+'"><button type="button" class="tp3-planner-close" aria-label="'+esc(typeof tp149T==='function'?tp149T('common.close'):'Bezárás')+'" onclick="tp3ClosePlannerPanel()">×</button><div class="tp3-planner-content"></div></section>';
    tp3PlannerHost.addEventListener('click',e=>{if(e.target===tp3PlannerHost)window.tp3ClosePlannerPanel()});
    document.body.appendChild(tp3PlannerHost);
-   document.documentElement.classList.add('tp3-planner-open');document.body.classList.add('tp3-planner-open');document.body.style.overflow='hidden';
+   document.documentElement.classList.add('tp3-planner-open');document.body.classList.add('tp3-planner-open');document.body.style.setProperty('overflow','hidden','important');
   }
   const content=tp3PlannerHost.querySelector('.tp3-planner-content');content.innerHTML=html;tp3DecoratePlannerContent(content,kind);
   try{if(typeof rf260EnhanceSelects==='function')rf260EnhanceSelects()}catch(_){}
