@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - feat/phase4-coach-17-21
+      - feat/phase5-health-27
     tags:
       - 'v*'
 

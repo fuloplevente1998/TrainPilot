@@ -1194,5 +1194,140 @@
  window.TrainPilotPhase4={version:TP4_VERSION,allHistoryExercises:true,allTargetExercises:true,timedStats:true,bilateralStats:true,nextWorkoutSummary:true};
 })();
 
+
+/* @section Phase 5 — #27 Health pulse trend source + persistent weight edit */
+(function(){
+ 'use strict';
+ const TP5_VERSION='phase5-health-27-r1';
+ const COPY={
+  hu:{today:'Mai pulzus',trend:'7 napos trend',trendSub:'Elmúlt 7 naptári nap • napi átlagpulzus',few:'Elmúlt 7 naptári nap • még kevés mért adat',source:'Forrás: Health Connect szinkron → TrainPilot Health-napló (healthLedgerV1), napi averageHeartRate.',noData:'Nincs adat',weightEdit:'Testsúly szerkesztése',weight:'Testsúly',date:'Mérés dátuma',save:'Mentés',cancel:'Mégse',del:'Törlés',range:'30–300 kg közötti értéket adj meg.'},
+  en:{today:'Today heart rate',trend:'7-day trend',trendSub:'Last 7 calendar days • daily average heart rate',few:'Last 7 calendar days • not enough measured data yet',source:'Source: Health Connect sync → TrainPilot Health ledger (healthLedgerV1), daily averageHeartRate.',noData:'No data',weightEdit:'Edit body weight',weight:'Body weight',date:'Measurement date',save:'Save',cancel:'Cancel',del:'Delete',range:'Enter a value between 30 and 300 kg.'},
+  de:{today:'Heutiger Puls',trend:'7-Tage-Trend',trendSub:'Letzte 7 Kalendertage • täglicher Durchschnittspuls',few:'Letzte 7 Kalendertage • noch zu wenige Messdaten',source:'Quelle: Health-Connect-Sync → TrainPilot Health-Protokoll (healthLedgerV1), tägliches averageHeartRate.',noData:'Keine Daten',weightEdit:'Körpergewicht bearbeiten',weight:'Körpergewicht',date:'Messdatum',save:'Speichern',cancel:'Abbrechen',del:'Löschen',range:'Bitte einen Wert zwischen 30 und 300 kg eingeben.'},
+  ro:{today:'Pulsul de azi',trend:'Tendință 7 zile',trendSub:'Ultimele 7 zile calendaristice • puls mediu zilnic',few:'Ultimele 7 zile calendaristice • încă sunt puține date măsurate',source:'Sursă: sincronizare Health Connect → jurnalul Health TrainPilot (healthLedgerV1), averageHeartRate zilnic.',noData:'Fără date',weightEdit:'Editează greutatea',weight:'Greutate',date:'Data măsurării',save:'Salvează',cancel:'Anulează',del:'Șterge',range:'Introdu o valoare între 30 și 300 kg.'}
+ };
+ const lang=()=>{try{return typeof rf212Lang==='function'?rf212Lang():(document.documentElement.lang||'hu').slice(0,2)}catch(_){return 'hu'}};
+ const tx=()=>COPY[lang()]||COPY.hu;
+ const esc5=v=>String(v==null?'':v).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ const positive=v=>{const n=Number(v);return Number.isFinite(n)&&n>0?n:null};
+ const fmt=v=>{try{return typeof tp149FormatNumber==='function'?tp149FormatNumber(v,{maximumFractionDigits:1}):String(Math.round(Number(v)*10)/10)}catch(_){return String(v)}};
+ const dayKey=d=>{try{return typeof rf240DayKey==='function'?rf240DayKey(d):d.toISOString().slice(0,10)}catch(_){return d.toISOString().slice(0,10)}};
+ const ledger=()=>{try{return typeof rf240Ledger==='function'?rf240Ledger():{days:{}}}catch(_){return {days:{}}}};
+ const locale=()=>({hu:'hu-HU',en:'en-US',de:'de-DE',ro:'ro-RO'}[lang()]||'hu-HU');
+
+ window.tp5PulseTrendRows=function(){
+  const days=ledger()?.days||{},today=new Date();today.setHours(12,0,0,0);const out=[];
+  for(let offset=6;offset>=0;offset--){
+   const d=new Date(today);d.setDate(today.getDate()-offset);const key=dayKey(d),value=positive(days?.[key]?.averageHeartRate);
+   out.push({key,date:d,value});
+  }
+  return out;
+ };
+
+ function chart(rows,cls,w,h,p){
+  const valid=rows.map((r,i)=>({i,value:positive(r.value)})).filter(x=>x.value!=null);
+  if(valid.length<2)return '<div class="tp5-pulse-empty">'+esc5(tx().noData)+'</div>';
+  const mn=Math.min(...valid.map(x=>x.value)),mx=Math.max(...valid.map(x=>x.value)),span=Math.max(1,mx-mn);
+  const pts=valid.map(x=>({x:p+x.i*(w-2*p)/6,y:h-p-(x.value-mn)*(h-2*p)/span}));
+  let d='M'+pts[0].x.toFixed(1)+' '+pts[0].y.toFixed(1);
+  for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],mx2=((a.x+b.x)/2).toFixed(1);d+=' C'+mx2+' '+a.y.toFixed(1)+' '+mx2+' '+b.y.toFixed(1)+' '+b.x.toFixed(1)+' '+b.y.toFixed(1)}
+  const dots=pts.map(x=>'<circle cx="'+x.x.toFixed(1)+'" cy="'+x.y.toFixed(1)+'" r="'+(w<200?'2.1':'3')+'"/>').join('');
+  return '<svg class="'+cls+'" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" aria-hidden="true"><path d="'+d+'"/>'+dots+'</svg>';
+ }
+
+ function dayCells(rows){
+  return rows.map(r=>{
+   let label='';try{label=new Intl.DateTimeFormat(locale(),{weekday:'short'}).format(r.date).replace('.','')}catch(_){label=r.key.slice(5)}
+   return '<div class="tp5-pulse-day"><small>'+esc5(label)+'</small><strong>'+esc5(r.value==null?'—':Math.round(r.value))+'</strong></div>';
+  }).join('');
+ }
+
+ function decoratePulse(){
+  const pulse=document.querySelector('main.rf263-health .tp169-pulse-journal');if(!pulse)return false;
+  const rows=window.tp5PulseTrendRows(),measured=rows.filter(x=>x.value!=null).length,t=tx();
+  const summary=pulse.querySelector('.tp169-pulse-summary'),small=summary?.querySelector('small');
+  if(small)small.textContent=measured>=3?t.trendSub:t.few;
+  if(summary){
+   summary.querySelectorAll('.tp168-spark,.tp168-spark-empty,.tp5-trend-mini').forEach(x=>x.remove());
+   const mini=document.createElement('span');mini.className='tp5-trend-mini';mini.innerHTML=chart(rows,'tp5-pulse-mini-svg',132,34,3);
+   const chev=summary.querySelector(':scope > b');summary.insertBefore(mini,chev||null);
+  }
+  const body=pulse.querySelector('.tp169-pulse-body'),grid=body?.querySelector('.tp168-pulse-grid');if(!body||!grid)return true;
+  let today=body.querySelector('.tp5-pulse-today');
+  if(!today){today=document.createElement('section');today.className='tp5-pulse-today';today.innerHTML='<h3>'+esc5(t.today)+'</h3>';body.insertBefore(today,grid);today.appendChild(grid)}
+  let old=body.querySelector(':scope > .tp169-pulse-chart');if(old)old.style.display='none';
+  let trend=body.querySelector('.tp5-pulse-trend-section');
+  if(!trend){trend=document.createElement('section');trend.className='tp5-pulse-trend-section';const recovery=body.querySelector('.tp168-recovery-history');body.insertBefore(trend,recovery||null)}
+  trend.innerHTML='<div class="tp5-pulse-trend-head"><div><h3>'+esc5(t.trend)+'</h3><p>'+esc5(measured>=3?t.trendSub:t.few)+'</p></div><span>'+measured+'/7</span></div>'+
+   '<div class="tp5-pulse-chart">'+chart(rows,'tp5-pulse-large-svg',300,108,10)+'</div>'+
+   '<div class="tp5-pulse-days">'+dayCells(rows)+'</div>'+
+   '<p class="tp5-pulse-source">'+esc5(t.source)+'</p>';
+  return true;
+ }
+ window.tp5DecoratePulse=decoratePulse;
+
+ let weightFocus=null;
+ function closeWeightEditor(){
+  const modal=document.querySelector('#tp2628Dialog[data-tp5-weight-edit="1"]');if(!modal)return;
+  modal.remove();const f=weightFocus;weightFocus=null;if(f&&f.isConnected)try{f.focus({preventScroll:true})}catch(_){}
+ }
+ function refreshWeight(){
+  if(window.TrainPilot168Health){window.TrainPilot168Health.weightOpen=true;window.TrainPilot168Health.decorate?.()}
+  decoratePulse();
+ }
+ window.tp5OpenWeightEditor=function(date){
+  const rows=typeof weights==='function'?weights():[],idx=rows.findIndex(x=>String(x?.date||'')===String(date||''));if(idx<0)return false;
+  document.getElementById('tp2628Dialog')?.remove();const row=rows[idx],t=tx();weightFocus=document.activeElement;
+  const modal=document.createElement('div');modal.id='tp2628Dialog';modal.dataset.tp5WeightEdit='1';modal.className='tp2628-dialog-backdrop tp5-weight-backdrop';
+  let shown='';try{shown=new Intl.DateTimeFormat(locale(),{year:'numeric',month:'short',day:'numeric'}).format(new Date(row.date))}catch(_){shown=String(row.date||'')}
+  modal.innerHTML='<div class="tp2628-dialog tp5-weight-dialog" role="dialog" aria-modal="true" aria-labelledby="tp5WeightTitle">'+
+   '<div class="tp5-weight-title"><div><h2 id="tp5WeightTitle">'+esc5(t.weightEdit)+'</h2><p>'+esc5(shown)+'</p></div><button type="button" class="tp5-weight-x" data-tp2628-cancel aria-label="'+esc5(t.cancel)+'">×</button></div>'+
+   '<label class="tp5-weight-field">'+esc5(t.weight)+'<div class="tp5-weight-input-wrap"><input class="field" data-tp2629-input id="tp5WeightKg" type="number" inputmode="decimal" min="30" max="300" step="0.1" value="'+esc5(row.kg)+'"><span>kg</span></div></label>'+
+   '<div class="tp5-weight-date"><small>'+esc5(t.date)+'</small><strong>'+esc5(shown)+'</strong></div>'+
+   '<p class="tp5-weight-error" aria-live="polite"></p>'+
+   '<div class="tp2628-dialog-actions tp5-weight-actions"><button type="button" class="btn danger" data-tp5-delete>'+esc5(t.del)+'</button><button type="button" class="btn secondary" data-tp2628-cancel>'+esc5(t.cancel)+'</button><button type="button" class="btn" data-tp2628-confirm>'+esc5(t.save)+'</button></div>'+
+   '</div>';
+  const input=modal.querySelector('#tp5WeightKg'),error=modal.querySelector('.tp5-weight-error');
+  const cancel=()=>closeWeightEditor();
+  const save=()=>{
+   const kg=Number(String(input.value||'').replace(',','.'));
+   if(!Number.isFinite(kg)||kg<30||kg>300){error.textContent=t.range;input.focus();return}
+   const next=(typeof weights==='function'?weights():[]).slice(),i=next.findIndex(x=>String(x?.date||'')===String(date||''));if(i<0){closeWeightEditor();return}
+   next[i]={...next[i],kg:Math.round(kg*10)/10,updatedAt:Date.now()};db.set('weights',next);
+   try{if(typeof cloudChanged==='function')cloudChanged()}catch(_){}
+   closeWeightEditor();refreshWeight();
+  };
+  modal.querySelectorAll('[data-tp2628-cancel]').forEach(b=>b.addEventListener('click',cancel));
+  modal.querySelector('[data-tp2628-confirm]').addEventListener('click',save);
+  modal.querySelector('[data-tp5-delete]').addEventListener('click',()=>{closeWeightEditor();if(typeof rf215Del==='function')rf215Del(date)});
+  modal.addEventListener('click',e=>{if(e.target===modal)cancel()});
+  modal.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();cancel()}else if(e.key==='Enter'&&e.target===input){e.preventDefault();save()}});
+  document.body.appendChild(modal);setTimeout(()=>{try{input.focus({preventScroll:true});input.select()}catch(_){input.focus?.()}},0);
+  return true;
+ };
+ window.tp168EditWeight=window.tp5OpenWeightEditor;
+ window.rf215Edit=window.tp5OpenWeightEditor;
+
+ if(window.TrainPilot168Health?.decorate){
+  const base=window.TrainPilot168Health.decorate;
+  window.TrainPilot168Health.decorate=function(){const out=base.apply(this,arguments);decoratePulse();return out};
+ }
+ if(typeof window.tp168TogglePulse==='function'){
+  const base=window.tp168TogglePulse;window.tp168TogglePulse=function(){const out=base.apply(this,arguments);setTimeout(decoratePulse,0);return out};
+ }
+ if(typeof window.render==='function'){
+  const base=window.render;window.render=function(){const out=base.apply(this,arguments);decoratePulse();setTimeout(decoratePulse,0);return out};
+ }
+ const style=document.createElement('style');style.id='tp5Health27Css';style.textContent=[
+  '.tp5-pulse-today,.tp5-pulse-trend-section{margin:8px 0;padding:10px;border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--card2) 72%,transparent)}',
+  '.tp5-pulse-today h3,.tp5-pulse-trend-section h3{margin:0 0 7px;font-size:13px}.tp5-pulse-trend-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.tp5-pulse-trend-head p{margin:2px 0 0;font-size:11px;color:var(--muted)}.tp5-pulse-trend-head>span{flex:0 0 auto;font-size:11px;font-weight:800;color:var(--accent2)}',
+  '.tp5-pulse-chart{height:108px;margin:8px 0 4px}.tp5-pulse-large-svg,.tp5-pulse-mini-svg{width:100%;height:100%;overflow:visible}.tp5-pulse-large-svg path,.tp5-pulse-mini-svg path{fill:none;stroke:var(--accent2);stroke-width:2.4;vector-effect:non-scaling-stroke}.tp5-pulse-large-svg circle,.tp5-pulse-mini-svg circle{fill:var(--accent2)}.tp5-trend-mini{display:block;width:132px;height:34px;flex:0 0 132px}.tp5-pulse-empty{display:grid;place-items:center;height:100%;font-size:11px;color:var(--muted)}',
+  '.tp5-pulse-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}.tp5-pulse-day{min-width:0;text-align:center;padding:4px 1px;border-radius:8px;background:color-mix(in srgb,var(--card) 80%,transparent)}.tp5-pulse-day small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:9px;color:var(--muted)}.tp5-pulse-day strong{font-size:11px}.tp5-pulse-source{margin:7px 0 0;font-size:10px;line-height:1.35;color:var(--muted)}',
+  '.tp5-weight-backdrop{padding:12px!important;align-items:center!important}.tp5-weight-dialog{box-sizing:border-box!important;width:min(100%,420px)!important;max-height:min(72vh,480px)!important;overflow:auto!important;padding:14px!important}.tp5-weight-title{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.tp5-weight-title h2{margin:0;font-size:18px}.tp5-weight-title p{margin:3px 0 0;font-size:12px;color:var(--muted)}.tp5-weight-x{flex:0 0 38px;width:38px;height:38px;border:0;border-radius:12px;background:color-mix(in srgb,#a33 30%,var(--card2));color:#fff;font-size:26px;line-height:1}.tp5-weight-field{display:grid;gap:6px;margin:14px 0 10px;font-size:12px;font-weight:700}.tp5-weight-input-wrap{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px}.tp5-weight-input-wrap .field{min-width:0;margin:0!important}.tp5-weight-input-wrap span{font-weight:800}.tp5-weight-date{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border:1px solid var(--line);border-radius:12px}.tp5-weight-date small{color:var(--muted)}.tp5-weight-error{min-height:18px;margin:6px 0 0;color:#e88;font-size:11px}.tp5-weight-actions{display:grid!important;grid-template-columns:auto 1fr 1fr!important;gap:7px!important;margin-top:8px!important}.tp5-weight-actions .btn{min-width:0!important;margin:0!important}',
+  '@media(max-width:360px){.tp5-trend-mini{width:92px;flex-basis:92px}.tp5-pulse-days{gap:2px}.tp5-pulse-day strong{font-size:10px}.tp5-weight-actions{grid-template-columns:1fr 1fr!important}.tp5-weight-actions [data-tp5-delete]{grid-column:1/-1;grid-row:2}.tp5-weight-dialog{padding:11px!important}}'
+ ].join('');document.head.appendChild(style);
+ window.TrainPilotPhase5={version:TP5_VERSION,pulseSource:'healthLedgerV1.averageHeartRate',calendarDays:7,zeroPulseAsMissing:true,persistentWeightEdit:true,ownWeightDialog:true};
+ decoratePulse();setTimeout(decoratePulse,0);
+})();
+
 });</script>
 </body></html>
