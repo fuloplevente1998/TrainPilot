@@ -3,7 +3,7 @@ const html=fs.readFileSync('www/index.html','utf8');
 const p=html.slice(html.indexOf('/* Phase 3 — #29 + #30'));
 assert.ok(p.length>5000,'Phase 3 runtime block missing');
 for(const marker of [
- "TP3_VERSION='phase3-29-30-37-r4'",
+ "TP3_VERSION='phase3-29-30-37-r5'",
  'tp3-history-ex',
  'tp3-photo-section',
  'tp3-stat-row',
@@ -17,9 +17,14 @@ for(const marker of [
  'tp3HistoryToggle',
  'historyExerciseSummary',
  'tp3WorkoutSummaryHtml',
+ 'tp3OpenExerciseEditor',
+ 'tp3SaveExerciseEdit',
+ 'tp3ExerciseAddSet',
+ 'tp3StartAddExercise',
  'tp3WorkoutStats',
- 'tp3BeginHistoryEdit',
  'journalAcceptedCard:true',
+ 'exerciseInlineEditor:true',
+ 'exerciseAdd:true',
  'tp3-combined-history',
  'tp3-history-performance',
  'phase3HistoryTombstones',
@@ -35,8 +40,12 @@ assert.match(p,/content:"›"!important/,'unified arrow glyph must be the accept
 assert.match(p,/\.rf103-history-chevron::before/,'Journal chevrons must use the unified reference arrow');
 assert.match(p,/\.tp166-home-coach-chevron::before/,'Home reference chevron must use the same unified style');
 assert.match(p,/tp3WorkoutSummaryHtml/,'expanded Journal card must render the accepted inline workout summary');
-assert.match(p,/tp3-summary-edit/,'expanded Journal card must expose explicit inline editing');
-assert.doesNotMatch(p,/setTimeout\(\(\)=>document\.querySelector\('\[data-tp152-history-key/,'opening/editing Journal must not use the old forced scrollIntoView jump');
+assert.doesNotMatch(p,/tp3-summary-edit/,'accepted Journal card must not expose a top-level Edit button');
+assert.match(p,/tp3-history-ex-item/,'each logged exercise must be independently expandable');
+assert.match(p,/tp3-add-exercise/,'Journal must allow adding a new exercise');
+assert.match(p,/tp3ExerciseAddSet/,'existing logged exercise must allow adding sets');
+assert.doesNotMatch(p,/scrollIntoView/,'opening/editing Journal must not use the old forced scrollIntoView jump');
+assert.match(p,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/,'Journal metrics must use a one-row 1x4 grid');
 assert.match(html,/kind==='history'&&typeof window\.tp3HistoryIsDeleted/,'Drive merge must filter explicitly deleted Journal records before stale snapshots can restore them');
 assert.match(p,/confirm\.addEventListener\('pointerup',accept/,'Journal delete confirmation must commit on the first physical pointer tap');
 assert.match(p,/profileScreen=function\(\)\{return tp3RenderPlannerPanel/,'personal planner must render into the Phase 3 panel instead of a separate route');
