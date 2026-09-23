@@ -277,3 +277,111 @@ main.tp168-health>details.tp168-pulse-panel{display:none!important}
  .tp169-pulse-journal>.tp168-trend{grid-template-columns:28px minmax(0,1fr) auto!important}
  .tp169-pulse-journal>.tp168-trend .tp168-spark,.tp169-pulse-journal>.tp168-trend .tp168-spark-empty{display:none}
 }
+
+
+/* 1.6.9 minor 2 — compact weight journal, correct recovery history, inline Today date. */
+.tp168-today-head{
+ display:grid!important;
+ grid-template-columns:auto minmax(0,1fr)!important;
+ align-items:center!important
+}
+.tp168-today-copy{min-width:0}
+.tp169-today-titleline{display:flex;align-items:baseline;gap:9px;min-width:0;flex-wrap:wrap}
+.tp169-today-titleline h2{margin:0!important}
+.tp168-today-date{
+ position:static!important;
+ align-self:auto!important;
+ padding:0!important;
+ font-size:14px!important;
+ line-height:1.1!important;
+ font-weight:850!important;
+ color:var(--accent2)!important;
+ white-space:nowrap
+}
+.tp168-today-copy>p{margin-top:3px!important}
+
+.tp169-body-inline{padding:7px!important;margin:8px 0 7px!important}
+.tp169-inline-heading{margin-bottom:6px!important}
+.tp169-body-inline .grid2{
+ display:grid!important;
+ grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ gap:5px!important
+}
+.tp169-body-inline .stat{
+ min-width:0!important;
+ padding:7px 6px!important;
+ border-radius:10px!important
+}
+.tp169-body-inline .stat small{
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.tp169-body-inline .stat strong{font-size:12.5px!important}
+.tp169-body-inline .stat .small{font-size:8.5px!important}
+.tp169-body-inline button{display:none!important}
+
+.tp168-weight-stats{
+ grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ margin:7px 0!important
+}
+.tp169-weight-entry{
+ margin:7px 0;
+ border:1px solid color-mix(in srgb,var(--accent) 24%,var(--line));
+ border-radius:11px;
+ background:color-mix(in srgb,var(--accent) 4%,var(--card2));
+ overflow:hidden
+}
+.tp169-weight-entry>summary{
+ list-style:none;
+ min-height:38px;
+ padding:7px 9px;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:8px;
+ cursor:pointer;
+ color:var(--accent2);
+ font-size:11px;
+ font-weight:850
+}
+.tp169-weight-entry>summary::-webkit-details-marker{display:none}
+.tp169-weight-entry>summary .tp168-chevron{width:27px;height:27px;font-size:18px}
+.tp169-weight-entry[open]>summary .tp168-chevron{transform:rotate(90deg)!important}
+.tp169-weight-entry-body{
+ padding:8px;
+ border-top:1px solid color-mix(in srgb,var(--accent) 17%,var(--line))
+}
+.tp169-weight-entry .tp168-weight-form{margin:0!important}
+.tp168-weight-range{margin-top:7px!important}
+
+.tp169-recovery-empty{
+ padding:9px 2px 5px;
+ color:var(--muted);
+ font-size:10px
+}
+.tp169-recovery-row{
+ display:grid;
+ grid-template-columns:minmax(92px,.8fr) minmax(0,1.7fr);
+ align-items:center;
+ gap:8px;
+ padding:7px 2px;
+ border-bottom:1px solid color-mix(in srgb,var(--accent) 12%,var(--line))
+}
+.tp169-recovery-row:last-child{border-bottom:0}
+.tp169-recovery-row strong{font-size:10.5px;color:var(--text)}
+.tp169-recovery-row span{font-size:10px;color:var(--muted);min-width:0}
+.tp169-recovery-row b{color:var(--accent2);font-weight:800}
+.tp169-recovery-row i{font-style:normal;opacity:.6;padding:0 2px}
+
+/* Health Connect capability/permission content belongs only to its own panel. */
+.tp169-pulse-journal .rf263-permission-list,
+.tp169-pulse-journal #rf263HealthDiagnostics{display:none!important}
+
+@media(max-width:360px){
+ .tp169-today-titleline{gap:6px}
+ .tp168-today-date{font-size:12.5px!important}
+ .tp169-body-inline .grid2{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .tp169-body-inline .stat:last-child{grid-column:1/-1}
+ .tp169-recovery-row{grid-template-columns:1fr;gap:2px}
+ .tp168-weight-form{grid-template-columns:1fr 1fr!important}
+ .tp168-weight-save{grid-column:1/-1!important;width:100%}
+}

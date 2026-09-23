@@ -1,5 +1,10 @@
 # TrainPilot 1.6.9 – Egészség felület finomhangolás
 
+- Minor 2: a Testsúlynapló duplikált testsúly-kártyái és belső naplógombja kikerült; a Test és fittség rész csak Testzsír / SpO₂ / VO₂max adatokat mutat.
+- Minor 2: az új testsúlymérés külön, alapból összecsukott „+ Új mérés” blokkba került; Változás és Minimum/Maximum marad mindig látható.
+- Minor 2: a Pulzustrend „Regenerációs előzmények” része közvetlenül a mentett napi Alvás + HRV előzményekből épül, a Health Connect jogosultságok pedig kizárólag a Health Connect panelben maradnak.
+- Minor 2: a Mai állapot dátuma közvetlenül a „Mai állapot” cím mellé került nagyobb, olvashatóbb méretben.
+
 - Minor frissítés: a Pulzustrend helyben lenyílik és átveszi a korábbi külön Pulzus panel adatait/regenerációs előzményeit.
 - A Test és fittség adatok a lenyíló Testsúlynaplóba költöztek; a külön Test és fittség kártya megszűnt.
 - A pulzus- és testsúlygrafikonok szögletes töréspontok helyett simított, íves görbét használnak.

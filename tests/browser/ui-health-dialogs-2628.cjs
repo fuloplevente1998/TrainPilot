@@ -29,12 +29,11 @@ const {chromium}=require('playwright');
   });
   await page.waitForTimeout(80);
   const journal=page.locator('.tp168-weight-journal');assert.equal(await journal.count(),1,'inline weight journal must exist');
+  assert.match(await journal.locator('.tp168-weight-summary').innerText(),/66[,.]5 kg/,'manual 66.5 kg must appear in compact weight-journal header');
   await journal.locator('.tp168-weight-summary').click();await page.waitForTimeout(30);
   const fitness=journal.locator('.tp169-body-inline');
   assert.equal(await fitness.count(),1,'Body/Fitness data must be embedded in the expanded weight journal');
-  const fitnessText=await fitness.innerText();
-  assert.match(fitnessText,/66[,.]5 kg/,'manual 66.5 kg must appear in embedded Body/Fitness data');
-  assert.match(fitnessText,/Kézi adat|Local entry|Lokaler Eintrag|Înregistrare locală|Kézi testsúlynapló|Manual weight log|Manuelles Gewichtsprotokoll|Jurnal manual de greutate/,'manual weight fallback must identify its source in the active language');
+  assert.equal(await fitness.locator('.stat').count(),3,'embedded Body/Fitness must avoid duplicate weight tile');
 
   // Home -> Help me get started is a full scrollable subpage, never the compact
   // non-scrolling Home dashboard.
