@@ -39,6 +39,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  const sideInputs=side.locator('.tp3-side input');assert.equal(await sideInputs.count(),2);assert.equal(await sideInputs.nth(0).inputValue(),'20');assert.equal(await sideInputs.nth(1).inputValue(),'20','legacy mp/oldal must map compatibly to both side fields');
  await sideInputs.nth(0).fill('23');await sideInputs.nth(1).fill('19');
  await page.locator('.tp3-save-actions .btn').first().click();await page.waitForTimeout(80);
+ const notice=page.locator('#tp2628Dialog');if(await notice.count())await notice.locator('[data-tp2628-ok]').click();
  const persisted=await page.evaluate(()=>{const e=history()[0].exercises.find(x=>x.id==='side-plank'),s=e.sets[0];return {left:s.leftSeconds,right:s.rightSeconds,reps:s.reps}});
  assert.deepEqual(persisted,{left:23,right:19,reps:'23'},'bilateral journal values must save separately while preserving legacy reps compatibility');
 
