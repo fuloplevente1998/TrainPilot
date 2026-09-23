@@ -1,0 +1,99 @@
+name: Publish historical TrainPilot releases
+
+on:
+  push:
+    branches:
+      - 'release/publish-history'
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: trainpilot-publish-history
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Publish validated historical APK artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          publish_one() {
+            TAG="$1"
+            TITLE="$2"
+            TARGET_SHA="$3"
+            RUN_ID="$4"
+
+            WORK="$RUNNER_TEMP/$TAG"
+            OUT="$WORK/out"
+            mkdir -p "$OUT"
+
+            echo "Downloading validated artifact for $TAG from run $RUN_ID"
+            gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" --dir "$WORK/artifact"
+
+            APK="$(find "$WORK/artifact" -type f -name 'TrainPilot-*.apk' -print -quit)"
+            if [ -z "$APK" ]; then
+              echo "No APK found for $TAG / run $RUN_ID" >&2
+              exit 1
+            fi
+
+            SAFE_NAME="${TAG#v}"
+            RELEASE_APK="$OUT/TrainPilot-$SAFE_NAME.apk"
+            cp "$APK" "$RELEASE_APK"
+            sha256sum "$RELEASE_APK" > "$OUT/SHA256SUMS.txt"
+
+            cat > "$OUT/BUILD_INFO.txt" <<EOF
+          TrainPilot release: $TAG
+          Title: $TITLE
+          Historical main target: $TARGET_SHA
+          Validated GitHub Actions release-gate run: $RUN_ID
+          APK source: preserved signed artifact from that successful release-gate run.
+          EOF
+
+            NOTES="$(cat <<EOF
+          Historical TrainPilot main snapshot.
+
+          - Main target: `$TARGET_SHA`
+          - APK: preserved from successful signed Release Gate run `$RUN_ID`
+          - Signing: official TrainPilot release certificate
+          - This release was reconstructed from the already validated GitHub Actions artifact; the APK was not rebuilt for this catalog operation.
+          EOF
+          )"
+
+            if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              gh release upload "$TAG" "$RELEASE_APK" "$OUT/SHA256SUMS.txt" "$OUT/BUILD_INFO.txt" --repo "$GITHUB_REPOSITORY" --clobber
+            else
+              gh release create "$TAG" "$RELEASE_APK" "$OUT/SHA256SUMS.txt" "$OUT/BUILD_INFO.txt" \
+                --repo "$GITHUB_REPOSITORY" \
+                --target "$TARGET_SHA" \
+                --title "$TITLE" \
+                --notes "$NOTES"
+            fi
+          }
+
+          publish_one "v1.6.1" "TrainPilot 1.6.1" "83a1a4488ced4b6ca47738a0c3532a3f3410ff37" "35659334576"
+          publish_one "v1.6.2" "TrainPilot 1.6.2" "98155feb9c200b0969b6647ae872638011e64207" "35712807858"
+          publish_one "v1.6.3" "TrainPilot 1.6.3" "aa53676af8700202996140c0b8cf1ff6c789cd5e" "35715099262"
+          publish_one "v1.6.4" "TrainPilot 1.6.4" "9ad67ccc8da81fcbc775f00077ad4bc60401cb5f" "35741411515"
+          publish_one "v1.6.5" "TrainPilot 1.6.5" "9330c83250e854e6c59aaff3c6b9eb44216f5c60" "35747380347"
+          publish_one "v1.6.6" "TrainPilot 1.6.6" "af452474478ba8eabef5ec9718ae27bf2a60d294" "35760132452"
+          publish_one "v1.6.7" "TrainPilot 1.6.7" "65b7a67a780833cf603ffbbc9dcc4797c7ddc087" "35771809733"
+          publish_one "v1.6.8" "TrainPilot 1.6.8" "b9d39677f9236acf70a955cd39c8ca13dd7b2e04" "35786264872"
+          publish_one "v1.6.9" "TrainPilot 1.6.9" "ea3f5771c6e734a04c0f917dab57535db5aa5458" "35790294420"
+          publish_one "v1.6.9-minor" "TrainPilot 1.6.9 minor" "a79bd0b097c4efaa21881b3a56f802b14976e7c7" "35793075438"
+          publish_one "v1.6.9-minor2" "TrainPilot 1.6.9 minor 2" "921c2a26a84c647eeb33e36586c08a38032b1c9d" "35821706625"
+          publish_one "v1.6.9-phase1" "TrainPilot 1.6.9 – Phase 1 (#15)" "41e7955decc586f48ff85102331a6e2ccefd9ae7" "35835882918"
+
+          gh release edit "v1.6.9-phase1" --repo "$GITHUB_REPOSITORY" --latest
