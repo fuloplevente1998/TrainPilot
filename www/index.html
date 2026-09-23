@@ -1248,7 +1248,7 @@
   if(small)small.textContent=measured>=3?t.trendSub:t.few;
   if(summary){
    summary.querySelectorAll('.tp168-spark,.tp168-spark-empty,.tp5-trend-mini').forEach(x=>x.remove());
-   const mini=document.createElement('span');mini.className='tp5-trend-mini';mini.innerHTML=chart(rows,'tp5-pulse-mini-svg',132,34,3);
+   const mini=document.createElement('span');mini.className='tp5-trend-mini';mini.innerHTML=chart(rows,'tp168-spark tp169-smooth-chart tp5-pulse-mini-svg',132,34,3);
    const chev=summary.querySelector(':scope > b');summary.insertBefore(mini,chev||null);
   }
   const body=pulse.querySelector('.tp169-pulse-body'),grid=body?.querySelector('.tp168-pulse-grid');if(!body||!grid)return true;
