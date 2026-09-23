@@ -1,0 +1,13 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http'),{chromium}=require('playwright');
+const root=path.resolve('www');
+const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local').pathname;if(p==='/')p='/index.html';const file=path.resolve(root,'.'+p);if(!file.startsWith(root+path.sep)){res.writeHead(403);return res.end()}fs.readFile(file,(e,d)=>{if(e){res.writeHead(404);return res.end()}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'text/plain');res.end(d)})});
+const snap=page=>page.evaluate(()=>{const c=document.querySelector('#rf220CoachCard');return c?{cls:c.className,text:(c.innerText||'').replace(/\s+/g,' ').trim(),kicker:!!c.querySelector('.tp151-kicker'),copy:!!c.querySelector('.tp166-home-coach-copy'),readiness:!!c.querySelector('.tp167-home-coach-readiness'),legacyHead:!!c.querySelector('.rf221-coach-head'),legacyLine:!!c.querySelector('.rf221-coach-line')}:null});
+(async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));let b;try{
+ b=await chromium.launch({headless:true,args:['--no-sandbox']});const p=await b.newPage({viewport:{width:393,height:873},locale:'hu-HU'});
+ await p.goto('http://127.0.0.1:'+server.address().port+'/');await p.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.TrainPilotHomeCoachStartup?.version==='1');await p.waitForTimeout(180);
+ const boot=await snap(p);assert.ok(boot,'startup Home Coach missing');assert.match(boot.cls,/tp166-home-coach/);assert.equal(boot.kicker,true,'startup must already show accepted Mai javaslat card');assert.equal(boot.copy,true);assert.equal(boot.readiness,true);assert.equal(boot.legacyHead,false,'legacy compact Coach must not repaint after boot');assert.equal(boot.legacyLine,false);
+ await p.evaluate(()=>go('health'));await p.waitForTimeout(60);await p.evaluate(()=>go('home'));await p.waitForTimeout(180);
+ const back=await snap(p);assert.ok(back);assert.match(back.cls,/tp166-home-coach/);assert.equal(back.kicker,true);assert.equal(back.copy,true);assert.equal(back.readiness,true);assert.equal(back.legacyHead,false);assert.equal(back.legacyLine,false);
+ assert.equal(back.text,boot.text,'Home Coach content/structure must be identical at startup and after route roundtrip');
+ console.log('PASS: Home Coach is identical at app startup and after page navigation; legacy compact repaint cannot replace it.');
+}finally{if(b)await b.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exit(1)});
