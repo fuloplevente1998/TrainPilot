@@ -623,13 +623,13 @@
 /* Phase 3 — #29 + #30 Journal polish and unified right-chevron language. */
 (function(){
  'use strict';
- const TP3_VERSION='phase3-29-30-37-r3';
+ const TP3_VERSION='phase3-29-30-37-r4';
  const lang=()=>typeof rf212Lang==='function'?rf212Lang():'hu';
  const words={
-  hu:{photos:'Edzésfotók',photoCount:n=>n+' fotó',left:'Bal oldal – mp',right:'Jobb oldal – mp',sets:'Sorozatok',addSet:'Sorozat hozzáadása',remove:'Törlés',statsHint:'Koppints a részletekhez.'},
-  en:{photos:'Workout photos',photoCount:n=>n+' photos',left:'Left side – sec',right:'Right side – sec',sets:'Sets',addSet:'Add set',remove:'Delete',statsHint:'Tap for details.'},
-  de:{photos:'Trainingsfotos',photoCount:n=>n+' Fotos',left:'Linke Seite – Sek.',right:'Rechte Seite – Sek.',sets:'Sätze',addSet:'Satz hinzufügen',remove:'Löschen',statsHint:'Für Details tippen.'},
-  ro:{photos:'Fotografii antrenament',photoCount:n=>n+' fotografii',left:'Partea stângă – sec',right:'Partea dreaptă – sec',sets:'Serii',addSet:'Adaugă serie',remove:'Șterge',statsHint:'Atinge pentru detalii.'}
+  hu:{photos:'Edzésfotók',photoCount:n=>n+' fotó',left:'Bal oldal – mp',right:'Jobb oldal – mp',sets:'Sorozatok',addSet:'Sorozat hozzáadása',remove:'Törlés',statsHint:'Koppints a részletekhez.',summary:'Edzés összegzés',trained:'Mit edzettél?',edit:'Szerkesztés',cancel:'Mégse',exercise:'gyakorlat',reps:'összes ismétlés',volume:'össz volumen',focus:'Fő fókusz',noFocus:'Teljes test',save:'Mentés'},
+  en:{photos:'Workout photos',photoCount:n=>n+' photos',left:'Left side – sec',right:'Right side – sec',sets:'Sets',addSet:'Add set',remove:'Delete',statsHint:'Tap for details.',summary:'Workout summary',trained:'What did you train?',edit:'Edit',cancel:'Cancel',exercise:'exercises',reps:'total reps',volume:'total volume',focus:'Main focus',noFocus:'Full body',save:'Save'},
+  de:{photos:'Trainingsfotos',photoCount:n=>n+' Fotos',left:'Linke Seite – Sek.',right:'Rechte Seite – Sek.',sets:'Sätze',addSet:'Satz hinzufügen',remove:'Löschen',statsHint:'Für Details tippen.',summary:'Trainingsübersicht',trained:'Was hast du trainiert?',edit:'Bearbeiten',cancel:'Abbrechen',exercise:'Übungen',reps:'Wiederholungen gesamt',volume:'Gesamtvolumen',focus:'Hauptfokus',noFocus:'Ganzkörper',save:'Speichern'},
+  ro:{photos:'Fotografii antrenament',photoCount:n=>n+' fotografii',left:'Partea stângă – sec',right:'Partea dreaptă – sec',sets:'Serii',addSet:'Adaugă serie',remove:'Șterge',statsHint:'Atinge pentru detalii.',summary:'Rezumat antrenament',trained:'Ce ai antrenat?',edit:'Editează',cancel:'Anulează',exercise:'exerciții',reps:'repetări totale',volume:'volum total',focus:'Focus principal',noFocus:'Tot corpul',save:'Salvează'}
  };
  const tx=()=>words[lang()]||words.hu;
  const isBilateral=e=>String(e?.repUnit||'').toLowerCase()==='mp/oldal'||e?.id==='side-plank';
@@ -652,6 +652,24 @@
   return groups.map(g=>(g.count>1?g.count+'× ':'')+g.value).join(' · ');
  };
  const historyExerciseSummary=x=>(x?.exercises||[]).map(raw=>{const e=rf151SetMeta(raw);return '<div class="tp3-history-performance"><span class="tp3-history-performance-name">'+esc(tp149ExerciseName(e))+'</span><span class="tp3-history-performance-value">'+esc(exerciseSummaryText(e))+'</span></div>'}).join('');
+ const tp3WorkoutStats=x=>{
+  let reps=0,volume=0;const focus={},doneSets=[];
+  for(const raw of x?.exercises||[]){
+   const e=rf151SetMeta(raw),sets=(e.sets||[]).filter(s=>s&&s.done!==false);doneSets.push(...sets);
+   const timed=isBilateral(e)||/mp|sec/i.test(String(e.repUnit||''));
+   for(const s of sets){const r=Number(s.reps)||0,w=Number(s.weight)||0;if(!timed)reps+=r;if(w>0&&r>0)volume+=w*r}
+   for(const g of (typeof rf145Groups==='function'?rf145Groups(e.id):(typeof muscleGroups==='function'?muscleGroups(e.id):[])))focus[g]=(focus[g]||0)+sets.length;
+  }
+  const focusText=Object.entries(focus).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([g])=>typeof rf145MuscleLabel==='function'?rf145MuscleLabel(g):g).join(' · ');
+  return {exerciseCount:(x?.exercises||[]).length,setCount:doneSets.length,reps:Math.round(reps),volume:Math.round(volume),focus:focusText};
+ };
+ const tp3WorkoutSummaryHtml=(x,key)=>{
+  const w=tx(),s=tp3WorkoutStats(x),volume=s.volume?tp149FormatNumber(s.volume)+' kg':'—';
+  return '<section class="tp3-workout-summary"><div class="tp3-summary-head"><div><strong class="tp3-summary-title">▥ '+esc(w.summary)+'</strong><div class="small muted">'+esc(w.focus+': '+(s.focus||w.noFocus))+'</div></div><button type="button" class="btn secondary tp3-summary-edit" onclick="event.stopPropagation();tp3BeginHistoryEdit(\''+esc(key)+'\')">✎ '+esc(w.edit)+'</button></div>'+
+   '<div class="tp3-summary-metrics"><div><strong>'+esc(s.exerciseCount)+'</strong><span>'+esc(w.exercise)+'</span></div><div><strong>'+esc(s.setCount)+'</strong><span>'+esc(w.sets.toLowerCase())+'</span></div><div><strong>'+esc(s.reps)+'</strong><span>'+esc(w.reps)+'</span></div><div><strong>'+esc(volume)+'</strong><span>'+esc(w.volume)+'</span></div></div>'+
+   '<div class="tp3-trained-head"><strong>◎ '+esc(w.trained)+'</strong></div><div class="tp3-history-performance-list">'+historyExerciseSummary(x)+'</div></section>';
+ };
+
 
 
  window.tp3SetSide=function(ei,si,key,value){
@@ -660,12 +678,17 @@
   if(s.leftSeconds||s.rightSeconds)s.reps=String(Math.max(Number(s.leftSeconds)||0,Number(s.rightSeconds)||0)||'');
  };
 
- const editBase=editHistoryWorkout;
- editHistoryWorkout=function(key){
-  const i=rf142FindHistoryIndex(key),x=history()[i];if(!x){return editBase?.apply(this,arguments)}
-  const copy=normalizeLegacySides(rf151Clone(x));
-  state.rf151HistoryEdit={key,workout:copy};state.tab='history';render();
-  setTimeout(()=>document.querySelector('[data-tp152-history-key="'+CSS.escape(String(key))+'"]')?.scrollIntoView?.({block:'start'}),0);
+ const tp3KeepScroll=fn=>{const y=window.scrollY||0;fn();requestAnimationFrame(()=>{try{window.scrollTo(0,y)}catch(_){}})};
+ window.tp3BeginHistoryEdit=function(key){
+  const i=rf142FindHistoryIndex(key),x=history()[i];if(!x){alert(typeof tp149T==='function'?tp149T('journal.none'):'Az edzés nem található.');return}
+  state.rf151HistoryEdit={key,workout:normalizeLegacySides(rf151Clone(x))};state.tp3HistoryOpenKey=key;state.tab='history';tp3KeepScroll(()=>render());
+ };
+ editHistoryWorkout=window.tp3BeginHistoryEdit;
+ window.tp3CancelHistoryEdit=function(key){state.rf151HistoryEdit=null;state.tp3HistoryOpenKey=key||state.tp3HistoryOpenKey;state.tab='history';tp3KeepScroll(()=>render())};
+ rf151CancelHistoryEdit=function(){return window.tp3CancelHistoryEdit(state.tp3HistoryOpenKey)};
+ rf151HistoryEditor=function(key){
+  const ed=rf151Edit();if(!ed||ed.key!==key)return window.tp3BeginHistoryEdit(key);
+  state.tp3HistoryOpenKey=key;state.tab='history';tp3KeepScroll(()=>render());
  };
 
  tp152HistoryEditorHtml=function(key){
@@ -682,9 +705,27 @@
       :'<label class="small tp3-reps">'+esc(e.repUnit||'ism.')+'<input class="field" inputmode="numeric" value="'+esc(set.reps||'')+'" oninput="rf151SetValue('+ei+','+si+',\'reps\',this.value)"></label>';
     return '<div class="tp3-set-row"><div class="num">'+(si+1)+'</div>'+load+reps+'<button type="button" class="check '+(set.done?'done':'')+'" aria-label="OK" onclick="rf151ToggleDone('+ei+','+si+')">'+(set.done?'✓':'OK')+'</button><button type="button" class="tp3-mini-delete" aria-label="'+esc(w.remove)+'" onclick="rf151RemoveSet('+ei+','+si+')">−</button></div>';
    }).join('');
-   return '<details class="card tp152-history-ex tp3-history-ex"><summary><div class="tp3-history-ex-title"><strong>'+esc(e.hu)+'</strong><span class="small muted">'+esc((e.sets||[]).length+' '+w.sets.toLowerCase())+'</span></div><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary><div class="tp152-history-ex-body tp3-history-ex-body">'+rows+'<div class="tp3-ex-actions"><button class="btn secondary" onclick="rf151AddSet('+ei+')">＋ '+esc(w.addSet)+'</button><button class="btn danger" onclick="rf151RemoveExercise('+ei+')">'+esc(w.remove)+'</button></div></div></details>';
+   return '<details class="card tp152-history-ex tp3-history-ex"><summary><div class="tp3-history-ex-title"><strong>'+esc(tp149ExerciseName(e))+'</strong><span class="small muted">'+esc((e.sets||[]).length+' '+w.sets.toLowerCase())+' · '+esc(exerciseSummaryText(e))+'</span></div><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary><div class="tp152-history-ex-body tp3-history-ex-body">'+rows+'<div class="tp3-ex-actions"><button class="btn secondary" onclick="rf151AddSet('+ei+')">＋ '+esc(w.addSet)+'</button><button class="btn danger" onclick="rf151RemoveExercise('+ei+')">'+esc(w.remove)+'</button></div></div></details>';
   }).join('');
-  return '<section class="card tp152-history-editor tp3-history-editor"><div class="tp152-history-edit-head"><h2>'+esc(tp152T('historyEdit'))+'</h2><button class="btn secondary tp3-edit-close" onclick="rf151CancelHistoryEdit()" aria-label="'+esc(tp149T('common.close')||'Close')+'">×</button></div><div class="grid2 tp3-time-grid"><label>'+esc(tp149T('dialog.scheduleMove.date'))+' / '+esc(tp149T('calendar.time'))+'<input class="field" id="rf151Start" type="datetime-local" value="'+esc(rf142LocalInputValue(x.started))+'"></label><label>'+esc(tp149T('weight.range.all'))+'<input class="field" id="rf151End" type="datetime-local" value="'+esc(rf142LocalInputValue(x.finished))+'"></label></div><div class="section">'+esc(tp152T('historyExercises'))+'</div>'+exercisesHtml+'<details class="tp152-inline-add tp3-inline-add"><summary><strong>＋ '+esc(tp152T('historyAdd'))+'</strong><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary><div class="tp152-inline-add-body"><select class="field" id="rf151Exercise"><option value="">—</option>'+opts.map(e=>'<option value="'+esc(e.id)+'">'+esc(tp149ExerciseName(e))+'</option>').join('')+'</select><button class="btn secondary block" onclick="rf151AddExercise()">＋ '+esc(tp152T('historyAdd'))+'</button></div></details><div class="tp3-save-actions"><button class="btn block" onclick="rf151SaveHistory(false)">'+esc(tp149T('common.save'))+'</button><button class="btn secondary" onclick="rf151SaveHistory(true)">'+esc(tp149T('common.refresh'))+'</button></div></section>';
+  return '<section class="card tp152-history-editor tp3-history-editor"><div class="tp152-history-edit-head"><h2>'+esc(tp152T('historyEdit'))+'</h2></div><div class="grid2 tp3-time-grid"><label>'+esc(tp149T('dialog.scheduleMove.date'))+' / '+esc(tp149T('calendar.time'))+'<input class="field" id="rf151Start" type="datetime-local" value="'+esc(rf142LocalInputValue(x.started))+'"></label><label>'+esc(tp149T('weight.range.all'))+'<input class="field" id="rf151End" type="datetime-local" value="'+esc(rf142LocalInputValue(x.finished))+'"></label></div>'+exercisesHtml+'<details class="tp152-inline-add tp3-inline-add"><summary><strong>＋ '+esc(tp152T('historyAdd'))+'</strong><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary><div class="tp152-inline-add-body"><select class="field" id="rf151Exercise"><option value="">—</option>'+opts.map(e=>'<option value="'+esc(e.id)+'">'+esc(tp149ExerciseName(e))+'</option>').join('')+'</select><button class="btn secondary block" onclick="rf151AddExercise()">＋ '+esc(tp152T('historyAdd'))+'</button></div></details><div class="tp3-save-actions"><button class="btn block tp3-save-primary" onclick="rf151SaveHistory(false)">✓ '+esc(w.save)+'</button><button class="btn secondary" onclick="tp3CancelHistoryEdit(\''+esc(key)+'\')">'+esc(w.cancel)+'</button><button class="btn danger" onclick="tp3DeleteHistoryWorkout(\''+esc(key)+'\')">'+esc(w.remove)+'</button></div></section>';
+ };
+
+ rf151SaveHistory=async function(refreshHealth){
+  try{
+   const ed=rf151Edit();if(!ed)throw Error('Nincs szerkesztett edzés.');
+   const i=rf142FindHistoryIndex(ed.key);if(i<0)throw Error('Az edzés nem található.');
+   const started=rf142IsoFromLocal(document.getElementById('rf151Start')?.value),finished=rf142IsoFromLocal(document.getElementById('rf151End')?.value);rf142ValidWindow(started,finished);
+   if(!ed.workout.exercises.length)throw Error('Az edzésben legalább 1 gyakorlatnak maradnia kell.');
+   for(const e of ed.workout.exercises){if(!(e.sets||[]).length)throw Error('Minden gyakorlatnál legalább 1 sorozat szükséges.');rf151Renumber(e)}
+   const h=history(),old=h[i],saved={...ed.workout,started,finished,editedAt:new Date().toISOString()};h[i]=saved;h.sort((a,b)=>String(b.started||'').localeCompare(String(a.started||'')));db.set('history',h);
+   if(state.feedbackStarted===old.started)state.feedbackStarted=started;
+   if(state.health){if(state.health.workout===old.started)state.health.workout=started;state.health.summary=null}
+   state.rf151HistoryEdit=null;state.tp3HistoryOpenKey=rf142WorkoutKey(saved);state.tab='history';
+   try{if(typeof cloudChanged==='function')cloudChanged()}catch(_){}
+   const y=window.scrollY||0;
+   if(refreshHealth){await rf142ReadHealthForWorkout(saved);state.tp3HistoryOpenKey=rf142WorkoutKey(saved)}
+   render();requestAnimationFrame(()=>{try{window.scrollTo(0,y)}catch(_){}});
+  }catch(e){alert(e.message||'Az edzés mentése nem sikerült.')}
  };
 
  if(typeof rf130PhotoSection==='function'){
@@ -698,16 +739,15 @@
 
  window.tp3HistoryToggle=function(el,key){
   if(!el)return;
-  const editing=state.rf151HistoryEdit?.key===key;
-  if(el.open&&!editing){editHistoryWorkout(key);return}
-  if(!el.open&&editing){state.rf151HistoryEdit=null;render()}
+  if(el.open)state.tp3HistoryOpenKey=key;
+  else if(state.tp3HistoryOpenKey===key)state.tp3HistoryOpenKey=null;
  };
 
  rf263HistoryItem=function(x,originalIndex,visibleIndex){
   const safe=typeof window.tp165SafeHistoryRecord==='function'?window.tp165SafeHistoryRecord(x,originalIndex):x;
   try{
    x=safe;
-   const key=rf142WorkoutKey(x),editing=state.rf151HistoryEdit?.key===key,c=completedSets(x);
+   const key=rf142WorkoutKey(x),editing=state.rf151HistoryEdit?.key===key,open=editing||state.tp3HistoryOpenKey===key,c=completedSets(x);
    const title=typeof tp149HistoryTitle==='function'?tp149HistoryTitle(x):(x.programName?x.programName+' • '+(x.dayId||x.workout):'Full Body '+x.workout);
    const validDate=typeof window.tp167HistoryDateIso==='function'?window.tp167HistoryDateIso(x.started):x.started;
    const dateText=validDate?(typeof tp149FormatDateTime==='function'?tp149FormatDateTime(validDate):fmtDate(validDate)):(typeof window.tp167MissingDateText==='function'?window.tp167MissingDateText():'Dátum nem elérhető');
@@ -717,12 +757,11 @@
    const calendarText=typeof tp149T==='function'?tp149T('journal.addCalendar'):'Naptárhoz adás';
    const healthText=typeof tp149T==='function'?tp149T('journal.healthData'):'Health adatok';
    const refreshText=typeof tp149T==='function'?tp149T('common.refresh'):'Frissítés';
-   const deleteText=typeof tp149T==='function'?tp149T('common.delete'):'Törlés';
-   const tools='<div class="tp3-history-aux"><button class="btn secondary block" type="button" onclick="event.stopPropagation();calendarIntent('+originalIndex+')">'+esc(calendarText)+'</button><button type="button" class="btn danger block tp155-history-delete" onclick="event.preventDefault();event.stopPropagation();tp3DeleteHistoryWorkout(\''+esc(key)+'\')">'+esc(deleteText)+'</button></div>';
+   const tools='<div class="tp3-history-aux tp3-history-aux-single"><button class="btn secondary block" type="button" onclick="event.stopPropagation();calendarIntent('+originalIndex+')">'+esc(calendarText)+'</button></div>';
    const health='<div class="rf-history-health-panel" data-rf-history-health-panel="'+originalIndex+'"><button type="button" class="rf-history-health-toggle" aria-expanded="true" onclick="event.stopPropagation();rfHistoryHealthToggle('+originalIndex+')"><strong>'+esc(healthText)+'</strong><span class="small muted">'+esc(rfHistoryHealthWindow(x))+'</span><span class="rf-history-health-chevron" aria-hidden="true">›</span></button><div class="rf-history-health-body"><div class="rf-history-health" data-rf-history-health="'+originalIndex+'">'+rfHistoryHealthHtml(originalIndex)+'</div><button type="button" class="btn secondary block rf-history-health-refresh" onclick="event.stopPropagation();healthFromHistory('+originalIndex+')">'+esc(refreshText)+'</button></div></div>';
-   const editor=editing?tp152HistoryEditorHtml(key):'';
-   const body='<div class="history-body tp3-combined-history-body">'+editor+tools+health+rf130PhotoSection(x,key)+'</div>';
-   return '<details data-tp152-history-key="'+esc(key)+'" '+(editing?'open ':'')+'class="history rf263-history rf103-history tp3-combined-history" ontoggle="if(this.open){rf130LoadHistoryPhotos(this);rfHistoryHealthEnsure('+originalIndex+')}tp3HistoryToggle(this,\''+esc(key)+'\')"><summary><div class="history-head"><div class="history-title-row"><div><div class="history-title">'+esc(title)+'</div><div class="history-date">'+esc(dateText)+'</div></div><div class="rf103-history-side"><span class="badge">'+esc(exerciseCount+(photoLabel?' • '+photoLabel:''))+'</span><span class="rf103-history-chevron" aria-hidden="true">›</span></div></div><div class="history-badges"><span class="history-badge">⏱ '+esc(sessionDuration(x))+'</span><span class="history-badge">✓ '+esc(typeof tp149T==='function'?tp149T('journal.setCount',{done:c.done,total:c.total}):c.done+'/'+c.total+' sorozat')+'</span></div><div class="tp3-history-performance-list">'+historyExerciseSummary(x)+'</div></div></summary>'+body+'</details>';
+   const primary=editing?tp152HistoryEditorHtml(key):tp3WorkoutSummaryHtml(x,key);
+   const body='<div class="history-body tp3-combined-history-body">'+primary+tools+health+rf130PhotoSection(x,key)+'</div>';
+   return '<details data-tp152-history-key="'+esc(key)+'" '+(open?'open ':'')+'class="history rf263-history rf103-history tp3-combined-history" ontoggle="if(this.open){rf130LoadHistoryPhotos(this);rfHistoryHealthEnsure('+originalIndex+')}tp3HistoryToggle(this,\''+esc(key)+'\')"><summary><div class="history-head"><div class="history-title-row"><div><div class="history-title">'+esc(title)+'</div><div class="history-date">'+esc(dateText)+'</div></div><div class="rf103-history-side"><span class="badge">'+esc(exerciseCount+(photoLabel?' • '+photoLabel:''))+'</span><span class="rf103-history-chevron" aria-hidden="true">›</span></div></div><div class="history-badges"><span class="history-badge">⏱ '+esc(sessionDuration(x))+'</span><span class="history-badge">✓ '+esc(typeof tp149T==='function'?tp149T('journal.setCount',{done:c.done,total:c.total}):c.done+'/'+c.total+' sorozat')+'</span></div></div></summary>'+body+'</details>';
   }catch(error){
    try{console.error('[TrainPilot] Phase 3 Journal row recovery',originalIndex,error)}catch(_){}
    const date=typeof fmtDate==='function'?fmtDate(safe?.started):'';
