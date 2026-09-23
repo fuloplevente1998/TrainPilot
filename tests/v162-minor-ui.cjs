@@ -5,7 +5,7 @@ const base=fs.readFileSync(baseFile,'utf8'),followSource=followFile?fs.readFileS
 const app=base+(followSource?'\n'+followSource:'');
 const pkg=require('../package.json'),src=require('../SOURCE_VERSION.json'),gradle=fs.readFileSync('android/app/build.gradle','utf8');
 assert.equal(pkg.version,'1.7.0');assert.equal(src.version,'1.7.0');assert.equal(src.versionCode,2659);
-assert.match(gradle,/versionCode\s+2659/);assert.match(gradle,/versionName\s+"1\.6\.9"/);
+assert.match(gradle,/versionCode\s+2659/);assert.match(gradle,/versionName\s+"1\.7\.0"/);
 
 // Keep the 1.6.3 stale-session guard unchanged.
 for(const marker of ["window.tp162VisibleHealthSessions","String(s?.source||'')!==ownPackage","clientRecordId.indexOf('trainpilot:tpw_')===0","stableIds.has(clientRecordId)","exerciseSessionCount:visible.length","exerciseMinutes:minutes"])assert.ok(app.includes(marker),'missing Health-count guard: '+marker);
