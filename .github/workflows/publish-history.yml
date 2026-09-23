@@ -90,7 +90,7 @@ jobs:
           }
 
           publish_one "v1.6.1" "TrainPilot 1.6.1" "83a1a4488ced4b6ca47738a0c3532a3f3410ff37" "35659334576"
-          publish_one "v1.6.2" "TrainPilot 1.6.2" "98155feb9c200b0969b6647ae872638011e64207" "35712807858"
+          publish_one "v1.6.2" "TrainPilot 1.6.2" "86cabbd9416da2a79b783a6712f7233abdccc77f" "35712807858"
           publish_one "v1.6.3" "TrainPilot 1.6.3" "aa53676af8700202996140c0b8cf1ff6c789cd5e" "35715099262"
           publish_one "v1.6.4" "TrainPilot 1.6.4" "9ad67ccc8da81fcbc775f00077ad4bc60401cb5f" "35741411515"
           publish_one "v1.6.5" "TrainPilot 1.6.5" "9330c83250e854e6c59aaff3c6b9eb44216f5c60" "35747380347"
