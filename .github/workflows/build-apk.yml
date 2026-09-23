@@ -3,6 +3,8 @@ name: Release Gate + TrainPilot APK
 on:
   workflow_dispatch:
   push:
+    branches:
+      - 'build/phase1-issue18-drive-sync-169'
     tags:
       - 'v*'
 
