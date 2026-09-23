@@ -7,11 +7,12 @@ This file is the current handoff/source-of-truth for continuing TrainPilot devel
 ## Current stable line
 
 - Stable branch: `main`
-- Current package version: **1.6.9**
-- Android versionCode: **2658**
+- Current package version: **1.7.0**
+- Android versionCode: **2659**
 - Completed/accepted roadmap phases so far:
   - **Phase 2 – #15 + #16 Demo / active-workout UI**: completed and phone-approved.
   - **Original Phase 1 – #18 Drive sync and data protection**: completed and phone-approved.
+  - **Phase 3 – #29 + #30 Journal full polish + #37 personal planner panel**: completed and user-approved for `main` after the final phone feedback fixes.
 - PR **#34 – #15 unified exercise demo panel**: **merged**
 - PR **#35 – #16 active workout sticky controls and rest timer**: **merged**
 - PR **#36 – #18 Drive sync data-safety and legacy dedupe**: **merged**
@@ -24,7 +25,8 @@ This file is the current handoff/source-of-truth for continuing TrainPilot devel
 - #18 post-merge `main` Quick TrainPilot Validation (run `35856303959`): **passed**
 - Issues **#15, #16 and #18**: **closed / completed**
 - The current `main` is the only valid baseline for the next development step.
-- **Next development step: Phase 3 – #29 + #30 Journal full polish.**
+- **Phase 3 release gate #122**: full Node regression, full Chromium/UI regression, signed APK build and APK/package/source verification all passed.
+- **Next development step: Phase 4 – #17 + #21 Coach full exercise coverage.**
 
 ### Accepted #18 behavior
 
@@ -42,16 +44,30 @@ The original six-phase roadmap is:
 
 1. **Drive sync and data protection** – issue **#18** ✅
 2. **Demo and active workout** – issues **#15 + #16** ✅
-3. **Journal full polish** – issues **#29 + #30**
+3. **Journal full polish** – issues **#29 + #30** ✅
 4. **Coach full exercise coverage** – issues **#17 + #21**
 5. **Health pulse-trend data source** – issue **#27**
 6. **Performance and smoothness** – issue **#19**
 
 Because development began with Phase 2 before the original order was recovered, the actual completed order is:
 
-**Phase 2 (#15 + #16) ✅ → Phase 1 (#18) ✅ → Phase 3 (#29 + #30) → Phase 4 (#17 + #21) → Phase 5 (#27) → Phase 6 (#19).**
+**Phase 2 (#15 + #16) ✅ → Phase 1 (#18) ✅ → Phase 3 (#29 + #30, plus #37) ✅ → Phase 4 (#17 + #21) → Phase 5 (#27) → Phase 6 (#19).**
 
-The **next phase is Phase 3: #29 + #30 Journal full polish**, and it must start only from the current phone-approved `main`.
+The **next phase is Phase 4: #17 + #21 Coach full exercise coverage**, and it must start only from the newly accepted TrainPilot 1.7.0 `main`.
+
+### Accepted Phase 3 / TrainPilot 1.7.0 behavior
+
+- The Journal list stays compact and shows only workout-level metadata while collapsed.
+- Expanding a workout shows the accepted one-row **1×4** summary metrics with icons: exercises, sets, total reps and total volume.
+- **Mit edzettél?** contains independently collapsible exercise rows; opening an exercise injects its compact editor locally without re-rendering the whole Journal card.
+- Per-exercise editing supports modifying sets, adding/removing sets, Save, Cancel and deleting that exercise.
+- **+ Gyakorlat hozzáadása** adds a new exercise into the logged workout; an exercise already present is extended with additional sets instead of duplicated.
+- Health data stays inside the expanded workout; its chevron is right-aligned and uses the same visual pattern as Workout photos.
+- Deleted workouts retain local tombstones so stale Drive snapshots cannot resurrect them.
+- Journal/Statistics/Home detail arrows use the accepted unified chevron language.
+- The personal training planner from #37 opens as a compact overlay panel and preserves the underlying route.
+- Final phone feedback fixes: exercise editor opening no longer triggers a whole-Journal render, and the Health chevron matches the Workout photos disclosure.
+- TrainPilot 1.7.0 release gate #122 passed all regression, Chromium/UI, signing and APK/source verification checks.
 
 ### Phase 3 UI consistency requirement – unified right chevrons
 

@@ -1,3 +1,19 @@
+# TrainPilot 1.7.0 – Phase 3 Napló véglegesítés
+
+- A Napló összecsukott edzései kompaktak maradnak: név, dátum/idő, időtartam, gyakorlat- és sorozatszám.
+- Lenyitva az Edzés összegzés egyetlen 1×4 stat sort használ ikonokkal: gyakorlatok, sorozatok, összes ismétlés, össz volumen.
+- A „Mit edzettél?” gyakorlatlistában minden gyakorlat külön, alapból csukott; koppintásra helyben nyílik a kompakt szerkesztő.
+- A gyakorlat szerkesztése támogatja a súly/ismétlés módosítását, sorozat hozzáadását és törlését, Mentés / Mégse / Gyakorlat törlése műveleteket.
+- A naplózott edzéshez utólag új gyakorlat is hozzáadható; meglévő gyakorlat nem duplikálódik, ahhoz új sorozat adható.
+- A gyakorlat-szerkesztő megnyitása gyorsult: már nem rendereli újra az egész Napló kártyát.
+- A Health adatok a lenyitott edzésen belül maradnak; nyiluk jobb oldalra került és az Edzésfotók lenyitójával egységes.
+- A külön felső Szerkesztés gomb és a duplikált Gyakorlatok szekció megszűnt.
+- A Statisztikák részletei helyben nyílnak, a Journal / Statistics / Home chevronok egységesek.
+- A #37 személyes edzéstervező kompakt overlay panelként működik, az alatta lévő útvonal megtartásával.
+- A naplótörlés tombstone-védelemmel megakadályozza, hogy régi Drive snapshot visszahozza a törölt edzést.
+- Release Gate #122: teljes Node regresszió, teljes Chromium/UI regresszió, signed APK build és APK/package/source ellenőrzés sikeres.
+- Android `versionCode 2659`, `versionName 1.7.0`.
+
 ## #15 – Egységes videós bemutató (1.6.9, következő minor)
 
 - Az aktív edzés „Bemutató / leírás” gombja egy koppintással nyitja a közös videó + leírás panelt. A köztes lenyíló rész megszűnt.
