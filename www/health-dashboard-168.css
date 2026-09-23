@@ -502,3 +502,15 @@ main.tp168-health .tp-global-chevron{
 main.tp168-health .tp-global-chevron::before{
  color:currentColor!important
 }
+
+/* #41 workout override: older inline icon rules must not erase the shared glyph. */
+html body .tp1511-training summary i.tp-global-chevron::before{
+ content:"›"!important;
+ display:block!important;
+ font-size:36px!important;
+ line-height:.82!important;
+ color:currentColor!important;
+ font-style:normal!important;
+ opacity:1!important;
+ visibility:visible!important
+}
