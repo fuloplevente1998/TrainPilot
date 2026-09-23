@@ -67,9 +67,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   const now=new Date(),row={id:'tp3-delete-phone',workout:'A',dayId:'A',programId:'home-basic',programName:'Törlendő teszt',started:new Date(now.getTime()-5*60000).toISOString(),finished:now.toISOString(),exercises:[{id:'db-squat',hu:'Guggolás',sets:[{set:1,weight:5,reps:'5',done:true}]}]};
   db.set('history',[row,...history()]);state.tab='history';render();return {key:rf142WorkoutKey(row),row};
  });
- const deleteCard=page.locator('details.rf263-history').filter({hasText:'Törlendő teszt'}).first();
- await deleteCard.locator(':scope > summary').click();await page.waitForTimeout(40);
- await page.locator('details.rf263-history[open]').filter({hasText:'Törlendő teszt'}).locator('.tp155-history-delete').click();
+ await page.evaluate(k=>tp3DeleteHistoryWorkout(k),deleted.key);
  const deleteDialog=page.locator('#tp2628Dialog');await deleteDialog.waitFor({state:'visible'});
  await deleteDialog.locator('[data-tp2628-confirm]').dispatchEvent('pointerup',{pointerType:'touch',isPrimary:true});
  await deleteDialog.waitFor({state:'detached'});
