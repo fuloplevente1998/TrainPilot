@@ -703,13 +703,30 @@
  };
 
  rf263HistoryItem=function(x,originalIndex,visibleIndex){
-  const key=rf142WorkoutKey(x),editing=state.rf151HistoryEdit?.key===key,c=completedSets(x);
-  const title=x.programName?x.programName+' • '+(x.dayId||x.workout):'Full Body '+x.workout;
-  const photoCount=typeof rf130VisiblePhotos==='function'?rf130VisiblePhotos(x).length:0;
-  const tools=editing?'<div class="tp3-history-aux"><button class="btn secondary block" type="button" onclick="event.stopPropagation();calendarIntent('+originalIndex+')">'+esc(tp149T('calendar.add')||'Naptárhoz adás')+'</button><button type="button" class="btn danger block tp155-history-delete" onclick="event.stopPropagation();deleteHistoryWorkout(\''+esc(key)+'\')">'+esc(tp149T('common.delete'))+'</button></div>':'';
-  const health=editing?'<div class="rf-history-health-panel" data-rf-history-health-panel="'+originalIndex+'"><button type="button" class="rf-history-health-toggle" aria-expanded="true" onclick="event.stopPropagation();rfHistoryHealthToggle('+originalIndex+')"><strong>Health adatok</strong><span class="small muted">'+esc(rfHistoryHealthWindow(x))+'</span><span class="rf-history-health-chevron" aria-hidden="true">›</span></button><div class="rf-history-health-body"><div class="rf-history-health" data-rf-history-health="'+originalIndex+'">'+rfHistoryHealthHtml(originalIndex)+'</div><button type="button" class="btn secondary block rf-history-health-refresh" onclick="event.stopPropagation();healthFromHistory('+originalIndex+')">Frissítés</button></div></div>':'';
-  const body=editing?'<div class="history-body tp3-combined-history-body">'+tp152HistoryEditorHtml(key)+tools+health+rf130PhotoSection(x,key)+'</div>':'<div class="history-body tp3-combined-history-body tp3-history-placeholder"></div>';
-  return '<details data-tp152-history-key="'+esc(key)+'" '+(editing?'open ':'')+'class="history rf263-history rf103-history tp3-combined-history" ontoggle="if(this.open){rf130LoadHistoryPhotos(this);rfHistoryHealthEnsure('+originalIndex+')}tp3HistoryToggle(this,\''+esc(key)+'\')"><summary><div class="history-head"><div class="history-title-row"><div><div class="history-title">'+esc(title)+'</div><div class="history-date">'+fmtDate(x.started)+'</div></div><div class="rf103-history-side"><span class="badge">'+x.exercises.length+' gyakorlat'+(photoCount?' • '+photoCount+' fotó':'')+'</span><span class="rf103-history-chevron" aria-hidden="true">›</span></div></div><div class="history-badges"><span class="history-badge">⏱ '+sessionDuration(x)+'</span><span class="history-badge">✓ '+c.done+'/'+c.total+' sorozat</span></div><div class="tp3-history-performance-list">'+historyExerciseSummary(x)+'</div></div></summary>'+body+'</details>';
+  const safe=typeof window.tp165SafeHistoryRecord==='function'?window.tp165SafeHistoryRecord(x,originalIndex):x;
+  try{
+   x=safe;
+   const key=rf142WorkoutKey(x),editing=state.rf151HistoryEdit?.key===key,c=completedSets(x);
+   const title=typeof tp149HistoryTitle==='function'?tp149HistoryTitle(x):(x.programName?x.programName+' • '+(x.dayId||x.workout):'Full Body '+x.workout);
+   const validDate=typeof window.tp167HistoryDateIso==='function'?window.tp167HistoryDateIso(x.started):x.started;
+   const dateText=validDate?(typeof tp149FormatDateTime==='function'?tp149FormatDateTime(validDate):fmtDate(validDate)):(typeof window.tp167MissingDateText==='function'?window.tp167MissingDateText():'Dátum nem elérhető');
+   const photoCount=typeof rf130VisiblePhotos==='function'?rf130VisiblePhotos(x).length:0;
+   const exerciseCount=typeof tp149T==='function'?tp149T('journal.exerciseCount',{count:x.exercises.length}):x.exercises.length+' gyakorlat';
+   const photoLabel=photoCount?(typeof tp149T==='function'?tp149T('journal.photoCount',{count:photoCount}):photoCount+' fotó'):'';
+   const calendarText=typeof tp149T==='function'?tp149T('journal.addCalendar'):'Naptárhoz adás';
+   const healthText=typeof tp149T==='function'?tp149T('journal.healthData'):'Health adatok';
+   const refreshText=typeof tp149T==='function'?tp149T('common.refresh'):'Frissítés';
+   const deleteText=typeof tp149T==='function'?tp149T('common.delete'):'Törlés';
+   const tools='<div class="tp3-history-aux"><button class="btn secondary block" type="button" onclick="event.stopPropagation();calendarIntent('+originalIndex+')">'+esc(calendarText)+'</button><button type="button" class="btn danger block tp155-history-delete" onclick="event.stopPropagation();deleteHistoryWorkout(\''+esc(key)+'\')">'+esc(deleteText)+'</button></div>';
+   const health='<div class="rf-history-health-panel" data-rf-history-health-panel="'+originalIndex+'"><button type="button" class="rf-history-health-toggle" aria-expanded="true" onclick="event.stopPropagation();rfHistoryHealthToggle('+originalIndex+')"><strong>'+esc(healthText)+'</strong><span class="small muted">'+esc(rfHistoryHealthWindow(x))+'</span><span class="rf-history-health-chevron" aria-hidden="true">›</span></button><div class="rf-history-health-body"><div class="rf-history-health" data-rf-history-health="'+originalIndex+'">'+rfHistoryHealthHtml(originalIndex)+'</div><button type="button" class="btn secondary block rf-history-health-refresh" onclick="event.stopPropagation();healthFromHistory('+originalIndex+')">'+esc(refreshText)+'</button></div></div>';
+   const editor=editing?tp152HistoryEditorHtml(key):'';
+   const body='<div class="history-body tp3-combined-history-body">'+editor+tools+health+rf130PhotoSection(x,key)+'</div>';
+   return '<details data-tp152-history-key="'+esc(key)+'" '+(editing?'open ':'')+'class="history rf263-history rf103-history tp3-combined-history" ontoggle="if(this.open){rf130LoadHistoryPhotos(this);rfHistoryHealthEnsure('+originalIndex+')}tp3HistoryToggle(this,\''+esc(key)+'\')"><summary><div class="history-head"><div class="history-title-row"><div><div class="history-title">'+esc(title)+'</div><div class="history-date">'+esc(dateText)+'</div></div><div class="rf103-history-side"><span class="badge">'+esc(exerciseCount+(photoLabel?' • '+photoLabel:''))+'</span><span class="rf103-history-chevron" aria-hidden="true">›</span></div></div><div class="history-badges"><span class="history-badge">⏱ '+esc(sessionDuration(x))+'</span><span class="history-badge">✓ '+esc(typeof tp149T==='function'?tp149T('journal.setCount',{done:c.done,total:c.total}):c.done+'/'+c.total+' sorozat')+'</span></div><div class="tp3-history-performance-list">'+historyExerciseSummary(x)+'</div></div></summary>'+body+'</details>';
+  }catch(error){
+   try{console.error('[TrainPilot] Phase 3 Journal row recovery',originalIndex,error)}catch(_){}
+   const date=typeof fmtDate==='function'?fmtDate(safe?.started):'';
+   return '<div class="history card tp165-history-recovery" role="status"><strong>Korábbi naplóbejegyzés</strong><p class="small muted">'+esc(date)+'<br>Ez a régi bejegyzés hiányos, ezért egyszerűsített nézetben jelent meg.</p></div>';
+  }
  };
 
  rf220ProgressHtml=function(){
