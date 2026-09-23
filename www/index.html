@@ -883,10 +883,11 @@
    document.body.appendChild(tp3PlannerHost);
    document.documentElement.classList.add('tp3-planner-open');document.body.classList.add('tp3-planner-open');document.body.style.setProperty('overflow','hidden','important');
   }
-  const content=tp3PlannerHost.querySelector('.tp3-planner-content');content.innerHTML=html;tp3DecoratePlannerContent(content,kind);
+  const content=tp3PlannerHost.querySelector('.tp3-planner-content');content.innerHTML=html;
+  try{if(typeof tp149TranslateFreshDom==='function')tp149TranslateFreshDom(content)}catch(_){}
+  tp3DecoratePlannerContent(content,kind);
   try{if(typeof rf260EnhanceSelects==='function')rf260EnhanceSelects()}catch(_){}
   try{if(typeof rf260EnhanceTemporalFields==='function')rf260EnhanceTemporalFields()}catch(_){}
-  try{if(typeof tp149TranslateFreshDom==='function')tp149TranslateFreshDom(content)}catch(_){}
   window.tp3PlannerPosition();requestAnimationFrame(()=>window.tp3PlannerPosition());
   try{tp3PlannerHost.querySelector('.tp3-planner-close')?.focus({preventScroll:true})}catch(_){}
   return true;
