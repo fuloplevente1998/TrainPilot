@@ -3,6 +3,8 @@ name: Release Gate + TrainPilot APK
 on:
   workflow_dispatch:
   push:
+    branches:
+      - feat/phase4-coach-17-21
     tags:
       - 'v*'
 

@@ -1073,5 +1073,126 @@
  window.TrainPilotPhase3={version:TP3_VERSION,isBilateral,normalizeLegacySides,unifiedChevron:true,journalCompact:true,statsInline:true,historyTombstones:true,singleTapDelete:true,plannerPanel:true,journalAcceptedCard:true,exerciseInlineEditor:true,exerciseAdd:true,fastExerciseOpen:true,healthChevronAligned:true};
 })();
 
+// @section Phase 4 — #17 + #21 Coach full exercise coverage
+(function(){
+ 'use strict';
+ const TP4_VERSION='phase4-coach-17-21-r1';
+ const lang=()=>typeof rf212Lang==='function'?rf212Lang():'hu';
+ const copy=()=>({
+  hu:{sets:'sorozat',sessions:'edzés',bestReps:'Legjobb ismétlés',bestTime:'Legjobb idő',bestSides:'Legjobb oldal-idő',last:'Legutóbbi',hold:'Tartás',history:'előzmény alapján',noHistory:'Nincs még elég előzmény.',statsHint:'Minden naplózott gyakorlat megjelenik, a terhelés típusának megfelelő statisztikával.'},
+  en:{sets:'sets',sessions:'workouts',bestReps:'Best reps',bestTime:'Best time',bestSides:'Best side time',last:'Latest',hold:'Hold',history:'from history',noHistory:'Not enough history yet.',statsHint:'Every logged exercise is shown with statistics appropriate to its load type.'},
+  de:{sets:'Sätze',sessions:'Trainings',bestReps:'Beste Wiederholungen',bestTime:'Beste Zeit',bestSides:'Beste Seitenzeit',last:'Zuletzt',hold:'Halten',history:'aus Verlauf',noHistory:'Noch nicht genug Verlauf.',statsHint:'Alle protokollierten Übungen erscheinen mit passenden Statistiken.'},
+  ro:{sets:'serii',sessions:'antrenamente',bestReps:'Repetări maxime',bestTime:'Cel mai bun timp',bestSides:'Cel mai bun timp pe părți',last:'Ultimul',hold:'Menține',history:'din istoric',noHistory:'Istoric insuficient.',statsHint:'Fiecare exercițiu jurnalizat apare cu statistici potrivite tipului său.'}
+ })[lang()]||({
+  sets:'sorozat',sessions:'edzés',bestReps:'Legjobb ismétlés',bestTime:'Legjobb idő',bestSides:'Legjobb oldal-idő',last:'Legutóbbi',hold:'Tartás',history:'előzmény alapján',noHistory:'Nincs még elég előzmény.',statsHint:'Minden naplózott gyakorlat megjelenik, a terhelés típusának megfelelő statisztikával.'
+ });
+ const num=v=>{const n=Number(String(v??'').replace(',','.'));return Number.isFinite(n)?n:0};
+ const meta=(id,raw)=>{const lib=typeof byId==='function'?byId(id):null;return Object.assign({},lib||{},raw||{}, {id:id,loadType:raw?.loadType||lib?.loadType||'bodyweight',repUnit:raw?.repUnit||lib?.repUnit||'ism.'})};
+ const bilateral=(e,sets)=>/oldal|side/i.test(String(e?.repUnit||''))||sets.some(s=>num(s?.leftSeconds)>0||num(s?.rightSeconds)>0);
+ const timed=(e,sets)=>bilateral(e,sets)||/\bmp\b|sec|second/i.test(String(e?.repUnit||''));
+ const setDone=s=>s&&s.done!==false;
+ const fmt=n=>typeof tp149FormatNumber==='function'?tp149FormatNumber(n,{maximumFractionDigits:1}):String(Math.round(n*10)/10);
+
+ rf220ExerciseStats=function(id){
+  const rows=[],sessions=[],byWorkout={};
+  for(const h of (typeof rf220Hist==='function'?rf220Hist():history()||[])){
+   const matches=(h?.exercises||[]).filter(e=>e?.id===id);if(!matches.length)continue;
+   let has=false,vol=0;
+   for(const raw of matches){
+    const e=meta(id,raw),sets=(e.sets||[]).filter(setDone),isBi=bilateral(e,sets),isTimed=timed(e,sets);
+    for(const s of sets){
+     const w=num(s.weight),r=num(s.reps),left=num(s.leftSeconds),right=num(s.rightSeconds);
+     rows.push({w,r,left,right,seconds:isBi?Math.max(left,right,r):isTimed?r:0,one:!isTimed&&w>0&&r>0?w*(1+r/30):0,vol:!isTimed?w*r:0,date:typeof rf220WorkoutTime==='function'?rf220WorkoutTime(h):Date.parse(h.started||h.finished||0),kind:isBi?'bilateral':isTimed?'timed':w>0?'weighted':'reps'});
+     vol+=!isTimed?w*r:0;has=true;
+    }
+   }
+   if(has){sessions.push(h);byWorkout[String(typeof rf220WorkoutTime==='function'?rf220WorkoutTime(h):Date.parse(h.started||0))]=vol}
+  }
+  if(!rows.length)return null;
+  const raw=rows[0],m=meta(id,(sessions[0]?.exercises||[]).find(e=>e.id===id)),isBi=bilateral(m,rows),isTimed=timed(m,rows),weighted=!isTimed&&rows.some(x=>x.w>0);
+  const maxWeight=Math.max(0,...rows.map(x=>x.w)),e1rm=Math.max(0,...rows.map(x=>x.one)),maxReps=Math.max(0,...rows.map(x=>x.r)),maxSeconds=Math.max(0,...rows.map(x=>x.seconds)),maxLeft=Math.max(0,...rows.map(x=>x.left)),maxRight=Math.max(0,...rows.map(x=>x.right));
+  const best=rows.slice().sort((a,b)=>weighted?((b.w-a.w)||(b.r-a.r)):isTimed?(b.seconds-a.seconds):(b.r-a.r))[0]||raw;
+  const latest=rows.slice().sort((a,b)=>(b.date||0)-(a.date||0))[0]||raw;
+  return {kind:isBi?'bilateral':isTimed?'timed':weighted?'weighted':'reps',maxWeight,e1rm,best,maxVolume:Math.max(0,...Object.values(byWorkout)),count:rows.length,sessions:sessions.length,maxReps,maxSeconds,maxLeft,maxRight,latest};
+ };
+ rf220ProgressRows=function(){
+  const ids=[];
+  for(const h of (typeof rf220Hist==='function'?rf220Hist():history()||[]))for(const e of h?.exercises||[])if(e?.id&&!ids.includes(e.id))ids.push(e.id);
+  return ids.map(id=>({id,s:rf220ExerciseStats(id)})).filter(x=>x.s).sort((a,b)=>(b.s.sessions-a.s.sessions)||(b.s.count-a.s.count));
+ };
+ const summary=s=>{
+  const t=copy();
+  if(s.kind==='bilateral')return t.bestSides+': '+fmt(s.maxLeft)+' / '+fmt(s.maxRight)+' mp';
+  if(s.kind==='timed')return t.bestTime+': '+fmt(s.maxSeconds)+' mp';
+  if(s.kind==='reps')return t.bestReps+': '+fmt(s.maxReps);
+  return s.maxWeight?(rf220L().maxWeight+': '+fmt(s.maxWeight)+' kg'):(t.bestReps+': '+fmt(s.maxReps));
+ };
+ const detail=s=>{
+  const t=copy(),label=(a,b)=>'<div class="stat"><small>'+esc(a)+'</small><strong>'+esc(b)+'</strong></div>';
+  if(s.kind==='bilateral')return label(t.bestSides,fmt(s.maxLeft)+' / '+fmt(s.maxRight)+' mp')+label(t.last,fmt(s.latest.left)+' / '+fmt(s.latest.right)+' mp')+label(t.sets,fmt(s.count))+label(t.sessions,fmt(s.sessions));
+  if(s.kind==='timed')return label(t.bestTime,fmt(s.maxSeconds)+' mp')+label(t.last,fmt(s.latest.seconds)+' mp')+label(t.sets,fmt(s.count))+label(t.sessions,fmt(s.sessions));
+  if(s.kind==='reps')return label(t.bestReps,fmt(s.maxReps))+label(t.last,fmt(s.latest.r))+label(t.sets,fmt(s.count))+label(t.sessions,fmt(s.sessions));
+  return label(rf220L().maxWeight,s.maxWeight?fmt(s.maxWeight)+' kg':'—')+label(rf220L().e1rm,s.e1rm?fmt(s.e1rm)+' kg':'—')+label(rf220L().bestSet,fmt(s.best.w)+' kg × '+fmt(s.best.r))+label(rf220L().volume,s.maxVolume?fmt(s.maxVolume)+' kg·rep':'—');
+ };
+ rf220ProgressHtml=function(){
+  const t=rf220L(),rows=rf220ProgressRows(),x=copy();
+  if(!rows.length)return '<div class="card"><h2>'+esc(t.progress)+'</h2><p class="muted">'+esc(t.noData)+'</p></div>';
+  return '<section class="card tp3-stats-card tp4-stats-card"><h2>'+esc(t.progress)+' • '+esc(t.records)+'</h2><p class="small muted tp3-stats-hint">'+esc(x.statsHint)+'</p><div class="tp3-stats-list">'+rows.map(({id,s})=>
+   '<details class="tp3-stat-row tp4-stat-row" data-tp3-stat="'+esc(id)+'" data-tp4-kind="'+esc(s.kind)+'"><summary><div class="tp3-stat-copy"><strong>'+esc(rf220ExerciseName(id))+'</strong><span class="small muted">'+esc(summary(s))+'</span></div><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary><div class="tp3-stat-detail"><div class="grid2">'+detail(s)+'</div><div class="small muted tp3-stat-note">'+esc(t.approx)+'</div></div></details>'
+  ).join('')+'</div></section>';
+ };
+
+ const adviceBase=rf233ExerciseAdvice;
+ rf233ExerciseAdvice=function(id,decision){
+  let a=null;try{a=adviceBase(id,decision)}catch(_){}
+  if(a&&a.action!=='unknown')return a;
+  const s=rf220ExerciseStats(id),t=rf233L(),x=copy();
+  if(!s)return a||{action:'unknown',label:t.unknown,text:x.noHistory};
+  let text='';
+  if(s.kind==='bilateral')text=x.last+': '+fmt(s.latest.left)+' / '+fmt(s.latest.right)+' mp • '+x.history+'.';
+  else if(s.kind==='timed')text=x.last+': '+fmt(s.latest.seconds)+' mp • '+x.history+'.';
+  else if(s.kind==='reps')text=x.last+': '+fmt(s.latest.r)+' • '+x.history+'.';
+  else text=summary(s)+' • '+x.history+'.';
+  return {action:'hold',label:t.hold||x.hold,text:text};
+ };
+ rf233CoachPlan=function(){
+  const readiness=rf220Readiness(),decision=rf233Decision(readiness),target=rf233TargetWorkout(),raw=target.day?.exercises||[],ids=[];
+  for(const v of raw){const id=typeof v==='string'?v:v?.id;if(id&&!ids.includes(id))ids.push(id)}
+  return {readiness,decision,target,exercises:ids.map(id=>{const e=byId(id);return {id,name:e?(typeof tp149ExerciseName==='function'?tp149ExerciseName(e):rf220ExerciseName(id)):id,effort:rf233LastEffort(id),advice:rf233ExerciseAdvice(id,decision)}})};
+ };
+
+ const targetSummary=target=>{
+  if(!target?.day)return '—';
+  const p=target.program,programName=p?(typeof tp149ProgramMeta==='function'?tp149ProgramMeta(p,'name'):(p.name||'')):'';
+  const dayName=target.day.name||target.day.id||'';
+  const when=target.item?.start?(typeof tp149FormatDateTime==='function'?tp149FormatDateTime(target.item.start,{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):new Date(target.item.start).toLocaleString()):'';
+  return [programName,dayName,when].filter(Boolean).join(' • ');
+ };
+ window.tp4PolishCoachTarget=function(root=document){
+  const host=root?.matches?.('.tp151-coach')?root:root?.querySelector?.('.tp151-coach');
+  if(!host)return false;
+  const strong=host.querySelector('.tp153-coach-next strong')||host.querySelector('.tp151-coach-target>:last-child strong');
+  if(!strong)return false;
+  const target=rf233CoachPlan().target,full=targetSummary(target);strong.textContent=full;strong.classList.add('tp4-next-summary');
+  const dup=host.querySelector?.('.tp151-coach-target + p.small.muted');if(dup){dup.textContent='';dup.classList.add('tp4-next-duplicate');dup.hidden=true}
+  return true;
+ };
+ if(typeof window.tp155R4RefreshPanel==='function'){
+  const panelRefreshBase=window.tp155R4RefreshPanel;
+  window.tp155R4RefreshPanel=function(){const out=panelRefreshBase.apply(this,arguments);const host=document.getElementById('tp155R4PanelHost');if(host?.dataset?.panel==='coach')window.tp4PolishCoachTarget(host);return out};
+ }
+ const renderBase=render;
+ render=function(){const out=renderBase.apply(this,arguments);window.tp4PolishCoachTarget(document);return out};
+
+ const style=document.createElement('style');style.id='tp4CoachCoverageCss';style.textContent=[
+  '.tp153-coach-next{min-width:0!important}.tp153-coach-next strong.tp4-next-summary{font-size:13px!important;line-height:1.25!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important;max-width:100%!important}',
+  '.tp151-coach-target>*{min-width:0!important}.tp4-next-duplicate{display:none!important}',
+  '.tp4-stat-row .tp3-stat-copy span{white-space:normal!important;overflow-wrap:anywhere!important}',
+  '@media(max-width:412px){.tp151-coach-target{grid-template-columns:minmax(0,.72fr) minmax(0,1.28fr)!important;gap:6px!important}.tp153-coach-next{padding:7px!important}.tp153-coach-next strong.tp4-next-summary{font-size:12px!important}}',
+  '@media(max-width:340px){.tp151-coach-target{grid-template-columns:minmax(0,.64fr) minmax(0,1.36fr)!important}.tp153-coach-next strong.tp4-next-summary{font-size:11.5px!important}}'
+ ].join('');document.head.appendChild(style);
+ window.TrainPilotPhase4={version:TP4_VERSION,allHistoryExercises:true,allTargetExercises:true,timedStats:true,bilateralStats:true,nextWorkoutSummary:true};
+})();
+
 });</script>
 </body></html>
