@@ -1335,16 +1335,17 @@
  window.tpGlobalApplyChevrons=function(root=document){
   const scope=root&&root.querySelectorAll?root:document;
   scope.querySelectorAll(tpGlobalChevronSelectors.join(',')).forEach(el=>{
-   el.classList.add('tp-global-chevron');
-   el.setAttribute('aria-hidden','true');
+   if(!el.classList.contains('tp-global-chevron'))el.classList.add('tp-global-chevron');
+   if(el.getAttribute('aria-hidden')!=='true')el.setAttribute('aria-hidden','true');
    if(el.textContent!=='›')el.textContent='›';
    const summary=el.closest('summary'),details=summary?.parentElement?.matches?.('details')?summary.parentElement:null;
-   if(details||el.matches('.tp169-pulse-summary>b,.tp168-weight-summary>b')||el.closest('.rf-history-health-panel')){
+   if((details||el.matches('.tp169-pulse-summary>b,.tp168-weight-summary>b')||el.closest('.rf-history-health-panel'))&&!el.classList.contains('tp-global-chevron-rotates')){
     el.classList.add('tp-global-chevron-rotates');
    }
   });
   scope.querySelectorAll('.tp-library-card>summary').forEach(summary=>{
-   summary.classList.add('tp-global-chevron-host','tp-global-chevron-host-rotates');
+   if(!summary.classList.contains('tp-global-chevron-host'))summary.classList.add('tp-global-chevron-host');
+   if(!summary.classList.contains('tp-global-chevron-host-rotates'))summary.classList.add('tp-global-chevron-host-rotates');
   });
   return true;
  };
@@ -1352,11 +1353,17 @@
  if(typeof tp5ChevronRenderBase==='function')window.render=function(){
   const out=tp5ChevronRenderBase.apply(this,arguments);
   window.tpGlobalApplyChevrons(document);
-  setTimeout(()=>window.tpGlobalApplyChevrons(document),0);
   return out;
  };
+ if(window.TrainPilot168Health?.decorate){
+  const originalDecorate=window.TrainPilot168Health.decorate;
+  window.TrainPilot168Health.decorate=function(){
+   const out=originalDecorate.apply(this,arguments);
+   window.tpGlobalApplyChevrons(document);
+   return out;
+  };
+ }
  window.tpGlobalApplyChevrons(document);
- setTimeout(()=>window.tpGlobalApplyChevrons(document),0);
 
  window.TrainPilotPhase5={version:TP5_VERSION,pulseSource:'healthLedgerV1.averageHeartRate',calendarDays:7,zeroPulseAsMissing:true,persistentWeightEdit:true,ownWeightDialog:true ,globalChevron:true,themeAwareChevron:true,matteHealthBasic:true,pulseSafeZone:true};
  decoratePulse();setTimeout(decoratePulse,0);
