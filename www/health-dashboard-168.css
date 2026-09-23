@@ -491,3 +491,14 @@ html:not([data-tp-theme-family="vivid"]) body.tp168-health-view :is(
 html:not([data-tp-theme-family="vivid"]) body.tp168-health-view main.tp168-health{
  filter:none!important
 }
+
+/* #41 follow-up: the global token wins over legacy mixed-color Health arrows. */
+main.tp168-health :is(.tp168-status>b,.tp169-pulse-summary>b,.tp168-weight-summary>b).tp-global-chevron,
+main.tp168-health .tp-global-chevron{
+ color:var(--accent2,var(--accent))!important;
+ text-shadow:none!important;
+ filter:none!important
+}
+main.tp168-health .tp-global-chevron::before{
+ color:currentColor!important
+}
