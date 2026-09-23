@@ -51,6 +51,7 @@ const {chromium}=require('playwright');
   assert.equal(geometry.sticky,'sticky','video title and red close must remain sticky');
   assert.ok(geometry.closeWidth>=33&&geometry.closeHeight>=33,'close target must be comfortably tappable');
   assert.ok(geometry.closeX>geometry.dialogRight-65,'red close belongs at upper right');
+  assert.equal(geometry.closeColor,'rgb(71, 37, 41)','demo X must use the shared TrainPilot dark-red close treatment');
   assert.ok(geometry.iframeHeight>130&&geometry.iframeWidth>260,'video must remain visible');
   assert.ok(geometry.overflow<=1&&geometry.docOverflow<=1,'393px panel must not overflow: '+JSON.stringify(geometry));
   await close.click();await modal.waitFor({state:'detached'});
