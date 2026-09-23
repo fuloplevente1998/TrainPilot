@@ -425,20 +425,33 @@
  'use strict';
  const clone=x=>JSON.parse(JSON.stringify(x));
  const stripId=x=>{const y=clone(x);delete y.id;return y};
- const sameWithoutId=(a,b)=>canonical(stripId(a))===canonical(stripId(b));
- const historyCore=x=>{const y=stripId(x);delete y.photos;return y};
- const sameHistoryCore=(a,b)=>canonical(historyCore(a))===canonical(historyCore(b));
  const hash32=(s,seed)=>{let h=seed>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;h^=h>>>13;}return h.toString(16).padStart(8,'0')};
- const legacyId=(kind,x)=>{const s=canonical(stripId(x));return 'tp18-'+(kind==='history'?'h':'w')+'-'+hash32(s,2166136261)+hash32(s,2246822519)+hash32(s,3266489917)};
- const mergePhotoVariant=(a,b)=>{
-  if(!sameHistoryCore(a,b))return null;
-  let merged=null;
-  if(typeof rf130MergeHistoryPhotos==='function'){
-   const aa=stripId(a),bb=stripId(b);
-   try{merged=rf130MergeHistoryPhotos(aa,bb)}catch(_){}
+ const workoutIdentity=x=>canonical({
+  started:x?.started||'',finished:x?.finished||'',workout:x?.workout||'',dayId:x?.dayId||'',programId:x?.programId||'',scheduleId:x?.scheduleId||'',
+  exercises:(x?.exercises||[]).map(e=>({id:e?.id||'',sets:(e?.sets||[]).map(s=>({set:s?.set??null,weight:s?.weight??null,reps:s?.reps??null,leftSeconds:s?.leftSeconds??null,rightSeconds:s?.rightSeconds??null,done:!!s?.done}))}))
+ });
+ const weightIdentity=x=>canonical({date:x?.date||'',kg:x?.kg??null});
+ const identity=(kind,x)=>kind==='history'?workoutIdentity(x):kind==='weights'?weightIdentity(x):canonical(stripId(x));
+ const sameIdentity=(kind,a,b)=>identity(kind,a)===identity(kind,b);
+ const syntheticId=(kind,id)=>new RegExp('^tp18-'+(kind==='history'?'h':'w')+'-').test(String(id||''));
+ const legacyId=(kind,x)=>{const s=identity(kind,x);return 'tp18-'+(kind==='history'?'h':'w')+'-'+hash32(s,2166136261)+hash32(s,2246822519)+hash32(s,3266489917)};
+ const mergeHistoryVariant=(a,b)=>{
+  if(!sameIdentity('history',a,b))return null;
+  const merged=clone(a),incoming=clone(b);
+  for(const [k,v] of Object.entries(incoming)){
+   if(k==='id'||k==='photos'||v===undefined||v===null||v==='')continue;
+   if(k==='feedback'&&merged.feedback){
+    const at=Number(merged.feedback?.updatedAt)||0,bt=Number(v?.updatedAt)||0;if(bt<at)continue;
+   }
+   if(k==='health240'&&merged.health240){
+    const at=Date.parse(merged.health240?.syncedAt||'')||0,bt=Date.parse(v?.syncedAt||'')||0;if(bt<at)continue;
+   }
+   merged[k]=v;
   }
-  if(!merged)merged=clone(a);
-  if(a.id||b.id)merged.id=a.id||b.id;
+  if(typeof rf130MergeHistoryPhotos==='function'){
+   try{const p=rf130MergeHistoryPhotos({...stripId(a),...merged},{...stripId(b),...incoming});if(p)Object.assign(merged,p)}catch(_){}
+  }else if((a.photos||b.photos)){const by=new Map();for(const p of [...(a.photos||[]),...(b.photos||[])])if(p?.id)by.set(p.id,{...(by.get(p.id)||{}),...p});merged.photos=[...by.values()]}
+  const real=[a.id,b.id].find(id=>id&&!syntheticId('history',id));merged.id=real||legacyId('history',merged);
   return merged;
  };
  const stableConflict=(kind,a,b,baseRows,choose)=>{
@@ -454,10 +467,10 @@
  };
  const ensureLegacyIds=(kind,rows)=>{
   const used=new Map();
-  for(const x of rows)if(x?.id)used.set(x.id,canonical(x));
+  for(const src of rows){if(!src?.id||syntheticId(kind,src.id))continue;used.set(src.id,canonical(src))}
   return rows.map(src=>{
-   const x=clone(src);if(x.id)return x;
-   const root=legacyId(kind,x);let id=root,n=1,body=canonical(stripId(x));
+   const x=clone(src);if(x.id&&!syntheticId(kind,x.id))return x;
+   const root=legacyId(kind,x);let id=root,n=1,body=identity(kind,x);
    while(used.has(id)&&used.get(id)!==body)id=root+'-'+(++n);
    x.id=id;used.set(id,body);return x;
   });
@@ -483,15 +496,14 @@
     const byId=items.findIndex(y=>y?.id===x.id);
     if(byId>=0){if(!archiveOnly)items[byId]=stableConflict(kind,items[byId],x,baseRows,choose);return}
    }
-   let same=items.findIndex(y=>sameWithoutId(y,x));
+   const same=items.findIndex(y=>sameIdentity(kind,y,x));
    if(same>=0){
-    if(kind==='history'){const p=mergePhotoVariant(items[same],x);if(p)items[same]=p}
-    if(!items[same].id&&x.id)items[same].id=x.id;
+    if(kind==='history')items[same]=mergeHistoryVariant(items[same],x)||items[same];
+    else {
+     const real=[items[same].id,x.id].find(id=>id&&!syntheticId(kind,id));
+     items[same]={...items[same],...x,id:real||legacyId(kind,x)};
+    }
     return;
-   }
-   if(kind==='history'){
-    same=items.findIndex(y=>sameHistoryCore(y,x));
-    if(same>=0){const p=mergePhotoVariant(items[same],x);if(p){items[same]=p;if(!items[same].id&&x.id)items[same].id=x.id;return}}
    }
    items.push(x);
   };
