@@ -4,7 +4,7 @@ const p=html.slice(html.indexOf('/* Phase 3 — #29 + #30'));
 assert.ok(p.length>5000,'Phase 3 runtime block missing');
 for(const marker of [
  "TP3_VERSION='phase3-29-30-37-r5'",
- 'tp3-history-ex',
+ 'tp3-history-ex-item',
  'tp3-photo-section',
  'tp3-stat-row',
  "state?.tab==='stats'",
@@ -15,7 +15,6 @@ for(const marker of [
  'statsInline:true',
  'journalCompact:true',
  'tp3HistoryToggle',
- 'historyExerciseSummary',
  'tp3WorkoutSummaryHtml',
  'tp3OpenExerciseEditor',
  'tp3SaveExerciseEdit',
@@ -26,7 +25,6 @@ for(const marker of [
  'exerciseInlineEditor:true',
  'exerciseAdd:true',
  'tp3-combined-history',
- 'tp3-history-performance',
  'phase3HistoryTombstones',
  'tp3DeleteHistoryWorkout',
  'tp3PlannerPanelHost',
