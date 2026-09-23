@@ -622,7 +622,7 @@
 /* Phase 3 — #29 + #30 Journal polish and unified right-chevron language. */
 (function(){
  'use strict';
- const TP3_VERSION='phase3-29-30-r1';
+ const TP3_VERSION='phase3-29-30-r2';
  const lang=()=>typeof rf212Lang==='function'?rf212Lang():'hu';
  const words={
   hu:{photos:'Edzésfotók',photoCount:n=>n+' fotó',left:'Bal oldal – mp',right:'Jobb oldal – mp',sets:'Sorozatok',addSet:'Sorozat hozzáadása',remove:'Törlés',statsHint:'Koppints a részletekhez.'},
@@ -634,6 +634,24 @@
  const isBilateral=e=>String(e?.repUnit||'').toLowerCase()==='mp/oldal'||e?.id==='side-plank';
  const sideValue=(s,k)=>{const v=Number(s?.[k]);if(Number.isFinite(v)&&v>0)return Math.round(v);const legacy=Number(s?.reps);return Number.isFinite(legacy)&&legacy>0?Math.round(legacy):''};
  const normalizeLegacySides=x=>{for(const e of x?.exercises||[])if(isBilateral(e))for(const s of e.sets||[]){const legacy=Number(s.reps);if(!(Number(s.leftSeconds)>0)&&Number.isFinite(legacy)&&legacy>0)s.leftSeconds=Math.round(legacy);if(!(Number(s.rightSeconds)>0)&&Number.isFinite(legacy)&&legacy>0)s.rightSeconds=Math.round(legacy)}return x};
+ const setSummaryText=(e,s)=>{
+  if(isBilateral(e)){
+   const left=sideValue(s,'leftSeconds'),right=sideValue(s,'rightSeconds'),parts=[];
+   if(Number(s?.weight)>0&&e.loadType!=='bodyweight')parts.push((Number(s.weight)||0)+' '+tp149LoadLabel(e.loadType));
+   parts.push((lang()==='hu'?'Bal ':lang()==='de'?'Links ':lang()==='ro'?'Stg. ':'Left ')+(left||'—')+' mp');
+   parts.push((lang()==='hu'?'Jobb ':lang()==='de'?'Rechts ':lang()==='ro'?'Dr. ':'Right ')+(right||'—')+' mp');
+   return parts.join(' · ');
+  }
+  try{return formatSet(e,s)}catch(_){return String(s?.reps||'—')+' '+String(e?.repUnit||'')}
+ };
+ const exerciseSummaryText=e=>{
+  const sets=(e?.sets||[]).filter(s=>s&&s.done!==false);if(!sets.length)return (lang()==='hu'?'Nincs kész sorozat':'No completed set');
+  const groups=[];
+  for(const s of sets){const value=setSummaryText(e,s),last=groups.at(-1);if(last&&last.value===value)last.count++;else groups.push({value,count:1})}
+  return groups.map(g=>(g.count>1?g.count+'× ':'')+g.value).join(' · ');
+ };
+ const historyExerciseSummary=x=>(x?.exercises||[]).map(raw=>{const e=rf151SetMeta(raw);return '<div class="tp3-history-performance"><span class="tp3-history-performance-name">'+esc(tp149ExerciseName(e))+'</span><span class="tp3-history-performance-value">'+esc(exerciseSummaryText(e))+'</span></div>'}).join('');
+
 
  window.tp3SetSide=function(ei,si,key,value){
   const s=rf151Edit()?.workout?.exercises?.[ei]?.sets?.[si];if(!s||!['leftSeconds','rightSeconds'].includes(key))return;
@@ -677,6 +695,40 @@
   };
  }
 
+ window.tp3HistoryToggle=function(el,key){
+  if(!el)return;
+  const editing=state.rf151HistoryEdit?.key===key;
+  if(el.open&&!editing){editHistoryWorkout(key);return}
+  if(!el.open&&editing){state.rf151HistoryEdit=null;render()}
+ };
+
+ rf263HistoryItem=function(x,originalIndex,visibleIndex){
+  const safe=typeof window.tp165SafeHistoryRecord==='function'?window.tp165SafeHistoryRecord(x,originalIndex):x;
+  try{
+   x=safe;
+   const key=rf142WorkoutKey(x),editing=state.rf151HistoryEdit?.key===key,c=completedSets(x);
+   const title=typeof tp149HistoryTitle==='function'?tp149HistoryTitle(x):(x.programName?x.programName+' • '+(x.dayId||x.workout):'Full Body '+x.workout);
+   const validDate=typeof window.tp167HistoryDateIso==='function'?window.tp167HistoryDateIso(x.started):x.started;
+   const dateText=validDate?(typeof tp149FormatDateTime==='function'?tp149FormatDateTime(validDate):fmtDate(validDate)):(typeof window.tp167MissingDateText==='function'?window.tp167MissingDateText():'Dátum nem elérhető');
+   const photoCount=typeof rf130VisiblePhotos==='function'?rf130VisiblePhotos(x).length:0;
+   const exerciseCount=typeof tp149T==='function'?tp149T('journal.exerciseCount',{count:x.exercises.length}):x.exercises.length+' gyakorlat';
+   const photoLabel=photoCount?(typeof tp149T==='function'?tp149T('journal.photoCount',{count:photoCount}):photoCount+' fotó'):'';
+   const calendarText=typeof tp149T==='function'?tp149T('journal.addCalendar'):'Naptárhoz adás';
+   const healthText=typeof tp149T==='function'?tp149T('journal.healthData'):'Health adatok';
+   const refreshText=typeof tp149T==='function'?tp149T('common.refresh'):'Frissítés';
+   const deleteText=typeof tp149T==='function'?tp149T('common.delete'):'Törlés';
+   const tools='<div class="tp3-history-aux"><button class="btn secondary block" type="button" onclick="event.stopPropagation();calendarIntent('+originalIndex+')">'+esc(calendarText)+'</button><button type="button" class="btn danger block tp155-history-delete" onclick="event.stopPropagation();deleteHistoryWorkout(\''+esc(key)+'\')">'+esc(deleteText)+'</button></div>';
+   const health='<div class="rf-history-health-panel" data-rf-history-health-panel="'+originalIndex+'"><button type="button" class="rf-history-health-toggle" aria-expanded="true" onclick="event.stopPropagation();rfHistoryHealthToggle('+originalIndex+')"><strong>'+esc(healthText)+'</strong><span class="small muted">'+esc(rfHistoryHealthWindow(x))+'</span><span class="rf-history-health-chevron" aria-hidden="true">›</span></button><div class="rf-history-health-body"><div class="rf-history-health" data-rf-history-health="'+originalIndex+'">'+rfHistoryHealthHtml(originalIndex)+'</div><button type="button" class="btn secondary block rf-history-health-refresh" onclick="event.stopPropagation();healthFromHistory('+originalIndex+')">'+esc(refreshText)+'</button></div></div>';
+   const editor=editing?tp152HistoryEditorHtml(key):'';
+   const body='<div class="history-body tp3-combined-history-body">'+editor+tools+health+rf130PhotoSection(x,key)+'</div>';
+   return '<details data-tp152-history-key="'+esc(key)+'" '+(editing?'open ':'')+'class="history rf263-history rf103-history tp3-combined-history" ontoggle="if(this.open){rf130LoadHistoryPhotos(this);rfHistoryHealthEnsure('+originalIndex+')}tp3HistoryToggle(this,\''+esc(key)+'\')"><summary><div class="history-head"><div class="history-title-row"><div><div class="history-title">'+esc(title)+'</div><div class="history-date">'+esc(dateText)+'</div></div><div class="rf103-history-side"><span class="badge">'+esc(exerciseCount+(photoLabel?' • '+photoLabel:''))+'</span><span class="rf103-history-chevron" aria-hidden="true">›</span></div></div><div class="history-badges"><span class="history-badge">⏱ '+esc(sessionDuration(x))+'</span><span class="history-badge">✓ '+esc(typeof tp149T==='function'?tp149T('journal.setCount',{done:c.done,total:c.total}):c.done+'/'+c.total+' sorozat')+'</span></div><div class="tp3-history-performance-list">'+historyExerciseSummary(x)+'</div></div></summary>'+body+'</details>';
+  }catch(error){
+   try{console.error('[TrainPilot] Phase 3 Journal row recovery',originalIndex,error)}catch(_){}
+   const date=typeof fmtDate==='function'?fmtDate(safe?.started):'';
+   return '<div class="history card tp165-history-recovery" role="status"><strong>Korábbi naplóbejegyzés</strong><p class="small muted">'+esc(date)+'<br>Ez a régi bejegyzés hiányos, ezért egyszerűsített nézetben jelent meg.</p></div>';
+  }
+ };
+
  rf220ProgressHtml=function(){
   const t=rf220L(),rows=rf220ProgressRows(),w=tx();
   if(!rows.length)return '<div class="card"><h2>'+esc(t.progress)+'</h2><p class="muted">'+esc(t.noData)+'</p></div>';
@@ -697,6 +749,7 @@
 
  const style=document.createElement('style');style.id='tp3JournalPolishCss';style.textContent=[
   '.tp3-history-editor{padding:12px!important;margin:8px 0 12px!important}.tp3-history-editor .section{margin:10px 0 5px!important}.tp3-time-grid{gap:7px!important}.tp3-time-grid label{font-size:11px!important}.tp3-time-grid .field{min-height:38px!important;padding:7px 8px!important}',
+  '.tp3-combined-history>summary{cursor:pointer}.tp3-history-performance-list{display:grid;gap:3px;margin-top:7px}.tp3-history-performance{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.6fr);gap:8px;align-items:baseline;font-size:11px;line-height:1.25}.tp3-history-performance-name{min-width:0;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tp3-history-performance-value{min-width:0;color:var(--muted);text-align:right;overflow-wrap:anywhere}.tp3-combined-history-body{padding-top:2px!important}.tp3-history-placeholder{display:none!important}.tp3-combined-history .tp3-history-editor{margin:0 0 8px!important;border:0!important;background:transparent!important;padding:8px 0!important}.tp3-combined-history .tp3-history-editor>.tp152-history-edit-head h2{display:none}.tp3-combined-history .tp3-edit-close{display:none!important}.tp3-history-aux{display:grid;grid-template-columns:1fr auto;gap:7px;margin:8px 0}.tp3-history-aux .btn{margin:0!important;min-height:38px!important;padding:7px 9px!important}',
   '.tp3-history-ex{margin:6px 0!important;border-radius:14px!important}.tp3-history-ex>summary{min-height:48px!important;padding:8px 10px!important}.tp3-history-ex-title{display:grid;gap:1px;min-width:0}.tp3-history-ex-body{padding:0 8px 8px!important}',
   '.tp3-set-row{display:grid;grid-template-columns:26px minmax(58px,.8fr) minmax(72px,1fr) 42px 34px;gap:5px;align-items:end;padding:6px 0;border-top:1px solid color-mix(in srgb,var(--line) 72%,transparent)}.tp3-set-row:first-child{border-top:0}.tp3-set-row label{margin:0!important;font-size:10px!important;min-width:0}.tp3-set-row .field{min-height:36px!important;height:36px!important;padding:6px 7px!important;margin-top:2px!important}.tp3-set-row .num{align-self:center;width:25px;height:25px}.tp3-set-row .check{width:38px!important;height:36px!important;min-height:36px!important;align-self:end}.tp3-mini-delete{width:34px;height:36px;border:1px solid color-mix(in srgb,#b64 45%,var(--line));border-radius:9px;background:transparent;color:var(--muted);font-size:20px;line-height:1}.tp3-bodyweight{align-self:center}.tp3-ex-actions{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:6px}.tp3-ex-actions .btn{min-height:38px!important;padding:7px 9px!important}.tp3-save-actions{display:grid;grid-template-columns:1.25fr .75fr;gap:7px;margin-top:8px}.tp3-save-actions .btn{min-height:42px!important;padding:8px 10px!important}.tp3-inline-add{margin:6px 0!important}',
   '.tp3-photo-section{margin:10px 0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:color-mix(in srgb,var(--card2) 72%,transparent)}.tp3-photo-section>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;padding:9px 11px;cursor:pointer}.tp3-photo-section>summary::-webkit-details-marker{display:none}.tp3-photo-body{padding:0 8px 8px}.tp3-photo-body>.rf130-photo-section{margin:0!important;padding:8px!important;border:0!important;border-radius:10px!important}.tp3-photo-body .rf130-photo-grid{margin-top:8px!important;gap:8px!important}.tp3-photo-body .rf130-photo-preview{aspect-ratio:16/10!important}.tp3-photo-body .btn{min-height:38px!important;padding:7px 9px!important}',
