@@ -65,19 +65,25 @@ jobs:
             NOTES="$(cat <<EOF
           Historical TrainPilot main snapshot.
 
-          - Main target: `$TARGET_SHA`
-          - APK: preserved from successful signed Release Gate run `$RUN_ID`
+          - Main target: $TARGET_SHA
+          - APK: preserved from successful signed Release Gate run $RUN_ID
           - Signing: official TrainPilot release certificate
           - This release was reconstructed from the already validated GitHub Actions artifact; the APK was not rebuilt for this catalog operation.
           EOF
           )"
 
+            if ! git show-ref --tags --verify --quiet "refs/tags/$TAG"; then
+              git tag "$TAG" "$TARGET_SHA"
+              git push origin "refs/tags/$TAG"
+            fi
+
             if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
               gh release upload "$TAG" "$RELEASE_APK" "$OUT/SHA256SUMS.txt" "$OUT/BUILD_INFO.txt" --repo "$GITHUB_REPOSITORY" --clobber
+              gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TITLE" --notes "$NOTES"
             else
               gh release create "$TAG" "$RELEASE_APK" "$OUT/SHA256SUMS.txt" "$OUT/BUILD_INFO.txt" \
                 --repo "$GITHUB_REPOSITORY" \
-                --target "$TARGET_SHA" \
+                --verify-tag \
                 --title "$TITLE" \
                 --notes "$NOTES"
             fi
