@@ -1353,6 +1353,9 @@
  if(typeof tp5ChevronRenderBase==='function')window.render=function(){
   const out=tp5ChevronRenderBase.apply(this,arguments);
   window.tpGlobalApplyChevrons(document);
+  if(state?.tab==='health')setTimeout(()=>{
+   if(state?.tab==='health')window.tpGlobalApplyChevrons(document);
+  },0);
   return out;
  };
  if(window.TrainPilot168Health?.decorate){
@@ -1360,6 +1363,9 @@
   window.TrainPilot168Health.decorate=function(){
    const out=originalDecorate.apply(this,arguments);
    window.tpGlobalApplyChevrons(document);
+   if(state?.tab==='health')setTimeout(()=>{
+    if(state?.tab==='health')window.tpGlobalApplyChevrons(document);
+   },0);
    return out;
   };
  }
