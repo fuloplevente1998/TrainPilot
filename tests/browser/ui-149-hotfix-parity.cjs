@@ -76,8 +76,12 @@ async function geometryAudit(page,label){
  const [baseServer,curServer]=await Promise.all([serve(baseline.root),serve(currentRoot)]);
  let browser;
  try{
-  const baseCss=cp.execFileSync('git',['show',BASE+':www/styles.css'],{maxBuffer:16*1024*1024});
-  assert.deepEqual(fs.readFileSync('www/styles.css'),baseCss,'hotfix 1.4.8.1 styles.css must remain byte-identical');
+  const acceptedStyleBase='921c2a26a84c647eeb33e36586c08a38032b1c9d';
+  const baseCss=cp.execFileSync('git',['show',acceptedStyleBase+':www/styles.css'],{maxBuffer:16*1024*1024});
+  const currentCss=fs.readFileSync('www/styles.css');
+  assert.ok(currentCss.subarray(0,baseCss.length).equals(baseCss),'#15 must preserve the accepted 1.6.9 minor2 styles byte-identically');
+  const cssSuffix=currentCss.subarray(baseCss.length).toString('utf8');
+  assert.match(cssSuffix,/^\s*\/\* #15: unified compact exercise demo and video dialog\. \*\//,'only the dedicated #15 style block may follow the accepted baseline');
 
   browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});
   const viewports=[{width:320,height:640},{width:360,height:800},{width:393,height:873},{width:412,height:915},{width:640,height:360}];
