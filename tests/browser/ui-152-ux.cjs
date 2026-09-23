@@ -243,16 +243,16 @@ const server=http.createServer((req,res)=>{
   const workoutCoach=page.locator('main.tp153-workout .tp155-workout-coach');assert.equal(await workoutCoach.count(),1,'active workout must show the current exercise Coach suggestion');
   assert.ok((await workoutCoach.innerText()).trim().length<=140,'active workout Coach suggestion must stay compact');
   assert.equal(await page.locator('main.tp153-workout .video-card').count(),0,'active workout must not keep the old large video card');
-  assert.ok(await page.locator('main.tp153-workout .tp153-video-launch').count()<=1,'active workout uses only the compact demo launch');
+  assert.ok(await page.locator('main.tp153-workout .tp15-demo-launch').count()<=1,'active workout uses only the one-tap compact demo launch');
   assert.equal(await page.locator('main.tp153-workout > .tp153-workout-guide').count(),0,'workout guidance must no longer sit at the bottom of the workout');
   const demoId=await page.evaluate(()=>state.session.exercises.find(x=>demoInfo(x.id))?.id||null);
   if(demoId){
    await page.evaluate(id=>{const i=state.session.exercises.findIndex(x=>x.id===id);if(i>=0){state.current=i;renderWorkout()}},demoId);
-   const topGuide=page.locator('.tp153-workout-head .tp154-workout-guide');assert.equal(await topGuide.count(),1,'exercise demo and guidance must be discoverable in the top workout card');
-   assert.equal(await topGuide.locator('.tp154-workout-guide-body').isVisible(),false,'top demo guidance starts compact');
-   await topGuide.locator('summary').click();assert.equal(await topGuide.locator('.tp154-workout-guide-body').isVisible(),true,'top demo guidance must expand inline');
-   assert.equal(await topGuide.locator('.tp153-video-launch').count(),1,'expanded top guidance must contain the demo launch');
-   await page.evaluate(id=>openDemo(id),demoId);await page.waitForSelector('#videoModal');assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),true,'Android back must consume the open video modal');assert.equal(await page.locator('#videoModal').count(),0,'Android back must close video before navigating')
+   const launch=page.locator('.tp153-workout-head .tp15-demo-launch');assert.equal(await launch.count(),1,'exercise demo must have one direct entry point in the top workout card');
+   assert.equal(await page.locator('.tp153-workout-head .tp154-workout-guide').count(),0,'old intermediate guide accordion must not remain');
+   await launch.click();await page.waitForSelector('#videoModal');
+   assert.equal(await page.locator('.tp15-demo-guide').count(),1,'video and exercise instructions must share one panel');
+   assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),true,'Android back must consume the open video modal');assert.equal(await page.locator('#videoModal').count(),0,'Android back must close video before navigating')
   }
   await page.evaluate(()=>{state.session=null;state.workout=null;go('home')});
 

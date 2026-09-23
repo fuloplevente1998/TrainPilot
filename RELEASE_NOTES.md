@@ -1,3 +1,12 @@
+## #15 – Egységes videós bemutató (1.6.9, következő minor)
+
+- Az aktív edzés „Bemutató / leírás” gombja egy koppintással nyitja a közös videó + leírás panelt. A köztes lenyíló rész megszűnt.
+- Kompakt, témaszínt követő, mobilra méretezett panel; jobb felső, rögzített piros X és Android Vissza.
+- Egyetlen külső videómegnyitó; a forrásinformáció külön szövegként olvasható.
+- Megmaradnak az eddigi videóazonosítók, URL-ek és natív külső megnyitási útvonalak.
+- Külön statikus és böngészős regressziós teszt 320 px szélességig.
+- Verziójelzés változatlan a tesztkör alatt: 1.6.9 / 2658.
+
 # TrainPilot 1.6.9 – Egészség felület finomhangolás
 
 - Minor 2: a Testsúlynapló duplikált testsúly-kártyái és belső naplógombja kikerült; a Test és fittség rész csak Testzsír / SpO₂ / VO₂max adatokat mutat.
