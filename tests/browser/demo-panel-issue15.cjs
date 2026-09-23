@@ -5,7 +5,7 @@ const {chromium}=require('playwright');
  const server=http.createServer((req,res)=>{
   const file=path.resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/\/$/,'/index.html'));
   if(!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return}
-  fs.readFile(file,(e,d)=>{if(e){res.writeHead(404);res.end();return}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/plain');res.end(d)})
+  fs.readFile(file,(e,d)=>{if(e){res.writeHead(404);res.end();return}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'application/octet-stream');res.end(d)})
  });
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
  let browser;
