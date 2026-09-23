@@ -459,7 +459,7 @@
  };
  const stableConflict=(kind,a,b,baseRows,choose)=>{
   if(canonical(a)===canonical(b))return a;
-  if(kind==='history'){const p=mergePhotoVariant(a,b);if(p)return p}
+  if(kind==='history'){const p=mergeHistoryVariant(a,b);if(p)return p}
   const id=a?.id||b?.id,base=id?(baseRows||[]).find(x=>x?.id===id):null;
   if(base){
    const ac=canonical(a),bc=canonical(b),kc=canonical(base);
