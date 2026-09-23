@@ -451,9 +451,21 @@
    }
    merged[k]=v;
   }
-  if(typeof rf130MergeHistoryPhotos==='function'){
-   try{const p=rf130MergeHistoryPhotos({...stripId(a),...merged},{...stripId(b),...incoming});if(p)Object.assign(merged,p)}catch(_){}
-  }else if((a.photos||b.photos)){const by=new Map();for(const p of [...(a.photos||[]),...(b.photos||[])])if(p?.id)by.set(p.id,{...(by.get(p.id)||{}),...p});merged.photos=[...by.values()]}
+  if(a.photos||b.photos){
+   const by=new Map();
+   for(const p of [...(a.photos||[]),...(b.photos||[])]){
+    if(!p?.id)continue;
+    const old=by.get(p.id);
+    if(!old){by.set(p.id,clone(p));continue}
+    const newer=(Number(p.updatedAt)||0)>=(Number(old.updatedAt)||0)?p:old;
+    const photo={...old,...p,...newer};
+    photo.driveFileId=p.driveFileId||old.driveFileId||null;
+    photo.deletedAt=[p.deletedAt,old.deletedAt].filter(Boolean).sort().pop()||null;
+    photo.updatedAt=Math.max(Number(p.updatedAt)||0,Number(old.updatedAt)||0);
+    by.set(p.id,photo);
+   }
+   merged.photos=[...by.values()].sort((x,y)=>String(x.createdAt||'').localeCompare(String(y.createdAt||'')));
+  }
   const real=[a.id,b.id].find(id=>id&&!syntheticId('history',id));merged.id=real||legacyId('history',merged);
   return merged;
  };
