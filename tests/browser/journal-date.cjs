@@ -144,7 +144,7 @@ const {chromium}=require('playwright');
    assert.notEqual(historyClosed.fill,'rgba(0, 0, 0, 0)','journal disclosure triangle must be visible');
    const historyHeadRadius=await firstHistory.locator('.history-head').evaluate(e=>parseFloat(getComputedStyle(e).borderTopLeftRadius));
    assert.ok(historyHeadRadius>=12,'journal inner frame must have rounded corners');
-   await firstHistory.locator('summary').click();await page.waitForTimeout(180);
+   await firstHistory.locator(':scope > summary').click();await page.waitForTimeout(180);
    const historyOpen=await historyArrowStyle();
    assert.notEqual(historyOpen.transform,historyClosed.transform,'journal disclosure triangle must rotate from right to down when opened');
    assert.equal(await page.locator('details.rf263-history[open]').count(),1,'journal workout must expand on tap');
