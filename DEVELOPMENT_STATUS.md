@@ -7,15 +7,29 @@ This file is the current handoff/source-of-truth for continuing TrainPilot devel
 ## Current stable line
 
 - Stable branch: `main`
-- Current version: **1.6.9 minor 2**
+- Current package version: **1.6.9**
 - Android versionCode: **2658**
-- PR **#33 – TrainPilot 1.6.9 minor 2 – compact Health cleanup**: **merged**
-- Merge commit: `921c2a26a84c647eeb33e36586c08a38032b1c9d`
-- Full regression / Chromium UI validation: **passed**
-- Signed Android release APK build and APK/package-source verification: **passed**
-- Post-merge `main` Quick TrainPilot Validation: **passed**
-- Phone validation: **passed**
-- This accepted 1.6.9 minor 2 `main` is the baseline for the next development phases.
+- Latest accepted development phase: **Phase 1 – #15 unified exercise demo / video panel**
+- PR **#34 – Phase 1: #15 unified exercise demo panel**: **merged**
+- Phase 1 merge commit: `41e7955decc586f48ff85102331a6e2ccefd9ae7`
+- Phase 1 signed APK release gate: **passed**
+- Phase 1 full Node/regression suite: **passed**
+- Phase 1 full Chromium/UI regression suite: **passed**
+- Phase 1 APK/package/source verification: **passed**
+- Phase 1 physical-phone validation: **passed**
+- Post-merge `main` Quick TrainPilot Validation (run `35836660243`): **passed**
+- Issue **#15**: **closed / completed**
+- The current `main` is the only valid baseline for Phase 2.
+
+### Accepted Phase 1 behavior
+
+- Active workout **Demo / instructions** opens the unified panel in one tap.
+- No intermediate disclosure is required before the video.
+- Video and exercise instructions share the same compact panel.
+- The close control uses the shared TrainPilot dark-red X treatment (`#472529` / `rgb(71, 37, 41)`).
+- Android Back / Escape closes the demo before navigation.
+- Only one external video-opening action remains.
+- Mobile overflow and focus-return behavior are regression-protected.
 
 ## Permanent TrainPilot development / release workflow – MANDATORY
 
