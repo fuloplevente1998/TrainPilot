@@ -1,3 +1,12 @@
+# TrainPilot 1.7.1 – Phase 4 Coach teljes gyakorlatlefedettség (teszt)
+
+- A Coach / Statisztikák minden érvényes Napló-előzménnyel rendelkező gyakorlatot megjelenít, nem csak a súlyos/ismétléses típusokat.
+- Külön kezeli a súlyos, testsúlyos ismétléses, időalapú és kétoldalas `mp/oldal` gyakorlatok statisztikáit.
+- A következő edzés célprogramjának minden gyakorlatához készül Coach-javaslat; kevés előzménynél is látható induló/előzmény alapú állapot.
+- A Coach „Következő edzés” főértéke programnév + edzésnap + tervezett dátum/idő összefoglalót mutat, a külön kontextus nélküli A/B érték megszűnik.
+- 320–412 px szélességen a következő edzés összefoglaló tördelhető, vízszintes túlcsordulás nélkül.
+- Android `versionCode 2660`, `versionName 1.7.1`.
+
 # TrainPilot 1.7.0 – Phase 3 Napló véglegesítés
 
 - A Napló összecsukott edzései kompaktak maradnak: név, dátum/idő, időtartam, gyakorlat- és sorozatszám.

@@ -1,6 +1,6 @@
 {
-  "version": "1.7.0",
-  "versionCode": 2659,
+  "version": "1.7.1",
+  "versionCode": 2660,
   "baselineCommit": "69cc9a0e51becd79a4758324c9f920812c90b528",
   "source": "www/app.js",
   "sourceCommit": ""
