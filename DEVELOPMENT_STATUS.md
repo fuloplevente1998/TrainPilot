@@ -16,6 +16,14 @@ This file is the current handoff/source-of-truth for continuing TrainPilot devel
 - PR **#34 – #15 unified exercise demo panel**: **merged**
 - PR **#35 – #16 active workout sticky controls and rest timer**: **merged**
 - PR **#36 – #18 Drive sync data-safety and legacy dedupe**: **merged**
+- PR **#38 – TrainPilot 1.7.0 Phase 3 Journal polish (#29 + #30 + #37)**: **merged**
+- Phase 3 merge commit: `25a2cfbefaff63244a6e85875674eb884df87131`
+- Phase 3 signed APK Release Gate **#122**: **passed**
+- Phase 3 full Node/regression suite: **passed**
+- Phase 3 full Chromium/UI regression suite: **passed**
+- Phase 3 APK/package/source verification: **passed**
+- Phase 3 post-merge `main` Quick TrainPilot Validation **#466**: **passed**
+- Issues **#29, #30 and #37**: **closed / completed**
 - #18 merge commit: `25e3deb7edc0480b86fb5a9380935a9c7adf33f4`
 - #18 signed APK release gate: **passed**
 - #18 full Node/regression suite: **passed**
