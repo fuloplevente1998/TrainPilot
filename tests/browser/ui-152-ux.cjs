@@ -175,7 +175,8 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.locator('#tp155R4PanelHost').count(),0,'opening a full page must close the Coach panel');
   assert.equal(await page.locator('main.rf263-health.tp155-r4-page-reveal').count(),0,'Health full page must not restore the legacy heavy reveal motion');
   assert.ok(await page.locator('main.rf263-health').evaluate(e=>parseFloat(getComputedStyle(e).animationDuration)*1000)<=110.5,'Health full-page reveal must remain lightweight');
-  assert.ok(await page.locator('main.rf263-health .stat[data-tp153-link="weight"]').count()>=1,'Health weight stat must link to the weight journal');
+  assert.equal(await page.locator('main.rf263-health .stat[data-tp153-link="weight"]').count(),0,'minor2 must not restore the duplicate Health weight stat');
+  assert.equal(await page.locator('main.rf263-health .tp168-weight-summary').count(),1,'Health weight-journal summary must be the single weight entry point');
   assert.ok(await page.locator('main.rf263-health .stat[data-tp153-link="recovery"]').count()>=2,'Health Sleep and HRV stats must link to recovery history');
   assert.ok(await page.locator('main.rf263-health .tp151-health-card.tp155-r4-accent-surface').count()>=1,'Health daily summary must use the shared highlighted surface');
   await page.evaluate(()=>go('home'));
