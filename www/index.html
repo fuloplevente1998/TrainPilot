@@ -618,5 +618,104 @@
  window.TrainPilotHomeCoachStartup={version:'1',decorate};
 })();
 
+
+/* Phase 3 — #29 + #30 Journal polish and unified right-chevron language. */
+(function(){
+ 'use strict';
+ const TP3_VERSION='phase3-29-30-r1';
+ const lang=()=>typeof rf212Lang==='function'?rf212Lang():'hu';
+ const words={
+  hu:{photos:'Edzésfotók',photoCount:n=>n+' fotó',left:'Bal oldal – mp',right:'Jobb oldal – mp',sets:'Sorozatok',addSet:'Sorozat hozzáadása',remove:'Törlés',statsHint:'Koppints a részletekhez.'},
+  en:{photos:'Workout photos',photoCount:n=>n+' photos',left:'Left side – sec',right:'Right side – sec',sets:'Sets',addSet:'Add set',remove:'Delete',statsHint:'Tap for details.'},
+  de:{photos:'Trainingsfotos',photoCount:n=>n+' Fotos',left:'Linke Seite – Sek.',right:'Rechte Seite – Sek.',sets:'Sätze',addSet:'Satz hinzufügen',remove:'Löschen',statsHint:'Für Details tippen.'},
+  ro:{photos:'Fotografii antrenament',photoCount:n=>n+' fotografii',left:'Partea stângă – sec',right:'Partea dreaptă – sec',sets:'Serii',addSet:'Adaugă serie',remove:'Șterge',statsHint:'Atinge pentru detalii.'}
+ };
+ const tx=()=>words[lang()]||words.hu;
+ const isBilateral=e=>String(e?.repUnit||'').toLowerCase()==='mp/oldal'||e?.id==='side-plank';
+ const sideValue=(s,k)=>{const v=Number(s?.[k]);if(Number.isFinite(v)&&v>0)return Math.round(v);const legacy=Number(s?.reps);return Number.isFinite(legacy)&&legacy>0?Math.round(legacy):''};
+ const normalizeLegacySides=x=>{for(const e of x?.exercises||[])if(isBilateral(e))for(const s of e.sets||[]){const legacy=Number(s.reps);if(!(Number(s.leftSeconds)>0)&&Number.isFinite(legacy)&&legacy>0)s.leftSeconds=Math.round(legacy);if(!(Number(s.rightSeconds)>0)&&Number.isFinite(legacy)&&legacy>0)s.rightSeconds=Math.round(legacy)}return x};
+
+ window.tp3SetSide=function(ei,si,key,value){
+  const s=rf151Edit()?.workout?.exercises?.[ei]?.sets?.[si];if(!s||!['leftSeconds','rightSeconds'].includes(key))return;
+  const n=Math.max(0,Math.round(Number(String(value).replace(',','.'))||0));s[key]=n;
+  if(s.leftSeconds||s.rightSeconds)s.reps=String(Math.max(Number(s.leftSeconds)||0,Number(s.rightSeconds)||0)||'');
+ };
+
+ const editBase=editHistoryWorkout;
+ editHistoryWorkout=function(key){
+  const i=rf142FindHistoryIndex(key),x=history()[i];if(!x){return editBase?.apply(this,arguments)}
+  const copy=normalizeLegacySides(rf151Clone(x));
+  state.rf151HistoryEdit={key,workout:copy};state.tab='history';render();
+  setTimeout(()=>document.querySelector('[data-tp152-history-key="'+CSS.escape(String(key))+'"]')?.scrollIntoView?.({block:'start'}),0);
+ };
+
+ tp152HistoryEditorHtml=function(key){
+  const ed=rf151Edit();if(!ed||ed.key!==key)return '';
+  const x=normalizeLegacySides(ed.workout),opts=exercises().filter(e=>!x.exercises.some(v=>v.id===e.id)),w=tx();
+  const exercisesHtml=x.exercises.map((raw,ei)=>{
+   const e=rf151SetMeta(raw),bilateral=isBilateral(e);
+   const rows=(e.sets||[]).map((set,si)=>{
+    const load=e.loadType==='bodyweight'
+      ?'<span class="small muted tp3-bodyweight">'+esc(tp149T('workout.bodyweight'))+'</span>'
+      :'<label class="small tp3-load">'+esc(tp149LoadLabel(e.loadType))+'<input class="field" inputmode="decimal" value="'+esc(Number(set.weight)||0)+'" oninput="rf151SetValue('+ei+','+si+',\'weight\',this.value)"></label>';
+    const reps=bilateral
+      ?'<label class="small tp3-side">'+esc(w.left)+'<input class="field" inputmode="numeric" value="'+esc(sideValue(set,'leftSeconds'))+'" oninput="tp3SetSide('+ei+','+si+',\'leftSeconds\',this.value)"></label><label class="small tp3-side">'+esc(w.right)+'<input class="field" inputmode="numeric" value="'+esc(sideValue(set,'rightSeconds'))+'" oninput="tp3SetSide('+ei+','+si+',\'rightSeconds\',this.value)"></label>'
+      :'<label class="small tp3-reps">'+esc(e.repUnit||'ism.')+'<input class="field" inputmode="numeric" value="'+esc(set.reps||'')+'" oninput="rf151SetValue('+ei+','+si+',\'reps\',this.value)"></label>';
+    return '<div class="tp3-set-row"><div class="num">'+(si+1)+'</div>'+load+reps+'<button type="button" class="check '+(set.done?'done':'')+'" aria-label="OK" onclick="rf151ToggleDone('+ei+','+si+')">'+(set.done?'✓':'OK')+'</button><button type="button" class="tp3-mini-delete" aria-label="'+esc(w.remove)+'" onclick="rf151RemoveSet('+ei+','+si+')">−</button></div>';
+   }).join('');
+   return '<details class="card tp152-history-ex tp3-history-ex"><summary><div class="tp3-history-ex-title"><strong>'+esc(e.hu)+'</strong><span class="small muted">'+esc((e.sets||[]).length+' '+w.sets.toLowerCase())+'</span></div><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary><div class="tp152-history-ex-body tp3-history-ex-body">'+rows+'<div class="tp3-ex-actions"><button class="btn secondary" onclick="rf151AddSet('+ei+')">＋ '+esc(w.addSet)+'</button><button class="btn danger" onclick="rf151RemoveExercise('+ei+')">'+esc(w.remove)+'</button></div></div></details>';
+  }).join('');
+  return '<section class="card tp152-history-editor tp3-history-editor"><div class="tp152-history-edit-head"><h2>'+esc(tp152T('historyEdit'))+'</h2><button class="btn secondary tp3-edit-close" onclick="rf151CancelHistoryEdit()" aria-label="'+esc(tp149T('common.close')||'Close')+'">×</button></div><div class="grid2 tp3-time-grid"><label>'+esc(tp149T('dialog.scheduleMove.date'))+' / '+esc(tp149T('calendar.time'))+'<input class="field" id="rf151Start" type="datetime-local" value="'+esc(rf142LocalInputValue(x.started))+'"></label><label>'+esc(tp149T('weight.range.all'))+'<input class="field" id="rf151End" type="datetime-local" value="'+esc(rf142LocalInputValue(x.finished))+'"></label></div><div class="section">'+esc(tp152T('historyExercises'))+'</div>'+exercisesHtml+'<details class="tp152-inline-add tp3-inline-add"><summary><strong>＋ '+esc(tp152T('historyAdd'))+'</strong><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary><div class="tp152-inline-add-body"><select class="field" id="rf151Exercise"><option value="">—</option>'+opts.map(e=>'<option value="'+esc(e.id)+'">'+esc(tp149ExerciseName(e))+'</option>').join('')+'</select><button class="btn secondary block" onclick="rf151AddExercise()">＋ '+esc(tp152T('historyAdd'))+'</button></div></details><div class="tp3-save-actions"><button class="btn block" onclick="rf151SaveHistory(false)">'+esc(tp149T('common.save'))+'</button><button class="btn secondary" onclick="rf151SaveHistory(true)">'+esc(tp149T('common.refresh'))+'</button></div></section>';
+ };
+
+ if(typeof rf130PhotoSection==='function'){
+  const photoBase=rf130PhotoSection;
+  rf130PhotoSection=function(x,key){
+   const photos=typeof rf130VisiblePhotos==='function'?rf130VisiblePhotos(x):[];
+   const w=tx();
+   return '<details class="tp3-photo-section"><summary><div><strong>'+esc(w.photos)+'</strong><span class="small muted"> • '+esc(w.photoCount(photos.length))+'</span></div><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary><div class="tp3-photo-body">'+photoBase(x,key)+'</div></details>';
+  };
+ }
+
+ rf220ProgressHtml=function(){
+  const t=rf220L(),rows=rf220ProgressRows(),w=tx();
+  if(!rows.length)return '<div class="card"><h2>'+esc(t.progress)+'</h2><p class="muted">'+esc(t.noData)+'</p></div>';
+  return '<section class="card tp3-stats-card"><h2>'+esc(t.progress)+' • '+esc(t.records)+'</h2><p class="small muted tp3-stats-hint">'+esc(w.statsHint)+'</p><div class="tp3-stats-list">'+rows.slice(0,12).map(({id,s})=>{
+   const max=s.maxWeight?String(s.maxWeight)+' kg':'—',e1=s.e1rm?s.e1rm.toFixed(1)+' kg':'—',best=s.best?String(s.best.w||0)+' kg × '+String(s.best.r||0):'—',vol=s.maxVolume?Math.round(s.maxVolume)+' kg·rep':'—';
+   return '<details class="tp3-stat-row" data-tp3-stat="'+esc(id)+'"><summary><div class="tp3-stat-copy"><strong>'+esc(rf220ExerciseName(id))+'</strong><span class="small muted">'+(s.maxWeight?esc(t.maxWeight+': '+s.maxWeight+' kg'):'')+'</span></div><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary><div class="tp3-stat-detail"><div class="grid2"><div class="stat"><small>'+esc(t.maxWeight)+'</small><strong>'+esc(max)+'</strong></div><div class="stat"><small>'+esc(t.e1rm)+'</small><strong>'+esc(e1)+'</strong></div><div class="stat"><small>'+esc(t.bestSet)+'</small><strong>'+esc(best)+'</strong></div><div class="stat"><small>'+esc(t.volume)+'</small><strong>'+esc(vol)+'</strong></div></div><div class="small muted tp3-stat-note">'+esc(t.approx)+'</div></div></details>';
+  }).join('')+'</div></section>';
+ };
+
+ const backBase=window.TrainPilotAndroidBack;
+ window.TrainPilotAndroidBack=function(){
+  if(state?.tab==='stats'){
+   const open=[...document.querySelectorAll('details.tp3-stat-row[open]')].at(-1);
+   if(open){open.open=false;open.querySelector('summary')?.focus?.();return true}
+  }
+  return typeof backBase==='function'?backBase.apply(this,arguments):false;
+ };
+
+ const style=document.createElement('style');style.id='tp3JournalPolishCss';style.textContent=[
+  '.tp3-history-editor{padding:12px!important;margin:8px 0 12px!important}.tp3-history-editor .section{margin:10px 0 5px!important}.tp3-time-grid{gap:7px!important}.tp3-time-grid label{font-size:11px!important}.tp3-time-grid .field{min-height:38px!important;padding:7px 8px!important}',
+  '.tp3-history-ex{margin:6px 0!important;border-radius:14px!important}.tp3-history-ex>summary{min-height:48px!important;padding:8px 10px!important}.tp3-history-ex-title{display:grid;gap:1px;min-width:0}.tp3-history-ex-body{padding:0 8px 8px!important}',
+  '.tp3-set-row{display:grid;grid-template-columns:26px minmax(58px,.8fr) minmax(72px,1fr) 42px 34px;gap:5px;align-items:end;padding:6px 0;border-top:1px solid color-mix(in srgb,var(--line) 72%,transparent)}.tp3-set-row:first-child{border-top:0}.tp3-set-row label{margin:0!important;font-size:10px!important;min-width:0}.tp3-set-row .field{min-height:36px!important;height:36px!important;padding:6px 7px!important;margin-top:2px!important}.tp3-set-row .num{align-self:center;width:25px;height:25px}.tp3-set-row .check{width:38px!important;height:36px!important;min-height:36px!important;align-self:end}.tp3-mini-delete{width:34px;height:36px;border:1px solid color-mix(in srgb,#b64 45%,var(--line));border-radius:9px;background:transparent;color:var(--muted);font-size:20px;line-height:1}.tp3-bodyweight{align-self:center}.tp3-ex-actions{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:6px}.tp3-ex-actions .btn{min-height:38px!important;padding:7px 9px!important}.tp3-save-actions{display:grid;grid-template-columns:1.25fr .75fr;gap:7px;margin-top:8px}.tp3-save-actions .btn{min-height:42px!important;padding:8px 10px!important}.tp3-inline-add{margin:6px 0!important}',
+  '.tp3-photo-section{margin:10px 0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:color-mix(in srgb,var(--card2) 72%,transparent)}.tp3-photo-section>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;padding:9px 11px;cursor:pointer}.tp3-photo-section>summary::-webkit-details-marker{display:none}.tp3-photo-body{padding:0 8px 8px}.tp3-photo-body>.rf130-photo-section{margin:0!important;padding:8px!important;border:0!important;border-radius:10px!important}.tp3-photo-body .rf130-photo-grid{margin-top:8px!important;gap:8px!important}.tp3-photo-body .rf130-photo-preview{aspect-ratio:16/10!important}.tp3-photo-body .btn{min-height:38px!important;padding:7px 9px!important}',
+  '.tp3-stats-card{padding:12px!important}.tp3-stats-card h2{margin:0 0 2px!important}.tp3-stats-hint{margin:0 0 8px!important}.tp3-stats-list{display:grid;gap:6px}.tp3-stat-row{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:color-mix(in srgb,var(--card2) 78%,transparent)}.tp3-stat-row>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;padding:9px 11px;cursor:pointer}.tp3-stat-row>summary::-webkit-details-marker{display:none}.tp3-stat-copy{display:grid;gap:2px;min-width:0}.tp3-stat-detail{padding:0 10px 10px}.tp3-stat-detail .grid2{gap:6px!important}.tp3-stat-detail .stat{min-height:0!important;padding:8px!important}.tp3-stat-note{margin-top:7px}',
+  '.tp3-unified-chevron,.rf103-history-chevron,.rf-history-health-chevron,.tp152-chevron,.tp146-exercise-chevron,.tp152-program-chevron,.tp166-home-coach-chevron,.tp1511-training summary i{box-sizing:border-box!important;display:inline-grid!important;place-items:center!important;flex:0 0 28px!important;width:28px!important;min-width:28px!important;max-width:28px!important;height:34px!important;min-height:34px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:var(--accent2)!important;font-family:Arial,sans-serif!important;font-size:0!important;font-weight:900!important;line-height:1!important;transition:transform .15s ease!important}',
+  '.tp3-unified-chevron::before,.rf103-history-chevron::before,.rf-history-health-chevron::before,.tp152-chevron::before,.tp146-exercise-chevron::before,.tp152-program-chevron::before,.tp166-home-coach-chevron::before,.tp1511-training summary i::before{content:"›"!important;font-size:34px!important;font-weight:900!important;line-height:.9!important;color:var(--accent2)!important}',
+  'details[open]>.tp3-unified-chevron,details[open]>summary .tp3-unified-chevron,details.rf263-history[open] .rf103-history-chevron,details.tp152-history-ex[open]>summary .tp152-chevron,details.tp152-inline-add[open]>summary .tp152-chevron,details.tp152-exercise[open]>summary .tp152-chevron,details.tp152-program-card[open]>summary .tp152-program-chevron,details.tp1511-training[open] summary i,.rf-history-health-panel:not(.collapsed) .rf-history-health-chevron{transform:rotate(90deg)!important}',
+  '@media(max-width:380px){.tp3-set-row{grid-template-columns:24px minmax(52px,.7fr) minmax(64px,1fr) 40px 32px;gap:4px}.tp3-set-row:has(.tp3-side){grid-template-columns:24px minmax(58px,1fr) minmax(58px,1fr) 40px 32px}.tp3-set-row:has(.tp3-side) .tp3-bodyweight{display:none}.tp3-save-actions{grid-template-columns:1fr}.tp3-ex-actions{grid-template-columns:1fr auto}}'
+ ].join('');document.head.appendChild(style);
+
+ const normalizeChevrons=root=>{
+  const selectors=['.rf103-history-chevron','.rf-history-health-chevron','.tp152-chevron','.tp146-exercise-chevron','.tp152-program-chevron','.tp166-home-coach-chevron','.tp1511-training summary i','.tp3-unified-chevron'];
+  root?.querySelectorAll?.(selectors.join(',')).forEach(el=>{if(el.textContent!=='›')el.textContent='›'});
+ };
+ const renderBase=render;
+ render=function(){const out=renderBase.apply(this,arguments);normalizeChevrons(document);setTimeout(()=>normalizeChevrons(document),0);return out};
+ normalizeChevrons(document);
+ window.TrainPilotPhase3={version:TP3_VERSION,isBilateral,normalizeLegacySides,unifiedChevron:true,journalCompact:true,statsInline:true};
+})();
+
 });</script>
 </body></html>
