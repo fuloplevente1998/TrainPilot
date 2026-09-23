@@ -385,3 +385,109 @@ main.tp168-health>details.tp168-pulse-panel{display:none!important}
  .tp168-weight-form{grid-template-columns:1fr 1fr!important}
  .tp168-weight-save{grid-column:1/-1!important;width:100%}
 }
+
+
+/* #41 — one global, theme-aware navigation/detail chevron language. */
+.tp-global-chevron{
+ box-sizing:border-box!important;
+ display:inline-grid!important;
+ place-items:center!important;
+ flex:0 0 30px!important;
+ width:30px!important;
+ min-width:30px!important;
+ max-width:30px!important;
+ height:36px!important;
+ min-height:36px!important;
+ border:0!important;
+ border-radius:0!important;
+ background:transparent!important;
+ box-shadow:none!important;
+ filter:none!important;
+ color:var(--accent2,var(--accent))!important;
+ font-family:Arial,sans-serif!important;
+ font-size:0!important;
+ font-weight:900!important;
+ line-height:1!important;
+ text-shadow:none!important;
+ transition:transform .15s ease!important
+}
+.tp-global-chevron::before{
+ content:"›"!important;
+ display:block!important;
+ color:currentColor!important;
+ font-size:36px!important;
+ font-weight:900!important;
+ line-height:.82!important
+}
+details[open]>summary .tp-global-chevron.tp-global-chevron-rotates,
+details[open]>summary>.tp-global-chevron.tp-global-chevron-rotates,
+.tp169-pulse-journal.tp169-open .tp169-pulse-summary>.tp-global-chevron.tp-global-chevron-rotates,
+.tp168-weight-journal.tp168-open .tp168-weight-summary>.tp-global-chevron.tp-global-chevron-rotates,
+.rf-history-health-panel:not(.collapsed) .tp-global-chevron.tp-global-chevron-rotates{
+ transform:rotate(90deg)!important
+}
+details:not([open])>summary .tp-global-chevron.tp-global-chevron-rotates,
+.tp169-pulse-journal:not(.tp169-open) .tp169-pulse-summary>.tp-global-chevron.tp-global-chevron-rotates,
+.tp168-weight-journal:not(.tp168-open) .tp168-weight-summary>.tp-global-chevron.tp-global-chevron-rotates,
+.rf-history-health-panel.collapsed .tp-global-chevron.tp-global-chevron-rotates{
+ transform:none!important
+}
+
+/* Legacy pseudo-chevron hosts use the same token/component language. */
+.tp-global-chevron-host{position:relative}
+.tp-global-chevron-host::after{
+ content:"›"!important;
+ color:var(--accent2,var(--accent))!important;
+ font-family:Arial,sans-serif!important;
+ font-size:36px!important;
+ font-weight:900!important;
+ line-height:.82!important;
+ text-shadow:none!important;
+ filter:none!important;
+ background:transparent!important;
+ border:0!important;
+ box-shadow:none!important;
+ transform:none!important;
+ transition:transform .15s ease!important
+}
+details[open]>.tp-global-chevron-host.tp-global-chevron-host-rotates::after,
+details[open]>summary.tp-global-chevron-host.tp-global-chevron-host-rotates::after{
+ transform:rotate(90deg)!important
+}
+
+/* Pulse sparkline gets a protected right-side lane before the global chevron. */
+.tp169-pulse-summary>.tp5-trend-mini{
+ box-sizing:border-box!important;
+ min-width:0!important;
+ max-width:118px!important;
+ margin-right:6px!important;
+ padding-right:8px!important;
+ overflow:hidden!important
+}
+.tp169-pulse-summary>.tp5-trend-mini .tp5-pulse-mini-svg{
+ display:block!important;
+ width:100%!important;
+ max-width:100%!important;
+ overflow:hidden!important
+}
+@media(max-width:390px){
+ .tp169-pulse-summary>.tp5-trend-mini{max-width:86px!important;margin-right:5px!important;padding-right:7px!important}
+}
+@media(max-width:340px){
+ .tp169-pulse-summary>.tp5-trend-mini{display:none!important}
+}
+
+/* Matte/basic themes must stay matte on Health. Vivid themes may keep accent glow. */
+html:not([data-tp-theme-family="vivid"]) body.tp168-health-view :is(
+ .tp168-today-card,.tp168-metric,.tp168-status,.tp168-trend,.tp169-pulse-journal,
+ .tp168-weight-journal,.tp168-more-panel,.tp168-connect-panel,.tp168-sync-tail,
+ .tp168-health-note,.tp168-icon,.tp169-pulse-body,.tp169-body-inline,.tp169-weight-entry,
+ .tp168-weight-recent>div,.tp5-pulse-today,.tp5-pulse-trend-section
+){
+ box-shadow:none!important;
+ filter:none!important;
+ text-shadow:none!important
+}
+html:not([data-tp-theme-family="vivid"]) body.tp168-health-view main.tp168-health{
+ filter:none!important
+}
