@@ -103,8 +103,7 @@ const {chromium}=require('playwright');
 
   await page.evaluate(()=>{const now=new Date(),h={id:'delete-me',started:now.toISOString(),finished:new Date(now.getTime()+1800000).toISOString(),workout:'A',dayId:'A',programId:'home-basic',programName:'Otthoni A/B – Alap',exercises:[]};db.set('history',[h]);go('history')});
   await page.locator('[data-tp152-history-key="delete-me"] > summary').click();
-  await page.locator('[data-tp152-history-key="delete-me"] .tp3-summary-edit').click();
-  assert.equal(await page.locator('.tp155-history-delete').count(),1,'logged workout inline editor must expose a delete action');assert.equal((await page.locator('.tp155-history-delete').first().textContent()).trim(),'Törlés');
+  assert.equal(await page.locator('[data-tp152-history-key="delete-me"] .tp155-history-delete').count(),1,'expanded logged workout must expose a delete-workout action');assert.match((await page.locator('[data-tp152-history-key="delete-me"] .tp155-history-delete').first().textContent()).trim(),/Edzés törlése|Törlés/);
   await page.evaluate(()=>{const rows=history();rows[0].photos=[{id:'photo-test',label:'after',createdAt:new Date().toISOString(),updatedAt:Date.now(),deletedAt:null}];db.set('history',rows);window.tp2628Confirm=async()=>true;window.rf130PhotoPlugin=()=>({delete:async()=>({})});render();const item=document.querySelector('[data-tp152-history-key="delete-me"]');if(item)item.open=true});
   await page.evaluate(()=>rf130DeletePhoto('delete-me','photo-test'));await page.waitForTimeout(30);
   assert.equal(await page.locator('[data-tp152-history-key="delete-me"]').getAttribute('open'),'','photo deletion must keep the journal entry open');
