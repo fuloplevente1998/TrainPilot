@@ -16,5 +16,5 @@ assert.match(index,/healthLedgerV1/);
 assert.match(index,/averageHeartRate/);
 assert.equal(pkg.version,'1.7.5');
 assert.equal(src.version,'1.7.5');assert.equal(src.versionCode,2664);assert.equal(src.baselineCommit,'be61bf98cc0b4b091a4066ac678c932299d10296');
-assert.match(gradle,/versionCode\s+2664/);assert.match(gradle,/versionName\s+"1\.7\.4"/);
+assert.match(gradle,/versionCode\s+2664/);assert.match(gradle,/versionName\s+"1\.7\.5"/);
 console.log('PASS Phase 5 static: #27 pulse source/calendar window + persistent TrainPilot weight editor.');
