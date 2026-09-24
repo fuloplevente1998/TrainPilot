@@ -1,10 +1,10 @@
-# TrainPilot 1.7.5 – Journal gyakorlatválasztó + Health lenyitás (tesztjelölt)
+# TrainPilot 1.7.5 – Journal gyakorlatválasztó + Health lenyitás (telefonon elfogadva, main)
 
 - #49: az újonnan lazán felépített Napló-edzésrészlet gyakorlatválasztója már első megnyitás előtt helyben megkapja az egyedi TrainPilot lenyíló vezérlőt; nincs natív Android/WebView szürke választó elsőre.
 - #49: a választó és az alatta lévő Hozzáadás gomb külön, teljes szélességű sorba került; a hosszú gyakorlatnevek a menüben több sorba törhetnek.
 - #50: az Egészség Pulzustrend lenyitása csak a meglévő panel nyitott állapotát változtatja; nem építi újra a teljes Mai állapot blokkot és nem villan fel a régi grafikon. A napi 7 naptári napos, Health Connect-alapú trend és a Testsúlynapló megmarad.
-- #49/#50 célzott Chromium-vizsgálat: első és ismételt választás 320/360/393/412 px, adatmegőrzés, pulzuspanelek DOM-azonossága. Minden korábbi Node/UI + Phase 7 benchmark kötelező; signed Android APK és explicit telefonos elfogadás szükséges main merge előtt.
-- Android `versionCode 2664`, `versionName 1.7.5`. Kiindulási, jóváhagyott 1.7.4 main: `be61bf98cc0b4b091a4066ac678c932299d10296`.
+- #49/#50 célzott Chromium-vizsgálat: első és ismételt választás 320/360/393/412 px, adatmegőrzés, pulzuspanelek DOM-azonossága. Signed Release Gate #237, Quick #679 és Performance #79: PASS. Telefonos jóváhagyást követően PR #54 merge-elve mainre; post-merge Quick #680 és Performance #80: PASS.
+- Android `versionCode 2664`, `versionName 1.7.5`. Kiindulási, jóváhagyott 1.7.4 main: `be61bf98cc0b4b091a4066ac678c932299d10296`. Elfogadott 1.7.5 main: `8464b3eec72803482eb5aa8037a97a7b69b09100`. A v1.7.5 GitHub Release közzététele ettől külön lépés; v1.7.4 már publikálva.
 
 # TrainPilot 1.7.4 – Phase 7 teljesítmény / renderarchitektúra (telefonon elfogadva, main)
 
