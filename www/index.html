@@ -1237,20 +1237,37 @@
   return tp4ExerciseStatsFromMatches(id,workouts);
  };
  rf220ProgressRows=function(){
-  const ids=[],grouped=new Map();
-  for(const h of (typeof rf220Hist==='function'?rf220Hist():history()||[])){
-   const perWorkout=new Map();
-   for(const e of h?.exercises||[]){
-    if(!e?.id)continue;
-    if(!perWorkout.has(e.id))perWorkout.set(e.id,[]);
-    perWorkout.get(e.id).push(e);
+  const ids=[],accs=new Map(),hist=typeof rf220Hist==='function'?rf220Hist():history()||[];
+  const row=(w,r,left,right,seconds,one,vol,date,kind)=>({w,r,left,right,seconds,one,vol,date,kind});
+  for(const h of hist){
+   const workoutTime=typeof rf220WorkoutTime==='function'?rf220WorkoutTime(h):Date.parse(h.started||h.finished||0),firstRaw=new Map(),volumes=new Map(),touched=new Set();
+   for(const raw of h?.exercises||[]){
+    const id=raw?.id;if(!id)continue;
+    if(!firstRaw.has(id))firstRaw.set(id,raw);
+    let a=accs.get(id);
+    if(!a){a={first:null,firstSessionRaw:null,latest:null,bestWeighted:null,bestTimed:null,bestReps:null,maxWeight:0,e1rm:0,maxReps:0,maxSeconds:0,maxLeft:0,maxRight:0,count:0,sessions:0,byWorkout:new Map()};accs.set(id,a);ids.push(id)}
+    const e=meta(id,raw),sets=(e.sets||[]).filter(setDone),isBi=bilateral(e,sets),isTimed=timed(e,sets);
+    for(const s of sets){
+     const w=num(s.weight),r=num(s.reps),left=num(s.leftSeconds),right=num(s.rightSeconds),seconds=isBi?Math.max(left,right,r):isTimed?r:0,one=!isTimed&&w>0&&r>0?w*(1+r/30):0,vol=!isTimed?w*r:0,kind=isBi?'bilateral':isTimed?'timed':w>0?'weighted':'reps';
+     if(!a.first)a.first=row(w,r,left,right,seconds,one,vol,workoutTime,kind);
+     if(!a.latest||workoutTime>a.latest.date)a.latest=row(w,r,left,right,seconds,one,vol,workoutTime,kind);
+     if(!a.bestWeighted||w>a.bestWeighted.w||(w===a.bestWeighted.w&&r>a.bestWeighted.r))a.bestWeighted=row(w,r,left,right,seconds,one,vol,workoutTime,kind);
+     if(!a.bestTimed||seconds>a.bestTimed.seconds)a.bestTimed=row(w,r,left,right,seconds,one,vol,workoutTime,kind);
+     if(!a.bestReps||r>a.bestReps.r)a.bestReps=row(w,r,left,right,seconds,one,vol,workoutTime,kind);
+     a.maxWeight=Math.max(a.maxWeight,w);a.e1rm=Math.max(a.e1rm,one);a.maxReps=Math.max(a.maxReps,r);a.maxSeconds=Math.max(a.maxSeconds,seconds);a.maxLeft=Math.max(a.maxLeft,left);a.maxRight=Math.max(a.maxRight,right);a.count++;
+     volumes.set(id,(volumes.get(id)||0)+vol);touched.add(id);
+    }
    }
-   for(const [id,matches] of perWorkout){
-    if(!grouped.has(id)){ids.push(id);grouped.set(id,[])}
-    grouped.get(id).push({h,matches});
+   for(const id of touched){
+    const a=accs.get(id);a.sessions++;if(!a.firstSessionRaw)a.firstSessionRaw=firstRaw.get(id)||null;a.byWorkout.set(String(workoutTime),volumes.get(id)||0);
    }
   }
-  return ids.map(id=>({id,s:tp4ExerciseStatsFromMatches(id,grouped.get(id)||[])})).filter(x=>x.s).sort((a,b)=>(b.s.sessions-a.s.sessions)||(b.s.count-a.s.count));
+  return ids.map(id=>{
+   const a=accs.get(id);if(!a?.first)return {id,s:null};
+   const m=meta(id,a.firstSessionRaw),isBi=bilateral(m,[]),isTimed=timed(m,[]),weighted=!isTimed&&a.maxWeight>0,best=weighted?a.bestWeighted:isTimed?a.bestTimed:a.bestReps;
+   let maxVolume=0;for(const v of a.byWorkout.values())if(v>maxVolume)maxVolume=v;
+   return {id,s:{kind:isBi?'bilateral':isTimed?'timed':weighted?'weighted':'reps',maxWeight:a.maxWeight,e1rm:a.e1rm,best:best||a.first,maxVolume,count:a.count,sessions:a.sessions,maxReps:a.maxReps,maxSeconds:a.maxSeconds,maxLeft:a.maxLeft,maxRight:a.maxRight,latest:a.latest||a.first}};
+  }).filter(x=>x.s).sort((a,b)=>(b.s.sessions-a.s.sessions)||(b.s.count-a.s.count));
  };
  const summary=s=>{
   const t=copy();
@@ -1663,7 +1680,7 @@
   };
   window.programCards=programCards;
  }
- window.TrainPilotPhase7Performance={version:'phase7-performance-19-r3',historySnapshot:'operation-scoped',persistentCache:false,lazyPrograms:true,batchedProgressStats:true};
+ window.TrainPilotPhase7Performance={version:'phase7-performance-19-r4',historySnapshot:'operation-scoped',persistentCache:false,lazyPrograms:true,batchedProgressStats:true,singlePassProgressStats:true};
 })();
 
 });</script>
