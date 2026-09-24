@@ -697,3 +697,15 @@ html body #tp155R4PanelHost[data-panel="quick"] .tp152-quick-row>summary .tp152-
  flex:0 0 24px!important;
  margin-left:6px!important;
 }
+
+
+/* #49 — lazy Journal exercise picker: full-width branded menu on its first open.
+   Scope these rules to the single expanded workout; no eager card hydration. */
+#app .tp3-add-exercise-body{grid-template-columns:minmax(0,1fr)}
+#app .tp3-add-exercise-body>.tp-select{grid-column:1;width:100%;min-width:0}
+#app .tp3-add-exercise-body>.btn{grid-column:1;justify-self:stretch;width:100%!important}
+#app .tp3-add-exercise-body .tp-select-option{align-items:flex-start;white-space:normal;min-height:44px}
+#app .tp3-add-exercise-body .tp-select-menu .tp-select-label{
+  min-width:0;overflow:visible;text-overflow:clip;white-space:normal;
+  overflow-wrap:anywhere;line-height:1.35
+}
