@@ -32,3 +32,5 @@ jobs:
         run: npx --no-install playwright install --with-deps chromium
       - name: Run Phase 7 performance benchmark
         run: node tests/browser/phase7-performance-19.cjs
+      - name: Trace repeated history callers
+        run: node tests/browser/phase7-history-callers-19.cjs
