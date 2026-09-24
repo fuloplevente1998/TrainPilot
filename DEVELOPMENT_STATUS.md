@@ -4,6 +4,9 @@ Last updated: 2026-09-24. The authoritative completed phase history is [docs/PHA
 
 ## Stable baseline and current work
 
+- **Active separately gated post-Phase-7 follow-up:** #49 (first-open branded Journal exercise picker and readable wide options) + #50 (in-place Health Pulse disclosure with no legacy-chart flash) on `fix/journal-picker-pulse-disclosure-49-50`, from published and post-merge validated main `be61bf98cc0b4b091a4066ac678c932299d10296`. Candidate **1.7.5 / 2664**; the released, approved main remains **1.7.4 / 2663** until a new signed APK passes physical-phone testing. Full Phase 7 benchmark guards and #18 data safety are mandatory.
+
+
 - **Latest phone-accepted and merged stable main app:** TrainPilot **1.7.4 / Android versionCode 2663**, Phase 7 [PR #48](https://github.com/fuloplevente1998/TrainPilot/pull/48) merge commit `4a85b33e3545197a9053461840e60a178b45a341` from validated Phase 6 `f064298ddbe1e7e4cf1ecdfca18b3d93899dc74a`. User explicitly accepted the speed improvement for main and elected to defer two unrelated UI follow-ups. Post-merge Quick TrainPilot Validation [#652](https://github.com/fuloplevente1998/TrainPilot/actions/runs/36034983842) passed.
 - **Phase 7 (#19) completed and merged:** lazy Journal detail hydration, operation-scoped fresh history snapshots (no persistent cache), lazy Program detail hydration, batched Coach Progress statistics and deferred full Coach Progress hydration after first paint.
 - Reference 240-workout Chromium benchmark: Journal ~3166 ms / 242 history calls / ~99,056 nodes before versus **~104 ms / 1 history call / ~3,536 nodes** after. Home ~149→31 ms; Programs ~146→31 ms. Coach first visible feedback ~350–540→32–64 ms; full deferred Progress still loads afterward. Physical phone feedback: speedup is noticeable.
