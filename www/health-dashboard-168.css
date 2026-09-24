@@ -535,3 +535,41 @@ html body .tp1511-training summary i.tp-global-chevron::before{
  filter:none!important;
  text-shadow:none!important
 }
+
+
+/* Phase 5 #41: final specificity guard against legacy white triangle pseudo-elements. */
+html body #app .tp-global-chevron{
+ color:var(--accent2,var(--accent))!important;
+ width:30px!important;min-width:30px!important;max-width:30px!important;
+ height:36px!important;min-height:36px!important;max-height:36px!important;
+ flex:0 0 30px!important;clip-path:none!important;
+ opacity:1!important;visibility:visible!important;
+ background:transparent!important;border:0!important;box-shadow:none!important;
+ overflow:visible!important;
+}
+html body #app .tp-global-chevron::before{
+ content:"›"!important;display:block!important;
+ width:auto!important;min-width:0!important;max-width:none!important;
+ height:auto!important;min-height:0!important;max-height:none!important;
+ clip-path:none!important;background:none!important;border:0!important;
+ color:currentColor!important;font:900 36px/.82 Arial,sans-serif!important;
+ opacity:1!important;visibility:visible!important;
+ transform:none!important;text-shadow:none!important;filter:none!important;
+}
+html body #app details[open]>summary .tp-global-chevron.tp-global-chevron-rotates,
+html body #app .tp169-pulse-journal.tp169-open .tp169-pulse-summary>.tp-global-chevron.tp-global-chevron-rotates,
+html body #app .tp168-weight-journal.tp168-open .tp168-weight-summary>.tp-global-chevron.tp-global-chevron-rotates{
+ transform:rotate(90deg)!important;
+}
+html body #app .tp-library-card>summary.tp-global-chevron-host::after{
+ content:"›"!important;clip-path:none!important;
+ background:none!important;color:var(--accent2,var(--accent))!important;
+ display:inline-grid!important;place-items:center!important;
+ width:30px!important;min-width:30px!important;max-width:30px!important;
+ height:36px!important;min-height:36px!important;max-height:36px!important;
+ font:900 36px/.82 Arial,sans-serif!important;
+ border:0!important;box-shadow:none!important;filter:none!important;
+}
+html body #app .tp-library-card[open]>summary.tp-global-chevron-host::after{
+ transform:rotate(90deg)!important;
+}
