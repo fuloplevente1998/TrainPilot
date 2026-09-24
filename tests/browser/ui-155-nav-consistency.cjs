@@ -48,81 +48,59 @@ const server=http.createServer((req,res)=>{
   const program=page.locator('.tp152-program-card').first();
   const pArrow=program.locator(':scope > summary .tp152-program-chevron');
   const arrowStyle=async loc=>loc.evaluate(el=>{const s=getComputedStyle(el),b=getComputedStyle(el,'::before');return {w:parseFloat(s.width),h:parseFloat(s.height),font:parseFloat(s.fontSize),border:s.borderTopWidth,bg:s.backgroundImage,glyph:b.content,clip:b.clipPath,fill:b.backgroundColor,hostTransform:s.transform,transform:b.transform}});
-  const pClosed=await arrowStyle(pArrow);
-  assert.ok(pClosed.w<=18.6&&pClosed.h<=18.6,'program disclosure is a compact triangle target');
-  assert.equal(pClosed.border,'0px');assert.equal(pClosed.bg,'none');assert.equal(pClosed.font,0,'literal chevron text must be hidden');
-  assert.match(pClosed.clip,/polygon/i,'disclosure must use one CSS triangle');
-  assert.notEqual(pClosed.fill,'rgba(0, 0, 0, 0)','triangle must be visibly filled');
-
+  // Phase 5 #41 replaced the 1.5.5 triangle with a 30x36 theme-aware chevron.
+  // The original navigation, expansion and responsive coverage remains below.
+  const assertSharedChevron=async(loc,name)=>{
+   await loc.waitFor({state:'attached'});
+   await page.evaluate(()=>tpGlobalApplyChevrons(document));
+   const style=await arrowStyle(loc);
+   assert.ok(style.w>=25&&style.h>=30,name+' must have the shared touch target');
+   assert.ok(style.glyph?.includes('›'),name+' must render the shared chevron');
+   assert.equal(style.clip,'none',name+' must not render a clipped triangle');
+   const c=await loc.evaluate(el=>getComputedStyle(el).color);
+   const theme=await page.evaluate(()=>{const e=document.createElement('i');e.style.color='var(--accent2)';document.body.appendChild(e);const c=getComputedStyle(e).color;e.remove();return c});
+   assert.equal(c,theme,name+' must use the selected theme color');
+   return style;
+  };
+  await assertSharedChevron(pArrow,'Program disclosure');
   await program.locator(':scope > summary').click();
-  await page.waitForTimeout(180);
-  const pOpen=await arrowStyle(pArrow);
-  assert.notEqual(pOpen.transform,pClosed.transform,'open disclosure triangle rotates from right to down');
+  await page.waitForTimeout(80);
+  await assertSharedChevron(pArrow,'Expanded program disclosure');
 
-  const day=program.locator('.tp152-program-day').first();const dArrow=day.locator(':scope > summary .tp152-chevron');
-  const dStyle=await arrowStyle(dArrow);
-  assert.deepEqual({w:dStyle.w,h:dStyle.h,font:dStyle.font,border:dStyle.border,bg:dStyle.bg,glyph:dStyle.glyph,clip:dStyle.clip,fill:dStyle.fill},{w:pOpen.w,h:pOpen.h,font:pOpen.font,border:pOpen.border,bg:pOpen.bg,glyph:pOpen.glyph,clip:pOpen.clip,fill:pOpen.fill},'program and day disclosures share one simple triangle component');
-  await day.locator(':scope > summary').click();await page.waitForTimeout(180);
-  const exercise=day.locator('.tp146-exercise').first();const eArrow=exercise.locator(':scope > summary .tp146-exercise-chevron').first();
-  await eArrow.waitFor({state:'attached'});
-  const eClosed=await arrowStyle(eArrow);
-  assert.equal(eClosed.font,0,'exercise card must hide the legacy chevron glyph');
-  assert.equal(eClosed.bg,'none','exercise card must use the plain triangle treatment');
-  assert.match(eClosed.clip,/polygon/i,'exercise card disclosure must be a CSS triangle');
-  await exercise.locator(':scope > summary').click();await page.waitForTimeout(180);
-  const eOpen=await arrowStyle(eArrow);
-  assert.equal(eClosed.hostTransform,'none','closed exercise host must not rotate');
-  assert.equal(eOpen.hostTransform,'none','open exercise host must not inherit legacy 180-degree rotation');
-  assert.notEqual(eOpen.transform,eClosed.transform,'exercise disclosure rotates from right to down');
+  const day=program.locator('.tp152-program-day').first();
+  const dArrow=day.locator(':scope > summary .tp152-chevron');
+  await assertSharedChevron(dArrow,'Program day disclosure');
+  await day.locator(':scope > summary').click();await page.waitForTimeout(80);
+  const exercise=day.locator('.tp146-exercise').first();
+  const eArrow=exercise.locator(':scope > summary .tp146-exercise-chevron').first();
+  await assertSharedChevron(eArrow,'Program exercise disclosure');
+  await exercise.locator(':scope > summary').click();await page.waitForTimeout(80);
+  await assertSharedChevron(eArrow,'Expanded program exercise disclosure');
 
   await page.evaluate(()=>go('plan'));await page.waitForSelector('.tp152-active-program');
   const activeArrow=page.locator('.tp152-active-program>summary>.tp152-chevron').first();
-  const aStyle=await arrowStyle(activeArrow);
-  assert.equal(aStyle.font,0,'active-program literal chevron text must stay hidden');
-  assert.ok(aStyle.w<=18.6&&aStyle.h<=18.6,'active-program disclosure must not regain the legacy 28/32px chevron box');
-  assert.equal(aStyle.bg,'none','active-program disclosure must not regain the legacy gradient background');
-  assert.equal(aStyle.hostTransform,'none','active-program host must never rotate; only the triangle rotates');
-  assert.match(aStyle.clip,/polygon/i,'active-program uses the same CSS triangle');
+  await assertSharedChevron(activeArrow,'Active program disclosure');
 
   const workoutDay=page.locator('.tp152-plan .tp152-day').first();
   const workoutDayArrow=workoutDay.locator(':scope > summary .tp152-day-title-row .tp152-chevron').first();
-  const wdOpen=await arrowStyle(workoutDayArrow);
-  assert.equal(wdOpen.font,0,'Workout day must hide the legacy cyan chevron glyph');
-  assert.ok(wdOpen.w<=18.6&&wdOpen.h<=18.6,'Workout day must use the compact 1.5.5 triangle host');
-  assert.equal(wdOpen.bg,'none','Workout day must not keep the legacy gradient chevron box');
-  assert.equal(wdOpen.hostTransform,'none','Workout day host must never rotate');
-  assert.match(wdOpen.clip,/polygon/i,'Workout day disclosure must be the same CSS triangle');
-  await workoutDay.locator(':scope > summary').click();await page.waitForTimeout(180);
-  const wdClosed=await arrowStyle(workoutDayArrow);
-  assert.equal(wdClosed.hostTransform,'none','Workout day host stays unrotated when closed');
-  assert.notEqual(wdClosed.transform,wdOpen.transform,'Workout day triangle changes between down/open and right/closed');
-  await workoutDay.locator(':scope > summary').click();await page.waitForTimeout(180);
+  await assertSharedChevron(workoutDayArrow,'Workout day disclosure');
+  await workoutDay.locator(':scope > summary').click();await page.waitForTimeout(80);
+  await assertSharedChevron(workoutDayArrow,'Expanded Workout day disclosure');
+  await workoutDay.locator(':scope > summary').click();await page.waitForTimeout(80);
 
   const workoutExercise=workoutDay.locator('.tp152-exercise').first();
   const workoutExerciseArrow=workoutExercise.locator(':scope > summary .tp146-exercise-chevron').first();
-  const weClosed=await arrowStyle(workoutExerciseArrow);
-  assert.equal(weClosed.hostTransform,'none','closed Workout exercise host must not rotate');
-  assert.equal(weClosed.font,0,'Workout exercise must hide the legacy chevron glyph');
-  assert.equal(weClosed.bg,'none','Workout exercise must use the plain triangle treatment');
-  assert.match(weClosed.clip,/polygon/i,'Workout exercise disclosure must be a CSS triangle');
-  await workoutExercise.locator(':scope > summary').click();await page.waitForTimeout(180);
-  const weOpen=await arrowStyle(workoutExerciseArrow);
-  assert.equal(weOpen.hostTransform,'none','open Workout exercise host must not inherit the legacy 180-degree rotation');
-  assert.notEqual(weOpen.transform,weClosed.transform,'Workout exercise triangle changes from right/closed to down/open');
+  await assertSharedChevron(workoutExerciseArrow,'Workout exercise disclosure');
+  await workoutExercise.locator(':scope > summary').click();await page.waitForTimeout(80);
+  await assertSharedChevron(workoutExerciseArrow,'Expanded Workout exercise disclosure');
 
-  await page.evaluate(()=>{state.session=null;state.workout=null;tp150QuickPicker()});await page.waitForSelector('.tp150-quick-picker .tp152-quick-row');
+  await page.evaluate(()=>{state.session=null;state.workout=null;tp150QuickPicker()});
+  await page.waitForSelector('.tp150-quick-picker .tp152-quick-row');
   const quickRow=page.locator('.tp150-quick-picker .tp152-quick-row').first();
   const quickArrow=quickRow.locator(':scope > summary .tp-exercise-actions .tp152-chevron').first();
-  const qClosed=await arrowStyle(quickArrow);
-  assert.equal(qClosed.font,0,'Quick Workout must hide the legacy chevron glyph');
-  assert.ok(qClosed.w<=18.6&&qClosed.h<=18.6,'Quick Workout uses the compact 1.5.5 triangle host');
-  assert.equal(qClosed.bg,'none','Quick Workout must not keep the legacy rounded/gradient chevron box');
-  assert.equal(qClosed.hostTransform,'none','closed Quick Workout chevron host must not rotate');
-  assert.match(qClosed.clip,/polygon/i,'Quick Workout disclosure must be a CSS triangle');
-  await quickRow.locator(':scope > summary').click();await page.waitForTimeout(180);
-  const qOpen=await arrowStyle(quickArrow);
-  assert.equal(qOpen.hostTransform,'none','open Quick Workout chevron host must not inherit the legacy 180-degree rotation');
-  assert.notEqual(qOpen.transform,qClosed.transform,'Quick Workout triangle changes from right/closed to down/open');
+  await assertSharedChevron(quickArrow,'Quick Workout disclosure');
+  await quickRow.locator(':scope > summary').click();await page.waitForTimeout(80);
+  await assertSharedChevron(quickArrow,'Expanded Quick Workout disclosure');
 
   await page.evaluate(()=>go('calendar'));await page.waitForSelector('#tp155R4PanelHost[data-panel="calendar"] .tp155-r4-calendar-panel-main');
   assert.equal(await page.locator('#tp155R4PanelHost .tp151-page-head').count(),0,'Calendar panel must remove the old standalone page heading and hint');
@@ -144,15 +122,15 @@ const server=http.createServer((req,res)=>{
 
   await page.evaluate(()=>profileScreen());await page.waitForSelector('.rf148-profile-accordion');
   const exclusion=page.locator('.rf148-profile-accordion').first();
-  const exclusionArrow=async()=>exclusion.locator('summary').evaluate(el=>{const s=getComputedStyle(el,'::after');return {border:s.borderTopWidth,bg:s.backgroundImage,fill:s.backgroundColor,w:parseFloat(s.width),h:parseFloat(s.height),clip:s.clipPath,transform:s.transform}});
+  const exclusionArrow=async()=>exclusion.locator('summary').evaluate(el=>{const s=getComputedStyle(el,'::after');return {border:s.borderTopWidth,bg:s.backgroundImage,w:parseFloat(s.width),h:parseFloat(s.height),clip:s.clipPath,content:s.content,transform:s.transform}});
   const exclusionClosed=await exclusionArrow();
-  assert.equal(exclusionClosed.border,'0px','profile exclusion disclosure must be borderless');
-  assert.equal(exclusionClosed.bg,'none','profile exclusion disclosure must not retain the legacy red glyph treatment');
-  assert.ok(exclusionClosed.w<=9.6&&exclusionClosed.h<=12.6,'profile exclusion disclosure uses the compact triangle');
-  assert.match(exclusionClosed.clip,/polygon/i,'profile exclusion disclosure must be a CSS triangle');
-  assert.notEqual(exclusionClosed.fill,'rgba(0, 0, 0, 0)','profile exclusion triangle must be visible');
+  assert.equal(exclusionClosed.border,'0px','profile exclusion must be borderless');
+  assert.equal(exclusionClosed.bg,'none','profile exclusion must not regain gradient');
+  assert.ok(exclusionClosed.w>=23&&exclusionClosed.w<=25&&exclusionClosed.h>=23&&exclusionClosed.h<=25,'profile disclosure fits 24px slot');
+  assert.equal(exclusionClosed.clip,'none','profile exclusion must not use clipped triangle');
+  assert.ok(exclusionClosed.content.includes('›'),'profile exclusion uses shared theme chevron');
   await exclusion.locator('summary').click();await page.waitForTimeout(180);
-  assert.notEqual((await exclusionArrow()).transform,exclusionClosed.transform,'profile exclusion triangle rotates from right to down');
+  assert.notEqual((await exclusionArrow()).transform,exclusionClosed.transform,'profile exclusion chevron rotates on expansion');
 
   assert.deepEqual(errors,[],'page errors: '+errors.join('\n'));
   console.log('PASS TrainPilot 1.5.5 nav consistency');

@@ -385,3 +385,258 @@ main.tp168-health>details.tp168-pulse-panel{display:none!important}
  .tp168-weight-form{grid-template-columns:1fr 1fr!important}
  .tp168-weight-save{grid-column:1/-1!important;width:100%}
 }
+
+
+/* #41 — one global, theme-aware navigation/detail chevron language. */
+.tp-global-chevron{
+ box-sizing:border-box!important;
+ display:inline-grid!important;
+ place-items:center!important;
+ flex:0 0 30px!important;
+ width:30px!important;
+ min-width:30px!important;
+ max-width:30px!important;
+ height:36px!important;
+ min-height:36px!important;
+ border:0!important;
+ border-radius:0!important;
+ background:transparent!important;
+ box-shadow:none!important;
+ filter:none!important;
+ color:var(--accent2,var(--accent))!important;
+ font-family:Arial,sans-serif!important;
+ font-size:0!important;
+ font-weight:900!important;
+ line-height:1!important;
+ text-shadow:none!important;
+ transition:transform .15s ease!important
+}
+.tp-global-chevron::before{
+ content:"›"!important;
+ display:block!important;
+ color:currentColor!important;
+ font-size:36px!important;
+ font-weight:900!important;
+ line-height:.82!important
+}
+details[open]>summary .tp-global-chevron.tp-global-chevron-rotates,
+details[open]>summary>.tp-global-chevron.tp-global-chevron-rotates,
+.tp169-pulse-journal.tp169-open .tp169-pulse-summary>.tp-global-chevron.tp-global-chevron-rotates,
+.tp168-weight-journal.tp168-open .tp168-weight-summary>.tp-global-chevron.tp-global-chevron-rotates,
+.rf-history-health-panel:not(.collapsed) .tp-global-chevron.tp-global-chevron-rotates{
+ transform:rotate(90deg)!important
+}
+details:not([open])>summary .tp-global-chevron.tp-global-chevron-rotates,
+.tp169-pulse-journal:not(.tp169-open) .tp169-pulse-summary>.tp-global-chevron.tp-global-chevron-rotates,
+.tp168-weight-journal:not(.tp168-open) .tp168-weight-summary>.tp-global-chevron.tp-global-chevron-rotates,
+.rf-history-health-panel.collapsed .tp-global-chevron.tp-global-chevron-rotates{
+ transform:none!important
+}
+
+/* Legacy pseudo-chevron hosts use the same token/component language. */
+.tp-global-chevron-host{position:relative}
+.tp-global-chevron-host::after{
+ content:"›"!important;
+ color:var(--accent2,var(--accent))!important;
+ font-family:Arial,sans-serif!important;
+ font-size:36px!important;
+ font-weight:900!important;
+ line-height:.82!important;
+ text-shadow:none!important;
+ filter:none!important;
+ background:transparent!important;
+ border:0!important;
+ box-shadow:none!important;
+ transform:none!important;
+ transition:transform .15s ease!important
+}
+details[open]>.tp-global-chevron-host.tp-global-chevron-host-rotates::after,
+details[open]>summary.tp-global-chevron-host.tp-global-chevron-host-rotates::after{
+ transform:rotate(90deg)!important
+}
+
+/* Pulse sparkline gets a protected right-side lane before the global chevron. */
+.tp169-pulse-summary>.tp5-trend-mini{
+ box-sizing:border-box!important;
+ min-width:0!important;
+ max-width:118px!important;
+ margin-right:6px!important;
+ padding-right:8px!important;
+ overflow:hidden!important
+}
+.tp169-pulse-summary>.tp5-trend-mini .tp5-pulse-mini-svg{
+ display:block!important;
+ width:100%!important;
+ max-width:100%!important;
+ overflow:hidden!important
+}
+@media(max-width:390px){
+ .tp169-pulse-summary>.tp5-trend-mini{max-width:86px!important;margin-right:5px!important;padding-right:7px!important}
+}
+@media(max-width:340px){
+ .tp169-pulse-summary>.tp5-trend-mini{display:none!important}
+}
+
+/* Matte/basic themes must stay matte on Health. Vivid themes may keep accent glow. */
+html:not([data-tp-theme-family="vivid"]) body.tp168-health-view :is(
+ .tp168-today-card,.tp168-metric,.tp168-status,.tp168-trend,.tp169-pulse-journal,
+ .tp168-weight-journal,.tp168-more-panel,.tp168-connect-panel,.tp168-sync-tail,
+ .tp168-health-note,.tp168-icon,.tp169-pulse-body,.tp169-body-inline,.tp169-weight-entry,
+ .tp168-weight-recent>div,.tp5-pulse-today,.tp5-pulse-trend-section
+){
+ box-shadow:none!important;
+ filter:none!important;
+ text-shadow:none!important
+}
+html:not([data-tp-theme-family="vivid"]) body.tp168-health-view main.tp168-health{
+ filter:none!important
+}
+
+/* #41 follow-up: the global token wins over legacy mixed-color Health arrows. */
+main.tp168-health :is(.tp168-status>b,.tp169-pulse-summary>b,.tp168-weight-summary>b).tp-global-chevron,
+main.tp168-health .tp-global-chevron{
+ color:var(--accent2,var(--accent))!important;
+ text-shadow:none!important;
+ filter:none!important
+}
+main.tp168-health .tp-global-chevron::before{
+ color:currentColor!important
+}
+
+/* #41 workout override: older inline icon rules must not erase the shared glyph. */
+html body .tp1511-training summary i.tp-global-chevron::before{
+ content:"›"!important;
+ display:block!important;
+ font-size:36px!important;
+ line-height:.82!important;
+ color:currentColor!important;
+ font-style:normal!important;
+ opacity:1!important;
+ visibility:visible!important
+}
+
+/* #41: Library disclosure uses the shared chevron, never the old clipped triangle. */
+.tp-library-card>summary.tp-global-chevron-host::after{
+ content:"›"!important;
+ display:inline-grid!important;
+ place-items:center!important;
+ width:30px!important;
+ height:36px!important;
+ min-width:30px!important;
+ min-height:36px!important;
+ margin:0!important;
+ padding:0!important;
+ color:var(--accent2,var(--accent))!important;
+ font:900 36px/.82 Arial,sans-serif!important;
+ clip-path:none!important;
+ background:none!important;
+ border:0!important;
+ box-shadow:none!important;
+ filter:none!important;
+ text-shadow:none!important
+}
+
+
+/* Phase 5 #41: final specificity guard against legacy white triangle pseudo-elements. */
+html body #app .tp-global-chevron{
+ color:var(--accent2,var(--accent))!important;
+ width:30px!important;min-width:30px!important;max-width:30px!important;
+ height:36px!important;min-height:36px!important;max-height:36px!important;
+ flex:0 0 30px!important;clip-path:none!important;
+ opacity:1!important;visibility:visible!important;
+ background:transparent!important;border:0!important;box-shadow:none!important;
+ overflow:visible!important;
+}
+html body #app .tp-global-chevron::before{
+ content:"›"!important;display:block!important;
+ width:auto!important;min-width:0!important;max-width:none!important;
+ height:auto!important;min-height:0!important;max-height:none!important;
+ clip-path:none!important;background:none!important;border:0!important;
+ color:currentColor!important;font:900 36px/.82 Arial,sans-serif!important;
+ opacity:1!important;visibility:visible!important;
+ transform:none!important;text-shadow:none!important;filter:none!important;
+}
+html body #app details[open]>summary .tp-global-chevron.tp-global-chevron-rotates,
+html body #app .tp169-pulse-journal.tp169-open .tp169-pulse-summary>.tp-global-chevron.tp-global-chevron-rotates,
+html body #app .tp168-weight-journal.tp168-open .tp168-weight-summary>.tp-global-chevron.tp-global-chevron-rotates{
+ transform:rotate(90deg)!important;
+}
+html body #app .tp-library-card>summary.tp-global-chevron-host::after{
+ content:"›"!important;clip-path:none!important;
+ background:none!important;color:var(--accent2,var(--accent))!important;
+ display:inline-grid!important;place-items:center!important;
+ width:30px!important;min-width:30px!important;max-width:30px!important;
+ height:36px!important;min-height:36px!important;max-height:36px!important;
+ font:900 36px/.82 Arial,sans-serif!important;
+ border:0!important;box-shadow:none!important;filter:none!important;
+}
+html body #app .tp-library-card[open]>summary.tp-global-chevron-host::after{
+ transform:rotate(90deg)!important;
+}
+
+/* Phase 5 #44 — shared Today six-card grid: compact Home, near-square Health. */
+#app .tp5-today-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;width:100%;min-width:0}
+#app .tp5-today-metric{box-sizing:border-box;min-width:0!important;margin:0!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:flex-end!important;gap:4px!important;overflow:hidden!important;text-align:left!important;color:var(--text)!important;border:1px solid color-mix(in srgb,var(--accent) 20%,var(--line))!important;border-radius:13px!important;background:color-mix(in srgb,var(--accent) 4%,var(--card2))!important;box-shadow:none!important;appearance:none;-webkit-appearance:none}
+#app button.tp5-today-metric{cursor:pointer}#app button.tp5-today-metric:active{transform:scale(.985)}
+#app .tp5-today-icon{width:24px;height:24px;flex:0 0 24px;display:grid;place-items:center;color:var(--accent2)}
+#app .tp5-today-icon svg{width:23px;height:23px;display:block;overflow:visible}
+#app .tp5-today-label{display:block;flex:0 0 auto;max-width:100%;min-width:0;margin-top:auto;font-weight:700;font-size:11px;line-height:1.12;white-space:normal;overflow-wrap:anywhere;color:var(--muted)}
+#app .tp5-today-value{display:block;max-width:100%;min-width:0;font-size:clamp(13px,3.9vw,19px);line-height:1.15;font-weight:900;overflow-wrap:anywhere;color:var(--text)}
+#app main.tp168-health .tp5-today-grid.tp5-today-full{margin:1px 0 11px!important}
+#app main.tp168-health .tp5-today-full>.tp5-today-metric.stat{aspect-ratio:1/1;min-height:102px!important;padding:11px 9px!important}
+#app main.rf221-home #rf223Today.tp5-home-today{padding:8px 10px!important;overflow:visible}
+#app main.rf221-home #rf223Today .rf223-title{margin:0 0 7px!important;line-height:1.15}
+#app main.rf221-home #rf223Today .tp5-today-grid.tp5-today-compact{gap:5px!important}
+#app main.rf221-home #rf223Today .tp5-today-metric.stat{aspect-ratio:auto!important;min-height:62px!important;height:auto!important;padding:6px 7px!important;gap:2px!important}
+#app main.rf221-home #rf223Today .tp5-today-icon{width:16px;height:16px;flex-basis:16px}
+#app main.rf221-home #rf223Today .tp5-today-icon svg{width:16px;height:16px}
+#app main.rf221-home #rf223Today .tp5-today-label{font-size:10px;line-height:1.06}
+#app main.rf221-home #rf223Today .tp5-today-value{font-size:13px;line-height:1.08;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:360px){#app .tp5-today-grid{gap:5px!important}#app main.tp168-health .tp5-today-full>.tp5-today-metric.stat{min-height:97px!important;padding:8px 6px!important}#app .tp5-today-label{font-size:10px}#app .tp5-today-value{font-size:13px}#app main.rf221-home #rf223Today .tp5-today-metric.stat{min-height:59px!important;padding:5px!important}#app main.rf221-home #rf223Today .tp5-today-label{font-size:9px}#app main.rf221-home #rf223Today .tp5-today-value{font-size:12px}}
+
+/* Phase 5 #41 selective final guard + #44 compact Health.
+   Only disclosure controls: leave play icons and non-disclosure graphics untouched. */
+html body:not(#tp5-chevron-guard) .tp-select-trigger::after,
+html body:not(#tp5-chevron-guard) .tp160-journal-disclosure::before,
+html body:not(#tp5-chevron-guard) .rf148-profile-accordion>summary::after{
+ content:"›"!important;display:inline-grid!important;place-items:center!important;
+ box-sizing:border-box!important;width:24px!important;min-width:24px!important;max-width:24px!important;
+ height:24px!important;min-height:24px!important;max-height:24px!important;
+ flex:0 0 24px!important;margin:0!important;padding:0!important;
+ clip-path:none!important;background:none!important;border:0!important;
+ border-radius:0!important;box-shadow:none!important;
+ -webkit-mask:none!important;mask:none!important;
+ filter:none!important;text-shadow:none!important;overflow:visible!important;
+ color:var(--accent2,var(--accent))!important;font:900 30px/1 Arial,sans-serif!important;
+}
+html body:not(#tp5-chevron-guard) .tp160-journal-disclosure{
+ width:24px!important;min-width:24px!important;height:24px!important;min-height:24px!important;
+ flex:0 0 24px!important;margin-left:6px!important;align-self:center!important;
+}
+html body:not(#tp5-chevron-guard) .tp-library-card>summary::after{
+ content:"›"!important;display:inline-grid!important;place-items:center!important;
+ box-sizing:border-box!important;width:30px!important;min-width:30px!important;max-width:30px!important;
+ height:36px!important;min-height:36px!important;max-height:36px!important;
+ flex:0 0 30px!important;padding:0!important;clip-path:none!important;
+ background:none!important;border:0!important;border-radius:0!important;
+ box-shadow:none!important;filter:none!important;text-shadow:none!important;
+ -webkit-mask:none!important;mask:none!important;
+ color:var(--accent2,var(--accent))!important;font:900 36px/.82 Arial,sans-serif!important;
+}
+/* Health 2x3 is deliberately flatter than the Home/Health initial square concept.
+   Keep the Home compact grid unchanged and protect 320px layouts. */
+#app main.tp168-health .tp5-today-grid.tp5-today-full{gap:6px!important;margin:1px 0 8px!important}
+#app main.tp168-health .tp5-today-full>.tp5-today-metric.stat{
+ aspect-ratio:auto!important;min-height:82px!important;height:82px!important;
+ padding:8px 8px!important;gap:3px!important;justify-content:flex-end!important;
+}
+#app main.tp168-health .tp5-today-full .tp5-today-icon{width:19px;height:19px;flex-basis:19px}
+#app main.tp168-health .tp5-today-full .tp5-today-icon svg{width:19px;height:19px}
+#app main.tp168-health .tp5-today-full .tp5-today-label{font-size:10.5px;line-height:1.08}
+#app main.tp168-health .tp5-today-full .tp5-today-value{font-size:clamp(13px,3.7vw,17px);line-height:1.1}
+@media(max-width:360px){
+ #app main.tp168-health .tp5-today-full>.tp5-today-metric.stat{
+  min-height:78px!important;height:78px!important;padding:7px 5px!important;gap:2px!important
+ }
+ #app main.tp168-health .tp5-today-full .tp5-today-value{font-size:13px}
+}

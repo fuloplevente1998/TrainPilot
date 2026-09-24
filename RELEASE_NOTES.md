@@ -1,3 +1,13 @@
+# TrainPilot 1.7.2 – Phase 5 Health / Pulzustrend (teszt)
+
+- A Pulzustrend explicit módon a Health Connect szinkronból felépülő TrainPilot `healthLedgerV1` napi `averageHeartRate` értékeit használja.
+- A trend valódi, egymást követő utolsó 7 naptári napra korlátozódik; a régebbi mérési napok nem csúsznak be a 7 napos ablakba.
+- A „Mai pulzus” és a „7 napos trend” külön blokkban jelenik meg; a trendnél forrásmagyarázat és napi lefedettség látszik.
+- A 0 vagy hiányzó pulzusértékek nem jelennek meg valós mérésként.
+- A Testsúlynapló szerkesztése saját, kompakt TrainPilot dialógust kapott; az átírt kg érték ténylegesen elmentődik és újranyitáskor is megmarad.
+- A testsúly-szerkesztőben Mentés, Mégse és Törlés érhető el, mobilon 320 px szélességig overflow nélkül.
+- Android `versionCode 2661`, `versionName 1.7.2`.
+
 # TrainPilot 1.7.1 – Phase 4 Coach teljes gyakorlatlefedettség (teszt)
 
 - A Coach / Statisztikák minden érvényes Napló-előzménnyel rendelkező gyakorlatot megjelenít, nem csak a súlyos/ismétléses típusokat.

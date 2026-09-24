@@ -47,22 +47,23 @@ const server=http.createServer((req,res)=>{
   assert.ok(video.inner.w<video.outer.w&&video.inner.h<video.outer.h,'video glyph must be smaller than its frame');
   assert.ok(video.inner.x>=video.outer.x&&video.inner.y>=video.outer.y&&video.inner.x+video.inner.w<=video.outer.x+video.outer.w+0.5&&video.inner.y+video.inner.h<=video.outer.y+video.outer.h+0.5,'video glyph must remain fully inside its frame');
 
-  const chevron=await page.locator('.tp152-chevron').first().evaluate(el=>{const s=getComputedStyle(el),b=getComputedStyle(el,'::before');return {border:s.borderTopWidth,bg:s.backgroundImage,cssWidth:parseFloat(s.width),paddingLeft:s.paddingLeft,paddingRight:s.paddingRight,font:parseFloat(s.fontSize),clip:b.clipPath,fill:b.backgroundColor}});
-  assert.equal(chevron.border,'0px','disclosure arrows must not use a separate hard border');
-  assert.equal(chevron.bg,'none','1.5.5 disclosure arrows must not use the legacy blended box');
-  assert.ok(chevron.cssWidth<=18.6,'disclosure arrows must use the compact triangle host: '+JSON.stringify(chevron));
-  assert.equal(chevron.font,0,'legacy chevron glyph must be hidden');
-  assert.match(chevron.clip,/polygon/i,'disclosure arrow must be a CSS triangle');
-  assert.notEqual(chevron.fill,'rgba(0, 0, 0, 0)','disclosure triangle must be visibly filled');
-  assert.equal(chevron.paddingLeft,'0px');assert.equal(chevron.paddingRight,'0px');
+  const chevron=await page.locator('.tp152-chevron').first().evaluate(el=>{const s=getComputedStyle(el),b=getComputedStyle(el,'::before');return {border:s.borderTopWidth,bg:s.backgroundImage,cssWidth:parseFloat(s.width),glyph:b.content,clip:b.clipPath,color:s.color}});
+  const themeColor=await page.evaluate(()=>{const el=document.createElement('i');el.style.color='var(--accent2)';document.body.appendChild(el);const v=getComputedStyle(el).color;el.remove();return v});
+  assert.equal(chevron.border,'0px','shared disclosure arrows must be borderless');
+  assert.equal(chevron.bg,'none','shared disclosure arrows must not use a blended box');
+  assert.ok(chevron.cssWidth>=25,'shared chevron must retain its accessible touch target: '+JSON.stringify(chevron));
+  assert.ok(chevron.glyph?.includes('›'),'shared chevron must show the theme-aware glyph');
+  assert.equal(chevron.clip,'none','shared chevron must not use the old clipped triangle');
+  assert.equal(chevron.color,themeColor,'shared chevron must follow the selected theme');
 
   await page.evaluate(()=>profileScreen());await page.waitForSelector('.tp152-profile');
   const group=page.locator('.tp152-profile-group').nth(1);await group.locator(':scope > summary').click();
   const select=group.locator('.tp-select-trigger').first();
-  const selectArrow=await select.evaluate(el=>{const s=getComputedStyle(el,'::after');return {bg:s.backgroundImage,w:parseFloat(s.width),h:parseFloat(s.height),border:s.borderTopWidth,clip:s.clipPath}});
-  assert.equal(selectArrow.bg,'none','dropdown arrow must use the 1.5.5 plain triangle treatment');
-  assert.ok(selectArrow.w<=9.6&&selectArrow.h<=12.6,'dropdown triangle must stay compact');
-  assert.match(selectArrow.clip,/polygon/i,'dropdown arrow must be a CSS triangle');
+  const selectArrow=await select.evaluate(el=>{const s=getComputedStyle(el,'::after');return {bg:s.backgroundImage,w:parseFloat(s.width),h:parseFloat(s.height),border:s.borderTopWidth,clip:s.clipPath,content:s.content,color:s.color}});
+  assert.equal(selectArrow.bg,'none','dropdown arrow must have no gradient');
+  assert.ok(selectArrow.w>=23&&selectArrow.w<=25&&selectArrow.h>=23&&selectArrow.h<=25,'dropdown chevron must fit its 24px slot');
+  assert.equal(selectArrow.clip,'none','dropdown arrow must not use a clipped triangle');
+  assert.ok(selectArrow.content.includes('›'),'dropdown arrow must use shared theme chevron');
   assert.equal(selectArrow.border,'0px');
 
   const coverage=await page.evaluate(()=>document.getElementById('tp154MobilePolishCss')?.textContent||'');
