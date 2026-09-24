@@ -1526,7 +1526,13 @@
     rfHistoryHealthCache.set(key,{error:e?.message||'A Health Connect adatok lekérése nem sikerült.'});
    }
    // Paint only the final result. Never replace the inline block with the transient loading state.
+   // Disable anchoring for this local replacement and restore the exact Journal scroll offset.
+   const sx=window.scrollX||0,sy=window.scrollY||0,healthHost=document.querySelector('[data-rf-history-health="'+i+'"]'),anchor=healthHost?.style?.overflowAnchor||'';
+   if(healthHost)healthHost.style.overflowAnchor='none';
    rfHistoryHealthPaint(i);
+   window.scrollTo(sx,sy);
+   if(typeof requestAnimationFrame==='function')requestAnimationFrame(()=>{window.scrollTo(sx,sy);if(healthHost)healthHost.style.overflowAnchor=anchor});
+   else if(healthHost)healthHost.style.overflowAnchor=anchor;
   })().finally(()=>{
    panel?.classList.remove('tp6-health-refreshing');
    if(refresh){refresh.disabled=false;refresh.removeAttribute('aria-busy')}
