@@ -336,3 +336,20 @@ details.rf263-history>.history-body{padding:0 10px 12px!important}
   .tp15-demo-header h2{font-size:15px!important}
   .tp15-demo-guide h3{font-size:13px}
 }
+
+/* #56 / 1.7.6: the selection highlight must follow a tap without a 150ms
+   cross-fade. Keep only the tiny press-scale animation; active colors,
+   borders and glow switch together in the first painted navigation frame. */
+html body .top.tp154-nav-grid .tp154-nav-cell {
+  transition: transform .09s ease-out !important;
+}
+html body .top.tp154-nav-grid .tp154-nav-cell :is(
+  .tp151-nav-icon, .tp151-nav-label, .tp154-nav-action-icon
+) {
+  transition: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  html body .top.tp154-nav-grid .tp154-nav-cell {
+    transition: none !important;
+  }
+}
