@@ -363,3 +363,10 @@ html body .top.tp154-nav-grid .tp151-nav-item[onclick*="calendar"]:not(.active) 
   color: var(--text) !important;
   box-shadow: none !important;
 }
+
+/* 1.7.6 Coach-only close alignment: lift the existing sticky X above the
+   framed recommendation while retaining its inset from the outer panel edge.
+   Calendar and Settings deliberately keep their accepted close geometry. */
+html body #tp155R4PanelHost[data-panel="coach"] .tp155-r4-panel-close {
+  top: 1px !important;
+}

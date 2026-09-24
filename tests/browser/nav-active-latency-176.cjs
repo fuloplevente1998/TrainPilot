@@ -97,6 +97,18 @@ const server = http.createServer((req, res) => {
           const selector = panel === 'calendar' ? '.tp151-nav-item[onclick*="calendar"]' : '.tp154-' + panel + '-action';
           await page.locator('.top.tp154-nav-grid ' + selector).click();
           assert.equal(await page.locator('#tp155R4PanelHost').getAttribute('data-panel'), panel, width + '/' + theme + ': panel ' + panel);
+          if (panel === 'coach') {
+            const coachClose = await page.evaluate(() => {
+              const host = document.querySelector('#tp155R4PanelHost[data-panel="coach"]');
+              const wrapper = host.querySelector('.tp155-r4-panel').getBoundingClientRect();
+              const x = host.querySelector('.tp155-r4-panel-close').getBoundingClientRect();
+              const card = host.querySelector('.tp151-coach-recommendation').getBoundingClientRect();
+              return { outerTopGap: x.top - wrapper.top, innerBottomGap: card.top - x.bottom, position: getComputedStyle(host.querySelector('.tp155-r4-panel-close')).position };
+            });
+            assert.equal(coachClose.position, 'sticky', width + '/' + theme + ': Coach X retains scroll behavior');
+            assert.ok(coachClose.outerTopGap >= 8 && coachClose.outerTopGap <= 16, width + '/' + theme + ': Coach X above original position with outer clearance ' + JSON.stringify(coachClose));
+            assert.ok(coachClose.innerBottomGap >= 6, width + '/' + theme + ': Coach X clears the recommendation frame ' + JSON.stringify(coachClose));
+          }
           const now = await snap();
           assert.equal(now.filter(s => s.selected).length, 1, width + '/' + theme + ': one selected panel');
           await page.waitForTimeout(180);

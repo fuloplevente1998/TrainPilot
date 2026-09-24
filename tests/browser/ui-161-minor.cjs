@@ -26,7 +26,7 @@ const {chromium}=require('playwright');
     const host=document.querySelector('#tp155R4PanelHost[data-panel="'+type+'"]');
     const panel=host.querySelector('.tp155-r4-panel'),close=host.querySelector('.tp155-r4-panel-close'),content=host.querySelector('.tp155-r4-panel-content');
     const hr=host.getBoundingClientRect(),pr=panel.getBoundingClientRect(),cr=close.getBoundingClientRect(),xr=content.getBoundingClientRect();
-    return {navBottom:nav.bottom,hostTop:hr.top,panelTop:pr.top,closeTop:cr.top,closeRight:cr.right,panelRight:pr.right,contentTop:xr.top,position:getComputedStyle(close).position,clear:getComputedStyle(content).clear};
+    return {navBottom:nav.bottom,hostTop:hr.top,panelTop:pr.top,closeTop:cr.top,closeRight:cr.right,panelRight:pr.right,contentTop:xr.top,position:getComputedStyle(close).position,clear:getComputedStyle(content).clear,closeBottom:cr.bottom,firstCardTop:host.querySelector('.tp151-coach-recommendation')?.getBoundingClientRect().top??null};
    },type);
    assert.ok(g.hostTop<=g.navBottom+1&&g.hostTop>=g.navBottom-9,type+' panel should sit directly under/slightly overlap the fixed navigation: '+JSON.stringify(g));
    assert.ok(g.panelTop<=g.navBottom+3&&g.panelTop>=g.navBottom-6,type+' visible panel edge should sit directly against the navigation: '+JSON.stringify(g));
@@ -34,7 +34,10 @@ const {chromium}=require('playwright');
    const is162=await page.evaluate(()=>!!window.TrainPilot162Followup);
    if(is162){
     assert.equal(g.position,'sticky',type+' 1.6.2 X must remain sticky while the panel scrolls');
-    assert.ok(g.closeTop-g.panelTop>=15&&g.closeTop-g.panelTop<=23,type+' 1.6.2 X should sit only a few pixels lower inside the panel: '+JSON.stringify(g));
+    if(type==='coach'){
+     assert.ok(g.closeTop-g.panelTop>=8&&g.closeTop-g.panelTop<=16,'Coach X must be moved up but remain inside the outer panel frame: '+JSON.stringify(g));
+     assert.ok(g.firstCardTop!=null&&g.firstCardTop-g.closeBottom>=6,'Coach X must clear the first framed recommendation by at least 6px: '+JSON.stringify(g));
+    }else assert.ok(g.closeTop-g.panelTop>=15&&g.closeTop-g.panelTop<=23,type+' previously accepted X height must remain unchanged: '+JSON.stringify(g));
     assert.ok(Math.abs((g.panelRight-g.closeRight)-14)<=3,type+' 1.6.2 X should keep the left-shifted 14px right inset: '+JSON.stringify(g));
     const sticky=await page.evaluate(type=>{
      const host=document.querySelector('#tp155R4PanelHost[data-panel="'+type+'"]'),panel=host.querySelector('.tp155-r4-panel'),close=host.querySelector('.tp155-r4-panel-close');
