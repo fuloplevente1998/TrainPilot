@@ -12,7 +12,7 @@ const median=a=>{const s=[...a].sort((x,y)=>x-y),m=Math.floor(s.length/2);return
   const navStart=Date.now();
   await page.goto('http://127.0.0.1:'+server.address().port+'/',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
-  const startup=await page.evaluate(()=>({bootMs:performance.now(),nodes:document.getElementsByTagName('*').length,heap:performance.memory?.usedJSHeapSize||null}));
+  const startup=await page.evaluate(()=>({bootMs:performance.now(),nodes:document.getElementsByTagName('*').length,heap:performance.memory?.usedJSHeapSize||null}));startup.wallMs=Date.now()-navStart;
   const seeded=await page.evaluate(()=>{
    db.set('language','hu');
    const ids=['db-squat','db-floor-press','one-arm-row','rdl','db-curl','pushup','plank','side-plank'];
@@ -68,7 +68,7 @@ const median=a=>{const s=[...a].sort((x,y)=>x-y),m=Math.floor(s.length/2);return
   for(let i=0;i<4;i++){repeat.push(await runAction('roundtrip-'+i,()=>{go('health');go('history');go('home')},1))}
   const final=await page.evaluate(()=>({nodes:document.getElementsByTagName('*').length,heap:performance.memory?.usedJSHeapSize||null,styleSheets:document.styleSheets.length,inlineStyles:document.querySelectorAll('style').length,importantRules:[...document.styleSheets].reduce((n,s)=>{try{return n+[...s.cssRules].filter(r=>String(r.cssText).includes('!important')).length}catch(_){return n}},0)}));
   assert.deepEqual(errors,[],'page errors: '+errors.join('\n'));
-  const metrics={baselineCommit:'f064298ddbe1e7e4cf1ecdfca18b3d93899dc74a',startup:{bootMs:round(startup.bootMs),wallMs:Date.now()-navStart,nodes:startup.nodes,heap:startup.heap},routes,workoutExpand,exerciseOpen,photoModal,roundtrips:repeat,final};
+  const metrics={baselineCommit:'f064298ddbe1e7e4cf1ecdfca18b3d93899dc74a',startup:{bootMs:round(startup.bootMs),wallMs:startup.wallMs,nodes:startup.nodes,heap:startup.heap},routes,workoutExpand,exerciseOpen,photoModal,roundtrips:repeat,final};
   console.log('PHASE7_METRICS '+JSON.stringify(metrics));
   console.log('PASS Phase 7 performance benchmark instrumentation');
  }finally{await browser?.close();await new Promise(r=>server.close(r))}
