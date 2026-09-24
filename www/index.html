@@ -1205,20 +1205,21 @@
  const setDone=s=>s&&s.done!==false;
  const fmt=n=>typeof tp149FormatNumber==='function'?tp149FormatNumber(n,{maximumFractionDigits:1}):String(Math.round(n*10)/10);
 
- rf220ExerciseStats=function(id){
+ const tp4ExerciseStatsFromMatches=(id,workouts)=>{
   const rows=[],sessions=[],byWorkout={};
-  for(const h of (typeof rf220Hist==='function'?rf220Hist():history()||[])){
-   const matches=(h?.exercises||[]).filter(e=>e?.id===id);if(!matches.length)continue;
+  for(const entry of workouts||[]){
+   const h=entry.h,matches=entry.matches||[];if(!matches.length)continue;
    let has=false,vol=0;
+   const workoutTime=typeof rf220WorkoutTime==='function'?rf220WorkoutTime(h):Date.parse(h.started||h.finished||0);
    for(const raw of matches){
     const e=meta(id,raw),sets=(e.sets||[]).filter(setDone),isBi=bilateral(e,sets),isTimed=timed(e,sets);
     for(const s of sets){
      const w=num(s.weight),r=num(s.reps),left=num(s.leftSeconds),right=num(s.rightSeconds);
-     rows.push({w,r,left,right,seconds:isBi?Math.max(left,right,r):isTimed?r:0,one:!isTimed&&w>0&&r>0?w*(1+r/30):0,vol:!isTimed?w*r:0,date:typeof rf220WorkoutTime==='function'?rf220WorkoutTime(h):Date.parse(h.started||h.finished||0),kind:isBi?'bilateral':isTimed?'timed':w>0?'weighted':'reps'});
+     rows.push({w,r,left,right,seconds:isBi?Math.max(left,right,r):isTimed?r:0,one:!isTimed&&w>0&&r>0?w*(1+r/30):0,vol:!isTimed?w*r:0,date:workoutTime,kind:isBi?'bilateral':isTimed?'timed':w>0?'weighted':'reps'});
      vol+=!isTimed?w*r:0;has=true;
     }
    }
-   if(has){sessions.push(h);byWorkout[String(typeof rf220WorkoutTime==='function'?rf220WorkoutTime(h):Date.parse(h.started||0))]=vol}
+   if(has){sessions.push(h);byWorkout[String(workoutTime)]=vol}
   }
   if(!rows.length)return null;
   const raw=rows[0],m=meta(id,(sessions[0]?.exercises||[]).find(e=>e.id===id)),isBi=bilateral(m,rows),isTimed=timed(m,rows),weighted=!isTimed&&rows.some(x=>x.w>0);
@@ -1227,10 +1228,29 @@
   const latest=rows.slice().sort((a,b)=>(b.date||0)-(a.date||0))[0]||raw;
   return {kind:isBi?'bilateral':isTimed?'timed':weighted?'weighted':'reps',maxWeight,e1rm,best,maxVolume:Math.max(0,...Object.values(byWorkout)),count:rows.length,sessions:sessions.length,maxReps,maxSeconds,maxLeft,maxRight,latest};
  };
+ rf220ExerciseStats=function(id){
+  const workouts=[];
+  for(const h of (typeof rf220Hist==='function'?rf220Hist():history()||[])){
+   const matches=(h?.exercises||[]).filter(e=>e?.id===id);
+   if(matches.length)workouts.push({h,matches});
+  }
+  return tp4ExerciseStatsFromMatches(id,workouts);
+ };
  rf220ProgressRows=function(){
-  const ids=[];
-  for(const h of (typeof rf220Hist==='function'?rf220Hist():history()||[]))for(const e of h?.exercises||[])if(e?.id&&!ids.includes(e.id))ids.push(e.id);
-  return ids.map(id=>({id,s:rf220ExerciseStats(id)})).filter(x=>x.s).sort((a,b)=>(b.s.sessions-a.s.sessions)||(b.s.count-a.s.count));
+  const ids=[],grouped=new Map();
+  for(const h of (typeof rf220Hist==='function'?rf220Hist():history()||[])){
+   const perWorkout=new Map();
+   for(const e of h?.exercises||[]){
+    if(!e?.id)continue;
+    if(!perWorkout.has(e.id))perWorkout.set(e.id,[]);
+    perWorkout.get(e.id).push(e);
+   }
+   for(const [id,matches] of perWorkout){
+    if(!grouped.has(id)){ids.push(id);grouped.set(id,[])}
+    grouped.get(id).push({h,matches});
+   }
+  }
+  return ids.map(id=>({id,s:tp4ExerciseStatsFromMatches(id,grouped.get(id)||[])})).filter(x=>x.s).sort((a,b)=>(b.s.sessions-a.s.sessions)||(b.s.count-a.s.count));
  };
  const summary=s=>{
   const t=copy();
@@ -1643,7 +1663,7 @@
   };
   window.programCards=programCards;
  }
- window.TrainPilotPhase7Performance={version:'phase7-performance-19-r2',historySnapshot:'operation-scoped',persistentCache:false,lazyPrograms:true};
+ window.TrainPilotPhase7Performance={version:'phase7-performance-19-r3',historySnapshot:'operation-scoped',persistentCache:false,lazyPrograms:true,batchedProgressStats:true};
 })();
 
 });</script>
