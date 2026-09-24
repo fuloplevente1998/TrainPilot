@@ -640,3 +640,60 @@ html body:not(#tp5-chevron-guard) .tp-library-card>summary::after{
  }
  #app main.tp168-health .tp5-today-full .tp5-today-value{font-size:13px}
 }
+
+
+/* Phase 5 #41 phone-audit: remaining legacy triangles reported 2026-09-24. */
+html body #app .tp155-journal-filter>summary>.tp160-journal-disclosure::before,
+html body #tp155R4PanelHost .tp-select-trigger::after,
+html body #tp155R4PanelHost[data-panel="quick"] .tp155-quick-filter>summary::after,
+html body #tp155R4PanelHost[data-panel="quick"] .tp152-quick-row>summary .tp152-chevron::before{
+ content:"›"!important;
+ display:inline-grid!important;
+ place-items:center!important;
+ box-sizing:border-box!important;
+ width:24px!important;
+ min-width:24px!important;
+ max-width:24px!important;
+ height:24px!important;
+ min-height:24px!important;
+ max-height:24px!important;
+ margin:0!important;
+ padding:0!important;
+ border:0!important;
+ border-radius:0!important;
+ background:none!important;
+ box-shadow:none!important;
+ clip-path:none!important;
+ -webkit-clip-path:none!important;
+ -webkit-mask:none!important;
+ mask:none!important;
+ filter:none!important;
+ text-shadow:none!important;
+ overflow:visible!important;
+ color:var(--accent2,var(--accent))!important;
+ font:900 30px/1 Arial,sans-serif!important;
+ line-height:24px!important;
+ transform:none!important;
+ transform-origin:50% 50%!important;
+}
+html body #app .tp155-journal-filter[open]>summary>.tp160-journal-disclosure::before,
+html body #tp155R4PanelHost .tp-select.open>.tp-select-trigger::after,
+html body #tp155R4PanelHost[data-panel="quick"] .tp155-quick-filter[open]>summary::after,
+html body #tp155R4PanelHost[data-panel="quick"] .tp152-quick-row[open]>summary .tp152-chevron::before{
+ transform:rotate(90deg)!important;
+}
+html body #tp155R4PanelHost[data-panel="quick"] .tp155-quick-filter>summary::after{
+ margin-left:auto!important;
+ flex:0 0 24px!important;
+}
+html body #tp155R4PanelHost[data-panel="quick"] .tp152-quick-row>summary .tp152-chevron{
+ color:var(--accent2,var(--accent))!important;
+ width:24px!important;
+ min-width:24px!important;
+ max-width:24px!important;
+ height:24px!important;
+ min-height:24px!important;
+ max-height:24px!important;
+ flex:0 0 24px!important;
+ margin-left:6px!important;
+}
