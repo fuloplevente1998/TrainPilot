@@ -45,7 +45,7 @@ const median=a=>{const s=[...a].sort((x,y)=>x-y),m=Math.floor(s.length/2);return
     samples.push(x);
    }
    const last=samples.at(-1);
-   return {label,medianTotal:round(median(samples.map(x=>x.total))),medianFeedback:round(median(samples.map(x=>x.feedback))),medianRenderMs:round(median(samples.map(x=>x.renderMs))),medianRenderCalls:median(samples.map(x=>x.renderCalls)),medianHistoryCalls:median(samples.map(x=>x.historyCalls)),medianMutations:median(samples.map(x=>x.mutations)),nodes:last.nodes,longTasks:samples.reduce((a,x)=>a+x.longTasks,0),maxTotal:round(Math.max(...samples.map(x=>x.total)))};
+   return {label,firstTotal:round(samples[0].total),firstFeedback:round(samples[0].feedback),medianTotal:round(median(samples.map(x=>x.total))),medianFeedback:round(median(samples.map(x=>x.feedback))),medianRenderMs:round(median(samples.map(x=>x.renderMs))),medianRenderCalls:median(samples.map(x=>x.renderCalls)),medianHistoryCalls:median(samples.map(x=>x.historyCalls)),medianMutations:median(samples.map(x=>x.mutations)),nodes:last.nodes,longTasks:samples.reduce((a,x)=>a+x.longTasks,0),maxTotal:round(Math.max(...samples.map(x=>x.total)))};
   };
   const routes=[];
   routes.push(await runAction('home',()=>go('home')));
