@@ -1,6 +1,6 @@
 # TrainPilot — permanent performance regression policy
 
-Introduced after phone acceptance and main merge of **TrainPilot 1.7.4 / 2663**, Phase 7 issue [#19](../issues/19), PR [#48](../pull/48), main merge `4a85b33e3545197a9053461840e60a178b45a341`. Do not revert the measured optimizations while repairing unrelated UX.
+Introduced after phone acceptance and main merge of **TrainPilot 1.7.4 / 2663**, Phase 7 issue [#19](https://github.com/fuloplevente1998/TrainPilot/issues/19), PR [#48](https://github.com/fuloplevente1998/TrainPilot/pull/48), main merge `4a85b33e3545197a9053461840e60a178b45a341`. Do not revert the measured optimizations while repairing unrelated UX.
 
 ## Reproducible reference
 
@@ -27,8 +27,8 @@ Do not compare cold and warmed paths, different phone models or datasets as if e
 
 ## Known post-1.7.4 UI follow-ups
 
-- [#49](../issues/49): first-open Journal exercise picker shows native grey WebView chooser; subsequent branded dropdown is too narrow for long exercise names. Repair the **first-open** initialization and responsive dropdown **without undoing lazy Journal hydration**.
-- [#50](../issues/50): Health pulse disclosure differs visually from the accepted weight disclosure and appears to flash stale UI on a real phone. Diagnose the exact path before assuming a cause; protect correct seven-day pulse semantics and avoid global rerenders.
-- [#51](../issues/51): long-term benchmark expansion and performance safeguards.
+- [#49](https://github.com/fuloplevente1998/TrainPilot/issues/49): first-open Journal exercise picker shows native grey WebView chooser; subsequent branded dropdown is too narrow for long exercise names. Repair the **first-open** initialization and responsive dropdown **without undoing lazy Journal hydration**.
+- [#50](https://github.com/fuloplevente1998/TrainPilot/issues/50): Health pulse disclosure differs visually from the accepted weight disclosure and appears to flash stale UI on a real phone. Diagnose the exact path before assuming a cause; protect correct seven-day pulse semantics and avoid global rerenders.
+- [#51](https://github.com/fuloplevente1998/TrainPilot/issues/51): long-term benchmark expansion and performance safeguards.
 
 These user-observed issues were deferred by explicit approval so the **already measured and phone-felt speedup** could land on `main` first. Their existence does not imply that Phase 7 caused them; earlier origin is unverified.
