@@ -1,0 +1,53 @@
+name: Publish accepted TrainPilot 1.7.4 (one-shot)
+
+# This file is intentionally created in a tiny main-targeted PR after Phase 7
+# phone approval. Only the merge adding this file triggers the one-shot job.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-accepted-174.yml'
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out the exact accepted main source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Verify version and create the immutable release tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./package.json').version")"
+          CODE="$(node -p "require('./SOURCE_VERSION.json').versionCode")"
+          TAG="v1.7.4"
+          test "$VERSION" = "1.7.4"
+          test "$CODE" = "2663"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "Release tag $TAG already exists; do not overwrite it."
+            if gh release view "$TAG" >/dev/null 2>&1; then
+              echo "Release already published; nothing to do."
+              exit 0
+            fi
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "$TAG" -m "TrainPilot 1.7.4 / 2663 — Phase 7 phone-approved performance release" "$GITHUB_SHA"
+            git push origin "refs/tags/$TAG"
+          fi
+          # GitHub suppresses workflow triggers caused by GITHUB_TOKEN pushes.
+          # Explicit workflow_dispatch is allowed and runs the existing signed
+          # Release Gate on the exact just-created tag / source commit.
+          gh workflow run build-apk.yml --ref "$TAG"
+          echo "Triggered signed release pipeline on $TAG at $GITHUB_SHA"
