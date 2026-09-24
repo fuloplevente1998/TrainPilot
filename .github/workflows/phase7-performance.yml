@@ -34,3 +34,5 @@ jobs:
         run: node tests/browser/phase7-performance-19.cjs
       - name: Trace repeated history callers
         run: node tests/browser/phase7-history-callers-19.cjs
+      - name: Profile cold Coach open
+        run: node tests/browser/phase7-coach-cold-19.cjs
