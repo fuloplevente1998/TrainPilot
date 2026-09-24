@@ -573,3 +573,23 @@ html body #app .tp-library-card>summary.tp-global-chevron-host::after{
 html body #app .tp-library-card[open]>summary.tp-global-chevron-host::after{
  transform:rotate(90deg)!important;
 }
+
+/* Phase 5 #44 — shared Today six-card grid: compact Home, near-square Health. */
+#app .tp5-today-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;width:100%;min-width:0}
+#app .tp5-today-metric{box-sizing:border-box;min-width:0!important;margin:0!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:flex-end!important;gap:4px!important;overflow:hidden!important;text-align:left!important;color:var(--text)!important;border:1px solid color-mix(in srgb,var(--accent) 20%,var(--line))!important;border-radius:13px!important;background:color-mix(in srgb,var(--accent) 4%,var(--card2))!important;box-shadow:none!important;appearance:none;-webkit-appearance:none}
+#app button.tp5-today-metric{cursor:pointer}#app button.tp5-today-metric:active{transform:scale(.985)}
+#app .tp5-today-icon{width:24px;height:24px;flex:0 0 24px;display:grid;place-items:center;color:var(--accent2)}
+#app .tp5-today-icon svg{width:23px;height:23px;display:block;overflow:visible}
+#app .tp5-today-label{display:block;flex:0 0 auto;max-width:100%;min-width:0;margin-top:auto;font-weight:700;font-size:11px;line-height:1.12;white-space:normal;overflow-wrap:anywhere;color:var(--muted)}
+#app .tp5-today-value{display:block;max-width:100%;min-width:0;font-size:clamp(13px,3.9vw,19px);line-height:1.15;font-weight:900;overflow-wrap:anywhere;color:var(--text)}
+#app main.tp168-health .tp5-today-grid.tp5-today-full{margin:1px 0 11px!important}
+#app main.tp168-health .tp5-today-full>.tp5-today-metric.stat{aspect-ratio:1/1;min-height:102px!important;padding:11px 9px!important}
+#app main.rf221-home #rf223Today.tp5-home-today{padding:8px 10px!important;overflow:visible}
+#app main.rf221-home #rf223Today .rf223-title{margin:0 0 7px!important;line-height:1.15}
+#app main.rf221-home #rf223Today .tp5-today-grid.tp5-today-compact{gap:5px!important}
+#app main.rf221-home #rf223Today .tp5-today-metric.stat{aspect-ratio:auto!important;min-height:62px!important;height:auto!important;padding:6px 7px!important;gap:2px!important}
+#app main.rf221-home #rf223Today .tp5-today-icon{width:16px;height:16px;flex-basis:16px}
+#app main.rf221-home #rf223Today .tp5-today-icon svg{width:16px;height:16px}
+#app main.rf221-home #rf223Today .tp5-today-label{font-size:10px;line-height:1.06}
+#app main.rf221-home #rf223Today .tp5-today-value{font-size:13px;line-height:1.08;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:360px){#app .tp5-today-grid{gap:5px!important}#app main.tp168-health .tp5-today-full>.tp5-today-metric.stat{min-height:97px!important;padding:8px 6px!important}#app .tp5-today-label{font-size:10px}#app .tp5-today-value{font-size:13px}#app main.rf221-home #rf223Today .tp5-today-metric.stat{min-height:59px!important;padding:5px!important}#app main.rf221-home #rf223Today .tp5-today-label{font-size:9px}#app main.rf221-home #rf223Today .tp5-today-value{font-size:12px}}
