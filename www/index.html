@@ -1619,7 +1619,31 @@
    return panelBase.apply(this,arguments);
   };
  }
- window.TrainPilotPhase7Performance={version:'phase7-performance-19-r1',historySnapshot:'operation-scoped',persistentCache:false};
+ const tp7ProgramBodyHtml=function(p){
+  const days=(p.days||[]).map(function(d){
+   return '<details class="tp152-program-day"><summary><strong>'+esc(tp149ProgramDayName(p,d))+'</strong><span class="small muted">'+esc(tp149Plural('exercise.count',d.exercises?.length||0))+'</span><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-program-day-body">'+(d.exercises||[]).map(function(id,i){return tp152ProgramPreviewRow(p,d,id,i)}).join('')+'</div></details>';
+  }).join('');
+  return days+(!p.builtin?'<div class="rf103-program-extra"><button class="btn secondary" onclick="editCustomProgram(\''+esc(p.id)+'\')">'+esc(tp149T('common.edit'))+'</button><button class="btn danger" onclick="deleteCustomProgram(\''+esc(p.id)+'\')">'+esc(tp149T('common.delete'))+'</button></div>':'');
+ };
+ window.tp7EnsureProgramBody=function tp7EnsureProgramBody(el,id){
+  const body=el?.querySelector?.(':scope > .tp152-program-card-body');if(!body||body.dataset.tp7Hydrated==='true')return body;
+  const p=programById(id);if(!p)return body;
+  body.innerHTML=tp7ProgramBodyHtml(p);body.dataset.tp7Hydrated='true';
+  try{window.tpGlobalApplyChevrons?.(body)}catch(_){}
+  return body;
+ };
+ if(typeof programCards==='function'){
+  programCards=function(){
+   const list=programs(),activeId=activeProgramId();
+   return list.map(function(p){
+    const active=p.id===activeId,accent=tp152ProgramAccent(p),name=tp149ProgramMeta(p,'name'),location=tp149ProgramMeta(p,'location'),level=tp149ProgramMeta(p,'level');
+    const stats=tp149T('program.cardStats',{days:p.days.length,counts:p.days.map(function(d){return d.exercises.length}).join('/')});
+    return '<details class="program-card rf103-program-card tp152-program-card '+(active?'active-program':'')+'" style="--tp-program-accent:'+esc(accent)+'" data-tp7-program-id="'+esc(p.id)+'" ontoggle="if(this.open)tp7EnsureProgramBody(this,\''+esc(p.id)+'\')"><summary><div class="rf103-program-main"><div class="rf103-program-info"><span class="badge">'+esc(location)+'</span><span class="badge">'+esc(level)+'</span><h3>'+esc(name)+'</h3><p class="small muted">'+esc(stats)+'</p></div><button class="btn rf103-program-activate '+(active?'secondary':'')+'" '+(active?'disabled':'')+' onclick="event.preventDefault();event.stopPropagation();activateProgram(\''+esc(p.id)+'\')">'+esc(tp149T(active?'program.active':'program.activate'))+'</button></div><span class="tp152-chevron tp152-program-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-program-card-body" data-tp7-hydrated="false"></div></details>';
+   }).join('');
+  };
+  window.programCards=programCards;
+ }
+ window.TrainPilotPhase7Performance={version:'phase7-performance-19-r2',historySnapshot:'operation-scoped',persistentCache:false,lazyPrograms:true};
 })();
 
 });</script>
