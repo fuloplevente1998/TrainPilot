@@ -1526,13 +1526,10 @@
     rfHistoryHealthCache.set(key,{error:e?.message||'A Health Connect adatok lekérése nem sikerült.'});
    }
    // Paint only the final result. Never replace the inline block with the transient loading state.
-   // Disable anchoring for this local replacement and restore the exact Journal scroll offset.
-   const sx=window.scrollX||0,sy=window.scrollY||0,healthHost=document.querySelector('[data-rf-history-health="'+i+'"]'),anchor=healthHost?.style?.overflowAnchor||'';
-   if(healthHost)healthHost.style.overflowAnchor='none';
+   // The Health result is not a scroll anchor; restore the current offset synchronously after replacement.
+   const sx=window.scrollX||0,sy=window.scrollY||0;
    rfHistoryHealthPaint(i);
    window.scrollTo(sx,sy);
-   if(typeof requestAnimationFrame==='function')requestAnimationFrame(()=>{window.scrollTo(sx,sy);if(healthHost)healthHost.style.overflowAnchor=anchor});
-   else if(healthHost)healthHost.style.overflowAnchor=anchor;
   })().finally(()=>{
    panel?.classList.remove('tp6-health-refreshing');
    if(refresh){refresh.disabled=false;refresh.removeAttribute('aria-busy')}
@@ -1556,6 +1553,7 @@
   '#rf130PhotoModal .tp6-photo-dialog>br{display:none!important}',
   '#rf130PhotoModal .tp6-photo-dialog>.grid2{gap:7px!important;margin-top:9px!important}',
   '#rf130PhotoModal .tp6-photo-dialog [data-rf130-status]{min-height:17px!important;margin:7px 0 0!important}',
+  '.rf-history-health{overflow-anchor:none!important}',
   '.rf-history-health-panel.tp6-health-refreshing .rf-history-health-refresh{opacity:.72!important;cursor:progress!important}',
   '@media(max-width:340px){#rf130PhotoModal .tp6-photo-dialog{padding:12px!important}#rf130PhotoModal .tp6-photo-dialog .rf130-labels .btn{font-size:10.5px!important;padding:7px 2px!important}#rf130PhotoModal .tp6-photo-dialog>.grid2{grid-template-columns:repeat(2,minmax(0,1fr))!important}}'
  ].join('');document.head.appendChild(style);
