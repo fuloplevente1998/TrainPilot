@@ -22,5 +22,9 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  await first.locator('details.tp3-history-ex-item>summary').first().click();
  await page.waitForSelector('details.tp3-history-ex-item[open] .tp3-exercise-inline-editor');
  assert.equal(await first.getAttribute('data-tp3-no-render-probe'),'kept','exercise disclosure must remain local and avoid whole Journal re-render');
+ await page.evaluate(()=>{const now=new Date(),h={id:'p7-empty',workout:'A',dayId:'A',programId:'home-basic',programName:'Phase 7 empty',started:now.toISOString(),finished:new Date(now.getTime()+1800000).toISOString(),exercises:[],photos:[]};db.set('history',[h]);state.tp3HistoryOpenKey=null;go('history')});
+ const empty=page.locator('[data-tp152-history-key="p7-empty"]');await empty.locator(':scope > summary').click();
+ assert.equal(await empty.locator('.tp155-history-delete').count(),1,'opening a lazy Journal row must synchronously expose the accepted delete-workout action');
+ assert.equal(await empty.locator('.tp3-combined-history-body').getAttribute('data-tp3-hydrated'),'true','empty legacy-compatible workout must hydrate on opening click');
  console.log('PASS Phase 7 Journal lazy hydration and accepted local editor behavior');
 }finally{await browser?.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exit(1)});
