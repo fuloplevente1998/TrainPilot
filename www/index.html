@@ -32,7 +32,19 @@
   try{return typeof rf229RecoveryHistory==='function'?rf229RecoveryHistory().find(x=>x?.day===key)||null:null}catch(_){return null}
  };
  window.tp5UnifiedTodayModel=function(){
-  const key=dayKey(),day=typeof rf240Ledger==='function'?(rf240Ledger()?.days?.[key]||{}):{},r=currentRecovery(key);
+  const key=dayKey(),day=typeof rf240Ledger==='function'?(rf240Ledger()?.days?.[key]||{}):{};
+  // Health navigation already canonicalizes recovery from the dated journal.
+  // Do the same on Home before calculating readiness so both screens agree.
+  try{
+   const rows=typeof rf229RecoveryHistory==='function'?rf229RecoveryHistory():[];
+   if(rows[0]?.day===key&&typeof rf229ApplyLatestRecovery==='function'){
+    const baseline=typeof rf229Median==='function'?rf229Median(rows.slice(0,7).map(x=>x?.hrvRmssdMs)):null;
+    const active=state?.health?.recovery,latest=rows[0];
+    if(!active||active.day!==key||num(active.hrvBaselineMs)!==num(baseline)||num(active.sleepMinutes)!==num(latest.sleepMinutes)||num(active.hrvRmssdMs)!==num(latest.hrvRmssdMs))
+     rf229ApplyLatestRecovery();
+   }
+  }catch(_){}
+  const r=currentRecovery(key);
   let count=0;
   try{
    const rows=typeof history==='function'?history():[];
