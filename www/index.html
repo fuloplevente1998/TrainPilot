@@ -959,6 +959,24 @@
   try{window.tpGlobalApplyChevrons?.(body)}catch(_){}
   return body;
  };
+ // The expanded Journal picker may be wider than its inline trigger. Reuse
+ // viewport-aware positioning; no new hidden DOM or per-row render work.
+ if(typeof rf260PositionSelect==='function'&&!window.tp49JournalMenuPositioned){
+  const basePosition=rf260PositionSelect;
+  window.tp49JournalMenuPositioned=true;
+  rf260PositionSelect=function(wrap){
+   const result=basePosition.apply(this,arguments);
+   if(!wrap?.closest?.('.tp3-add-exercise-body'))return result;
+   const menu=wrap.querySelector('.tp-select-menu'),v=rf260VisualViewport();
+   if(!menu||!v)return result;
+   const edge=10,width=Math.min(420,Math.max(180,v.width-edge*2));
+   const rect=wrap.querySelector('.tp-select-trigger')?.getBoundingClientRect();
+   const ideal=rect?rect.left+rect.width/2-width/2:v.left+(v.width-width)/2;
+   menu.style.width=width+'px';
+   menu.style.left=Math.max(v.left+edge,Math.min(ideal,v.right-width-edge))+'px';
+   return result;
+  };
+ }
  rf263HistoryItem=function(x,originalIndex,visibleIndex){
   const safe=typeof window.tp165SafeHistoryRecord==='function'?window.tp165SafeHistoryRecord(x,originalIndex):x;
   try{

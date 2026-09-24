@@ -35,7 +35,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   });
   assert.equal(layout.visible,'visible','branded menu must open on first click at '+width);
   assert.ok(layout.menuW>=layout.triggerW-2,'menu must be as wide as its full-row trigger at '+width+': '+JSON.stringify(layout));
-  assert.ok(layout.menuW>=Math.min(260,width-85),'exercise names need wider responsive menu at '+width+': '+JSON.stringify(layout));
+  assert.ok(layout.menuW>=Math.min(350,width-35),'exercise names need wider responsive menu at '+width+': '+JSON.stringify(layout));
   assert.equal(layout.labelWhiteSpace,'normal','long exercise names must wrap rather than truncate');
   assert.equal(layout.labelOverflow,'visible','no ellipsis truncation for long menu options');
   assert.ok(layout.optionCount>4,'exercise library options must remain available');
