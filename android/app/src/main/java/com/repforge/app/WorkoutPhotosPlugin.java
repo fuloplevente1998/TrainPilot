@@ -2,15 +2,15 @@ package com.repforge.app;
 
 import android.app.Activity;
 import android.content.ClipData;
-import android.content.ContentValues;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Base64;
 import androidx.core.content.FileProvider;
@@ -31,7 +31,6 @@ public class WorkoutPhotosPlugin extends Plugin {
     private volatile boolean busy = false;
     private volatile File cameraTemp;
     private volatile Uri cameraUri;
-    private volatile boolean cameraUsesMediaStore = false;
     private volatile PluginCall pendingPhotoCall;
     private volatile int pendingRequestCode = -1;
 
@@ -92,19 +91,6 @@ public class WorkoutPhotosPlugin extends Plugin {
         });
     }
 
-    private Uri createMediaStoreCameraUri() throws IOException {
-        ContentValues values = new ContentValues();
-        values.put(MediaStore.Images.Media.DISPLAY_NAME, "trainpilot-capture-" + UUID.randomUUID() + ".jpg");
-        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            values.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/TrainPilotTemp");
-            values.put(MediaStore.Images.Media.IS_PENDING, 1);
-        }
-        Uri uri = getContext().getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-        if (uri == null) throw new IOException("A kamera ideiglenes MediaStore képe nem hozható létre.");
-        return uri;
-    }
-
     private boolean uriHasData(Uri uri) {
         if (uri == null) return false;
         try (InputStream in = getContext().getContentResolver().openInputStream(uri)) {
@@ -112,9 +98,37 @@ public class WorkoutPhotosPlugin extends Plugin {
         } catch (Exception ignored) { return false; }
     }
 
-    private void deleteCameraMediaStoreUri(Uri uri) {
-        if (uri == null) return;
-        try { getContext().getContentResolver().delete(uri, null, null); } catch (Exception ignored) {}
+    private boolean fileHasData(File file) {
+        return file != null && file.isFile() && file.length() > 0;
+    }
+
+    private boolean waitForFileData(File file) throws InterruptedException {
+        for (int attempt = 0; attempt < 5; attempt++) {
+            if (fileHasData(file)) return true;
+            if (attempt < 4) Thread.sleep(50L);
+        }
+        return false;
+    }
+
+    private File writeReturnedBitmap(Bitmap bitmap) throws IOException {
+        if (bitmap == null) return null;
+        File file = File.createTempFile("trainpilot-camera-return-", ".jpg", getContext().getCacheDir());
+        try (FileOutputStream out = new FileOutputStream(file)) {
+            if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)) throw new IOException("A kamera előnézeti képének mentése sikertelen.");
+        }
+        return file;
+    }
+
+    private void resolveCancelled(PluginCall call) {
+        if (call == null) return;
+        JSObject result = new JSObject();
+        result.put("cancelled", true);
+        call.resolve(result);
+    }
+
+    private void cleanupCameraTarget(Uri uri, File file) {
+        revokeCameraGrant(uri);
+        if (file != null) try { file.delete(); } catch (Exception ignored) {}
     }
 
     private void revokeCameraGrant(Uri uri) {
@@ -127,59 +141,33 @@ public class WorkoutPhotosPlugin extends Plugin {
 
     @SuppressWarnings("deprecation")
     @PluginMethod public void capture(PluginCall call) {
-        if (busy) { call.reject("Már folyamatban van egy fotóművelet."); return; }
-        busy = true;
-        pendingPhotoCall = call;
-        pendingRequestCode = REQUEST_CAPTURE;
+        if (busy) { call.reject("Már folyamatban van fotóművelet."); return; }
+        busy = true; pendingPhotoCall = call; pendingRequestCode = REQUEST_CAPTURE;
         getBridge().executeOnMainThread(() -> {
             try {
+                cleanupCameraTarget(cameraUri, cameraTemp);
+                cameraTemp = File.createTempFile("trainpilot-camera-", ".jpg", getContext().getCacheDir());
+                cameraUri = FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", cameraTemp);
                 Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                if (cameraTemp != null) cameraTemp.delete();
-                cameraTemp = null; cameraUri = null; cameraUsesMediaStore = false;
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    cameraUri = createMediaStoreCameraUri();
-                    cameraUsesMediaStore = true;
-                } else {
-                    cameraTemp = File.createTempFile("trainpilot-camera-", ".jpg", getContext().getCacheDir());
-                    cameraUri = FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", cameraTemp);
-                }
-
                 intent.putExtra(MediaStore.EXTRA_OUTPUT, cameraUri);
                 intent.putExtra("return-data", false);
-                intent.setClipData(ClipData.newRawUri("TrainPilot photo", cameraUri));
-                int grants = Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION;
+                intent.setClipData(ClipData.newRawUri("TrainPilot camera", cameraUri));
+                int grants = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
                 intent.addFlags(grants);
-                try {
-                    for (android.content.pm.ResolveInfo ri : getContext().getPackageManager().queryIntentActivities(intent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)) {
-                        if (ri.activityInfo != null) getContext().grantUriPermission(ri.activityInfo.packageName, cameraUri, grants);
+                for (ResolveInfo ri : getContext().getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)) {
+                    if (ri.activityInfo != null && ri.activityInfo.packageName != null) {
+                        getContext().grantUriPermission(ri.activityInfo.packageName, cameraUri, grants);
                     }
-                } catch (Exception ignored) {}
+                }
+                if (intent.resolveActivity(getContext().getPackageManager()) == null) throw new IOException("Nem található kameraalkalmazás.");
                 getActivity().startActivityForResult(intent, REQUEST_CAPTURE);
-            } catch (android.content.ActivityNotFoundException e) {
-                revokeCameraGrant(cameraUri);
-                if (cameraUsesMediaStore) deleteCameraMediaStoreUri(cameraUri);
-                if (cameraTemp != null) cameraTemp.delete();
-                cameraUri = null; cameraTemp = null; cameraUsesMediaStore = false;
-                pendingPhotoCall = null; pendingRequestCode = -1; busy = false;
-                call.reject("Nem található kameraalkalmazás.", e);
             } catch (Exception e) {
-                revokeCameraGrant(cameraUri);
-                if (cameraUsesMediaStore) deleteCameraMediaStoreUri(cameraUri);
-                if (cameraTemp != null) cameraTemp.delete();
-                cameraUri = null; cameraTemp = null; cameraUsesMediaStore = false;
+                cleanupCameraTarget(cameraUri, cameraTemp);
+                cameraUri = null; cameraTemp = null;
                 pendingPhotoCall = null; pendingRequestCode = -1; busy = false;
                 call.reject("A kamera nem indítható.", e);
             }
         });
-    }
-
-    private void importCapturedMediaStore(PluginCall call, Uri uri) {
-        try { importUri(call, uri, null); }
-        finally {
-            revokeCameraGrant(uri);
-            deleteCameraMediaStoreUri(uri);
-        }
     }
 
     @SuppressWarnings("deprecation")
@@ -194,38 +182,60 @@ public class WorkoutPhotosPlugin extends Plugin {
         busy = false;
 
         if (requestCode == REQUEST_PICK) {
-            if (call == null) return;
             Uri uri = data == null ? null : data.getData();
-            if (uri == null) {
-                JSObject r = new JSObject(); r.put("cancelled", true); call.resolve(r); return;
-            }
+            if (call == null || uri == null) { resolveCancelled(call); return; }
             getBridge().execute(() -> importUri(call, uri, null));
             return;
         }
 
-        Uri outputUri = cameraUri;
-        File outputFile = cameraTemp;
-        boolean mediaStore = cameraUsesMediaStore;
-        cameraUri = null; cameraTemp = null; cameraUsesMediaStore = false;
+        final Uri outputUri = cameraUri;
+        final File outputFile = cameraTemp;
+        final Uri returnedUri = data == null ? null : data.getData();
+        final Object returnedExtra = data == null || data.getExtras() == null ? null : data.getExtras().get("data");
+        cameraUri = null;
+        cameraTemp = null;
 
-        boolean hasImage = mediaStore ? uriHasData(outputUri) : (outputFile != null && outputFile.isFile() && outputFile.length() > 0);
-        // Accept a non-empty output even if an OEM camera reports RESULT_CANCELED.
-        if (call == null || !hasImage) {
-            revokeCameraGrant(outputUri);
-            if (mediaStore) deleteCameraMediaStoreUri(outputUri);
-            if (outputFile != null) outputFile.delete();
-            if (call != null) { JSObject r = new JSObject(); r.put("cancelled", true); call.resolve(r); }
-            return;
-        }
-
-        if (mediaStore) {
-            Uri captured = outputUri;
-            getBridge().execute(() -> importCapturedMediaStore(call, captured));
-        } else {
-            revokeCameraGrant(outputUri);
-            File captured = outputFile;
-            getBridge().execute(() -> importUri(call, null, captured));
-        }
+        if (call == null) { cleanupCameraTarget(outputUri, outputFile); return; }
+        getBridge().execute(() -> {
+            File returnedFile = null;
+            try {
+                // Some camera apps report RESULT_CANCELED even after writing an approved shot.
+                // Trust actual bytes first, and allow a short flush window before classifying the result.
+                if (waitForFileData(outputFile)) {
+                    revokeCameraGrant(outputUri);
+                    importUri(call, null, outputFile);
+                    return;
+                }
+                // OEM fallback: some cameras return a content Uri instead of honoring EXTRA_OUTPUT.
+                if (returnedUri != null && uriHasData(returnedUri)) {
+                    try { importUri(call, returnedUri, null); }
+                    finally { cleanupCameraTarget(outputUri, outputFile); }
+                    return;
+                }
+                // Last-resort compatibility path for cameras that only return the preview Bitmap.
+                if (returnedExtra instanceof Bitmap) {
+                    returnedFile = writeReturnedBitmap((Bitmap) returnedExtra);
+                    if (fileHasData(returnedFile)) {
+                        cleanupCameraTarget(outputUri, outputFile);
+                        importUri(call, null, returnedFile);
+                        returnedFile = null;
+                        return;
+                    }
+                }
+                cleanupCameraTarget(outputUri, outputFile);
+                if (resultCode == Activity.RESULT_CANCELED) resolveCancelled(call);
+                else call.reject("A kamera nem adott vissza érvényes képet.");
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                cleanupCameraTarget(outputUri, outputFile);
+                if (returnedFile != null) try { returnedFile.delete(); } catch (Exception ignored) {}
+                call.reject("A kamera eredményének feldolgozása megszakadt.", e);
+            } catch (Exception e) {
+                cleanupCameraTarget(outputUri, outputFile);
+                if (returnedFile != null) try { returnedFile.delete(); } catch (Exception ignored) {}
+                call.reject(e.getMessage() == null ? "A kamera eredményének feldolgozása sikertelen." : e.getMessage(), e);
+            }
+        });
     }
 
     private void importUri(PluginCall call, Uri uri, File supplied) {

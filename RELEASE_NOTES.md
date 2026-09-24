@@ -1,3 +1,14 @@
+# TrainPilot 1.7.3 – Phase 6 Napló / kamera / Health frissítés (teszt)
+
+- #42: a kamera újra privát FileProvider cache-fájlba ír; a visszatérési út a tényleges képbájtokat ellenőrzi az Activity result flag előtt, rövid fájl-flush várakozással.
+- #42: kompatibilitási fallback fogadja a kamera által visszaadott content URI-t, illetve végső esetben a preview Bitmapet; a valódi megszakítás külön marad a hibás/üres sikeres callbacktől.
+- #42: a széles média- és CAMERA jogosultság továbbra sem szükséges; a kép normalizálása, EXIF/GPS eltávolítása és privát app-tárhelye változatlan.
+- #42: a „Fotó hozzáadása” panel kompakt, témakövető felületet és jobb felső piros X-et kapott; az Edzés előtt / Edzés után / Egyéb, Kamera és Kiválasztás funkciók megmaradtak.
+- #43: Napló → Health → Frissítés közben nincs köztes loading-paint; a már látható Health-adat marad a helyén, majd csak a kész eredmény festődik be.
+- #43: a lenyitott edzés/Health panel DOM-ja nem renderelődik újra, így az állapot és a scrollpozíció megmarad.
+- Android `versionCode 2662`, `versionName 1.7.3`.
+- Fizikai telefonos jóváhagyás szükséges a Phase 6 merge előtt.
+
 # TrainPilot 1.7.2 – Phase 5 Health / Pulzustrend (teszt)
 
 - A Pulzustrend explicit módon a Health Connect szinkronból felépülő TrainPilot `healthLedgerV1` napi `averageHeartRate` értékeit használja.

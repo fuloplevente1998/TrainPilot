@@ -1486,5 +1486,80 @@
  decoratePulse();setTimeout(decoratePulse,0);
 })();
 
+
+/* Phase 6 — #42 native photo return + compact modal, #43 silent Journal Health refresh */
+(function(){
+ 'use strict';
+ const TP6_VERSION='phase6-journal-media-health-42-43-r1';
+
+ const tp6PhotoOpenBase=rf130OpenAddPhoto;
+ rf130OpenAddPhoto=function rf130OpenAddPhoto(key){
+  const out=tp6PhotoOpenBase.apply(this,arguments),modal=document.getElementById('rf130PhotoModal'),dialog=modal?.querySelector('.rf130-photo-dialog');
+  if(!modal||!dialog)return out;
+  modal.classList.add('tp6-photo-modal');dialog.classList.add('tp6-photo-dialog');
+  const close=dialog.querySelector('[data-rf130-action="close"]');
+  if(close){
+   close.className='tp6-photo-close';close.textContent='×';close.setAttribute('aria-label','Bezárás');close.setAttribute('title','Bezárás');
+   dialog.prepend(close);
+  }
+  dialog.querySelector('h2')?.classList.add('tp6-photo-title');
+  return out;
+ };
+ window.rf130OpenAddPhoto=rf130OpenAddPhoto;
+
+ const tp6HistoryHealthFlights=new Map();
+ healthFromHistory=async function healthFromHistory(i){
+  const h=history()[i];if(!h)return;
+  if(!h.finished||!(Date.parse(h.finished)>Date.parse(h.started))){
+   rfHistoryHealthCache.set(h.started,{error:'Ehhez az edzéshez nincs érvényes befejezési idő.'});rfHistoryHealthPaint(i);return;
+  }
+  const key=h.started;
+  if(tp6HistoryHealthFlights.has(key))return tp6HistoryHealthFlights.get(key);
+  const panel=document.querySelector('[data-rf-history-health-panel="'+i+'"]'),refresh=panel?.querySelector('.rf-history-health-refresh');
+  panel?.classList.add('tp6-health-refreshing');
+  if(refresh){refresh.disabled=true;refresh.setAttribute('aria-busy','true')}
+  const task=(async()=>{
+   try{
+    const result=await healthPlugin().readWorkout({start:h.started,end:h.finished,source:''});
+    rfHistoryHealthCache.set(key,{summary:result||{},loadedAt:Date.now()});
+   }catch(e){
+    rfHistoryHealthCache.set(key,{error:e?.message||'A Health Connect adatok lekérése nem sikerült.'});
+   }
+   // Paint only the final result. Never replace the inline block with the transient loading state.
+   // The Health result is not a scroll anchor; restore the current offset synchronously after replacement.
+   const sx=window.scrollX||0,sy=window.scrollY||0;
+   rfHistoryHealthPaint(i);
+   window.scrollTo(sx,sy);
+  })().finally(()=>{
+   panel?.classList.remove('tp6-health-refreshing');
+   if(refresh){refresh.disabled=false;refresh.removeAttribute('aria-busy')}
+   tp6HistoryHealthFlights.delete(key);
+  });
+  tp6HistoryHealthFlights.set(key,task);
+  return task;
+ };
+ window.healthFromHistory=healthFromHistory;
+
+ const style=document.createElement('style');style.id='tp6JournalMediaHealthCss';style.textContent=[
+  '#rf130PhotoModal.tp6-photo-modal{padding:10px!important}',
+  '#rf130PhotoModal .tp6-photo-dialog{position:relative!important;box-sizing:border-box!important;width:min(100%,440px)!important;max-width:440px!important;max-height:min(82vh,620px)!important;overflow:auto!important;padding:14px!important;border:1px solid var(--line)!important;border-radius:16px!important;background:var(--card)!important;box-shadow:none!important}',
+  'html[data-tp-theme-family="vivid"] #rf130PhotoModal .tp6-photo-dialog{box-shadow:0 0 22px color-mix(in srgb,var(--accent) 18%,transparent)!important}',
+  '#rf130PhotoModal .tp6-photo-title{margin:1px 44px 7px 0!important;font-size:19px!important;line-height:1.15!important}',
+  '#rf130PhotoModal .tp6-photo-dialog>p{margin:6px 0 9px!important;line-height:1.35!important}',
+  '#rf130PhotoModal .tp6-photo-close{position:absolute!important;z-index:2!important;top:9px!important;right:9px!important;width:38px!important;height:38px!important;min-width:38px!important;padding:0!important;border:1px solid #ff737b!important;border-radius:11px!important;background:#b92f3b!important;color:#fff!important;box-shadow:none!important;font:800 27px/34px system-ui,sans-serif!important;text-align:center!important;cursor:pointer!important}',
+  '#rf130PhotoModal .tp6-photo-close:focus-visible{outline:2px solid var(--accent)!important;outline-offset:2px!important}',
+  '#rf130PhotoModal .tp6-photo-dialog .rf130-labels{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}',
+  '#rf130PhotoModal .tp6-photo-dialog .rf130-labels .btn{min-width:0!important;padding:7px 3px!important;font-size:11.5px!important;line-height:1.15!important;white-space:normal!important}',
+  '#rf130PhotoModal .tp6-photo-dialog>br{display:none!important}',
+  '#rf130PhotoModal .tp6-photo-dialog>.grid2{gap:7px!important;margin-top:9px!important}',
+  '#rf130PhotoModal .tp6-photo-dialog [data-rf130-status]{min-height:17px!important;margin:7px 0 0!important}',
+  '.rf-history-health{overflow-anchor:none!important}',
+  '.rf-history-health-panel.tp6-health-refreshing .rf-history-health-refresh{opacity:.72!important;cursor:progress!important}',
+  '@media(max-width:340px){#rf130PhotoModal .tp6-photo-dialog{padding:12px!important}#rf130PhotoModal .tp6-photo-dialog .rf130-labels .btn{font-size:10.5px!important;padding:7px 2px!important}#rf130PhotoModal .tp6-photo-dialog>.grid2{grid-template-columns:repeat(2,minmax(0,1fr))!important}}'
+ ].join('');document.head.appendChild(style);
+
+ window.TrainPilotPhase6={version:TP6_VERSION,issues:[42,43],cameraPrivateFileProvider:true,cameraReturnFallbacks:true,compactPhotoModal:true,silentInlineHealthRefresh:true};
+})();
+
 });</script>
 </body></html>

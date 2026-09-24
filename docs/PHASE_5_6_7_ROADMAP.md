@@ -59,7 +59,7 @@ Capture useful before/after evidence (e.g. trace/Performance marks, relevant And
 | Phase | Issue(s) | Work | State |
 |---|---|---|---|
 | 5 | #27, #41, #44 | Health + global visual consistency + shared today grid | ✅ Phone-approved and merged (PR #40 + #45), TrainPilot 1.7.2 |
-| 6 | #42, #43 | Native camera/photo dialog + minor Journal inline Health loading-flash fix | **Next** |
+| 6 | #42, #43 | Native camera/photo dialog + minor Journal inline Health loading-flash fix | **Active development: 1.7.3 / 2662 candidate; phone approval pending** |
 | 7 | #19 | App-wide performance diagnostics and verified optimization | Planned; wait for Phase 6 merge |
 
 **Sequence from here:** latest validated `main` → Phase 6 branch/APK → phone approval → merge/validate `main` → Phase 7 branch/performance baseline/APK → phone approval → merge/validate.
