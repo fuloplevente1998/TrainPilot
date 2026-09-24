@@ -53,9 +53,13 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   await exactChevron('#tp155R4PanelHost[data-panel="quick"] .tp155-quick-filter>summary','::after','Quick-workout filter arrow');
   await exactChevron('#tp155R4PanelHost[data-panel="quick"] .tp152-quick-row .tp152-chevron','::before','Quick-workout exercise-row arrow');
   await page.evaluate(()=>{window.tp155R4ClosePanel(false);go('calendar')});await page.waitForSelector('#tp155R4PanelHost[data-panel="calendar"] #rf230Mode');
-  await exactChevron('#tp155R4PanelHost[data-panel="calendar"] #rf230Mode + .tp-select-trigger','::after','Calendar planning-rhythm select arrow').catch(async()=>{
-   await exactChevron('#tp155R4PanelHost[data-panel="calendar"] #rf230Mode','::after','Calendar planning-rhythm select arrow');
-  });
+  {
+   const trigger=page.locator('#tp155R4PanelHost[data-panel="calendar"] #rf230Mode').locator('xpath=..').locator('.tp-select-trigger');
+   const x=await trigger.evaluate(e=>{const c=getComputedStyle(e,'::after'),probe=document.createElement('i');probe.style.color='var(--accent2)';document.body.appendChild(probe);const theme=getComputedStyle(probe).color;probe.remove();return {content:c.content,clip:c.clipPath,color:c.color,theme}});
+   assert.equal(x.clip,'none','Calendar planning-rhythm select must not use triangle clipping: '+JSON.stringify(x));
+   assert.ok(x.content.includes('›'),'Calendar planning-rhythm select must render the shared chevron: '+JSON.stringify(x));
+   assert.equal(x.color,x.theme,'Calendar planning-rhythm select must follow theme accent: '+JSON.stringify(x));
+  }
   await page.evaluate(()=>{window.tp155R4ClosePanel(false);go('programs');window.tp155R4OpenPanel('exercises',document.activeElement)});await page.waitForSelector('#tp155R4PanelHost[data-panel="exercises"] #libraryMuscle');
   for(const id of ['libraryMuscle','libraryGear']){
    const sel='#tp155R4PanelHost[data-panel="exercises"] #'+id;
