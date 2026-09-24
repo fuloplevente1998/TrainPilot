@@ -55,7 +55,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   rf240Ledger=()=>({version:1,days,lastSyncAt:now.toISOString()});
   db.set('weights',[{kg:66.5,date:now.toISOString()}]);state.health=state.health||{};state.health.wellness={};go('health');
  });
- await page.waitForSelector('main.rf263-health .tp169-pulse-journal .tp5-pulse-trend-section');await page.waitForTimeout(90);
+ await page.waitForSelector('main.rf263-health .tp169-pulse-journal .tp5-pulse-trend-section',{state:'attached'});await page.waitForTimeout(90);
  const pulse=page.locator('main.rf263-health .tp169-pulse-journal'),button=pulse.locator('.tp169-pulse-summary');
  await page.evaluate(()=>{
   window.__pulsePanel=document.querySelector('.tp169-pulse-journal');
@@ -77,7 +77,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   assert.equal(actual.legacyChartVisible,false,'legacy chart must never become visible during open');
  }
  assert.match(await pulse.locator('.tp5-pulse-source').innerText(),/Health Connect.*healthLedgerV1.*averageHeartRate/i);
- await page.evaluate(()=>{go('home');go('health')});await page.waitForSelector('main.rf263-health .tp5-pulse-trend-section');
+ await page.evaluate(()=>{go('home');go('health')});await page.waitForSelector('main.rf263-health .tp5-pulse-trend-section',{state:'attached'});
  await page.locator('.tp169-pulse-summary').click();
  assert.equal(await page.locator('.tp169-pulse-journal.tp169-open .tp5-pulse-trend-section').count(),1,'pulse still opens correctly after route navigation');
  const weight=page.locator('.tp168-weight-journal');await weight.locator('.tp168-weight-summary').click();assert.equal(await page.locator('.tp168-weight-journal.tp168-open').count(),1,'weight disclosure must remain functional');
