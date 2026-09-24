@@ -4,20 +4,19 @@ Last updated: 2026-09-24. The authoritative phase-by-phase scope is [docs/PHASE_
 
 ## Stable baseline and current work
 
-- Latest **phone-approved** stable branch: `main`, TrainPilot **1.7.1 / Android versionCode 2660**; accepted Phase 4 PR #39 merged as `8424e5793c24d87be1edfc774e0fa7d475029de6`; post-merge Quick Validation #477 PASS.
-- Earlier phone-approved work: Phase 1 #18, Phase 2 #15/#16, Phase 3 #29/#30/#37, Phase 4 #17/#21. PRs #34, #35, #36, #38 and #39 merged.
-- **Phase 4 closure confirmed 2026-09-24 with one documented, temporary exception:** on the currently approved Health screen, the `Pulzus` and separate `Nyugalmi pulzus` buttons open the same graph. The user accepts Phase 4 as closed because Phase 5 #44 will **remove the separate resting-heart-rate button** and replace it with `Mai edzés` in the shared 2×3 Today status. Preserve any resting-HR source records; retest remaining `Pulzus` navigation. See PR #39 closure comment and #44.
-- **Active Phase 5:** #27, #41, #44; existing branch `feat/phase5-health-27`, draft [PR #40](https://github.com/fuloplevente1998/TrainPilot/pull/40), development version **1.7.2 / 2661**. #27, #41 and #44 are implemented on the phase branch, including the shared Home/Health 2×3 Today model, the selected patch-derived disclosure chevrons, and the flatter Health grid. Automated release gates pass; physical-phone approval is still required.
-- Latest Phase 5 candidate commit `bcaa2c3bd66e052abe9abdf78251d7bc38bb14f2` passed Quick Validation and Release Gate run `35989769213`, including full Node regression, full Chromium/UI regression, signed APK build and APK/package/source verification. **No Phase 5 merge until this refreshed candidate passes a fresh physical-phone test.**
-- **Planned Phase 6:** #42 + #43, native workout-photo camera/import + compact photo modal and Journal Health-refresh flash. Start its dedicated branch **only after approved Phase 5 merges and `main` validates**.
+- Latest **phone-approved** stable app baseline: `main`, TrainPilot **1.7.2 / Android versionCode 2661**. Phase 5 PR #40 merged as `c42781d58ab681b49fdc82de2c24ab9a1af2c34f`; final phone-reported chevron follow-up PR #45 merged as `377523e0fc94776a494d44ac59ddf31a30189988`; post-merge Quick TrainPilot Validation run `36009395458` PASS.
+- Earlier phone-approved work: Phase 1 #18, Phase 2 #15/#16, Phase 3 #29/#30/#37, Phase 4 #17/#21, Phase 5 #27/#41/#44. PRs #34, #35, #36, #38, #39, #40 and #45 merged.
+- The temporary Phase 4 Health exception is resolved by accepted Phase 5 #44: the separate resting-HR shortcut was removed from the shared Today grid and replaced by `Mai edzés`, while underlying resting-HR source records remain preserved.
+- **Phase 5 completed and phone-approved:** #27, #41 and #44. The accepted TrainPilot **1.7.2 / 2661** baseline includes Health pulse/weight correctness, global theme-aware disclosure chevrons, the shared Home/Health 2×3 `Mai állapot`, the flatter Health grid, and the final phone-reported chevron fixes from PR #45. Issues #27/#41/#44 are closed.
+- **Next: Phase 6:** #42 + #43, starting only from the latest validated `main`. #42 is unchanged: native workout-photo camera/import repair plus compact photo modal. #43 is now a **minor UI bug**: on Journal → Health `Frissítés`, the `Health Connect adatok lekérése` loading window/text briefly flashes; for this inline refresh that loading UI must remain hidden while the data refresh still completes in place.
 - **Planned Phase 7:** #19, app-wide latency/jank/render architecture investigation. Start **only after approved Phase 6 merges and `main` validates**. Layering and repeated render wrappers are hypotheses, not proven root causes.
-- Six open issues have exactly one owner phase: Phase 5 (#27, #41, #44), Phase 6 (#42, #43), Phase 7 (#19).
+- Remaining roadmap issues: Phase 6 (#42, #43) and Phase 7 (#19).
 
 ## Phase 5–7 acceptance boundaries
 
 **Phase 5 — Health + shared design system (#27, #41, #44).** Correct 7-calendar-day pulse source/semantics and weight edit; audited common theme-aware chevrons (navigation only; actual play controls remain play), Health chart safe zone and basic-matte/vivid-glow styling; unified 2×3 Today status in **existing** Home/Health positions with `Alvás / HRV / Pulzus / Lépések / Mai edzés / Regeneráció`. Home grid visibly more compact than Health grid; both share one daily data model.
 
-**Phase 6 — Journal/media reliability (#42, #43).** Fix approved Android camera photos being reported as cancelled while preserving gallery and genuine cancellation; make the photo dialog compact with top-right red X and theme-aware styles; prevent legacy layer flashes on in-place Journal Health refresh, preserving expanded state and scroll position.
+**Phase 6 — Journal/media reliability (#42, #43).** Fix approved Android camera photos being reported as cancelled while preserving gallery and genuine cancellation; make the photo dialog compact with top-right red X and theme-aware styles. For #43, keep the Journal inline Health refresh visually stable and specifically suppress the brief `Health Connect adatok lekérése` loading window/text; preserve expanded state and scroll position.
 
 **Phase 7 — latency and smoothness (#19).** Profile start/navigation, exercise editor, Home/Health/Coach/Journal, history expansion/Health sync, photo flow and scroll with representative datasets. Measure baseline before refactoring; inspect layered legacy wrappers, scheduled DOM rewrites, duplicate reads/writes, event handlers and WebView work without presuming causality. Quantify before/after on the same phone; protect legacy data and Drive synchronization.
 
@@ -69,7 +68,7 @@ This requirement is part of **Phase 3 (#29 + #30)** unless explicitly moved late
 
 ## Permanent TrainPilot release process — mandatory for **each remaining phase**
 
-1. Branch from the latest **physically phone-approved** `main` commit; **Phase 5 already has its dedicated branch and draft PR #40**. Do not base Phase 6/7 on unapproved development code.
+1. Branch from the latest **physically phone-approved and post-merge validated** `main` commit. Phase 6 must start from the accepted TrainPilot 1.7.2 baseline (plus any validated CI-only maintenance merged afterward), never from an unapproved development branch.
 2. Confirm phase issue acceptance criteria; implement its scope with targeted tests and protected earlier behavior.
 3. Run targeted tests, **full Node/regression**, **full Chromium/UI**, and build a **signed, upgrade-safe Android APK** with APK/package/source/version checks.
 4. Deliver that phase's APK for a physical Android phone test. If rejected, fix the **same phase branch**, repeat tests and deliver another APK.
@@ -80,4 +79,4 @@ Never trade data correctness, historical Journal recovery, Drive merge/tombstone
 
 ## Recovery instruction
 
-At the beginning of another TrainPilot conversation, read this file, then [the current roadmap](docs/PHASE_5_6_7_ROADMAP.md), and check GitHub issues / PR #40 / actual `main` validation. Follow Phase 5 → Phase 6 → Phase 7 in that order, retaining the signed-APK → physical-phone-approval → merge gate.
+At the beginning of another TrainPilot conversation, read this file, then [the current roadmap](docs/PHASE_5_6_7_ROADMAP.md), check issues #42/#43/#19 and the actual `main` validation, then continue with **Phase 6 → Phase 7**. Retain the signed-APK → physical-phone-approval → merge-to-main → post-merge-validation gate.
