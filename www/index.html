@@ -216,11 +216,28 @@
  window.tp168SaveWeight=function(){const kg=Number(String(document.querySelector('#tp168WeightKg')?.value||'').replace(',','.')),raw=String(document.querySelector('#tp168WeightDate')?.value||'').trim(),fallback=typeof rf215Date==='function'?rf215Date():new Date().toISOString().slice(0,10),d=/^\d{4}-\d{2}-\d{2}$/.test(raw)?raw:fallback;if(!kg||kg<30||kg>300)return alert('30–300 kg');const w=weights();w.unshift({kg:Math.round(kg*10)/10,date:new Date(d+'T12:00:00').toISOString()});db.set('weights',w);window.TrainPilot168Health.weightOpen=true;decorate()};
  window.tp168EditWeight=function(date){window.TrainPilot168Health.weightOpen=true;return typeof rf215Edit==='function'?rf215Edit(date):undefined};
  window.tp168DeleteWeight=function(date){window.TrainPilot168Health.weightOpen=true;return typeof rf215Del==='function'?rf215Del(date):undefined};
- window.tp168TogglePulse=function(){window.TrainPilot168Health.pulseOpen=!window.TrainPilot168Health.pulseOpen;decorate();setTimeout(()=>document.querySelector('.tp169-pulse-journal')?.scrollIntoView?.({block:'nearest',behavior:'smooth'}),0)};
- window.tp168OpenPulse=function(){window.TrainPilot168Health.pulseOpen=true;decorate();setTimeout(()=>document.querySelector('.tp169-pulse-journal')?.scrollIntoView?.({block:'center',behavior:'smooth'}),0)};
+ // Keep the already decorated 7-day trend subtree mounted during disclosure.
+ // Rebuilding Today here briefly exposes the legacy pulse chart before Phase 5 decoration.
+ window.tp168TogglePulse=function(){
+  const health=window.TrainPilot168Health,next=!health.pulseOpen,panel=document.querySelector('main.rf263-health .tp169-pulse-journal');
+  health.pulseOpen=next;
+  if(!panel){decorate();return}
+  panel.classList.toggle('tp169-open',next);
+  panel.querySelector('.tp169-pulse-summary')?.setAttribute('aria-expanded',String(next));
+  if(next)requestAnimationFrame(()=>{if(panel.isConnected)panel.scrollIntoView?.({block:'nearest',behavior:'smooth'})});
+ };
+ window.tp168OpenPulse=function(){
+  if(!window.TrainPilot168Health.pulseOpen)return window.tp168TogglePulse();
+  const panel=document.querySelector('main.rf263-health .tp169-pulse-journal');
+  if(panel)panel.scrollIntoView?.({block:'center',behavior:'smooth'});
+  else decorate();
+ };
  const recoveryBase=window.tp153OpenRecovery;
  window.tp153OpenRecovery=function(){
-  window.TrainPilot168Health.pulseOpen=true;decorate();
+  const panel=document.querySelector('main.rf263-health .tp169-pulse-journal');
+  window.TrainPilot168Health.pulseOpen=true;
+  if(panel){panel.classList.add('tp169-open');panel.querySelector('.tp169-pulse-summary')?.setAttribute('aria-expanded','true')}
+  else decorate();
   setTimeout(()=>{
    const nested=document.querySelector('.tp169-pulse-journal .tp168-recovery-history');
    if(nested){nested.open=true;if(nested.scrollIntoView)nested.scrollIntoView({block:'center',behavior:'smooth'});return}
@@ -935,6 +952,10 @@
   if(!raw)return body;
   const x=typeof window.tp165SafeHistoryRecord==='function'?window.tp165SafeHistoryRecord(raw,i>=0?i:originalIndex):raw;
   body.innerHTML=tp3HistoryBodyHtml(x,key,originalIndex);body.dataset.tp3Hydrated='true';
+  // Phase 7 lazy hydration injects this select after the global render enhancer ran.
+  // Upgrade this *local* picker synchronously before its first possible tap.
+  const newPicker=body.querySelector('select.field[data-tp3-add-exercise]');
+  if(newPicker&&typeof rf260EnhanceSelect==='function')rf260EnhanceSelect(newPicker,0);
   try{window.tpGlobalApplyChevrons?.(body)}catch(_){}
   return body;
  };
@@ -1444,7 +1465,12 @@
   window.TrainPilot168Health.decorate=function(){const out=base.apply(this,arguments);decoratePulse();return out};
  }
  if(typeof window.tp168TogglePulse==='function'){
-  const base=window.tp168TogglePulse;window.tp168TogglePulse=function(){const out=base.apply(this,arguments);setTimeout(decoratePulse,0);return out};
+  const base=window.tp168TogglePulse;window.tp168TogglePulse=function(){
+   const out=base.apply(this,arguments);
+   // The existing Pulse content is already upgraded; never rewrite the chart on each tap.
+   if(!document.querySelector('main.rf263-health .tp169-pulse-journal .tp5-pulse-trend-section'))decoratePulse();
+   return out;
+  };
  }
  if(typeof window.render==='function'){
   const base=window.render;window.render=function(){const out=base.apply(this,arguments);decoratePulse();setTimeout(decoratePulse,0);return out};
