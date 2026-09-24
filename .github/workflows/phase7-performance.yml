@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [ main ]
   push:
-    branches: [ feat/phase7-performance-19 ]
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
@@ -30,9 +30,19 @@ jobs:
         run: npm ci
       - name: Install Chromium
         run: npx --no-install playwright install --with-deps chromium
-      - name: Run Phase 7 performance benchmark
-        run: node tests/browser/phase7-performance-19.cjs
+      - name: Run reproducible benchmark
+        run: node tests/browser/phase7-performance-19.cjs | tee phase7-metrics.log
+      - name: Reject major structural and timing regressions
+        run: node tests/browser/phase7-performance-budget.cjs phase7-metrics.log
       - name: Trace repeated history callers
         run: node tests/browser/phase7-history-callers-19.cjs
       - name: Profile cold Coach open
         run: node tests/browser/phase7-coach-cold-19.cjs
+      - name: Archive performance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrainPilot-performance-${{ github.run_id }}
+          path: phase7-metrics.log
+          if-no-files-found: ignore
+          retention-days: 30

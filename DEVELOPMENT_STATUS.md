@@ -1,16 +1,14 @@
 # TrainPilot — Development Status
 
-Last updated: 2026-09-24. The authoritative phase-by-phase scope is [docs/PHASE_5_6_7_ROADMAP.md](docs/PHASE_5_6_7_ROADMAP.md). This file supersedes the former six-phase plan. **Planning does not mean an issue or APK is implemented or approved.**
+Last updated: 2026-09-24. The authoritative completed phase history is [docs/PHASE_5_6_7_ROADMAP.md](docs/PHASE_5_6_7_ROADMAP.md). The permanent future performance gate is [docs/PERFORMANCE_REGRESSION_POLICY.md](docs/PERFORMANCE_REGRESSION_POLICY.md).
 
 ## Stable baseline and current work
 
-- Latest **phone-approved** stable app baseline: `main`, TrainPilot **1.7.3 / Android versionCode 2662**, validated main commit `f064298ddbe1e7e4cf1ecdfca18b3d93899dc74a`. Phase 6 PR #47 is merged; #42 and #43 are closed/completed.
-- **Phase 6 completed and phone-approved:** camera approval now attaches the photo through the private FileProvider flow, genuine cancel remains cancel, gallery selection remains functional, the photo modal is compact with the accepted red X, and Journal Health refresh no longer flashes the global loading UI or loses expanded/scroll state.
-- **Active Phase 7 candidate:** issue #19 on `feat/phase7-performance-19`, based exactly on validated `main` `f064298ddbe1e7e4cf1ecdfca18b3d93899dc74a`; candidate version **1.7.4 / 2663**. Draft PR #48 remains unmerged until explicit physical-phone approval.
-- Phase 7 measured bottlenecks rather than removing legacy layers blindly. The main fixes are lazy Journal detail hydration, operation-scoped history reuse, lazy Program detail hydration, batched Progress statistics and post-first-paint Coach Progress hydration.
-- Representative 240-workout Chromium benchmark: Journal fell from ~3166 ms / 242 `history()` calls / ~99k DOM nodes to ~88–104 ms / 1 call / ~3.5k nodes; Coach first visible feedback fell from roughly 350–540 ms to ~30–58 ms while the complete statistics still hydrate afterward.
-- Remaining roadmap issue: Phase 7 (#19) only. No merge until signed 1.7.4 APK passes physical-phone comparison against 1.7.3.
-
+- **Latest phone-accepted and merged stable main app:** TrainPilot **1.7.4 / Android versionCode 2663**, Phase 7 [PR #48](https://github.com/fuloplevente1998/TrainPilot/pull/48) merge commit `4a85b33e3545197a9053461840e60a178b45a341` from validated Phase 6 `f064298ddbe1e7e4cf1ecdfca18b3d93899dc74a`. User explicitly accepted the speed improvement for main and elected to defer two unrelated UI follow-ups. Post-merge Quick TrainPilot Validation [#652](https://github.com/fuloplevente1998/TrainPilot/actions/runs/36034983842) passed.
+- **Phase 7 (#19) completed and merged:** lazy Journal detail hydration, operation-scoped fresh history snapshots (no persistent cache), lazy Program detail hydration, batched Coach Progress statistics and deferred full Coach Progress hydration after first paint.
+- Reference 240-workout Chromium benchmark: Journal ~3166 ms / 242 history calls / ~99,056 nodes before versus **~104 ms / 1 history call / ~3,536 nodes** after. Home ~149→31 ms; Programs ~146→31 ms. Coach first visible feedback ~350–540→32–64 ms; full deferred Progress still loads afterward. Physical phone feedback: speedup is noticeable.
+- **Open UI follow-ups for the next separately tested release:** [#49](https://github.com/fuloplevente1998/TrainPilot/issues/49) Journal exercise picker native-first/open width; [#50](https://github.com/fuloplevente1998/TrainPilot/issues/50) Health pulse disclosure visual flash. Earlier origin is unverified. Do not blend unapproved UI fixes into the accepted Phase 7 main commit.
+- **Permanent slowdown-prevention guard:** [#51](https://github.com/fuloplevente1998/TrainPilot/issues/51) and the [versioned performance policy](docs/PERFORMANCE_REGRESSION_POLICY.md). Every future fix must retain the measurable Phase 7 structural and latency gains and re-test first and repeated opens.
 
 ## Phase 5–7 acceptance boundaries
 
@@ -66,17 +64,17 @@ Reference behavior/style:
 
 This requirement is part of **Phase 3 (#29 + #30)** unless explicitly moved later.
 
-## Permanent TrainPilot release process — mandatory for **each remaining phase**
+## Permanent TrainPilot release process — mandatory for **each subsequent app release**
 
-1. Branch from the latest **physically phone-approved and post-merge validated** `main` commit. Phase 6 must start from the accepted TrainPilot 1.7.2 baseline (plus any validated CI-only maintenance merged afterward), never from an unapproved development branch.
+1. Branch from the latest **physically phone-approved and post-merge validated** `main` app commit. For the upcoming UI fixes (#49/#50), use the accepted 1.7.4 / 2663 main baseline including any subsequent validated docs/test-only commits; never branch from an unapproved development APK.
 2. Confirm phase issue acceptance criteria; implement its scope with targeted tests and protected earlier behavior.
 3. Run targeted tests, **full Node/regression**, **full Chromium/UI**, and build a **signed, upgrade-safe Android APK** with APK/package/source/version checks.
 4. Deliver that phase's APK for a physical Android phone test. If rejected, fix the **same phase branch**, repeat tests and deliver another APK.
 5. **No merge until explicit user phone approval**. After approval merge to `main`, verify the post-merge workflow, record accepted commit/PR/issue status.
-6. Only then begin the next phase from the newly approved `main`. Each of Phases 5, 6 and 7 needs its **own testable, signed APK**.
+6. Only then begin the next UX work from the newly approved `main`. Every UX release requires its own testable, signed APK. Documentation/test-only maintenance cannot silently alter the app artifact.
 
 Never trade data correctness, historical Journal recovery, Drive merge/tombstone safety, app signing continuity, Coach logic, or accepted UX for UI simplification or latency improvements. A completed CI run, a draft PR and a mockup are not phone acceptance.
 
 ## Recovery instruction
 
-At the beginning of another TrainPilot conversation, read this file, then [the current roadmap](docs/PHASE_5_6_7_ROADMAP.md), check issues #42/#43/#19 and the actual `main` validation, then continue with the active **Phase 7 (#19)** branch. Retain the signed-APK → physical-phone-approval → merge-to-main → post-merge-validation gate.
+At the beginning of another TrainPilot conversation, read this file, [the completed roadmap](docs/PHASE_5_6_7_ROADMAP.md) and [the permanent performance policy](docs/PERFORMANCE_REGRESSION_POLICY.md). Verify latest main and issues #49/#50/#51, then start any new code fix from the post-merge-validated **1.7.4 / 2663 main** (not the old Phase 7 branch). For future UX code keep measured regression guard → full tests → signed APK → physical-phone-approval → merge-to-main → post-merge-validation.
