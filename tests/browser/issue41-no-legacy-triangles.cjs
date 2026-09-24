@@ -38,6 +38,33 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   }
   await page.evaluate(()=>{go('programs');muscleLibrary()});await page.waitForSelector('#libraryResults .tp-library-card');await scan('exercise-library');
   await page.evaluate(()=>profileScreen());await page.waitForSelector('.rf148-profile-accordion');await scan('profile');
+
+  // #41 phone-reported exact locations (2026-09-24): these four surfaces previously
+  // still exposed the white CSS triangle even though the generic audit passed.
+  const exactChevron=async(selector,pseudo,label)=>{
+   const x=await page.locator(selector).first().evaluate((e,pseudo)=>{const c=getComputedStyle(e,pseudo),probe=document.createElement('i');probe.style.color='var(--accent2)';document.body.appendChild(probe);const theme=getComputedStyle(probe).color;probe.remove();return {content:c.content,clip:c.clipPath,color:c.color,theme}},pseudo);
+   assert.equal(x.clip,'none',label+' must not use triangle clipping: '+JSON.stringify(x));
+   assert.ok(x.content.includes('›'),label+' must render the shared chevron: '+JSON.stringify(x));
+   assert.equal(x.color,x.theme,label+' must follow the active theme accent: '+JSON.stringify(x));
+  };
+  await page.evaluate(()=>{window.tp155R4ClosePanel?.(false);go('history')});await page.waitForSelector('.tp155-journal-filter .tp160-journal-disclosure');
+  await exactChevron('.tp155-journal-filter .tp160-journal-disclosure','::before','Journal date-filter arrow');
+  await page.evaluate(()=>{go('plan');window.tp155R4OpenPanel('quick',document.activeElement)});await page.waitForSelector('#tp155R4PanelHost[data-panel="quick"] .tp155-quick-filter');
+  await exactChevron('#tp155R4PanelHost[data-panel="quick"] .tp155-quick-filter>summary','::after','Quick-workout filter arrow');
+  await exactChevron('#tp155R4PanelHost[data-panel="quick"] .tp152-quick-row .tp152-chevron','::before','Quick-workout exercise-row arrow');
+  await page.evaluate(()=>{window.tp155R4ClosePanel(false);go('calendar')});await page.waitForSelector('#tp155R4PanelHost[data-panel="calendar"] #rf230Mode');
+  await exactChevron('#tp155R4PanelHost[data-panel="calendar"] #rf230Mode + .tp-select-trigger','::after','Calendar planning-rhythm select arrow').catch(async()=>{
+   await exactChevron('#tp155R4PanelHost[data-panel="calendar"] #rf230Mode','::after','Calendar planning-rhythm select arrow');
+  });
+  await page.evaluate(()=>{window.tp155R4ClosePanel(false);go('programs');window.tp155R4OpenPanel('exercises',document.activeElement)});await page.waitForSelector('#tp155R4PanelHost[data-panel="exercises"] #libraryMuscle');
+  for(const id of ['libraryMuscle','libraryGear']){
+   const sel='#tp155R4PanelHost[data-panel="exercises"] #'+id;
+   const trigger=page.locator(sel).locator('xpath=..').locator('.tp-select-trigger');
+   const x=await trigger.evaluate(e=>{const c=getComputedStyle(e,'::after'),probe=document.createElement('i');probe.style.color='var(--accent2)';document.body.appendChild(probe);const theme=getComputedStyle(probe).color;probe.remove();return {content:c.content,clip:c.clipPath,color:c.color,theme}});
+   assert.equal(x.clip,'none',id+' filter must not use triangle clipping: '+JSON.stringify(x));
+   assert.ok(x.content.includes('›'),id+' filter must render the shared chevron: '+JSON.stringify(x));
+   assert.equal(x.color,x.theme,id+' filter must follow theme accent: '+JSON.stringify(x));
+  }
   await page.evaluate(()=>go('health'));await page.waitForSelector('.tp5-today-full');
   for(const width of [320,360,393,412]){
    await page.setViewportSize({width,height:760});
