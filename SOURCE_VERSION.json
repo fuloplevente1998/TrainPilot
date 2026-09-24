@@ -1,7 +1,7 @@
 {
-  "version": "1.7.3",
-  "versionCode": 2662,
-  "baselineCommit": "237bf6b95e57672a516e2627a995fc7011df5065",
+  "version": "1.7.4",
+  "versionCode": 2663,
+  "baselineCommit": "f064298ddbe1e7e4cf1ecdfca18b3d93899dc74a",
   "source": "www/app.js",
   "sourceCommit": ""
 }

@@ -1,3 +1,15 @@
+# TrainPilot 1.7.4 – Phase 7 teljesítmény / renderarchitektúra (teszt)
+
+- #19: reprodukálható Chromium benchmark került a repóba 240 edzéses, 8 gyakorlatos nagy Napló-adathalmazzal; startup, fő route-ok, Journal megnyitás/szerkesztés, fotómodal, Coach és ismételt navigáció mérhető.
+- A Napló zárt kártyái lazy módon építik fel a részletes szerkesztő/Health/fotó DOM-ot. A baseline ~3166 ms / 242 `history()` / ~99 056 DOM node értékéről a validált CI futásokban ~88–104 ms / 1 `history()` / ~3 536 DOM node környékére csökkent a nagy Napló megnyitása.
+- A Home és Coach műveletek műveleten belüli history snapshotot használnak, tartós cache nélkül; minden új művelet friss tárolt history-t olvas.
+- A Programok zárt kártyái nem építik fel előre a teljes nap/gyakorlat preview DOM-ot; megnyitáskor helyben hidratálnak.
+- A Coach felső UI-ja és gyakorlatonkénti javaslatai azonnal megjelennek; a lent lévő teljes Progress/Statisztikák blokk az első festés után töltődik. A mért első látható feedback ~350–540 ms-ról ~30–58 ms-ra csökkent, miközben minden naplózott gyakorlat és weighted/reps/timed/bilateral stat megmarad.
+- A Journal és Program lazy nyitás megőrzi a korábbi azonnali vezérlőket és a helyi szerkesztési viselkedést; külön regressziós tesztek védik.
+- A Drive/legacy/tombstone adatbiztonsági logika nem lett lazítva és nincs tartós history cache.
+- Android `versionCode 2663`, `versionName 1.7.4`.
+- Fizikai telefonos jóváhagyás szükséges a Phase 7 merge előtt; PR #48 addig draft marad.
+
 # TrainPilot 1.7.3 – Phase 6 Napló / kamera / Health frissítés (teszt)
 
 - #42: a kamera újra privát FileProvider cache-fájlba ír; a visszatérési út a tényleges képbájtokat ellenőrzi az Activity result flag előtt, rövid fájl-flush várakozással.
@@ -7,7 +19,7 @@
 - #43: Napló → Health → Frissítés közben nincs köztes loading-paint; a már látható Health-adat marad a helyén, majd csak a kész eredmény festődik be.
 - #43: a lenyitott edzés/Health panel DOM-ja nem renderelődik újra, így az állapot és a scrollpozíció megmarad.
 - Android `versionCode 2662`, `versionName 1.7.3`.
-- Fizikai telefonos jóváhagyás szükséges a Phase 6 merge előtt.
+- Phase 6 2026-09-24-én fizikailag elfogadva, PR #47-tel mainre merge-elve; validált main: `f064298ddbe1e7e4cf1ecdfca18b3d93899dc74a`.
 
 # TrainPilot 1.7.2 – Phase 5 Health / Pulzustrend (teszt)
 

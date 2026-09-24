@@ -1,0 +1,20 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http'),{chromium}=require('playwright');
+const root=path.resolve('www');
+const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local').pathname;if(p==='/')p='/index.html';const file=path.resolve(root,'.'+p);if(!file.startsWith(root+path.sep)){res.writeHead(403);return res.end()}fs.readFile(file,(e,d)=>{if(e){res.writeHead(404);return res.end()}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'text/plain');res.end(d)})});
+(async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));let b;try{
+ b=await chromium.launch({headless:true,args:['--no-sandbox']});const p=await b.newPage({viewport:{width:393,height:873},locale:'hu-HU'});
+ await p.goto('http://127.0.0.1:'+server.address().port+'/');await p.waitForFunction(()=>window.TrainPilotBoot?.finished);
+ await p.evaluate(()=>go('programs'));await p.waitForSelector('details.tp152-program-card');
+ const cards=p.locator('details.tp152-program-card'),count=await cards.count();assert.ok(count>=3,'program cards missing');
+ assert.equal(await p.locator('.tp152-program-card-body[data-tp7-hydrated="true"]').count(),0,'collapsed program cards must not eagerly render bodies');
+ assert.equal(await p.locator('.tp152-program-day').count(),0,'collapsed program cards must not build day/exercise preview DOM');
+ const first=cards.first();await first.locator(':scope > summary').click();
+ assert.ok(await first.locator('.tp152-program-day').count()>=1,'opening a lazy program card must synchronously expose its accepted day rows');
+ await p.waitForSelector('details.tp152-program-card[open] .tp152-program-day');
+ assert.equal(await p.locator('.tp152-program-card-body[data-tp7-hydrated="true"]').count(),1,'only opened program card should hydrate');
+ const day=first.locator('.tp152-program-day').first();await day.locator(':scope > summary').click();assert.ok(await day.locator('.tp152-program-day-body').locator('*').count()>0,'program day preview must remain available');
+ await first.locator(':scope > summary').click();await first.locator(':scope > summary').click();
+ assert.equal(await first.locator(':scope > .tp152-program-card-body').getAttribute('data-tp7-hydrated'),'true','hydrated program body should be reused after collapse/reopen');
+ assert.equal((await p.evaluate(()=>window.TrainPilotPhase7Performance)).lazyPrograms,true);
+ console.log('PASS Phase 7 lazy program cards preserve expandable program details');
+}finally{await b?.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exit(1)});

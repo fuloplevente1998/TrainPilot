@@ -1,0 +1,38 @@
+name: Phase 7 Performance Baseline
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ feat/phase7-performance-19 ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trainpilot-phase7-perf-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Run Phase 7 performance benchmark
+        run: node tests/browser/phase7-performance-19.cjs
+      - name: Trace repeated history callers
+        run: node tests/browser/phase7-history-callers-19.cjs
+      - name: Profile cold Coach open
+        run: node tests/browser/phase7-coach-cold-19.cjs

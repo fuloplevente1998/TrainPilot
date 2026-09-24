@@ -921,6 +921,23 @@
   else if(state.tp3HistoryOpenKey===key)state.tp3HistoryOpenKey=null;
  };
 
+ const tp3HistoryBodyHtml=(x,key,originalIndex)=>{
+  const calendarText=typeof tp149T==='function'?tp149T('journal.addCalendar'):'Naptárhoz adás';
+  const healthText=typeof tp149T==='function'?tp149T('journal.healthData'):'Health adatok';
+  const refreshText=typeof tp149T==='function'?tp149T('common.refresh'):'Frissítés';
+  const tools='<div class="tp3-history-aux"><button class="btn secondary block" type="button" onclick="event.stopPropagation();calendarIntent('+originalIndex+')">'+esc(calendarText)+'</button><button class="btn danger block tp155-history-delete" type="button" onclick="event.stopPropagation();tp3DeleteHistoryWorkout(\''+esc(key)+'\')">'+esc(tx().deleteWorkout)+'</button></div>';
+  const health='<div class="rf-history-health-panel" data-rf-history-health-panel="'+originalIndex+'"><button type="button" class="rf-history-health-toggle" aria-expanded="true" onclick="event.stopPropagation();rfHistoryHealthToggle('+originalIndex+')"><div class="tp3-health-toggle-copy"><strong>'+esc(healthText)+'</strong><span class="small muted"> • '+esc(rfHistoryHealthWindow(x))+'</span></div><span class="rf-history-health-chevron" aria-hidden="true">›</span></button><div class="rf-history-health-body"><div class="rf-history-health" data-rf-history-health="'+originalIndex+'">'+rfHistoryHealthHtml(originalIndex)+'</div><button type="button" class="btn secondary block rf-history-health-refresh" onclick="event.stopPropagation();healthFromHistory('+originalIndex+')">'+esc(refreshText)+'</button></div></div>';
+  return tp3WorkoutSummaryHtml(x,key)+tools+health+rf130PhotoSection(x,key);
+ };
+ window.tp3EnsureHistoryBody=function(el,originalIndex,key){
+  const body=el?.querySelector?.(':scope > .tp3-combined-history-body');if(!body||body.dataset.tp3Hydrated==='true')return body;
+  const rows=history(),i=rows.findIndex(v=>rf142WorkoutKey(v)===key),raw=i>=0?rows[i]:rows[originalIndex];
+  if(!raw)return body;
+  const x=typeof window.tp165SafeHistoryRecord==='function'?window.tp165SafeHistoryRecord(raw,i>=0?i:originalIndex):raw;
+  body.innerHTML=tp3HistoryBodyHtml(x,key,originalIndex);body.dataset.tp3Hydrated='true';
+  try{window.tpGlobalApplyChevrons?.(body)}catch(_){}
+  return body;
+ };
  rf263HistoryItem=function(x,originalIndex,visibleIndex){
   const safe=typeof window.tp165SafeHistoryRecord==='function'?window.tp165SafeHistoryRecord(x,originalIndex):x;
   try{
@@ -932,14 +949,8 @@
    const photoCount=typeof rf130VisiblePhotos==='function'?rf130VisiblePhotos(x).length:0;
    const exerciseCount=typeof tp149T==='function'?tp149T('journal.exerciseCount',{count:x.exercises.length}):x.exercises.length+' gyakorlat';
    const photoLabel=photoCount?(typeof tp149T==='function'?tp149T('journal.photoCount',{count:photoCount}):photoCount+' fotó'):'';
-   const calendarText=typeof tp149T==='function'?tp149T('journal.addCalendar'):'Naptárhoz adás';
-   const healthText=typeof tp149T==='function'?tp149T('journal.healthData'):'Health adatok';
-   const refreshText=typeof tp149T==='function'?tp149T('common.refresh'):'Frissítés';
-   const tools='<div class="tp3-history-aux"><button class="btn secondary block" type="button" onclick="event.stopPropagation();calendarIntent('+originalIndex+')">'+esc(calendarText)+'</button><button class="btn danger block tp155-history-delete" type="button" onclick="event.stopPropagation();tp3DeleteHistoryWorkout(\''+esc(key)+'\')">'+esc(tx().deleteWorkout)+'</button></div>';
-   const health='<div class="rf-history-health-panel" data-rf-history-health-panel="'+originalIndex+'"><button type="button" class="rf-history-health-toggle" aria-expanded="true" onclick="event.stopPropagation();rfHistoryHealthToggle('+originalIndex+')"><div class="tp3-health-toggle-copy"><strong>'+esc(healthText)+'</strong><span class="small muted"> • '+esc(rfHistoryHealthWindow(x))+'</span></div><span class="rf-history-health-chevron" aria-hidden="true">›</span></button><div class="rf-history-health-body"><div class="rf-history-health" data-rf-history-health="'+originalIndex+'">'+rfHistoryHealthHtml(originalIndex)+'</div><button type="button" class="btn secondary block rf-history-health-refresh" onclick="event.stopPropagation();healthFromHistory('+originalIndex+')">'+esc(refreshText)+'</button></div></div>';
-   const primary=tp3WorkoutSummaryHtml(x,key);
-   const body='<div class="history-body tp3-combined-history-body">'+primary+tools+health+rf130PhotoSection(x,key)+'</div>';
-   return '<details data-tp152-history-key="'+esc(key)+'" '+(open?'open ':'')+'class="history rf263-history rf103-history tp3-combined-history" ontoggle="if(this.open){rf130LoadHistoryPhotos(this);rfHistoryHealthEnsure('+originalIndex+')}tp3HistoryToggle(this,\''+esc(key)+'\')"><summary><div class="history-head"><div class="history-title-row"><div><div class="history-title">'+esc(title)+'</div><div class="history-date">'+esc(dateText)+'</div></div><div class="rf103-history-side"><span class="badge">'+esc(exerciseCount+(photoLabel?' • '+photoLabel:''))+'</span><span class="rf103-history-chevron" aria-hidden="true">›</span></div></div><div class="history-badges"><span class="history-badge">⏱ '+esc(sessionDuration(x))+'</span><span class="history-badge">✓ '+esc(typeof tp149T==='function'?tp149T('journal.setCount',{done:c.done,total:c.total}):c.done+'/'+c.total+' sorozat')+'</span></div></div></summary>'+body+'</details>';
+   const body='<div class="history-body tp3-combined-history-body" data-tp3-hydrated="'+(open?'true':'false')+'">'+(open?tp3HistoryBodyHtml(x,key,originalIndex):'')+'</div>';
+   return '<details data-tp152-history-key="'+esc(key)+'" '+(open?'open ':'')+'class="history rf263-history rf103-history tp3-combined-history" ontoggle="if(this.open){tp3EnsureHistoryBody(this,'+originalIndex+',\''+esc(key)+'\');rf130LoadHistoryPhotos(this);rfHistoryHealthEnsure('+originalIndex+')}tp3HistoryToggle(this,\''+esc(key)+'\')"><summary onclick="if(!this.parentElement.open)tp3EnsureHistoryBody(this.parentElement,'+originalIndex+',\''+esc(key)+'\')"><div class="history-head"><div class="history-title-row"><div><div class="history-title">'+esc(title)+'</div><div class="history-date">'+esc(dateText)+'</div></div><div class="rf103-history-side"><span class="badge">'+esc(exerciseCount+(photoLabel?' • '+photoLabel:''))+'</span><span class="rf103-history-chevron" aria-hidden="true">›</span></div></div><div class="history-badges"><span class="history-badge">⏱ '+esc(sessionDuration(x))+'</span><span class="history-badge">✓ '+esc(typeof tp149T==='function'?tp149T('journal.setCount',{done:c.done,total:c.total}):c.done+'/'+c.total+' sorozat')+'</span></div></div></summary>'+body+'</details>';
   }catch(error){
    try{console.error('[TrainPilot] Phase 3 Journal row recovery',originalIndex,error)}catch(_){}
    const date=typeof fmtDate==='function'?fmtDate(safe?.started):'';
@@ -1194,20 +1205,21 @@
  const setDone=s=>s&&s.done!==false;
  const fmt=n=>typeof tp149FormatNumber==='function'?tp149FormatNumber(n,{maximumFractionDigits:1}):String(Math.round(n*10)/10);
 
- rf220ExerciseStats=function(id){
+ const tp4ExerciseStatsFromMatches=(id,workouts)=>{
   const rows=[],sessions=[],byWorkout={};
-  for(const h of (typeof rf220Hist==='function'?rf220Hist():history()||[])){
-   const matches=(h?.exercises||[]).filter(e=>e?.id===id);if(!matches.length)continue;
+  for(const entry of workouts||[]){
+   const h=entry.h,matches=entry.matches||[];if(!matches.length)continue;
    let has=false,vol=0;
+   const workoutTime=typeof rf220WorkoutTime==='function'?rf220WorkoutTime(h):Date.parse(h.started||h.finished||0);
    for(const raw of matches){
     const e=meta(id,raw),sets=(e.sets||[]).filter(setDone),isBi=bilateral(e,sets),isTimed=timed(e,sets);
     for(const s of sets){
      const w=num(s.weight),r=num(s.reps),left=num(s.leftSeconds),right=num(s.rightSeconds);
-     rows.push({w,r,left,right,seconds:isBi?Math.max(left,right,r):isTimed?r:0,one:!isTimed&&w>0&&r>0?w*(1+r/30):0,vol:!isTimed?w*r:0,date:typeof rf220WorkoutTime==='function'?rf220WorkoutTime(h):Date.parse(h.started||h.finished||0),kind:isBi?'bilateral':isTimed?'timed':w>0?'weighted':'reps'});
+     rows.push({w,r,left,right,seconds:isBi?Math.max(left,right,r):isTimed?r:0,one:!isTimed&&w>0&&r>0?w*(1+r/30):0,vol:!isTimed?w*r:0,date:workoutTime,kind:isBi?'bilateral':isTimed?'timed':w>0?'weighted':'reps'});
      vol+=!isTimed?w*r:0;has=true;
     }
    }
-   if(has){sessions.push(h);byWorkout[String(typeof rf220WorkoutTime==='function'?rf220WorkoutTime(h):Date.parse(h.started||0))]=vol}
+   if(has){sessions.push(h);byWorkout[String(workoutTime)]=vol}
   }
   if(!rows.length)return null;
   const raw=rows[0],m=meta(id,(sessions[0]?.exercises||[]).find(e=>e.id===id)),isBi=bilateral(m,rows),isTimed=timed(m,rows),weighted=!isTimed&&rows.some(x=>x.w>0);
@@ -1216,10 +1228,29 @@
   const latest=rows.slice().sort((a,b)=>(b.date||0)-(a.date||0))[0]||raw;
   return {kind:isBi?'bilateral':isTimed?'timed':weighted?'weighted':'reps',maxWeight,e1rm,best,maxVolume:Math.max(0,...Object.values(byWorkout)),count:rows.length,sessions:sessions.length,maxReps,maxSeconds,maxLeft,maxRight,latest};
  };
+ rf220ExerciseStats=function(id){
+  const workouts=[];
+  for(const h of (typeof rf220Hist==='function'?rf220Hist():history()||[])){
+   const matches=(h?.exercises||[]).filter(e=>e?.id===id);
+   if(matches.length)workouts.push({h,matches});
+  }
+  return tp4ExerciseStatsFromMatches(id,workouts);
+ };
  rf220ProgressRows=function(){
-  const ids=[];
-  for(const h of (typeof rf220Hist==='function'?rf220Hist():history()||[]))for(const e of h?.exercises||[])if(e?.id&&!ids.includes(e.id))ids.push(e.id);
-  return ids.map(id=>({id,s:rf220ExerciseStats(id)})).filter(x=>x.s).sort((a,b)=>(b.s.sessions-a.s.sessions)||(b.s.count-a.s.count));
+  const ids=[],grouped=new Map();
+  for(const h of (typeof rf220Hist==='function'?rf220Hist():history()||[])){
+   const perWorkout=new Map();
+   for(const e of h?.exercises||[]){
+    if(!e?.id)continue;
+    if(!perWorkout.has(e.id))perWorkout.set(e.id,[]);
+    perWorkout.get(e.id).push(e);
+   }
+   for(const [id,matches] of perWorkout){
+    if(!grouped.has(id)){ids.push(id);grouped.set(id,[])}
+    grouped.get(id).push({h,matches});
+   }
+  }
+  return ids.map(id=>({id,s:tp4ExerciseStatsFromMatches(id,grouped.get(id)||[])})).filter(x=>x.s).sort((a,b)=>(b.s.sessions-a.s.sessions)||(b.s.count-a.s.count));
  };
  const summary=s=>{
   const t=copy();
@@ -1559,6 +1590,113 @@
  ].join('');document.head.appendChild(style);
 
  window.TrainPilotPhase6={version:TP6_VERSION,issues:[42,43],cameraPrivateFileProvider:true,cameraReturnFallbacks:true,compactPhotoModal:true,silentInlineHealthRefresh:true};
+
+})();
+
+/* Phase 7 — #19 operation-scoped history snapshot for render/Coach calculations. */
+(function(){
+ 'use strict';
+ let depth=0,liveHistory=null,snapshot=null;
+ window.tp7WithHistorySnapshot=function tp7WithHistorySnapshot(fn){
+  if(typeof fn!=='function')return undefined;
+  if(depth>0){depth++;try{return fn(snapshot)}finally{depth--}}
+  const current=history;
+  if(typeof current!=='function')return fn(null);
+  const rows=current();
+  liveHistory=current;snapshot=Array.isArray(rows)?rows:[];
+  history=function(){return snapshot};
+  depth=1;
+  try{return fn(snapshot)}
+  finally{
+   depth=0;history=liveHistory;liveHistory=null;snapshot=null;
+  }
+ };
+ const renderBase=render;
+ render=function(){
+  const tab=state?.tab,custom=arguments.length>0&&arguments[0]!=null;
+  if(!custom&&['home','history','health','stats'].includes(tab)){
+   const self=this,args=arguments;
+   return window.tp7WithHistorySnapshot(()=>renderBase.apply(self,args));
+  }
+  return renderBase.apply(this,arguments);
+ };
+ window.render=render;
+ if(typeof rf233CoachPlan==='function'){
+  const coachPlanBase=rf233CoachPlan;
+  rf233CoachPlan=function(){
+   const self=this,args=arguments;
+   return window.tp7WithHistorySnapshot(()=>coachPlanBase.apply(self,args));
+  };
+  window.rf233CoachPlan=rf233CoachPlan;
+ }
+ let tp7CoachProgressDeferred=false,tp7CoachProgressToken=0;
+ const tp7ProgressHtmlBase=typeof rf220ProgressHtml==='function'?rf220ProgressHtml:null;
+ if(tp7ProgressHtmlBase&&typeof window.tp155R4RefreshPanel==='function'){
+  rf220ProgressHtml=function(){
+   if(tp7CoachProgressDeferred)return '<div data-tp7-coach-progress="pending" aria-hidden="true"></div>';
+   return tp7ProgressHtmlBase.apply(this,arguments);
+  };
+  window.rf220ProgressHtml=rf220ProgressHtml;
+  const refreshBase=window.tp155R4RefreshPanel;
+  const scheduleCoachProgress=function(){
+   const token=++tp7CoachProgressToken;
+   const hydrate=function(){
+    if(token!==tp7CoachProgressToken)return;
+    const host=document.querySelector('#tp155R4PanelHost[data-panel="coach"]'),placeholder=host?.querySelector?.('[data-tp7-coach-progress="pending"]');
+    if(!host||!placeholder)return;
+    window.tp7WithHistorySnapshot(()=>{
+     if(token!==tp7CoachProgressToken||!placeholder.isConnected)return;
+     const scroller=host.querySelector('.tp155-r4-panel'),y=scroller?.scrollTop||0,html=tp7ProgressHtmlBase();
+     placeholder.insertAdjacentHTML('beforebegin',html);placeholder.remove();
+     try{window.tpGlobalApplyChevrons?.(host)}catch(_){}
+     if(scroller)scroller.scrollTop=y;
+    });
+   };
+   if(typeof requestAnimationFrame==='function')requestAnimationFrame(()=>setTimeout(hydrate,0));else setTimeout(hydrate,0);
+  };
+  window.tp155R4RefreshPanel=function(){
+   const coach=document.querySelector('#tp155R4PanelHost[data-panel="coach"]');
+   if(!coach)return refreshBase.apply(this,arguments);
+   tp7CoachProgressDeferred=true;
+   try{return refreshBase.apply(this,arguments)}
+   finally{tp7CoachProgressDeferred=false;scheduleCoachProgress()}
+  };
+ }
+ if(typeof window.tp155R4OpenPanel==='function'){
+  const panelBase=window.tp155R4OpenPanel;
+  window.tp155R4OpenPanel=function(panel){
+   if(panel==='coach'){
+    const self=this,args=arguments;
+    return window.tp7WithHistorySnapshot(()=>panelBase.apply(self,args));
+   }
+   return panelBase.apply(this,arguments);
+  };
+ }
+ const tp7ProgramBodyHtml=function(p){
+  const days=(p.days||[]).map(function(d){
+   return '<details class="tp152-program-day"><summary><strong>'+esc(tp149ProgramDayName(p,d))+'</strong><span class="small muted">'+esc(tp149Plural('exercise.count',d.exercises?.length||0))+'</span><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-program-day-body">'+(d.exercises||[]).map(function(id,i){return tp152ProgramPreviewRow(p,d,id,i)}).join('')+'</div></details>';
+  }).join('');
+  return days+(!p.builtin?'<div class="rf103-program-extra"><button class="btn secondary" onclick="editCustomProgram(\''+esc(p.id)+'\')">'+esc(tp149T('common.edit'))+'</button><button class="btn danger" onclick="deleteCustomProgram(\''+esc(p.id)+'\')">'+esc(tp149T('common.delete'))+'</button></div>':'');
+ };
+ window.tp7EnsureProgramBody=function tp7EnsureProgramBody(el,id){
+  const body=el?.querySelector?.(':scope > .tp152-program-card-body');if(!body||body.dataset.tp7Hydrated==='true')return body;
+  const p=programById(id);if(!p)return body;
+  body.innerHTML=tp7ProgramBodyHtml(p);body.dataset.tp7Hydrated='true';
+  try{window.tpGlobalApplyChevrons?.(body)}catch(_){}
+  return body;
+ };
+ if(typeof programCards==='function'){
+  programCards=function(){
+   const list=programs(),activeId=activeProgramId();
+   return list.map(function(p){
+    const active=p.id===activeId,accent=tp152ProgramAccent(p),name=tp149ProgramMeta(p,'name'),location=tp149ProgramMeta(p,'location'),level=tp149ProgramMeta(p,'level');
+    const stats=tp149T('program.cardStats',{days:p.days.length,counts:p.days.map(function(d){return d.exercises.length}).join('/')});
+    return '<details class="program-card rf103-program-card tp152-program-card '+(active?'active-program':'')+'" style="--tp-program-accent:'+esc(accent)+'" data-tp7-program-id="'+esc(p.id)+'" ontoggle="if(this.open)tp7EnsureProgramBody(this,\''+esc(p.id)+'\')"><summary onclick="if(!this.parentElement.open)tp7EnsureProgramBody(this.parentElement,\''+esc(p.id)+'\')"><div class="rf103-program-main"><div class="rf103-program-info"><span class="badge">'+esc(location)+'</span><span class="badge">'+esc(level)+'</span><h3>'+esc(name)+'</h3><p class="small muted">'+esc(stats)+'</p></div><button class="btn rf103-program-activate '+(active?'secondary':'')+'" '+(active?'disabled':'')+' onclick="event.preventDefault();event.stopPropagation();activateProgram(\''+esc(p.id)+'\')">'+esc(tp149T(active?'program.active':'program.activate'))+'</button></div><span class="tp152-chevron tp152-program-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-program-card-body" data-tp7-hydrated="false"></div></details>';
+   }).join('');
+  };
+  window.programCards=programCards;
+ }
+ window.TrainPilotPhase7Performance={version:'phase7-performance-19-r4',historySnapshot:'operation-scoped',persistentCache:false,lazyPrograms:true,batchedProgressStats:true,deferredCoachProgress:true};
 })();
 
 });</script>
