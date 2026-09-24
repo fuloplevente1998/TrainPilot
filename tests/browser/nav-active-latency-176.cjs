@@ -49,7 +49,7 @@ const server = http.createServer((req, res) => {
         });
         assert.equal(initial.count, 8, width + ': all navigation buttons present');
         assert.equal(initial.active, 1, width + ': exactly one active on Home');
-        assert.equal(initial.family, theme === 'blue' ? 'neon' : 'basic', width + '/' + theme + ': expected theme family');
+        assert.equal(initial.family, theme === 'blue' ? 'vivid' : 'basic', width + '/' + theme + ': expected theme family');
         assert.ok(initial.styles.every(s => !s.visualTransitions.length && s.maxDuration <= 100 && s.childTransition === '0s'), width + '/' + theme + ': active background/border/glow must not animate: ' + JSON.stringify(initial.styles));
 
         // Compare immediately computed colors/shadows to the settled state. A
