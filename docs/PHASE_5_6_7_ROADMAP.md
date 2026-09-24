@@ -1,13 +1,13 @@
 # TrainPilot — revised Phase 5–7 roadmap
 
-Approved 2026-09-24. This plan **supersedes the old six-phase roadmap**. The six currently open issues are assigned exactly once: #27, #41, #44, #42, #43 and #19.
+Completed 2026-09-24. Phase 5, Phase 6 and Phase 7 have each shipped to phone-approved `main`. The ongoing release contract and future benchmark budget are in [PERFORMANCE_REGRESSION_POLICY.md](PERFORMANCE_REGRESSION_POLICY.md).
 
 ## Stable baseline and release contract
 
-- Latest phone-approved stable app code: `main`, TrainPilot **1.7.3 / Android versionCode 2662**. Phase 6 PR #47 is merged; accepted and validated main commit: `f064298ddbe1e7e4cf1ecdfca18b3d93899dc74a`; #42 and #43 are closed/completed.
-- **Phase 6 is complete and accepted. Phase 7 is active.** Phase 7 branch `feat/phase7-performance-19` starts exactly from validated main `f064298ddbe1e7e4cf1ecdfca18b3d93899dc74a`; candidate version is 1.7.4 / 2663.
-- **Never merge an unapproved phase**. Complete targeted checks + full Node regression + full Chromium/UI regression + signed APK + package/source verification, then physical-phone test and explicit approval. Only after merging and post-merge `main` validation start the next phase from the newly approved `main`.
-- Planned scopes below are phase boundaries, **not claims of implemented functionality**. If a severe data-loss/security issue emerges, stop and handle it explicitly rather than concealing it in performance or design work.
+- **Latest stable approved main app:** TrainPilot **1.7.4 / Android versionCode 2663**. Phase 7 PR #48 merged at `4a85b33e3545197a9053461840e60a178b45a341`; post-merge Quick Validation #652 passed. Phase 7 issue #19 is completed.
+- This approval was for the **measured and phone-felt speed optimization**. Existing Journal picker UI (#49) and Health pulse disclosure visual behavior (#50) are separately tracked follow-ups. Their suspected earlier origin is not proven.
+- For every subsequent **UX** change: branch from latest validated `main`, add targeted first-open and repeated-open regression, run permanent benchmark budgets, full Node and Chromium/UI tests, build signed upgrade-safe APK, obtain explicit physical-phone acceptance, **then merge**, and verify post-merge main.
+- The future performance guard and required baseline evidence are documented in [PERFORMANCE_REGRESSION_POLICY.md](PERFORMANCE_REGRESSION_POLICY.md); tracking issue #51.
 
 ## Phase 5 — Health + shared visual system
 
@@ -38,21 +38,13 @@ Approved 2026-09-24. This plan **supersedes the old six-phase roadmap**. The six
 
 ## Phase 7 — App-wide latency, jank and render architecture
 
-**Issue:** [#19](https://github.com/fuloplevente1998/TrainPilot/issues/19), expanded from the original post-1.6.5 slowdown into an app-wide performance investigation.
+**Issue:** [#19](https://github.com/fuloplevente1998/TrainPilot/issues/19); **result:** accepted on physical Android phone and merged via [PR #48](https://github.com/fuloplevente1998/TrainPilot/pull/48), **TrainPilot 1.7.4 / 2663**. Validated Phase 6 parent was `f064298ddbe1e7e4cf1ecdfca18b3d93899dc74a`; Phase 7 merge commit `4a85b33e3545197a9053461840e60a178b45a341`.
 
-**Branch:** create `feat/phase7-performance-19` **only after approved Phase 6 is on `main`**.
-
-**First measure, then change:** compare Phase 6's phone-approved APK with instrumentation and repeatable navigation datasets. Capture startup and initial paint; Home ↔ Workout ↔ Health ↔ Programs/Journal/Coach navigation; opening/editing workout exercises and weight; history with small/large/legacy records; Journal expansion and Health refresh; photo modal entry and return; scrolling and repeated navigation.
-
-Investigate, without presuming the cause:
-- Multiple legacy render wrappers, overlay/decorator layers and stacked CSS or hidden DOM.
-- Duplicate `render()` calls, `setTimeout` post-decoration, DOM rewrites/mutation churn and layout thrashing.
-- Repeated `history()` normalization/copies, duplicated computed stats/Health parsing, redundant storage/Drive writes.
-- Event listener accumulation, unreleased photo/media resources, Android WebView main-thread work, GC and frame-rate drops.
-
-Capture useful before/after evidence (e.g. trace/Performance marks, relevant Android WebView frame timing, DOM node count, long tasks, render duration and UI action latency). Set measurable thresholds **after collecting the baseline**, not by inventing targets. Remove/merge legacy layers **only when profiling supports it** and targeted regression demonstrates parity. Do not weaken Drive merge/tombstone safety, persisted data, Coach logic or phase-approved designs.
-
-**Exit:** full regression + browser UI + signed Phase 7 APK; compare with the Phase 6 baseline on the same physical phone; explicit user approval → merge and post-merge validation.
+- Reproducible 240-workout benchmark demonstrated Journal ~3166→104 ms (median), 242→1 history reads, ~99k→3.5k DOM nodes; Home ~149→31 ms, Programs ~146→31 ms and Coach first visible feedback ~350–540→32–64 ms.
+- Merged architecture: lazy Journal/Program detail, operation-scoped fresh history snapshots, batched Coach Progress and deferred full Progress hydration. Earlier phase behavior and Drive legacy data safeguards remain protected by regression coverage.
+- Full Node + Chromium/UI regression, signed 1.7.4 Android release gate #228, Performance #70 and PR Quick #651 passed. The user tested the APK and explicitly requested merging the speed improvements first. Post-merge Quick #652 passed.
+- Separately tracked follow-ups: Journal first-open native picker and insufficient dropdown width [#49](https://github.com/fuloplevente1998/TrainPilot/issues/49); Health pulse disclosure UI flash [#50](https://github.com/fuloplevente1998/TrainPilot/issues/50); permanent future slowdown guard [#51](https://github.com/fuloplevente1998/TrainPilot/issues/51). Do not presume these bugs originated in Phase 7.
+- All future changes must follow [the permanent performance policy](PERFORMANCE_REGRESSION_POLICY.md) and its benchmark CI gate without sacrificing #18 / Phase 3–6 behavior.
 
 ## Dependency and issue map
 
@@ -60,6 +52,6 @@ Capture useful before/after evidence (e.g. trace/Performance marks, relevant And
 |---|---|---|---|
 | 5 | #27, #41, #44 | Health + global visual consistency + shared today grid | ✅ Phone-approved and merged (PR #40 + #45), TrainPilot 1.7.2 |
 | 6 | #42, #43 | Native camera/photo dialog + minor Journal inline Health loading-flash fix | ✅ Phone-approved and merged (PR #47), TrainPilot 1.7.3 |
-| 7 | #19 | App-wide performance diagnostics and verified optimization | **Active candidate: PR #48 draft, TrainPilot 1.7.4 / 2663; phone approval pending** |
+| 7 | #19 | App-wide diagnostics and measured optimizations | ✅ Phone-approved and merged (PR #48), TrainPilot 1.7.4 / 2663 |
 
-**Sequence from here:** Phase 7 final regression + signed 1.7.4 APK → physical-phone comparison with 1.7.3 → explicit approval → merge PR #48 → post-merge `main` validation.
+**Next:** use approved 1.7.4 main for independently tested follow-up issues **#49 / #50**, and preserve the permanent regression policy **#51**. No UI-code merge before its own signed APK and phone approval.
