@@ -35,19 +35,26 @@ const {chromium}=require('playwright');
    await page.evaluate(()=>window.__tp6HealthResolvers[0]({activeCalories:111,averageHeartRate:123,source:'all'}));
    await page.waitForFunction(()=>document.querySelector('[data-rf-history-health]')?.innerText.includes('111'));
    assert.equal(await refresh.isDisabled(),false);
+   const settle=()=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+   await settle();
 
    await page.evaluate(()=>{document.body.style.minHeight='2400px';window.scrollTo(0,Math.min(260,document.documentElement.scrollHeight-innerHeight))});
+   await settle();
    const scrollBefore=await page.evaluate(()=>window.scrollY);
    await page.evaluate(()=>document.querySelector('.rf-history-health-refresh').click());
    await page.waitForFunction(()=>window.__tp6HealthResolvers.length===2);
+   await settle();
    assert.match(await health.innerText(),/111/,'previous Health result must remain visible while refresh is running');
    assert.doesNotMatch(await health.innerText(),/Health Connect lekérdezés|Health Connect adatok lekérése/i);
    assert.notEqual(await workout.getAttribute('open'),null,'workout expansion must survive inline refresh');
    assert.equal(await panel.locator('.rf-history-health-toggle').getAttribute('aria-expanded'),'true','Health panel expansion must survive inline refresh');
-   assert.ok(Math.abs((await page.evaluate(()=>window.scrollY))-scrollBefore)<=1,'inline refresh must not jump scroll before completion');
+   const scrollPending=await page.evaluate(()=>window.scrollY);
+   assert.ok(Math.abs(scrollPending-scrollBefore)<=1,`inline refresh must not jump scroll before completion: before=${scrollBefore}, pending=${scrollPending}`);
    await page.evaluate(()=>window.__tp6HealthResolvers[1]({activeCalories:222,averageHeartRate:129,source:'all'}));
    await page.waitForFunction(()=>document.querySelector('[data-rf-history-health]')?.innerText.includes('222'));
-   assert.ok(Math.abs((await page.evaluate(()=>window.scrollY))-scrollBefore)<=1,'inline refresh must not jump scroll after completion');
+   await settle();
+   const scrollAfter=await page.evaluate(()=>window.scrollY);
+   assert.ok(Math.abs(scrollAfter-scrollBefore)<=1,`inline refresh must not jump scroll after completion: before=${scrollBefore}, after=${scrollAfter}`);
 
    await page.evaluate(()=>{
     rf200SetTheme('classicGreen');go('history');
