@@ -1629,6 +1629,39 @@
   };
   window.rf233CoachPlan=rf233CoachPlan;
  }
+ let tp7CoachProgressDeferred=false,tp7CoachProgressToken=0;
+ const tp7ProgressHtmlBase=typeof rf220ProgressHtml==='function'?rf220ProgressHtml:null;
+ if(tp7ProgressHtmlBase&&typeof window.tp155R4RefreshPanel==='function'){
+  rf220ProgressHtml=function(){
+   if(tp7CoachProgressDeferred)return '<div data-tp7-coach-progress="pending" aria-hidden="true"></div>';
+   return tp7ProgressHtmlBase.apply(this,arguments);
+  };
+  window.rf220ProgressHtml=rf220ProgressHtml;
+  const refreshBase=window.tp155R4RefreshPanel;
+  const scheduleCoachProgress=function(){
+   const token=++tp7CoachProgressToken;
+   const hydrate=function(){
+    if(token!==tp7CoachProgressToken)return;
+    const host=document.querySelector('#tp155R4PanelHost[data-panel="coach"]'),placeholder=host?.querySelector?.('[data-tp7-coach-progress="pending"]');
+    if(!host||!placeholder)return;
+    window.tp7WithHistorySnapshot(()=>{
+     if(token!==tp7CoachProgressToken||!placeholder.isConnected)return;
+     const scroller=host.querySelector('.tp155-r4-panel'),y=scroller?.scrollTop||0,html=tp7ProgressHtmlBase();
+     placeholder.insertAdjacentHTML('beforebegin',html);placeholder.remove();
+     try{window.tpGlobalApplyChevrons?.(host)}catch(_){}
+     if(scroller)scroller.scrollTop=y;
+    });
+   };
+   if(typeof requestAnimationFrame==='function')requestAnimationFrame(()=>setTimeout(hydrate,0));else setTimeout(hydrate,0);
+  };
+  window.tp155R4RefreshPanel=function(){
+   const coach=document.querySelector('#tp155R4PanelHost[data-panel="coach"]');
+   if(!coach)return refreshBase.apply(this,arguments);
+   tp7CoachProgressDeferred=true;
+   try{return refreshBase.apply(this,arguments)}
+   finally{tp7CoachProgressDeferred=false;scheduleCoachProgress()}
+  };
+ }
  if(typeof window.tp155R4OpenPanel==='function'){
   const panelBase=window.tp155R4OpenPanel;
   window.tp155R4OpenPanel=function(panel){
@@ -1663,7 +1696,7 @@
   };
   window.programCards=programCards;
  }
- window.TrainPilotPhase7Performance={version:'phase7-performance-19-r3',historySnapshot:'operation-scoped',persistentCache:false,lazyPrograms:true,batchedProgressStats:true};
+ window.TrainPilotPhase7Performance={version:'phase7-performance-19-r4',historySnapshot:'operation-scoped',persistentCache:false,lazyPrograms:true,batchedProgressStats:true,deferredCoachProgress:true};
 })();
 
 });</script>
