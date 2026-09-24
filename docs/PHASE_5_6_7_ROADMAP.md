@@ -4,8 +4,8 @@ Completed 2026-09-24. Phase 5, Phase 6 and Phase 7 have each shipped to phone-ap
 
 ## Stable baseline and release contract
 
-- **Latest stable approved main app:** TrainPilot **1.7.4 / Android versionCode 2663**. Phase 7 PR #48 merged at `4a85b33e3545197a9053461840e60a178b45a341`; post-merge Quick Validation #652 passed. Phase 7 issue #19 is completed.
-- This approval was for the **measured and phone-felt speed optimization**. Existing Journal picker UI (#49) and Health pulse disclosure visual behavior (#50) are separately tracked follow-ups. Their suspected earlier origin is not proven.
+- **Latest stable approved main app:** TrainPilot **1.7.5 / Android versionCode 2664**, PR #54 merged at `8464b3eec72803482eb5aa8037a97a7b69b09100`; post-merge Quick #680 and Performance #80 passed. The previously published GitHub Release is v1.7.4 / 2663. Phase 7 performance PR #48 remains completed and protected by the permanent benchmark gate.
+- The measured Phase 7 speedup was accepted first as v1.7.4. The separately developed Journal picker (#49) and Health pulse disclosure (#50) fixes were then phone-approved and merged via PR #54 as 1.7.5; both issues are closed. Their suspected earlier origin was not proven.
 - For every subsequent **UX** change: branch from latest validated `main`, add targeted first-open and repeated-open regression, run permanent benchmark budgets, full Node and Chromium/UI tests, build signed upgrade-safe APK, obtain explicit physical-phone acceptance, **then merge**, and verify post-merge main.
 - The future performance guard and required baseline evidence are documented in [PERFORMANCE_REGRESSION_POLICY.md](PERFORMANCE_REGRESSION_POLICY.md); tracking issue #51.
 
@@ -54,4 +54,4 @@ Completed 2026-09-24. Phase 5, Phase 6 and Phase 7 have each shipped to phone-ap
 | 6 | #42, #43 | Native camera/photo dialog + minor Journal inline Health loading-flash fix | ✅ Phone-approved and merged (PR #47), TrainPilot 1.7.3 |
 | 7 | #19 | App-wide diagnostics and measured optimizations | ✅ Phone-approved and merged (PR #48), TrainPilot 1.7.4 / 2663 |
 
-**Next:** use approved 1.7.4 main for independently tested follow-up issues **#49 / #50**, and preserve the permanent regression policy **#51**. No UI-code merge before its own signed APK and phone approval.
+**Next:** start future features from post-merge-validated 1.7.5 main, retain the permanent performance regression policy (#51 completed) and #18 data integrity. Publishing a 1.7.5 GitHub Release, if requested, is separate from the accepted main merge.
