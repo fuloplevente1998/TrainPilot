@@ -4,7 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - feat/phase5-health-27
+      - 'feat/**'
+      - 'fix/**'
     tags:
       - 'v*'
 
