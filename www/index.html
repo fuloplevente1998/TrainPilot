@@ -1570,6 +1570,56 @@
  ].join('');document.head.appendChild(style);
 
  window.TrainPilotPhase6={version:TP6_VERSION,issues:[42,43],cameraPrivateFileProvider:true,cameraReturnFallbacks:true,compactPhotoModal:true,silentInlineHealthRefresh:true};
+
+})();
+
+/* Phase 7 — #19 operation-scoped history snapshot for render/Coach calculations. */
+(function(){
+ 'use strict';
+ let depth=0,liveHistory=null,snapshot=null;
+ window.tp7WithHistorySnapshot=function tp7WithHistorySnapshot(fn){
+  if(typeof fn!=='function')return undefined;
+  if(depth>0){depth++;try{return fn(snapshot)}finally{depth--}}
+  const current=history;
+  if(typeof current!=='function')return fn(null);
+  const rows=current();
+  liveHistory=current;snapshot=Array.isArray(rows)?rows:[];
+  history=function(){return snapshot};
+  depth=1;
+  try{return fn(snapshot)}
+  finally{
+   depth=0;history=liveHistory;liveHistory=null;snapshot=null;
+  }
+ };
+ const renderBase=render;
+ render=function(){
+  const tab=state?.tab,custom=arguments.length>0&&arguments[0]!=null;
+  if(!custom&&['home','history','health','stats'].includes(tab)){
+   const self=this,args=arguments;
+   return window.tp7WithHistorySnapshot(()=>renderBase.apply(self,args));
+  }
+  return renderBase.apply(this,arguments);
+ };
+ window.render=render;
+ if(typeof rf233CoachPlan==='function'){
+  const coachPlanBase=rf233CoachPlan;
+  rf233CoachPlan=function(){
+   const self=this,args=arguments;
+   return window.tp7WithHistorySnapshot(()=>coachPlanBase.apply(self,args));
+  };
+  window.rf233CoachPlan=rf233CoachPlan;
+ }
+ if(typeof window.tp155R4OpenPanel==='function'){
+  const panelBase=window.tp155R4OpenPanel;
+  window.tp155R4OpenPanel=function(panel){
+   if(panel==='coach'){
+    const self=this,args=arguments;
+    return window.tp7WithHistorySnapshot(()=>panelBase.apply(self,args));
+   }
+   return panelBase.apply(this,arguments);
+  };
+ }
+ window.TrainPilotPhase7Performance={version:'phase7-performance-19-r1',historySnapshot:'operation-scoped',persistentCache:false};
 })();
 
 });</script>
