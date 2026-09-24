@@ -1,4 +1,4 @@
-# TrainPilot 1.7.4 – Phase 7 teljesítmény / renderarchitektúra (teszt)
+# TrainPilot 1.7.4 – Phase 7 teljesítmény / renderarchitektúra (telefonon elfogadva, main)
 
 - #19: reprodukálható Chromium benchmark került a repóba 240 edzéses, 8 gyakorlatos nagy Napló-adathalmazzal; startup, fő route-ok, Journal megnyitás/szerkesztés, fotómodal, Coach és ismételt navigáció mérhető.
 - A Napló zárt kártyái lazy módon építik fel a részletes szerkesztő/Health/fotó DOM-ot. A baseline ~3166 ms / 242 `history()` / ~99 056 DOM node értékéről a validált CI futásokban ~88–104 ms / 1 `history()` / ~3 536 DOM node környékére csökkent a nagy Napló megnyitása.
@@ -8,7 +8,9 @@
 - A Journal és Program lazy nyitás megőrzi a korábbi azonnali vezérlőket és a helyi szerkesztési viselkedést; külön regressziós tesztek védik.
 - A Drive/legacy/tombstone adatbiztonsági logika nem lett lazítva és nincs tartós history cache.
 - Android `versionCode 2663`, `versionName 1.7.4`.
-- Fizikai telefonos jóváhagyás szükséges a Phase 7 merge előtt; PR #48 addig draft marad.
+- A fizikai telefonos teszt szerint a sebességnövekedés érezhető; a felhasználó külön jóváhagyta a gyorsított 1.7.4 main-merge-öt. PR #48 merge commit: `4a85b33e3545197a9053461840e60a178b45a341`. Merge utáni Quick Validation #652: PASS.
+- Külön következő javítás: #49 első nyitáskor szürke natív Napló-gyakorlatválasztó és túl keskeny egyedi lista; #50 Health Pulzustrend nyitási villanás. Korábbi eredetük nem bizonyított.
+- A jövőbeli lassulások ellen kötelező benchmark és regression policy: `docs/PERFORMANCE_REGRESSION_POLICY.md`, #51. A két UI-javítás nem része a már elfogadott 1.7.4 appnak.
 
 # TrainPilot 1.7.3 – Phase 6 Napló / kamera / Health frissítés (teszt)
 
