@@ -32,8 +32,8 @@ const {chromium}=require('playwright');
   assert.ok(parseFloat(await titleLine.locator('time').evaluate(e=>getComputedStyle(e).fontSize))>=13,'Today date must use a larger readable size');
   const titleBox=await titleLine.locator('h2').boundingBox(),dateBox=await titleLine.locator('time').boundingBox();assert.ok(titleBox&&dateBox&&dateBox.y<titleBox.y+titleBox.height+5,'Today date must visually share the title line');
 
-  assert.equal(await page.locator('.tp168-today-card .tp168-metric').count(),4,'Today status must expose four primary metrics');
-  assert.equal(await page.locator('.tp168-today-card .tp168-status').count(),2,'recovery/resting pulse status row missing');
+  assert.equal(await page.locator('.tp168-today-card .tp5-today-metric').count(),6,'Today status must expose six shared metric tiles');
+  assert.equal(await page.locator('.tp168-today-card .tp168-resting').count(),0,'separate resting pulse shortcut must be removed');
 
   const pulse=page.locator('.tp169-pulse-journal');assert.equal(await pulse.count(),1,'Pulse trend disclosure missing');
   assert.equal(await page.locator('main.rf263-health>details.tp168-pulse-panel').count(),0,'standalone Pulse panel must be removed');
@@ -74,7 +74,7 @@ const {chromium}=require('playwright');
   assert.equal(await page.locator('.tp168-weight-journal.tp168-open').count(),1,'weight shortcut must open the inline journal');
 
   await page.evaluate(()=>{const k=rf240DayKey(new Date());rf240Ledger=()=>({days:{[k]:{averageHeartRate:75,restingHeartRate:0,steps:10523}}});TrainPilot168Health.decorate()});await page.waitForTimeout(30);
-  const resting=await page.locator('.tp168-resting').innerText();assert.doesNotMatch(resting,/0\s*bpm/i,'0 bpm must never be presented as a real resting heart-rate measurement');
+  const resting=await page.locator('.tp168-pulse-grid').innerText();assert.doesNotMatch(resting,/0\s*bpm/i,'0 bpm must never be presented as a real resting heart-rate measurement');
 
   const matte=await page.evaluate(()=>({today:getComputedStyle(document.querySelector('.tp168-today-card')).boxShadow,nav:getComputedStyle(document.querySelector('.top.tp154-nav-grid .active')).boxShadow,family:document.documentElement.dataset.tpThemeFamily}));
   assert.equal(matte.family,'basic');assert.equal(matte.today,'none');assert.equal(matte.nav,'none');
