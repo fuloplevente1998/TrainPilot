@@ -4,8 +4,8 @@ Approved 2026-09-24. This plan **supersedes the old six-phase roadmap**. The six
 
 ## Stable baseline and release contract
 
-- Latest phone-approved stable app code: `main`, TrainPilot **1.7.2 / Android versionCode 2661**. Phase 5 PR #40 and final phone-chevron follow-up PR #45 are merged; accepted app baseline commit: `377523e0fc94776a494d44ac59ddf31a30189988`; post-merge Quick Validation `36009395458` PASS.
-- **Phase 5 is complete and accepted. Phase 6 is next.** Phase 6 must branch from the latest validated `main` after any CI-only maintenance.
+- Latest phone-approved stable app code: `main`, TrainPilot **1.7.3 / Android versionCode 2662**. Phase 6 PR #47 is merged; accepted and validated main commit: `f064298ddbe1e7e4cf1ecdfca18b3d93899dc74a`; #42 and #43 are closed/completed.
+- **Phase 6 is complete and accepted. Phase 7 is active.** Phase 7 branch `feat/phase7-performance-19` starts exactly from validated main `f064298ddbe1e7e4cf1ecdfca18b3d93899dc74a`; candidate version is 1.7.4 / 2663.
 - **Never merge an unapproved phase**. Complete targeted checks + full Node regression + full Chromium/UI regression + signed APK + package/source verification, then physical-phone test and explicit approval. Only after merging and post-merge `main` validation start the next phase from the newly approved `main`.
 - Planned scopes below are phase boundaries, **not claims of implemented functionality**. If a severe data-loss/security issue emerges, stop and handle it explicitly rather than concealing it in performance or design work.
 
@@ -34,7 +34,7 @@ Approved 2026-09-24. This plan **supersedes the old six-phase roadmap**. The six
 - Test captured photo acceptance on an **actual phone**, picker regression, true cancel path, multiple photo additions, app resume, refreshed in-place Journal Health rendering, back navigation and 320–412 px layouts.
 - The suspected native callback/URI cause is a **hypothesis until instrumented/verified**; do not assume a specific OEM or Android cancellation behavior without evidence.
 
-**Exit:** separate signed Phase 6 APK and explicit phone approval → merge Phase 6 PR to `main` → verify `main`.
+**Result:** completed and phone-approved. PR #47 merged to `main`; #42/#43 closed. Accepted TrainPilot 1.7.3 / 2662 baseline commit: `f064298ddbe1e7e4cf1ecdfca18b3d93899dc74a`.
 
 ## Phase 7 — App-wide latency, jank and render architecture
 
@@ -59,7 +59,7 @@ Capture useful before/after evidence (e.g. trace/Performance marks, relevant And
 | Phase | Issue(s) | Work | State |
 |---|---|---|---|
 | 5 | #27, #41, #44 | Health + global visual consistency + shared today grid | ✅ Phone-approved and merged (PR #40 + #45), TrainPilot 1.7.2 |
-| 6 | #42, #43 | Native camera/photo dialog + minor Journal inline Health loading-flash fix | **Active development: 1.7.3 / 2662 candidate; phone approval pending** |
-| 7 | #19 | App-wide performance diagnostics and verified optimization | Planned; wait for Phase 6 merge |
+| 6 | #42, #43 | Native camera/photo dialog + minor Journal inline Health loading-flash fix | ✅ Phone-approved and merged (PR #47), TrainPilot 1.7.3 |
+| 7 | #19 | App-wide performance diagnostics and verified optimization | **Active candidate: PR #48 draft, TrainPilot 1.7.4 / 2663; phone approval pending** |
 
-**Sequence from here:** latest validated `main` → Phase 6 branch/APK → phone approval → merge/validate `main` → Phase 7 branch/performance baseline/APK → phone approval → merge/validate.
+**Sequence from here:** Phase 7 final regression + signed 1.7.4 APK → physical-phone comparison with 1.7.3 → explicit approval → merge PR #48 → post-merge `main` validation.

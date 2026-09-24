@@ -4,13 +4,13 @@ Last updated: 2026-09-24. The authoritative phase-by-phase scope is [docs/PHASE_
 
 ## Stable baseline and current work
 
-- Latest **phone-approved** stable app baseline: `main`, TrainPilot **1.7.2 / Android versionCode 2661**. Phase 5 PR #40 merged as `c42781d58ab681b49fdc82de2c24ab9a1af2c34f`; final phone-reported chevron follow-up PR #45 merged as `377523e0fc94776a494d44ac59ddf31a30189988`; post-merge Quick TrainPilot Validation run `36009395458` PASS.
-- Earlier phone-approved work: Phase 1 #18, Phase 2 #15/#16, Phase 3 #29/#30/#37, Phase 4 #17/#21, Phase 5 #27/#41/#44. PRs #34, #35, #36, #38, #39, #40 and #45 merged.
-- The temporary Phase 4 Health exception is resolved by accepted Phase 5 #44: the separate resting-HR shortcut was removed from the shared Today grid and replaced by `Mai edzés`, while underlying resting-HR source records remain preserved.
-- **Phase 5 completed and phone-approved:** #27, #41 and #44. The accepted TrainPilot **1.7.2 / 2661** baseline includes Health pulse/weight correctness, global theme-aware disclosure chevrons, the shared Home/Health 2×3 `Mai állapot`, the flatter Health grid, and the final phone-reported chevron fixes from PR #45. Issues #27/#41/#44 are closed.
-- **Active Phase 6 candidate:** #42 + #43 on `feat/phase6-journal-media-health-42-43`, based exactly on validated `main` `237bf6b95e57672a516e2627a995fc7011df5065`; development version **1.7.3 / 2662**. #42 uses a private FileProvider camera target with post-callback byte/URI/Bitmap fallbacks and a compact photo modal. #43 suppresses the transient Journal Health loading paint and keeps the existing inline result visible until the refreshed result is ready. **Not phone-approved; do not merge before explicit physical-phone acceptance.**
-- **Planned Phase 7:** #19, app-wide latency/jank/render architecture investigation. Start **only after approved Phase 6 merges and `main` validates**. Layering and repeated render wrappers are hypotheses, not proven root causes.
-- Remaining roadmap issues: Phase 6 (#42, #43) and Phase 7 (#19).
+- Latest **phone-approved** stable app baseline: `main`, TrainPilot **1.7.3 / Android versionCode 2662**, validated main commit `f064298ddbe1e7e4cf1ecdfca18b3d93899dc74a`. Phase 6 PR #47 is merged; #42 and #43 are closed/completed.
+- **Phase 6 completed and phone-approved:** camera approval now attaches the photo through the private FileProvider flow, genuine cancel remains cancel, gallery selection remains functional, the photo modal is compact with the accepted red X, and Journal Health refresh no longer flashes the global loading UI or loses expanded/scroll state.
+- **Active Phase 7 candidate:** issue #19 on `feat/phase7-performance-19`, based exactly on validated `main` `f064298ddbe1e7e4cf1ecdfca18b3d93899dc74a`; candidate version **1.7.4 / 2663**. Draft PR #48 remains unmerged until explicit physical-phone approval.
+- Phase 7 measured bottlenecks rather than removing legacy layers blindly. The main fixes are lazy Journal detail hydration, operation-scoped history reuse, lazy Program detail hydration, batched Progress statistics and post-first-paint Coach Progress hydration.
+- Representative 240-workout Chromium benchmark: Journal fell from ~3166 ms / 242 `history()` calls / ~99k DOM nodes to ~88–104 ms / 1 call / ~3.5k nodes; Coach first visible feedback fell from roughly 350–540 ms to ~30–58 ms while the complete statistics still hydrate afterward.
+- Remaining roadmap issue: Phase 7 (#19) only. No merge until signed 1.7.4 APK passes physical-phone comparison against 1.7.3.
+
 
 ## Phase 5–7 acceptance boundaries
 
@@ -79,4 +79,4 @@ Never trade data correctness, historical Journal recovery, Drive merge/tombstone
 
 ## Recovery instruction
 
-At the beginning of another TrainPilot conversation, read this file, then [the current roadmap](docs/PHASE_5_6_7_ROADMAP.md), check issues #42/#43/#19 and the actual `main` validation, then continue with **Phase 6 → Phase 7**. Retain the signed-APK → physical-phone-approval → merge-to-main → post-merge-validation gate.
+At the beginning of another TrainPilot conversation, read this file, then [the current roadmap](docs/PHASE_5_6_7_ROADMAP.md), check issues #42/#43/#19 and the actual `main` validation, then continue with the active **Phase 7 (#19)** branch. Retain the signed-APK → physical-phone-approval → merge-to-main → post-merge-validation gate.
