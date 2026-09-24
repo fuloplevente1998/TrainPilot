@@ -52,6 +52,33 @@ const server = http.createServer((req, res) => {
         assert.equal(initial.family, theme === 'blue' ? 'vivid' : 'basic', width + '/' + theme + ': expected theme family');
         assert.ok(initial.styles.every(s => !s.visualTransitions.length && s.maxDuration <= 100 && s.childTransition === '0s'), width + '/' + theme + ': active background/border/glow must not animate: ' + JSON.stringify(initial.styles));
 
+        // The three floating panel launchers must look alike even when idle.
+        const panelCards = await page.evaluate(() => {
+          const top = document.querySelector('.top.tp154-nav-grid');
+          const selectors = {
+            calendar: '.tp151-nav-item[onclick*="calendar"]',
+            coach: '.tp154-coach-action',
+            settings: '.tp154-settings-action'
+          };
+          return Object.fromEntries(Object.entries(selectors).map(([name, selector]) => {
+            const el = top.querySelector(selector), cs = getComputedStyle(el);
+            return [name, {
+              active: el.classList.contains('active'),
+              background: cs.backgroundColor,
+              image: cs.backgroundImage,
+              borderColor: cs.borderTopColor,
+              borderStyle: cs.borderTopStyle,
+              borderWidth: cs.borderTopWidth,
+              radius: cs.borderTopLeftRadius,
+              shadow: cs.boxShadow,
+              color: cs.color
+            }];
+          }));
+        });
+        assert.equal(panelCards.calendar.active, false, width + '/' + theme + ': Calendar idle on Home');
+        assert.deepEqual(panelCards.calendar, panelCards.coach, width + '/' + theme + ': Calendar card must match Coach');
+        assert.deepEqual(panelCards.calendar, panelCards.settings, width + '/' + theme + ': Calendar card must match Settings');
+
         // Compare immediately computed colors/shadows to the settled state. A
         // lingering transition on the old active button fails this assertion.
         const snap = () => page.evaluate(() => [...document.querySelectorAll('.top.tp154-nav-grid .tp154-nav-cell')].map(el => {
@@ -82,6 +109,6 @@ const server = http.createServer((req, res) => {
       assert.deepEqual(errors, [], width + ': no page errors');
       await page.close();
     }
-    console.log('PASS #56: instant nav selected visuals, first/repeated page+panel changes, 320/360/393/412px, basic/neon');
+    console.log('PASS #56: instant nav visuals + matching Calendar/Coach/Settings cards, first/repeated page+panel changes, 320/360/393/412px, basic/neon');
   } finally { await browser?.close(); server.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

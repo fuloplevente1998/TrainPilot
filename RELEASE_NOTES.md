@@ -1,6 +1,7 @@
 # TrainPilot 1.7.6 / 2665 — navigációs kijelölés, telefonos tesztverzió (#56)
 
 - Az Androidon megfigyelt, késve átvándorló arany/fényes navigációs kerethez tartozó 140–150 ms-os háttér-, keret- és árnyék-áttűnés megszűnik; a kiválasztott gomb vizuális állapota egy lépésben vált.
+- A Naptár gomb az alapállapotában ugyanazt a kártyahátteret és keretet kapja, mint a szintén lebegő panelként megnyíló Coach és Beállítások. A kiválasztott gomb témaszínű jelölése továbbra is közös.
 - A rövid lenyomási animáció (90 ms-os méretváltozás) megmarad. Az alapszínek matt, a neon témák fényes stílusa, a két soros navigáció, a panelok és a Phase 7 gyorsítások változatlanok.
 - #56: célzott első és ismételt route/panel teszt 320/360/393/412 px-on, matt és neon témával; teljes Node/Chromium/regressziós/performance és aláírt APK release gate.
 - Kiindulás: telefonon jóváhagyott 1.7.5 / 2664 app, legfrissebb 1.7.5 main `d0a3881ed9d8ec9d1238a914b6e6cab5da1e7c3e`. A 1.7.6 **tesztjelölt**, nem publikált/elfogadott release; main merge csak telefonos jóváhagyás után.

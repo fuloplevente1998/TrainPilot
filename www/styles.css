@@ -353,3 +353,13 @@ html body .top.tp154-nav-grid .tp154-nav-cell :is(
     transition: none !important;
   }
 }
+
+/* #56 follow-up: Calendar is a floating panel like Coach and Settings.
+   All three idle panel launchers share the same card surface. Active states
+   remain controlled by the existing theme-aware 2x4 nav selection rules. */
+html body .top.tp154-nav-grid .tp151-nav-item[onclick*="calendar"]:not(.active) {
+  background: var(--card2) !important;
+  border: 1px solid var(--line) !important;
+  color: var(--text) !important;
+  box-shadow: none !important;
+}
