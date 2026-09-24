@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="hu" class="tp-booting"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0e1015"><title>TrainPilot</title><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="health-dashboard-168.css"><style>html,body{margin:0;min-height:100%;background:#0e1015}html.tp-booting #app{visibility:hidden}#tpBoot{position:fixed;inset:0;display:grid;place-items:center;background:#0e1015;color:#f6f8fb;font:900 25px/1.2 system-ui,sans-serif;z-index:999999}</style></head><body><div id="tpBoot" aria-label="Betöltés"></div><div id="app"></div>
 <script defer src="app.js"></script>
+<script defer src="today-44.js"></script>
 <script>window.addEventListener("DOMContentLoaded",function(){
 /* TrainPilot 1.6.9 — themed Health polish + inline body-weight journal. */
 (function(){
@@ -157,10 +158,9 @@
  }
  function rebuildToday(card,d,r,bodyHtml,pulseHistory){
   if(!card)return;card.classList.add('tp168-today-card');card.classList.remove('tp146-health-compact');
-  const ready=readiness(),rv=ready.score==null?'—':fmt(ready.score)+'/100',rest=positive(d.restingHeartRate),trend=trendValues();
+  const trend=trendValues();
   card.innerHTML='<div class="tp168-today-head">'+icon('health','tp168-health-heart')+'<div class="tp168-today-copy"><div class="tp169-today-titleline"><h2>'+escText(c().today)+'</h2><time class="tp168-today-date" datetime="'+escText(new Date().toISOString().slice(0,10))+'">'+escText(dateText())+'</time></div><p>'+escText(c().todaySub)+'</p></div></div>'+
-   '<div class="tp168-metrics">'+metric('sleep',c().sleep,sleepText(r),'recovery')+metric('hrv',c().hrv,n(r.hrvRmssdMs)==null?'—':fmt(Math.round(n(r.hrvRmssdMs)))+' ms','recovery')+metric('pulse',c().pulse,positive(d.averageHeartRate)==null?'—':fmt(Math.round(positive(d.averageHeartRate)))+' bpm','pulse')+metric('steps',c().steps,n(d.steps)==null?'—':fmt(Math.round(n(d.steps))))+'</div>'+
-   '<div class="tp168-status-grid"><button type="button" class="tp168-status tp168-recovery tp168-level-'+escText(ready.level||'unknown')+'" data-tp168-action="recovery">'+icon('leaf')+'<span><small>'+escText(c().recovery)+'</small><strong>'+escText(rv)+'</strong><em>'+escText(readinessLabel(ready))+'</em></span><b aria-hidden="true">›</b></button><button type="button" class="tp168-status tp168-resting" data-tp168-action="pulse">'+icon('pulse')+'<span><small>'+escText(c().resting)+'</small><strong>'+escText(rest==null?'—':fmt(Math.round(rest))+' bpm')+'</strong></span><b aria-hidden="true">›</b></button></div>'+
+   window.tp5UnifiedTodayGridHtml('health')+
    pulseJournal(d,trend,recoveryHistoryHtml())+weightJournal(bodyHtml);
   card.querySelectorAll('[data-tp168-action]').forEach(el=>{const run=()=>el.dataset.tp168Action==='recovery'?window.tp153OpenRecovery?.():window.tp168OpenPulse?.();el.onclick=run;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();run()}}});
  }
