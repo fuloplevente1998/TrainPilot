@@ -122,15 +122,15 @@ const server=http.createServer((req,res)=>{
 
   await page.evaluate(()=>profileScreen());await page.waitForSelector('.rf148-profile-accordion');
   const exclusion=page.locator('.rf148-profile-accordion').first();
-  const exclusionArrow=async()=>exclusion.locator('summary').evaluate(el=>{const s=getComputedStyle(el,'::after');return {border:s.borderTopWidth,bg:s.backgroundImage,fill:s.backgroundColor,w:parseFloat(s.width),h:parseFloat(s.height),clip:s.clipPath,transform:s.transform}});
+  const exclusionArrow=async()=>exclusion.locator('summary').evaluate(el=>{const s=getComputedStyle(el,'::after');return {border:s.borderTopWidth,bg:s.backgroundImage,w:parseFloat(s.width),h:parseFloat(s.height),clip:s.clipPath,content:s.content,transform:s.transform}});
   const exclusionClosed=await exclusionArrow();
-  assert.equal(exclusionClosed.border,'0px','profile exclusion disclosure must be borderless');
-  assert.equal(exclusionClosed.bg,'none','profile exclusion disclosure must not retain the legacy red glyph treatment');
-  assert.ok(exclusionClosed.w<=9.6&&exclusionClosed.h<=12.6,'profile exclusion disclosure uses the compact triangle');
-  assert.match(exclusionClosed.clip,/polygon/i,'profile exclusion disclosure must be a CSS triangle');
-  assert.notEqual(exclusionClosed.fill,'rgba(0, 0, 0, 0)','profile exclusion triangle must be visible');
+  assert.equal(exclusionClosed.border,'0px','profile exclusion must be borderless');
+  assert.equal(exclusionClosed.bg,'none','profile exclusion must not regain gradient');
+  assert.ok(exclusionClosed.w>=23&&exclusionClosed.w<=25&&exclusionClosed.h>=23&&exclusionClosed.h<=25,'profile disclosure fits 24px slot');
+  assert.equal(exclusionClosed.clip,'none','profile exclusion must not use clipped triangle');
+  assert.ok(exclusionClosed.content.includes('›'),'profile exclusion uses shared theme chevron');
   await exclusion.locator('summary').click();await page.waitForTimeout(180);
-  assert.notEqual((await exclusionArrow()).transform,exclusionClosed.transform,'profile exclusion triangle rotates from right to down');
+  assert.notEqual((await exclusionArrow()).transform,exclusionClosed.transform,'profile exclusion chevron rotates on expansion');
 
   assert.deepEqual(errors,[],'page errors: '+errors.join('\n'));
   console.log('PASS TrainPilot 1.5.5 nav consistency');
