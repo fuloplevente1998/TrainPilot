@@ -8,7 +8,9 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  const cards=p.locator('details.tp152-program-card'),count=await cards.count();assert.ok(count>=3,'program cards missing');
  assert.equal(await p.locator('.tp152-program-card-body[data-tp7-hydrated="true"]').count(),0,'collapsed program cards must not eagerly render bodies');
  assert.equal(await p.locator('.tp152-program-day').count(),0,'collapsed program cards must not build day/exercise preview DOM');
- const first=cards.first();await first.locator(':scope > summary').click();await p.waitForSelector('details.tp152-program-card[open] .tp152-program-day');
+ const first=cards.first();await first.locator(':scope > summary').click();
+ assert.ok(await first.locator('.tp152-program-day').count()>=1,'opening a lazy program card must synchronously expose its accepted day rows');
+ await p.waitForSelector('details.tp152-program-card[open] .tp152-program-day');
  assert.equal(await p.locator('.tp152-program-card-body[data-tp7-hydrated="true"]').count(),1,'only opened program card should hydrate');
  const day=first.locator('.tp152-program-day').first();await day.locator(':scope > summary').click();assert.ok(await day.locator('.tp152-program-day-body').locator('*').count()>0,'program day preview must remain available');
  await first.locator(':scope > summary').click();await first.locator(':scope > summary').click();
