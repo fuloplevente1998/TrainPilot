@@ -54,11 +54,12 @@ const {chromium}=require('playwright');
   const arrow=filter.locator('.tp160-journal-disclosure');
   assert.equal((await arrow.innerText()).trim(),'','Journal arrow must not use a text glyph');
   const closed=await arrow.evaluate(e=>getComputedStyle(e,'::before').transform);
-  assert.match(await arrow.evaluate(e=>getComputedStyle(e,'::before').clipPath),/polygon/i,'Journal must use the shared CSS triangle');
+  assert.equal(await arrow.evaluate(e=>getComputedStyle(e,'::before').clipPath),'none','Journal must not use clipped triangle');
+  assert.ok((await arrow.evaluate(e=>getComputedStyle(e,'::before').content)).includes('›'),'Journal uses shared theme chevron');
   await filter.locator('summary').click();
   await page.waitForTimeout(180);
   const opened=await arrow.evaluate(e=>getComputedStyle(e,'::before').transform);
-  assert.notEqual(opened,closed,'Journal CSS triangle must rotate when opened');
+  assert.notEqual(opened,closed,'Journal chevron rotates when opened');
 
   await page.evaluate(()=>go('home'));
   const motion=await page.evaluate(()=>{
