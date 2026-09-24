@@ -59,10 +59,11 @@ const server=http.createServer((req,res)=>{
   await page.evaluate(()=>profileScreen());await page.waitForSelector('.tp152-profile');
   const group=page.locator('.tp152-profile-group').nth(1);await group.locator(':scope > summary').click();
   const select=group.locator('.tp-select-trigger').first();
-  const selectArrow=await select.evaluate(el=>{const s=getComputedStyle(el,'::after');return {bg:s.backgroundImage,w:parseFloat(s.width),h:parseFloat(s.height),border:s.borderTopWidth,clip:s.clipPath}});
-  assert.equal(selectArrow.bg,'none','dropdown arrow must use the 1.5.5 plain triangle treatment');
-  assert.ok(selectArrow.w<=9.6&&selectArrow.h<=12.6,'dropdown triangle must stay compact');
-  assert.match(selectArrow.clip,/polygon/i,'dropdown arrow must be a CSS triangle');
+  const selectArrow=await select.evaluate(el=>{const s=getComputedStyle(el,'::after');return {bg:s.backgroundImage,w:parseFloat(s.width),h:parseFloat(s.height),border:s.borderTopWidth,clip:s.clipPath,content:s.content,color:s.color}});
+  assert.equal(selectArrow.bg,'none','dropdown arrow must have no gradient');
+  assert.ok(selectArrow.w>=23&&selectArrow.w<=25&&selectArrow.h>=23&&selectArrow.h<=25,'dropdown chevron must fit its 24px slot');
+  assert.equal(selectArrow.clip,'none','dropdown arrow must not use a clipped triangle');
+  assert.ok(selectArrow.content.includes('›'),'dropdown arrow must use shared theme chevron');
   assert.equal(selectArrow.border,'0px');
 
   const coverage=await page.evaluate(()=>document.getElementById('tp154MobilePolishCss')?.textContent||'');
