@@ -99,10 +99,9 @@ html[data-tp-theme-family="basic"] body :is(#app,#tp155R4PanelHost) :is(
 /* Typography: retain the existing Inter/system stack and all sizes, line
    heights, font weights, wrapping and spacing; no new font downloads. */
 
-/* #58 border-consistency follow-up: match Health's actual 1px card outlines.
-   The accepted 2px Home/Plan and 3px Program structural borders left
-   visibly heavier lines. Pair any reduction with compensating inner padding
-   so the outer box, child positions and tap targets DO NOT move. */
+/* #58 border-consistency follow-up: Health's 1px visible card outlines.
+   Compensate the former 2px Home/Plan borders with padding; preserve the
+   Program card's original 3px border BOX and paint only 1px of its edge. */
 html body #app main.rf221-home > .hero.tp155-home-active-card {
   border-width:var(--tp-ui-border-size)!important;
   padding:11px 13px!important; /* Was 2px border + 10px 12px padding. */
@@ -111,9 +110,25 @@ html body #app main.tp152-plan > .tp152-active-program {
   border-width:var(--tp-ui-border-size)!important;
   padding:1px!important; /* Was 2px border + 0px padding on each side. */
 }
+/* Program rows have a legacy 3px left-border *box*; shrinking it
+   moves the summary grid. Retain the invisible 3px geometry and paint just
+   the first pixel via a border-box background gradient. All four VISIBLE
+   edges are 1px, including selected rows; neither label nor hitbox moves. */
 html body #app main.tp150-programs-compact .tp152-program-card {
-  border-width:var(--tp-ui-border-size)!important;
-  padding-left:2px!important; /* Was 3px left border + 0px padding. */
+  border-left-color:transparent!important;
+  background:
+    linear-gradient(to right,var(--tp-ui-border) 0 1px,transparent 1px),
+    var(--tp-ui-card)!important;
+  background-origin:border-box!important;
+  background-clip:border-box!important;
+}
+html body #app main.tp150-programs-compact .tp152-program-card.active-program {
+  border-left-color:transparent!important;
+  background:
+    linear-gradient(to right,color-mix(in srgb,var(--accent) 65%,var(--tp-ui-border)) 0 1px,transparent 1px),
+    var(--tp-ui-card)!important;
+  background-origin:border-box!important;
+  background-clip:border-box!important;
 }
 /* A containing Programs card already has all four sides; unify its
    group outline too, but do not box the three separate action buttons. */

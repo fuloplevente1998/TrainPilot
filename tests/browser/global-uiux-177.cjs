@@ -7,10 +7,10 @@ const {chromium}=require('playwright');
 const root=path.resolve('www');
 const css=fs.readFileSync(path.join(root,'global-uiux-177.css'),'utf8');
 const ownRules=css.replace(/\/\*[\s\S]*?\*\//g,'').replace(/--[\w-]+\s*:\s*[^;]+;/g,'');
-// Only three explicit border-width compensations may alter padding; no
+// Only two explicit border-width compensations may alter padding; no
 // page geometry, button spacing, grid, navigation or overlay layout edits.
 const allowedPadding=[...ownRules.matchAll(/\bpadding(?:-left)?\s*:\s*([^;]+);/g)].map(m=>m[0]);
-assert.deepEqual(allowedPadding,['padding:11px 13px!important;','padding:1px!important;','padding-left:2px!important;']);
+assert.deepEqual(allowedPadding,['padding:11px 13px!important;','padding:1px!important;']);
 for(const prop of ['display','grid-template','grid-auto','flex-direction','position','top','right','bottom','left','margin','width','height','min-height','max-height','transform','gap']){
  assert.equal(new RegExp('(^|[;{\\s])'+prop+'\\s*:','m').test(ownRules),false,'CSS-only styling must not override geometry: '+prop);
 }
@@ -92,9 +92,13 @@ const server=http.createServer((req,res)=>{
       assert.equal(result.after.hero.shadow==='none',family==='basic',route+': glow only for vivid theme');
      }
      if(route==='programs'){
-      const c=await page.locator('.tp152-program-card:not(.active-program)').first().evaluate(e=>{const s=getComputedStyle(e);return {w:s.borderLeftWidth,c:s.borderLeftColor}});
-      assert.equal(c.w,'1px','Program card left outline must visually match Health 1px');
-      assert.equal(c.c,'rgb(44, 52, 64)','Program border is now neutral instead of blue-gray');
+      const c=await page.locator('.tp152-program-card:not(.active-program)').first().evaluate(e=>{const s=getComputedStyle(e);return {w:s.borderLeftWidth,c:s.borderLeftColor,background:s.backgroundImage,bg:s.backgroundColor,origin:s.backgroundOrigin,otherEdge:s.borderTopWidth,otherEdgeColor:s.borderTopColor}});
+      assert.equal(c.w,'3px','Preserve legacy 3px physical left-border box so program columns cannot reflow');
+      assert.equal(c.c,'rgba(0, 0, 0, 0)','Hide the thick left border');
+      assert.ok(c.background.includes('linear-gradient')&&c.background.includes('1px'),'Only the first 1px of the left edge is painted');
+      assert.ok(c.origin.split(',').every(x=>x.trim()==='border-box'),'Paint the visible line in transparent border box');
+      assert.equal(c.otherEdge,'1px','Other three visible borders are standard Health 1px');
+      assert.equal(c.otherEdgeColor,'rgb(44, 52, 64)','Visible program border is neutral instead of blue-gray');
       const frame=await page.locator('main.tp150-programs-compact .tp150-programs-frame').evaluate(e=>{const s=getComputedStyle(e);return {width:s.borderTopWidth,bg:s.backgroundColor}});
       assert.equal(frame.width,'1px','Program list grouping keeps one closed 1px frame');
       assert.equal(frame.bg,'rgb(26, 30, 37)','Program grouping matches Health card fill');

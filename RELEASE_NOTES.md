@@ -1,7 +1,7 @@
 ## #58: Egészség-referencia 1px körvonalak – vizuális finomhangolás
 
-- Kezdőlap Hero, Edzés aktív program és Programok kártyák: valódi 1px-es körvonal az Egészség kártyái szerint; a korábbi 2px/3px keretek eltűnnek.
-- A vonalvastagság csökkentését célzott 1–2px belső kompenzáció kíséri, hogy a kártyák külső mérete, belső szöveg/gomb pozíciója és a navigáció változatlan maradjon.
+- Kezdőlap Hero, Edzés aktív program és Programok kártyák: valódi 1px-es körvonal az Egészség kártyái szerint; a korábbi 2px-es Hero-keretek 1px-re vékonyodnak, a Programok 3px-es bal oldali szegélyének csak 1px-e látszik (a belső elrendezés változatlan).
+- A Hero-kártyák vonalvastagságának csökkentését célzott 1px belső kompenzáció kíséri. A Programok kártyáin az eredeti 3px-es fizikai szegélyt áttetszően tartjuk meg és csak 1px színes szegélyt rajzolunk rá; így a szöveg/gombok pozíciója és az érintési felület változatlan marad.
 - Teljesen körbezárt 1px-es vizuális keret kerül a korábban külön háttér nélkül álló aktív edzéssorokra és Coach interaktív mérőcsempéire. Ehhez CSS outline szolgál; nem csökkenti a gombok érintési méretét.
 - A Programok gyűjtőkeretét az Egészség kártyaszínével egységesítjük. A Naptár és Beállítások meglévő belső kártyái már teljesen keretezettek; az overlay és a navigáció közé nem kerül duplán felső vonal, a belső listaelválasztók nem kapnak újabb keretet.
 - Továbbra is csak CSS: nem változik a DOM, a navigáció, a funkciók, a meglévő Coach-X magassága vagy az alkalmazás betűmérete.
