@@ -1,0 +1,70 @@
+name: Publish accepted TrainPilot 1.7.6 (one-shot)
+
+# 1.7.6 / 2665 was approved after phone testing. This workflow tags
+# the exact merged release source plus this publishing-only workflow,
+# then explicitly dispatches the existing signed Release Gate.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-accepted-176.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: trainpilot-publish-accepted-176
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - name: Checkout the accepted merged main
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Verify accepted source, tag and start signed Release Gate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG=v1.7.6
+          EXPECTED_APP_MERGE=f45b745e83b13eb051f0c7ff641ae4f6d53b9ef3
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse origin/main)" = "$GITHUB_SHA"
+          git merge-base --is-ancestor "$EXPECTED_APP_MERGE" "$GITHUB_SHA"
+          # The only permitted change after the accepted merge is this
+          # self-contained release publisher; no application code drift.
+          CHANGED="$(git diff --name-only "$EXPECTED_APP_MERGE" "$GITHUB_SHA")"
+          test "$CHANGED" = ".github/workflows/publish-accepted-176.yml"
+          test "$(node -p "require('./package.json').version")" = "1.7.6"
+          test "$(node -p "require('./SOURCE_VERSION.json').version")" = "1.7.6"
+          test "$(node -p "require('./SOURCE_VERSION.json').versionCode")" = "2665"
+          grep -q 'versionCode 2665' android/app/build.gradle
+          grep -q 'versionName "1.7.6"' android/app/build.gradle
+
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            git fetch origin "refs/tags/$TAG:refs/tags/$TAG"
+            test "$(git rev-parse "$TAG^{}")" = "$GITHUB_SHA"
+            if gh release view "$TAG" >/dev/null 2>&1; then
+              echo "GitHub Release $TAG already exists at accepted commit."
+              exit 0
+            fi
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "$TAG" -m "TrainPilot 1.7.6 / 2665 – phone-approved navigation and unified UI" "$GITHUB_SHA"
+            git push origin "refs/tags/$TAG"
+          fi
+
+          # A push with GITHUB_TOKEN does not itself start tag workflows.
+          gh workflow run build-apk.yml --ref "$TAG"
+          echo "Triggered signed Release Gate for $TAG at $GITHUB_SHA."
