@@ -33,7 +33,7 @@ const server=http.createServer((req,res)=>{
    await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
    assert.equal(await page.evaluate(()=>!!window.TrainPilotGlobalUi177),false,'Do not install new JS or change toggle logic');
    for(const theme of ['classicBlue','blue']){
-    await page.evaluate(t=>{state.session=null;state.workout=null;window.tp155R4ClosePanel?.(false);rf200SetTheme(t);go('home')},theme);
+    await page.evaluate(t=>{state.session=null;state.workout=null;db.set('draft',null);window.tp155R4ClosePanel?.(false);rf200SetTheme(t);go('home')},theme);
     const family=theme==='blue'?'vivid':'basic';
     assert.equal(await page.evaluate(()=>document.documentElement.dataset.tpThemeFamily),family);
     for(const route of ['home','plan','programs','history','health']){
@@ -104,18 +104,6 @@ const server=http.createServer((req,res)=>{
       assert.equal(frame.bg,'rgb(26, 30, 37)','Program grouping matches Health card fill');
      }
     }
-    // Current workout set rows get an external visual-only closed outline.
-    await page.evaluate(()=>{go('plan');const p=activeProgram();if(p?.days?.length)startWorkout(p.days[0].id)});
-    if(await page.locator('main.tp153-workout .tp153-set-row').count()){
-      const rowStyle=await page.locator('main.tp153-workout .tp153-set-row').first().evaluate(e=>{
-        const s=getComputedStyle(e),r=e.getBoundingClientRect();
-        return {width:s.outlineWidth,style:s.outlineStyle,color:s.outlineColor,height:r.height};
-      });
-      assert.equal(rowStyle.width,'1px','Each active set is a separate closed 1px interaction unit');
-      assert.equal(rowStyle.style,'solid');
-      assert.equal(rowStyle.color,'rgb(44, 52, 64)');
-      assert.ok(rowStyle.height>30,'Workout set tap targets remain usable');
-    }
     // Original 1.7.6 overlay geometry: Coach only is lifted; neither
     // Calendar nor Settings moves during this separate visual-only pass.
     await page.evaluate(()=>go('home'));
@@ -144,6 +132,18 @@ const server=http.createServer((req,res)=>{
     }
     assert.ok(positions.find(x=>x.panel==='coach').top<positions[0].top,'Coach X stays raised, others remain at their old positions');
     for(const x of positions.slice(1))for(const k of ['w','h','bg','border','radius'])assert.equal(x[k],positions[0][k],'Same X appearance; no geometry edits on global branch: '+k);
+    // Current workout set rows get an external visual-only closed outline.
+    await page.evaluate(()=>{go('plan');const p=activeProgram();if(p?.days?.length)startWorkout(p.days[0].id)});
+    if(await page.locator('main.tp153-workout .tp153-set-row').count()){
+      const rowStyle=await page.locator('main.tp153-workout .tp153-set-row').first().evaluate(e=>{
+        const s=getComputedStyle(e),r=e.getBoundingClientRect();
+        return {width:s.outlineWidth,style:s.outlineStyle,color:s.outlineColor,height:r.height};
+      });
+      assert.equal(rowStyle.width,'1px','Each active set is a separate closed 1px interaction unit');
+      assert.equal(rowStyle.style,'solid');
+      assert.equal(rowStyle.color,'rgb(44, 52, 64)');
+      assert.ok(rowStyle.height>30,'Workout set tap targets remain usable');
+    }
    }
    assert.deepEqual(errors,[],width+': no page errors');
    await page.close();
