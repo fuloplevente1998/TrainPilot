@@ -61,7 +61,11 @@ const server=http.createServer((req,res)=>{
       return {before,after};
      });
      assert.deepEqual(result.after.buttons,result.before.buttons,width+'/'+theme+'/'+route+': nav buttons geometry/typography unchanged');
-     assert.deepEqual(result.after.regularRect,result.before.regularRect,width+'/'+theme+'/'+route+': secondary card geometry unchanged');
+     if(result.after.regularRect||result.before.regularRect){
+      const {padding:afterPadding,...afterRect}=result.after.regularRect;
+      const {padding:beforePadding,...beforeRect}=result.before.regularRect;
+      assert.deepEqual(afterRect,beforeRect,width+'/'+theme+'/'+route+': secondary card box unchanged after border/padding compensation');
+     }
      if(result.after.heroRect||result.before.heroRect){
       const {padding:afterCompensatedPadding,...afterHeroGeometry}=result.after.heroRect;
       const {padding:beforeOriginalPadding,...beforeHeroGeometry}=result.before.heroRect;
