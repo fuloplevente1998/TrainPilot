@@ -9,7 +9,7 @@ const css=fs.readFileSync(path.join(root,'global-uiux-177.css'),'utf8');
 const ownRules=css.replace(/\/\*[\s\S]*?\*\//g,'').replace(/--[\w-]+\s*:\s*[^;]+;/g,'');
 // Only three explicit border-width compensations may alter padding; no
 // page geometry, button spacing, grid, navigation or overlay layout edits.
-const allowedPadding=[...ownRules.matchAll(/\\bpadding(?:-left)?\\s*:\\s*([^;]+);/g)].map(m=>m[0]);
+const allowedPadding=[...ownRules.matchAll(/\bpadding(?:-left)?\s*:\s*([^;]+);/g)].map(m=>m[0]);
 assert.deepEqual(allowedPadding,['padding:11px 13px!important;','padding:1px!important;','padding-left:2px!important;']);
 for(const prop of ['display','grid-template','grid-auto','flex-direction','position','top','right','bottom','left','margin','width','height','min-height','max-height','transform','gap']){
  assert.equal(new RegExp('(^|[;{\\s])'+prop+'\\s*:','m').test(ownRules),false,'CSS-only styling must not override geometry: '+prop);
