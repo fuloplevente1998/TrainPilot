@@ -34,7 +34,7 @@ html body :is(#app, #tp155R4PanelHost) :is(
   .tp152-day, .tp152-exercise, .tp152-quick-row, .tp152-inline-add,
   .tp155-journal-filter, .tp155-r4-panel, .tp168-metric,
   .tp168-status, .tp168-trend, .tp168-weight-journal,
-  .tp169-pulse-journal, .tp168-health-note
+  .tp169-pulse-journal, .tp168-health-note, .tp1511-training
 ):not(.tp-ui-hero) {
   background: var(--tp-ui-card) !important;
   border: var(--tp-ui-border-size) solid var(--tp-ui-border) !important;
