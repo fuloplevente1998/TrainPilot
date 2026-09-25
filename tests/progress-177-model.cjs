@@ -11,7 +11,8 @@ else{
  code=hit[1];
 }
 const box={module:{exports:{}},exports:{},window:{},console};
-vm.runInNewContext(code,box,{filename:'trainpilot-177-progress-model.js'});
+const ctx=vm.createContext(box);
+vm.runInContext(code,ctx,{filename:'trainpilot-177-progress-model.js'});
 const m=box.module.exports;
 const when=d=>d+'T16:00:00+02:00';
 const workout=(id,day,exercises,extra={})=>({
@@ -39,7 +40,8 @@ assert.ok(records.some(x=>x.kind==='weight'&&x.previous===10&&x.value===12));
 assert.ok(records.some(x=>x.kind==='left'&&x.previous===30&&x.value===36));
 assert.ok(records.some(x=>x.kind==='right'&&x.previous===30&&x.value===32));
 assert.ok(records.every(x=>x.previous!==undefined),'no first-ever baseline should count as PR');
-const today=new Date(2026,8,25,12,0,0);
+const makeDate=expr=>vm.runInContext(expr,ctx);
+const today=makeDate('new Date(2026,8,25,12,0,0)');
 const week=m.build(prepared,'7d',today);
 assert.equal(week.currentMetrics.workouts,2);
 assert.equal(week.previousMetrics.workouts,1);
@@ -59,7 +61,7 @@ assert.equal(core.percent,100,'group percentage is relative to the busiest group
 assert.equal(week.currentMetrics.sets,2);
 assert.equal(m.build(prepared,'30d',today).buckets.length,5);
 assert.equal(m.build(prepared,'3m',today).buckets.length,13);
-const fresh=m.build(prepared,'7d',new Date(2027,1,1,9));
+const fresh=m.build(prepared,'7d',makeDate('new Date(2027,1,1,9)'));
 assert.equal(fresh.currentMetrics.workouts,0);
 assert.equal(fresh.changes.volume,null,'no previous baseline is not +100%');
 assert.ok(!JSON.stringify(fresh).includes('8.4'),'never invent a workout intensity score');
