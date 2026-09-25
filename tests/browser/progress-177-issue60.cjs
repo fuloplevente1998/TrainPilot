@@ -31,11 +31,14 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   const rail=positive?.querySelector('.tp177-bar-rail'),bar=positive?.querySelector('.tp177-bar');
   if(!cols||!positive||!rail||!bar)return null;
   const r=rail.getBoundingClientRect(),b=bar.getBoundingClientRect();
-  return {display:getComputedStyle(cols).display,align:getComputedStyle(rail).alignItems,railH:r.height,barH:b.height,barW:b.width};
+  const axisTop=Number(document.querySelector('.tp177-chart-axis span')?.textContent.replace(/[^\d]/g,'')||0);
+  const volume=Number(positive.getAttribute('aria-label')?.split(';')[1]?.replace(/[^\d]/g,'')||0);
+  return {display:getComputedStyle(cols).display,align:getComputedStyle(rail).alignItems,railH:r.height,barH:b.height,barW:b.width,axisTop,volume};
  });
  assert.ok(vertical,'at least one real volume bar expected');
  assert.equal(vertical.display,'grid');assert.equal(vertical.align,'flex-end');
  assert.ok(vertical.railH>100&&vertical.barH>0&&vertical.barW<=40,'volume must render as vertical columns: '+JSON.stringify(vertical));
+ assert.ok(vertical.axisTop>=vertical.volume&&Math.abs(vertical.barH/vertical.railH-vertical.volume/vertical.axisTop)<.02,'bar height must match the displayed kg axis: '+JSON.stringify(vertical));
  for(const [period,count] of [['7d',7],['30d',5],['3m',13]]){
   await page.locator('.tp177-periods button[data-period="'+period+'"]').click();
   await page.waitForFunction(n=>document.querySelectorAll('.tp177-chart-column').length===n,count);

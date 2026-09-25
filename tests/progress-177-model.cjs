@@ -67,4 +67,6 @@ assert.equal(fresh.changes.volume,null,'no previous baseline is not +100%');
 assert.ok(!JSON.stringify(fresh).includes('8.4'),'never invent a workout intensity score');
 const deleted=m.prepare(raw,{isDeleted:w=>w.id==='recent'});
 assert.ok(!deleted.some(x=>x.key==='recent'),'deleted workouts excluded');
+const legacy=m.prepare([workout(undefined,'2026-09-20',[press(10,10)],{programId:'home-basic',dayId:'A'})]);
+assert.equal(legacy[0].key,legacy[0].source.started+'|home-basic|A','legacy workout links use the same key as Journal');
 console.log('PASS #60: 7d/30d/3m bars, completed-only data, weighted volume, PRs, bilateral time, relative muscle loads, no invented intensity.');

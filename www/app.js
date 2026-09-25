@@ -13148,7 +13148,8 @@ window.tp164DecoratePerSideRows();
       timed,bilateral});
     }
    }
-   cleaned.push({source:w,key:String(w.id||w.started||date.toISOString()),date,dateMs:date.getTime(),
+   const key=w.id||`${w.started||''}|${w.programId||''}|${w.dayId||w.workout||''}`;
+   cleaned.push({source:w,key:String(key),date,dateMs:date.getTime(),
     sets,volume:Math.round(volume*100)/100,weighted,groups,performances});
   }
   cleaned.sort((a,b)=>a.dateMs-b.dateMs);
@@ -13324,10 +13325,12 @@ window.addEventListener?.('DOMContentLoaded',function(){
    '<span class="tp177-chevron" aria-hidden="true">›</span></button>';
  }
  function barChart(v){
-  const max=Math.max(0,...v.buckets.map(b=>b.volume)),unit=max>0?Math.ceil(max/4/1000)*1000:1000;
+  const max=Math.max(0,...v.buckets.map(b=>b.volume));
+  const rough=max>0?max/4:1,order=Math.pow(10,Math.floor(Math.log10(rough)));
+  const unit=[1,2,5,10].find(n=>n*order>=rough)*order,axisMax=unit*4;
   const ticks=[4,3,2,1,0].map(x=>'<span>'+fmt(unit*x)+'</span>').join('');
   const bars=v.buckets.map((b,i)=>{
-   const height=max>0?Math.max(0,Math.round(b.volume/max*100)):0;
+   const height=max>0?Math.max(0,b.volume/axisMax*100):0;
    return '<button type="button" class="tp177-chart-column" aria-label="'+escapeHtml(dateFmt(b.start)+'; '+fmt(b.volume)+' kg; '+b.workouts.length+' '+tr('sessions'))+
     '" onclick="tp177OpenBucket('+i+')"><span class="tp177-bar-rail"><span class="tp177-bar" style="height:'+height+'%"></span></span>'+
     '<span class="tp177-chart-date">'+escapeHtml(dateFmt(b.start,true))+'</span></button>';
@@ -13509,4 +13512,3 @@ window.addEventListener?.('DOMContentLoaded',function(){
 // @section ready.js
 window.TrainPilotBoot.finish();
 // @endsection ready.js
-
