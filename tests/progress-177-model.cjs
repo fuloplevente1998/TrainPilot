@@ -1,11 +1,17 @@
 /* #60: complete workouts, comparable PRs, accurate weighted volume and group shares. */
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const source=fs.readFileSync('www/app.js','utf8');
-const hit=source.match(/\/\/ @section trainpilot-177-progress-model\.js\n([\s\S]*?)\/\/ @endsection trainpilot-177-progress-model\.js/);
-assert.ok(hit,'#60 progress model section missing from canonical app.js');
+const split='www/trainpilot-177-progress-model.js';
+let code='';
+if(fs.existsSync(split))code=fs.readFileSync(split,'utf8');
+else{
+ const source=fs.readFileSync('www/app.js','utf8');
+ const hit=source.match(/\/\/ @section trainpilot-177-progress-model\.js\n([\s\S]*?)\/\/ @endsection trainpilot-177-progress-model\.js/);
+ assert.ok(hit,'#60 progress model section missing from canonical app.js');
+ code=hit[1];
+}
 const box={module:{exports:{}},exports:{},window:{},console};
-vm.runInNewContext(hit[1],box,{filename:'trainpilot-177-progress-model.js'});
+vm.runInNewContext(code,box,{filename:'trainpilot-177-progress-model.js'});
 const m=box.module.exports;
 const when=d=>d+'T16:00:00+02:00';
 const workout=(id,day,exercises,extra={})=>({
