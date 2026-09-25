@@ -42,7 +42,7 @@ const server=http.createServer((req,res)=>{
   const homeActive=page.locator('main.rf221-home > .hero.tp155-home-active-card');
   assert.equal(await homeActive.count(),1,'Home must expose one highlighted active-program card');assert.equal(await homeActive.evaluate(e=>e.classList.contains('tp155-r4-accent-surface')),true,'Home active program must use the shared highlighted surface');
   const homeLayout=await homeActive.evaluate(e=>{const g=e.querySelector('.tp155-home-active-grid'),l=e.querySelector('.tp155-home-program-left'),r=e.querySelector('.tp155-home-program-right'),h=e.querySelector('h1'),cs=getComputedStyle(e),gr=getComputedStyle(g),lr=l.getBoundingClientRect(),rr=r.getBoundingClientRect();return {border:parseFloat(cs.borderTopWidth),grid:gr.display,leftX:lr.x,rightX:rr.x,titleFont:parseFloat(getComputedStyle(h).fontSize),height:e.getBoundingClientRect().height,next:String(r.textContent||'').trim()}});
-  assert.ok(homeLayout.border>=1.5,'Basic themes keep a visible matte selection frame on the Home active program: '+JSON.stringify(homeLayout));
+  assert.equal(homeLayout.border,1,'Home active Hero matches Health 1px card outline: '+JSON.stringify(homeLayout));
   assert.equal(homeLayout.grid,'grid','Home active program content must use a two-column grid');
   assert.ok(homeLayout.rightX>homeLayout.leftX,'next workout/program information must sit to the right of the active program');
   assert.ok(homeLayout.titleFont>=21,'active program title must be more prominent');
@@ -82,13 +82,14 @@ const server=http.createServer((req,res)=>{
   assert.ok(navSizing.cellH<=57,'2x4 navigation cell height must not increase: '+JSON.stringify(navSizing));assert.ok(navSizing.icon>=21,'navigation icons should be larger without taller cells');assert.ok(navSizing.label>=12.5,'Hungarian navigation labels should be more readable');assert.equal(navSizing.shadow,'none','Basic active navigation must stay matte without glow');assert.ok(navSizing.border>=1,'Basic active navigation keeps a matte selection frame');
   await page.evaluate(()=>rf200SetTheme('blue'));await page.waitForSelector('main.rf221-home > .hero.tp155-home-active-card');
   const neonVisual=await page.locator('main.rf221-home > .hero.tp155-home-active-card').evaluate(e=>({border:parseFloat(getComputedStyle(e).borderTopWidth),shadow:getComputedStyle(e).boxShadow,family:document.documentElement.dataset.tpThemeFamily}));
-  assert.equal(neonVisual.family,'vivid');assert.ok(neonVisual.border>=1.5,'Neon themes may use the stronger colored selection frame');assert.notEqual(neonVisual.shadow,'none','Neon themes may use a subtle glow');
+  assert.equal(neonVisual.family,'vivid');assert.equal(neonVisual.border,1,'Vivid Hero is also 1px; only its glow differs');assert.notEqual(neonVisual.shadow,'none','Neon themes may use a subtle glow');
   await page.evaluate(()=>rf200SetTheme('classicBlue'));await page.waitForSelector('main.rf221-home');
 
   await page.evaluate(()=>{state.session=null;state.workout=null;state.tab='plan';render()});
   await page.waitForSelector('.tp152-active-program');
   const trainingSettings=page.locator('.tp1511-training');assert.equal(await trainingSettings.count(),1,'Workout settings must remain on the Workout page');
-  const trainingSurface=await trainingSettings.evaluate(e=>({border:parseFloat(getComputedStyle(e).borderTopWidth),background:getComputedStyle(e).backgroundImage,height:e.getBoundingClientRect().height,stylePresent:!!document.getElementById('tp155WorkoutSettingsCompactCss')}));assert.ok(trainingSurface.border>=1&&trainingSurface.background!=='none','Workout settings must use the compact colored outline treatment: '+JSON.stringify(trainingSurface));assert.ok(trainingSurface.height<90,'collapsed Workout settings must stay compact');
+  await page.waitForTimeout(250); // Wait for the existing panel entrance to settle before measuring flat card color.
+  const trainingSurface=await trainingSettings.evaluate(e=>({border:parseFloat(getComputedStyle(e).borderTopWidth),background:getComputedStyle(e).backgroundColor,height:e.getBoundingClientRect().height,stylePresent:!!document.getElementById('tp155WorkoutSettingsCompactCss')}));assert.equal(trainingSurface.border,1,'Workout settings have a standard 1px secondary border');assert.equal(trainingSurface.background,'rgb(26, 30, 37)','Workout settings use shared Health card fill');assert.ok(trainingSurface.height<90,'collapsed Workout settings must stay compact');
   await trainingSettings.locator(':scope > summary').click();assert.ok(await trainingSettings.getAttribute('open')!==null);
   const trainingFieldHeight=await trainingSettings.locator('.field').first().evaluate(e=>e.getBoundingClientRect().height);assert.ok(trainingFieldHeight<=38,'Workout settings fields must stay compact');
   const trainingSave=trainingSettings.locator('.btn[onclick*="tp1511SaveTraining"]');const saveNormal=await trainingSave.evaluate(e=>getComputedStyle(e).backgroundColor);assert.match(saveNormal,/rgb\((?:3[0-9]|4[0-9]),\s*(?:7[0-9]|8[0-9]),\s*(?:5[0-9]|6[0-9])\)/,'Workout settings Save must use the dark green resting state');

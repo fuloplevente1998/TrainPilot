@@ -1,0 +1,156 @@
+/* #58 visual-only Health-reference pass. NO geometry, DOM, component or event changes.
+   The active Health page uses the app's resolved palette, not its obsolete
+   early 1.6.8 blue fallback. Keep the existing fonts, sizes, radii and layout. */
+:root{
+  --tp-ui-bg:#0e1015;
+  --tp-ui-card:#1a1e25;
+  --tp-ui-card-raised:#232933;
+  --tp-ui-border:#2c3440;
+  --tp-ui-border-size:1px; /* Reference thickness on every enclosing card. */
+  --tp-ui-font:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  --tp-ui-hero-border:linear-gradient(120deg,
+    color-mix(in srgb,var(--accent) 90%,var(--tp-ui-border)),
+    color-mix(in srgb,var(--accent2) 42%,var(--tp-ui-border)) 62%,
+    var(--tp-ui-border));
+  --tp-ui-vivid-glow:0 0 18px color-mix(in srgb,var(--accent) 24%,transparent);
+}
+html,html body,html body.tp168-health-view,
+html[data-tp-theme-family="vivid"] body.tp168-health-view{
+  background:var(--tp-ui-bg)!important;
+}
+/* Same opaque secondary-card fill and neutral hairline from Health to
+   Home, Workout, Programs, Journal, and all floating-panel interiors.
+   Only presentation properties: never touch display, grid, padding, margin,
+   positions, dimensions, click handlers or close-button geometry. */
+html body :is(#app,#tp155R4PanelHost) :is(
+  .card,.hero,.stat,.history,.setting,.weight-row,
+  .tp151-calendar-frame,.tp151-day-panel,
+  .tp152-active-program,.tp152-program-card,.tp152-program-day,
+  .tp152-day,.tp152-exercise,.tp152-quick-row,.tp152-inline-add,
+  .tp152-accordion,.tp152-history-editor,.tp1511-training,
+  .tp155-journal-filter,.tp155-r4-panel,
+  .tp168-metric,.tp168-status,.tp168-trend,.tp168-weight-journal,
+  .tp169-pulse-journal,.tp168-health-note
+){
+  background:var(--tp-ui-card)!important;
+  border-color:var(--tp-ui-border)!important;
+  box-shadow:none!important;
+}
+/* Preserve the original 3px/2px structural widths: color only. */
+html body #app :is(.tp152-program-card,.tp152-active-program){
+  border-left-color:var(--tp-ui-border)!important;
+}
+/* In the Program library, only the selected card gets a SOLID theme-
+   colored hairline. The old per-program blue left stripe is removed. */
+html body #app .tp152-program-card.active-program{
+  border-color:color-mix(in srgb,var(--accent) 65%,var(--tp-ui-border))!important;
+}
+html body :is(#app,#tp155R4PanelHost) :is(
+  .tp152-preview-ex,.history-head,.tp152-quick-body
+){background:var(--tp-ui-card-raised)!important;}
+
+/* Explicit existing classes instead of runtime decorators: no DOM changes.
+   Exactly one main hero per view (Health Today, Coach Today, Home active,
+   Plan active or quick start, current Workout head). */
+html body #app main.rf221-home>.hero.tp155-home-active-card,
+html body #app main.tp152-plan>.tp152-active-program,
+html body #app main.tp152-plan>.tp150-quick-entry:first-child:not(:has(~ .tp152-active-program)),
+html body #app main.tp153-workout .tp153-workout-head,
+html body #app main.tp168-health>.tp168-today-card,
+html body #app main.rf263-health>.tp151-health-card,
+html body #tp155R4PanelHost[data-panel="coach"] .tp151-coach-recommendation{
+  border-color:transparent!important;
+  background:linear-gradient(var(--tp-ui-card),var(--tp-ui-card)) padding-box,
+    var(--tp-ui-hero-border) border-box!important;
+  box-shadow:none!important;
+  filter:none!important;
+}
+/* Vivid/neon ONLY; basic themes never get glow. */
+html[data-tp-theme-family="vivid"] body #app main.rf221-home>.hero.tp155-home-active-card,
+html[data-tp-theme-family="vivid"] body #app main.tp152-plan>.tp152-active-program,
+html[data-tp-theme-family="vivid"] body #app main.tp152-plan>.tp150-quick-entry:first-child:not(:has(~ .tp152-active-program)),
+html[data-tp-theme-family="vivid"] body #app main.tp153-workout .tp153-workout-head,
+html[data-tp-theme-family="vivid"] body #app main.tp168-health>.tp168-today-card,
+html[data-tp-theme-family="vivid"] body #app main.rf263-health>.tp151-health-card,
+html[data-tp-theme-family="vivid"] body #tp155R4PanelHost[data-panel="coach"] .tp151-coach-recommendation{
+  box-shadow:var(--tp-ui-vivid-glow)!important;
+}
+/* Basic palettes: flat button/cards/selection/progress treatment, leaving
+   backgrounds, typography metrics and existing press/toggle logic intact. */
+html[data-tp-theme-family="basic"] body :is(#app,#tp155R4PanelHost) :is(
+  .btn,button,.tab,.card,.hero,.stat,.setting,.history,.progress,
+  .tp-select-trigger,.tp-select-menu,.tp162-theme-columns,
+  .tp155-r4-panel,.tp155-r4-panel-close,.tp152-program-card,
+  .tp152-active-program,.tp152-day,.tp152-exercise,.tp152-quick-row,
+  .tp155-journal-filter,.tp168-today-card,.tp168-metric,.tp168-status,
+  .tp168-trend,.tp168-weight-journal,.tp169-pulse-journal,
+  .tp151-coach-recommendation,.tp166-home-coach,.tp153-workout-head
+){
+  box-shadow:none!important;
+  filter:none!important;
+  text-shadow:none!important;
+}
+html[data-tp-theme-family="basic"] body :is(
+  .top.tp154-nav-grid,.tp-temporal-modal,.video-modal,.tp15-demo-dialog
+){box-shadow:none!important;filter:none!important;}
+html[data-tp-theme-family="basic"] body :is(#app,#tp155R4PanelHost) :is(
+  .progress,.progress>div
+){box-shadow:none!important;filter:none!important;}
+/* Typography: retain the existing Inter/system stack and all sizes, line
+   heights, font weights, wrapping and spacing; no new font downloads. */
+
+/* #58 border-consistency follow-up: Health's 1px visible card outlines.
+   Compensate the former 2px Home/Plan borders with padding; preserve the
+   Program card's original 3px border BOX and paint only 1px of its edge. */
+html body #app main.rf221-home > .hero.tp155-home-active-card {
+  border-width:var(--tp-ui-border-size)!important;
+  padding:11px 13px!important; /* Was 2px border + 10px 12px padding. */
+}
+html body #app main.tp152-plan > .tp152-active-program {
+  border-width:var(--tp-ui-border-size)!important;
+  padding:1px!important; /* Was 2px border + 0px padding on each side. */
+}
+/* Program rows have a legacy 3px left-border *box*; shrinking it
+   moves the summary grid. Retain the invisible 3px geometry and paint just
+   the first pixel via a border-box background gradient. All four VISIBLE
+   edges are 1px, including selected rows; neither label nor hitbox moves. */
+html body #app main.tp150-programs-compact .tp152-program-card {
+  border-left-color:transparent!important;
+  background:
+    linear-gradient(to right,var(--tp-ui-border) 0 1px,transparent 1px),
+    var(--tp-ui-card)!important;
+  background-origin:border-box!important;
+  background-clip:border-box!important;
+}
+html body #app main.tp150-programs-compact .tp152-program-card.active-program {
+  border-left-color:transparent!important;
+  background:
+    linear-gradient(to right,color-mix(in srgb,var(--accent) 65%,var(--tp-ui-border)) 0 1px,transparent 1px),
+    var(--tp-ui-card)!important;
+  background-origin:border-box!important;
+  background-clip:border-box!important;
+}
+/* A containing Programs card already has all four sides; unify its
+   group outline too, but do not box the three separate action buttons. */
+html body #app main.tp150-programs-compact .tp150-programs-frame {
+  background:var(--tp-ui-card)!important;
+  border-color:var(--tp-ui-border)!important;
+}
+
+/* Two currently unframed, meaningful interaction units can benefit from
+   the same closed 1px outline. Outlines do NOT participate in the box model:
+   the Workout set controls and Coach metric tap targets keep exact geometry. */
+html body #app main.tp153-workout .tp153-set-row {
+  outline:1px solid var(--tp-ui-border)!important;
+  outline-offset:2px!important;
+  border-radius:12px; /* Visual outline only; not a new container/padding. */
+}
+html body #tp155R4PanelHost[data-panel="coach"] .tp153-coach-metric:not(:focus-visible),
+html body #tp155R4PanelHost[data-panel="coach"] .tp151-coach-target > span {
+  outline:1px solid var(--tp-ui-border)!important;
+  outline-offset:-1px!important;
+}
+/* Focus-visible retains the existing thicker accessibility focus ring.
+   Inner Program-day rows remain single separators: double boxing them
+   would crowd the hierarchy. Floating panels deliberately remain joined
+   to the sticky header and must not gain an extra top border. */
