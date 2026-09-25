@@ -47,8 +47,11 @@ const server=http.createServer((req,res)=>{
        const rs=regular&&getComputedStyle(regular),hs=hero&&getComputedStyle(hero);
        return {nav:rect(nav),buttons:buttons.map(rect),main:rect(main),regularRect:rect(regular),heroRect:rect(hero),body:getComputedStyle(document.body).backgroundColor,regular:rs?{bg:rs.backgroundColor,border:rs.borderTopColor,shadow:rs.boxShadow}:null,hero:hs?{borderImage:hs.backgroundImage,border:hs.borderTopWidth,shadow:hs.boxShadow}:null};
       };
-      link.disabled=true;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));const before=snap();
-      link.disabled=false;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));const after=snap();
+      // The existing app animates some background/outline changes. Compare
+      // the fully settled styles instead of intermediate oklab colors.
+      const settled=()=>new Promise(r=>setTimeout(()=>requestAnimationFrame(()=>requestAnimationFrame(r)),300));
+      link.disabled=true;await settled();const before=snap();
+      link.disabled=false;await settled();const after=snap();
       return {before,after};
      });
      assert.deepEqual(result.after.buttons,result.before.buttons,width+'/'+theme+'/'+route+': nav buttons geometry/typography unchanged');
