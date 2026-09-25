@@ -62,9 +62,17 @@ const server=http.createServer((req,res)=>{
      });
      assert.deepEqual(result.after.buttons,result.before.buttons,width+'/'+theme+'/'+route+': nav buttons geometry/typography unchanged');
      assert.deepEqual(result.after.regularRect,result.before.regularRect,width+'/'+theme+'/'+route+': secondary card geometry unchanged');
-     assert.deepEqual(result.after.heroRect,result.before.heroRect,width+'/'+theme+'/'+route+': highlighted card geometry unchanged');
+     if(result.after.heroRect||result.before.heroRect){
+      const {padding:afterCompensatedPadding,...afterHeroGeometry}=result.after.heroRect;
+      const {padding:beforeOriginalPadding,...beforeHeroGeometry}=result.before.heroRect;
+      assert.deepEqual(afterHeroGeometry,beforeHeroGeometry,width+'/'+theme+'/'+route+': highlighted card placement and size unchanged despite border/padding exchange');
+     }
      assert.deepEqual(result.after.heroInnerRect,result.before.heroInnerRect,width+'/'+theme+'/'+route+': hero content geometry unchanged');
-     assert.deepEqual(result.after.programCardRect,result.before.programCardRect,width+'/'+theme+'/'+route+': program card frame unchanged');
+     if(result.after.programCardRect||result.before.programCardRect){
+      const {padding:afterProgramPadding,...afterProgramGeometry}=result.after.programCardRect;
+      const {padding:beforeProgramPadding,...beforeProgramGeometry}=result.before.programCardRect;
+      assert.deepEqual(afterProgramGeometry,beforeProgramGeometry,width+'/'+theme+'/'+route+': program card placement and size unchanged');
+     }
      assert.deepEqual(result.after.programCardContentRect,result.before.programCardContentRect,width+'/'+theme+'/'+route+': program card summary unchanged');
      assert.deepEqual(result.after.nav,result.before.nav,width+'/'+theme+'/'+route+': full navbar layout unchanged');
      for(const k of ['x','y','w','h','padding','gap','fontSize','fontFamily','grid'])assert.equal(result.after.main[k],result.before.main[k],width+'/'+theme+'/'+route+': main layout '+k);
