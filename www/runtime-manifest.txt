@@ -1,4 +1,1 @@
 app.js
-progress-177-model.js
-progress-177.js
-progress-177.css
