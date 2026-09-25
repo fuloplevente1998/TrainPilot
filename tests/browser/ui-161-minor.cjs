@@ -34,10 +34,9 @@ const {chromium}=require('playwright');
    const is162=await page.evaluate(()=>!!window.TrainPilot162Followup);
    if(is162){
     assert.equal(g.position,'sticky',type+' 1.6.2 X must remain sticky while the panel scrolls');
-    if(type==='coach'){
-     assert.ok(g.closeTop-g.panelTop>=8&&g.closeTop-g.panelTop<=16,'Coach X must be moved up but remain inside the outer panel frame: '+JSON.stringify(g));
-     assert.ok(g.firstCardTop!=null&&g.firstCardTop-g.closeBottom>=6,'Coach X must clear the first framed recommendation by at least 6px: '+JSON.stringify(g));
-    }else assert.ok(g.closeTop-g.panelTop>=15&&g.closeTop-g.panelTop<=23,type+' previously accepted X height must remain unchanged: '+JSON.stringify(g));
+    // #58: all three overlay X buttons now share the verified Coach inset.
+    assert.ok(g.closeTop-g.panelTop>=8&&g.closeTop-g.panelTop<=16,type+' unified X clears outer frame: '+JSON.stringify(g));
+    if(type==='coach')assert.ok(g.firstCardTop!=null&&g.firstCardTop-g.closeBottom>=6,'Coach X clears recommendation frame: '+JSON.stringify(g));
     assert.ok(Math.abs((g.panelRight-g.closeRight)-14)<=3,type+' 1.6.2 X should keep the left-shifted 14px right inset: '+JSON.stringify(g));
     const sticky=await page.evaluate(type=>{
      const host=document.querySelector('#tp155R4PanelHost[data-panel="'+type+'"]'),panel=host.querySelector('.tp155-r4-panel'),close=host.querySelector('.tp155-r4-panel-close');
