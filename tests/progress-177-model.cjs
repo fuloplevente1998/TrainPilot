@@ -10,7 +10,7 @@ else{
  assert.ok(hit,'#60 progress model section missing from canonical app.js');
  code=hit[1];
 }
-const box={module:{exports:{}},exports:{},window:{},console};
+const box={module:{exports:{}},exports:{},window:{},console,Date};
 const ctx=vm.createContext(box);
 vm.runInContext(code,ctx,{filename:'trainpilot-177-progress-model.js'});
 const m=box.module.exports;
