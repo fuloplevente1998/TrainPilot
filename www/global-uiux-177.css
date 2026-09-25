@@ -34,7 +34,6 @@ html body :is(#app,#tp155R4PanelHost) :is(
 ){
   background:var(--tp-ui-card)!important;
   border-color:var(--tp-ui-border)!important;
-  border-style:solid!important;
   box-shadow:none!important;
 }
 /* Preserve the original 3px/2px structural widths: color only. */
@@ -61,7 +60,6 @@ html body #app main.tp168-health>.tp168-today-card,
 html body #app main.rf263-health>.tp151-health-card,
 html body #tp155R4PanelHost[data-panel="coach"] .tp151-coach-recommendation{
   border-color:transparent!important;
-  border-style:solid!important;
   background:linear-gradient(var(--tp-ui-card),var(--tp-ui-card)) padding-box,
     var(--tp-ui-hero-border) border-box!important;
   box-shadow:none!important;
