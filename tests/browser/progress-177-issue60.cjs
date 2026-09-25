@@ -26,6 +26,8 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  await page.waitForFunction(()=>{const img=document.querySelector('.tp177-anatomy-image');return img?.complete&&img.naturalWidth>0});
  assert.equal(await page.locator('.tp177-heatmap [data-group="chest"]').count(),1,'logged chest load highlights anatomy');
  assert.equal(await page.locator('.tp177-heatmap [data-group="legs"]').count(),0,'unlogged groups remain neutral');
+ assert.equal(await page.locator('.tp177-load-legend [data-load]').count(),3,'fixed low/medium/high load legend');
+ assert.equal(await page.locator('.tp177-muscle-row[data-load="high"]').count()>0,true,'relative peak uses the high-load color in every theme');
  assert.ok((await page.locator('.tp177-metric').first().boundingBox()).height<90,'summary cards should match compact mockup proportions');
  const text=(await page.locator('main.tp177-progress').innerText()).replace(/\s+/g,' ');
  assert.doesNotMatch(text,/Átlag.?intenzitás|8[,.]4\s*\/\s*10/i,'no invented workout intensity score');

@@ -13240,7 +13240,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
   hu:{log:'Edzésnapló',stats:'Statisztikák',progress:'Fejlődés',volume:'Összes volumen',trend:'Volumen trend',
    days7:'7 nap',days30:'30 nap',months3:'3 hó',vs:'az előző időszakhoz képest',pr:'PR rekordok',
    workouts:'Edzések száma',average:'Átlagos volumen',averageSmall:'súlyzós edzésenként',
-   sets:'Sorozatok száma',muscles:'Izomcsoport-terhelés',groupNote:'Az arányok a legnagyobb naplózott sorozatterheléshez viszonyítanak, nem fáradtságot mérnek.',
+   sets:'Sorozatok száma',muscles:'Izomcsoport-terhelés',groupNote:'A színek és arányok az időszak legterheltebb izomcsoportjához viszonyítanak, nem fáradtságot mérnek.',
+   low:'Kisebb',medium:'Közepes',high:'Nagyobb',
    coach:'Fejlődési javaslat',more:'Részletek',noData:'Ehhez az időszakhoz nincs elegendő naplózott adat.',
    noWeight:'Ebben az időszakban nincs mérhető súlyzós volumen.',openLog:'Megnyitás az Edzésnaplóban',
    close:'Bezárás',back:'Vissza',previous:'Korábbi',current:'Új',sessions:'Edzések',completed:'Befejezett edzések',setCount:'sorozat',
@@ -13255,7 +13256,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
   en:{log:'Workout log',stats:'Statistics',progress:'Progress',volume:'Total volume',trend:'Volume trend',
    days7:'7 days',days30:'30 days',months3:'3 mo',vs:'vs previous period',pr:'PR records',
    workouts:'Workouts',average:'Average volume',averageSmall:'per weighted workout',
-   sets:'Completed sets',muscles:'Muscle group load',groupNote:'Relative to the most trained muscle group, not a fatigue measurement.',
+   sets:'Completed sets',muscles:'Muscle group load',groupNote:'Colors and percentages are relative to the most trained group, not a fatigue measurement.',
+   low:'Lower',medium:'Medium',high:'Higher',
    coach:'Progress insight',more:'Details',noData:'Not enough logged data for this period.',
    noWeight:'No measurable weighted volume in this period.',openLog:'Open in workout log',
    close:'Close',back:'Back',previous:'Previous',current:'New',sessions:'Workouts',completed:'Completed workouts',setCount:'sets',
@@ -13343,6 +13345,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
    '<p class="tp177-small">'+escapeHtml(tr('hint'))+'</p></section>';
  }
  // Approximate exercise-target heatmap. Opacity follows the same relative scale as the bars.
+ const loadLevel=percent=>percent<=33?'low':percent<=66?'medium':'high';
+ const loadColor={low:'#f0c83e',medium:'#f28a28',high:'#e84e4e'};
  function anatomy(v){
   const shapes={
    chest:'<ellipse cx="370" cy="305" rx="110" ry="75"/><ellipse cx="530" cy="305" rx="110" ry="75"/>',
@@ -13352,17 +13356,18 @@ window.addEventListener?.('DOMContentLoaded',function(){
    arms:'<ellipse cx="183" cy="435" rx="72" ry="158"/><ellipse cx="726" cy="435" rx="72" ry="158"/><ellipse cx="843" cy="448" rx="66" ry="150"/><ellipse cx="1405" cy="448" rx="66" ry="150"/>',
    core:'<ellipse cx="454" cy="515" rx="94" ry="157"/><ellipse cx="1127" cy="540" rx="92" ry="130"/>'
   };
-  const areas=v.groups.filter(g=>g.sets>0).map(g=>'<g data-group="'+g.key+'" fill="var(--accent)" opacity="'+(0.14+0.42*g.percent/100).toFixed(2)+'">'+shapes[g.key]+'</g>').join('');
+  const areas=v.groups.filter(g=>g.sets>0).map(g=>'<g data-group="'+g.key+'" data-load="'+loadLevel(g.percent)+'" fill="'+loadColor[loadLevel(g.percent)]+'" opacity="'+(0.30+0.42*g.percent/100).toFixed(2)+'">'+shapes[g.key]+'</g>').join('');
   return '<div class="tp177-anatomy-art"><img class="tp177-anatomy-image" src="progress-anatomy-177.png" alt="" loading="lazy">'+
    '<svg class="tp177-heatmap" viewBox="0 0 1536 1024" aria-hidden="true" preserveAspectRatio="xMidYMid meet"><g filter="url(#tp177-heat-blur)">'+areas+'</g>'+
    '<defs><filter id="tp177-heat-blur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="23"/></filter></defs></svg></div>';
  }
  function groupPanel(v){
-  const rows=v.groups.map(g=>'<button type="button" class="tp177-muscle-row" onclick="tp177OpenGroup(\''+g.key+'\')" '+(g.sets?'':'disabled')+'>'+
+  const rows=v.groups.map(g=>'<button type="button" class="tp177-muscle-row" data-load="'+(g.sets?loadLevel(g.percent):'none')+'" onclick="tp177OpenGroup(\''+g.key+'\')" '+(g.sets?'':'disabled')+'>'+
    '<span class="tp177-muscle-label">'+escapeHtml(g.name)+'</span><span class="tp177-muscle-track"><span style="width:'+g.percent+'%"></span></span>'+
    '<span class="tp177-muscle-percent">'+(g.sets?fmt(g.percent)+'%':'—')+'</span></button>').join('');
   return '<section class="tp177-panel tp177-muscles"><div class="tp177-panel-heading"><h2>'+escapeHtml(tr('muscles'))+'</h2><span class="tp177-small">'+escapeHtml(tr(v.period==='7d'?'days7':v.period==='30d'?'days30':'months3'))+'</span></div><div class="tp177-muscle-layout">'+
    '<div class="tp177-anatomy">'+anatomy(v)+'</div><div class="tp177-muscle-bars">'+rows+'</div></div>'+
+   '<div class="tp177-load-legend">'+['low','medium','high'].map(level=>'<span data-load="'+level+'"><i aria-hidden="true"></i>'+escapeHtml(tr(level))+'</span>').join('')+'</div>'+
    '<p class="tp177-small">'+escapeHtml(tr('groupNote'))+'</p></section>';
  }
  function suggestion(v){

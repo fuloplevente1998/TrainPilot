@@ -106,8 +106,14 @@ html body #app .tp177-muscle-row:disabled{opacity:.45;cursor:default}
 html body #app .tp177-muscle-label{font-size:11px;white-space:nowrap}
 html body #app .tp177-muscle-percent{font-size:11px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
 html body #app .tp177-muscle-track{height:10px;min-width:0;border-radius:9px;overflow:hidden;background:var(--tp-ui-card-raised,var(--card2))}
-html body #app .tp177-muscle-track>span{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,var(--accent),var(--accent2,var(--accent)))}
-html body #app .tp177-muscle-row:focus-visible .tp177-muscle-track{outline:2px solid var(--accent)}
+html body #app .tp177-muscle-track>span{display:block;height:100%;border-radius:9px;background:var(--tp177-load)}
+html body #app .tp177-muscle-row[data-load="low"],html body #app .tp177-load-legend [data-load="low"]{--tp177-load:#f0c83e}
+html body #app .tp177-muscle-row[data-load="medium"],html body #app .tp177-load-legend [data-load="medium"]{--tp177-load:#f28a28}
+html body #app .tp177-muscle-row[data-load="high"],html body #app .tp177-load-legend [data-load="high"]{--tp177-load:#e84e4e}
+html body #app .tp177-muscle-row:focus-visible .tp177-muscle-track{outline:2px solid var(--tp177-load,var(--accent))}
+html body #app .tp177-load-legend{display:flex;justify-content:center;gap:13px;margin-top:9px;color:var(--muted);font-size:10px}
+html body #app .tp177-load-legend span{display:inline-flex;align-items:center;gap:4px}
+html body #app .tp177-load-legend i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--tp177-load)}
 html body #app .tp177-muscles>.tp177-small{margin:12px 0 0;font-size:11px}
 html body #app main.tp177-progress .tp177-coach{
  display:flex;align-items:center;gap:11px;min-height:96px;padding:13px;text-align:left;color:var(--text);cursor:pointer
