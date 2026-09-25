@@ -6,7 +6,7 @@
   --tp-ui-card:#1a1e25;
   --tp-ui-card-raised:#232933;
   --tp-ui-border:#2c3440;
-  --tp-ui-border-size:1px;
+  --tp-ui-border-size:1px; /* Visual standard; preserve legacy 2px/3px layout widths. */
   --tp-ui-font:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
   --tp-ui-hero-border:linear-gradient(120deg,
     color-mix(in srgb,var(--accent) 90%,var(--tp-ui-border)),
@@ -33,17 +33,18 @@ html body :is(#app,#tp155R4PanelHost) :is(
   .tp169-pulse-journal,.tp168-health-note
 ){
   background:var(--tp-ui-card)!important;
-  border:var(--tp-ui-border-size) solid var(--tp-ui-border)!important;
+  border-color:var(--tp-ui-border)!important;
+  border-style:solid!important;
   box-shadow:none!important;
 }
+/* Preserve the original 3px/2px structural widths: color only. */
 html body #app :is(.tp152-program-card,.tp152-active-program){
-  border-left:var(--tp-ui-border-size) solid var(--tp-ui-border)!important;
+  border-left-color:var(--tp-ui-border)!important;
 }
 /* In the Program library, only the selected card gets a SOLID theme-
    colored hairline. The old per-program blue left stripe is removed. */
 html body #app .tp152-program-card.active-program{
-  border:var(--tp-ui-border-size) solid
-    color-mix(in srgb,var(--accent) 65%,var(--tp-ui-border))!important;
+  border-color:color-mix(in srgb,var(--accent) 65%,var(--tp-ui-border))!important;
 }
 html body :is(#app,#tp155R4PanelHost) :is(
   .tp152-preview-ex,.history-head,.tp152-quick-body
@@ -59,7 +60,8 @@ html body #app main.tp153-workout .tp153-workout-head,
 html body #app main.tp168-health>.tp168-today-card,
 html body #app main.rf263-health>.tp151-health-card,
 html body #tp155R4PanelHost[data-panel="coach"] .tp151-coach-recommendation{
-  border:var(--tp-ui-border-size) solid transparent!important;
+  border-color:transparent!important;
+  border-style:solid!important;
   background:linear-gradient(var(--tp-ui-card),var(--tp-ui-card)) padding-box,
     var(--tp-ui-hero-border) border-box!important;
   box-shadow:none!important;

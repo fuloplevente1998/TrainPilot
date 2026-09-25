@@ -34,6 +34,9 @@ const server=http.createServer((req,res)=>{
     assert.equal(await page.evaluate(()=>document.documentElement.dataset.tpThemeFamily),family);
     for(const route of ['home','plan','programs','history','health']){
      await page.evaluate(x=>go(x),route);
+     // Let the existing route entrance transition settle before comparing
+     // visual CSS on/off; do not misdiagnose a transient animation as reflow.
+     await page.waitForTimeout(350);
      const result=await page.evaluate(async()=>{
       const link=document.querySelector('link[href="global-uiux-177.css"]'),main=document.querySelector('#app main');
       const nav=document.querySelector('.top.tp154-nav-grid'),buttons=[...nav.querySelectorAll('.tp154-nav-cell')];
@@ -42,13 +45,15 @@ const server=http.createServer((req,res)=>{
        const regular=main.querySelector('.card:not(.tp155-home-active-card):not(.tp168-today-card):not(.tp153-workout-head):not(.tp152-active-program),.tp152-program-card:not(.active-program),.stat:not(.tp168-today-card)');
        const hero=main.matches('.rf221-home')?main.querySelector(':scope>.hero.tp155-home-active-card'):main.matches('.tp152-plan')?main.querySelector(':scope>.tp152-active-program'):main.matches('.tp153-workout')?main.querySelector('.tp153-workout-head'):main.matches('.tp168-health,.rf263-health')?main.querySelector('.tp168-today-card,.tp151-health-card'):null;
        const rs=regular&&getComputedStyle(regular),hs=hero&&getComputedStyle(hero);
-       return {nav:rect(nav),buttons:buttons.map(rect),main:rect(main),body:getComputedStyle(document.body).backgroundColor,regular:rs?{bg:rs.backgroundColor,border:rs.borderTopColor,shadow:rs.boxShadow}:null,hero:hs?{borderImage:hs.backgroundImage,border:hs.borderTopWidth,shadow:hs.boxShadow}:null};
+       return {nav:rect(nav),buttons:buttons.map(rect),main:rect(main),regularRect:rect(regular),heroRect:rect(hero),body:getComputedStyle(document.body).backgroundColor,regular:rs?{bg:rs.backgroundColor,border:rs.borderTopColor,shadow:rs.boxShadow}:null,hero:hs?{borderImage:hs.backgroundImage,border:hs.borderTopWidth,shadow:hs.boxShadow}:null};
       };
       link.disabled=true;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));const before=snap();
       link.disabled=false;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));const after=snap();
       return {before,after};
      });
      assert.deepEqual(result.after.buttons,result.before.buttons,width+'/'+theme+'/'+route+': nav buttons geometry/typography unchanged');
+     assert.deepEqual(result.after.regularRect,result.before.regularRect,width+'/'+theme+'/'+route+': secondary card geometry unchanged');
+     assert.deepEqual(result.after.heroRect,result.before.heroRect,width+'/'+theme+'/'+route+': highlighted card geometry unchanged');
      assert.deepEqual(result.after.nav,result.before.nav,width+'/'+theme+'/'+route+': full navbar layout unchanged');
      for(const k of ['x','y','w','h','padding','gap','fontSize','fontFamily','grid'])assert.equal(result.after.main[k],result.before.main[k],width+'/'+theme+'/'+route+': main layout '+k);
      assert.equal(result.after.body,'rgb(14, 16, 21)');
@@ -58,13 +63,14 @@ const server=http.createServer((req,res)=>{
       assert.equal(result.after.regular.shadow,'none',route+': plain cards have no shadow');
      }
      if(result.after.hero){
-      assert.equal(result.after.hero.border,'1px',route+': hero has a 1px gradient border');
+      assert.equal(result.after.hero.border,result.before.hero.border,route+': visual highlight preserves original border width');
       assert.ok(result.after.hero.borderImage.includes('gradient'),route+': hero has visual gradient border');
       assert.equal(result.after.hero.shadow==='none',family==='basic',route+': glow only for vivid theme');
      }
      if(route==='programs'){
-      const c=await page.locator('.tp152-program-card').first().evaluate(e=>{const s=getComputedStyle(e);return {w:s.borderLeftWidth,c:s.borderLeftColor}});
-      assert.equal(c.w,'1px','Program cards have only neutral hairline');
+      const c=await page.locator('.tp152-program-card:not(.active-program)').first().evaluate(e=>{const s=getComputedStyle(e);return {w:s.borderLeftWidth,c:s.borderLeftColor}});
+      assert.equal(c.w,'3px','Program cards retain original 3px layout spacing');
+      assert.equal(c.c,'rgb(44, 52, 64)','Program border is now neutral instead of blue-gray');
      }
     }
     // Original 1.7.6 overlay geometry: Coach only is lifted; neither
