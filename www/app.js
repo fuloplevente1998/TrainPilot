@@ -13243,7 +13243,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
    sets:'Sorozatok száma',muscles:'Izomcsoport-terhelés',groupNote:'Az arányok a legnagyobb naplózott sorozatterheléshez viszonyítanak, nem fáradtságot mérnek.',
    coach:'Fejlődési javaslat',more:'Részletek',noData:'Ehhez az időszakhoz nincs elegendő naplózott adat.',
    noWeight:'Ebben az időszakban nincs mérhető súlyzós volumen.',openLog:'Megnyitás az Edzésnaplóban',
-   close:'Bezárás',previous:'Korábbi',current:'Új',sessions:'Edzések',completed:'Befejezett edzések',
+   close:'Bezárás',back:'Vissza',previous:'Korábbi',current:'Új',sessions:'Edzések',completed:'Befejezett edzések',setCount:'sorozat',
+   daily:'Napi bontás',weekly:'Heti bontás',exercises:'Gyakorlatok',groupWork:'Naplózott gyakorlatok',
    hint:'Válassz egy oszlopot a részletekhez.',groupDetails:'Izomcsoport részletei',
    allStats:'Megnyitás a Statisztikákban',noChange:'Nincs összehasonlítható előzmény',
    suggestionEmpty:'Rögzíts további edzéseket a személyre szabott fejlődési összesítéshez.',
@@ -13257,7 +13258,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
    sets:'Completed sets',muscles:'Muscle group load',groupNote:'Relative to the most trained muscle group, not a fatigue measurement.',
    coach:'Progress insight',more:'Details',noData:'Not enough logged data for this period.',
    noWeight:'No measurable weighted volume in this period.',openLog:'Open in workout log',
-   close:'Close',previous:'Previous',current:'New',sessions:'Workouts',completed:'Completed workouts',
+   close:'Close',back:'Back',previous:'Previous',current:'New',sessions:'Workouts',completed:'Completed workouts',setCount:'sets',
+   daily:'Daily bars',weekly:'Weekly bars',exercises:'Exercises',groupWork:'Logged exercises',
    hint:'Tap a bar for details.',groupDetails:'Muscle group details',
    allStats:'Open Statistics',noChange:'No comparable previous data',
    suggestionEmpty:'Log more workouts for useful progress insights.',
@@ -13320,7 +13322,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  function metricCard(icon,label,value,delta,action,subtitle){
   return '<button type="button" class="tp177-metric" onclick="'+action+'"><span class="tp177-icon" aria-hidden="true">'+icon+'</span>'+
    '<span class="tp177-metric-body"><span class="tp177-metric-label">'+escapeHtml(label)+'</span>'+
-   '<strong>'+value+'</strong><span class="tp177-delta">'+pct(delta)+'</span>'+
+   '<span class="tp177-metric-value"><strong>'+value+'</strong><span class="tp177-delta">'+pct(delta)+'</span></span>'+
    (subtitle?'<span class="tp177-metric-caption">'+escapeHtml(subtitle)+'</span>':'')+'</span>'+
    '<span class="tp177-chevron" aria-hidden="true">›</span></button>';
  }
@@ -13335,36 +13337,32 @@ window.addEventListener?.('DOMContentLoaded',function(){
     '" onclick="tp177OpenBucket('+i+')"><span class="tp177-bar-rail"><span class="tp177-bar" style="height:'+height+'%"></span></span>'+
     '<span class="tp177-chart-date">'+escapeHtml(dateFmt(b.start,true))+'</span></button>';
   }).join('');
-  return '<section class="tp177-panel tp177-trend" aria-label="'+escapeHtml(tr('trend'))+'"><h2>'+escapeHtml(tr('trend'))+'</h2>'+
+  return '<section class="tp177-panel tp177-trend" aria-label="'+escapeHtml(tr('trend'))+'"><div class="tp177-panel-heading"><h2>'+escapeHtml(tr('trend'))+'</h2><span class="tp177-small">'+escapeHtml(tr(v.period==='7d'?'daily':'weekly'))+'</span></div>'+
    '<div class="tp177-chart-scroll"><div class="tp177-chart"><div class="tp177-chart-axis">'+ticks+'</div>'+
    '<div class="tp177-chart-columns" style="grid-template-columns:repeat('+v.buckets.length+',minmax(24px,1fr))">'+bars+'</div></div></div>'+
    '<p class="tp177-small">'+escapeHtml(tr('hint'))+'</p></section>';
  }
- // Original, self-contained front/back schematic. Load shares remain in the adjacent bars.
- function anatomy(){
-  const figure=(x,back)=>{
-   const color=back?'#cf795b':'#da8963';
-   return '<g transform="translate('+x+',0)"><circle cx="44" cy="14" r="11" fill="#a2aab7"/>'+
-    '<path d="M30 29 L58 29 66 48 60 97 52 113 50 158 43 180 36 157 33 113 25 97 21 48Z" fill="#687583" stroke="#aab4c3" stroke-width="1.3"/>'+
-    '<path d="M27 38 C14 39 12 49 9 67 L4 95 13 98 21 72 30 52M61 38 C75 39 77 49 79 67 L84 95 75 98 67 72 58 52" fill="#87909e" stroke="#acb6c2" stroke-width="1"/>'+
-    '<path d="M30 108 L33 147 36 176 42 178 44 127 46 178 52 176 56 145 59 108" fill="#8d96a3" stroke="#b4bdc9" stroke-width="1"/>'+
-    '<ellipse cx="24" cy="43" rx="7" ry="12" fill="'+color+'" opacity=".93"/>'+
-    '<ellipse cx="64" cy="43" rx="7" ry="12" fill="'+color+'" opacity=".93"/>'+
-    (back?'<path d="M30 42 Q44 36 58 42 L57 78 Q44 94 31 78Z" fill="#e59c77"/><path d="M32 82L56 82 54 103 34 103Z" fill="#ba6f50"/>':
-     '<path d="M29 41 Q43 36 43 50 L43 62 28 62Z M45 50Q46 36 60 41L61 62 45 62Z" fill="#f1a77c"/>'+
-     '<path d="M34 65 L54 65 51 99 37 99Z" fill="#afbbc5" stroke="#c9d0d8" stroke-width=".7"/>')+
-    '<path d="M29 111 L39 113 41 144 34 153 31 147Z M49 113L59 111 57 147 53 153 47 144Z" fill="'+color+'" opacity=".85"/></g>';
+ // Approximate exercise-target heatmap. Opacity follows the same relative scale as the bars.
+ function anatomy(v){
+  const shapes={
+   chest:'<ellipse cx="370" cy="305" rx="110" ry="75"/><ellipse cx="530" cy="305" rx="110" ry="75"/>',
+   back:'<ellipse cx="1040" cy="367" rx="115" ry="170"/><ellipse cx="1215" cy="367" rx="115" ry="170"/>',
+   shoulders:'<ellipse cx="250" cy="245" rx="75" ry="88"/><ellipse cx="668" cy="245" rx="75" ry="88"/><ellipse cx="895" cy="255" rx="72" ry="85"/><ellipse cx="1360" cy="255" rx="72" ry="85"/>',
+   legs:'<ellipse cx="345" cy="792" rx="75" ry="180"/><ellipse cx="558" cy="792" rx="75" ry="180"/><ellipse cx="1033" cy="788" rx="74" ry="175"/><ellipse cx="1245" cy="788" rx="74" ry="175"/>',
+   arms:'<ellipse cx="183" cy="435" rx="72" ry="158"/><ellipse cx="726" cy="435" rx="72" ry="158"/><ellipse cx="843" cy="448" rx="66" ry="150"/><ellipse cx="1405" cy="448" rx="66" ry="150"/>',
+   core:'<ellipse cx="454" cy="515" rx="94" ry="157"/><ellipse cx="1127" cy="540" rx="92" ry="130"/>'
   };
-  return '<svg class="tp177-anatomy-svg" viewBox="0 0 190 190" role="img" aria-label="Front and back muscle illustration">'+
-   '<defs><linearGradient id="tp177-musc-grad" x1="0" x2="1"><stop stop-color="#c18c71"/><stop offset="1" stop-color="#f7ad78"/></linearGradient></defs>'+
-   figure(0,false)+figure(98,true)+'</svg>';
+  const areas=v.groups.filter(g=>g.sets>0).map(g=>'<g data-group="'+g.key+'" fill="var(--accent)" opacity="'+(0.14+0.42*g.percent/100).toFixed(2)+'">'+shapes[g.key]+'</g>').join('');
+  return '<div class="tp177-anatomy-art"><img class="tp177-anatomy-image" src="progress-anatomy-177.png" alt="" loading="lazy">'+
+   '<svg class="tp177-heatmap" viewBox="0 0 1536 1024" aria-hidden="true" preserveAspectRatio="xMidYMid meet"><g filter="url(#tp177-heat-blur)">'+areas+'</g>'+
+   '<defs><filter id="tp177-heat-blur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="23"/></filter></defs></svg></div>';
  }
  function groupPanel(v){
   const rows=v.groups.map(g=>'<button type="button" class="tp177-muscle-row" onclick="tp177OpenGroup(\''+g.key+'\')" '+(g.sets?'':'disabled')+'>'+
    '<span class="tp177-muscle-label">'+escapeHtml(g.name)+'</span><span class="tp177-muscle-track"><span style="width:'+g.percent+'%"></span></span>'+
    '<span class="tp177-muscle-percent">'+(g.sets?fmt(g.percent)+'%':'—')+'</span></button>').join('');
-  return '<section class="tp177-panel tp177-muscles"><h2>'+escapeHtml(tr('muscles'))+'</h2><div class="tp177-muscle-layout">'+
-   '<div class="tp177-anatomy">'+anatomy()+'</div><div class="tp177-muscle-bars">'+rows+'</div></div>'+
+  return '<section class="tp177-panel tp177-muscles"><div class="tp177-panel-heading"><h2>'+escapeHtml(tr('muscles'))+'</h2><span class="tp177-small">'+escapeHtml(tr(v.period==='7d'?'days7':v.period==='30d'?'days30':'months3'))+'</span></div><div class="tp177-muscle-layout">'+
+   '<div class="tp177-anatomy">'+anatomy(v)+'</div><div class="tp177-muscle-bars">'+rows+'</div></div>'+
    '<p class="tp177-small">'+escapeHtml(tr('groupNote'))+'</p></section>';
  }
  function suggestion(v){
@@ -13395,21 +13393,27 @@ window.addEventListener?.('DOMContentLoaded',function(){
    '<span>'+escapeHtml(suggestion(v))+'</span></span><span class="tp177-chevron" aria-hidden="true">›</span></button>'+
    '</main>';
  }
- function dialog(title,body){
+ const dialogStack=[];
+ function dialog(title,body,nested=false,restoring=false){
+  const previous=document.getElementById('tp177Dialog');
+  if(nested&&previous)dialogStack.push({title:previous.querySelector('#tp177DialogTitle')?.textContent||'',body:previous.querySelector('.tp177-dialog-content')?.innerHTML||''});
+  else if(!nested&&!restoring)dialogStack.length=0;
   document.getElementById('tp177Dialog')?.remove();
   const host=document.createElement('div');host.id='tp177Dialog';host.className='tp177-dialog';
   host.innerHTML='<div class="tp177-dialog-backdrop" onclick="tp177CloseDialog()"></div>'+
    '<section class="tp177-dialog-card" role="dialog" aria-modal="true" aria-labelledby="tp177DialogTitle" tabindex="-1">'+
-   '<header><h2 id="tp177DialogTitle">'+escapeHtml(title)+'</h2><button type="button" class="tp177-dialog-close" onclick="tp177CloseDialog()" aria-label="'+escapeHtml(tr('close'))+'">×</button></header>'+
+   '<header>'+(dialogStack.length?'<button type="button" class="tp177-dialog-back" onclick="tp177BackDialog()" aria-label="'+escapeHtml(tr('back'))+'">‹</button>':'')+
+   '<h2 id="tp177DialogTitle">'+escapeHtml(title)+'</h2><button type="button" class="tp177-dialog-close" onclick="tp177CloseDialog()" aria-label="'+escapeHtml(tr('close'))+'">×</button></header>'+
    '<div class="tp177-dialog-content">'+body+'</div></section>';
   document.body.appendChild(host);host.querySelector('[role="dialog"]').focus();
  }
- window.tp177CloseDialog=function(){document.getElementById('tp177Dialog')?.remove()};
+ window.tp177CloseDialog=function(){dialogStack.length=0;document.getElementById('tp177Dialog')?.remove()};
+ window.tp177BackDialog=function(){const previous=dialogStack.pop();if(!previous)return window.tp177CloseDialog();dialog(previous.title,previous.body,false,true)};
  function workoutRows(xs){
   if(!xs.length)return '<p class="tp177-small">'+escapeHtml(tr('noData'))+'</p>';
   return '<div class="tp177-detail-list">'+xs.slice().sort((a,b)=>b.dateMs-a.dateMs).map(w=>
    '<button class="tp177-detail-workout" type="button" data-tp177-key="'+escapeHtml(w.key)+'" onclick="tp177OpenWorkout(this.dataset.tp177Key)">'+
-   '<strong>'+escapeHtml(dateFmt(w.date))+'</strong><span>'+fmt(w.volume)+' kg · '+fmt(w.sets)+' '+escapeHtml(tr('sets'))+'</span>'+
+   '<strong>'+escapeHtml(dateFmt(w.date))+'</strong><span>'+fmt(w.volume)+' kg · '+fmt(w.sets)+' '+escapeHtml(tr('setCount'))+'</span>'+
    '<span class="tp177-chevron">›</span></button>').join('')+'</div>';
  }
  window.tp177OpenBucket=function(index){
@@ -13437,18 +13441,41 @@ window.addEventListener?.('DOMContentLoaded',function(){
  window.tp177OpenGroup=function(key){
   const v=snapshot(),g=v.groups.find(g=>g.key===key);if(!g||!g.sets)return;
   const xs=v.current.filter(w=>(w.groups[key]||0)>0);
+  const exerciseTotals=new Map();
+  xs.forEach(w=>(w.source.exercises||[]).forEach(e=>{
+   if(!groupMap(e).map(model.canonicalGroup).includes(key))return;
+   const done=(e.sets||[]).filter(s=>s&&s.done===true);if(!done.length)return;
+   const id=String(e.id||e.hu||e.en||'');
+   const entry=exerciseTotals.get(id)||{id,sets:0,volume:0};
+   entry.sets+=done.length;
+   if(!/mp|sec|second/i.test(e.repUnit||''))done.forEach(s=>{const weight=model.number(s.weight),reps=model.number(s.reps);entry.volume+=weight*reps});
+   exerciseTotals.set(id,entry);
+  }));
+  const prior=v.prior.reduce((sum,w)=>sum+(w.groups[key]||0),0);
+  const exercises=[...exerciseTotals.values()].sort((a,b)=>b.sets-a.sets).map(e=>
+   '<div class="tp177-group-exercise"><strong>'+escapeHtml(typeof rf220ExerciseName==='function'?rf220ExerciseName(e.id):e.id)+'</strong><span>'+fmt(e.sets)+' '+escapeHtml(tr('setCount'))+(e.volume>0?' · '+fmt(e.volume)+' kg':'')+'</span></div>').join('');
   dialog(tr('groupDetails')+' – '+g.name,
-   '<p class="tp177-detail-totals"><strong>'+fmt(g.sets,1)+'</strong> '+escapeHtml(tr('sets'))+' · '+g.percent+'%</p>'+
-   workoutRows(xs));
+   '<p class="tp177-detail-totals"><strong>'+fmt(g.sets,1)+'</strong> '+escapeHtml(tr('setCount'))+' · '+g.percent+'% · '+escapeHtml(tr('previous'))+': '+fmt(prior,1)+'</p>'+
+   '<h3>'+escapeHtml(tr('groupWork'))+'</h3><div class="tp177-group-exercises">'+exercises+'</div><h3>'+escapeHtml(tr('sessions'))+'</h3>'+workoutRows(xs));
  };
  window.tp177OpenWorkout=function(key){
-  window.tp177CloseDialog();
-  if(typeof rf263HistoryFilter!=='undefined')rf263HistoryFilter={from:'',to:''};
-  state.tp177JournalView='log';
-  go('history');
-  const rows=[...document.querySelectorAll('details[data-tp152-history-key]')];
-  const target=rows.find(el=>el.dataset.tp152HistoryKey===key);
-  if(target){target.open=true;target.scrollIntoView?.({block:'center'})}
+  const w=snapshot().current.find(w=>w.key===key);if(!w)return;
+  const exercises=(w.source.exercises||[]).map(e=>{
+   const done=(e.sets||[]).filter(s=>s&&s.done===true);if(!done.length)return '';
+   const unit=String(e.repUnit||'ism.'),timed=/mp|sec|second/i.test(unit);
+   const sets=done.map((s,i)=>{
+    const weight=model.number(s.weight),reps=model.number(s.reps),left=model.number(s.leftSeconds),right=model.number(s.rightSeconds);
+    const details=timed&&/oldal|side/i.test(unit)&&left&&right?
+     tr('left')+' '+fmt(left)+' mp · '+tr('right')+' '+fmt(right)+' mp':
+     timed?fmt(reps)+' '+unit:weight?fmt(weight,1)+' kg × '+fmt(reps):fmt(reps)+' '+unit;
+    return '<li>'+escapeHtml(String(i+1)+'. '+details)+'</li>';
+   }).join('');
+   return '<section class="tp177-detail-exercise"><h3>'+escapeHtml(typeof rf220ExerciseName==='function'?rf220ExerciseName(e.id):e.hu||e.en||e.id)+'</h3><ol>'+sets+'</ol></section>';
+  }).filter(Boolean).join('');
+  const name=w.source.programName||w.source.workout||'';
+  dialog(dateFmt(w.date),'<p class="tp177-detail-totals">'+(name?'<span>'+escapeHtml(name)+'</span><br>':'')+
+   '<strong>'+fmt(w.volume)+' kg</strong> · '+fmt(w.sets)+' '+escapeHtml(tr('setCount'))+'</p>'+
+   '<h3>'+escapeHtml(tr('exercises'))+'</h3>'+(exercises||'<p>'+escapeHtml(tr('noData'))+'</p>'),true);
  };
  window.tp177OpenCoach=function(){
   if(typeof window.tp155R4TogglePanel==='function'){
@@ -13457,23 +13484,12 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
   if(typeof go==='function')go('coach');
  };
- let statsFocus=null;
  function decorateStats(){
   const main=document.querySelector('#app main');
   if(!main)return;
   const nav=main.querySelector('nav.tp155-journal-tabs');
   if(nav)nav.outerHTML=tabs('stats');
   else main.insertAdjacentHTML('afterbegin',tabs('stats'));
-  if(statsFocus){
-   const v=snapshot(),metric=statsFocus==='sets'?v.currentMetrics.sets:v.currentMetrics.workouts;
-   const title=statsFocus==='sets'?tr('sets'):tr('workouts');
-   main.querySelector('#tp177StatsFocus')?.remove();
-   const panel='<section id="tp177StatsFocus" class="tp177-panel tp177-stats-focus"><span class="tp177-small">'+escapeHtml(title)+
-    ' · '+escapeHtml(dateFmt(v.start))+' – '+escapeHtml(dateFmt(model.addDays(v.end,-1)))+'</span>'+
-    '<strong>'+fmt(metric)+'</strong></section>';
-   main.querySelector('nav.tp155-journal-tabs')?.insertAdjacentHTML('afterend',panel);
-   statsFocus=null;
-  }
  }
  const journalBase=historyScreen;
  historyScreen=function(){
@@ -13490,8 +13506,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
   window.tp2627OpenStats=window.tp155OpenJournalStats;
  }
  window.tp177OpenStat=function(type){
-  statsFocus=type;
-  if(typeof window.tp155OpenJournalStats==='function')window.tp155OpenJournalStats();
+  if(type!=='sets'&&type!=='workouts')return;
+  const v=snapshot(),label=tr(type==='sets'?'sets':'workouts'),value=v.currentMetrics[type];
+  dialog(label,'<p class="tp177-detail-totals"><strong>'+fmt(value)+'</strong> · '+escapeHtml(dateFmt(v.start))+' – '+escapeHtml(dateFmt(model.addDays(v.end,-1)))+'</p>'+workoutRows(v.current));
  };
  let openingProgress=false;
  const goBase=go;
@@ -13504,7 +13521,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   openingProgress=true;state.tp177JournalView='progress';
   try{return go('history')}finally{openingProgress=false}
  };
- document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.getElementById('tp177Dialog'))window.tp177CloseDialog()});
+ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.getElementById('tp177Dialog'))window.tp177BackDialog()});
  window.TrainPilot177Progress={version:'1.7.7-issue60',snapshot,prepare:model.prepare,build:model.build};
 });
 // @endsection trainpilot-177-progress-ui.js
