@@ -1,0 +1,133 @@
+/* TrainPilot global UI/UX visual tokens — Health is the reference.
+   The active Health palette resolves to the original app background/card colors;
+   avoid resurrecting early, hard-coded 1.6.8 blue fallback values. */
+:root {
+  --tp-ui-bg: #0e1015;
+  --tp-ui-card: #1a1e25;
+  --tp-ui-card-raised: #232933;
+  --tp-ui-border: #2c3440;
+  --tp-ui-border-size: 1px;
+  --tp-ui-hero-border: linear-gradient(120deg,
+      color-mix(in srgb, var(--accent) 90%, var(--tp-ui-border)),
+      color-mix(in srgb, var(--accent2) 42%, var(--tp-ui-border)) 62%,
+      var(--tp-ui-border));
+  --tp-ui-vivid-glow: 0 0 18px color-mix(in srgb, var(--accent) 24%, transparent);
+  --tp-ui-close-size: 36px;
+  --tp-ui-close-bg: #472529;
+  --tp-ui-close-border: #744048;
+  --tp-ui-close-text: #ffd9dc;
+  --tp-ui-close-radius: 11px;
+}
+/* Every route uses exactly the same Health-derived background. */
+html, html body,
+html body.tp168-health-view,
+html[data-tp-theme-family="vivid"] body.tp168-health-view {
+  background: var(--tp-ui-bg) !important;
+}
+
+/* Secondary surfaces are flat, opaque, equal on Home/Workout/Programs/Journal
+   and on the Health view itself. Exclude the single hero per page. */
+html body :is(#app, #tp155R4PanelHost) :is(
+  .card, .hero, .stat, .history, .setting, .weight-row,
+  .tp151-calendar-frame, .tp151-day-panel,
+  .tp152-active-program, .tp152-program-card, .tp152-program-day,
+  .tp152-day, .tp152-exercise, .tp152-quick-row, .tp152-inline-add,
+  .tp155-journal-filter, .tp155-r4-panel, .tp168-metric,
+  .tp168-status, .tp168-trend, .tp168-weight-journal,
+  .tp169-pulse-journal, .tp168-health-note
+):not(.tp-ui-hero) {
+  background: var(--tp-ui-card) !important;
+  border: var(--tp-ui-border-size) solid var(--tp-ui-border) !important;
+  box-shadow: none !important;
+}
+/* Rest of the nested Program editor/library has the same neutral 1px border,
+   never the old program-specific blue-gray left stripe. */
+html body #app :is(
+  .tp152-program-card, .tp152-program-day, .tp152-day, .tp152-exercise,
+  .tp152-active-program, .tp152-quick-row, .tp152-inline-add,
+  .tp152-accordion, .tp152-history-editor
+):not(.tp-ui-hero) {
+  border: var(--tp-ui-border-size) solid var(--tp-ui-border) !important;
+  box-shadow: none !important;
+}
+html body #app :is(.tp152-program-card, .tp152-active-program):not(.tp-ui-hero) {
+  border-left: var(--tp-ui-border-size) solid var(--tp-ui-border) !important;
+}
+html body #app :is(.tp152-preview-ex, .history-head, .tp152-quick-body) {
+  background: var(--tp-ui-card-raised) !important;
+}
+/* An actual gradient border, flat dark card inside. Rendered only on the
+   decorated primary action: Health Today, Coach recommendation, Home active
+   workout, Workout/Plan active programme or current exercise. */
+html body :is(#app, #tp155R4PanelHost) .tp-ui-hero {
+  box-sizing: border-box !important;
+  border: var(--tp-ui-border-size) solid transparent !important;
+  background:
+    linear-gradient(var(--tp-ui-card), var(--tp-ui-card)) padding-box,
+    var(--tp-ui-hero-border) border-box !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+html[data-tp-theme-family="vivid"] body :is(#app, #tp155R4PanelHost) .tp-ui-hero {
+  box-shadow: var(--tp-ui-vivid-glow) !important;
+}
+
+/* Basic themes, including classic gold, never render shadows, neon, filters
+   or text glows. This applies to interactive controls and overlay content. */
+html[data-tp-theme-family="basic"] body :is(#app, #tp155R4PanelHost) :is(
+  button, .btn, .tab, .top, .card, .hero, .stat, .setting, .history,
+  .progress, .tp-select-trigger, .tp-select-menu, .tp162-theme-columns,
+  .tp155-r4-panel, .tp155-r4-panel-close, .tp-ui-hero,
+  .tp152-active-program, .tp152-program-card, .tp152-day,
+  .tp152-exercise, .tp152-quick-row, .tp155-journal-filter,
+  .tp168-today-card, .tp168-metric, .tp168-status, .tp168-trend,
+  .tp168-weight-journal, .tp169-pulse-journal,
+  .tp151-coach-recommendation, .tp166-home-coach, .tp153-workout-head
+) {
+  box-shadow: none !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+html[data-tp-theme-family="basic"] body .top.tp154-nav-grid,
+html[data-tp-theme-family="basic"] body :is(.tp-temporal-modal, .video-modal, .tp15-demo-dialog) {
+  box-shadow: none !important;
+  filter: none !important;
+}
+html[data-tp-theme-family="basic"] body :is(#app, #tp155R4PanelHost) .progress,
+html[data-tp-theme-family="basic"] body :is(#app, #tp155R4PanelHost) .progress > div {
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* The three page-independent panel close buttons are truly identical.
+   Move Calendar and Settings to the already-tested safe Coach vertical rail:
+   preserve 8-16px outer clearance and never touch the framed content. */
+html body #tp155R4PanelHost:is(
+  [data-panel="calendar"], [data-panel="coach"], [data-panel="settings"]
+) .tp155-r4-panel-close {
+  box-sizing: border-box !important;
+  position: sticky !important;
+  top: 1px !important;
+  right: auto !important;
+  float: right !important;
+  margin: 0 4px -36px 8px !important;
+  z-index: 20 !important;
+  width: var(--tp-ui-close-size) !important;
+  height: var(--tp-ui-close-size) !important;
+  min-width: var(--tp-ui-close-size) !important;
+  min-height: var(--tp-ui-close-size) !important;
+  max-width: var(--tp-ui-close-size) !important;
+  max-height: var(--tp-ui-close-size) !important;
+  padding: 0 !important;
+  border: 1px solid var(--tp-ui-close-border) !important;
+  border-radius: var(--tp-ui-close-radius) !important;
+  color: var(--tp-ui-close-text) !important;
+  background: var(--tp-ui-close-bg) !important;
+  box-shadow: none !important;
+  display: grid !important;
+  place-items: center !important;
+  font: 900 22px/1 sans-serif !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  html body :is(#app, #tp155R4PanelHost) .tp-ui-hero { transition: none !important; }
+}

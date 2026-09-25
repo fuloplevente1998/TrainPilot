@@ -1,3 +1,11 @@
+# Global UI/UX — Health-reference preview (#58, stacked after 1.7.6 candidate)
+
+- Egyetlen Egészség-alapú háttér, kártyaszín és 1px szegély globálisan; a Programok színezett bal szegélyei helyett neutrális keret.
+- Csak a fő interakciós Hero-kártya kap átmenetes témaszínű keretet: Mai állapot, Coach Mai javaslat, Kezdőlap aktuális program, Edzés program/aktuális gyakorlat.
+- Alap témák: matt felületek, árnyék és ragyogás nélkül; élénk témák: a Hero és kiválasztott elemek témaszínű fénye megmarad.
+- Naptár, Coach és Beállítások X vezérlője méretben, színben, sugárban és elhelyezésben egyező; újrakattintásra az overlay bezárul és a korábbi főnézet kap fókuszt.
+- A 1.7.6-os navigációs késésjavítás és Naptár-kártya megtartva. Verziószám változatlan (1.7.6 tesztjelölt), mivel ez külön preview branch; main merge és release csak telefonos validációval.
+
 # TrainPilot 1.7.6 / 2665 — navigációs kijelölés, telefonos tesztverzió (#56)
 
 - Az Androidon megfigyelt, késve átvándorló arany/fényes navigációs kerethez tartozó 140–150 ms-os háttér-, keret- és árnyék-áttűnés megszűnik; a kiválasztott gomb vizuális állapota egy lépésben vált.

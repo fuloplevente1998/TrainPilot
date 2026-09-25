@@ -1,4 +1,4 @@
-const C='trainpilot-v1481';
+const C='trainpilot-v177-ui1';
 const CORE=['./','./index.html','./styles.css','./manifest.json','./runtime-manifest.txt'];
 
 async function runtimeAssets(){
