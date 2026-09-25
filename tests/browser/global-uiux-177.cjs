@@ -7,7 +7,11 @@ const {chromium}=require('playwright');
 const root=path.resolve('www');
 const css=fs.readFileSync(path.join(root,'global-uiux-177.css'),'utf8');
 const ownRules=css.replace(/\/\*[\s\S]*?\*\//g,'').replace(/--[\w-]+\s*:\s*[^;]+;/g,'');
-for(const prop of ['display','grid-template','grid-auto','flex-direction','position','top','right','bottom','left','padding','margin','width','height','min-height','max-height','transform','gap','border-radius']){
+// Only three explicit border-width compensations may alter padding; no
+// page geometry, button spacing, grid, navigation or overlay layout edits.
+const allowedPadding=[...ownRules.matchAll(/\\bpadding(?:-left)?\\s*:\\s*([^;]+);/g)].map(m=>m[0]);
+assert.deepEqual(allowedPadding,['padding:11px 13px!important;','padding:1px!important;','padding-left:2px!important;']);
+for(const prop of ['display','grid-template','grid-auto','flex-direction','position','top','right','bottom','left','margin','width','height','min-height','max-height','transform','gap']){
  assert.equal(new RegExp('(^|[;{\\s])'+prop+'\\s*:','m').test(ownRules),false,'CSS-only styling must not override geometry: '+prop);
 }
 const server=http.createServer((req,res)=>{
@@ -43,9 +47,11 @@ const server=http.createServer((req,res)=>{
       const snap=()=>{
        const rect=e=>{if(!e)return null;const r=e.getBoundingClientRect(),s=getComputedStyle(e);return {x:r.x,y:r.y,w:r.width,h:r.height,padding:s.padding,gap:s.gap,fontSize:s.fontSize,fontFamily:s.fontFamily,grid:s.gridTemplateColumns}};
        const regular=main.querySelector('.card:not(.tp155-home-active-card):not(.tp168-today-card):not(.tp153-workout-head):not(.tp152-active-program),.tp152-program-card:not(.active-program),.stat:not(.tp168-today-card)');
+       const programCard=main.querySelector('.tp152-program-card');
+       const heroInner=main.querySelector('.tp155-home-active-grid,.tp152-active-program > summary');
        const hero=main.matches('.rf221-home')?main.querySelector(':scope>.hero.tp155-home-active-card'):main.matches('.tp152-plan')?main.querySelector(':scope>.tp152-active-program'):main.matches('.tp153-workout')?main.querySelector('.tp153-workout-head'):main.matches('.tp168-health,.rf263-health')?main.querySelector('.tp168-today-card,.tp151-health-card'):null;
        const rs=regular&&getComputedStyle(regular),hs=hero&&getComputedStyle(hero);
-       return {nav:rect(nav),buttons:buttons.map(rect),main:rect(main),regularRect:rect(regular),heroRect:rect(hero),body:getComputedStyle(document.body).backgroundColor,regular:rs?{bg:rs.backgroundColor,border:rs.borderTopColor,shadow:rs.boxShadow}:null,hero:hs?{borderImage:hs.backgroundImage,border:hs.borderTopWidth,shadow:hs.boxShadow}:null};
+       return {nav:rect(nav),buttons:buttons.map(rect),main:rect(main),regularRect:rect(regular),heroRect:rect(hero),heroInnerRect:rect(heroInner),programCardRect:rect(programCard),programCardContentRect:rect(programCard?.querySelector(':scope > summary')) ,body:getComputedStyle(document.body).backgroundColor,regular:rs?{bg:rs.backgroundColor,border:rs.borderTopColor,shadow:rs.boxShadow}:null,hero:hs?{borderImage:hs.backgroundImage,border:hs.borderTopWidth,shadow:hs.boxShadow}:null};
       };
       // The existing app animates some background/outline changes. Compare
       // the fully settled styles instead of intermediate oklab colors.
@@ -57,6 +63,9 @@ const server=http.createServer((req,res)=>{
      assert.deepEqual(result.after.buttons,result.before.buttons,width+'/'+theme+'/'+route+': nav buttons geometry/typography unchanged');
      assert.deepEqual(result.after.regularRect,result.before.regularRect,width+'/'+theme+'/'+route+': secondary card geometry unchanged');
      assert.deepEqual(result.after.heroRect,result.before.heroRect,width+'/'+theme+'/'+route+': highlighted card geometry unchanged');
+     assert.deepEqual(result.after.heroInnerRect,result.before.heroInnerRect,width+'/'+theme+'/'+route+': hero content geometry unchanged');
+     assert.deepEqual(result.after.programCardRect,result.before.programCardRect,width+'/'+theme+'/'+route+': program card frame unchanged');
+     assert.deepEqual(result.after.programCardContentRect,result.before.programCardContentRect,width+'/'+theme+'/'+route+': program card summary unchanged');
      assert.deepEqual(result.after.nav,result.before.nav,width+'/'+theme+'/'+route+': full navbar layout unchanged');
      for(const k of ['x','y','w','h','padding','gap','fontSize','fontFamily','grid'])assert.equal(result.after.main[k],result.before.main[k],width+'/'+theme+'/'+route+': main layout '+k);
      assert.equal(result.after.body,'rgb(14, 16, 21)');
@@ -66,15 +75,30 @@ const server=http.createServer((req,res)=>{
       assert.equal(result.after.regular.shadow,'none',route+': plain cards have no shadow');
      }
      if(result.after.hero){
-      assert.equal(result.after.hero.border,result.before.hero.border,route+': visual highlight preserves original border width');
+      assert.equal(result.after.hero.border,'1px',route+': Health-reference Hero has a truly 1px outline');
       assert.ok(result.after.hero.borderImage.includes('gradient'),route+': hero has visual gradient border');
       assert.equal(result.after.hero.shadow==='none',family==='basic',route+': glow only for vivid theme');
      }
      if(route==='programs'){
       const c=await page.locator('.tp152-program-card:not(.active-program)').first().evaluate(e=>{const s=getComputedStyle(e);return {w:s.borderLeftWidth,c:s.borderLeftColor}});
-      assert.equal(c.w,'3px','Program cards retain original 3px layout spacing');
+      assert.equal(c.w,'1px','Program card left outline must visually match Health 1px');
       assert.equal(c.c,'rgb(44, 52, 64)','Program border is now neutral instead of blue-gray');
+      const frame=await page.locator('main.tp150-programs-compact .tp150-programs-frame').evaluate(e=>{const s=getComputedStyle(e);return {width:s.borderTopWidth,bg:s.backgroundColor}});
+      assert.equal(frame.width,'1px','Program list grouping keeps one closed 1px frame');
+      assert.equal(frame.bg,'rgb(26, 30, 37)','Program grouping matches Health card fill');
      }
+    }
+    // Current workout set rows get an external visual-only closed outline.
+    await page.evaluate(()=>{go('plan');const p=activeProgram();if(p?.days?.length)startWorkout(p.days[0].id)});
+    if(await page.locator('main.tp153-workout .tp153-set-row').count()){
+      const rowStyle=await page.locator('main.tp153-workout .tp153-set-row').first().evaluate(e=>{
+        const s=getComputedStyle(e),r=e.getBoundingClientRect();
+        return {width:s.outlineWidth,style:s.outlineStyle,color:s.outlineColor,height:r.height};
+      });
+      assert.equal(rowStyle.width,'1px','Each active set is a separate closed 1px interaction unit');
+      assert.equal(rowStyle.style,'solid');
+      assert.equal(rowStyle.color,'rgb(44, 52, 64)');
+      assert.ok(rowStyle.height>30,'Workout set tap targets remain usable');
     }
     // Original 1.7.6 overlay geometry: Coach only is lifted; neither
     // Calendar nor Settings moves during this separate visual-only pass.
@@ -89,6 +113,15 @@ const server=http.createServer((req,res)=>{
       return {top:r.top-p.getBoundingClientRect().top,w:r.width,h:r.height,bg:s.backgroundColor,border:s.borderTopColor,radius:s.borderTopLeftRadius};
      });
      positions.push({panel,...x});
+     if(panel==='coach'){
+       const tile=page.locator('#tp155R4PanelHost[data-panel="coach"] .tp153-coach-metric').first();
+       if(await tile.count()){
+         const s=await tile.evaluate(e=>{const c=getComputedStyle(e),r=e.getBoundingClientRect();return {width:c.outlineWidth,color:c.outlineColor,w:r.width,h:r.height}});
+         assert.equal(s.width,'1px','Coach metric tile gets a closed Health-style outline');
+         assert.equal(s.color,'rgb(44, 52, 64)');
+         assert.ok(s.w>30&&s.h>30,'Coach metric hit target unchanged');
+       }
+     }
      await page.locator('.top.tp154-nav-grid '+b).click();
      assert.equal(await page.locator('#tp155R4PanelHost').count(),0,panel+': existing retap closes panel');
      assert.equal(await page.evaluate(()=>state.tab),'home',panel+': existing parent route unchanged');

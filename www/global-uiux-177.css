@@ -6,7 +6,7 @@
   --tp-ui-card:#1a1e25;
   --tp-ui-card-raised:#232933;
   --tp-ui-border:#2c3440;
-  --tp-ui-border-size:1px; /* Visual standard; preserve legacy 2px/3px layout widths. */
+  --tp-ui-border-size:1px; /* Reference thickness on every enclosing card. */
   --tp-ui-font:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
   --tp-ui-hero-border:linear-gradient(120deg,
     color-mix(in srgb,var(--accent) 90%,var(--tp-ui-border)),
@@ -98,3 +98,44 @@ html[data-tp-theme-family="basic"] body :is(#app,#tp155R4PanelHost) :is(
 ){box-shadow:none!important;filter:none!important;}
 /* Typography: retain the existing Inter/system stack and all sizes, line
    heights, font weights, wrapping and spacing; no new font downloads. */
+
+/* #58 border-consistency follow-up: match Health's actual 1px card outlines.
+   The accepted 2px Home/Plan and 3px Program structural borders left
+   visibly heavier lines. Pair any reduction with compensating inner padding
+   so the outer box, child positions and tap targets DO NOT move. */
+html body #app main.rf221-home > .hero.tp155-home-active-card {
+  border-width:var(--tp-ui-border-size)!important;
+  padding:11px 13px!important; /* Was 2px border + 10px 12px padding. */
+}
+html body #app main.tp152-plan > .tp152-active-program {
+  border-width:var(--tp-ui-border-size)!important;
+  padding:1px!important; /* Was 2px border + 0px padding on each side. */
+}
+html body #app main.tp150-programs-compact .tp152-program-card {
+  border-width:var(--tp-ui-border-size)!important;
+  padding-left:2px!important; /* Was 3px left border + 0px padding. */
+}
+/* A containing Programs card already has all four sides; unify its
+   group outline too, but do not box the three separate action buttons. */
+html body #app main.tp150-programs-compact .tp150-programs-frame {
+  background:var(--tp-ui-card)!important;
+  border-color:var(--tp-ui-border)!important;
+}
+
+/* Two currently unframed, meaningful interaction units can benefit from
+   the same closed 1px outline. Outlines do NOT participate in the box model:
+   the Workout set controls and Coach metric tap targets keep exact geometry. */
+html body #app main.tp153-workout .tp153-set-row {
+  outline:1px solid var(--tp-ui-border)!important;
+  outline-offset:2px!important;
+  border-radius:12px; /* Visual outline only; not a new container/padding. */
+}
+html body #tp155R4PanelHost[data-panel="coach"] .tp153-coach-metric:not(:focus-visible),
+html body #tp155R4PanelHost[data-panel="coach"] .tp151-coach-target > span {
+  outline:1px solid var(--tp-ui-border)!important;
+  outline-offset:-1px!important;
+}
+/* Focus-visible retains the existing thicker accessibility focus ring.
+   Inner Program-day rows remain single separators: double boxing them
+   would crowd the hierarchy. Floating panels deliberately remain joined
+   to the sticky header and must not gain an extra top border. */
