@@ -1,13 +1,21 @@
+/* Visual-only contract: CSS may recolor surfaces and 1px borders,
+   but must not alter the navigation, card grids, button hit targets,
+   overlay X positions or event handling inherited from 1.7.6. */
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 const {chromium}=require('playwright');
 const root=path.resolve('www');
+const css=fs.readFileSync(path.join(root,'global-uiux-177.css'),'utf8');
+const ownRules=css.replace(/\/\*[\s\S]*?\*\//g,'').replace(/--[\w-]+\s*:\s*[^;]+;/g,'');
+for(const prop of ['display','grid-template','grid-auto','flex-direction','position','top','right','bottom','left','padding','margin','width','height','min-height','max-height','transform','gap','border-radius']){
+ assert.equal(new RegExp('(^|[;{\\s])'+prop+'\\s*:','m').test(ownRules),false,'CSS-only styling must not override geometry: '+prop);
+}
 const server=http.createServer((req,res)=>{
  let p=new URL(req.url,'http://local').pathname;if(p==='/')p='/index.html';
- const file=path.resolve(root,'.'+p);
- if(!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return}
- fs.readFile(file,(e,d)=>{if(e){res.writeHead(404);res.end();return}
-  res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'text/plain');res.end(d);
+ const f=path.resolve(root,'.'+p);
+ if(!f.startsWith(root+path.sep)){res.writeHead(403);res.end();return}
+ fs.readFile(f,(e,d)=>{if(e){res.writeHead(404);res.end();return}
+  res.setHeader('Content-Type',f.endsWith('.js')?'text/javascript':f.endsWith('.css')?'text/css':f.endsWith('.html')?'text/html':'text/plain');res.end(d);
  });
 });
 (async()=>{
@@ -16,63 +24,72 @@ const server=http.createServer((req,res)=>{
   browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});
   for(const width of [320,360,393,412]){
    const page=await browser.newPage({viewport:{width,height:873},locale:'hu-HU',timezoneId:'Europe/Budapest'});
-   const errors=[];page.on('pageerror',e=>errors.push(String(e?.stack||e)));page.on('dialog',d=>d.accept());
+   const errors=[];page.on('pageerror',e=>errors.push(String(e.message||e)));page.on('dialog',d=>d.accept());
    await page.goto('http://127.0.0.1:'+server.address().port+'/');
-   await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&!!window.TrainPilotGlobalUi177);
+   await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
+   assert.equal(await page.evaluate(()=>!!window.TrainPilotGlobalUi177),false,'Do not install new JS or change toggle logic');
    for(const theme of ['classicBlue','blue']){
-    await page.evaluate(t=>{state.session=null;state.workout=null;window.tp155R4ClosePanel?.(false);rf200SetTheme(t);go('home');},theme);
+    await page.evaluate(t=>{state.session=null;state.workout=null;window.tp155R4ClosePanel?.(false);rf200SetTheme(t);go('home')},theme);
     const family=theme==='blue'?'vivid':'basic';
     assert.equal(await page.evaluate(()=>document.documentElement.dataset.tpThemeFamily),family);
-    const tokens=await page.evaluate(()=>{
-      const c=getComputedStyle(document.documentElement);
-      return {bg:c.getPropertyValue('--tp-ui-bg').trim(),card:c.getPropertyValue('--tp-ui-card').trim(),border:c.getPropertyValue('--tp-ui-border').trim(),width:c.getPropertyValue('--tp-ui-border-size').trim()};
-    });
-    assert.deepEqual(tokens,{bg:'#0e1015',card:'#1a1e25',border:'#2c3440',width:'1px'});
     for(const route of ['home','plan','programs','history','health']){
-      await page.evaluate(x=>go(x),route);
-      const stateUi=await page.evaluate(()=>{
-        const main=document.querySelector('#app main'),hero=[...main.querySelectorAll('.tp-ui-hero')],regular=main.querySelector('.card:not(.tp-ui-hero),.stat:not(.tp-ui-hero),.tp152-program-card:not(.tp-ui-hero)');
-        const c=regular?getComputedStyle(regular):null,body=getComputedStyle(document.body);
-        return {route:state.tab,hero:hero.length,bg:body.backgroundColor,surface:c?.backgroundColor,border:c?.borderTopColor,shadow:c?.boxShadow,heroShadow:hero[0]?getComputedStyle(hero[0]).boxShadow:null};
-      });
-      assert.equal(stateUi.route,route,width+'/'+theme+'/'+route+': route remains functional');
-      assert.equal(stateUi.bg,'rgb(14, 16, 21)');
-      assert.ok(stateUi.hero<=1,'Only one highlighted hero per route: '+JSON.stringify(stateUi));
-      if(route==='health')assert.equal(stateUi.hero,1,'Health Today stays hero');
-      if(route==='plan')assert.equal(stateUi.hero,1,'Plan main action stays hero');
-      if(stateUi.surface){assert.equal(stateUi.surface,'rgb(26, 30, 37)',route+': shared surface');assert.equal(stateUi.border,'rgb(44, 52, 64)',route+': neutral border')}
-      if(family==='basic'){assert.equal(stateUi.shadow,'none','Basic cards are matte');if(stateUi.hero)assert.equal(stateUi.heroShadow,'none','Basic hero has no glow')}
-      if(family==='vivid'&&stateUi.hero)assert.notEqual(stateUi.heroShadow,'none','Vivid hero may glow');
+     await page.evaluate(x=>go(x),route);
+     const result=await page.evaluate(async()=>{
+      const link=document.querySelector('link[href="global-uiux-177.css"]'),main=document.querySelector('#app main');
+      const nav=document.querySelector('.top.tp154-nav-grid'),buttons=[...nav.querySelectorAll('.tp154-nav-cell')];
+      const snap=()=>{
+       const rect=e=>{if(!e)return null;const r=e.getBoundingClientRect(),s=getComputedStyle(e);return {x:r.x,y:r.y,w:r.width,h:r.height,padding:s.padding,gap:s.gap,fontSize:s.fontSize,fontFamily:s.fontFamily,grid:s.gridTemplateColumns}};
+       const regular=main.querySelector('.card:not(.tp155-home-active-card):not(.tp168-today-card):not(.tp153-workout-head):not(.tp152-active-program),.tp152-program-card:not(.active-program),.stat:not(.tp168-today-card)');
+       const hero=main.matches('.rf221-home')?main.querySelector(':scope>.hero.tp155-home-active-card'):main.matches('.tp152-plan')?main.querySelector(':scope>.tp152-active-program'):main.matches('.tp153-workout')?main.querySelector('.tp153-workout-head'):main.matches('.tp168-health,.rf263-health')?main.querySelector('.tp168-today-card,.tp151-health-card'):null;
+       const rs=regular&&getComputedStyle(regular),hs=hero&&getComputedStyle(hero);
+       return {nav:rect(nav),buttons:buttons.map(rect),main:rect(main),body:getComputedStyle(document.body).backgroundColor,regular:rs?{bg:rs.backgroundColor,border:rs.borderTopColor,shadow:rs.boxShadow}:null,hero:hs?{borderImage:hs.backgroundImage,border:hs.borderTopWidth,shadow:hs.boxShadow}:null};
+      };
+      link.disabled=true;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));const before=snap();
+      link.disabled=false;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));const after=snap();
+      return {before,after};
+     });
+     assert.deepEqual(result.after.buttons,result.before.buttons,width+'/'+theme+'/'+route+': nav buttons geometry/typography unchanged');
+     assert.deepEqual(result.after.nav,result.before.nav,width+'/'+theme+'/'+route+': full navbar layout unchanged');
+     for(const k of ['x','y','w','h','padding','gap','fontSize','fontFamily','grid'])assert.equal(result.after.main[k],result.before.main[k],width+'/'+theme+'/'+route+': main layout '+k);
+     assert.equal(result.after.body,'rgb(14, 16, 21)');
+     if(result.after.regular){
+      assert.equal(result.after.regular.bg,'rgb(26, 30, 37)',route+': Health card fill');
+      assert.equal(result.after.regular.border,'rgb(44, 52, 64)',route+': neutral 1px border');
+      assert.equal(result.after.regular.shadow,'none',route+': plain cards have no shadow');
+     }
+     if(result.after.hero){
+      assert.equal(result.after.hero.border,'1px',route+': hero has a 1px gradient border');
+      assert.ok(result.after.hero.borderImage.includes('gradient'),route+': hero has visual gradient border');
+      assert.equal(result.after.hero.shadow==='none',family==='basic',route+': glow only for vivid theme');
+     }
+     if(route==='programs'){
+      const c=await page.locator('.tp152-program-card').first().evaluate(e=>{const s=getComputedStyle(e);return {w:s.borderLeftWidth,c:s.borderLeftColor}});
+      assert.equal(c.w,'1px','Program cards have only neutral hairline');
+     }
     }
+    // Original 1.7.6 overlay geometry: Coach only is lifted; neither
+    // Calendar nor Settings moves during this separate visual-only pass.
     await page.evaluate(()=>go('home'));
-    let previousTab=await page.evaluate(()=>state.tab);
-    let geom=[];
+    const positions=[];
     for(const panel of ['calendar','coach','settings']){
-      await page.evaluate(t=>window.tp155R4OpenPanel(t,document.activeElement),panel);
-      const s=await page.evaluate(()=>{
-        const host=document.querySelector('#tp155R4PanelHost'),p=host.querySelector('.tp155-r4-panel'),x=host.querySelector('.tp155-r4-panel-close'),c=getComputedStyle(x);
-        return {panel:host.dataset.panel,width:x.getBoundingClientRect().width,height:x.getBoundingClientRect().height,radius:c.borderTopLeftRadius,background:c.backgroundColor,border:c.borderTopColor,color:c.color,top:x.getBoundingClientRect().top-p.getBoundingClientRect().top,hero:host.querySelectorAll('.tp-ui-hero').length};
-      });
-      assert.equal(s.panel,panel);
-      assert.equal(s.width,36);assert.equal(s.height,36);
-      assert.ok(s.top>=8&&s.top<=16,'Close X is safely inset: '+JSON.stringify(s));
-      if(panel==='coach')assert.equal(s.hero,1,'Coach recommendation hero');
-      geom.push(s);
-      await page.evaluate(()=>window.tp155R4TogglePanel(document.querySelector('#tp155R4PanelHost').dataset.panel,document.activeElement));
-      assert.equal(await page.locator('#tp155R4PanelHost').count(),0,'Retap closes '+panel);
-      assert.equal(await page.evaluate(()=>state.tab),previousTab,'Underlying route retained');
-      assert.equal(await page.evaluate(()=>document.activeElement?.tagName),'MAIN','Underlying main receives focus after retap');
+     const b=panel==='calendar'?'.tp151-nav-item[onclick*="calendar"]':'.tp154-'+panel+'-action';
+     await page.locator('.top.tp154-nav-grid '+b).click();
+     assert.equal(await page.locator('#tp155R4PanelHost').getAttribute('data-panel'),panel);
+     const x=await page.evaluate(()=>{
+      const h=document.querySelector('#tp155R4PanelHost'),p=h.querySelector('.tp155-r4-panel'),e=h.querySelector('.tp155-r4-panel-close'),s=getComputedStyle(e),r=e.getBoundingClientRect();
+      return {top:r.top-p.getBoundingClientRect().top,w:r.width,h:r.height,bg:s.backgroundColor,border:s.borderTopColor,radius:s.borderTopLeftRadius};
+     });
+     positions.push({panel,...x});
+     await page.locator('.top.tp154-nav-grid '+b).click();
+     assert.equal(await page.locator('#tp155R4PanelHost').count(),0,panel+': existing retap closes panel');
+     assert.equal(await page.evaluate(()=>state.tab),'home',panel+': existing parent route unchanged');
     }
-    for(const g of geom.slice(1)){
-      const x=geom[0];for(const k of ['width','height','radius','background','border','color','top'])assert.equal(g[k],x[k],'All panel X geometry/tokens identical for '+k);
-    }
-    // Existing navigation selection remains instant and theme-aware.
-    const transitions=await page.evaluate(()=>[...document.querySelectorAll('.top.tp154-nav-grid .tp154-nav-cell')].map(x=>getComputedStyle(x).transitionProperty));
-    assert.ok(transitions.length===8&&transitions.every(x=>x==='transform'),'1.7.6 nav latency fix retained');
+    assert.ok(positions.find(x=>x.panel==='coach').top<positions[0].top,'Coach X stays raised, others remain at their old positions');
+    for(const x of positions.slice(1))for(const k of ['w','h','bg','border','radius'])assert.equal(x[k],positions[0][k],'Same X appearance; no geometry edits on global branch: '+k);
    }
    assert.deepEqual(errors,[],width+': no page errors');
    await page.close();
   }
-  console.log('PASS #58 global Health-reference surfaces, hero count, basic/vivid glow, Programs borders, identical overlay X and toggle focus at 320/360/393/412px');
+  console.log('PASS #58 visual-only: exact nav/main geometry, existing panel X and toggle behavior, Health tones, Hero and themes at 320/360/393/412px');
  }finally{await browser?.close();server.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});

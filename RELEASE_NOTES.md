@@ -1,16 +1,18 @@
-# Global UI/UX — Health-reference preview (#58, stacked after 1.7.6 candidate)
+# #58 Health-reference visual-only preview — layout frozen
 
-- Egyetlen Egészség-alapú háttér, kártyaszín és 1px szegély globálisan; a Programok színezett bal szegélyei helyett neutrális keret.
-- Csak a fő interakciós Hero-kártya kap átmenetes témaszínű keretet: Mai állapot, Coach Mai javaslat, Kezdőlap aktuális program, Edzés program/aktuális gyakorlat.
-- Alap témák: matt felületek, árnyék és ragyogás nélkül; élénk témák: a Hero és kiválasztott elemek témaszínű fénye megmarad.
-- Naptár, Coach és Beállítások X vezérlője méretben, színben, sugárban és elhelyezésben egyező; újrakattintásra az overlay bezárul és a korábbi főnézet kap fókuszt.
-- A 1.7.6-os navigációs késésjavítás és Naptár-kártya megtartva. Verziószám változatlan (1.7.6 tesztjelölt), mivel ez külön preview branch; main merge és release csak telefonos validációval.
+- A mellékelt hatképernyős referencia kizárólag szín-, vonal-, kiemelés- és tipográfiai irányt ad. A navigáció 2×4-es elrendezése, a kártyák és gombok mérete/helye, minden margó, lekerekítés, kattintási zóna, logika és funkció változatlan.
+- Meglévő Egészség színkódok: háttér #0e1015; kártya #1a1e25; emelt felület #232933; neutrális szegély #2c3440 (1px); a betűk jelenlegi Inter/system stackje változatlan, külső font letöltés nincs.
+- Csak a Kezdőlap aktuális edzése, az Edzés aktív terve/gyakorlata, az Egészség Mai állapot és a Coach Mai javaslat kap színátmenetes, 1px témaszínű keretet. A Programok aktív kártyája legfeljebb egyszínű témaszínű keretet kap, minden más kártya lapos és neutrális.
+- Alap színek: nincs shadow/filter/glow a kártyákon, vezérlőkön és progress elemeken; élénk színek: a kiemelt Hero fénye engedélyezett.
+- A 1.7.6-os javítások változatlanok: navigációs késés, Naptár gomb háttere, kizárólag Coach X 7px-szel magasabban. Naptár és Beállítások X pozíciója érintetlen; a meglévő overlay-toggle és fókuszkezelés változatlan. A korábbi, új X-geometriát/toggle-kódot hozzáadó kísérleti módosítások kikerültek ebből az ágból.
+- Kizárólag CSS, új JS-es komponens, DOM-manipuláció vagy eseménykezelő nélkül; teljes regressziós és telefonos ellenőrzés kell a merge előtt.
 
 # TrainPilot 1.7.6 / 2665 — navigációs kijelölés, telefonos tesztverzió (#56)
 
 - Az Androidon megfigyelt, késve átvándorló arany/fényes navigációs kerethez tartozó 140–150 ms-os háttér-, keret- és árnyék-áttűnés megszűnik; a kiválasztott gomb vizuális állapota egy lépésben vált.
 - A Naptár gomb az alapállapotában ugyanazt a kártyahátteret és keretet kapja, mint a szintén lebegő panelként megnyíló Coach és Beállítások. A kiválasztott gomb témaszínű jelölése továbbra is közös.
-- Kiegészítés: kizárólag a Coach lebegő panel X gombja 7 px-szel feljebb került; a külső panelkeret és az első belső ajánláskártya kerete között marad. A Naptár és a Beállítások X pozíciója nem változott.\n- A rövid lenyomási animáció (90 ms-os méretváltozás) megmarad. Az alapszínek matt, a neon témák fényes stílusa, a két soros navigáció, a panelok és a Phase 7 gyorsítások változatlanok.
+- Kiegészítés: kizárólag a Coach lebegő panel X gombja 7 px-szel feljebb került; a külső panelkeret és az első belső ajánláskártya kerete között marad. A Naptár és a Beállítások X pozíciója nem változott.
+- A rövid lenyomási animáció (90 ms-os méretváltozás) megmarad. Az alapszínek matt, a neon témák fényes stílusa, a két soros navigáció, a panelok és a Phase 7 gyorsítások változatlanok.
 - #56: célzott első és ismételt route/panel teszt 320/360/393/412 px-on, matt és neon témával; teljes Node/Chromium/regressziós/performance és aláírt APK release gate.
 - Kiindulás: telefonon jóváhagyott 1.7.5 / 2664 app, legfrissebb 1.7.5 main `d0a3881ed9d8ec9d1238a914b6e6cab5da1e7c3e`. A 1.7.6 **tesztjelölt**, nem publikált/elfogadott release; main merge csak telefonos jóváhagyás után.
 
