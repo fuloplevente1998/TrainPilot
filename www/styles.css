@@ -370,3 +370,10 @@ html body .top.tp154-nav-grid .tp151-nav-item[onclick*="calendar"]:not(.active) 
 html body #tp155R4PanelHost[data-panel="coach"] .tp155-r4-panel-close {
   top: 1px !important;
 }
+
+/* #63: section icons stay beside labels without changing their accessible names. */
+html body #app .tp63-group-icon{display:inline-block;vertical-align:middle;width:17px;height:17px;min-width:17px;margin-right:7px;color:var(--accent);flex:0 0 17px}
+html body #app .tp152-profile-group>summary{justify-content:flex-start}
+html body #app .tp152-profile-group>summary>strong{flex:1;min-width:0}
+html body #app main.rf263-health>.tp151-health-card>h2 .tp63-group-icon,
+html body #app main.rf263-health>details.tp151-details>summary>strong .tp63-group-icon{margin-right:6px}
