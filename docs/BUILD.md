@@ -60,3 +60,10 @@ cd android
 ```
 
 A keystore és a Secret értékek soha ne kerüljenek Gitbe, source ZIP-be vagy GitHub Release assetbe.
+
+## A 1.7.7 → 1.0.0 átállás biztonsági feltételei
+
+- A kiindulási, kiadott APK verziója `1.7.7`, `versionCode 2670`. A következő `1.0.0` APK `versionCode` értéke legalább `2671`.
+- Az Android application ID `com.repforge.app`, az eredeti release signer és a meglévő helyi adattárolási azonosítók változatlanok.
+- Kiadás előtt az eredeti 1.7.7 APK aláírási tanúsítványának SHA-256 ujjlenyomatát az új APK-val össze kell hasonlítani; szükség van meglévő 1.7.7 telepítés fölé történő, adatmegőrző frissítési próbára is.
+- A történeti release-ek és tagek külön privát archiválása nem változtatja meg a publikus `main` commitelőzményét. Lásd [karbantartási terv](REPOSITORY_MAINTENANCE_2026-09-26.md).

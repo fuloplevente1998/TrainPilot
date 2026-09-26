@@ -1,14 +1,14 @@
 # TrainPilot — Development Status
 
-Last updated: 2026-09-24. The authoritative completed phase history is [docs/PHASE_5_6_7_ROADMAP.md](docs/PHASE_5_6_7_ROADMAP.md). The permanent future performance gate is [docs/PERFORMANCE_REGRESSION_POLICY.md](docs/PERFORMANCE_REGRESSION_POLICY.md).
+Last updated: **2026-09-26**. Earlier Phase 5–7 history remains below; it is historical, not the current release state. See [docs/PHASE_5_6_7_ROADMAP.md](docs/PHASE_5_6_7_ROADMAP.md) and the permanent [performance regression policy](docs/PERFORMANCE_REGRESSION_POLICY.md).
 
-## Stable baseline and current work
+## Current stable baseline and next phase
 
-- **Latest phone-approved stable app: TrainPilot 1.7.5 / Android versionCode 2664**, merged from PR [#54](https://github.com/fuloplevente1998/TrainPilot/pull/54) to validated `main` commit `8464b3eec72803482eb5aa8037a97a7b69b09100`. Post-merge Quick Validation #680 and Phase 7 Performance #80: PASS. Signed candidate Release Gate #237, Quick #679 and Phase 7 Performance #79: PASS.
-- **#49 and #50 completed and merged:** Journal exercise selector is branded on first open after lazy hydration, with a wider multi-line dropdown; Health Pulse opens the existing decorated 7-day chart in place, without a transient legacy panel or full Health Today rewrite. Both issues are closed. Keep the targeted first-open/repeated-open mobile regression tests.
-- **Published GitHub Release remains 1.7.4 / 2663**, the phone-approved Phase 7 performance build. 1.7.5 is accepted on main but has **not yet been published as a GitHub Release**. Do not change or overwrite the historical v1.7.4 tag.
-- **Phase 7 speedup remains mandatory:** lazy Journal and Program detail hydration, operation-scoped fresh history snapshots (no persistent cache), batched Coach Progress statistics and delayed full Progress hydration after first paint. Keep the permanent [performance regression policy](docs/PERFORMANCE_REGRESSION_POLICY.md), budget CI and [#18 legacy/Drive safety](https://github.com/fuloplevente1998/TrainPilot/issues/18).
-- Measured Phase 7 reference 240-workout Chromium dataset: Journal ~3166→104 ms median, 242→1 history calls, ~99k→3.5k DOM nodes; Home ~149→31 ms, Programs ~146→31 ms, Coach first visible feedback ~350–540→32–64 ms. Regression gates also passed for the accepted 1.7.5 main.
+- **Published stable baseline: TrainPilot 1.7.7 / Android versionCode 2670**, with `main` accepted release source at `61b7d2008740ffd56d352736f10aa93ab8c2e08c`. GitHub Release `v1.7.7` is published, with signed APK, source ZIP and SHA-256 manifest.
+- **#60, #61, #62 and #63 are closed.** The 1.7.7 baseline includes the Fejlődés view, vertical volume trend and in-place metric details, the muscle illustration corrections and the app-wide icon consistency pass.
+- **Next milestone: TrainPilot 1.0.0**, created from the verified 1.7.7 baseline on a separate branch. Update `versionName` to `1.0.0` with `versionCode >= 2671`; preserve `com.repforge.app`, signing certificate, persisted data identifiers and upgrade-safe behavior.
+- **Repository maintenance:** the original 56 branches and 19 tags, 17 releases and 62 release assets are mirrored to a separate private TrainPilot-Archive repository; a Google Drive backup exists as a second copy. The current public `main` Git history must remain intact; old branches/releases/tags are removed from public only after archive verification.
+- The Phase 7 speedup remains mandatory: lazy Journal and Programs details, operation-scoped fresh history snapshots, batched Coach statistics, delayed full Progress hydration and the permanent performance regression policy. Historical 240-workout reference: Journal ~3166→104 ms median, 242→1 history calls and ~99k→3.5k DOM nodes.
 
 ## Phase 5–7 acceptance boundaries
 
@@ -66,7 +66,7 @@ This requirement is part of **Phase 3 (#29 + #30)** unless explicitly moved late
 
 ## Permanent TrainPilot release process — mandatory for **each subsequent app release**
 
-1. Branch from the latest **physically phone-approved and post-merge validated** `main` app commit. For the upcoming UI fixes (#49/#50), use the accepted 1.7.4 / 2663 main baseline including any subsequent validated docs/test-only commits; never branch from an unapproved development APK.
+1. Branch from the latest **physically phone-approved and post-merge validated** `main` app commit. For the 1.0.0 preparation, start from the published 1.7.7 / 2670 baseline and include later documentation-only commits; never branch from an unapproved development APK.
 2. Confirm phase issue acceptance criteria; implement its scope with targeted tests and protected earlier behavior.
 3. Run targeted tests, **full Node/regression**, **full Chromium/UI**, and build a **signed, upgrade-safe Android APK** with APK/package/source/version checks.
 4. Deliver that phase's APK for a physical Android phone test. If rejected, fix the **same phase branch**, repeat tests and deliver another APK.
@@ -77,4 +77,4 @@ Never trade data correctness, historical Journal recovery, Drive merge/tombstone
 
 ## Recovery instruction
 
-At the beginning of another TrainPilot conversation, read this file, the completed Phase 5–7 roadmap and the permanent performance policy. Verify latest main (accepted app baseline **1.7.5 / 2664**, PR #54 merged at `8464b3eec72803482eb5aa8037a97a7b69b09100`), and check current issues before creating future branches. The signed-APK → physical-phone-approval → merge-to-main → post-merge-validation gate remains mandatory for UI changes.
+At the beginning of a future TrainPilot conversation, read this file, the completed Phase 5–7 roadmap and the permanent performance policy. Verify the latest `main` and published `v1.7.7` release against the accepted **1.7.7 / 2670** baseline before making new branches. The signed-APK → physical-phone-approval → merge-to-main → post-merge-validation gate remains mandatory for application/UX changes. The private TrainPilot-Archive and a separate cloud backup preserve historical refs/releases. The 1.0.0 upgrade must retain application ID, signing certificate and data compatibility, while increasing Android versionCode to at least 2671.

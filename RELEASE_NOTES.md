@@ -1,3 +1,14 @@
+# TrainPilot 1.7.7 / 2670 – stabil publikált kiadás (2026-09-26)
+
+- **#60 – Fejlődés:** naplóalapú fejlődési mutatók, egymás mellé rendezett függőleges volumentrend és elfogadott elrendezés.
+- **#61 – Izomábra:** az anatómiai ábra kijelölésének pontosítása.
+- **#62 – Mutatókártyák:** helyben lenyíló, kompakt mutatórészletek.
+- **#63 – Ikonok:** kis ikonok és feliratok vizuális következetességének javítása.
+- Publikált GitHub Release: `v1.7.7`; Android `versionName 1.7.7`, `versionCode 2670`.
+- Az új TrainPilot 1.0.0 verzió külön ágban és külön teszteléssel készül, `versionCode >= 2671` mellett. A 1.7.7-es APK történeti kiadás, nem nevezzük át utólag.
+
+---
+
 ## #58: Egészség-referencia 1px körvonalak – vizuális finomhangolás
 
 - Kezdőlap Hero, Edzés aktív program és Programok kártyák: valódi 1px-es körvonal az Egészség kártyái szerint; a korábbi 2px-es Hero-keretek 1px-re vékonyodnak, a Programok 3px-es bal oldali szegélyének csak 1px-e látszik (a belső elrendezés változatlan).

@@ -9,7 +9,7 @@
 - [x] Repository Secrets beállítva: `ANDROID_KEYSTORE_BASE64`, `ANDROID_STORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`
 - [x] meglévő telepítések frissítéséhez szükséges kompatibilis signer helyreállítva és Secretként konfigurálva
 - [ ] végleges Google Play signing / Play App Signing stratégia rögzítése
-- [ ] production release/upload kulcs biztonságos offline mentési és helyreállítási eljárása
+- [ ] production release/upload kulcs külön titkosított, lehetőleg offline mentésének és APK-signer egyezésének végső ellenőrzése
 
 > Megjegyzés: a jelenlegi kompatibilitási signer a korábbi telepítések frissíthetőségének megőrzésére szolgál. A Play Store publikálás előtt a Play App Signing beállítását és az esetleges kulcsmigrációt külön kell megtervezni.
 
@@ -20,10 +20,12 @@
 - [x] APK + source ZIP + SHA256 artifact-előkészítés a workflow-ban
 - [x] `v*` taghez GitHub Release publikálási workflow
 - [x] verzió/tag konzisztencia-ellenőrzés
-- [ ] 1.6.1 signed APK Release Gate teljes, zöld lefutása
-- [ ] 1.6.1 fizikai telefonos telepítés/frissítés teszt
-- [ ] 1.6.1 telefonos funkcionális smoke test
-- [ ] elfogadott 1.6.1 merge `main` ágra és `v1.6.1` tag
+- [x] 1.7.7 / 2670 publikált, aláírt APK és source ZIP sikeres Release Gate után; elfogadott `main` alap
+- [x] `v1.7.7` tag és GitHub Release publikálva
+- [ ] helyreállított `.jks` aláíró tanúsítvány SHA-256 egyezésének összevetése a kiadott 1.7.7 APK-val
+- [ ] 1.0.0 / legalább 2671-es `versionCode` build és teljes tesztkapu
+- [ ] 1.0.0 telefonos, korábbi 1.7.7-re telepített, adatmegőrző frissítési próba
+- [ ] 1.0.0 végleges telefonos jóváhagyás után merge és kiadás
 
 ## Fotók
 
