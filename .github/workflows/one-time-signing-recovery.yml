@@ -1,0 +1,104 @@
+name: ONE TIME - encrypted TrainPilot signing recovery
+
+# This workflow only runs on a push to a temporary, owner-controlled branch.
+# Do not merge into main. Delete the temporary branch after verifying recovery.
+on:
+  push:
+    branches:
+      - maintenance/signing-key-recovery
+    paths:
+      - '.github/workflows/one-time-signing-recovery.yml'
+      - '.github/recovery-public.crt'
+
+permissions:
+  contents: read
+
+jobs:
+  encrypted-recovery:
+    if: github.repository == 'fuloplevente1998/TrainPilot' && github.ref == 'refs/heads/maintenance/signing-key-recovery'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout recovery branch
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Encrypt signing data for the owner only
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+          python3 - <<'PY'
+          import base64
+          import hashlib
+          import io
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+          import tarfile
+          import tempfile
+
+          cert = Path('.github/recovery-public.crt').resolve()
+          expected = '5F:93:E5:C7:6C:ED:C4:7D:97:F4:F9:BF:92:AD:FE:0F:B8:20:DE:9D:1C:C6:8E:34:11:B1:A9:7A:F6:89:96:15'
+          fp = subprocess.run(['openssl', 'x509', '-in', str(cert), '-noout', '-fingerprint', '-sha256'],
+                              check=True, capture_output=True, text=True).stdout.strip()
+          if fp.split('=', 1)[-1].upper() != expected:
+              raise SystemExit('Public certificate fingerprint mismatch; stopping.')
+          subprocess.run(['openssl', 'x509', '-in', str(cert), '-noout', '-checkend', '86400'],
+                         check=True, capture_output=True)
+
+          names = ('ANDROID_KEYSTORE_BASE64', 'ANDROID_STORE_PASSWORD',
+                   'ANDROID_KEY_ALIAS', 'ANDROID_KEY_PASSWORD')
+          missing = [name for name in names if not os.environ.get(name)]
+          if missing:
+              raise SystemExit('Required secrets missing: ' + ', '.join(missing))
+          encoded = ''.join(os.environ['ANDROID_KEYSTORE_BASE64'].split())
+          try:
+              keystore = base64.b64decode(encoded, validate=True)
+          except Exception:
+              raise SystemExit('ANDROID_KEYSTORE_BASE64 is not valid Base64.') from None
+          if len(keystore) < 100:
+              raise SystemExit('Decoded keystore is unexpectedly small.')
+
+          output = Path(os.environ['GITHUB_WORKSPACE']) / 'TrainPilot-signing-recovery.cms'
+          with tempfile.TemporaryDirectory(prefix='trainpilot-secrets-', dir=os.environ['RUNNER_TEMP']) as temp_name:
+              tmp = Path(temp_name)
+              jks = tmp / 'trainpilot-release.jks'
+              jks.write_bytes(keystore)
+              os.chmod(jks, 0o600)
+              metadata = tmp / 'signing-metadata.json'
+              metadata.write_text(json.dumps({
+                  'ANDROID_STORE_PASSWORD': os.environ['ANDROID_STORE_PASSWORD'],
+                  'ANDROID_KEY_ALIAS': os.environ['ANDROID_KEY_ALIAS'],
+                  'ANDROID_KEY_PASSWORD': os.environ['ANDROID_KEY_PASSWORD']
+              }, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+              os.chmod(metadata, 0o600)
+              checksum = hashlib.sha256(keystore).hexdigest() + '  trainpilot-release.jks\n'
+              (tmp / 'SHA256SUMS.txt').write_text(checksum, encoding='ascii')
+              archive = tmp / 'signing-data.tar.gz'
+              with tarfile.open(archive, 'w:gz') as tar:
+                  for filename in ('trainpilot-release.jks', 'signing-metadata.json', 'SHA256SUMS.txt'):
+                      tar.add(tmp / filename, arcname=filename)
+              subprocess.run(['openssl', 'cms', '-encrypt', '-binary', '-aes256',
+                              '-in', str(archive), '-out', str(output),
+                              '-outform', 'DER', str(cert)], check=True)
+          if not output.exists() or output.stat().st_size < 100:
+              raise SystemExit('Encrypted recovery file was not created.')
+          print('Encrypted artifact created (no plaintext secrets printed).')
+          print('Encrypted file SHA256: ' + hashlib.sha256(output.read_bytes()).hexdigest())
+          PY
+
+      - name: Upload ONLY the encrypted recovery file
+        uses: actions/upload-artifact@v7
+        with:
+          name: TrainPilot-signing-recovery-ENCRYPTED
+          path: TrainPilot-signing-recovery.cms
+          retention-days: 7
+          if-no-files-found: error
