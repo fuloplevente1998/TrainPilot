@@ -30,6 +30,8 @@ jobs:
         run: npm ci
       - name: Install Chromium
         run: npx --no-install playwright install --with-deps chromium
+      - name: Verify Progress daily filters and latest chart position
+        run: node tests/browser/progress-177-issue60.cjs
       - name: Run reproducible benchmark
         run: node tests/browser/phase7-performance-19.cjs | tee phase7-metrics.log
       - name: Reject major structural and timing regressions
