@@ -1,0 +1,35 @@
+name: Prepare TrainPilot 1.7.7 release
+
+on:
+  push:
+    branches: [maintenance/release-177]
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+      - name: Verify version and publish release tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node -p "require('./package.json').version")" = 1.7.7
+          test "$(node -p "require('./SOURCE_VERSION.json').versionCode")" = 2670
+          SHA="$(git rev-parse HEAD)"
+          test "$SHA" = "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v1.7.7" --jq '.object.sha' > /tmp/tag-sha 2>/dev/null; then
+            test "$(cat /tmp/tag-sha)" = "$SHA"
+          else
+            gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref=refs/tags/v1.7.7 -f sha="$SHA" >/dev/null
+          fi
+          gh workflow run build-apk.yml --ref v1.7.7
+          echo "Dispatched release gate for v1.7.7 at $SHA"
