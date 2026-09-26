@@ -41,26 +41,28 @@ const {chromium}=require('playwright');
   const coachScroll=await page.evaluate(async()=>{const panel=document.querySelector('#tp155R4PanelHost .tp155-r4-panel'),probe=document.createElement('div');probe.style.height='1600px';panel.querySelector('.tp155-r4-panel-content')?.appendChild(probe);panel.scrollTop=9999;await new Promise(r=>setTimeout(r,50));const y=panel.scrollTop;probe.remove();return y});
   assert.ok(coachScroll>0,'Coach panel must scroll internally when content is taller than viewport');
 
-  // #13 removes Home statistics button; Statistics stays available through the
-  // established Journal/progress route and must keep the same deterministic state.
+  // #67: Home has no separate Statistics button; the canonical Progress view
+  // opens within Journal and must release the Coach panel scroll lock.
   await page.evaluate(()=>{window.tp155R4ClosePanel?.(false);go('progress');window.scrollTo(0,0)});
   await page.waitForTimeout(80);
   const stats=await page.evaluate(()=>(
    {tab:state.tab,homeClass:document.querySelector('main')?.classList.contains('rf221-home'),overflow:getComputedStyle(document.body).overflow,text:document.querySelector('main')?.innerText||'',active:document.querySelector('.tab.active .tp151-nav-label')?.textContent?.trim()||[...document.querySelectorAll('.tab')].find(x=>x.classList.contains('active'))?.textContent?.trim()}
   ));
-  assert.equal(stats.tab,'stats');
+  assert.equal(stats.tab,'history','Progress route resolves to the Journal container');
+  assert.equal(await page.evaluate(()=>state.tp177JournalView),'progress');
   assert.equal(stats.homeClass,false);
   assert.notEqual(stats.overflow,'hidden');
-  assert.match(stats.text,/Statisztikák|Statistics/);
-  assert.match(stats.active||'',/^(Napló|Log|Journal)$/,'Statistics must identify Journal as its navigation parent');
-  assert.ok((await makeScrollable())>0,'Statistics screen must scroll when content is taller than viewport');
+  assert.match(stats.text,/Fejlődés|Progress/);
+  assert.match(stats.active||'',/^(Napló|Log|Journal)$/,'Progress must identify Journal as its navigation parent');
+  assert.ok((await makeScrollable())>0,'Progress screen must scroll when content is taller than viewport');
 
-  // Router alias must use the same deterministic Statistics state.
+  // Legacy router alias must reopen the same canonical Progress screen.
   await page.evaluate(()=>{go('home');go('progress')});
-  await page.waitForTimeout(60);
-  assert.equal(await page.evaluate(()=>state.tab),'stats');
+  await page.waitForSelector('main.tp177-progress');
+  assert.equal(await page.evaluate(()=>state.tab),'history');
+  assert.equal(await page.evaluate(()=>state.tp177JournalView),'progress');
 
-  console.log('PASS: TrainPilot 2627 #13 full-card Coach entry + retained Statistics route release scroll lock deterministically.');
+  console.log('PASS: TrainPilot 2627 #13 Coach entry + canonical Progress route release scroll lock deterministically.');
  }finally{
   if(browser)await browser.close();
   await new Promise(r=>server.close(r));
