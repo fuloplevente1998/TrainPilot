@@ -10475,12 +10475,19 @@ profileScreen=function(){
  const mins={};for(let m=20;m<=120;m+=5)mins[String(m)]=tp149FormatNumber(m)+' '+tp149T('unit.minute.short');
  const avoid=Object.keys(TP149_PLANNER_ROWS.area).map(function(k){return '<label class="exclude-row"><input type="checkbox" name="pfAvoidArea" value="'+esc(k)+'" '+((p.avoidAreas||[]).includes(k)?'checked':'')+'>'+esc(tp149PlannerRow('area',k))+'</label>'}).join('');
  const excluded=exercises().map(function(e){return '<label class="exclude-row"><input type="checkbox" name="pfExclude" value="'+esc(e.id)+'" '+((p.excluded||[]).includes(e.id)?'checked':'')+'>'+esc(tp149ExerciseName(e))+'</label>'}).join('');
- const group=function(title,body,open){return '<details class="setting tp152-accordion tp152-profile-group" '+(open?'open':'')+'><summary><strong>'+esc(title)+'</strong><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-accordion-body">'+body+'</div></details>'};
+ const groupIcons={
+  basic:'<circle cx="12" cy="7" r="3"/><path d="M5 20v-2a7 7 0 0 1 14 0v2"/>',
+  goal:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  gear:'<path d="M5 8v8M8 6v12M16 6v12M19 8v8M8 12h8M3 9v6M21 9v6"/>',
+  schedule:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M8 15h3"/>',
+  limits:'<path d="M12 2l8 4v5c0 5-3 8-8 11-5-3-8-6-8-11V6z"/><path d="M12 7v6M12 17h.01"/>'
+ };
+ const group=function(title,body,open,icon){return '<details class="setting tp152-accordion tp152-profile-group" '+(open?'open':'')+'><summary><svg class="tp63-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'+groupIcons[icon]+'</svg><strong>'+esc(title)+'</strong><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-accordion-body">'+body+'</div></details>'};
  const basic='<div class="profile-grid"><label>'+esc(tp149T('planner.age'))+'<input id="pfAge" class="field" type="number" min="18" max="100" value="'+esc(p.age)+'"></label><label>'+esc(tp149T('planner.height'))+'<input id="pfHeight" class="field" type="number" min="100" max="250" value="'+esc(p.height)+'"></label><label>'+esc(tp149T('planner.weight'))+'<input id="pfWeight" class="field" type="number" step="0.1" min="30" max="350" value="'+esc(p.weight)+'"></label></div>';
  const goal=profileSelect('pfGoal',tp149T('planner.goal'),tp149PlannerOptions('goal'),p.goal)+profileSelect('pfExperience',tp149T('planner.experience'),tp149PlannerOptions('experience'),p.experience)+profileSelect('pfActivity',tp149T('planner.activity'),tp149PlannerOptions('activity'),p.activity);
  const schedule=profileSelect('pfMinutes',tp149T('planner.minutes'),mins,String(p.minutes))+profileSelect('pfCadence',tp149T('planner.cadence'),tp149PlannerOptions('cadence'),p.cadence)+profileSelect('pfSplit',tp149T('planner.split'),Object.fromEntries(['auto','full','upperlower','ppl'].map(function(k){return [k,tp149PlannerRow('split',k)]})),p.split)+profileSelect('pfFocus',tp149T('planner.focus'),tp149PlannerOptions('focus'),p.focus||'balanced');
  const limits='<details class="rf148-profile-accordion"><summary>'+esc(tp149T('planner.avoidAreas'))+'</summary><div class="rf148-profile-accordion-body"><p class="small muted">'+esc(tp149T('planner.avoidHelp'))+'</p>'+avoid+'</div></details><details class="rf148-profile-accordion"><summary>'+esc(tp149T('planner.excludeExercises'))+'</summary><div class="rf148-profile-accordion-body">'+excluded+'</div></details>';
- const html='<main class="tp152-profile"><button class="btn secondary" onclick="go(\'home\')">← '+esc(tp149T('planner.back'))+'</button><div class="hero"><h1>'+esc(tp149T('planner.title'))+'</h1><p>'+esc(tp149T('planner.intro'))+'</p></div>'+group(tp152T('profileBasic'),basic,true)+group(tp152T('profileGoal'),goal,false)+group(tp152T('profileGear'),gearForm132(p),false)+group(tp152T('profileSchedule'),schedule,false)+group(tp152T('profileLimits'),limits,true)+'<button class="btn block tp152-profile-build" onclick="previewProfile()">'+esc(tp149T('planner.build'))+'</button></main>';
+ const html='<main class="tp152-profile"><button class="btn secondary" onclick="go(\'home\')">← '+esc(tp149T('planner.back'))+'</button><div class="hero"><h1>'+esc(tp149T('planner.title'))+'</h1><p>'+esc(tp149T('planner.intro'))+'</p></div>'+group(tp152T('profileBasic'),basic,true,'basic')+group(tp152T('profileGoal'),goal,false,'goal')+group(tp152T('profileGear'),gearForm132(p),false,'gear')+group(tp152T('profileSchedule'),schedule,false,'schedule')+group(tp152T('profileLimits'),limits,true,'limits')+'<button class="btn block tp152-profile-build" onclick="previewProfile()">'+esc(tp149T('planner.build'))+'</button></main>';
  render(shell(html));window.scrollTo?.(0,0);if(typeof rf260ScrollState==='function')rf260ScrollState();
 };
 
@@ -13535,6 +13542,29 @@ window.addEventListener?.('DOMContentLoaded',function(){
  window.TrainPilot177Progress={version:'1.7.7-issue60',snapshot,prepare:model.prepare,build:model.build};
 });
 // @endsection trainpilot-177-progress-ui.js
+
+// @section issue63-section-icons.js
+/* Small, decorative section marks retain the translated text and compact card layout. */
+const tp63HealthIcons=[
+ '<path d="M3 12h4l2-5 4 10 2-5h6"/>',
+ '<circle cx="12" cy="7" r="3"/><path d="M5 20v-2a7 7 0 0 1 14 0v2"/>',
+ '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ '<path d="M4 19h16M6 16l4-4 3 2 5-7"/><path d="M15 7h3v3"/>'
+];
+const tp63HealthHubBase=rf263HealthHub;
+rf263HealthHub=function(){
+ const result=tp63HealthHubBase.apply(this,arguments);
+ const main=document.querySelector('main.rf263-health');
+ if(main){
+  const headings=[...main.querySelectorAll(':scope > .tp151-health-card > h2, :scope > details.tp151-details > summary > strong')];
+  headings.slice(0,4).forEach((heading,index)=>{
+   if(heading.querySelector('.tp63-group-icon'))return;
+   heading.insertAdjacentHTML('afterbegin','<svg class="tp63-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'+tp63HealthIcons[index]+'</svg>');
+  });
+ }
+ return result;
+};
+// @endsection issue63-section-icons.js
 
 // @section ready.js
 window.TrainPilotBoot.finish();
