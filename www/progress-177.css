@@ -35,7 +35,7 @@ html body #app .tp177-hero-change>.tp177-small{max-width:160px}
 html body #app .tp177-positive{color:var(--ok,#62d08a)}
 html body #app .tp177-negative{color:var(--muted)}
 html body #app .tp177-neutral{color:var(--muted)}
-html body #app .tp177-periods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+html body #app .tp177-periods{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 html body #app .tp177-periods button{
  min-width:0;min-height:42px;border-radius:12px;background:var(--tp-ui-card-raised,var(--card2));
  color:var(--text);border:1px solid var(--tp-ui-border,var(--line));font-size:14px;padding:7px 3px
