@@ -13241,7 +13241,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    days7:'7 nap',days30:'30 nap',months3:'3 hó',vs:'az előző időszakhoz képest',pr:'PR rekordok',
    workouts:'Edzések száma',average:'Átlagos volumen',averageSmall:'súlyzós edzésenként',
    sets:'Sorozatok száma',muscles:'Izomcsoport-terhelés',groupNote:'A színek és arányok az időszak legterheltebb izomcsoportjához viszonyítanak, nem fáradtságot mérnek.',
-   low:'Kisebb',medium:'Közepes',high:'Nagyobb',
+   low:'Kisebb',medium:'Közepes',high:'Nagyobb',anatomyZoom:'Izomterhelés nagyítása',
    coach:'Fejlődési javaslat',more:'Részletek',noData:'Ehhez az időszakhoz nincs elegendő naplózott adat.',
    noWeight:'Ebben az időszakban nincs mérhető súlyzós volumen.',openLog:'Megnyitás az Edzésnaplóban',
    close:'Bezárás',back:'Vissza',previous:'Korábbi',current:'Új',sessions:'Edzések',completed:'Befejezett edzések',setCount:'sorozat',
@@ -13257,7 +13257,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    days7:'7 days',days30:'30 days',months3:'3 mo',vs:'vs previous period',pr:'PR records',
    workouts:'Workouts',average:'Average volume',averageSmall:'per weighted workout',
    sets:'Completed sets',muscles:'Muscle group load',groupNote:'Colors and percentages are relative to the most trained group, not a fatigue measurement.',
-   low:'Lower',medium:'Medium',high:'Higher',
+   low:'Lower',medium:'Medium',high:'Higher',anatomyZoom:'Enlarge muscle load diagram',
    coach:'Progress insight',more:'Details',noData:'Not enough logged data for this period.',
    noWeight:'No measurable weighted volume in this period.',openLog:'Open in workout log',
    close:'Close',back:'Back',previous:'Previous',current:'New',sessions:'Workouts',completed:'Completed workouts',setCount:'sets',
@@ -13349,22 +13349,17 @@ window.addEventListener?.('DOMContentLoaded',function(){
    '<div class="tp177-chart-columns" style="grid-template-columns:repeat('+v.buckets.length+',minmax(24px,1fr))">'+bars+'</div></div></div>'+
    '<p class="tp177-small">'+escapeHtml(tr('hint'))+'</p></section>';
  }
- // Approximate exercise-target heatmap. Opacity follows the same relative scale as the bars.
+ // #61: aligned muscle masks keep the illustration neutral outside logged tissue.
  const loadLevel=percent=>percent<=33?'low':percent<=66?'medium':'high';
  const loadColor={low:'#f0c83e',medium:'#f28a28',high:'#e84e4e'};
- function anatomy(v){
-  const shapes={
-   chest:'<ellipse cx="370" cy="305" rx="110" ry="75"/><ellipse cx="530" cy="305" rx="110" ry="75"/>',
-   back:'<ellipse cx="1040" cy="367" rx="115" ry="170"/><ellipse cx="1215" cy="367" rx="115" ry="170"/>',
-   shoulders:'<ellipse cx="250" cy="245" rx="75" ry="88"/><ellipse cx="668" cy="245" rx="75" ry="88"/><ellipse cx="895" cy="255" rx="72" ry="85"/><ellipse cx="1360" cy="255" rx="72" ry="85"/>',
-   legs:'<ellipse cx="345" cy="792" rx="75" ry="180"/><ellipse cx="558" cy="792" rx="75" ry="180"/><ellipse cx="1033" cy="788" rx="74" ry="175"/><ellipse cx="1245" cy="788" rx="74" ry="175"/>',
-   arms:'<ellipse cx="183" cy="435" rx="72" ry="158"/><ellipse cx="726" cy="435" rx="72" ry="158"/><ellipse cx="843" cy="448" rx="66" ry="150"/><ellipse cx="1405" cy="448" rx="66" ry="150"/>',
-   core:'<ellipse cx="454" cy="515" rx="94" ry="157"/><ellipse cx="1127" cy="540" rx="92" ry="130"/>'
-  };
-  const areas=v.groups.filter(g=>g.sets>0).map(g=>'<g data-group="'+g.key+'" data-load="'+loadLevel(g.percent)+'" fill="'+loadColor[loadLevel(g.percent)]+'" opacity="'+(0.30+0.42*g.percent/100).toFixed(2)+'">'+shapes[g.key]+'</g>').join('');
-  return '<div class="tp177-anatomy-art"><img class="tp177-anatomy-image" src="progress-anatomy-177.webp" alt="" loading="lazy">'+
-   '<svg class="tp177-heatmap" viewBox="0 0 1536 1024" aria-hidden="true" preserveAspectRatio="xMidYMid meet"><g filter="url(#tp177-heat-blur)">'+areas+'</g>'+
-   '<defs><filter id="tp177-heat-blur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="23"/></filter></defs></svg></div>';
+ function anatomy(v,large=false){
+  const active=v.groups.filter(g=>g.sets>0),prefix=large?'large':'small';
+  const masks=active.map(g=>'<mask id="tp177-'+prefix+'-'+g.key+'" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" mask-type="luminance" x="0" y="0" width="1536" height="1024"><image href="progress-muscle-'+g.key+'-177.png" x="0" y="0" width="1536" height="1024"/></mask>').join('');
+  const areas=active.map(g=>'<g data-group="'+g.key+'" data-load="'+loadLevel(g.percent)+'"><rect x="0" y="0" width="1536" height="1024" fill="'+loadColor[loadLevel(g.percent)]+'" mask="url(#tp177-'+prefix+'-'+g.key+')"/></g>').join('');
+  const art='<div class="tp177-anatomy-art"><img class="tp177-anatomy-image" src="progress-anatomy-177.webp" alt="" loading="lazy">'+
+   '<svg class="tp177-heatmap" viewBox="0 0 1536 1024" aria-hidden="true" preserveAspectRatio="xMidYMid meet"><defs>'+masks+'</defs>'+areas+'</svg></div>';
+  return large?'<div class="tp177-anatomy-large">'+art+'</div>':
+   '<button type="button" class="tp177-anatomy-zoom" aria-label="'+escapeHtml(tr('anatomyZoom'))+'" onclick="tp177OpenAnatomy()">'+art+'</button>';
  }
  function groupPanel(v){
   const rows=v.groups.map(g=>'<button type="button" class="tp177-muscle-row" data-load="'+(g.sets?loadLevel(g.percent):'none')+'" onclick="tp177OpenGroup(\''+g.key+'\')" '+(g.sets?'':'disabled')+'>'+
@@ -13418,6 +13413,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   document.body.appendChild(host);host.querySelector('[role="dialog"]').focus();
  }
  window.tp177CloseDialog=function(){dialogStack.length=0;document.getElementById('tp177Dialog')?.remove()};
+ window.tp177OpenAnatomy=function(){dialog(tr('muscles'),anatomy(snapshot(),true))};
  window.tp177BackDialog=function(){const previous=dialogStack.pop();if(!previous)return window.tp177CloseDialog();dialog(previous.title,previous.body,false,true)};
  function workoutRows(xs){
   if(!xs.length)return '<p class="tp177-small">'+escapeHtml(tr('noData'))+'</p>';

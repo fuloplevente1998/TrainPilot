@@ -26,6 +26,15 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  await page.waitForFunction(()=>{const img=document.querySelector('.tp177-anatomy-image');return img?.complete&&img.naturalWidth>0});
  assert.equal(await page.locator('.tp177-heatmap [data-group="chest"]').count(),1,'logged chest load highlights anatomy');
  assert.equal(await page.locator('.tp177-heatmap [data-group="legs"]').count(),0,'unlogged groups remain neutral');
+ const muscleAssets=await page.evaluate(async()=>Promise.all([...document.querySelectorAll('.tp177-heatmap mask image')].map(async img=>({url:img.getAttribute('href'),status:(await fetch(img.getAttribute('href'))).status}))));
+ assert.ok(muscleAssets.length>0&&muscleAssets.every(x=>x.status===200),'logged muscle tints must load their aligned mask images: '+JSON.stringify(muscleAssets));
+ assert.equal(await page.locator('.tp177-heatmap filter').count(),0,'muscle load stays on the tissue, without a blurred glow');
+ const smallAnatomy=await page.locator('.tp177-anatomy-art').first().boundingBox();
+ await page.getByRole('button',{name:'Izomterhelés nagyítása'}).click();
+ await page.waitForSelector('#tp177Dialog .tp177-anatomy-large');
+ const enlargedAnatomy=await page.locator('#tp177Dialog .tp177-anatomy-art').boundingBox();
+ assert.ok(enlargedAnatomy.width>smallAnatomy.width*1.5,'tapping anatomy opens a substantially larger illustration');
+ await page.locator('.tp177-dialog-close').click();await page.waitForSelector('#tp177Dialog',{state:'detached'});
  assert.equal(await page.locator('.tp177-load-legend [data-load]').count(),3,'fixed low/medium/high load legend');
  assert.equal(await page.locator('.tp177-muscle-row[data-load="high"]').count()>0,true,'relative peak uses the high-load color in every theme');
  assert.ok((await page.locator('.tp177-metric').first().boundingBox()).height<90,'summary cards should match compact mockup proportions');
