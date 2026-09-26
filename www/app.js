@@ -13326,8 +13326,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
   render();
  }
  window.tp177SetPeriod=selectPeriod;
- function metricCard(icon,label,value,delta,action,subtitle){
-  return '<button type="button" class="tp177-metric" onclick="'+action+'"><span class="tp177-icon" aria-hidden="true">'+icon+'</span>'+
+ let openMetric=null;
+ function metricCard(key,icon,label,value,delta,subtitle){
+  return '<button type="button" class="tp177-metric" data-metric="'+key+'" aria-expanded="'+(openMetric===key)+'" aria-controls="tp177MetricDetails" onclick="tp177ToggleMetric(\''+key+'\')"><span class="tp177-icon" aria-hidden="true">'+icon+'</span>'+
    '<span class="tp177-metric-body"><span class="tp177-metric-label">'+escapeHtml(label)+'</span>'+
    '<span class="tp177-metric-value"><strong>'+value+'</strong><span class="tp177-delta">'+pct(delta)+'</span></span>'+
    (subtitle?'<span class="tp177-metric-caption">'+escapeHtml(subtitle)+'</span>':'')+'</span>'+
@@ -13377,6 +13378,43 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(top)return tr('suggestionFocus')+top.name+'.';
   return tr('suggestionStable');
  }
+ function inlineWorkouts(xs){
+  if(!xs.length)return '<p class="tp177-small">'+escapeHtml(tr('noData'))+'</p>';
+  return '<div class="tp177-inline-list">'+xs.slice().sort((a,b)=>b.dateMs-a.dateMs).map(w=>{
+   const exercises=(w.source.exercises||[]).map(e=>{
+    const done=(e.sets||[]).filter(s=>s&&s.done===true);
+    if(!done.length)return '';
+    const name=typeof rf220ExerciseName==='function'?rf220ExerciseName(e.id):e.hu||e.en||e.id;
+    return '<div class="tp177-inline-exercise"><strong>'+escapeHtml(name)+'</strong><span>'+fmt(done.length)+' '+escapeHtml(tr('setCount'))+'</span></div>';
+   }).filter(Boolean).join('');
+   return '<details class="tp177-inline-row"><summary><strong>'+escapeHtml(dateFmt(w.date))+'</strong><span>'+fmt(w.volume)+' kg · '+fmt(w.sets)+' '+escapeHtml(tr('setCount'))+'</span><i aria-hidden="true">⌄</i></summary>'+
+    '<div class="tp177-inline-row-body">'+(exercises||'<p class="tp177-small">'+escapeHtml(tr('noData'))+'</p>')+'</div></details>';
+  }).join('')+'</div>';
+ }
+ function metricDetails(key,v){
+  const m=v.currentMetrics,heading=tr(key==='pr'?'pr':key==='average'?'average':key);
+  let content='';
+  if(key==='pr'){
+   const names={weight:tr('weight'),reps:tr('reps'),time:tr('time'),left:tr('left'),right:tr('right')};
+   content=m.pr.length?'<div class="tp177-inline-list">'+m.pr.slice().sort((a,b)=>b.date-a.date).map(p=>
+    '<div class="tp177-inline-record"><strong>'+escapeHtml(typeof rf220ExerciseName==='function'?rf220ExerciseName(p.id):p.id)+'</strong><span>'+escapeHtml(names[p.kind]||p.kind)+' · '+escapeHtml(dateFmt(p.date))+'</span><span>'+escapeHtml(tr('previous'))+': '+fmt(p.previous,1)+' '+escapeHtml(p.unit)+' → '+escapeHtml(tr('current'))+': '+fmt(p.value,1)+' '+escapeHtml(p.unit)+'</span></div>').join('')+'</div>':
+    '<p class="tp177-small">'+escapeHtml(tr('noData'))+'</p>';
+  }else{
+   const xs=key==='average'?v.current.filter(w=>w.weighted):v.current;
+   const value=key==='average'?(m.avgVolume==null?'—':fmt(m.avgVolume,1)+' kg'):fmt(m[key]);
+   content='<p class="tp177-inline-total"><strong>'+value+'</strong> · '+escapeHtml(dateFmt(v.start))+' – '+escapeHtml(dateFmt(model.addDays(v.end,-1)))+'</p>'+
+    (xs.length?inlineWorkouts(xs):'<p class="tp177-small">'+escapeHtml(tr(key==='average'?'noWeight':'noData'))+'</p>');
+  }
+  return '<h2>'+escapeHtml(heading)+'</h2>'+content;
+ }
+ window.tp177ToggleMetric=function(key){
+  if(!['pr','workouts','average','sets'].includes(key))return;
+  openMetric=openMetric===key?null:key;
+  const panel=document.getElementById('tp177MetricDetails');if(!panel)return;
+  panel.innerHTML=openMetric?metricDetails(openMetric,snapshot()):'';
+  panel.hidden=!openMetric;
+  document.querySelectorAll('.tp177-metric[data-metric]').forEach(button=>button.setAttribute('aria-expanded',String(button.dataset.metric===openMetric)));
+ };
  function progressHtml(){
   const v=snapshot(),m=v.currentMetrics,c=v.changes,period=v.period;
   const from=dateFmt(v.start),through=dateFmt(model.addDays(v.end,-1));
@@ -13389,10 +13427,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
    '<div class="tp177-hero-change">'+pct(c.volume)+'<span class="tp177-small">'+escapeHtml(tr('vs'))+'</span></div></div>'+
    '<div class="tp177-periods" role="group" aria-label="'+escapeHtml(tr('progress'))+'">'+periodButtons+'</div></section>'+
    barChart(v)+'<div class="tp177-metric-grid">'+
-   metricCard('♜',tr('pr'),fmt(m.pr.length),c.pr,'tp177OpenRecords()','')+
-   metricCard('◫',tr('workouts'),fmt(m.workouts),c.workouts,"tp177OpenStat('workouts')",'')+
-   metricCard('↗',tr('average'),avg,c.avgVolume,'tp177OpenAverage()',tr('averageSmall'))+
-   metricCard('▤',tr('sets'),fmt(m.sets),c.sets,"tp177OpenStat('sets')",'')+'</div>'+
+   metricCard('pr','♜',tr('pr'),fmt(m.pr.length),c.pr,'')+
+   metricCard('workouts','◫',tr('workouts'),fmt(m.workouts),c.workouts,'')+
+   metricCard('average','↗',tr('average'),avg,c.avgVolume,tr('averageSmall'))+
+   metricCard('sets','▤',tr('sets'),fmt(m.sets),c.sets,'')+'</div>'+
+   '<section id="tp177MetricDetails" class="tp177-metric-details" aria-live="polite"'+(openMetric?'':' hidden')+'>'+(openMetric?metricDetails(openMetric,v):'')+'</section>'+
    groupPanel(v)+'<button type="button" class="tp177-panel tp177-coach" onclick="tp177OpenCoach()">'+
    '<span class="tp177-icon" aria-hidden="true">✧</span><span class="tp177-coach-body"><strong>'+escapeHtml(tr('coach'))+'</strong>'+
    '<span>'+escapeHtml(suggestion(v))+'</span></span><span class="tp177-chevron" aria-hidden="true">›</span></button>'+
