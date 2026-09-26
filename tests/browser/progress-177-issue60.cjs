@@ -21,6 +21,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  assert.match((await page.locator('.tp155-journal-tabs').innerText()).replace(/\s+/g,' '),/Edzésnapló.*Fejlődés/);
  await page.getByRole('tab',{name:'Fejlődés'}).click();await page.waitForSelector('main.tp177-progress');
  assert.equal(await page.locator('.tp177-metric').count(),4,'reference layout keeps four summary cards');
+ assert.match(await page.locator('.tp177-metric[data-metric="duration"]').innerText(),/Átl\. edzésidő[\s\S]*60 min/);
  assert.equal(await page.locator('.tp177-muscle-row').count(),6,'six main muscle group rows expected');
  await page.locator('.tp177-anatomy-image').scrollIntoViewIfNeeded();
  await page.waitForFunction(()=>{const img=document.querySelector('.tp177-anatomy-image');return img?.complete&&img.naturalWidth>0});
@@ -80,6 +81,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   }
  }
  await page.locator('.tp177-periods button[data-period="7d"]').click();await page.waitForFunction(()=>document.querySelectorAll('.tp177-chart-column').length===7);
+ assert.match(await page.locator('.tp177-metric[data-metric="duration"]').innerText(),/60 min/,'duration recalculates for selected period');
  await page.evaluate(()=>{const b=[...document.querySelectorAll('.tp177-chart-column')].find(x=>parseFloat(x.querySelector('.tp177-bar')?.style.height||'0')>0);b?.click()});
  await page.waitForSelector('#tp177Dialog .tp177-dialog-card');assert.match(await page.locator('#tp177Dialog').innerText(),/kg/);
  await page.locator('.tp177-dialog-close').click();await page.waitForSelector('#tp177Dialog',{state:'detached'});
@@ -90,7 +92,8 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  await page.locator('#tp177MetricDetails .tp177-inline-row summary').first().click();
  assert.equal(await page.locator('#tp177MetricDetails .tp177-inline-row[open] .tp177-inline-exercise').count()>0,true,'workout expands locally');
  await page.locator('.tp177-metric').nth(3).click();
- assert.match(await page.locator('#tp177MetricDetails').innerText(),/Sorozatok száma/);
+ assert.match(await page.locator('#tp177MetricDetails').innerText(),/Átlagos edzésidő/);
+ assert.match(await page.locator('#tp177MetricDetails').innerText(),/Mért időtartamú edzésekből számolva/);
  assert.equal(await page.locator('.tp177-metric[aria-expanded="true"]').count(),1);
  await page.locator('.tp177-metric').nth(2).click();
  await page.locator('#tp177MetricDetails .tp177-inline-row summary').first().click();

@@ -49,6 +49,9 @@ assert.equal(week.currentMetrics.volume,120);
 assert.equal(week.previousMetrics.volume,100);
 assert.equal(week.currentMetrics.weightedCount,1);
 assert.equal(week.currentMetrics.avgVolume,120);
+assert.equal(week.currentMetrics.avgDuration,60,'average uses completed workouts with valid start/end timestamps');
+assert.equal(week.currentMetrics.timedWorkouts,2);
+assert.equal(week.changes.duration,0);
 assert.equal(week.changes.volume,20);
 assert.equal(week.buckets.length,7);
 assert.equal(week.buckets.reduce((s,b)=>s+b.volume,0),120);
@@ -63,6 +66,15 @@ const todayOnly=m.build(prepared,'1d',makeDate('new Date(2026,8,23,12)'));
 assert.equal(todayOnly.buckets.length,1);
 assert.equal(todayOnly.currentMetrics.workouts,0,'1 day filter is only the current calendar day');
 assert.equal(todayOnly.previousMetrics.workouts,1,'1 day comparison uses yesterday');
+assert.equal(todayOnly.currentMetrics.avgDuration,null,'no workouts must show missing duration, not zero');
+const varied=m.prepare([
+ workout('short','2026-09-23',[press(10,10)],{finished:'2026-09-23T15:30:00+02:00'}),
+ workout('long','2026-09-24',[press(10,10)],{finished:'2026-09-24T16:30:00+02:00'}),
+ workout('unknown','2026-09-25',[press(10,10)],{started:'invalid'})
+]);
+const variedWeek=m.build(varied,'7d',today);
+assert.equal(variedWeek.currentMetrics.avgDuration,60,'30 and 90 minutes average to 60; missing duration is excluded');
+assert.equal(variedWeek.currentMetrics.timedWorkouts,2);
 assert.equal(m.build(prepared,'30d',today).buckets.length,5);
 assert.equal(m.build(prepared,'3m',today).buckets.length,13);
 const fresh=m.build(prepared,'7d',makeDate('new Date(2027,1,1,9)'));
