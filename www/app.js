@@ -13303,10 +13303,15 @@ window.addEventListener?.('DOMContentLoaded',function(){
   return cachedModels[period]||(cachedModels[period]=model.build(cachedRows,period,new Date()));
  }
  function tabs(active){
+  const icons={
+   log:'<path d="M4 3.5h9a2 2 0 0 1 2 2V17H6a2 2 0 0 0-2 2z"/><path d="M4 3.5v15A2 2 0 0 0 6 20h10"/><path d="M7 8h5M7 11h5"/>',
+   stats:'<path d="M3 20h18"/><rect x="5" y="12" width="3" height="8" rx=".5"/><rect x="10.5" y="8" width="3" height="12" rx=".5"/><rect x="16" y="4" width="3" height="16" rx=".5"/>',
+   progress:'<path d="M3 17l6-6 4 3 8-9"/><path d="M16 5h5v5"/>'
+  };
   const entries=[['log',tr('log'),"go('history')"],['stats',tr('stats'),"tp155OpenJournalStats()"],
    ['progress',tr('progress'),"tp177OpenProgress()"]];
   return '<nav class="tp155-journal-tabs tp177-journal-tabs" role="tablist" aria-label="'+escapeHtml(tr('log'))+'">'+
-   entries.map(x=>'<button type="button" role="tab" aria-selected="'+(active===x[0]?'true':'false')+'" class="'+(active===x[0]?'active':'')+'" onclick="'+x[2]+'">'+escapeHtml(x[1])+'</button>').join('')+'</nav>';
+   entries.map(x=>'<button type="button" role="tab" aria-selected="'+(active===x[0]?'true':'false')+'" class="'+(active===x[0]?'active':'')+'" onclick="'+x[2]+'"><svg class="tp177-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'+icons[x[0]]+'</svg><span>'+escapeHtml(x[1])+'</span></button>').join('')+'</nav>';
  }
  function replaceTabs(html,active){
   const replacement=tabs(active);

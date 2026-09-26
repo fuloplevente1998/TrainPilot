@@ -5,7 +5,11 @@ html body #app .tp155-journal-tabs.tp177-journal-tabs{
  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:4px!important;
  border:1px solid var(--tp-ui-border,var(--line))!important;min-width:0;
 }
-html body #app .tp177-journal-tabs button{min-width:0;font-size:clamp(11px,3.25vw,15px);white-space:nowrap}
+html body #app .tp177-journal-tabs button{
+ display:inline-flex;align-items:center;justify-content:center;gap:4px;
+ min-width:0;padding:6px 3px;font-size:clamp(10px,2.9vw,14px);line-height:1.15;white-space:nowrap
+}
+html body #app .tp177-journal-tabs .tp177-tab-icon{display:block;width:14px;height:14px;flex:0 0 14px}
 html body #app .tp177-journal-tabs button.active{
  background:color-mix(in srgb,var(--accent) 19%,var(--tp-ui-card,var(--card)))!important;
  color:var(--text)!important;
