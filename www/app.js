@@ -13082,7 +13082,7 @@ window.tp164DecoratePerSideRows();
   if(typeof window!=='undefined')window.TrainPilot177Model=api;
 })(function(){
  'use strict';
- const PERIODS={'7d':7,'30d':30,'3m':91};
+ const PERIODS={'1d':1,'7d':7,'30d':30,'3m':91};
  const GROUPS=['chest','back','shoulders','legs','arms','core'];
  const LABELS={chest:'Mell',back:'Hát',shoulders:'Váll',legs:'Láb',arms:'Kar',core:'Core'};
  const canonicalGroup=value=>{
@@ -13148,9 +13148,11 @@ window.tp164DecoratePerSideRows();
       timed,bilateral});
     }
    }
+   const startMs=Date.parse(w.started||w.startedAt||''),durationMs=date.getTime()-startMs;
+   const durationMinutes=Number.isFinite(startMs)&&durationMs>0&&durationMs<=24*60*60*1000?durationMs/60000:null;
    const key=w.id||`${w.started||''}|${w.programId||''}|${w.dayId||w.workout||''}`;
    cleaned.push({source:w,key:String(key),date,dateMs:date.getTime(),
-    sets,volume:Math.round(volume*100)/100,weighted,groups,performances});
+    sets,volume:Math.round(volume*100)/100,weighted,groups,performances,durationMinutes});
   }
   cleaned.sort((a,b)=>a.dateMs-b.dateMs);
   const best=new Map();
@@ -13201,6 +13203,10 @@ window.tp164DecoratePerSideRows();
   const metric=xs=>({workouts:xs.length,sets:sum(xs,'sets'),volume:sum(xs,'volume'),
     weightedCount:xs.filter(w=>w.weighted).length,pr:xs.flatMap(w=>w.pr)});
   const a=metric(current),b=metric(prior);
+  for(const [m,xs] of [[a,current],[b,prior]]){
+   const timed=xs.filter(w=>w.durationMinutes!=null);
+   m.avgDuration=timed.length?timed.reduce((total,w)=>total+w.durationMinutes,0)/timed.length:null;
+  }
   a.avgVolume=a.weightedCount?a.volume/a.weightedCount:null;
   b.avgVolume=b.weightedCount?b.volume/b.weightedCount:null;
   const groupScores=Object.fromEntries(GROUPS.map(g=>[g,0]));
@@ -13208,7 +13214,7 @@ window.tp164DecoratePerSideRows();
   const maxScore=Math.max(0,...Object.values(groupScores));
   const groups=GROUPS.map(g=>({key:g,name:LABELS[g],sets:groupScores[g],
    percent:maxScore?Math.round(groupScores[g]*100/maxScore):0}));
-  const bucketDays=period==='7d'?1:7;
+  const bucketDays=period==='1d'||period==='7d'?1:7;
   const bucketCount=Math.ceil(span/bucketDays),buckets=[];
   for(let i=0;i<bucketCount;i++){
    const from=addDays(start,i*bucketDays),to=addDays(from,bucketDays);
@@ -13218,7 +13224,8 @@ window.tp164DecoratePerSideRows();
   const changes={
    volume:signedPercent(a.volume,b.volume),workouts:signedPercent(a.workouts,b.workouts),
    sets:signedPercent(a.sets,b.sets),pr:signedPercent(a.pr.length,b.pr.length),
-   avgVolume:signedPercent(a.avgVolume||0,b.avgVolume||0)
+   avgVolume:signedPercent(a.avgVolume||0,b.avgVolume||0),
+   avgDuration:signedPercent(a.avgDuration||0,b.avgDuration||0)
   };
   return {period,span,start,end,previousStart,current,prior,buckets,groups,maxGroupScore:maxScore,
    currentMetrics:a,previousMetrics:b,changes};
@@ -13238,9 +13245,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
  if(!model||typeof historyScreen!=='function'||typeof shell!=='function')return;
  const COPY={
   hu:{log:'Edzésnapló',stats:'Statisztikák',progress:'Fejlődés',volume:'Összes volumen',trend:'Volumen trend',
-   days7:'7 nap',days30:'30 nap',months3:'3 hó',vs:'az előző időszakhoz képest',pr:'PR rekordok',
+   day1:'1 nap',days7:'7 nap',days30:'30 nap',months3:'3 hó',vs:'az előző időszakhoz képest',pr:'PR rekordok',
    workouts:'Edzések száma',average:'Átlagos volumen',averageSmall:'súlyzós edzésenként',
-   sets:'Sorozatok száma',muscles:'Izomcsoport-terhelés',groupNote:'A színek és arányok az időszak legterheltebb izomcsoportjához viszonyítanak, nem fáradtságot mérnek.',
+   duration:'Átlagos edzésidő',minutes:'perc',sets:'Sorozatok száma',muscles:'Izomcsoport-terhelés',groupNote:'A színek és arányok az időszak legterheltebb izomcsoportjához viszonyítanak, nem fáradtságot mérnek.',
    low:'Kisebb',medium:'Közepes',high:'Nagyobb',anatomyZoom:'Izomterhelés nagyítása',
    coach:'Fejlődési javaslat',more:'Részletek',noData:'Ehhez az időszakhoz nincs elegendő naplózott adat.',
    noWeight:'Ebben az időszakban nincs mérhető súlyzós volumen.',openLog:'Megnyitás az Edzésnaplóban',
@@ -13254,9 +13261,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
    suggestionStable:'A következetességet az edzésszám és a volumen együtt mutatja.',
    coachOpen:'Részletek a Coachban',weight:'Súly',reps:'Ismétlés',time:'Idő',left:'Bal oldal',right:'Jobb oldal'},
   en:{log:'Workout log',stats:'Statistics',progress:'Progress',volume:'Total volume',trend:'Volume trend',
-   days7:'7 days',days30:'30 days',months3:'3 mo',vs:'vs previous period',pr:'PR records',
+   day1:'1 day',days7:'7 days',days30:'30 days',months3:'3 mo',vs:'vs previous period',pr:'PR records',
    workouts:'Workouts',average:'Average volume',averageSmall:'per weighted workout',
-   sets:'Completed sets',muscles:'Muscle group load',groupNote:'Colors and percentages are relative to the most trained group, not a fatigue measurement.',
+   duration:'Average workout time',minutes:'min',sets:'Completed sets',muscles:'Muscle group load',groupNote:'Colors and percentages are relative to the most trained group, not a fatigue measurement.',
    low:'Lower',medium:'Medium',high:'Higher',anatomyZoom:'Enlarge muscle load diagram',
    coach:'Progress insight',more:'Details',noData:'Not enough logged data for this period.',
    noWeight:'No measurable weighted volume in this period.',openLog:'Open in workout log',
@@ -13270,16 +13277,16 @@ window.addEventListener?.('DOMContentLoaded',function(){
    suggestionStable:'Workout count and volume together provide context for consistency.',
    coachOpen:'View in Coach',weight:'Weight',reps:'Reps',time:'Time',left:'Left side',right:'Right side'},
   de:{log:'Trainingstagebuch',stats:'Statistiken',progress:'Fortschritt',volume:'Gesamtvolumen',trend:'Volumentrend',
-   days7:'7 Tage',days30:'30 Tage',months3:'3 Mon.',vs:'zum vorigen Zeitraum',pr:'Persönliche Rekorde',workouts:'Trainingseinheiten',
+   day1:'1 Tag',days7:'7 Tage',days30:'30 Tage',months3:'3 Mon.',vs:'zum vorigen Zeitraum',pr:'Persönliche Rekorde',workouts:'Trainingseinheiten',
    average:'Ø Volumen',averageSmall:'pro Krafttraining',sets:'Sätze',muscles:'Muskelgruppenbelastung',coach:'Fortschrittsempfehlung'},
   ro:{log:'Jurnal de antrenament',stats:'Statistici',progress:'Progres',volume:'Volum total',trend:'Tendință volum',
-   days7:'7 zile',days30:'30 zile',months3:'3 luni',vs:'față de perioada anterioară',pr:'Recorduri personale',
+   day1:'1 zi',days7:'7 zile',days30:'30 zile',months3:'3 luni',vs:'față de perioada anterioară',pr:'Recorduri personale',
    workouts:'Antrenamente',average:'Volum mediu',averageSmall:'per antrenament cu greutăți',sets:'Serii',muscles:'Grupe musculare',coach:'Sugestie de progres'},
   sk:{log:'Tréningový denník',stats:'Štatistiky',progress:'Pokrok',volume:'Celkový objem',trend:'Trend objemu',
-   days7:'7 dní',days30:'30 dní',months3:'3 mes.',vs:'oproti predošlému obdobiu',pr:'Osobné rekordy',
+   day1:'1 deň',days7:'7 dní',days30:'30 dní',months3:'3 mes.',vs:'oproti predošlému obdobiu',pr:'Osobné rekordy',
    workouts:'Tréningy',average:'Priemerný objem',averageSmall:'na silový tréning',sets:'Série',muscles:'Zaťaženie svalov',coach:'Odporúčanie'},
   pl:{log:'Dziennik treningowy',stats:'Statystyki',progress:'Postępy',volume:'Całkowita objętość',trend:'Trend objętości',
-   days7:'7 dni',days30:'30 dni',months3:'3 mies.',vs:'względem poprzedniego okresu',pr:'Rekordy osobiste',
+   day1:'1 dzień',days7:'7 dni',days30:'30 dni',months3:'3 mies.',vs:'względem poprzedniego okresu',pr:'Rekordy osobiste',
    workouts:'Treningi',average:'Śr. objętość',averageSmall:'na trening siłowy',sets:'Serie',muscles:'Obciążenie mięśni',coach:'Wskazówka'}};
  const lang=()=>{try{return typeof rf212Lang==='function'?rf212Lang():'hu'}catch(_){return 'hu'}};
  const tr=k=>(COPY[lang()]||COPY.hu)[k]||COPY.hu[k]||k;
@@ -13299,7 +13306,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    cachedRaw=raw;cachedDate=today;cachedModels={};
    cachedRows=model.prepare(history(),{groupMap,isDeleted:x=>typeof window.tp3HistoryIsDeleted==='function'&&window.tp3HistoryIsDeleted(x)});
   }
-  const period=['7d','30d','3m'].includes(state.tp177Period)?state.tp177Period:'3m';
+  const period=['1d','7d','30d','3m'].includes(state.tp177Period)?state.tp177Period:'3m';
   return cachedModels[period]||(cachedModels[period]=model.build(cachedRows,period,new Date()));
  }
  function tabs(active){
@@ -13320,13 +13327,22 @@ window.addEventListener?.('DOMContentLoaded',function(){
    :String(html).replace(/(<main[^>]*>)/,function(m){return m+replacement});
  }
  function selectPeriod(p){
+  if(!Object.prototype.hasOwnProperty.call(model.PERIODS,p))return;
   state.tp177Period=p;
   const buttons=[...document.querySelectorAll('.tp177-periods button')];
-  if(buttons.length===3){buttons.forEach(b=>{const active=b.dataset.period===p;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))})}
+  if(buttons.length===4){buttons.forEach(b=>{const active=b.dataset.period===p;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))})}
   render();
+ }
+ function showLatestBucket(){
+  requestAnimationFrame(()=>{
+   const chart=document.querySelector('main.tp177-progress .tp177-chart-scroll');
+   if(chart)chart.scrollLeft=chart.scrollWidth-chart.clientWidth;
+  });
  }
  window.tp177SetPeriod=selectPeriod;
  let openMetric=null;
+ let volumeExpanded=false;
+ window.tp177ToggleVolume=function(){volumeExpanded=!volumeExpanded;render()};
  function metricCard(key,icon,label,value,delta,subtitle){
   return '<button type="button" class="tp177-metric" data-metric="'+key+'" aria-expanded="'+(openMetric===key)+'" aria-controls="tp177MetricDetails" onclick="tp177ToggleMetric(\''+key+'\')"><span class="tp177-icon" aria-hidden="true">'+icon+'</span>'+
    '<span class="tp177-metric-body"><span class="tp177-metric-label">'+escapeHtml(label)+'</span>'+
@@ -13345,7 +13361,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     '" onclick="tp177OpenBucket('+i+')"><span class="tp177-bar-rail"><span class="tp177-bar" style="height:'+height+'%"></span></span>'+
     '<span class="tp177-chart-date">'+escapeHtml(dateFmt(b.start,true))+'</span></button>';
   }).join('');
-  return '<section class="tp177-panel tp177-trend" aria-label="'+escapeHtml(tr('trend'))+'"><div class="tp177-panel-heading"><h2>'+escapeHtml(tr('trend'))+'</h2><span class="tp177-small">'+escapeHtml(tr(v.period==='7d'?'daily':'weekly'))+'</span></div>'+
+  return '<section class="tp177-panel tp177-trend" aria-label="'+escapeHtml(tr('trend'))+'"><div class="tp177-panel-heading"><h2>'+escapeHtml(tr('trend'))+'</h2><span class="tp177-small">'+escapeHtml(tr(v.period==='1d'||v.period==='7d'?'daily':'weekly'))+'</span></div>'+
    '<div class="tp177-chart-scroll"><div class="tp177-chart"><div class="tp177-chart-axis">'+ticks+'</div>'+
    '<div class="tp177-chart-columns" style="grid-template-columns:repeat('+v.buckets.length+',minmax(24px,1fr))">'+bars+'</div></div></div>'+
    '<p class="tp177-small">'+escapeHtml(tr('hint'))+'</p></section>';
@@ -13366,7 +13382,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const rows=v.groups.map(g=>'<button type="button" class="tp177-muscle-row" data-load="'+(g.sets?loadLevel(g.percent):'none')+'" onclick="tp177OpenGroup(\''+g.key+'\')" '+(g.sets?'':'disabled')+'>'+
    '<span class="tp177-muscle-label">'+escapeHtml(g.name)+'</span><span class="tp177-muscle-track"><span style="width:'+g.percent+'%"></span></span>'+
    '<span class="tp177-muscle-percent">'+(g.sets?fmt(g.percent)+'%':'—')+'</span></button>').join('');
-  return '<section class="tp177-panel tp177-muscles"><div class="tp177-panel-heading"><h2>'+escapeHtml(tr('muscles'))+'</h2><span class="tp177-small">'+escapeHtml(tr(v.period==='7d'?'days7':v.period==='30d'?'days30':'months3'))+'</span></div><div class="tp177-muscle-layout">'+
+  return '<section class="tp177-panel tp177-muscles"><div class="tp177-panel-heading"><h2>'+escapeHtml(tr('muscles'))+'</h2><span class="tp177-small">'+escapeHtml(tr(v.period==='1d'?'day1':v.period==='7d'?'days7':v.period==='30d'?'days30':'months3'))+'</span></div><div class="tp177-muscle-layout">'+
    '<div class="tp177-anatomy">'+anatomy(v)+'</div><div class="tp177-muscle-bars">'+rows+'</div></div>'+
    '<div class="tp177-load-legend">'+['low','medium','high'].map(level=>'<span data-load="'+level+'"><i aria-hidden="true"></i>'+escapeHtml(tr(level))+'</span>').join('')+'</div>'+
    '<p class="tp177-small">'+escapeHtml(tr('groupNote'))+'</p></section>';
@@ -13401,14 +13417,14 @@ window.addEventListener?.('DOMContentLoaded',function(){
     '<p class="tp177-small">'+escapeHtml(tr('noData'))+'</p>';
   }else{
    const xs=key==='average'?v.current.filter(w=>w.weighted):v.current;
-   const value=key==='average'?(m.avgVolume==null?'—':fmt(m.avgVolume,1)+' kg'):fmt(m[key]);
+   const value=key==='average'?(m.avgVolume==null?'—':fmt(m.avgVolume,1)+' kg'):key==='duration'?(m.avgDuration==null?'—':fmt(Math.round(m.avgDuration))+' '+tr('minutes')):fmt(m[key]);
    content='<p class="tp177-inline-total"><strong>'+value+'</strong> · '+escapeHtml(dateFmt(v.start))+' – '+escapeHtml(dateFmt(model.addDays(v.end,-1)))+'</p>'+
     (xs.length?inlineWorkouts(xs):'<p class="tp177-small">'+escapeHtml(tr(key==='average'?'noWeight':'noData'))+'</p>');
   }
   return '<h2>'+escapeHtml(heading)+'</h2>'+content;
  }
  window.tp177ToggleMetric=function(key){
-  if(!['pr','workouts','average','sets'].includes(key))return;
+  if(!['pr','workouts','average','duration'].includes(key))return;
   openMetric=openMetric===key?null:key;
   const panel=document.getElementById('tp177MetricDetails');if(!panel)return;
   panel.innerHTML=openMetric?metricDetails(openMetric,snapshot()):'';
@@ -13416,21 +13432,25 @@ window.addEventListener?.('DOMContentLoaded',function(){
   document.querySelectorAll('.tp177-metric[data-metric]').forEach(button=>button.setAttribute('aria-expanded',String(button.dataset.metric===openMetric)));
  };
  function progressHtml(){
+  showLatestBucket();
   const v=snapshot(),m=v.currentMetrics,c=v.changes,period=v.period;
   const from=dateFmt(v.start),through=dateFmt(model.addDays(v.end,-1));
-  const periodButtons=[['7d','days7'],['30d','days30'],['3m','months3']].map(a=>
+  const periodButtons=[['1d','day1'],['7d','days7'],['30d','days30'],['3m','months3']].map(a=>
    '<button type="button" data-period="'+a[0]+'" class="'+(period===a[0]?'active':'')+'" aria-pressed="'+(period===a[0]?'true':'false')+'" onclick="tp177SetPeriod(\''+a[0]+'\')">'+escapeHtml(tr(a[1]))+'</button>').join('');
   const avg=m.avgVolume!=null?fmt(m.avgVolume,1)+' kg':'—';
+  const duration=m.avgDuration!=null?fmt(Math.round(m.avgDuration))+' '+tr('minutes'):'—';
   return '<main class="tp177-progress">'+tabs('progress')+
    '<section class="tp177-panel tp177-summary"><div class="tp177-summary-head"><div><span class="tp177-small">'+escapeHtml(tr('volume'))+
    '</span><strong class="tp177-big">'+fmt(m.volume)+' kg</strong><span class="tp177-small">'+escapeHtml(from)+' – '+escapeHtml(through)+'</span></div>'+
-   '<div class="tp177-hero-change">'+pct(c.volume)+'<span class="tp177-small">'+escapeHtml(tr('vs'))+'</span></div></div>'+
+   '<button type="button" class="tp177-volume-toggle" aria-label="'+escapeHtml(tr('trend'))+'" aria-expanded="'+volumeExpanded+'" aria-controls="tp177VolumeTrend" onclick="tp177ToggleVolume()"><span aria-hidden="true">⌄</span></button></div>'+
+   (volumeExpanded?'':'<button type="button" class="tp177-volume-preview" aria-label="'+escapeHtml(tr('trend'))+'" onclick="tp177ToggleVolume()">'+v.buckets.slice(-7).map(b=>'<span style="height:'+Math.max(3,Math.round(b.volume/Math.max(1,...v.buckets.map(x=>x.volume))*100))+'%"></span>').join('')+'</button>')+
+   '<div id="tp177VolumeTrend"'+(volumeExpanded?'':' hidden')+'>'+barChart(v)+'</div>'+
    '<div class="tp177-periods" role="group" aria-label="'+escapeHtml(tr('progress'))+'">'+periodButtons+'</div></section>'+
-   barChart(v)+'<div class="tp177-metric-grid">'+
+   '<div class="tp177-metric-grid">'+
    metricCard('pr','♜',tr('pr'),fmt(m.pr.length),c.pr,'')+
    metricCard('workouts','◫',tr('workouts'),fmt(m.workouts),c.workouts,'')+
    metricCard('average','↗',tr('average'),avg,c.avgVolume,tr('averageSmall'))+
-   metricCard('sets','▤',tr('sets'),fmt(m.sets),c.sets,'')+'</div>'+
+   metricCard('duration','◷',tr('duration'),duration,c.avgDuration,'')+'</div>'+
    '<section id="tp177MetricDetails" class="tp177-metric-details" aria-live="polite"'+(openMetric?'':' hidden')+'>'+(openMetric?metricDetails(openMetric,v):'')+'</section>'+
    groupPanel(v)+'<button type="button" class="tp177-panel tp177-coach" onclick="tp177OpenCoach()">'+
    '<span class="tp177-icon" aria-hidden="true">✧</span><span class="tp177-coach-body"><strong>'+escapeHtml(tr('coach'))+'</strong>'+

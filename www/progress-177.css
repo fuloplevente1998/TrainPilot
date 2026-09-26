@@ -27,6 +27,14 @@ html body #app main.tp177-progress .tp177-summary{
  var(--tp-ui-hero-border,linear-gradient(120deg,var(--accent),var(--line))) border-box;
 }
 html body #app .tp177-summary-head{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px}
+html body #app .tp177-summary-head{margin-bottom:8px}
+html body #app .tp177-volume-toggle{border:0;background:transparent;color:var(--text);font-size:26px;cursor:pointer;min-width:44px;min-height:44px}
+html body #app .tp177-volume-toggle[aria-expanded="true"] span{display:inline-block;transform:rotate(180deg)}
+html body #app .tp177-volume-preview{display:flex;align-items:end;justify-content:end;gap:4px;width:100%;height:37px;margin:0 0 10px;padding:0 5px;border:0;background:transparent;cursor:pointer}
+html body #app .tp177-volume-preview span{display:block;width:13px;min-height:2px;border-radius:3px 3px 0 0;background:var(--accent)}
+html body #app .tp177-summary #tp177VolumeTrend:not([hidden]){margin:7px 0 10px}
+html body #app .tp177-summary #tp177VolumeTrend[hidden]{display:none}
+html body #app .tp177-summary .tp177-trend{margin:0;padding:4px 0 0;border:0;background:transparent}
 html body #app .tp177-summary-head>div:first-child{display:flex;flex-direction:column;gap:5px;min-width:0}
 html body #app .tp177-small{color:var(--muted);font-size:12px;line-height:1.45}
 html body #app .tp177-big{font-size:clamp(27px,7vw,38px);font-weight:900;letter-spacing:-.035em;line-height:1.05;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -35,7 +43,7 @@ html body #app .tp177-hero-change>.tp177-small{max-width:160px}
 html body #app .tp177-positive{color:var(--ok,#62d08a)}
 html body #app .tp177-negative{color:var(--muted)}
 html body #app .tp177-neutral{color:var(--muted)}
-html body #app .tp177-periods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+html body #app .tp177-periods{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 html body #app .tp177-periods button{
  min-width:0;min-height:42px;border-radius:12px;background:var(--tp-ui-card-raised,var(--card2));
  color:var(--text);border:1px solid var(--tp-ui-border,var(--line));font-size:14px;padding:7px 3px
@@ -49,25 +57,25 @@ html body #app .tp177-panel-heading{display:flex;justify-content:space-between;a
 html body #app .tp177-panel-heading h2{margin:0}
 html body #app .tp177-panel-heading>.tp177-small{white-space:nowrap;border:1px solid var(--tp-ui-border,var(--line));border-radius:10px;padding:5px 8px;background:var(--tp-ui-card-raised,var(--card2))}
 html body #app .tp177-chart-scroll{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin}
-html body #app .tp177-chart{display:flex;align-items:stretch;gap:9px;min-width:max-content;width:100%;height:180px}
+html body #app .tp177-chart{display:flex;align-items:stretch;gap:9px;min-width:max-content;width:100%;height:126px}
 html body #app .tp177-chart-axis{
- width:35px;flex:0 0 35px;height:150px;display:flex;flex-direction:column;justify-content:space-between;
+ width:35px;flex:0 0 35px;height:96px;display:flex;flex-direction:column;justify-content:space-between;
  align-items:flex-end;color:var(--muted);font-size:10px;font-variant-numeric:tabular-nums;padding-top:1px
 }
 html body #app .tp177-chart-columns{
- display:grid;gap:4px;align-items:end;flex:1 0 auto;min-width:max-content;height:180px;
+ display:grid;gap:4px;align-items:end;flex:1 0 auto;min-width:max-content;height:126px;
  position:relative;padding-right:2px;
 }
 html body #app .tp177-chart-columns:before{
- content:"";position:absolute;top:0;left:0;right:0;height:149px;pointer-events:none;
- background:repeating-linear-gradient(to bottom,var(--tp-ui-border,var(--line)) 0,var(--tp-ui-border,var(--line)) 1px,transparent 1px,transparent 37px);
+ content:"";position:absolute;top:0;left:0;right:0;height:95px;pointer-events:none;
+ background:repeating-linear-gradient(to bottom,var(--tp-ui-border,var(--line)) 0,var(--tp-ui-border,var(--line)) 1px,transparent 1px,transparent 24px);
  opacity:.65
 }
 html body #app .tp177-chart-column{
  position:relative;z-index:1;display:flex;flex-direction:column;align-items:stretch;justify-content:end;gap:5px;
- margin:0;border:0;background:none;padding:0;color:var(--muted);height:180px;min-width:24px
+ margin:0;border:0;background:none;padding:0;color:var(--muted);height:126px;min-width:24px
 }
-html body #app .tp177-bar-rail{height:149px;display:flex;align-items:flex-end;justify-content:center;min-width:0}
+html body #app .tp177-bar-rail{height:95px;display:flex;align-items:flex-end;justify-content:center;min-width:0}
 html body #app .tp177-bar{
  display:block;width:100%;max-width:36px;min-height:0;border-radius:5px 5px 0 0;
  background:linear-gradient(180deg,var(--accent2,var(--accent)),var(--accent));
