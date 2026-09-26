@@ -51,6 +51,8 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  assert.doesNotMatch(text,/Átlag.?intenzitás|8[,.]4\s*\/\s*10/i,'no invented workout intensity score');
  assert.match(text,/Átlagos volumen/);
  assert.equal(await page.locator('.tp177-chart-column').count(),13,'3 month view uses weekly vertical columns');
+ const latest=()=>page.locator('.tp177-chart-scroll').evaluate(el=>({left:el.scrollLeft,max:el.scrollWidth-el.clientWidth}));
+ await page.waitForFunction(()=>{const el=document.querySelector('.tp177-chart-scroll');return el&&Math.abs(el.scrollLeft-(el.scrollWidth-el.clientWidth))<2});
  const vertical=await page.evaluate(()=>{
   const cols=document.querySelector('.tp177-chart-columns'),positive=[...document.querySelectorAll('.tp177-chart-column')].find(x=>parseFloat(x.querySelector('.tp177-bar')?.style.height||'0')>0);
   const rail=positive?.querySelector('.tp177-bar-rail'),bar=positive?.querySelector('.tp177-bar');
@@ -64,11 +66,18 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  assert.equal(vertical.display,'grid');assert.equal(vertical.align,'flex-end');
  assert.ok(vertical.railH>100&&vertical.barH>0&&vertical.barW<=40,'volume must render as vertical columns: '+JSON.stringify(vertical));
  assert.ok(vertical.axisTop>=vertical.volume&&Math.abs(vertical.barH/vertical.railH-vertical.volume/vertical.axisTop)<.02,'bar height must match the displayed kg axis: '+JSON.stringify(vertical));
- for(const [period,count] of [['7d',7],['30d',5],['3m',13]]){
+ for(const [period,count] of [['1d',1],['7d',7],['30d',5],['3m',13]]){
   await page.locator('.tp177-periods button[data-period="'+period+'"]').click();
   await page.waitForFunction(n=>document.querySelectorAll('.tp177-chart-column').length===n,count);
   assert.equal(await page.locator('.tp177-periods button[data-period="'+period+'"]').getAttribute('aria-pressed'),'true');
   if(period==='7d')assert.equal(await page.locator('.tp177-chart-column').evaluateAll(xs=>new Set(xs.map(x=>x.getAttribute('aria-label').split(';')[0])).size),7,'7 days are seven separate daily buckets');
+  if(period==='1d')assert.equal(await page.locator('.tp177-chart-column').first().getAttribute('aria-label').then(s=>s.split(';')[0]),new Intl.DateTimeFormat('hu-HU',{year:'numeric',month:'short',day:'numeric'}).format(new Date()),'1 day is today');
+  if(period==='3m'){
+   await page.waitForFunction(()=>{const el=document.querySelector('.tp177-chart-scroll');return Math.abs(el.scrollLeft-(el.scrollWidth-el.clientWidth))<2});
+   const pos=await latest();assert.ok(pos.max>0&&Math.abs(pos.left-pos.max)<2,'long chart opens on the latest bucket');
+   await page.locator('.tp177-chart-scroll').evaluate(el=>{el.scrollLeft=0});
+   assert.ok((await latest()).left<2,'older buckets remain reachable by scrolling back');
+  }
  }
  await page.locator('.tp177-periods button[data-period="7d"]').click();await page.waitForFunction(()=>document.querySelectorAll('.tp177-chart-column').length===7);
  await page.evaluate(()=>{const b=[...document.querySelectorAll('.tp177-chart-column')].find(x=>parseFloat(x.querySelector('.tp177-bar')?.style.height||'0')>0);b?.click()});
