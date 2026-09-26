@@ -1,4 +1,13 @@
-# TrainPilot 1.0.0 / 2674 – aktuális `main`-forrás, GitHub Release még nincs (2026-09-26)
+# TrainPilot 1.0.0 / 2675 – nyilvános kiadás előkészítése (2026-09-26)
+
+- **#69 – Átlagos edzésidő:** a Fejlődés 2×2 kártyájában a Sorozatok száma helyett az „Átl. edzésidő” látható. Az 1/7/30 napos és 3 hónapos szűrő befejezett, érvényes időpontú naplózott edzésekből számol percben kijelzett átlagot; hiányzó mérésnél „—” jelenik meg. A helyben lenyíló részletek az egyes edzések időtartamát mutatják.
+- A sorozatok és az izomterhelés adatai változatlanok. Megmarad a kétfüles Napló, a közös piros X-szel zárható Részletes statisztikák ablak és a Coach → Fejlődés navigáció.
+- Kanonikus forrás: publikus `main`, #69 merge commit `8eed366cee4349933cbd829692cb5d0cb78d9b19`; Android `versionName 1.0.0`, `versionCode 2675`.
+- A #69-es Release Gate és a merge utáni Quick/Performance CI sikeres. Az 1.7.7 → 1.0.0 készülékes, adatmegőrző frissítés külön ellenőrizendő. A hivatalos új GitHub Release csak a taghez tartozó aláírt APK és forráscsomag kiadása után tekinthető publikáltnak.
+
+---
+
+# TrainPilot 1.0.0 / 2674 – korábbi `main`-forrás, GitHub Release nélkül (2026-09-26)
 
 - #66: 1.0.0-verzióátállás és Fejlődés felület; #67/#68: kétfüles Napló, Coach → Fejlődés, teljes PR-előzmények és egységes Felszerelés/Kizárások jelölők.
 - **Részletes statisztikák:** a korábbi teljes, gyakorlatonkénti statisztikai lista most a Fejlődésből nyíló, közös felugró ablakban érhető el, a globális jobb felső piros X-szel és Android Back támogatással.
