@@ -13299,8 +13299,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  const locale=()=>({hu:'hu-HU',en:'en-US',de:'de-DE',ro:'ro-RO',sk:'sk-SK',pl:'pl-PL'}[lang()]||'hu-HU');
  const escapeHtml=v=>String(v==null?'':v).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
  const fmt=(v,digits=0)=>Number(v||0).toLocaleString(locale(),{maximumFractionDigits:digits});
- const fmtDuration=minutes=>minutes==null?'—':Math.round(minutes)>=60?
-  Math.floor(Math.round(minutes)/60)+' h '+String(Math.round(minutes)%60).padStart(2,'0')+' min':Math.round(minutes)+' min';
+ const fmtDuration=minutes=>minutes==null?'—':Math.round(minutes)+' min';
  const dateFmt=(d,short=false)=>new Intl.DateTimeFormat(locale(),short?{month:'short',day:'numeric'}:{year:'numeric',month:'short',day:'numeric'}).format(d);
  const pct=v=>v==null?'<span class="tp177-neutral">—</span>':'<span class="'+(v<0?'tp177-negative':'tp177-positive')+'">'+(v>0?'▲ +':v<0?'▼ ':'')+fmt(v)+'%</span>';
  let cachedRaw=null,cachedDate=null,cachedRows=null,cachedModels={};
