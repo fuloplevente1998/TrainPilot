@@ -23,9 +23,10 @@
 - [x] 1.7.7 / 2670 publikált, aláírt APK és source ZIP sikeres Release Gate után; elfogadott `main` alap
 - [x] `v1.7.7` tag és GitHub Release publikálva
 - [ ] helyreállított `.jks` aláíró tanúsítvány SHA-256 egyezésének összevetése a kiadott 1.7.7 APK-val
-- [ ] 1.0.0 / legalább 2671-es `versionCode` build és teljes tesztkapu
+- [x] 1.0.0 / 2675-ös `versionCode`, sikeres teljes PR Release Gate, aláírt teszt-APK és merge utáni Quick/Performance
 - [ ] 1.0.0 telefonos, korábbi 1.7.7-re telepített, adatmegőrző frissítési próba
-- [ ] 1.0.0 végleges telefonos jóváhagyás után merge és kiadás
+- [x] 1.0.0 / 2675 forrás merge a `main` ágba (#69)
+- [ ] 1.0.0 / 2675 végleges GitHub Release ellenőrzése és aláírás egyezése
 
 ## Fotók
 
