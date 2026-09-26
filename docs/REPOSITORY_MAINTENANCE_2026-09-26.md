@@ -9,7 +9,7 @@
 - A külön, privát `fuloplevente1998/TrainPilot-Archive` repositoryban 2026-09-26-án a teljes eredeti **56 ág**, **19 tag**, **17 release** és **62 release-asset** átvitele megtörtént; az eredeti Git-referenciák és az archivált assetek SHA-256 értékei ellenőrzöttek.
 - A Google Drive-on külön teljes Git-bundle, mirror és release-biztonsági mentés található.
 - A privát archívum `archive/metadata-20260926` ágán release-, issue- és PR-jegyzék, a `backup/release-files-20260926` ágon további kiadási jegyzékek vannak.
-- A privát release-ek közül a `v1.7.2` és `v1.7.7` leírásában Windows-karakterkódolási hiba került javításra kijelölésre; az eredeti leírások a forrás release-oldalain és az archivált release-jegyzékben sértetlenül megvannak.
+- A privát release-ek közül a `v1.7.2` és `v1.7.7` leírásának Windows-karakterkódolási hibáját kijavítottuk; a GitHubon mindkét ékezetes leírás visszaellenőrzött.
 - Sem a nyilvános, sem a privát repositoryba nem kerülhet `.jks`, signing-jelszó vagy titkosítatlan kulcsmentés.
 
 ## Nyilvános repository végállapota
@@ -29,7 +29,7 @@
 
 ## Még ellenőrizendő
 
-- [ ] A két archivált release-leírás UTF-8 javítása és visszaellenőrzése.
+- [x] A két archivált release-leírás UTF-8 javítása és visszaellenőrzése.
 - [ ] A historyn kívüli issue-/PR-hozzászólások és review-k külön archívumának lezárása, ha szükséges.
 - [ ] A régi nyilvános release-ek, tagek és mellékágak törlése CLI-vel, a `main` és `v1.7.7` megtartásával.
 - [ ] A helyreállított keystore aláíró tanúsítványának összehasonlítása az eredeti APK-éval.
