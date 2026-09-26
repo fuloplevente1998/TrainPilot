@@ -34,10 +34,12 @@ const listen=()=>new Promise(r=>server.listen(0,'127.0.0.1',r)),base=()=>'http:/
  assert.equal(await page.locator('#tp155R4PanelHost[data-panel="coach"] .tp151-coach-recommendation').count()>0,true,'Coach panel recommendation must remain available');
  await page.evaluate(()=>window.tp155R4ClosePanel?.(false));await page.waitForTimeout(30);
 
- // Journal statistics entry remains present.
+ // #67: the Journal now has Log and Progress; the duplicate Statistics tab is removed.
  await page.evaluate(()=>go('history'));await page.waitForTimeout(60);
  const journalTabs=page.locator('.tp155-journal-tabs');assert.equal(await journalTabs.count(),1,'Journal tabs must remain');
- assert.match(await journalTabs.innerText(),/Statisztikák/);
+ assert.equal(await journalTabs.locator('button').count(),2,'Journal shows only the two canonical tabs');
+ assert.match((await journalTabs.innerText()).replace(/\s+/g,' '),/Edzésnapló.*Fejlődés/);
+ assert.doesNotMatch(await journalTabs.innerText(),/Statisztikák/);
 
  // Long German text at a narrow phone width must wrap without horizontal overflow.
  await page.setViewportSize({width:320,height:740});

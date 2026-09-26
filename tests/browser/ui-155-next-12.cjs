@@ -39,9 +39,12 @@ const {chromium}=require('playwright');
   assert.deepEqual(await page.evaluate(id=>({status:scheduled().find(x=>x.id===id)?.status,history:history().length}),initial.id),{status:'completed',history:0},'manual completion must not create a duplicate journal workout');
 
   await page.evaluate(()=>{tp155R4ClosePanel(false);go('history')});await page.waitForSelector('.tp155-journal-tabs');
-  await page.locator('.tp155-journal-tabs button').nth(1).click();await page.waitForTimeout(40);assert.equal(await page.evaluate(()=>state.tab),'stats');assert.equal(await page.locator('.tp155-journal-tabs button.active').innerText(),'Statisztikák');
-  const statsChrome=await page.evaluate(()=>{const main=document.querySelector('#app main');return {hero:!!main?.querySelector(':scope > .hero'),back:[...(main?.children||[])].some(el=>el.tagName==='BUTTON'&&String(el.getAttribute('onclick')||'').includes("go('home')"))}});
-  assert.deepEqual(statsChrome,{hero:false,back:false},'Statistics must not repeat title/description or old Back button');
+  assert.equal(await page.locator('.tp155-journal-tabs button').count(),2,'#67 Journal has two tabs');
+  await page.locator('.tp155-journal-tabs button').nth(1).click();await page.waitForSelector('main.tp177-progress');
+  assert.equal(await page.evaluate(()=>state.tab),'history','Progress is nested in Journal');
+  assert.equal(await page.locator('.tp155-journal-tabs button.active').innerText(),'Fejlődés');
+  const progressChrome=await page.evaluate(()=>{const main=document.querySelector('#app main');return {hero:!!main?.querySelector(':scope > .hero'),back:[...(main?.children||[])].some(el=>el.tagName==='BUTTON'&&String(el.getAttribute('onclick')||'').includes("go('home')"))}});
+  assert.deepEqual(progressChrome,{hero:false,back:false},'Progress must not repeat title/description or old Back button');
 
   await page.evaluate(()=>go('calendar'));await page.waitForSelector('#tp155R4PanelHost[data-panel="calendar"]');
   const planner=page.locator('.rf2211-planner');assert.equal(await planner.evaluate(e=>e.tagName),'SECTION','Calendar planning settings must be permanently open');assert.equal(await planner.locator('summary').count(),0,'Calendar planning settings must not be collapsible');assert.equal(await planner.locator('.rf2211-planbody').isVisible(),true);

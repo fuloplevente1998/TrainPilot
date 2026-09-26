@@ -17,8 +17,8 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   go('history');
  });
  await page.waitForSelector('.tp155-journal-tabs');
- assert.equal(await page.locator('.tp155-journal-tabs button').count(),3,'Journal must have Log / Statistics / Progress tabs');
- assert.match((await page.locator('.tp155-journal-tabs').innerText()).replace(/\s+/g,' '),/Edzésnapló.*Statisztikák.*Fejlődés/);
+ assert.equal(await page.locator('.tp155-journal-tabs button').count(),2,'Journal must have Log / Progress tabs');
+ assert.match((await page.locator('.tp155-journal-tabs').innerText()).replace(/\s+/g,' '),/Edzésnapló.*Fejlődés/);
  await page.getByRole('tab',{name:'Fejlődés'}).click();await page.waitForSelector('main.tp177-progress');
  assert.equal(await page.locator('.tp177-metric').count(),4,'reference layout keeps four summary cards');
  assert.equal(await page.locator('.tp177-muscle-row').count(),6,'six main muscle group rows expected');
@@ -104,9 +104,9 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  await page.locator('#tp177Dialog .tp177-detail-workout').first().click();await page.waitForSelector('#tp177Dialog .tp177-detail-exercise');
  await page.locator('.tp177-dialog-back').click();await page.waitForSelector('#tp177Dialog .tp177-group-exercise');
  await page.locator('.tp177-dialog-close').click();
- assert.equal(await page.locator('.tp155-journal-tabs button').count(),3);
+ assert.equal(await page.locator('.tp155-journal-tabs button').count(),2);
  assert.equal(await page.getByRole('tab',{name:'Fejlődés'}).getAttribute('aria-selected'),'true');
  for(const width of [320,393,412]){await page.setViewportSize({width,height:873});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true,'Progress must not overflow body at '+width+'px')}
  assert.deepEqual(errors,[],'page errors: '+errors.join('\n'));
- console.log('PASS #60 Progress UI: 3 Journal tabs, daily/weekly vertical bars, compact cards, anatomy, nested local details, mobile widths and no invented intensity.');
+ console.log('PASS #60 Progress UI: 2 Journal tabs, daily/weekly vertical bars, compact cards, anatomy, nested local details, mobile widths and no invented intensity.');
 }finally{await browser?.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exit(1)});
