@@ -1,0 +1,38 @@
+/* #67: theme-aware Equipment and Exclusions checkboxes, without changing saving logic. */
+html body :is(#tp3PlannerPanelHost,main.tp152-profile) :is(.exclude-row,.rf148-gear-row){
+ display:flex!important;align-items:center;gap:11px;min-height:44px;padding:8px 10px!important;margin-block:5px!important;
+ border:1px solid var(--tp-ui-border,var(--line))!important;border-radius:12px!important;
+ background:var(--tp-ui-card,var(--card))!important;box-shadow:none!important;color:var(--text);
+}
+html body :is(#tp3PlannerPanelHost,main.tp152-profile) :is(.exclude-row,.rf148-gear-row):has(input[type="checkbox"]:checked){
+ border-color:color-mix(in srgb,var(--accent) 52%,var(--tp-ui-border,var(--line)))!important;
+ background:color-mix(in srgb,var(--accent) 11%,var(--tp-ui-card,var(--card)))!important;box-shadow:none!important;
+}
+html body :is(#tp3PlannerPanelHost,main.tp152-profile) :is(.exclude-row,.rf148-gear-row) input[type="checkbox"]{
+ -webkit-appearance:none!important;appearance:none!important;box-sizing:border-box;display:inline-grid!important;place-items:center;
+ width:26px!important;height:26px!important;min-width:26px;flex:0 0 26px;padding:0!important;margin:0!important;cursor:pointer;
+ border:1.5px solid color-mix(in srgb,var(--accent) 37%,var(--tp-ui-border,var(--line)))!important;
+ border-radius:7px!important;background:var(--tp-ui-card-raised,var(--card2))!important;box-shadow:none!important;
+}
+html body :is(#tp3PlannerPanelHost,main.tp152-profile) :is(.exclude-row,.rf148-gear-row) input[type="checkbox"]::after{
+ content:"";display:block;width:11px;height:7px;box-sizing:border-box;
+ border-left:2.5px solid var(--tp-ui-bg,#0e1015);border-bottom:2.5px solid var(--tp-ui-bg,#0e1015);
+ opacity:0;transform:translateY(-1px) rotate(-45deg);
+}
+html body :is(#tp3PlannerPanelHost,main.tp152-profile) :is(.exclude-row,.rf148-gear-row) input[type="checkbox"]:checked{
+ background:var(--accent)!important;border-color:var(--accent)!important;
+}
+html body :is(#tp3PlannerPanelHost,main.tp152-profile) :is(.exclude-row,.rf148-gear-row) input[type="checkbox"]:checked::after{opacity:1}
+html body :is(#tp3PlannerPanelHost,main.tp152-profile) :is(.exclude-row,.rf148-gear-row) input[type="checkbox"]:focus-visible{
+ outline:2px solid var(--accent)!important;outline-offset:3px;
+}
+html body :is(#tp3PlannerPanelHost,main.tp152-profile) :is(.exclude-row,.rf148-gear-row) input[type="checkbox"]:disabled{opacity:.5;cursor:not-allowed}
+html body #app .tp155-journal-tabs.tp177-journal-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+html body #tp155R4PanelHost[data-panel="coach"] .tp67-coach-progress{margin-top:12px;min-height:44px;border-radius:12px;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--tp-ui-border,var(--line)))}
+
+/* #67 follow-up: restore the full exercise stats via Progress without adding a third tab. */
+html body #app main.tp177-progress>.tp67-full-stats-entry{min-height:46px;margin:8px 0 12px!important;border:1px solid color-mix(in srgb,var(--accent) 47%,var(--tp-ui-border,var(--line)))!important;border-radius:12px!important;background:var(--tp-ui-card-raised,var(--card2))!important;color:var(--text)!important;font-weight:800;text-align:center}
+html body #tp155R4PanelHost[data-panel="stats"] .tp67-full-stats-panel{padding:0 2px 10px!important;min-width:0}
+html body #tp155R4PanelHost[data-panel="stats"] .tp67-stats-heading{padding:0 44px 8px 2px;margin:0 0 8px}
+html body #tp155R4PanelHost[data-panel="stats"] .tp67-stats-heading h2{margin:0;font-size:20px;line-height:1.25}
+html body #tp155R4PanelHost[data-panel="stats"] .tp3-stats-card{margin:0!important}

@@ -17,8 +17,8 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   go('history');
  });
  await page.waitForSelector('.tp155-journal-tabs');
- assert.equal(await page.locator('.tp155-journal-tabs button').count(),3,'Journal must have Log / Statistics / Progress tabs');
- assert.match((await page.locator('.tp155-journal-tabs').innerText()).replace(/\s+/g,' '),/Edzésnapló.*Statisztikák.*Fejlődés/);
+ assert.equal(await page.locator('.tp155-journal-tabs button').count(),2,'Journal must have Log / Progress tabs');
+ assert.match((await page.locator('.tp155-journal-tabs').innerText()).replace(/\s+/g,' '),/Edzésnapló.*Fejlődés/);
  await page.getByRole('tab',{name:'Fejlődés'}).click();await page.waitForSelector('main.tp177-progress');
  assert.equal(await page.locator('.tp177-metric').count(),4,'reference layout keeps four summary cards');
  assert.equal(await page.locator('.tp177-muscle-row').count(),6,'six main muscle group rows expected');
@@ -51,6 +51,8 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  assert.doesNotMatch(text,/Átlag.?intenzitás|8[,.]4\s*\/\s*10/i,'no invented workout intensity score');
  assert.match(text,/Átlagos volumen/);
  assert.equal(await page.locator('.tp177-chart-column').count(),13,'3 month view uses weekly vertical columns');
+ const latest=()=>page.locator('.tp177-chart-scroll').evaluate(el=>({left:el.scrollLeft,max:el.scrollWidth-el.clientWidth}));
+ await page.waitForFunction(()=>{const el=document.querySelector('.tp177-chart-scroll');return el&&Math.abs(el.scrollLeft-(el.scrollWidth-el.clientWidth))<2});
  const vertical=await page.evaluate(()=>{
   const cols=document.querySelector('.tp177-chart-columns'),positive=[...document.querySelectorAll('.tp177-chart-column')].find(x=>parseFloat(x.querySelector('.tp177-bar')?.style.height||'0')>0);
   const rail=positive?.querySelector('.tp177-bar-rail'),bar=positive?.querySelector('.tp177-bar');
@@ -64,11 +66,18 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  assert.equal(vertical.display,'grid');assert.equal(vertical.align,'flex-end');
  assert.ok(vertical.railH>100&&vertical.barH>0&&vertical.barW<=40,'volume must render as vertical columns: '+JSON.stringify(vertical));
  assert.ok(vertical.axisTop>=vertical.volume&&Math.abs(vertical.barH/vertical.railH-vertical.volume/vertical.axisTop)<.02,'bar height must match the displayed kg axis: '+JSON.stringify(vertical));
- for(const [period,count] of [['7d',7],['30d',5],['3m',13]]){
+ for(const [period,count] of [['1d',1],['7d',7],['30d',5],['3m',13]]){
   await page.locator('.tp177-periods button[data-period="'+period+'"]').click();
   await page.waitForFunction(n=>document.querySelectorAll('.tp177-chart-column').length===n,count);
   assert.equal(await page.locator('.tp177-periods button[data-period="'+period+'"]').getAttribute('aria-pressed'),'true');
   if(period==='7d')assert.equal(await page.locator('.tp177-chart-column').evaluateAll(xs=>new Set(xs.map(x=>x.getAttribute('aria-label').split(';')[0])).size),7,'7 days are seven separate daily buckets');
+  if(period==='1d')assert.equal(await page.locator('.tp177-chart-column').first().getAttribute('aria-label').then(s=>s.split(';')[0]),new Intl.DateTimeFormat('hu-HU',{year:'numeric',month:'short',day:'numeric'}).format(new Date()),'1 day is today');
+  if(period==='3m'){
+   await page.waitForFunction(()=>{const el=document.querySelector('.tp177-chart-scroll');return Math.abs(el.scrollLeft-(el.scrollWidth-el.clientWidth))<2});
+   const pos=await latest();assert.ok(pos.max>0&&Math.abs(pos.left-pos.max)<2,'long chart opens on the latest bucket');
+   await page.locator('.tp177-chart-scroll').evaluate(el=>{el.scrollLeft=0});
+   assert.ok((await latest()).left<2,'older buckets remain reachable by scrolling back');
+  }
  }
  await page.locator('.tp177-periods button[data-period="7d"]').click();await page.waitForFunction(()=>document.querySelectorAll('.tp177-chart-column').length===7);
  await page.evaluate(()=>{const b=[...document.querySelectorAll('.tp177-chart-column')].find(x=>parseFloat(x.querySelector('.tp177-bar')?.style.height||'0')>0);b?.click()});
@@ -95,9 +104,9 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  await page.locator('#tp177Dialog .tp177-detail-workout').first().click();await page.waitForSelector('#tp177Dialog .tp177-detail-exercise');
  await page.locator('.tp177-dialog-back').click();await page.waitForSelector('#tp177Dialog .tp177-group-exercise');
  await page.locator('.tp177-dialog-close').click();
- assert.equal(await page.locator('.tp155-journal-tabs button').count(),3);
+ assert.equal(await page.locator('.tp155-journal-tabs button').count(),2);
  assert.equal(await page.getByRole('tab',{name:'Fejlődés'}).getAttribute('aria-selected'),'true');
  for(const width of [320,393,412]){await page.setViewportSize({width,height:873});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true,'Progress must not overflow body at '+width+'px')}
  assert.deepEqual(errors,[],'page errors: '+errors.join('\n'));
- console.log('PASS #60 Progress UI: 3 Journal tabs, daily/weekly vertical bars, compact cards, anatomy, nested local details, mobile widths and no invented intensity.');
+ console.log('PASS #60 Progress UI: 2 Journal tabs, daily/weekly vertical bars, compact cards, anatomy, nested local details, mobile widths and no invented intensity.');
 }finally{await browser?.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exit(1)});

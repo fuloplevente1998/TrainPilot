@@ -11429,7 +11429,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
 
  let currentPanel='',panelHost=null,panelTrigger=null,bodyOverflow='',panelOpenScrollY=0;
  const panelDomSupported=(()=>{try{const x=document?.createElement?.('div');return !!(x&&typeof x.addEventListener==='function'&&document?.body&&typeof document.body.appendChild==='function')}catch(_){return false}})();
- const PANEL_ROUTES=new Set(['calendar','coach','settings','quick','exercises']);
+ const PANEL_ROUTES=new Set(['calendar','coach','settings','quick','exercises','stats']);
  const FULL_ROUTES=new Set(['home','plan','health','programs','history']);
 
  const routeFromButton=function(btn){
@@ -11514,6 +11514,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   if(type==='coach')return coachHtml();
   if(type==='quick')return typeof window.tp155QuickPanelHtml==='function'?window.tp155QuickPanelHtml():'';
   if(type==='exercises')return typeof window.tp155ExercisePanelHtml==='function'?window.tp155ExercisePanelHtml():'';
+  if(type==='stats')return typeof window.tp67FullStatsPanelHtml==='function'?window.tp67FullStatsPanelHtml():'';
   return '';
  };
 
@@ -12609,7 +12610,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  cleanupChrome();
 
  const style=document.createElement('style');style.id='tp162FollowupCss';style.textContent=[
-  '#tp155R4PanelHost:is([data-panel="calendar"],[data-panel="coach"],[data-panel="settings"],[data-panel="exercises"]) .tp155-r4-panel-close{position:sticky!important;top:8px!important;right:auto!important;float:right!important;margin:0 4px -36px 8px!important;z-index:20!important}',
+  '#tp155R4PanelHost:is([data-panel="calendar"],[data-panel="coach"],[data-panel="settings"],[data-panel="exercises"],[data-panel="stats"]) .tp155-r4-panel-close{position:sticky!important;top:8px!important;right:auto!important;float:right!important;margin:0 4px -36px 8px!important;z-index:20!important}',
   '#tp155R4PanelHost[data-panel="coach"] .tp151-coach-recommendation{margin-top:10px!important}',
   '#tp155R4PanelHost[data-panel="quick"] .tp155-quick-panel>:is(.hero,.tp151-page-head){display:none!important}',
   '#tp155R4PanelHost[data-panel="quick"] .tp160-quick-context{font-size:15px!important;font-weight:850!important;line-height:1.2!important}',
@@ -13082,7 +13083,7 @@ window.tp164DecoratePerSideRows();
   if(typeof window!=='undefined')window.TrainPilot177Model=api;
 })(function(){
  'use strict';
- const PERIODS={'7d':7,'30d':30,'3m':91};
+ const PERIODS={'1d':1,'7d':7,'30d':30,'3m':91};
  const GROUPS=['chest','back','shoulders','legs','arms','core'];
  const LABELS={chest:'Mell',back:'Hát',shoulders:'Váll',legs:'Láb',arms:'Kar',core:'Core'};
  const canonicalGroup=value=>{
@@ -13208,7 +13209,7 @@ window.tp164DecoratePerSideRows();
   const maxScore=Math.max(0,...Object.values(groupScores));
   const groups=GROUPS.map(g=>({key:g,name:LABELS[g],sets:groupScores[g],
    percent:maxScore?Math.round(groupScores[g]*100/maxScore):0}));
-  const bucketDays=period==='7d'?1:7;
+  const bucketDays=period==='1d'||period==='7d'?1:7;
   const bucketCount=Math.ceil(span/bucketDays),buckets=[];
   for(let i=0;i<bucketCount;i++){
    const from=addDays(start,i*bucketDays),to=addDays(from,bucketDays);
@@ -13238,7 +13239,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  if(!model||typeof historyScreen!=='function'||typeof shell!=='function')return;
  const COPY={
   hu:{log:'Edzésnapló',stats:'Statisztikák',progress:'Fejlődés',volume:'Összes volumen',trend:'Volumen trend',
-   days7:'7 nap',days30:'30 nap',months3:'3 hó',vs:'az előző időszakhoz képest',pr:'PR rekordok',
+   day1:'1 nap',days7:'7 nap',days30:'30 nap',months3:'3 hó',vs:'az előző időszakhoz képest',pr:'PR rekordok',
    workouts:'Edzések száma',average:'Átlagos volumen',averageSmall:'súlyzós edzésenként',
    sets:'Sorozatok száma',muscles:'Izomcsoport-terhelés',groupNote:'A színek és arányok az időszak legterheltebb izomcsoportjához viszonyítanak, nem fáradtságot mérnek.',
    low:'Kisebb',medium:'Közepes',high:'Nagyobb',anatomyZoom:'Izomterhelés nagyítása',
@@ -13254,7 +13255,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    suggestionStable:'A következetességet az edzésszám és a volumen együtt mutatja.',
    coachOpen:'Részletek a Coachban',weight:'Súly',reps:'Ismétlés',time:'Idő',left:'Bal oldal',right:'Jobb oldal'},
   en:{log:'Workout log',stats:'Statistics',progress:'Progress',volume:'Total volume',trend:'Volume trend',
-   days7:'7 days',days30:'30 days',months3:'3 mo',vs:'vs previous period',pr:'PR records',
+   day1:'1 day',days7:'7 days',days30:'30 days',months3:'3 mo',vs:'vs previous period',pr:'PR records',
    workouts:'Workouts',average:'Average volume',averageSmall:'per weighted workout',
    sets:'Completed sets',muscles:'Muscle group load',groupNote:'Colors and percentages are relative to the most trained group, not a fatigue measurement.',
    low:'Lower',medium:'Medium',high:'Higher',anatomyZoom:'Enlarge muscle load diagram',
@@ -13270,16 +13271,16 @@ window.addEventListener?.('DOMContentLoaded',function(){
    suggestionStable:'Workout count and volume together provide context for consistency.',
    coachOpen:'View in Coach',weight:'Weight',reps:'Reps',time:'Time',left:'Left side',right:'Right side'},
   de:{log:'Trainingstagebuch',stats:'Statistiken',progress:'Fortschritt',volume:'Gesamtvolumen',trend:'Volumentrend',
-   days7:'7 Tage',days30:'30 Tage',months3:'3 Mon.',vs:'zum vorigen Zeitraum',pr:'Persönliche Rekorde',workouts:'Trainingseinheiten',
+   day1:'1 Tag',days7:'7 Tage',days30:'30 Tage',months3:'3 Mon.',vs:'zum vorigen Zeitraum',pr:'Persönliche Rekorde',workouts:'Trainingseinheiten',
    average:'Ø Volumen',averageSmall:'pro Krafttraining',sets:'Sätze',muscles:'Muskelgruppenbelastung',coach:'Fortschrittsempfehlung'},
   ro:{log:'Jurnal de antrenament',stats:'Statistici',progress:'Progres',volume:'Volum total',trend:'Tendință volum',
-   days7:'7 zile',days30:'30 zile',months3:'3 luni',vs:'față de perioada anterioară',pr:'Recorduri personale',
+   day1:'1 zi',days7:'7 zile',days30:'30 zile',months3:'3 luni',vs:'față de perioada anterioară',pr:'Recorduri personale',
    workouts:'Antrenamente',average:'Volum mediu',averageSmall:'per antrenament cu greutăți',sets:'Serii',muscles:'Grupe musculare',coach:'Sugestie de progres'},
   sk:{log:'Tréningový denník',stats:'Štatistiky',progress:'Pokrok',volume:'Celkový objem',trend:'Trend objemu',
-   days7:'7 dní',days30:'30 dní',months3:'3 mes.',vs:'oproti predošlému obdobiu',pr:'Osobné rekordy',
+   day1:'1 deň',days7:'7 dní',days30:'30 dní',months3:'3 mes.',vs:'oproti predošlému obdobiu',pr:'Osobné rekordy',
    workouts:'Tréningy',average:'Priemerný objem',averageSmall:'na silový tréning',sets:'Série',muscles:'Zaťaženie svalov',coach:'Odporúčanie'},
   pl:{log:'Dziennik treningowy',stats:'Statystyki',progress:'Postępy',volume:'Całkowita objętość',trend:'Trend objętości',
-   days7:'7 dni',days30:'30 dni',months3:'3 mies.',vs:'względem poprzedniego okresu',pr:'Rekordy osobiste',
+   day1:'1 dzień',days7:'7 dni',days30:'30 dni',months3:'3 mies.',vs:'względem poprzedniego okresu',pr:'Rekordy osobiste',
    workouts:'Treningi',average:'Śr. objętość',averageSmall:'na trening siłowy',sets:'Serie',muscles:'Obciążenie mięśni',coach:'Wskazówka'}};
  const lang=()=>{try{return typeof rf212Lang==='function'?rf212Lang():'hu'}catch(_){return 'hu'}};
  const tr=k=>(COPY[lang()]||COPY.hu)[k]||COPY.hu[k]||k;
@@ -13299,7 +13300,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    cachedRaw=raw;cachedDate=today;cachedModels={};
    cachedRows=model.prepare(history(),{groupMap,isDeleted:x=>typeof window.tp3HistoryIsDeleted==='function'&&window.tp3HistoryIsDeleted(x)});
   }
-  const period=['7d','30d','3m'].includes(state.tp177Period)?state.tp177Period:'3m';
+  const period=['1d','7d','30d','3m'].includes(state.tp177Period)?state.tp177Period:'3m';
   return cachedModels[period]||(cachedModels[period]=model.build(cachedRows,period,new Date()));
  }
  function tabs(active){
@@ -13320,10 +13321,17 @@ window.addEventListener?.('DOMContentLoaded',function(){
    :String(html).replace(/(<main[^>]*>)/,function(m){return m+replacement});
  }
  function selectPeriod(p){
+  if(!Object.prototype.hasOwnProperty.call(model.PERIODS,p))return;
   state.tp177Period=p;
   const buttons=[...document.querySelectorAll('.tp177-periods button')];
-  if(buttons.length===3){buttons.forEach(b=>{const active=b.dataset.period===p;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))})}
+  if(buttons.length===4){buttons.forEach(b=>{const active=b.dataset.period===p;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))})}
   render();
+ }
+ function showLatestBucket(){
+  requestAnimationFrame(()=>{
+   const chart=document.querySelector('main.tp177-progress .tp177-chart-scroll');
+   if(chart)chart.scrollLeft=chart.scrollWidth-chart.clientWidth;
+  });
  }
  window.tp177SetPeriod=selectPeriod;
  let openMetric=null;
@@ -13345,7 +13353,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     '" onclick="tp177OpenBucket('+i+')"><span class="tp177-bar-rail"><span class="tp177-bar" style="height:'+height+'%"></span></span>'+
     '<span class="tp177-chart-date">'+escapeHtml(dateFmt(b.start,true))+'</span></button>';
   }).join('');
-  return '<section class="tp177-panel tp177-trend" aria-label="'+escapeHtml(tr('trend'))+'"><div class="tp177-panel-heading"><h2>'+escapeHtml(tr('trend'))+'</h2><span class="tp177-small">'+escapeHtml(tr(v.period==='7d'?'daily':'weekly'))+'</span></div>'+
+  return '<section class="tp177-panel tp177-trend" aria-label="'+escapeHtml(tr('trend'))+'"><div class="tp177-panel-heading"><h2>'+escapeHtml(tr('trend'))+'</h2><span class="tp177-small">'+escapeHtml(tr(v.period==='1d'||v.period==='7d'?'daily':'weekly'))+'</span></div>'+
    '<div class="tp177-chart-scroll"><div class="tp177-chart"><div class="tp177-chart-axis">'+ticks+'</div>'+
    '<div class="tp177-chart-columns" style="grid-template-columns:repeat('+v.buckets.length+',minmax(24px,1fr))">'+bars+'</div></div></div>'+
    '<p class="tp177-small">'+escapeHtml(tr('hint'))+'</p></section>';
@@ -13366,7 +13374,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const rows=v.groups.map(g=>'<button type="button" class="tp177-muscle-row" data-load="'+(g.sets?loadLevel(g.percent):'none')+'" onclick="tp177OpenGroup(\''+g.key+'\')" '+(g.sets?'':'disabled')+'>'+
    '<span class="tp177-muscle-label">'+escapeHtml(g.name)+'</span><span class="tp177-muscle-track"><span style="width:'+g.percent+'%"></span></span>'+
    '<span class="tp177-muscle-percent">'+(g.sets?fmt(g.percent)+'%':'—')+'</span></button>').join('');
-  return '<section class="tp177-panel tp177-muscles"><div class="tp177-panel-heading"><h2>'+escapeHtml(tr('muscles'))+'</h2><span class="tp177-small">'+escapeHtml(tr(v.period==='7d'?'days7':v.period==='30d'?'days30':'months3'))+'</span></div><div class="tp177-muscle-layout">'+
+  return '<section class="tp177-panel tp177-muscles"><div class="tp177-panel-heading"><h2>'+escapeHtml(tr('muscles'))+'</h2><span class="tp177-small">'+escapeHtml(tr(v.period==='1d'?'day1':v.period==='7d'?'days7':v.period==='30d'?'days30':'months3'))+'</span></div><div class="tp177-muscle-layout">'+
    '<div class="tp177-anatomy">'+anatomy(v)+'</div><div class="tp177-muscle-bars">'+rows+'</div></div>'+
    '<div class="tp177-load-legend">'+['low','medium','high'].map(level=>'<span data-load="'+level+'"><i aria-hidden="true"></i>'+escapeHtml(tr(level))+'</span>').join('')+'</div>'+
    '<p class="tp177-small">'+escapeHtml(tr('groupNote'))+'</p></section>';
@@ -13416,9 +13424,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
   document.querySelectorAll('.tp177-metric[data-metric]').forEach(button=>button.setAttribute('aria-expanded',String(button.dataset.metric===openMetric)));
  };
  function progressHtml(){
+  showLatestBucket();
   const v=snapshot(),m=v.currentMetrics,c=v.changes,period=v.period;
   const from=dateFmt(v.start),through=dateFmt(model.addDays(v.end,-1));
-  const periodButtons=[['7d','days7'],['30d','days30'],['3m','months3']].map(a=>
+  const periodButtons=[['1d','day1'],['7d','days7'],['30d','days30'],['3m','months3']].map(a=>
    '<button type="button" data-period="'+a[0]+'" class="'+(period===a[0]?'active':'')+'" aria-pressed="'+(period===a[0]?'true':'false')+'" onclick="tp177SetPeriod(\''+a[0]+'\')">'+escapeHtml(tr(a[1]))+'</button>').join('');
   const avg=m.avgVolume!=null?fmt(m.avgVolume,1)+' kg':'—';
   return '<main class="tp177-progress">'+tabs('progress')+
@@ -13593,6 +13602,129 @@ rf263HealthHub=function(){
  return result;
 };
 // @endsection issue63-section-icons.js
+
+// @section issue67-fixes.js
+/* Issue #67: non-invasive 1.0.0 navigation bridge.
+ * Additive compatibility section in the canonical single-source app.
+ */
+(function(){
+ 'use strict';
+ const labels={
+  hu:{open:'Fejlődés megnyitása',all:'Teljes rekordlista',fullStats:'Részletes statisztikák',backToProgress:'Vissza a Fejlődéshez',weight:'Súly',reps:'Ismétlés',time:'Idő',left:'Bal oldal',right:'Jobb oldal',previous:'Korábbi',current:'Új'},
+  en:{open:'Open Progress',all:'All-time records',fullStats:'Detailed statistics',backToProgress:'Back to Progress',weight:'Weight',reps:'Reps',time:'Time',left:'Left side',right:'Right side',previous:'Previous',current:'New'},
+  de:{open:'Fortschritt öffnen',all:'Alle Rekorde',fullStats:'Detaillierte Statistiken',backToProgress:'Zurück zum Fortschritt',weight:'Gewicht',reps:'Wiederholungen',time:'Zeit',left:'Links',right:'Rechts',previous:'Vorher',current:'Neu'},
+  ro:{open:'Deschide Progresul',all:'Toate recordurile',fullStats:'Statistici detaliate',backToProgress:'Înapoi la Progres',weight:'Greutate',reps:'Repetări',time:'Timp',left:'Stânga',right:'Dreapta',previous:'Anterior',current:'Nou'},
+  sk:{open:'Otvoriť pokrok',all:'Všetky rekordy',fullStats:'Podrobné štatistiky',backToProgress:'Späť na Pokrok'},pl:{open:'Otwórz postępy',all:'Wszystkie rekordy',fullStats:'Szczegółowe statystyki',backToProgress:'Wróć do Postępów'}
+ };
+ const lang=()=>typeof rf212Lang==='function'?rf212Lang():'hu';
+ const copy=()=>Object.assign({},labels.hu,labels[lang()]||{});
+ const locale=()=>({hu:'hu-HU',en:'en-US',de:'de-DE',ro:'ro-RO',sk:'sk-SK',pl:'pl-PL'}[lang()]||'hu-HU');
+ const stripStats=html=>String(html).replace(/(<nav\b[^>]*class="[^"]*\btp155-journal-tabs\b[^"]*"[^>]*>)([\s\S]*?)(<\/nav>)/gi,
+  (all,head,inside,tail)=>head+inside.replace(/<button\b[^>]*onclick="tp155OpenJournalStats\(\)"[\s\S]*?<\/button>/gi,'')+tail);
+ function removeLegacyTab(root){
+  root?.querySelectorAll?.('.tp155-journal-tabs button').forEach(button=>{
+   if((button.getAttribute('onclick')||'').includes('tp155OpenJournalStats()'))button.remove();
+  });
+ }
+ function updateAllTimePr(){
+  const panel=document.querySelector('#tp177MetricDetails'),trigger=document.querySelector('.tp177-metric[data-metric="pr"][aria-expanded="true"]');
+  if(!panel||panel.hidden||!trigger||!window.TrainPilot177Model||typeof history!=='function')return;
+  const model=window.TrainPilot177Model;
+  const all=model.prepare(history(),{isDeleted:x=>typeof window.tp3HistoryIsDeleted==='function'&&window.tp3HistoryIsDeleted(x)})
+   .flatMap(workout=>workout.pr||[]).sort((a,b)=>b.date-a.date);
+  const t=copy(),l=locale(),header=panel.querySelector('h2')?.textContent||'PR';
+  panel.replaceChildren();
+  const heading=document.createElement('h2');heading.textContent=header;panel.appendChild(heading);
+  const note=document.createElement('p');note.className='tp177-small';note.textContent=t.all+' · '+all.length;panel.appendChild(note);
+  if(!all.length){const none=document.createElement('p');none.className='tp177-small';none.textContent=lang()==='hu'?'Még nincs személyes rekord.':'No personal records yet.';panel.appendChild(none);return}
+  const list=document.createElement('div');list.className='tp177-inline-list';
+  const fmt=value=>Number(value||0).toLocaleString(l,{maximumFractionDigits:1});
+  for(const rec of all){
+   const row=document.createElement('div');row.className='tp177-inline-record';
+   const name=document.createElement('strong');name.textContent=typeof rf220ExerciseName==='function'?rf220ExerciseName(rec.id):rec.id;
+   const date=document.createElement('span');date.textContent=(t[rec.kind]||rec.kind)+' · '+new Intl.DateTimeFormat(l,{year:'numeric',month:'short',day:'numeric'}).format(rec.date);
+   const value=document.createElement('span');value.textContent=t.previous+': '+fmt(rec.previous)+' '+rec.unit+' → '+t.current+': '+fmt(rec.value)+' '+rec.unit;
+   row.append(name,date,value);list.appendChild(row);
+  }
+  panel.appendChild(list);
+ }
+ // #67 follow-up: retain the full per-exercise Statistics view as a detail of Progress.
+ function decorateProgress(root){
+  if(!root||root.querySelector('.tp67-full-stats-entry'))return;
+  const anchor=root.querySelector('#tp177MetricDetails');
+  if(!anchor)return;
+  const button=document.createElement('button');
+  button.type='button';button.className='btn secondary block tp67-full-stats-entry';
+  button.textContent=copy().fullStats+' ›';
+  button.addEventListener('click',()=>window.tp67OpenFullStats(button));
+  anchor.insertAdjacentElement('afterend',button);
+ }
+ window.tp67FullStatsPanelHtml=function(){
+  // The same full per-exercise statistics renderer used by the former Journal page.
+  const report=typeof rf220ProgressHtml==='function'?rf220ProgressHtml():'';
+  return '<main class="tp67-full-stats-panel"><header class="tp67-stats-heading"><h2>'+esc(copy().fullStats)+'</h2></header>'+report+'</main>';
+ };
+ window.tp67OpenFullStats=function(trigger){
+  // The shared popup supplies the global red X, backdrop and Android Back.
+  if(!document.querySelector('#app main.tp177-progress'))return false;
+  return !!window.tp155R4OpenPanel?.('stats',trigger||document.activeElement);
+ };
+ function decorateCoach(root){
+  if(!root||root.querySelector('.tp67-coach-progress'))return;
+  // Phase 7 renders a deferred placeholder before the old statistics card hydrates.
+  // Replace the placeholder immediately, so redundant statistics are never built.
+  const pending=root.querySelector('[data-tp7-coach-progress="pending"]');
+  const oldCard=[...root.querySelectorAll(':scope > .card')].reverse().find(card=>
+   /fejlőd|progress|fortschritt|progres|pokrok|postęp/i.test(card.querySelector(':scope > h2')?.textContent||'')
+  );
+  const target=pending||oldCard;
+  if(!target)return;
+  const button=document.createElement('button');button.type='button';button.className='btn secondary block tp67-coach-progress';button.textContent=copy().open;
+  button.addEventListener('click',()=>{
+   window.tp155R4ClosePanel?.(false);
+   window.tp177OpenProgress?.();
+  });
+  target.replaceWith(button);
+ }
+ window.addEventListener?.('DOMContentLoaded',()=>{
+  if(typeof historyScreen!=='function'||typeof render!=='function'||!window.TrainPilot177Progress)return;
+  const oldHistory=historyScreen;
+  historyScreen=function(){return stripStats(oldHistory.apply(this,arguments))};
+  const oldRender=render;
+  render=function(){
+   const result=oldRender.apply(this,arguments),main=document.querySelector('#app main');
+   removeLegacyTab(main);
+   if(main?.matches('main.tp151-coach'))decorateCoach(main);
+   if(main?.matches('main.tp177-progress')){updateAllTimePr();decorateProgress(main)}
+   return result;
+  };
+  window.render=render;
+  const oldGo=go;
+  go=function(route){
+   if(route==='stats'||route==='progress')return window.tp177OpenProgress();
+   return oldGo.apply(this,arguments);
+  };
+  window.TrainPilotNavigate=go;
+
+  const oldToggle=window.tp177ToggleMetric;
+  window.tp177ToggleMetric=function(key){
+   const result=oldToggle.apply(this,arguments);
+   if(key==='pr')updateAllTimePr();
+   return result;
+  };
+  if(typeof window.tp155R4RefreshPanel==='function'){
+   const oldRefresh=window.tp155R4RefreshPanel;
+   window.tp155R4RefreshPanel=function(){
+    const result=oldRefresh.apply(this,arguments);
+    decorateCoach(document.querySelector('#tp155R4PanelHost[data-panel="coach"] main.tp151-coach'));
+    return result;
+   };
+  }
+  window.TrainPilot67={version:'issue67-rc4',twoJournalTabs:true,allTimePr:true,fullStatsRestored:true,statsPopup:true,coachDeepLink:true,themedCheckboxes:true};
+ });
+})();
+
+// @endsection issue67-fixes.js
 
 // @section ready.js
 window.TrainPilotBoot.finish();
