@@ -13100,6 +13100,12 @@ window.tp164DecoratePerSideRows();
  const addDays=(date,delta)=>new Date(date.getFullYear(),date.getMonth(),date.getDate()+delta);
  const dayKey=date=>date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
  const number=value=>{const n=Number(value);return Number.isFinite(n)&&n>0?n:0};
+ const durationMinutes=workout=>{
+  const started=Date.parse(workout.started||workout.startedAt||'');
+  const finished=Date.parse(workout.finished||workout.endedAt||workout.finishedAt||workout.completedAt||'');
+  const minutes=(finished-started)/60000;
+  return Number.isFinite(minutes)&&minutes>0?minutes:null;
+ };
  const signedPercent=(current,previous)=>previous>0?Math.round((current-previous)*100/previous):null;
  const dateOf=workout=>{
   const value=workout.finished||workout.endedAt||workout.finishedAt||workout.completedAt;
@@ -13150,7 +13156,7 @@ window.tp164DecoratePerSideRows();
     }
    }
    const key=w.id||`${w.started||''}|${w.programId||''}|${w.dayId||w.workout||''}`;
-   cleaned.push({source:w,key:String(key),date,dateMs:date.getTime(),
+   cleaned.push({source:w,key:String(key),date,dateMs:date.getTime(),durationMinutes:durationMinutes(w),
     sets,volume:Math.round(volume*100)/100,weighted,groups,performances});
   }
   cleaned.sort((a,b)=>a.dateMs-b.dateMs);
@@ -13204,6 +13210,11 @@ window.tp164DecoratePerSideRows();
   const a=metric(current),b=metric(prior);
   a.avgVolume=a.weightedCount?a.volume/a.weightedCount:null;
   b.avgVolume=b.weightedCount?b.volume/b.weightedCount:null;
+  for(const [metrics,workouts] of [[a,current],[b,prior]]){
+   const timed=workouts.filter(w=>w.durationMinutes!=null);
+   metrics.timedWorkouts=timed.length;
+   metrics.avgDuration=timed.length?timed.reduce((sum,w)=>sum+w.durationMinutes,0)/timed.length:null;
+  }
   const groupScores=Object.fromEntries(GROUPS.map(g=>[g,0]));
   current.forEach(w=>GROUPS.forEach(g=>{groupScores[g]+=w.groups[g]||0}));
   const maxScore=Math.max(0,...Object.values(groupScores));
@@ -13218,6 +13229,7 @@ window.tp164DecoratePerSideRows();
   }
   const changes={
    volume:signedPercent(a.volume,b.volume),workouts:signedPercent(a.workouts,b.workouts),
+   duration:b.avgDuration==null||a.avgDuration==null?null:signedPercent(a.avgDuration,b.avgDuration),
    sets:signedPercent(a.sets,b.sets),pr:signedPercent(a.pr.length,b.pr.length),
    avgVolume:signedPercent(a.avgVolume||0,b.avgVolume||0)
   };
@@ -13241,7 +13253,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   hu:{log:'Edzésnapló',stats:'Statisztikák',progress:'Fejlődés',volume:'Összes volumen',trend:'Volumen trend',
    day1:'1 nap',days7:'7 nap',days30:'30 nap',months3:'3 hó',vs:'az előző időszakhoz képest',pr:'PR rekordok',
    workouts:'Edzések száma',average:'Átlagos volumen',averageSmall:'súlyzós edzésenként',
-   sets:'Sorozatok száma',muscles:'Izomcsoport-terhelés',groupNote:'A színek és arányok az időszak legterheltebb izomcsoportjához viszonyítanak, nem fáradtságot mérnek.',
+   duration:'Átl. edzésidő',durationDetail:'Átlagos edzésidő',durationNote:'Mért időtartamú edzésekből számolva',durationMissing:'Nincs mért edzésidő ebben az időszakban.',sets:'Sorozatok száma',muscles:'Izomcsoport-terhelés',groupNote:'A színek és arányok az időszak legterheltebb izomcsoportjához viszonyítanak, nem fáradtságot mérnek.',
    low:'Kisebb',medium:'Közepes',high:'Nagyobb',anatomyZoom:'Izomterhelés nagyítása',
    coach:'Fejlődési javaslat',more:'Részletek',noData:'Ehhez az időszakhoz nincs elegendő naplózott adat.',
    noWeight:'Ebben az időszakban nincs mérhető súlyzós volumen.',openLog:'Megnyitás az Edzésnaplóban',
@@ -13257,7 +13269,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   en:{log:'Workout log',stats:'Statistics',progress:'Progress',volume:'Total volume',trend:'Volume trend',
    day1:'1 day',days7:'7 days',days30:'30 days',months3:'3 mo',vs:'vs previous period',pr:'PR records',
    workouts:'Workouts',average:'Average volume',averageSmall:'per weighted workout',
-   sets:'Completed sets',muscles:'Muscle group load',groupNote:'Colors and percentages are relative to the most trained group, not a fatigue measurement.',
+   duration:'Avg. duration',durationDetail:'Average workout duration',durationNote:'Based on workouts with recorded duration',durationMissing:'No recorded workout duration in this period.',sets:'Completed sets',muscles:'Muscle group load',groupNote:'Colors and percentages are relative to the most trained group, not a fatigue measurement.',
    low:'Lower',medium:'Medium',high:'Higher',anatomyZoom:'Enlarge muscle load diagram',
    coach:'Progress insight',more:'Details',noData:'Not enough logged data for this period.',
    noWeight:'No measurable weighted volume in this period.',openLog:'Open in workout log',
@@ -13272,21 +13284,22 @@ window.addEventListener?.('DOMContentLoaded',function(){
    coachOpen:'View in Coach',weight:'Weight',reps:'Reps',time:'Time',left:'Left side',right:'Right side'},
   de:{log:'Trainingstagebuch',stats:'Statistiken',progress:'Fortschritt',volume:'Gesamtvolumen',trend:'Volumentrend',
    day1:'1 Tag',days7:'7 Tage',days30:'30 Tage',months3:'3 Mon.',vs:'zum vorigen Zeitraum',pr:'Persönliche Rekorde',workouts:'Trainingseinheiten',
-   average:'Ø Volumen',averageSmall:'pro Krafttraining',sets:'Sätze',muscles:'Muskelgruppenbelastung',coach:'Fortschrittsempfehlung'},
+   average:'Ø Volumen',averageSmall:'pro Krafttraining',duration:'Ø Dauer',durationDetail:'Ø Trainingsdauer',sets:'Sätze',muscles:'Muskelgruppenbelastung',coach:'Fortschrittsempfehlung'},
   ro:{log:'Jurnal de antrenament',stats:'Statistici',progress:'Progres',volume:'Volum total',trend:'Tendință volum',
    day1:'1 zi',days7:'7 zile',days30:'30 zile',months3:'3 luni',vs:'față de perioada anterioară',pr:'Recorduri personale',
-   workouts:'Antrenamente',average:'Volum mediu',averageSmall:'per antrenament cu greutăți',sets:'Serii',muscles:'Grupe musculare',coach:'Sugestie de progres'},
+   workouts:'Antrenamente',average:'Volum mediu',averageSmall:'per antrenament cu greutăți',duration:'Durată medie',durationDetail:'Durată medie antrenament',sets:'Serii',muscles:'Grupe musculare',coach:'Sugestie de progres'},
   sk:{log:'Tréningový denník',stats:'Štatistiky',progress:'Pokrok',volume:'Celkový objem',trend:'Trend objemu',
    day1:'1 deň',days7:'7 dní',days30:'30 dní',months3:'3 mes.',vs:'oproti predošlému obdobiu',pr:'Osobné rekordy',
-   workouts:'Tréningy',average:'Priemerný objem',averageSmall:'na silový tréning',sets:'Série',muscles:'Zaťaženie svalov',coach:'Odporúčanie'},
+   workouts:'Tréningy',average:'Priemerný objem',averageSmall:'na silový tréning',duration:'Ø čas',durationDetail:'Priemerný čas tréningu',sets:'Série',muscles:'Zaťaženie svalov',coach:'Odporúčanie'},
   pl:{log:'Dziennik treningowy',stats:'Statystyki',progress:'Postępy',volume:'Całkowita objętość',trend:'Trend objętości',
    day1:'1 dzień',days7:'7 dni',days30:'30 dni',months3:'3 mies.',vs:'względem poprzedniego okresu',pr:'Rekordy osobiste',
-   workouts:'Treningi',average:'Śr. objętość',averageSmall:'na trening siłowy',sets:'Serie',muscles:'Obciążenie mięśni',coach:'Wskazówka'}};
+   workouts:'Treningi',average:'Śr. objętość',averageSmall:'na trening siłowy',duration:'Śr. czas',durationDetail:'Średni czas treningu',sets:'Serie',muscles:'Obciążenie mięśni',coach:'Wskazówka'}};
  const lang=()=>{try{return typeof rf212Lang==='function'?rf212Lang():'hu'}catch(_){return 'hu'}};
  const tr=k=>(COPY[lang()]||COPY.hu)[k]||COPY.hu[k]||k;
  const locale=()=>({hu:'hu-HU',en:'en-US',de:'de-DE',ro:'ro-RO',sk:'sk-SK',pl:'pl-PL'}[lang()]||'hu-HU');
  const escapeHtml=v=>String(v==null?'':v).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
  const fmt=(v,digits=0)=>Number(v||0).toLocaleString(locale(),{maximumFractionDigits:digits});
+ const fmtDuration=minutes=>minutes==null?'—':Math.round(minutes)+' min';
  const dateFmt=(d,short=false)=>new Intl.DateTimeFormat(locale(),short?{month:'short',day:'numeric'}:{year:'numeric',month:'short',day:'numeric'}).format(d);
  const pct=v=>v==null?'<span class="tp177-neutral">—</span>':'<span class="'+(v<0?'tp177-negative':'tp177-positive')+'">'+(v>0?'▲ +':v<0?'▼ ':'')+fmt(v)+'%</span>';
  let cachedRaw=null,cachedDate=null,cachedRows=null,cachedModels={};
@@ -13338,7 +13351,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  function metricCard(key,icon,label,value,delta,subtitle){
   return '<button type="button" class="tp177-metric" data-metric="'+key+'" aria-expanded="'+(openMetric===key)+'" aria-controls="tp177MetricDetails" onclick="tp177ToggleMetric(\''+key+'\')"><span class="tp177-icon" aria-hidden="true">'+icon+'</span>'+
    '<span class="tp177-metric-body"><span class="tp177-metric-label">'+escapeHtml(label)+'</span>'+
-   '<span class="tp177-metric-value"><strong>'+value+'</strong><span class="tp177-delta">'+pct(delta)+'</span></span>'+
+   '<span class="tp177-metric-value"><strong>'+value+'</strong>'+(delta===undefined?'':'<span class="tp177-delta">'+pct(delta)+'</span>')+'</span>'+
    (subtitle?'<span class="tp177-metric-caption">'+escapeHtml(subtitle)+'</span>':'')+'</span>'+
    '<span class="tp177-chevron" aria-hidden="true">›</span></button>';
  }
@@ -13386,7 +13399,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(top)return tr('suggestionFocus')+top.name+'.';
   return tr('suggestionStable');
  }
- function inlineWorkouts(xs){
+ function inlineWorkouts(xs,duration=false){
   if(!xs.length)return '<p class="tp177-small">'+escapeHtml(tr('noData'))+'</p>';
   return '<div class="tp177-inline-list">'+xs.slice().sort((a,b)=>b.dateMs-a.dateMs).map(w=>{
    const exercises=(w.source.exercises||[]).map(e=>{
@@ -13395,12 +13408,12 @@ window.addEventListener?.('DOMContentLoaded',function(){
     const name=typeof rf220ExerciseName==='function'?rf220ExerciseName(e.id):e.hu||e.en||e.id;
     return '<div class="tp177-inline-exercise"><strong>'+escapeHtml(name)+'</strong><span>'+fmt(done.length)+' '+escapeHtml(tr('setCount'))+'</span></div>';
    }).filter(Boolean).join('');
-   return '<details class="tp177-inline-row"><summary><strong>'+escapeHtml(dateFmt(w.date))+'</strong><span>'+fmt(w.volume)+' kg · '+fmt(w.sets)+' '+escapeHtml(tr('setCount'))+'</span><i aria-hidden="true">⌄</i></summary>'+
+   return '<details class="tp177-inline-row"><summary><strong>'+escapeHtml(dateFmt(w.date))+'</strong><span>'+(duration?escapeHtml(fmtDuration(w.durationMinutes)):fmt(w.volume)+' kg · '+fmt(w.sets)+' '+escapeHtml(tr('setCount')))+'</span><i aria-hidden="true">⌄</i></summary>'+
     '<div class="tp177-inline-row-body">'+(exercises||'<p class="tp177-small">'+escapeHtml(tr('noData'))+'</p>')+'</div></details>';
   }).join('')+'</div>';
  }
  function metricDetails(key,v){
-  const m=v.currentMetrics,heading=tr(key==='pr'?'pr':key==='average'?'average':key);
+  const m=v.currentMetrics,heading=tr(key==='duration'?'durationDetail':key==='pr'?'pr':key==='average'?'average':key);
   let content='';
   if(key==='pr'){
    const names={weight:tr('weight'),reps:tr('reps'),time:tr('time'),left:tr('left'),right:tr('right')};
@@ -13408,15 +13421,15 @@ window.addEventListener?.('DOMContentLoaded',function(){
     '<div class="tp177-inline-record"><strong>'+escapeHtml(typeof rf220ExerciseName==='function'?rf220ExerciseName(p.id):p.id)+'</strong><span>'+escapeHtml(names[p.kind]||p.kind)+' · '+escapeHtml(dateFmt(p.date))+'</span><span>'+escapeHtml(tr('previous'))+': '+fmt(p.previous,1)+' '+escapeHtml(p.unit)+' → '+escapeHtml(tr('current'))+': '+fmt(p.value,1)+' '+escapeHtml(p.unit)+'</span></div>').join('')+'</div>':
     '<p class="tp177-small">'+escapeHtml(tr('noData'))+'</p>';
   }else{
-   const xs=key==='average'?v.current.filter(w=>w.weighted):v.current;
-   const value=key==='average'?(m.avgVolume==null?'—':fmt(m.avgVolume,1)+' kg'):fmt(m[key]);
+   const xs=key==='average'?v.current.filter(w=>w.weighted):key==='duration'?v.current.filter(w=>w.durationMinutes!=null):v.current;
+   const value=key==='average'?(m.avgVolume==null?'—':fmt(m.avgVolume,1)+' kg'):key==='duration'?fmtDuration(m.avgDuration):fmt(m[key]);
    content='<p class="tp177-inline-total"><strong>'+value+'</strong> · '+escapeHtml(dateFmt(v.start))+' – '+escapeHtml(dateFmt(model.addDays(v.end,-1)))+'</p>'+
-    (xs.length?inlineWorkouts(xs):'<p class="tp177-small">'+escapeHtml(tr(key==='average'?'noWeight':'noData'))+'</p>');
+    (xs.length?(key==='duration'?'<p class="tp177-small">'+escapeHtml(tr('durationNote'))+'</p>':'')+inlineWorkouts(xs,key==='duration'):'<p class="tp177-small">'+escapeHtml(tr(key==='duration'?'durationMissing':key==='average'?'noWeight':'noData'))+'</p>');
   }
   return '<h2>'+escapeHtml(heading)+'</h2>'+content;
  }
  window.tp177ToggleMetric=function(key){
-  if(!['pr','workouts','average','sets'].includes(key))return;
+  if(!['pr','workouts','average','duration'].includes(key))return;
   openMetric=openMetric===key?null:key;
   const panel=document.getElementById('tp177MetricDetails');if(!panel)return;
   panel.innerHTML=openMetric?metricDetails(openMetric,snapshot()):'';
@@ -13439,7 +13452,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    metricCard('pr','♜',tr('pr'),fmt(m.pr.length),c.pr,'')+
    metricCard('workouts','◫',tr('workouts'),fmt(m.workouts),c.workouts,'')+
    metricCard('average','↗',tr('average'),avg,c.avgVolume,tr('averageSmall'))+
-   metricCard('sets','▤',tr('sets'),fmt(m.sets),c.sets,'')+'</div>'+
+   metricCard('duration','◷',tr('duration'),fmtDuration(m.avgDuration),undefined,'')+'</div>'+
    '<section id="tp177MetricDetails" class="tp177-metric-details" aria-live="polite"'+(openMetric?'':' hidden')+'>'+(openMetric?metricDetails(openMetric,v):'')+'</section>'+
    groupPanel(v)+'<button type="button" class="tp177-panel tp177-coach" onclick="tp177OpenCoach()">'+
    '<span class="tp177-icon" aria-hidden="true">✧</span><span class="tp177-coach-body"><strong>'+escapeHtml(tr('coach'))+'</strong>'+
