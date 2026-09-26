@@ -32,4 +32,7 @@ html body #tp155R4PanelHost[data-panel="coach"] .tp67-coach-progress{margin-top:
 
 /* #67 follow-up: restore the full exercise stats via Progress without adding a third tab. */
 html body #app main.tp177-progress>.tp67-full-stats-entry{min-height:46px;margin:8px 0 12px!important;border:1px solid color-mix(in srgb,var(--accent) 47%,var(--tp-ui-border,var(--line)))!important;border-radius:12px!important;background:var(--tp-ui-card-raised,var(--card2))!important;color:var(--text)!important;font-weight:800;text-align:center}
-html body #app main.tp67-full-stats>.tp67-full-stats-back{display:block;min-height:44px;margin:4px 0 12px;border:1px solid var(--tp-ui-border,var(--line));border-radius:12px}
+html body #tp155R4PanelHost[data-panel="stats"] .tp67-full-stats-panel{padding:0 2px 10px!important;min-width:0}
+html body #tp155R4PanelHost[data-panel="stats"] .tp67-stats-heading{padding:0 44px 8px 2px;margin:0 0 8px}
+html body #tp155R4PanelHost[data-panel="stats"] .tp67-stats-heading h2{margin:0;font-size:20px;line-height:1.25}
+html body #tp155R4PanelHost[data-panel="stats"] .tp3-stats-card{margin:0!important}

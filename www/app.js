@@ -11429,7 +11429,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
 
  let currentPanel='',panelHost=null,panelTrigger=null,bodyOverflow='',panelOpenScrollY=0;
  const panelDomSupported=(()=>{try{const x=document?.createElement?.('div');return !!(x&&typeof x.addEventListener==='function'&&document?.body&&typeof document.body.appendChild==='function')}catch(_){return false}})();
- const PANEL_ROUTES=new Set(['calendar','coach','settings','quick','exercises']);
+ const PANEL_ROUTES=new Set(['calendar','coach','settings','quick','exercises','stats']);
  const FULL_ROUTES=new Set(['home','plan','health','programs','history']);
 
  const routeFromButton=function(btn){
@@ -11514,6 +11514,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   if(type==='coach')return coachHtml();
   if(type==='quick')return typeof window.tp155QuickPanelHtml==='function'?window.tp155QuickPanelHtml():'';
   if(type==='exercises')return typeof window.tp155ExercisePanelHtml==='function'?window.tp155ExercisePanelHtml():'';
+  if(type==='stats')return typeof window.tp67FullStatsPanelHtml==='function'?window.tp67FullStatsPanelHtml():'';
   return '';
  };
 
@@ -12609,7 +12610,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  cleanupChrome();
 
  const style=document.createElement('style');style.id='tp162FollowupCss';style.textContent=[
-  '#tp155R4PanelHost:is([data-panel="calendar"],[data-panel="coach"],[data-panel="settings"],[data-panel="exercises"]) .tp155-r4-panel-close{position:sticky!important;top:8px!important;right:auto!important;float:right!important;margin:0 4px -36px 8px!important;z-index:20!important}',
+  '#tp155R4PanelHost:is([data-panel="calendar"],[data-panel="coach"],[data-panel="settings"],[data-panel="exercises"],[data-panel="stats"]) .tp155-r4-panel-close{position:sticky!important;top:8px!important;right:auto!important;float:right!important;margin:0 4px -36px 8px!important;z-index:20!important}',
   '#tp155R4PanelHost[data-panel="coach"] .tp151-coach-recommendation{margin-top:10px!important}',
   '#tp155R4PanelHost[data-panel="quick"] .tp155-quick-panel>:is(.hero,.tp151-page-head){display:none!important}',
   '#tp155R4PanelHost[data-panel="quick"] .tp160-quick-context{font-size:15px!important;font-weight:850!important;line-height:1.2!important}',
@@ -13655,34 +13656,18 @@ rf263HealthHub=function(){
   const button=document.createElement('button');
   button.type='button';button.className='btn secondary block tp67-full-stats-entry';
   button.textContent=copy().fullStats+' ›';
-  button.addEventListener('click',()=>window.tp67OpenFullStats());
+  button.addEventListener('click',()=>window.tp67OpenFullStats(button));
   anchor.insertAdjacentElement('afterend',button);
  }
- window.tp67OpenFullStats=function(){
-  if(typeof window.tp155OpenJournalStats!=='function')return false;
-  window.tp155R4ClosePanel?.(false);
-  window.tp155OpenJournalStats();
-  const main=document.querySelector('#app main');
-  if(!main)return false;
-  main.classList.add('tp67-full-stats');
-  // Old stats decoration runs after render and re-adds tabs; remove only
-  // the retired Statistics tab and highlight the parent Progress tab.
-  removeLegacyTab(main);
-  const nav=main.querySelector('nav.tp155-journal-tabs');
-  nav?.querySelectorAll('button').forEach(button=>{
-   const active=(button.getAttribute('onclick')||'').includes('tp177OpenProgress()');
-   button.classList.toggle('active',active);
-   if(button.hasAttribute('aria-selected'))button.setAttribute('aria-selected',String(active));
-  });
-  if(!main.querySelector('.tp67-full-stats-back')){
-   const back=document.createElement('button');
-   back.type='button';back.className='btn secondary tp67-full-stats-back';
-   back.textContent='← '+copy().backToProgress;
-   back.addEventListener('click',()=>window.tp177OpenProgress());
-   if(nav)nav.insertAdjacentElement('afterend',back);else main.prepend(back);
-  }
-  window.scrollTo?.(0,0);
-  return true;
+ window.tp67FullStatsPanelHtml=function(){
+  // The same full per-exercise statistics renderer used by the former Journal page.
+  const report=typeof rf220ProgressHtml==='function'?rf220ProgressHtml():'';
+  return '<main class="tp67-full-stats-panel"><header class="tp67-stats-heading"><h2>'+esc(copy().fullStats)+'</h2></header>'+report+'</main>';
+ };
+ window.tp67OpenFullStats=function(trigger){
+  // The shared popup supplies the global red X, backdrop and Android Back.
+  if(!document.querySelector('#app main.tp177-progress'))return false;
+  return !!window.tp155R4OpenPanel?.('stats',trigger||document.activeElement);
  };
  function decorateCoach(root){
   if(!root||root.querySelector('.tp67-coach-progress'))return;
@@ -13720,16 +13705,7 @@ rf263HealthHub=function(){
    return oldGo.apply(this,arguments);
   };
   window.TrainPilotNavigate=go;
-  const oldAndroidBack=window.TrainPilotAndroidBack;
-  window.TrainPilotAndroidBack=function(){
-   const main=document.querySelector('#app main.tp67-full-stats');
-   if(main&&state?.tab==='stats'&&!main.querySelector('details.tp3-stat-row[open]')&&
-      !document.querySelector('#tp2628Dialog,#tp177Dialog,.video-modal,#tp155R4PanelHost')){
-    window.tp177OpenProgress();
-    return true;
-   }
-   return typeof oldAndroidBack==='function'?oldAndroidBack.apply(this,arguments):false;
-  };
+
   const oldToggle=window.tp177ToggleMetric;
   window.tp177ToggleMetric=function(key){
    const result=oldToggle.apply(this,arguments);
@@ -13744,7 +13720,7 @@ rf263HealthHub=function(){
     return result;
    };
   }
-  window.TrainPilot67={version:'issue67-rc3',twoJournalTabs:true,allTimePr:true,fullStatsRestored:true,coachDeepLink:true,themedCheckboxes:true};
+  window.TrainPilot67={version:'issue67-rc4',twoJournalTabs:true,allTimePr:true,fullStatsRestored:true,statsPopup:true,coachDeepLink:true,themedCheckboxes:true};
  });
 })();
 

@@ -16,5 +16,5 @@ assert.match(java,/actual\.length <= 0 \|\| !Arrays\.equals\(expected, actual\)/
 assert.match(java,/clearPendingSave\(source\)/,'temporary export data must be cleaned up after callback handling');
 const src=require('../SOURCE_VERSION.json');
 assert.equal(src.version,'1.0.0');
-assert.equal(src.versionCode,2673);
+assert.equal(src.versionCode,2674);
 console.log('PASS: lifecycle-safe native backup export stages data internally, keeps Activity state small, verifies exact bytes, and cleans temp data.');

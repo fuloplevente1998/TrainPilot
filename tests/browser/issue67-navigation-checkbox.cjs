@@ -35,24 +35,42 @@ const server=http.createServer((req,res)=>{
   await page.waitForSelector('#tp177MetricDetails .tp177-inline-record');
   assert.match(await page.locator('#tp177MetricDetails').innerText(),/Teljes rekordlista/);
   assert.equal(await page.locator('#tp177MetricDetails .tp177-inline-record').count()>0,true,'PR card shows the full history even when today has no PR');
-  // Restored old full exercise statistics remains distinct from the PR event list.
-  assert.equal(await page.locator('.tp67-full-stats-entry').count(),1,'Progress offers the old full Statistics view');
+  // Restore the complete legacy exercise statistics inside the shared floating panel.
+  assert.equal(await page.locator('.tp67-full-stats-entry').count(),1,'Progress offers detailed exercise statistics');
   await page.locator('.tp67-full-stats-entry').click();
-  await page.waitForSelector('main.tp67-full-stats .tp4-stat-row');
-  assert.equal(await page.evaluate(()=>state.tab),'stats');
-  assert.equal(await page.locator('main.tp67-full-stats .tp4-stat-row').count(),1,'all logged exercise statistics are preserved');
-  assert.equal(await page.locator('main.tp67-full-stats .tp155-journal-tabs button').count(),2,'full Stats does not restore a third Journal tab');
-  await page.locator('main.tp67-full-stats .tp4-stat-row summary').first().click();
-  assert.equal(await page.locator('main.tp67-full-stats .tp4-stat-row[open] .stat').count(),4,'max load, estimated 1RM, best set and volume all remain available');
-  assert.equal(await page.evaluate(()=>window.TrainPilotAndroidBack()),true,'first Android Back collapses an expanded exercise');
-  assert.equal(await page.locator('main.tp67-full-stats .tp4-stat-row[open]').count(),0);
-  assert.equal(await page.evaluate(()=>window.TrainPilotAndroidBack()),true,'second Android Back returns to Progress');
-  await page.waitForSelector('main.tp177-progress .tp67-full-stats-entry');
+  const stats=page.locator('#tp155R4PanelHost[data-panel="stats"]');
+  await stats.locator('.tp67-full-stats-panel .tp4-stat-row').first().waitFor();
+  assert.equal(await page.evaluate(()=>state.tab),'history','Statistics popup must preserve Journal route');
+  assert.equal(await page.evaluate(()=>state.tp177JournalView),'progress','Statistics popup must preserve the Progress tab');
+  assert.equal(await page.locator('#app main.tp177-progress .tp155-journal-tabs button').count(),2,'the main Journal keeps two tabs');
+  assert.equal(await stats.locator('.tp4-stat-row').count(),1,'all historic exercise statistics remain available');
+  const redClose=stats.locator('.tp155-r4-panel-close');
+  assert.equal(await redClose.isVisible(),true,'popup uses the shared global red X');
+  const closeStyle=await redClose.evaluate(el=>{
+   const box=el.getBoundingClientRect(),parent=el.closest('.tp155-r4-panel').getBoundingClientRect(),cs=getComputedStyle(el);
+   return {background:cs.backgroundColor,width:box.width,height:box.height,right:parent.right-box.right,top:box.top-parent.top};
+  });
+  assert.equal(closeStyle.background,'rgb(71, 37, 41)','global red close background is unchanged');
+  assert.ok(closeStyle.right>=0&&closeStyle.right<=24&&closeStyle.top>=0&&closeStyle.top<=38,'the red X remains in the top-right corner: '+JSON.stringify(closeStyle));
+  assert.ok(Math.abs(closeStyle.width-closeStyle.height)<=1,'the shared global close control remains square');
+  await stats.locator('.tp4-stat-row summary').first().click();
+  assert.equal(await stats.locator('.tp4-stat-row[open] .stat').count(),4,'max load, estimated 1RM, best set and volume remain available');
+  assert.equal(await page.evaluate(()=>window.TrainPilotAndroidBack()),true,'Android Back collapses expanded statistics first');
+  assert.equal(await stats.locator('.tp4-stat-row[open]').count(),0);
+  assert.equal(await page.evaluate(()=>window.TrainPilotAndroidBack()),true,'next Android Back closes the popup');
+  assert.equal(await page.locator('#tp155R4PanelHost[data-panel="stats"]').count(),0);
+  assert.equal(await page.locator('main.tp177-progress .tp67-full-stats-entry').count(),1,'closing returns to the same Progress page');
   await page.locator('.tp67-full-stats-entry').click();
-  await page.waitForSelector('main.tp67-full-stats .tp67-full-stats-back');
-  await page.locator('.tp67-full-stats-back').click();
-  await page.waitForSelector('main.tp177-progress .tp67-full-stats-entry');
-
+  await stats.locator('.tp155-r4-panel-close').click();
+  assert.equal(await page.locator('#tp155R4PanelHost').count(),0,'tapping global red X closes the popup');
+  assert.equal(await page.locator('main.tp177-progress').count(),1);
+  assert.equal(await page.locator('.tp67-full-stats-entry:focus').count(),1,'global close restores focus to the opener');
+  await page.setViewportSize({width:320,height:740});
+  await page.locator('.tp67-full-stats-entry').click();
+  await stats.locator('.tp155-r4-panel-close').waitFor();
+  assert.equal(await stats.evaluate(el=>el.scrollWidth<=el.clientWidth+1),true,'popup fits the 320px phone width');
+  await stats.locator('.tp155-r4-panel-close').click();
+  await page.setViewportSize({width:393,height:873});
 
   await page.evaluate(()=>window.tp155R4OpenPanel('coach',document.activeElement));
   await page.waitForSelector('#tp155R4PanelHost[data-panel="coach"] .tp67-coach-progress');
@@ -85,6 +103,6 @@ const server=http.createServer((req,res)=>{
    await input.uncheck({force:true});assert.equal(await input.isChecked(),false);
   }
   assert.deepEqual(errors,[],'no new browser exceptions');
-  console.log('PASS #67: two Journal tabs, full legacy Statistics from Progress, Coach link, PR list and themed checkboxes.');
+  console.log('PASS #67: two Journal tabs, complete popup Statistics with global red X, Coach link, PR list and themed checkboxes.');
  }finally{if(browser)await browser.close();server.close()}
 })().catch(err=>{console.error(err);process.exit(1)});
