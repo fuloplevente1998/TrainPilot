@@ -13325,7 +13325,6 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const buttons=[...document.querySelectorAll('.tp177-periods button')];
   if(buttons.length===4){buttons.forEach(b=>{const active=b.dataset.period===p;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))})}
   render();
-  showLatestBucket();
  }
  function showLatestBucket(){
   requestAnimationFrame(()=>{
@@ -13424,6 +13423,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   document.querySelectorAll('.tp177-metric[data-metric]').forEach(button=>button.setAttribute('aria-expanded',String(button.dataset.metric===openMetric)));
  };
  function progressHtml(){
+  showLatestBucket();
   const v=snapshot(),m=v.currentMetrics,c=v.changes,period=v.period;
   const from=dateFmt(v.start),through=dateFmt(model.addDays(v.end,-1));
   const periodButtons=[['1d','day1'],['7d','days7'],['30d','days30'],['3m','months3']].map(a=>
@@ -13572,7 +13572,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  window.TrainPilotNavigate=go;
  window.tp177OpenProgress=function(){
   openingProgress=true;state.tp177JournalView='progress';
-  try{const result=go('history');showLatestBucket();return result}finally{openingProgress=false}
+  try{return go('history')}finally{openingProgress=false}
  };
  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.getElementById('tp177Dialog'))window.tp177BackDialog()});
  window.TrainPilot177Progress={version:'1.7.7-issue60',snapshot,prepare:model.prepare,build:model.build};
