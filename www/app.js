@@ -13369,7 +13369,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    core:'<ellipse cx="454" cy="515" rx="94" ry="157"/><ellipse cx="1127" cy="540" rx="92" ry="130"/>'
   };
   const areas=v.groups.filter(g=>g.sets>0).map(g=>'<g data-group="'+g.key+'" data-load="'+loadLevel(g.percent)+'" fill="'+loadColor[loadLevel(g.percent)]+'" opacity="'+(0.30+0.42*g.percent/100).toFixed(2)+'">'+shapes[g.key]+'</g>').join('');
-  return '<div class="tp177-anatomy-art"><img class="tp177-anatomy-image" src="progress-anatomy-177.png" alt="" loading="lazy">'+
+  return '<div class="tp177-anatomy-art"><img class="tp177-anatomy-image" src="progress-anatomy-177.webp" alt="" loading="lazy">'+
    '<svg class="tp177-heatmap" viewBox="0 0 1536 1024" aria-hidden="true" preserveAspectRatio="xMidYMid meet"><g filter="url(#tp177-heat-blur)">'+areas+'</g>'+
    '<defs><filter id="tp177-heat-blur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="23"/></filter></defs></svg></div>';
  }

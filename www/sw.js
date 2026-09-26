@@ -1,5 +1,5 @@
-const C='trainpilot-v177-ui1';
-const CORE=['./','./index.html','./styles.css','./health-dashboard-168.css','./global-uiux-177.css','./progress-177.css','./progress-anatomy-177.png','./manifest.json','./runtime-manifest.txt'];
+const C='trainpilot-v177-ui2';
+const CORE=['./','./index.html','./styles.css','./health-dashboard-168.css','./global-uiux-177.css','./progress-177.css','./progress-anatomy-177.webp','./manifest.json','./runtime-manifest.txt'];
 
 async function runtimeAssets(){
   const r=await fetch('./runtime-manifest.txt',{cache:'no-store'});
