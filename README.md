@@ -18,16 +18,14 @@ TrainPilot egy Androidra készült, local-first edzéstervező és edzésnapló 
 
 A Google-funkciókhoz külön Google Cloud/OAuth konfiguráció szükséges. A Health Connect és a Google-integrációk tényleges működése eszköz-, Android-verzió-, jogosultság- és fiókbeállítás-függő; kiadás előtt fizikai készülékes ellenőrzés szükséges.
 
-## Aktuális stabil alap: 1.7.7
+## Aktuális `main`-forrás: TrainPilot 1.0.0 (2674)
 
-- Legutóbbi publikált kiadás: **[v1.7.7](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.7.7)** (2026-09-26).
-- Android `versionCode`: **2670**; `versionName`: **1.7.7**.
-- Elfogadott kiadási alap: `main`, commit `61b7d2008740ffd56d352736f10aa93ab8c2e08c`.
-- Android application ID: `com.repforge.app`.
-- Kanonikus webalkalmazás-forrás: `www/app.js`.
-- A #60, #61, #62 és #63 feladatok a 1.7.7-es alapban lezárva.
-
-Az alkalmazás átnevezése **TrainPilot 1.0.0**-ra külön fejlesztési/ellenőrzési körben történik. A következő APK-nál a `versionName` lehet `1.0.0`, de az Android `versionCode` értékét legalább **2671**-re kell növelni. Ez a dokumentációs frissítés még nem módosítja a telepíthető alkalmazás verzióját.
+- Az alkalmazás `main` ága: [1.0.0 / 2674](https://github.com/fuloplevente1998/TrainPilot/commit/5d22e1a166d4909320e8924e278ce9d47f6443c8) (#66 és #68); az új verzió **forráskódja bekerült a mainre**, külön `v1.0.0` GitHub Release és új tag még nincs.
+- A **legutóbbi publikált GitHub Release** továbbra is [v1.7.7](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.7.7) (1.7.7 / 2670, 2026-09-26).
+- A Napló két füle az Edzésnapló és a Fejlődés. A Fejlődés **Részletes statisztikák** gombja közös felugró panelt nyit a globális piros X-szel; a Coach Fejlődés-gombja ide navigál.
+- A #67 javításokra: [sikeres automatikus tesztek, Chromium UI-regresszió és aláírt 2674-es teszt-APK](https://github.com/fuloplevente1998/TrainPilot/actions/runs/36240223904).
+- A privát [TrainPilot-Archive](https://github.com/fuloplevente1998/TrainPilot-Archive) `main` ága tartalmazza ugyanezt a forrást; új privát GitHub Release nem készült.
+- Android application ID: `com.repforge.app`; kanonikus webalkalmazás-forrás: `www/app.js`.
 
 A `com.repforge.app`, egyes `repforge:*` helyi adattárolási kulcsok és régi backup/szinkron azonosítók szándékosan megmaradnak a korábbi telepítésekkel és felhasználói adatokkal való kompatibilitás miatt. Az eredeti release-aláírásnak a frissítésnél is változatlannak kell maradnia.
 

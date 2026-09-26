@@ -1,3 +1,12 @@
+# TrainPilot 1.0.0 / 2674 – aktuális `main`-forrás, GitHub Release még nincs (2026-09-26)
+
+- #66: 1.0.0-verzióátállás és Fejlődés felület; #67/#68: kétfüles Napló, Coach → Fejlődés, teljes PR-előzmények és egységes Felszerelés/Kizárások jelölők.
+- **Részletes statisztikák:** a korábbi teljes, gyakorlatonkénti statisztikai lista most a Fejlődésből nyíló, közös felugró ablakban érhető el, a globális jobb felső piros X-szel és Android Back támogatással.
+- Az 1.0.0 (2674) forrása a publikus `main` ágon: `5d22e1a166d4909320e8924e278ce9d47f6443c8`. Branch Release Gate #36240223904: 104/104 automatizált teszt, teljes Chromium UI, aláírt APK és csomagellenőrzés sikeres.
+- A privát `TrainPilot-Archive/main` a teljes közös forráskódot tükrözi, külön GitHub Release és új tag nélkül. A v1.7.7 az utolsó publikált bináris kiadás.
+
+---
+
 # TrainPilot 1.7.7 / 2670 – stabil publikált kiadás (2026-09-26)
 
 - **#60 – Fejlődés:** naplóalapú fejlődési mutatók, egymás mellé rendezett függőleges volumentrend és elfogadott elrendezés.
