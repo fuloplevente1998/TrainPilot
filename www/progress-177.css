@@ -103,9 +103,12 @@ html body #app .tp177-anatomy-image{display:block;width:100%;height:auto;filter:
 html body #app .tp177-heatmap{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 html body #app .tp177-anatomy-zoom{display:block;width:100%;padding:0;border:0;background:none;cursor:zoom-in}
 html body #app .tp177-anatomy-zoom:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:8px}
-html body #app .tp177-anatomy-large{max-width:100%;overflow:auto;touch-action:pan-x pan-y}
-html body #app .tp177-anatomy-large .tp177-anatomy-art{width:min(720px,190vw);max-width:none}
-html body .tp177-dialog:has(.tp177-anatomy-large) .tp177-dialog-card{width:min(100%,800px)}
+html body .tp177-dialog:has(.tp177-anatomy-large) .tp177-dialog-card{width:min(100%,800px);max-height:calc(100dvh - 28px)}
+html body .tp177-dialog:has(.tp177-anatomy-large) .tp177-dialog-content{display:grid;place-items:center;overflow:hidden;min-width:0}
+html body .tp177-dialog .tp177-anatomy-large{width:100%;min-width:0}
+html body .tp177-dialog .tp177-anatomy-art{position:relative;width:100%;max-width:720px;margin:auto}
+html body .tp177-dialog .tp177-anatomy-image{display:block;width:100%;height:auto;filter:grayscale(1) contrast(1.06)}
+html body .tp177-dialog .tp177-heatmap{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 html body #app .tp177-muscle-bars{display:grid;gap:9px;min-width:0}
 html body #app .tp177-muscle-row{
  display:grid;grid-template-columns:34px minmax(0,1fr) 30px;gap:4px;align-items:center;width:100%;padding:0;

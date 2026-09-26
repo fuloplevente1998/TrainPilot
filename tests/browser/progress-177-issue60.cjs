@@ -34,6 +34,15 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  await page.waitForSelector('#tp177Dialog .tp177-anatomy-large');
  const enlargedAnatomy=await page.locator('#tp177Dialog .tp177-anatomy-art').boundingBox();
  assert.ok(enlargedAnatomy.width>smallAnatomy.width*1.5,'tapping anatomy opens a substantially larger illustration');
+ const fittedAnatomy=await page.evaluate(()=>{
+  const dialog=document.querySelector('#tp177Dialog'),art=dialog.querySelector('.tp177-anatomy-art'),img=dialog.querySelector('.tp177-anatomy-image'),overlay=dialog.querySelector('.tp177-heatmap');
+  const a=art.getBoundingClientRect(),i=img.getBoundingClientRect(),o=overlay.getBoundingClientRect();
+  return {a:{left:a.left,right:a.right,top:a.top,bottom:a.bottom},i:{left:i.left,right:i.right,top:i.top,bottom:i.bottom},o:{left:o.left,right:o.right,top:o.top,bottom:o.bottom},filter:getComputedStyle(img).filter,overflowX:document.documentElement.scrollWidth-document.documentElement.clientWidth};
+ });
+ assert.ok(fittedAnatomy.a.left>=0&&fittedAnatomy.a.right<=393&&fittedAnatomy.a.top>=0&&fittedAnatomy.a.bottom<=873,'entire anatomy fits the phone viewport without horizontal panning');
+ assert.ok(fittedAnatomy.overflowX<=0,'enlarged anatomy does not widen the page');
+ assert.match(fittedAnatomy.filter,/grayscale\(1\)/,'enlarged base uses the same neutral gray as the small view');
+ assert.ok(Math.abs(fittedAnatomy.i.left-fittedAnatomy.o.left)<1&&Math.abs(fittedAnatomy.i.right-fittedAnatomy.o.right)<1&&Math.abs(fittedAnatomy.i.bottom-fittedAnatomy.o.bottom)<1,'colored muscle overlay matches the full enlarged image');
  await page.locator('.tp177-dialog-close').click();await page.waitForSelector('#tp177Dialog',{state:'detached'});
  assert.equal(await page.locator('.tp177-load-legend [data-load]').count(),3,'fixed low/medium/high load legend');
  assert.equal(await page.locator('.tp177-muscle-row[data-load="high"]').count()>0,true,'relative peak uses the high-load color in every theme');
