@@ -13609,11 +13609,11 @@ rf263HealthHub=function(){
 (function(){
  'use strict';
  const labels={
-  hu:{open:'Fejlődés megnyitása',all:'Teljes rekordlista',weight:'Súly',reps:'Ismétlés',time:'Idő',left:'Bal oldal',right:'Jobb oldal',previous:'Korábbi',current:'Új'},
-  en:{open:'Open Progress',all:'All-time records',weight:'Weight',reps:'Reps',time:'Time',left:'Left side',right:'Right side',previous:'Previous',current:'New'},
-  de:{open:'Fortschritt öffnen',all:'Alle Rekorde',weight:'Gewicht',reps:'Wiederholungen',time:'Zeit',left:'Links',right:'Rechts',previous:'Vorher',current:'Neu'},
-  ro:{open:'Deschide Progresul',all:'Toate recordurile',weight:'Greutate',reps:'Repetări',time:'Timp',left:'Stânga',right:'Dreapta',previous:'Anterior',current:'Nou'},
-  sk:{open:'Otvoriť pokrok',all:'Všetky rekordy'},pl:{open:'Otwórz postępy',all:'Wszystkie rekordy'}
+  hu:{open:'Fejlődés megnyitása',all:'Teljes rekordlista',fullStats:'Részletes statisztikák',backToProgress:'Vissza a Fejlődéshez',weight:'Súly',reps:'Ismétlés',time:'Idő',left:'Bal oldal',right:'Jobb oldal',previous:'Korábbi',current:'Új'},
+  en:{open:'Open Progress',all:'All-time records',fullStats:'Detailed statistics',backToProgress:'Back to Progress',weight:'Weight',reps:'Reps',time:'Time',left:'Left side',right:'Right side',previous:'Previous',current:'New'},
+  de:{open:'Fortschritt öffnen',all:'Alle Rekorde',fullStats:'Detaillierte Statistiken',backToProgress:'Zurück zum Fortschritt',weight:'Gewicht',reps:'Wiederholungen',time:'Zeit',left:'Links',right:'Rechts',previous:'Vorher',current:'Neu'},
+  ro:{open:'Deschide Progresul',all:'Toate recordurile',fullStats:'Statistici detaliate',backToProgress:'Înapoi la Progres',weight:'Greutate',reps:'Repetări',time:'Timp',left:'Stânga',right:'Dreapta',previous:'Anterior',current:'Nou'},
+  sk:{open:'Otvoriť pokrok',all:'Všetky rekordy',fullStats:'Podrobné štatistiky',backToProgress:'Späť na Pokrok'},pl:{open:'Otwórz postępy',all:'Wszystkie rekordy',fullStats:'Szczegółowe statystyki',backToProgress:'Wróć do Postępów'}
  };
  const lang=()=>typeof rf212Lang==='function'?rf212Lang():'hu';
  const copy=()=>Object.assign({},labels.hu,labels[lang()]||{});
@@ -13647,6 +13647,43 @@ rf263HealthHub=function(){
   }
   panel.appendChild(list);
  }
+ // #67 follow-up: retain the full per-exercise Statistics view as a detail of Progress.
+ function decorateProgress(root){
+  if(!root||root.querySelector('.tp67-full-stats-entry'))return;
+  const anchor=root.querySelector('#tp177MetricDetails');
+  if(!anchor)return;
+  const button=document.createElement('button');
+  button.type='button';button.className='btn secondary block tp67-full-stats-entry';
+  button.textContent=copy().fullStats+' ›';
+  button.addEventListener('click',()=>window.tp67OpenFullStats());
+  anchor.insertAdjacentElement('afterend',button);
+ }
+ window.tp67OpenFullStats=function(){
+  if(typeof window.tp155OpenJournalStats!=='function')return false;
+  window.tp155R4ClosePanel?.(false);
+  window.tp155OpenJournalStats();
+  const main=document.querySelector('#app main');
+  if(!main)return false;
+  main.classList.add('tp67-full-stats');
+  // Old stats decoration runs after render and re-adds tabs; remove only
+  // the retired Statistics tab and highlight the parent Progress tab.
+  removeLegacyTab(main);
+  const nav=main.querySelector('nav.tp155-journal-tabs');
+  nav?.querySelectorAll('button').forEach(button=>{
+   const active=(button.getAttribute('onclick')||'').includes('tp177OpenProgress()');
+   button.classList.toggle('active',active);
+   if(button.hasAttribute('aria-selected'))button.setAttribute('aria-selected',String(active));
+  });
+  if(!main.querySelector('.tp67-full-stats-back')){
+   const back=document.createElement('button');
+   back.type='button';back.className='btn secondary tp67-full-stats-back';
+   back.textContent='← '+copy().backToProgress;
+   back.addEventListener('click',()=>window.tp177OpenProgress());
+   if(nav)nav.insertAdjacentElement('afterend',back);else main.prepend(back);
+  }
+  window.scrollTo?.(0,0);
+  return true;
+ };
  function decorateCoach(root){
   if(!root||root.querySelector('.tp67-coach-progress'))return;
   // Phase 7 renders a deferred placeholder before the old statistics card hydrates.
@@ -13673,7 +13710,7 @@ rf263HealthHub=function(){
    const result=oldRender.apply(this,arguments),main=document.querySelector('#app main');
    removeLegacyTab(main);
    if(main?.matches('main.tp151-coach'))decorateCoach(main);
-   if(main?.matches('main.tp177-progress'))updateAllTimePr();
+   if(main?.matches('main.tp177-progress')){updateAllTimePr();decorateProgress(main)}
    return result;
   };
   window.render=render;
@@ -13683,6 +13720,16 @@ rf263HealthHub=function(){
    return oldGo.apply(this,arguments);
   };
   window.TrainPilotNavigate=go;
+  const oldAndroidBack=window.TrainPilotAndroidBack;
+  window.TrainPilotAndroidBack=function(){
+   const main=document.querySelector('#app main.tp67-full-stats');
+   if(main&&state?.tab==='stats'&&!main.querySelector('details.tp3-stat-row[open]')&&
+      !document.querySelector('#tp2628Dialog,#tp177Dialog,.video-modal,#tp155R4PanelHost')){
+    window.tp177OpenProgress();
+    return true;
+   }
+   return typeof oldAndroidBack==='function'?oldAndroidBack.apply(this,arguments):false;
+  };
   const oldToggle=window.tp177ToggleMetric;
   window.tp177ToggleMetric=function(key){
    const result=oldToggle.apply(this,arguments);
@@ -13697,7 +13744,7 @@ rf263HealthHub=function(){
     return result;
    };
   }
-  window.TrainPilot67={version:'issue67-rc2',twoJournalTabs:true,allTimePr:true,coachDeepLink:true,themedCheckboxes:true};
+  window.TrainPilot67={version:'issue67-rc3',twoJournalTabs:true,allTimePr:true,fullStatsRestored:true,coachDeepLink:true,themedCheckboxes:true};
  });
 })();
 

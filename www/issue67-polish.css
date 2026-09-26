@@ -29,3 +29,7 @@ html body :is(#tp3PlannerPanelHost,main.tp152-profile) :is(.exclude-row,.rf148-g
 html body :is(#tp3PlannerPanelHost,main.tp152-profile) :is(.exclude-row,.rf148-gear-row) input[type="checkbox"]:disabled{opacity:.5;cursor:not-allowed}
 html body #app .tp155-journal-tabs.tp177-journal-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 html body #tp155R4PanelHost[data-panel="coach"] .tp67-coach-progress{margin-top:12px;min-height:44px;border-radius:12px;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--tp-ui-border,var(--line)))}
+
+/* #67 follow-up: restore the full exercise stats via Progress without adding a third tab. */
+html body #app main.tp177-progress>.tp67-full-stats-entry{min-height:46px;margin:8px 0 12px!important;border:1px solid color-mix(in srgb,var(--accent) 47%,var(--tp-ui-border,var(--line)))!important;border-radius:12px!important;background:var(--tp-ui-card-raised,var(--card2))!important;color:var(--text)!important;font-weight:800;text-align:center}
+html body #app main.tp67-full-stats>.tp67-full-stats-back{display:block;min-height:44px;margin:4px 0 12px;border:1px solid var(--tp-ui-border,var(--line));border-radius:12px}

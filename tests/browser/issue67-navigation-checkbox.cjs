@@ -35,6 +35,24 @@ const server=http.createServer((req,res)=>{
   await page.waitForSelector('#tp177MetricDetails .tp177-inline-record');
   assert.match(await page.locator('#tp177MetricDetails').innerText(),/Teljes rekordlista/);
   assert.equal(await page.locator('#tp177MetricDetails .tp177-inline-record').count()>0,true,'PR card shows the full history even when today has no PR');
+  // Restored old full exercise statistics remains distinct from the PR event list.
+  assert.equal(await page.locator('.tp67-full-stats-entry').count(),1,'Progress offers the old full Statistics view');
+  await page.locator('.tp67-full-stats-entry').click();
+  await page.waitForSelector('main.tp67-full-stats .tp4-stat-row');
+  assert.equal(await page.evaluate(()=>state.tab),'stats');
+  assert.equal(await page.locator('main.tp67-full-stats .tp4-stat-row').count(),1,'all logged exercise statistics are preserved');
+  assert.equal(await page.locator('main.tp67-full-stats .tp155-journal-tabs button').count(),2,'full Stats does not restore a third Journal tab');
+  await page.locator('main.tp67-full-stats .tp4-stat-row summary').first().click();
+  assert.equal(await page.locator('main.tp67-full-stats .tp4-stat-row[open] .stat').count(),4,'max load, estimated 1RM, best set and volume all remain available');
+  assert.equal(await page.evaluate(()=>window.TrainPilotAndroidBack()),true,'first Android Back collapses an expanded exercise');
+  assert.equal(await page.locator('main.tp67-full-stats .tp4-stat-row[open]').count(),0);
+  assert.equal(await page.evaluate(()=>window.TrainPilotAndroidBack()),true,'second Android Back returns to Progress');
+  await page.waitForSelector('main.tp177-progress .tp67-full-stats-entry');
+  await page.locator('.tp67-full-stats-entry').click();
+  await page.waitForSelector('main.tp67-full-stats .tp67-full-stats-back');
+  await page.locator('.tp67-full-stats-back').click();
+  await page.waitForSelector('main.tp177-progress .tp67-full-stats-entry');
+
 
   await page.evaluate(()=>window.tp155R4OpenPanel('coach',document.activeElement));
   await page.waitForSelector('#tp155R4PanelHost[data-panel="coach"] .tp67-coach-progress');
@@ -67,6 +85,6 @@ const server=http.createServer((req,res)=>{
    await input.uncheck({force:true});assert.equal(await input.isChecked(),false);
   }
   assert.deepEqual(errors,[],'no new browser exceptions');
-  console.log('PASS #67: two Journal tabs, Coach deep link, all-time PR list, themed Gear/Exclusion checkboxes.');
+  console.log('PASS #67: two Journal tabs, full legacy Statistics from Progress, Coach link, PR list and themed checkboxes.');
  }finally{if(browser)await browser.close();server.close()}
 })().catch(err=>{console.error(err);process.exit(1)});
