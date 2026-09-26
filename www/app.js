@@ -13604,7 +13604,7 @@ rf263HealthHub=function(){
 
 // @section issue67-fixes.js
 /* Issue #67: non-invasive 1.0.0 navigation bridge.
- * Kept separate from the canonical source until the 1.0.0 test branch is approved.
+ * Additive compatibility section in the canonical single-source app.
  */
 (function(){
  'use strict';
@@ -13649,14 +13649,20 @@ rf263HealthHub=function(){
  }
  function decorateCoach(root){
   if(!root||root.querySelector('.tp67-coach-progress'))return;
-  const last=root.lastElementChild;
-  if(!last?.matches?.('.card')||!last.querySelector('h2')||last.matches('.tp151-coach-recommendation,.tp151-coach-context'))return;
+  // Phase 7 renders a deferred placeholder before the old statistics card hydrates.
+  // Replace the placeholder immediately, so redundant statistics are never built.
+  const pending=root.querySelector('[data-tp7-coach-progress="pending"]');
+  const oldCard=[...root.querySelectorAll(':scope > .card')].reverse().find(card=>
+   /fejlőd|progress|fortschritt|progres|pokrok|postęp/i.test(card.querySelector(':scope > h2')?.textContent||'')
+  );
+  const target=pending||oldCard;
+  if(!target)return;
   const button=document.createElement('button');button.type='button';button.className='btn secondary block tp67-coach-progress';button.textContent=copy().open;
   button.addEventListener('click',()=>{
    window.tp155R4ClosePanel?.(false);
    window.tp177OpenProgress?.();
   });
-  last.replaceWith(button);
+  target.replaceWith(button);
  }
  window.addEventListener?.('DOMContentLoaded',()=>{
   if(typeof historyScreen!=='function'||typeof render!=='function'||!window.TrainPilot177Progress)return;
