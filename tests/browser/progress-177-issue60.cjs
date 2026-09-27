@@ -20,6 +20,14 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  assert.equal(await page.locator('.tp155-journal-tabs button').count(),2,'Journal must have Log / Progress tabs');
  assert.match((await page.locator('.tp155-journal-tabs').innerText()).replace(/\s+/g,' '),/Edzésnapló.*Fejlődés/);
  await page.getByRole('tab',{name:'Fejlődés'}).click();await page.waitForSelector('main.tp177-progress');
+ assert.equal(await page.locator('.tp177-volume-panel').count(),1,'total volume and trend share one panel');
+ assert.equal(await page.locator('.tp177-volume-toggle').getAttribute('aria-expanded'),'false');
+ const compactHeight=(await page.locator('.tp177-bar-rail').first().boundingBox()).height;
+ assert.ok(compactHeight>=55&&compactHeight<100,'the chart remains visible in compact mode');
+ await page.locator('.tp177-volume-toggle').click();
+ const expandedHeight=(await page.locator('.tp177-bar-rail').first().boundingBox()).height;
+ assert.ok(expandedHeight>compactHeight&&expandedHeight<149,'expanded chart is larger but still smaller than the previous layout');
+ assert.equal(await page.locator('.tp177-volume-toggle').getAttribute('aria-expanded'),'true');
  assert.equal(await page.locator('.tp177-metric').count(),4,'reference layout keeps four summary cards');
  assert.match(await page.locator('.tp177-metric[data-metric="duration"]').innerText(),/Átl\. edzésidő[\s\S]*60 min/);
  assert.equal(await page.locator('.tp177-muscle-row').count(),6,'six main muscle group rows expected');
@@ -80,6 +88,9 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
    assert.ok((await latest()).left<2,'older buckets remain reachable by scrolling back');
   }
  }
+ await page.locator('.tp177-volume-toggle').click();
+ assert.equal(await page.locator('.tp177-volume-toggle').getAttribute('aria-expanded'),'false');
+ assert.ok((await page.locator('.tp177-bar-rail').first().boundingBox()).height<expandedHeight,'compact chart survives period changes');
  await page.locator('.tp177-periods button[data-period="7d"]').click();await page.waitForFunction(()=>document.querySelectorAll('.tp177-chart-column').length===7);
  assert.match(await page.locator('.tp177-metric[data-metric="duration"]').innerText(),/60 min/,'duration recalculates for selected period');
  await page.evaluate(()=>{const b=[...document.querySelectorAll('.tp177-chart-column')].find(x=>parseFloat(x.querySelector('.tp177-bar')?.style.height||'0')>0);b?.click()});
