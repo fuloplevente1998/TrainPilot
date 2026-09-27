@@ -188,6 +188,7 @@ var cloudStatus = function cloudStatus(){const s=db.get('cloudStatus',{});return
 var cloudPanel = function cloudPanel(){const p=cloudPrefs();return `<div class="setting"><label>Google-fiók és szinkron</label><p class="small muted">${cloudProfile?esc(cloudProfile.name||cloudProfile.email)+' • '+esc(cloudProfile.email):'Kapcsold a Google-fiókodat a RepForge-profilhoz. A kiadás Google Cloud-beállítása szükséges.'}</p>${cloudProfile?`<button class="btn secondary block" onclick="disconnectGoogle()">Kijelentkezés</button><br><label><input type="checkbox" ${p.drive?'checked':''} onchange="setCloudOption('drive',this.checked)"> Automatikus Drive-szinkron</label><label><input type="checkbox" ${p.calendar?'checked':''} onchange="setCloudOption('calendar',this.checked)"> Automatikus edzésnaptár</label><p class="small muted">Az app megnyitásakor és adatváltozás után, internet mellett. Bezárt appban nincs háttérszinkron. A naptárkapcsolat iránya: RepForge → Google Naptár.</p><button class="btn block" onclick="syncCloud(false)">Drive-szinkron most</button><br><button class="btn secondary block" onclick="syncCalendar(false)">Naptárszinkron most</button>`:`<button class="btn block" onclick="connectGoogle()">Google-fiók kapcsolása</button>`}${cloudStatus()}</div>`;};
 var showCloudMessage = function showCloudMessage(t){cloudMessage=t||'';const e=document.getElementById('cloudStatus');if(e)e.outerHTML=cloudStatus();};
 var calendarSyncPending=false;
+var cloudDriveStage='';
 var finishCloud = function finishCloud(){cloudBusy=false;if(calendarSyncPending){calendarSyncPending=false;void syncCalendar(false);return;}if(cloudDirty){cloudDirty=false;cloudChanged();}};
 var initCloud = async function initCloud(){if(!isNative()||!googleBridge()?.status)return;try{const r=await googleBridge().status();cloudProfile=r.profile?JSON.parse(r.profile):null;if(state.tab==='settings')render();cloudChanged();}catch(e){showCloudMessage(e.message);}};
 var connectGoogle = async function connectGoogle(){if(cloudBusy)return;if(!isNative()){alert('A Google-kapcsolat Androidon érhető el.');return;}if(!confirm('A kiválasztott Google-fiókhoz kapcsolod a RepForge-ot? A szinkron későbbi bekapcsolása a telefon jelenlegi edzésadatait is ebbe a fiókba menti.'))return;cloudBusy=true;try{const r=await googleBridge().connect();cloudProfile=JSON.parse(r.profile);db.set('cloudPrefs',{drive:false,calendar:false});db.set('cloudStatus',{});render();alert('Google-profil kapcsolva. A Drive és a naptár engedélyét külön kérjük, a funkció bekapcsolásakor.');}catch(e){alert(e.message);}finally{finishCloud();}};
@@ -8530,6 +8531,11 @@ window.TrainPilotI18n.workoutAudit=function(){
   'cloud.driveAfterWorkout':['Drive-szinkron az edzés befejezése után.','Drive will sync after the workout is finished.','Drive wird nach Abschluss des Trainings synchronisiert.','Drive se va sincroniza după finalizarea antrenamentului.'],
   'cloud.offlineDrive':['Offline: a helyi adatok megvannak, a szinkron internetre vár.','Offline: local data is safe; sync is waiting for an internet connection.','Offline: Die lokalen Daten sind vorhanden; die Synchronisierung wartet auf eine Internetverbindung.','Offline: datele locale sunt în siguranță; sincronizarea așteaptă conexiunea la internet.'],
   'cloud.syncingDrive':['Drive-szinkron…','Syncing Drive…','Drive wird synchronisiert…','Se sincronizează Drive…'],
+  'cloud.driveListing':['Mentések listázása…','Listing backups…','Sicherungen werden aufgelistet…','Se listează copiile…'],
+  'cloud.driveFound':['{listed} mentés listázva, {current} aktuális eszközmentés.','{listed} backups listed, {current} latest device backups.','{listed} Sicherungen gelistet, {current} aktuelle Gerätesicherungen.','{listed} copii listate, {current} copii curente ale dispozitivelor.'],
+  'cloud.driveReading':['Aktuális mentés letöltése: {index}/{total}.','Downloading current backup: {index}/{total}.','Aktuelle Sicherung wird geladen: {index}/{total}.','Se descarcă copia curentă: {index}/{total}.'],
+  'cloud.drivePhotos':['Edzésfotók ellenőrzése…','Checking workout photos…','Trainingsfotos werden geprüft…','Se verifică fotografiile antrenamentelor…'],
+  'cloud.driveWriting':['Új mentés feltöltése és visszaellenőrzése…','Uploading and verifying the new backup…','Neue Sicherung wird hochgeladen und geprüft…','Se încarcă și se verifică noua copie…'],
   'cloud.unknownBackup':['Ismeretlen vagy más profilhoz tartozó felhőmentés.','Unknown cloud backup or backup belonging to another profile.','Unbekannte Cloud-Sicherung oder Sicherung eines anderen Profils.','Copie cloud necunoscută sau aparținând altui profil.'],
   'cloud.manualConflict':['Eltérő adatok vannak a felhőben. Indíts kézi szinkront az egyeztetéshez.','Cloud data differs. Start a manual sync to resolve the conflict.','Die Cloud-Daten unterscheiden sich. Starte eine manuelle Synchronisierung zur Konfliktlösung.','Datele din cloud diferă. Pornește o sincronizare manuală pentru rezolvarea conflictului.'],
   'cloud.conflictTitle':['Szinkronütközés','Sync conflict','Synchronisierungskonflikt','Conflict de sincronizare'],
@@ -8562,7 +8568,7 @@ window.TrainPilotI18n.workoutAudit=function(){
 
 cloudStatus=function(){
  const s=db.get('cloudStatus',{});
- return '<div id="cloudStatus" class="small muted">'+esc(cloudMessage||'')+(s.drive?'<p>'+esc(tp149T('cloud.lastDrive',{date:tp149FormatDateTime(s.drive)}))+'</p>':'')+(s.calendar?'<p>'+esc(tp149T('cloud.lastCalendar',{date:tp149FormatDateTime(s.calendar)}))+'</p>':'')+'</div>';
+ return '<div id="cloudStatus" class="small muted">'+esc(cloudMessage||'')+(cloudDriveStage?'<p>'+esc(cloudDriveStage)+'</p>':'')+(s.drive?'<p>'+esc(tp149T('cloud.lastDrive',{date:tp149FormatDateTime(s.drive)}))+'</p>':'')+(s.calendar?'<p>'+esc(tp149T('cloud.lastCalendar',{date:tp149FormatDateTime(s.calendar)}))+'</p>':'')+'</div>';
 };
 const tp149CloudPanelBase=cloudPanel;
 cloudPanel=function(){
@@ -8614,13 +8620,18 @@ syncCloud=async function(silent=false){
  if(cloudBusy||!cloudProfile)return;
  if(state.session){showCloudMessage(tp149T('cloud.driveAfterWorkout'));return;}
  if(navigator.onLine===false){showCloudMessage(tp149T('cloud.offlineDrive'));return;}
- cloudBusy=true;showCloudMessage(tp149T('cloud.syncingDrive'));
+ cloudBusy=true;
+ const stage=function(key,vars){cloudDriveStage=tp149T(key,vars);showCloudMessage(tp149T('cloud.syncingDrive'));};
+ stage('cloud.driveListing');
  try{
   const owner=cloudProfile.sub,bridge=googleBridge(),local=validateSync(syncData()),startState=canonicalSyncData(local),files=(await bridge.driveList({silent:silent})).files||[];
   const latest=new Map();
   for(const f of files){const m=/^repforge-sync-([a-z0-9-]{36})-/.exec(f.name);if(!m)continue;const old=latest.get(m[1]);if(!old||String(f.createdTime)>String(old.createdTime))latest.set(m[1],f);}
+  const current=[...latest.values()].sort(function(a,b){return String(a.createdTime).localeCompare(String(b.createdTime));});
+  stage('cloud.driveFound',{listed:files.length,current:current.length});
   const remotes=[];
-  for(const f of [...latest.values()].sort(function(a,b){return String(a.createdTime).localeCompare(String(b.createdTime));})){
+  for(let i=0;i<current.length;i++){
+   const f=current[i];stage('cloud.driveReading',{index:i+1,total:current.length});
    const snap=JSON.parse((await bridge.driveRead({id:f.id,silent:silent})).data);
    if(snap.app!=='RepForgeSync'||snap.schema!==1||snap.owner!==owner)throw Error(tp149T('cloud.unknownBackup'));
    remotes.push(validateSync(snap.data));
@@ -8634,17 +8645,18 @@ syncCloud=async function(silent=false){
    const phone=await tp2628Confirm(tp149T('cloud.conflict'),{title:tp149T('cloud.conflictTitle'),confirmText:tp149T('cloud.phone'),cancelText:tp149T('cloud.cloud')});
    merged=validateSync(mergeSync(local,remotes,base,function(){return phone;}));
   }
-  if(typeof rf130SyncWorkoutPhotos==='function')await rf130SyncWorkoutPhotos(merged,bridge,silent);
+  if(typeof rf130SyncWorkoutPhotos==='function'){stage('cloud.drivePhotos');await rf130SyncWorkoutPhotos(merged,bridge,silent);}
   if(state.session||canonicalSyncData(syncData())!==startState)throw Error(tp149T('cloud.changedDuringSync'));
   let device=db.get('cloudDevice',null);if(!device){device=crypto.randomUUID();db.set('cloudDevice',device);}
   if(!base||canonicalSyncData(merged)!==canonicalSyncData(base)||!files.length){
+   stage('cloud.driveWriting');
    const r=await bridge.driveWrite({silent:silent,data:JSON.stringify({app:'RepForgeSync',schema:1,owner:owner,device:device,data:merged})});
    if(!r.verified)throw Error(tp149T('cloud.verifyFailed'));
   }
   if(state.session||canonicalSyncData(syncData())!==startState)throw Error(tp149T('cloud.changedLocal'));
   storeMerged(merged);db.set('cloudBase:'+owner,merged);db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{drive:new Date().toISOString()}));
-  showCloudMessage(tp149T('cloud.driveDone'));render();
- }catch(e){showCloudMessage(e.message);if(!silent)alert(cloudMessage);}finally{finishCloud();}
+  cloudDriveStage='';showCloudMessage(tp149T('cloud.driveDone'));render();
+ }catch(e){cloudDriveStage='';showCloudMessage(e.message);if(!silent)alert(cloudMessage);}finally{cloudDriveStage='';finishCloud();}
 };
 
 workoutDescription=function(h){
