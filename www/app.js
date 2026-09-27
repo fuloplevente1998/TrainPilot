@@ -4472,9 +4472,4173 @@ var rf260TemporalDateButtons = function rf260TemporalDateButtons(){
 };
 var rf260TemporalPaintDate = function rf260TemporalPaintDate(){
  const p=rf260TemporalPicker;if(!p)return;const t=rf260TemporalText(),locale=typeof rf233Locale==='function'?rf233Locale():'hu-HU',today=rf260TemporalDateKey(new Date()),title=p.type==='datetime-local'?t.datetime:t.date;
- p.modal.innerHTML=`<div class="tp-modal-card tp-temporal-card" onclick="event.stopPropagation()"><div class="tp-modal-head"><h2 id="tpTemporalTitle">${esc(title)}</h2><button type="button" class="btn secondary tp-modal-close" aria-label="${esc(t.cancel)}" onclick="rf260TemporalClose()">×</button></div><div class="tp-temporal-month"><button type="button" class="btn secondary" aria-label="${esc(t.prev)}" onclick="rf260T
-... 471422 bytes omitted ...
-wner,device:device,data:merged})});
+ p.modal.innerHTML=`<div class="tp-modal-card tp-temporal-card" onclick="event.stopPropagation()"><div class="tp-modal-head"><h2 id="tpTemporalTitle">${esc(title)}</h2><button type="button" class="btn secondary tp-modal-close" aria-label="${esc(t.cancel)}" onclick="rf260TemporalClose()">×</button></div><div class="tp-temporal-month"><button type="button" class="btn secondary" aria-label="${esc(t.prev)}" onclick="rf260TemporalMoveMonth(-1)">‹</button><strong>${esc(p.month.toLocaleDateString(locale,{year:'numeric',month:'long'}))}</strong><button type="button" class="btn secondary" aria-label="${esc(t.nextMonth)}" onclick="rf260TemporalMoveMonth(1)">›</button></div><div class="tp-temporal-week" aria-hidden="true">${['H','K','Sze','Cs','P','Szo','V'].map(x=>`<span>${x}</span>`).join('')}</div><div class="tp-temporal-days">${rf260TemporalDateButtons()}</div><div class="tp-temporal-actions"><button type="button" class="btn secondary" onclick="rf260TemporalCommit('')">${esc(t.clear)}</button><button type="button" class="btn secondary" onclick="rf260TemporalChooseDate('${today}')" ${rf260TemporalAllowedDate(p.input,today)?'':'disabled'}>${esc(t.today)}</button>${p.type==='datetime-local'?`<button type="button" class="btn" onclick="rf260TemporalChooseDate('${rf260TemporalDateKey(p.date)}')">${esc(t.next)}</button>`:''}</div></div>`;
+ const selected=p.modal.querySelector?.('[data-tp-date][aria-pressed="true"]:not(:disabled)')||p.modal.querySelector?.('[data-tp-date][aria-current="date"]:not(:disabled)')||p.modal.querySelector?.('[data-tp-date]:not(:disabled)');setTimeout(()=>selected?.focus?.(),0);
+};
+var rf260TemporalPaintTime = function rf260TemporalPaintTime(){
+ const p=rf260TemporalPicker;if(!p)return;const t=rf260TemporalText(),hours=Array.from({length:24},(_,i)=>`<button type="button" class="tp-time-option" data-tp-hour="${i}" aria-pressed="${i===p.hour?'true':'false'}" onclick="rf260TemporalSetTime('hour',${i},this)">${String(i).padStart(2,'0')}</button>`).join(''),minutes=Array.from({length:60},(_,i)=>`<button type="button" class="tp-time-option" data-tp-minute="${i}" aria-pressed="${i===p.minute?'true':'false'}" onclick="rf260TemporalSetTime('minute',${i},this)">${String(i).padStart(2,'0')}</button>`).join('');
+ p.modal.innerHTML=`<div class="tp-modal-card tp-temporal-card" onclick="event.stopPropagation()"><div class="tp-modal-head"><h2 id="tpTemporalTitle">${esc(p.type==='datetime-local'?t.datetime:t.time)}</h2><button type="button" class="btn secondary tp-modal-close" aria-label="${esc(t.cancel)}" onclick="rf260TemporalClose()">×</button></div>${p.type==='datetime-local'?`<button type="button" class="btn secondary block tp-temporal-back" onclick="rf260TemporalPicker.stage='date';rf260TemporalPaintDate()">← ${esc(t.back)} • ${esc(p.date.toLocaleDateString(typeof rf233Locale==='function'?rf233Locale():'hu-HU'))}</button>`:''}<div class="tp-time-heading"><strong>${esc(t.hour)}</strong><strong>${esc(t.minute)}</strong></div><div class="tp-time-columns"><div class="tp-time-grid tp-hours">${hours}</div><div class="tp-time-grid tp-minutes">${minutes}</div></div><div class="tp-temporal-actions"><button type="button" class="btn secondary" onclick="rf260TemporalCommit('')">${esc(t.clear)}</button><button type="button" class="btn" onclick="tp152SaveTimeFields(this)">${esc(t.save)} • ${String(p.hour).padStart(2,'0')}:${String(p.minute).padStart(2,'0')}</button></div></div>`;
+ setTimeout(()=>{p.modal.querySelector?.('[data-tp-hour][aria-pressed="true"]')?.scrollIntoView?.({block:'center'});p.modal.querySelector?.('[data-tp-minute][aria-pressed="true"]')?.scrollIntoView?.({block:'center'});p.modal.querySelector?.('[aria-pressed="true"]')?.focus?.()},0);
+};
+var rf260OpenTemporal = function rf260OpenTemporal(input,trigger=null){
+ if(!input||input.disabled)return;rf260TemporalClose(false);rf260CloseSelects();const type=rf260TemporalType(input),parts=rf260TemporalParts(input),modal=document.createElement('div');modal.id='tpTemporalPicker';modal.className='tp-modal tp-temporal-modal';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-labelledby','tpTemporalTitle');modal.addEventListener?.('click',()=>rf260TemporalClose());modal.addEventListener?.('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();rf260TemporalClose();return}const v=e.target?.dataset?.tpDate,delta={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7}[e.key];if(v&&delta!=null){e.preventDefault();const d=rf260TemporalParseDate(v);d.setDate(d.getDate()+delta);const target=rf260TemporalDateKey(d);if(!rf260TemporalAllowedDate(input,target))return;rf260TemporalPicker.date=d;rf260TemporalPicker.month=new Date(d.getFullYear(),d.getMonth(),1,12);rf260TemporalPaintDate();setTimeout(()=>rf260TemporalPicker?.modal?.querySelector?.(`[data-tp-date="${target}"]`)?.focus?.(),0)}});document.body?.appendChild?.(modal);rf260TemporalPicker={input,trigger:trigger||input.closest?.('.tp-temporal')?.querySelector?.('.tp-temporal-trigger'),type,date:parts.date,hour:parts.hour,minute:parts.minute,month:new Date(parts.date.getFullYear(),parts.date.getMonth(),1,12),stage:type==='time'?'time':'date',modal};rf260TemporalPicker.trigger?.setAttribute?.('aria-expanded','true');if(type==='time')rf260TemporalPaintTime();else rf260TemporalPaintDate();
+};
+let rf260TemporalPicker=null;
+var rf260EnhanceActiveStates = function rf260EnhanceActiveStates(){
+ const root=document;
+ (root.querySelectorAll?.('.tab')||[]).forEach(b=>{if(b.classList.contains('active'))b.setAttribute?.('aria-current','page');else b.removeAttribute?.('aria-current')});
+ (root.querySelectorAll?.('.check')||[]).forEach(b=>b.setAttribute?.('aria-pressed',b.classList.contains('done')?'true':'false'));
+ (root.querySelectorAll?.('.rf232-effort .btn,.rf232-pain')||[]).forEach(b=>b.setAttribute?.('aria-pressed',b.classList.contains('secondary')?'false':'true'));
+ (root.querySelectorAll?.('button.btn[data-tp-role="control"]')||[]).forEach(b=>{if(/toggleCalendarDay|rf2211AddDay/.test(String(b.getAttribute?.('onclick')||'')))return;b.setAttribute?.('aria-pressed',b.classList.contains('secondary')?'false':'true')});
+ const theme=typeof rf200ThemeKey==='function'?rf200ThemeKey():'';const themeSelect=root.querySelector?.('.rf200-theme-select');if(themeSelect&&themeSelect.value!==theme){themeSelect.value=theme;rf260SyncCustomSelect(themeSelect)}
+ const starter=root.querySelector?.('button[onclick^="resetStarter("]');if(starter){starter.classList.remove?.('danger','tp-primary','tp-emphasis');starter.dataset&&(starter.dataset.tpRole='secondary')}
+ if(state?.rf260MovingScheduleId)rf260SetMoveButtonState(state.rf260MovingScheduleId,true);
+};
+var rf260SemanticRole = function rf260SemanticRole(el){const name=typeof rf253ActionCall==='function'?rf253ActionCall(el).name:'';if(name==='resetStarter')return 'secondary';return typeof rf253SemanticRole==='function'?rf253SemanticRole(el):''};
+var rf260SplitStickyHeader = function rf260SplitStickyHeader(){
+ const top=document.querySelector?.('.top');if(!top||top.dataset?.tpSplitHeader==='1')return;
+ const row=top.querySelector?.('.rf208-brand-row'),brand=row?.querySelector?.('.brand'),tag=Array.from(top.children||[]).find(x=>x?.classList?.contains?.('tag'));
+ if(!brand&&!tag){top.dataset&&(top.dataset.tpSplitHeader='1');return}
+ const strip=document.createElement('div');strip.className='tp-brand-strip';
+ if(brand){const brandRow=document.createElement('div');brandRow.className='rf208-brand-row tp-brand-only-row';brandRow.appendChild(brand);strip.appendChild(brandRow)}if(tag)strip.appendChild(tag);
+ if(row){row.classList?.add?.('tp-sticky-actions-row');if(!row.children.length)row.remove?.()}
+ top.parentNode?.insertBefore?.(strip,top);top.dataset&&(top.dataset.tpSplitHeader='1');
+};
+var rf260TrimHome = function rf260TrimHome(){
+ if(state?.tab!=='home')return;const main=document.querySelector?.('main.rf221-home')||document.querySelector?.('main');if(!main)return;
+ const direct=Array.from(main.children||[]);for(const el of direct){if(!el?.classList?.contains?.('grid2'))continue;const text=String(el.textContent||'');if(/Elvégzett edzések|Completed workouts|Abgeschlossene Trainings|Antrenamente finalizate/i.test(text)&&/Legutóbbi testsúly|Latest weight|Letztes Gewicht|Ultima greutate/i.test(text))el.remove?.()}
+};
+var rf260UpdateViewClasses = function rf260UpdateViewClasses(){document.body?.classList?.toggle?.('tp-home-view',state?.tab==='home')};
+var rf260AfterRender = function rf260AfterRender(){
+ rf260SplitStickyHeader();rf260UpdateViewClasses();rf260TrimHome();rf260EnhanceSelects();rf260EnhanceTemporalFields();
+ if(typeof rf252ApplyButtonHierarchy==='function')rf252ApplyButtonHierarchy(document);
+ rf260EnhanceActiveStates();
+ if(typeof rf252ScheduleButtonPass==='function')rf252ScheduleButtonPass();
+};
+var rf260ScrollState = function rf260ScrollState(){
+ const y=window.scrollY||document.documentElement?.scrollTop||document.body?.scrollTop||0;
+ const next=rf260NavCompact?y>RF260_NAV_COMPACT_EXIT:y>RF260_NAV_COMPACT_ENTER;
+ if(next===rf260NavCompact)return;
+ rf260NavCompact=next;document.documentElement?.classList?.toggle?.('tp-nav-compact',next);
+};
+/* TrainPilot 2.6.2: unified UI/UX refinement layer + fluid sticky header + theme dropdown. */
+const RF260_UI_VERSION='2.6.2';
+
+(function rf260Css(){
+ if(document.querySelector?.('#rf260Css'))return;
+ const s=document.createElement('style');s.id='rf260Css';s.textContent=`
+  :root{--tp-popover:var(--card);--tp-popover-strong:var(--card2);--tp-overlay:rgba(4,7,11,.78);--tp-pressed-scale:.982;--tp-primary-ink:#11151b;--tp-edge:8px;--tp-menu-max-height:320px}
+  /* overflow-x:clip preserves sticky positioning unlike the older overflow-x:hidden hardening layer. */
+  html,body{overflow-x:clip!important}
+  /* Fluid sticky navigation: brand scrolls away naturally; sticky nav keeps constant layout height. */
+  .tp-brand-strip{background:rgba(14,16,21,.95);backdrop-filter:blur(12px);padding:calc(12px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 5px max(16px,env(safe-area-inset-left,0px));border-bottom:0;position:relative;z-index:9}
+  .tp-brand-strip .rf208-brand-row{margin:0}.tp-brand-strip .tag{margin-top:2px}
+  .top{position:sticky!important;top:0!important;z-index:30!important;transition:box-shadow .18s ease,background-color .18s ease,border-color .18s ease;will-change:box-shadow;background:rgba(14,16,21,.965);padding:6px max(10px,env(safe-area-inset-right,0px)) 8px max(10px,env(safe-area-inset-left,0px));isolation:isolate}
+  .top .rf208-brand-row.tp-sticky-actions-row{justify-content:flex-end!important;margin:0 0 5px!important;min-height:40px}.top .tp151-top-actions{margin-left:auto}
+  body.tp-home-view .top{position:sticky!important;top:0!important}
+  .rf208-tabs,.rf208-tabs .tab,.tabs,.tab{transition:transform .16s ease,font-size .16s ease,background-color .15s ease,border-color .15s ease,box-shadow .15s ease}
+  .rf208-tabs .tab{transform:translateZ(0) scale(1);transform-origin:center}
+  html.tp-nav-compact .top{box-shadow:0 8px 24px #0008;background:rgba(14,16,21,.992);border-bottom-color:rgba(var(--accent-rgb),.20)}
+  html.tp-nav-compact .rf208-tabs .tab{transform:translateZ(0) scale(.985);font-size:12.25px!important}
+  .tab.active{box-shadow:0 0 0 2px rgba(var(--accent2-rgb),.18),0 5px 16px rgba(var(--accent-rgb),.15)}
+
+  /* Persistent selection is visually distinct from the short press animation. */
+  .btn[aria-pressed="true"],.btn.tp-selected,.tp-select-option[aria-selected="true"],.rf232-effort .btn:not(.secondary),.rf232-pain:not(.secondary){
+    border-color:var(--accent)!important;
+    box-shadow:0 0 0 2px rgba(var(--accent-rgb),.24),0 6px 18px rgba(var(--accent-rgb),.14)!important;
+  }
+  .btn[aria-pressed="true"],.btn.tp-selected{background:rgba(var(--accent-rgb),.18)!important;color:var(--accent2)!important}
+  .check.done{background:var(--accent)!important;color:var(--tp-primary-ink)!important}.cal-cell.completed{border-color:var(--line)!important;background:#11151b!important}
+  .btn:disabled,.tab:disabled,[role="button"][aria-disabled="true"]{opacity:.5!important;filter:saturate(.55)!important;cursor:not-allowed}
+
+  /* Calendar: today and selected day are separate, combinable states. */
+  .cal-cell.tp-selected-day{border-color:var(--accent)!important;background:rgba(var(--accent-rgb),.20)!important;box-shadow:inset 0 0 0 2px rgba(var(--accent-rgb),.42),0 0 0 1px rgba(var(--accent2-rgb),.16)}
+  .cal-cell.today.tp-selected-day{outline:2px solid var(--accent2)!important;outline-offset:2px}
+  .cal-cell.planned.tp-selected-day{background:linear-gradient(rgba(var(--accent-rgb),.18),rgba(var(--accent-rgb),.18)),#262b34!important}
+  .cal-cell.completed.tp-selected-day{border-color:var(--accent)!important;background:rgba(var(--accent-rgb),.20)!important}
+  .cal-cell.skipped.tp-selected-day{opacity:.82}
+
+  /* Compact exercise video action; row itself remains the edit/detail target. */
+  .tp-exercise-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;min-width:44px}
+  .tp-play-btn{width:42px;height:42px;min-width:42px;padding:0!important;border-radius:13px!important;display:inline-grid;place-items:center;font-size:17px;line-height:1;background:rgba(var(--accent-rgb),.12)!important;color:var(--accent2)!important;border:1px solid rgba(var(--accent-rgb),.48)!important}
+  .tp-play-btn:active{background:rgba(var(--accent-rgb),.24)!important}
+  .tp-play-btn svg{width:17px;height:17px;fill:currentColor}
+
+  /* TrainPilot custom dropdown/combobox. The original select stays as the data source. */
+  .tp-select{position:relative;width:100%;margin-top:4px}
+  .tp-native-select{position:absolute!important;left:0!important;top:0!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;clip:rect(0 0 0 0)!important;clip-path:inset(50%)!important}
+  .tp-select-trigger{width:100%;min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;background:linear-gradient(145deg,var(--card2),var(--card));color:var(--text);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-weight:750}
+  .tp-select-trigger::after{content:'⌄';color:var(--accent2);font-size:18px;line-height:1;transition:transform .15s ease}
+  .tp-select.open .tp-select-trigger{border-color:var(--accent);box-shadow:0 0 0 2px rgba(var(--accent-rgb),.18)}
+  .tp-select.open .tp-select-trigger::after{transform:rotate(180deg)}
+  .tp-select-menu{position:fixed;z-index:10000;display:block;visibility:hidden;opacity:0;pointer-events:none;max-width:calc(100vw - 16px);max-height:var(--tp-menu-max-height);overflow:auto;background:var(--tp-popover);border:1px solid rgba(var(--accent-rgb),.42);border-radius:14px;padding:6px;box-shadow:0 18px 46px #000c;overscroll-behavior:contain;transform:translateY(-4px) scale(.992);transform-origin:top center;transition:opacity .12s ease,transform .12s ease,visibility .12s step-end}
+  .tp-select-menu[data-placement="top"]{transform-origin:bottom center;transform:translateY(4px) scale(.992)}
+  .tp-select.open .tp-select-menu{visibility:visible;opacity:1;pointer-events:auto;transform:translateY(0) scale(1);transition:opacity .12s ease,transform .12s ease,visibility 0s}
+  .tp-select-option{display:flex;width:100%;min-height:42px;align-items:center;text-align:left;border:0;border-radius:10px;padding:9px 10px;background:transparent;color:var(--text);font-weight:700}
+  .tp-select-swatch{width:16px;height:16px;min-width:16px;border-radius:50%;margin-right:9px;border:1px solid #ffffff38;box-shadow:0 0 0 1px #0005}
+  .tp-select-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tp-select-option:hover,.tp-select-option:focus-visible{background:var(--card2);outline:2px solid rgba(var(--accent2-rgb),.32);outline-offset:-2px}
+  .tp-select-option[aria-selected="true"]{background:rgba(var(--accent-rgb),.17);color:var(--accent2)}
+  .tp-select-option[aria-selected="true"]::after{content:'✓';margin-left:auto;color:var(--accent);font-weight:950}
+  .tp-select-option:disabled,.tp-select-trigger:disabled{opacity:.42;cursor:not-allowed}.tp-select.tp-disabled .tp-select-trigger{filter:saturate(.55)}
+  .tp-select-trigger:focus-visible,.btn:focus-visible,.tab:focus-visible,.check:focus-visible,.rf208-settings-btn:focus-visible,.card[onclick]:focus-visible{outline:3px solid rgba(var(--accent2-rgb),.42);outline-offset:2px}
+
+  /* TrainPilot custom date/time controls. Native WebView picker inputs are converted to hidden value stores. */
+  .tp-temporal{position:relative;width:100%;margin-top:4px}.tp-native-temporal{display:none!important}.tp-temporal-trigger{margin-top:0!important}.tp-temporal-trigger::after{display:none!important}.tp-temporal-value{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tp-temporal-icon{margin-left:auto;color:var(--accent2);font-size:18px}.tp-temporal.tp-disabled{opacity:.5}
+  .tp-temporal-modal{z-index:13000}.tp-temporal-card{width:min(430px,100%)}.tp-temporal-month{display:grid;grid-template-columns:44px 1fr 44px;gap:8px;align-items:center;margin-bottom:10px}.tp-temporal-month strong{text-align:center;min-width:0}.tp-temporal-week,.tp-temporal-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.tp-temporal-week{margin-bottom:5px;text-align:center;color:var(--muted);font-size:12px;font-weight:800}.tp-temporal-day,.tp-time-option{min-width:0;min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--card2);color:var(--text);font-weight:800}.tp-temporal-day[aria-current="date"]{outline:1px solid var(--accent2);outline-offset:1px}.tp-temporal-day[aria-pressed="true"],.tp-time-option[aria-pressed="true"]{background:var(--accent)!important;color:var(--tp-primary-ink)!important;border-color:var(--accent)!important;box-shadow:0 0 0 2px rgba(var(--accent-rgb),.22)}.tp-temporal-day:disabled,.tp-time-option:disabled{opacity:.32}.tp-temporal-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}.tp-temporal-back{margin-bottom:10px}.tp-time-heading{display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:center;margin-bottom:6px;color:var(--muted)}.tp-time-columns{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tp-time-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;max-height:min(38dvh,260px);overflow:auto;overscroll-behavior:contain;padding:2px}.tp-time-grid.tp-minutes{grid-template-columns:repeat(3,minmax(0,1fr))}
+  @media(max-width:380px){.tp-temporal-card{padding:12px}.tp-temporal-day,.tp-time-option{min-height:38px}.tp-time-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.tp-time-grid.tp-minutes{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+  /* Touch feedback: pressed is transient, selected/active stays visible. */
+  .btn,.tab,.check,.tp-select-trigger,.tp-select-option,.rf208-settings-btn,.rf223-stat,.card[onclick],.exercise[onclick]{transition:transform .10s ease,filter .10s ease,background-color .15s ease,border-color .15s ease,box-shadow .15s ease}
+  .btn:not(:disabled):active,.tab:not(:disabled):active,.check:not(:disabled):active,.tp-select-trigger:active,.tp-select-option:not(:disabled):active,.rf208-settings-btn:active,.rf223-stat:active,.card[onclick]:active,.exercise[onclick]:active{transform:scale(var(--tp-pressed-scale));filter:brightness(1.08)}
+  .tp-action-active{border-color:var(--accent)!important;background:rgba(var(--accent-rgb),.18)!important;color:var(--accent2)!important;box-shadow:0 0 0 2px rgba(var(--accent-rgb),.24),0 6px 18px rgba(var(--accent-rgb),.14)!important}
+
+  /* In-app calendar move editor replaces system prompt dialogs. */
+  .tp-modal{position:fixed;inset:0;z-index:12000;display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:var(--tp-overlay);backdrop-filter:blur(5px);overscroll-behavior:contain}
+  .tp-modal-card{width:min(520px,100%);max-height:min(88dvh,720px);overflow:auto;overscroll-behavior:contain;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:0 24px 70px #000b}
+  .tp-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}.tp-modal-head h2{margin:0}.tp-modal-close{width:42px;height:42px;min-width:42px;padding:0!important;display:grid;place-items:center}
+  .tp-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tp-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  body.tp-modal-open{overflow:hidden!important}
+
+  /* Compact exercise library: descriptions stay collapsed until requested. */
+  .tp-library-card{padding:0!important;overflow:hidden}
+  .tp-library-card>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;min-height:58px;user-select:none}
+  .tp-library-card>summary::-webkit-details-marker{display:none}
+  .tp-library-card>summary::after{content:'⌄';color:var(--accent2);font-size:26px;font-weight:900;line-height:1;width:36px;height:36px;display:grid;place-items:center;flex:0 0 36px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--accent);transition:transform .15s ease,background .15s ease}
+  .tp-library-card[open]>summary::after{transform:rotate(180deg)}
+  .tp-library-summary-main{min-width:0;flex:1}.tp-library-summary-main h3{margin:0 0 4px}.tp-library-summary-main .small{margin:0}
+  .tp-library-card .tp-play-btn{margin-left:auto}
+  .tp-library-body{padding:0 14px 14px;border-top:1px solid var(--line)}
+  .tp-library-body>p:first-child{margin-top:12px}.tp-library-body>.btn{margin-top:10px}
+
+  /* Settings action spacing and non-destructive starter profile treatment. */
+  .setting>.btn.block{margin-top:10px}
+  .setting>.btn.block+br{display:none}
+  button[onclick^="resetStarter("]{background:var(--card2)!important;color:var(--text)!important;border:1px solid var(--line)!important;box-shadow:none!important}
+
+  /* Home should not gain empty scroll space merely because other views are long. */
+  body.tp-home-view{overscroll-behavior-y:none}body.tp-home-view main.rf221-home{padding-bottom:18px!important}
+
+  @media(max-width:520px){
+   .tp-exercise-actions{gap:4px}.tp-play-btn{width:40px;height:40px;min-width:40px;border-radius:12px!important}
+   .tp-modal{place-items:end center;padding-top:max(10px,env(safe-area-inset-top,0px));padding-bottom:max(10px,env(safe-area-inset-bottom,0px))}
+   .tp-modal-card{width:100%;max-height:min(92dvh,720px);border-radius:20px 20px 14px 14px;padding:14px}
+   .tp-modal-grid{grid-template-columns:1fr}.tp-modal-grid .field{min-height:46px;font-size:16px}
+  }
+  @media(max-width:360px){
+   .tp-modal-actions{grid-template-columns:1fr}
+  }
+  @media(prefers-reduced-motion:reduce){
+   .top,.top .brand,.top .tag,.tabs,.tab,.btn,.check,.tp-select-trigger,.tp-select-trigger::after,.tp-select-menu,.tp-select-option,.rf208-settings-btn,.rf223-stat,.card[onclick],.exercise[onclick]{transition:none!important}
+  }
+ `;document.head?.appendChild?.(s);
+})();
+
+
+// Edzés: every current exercise resolves its video dynamically from the current exercise ID.
+if(typeof rf201ExerciseRow==='function'){
+ rf201ExerciseRow=function(dayId,id,i){
+  const e=byId(id),play=rf260VideoButton(id);
+  return `<div class="exercise" onclick="rf154EditSlot('${esc(dayId)}',${i})">
+    <div class="num">${i+1}</div>
+    <div><div class="ex-name">${esc(e?.hu||id)}</div><div class="en">${esc(e?.en||'')}</div><div class="meta">${e?.sets||''}${e?.sets?' × ':''}${esc(e?.reps||'')} ${e?.weight?`• ${e.weight} ${esc(e.unit||'kg')}`:''}</div></div>
+    <div class="tp-exercise-actions">${play}<div class="chev" aria-hidden="true">›</div></div>
+  </div>`;
+ };
+}
+
+// Full exercise library: the small play action is independent from opening exercise details.
+if(typeof rf203ExerciseLibrary==='function'){
+ rf203ExerciseLibrary=function(){
+  const list=exercises();
+  render(shell(`<main>
+   <button class="btn secondary" onclick="go('programs')">← Vissza a Programokhoz</button>
+   <div class="hero"><span class="badge">GYAKORLATKÖNYVTÁR</span><h1>${list.length} gyakorlat</h1><div class="muted">Otthoni és konditermi gyakorlatok egy helyen. A ▶ gomb az adott gyakorlat aktuális bemutatóját nyitja.</div></div>
+   ${list.map((e,i)=>`<div class="exercise" onclick="rf203ExerciseDetail('${esc(e.id)}')"><div class="num">${i+1}</div><div><div class="ex-name">${esc(e.hu)}</div><div class="en">${esc(e.en||'')}</div><div class="meta">${esc(e.target||'')} ${e.equipment?`• ${esc(e.equipment)}`:''}</div></div><div class="tp-exercise-actions">${rf260VideoButton(e.id)}<div class="chev" aria-hidden="true">›</div></div></div>`).join('')}
+  </main>`));
+ };
+}
+
+// Filterable legacy library uses the same compact dynamic play action instead of a fixed row URL.
+if(typeof libraryResults==='function'){
+ libraryResults=function(group,gear,q){
+  const es=exercises().filter(e=>libraryMatch(e,group,gear,q));
+  return `<p class="muted">${es.length} / ${exercises().length} gyakorlat</p>${es.map(e=>{const groups=muscleGroups(e.id),secondary=groups.slice(1).map(x=>MUSCLES[x]).filter(Boolean).join(' / ');return `<details class="card tp-library-card"><summary><div class="tp-library-summary-main"><h3>${esc(e.hu)}</h3><p class="small">${esc(e.equipment)} • Fő izomcsoport: ${esc(MUSCLES[groups[0]]||e.target)}</p></div>${rf260VideoButton(e.id)}</summary><div class="tp-library-body">${secondary?`<p class="small muted">További izomcsoportok: ${esc(secondary)}</p>`:''}<p>${esc(e.notes||'Ehhez a gyakorlathoz még nincs külön technikai leírás.')}</p><button class="btn secondary block" onclick="chooseLibraryPlacement('${esc(e.id)}')">Hozzáadás saját programhoz</button></div></details>`}).join('')||'<p>Nincs találat. Próbálj másik szűrőt vagy keresőkifejezést.</p>'}`;
+ };
+}
+
+// Naptár: preserve the existing "today" outline and add persistent selected-day state.
+if(typeof calendarGrid==='function'){
+ const rf260CalendarGridBase=calendarGrid;
+ calendarGrid=function(){
+  let html=rf260CalendarGridBase();
+  // 2.6.1: a completed scheduled workout is history now; in the calendar a checkmark is enough.
+  html=html.replace(/(<button class="[^"]*\bcompleted\b[^"]*"[^>]*><span>\d+<\/span>)<b>[^<]*<\/b>(<\/button>)/g,'$1<b>✓</b>$2');
+  const selected=typeof rf2211Selected==='function'?rf2211Selected():(state?.rf2211CalendarDate||'');
+  if(!selected)return html;
+  const needle=`onclick="toggleCalendarDay('${selected}')"`;
+  const at=html.indexOf(needle);if(at<0)return html;
+  const start=html.lastIndexOf('<button class="',at),end=start>=0?html.indexOf('"',start+15):-1;
+  if(start>=0&&end>start){const cls=html.slice(start+15,end);html=html.slice(0,start+15)+cls+' tp-selected-day'+html.slice(end);const oc=html.indexOf(needle,start);if(oc>=0)html=html.slice(0,oc)+`aria-pressed="true" ${needle}`+html.slice(oc+needle.length);}
+  return html;
+ };
+}
+
+// Scheduled item states: skipped and move mode stay visibly selected while active.
+if(typeof scheduleListHtml==='function'){
+ scheduleListHtml=function(){
+  const isDone=x=>typeof rf209ScheduleDone==='function'?rf209ScheduleDone(x):(x.status==='completed'||history().some(h=>h.scheduleId===x.id));
+  const items=scheduled().filter(x=>!x.cancelled&&!isDone(x)).sort((a,b)=>Date.parse(a.start)-Date.parse(b.start)).slice(-120);
+  return items.length?items.map(x=>{
+   const p=programById(x.programId||'home-basic'),d=programDay(p,x.dayId||x.workout),done=false,skipped=x.status==='skipped',moving=state?.rf260MovingScheduleId===x.id;
+   return `<div class="card schedule-card"><div><strong>${esc(p?.name||'Program')} • ${esc(d?.name||x.dayId||x.workout)}</strong><div class="small muted">${esc(fmtDate(x.start))} • ${done?'Teljesítve':skipped?'Kihagyva':'Tervezett'}</div></div><div class="schedule-actions">${!done?`<button class="btn" onclick="startScheduledById('${esc(x.id)}')">Indítás</button>`:''}<button class="btn secondary ${moving?'tp-action-active':''}" data-tp-move-id="${esc(x.id)}" aria-pressed="${moving?'true':'false'}" onclick="rf260OpenScheduleMove('${esc(x.id)}',this)">Áthelyezés</button><button class="btn secondary ${skipped?'tp-selected':''}" aria-pressed="${skipped?'true':'false'}" onclick="skipSchedule('${esc(x.id)}')">${skipped?'Vissza':'Kihagyás'}</button><button class="btn danger" onclick="rf209DeleteSchedule('${esc(x.id)}')">Törlés</button></div></div>`;
+  }).join(''):'<div class="muted">Még nincs tervezett edzés.</div>';
+ };
+}
+
+
+let rf260MoveReturnFocus=null;
+
+
+if(typeof editSchedulePrompt==='function')editSchedulePrompt=function(id){return rf260OpenScheduleMove(id)};
+
+// Health source labels: package IDs are implementation details, never primary UI copy.
+
+if(typeof rf243FriendlySource==='function')rf243FriendlySource=rf260FriendlyHealthSource;
+if(typeof healthSourceName==='function')healthSourceName=function(source){return rf260FriendlyHealthSource(source,state.health?.summary?.sourceLabels?.[source])};
+if(typeof rf207SourceLabel==='function')rf207SourceLabel=function(d){return d?.source?rf260FriendlyHealthSource(d.source,d.sourceLabels?.[d.source]):'Nincs kiválasztott adatforrás'};
+
+
+// 2.6 semantic-role correction: the starter profile is an optional preset, not a destructive action.
+
+if(typeof rf252ApplyButtonHierarchy==='function')rf252ApplyButtonHierarchy=function(root=document){
+ const buttons=root?.querySelectorAll?.('button.btn')||[];buttons.forEach(el=>{el.classList.remove('tp-primary','tp-emphasis');const role=rf260SemanticRole(el);if(el.dataset)el.dataset.tpRole=role;if(role==='primary')el.classList.add('tp-primary');else if(role==='emphasis')el.classList.add('tp-emphasis');else if(role==='danger')el.classList.add('danger');if(rf253ActionCall?.(el).name==='resetStarter')el.classList.remove('danger')});
+};
+rf252ButtonRole=rf260SemanticRole;
+
+// Main-view navigation can be triggered from the compact sticky header at any scroll depth.
+// Open the destination from its top without requiring the user to manually scroll back first.
+const rf260GoBase=go;
+go=function(route){
+ const target=window.TrainPilotRoutes?.[String(route||'')]||String(route||'');const r=rf260GoBase(route);
+ if(String(state?.tab||'')===String(target))setTimeout(()=>{window.scrollTo?.(0,0);rf260ScrollState()},0);
+ return r;
+};
+if(typeof rf206HealthHub==='function'){
+ const rf260HealthHubBase=rf206HealthHub;
+ rf206HealthHub=function(...args){const r=rf260HealthHubBase(...args);setTimeout(()=>{window.scrollTo?.(0,0);rf260ScrollState()},0);return r};
+}
+
+
+// One final 2.6 post-render layer. Existing data/navigation behavior remains untouched.
+const rf260RenderBase=render;
+render=function(custom){const r=rf260RenderBase(custom);rf260EnhanceSelects();rf260EnhanceTemporalFields();rf260AfterRender();return r};
+
+
+let rf260NavCompact=false;
+const RF260_NAV_COMPACT_ENTER=56,RF260_NAV_COMPACT_EXIT=8;
+
+window.addEventListener?.('scroll',()=>{rf260ScrollState();rf260CloseSelects()},{passive:true});
+window.addEventListener?.('resize',()=>{rf260CloseSelects();rf260ScrollState()},{passive:true});
+window.visualViewport?.addEventListener?.('resize',()=>rf260RepositionOpenSelects(),{passive:true});
+window.visualViewport?.addEventListener?.('scroll',()=>rf260RepositionOpenSelects(),{passive:true});
+document.addEventListener?.('click',()=>rf260CloseSelects());
+document.addEventListener?.('keydown',e=>{if(e.key==='Tab')rf260TrapModalFocus(e);if(e.key==='Escape'){if(document.querySelector?.('#tpTemporalPicker'))rf260TemporalClose();else if(document.querySelector?.('#tpScheduleMoveModal'))rf260CloseScheduleMove();else rf260CloseSelects()}});
+rf260ScrollState();
+
+
+// @endsection v260.js
+
+// @section v263.js
+var rf263FriendlySource = function rf263FriendlySource(pkg,label=''){
+ if(typeof rf260FriendlyHealthSource==='function')return rf260FriendlyHealthSource(pkg,label);
+ if(typeof rf243FriendlySource==='function')return rf243FriendlySource(pkg,label);
+ return /samsung|shealth/i.test(String(pkg||'')+' '+String(label||''))?'Samsung Health':'Health Connect';
+};
+var rf263SourceNames = function rf263SourceNames(){
+ const names=new Set(),ledger=rf240Ledger();
+ const add=(pkg,label='')=>{if(pkg)names.add(rf263FriendlySource(pkg,label))};
+ for(const d of Object.values(ledger.days||{})){
+  const labels=d?.sourceLabels||{};
+  for(const pkg of d?.sources||[])add(pkg,labels[pkg]);
+  add(d?.hrvSource,labels[d?.hrvSource]);
+  for(const session of d?.sleepSessions||[])add(session?.source,labels[session?.source]);
+ }
+ for(const r of rf229RecoveryHistory())add(r?.sleepSource);
+ return [...names].filter(Boolean).sort();
+};
+var rf263TargetDay = function rf263TargetDay(offset){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-offset);return rf240DayKey(d)};
+var rf263NightWindow = function rf263NightWindow(offset){
+ const end=new Date();end.setHours(12,0,0,0);end.setDate(end.getDate()-offset);
+ if(end.getTime()>Date.now())end.setTime(Date.now());
+ const start=new Date(end);start.setDate(start.getDate()-1);
+ return {start:start.toISOString(),end:end.toISOString()};
+};
+var rf263RecoveryRow = function rf263RecoveryRow(day,r,prior){
+ const stage=prior?.sleepStageBased===true&&rf240Num(prior?.sleepMinutes)!=null;
+ return {
+  day,
+  sleepMinutes:stage?rf240Num(prior.sleepMinutes):rf240Num(r?.sleepMinutes),
+  sleepStart:stage?prior.sleepStart||null:r?.sleepStart||null,
+  sleepEnd:stage?prior.sleepEnd||null:r?.sleepEnd||null,
+  sleepSource:stage?prior.sleepSource||null:r?.sleepSource||null,
+  sleepStageBased:stage,
+  sleepStageCount:stage?(prior.sleepStageCount||0):0,
+  hrvRmssdMs:rf240Num(r?.hrvRmssdMs),
+  hrvTime:r?.hrvTime||prior?.hrvTime||null,
+  hrvSource:r?.hrvSource||prior?.hrvSource||null,
+  hrvSamples:Number(r?.hrvSamples)||0,
+  readAt:new Date().toISOString()
+ };
+};
+var rf263RefreshRecovery = async function rf263RefreshRecovery(p){
+ const old=rf229RecoveryHistory(),oldMap=new Map(old.map(x=>[x?.day,x])),recent=new Set(),fresh=[],failed=new Set();let successful=0;
+ for(let i=0;i<RF263_RECOVERY_DAYS;i++){
+  const day=rf263TargetDay(i);recent.add(day);rf245Progress(`Alvás és HRV: ${i+1}/${RF263_RECOVERY_DAYS}`);
+  try{
+   const r=await p.readRecovery(rf263NightWindow(i));successful++;
+   const row=rf263RecoveryRow(day,r,oldMap.get(day));
+   if(row.sleepMinutes!=null||row.hrvRmssdMs!=null)fresh.push(row);
+  }catch(_){failed.add(day)}
+ }
+ if(!successful)throw new Error('A regenerációs adatok nem olvashatók.');
+ const keep=old.filter(x=>!recent.has(x?.day)||failed.has(x?.day));
+ db.set('recoveryHistory',[...keep,...fresh].sort((a,b)=>String(b.day).localeCompare(String(a.day))));
+ rf229ApplyLatestRecovery();
+ return {saved:fresh.length,sleepDays:fresh.filter(x=>x.sleepMinutes!=null).length,stageDays:fresh.filter(x=>x.sleepStageBased).length,hrvDays:fresh.filter(x=>x.hrvRmssdMs!=null).length,failedDays:failed.size};
+};
+var rf263UpdateRecoveryStage = function rf263UpdateRecoveryStage(report,summary,error=''){
+ if(!Array.isArray(report?.stages))return;
+ let s=report.stages.find(x=>x?.name==='Alvás és HRV');if(!s){s={name:'Alvás és HRV'};report.stages.push(s)}
+ if(error){s.status='partial';s.detail='A napi Health-adatok megmaradtak, de az éjszakai regenerációs ellenőrzés nem frissült teljesen.';return}
+ s.status=summary.failedDays?'partial':'ok';
+ s.detail=`14 napos éjszakai ellenőrzés • ${summary.sleepDays} alvásnap • ${summary.hrvDays} HRV-nap${summary.stageDays?` • ${summary.stageDays} sleep-stage alapú`:''}`;
+};
+var rf263Sync = function rf263Sync(options={}){
+ if(rf263SyncFlight)return rf263SyncFlight;
+ rf263SyncFlight=(async()=>{
+  const p=options.plugin||healthPlugin(),report=await rf250Sync({...options,plugin:p});
+  if(!report||report.status==='error')return report;
+  state.health=state.health||{};state.health.busy=true;rf245Paint();
+  let summary={saved:0,sleepDays:0,stageDays:0,hrvDays:0,failedDays:0},recoveryError='';
+  try{summary=await rf263RefreshRecovery(p);rf263UpdateRecoveryStage(report,summary)}catch(e){
+   recoveryError=rf245Message(e);rf263UpdateRecoveryStage(report,summary,recoveryError);report.errors=report.errors||[];report.errors.push('Regenerációs ellenőrzés: '+recoveryError);
+  }
+  const diag=rf244Diag();
+  diag.permissions=state.health.permissions||diag.permissions||{};diag.lastAt=new Date().toISOString();diag.recoverySaved=summary.saved;diag.recoveryWindowAt=diag.lastAt;diag.recoverySleepDays=summary.sleepDays;diag.recoveryHrvDays=summary.hrvDays;diag.recoveryFailedDays=summary.failedDays;diag.sources=rf263SourceNames();diag.error=recoveryError?'A regenerációs adatok frissítése nem sikerült.':summary.failedDays?`${summary.failedDays} regenerációs nap nem frissült; a korábbi érvényes adat megmaradt.`:null;rf244SaveDiag(diag);
+  report.finishedAt=new Date().toISOString();report.status=(report.errors||[]).length||summary.failedDays?'partial':'ok';db.set(RF250_REPORT,report);db.set(RF245_REPORT,report);state.health.message=report.status==='ok'?'Szinkron befejezve.':'Részleges szinkron – a korábbi érvényes adatok megmaradtak.';return report;
+ })().finally(()=>{state.health=state.health||{};state.health.busy=false;rf263SyncFlight=null;rf245Paint()});
+ return rf263SyncFlight;
+};
+var rf263PermissionRows = function rf263PermissionRows(){
+ const p=state.health?.permissions||rf244Diag().permissions||{};
+ return Object.entries(RF263_PERMISSION_NAMES).map(([key,label])=>{
+  const v=p[key],txt=v===true?'Engedélyezve':v===false?'Nincs engedély':'Nincs ellenőrizve';
+  return `<div class="history-ex rf263-permission-row"><strong>${esc(label)}</strong><div class="small muted">${esc(txt)}</div></div>`;
+ }).join('');
+};
+var rf263DiagHtml = function rf263DiagHtml(){
+ const diag=rf244Diag(),ledger=rf240Ledger(),sources=rf263SourceNames(),p=state.health?.permissions||diag.permissions||{},granted=Object.entries(RF263_PERMISSION_NAMES).filter(([k])=>p[k]===true).length;
+ const locale=typeof rf233Locale==='function'?rf233Locale():'hu-HU';
+ const last=ledger.lastSyncAt?new Date(ledger.lastSyncAt).toLocaleString(locale):'Még nem volt sikeres szinkron';
+ const src=sources.length?sources.join(', '):'Még nincs azonosított adatforrás';
+ return `<details class="card" id="rf263HealthDiagnostics"><summary><strong>Kapcsolat és támogatott adatok</strong></summary><p class="small muted">Források: ${esc(src)}<br>Engedélyezett adattípusok: ${granted}/${Object.keys(RF263_PERMISSION_NAMES).length}<br>Utolsó sikeres szinkron: ${esc(last)}${diag.recoveryWindowAt?`<br>Regeneráció ellenőrizve: ${esc(new Date(diag.recoveryWindowAt).toLocaleString(locale))}`:''}${diag.error?`<br>${esc(diag.error)}`:''}</p><div class="rf263-permission-list">${rf263PermissionRows()}</div></details>`;
+};
+var rf263HealthHub = function rf263HealthHub(){
+ state.tab='health';state.healthView=false;if(typeof rf225HealthPage!=='undefined')rf225HealthPage='hub';rf240ApplyLedger();
+ const ledger=rf240Ledger(),today=ledger.days?.[rf240DayKey(new Date())]||{},rec=state.health?.recovery||{},w=state.health?.wellness||{},manualWeight=(()=>{const a=typeof rf215All==='function'?rf215All():[];const n=Number(a.at?.(-1)?.kg);return Number.isFinite(n)?n:null})(),healthWeight=w.weightKg==null?null:Number(w.weightKg),shownWeight=Number.isFinite(healthWeight)?healthWeight:manualWeight,weightSource=Number.isFinite(healthWeight)?'Health Connect':shownWeight!=null?(({hu:'Kézi adat',en:'Local entry',de:'Lokaler Eintrag',ro:'Înregistrare locală'}[typeof rf212Lang==='function'?rf212Lang():'hu'])||'Kézi adat'):'',coach=typeof rf235HealthCoachCard==='function'?rf235HealthCoachCard():'';
+ const locale=typeof rf233Locale==='function'?rf233Locale():'hu-HU';
+ const syncAt=ledger.lastSyncAt?new Date(ledger.lastSyncAt).toLocaleString(locale):'Még nem volt';
+ const sleepSub=rec.sleepMinutes==null?'':rec.sleepStageBased?'sleep stage alapján':(rec.sleepSource?'session-időtartam • '+rf263FriendlySource(rec.sleepSource):'session-időtartam');
+ const bp=w.bloodPressureSystolic==null||w.bloodPressureDiastolic==null?'—':`${Math.round(w.bloodPressureSystolic)}/${Math.round(w.bloodPressureDiastolic)} mmHg`,busy=!!state.health?.busy;
+ const body=`<main class="rf263-health"><div class="hero"><h1>Egészség</h1><div class="muted">Health Connect, regeneráció, Health-adatok és Coach egy közös adatfolyamban.</div></div><div class="card rf263-sync-card"><div class="grid2 rf263-sync-actions"><button class="btn block" data-tp-role="primary" onclick="rf244UnifiedSync()" ${busy?'disabled':''}>Szinkronizálás</button><button class="btn secondary block" data-tp-role="secondary" onclick="healthSettings()" ${busy?'disabled':''}>Engedélyek</button></div><p class="small muted">Utolsó sikeres szinkron: ${esc(syncAt)}</p>${state.health?.message?`<p class="small" role="status">${esc(state.health.message)}</p>`:''}</div>${coach}<div class="card"><h2>Mai állapot</h2><div class="grid2">${rf244Stat('Alvás',rf244SleepText(rec.sleepMinutes),sleepSub)}${rf244Stat('HRV',rec.hrvRmssdMs==null?'—':Math.round(rec.hrvRmssdMs)+' ms')}${rf244Stat('Lépések',today.steps==null?'—':Math.round(today.steps).toLocaleString('hu-HU'))}${rf244Stat('Aktív energia',today.activeCalories==null?'—':Math.round(today.activeCalories)+' kcal')}${rf244Stat('Átlagpulzus',today.averageHeartRate==null?'—':Math.round(today.averageHeartRate)+' bpm')}${rf244Stat('Nyugalmi pulzus',today.restingHeartRate==null?'—':Math.round(today.restingHeartRate)+' bpm')}</div></div><div class="card"><h2>Test és fittség</h2><div class="grid2">${rf244Stat('Testsúly',rf250Fmt(shownWeight,1,' kg'),weightSource)}${rf244Stat('Testzsír',rf250Fmt(w.bodyFatPercent,1,' %'))}${rf244Stat('SpO₂',rf250Fmt(w.oxygenSaturationPercent,1,' %'))}${rf244Stat('VO₂max',rf250Fmt(w.vo2Max,1))}</div><button id="rf251WeightJournal" class="btn secondary block rf251-weight-btn" onclick="rf215WeightScreen()">Testsúly napló és grafikon</button></div><details class="card"><summary><strong>További Health-adatok</strong></summary><div class="grid2">${rf244Stat('Vérnyomás',bp)}${rf244Stat('Vércukor',rf250Fmt(w.bloodGlucoseMmolL,1,' mmol/L'))}${rf244Stat('Légzésszám',rf250Fmt(w.respiratoryRate,1,' /perc'))}${rf244Stat('Távolság',rf250Fmt(today.distanceMeters==null?null:today.distanceMeters/1000,2,' km'))}</div></details><details class="card"><summary><strong>Regenerációs előzmények</strong></summary>${rf244RecoveryRows()}</details>${rf263DiagHtml()}</main>`;
+ render(shell(body));
+};
+var rf263HistoryDay = function rf263HistoryDay(value){
+ if(typeof rf233DayKey==='function')return rf233DayKey(value);
+ const d=new Date(value);if(!Number.isFinite(d.getTime()))return '';
+ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
+var rf263SetHistoryFilter = function rf263SetHistoryFilter(key,value){
+ if(key!=='from'&&key!=='to')return;
+ if(value&&!rf263ParseDate(value))return;
+ const next={...rf263HistoryFilter,[key]:value||''};
+ if(next.from&&next.to&&next.from>next.to)return;
+ rf263HistoryFilter=next;render(historyScreen());
+};
+var rf263ClearHistoryFilter = function rf263ClearHistoryFilter(){rf263HistoryFilter={from:'',to:''};render(historyScreen())};
+var rf263FilteredHistory = function rf263FilteredHistory(){
+ const all=history(),from=rf263HistoryFilter.from,to=rf263HistoryFilter.to;
+ return all.map((x,index)=>({x,index})).filter(({x})=>{const day=rf263HistoryDay(x.started);return (!from||day>=from)&&(!to||day<=to)});
+};
+var rf263HistoryItem = function rf263HistoryItem(x,originalIndex,visibleIndex){
+ const c=completedSets(x),title=x.programName?`${x.programName} • ${x.dayId||x.workout}`:`Full Body ${x.workout}`,key=rf142WorkoutKey(x);
+ return `<details class="history rf263-history rf103-history"><summary><div class="history-head"><div class="history-title-row"><div><div class="history-title">${esc(title)}</div><div class="history-date">${fmtDate(x.started)}</div></div><div class="rf103-history-side"><span class="badge">${x.exercises.length} gyakorlat</span><span class="rf103-history-chevron" aria-hidden="true">⌄</span></div></div><div class="history-badges"><span class="history-badge">⏱ ${sessionDuration(x)}</span><span class="history-badge">✓ ${c.done}/${c.total} sorozat</span></div></div></summary><div class="history-body"><div class="grid2"><button class="btn secondary" onclick="editHistoryWorkout('${esc(key)}')">Edzés módosítása</button><button class="btn secondary" onclick="healthFromHistory(${originalIndex})">Health adatok</button></div><br><button class="btn secondary" onclick="calendarIntent(${originalIndex})">Hozzáadás a naptárhoz</button>${x.exercises.map(e=>`<div class="history-ex"><div class="history-ex-name">${esc(e.hu)}</div><div class="en">${esc(e.en||'')}</div><div class="history-setchips">${(e.sets||[]).map(s=>`<span class="setchip">${esc(formatSet(e,s))}${s.done?' ✓':' • nincs kész'}</span>`).join('')}</div></div>`).join('')}</div></details>`;
+};
+var rf263ParseDate = function rf263ParseDate(value){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(value||''))return null;
+ const [y,m,d]=value.split('-').map(Number),date=new Date(y,m-1,d,12);
+ return y>=1900&&y<=2100&&date.getFullYear()===y&&date.getMonth()===m-1&&date.getDate()===d?date:null;
+};
+var rf263DateKey = function rf263DateKey(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`};
+var rf263DateField = function rf263DateField(key,label,value){
+ const date=rf263ParseDate(value),text=date?date.toLocaleDateString('hu-HU'):'Dátum kiválasztása';
+ return `<div><span class="small muted" id="rf263-${key}-label">${label}</span><button type="button" id="rf263-${key}-date" class="tp-select-trigger rf263-date-trigger" aria-haspopup="dialog" aria-labelledby="rf263-${key}-label rf263-${key}-value" onclick="rf263OpenDate('${key}')"><span id="rf263-${key}-value">${esc(text)}</span><span aria-hidden="true">▦</span></button></div>`;
+};
+var rf263DateAllowed = function rf263DateAllowed(key,value){
+ if(!rf263ParseDate(value))return false;
+ return key==='from'?(!rf263HistoryFilter.to||value<=rf263HistoryFilter.to):(!rf263HistoryFilter.from||value>=rf263HistoryFilter.from);
+};
+var rf263CloseDate = function rf263CloseDate(){
+ const picker=rf263DatePicker;if(!picker)return;
+ rf263DatePicker=null;picker.dialog.close();picker.dialog.remove();
+ document.getElementById(`rf263-${picker.key}-date`)?.focus();
+};
+var rf263PickDate = function rf263PickDate(value){
+ const picker=rf263DatePicker;if(!picker||value&&!rf263DateAllowed(picker.key,value))return;
+ const key=picker.key;rf263CloseDate();rf263SetHistoryFilter(key,value);
+ document.getElementById(`rf263-${key}-date`)?.focus();
+};
+var rf263MoveMonth = function rf263MoveMonth(delta){
+ const picker=rf263DatePicker;if(!picker)return;
+ const next=new Date(picker.month.getFullYear(),picker.month.getMonth()+delta,1,12);
+ if(next.getFullYear()<1900||next.getFullYear()>2100)return;
+ picker.month=next;rf263PaintDate();
+ picker.dialog.querySelector(delta<0?'[data-prev-month]':'[data-next-month]')?.focus();
+};
+var rf263PaintDate = function rf263PaintDate(){
+ const picker=rf263DatePicker;if(!picker)return;
+ const {dialog,key,month}=picker,y=month.getFullYear(),m=month.getMonth(),selected=rf263HistoryFilter[key];
+ const first=(new Date(y,m,1,12).getDay()+6)%7,count=new Date(y,m+1,0,12).getDate(),today=rf263DateKey(new Date());
+ let days='<span aria-hidden="true"></span>'.repeat(first);
+ for(let d=1;d<=count;d++){
+  const date=new Date(y,m,d,12),value=rf263DateKey(date),allowed=rf263DateAllowed(key,value);
+  days+=`<button type="button" class="rf263-date-day" data-date="${value}" aria-label="${esc(date.toLocaleDateString('hu-HU',{year:'numeric',month:'long',day:'numeric',weekday:'long'}))}" aria-pressed="${value===selected}" ${value===today?'aria-current="date"':''} ${allowed?'':'disabled'} onclick="rf263PickDate('${value}')">${d}</button>`;
+ }
+ dialog.innerHTML=`<div class="rf263-date-heading"><h2 id="rf263-date-title">${key==='from'?'Ettől':'Eddig'} – dátum</h2><button type="button" class="btn secondary" aria-label="Dátumválasztó bezárása" onclick="rf263CloseDate()">✕</button></div><div class="rf263-date-month"><button type="button" class="btn secondary" data-prev-month aria-label="Előző hónap" onclick="rf263MoveMonth(-1)" ${y===1900&&m===0?'disabled':''}>‹</button><strong aria-live="polite">${esc(month.toLocaleDateString('hu-HU',{year:'numeric',month:'long'}))}</strong><button type="button" class="btn secondary" data-next-month aria-label="Következő hónap" onclick="rf263MoveMonth(1)" ${y===2100&&m===11?'disabled':''}>›</button></div><div class="rf263-date-week" aria-hidden="true">${['H','K','Sze','Cs','P','Szo','V'].map(x=>`<span>${x}</span>`).join('')}</div><div class="rf263-date-grid">${days}</div><p class="small muted">A kiválasztott nap is beleszámít a szűrésbe.</p><div class="rf263-date-actions"><button type="button" class="btn secondary" onclick="rf263PickDate('')">Dátum törlése</button><button type="button" class="btn" onclick="rf263PickDate('${today}')" ${rf263DateAllowed(key,today)?'':'disabled'}>Ma</button></div>`;
+};
+var rf263OpenDate = function rf263OpenDate(key){
+ if(key!=='from'&&key!=='to')return;
+ rf263CloseDate();
+ const start=rf263ParseDate(rf263HistoryFilter[key])||rf263ParseDate(rf263HistoryFilter[key==='from'?'to':'from'])||new Date();
+ const dialog=document.createElement('dialog');dialog.className='rf263-date-dialog';
+ dialog.setAttribute('aria-labelledby','rf263-date-title');dialog.setAttribute('aria-modal','true');
+ document.body.appendChild(dialog);
+ rf263DatePicker={key,dialog,month:new Date(start.getFullYear(),start.getMonth(),1,12)};
+ dialog.addEventListener('cancel',e=>{e.preventDefault();rf263CloseDate()});
+ dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)rf263CloseDate()}});
+ dialog.addEventListener('keydown',e=>{
+  const value=e.target.dataset?.date;if(!value)return;
+  const delta={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7}[e.key];
+  if(delta==null)return;e.preventDefault();
+  const next=rf263ParseDate(value);next.setDate(next.getDate()+delta);const target=rf263DateKey(next);
+  if(!rf263DateAllowed(key,target))return;
+  rf263DatePicker.month=new Date(next.getFullYear(),next.getMonth(),1,12);rf263PaintDate();
+  dialog.querySelector(`[data-date="${target}"]`)?.focus();
+ });
+ rf263PaintDate();dialog.showModal();
+ (dialog.querySelector('[aria-pressed="true"]:not(:disabled)')||dialog.querySelector('[aria-current="date"]:not(:disabled)')||dialog.querySelector('[data-date]:not(:disabled)')||dialog.querySelector('button'))?.focus();
+};
+/* TrainPilot 2.6.3-dev2: unified Health hub, overnight recovery repair, readable diagnostics and scalable workout history. */
+const RF263_VERSION='2.6.3-dev2';
+const RF263_RECOVERY_DAYS=14;
+const RF263_PERMISSION_NAMES=typeof RF251_PERMISSION_NAMES==='object'?RF251_PERMISSION_NAMES:{
+ READ_HEART_RATE:'Pulzus',READ_RESTING_HEART_RATE:'Nyugalmi pulzus',READ_ACTIVE_CALORIES_BURNED:'Aktív energia',READ_TOTAL_CALORIES_BURNED:'Teljes energia',READ_EXERCISE:'Edzések',READ_SLEEP:'Alvás',READ_HEART_RATE_VARIABILITY:'HRV',READ_STEPS:'Lépések',READ_WEIGHT:'Testsúly',READ_BODY_FAT:'Testzsír',READ_OXYGEN_SATURATION:'SpO₂',READ_VO2_MAX:'VO₂max',READ_DISTANCE:'Távolság',READ_SPEED:'Sebesség',READ_BLOOD_PRESSURE:'Vérnyomás',READ_BLOOD_GLUCOSE:'Vércukor',READ_RESPIRATORY_RATE:'Légzésszám'
+};
+
+(function rf263Css(){
+ if(document.querySelector?.('#rf263Css'))return;
+ const s=document.createElement('style');s.id='rf263Css';s.textContent=`
+  .rf263-sync-actions{grid-template-columns:minmax(0,1.45fr) minmax(0,.8fr)}
+  .rf263-permission-list{display:grid;gap:8px;margin-top:10px}.rf263-permission-row{margin:0}
+  .rf263-history-filter{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+  .rf263-history-filter label{margin:0}.rf263-history-count{margin:10px 0 0}
+  details.rf263-history{padding:0;overflow:hidden}
+  details.rf263-history>summary{list-style:none;cursor:pointer;padding:14px 16px;user-select:none}
+  details.rf263-history>summary::-webkit-details-marker{display:none}
+  details.rf263-history>summary .history-head{margin:0;border:1px solid var(--line);border-radius:16px}
+  details.rf263-history>summary .history-title-row{gap:10px}
+  details.rf263-history>summary::after{display:none}
+  .rf103-history-side{display:flex;flex-direction:column;align-items:flex-end;gap:7px;flex:0 0 auto}
+  .rf103-history-chevron{display:grid;place-items:center;width:34px;height:30px;color:var(--accent2);font-size:24px;font-weight:900;line-height:1;border-radius:999px;box-shadow:inset 0 0 0 1px var(--accent);transition:transform .15s ease,background .15s ease}
+  details.rf263-history[open] .rf103-history-chevron{transform:rotate(180deg)}
+  details.rf263-history>.history-body{padding:0 16px 16px}
+  @media(max-width:520px){.rf263-sync-actions{grid-template-columns:1.25fr .85fr}.rf263-history-filter{grid-template-columns:1fr 1fr}.rf263-history-filter .rf263-clear-filter{grid-column:1/-1}}
+ `;document.head?.appendChild?.(s);
+})();
+
+
+let rf263SyncFlight=null;
+
+
+// Every legacy Health refresh alias now enters the same complete manual pipeline.
+rf244UnifiedSync=()=>rf263Sync({manual:true});
+rf240SyncNow=rf244UnifiedSync;
+rf240FullSync=()=>rf263Sync({manual:true,full:true});
+readRecoveryHealth=rf244UnifiedSync;
+readWellnessHealth=rf244UnifiedSync;
+rf207ReadTodayHealth=rf244UnifiedSync;
+rf225ConnectHealth=rf244UnifiedSync;
+readHealthWorkout=rf244UnifiedSync;
+exportHealthWorkout=rf244UnifiedSync;
+rf241RefreshWorkoutHealth=rf244UnifiedSync;
+rf240RefreshSelectedWorkout=rf244UnifiedSync;
+rf142ReadHealthForWorkout=rf244UnifiedSync;
+
+
+rf250HealthHub=rf263HealthHub;
+rf206HealthHub=rf263HealthHub;
+healthScreen=function(){
+ rf245CoachVisible=false;state.healthView=false;if(typeof rf225HealthPage!=='undefined')rf225HealthPage='hub';
+ return go('health');
+};
+
+// Coach never performs a Health sync. Its former refresh action only opens the Health hub.
+const rf263CoachBase=rf233CoachScreen;
+rf233CoachScreen=function(){
+ const r=rf263CoachBase();
+ const main=document.querySelector?.('main');
+ if(main){
+  for(const b of main.querySelectorAll?.('button')||[]){
+   const action=String(b.getAttribute?.('onclick')||''),text=String(b.textContent||'');
+   if(action.includes('readRecoveryHealth')||/Regeneráció frissítése|Refresh recovery|Regeneration aktualisieren|Actualizează recuperarea/.test(text)){
+    b.setAttribute?.('onclick',"go('health')");b.textContent='Egészség megnyitása';
+   }
+  }
+ }
+ return r;
+};
+rf220CoachScreen=rf233CoachScreen;
+
+// Scalable workout history: newest visible workout expanded, older entries collapsed, inclusive date range filter.
+let rf263HistoryFilter={from:'',to:''};
+
+
+historyScreen=function(){
+ const all=history(),filtered=rf263FilteredHistory(),from=rf263HistoryFilter.from,to=rf263HistoryFilter.to,active=!!(from||to);
+ return shell(`<main><div class="hero"><h1>Edzésnapló</h1><div class="muted">Az edzések alapból összecsukva jelennek meg; koppints egy bejegyzésre a részletekhez. Dátum szerint is szűrhetsz.</div></div><div class="card"><div class="rf263-history-filter">${rf263DateField('from','Ettől',from)}${rf263DateField('to','Eddig',to)}<button class="btn secondary rf263-clear-filter" onclick="rf263ClearHistoryFilter()" ${active?'':'disabled'}>Szűrés törlése</button></div><p class="small muted rf263-history-count">${filtered.length} / ${all.length} edzés</p></div>${filtered.length?filtered.map(({x,index},i)=>rf263HistoryItem(x,index,i)).join(''):(all.length?'<div class="card muted">A kiválasztott dátumtartományban nincs naplózott edzés.</div>':'<div class="muted">Még nincs elmentett edzés.</div>')}</main>`);
+};
+
+
+// Journal date picker: an app-rendered calendar, without native WebView date inputs.
+
+
+let rf263DatePicker=null;
+
+
+(function rf263DateCss(){
+ const style=document.createElement('style');style.id='rf263DateCss';style.textContent=`
+ .rf263-history-filter>*{min-width:0}.rf263-date-trigger{margin-top:4px;min-height:48px;white-space:normal;overflow-wrap:anywhere}.rf263-date-trigger::after{display:none}
+ .rf263-date-dialog{box-sizing:border-box;width:min(380px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);margin:auto;padding:16px;border:1px solid var(--accent);border-radius:20px;background:var(--card);color:var(--text);box-shadow:0 20px 60px #0009;overflow:auto;overscroll-behavior:contain}
+ .rf263-date-dialog::backdrop{background:rgba(4,7,11,.78)}
+ .rf263-date-heading,.rf263-date-month{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}.rf263-date-heading h2{margin:0;font-size:18px}.rf263-date-month strong{text-align:center;min-width:0}
+ .rf263-date-heading .btn,.rf263-date-month .btn{min-width:44px;min-height:44px;padding:8px}
+ .rf263-date-week,.rf263-date-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center}.rf263-date-week{margin-bottom:6px;font-size:12px;color:var(--muted)}
+ .rf263-date-day{min-width:0;min-height:44px;border:1px solid transparent;border-radius:10px;background:var(--card2);color:var(--text);font:inherit;cursor:pointer;padding:0}
+ .rf263-date-day[aria-current="date"]{border-color:var(--accent)}.rf263-date-day[aria-pressed="true"]{background:var(--accent);color:var(--tp-primary-ink,#11151b);font-weight:800}
+ .rf263-date-day:disabled{opacity:.35;cursor:not-allowed}.rf263-date-day:focus-visible{outline:2px solid var(--accent2);outline-offset:1px}.rf263-date-actions{display:flex;gap:8px}.rf263-date-actions .btn{flex:1;min-height:44px}
+ @media(max-width:360px){.rf263-date-dialog{padding:12px}.rf263-date-week,.rf263-date-grid{gap:2px}}
+ `;document.head.appendChild(style);
+})();
+
+// @endsection v263.js
+
+// @section trainpilot-110.js
+
+/* TrainPilot 1.1.2: automatic foreground Health sync, silent background UI refresh and themed timed-exercise stopwatch. */
+const RF110_AUTO_HEALTH_MS=5*60*1000;
+const RF110_RECOVERY_REFRESH_MS=6*60*60*1000;
+let rf110AutoHealthTimer=null,rf110AutoHealthFlight=null,rf110LastAutoHealthAt=0;
+
+// Automatic Health reads must never repaint the current route. The Health pipeline
+// legitimately repaints for a manual sync; suppress only paints caused by the
+// automatic flight. A manually queued sync still paints because rf250ActiveManual
+// becomes true before that run starts.
+const rf110PaintBase=rf245Paint;
+rf245Paint=function rf245Paint(){
+ if(rf110AutoHealthFlight&&!rf250ActiveManual)return;
+ return rf110PaintBase();
+};
+
+var rf110ReadPermissionGranted=function rf110ReadPermissionGranted(permissions){
+ return Object.entries(permissions||{}).some(([k,v])=>k.startsWith('READ_')&&v===true);
+};
+var rf110AutoHealthSync=function rf110AutoHealthSync({force=false}={}){
+ if(document.hidden||!isNative()||rf110AutoHealthFlight||state.health?.busy)return Promise.resolve(null);
+ const now=Date.now();if(!force&&now-rf110LastAutoHealthAt<RF110_AUTO_HEALTH_MS)return Promise.resolve(null);
+ rf110AutoHealthFlight=(async()=>{
+  try{
+   const p=healthPlugin(),status=await p.getStatus(),permissions=status?.permissions||{};
+   state.health=state.health||{};state.health.permissions=permissions;
+   if(!rf110ReadPermissionGranted(permissions))return null;
+   const diag=typeof rf244Diag==='function'?rf244Diag():{},lastRecovery=Date.parse(diag?.recoveryWindowAt||'');
+   const recoveryDue=!Number.isFinite(lastRecovery)||Date.now()-lastRecovery>=RF110_RECOVERY_REFRESH_MS;
+   const report=recoveryDue?await rf263Sync({plugin:p,manual:false}):await rf250Sync({plugin:p,manual:false});
+   if(report?.status!=='error')rf110LastAutoHealthAt=Date.now();
+   return report;
+  }catch(_){return null}
+  finally{rf110AutoHealthFlight=null}
+ })();
+ return rf110AutoHealthFlight;
+};
+var rf110InitAutoHealth=function rf110InitAutoHealth(){
+ if(rf110AutoHealthTimer)return;
+ setTimeout(()=>rf110AutoHealthSync({force:true}),1200);
+ rf110AutoHealthTimer=setInterval(()=>rf110AutoHealthSync(),RF110_AUTO_HEALTH_MS);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(()=>rf110AutoHealthSync(),600)});
+};
+
+// Permission management is navigation only. It must not enter the sync/busy pipeline.
+healthSettings=async function healthSettings(){
+ try{
+  await healthPlugin().openSettings();
+  state.health=state.health||{};state.health.message='Health Connect engedélyek megnyitva.';
+ }catch(e){
+  state.health=state.health||{};state.health.message=e?.message||'A Health Connect engedélyek nem nyithatók meg.';
+  if(state.tab==='health'&&!state.session)rf263HealthHub();
+ }
+};
+
+let rf110Stopwatch={key:'',setIndex:-1,elapsedMs:0,startedAt:0,running:false,timer:null,lastSecond:-1};
+var rf110StopwatchSeconds=function rf110StopwatchSeconds(){
+ const total=rf110Stopwatch.elapsedMs+(rf110Stopwatch.running?Math.max(0,Date.now()-rf110Stopwatch.startedAt):0);
+ return Math.max(0,Math.floor(total/1000));
+};
+var rf110FormatStopwatch=function rf110FormatStopwatch(sec){
+ sec=Math.max(0,Math.floor(Number(sec)||0));return `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`;
+};
+var rf110StopwatchPersist=function rf110StopwatchPersist(sec){
+ if(!state.session||rf110Stopwatch.setIndex<0)return;
+ const row=state.session.exercises?.[state.current]?.sets?.[rf110Stopwatch.setIndex];if(!row)return;
+ row.reps=sec>0?String(sec):'';persistDraft();
+ const rows=[...document.querySelectorAll('main .row')],ui=rows[rf110Stopwatch.setIndex];
+ const fields=ui?[...ui.querySelectorAll('input.field')]:[],input=fields.at(-1);if(input)input.value=row.reps;
+};
+var rf110StopwatchPaint=function rf110StopwatchPaint(){
+ const sec=rf110StopwatchSeconds(),display=document.querySelector('#rf110StopwatchTime'),toggle=document.querySelector('#rf110StopwatchToggle');
+ if(display)display.textContent=rf110FormatStopwatch(sec);
+ if(toggle)toggle.textContent=rf110Stopwatch.running?'Szünet':'Indítás';
+ if(sec!==rf110Stopwatch.lastSecond){rf110Stopwatch.lastSecond=sec;rf110StopwatchPersist(sec)}
+};
+var rf110StopwatchPause=function rf110StopwatchPause(){
+ if(!rf110Stopwatch.running)return;
+ rf110Stopwatch.elapsedMs+=Math.max(0,Date.now()-rf110Stopwatch.startedAt);rf110Stopwatch.startedAt=0;rf110Stopwatch.running=false;
+ if(rf110Stopwatch.timer){clearInterval(rf110Stopwatch.timer);rf110Stopwatch.timer=null}rf110StopwatchPaint();
+};
+var rf110StopwatchHalt=function rf110StopwatchHalt(clear=false){
+ rf110StopwatchPause();if(clear){rf110Stopwatch.key='';rf110Stopwatch.setIndex=-1;rf110Stopwatch.elapsedMs=0;rf110Stopwatch.lastSecond=-1}
+};
+var rf110ToggleStopwatch=function rf110ToggleStopwatch(){
+ if(rf110Stopwatch.running){rf110StopwatchPause();return}
+ rf110Stopwatch.startedAt=Date.now();rf110Stopwatch.running=true;rf110Stopwatch.timer=setInterval(rf110StopwatchPaint,250);rf110StopwatchPaint();
+};
+var rf110ResetStopwatch=function rf110ResetStopwatch(){
+ rf110StopwatchPause();rf110Stopwatch.elapsedMs=0;rf110Stopwatch.lastSecond=-1;rf110StopwatchPersist(0);rf110StopwatchPaint();
+};
+var rf110DecorateTimedWorkout=function rf110DecorateTimedWorkout(){
+ if(!state.session)return rf110StopwatchHalt(true);
+ const sessionExercise=state.session.exercises?.[state.current],exercise=sessionExercise?byId(sessionExercise.id):null;
+ const timed=String(sessionExercise?.repUnit||exercise?.repUnit||exercise?.reps||'').includes('mp');
+ if(!sessionExercise||!exercise||!timed)return rf110StopwatchHalt(true);
+ const setIndex=sessionExercise.sets.findIndex(s=>!s.done);if(setIndex<0)return rf110StopwatchHalt(true);
+ const key=`${state.session.started}|${state.current}|${setIndex}`;
+ if(rf110Stopwatch.key!==key){rf110StopwatchHalt(true);rf110Stopwatch.key=key;rf110Stopwatch.setIndex=setIndex;const saved=Number(sessionExercise.sets[setIndex].reps);rf110Stopwatch.elapsedMs=Number.isFinite(saved)&&saved>0?saved*1000:0}
+ if(document.querySelector('#rf110Stopwatch')){rf110StopwatchPaint();return}
+ const main=document.querySelector('main');if(!main)return;
+ const nav=[...main.querySelectorAll('button')].find(b=>/Következő gyakorlat|Edzés befejezése/.test(b.textContent||''));
+ const card=document.createElement('div');card.id='rf110Stopwatch';card.className='card rf110-stopwatch';
+ card.innerHTML=`<div class="rf110-stopwatch-head"><div><strong>Stopper • ${setIndex+1}. sorozat</strong><div class="small muted">Cél: ${esc(exercise.reps||'időre végzett sorozat')}</div></div><div id="rf110StopwatchTime" class="rf110-stopwatch-time">${rf110FormatStopwatch(rf110StopwatchSeconds())}</div></div><div class="rf110-stopwatch-actions"><button id="rf110StopwatchToggle" class="btn" onclick="rf110ToggleStopwatch()">${rf110Stopwatch.running?'Szünet':'Indítás'}</button><button class="btn secondary" onclick="rf110ResetStopwatch()">Nullázás</button></div><p class="small muted">Az eltelt másodperc automatikusan bekerül az aktuális sorozat mezőjébe.</p>`;
+ if(nav?.parentNode)nav.parentNode.insertBefore(card,nav);else main.appendChild(card);rf110StopwatchPaint();
+};
+
+(function rf110Css(){
+ if(document.querySelector?.('#rf110Css'))return;
+ const s=document.createElement('style');s.id='rf110Css';s.textContent=`
+  .rf110-stopwatch{border-radius:18px;border:1px solid var(--accent);background:linear-gradient(180deg,var(--card),var(--card2));padding:14px;margin:14px 0}
+  .rf110-stopwatch-head{display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .rf110-stopwatch-time{font-size:36px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:.04em;color:var(--accent2)}
+  .rf110-stopwatch-actions{display:grid;grid-template-columns:1.35fr 1fr;gap:10px;margin-top:12px}
+  .rf110-stopwatch-actions .btn{min-height:46px}
+  @media(max-width:380px){.rf110-stopwatch-head{align-items:flex-start;flex-direction:column;gap:8px}.rf110-stopwatch-time{font-size:32px;width:100%;text-align:center}}
+ `;document.head?.appendChild?.(s);
+})();
+
+const rf110RenderWorkoutBase=renderWorkout;
+renderWorkout=function(){const r=rf110RenderWorkoutBase();rf110DecorateTimedWorkout();return r};
+const rf110FinishWorkoutBase=finishWorkout;
+finishWorkout=function(){const r=rf110FinishWorkoutBase();if(!state.session)rf110StopwatchHalt(true);return r};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&rf110Stopwatch.running)rf110StopwatchPaint()});
+
+rf110InitAutoHealth();
+
+// @endsection trainpilot-110.js
+
+
+// @section trainpilot-120-clean-runtime.js
+
+/* TrainPilot 1.2.0 clean runtime.
+ * The historical source remains available for compatibility helpers, but the live UI no
+ * longer traverses the old shell/render/go wrapper chain. Every route builds its final
+ * screen and applies DOM polish synchronously in the same task before the browser paints.
+ */
+const TP120_VERSION='1.2.0';
+
+// Final shell: build the current TrainPilot header directly instead of transforming old headers.
+shell=function(content){
+ const lang=typeof rf212Lang==='function'?rf212Lang():'hu';
+ let body=String(content||'');
+ if(/<h1>Beállítások<\/h1>|<h1>Settings<\/h1>|<h1>Einstellungen<\/h1>|<h1>Setări<\/h1>/.test(body)&&!body.includes('rf212-language')&&typeof rf212LanguagePanel==='function'){
+  body=body.replace(/(<div class="hero">[\s\S]*?<\/div>)/,`$1${rf212LanguagePanel()}`);
+ }
+ const active=id=>(state.tab===id||(id==='home'&&(state.tab==='stats'||state.tab==='profile')))?'active':'';
+ let html=`<div><div class="top"><div class="rf208-brand-row"><div class="brand">TrainPilot</div><button class="rf208-settings-btn" aria-label="Beállítások" title="Beállítások" onclick="go('settings')">⚙︎</button></div><div class="tag">intelligens edzéstervező</div><div class="tabs tabs6 rf208-tabs"><button class="tab ${active('home')}" onclick="go('home')">Kezdőlap</button><button class="tab ${active('plan')}" onclick="go('plan')">Edzés</button><button class="tab ${active('calendar')}" onclick="go('calendar')">Naptár</button><button class="tab ${active('programs')}" onclick="go('programs')">Programok</button><button class="tab ${active('history')}" onclick="go('history')">Napló</button><button class="tab ${active('health')}" onclick="go('health')">Egészség</button></div></div>${body}${state.session&&state.timer>0?timerHtml():''}</div>`;
+ document.documentElement.lang=lang;
+ if(typeof rf212Translate==='function')html=rf212Translate(html);
+ if(lang==='en'&&typeof rf213ApplyMap==='function'){html=rf213ApplyMap(html,RF213_EN);if(typeof rf213EnglishExerciseCards==='function')html=rf213EnglishExerciseCards(html)}
+ if(lang!=='hu'&&typeof rf214Map==='function'){html=rf214Map(html,RF214_MAPS[lang]||RF214_MAPS.en);if(typeof rf214ExerciseCards==='function')html=rf214ExerciseCards(html,lang)}
+ html=String(html).replaceAll('null/100','—').replaceAll('null ms','—');
+ return html;
+};
+
+// Use the last pure Home HTML builder before later versions started decorating the DOM
+// asynchronously. The same final cards are added synchronously after the root write below.
+if(typeof rf215Home==='function')home=function(){return rf215Home()};
+
+var tp120BindWeightShortcuts=function tp120BindWeightShortcuts(){
+ document.querySelectorAll?.('button,.stat,.card')?.forEach?.(el=>{
+  const txt=String(el.textContent||'').trim();
+  if(/Testsúly napló|Body weight log|Körpergewichtsprotokoll|Jurnal greutate|Legutóbbi testsúly|Latest body weight|Letztes Körpergewicht|Ultima greutate corporală/i.test(txt))el.setAttribute?.('onclick','rf215WeightScreen()');
+ });
+};
+var tp120BindCoach=function tp120BindCoach(){
+ if(state.tab!=='home')return;const main=document.querySelector?.('main');if(!main||main.querySelector?.('#rf220CoachCard'))return;
+ const c=document.createElement('div');c.id='rf220CoachCard';c.className='card';const t=rf220L(),r=rf220Readiness();
+ c.innerHTML=`<strong>${t.coach}</strong><p class="small muted">${t.readiness}: <b>${r.score==null?'—':r.score+'/100'}</b> • ${t[r.level]||''}</p><button class="btn block" onclick="rf220CoachScreen()">${t.open}</button>`;
+ const hero=main.querySelector?.('.hero');if(hero)hero.insertAdjacentElement?.('afterend',c);else main.prepend?.(c);
+};
+var tp120CompactHome=function tp120CompactHome(){
+ if(state.tab!=='home')return;const main=document.querySelector?.('main');if(!main||!main.querySelector?.('#rf220CoachCard'))return;main.classList?.add?.('rf221-home');
+ const c=main.querySelector?.('#rf220CoachCard');if(c){const t=rf220L(),x=rf221T(),r=rf220Readiness();c.innerHTML=`<div class="rf221-coach-head"><strong>${t.coach}</strong><span class="badge">${r.score==null?'—':r.score+'/100'}</span></div><div class="small muted rf221-coach-line">${t[r.level]||''} • ${esc(rf220CoachText(r))}</div><div class="grid2 rf221-coach-actions"><button class="btn secondary" onclick="rf220CoachScreen()">${x.details}</button><button class="btn secondary" onclick="tp2627OpenStats()">${x.stats}</button></div>`}
+ main.querySelectorAll?.('.card')?.forEach?.(el=>{if(el===c)return;const text=String(el.textContent||'');if(/Gyors elérés|Quick access|Schnellzugriff|Acces rapid/i.test(text))el.remove?.()});
+};
+var tp120TodayCard=function tp120TodayCard(){
+ if(state.tab!=='home')return;const main=document.querySelector?.('main.rf221-home')||document.querySelector?.('main');if(!main||main.querySelector?.('#rf223Today'))return;
+ const coach=main.querySelector?.('#rf220CoachCard');if(coach)coach.insertAdjacentHTML?.('beforebegin',rf223StatusHtml());
+};
+var tp120RemoveProgramStats=function tp120RemoveProgramStats(){
+ if(state.tab!=='programs')return;const main=document.querySelector?.('main');if(!main)return;
+ main.querySelectorAll?.('button,.card,[role="button"]')?.forEach?.(el=>{const txt=String(el.textContent||'').trim(),oc=String(el.getAttribute?.('onclick')||'');if(/statsScreen\s*\(/.test(oc)||/^(Statisztikák|Statistics|Statistiken|Statistici)$/.test(txt)){const card=el.closest?.('.card');if(card&&/Gyakorlat|Exercise|Übung|Exerci/i.test(String(card.textContent||'')))el.remove?.();else if(el.tagName==='BUTTON')el.remove?.()}});
+};
+var tp120AfterRender=function tp120AfterRender(){
+ // All DOM-affecting work is deliberately synchronous: no zero-delay legacy repaint.
+ if(state.tab==='home'){
+  if(typeof rf221Css==='function')rf221Css();if(typeof rf223Css==='function')rf223Css();
+  tp120BindCoach();tp120CompactHome();tp120TodayCard();if(typeof rf251RepairHomeCoach==='function')rf251RepairHomeCoach();tp120BindWeightShortcuts();
+ }
+ if(state.tab==='programs')tp120RemoveProgramStats();
+ if(state.tab==='health')tp120BindWeightShortcuts();
+ if(typeof rf260SplitStickyHeader==='function')rf260SplitStickyHeader();
+ if(typeof rf260UpdateViewClasses==='function')rf260UpdateViewClasses();
+ if(typeof rf260TrimHome==='function')rf260TrimHome();
+ if(typeof rf260EnhanceSelects==='function')rf260EnhanceSelects();
+ if(typeof rf260EnhanceTemporalFields==='function')rf260EnhanceTemporalFields();
+ if(typeof rf252ApplyButtonHierarchy==='function')rf252ApplyButtonHierarchy(document);
+ if(typeof rf260EnhanceActiveStates==='function')rf260EnhanceActiveStates();
+};
+
+// Final direct renderer. One route => one #app innerHTML write; no historical render wrappers.
+render=function(custom){
+ if(window.TrainPilotBoot?.loading)return;
+ if(typeof closeDemo==='function')closeDemo();
+ const root=document.querySelector('#app');if(!root)return;
+ if(custom!=null){root.innerHTML=String(custom);tp120AfterRender();return;}
+ if(state.tab==='profile')return profileScreen();
+ if(state.tab==='stats')return rf221StatsScreen();
+ if(state.tab==='health'){if(typeof rf225HealthPage!=='undefined'&&rf225HealthPage==='weight')return rf215WeightScreen();return rf263HealthHub()}
+ let html='';
+ if(state.tab==='home')html=home();
+ else if(state.tab==='plan')html=planScreen();
+ else if(state.tab==='calendar')html=calendarScreen();
+ else if(state.tab==='programs')html=programsScreen();
+ else if(state.tab==='history')html=historyScreen();
+ else html=settingsScreen();
+ root.innerHTML=html;tp120AfterRender();
+};
+
+// Final direct router. No route-mask and no nested go() wrapper chain.
+go=function(route){
+ const key=String(route||'home'),target=RF253_CORE_ROUTES?.[key]||key;
+ const navigate=()=>{
+  if(typeof stopTimer==='function')stopTimer();
+  if(typeof rf245CoachVisible!=='undefined')rf245CoachVisible=false;
+  state.healthView=false;
+  if(target==='health'&&typeof rf225HealthPage!=='undefined')rf225HealthPage='hub';
+  if(target==='weight')return rf215WeightScreen();
+  if(target==='coach')return rf220CoachScreen();
+  if(target==='progress')return tp2627OpenStats();
+  state.tab=target;state.session=null;state.workout=null;render();
+  window.scrollTo?.(0,0);if(typeof rf260ScrollState==='function')rf260ScrollState();
+ };
+ if(state.session){tp2628Confirm('Kilépsz a folyamatban lévő edzésből? A mentett vázlat megmarad, később folytathatod.',{title:'Edzés elhagyása',confirmText:'Kilépés',danger:true}).then(ok=>{if(ok)navigate()});return;}
+ return navigate();
+};
+window.TrainPilotNavigate=go;
+
+// Manual and automatic Health repaint boundary without another wrapper layer.
+rf245Paint=function rf245Paint(){
+ if(rf110AutoHealthFlight&&!rf250ActiveManual)return;
+ if(!window.TrainPilotBoot?.loading&&!state.session){if(rf245CoachVisible)rf233CoachScreen();else render()}
+};
+
+// One backup implementation instead of the historical appVersion wrapper chain.
+makeBackup=function(){return {
+ app:'RepForge',version:3,appVersion:TP120_VERSION,schemaVersion:typeof RF12_SCHEMA!=='undefined'?RF12_SCHEMA:3,exportedAt:new Date().toISOString(),
+ history:history(),weights:weights(),settings:settings(),plan:db.get('plan',DEFAULT_PLAN),exercises:exercises(),scheduled:typeof scheduled==='function'?scheduled():[],
+ programs:typeof programs==='function'?programs():[],activeProgramId:typeof activeProgramId==='function'?activeProgramId():null,plannerSettings:typeof plannerSettings==='function'?plannerSettings():{},
+ exerciseFavorites:typeof rf144Favorites==='function'?rf144Favorites():[],themeAccent:typeof rf200ThemeKey==='function'?rf200ThemeKey():'green',language:typeof rf212LangSetting==='function'?rf212LangSetting():'system',recoveryHistory:typeof rf229RecoveryHistory==='function'?rf229RecoveryHistory():[]
+}};
+
+// Workout rendering stays visually atomic: base workout HTML, feedback and stopwatch all in one task.
+if(typeof rf152RenderWorkout==='function')renderWorkout=function(){
+ rf152RenderWorkout();if(!state.session)return;const e=state.session.exercises?.[state.current],main=document.querySelector?.('main');
+ if(e&&main&&!document.querySelector?.('#rf152Feedback')){const nav=[...main.querySelectorAll?.('button')||[]].find(b=>/Következő gyakorlat|Edzés befejezése/.test(String(b.textContent||'')));if(nav){const wrap=document.createElement('div');wrap.innerHTML=rf152FeedbackHtml(e);if(wrap.firstElementChild)nav.parentNode?.insertBefore?.(wrap.firstElementChild,nav)}}
+ rf110DecorateTimedWorkout();tp120AfterRender();
+};
+
+// No 1.1.2 route masking survives into 1.2.
+document.documentElement.classList?.remove?.('tp-route-switching');
+document.getElementById?.('rf112PaintGuard')?.remove?.();
+document.title='TrainPilot';
+
+// @endsection trainpilot-120-clean-runtime.js
+
+
+// @section trainpilot-130-workout-photos.js
+/* TrainPilot 1.3.0: private workout photos, lazy previews and Drive appDataFolder file sync. */
+const TP130_VERSION='1.3.1';
+var rf130PhotoPlugin = function rf130PhotoPlugin(){return window.Capacitor?.Plugins?.WorkoutPhotos||window.Capacitor?.registerPlugin?.('WorkoutPhotos')||null;};
+
+var rf130PhotoLabelText = function rf130PhotoLabelText(label){return ({before:'Edzés előtt',after:'Edzés után',other:'Egyéb'})[label]||'Fotó';};
+var rf130WorkoutByKey = function rf130WorkoutByKey(key){const h=history(),i=h.findIndex(x=>rf142WorkoutKey(x)===key);return {h,i,x:i>=0?h[i]:null};};
+var rf130VisiblePhotos = function rf130VisiblePhotos(x){return (x?.photos||[]).filter(p=>p&&p.id&&!p.deletedAt);};
+var rf130MergeHistoryPhotos = function rf130MergeHistoryPhotos(a,b){
+ if(!a||!b)return null;const ac=JSON.parse(JSON.stringify(a)),bc=JSON.parse(JSON.stringify(b));delete ac.photos;delete bc.photos;if(canonical(ac)!==canonical(bc))return null;
+ const map=new Map();for(const src of [a,b])for(const p of src.photos||[]){if(!p?.id)continue;const old=map.get(p.id);if(!old){map.set(p.id,JSON.parse(JSON.stringify(p)));continue;}const newer=(Number(p.updatedAt)||0)>=(Number(old.updatedAt)||0)?p:old,merged={...old,...p,...newer};merged.driveFileId=p.driveFileId||old.driveFileId||null;merged.deletedAt=[p.deletedAt,old.deletedAt].filter(Boolean).sort().pop()||null;merged.updatedAt=Math.max(Number(p.updatedAt)||0,Number(old.updatedAt)||0);map.set(p.id,merged);}
+ return {...a,photos:[...map.values()].sort((x,y)=>String(x.createdAt||'').localeCompare(String(y.createdAt||'')))};
+};
+var rf130SyncWorkoutPhotos = async function rf130SyncWorkoutPhotos(data,bridge,silent){
+ const native=rf130PhotoPlugin();if(!native||!bridge?.drivePhotoWrite)return data;let touched=false;
+ for(const h of data.history||[])for(const p of h.photos||[]){if(!p?.id)continue;
+  if(p.deletedAt){try{await native.delete({id:p.id})}catch(_){}if(p.driveFileId&&bridge.drivePhotoDelete){await bridge.drivePhotoDelete({id:p.driveFileId,photoId:p.id,silent});p.driveFileId=null;p.updatedAt=Date.now();touched=true}continue;}
+  if(!p.driveFileId){let exists=false;try{exists=!!(await native.exists({id:p.id})).exists}catch(_){}if(exists){const r=await bridge.drivePhotoWrite({photoId:p.id,silent});if(!r?.verified||!r?.id)throw Error('A naplófotó Drive-mentése nem ellenőrizhető.');p.driveFileId=r.id;p.updatedAt=Date.now();touched=true;}}
+ }
+ if(touched)data.history=[...(data.history||[])];return data;
+};
+let rf130PhotoTarget=null,rf130PhotoLabel='after';
+var rf130ClosePhotoModal = function rf130ClosePhotoModal(){document.getElementById('rf130PhotoModal')?.remove();rf130PhotoTarget=null;};
+var rf130SetPhotoLabel = function rf130SetPhotoLabel(label){if(!['before','after','other'].includes(label))return;rf130PhotoLabel=label;document.querySelectorAll('#rf130PhotoModal [data-rf130-label]').forEach(b=>{const on=b.dataset.rf130Label===label;b.classList.toggle('active',on);b.setAttribute('aria-pressed',on?'true':'false');});};
+var rf130OpenAddPhoto = function rf130OpenAddPhoto(key){
+ if(!isNative()){alert('A naplófotó Androidon érhető el.');return;}rf130ClosePhotoModal();rf130PhotoTarget=key;rf130PhotoLabel='after';const modal=document.createElement('div');modal.id='rf130PhotoModal';modal.className='video-modal';modal.innerHTML=`<div class="video-dialog rf130-photo-dialog" role="dialog" aria-modal="true" aria-label="Fotó hozzáadása"><button type="button" class="btn secondary" data-rf130-action="close">✕ Bezárás</button><h2>Fotó hozzáadása</h2><p class="small muted">A kép privát app-tárhelyre kerül, legfeljebb 1600 px hosszú oldallal. Az újramentés eltávolítja az eredeti EXIF/GPS metaadatot.</p><div class="rf130-labels"><button type="button" class="btn secondary" data-rf130-label="before" aria-pressed="false">Edzés előtt</button><button type="button" class="btn secondary active" data-rf130-label="after" aria-pressed="true">Edzés után</button><button type="button" class="btn secondary" data-rf130-label="other" aria-pressed="false">Egyéb</button></div><br><div class="grid2"><button type="button" class="btn block" data-rf130-source="capture">Kamera</button><button type="button" class="btn secondary block" data-rf130-source="pick">Kiválasztás</button></div><p class="small muted" data-rf130-status aria-live="polite"></p></div>`;document.body.appendChild(modal);rf130SetPhotoLabel(rf130PhotoLabel);modal.addEventListener('click',e=>{const b=e.target?.closest?.('button');if(!b||!modal.contains(b))return;if(b.dataset.rf130Action==='close'){rf130ClosePhotoModal();return;}if(b.dataset.rf130Label){rf130SetPhotoLabel(b.dataset.rf130Label);return;}if(b.dataset.rf130Source){e.preventDefault();rf130AcquirePhoto(b.dataset.rf130Source);}});modal.querySelector('button')?.focus();
+};
+var rf130AcquirePhoto = async function rf130AcquirePhoto(source){
+ const key=rf130PhotoTarget,storage=rf130PhotoPlugin();
+ if(!key||!storage){alert('A fotókezelő nem érhető el.');return;}
+ const modal=document.getElementById('rf130PhotoModal'),buttons=[...(modal?.querySelectorAll?.('[data-rf130-source]')||[])],status=modal?.querySelector?.('[data-rf130-status]');
+ buttons.forEach(b=>b.disabled=true);if(status)status.textContent=source==='capture'?'Kamera megnyitása…':'Képválasztó megnyitása…';
+ try{
+  const r=source==='capture'?await storage.capture():await storage.pick();
+  if(r?.cancelled){if(status)status.textContent='Művelet megszakítva.';return;}
+  if(!r?.id)throw Error('A fotó mentése nem sikerült.');
+  const q=rf130WorkoutByKey(key);if(!q.x)throw Error('Az edzés nem található.');
+  const now=new Date().toISOString(),photo={id:r.id,label:rf130PhotoLabel,createdAt:now,updatedAt:Date.now(),mimeType:'image/jpeg',width:r.width||null,height:r.height||null,bytes:r.bytes||null,driveFileId:null,deletedAt:null};
+  q.x.photos=[...(q.x.photos||[]),photo];db.set('history',q.h);rf130ClosePhotoModal();cloudChanged();render();
+ }catch(e){
+  const msg=String(e?.message||e||'');
+  if(/cancel|canceled|cancelled|megszak/i.test(msg)){if(status)status.textContent='Művelet megszakítva.';return;}
+  if(status)status.textContent='A fotóművelet nem sikerült.';alert(msg||'A fotó hozzáadása nem sikerült.');
+ }finally{buttons.forEach(b=>b.disabled=false);}
+};
+var rf130FindPhoto = function rf130FindPhoto(key,id){const q=rf130WorkoutByKey(key),p=q.x?.photos?.find(x=>x.id===id);return {...q,p};};
+var rf130LoadPhotoPreview = async function rf130LoadPhotoPreview(host,id){if(!host||host.dataset.loaded==='1')return;host.dataset.loaded='1';try{const r=await rf130PhotoPlugin()?.read?.({id,maxPx:480});if(r?.dataUrl)host.innerHTML=`<img src="${r.dataUrl}" alt="Naplófotó">`;}catch(_){host.dataset.loaded='0';host.classList.add('rf130-cloud-only');}};
+var rf130LoadHistoryPhotos = function rf130LoadHistoryPhotos(details){if(!details?.open)return;details.querySelectorAll?.('[data-rf130-photo-id]')?.forEach?.(el=>rf130LoadPhotoPreview(el,el.dataset.rf130PhotoId));};
+var rf130ShowPhoto = async function rf130ShowPhoto(key,id){
+ const q=rf130FindPhoto(key,id);if(!q.p||q.p.deletedAt)return;const plugin=rf130PhotoPlugin();if(!plugin){alert('A fotókezelő nem érhető el.');return;}let r=null;try{r=await plugin.read({id,maxPx:1600})}catch(_){if(q.p.driveFileId&&cloudProfile&&googleBridge()?.drivePhotoRead&&navigator.onLine!==false){try{showCloudMessage('Naplófotó letöltése…');await googleBridge().drivePhotoRead({id:q.p.driveFileId,photoId:id,silent:false});r=await plugin.read({id,maxPx:1600});showCloudMessage('Naplófotó letöltve.')}catch(e){alert(e?.message||'A Drive-fotó nem tölthető le.');return}}else{alert(q.p.driveFileId?'A fotó a Drive-ban van. Kapcsold a Google-fiókot és legyen internetkapcsolat.':'A fotófájl nincs ezen a készüléken.');return}}
+ if(!r?.dataUrl)return;rf130ClosePhotoModal();const modal=document.createElement('div');modal.id='rf130PhotoModal';modal.className='video-modal';modal.innerHTML=`<div class="video-dialog rf130-photo-view" role="dialog" aria-modal="true"><button class="btn secondary" onclick="rf130ClosePhotoModal()">✕ Bezárás</button><h2>${esc(rf130PhotoLabelText(q.p.label))}</h2><img src="${r.dataUrl}" alt="${esc(rf130PhotoLabelText(q.p.label))}"><p class="small muted">${esc(fmtDate(q.p.createdAt))}${q.p.driveFileId?' • Drive mentve':''}</p></div>`;document.body.appendChild(modal);modal.querySelector('button')?.focus();
+};
+var rf130DeletePhoto = async function rf130DeletePhoto(key,id){
+ const q=rf130FindPhoto(key,id);if(!q.p||q.p.deletedAt)return;if(!confirm('Törlöd ezt a naplófotót? A következő Drive-szinkron a felhőből is eltávolítja.'))return;try{await rf130PhotoPlugin()?.delete?.({id})}catch(_){}q.p.deletedAt=new Date().toISOString();q.p.updatedAt=Date.now();db.set('history',q.h);cloudChanged();render();
+};
+var rf130PhotoSection = function rf130PhotoSection(x,key){const photos=rf130VisiblePhotos(x);return `<div class="rf130-photo-section"><div class="rf130-photo-head"><strong>Edzésfotók</strong><button class="btn secondary" type="button" onclick="rf130OpenAddPhoto('${esc(key)}')">＋ Fotó hozzáadása</button></div>${photos.length?`<div class="rf130-photo-grid">${photos.map(p=>`<div class="rf130-photo-card"><button class="rf130-photo-preview" data-rf130-photo-id="${esc(p.id)}" onclick="rf130ShowPhoto('${esc(key)}','${esc(p.id)}')"><span>${p.driveFileId?'☁':'▣'} ${esc(rf130PhotoLabelText(p.label))}</span></button><div class="small muted">${esc(fmtDate(p.createdAt))}${p.driveFileId?' • Drive':''}</div><button class="btn secondary block" onclick="rf130DeletePhoto('${esc(key)}','${esc(p.id)}')">Törlés</button></div>`).join('')}</div>`:'<p class="small muted">Ehhez az edzéshez még nincs fotó.</p>'}</div>`;};
+rf263HistoryItem=function(x,originalIndex,visibleIndex){
+ const c=completedSets(x),title=x.programName?`${x.programName} • ${x.dayId||x.workout}`:`Full Body ${x.workout}`,key=rf142WorkoutKey(x),photoCount=rf130VisiblePhotos(x).length;
+ return `<details class="history rf263-history rf103-history" ontoggle="if(this.open){rf130LoadHistoryPhotos(this);rfHistoryHealthEnsure(${originalIndex})}"><summary><div class="history-head"><div class="history-title-row"><div><div class="history-title">${esc(title)}</div><div class="history-date">${fmtDate(x.started)}</div></div><div class="rf103-history-side"><span class="badge">${x.exercises.length} gyakorlat${photoCount?` • ${photoCount} fotó`:''}</span><span class="rf103-history-chevron" aria-hidden="true">⌄</span></div></div><div class="history-badges"><span class="history-badge">⏱ ${sessionDuration(x)}</span><span class="history-badge">✓ ${c.done}/${c.total} sorozat</span></div></div></summary><div class="history-body"><div class="grid2"><button class="btn secondary" onclick="editHistoryWorkout('${esc(key)}')">Edzés módosítása</button><button class="btn secondary" onclick="calendarIntent(${originalIndex})">Naptárhoz adás</button></div><div class="rf-history-health-panel" data-rf-history-health-panel="${originalIndex}"><button type="button" class="rf-history-health-toggle" aria-expanded="true" onclick="event.stopPropagation();rfHistoryHealthToggle(${originalIndex})"><strong>Health adatok</strong><span class="small muted">${esc(rfHistoryHealthWindow(x))}</span><span class="rf-history-health-chevron" aria-hidden="true">⌄</span></button><div class="rf-history-health-body"><div class="rf-history-health" data-rf-history-health="${originalIndex}">${rfHistoryHealthHtml(originalIndex)}</div><button type="button" class="btn secondary block rf-history-health-refresh" onclick="event.stopPropagation();healthFromHistory(${originalIndex})">Frissítés</button></div></div>${rf130PhotoSection(x,key)}${x.exercises.map(e=>`<div class="history-ex"><div class="history-ex-name">${esc(e.hu)}</div><div class="en">${esc(e.en||'')}</div><div class="history-setchips">${(e.sets||[]).map(s=>`<span class="setchip">${esc(formatSet(e,s))}${s.done?' ✓':' • nincs kész'}</span>`).join('')}</div></div>`).join('')}</div></details>`;
+};
+const rf130BackupBase=makeBackup;makeBackup=function(){return {...rf130BackupBase(),appVersion:TP130_VERSION};};
+(function(){const st=document.createElement('style');st.id='rf130PhotoCss';st.textContent=`.rf130-photo-section{margin:16px 0;padding:14px;border:1px solid var(--line);border-radius:16px}.rf130-photo-head{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap}.rf130-photo-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}.rf130-photo-card{min-width:0}.rf130-photo-preview{width:100%;aspect-ratio:4/3;border:1px solid var(--line);border-radius:14px;background:var(--card);color:inherit;overflow:hidden;display:grid;place-items:center;padding:0;cursor:pointer}.rf130-photo-preview img{width:100%;height:100%;object-fit:cover;display:block}.rf130-photo-preview.rf130-cloud-only{border-style:dashed}.rf130-labels{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.rf130-labels .btn{position:relative;transition:background .16s ease,border-color .16s ease,box-shadow .16s ease,transform .08s ease}.rf130-labels .btn[aria-pressed="true"]{background:color-mix(in srgb,var(--accent) 28%,var(--card2));border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent),0 0 0 1px color-mix(in srgb,var(--accent) 24%,transparent);color:var(--text);font-weight:950}.rf130-labels .btn[aria-pressed="true"]::before{content:"✓ ";color:var(--accent);font-weight:950}.rf130-labels .btn:active{transform:scale(.985)}.rf130-photo-view img{display:block;max-width:100%;max-height:70vh;margin:12px auto;border-radius:14px}.rf130-photo-dialog{max-width:560px}@media(max-width:520px){.rf130-photo-grid{grid-template-columns:1fr}.rf130-labels{grid-template-columns:1fr}}`;document.head.appendChild(st)})();
+(function(){const st=document.createElement('style');st.id='rf2625HistoryHealthCss';st.textContent=`.rf-history-health{margin-top:10px}.rf-history-health-result,.rf-history-health-loading,.rf-history-health-error,.rf-history-health-empty{background:color-mix(in srgb,var(--card2) 72%,var(--card));border:1px solid var(--line);border-radius:14px;padding:12px}.rf-history-health-head{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.rf-history-health-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.rf-history-health-grid .stat{padding:10px}.rf-history-health-grid .stat strong{font-size:17px}.rf-history-health-error{border-color:color-mix(in srgb,var(--bad) 55%,var(--line))}@media(max-width:420px){.rf-history-health-grid{grid-template-columns:1fr}}`;document.head.appendChild(st)})();
+(function(){const st=document.createElement('style');st.id='rf2626HistoryHealthCss';st.textContent=`.rf-history-health-panel{margin-top:8px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--card2) 68%,var(--card));overflow:hidden}.rf-history-health-toggle{appearance:none;width:100%;border:0;background:transparent;color:inherit;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;text-align:left;cursor:pointer}.rf-history-health-toggle .muted{margin-left:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rf-history-health-chevron{font-size:16px;line-height:1;transition:transform .15s ease}.rf-history-health-panel.collapsed .rf-history-health-chevron{transform:rotate(-90deg)}.rf-history-health-body[hidden]{display:none!important}.rf-history-health{margin:0!important}.rf-history-health-result,.rf-history-health-loading,.rf-history-health-error,.rf-history-health-empty{border:0!important;border-top:1px solid var(--line)!important;border-radius:0!important;background:transparent!important;padding:8px 10px!important}.rf-history-health-head{margin-bottom:6px!important}.rf-history-health-head>strong{display:none}.rf-history-health-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}.rf-history-health-grid .stat{padding:6px!important;min-height:0!important}.rf-history-health-grid .stat small{font-size:10px;line-height:1.15}.rf-history-health-grid .stat strong{font-size:14px!important;line-height:1.2}.rf-history-health-result>p:last-child{margin:6px 0 0}.rf-history-health-refresh{width:calc(100% - 20px)!important;margin:0 10px 8px!important;padding:7px 9px!important;min-height:34px!important}@media(max-width:430px){.rf-history-health-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.rf-history-health-toggle{align-items:flex-start;flex-wrap:wrap}.rf-history-health-toggle .muted{width:calc(100% - 24px);margin-left:0}}`;document.head.appendChild(st)})();
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('rf130PhotoModal'))rf130ClosePhotoModal()});
+// @endsection trainpilot-130-workout-photos.js
+
+// @section trainpilot-140-progression-2.js
+/* TrainPilot 1.4.0: Progressive Overload 2.0 — prescription-aware, trend-based and exercise-specific. */
+const TP140_VERSION='1.4.0';
+const TP140_ISOLATION=new Set(['lateral-raise','db-reverse-fly','face-pull','db-curl','hammer-curl','cable-curl','oh-triceps','cable-triceps','leg-extension','leg-curl','calf-raise']);
+const TP140_BODY_PROGRESSIONS={
+ pushup:'nehezebb fekvőtámasz-variáció, lassabb excentrikus szakasz, alsó szünet vagy nagyobb ROM',
+ 'close-pushup':'nehezebb fekvőtámasz-variáció, lassabb tempó vagy alsó szünet',
+ crunch:'lassabb tempó, felső megtartás vagy nehezebb hasprés-variáció',
+ plank:'hosszabb kontrollált tartás, nehezebb plank-variáció vagy nagyobb feszítés',
+ 'side-plank':'hosszabb kontrollált tartás vagy nehezebb oldalsó plank-variáció'
+};
+var tp140ParseTarget=function tp140ParseTarget(text,rirValue=null){
+ const raw=String(text??'').trim(),t=raw.toLowerCase().replaceAll('−','-').replaceAll('–','-'),explicitRir=/\brir\b/i.test(t);
+ const rir=t.match(/(\d+(?:[.,]\d+)?)\s*-\s*(\d+(?:[.,]\d+)?)\s*rir\b/i)||t.match(/(\d+(?:[.,]\d+)?)\s*rir\b/i);
+ const rirA=rir?Number(String(rir[1]).replace(',','.')):(Number.isFinite(Number(rirValue))?Number(rirValue):null),rirB=rir?.[2]!=null?Number(String(rir[2]).replace(',','.')):rirA;
+ // A pure "2–3 RIR" target has no repetition ceiling. Program prescriptions may also
+ // carry a separate numeric RIR alongside a normal rep range; keep both in that case.
+ if(explicitRir&&/^\s*\d+(?:[.,]\d+)?(?:\s*-\s*\d+(?:[.,]\d+)?)?\s*rir\s*$/i.test(t))return {kind:'rir',min:null,max:null,rirMin:Math.min(rirA,rirB),rirMax:Math.max(rirA,rirB),raw};
+ const timed=/\b(mp|másodperc|sec|second)\b/i.test(t),range=t.match(/(\d+)\s*-\s*(\d+)/),single=t.match(/(^|\D)(\d+)(?!\d)/);
+ if(range){const min=Number(range[1]),max=Number(range[2]);return {kind:timed?'time':'reps',min:Math.min(min,max),max:Math.max(min,max),rirMin:rirA==null?null:Math.min(rirA,rirB),rirMax:rirA==null?null:Math.max(rirA,rirB),raw};}
+ if(single){const n=Number(single[2]);return {kind:timed?'time':'reps',min:n,max:n,rirMin:rirA==null?null:rirA,rirMax:rirA==null?null:rirB,raw};}
+ return {kind:explicitRir?'rir':timed?'time':'open',min:null,max:null,rirMin:rirA,rirMax:rirB,raw};
+};
+var tp140Program=function tp140Program(programId=null){
+ const id=programId||state.session?.programId||(typeof activeProgramId==='function'?activeProgramId():null);
+ return (id&&typeof programById==='function'?programById(id):null)||(typeof activeProgram==='function'?activeProgram():null);
+};
+var tp140Prescription=function tp140Prescription(id,sessionExercise=null,programId=null){
+ const lib=byId(id)||{},p=tp140Program(programId),rx=sessionExercise?.prescription||p?.prescriptions?.[id]||{},text=String(rx.reps??sessionExercise?.progressionPrescription?.reps??lib.reps??'');
+ const parsed=tp140ParseTarget(text,rx.rir);
+ return {...parsed,reps:text,sets:Number(rx.sets??sessionExercise?.progressionPrescription?.sets??sessionExercise?.sets?.length??lib.sets)||null,rest:Number(rx.rest)||null,source:(sessionExercise?.prescription||p?.prescriptions?.[id])?'program':'library',programId:p?.id||programId||null};
+};
+var tp140Recent=function tp140Recent(id,programId=null,limit=3){
+ const rows=[];for(const h of history()){const e=(h.exercises||[]).find(x=>x.id===id);if(e)rows.push({workout:h,exercise:e});}
+ if(!programId)return rows.slice(0,limit);
+ const same=rows.filter(r=>(r.workout.programId||'home-basic')===programId);
+ return (same.length>=2?same:rows).slice(0,limit);
+};
+var tp140Median=function tp140Median(a){const x=a.filter(Number.isFinite).sort((m,n)=>m-n);if(!x.length)return 0;const i=Math.floor(x.length/2);return x.length%2?x[i]:(x[i-1]+x[i])/2;};
+var tp140Occurrence=function tp140Occurrence(row,target){
+ const e=row?.exercise||{},allSets=e.sets||[],done=allSets.filter(s=>s.done),reps=done.map(s=>Number(s.reps)).filter(Number.isFinite),weights=done.map(s=>Number(s.weight)).filter(Number.isFinite),effort=e.effort||null;
+ const allDone=!!allSets.length&&done.length===allSets.length&&(!target.sets||done.length>=target.sets),weight=tp140Median(weights),minRep=reps.length?Math.min(...reps):null,maxRep=reps.length?Math.max(...reps):null,avgRep=reps.length?reps.reduce((a,b)=>a+b,0)/reps.length:null;
+ const metricKind=target.kind==='time'?'time':target.kind==='reps'?'reps':target.kind;
+ const hitTop=(metricKind==='reps'||metricKind==='time')&&allDone&&target.max!=null&&minRep!=null&&minRep>=target.max;
+ const overTop=(metricKind==='reps'||metricKind==='time')&&allDone&&target.max!=null&&minRep!=null&&minRep>target.max;
+ const belowMin=(metricKind==='reps'||metricKind==='time')&&target.min!=null&&minRep!=null&&minRep<target.min;
+ const safeEffort=['easy','light','good'].includes(effort),adverse=['challenging','hard','pain'].includes(effort);
+ return {row,e,done,reps,allDone,weight,minRep,maxRep,avgRep,effort,hitTop,overTop,belowMin,safeEffort,adverse};
+};
+var tp140ObservedStep=function tp140ObservedStep(id,loadType){
+ const vals=[];for(const h of history())for(const e of h.exercises||[])if(e.id===id&&(e.loadType||byId(id)?.loadType)===loadType)for(const s of e.sets||[])if(s.done&&Number(s.weight)>0)vals.push(Number(s.weight));
+ const uniq=[...new Set(vals.map(x=>Math.round(x*100)/100))].sort((a,b)=>a-b),diffs=[];for(let i=1;i<uniq.length;i++){const d=Math.round((uniq[i]-uniq[i-1])*100)/100;if(d>=0.25&&d<=10)diffs.push(d);}return diffs.length?Math.min(...diffs):null;
+};
+var tp140DefaultStep=function tp140DefaultStep(lib,base){
+ const t=lib?.loadType||'bodyweight',id=lib?.id||'';if(t==='bodyweight')return 0;
+ if(TP140_ISOLATION.has(id))return t==='total'?1:0.5;
+ if(t==='per_hand')return base<5?0.5:1;
+ if(t==='single_dumbbell')return base<5?0.5:1;
+ if(t==='total')return base<20?2:2.5;
+ return 1;
+};
+var tp140Step=function tp140Step(lib,base){
+ const cfg=settings()?.progressionSteps||{},isolation=TP140_ISOLATION.has(lib?.id),override=Number(isolation?cfg.isolation:cfg[lib?.loadType]),observed=tp140ObservedStep(lib?.id,lib?.loadType),fallback=tp140DefaultStep(lib,base);
+ if(Number.isFinite(override)&&override>=0.25&&override<=10)return override;
+ if(Number.isFinite(observed)&&observed>=0.25&&observed<=(isolation?fallback:Math.max(fallback*2,1)))return observed;
+ return fallback;
+};
+var tp140NextWeight=function tp140NextWeight(lib,base,dir=1){const step=tp140Step(lib,base);return Math.max(0,Math.round((base+dir*step)*4)/4);};
+var tp140NextRepTargets=function tp140NextRepTargets(reps,target){
+ if(!Array.isArray(reps)||!reps.length||target.max==null)return [];
+ const out=reps.map(x=>Math.min(target.max,Math.max(target.min??0,Number(x)||0))),min=Math.min(...out);if(min>=target.max)return out;
+ for(let i=0;i<out.length;i++)if(out[i]===min)out[i]=Math.min(target.max,out[i]+1);return out;
+};
+var tp140RepText=function tp140RepText(reps,target){
+ const next=tp140NextRepTargets(reps,target);if(!next.length)return 'előbb növeld fokozatosan a szabályos ismétléseket';
+ return `következő cél: ${next.join('–')} ${target.kind==='time'?'mp':'ism.'}`;
+};
+var tp140BodyRecommendation=function tp140BodyRecommendation(id,target,recent,latest){
+ const goal=TP140_BODY_PROGRESSIONS[id]||'nehezebb variáció, lassabb tempó, szünet vagy nagyobb mozgástartomány';
+ if(!latest)return {action:'start',weight:0,autoApply:false,text:'Nincs még elég előzmény. Kezdd kontrollált, szabályos sorozatokkal.'};
+ if(latest.effort==='pain')return {action:'pain',weight:0,autoApply:false,text:'Fájdalom / kellemetlenség volt: nincs progresszió. Csak fájdalommentes kivitelezéssel folytasd.'};
+ if(!latest.allDone)return {action:'hold',weight:0,autoApply:false,text:'A legutóbbi alkalom részleges volt, ezért most nem lépünk tovább.'};
+ if(['challenging','hard'].includes(latest.effort))return {action:'hold',weight:0,autoApply:false,text:'Maradjon a jelenlegi testsúlyos változat és ismétlésszám; előbb legyen stabil, szabályos végrehajtás.'};
+ if(target.kind==='rir'){
+  const rir=`${target.rirMin}${target.rirMax!==target.rirMin?'–'+target.rirMax:''} RIR`;
+  if(['easy','light'].includes(latest.effort))return {action:'reps',weight:0,autoApply:false,text:`Maradjon a ${rir} elv: a következő alkalommal legfeljebb 1 szabályos ismétléssel növeld a sorozatokat, de állj meg, amikor még ${rir} tartalék marad.`};
+  return {action:'hold',weight:0,autoApply:false,text:`A cél nem ismétléstartomány, hanem ${rir}. Tartsd ezt a tartalékot; ne kezeld a „${target.reps}” értéket ${target.rirMax} ismétléses felső határként.`};
+ }
+ const same=recent.filter(x=>Math.abs(x.weight-latest.weight)<0.01),stableTop=same.slice(0,3).filter(x=>x.hitTop&&x.safeEffort).length>=2;
+ if(stableTop)return {action:'variation',weight:0,autoApply:false,text:`A felső cél legalább 2 alkalommal stabil volt. Súlynövelés helyett jöhet ${goal}.`};
+ if(latest.hitTop)return {action:'hold',weight:0,autoApply:false,text:'Elérted a felső célt, de előbb ismételd meg stabilan még egy alkalommal; utána jöhet nehezebb testsúlyos progresszió.'};
+ if((target.kind==='reps'||target.kind==='time')&&latest.reps.length)return {action:'reps',weight:0,autoApply:false,text:`Maradjon a jelenlegi változat; ${tp140RepText(latest.reps,target)}. A nehezítés csak stabil felső teljesítés után jön.`};
+ return {action:'hold',weight:0,autoApply:false,text:'Maradjon a jelenlegi testsúlyos változat; előbb stabilizáld a szabályos teljesítést.'};
+};
+var rf152RepRange=function rf152RepRange(id){const t=tp140Prescription(id);return {min:t.kind==='reps'||t.kind==='time'?t.min:null,max:t.kind==='reps'||t.kind==='time'?t.max:null,kind:t.kind,rirMin:t.rirMin,rirMax:t.rirMax};};
+var rf152Step=function rf152Step(e){return tp140Step(e,Number(e?.weight)||0);};
+rf152Recommendation=function rf152Recommendation(id,sessionExercise=null){
+ const lib=byId(id),programId=state.session?.programId||(typeof activeProgramId==='function'?activeProgramId():null),target=tp140Prescription(id,sessionExercise,programId),rows=tp140Recent(id,target.programId,3),recent=rows.map(r=>tp140Occurrence(r,target)),latest=recent[0];
+ if(!lib)return {action:'hold',weight:0,autoApply:false,text:'A gyakorlat adatai nem érhetők el.'};
+ if(lib.loadType==='bodyweight')return {...tp140BodyRecommendation(id,target,recent,latest),target,historyCount:recent.length};
+ if(!latest)return {action:'start',weight:Number(lib.weight)||0,autoApply:false,target,historyCount:0,text:'Nincs még elég előzmény. Indulj kontrollált, kényelmes terheléssel.'};
+ const base=latest.weight||rf152BaseWeight(latest.e),sameLoad=recent.filter(x=>Math.abs(x.weight-base)<0.01),stableTop=sameLoad.slice(0,3).filter(x=>x.hitTop&&x.safeEffort).length>=2,recentAdverse=sameLoad.slice(0,2).some(x=>x.adverse),next=tp140NextWeight(lib,base),unit=loadLabel(lib.loadType);
+ if(latest.effort==='pain')return {action:'pain',weight:base,autoApply:false,target,historyCount:recent.length,text:'Fájdalom / kellemetlenség volt: nincs terhelésemelés. Maradj fájdalommentes kivitelezésnél.'};
+ if(!latest.allDone)return {action:'hold',weight:base,autoApply:false,target,historyCount:recent.length,text:'A legutóbbi edzés részleges volt, ezért most nem változtatunk terhelést.'};
+ if(latest.effort==='challenging')return {action:'hold',weight:base,autoApply:false,target,historyCount:recent.length,text:`Kicsit nehéz volt. Maradjon ${base} ${unit}; előbb legyen stabil a jelenlegi teljesítés.`};
+ if(latest.effort==='hard'){
+  const hardCount=sameLoad.slice(0,3).filter(x=>x.effort==='hard').length;
+  if(latest.belowMin||hardCount>=2){const down=tp140NextWeight(lib,base,-1);return {action:'reduce',weight:down,autoApply:false,target,historyCount:recent.length,text:`Túl nehéz volt${hardCount>=2?' több alkalommal is':''}. Súlynövelés nincs; indokolt lehet ${down} ${unit} vagy kisebb volumen, amíg újra stabil nem lesz a technika.`};}
+  return {action:'hold',weight:base,autoApply:false,target,historyCount:recent.length,text:`Túl nehéz volt. Maradjon ${base} ${unit}; ha a következő alkalommal is így alakul vagy az alsó ismétléshatár sem tartható, csökkents terhelést/volument.`};
+ }
+ if(target.kind==='rir')return {action:'hold',weight:base,autoApply:false,target,historyCount:recent.length,text:`A cél ${target.rirMin}–${target.rirMax} RIR, nem ismétléstartomány. A terhelést csak a RIR-cél stabil teljesítése alapján módosítsd.`};
+ if(target.kind!=='reps'&&target.kind!=='time')return {action:'hold',weight:base,autoApply:false,target,historyCount:recent.length,text:`Maradjon ${base} ${unit}; ehhez a célhoz nincs megbízható ismétléstartomány.`};
+ if(latest.hitTop&&latest.safeEffort&&!recentAdverse){
+  if(stableTop)return {action:'increase',weight:next,autoApply:true,target,historyCount:recent.length,text:`Stabil felső teljesítés (${Math.min(3,sameLoad.length)} alkalom alapján). Következő terhelés: ${next} ${unit}.`};
+  return {action:'increase',weight:next,autoApply:false,target,historyCount:recent.length,text:`A felső határt elérted${latest.overTop?' és túl is teljesítetted':''}; ${next} ${unit} lehet a következő kis lépés, de az app egyetlen alkalom alapján még nem írja át automatikusan a súlyt.`};
+ }
+ if(latest.reps.length)return {action:'reps',weight:base,autoApply:false,target,historyCount:recent.length,text:`Maradjon ${base} ${unit}; ${tp140RepText(latest.reps,target)}. Súlyt csak stabil felső teljesítés után emelünk.`};
+ return {action:'hold',weight:base,autoApply:false,target,historyCount:recent.length,text:`Maradjon ${base} ${unit}; előbb legyen stabil, teljes értékű teljesítés.`};
+};
+rf152ApplySuggestions=function rf152ApplySuggestions(){
+ if(!state.session)return;
+ for(const e of state.session.exercises||[]){
+  const target=tp140Prescription(e.id,e,state.session.programId);e.progressionPrescription={sets:target.sets,reps:target.reps,kind:target.kind,rirMin:target.rirMin,rirMax:target.rirMax,source:target.source};
+  const r=rf152Recommendation(e.id,e);e.rf152Recommendation=r;
+  if(r.action==='increase'&&r.autoApply===true&&Number.isFinite(r.weight))for(const s of e.sets||[])s.weight=r.weight;
+ }
+ persistDraft();
+};
+rf152FeedbackHtml=function rf152FeedbackHtml(e){
+ rf232Css();const r=e.rf152Recommendation||rf152Recommendation(e.id,e),sel=e.effort||'',t=rf232L(),count=Number(r.historyCount)||0,target=r.target;
+ const scale=RF232_EFFORT_KEYS.map((k,i)=>`<button class="btn ${sel===k?'':'secondary'}" onclick="rf152SetEffort('${k}')"><span class="n">${i+1}</span><span class="lbl">${esc(t[k])}</span></button>`).join('');
+ const meta=target?`<div class="small muted" style="margin-top:6px">Cél: ${esc(target.reps||target.kind)} • előzmény: ${count}/3 alkalom</div>`:'';
+ return `<div class="card" id="rf152Feedback"><strong>Progresszív terhelés 2.0</strong><p class="small muted">${esc(r.text)}</p>${meta}<div class="small" style="margin:10px 0 8px">${esc(t.prompt)}</div><div class="rf232-effort">${scale}</div><button class="btn ${sel==='pain'?'':'secondary'} block rf232-pain" onclick="rf152SetEffort('pain')">${esc(t.pain)}</button></div>`;
+};
+const tp140SettingsScreenBase=settingsScreen;
+settingsScreen=function(){
+ const s=settings(),d={isolation:0.5,per_hand:1,single_dumbbell:1,total:2.5},x={...d,...(s.progressionSteps||{})};let html=tp140SettingsScreenBase();
+ const panel=`<div class="setting" id="tp140ProgressionSteps"><label>Progresszív terhelés • tényleges súlylépcsők</label><p class="small muted">Állítsd a felszereléseddel ténylegesen kirakható legkisebb növelést. A kézisúlyzós értékek a kijelzett egységre vonatkoznak.</p><div class="grid2"><label>Izolációs gyakorlat (kg)<input id="tp140StepIsolation" class="field" type="number" min="0.25" max="10" step="0.25" value="${x.isolation}"></label><label>Kézisúlyzó / kar (kg/kar)<input id="tp140StepPerHand" class="field" type="number" min="0.25" max="10" step="0.25" value="${x.per_hand}"></label><label>Egy kézisúlyzó (kg)<input id="tp140StepSingle" class="field" type="number" min="0.25" max="10" step="0.25" value="${x.single_dumbbell}"></label><label>Rúd / összsúly (kg)<input id="tp140StepTotal" class="field" type="number" min="0.25" max="10" step="0.25" value="${x.total}"></label></div><br><button class="btn secondary block" onclick="saveSettings()">Súlylépcsők mentése</button></div>`;
+ return html.replace('</main>',panel+'</main>');
+};
+saveSettings=function(){
+ const clamp=(id,fallback)=>{const n=Number(document.getElementById(id)?.value);return Number.isFinite(n)?Math.max(.25,Math.min(10,Math.round(n*4)/4)):fallback},cur=settings();
+ db.set('settings',{...cur,rest:Math.max(30,Math.min(300,Number(document.getElementById('rest')?.value)||cur.rest||90)),progressionSteps:{isolation:clamp('tp140StepIsolation',cur.progressionSteps?.isolation??.5),per_hand:clamp('tp140StepPerHand',cur.progressionSteps?.per_hand??1),single_dumbbell:clamp('tp140StepSingle',cur.progressionSteps?.single_dumbbell??1),total:clamp('tp140StepTotal',cur.progressionSteps?.total??2.5)}});alert('Mentve.');
+};
+const tp140BackupBase=makeBackup;makeBackup=function(){return {...tp140BackupBase(),appVersion:TP140_VERSION};};
+// @endsection trainpilot-140-progression-2.js
+
+
+// @section trainpilot-141-coach-entry.js
+/* TrainPilot 1.4.1: Home and Health open the same Coach screen/context. */
+const TP141_VERSION='1.4.1';
+const tp141CoachScreen=rf233CoachScreen;
+var tp141OpenCoach=function tp141OpenCoach(){
+ state.tab='health';
+ state.healthView=true;
+ if(typeof rf245CoachVisible!=='undefined')rf245CoachVisible=true;
+ return tp141CoachScreen();
+};
+// Home/legacy entry points use Health context so Home-only decorators cannot rewrite/freeze Coach.
+rf220CoachScreen=tp141OpenCoach;
+const tp141Backup=makeBackup;makeBackup=function(){return {...tp141Backup(),appVersion:TP141_VERSION}};
+// @endsection trainpilot-141-coach-entry.js
+
+
+var tp2627OpenStats=function tp2627OpenStats(){
+ state.tab='stats';
+ state.healthView=false;
+ if(typeof rf245CoachVisible!=='undefined')rf245CoachVisible=false;
+ rf221StatsScreen();
+ window.scrollTo?.(0,0);
+ if(typeof rf260ScrollState==='function')rf260ScrollState();
+};
+
+
+var tp2628ProfileScreenBase=profileScreen;
+profileScreen=function(){
+ state.tab='profile';state.healthView=false;
+ if(typeof rf245CoachVisible!=='undefined')rf245CoachVisible=false;
+ const r=tp2628ProfileScreenBase();
+ window.scrollTo?.(0,0);if(typeof rf260ScrollState==='function')rf260ScrollState();
+ return r;
+};
+
+
+var tp2628DialogEscape=function tp2628DialogEscape(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));};
+var tp2628DialogRemove=function tp2628DialogRemove(){document.getElementById('tp2628Dialog')?.remove();};
+var tp2628Confirm=function tp2628Confirm(message,opts={}){
+ tp2628DialogRemove();
+ return new Promise(resolve=>{
+  const title=opts.title||'Megerősítés',confirmText=opts.confirmText||'OK',cancelText=opts.cancelText||'Mégse',danger=opts.danger===true;
+  const modal=document.createElement('div');modal.id='tp2628Dialog';modal.className='tp2628-dialog-backdrop';
+  modal.innerHTML=`<div class="tp2628-dialog" role="dialog" aria-modal="true" aria-labelledby="tp2628DialogTitle"><h2 id="tp2628DialogTitle">${tp2628DialogEscape(title)}</h2><p class="tp2628-dialog-message">${tp2628DialogEscape(message)}</p><div class="tp2628-dialog-actions"><button type="button" class="btn secondary" data-tp2628-cancel>${tp2628DialogEscape(cancelText)}</button><button type="button" class="btn ${danger?'danger':''}" data-tp2628-confirm>${tp2628DialogEscape(confirmText)}</button></div></div>`;
+  let finished=false;
+  const key=e=>{if(e.key==='Escape'){e.preventDefault();finish(false)}};
+  const finish=value=>{if(finished)return;finished=true;document.removeEventListener('keydown',key,true);modal.remove();resolve(value)};
+  modal.querySelector('[data-tp2628-cancel]').onclick=()=>finish(false);
+  modal.querySelector('[data-tp2628-confirm]').onclick=()=>finish(true);
+  modal.addEventListener('click',e=>{if(e.target===modal)finish(false)});
+  document.addEventListener('keydown',key,true);document.body.appendChild(modal);modal.querySelector('[data-tp2628-cancel]')?.focus();
+ });
+};
+var tp2628Notice=function tp2628Notice(message,title='TrainPilot'){
+ tp2628DialogRemove();
+ return new Promise(resolve=>{
+  const modal=document.createElement('div');modal.id='tp2628Dialog';modal.className='tp2628-dialog-backdrop';
+  modal.innerHTML=`<div class="tp2628-dialog" role="alertdialog" aria-modal="true" aria-labelledby="tp2628DialogTitle"><h2 id="tp2628DialogTitle">${tp2628DialogEscape(title)}</h2><p class="tp2628-dialog-message">${tp2628DialogEscape(message)}</p><div class="tp2628-dialog-actions single"><button type="button" class="btn" data-tp2628-ok>OK</button></div></div>`;
+  let finished=false;const finish=()=>{if(finished)return;finished=true;document.removeEventListener('keydown',key,true);modal.remove();resolve(true)};const key=e=>{if(e.key==='Escape'||e.key==='Enter'){e.preventDefault();finish()}};
+  modal.querySelector('[data-tp2628-ok]').onclick=finish;document.addEventListener('keydown',key,true);document.body.appendChild(modal);modal.querySelector('[data-tp2628-ok]')?.focus();
+ });
+};
+window.alert=function(message){void tp2628Notice(String(message??''));};
+(function(){if(document.getElementById('tp2628DialogCss'))return;const st=document.createElement('style');st.id='tp2628DialogCss';st.textContent=`.tp2628-dialog-backdrop{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.72);backdrop-filter:blur(5px)}.tp2628-dialog{width:min(460px,100%);max-height:min(78dvh,620px);overflow:auto;background:linear-gradient(145deg,var(--card2),var(--card));color:var(--text);border:1px solid color-mix(in srgb,var(--accent) 28%,var(--line));border-radius:22px;padding:20px;box-shadow:0 24px 70px rgba(0,0,0,.55)}.tp2628-dialog h2{margin:0 0 12px;font-size:22px}.tp2628-dialog-message{white-space:pre-line;line-height:1.45;margin:0 0 20px;color:var(--text)}.tp2628-dialog-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tp2628-dialog-actions.single{grid-template-columns:1fr}.tp2628-dialog-actions .btn{min-height:48px}@media(max-width:380px){.tp2628-dialog{padding:16px;border-radius:18px}.tp2628-dialog-actions{grid-template-columns:1fr}}`;document.head.appendChild(st)})();
+
+// @section trainpilot-142-photo-stopwatch-ui.js
+/* TrainPilot 1.4.2: native photo launch reliability + visible timed-set controls. */
+const TP142_VERSION='1.4.2';
+
+const tp142StopwatchPaintBase=rf110StopwatchPaint;
+rf110StopwatchPaint=function rf110StopwatchPaint(){
+ const r=tp142StopwatchPaintBase();
+ const sec=rf110StopwatchSeconds(),toggle=document.querySelector('#rf110StopwatchToggle'),status=document.querySelector('#rf142StopwatchStatus');
+ if(toggle)toggle.textContent=rf110Stopwatch.running?'Stop és rögzítés':(sec>0?'Folytatás':'Indítás');
+ if(status){
+  const setNo=Math.max(1,(Number(rf110Stopwatch.setIndex)||0)+1);
+  status.textContent=rf110Stopwatch.running?`Fut • ${setNo}. sorozat • ${sec} mp`:sec>0?`${sec} mp rögzítve a ${setNo}. sorozatba.`:'Indítsd a stoppert; leállításkor az idő automatikusan a sorozatba kerül.';
+ }
+ return r;
+};
+const tp142TimedWorkoutBase=rf110DecorateTimedWorkout;
+rf110DecorateTimedWorkout=function rf110DecorateTimedWorkout(){
+ const r=tp142TimedWorkoutBase(),card=document.querySelector('#rf110Stopwatch');
+ if(!card)return r;
+ card.classList.add('rf142-stopwatch-top');
+ const status=card.querySelector('p.small.muted');if(status)status.id='rf142StopwatchStatus';
+ const main=card.closest('main'),hero=main?.querySelector('.hero');
+ if(hero&&hero.nextElementSibling!==card)hero.insertAdjacentElement('afterend',card);
+ rf110StopwatchPaint();return r;
+};
+(function tp142StopwatchCss(){
+ if(document.querySelector?.('#tp142StopwatchCss'))return;
+ const style=document.createElement('style');style.id='tp142StopwatchCss';style.textContent=`
+  .rf142-stopwatch-top{margin:10px 0 16px;padding:16px}
+  .rf142-stopwatch-top .rf110-stopwatch-time{font-size:42px}
+  .rf142-stopwatch-top .rf110-stopwatch-actions .btn{min-height:52px}
+  .rf142-stopwatch-top #rf142StopwatchStatus{margin:10px 0 0;font-weight:650}
+  @media(max-width:380px){.rf142-stopwatch-top .rf110-stopwatch-time{font-size:36px}}
+ `;document.head?.appendChild?.(style);
+})();
+
+// User-facing wording only; the progression decision logic is unchanged.
+const tp142FeedbackHtmlBase=rf152FeedbackHtml;
+rf152FeedbackHtml=function(e){return String(tp142FeedbackHtmlBase(e)).replaceAll('Progresszív terhelés 2.0','Progresszív edzés').replaceAll('Progresszív edzés 2.0','Progresszív edzés')};
+const tp142SettingsScreenBase=settingsScreen;
+settingsScreen=function(){return String(tp142SettingsScreenBase()).replaceAll('Progresszív terhelés • tényleges súlylépcsők','Progresszív edzés • tényleges súlylépcsők')};
+
+const tp142BackupBase=makeBackup;makeBackup=function(){return {...tp142BackupBase(),appVersion:TP142_VERSION}};
+// @endsection trainpilot-142-photo-stopwatch-ui.js
+
+// @section trainpilot-143-gallery-picker.js
+/* TrainPilot 1.4.3: real-device gallery picker reliability hotfix. */
+const TP143_VERSION='1.4.3';
+const tp143BackupBase=makeBackup;
+makeBackup=function(){return {...tp143BackupBase(),appVersion:TP143_VERSION}};
+// @endsection trainpilot-143-gallery-picker.js
+
+// @section trainpilot-144-capacitor-camera.js
+/* TrainPilot 1.4.4 test 2624: local gallery + MediaStore camera + private storage. */
+const TP144_VERSION='1.4.4';
+const tp144BackupBase=makeBackup;
+makeBackup=function(){return {...tp144BackupBase(),appVersion:TP144_VERSION}};
+// @endsection trainpilot-144-capacitor-camera.js
+
+
+// TrainPilot 1.4.5 / test 2629: complete active WebView dialog audit.
+// All currently reachable confirm()/prompt() paths are fronted by TrainPilot-owned UI.
+var tp2629Prompt=function tp2629Prompt(message,opts={}){
+ tp2628DialogRemove();
+ return new Promise(resolve=>{
+  const title=opts.title||'Adat megadása',okText=opts.okText||'OK',cancelText=opts.cancelText||'Mégse';
+  const modal=document.createElement('div');modal.id='tp2628Dialog';modal.className='tp2628-dialog-backdrop';
+  modal.innerHTML=`<div class="tp2628-dialog" role="dialog" aria-modal="true" aria-labelledby="tp2628DialogTitle"><h2 id="tp2628DialogTitle">${tp2628DialogEscape(title)}</h2><p class="tp2628-dialog-message">${tp2628DialogEscape(message)}</p><input class="field" data-tp2629-input type="${tp2628DialogEscape(opts.type||'text')}" value="${tp2628DialogEscape(opts.value??'')}" ${opts.inputMode?`inputmode="${tp2628DialogEscape(opts.inputMode)}"`:''}><div class="tp2628-dialog-actions" style="margin-top:14px"><button type="button" class="btn secondary" data-tp2628-cancel>${tp2628DialogEscape(cancelText)}</button><button type="button" class="btn" data-tp2628-confirm>${tp2628DialogEscape(okText)}</button></div></div>`;
+  let finished=false;const input=modal.querySelector('[data-tp2629-input]');
+  const finish=value=>{if(finished)return;finished=true;document.removeEventListener('keydown',key,true);modal.remove();resolve(value)};
+  const key=e=>{if(e.key==='Escape'){e.preventDefault();finish(null)}else if(e.key==='Enter'){e.preventDefault();finish(input.value)}};
+  modal.querySelector('[data-tp2628-cancel]').onclick=()=>finish(null);
+  modal.querySelector('[data-tp2628-confirm]').onclick=()=>finish(input.value);
+  modal.addEventListener('click',e=>{if(e.target===modal)finish(null)});
+  document.addEventListener('keydown',key,true);document.body.appendChild(modal);input.focus();input.select?.();
+ });
+};
+var tp2629ConfirmBypass=function tp2629ConfirmBypass(fn,value=true){const old=window.confirm;window.confirm=()=>value;try{return fn()}finally{window.confirm=old}};
+var tp2629PromptBypass=function tp2629PromptBypass(values,fn){const old=window.prompt,a=[...values];window.prompt=()=>a.length?a.shift():null;try{return fn()}finally{window.prompt=old}};
+
+// Backup restore.
+if(typeof restoreText==='function'){
+ const tp2629RestoreTextBase=restoreText;
+ restoreText=function(text){
+  if(text.length>20*1024*1024)throw Error('Maximum 20 MB.');
+  const d=validateBackup(JSON.parse(text.replace(/^\uFEFF/,'')));
+  const msg=`${d.history.length} edzés és ${d.weights.length} testsúlyadat visszatöltése?\nEz lecseréli az app jelenlegi naplóját és tervét. A félbehagyott edzés törlődik.`;
+  void tp2628Confirm(msg,{title:'Biztonsági mentés visszatöltése',confirmText:'Visszatöltés',danger:true}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629RestoreTextBase(text),true)});
+  return true;
+ };
+}
+
+// Google account confirmation paths.
+if(typeof connectGoogle==='function'){
+ const tp2629ConnectGoogleBase=connectGoogle;
+ connectGoogle=async function(){
+  if(cloudBusy)return;if(!isNative())return tp2629ConnectGoogleBase();
+  const ok=await tp2628Confirm('A kiválasztott Google-fiókhoz kapcsolod a TrainPilotot? A szinkron későbbi bekapcsolása a telefon jelenlegi edzésadatait is ebbe a fiókba menti.',{title:'Google-fiók kapcsolása',confirmText:'Kapcsolás'});
+  if(!ok)return;return tp2629ConfirmBypass(()=>tp2629ConnectGoogleBase(),true);
+ };
+}
+if(typeof disconnectGoogle==='function'){
+ const tp2629DisconnectGoogleBase=disconnectGoogle;
+ disconnectGoogle=async function(){
+  if(cloudBusy)return tp2629DisconnectGoogleBase();
+  const ok=await tp2628Confirm('Kijelentkezel? A szinkron leáll, a helyi és a Google-ban tárolt adatok megmaradnak.',{title:'Google-fiók leválasztása',confirmText:'Kijelentkezés',danger:true});
+  if(!ok)return;return tp2629ConfirmBypass(()=>tp2629DisconnectGoogleBase(),true);
+ };
+}
+
+// Drive merge has a synchronous legacy conflict selector deep in mergeSync().
+// First pass captures that selector without showing a native dialog; if a conflict
+// exists, the operation is safely repeated after an app-owned choice.
+if(typeof syncCloud==='function'){
+ const tp2629SyncCloudBase=syncCloud;
+ syncCloud=async function(silent=false){
+  if(silent)return tp2629SyncCloudBase(true);
+  let conflictMessage='';const old=window.confirm;
+  window.confirm=msg=>{conflictMessage=String(msg||'');throw Error('__TP2629_SYNC_CONFLICT__')};
+  let first;
+  try{first=await tp2629SyncCloudBase(false)}finally{window.confirm=old}
+  if(!conflictMessage)return first;
+  const phone=await tp2628Confirm(conflictMessage,{title:'Szinkronütközés',confirmText:'Telefon',cancelText:'Felhő'});
+  const prev=window.confirm;window.confirm=()=>phone;try{return await tp2629SyncCloudBase(false)}finally{window.confirm=prev}
+ };
+}
+
+// Legacy planned-item delete is still callable from older planner UI helpers.
+if(typeof cancelSchedule==='function'){
+ const tp2629CancelScheduleBase=cancelSchedule;
+ cancelSchedule=function(i){const row=scheduled()?.[i];if(!row)return;void tp2628Confirm('Törlöd ezt a tervezett alkalmat? A teljesített edzésnapló megmarad.',{title:'Tervezett edzés törlése',confirmText:'Törlés',danger:true}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629CancelScheduleBase(i),true)})};
+}
+
+// Starting a new workout over a draft.
+if(typeof startWorkout==='function'){
+ const tp2629StartWorkoutBase=startWorkout;
+ startWorkout=function(dayId,scheduleId=null,programId=null){
+  if(!db.get('draft',null))return tp2629StartWorkoutBase(dayId,scheduleId,programId);
+  void tp2628Confirm('Új edzést indítasz? A félbehagyott edzés helyére ez kerül.',{title:'Új edzés indítása',confirmText:'Indítás',danger:true}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629StartWorkoutBase(dayId,scheduleId,programId),true)});
+ };
+}
+
+// Preserve the complete finish-workout wrapper chain; only pre-resolve its legacy
+// partial-workout confirm and then let the existing synchronous logic run unchanged.
+if(typeof finishWorkout==='function'){
+ const tp2629FinishWorkoutBase=finishWorkout;
+ finishWorkout=function(){
+  const ses=state.session;if(!ses)return tp2629FinishWorkoutBase.apply(this,arguments);
+  const anyDone=(ses.exercises||[]).some(e=>(e.sets||[]).some(x=>x.done));
+  const anyUndone=(ses.exercises||[]).some(e=>(e.sets||[]).some(x=>!x.done));
+  if(!(anyDone&&anyUndone))return tp2629FinishWorkoutBase.apply(this,arguments);
+  const args=arguments,ctx=this;void tp2628Confirm('Vannak be nem fejezett sorozatok. Elmented a részleges edzést?',{title:'Részleges edzés mentése',confirmText:'Mentés'}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629FinishWorkoutBase.apply(ctx,args),true)});
+ };
+}
+
+// Settings reset confirmations.
+if(typeof resetPlan==='function'){
+ const tp2629ResetPlanBase=resetPlan;
+ resetPlan=function(){void tp2628Confirm('Visszaállítod az alapértelmezett Otthoni A/B – Alap programot és gyakorlatértékeket? A napló megmarad.',{title:'Alapértékek visszaállítása',confirmText:'Visszaállítás',danger:true}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629ResetPlanBase(),true)})};
+}
+if(typeof resetStarter==='function'){
+ const tp2629ResetStarterBase=resetStarter;
+ resetStarter=function(){void tp2628Confirm('A gyakorlatok alap sorozat/ismétlés értékei a kímélő profilra állnak. A napló megmarad.',{title:'Kímélő profil',confirmText:'Alkalmazás'}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629ResetStarterBase(),true)})};
+}
+
+// Program library confirmations/prompts.
+if(typeof activateProgram==='function'){
+ const tp2629ActivateProgramBase=activateProgram;
+ activateProgram=function(id){if(!programById(id))return;void tp2628Confirm('Aktiválod ezt a programot? A korábbi napló és tervezett alkalmak megmaradnak.',{title:'Program aktiválása',confirmText:'Aktiválás'}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629ActivateProgramBase(id),true)})};
+}
+if(typeof createCustomProgram==='function'){
+ const tp2629CreateCustomProgramBase=createCustomProgram;
+ createCustomProgram=async function(){
+  const name=await tp2629Prompt('Program neve:',{title:'Új saját program',value:'Saját program'});if(!name)return;
+  const count=await tp2629Prompt('Hány napos ciklus? (1–7)',{title:'Program hossza',value:'2',type:'number',inputMode:'numeric'});if(count===null)return;
+  return tp2629PromptBypass([name,count],()=>tp2629CreateCustomProgramBase());
+ };
+}
+if(typeof deleteCustomProgram==='function'){
+ const tp2629DeleteCustomProgramBase=deleteCustomProgram;
+ deleteCustomProgram=function(id){const p=programById(id);if(!p||p.builtin)return;void tp2628Confirm('Törlöd ezt a saját programot? A korábbi naplóbejegyzések megmaradnak.',{title:'Saját program törlése',confirmText:'Törlés',danger:true}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629DeleteCustomProgramBase(id),true)})};
+}
+if(typeof deleteCustomExercise14==='function'){
+ const tp2629DeleteCustomExerciseBase=deleteCustomExercise14;
+ deleteCustomExercise14=function(id){const e=exercises().find(x=>x.id===id);if(!e?.custom)return;void tp2628Confirm('Törlöd ezt a saját gyakorlatot? A korábbi naplóbejegyzéseket nem módosítjuk.',{title:'Saját gyakorlat törlése',confirmText:'Törlés',danger:true}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629DeleteCustomExerciseBase(id),true)})};
+}
+
+// Workout/history deletion and editable-plan confirmations.
+if(typeof deleteHistoryWorkout==='function'){
+ const tp2629DeleteHistoryBase=deleteHistoryWorkout;
+ deleteHistoryWorkout=function(key){const i=rf142FindHistoryIndex(key),h=history();if(i<0)return tp2629DeleteHistoryBase(key);const x=h[i];const msg=`Biztosan törlöd ezt az edzést?\n${fmtDate(x.started)} • ${sessionDuration(x)}`;void tp2628Confirm(msg,{title:'Edzés törlése',confirmText:'Törlés',danger:true}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629DeleteHistoryBase(key),true)})};
+}
+if(typeof rf153ResetDay==='function'){
+ const tp2629ResetDayBase=rf153ResetDay;
+ rf153ResetDay=function(w){void tp2628Confirm(`Visszaállítod a Full Body ${w} gyári programját?`,{title:'Programnap visszaállítása',confirmText:'Visszaállítás',danger:true}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629ResetDayBase(w),true)})};
+}
+if(typeof rf154Remove==='function'){
+ const tp2629RemoveExerciseBase=rf154Remove;
+ rf154Remove=function(w,i){
+  let blocked=false;try{const st=typeof rf155DayState==='function'?rf155DayState(w):null,arr=st?.day?.exercises||plan()?.[w]||[];blocked=arr.length<=1}catch(_){}
+  if(blocked)return tp2629RemoveExerciseBase(w,i);
+  void tp2628Confirm('Törlöd ezt a gyakorlatot a programból?',{title:'Gyakorlat eltávolítása',confirmText:'Törlés',danger:true}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629RemoveExerciseBase(w,i),true)});
+ };
+}
+
+// Body-weight journal delete/edit.
+if(typeof rf215Del==='function'){
+ const tp2629WeightDeleteBase=rf215Del;
+ rf215Del=function(date){void tp2628Confirm('Törlöd ezt a testsúlyadatot?',{title:'Testsúlyadat törlése',confirmText:'Törlés',danger:true}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629WeightDeleteBase(date),true)})};
+}
+if(typeof rf215Edit==='function'){
+ const tp2629WeightEditBase=rf215Edit;
+ rf215Edit=async function(date){const x=weights().find(y=>y.date===date);if(!x)return;const v=await tp2629Prompt((typeof rf215T==='function'?rf215T()[3]:'Testsúly')+' (kg)',{title:'Testsúly szerkesztése',value:x.kg,type:'number',inputMode:'decimal'});if(v===null)return;return tp2629PromptBypass([v],()=>tp2629WeightEditBase(date))};
+}
+
+// Calendar reschedule and legacy day chooser prompts.
+if(typeof editSchedulePrompt==='function'){
+ const tp2629EditScheduleBase=editSchedulePrompt;
+ editSchedulePrompt=async function(id){const s=scheduled(),i=s.findIndex(x=>x.id===id);if(i<0)return;const old=s[i];const date=await tp2629Prompt('Új dátum (ÉÉÉÉ-HH-NN):',{title:'Edzés áthelyezése',value:localDateKey(new Date(old.start)),type:'date'});if(date===null)return;const time=await tp2629Prompt('Új időpont (ÓÓ:PP):',{title:'Edzés áthelyezése',value:new Date(old.start).toTimeString().slice(0,5),type:'time'});if(time===null)return;return tp2629PromptBypass([date,time],()=>tp2629EditScheduleBase(id))};
+}
+if(typeof rf224DayChoice==='function'){
+ const tp2629DayChoiceBase=rf224DayChoice;
+ rf224DayChoice=async function(date){const items=scheduleOnDate(date).filter(x=>!x.cancelled);if(items.length)return tp2629DayChoiceBase(date);const p=activeProgram(),days=p?.days||[];if(!days.length)return;const t=rf224T(),labels=days.map((d,i)=>`${i+1}. ${d.name||d.id}`).join('\n');const raw=await tp2629Prompt(`${t.choose}\n\n${labels}`,{title:t.title||'Edzésnap kiválasztása',value:'1',inputMode:'numeric'});if(raw===null)return;return tp2629PromptBypass([raw],()=>tp2629DayChoiceBase(date))};
+}
+
+window.TrainPilotDialogAudit={version:'2629',prompt:tp2629Prompt};
+
+const TP145_VERSION='1.4.5';
+const tp145BackupBase=makeBackup;
+makeBackup=function(){return {...tp145BackupBase(),appVersion:TP145_VERSION}};
+
+// @section trainpilot-146-inline-compact.js
+// TrainPilot 1.4.6 / test 2630: exercise details stay on the Edzés page and
+// collapsed Journal entries use the same compact card rhythm.
+if(typeof rf201ExerciseRow==='function'){
+ rf201ExerciseRow=function(dayId,id,i){
+  const e=byId(id),rawPlay=typeof rf260VideoButton==='function'?rf260VideoButton(id):'';
+  const play=rawPlay.replace('event.stopPropagation();','event.preventDefault();event.stopPropagation();');
+  const target=e?.target?`<span class="badge">${esc(e.target)}</span>`:'';
+  const equipment=e?.equipment?`<span class="badge">${esc(e.equipment)}</span>`:'';
+  const note=e?.notes?`<p class="small muted tp146-exercise-note">${esc(e.notes)}</p>`:'<p class="small muted tp146-exercise-note">Koppints a módosításra, ha cserélni vagy szerkeszteni szeretnéd a gyakorlatot.</p>';
+  return `<details class="exercise tp146-exercise" data-tp146-day="${esc(dayId)}" data-tp146-exercise="${esc(id)}">
+   <summary class="tp146-exercise-summary">
+    <div class="num">${i+1}</div>
+    <div class="tp146-exercise-copy"><div class="ex-name">${esc(e?.hu||id)}</div><div class="en">${esc(e?.en||'')}</div><div class="meta">${e?.sets||''}${e?.sets?' × ':''}${esc(e?.reps||'')} ${e?.weight?`• ${e.weight} ${esc(e.unit||'kg')}`:''}</div></div>
+    <div class="tp-exercise-actions">${play}<span class="tp146-exercise-chevron" aria-hidden="true">⌄</span></div>
+   </summary>
+   <div class="tp146-exercise-body">
+    ${(target||equipment)?`<div class="tp146-exercise-tags">${target}${equipment}</div>`:''}
+    ${note}
+    <button type="button" class="btn secondary block tp146-edit-exercise" onclick="event.stopPropagation();rf154EditSlot('${esc(dayId)}',${i})">Gyakorlat módosítása</button>
+   </div>
+  </details>`;
+ };
+}
+
+// 1.4.6 main: unified compact cards, consistent program/day titles and final WebView dialog audit.
+var tp146ProgramDayTitle=function tp146ProgramDayTitle(program,day){
+ const raw=String(program?.name||'Program'),lang=typeof rf212Lang==='function'?rf212Lang():'hu';
+ let name=raw;
+ if(lang==='en'&&typeof RF213_EN!=='undefined')name=RF213_EN[raw]||raw;
+ else if(lang!=='hu'&&typeof RF214_MAPS!=='undefined'){const map=RF214_MAPS[lang]||RF214_MAPS.en||{};name=map[raw]||raw;}
+ name=String(name).replace(/\s*[–—]\s*/g,' - ').replace(/\s+-\s+/g,' - ').trim();
+ const d=String(day?.name||day?.id||'').trim();
+ return d?`${name} - ${d}`:name;
+};
+workoutTitle=function(programId,dayId){const p=programById(programId)||activeProgram(),d=programDay(p,dayId);return tp146ProgramDayTitle(p,d)};
+
+planScreen=function(){
+ const p=activeProgram();
+ if(!p)return shell(`<main><div class="hero"><h1>Nincs aktív program</h1><div class="muted">Válassz programot a Programok fülön.</div></div><button class="btn block" onclick="go('programs')">Program választása</button></main>`);
+ return shell(`<main class="tp146-plan"><div class="hero"><span class="badge">AKTÍV PROGRAM</span><h1>${esc(p.name)}</h1><div class="muted">${esc(p.location||'')} ${p.level?`• ${esc(p.level)}`:''} • ${p.days?.length||0} napos ciklus</div><br><button class="btn secondary block" onclick="go('programs')">Másik program választása</button></div>${(p.days||[]).map(d=>`<div class="card tp146-day-head"><div class="tp146-day-copy"><span class="badge">EDZÉSNAP</span><h2 class="tp146-day-title">${esc(tp146ProgramDayTitle(p,d))}</h2><div class="small muted">${d.exercises?.length||0} gyakorlat • koppints a részletekhez</div></div><span class="tp146-day-letter" aria-label="${esc(d.name||d.id)}">${esc(d.id||d.name||'')}</span></div>${(d.exercises||[]).map((id,i)=>rf201ExerciseRow(d.id,id,i)).join('')}<button class="btn secondary block" onclick="rf154AddScreen('${esc(d.id)}')">+ Gyakorlat hozzáadása</button><br><button class="btn block" onclick="startWorkout('${esc(d.id)}')">Edzés indítása</button>`).join('<br>')}</main>`);
+};
+showWorkout=function(dayId){
+ state.workout=dayId;state.tab='plan';const p=activeProgram(),d=programDay(p,dayId);if(!p||!d){render();return;}
+ render(shell(`<main class="tp146-plan"><button class="btn secondary" onclick="go('plan')">← ${esc(p.name)}</button><div class="hero"><span class="badge">AKTÍV PROGRAM</span><h1>${esc(tp146ProgramDayTitle(p,d))}</h1><div class="muted">${d.exercises?.length||0} gyakorlat</div></div>${(d.exercises||[]).map((id,i)=>rf201ExerciseRow(d.id,id,i)).join('')}<br><button class="btn secondary block" onclick="rf154AddScreen('${esc(d.id)}')">+ Gyakorlat hozzáadása</button><br><button class="btn block" onclick="startWorkout('${esc(d.id)}')">Edzés indítása</button></main>`));
+};
+
+const tp146HomeBase=home;
+home=function(){
+ let html=tp146HomeBase();const p=activeProgram(),np=nextPlanned(),next=nextWorkout(),targetProgram=np?programById(np.programId||p?.id):p,targetDay=programDay(targetProgram,np?(np.dayId||np.workout):next);
+ if(!targetProgram||!targetDay)return html;
+ const title=esc(tp146ProgramDayTitle(targetProgram,targetDay)),when=np?esc(fmtDate(np.start)):`${targetDay.exercises?.length||0} gyakorlat`;
+ const block=`<div class="tp146-next"><span class="small muted">Következő</span><strong class="tp146-next-title">${title}</strong><span class="small muted tp146-next-time">${when}</span></div><br>`;
+ html=html.replace(/<div class="muted">Következő:[\s\S]*?<\/div><br>/,block).replace(/<div class="muted">Következő ciklusnap:[\s\S]*?<\/div><br>/,block);
+ return html;
+};
+
+scheduleListHtml=function(){
+ const isDone=x=>typeof rf209ScheduleDone==='function'?rf209ScheduleDone(x):(x.status==='completed'||history().some(h=>h.scheduleId===x.id));
+ const items=scheduled().filter(x=>!x.cancelled&&!isDone(x)).sort((a,b)=>Date.parse(a.start)-Date.parse(b.start)).slice(-120);
+ return items.length?items.map(x=>{const p=programById(x.programId||'home-basic'),d=programDay(p,x.dayId||x.workout),skipped=x.status==='skipped',moving=state?.rf260MovingScheduleId===x.id;return `<div class="card schedule-card tp146-schedule-card"><div class="tp146-schedule-copy"><strong class="tp146-schedule-title">${esc(tp146ProgramDayTitle(p,d))}</strong><div class="small muted">${esc(fmtDate(x.start))} • ${skipped?'Kihagyva':'Tervezett'}</div></div><div class="schedule-actions tp146-schedule-actions"><div class="tp146-schedule-primary"><button class="btn" onclick="startScheduledById('${esc(x.id)}')">Indítás</button><button class="btn secondary ${moving?'tp-action-active':''}" data-tp-move-id="${esc(x.id)}" aria-pressed="${moving?'true':'false'}" onclick="rf260OpenScheduleMove('${esc(x.id)}',this)">Áthelyezés</button></div><div class="tp146-schedule-side"><button class="btn danger" onclick="rf209DeleteSchedule('${esc(x.id)}')">Törlés</button><button class="btn secondary ${skipped?'tp-selected':''}" aria-pressed="${skipped?'true':'false'}" onclick="skipSchedule('${esc(x.id)}')">${skipped?'Vissza':'Kihagyás'}</button></div></div></div>`}).join(''):'<div class="muted">Még nincs tervezett edzés.</div>';
+};
+
+var tp146CompactHealthCards=function tp146CompactHealthCards(){
+ const main=document.querySelector?.('main.rf263-health');if(!main)return;
+ main.querySelectorAll?.(':scope > .card')?.forEach(card=>{const h=card.querySelector?.(':scope > h2');if(!h)return;const text=String(h.textContent||'').trim();if(/^(Mai állapot|Today status|Heutiger Status|Starea de azi|Test és fittség|Body and fitness|Körper und Fitness|Corp și fitness)$/i.test(text))card.classList.add('tp146-health-compact')});
+};
+if(typeof rf263HealthHub==='function'){
+ const tp146HealthHubBase=rf263HealthHub;
+ rf263HealthHub=function(){const r=tp146HealthHubBase.apply(this,arguments);tp146CompactHealthCards();return r};
+}
+
+if(typeof rf130DeletePhoto==='function'){
+ rf130DeletePhoto=async function(key,id){
+  const q=rf130FindPhoto(key,id);if(!q.p||q.p.deletedAt)return;
+  const ok=await tp2628Confirm('Törlöd ezt a naplófotót? A következő Drive-szinkron a felhőből is eltávolítja.',{title:'Naplófotó törlése',confirmText:'Törlés',danger:true});
+  if(!ok)return;
+  try{await rf130PhotoPlugin()?.delete?.({id})}catch(_){}
+  q.p.deletedAt=new Date().toISOString();q.p.updatedAt=Date.now();db.set('history',q.h);cloudChanged();render();
+ };
+}
+
+window.TrainPilotUiUnify={version:'2630-main',nativeDialogAudit:true};
+window.TrainPilotInlineCompact={version:'2630'};
+const TP146_UI_VERSION='1.4.6';
+const tp146UiBackupBase=makeBackup;
+makeBackup=function(){return {...tp146UiBackupBase(),appVersion:TP146_UI_VERSION}};
+// @endsection trainpilot-146-inline-compact.js
+
+// @section trainpilot-146-layout-hotfix.js
+// TrainPilot 1.4.6 main hotfix: restore calendar action layout and place the A/B marker inside the workout title.
+(function(){
+  'use strict';
+
+  var tp146HotfixProgramBaseTitle=function(program,day){
+    const full=typeof tp146ProgramDayTitle==='function'?String(tp146ProgramDayTitle(program,day)||''):String(program?.name||'Program');
+    const label=String(day?.name||day?.id||'').trim();
+    const suffix=label?` - ${label}`:'';
+    if(suffix&&full.endsWith(suffix))return full.slice(0,-suffix.length);
+    return String(program?.name||'Program').replace(/\s*[–—]\s*/g,' - ').replace(/\s+-\s+/g,' - ').trim();
+  };
+  var tp146HotfixDayBadge=function(day){return String(day?.name||day?.id||'').trim()};
+  var tp146HotfixDayHeading=function(program,day){
+    const base=esc(tp146HotfixProgramBaseTitle(program,day)),badge=esc(tp146HotfixDayBadge(day));
+    return `<div class="tp146-day-headingline"><h2 class="tp146-day-title">${base}${badge?` <span class="tp146-day-sep">-</span> <span class="tp146-day-letter" aria-label="${badge}">${badge}</span>`:''}</h2></div>`;
+  };
+
+  planScreen=function(){
+    const p=activeProgram();
+    if(!p)return shell(`<main><div class="hero"><h1>Nincs aktív program</h1><div class="muted">Válassz programot a Programok fülön.</div></div><button class="btn block" onclick="go('programs')">Program választása</button></main>`);
+    return shell(`<main class="tp146-plan"><div class="hero"><span class="badge">AKTÍV PROGRAM</span><h1>${esc(p.name)}</h1><div class="muted">${esc(p.location||'')} ${p.level?`• ${esc(p.level)}`:''} • ${p.days?.length||0} napos ciklus</div><br><button class="btn secondary block" onclick="go('programs')">Másik program választása</button></div>${(p.days||[]).map(d=>`<div class="card tp146-day-head"><div class="tp146-day-copy"><span class="badge">EDZÉSNAP</span>${tp146HotfixDayHeading(p,d)}<div class="small muted">${d.exercises?.length||0} gyakorlat • koppints a részletekhez</div></div></div>${(d.exercises||[]).map((id,i)=>rf201ExerciseRow(d.id,id,i)).join('')}<button class="btn secondary block" onclick="rf154AddScreen('${esc(d.id)}')">+ Gyakorlat hozzáadása</button><br><button class="btn block" onclick="startWorkout('${esc(d.id)}')">Edzés indítása</button>`).join('<br>')}</main>`);
+  };
+
+  showWorkout=function(dayId){
+    state.workout=dayId;state.tab='plan';const p=activeProgram(),d=programDay(p,dayId);if(!p||!d){render();return;}
+    render(shell(`<main class="tp146-plan"><button class="btn secondary" onclick="go('plan')">← ${esc(p.name)}</button><div class="hero"><span class="badge">AKTÍV PROGRAM</span><div class="tp146-workout-hero-title">${tp146HotfixDayHeading(p,d)}</div><div class="muted">${d.exercises?.length||0} gyakorlat</div></div>${(d.exercises||[]).map((id,i)=>rf201ExerciseRow(d.id,id,i)).join('')}<br><button class="btn secondary block" onclick="rf154AddScreen('${esc(d.id)}')">+ Gyakorlat hozzáadása</button><br><button class="btn block" onclick="startWorkout('${esc(d.id)}')">Edzés indítása</button></main>`));
+  };
+
+  scheduleListHtml=function(){
+    const isDone=x=>typeof rf209ScheduleDone==='function'?rf209ScheduleDone(x):(x.status==='completed'||history().some(h=>h.scheduleId===x.id));
+    const items=scheduled().filter(x=>!x.cancelled&&!isDone(x)).sort((a,b)=>Date.parse(a.start)-Date.parse(b.start)).slice(-120);
+    return items.length?items.map(x=>{
+      const p=programById(x.programId||'home-basic'),d=programDay(p,x.dayId||x.workout),skipped=x.status==='skipped',moving=state?.rf260MovingScheduleId===x.id;
+      return `<div class="card schedule-card tp146-schedule-card"><div class="tp146-schedule-head"><div class="tp146-schedule-copy"><strong class="tp146-schedule-title">${esc(tp146ProgramDayTitle(p,d))}</strong><div class="small muted">${esc(fmtDate(x.start))} • ${skipped?'Kihagyva':'Tervezett'}</div></div><button class="btn danger tp146-schedule-delete" onclick="rf209DeleteSchedule('${esc(x.id)}')">Törlés</button></div><div class="schedule-actions tp146-schedule-actions-row"><button class="btn" onclick="startScheduledById('${esc(x.id)}')">Indítás</button><button class="btn secondary ${moving?'tp-action-active':''}" data-tp-move-id="${esc(x.id)}" aria-pressed="${moving?'true':'false'}" onclick="rf260OpenScheduleMove('${esc(x.id)}',this)">Áthelyezés</button><button class="btn secondary ${skipped?'tp-selected':''}" aria-pressed="${skipped?'true':'false'}" onclick="skipSchedule('${esc(x.id)}')">${skipped?'Vissza':'Kihagyás'}</button></div></div>`;
+    }).join(''):'<div class="muted">Még nincs tervezett edzés.</div>';
+  };
+
+  const style=document.createElement('style');
+  style.id='tp146-layout-hotfix-css';
+  style.textContent=`
+    .tp146-day-head{justify-content:flex-start!important}
+    .tp146-day-headingline{display:flex;align-items:center;min-width:0}
+    .tp146-day-title{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:5px 0 2px!important}
+    .tp146-day-title .tp146-day-letter{display:inline-grid!important;place-items:center;flex:0 0 36px;width:36px;height:36px;border-radius:11px;border:1px solid color-mix(in srgb,var(--accent) 72%,var(--line));background:color-mix(in srgb,var(--accent) 14%,var(--card));color:var(--accent2);font-size:20px;font-weight:950;vertical-align:middle}
+    .tp146-day-sep{color:var(--muted);font-weight:700}
+    .tp146-workout-hero-title .tp146-day-title{font-size:clamp(26px,7vw,38px)!important;line-height:1.1;margin:8px 0 6px!important}
+    .tp146-workout-hero-title .tp146-day-title .tp146-day-letter{width:42px;height:42px;flex-basis:42px;font-size:22px;border-radius:13px}
+    .tp146-schedule-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+    .tp146-schedule-copy{min-width:0;flex:1}
+    .tp146-schedule-delete{flex:0 0 auto;min-height:34px!important;padding:7px 12px!important;margin:0!important;align-self:flex-start}
+    .tp146-schedule-actions-row{display:flex!important;grid-template-columns:none!important;gap:6px!important;flex-wrap:wrap!important;align-items:stretch}
+    .tp146-schedule-actions-row .btn{flex:1 1 90px;min-height:40px!important;padding:9px 10px!important;margin:0!important}
+    @media(max-width:380px){.tp146-schedule-delete{padding:7px 9px!important}.tp146-schedule-actions-row .btn{flex-basis:82px}}
+  `;
+  document.head.appendChild(style);
+
+  window.TrainPilotUiHotfix={version:'2630b',calendarActionsRestored:true,inlineDayBadge:true};
+  if(window.TrainPilotBoot?.finished)render();
+})();
+// @endsection trainpilot-146-layout-hotfix.js
+
+// @section trainpilot-148-adaptive-planner.js
+/* TrainPilot 1.4.8 development: adaptive personal planner + 100-exercise library. */
+const RF148_VERSION='1.4.8';
+var rf148PlanDayHeading=function rf148PlanDayHeading(program,day){
+ const base=esc(typeof tp146ProgramDayTitle==='function'?tp146ProgramDayTitle(program,{id:'',name:''}):String(program?.name||'Program'));
+ const badge=esc(String(day?.id||day?.name||'').trim());
+ return '<div class="tp146-day-headingline"><h2 class="tp146-day-title">'+base+(badge?' <span class="tp146-day-sep">-</span> <span class="tp146-day-letter" aria-label="'+badge+'">'+badge+'</span>':'')+'</h2></div>';
+};
+planScreen=function(){
+ const p=activeProgram();
+ if(!p)return shell('<main><div class="hero"><h1>Nincs aktív program</h1><div class="muted">Válassz programot a Programok fülön.</div></div><button class="btn block" onclick="go(\'programs\')">Program választása</button></main>');
+ return shell('<main class="tp146-plan"><div class="hero"><span class="badge">AKTÍV PROGRAM</span><h1>'+esc(p.name)+'</h1><div class="muted">'+esc(p.location||'')+(p.level?' • '+esc(p.level):'')+' • '+(p.days?.length||0)+' napos ciklus</div><br><button class="btn secondary block" onclick="go(\'programs\')">Másik program választása</button></div>'+(p.days||[]).map(function(d){return '<div class="card tp146-day-head"><div class="tp146-day-copy"><span class="badge">EDZÉSNAP</span>'+rf148PlanDayHeading(p,d)+'<div class="small muted">'+(d.exercises?.length||0)+' gyakorlat • koppints a részletekhez</div></div></div>'+(d.exercises||[]).map(function(id,i){return rf201ExerciseRow(d.id,id,i);}).join('')+'<button class="btn secondary block" onclick="rf154AddScreen(\''+esc(d.id)+'\')">+ Gyakorlat hozzáadása</button><br><button class="btn block" onclick="startWorkout(\''+esc(d.id)+'\')">Edzés indítása</button>';}).join('<br>')+'</main>');
+};
+showWorkout=function(dayId){
+ state.workout=dayId;state.tab='plan';const p=activeProgram(),d=programDay(p,dayId);if(!p||!d){render();return;}
+ render(shell('<main class="tp146-plan"><button class="btn secondary" onclick="go(\'plan\')">← '+esc(p.name)+'</button><div class="hero"><span class="badge">AKTÍV PROGRAM</span><div class="tp146-workout-hero-title">'+rf148PlanDayHeading(p,d)+'</div><div class="muted">'+(d.exercises?.length||0)+' gyakorlat</div></div>'+(d.exercises||[]).map(function(id,i){return rf201ExerciseRow(d.id,id,i);}).join('')+'<br><button class="btn secondary block" onclick="rf154AddScreen(\''+esc(d.id)+'\')">+ Gyakorlat hozzáadása</button><br><button class="btn block" onclick="startWorkout(\''+esc(d.id)+'\')">Edzés indítása</button></main>'));
+};
+const RF148_PATTERN_LABELS={
+ squat:'Guggolás',hinge:'Csípődomináns',lunge:'Kitörés','horizontal-push':'Vízszintes tolás','horizontal-pull':'Vízszintes húzás',
+ 'vertical-push':'Függőleges tolás','vertical-pull':'Függőleges húzás','chest-isolation':'Mell izoláció','shoulder-isolation':'Váll izoláció',
+ 'rear-delt':'Hátsó váll','elbow-flexion':'Bicepsz','elbow-extension':'Tricepsz','knee-extension':'Térdnyújtás','knee-flexion':'Térdhajlítás',
+ calf:'Vádli','core-bracing':'Törzsfeszítés','core-flexion':'Törzshajlítás','core-stability':'Törzsstabilizáció',conditioning:'Kondicionálás',other:'Egyéb'
+};
+const RF148_STYLE_LABELS={strength:'Erősítés',bodybuilding:'Testépítés',calisthenics:'Calisthenics',conditioning:'Kondicionálás',mobility:'Mobilitás',other:'Egyéb'};
+const RF148_FOCUS_LABELS={balanced:'Kiegyensúlyozott',upper:'Felsőtest',chestback:'Mell / hát',shoulderarms:'Váll / kar',core:'Törzs',legs:'Láb'};
+const RF148_AREA_LABELS={legs:'Láb',chest:'Mell',back:'Hát',shoulders:'Váll',arms:'Kar',core:'Törzs'};
+const RF148_AREA_PATTERNS={
+ legs:['squat','hinge','lunge','knee-extension','knee-flexion','calf'],
+ chest:['horizontal-push','chest-isolation'],
+ back:['horizontal-pull','vertical-pull'],
+ shoulders:['vertical-push','shoulder-isolation','rear-delt'],
+ arms:['elbow-flexion','elbow-extension'],
+ core:['core-bracing','core-flexion','core-stability']
+};
+const RF148_ROLE_PATTERNS={
+ leg:['squat','lunge','knee-extension','calf'],
+ hinge:['hinge','knee-flexion'],
+ push:['horizontal-push','chest-isolation'],
+ pull:['horizontal-pull','vertical-pull'],
+ shoulder:['vertical-push','shoulder-isolation','rear-delt'],
+ bi:['elbow-flexion'],tri:['elbow-extension'],
+ core:['core-bracing','core-flexion'],stability:['core-stability'],conditioning:['conditioning']
+};
+const RF148_NEW_EXERCISES=[
+{id:'pullup',hu:'Húzódzkodás',en:'Pull-Up',equipment:'húzódzkodórúd',loadType:'bodyweight',target:'Hát / bicepsz',notes:'Stabil rúdon, lendítés nélkül húzd a mellkast a rúd felé. A váll ne essen előre a felső helyzetben.',sets:3,reps:'4–10',weight:0,repUnit:'ism.',movementPattern:'vertical-pull',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['fitness','muscle','strength'],style:'calisthenics'},
+{id:'chinup',hu:'Húzódzkodás alsó fogással',en:'Chin-Up',equipment:'húzódzkodórúd',loadType:'bodyweight',target:'Hát / bicepsz',notes:'Alsó fogással, feszes törzzsel húzd magad fel. Kerüld a lendítést és a váll felhúzását.',sets:3,reps:'4–10',weight:0,repUnit:'ism.',movementPattern:'vertical-pull',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['fitness','muscle','strength'],style:'calisthenics'},
+{id:'negative-pullup',hu:'Negatív húzódzkodás',en:'Negative Pull-Up',equipment:'húzódzkodórúd',loadType:'bodyweight',target:'Hát / bicepsz',notes:'Felső helyzetből 3–5 másodperc alatt engedd le magad kontrolláltan. Biztonságos fellépőről indulj.',sets:3,reps:'3–6',weight:0,repUnit:'ism.',movementPattern:'vertical-pull',difficulty:'beginner',complexity:'medium',beginnerSafe:true,compound:true,goalTags:['fitness','muscle','strength'],style:'calisthenics'},
+{id:'scapular-pullup',hu:'Lapockás húzódzkodás',en:'Scapular Pull-Up',equipment:'húzódzkodórúd',loadType:'bodyweight',target:'Hát / lapocka',notes:'Nyújtott karral csak a lapockákat húzd lefelé és hátra, majd kontrolláltan engedd vissza.',sets:2,reps:'8–15',weight:0,repUnit:'ism.',movementPattern:'vertical-pull',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness','muscle'],style:'calisthenics'},
+{id:'inverted-row',hu:'Fordított evezés',en:'Inverted Row',equipment:'stabil alacsony rúd / heveder',loadType:'bodyweight',target:'Hát / bicepsz',notes:'A test maradjon egyenes, húzd a mellkast a stabil rúd felé, majd lassan engedd vissza.',sets:3,reps:'6–15',weight:0,repUnit:'ism.',movementPattern:'horizontal-pull',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle','strength'],style:'calisthenics'},
+{id:'dip',hu:'Tolódzkodás',en:'Parallel Bar Dip',equipment:'tolódzkodó korlát',loadType:'bodyweight',target:'Mell / tricepsz',notes:'Stabil korláton kontrolláltan engedd a tested, majd nyomd vissza. Ne erőltesd a váll számára kényelmetlen mélységet.',sets:3,reps:'5–12',weight:0,repUnit:'ism.',movementPattern:'horizontal-push',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['fitness','muscle','strength'],style:'calisthenics'},
+{id:'bench-dip',hu:'Pados tolódzkodás',en:'Bench Dip',equipment:'stabil pad',loadType:'bodyweight',target:'Tricepsz / mell',notes:'A pad legyen stabil. Csak fájdalommentes vállmozgástartományban engedd magad, a könyök hátrafelé haladjon.',sets:2,reps:'6–12',weight:0,repUnit:'ism.',movementPattern:'horizontal-push',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['fitness','muscle'],style:'calisthenics'},
+{id:'diamond-pushup',hu:'Gyémánt fekvőtámasz',en:'Diamond Push-Up',equipment:'testsúly',loadType:'bodyweight',target:'Tricepsz / mell',notes:'A kezek közel legyenek egymáshoz a mellkas alatt. Tartsd feszesen a törzset és kontrolláld a könyököt.',sets:3,reps:'6–15',weight:0,repUnit:'ism.',movementPattern:'horizontal-push',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['fitness','muscle','strength'],style:'calisthenics'},
+{id:'pseudo-planche-pushup',hu:'Pseudo planche fekvőtámasz',en:'Pseudo Planche Push-Up',equipment:'testsúly',loadType:'bodyweight',target:'Mell / váll / tricepsz',notes:'A vállakat enyhén told a kéz elé, a törzs maradjon feszes. Csak stabil fekvőtámasz-technika után.',sets:3,reps:'4–10',weight:0,repUnit:'ism.',movementPattern:'horizontal-push',difficulty:'advanced',complexity:'high',beginnerSafe:false,compound:true,goalTags:['fitness','muscle','strength'],style:'calisthenics'},
+{id:'hanging-knee-raise',hu:'Függésben térdemelés',en:'Hanging Knee Raise',equipment:'húzódzkodórúd',loadType:'bodyweight',target:'Törzs',notes:'Lendítés nélkül húzd a térdeket a mellkas felé, a medencét enyhén billentsd hátra.',sets:3,reps:'6–15',weight:0,repUnit:'ism.',movementPattern:'core-flexion',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:false,goalTags:['fitness','muscle'],style:'calisthenics'},
+{id:'hanging-leg-raise',hu:'Függésben lábemelés',en:'Hanging Leg Raise',equipment:'húzódzkodórúd',loadType:'bodyweight',target:'Törzs',notes:'Nyújtott vagy enyhén hajlított lábbal emelj lendítés nélkül. Csak stabil függés és térdemelés után.',sets:3,reps:'5–12',weight:0,repUnit:'ism.',movementPattern:'core-flexion',difficulty:'advanced',complexity:'high',beginnerSafe:false,compound:false,goalTags:['fitness','muscle','strength'],style:'calisthenics'},
+{id:'hollow-hold',hu:'Hollow tartás',en:'Hollow Body Hold',equipment:'testsúly',loadType:'bodyweight',target:'Törzs',notes:'A derekat finoman szorítsd a talajhoz. Rövidítsd a kartartást vagy hajlítsd a térdet, ha a derék elemelkedik.',sets:3,reps:'20–40 mp',weight:0,repUnit:'mp',movementPattern:'core-bracing',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness','strength'],style:'calisthenics'},
+{id:'superman-hold',hu:'Superman tartás',en:'Superman Hold',equipment:'testsúly',loadType:'bodyweight',target:'Hát / törzs',notes:'Hason fekve kis mozgástartományban emeld a kart és lábat, a nyak maradjon semleges. Ne homoríts túl.',sets:2,reps:'15–30 mp',weight:0,repUnit:'mp',movementPattern:'core-stability',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness'],style:'calisthenics'},
+{id:'mountain-climber',hu:'Hegymászó',en:'Mountain Climber',equipment:'testsúly',loadType:'bodyweight',target:'Törzs / kondíció',notes:'Fekvőtámasz-helyzetben váltva húzd a térdeket előre. Tartsd stabilan a medencét és a vállat.',sets:3,reps:'30–60 mp',weight:0,repUnit:'mp',movementPattern:'conditioning',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','fatloss'],style:'conditioning'},
+
+{id:'band-row',hu:'Gumiszalagos evezés',en:'Resistance Band Row',equipment:'gumiszalag',loadType:'bodyweight',target:'Hát / bicepsz',notes:'A szalagot stabil ponthoz rögzítsd. Könyökkel húzz hátra, zárd a lapockát, majd lassan engedd vissza.',sets:3,reps:'10–20',weight:0,repUnit:'ism.',movementPattern:'horizontal-pull',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle'],style:'strength'},
+{id:'band-lat-pulldown',hu:'Gumiszalagos lehúzás',en:'Resistance Band Lat Pulldown',equipment:'gumiszalag + magas rögzítés',loadType:'bodyweight',target:'Hát / bicepsz',notes:'A szalagot biztonságosan magas ponthoz rögzítsd. A könyököt húzd lefelé a törzs mellé.',sets:3,reps:'10–20',weight:0,repUnit:'ism.',movementPattern:'vertical-pull',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle'],style:'strength'},
+{id:'band-chest-press',hu:'Gumiszalagos mellnyomás',en:'Resistance Band Chest Press',equipment:'gumiszalag + stabil rögzítés',loadType:'bodyweight',target:'Mell / tricepsz',notes:'A szalag stabilan legyen mögötted rögzítve. Nyomd előre a karokat, a bordakosár maradjon kontrollált.',sets:3,reps:'10–20',weight:0,repUnit:'ism.',movementPattern:'horizontal-push',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle'],style:'strength'},
+{id:'band-overhead-press',hu:'Gumiszalagos vállnyomás',en:'Resistance Band Overhead Press',equipment:'gumiszalag',loadType:'bodyweight',target:'Váll / tricepsz',notes:'Állj a szalag közepére, tarts stabil törzset és nyomd a kezeket fej fölé.',sets:3,reps:'10–20',weight:0,repUnit:'ism.',movementPattern:'vertical-push',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle'],style:'strength'},
+{id:'band-face-pull',hu:'Gumiszalagos face pull',en:'Resistance Band Face Pull',equipment:'gumiszalag + stabil rögzítés',loadType:'bodyweight',target:'Hátsó váll / hát',notes:'Arc magasságában rögzített szalagot húzz a homlok felé, a könyök maradjon magasan.',sets:3,reps:'12–20',weight:0,repUnit:'ism.',movementPattern:'rear-delt',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness','muscle'],style:'bodybuilding'},
+{id:'band-biceps-curl',hu:'Gumiszalagos bicepszezés',en:'Resistance Band Biceps Curl',equipment:'gumiszalag',loadType:'bodyweight',target:'Bicepsz',notes:'Állj a szalagra, a könyök maradjon a törzs mellett és hajlíts lendítés nélkül.',sets:3,reps:'10–20',weight:0,repUnit:'ism.',movementPattern:'elbow-flexion',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness','muscle'],style:'bodybuilding'},
+{id:'band-triceps-pushdown',hu:'Gumiszalagos tricepsz lenyomás',en:'Resistance Band Triceps Pushdown',equipment:'gumiszalag + magas rögzítés',loadType:'bodyweight',target:'Tricepsz',notes:'A könyök maradjon a törzs mellett, csak az alkart nyújtsd lefelé.',sets:3,reps:'10–20',weight:0,repUnit:'ism.',movementPattern:'elbow-extension',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness','muscle'],style:'bodybuilding'},
+{id:'band-pallof-press',hu:'Gumiszalagos Pallof-nyomás',en:'Resistance Band Pallof Press',equipment:'gumiszalag + oldalsó rögzítés',loadType:'bodyweight',target:'Törzs',notes:'Oldalról húzó szalaggal nyomd ki a kezeket a mellkas elől úgy, hogy a törzs ne forduljon el.',sets:3,reps:'8–15 / oldal',weight:0,repUnit:'/oldal',movementPattern:'core-stability',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness','strength'],style:'strength'},
+
+{id:'kb-goblet-squat',hu:'Kettlebell goblet guggolás',en:'Kettlebell Goblet Squat',equipment:'kettlebell',loadType:'single_dumbbell',target:'Láb / far / törzs',notes:'A kettlebellt a mellkas előtt tartsd. Guggolj kontrolláltan, a térd kövesse a lábfejet.',sets:3,reps:'8–15',weight:0,repUnit:'ism.',movementPattern:'squat',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle','strength'],style:'strength'},
+{id:'kb-deadlift',hu:'Kettlebell felhúzás',en:'Kettlebell Deadlift',equipment:'kettlebell',loadType:'single_dumbbell',target:'Far / combhajlító / hát',notes:'A csípőt told hátra, a hát maradjon semleges, majd csípőnyújtással állj fel.',sets:3,reps:'8–15',weight:0,repUnit:'ism.',movementPattern:'hinge',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle','strength'],style:'strength'},
+{id:'kb-swing',hu:'Kettlebell swing',en:'Kettlebell Swing',equipment:'kettlebell',loadType:'single_dumbbell',target:'Far / combhajlító / törzs',notes:'Csípőből robbanékonyan nyújts, ne karból emeld a súlyt. Csak stabil csípőhajlítási technika után.',sets:3,reps:'10–20',weight:0,repUnit:'ism.',movementPattern:'hinge',difficulty:'intermediate',complexity:'high',beginnerSafe:false,compound:true,goalTags:['fitness','strength','fatloss'],style:'strength'},
+{id:'kb-clean',hu:'Kettlebell clean',en:'Kettlebell Clean',equipment:'kettlebell',loadType:'single_dumbbell',target:'Teljes test',notes:'A kettlebell közel haladjon a testhez és puhán érkezzen rack helyzetbe. Technikás gyakorlat, könnyű súllyal kezdd.',sets:3,reps:'5–10 / oldal',weight:0,repUnit:'/oldal',movementPattern:'hinge',difficulty:'advanced',complexity:'high',beginnerSafe:false,compound:true,goalTags:['fitness','strength'],style:'strength'},
+{id:'kb-press',hu:'Egykezes kettlebell vállnyomás',en:'Single-Arm Kettlebell Press',equipment:'kettlebell',loadType:'single_dumbbell',target:'Váll / tricepsz / törzs',notes:'Rack helyzetből, feszes törzzsel nyomd a kettlebellt fej fölé. Ne homoríts túl.',sets:3,reps:'6–12 / oldal',weight:0,repUnit:'/oldal',movementPattern:'vertical-push',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['fitness','muscle','strength'],style:'strength'},
+{id:'kb-row',hu:'Egykezes kettlebell evezés',en:'Single-Arm Kettlebell Row',equipment:'kettlebell',loadType:'single_dumbbell',target:'Hát / bicepsz',notes:'Stabil csípőhajlításban húzd a könyököt a csípő felé. A törzs ne forduljon el.',sets:3,reps:'8–15 / oldal',weight:0,repUnit:'/oldal',movementPattern:'horizontal-pull',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle','strength'],style:'strength'},
+{id:'kb-reverse-lunge',hu:'Kettlebelles hátralépős kitörés',en:'Kettlebell Reverse Lunge',equipment:'kettlebell',loadType:'single_dumbbell',target:'Láb / far / törzs',notes:'A kettlebellt goblet vagy rack helyzetben tartva lépj hátra, majd az elöl lévő lábbal állj fel.',sets:3,reps:'6–12 / láb',weight:0,repUnit:'/láb',movementPattern:'lunge',difficulty:'beginner',complexity:'medium',beginnerSafe:true,compound:true,goalTags:['fitness','muscle','strength'],style:'strength'},
+{id:'kb-halo',hu:'Kettlebell halo',en:'Kettlebell Halo',equipment:'kettlebell',loadType:'single_dumbbell',target:'Váll / törzs',notes:'Könnyű súllyal vezesd a kettlebellt kontrolláltan a fej körül. A bordakosár és medence maradjon stabil.',sets:2,reps:'6–10 / irány',weight:0,repUnit:'/oldal',movementPattern:'shoulder-isolation',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness'],style:'mobility'},
+
+{id:'barbell-back-squat',hu:'Guggolás rúddal',en:'Barbell Back Squat',equipment:'kétkezes rúd + biztonságos állvány',loadType:'total',target:'Láb / far / törzs',notes:'Biztonságos állványból indulj. A törzs maradjon feszes, a térd kövesse a lábfejet. Biztosítókar ajánlott.',sets:3,reps:'5–10',weight:0,repUnit:'ism.',movementPattern:'squat',difficulty:'intermediate',complexity:'high',beginnerSafe:false,compound:true,goalTags:['muscle','strength'],style:'strength'},
+{id:'conventional-deadlift',hu:'Hagyományos felhúzás',en:'Conventional Deadlift',equipment:'kétkezes rúd',loadType:'total',target:'Far / combhajlító / hát',notes:'A rúd maradjon közel a lábhoz, a gerinc semleges. Feszíts rá a rúdra az elemelés előtt.',sets:3,reps:'4–8',weight:0,repUnit:'ism.',movementPattern:'hinge',difficulty:'intermediate',complexity:'high',beginnerSafe:false,compound:true,goalTags:['muscle','strength'],style:'strength'},
+{id:'bench-press',hu:'Fekvenyomás rúddal',en:'Barbell Bench Press',equipment:'kétkezes rúd + pad',loadType:'total',target:'Mell / tricepsz / váll',notes:'A lapocka legyen stabil, a láb a talajon. Biztonsági bak vagy segítő ajánlott.',sets:3,reps:'5–10',weight:0,repUnit:'ism.',movementPattern:'horizontal-push',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['muscle','strength'],style:'strength'},
+{id:'incline-bench-press',hu:'Ferdepados fekvenyomás rúddal',en:'Incline Barbell Bench Press',equipment:'kétkezes rúd + ferde pad',loadType:'total',target:'Mell / váll / tricepsz',notes:'Mérsékelt pad-dőlésszöget használj, a lapocka maradjon stabil. Biztonsági bak vagy segítő ajánlott.',sets:3,reps:'6–12',weight:0,repUnit:'ism.',movementPattern:'horizontal-push',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['muscle','strength'],style:'bodybuilding'},
+{id:'barbell-overhead-press',hu:'Álló vállból nyomás rúddal',en:'Barbell Overhead Press',equipment:'kétkezes rúd',loadType:'total',target:'Váll / tricepsz / törzs',notes:'Feszes far- és hasizmokkal nyomd a rudat fej fölé. Ne kompenzálj túlzott homorítással.',sets:3,reps:'5–10',weight:0,repUnit:'ism.',movementPattern:'vertical-push',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['muscle','strength'],style:'strength'},
+{id:'assisted-pullup-machine',hu:'Rásegítéses húzódzkodás gépen',en:'Assisted Pull-Up Machine',equipment:'rásegítéses húzódzkodó gép',loadType:'total',target:'Hát / bicepsz',notes:'Állíts megfelelő rásegítést, húzd a mellkast felfelé és kontrolláltan engedd vissza.',sets:3,reps:'6–12',weight:0,repUnit:'ism.',movementPattern:'vertical-pull',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle','strength'],style:'strength'},
+{id:'pec-deck',hu:'Tárogatás pec-deck gépen',en:'Pec Deck Fly',equipment:'pec-deck gép',loadType:'total',target:'Mell',notes:'A váll maradjon lent és hátul. Zárd a karokat kontrolláltan, ne rántsd össze a súlyt.',sets:3,reps:'10–15',weight:0,repUnit:'ism.',movementPattern:'chest-isolation',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness','muscle'],style:'bodybuilding'},
+{id:'cable-lateral-raise',hu:'Csigás oldalemelés',en:'Cable Lateral Raise',equipment:'alsó csiga',loadType:'total',target:'Váll',notes:'Könnyű terheléssel emeld oldalra a kart vállmagasság közeléig. Ne lendíts.',sets:3,reps:'10–20',weight:0,repUnit:'ism.',movementPattern:'shoulder-isolation',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness','muscle'],style:'bodybuilding'},
+{id:'hack-squat',hu:'Hack guggolás gépen',en:'Hack Squat Machine',equipment:'hack guggoló gép',loadType:'total',target:'Láb / far',notes:'A hát és medence maradjon a támlán. Engedd a térdet kontrolláltan, majd nyomd vissza a platformot.',sets:3,reps:'8–15',weight:0,repUnit:'ism.',movementPattern:'squat',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle','strength'],style:'bodybuilding'},
+{id:'standing-calf-raise',hu:'Álló vádliemelés gépen',en:'Standing Calf Raise Machine',equipment:'álló vádligép',loadType:'total',target:'Vádli',notes:'A bokát teljes, fájdalommentes mozgástartományban mozgasd. Felül röviden feszíts rá.',sets:3,reps:'10–20',weight:0,repUnit:'ism.',movementPattern:'calf',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness','muscle'],style:'bodybuilding'}
+];
+const RF148_NEW_IDS=new Set(RF148_NEW_EXERCISES.map(function(e){return e.id;}));
+const RF148_MUSCLES={
+ pullup:['back','biceps'],chinup:['back','biceps'],'negative-pullup':['back','biceps'],'scapular-pullup':['back'],'inverted-row':['back','biceps'],dip:['chest','triceps'], 'bench-dip':['triceps','chest'],'diamond-pushup':['triceps','chest'],'pseudo-planche-pushup':['chest','shoulders','triceps'],'hanging-knee-raise':['core'],'hanging-leg-raise':['core'],'hollow-hold':['core'],'superman-hold':['back','core'],'mountain-climber':['core','legs'],
+ 'band-row':['back','biceps'],'band-lat-pulldown':['back','biceps'],'band-chest-press':['chest','triceps'],'band-overhead-press':['shoulders','triceps'],'band-face-pull':['shoulders','back'],'band-biceps-curl':['biceps'],'band-triceps-pushdown':['triceps'],'band-pallof-press':['core'],
+ 'kb-goblet-squat':['legs','core'],'kb-deadlift':['legs','back'],'kb-swing':['legs','core'],'kb-clean':['legs','shoulders','core'],'kb-press':['shoulders','triceps','core'],'kb-row':['back','biceps'],'kb-reverse-lunge':['legs','core'],'kb-halo':['shoulders','core'],
+ 'barbell-back-squat':['legs','core'],'conventional-deadlift':['legs','back'],'bench-press':['chest','triceps','shoulders'],'incline-bench-press':['chest','shoulders','triceps'],'barbell-overhead-press':['shoulders','triceps'],'assisted-pullup-machine':['back','biceps'],'pec-deck':['chest'],'cable-lateral-raise':['shoulders'],'hack-squat':['legs'],'standing-calf-raise':['legs']
+};
+Object.assign(GEAR132,{bands:'Gumiszalag / erősítőszalag',pullupbar:'Húzódzkodórúd',dipbars:'Tolódzkodó korlát',kettlebell:'Kettlebell'});
+const RF148_NEEDS={
+ pullup:['pullupbar'],chinup:['pullupbar'],'negative-pullup':['pullupbar'],'scapular-pullup':['pullupbar'],'inverted-row':['pullupbar'],dip:['dipbars'],'bench-dip':['bench'],'diamond-pushup':[],'pseudo-planche-pushup':[],'hanging-knee-raise':['pullupbar'],'hanging-leg-raise':['pullupbar'],'hollow-hold':[],'superman-hold':[],'mountain-climber':[],
+ 'band-row':['bands'],'band-lat-pulldown':['bands'],'band-chest-press':['bands'],'band-overhead-press':['bands'],'band-face-pull':['bands'],'band-biceps-curl':['bands'],'band-triceps-pushdown':['bands'],'band-pallof-press':['bands'],
+ 'kb-goblet-squat':['kettlebell'],'kb-deadlift':['kettlebell'],'kb-swing':['kettlebell'],'kb-clean':['kettlebell'],'kb-press':['kettlebell'],'kb-row':['kettlebell'],'kb-reverse-lunge':['kettlebell'],'kb-halo':['kettlebell'],
+ 'barbell-back-squat':['barbell'],'conventional-deadlift':['barbell'],'bench-press':['barbell','bench'],'incline-bench-press':['barbell','bench'],'barbell-overhead-press':['barbell'],'assisted-pullup-machine':['machines'],'pec-deck':['machines'],'cable-lateral-raise':['machines'],'hack-squat':['machines'],'standing-calf-raise':['machines']
+};
+for(const e of RF148_NEW_EXERCISES){
+ if(!EXTRA_EXERCISES.some(function(x){return x.id===e.id;}))EXTRA_EXERCISES.push(Object.assign({},e));
+ MUSCLE_MAP[e.id]=RF148_MUSCLES[e.id]||[];
+ NEEDS132[e.id]=RF148_NEEDS[e.id]||[];
+ if(typeof RF14_PATTERNS!=='undefined')RF14_PATTERNS[e.id]=e.movementPattern;
+ if(typeof RF14_COMPOUND!=='undefined'&&e.compound)RF14_COMPOUND.add(e.id);
+ if(typeof RF14_ADVANCED!=='undefined'&&!e.beginnerSafe)RF14_ADVANCED.add(e.id);
+ if(typeof RF14_BEGINNER_FAVOR!=='undefined'&&e.beginnerSafe)RF14_BEGINNER_FAVOR.add(e.id);
+}
+
+var rf148PatternLabel=function rf148PatternLabel(pattern){return RF148_PATTERN_LABELS[pattern]||pattern||RF148_PATTERN_LABELS.other;};
+var rf148StyleLabel=function rf148StyleLabel(e){return RF148_STYLE_LABELS[e&&e.style]||RF148_STYLE_LABELS.strength;};
+var rf148CustomMuscle=function rf148CustomMuscle(e){
+ if(e&&Object.hasOwn(MUSCLES,e.muscleGroup))return e.muscleGroup;
+ const p=e&&e.movementPattern;
+ if(['squat','hinge','lunge','knee-extension','knee-flexion','calf'].includes(p))return 'legs';
+ if(['horizontal-push','chest-isolation'].includes(p))return 'chest';
+ if(['horizontal-pull','vertical-pull'].includes(p))return 'back';
+ if(['vertical-push','shoulder-isolation','rear-delt'].includes(p))return 'shoulders';
+ if(p==='elbow-flexion')return 'biceps';
+ if(p==='elbow-extension')return 'triceps';
+ if(['core-bracing','core-flexion','core-stability','conditioning'].includes(p))return 'core';
+ return 'core';
+};
+const rf148MuscleGroupsBase=muscleGroups;
+muscleGroups=function(id){
+ const e=exercises().find(function(x){return x.id===id;});
+ if(e&&e.custom)return [rf148CustomMuscle(e)];
+ return rf148MuscleGroupsBase(id);
+};
+const rf148AvailableBase=available132;
+available132=function(id,p){
+ const e=exercises().find(function(x){return x.id===id;});
+ if(e&&e.custom){
+  if((p&&p.excluded||[]).includes(id))return false;
+  const needs=Array.isArray(e.gearNeeds)?e.gearNeeds:[];
+  const gear=profileGear132(p||{gear:[]});
+  return needs.every(function(k){return gear.includes(k)||(k==='dumbbell'&&gear.includes('dumbbells'));});
+ }
+ return rf148AvailableBase(id,p);
+};
+
+gearForm132=function(p){
+ const selected=profileGear132(p);
+ const rows=Object.entries(GEAR132).map(function(kv){return '<label class="exclude-row"><input name="pfGear" type="checkbox" value="'+esc(kv[0])+'" '+(selected.includes(kv[0])?'checked':'')+'>'+esc(kv[1])+'</label>';}).join('');
+ return '<div class="setting"><h2>Mivel edzenél?</h2><p>A saját testsúlyos gyakorlatok mindig használhatók. Jelöld az összes valóban elérhető eszközt.</p><div class="muscle-chips"><button type="button" class="btn secondary" onclick="gearPreset132(\'bodyweight\')">Csak saját testsúly</button><button type="button" class="btn secondary" onclick="gearPreset132(\'dumbbells\')">Kézisúlyzó</button><button type="button" class="btn secondary" onclick="gearPreset132(\'calisthenics\')">Calisthenics</button><button type="button" class="btn secondary" onclick="gearPreset132(\'mixed\')">Minden eszköz</button></div>'+rows+'<p class="small muted">Gumiszalag, húzódzkodórúd, tolódzkodó és kettlebell is használható a személyes tervezőben.</p></div>';
+};
+gearPreset132=function(preset){
+ const chosen=preset==='bodyweight'?[]:preset==='dumbbells'?['dumbbells','support']:preset==='calisthenics'?['pullupbar','dipbars']:Object.keys(GEAR132);
+ document.querySelectorAll('input[name=pfGear]').forEach(function(x){x.checked=chosen.includes(x.value);});
+};
+
+profileScreen=function(){
+ state.tab='profile';state.healthView=false;
+ if(typeof rf245CoachVisible!=='undefined')rf245CoachVisible=false;
+ const old=state.profilePreview||trainingProfile()||{};
+ const p=Object.assign({age:'',height:'',weight:'',goal:'fitness',experience:'beginner',activity:'mixed',minutes:45,location:'home',gear:[],cadence:'alternate',split:'auto',excluded:[],focus:'balanced',avoidAreas:[]},old);
+ const mins={};for(let m=20;m<=120;m+=5)mins[String(m)]=m+' perc';
+ const avoid=Object.entries(RF148_AREA_LABELS).map(function(kv){return '<label class="exclude-row"><input type="checkbox" name="pfAvoidArea" value="'+esc(kv[0])+'" '+((p.avoidAreas||[]).includes(kv[0])?'checked':'')+'>'+esc(kv[1])+'</label>';}).join('');
+ const html='<main><button class="btn secondary" onclick="go(\'home\')">← Vissza</button><div class="hero"><h1>Segíts elkezdeni</h1><p>A terv a te célodból, tapasztalatodból, eszközeidből és preferenciáidból épül fel. Először átnézheted, csak utána aktiválod.</p></div><div class="setting profile-grid">'+
+ '<label>Életkor<input id="pfAge" class="field" type="number" min="18" max="100" value="'+esc(p.age)+'"></label>'+
+ '<label>Magasság (cm)<input id="pfHeight" class="field" type="number" min="100" max="250" value="'+esc(p.height)+'"></label>'+
+ '<label>Testsúly (kg)<input id="pfWeight" class="field" type="number" step="0.1" min="30" max="350" value="'+esc(p.weight)+'"></label>'+
+ profileSelect('pfGoal','Cél',{fitness:'Általános fittség',muscle:'Izomépítés',strength:'Erősödés',fatloss:'Fogyás támogatása'},p.goal)+
+ profileSelect('pfExperience','Tapasztalat',{beginner:'Most kezdem / újrakezdem',intermediate:'Rendszeresen edzek'},p.experience)+
+ profileSelect('pfActivity','Munka és napi aktivitás',{sedentary:'Többnyire ülök',mixed:'Vegyes / sok séta',physical:'Fizikai munka'},p.activity)+
+ gearForm132(p)+
+ profileSelect('pfMinutes','Idő egy edzésre',mins,String(p.minutes))+
+ profileSelect('pfCadence','Beosztás',{alternate:'Minden második nap',weekly:'Fix heti napok',custom:'Naptárban kijelölöm'},p.cadence)+
+ profileSelect('pfSplit','Edzésfelosztás',{auto:'Válasszon az app',full:'Teljes test A/B',upperlower:'Felsőtest / alsótest',ppl:'Toló / húzó / láb'},p.split)+
+ profileSelect('pfFocus','Fókusz',RF148_FOCUS_LABELS,p.focus||'balanced')+
+ '<details class="rf148-profile-accordion"><summary>Kerülendő területek</summary><div class="rf148-profile-accordion-body"><p class="small muted">Ezeket a területeket a generátor nem próbálja kötelezően visszatenni más felosztás miatt.</p>'+avoid+'</div></details>'+
+ '<details class="rf148-profile-accordion"><summary>Egyedi gyakorlatkizárás</summary><div class="rf148-profile-accordion-body"><p class="small muted">Finomhangolásként egyenként is kizárhatsz gyakorlatokat.</p>'+exercises().map(function(e){return '<label class="exclude-row"><input type="checkbox" name="pfExclude" value="'+esc(e.id)+'" '+((p.excluded||[]).includes(e.id)?'checked':'')+'>'+esc(e.hu)+'</label>';}).join('')+'</div></details>'+
+ '<p class="small muted">A profil a telefonon tárolódik. A személyes generátor nem egy másik felhasználó A/B programjából indul.</p><button class="btn block" onclick="previewProfile()">Személyes terv összeállítása</button></div></main>';
+ render(shell(html));
+ window.scrollTo?.(0,0);if(typeof rf260ScrollState==='function')rf260ScrollState();
+};
+
+
+const RF148_EXTRA_PROGRAMS=[
+ {id:'home-upper-ab',name:'Otthoni felsőtest A/B',location:'Otthon',level:'Kezdő / középhaladó',builtin:true,category:'Felsőtest',days:[
+  {id:'A',name:'Mell / hát / váll',exercises:['db-floor-press','one-arm-row','db-ohp','db-curl','oh-triceps','plank']},
+  {id:'B',name:'Hát / mell / kar',exercises:['pushup','db-pullover','lateral-raise','hammer-curl','close-pushup','dead-bug']}
+ ]},
+ {id:'home-quick-30',name:'Otthoni gyors 30 perc',location:'Otthon',level:'Kezdő',builtin:true,category:'Rövid edzés',days:[
+  {id:'A',name:'Gyors A',exercises:['goblet-squat','db-floor-press','one-arm-row','plank']},
+  {id:'B',name:'Gyors B',exercises:['db-rdl','db-ohp','pushup','dead-bug']}
+ ]},
+ {id:'calisthenics-ab',name:'Calisthenics A/B',location:'Saját testsúly + rúd',level:'Középhaladó',builtin:true,category:'Calisthenics',days:[
+  {id:'A',name:'Toló / húzó',exercises:['pullup','dip','diamond-pushup','inverted-row','hanging-knee-raise','hollow-hold']},
+  {id:'B',name:'Technika / törzs',exercises:['chinup','pike-pushup','negative-pullup','pushup','hanging-leg-raise','superman-hold']}
+ ]},
+ {id:'bands-ab',name:'Gumiszalagos A/B',location:'Gumiszalag',level:'Kezdő',builtin:true,category:'Gumiszalag',days:[
+  {id:'A',name:'Felsőtest A',exercises:['band-chest-press','band-row','band-overhead-press','band-biceps-curl','band-triceps-pushdown','band-pallof-press']},
+  {id:'B',name:'Felsőtest B',exercises:['band-lat-pulldown','band-chest-press','band-face-pull','band-row','band-biceps-curl','band-pallof-press']}
+ ]},
+ {id:'kettlebell-ab',name:'Kettlebell Full Body A/B',location:'Kettlebell',level:'Kezdő / középhaladó',builtin:true,category:'Kettlebell',days:[
+  {id:'A',name:'Full Body A',exercises:['kb-goblet-squat','kb-row','kb-press','kb-deadlift','kb-halo','hollow-hold']},
+  {id:'B',name:'Full Body B',exercises:['kb-reverse-lunge','kb-row','kb-swing','kb-press','kb-halo','dead-bug']}
+ ]},
+ {id:'gym-upper-lower',name:'Konditermi felső / alsó',location:'Edzőterem',level:'Középhaladó',builtin:true,category:'Felső / alsó',days:[
+  {id:'A',name:'Felsőtest A',exercises:['bench-press','lat-pulldown','machine-shoulder-press','seated-cable-row','cable-curl','cable-triceps']},
+  {id:'B',name:'Alsótest A',exercises:['barbell-back-squat','leg-curl','leg-press','standing-calf-raise','plank']},
+  {id:'C',name:'Felsőtest B',exercises:['incline-bench-press','assisted-pullup-machine','cable-lateral-raise','seated-cable-row','hammer-curl','cable-triceps']},
+  {id:'D',name:'Alsótest B',exercises:['conventional-deadlift','hack-squat','leg-curl','standing-calf-raise','dead-bug']}
+ ]},
+ {id:'gym-ppl',name:'Konditermi Push / Pull / Legs',location:'Edzőterem',level:'Középhaladó',builtin:true,category:'PPL',days:[
+  {id:'A',name:'Push',exercises:['bench-press','incline-bench-press','barbell-overhead-press','pec-deck','cable-lateral-raise','cable-triceps']},
+  {id:'B',name:'Pull',exercises:['lat-pulldown','seated-cable-row','assisted-pullup-machine','barbell-row','cable-curl','band-face-pull']},
+  {id:'C',name:'Legs',exercises:['barbell-back-squat','leg-press','leg-curl','hack-squat','standing-calf-raise','plank']}
+ ]},
+ {id:'gym-strength-abc',name:'Konditermi erő A/B/C',location:'Edzőterem',level:'Középhaladó',builtin:true,category:'Erő',days:[
+  {id:'A',name:'Guggolás / nyomás',exercises:['barbell-back-squat','bench-press','barbell-row','plank']},
+  {id:'B',name:'Felhúzás / váll',exercises:['conventional-deadlift','barbell-overhead-press','lat-pulldown','dead-bug']},
+  {id:'C',name:'Vegyes',exercises:['leg-press','incline-bench-press','seated-cable-row','machine-shoulder-press','cable-curl','cable-triceps']}
+ ]}
+];
+const rf148ProgramsBase=programs;
+programs=function(){
+ const saved=rf148ProgramsBase();
+ const existing=new Set(saved.map(function(p){return p.id;}));
+ return saved.concat(RF148_EXTRA_PROGRAMS.filter(function(p){return !existing.has(p.id);}).map(function(p){return JSON.parse(JSON.stringify(p));}));
+};
+
+var rf148BackupValidationIds=null;
+validateProfile=function(p){
+ if(!p||!Number.isInteger(p.age)||p.age<18||p.age>100||!Number.isFinite(p.height)||p.height<100||p.height>250||!Number.isFinite(p.weight)||p.weight<30||p.weight>350)throw Error('Adj meg érvényes felnőtt életkort, magasságot és testsúlyt.');
+ const out=Object.assign({},p,{location:p.location||'home',gear:Array.isArray(p.gear)?p.gear:profileGear132(p),excluded:Array.isArray(p.excluded)?p.excluded:[],focus:p.focus||'balanced',avoidAreas:Array.isArray(p.avoidAreas)?p.avoidAreas:[]});
+ const allowed={goal:['fitness','muscle','strength','fatloss'],experience:['beginner','intermediate'],activity:['sedentary','mixed','physical'],location:['home','gym'],cadence:['alternate','weekly','custom'],split:['auto','full','upperlower','ppl'],focus:Object.keys(RF148_FOCUS_LABELS)};
+ for(const k of Object.keys(allowed))if(!allowed[k].includes(out[k]))throw Error('Érvénytelen profilválasztás.');
+ if(!Number.isInteger(out.minutes)||out.minutes<20||out.minutes>120||out.minutes%5!==0)throw Error('Az edzésidő 20 és 120 perc között, 5 perces lépésekben adható meg.');
+ if(!Array.isArray(out.gear)||out.gear.some(function(x){return !Object.hasOwn(GEAR132,x);})||new Set(out.gear).size!==out.gear.length)throw Error('Érvénytelen felszereléslista.');
+ if(!Array.isArray(out.excluded)||out.excluded.some(function(id){return !exercises().some(function(e){return e.id===id;})&&!(rf148BackupValidationIds&&rf148BackupValidationIds.has(id));}))throw Error('Érvénytelen gyakorlatkizárás.');
+ if(new Set(out.avoidAreas).size!==out.avoidAreas.length||out.avoidAreas.some(function(x){return !Object.hasOwn(RF148_AREA_LABELS,x);}))throw Error('Érvénytelen kerülendő terület.');
+ return out;
+};
+var rf148ExerciseAvoided=function rf148ExerciseAvoided(e,p){
+ const avoided=new Set((p.avoidAreas||[]).flatMap(function(a){return RF148_AREA_PATTERNS[a]||[];}));
+ return avoided.has(e.movementPattern);
+};
+var rf148FocusRoles=function rf148FocusRoles(focus){
+ return ({upper:['push','pull','shoulder','bi','tri'],chestback:['push','pull'],shoulderarms:['shoulder','bi','tri'],core:['core','stability'],legs:['leg','hinge'],balanced:[]})[focus]||[];
+};
+var rf148FocusOrder=function rf148FocusOrder(roles,focus){
+ const first=rf148FocusRoles(focus),out=[];
+ first.concat(roles).forEach(function(x){if(!out.includes(x))out.push(x);});
+ return out;
+};
+var rf148Capacity=function rf148Capacity(minutes){
+ if(minutes<=25)return 3;if(minutes<=40)return 4;if(minutes<=55)return 5;if(minutes<=70)return 6;if(minutes<=85)return 7;if(minutes<=100)return 8;if(minutes<=110)return 9;return 10;
+};
+var rf148Prescription=function rf148Prescription(e,p){
+ let sets=p.experience==='beginner'?2:3;
+ if(p.minutes>=75)sets++;
+ if(p.activity==='physical')sets=Math.max(2,sets-1);
+ if(p.minutes<=30)sets=2;
+ let rest=p.goal==='strength'?150:p.goal==='muscle'?90:75;
+ if(e.movementPattern==='conditioning')rest=45;
+ let reps=e.repUnit==='mp'?(e.reps||'20–40 mp'):(p.goal==='strength'&&e.compound?'5–8':p.goal==='muscle'?'8–15':'8–12');
+ return {sets:sets,reps:reps,weight:0,rest:rest,trial:true,rir:p.experience==='beginner'?3:2};
+};
+var rf148RolePools=function rf148RolePools(lib,p){
+ const out={};
+ for(const entry of Object.entries(RF148_ROLE_PATTERNS)){
+  const role=entry[0],patterns=entry[1];
+  out[role]=lib.filter(function(e){return patterns.includes(e.movementPattern);}).sort(function(a,b){return rf14Score(b.id,p,role)-rf14Score(a.id,p,role)||a.id.localeCompare(b.id);});
+ }
+ return out;
+};
+var rf148Layout=function rf148Layout(p,pools){
+ const lower=pools.leg.length+pools.hinge.length>0,pull=pools.pull.length>0;
+ let effective=p.split;
+ if(effective==='auto')effective=p.experience==='intermediate'&&lower&&pull?'upperlower':'full';
+ if((effective==='ppl'||effective==='upperlower')&&!lower)effective='upper';
+ if(effective==='ppl'&&!pull)effective='full';
+ if(effective==='full'&&!lower)effective='upper';
+ const layouts={
+  full:[['A',['leg','push','pull','core','hinge','shoulder','bi','conditioning']],['B',['hinge','pull','push','core','leg','shoulder','tri','conditioning']]],
+  upper:[['Felsőtest A',['push','pull','shoulder','bi','tri','core','stability','conditioning']],['Felsőtest B',['pull','push','shoulder','tri','bi','core','stability','conditioning']]],
+  upperlower:[['Felsőtest',['push','pull','shoulder','bi','tri','core']],['Alsótest és törzs',['leg','hinge','core','stability','conditioning']]],
+  ppl:[['Toló',['push','shoulder','tri','core']],['Húzó',['pull','bi','core','stability']],['Láb és törzs',['leg','hinge','core','conditioning']]]
+ };
+ return {effective:effective,days:layouts[effective]||layouts.full};
+};
+generatePersonalProgram=function(input){
+ const p=validateProfile(input),gear=profileGear132(p);
+ const lib=exercises().filter(function(e){return available132(e.id,p)&&!rf148ExerciseAvoided(e,p)&&(p.experience!=='beginner'||e.beginnerSafe);});
+ if(lib.length<3)throw Error('A választott felszerelés és kizárások mellett kevesebb mint 3 használható gyakorlat maradt. Engedélyezz több eszközt, területet vagy gyakorlatot.');
+ const pools=rf148RolePools(lib,p),layout=rf148Layout(p,pools),capacity=Math.min(rf148Capacity(p.minutes),lib.length),prescriptions={};
+ const focusRoles=rf148FocusRoles(p.focus);
+ const fallback=lib.slice().sort(function(a,b){
+  const ar=Object.keys(RF148_ROLE_PATTERNS).find(function(r){return RF148_ROLE_PATTERNS[r].includes(a.movementPattern);});
+  const br=Object.keys(RF148_ROLE_PATTERNS).find(function(r){return RF148_ROLE_PATTERNS[r].includes(b.movementPattern);});
+  const af=focusRoles.includes(ar)?1:0,bf=focusRoles.includes(br)?1:0;
+  return bf-af||Number(b.compound)-Number(a.compound)||Number(b.beginnerSafe)-Number(a.beginnerSafe)||a.id.localeCompare(b.id);
+ });
+ const days=layout.days.map(function(spec,di){
+  const name=spec[0],roles=rf148FocusOrder(spec[1],p.focus),ids=[];
+  for(const role of roles){
+   if(ids.length>=capacity)break;
+   const available=(pools[role]||[]).filter(function(e){return !ids.includes(e.id);});
+   if(!available.length)continue;
+   const e=available[di%available.length];ids.push(e.id);
+  }
+  for(const e of fallback){
+   if(ids.length>=capacity)break;
+   if(!ids.includes(e.id))ids.push(e.id);
+  }
+  if(ids.length<3)throw Error('Nem maradt legalább 3 különböző gyakorlat egy használható edzésnaphoz.');
+  ids.forEach(function(id){prescriptions[id]=rf148Prescription(exercises().find(function(e){return e.id===id;}),p);});
+  return {id:String.fromCharCode(65+di),name:name,exercises:ids};
+ });
+ const splitNames={full:'Teljes test A/B',upper:'Felsőtest A/B',upperlower:'Felső / alsó',ppl:'Toló / húzó / láb'};
+ const avoided=(p.avoidAreas||[]).map(function(x){return RF148_AREA_LABELS[x];});
+ const changed=p.split!=='auto'&&layout.effective!==p.split;
+ const reasons=[
+  'Elérhető: '+(gear.length?gear.map(function(k){return GEAR132[k];}).join(' + '):'saját testsúly')+'.',
+  'Fókusz: '+RF148_FOCUS_LABELS[p.focus]+(avoided.length?'. Kerülendő: '+avoided.join(', ')+'.':'.'),
+  p.minutes+' perc: legfeljebb '+capacity+' gyakorlat/nap; a hosszabb időkeret több gyakorlatot és szükség esetén több munkasorozatot enged.',
+  changed?'A kért felosztást a rendelkezésre álló gyakorlatokhoz igazítottuk, hogy ne legyen kötelező hiányzó vagy kerülendő edzésnap.':'A felosztás a jelenlegi profilhoz és elérhető mozgásmintákhoz igazodik.',
+  'A progresszió a saját teljesített sorozataidból és visszajelzéseidből folytatódik; a kezdősúlyt próbasorozattal állítsd be.'
+ ];
+ return {id:'personal-'+crypto.randomUUID(),name:'Személyes terv – '+splitNames[layout.effective],location:gear.length?'Választott felszerelés':'Saját testsúly',level:p.experience==='beginner'?'Kezdő':'Középhaladó',builtin:false,generated:true,generatorVersion:RF148_VERSION,effectiveSplit:layout.effective,gear:gear.slice(),focus:p.focus,avoidAreas:(p.avoidAreas||[]).slice(),days:days,prescriptions:prescriptions,reasons:reasons,createdAt:new Date().toISOString()};
+};
+previewProfile=function(){
+ try{
+  const p={age:Number($('#pfAge').value),height:Number($('#pfHeight').value),weight:Number($('#pfWeight').value),goal:$('#pfGoal').value,experience:$('#pfExperience').value,activity:$('#pfActivity').value,location:'home',gear:[...document.querySelectorAll('input[name=pfGear]:checked')].map(function(x){return x.value;}),minutes:Number($('#pfMinutes').value),cadence:$('#pfCadence').value,split:$('#pfSplit').value,focus:$('#pfFocus').value,avoidAreas:[...document.querySelectorAll('input[name=pfAvoidArea]:checked')].map(function(x){return x.value;}),excluded:[...document.querySelectorAll('input[name=pfExclude]:checked')].map(function(x){return x.value;})};
+  state.profilePreview=validateProfile(p);state.programPreview=generatePersonalProgram(state.profilePreview);showPersonalPreview();
+ }catch(e){alert(e.message);}
+};
+
+const rf148ValidateBackupBase=validateBackup;
+validateBackup=function(d){
+ const backupExercises=Array.isArray(d&&d.exercises)?d.exercises:[],added=[];
+ const previousIds=rf148BackupValidationIds;
+ rf148BackupValidationIds=new Set(backupExercises.map(function(e){return e&&e.id;}).filter(Boolean));
+ for(const e of backupExercises){
+  if(!e||!e.custom||!e.id||MUSCLE_MAP[e.id])continue;
+  MUSCLE_MAP[e.id]=[rf148CustomMuscle(e)];added.push(e.id);
+ }
+ try{return rf148ValidateBackupBase(d);}
+ finally{for(const id of added)delete MUSCLE_MAP[id];rf148BackupValidationIds=previousIds;}
+};
+
+customExerciseScreen=function(){
+ const patterns=Object.entries(RF148_PATTERN_LABELS).map(function(kv){return '<option value="'+esc(kv[0])+'">'+esc(kv[1])+'</option>';}).join('');
+ const styles=Object.entries(RF148_STYLE_LABELS).map(function(kv){return '<option value="'+esc(kv[0])+'">'+esc(kv[1])+'</option>';}).join('');
+ const muscles=Object.entries(MUSCLES).map(function(kv){return '<option value="'+esc(kv[0])+'">'+esc(kv[1])+'</option>';}).join('');
+ const gears=Object.entries(GEAR132).map(function(kv){return '<label class="exclude-row"><input type="checkbox" name="ceGear" value="'+esc(kv[0])+'">'+esc(kv[1])+'</label>';}).join('');
+ render(shell('<main><button class="btn secondary" onclick="go(\'programs\')">← Vissza</button><div class="hero"><h1>Saját gyakorlat</h1><p>Adj hozzá saját gyakorlatot a könyvtárhoz. A mozgásminta és a kategória külön mező.</p></div><div class="setting"><label>Magyar név<input id="ceHu" class="field" maxlength="80"></label><label>Angol név<input id="ceEn" class="field" maxlength="80"></label><label>Felszerelés leírása<input id="ceEq" class="field" maxlength="80" value="testsúly"></label><label>Fő izomcsoport<select id="ceMuscle" class="field">'+muscles+'</select></label><label>Mozgásminta<select id="cePattern" class="field">'+patterns+'</select></label><label>Kategória / stílus<select id="ceStyle" class="field">'+styles+'</select></label><label>Nehézség<select id="ceDifficulty" class="field"><option value="beginner">Kezdő</option><option value="intermediate">Középhaladó</option><option value="advanced">Haladó</option></select></label><details><summary>Szükséges felszerelés</summary><p class="small muted">Csak azt jelöld, ami nélkül a gyakorlat nem végezhető el.</p>'+gears+'</details><label>Technikai jegyzet<textarea id="ceNotes" class="field" maxlength="500"></textarea></label><button class="btn block" onclick="saveCustomExercise14()">Gyakorlat mentése</button></div></main>'));
+};
+saveCustomExercise14=function(){
+ const hu=$('#ceHu').value.trim(),en=$('#ceEn').value.trim(),pattern=$('#cePattern').value,style=$('#ceStyle').value,muscle=$('#ceMuscle').value,gearNeeds=[...document.querySelectorAll('input[name=ceGear]:checked')].map(function(x){return x.value;});
+ if(hu.length<2||en.length<2){alert('Adj meg magyar és angol nevet.');return;}
+ if(!Object.hasOwn(RF148_PATTERN_LABELS,pattern)||!Object.hasOwn(RF148_STYLE_LABELS,style)||!Object.hasOwn(MUSCLES,muscle)){alert('Érvénytelen gyakorlatadat.');return;}
+ const difficulty=$('#ceDifficulty').value;if(!['beginner','intermediate','advanced'].includes(difficulty)){alert('Érvénytelen nehézség.');return;}
+ const goals=style==='conditioning'?['fitness','fatloss']:style==='mobility'?['fitness']:style==='bodybuilding'?['fitness','muscle']:['fitness','muscle','strength'];
+ const compound=!['chest-isolation','shoulder-isolation','rear-delt','elbow-flexion','elbow-extension','knee-extension','knee-flexion','calf','core-bracing','core-flexion','core-stability','other'].includes(pattern);
+ let loadType='bodyweight';if(gearNeeds.includes('dumbbells'))loadType='per_hand';else if(gearNeeds.includes('dumbbell')||gearNeeds.includes('kettlebell'))loadType='single_dumbbell';else if(gearNeeds.length)loadType='total';
+ const id='custom-'+crypto.randomUUID(),e={id:id,hu:hu,en:en,equipment:$('#ceEq').value.trim()||'testsúly',target:MUSCLES[muscle],notes:$('#ceNotes').value.trim(),sets:2,reps:'8–12',weight:0,loadType:loadType,repUnit:'ism.',movementPattern:pattern,difficulty:difficulty,beginnerSafe:difficulty==='beginner',complexity:difficulty==='beginner'?'low':difficulty==='intermediate'?'medium':'high',compound:compound,goalTags:goals,style:style,gearNeeds:gearNeeds,muscleGroup:muscle,custom:true};
+ MUSCLE_MAP[id]=[muscle];NEEDS132[id]=gearNeeds.slice();db.set('exercises',[...exercises(),e]);alert('Saját gyakorlat hozzáadva.');go('programs');
+};
+
+const rf148DemoInfoBase=demoInfo;
+demoInfo=function(id){
+ const found=rf148DemoInfoBase(id);if(found)return found;
+ if(!RF148_NEW_IDS.has(id))return null;
+ const e=exercises().find(function(x){return x.id===id;});
+ return {provider:null,videoId:null,credit:'YouTube keresés',source:'https://www.youtube.com/results?search_query='+encodeURIComponent((e&&e.en||id)+' exercise tutorial')};
+};
+
+if(typeof libraryResults==='function'){
+ libraryResults=function(group,gear,q){
+  const es=exercises().filter(function(e){return libraryMatch(e,group,gear,q);});
+  return '<p class="muted">'+es.length+' / '+exercises().length+' gyakorlat</p>'+((es.map(function(e){
+   const groups=muscleGroups(e.id),secondary=groups.slice(1).map(function(x){return MUSCLES[x];}).filter(Boolean).join(' / ');
+   return '<details class="card tp-library-card"><summary><div class="tp-library-summary-main"><h3>'+esc(e.hu)+'</h3><p class="small">'+esc(e.equipment)+' • Fő izomcsoport: '+esc(MUSCLES[groups[0]]||e.target)+'</p></div>'+rf260VideoButton(e.id)+'</summary><div class="tp-library-body"><p class="small muted">'+esc(rf148PatternLabel(e.movementPattern))+' • '+esc(rf148StyleLabel(e))+'</p>'+(secondary?'<p class="small muted">További izomcsoportok: '+esc(secondary)+'</p>':'')+'<p>'+esc(e.notes||'Ehhez a gyakorlathoz még nincs külön technikai leírás.')+'</p><button class="btn secondary block" onclick="chooseLibraryPlacement(\''+esc(e.id)+'\')">Hozzáadás saját programhoz</button></div></details>';
+  }).join(''))||'<p>Nincs találat. Próbálj másik szűrőt vagy keresőkifejezést.</p>');
+ };
+}
+if(typeof rf203ExerciseLibrary==='function'){
+ rf203ExerciseLibrary=function(){
+  const list=exercises();
+  render(shell('<main><button class="btn secondary" onclick="go(\'programs\')">← Vissza a Programokhoz</button><div class="hero"><span class="badge">GYAKORLATKÖNYVTÁR</span><h1>'+list.length+' gyakorlat</h1><div class="muted">Súlyzós, gépes, calisthenics, gumiszalagos és kettlebell gyakorlatok egy helyen.</div></div>'+list.map(function(e,i){return '<div class="exercise" onclick="rf203ExerciseDetail(\''+esc(e.id)+'\')"><div class="num">'+(i+1)+'</div><div><div class="ex-name">'+esc(e.hu)+'</div><div class="en">'+esc(e.en||'')+'</div><div class="meta">'+esc(e.target||'')+(e.equipment?' • '+esc(e.equipment):'')+' • '+esc(rf148PatternLabel(e.movementPattern))+'</div></div><div class="tp-exercise-actions">'+rf260VideoButton(e.id)+'<div class="chev" aria-hidden="true">›</div></div></div>';}).join('')+'</main>'));
+ };
+}
+libraryGear=function(e){
+ const mapped=e&&RF148_NEEDS[e.id],needs=Array.isArray(mapped)?mapped:(Array.isArray(e&&e.gearNeeds)?e.gearNeeds:[]);
+ if(needs.includes('bands'))return 'bands';
+ if(needs.includes('pullupbar'))return 'pullupbar';
+ if(needs.includes('dipbars'))return 'dipbars';
+ if(needs.includes('kettlebell'))return 'kettlebell';
+ if(needs.includes('machines'))return 'machine';
+ if(needs.includes('barbell'))return 'barbell';
+ if(needs.includes('dumbbell')||needs.includes('dumbbells'))return 'dumbbells';
+ if(e&&e.gear)return e.gear;
+ if(e&&e.loadType==='bodyweight')return 'bodyweight';
+ if(/rúd/.test(e&&e.equipment||''))return 'barbell';
+ if(/gép|csiga|lehúzó/.test(e&&e.equipment||''))return 'machine';
+ return 'dumbbells';
+};
+muscleLibrary=function(group='all'){
+ state.libraryFilter={group:group,gear:'all',q:''};
+ const gearOptions={all:'Összes',bodyweight:'Saját testsúly',dumbbells:'Kézisúlyzó',barbell:'Kétkezes rúd',machine:'Gép / csiga',bands:'Gumiszalag',pullupbar:'Húzódzkodórúd',dipbars:'Tolódzkodó',kettlebell:'Kettlebell'};
+ render(shell('<main><button class="btn secondary" onclick="go(\'programs\')">← Programok</button><div class="hero"><h1>Gyakorlatok / Izomcsoportok</h1><p>'+exercises().length+' gyakorlat • súlyzós, gépes, calisthenics és gumiszalagos variációk</p></div><div class="setting"><label>Keresés<input id="libraryQuery" class="field" type="search" placeholder="Gyakorlat vagy felszerelés" oninput="filterLibrary()"></label><label>Izomcsoport<select id="libraryMuscle" class="field" onchange="filterLibrary()"><option value="all">Összes</option>'+Object.entries(MUSCLES).map(function(kv){return '<option value="'+esc(kv[0])+'" '+(group===kv[0]?'selected':'')+'>'+esc(kv[1])+'</option>';}).join('')+'</select></label><label>Felszerelés<select id="libraryGear" class="field" onchange="filterLibrary()">'+Object.entries(gearOptions).map(function(kv){return '<option value="'+esc(kv[0])+'">'+esc(kv[1])+'</option>';}).join('')+'</select></label></div><div id="libraryResults">'+libraryResults(group,'all','')+'</div></main>'));
+};
+
+(function rf148UiPolish(){
+ if(document.querySelector?.('#rf148UiPolish'))return;
+ const st=document.createElement('style');st.id='rf148UiPolish';
+ st.textContent=[
+  '.rf148-profile-accordion{display:block;margin:14px 0!important;border:1px solid color-mix(in srgb,#ef4444 38%,var(--line));border-radius:14px;background:color-mix(in srgb,#ef4444 8%,var(--card));overflow:hidden}',
+  '.rf148-profile-accordion+.rf148-profile-accordion{margin-top:18px!important}',
+  '.rf148-profile-accordion>summary{display:block;list-style:none;cursor:pointer;padding:14px 13px;font-weight:900;line-height:1.3;min-height:48px;color:color-mix(in srgb,#ff6b6b 72%,var(--text))}',
+  '.rf148-profile-accordion>summary::-webkit-details-marker{display:none}',
+  ".rf148-profile-accordion>summary::after{content:'⌄';float:right;color:#ff6b6b;font-size:18px;transition:transform .15s ease}",
+  '.rf148-profile-accordion[open]>summary::after{transform:rotate(180deg)}',
+  '.rf148-profile-accordion-body{padding:0 13px 13px;border-top:1px solid color-mix(in srgb,#ef4444 28%,var(--line))}',
+  '.rf148-profile-accordion-body>.small{margin-top:12px}'
+ ].join('');
+ document.head?.appendChild(st);
+})();
+window.TrainPilotAdaptivePlanner={version:RF148_VERSION,exerciseTarget:100,adaptiveAvoidAreas:true,maxMinutes:120};
+// @endsection trainpilot-148-adaptive-planner.js
+
+
+// @section trainpilot-1481-resume-hotfix.js
+/* TrainPilot 1.4.8.1 hotfix: draft resume routing + release metadata. */
+const TP1481_VERSION='1.4.8.1';
+window.TrainPilotHotfix={version:TP1481_VERSION,resumeDraftRoute:true};
+// @endsection trainpilot-1481-resume-hotfix.js
+
+
+// @section trainpilot-1481-per-side-stopwatch.js
+/* TrainPilot 1.4.8.1: independent left/right timers for mp/oldal exercises. */
+const tp1481TimedWorkoutBase=rf110DecorateTimedWorkout;
+const tp1481ToggleSetBase=toggleSet;
+const tp1481FormatSetBase=formatSet;
+let tp1481SideStopwatch={exerciseIndex:-1,setIndex:-1,side:null,elapsedMs:0,startedAt:0,running:false,timer:null,lastSecond:-1};
+
+var tp1481IsPerSideTimed=function tp1481IsPerSideTimed(sessionExercise){
+ const e=sessionExercise?byId(sessionExercise.id):null;
+ return String(sessionExercise?.repUnit||e?.repUnit||'').replace(/\s+/g,'').toLowerCase()==='mp/oldal';
+};
+var tp1481SideField=function tp1481SideField(side){return side==='right'?'rightSeconds':'leftSeconds'};
+var tp1481StoredSide=function tp1481StoredSide(set,side){
+ const n=Number(set?.[tp1481SideField(side)]);return Number.isFinite(n)&&n>0?Math.floor(n):0;
+};
+var tp1481SyncPerSideReps=function tp1481SyncPerSideReps(set){
+ const left=tp1481StoredSide(set,'left'),right=tp1481StoredSide(set,'right');
+ set.reps=left>0&&right>0?String(Math.min(left,right)):'';
+ return {left,right};
+};
+var tp1481SideSeconds=function tp1481SideSeconds(){
+ const total=tp1481SideStopwatch.elapsedMs+(tp1481SideStopwatch.running?Math.max(0,Date.now()-tp1481SideStopwatch.startedAt):0);
+ return Math.max(0,Math.floor(total/1000));
+};
+var tp1481PersistSide=function tp1481PersistSide(sec){
+ if(!state.session||tp1481SideStopwatch.exerciseIndex<0||tp1481SideStopwatch.setIndex<0||!tp1481SideStopwatch.side)return;
+ const ex=state.session.exercises?.[tp1481SideStopwatch.exerciseIndex];if(!tp1481IsPerSideTimed(ex))return;
+ const set=ex?.sets?.[tp1481SideStopwatch.setIndex];if(!set)return;
+ set[tp1481SideField(tp1481SideStopwatch.side)]=Math.max(0,Math.floor(Number(sec)||0));
+ tp1481SyncPerSideReps(set);persistDraft();
+};
+var tp1481SidePaint=function tp1481SidePaint(){
+ const sec=tp1481SideSeconds(),active=tp1481SideStopwatch.side;
+ if(active&&sec!==tp1481SideStopwatch.lastSecond){tp1481SideStopwatch.lastSecond=sec;tp1481PersistSide(sec)}
+ for(const side of ['left','right']){
+  const ex=state.session?.exercises?.[tp1481SideStopwatch.exerciseIndex],set=ex?.sets?.[tp1481SideStopwatch.setIndex];
+  const stored=side===active?sec:tp1481StoredSide(set,side);
+  const display=document.querySelector('#tp1481SideTime-'+side),input=document.querySelector('#tp1481SideInput-'+side),button=document.querySelector('#tp1481SideToggle-'+side);
+  if(display)display.textContent=rf110FormatStopwatch(stored);
+  if(input&&document.activeElement!==input)input.value=stored||'';
+  if(button){
+   const isRunning=tp1481SideStopwatch.running&&active===side;
+   button.textContent=isRunning?'Stop és rögzítés':stored>0?'Folytatás':'Indítás';
+  }
+ }
+};
+var tp1481PauseSide=function tp1481PauseSide(){
+ if(!tp1481SideStopwatch.running)return;
+ tp1481SideStopwatch.elapsedMs+=Math.max(0,Date.now()-tp1481SideStopwatch.startedAt);
+ tp1481SideStopwatch.startedAt=0;tp1481SideStopwatch.running=false;
+ if(tp1481SideStopwatch.timer){clearInterval(tp1481SideStopwatch.timer);tp1481SideStopwatch.timer=null}
+ tp1481PersistSide(tp1481SideSeconds());tp1481SidePaint();
+};
+var tp1481HaltSide=function tp1481HaltSide(clear=false){
+ tp1481PauseSide();
+ if(clear){tp1481SideStopwatch={exerciseIndex:-1,setIndex:-1,side:null,elapsedMs:0,startedAt:0,running:false,timer:null,lastSecond:-1}}
+};
+var tp1481ActivateSide=function tp1481ActivateSide(side){
+ const ex=state.session?.exercises?.[state.current];if(!tp1481IsPerSideTimed(ex))return;
+ const setIndex=ex.sets.findIndex(s=>!s.done);if(setIndex<0)return;
+ const same=tp1481SideStopwatch.exerciseIndex===state.current&&tp1481SideStopwatch.setIndex===setIndex&&tp1481SideStopwatch.side===side;
+ if(same&&tp1481SideStopwatch.running){tp1481PauseSide();return}
+ if(tp1481SideStopwatch.running)tp1481PauseSide();
+ const set=ex.sets[setIndex];
+ tp1481SideStopwatch.exerciseIndex=state.current;tp1481SideStopwatch.setIndex=setIndex;tp1481SideStopwatch.side=side;
+ tp1481SideStopwatch.elapsedMs=tp1481StoredSide(set,side)*1000;tp1481SideStopwatch.startedAt=Date.now();tp1481SideStopwatch.running=true;tp1481SideStopwatch.lastSecond=-1;
+ tp1481SideStopwatch.timer=setInterval(tp1481SidePaint,250);tp1481SidePaint();
+};
+var tp1481SetSideSeconds=function tp1481SetSideSeconds(setIndex,side,value){
+ const ex=state.session?.exercises?.[state.current];if(!tp1481IsPerSideTimed(ex))return;
+ if(tp1481SideStopwatch.running&&tp1481SideStopwatch.exerciseIndex===state.current&&tp1481SideStopwatch.setIndex===setIndex&&tp1481SideStopwatch.side===side)tp1481PauseSide();
+ const set=ex.sets?.[setIndex];if(!set)return;
+ set[tp1481SideField(side)]=Math.max(0,Math.floor(Number(String(value).replace(',','.'))||0));
+ tp1481SyncPerSideReps(set);persistDraft();tp1481SidePaint();
+};
+var tp1481ResetSide=function tp1481ResetSide(side){
+ const ex=state.session?.exercises?.[state.current];if(!tp1481IsPerSideTimed(ex))return;
+ const setIndex=ex.sets.findIndex(s=>!s.done);if(setIndex<0)return;
+ if(tp1481SideStopwatch.running&&tp1481SideStopwatch.exerciseIndex===state.current&&tp1481SideStopwatch.setIndex===setIndex&&tp1481SideStopwatch.side===side)tp1481PauseSide();
+ const set=ex.sets[setIndex];set[tp1481SideField(side)]=0;tp1481SyncPerSideReps(set);persistDraft();
+ if(tp1481SideStopwatch.exerciseIndex===state.current&&tp1481SideStopwatch.setIndex===setIndex&&tp1481SideStopwatch.side===side){tp1481SideStopwatch.elapsedMs=0;tp1481SideStopwatch.startedAt=0;tp1481SideStopwatch.running=false;tp1481SideStopwatch.lastSecond=-1}
+ tp1481SidePaint();
+};
+var tp1481DecoratePerSide=function tp1481DecoratePerSide(){
+ const ex=state.session?.exercises?.[state.current],exercise=ex?byId(ex.id):null;
+ if(!tp1481IsPerSideTimed(ex)||!exercise)return;
+ rf110StopwatchHalt(true);
+ const setIndex=ex.sets.findIndex(s=>!s.done);if(setIndex<0){tp1481HaltSide(true);return}
+ if(tp1481SideStopwatch.exerciseIndex!==state.current||tp1481SideStopwatch.setIndex!==setIndex)tp1481HaltSide(true);
+ if(document.querySelector('#rf110Stopwatch')){tp1481SidePaint();return}
+ const set=ex.sets[setIndex],left=tp1481StoredSide(set,'left'),right=tp1481StoredSide(set,'right');
+ const main=document.querySelector('main');if(!main)return;
+ const card=document.createElement('div');card.id='rf110Stopwatch';card.className='card rf110-stopwatch rf142-stopwatch-top tp1481-side-stopwatch';
+ card.innerHTML=`<div class="rf110-stopwatch-head"><div><strong>Stopper • ${setIndex+1}. sorozat • oldalanként</strong><div class="small muted">Cél: ${esc(exercise.reps||'időre végzett sorozat')}</div></div></div>
+ <div class="tp1481-side-grid">
+  <div class="tp1481-side-card"><strong>Bal oldal</strong><div id="tp1481SideTime-left" class="rf110-stopwatch-time">${rf110FormatStopwatch(left)}</div><label class="small">Másodperc<input id="tp1481SideInput-left" class="field" inputmode="numeric" min="0" step="1" value="${left||''}" oninput="tp1481SetSideSeconds(${setIndex},'left',this.value)"></label><div class="tp1481-side-actions"><button id="tp1481SideToggle-left" class="btn" onclick="tp1481ActivateSide('left')">${left>0?'Folytatás':'Indítás'}</button><button class="btn secondary" onclick="tp1481ResetSide('left')">Nullázás</button></div></div>
+  <div class="tp1481-side-card"><strong>Jobb oldal</strong><div id="tp1481SideTime-right" class="rf110-stopwatch-time">${rf110FormatStopwatch(right)}</div><label class="small">Másodperc<input id="tp1481SideInput-right" class="field" inputmode="numeric" min="0" step="1" value="${right||''}" oninput="tp1481SetSideSeconds(${setIndex},'right',this.value)"></label><div class="tp1481-side-actions"><button id="tp1481SideToggle-right" class="btn" onclick="tp1481ActivateSide('right')">${right>0?'Folytatás':'Indítás'}</button><button class="btn secondary" onclick="tp1481ResetSide('right')">Nullázás</button></div></div>
+ </div><p class="small muted" id="tp1481SideStatus">Mérd a két oldalt külön. A sorozat csak mindkét oldal rögzítése után jelölhető késznek.</p>`;
+ const hero=main.querySelector('.hero'),nav=[...main.querySelectorAll('button')].find(b=>/Következő gyakorlat|Edzés befejezése/.test(String(b.textContent||'')));
+ if(hero)hero.insertAdjacentElement('afterend',card);else if(nav?.parentNode)nav.parentNode.insertBefore(card,nav);else main.appendChild(card);
+ tp1481SidePaint();
+};
+rf110DecorateTimedWorkout=function rf110DecorateTimedWorkout(){
+ const ex=state.session?.exercises?.[state.current];
+ if(tp1481IsPerSideTimed(ex))return tp1481DecoratePerSide();
+ tp1481HaltSide(true);return tp1481TimedWorkoutBase();
+};
+
+toggleSet=function toggleSet(ei,si){
+ const ex=state.session?.exercises?.[ei];
+ if(!tp1481IsPerSideTimed(ex))return tp1481ToggleSetBase(ei,si);
+ const set=ex?.sets?.[si];if(!set)return;
+ if(!set.done){
+  if(tp1481SideStopwatch.running&&tp1481SideStopwatch.exerciseIndex===ei&&tp1481SideStopwatch.setIndex===si)tp1481PauseSide();
+  const sides=tp1481SyncPerSideReps(set);
+  if(sides.left<1||sides.right<1){alert('Mérd meg külön a bal és a jobb oldalt is, mielőtt késznek jelölöd a sorozatot.');persistDraft();return}
+ }
+ set.done=!set.done;persistDraft();if(set.done)startRest();renderWorkout();
+};
+
+formatSet=function formatSet(e,s){
+ const perSide=String(e?.repUnit||'').replace(/\s+/g,'').toLowerCase()==='mp/oldal';
+ if(!perSide)return tp1481FormatSetBase(e,s);
+ const left=tp1481StoredSide(s,'left'),right=tp1481StoredSide(s,'right');
+ if(!left&&!right)return tp1481FormatSetBase(e,s);
+ const value=`Bal ${left||'—'} mp • Jobb ${right||'—'} mp`;
+ return e.loadType==='bodyweight'?value:`${s.weight||0} ${loadLabel(e.loadType)} × ${value}`;
+};
+
+(function tp1481SideCss(){
+ if(document.querySelector?.('#tp1481SideCss'))return;
+ const style=document.createElement('style');style.id='tp1481SideCss';style.textContent=`
+ .tp1481-side-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+ .tp1481-side-card{min-width:0;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--card2)}
+ .tp1481-side-card>strong{display:block;margin-bottom:8px}.tp1481-side-card .rf110-stopwatch-time{text-align:center;margin:8px 0 10px}
+ .tp1481-side-actions{display:grid;grid-template-columns:1.2fr 1fr;gap:8px;margin-top:8px}.tp1481-side-actions .btn{min-height:44px}
+ .tp1481-side-card .field{margin-top:5px}
+ @media(max-width:430px){.tp1481-side-grid{grid-template-columns:1fr}.tp1481-side-card .rf110-stopwatch-time{font-size:34px}}
+ `;document.head?.appendChild?.(style);
+})();
+window.TrainPilotHotfix={...(window.TrainPilotHotfix||{}),perSideStopwatch:true};
+// @endsection trainpilot-1481-per-side-stopwatch.js
+
+
+// @section trainpilot-1481-home-coach-overflow.js
+/* TrainPilot 1.4.8.1: never clip the dynamic Home Coach card on shorter/mobile viewports. */
+(function tp1481HomeCoachOverflowCss(){
+ if(document.querySelector?.('#tp1481HomeCoachOverflowCss'))return;
+ const style=document.createElement('style');style.id='tp1481HomeCoachOverflowCss';style.textContent=`
+  body:has(main.rf221-home){overflow-x:hidden!important;overflow-y:auto!important}
+  main.rf221-home{
+    height:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+    padding-bottom:max(104px,calc(24px + env(safe-area-inset-bottom,0px)))!important;
+  }
+  main.rf221-home #rf220CoachCard{
+    flex:0 0 auto!important;
+    margin-top:0!important;
+    overflow:visible!important;
+    padding:10px 11px!important;
+  }
+  main.rf221-home .rf221-coach-line{
+    display:-webkit-box!important;
+    -webkit-box-orient:vertical!important;
+    -webkit-line-clamp:2!important;
+    white-space:normal!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    line-height:1.25!important;
+    max-height:2.5em!important;
+    margin:4px 0 6px!important;
+  }
+  main.rf221-home .rf221-coach-actions{
+    margin-top:6px!important;
+  }
+  main.rf221-home .rf221-coach-actions .btn{
+    min-height:36px!important;
+    padding:7px 9px!important;
+  }
+ `;document.head?.appendChild?.(style);
+})();
+window.TrainPilotHotfix={...(window.TrainPilotHotfix||{}),homeCoachOverflow:true};
+// @endsection trainpilot-1481-home-coach-overflow.js
+
+
+// @section trainpilot-149-complete-i18n.js
+/* TrainPilot 1.4.9: complete four-language runtime localization.
+ * Hungarian remains the canonical source language. English, German and Romanian are
+ * rendered from one final translation pass so later feature layers cannot bypass i18n.
+ */
+const TP149_VERSION='1.4.9-dev';
+const TP149_LANGS={system:'System',hu:'Magyar',en:'English',de:'Deutsch',ro:'Română'};
+const TP149_LOCALES={hu:'hu-HU',en:'en-US',de:'de-DE',ro:'ro-RO'};
+
+/* 1.4.9 phase 1: key-based i18n core. Legacy text replacement remains only as
+ * a compatibility bridge while screens are migrated to tp149T()/t().
+ */
+const TP149_KEY_ROWS={
+ 'nav.home':['Kezdőlap','Home','Start','Acasă'],
+ 'nav.workout':['Edzés','Workout','Training','Antrenament'],
+ 'nav.calendar':['Naptár','Calendar','Kalender','Calendar'],
+ 'nav.programs':['Programok','Programs','Programme','Programe'],
+ 'nav.log':['Napló','Log','Protokoll','Jurnal'],
+ 'nav.health':['Egészség','Health','Gesundheit','Sănătate'],
+ 'nav.settings':['Beállítások','Settings','Einstellungen','Setări'],
+ 'common.back':['Vissza','Back','Zurück','Înapoi'],
+ 'common.close':['Bezárás','Close','Schließen','Închide'],
+ 'common.cancel':['Mégse','Cancel','Abbrechen','Anulează'],
+ 'common.ok':['OK','OK','OK','OK'],
+ 'common.save':['Mentés','Save','Speichern','Salvează'],
+ 'common.delete':['Törlés','Delete','Löschen','Șterge'],
+ 'common.edit':['Szerkesztés','Edit','Bearbeiten','Editează'],
+ 'common.refresh':['Frissítés','Refresh','Aktualisieren','Actualizează'],
+ 'common.search':['Keresés','Search','Suche','Căutare'],
+ 'common.all':['Összes','All','Alle','Toate'],
+ 'language.title':['Nyelv','Language','Sprache','Limbă'],
+ 'language.system':['Rendszer nyelve','System language','Systemsprache','Limba sistemului'],
+ 'language.help':['Alapértelmezésként a telefon rendszerének nyelvét használja. Bármikor felülírható.','By default, the phone system language is used. You can override it at any time.','Standardmäßig wird die Systemsprache des Telefons verwendet. Sie kann jederzeit geändert werden.','Implicit se folosește limba sistemului telefonului. Poate fi schimbată oricând.'],
+ 'language.hu':['Magyar','Hungarian','Ungarisch','Maghiară'],
+ 'language.en':['English','English','Englisch','Engleză'],
+ 'language.de':['Deutsch','German','Deutsch','Germană'],
+ 'language.ro':['Română','Romanian','Rumänisch','Română'],
+ 'settings.title':['Beállítások','Settings','Einstellungen','Setări'],
+ 'workout.start':['Edzés indítása','Start workout','Training starten','Pornește antrenamentul'],
+ 'workout.startScheduled':['Tervezett edzés indítása','Start scheduled workout','Geplantes Training starten','Pornește antrenamentul planificat'],
+ 'workout.finish':['Edzés befejezése','Finish workout','Training beenden','Încheie antrenamentul'],
+ 'workout.nextExercise':['Következő gyakorlat','Next exercise','Nächste Übung','Următorul exercițiu'],
+ 'workout.previous':['Előző','Previous','Zurück','Anterior'],
+ 'workout.rest':['Pihenő','Rest','Pause','Pauză'],
+ 'workout.sets':['Sorozatok','Sets','Sätze','Serii'],
+ 'planner.help.title':['Nem tudod, hogyan kezdd?','Not sure how to start?','Du weißt nicht, wie du anfangen sollst?','Nu știi cum să începi?'],
+ 'planner.help.cta':['Segíts elkezdeni','Help me get started','Beim Start helfen','Ajută-mă să încep'],
+ 'planner.focus':['Fókusz','Focus','Fokus','Accent'],
+ 'planner.avoidAreas':['Kerülendő területek','Areas to avoid','Zu vermeidende Bereiche','Zone de evitat'],
+ 'planner.excludeExercises':['Egyedi gyakorlatkizárás','Individual exercise exclusions','Einzelne Übungsausschlüsse','Excluderi individuale de exerciții'],
+ 'backup.title':['Biztonsági mentés','Backup','Sicherung','Copie de siguranță'],
+ 'backup.saveFile':['Mentés fájlba','Save to file','In Datei speichern','Salvează în fișier'],
+ 'backup.restore':['Visszatöltés','Restore','Wiederherstellen','Restaurează'],
+ 'backup.none':['Még nincs ellenőrzött fájlmentés.','No verified file backup yet.','Noch keine überprüfte Dateisicherung.','Nu există încă o copie de siguranță verificată.'],
+ 'backup.lastVerified':['Utolsó ellenőrzött mentés: {name} • {date}','Last verified backup: {name} • {date}','Letzte überprüfte Sicherung: {name} • {date}','Ultima copie verificată: {name} • {date}'],
+ 'exercise.library':['Gyakorlatkönyvtár','Exercise library','Übungsbibliothek','Bibliotecă de exerciții'],
+ 'exercise.demo':['Gyakorlat bemutatóvideó','Exercise demo video','Übungs-Demovideo','Videoclip demonstrativ exercițiu'],
+ 'exercise.count.one':['{count} gyakorlat','{count} exercise','{count} Übung','{count} exercițiu'],
+ 'exercise.count.few':['{count} gyakorlat','{count} exercises','{count} Übungen','{count} exerciții'],
+ 'exercise.count.other':['{count} gyakorlat','{count} exercises','{count} Übungen','{count} exerciții'],
+ 'unit.second.short':['mp','sec','Sek.','sec'],
+ 'unit.minute.short':['perc','min','Min.','min'],
+ 'unit.kilogram.short':['kg','kg','kg','kg'],
+ 'unit.repetition.short':['ism.','reps','Wdh.','rep.'],
+ 'dialog.confirm.title':['Megerősítés','Confirmation','Bestätigung','Confirmare'],
+ 'exercise.backPrograms':['Vissza a Programokhoz','Back to Programs','Zurück zu Programme','Înapoi la Programe'],
+ 'exercise.libraryBadge':['GYAKORLATKÖNYVTÁR','EXERCISE LIBRARY','ÜBUNGSBIBLIOTHEK','BIBLIOTECĂ DE EXERCIȚII'],
+ 'exercise.librarySubtitle':['Súlyzós, gépes, calisthenics, gumiszalagos és kettlebell gyakorlatok egy helyen.','Dumbbell, machine, calisthenics, resistance-band and kettlebell exercises in one place.','Kurzhantel-, Geräte-, Calisthenics-, Widerstandsband- und Kettlebell-Übungen an einem Ort.','Exerciții cu gantere, aparate, calisthenics, benzi elastice și kettlebell într-un singur loc.'],
+ 'exercise.primaryMuscle':['Fő izomcsoport','Primary muscle group','Primäre Muskelgruppe','Grupă musculară principală'],
+ 'exercise.additionalMuscles':['További izomcsoportok','Additional muscle groups','Weitere Muskelgruppen','Grupe musculare suplimentare'],
+ 'exercise.addToProgram':['Hozzáadás saját programhoz','Add to custom program','Zum eigenen Programm hinzufügen','Adaugă la programul personalizat'],
+ 'exercise.noDescription':['Ehhez a gyakorlathoz még nincs külön technikai leírás.','No separate technique description is available for this exercise yet.','Für diese Übung ist noch keine separate Technikbeschreibung verfügbar.','Nu există încă o descriere tehnică separată pentru acest exercițiu.'],
+ 'exercise.noResults':['Nincs találat. Próbálj másik szűrőt vagy keresőkifejezést.','No results. Try another filter or search term.','Keine Treffer. Versuche einen anderen Filter oder Suchbegriff.','Niciun rezultat. Încearcă alt filtru sau alt termen de căutare.'],
+ 'exercise.resultCount':['{shown} / {total} gyakorlat','{shown} / {total} exercises','{shown} / {total} Übungen','{shown} / {total} exerciții'],
+ 'exercise.search':['Keresés','Search','Suche','Căutare'],
+ 'exercise.searchPlaceholder':['Gyakorlat vagy felszerelés','Exercise or equipment','Übung oder Ausrüstung','Exercițiu sau echipament'],
+ 'exercise.muscleGroup':['Izomcsoport','Muscle group','Muskelgruppe','Grupă musculară'],
+ 'exercise.equipment':['Felszerelés','Equipment','Ausrüstung','Echipament'],
+ 'exercise.all':['Összes','All','Alle','Toate'],
+ 'exercise.libraryTitle':['Gyakorlatok / Izomcsoportok','Exercises / Muscle groups','Übungen / Muskelgruppen','Exerciții / Grupe musculare'],
+ 'exercise.librarySummary':['{count} gyakorlat • súlyzós, gépes, calisthenics és gumiszalagos variációk','{count} exercises • free-weight, machine, calisthenics and resistance-band variations','{count} Übungen • freie Gewichte, Geräte, Calisthenics und Widerstandsband-Varianten','{count} exerciții • variante cu greutăți libere, aparate, calisthenics și benzi elastice'],
+ 'exercise.demoSuffix':['bemutatóvideó','demo video','Demovideo','videoclip demonstrativ'],
+ 'program.active':['Aktív','Active','Aktiv','Activ'],
+ 'program.activate':['Aktiválás','Activate','Aktivieren','Activează'],
+ 'program.activeBadge':['AKTÍV PROGRAM','ACTIVE PROGRAM','AKTIVES PROGRAMM','PROGRAM ACTIV'],
+ 'program.workoutDayBadge':['EDZÉSNAP','WORKOUT DAY','TRAININGSTAG','ZI DE ANTRENAMENT'],
+ 'program.cardStats':['{days} napos ciklus • {counts} gyakorlat','{days}-day cycle • {counts} exercises','{days}-Tage-Zyklus • {counts} Übungen','Ciclu de {days} zile • {counts} exerciții'],
+ 'program.cycle':['{count} napos ciklus','{count}-day cycle','{count}-Tage-Zyklus','Ciclu de {count} zile'],
+ 'program.tapDetails':['{count} gyakorlat • koppints a részletekhez','{count} exercises • tap for details','{count} Übungen • für Details tippen','{count} exerciții • atinge pentru detalii'],
+ 'program.chooseAnother':['Másik program választása','Choose another program','Anderes Programm wählen','Alege alt program'],
+ 'program.addExercise':['Gyakorlat hozzáadása','Add exercise','Übung hinzufügen','Adaugă exercițiu'],
+ 'program.noActive':['Nincs aktív program','No active program','Kein aktives Programm','Niciun program activ'],
+ 'program.noActiveHelp':['Válassz programot a Programok fülön.','Choose a program on the Programs tab.','Wähle im Tab Programme ein Programm aus.','Alege un program din fila Programe.'],
+ 'program.choose':['Program választása','Choose program','Programm wählen','Alege program'],
+ 'planner.back':['Vissza','Back','Zurück','Înapoi'],
+ 'planner.title':['Segíts elkezdeni','Help me get started','Beim Start helfen','Ajută-mă să încep'],
+ 'planner.intro':['A terv a te célodból, tapasztalatodból, eszközeidből és preferenciáidból épül fel. Először átnézheted, csak utána aktiválod.','The plan is built from your goal, experience, available equipment and preferences. You can review it before activating it.','Der Plan wird aus deinem Ziel, deiner Erfahrung, deiner verfügbaren Ausrüstung und deinen Präferenzen erstellt. Du kannst ihn vor der Aktivierung prüfen.','Planul este construit pe baza obiectivului, experienței, echipamentului disponibil și preferințelor tale. Îl poți verifica înainte de activare.'],
+ 'planner.age':['Életkor','Age','Alter','Vârstă'],
+ 'planner.height':['Magasság (cm)','Height (cm)','Größe (cm)','Înălțime (cm)'],
+ 'planner.weight':['Testsúly (kg)','Body weight (kg)','Körpergewicht (kg)','Greutate corporală (kg)'],
+ 'planner.goal':['Cél','Goal','Ziel','Obiectiv'],
+ 'planner.experience':['Tapasztalat','Experience','Erfahrung','Experiență'],
+ 'planner.activity':['Munka és napi aktivitás','Work and daily activity','Arbeit und tägliche Aktivität','Muncă și activitate zilnică'],
+ 'planner.minutes':['Idő egy edzésre','Time per workout','Zeit pro Training','Timp per antrenament'],
+ 'planner.cadence':['Beosztás','Schedule','Rhythmus','Programare'],
+ 'planner.split':['Edzésfelosztás','Workout split','Trainingsaufteilung','Împărțirea antrenamentului'],
+ 'planner.avoidHelp':['Ezeket a területeket a generátor nem próbálja kötelezően visszatenni más felosztás miatt.','The generator will not force these areas back into the plan because of another split.','Der Generator erzwingt diese Bereiche nicht wegen einer anderen Aufteilung.','Generatorul nu va reintroduce forțat aceste zone din cauza altei împărțiri.'],
+ 'planner.excludeHelp':['Finomhangolásként egyenként is kizárhatsz gyakorlatokat.','For fine tuning, you can exclude individual exercises as well.','Zur Feinabstimmung kannst du einzelne Übungen ausschließen.','Pentru reglaj fin poți exclude și exerciții individuale.'],
+ 'planner.storageHelp':['A profil a telefonon tárolódik. A személyes generátor nem egy másik felhasználó A/B programjából indul.','The profile is stored on the phone. The personal generator does not start from another user’s A/B program.','Das Profil wird auf dem Telefon gespeichert. Der persönliche Generator basiert nicht auf dem A/B-Programm eines anderen Nutzers.','Profilul este stocat pe telefon. Generatorul personal nu pornește de la programul A/B al altui utilizator.'],
+ 'planner.build':['Személyes terv összeállítása','Build personal plan','Persönlichen Plan erstellen','Creează planul personal'],
+ 'planner.gearTitle':['Mivel edzenél?','What will you train with?','Womit möchtest du trainieren?','Cu ce vei face antrenamentul?'],
+ 'planner.gearHelp':['A saját testsúlyos gyakorlatok mindig használhatók. Jelöld az összes valóban elérhető eszközt.','Bodyweight exercises are always available. Select every piece of equipment you actually have access to.','Körpergewichtsübungen sind immer verfügbar. Wähle alle Geräte aus, die dir tatsächlich zur Verfügung stehen.','Exercițiile cu greutatea corpului sunt întotdeauna disponibile. Selectează toate echipamentele la care ai acces în mod real.'],
+ 'planner.gearMore':['Gumiszalag, húzódzkodórúd, tolódzkodó és kettlebell is használható a személyes tervezőben.','Resistance bands, a pull-up bar, dip bars and kettlebells can also be used by the personal planner.','Widerstandsbänder, Klimmzugstange, Dip-Barren und Kettlebells können ebenfalls im persönlichen Planer verwendet werden.','Benzile elastice, bara de tracțiuni, barele paralele și kettlebellurile pot fi folosite și în planificatorul personal.'],
+ 'planner.presetBodyweight':['Csak saját testsúly','Bodyweight only','Nur Körpergewicht','Doar greutatea corpului'],
+ 'planner.presetDumbbell':['Kézisúlyzó','Dumbbells','Kurzhanteln','Gantere'],
+ 'planner.presetCalisthenics':['Calisthenics','Calisthenics','Calisthenics','Calisthenics'],
+ 'planner.presetAll':['Minden eszköz','All equipment','Alle Geräte','Tot echipamentul'],
+ 'planner.previewLabel':['Javaslat • még nincs aktiválva','Suggestion • not activated yet','Vorschlag • noch nicht aktiviert','Sugestie • încă neactivată'],
+ 'planner.trialHelp':['Az első alkalommal könnyű próbasorozattal válassz terhelést, és rögzítsd a súlyt. A mező kezdetben üres.','On the first session, use a light trial set to choose the load and record the weight. The field starts empty.','Wähle beim ersten Training die Belastung mit einem leichten Testsatz und trage das Gewicht ein. Das Feld ist anfangs leer.','La prima sesiune, alege încărcarea cu o serie ușoară de probă și înregistrează greutatea. Câmpul este inițial gol.'],
+ 'planner.activate':['Terv mentése és aktiválása','Save and activate plan','Plan speichern und aktivieren','Salvează și activează planul'],
+ 'planner.saved':['A terv kész. A naptárban válaszd ki a kezdőnapot és az alkalmakat.','The plan is ready. Choose the start date and sessions in the calendar.','Der Plan ist fertig. Wähle im Kalender den Starttag und die Trainingseinheiten aus.','Planul este gata. Alege în calendar data de început și sesiunile.'],
+ 'planner.saveFailed':['Nem sikerült menteni. A korábbi terv megmaradt.','Could not save. The previous plan was kept.','Speichern fehlgeschlagen. Der bisherige Plan wurde beibehalten.','Salvarea a eșuat. Planul anterior a fost păstrat.'],
+ 'planner.generatedName':['Személyes terv – {split}','Personal plan – {split}','Persönlicher Plan – {split}','Plan personal – {split}'],
+ 'planner.locationSelected':['Választott felszerelés','Selected equipment','Ausgewählte Ausrüstung','Echipament selectat'],
+ 'planner.locationBodyweight':['Saját testsúly','Bodyweight','Körpergewicht','Greutatea corpului'],
+ 'planner.reasonAvailable':['Elérhető: {equipment}.','Available: {equipment}.','Verfügbar: {equipment}.','Disponibil: {equipment}.'],
+ 'planner.reasonFocus':['Fókusz: {focus}.{avoid}','Focus: {focus}.{avoid}','Fokus: {focus}.{avoid}','Accent: {focus}.{avoid}'],
+ 'planner.reasonAvoid':[' Kerülendő: {areas}.',' Avoid: {areas}.',' Zu vermeiden: {areas}.',' De evitat: {areas}.'],
+ 'planner.reasonTime':['{minutes} perc: legfeljebb {capacity} gyakorlat/nap; a hosszabb időkeret több gyakorlatot és szükség esetén több munkasorozatot enged.','{minutes} min: up to {capacity} exercises/day; a longer time window allows more exercises and, when needed, more working sets.','{minutes} Min.: bis zu {capacity} Übungen/Tag; mehr Zeit ermöglicht mehr Übungen und bei Bedarf mehr Arbeitssätze.','{minutes} min: până la {capacity} exerciții/zi; un interval mai lung permite mai multe exerciții și, la nevoie, mai multe serii de lucru.'],
+ 'planner.reasonAdjusted':['A kért felosztást a rendelkezésre álló gyakorlatokhoz igazítottuk, hogy ne legyen kötelező hiányzó vagy kerülendő edzésnap.','The requested split was adjusted to the available exercises so no missing or avoided workout day is forced into the plan.','Die gewünschte Aufteilung wurde an die verfügbaren Übungen angepasst, damit kein fehlender oder zu vermeidender Trainingstag erzwungen wird.','Împărțirea cerută a fost adaptată la exercițiile disponibile, pentru a nu forța o zi de antrenament lipsă sau de evitat.'],
+ 'planner.reasonMatched':['A felosztás a jelenlegi profilhoz és elérhető mozgásmintákhoz igazodik.','The split matches the current profile and available movement patterns.','Die Aufteilung passt zum aktuellen Profil und zu den verfügbaren Bewegungsmustern.','Împărțirea se potrivește profilului actual și tiparelor de mișcare disponibile.'],
+ 'planner.reasonProgression':['A progresszió a saját teljesített sorozataidból és visszajelzéseidből folytatódik; a kezdősúlyt próbasorozattal állítsd be.','Progression continues from your own completed sets and feedback; choose the starting weight with a trial set.','Die Progression basiert auf deinen eigenen absolvierten Sätzen und Rückmeldungen; bestimme das Startgewicht mit einem Testsatz.','Progresia continuă pe baza seriilor finalizate și a feedbackului tău; stabilește greutatea inițială cu o serie de probă.'],
+ 'planner.errorProfile':['Adj meg érvényes felnőtt életkort, magasságot és testsúlyt.','Enter a valid adult age, height and body weight.','Gib ein gültiges Erwachsenenalter, eine gültige Größe und ein gültiges Körpergewicht ein.','Introdu o vârstă adultă, o înălțime și o greutate corporală valide.'],
+ 'planner.errorChoice':['Érvénytelen profilválasztás.','Invalid profile selection.','Ungültige Profilauswahl.','Selecție de profil nevalidă.'],
+ 'planner.errorMinutes':['Az edzésidő 20 és 120 perc között, 5 perces lépésekben adható meg.','Workout time must be between 20 and 120 minutes in 5-minute increments.','Die Trainingszeit muss zwischen 20 und 120 Minuten in 5-Minuten-Schritten liegen.','Durata antrenamentului trebuie să fie între 20 și 120 de minute, în pași de 5 minute.'],
+ 'planner.errorGear':['Érvénytelen felszereléslista.','Invalid equipment list.','Ungültige Ausrüstungsliste.','Listă de echipamente nevalidă.'],
+ 'planner.errorExclude':['Érvénytelen gyakorlatkizárás.','Invalid exercise exclusion.','Ungültiger Übungsausschluss.','Excludere de exercițiu nevalidă.'],
+ 'planner.errorAvoid':['Érvénytelen kerülendő terület.','Invalid area to avoid.','Ungültiger zu vermeidender Bereich.','Zonă de evitat nevalidă.'],
+ 'planner.errorPool':['A választott felszerelés és kizárások mellett kevesebb mint 3 használható gyakorlat maradt. Engedélyezz több eszközt, területet vagy gyakorlatot.','Fewer than 3 usable exercises remain with the selected equipment and exclusions. Allow more equipment, areas or exercises.','Mit der gewählten Ausrüstung und den Ausschlüssen bleiben weniger als 3 nutzbare Übungen. Erlaube mehr Ausrüstung, Bereiche oder Übungen.','Cu echipamentul și excluderile selectate au rămas mai puțin de 3 exerciții utilizabile. Permite mai multe echipamente, zone sau exerciții.'],
+ 'planner.errorDayPool':['Nem maradt legalább 3 különböző gyakorlat egy használható edzésnaphoz.','Fewer than 3 different exercises remain for a usable workout day.','Für einen nutzbaren Trainingstag bleiben weniger als 3 verschiedene Übungen.','Au rămas mai puțin de 3 exerciții diferite pentru o zi de antrenament utilizabilă.'],
+ 'planner.rest':['{seconds} mp pihenő','{seconds} sec rest','{seconds} Sek. Pause','{seconds} sec pauză']
+};
+const TP149_CATALOG={hu:{},en:{},de:{},ro:{}};
+for(const [key,row] of Object.entries(TP149_KEY_ROWS)){
+ TP149_CATALOG.hu[key]=row[0];TP149_CATALOG.en[key]=row[1];TP149_CATALOG.de[key]=row[2];TP149_CATALOG.ro[key]=row[3];
+}
+var tp149Interpolate=function tp149Interpolate(value,vars){
+ return String(value).replace(/\{([A-Za-z0-9_]+)\}/g,function(_m,key){return Object.hasOwn(vars||{},key)?String(vars[key]):_m;});
+};
+var tp149T=function tp149T(key,vars={},lang){
+ const resolved=TP149_LOCALES[lang]?lang:(typeof rf212Lang==='function'?rf212Lang():'en');
+ const safe=TP149_LOCALES[resolved]?resolved:'en';
+ const value=TP149_CATALOG[safe]?.[key]??TP149_CATALOG.en[key]??TP149_CATALOG.hu[key];
+ return value==null?String(key):tp149Interpolate(value,vars);
+};
+window.t=tp149T;
+var tp149Plural=function tp149Plural(key,count,vars={},lang){
+ const resolved=TP149_LOCALES[lang]?lang:(typeof rf212Lang==='function'?rf212Lang():'en');
+ const locale=TP149_LOCALES[resolved]||TP149_LOCALES.en;
+ let form='other';try{form=new Intl.PluralRules(locale).select(Number(count));}catch(_){}
+ const exact=key+'.'+form, fallback=key+'.other';
+ return tp149T(TP149_CATALOG[resolved]?.[exact]!=null?exact:fallback,Object.assign({count:count},vars),resolved);
+};
+var tp149FormatNumber=function tp149FormatNumber(value,options={},lang){
+ const locale=TP149_LOCALES[lang]||tp149Locale(lang);
+ const n=Number(value);if(!Number.isFinite(n))return '—';
+ try{return new Intl.NumberFormat(locale,options).format(n);}catch(_){return String(n);}
+};
+var tp149FormatDate=function tp149FormatDate(value,options={},lang){
+ const d=value instanceof Date?value:new Date(value);if(!Number.isFinite(d.getTime()))return '—';
+ const locale=TP149_LOCALES[lang]||tp149Locale(lang);
+ try{return new Intl.DateTimeFormat(locale,Object.assign({year:'numeric',month:'2-digit',day:'2-digit'},options)).format(d);}catch(_){return d.toISOString().slice(0,10);}
+};
+var tp149FormatDateTime=function tp149FormatDateTime(value,options={},lang){
+ return tp149FormatDate(value,Object.assign({hour:'2-digit',minute:'2-digit'},options),lang);
+};
+var tp149FormatUnit=function tp149FormatUnit(value,unitKey,options={},lang){
+ const number=tp149FormatNumber(value,options,lang),unit=tp149T('unit.'+unitKey+'.short',{},lang);
+ return number+' '+unit;
+};
+var tp149CatalogAudit=function tp149CatalogAudit(){
+ const keys=new Set(Object.keys(TP149_CATALOG.hu));
+ for(const lang of ['en','de','ro'])for(const key of Object.keys(TP149_CATALOG[lang]))keys.add(key);
+ const missing=[];
+ for(const key of keys)for(const lang of ['hu','en','de','ro'])if(typeof TP149_CATALOG[lang]?.[key]!=='string'||!TP149_CATALOG[lang][key].trim())missing.push(lang+':'+key);
+ return {keys:keys.size,missing:missing};
+};
+
+const TP149_ROWS=[
+['intelligens edzéstervező','intelligent workout planner','intelligenter Trainingsplaner','planificator inteligent de antrenament'],
+['Kezdőlap','Home','Start','Acasă'],['Edzés','Workout','Training','Antrenament'],['Naptár','Calendar','Kalender','Calendar'],['Programok','Programs','Programme','Programe'],['Napló','Log','Protokoll','Jurnal'],['Egészség','Health','Gesundheit','Sănătate'],['Beállítások','Settings','Einstellungen','Setări'],
+['Vissza','Back','Zurück','Înapoi'],['Bezárás','Close','Schließen','Închide'],['Mégse','Cancel','Abbrechen','Anulează'],['Mentés','Save','Speichern','Salvează'],['Törlés','Delete','Löschen','Șterge'],['Szerkesztés','Edit','Bearbeiten','Editează'],['Frissítés','Refresh','Aktualisieren','Actualizează'],['Keresés','Search','Suche','Căutare'],['Összes','All','Alle','Toate'],
+['Nyelv','Language','Sprache','Limbă'],['Rendszer nyelve','System language','Systemsprache','Limba sistemului'],['Alapértelmezésként a telefon rendszerének nyelvét használja. Bármikor felülírható.','By default, the phone system language is used. You can override it at any time.','Standardmäßig wird die Systemsprache des Telefons verwendet. Sie kann jederzeit geändert werden.','Implicit se folosește limba sistemului telefonului. Poate fi schimbată oricând.'],
+['Nem tudod, hogyan kezdd?','Not sure how to start?','Du weißt nicht, wie du anfangen sollst?','Nu știi cum să începi?'],['Állítsunk össze egy hozzád illő, követhető tervet.','Let’s build a practical plan that fits you.','Erstellen wir einen passenden, gut umsetzbaren Plan.','Hai să construim un plan potrivit și ușor de urmat.'],['Segíts elkezdeni','Help me get started','Beim Start helfen','Ajută-mă să încep'],
+['Aktív program','Active program','Aktives Programm','Program activ'],['AKTÍV PROGRAM','ACTIVE PROGRAM','AKTIVES PROGRAMM','PROGRAM ACTIV'],['EDZÉSNAP','WORKOUT DAY','TRAININGSTAG','ZI DE ANTRENAMENT'],['Következő','Next','Nächstes','Următorul'],['Következő:','Next:','Nächstes:','Următorul:'],['Edzés indítása','Start workout','Training starten','Pornește antrenamentul'],['Tervezett edzés indítása','Start scheduled workout','Geplantes Training starten','Pornește antrenamentul planificat'],['Másik program választása','Choose another program','Anderes Programm wählen','Alege alt program'],
+['Edzésprogramok','Workout programs','Trainingsprogramme','Programe de antrenament'],['Otthoni, konditermi és saját programok ugyanabban a naplóban.','Home, gym and custom programs in the same log.','Heim-, Studio- und eigene Programme im selben Protokoll.','Programe pentru acasă, sală și personalizate în același jurnal.'],['Saját program','Custom program','Eigenes Programm','Program personalizat'],['Új saját program létrehozása','Create a new custom program','Neues eigenes Programm erstellen','Creează un program personalizat nou'],['Kezdő / középhaladó','Beginner / intermediate','Anfänger / Mittelstufe','Începător / intermediar'],['Középhaladó','Intermediate','Mittelstufe','Intermediar'],['középhaladó','intermediate','Mittelstufe','intermediar'],['Kezdő','Beginner','Anfänger','Începător'],['testsúly + rúd','bodyweight + bar','Körpergewicht + Stange','greutatea corpului + bară'],['Saját testsúly + rúd','Bodyweight + bar','Körpergewicht + Stange','Greutatea corpului + bară'],['rúd','bar','Stange','bară'],['Aktiválás','Activate','Aktivieren','Activează'],['Aktív','Active','Aktiv','Activ'],['napos ciklus','day cycle','Tage-Zyklus','zile ciclu'],
+['Otthoni A/B – Alap','Home A/B – Basic','Zuhause A/B – Basis','Acasă A/B – Bază'],['Otthoni A/B – 2. szint','Home A/B – Level 2','Zuhause A/B – Stufe 2','Acasă A/B – Nivel 2'],['Otthoni változatos','Home variety','Zuhause abwechslungsreich','Acasă variat'],['Konditermi Full Body','Gym Full Body','Studio Ganzkörper','Sală Full Body'],['Konditermi A/B','Gym A/B','Studio A/B','Sală A/B'],
+['Otthoni felsőtest A/B','Home upper body A/B','Zuhause Oberkörper A/B','Acasă partea superioară A/B'],['Otthoni gyors 30 perc','Home quick 30 min','Zuhause schnell 30 Min.','Acasă rapid 30 min'],['Calisthenics A/B','Calisthenics A/B','Calisthenics A/B','Calisthenics A/B'],['Gumiszalagos A/B','Resistance-band A/B','Widerstandsband A/B','Bandă elastică A/B'],['Kettlebell Full Body A/B','Kettlebell Full Body A/B','Kettlebell Ganzkörper A/B','Kettlebell Full Body A/B'],['Konditermi felső / alsó','Gym upper / lower','Studio Oberkörper / Unterkörper','Sală superior / inferior'],['Konditermi Push / Pull / Legs','Gym Push / Pull / Legs','Studio Push / Pull / Beine','Sală Push / Pull / Picioare'],['Konditermi erő A/B/C','Gym strength A/B/C','Studio Kraft A/B/C','Sală forță A/B/C'],
+['Felsőtest A','Upper body A','Oberkörper A','Partea superioară A'],['Felsőtest B','Upper body B','Oberkörper B','Partea superioară B'],['Alsótest A','Lower body A','Unterkörper A','Partea inferioară A'],['Alsótest B','Lower body B','Unterkörper B','Partea inferioară B'],['Teljes test 1','Full body 1','Ganzkörper 1','Corp complet 1'],['Teljes test 2','Full body 2','Ganzkörper 2','Corp complet 2'],['Toló','Push','Drücken','Împins'],['Húzó','Pull','Ziehen','Tras'],['Láb és törzs','Legs and core','Beine und Rumpf','Picioare și trunchi'],['Mell / hát / váll','Chest / back / shoulders','Brust / Rücken / Schultern','Piept / spate / umeri'],['Hát / mell / kar','Back / chest / arms','Rücken / Brust / Arme','Spate / piept / brațe'],['Gyors A','Quick A','Schnell A','Rapid A'],['Gyors B','Quick B','Schnell B','Rapid B'],['Technika / törzs','Technique / core','Technik / Rumpf','Tehnică / trunchi'],['Guggolás / nyomás','Squat / press','Kniebeuge / Drücken','Genuflexiune / împins'],['Felhúzás / váll','Deadlift / shoulders','Kreuzheben / Schultern','Îndreptări / umeri'],['Vegyes','Mixed','Gemischt','Mixt'],
+['Személyes terv','Personal plan','Persönlicher Plan','Plan personal'],['Fókusz','Focus','Fokus','Accent'],['Kiegyensúlyozott','Balanced','Ausgewogen','Echilibrat'],['Felsőtest','Upper body','Oberkörper','Partea superioară'],['Mell / hát','Chest / back','Brust / Rücken','Piept / spate'],['Váll / kar','Shoulders / arms','Schultern / Arme','Umeri / brațe'],['Törzs','Core','Rumpf','Trunchi'],['Láb','Legs','Beine','Picioare'],['Mell','Chest','Brust','Piept'],['Hát','Back','Rücken','Spate'],['Váll','Shoulders','Schultern','Umeri'],['Kar','Arms','Arme','Brațe'],
+['Kerülendő területek','Areas to avoid','Zu vermeidende Bereiche','Zone de evitat'],['Egyedi gyakorlatkizárás','Individual exercise exclusions','Einzelne Übungsausschlüsse','Excluderi individuale de exerciții'],['Ezeket a területeket a generátor nem próbálja kötelezően visszatenni más felosztás miatt.','The generator will not force these areas back into the plan because of another split.','Der Generator erzwingt diese Bereiche nicht wegen einer anderen Aufteilung.','Generatorul nu va reintroduce forțat aceste zone din cauza altei împărțiri.'],['Finomhangolásként egyenként is kizárhatsz gyakorlatokat.','For fine tuning, you can exclude individual exercises as well.','Zur Feinabstimmung kannst du einzelne Übungen ausschließen.','Pentru reglaj fin poți exclude și exerciții individuale.'],
+['Cél','Goal','Ziel','Obiectiv'],['Általános fittség','General fitness','Allgemeine Fitness','Condiție fizică generală'],['Izomépítés','Muscle gain','Muskelaufbau','Creștere musculară'],['Erősödés','Strength','Kraft','Forță'],['Fogyás támogatása','Support fat loss','Fettabbau unterstützen','Susținerea slăbirii'],['Tapasztalat','Experience','Erfahrung','Experiență'],['Most kezdem / újrakezdem','Starting / restarting','Ich beginne / starte neu','Încep / reîncep'],['Rendszeresen edzek','I train regularly','Ich trainiere regelmäßig','Mă antrenez regulat'],['Munka és napi aktivitás','Work and daily activity','Arbeit und Alltagsaktivität','Muncă și activitate zilnică'],['Többnyire ülök','Mostly sedentary','Meist sitzend','Mai mult sedentar'],['Vegyes / sok séta','Mixed / lots of walking','Gemischt / viel Gehen','Mixt / mult mers'],['Fizikai munka','Physical work','Körperliche Arbeit','Muncă fizică'],
+['Mivel edzenél?','What will you train with?','Womit trainierst du?','Cu ce te vei antrena?'],['A saját testsúlyos gyakorlatok mindig használhatók. Jelöld az összes valóban elérhető eszközt.','Bodyweight exercises are always available. Select every piece of equipment you actually have.','Körpergewichtsübungen sind immer verfügbar. Wähle alle tatsächlich verfügbaren Geräte.','Exercițiile cu greutatea corpului sunt mereu disponibile. Selectează toate echipamentele disponibile.'],['Csak saját testsúly','Bodyweight only','Nur Körpergewicht','Doar greutatea corpului'],['Kézisúlyzó','Dumbbell','Kurzhantel','Gantere'],['Calisthenics','Calisthenics','Calisthenics','Calisthenics'],['Minden eszköz','All equipment','Alle Geräte','Tot echipamentul'],['Gumiszalag / erősítőszalag','Resistance band','Widerstandsband','Bandă elastică'],['Húzódzkodórúd','Pull-up bar','Klimmzugstange','Bară de tracțiuni'],['Tolódzkodó korlát','Dip bars','Dip-Barren','Bare pentru dips'],['Kettlebell','Kettlebell','Kettlebell','Kettlebell'],['Gumiszalag, húzódzkodórúd, tolódzkodó és kettlebell is használható a személyes tervezőben.','Resistance bands, pull-up bars, dip bars and kettlebells can also be used in the personal planner.','Widerstandsbänder, Klimmzugstangen, Dip-Barren und Kettlebells können ebenfalls im persönlichen Planer verwendet werden.','Benzile elastice, bara de tracțiuni, barele pentru dips și kettlebell-urile pot fi folosite și în planificatorul personal.'],
+['Idő egy edzésre','Time per workout','Zeit pro Training','Durata unui antrenament'],['perc','min','Min.','min'],['Beosztás','Schedule','Rhythmus','Programare'],['Minden második nap','Every other day','Jeden zweiten Tag','La două zile'],['Fix heti napok','Fixed weekdays','Feste Wochentage','Zile fixe săptămânal'],['Naptárban kijelölöm','Choose in calendar','Im Kalender wählen','Aleg în calendar'],['Edzésfelosztás','Workout split','Trainingsaufteilung','Împărțirea antrenamentului'],['Válasszon az app','Let the app choose','App auswählen lassen','Lasă aplicația să aleagă'],['Teljes test A/B','Full body A/B','Ganzkörper A/B','Corp complet A/B'],['Felsőtest / alsótest','Upper / lower','Oberkörper / Unterkörper','Superior / inferior'],['Toló / húzó / láb','Push / pull / legs','Push / Pull / Beine','Push / Pull / picioare'],['Személyes terv összeállítása','Build personal plan','Persönlichen Plan erstellen','Creează planul personal'],
+['A profil a telefonon tárolódik. A személyes generátor nem egy másik felhasználó A/B programjából indul.','The profile is stored on the phone. The personal generator does not start from another user’s A/B program.','Das Profil wird auf dem Telefon gespeichert. Der persönliche Generator startet nicht mit dem A/B-Programm eines anderen Nutzers.','Profilul este stocat pe telefon. Generatorul personal nu pornește de la programul A/B al altui utilizator.'],
+['Otthoni és konditermi gyakorlatok közös könyvtára. A meglévő videók és technikai segítségek megmaradtak.','A shared library of home and gym exercises. Existing videos and technique help are preserved.','Eine gemeinsame Bibliothek für Heim- und Studioübungen. Vorhandene Videos und Technikhilfen bleiben erhalten.','O bibliotecă comună de exerciții pentru acasă și sală. Videoclipurile și ajutorul tehnic existente sunt păstrate.'],['Otthoni és konditermi gyakorlatok közös könyvtára. Koppints a teljes lista megnyitásához.','A shared library of home and gym exercises. Tap to open the full list.','Eine gemeinsame Bibliothek für Heim- und Studioübungen. Tippe, um die vollständige Liste zu öffnen.','O bibliotecă comună de exerciții pentru acasă și sală. Apasă pentru lista completă.'],['Koppints a teljes lista megnyitásához.','Tap to open the full list.','Tippe, um die vollständige Liste zu öffnen.','Apasă pentru lista completă.'],['Otthoni és konditermi gyakorlatok közös könyvtára.','Shared home and gym exercise library.','Gemeinsame Bibliothek für Heim- und Studioübungen.','Bibliotecă comună de exerciții pentru acasă și sală.'],['Gyakorlatkönyvtár','Exercise library','Übungsbibliothek','Bibliotecă de exerciții'],['GYAKORLATKÖNYVTÁR','EXERCISE LIBRARY','ÜBUNGSBIBLIOTHEK','BIBLIOTECĂ DE EXERCIȚII'],['Gyakorlatok / Izomcsoportok','Exercises / Muscle groups','Übungen / Muskelgruppen','Exerciții / Grupe musculare'],['Gyakorlat vagy felszerelés','Exercise or equipment','Übung oder Gerät','Exercițiu sau echipament'],['Izomcsoport','Muscle group','Muskelgruppe','Grupă musculară'],['Felszerelés','Equipment','Ausrüstung','Echipament'],['Saját testsúly','Bodyweight','Körpergewicht','Greutatea corpului'],['Kétkezes rúd','Barbell','Langhantel','Bară'],['Gép / csiga','Machine / cable','Maschine / Kabelzug','Aparat / cablu'],['Gumiszalag','Resistance band','Widerstandsband','Bandă elastică'],['Tolódzkodó','Dip bars','Dip-Barren','Bare dips'],['Fő izomcsoport:','Primary muscle group:','Hauptmuskelgruppe:','Grupă musculară principală:'],['További izomcsoportok:','Additional muscle groups:','Weitere Muskelgruppen:','Grupe musculare suplimentare:'],['Hozzáadás saját programhoz','Add to custom program','Zum eigenen Programm hinzufügen','Adaugă la programul personal'],['Nincs találat. Próbálj másik szűrőt vagy keresőkifejezést.','No results. Try another filter or search term.','Keine Treffer. Versuche einen anderen Filter oder Suchbegriff.','Niciun rezultat. Încearcă alt filtru sau termen de căutare.'],['Ehhez a gyakorlathoz még nincs külön technikai leírás.','No separate technique note is available for this exercise yet.','Für diese Übung gibt es noch keinen eigenen Technikhinweis.','Nu există încă o notă tehnică separată pentru acest exercițiu.'],
+['Saját gyakorlat','Custom exercise','Eigene Übung','Exercițiu personalizat'],['Adj hozzá saját gyakorlatot a könyvtárhoz. A mozgásminta és a kategória külön mező.','Add your own exercise to the library. Movement pattern and category are separate fields.','Füge deine eigene Übung zur Bibliothek hinzu. Bewegungsmuster und Kategorie sind getrennte Felder.','Adaugă propriul exercițiu în bibliotecă. Modelul de mișcare și categoria sunt câmpuri separate.'],['Magyar név','Hungarian name','Ungarischer Name','Nume maghiar'],['Angol név','English name','Englischer Name','Nume englez'],['Felszerelés leírása','Equipment description','Ausrüstungsbeschreibung','Descriere echipament'],['Fő izomcsoport','Primary muscle group','Hauptmuskelgruppe','Grupă musculară principală'],['Mozgásminta','Movement pattern','Bewegungsmuster','Model de mișcare'],['Kategória / stílus','Category / style','Kategorie / Stil','Categorie / stil'],['Nehézség','Difficulty','Schwierigkeit','Dificultate'],['Haladó','Advanced','Fortgeschritten','Avansat'],['Szükséges felszerelés','Required equipment','Benötigte Ausrüstung','Echipament necesar'],['Csak azt jelöld, ami nélkül a gyakorlat nem végezhető el.','Select only what is required to perform the exercise.','Wähle nur aus, was für die Übung wirklich erforderlich ist.','Selectează doar echipamentul fără de care exercițiul nu poate fi efectuat.'],['Technikai jegyzet','Technique note','Technikhinweis','Notă tehnică'],['Gyakorlat mentése','Save exercise','Übung speichern','Salvează exercițiul'],['Saját gyakorlat hozzáadva.','Custom exercise added.','Eigene Übung hinzugefügt.','Exercițiu personalizat adăugat.'],
+['Guggolás','Squat','Kniebeuge','Genuflexiune'],['Csípődomináns','Hip hinge','Hüftdominant','Dominant șold'],['Kitörés','Lunge','Ausfallschritt','Fandare'],['Vízszintes tolás','Horizontal push','Horizontales Drücken','Împins orizontal'],['Vízszintes húzás','Horizontal pull','Horizontales Ziehen','Tras orizontal'],['Függőleges tolás','Vertical push','Vertikales Drücken','Împins vertical'],['Függőleges húzás','Vertical pull','Vertikales Ziehen','Tras vertical'],['Mell izoláció','Chest isolation','Brust-Isolation','Izolare piept'],['Váll izoláció','Shoulder isolation','Schulter-Isolation','Izolare umeri'],['Hátsó váll','Rear delts','Hintere Schulter','Deltoid posterior'],['Bicepsz','Biceps','Bizeps','Biceps'],['Tricepsz','Triceps','Trizeps','Triceps'],['Térdnyújtás','Knee extension','Kniestreckung','Extensie genunchi'],['Térdhajlítás','Knee flexion','Kniebeugung','Flexie genunchi'],['Vádli','Calves','Waden','Gambe'],['Törzsfeszítés','Core bracing','Rumpfspannung','Încordare trunchi'],['Törzshajlítás','Core flexion','Rumpfbeugung','Flexie trunchi'],['Törzsstabilizáció','Core stability','Rumpfstabilität','Stabilitate trunchi'],['Kondicionálás','Conditioning','Kondition','Condiționare'],['Erősítés','Strength','Kraft','Forță'],['Testépítés','Bodybuilding','Bodybuilding','Culturism'],['Mobilitás','Mobility','Mobilität','Mobilitate'],['Egyéb','Other','Sonstiges','Altele'],
+['Edzésnaptár','Workout calendar','Trainingskalender','Calendar de antrenament'],['Tervezési mód','Planning mode','Planungsmodus','Mod de planificare'],['Koppints egy napra, majd válassz az aktív program edzésnapjai közül. Több hét előre a Tervezési beállítások alatt tervezhetsz.','Tap a date, then choose a workout day from the active program. You can plan several weeks ahead under Planning settings.','Tippe auf einen Tag und wähle dann einen Trainingstag aus dem aktiven Programm. Unter Planungseinstellungen kannst du mehrere Wochen im Voraus planen.','Atinge o zi, apoi alege o zi de antrenament din programul activ. În Setări planificare poți planifica mai multe săptămâni în avans.'],['Tervezési beállítások','Planning settings','Planungseinstellungen','Setări planificare'],['több hét előre','several weeks ahead','mehrere Wochen im Voraus','mai multe săptămâni în avans'],['Válassz ritmust. A TrainPilot az aktív program napjait sorrendben forgatja.','Choose a rhythm. TrainPilot cycles through the active program days in order.','Wähle einen Rhythmus. TrainPilot durchläuft die Tage des aktiven Programms der Reihe nach.','Alege un ritm. TrainPilot parcurge în ordine zilele programului activ.'],['Tervezési ritmus','Planning rhythm','Planungsrhythmus','Ritm de planificare'],['Minden nap','Every day','Jeden Tag','În fiecare zi'],['Kijelölt heti napokon','Selected weekdays','An ausgewählten Wochentagen','În zilele săptămânii selectate'],['Első edzésnap','First workout day','Erster Trainingstag','Prima zi de antrenament'],['Edzések megtervezése','Plan workouts','Trainings planen','Planifică antrenamentele'],['Tervezve:','Planned:','Geplant:','Planificat:'],['Válassz edzésnapot:','Choose a workout day:','Trainingstag auswählen:','Alege o zi de antrenament:'],['Koppints egy napra, majd válaszd ki az edzésnapot.','Tap a date, then choose the workout day.','Tippe auf einen Tag und wähle dann den Trainingstag.','Atinge o zi, apoi alege ziua de antrenament.'],['Melyik edzésnap kerüljön erre a napra?','Which workout day should be added to this date?','Welcher Trainingstag soll an diesem Datum eingetragen werden?','Ce zi de antrenament să fie adăugată la această dată?'],['Egyéni naptár','Custom calendar','Eigener Kalender','Calendar personalizat'],['Kezdőnap','Start date','Startdatum','Data de început'],['Időpont','Time','Uhrzeit','Ora'],['Időtartam (perc)','Duration (minutes)','Dauer (Minuten)','Durată (minute)'],['Hetek száma','Number of weeks','Anzahl der Wochen','Număr de săptămâni'],['Első programnap','First program day','Erster Programmtag','Prima zi a programului'],['Terv generálása','Generate plan','Plan erstellen','Generează planul'],['Tervezett alkalmak','Scheduled sessions','Geplante Einheiten','Sesiuni planificate'],['Tervezett','Scheduled','Geplant','Planificat'],['Teljesítve','Completed','Abgeschlossen','Finalizat'],['Kihagyott','Skipped','Übersprungen','Omis'],['Áthelyezés','Move','Verschieben','Mută'],['Kihagyás','Skip','Überspringen','Omite'],['Visszaállítás','Restore','Wiederherstellen','Restaurează'],
+['Elvégzett edzések','Completed workouts','Abgeschlossene Trainings','Antrenamente finalizate'],['Legutóbbi testsúly','Latest body weight','Letztes Körpergewicht','Ultima greutate corporală'],['Testsúly napló','Body weight log','Körpergewichtsprotokoll','Jurnal greutate'],['Testsúly','Body weight','Körpergewicht','Greutate'],['Statisztikák','Statistics','Statistiken','Statistici'],['Részletek','Details','Details','Detalii'],
+['Mai állapot','Today status','Heutiger Status','Starea de azi'],['Aktivitás','Activity','Aktivität','Activitate'],['Aktív kcal','Active kcal','Aktive kcal','Kcal active'],['Edzések','Workouts','Trainings','Antrenamente'],['Nincs mai Health Connect adat','No Health Connect data today','Heute keine Health-Connect-Daten','Nu există date Health Connect azi'],
+['Regeneráció','Recovery','Erholung','Recuperare'],['Alvás','Sleep','Schlaf','Somn'],['Pulzus','Heart rate','Herzfrequenz','Puls'],['Átlagpulzus','Average heart rate','Durchschnittspuls','Puls mediu'],['Nyugalmi pulzus','Resting heart rate','Ruhepuls','Puls în repaus'],['Aktív energia','Active energy','Aktive Energie','Energie activă'],['Test és fittség','Body and fitness','Körper und Fitness','Corp și fitness'],['Testzsír','Body fat','Körperfett','Grăsime corporală'],['További Health-adatok','More Health data','Weitere Health-Daten','Mai multe date Health'],['Regenerációs előzmények','Recovery history','Erholungsverlauf','Istoric recuperare'],['Szinkronizálás','Sync','Synchronisieren','Sincronizează'],['Engedélyek','Permissions','Berechtigungen','Permisiuni'],['Engedélyek kezelése','Manage permissions','Berechtigungen verwalten','Gestionează permisiunile'],['Mindent szinkronizál','Sync everything','Alles synchronisieren','Sincronizează tot'],
+['Edzésfotók','Workout photos','Trainingsfotos','Fotografii antrenament'],['Fotó hozzáadása','Add photo','Foto hinzufügen','Adaugă fotografie'],['Edzés előtt','Before workout','Vor dem Training','Înainte de antrenament'],['Edzés után','After workout','Nach dem Training','După antrenament'],['Kamera','Camera','Kamera','Cameră'],['Kiválasztás','Choose','Auswählen','Alege'],
+['Gyakorlat hozzáadása','Add exercise','Übung hinzufügen','Adaugă exercițiu'],['koppints a részletekhez','tap for details','für Details antippen','apasă pentru detalii'],['Koppints a részletekhez','Tap for details','Für Details antippen','Apasă pentru detalii'],['közel maximum','near maximum','nahe am Maximum','aproape de maxim'],['súlyzó','dumbbell','Kurzhantel','ganteră'],['kar','arm','Arm','braț'],['láb','leg','Bein','picior'],['oldal','side','Seite','parte'],['mp','sec','Sek.','sec'],['Pihenő','Rest','Pause','Pauză'],['Sorozatok','Sets','Sätze','Serii'],['Következő gyakorlat','Next exercise','Nächste Übung','Următorul exercițiu'],['Előző','Previous','Zurück','Anterior'],['Edzés befejezése','Finish workout','Training beenden','Încheie antrenamentul'],['Túl könnyű','Too easy','Zu leicht','Prea ușor'],['Pont jó','Just right','Genau richtig','Potrivit'],['Nagyon nehéz','Very hard','Sehr schwer','Foarte greu'],['Fájdalom','Pain','Schmerz','Durere'],
+['Megerősítés','Confirmation','Bestätigung','Confirmare'],['Edzés elhagyása','Leave workout','Training verlassen','Părăsește antrenamentul'],['Kilépés','Leave','Verlassen','Ieși'],['Kilépsz a folyamatban lévő edzésből? A mentett vázlat megmarad, később folytathatod.','Leave the workout in progress? The saved draft will remain so you can continue later.','Laufendes Training verlassen? Der gespeicherte Entwurf bleibt erhalten und kann später fortgesetzt werden.','Părăsești antrenamentul în curs? Schița salvată rămâne și poate fi continuată mai târziu.'],
+['Biztonsági mentés','Backup','Sicherung','Copie de siguranță'],['Mentés fájlba','Save to file','In Datei speichern','Salvează în fișier'],['Visszatöltés','Restore','Wiederherstellen','Restaurează'],['Témaszín','Accent color','Akzentfarbe','Culoare de accent'],['Pihenőidő','Rest time','Pausenzeit','Timp de pauză'],['Súlylépcsők mentése','Save weight increments','Gewichtsschritte speichern','Salvează pașii de greutate'],
+['Sárga','Yellow','Gelb','Galben'],['Kék','Blue','Blau','Albastru'],['Zöld','Green','Grün','Verde'],['Lila','Purple','Violett','Mov'],['Narancs','Orange','Orange','Portocaliu'],['Cián','Cyan','Cyan','Cian'],['Türkiz','Teal','Türkis','Turcoaz'],['Rózsaszín','Pink','Rosa','Roz'],['Piros','Red','Rot','Roșu'],['Magenta','Magenta','Magenta','Magenta'],['Levendula','Lavender','Lavendel','Lavandă'],['Égkék','Sky blue','Himmelblau','Albastru cer'],['Menta','Mint','Minze','Mentă'],['Korall','Coral','Korall','Coral'],
+['Nincs adat','No data','Keine Daten','Fără date'],['Még nincs adat.','No data yet.','Noch keine Daten.','Nu există încă date.'],['Még nincs elmentett edzés.','No workouts saved yet.','Noch keine Trainings gespeichert.','Nu există încă antrenamente salvate.'],['Még nincs tervezett edzés.','No workouts scheduled yet.','Noch keine Trainings geplant.','Nu există încă antrenamente planificate.']
+];
+const TP149_MAPS={en:{},de:{},ro:{}};
+for(const row of TP149_ROWS){TP149_MAPS.en[row[0]]=row[1];TP149_MAPS.de[row[0]]=row[2];TP149_MAPS.ro[row[0]]=row[3];}
+
+const TP149_EX_DE={
+'db-squat':'Kurzhantel-Kniebeuge','db-floor-press':'Kurzhantel-Floor-Press','one-arm-row':'Einarmiges Kurzhantelrudern','rdl':'Rumänisches Kreuzheben mit Langhantel','db-curl':'Kurzhantel-Bizepscurls','reverse-lunge':'Rückwärts-Ausfallschritt mit Kurzhanteln','db-ohp':'Kurzhantel-Schulterdrücken','barbell-row':'Vorgebeugtes Langhantelrudern','pushup':'Liegestütz','oh-triceps':'Überkopf-Trizepsstrecken mit Kurzhantel','crunch':'Crunch','plank':'Unterarmstütz',
+'goblet-squat':'Goblet-Kniebeuge','bulgarian-split-squat':'Bulgarische Kniebeuge','db-pullover':'Kurzhantel-Pullover','lateral-raise':'Seitheben mit Kurzhanteln','hammer-curl':'Hammercurls','close-pushup':'Enger Liegestütz','leg-press':'Beinpresse','machine-chest-press':'Brustpresse','lat-pulldown':'Latzug','seated-cable-row':'Sitzendes Kabelrudern','leg-curl':'Beinbeuger','machine-shoulder-press':'Schulterpresse','cable-triceps':'Trizepsdrücken am Kabel','cable-curl':'Bizepscurls am Kabel',
+'incline-pushup':'Erhöhter Liegestütz','modified-pushup':'Kniender Liegestütz','decline-pushup':'Liegestütz mit erhöhten Füßen','pike-pushup':'Pike-Liegestütz','plyo-pushup':'Plyometrischer Liegestütz','archer-pushup':'Archer-Liegestütz','prisoner-squat':'Prisoner-Kniebeuge','single-leg-squat':'Einbeinige Kniebeuge','squat-jump':'Kniebeugensprung','lunge-jump':'Ausfallschrittsprung','jumping-jacks':'Hampelmann','box-jump':'Boxsprung','db-front-squat':'Frontkniebeuge mit Kurzhanteln','single-arm-db-press':'Einarmiges Kurzhantel-Brustdrücken','single-arm-incline-press':'Einarmiges Schrägbankdrücken mit Kurzhantel','single-leg-press':'Einbeinige Beinpresse','seated-leg-curl':'Sitzender Beinbeuger','single-leg-seated-curl':'Einbeiniger sitzender Beinbeuger','leg-press-calf':'Wadenheben an der Beinpresse','close-grip-bench':'Enges Bankdrücken',
+'pullup':'Klimmzug','chinup':'Klimmzug im Untergriff','negative-pullup':'Negativer Klimmzug','scapular-pullup':'Schulterblatt-Klimmzug','inverted-row':'Umgekehrtes Rudern','dip':'Barren-Dips','bench-dip':'Bank-Dips','diamond-pushup':'Diamant-Liegestütz','pseudo-planche-pushup':'Pseudo-Planche-Liegestütz','hanging-knee-raise':'Hängendes Knieheben','hanging-leg-raise':'Hängendes Beinheben','hollow-hold':'Hollow Hold','superman-hold':'Superman Hold','mountain-climber':'Mountain Climber',
+'band-row':'Rudern mit Widerstandsband','band-lat-pulldown':'Latzug mit Widerstandsband','band-chest-press':'Brustdrücken mit Widerstandsband','band-overhead-press':'Schulterdrücken mit Widerstandsband','band-face-pull':'Face Pull mit Widerstandsband','band-biceps-curl':'Bizepscurls mit Widerstandsband','band-triceps-pushdown':'Trizepsdrücken mit Widerstandsband','band-pallof-press':'Pallof Press mit Widerstandsband',
+'kb-goblet-squat':'Kettlebell-Goblet-Kniebeuge','kb-deadlift':'Kettlebell-Kreuzheben','kb-swing':'Kettlebell Swing','kb-clean':'Kettlebell Clean','kb-press':'Einarmiges Kettlebell-Schulterdrücken','kb-row':'Einarmiges Kettlebell-Rudern','kb-reverse-lunge':'Rückwärts-Ausfallschritt mit Kettlebell','kb-halo':'Kettlebell Halo',
+'barbell-back-squat':'Langhantel-Kniebeuge','conventional-deadlift':'Konventionelles Kreuzheben','bench-press':'Langhantel-Bankdrücken','incline-bench-press':'Schrägbankdrücken mit Langhantel','barbell-overhead-press':'Schulterdrücken mit Langhantel','assisted-pullup-machine':'Klimmzugmaschine mit Unterstützung','pec-deck':'Butterfly-Maschine','cable-lateral-raise':'Seitheben am Kabel','hack-squat':'Hackenschmidt-Kniebeuge','standing-calf-raise':'Stehendes Wadenheben',
+'bodyweight-squat':'Körpergewichts-Kniebeuge','glute-bridge':'Gesäßbrücke','dead-bug':'Dead Bug – diagonale Arm-Bein-Streckung','bird-dog':'Bird Dog – diagonale Arm-Bein-Streckung im Vierfüßlerstand','side-plank':'Seitstütz','calf-raise':'Stehendes Wadenheben mit Körpergewicht','db-step-up':'Kurzhantel-Step-Up','db-rdl':'Rumänisches Kreuzheben mit Kurzhanteln','db-bench-press':'Kurzhantel-Bankdrücken','incline-db-press':'Schrägbankdrücken mit Kurzhanteln','db-reverse-fly':'Vorgebeugtes Reverse Fly mit Kurzhanteln','face-pull':'Face Pull am Kabelzug','leg-extension':'Beinstrecker','cable-fly':'Stehendes Kabel-Fly'
+};
+const TP149_EX_RO={
+'db-squat':'Genuflexiune cu gantere','db-floor-press':'Împins cu gantere la sol','one-arm-row':'Ramat cu o ganteră','rdl':'Îndreptări românești cu bară','db-curl':'Flexii biceps cu gantere','reverse-lunge':'Fandare înapoi cu gantere','db-ohp':'Împins deasupra capului cu gantere','barbell-row':'Ramat aplecat cu bară','pushup':'Flotări','oh-triceps':'Extensie triceps deasupra capului cu ganteră','crunch':'Abdomene crunch','plank':'Planșă pe antebrațe',
+'goblet-squat':'Genuflexiune goblet','bulgarian-split-squat':'Genuflexiune bulgărească','db-pullover':'Pullover cu ganteră','lateral-raise':'Ridicări laterale cu gantere','hammer-curl':'Flexii ciocan','close-pushup':'Flotări cu priză îngustă','leg-press':'Presă pentru picioare','machine-chest-press':'Împins la aparat pentru piept','lat-pulldown':'Tracțiuni la helcometru','seated-cable-row':'Ramat la cablu din șezut','leg-curl':'Flexii pentru femurali la aparat','machine-shoulder-press':'Împins pentru umeri la aparat','cable-triceps':'Extensii triceps la cablu','cable-curl':'Flexii biceps la cablu',
+'incline-pushup':'Flotări înclinate','modified-pushup':'Flotări din genunchi','decline-pushup':'Flotări cu picioarele ridicate','pike-pushup':'Flotări pike','plyo-pushup':'Flotări pliometrice','archer-pushup':'Flotări archer','prisoner-squat':'Genuflexiune prisoner','single-leg-squat':'Genuflexiune pe un picior','squat-jump':'Săritură din genuflexiune','lunge-jump':'Săritură din fandare','jumping-jacks':'Sărituri jumping jack','box-jump':'Săritură pe cutie','db-front-squat':'Genuflexiune frontală cu gantere','single-arm-db-press':'Împins cu o ganteră pentru piept','single-arm-incline-press':'Împins înclinat cu o ganteră','single-leg-press':'Presă pe un picior','seated-leg-curl':'Flexii femurali din șezut','single-leg-seated-curl':'Flexii femurali pe un picior din șezut','leg-press-calf':'Ridicări pe vârfuri la presa de picioare','close-grip-bench':'Împins la bancă cu priză îngustă',
+'pullup':'Tracțiuni','chinup':'Tracțiuni cu priză supinată','negative-pullup':'Tracțiuni negative','scapular-pullup':'Tracțiuni scapulare','inverted-row':'Ramat invers','dip':'Dips la paralele','bench-dip':'Dips la bancă','diamond-pushup':'Flotări diamant','pseudo-planche-pushup':'Flotări pseudo planche','hanging-knee-raise':'Ridicări de genunchi din atârnat','hanging-leg-raise':'Ridicări de picioare din atârnat','hollow-hold':'Menținere hollow','superman-hold':'Menținere Superman','mountain-climber':'Mountain climber',
+'band-row':'Ramat cu bandă elastică','band-lat-pulldown':'Tracțiuni la piept cu bandă elastică','band-chest-press':'Împins pentru piept cu bandă elastică','band-overhead-press':'Împins deasupra capului cu bandă elastică','band-face-pull':'Face pull cu bandă elastică','band-biceps-curl':'Flexii biceps cu bandă elastică','band-triceps-pushdown':'Extensii triceps cu bandă elastică','band-pallof-press':'Pallof press cu bandă elastică',
+'kb-goblet-squat':'Genuflexiune goblet cu kettlebell','kb-deadlift':'Îndreptări cu kettlebell','kb-swing':'Kettlebell swing','kb-clean':'Kettlebell clean','kb-press':'Împins cu kettlebell cu un braț','kb-row':'Ramat cu kettlebell cu un braț','kb-reverse-lunge':'Fandare înapoi cu kettlebell','kb-halo':'Kettlebell halo',
+'barbell-back-squat':'Genuflexiune cu bară','conventional-deadlift':'Îndreptări convenționale','bench-press':'Împins la bancă cu bară','incline-bench-press':'Împins înclinat cu bară','barbell-overhead-press':'Împins deasupra capului cu bară','assisted-pullup-machine':'Tracțiuni asistate la aparat','pec-deck':'Fluturări la pec-deck','cable-lateral-raise':'Ridicări laterale la cablu','hack-squat':'Genuflexiune hack la aparat','standing-calf-raise':'Ridicări pe vârfuri din picioare',
+'bodyweight-squat':'Genuflexiune cu greutatea corpului','glute-bridge':'Pod fesier','dead-bug':'Dead bug – extensie braț-picior opus','bird-dog':'Bird dog – extensie braț-picior opus din patruped','side-plank':'Planșă laterală','calf-raise':'Ridicări pe vârfuri cu greutatea corpului','db-step-up':'Urcare pe treaptă cu gantere','db-rdl':'Îndreptări românești cu gantere','db-bench-press':'Împins la bancă cu gantere','incline-db-press':'Împins înclinat cu gantere','db-reverse-fly':'Fluturări inverse cu gantere din aplecat','face-pull':'Face pull la cablu','leg-extension':'Extensii de genunchi la aparat','cable-fly':'Fluturări la cabluri din picioare'
+};
+
+var tp149Locale=function tp149Locale(lang=rf212Lang()){return TP149_LOCALES[lang]||TP149_LOCALES.en;};
+
+
+const TP149_PLANNER_ROWS={
+ goal:{
+  fitness:['Általános fittség','General fitness','Allgemeine Fitness','Condiție fizică generală'],
+  muscle:['Izomépítés','Muscle gain','Muskelaufbau','Creștere musculară'],
+  strength:['Erősödés','Strength','Kraft','Forță'],
+  fatloss:['Fogyás támogatása','Support fat loss','Fettabbau unterstützen','Susținerea slăbirii']
+ },
+ experience:{
+  beginner:['Most kezdem / újrakezdem','Starting / restarting','Ich beginne / starte neu','Încep / reîncep'],
+  intermediate:['Rendszeresen edzek','I train regularly','Ich trainiere regelmäßig','Mă antrenez regulat']
+ },
+ activity:{
+  sedentary:['Többnyire ülök','Mostly sitting','Meist sitzend','Mai mult stau jos'],
+  mixed:['Vegyes / sok séta','Mixed / lots of walking','Gemischt / viel Gehen','Mixt / mult mers pe jos'],
+  physical:['Fizikai munka','Physical work','Körperliche Arbeit','Muncă fizică']
+ },
+ cadence:{
+  alternate:['Minden második nap','Every other day','Jeden zweiten Tag','La două zile'],
+  weekly:['Fix heti napok','Fixed weekdays','Feste Wochentage','Zile fixe ale săptămânii'],
+  custom:['Naptárban kijelölöm','Choose in calendar','Im Kalender auswählen','Selectez în calendar']
+ },
+ split:{
+  auto:['Válasszon az app','Let the app choose','App wählen lassen','Lasă aplicația să aleagă'],
+  full:['Teljes test A/B','Full body A/B','Ganzkörper A/B','Corp complet A/B'],
+  upper:['Felsőtest A/B','Upper body A/B','Oberkörper A/B','Partea superioară A/B'],
+  upperlower:['Felsőtest / alsótest','Upper / lower','Oberkörper / Unterkörper','Superior / inferior'],
+  ppl:['Toló / húzó / láb','Push / pull / legs','Drücken / Ziehen / Beine','Împins / tras / picioare']
+ },
+ focus:{
+  balanced:['Kiegyensúlyozott','Balanced','Ausgewogen','Echilibrat'],
+  upper:['Felsőtest','Upper body','Oberkörper','Partea superioară'],
+  chestback:['Mell / hát','Chest / back','Brust / Rücken','Piept / spate'],
+  shoulderarms:['Váll / kar','Shoulders / arms','Schultern / Arme','Umeri / brațe'],
+  core:['Törzs','Core','Rumpf','Trunchi'],
+  legs:['Láb','Legs','Beine','Picioare']
+ },
+ area:{
+  legs:['Láb','Legs','Beine','Picioare'],chest:['Mell','Chest','Brust','Piept'],
+  back:['Hát','Back','Rücken','Spate'],shoulders:['Váll','Shoulders','Schultern','Umeri'],
+  arms:['Kar','Arms','Arme','Brațe'],core:['Törzs','Core','Rumpf','Trunchi']
+ },
+ gear:{
+  dumbbell:['1 kézisúlyzó','1 dumbbell','1 Kurzhantel','1 ganteră'],
+  dumbbells:['2 kézisúlyzó','2 dumbbells','2 Kurzhanteln','2 gantere'],
+  barbell:['Kétkezes rúd','Barbell','Langhantel','Bară'],
+  bench:['Edzőpad','Bench','Trainingsbank','Bancă'],
+  support:['Stabil támasz az evezéshez','Stable support for rows','Stabile Stütze fürs Rudern','Suport stabil pentru ramat'],
+  step:['Stabil fellépő','Stable step','Stabile Stufe','Treaptă stabilă'],
+  machines:['Edzőgépek és csigák','Machines and cables','Geräte und Kabelzüge','Aparate și cabluri'],
+  bands:['Gumiszalag / erősítőszalag','Resistance band','Widerstandsband','Bandă elastică'],
+  pullupbar:['Húzódzkodórúd','Pull-up bar','Klimmzugstange','Bară de tracțiuni'],
+  dipbars:['Tolódzkodó korlát','Dip bars','Dip-Barren','Bare paralele'],
+  kettlebell:['Kettlebell','Kettlebell','Kettlebell','Kettlebell']
+ },
+ generatedDay:{
+  A:['A','A','A','A'],B:['B','B','B','B'],
+  upperA:['Felsőtest A','Upper body A','Oberkörper A','Partea superioară A'],
+  upperB:['Felsőtest B','Upper body B','Oberkörper B','Partea superioară B'],
+  upper:['Felsőtest','Upper body','Oberkörper','Partea superioară'],
+  lowerCore:['Alsótest és törzs','Lower body and core','Unterkörper und Rumpf','Partea inferioară și trunchi'],
+  push:['Toló','Push','Drücken','Împins'],pull:['Húzó','Pull','Ziehen','Tras'],legsCore:['Láb és törzs','Legs and core','Beine und Rumpf','Picioare și trunchi']
+ },
+ level:{
+  beginner:['Kezdő','Beginner','Anfänger','Începător'],
+  intermediate:['Középhaladó','Intermediate','Mittelstufe','Intermediar']
+ }
+};
+var tp149PlannerRow=function tp149PlannerRow(group,key,lang=rf212Lang(),fallback=''){
+ return tp149RowValue(TP149_PLANNER_ROWS[group]?.[key],lang,fallback||key);
+};
+var tp149PlannerOptions=function tp149PlannerOptions(group){
+ const out={};for(const key of Object.keys(TP149_PLANNER_ROWS[group]||{}))out[key]=tp149PlannerRow(group,key);return out;
+};
+var tp149PlannerGear=function tp149PlannerGear(key,lang=rf212Lang()){
+ return tp149PlannerRow('gear',key,lang,typeof GEAR132!=='undefined'?GEAR132[key]||key:key);
+};
+const TP149_PROGRAM_META={
+ locations:{
+  home:['Otthon','Home','Zuhause','Acasă'],
+  gym:['Edzőterem','Gym','Fitnessstudio','Sală'],
+  calisthenics:['Saját testsúly + rúd','Bodyweight + bar','Körpergewicht + Stange','Greutatea corpului + bară'],
+  bands:['Gumiszalag','Resistance band','Widerstandsband','Bandă elastică'],
+  kettlebell:['Kettlebell','Kettlebell','Kettlebell','Kettlebell']
+ },
+ levels:{
+  beginner:['Kezdő','Beginner','Anfänger','Începător'],
+  intermediate:['Középhaladó','Intermediate','Mittelstufe','Intermediar'],
+  mixed:['Kezdő / középhaladó','Beginner / intermediate','Anfänger / Mittelstufe','Începător / intermediar']
+ }
+};
+const TP149_PROGRAM_ROWS={
+ 'home-basic':{name:['Otthoni A/B – Alap','Home A/B – Basic','Zuhause A/B – Basis','Acasă A/B – Bază'],location:'home',level:'beginner',days:{A:['A','A','A','A'],B:['B','B','B','B']}},
+ 'home-level2':{name:['Otthoni A/B – 2. szint','Home A/B – Level 2','Zuhause A/B – Stufe 2','Acasă A/B – Nivel 2'],location:'home',level:'intermediate',days:{A:['A','A','A','A'],B:['B','B','B','B']}},
+ 'home-varied':{name:['Otthoni változatos','Home variety','Zuhause abwechslungsreich','Acasă variat'],location:'home',level:'intermediate',days:{A:['Teljes test 1','Full body 1','Ganzkörper 1','Corp complet 1'],B:['Teljes test 2','Full body 2','Ganzkörper 2','Corp complet 2']}},
+ 'gym-fullbody':{name:['Konditermi Full Body','Gym Full Body','Studio Ganzkörper','Sală Full Body'],location:'gym',level:'beginner',days:{A:['Full Body','Full Body','Ganzkörper','Corp complet']}},
+ 'gym-ab':{name:['Konditermi A/B','Gym A/B','Studio A/B','Sală A/B'],location:'gym',level:'intermediate',days:{A:['A','A','A','A'],B:['B','B','B','B']}},
+ 'home-upper-ab':{name:['Otthoni felsőtest A/B','Home upper body A/B','Zuhause Oberkörper A/B','Acasă partea superioară A/B'],location:'home',level:'mixed',days:{A:['Mell / hát / váll','Chest / back / shoulders','Brust / Rücken / Schultern','Piept / spate / umeri'],B:['Hát / mell / kar','Back / chest / arms','Rücken / Brust / Arme','Spate / piept / brațe']}},
+ 'home-quick-30':{name:['Otthoni gyors 30 perc','Home quick 30 min','Zuhause schnell 30 Min.','Acasă rapid 30 min'],location:'home',level:'beginner',days:{A:['Gyors A','Quick A','Schnell A','Rapid A'],B:['Gyors B','Quick B','Schnell B','Rapid B']}},
+ 'calisthenics-ab':{name:['Calisthenics A/B','Calisthenics A/B','Calisthenics A/B','Calisthenics A/B'],location:'calisthenics',level:'intermediate',days:{A:['Toló / húzó','Push / pull','Drücken / Ziehen','Împins / tras'],B:['Technika / törzs','Technique / core','Technik / Rumpf','Tehnică / trunchi']}},
+ 'bands-ab':{name:['Gumiszalagos A/B','Resistance-band A/B','Widerstandsband A/B','Bandă elastică A/B'],location:'bands',level:'beginner',days:{A:['Felsőtest A','Upper body A','Oberkörper A','Partea superioară A'],B:['Felsőtest B','Upper body B','Oberkörper B','Partea superioară B']}},
+ 'kettlebell-ab':{name:['Kettlebell Full Body A/B','Kettlebell Full Body A/B','Kettlebell Ganzkörper A/B','Kettlebell Full Body A/B'],location:'kettlebell',level:'mixed',days:{A:['Full Body A','Full Body A','Ganzkörper A','Corp complet A'],B:['Full Body B','Full Body B','Ganzkörper B','Corp complet B']}},
+ 'gym-upper-lower':{name:['Konditermi felső / alsó','Gym upper / lower','Studio Oberkörper / Unterkörper','Sală superior / inferior'],location:'gym',level:'intermediate',days:{A:['Felsőtest A','Upper body A','Oberkörper A','Partea superioară A'],B:['Alsótest A','Lower body A','Unterkörper A','Partea inferioară A'],C:['Felsőtest B','Upper body B','Oberkörper B','Partea superioară B'],D:['Alsótest B','Lower body B','Unterkörper B','Partea inferioară B']}},
+ 'gym-ppl':{name:['Konditermi Push / Pull / Legs','Gym Push / Pull / Legs','Studio Push / Pull / Beine','Sală Push / Pull / Picioare'],location:'gym',level:'intermediate',days:{A:['Push','Push','Drücken','Împins'],B:['Pull','Pull','Ziehen','Tras'],C:['Legs','Legs','Beine','Picioare']}},
+ 'gym-strength-abc':{name:['Konditermi erő A/B/C','Gym strength A/B/C','Studio Kraft A/B/C','Sală forță A/B/C'],location:'gym',level:'intermediate',days:{A:['Guggolás / nyomás','Squat / press','Kniebeuge / Drücken','Genuflexiune / împins'],B:['Felhúzás / váll','Deadlift / shoulders','Kreuzheben / Schultern','Îndreptări / umeri'],C:['Vegyes','Mixed','Gemischt','Mixt']}}
+};
+var tp149LangIndex=function tp149LangIndex(lang=rf212Lang()){return ({hu:0,en:1,de:2,ro:3})[lang]??1;};
+var tp149GeneratedDayKey=function tp149GeneratedDayKey(program,day){
+ if(day?.i18nKey)return day.i18nKey;
+ const split=program?.i18n?.effectiveSplit||program?.effectiveSplit;
+ const id=String(day?.id||'');
+ if(split==='upper')return id==='A'?'upperA':id==='B'?'upperB':id;
+ if(split==='upperlower')return id==='A'?'upper':id==='B'?'lowerCore':id;
+ if(split==='ppl')return id==='A'?'push':id==='B'?'pull':id==='C'?'legsCore':id;
+ return id||'A';
+};
+var tp149GeneratedExperience=function tp149GeneratedExperience(program){
+ const saved=program?.i18n?.experience;if(saved)return saved;
+ const raw=String(program?.level||'').toLocaleLowerCase('hu-HU');
+ return raw.includes('közép')||raw.includes('intermediate')||raw.includes('mittel')||raw.includes('intermediar')?'intermediate':'beginner';
+};
+var tp149ProgramMeta=function tp149ProgramMeta(program,field,lang=rf212Lang()){
+ if(!program)return '';
+ if(program.generated===true){
+  const split=program.i18n?.effectiveSplit||program.effectiveSplit||'full';
+  if(field==='name')return tp149T('planner.generatedName',{split:tp149PlannerRow('split',split,lang,split)},lang);
+  if(field==='location')return tp149T((program.i18n?.gear||program.gear||[]).length?'planner.locationSelected':'planner.locationBodyweight',{},lang);
+  if(field==='level')return tp149PlannerRow('level',tp149GeneratedExperience(program),lang,program.level||'');
+  return String(program[field]||'');
+ }
+ if(program.builtin!==true)return String(program[field]||'');
+ const row=TP149_PROGRAM_ROWS[program.id],idx=tp149LangIndex(lang);
+ if(field==='name'&&row?.name)return row.name[idx]||row.name[1]||row.name[0];
+ if(field==='location'&&row?.location)return TP149_PROGRAM_META.locations[row.location]?.[idx]||String(program.location||'');
+ if(field==='level'&&row?.level)return TP149_PROGRAM_META.levels[row.level]?.[idx]||String(program.level||'');
+ return String(program[field]||'');
+};
+var tp149ProgramDayName=function tp149ProgramDayName(program,day,lang=rf212Lang()){
+ if(!program||!day)return '';
+ if(program.generated===true)return tp149PlannerRow('generatedDay',tp149GeneratedDayKey(program,day),lang,day.name||day.id||'');
+ if(program.builtin!==true)return String(day.name||day.id||'');
+ const row=TP149_PROGRAM_ROWS[program.id]?.days?.[day.id],idx=tp149LangIndex(lang);
+ return row?.[idx]||row?.[1]||String(day.name||day.id||'');
+};
+
+
+var tp149GeneratedReasons=function tp149GeneratedReasons(program,lang=rf212Lang()){
+ if(!program?.generated)return Array.isArray(program?.reasons)?program.reasons.slice():[];
+ const meta=program.i18n||{};
+ const gear=meta.gear||program.gear||[];
+ const focus=meta.focus||program.focus||'balanced';
+ const avoidAreas=meta.avoidAreas||program.avoidAreas||[];
+ const minutes=Number(meta.minutes||settings()?.profile?.minutes||45);
+ const capacity=Number(meta.capacity||rf148Capacity(minutes));
+ const equipment=gear.length?gear.map(function(k){return tp149PlannerGear(k,lang);}).join(' + '):tp149T('planner.locationBodyweight',{},lang);
+ const areas=avoidAreas.map(function(k){return tp149PlannerRow('area',k,lang,k);}).join(', ');
+ const avoid=areas?tp149T('planner.reasonAvoid',{areas:areas},lang):'';
+ return [
+  tp149T('planner.reasonAvailable',{equipment:equipment},lang),
+  tp149T('planner.reasonFocus',{focus:tp149PlannerRow('focus',focus,lang,focus),avoid:avoid},lang),
+  tp149T('planner.reasonTime',{minutes:tp149FormatNumber(minutes,{},lang),capacity:tp149FormatNumber(capacity,{},lang)},lang),
+  tp149T(meta.changed?'planner.reasonAdjusted':'planner.reasonMatched',{},lang),
+  tp149T('planner.reasonProgression',{},lang)
+ ];
+};
+var tp149PlannerAudit=function tp149PlannerAudit(){
+ const missing=[];
+ const required={
+  goal:['fitness','muscle','strength','fatloss'],experience:['beginner','intermediate'],
+  activity:['sedentary','mixed','physical'],cadence:['alternate','weekly','custom'],
+  split:['auto','full','upper','upperlower','ppl'],focus:['balanced','upper','chestback','shoulderarms','core','legs'],
+  area:['legs','chest','back','shoulders','arms','core'],
+  gear:typeof GEAR132==='undefined'?[]:Object.keys(GEAR132),
+  generatedDay:['A','B','upperA','upperB','upper','lowerCore','push','pull','legsCore'],
+  level:['beginner','intermediate']
+ };
+ for(const [group,keys] of Object.entries(required))for(const key of keys){
+  const row=TP149_PLANNER_ROWS[group]?.[key];
+  if(!Array.isArray(row)||row.length!==4||row.some(function(x){return !String(x||'').trim();}))missing.push(group+':'+key);
+ }
+ return {missing:missing};
+};
+
+const TP149_EX_NOTE_EN={
+ "db-squat": "Hold one dumbbell at each side. Stand about shoulder-width apart, move the hips back and down, then stand up. Keep the core braced.",
+ "db-floor-press": "Lie on your back, lower the elbows under control until they touch the floor, then press the dumbbells back up.",
+ "one-arm-row": "Use a stable support and pull the dumbbell toward the hip or lower ribs. Do not rotate your torso.",
+ "rdl": "Keep the knees slightly bent and the back neutral. Push the hips back and lower only as far as you can maintain control.",
+ "db-curl": "Keep the elbows by your sides. Curl without swinging, then lower the dumbbells under control.",
+ "reverse-lunge": "Hold one dumbbell at each side. Step back, lower the rear knee, then drive through the front leg to return. Enter weight per arm and repetitions per leg.",
+ "db-ohp": "Press the dumbbells overhead from shoulder height, then lower them slowly under control.",
+ "barbell-row": "Brace the core and keep the back neutral. Pull the bar toward the abdomen or lower ribs.",
+ "pushup": "Keep the body in a straight line. Stop when you feel you could still perform about 2–3 clean repetitions.",
+ "oh-triceps": "Hold one light dumbbell with both hands, lower it behind the head, then extend the elbows to raise it again.",
+ "crunch": "Lie on your back and lift the shoulder blades off the floor. You do not need to sit all the way up.",
+ "plank": "Support yourself on the forearms and toes. Brace the abs and glutes, keep the body straight, and do not let the lower back sag.",
+ "goblet-squat": "Hold one dumbbell in front of the chest. Sit the hips down, let the knees track with the toes, then stand up.",
+ "bulgarian-split-squat": "Support the rear foot. Lower the hips vertically and drive back up through the front leg. Count repetitions per leg.",
+ "db-pullover": "Lie on your back and hold one dumbbell with both hands. Lower it behind the head under control, then pull it back over the chest.",
+ "lateral-raise": "With the elbows slightly bent, raise the dumbbells out to the sides to about shoulder height without swinging.",
+ "hammer-curl": "Use a neutral grip with the palms facing each other. Keep the elbows close to the torso.",
+ "close-pushup": "Place the hands closer than shoulder width. Keep the torso braced and lower yourself under control.",
+ "leg-press": "Keep the lower back against the pad. Lower the load under control, then press it back without forcefully locking the knees.",
+ "machine-chest-press": "Keep the shoulder blades stable against the pad. Press the handles forward, then return under control.",
+ "lat-pulldown": "Lean back slightly and pull the bar toward the upper chest. Do not jerk the weight or pull behind the neck.",
+ "seated-cable-row": "Keep the torso neutral, pull the handle toward the abdomen and squeeze the shoulder blades, then return under control.",
+ "leg-curl": "Keep the hips stable. Flex the knees under control, then slowly return to the starting position.",
+ "machine-shoulder-press": "Keep the back supported. Press the handles upward, then lower them under control.",
+ "cable-triceps": "Keep the elbows close to the torso. Extend the forearms downward, then return under control.",
+ "cable-curl": "Keep the elbows close to the torso. Flex the elbows without using momentum.",
+ "incline-pushup": "Keep the body in a straight line with the hands on a stable raised surface. Lower the chest toward the support under control.",
+ "modified-pushup": "From the knees, keep a straight line from knees to head. Let the elbows travel at roughly a 45-degree angle.",
+ "decline-pushup": "Place the feet on a stable raised surface. Keep the core braced and control the elbow position.",
+ "pike-pushup": "From an inverted-V position, lower the head toward the floor under control, then press back up.",
+ "plyo-pushup": "Use only after you have a stable basic push-up. Push explosively away from the floor and land softly with bent elbows.",
+ "archer-pushup": "Use a wide hand position and load mainly one arm while the other reaches out to the side. Alternate sides.",
+ "prisoner-squat": "Keep the hands behind the head and the chest open. Squat under control with the knees tracking the toes.",
+ "single-leg-squat": "Stand on one leg and use a stable support if needed. Lower only as far as you can keep the knee and pelvis controlled.",
+ "squat-jump": "Jump explosively from a squat, then land softly with bent knees. Do not continue to complete exhaustion.",
+ "lunge-jump": "Jump from a lunge and switch legs in the air. Land softly and keep the knee from collapsing inward.",
+ "jumping-jacks": "Open and close the legs rhythmically while raising the arms. Land softly; use a stepping version for lower impact.",
+ "box-jump": "Jump only onto a stable surface that cannot tip. Land softly on both feet and preferably step down.",
+ "db-front-squat": "Hold one dumbbell at each shoulder. Keep the chest up and let the knees track with the feet.",
+ "single-arm-db-press": "Lie on a bench and press with one arm. Brace the core so the pelvis and chest do not rotate.",
+ "single-arm-incline-press": "Press with one arm on an incline bench without rotating the torso. Start with a light trial weight.",
+ "single-leg-press": "Press the platform with one leg under control. Do not lock the knee or let it collapse inward.",
+ "seated-leg-curl": "Set the pad above the ankle and keep the back against the support. Curl and return under control.",
+ "single-leg-seated-curl": "Curl with one leg under control while keeping the pelvis stable. Use the same technique on both sides.",
+ "leg-press-calf": "Keep only the forefoot securely on the platform. Raise and lower the heel through the ankle while keeping the knee controlled.",
+ "close-grip-bench": "Use a grip narrower than your normal bench press, but not extremely narrow. Lower the bar under control.",
+ "pullup": "Use a stable bar and pull the chest toward it without swinging. Do not let the shoulders roll forward at the top.",
+ "chinup": "Use an underhand grip and a braced torso. Avoid swinging and shrugging the shoulders.",
+ "negative-pullup": "Start at the top and lower yourself under control for 3–5 seconds. Begin from a safe step or platform.",
+ "scapular-pullup": "With straight arms, draw only the shoulder blades down and back, then return under control.",
+ "inverted-row": "Keep the body straight, pull the chest toward the stable bar, then lower slowly.",
+ "dip": "Use stable parallel bars, lower the body under control, then press back up. Do not force a depth that is uncomfortable for the shoulders.",
+ "bench-dip": "Make sure the bench is stable. Lower only through a pain-free shoulder range and keep the elbows moving backward.",
+ "diamond-pushup": "Keep the hands close together below the chest. Brace the core and control the elbows.",
+ "pseudo-planche-pushup": "Shift the shoulders slightly in front of the hands while keeping the torso braced. Use only after developing stable push-up technique.",
+ "hanging-knee-raise": "Without swinging, draw the knees toward the chest and slightly tuck the pelvis.",
+ "hanging-leg-raise": "Raise straight or slightly bent legs without swinging. Progress to this only after a stable hang and knee raise.",
+ "hollow-hold": "Gently press the lower back toward the floor. Shorten the arm position or bend the knees if the lower back lifts.",
+ "superman-hold": "Lie face down and raise the arms and legs through a small range while keeping the neck neutral. Do not overarch the back.",
+ "mountain-climber": "From a push-up position, alternate driving the knees forward. Keep the pelvis and shoulders stable.",
+ "band-row": "Anchor the band securely. Pull the elbows back, squeeze the shoulder blades, then return slowly.",
+ "band-lat-pulldown": "Anchor the band securely at a high point. Pull the elbows down alongside the torso.",
+ "band-chest-press": "Anchor the band securely behind you. Press the arms forward while keeping the rib cage controlled.",
+ "band-overhead-press": "Stand on the middle of the band, brace the torso, and press the hands overhead.",
+ "band-face-pull": "Anchor the band around face height and pull toward the forehead while keeping the elbows high.",
+ "band-biceps-curl": "Stand on the band, keep the elbows by the torso, and curl without swinging.",
+ "band-triceps-pushdown": "Keep the elbows by the torso and extend only the forearms downward.",
+ "band-pallof-press": "With the band pulling from the side, press the hands forward from the chest without letting the torso rotate.",
+ "kb-goblet-squat": "Hold the kettlebell in front of the chest. Squat under control and let the knees track with the feet.",
+ "kb-deadlift": "Push the hips back, keep the back neutral, then stand up by extending the hips.",
+ "kb-swing": "Drive explosively through the hips instead of lifting with the arms. Use only after learning a stable hip-hinge technique.",
+ "kb-clean": "Keep the kettlebell close to the body and let it land softly in the rack position. This is a technical movement, so start light.",
+ "kb-press": "Press the kettlebell overhead from the rack position with a braced torso. Do not overarch the lower back.",
+ "kb-row": "In a stable hip-hinge position, pull the elbow toward the hip. Do not rotate the torso.",
+ "kb-reverse-lunge": "Hold the kettlebell in a goblet or rack position, step back, then stand up through the front leg.",
+ "kb-halo": "With a light weight, guide the kettlebell around the head under control. Keep the rib cage and pelvis stable.",
+ "barbell-back-squat": "Start from a safe rack. Keep the torso braced and the knees tracking the feet. Safety arms are recommended.",
+ "conventional-deadlift": "Keep the bar close to the legs and the spine neutral. Take the slack out of the bar before lifting.",
+ "bench-press": "Keep the shoulder blades stable and the feet on the floor. Safety arms or a spotter are recommended.",
+ "incline-bench-press": "Use a moderate bench angle and keep the shoulder blades stable. Safety arms or a spotter are recommended.",
+ "barbell-overhead-press": "Brace the glutes and abs while pressing the bar overhead. Do not compensate by excessively arching the lower back.",
+ "assisted-pullup-machine": "Set an appropriate amount of assistance, pull the chest upward, and return under control.",
+ "pec-deck": "Keep the shoulders down and back. Bring the arms together under control without jerking the weight.",
+ "cable-lateral-raise": "Use a light load and raise the arm to around shoulder height. Do not swing.",
+ "hack-squat": "Keep the back and pelvis against the pad. Lower under control, then press the platform back up.",
+ "standing-calf-raise": "Move the ankle through a full pain-free range. Briefly contract the calves at the top.",
+ "bodyweight-squat": "Stand in a stable stance, lower the hips, then stand up. Let the knees track with the feet.",
+ "glute-bridge": "Lie on your back with the knees bent and raise the hips. Squeeze the glutes, then lower under control.",
+ "dead-bug": "Lie on your back with the arms raised and knees bent. Alternately extend the opposite arm and leg while keeping the trunk stable.",
+ "bird-dog": "From all fours, extend the opposite arm and leg. Keep the pelvis level.",
+ "side-plank": "Lie on your side, support yourself on the forearm, and raise the hips. Train both sides and record time per side.",
+ "calf-raise": "Using a stable support, rise onto the toes, then slowly lower the heels.",
+ "db-step-up": "Step onto a stable platform with one leg, then step back down under control. Count repetitions per leg and make sure the platform cannot tip.",
+ "db-rdl": "With the knees slightly bent, push the hips back. Keep the dumbbells close to the legs and the back neutral.",
+ "db-bench-press": "Lie on a stable bench, press the dumbbells over the chest, then lower them under control. Keep the feet firmly on the floor.",
+ "incline-db-press": "With the back supported on an incline bench, press the dumbbells up. Do not use momentum or lift the hips.",
+ "db-reverse-fly": "With a stable hinged torso, raise light dumbbells out to the sides. Keep the elbows slightly bent and do not swing the torso.",
+ "face-pull": "Pull the rope toward the face so the hands finish beside it. Return under control without swinging the torso.",
+ "leg-extension": "Adjust the machine to your body size. From a stable seated position, extend the knees under control, then lower slowly.",
+ "cable-fly": "With the elbows slightly bent, bring the arms together in front of the chest, then open under control. Enter the load for one side of the cable."
+};
+const TP149_EQUIPMENT_ROWS={
+ 'testsúly':['testsúly','bodyweight','Körpergewicht','greutatea corpului'],
+ 'testsúly + stabil támasz':['testsúly + stabil támasz','bodyweight + stable support','Körpergewicht + stabile Stütze','greutatea corpului + suport stabil'],
+ 'testsúly + opcionális stabil támasz':['testsúly + opcionális stabil támasz','bodyweight + optional stable support','Körpergewicht + optionale stabile Stütze','greutatea corpului + suport stabil opțional'],
+ 'testsúly + pad':['testsúly + pad','bodyweight + bench','Körpergewicht + Bank','greutatea corpului + bancă'],
+ 'testsúly + stabil pad/támasz':['testsúly + stabil pad/támasz','bodyweight + stable bench/support','Körpergewicht + stabile Bank/Stütze','greutatea corpului + bancă/suport stabil'],
+ '1 kézisúlyzó':['1 kézisúlyzó','1 dumbbell','1 Kurzhantel','1 ganteră'],
+ '1 kézisúlyzó + pad':['1 kézisúlyzó + pad','1 dumbbell + bench','1 Kurzhantel + Bank','1 ganteră + bancă'],
+ '1 kézisúlyzó + támasz':['1 kézisúlyzó + támasz','1 dumbbell + support','1 Kurzhantel + Stütze','1 ganteră + suport'],
+ '1 kézisúlyzó + állítható pad':['1 kézisúlyzó + állítható pad','1 dumbbell + adjustable bench','1 Kurzhantel + verstellbare Bank','1 ganteră + bancă reglabilă'],
+ '2 kézisúlyzó':['2 kézisúlyzó','2 dumbbells','2 Kurzhanteln','2 gantere'],
+ '2 kézisúlyzó + támasz':['2 kézisúlyzó + támasz','2 dumbbells + support','2 Kurzhanteln + Stütze','2 gantere + suport'],
+ '2 kézisúlyzó + stabil fellépő':['2 kézisúlyzó + stabil fellépő','2 dumbbells + stable step','2 Kurzhanteln + stabile Stufe','2 gantere + treaptă stabilă'],
+ '2 kézisúlyzó + vízszintes pad':['2 kézisúlyzó + vízszintes pad','2 dumbbells + flat bench','2 Kurzhanteln + Flachbank','2 gantere + bancă orizontală'],
+ '2 kézisúlyzó + állítható pad':['2 kézisúlyzó + állítható pad','2 dumbbells + adjustable bench','2 Kurzhanteln + verstellbare Bank','2 gantere + bancă reglabilă'],
+ 'kétkezes rúd':['kétkezes rúd','barbell','Langhantel','bară'],
+ 'kétkezes rúd + pad':['kétkezes rúd + pad','barbell + bench','Langhantel + Bank','bară + bancă'],
+ 'kétkezes rúd + ferde pad':['kétkezes rúd + ferde pad','barbell + incline bench','Langhantel + Schrägbank','bară + bancă înclinată'],
+ 'kétkezes rúd + biztonságos állvány':['kétkezes rúd + biztonságos állvány','barbell + safety rack','Langhantel + Sicherheitsrack','bară + suport de siguranță'],
+ 'kettlebell':['kettlebell','kettlebell','Kettlebell','kettlebell'],
+ 'gumiszalag':['gumiszalag','resistance band','Widerstandsband','bandă elastică'],
+ 'gumiszalag + magas rögzítés':['gumiszalag + magas rögzítés','resistance band + high anchor','Widerstandsband + hohe Befestigung','bandă elastică + ancorare înaltă'],
+ 'gumiszalag + oldalsó rögzítés':['gumiszalag + oldalsó rögzítés','resistance band + side anchor','Widerstandsband + seitliche Befestigung','bandă elastică + ancorare laterală'],
+ 'gumiszalag + stabil rögzítés':['gumiszalag + stabil rögzítés','resistance band + stable anchor','Widerstandsband + stabile Befestigung','bandă elastică + ancorare stabilă'],
+ 'húzódzkodórúd':['húzódzkodórúd','pull-up bar','Klimmzugstange','bară de tracțiuni'],
+ 'tolódzkodó korlát':['tolódzkodó korlát','parallel bars','Dip-Barren','bare paralele'],
+ 'stabil alacsony rúd / heveder':['stabil alacsony rúd / heveder','stable low bar / suspension strap','stabile niedrige Stange / Schlingentrainer','bară joasă stabilă / chingă de suspensie'],
+ 'stabil pad':['stabil pad','stable bench','stabile Bank','bancă stabilă'],
+ 'stabil fellépő/doboz':['stabil fellépő/doboz','stable step/box','stabile Stufe/Box','treaptă/cutie stabilă'],
+ 'csiga':['csiga','cable machine','Kabelzug','scripete'],
+ 'alsó csiga':['alsó csiga','low cable','unterer Kabelzug','scripete jos'],
+ 'kétoldali csiga':['kétoldali csiga','dual cable machine','beidseitiger Kabelzug','scripete dublu'],
+ 'csiga + kötél':['csiga + kötél','cable + rope','Kabelzug + Seil','scripete + frânghie'],
+ 'csigás gép':['csigás gép','cable machine','Kabelzugmaschine','aparat cu cablu'],
+ 'csigás lehúzó':['csigás lehúzó','lat pulldown machine','Latzugmaschine','aparat helcometru'],
+ 'lábtoló gép':['lábtoló gép','leg press machine','Beinpresse','presă pentru picioare'],
+ 'lábhajlító gép':['lábhajlító gép','leg curl machine','Beinbeugermaschine','aparat pentru flexii femurali'],
+ 'ülő lábhajlító gép':['ülő lábhajlító gép','seated leg curl machine','sitzende Beinbeugermaschine','aparat pentru flexii femurali din șezut'],
+ 'lábnyújtó gép':['lábnyújtó gép','leg extension machine','Beinstreckermaschine','aparat pentru extensii de genunchi'],
+ 'mellnyomó gép':['mellnyomó gép','chest press machine','Brustpresse','aparat pentru împins la piept'],
+ 'vállnyomó gép':['vállnyomó gép','shoulder press machine','Schulterpresse','aparat pentru împins la umeri'],
+ 'rásegítéses húzódzkodó gép':['rásegítéses húzódzkodó gép','assisted pull-up machine','Klimmzugmaschine mit Unterstützung','aparat pentru tracțiuni asistate'],
+ 'pec-deck gép':['pec-deck gép','pec-deck machine','Butterfly-Maschine','aparat pec-deck'],
+ 'hack guggoló gép':['hack guggoló gép','hack squat machine','Hackenschmidt-Maschine','aparat hack squat'],
+ 'álló vádligép':['álló vádligép','standing calf raise machine','stehende Wadenhebemaschine','aparat pentru ridicări pe vârfuri din picioare']
+};
+const TP149_TARGET_PARTS={
+ 'bicepsz':['Bicepsz','Biceps','Bizeps','Biceps'],
+ 'alkar':['Alkar','Forearms','Unterarme','Antebrațe'],
+ 'combhajlító':['Combhajlító','Hamstrings','Beinbeuger','Femurali'],
+ 'far':['Far','Glutes','Gesäß','Fesieri'],
+ 'has':['Has','Abs','Bauch','Abdomen'],
+ 'hát':['Hát','Back','Rücken','Spate'],
+ 'lapocka':['Lapocka','Shoulder blades','Schulterblätter','Omoplați'],
+ 'törzs':['Törzs','Core','Rumpf','Trunchi'],
+ 'mell':['Mell','Chest','Brust','Piept'],
+ 'hátsó váll':['Hátsó váll','Rear delts','Hintere Schulter','Deltoid posterior'],
+ 'láb':['Láb','Legs','Beine','Picioare'],
+ 'váll':['Váll','Shoulders','Schultern','Umeri'],
+ 'tricepsz':['Tricepsz','Triceps','Trizeps','Triceps'],
+ 'teljes test':['Teljes test','Full body','Ganzkörper','Corp complet'],
+ 'kondíció':['Kondíció','Conditioning','Kondition','Condiționare'],
+ 'vádli':['Vádli','Calves','Waden','Gambe']
+};
+
+const TP149_MUSCLE_ROWS={
+ legs:['Láb','Legs','Beine','Picioare'],core:['Törzs','Core','Rumpf','Trunchi'],
+ chest:['Mell','Chest','Brust','Piept'],back:['Hát','Back','Rücken','Spate'],
+ shoulders:['Váll','Shoulders','Schultern','Umeri'],biceps:['Bicepsz','Biceps','Bizeps','Biceps'],
+ triceps:['Tricepsz','Triceps','Trizeps','Triceps']
+};
+const TP149_LIBRARY_GEAR_ROWS={
+ all:['Összes','All','Alle','Toate'],bodyweight:['Saját testsúly','Bodyweight','Körpergewicht','Greutatea corpului'],
+ dumbbells:['Kézisúlyzó','Dumbbells','Kurzhanteln','Gantere'],barbell:['Kétkezes rúd','Barbell','Langhantel','Bară'],
+ machine:['Gép / csiga','Machine / cable','Gerät / Kabelzug','Aparat / scripete'],bands:['Gumiszalag','Resistance band','Widerstandsband','Bandă elastică'],
+ pullupbar:['Húzódzkodórúd','Pull-up bar','Klimmzugstange','Bară de tracțiuni'],dipbars:['Tolódzkodó','Dip bars','Dip-Barren','Bare paralele'],
+ kettlebell:['Kettlebell','Kettlebell','Kettlebell','Kettlebell']
+};
+var tp149MuscleGroupLabel=function tp149MuscleGroupLabel(key,lang=rf212Lang()){
+ return tp149RowValue(TP149_MUSCLE_ROWS[key],lang,typeof MUSCLES!=='undefined'?MUSCLES[key]||key:key);
+};
+const TP149_MOVEMENT_ROWS={
+ squat:['Guggolás','Squat','Kniebeuge','Genuflexiune'],
+ hinge:['Csípőhajlítás / felhúzás','Hip hinge / deadlift','Hüftbeuge / Kreuzheben','Flexie de șold / îndreptări'],
+ lunge:['Kitörés','Lunge','Ausfallschritt','Fandare'],
+ 'horizontal-push':['Vízszintes nyomás','Horizontal push','Horizontales Drücken','Împins orizontal'],
+ 'horizontal-pull':['Vízszintes húzás','Horizontal pull','Horizontales Ziehen','Tras orizontal'],
+ 'vertical-push':['Függőleges nyomás','Vertical push','Vertikales Drücken','Împins vertical'],
+ 'vertical-pull':['Függőleges húzás','Vertical pull','Vertikales Ziehen','Tras vertical'],
+ 'chest-isolation':['Mell izoláció','Chest isolation','Brust-Isolation','Izolare piept'],
+ 'shoulder-isolation':['Váll izoláció','Shoulder isolation','Schulter-Isolation','Izolare umeri'],
+ 'rear-delt':['Hátsó váll','Rear delts','Hintere Schulter','Deltoid posterior'],
+ 'elbow-flexion':['Könyökhajlítás','Elbow flexion','Ellenbogenbeugung','Flexia cotului'],
+ 'elbow-extension':['Könyöknyújtás','Elbow extension','Ellenbogenstreckung','Extensia cotului'],
+ 'knee-extension':['Térdnyújtás','Knee extension','Kniestreckung','Extensia genunchiului'],
+ 'knee-flexion':['Térdhajlítás','Knee flexion','Kniebeugung','Flexia genunchiului'],
+ calf:['Vádli','Calves','Waden','Gambe'],
+ 'core-bracing':['Törzsfeszítés','Core bracing','Rumpfspannung','Stabilizare trunchi'],
+ 'core-flexion':['Törzshajlítás','Core flexion','Rumpfbeugung','Flexia trunchiului'],
+ 'core-stability':['Törzsstabilitás','Core stability','Rumpfstabilität','Stabilitatea trunchiului'],
+ conditioning:['Kondíció','Conditioning','Kondition','Condiționare'],
+ other:['Egyéb','Other','Sonstiges','Altele']
+};
+const TP149_STYLE_ROWS={
+ strength:['Erő / általános','Strength / general','Kraft / allgemein','Forță / general'],
+ bodybuilding:['Izomépítés','Bodybuilding','Muskelaufbau','Hipertrofie'],
+ calisthenics:['Calisthenics','Calisthenics','Calisthenics','Calisthenics'],
+ conditioning:['Kondíció','Conditioning','Kondition','Condiționare'],
+ mobility:['Mobilitás','Mobility','Mobilität','Mobilitate']
+};
+var tp149RowValue=function tp149RowValue(row,lang=rf212Lang(),fallback=''){
+ const idx=tp149LangIndex(lang);return Array.isArray(row)?String(row[idx]??row[1]??row[0]??fallback):String(fallback);
+};
+
+const TP149_EX_NOTE_DE={
+ "db-squat": "Halte je eine Kurzhantel seitlich am Körper. Stelle die Füße etwa schulterbreit, schiebe die Hüfte nach hinten und unten und stehe wieder auf. Halte den Rumpf angespannt.",
+ "db-floor-press": "Lege dich auf den Rücken, senke die Ellenbogen kontrolliert bis zum Boden und drücke die Kurzhanteln wieder nach oben.",
+ "one-arm-row": "Nutze eine stabile Stütze und ziehe die Kurzhantel zur Hüfte bzw. zu den unteren Rippen. Verdrehe den Oberkörper nicht.",
+ "rdl": "Halte die Knie leicht gebeugt und den Rücken neutral. Schiebe die Hüfte nach hinten und gehe nur so tief, wie du die Bewegung kontrollieren kannst.",
+ "db-curl": "Halte die Ellenbogen am Körper. Beuge die Arme ohne Schwung und senke die Kurzhanteln anschließend kontrolliert ab.",
+ "reverse-lunge": "Halte je eine Kurzhantel seitlich am Körper. Mache einen Schritt nach hinten, senke das hintere Knie ab und drücke dich über das vordere Bein zurück. Gewicht pro Arm und Wiederholungen pro Bein eingeben.",
+ "db-ohp": "Drücke die Kurzhanteln aus Schulterhöhe über den Kopf und senke sie anschließend langsam kontrolliert ab.",
+ "barbell-row": "Spanne den Rumpf an und halte den Rücken neutral. Ziehe die Langhantel zum Bauch bzw. zu den unteren Rippen.",
+ "pushup": "Halte den Körper in einer geraden Linie. Höre auf, wenn noch etwa 2–3 saubere Wiederholungen möglich wären.",
+ "oh-triceps": "Halte eine leichte Kurzhantel mit beiden Händen, senke sie hinter den Kopf und strecke die Ellenbogen wieder.",
+ "crunch": "Lege dich auf den Rücken und hebe die Schulterblätter vom Boden ab. Du musst dich nicht vollständig aufsetzen.",
+ "plank": "Stütze dich auf Unterarmen und Zehen ab. Spanne Bauch und Gesäß an, halte den Körper gerade und lass den unteren Rücken nicht durchhängen.",
+ "goblet-squat": "Halte eine Kurzhantel vor der Brust. Setze die Hüfte nach unten, führe die Knie in Richtung der Zehen und stehe wieder auf.",
+ "bulgarian-split-squat": "Stütze den hinteren Fuß ab. Senke die Hüfte senkrecht und drücke dich über das vordere Bein wieder nach oben. Wiederholungen pro Bein zählen.",
+ "db-pullover": "Lege dich auf den Rücken und halte eine Kurzhantel mit beiden Händen. Senke sie kontrolliert hinter den Kopf und ziehe sie wieder über die Brust.",
+ "lateral-raise": "Hebe die Kurzhanteln mit leicht gebeugten Ellenbogen seitlich bis etwa auf Schulterhöhe an, ohne Schwung zu holen.",
+ "hammer-curl": "Verwende einen neutralen Griff, die Handflächen zeigen zueinander. Die Ellenbogen bleiben nah am Körper.",
+ "close-pushup": "Setze die Hände enger als schulterbreit. Halte den Rumpf fest und senke dich kontrolliert ab.",
+ "leg-press": "Halte den unteren Rücken an der Lehne. Senke die Last kontrolliert und drücke sie zurück, ohne die Knie hart durchzustrecken.",
+ "machine-chest-press": "Halte die Schulterblätter stabil an der Lehne. Drücke die Griffe nach vorn und führe sie kontrolliert zurück.",
+ "lat-pulldown": "Lehne dich leicht zurück und ziehe die Stange zur oberen Brust. Nicht ruckartig ziehen und nicht hinter den Nacken führen.",
+ "seated-cable-row": "Halte den Oberkörper neutral, ziehe den Griff zum Bauch und führe die Schulterblätter zusammen. Anschließend kontrolliert zurückführen.",
+ "leg-curl": "Halte die Hüfte stabil. Beuge die Knie kontrolliert und kehre langsam in die Ausgangsposition zurück.",
+ "machine-shoulder-press": "Halte den Rücken an der Lehne. Drücke die Griffe nach oben und senke sie kontrolliert ab.",
+ "cable-triceps": "Halte die Ellenbogen am Körper. Strecke die Unterarme nach unten und führe sie kontrolliert zurück.",
+ "cable-curl": "Halte die Ellenbogen am Körper. Beuge die Arme ohne Schwung.",
+ "incline-pushup": "Halte den Körper in einer geraden Linie und die Hände auf einer stabilen erhöhten Fläche. Senke die Brust kontrolliert zur Stütze.",
+ "modified-pushup": "Halte vom Knie bis zum Kopf eine gerade Linie. Die Ellenbogen bewegen sich ungefähr in einem 45-Grad-Winkel.",
+ "decline-pushup": "Lege die Füße auf eine stabile erhöhte Fläche. Halte den Rumpf fest und kontrolliere die Ellenbogenposition.",
+ "pike-pushup": "Senke aus einer umgekehrten V-Position den Kopf kontrolliert Richtung Boden und drücke dich wieder hoch.",
+ "plyo-pushup": "Nur nach sicher beherrschtem normalem Liegestütz. Drücke dich explosiv vom Boden ab und lande weich mit gebeugten Ellenbogen.",
+ "archer-pushup": "Nutze eine breite Handposition und belaste überwiegend einen Arm, während der andere seitlich gestreckt bleibt. Seiten abwechseln.",
+ "prisoner-squat": "Halte die Hände hinter dem Kopf und die Brust offen. Kniebeuge kontrolliert, die Knie folgen den Fußspitzen.",
+ "single-leg-squat": "Stehe auf einem Bein und nutze bei Bedarf eine stabile Stütze. Gehe nur so tief, wie Knie und Becken kontrolliert bleiben.",
+ "squat-jump": "Springe explosiv aus der Kniebeuge und lande weich mit gebeugten Knien. Nicht bis zur vollständigen Ermüdung ausführen.",
+ "lunge-jump": "Springe aus dem Ausfallschritt und wechsle die Beine in der Luft. Lande weich und lass das Knie nicht nach innen fallen.",
+ "jumping-jacks": "Öffne und schließe Beine rhythmisch und hebe gleichzeitig die Arme. Lande weich; für weniger Belastung kann die Bewegung auch schrittweise ausgeführt werden.",
+ "box-jump": "Springe nur auf eine stabile, kippsichere Fläche. Lande weich auf beiden Füßen und steige möglichst herunter.",
+ "db-front-squat": "Halte je eine Kurzhantel auf Schulterhöhe. Brust oben halten, die Knie folgen den Füßen.",
+ "single-arm-db-press": "Drücke im Liegen auf einer Bank mit einem Arm. Spanne den Rumpf an, damit sich Becken und Brustkorb nicht verdrehen.",
+ "single-arm-incline-press": "Drücke auf der Schrägbank mit einem Arm und verdrehe den Oberkörper nicht. Beginne mit einem leichten Testgewicht.",
+ "single-leg-press": "Drücke die Plattform kontrolliert mit einem Bein. Das Knie nicht durchstrecken und nicht nach innen fallen lassen.",
+ "seated-leg-curl": "Stelle das Polster oberhalb des Knöchels ein und halte den Rücken an der Lehne. Kontrolliert beugen und zurückführen.",
+ "single-leg-seated-curl": "Beuge mit einem Bein kontrolliert und halte das Becken stabil. Beide Seiten mit gleicher Technik ausführen.",
+ "leg-press-calf": "Nur den Vorfuß sicher auf der Plattform platzieren. Hebe und senke die Ferse aus dem Sprunggelenk und halte das Knie kontrolliert.",
+ "close-grip-bench": "Greife enger als beim normalen Bankdrücken, aber nicht extrem eng. Senke die Stange kontrolliert ab.",
+ "pullup": "Ziehe die Brust an einer stabilen Stange ohne Schwung nach oben. Lass die Schultern in der oberen Position nicht nach vorn fallen.",
+ "chinup": "Ziehe dich im Untergriff mit angespanntem Rumpf hoch. Vermeide Schwung und ein Hochziehen der Schultern.",
+ "negative-pullup": "Starte in der oberen Position und senke dich 3–5 Sekunden kontrolliert ab. Beginne von einer sicheren Stufe oder Plattform.",
+ "scapular-pullup": "Ziehe bei gestreckten Armen nur die Schulterblätter nach unten und hinten und lasse anschließend kontrolliert nach.",
+ "inverted-row": "Halte den Körper gerade, ziehe die Brust zur stabilen Stange und senke dich langsam wieder ab.",
+ "dip": "Senke den Körper an stabilen Barren kontrolliert ab und drücke dich wieder hoch. Erzwinge keine für die Schulter unangenehme Tiefe.",
+ "bench-dip": "Achte auf eine stabile Bank. Senke dich nur im schmerzfreien Schulterbereich ab, die Ellenbogen bewegen sich nach hinten.",
+ "diamond-pushup": "Halte die Hände dicht unter der Brust zusammen. Spanne den Rumpf an und kontrolliere die Ellenbogen.",
+ "pseudo-planche-pushup": "Schiebe die Schultern leicht vor die Hände und halte den Rumpf fest. Erst nach sicherer Liegestütztechnik ausführen.",
+ "hanging-knee-raise": "Ziehe die Knie ohne Schwung zur Brust und kippe das Becken leicht nach hinten.",
+ "hanging-leg-raise": "Hebe gestreckte oder leicht gebeugte Beine ohne Schwung. Erst nach sicherem Hängen und Knieheben ausführen.",
+ "hollow-hold": "Drücke den unteren Rücken sanft zum Boden. Verkürze die Armposition oder beuge die Knie, wenn sich der Rücken vom Boden löst.",
+ "superman-hold": "Hebe in Bauchlage Arme und Beine nur in kleinem Bewegungsumfang an, der Nacken bleibt neutral. Nicht übermäßig ins Hohlkreuz gehen.",
+ "mountain-climber": "Ziehe aus der Liegestützposition abwechselnd die Knie nach vorn. Halte Becken und Schultern stabil.",
+ "band-row": "Befestige das Band sicher. Ziehe die Ellenbogen nach hinten, führe die Schulterblätter zusammen und kehre langsam zurück.",
+ "band-lat-pulldown": "Befestige das Band sicher an einem hohen Punkt. Ziehe die Ellenbogen seitlich am Oberkörper nach unten.",
+ "band-chest-press": "Befestige das Band sicher hinter dir. Drücke die Arme nach vorn und halte den Brustkorb kontrolliert.",
+ "band-overhead-press": "Stelle dich auf die Mitte des Bandes, stabilisiere den Rumpf und drücke die Hände über den Kopf.",
+ "band-face-pull": "Befestige das Band etwa auf Gesichtshöhe und ziehe es zur Stirn, die Ellenbogen bleiben hoch.",
+ "band-biceps-curl": "Stelle dich auf das Band, halte die Ellenbogen am Körper und beuge die Arme ohne Schwung.",
+ "band-triceps-pushdown": "Halte die Ellenbogen am Körper und strecke nur die Unterarme nach unten.",
+ "band-pallof-press": "Drücke bei seitlichem Bandzug die Hände von der Brust nach vorn, ohne den Oberkörper rotieren zu lassen.",
+ "kb-goblet-squat": "Halte die Kettlebell vor der Brust. Kniebeuge kontrolliert und führe die Knie in Richtung der Füße.",
+ "kb-deadlift": "Schiebe die Hüfte nach hinten, halte den Rücken neutral und richte dich durch Hüftstreckung auf.",
+ "kb-swing": "Strecke die Hüfte explosiv und hebe die Kettlebell nicht mit den Armen. Erst nach sicherer Hüftbeuge-Technik ausführen.",
+ "kb-clean": "Führe die Kettlebell nah am Körper und lasse sie weich in der Rack-Position ankommen. Technische Übung: leicht beginnen.",
+ "kb-press": "Drücke die Kettlebell aus der Rack-Position mit angespanntem Rumpf über den Kopf. Nicht übermäßig ins Hohlkreuz gehen.",
+ "kb-row": "Ziehe in stabiler Hüftbeuge den Ellenbogen zur Hüfte. Verdrehe den Oberkörper nicht.",
+ "kb-reverse-lunge": "Halte die Kettlebell in Goblet- oder Rack-Position, mache einen Schritt nach hinten und stehe über das vordere Bein wieder auf.",
+ "kb-halo": "Führe eine leichte Kettlebell kontrolliert um den Kopf. Brustkorb und Becken bleiben stabil.",
+ "barbell-back-squat": "Starte aus einem sicheren Rack. Halte den Rumpf angespannt und die Knie in Richtung der Füße. Sicherheitsablagen werden empfohlen.",
+ "conventional-deadlift": "Halte die Stange nah an den Beinen und die Wirbelsäule neutral. Nimm vor dem Abheben die Spannung aus dem Spiel der Stange.",
+ "bench-press": "Halte die Schulterblätter stabil und die Füße am Boden. Sicherheitsablagen oder ein Spotter werden empfohlen.",
+ "incline-bench-press": "Verwende einen moderaten Bankwinkel und halte die Schulterblätter stabil. Sicherheitsablagen oder ein Spotter werden empfohlen.",
+ "barbell-overhead-press": "Spanne Gesäß und Bauch an, während du die Stange über den Kopf drückst. Vermeide übermäßiges Hohlkreuz.",
+ "assisted-pullup-machine": "Stelle eine passende Unterstützung ein, ziehe die Brust nach oben und senke dich kontrolliert ab.",
+ "pec-deck": "Halte die Schultern unten und hinten. Führe die Arme kontrolliert zusammen, ohne die Last ruckartig zu bewegen.",
+ "cable-lateral-raise": "Verwende eine leichte Last und hebe den Arm seitlich bis etwa Schulterhöhe. Nicht schwingen.",
+ "hack-squat": "Halte Rücken und Becken an der Lehne. Senke kontrolliert ab und drücke die Plattform wieder hoch.",
+ "standing-calf-raise": "Bewege das Sprunggelenk über den vollen schmerzfreien Bewegungsumfang. Oben die Waden kurz anspannen.",
+ "bodyweight-squat": "Stehe stabil, senke die Hüfte ab und richte dich wieder auf. Die Knie folgen der Richtung der Füße.",
+ "glute-bridge": "Lege dich mit gebeugten Knien auf den Rücken und hebe die Hüfte. Spanne das Gesäß an und senke anschließend kontrolliert ab.",
+ "dead-bug": "Lege dich auf den Rücken, hebe die Arme und halte die Knie gebeugt. Strecke abwechselnd den gegenüberliegenden Arm und das Bein bei stabilem Rumpf.",
+ "bird-dog": "Strecke im Vierfüßlerstand den gegenüberliegenden Arm und das Bein. Halte das Becken waagerecht.",
+ "side-plank": "Lege dich seitlich auf den Unterarm und hebe die Hüfte. Beide Seiten trainieren und die Zeit pro Seite erfassen.",
+ "calf-raise": "Steige mit stabiler Stütze auf die Zehenspitzen und senke die Fersen langsam wieder ab.",
+ "db-step-up": "Steige mit einem Bein auf eine stabile Plattform und kontrolliert wieder herunter. Wiederholungen pro Bein zählen; die Plattform darf nicht kippen.",
+ "db-rdl": "Schiebe bei leicht gebeugten Knien die Hüfte nach hinten. Halte die Kurzhanteln nah an den Beinen und den Rücken neutral.",
+ "db-bench-press": "Drücke auf einer stabilen Bank die Kurzhanteln über die Brust und senke sie kontrolliert ab. Die Füße bleiben fest am Boden.",
+ "incline-db-press": "Drücke mit gestütztem Rücken auf der Schrägbank die Kurzhanteln nach oben. Nicht schwingen und die Hüfte nicht anheben.",
+ "db-reverse-fly": "Hebe bei stabil vorgebeugtem Oberkörper leichte Kurzhanteln seitlich an. Ellenbogen leicht gebeugt halten und nicht mit dem Oberkörper schwingen.",
+ "face-pull": "Ziehe das Seil zum Gesicht, sodass die Hände neben dem Gesicht enden. Kontrolliert zurückführen und nicht mit dem Oberkörper schwingen.",
+ "leg-extension": "Stelle die Maschine auf deine Körpergröße ein. Strecke die Knie aus stabiler Sitzposition kontrolliert und senke langsam ab.",
+ "cable-fly": "Führe die Arme mit leicht gebeugten Ellenbogen vor der Brust zusammen und öffne sie kontrolliert. Die Last für eine Kabelseite eingeben."
+};
+const TP149_EX_NOTE_RO={
+ "db-squat": "Ține câte o ganteră pe lângă corp. Stai cu picioarele aproximativ la lățimea umerilor, du șoldurile înapoi și în jos, apoi ridică-te. Menține trunchiul încordat.",
+ "db-floor-press": "Întins pe spate, coboară coatele controlat până ating podeaua, apoi împinge ganterele înapoi în sus.",
+ "one-arm-row": "Folosește un suport stabil și trage gantera spre șold sau coastele inferioare. Nu roti trunchiul.",
+ "rdl": "Ține genunchii ușor îndoiți și spatele neutru. Du șoldurile înapoi și coboară doar atât cât poți păstra controlul.",
+ "db-curl": "Ține coatele lângă corp. Flexează brațele fără balans, apoi coboară ganterele controlat.",
+ "reverse-lunge": "Ține câte o ganteră pe lângă corp. Fă un pas înapoi, coboară genunchiul din spate, apoi împinge prin piciorul din față pentru a reveni. Introdu greutatea per braț și repetările per picior.",
+ "db-ohp": "Împinge ganterele de la nivelul umerilor deasupra capului, apoi coboară-le lent și controlat.",
+ "barbell-row": "Încordează trunchiul și menține spatele neutru. Trage bara spre abdomen sau coastele inferioare.",
+ "pushup": "Menține corpul într-o linie dreaptă. Oprește-te când simți că mai ai aproximativ 2–3 repetări corecte în rezervă.",
+ "oh-triceps": "Ține o ganteră ușoară cu ambele mâini, coboar-o în spatele capului, apoi extinde coatele.",
+ "crunch": "Întins pe spate, ridică omoplații de pe podea. Nu este nevoie să te ridici complet în șezut.",
+ "plank": "Sprijină-te pe antebrațe și degetele picioarelor. Încordează abdomenul și fesierii, păstrează corpul drept și nu lăsa zona lombară să se lase.",
+ "goblet-squat": "Ține o ganteră în fața pieptului. Coboară șoldurile, lasă genunchii să urmărească direcția vârfurilor și ridică-te.",
+ "bulgarian-split-squat": "Sprijină piciorul din spate. Coboară șoldurile vertical și împinge prin piciorul din față pentru a reveni. Numără repetările per picior.",
+ "db-pullover": "Întins pe spate, ține o ganteră cu ambele mâini. Coboar-o controlat în spatele capului, apoi adu-o înapoi deasupra pieptului.",
+ "lateral-raise": "Cu coatele ușor îndoite, ridică ganterele lateral până aproape de nivelul umerilor, fără balans.",
+ "hammer-curl": "Folosește o priză neutră, cu palmele orientate una spre cealaltă. Ține coatele aproape de trunchi.",
+ "close-pushup": "Așază mâinile mai aproape decât lățimea umerilor. Menține trunchiul încordat și coboară controlat.",
+ "leg-press": "Ține zona lombară lipită de spătar. Coboară sarcina controlat, apoi împinge înapoi fără să blochezi forțat genunchii.",
+ "machine-chest-press": "Ține omoplații stabili pe spătar. Împinge mânerele înainte, apoi revino controlat.",
+ "lat-pulldown": "Înclină-te ușor pe spate și trage bara spre partea superioară a pieptului. Nu smuci greutatea și nu trage bara în spatele cefei.",
+ "seated-cable-row": "Ține trunchiul neutru, trage mânerul spre abdomen și apropie omoplații, apoi revino controlat.",
+ "leg-curl": "Menține șoldurile stabile. Flexează genunchii controlat, apoi revino lent în poziția inițială.",
+ "machine-shoulder-press": "Ține spatele sprijinit. Împinge mânerele în sus, apoi coboară-le controlat.",
+ "cable-triceps": "Ține coatele lângă trunchi. Extinde antebrațele în jos, apoi revino controlat.",
+ "cable-curl": "Ține coatele lângă trunchi. Flexează brațele fără să folosești elan.",
+ "incline-pushup": "Menține corpul într-o linie dreaptă, cu mâinile pe o suprafață ridicată și stabilă. Coboară pieptul spre suport controlat.",
+ "modified-pushup": "Din sprijin pe genunchi, menține o linie dreaptă de la genunchi la cap. Coatele se deplasează aproximativ la 45 de grade.",
+ "decline-pushup": "Așază picioarele pe o suprafață ridicată și stabilă. Menține trunchiul încordat și controlează poziția coatelor.",
+ "pike-pushup": "Din poziția de V inversat, coboară capul controlat spre podea, apoi împinge-te înapoi.",
+ "plyo-pushup": "Execută doar după ce stăpânești flotarea de bază. Împinge exploziv de la sol și aterizează ușor, cu coatele îndoite.",
+ "archer-pushup": "Folosește o poziție largă a mâinilor și încarcă în principal un braț, în timp ce celălalt rămâne întins lateral. Alternează părțile.",
+ "prisoner-squat": "Ține mâinile în spatele capului și pieptul deschis. Execută genuflexiunea controlat, cu genunchii urmărind direcția picioarelor.",
+ "single-leg-squat": "Stai pe un picior și folosește un suport stabil dacă este nevoie. Coboară doar atât cât poți menține genunchiul și bazinul controlate.",
+ "squat-jump": "Sari exploziv din genuflexiune, apoi aterizează ușor cu genunchii îndoiți. Nu continua până la epuizare completă.",
+ "lunge-jump": "Sari din fandare și schimbă picioarele în aer. Aterizează ușor și nu lăsa genunchiul să cadă spre interior.",
+ "jumping-jacks": "Deschide și închide ritmic picioarele în timp ce ridici brațele. Aterizează ușor; pentru impact redus poți executa varianta prin pași.",
+ "box-jump": "Sari doar pe o suprafață stabilă care nu se poate răsturna. Aterizează ușor pe ambele picioare și, de preferat, coboară prin pas.",
+ "db-front-squat": "Ține câte o ganteră la nivelul umerilor. Menține pieptul sus și lasă genunchii să urmărească direcția picioarelor.",
+ "single-arm-db-press": "Întins pe bancă, împinge cu un singur braț. Încordează trunchiul pentru ca bazinul și pieptul să nu se rotească.",
+ "single-arm-incline-press": "Împinge cu un braț pe banca înclinată fără să rotești trunchiul. Începe cu o greutate ușoară de probă.",
+ "single-leg-press": "Împinge platforma cu un singur picior, controlat. Nu bloca genunchiul și nu îl lăsa să cadă spre interior.",
+ "seated-leg-curl": "Reglează perna deasupra gleznei și ține spatele pe spătar. Flexează și revino controlat.",
+ "single-leg-seated-curl": "Flexează cu un picior controlat, menținând bazinul stabil. Folosește aceeași tehnică pe ambele părți.",
+ "leg-press-calf": "Ține doar partea din față a tălpii sigur pe platformă. Ridică și coboară călcâiul din gleznă, menținând genunchiul controlat.",
+ "close-grip-bench": "Folosește o priză mai îngustă decât la împinsul normal la bancă, dar nu extrem de îngustă. Coboară bara controlat.",
+ "pullup": "Pe o bară stabilă, trage pieptul spre bară fără balans. Nu lăsa umerii să cadă înainte în poziția de sus.",
+ "chinup": "Folosește priză supinată și menține trunchiul încordat. Evită balansul și ridicarea umerilor.",
+ "negative-pullup": "Pornește din poziția de sus și coboară controlat timp de 3–5 secunde. Începe de pe o treaptă sau platformă sigură.",
+ "scapular-pullup": "Cu brațele întinse, trage doar omoplații în jos și înapoi, apoi revino controlat.",
+ "inverted-row": "Menține corpul drept, trage pieptul spre bara stabilă, apoi coboară lent.",
+ "dip": "Pe bare paralele stabile, coboară corpul controlat, apoi împinge-te înapoi. Nu forța o adâncime incomodă pentru umeri.",
+ "bench-dip": "Asigură-te că banca este stabilă. Coboară doar într-un interval fără durere pentru umeri, cu coatele deplasându-se înapoi.",
+ "diamond-pushup": "Ține mâinile apropiate sub piept. Încordează trunchiul și controlează coatele.",
+ "pseudo-planche-pushup": "Mută umerii ușor înaintea mâinilor și menține trunchiul încordat. Execută doar după ce stăpânești o tehnică stabilă de flotare.",
+ "hanging-knee-raise": "Fără balans, trage genunchii spre piept și rotește ușor bazinul posterior.",
+ "hanging-leg-raise": "Ridică picioarele întinse sau ușor îndoite fără balans. Treci la această variantă doar după ce stăpânești atârnarea și ridicarea genunchilor.",
+ "hollow-hold": "Apasă ușor zona lombară spre podea. Scurtează poziția brațelor sau îndoaie genunchii dacă zona lombară se ridică.",
+ "superman-hold": "Culcat pe burtă, ridică brațele și picioarele într-un interval mic, cu gâtul neutru. Nu arcui excesiv spatele.",
+ "mountain-climber": "Din poziție de flotare, adu alternativ genunchii înainte. Menține bazinul și umerii stabile.",
+ "band-row": "Fixează banda într-un punct sigur. Trage coatele înapoi, apropie omoplații, apoi revino lent.",
+ "band-lat-pulldown": "Fixează banda în siguranță într-un punct înalt. Trage coatele în jos pe lângă trunchi.",
+ "band-chest-press": "Fixează banda în siguranță în spatele tău. Împinge brațele înainte, menținând cutia toracică stabilă.",
+ "band-overhead-press": "Stai pe mijlocul benzii, stabilizează trunchiul și împinge mâinile deasupra capului.",
+ "band-face-pull": "Fixează banda aproximativ la nivelul feței și trage spre frunte, menținând coatele sus.",
+ "band-biceps-curl": "Stai pe bandă, ține coatele lângă trunchi și flexează brațele fără balans.",
+ "band-triceps-pushdown": "Ține coatele lângă trunchi și extinde doar antebrațele în jos.",
+ "band-pallof-press": "Cu banda trăgând din lateral, împinge mâinile înainte de la piept fără să lași trunchiul să se rotească.",
+ "kb-goblet-squat": "Ține kettlebellul în fața pieptului. Execută genuflexiunea controlat și lasă genunchii să urmărească direcția picioarelor.",
+ "kb-deadlift": "Du șoldurile înapoi, menține spatele neutru, apoi ridică-te prin extensia șoldurilor.",
+ "kb-swing": "Extinde șoldurile exploziv, fără să ridici greutatea din brațe. Execută doar după ce stăpânești o flexie de șold stabilă.",
+ "kb-clean": "Ține kettlebellul aproape de corp și lasă-l să ajungă ușor în poziția rack. Este o mișcare tehnică; începe cu greutate mică.",
+ "kb-press": "Din poziția rack, împinge kettlebellul deasupra capului cu trunchiul încordat. Nu arcui excesiv zona lombară.",
+ "kb-row": "Dintr-o poziție stabilă de flexie a șoldului, trage cotul spre șold. Nu roti trunchiul.",
+ "kb-reverse-lunge": "Ține kettlebellul în poziție goblet sau rack, fă un pas înapoi, apoi ridică-te prin piciorul din față.",
+ "kb-halo": "Cu o greutate ușoară, ghidează kettlebellul controlat în jurul capului. Menține cutia toracică și bazinul stabile.",
+ "barbell-back-squat": "Pornește dintr-un rack sigur. Menține trunchiul încordat și genunchii în direcția picioarelor. Se recomandă brațe de siguranță.",
+ "conventional-deadlift": "Ține bara aproape de picioare și coloana neutră. Creează tensiune în bară înainte de a o desprinde de podea.",
+ "bench-press": "Menține omoplații stabili și picioarele pe podea. Se recomandă brațe de siguranță sau un partener de asigurare.",
+ "incline-bench-press": "Folosește o înclinație moderată a băncii și menține omoplații stabili. Se recomandă brațe de siguranță sau un partener de asigurare.",
+ "barbell-overhead-press": "Încordează fesierii și abdomenul când împingi bara deasupra capului. Nu compensa prin arcuirea excesivă a zonei lombare.",
+ "assisted-pullup-machine": "Setează o asistență potrivită, trage pieptul în sus și coboară controlat.",
+ "pec-deck": "Ține umerii jos și înapoi. Apropie brațele controlat, fără să smucești greutatea.",
+ "cable-lateral-raise": "Folosește o sarcină ușoară și ridică brațul lateral până aproape de nivelul umărului. Nu folosi balans.",
+ "hack-squat": "Ține spatele și bazinul lipite de suport. Coboară controlat, apoi împinge platforma înapoi.",
+ "standing-calf-raise": "Mișcă glezna printr-un interval complet și fără durere. Contractă scurt gambele în partea de sus.",
+ "bodyweight-squat": "Stai într-o poziție stabilă, coboară șoldurile, apoi ridică-te. Genunchii urmăresc direcția picioarelor.",
+ "glute-bridge": "Întins pe spate cu genunchii îndoiți, ridică șoldurile. Contractă fesierii, apoi coboară controlat.",
+ "dead-bug": "Întins pe spate, ridică brațele și menține genunchii îndoiți. Extinde alternativ brațul și piciorul opus, cu trunchiul stabil.",
+ "bird-dog": "Din sprijin în patru labe, extinde brațul și piciorul opus. Menține bazinul orizontal.",
+ "side-plank": "Culcat pe o parte, sprijină-te pe antebraț și ridică șoldurile. Lucrează ambele părți și înregistrează timpul per parte.",
+ "calf-raise": "Folosind un suport stabil, ridică-te pe vârfuri, apoi coboară lent călcâiele.",
+ "db-step-up": "Urcă cu un picior pe o platformă stabilă, apoi coboară controlat. Numără repetările per picior și asigură-te că platforma nu se poate răsturna.",
+ "db-rdl": "Cu genunchii ușor îndoiți, du șoldurile înapoi. Ține ganterele aproape de picioare și spatele neutru.",
+ "db-bench-press": "Întins pe o bancă stabilă, împinge ganterele deasupra pieptului, apoi coboară-le controlat. Ține picioarele ferm pe podea.",
+ "incline-db-press": "Cu spatele sprijinit pe banca înclinată, împinge ganterele în sus. Nu folosi elan și nu ridica șoldurile.",
+ "db-reverse-fly": "Cu trunchiul aplecat și stabil, ridică gantere ușoare lateral. Ține coatele ușor îndoite și nu balansa trunchiul.",
+ "face-pull": "Trage frânghia spre față, astfel încât mâinile să ajungă lângă aceasta. Revino controlat, fără să balansezi trunchiul.",
+ "leg-extension": "Reglează aparatul la dimensiunile corpului. Dintr-o poziție stabilă în șezut, extinde genunchii controlat, apoi coboară lent.",
+ "cable-fly": "Cu coatele ușor îndoite, apropie brațele în fața pieptului, apoi deschide controlat. Introdu sarcina pentru o singură parte a cablului."
+};
+var tp149ExerciseNote=function tp149ExerciseNote(exercise,lang=rf212Lang()){
+ if(!exercise)return '';
+ if(exercise.custom===true)return String(exercise.notes||'');
+ if(lang==='hu')return String(exercise.notes||'');
+ if(lang==='de')return TP149_EX_NOTE_DE[exercise.id]||TP149_EX_NOTE_EN[exercise.id]||String(exercise.notes||'');
+ if(lang==='ro')return TP149_EX_NOTE_RO[exercise.id]||TP149_EX_NOTE_EN[exercise.id]||String(exercise.notes||'');
+ return TP149_EX_NOTE_EN[exercise.id]||String(exercise.notes||'');
+};
+var tp149Equipment=function tp149Equipment(exercise,lang=rf212Lang()){
+ if(!exercise)return '';
+ if(exercise.custom===true)return String(exercise.equipment||'');
+ return tp149RowValue(TP149_EQUIPMENT_ROWS[String(exercise.equipment||'')],lang,exercise.equipment||'');
+};
+var tp149Target=function tp149Target(exercise,lang=rf212Lang()){
+ if(!exercise)return '';
+ if(exercise.custom===true&&exercise.muscleGroup==null)return String(exercise.target||'');
+ const raw=String(exercise.target||'').trim();if(!raw)return '';
+ return raw.split('/').map(function(part){
+  const key=part.trim().toLocaleLowerCase('hu-HU');
+  return tp149RowValue(TP149_TARGET_PARTS[key],lang,part.trim());
+ }).join(' / ');
+};
+var tp149MovementLabel=function tp149MovementLabel(pattern,lang=rf212Lang()){
+ return tp149RowValue(TP149_MOVEMENT_ROWS[pattern],lang,pattern||'');
+};
+var tp149StyleText=function tp149StyleText(exercise,lang=rf212Lang()){
+ const key=exercise?.style||'strength';return tp149RowValue(TP149_STYLE_ROWS[key],lang,key);
+};
+
+var tp149ExerciseName=function tp149ExerciseName(exercise,lang=rf212Lang()){
+ if(!exercise)return '';
+ if(exercise.custom===true)return String(exercise.hu||exercise.en||exercise.id||'');
+ if(lang==='hu')return String(exercise.hu||exercise.en||exercise.id||'');
+ if(lang==='en')return String(exercise.en||exercise.hu||exercise.id||'');
+ if(lang==='de')return TP149_EX_DE[exercise.id]||String(exercise.en||exercise.hu||exercise.id||'');
+ if(lang==='ro')return TP149_EX_RO[exercise.id]||String(exercise.en||exercise.hu||exercise.id||'');
+ return String(exercise.en||exercise.hu||exercise.id||'');
+};
+var tp149ExerciseNameAudit=function tp149ExerciseNameAudit(){
+ const list=typeof exercises==='function'?exercises().filter(function(e){return e&&e.custom!==true;}):[];
+ const targetUnknown=function(e){return String(e.target||'').split('/').map(function(x){return x.trim().toLocaleLowerCase('hu-HU');}).filter(Boolean).filter(function(k){return !TP149_TARGET_PARTS[k];});};
+ return {
+  total:list.length,
+  missing:{
+   hu:list.filter(function(e){return !String(e.hu||'').trim();}).map(function(e){return e.id;}),
+   en:list.filter(function(e){return !String(e.en||'').trim();}).map(function(e){return e.id;}),
+   de:list.filter(function(e){return !TP149_EX_DE[e.id];}).map(function(e){return e.id;}),
+   ro:list.filter(function(e){return !TP149_EX_RO[e.id];}).map(function(e){return e.id;}),
+   noteEn:list.filter(function(e){return !TP149_EX_NOTE_EN[e.id];}).map(function(e){return e.id;}),
+   noteDe:list.filter(function(e){return !TP149_EX_NOTE_DE[e.id];}).map(function(e){return e.id;}),
+   noteRo:list.filter(function(e){return !TP149_EX_NOTE_RO[e.id];}).map(function(e){return e.id;}),
+   equipment:list.filter(function(e){return e.equipment&&!TP149_EQUIPMENT_ROWS[e.equipment];}).map(function(e){return e.id+':'+e.equipment;}),
+   target:list.flatMap(function(e){return targetUnknown(e).map(function(x){return e.id+':'+x;});}),
+   movement:list.filter(function(e){return e.movementPattern&&!TP149_MOVEMENT_ROWS[e.movementPattern];}).map(function(e){return e.id+':'+e.movementPattern;}),
+   style:list.filter(function(e){return e.style&&!TP149_STYLE_ROWS[e.style];}).map(function(e){return e.id+':'+e.style;})
+  }
+ };
+};
+var tp149ProgramAudit=function tp149ProgramAudit(){
+ const list=typeof programs==='function'?programs().filter(function(p){return p&&p.builtin===true;}):[];
+ const missing=[];
+ for(const p of list){
+  const row=TP149_PROGRAM_ROWS[p.id];if(!row){missing.push(p.id+':program');continue;}
+  if(!Array.isArray(row.name)||row.name.length!==4||row.name.some(function(x){return !String(x||'').trim();}))missing.push(p.id+':name');
+  for(const d of p.days||[]){const day=row.days?.[d.id];if(!Array.isArray(day)||day.length!==4||day.some(function(x){return !String(x||'').trim();}))missing.push(p.id+':day:'+d.id);}
+ }
+ return {total:list.length,missing:missing};
+};
+
+var tp149Map=function tp149Map(lang=rf212Lang()){
+ const base=typeof RF214_MAPS!=='undefined'?(RF214_MAPS[lang]||{}):{};
+ const out=Object.assign({},base,TP149_MAPS[lang]||{});
+ if(lang!=='hu'&&typeof exercises==='function'){
+  for(const e of exercises()){
+   if(!e||e.custom)continue;
+   if(e.hu)out[e.hu]=lang==='en'?(e.en||e.hu):lang==='de'?(TP149_EX_DE[e.id]||e.en||e.hu):(TP149_EX_RO[e.id]||e.en||e.hu);
+   if(e.notes&&!out[e.notes])out[e.notes]=lang==='en'?'Perform the exercise with controlled technique and a pain-free range of motion.':lang==='de'?'Führe die Übung kontrolliert und in einem schmerzfreien Bewegungsumfang aus.':'Execută exercițiul controlat, într-un interval de mișcare fără durere.';
+  }
+ }
+ return out;
+};
+var tp149Patterns=function tp149Patterns(text,lang){
+ let s=String(text);
+ const p={
+  en:[
+   [/(\d+)\s+gyakorlat/g,'$1 exercises'],[/(\d+)\s+exercise\b/g,'$1 exercises'],[/(\d+)\s+sorozat/g,'$1 sets'],[/(\d+)\s+napos ciklus/g,'$1-day cycle'],[/(\d+)\s+perc/g,'$1 min'],[/(\d+)\s+edzés megtervezve\./g,'$1 workouts scheduled.'],[/Pihenő:\s*(\d+)\s*mp/g,'Rest: $1 sec'],[/(\d+)\s*mp pihenő/g,'$1 sec rest'],[/(\d+)\s+alkalom/g,'$1 sessions'],[/\s\/\s*kar\b/g,' / arm'],[/\s\/\s*láb\b/g,' / leg'],[/\s\/\s*oldal\b/g,' / side'],[/\bmp\b/g,'sec']
+  ],
+  de:[
+   [/(\d+)\s+gyakorlat/g,'$1 Übungen'],[/(\d+)\s+Übung\b/g,'$1 Übungen'],[/(\d+)\s+sorozat/g,'$1 Sätze'],[/(\d+)\s+napos ciklus/g,'$1-Tage-Zyklus'],[/(\d+)\s+perc/g,'$1 Min.'],[/(\d+)\s+edzés megtervezve\./g,'$1 Trainings geplant.'],[/Pihenő:\s*(\d+)\s*mp/g,'Pause: $1 Sek.'],[/(\d+)\s*mp pihenő/g,'$1 Sek. Pause'],[/(\d+)\s+alkalom/g,'$1 Einheiten'],[/\s\/\s*kar\b/g,' / Arm'],[/\s\/\s*láb\b/g,' / Bein'],[/\s\/\s*oldal\b/g,' / Seite'],[/\bmp\b/g,'Sek.']
+  ],
+  ro:[
+   [/(\d+)\s+gyakorlat/g,'$1 exerciții'],[/(\d+)\s+exercițiu\b/g,'$1 exerciții'],[/(\d+)\s+sorozat/g,'$1 serii'],[/(\d+)\s+napos ciklus/g,'ciclu de $1 zile'],[/(\d+)\s+perc/g,'$1 min'],[/(\d+)\s+edzés megtervezve\./g,'$1 antrenamente planificate.'],[/Pihenő:\s*(\d+)\s*mp/g,'Pauză: $1 sec'],[/(\d+)\s*mp pihenő/g,'$1 sec pauză'],[/(\d+)\s+alkalom/g,'$1 sesiuni'],[/\s\/\s*kar\b/g,' / braț'],[/\s\/\s*láb\b/g,' / picior'],[/\s\/\s*oldal\b/g,' / parte'],[/\bmp\b/g,'sec']
+  ]
+ };
+ for(const pair of p[lang]||[])s=s.replace(pair[0],pair[1]);
+ return s;
+};
+var tp149UserValues=function tp149UserValues(){
+ const values=[];
+ const add=function(v){v=String(v??'').trim();if(v)values.push(v);};
+ try{for(const e of exercises())if(e?.custom){add(e.hu);add(e.en);add(e.equipment);add(e.notes);}}catch(_){}
+ try{for(const p of programs())if(p&&p.builtin!==true){add(p.name);add(p.location);for(const d of p.days||[])add(d?.name);}}catch(_){}
+ const out=[];for(const raw of values){out.push(raw);try{if(typeof esc==='function')out.push(esc(raw));}catch(_){}}
+ return [...new Set(out.filter(Boolean))].sort(function(a,b){return b.length-a.length;});
+};
+var tp149Translate=function tp149Translate(input,lang=rf212Lang()){
+ const browserHasLanguage=typeof navigator!=='undefined'&&((navigator.languages&&navigator.languages.length)||navigator.language);
+ if(lang==='hu'||!browserHasLanguage)return String(input);
+ let source=String(input),protectedValues=[];
+ for(const value of tp149UserValues()){
+  if(!value||!source.includes(value))continue;
+  const token='\uE000TPU'+protectedValues.length+'\uE001';
+  source=source.split(value).join(token);protectedValues.push([token,value]);
+ }
+ let out=source,map=tp149Map(lang);
+ Object.keys(map).sort(function(a,b){return b.length-a.length;}).forEach(function(k){if(k&&out.includes(k))out=out.split(k).join(map[k]);});
+ out=tp149Patterns(out,lang);
+ for(const pair of protectedValues)out=out.split(pair[0]).join(pair[1]);
+ return out;
+};
+rf212Translate=function(html){return tp149Translate(html,rf212Lang());};
+rf214Map=function(html,map){const lang=rf212Lang();return lang==='hu'?String(html):tp149Translate(html,lang);};
+
+const tp149LanguagePanelBase=rf212LanguagePanel;
+rf212LanguagePanel=function(){
+ if(rf212Lang()==='hu')return tp149LanguagePanelBase.apply(this,arguments);
+ const lang=rf212Lang(),current=rf212LangSetting();
+ const labels={
+  system:{hu:'Rendszer nyelve',en:'System language',de:'Systemsprache',ro:'Limba sistemului'},
+  hu:{hu:'Magyar',en:'Hungarian',de:'Ungarisch',ro:'Maghiară'},
+  en:{hu:'English',en:'English',de:'Englisch',ro:'Engleză'},
+  de:{hu:'Deutsch',en:'German',de:'Deutsch',ro:'Germană'},
+  ro:{hu:'Română',en:'Romanian',de:'Rumänisch',ro:'Română'}
+ };
+ const title=lang==='hu'?'Nyelv':TP149_MAPS[lang]?.Nyelv||'Language';
+ const help=lang==='hu'?'Alapértelmezésként a telefon rendszerének nyelvét használja. Bármikor felülírható.':TP149_MAPS[lang]?.['Alapértelmezésként a telefon rendszerének nyelvét használja. Bármikor felülírható.'];
+ return '<div class="setting rf212-language"><label>'+esc(title)+'</label><p class="small muted">'+esc(help)+'</p><select class="field" onchange="rf212SetLang(this.value)">'+Object.keys(TP149_LANGS).map(function(k){return '<option value="'+k+'" '+(current===k?'selected':'')+'>'+esc(labels[k][lang]||labels[k].en)+'</option>';}).join('')+'</select></div>';
+};
+
+var tp149LanguageOptionLabel=function tp149LanguageOptionLabel(setting,lang=rf212Lang()){
+ const key=setting==='system'?'language.system':'language.'+setting;
+ return tp149T(key,{},lang);
+};
+rf212LanguagePanel=function(){
+ if(rf212Lang()==='hu')return tp149LanguagePanelBase.apply(this,arguments);
+ const lang=rf212Lang(),current=rf212LangSetting();
+ return '<div class="setting rf212-language"><label>'+esc(tp149T('language.title',{},lang))+'</label><p class="small muted">'+esc(tp149T('language.help',{},lang))+'</p><select class="field" onchange="rf212SetLang(this.value)">'+Object.keys(TP149_LANGS).map(function(k){return '<option value="'+k+'" '+(current===k?'selected':'')+'>'+esc(tp149LanguageOptionLabel(k,lang))+'</option>';}).join('')+'</select></div>';
+};
+if(typeof tab==='function'){
+ tab=function(id,label){
+  const key={home:'nav.home',plan:'nav.workout',calendar:'nav.calendar',programs:'nav.programs',history:'nav.log',health:'nav.health',settings:'nav.settings'}[id];
+  const text=key?tp149T(key):label;
+  return '<button class="tab '+(state.tab===id?'active':'')+'" onclick="go(\''+id+'\')">'+esc(text)+'</button>';
+ };
+}
+if(typeof backupStatus==='function'){
+ backupStatus=function(){
+  const x=db.get('lastExport',null);
+  return x?tp149T('backup.lastVerified',{name:x.name,date:tp149FormatDateTime(x.date)}):tp149T('backup.none');
+ };
+}
+
+if(typeof tp146ProgramDayTitle==='function'){
+ tp146ProgramDayTitle=function(program,day){
+  const name=String(tp149ProgramMeta(program,'name')).replace(/\s*[–—]\s*/g,' - ').replace(/\s+-\s+/g,' - ').trim();
+  const dayName=tp149ProgramDayName(program,day);
+  return dayName?name+' - '+dayName:name;
+ };
+ workoutTitle=function(programId,dayId){
+  const p=programById(programId)||activeProgram(),d=programDay(p,dayId);
+  return tp146ProgramDayTitle(p,d);
+ };
+}
+
+if(typeof rf260VideoButton==='function'){
+ rf260VideoButton=function(id){
+  const d=typeof demoInfo==='function'?demoInfo(id):null;if(!d)return '';
+  const e=typeof byId==='function'?byId(id):null;
+  const label=(e?tp149ExerciseName(e):tp149T('exercise.library'))+' '+tp149T('exercise.demoSuffix');
+  return '<button type="button" class="btn secondary tp-play-btn" data-tp-role="control" aria-label="'+esc(label)+'" title="'+esc(label)+'" onclick="event.stopPropagation();openDemo(\''+esc(id)+'\')">'+rf260PlayIcon()+'</button>';
+ };
+}
+if(typeof libraryMatch==='function'){
+ libraryMatch=function(e,group,gear,q){
+  const normal=function(x){return String(x).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();};
+  const names=[e?.hu,e?.en,tp149ExerciseName(e,'de'),tp149ExerciseName(e,'ro')];
+  const equipment=['hu','en','de','ro'].map(function(lang){return tp149Equipment(e,lang);});
+  const hay=normal(names.concat(equipment).join(' '));
+  return (group==='all'||rf205PrimaryMuscle(e.id)===group)&&(gear==='all'||libraryGear(e)===gear)&&hay.includes(normal(String(q||'').trim()));
+ };
+}
+if(typeof libraryResults==='function'){
+ libraryResults=function(group,gear,q){
+  const es=exercises().filter(function(e){return libraryMatch(e,group,gear,q);});
+  const count=tp149T('exercise.resultCount',{shown:es.length,total:exercises().length});
+  return '<p class="muted">'+esc(count)+'</p>'+((es.map(function(e){
+   const groups=muscleGroups(e.id),secondary=groups.slice(1).map(function(x){return tp149MuscleGroupLabel(x);}).filter(Boolean).join(' / ');
+   const primary=groups[0]?tp149MuscleGroupLabel(groups[0]):tp149Target(e);
+   return '<details class="card tp-library-card"><summary><div class="tp-library-summary-main"><h3>'+esc(tp149ExerciseName(e))+'</h3><p class="small">'+esc(tp149Equipment(e))+' • '+esc(tp149T('exercise.primaryMuscle'))+': '+esc(primary)+'</p></div>'+rf260VideoButton(e.id)+'</summary><div class="tp-library-body"><p class="small muted">'+esc(tp149MovementLabel(e.movementPattern))+' • '+esc(tp149StyleText(e))+'</p>'+(secondary?'<p class="small muted">'+esc(tp149T('exercise.additionalMuscles'))+': '+esc(secondary)+'</p>':'')+'<p>'+esc(tp149ExerciseNote(e)||tp149T('exercise.noDescription'))+'</p><button class="btn secondary block" onclick="chooseLibraryPlacement(\''+esc(e.id)+'\')">'+esc(tp149T('exercise.addToProgram'))+'</button></div></details>';
+  }).join(''))||'<p>'+esc(tp149T('exercise.noResults'))+'</p>');
+ };
+}
+if(typeof rf203ExerciseLibrary==='function'){
+ rf203ExerciseLibrary=function(){
+  const list=exercises();
+  render(shell('<main><button class="btn secondary" onclick="go(\'programs\')">← '+esc(tp149T('exercise.backPrograms'))+'</button><div class="hero"><span class="badge">'+esc(tp149T('exercise.libraryBadge'))+'</span><h1>'+esc(tp149Plural('exercise.count',list.length))+'</h1><div class="muted">'+esc(tp149T('exercise.librarySubtitle'))+'</div></div>'+list.map(function(e,i){return '<div class="exercise" onclick="rf203ExerciseDetail(\''+esc(e.id)+'\')"><div class="num">'+(i+1)+'</div><div><div class="ex-name">'+esc(tp149ExerciseName(e))+'</div><div class="meta">'+esc(tp149Target(e))+(e.equipment?' • '+esc(tp149Equipment(e)):'')+(e.movementPattern?' • '+esc(tp149MovementLabel(e.movementPattern)):'')+'</div></div><div class="tp-exercise-actions">'+rf260VideoButton(e.id)+'<div class="chev" aria-hidden="true">›</div></div></div>';}).join('')+'</main>'));
+ };
+}
+if(typeof rf203ExerciseDetail==='function'){
+ rf203ExerciseDetail=function(id){
+  const e=byId(id);if(!e)return;
+  render(shell('<main><button class="btn secondary" onclick="rf203ExerciseLibrary()">← '+esc(tp149T('exercise.library'))+'</button><div class="hero"><h1>'+esc(tp149ExerciseName(e))+'</h1><div class="muted">'+(e.sets||'')+(e.sets?' × ':'')+esc(e.reps||'')+(e.weight?' • '+tp149FormatUnit(e.weight,'kilogram'):'')+'</div></div><div class="card detail"><span class="badge">'+esc(tp149Target(e))+'</span>'+(e.equipment?'<span class="badge">'+esc(tp149Equipment(e))+'</span>':'')+(e.movementPattern?'<span class="badge">'+esc(tp149MovementLabel(e.movementPattern))+'</span>':'')+(typeof motionDemo==='function'?motionDemo(e.id):'')+'<p class="note">'+esc(tp149ExerciseNote(e)||tp149T('exercise.noDescription'))+'</p></div></main>'));
+ };
+}
+if(typeof muscleLibrary==='function'){
+ muscleLibrary=function(group='all'){
+  state.libraryFilter={group:group,gear:'all',q:''};
+  const muscleOptions=Object.keys(MUSCLES).map(function(k){return '<option value="'+esc(k)+'" '+(group===k?'selected':'')+'>'+esc(tp149MuscleGroupLabel(k))+'</option>';}).join('');
+  const gearHtml=Object.entries(TP149_LIBRARY_GEAR_ROWS).map(function(kv){return '<option value="'+esc(kv[0])+'">'+esc(tp149RowValue(kv[1]))+'</option>';}).join('');
+  render(shell('<main><button class="btn secondary" onclick="go(\'programs\')">← '+esc(tp149T('nav.programs'))+'</button><div class="hero"><h1>'+esc(tp149T('exercise.libraryTitle'))+'</h1><p>'+esc(tp149T('exercise.librarySummary',{count:exercises().length}))+'</p></div><div class="setting"><label>'+esc(tp149T('exercise.search'))+'<input id="libraryQuery" class="field" type="search" placeholder="'+esc(tp149T('exercise.searchPlaceholder'))+'" oninput="filterLibrary()"></label><label>'+esc(tp149T('exercise.muscleGroup'))+'<select id="libraryMuscle" class="field" onchange="filterLibrary()"><option value="all">'+esc(tp149T('exercise.all'))+'</option>'+muscleOptions+'</select></label><label>'+esc(tp149T('exercise.equipment'))+'<select id="libraryGear" class="field" onchange="filterLibrary()">'+gearHtml+'</select></label></div><div id="libraryResults">'+libraryResults(group,'all','')+'</div></main>'));
+ };
+}
+
+
+if(typeof programCards==='function'){
+ programCards=function(){
+  return programs().map(function(p){
+   const active=p.id===activeProgramId(),name=tp149ProgramMeta(p,'name'),location=tp149ProgramMeta(p,'location'),level=tp149ProgramMeta(p,'level');
+   const stats=tp149T('program.cardStats',{days:p.days.length,counts:p.days.map(function(d){return d.exercises.length;}).join('/')});
+   return '<div class="program-card rf103-program-card '+(active?'active-program':'')+'"><div class="rf103-program-main"><div class="rf103-program-info"><span class="badge">'+esc(location)+'</span><span class="badge">'+esc(level)+'</span><h3>'+esc(name)+'</h3><p class="small muted">'+esc(stats)+'</p></div><button class="btn rf103-program-activate '+(active?'secondary':'')+'" '+(active?'disabled':'')+' onclick="activateProgram(\''+esc(p.id)+'\')">'+esc(tp149T(active?'program.active':'program.activate'))+'</button></div>'+(!p.builtin?'<div class="rf103-program-extra"><button class="btn secondary" onclick="editCustomProgram(\''+esc(p.id)+'\')">'+esc(tp149T('common.edit'))+'</button><button class="btn danger" onclick="deleteCustomProgram(\''+esc(p.id)+'\')">'+esc(tp149T('common.delete'))+'</button></div>':'')+'</div>';
+  }).join('');
+ };
+}
+const tp149Rf148PlanDayHeadingBase=rf148PlanDayHeading;
+if(typeof rf148PlanDayHeading==='function'){
+ rf148PlanDayHeading=function(program,day){
+  if(rf212Lang()==='hu')return tp149Rf148PlanDayHeadingBase.apply(this,arguments);
+  const base=esc(tp146ProgramDayTitle(program,{id:'',name:''}));
+  const dayName=tp149ProgramDayName(program,day);
+  const badge=String(day?.id||'').trim(),translated=String(dayName||'');
+  let suffix='';
+  if(translated){
+   suffix=' <span class="tp146-day-sep">-</span> ';
+   if(badge&&badge===translated)suffix+='<span class="tp146-day-letter" aria-label="'+esc(badge)+'">'+esc(badge)+'</span>';
+   else suffix+=esc(translated)+(badge?' <span class="tp146-day-letter" aria-label="'+esc(badge)+'">'+esc(badge)+'</span>':'');
+  }
+  return '<div class="tp146-day-headingline"><h2 class="tp146-day-title">'+base+suffix+'</h2></div>';
+ };
+}
+const tp149PlanScreenBase=planScreen;
+if(typeof planScreen==='function'){
+ planScreen=function(){
+  if(rf212Lang()==='hu')return tp149PlanScreenBase.apply(this,arguments);
+  const p=activeProgram();
+  if(!p)return shell('<main><div class="hero"><h1>'+esc(tp149T('program.noActive'))+'</h1><div class="muted">'+esc(tp149T('program.noActiveHelp'))+'</div></div><button class="btn block" onclick="go(\'programs\')">'+esc(tp149T('program.choose'))+'</button></main>');
+  const pName=tp149ProgramMeta(p,'name'),location=tp149ProgramMeta(p,'location'),level=tp149ProgramMeta(p,'level');
+  return shell('<main class="tp146-plan"><div class="hero"><span class="badge">'+esc(tp149T('program.activeBadge'))+'</span><h1>'+esc(pName)+'</h1><div class="muted">'+esc(location)+(level?' • '+esc(level):'')+' • '+esc(tp149T('program.cycle',{count:p.days?.length||0}))+'</div><br><button class="btn secondary block" onclick="go(\'programs\')">'+esc(tp149T('program.chooseAnother'))+'</button></div>'+(p.days||[]).map(function(d){return '<div class="card tp146-day-head"><div class="tp146-day-copy"><span class="badge">'+esc(tp149T('program.workoutDayBadge'))+'</span>'+rf148PlanDayHeading(p,d)+'<div class="small muted">'+esc(tp149T('program.tapDetails',{count:d.exercises?.length||0}))+'</div></div></div>'+(d.exercises||[]).map(function(id,i){return rf201ExerciseRow(d.id,id,i);}).join('')+'<button class="btn secondary block" onclick="rf154AddScreen(\''+esc(d.id)+'\')">+ '+esc(tp149T('program.addExercise'))+'</button><br><button class="btn block" onclick="startWorkout(\''+esc(d.id)+'\')">'+esc(tp149T('workout.start'))+'</button>';}).join('<br>')+'</main>');
+ };
+}
+const tp149ShowWorkoutBase=showWorkout;
+if(typeof showWorkout==='function'){
+ showWorkout=function(dayId){
+  if(rf212Lang()==='hu')return tp149ShowWorkoutBase.apply(this,arguments);
+  state.workout=dayId;state.tab='plan';const p=activeProgram(),d=programDay(p,dayId);if(!p||!d){render();return;}
+  render(shell('<main class="tp146-plan"><button class="btn secondary" onclick="go(\'plan\')">← '+esc(tp149ProgramMeta(p,'name'))+'</button><div class="hero"><span class="badge">'+esc(tp149T('program.activeBadge'))+'</span><div class="tp146-workout-hero-title">'+rf148PlanDayHeading(p,d)+'</div><div class="muted">'+esc(tp149Plural('exercise.count',d.exercises?.length||0))+'</div></div>'+(d.exercises||[]).map(function(id,i){return rf201ExerciseRow(d.id,id,i);}).join('')+'<br><button class="btn secondary block" onclick="rf154AddScreen(\''+esc(d.id)+'\')">+ '+esc(tp149T('program.addExercise'))+'</button><br><button class="btn block" onclick="startWorkout(\''+esc(d.id)+'\')">'+esc(tp149T('workout.start'))+'</button></main>'));
+ };
+}
+
+
+validateProfile=function(p){
+ if(!p||!Number.isInteger(p.age)||p.age<18||p.age>100||!Number.isFinite(p.height)||p.height<100||p.height>250||!Number.isFinite(p.weight)||p.weight<30||p.weight>350)throw Error(tp149T('planner.errorProfile'));
+ const out=Object.assign({},p,{location:p.location||'home',gear:Array.isArray(p.gear)?p.gear:profileGear132(p),excluded:Array.isArray(p.excluded)?p.excluded:[],focus:p.focus||'balanced',avoidAreas:Array.isArray(p.avoidAreas)?p.avoidAreas:[]});
+ const allowed={goal:['fitness','muscle','strength','fatloss'],experience:['beginner','intermediate'],activity:['sedentary','mixed','physical'],location:['home','gym'],cadence:['alternate','weekly','custom'],split:['auto','full','upperlower','ppl'],focus:Object.keys(TP149_PLANNER_ROWS.focus)};
+ for(const k of Object.keys(allowed))if(!allowed[k].includes(out[k]))throw Error(tp149T('planner.errorChoice'));
+ if(!Number.isInteger(out.minutes)||out.minutes<20||out.minutes>120||out.minutes%5!==0)throw Error(tp149T('planner.errorMinutes'));
+ if(!Array.isArray(out.gear)||out.gear.some(function(x){return !Object.hasOwn(GEAR132,x);})||new Set(out.gear).size!==out.gear.length)throw Error(tp149T('planner.errorGear'));
+ if(!Array.isArray(out.excluded)||out.excluded.some(function(id){return !exercises().some(function(e){return e.id===id;})&&!(rf148BackupValidationIds&&rf148BackupValidationIds.has(id));}))throw Error(tp149T('planner.errorExclude'));
+ if(new Set(out.avoidAreas).size!==out.avoidAreas.length||out.avoidAreas.some(function(x){return !Object.hasOwn(TP149_PLANNER_ROWS.area,x);}))throw Error(tp149T('planner.errorAvoid'));
+ return out;
+};
+gearForm132=function(p){
+ const selected=profileGear132(p);
+ const rows=Object.keys(GEAR132).map(function(k){return '<label class="exclude-row"><input name="pfGear" type="checkbox" value="'+esc(k)+'" '+(selected.includes(k)?'checked':'')+'>'+esc(tp149PlannerGear(k))+'</label>';}).join('');
+ return '<div class="setting"><h2>'+esc(tp149T('planner.gearTitle'))+'</h2><p>'+esc(tp149T('planner.gearHelp'))+'</p><div class="muscle-chips"><button type="button" class="btn secondary" onclick="gearPreset132(\'bodyweight\')">'+esc(tp149T('planner.presetBodyweight'))+'</button><button type="button" class="btn secondary" onclick="gearPreset132(\'dumbbells\')">'+esc(tp149T('planner.presetDumbbell'))+'</button><button type="button" class="btn secondary" onclick="gearPreset132(\'calisthenics\')">'+esc(tp149T('planner.presetCalisthenics'))+'</button><button type="button" class="btn secondary" onclick="gearPreset132(\'mixed\')">'+esc(tp149T('planner.presetAll'))+'</button></div>'+rows+'<p class="small muted">'+esc(tp149T('planner.gearMore'))+'</p></div>';
+};
+profileScreen=function(){
+ state.tab='profile';state.healthView=false;if(typeof rf245CoachVisible!=='undefined')rf245CoachVisible=false;
+ const old=state.profilePreview||trainingProfile()||{};
+ const p=Object.assign({age:'',height:'',weight:'',goal:'fitness',experience:'beginner',activity:'mixed',minutes:45,location:'home',gear:[],cadence:'alternate',split:'auto',excluded:[],focus:'balanced',avoidAreas:[]},old);
+ const mins={};for(let m=20;m<=120;m+=5)mins[String(m)]=tp149FormatNumber(m)+' '+tp149T('unit.minute.short');
+ const avoid=Object.keys(TP149_PLANNER_ROWS.area).map(function(k){return '<label class="exclude-row"><input type="checkbox" name="pfAvoidArea" value="'+esc(k)+'" '+((p.avoidAreas||[]).includes(k)?'checked':'')+'>'+esc(tp149PlannerRow('area',k))+'</label>';}).join('');
+ const html='<main><button class="btn secondary" onclick="go(\'home\')">← '+esc(tp149T('planner.back'))+'</button><div class="hero"><h1>'+esc(tp149T('planner.title'))+'</h1><p>'+esc(tp149T('planner.intro'))+'</p></div><div class="setting profile-grid">'+
+ '<label>'+esc(tp149T('planner.age'))+'<input id="pfAge" class="field" type="number" min="18" max="100" value="'+esc(p.age)+'"></label>'+
+ '<label>'+esc(tp149T('planner.height'))+'<input id="pfHeight" class="field" type="number" min="100" max="250" value="'+esc(p.height)+'"></label>'+
+ '<label>'+esc(tp149T('planner.weight'))+'<input id="pfWeight" class="field" type="number" step="0.1" min="30" max="350" value="'+esc(p.weight)+'"></label>'+
+ profileSelect('pfGoal',tp149T('planner.goal'),tp149PlannerOptions('goal'),p.goal)+
+ profileSelect('pfExperience',tp149T('planner.experience'),tp149PlannerOptions('experience'),p.experience)+
+ profileSelect('pfActivity',tp149T('planner.activity'),tp149PlannerOptions('activity'),p.activity)+
+ gearForm132(p)+
+ profileSelect('pfMinutes',tp149T('planner.minutes'),mins,String(p.minutes))+
+ profileSelect('pfCadence',tp149T('planner.cadence'),tp149PlannerOptions('cadence'),p.cadence)+
+ profileSelect('pfSplit',tp149T('planner.split'),Object.fromEntries(['auto','full','upperlower','ppl'].map(function(k){return [k,tp149PlannerRow('split',k)];})),p.split)+
+ profileSelect('pfFocus',tp149T('planner.focus'),tp149PlannerOptions('focus'),p.focus||'balanced')+
+ '<details class="rf148-profile-accordion"><summary>'+esc(tp149T('planner.avoidAreas'))+'</summary><div class="rf148-profile-accordion-body"><p class="small muted">'+esc(tp149T('planner.avoidHelp'))+'</p>'+avoid+'</div></details>'+
+ '<details class="rf148-profile-accordion"><summary>'+esc(tp149T('planner.excludeExercises'))+'</summary><div class="rf148-profile-accordion-body"><p class="small muted">'+esc(tp149T('planner.excludeHelp'))+'</p>'+exercises().map(function(e){return '<label class="exclude-row"><input type="checkbox" name="pfExclude" value="'+esc(e.id)+'" '+((p.excluded||[]).includes(e.id)?'checked':'')+'>'+esc(tp149ExerciseName(e))+'</label>';}).join('')+'</div></details>'+
+ '<p class="small muted">'+esc(tp149T('planner.storageHelp'))+'</p><button class="btn block" onclick="previewProfile()">'+esc(tp149T('planner.build'))+'</button></div></main>';
+ render(shell(html));window.scrollTo?.(0,0);if(typeof rf260ScrollState==='function')rf260ScrollState();
+};
+generatePersonalProgram=function(input){
+ const p=validateProfile(input),gear=profileGear132(p);
+ const lib=exercises().filter(function(e){return available132(e.id,p)&&!rf148ExerciseAvoided(e,p)&&(p.experience!=='beginner'||e.beginnerSafe);});
+ if(lib.length<3)throw Error(tp149T('planner.errorPool'));
+ const pools=rf148RolePools(lib,p);
+ const lower=pools.leg.length+pools.hinge.length>0,pull=pools.pull.length>0;
+ let effective=p.split;if(effective==='auto')effective=p.experience==='intermediate'&&lower&&pull?'upperlower':'full';
+ if((effective==='ppl'||effective==='upperlower')&&!lower)effective='upper';
+ if(effective==='ppl'&&!pull)effective='full';if(effective==='full'&&!lower)effective='upper';
+ const layouts={
+  full:[['A',['leg','push','pull','core','hinge','shoulder','bi','conditioning']],['B',['hinge','pull','push','core','leg','shoulder','tri','conditioning']]],
+  upper:[['upperA',['push','pull','shoulder','bi','tri','core','stability','conditioning']],['upperB',['pull','push','shoulder','tri','bi','core','stability','conditioning']]],
+  upperlower:[['upper',['push','pull','shoulder','bi','tri','core']],['lowerCore',['leg','hinge','core','stability','conditioning']]],
+  ppl:[['push',['push','shoulder','tri','core']],['pull',['pull','bi','core','stability']],['legsCore',['leg','hinge','core','conditioning']]]
+ };
+ const specs=layouts[effective]||layouts.full,capacity=Math.min(rf148Capacity(p.minutes),lib.length),prescriptions={},focusRoles=rf148FocusRoles(p.focus);
+ const fallback=lib.slice().sort(function(a,b){const ar=Object.keys(RF148_ROLE_PATTERNS).find(function(r){return RF148_ROLE_PATTERNS[r].includes(a.movementPattern);});const br=Object.keys(RF148_ROLE_PATTERNS).find(function(r){return RF148_ROLE_PATTERNS[r].includes(b.movementPattern);});const af=focusRoles.includes(ar)?1:0,bf=focusRoles.includes(br)?1:0;return bf-af||Number(b.compound)-Number(a.compound)||Number(b.beginnerSafe)-Number(a.beginnerSafe)||a.id.localeCompare(b.id);});
+ const days=specs.map(function(spec,di){
+  const dayKey=spec[0],roles=rf148FocusOrder(spec[1],p.focus),ids=[];
+  for(const role of roles){if(ids.length>=capacity)break;const available=(pools[role]||[]).filter(function(e){return !ids.includes(e.id);});if(!available.length)continue;ids.push(available[di%available.length].id);}
+  for(const e of fallback){if(ids.length>=capacity)break;if(!ids.includes(e.id))ids.push(e.id);}
+  if(ids.length<3)throw Error(tp149T('planner.errorDayPool'));
+  ids.forEach(function(id){prescriptions[id]=rf148Prescription(exercises().find(function(e){return e.id===id;}),p);});
+  return {id:String.fromCharCode(65+di),name:tp149PlannerRow('generatedDay',dayKey,'hu',dayKey),i18nKey:dayKey,exercises:ids};
+ });
+ const changed=p.split!=='auto'&&effective!==p.split;
+ const i18n={effectiveSplit:effective,gear:gear.slice(),focus:p.focus,avoidAreas:(p.avoidAreas||[]).slice(),minutes:p.minutes,capacity:capacity,changed:changed,experience:p.experience};
+ const canonical={generated:true,effectiveSplit:effective,gear:gear.slice(),focus:p.focus,avoidAreas:(p.avoidAreas||[]).slice(),i18n:i18n};
+ const reasons=tp149GeneratedReasons(canonical,'hu');
+ return {id:'personal-'+crypto.randomUUID(),name:tp149T('planner.generatedName',{split:tp149PlannerRow('split',effective,'hu',effective)},'hu'),location:gear.length?tp149T('planner.locationSelected',{},'hu'):tp149T('planner.locationBodyweight',{},'hu'),level:tp149PlannerRow('level',p.experience,'hu',p.experience),builtin:false,generated:true,generatorVersion:RF148_VERSION,effectiveSplit:effective,gear:gear.slice(),focus:p.focus,avoidAreas:(p.avoidAreas||[]).slice(),days:days,prescriptions:prescriptions,reasons:reasons,i18n:i18n,createdAt:new Date().toISOString()};
+};
+showPersonalPreview=function(){
+ const p=state.programPreview;if(!p)return;
+ const reasons=tp149GeneratedReasons(p);
+ render(shell('<main><button class="btn secondary" onclick="profileScreen()">← '+esc(tp149T('planner.title'))+'</button><div class="hero"><h1>'+esc(tp149ProgramMeta(p,'name'))+'</h1><p>'+esc(tp149T('planner.previewLabel'))+'</p></div><div class="card">'+reasons.map(function(x){return '<p>'+esc(x)+'</p>';}).join('')+'<p>'+esc(tp149T('planner.trialHelp'))+'</p></div>'+p.days.map(function(d){return '<div class="section">'+esc(tp149ProgramDayName(p,d))+'</div>'+d.exercises.map(function(id){const e=byId(id),r=p.prescriptions[id];return '<div class="card"><strong>'+esc(tp149ExerciseName(e))+'</strong><p>'+r.sets+' × '+esc(r.reps)+' • '+esc(tp149T('planner.rest',{seconds:tp149FormatNumber(r.rest)}))+'</p><span class="badge">'+esc(tp149MuscleGroupLabel(muscleGroups(id)[0]))+'</span>'+demoCard(id)+'</div>';}).join('');}).join('')+'<button class="btn block" onclick="acceptPersonalProgram()">'+esc(tp149T('planner.activate'))+'</button></main>'));
+};
+acceptPersonalProgram=function(){
+ if(!state.programPreview)return;const p=state.programPreview,profile=state.profilePreview;const keys=['settings','programs','activeProgramId','plannerSettings'];const old=keys.map(function(k){return localStorage.getItem('repforge:'+k);});
+ try{db.set('settings',Object.assign({},settings(),{profile:profile}));db.set('programs',[...programs(),p]);db.set('activeProgramId',p.id);db.set('plannerSettings',Object.assign({},plannerSettings(),{mode:profile.cadence,minutes:profile.minutes}));}
+ catch(e){keys.forEach(function(k,i){old[i]===null?localStorage.removeItem('repforge:'+k):localStorage.setItem('repforge:'+k,old[i]);});alert(tp149T('planner.saveFailed'));return;}
+ state.programPreview=null;state.profilePreview=null;state.tab='calendar';render();alert(tp149T('planner.saved'));
+};
+
+var tp149TranslateDom=function tp149TranslateDom(root=document){
+ const lang=rf212Lang();document.documentElement.lang=lang;if(lang==='hu'||!root||typeof document.createTreeWalker!=='function'||typeof NodeFilter==='undefined')return;
+ const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+ const nodes=[];let n;while((n=walker.nextNode()))nodes.push(n);
+ for(const node of nodes){
+  const p=node.parentElement;if(!p||/^(SCRIPT|STYLE|TEXTAREA)$/i.test(p.tagName))continue;
+  const old=node.nodeValue;if(!old||!old.trim())continue;
+  const translated=tp149Translate(old,lang);if(translated!==old)node.nodeValue=translated;
+ }
+ root.querySelectorAll?.('[aria-label],[title],[placeholder]').forEach(function(el){
+  for(const a of ['aria-label','title','placeholder']){const v=el.getAttribute(a);if(v){const t=tp149Translate(v,lang);if(t!==v)el.setAttribute(a,t);}}
+ });
+ const weekdayLabels={
+  en:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+  de:['Mo','Di','Mi','Do','Fr','Sa','So'],
+  ro:['Lu','Ma','Mi','Jo','Vi','Sâ','Du']
+ };
+ root.querySelectorAll?.('.cal-weekdays span').forEach(function(el,i){if(weekdayLabels[lang]?.[i])el.textContent=weekdayLabels[lang][i];});
+ root.querySelectorAll?.('.rf2211-weekdays label').forEach(function(el,i){const label=weekdayLabels[lang]?.[i];if(!label)return;for(const n of [...el.childNodes])if(n.nodeType===3&&n.nodeValue.trim())n.nodeValue=label;});
+ // Built-in exercise cards: use the canonical English name or explicit DE/RO translation.
+ root.querySelectorAll?.('.exercise,.detail,.tp-library-card').forEach(function(card){
+  const hu=card.querySelector?.('.ex-name')||card.querySelector?.('h2')||card.querySelector?.('h3');
+  const en=card.querySelector?.('.en');if(!hu)return;
+  const current=String(hu.textContent||'').trim();
+  const e=typeof exercises==='function'?exercises().find(function(x){return !x.custom&&(x.hu===current||x.en===String(en?.textContent||'').trim());}):null;
+  if(e){hu.textContent=tp149ExerciseName(e,lang);if(en)en.hidden=true;}
+ });
+};
+const tp149AfterRenderBase=tp120AfterRender;
+tp120AfterRender=function(){tp149AfterRenderBase();tp149TranslateDom(document.querySelector('#app')||document);};
+
+const tp149FmtDateBase=fmtDate;
+fmtDate=function(v){const out=tp149FormatDateTime(v);return out==='—'?tp149FmtDateBase(v):out;};
+if(typeof rf222Locale==='function')rf222Locale=function(){return tp149Locale();};
+if(typeof rf233Locale==='function')rf233Locale=function(){return tp149Locale();};
+
+const tp149SetLangBase=rf212SetLang;
+rf212SetLang=function(v){
+ if(!Object.hasOwn(TP149_LANGS,v))return;
+ db.set('language',v);document.documentElement.lang=rf212Lang();render();
+};
+
+var tp149TranslateFreshDom=function tp149TranslateFreshDom(node){
+ if(node&&rf212Lang()!=='hu')tp149TranslateDom(node);
+};
+if(typeof tp2628Confirm==='function'){
+ const tp149ConfirmBase=tp2628Confirm;
+ tp2628Confirm=function(message,opts){const p=tp149ConfirmBase(message,opts);tp149TranslateFreshDom(document.getElementById?.('tp2628Dialog'));return p;};
+}
+if(typeof tp2628Notice==='function'){
+ const tp149NoticeBase=tp2628Notice;
+ tp2628Notice=function(message,title){const p=tp149NoticeBase(message,title);tp149TranslateFreshDom(document.getElementById?.('tp2628Dialog'));return p;};
+}
+if(typeof rf130OpenAddPhoto==='function'){
+ const tp149PhotoBase=rf130OpenAddPhoto;
+ rf130OpenAddPhoto=function(){const r=tp149PhotoBase.apply(this,arguments);tp149TranslateFreshDom(document.getElementById?.('rf130PhotoModal'));return r;};
+}
+if(typeof openDemo==='function'){
+ const tp149DemoBase=openDemo;
+ openDemo=function(){const r=tp149DemoBase.apply(this,arguments);tp149TranslateFreshDom(document.querySelector?.('.video-dialog'));return r;};
+}
+const tp149BackupBase=makeBackup;
+makeBackup=function(){
+ const b=tp149BackupBase();
+ return Object.assign({},b,{language:typeof rf212LangSetting==='function'?rf212LangSetting():'system'});
+};
+if(typeof restoreText==='function'){
+ const tp149RestoreTextBase=restoreText;
+ restoreText=function(text){
+  let desired=null;
+  try{
+   const parsed=JSON.parse(String(text).replace(/^\uFEFF/,''));
+   if(parsed&&Object.hasOwn(TP149_LANGS,parsed.language))desired=parsed.language;
+  }catch(_){}
+  if(!desired)return tp149RestoreTextBase(text);
+  const confirmBase=typeof tp2628Confirm==='function'?tp2628Confirm:null;
+  if(!confirmBase)return tp149RestoreTextBase(text);
+  tp2628Confirm=function(message,opts){
+   const p=confirmBase(message,opts);
+   return Promise.resolve(p).then(function(ok){if(ok){db.set('language',desired);document.documentElement.lang=rf212Lang();}return ok;});
+  };
+  try{return tp149RestoreTextBase(text);}finally{tp2628Confirm=confirmBase;}
+ };
+}
+window.TrainPilotI18n={
+ version:TP149_VERSION,languages:['hu','en','de','ro'],locale:tp149Locale,
+ t:tp149T,translate:tp149Translate,plural:tp149Plural,formatNumber:tp149FormatNumber,
+ formatDate:tp149FormatDate,formatDateTime:tp149FormatDateTime,formatUnit:tp149FormatUnit,
+ audit:tp149CatalogAudit,exerciseNameAudit:tp149ExerciseNameAudit,programAudit:tp149ProgramAudit,exerciseName:tp149ExerciseName,exerciseNote:tp149ExerciseNote,equipment:tp149Equipment,target:tp149Target,muscleGroup:tp149MuscleGroupLabel,movement:tp149MovementLabel,style:tp149StyleText,programMeta:tp149ProgramMeta,programDayName:tp149ProgramDayName,plannerRow:tp149PlannerRow,plannerAudit:tp149PlannerAudit,generatedReasons:tp149GeneratedReasons
+};
+// @endsection trainpilot-149-complete-i18n.js
+
+
+// @section trainpilot-149-calendar-history-i18n.js
+/* TrainPilot 1.4.9: direct key-based calendar, scheduling and journal localization. */
+(function(){
+ const rows={
+  'calendar.title':['Edzésnaptár','Workout calendar','Trainingskalender','Calendar de antrenament'],
+  'calendar.intro':['Koppints egy napra, majd válassz az aktív program edzésnapjai közül. Több hét előre a Tervezési beállítások alatt tervezhetsz.','Tap a day, then choose one of the active program workout days. You can plan several weeks ahead under Planning settings.','Tippe auf einen Tag und wähle anschließend einen Trainingstag des aktiven Programms. Unter Planungseinstellungen kannst du mehrere Wochen im Voraus planen.','Atinge o zi, apoi alege una dintre zilele de antrenament ale programului activ. Poți planifica mai multe săptămâni înainte din Setări de planificare.'],
+  'calendar.planningSettings':['Tervezési beállítások','Planning settings','Planungseinstellungen','Setări de planificare'],
+  'calendar.weeksAhead':['több hét előre','several weeks ahead','mehrere Wochen im Voraus','mai multe săptămâni înainte'],
+  'calendar.rhythmHelp':['Válassz ritmust. A TrainPilot az aktív program napjait sorrendben forgatja.','Choose a rhythm. TrainPilot cycles through the active program days in order.','Wähle einen Rhythmus. TrainPilot durchläuft die Tage des aktiven Programms der Reihe nach.','Alege un ritm. TrainPilot parcurge în ordine zilele programului activ.'],
+  'calendar.rhythm':['Tervezési ritmus','Planning rhythm','Planungsrhythmus','Ritm de planificare'],
+  'calendar.cadence.alternate':['Minden második nap','Every other day','Jeden zweiten Tag','O dată la două zile'],
+  'calendar.cadence.daily':['Minden nap','Every day','Jeden Tag','În fiecare zi'],
+  'calendar.cadence.weekly':['Kijelölt heti napokon','Selected weekdays','An ausgewählten Wochentagen','În zilele săptămânii selectate'],
+  'calendar.startDate':['Kezdőnap','Start date','Startdatum','Data de început'],
+  'calendar.time':['Időpont','Time','Uhrzeit','Ora'],
+  'calendar.duration':['Időtartam (perc)','Duration (minutes)','Dauer (Minuten)','Durată (minute)'],
+  'calendar.weeks':['Hetek száma','Number of weeks','Anzahl der Wochen','Număr de săptămâni'],
+  'calendar.firstDay':['Első edzésnap','First workout day','Erster Trainingstag','Prima zi de antrenament'],
+  'calendar.plan':['Edzések megtervezése','Plan workouts','Trainings planen','Planifică antrenamentele'],
+  'calendar.planned':['Tervezett edzések','Planned workouts','Geplante Trainings','Antrenamente planificate'],
+  'calendar.chooseDay':['Válassz edzésnapot:','Choose a workout day:','Trainingstag auswählen:','Alege o zi de antrenament:'],
+  'calendar.scheduled':['Tervezve: {day}','Scheduled: {day}','Geplant: {day}','Planificat: {day}'],
+  'calendar.status.planned':['Tervezett','Planned','Geplant','Planificat'],
+  'calendar.status.skipped':['Kihagyva','Skipped','Übersprungen','Omis'],
+  'calendar.action.start':['Indítás','Start','Starten','Pornește'],
+  'calendar.action.move':['Áthelyezés','Move','Verschieben','Mută'],
+  'calendar.action.skip':['Kihagyás','Skip','Überspringen','Omite'],
+  'calendar.action.restore':['Vissza','Restore','Zurücksetzen','Restaurează'],
+  'calendar.noPlanned':['Még nincs tervezett edzés.','No workouts are planned yet.','Noch kein Training geplant.','Nu există încă antrenamente planificate.'],
+  'calendar.error.dateTime':['Adj meg érvényes kezdőnapot és időpontot.','Enter a valid start date and time.','Gib ein gültiges Startdatum und eine gültige Uhrzeit ein.','Introdu o dată de început și o oră valide.'],
+  'calendar.error.weekday':['A heti napos tervezéshez jelölj ki legalább egy napot.','Select at least one weekday for weekly planning.','Wähle für die Wochenplanung mindestens einen Wochentag aus.','Selectează cel puțin o zi a săptămânii pentru planificarea săptămânală.'],
+  'calendar.error.noEmpty':['Nem találtam új, üres napot a megadott időszakban.','No new free day was found in the selected period.','Im gewählten Zeitraum wurde kein neuer freier Tag gefunden.','Nu a fost găsită nicio zi liberă nouă în perioada selectată.'],
+  'weekday.mon':['H','Mon','Mo','Lu'],'weekday.tue':['K','Tue','Di','Ma'],'weekday.wed':['Sze','Wed','Mi','Mi'],'weekday.thu':['Cs','Thu','Do','Jo'],'weekday.fri':['P','Fri','Fr','Vi'],'weekday.sat':['Szo','Sat','Sa','Sâ'],'weekday.sun':['V','Sun','So','Du'],
+  'journal.title':['Edzésnapló','Workout log','Trainingstagebuch','Jurnal de antrenament'],
+  'journal.intro':['Az edzések alapból összecsukva jelennek meg; koppints egy bejegyzésre a részletekhez. Dátum szerint is szűrhetsz.','Workouts are collapsed by default; tap an entry for details. You can also filter by date.','Trainings sind standardmäßig eingeklappt; tippe für Details auf einen Eintrag. Du kannst auch nach Datum filtern.','Antrenamentele sunt restrânse implicit; atinge o înregistrare pentru detalii. Poți filtra și după dată.'],
+  'journal.from':['Ettől','From','Von','De la'],
+  'journal.to':['Eddig','To','Bis','Până la'],
+  'journal.clearFilter':['Szűrés törlése','Clear filter','Filter löschen','Șterge filtrul'],
+  'journal.count':['{shown} / {total} edzés','{shown} / {total} workouts','{shown} / {total} Trainings','{shown} / {total} antrenamente'],
+  'journal.noneRange':['A kiválasztott dátumtartományban nincs naplózott edzés.','There are no logged workouts in the selected date range.','Im ausgewählten Datumsbereich gibt es keine protokollierten Trainings.','Nu există antrenamente înregistrate în intervalul de date selectat.'],
+  'journal.none':['Még nincs elmentett edzés.','No workout has been saved yet.','Noch kein Training gespeichert.','Nu există încă niciun antrenament salvat.'],
+  'journal.datePick':['Dátum kiválasztása','Choose date','Datum auswählen','Alege data'],
+  'journal.dateTitle.from':['Ettől – dátum','From – date','Von – Datum','De la – data'],
+  'journal.dateTitle.to':['Eddig – dátum','To – date','Bis – Datum','Până la – data'],
+  'journal.closePicker':['Dátumválasztó bezárása','Close date picker','Datumsauswahl schließen','Închide selectorul de dată'],
+  'journal.prevMonth':['Előző hónap','Previous month','Vorheriger Monat','Luna anterioară'],
+  'journal.nextMonth':['Következő hónap','Next month','Nächster Monat','Luna următoare'],
+  'journal.inclusive':['A kiválasztott nap is beleszámít a szűrésbe.','The selected day is included in the filter.','Der ausgewählte Tag ist im Filter enthalten.','Ziua selectată este inclusă în filtru.'],
+  'journal.clearDate':['Dátum törlése','Clear date','Datum löschen','Șterge data'],
+  'journal.today':['Ma','Today','Heute','Astăzi'],
+  'journal.exerciseCount':['{count} gyakorlat','{count} exercises','{count} Übungen','{count} exerciții'],
+  'journal.photoCount':['{count} fotó','{count} photos','{count} Fotos','{count} fotografii'],
+  'journal.setCount':['{done}/{total} sorozat','{done}/{total} sets','{done}/{total} Sätze','{done}/{total} serii'],
+  'journal.editWorkout':['Edzés módosítása','Edit workout','Training bearbeiten','Editează antrenamentul'],
+  'journal.addCalendar':['Naptárhoz adás','Add to calendar','Zum Kalender hinzufügen','Adaugă în calendar'],
+  'journal.healthData':['Health adatok','Health data','Health-Daten','Date Health'],
+  'journal.notDone':['nincs kész','not done','nicht erledigt','nefinalizat']
+ };
+ for(const [key,row] of Object.entries(rows)){
+  TP149_KEY_ROWS[key]=row;
+  TP149_CATALOG.hu[key]=row[0];TP149_CATALOG.en[key]=row[1];TP149_CATALOG.de[key]=row[2];TP149_CATALOG.ro[key]=row[3];
+ }
+})();
+
+var tp149Weekdays=function tp149Weekdays(){return ['weekday.mon','weekday.tue','weekday.wed','weekday.thu','weekday.fri','weekday.sat','weekday.sun'].map(function(k){return tp149T(k);});};
+
+rf230WeekdayRow=function(mode){
+ const vals=[1,2,3,4,5,6,0],names=tp149Weekdays();
+ return '<div id="rf230Weekdays" class="rf2211-weekdays" style="'+(mode==='weekly'?'':'display:none')+'">'+names.map(function(n,i){return '<label><input type="checkbox" name="rf2211Weekday" value="'+vals[i]+'">'+esc(n)+'</label>';}).join('')+'</div>';
+};
+
+rf2211Planner=function(){
+ const s=plannerSettings(),p=activeProgram(),days=rf2211Days(),today=new Date().toISOString().slice(0,10),mode=rf230PlannerMode();
+ return '<details class="card rf2211-planner"><summary><strong>'+esc(tp149T('calendar.planningSettings'))+'</strong><span class="small muted"> • '+esc(tp149T('calendar.weeksAhead'))+'</span></summary><div class="rf2211-planbody"><p class="small muted">'+esc(tp149T('calendar.rhythmHelp'))+'</p><label class="small">'+esc(tp149T('calendar.rhythm'))+'<select class="field" id="rf230Mode" onchange="rf230ModeChanged()"><option value="alternate" '+(mode==='alternate'?'selected':'')+'>'+esc(tp149T('calendar.cadence.alternate'))+'</option><option value="daily" '+(mode==='daily'?'selected':'')+'>'+esc(tp149T('calendar.cadence.daily'))+'</option><option value="weekly" '+(mode==='weekly'?'selected':'')+'>'+esc(tp149T('calendar.cadence.weekly'))+'</option></select></label><div class="grid2"><label class="small">'+esc(tp149T('calendar.startDate'))+'<input class="field" id="rf2211Start" type="date" value="'+today+'"></label><label class="small">'+esc(tp149T('calendar.time'))+'<input class="field" id="rf2211Time" type="time" value="'+esc(s.time)+'"></label><label class="small">'+esc(tp149T('calendar.duration'))+'<input class="field" id="rf2211Minutes" type="number" min="10" max="240" value="'+s.minutes+'"></label><label class="small">'+esc(tp149T('calendar.weeks'))+'<input class="field" id="rf2211Weeks" type="number" min="1" max="12" value="4"></label></div><label class="small">'+esc(tp149T('calendar.firstDay'))+'<select class="field" id="rf2211First">'+days.map(function(d,i){return '<option value="'+i+'">'+esc(tp149ProgramDayName(p,d))+'</option>';}).join('')+'</select></label>'+rf230WeekdayRow(mode)+'<button class="btn block" onclick="rf2211PlanWeeks()">'+esc(tp149T('calendar.plan'))+'</button></div></details>';
+};
+
+rf2211PlanWeeks=function(){
+ const p=activeProgram(),days=rf2211Days();if(!p||!days.length)return;
+ const start=document.querySelector('#rf2211Start')?.value,time=document.querySelector('#rf2211Time')?.value,mode=document.querySelector('#rf230Mode')?.value||'alternate';
+ const minutes=Math.max(10,Math.min(240,Number(document.querySelector('#rf2211Minutes')?.value)||45));
+ const weeks=Math.max(1,Math.min(12,Number(document.querySelector('#rf2211Weeks')?.value)||4));
+ const first=Math.max(0,Math.min(days.length-1,Number(document.querySelector('#rf2211First')?.value)||0));
+ const weekdays=[...document.querySelectorAll('input[name="rf2211Weekday"]:checked')].map(function(x){return Number(x.value);});
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(start||'')||!/^\d{2}:\d{2}$/.test(time||'')){alert(tp149T('calendar.error.dateTime'));return;}
+ if(mode==='weekly'&&!weekdays.length){alert(tp149T('calendar.error.weekday'));return;}
+ const base=new Date(start+'T12:00'),out=[];let cycle=first;
+ for(let i=0;i<weeks*7;i++){
+  const d=new Date(base);d.setDate(base.getDate()+i);
+  const include=mode==='daily'||(mode==='alternate'&&i%2===0)||(mode==='weekly'&&weekdays.includes(d.getDay()));
+  if(!include)continue;
+  const date=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+  if(scheduleOnDate(date).some(function(x){return !x.cancelled;}))continue;
+  out.push(makeScheduleItem(p,date,time,minutes,days[cycle%days.length].id));cycle++;
+ }
+ if(!out.length){alert(tp149T('calendar.error.noEmpty'));return;}
+ db.set('plannerSettings',Object.assign({},plannerSettings(),{mode:mode,time:time,minutes:minutes}));addScheduleBatch(out);if(typeof cloudChanged==='function')cloudChanged();render();
+};
+
+rf2211DayPicker=function(){
+ const date=rf2211Selected();if(!date)return '';
+ const p=activeProgram(),days=rf2211Days(),item=scheduleOnDate(date).find(function(x){return !x.cancelled;});
+ const title=tp149FormatDate(new Date(date+'T12:00'),{month:'long',day:'numeric',weekday:'long'});
+ if(item){
+  const d=programDay(p,item.dayId||item.workout),name=tp149ProgramDayName(p,d)||item.dayId||item.workout;
+  return '<div class="card rf2211-picker"><div><strong>'+esc(title)+'</strong><div class="small muted">'+esc(tp149T('calendar.scheduled',{day:name}))+'</div></div><button class="btn danger" onclick="rf2211DeleteDate()">'+esc(tp149T('common.delete'))+'</button></div>';
+ }
+ return '<div class="card rf2211-picker"><strong>'+esc(title)+'</strong><div class="small muted">'+esc(tp149T('calendar.chooseDay'))+'</div><div class="rf2211-daybuttons">'+days.map(function(d){return '<button class="btn" onclick="rf2211AddDay(\''+esc(d.id)+'\')">'+esc(tp149ProgramDayName(p,d))+'</button>';}).join('')+'</div></div>';
+};
+
+scheduleListHtml=function(){
+ const isDone=function(x){return typeof rf209ScheduleDone==='function'?rf209ScheduleDone(x):(x.status==='completed'||history().some(function(h){return h.scheduleId===x.id;}));};
+ const items=scheduled().filter(function(x){return !x.cancelled&&!isDone(x);}).sort(function(a,b){return Date.parse(a.start)-Date.parse(b.start);}).slice(-120);
+ if(!items.length)return '<div class="muted">'+esc(tp149T('calendar.noPlanned'))+'</div>';
+ return items.map(function(x){
+  const p=programById(x.programId||'home-basic'),d=programDay(p,x.dayId||x.workout),skipped=x.status==='skipped',moving=state?.rf260MovingScheduleId===x.id;
+  const title=p&&d?tp146ProgramDayTitle(p,d):(x.dayId||x.workout||'');
+  return '<div class="card schedule-card tp146-schedule-card"><div class="tp146-schedule-head"><div class="tp146-schedule-copy"><strong class="tp146-schedule-title">'+esc(title)+'</strong><div class="small muted">'+esc(tp149FormatDateTime(x.start))+' • '+esc(tp149T(skipped?'calendar.status.skipped':'calendar.status.planned'))+'</div></div><button class="btn danger tp146-schedule-delete" onclick="rf209DeleteSchedule(\''+esc(x.id)+'\')">'+esc(tp149T('common.delete'))+'</button></div><div class="schedule-actions tp146-schedule-actions-row"><button class="btn" onclick="startScheduledById(\''+esc(x.id)+'\')">'+esc(tp149T('calendar.action.start'))+'</button><button class="btn secondary '+(moving?'tp-action-active':'')+'" data-tp-move-id="'+esc(x.id)+'" aria-pressed="'+(moving?'true':'false')+'" onclick="rf260OpenScheduleMove(\''+esc(x.id)+'\',this)">'+esc(tp149T('calendar.action.move'))+'</button><button class="btn secondary '+(skipped?'tp-selected':'')+'" aria-pressed="'+(skipped?'true':'false')+'" onclick="skipSchedule(\''+esc(x.id)+'\')">'+esc(tp149T(skipped?'calendar.action.restore':'calendar.action.skip'))+'</button></div></div>';
+ }).join('');
+};
+
+calendarScreen=function(){
+ const weekdays=tp149Weekdays(),month=tp149FormatDate(new Date(state.calendarMonth+'-01T12:00'),{year:'numeric',month:'long'});
+ return shell('<main><div class="hero rf224-hero"><h1>'+esc(tp149T('calendar.title'))+'</h1><div class="muted">'+esc(tp149T('calendar.intro'))+'</div></div>'+rf2211Planner()+'<div class="calendar-wrap"><div class="calendar-head"><button class="btn secondary" onclick="changeCalendarMonth(-1)">‹</button><strong>'+esc(month)+'</strong><button class="btn secondary" onclick="changeCalendarMonth(1)">›</button></div><div class="cal-weekdays">'+weekdays.map(function(x){return '<span>'+esc(x)+'</span>';}).join('')+'</div><div class="calendar-grid">'+calendarGrid()+'</div></div>'+rf2211DayPicker()+'<div class="section">'+esc(tp149T('calendar.planned'))+'</div>'+scheduleListHtml()+'</main>');
+};
+
+rf263DateField=function(key,label,value){
+ const date=rf263ParseDate(value),text=date?tp149FormatDate(date,{year:'numeric',month:'2-digit',day:'2-digit'}):tp149T('journal.datePick');
+ return '<div><span class="small muted" id="rf263-'+key+'-label">'+esc(label)+'</span><button type="button" id="rf263-'+key+'-date" class="tp-select-trigger rf263-date-trigger" aria-haspopup="dialog" aria-labelledby="rf263-'+key+'-label rf263-'+key+'-value" onclick="rf263OpenDate(\''+key+'\')"><span id="rf263-'+key+'-value">'+esc(text)+'</span><span aria-hidden="true">▦</span></button></div>';
+};
+
+rf263PaintDate=function(){
+ const picker=rf263DatePicker;if(!picker)return;
+ const dialog=picker.dialog,key=picker.key,month=picker.month,y=month.getFullYear(),m=month.getMonth(),selected=rf263HistoryFilter[key];
+ const first=(new Date(y,m,1,12).getDay()+6)%7,count=new Date(y,m+1,0,12).getDate(),today=rf263DateKey(new Date()),weekdays=tp149Weekdays();
+ let days='<span aria-hidden="true"></span>'.repeat(first);
+ for(let d=1;d<=count;d++){
+  const date=new Date(y,m,d,12),value=rf263DateKey(date),allowed=rf263DateAllowed(key,value);
+  days+='<button type="button" class="rf263-date-day" data-date="'+value+'" aria-label="'+esc(tp149FormatDate(date,{year:'numeric',month:'long',day:'numeric',weekday:'long'}))+'" aria-pressed="'+(value===selected)+'" '+(value===today?'aria-current="date"':'')+' '+(allowed?'':'disabled')+' onclick="rf263PickDate(\''+value+'\')">'+d+'</button>';
+ }
+ const title=tp149T(key==='from'?'journal.dateTitle.from':'journal.dateTitle.to');
+ dialog.innerHTML='<div class="rf263-date-heading"><h2 id="rf263-date-title">'+esc(title)+'</h2><button type="button" class="btn secondary" aria-label="'+esc(tp149T('journal.closePicker'))+'" onclick="rf263CloseDate()">✕</button></div><div class="rf263-date-month"><button type="button" class="btn secondary" data-prev-month aria-label="'+esc(tp149T('journal.prevMonth'))+'" onclick="rf263MoveMonth(-1)" '+(y===1900&&m===0?'disabled':'')+'>‹</button><strong aria-live="polite">'+esc(tp149FormatDate(month,{year:'numeric',month:'long'}))+'</strong><button type="button" class="btn secondary" data-next-month aria-label="'+esc(tp149T('journal.nextMonth'))+'" onclick="rf263MoveMonth(1)" '+(y===2100&&m===11?'disabled':'')+'>›</button></div><div class="rf263-date-week" aria-hidden="true">'+weekdays.map(function(x){return '<span>'+esc(x)+'</span>';}).join('')+'</div><div class="rf263-date-grid">'+days+'</div><p class="small muted">'+esc(tp149T('journal.inclusive'))+'</p><div class="rf263-date-actions"><button type="button" class="btn secondary" onclick="rf263PickDate(\'\')">'+esc(tp149T('journal.clearDate'))+'</button><button type="button" class="btn" onclick="rf263PickDate(\''+today+'\')" '+(rf263DateAllowed(key,today)?'':'disabled')+'>'+esc(tp149T('journal.today'))+'</button></div>';
+};
+
+var tp149HistoryExerciseName=function tp149HistoryExerciseName(e){
+ const lib=e?.id&&typeof byId==='function'?byId(e.id):null;
+ return lib&&!lib.custom?tp149ExerciseName(lib):String(e?.hu||e?.en||e?.id||'');
+};
+var tp149HistoryTitle=function tp149HistoryTitle(x){
+ const p=x?.programId&&typeof programById==='function'?programById(x.programId):null,d=p?programDay(p,x.dayId||x.workout):null;
+ if(p&&d)return tp149ProgramMeta(p,'name')+' • '+tp149ProgramDayName(p,d);
+ if(x?.programName)return String(x.programName)+' • '+String(x.dayId||x.workout||'');
+ return 'Full Body '+String(x?.workout||'');
+};
+
+rf263HistoryItem=function(x,originalIndex,visibleIndex){
+ const c=completedSets(x),title=tp149HistoryTitle(x),key=rf142WorkoutKey(x),photoCount=rf130VisiblePhotos(x).length;
+ const count=tp149T('journal.exerciseCount',{count:x.exercises.length})+(photoCount?' • '+tp149T('journal.photoCount',{count:photoCount}):'');
+ return '<details class="history rf263-history rf103-history" ontoggle="if(this.open){rf130LoadHistoryPhotos(this);rfHistoryHealthEnsure('+originalIndex+')}"><summary><div class="history-head"><div class="history-title-row"><div><div class="history-title">'+esc(title)+'</div><div class="history-date">'+esc(tp149FormatDateTime(x.started))+'</div></div><div class="rf103-history-side"><span class="badge">'+esc(count)+'</span><span class="rf103-history-chevron" aria-hidden="true">⌄</span></div></div><div class="history-badges"><span class="history-badge">⏱ '+esc(sessionDuration(x))+'</span><span class="history-badge">✓ '+esc(tp149T('journal.setCount',{done:c.done,total:c.total}))+'</span></div></div></summary><div class="history-body"><div class="grid2"><button class="btn secondary" onclick="editHistoryWorkout(\''+esc(key)+'\')">'+esc(tp149T('journal.editWorkout'))+'</button><button class="btn secondary" onclick="calendarIntent('+originalIndex+')">'+esc(tp149T('journal.addCalendar'))+'</button></div><div class="rf-history-health-panel" data-rf-history-health-panel="'+originalIndex+'"><button type="button" class="rf-history-health-toggle" aria-expanded="true" onclick="event.stopPropagation();rfHistoryHealthToggle('+originalIndex+')"><strong>'+esc(tp149T('journal.healthData'))+'</strong><span class="small muted">'+esc(rfHistoryHealthWindow(x))+'</span><span class="rf-history-health-chevron" aria-hidden="true">⌄</span></button><div class="rf-history-health-body"><div class="rf-history-health" data-rf-history-health="'+originalIndex+'">'+rfHistoryHealthHtml(originalIndex)+'</div><button type="button" class="btn secondary block rf-history-health-refresh" onclick="event.stopPropagation();healthFromHistory('+originalIndex+')">'+esc(tp149T('common.refresh'))+'</button></div></div>'+rf130PhotoSection(x,key)+(x.exercises||[]).map(function(e){return '<div class="history-ex"><div class="history-ex-name">'+esc(tp149HistoryExerciseName(e))+'</div><div class="history-setchips">'+(e.sets||[]).map(function(s){return '<span class="setchip">'+esc(formatSet(e,s))+(s.done?' ✓':' • '+esc(tp149T('journal.notDone')))+'</span>';}).join('')+'</div></div>';}).join('')+'</div></details>';
+};
+
+historyScreen=function(){
+ const all=history(),filtered=rf263FilteredHistory(),from=rf263HistoryFilter.from,to=rf263HistoryFilter.to,active=!!(from||to);
+ return shell('<main><div class="hero"><h1>'+esc(tp149T('journal.title'))+'</h1><div class="muted">'+esc(tp149T('journal.intro'))+'</div></div><div class="card"><div class="rf263-history-filter">'+rf263DateField('from',tp149T('journal.from'),from)+rf263DateField('to',tp149T('journal.to'),to)+'<button class="btn secondary rf263-clear-filter" onclick="rf263ClearHistoryFilter()" '+(active?'':'disabled')+'>'+esc(tp149T('journal.clearFilter'))+'</button></div><p class="small muted rf263-history-count">'+esc(tp149T('journal.count',{shown:filtered.length,total:all.length}))+'</p></div>'+(filtered.length?filtered.map(function(row,i){return rf263HistoryItem(row.x,row.index,i);}).join(''):(all.length?'<div class="card muted">'+esc(tp149T('journal.noneRange'))+'</div>':'<div class="muted">'+esc(tp149T('journal.none'))+'</div>'))+'</main>');
+};
+
+window.TrainPilotI18n.calendarJournalAudit=function(){
+ const keys=['calendar.title','calendar.intro','calendar.planningSettings','calendar.cadence.alternate','calendar.cadence.daily','calendar.cadence.weekly','calendar.planned','journal.title','journal.intro','journal.from','journal.to','journal.clearFilter','journal.none'];
+ const missing={hu:[],en:[],de:[],ro:[]};
+ for(const lang of Object.keys(missing))for(const key of keys)if(!TP149_CATALOG[lang]?.[key])missing[lang].push(key);
+ return missing;
+};
+// @endsection trainpilot-149-calendar-history-i18n.js
+
+
+// @section trainpilot-149-health-coach-i18n.js
+/* TrainPilot 1.4.9: direct Health hub and Coach localization. */
+(function(){
+ const rows={
+  'health.title':['Egészség','Health','Gesundheit','Sănătate'],
+  'health.intro':['Health Connect, regeneráció, Health-adatok és Coach egy közös adatfolyamban.','Health Connect, recovery, health data and Coach in one unified flow.','Health Connect, Regeneration, Gesundheitsdaten und Coach in einem gemeinsamen Ablauf.','Health Connect, recuperare, date de sănătate și Coach într-un singur flux.'],
+  'health.sync':['Szinkronizálás','Sync','Synchronisieren','Sincronizează'],
+  'health.permissions':['Engedélyek','Permissions','Berechtigungen','Permisiuni'],
+  'health.lastSync':['Utolsó sikeres szinkron: {time}','Last successful sync: {time}','Letzte erfolgreiche Synchronisierung: {time}','Ultima sincronizare reușită: {time}'],
+  'health.never':['Még nem volt','Never','Noch nie','Niciodată'],
+  'health.localEntry':['Kézi adat','Local entry','Lokaler Eintrag','Înregistrare locală'],
+  'health.todayStatus':['Mai állapot','Today status','Heutiger Status','Starea de azi'],
+  'health.bodyFitness':['Test és fittség','Body and fitness','Körper und Fitness','Corp și fitness'],
+  'health.sleep':['Alvás','Sleep','Schlaf','Somn'],
+  'health.sleepStage':['alvásfázisok alapján','based on sleep stages','basierend auf Schlafphasen','pe baza etapelor somnului'],
+  'health.sessionDuration':['alvási munkamenet időtartama','sleep-session duration','Dauer der Schlafsitzung','durata sesiunii de somn'],
+  'health.steps':['Lépések','Steps','Schritte','Pași'],
+  'health.activeEnergy':['Aktív energia','Active energy','Aktive Energie','Energie activă'],
+  'health.avgHeartRate':['Átlagpulzus','Average heart rate','Durchschnittspuls','Puls mediu'],
+  'health.restingHeartRate':['Nyugalmi pulzus','Resting heart rate','Ruhepuls','Puls în repaus'],
+  'health.weight':['Testsúly','Weight','Gewicht','Greutate'],
+  'health.bodyFat':['Testzsír','Body fat','Körperfett','Grăsime corporală'],
+  'health.weightJournal':['Testsúly napló és grafikon','Weight log and chart','Gewichtsprotokoll und Diagramm','Jurnal și grafic de greutate'],
+  'health.more':['További Health-adatok','More health data','Weitere Gesundheitsdaten','Mai multe date de sănătate'],
+  'health.bloodPressure':['Vérnyomás','Blood pressure','Blutdruck','Tensiune arterială'],
+  'health.bloodGlucose':['Vércukor','Blood glucose','Blutzucker','Glicemie'],
+  'health.respiratoryRate':['Légzésszám','Respiratory rate','Atemfrequenz','Frecvență respiratorie'],
+  'health.distance':['Távolság','Distance','Distanz','Distanță'],
+  'health.recoveryHistory':['Regenerációs előzmények','Recovery history','Regenerationsverlauf','Istoric recuperare'],
+  'health.permissionsOpened':['Health Connect engedélyek megnyitva.','Health Connect permissions opened.','Health-Connect-Berechtigungen geöffnet.','Permisiunile Health Connect au fost deschise.'],
+  'health.permissionsError':['A Health Connect engedélyek nem nyithatók meg.','Health Connect permissions could not be opened.','Die Health-Connect-Berechtigungen konnten nicht geöffnet werden.','Permisiunile Health Connect nu au putut fi deschise.'],
+  'coach.title':['TrainPilot Coach','TrainPilot Coach','TrainPilot Coach','TrainPilot Coach'],
+  'coach.today':['Mai edzés','Today’s workout','Heutiges Training','Antrenamentul de azi'],
+  'coach.next':['Következő edzés','Next workout','Nächstes Training','Următorul antrenament'],
+  'coach.suggested':['Javasolt edzés','Suggested workout','Empfohlenes Training','Antrenament recomandat'],
+  'coach.noPlan':['Nincs tervezett edzés','No planned workout','Kein Training geplant','Nu există antrenament planificat'],
+  'coach.start':['Edzés indítása','Start workout','Training starten','Pornește antrenamentul'],
+  'coach.calendar':['Naptár megnyitása','Open calendar','Kalender öffnen','Deschide calendarul'],
+  'coach.openHealth':['Egészség megnyitása','Open Health','Gesundheit öffnen','Deschide Sănătate'],
+  'coach.why':['Mi alapján?','Why?','Grundlage','Pe ce se bazează?'],
+  'coach.exercisePlan':['Gyakorlatonkénti javaslat','Exercise recommendations','Empfehlung je Übung','Recomandări pe exerciții'],
+  'coach.normal':['Normál terhelés','Normal load','Normale Belastung','Încărcare normală'],
+  'coach.reduced':['Kissé visszafogott terhelés','Slightly reduced load','Etwas reduzierte Belastung','Încărcare ușor redusă'],
+  'coach.light':['Könnyített nap','Light day','Leichter Tag','Zi ușoară'],
+  'coach.normalText':['A jelenlegi adatok alapján mehet a tervezett edzés. A progresszió csak ott lépjen tovább, ahol az előző teljesítés és visszajelzés is indokolja.','Current data supports the planned workout. Progress only where the previous performance and feedback support it.','Die aktuellen Daten sprechen für das geplante Training. Progression nur dort, wo Leistung und Rückmeldung dafür sprechen.','Datele actuale susțin antrenamentul planificat. Progresează doar unde performanța și feedbackul anterior justifică asta.'],
+  'coach.reducedText':['Kezdj óvatosabban. A korábban nehéznek jelölt gyakorlatoknál tartsd a terhelést; súlyemelést csak jó bemelegítés után válassz.','Start more conservatively. Hold load on exercises previously marked hard; increase only after a good warm-up.','Etwas vorsichtiger starten. Bei zuletzt schweren Übungen Belastung halten; nur nach gutem Aufwärmen steigern.','Începe mai prudent. Păstrează greutatea la exercițiile marcate anterior ca dificile; crește doar după o încălzire bună.'],
+  'coach.lightText':['A mai jelek alapján ne erőltesd a progressziót. Könnyített edzés vagy pihenő is megfelelő választás lehet.','Do not force progression today. A lighter session or rest can be appropriate.','Heute keine Progression erzwingen. Leichteres Training oder Pause kann passend sein.','Nu forța progresia azi. Un antrenament mai ușor sau odihna pot fi potrivite.'],
+  'coach.painText':['A közelmúltban fájdalom / kellemetlenség jelzés volt. Az érintett gyakorlatnál ne emelj terhelést.','A recent pain/discomfort flag exists. Do not increase load on the affected exercise.','Kürzlich wurde Schmerz/Beschwerden gemeldet. Bei der betroffenen Übung nicht steigern.','Există un semnal recent de durere/disconfort. Nu crește greutatea la exercițiul afectat.'],
+  'coach.sleep':['Alvás','Sleep','Schlaf','Somn'],'coach.hrv':['HRV','HRV','HRV','HRV'],
+  'coach.load':['Edzésterhelés','Training load','Trainingsbelastung','Încărcare'],
+  'coach.dataAge':['Regenerációs adat','Recovery data','Regenerationsdaten','Date recuperare'],
+  'coach.daysOld':['napos','days old','Tage alt','zile vechi'],
+  'coach.todayWord':['ma','today','heute','astăzi'],
+  'coach.noRecovery':['Nincs friss alvás/HRV adat','No recent sleep/HRV data','Keine aktuellen Schlaf-/HRV-Daten','Nu există date recente de somn/HRV'],
+  'coach.hold':['Tartás','Hold','Halten','Menține'],'coach.increase':['Emelhető','Can increase','Steigerbar','Poți crește'],
+  'coach.reps':['Ismétlés +','Reps +','Wdh. +','Repetări +'],'coach.easyStart':['Könnyebb kezdés','Start lighter','Leichter starten','Începe mai ușor'],
+  'coach.startLighter':['indulj könnyebben','start lighter','leichter starten','începe mai ușor'],
+  'coach.pain':['Ne emelj','Do not increase','Nicht steigern','Nu crește'],
+  'coach.startLoad':['Kezdő terhelés','Starting load','Startbelastung','Greutate inițială'],
+  'coach.unknown':['Nincs elég előzmény','Not enough history','Nicht genug Verlauf','Istoric insuficient'],
+  'coach.readiness':['Mai készenlét','Today readiness','Heutige Bereitschaft','Pregătire azi'],
+  'coach.approx':['A Coach tájékoztató edzéstámogatás, nem orvosi értékelés.','Coach guidance is informational and is not medical advice.','Coach-Hinweise sind informativ und keine medizinische Bewertung.','Recomandările Coach sunt informative, nu evaluare medicală.']
+ };
+ for(const [key,row] of Object.entries(rows)){
+  TP149_KEY_ROWS[key]=row;
+  TP149_CATALOG.hu[key]=row[0];TP149_CATALOG.en[key]=row[1];TP149_CATALOG.de[key]=row[2];TP149_CATALOG.ro[key]=row[3];
+ }
+})();
+
+var tp149HealthFmt=function tp149HealthFmt(value,digits,suffix){
+ const n=Number(value);if(!Number.isFinite(n))return '—';
+ return tp149FormatNumber(n,{minimumFractionDigits:digits,maximumFractionDigits:digits})+(suffix||'');
+};
+var tp149SleepText=function tp149SleepText(minutes){
+ const n=Number(minutes);if(!Number.isFinite(n))return '—';
+ const h=Math.floor(n/60),m=Math.round(n%60);
+ return (h?tp149FormatNumber(h)+' h ':'')+tp149FormatNumber(m)+' min';
+};
+
+healthSettings=async function(){
+ try{
+  await healthPlugin().openSettings();
+  state.health=state.health||{};state.health.message=tp149T('health.permissionsOpened');
+ }catch(e){
+  state.health=state.health||{};state.health.message=e?.message||tp149T('health.permissionsError');
+  if(state.tab==='health'&&!state.session)rf263HealthHub();
+ }
+};
+
+rf263HealthHub=function(){
+ state.tab='health';state.healthView=false;if(typeof rf225HealthPage!=='undefined')rf225HealthPage='hub';rf240ApplyLedger();
+ const ledger=rf240Ledger(),today=ledger.days?.[rf240DayKey(new Date())]||{},rec=state.health?.recovery||{},w=state.health?.wellness||{};
+ const manualWeight=(function(){const all=typeof rf215All==='function'?rf215All():[];const n=Number(all.at?.(-1)?.kg);return Number.isFinite(n)?n:null;})();
+ const healthWeight=w.weightKg==null?null:Number(w.weightKg),shownWeight=Number.isFinite(healthWeight)?healthWeight:manualWeight;
+ const weightSource=Number.isFinite(healthWeight)?'Health Connect':shownWeight!=null?tp149T('health.localEntry'):'';
+ const coach=typeof rf235HealthCoachCard==='function'?rf235HealthCoachCard():'';
+ const syncAt=ledger.lastSyncAt?tp149FormatDateTime(ledger.lastSyncAt):tp149T('health.never');
+ const sleepSub=rec.sleepMinutes==null?'':rec.sleepStageBased?tp149T('health.sleepStage'):(rec.sleepSource?tp149T('health.sessionDuration')+' • '+rf263FriendlySource(rec.sleepSource):tp149T('health.sessionDuration'));
+ const bp=w.bloodPressureSystolic==null||w.bloodPressureDiastolic==null?'—':tp149FormatNumber(Math.round(w.bloodPressureSystolic))+'/'+tp149FormatNumber(Math.round(w.bloodPressureDiastolic))+' mmHg';
+ const busy=!!state.health?.busy;
+ const body='<main class="rf263-health"><div class="hero"><h1>'+esc(tp149T('health.title'))+'</h1><div class="muted">'+esc(tp149T('health.intro'))+'</div></div><div class="card rf263-sync-card"><div class="grid2 rf263-sync-actions"><button class="btn block" data-tp-role="primary" onclick="rf244UnifiedSync()" '+(busy?'disabled':'')+'>'+esc(tp149T('health.sync'))+'</button><button class="btn secondary block" data-tp-role="secondary" onclick="healthSettings()" '+(busy?'disabled':'')+'>'+esc(tp149T('health.permissions'))+'</button></div><p class="small muted">'+esc(tp149T('health.lastSync',{time:syncAt}))+'</p>'+(state.health?.message?'<p class="small" role="status">'+esc(state.health.message)+'</p>':'')+'</div>'+coach+
+ '<div class="card"><h2>'+esc(tp149T('health.todayStatus'))+'</h2><div class="grid2">'+
+ rf244Stat(tp149T('health.sleep'),tp149SleepText(rec.sleepMinutes),sleepSub)+
+ rf244Stat('HRV',rec.hrvRmssdMs==null?'—':tp149FormatNumber(Math.round(rec.hrvRmssdMs))+' ms')+
+ rf244Stat(tp149T('health.steps'),today.steps==null?'—':tp149FormatNumber(Math.round(today.steps)))+
+ rf244Stat(tp149T('health.activeEnergy'),today.activeCalories==null?'—':tp149FormatNumber(Math.round(today.activeCalories))+' kcal')+
+ rf244Stat(tp149T('health.avgHeartRate'),today.averageHeartRate==null?'—':tp149FormatNumber(Math.round(today.averageHeartRate))+' bpm')+
+ rf244Stat(tp149T('health.restingHeartRate'),today.restingHeartRate==null?'—':tp149FormatNumber(Math.round(today.restingHeartRate))+' bpm')+
+ '</div></div><div class="card"><h2>'+esc(tp149T('health.bodyFitness'))+'</h2><div class="grid2">'+
+ rf244Stat(tp149T('health.weight'),tp149HealthFmt(shownWeight,1,' kg'),weightSource)+
+ rf244Stat(tp149T('health.bodyFat'),w.bodyFatPercent==null?'—':tp149HealthFmt(w.bodyFatPercent,1,' %'))+
+ rf244Stat('SpO₂',w.oxygenSaturationPercent==null?'—':tp149HealthFmt(w.oxygenSaturationPercent,1,' %'))+
+ rf244Stat('VO₂max',w.vo2Max==null?'—':tp149HealthFmt(w.vo2Max,1,''))+
+ '</div><button id="rf251WeightJournal" class="btn secondary block rf251-weight-btn" onclick="rf215WeightScreen()">'+esc(tp149T('health.weightJournal'))+'</button></div>'+
+ '<details class="card"><summary><strong>'+esc(tp149T('health.more'))+'</strong></summary><div class="grid2">'+
+ rf244Stat(tp149T('health.bloodPressure'),bp)+
+ rf244Stat(tp149T('health.bloodGlucose'),w.bloodGlucoseMmolL==null?'—':tp149HealthFmt(w.bloodGlucoseMmolL,1,' mmol/L'))+
+ rf244Stat(tp149T('health.respiratoryRate'),w.respiratoryRate==null?'—':tp149HealthFmt(w.respiratoryRate,1,' /min'))+
+ rf244Stat(tp149T('health.distance'),today.distanceMeters==null?'—':tp149HealthFmt(today.distanceMeters/1000,2,' km'))+
+ '</div></details><details class="card"><summary><strong>'+esc(tp149T('health.recoveryHistory'))+'</strong></summary>'+rf244RecoveryRows()+'</details>'+rf263DiagHtml()+'</main>';
+ render(shell(body));if(typeof tp146CompactHealthCards==='function')tp146CompactHealthCards();
+};
+
+rf250HealthHub=rf263HealthHub;
+rf206HealthHub=rf263HealthHub;
+
+rf233L=function(){
+ return {
+  coach:tp149T('coach.title'),today:tp149T('coach.today'),next:tp149T('coach.next'),suggested:tp149T('coach.suggested'),noPlan:tp149T('coach.noPlan'),
+  start:tp149T('coach.start'),calendar:tp149T('coach.calendar'),refresh:tp149T('coach.openHealth'),why:tp149T('coach.why'),exercisePlan:tp149T('coach.exercisePlan'),
+  normal:tp149T('coach.normal'),reduced:tp149T('coach.reduced'),light:tp149T('coach.light'),normalText:tp149T('coach.normalText'),reducedText:tp149T('coach.reducedText'),
+  lightText:tp149T('coach.lightText'),painText:tp149T('coach.painText'),sleep:tp149T('coach.sleep'),hrv:tp149T('coach.hrv'),load:tp149T('coach.load'),
+  dataAge:tp149T('coach.dataAge'),daysOld:tp149T('coach.daysOld'),noRecovery:tp149T('coach.noRecovery'),hold:tp149T('coach.hold'),increase:tp149T('coach.increase'),
+  reps:tp149T('coach.reps'),easyStart:tp149T('coach.easyStart'),startLighter:tp149T('coach.startLighter'),pain:tp149T('coach.pain'),startLoad:tp149T('coach.startLoad'),
+  unknown:tp149T('coach.unknown'),approx:tp149T('coach.approx')
+ };
+};
+
+rf233ExerciseAdvice=function(id,decision){
+ const t=rf233L();let rec=null,last=null,base=0,effort=null;
+ try{rec=rf152Recommendation(id);last=rf152Last(id);effort=last?.exercise?.effort||null;base=last?.exercise?rf152BaseWeight(last.exercise):0;}catch(_){}
+ if(effort==='pain')return {action:'pain',label:t.pain,text:rec?.text||t.painText};
+ if(decision.mode==='light')return {action:'easy',label:t.easyStart,text:base>0?t.lightText+' ('+base+' '+loadLabel(byId(id)?.loadType)+' → '+t.startLighter+'.)':t.lightText};
+ if(decision.mode==='reduced'&&(effort==='hard'||effort==='challenging'))return {action:'hold',label:t.hold,text:rec?.text||t.reducedText};
+ if(decision.mode==='reduced'&&rec?.action==='increase')return {action:'hold',label:t.hold,text:t.reducedText};
+ if(rec?.action==='increase')return {action:'increase',label:t.increase,text:rec.text};
+ if(rec?.action==='reps')return {action:'reps',label:t.reps,text:rec.text};
+ if(rec?.action==='hold')return {action:'hold',label:t.hold,text:rec.text};
+ if(rec?.action==='start')return {action:'start',label:t.startLoad,text:rec.text};
+ return {action:'unknown',label:t.unknown,text:rec?.text||t.unknown};
+};
+
+rf233CoachPlan=function(){
+ const readiness=rf220Readiness(),decision=rf233Decision(readiness),target=rf233TargetWorkout(),ids=target.day?.exercises||[];
+ return {readiness:readiness,decision:decision,target:target,exercises:ids.map(function(id){const e=byId(id);return {id:id,name:e?tp149ExerciseName(e):id,effort:rf233LastEffort(id),advice:rf233ExerciseAdvice(id,decision)};})};
+};
+
+rf233SignalHtml=function(plan){
+ const t=rf233L(),r=plan.readiness,age=rf233RecoveryAgeDays(),rows=[];
+ rows.push(t.sleep+': '+(r.sleep==null?'—':tp149FormatNumber(Math.round(r.sleep/6)/10,{maximumFractionDigits:1})+' h'));
+ rows.push(t.hrv+': '+(r.hrv==null?'—':tp149FormatNumber(Math.round(r.hrv))+' ms')+(r.hrv!=null&&r.base?' / '+tp149FormatNumber(Math.round(r.base))+' ms':''));
+ rows.push(t.load+': '+tp149FormatNumber(r.load)+'/100');
+ rows.push(age==null?t.noRecovery:t.dataAge+': '+(age===0?tp149T('coach.todayWord'):tp149FormatNumber(age)+' '+t.daysOld));
+ return rows.map(function(x){return '<div class="rf233-signal">'+esc(x)+'</div>';}).join('');
+};
+
+rf233TargetSub=function(target){
+ if(!target.day)return '';
+ const p=target.program,bits=[p?tp149ProgramMeta(p,'name'):'',p?tp149ProgramDayName(p,target.day):(target.day?.name||target.day?.id||'')];
+ if(target.item?.start)bits.push(tp149FormatDateTime(target.item.start,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}));
+ return bits.filter(Boolean).join(' • ');
+};
+
+rf233CoachScreen=function(){
+ state.tab='health';state.healthView=true;
+ if(typeof rf245CoachVisible!=='undefined')rf245CoachVisible=true;
+ const t=rf233L(),p=rf233CoachPlan(),r=p.readiness,target=p.target;
+ const button=target.kind==='today'?'<button class="btn block" onclick="rf233StartTarget()">'+esc(t.start)+'</button>':target.kind==='next'?'<button class="btn secondary block" onclick="rf233StartTarget()">'+esc(t.calendar)+'</button>':target.kind==='suggested'?'<button class="btn block" onclick="rf233StartTarget()">'+esc(t.start)+'</button>':'<button class="btn secondary block" onclick="go(\'calendar\')">'+esc(t.calendar)+'</button>';
+ const targetName=target.day?(target.program?tp149ProgramDayName(target.program,target.day):(target.day.name||target.day.id||'—')):'—';
+ render(shell('<main><button class="btn secondary" onclick="go(\'home\')">← '+esc(tp149T('common.back'))+'</button><div class="hero"><h1>'+esc(t.coach)+'</h1><div class="muted">'+esc(p.decision.text)+'</div></div><div class="card rf233-today"><div class="rf233-score"><div><small>'+esc(tp149T('coach.readiness'))+'</small><strong>'+tp149FormatNumber(r.score)+'/100</strong></div><div><small>'+esc(rf233TargetTitle(target))+'</small><strong>'+esc(targetName)+'</strong></div></div><p><b>'+esc(p.decision.title)+'</b></p><p class="small muted">'+esc(rf233TargetSub(target))+'</p>'+button+'</div><div class="card"><strong>'+esc(t.why)+'</strong><div class="rf233-signals">'+rf233SignalHtml(p)+'</div><br><button class="btn secondary block" onclick="go(\'health\')">'+esc(tp149T('coach.openHealth'))+'</button></div><div class="section">'+esc(t.exercisePlan)+'</div>'+rf233ExerciseRows(p)+'<p class="small muted">'+esc(t.approx)+'</p>'+rf220ProgressHtml()+'</main>'));
+};
+rf220CoachScreen=rf233CoachScreen;
+
+rf233BindHome=function(){
+ if(window.TrainPilotBoot?.loading)return;
+ setTimeout(function(){
+  const main=document.querySelector('main');if(!main||main.querySelector('#rf220CoachCard'))return;
+  const p=rf233CoachPlan(),t=rf233L(),c=document.createElement('div'),targetName=p.target.day?(p.target.program?tp149ProgramDayName(p.target.program,p.target.day):(p.target.day.name||p.target.day.id||'—')):'—';
+  c.id='rf220CoachCard';c.className='card rf233-home';
+  c.innerHTML='<strong>'+esc(t.coach)+'</strong><div class="rf233-homegrid"><div><span class="small muted">'+esc(tp149T('coach.readiness'))+'</span><b>'+tp149FormatNumber(p.readiness.score)+'/100</b></div><div><span class="small muted">'+esc(rf233TargetTitle(p.target))+'</span><b>'+esc(targetName)+'</b></div></div><p class="small">'+esc(p.decision.title)+' • '+esc(p.decision.text)+'</p><button class="btn block" onclick="rf233CoachScreen()">'+esc(t.coach)+'</button>';
+  const hero=main.querySelector('.hero');if(hero)hero.insertAdjacentElement('afterend',c);else main.prepend(c);
+ },0);
+};
+rf220BindHome=rf233BindHome;
+
+window.TrainPilotI18n.healthCoachAudit=function(){
+ const keys=['health.title','health.sync','health.permissions','health.todayStatus','health.bodyFitness','health.more','health.recoveryHistory','coach.title','coach.today','coach.next','coach.openHealth','coach.why','coach.exercisePlan','coach.approx'];
+ const missing={hu:[],en:[],de:[],ro:[]};
+ for(const lang of Object.keys(missing))for(const key of keys)if(!TP149_CATALOG[lang]?.[key])missing[lang].push(key);
+ return missing;
+};
+// @endsection trainpilot-149-health-coach-i18n.js
+
+
+// @section trainpilot-149-workout-progression-i18n.js
+/* TrainPilot 1.4.9: direct workout, progression, rest timer, stopwatch and demo localization. */
+(function(){
+ const rows={
+  'workout.target':['Cél','Target','Ziel','Țintă'],
+  'workout.sets':['Sorozatok','Sets','Sätze','Serii'],
+  'workout.bodyweight':['Testsúly','Body weight','Körpergewicht','Greutatea corpului'],
+  'workout.reps':['Ismétlés','Reps','Wdh.','Repetări'],
+  'workout.seconds':['Másodperc','Seconds','Sekunden','Secunde'],
+  'workout.perArm':['/kar','/ arm','/ Arm','/ braț'],
+  'workout.perLeg':['/láb','/ leg','/ Bein','/ picior'],
+  'workout.finish':['Edzés befejezése','Finish workout','Training beenden','Finalizează antrenamentul'],
+  'workout.next':['Következő gyakorlat','Next exercise','Nächste Übung','Exercițiul următor'],
+  'workout.previous':['Előző','Previous','Zurück','Anterior'],
+  'workout.invalidReps':['Írd be a tényleges ismétlésszámot vagy másodpercet.','Enter the actual repetitions or seconds.','Gib die tatsächlichen Wiederholungen oder Sekunden ein.','Introdu numărul real de repetări sau secunde.'],
+  'workout.rest':['Pihenő','Rest','Pause','Pauză'],
+  'workout.skipRest':['Kihagyás','Skip','Überspringen','Omite'],
+  'workout.load.per_hand':['kg/kar','kg/arm','kg/Arm','kg/braț'],
+  'workout.load.total':['kg összesen','kg total','kg gesamt','kg total'],
+  'workout.load.single_dumbbell':['kg (1 súlyzó)','kg (1 dumbbell)','kg (1 Hantel)','kg (1 ganteră)'],
+  'workout.load.bodyweight':['testsúly','body weight','Körpergewicht','greutatea corpului'],
+  'progress.title':['Progresszív edzés','Progressive training','Progressives Training','Antrenament progresiv'],
+  'progress.history':['előzmény: {count}/3 alkalom','history: {count}/3 sessions','Verlauf: {count}/3 Einheiten','istoric: {count}/3 sesiuni'],
+  'progress.noExercise':['A gyakorlat adatai nem érhetők el.','Exercise data is unavailable.','Übungsdaten sind nicht verfügbar.','Datele exercițiului nu sunt disponibile.'],
+  'progress.noHistory':['Nincs még elég előzmény. Indulj kontrollált, kényelmes terheléssel.','There is not enough history yet. Start with a controlled, comfortable load.','Noch nicht genug Verlauf. Starte mit einer kontrollierten, angenehmen Belastung.','Nu există încă suficient istoric. Începe cu o încărcare controlată și confortabilă.'],
+  'progress.painLoad':['Fájdalom / kellemetlenség volt: nincs terhelésemelés. Maradj fájdalommentes kivitelezésnél.','Pain / discomfort was reported: do not increase the load. Continue only with pain-free execution.','Schmerz / Beschwerden wurden gemeldet: Belastung nicht erhöhen. Nur schmerzfrei weitertrainieren.','A fost semnalată durere / disconfort: nu crește încărcarea. Continuă doar fără durere.'],
+  'progress.partialLoad':['A legutóbbi edzés részleges volt, ezért most nem változtatunk terhelést.','The last workout was incomplete, so the load stays unchanged for now.','Das letzte Training war unvollständig, daher bleibt die Belastung vorerst unverändert.','Ultimul antrenament a fost incomplet, deci încărcarea rămâne neschimbată deocamdată.'],
+  'progress.challenging':['Kicsit nehéz volt. Maradjon {weight} {unit}; előbb legyen stabil a jelenlegi teljesítés.','It was slightly hard. Keep {weight} {unit}; first make the current performance stable.','Es war etwas schwer. Bleib bei {weight} {unit}; stabilisiere zuerst die aktuelle Leistung.','A fost puțin greu. Păstrează {weight} {unit}; stabilizează mai întâi performanța actuală.'],
+  'progress.hardReduce':['Túl nehéz volt{repeat}. Súlynövelés nincs; indokolt lehet {weight} {unit} vagy kisebb volumen, amíg újra stabil nem lesz a technika.','It was too hard{repeat}. Do not increase the load; {weight} {unit} or lower volume may be appropriate until technique is stable again.','Es war zu schwer{repeat}. Keine Steigerung; {weight} {unit} oder weniger Volumen kann sinnvoll sein, bis die Technik wieder stabil ist.','A fost prea greu{repeat}. Nu crește încărcarea; {weight} {unit} sau un volum mai mic poate fi potrivit până când tehnica devine din nou stabilă.'],
+  'progress.repeat':[' több alkalommal is',' on multiple sessions',' in mehreren Einheiten',' în mai multe sesiuni'],
+  'progress.hardHold':['Túl nehéz volt. Maradjon {weight} {unit}; ha a következő alkalommal is így alakul vagy az alsó ismétléshatár sem tartható, csökkents terhelést/volument.','It was too hard. Keep {weight} {unit}; if this happens again or the lower rep target cannot be maintained, reduce load or volume.','Es war zu schwer. Bleib bei {weight} {unit}; wenn es erneut so läuft oder die untere Wiederholungsgrenze nicht gehalten wird, reduziere Belastung oder Volumen.','A fost prea greu. Păstrează {weight} {unit}; dacă se repetă sau nu poți menține limita inferioară de repetări, redu încărcarea sau volumul.'],
+  'progress.rirLoad':['Ținta este {rir} RIR, nu un interval de repetări. Modifică încărcarea doar pe baza atingerii stabile a țintei RIR.','The target is {rir} RIR, not a repetition range. Adjust the load only after consistently meeting the RIR target.','Das Ziel sind {rir} RIR, kein Wiederholungsbereich. Ändere die Belastung nur bei stabiler Erfüllung des RIR-Ziels.','Ținta este {rir} RIR, nu un interval de repetări. Modifică încărcarea doar pe baza atingerii stabile a țintei RIR.'],
+  'progress.openTarget':['Maradjon {weight} {unit}; ehhez a célhoz nincs megbízható ismétléstartomány.','Keep {weight} {unit}; this target has no reliable repetition range.','Bleib bei {weight} {unit}; für dieses Ziel gibt es keinen verlässlichen Wiederholungsbereich.','Păstrează {weight} {unit}; această țintă nu are un interval de repetări fiabil.'],
+  'progress.stableTop':['Stabil felső teljesítés ({count} alkalom alapján). Következő terhelés: {weight} {unit}.','Stable top-end performance (based on {count} sessions). Next load: {weight} {unit}.','Stabile Leistung am oberen Ziel (basierend auf {count} Einheiten). Nächste Belastung: {weight} {unit}.','Performanță stabilă la limita superioară (pe baza a {count} sesiuni). Următoarea încărcare: {weight} {unit}.'],
+  'progress.hitTop':['Elérted a felső határt{over}; {weight} {unit} lehet a következő kis lépés, de az app egyetlen alkalom alapján még nem írja át automatikusan a súlyt.','You reached the upper target{over}; {weight} {unit} can be the next small step, but the app will not auto-change the load from a single session.','Du hast das obere Ziel erreicht{over}; {weight} {unit} kann der nächste kleine Schritt sein, aber die App ändert die Belastung nach nur einer Einheit nicht automatisch.','Ai atins limita superioară{over}; {weight} {unit} poate fi următorul pas mic, dar aplicația nu modifică automat greutatea după o singură sesiune.'],
+  'progress.over':[' és túl is teljesítetted',' and exceeded it',' und sogar überschritten',' și ai depășit-o'],
+  'progress.repsLoad':['Maradjon {weight} {unit}; {next}. Súlyt csak stabil felső teljesítés után emelünk.','Keep {weight} {unit}; {next}. Increase load only after stable top-end performance.','Bleib bei {weight} {unit}; {next}. Erhöhe die Belastung erst nach stabiler Leistung am oberen Ziel.','Păstrează {weight} {unit}; {next}. Crește greutatea doar după o performanță stabilă la limita superioară.'],
+  'progress.holdLoad':['Maradjon {weight} {unit}; előbb legyen stabil, teljes értékű teljesítés.','Keep {weight} {unit}; first establish stable, complete performance.','Bleib bei {weight} {unit}; erreiche zuerst eine stabile, vollständige Leistung.','Păstrează {weight} {unit}; obține mai întâi o performanță stabilă și completă.'],
+  'progress.nextGeneric':['előbb növeld fokozatosan a szabályos ismétléseket','first increase clean repetitions gradually','steigere zuerst schrittweise die sauberen Wiederholungen','crește mai întâi treptat repetările corecte'],
+  'progress.nextTarget':['következő cél: {values} {unit}','next target: {values} {unit}','nächstes Ziel: {values} {unit}','următoarea țintă: {values} {unit}'],
+  'progress.body.noHistory':['Nincs még elég előzmény. Kezdd kontrollált, szabályos sorozatokkal.','There is not enough history yet. Start with controlled, clean sets.','Noch nicht genug Verlauf. Beginne mit kontrollierten, sauberen Sätzen.','Nu există încă suficient istoric. Începe cu serii controlate și corecte.'],
+  'progress.body.pain':['Fájdalom / kellemetlenség volt: nincs progresszió. Csak fájdalommentes kivitelezéssel folytasd.','Pain / discomfort was reported: do not progress. Continue only pain-free.','Schmerz / Beschwerden wurden gemeldet: keine Progression. Nur schmerzfrei fortfahren.','A fost semnalată durere / disconfort: fără progresie. Continuă doar fără durere.'],
+  'progress.body.partial':['A legutóbbi alkalom részleges volt, ezért most nem lépünk tovább.','The last session was incomplete, so do not progress yet.','Die letzte Einheit war unvollständig, daher noch keine Progression.','Ultima sesiune a fost incompletă, deci nu progresa încă.'],
+  'progress.body.hard':['Maradjon a jelenlegi testsúlyos változat és ismétlésszám; előbb legyen stabil, szabályos végrehajtás.','Keep the current bodyweight variation and reps; first establish stable, clean execution.','Behalte die aktuelle Körpergewichtsvariante und Wiederholungszahl bei; stabilisiere zuerst die saubere Ausführung.','Păstrează varianta actuală cu greutatea corpului și repetările; stabilizează mai întâi execuția corectă.'],
+  'progress.body.rirReps':['Maradjon a {rir} elv: a következő alkalommal legfeljebb 1 szabályos ismétléssel növeld a sorozatokat, de állj meg, amikor még {rir} tartalék marad.','Keep the {rir} principle: next time add at most 1 clean rep per set, stopping while {rir} remains in reserve.','Behalte das {rir}-Prinzip bei: erhöhe beim nächsten Mal jeden Satz um höchstens 1 saubere Wiederholung und stoppe mit {rir} Reserve.','Păstrează principiul {rir}: data viitoare adaugă cel mult 1 repetare corectă pe serie și oprește-te când mai rămân {rir} în rezervă.'],
+  'progress.body.rirHold':['A cél nem ismétléstartomány, hanem {rir}. Tartsd ezt a tartalékot; ne kezeld a „{target}” értéket ismétléses felső határként.','The target is not a repetition range but {rir}. Keep that reserve; do not treat “{target}” as a repetition ceiling.','Das Ziel ist kein Wiederholungsbereich, sondern {rir}. Halte diese Reserve; behandle „{target}“ nicht als Wiederholungsobergrenze.','Ținta nu este un interval de repetări, ci {rir}. Păstrează această rezervă; nu trata „{target}” ca limită superioară de repetări.'],
+  'progress.body.variation':['A felső cél legalább 2 alkalommal stabil volt. Súlynövelés helyett jöhet {goal}.','The upper target was stable for at least 2 sessions. Instead of adding weight, use {goal}.','Das obere Ziel war mindestens 2 Einheiten stabil. Statt Zusatzgewicht nutze {goal}.','Ținta superioară a fost stabilă în cel puțin 2 sesiuni. În loc să adaugi greutate, folosește {goal}.'],
+  'progress.body.hitTop':['Elérted a felső célt, de előbb ismételd meg stabilan még egy alkalommal; utána jöhet nehezebb testsúlyos progresszió.','You reached the upper target, but repeat it stably once more before progressing to a harder bodyweight variation.','Du hast das obere Ziel erreicht; wiederhole es noch einmal stabil, bevor du zu einer schwierigeren Körpergewichtsprogression wechselst.','Ai atins ținta superioară; repet-o stabil încă o dată înainte de o progresie mai dificilă cu greutatea corpului.'],
+  'progress.body.reps':['Maradjon a jelenlegi változat; {next}. A nehezítés csak stabil felső teljesítés után jön.','Keep the current variation; {next}. Progress only after stable top-end performance.','Behalte die aktuelle Variante bei; {next}. Steigere erst nach stabiler Leistung am oberen Ziel.','Păstrează varianta actuală; {next}. Progresează doar după o performanță stabilă la limita superioară.'],
+  'progress.body.hold':['Maradjon a jelenlegi testsúlyos változat; előbb stabilizáld a szabályos teljesítést.','Keep the current bodyweight variation; first stabilize clean performance.','Behalte die aktuelle Körpergewichtsvariante bei; stabilisiere zuerst die saubere Leistung.','Păstrează varianta actuală cu greutatea corpului; stabilizează mai întâi execuția corectă.'],
+  'progress.body.goal.generic':['nehezebb variáció, lassabb tempó, szünet vagy nagyobb mozgástartomány','a harder variation, slower tempo, pause, or greater range of motion','eine schwierigere Variante, langsameres Tempo, Pause oder größerer Bewegungsumfang','o variantă mai dificilă, tempo mai lent, pauză sau amplitudine mai mare'],
+  'progress.body.goal.pushup':['nehezebb fekvőtámasz-variáció, lassabb excentrikus szakasz, alsó szünet vagy nagyobb ROM','a harder push-up variation, slower eccentric, bottom pause, or greater ROM','eine schwierigere Liegestütz-Variante, langsamere Exzentrik, Pause unten oder größerer ROM','o variantă mai dificilă de flotare, coborâre mai lentă, pauză jos sau ROM mai mare'],
+  'progress.body.goal.close-pushup':['nehezebb fekvőtámasz-variáció, lassabb tempó vagy alsó szünet','a harder push-up variation, slower tempo, or bottom pause','eine schwierigere Liegestütz-Variante, langsameres Tempo oder Pause unten','o variantă mai dificilă de flotare, tempo mai lent sau pauză jos'],
+  'progress.body.goal.crunch':['lassabb tempó, felső megtartás vagy nehezebb hasprés-variáció','slower tempo, a hold at the top, or a harder crunch variation','langsameres Tempo, Halten oben oder eine schwierigere Crunch-Variante','tempo mai lent, menținere sus sau o variantă mai dificilă de crunch'],
+  'progress.body.goal.plank':['hosszabb kontrollált tartás, nehezebb plank-variáció vagy nagyobb feszítés','a longer controlled hold, harder plank variation, or greater tension','längeres kontrolliertes Halten, schwierigere Plank-Variante oder mehr Spannung','menținere controlată mai lungă, variantă de plank mai dificilă sau tensiune mai mare'],
+  'progress.body.goal.side-plank':['hosszabb kontrollált tartás vagy nehezebb oldalsó plank-variáció','a longer controlled hold or a harder side-plank variation','längeres kontrolliertes Halten oder eine schwierigere Side-Plank-Variante','menținere controlată mai lungă sau o variantă mai dificilă de side plank'],
+  'stopwatch.title':['Stopper • {set}. sorozat','Stopwatch • set {set}','Stoppuhr • Satz {set}','Cronometru • seria {set}'],
+  'stopwatch.timedTarget':['időre végzett sorozat','timed set','zeitbasierter Satz','serie cronometrată'],
+  'stopwatch.pauseSave':['Stop és rögzítés','Stop and save','Stoppen und speichern','Oprește și salvează'],
+  'stopwatch.resume':['Folytatás','Resume','Fortsetzen','Continuă'],
+  'stopwatch.start':['Indítás','Start','Starten','Pornește'],
+  'stopwatch.reset':['Nullázás','Reset','Zurücksetzen','Resetează'],
+  'stopwatch.help':['Az eltelt másodperc automatikusan bekerül az aktuális sorozat mezőjébe.','Elapsed seconds are automatically entered into the current set.','Die verstrichenen Sekunden werden automatisch in den aktuellen Satz eingetragen.','Secundele scurse sunt introduse automat în seria curentă.'],
+  'stopwatch.running':['Fut • {set}. sorozat • {sec} mp','Running • set {set} • {sec} sec','Läuft • Satz {set} • {sec} s','Rulează • seria {set} • {sec} sec'],
+  'stopwatch.saved':['{sec} mp rögzítve a {set}. sorozatba.','{sec} sec saved to set {set}.','{sec} s in Satz {set} gespeichert.','{sec} sec salvate în seria {set}.'],
+  'stopwatch.ready':['Indítsd a stoppert; leállításkor az idő automatikusan a sorozatba kerül.','Start the stopwatch; when stopped, the time is saved automatically to the set.','Starte die Stoppuhr; beim Stoppen wird die Zeit automatisch im Satz gespeichert.','Pornește cronometrul; la oprire, timpul este salvat automat în serie.'],
+  'video.badge':['VIDEÓBEMUTATÓ • INTERNET','VIDEO DEMO • INTERNET','VIDEO-DEMO • INTERNET','DEMO VIDEO • INTERNET'],
+  'video.player':['külön lejátszó','separate player','separater Player','player separat'],
+  'video.sourcePage':['videó a forrásoldalon','video on source page','Video auf Quellseite','video pe pagina sursă'],
+  'video.openDemo':['▶ Bemutató megnyitása','▶ Open demo','▶ Demo öffnen','▶ Deschide demonstrația'],
+  'video.openBrowser':['▶ Videó a böngészőben','▶ Video in browser','▶ Video im Browser','▶ Video în browser']
+ };
+ // Correct HU row for RIR load (kept separately to avoid accidental mixed-language source text).
+ rows['progress.rirLoad'][0]='A cél {rir} RIR, nem ismétléstartomány. A terhelést csak a RIR-cél stabil teljesítése alapján módosítsd.';
+ for(const [key,row] of Object.entries(rows)){
+  TP149_KEY_ROWS[key]=row;
+  TP149_CATALOG.hu[key]=row[0];TP149_CATALOG.en[key]=row[1];TP149_CATALOG.de[key]=row[2];TP149_CATALOG.ro[key]=row[3];
+ }
+})();
+
+var tp149LoadLabel=function tp149LoadLabel(type){
+ const key={'per_hand':'workout.load.per_hand','total':'workout.load.total','single_dumbbell':'workout.load.single_dumbbell','bodyweight':'workout.load.bodyweight'}[type];
+ return key?tp149T(key):'kg';
+};
+loadLabel=function(type){return tp149LoadLabel(type);};
+
+var tp149RepUnit=function tp149RepUnit(unit){
+ const x=String(unit||'');
+ if(x==='mp'||/sec|second/i.test(x))return tp149T('workout.seconds');
+ if(x==='/kar'||/arm/i.test(x))return tp149T('workout.perArm');
+ if(x==='/láb'||/leg/i.test(x))return tp149T('workout.perLeg');
+ if(x==='ism.'||/rep/i.test(x))return tp149T('workout.reps');
+ return x||tp149T('workout.reps');
+};
+var tp149ProgressionNext=function tp149ProgressionNext(reps,target){
+ const next=tp140NextRepTargets(reps,target);
+ if(!next.length)return tp149T('progress.nextGeneric');
+ return tp149T('progress.nextTarget',{values:next.join('–'),unit:target.kind==='time'?tp149T('workout.seconds').toLowerCase():tp149T('workout.reps').toLowerCase()});
+};
+var tp149BodyGoal=function tp149BodyGoal(id){
+ const suffix={'pushup':'pushup','close-pushup':'close-pushup','crunch':'crunch','plank':'plank','side-plank':'side-plank'}[id]||'generic';
+ return tp149T('progress.body.goal.'+suffix);
+};
+tp140RepText=function(reps,target){return tp149ProgressionNext(reps,target);};
+
+tp140BodyRecommendation=function(id,target,recent,latest){
+ if(!latest)return {action:'start',weight:0,autoApply:false,text:tp149T('progress.body.noHistory')};
+ if(latest.effort==='pain')return {action:'pain',weight:0,autoApply:false,text:tp149T('progress.body.pain')};
+ if(!latest.allDone)return {action:'hold',weight:0,autoApply:false,text:tp149T('progress.body.partial')};
+ if(['challenging','hard'].includes(latest.effort))return {action:'hold',weight:0,autoApply:false,text:tp149T('progress.body.hard')};
+ if(target.kind==='rir'){
+  const rir=String(target.rirMin)+(target.rirMax!==target.rirMin?'–'+target.rirMax:'')+' RIR';
+  if(['easy','light'].includes(latest.effort))return {action:'reps',weight:0,autoApply:false,text:tp149T('progress.body.rirReps',{rir:rir})};
+  return {action:'hold',weight:0,autoApply:false,text:tp149T('progress.body.rirHold',{rir:rir,target:target.reps})};
+ }
+ const same=recent.filter(function(x){return Math.abs(x.weight-latest.weight)<0.01;}),stableTop=same.slice(0,3).filter(function(x){return x.hitTop&&x.safeEffort;}).length>=2;
+ if(stableTop)return {action:'variation',weight:0,autoApply:false,text:tp149T('progress.body.variation',{goal:tp149BodyGoal(id)})};
+ if(latest.hitTop)return {action:'hold',weight:0,autoApply:false,text:tp149T('progress.body.hitTop')};
+ if((target.kind==='reps'||target.kind==='time')&&latest.reps.length)return {action:'reps',weight:0,autoApply:false,text:tp149T('progress.body.reps',{next:tp149ProgressionNext(latest.reps,target)})};
+ return {action:'hold',weight:0,autoApply:false,text:tp149T('progress.body.hold')};
+};
+
+rf152Recommendation=function(id,sessionExercise=null){
+ const lib=byId(id),programId=state.session?.programId||(typeof activeProgramId==='function'?activeProgramId():null),target=tp140Prescription(id,sessionExercise,programId),rows=tp140Recent(id,target.programId,3),recent=rows.map(function(r){return tp140Occurrence(r,target);}),latest=recent[0];
+ if(!lib)return {action:'hold',weight:0,autoApply:false,text:tp149T('progress.noExercise'),target:target,historyCount:recent.length};
+ if(lib.loadType==='bodyweight')return Object.assign({},tp140BodyRecommendation(id,target,recent,latest),{target:target,historyCount:recent.length});
+ if(!latest)return {action:'start',weight:Number(lib.weight)||0,autoApply:false,target:target,historyCount:0,text:tp149T('progress.noHistory')};
+ const base=latest.weight||rf152BaseWeight(latest.e),sameLoad=recent.filter(function(x){return Math.abs(x.weight-base)<0.01;}),stableTop=sameLoad.slice(0,3).filter(function(x){return x.hitTop&&x.safeEffort;}).length>=2,recentAdverse=sameLoad.slice(0,2).some(function(x){return x.adverse;}),next=tp140NextWeight(lib,base),unit=tp149LoadLabel(lib.loadType),fw=tp149FormatNumber(base,{maximumFractionDigits:2});
+ if(latest.effort==='pain')return {action:'pain',weight:base,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.painLoad')};
+ if(!latest.allDone)return {action:'hold',weight:base,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.partialLoad')};
+ if(latest.effort==='challenging')return {action:'hold',weight:base,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.challenging',{weight:fw,unit:unit})};
+ if(latest.effort==='hard'){
+  const hardCount=sameLoad.slice(0,3).filter(function(x){return x.effort==='hard';}).length;
+  if(latest.belowMin||hardCount>=2){
+   const down=tp140NextWeight(lib,base,-1);
+   return {action:'reduce',weight:down,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.hardReduce',{repeat:hardCount>=2?tp149T('progress.repeat'):'',weight:tp149FormatNumber(down,{maximumFractionDigits:2}),unit:unit})};
+  }
+  return {action:'hold',weight:base,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.hardHold',{weight:fw,unit:unit})};
+ }
+ if(target.kind==='rir'){
+  const rir=String(target.rirMin)+(target.rirMax!==target.rirMin?'–'+target.rirMax:'');
+  return {action:'hold',weight:base,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.rirLoad',{rir:rir})};
+ }
+ if(target.kind!=='reps'&&target.kind!=='time')return {action:'hold',weight:base,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.openTarget',{weight:fw,unit:unit})};
+ if(latest.hitTop&&latest.safeEffort&&!recentAdverse){
+  const nw=tp149FormatNumber(next,{maximumFractionDigits:2});
+  if(stableTop)return {action:'increase',weight:next,autoApply:true,target:target,historyCount:recent.length,text:tp149T('progress.stableTop',{count:Math.min(3,sameLoad.length),weight:nw,unit:unit})};
+  return {action:'increase',weight:next,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.hitTop',{over:latest.overTop?tp149T('progress.over'):'',weight:nw,unit:unit})};
+ }
+ if(latest.reps.length)return {action:'reps',weight:base,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.repsLoad',{weight:fw,unit:unit,next:tp149ProgressionNext(latest.reps,target)})};
+ return {action:'hold',weight:base,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.holdLoad',{weight:fw,unit:unit})};
+};
+
+rf152FeedbackHtml=function(e){
+ rf232Css();
+ const r=rf152Recommendation(e.id,e),sel=e.effort||'',t=rf232L(),count=Number(r.historyCount)||0,target=r.target;
+ const scale=RF232_EFFORT_KEYS.map(function(k,i){return '<button class="btn '+(sel===k?'':'secondary')+'" onclick="rf152SetEffort(\''+k+'\')"><span class="n">'+(i+1)+'</span><span class="lbl">'+esc(t[k])+'</span></button>';}).join('');
+ const meta=target?'<div class="small muted" style="margin-top:6px">'+esc(tp149T('workout.target'))+': '+esc(target.reps||target.kind)+' • '+esc(tp149T('progress.history',{count:count}))+'</div>':'';
+ return '<div class="card" id="rf152Feedback"><strong>'+esc(tp149T('progress.title'))+'</strong><p class="small muted">'+esc(r.text)+'</p>'+meta+'<div class="small" style="margin:10px 0 8px">'+esc(t.prompt)+'</div><div class="rf232-effort">'+scale+'</div><button class="btn '+(sel==='pain'?'':'secondary')+' block rf232-pain" onclick="rf152SetEffort(\'pain\')">'+esc(t.pain)+'</button></div>';
+};
+
+timerHtml=function(){
+ return '<div class="timer"><strong id="tv">'+tstr(state.timer)+'</strong><div class="muted" style="flex:1">'+esc(tp149T('workout.rest'))+'</div><button class="btn secondary" onclick="skipTimer()">'+esc(tp149T('workout.skipRest'))+'</button></div>';
+};
+
+rf110StopwatchPaint=function(){
+ const sec=rf110StopwatchSeconds(),display=document.querySelector('#rf110StopwatchTime'),toggle=document.querySelector('#rf110StopwatchToggle'),status=document.querySelector('#rf142StopwatchStatus');
+ if(display)display.textContent=rf110FormatStopwatch(sec);
+ if(toggle)toggle.textContent=rf110Stopwatch.running?tp149T('stopwatch.pauseSave'):(sec>0?tp149T('stopwatch.resume'):tp149T('stopwatch.start'));
+ if(status){
+  const setNo=Math.max(1,(Number(rf110Stopwatch.setIndex)||0)+1);
+  status.textContent=rf110Stopwatch.running?tp149T('stopwatch.running',{set:setNo,sec:sec}):sec>0?tp149T('stopwatch.saved',{set:setNo,sec:sec}):tp149T('stopwatch.ready');
+ }
+ if(sec!==rf110Stopwatch.lastSecond){rf110Stopwatch.lastSecond=sec;rf110StopwatchPersist(sec);}
+};
+
+rf110DecorateTimedWorkout=function(){
+ if(!state.session)return rf110StopwatchHalt(true);
+ const sessionExercise=state.session.exercises?.[state.current],exercise=sessionExercise?byId(sessionExercise.id):null;
+ const timed=String(sessionExercise?.repUnit||exercise?.repUnit||exercise?.reps||'').includes('mp');
+ if(!sessionExercise||!exercise||!timed)return rf110StopwatchHalt(true);
+ const setIndex=sessionExercise.sets.findIndex(function(s){return !s.done;});if(setIndex<0)return rf110StopwatchHalt(true);
+ const key=String(state.session.started)+'|'+state.current+'|'+setIndex;
+ if(rf110Stopwatch.key!==key){rf110StopwatchHalt(true);rf110Stopwatch.key=key;rf110Stopwatch.setIndex=setIndex;const saved=Number(sessionExercise.sets[setIndex].reps);rf110Stopwatch.elapsedMs=Number.isFinite(saved)&&saved>0?saved*1000:0;}
+ if(document.querySelector('#rf110Stopwatch')){rf110StopwatchPaint();return;}
+ const main=document.querySelector('main');if(!main)return;
+ const firstRow=main.querySelector('.row'),nav=main.querySelector('[data-tp-workout-next]');
+ const card=document.createElement('div');card.id='rf110Stopwatch';card.className='card rf110-stopwatch rf142-stopwatch-top';
+ card.innerHTML='<div class="rf110-stopwatch-head"><div><strong>'+esc(tp149T('stopwatch.title',{set:setIndex+1}))+'</strong><div class="small muted">'+esc(tp149T('workout.target'))+': '+esc(exercise.reps||tp149T('stopwatch.timedTarget'))+'</div></div><div id="rf110StopwatchTime" class="rf110-stopwatch-time">'+rf110FormatStopwatch(rf110StopwatchSeconds())+'</div></div><div class="rf110-stopwatch-actions"><button id="rf110StopwatchToggle" class="btn" onclick="rf110ToggleStopwatch()">'+esc(rf110Stopwatch.running?tp149T('stopwatch.pauseSave'):tp149T('stopwatch.start'))+'</button><button class="btn secondary" onclick="rf110ResetStopwatch()">'+esc(tp149T('stopwatch.reset'))+'</button></div><p id="rf142StopwatchStatus" class="small muted">'+esc(tp149T('stopwatch.help'))+'</p>';
+ if(firstRow?.parentNode)firstRow.parentNode.insertBefore(card,firstRow);else if(nav?.parentNode)nav.parentNode.insertBefore(card,nav);else main.appendChild(card);
+ rf110StopwatchPaint();
+};
+
+demoCard=function(id){
+ const d=demoInfo(id);if(!d)return '';
+ return '<div class="video-card"><span class="badge">'+esc(tp149T('video.badge'))+'</span><p class="small muted">'+esc(d.credit)+' • '+esc(tp149T(d.provider?'video.player':'video.sourcePage'))+'</p><button class="btn block" onclick="openDemo(\''+esc(id)+'\')">'+esc(tp149T(d.provider?'video.openDemo':'video.openBrowser'))+'</button></div>';
+};
+motionDemo=function(id){return demoCard(id);};
+
+var tp149WorkoutTitle=function tp149WorkoutTitle(){
+ const p=state.session?.programId?programById(state.session.programId):activeProgram(),d=p?programDay(p,state.session?.dayId||state.workout):null;
+ if(p&&d)return tp149ProgramMeta(p,'name')+' • '+tp149ProgramDayName(p,d);
+ return String(state.session?.programName||state.workout||'TrainPilot');
+};
+
+renderWorkout=function(){
+ if(!state.session)return;
+ persistDraft();
+ const i=Math.max(0,Math.min(Number(state.current)||0,state.session.exercises.length-1)),se=state.session.exercises[i],e=byId(se.id)||se,total=state.session.exercises.length,pct=Math.round((i/Math.max(1,total))*100);
+ const name=e?.custom?String(e.hu||e.en||e.id):tp149ExerciseName(e),note=e?.custom?String(e.notes||''):tp149ExerciseNote(e),target=se.prescription?.reps||se.progressionPrescription?.reps||e.reps||'',sets=se.sets||[];
+ const rows=sets.map(function(s,si){
+  const load=e.loadType==='bodyweight'?'<span class="small muted">'+esc(tp149T('workout.bodyweight'))+'</span>':'<label class="small">'+esc(tp149LoadLabel(e.loadType))+'<input class="field" aria-label="'+esc(tp149LoadLabel(e.loadType))+'" inputmode="decimal" value="'+esc(s.weight??'')+'" oninput="upd('+i+','+si+',\'weight\',this.value)"></label>';
+  const unit=tp149RepUnit(e.repUnit);
+  return '<div class="row"><div class="num">'+(si+1)+'</div>'+load+'<label class="small">'+esc(unit)+'<input class="field" inputmode="numeric" aria-label="'+esc(unit)+'" placeholder="'+esc(target)+'" value="'+esc(s.reps??'')+'" oninput="upd('+i+','+si+',\'reps\',this.value)"></label><button class="check '+(s.done?'done':'')+'" onclick="toggleSet('+i+','+si+')">'+(s.done?'✓':'OK')+'</button></div>';
+ }).join('');
+ const body='<main class="tp149-workout"><div class="hero"><span class="badge">'+esc(tp149WorkoutTitle())+'</span><h1>'+(i+1)+'/'+total+'</h1><div class="muted">'+esc(name)+'</div><div class="progress"><div style="width:'+pct+'%"></div></div></div><div class="card detail"><h2>'+esc(name)+'</h2><div class="meta">'+esc(tp149T('workout.target'))+': '+sets.length+' × '+esc(target)+'</div>'+motionDemo(e.id)+(note?'<p class="note">'+esc(note)+'</p>':'')+'</div><div class="section">'+esc(tp149T('workout.sets'))+'</div>'+rows+'<br><button class="btn block" data-tp-workout-next onclick="nextExercise()">'+esc(tp149T(i===total-1?'workout.finish':'workout.next'))+'</button><br><br><button class="btn secondary block" onclick="prevExercise()" '+(i===0?'disabled':'')+'>'+esc(tp149T('workout.previous'))+'</button></main>';
+ render(shell(body));
+ const main=document.querySelector('main'),nav=main?.querySelector('[data-tp-workout-next]');
+ if(se&&main&&nav&&!document.querySelector('#rf152Feedback')){const wrap=document.createElement('div');wrap.innerHTML=rf152FeedbackHtml(se);if(wrap.firstElementChild)nav.parentNode.insertBefore(wrap.firstElementChild,nav);}
+ rf110DecorateTimedWorkout();
+ if(typeof tp120AfterRender==='function')tp120AfterRender();
+};
+
+toggleSet=function(ei,si){
+ const s=state.session?.exercises?.[ei]?.sets?.[si];if(!s)return;
+ if(!s.done&&(!/^\d+$/.test(String(s.reps))||Number(s.reps)<1)){alert(tp149T('workout.invalidReps'));return;}
+ s.done=!s.done;if(s.done)startRest();renderWorkout();
+};
+
+window.TrainPilotI18n.workoutAudit=function(){
+ const keys=['workout.target','workout.sets','workout.bodyweight','workout.finish','workout.next','workout.previous','workout.invalidReps','workout.rest','progress.title','progress.noHistory','progress.painLoad','progress.partialLoad','progress.body.noHistory','progress.body.pain','stopwatch.title','stopwatch.start','stopwatch.reset','video.openDemo'];
+ const missing={hu:[],en:[],de:[],ro:[]};
+ for(const lang of Object.keys(missing))for(const key of keys)if(!TP149_CATALOG[lang]?.[key])missing[lang].push(key);
+ return missing;
+};
+// @endsection trainpilot-149-workout-progression-i18n.js
+
+
+// @section trainpilot-149-cloud-calendar-i18n.js
+/* TrainPilot 1.4.9: direct Google Drive / Calendar synchronization localization. */
+(function(){
+ const rows={
+  'cloud.title':['Google-fiók és szinkron','Google account and sync','Google-Konto und Synchronisierung','Cont Google și sincronizare'],
+  'cloud.connectHelp':['Kapcsold a Google-fiókodat a TrainPilot-profilhoz. A kiadás megfelelő Google Cloud-beállítása szükséges.','Connect your Google account to your TrainPilot profile. The release requires the appropriate Google Cloud configuration.','Verbinde dein Google-Konto mit deinem TrainPilot-Profil. Für die Veröffentlichung ist die passende Google-Cloud-Konfiguration erforderlich.','Conectează contul Google la profilul TrainPilot. Versiunea publicată necesită configurarea Google Cloud corespunzătoare.'],
+  'cloud.signOut':['Kijelentkezés','Sign out','Abmelden','Deconectare'],
+  'cloud.autoDrive':['Automatikus Drive-szinkron','Automatic Drive sync','Automatische Drive-Synchronisierung','Sincronizare automată Drive'],
+  'cloud.autoCalendar':['Automatikus edzésnaptár','Automatic workout calendar','Automatischer Trainingskalender','Calendar automat de antrenamente'],
+  'cloud.autoHelp':['Az app megnyitásakor és adatváltozás után, internet mellett. Bezárt appban nincs háttérszinkron. A naptárkapcsolat iránya: TrainPilot → Google Naptár.','Runs when the app opens and after data changes while online. There is no background sync while the app is closed. Calendar direction: TrainPilot → Google Calendar.','Läuft beim Öffnen der App und nach Datenänderungen bei Internetverbindung. Bei geschlossener App gibt es keine Hintergrundsynchronisierung. Kalenderrichtung: TrainPilot → Google Kalender.','Rulează la deschiderea aplicației și după modificarea datelor, când există internet. Nu există sincronizare în fundal când aplicația este închisă. Direcția calendarului: TrainPilot → Google Calendar.'],
+  'cloud.syncDriveNow':['Drive-szinkron most','Sync Drive now','Drive jetzt synchronisieren','Sincronizează Drive acum'],
+  'cloud.syncCalendarNow':['Naptárszinkron most','Sync calendar now','Kalender jetzt synchronisieren','Sincronizează calendarul acum'],
+  'cloud.connect':['Google-fiók kapcsolása','Connect Google account','Google-Konto verbinden','Conectează contul Google'],
+  'cloud.lastDrive':['Utolsó Drive-szinkron: {date}','Last Drive sync: {date}','Letzte Drive-Synchronisierung: {date}','Ultima sincronizare Drive: {date}'],
+  'cloud.lastCalendar':['Utolsó naptárszinkron: {date}','Last calendar sync: {date}','Letzte Kalendersynchronisierung: {date}','Ultima sincronizare calendar: {date}'],
+  'cloud.androidOnly':['A Google-kapcsolat Androidon érhető el.','Google connection is available on Android.','Die Google-Verbindung ist auf Android verfügbar.','Conectarea Google este disponibilă pe Android.'],
+  'cloud.connectTitle':['Google-fiók kapcsolása','Connect Google account','Google-Konto verbinden','Conectează contul Google'],
+  'cloud.connectConfirm':['A kiválasztott Google-fiókhoz kapcsolod a TrainPilotot? A szinkron későbbi bekapcsolása a telefon jelenlegi edzésadatait is ebbe a fiókba menti.','Connect TrainPilot to the selected Google account? Enabling sync later will also save the phone’s current workout data to this account.','TrainPilot mit dem ausgewählten Google-Konto verbinden? Wenn die Synchronisierung später aktiviert wird, werden auch die aktuellen Trainingsdaten des Telefons in diesem Konto gespeichert.','Conectezi TrainPilot la contul Google selectat? Activarea ulterioară a sincronizării va salva și datele actuale de antrenament ale telefonului în acest cont.'],
+  'cloud.connectAction':['Kapcsolás','Connect','Verbinden','Conectează'],
+  'cloud.connected':['Google-profil kapcsolva. A Drive és a naptár engedélyét külön kérjük, a funkció bekapcsolásakor.','Google profile connected. Drive and Calendar permissions are requested separately when each feature is enabled.','Google-Profil verbunden. Berechtigungen für Drive und Kalender werden beim Aktivieren der jeweiligen Funktion separat angefordert.','Profil Google conectat. Permisiunile Drive și Calendar sunt solicitate separat când este activată fiecare funcție.'],
+  'cloud.busy':['Várd meg a szinkron végét.','Wait for the sync to finish.','Warte, bis die Synchronisierung abgeschlossen ist.','Așteaptă finalizarea sincronizării.'],
+  'cloud.disconnectTitle':['Google-fiók leválasztása','Disconnect Google account','Google-Konto trennen','Deconectează contul Google'],
+  'cloud.disconnectConfirm':['Kijelentkezel? A szinkron leáll, a helyi és a Google-ban tárolt adatok megmaradnak.','Sign out? Sync will stop, while local data and data stored in Google will remain.','Abmelden? Die Synchronisierung wird beendet; lokale und bei Google gespeicherte Daten bleiben erhalten.','Te deconectezi? Sincronizarea se va opri, iar datele locale și cele stocate în Google vor rămâne.'],
+  'cloud.driveAfterWorkout':['Drive-szinkron az edzés befejezése után.','Drive will sync after the workout is finished.','Drive wird nach Abschluss des Trainings synchronisiert.','Drive se va sincroniza după finalizarea antrenamentului.'],
+  'cloud.offlineDrive':['Offline: a helyi adatok megvannak, a szinkron internetre vár.','Offline: local data is safe; sync is waiting for an internet connection.','Offline: Die lokalen Daten sind vorhanden; die Synchronisierung wartet auf eine Internetverbindung.','Offline: datele locale sunt în siguranță; sincronizarea așteaptă conexiunea la internet.'],
+  'cloud.syncingDrive':['Drive-szinkron…','Syncing Drive…','Drive wird synchronisiert…','Se sincronizează Drive…'],
+  'cloud.unknownBackup':['Ismeretlen vagy más profilhoz tartozó felhőmentés.','Unknown cloud backup or backup belonging to another profile.','Unbekannte Cloud-Sicherung oder Sicherung eines anderen Profils.','Copie cloud necunoscută sau aparținând altui profil.'],
+  'cloud.manualConflict':['Eltérő adatok vannak a felhőben. Indíts kézi szinkront az egyeztetéshez.','Cloud data differs. Start a manual sync to resolve the conflict.','Die Cloud-Daten unterscheiden sich. Starte eine manuelle Synchronisierung zur Konfliktlösung.','Datele din cloud diferă. Pornește o sincronizare manuală pentru rezolvarea conflictului.'],
+  'cloud.conflictTitle':['Szinkronütközés','Sync conflict','Synchronisierungskonflikt','Conflict de sincronizare'],
+  'cloud.conflict':['Eltérő adatok vannak a telefonon és a felhőben. Az ütköző értékeknél a TELEFON változata maradjon?\nAz egyedi edzések mindkét helyről megmaradnak.','Data differs between the phone and the cloud. For conflicting values, keep the PHONE version?\nUnique workouts from both locations will be kept.','Die Daten auf Telefon und in der Cloud unterscheiden sich. Bei Konflikten die TELEFON-Version behalten?\nEindeutige Trainings von beiden Seiten bleiben erhalten.','Datele diferă între telefon și cloud. Pentru valorile în conflict, păstrezi versiunea de pe TELEFON?\nAntrenamentele unice din ambele locații vor fi păstrate.'],
+  'cloud.phone':['Telefon','Phone','Telefon','Telefon'],
+  'cloud.cloud':['Felhő','Cloud','Cloud','Cloud'],
+  'cloud.changedDuringSync':['Közben változtak az adatok vagy edzés indult. Indítsd újra a szinkront.','Data changed or a workout started during sync. Start the sync again.','Während der Synchronisierung wurden Daten geändert oder ein Training gestartet. Starte die Synchronisierung erneut.','Datele s-au modificat sau a început un antrenament în timpul sincronizării. Pornește sincronizarea din nou.'],
+  'cloud.verifyFailed':['A Drive-mentés ellenőrzése nem sikerült.','Drive backup verification failed.','Die Überprüfung der Drive-Sicherung ist fehlgeschlagen.','Verificarea copiei Drive a eșuat.'],
+  'cloud.changedLocal':['Közben változtak az adatok. A helyi változásokat a következő szinkron egyesíti.','Data changed during sync. Local changes will be merged during the next sync.','Während der Synchronisierung wurden Daten geändert. Lokale Änderungen werden bei der nächsten Synchronisierung zusammengeführt.','Datele s-au modificat în timpul sincronizării. Modificările locale vor fi îmbinate la următoarea sincronizare.'],
+  'cloud.driveDone':['Drive-szinkron kész.','Drive sync complete.','Drive-Synchronisierung abgeschlossen.','Sincronizarea Drive este finalizată.'],
+  'cloud.invalidSchedules':['Hibás tervezett edzések.','Invalid scheduled workouts.','Ungültige geplante Trainings.','Antrenamente planificate nevalide.'],
+  'cloud.invalidSchedule':['Hibás tervezett edzés.','Invalid scheduled workout.','Ungültiges geplantes Training.','Antrenament planificat nevalid.'],
+  'cloud.noStorage':['Nincs elég hely a szinkronadatoknak.','Not enough storage for sync data.','Nicht genug Speicherplatz für Synchronisierungsdaten.','Nu există suficient spațiu pentru datele de sincronizare.'],
+  'cloud.calendarWaiting':['Naptárszinkron internetre vár.','Calendar sync is waiting for an internet connection.','Kalendersynchronisierung wartet auf eine Internetverbindung.','Sincronizarea calendarului așteaptă conexiunea la internet.'],
+  'cloud.calendarQueued':['Naptárszinkron várakozik a Drive-művelet végére.','Calendar sync is queued until the Drive operation finishes.','Kalendersynchronisierung wartet auf den Abschluss des Drive-Vorgangs.','Sincronizarea calendarului așteaptă încheierea operației Drive.'],
+  'cloud.noCalendarItems':['Még nincs naptárba küldhető edzés.','There are no workouts to send to the calendar yet.','Noch keine Trainings zum Übertragen in den Kalender.','Nu există încă antrenamente de trimis în calendar.'],
+  'cloud.calendarDone':['Naptárszinkron kész.','Calendar sync complete.','Kalendersynchronisierung abgeschlossen.','Sincronizarea calendarului este finalizată.'],
+  'calendar.completed':['teljesített edzés','completed workout','abgeschlossenes Training','antrenament finalizat'],
+  'calendar.plannedDescription':['Tervezett edzés','Planned workout','Geplantes Training','Antrenament planificat'],
+  'calendar.noWorkout':['Nincs ilyen edzés.','Workout not found.','Training nicht gefunden.','Antrenamentul nu a fost găsit.'],
+  'calendar.invalidTimes':['Ehhez az edzéshez nincs érvényes kezdési/befejezési idő.','This workout has no valid start/end time.','Für dieses Training gibt es keine gültige Start-/Endzeit.','Acest antrenament nu are o oră validă de început/sfârșit.'],
+  'calendar.androidOnly':['A naptárgomb Androidon használható.','The calendar button is available on Android.','Die Kalenderschaltfläche ist auf Android verfügbar.','Butonul calendar este disponibil pe Android.'],
+  'calendar.opened':['A naptár ablaka megnyílt. Válaszd ki a naptárat, és ott mentsd el. A kézi bejegyzés nem kapcsolódik az automatikus szinkronhoz.','The calendar window opened. Choose the calendar and save it there. A manual entry is not linked to automatic sync.','Das Kalenderfenster wurde geöffnet. Wähle den Kalender aus und speichere dort. Ein manueller Eintrag ist nicht mit der automatischen Synchronisierung verknüpft.','Fereastra calendarului s-a deschis. Alege calendarul și salvează acolo. O înregistrare manuală nu este legată de sincronizarea automată.']
+ };
+ for(const [key,row] of Object.entries(rows)){
+  TP149_KEY_ROWS[key]=row;
+  TP149_CATALOG.hu[key]=row[0];TP149_CATALOG.en[key]=row[1];TP149_CATALOG.de[key]=row[2];TP149_CATALOG.ro[key]=row[3];
+ }
+})();
+
+cloudStatus=function(){
+ const s=db.get('cloudStatus',{});
+ return '<div id="cloudStatus" class="small muted">'+esc(cloudMessage||'')+(s.drive?'<p>'+esc(tp149T('cloud.lastDrive',{date:tp149FormatDateTime(s.drive)}))+'</p>':'')+(s.calendar?'<p>'+esc(tp149T('cloud.lastCalendar',{date:tp149FormatDateTime(s.calendar)}))+'</p>':'')+'</div>';
+};
+const tp149CloudPanelBase=cloudPanel;
+cloudPanel=function(){
+ if(rf212Lang()==='hu')return tp149CloudPanelBase.apply(this,arguments);
+ const p=cloudPrefs(),profile=cloudProfile;
+ const identity=profile?(esc(profile.name||profile.email)+(profile.name&&profile.email?' • '+esc(profile.email):'')):esc(tp149T('cloud.connectHelp'));
+ const controls=profile?
+  '<button class="btn secondary block" onclick="disconnectGoogle()">'+esc(tp149T('cloud.signOut'))+'</button><br>'+
+  '<label><input type="checkbox" '+(p.drive?'checked':'')+' onchange="setCloudOption(\'drive\',this.checked)"> '+esc(tp149T('cloud.autoDrive'))+'</label>'+
+  '<label><input type="checkbox" '+(p.calendar?'checked':'')+' onchange="setCloudOption(\'calendar\',this.checked)"> '+esc(tp149T('cloud.autoCalendar'))+'</label>'+
+  '<p class="small muted">'+esc(tp149T('cloud.autoHelp'))+'</p>'+
+  '<button class="btn block" onclick="syncCloud(false)">'+esc(tp149T('cloud.syncDriveNow'))+'</button><br>'+
+  '<button class="btn secondary block" onclick="syncCalendar(false)">'+esc(tp149T('cloud.syncCalendarNow'))+'</button>':
+  '<button class="btn block" onclick="connectGoogle()">'+esc(tp149T('cloud.connect'))+'</button>';
+ return '<div class="setting"><label>'+esc(tp149T('cloud.title'))+'</label><p class="small muted">'+identity+'</p>'+controls+cloudStatus()+'</div>';
+};
+
+connectGoogle=async function(){
+ if(cloudBusy)return;
+ if(!isNative()){alert(tp149T('cloud.androidOnly'));return;}
+ const ok=await tp2628Confirm(tp149T('cloud.connectConfirm'),{title:tp149T('cloud.connectTitle'),confirmText:tp149T('cloud.connectAction')});
+ if(!ok)return;
+ cloudBusy=true;
+ try{
+  const r=await googleBridge().connect();cloudProfile=JSON.parse(r.profile);
+  db.set('cloudPrefs',{drive:false,calendar:false});db.set('cloudStatus',{});render();alert(tp149T('cloud.connected'));
+ }catch(e){alert(e.message);}finally{finishCloud();}
+};
+disconnectGoogle=async function(){
+ if(cloudBusy){alert(tp149T('cloud.busy'));return;}
+ const ok=await tp2628Confirm(tp149T('cloud.disconnectConfirm'),{title:tp149T('cloud.disconnectTitle'),confirmText:tp149T('cloud.signOut'),danger:true});
+ if(!ok)return;
+ try{await googleBridge().disconnect();cloudProfile=null;db.set('cloudPrefs',{drive:false,calendar:false});db.set('cloudStatus',{});cloudMessage='';render();}catch(e){alert(e.message);}
+};
+
+validateSync=function(d){
+ validateBackup(d);
+ if(!Array.isArray(d.scheduled)||d.scheduled.length>500)throw Error(tp149T('cloud.invalidSchedules'));
+ for(const p of d.scheduled)if(!p||typeof p.id!=='string'||!/^[a-z0-9-]{8,80}$/.test(p.id)||!Number.isFinite(Date.parse(p.start))||!Number.isFinite(Date.parse(p.end))||Date.parse(p.end)<=Date.parse(p.start)||typeof p.updatedAt!=='number'||!Number.isFinite(p.updatedAt)||typeof p.cancelled!=='boolean')throw Error(tp149T('cloud.invalidSchedule'));
+ return d;
+};
+storeMerged=function(d){
+ const keys=['history','weights','settings','exercises','plan','scheduled'],old=keys.map(function(k){return localStorage.getItem('repforge:'+k);});
+ try{for(const k of keys)localStorage.setItem('repforge:'+k,JSON.stringify(d[k]));}
+ catch(e){for(const k of keys)localStorage.removeItem('repforge:'+k);keys.forEach(function(k,i){if(old[i]!=null)localStorage.setItem('repforge:'+k,old[i]);});throw Error(tp149T('cloud.noStorage'));}
+};
+
+syncCloud=async function(silent=false){
+ if(cloudBusy||!cloudProfile)return;
+ if(state.session){showCloudMessage(tp149T('cloud.driveAfterWorkout'));return;}
+ if(navigator.onLine===false){showCloudMessage(tp149T('cloud.offlineDrive'));return;}
+ cloudBusy=true;showCloudMessage(tp149T('cloud.syncingDrive'));
+ try{
+  const owner=cloudProfile.sub,bridge=googleBridge(),local=validateSync(syncData()),startState=canonicalSyncData(local),files=(await bridge.driveList({silent:silent})).files||[];
+  const latest=new Map();
+  for(const f of files){const m=/^repforge-sync-([a-z0-9-]{36})-/.exec(f.name);if(!m)continue;const old=latest.get(m[1]);if(!old||String(f.createdTime)>String(old.createdTime))latest.set(m[1],f);}
+  const remotes=[];
+  for(const f of [...latest.values()].sort(function(a,b){return String(a.createdTime).localeCompare(String(b.createdTime));})){
+   const snap=JSON.parse((await bridge.driveRead({id:f.id,silent:silent})).data);
+   if(snap.app!=='RepForgeSync'||snap.schema!==1||snap.owner!==owner)throw Error(tp149T('cloud.unknownBackup'));
+   remotes.push(validateSync(snap.data));
+  }
+  const base=db.get('cloudBase:'+owner,null);
+  let merged,conflict=false;
+  try{merged=validateSync(mergeSync(local,remotes,base,function(){conflict=true;throw Error('__TP149_CLOUD_CONFLICT__');}));}
+  catch(e){if(e?.message!=='__TP149_CLOUD_CONFLICT__')throw e;}
+  if(conflict){
+   if(silent)throw Error(tp149T('cloud.manualConflict'));
+   const phone=await tp2628Confirm(tp149T('cloud.conflict'),{title:tp149T('cloud.conflictTitle'),confirmText:tp149T('cloud.phone'),cancelText:tp149T('cloud.cloud')});
+   merged=validateSync(mergeSync(local,remotes,base,function(){return phone;}));
+  }
+  if(typeof rf130SyncWorkoutPhotos==='function')await rf130SyncWorkoutPhotos(merged,bridge,silent);
+  if(state.session||canonicalSyncData(syncData())!==startState)throw Error(tp149T('cloud.changedDuringSync'));
+  let device=db.get('cloudDevice',null);if(!device){device=crypto.randomUUID();db.set('cloudDevice',device);}
+  if(!base||canonicalSyncData(merged)!==canonicalSyncData(base)||!files.length){
+   const r=await bridge.driveWrite({silent:silent,data:JSON.stringify({app:'RepForgeSync',schema:1,owner:owner,device:device,data:merged})});
    if(!r.verified)throw Error(tp149T('cloud.verifyFailed'));
   }
   if(state.session||canonicalSyncData(syncData())!==startState)throw Error(tp149T('cloud.changedLocal'));
