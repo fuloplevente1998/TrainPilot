@@ -148,7 +148,24 @@ public class GoogleSyncPlugin extends Plugin {
  }
  @PluginMethod public void disconnect(PluginCall c){if(pending!=null){c.reject("Várd meg a folyamatban lévő művelet végét.");return;}token=null;prefs().edit().clear().apply();c.resolve();}
  private String enc(String x)throws Exception{return URLEncoder.encode(x,"UTF-8");}
- private JSONObject request(String method,String url,JSONObject body)throws Exception{return http(method,url,body==null?null:body.toString(),"application/json; charset=UTF-8");}
+ // Retry network failures for reads, idempotent writes, and deterministic-ID calendar event creation.
+ private boolean retryableGoogleFailure(IOException e){
+  if(e instanceof ApiError){int code=((ApiError)e).code;return code==408||code==429||(code>=500&&code<=599);}
+  return e instanceof SocketException||e instanceof SocketTimeoutException||e instanceof EOFException||e instanceof UnknownHostException;
+ }
+ private JSONObject request(String method,String url,JSONObject body)throws Exception{
+  String payload=body==null?null:body.toString();
+  boolean eventPost="POST".equals(method)&&url.startsWith("https://www.googleapis.com/calendar/v3/calendars/")&&url.contains("/events?");
+  boolean retryable="GET".equals(method)||"PUT".equals(method)||"DELETE".equals(method)||eventPost;
+  for(int attempt=0;;attempt++){
+   try{return http(method,url,payload,"application/json; charset=UTF-8");}
+   catch(IOException error){
+    if(!retryable||attempt>=2||!retryableGoogleFailure(error))throw error;
+    try{Thread.sleep((attempt+1)*500L);}
+    catch(InterruptedException interrupted){Thread.currentThread().interrupt();throw new IOException("A Google-kérés megszakadt.",interrupted);}
+   }
+  }
+ }
  private JSONObject http(String method,String url,String body,String type)throws Exception{
   HttpURLConnection c=(HttpURLConnection)new URL(url).openConnection();c.setInstanceFollowRedirects(false);c.setConnectTimeout(20000);c.setReadTimeout(30000);c.setRequestMethod(method);c.setRequestProperty("Authorization","Bearer "+token);c.setRequestProperty("Accept","application/json");
   try{if(body!=null){c.setDoOutput(true);c.setRequestProperty("Content-Type",type);try(OutputStream o=c.getOutputStream()){o.write(body.getBytes(StandardCharsets.UTF_8));}}
