@@ -8534,6 +8534,7 @@ window.TrainPilotI18n.workoutAudit=function(){
   'cloud.syncingDrive':['Drive-szinkron…','Syncing Drive…','Drive wird synchronisiert…','Se sincronizează Drive…'],
   'cloud.driveListing':['Mentések listázása…','Listing backups…','Sicherungen werden aufgelistet…','Se listează copiile…'],
   'cloud.driveFound':['{listed} mentés listázva, {current} aktuális eszközmentés.','{listed} backups listed, {current} latest device backups.','{listed} Sicherungen gelistet, {current} aktuelle Gerätesicherungen.','{listed} copii listate, {current} copii curente ale dispozitivelor.'],
+  'cloud.driveUnchanged':['Drive naprakész, nincs új mentés vagy helyi változás.','Drive is up to date; no new backup or local changes.','Drive ist aktuell; keine neue Sicherung oder lokale Änderung.','Drive este actualizat; nu există copie nouă sau modificări locale.'],
   'cloud.driveReading':['Aktuális mentés letöltése: {index}/{total}.','Downloading current backup: {index}/{total}.','Aktuelle Sicherung wird geladen: {index}/{total}.','Se descarcă copia curentă: {index}/{total}.'],
   'cloud.drivePhotos':['Edzésfotók ellenőrzése…','Checking workout photos…','Trainingsfotos werden geprüft…','Se verifică fotografiile antrenamentelor…'],
   'cloud.driveWriting':['Új mentés feltöltése és visszaellenőrzése…','Uploading and verifying the new backup…','Neue Sicherung wird hochgeladen und geprüft…','Se încarcă și se verifică noua copie…'],
@@ -8621,6 +8622,13 @@ storeMerged=function(d){
  try{for(const k of keys)localStorage.setItem('repforge:'+k,JSON.stringify(d[k]));}
  catch(e){for(const k of keys)localStorage.removeItem('repforge:'+k);keys.forEach(function(k,i){if(old[i]!=null)localStorage.setItem('repforge:'+k,old[i]);});throw Error(tp149T('cloud.noStorage'));}
 };
+var driveLatestHeads=function driveLatestHeads(latest){return Object.fromEntries([...latest].map(function(entry){return [entry[0],entry[1].id];}));};
+var driveHeadsUnchanged=function driveHeadsUnchanged(current,previous){
+ if(!previous||!current||typeof previous!=='object')return false;
+ const keys=Object.keys(current),old=Object.keys(previous);
+ return keys.length===old.length&&keys.every(function(k){return Object.hasOwn(previous,k)&&previous[k]===current[k];});
+};
+var driveHasPendingPhotos=function driveHasPendingPhotos(rows){return rows.some(function(h){return (h.photos||[]).some(function(p){return p?.id&&(p.deletedAt||!p.driveFileId);});});};
 
 syncCloud=async function(silent=false){
  if(cloudBusy||!cloudProfile)return;
@@ -8634,7 +8642,12 @@ syncCloud=async function(silent=false){
   const latest=new Map();
   for(const f of files){const m=/^repforge-sync-([a-z0-9-]{36})-/.exec(f.name);if(!m)continue;const old=latest.get(m[1]);if(!old||String(f.createdTime)>String(old.createdTime))latest.set(m[1],f);}
   const current=[...latest.values()].sort(function(a,b){return String(a.createdTime).localeCompare(String(b.createdTime));});
+  const heads=driveLatestHeads(latest),base=db.get('cloudBase:'+owner,null);
   stage('cloud.driveFound',{listed:files.length,current:current.length});
+  if(base&&driveHeadsUnchanged(heads,db.get('cloudHeads:'+owner,null))&&canonicalSyncData(local)===canonicalSyncData(base)&&!driveHasPendingPhotos(local.history||[])){
+   db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{drive:new Date().toISOString()}));
+   cloudDriveStage='';showCloudMessage(tp149T('cloud.driveUnchanged'));return;
+  }
   const remotes=[];
   for(let i=0;i<current.length;i++){
    const f=current[i];stage('cloud.driveReading',{index:i+1,total:current.length});
@@ -8642,7 +8655,6 @@ syncCloud=async function(silent=false){
    if(snap.app!=='RepForgeSync'||snap.schema!==1||snap.owner!==owner)throw Error(tp149T('cloud.unknownBackup'));
    remotes.push(validateSync(snap.data));
   }
-  const base=db.get('cloudBase:'+owner,null);
   let merged,conflict=false;
   try{merged=validateSync(mergeSync(local,remotes,base,function(){conflict=true;throw Error('__TP149_CLOUD_CONFLICT__');}));}
   catch(e){if(e?.message!=='__TP149_CLOUD_CONFLICT__')throw e;}
@@ -8658,9 +8670,10 @@ syncCloud=async function(silent=false){
    stage('cloud.driveWriting');
    const r=await bridge.driveWrite({silent:silent,data:JSON.stringify({app:'RepForgeSync',schema:1,owner:owner,device:device,data:merged})});
    if(!r.verified)throw Error(tp149T('cloud.verifyFailed'));
+   if(r.id)heads[device]=r.id;
   }
   if(state.session||canonicalSyncData(syncData())!==startState)throw Error(tp149T('cloud.changedLocal'));
-  storeMerged(merged);db.set('cloudBase:'+owner,merged);db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{drive:new Date().toISOString()}));
+  storeMerged(merged);db.set('cloudBase:'+owner,merged);db.set('cloudHeads:'+owner,heads);db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{drive:new Date().toISOString()}));
   cloudDriveStage='';showCloudMessage(tp149T('cloud.driveDone'));render();
  }catch(e){cloudDriveStage='';showCloudMessage(e.message);if(!silent)alert(cloudMessage);}finally{cloudDriveStage='';finishCloud();}
 };
