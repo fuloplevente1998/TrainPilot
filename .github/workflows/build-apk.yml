@@ -145,11 +145,12 @@ jobs:
           OLD_APK="$RUNNER_TEMP/previous-release/TrainPilot-1.7.7.apk"
           NEW_APK="android/app/build/outputs/apk/release/app-release.apk"
           echo "88cf23e7385e666faa3f4b9dd91c19f8a384e095948c42ac9ceb889abfe13dcc  $OLD_APK" | sha256sum --check --
-          SIGNER="$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)"
-          OLD_CERT="$("$SIGNER" verify --print-certs "$OLD_APK" | awk -F': ' '/Signer #1 certificate SHA-256 digest/{print $2; exit}')"
-          NEW_CERT="$("$SIGNER" verify --print-certs "$NEW_APK" | awk -F': ' '/Signer #1 certificate SHA-256 digest/{print $2; exit}')"
+          OLD_CERT="$(python3 scripts/apk_signer_cert.py "$OLD_APK")"
+          NEW_CERT="$(python3 scripts/apk_signer_cert.py "$NEW_APK")"
           test -n "$OLD_CERT"
           test -n "$NEW_CERT"
+          echo "Original certificate: $OLD_CERT"
+          echo "New certificate: $NEW_CERT"
           test "$OLD_CERT" = "$NEW_CERT" || { echo "::error::Signing certificate differs from original v1.7.7"; exit 1; }
           echo "Release signing certificate matches v1.7.7"
 
