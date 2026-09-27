@@ -1,0 +1,44 @@
+name: Publish main TrainPilot v1.0.1 (one shot)
+
+on:
+  push:
+    branches:
+      - release/publish-main-v1.0.1
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: trainpilot-main-v1.0.1-publication
+  cancel-in-progress: false
+
+jobs:
+  dispatch-tagged-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify the approved main and dispatch tagged release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_MAIN: "b8ac729520f46a2ac1e6a6a537a9286bd2f4b31d"
+          TAG: "v1.0.1"
+        run: |
+          set -euo pipefail
+          current_main="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          test "$current_main" = "$EXPECTED_MAIN" || { echo "::error::main changed since validated build"; exit 1; }
+          existing_tag="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.sha' 2>/dev/null || true)"
+          if [ -n "$existing_tag" ]; then
+            test "$existing_tag" = "$EXPECTED_MAIN" || { echo "::error::tag points at a different commit"; exit 1; }
+            echo "Tag already points at verified main."
+          else
+            gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" -f "ref=refs/tags/$TAG" -f "sha=$EXPECTED_MAIN" >/dev/null
+            echo "Created $TAG at main $EXPECTED_MAIN."
+          fi
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; no duplicate dispatch."
+            exit 0
+          fi
+          gh workflow run build-apk.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG"
+          echo "Dispatched existing release gate from tagged main $EXPECTED_MAIN."
