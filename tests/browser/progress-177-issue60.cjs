@@ -22,12 +22,35 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  await page.getByRole('tab',{name:'Fejlődés'}).click();await page.waitForSelector('main.tp177-progress');
  assert.equal(await page.locator('.tp177-volume-panel').count(),1,'total volume and trend share one panel');
  assert.equal(await page.locator('.tp177-volume-toggle').getAttribute('aria-expanded'),'false');
+ // Keep the scale visible, and verify only the bars move, in both chart sizes.
+ const assertPinnedAxis=async (mode,compact)=>{
+  const m=await page.locator('.tp177-chart-scroll').evaluate(el=>{
+   const axis=el.querySelector('.tp177-chart-axis'),first=el.querySelector('.tp177-chart-column');
+   const max=el.scrollWidth-el.clientWidth,edge=el.getBoundingClientRect().left;
+   el.scrollLeft=0;
+   const before={axis:axis.getBoundingClientRect().left,bar:first.getBoundingClientRect().left};
+   el.scrollLeft=max;
+   const after={axis:axis.getBoundingClientRect().left,bar:first.getBoundingClientRect().left};
+   const style=getComputedStyle(axis);
+   return {max,edge,before,after,position:style.position,display:style.display,width:axis.getBoundingClientRect().width,font:parseFloat(style.fontSize),ticks:axis.querySelectorAll('span').length};
+  });
+  assert.equal(m.position,'sticky',mode+' scale remains anchored');
+  assert.equal(m.display,'flex',mode+' scale is visible');
+  assert.equal(m.ticks,5,mode+' has all five kg ticks');
+  assert.ok(m.max>10,mode+' has scrollable history: '+JSON.stringify(m));
+  assert.ok(Math.abs(m.before.axis-m.edge)<2&&Math.abs(m.after.axis-m.edge)<2,mode+' scale is stationary while scrolling: '+JSON.stringify(m));
+  assert.ok(m.before.bar-m.after.bar>m.max-3,mode+' columns move independently of the axis');
+  if(compact)assert.ok(m.width<=31&&m.font<=9.5,mode+' scale fits the compact preview');
+  else assert.ok(m.width>=34&&m.font>=9.5,mode+' scale remains legible in the expanded chart');
+ };
+ await assertPinnedAxis('Compact chart',true);
  const compactHeight=(await page.locator('.tp177-bar-rail').first().boundingBox()).height;
  assert.ok(compactHeight>=55&&compactHeight<100,'the chart remains visible in compact mode');
  await page.locator('.tp177-volume-toggle').click();
  const expandedHeight=(await page.locator('.tp177-bar-rail').first().boundingBox()).height;
  assert.ok(expandedHeight>compactHeight&&expandedHeight<149,'expanded chart is larger but still smaller than the previous layout');
  assert.equal(await page.locator('.tp177-volume-toggle').getAttribute('aria-expanded'),'true');
+ await assertPinnedAxis('Expanded chart',false);
  assert.equal(await page.locator('.tp177-metric').count(),4,'reference layout keeps four summary cards');
  assert.match(await page.locator('.tp177-metric[data-metric="duration"]').innerText(),/Átl\. edzésidő[\s\S]*60 min/);
  assert.equal(await page.locator('.tp177-muscle-row').count(),6,'six main muscle group rows expected');
@@ -120,7 +143,13 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  await page.locator('.tp177-dialog-close').click();
  assert.equal(await page.locator('.tp155-journal-tabs button').count(),2);
  assert.equal(await page.getByRole('tab',{name:'Fejlődés'}).getAttribute('aria-selected'),'true');
- for(const width of [320,393,412]){await page.setViewportSize({width,height:873});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true,'Progress must not overflow body at '+width+'px')}
+ await page.locator('.tp177-periods button[data-period="3m"]').click();
+ await page.waitForFunction(()=>document.querySelectorAll('.tp177-chart-column').length===13);
+ for(const width of [320,393,412]){
+  await page.setViewportSize({width,height:873});
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true,'Progress must not overflow body at '+width+'px');
+  await assertPinnedAxis('Compact '+width+'px',true);
+ }
  assert.deepEqual(errors,[],'page errors: '+errors.join('\n'));
  console.log('PASS #60 Progress UI: 2 Journal tabs, daily/weekly vertical bars, compact cards, anatomy, nested local details, mobile widths and no invented intensity.');
 }finally{await browser?.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exit(1)});
