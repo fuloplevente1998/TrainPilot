@@ -18,10 +18,10 @@ TrainPilot egy Androidra készült, local-first edzéstervező és edzésnapló 
 
 A Google-funkciókhoz külön Google Cloud/OAuth konfiguráció szükséges. A Health Connect és a Google-integrációk tényleges működése eszköz-, Android-verzió-, jogosultság- és fiókbeállítás-függő; kiadás előtt fizikai készülékes ellenőrzés szükséges.
 
-## Aktuális `main`-forrás: TrainPilot 1.0.0 (2675)
+## Aktuális fejlesztési forrás: TrainPilot 1.0.1 (2676)
 
-- A legújabb jóváhagyott forrás a [#69-es PR](https://github.com/fuloplevente1998/TrainPilot/pull/69) merge-je után a `main` ágon: [8eed366](https://github.com/fuloplevente1998/TrainPilot/commit/8eed366cee4349933cbd829692cb5d0cb78d9b19). A `versionName` továbbra is `1.0.0`, a `versionCode` **2675**.
-- A `v1.0.0` GitHub Release és az aláírt APK publikálása külön kiadási lépés. Amíg az ellenőrzött új Release nem érhető el, az utolsó publikált bináris a [v1.7.7](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.7.7) (2670).
+- Az 1.0.1 forrásban az összes volumen és a volumentrend közös, alapból kisméretű grafikonos panel. Kinyitva is kisebb a korábbi grafikon méreténél. Android `versionName`: `1.0.1`, `versionCode`: **2676**.
+- A legutóbbi publikált, aláírt bináris a [v1.0.0](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.0.0) (2675). Az 1.0.1 aláírt APK-ja és Release-e külön ellenőrzés után készülhet.
 - Az `1.7.7 → 1.0.0 (2675)` **valódi készülékes, adatmegőrző frissítési próbája külön ellenőrzés**; a CI önmagában ezt nem helyettesíti.
 - Android application ID: `com.repforge.app`; kanonikus webalkalmazás-forrás: `www/app.js`.
 
@@ -31,7 +31,7 @@ A `com.repforge.app`, egyes `repforge:*` helyi adattárolási kulcsok és régi 
 
 A publikus repository története a **TrainPilot 1.6.0** clean base állapottól indul. A korábbi privát/legacy előzmények nem részei ennek a Git-történetnek. A publikus `main` teljes meglévő commitelőzménye megmarad.
 
-A 2026-09-26-i takarítás előtt a külön, **privát `TrainPilot-Archive`** repositoryba átmásoltuk és összehasonlítottuk a forrás Git-ágait és tageit, valamint a 17 régebbi GitHub Release-t és azok 62 fájlját. Egy további Google Drive-mentés is létezik. A privát archívum nem a nyilvános letöltési hely. További információ: [repository-karbantartási terv](docs/REPOSITORY_MAINTENANCE_2026-09-26.md).
+A régi nyilvános ágak, tagek és Release-ek tisztítása előtt a külön, **privát `TrainPilot-Archive`** repositoryba átmásoltuk a teljes Git-történetet és az 1.0.0 fájljait; a 17 régebbi Release és assetjeik is ott szerepelnek. A publikus repóban a `main`, a `v1.0.0` tag és Release maradt. További információ: [repository-karbantartási terv](docs/REPOSITORY_MAINTENANCE_2026-09-26.md).
 
 A régi tagek és mellékágak publikusból való eltávolítása nem jelent Git-history-újraírást: a jelenlegi `main` előzményeit nem squasholjuk vagy force-pusholjuk.
 
