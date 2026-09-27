@@ -13443,6 +13443,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(!panel)return;
   panel.classList.toggle('tp177-volume-expanded',volumeExpanded);
   panel.querySelector('.tp177-volume-toggle')?.setAttribute('aria-expanded',String(volumeExpanded));
+  // The expanded chart is wider than the compact preview; follow the latest bucket again.
+  showLatestBucket();
  };
  function progressHtml(){
   showLatestBucket();
