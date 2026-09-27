@@ -1,14 +1,14 @@
 # TrainPilot — Development Status
 
-Last updated: **2026-09-26**. Earlier Phase 5–7 history remains below; it is historical, not the current release state. See [docs/PHASE_5_6_7_ROADMAP.md](docs/PHASE_5_6_7_ROADMAP.md) and the permanent [performance regression policy](docs/PERFORMANCE_REGRESSION_POLICY.md).
+Last updated: **2026-09-27**. Earlier Phase 5–7 history remains below; it is historical, not the current release state. See [docs/PHASE_5_6_7_ROADMAP.md](docs/PHASE_5_6_7_ROADMAP.md) and the permanent [performance regression policy](docs/PERFORMANCE_REGRESSION_POLICY.md).
 
 ## Current stable baseline and next phase
 
-- **Current `main` source: TrainPilot 1.0.0 / Android versionCode 2675.** PR #69 was merged at `8eed366cee4349933cbd829692cb5d0cb78d9b19`. In Progress, the 2×2 metric formerly showing set count now displays period-average workout duration in minutes. The chosen date filter drives the calculation; expandable details list the included logged durations. Set data and muscle-load computations remain intact.
+- **Current application change: TrainPilot 1.0.1 / Android display version 1.0 / versionCode 2676.** In Progress, total volume, previous-period comparison and two-row date filters occupy the left side of one compact panel; the small chart occupies the right. Expanding shows a wider chart. Bar selection and period-average duration remain available.
 - **Verified CI:** the PR's Release Gate (Node, Chromium UI, signed test APK), and post-merge main Quick Validation and Phase 7 Performance all passed. A physical 1.7.7 → 1.0.0 (2675) data-preserving update test has **not** been independently confirmed.
-- **Publication:** the separate `v1.0.0` GitHub Release is being prepared. Until its signed APK, signer continuity and source assets are verified, the last published binary remains **TrainPilot 1.7.7 / versionCode 2670**, GitHub Release `v1.7.7`.
+- **Publication:** the latest published signed binary is **TrainPilot 1.0.0 / versionCode 2675**, GitHub Release `v1.0.0`. The new `v1.0.1` release keeps that earlier release and includes the 2676 APK plus source ZIP after validation and phone approval.
 - **Previous changes:** #60–#63 and #66–#69 are merged; the 1.0.0 two-tab Journal, shared red-X detailed Statistics modal, Coach → Progress route and equipment/exclusion toggles remain as accepted.
-- **Archive:** the private TrainPilot-Archive mirrors the current 2675 application source and all 17 historical GitHub Releases (including asset digests). Historical public tags and branches must not be pruned until their backups have been checked; no main-history rewriting or force push.
+- **Archive:** the private TrainPilot-Archive contains the 1.0.0 application source, assets, full public Git bundle and the 17 historical GitHub Releases. The old public tags and side branches have been removed; no main-history rewriting or force push.
 - **Performance:** retain lazy Journal/Programs details, operation-scoped history snapshots, batched Coach statistics and the permanent performance regression policy.
 
 ## Phase 5–7 acceptance boundaries
@@ -78,4 +78,4 @@ Never trade data correctness, historical Journal recovery, Drive merge/tombstone
 
 ## Recovery instruction
 
-At the beginning of a future TrainPilot conversation, read this file, the completed Phase 5–7 roadmap and the permanent performance policy. Verify the latest `main` **1.0.0 / 2675** source and the separately published **1.7.7 / 2670** binary independently before making new branches. The signed-APK → physical-phone-approval → merge-to-main → post-merge-validation gate remains mandatory for application/UX changes. The private TrainPilot-Archive and a separate cloud backup preserve historical refs/releases. The 1.0.0 upgrade must retain application ID, signing certificate and data compatibility, while increasing Android versionCode to at least 2671.
+At the beginning of a future TrainPilot conversation, read this file, the completed Phase 5–7 roadmap and the permanent performance policy. Verify the current `main` source and the separately published **1.0.0 / 2675** binary independently before making new branches. The signed-APK → physical-phone-approval → merge-to-main → post-merge-validation gate remains mandatory for application/UX changes. The private TrainPilot-Archive and a separate cloud backup preserve historical refs/releases. Any 1.0.1 upgrade must retain application ID, signing certificate and data compatibility, while using Android versionCode 2676.

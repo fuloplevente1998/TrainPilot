@@ -78,7 +78,7 @@ jobs:
           const gradle=fs.readFileSync('android/app/build.gradle','utf8');
           const versionName=gradle.match(/versionName\s+"([^"]+)"/)?.[1];
           const versionCode=Number(gradle.match(/versionCode\s+(\d+)/)?.[1]);
-          if(pkg.version!==src.version||pkg.version!==versionName) throw new Error('Version mismatch');
+          if(pkg.version!==src.version||versionName!==(src.displayVersion||src.version)) throw new Error('Version mismatch');
           if(Number(src.versionCode)!==versionCode) throw new Error('versionCode mismatch');
           if(process.env.GITHUB_REF_TYPE==='tag'){
             const expectedTag=`v${pkg.version}`;
@@ -119,12 +119,13 @@ jobs:
           APK=android/app/build/outputs/apk/release/app-release.apk
           VERSION="$(node -p "require('./package.json').version")"
           CODE="$(node -p "require('./SOURCE_VERSION.json').versionCode")"
+          DISPLAY_VERSION="$(node -p "require('./SOURCE_VERSION.json').displayVersion || require('./package.json').version")"
           AAPT="$(ls "$ANDROID_HOME"/build-tools/*/aapt | sort -V | tail -1)"
           SIGNER="$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)"
           "$AAPT" dump badging "$APK" > apk-badging.txt
           grep -q "package: name='com.repforge.app'" apk-badging.txt
           grep -q "versionCode='$CODE'" apk-badging.txt
-          grep -q "versionName='$VERSION'" apk-badging.txt
+          grep -q "versionName='$DISPLAY_VERSION'" apk-badging.txt
           "$SIGNER" verify --verbose "$APK"
           unzip -p "$APK" assets/public/app.js > /tmp/packaged-app.js
           cmp www/app.js /tmp/packaged-app.js
@@ -134,25 +135,25 @@ jobs:
           zip -q "TrainPilot-$VERSION-source.zip" SOURCE_VERSION.json
           sha256sum "TrainPilot-$VERSION.apk" "TrainPilot-$VERSION-source.zip" > SHA256SUMS.txt
 
-      - name: Verify release signer continuity with v1.7.7
+      - name: Verify release signer continuity with v1.0.0
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/previous-release"
-          gh release download v1.7.7 --repo "$GITHUB_REPOSITORY" --pattern 'TrainPilot-1.7.7.apk' --dir "$RUNNER_TEMP/previous-release"
-          OLD_APK="$RUNNER_TEMP/previous-release/TrainPilot-1.7.7.apk"
+          gh release download v1.0.0 --repo "$GITHUB_REPOSITORY" --pattern 'TrainPilot-1.0.0.apk' --dir "$RUNNER_TEMP/previous-release"
+          OLD_APK="$RUNNER_TEMP/previous-release/TrainPilot-1.0.0.apk"
           NEW_APK="android/app/build/outputs/apk/release/app-release.apk"
-          echo "88cf23e7385e666faa3f4b9dd91c19f8a384e095948c42ac9ceb889abfe13dcc  $OLD_APK" | sha256sum --check --
+          echo "485817d3c33b0623b030ad919fb5e07af27d5e5890a3f67fb8e4dbe4b729f22a  $OLD_APK" | sha256sum --check --
           OLD_CERT="$(python3 scripts/apk_signer_cert.py "$OLD_APK")"
           NEW_CERT="$(python3 scripts/apk_signer_cert.py "$NEW_APK")"
           test -n "$OLD_CERT"
           test -n "$NEW_CERT"
           echo "Original certificate: $OLD_CERT"
           echo "New certificate: $NEW_CERT"
-          test "$OLD_CERT" = "$NEW_CERT" || { echo "::error::Signing certificate differs from original v1.7.7"; exit 1; }
-          echo "Release signing certificate matches v1.7.7"
+          test "$OLD_CERT" = "$NEW_CERT" || { echo "::error::Signing certificate differs from public v1.0.0"; exit 1; }
+          echo "Release signing certificate matches public v1.0.0"
 
       - name: Remove temporary signing material
         if: always()
