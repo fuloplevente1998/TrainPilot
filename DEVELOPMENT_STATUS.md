@@ -4,9 +4,9 @@ Last updated: **2026-09-27**. Earlier Phase 5–7 history remains below; it is h
 
 ## Current stable baseline and next phase
 
-- **Current application change: TrainPilot 1.0.1 / Android versionCode 2676.** In Progress, total volume and the trend chart share one panel. The chart is visible at a smaller height by default; expanding the panel gives more detail while remaining below the previous chart height. Date filters, bar selection and period-average duration remain available.
+- **Current application change: TrainPilot 1.0.1 / Android display version 1.0 / versionCode 2676.** In Progress, total volume, previous-period comparison and two-row date filters occupy the left side of one compact panel; the small chart occupies the right. Expanding shows a wider chart. Bar selection and period-average duration remain available.
 - **Verified CI:** the PR's Release Gate (Node, Chromium UI, signed test APK), and post-merge main Quick Validation and Phase 7 Performance all passed. A physical 1.7.7 → 1.0.0 (2675) data-preserving update test has **not** been independently confirmed.
-- **Publication:** the latest published signed binary is **TrainPilot 1.0.0 / versionCode 2675**, GitHub Release `v1.0.0`. The 1.0.1 APK and Release require a separate signing and validation step.
+- **Publication:** the latest published signed binary is **TrainPilot 1.0.0 / versionCode 2675**, GitHub Release `v1.0.0`. The new `v1.0.1` release keeps that earlier release and includes the 2676 APK plus source ZIP after validation and phone approval.
 - **Previous changes:** #60–#63 and #66–#69 are merged; the 1.0.0 two-tab Journal, shared red-X detailed Statistics modal, Coach → Progress route and equipment/exclusion toggles remain as accepted.
 - **Archive:** the private TrainPilot-Archive contains the 1.0.0 application source, assets, full public Git bundle and the 17 historical GitHub Releases. The old public tags and side branches have been removed; no main-history rewriting or force push.
 - **Performance:** retain lazy Journal/Programs details, operation-scoped history snapshots, batched Coach statistics and the permanent performance regression policy.

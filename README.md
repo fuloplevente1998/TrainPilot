@@ -20,8 +20,8 @@ A Google-funkciókhoz külön Google Cloud/OAuth konfiguráció szükséges. A H
 
 ## Aktuális fejlesztési forrás: TrainPilot 1.0.1 (2676)
 
-- Az 1.0.1 forrásban az összes volumen és a volumentrend közös, alapból kisméretű grafikonos panel. Kinyitva is kisebb a korábbi grafikon méreténél. Android `versionName`: `1.0.1`, `versionCode`: **2676**.
-- A legutóbbi publikált, aláírt bináris a [v1.0.0](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.0.0) (2675). Az 1.0.1 aláírt APK-ja és Release-e külön ellenőrzés után készülhet.
+- Az 1.0.1 forrásban az összes volumen, az előző időszakhoz viszonyított érték és a kétsoros időszakválasztó bal oldalt, a kisméretű grafikon jobb oldalt szerepel. Kinyitva nagyobb, teljes szélességű grafikon látható. Android `versionName`: `1.0`, `versionCode`: **2676**; a kiadási tag `v1.0.1`.
+- A legutóbbi publikált, aláírt bináris a [v1.0.0](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.0.0) (2675). A `v1.0.1` kiadáshoz aláírt APK és forrás ZIP készül az ellenőrzés és készülékes jóváhagyás után; a `v1.0.0` megmarad.
 - Az `1.7.7 → 1.0.0 (2675)` **valódi készülékes, adatmegőrző frissítési próbája külön ellenőrzés**; a CI önmagában ezt nem helyettesíti.
 - Android application ID: `com.repforge.app`; kanonikus webalkalmazás-forrás: `www/app.js`.
 
