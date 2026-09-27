@@ -78,7 +78,7 @@ jobs:
           const gradle=fs.readFileSync('android/app/build.gradle','utf8');
           const versionName=gradle.match(/versionName\s+"([^"]+)"/)?.[1];
           const versionCode=Number(gradle.match(/versionCode\s+(\d+)/)?.[1]);
-          if(pkg.version!==src.version||pkg.version!==versionName) throw new Error('Version mismatch');
+          if(pkg.version!==src.version||versionName!==(src.displayVersion||src.version)) throw new Error('Version mismatch');
           if(Number(src.versionCode)!==versionCode) throw new Error('versionCode mismatch');
           if(process.env.GITHUB_REF_TYPE==='tag'){
             const expectedTag=`v${pkg.version}`;
@@ -119,12 +119,13 @@ jobs:
           APK=android/app/build/outputs/apk/release/app-release.apk
           VERSION="$(node -p "require('./package.json').version")"
           CODE="$(node -p "require('./SOURCE_VERSION.json').versionCode")"
+          DISPLAY_VERSION="$(node -p "require('./SOURCE_VERSION.json').displayVersion || require('./package.json').version")"
           AAPT="$(ls "$ANDROID_HOME"/build-tools/*/aapt | sort -V | tail -1)"
           SIGNER="$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)"
           "$AAPT" dump badging "$APK" > apk-badging.txt
           grep -q "package: name='com.repforge.app'" apk-badging.txt
           grep -q "versionCode='$CODE'" apk-badging.txt
-          grep -q "versionName='$VERSION'" apk-badging.txt
+          grep -q "versionName='$DISPLAY_VERSION'" apk-badging.txt
           "$SIGNER" verify --verbose "$APK"
           unzip -p "$APK" assets/public/app.js > /tmp/packaged-app.js
           cmp www/app.js /tmp/packaged-app.js

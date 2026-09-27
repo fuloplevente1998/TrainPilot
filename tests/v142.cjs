@@ -17,5 +17,5 @@ assert(index.includes('v142.js')||bundle.includes("const RF142_VERSION='1.4.2'")
 const atLeast=(v,a,b,c)=>{const [x=0,y=0,z=0]=String(v).split('.').map(Number);return x>a||(x===a&&(y>b||(y===b&&z>=c)));};
 assert.equal(pkg.version,'1.0.1','canonical product version');
 const vm=gradle.match(/versionCode\s+(\d+)/);assert(vm&&Number(vm[1])>=142,'versionCode must be 142 or newer');
-const vn=gradle.match(/versionName\s+"([^"]+)"/);assert(vn&&vn[1]==='1.0.1','canonical Android versionName');
+const vn=gradle.match(/versionName\s+"([^"]+)"/);assert(vn&&vn[1]==='1.0','canonical Android versionName');
 console.log('PASS v1.4.2 workout time editing, deletion, Health Connect re-read, and consolidated runtime loading');
