@@ -8555,6 +8555,8 @@ window.TrainPilotI18n.workoutAudit=function(){
   'cloud.calendarPreparing':['Naptárszinkron indítása, események előkészítése…','Starting calendar sync, preparing events…','Kalendersynchronisierung startet, Termine werden vorbereitet…','Se pornește sincronizarea calendarului, se pregătesc evenimentele…'],
   'cloud.calendarRunning':['A naptárszinkron már folyamatban van.','Calendar sync is already in progress.','Die Kalendersynchronisierung läuft bereits.','Sincronizarea calendarului este deja în curs.'],
   'cloud.calendarProgress':['Naptárszinkron folyamatban: {done}/{total} esemény elküldve.','Calendar sync in progress: {done}/{total} events sent.','Kalendersynchronisierung läuft: {done}/{total} Termine gesendet.','Sincronizarea calendarului este în curs: {done}/{total} evenimente trimise.'],
+  'cloud.calendarDelta':['Naptár: {changed} változás, {total} összes esemény.','Calendar: {changed} changes, {total} total events.','Kalender: {changed} Änderungen, {total} Termine insgesamt.','Calendar: {changed} modificări, {total} evenimente în total.'],
+  'cloud.calendarDoneCount':['Naptárszinkron kész: {changed} változás.','Calendar sync complete: {changed} changes.','Kalendersynchronisierung abgeschlossen: {changed} Änderungen.','Sincronizarea calendarului este finalizată: {changed} modificări.'],
   'cloud.noCalendarItems':['Még nincs naptárba küldhető edzés.','There are no workouts to send to the calendar yet.','Noch keine Trainings zum Übertragen in den Kalender.','Nu există încă antrenamente de trimis în calendar.'],
   'cloud.calendarDone':['Naptárszinkron kész.','Calendar sync complete.','Kalendersynchronisierung abgeschlossen.','Sincronizarea calendarului este finalizată.'],
   'calendar.completed':['teljesített edzés','completed workout','abgeschlossenes Training','antrenament finalizat'],
@@ -8605,7 +8607,7 @@ disconnectGoogle=async function(){
  if(cloudBusy){alert(tp149T('cloud.busy'));return;}
  const ok=await tp2628Confirm(tp149T('cloud.disconnectConfirm'),{title:tp149T('cloud.disconnectTitle'),confirmText:tp149T('cloud.signOut'),danger:true});
  if(!ok)return;
- try{await googleBridge().disconnect();cloudProfile=null;db.set('cloudPrefs',{drive:false,calendar:false});db.set('cloudStatus',{});cloudMessage='';render();}catch(e){alert(e.message);}
+ try{await googleBridge().disconnect();if(cloudProfile?.sub)localStorage.removeItem('repforge:cloudCalendarSent:'+cloudProfile.sub);cloudProfile=null;db.set('cloudPrefs',{drive:false,calendar:false});db.set('cloudStatus',{});cloudMessage='';render();}catch(e){alert(e.message);}
 };
 
 validateSync=function(d){
@@ -8684,15 +8686,32 @@ calendarEvents=async function(){
  }
  return [...events.values()];
 };
+var calendarDelta=async function(events,previous,forceFull=false){
+ const hashes={},changes=[];
+ for(const event of events){
+  const bytes=new TextEncoder().encode(canonical(event)),digest=await crypto.subtle.digest('SHA-256',bytes);
+  const hash=Array.from(new Uint8Array(digest),x=>x.toString(16).padStart(2,'0')).join('');
+  hashes[event.id]=hash;
+  if(forceFull||!previous||previous.hashes[event.id]!==hash)changes.push(event);
+ }
+ if(previous)for(const id of Object.keys(previous.hashes))if(/^rf[0-9a-f]{64}$/.test(id)&&!Object.hasOwn(hashes,id))changes.push({id:id,cancelled:true});
+ return {hashes:hashes,changes:changes};
+};
 syncCalendar=async function(silent=false){
  if(!cloudProfile)return;
  if(cloudBusy){if(!silent){if(cloudActiveOperation==='calendar')showCloudMessage(tp149T('cloud.calendarRunning'));else{calendarSyncPending=true;showCloudMessage(tp149T('cloud.calendarQueued'));}}else cloudDirty=true;return;}
  if(navigator.onLine===false){showCloudMessage(tp149T('cloud.calendarWaiting'));return;}
  cloudBusy=true;cloudActiveOperation='calendar';showCloudMessage(tp149T('cloud.calendarPreparing'));
  try{
-  const events=await calendarEvents();if(!events.length){showCloudMessage(tp149T('cloud.noCalendarItems'));return;}
-  for(let i=0;i<events.length;i+=10){showCloudMessage(tp149T('cloud.calendarProgress',{done:i,total:events.length}));await googleBridge().calendarSync({silent:silent,events:JSON.stringify(events.slice(i,i+10))});}
-  db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{calendar:new Date().toISOString()}));showCloudMessage(tp149T('cloud.calendarDone'));
+  const owner=cloudProfile.sub,events=await calendarEvents(),key='cloudCalendarSent:'+owner,stored=db.get(key,null);
+  const previous=stored?.schema===1&&stored.hashes&&typeof stored.hashes==='object'?stored:null;
+  const full=!previous||!Number.isFinite(previous.fullAt)||Date.now()-previous.fullAt>=7*86400000||Date.now()<previous.fullAt;
+  const delta=await calendarDelta(events,previous,full);
+  if(!events.length&&!delta.changes.length){showCloudMessage(tp149T('cloud.noCalendarItems'));return;}
+  showCloudMessage(tp149T('cloud.calendarDelta',{changed:delta.changes.length,total:events.length}));
+  for(let i=0;i<delta.changes.length;i+=10){showCloudMessage(tp149T('cloud.calendarProgress',{done:i,total:delta.changes.length}));await googleBridge().calendarSync({silent:silent,events:JSON.stringify(delta.changes.slice(i,i+10))});}
+  db.set(key,{schema:1,fullAt:full?Date.now():previous.fullAt,hashes:delta.hashes});
+  db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{calendar:new Date().toISOString()}));showCloudMessage(tp149T('cloud.calendarDoneCount',{changed:delta.changes.length}));
  }catch(e){showCloudMessage(e.message);if(!silent)alert(e.message);}finally{finishCloud();}
 };
 calendarIntent=async function(index,planned=false){
