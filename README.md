@@ -21,8 +21,6 @@ A Google-funkciókhoz külön Google Cloud/OAuth konfiguráció szükséges. A H
 ## Aktuális `main`-forrás: TrainPilot 1.0.0 (2675)
 
 - A legújabb jóváhagyott forrás a [#69-es PR](https://github.com/fuloplevente1998/TrainPilot/pull/69) merge-je után a `main` ágon: [8eed366](https://github.com/fuloplevente1998/TrainPilot/commit/8eed366cee4349933cbd829692cb5d0cb78d9b19). A `versionName` továbbra is `1.0.0`, a `versionCode` **2675**.
-- A Fejlődés 2×2-es kártyáján a sorozatszám helyére az **Átl. edzésidő** került: a választott 1/7/30 napos vagy 3 hónapos időszak lezárt edzéseiből számított, percben megjelenített átlag. A kártya részleteiben az egyes edzések időtartama is látható; a sorozatok és izomterhelés adatai megmaradtak.
-- Az Edzésnapló és Fejlődés két fül marad. A Részletes statisztikák a közös, jobb felső piros X-szel zárható felugró ablakban nyílik meg. A #69-es forráság teljes Release Gate-je sikeres; a merge utáni gyors validáció és teljesítményteszt sikeres.
 - A `v1.0.0` GitHub Release és az aláírt APK publikálása külön kiadási lépés. Amíg az ellenőrzött új Release nem érhető el, az utolsó publikált bináris a [v1.7.7](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.7.7) (2670).
 - Az `1.7.7 → 1.0.0 (2675)` **valódi készülékes, adatmegőrző frissítési próbája külön ellenőrzés**; a CI önmagában ezt nem helyettesíti.
 - Android application ID: `com.repforge.app`; kanonikus webalkalmazás-forrás: `www/app.js`.
