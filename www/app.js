@@ -13366,10 +13366,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
     '" onclick="tp177OpenBucket('+i+')"><span class="tp177-bar-rail"><span class="tp177-bar" style="height:'+height+'%"></span></span>'+
     '<span class="tp177-chart-date">'+escapeHtml(dateFmt(b.start,true))+'</span></button>';
   }).join('');
-  return '<section class="tp177-panel tp177-trend" aria-label="'+escapeHtml(tr('trend'))+'"><div class="tp177-panel-heading"><h2>'+escapeHtml(tr('trend'))+'</h2><span class="tp177-small">'+escapeHtml(tr(v.period==='1d'||v.period==='7d'?'daily':'weekly'))+'</span></div>'+
+  return '<div class="tp177-trend" aria-label="'+escapeHtml(tr('trend'))+'"><div class="tp177-panel-heading"><h2>'+escapeHtml(tr('trend'))+'</h2><span class="tp177-small">'+escapeHtml(tr(v.period==='1d'||v.period==='7d'?'daily':'weekly'))+'</span></div>'+
    '<div class="tp177-chart-scroll"><div class="tp177-chart"><div class="tp177-chart-axis">'+ticks+'</div>'+
    '<div class="tp177-chart-columns" style="grid-template-columns:repeat('+v.buckets.length+',minmax(24px,1fr))">'+bars+'</div></div></div>'+
-   '<p class="tp177-small">'+escapeHtml(tr('hint'))+'</p></section>';
+   '<p class="tp177-small tp177-chart-hint">'+escapeHtml(tr('hint'))+'</p></div>';
  }
  // #61: aligned muscle masks keep the illustration neutral outside logged tissue.
  const loadLevel=percent=>percent<=33?'low':percent<=66?'medium':'high';
@@ -13436,6 +13436,14 @@ window.addEventListener?.('DOMContentLoaded',function(){
   panel.hidden=!openMetric;
   document.querySelectorAll('.tp177-metric[data-metric]').forEach(button=>button.setAttribute('aria-expanded',String(button.dataset.metric===openMetric)));
  };
+ let volumeExpanded=false;
+ window.tp177ToggleVolume=function(){
+  volumeExpanded=!volumeExpanded;
+  const panel=document.querySelector('main.tp177-progress .tp177-volume-panel');
+  if(!panel)return;
+  panel.classList.toggle('tp177-volume-expanded',volumeExpanded);
+  panel.querySelector('.tp177-volume-toggle')?.setAttribute('aria-expanded',String(volumeExpanded));
+ };
  function progressHtml(){
   showLatestBucket();
   const v=snapshot(),m=v.currentMetrics,c=v.changes,period=v.period;
@@ -13444,11 +13452,13 @@ window.addEventListener?.('DOMContentLoaded',function(){
    '<button type="button" data-period="'+a[0]+'" class="'+(period===a[0]?'active':'')+'" aria-pressed="'+(period===a[0]?'true':'false')+'" onclick="tp177SetPeriod(\''+a[0]+'\')">'+escapeHtml(tr(a[1]))+'</button>').join('');
   const avg=m.avgVolume!=null?fmt(m.avgVolume,1)+' kg':'—';
   return '<main class="tp177-progress">'+tabs('progress')+
-   '<section class="tp177-panel tp177-summary"><div class="tp177-summary-head"><div><span class="tp177-small">'+escapeHtml(tr('volume'))+
-   '</span><strong class="tp177-big">'+fmt(m.volume)+' kg</strong><span class="tp177-small">'+escapeHtml(from)+' – '+escapeHtml(through)+'</span></div>'+
-   '<div class="tp177-hero-change">'+pct(c.volume)+'<span class="tp177-small">'+escapeHtml(tr('vs'))+'</span></div></div>'+
-   '<div class="tp177-periods" role="group" aria-label="'+escapeHtml(tr('progress'))+'">'+periodButtons+'</div></section>'+
-   barChart(v)+'<div class="tp177-metric-grid">'+
+   '<section class="tp177-panel tp177-summary tp177-volume-panel'+(volumeExpanded?' tp177-volume-expanded':'')+'">'+
+   '<button type="button" class="tp177-volume-toggle" aria-expanded="'+volumeExpanded+'" aria-controls="tp177VolumeChart" onclick="tp177ToggleVolume()">'+
+   '<span class="tp177-summary-head"><span class="tp177-summary-value"><span class="tp177-small">'+escapeHtml(tr('volume'))+
+   '</span><strong class="tp177-big">'+fmt(m.volume)+' kg</strong><span class="tp177-small">'+escapeHtml(from)+' – '+escapeHtml(through)+'</span></span>'+
+   '<span class="tp177-hero-change">'+pct(c.volume)+'<span class="tp177-small">'+escapeHtml(tr('vs'))+'</span></span><span class="tp177-chevron" aria-hidden="true">›</span></span></button>'+
+   '<div class="tp177-periods" role="group" aria-label="'+escapeHtml(tr('progress'))+'">'+periodButtons+'</div>'+
+   '<div id="tp177VolumeChart">'+barChart(v)+'</div></section><div class="tp177-metric-grid">'+
    metricCard('pr','♜',tr('pr'),fmt(m.pr.length),c.pr,'')+
    metricCard('workouts','◫',tr('workouts'),fmt(m.workouts),c.workouts,'')+
    metricCard('average','↗',tr('average'),avg,c.avgVolume,tr('averageSmall'))+
