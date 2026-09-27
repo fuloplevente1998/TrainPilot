@@ -189,7 +189,8 @@ var cloudPanel = function cloudPanel(){const p=cloudPrefs();return `<div class="
 var showCloudMessage = function showCloudMessage(t){cloudMessage=t||'';const e=document.getElementById('cloudStatus');if(e)e.outerHTML=cloudStatus();};
 var calendarSyncPending=false;
 var cloudDriveStage='';
-var finishCloud = function finishCloud(){cloudBusy=false;if(calendarSyncPending){calendarSyncPending=false;void syncCalendar(false);return;}if(cloudDirty){cloudDirty=false;cloudChanged();}};
+var cloudActiveOperation='';
+var finishCloud = function finishCloud(){cloudBusy=false;cloudActiveOperation='';if(calendarSyncPending){calendarSyncPending=false;void syncCalendar(false);return;}if(cloudDirty){cloudDirty=false;cloudChanged();}};
 var initCloud = async function initCloud(){if(!isNative()||!googleBridge()?.status)return;try{const r=await googleBridge().status();cloudProfile=r.profile?JSON.parse(r.profile):null;if(state.tab==='settings')render();cloudChanged();}catch(e){showCloudMessage(e.message);}};
 var connectGoogle = async function connectGoogle(){if(cloudBusy)return;if(!isNative()){alert('A Google-kapcsolat Androidon érhető el.');return;}if(!confirm('A kiválasztott Google-fiókhoz kapcsolod a RepForge-ot? A szinkron későbbi bekapcsolása a telefon jelenlegi edzésadatait is ebbe a fiókba menti.'))return;cloudBusy=true;try{const r=await googleBridge().connect();cloudProfile=JSON.parse(r.profile);db.set('cloudPrefs',{drive:false,calendar:false});db.set('cloudStatus',{});render();alert('Google-profil kapcsolva. A Drive és a naptár engedélyét külön kérjük, a funkció bekapcsolásakor.');}catch(e){alert(e.message);}finally{finishCloud();}};
 var disconnectGoogle = async function disconnectGoogle(){if(cloudBusy){alert('Várd meg a szinkron végét.');return;}if(!confirm('Kijelentkezel? A szinkron leáll, a helyi és a Google-ban tárolt adatok megmaradnak.'))return;try{await googleBridge().disconnect();cloudProfile=null;db.set('cloudPrefs',{drive:false,calendar:false});db.set('cloudStatus',{});cloudMessage='';render();}catch(e){alert(e.message);}};
@@ -8551,6 +8552,9 @@ window.TrainPilotI18n.workoutAudit=function(){
   'cloud.noStorage':['Nincs elég hely a szinkronadatoknak.','Not enough storage for sync data.','Nicht genug Speicherplatz für Synchronisierungsdaten.','Nu există suficient spațiu pentru datele de sincronizare.'],
   'cloud.calendarWaiting':['Naptárszinkron internetre vár.','Calendar sync is waiting for an internet connection.','Kalendersynchronisierung wartet auf eine Internetverbindung.','Sincronizarea calendarului așteaptă conexiunea la internet.'],
   'cloud.calendarQueued':['Naptárszinkron várakozik a Drive-művelet végére.','Calendar sync is queued until the Drive operation finishes.','Kalendersynchronisierung wartet auf den Abschluss des Drive-Vorgangs.','Sincronizarea calendarului așteaptă încheierea operației Drive.'],
+  'cloud.calendarPreparing':['Naptárszinkron indítása, események előkészítése…','Starting calendar sync, preparing events…','Kalendersynchronisierung startet, Termine werden vorbereitet…','Se pornește sincronizarea calendarului, se pregătesc evenimentele…'],
+  'cloud.calendarRunning':['A naptárszinkron már folyamatban van.','Calendar sync is already in progress.','Die Kalendersynchronisierung läuft bereits.','Sincronizarea calendarului este deja în curs.'],
+  'cloud.calendarProgress':['Naptárszinkron folyamatban: {done}/{total} esemény elküldve.','Calendar sync in progress: {done}/{total} events sent.','Kalendersynchronisierung läuft: {done}/{total} Termine gesendet.','Sincronizarea calendarului este în curs: {done}/{total} evenimente trimise.'],
   'cloud.noCalendarItems':['Még nincs naptárba küldhető edzés.','There are no workouts to send to the calendar yet.','Noch keine Trainings zum Übertragen in den Kalender.','Nu există încă antrenamente de trimis în calendar.'],
   'cloud.calendarDone':['Naptárszinkron kész.','Calendar sync complete.','Kalendersynchronisierung abgeschlossen.','Sincronizarea calendarului este finalizată.'],
   'calendar.completed':['teljesített edzés','completed workout','abgeschlossenes Training','antrenament finalizat'],
@@ -8620,7 +8624,7 @@ syncCloud=async function(silent=false){
  if(cloudBusy||!cloudProfile)return;
  if(state.session){showCloudMessage(tp149T('cloud.driveAfterWorkout'));return;}
  if(navigator.onLine===false){showCloudMessage(tp149T('cloud.offlineDrive'));return;}
- cloudBusy=true;
+ cloudBusy=true;cloudActiveOperation='drive';
  const stage=function(key,vars){cloudDriveStage=tp149T(key,vars);showCloudMessage(tp149T('cloud.syncingDrive'));};
  stage('cloud.driveListing');
  try{
@@ -8682,12 +8686,12 @@ calendarEvents=async function(){
 };
 syncCalendar=async function(silent=false){
  if(!cloudProfile)return;
- if(cloudBusy){if(!silent){calendarSyncPending=true;showCloudMessage(tp149T('cloud.calendarQueued'));}else cloudDirty=true;return;}
+ if(cloudBusy){if(!silent){if(cloudActiveOperation==='calendar')showCloudMessage(tp149T('cloud.calendarRunning'));else{calendarSyncPending=true;showCloudMessage(tp149T('cloud.calendarQueued'));}}else cloudDirty=true;return;}
  if(navigator.onLine===false){showCloudMessage(tp149T('cloud.calendarWaiting'));return;}
- cloudBusy=true;
+ cloudBusy=true;cloudActiveOperation='calendar';showCloudMessage(tp149T('cloud.calendarPreparing'));
  try{
   const events=await calendarEvents();if(!events.length){showCloudMessage(tp149T('cloud.noCalendarItems'));return;}
-  for(let i=0;i<events.length;i+=100)await googleBridge().calendarSync({silent:silent,events:JSON.stringify(events.slice(i,i+100))});
+  for(let i=0;i<events.length;i+=10){showCloudMessage(tp149T('cloud.calendarProgress',{done:i,total:events.length}));await googleBridge().calendarSync({silent:silent,events:JSON.stringify(events.slice(i,i+10))});}
   db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{calendar:new Date().toISOString()}));showCloudMessage(tp149T('cloud.calendarDone'));
  }catch(e){showCloudMessage(e.message);if(!silent)alert(e.message);}finally{finishCloud();}
 };
