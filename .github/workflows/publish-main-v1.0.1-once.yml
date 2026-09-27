@@ -29,7 +29,7 @@ jobs:
           current_main="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
           test "$current_main" = "$EXPECTED_MAIN" || { echo "::error::main changed since validated build"; exit 1; }
           existing_tag="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.sha' 2>/dev/null || true)"
-          if [ -n "$existing_tag" ]; then
+          if [[ "$existing_tag" =~ ^[0-9a-f]{40}$ ]]; then
             test "$existing_tag" = "$EXPECTED_MAIN" || { echo "::error::tag points at a different commit"; exit 1; }
             echo "Tag already points at verified main."
           else
