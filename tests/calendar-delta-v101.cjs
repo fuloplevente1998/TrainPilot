@@ -1,0 +1,23 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const crypto=require('node:crypto').webcrypto;
+const source=fs.readFileSync('www/app.js','utf8');
+const begin=source.indexOf('var calendarDelta=async function');
+const end=source.indexOf('calendarIntent=async function',begin);
+assert.ok(begin>0&&end>begin);
+const values=new Map(),sent=[];
+let events=[],fail=false;
+const ctx={crypto,TextEncoder,Date,navigator:{onLine:true},cloudProfile:{sub:'account'},cloudBusy:false,cloudActiveOperation:'',cloudDirty:false,calendarSyncPending:false,cloudMessage:'',tp149T:(k,v={})=>k+JSON.stringify(v),showCloudMessage:x=>{ctx.cloudMessage=x},calendarEvents:async()=>events,canonical:x=>JSON.stringify(x),db:{get:(k,f)=>values.get(k)??f,set:(k,v)=>values.set(k,v)},googleBridge:()=>({calendarSync:async x=>{if(fail)throw Error('offline');sent.push(...JSON.parse(x.events))}}),finishCloud:()=>{ctx.cloudBusy=false;ctx.cloudActiveOperation=''},alert:()=>{},Object};
+vm.createContext(ctx);
+vm.runInContext(source.slice(begin,end),ctx);
+const event=(id,summary)=>({id:'rf'+id.repeat(64),summary});
+(async()=>{
+ events=[event('a','A'),event('b','B')];
+ await ctx.syncCalendar();assert.equal(sent.length,2);assert.equal(values.get('cloudCalendarSent:account').schema,1);
+ sent.length=0;await ctx.syncCalendar();assert.equal(sent.length,0,'unchanged events must not be sent again');
+ events=[event('a','A edited')];sent.length=0;await ctx.syncCalendar();assert.equal(sent.length,2,'changed event and removed event must both be sent');assert.equal(sent[0].summary,'A edited');assert.equal(sent[1].cancelled,true);
+ events=[event('a','A edited'),event('c','C')];fail=true;await ctx.syncCalendar();assert.equal(values.get('cloudCalendarSent:account').hashes[events[1].id],undefined,'failed batch must not mark event as sent');
+ fail=false;sent.length=0;await ctx.syncCalendar();assert.equal(sent.length,1);assert.equal(sent[0].summary,'C');
+ console.log('PASS calendar delta: full, unchanged, edit, deletion and retry after failed send');
+})().catch(e=>{console.error(e);process.exitCode=1});
