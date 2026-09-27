@@ -13364,11 +13364,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const height=max>0?Math.max(0,b.volume/axisMax*100):0;
    return '<button type="button" class="tp177-chart-column" aria-label="'+escapeHtml(dateFmt(b.start)+'; '+fmt(b.volume)+' kg; '+b.workouts.length+' '+tr('sessions'))+
     '" onclick="tp177OpenBucket('+i+')"><span class="tp177-bar-rail"><span class="tp177-bar" style="height:'+height+'%"></span></span>'+
-    '<span class="tp177-chart-date">'+escapeHtml(dateFmt(b.start,true))+'</span></button>';
+    '<span class="tp177-chart-date"><span class="tp177-chart-date-full">'+escapeHtml(dateFmt(b.start,true))+'</span><span class="tp177-chart-date-short">'+new Date(b.start).getDate()+'</span></span></button>';
   }).join('');
   return '<div class="tp177-trend" aria-label="'+escapeHtml(tr('trend'))+'"><div class="tp177-panel-heading"><h2>'+escapeHtml(tr('trend'))+'</h2><span class="tp177-small">'+escapeHtml(tr(v.period==='1d'||v.period==='7d'?'daily':'weekly'))+'</span></div>'+
    '<div class="tp177-chart-scroll"><div class="tp177-chart"><div class="tp177-chart-axis">'+ticks+'</div>'+
-   '<div class="tp177-chart-columns" style="grid-template-columns:repeat('+v.buckets.length+',minmax(24px,1fr))">'+bars+'</div></div></div>'+
+   '<div class="tp177-chart-columns" style="grid-template-columns:repeat('+v.buckets.length+',minmax(var(--tp177-bar-min,24px),1fr))">'+bars+'</div></div></div>'+
    '<p class="tp177-small tp177-chart-hint">'+escapeHtml(tr('hint'))+'</p></div>';
  }
  // #61: aligned muscle masks keep the illustration neutral outside logged tissue.

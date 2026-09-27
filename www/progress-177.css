@@ -30,8 +30,21 @@ html body #app .tp177-volume-toggle{display:block;width:100%;padding:0;border:0;
 html body #app .tp177-volume-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:8px}
 html body #app .tp177-volume-toggle .tp177-chevron{align-self:center;font-size:24px;color:var(--accent);transition:transform .18s ease}
 html body #app .tp177-volume-expanded .tp177-volume-toggle .tp177-chevron{transform:rotate(90deg)}
-html body #app .tp177-volume-panel{--tp177-plot-height:73px;--tp177-axis-height:60px;--tp177-column-height:84px;--tp177-grid-step:15px;padding:11px 12px!important}
-html body #app .tp177-volume-panel.tp177-volume-expanded{--tp177-plot-height:122px;--tp177-axis-height:109px;--tp177-column-height:133px;--tp177-grid-step:27.25px}
+html body #app main.tp177-progress .tp177-volume-panel{
+ --tp177-plot-height:76px;--tp177-axis-height:64px;--tp177-column-height:91px;--tp177-grid-step:19px;--tp177-bar-min:12px;
+ display:grid;grid-template-columns:minmax(0,46%) minmax(0,54%);grid-template-rows:auto auto;
+ column-gap:7px;row-gap:6px;padding:10px!important
+}
+html body #app main.tp177-progress .tp177-volume-panel.tp177-volume-expanded{
+ --tp177-plot-height:122px;--tp177-axis-height:109px;--tp177-column-height:133px;--tp177-grid-step:27.25px;--tp177-bar-min:24px;
+ grid-template-columns:1fr;grid-template-rows:auto auto auto
+}
+html body #app .tp177-volume-panel .tp177-volume-toggle{grid-column:1;grid-row:1;position:relative}
+html body #app .tp177-volume-panel .tp177-periods{grid-column:1;grid-row:2;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin:0}
+html body #app .tp177-volume-panel #tp177VolumeChart{grid-column:2;grid-row:1 / 3;min-width:0;align-self:center}
+html body #app .tp177-volume-expanded .tp177-volume-toggle{grid-column:1;grid-row:1}
+html body #app .tp177-volume-expanded .tp177-periods{grid-column:1;grid-row:2;grid-template-columns:repeat(4,minmax(0,1fr))}
+html body #app .tp177-volume-expanded #tp177VolumeChart{grid-column:1;grid-row:3}
 html body #app .tp177-summary-head{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px}
 html body #app .tp177-summary-head>.tp177-summary-value{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
 html body #app .tp177-small{color:var(--muted);font-size:12px;line-height:1.45}
@@ -50,11 +63,17 @@ html body #app .tp177-periods button.active{
  background:var(--accent);color:var(--tp-ui-bg,#0e1015);
  border-color:var(--accent);font-weight:850
 }
-html body #app .tp177-volume-panel .tp177-summary-head{margin-bottom:8px;gap:8px}
-html body #app .tp177-volume-panel .tp177-big{font-size:clamp(24px,6.5vw,33px)}
-html body #app .tp177-volume-panel .tp177-hero-change{font-size:clamp(14px,4vw,19px);gap:3px}
-html body #app .tp177-volume-panel .tp177-periods{gap:5px;margin-bottom:10px}
-html body #app .tp177-volume-panel .tp177-periods button{min-height:36px;padding:5px 2px}
+html body #app .tp177-volume-panel .tp177-summary-head{flex-direction:column;align-items:flex-start;margin:0;gap:6px;padding-right:14px}
+html body #app .tp177-volume-panel .tp177-summary-value{gap:2px;width:100%}
+html body #app .tp177-volume-panel .tp177-summary-value>.tp177-small:last-child{font-size:10px;line-height:1.25}
+html body #app .tp177-volume-panel .tp177-big{font-size:clamp(22px,6vw,30px)}
+html body #app .tp177-volume-panel .tp177-hero-change{align-items:flex-start;text-align:left;max-width:100%;font-size:clamp(13px,3.7vw,17px);gap:1px}
+html body #app .tp177-volume-panel .tp177-hero-change>.tp177-small{font-size:10px;line-height:1.2}
+html body #app .tp177-volume-panel .tp177-volume-toggle .tp177-chevron{position:absolute;top:0;right:0;font-size:19px}
+html body #app .tp177-volume-panel .tp177-periods button{min-height:29px;padding:3px 1px;font-size:clamp(10px,2.8vw,12px);border-radius:9px}
+html body #app .tp177-volume-expanded .tp177-summary-head{flex-direction:row;align-items:center;justify-content:space-between}
+html body #app .tp177-volume-expanded .tp177-hero-change{align-items:flex-end;text-align:right;max-width:43%}
+html body #app .tp177-volume-expanded .tp177-periods button{min-height:36px;font-size:13px}
 html body #app .tp177-volume-panel .tp177-trend .tp177-panel-heading{margin-bottom:6px}
 html body #app .tp177-volume-panel .tp177-trend h2{font-size:14px}
 html body #app .tp177-panel h2{font-size:17px;font-weight:850;margin:0 0 10px}
@@ -89,8 +108,17 @@ html body #app .tp177-bar{
 html body #app .tp177-chart-column:focus-visible .tp177-bar,
 html body #app .tp177-chart-column:hover .tp177-bar{outline:2px solid var(--text);outline-offset:1px}
 html body #app .tp177-chart-date{font-size:10px;line-height:21px;white-space:nowrap;text-align:center}
+html body #app .tp177-chart-date-short{display:none}
 html body #app .tp177-trend>.tp177-small{margin:6px 0 0;font-size:11px}
-html body #app .tp177-volume-panel:not(.tp177-volume-expanded) .tp177-chart-hint{display:none}
+html body #app .tp177-volume-panel:not(.tp177-volume-expanded) .tp177-trend .tp177-panel-heading,
+html body #app .tp177-volume-panel:not(.tp177-volume-expanded) .tp177-chart-hint,
+html body #app .tp177-volume-panel:not(.tp177-volume-expanded) .tp177-chart-axis,
+html body #app .tp177-volume-panel:not(.tp177-volume-expanded) .tp177-chart-date-full{display:none}
+html body #app .tp177-volume-panel:not(.tp177-volume-expanded) .tp177-chart-date-short{display:inline}
+html body #app .tp177-volume-panel:not(.tp177-volume-expanded) .tp177-chart{gap:0}
+html body #app .tp177-volume-panel:not(.tp177-volume-expanded) .tp177-chart-columns{gap:2px}
+html body #app .tp177-volume-panel:not(.tp177-volume-expanded) .tp177-chart-column{min-width:12px;gap:0}
+html body #app .tp177-volume-panel:not(.tp177-volume-expanded) .tp177-chart-date{font-size:9px;line-height:15px}
 html body #app .tp177-metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 12px}
 html body #app .tp177-metric{
  display:flex;align-items:center;gap:7px;position:relative;text-align:left;min-height:70px;min-width:0;
