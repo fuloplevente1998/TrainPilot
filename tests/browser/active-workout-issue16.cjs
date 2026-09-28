@@ -31,22 +31,22 @@ const {chromium}=require('playwright');
   assert.ok(initial.overflow<=1,'393px layout must not overflow');
 
   await page.evaluate(()=>{state.timer=75;state.restEndAt=Date.now()+75000;renderWorkout()});
-  await page.waitForSelector('.timer.tp16-rest-timer.tp16-rest-docked');
+  await page.waitForSelector('.tp16-workout-actions > .timer.tp16-rest-timer');
   const docked=await page.evaluate(()=>{
-   const t=document.querySelector('.tp16-rest-timer'),h=document.querySelector('.tp16-workout-head'),b=t.querySelector('button'),s=t.querySelector('strong');
-   const tr=t.getBoundingClientRect(),hr=h.getBoundingClientRect(),br=b.getBoundingClientRect();
-   return {position:getComputedStyle(t).position,parent:t.parentElement===h,text:s.textContent.trim(),font:getComputedStyle(s).fontSize,skip:b.textContent.trim(),skipH:br.height,w:tr.width,inside:tr.top>=hr.top&&tr.bottom<=hr.bottom+2};
+   const t=document.querySelector('.tp16-rest-timer'),h=document.querySelector('.tp16-workout-head'),a=document.querySelector('.tp16-workout-actions'),b=t.querySelector('button'),s=t.querySelector('strong');
+   const tr=t.getBoundingClientRect(),hr=h.getBoundingClientRect(),br=b.getBoundingClientRect(),pr=a.querySelector('.tp16-workout-prev').getBoundingClientRect(),nr=a.querySelector('.tp16-workout-next').getBoundingClientRect();
+   return {position:getComputedStyle(t).position,parent:t.parentElement===a,text:s.textContent.trim(),skip:b.textContent.trim(),skipH:br.height,w:tr.width,between:tr.left>=pr.right-1&&tr.right<=nr.left+1,headClear:!h.contains(t),overflow:document.documentElement.scrollWidth-innerWidth};
   });
-  assert.equal(docked.position,'relative');assert.equal(docked.parent,true);assert.equal(docked.skip,'Kihagyás');assert.equal(docked.font,'22px');assert.ok(docked.skipH>=34);assert.ok(docked.inside,'rest capsule should dock into visible workout header');assert.ok(docked.w<270,'rest capsule must stay compact');
+  assert.equal(docked.position,'static');assert.equal(docked.parent,true);assert.equal(docked.skip,'Kihagyás');assert.ok(docked.skipH>=34);assert.ok(docked.between,'rest capsule belongs between the controls: '+JSON.stringify(docked));assert.equal(docked.headClear,true);assert.ok(docked.overflow<=1);
 
   await page.evaluate(()=>{const h=document.querySelector('.tp16-workout-head'),sp=document.createElement('div');sp.id='tp16ScrollProbe';sp.style.height='1400px';h.insertAdjacentElement('afterend',sp);window.scrollTo(0,900)});
-  await page.waitForFunction(()=>document.querySelector('.tp16-rest-timer')?.classList.contains('tp16-rest-floating'));
+  await page.waitForTimeout(80);
   const floating=await page.evaluate(()=>{
    const t=document.querySelector('.tp16-rest-timer'),top=document.querySelector('.top'),a=document.querySelector('.tp16-workout-actions');
    const tr=t.getBoundingClientRect(),nr=top.getBoundingClientRect(),ar=a.getBoundingClientRect();
-   return {position:getComputedStyle(t).position,top:tr.top,navBottom:nr.bottom,bottom:tr.bottom,actionsTop:ar.top,overflow:document.documentElement.scrollWidth-innerWidth};
+   return {position:getComputedStyle(t).position,top:tr.top,navBottom:nr.bottom,bottom:tr.bottom,actionsTop:ar.top,actionsBottom:ar.bottom,overflow:document.documentElement.scrollWidth-innerWidth};
   });
-  assert.equal(floating.position,'fixed');assert.ok(floating.top>=floating.navBottom+4,'floating rest timer must remain below top navigation: '+JSON.stringify(floating));assert.ok(floating.bottom<floating.actionsTop,'top rest timer and bottom controls must not overlap');assert.ok(floating.overflow<=1);
+  assert.equal(floating.position,'static');assert.ok(floating.top>=floating.actionsTop&&floating.bottom<=floating.actionsBottom,'rest timer stays in bottom controls: '+JSON.stringify(floating));assert.ok(floating.overflow<=1);
 
   await page.locator('.tp16-rest-skip').click();await page.waitForFunction(()=>!document.querySelector('.tp16-rest-timer'));
   assert.equal(await page.locator('main.tp153-workout').count(),1,'Skip must preserve active workout');
@@ -62,6 +62,6 @@ const {chromium}=require('playwright');
   });
   assert.ok(narrow.overflow<=1,'320px workout must not overflow: '+JSON.stringify(narrow));assert.ok(narrow.prevH>=48&&narrow.nextH>=48);assert.equal(narrow.stacked,true,'320px may stack controls for full tap targets');assert.equal(narrow.order,true,'stacked order must remain Previous then Next');
   assert.deepEqual(errors,[],'browser page errors');
-  console.log('PASS #16 sticky large workout controls, docked/floating compact rest timer, skip, finish and 320px layout');
+  console.log('PASS #16 sticky large workout controls, bottom rest timer, skip, finish and 320px layout');
  }finally{if(browser)await browser.close();await new Promise(r=>server.close(r))}
 })().catch(e=>{console.error(e);process.exit(1)});
