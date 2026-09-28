@@ -1,0 +1,28 @@
+name: Publish TrainPilot v1.0.2
+on:
+  push:
+    branches:
+      - fix/workout-timer-intervals
+    paths:
+      - .github/workflows/publish-v102.yml
+permissions:
+  contents: write
+  actions: write
+jobs:
+  tag-and-dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: Verify approved main commit and version
+        run: |
+          test "$(git rev-parse HEAD)" = "3118de04a241004676b6a75c2c447cbb49ff8b4b"
+          node -e "const s=require('./SOURCE_VERSION.json');if(s.version!=='1.0.2'||s.versionCode!==2682)process.exit(1)"
+      - name: Create immutable release tag and dispatch signed build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/v1.0.2" -f sha="3118de04a241004676b6a75c2c447cbb49ff8b4b"
+          gh workflow run build-apk.yml --repo "$GITHUB_REPOSITORY" --ref v1.0.2
