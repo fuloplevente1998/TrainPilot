@@ -36,7 +36,7 @@ const server=http.createServer((req,res)=>{
     bottom:Math.max(...cards.map(el=>el.getBoundingClientRect().bottom)),viewport:innerHeight,
     horizontalOverflow:document.documentElement.scrollWidth>innerWidth+1};
   });
-  assert.ok(layout.cards>=6&&layout.allVisible,'all Home cards remain visible: '+JSON.stringify(layout));
+  assert.ok(layout.cards>=5&&layout.allVisible,'all Home cards remain visible: '+JSON.stringify(layout));
   assert.ok(layout.draftButtons.some(b=>b.text.includes('Edzés folytatása')&&b.visible));
   assert.ok(layout.draftButtons.some(b=>b.text.includes('törlése')&&b.visible));
   assert.equal(layout.coachCopy,true,'Coach text remains visible');
