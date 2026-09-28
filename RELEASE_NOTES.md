@@ -1,3 +1,12 @@
+# TrainPilot 1.0.2 / 2682 – edzésidő és pihenőidőzítő (2026-09-28)
+
+- A pihenőidőzítő az aktív edzés alsó Előző/Következő vezérlői közé kerül, a felső kártya kompakt marad.
+- A félbehagyott normál és gyors edzés aktív szakaszait külön rögzítjük. A kihagyott idő nem kerül az edzésnapló és a Fejlődés edzésidő-átlagába.
+- A folyamatban lévő időre végzett sorozat stoppert kilépéskor leállítjuk.
+- Android `versionName 1.0.2`, `versionCode 2682`; aláírás és alkalmazásazonosító változatlan.
+
+---
+
 # TrainPilot 1.0.0 / 2675 – nyilvános kiadás előkészítése (2026-09-26)
 
 - **#69 – Átlagos edzésidő:** a Fejlődés 2×2 kártyájában a Sorozatok száma helyett az „Átl. edzésidő” látható. Az 1/7/30 napos és 3 hónapos szűrő befejezett, érvényes időpontú naplózott edzésekből számol percben kijelzett átlagot; hiányzó mérésnél „—” jelenik meg. A helyben lenyíló részletek az egyes edzések időtartamát mutatják.

@@ -109,7 +109,16 @@ var restoreText = function restoreText(text){
  catch(e){for(const k of keys)localStorage.removeItem('repforge:'+k);keys.forEach((k,i)=>{if(old[i]!==null)localStorage.setItem('repforge:'+k,old[i]);});throw Error('Nincs elég tárhely. A korábbi adatokat visszaállítottam.');}
  alert('Visszatöltés kész.');render();return true;
 };
-var persistDraft = function persistDraft(){if(state.session)db.set('draft',{session:state.session,workout:state.workout,current:state.current,restEndAt:state.restEndAt||null});};
+var workoutIntervals = function workoutIntervals(session){
+ if(!Array.isArray(session.activeIntervals))session.activeIntervals=[{start:session.started,end:null}];
+ return session.activeIntervals;
+};
+var closeWorkoutInterval = function closeWorkoutInterval(session,at=new Date().toISOString()){
+ if(!session)return;
+ const last=workoutIntervals(session).at(-1);
+ if(last&&!last.end)last.end=at;
+};
+var persistDraft = function persistDraft(){if(state.session){workoutIntervals(state.session);db.set('draft',{session:state.session,workout:state.workout,current:state.current,restEndAt:state.restEndAt||null,savedAt:new Date().toISOString()});}};
 var resumeDraft = function resumeDraft(){
  const d=db.get('draft',null);if(!d)return;
  if(!d.session||!['A','B'].includes(d.workout)||!Array.isArray(d.session.exercises)||!d.session.exercises.length||d.session.exercises.some(e=>!byId(e.id))){alert('A félbehagyott edzés nem állítható vissza a jelenlegi tervvel.');return;}
@@ -351,7 +360,7 @@ var upd = function upd(ei,si,k,v){state.session.exercises[ei].sets[si][k]=k==="w
 var toggleSet = function toggleSet(ei,si){const s=state.session.exercises[ei].sets[si];if(!s.done && (!/^\d+$/.test(String(s.reps)) || Number(s.reps)<1)){alert("Írd be a tényleges ismétlésszámot vagy másodpercet.");return;}s.done=!s.done;if(s.done)startRest();renderWorkout()};
 var prevExercise = function prevExercise(){if(state.current>0){state.current--;renderWorkout();window.scrollTo(0,0)}};
 var nextExercise = function nextExercise(){if(state.current<state.session.exercises.length-1){state.current++;renderWorkout();window.scrollTo(0,0)}else finishWorkout()};
-var finishWorkout = function finishWorkout(){if(!state.session.exercises.some(e=>e.sets.some(s=>s.done))){alert("Előbb jelölj legalább egy sorozatot teljesítettnek.");return;}if(state.session.exercises.some(e=>e.sets.some(s=>!s.done))&&!confirm("Vannak be nem fejezett sorozatok. Elmented a részleges edzést?"))return;const h=history();state.session.finished=new Date().toISOString();h.unshift(state.session);db.set("history",h);db.set("draft",null);const w=state.workout;stopTimer();state.session=null;state.workout=null;state.tab="home";render(shell(`<main><div class="hero"><h1>Kész ✓</h1><div class="muted">Full Body ${w} elmentve.</div><br><button class="btn block" onclick="go('home')">Kezdőlap</button></div></main>`))};
+var finishWorkout = function finishWorkout(){if(!state.session.exercises.some(e=>e.sets.some(s=>s.done))){alert("Előbb jelölj legalább egy sorozatot teljesítettnek.");return;}if(state.session.exercises.some(e=>e.sets.some(s=>!s.done))&&!confirm("Vannak be nem fejezett sorozatok. Elmented a részleges edzést?"))return;const h=history();state.session.finished=new Date().toISOString();closeWorkoutInterval(state.session,state.session.finished);h.unshift(state.session);db.set("history",h);db.set("draft",null);const w=state.workout;stopTimer();state.session=null;state.workout=null;state.tab="home";render(shell(`<main><div class="hero"><h1>Kész ✓</h1><div class="muted">Full Body ${w} elmentve.</div><br><button class="btn block" onclick="go('home')">Kezdőlap</button></div></main>`))};
 var formatSet = function formatSet(e,s){
  // Historical weights are deliberately not reinterpreted: old entries lacked metadata.
  if(!e.loadType)return `${s.weight||0} kg × ${s.reps||'—'} (régi súlyjelölés)`;
@@ -424,7 +433,9 @@ var render = function render(custom){
 var motionDemo = function motionDemo(id){return demoCard(id)};
 var sessionDuration = function sessionDuration(x){
   if(!x.started || !x.finished) return "—";
-  const sec=Math.max(0,Math.round((new Date(x.finished)-new Date(x.started))/1000));
+  const intervals=Array.isArray(x.activeIntervals)?x.activeIntervals:null;
+  const ms=intervals?.length?intervals.reduce((sum,i)=>{const a=Date.parse(i.start),b=Date.parse(i.end||x.finished);return sum+(Number.isFinite(a)&&Number.isFinite(b)?Math.max(0,b-a):0)},0):Date.parse(x.finished)-Date.parse(x.started);
+  const sec=Math.max(0,Math.round(ms/1000));
   const min=Math.floor(sec/60), rem=sec%60;
   return min ? `${min} p ${rem ? rem+" mp" : ""}` : `${rem} mp`;
 };
@@ -638,7 +649,7 @@ const rf12OldRender=render;render=function(custom){if(window.TrainPilotBoot?.loa
 migrateTo12();render();
 
 // 1.2 draft/history polish loaded after the feature layer definitions.
-resumeDraft=function(){const d=db.get('draft',null);if(!d?.session||!Array.isArray(d.session.exercises)||!d.session.exercises.length){alert('Nincs visszaállítható edzés.');return;}const p=programById(d.session.programId)||activeProgram(),day=programDay(p,d.session.dayId||d.workout);if(!day||d.session.exercises.some(e=>!byId(e.id))){alert('A félbehagyott edzés nem állítható vissza a jelenlegi gyakorlatkönyvtárral.');return;}stopTimer();state.tab='plan';state.session=d.session;state.workout=d.session.dayId||d.workout;state.current=Math.max(0,Math.min(d.current||0,d.session.exercises.length-1));if(d.restEndAt>Date.now()){state.restEndAt=d.restEndAt;state.timer=Math.ceil((d.restEndAt-Date.now())/1000);state.timerId=setInterval(tickRest,250);}renderWorkout();};
+resumeDraft=function(){const d=db.get('draft',null);if(!d?.session||!Array.isArray(d.session.exercises)||!d.session.exercises.length){alert('Nincs visszaállítható edzés.');return;}const quick=d.session.quickWorkout||d.session.type==='quick',p=programById(d.session.programId)||activeProgram(),day=quick?null:programDay(p,d.session.dayId||d.workout);if((!quick&&!day)||d.session.exercises.some(e=>!byId(e.id))){alert('A félbehagyott edzés nem állítható vissza a jelenlegi gyakorlatkönyvtárral.');return;}stopTimer();if(typeof rf110StopwatchHalt==='function')rf110StopwatchHalt(true);if(typeof tp1481HaltSide==='function')tp1481HaltSide(true);state.tab='plan';state.session=d.session;state.workout=quick?'quick':d.session.dayId||d.workout;state.current=Math.max(0,Math.min(d.current||0,d.session.exercises.length-1));closeWorkoutInterval(state.session,d.savedAt||new Date().toISOString());state.session.activeIntervals.push({start:new Date().toISOString(),end:null});if(d.restEndAt>Date.now()){state.restEndAt=d.restEndAt;state.timer=Math.ceil((d.restEndAt-Date.now())/1000);state.timerId=setInterval(tickRest,250);}renderWorkout();};
 historyScreen=function(){const h=history();return shell(`<main><div class="hero"><h1>Edzésnapló</h1><div class="muted">Minden program korábbi edzése egy helyen marad.</div></div>${h.length?h.map((x,hi)=>{const c=completedSets(x),title=x.programName?`${x.programName} • ${x.dayId||x.workout}`:`Full Body ${x.workout}`;return `<div class="history"><div class="history-head"><div class="history-title-row"><div><div class="history-title">${esc(title)}</div><div class="history-date">${fmtDate(x.started)}</div></div><span class="badge">${x.exercises.length} gyakorlat</span></div><div class="history-badges"><span class="history-badge">⏱ ${sessionDuration(x)}</span><span class="history-badge">✓ ${c.done}/${c.total} sorozat</span></div></div><div class="history-body"><button class="btn secondary" onclick="calendarIntent(${hi})">Hozzáadás a naptárhoz</button>${x.exercises.map(e=>`<div class="history-ex"><div class="history-ex-name">${esc(e.hu)}</div><div class="en">${esc(e.en||'')}</div><div class="history-setchips">${(e.sets||[]).map(s=>`<span class="setchip">${esc(formatSet(e,s))}${s.done?' ✓':' • nincs kész'}</span>`).join('')}</div></div>`).join('')}</div></div>`;}).join(''):'<div class="muted">Még nincs elmentett edzés.</div>'}</main>`);};
 
 
@@ -9167,6 +9178,7 @@ shell=function(content){
 go=function(route){
  const key=String(route||'home'),target=RF253_CORE_ROUTES?.[key]||key;
  const navigate=function(){
+  if(state.session){rf110StopwatchHalt(true);tp1481HaltSide(true);closeWorkoutInterval(state.session);persistDraft();}
   if(typeof stopTimer==='function')stopTimer();
   if(typeof rf245CoachVisible!=='undefined')rf245CoachVisible=false;
   state.healthView=false;
@@ -12799,6 +12811,8 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  go=function(route){
   const key=String(route||'home'),target=window.TrainPilotRoutes?.[key]||key;
   if(state.session&&target==='history'){
+   rf110StopwatchHalt(true);tp1481HaltSide(true);
+   closeWorkoutInterval(state.session);
    try{persistDraft()}catch(_){}
    state.session=null;
    const out=tp164GoBase.apply(this,arguments);
@@ -13152,6 +13166,10 @@ window.tp164DecoratePerSideRows();
  const dayKey=date=>date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
  const number=value=>{const n=Number(value);return Number.isFinite(n)&&n>0?n:0};
  const durationMinutes=workout=>{
+  if(Array.isArray(workout.activeIntervals)&&workout.activeIntervals.length){
+   const ms=workout.activeIntervals.reduce((sum,i)=>{const a=Date.parse(i.start),b=Date.parse(i.end||workout.finished||'');return sum+(Number.isFinite(a)&&Number.isFinite(b)?Math.max(0,b-a):0)},0);
+   return ms>0?ms/60000:null;
+  }
   const started=Date.parse(workout.started||workout.startedAt||'');
   const finished=Date.parse(workout.finished||workout.endedAt||workout.finishedAt||workout.completedAt||'');
   const minutes=(finished-started)/60000;
