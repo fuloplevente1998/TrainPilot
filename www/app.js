@@ -13820,6 +13820,49 @@ rf263HealthHub=function(){
 
 // @endsection issue67-fixes.js
 
+// @section home-draft-compact.js
+/* Keep every Home card and its content visible while a workout draft adds a card. */
+(function tpHomeDraftCompact(){
+ const orderHomeCards=window.tp155OrderHomeCards;
+ window.tp155OrderHomeCards=function(){
+  const out=orderHomeCards?.apply(this,arguments);
+  const main=document.querySelector('main.rf221-home');
+  if(main)main.classList.toggle('tp-home-draft-compact',!!main.querySelector('button[onclick*="resumeDraft"]'));
+  return out;
+ };
+ const style=document.createElement('style');style.id='tpHomeDraftCompactCss';style.textContent=`
+  main.rf221-home.tp-home-draft-compact{gap:5px!important;padding-bottom:max(8px,env(safe-area-inset-bottom,0px))!important}
+  main.rf221-home.tp-home-draft-compact>.card,main.rf221-home.tp-home-draft-compact>.hero{margin:0!important;padding:6px 9px!important}
+  main.rf221-home.tp-home-draft-compact>.onboarding{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(112px,35%)!important;column-gap:8px!important;row-gap:2px!important;align-items:center!important}
+  main.rf221-home.tp-home-draft-compact>.onboarding h2{grid-column:1!important;font-size:16px!important}
+  main.rf221-home.tp-home-draft-compact>.onboarding p{grid-column:1!important;font-size:11px!important;line-height:1.18!important}
+  main.rf221-home.tp-home-draft-compact>.onboarding>.btn{grid-column:2!important;grid-row:1/span 2!important;min-height:40px!important;white-space:normal!important}
+  main.rf221-home.tp-home-draft-compact>.card:has(button[onclick*="resumeDraft"]){display:grid!important;gap:3px!important}
+  main.rf221-home.tp-home-draft-compact>.card:has(button[onclick*="resumeDraft"])>p{margin:0!important;line-height:1.18!important}
+  main.rf221-home.tp-home-draft-compact>.card:has(button[onclick*="resumeDraft"])>.grid2{margin:1px 0 0!important;gap:5px!important}
+  main.rf221-home.tp-home-draft-compact>.card:has(button[onclick*="resumeDraft"]) .btn{min-height:40px!important;padding:6px!important;white-space:normal!important;line-height:1.15!important}
+  main.rf221-home.tp-home-draft-compact>.hero.tp155-home-active-card{padding:6px 9px!important}
+  main.rf221-home.tp-home-draft-compact .tp155-home-active-grid{gap:7px!important}
+  main.rf221-home.tp-home-draft-compact .tp155-home-program-left h1{font-size:clamp(17px,4.8vw,23px)!important}
+  main.rf221-home.tp-home-draft-compact .tp155-home-program-right{padding-left:7px!important}
+  main.rf221-home.tp-home-draft-compact .tp155-home-program-right .tp146-next-title{font-size:14px!important}
+  main.rf221-home.tp-home-draft-compact>.hero>.btn{margin-top:4px!important;min-height:40px!important}
+  main.rf221-home.tp-home-draft-compact>.grid2{gap:5px!important}
+  main.rf221-home.tp-home-draft-compact>.grid2 .stat{padding:5px 8px!important}
+  main.rf221-home.tp-home-draft-compact #rf223Today{padding:6px 8px!important}
+  main.rf221-home.tp-home-draft-compact .rf223-title{margin-bottom:3px!important}
+  main.rf221-home.tp-home-draft-compact .rf223-stat{padding:5px 3px!important}
+  main.rf221-home.tp-home-draft-compact #rf220CoachCard.tp166-home-coach{padding:7px 9px!important}
+  main.rf221-home.tp-home-draft-compact #rf220CoachCard h2{font-size:16px!important;margin:1px 0 3px!important}
+  main.rf221-home.tp-home-draft-compact #rf220CoachCard .tp166-home-coach-copy p{font-size:12px!important;line-height:1.2!important}
+  main.rf221-home.tp-home-draft-compact #rf220CoachCard .tp166-home-coach-target{grid-template-columns:repeat(2,minmax(0,1fr))!important;margin:5px 0!important;gap:5px!important}
+  main.rf221-home.tp-home-draft-compact #rf220CoachCard .tp166-home-coach-target>span{padding:5px 7px!important;gap:1px!important}
+  main.rf221-home.tp-home-draft-compact #rf220CoachCard .tp166-home-coach-sub{margin-top:4px!important;font-size:11px!important}
+  @media(max-width:340px){main.rf221-home.tp-home-draft-compact>.onboarding{grid-template-columns:1fr!important}main.rf221-home.tp-home-draft-compact>.onboarding>.btn{grid-column:1!important;grid-row:auto!important}main.rf221-home.tp-home-draft-compact #rf220CoachCard .tp166-home-coach-target{grid-template-columns:1fr!important}}
+ `;document.head.appendChild(style);
+})();
+// @endsection home-draft-compact.js
+
 // @section ready.js
 window.TrainPilotBoot.finish();
 // @endsection ready.js
