@@ -13945,3 +13945,25 @@ rf240SyncWorkout=async function(p,h,force=false){
 window.TrainPilotIssue79={version:'79.1',intervals};
 })();
 // @endsection issue79-health-active-intervals.js
+
+
+// @section issue80-safe-video-sources.js
+/* #80 — never present unverified/generated demo mappings as verified exercise videos. */
+(function(){
+'use strict';
+const base=demoInfo;
+function searchInfo(id){
+ const e=typeof byId==='function'?byId(id):null;
+ const q=encodeURIComponent(((e&&e.en)||id)+' exercise tutorial proper form');
+ return {provider:null,videoId:null,credit:'YouTube keresés – ellenőrizendő forrás',source:'https://www.youtube.com/results?search_query='+q,verified:false};
+}
+demoInfo=function(id){
+ const d=base(id);if(!d)return null;
+ const credit=String(d.credit||'').trim();
+ // Zi Workout and anonymous/generic YouTube mappings are not trusted as verified demonstrations.
+ if(!credit||/zi\s*workout/i.test(credit)||/^youtube\s*[–-]/i.test(credit))return searchInfo(id);
+ return {...d,verified:true};
+};
+window.TrainPilotIssue80={version:'80.1',policy:'no-ai-or-unverified-embedded-demo'};
+})();
+// @endsection issue80-safe-video-sources.js
