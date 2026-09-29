@@ -13940,7 +13940,8 @@ rf240SyncWorkout=async function(p,h,force=false){
 };
 window.TrainPilotIssue79={version:'79.1',intervals};
 })();
-// @endsection issue79-health-active-intervals.js\n
+// @endsection issue79-health-active-intervals.js
+
 // @section issue80-safe-video-sources.js
 /* #80 — never present unverified/generated demo mappings as verified exercise videos. */
 (function(){
@@ -13960,7 +13961,8 @@ demoInfo=function(id){
 };
 window.TrainPilotIssue80={version:'80.1',policy:'no-ai-or-unverified-embedded-demo'};
 })();
-// @endsection issue80-safe-video-sources.js\n
+// @endsection issue80-safe-video-sources.js
+
 // @section ready.js
 window.TrainPilotBoot.finish();
 // @endsection ready.js
