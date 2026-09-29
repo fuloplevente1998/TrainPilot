@@ -21,8 +21,13 @@ const {chromium}=require('playwright');
    state.session=null;state.workout=null;
    const program=activeProgram(),day=program.days[0];
    startWorkout(day.id,null,program.id);
-   const index=state.session.exercises.findIndex(x=>demoInfo(x.id));
-   if(index<0)throw Error('No demo-enabled workout exercise');
+   let index=state.session.exercises.findIndex(x=>demoInfo(x.id)?.provider);
+   if(index<0){
+    const stable=byId('db-squat'),seed=state.session.exercises[0];
+    if(!stable||!seed||!demoInfo('db-squat')?.provider)throw Error('No verified embedded demo for regression fixture');
+    state.session.exercises.push({...seed,id:stable.id,hu:stable.hu,en:stable.en,sets:seed.sets});
+    index=state.session.exercises.length-1;
+   }
    state.current=index;renderWorkout();
    return state.session.exercises[index].id;
   });
@@ -71,6 +76,15 @@ const {chromium}=require('playwright');
   await english.click();await page.waitForSelector('#videoModal');
   assert.equal(await page.locator('.tp15-demo-guide h3').innerText(),'Instructions');
   assert.equal(await page.locator('.tp15-demo-close').getAttribute('aria-label'),'Close exercise demo');
+  await page.evaluate(()=>window.closeDemo());
+  await page.evaluate(()=>window.openDemo('db-pullover'));
+  const safe=page.locator('#videoModal');
+  await safe.waitFor({state:'visible'});
+  assert.equal(await safe.locator('.video-player iframe').count(),0,'unverified AI/unknown clip must not be embedded');
+  assert.equal(await safe.locator('.tp80-source-warning').count(),1,'clear unverified-video warning');
+  assert.equal(await safe.locator('.tp15-demo-guide').count(),1,'same established dialog keeps the exercise-specific written guide');
+  assert.equal(await safe.locator('.tp15-demo-external').count(),1,'one controlled external source/search action');
+  await page.evaluate(()=>window.closeDemo());
   assert.deepEqual(errors,[],'browser page errors');
   console.log('PASS #15 single-tap demo, video+instructions, red sticky X, one external action, Android Back, focus, 320px, EN');
  }finally{if(browser)await browser.close();await new Promise(r=>server.close(r))}
