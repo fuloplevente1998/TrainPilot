@@ -13948,6 +13948,7 @@ window.TrainPilotIssue79={version:'79.1',intervals};
 (function(){
 'use strict';
 const officialRow='https://www.muscleandstrength.com/exercises/bent-over-barbell-row.html';
+const verifiedGuides={'barbell-row':officialRow,'goblet-squat':'https://www.muscleandstrength.com/exercises/dumbbell-goblet-squat','bulgarian-split-squat':'https://www.muscleandstrength.com/exercises/one-leg-dumbbell-squat-aka-bulgarian-squat.html'};
 const officialLibrary='https://www.nasm.org/resource-center/exercise-library';
 const sourceBase=demoInfo;
 const openBase=openDemo;
@@ -13963,7 +13964,7 @@ function nameOf(id){const e=typeof byId==='function'?byId(id):null;return e&&e.e
 function searchUrl(id){return 'https://www.youtube.com/results?search_query='+encodeURIComponent(nameOf(id)+' exercise tutorial real trainer')}
 demoInfo=function(id){
  const d=sourceBase(id);if(!d)return d;
- if(id==='barbell-row')return {...d,provider:null,videoId:null,credit:lang().official,source:officialRow,sourceVerified:true,sourceKind:'verified-guide'};
+ if(Object.prototype.hasOwnProperty.call(verifiedGuides,id))return {...d,provider:null,videoId:null,credit:lang().official,source:verifiedGuides[id],sourceVerified:true,sourceKind:'verified-guide'};
  if(typeof RF143_DEMOS!=='undefined'&&Object.prototype.hasOwnProperty.call(RF143_DEMOS,id)){
   return {...d,provider:null,videoId:null,credit:lang().library,source:officialLibrary,sourceVerified:false,sourceKind:'library-search'};
  }
@@ -13987,8 +13988,9 @@ openDemo=function(id){
  m.innerHTML='<div class="video-dialog" role="dialog" aria-modal="true" aria-label="'+esc(title)+'">'+
   '<button class="btn secondary video-close" data-tp-video-close type="button" onclick="closeDemo()">✕ '+esc(tr.close)+'</button>'+
   '<h2>'+esc(title)+'</h2>'+
-  (!verified?'<p class="small muted">'+esc(tr.unverified)+'</p>':'')+
-  (notes?'<div class="tp15-demo-guide"><strong>'+esc(tr.guide)+'</strong><p>'+esc(notes)+'</p></div>':'')+
+  (!verified?'<p class="tp80-source-warning">'+esc(tr.unverified)+'</p>':'')+
+  (!window.TrainPilotDemo15&&notes?'<div class="tp80-guide"><strong>'+esc(tr.guide)+'</strong><p>'+esc(notes)+'</p></div>':'')+
+  '<p class="small muted">'+esc(d.credit)+'</p>'+
   (offline?'<p class="small muted">'+esc(tr.offline)+'</p>':
    '<button type="button" class="btn block" data-tp80-source>'+esc(sourceLabel)+'</button>'+
    (verified?'':'<button type="button" class="btn secondary block" data-tp80-search>'+esc(tr.search)+'</button>'))+
