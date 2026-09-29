@@ -1581,7 +1581,7 @@
   if(refresh){refresh.disabled=true;refresh.setAttribute('aria-busy','true')}
   const task=(async()=>{
    try{
-    const result=await healthPlugin().readWorkout({start:h.started,end:h.finished,source:''});
+    const result=await tp79ReadHealth(healthPlugin(),h,'readWorkout',{source:''});
     rfHistoryHealthCache.set(key,{summary:result||{},loadedAt:Date.now()});
    }catch(e){
     rfHistoryHealthCache.set(key,{error:e?.message||'A Health Connect adatok lekérése nem sikerült.'});
