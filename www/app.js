@@ -113,6 +113,32 @@ var workoutIntervals = function workoutIntervals(session){
  if(!Array.isArray(session.activeIntervals))session.activeIntervals=[{start:session.started,end:null}];
  return session.activeIntervals;
 };
+
+var tp79ActiveWindows=function(h){
+ const start=Date.parse(h?.started||''),end=Date.parse(h?.finished||'');
+ if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start)throw Error('Érvénytelen edzésidőszak.');
+ const recorded=Array.isArray(h.activeIntervals)&&h.activeIntervals.length?h.activeIntervals:null;
+ if(!recorded&&end-start>24*3600000)throw Error('Régi többnapos edzés: a szünet ideje nem állapítható meg.');
+ const raw=recorded||[{start:h.started,end:h.finished}],windows=raw.map(w=>({a:Math.max(start,Date.parse(w?.start||'')),b:Math.min(end,Date.parse(w?.end||h.finished))})).filter(w=>Number.isFinite(w.a)&&Number.isFinite(w.b)&&w.b>w.a).sort((a,b)=>a.a-b.a);
+ if(!windows.length)throw Error('Nem található érvényes aktív edzésszakasz.');
+ const merged=[];for(const w of windows){const last=merged.at(-1);if(last&&w.a<=last.b)last.b=Math.max(last.b,w.b);else merged.push({...w})}
+ if(merged.some(w=>w.b-w.a>24*3600000))throw Error('Az aktív szakasz meghaladja a Health Connect 24 órás korlátját.');
+ return merged.map(w=>({start:new Date(w.a).toISOString(),end:new Date(w.b).toISOString()}));
+};
+var tp79ReadHealth=async function(p,h,method='readWorkout',options={}){
+ const windows=tp79ActiveWindows(h),results=[],errors=[];
+ for(const w of windows){try{results.push(await p[method]({...options,...w}))}catch(e){errors.push(e?.message||String(e))}}
+ if(!results.length)throw Error(errors.join(' • ')||'A Health Connect lekérdezés nem sikerült.');
+ const out={...results[0],start:windows[0].start,end:windows.at(-1).end,activeWindows:windows,source:'all'};
+ for(const k of ['heartRateSamples','activeCalories','totalCalories','distanceMeters','exerciseMinutes','speedSamples']){const a=results.map(r=>r?.[k]).filter(v=>v!=null&&Number.isFinite(Number(v))).map(Number);out[k]=a.length?a.reduce((x,y)=>x+y,0):null}
+ const weighted=(key,weight)=>{let n=0,d=0;for(const r of results){const v=Number(r?.[key]),w=Number(r?.[weight]);if(r?.[key]!=null&&Number.isFinite(v)&&Number.isFinite(w)&&w>0){n+=v*w;d+=w}}return d?n/d:null};
+ out.averageHeartRate=weighted('averageHeartRate','heartRateSamples');out.averageSpeedMps=weighted('averageSpeedMps','speedSamples');
+ for(const [key,fn] of [['minHeartRate',Math.min],['maxHeartRate',Math.max],['maxSpeedMps',Math.max]]){const a=results.map(r=>r?.[key]).filter(v=>v!=null&&Number.isFinite(Number(v))).map(Number);out[key]=a.length?fn(...a):null}
+ const sessions=new Map();for(const r of results)for(const x of r?.exerciseSessions||[])sessions.set(x.id||x.source+'|'+x.start+'|'+x.end,x);
+ out.exerciseSessions=[...sessions.values()];out.exerciseSessionCount=out.exerciseSessions.length;
+ out.sources=[...new Set(results.flatMap(r=>r?.sources||[]))];out.sourceLabels=Object.assign({},...results.map(r=>r?.sourceLabels||{}));
+ out.warnings=[...new Set([...results.flatMap(r=>r?.warnings||[]),...errors])];return out;
+};
 var closeWorkoutInterval = function closeWorkoutInterval(session,at=new Date().toISOString()){
  if(!session)return;
  const last=workoutIntervals(session).at(-1);
@@ -3318,7 +3344,7 @@ var rf240ReadDays = async function rf240ReadDays(p,dayKeys,ledger=rf240Ledger())
  const unique=[...new Set(dayKeys)].filter(Boolean).sort();let done=0;for(const day of unique){const w=rf240DayBounds(day);if(Date.parse(w.end)<=Date.parse(w.start))continue;try{const r=await p.readHealthDay(w);ledger.days[day]={...r,day,readAt:new Date().toISOString()};done++}catch(e){ledger.warnings=(ledger.warnings||[]).slice(-20);ledger.warnings.push(`${day}: ${e?.message||e}`)}}rf240SaveLedger(ledger);rf240ApplyLedger();return done
 };
 var rf240WorkoutKey = function rf240WorkoutKey(h){return typeof rf142WorkoutKey==='function'?rf142WorkoutKey(h):h?.id||`${h?.started||''}|${h?.programId||''}|${h?.dayId||h?.workout||''}`};
-var rf240ValidWorkout = function rf240ValidWorkout(h){const a=Date.parse(h?.started||''),b=Date.parse(h?.finished||'');return Number.isFinite(a)&&Number.isFinite(b)&&b>a&&b-a<=24*3600000};
+var rf240ValidWorkout = function rf240ValidWorkout(h){const a=Date.parse(h?.started||''),b=Date.parse(h?.finished||'');return Number.isFinite(a)&&Number.isFinite(b)&&b>a&&(b-a<=24*3600000||Array.isArray(h?.activeIntervals)&&h.activeIntervals.length>0)};
 var rf240SaveWorkoutHealth = function rf240SaveWorkoutHealth(key,data){const rows=history(),i=rows.findIndex(x=>rf240WorkoutKey(x)===key);if(i<0)return false;rows[i]={...rows[i],health240:{...data,windowStart:rows[i].started,windowEnd:rows[i].finished,syncedAt:new Date().toISOString()}};db.set('history',rows);if(state.health?.workout===rows[i].started)state.health.summary=rows[i].health240;return true};
 var rf240SyncWorkout = async function rf240SyncWorkout(p,h,force=false){if(!rf240ValidWorkout(h))return false;const key=rf240WorkoutKey(h),old=h.health240;if(!force&&old?.windowStart===h.started&&old?.windowEnd===h.finished&&Date.now()-Date.parse(old.syncedAt||0)<6*3600000)return false;const r=await p.readTrainingWindow({start:h.started,end:h.finished});return rf240SaveWorkoutHealth(key,r)};
 var rf240AttachRecentWorkouts = async function rf240AttachRecentWorkouts(p,days=7,force=false){const cutoff=Date.now()-Math.max(1,days)*86400000,rows=history().filter(h=>rf240ValidWorkout(h)&&Date.parse(h.finished)>=cutoff).sort((a,b)=>Date.parse(a.finished)-Date.parse(b.finished));let n=0;for(const h of rows){try{if(await rf240SyncWorkout(p,h,force))n++}catch(_){}}return n};
@@ -3704,6 +3730,8 @@ var rf245Pipeline = async function rf245Pipeline(p,{manual=false,full=false}={})
    if(rf245Warnings(fresh).length)throw Error(rf245Warnings(fresh).join(' • '));
    if(checked)report.workouts++;
    if(!needsExport)continue;
+   // Never export a session spanning an inactive break.
+   if(Array.isArray(h.activeIntervals)&&h.activeIntervals.length>1){report.skipped++;continue}
    // Fresh exact-window session query is mandatory before any export.
    if(!permissions.READ_EXERCISE){report.skipped++;continue}
    const exact=await p.readTrainingWindow({start:h.started,end:h.finished});
@@ -3774,6 +3802,11 @@ const rf245LegacyWorkout=rf240SyncWorkout;
 const rf245SaveMatched=rf242SaveMatchedWorkoutHealth;
 rf242SaveMatchedWorkoutHealth=function(key,h,data,meta){const current=history().find(x=>rf240WorkoutKey(x)===key);if(!current||current.started!==h.started||current.finished!==h.finished)return false;return rf245SaveMatched(key,h,data,meta)};
 const rf245ReadWorkout=async(p,h,force)=>{
+ if(Array.isArray(h.activeIntervals)&&h.activeIntervals.length>1){
+  const old=h.health240;if(!force&&old?.windowStart===h.started&&old?.windowEnd===h.finished&&Date.now()-Date.parse(old.syncedAt||0)<6*3600000)return false;
+  const data=await tp79ReadHealth(p,h,'readTrainingWindow');
+  return rf245SaveMatched(rf240WorkoutKey(h),h,data,{matchMode:'active-intervals',sourceWindowStart:data.start,sourceWindowEnd:data.end});
+ }
  const windows=new Map();
  const saved=await rf245LegacyWorkout({readTrainingWindow:async args=>{
   const end=new Date(Math.min(Date.parse(args.end),Date.now())).toISOString();
