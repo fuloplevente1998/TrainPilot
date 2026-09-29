@@ -13940,7 +13940,8 @@ rf240SyncWorkout=async function(p,h,force=false){
 };
 window.TrainPilotIssue79={version:'79.1',intervals};
 })();
-// @endsection issue79-health-active-intervals.js\n
+// @endsection issue79-health-active-intervals.js
+
 // @section ready.js
 window.TrainPilotBoot.finish();
 // @endsection ready.js
