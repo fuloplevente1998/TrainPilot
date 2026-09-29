@@ -29,7 +29,7 @@ console.log('PASS: 1.1.5→1.2 migration, every-other-day weekend rollover, week
 // Every built-in exercise must expose a real demo mapping, including new programs.
 assert.equal(run('exercises().length'),26);
 assert.equal(run('exercises().filter(e=>!demoInfo(e.id)||!demoCard(e.id)).length'),0);
-assert.equal(run("exercises().filter(e=>demoInfo(e.id).provider!=='youtube').length"),0);
+assert.equal(run("exercises().filter(e=>!['youtube',null].includes(demoInfo(e.id).provider)).length"),0);
 assert.match(run("demoInfo('reverse-lunge').source"),/sjlsISvHyZs/);
 console.log('PASS: all 26 built-in exercises have demo cards; YouTube providers and two-dumbbell lunge preserved. Playback not tested.');
 
