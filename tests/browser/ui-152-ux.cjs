@@ -248,7 +248,7 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.locator('main.tp153-workout .video-card').count(),0,'active workout must not keep the old large video card');
   assert.ok(await page.locator('main.tp153-workout .tp15-demo-launch').count()<=1,'active workout uses only the one-tap compact demo launch');
   assert.equal(await page.locator('main.tp153-workout > .tp153-workout-guide').count(),0,'workout guidance must no longer sit at the bottom of the workout');
-  const demoId=await page.evaluate(()=>state.session.exercises.find(x=>demoInfo(x.id))?.id||null);
+  const demoId=await page.evaluate(()=>state.session.exercises.find(x=>demoInfo(x.id)?.provider)?.id||null);
   if(demoId){
    await page.evaluate(id=>{const i=state.session.exercises.findIndex(x=>x.id===id);if(i>=0){state.current=i;renderWorkout()}},demoId);
    const launch=page.locator('.tp153-workout-head .tp15-demo-launch');assert.equal(await launch.count(),1,'exercise demo must have one direct entry point in the top workout card');
