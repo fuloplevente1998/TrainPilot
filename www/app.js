@@ -135,8 +135,15 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)persistDraf
 // @endsection backup.js
 
 // @section demos.js
-var demoInfo = function demoInfo(id){const d=DEMOS[id];return d?{provider:d[1],videoId:d[2],credit:d[3]||(d[0]?'Muscle & Strength':'Zi workout'),source:d[0]?'https://www.muscleandstrength.com/exercises/'+d[0]:'https://www.youtube.com/watch?v='+d[2]}:null;};
-var demoCard = function demoCard(id){const d=demoInfo(id);if(!d)return '';return `<div class="video-card"><span class="badge">VIDEÓBEMUTATÓ • INTERNET</span><p class="small muted">${esc(d.credit)} • ${d.provider?'külön lejátszó':'videó a forrásoldalon'}</p><button class="btn block" onclick="openDemo('${id}')">${d.provider?'▶ Bemutató megnyitása':'▶ Videó a böngészőben'}</button></div>`;};
+var demoInfo = function demoInfo(id){
+ const d=DEMOS[id];if(!d)return null;
+ if(d[1]==='search'||(!d[3]&&!d[0])){
+  const e=typeof byId==='function'?byId(id):null;
+  return {provider:null,videoId:null,credit:'Nem ellenőrzött videó helyett oktatóvideó keresése',source:'https://www.youtube.com/results?search_query='+encodeURIComponent((e?.en||id)+' exercise tutorial real trainer')};
+ }
+ return {provider:d[1],videoId:d[2],credit:d[3]||(d[0]?'Muscle & Strength':'Oktatóvideó'),source:d[0]?'https://www.muscleandstrength.com/exercises/'+d[0]:'https://www.youtube.com/watch?v='+d[2]};
+};
+var demoCard = function demoCard(id){const d=demoInfo(id);if(!d)return '';return `<div class="video-card"><span class="badge">${d.videoId?'VIDEÓBEMUTATÓ':'OKTATÓVIDEÓ KERESÉSE'} • INTERNET</span><p class="small muted">${esc(d.credit)}${d.provider?' • külön lejátszó':''}</p><button class="btn block" onclick="openDemo('${id}')">${d.provider?'▶ Bemutató megnyitása':'▶ Oktatóvideó keresése'}</button></div>`;};
 var closeDemo = function closeDemo(){document.getElementById('videoModal')?.remove();};
 var openDemo = function openDemo(id){
  const d=demoInfo(id);if(!d)return;
@@ -154,9 +161,9 @@ var openVideoLink = async function openVideoLink(url){persistDraft();try{if(isNa
 // Online players; media is not downloaded or bundled into the APK.
 // 2026-09-10: all built-in exercises use YouTube embeds. Device playback remains to be tested.
 const DEMOS = {
- 'goblet-squat':[null,'youtube','CkFzgR55gho','YouTube – Goblet Squat'],
- 'bulgarian-split-squat':[null,'youtube','vLuhN_glFZ8','YouTube – Bulgarian Split Squat'],
- 'db-pullover':[null,'youtube','a3cF2sS5v6I','YouTube – Dumbbell Pullover on Floor'],
+ 'goblet-squat':[null,'search',null,'Oktatóvideó keresése'],
+ 'bulgarian-split-squat':[null,'youtube','bwhl_9jN_3o','Squat University'],
+ 'db-pullover':[null,'youtube','qALakTR1nRI','Onnit Academy'],
  'lateral-raise':[null,'youtube','3VcKaXpzqRo','ScottHermanFitness'],
  'hammer-curl':[null,'youtube','zC3nLlEvin4','ScottHermanFitness'],
  'close-pushup':[null,'youtube','W3gBdsTzDrk','Team Evolve'],
@@ -167,7 +174,7 @@ const DEMOS = {
  'leg-curl':[null,'youtube','ELOCsoDSmrg','ScottHermanFitness'],
  'machine-shoulder-press':[null,'youtube','WvLMauqrnK8','Renaissance Periodization'],
  'cable-triceps':[null,'youtube','_w-HpW70nSQ','ScottHermanFitness'],
- 'cable-curl':[null,'youtube','0QjH28wli5Q','YouTube – Straight Bar Cable Curl'],
+ 'cable-curl':[null,'search',null,'Oktatóvideó keresése'],
 
  'db-squat':[null,'youtube','v_c67Omje48','Mike Hildebrandt'],
  'db-floor-press':[null,'youtube','uUGDRwge4F8','ScottHermanFitness'],
@@ -676,7 +683,7 @@ const CATALOG131=[
 ];
 for(const [id,hu,en,equipment,loadType,muscles,notes,video,credit,gear] of CATALOG131){
  EXTRA_EXERCISES.push({id,hu,en,equipment,loadType,target:({legs:'Láb / far',core:'Törzs',chest:'Mell',shoulders:'Váll'})[muscles[0]],notes,sets:2,reps:id==='side-plank'?'15–30 mp / oldal':['dead-bug','bird-dog','db-step-up'].includes(id)?'8–12 / oldal':'8–12',weight:0,repUnit:id==='side-plank'?'mp/oldal':['dead-bug','bird-dog','db-step-up'].includes(id)?'/oldal':'ism.',gear});
- DEMOS[id]=[null,'youtube',video,credit];
+ DEMOS[id]=/^YouTube\s*[–-]/.test(credit)?[null,'search',null,'Oktatóvideó keresése']:[null,'youtube',video,credit];
 }
 
 
@@ -1125,10 +1132,9 @@ const RF143_NEW_EXERCISES=[
 {id:'leg-press-calf',hu:'Vádliemelés lábtoló gépen',en:'Leg Press Calf Raise',equipment:'lábtoló gép',loadType:'total',target:'Vádli',notes:'Csak az előláb legyen stabilan a platformon. Bokából emeld és engedd a sarkat, a térd maradjon kontrollált.',sets:2,reps:'12–20',weight:0,repUnit:'ism.',gear:'machine',movementPattern:'calf',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness','muscle','strength']},
 {id:'close-grip-bench',hu:'Szűk fogású fekvenyomás',en:'Close Grip Bench Press',equipment:'kétkezes rúd + pad',loadType:'total',target:'Tricepsz / mell',notes:'A fogás legyen a normál fekvenyomásnál szűkebb, de ne extrém keskeny. Kontrolláltan engedd a rudat.',sets:2,reps:'6–12',weight:0,repUnit:'ism.',gear:'barbell',movementPattern:'horizontal-push',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['muscle','strength','fitness']}
 ];
-const RF143_DEMOS={'incline-pushup':'0JUrOH--Kdk','modified-pushup':'PDr5B2jLUOw','decline-pushup':'DBz85WuXqMk','pike-pushup':'2b5t0Cu2nQI','plyo-pushup':'MH4gcTKQiEc','archer-pushup':'IDu6pRAPChg','prisoner-squat':'UYbsgiiZgao','single-leg-squat':'sSXnaFyhiZs','squat-jump':'tZSYZdtbONc','lunge-jump':'_5kDxC0flg0','jumping-jacks':'uLVt6u15L98','box-jump':'DXu-8TAJwi4','db-front-squat':'hZI8Yy5elZs','single-arm-db-press':'qFTnmyC-nf4','single-arm-incline-press':'iJ-GwVeUuCg','single-leg-press':'3aYsOsBA7ZE','seated-leg-curl':'_2Kd0d-JEUM','single-leg-seated-curl':'PXNJ71rksvU','leg-press-calf':'8k435cj30gc','close-grip-bench':'LJeqLAmJLfs'};
 const RF143_MUSCLES={'incline-pushup':['chest','triceps','core'],'modified-pushup':['chest','triceps','core'],'decline-pushup':['chest','shoulders','triceps'],'pike-pushup':['shoulders','triceps','core'],'plyo-pushup':['chest','triceps','shoulders'],'archer-pushup':['chest','triceps','core'],'prisoner-squat':['legs','core'],'single-leg-squat':['legs','core'],'squat-jump':['legs','core'],'lunge-jump':['legs','core'],'jumping-jacks':['legs','shoulders','core'],'box-jump':['legs','core'],'db-front-squat':['legs','core'],'single-arm-db-press':['chest','triceps','core'],'single-arm-incline-press':['chest','shoulders','triceps'],'single-leg-press':['legs'],'seated-leg-curl':['legs'],'single-leg-seated-curl':['legs'],'leg-press-calf':['legs'],'close-grip-bench':['triceps','chest','shoulders']};
 const RF143_NEEDS={'incline-pushup':[],'modified-pushup':[],'decline-pushup':['bench'],'pike-pushup':[],'plyo-pushup':[],'archer-pushup':[],'prisoner-squat':[],'single-leg-squat':[],'squat-jump':[],'lunge-jump':[],'jumping-jacks':[],'box-jump':['step'],'db-front-squat':['dumbbells'],'single-arm-db-press':['dumbbell','bench'],'single-arm-incline-press':['dumbbell','bench'],'single-leg-press':['machines'],'seated-leg-curl':['machines'],'single-leg-seated-curl':['machines'],'leg-press-calf':['machines'],'close-grip-bench':['barbell','bench']};
-for(const e of RF143_NEW_EXERCISES){if(typeof EXTRA_EXERCISES!=='undefined'&&!EXTRA_EXERCISES.some(x=>x.id===e.id))EXTRA_EXERCISES.push({...e});if(typeof MUSCLE_MAP!=='undefined')MUSCLE_MAP[e.id]=RF143_MUSCLES[e.id]||[];if(typeof NEEDS132!=='undefined')NEEDS132[e.id]=RF143_NEEDS[e.id]||[];if(typeof RF14_PATTERNS!=='undefined')RF14_PATTERNS[e.id]=e.movementPattern;if(typeof RF14_COMPOUND!=='undefined'&&e.compound)RF14_COMPOUND.add(e.id);if(typeof RF14_ADVANCED!=='undefined'&&!e.beginnerSafe)RF14_ADVANCED.add(e.id);if(typeof RF14_BEGINNER_FAVOR!=='undefined'&&e.beginnerSafe)RF14_BEGINNER_FAVOR.add(e.id);if(typeof DEMOS!=='undefined')DEMOS[e.id]=[null,'youtube',RF143_DEMOS[e.id],'NASM'];}
+for(const e of RF143_NEW_EXERCISES){if(typeof EXTRA_EXERCISES!=='undefined'&&!EXTRA_EXERCISES.some(x=>x.id===e.id))EXTRA_EXERCISES.push({...e});if(typeof MUSCLE_MAP!=='undefined')MUSCLE_MAP[e.id]=RF143_MUSCLES[e.id]||[];if(typeof NEEDS132!=='undefined')NEEDS132[e.id]=RF143_NEEDS[e.id]||[];if(typeof RF14_PATTERNS!=='undefined')RF14_PATTERNS[e.id]=e.movementPattern;if(typeof RF14_COMPOUND!=='undefined'&&e.compound)RF14_COMPOUND.add(e.id);if(typeof RF14_ADVANCED!=='undefined'&&!e.beginnerSafe)RF14_ADVANCED.add(e.id);if(typeof RF14_BEGINNER_FAVOR!=='undefined'&&e.beginnerSafe)RF14_BEGINNER_FAVOR.add(e.id);if(typeof DEMOS!=='undefined')DEMOS[e.id]=[null,'search',null,'Oktatóvideó keresése'];}
 
 const rf143Home=home;home=function(){let html=rf143Home();if(db.get('draft',null))html=html.replace('<button class="btn block" onclick="resumeDraft()">Edzés folytatása</button>','<div class="grid2"><button class="btn block" onclick="resumeDraft()">Edzés folytatása</button><button class="btn secondary" onclick="discardDraft143()">Félbehagyott edzés törlése</button></div>');return html;};
 const rf143Generate=generatePersonalProgram;generatePersonalProgram=function(input){const p=validateProfile(input),out=rf143Generate(input),newPool=RF143_NEW_EXERCISES.filter(e=>available132(e.id,p)&&e.movementPattern!=='conditioning');const used=new Set(out.days.flatMap(d=>d.exercises));for(let di=0;di<out.days.length;di++){const day=out.days[di];for(let i=0;i<day.exercises.length;i++){const old=exercises().find(e=>e.id===day.exercises[i]);if(!old)continue;const candidates=newPool.filter(e=>e.movementPattern===old.movementPattern&&!used.has(e.id)&&(p.experience!=='beginner'||e.beginnerSafe));if(!candidates.length||(di+i)%2!==0)continue;const n=candidates[(di+i)%candidates.length],oldId=day.exercises[i],rx=out.prescriptions[oldId];day.exercises[i]=n.id;used.add(n.id);if(rx){out.prescriptions[n.id]={...rx,reps:n.repUnit.includes('mp')?'20–40 mp':rx.reps,weight:0,trial:true};delete out.prescriptions[oldId];}}}out.reasons=[...(out.reasons||[]),'A v1.4.3 kibővített, 60 gyakorlatos könyvtárából a felszerelésedhez és tapasztalatodhoz illő új variációk is bekerülhetnek.'];return out;};
