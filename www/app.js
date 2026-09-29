@@ -13863,10 +13863,6 @@ rf263HealthHub=function(){
 })();
 // @endsection home-draft-compact.js
 
-// @section ready.js
-window.TrainPilotBoot.finish();
-// @endsection ready.js
-
 // @section issue79-health-active-intervals.js
 /* #79 — Health Connect: interrupted/resumed workouts use active intervals only. */
 (function(){
@@ -13944,4 +13940,8 @@ rf240SyncWorkout=async function(p,h,force=false){
 };
 window.TrainPilotIssue79={version:'79.1',intervals};
 })();
-// @endsection issue79-health-active-intervals.js
+// @endsection issue79-health-active-intervals.js\n
+// @section ready.js
+window.TrainPilotBoot.finish();
+// @endsection ready.js
+
