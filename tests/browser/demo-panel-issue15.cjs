@@ -21,7 +21,7 @@ const {chromium}=require('playwright');
    state.session=null;state.workout=null;
    const program=activeProgram(),day=program.days[0];
    startWorkout(day.id,null,program.id);
-   const index=state.session.exercises.findIndex(x=>demoInfo(x.id));
+   const index=state.session.exercises.findIndex(x=>demoInfo(x.id)?.provider);
    if(index<0)throw Error('No demo-enabled workout exercise');
    state.current=index;renderWorkout();
    return state.session.exercises[index].id;
