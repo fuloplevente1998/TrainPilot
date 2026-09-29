@@ -1,7 +1,5 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const all=fs.readFileSync('www/app.js','utf8');
-const m=all.match(/\/\/ @section issue79-health-active-intervals\.js\n([\s\S]*?)\/\/ @endsection issue79-health-active-intervals\.js/);
-assert.ok(m,'#79 runtime section');const src=m[1];
+const src=fs.readFileSync('www/issue79-health-active-intervals.js','utf8');
 let saved=null;
 const ctx=vm.createContext({window:{},Date,JSON,Number,Array,Object,Set,Error,rf240ValidWorkout:h=>Date.parse(h.finished)-Date.parse(h.started)<=86400000,rf240WorkoutKey:h=>h.id,rf242HasTrainingMetric:x=>x&&x.averageHeartRate!=null,rf242BestSession:()=>null,rf242SaveMatchedWorkoutHealth:(k,h,d,m)=>{saved={k,h,d,m};return true}});
 vm.runInContext(src,ctx);
