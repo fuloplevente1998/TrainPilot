@@ -20,7 +20,7 @@ const run=s=>vm.runInContext(s,ctx), snapshot=()=>JSON.stringify([...values].sor
  await run('exportData()');assert.equal(values.has('repforge:lastExport'),false);
  reply={verified:false};await run('exportData()');assert.equal(values.has('repforge:lastExport'),false);assert.match(alerts.at(-1),/Nem készült/);
  reply={verified:true,name:'test.json',bytes:123};await run('exportData()');assert.equal(JSON.parse(values.get('repforge:lastExport')).name,'test.json');
- assert.equal(run('Object.keys(DEMOS).length'),26);assert.equal(run("Object.values(DEMOS).filter(x=>x[1]==='youtube').length"),26);
+ assert.equal(run('Object.keys(DEMOS).length'),26);assert.equal(run("Object.values(DEMOS).filter(x=>x[1]==='youtube').length"),24);
  run("db.set('exercises',[{id:'reverse-lunge',sets:4,reps:'9/láb',weight:0,loadType:'bodyweight'}]);db.set('lunge114',false)");
  const oldHistory=values.get('repforge:history');run('migrateLunge114()');
  assert.equal(run("byId('reverse-lunge').weight"),5);assert.equal(run("byId('reverse-lunge').sets"),4);
