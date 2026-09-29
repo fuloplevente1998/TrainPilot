@@ -13942,6 +13942,66 @@ window.TrainPilotIssue79={version:'79.1',intervals};
 })();
 // @endsection issue79-health-active-intervals.js
 
+// @section issue80-video-source-safety.js
+/* #80: do not present AI, wrongly attributed or unverified clips as exercise instruction.
+   Preserve existing verified/credited demos and all other app/UI functionality. */
+(function(){
+'use strict';
+const officialRow='https://www.muscleandstrength.com/exercises/bent-over-barbell-row.html';
+const officialLibrary='https://www.nasm.org/resource-center/exercise-library';
+const sourceBase=demoInfo;
+const openBase=openDemo;
+const unverified=/^(?:YouTube\s*[–-]|Zi\s*workout)/i;
+const text={
+ hu:{unverified:'Ehhez a gyakorlathoz nincs ellenőrzött, pontos videó. A korábbi nem ellenőrzött bemutatót eltávolítottuk.',source:'Szakmai útmutató megnyitása',search:'Valódi bemutató keresése',offline:'Offline: a szöveges gyakorlati útmutató továbbra is elérhető.',guide:'Gyakorlat végrehajtása',close:'Bezárás',official:'Muscle & Strength • videós gyakorlatleírás',library:'NASM • hivatalos gyakorlatkönyvtár'},
+ en:{unverified:'No verified exact video is available for this exercise. The previous unverified demo has been removed.',source:'Open professional exercise guide',search:'Search for a real demonstration',offline:'Offline: written exercise instructions remain available.',guide:'Exercise instructions',close:'Close',official:'Muscle & Strength • video exercise guide',library:'NASM • official exercise library'},
+ de:{unverified:'Für diese Übung ist kein genaues, überprüftes Video verfügbar. Das bisherige ungeprüfte Video wurde entfernt.',source:'Professionelle Übungsanleitung öffnen',search:'Echte Vorführung suchen',offline:'Offline: Die schriftliche Anleitung bleibt verfügbar.',guide:'Übungsanleitung',close:'Schließen',official:'Muscle & Strength • Übungsvideo',library:'NASM • offizielle Übungsbibliothek'},
+ ro:{unverified:'Nu există un videoclip exact verificat pentru acest exercițiu. Clipul neverificat anterior a fost eliminat.',source:'Deschide ghidul de exerciții',search:'Caută o demonstrație reală',offline:'Offline: instrucțiunile scrise rămân disponibile.',guide:'Instrucțiuni',close:'Închide',official:'Muscle & Strength • ghid video',library:'NASM • biblioteca oficială'}
+};
+function lang(){const k=typeof rf212Lang==='function'?rf212Lang():'hu';return text[k]||text.hu}
+function nameOf(id){const e=typeof byId==='function'?byId(id):null;return e&&e.en||e&&e.hu||id}
+function searchUrl(id){return 'https://www.youtube.com/results?search_query='+encodeURIComponent(nameOf(id)+' exercise tutorial real trainer')}
+demoInfo=function(id){
+ const d=sourceBase(id);if(!d)return d;
+ if(id==='barbell-row')return {...d,provider:null,videoId:null,credit:lang().official,source:officialRow,sourceVerified:true,sourceKind:'verified-guide'};
+ if(typeof RF143_DEMOS!=='undefined'&&Object.prototype.hasOwnProperty.call(RF143_DEMOS,id)){
+  return {...d,provider:null,videoId:null,credit:lang().library,source:officialLibrary,sourceVerified:false,sourceKind:'library-search'};
+ }
+ if(unverified.test(String(d.credit||''))){
+  return {...d,provider:null,videoId:null,credit:lang().unverified,source:searchUrl(id),sourceVerified:false,sourceKind:'unverified-search'};
+ }
+ return d;
+};
+openDemo=function(id){
+ const d=demoInfo(id);if(!d)return;
+ if(!d.sourceKind)return openBase(id);
+ const tr=lang(),e=typeof byId==='function'?byId(id):null;
+ const title=e?(typeof tp149ExerciseName==='function'?tp149ExerciseName(e):e.hu||e.en):id;
+ const notes=e&&e.notes||'';
+ if(typeof closeDemo==='function')closeDemo();
+ const m=document.createElement('div');m.id='videoModal';m.className='video-modal';
+ const offline=navigator.onLine===false;
+ const verified=d.sourceKind==='verified-guide';
+ const sourceLabel=verified?tr.source:d.sourceKind==='library-search'?tr.source:tr.search;
+ const alt=searchUrl(id);
+ m.innerHTML='<div class="video-dialog" role="dialog" aria-modal="true" aria-label="'+esc(title)+'">'+
+  '<button class="btn secondary video-close" data-tp-video-close type="button" onclick="closeDemo()">✕ '+esc(tr.close)+'</button>'+
+  '<h2>'+esc(title)+'</h2>'+
+  (!verified?'<p class="small muted">'+esc(tr.unverified)+'</p>':'')+
+  (notes?'<div class="tp15-demo-guide"><strong>'+esc(tr.guide)+'</strong><p>'+esc(notes)+'</p></div>':'')+
+  (offline?'<p class="small muted">'+esc(tr.offline)+'</p>':
+   '<button type="button" class="btn block" data-tp80-source>'+esc(sourceLabel)+'</button>'+
+   (verified?'':'<button type="button" class="btn secondary block" data-tp80-search>'+esc(tr.search)+'</button>'))+
+  '</div>';
+ document.body.appendChild(m);
+ m.querySelector('[data-tp-video-close]')?.focus();
+ m.querySelector('[data-tp80-source]')?.addEventListener('click',()=>openVideoLink(d.source));
+ m.querySelector('[data-tp80-search]')?.addEventListener('click',()=>openVideoLink(alt));
+};
+window.TrainPilotIssue80={version:'80.1',officialRow,officialLibrary,searchUrl};
+})();
+// @endsection issue80-video-source-safety.js
+
 // @section ready.js
 window.TrainPilotBoot.finish();
 // @endsection ready.js
