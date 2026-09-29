@@ -13863,10 +13863,6 @@ rf263HealthHub=function(){
 })();
 // @endsection home-draft-compact.js
 
-// @section ready.js
-window.TrainPilotBoot.finish();
-// @endsection ready.js
-
 // @section issue79-health-active-intervals.js
 /* #79 — Health Connect: interrupted/resumed workouts use active intervals only. */
 (function(){
@@ -13944,9 +13940,7 @@ rf240SyncWorkout=async function(p,h,force=false){
 };
 window.TrainPilotIssue79={version:'79.1',intervals};
 })();
-// @endsection issue79-health-active-intervals.js
-
-
+// @endsection issue79-health-active-intervals.js\n
 // @section issue80-safe-video-sources.js
 /* #80 — never present unverified/generated demo mappings as verified exercise videos. */
 (function(){
@@ -13966,4 +13960,10 @@ demoInfo=function(id){
 };
 window.TrainPilotIssue80={version:'80.1',policy:'no-ai-or-unverified-embedded-demo'};
 })();
-// @endsection issue80-safe-video-sources.js
+// @endsection issue80-safe-video-sources.js\n
+// @section ready.js
+window.TrainPilotBoot.finish();
+// @endsection ready.js
+
+
+
