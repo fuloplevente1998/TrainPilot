@@ -81,6 +81,27 @@ const {chromium}=require('playwright');
    assert.match(await dialog.locator('[data-rf130-status]').innerText(),/Művelet megszakítva/i,'true picker cancellation must remain visible');
    await close.click();assert.equal(await modal.count(),0,'top-right X must close the photo modal');
 
+   if(width===390){
+    await page.evaluate(()=>{
+     const end=Date.now()-60000,start=end-26*3600000;
+     window.__tp79Windows=[{start:new Date(start).toISOString(),end:new Date(start+15*60000).toISOString()},{start:new Date(end-(85*60+33)*1000).toISOString(),end:new Date(end).toISOString()}];
+     db.set('history',[{id:'overnight-health',workout:'A',started:__tp79Windows[0].start,finished:__tp79Windows[1].end,activeIntervals:__tp79Windows,exercises:[]}]);
+     window.__tp79Calls=[];rfHistoryHealthCache.clear();
+     healthPlugin=()=>({readWorkout:async()=>{throw Error('Legacy whole-window read was called')},readTrainingWindow:async w=>{
+      __tp79Calls.push(w);if(!__tp79Windows.some(s=>s.start===w.start&&s.end===w.end))throw Error('Query includes the overnight pause');
+      return {averageHeartRate:120,maxHeartRate:150,heartRateSamples:10,activeCalories:40,totalCalories:null,distanceMeters:null,exerciseSessions:[],warnings:[]};
+     }});go('history');
+    });
+    await page.locator('details.rf263-history > summary').first().click();
+    await page.waitForFunction(()=>rfHistoryHealthCache.get(history()[0].started)?.summary?.activeCalories===80);
+    const overnight=await page.evaluate(()=>({calls:__tp79Calls.map(w=>[w.start,w.end]),expected:__tp79Windows.map(w=>[w.start,w.end]),text:document.querySelector('[data-rf-history-health]').innerText}));
+    assert.deepEqual(overnight.calls,overnight.expected,'real Journal expansion reads both active segments');
+    assert.match(overnight.text,/80 kcal/);assert.doesNotMatch(overnight.text,/Érvénytelen|Összes energia|Távolság/,'unknown values are not shown as zero');
+    await page.locator('.rf-history-health-refresh').click();
+    await page.waitForFunction(()=>__tp79Calls.length===4&&!document.querySelector('.rf-history-health-refresh').disabled);
+    assert.match(await page.locator('[data-rf-history-health]').innerText(),/80 kcal/);
+   }
+
    assert.deepEqual(errors,[]);
    console.log(`PASS Phase 6 Journal/media/Health UI ${width}px`);
    await context.close();
