@@ -10,7 +10,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   await page.evaluate(()=>{
    db.set('language','hu');state.health=state.health||{};
    const now=new Date(),key=rf240DayKey(now),yesterday=new Date(now);yesterday.setDate(now.getDate()-1);
-   const days={[key]:{averageHeartRate:74,restingHeartRate:57,steps:9421}};
+   const days={[key]:{averageHeartRate:74,restingHeartRate:57,steps:9421,totalCalories:1850}};
    rf240Ledger=()=>({version:1,days,lastSyncAt:new Date().toISOString()});
    const rec={day:key,sleepMinutes:450,hrvRmssdMs:54,hrvBaselineMs:48,sleepEnd:new Date().toISOString()};
    state.health.recovery=rec;db.set('recoveryHistory',[rec]);
@@ -23,13 +23,14 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
    go('home');
   });
   await page.waitForSelector('#rf223Today.tp5-home-today');
-  const keys=['sleep','hrv','pulse','steps','workout','recovery'];
+  const keys=['sleep','calories','pulse','steps','workout','recovery'];
   const read=async scope=>scope.locator('.tp5-today-metric').evaluateAll(nodes=>nodes.map(n=>({key:[...n.classList].find(x=>x.startsWith('tp5-today-')&&x!=='tp5-today-metric'),label:n.querySelector('.tp5-today-label')?.textContent,value:n.querySelector('.tp5-today-value')?.textContent})));
   const home=page.locator('#rf223Today'),homeTiles=await read(home);
   assert.equal(homeTiles.length,6,'Home must show six Today tiles');
   assert.deepEqual(homeTiles.map(x=>x.key),keys.map(x=>'tp5-today-'+x),'Home Today order must be 2x3');
   assert.equal(homeTiles[4].value,'2','Today workouts must count only completed, valid logged sessions');
   assert.equal(homeTiles[2].value,'74 bpm');
+  assert.equal(homeTiles[1].value.replace(/\s/g,''),'1850kcal','Today shows total calories burned for the local day');
   const position=await home.evaluate(e=>!!(e.compareDocumentPosition(document.querySelector('#rf220CoachCard'))&Node.DOCUMENT_POSITION_FOLLOWING));
   assert.ok(position,'Today must keep its original position before Coach');
   for(const width of [320,360,393,412]){
@@ -41,6 +42,8 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   await page.evaluate(()=>go('health'));await page.waitForSelector('main.rf263-health .tp5-today-full');
   const health=page.locator('main.tp168-health .tp5-today-grid'),healthTiles=await read(health);
   assert.deepEqual(healthTiles,homeTiles,'Home and Health must show identical six values and labels for the same day');
+  assert.equal(await page.locator('main.tp168-health .tp5-more-hrv').count(),1,'HRV remains in More Health data');
+  assert.match(await page.locator('main.tp168-health .tp5-more-hrv').innerText(),/54 ms/);
   assert.equal(await page.locator('main.tp168-health .tp168-resting').count(),0,'Resting pulse standalone shortcut must be removed');
   const widths=await page.evaluate(()=>({homeDay:document.querySelector('.tp5-today-grid')?.dataset.tp5Day,day:rf240DayKey(new Date())}));
   assert.equal(widths.homeDay,widths.day,'Today must use the local calendar day');
@@ -57,7 +60,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   });
   const missing=await read(page.locator('main.tp168-health .tp5-today-grid'));
   assert.equal(missing[0].value,'—','Stale sleep must not be shown as today’s data');
-  assert.equal(missing[1].value,'—','Stale HRV must not be shown as today’s data');
+  assert.equal(missing[1].value,'—','Missing total calories must not become zero');
   assert.equal(missing[2].value,'—','Zero pulse must be treated as missing');
   assert.equal(missing[3].value,'—','Null steps must not turn into zero');
   assert.equal(missing[5].value,'—','Unknown recovery must not present default readiness as a measured value');
