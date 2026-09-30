@@ -180,7 +180,9 @@ const server=http.createServer((req,res)=>{
   assert.ok(await page.locator('main.rf263-health').evaluate(e=>parseFloat(getComputedStyle(e).animationDuration)*1000)<=110.5,'Health full-page reveal must remain lightweight');
   assert.equal(await page.locator('main.rf263-health .stat[data-tp153-link="weight"]').count(),0,'minor2 must not restore the duplicate Health weight stat');
   assert.equal(await page.locator('main.rf263-health .tp168-weight-summary').count(),1,'Health weight-journal summary must be the single weight entry point');
-  for(const kind of ['sleep','hrv'])assert.equal(await page.locator('main.rf263-health .tp5-today-'+kind+'[onclick="tp5TodayAction(\'recovery\')"]').count(),1,'Health '+kind+' tile must open recovery history');
+  for(const kind of ['sleep'])assert.equal(await page.locator('main.rf263-health .tp5-today-'+kind+'[onclick="tp5TodayAction(\'recovery\')"]').count(),1,'Health '+kind+' tile must open recovery history');
+  assert.equal(await page.locator('main.rf263-health .tp5-today-calories').count(),1,'Today displays daily calories');
+  assert.equal(await page.locator('main.rf263-health .tp168-more-panel .tp5-more-hrv').count(),1,'HRV stays in More Health data');
   assert.ok(await page.locator('main.rf263-health .tp151-health-card.tp155-r4-accent-surface').count()>=1,'Health daily summary must use the shared highlighted surface');
   await page.evaluate(()=>go('home'));
 

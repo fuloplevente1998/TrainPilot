@@ -719,7 +719,7 @@ var healthSourceName = function healthSourceName(source){return source==='com.se
 var healthSourceOptions = function healthSourceOptions(){const sources=[...new Set(['com.sec.android.app.shealth',...(state.health.summary?.sources||[]),...(state.health.source?[state.health.source]:[])])];return `<option value="" ${!state.health.source?'selected':''}>Automatikus keresés</option>`+sources.map(x=>`<option value="${esc(x)}" ${x===state.health.source?'selected':''}>${esc(healthSourceName(x))}</option>`).join('');};
 var rfHistoryHealthCache=new Map();
 var rfHistoryHealthWindow=function rfHistoryHealthWindow(h){if(!h||!h.started||!h.finished)return '';try{const a=new Date(h.started),b=new Date(h.finished),f=x=>x.toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});return `${f(a)}–${f(b)} • ${sessionDuration(h)}`;}catch(_){return sessionDuration(h)||'';}};
-var rfHistoryHealthNumber=function rfHistoryHealthNumber(v,d=0){const n=Number(v);return Number.isFinite(n)?n.toLocaleString('hu-HU',{minimumFractionDigits:d,maximumFractionDigits:d}):null;};
+var rfHistoryHealthNumber=function rfHistoryHealthNumber(v,d=0){if(v==null||v==='')return null;const n=Number(v);return Number.isFinite(n)?n.toLocaleString('hu-HU',{minimumFractionDigits:d,maximumFractionDigits:d}):null;};
 var rfHistoryHealthHtml=function rfHistoryHealthHtml(i){
  const h=history()[i];if(!h)return '';
  const q=rfHistoryHealthCache.get(h.started),windowText=rfHistoryHealthWindow(h);
@@ -727,7 +727,7 @@ var rfHistoryHealthHtml=function rfHistoryHealthHtml(i){
  if(q.loading)return `<div class="rf-history-health-loading"><p class="small muted">Health Connect lekérdezés…</p></div>`;
  if(q.error)return `<div class="rf-history-health-error"><p class="small">${esc(q.error)}</p></div>`;
  const x=q.summary||{},stats=[];
- const active=rfHistoryHealthNumber(x.activeCalories),total=rfHistoryHealthNumber(x.totalCalories),avg=rfHistoryHealthNumber(x.averageHeartRate),max=rfHistoryHealthNumber(x.maxHeartRate),dist=Number(x.distanceMeters),mins=rfHistoryHealthNumber(x.exerciseMinutes),sessions=rfHistoryHealthNumber(x.exerciseSessionCount);
+ const active=rfHistoryHealthNumber(x.activeCalories),total=rfHistoryHealthNumber(x.totalCalories),avg=rfHistoryHealthNumber(x.averageHeartRate),max=rfHistoryHealthNumber(x.maxHeartRate),dist=x.distanceMeters==null?NaN:Number(x.distanceMeters),mins=rfHistoryHealthNumber(x.exerciseMinutes),sessions=rfHistoryHealthNumber(x.exerciseSessionCount);
  if(active!==null)stats.push(['Aktív kalória',active+' kcal']);
  if(total!==null)stats.push(['Összes energia',total+' kcal']);
  if(avg!==null||max!==null)stats.push(['Átlag / max. pulzus',(avg??'–')+' / '+(max??'–')+' bpm']);
@@ -3775,7 +3775,8 @@ const rf245SaveMatched=rf242SaveMatchedWorkoutHealth;
 rf242SaveMatchedWorkoutHealth=function(key,h,data,meta){const current=history().find(x=>rf240WorkoutKey(x)===key);if(!current||current.started!==h.started||current.finished!==h.finished)return false;return rf245SaveMatched(key,h,data,meta)};
 const rf245ReadWorkout=async(p,h,force)=>{
  const windows=new Map();
- const saved=await rf245LegacyWorkout({readTrainingWindow:async args=>{
+ const syncWorkout=window.TrainPilotIssue79?.syncWorkout||rf245LegacyWorkout;
+ const saved=await syncWorkout({readTrainingWindow:async args=>{
   const end=new Date(Math.min(Date.parse(args.end),Date.now())).toISOString();
   const actualWindow={start:args.start,end};const r=await p.readTrainingWindow(actualWindow);
   if(rf245Warnings(r).length)throw Error(rf245Warnings(r).join(' • '));windows.set(args.start+'|'+args.end,actualWindow);return r;
@@ -3920,7 +3921,8 @@ var rf250Pipeline = async function rf250Pipeline(p,{manual=false,full=false}={})
  if(manual&&!writeAllowed&&rows.length){try{await p.requestWrite();writeAllowed=(await p.getStatus()).permissions?.WRITE_EXERCISE===true}catch(e){report.errors.push('Exportengedély: '+rf245Message(e))}}
  let workoutErrors=0,exportErrors=0;
  for(const h of rows){
-  const key=rf240WorkoutKey(h),exported=db.get('healthExports245',{})[h.healthStableId||key],fingerprint=h.started+'|'+h.finished;
+  const activeWindows=window.TrainPilotIssue79?.intervals(h)||[];
+  const key=rf240WorkoutKey(h),exported=db.get('healthExports245',{})[h.healthStableId||key],fingerprint=h.started+'|'+h.finished+(activeWindows.length?'|'+JSON.stringify(activeWindows.map(w=>[w.start,w.end])):'');
   const needsExport=manual&&writeAllowed&&Date.parse(h.finished)>=recent&&(!exported||exported.fingerprint!==fingerprint);
   if(Date.parse(h.finished)<recent&&!needsExport)continue;
   rf245Progress(`Edzések ellenőrzése: ${report.workouts+1}`);
@@ -3928,10 +3930,15 @@ var rf250Pipeline = async function rf250Pipeline(p,{manual=false,full=false}={})
    const checked=await rf245ReadWorkout(p,h,manual||needsExport),fresh=history().find(x=>x.healthStableId===h.healthStableId||rf240WorkoutKey(x)===key)?.health240;
    if(rf245Warnings(fresh).length)throw Error(rf245Warnings(fresh).join(' • '));if(checked)report.workouts++;
    if(!needsExport)continue;if(!permissions.READ_EXERCISE){report.skipped++;continue}
-   const exact=await p.readTrainingWindow({start:h.started,end:h.finished});if(rf245Warnings(exact).length)throw Error(rf245Warnings(exact).join(' • '));if(rf245ExternalSession(exact,h)){report.skipped++;continue}
    try{
     const current=history().find(x=>x.healthStableId===h.healthStableId);if(!current||current.started!==h.started||current.finished!==h.finished)throw Error('Az edzés közben módosult; a következő szinkron ellenőrzi.');
-    await p.writeWorkout({start:h.started,end:h.finished,title:(h.programName||'TrainPilot')+' • '+(h.dayId||h.workout||''),clientRecordId:'trainpilot:'+h.healthStableId,clientVersion:Date.now()});
+    const exportWindows=activeWindows.length?activeWindows:[{start:h.started,end:h.finished}];
+    for(let segment=0;segment<exportWindows.length;segment++){
+     const w=exportWindows[segment],exact=await p.readTrainingWindow({start:w.start,end:w.end});
+     if(rf245Warnings(exact).length)throw Error(rf245Warnings(exact).join(' • '));
+     if(rf245ExternalSession(exact,{started:w.start,finished:w.end})){report.skipped++;continue}
+     await p.writeWorkout({start:w.start,end:w.end,title:(h.programName||'TrainPilot')+' • '+(h.dayId||h.workout||''),clientRecordId:'trainpilot:'+h.healthStableId+(segment?':segment:'+Date.parse(w.start):''),clientVersion:Date.now()});
+    }
     const saved=db.get('healthExports245',{});saved[h.healthStableId]={fingerprint,at:new Date().toISOString(),clientRecordId:'trainpilot:'+h.healthStableId};db.set('healthExports245',saved);report.exported++;
    }catch(e){exportErrors++;report.errors.push('Edzésexport: '+rf245Message(e))}
   }catch(e){workoutErrors++;report.errors.push('Edzés '+h.started+': '+rf245Message(e))}
@@ -13862,6 +13869,168 @@ rf263HealthHub=function(){
  `;document.head.appendChild(style);
 })();
 // @endsection home-draft-compact.js
+
+// @section issue79-health-active-intervals.js
+/* #79 — Health Connect: interrupted/resumed workouts use active intervals only. */
+(function(){
+'use strict';
+const MAX_WINDOW_MS=24*60*60*1000, TOLERANCE_MS=3*60*1000;
+function isoMs(v){const n=Date.parse(v||'');return Number.isFinite(n)?n:null}
+function intervals(h){
+ const raw=Array.isArray(h&&h.activeIntervals)?h.activeIntervals:[];
+ const finished=isoMs(h&&h.finished), out=[];
+ for(const x of raw){
+  const a=isoMs(x&&x.start),b=isoMs(x&&x.end);
+  if(a==null||b==null||b<=a||b-a>MAX_WINDOW_MS)continue;
+  const start=Math.max(a,isoMs(h&&h.started)??a),end=Math.min(b,finished??b);
+  if(end>start)out.push({start,end});
+ }
+ out.sort((a,b)=>a.start-b.start);
+ const merged=[];
+ for(const x of out){
+  const last=merged.at(-1);
+  if(last&&x.start<=last.end)last.end=Math.max(last.end,x.end);
+  else merged.push({...x});
+ }
+ return merged.map(x=>({start:new Date(x.start).toISOString(),end:new Date(x.end).toISOString(),ms:x.end-x.start}));
+}
+function hasMetric(x){return typeof rf242HasTrainingMetric==='function'?rf242HasTrainingMetric(x):!!x}
+async function readOne(p,w,activeOnly=false){
+ const read=args=>typeof p.readTrainingWindow==='function'?p.readTrainingWindow(args):p.readWorkout({...args,source:''});
+ const exact=await read({start:w.start,end:w.end});
+ if(activeOnly)return {...exact,sourceWindowStart:w.start,sourceWindowEnd:w.end,matchMode:'exact'};
+ if(hasMetric(exact))return {...exact,sourceWindowStart:w.start,sourceWindowEnd:w.end,matchMode:'exact'};
+ const start=new Date(Date.parse(w.start)-TOLERANCE_MS).toISOString(),end=new Date(Date.parse(w.end)+TOLERANCE_MS).toISOString();
+ const padded=await read({start,end});
+ const session=typeof rf242BestSession==='function'?rf242BestSession(padded,{started:w.start,finished:w.end}):null;
+ if(session){
+  try{const matched=await read({start:session.start,end:session.end});if(hasMetric(matched))return {...matched,sourceWindowStart:session.start,sourceWindowEnd:session.end,matchMode:'exercise-session'}}catch(_){}
+ }
+ return {...padded,sourceWindowStart:start,sourceWindowEnd:end,matchMode:hasMetric(padded)?'tolerance':'empty'};
+}
+function num(v){if(v==null||v==='')return null;const n=Number(v);return Number.isFinite(n)?n:null}
+function aggregate(parts,windows,errors){
+ const sum=k=>parts.reduce((s,p)=>s+(num(p[k])??0),0);
+ const present=k=>parts.some(p=>num(p[k])!=null);
+ const weighted=k=>{let n=0,d=0;parts.forEach((p,i)=>{const v=num(p[k]);if(v!=null){const samples=num(p[k==='averageHeartRate'?'heartRateSamples':'speedSamples']),w=samples>0?samples:windows[i]?.ms||1;n+=v*w;d+=w}});return d?n/d:null};
+ const max=k=>{const a=parts.map(p=>num(p[k])).filter(v=>v!=null);return a.length?Math.max(...a):null};
+ const min=k=>{const a=parts.map(p=>num(p[k])).filter(v=>v!=null);return a.length?Math.min(...a):null};
+ const sources=[...new Set(parts.flatMap(p=>Array.isArray(p.sources)?p.sources:[]))];
+ const labels=Object.assign({},...parts.map(p=>p.sourceLabels||{}));
+ const warnings=[...parts.flatMap(p=>Array.isArray(p.warnings)?p.warnings:[]),...errors.map(e=>e.message||String(e))];
+ const sessions=[...new Map(parts.flatMap(p=>Array.isArray(p.exerciseSessions)?p.exerciseSessions:[]).map(s=>[(s.source||'')+'|'+(s.id||s.start+'|'+s.end),s])).values()];
+ const spans=[];
+ for(const s of sessions)for(const w of windows){const a=Math.max(Date.parse(s.start),Date.parse(w.start)),b=Math.min(Date.parse(s.end),Date.parse(w.end));if(b>a)spans.push([a,b])}
+ spans.sort((a,b)=>a[0]-b[0]);const merged=[];for(const s of spans){const last=merged.at(-1);if(last&&s[0]<=last[1])last[1]=Math.max(last[1],s[1]);else merged.push(s)}
+ const sessionMinutes=merged.reduce((sum,s)=>sum+s[1]-s[0],0)/60000;
+ return {
+  averageHeartRate:weighted('averageHeartRate'),minHeartRate:min('minHeartRate'),maxHeartRate:max('maxHeartRate'),heartRateSamples:present('heartRateSamples')?sum('heartRateSamples'):null,
+  activeCalories:present('activeCalories')?sum('activeCalories'):null,totalCalories:present('totalCalories')?sum('totalCalories'):null,
+  distanceMeters:present('distanceMeters')?sum('distanceMeters'):null,averageSpeedMps:weighted('averageSpeedMps'),maxSpeedMps:max('maxSpeedMps'),
+  exerciseMinutes:sessions.length?sessionMinutes:present('exerciseMinutes')?sum('exerciseMinutes'):null,exerciseSessionCount:sessions.length||sum('exerciseSessionCount'),exerciseSessions:sessions,
+  sources,sourceLabels:labels,warnings,permissions:Object.assign({},...parts.map(p=>p.permissions||{})),
+  matchMode:'active-intervals',activeIntervals:windows.map(({start,end})=>({start,end})),
+  activeDurationMs:windows.reduce((s,w)=>s+w.ms,0),sourceWindowStart:windows[0]?.start||null,sourceWindowEnd:windows.at(-1)?.end||null
+ };
+}
+const validBase=rf240ValidWorkout;
+rf240ValidWorkout=function(h){
+ const a=isoMs(h&&h.started),b=isoMs(h&&h.finished);if(a==null||b==null||b<=a)return false;
+ const ws=intervals(h);return ws.length?ws.every(w=>w.ms>0&&w.ms<=MAX_WINDOW_MS):validBase(h);
+};
+async function readWorkout(p,h){
+ const ws=intervals(h);
+ if(!ws.length)return readOne(p,{start:h.started,end:h.finished,ms:Date.parse(h.finished)-Date.parse(h.started)});
+ const parts=[],okWindows=[],errors=[];
+ for(const w of ws){try{parts.push(await readOne(p,w,true));okWindows.push(w)}catch(e){errors.push(e)}}
+ if(!parts.length)throw errors[0]||new Error('Health Connect: nincs olvasható aktív edzésszakasz.');
+ return aggregate(parts,okWindows,errors);
+}
+async function syncWorkout(p,h,force=false){
+ if(!rf240ValidWorkout(h))return false;
+ const key=rf240WorkoutKey(h),old=h.health240,ws=intervals(h);
+ if(!ws.length){
+  const exact=await readOne(p,{start:h.started,end:h.finished,ms:Date.parse(h.finished)-Date.parse(h.started)});
+  return rf242SaveMatchedWorkoutHealth(key,h,exact,{matchMode:exact.matchMode,sourceWindowStart:exact.sourceWindowStart,sourceWindowEnd:exact.sourceWindowEnd});
+ }
+ const signature=JSON.stringify(ws.map(w=>[w.start,w.end]));
+ if(!force&&old?.activeIntervalSignature===signature&&Date.now()-Date.parse(old.syncedAt||0)<6*3600000&&hasMetric(old))return false;
+ const data=await readWorkout(p,h);
+ return rf242SaveMatchedWorkoutHealth(key,h,data,{matchMode:'active-intervals',activeIntervalSignature:signature,sourceWindowStart:data.sourceWindowStart,sourceWindowEnd:data.sourceWindowEnd});
+}
+rf240SyncWorkout=function(p,h,force=false){return typeof rf245Exclusive==='function'?rf245Exclusive(()=>syncWorkout(p,h,force)):syncWorkout(p,h,force)};
+window.TrainPilotIssue79={version:'79.2',intervals,readWorkout,syncWorkout};
+})();
+// @endsection issue79-health-active-intervals.js
+
+// @section issue80-video-source-safety.js
+/* #80: do not present AI, wrongly attributed or unverified clips as exercise instruction.
+   Preserve existing verified/credited demos and all other app/UI functionality. */
+(function(){
+'use strict';
+const officialRow='https://www.muscleandstrength.com/exercises/bent-over-barbell-row.html';
+const verifiedGuides={'barbell-row':officialRow,'goblet-squat':'https://www.muscleandstrength.com/exercises/dumbbell-goblet-squat','bulgarian-split-squat':'https://www.muscleandstrength.com/exercises/one-leg-dumbbell-squat-aka-bulgarian-squat.html'};
+const officialLibrary='https://www.nasm.org/resource-center/exercise-library';
+// Replace only the Zi/animation/generic clips; preserve the existing named demos.
+const verifiedVideos={
+ 'barbell-row':['kBWAon7ItDw','Jeremy Ethier'],
+ 'goblet-squat':['MeIiIdhvXT4','ScottHermanFitness'],
+ 'bulgarian-split-squat':['2C-uNgKwPLE','ScottHermanFitness'],
+ 'db-pullover':['ieFKuQAGYIA','The Active Life'],
+ 'cable-curl':['NFzTWp2qpiE','Fit Father Project']
+};
+const sourceBase=demoInfo;
+const openBase=openDemo;
+const unverified=/^(?:YouTube\s*[–-]|Zi\s*workout)/i;
+const text={
+ hu:{unverified:'Ehhez a gyakorlathoz nincs ellenőrzött, pontos videó. A korábbi nem ellenőrzött bemutatót eltávolítottuk.',source:'Szakmai útmutató megnyitása',search:'Valódi bemutató keresése',offline:'Offline: a szöveges gyakorlati útmutató továbbra is elérhető.',guide:'Gyakorlat végrehajtása',close:'Bezárás',official:'Muscle & Strength • videós gyakorlatleírás',library:'NASM • hivatalos gyakorlatkönyvtár'},
+ en:{unverified:'No verified exact video is available for this exercise. The previous unverified demo has been removed.',source:'Open professional exercise guide',search:'Search for a real demonstration',offline:'Offline: written exercise instructions remain available.',guide:'Exercise instructions',close:'Close',official:'Muscle & Strength • video exercise guide',library:'NASM • official exercise library'},
+ de:{unverified:'Für diese Übung ist kein genaues, überprüftes Video verfügbar. Das bisherige ungeprüfte Video wurde entfernt.',source:'Professionelle Übungsanleitung öffnen',search:'Echte Vorführung suchen',offline:'Offline: Die schriftliche Anleitung bleibt verfügbar.',guide:'Übungsanleitung',close:'Schließen',official:'Muscle & Strength • Übungsvideo',library:'NASM • offizielle Übungsbibliothek'},
+ ro:{unverified:'Nu există un videoclip exact verificat pentru acest exercițiu. Clipul neverificat anterior a fost eliminat.',source:'Deschide ghidul de exerciții',search:'Caută o demonstrație reală',offline:'Offline: instrucțiunile scrise rămân disponibile.',guide:'Instrucțiuni',close:'Închide',official:'Muscle & Strength • ghid video',library:'NASM • biblioteca oficială'}
+};
+function lang(){const k=typeof rf212Lang==='function'?rf212Lang():'hu';return text[k]||text.hu}
+function nameOf(id){const e=typeof byId==='function'?byId(id):null;return e&&e.en||e&&e.hu||id}
+function searchUrl(id){return 'https://www.youtube.com/results?search_query='+encodeURIComponent(nameOf(id)+' exercise tutorial real trainer')}
+demoInfo=function(id){
+ const d=sourceBase(id);if(!d)return d;
+ const replacement=verifiedVideos[id];
+ if(replacement)return {...d,provider:'youtube',videoId:replacement[0],credit:replacement[1],source:'https://www.youtube.com/watch?v='+replacement[0],sourceVerified:true};
+ if(Object.prototype.hasOwnProperty.call(verifiedGuides,id))return {...d,provider:null,videoId:null,credit:lang().official,source:verifiedGuides[id],sourceVerified:true,sourceKind:'verified-guide'};
+ if(unverified.test(String(d.credit||''))){
+  return {...d,provider:null,videoId:null,credit:lang().unverified,source:searchUrl(id),sourceVerified:false,sourceKind:'unverified-search'};
+ }
+ return d;
+};
+openDemo=function(id){
+ const d=demoInfo(id);if(!d)return;
+ if(!d.sourceKind)return openBase(id);
+ const tr=lang(),e=typeof byId==='function'?byId(id):null;
+ const title=e?(typeof tp149ExerciseName==='function'?tp149ExerciseName(e):e.hu||e.en):id;
+ const notes=e&&e.notes||'';
+ if(typeof closeDemo==='function')closeDemo();
+ const m=document.createElement('div');m.id='videoModal';m.className='video-modal';
+ const offline=navigator.onLine===false;
+ const verified=d.sourceKind==='verified-guide';
+ const sourceLabel=verified?tr.source:d.sourceKind==='library-search'?tr.source:tr.search;
+ const alt=searchUrl(id);
+ m.innerHTML='<div class="video-dialog" role="dialog" aria-modal="true" aria-label="'+esc(title)+'">'+
+  '<button class="btn secondary video-close" data-tp-video-close type="button" onclick="closeDemo()">✕ '+esc(tr.close)+'</button>'+
+  '<h2>'+esc(title)+'</h2>'+
+  (!verified?'<p class="tp80-source-warning">'+esc(tr.unverified)+'</p>':'')+
+  (!window.TrainPilotDemo15&&notes?'<div class="tp80-guide"><strong>'+esc(tr.guide)+'</strong><p>'+esc(notes)+'</p></div>':'')+
+  '<p class="small muted">'+esc(d.credit)+'</p>'+
+  (offline?'<p class="small muted">'+esc(tr.offline)+'</p>':
+   '<button type="button" class="btn block" data-tp80-source>'+esc(sourceLabel)+'</button>'+
+   (verified?'':'<button type="button" class="btn secondary block" data-tp80-search>'+esc(tr.search)+'</button>'))+
+  '</div>';
+ document.body.appendChild(m);
+ m.querySelector('[data-tp-video-close]')?.focus();
+ m.querySelector('[data-tp80-source]')?.addEventListener('click',()=>openVideoLink(d.source));
+ m.querySelector('[data-tp80-search]')?.addEventListener('click',()=>openVideoLink(alt));
+};
+window.TrainPilotIssue80={version:'80.2',officialRow,officialLibrary,searchUrl,verifiedVideos};
+})();
+// @endsection issue80-video-source-safety.js
 
 // @section ready.js
 window.TrainPilotBoot.finish();
