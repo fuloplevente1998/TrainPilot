@@ -18,7 +18,7 @@ assert.ok(phase.includes("grid-template-columns:repeat(3,minmax(0,1fr))"),'three
 assert.ok(phase.includes('tp6HistoryHealthFlights'),'Journal Health refresh must deduplicate in-flight reads');
 assert.ok(phase.includes("refresh.setAttribute('aria-busy','true')"),'inline refresh needs non-modal busy state');
 assert.ok(!phase.includes("rfHistoryHealthCache.set(h.started,{loading:true})"),'Phase 6 must not paint the transient Journal Health loading state');
-const awaitAt=phase.indexOf("await healthPlugin().readWorkout"),finalPaintAt=phase.indexOf("rfHistoryHealthPaint(i);",awaitAt);
+const awaitAt=phase.indexOf("await window.TrainPilotIssue79.readWorkout"),finalPaintAt=phase.indexOf("rfHistoryHealthPaint(i);",awaitAt);
 assert.ok(awaitAt>=0&&finalPaintAt>awaitAt,'Journal Health must paint only after the read finishes');
 
 assert.ok(java.includes('cameraTemp = File.createTempFile("trainpilot-camera-", ".jpg"'),'camera must target private app cache');
