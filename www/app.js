@@ -13971,6 +13971,14 @@ window.TrainPilotIssue79={version:'79.2',intervals,readWorkout,syncWorkout};
 const officialRow='https://www.muscleandstrength.com/exercises/bent-over-barbell-row.html';
 const verifiedGuides={'barbell-row':officialRow,'goblet-squat':'https://www.muscleandstrength.com/exercises/dumbbell-goblet-squat','bulgarian-split-squat':'https://www.muscleandstrength.com/exercises/one-leg-dumbbell-squat-aka-bulgarian-squat.html'};
 const officialLibrary='https://www.nasm.org/resource-center/exercise-library';
+// Replace only the Zi/animation/generic clips; preserve the existing named demos.
+const verifiedVideos={
+ 'barbell-row':['kBWAon7ItDw','Jeremy Ethier'],
+ 'goblet-squat':['MeIiIdhvXT4','ScottHermanFitness'],
+ 'bulgarian-split-squat':['2C-uNgKwPLE','ScottHermanFitness'],
+ 'db-pullover':['ieFKuQAGYIA','The Active Life'],
+ 'cable-curl':['NFzTWp2qpiE','Fit Father Project']
+};
 const sourceBase=demoInfo;
 const openBase=openDemo;
 const unverified=/^(?:YouTube\s*[–-]|Zi\s*workout)/i;
@@ -13985,10 +13993,9 @@ function nameOf(id){const e=typeof byId==='function'?byId(id):null;return e&&e.e
 function searchUrl(id){return 'https://www.youtube.com/results?search_query='+encodeURIComponent(nameOf(id)+' exercise tutorial real trainer')}
 demoInfo=function(id){
  const d=sourceBase(id);if(!d)return d;
+ const replacement=verifiedVideos[id];
+ if(replacement)return {...d,provider:'youtube',videoId:replacement[0],credit:replacement[1],source:'https://www.youtube.com/watch?v='+replacement[0],sourceVerified:true};
  if(Object.prototype.hasOwnProperty.call(verifiedGuides,id))return {...d,provider:null,videoId:null,credit:lang().official,source:verifiedGuides[id],sourceVerified:true,sourceKind:'verified-guide'};
- if(typeof RF143_DEMOS!=='undefined'&&Object.prototype.hasOwnProperty.call(RF143_DEMOS,id)){
-  return {...d,provider:null,videoId:null,credit:lang().library,source:officialLibrary,sourceVerified:false,sourceKind:'library-search'};
- }
  if(unverified.test(String(d.credit||''))){
   return {...d,provider:null,videoId:null,credit:lang().unverified,source:searchUrl(id),sourceVerified:false,sourceKind:'unverified-search'};
  }
@@ -14021,7 +14028,7 @@ openDemo=function(id){
  m.querySelector('[data-tp80-source]')?.addEventListener('click',()=>openVideoLink(d.source));
  m.querySelector('[data-tp80-search]')?.addEventListener('click',()=>openVideoLink(alt));
 };
-window.TrainPilotIssue80={version:'80.1',officialRow,officialLibrary,searchUrl};
+window.TrainPilotIssue80={version:'80.2',officialRow,officialLibrary,searchUrl,verifiedVideos};
 })();
 // @endsection issue80-video-source-safety.js
 

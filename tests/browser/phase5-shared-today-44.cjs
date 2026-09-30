@@ -43,7 +43,9 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   const health=page.locator('main.tp168-health .tp5-today-grid'),healthTiles=await read(health);
   assert.deepEqual(healthTiles,homeTiles,'Home and Health must show identical six values and labels for the same day');
   assert.equal(await page.locator('main.tp168-health .tp5-more-hrv').count(),1,'HRV remains in More Health data');
+  await page.locator('main.tp168-health .tp168-more-panel > summary').click();
   assert.match(await page.locator('main.tp168-health .tp5-more-hrv').innerText(),/54 ms/);
+  await page.locator('main.tp168-health .tp168-more-panel > summary').click();
   assert.equal(await page.locator('main.tp168-health .tp168-resting').count(),0,'Resting pulse standalone shortcut must be removed');
   const widths=await page.evaluate(()=>({homeDay:document.querySelector('.tp5-today-grid')?.dataset.tp5Day,day:rf240DayKey(new Date())}));
   assert.equal(widths.homeDay,widths.day,'Today must use the local calendar day');
