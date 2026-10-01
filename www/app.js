@@ -13977,7 +13977,59 @@ const verifiedVideos={
  'goblet-squat':['MeIiIdhvXT4','ScottHermanFitness'],
  'bulgarian-split-squat':['2C-uNgKwPLE','ScottHermanFitness'],
  'db-pullover':['ieFKuQAGYIA','The Active Life'],
- 'cable-curl':['NFzTWp2qpiE','Fit Father Project']
+ 'cable-curl':['NFzTWp2qpiE','Fit Father Project'],
+
+ // Restore exact direct demos that #80 previously demoted because their old
+ // credit string was generic. These are reviewed exercise-specific tutorials.
+ 'side-plank':['XeN4pEZZJNI','Well+Good'],
+ 'db-rdl':['hQgFixeXdZo','Mike | J2FIT Strength & Conditioning'],
+ 'db-reverse-fly':['lPt0GqwaqEw','Mind Pump TV'],
+
+ // v1.4.8 library expansion: keep every catalog exercise on a concrete,
+ // reviewed direct tutorial instead of falling through to a YouTube search.
+ 'pullup':['9yVGh3XbJ34','National Academy of Sports Medicine (NASM)'],
+ 'chinup':['e1YSApl-QcM','Simonster Strength'],
+ 'negative-pullup':['koEwdlmUxoM','Battle Bunker'],
+ 'scapular-pullup':['1yxFXaH3rtE','Gymless Fitness'],
+ 'inverted-row':['wRp2hCv_4ZQ','Mike Doyle'],
+ 'dip':['B6eMPQN7ej4','Calistenia Brasil'],
+ 'bench-dip':['WVeZDBhZwLA','National Academy of Sports Medicine (NASM)'],
+ 'diamond-pushup':['_4EGPVJuqfA','Tykato Fitness'],
+ 'pseudo-planche-pushup':['i-gSmqe9tNw','Minus The Gym'],
+ 'hanging-knee-raise':['G6a5267YpHM','FIT.nl'],
+ 'hanging-leg-raise':['Pr1ieGZ5atk','ATHLEAN-X'],
+ 'hollow-hold':['hK7QTWGRBu0','The Bodyweight Process'],
+ 'superman-hold':['g0Kr9Wd3CeQ','FIT.nl'],
+ 'mountain-climber':['cnyTQDSE884','Well+Good'],
+
+ 'band-row':['LSkyinhmA8k','Get Healthy U'],
+ 'band-lat-pulldown':['VxCt-KKvzBQ','Hammer Fitness'],
+ 'band-chest-press':['Fj1WkCwt-nk','Elite Fitness Downtown'],
+ 'band-overhead-press':['0VjBZALMJD0','Ryan Sersaw Health & Fitness'],
+ 'band-face-pull':['guG4eqBOfwA','Fitness Freedom Athletes'],
+ 'band-biceps-curl':['A0yEHB67kbI','BodyTorque'],
+ 'band-triceps-pushdown':['gjq9dmxU9fk','FlexXP'],
+ 'band-pallof-press':['BvSB4tvgLGc','Functional Bodybuilding'],
+
+ 'kb-goblet-squat':['aNDUbH_Uv4g','Zack Henderson'],
+ 'kb-deadlift':['MJPGkNqAXzg','National Academy of Sports Medicine (NASM)'],
+ 'kb-swing':['jYtimecuwuw','Mind Pump TV'],
+ 'kb-clean':['pDtRBx1fm70','Sport-Thieme'],
+ 'kb-press':['gjr-QAdsq4o','Onnit'],
+ 'kb-row':['l5qelXL5nfs','Coach Lynda / exercise demonstration'],
+ 'kb-reverse-lunge':['y2jz7ot6r2I','Greg Brookes'],
+ 'kb-halo':['Sci3lijQBmk','Brittany van Schravendijk'],
+
+ 'barbell-back-squat':['gcNh17Ckjgg','Jeremy Ethier'],
+ 'conventional-deadlift':['1nvAUJVmFZY','Rogue Fitness'],
+ 'bench-press':['rT7DgCr-3pg','ScottHermanFitness'],
+ 'incline-bench-press':['BjGLs6KGWUc','National Academy of Sports Medicine (NASM)'],
+ 'barbell-overhead-press':['cGnhixvC8uA','National Academy of Sports Medicine (NASM)'],
+ 'assisted-pullup-machine':['gx0RWT7WbmA','Colossus Fitness'],
+ 'pec-deck':['XZg28DIf1oc','Machine Chest Fly tutorial'],
+ 'cable-lateral-raise':['qitQHqNZbeM','Colossus Fitness'],
+ 'hack-squat':['hrciyIRwFzs','Coach Kelly'],
+ 'standing-calf-raise':['KVZ3qtJA4AU','Standing Calf Raise tutorial']
 };
 const sourceBase=demoInfo;
 const openBase=openDemo;
