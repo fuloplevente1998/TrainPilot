@@ -25,5 +25,5 @@ assert.ok(!manifest.includes('READ_MEDIA_IMAGES'));
 assert.ok(google.includes('ExecutorService ioExecutor')&&google.includes('ioExecutor.submit(()->{try{'));
 assert.ok(!google.includes('getBridge().execute(()->{try{'));
 assert.equal(pkg.version,'1.0.4');assert.equal(src.version,'1.0.4');assert.equal(src.versionCode,2684);
-assert.match(gradle,/versionCode\s+2684/);assert.match(gradle,/versionName\s+"1\.0\.3"/);
+assert.match(gradle,/versionCode\s+2684/);assert.match(gradle,/versionName\s+"1\.0\.4"/);
 console.log('PASS TrainPilot 2684 private FileProvider camera / OEM return fallback / queue isolation guards');
