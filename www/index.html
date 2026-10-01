@@ -1658,7 +1658,6 @@
    if(focusLast){
     const rows=[...document.querySelectorAll('main.tp153-workout .tp153-set-row')],row=rows.at(-1);
     const input=row?.querySelector('.tp164-side-set-input,input.field[inputmode="numeric"]');
-    row?.scrollIntoView?.({block:'nearest'});
     try{input?.focus?.({preventScroll:true})}catch(_){input?.focus?.()}
    }else{
     window.scrollTo?.(0,scrollY);
