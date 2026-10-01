@@ -18,7 +18,7 @@ assert.equal(order[0],'startup.js');assert.equal(order.at(-1),'ready.js');
 assert.ok(order.indexOf('v228c.js')<order.indexOf('ready.js'));
 assert.ok(order.indexOf('v229.js')<order.indexOf('ready.js'));
 assert.equal(writes,1,'one final startup render');
-assert.equal(run('makeBackup().appVersion'),'1.4.6');
+assert.equal(run('makeBackup().appVersion'),'1.0.5');
 for(let n=0;tasks.length&&n<10;n++){const q=tasks;tasks=[];for(const fn of q)fn();}
 assert.equal(cloudChecks,1);assert.equal(run('window.TrainPilotBoot.finished'),true);
 run('window.TrainPilotBoot.finish()');assert.equal(writes,1,'finish is idempotent');

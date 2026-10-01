@@ -1,6 +1,6 @@
 const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict'),crypto=require('node:crypto').webcrypto;
 const values=new Map(),alerts=[];let saved=null,eventWrites=[],files=[];
-const plugin={status:async()=>({profile:''}),driveList:async()=>({files}),driveRead:async()=>({data:saved}),driveWrite:async x=>{saved=x.data;return {verified:true}},calendarSync:async x=>{eventWrites=JSON.parse(x.events);return {count:eventWrites.length}}};
+const plugin={status:async()=>({profile:''}),driveList:async()=>({files}),driveRead:async()=>({data:saved}),driveWrite:async x=>{saved=x.data;return {verified:true}},calendarPrepare:async()=>({id:"managed-calendar"}),calendarSync:async x=>{eventWrites=JSON.parse(x.events);return {count:eventWrites.length}}};
 const ctx=vm.createContext({localStorage:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)},document:{querySelector:()=>({innerHTML:'',remove(){}}),getElementById:()=>null,addEventListener(){}},window:{Capacitor:{isNativePlatform:()=>true,Plugins:{GoogleSync:plugin}},scrollTo(){}},navigator:{onLine:true},setInterval:()=>1,clearInterval(){},Date,crypto,TextEncoder,alert:t=>alerts.push(t),confirm:()=>true,console});
 for(const f of ['backup.js','demos.js','cloud.js','app.js'])vm.runInContext(fs.readFileSync('www/'+f,'utf8'),ctx);
 const run=s=>vm.runInContext(s,ctx);

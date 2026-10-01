@@ -111,7 +111,7 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon clean assembleRelease
+          ./gradlew --no-daemon clean testReleaseUnitTest assembleRelease
 
       - name: Verify APK and package source
         shell: bash

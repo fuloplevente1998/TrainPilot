@@ -12,15 +12,36 @@ if (releaseTaskRequested && !releaseSigningComplete) {
     throw new GradleException("Release signing requires ANDROID_KEYSTORE_PATH, ANDROID_STORE_PASSWORD, ANDROID_KEY_ALIAS and ANDROID_KEY_PASSWORD.")
 }
 
+def playBuild = System.getenv("TRAINPILOT_PLAY_BUILD") == "true"
+def policyUrl = System.getenv("TRAINPILOT_PRIVACY_POLICY_URL") ?: ""
+def supportEmail = System.getenv("TRAINPILOT_SUPPORT_EMAIL") ?: ""
+def developerName = System.getenv("TRAINPILOT_DEVELOPER_NAME") ?: ""
+if (playBuild) {
+    if (!(policyUrl ==~ /https:\/\/[^\s]+/) || !(supportEmail ==~ /[^\s@]+@[^\s@]+\.[^\s@]+/) || developerName.trim().isEmpty()) {
+        throw new GradleException("Play build requires public HTTPS privacy URL, support email and developer identity.")
+    }
+    if (!releaseSigningComplete) throw new GradleException("Play upload signing configuration is missing.")
+    def keys = java.security.KeyStore.getInstance(file(releaseKeystorePath), releaseStorePassword.toCharArray())
+    def certificate = keys.getCertificate(releaseKeyAlias)
+    if (certificate == null || certificate.subjectX500Principal.name.toLowerCase().contains("cn=android debug")) {
+        throw new GradleException("Play builds cannot use the legacy Android Debug certificate.")
+    }
+}
+def javaLiteral = { value -> groovy.json.JsonOutput.toJson(value) }
+
 android {
     namespace "com.repforge.app"
     compileSdk rootProject.ext.compileSdkVersion
+    buildFeatures { buildConfig true }
     defaultConfig {
+        buildConfigField "String", "PRIVACY_POLICY_URL", javaLiteral(policyUrl)
+        buildConfigField "String", "SUPPORT_EMAIL", javaLiteral(supportEmail)
+        buildConfigField "String", "DEVELOPER_NAME", javaLiteral(developerName)
         applicationId "com.repforge.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2684
-        versionName "1.0.4"
+        versionCode 2685
+        versionName "1.0.5"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions { ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~' }
     }

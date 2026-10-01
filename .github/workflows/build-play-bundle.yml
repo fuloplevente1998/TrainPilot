@@ -1,0 +1,71 @@
+name: Build Play upload bundle
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  play-bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TRAINPILOT_PLAY_BUILD: 'true'
+      TRAINPILOT_PRIVACY_POLICY_URL: ${{ vars.TRAINPILOT_PRIVACY_POLICY_URL }}
+      TRAINPILOT_SUPPORT_EMAIL: ${{ vars.TRAINPILOT_SUPPORT_EMAIL }}
+      TRAINPILOT_DEVELOPER_NAME: ${{ vars.TRAINPILOT_DEVELOPER_NAME }}
+      ANDROID_STORE_PASSWORD: ${{ secrets.PLAY_UPLOAD_STORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.PLAY_UPLOAD_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.PLAY_UPLOAD_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Prepare separate Play upload key
+        env:
+          PLAY_UPLOAD_KEYSTORE_BASE64: ${{ secrets.PLAY_UPLOAD_KEYSTORE_BASE64 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for value in PLAY_UPLOAD_KEYSTORE_BASE64 ANDROID_STORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD TRAINPILOT_PRIVACY_POLICY_URL TRAINPILOT_SUPPORT_EMAIL TRAINPILOT_DEVELOPER_NAME; do
+            if [ -z "${!value}" ]; then echo "Missing configuration: $value"; exit 1; fi
+          done
+          KEY_FILE="$RUNNER_TEMP/trainpilot-play-upload.jks"
+          printf '%s' "$PLAY_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+          echo "ANDROID_KEYSTORE_PATH=$KEY_FILE" >> "$GITHUB_ENV"
+      - run: npm ci
+      - run: npm test
+      - name: Stamp source and build guarded Play AAB
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e "const fs=require('fs'),p='SOURCE_VERSION.json',m=JSON.parse(fs.readFileSync(p));m.sourceCommit=process.env.GITHUB_SHA;fs.writeFileSync(p,JSON.stringify(m,null,2)+'\n')"
+          npx --no-install cap sync android
+          cd android
+          ./gradlew --no-daemon bundleRelease
+      - name: Verify bundle signature and content
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          BUNDLE="TrainPilot-$VERSION-play.aab"
+          cp android/app/build/outputs/bundle/release/app-release.aab "$BUNDLE"
+          jarsigner -verify "$BUNDLE"
+          unzip -p "$BUNDLE" base/assets/public/app.js | cmp - www/app.js
+          sha256sum "$BUNDLE" > PLAY-SHA256SUMS.txt
+      - name: Remove upload key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/trainpilot-play-upload.jks"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: TrainPilot-Play-${{ github.run_id }}-${{ github.sha }}
+          path: |
+            TrainPilot-*-play.aab
+            PLAY-SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14

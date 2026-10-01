@@ -46,6 +46,10 @@ public class GoogleSyncPlugin extends Plugin {
  @PluginMethod public void drivePhotoRead(PluginCall c){begin(c,"drivePhotoRead");}
  @PluginMethod public void drivePhotoDelete(PluginCall c){begin(c,"drivePhotoDelete");}
  @PluginMethod public void calendarSync(PluginCall c){begin(c,"calendarSync");}
+ @PluginMethod public void calendarPrepare(PluginCall c){begin(c,"calendarPrepare");}
+ @PluginMethod public void calendarDeleteManaged(PluginCall c){begin(c,"calendarDeleteManaged");}
+ @PluginMethod public void driveDeleteAll(PluginCall c){begin(c,"driveDeleteAll");}
+ @PluginMethod public void drivePrune(PluginCall c){begin(c,"drivePrune");}
  private void begin(PluginCall c,String op){
   if(pending!=null){c.reject("Már folyamatban van egy Google-művelet.");return;}
   String email=prefs().getString("email","");if(!op.equals("connect")&&email.isEmpty()){c.reject("Előbb kapcsolódj a Google-fiókodhoz.");return;}
@@ -87,6 +91,10 @@ public class GoogleSyncPlugin extends Plugin {
     case "drivePhotoRead":readPhoto(out);break;
     case "drivePhotoDelete":deletePhoto(out);break;
     case "calendarSync":syncEvents(out);break;
+    case "calendarPrepare":out.put("id",calendar());break;
+    case "calendarDeleteManaged":deleteManagedCalendar(out);break;
+    case "driveDeleteAll":deleteAppData(out);break;
+    case "drivePrune":pruneSnapshots(out);break;
     default:throw new IOException("Ismeretlen művelet.");
    }succeed(out);
   }catch(Exception e){fail(e instanceof ApiError?"Google API hiba ("+((ApiError)e).code+"). Ellenőrizd az API-beállítást és az engedélyeket, majd próbáld újra.":e.getMessage());}});
@@ -125,10 +133,15 @@ public class GoogleSyncPlugin extends Plugin {
  private void deletePhoto(JSObject out)throws Exception{
   String id=pending.getString("id","");if(!id.matches("[A-Za-z0-9_-]+"))throw new IOException("Hibás Drive-fájlazonosító.");String pid=photoId(),name=photoName(pid);try{JSONObject meta=request("GET","https://www.googleapis.com/drive/v3/files/"+id+"?fields=name",null);if(!name.equals(meta.optString("name")))throw new IOException("Nem ehhez a naplófotóhoz tartozó Drive-fájl.");request("DELETE","https://www.googleapis.com/drive/v3/files/"+id,null);}catch(ApiError e){if(e.code!=404&&e.code!=410)throw e;}out.put("deleted",true);
  }
- private byte[] download(String url,int limit)throws Exception{HttpURLConnection c=(HttpURLConnection)new URL(url).openConnection();c.setConnectTimeout(20000);c.setReadTimeout(45000);c.setRequestMethod("GET");c.setRequestProperty("Authorization","Bearer "+token);try{int status=c.getResponseCode();if(status<200||status>=300)throw new ApiError(status);try(InputStream in=c.getInputStream();ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] b=new byte[8192];int n;while((n=in.read(b))!=-1){if(out.size()+n>limit)throw new IOException("A fotó túl nagy.");out.write(b,0,n);}return out.toByteArray();}}finally{c.disconnect();}}
+ private byte[] download(String url,int limit)throws Exception{
+  for(int attempt=0;;attempt++){HttpURLConnection c=(HttpURLConnection)new URL(url).openConnection();c.setInstanceFollowRedirects(false);c.setConnectTimeout(20000);c.setReadTimeout(45000);c.setRequestMethod("GET");c.setRequestProperty("Authorization","Bearer "+token);try{int status=c.getResponseCode();if(status<200||status>=300){if(attempt<3&&GoogleRequestPolicy.transientStatus(status)){long delay=GoogleRequestPolicy.delay(attempt,c.getHeaderField("Retry-After"),System.currentTimeMillis());if(delay>=0){c.disconnect();Thread.sleep(delay);continue;}}throw new ApiError(status);}return readResponse(c,limit);}finally{c.disconnect();}}
+ }
  private byte[] readResponse(HttpURLConnection c,int limit)throws IOException{try(InputStream in=c.getInputStream();ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] b=new byte[8192];int n;while((n=in.read(b))!=-1){if(out.size()+n>limit)throw new IOException("A válasz túl nagy.");out.write(b,0,n);}return out.toByteArray();}}
  private String calendar()throws Exception{
-  String id=prefs().getString("calendar","");if(!id.isEmpty())return id;
+  String id=prefs().getString("calendar","");if(!id.isEmpty()){
+   try{JSONObject c=request("GET","https://www.googleapis.com/calendar/v3/calendars/"+enc(id),null);if(!c.optString("description").equals("RepForge managed workout calendar v1"))throw new IOException("This is not a TrainPilot-managed calendar.");return id;}
+   catch(ApiError e){if(e.code!=404&&e.code!=410)throw e;prefs().edit().remove("calendar").apply();id="";}
+  }
   String page="";do{
    JSONObject r=request("GET","https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=250"+(page.isEmpty()?"":"&pageToken="+enc(page)),null);
    JSONArray a=r.optJSONArray("items");if(a!=null)for(int i=0;i<a.length();i++){JSONObject c=a.getJSONObject(i);if(c.optString("description").equals("RepForge managed workout calendar v1")&&c.optString("accessRole").equals("owner"))id=c.getString("id");}page=r.optString("nextPageToken");
@@ -138,7 +151,8 @@ public class GoogleSyncPlugin extends Plugin {
  }
  private void syncEvents(JSObject out)throws Exception{
   JSONArray events=new JSONArray(pending.getString("events","[]"));if(events.length()>100)throw new IOException("Maximum 100 esemény egy kérésben.");
-  String base="https://www.googleapis.com/calendar/v3/calendars/"+enc(calendar())+"/events";int count=0;
+  String selected=calendar(),expected=pending.getString("calendarId","");if(!expected.isEmpty()&&!expected.equals(selected))throw new IOException("Calendar changed during sync. Run sync again to resend every event.");
+  String base="https://www.googleapis.com/calendar/v3/calendars/"+enc(selected)+"/events";int count=0;
   for(int i=0;i<events.length();i++){
    JSONObject e=events.getJSONObject(i);String id=e.optString("id");if(!id.matches("rf[0-9a-f]{64}"))throw new IOException("Hibás eseményazonosító.");
    if(e.optBoolean("cancelled")){try{request("DELETE",base+"/"+id,null);}catch(ApiError error){if(error.code!=404&&error.code!=410)throw error;}}
@@ -150,12 +164,42 @@ public class GoogleSyncPlugin extends Plugin {
  private String enc(String x)throws Exception{return URLEncoder.encode(x,"UTF-8");}
  private JSONObject request(String method,String url,JSONObject body)throws Exception{return http(method,url,body==null?null:body.toString(),"application/json; charset=UTF-8");}
  private JSONObject http(String method,String url,String body,String type)throws Exception{
-  HttpURLConnection c=(HttpURLConnection)new URL(url).openConnection();c.setInstanceFollowRedirects(false);c.setConnectTimeout(20000);c.setReadTimeout(30000);c.setRequestMethod(method);c.setRequestProperty("Authorization","Bearer "+token);c.setRequestProperty("Accept","application/json");
-  try{if(body!=null){c.setDoOutput(true);c.setRequestProperty("Content-Type",type);try(OutputStream o=c.getOutputStream()){o.write(body.getBytes(StandardCharsets.UTF_8));}}
-   int status=c.getResponseCode();if(status<200||status>=300){if(status==401)Identity.getAuthorizationClient(getContext()).clearToken(ClearTokenRequest.builder().setToken(token).build());throw new ApiError(status);}
-   if(status==204)return new JSONObject();
-   try(InputStream in=c.getInputStream();ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] b=new byte[8192];int n;while((n=in.read(b))!=-1){if(out.size()+n>LIMIT)throw new IOException("A válasz túl nagy.");out.write(b,0,n);}String text=out.toString("UTF-8");return text.isEmpty()?new JSONObject():new JSONObject(text);}
-  }finally{c.disconnect();}
+  // GET/PUT/DELETE are safe to repeat; Calendar event POST uses deterministic IDs.
+  // Drive uploads and calendar creation cannot be retried blindly after an uncertain response.
+  boolean retryable=GoogleRequestPolicy.canRetry(method,url,body==null?"":new JSONObject(method.equals("POST")&&type.startsWith("application/json")?body:"{}").optString("id"));
+  for(int attempt=0;;attempt++){
+   HttpURLConnection c=(HttpURLConnection)new URL(url).openConnection();c.setInstanceFollowRedirects(false);c.setConnectTimeout(20000);c.setReadTimeout(30000);c.setRequestMethod(method);c.setRequestProperty("Authorization","Bearer "+token);c.setRequestProperty("Accept","application/json");
+   try{if(body!=null){c.setDoOutput(true);c.setRequestProperty("Content-Type",type);try(OutputStream o=c.getOutputStream()){o.write(body.getBytes(StandardCharsets.UTF_8));}}
+    int status=c.getResponseCode();if(status<200||status>=300){
+     if(retryable&&attempt<3&&GoogleRequestPolicy.transientStatus(status)){long delay=GoogleRequestPolicy.delay(attempt,c.getHeaderField("Retry-After"),System.currentTimeMillis());if(delay>=0){c.disconnect();Thread.sleep(delay);continue;}}
+
+     if(status==401)Identity.getAuthorizationClient(getContext()).clearToken(ClearTokenRequest.builder().setToken(token).build());throw new ApiError(status);
+    }
+    if(status==204)return new JSONObject();String text=new String(readResponse(c,LIMIT),StandardCharsets.UTF_8);return text.isEmpty()?new JSONObject():new JSONObject(text);
+   }finally{c.disconnect();}
+  }
+ }
+ private JSONArray appFiles(String query)throws Exception{
+  JSONArray all=new JSONArray();String page="";do{JSONObject result=request("GET","https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q="+enc("trashed = false and ("+query+")")+"&fields="+enc("nextPageToken,files(id,name,createdTime)")+"&pageSize=1000"+(page.isEmpty()?"":"&pageToken="+enc(page)),null);JSONArray files=result.optJSONArray("files");if(files!=null)for(int i=0;i<files.length();i++)all.put(files.get(i));page=result.optString("nextPageToken");}while(!page.isEmpty());return all;
+ }
+ private boolean appFileName(String name){return name.matches("repforge-sync-[a-z0-9-]{36}-[A-Za-z0-9_-]{1,80}\\.json|trainpilot-photo-[a-f0-9-]{36}\\.jpg");}
+ private void deleteAppData(JSObject out)throws Exception{
+  JSONArray files=appFiles("name contains 'repforge-sync-' or name contains 'trainpilot-photo-'");int count=0;for(int i=0;i<files.length();i++){JSONObject f=files.getJSONObject(i);if(!appFileName(f.optString("name")))continue;request("DELETE","https://www.googleapis.com/drive/v3/files/"+enc(f.getString("id")),null);count++;}out.put("deleted",count);
+ }
+ private void pruneSnapshots(JSObject out)throws Exception{
+  String device=pending.getString("device","");if(!device.matches("[a-f0-9-]{36}"))throw new IOException("Invalid device ID.");JSONArray files=appFiles("name contains 'repforge-sync-"+device+"-'");List<JSONObject> rows=new ArrayList<>();for(int i=0;i<files.length();i++){JSONObject f=files.getJSONObject(i);if(appFileName(f.optString("name")))rows.add(f);}rows.sort(Comparator.comparing(f->f.optString("createdTime")));int deleted=0,protectedLegacy=0;
+  // Keep the oldest safety snapshot and the latest ten. Never remove another device's backups.
+  for(int i=1;i<rows.size()-10;i++){JSONObject f=rows.get(i),snapshot=request("GET","https://www.googleapis.com/drive/v3/files/"+enc(f.getString("id"))+"?alt=media",null);if(!snapshot.optString("app").equals("RepForgeSync")||!snapshot.optString("owner").equals(prefs().getString("sub",""))||!snapshot.optString("device").equals(device))continue;JSONObject data=snapshot.optJSONObject("data");boolean legacy=data==null;for(String key:new String[]{"history","weights"}){JSONArray a=data==null?null:data.optJSONArray(key);if(a==null){legacy=true;continue;}for(int j=0;j<a.length();j++){String id=a.getJSONObject(j).optString("id");if(id.isEmpty()||id.startsWith("tp18-"))legacy=true;}}if(legacy){protectedLegacy++;continue;}request("DELETE","https://www.googleapis.com/drive/v3/files/"+enc(f.getString("id")),null);deleted++;}
+  out.put("deleted",deleted);out.put("protectedLegacy",protectedLegacy);
+ }
+ private void deleteManagedCalendar(JSObject out)throws Exception{
+  String page="";List<String> ids=new ArrayList<>();do{JSONObject r=request("GET","https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=250"+(page.isEmpty()?"":"&pageToken="+enc(page)),null);JSONArray a=r.optJSONArray("items");if(a!=null)for(int i=0;i<a.length();i++){JSONObject x=a.getJSONObject(i);if(x.optString("description").equals("RepForge managed workout calendar v1")&&x.optString("accessRole").equals("owner"))ids.add(x.getString("id"));}page=r.optString("nextPageToken");}while(!page.isEmpty());
+  for(String id:ids)try{request("DELETE","https://www.googleapis.com/calendar/v3/calendars/"+enc(id),null);}catch(ApiError e){if(e.code!=404&&e.code!=410)throw e;}prefs().edit().remove("calendar").apply();out.put("deleted",ids.size());
+ }
+ @PluginMethod public void revoke(PluginCall c){
+  if(pending!=null){c.reject("Wait for the current Google operation to finish.");return;}String email=prefs().getString("email","");if(email.isEmpty()){c.reject("Connect to Google first.");return;}pending=c;
+  List<Scope> scopes=new ArrayList<>();for(String s:new String[]{"openid","https://www.googleapis.com/auth/userinfo.email","https://www.googleapis.com/auth/userinfo.profile","https://www.googleapis.com/auth/drive.appdata","https://www.googleapis.com/auth/calendar.app.created","https://www.googleapis.com/auth/calendar.calendarlist.readonly"})scopes.add(new Scope(s));
+  Identity.getAuthorizationClient(getActivity()).revokeAccess(RevokeAccessRequest.builder().setAccount(new Account(email,"com.google")).setScopes(scopes).build()).addOnSuccessListener(v->{prefs().edit().clear().apply();succeed(new JSObject());}).addOnFailureListener(e->fail("Google permission revocation failed. Retry online; access has not been reported as revoked."));
  }
  private static class ApiError extends IOException{final int code;ApiError(int c){code=c;}}
  private synchronized void succeed(JSObject out){PluginCall c=pending;pending=null;token=null;if(c!=null)c.resolve(out);}
