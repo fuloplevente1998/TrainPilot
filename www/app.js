@@ -8307,7 +8307,8 @@ window.TrainPilotI18n.healthCoachAudit=function(){
   'workout.load.total':['kg összesen','kg total','kg gesamt','kg total'],
   'workout.load.single_dumbbell':['kg (1 súlyzó)','kg (1 dumbbell)','kg (1 Hantel)','kg (1 ganteră)'],
   'workout.load.bodyweight':['testsúly','body weight','Körpergewicht','greutatea corpului'],
-  'progress.title':['Progresszív edzés','Progressive training','Progressives Training','Antrenament progresiv'],
+  'progress.title':['Progresszív cél','Progressive goal','Progressives Ziel','Obiectiv progresiv'],
+  'progress.goalNote':['Az edzéselőzményeid alapján számolt következő fejlődési lépcső. A Coach a napi regenerációd alapján ettől eltérhet.','The next progression step calculated from your workout history. Coach may adjust it based on today’s recovery.','Der nächste Entwicklungsschritt aus deinem Trainingsverlauf. Der Coach kann ihn anhand deiner heutigen Regeneration anpassen.','Următorul pas de progres calculat din istoricul antrenamentelor. Coach îl poate ajusta în funcție de recuperarea de azi.'],
   'progress.history':['előzmény: {count}/3 alkalom','history: {count}/3 sessions','Verlauf: {count}/3 Einheiten','istoric: {count}/3 sesiuni'],
   'progress.noExercise':['A gyakorlat adatai nem érhetők el.','Exercise data is unavailable.','Übungsdaten sind nicht verfügbar.','Datele exercițiului nu sunt disponibile.'],
   'progress.noHistory':['Nincs még elég előzmény. Indulj kontrollált, kényelmes terheléssel.','There is not enough history yet. Start with a controlled, comfortable load.','Noch nicht genug Verlauf. Starte mit einer kontrollierten, angenehmen Belastung.','Nu există încă suficient istoric. Începe cu o încărcare controlată și confortabilă.'],
@@ -8444,7 +8445,7 @@ rf152FeedbackHtml=function(e){
  const r=rf152Recommendation(e.id,e),sel=e.effort||'',t=rf232L(),count=Number(r.historyCount)||0,target=r.target;
  const scale=RF232_EFFORT_KEYS.map(function(k,i){return '<button class="btn '+(sel===k?'':'secondary')+'" onclick="rf152SetEffort(\''+k+'\')"><span class="n">'+(i+1)+'</span><span class="lbl">'+esc(t[k])+'</span></button>';}).join('');
  const meta=target?'<div class="small muted" style="margin-top:6px">'+esc(tp149T('workout.target'))+': '+esc(target.reps||target.kind)+' • '+esc(tp149T('progress.history',{count:count}))+'</div>':'';
- return '<div class="card" id="rf152Feedback"><strong>'+esc(tp149T('progress.title'))+'</strong><p class="small muted">'+esc(r.text)+'</p>'+meta+'<div class="small" style="margin:10px 0 8px">'+esc(t.prompt)+'</div><div class="rf232-effort">'+scale+'</div><button class="btn '+(sel==='pain'?'':'secondary')+' block rf232-pain" onclick="rf152SetEffort(\'pain\')">'+esc(t.pain)+'</button></div>';
+ return '<div class="card" id="rf152Feedback"><strong>'+esc(tp149T('progress.title'))+'</strong><p class="small muted" style="margin:6px 0 0">'+esc(tp149T('progress.goalNote'))+'</p><p class="small muted">'+esc(r.text)+'</p>'+meta+'<div class="small" style="margin:10px 0 8px">'+esc(t.prompt)+'</div><div class="rf232-effort">'+scale+'</div><button class="btn '+(sel==='pain'?'':'secondary')+' block rf232-pain" onclick="rf152SetEffort(\'pain\')">'+esc(t.pain)+'</button></div>';
 };
 
 timerHtml=function(){
@@ -8516,7 +8517,7 @@ toggleSet=function(ei,si){
 };
 
 window.TrainPilotI18n.workoutAudit=function(){
- const keys=['workout.target','workout.sets','workout.bodyweight','workout.finish','workout.next','workout.previous','workout.invalidReps','workout.rest','progress.title','progress.noHistory','progress.painLoad','progress.partialLoad','progress.body.noHistory','progress.body.pain','stopwatch.title','stopwatch.start','stopwatch.reset','video.openDemo'];
+ const keys=['workout.target','workout.sets','workout.bodyweight','workout.finish','workout.next','workout.previous','workout.invalidReps','workout.rest','progress.title','progress.goalNote','progress.noHistory','progress.painLoad','progress.partialLoad','progress.body.noHistory','progress.body.pain','stopwatch.title','stopwatch.start','stopwatch.reset','video.openDemo'];
  const missing={hu:[],en:[],de:[],ro:[]};
  for(const lang of Object.keys(missing))for(const key of keys)if(!TP149_CATALOG[lang]?.[key])missing[lang].push(key);
  return missing;
@@ -9080,7 +9081,7 @@ window.TrainPilotI18n.weightAudit=function(){
   'settings.trainingProfileHelp':['A kímélő profil csökkenti az alap sorozatszámokat. Az alapértékek bármikor visszaállíthatók.','The gentle profile reduces default set counts. Defaults can be restored at any time.','Das schonende Profil reduziert die Standard-Satzzahlen. Die Standardwerte können jederzeit wiederhergestellt werden.','Profilul ușor reduce numărul implicit de serii. Valorile implicite pot fi restaurate oricând.'],
   'settings.gentleProfile':['Kímélő kezdőprofil (2 sorozat)','Gentle beginner profile (2 sets)','Schonendes Anfängerprofil (2 Sätze)','Profil ușor pentru începători (2 serii)'],
   'settings.restoreDefaults':['Alapértékek visszaállítása','Restore defaults','Standardwerte wiederherstellen','Restaurează valorile implicite'],
-  'settings.progression':['Progresszív edzés • tényleges súlylépcsők','Progressive training • actual load increments','Progressives Training • tatsächliche Gewichtsabstufungen','Antrenament progresiv • trepte reale de greutate'],
+  'settings.progression':['Progresszív cél • tényleges súlylépcsők','Progressive goal • actual load increments','Progressives Ziel • tatsächliche Gewichtsabstufungen','Obiectiv progresiv • trepte reale de greutate'],
   'settings.progressionHelp':['Állítsd a felszereléseddel ténylegesen kirakható legkisebb növelést. A kézisúlyzós értékek a kijelzett egységre vonatkoznak.','Set the smallest increment your equipment can actually provide. Dumbbell values refer to the displayed unit.','Stelle die kleinste mit deiner Ausrüstung tatsächlich mögliche Steigerung ein. Kurzhantelwerte beziehen sich auf die angezeigte Einheit.','Setează cea mai mică creștere posibilă cu echipamentul tău. Valorile pentru gantere se referă la unitatea afișată.'],
   'settings.stepIsolation':['Izolációs gyakorlat (kg)','Isolation exercise (kg)','Isolationsübung (kg)','Exercițiu de izolare (kg)'],
   'settings.stepPerHand':['Kézisúlyzó / kar (kg/kar)','Dumbbell / arm (kg/arm)','Kurzhantel / Arm (kg/Arm)','Ganteră / braț (kg/braț)'],
