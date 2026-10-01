@@ -20,6 +20,8 @@ Base: published v1.0.4 / `1d84c54dbcb46f3c6aaf7a94435dafd85586a91a`. Version cod
 
 The existing GitHub APK is signed by the Android Debug certificate (SHA-1 `85:DD:CE:73:93:8C:7A:39:2A:54:B6:D7:E2:A3:67:46:20:AD:61:5E`). Keep this key for upgrade-safe phone test APKs; do not overwrite the current APK signing secrets.
 
+A Play installation signed with a new production app-signing certificate cannot simply replace the currently debug-signed GitHub APK. Plan an explicit ZIP export/uninstall/Play install/ZIP restore migration for existing phone users unless a supported signing-continuity strategy is established. Do not promise an in-place production upgrade.
+
 For Play, configure `PLAY_UPLOAD_KEYSTORE_BASE64`, `PLAY_UPLOAD_STORE_PASSWORD`, `PLAY_UPLOAD_KEY_ALIAS`, `PLAY_UPLOAD_KEY_PASSWORD`; repository variables `TRAINPILOT_PRIVACY_POLICY_URL`, `TRAINPILOT_SUPPORT_EMAIL`, `TRAINPILOT_DEVELOPER_NAME`. Use a real HTTPS policy URL, support address and publisher identity. The bundled policy is a technical draft and needs these public details before publication.
 
 Enable Drive and Calendar APIs in the correct Google Cloud project. Create Android OAuth clients for `com.repforge.app` with each actual installed signing certificate: the legacy phone APK certificate and the **Play App Signing certificate** (the upload certificate alone is insufficient for Play-installed apps). Configure an External audience, required public branding/contact information and the required scopes, then complete verification/publication as required by Google. A Google Play developer account does not automatically configure this Cloud OAuth project.

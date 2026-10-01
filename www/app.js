@@ -14205,6 +14205,8 @@ var tp105DataPanel=function(){
 var tp105OpenPrivacy=async function(){if(isNative())await tp105ArchiveBridge().privacy({language:rf212Lang()});else window.open('privacy.html','_blank','noopener');};
 const tp105HealthPluginBase=healthPlugin;
 healthPlugin=function(){const p=tp105HealthPluginBase();return new Proxy(p,{get:function(target,key){const method=target[key];if(typeof method!=='function')return method;return function(args={}){return method.call(target,{...args,language:rf212Lang()});};}});};
+const tp105GoogleBridgeBase=googleBridge;
+googleBridge=function(){const p=tp105GoogleBridgeBase();return new Proxy(p,{get:function(target,key){const method=target[key];if(typeof method!=='function')return method;return function(args={}){return method.call(target,{...args,language:rf212Lang()});};}});};
 // @endsection publication-105.js
 
 // @section ready.js

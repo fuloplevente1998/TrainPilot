@@ -97,7 +97,7 @@ public class GoogleSyncPlugin extends Plugin {
     case "drivePrune":pruneSnapshots(out);break;
     default:throw new IOException("Ismeretlen művelet.");
    }succeed(out);
-  }catch(Exception e){fail(e instanceof ApiError?"Google API hiba ("+((ApiError)e).code+"). Ellenőrizd az API-beállítást és az engedélyeket, majd próbáld újra.":e.getMessage());}});
+  }catch(Exception e){fail(e instanceof ApiError?apiMessage((ApiError)e):e.getMessage());}});
  }
  private void writeSnapshot(JSObject out)throws Exception{
   String data=pending.getString("data","");JSONObject parsed=new JSONObject(data);
@@ -125,7 +125,7 @@ public class GoogleSyncPlugin extends Plugin {
   try(OutputStream o=c.getOutputStream();InputStream in=new FileInputStream(f)){
    o.write(("--"+boundary+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+meta+"\r\n--"+boundary+"\r\nContent-Type: image/jpeg\r\n\r\n").getBytes(StandardCharsets.UTF_8));byte[] b=new byte[8192];int n;while((n=in.read(b))!=-1)o.write(b,0,n);o.write(("\r\n--"+boundary+"--\r\n").getBytes(StandardCharsets.UTF_8));
   }
-  try{int status=c.getResponseCode();if(status<200||status>=300)throw new ApiError(status);JSONObject created=new JSONObject(new String(readResponse(c,LIMIT),StandardCharsets.UTF_8));if(!name.equals(created.optString("name"))||created.optLong("size",-1)!=f.length()||!md5(f).equalsIgnoreCase(created.optString("md5Checksum")))throw new IOException("A fotó Drive-ellenőrzése nem sikerült.");out.put("id",created.getString("id"));out.put("verified",true);}finally{c.disconnect();}
+  try{int status=c.getResponseCode();if(status<200||status>=300)throw apiError(c,status);JSONObject created=new JSONObject(new String(readResponse(c,LIMIT),StandardCharsets.UTF_8));if(!name.equals(created.optString("name"))||created.optLong("size",-1)!=f.length()||!md5(f).equalsIgnoreCase(created.optString("md5Checksum")))throw new IOException("A fotó Drive-ellenőrzése nem sikerült.");out.put("id",created.getString("id"));out.put("verified",true);}finally{c.disconnect();}
  }
  private void readPhoto(JSObject out)throws Exception{
   String id=pending.getString("id","");if(!id.matches("[A-Za-z0-9_-]+"))throw new IOException("Hibás Drive-fájlazonosító.");String pid=photoId(),name=photoName(pid);JSONObject meta=request("GET","https://www.googleapis.com/drive/v3/files/"+id+"?fields=name,size,mimeType",null);if(!name.equals(meta.optString("name"))||!"image/jpeg".equals(meta.optString("mimeType"))||meta.optLong("size",-1)<0||meta.optLong("size",0)>PHOTO_LIMIT)throw new IOException("Nem érvényes TrainPilot-fotó.");byte[] bytes=download("https://www.googleapis.com/drive/v3/files/"+id+"?alt=media",PHOTO_LIMIT);if(bytes.length!=meta.optLong("size"))throw new IOException("A letöltött fotó mérete eltér.");File f=photoFile(pid),tmp=new File(f.getParentFile(),pid+".tmp");try(FileOutputStream o=new FileOutputStream(tmp)){o.write(bytes);o.getFD().sync();}if(f.exists()&&!f.delete())throw new IOException("A régi helyi fotó nem cserélhető.");if(!tmp.renameTo(f))throw new IOException("A letöltött fotó nem menthető.");out.put("photoId",pid);out.put("bytes",bytes.length);out.put("verified",true);
@@ -134,7 +134,7 @@ public class GoogleSyncPlugin extends Plugin {
   String id=pending.getString("id","");if(!id.matches("[A-Za-z0-9_-]+"))throw new IOException("Hibás Drive-fájlazonosító.");String pid=photoId(),name=photoName(pid);try{JSONObject meta=request("GET","https://www.googleapis.com/drive/v3/files/"+id+"?fields=name",null);if(!name.equals(meta.optString("name")))throw new IOException("Nem ehhez a naplófotóhoz tartozó Drive-fájl.");request("DELETE","https://www.googleapis.com/drive/v3/files/"+id,null);}catch(ApiError e){if(e.code!=404&&e.code!=410)throw e;}out.put("deleted",true);
  }
  private byte[] download(String url,int limit)throws Exception{
-  for(int attempt=0;;attempt++){HttpURLConnection c=(HttpURLConnection)new URL(url).openConnection();c.setInstanceFollowRedirects(false);c.setConnectTimeout(20000);c.setReadTimeout(45000);c.setRequestMethod("GET");c.setRequestProperty("Authorization","Bearer "+token);try{int status=c.getResponseCode();if(status<200||status>=300){if(attempt<3&&GoogleRequestPolicy.transientStatus(status)){long delay=GoogleRequestPolicy.delay(attempt,c.getHeaderField("Retry-After"),System.currentTimeMillis());if(delay>=0){c.disconnect();Thread.sleep(delay);continue;}}throw new ApiError(status);}return readResponse(c,limit);}finally{c.disconnect();}}
+  for(int attempt=0;;attempt++){HttpURLConnection c=(HttpURLConnection)new URL(url).openConnection();c.setInstanceFollowRedirects(false);c.setConnectTimeout(20000);c.setReadTimeout(45000);c.setRequestMethod("GET");c.setRequestProperty("Authorization","Bearer "+token);try{int status=c.getResponseCode();if(status<200||status>=300){ApiError error=apiError(c,status);if(attempt<3&&GoogleRequestPolicy.transientStatus(status,error.reason)){long delay=GoogleRequestPolicy.delay(attempt,c.getHeaderField("Retry-After"),System.currentTimeMillis());if(delay>=0){c.disconnect();Thread.sleep(delay);continue;}}throw error;}return readResponse(c,limit);}finally{c.disconnect();}}
  }
  private byte[] readResponse(HttpURLConnection c,int limit)throws IOException{try(InputStream in=c.getInputStream();ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] b=new byte[8192];int n;while((n=in.read(b))!=-1){if(out.size()+n>limit)throw new IOException("A válasz túl nagy.");out.write(b,0,n);}return out.toByteArray();}}
  private String calendar()throws Exception{
@@ -171,9 +171,10 @@ public class GoogleSyncPlugin extends Plugin {
    HttpURLConnection c=(HttpURLConnection)new URL(url).openConnection();c.setInstanceFollowRedirects(false);c.setConnectTimeout(20000);c.setReadTimeout(30000);c.setRequestMethod(method);c.setRequestProperty("Authorization","Bearer "+token);c.setRequestProperty("Accept","application/json");
    try{if(body!=null){c.setDoOutput(true);c.setRequestProperty("Content-Type",type);try(OutputStream o=c.getOutputStream()){o.write(body.getBytes(StandardCharsets.UTF_8));}}
     int status=c.getResponseCode();if(status<200||status>=300){
-     if(retryable&&attempt<3&&GoogleRequestPolicy.transientStatus(status)){long delay=GoogleRequestPolicy.delay(attempt,c.getHeaderField("Retry-After"),System.currentTimeMillis());if(delay>=0){c.disconnect();Thread.sleep(delay);continue;}}
+     ApiError error=apiError(c,status);
+     if(retryable&&attempt<3&&GoogleRequestPolicy.transientStatus(status,error.reason)){long delay=GoogleRequestPolicy.delay(attempt,c.getHeaderField("Retry-After"),System.currentTimeMillis());if(delay>=0){c.disconnect();Thread.sleep(delay);continue;}}
 
-     if(status==401)Identity.getAuthorizationClient(getContext()).clearToken(ClearTokenRequest.builder().setToken(token).build());throw new ApiError(status);
+     if(status==401)Identity.getAuthorizationClient(getContext()).clearToken(ClearTokenRequest.builder().setToken(token).build());throw error;
     }
     if(status==204)return new JSONObject();String text=new String(readResponse(c,LIMIT),StandardCharsets.UTF_8);return text.isEmpty()?new JSONObject():new JSONObject(text);
    }finally{c.disconnect();}
@@ -201,7 +202,21 @@ public class GoogleSyncPlugin extends Plugin {
   List<Scope> scopes=new ArrayList<>();for(String s:new String[]{"openid","https://www.googleapis.com/auth/userinfo.email","https://www.googleapis.com/auth/userinfo.profile","https://www.googleapis.com/auth/drive.appdata","https://www.googleapis.com/auth/calendar.app.created","https://www.googleapis.com/auth/calendar.calendarlist.readonly"})scopes.add(new Scope(s));
   Identity.getAuthorizationClient(getActivity()).revokeAccess(RevokeAccessRequest.builder().setAccount(new Account(email,"com.google")).setScopes(scopes).build()).addOnSuccessListener(v->{prefs().edit().clear().apply();succeed(new JSObject());}).addOnFailureListener(e->fail("Google permission revocation failed. Retry online; access has not been reported as revoked."));
  }
- private static class ApiError extends IOException{final int code;ApiError(int c){code=c;}}
+ private ApiError apiError(HttpURLConnection connection,int code){
+  String reason="";try(InputStream in=connection.getErrorStream();ByteArrayOutputStream out=new ByteArrayOutputStream()){if(in!=null){byte[] b=new byte[1024];int n;while((n=in.read(b))!=-1&&out.size()+n<=8192)out.write(b,0,n);JSONObject error=new JSONObject(out.toString("UTF-8")).optJSONObject("error");JSONArray details=error==null?null:error.optJSONArray("errors");if(details!=null&&details.length()>0)reason=details.getJSONObject(0).optString("reason");}}
+  catch(Exception ignored){}return new ApiError(code,reason);
+ }
+ private String apiMessage(ApiError error){
+  String[] messages;
+  if(error.code==401)messages=new String[]{"A Google-engedély lejárt vagy visszavonták. Indíts kézi szinkront az új engedélykéréshez.","Google access expired or was revoked. Run manual sync to request access again.","Google-Zugriff ist abgelaufen oder widerrufen. Manuell synchronisieren, um erneut Zugriff anzufordern.","Accesul Google a expirat sau a fost revocat. Pornește sincronizarea manuală pentru o nouă autorizare."};
+  else if(error.reason.equals("storageQuotaExceeded"))messages=new String[]{"A Google Drive tárhelye megtelt. Szabadíts fel helyet, majd indíts kézi szinkront.","Google Drive storage is full. Free some space, then run manual sync.","Google Drive ist voll. Speicher freigeben und manuell synchronisieren.","Spațiul Google Drive este plin. Eliberează spațiu și sincronizează manual."};
+  else if(error.code==429||GoogleRequestPolicy.transientStatus(error.code,error.reason))messages=new String[]{"A Google átmenetileg nem fogadja a kérést. Várj, majd próbáld újra; a helyi adatok megmaradnak.","Google is temporarily refusing requests. Wait and retry; local data remains available.","Google lehnt Anfragen vorübergehend ab. Warten und erneut versuchen; lokale Daten bleiben erhalten.","Google refuză temporar cererile. Așteaptă și reîncearcă; datele locale rămân disponibile."};
+  else if(error.code==403)messages=new String[]{"A Google nem engedélyezte ezt a műveletet. Ellenőrizd az engedélyt, az API/OAuth beállítást és a tanúsítványt.","Google did not permit this operation. Check permission, API/OAuth configuration and the signing certificate.","Google erlaubt diesen Vorgang nicht. Berechtigung, API/OAuth-Einstellung und Zertifikat prüfen.","Google nu a permis operațiunea. Verifică permisiunea, configurația API/OAuth și certificatul."};
+  else messages=new String[]{"A Google-művelet nem sikerült.","The Google operation failed.","Der Google-Vorgang ist fehlgeschlagen.","Operațiunea Google a eșuat."};
+  String lang=pending==null?Locale.getDefault().getLanguage():pending.getString("language",Locale.getDefault().getLanguage());return messages[lang.equals("hu")?0:lang.equals("de")?2:lang.equals("ro")?3:1]+" ("+error.code+")";
+ }
+ private static class ApiError extends IOException{final int code;final String reason;ApiError(int c,String r){code=c;reason=r;}}
+
  private synchronized void succeed(JSObject out){PluginCall c=pending;pending=null;token=null;if(c!=null)c.resolve(out);}
  private synchronized void fail(String message){PluginCall c=pending;pending=null;token=null;if(c!=null)c.reject(message==null?"Nem sikerült a Google-művelet.":message);}
 }

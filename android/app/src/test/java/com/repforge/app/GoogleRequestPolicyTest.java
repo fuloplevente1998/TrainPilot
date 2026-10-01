@@ -19,5 +19,8 @@ public class GoogleRequestPolicyTest {
         assertTrue(GoogleRequestPolicy.transientStatus(429));
         assertFalse(GoogleRequestPolicy.transientStatus(401));
         assertFalse(GoogleRequestPolicy.transientStatus(403));
+        assertTrue(GoogleRequestPolicy.transientStatus(403,"userRateLimitExceeded"));
+        assertFalse(GoogleRequestPolicy.transientStatus(403,"insufficientPermissions"));
+        assertEquals(7000L,GoogleRequestPolicy.delay(0,"Thu, 01 Jan 1970 00:00:07 GMT",0));
     }
 }

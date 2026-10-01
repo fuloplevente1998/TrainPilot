@@ -1,7 +1,7 @@
 package com.repforge.app;
 
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 final class GoogleRequestPolicy {
     static boolean canRetry(String method, String url, String eventId) {
@@ -12,12 +12,15 @@ final class GoogleRequestPolicy {
     static boolean transientStatus(int code) {
         return code == 429 || code == 500 || code == 502 || code == 503 || code == 504;
     }
+    static boolean transientStatus(int code, String reason) {
+        return transientStatus(code) || code == 403 && (reason.equals("rateLimitExceeded") || reason.equals("userRateLimitExceeded"));
+    }
     static long delay(int attempt, String retryAfter, long now) {
         long delay = 1000L * (1L << attempt);
         if (retryAfter != null) {
             try { delay = Math.max(delay, Long.parseLong(retryAfter) * 1000L); }
             catch (NumberFormatException e) {
-                try { delay = Math.max(delay, ZonedDateTime.parse(retryAfter, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant().toEpochMilli() - now); }
+                try { delay = Math.max(delay, new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US).parse(retryAfter).getTime() - now); }
                 catch (Exception ignored) { }
             }
         }
