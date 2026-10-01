@@ -9,6 +9,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
   await page.evaluate(lang=>{db.set('language',lang);go('settings');},language);
   await page.waitForSelector('.tp105-data');await page.locator('.tp105-data>summary').click();
   const result=await page.evaluate(()=>({text:document.querySelector('.tp105-data').textContent,checked:document.querySelector('.tp105-data input').checked,overflow:document.documentElement.scrollWidth>innerWidth+1,buttons:[...document.querySelectorAll('.tp105-data button')].map(x=>x.getAttribute('onclick'))}));
+  await page.keyboard.press('Tab');
   const consentStyle=await page.evaluate(()=>{
    const input=document.querySelector('.tp105-health-consent input'),before=getComputedStyle(input);const off={appearance:before.appearance,width:before.width,radius:before.borderRadius};
    input.checked=true;input.focus();const selected=getComputedStyle(input),mark=getComputedStyle(input,'::after');
@@ -52,9 +53,11 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
   Capacitor.Plugins.GoogleSync.driveList=()=>new Promise((resolve,reject)=>{window.tp105FailNetwork=()=>reject(Object.assign(Error('A Google nem érhető el hálózati hiba miatt.'),{code:'GOOGLE_NETWORK'}));});
   window.tp105PendingSync=syncCloud(true);
  });
+ await page.locator('.tp105-data>summary').click();
  await page.locator('[onclick="tp105Archive(false)"]').click();await page.waitForFunction(()=>tp105SyncProbe.saved===2&&!window.TrainPilotBackupBusy);
  assert.equal(await page.evaluate(()=>cloudBusy),true);assert.equal(await page.evaluate(()=>tp105SyncProbe.alerts.some(x=>x.includes('Előbb fejezd be'))),false);
  await page.evaluate(async()=>{tp105FailNetwork();await tp105PendingSync;});assert.equal(await page.evaluate(()=>cloudBusy),false);
+ await page.locator('.tp105-data>summary').click();
  await page.locator('[onclick="tp105Archive(false)"]').click();await page.waitForFunction(()=>tp105SyncProbe.saved===3&&!window.TrainPilotBackupBusy);
 
  assert.equal(await page.evaluate(()=>cloudDriveStage),'');assert.deepEqual(probeErrors,[]);await page.close();

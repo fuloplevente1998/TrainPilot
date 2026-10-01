@@ -103,7 +103,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   await page.waitForFunction(n=>document.querySelectorAll('.tp177-chart-column').length===n,count);
   assert.equal(await page.locator('.tp177-periods button[data-period="'+period+'"]').getAttribute('aria-pressed'),'true');
   if(period==='7d')assert.equal(await page.locator('.tp177-chart-column').evaluateAll(xs=>new Set(xs.map(x=>x.getAttribute('aria-label').split(';')[0])).size),7,'7 days are seven separate daily buckets');
-  if(period==='1d')assert.equal(await page.locator('.tp177-chart-column').first().getAttribute('aria-label').then(s=>s.split(';')[0]),new Intl.DateTimeFormat('hu-HU',{year:'numeric',month:'short',day:'numeric'}).format(new Date()),'1 day is today');
+  if(period==='1d')assert.equal(await page.locator('.tp177-chart-column').first().getAttribute('aria-label').then(s=>s.split(';')[0]),await page.evaluate(()=>new Intl.DateTimeFormat('hu-HU',{year:'numeric',month:'short',day:'numeric'}).format(new Date())),'1 day is today in the browser timezone');
   if(period==='3m'){
    await page.waitForFunction(()=>{const el=document.querySelector('.tp177-chart-scroll');return Math.abs(el.scrollLeft-(el.scrollWidth-el.clientWidth))<2});
    const pos=await latest();assert.ok(pos.max>0&&Math.abs(pos.left-pos.max)<2,'long chart opens on the latest bucket');
