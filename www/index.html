@@ -650,7 +650,7 @@
    for(const remote of remotes||[]){const x=remote[key];if(x===undefined||canonical(selected)===canonical(x))continue;if(base&&canonical(x)===canonical(base[key]))continue;if(base&&canonical(selected)===canonical(base[key]))selected=x;else selected=choose(key,selected,x)}
    out[key]=selected;
   }
-  return out;
+  return typeof tp105MergeExtras==='function'?tp105MergeExtras(out,local,remotes,base,choose):out;
  };
  const tp18SnapshotSelection=files=>{
   const groups=new Map();
@@ -667,23 +667,29 @@
  };
  mergeSync=function(local,remotes,base,choose){return tp18MergeSync(local,remotes,base,choose,[])};
  syncCloud=async function(silent=false){
-  if(cloudBusy||!cloudProfile)return;
+  if(cloudBusy||window.TrainPilotBackupBusy||!cloudProfile)return;
   if(state.session){showCloudMessage(tp149T('cloud.driveAfterWorkout'));return}
   if(navigator.onLine===false){showCloudMessage(tp149T('cloud.offlineDrive'));return}
-  cloudBusy=true;showCloudMessage(tp149T('cloud.syncingDrive'));
+  cloudBusy=true;cloudActiveOperation='drive';cloudDriveStage='';showCloudMessage(tp149T('cloud.syncingDrive'));
   try{
    const owner=cloudProfile.sub,bridge=googleBridge(),local=validateSync(syncData()),startState=canonicalSyncData(local),files=(await bridge.driveList({silent:silent})).files||[];
    const selected=tp18SnapshotSelection(files),remotes=[],archives=[];
+   const latest=new Map(selected.current.map(f=>[/^repforge-sync-([a-z0-9-]{36})-/.exec(f.name)[1],f]));
+   const heads=driveLatestHeads(latest),base=db.get('cloudBase:'+owner,null);
+   // Only skip after this recovery-aware path has completed one full legacy scan.
+   if(base&&db.get('cloudScan105:'+owner,0)===1&&driveHeadsUnchanged(heads,db.get('cloudHeads:'+owner,null))&&canonicalSyncData(local)===canonicalSyncData(base)&&!driveHasPendingPhotos(local.history||[])){
+    db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{drive:new Date().toISOString()}));showCloudMessage(tp149T('cloud.driveUnchanged'));return;
+   }
    const readSnapshot=async(f,strict)=>{
     try{
      const snap=JSON.parse((await bridge.driveRead({id:f.id,silent:silent})).data);
      if(snap.app!=='RepForgeSync'||snap.schema!==1||snap.owner!==owner)throw Error(tp149T('cloud.unknownBackup'));
-     return validateSync(snap.data);
+     return validateSync(typeof tp105Project==='function'?tp105Project(snap.data,tp105HealthConsent()):snap.data);
     }catch(e){if(strict)throw e;return null}
    };
    for(const f of selected.current){const d=await readSnapshot(f,true);if(d)remotes.push(d)}
    for(const f of selected.archive){const d=await readSnapshot(f,false);if(d)archives.push(d)}
-   const base=db.get('cloudBase:'+owner,null);let merged,conflict=false;
+   let merged,conflict=false,writtenDevice=null;
    const attempt=chooser=>validateSync(tp18MergeSync(local,remotes,base,chooser,archives));
    try{merged=attempt(function(){conflict=true;throw Error('__TP18_CLOUD_CONFLICT__')})}
    catch(e){if(e?.message!=='__TP18_CLOUD_CONFLICT__')throw e}
@@ -697,11 +703,16 @@
    let device=db.get('cloudDevice',null);if(!device){device=crypto.randomUUID();db.set('cloudDevice',device)}
    if(!base||canonicalSyncData(merged)!==canonicalSyncData(base)||!files.length){
     const r=await bridge.driveWrite({silent:silent,data:JSON.stringify({app:'RepForgeSync',schema:1,owner:owner,device:device,data:merged})});
-    if(!r.verified)throw Error(tp149T('cloud.verifyFailed'));
+    if(!r.verified)throw Error(tp149T('cloud.verifyFailed'));writtenDevice=device;if(r.id)heads[device]=r.id;
    }
+   await waitForCloudBackup();
    if(state.session||canonicalSyncData(syncData())!==startState)throw Error(tp149T('cloud.changedLocal'));
-   storeMerged(merged);db.set('cloudBase:'+owner,merged);db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{drive:new Date().toISOString()}));
+   storeMerged(merged);document.documentElement.lang=rf212Lang();rf200ApplyTheme();db.set('cloudBase:'+owner,merged);db.set('cloudHeads:'+owner,heads);db.set('cloudScan105:'+owner,1);db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{drive:new Date().toISOString()}));
+   const maintain=writtenDevice&&typeof bridge.drivePrune==='function';
+   if(maintain){cloudActiveOperation='maintenance';cloudDriveStage=tp149T('cloud.driveCleanup');}
    showCloudMessage(tp149T('cloud.driveDone'));render();
+   if(typeof rf130DeleteSyncedPhotos==='function')await rf130DeleteSyncedPhotos(merged);
+   if(maintain){try{db.set('cloudRetention105',await bridge.drivePrune({device:writtenDevice,silent:true}));}catch(e){db.set('cloudRetention105',{error:e.message});}}
   }catch(e){showCloudMessage(e.message);if(!silent)alert(cloudMessage)}finally{finishCloud()}
  };
  window.TrainPilotIssue18={version:'18',mergeSync:tp18MergeSync,selectSnapshots:tp18SnapshotSelection,legacyId};

@@ -1,8 +1,8 @@
 {
-  "version": "1.0.4",
-  "displayVersion": "1.0.4",
-  "versionCode": 2684,
-  "baselineCommit": "d0a3881ed9d8ec9d1238a914b6e6cab5da1e7c3e",
+  "version": "1.0.5",
+  "displayVersion": "1.0.5",
+  "versionCode": 2687,
+  "baselineCommit": "1d84c54dbcb46f3c6aaf7a94435dafd85586a91a",
   "source": "www/app.js",
   "sourceCommit": ""
 }

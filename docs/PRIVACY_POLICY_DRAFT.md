@@ -1,5 +1,7 @@
 # TrainPilot adatvédelmi tájékoztató – publikálás előtti tervezet
 
+Az 1.0.5 jelölt aktuális, négy nyelvű szövege: `www/privacy.html` és a natív `PrivacyPolicy.java`. Az alábbi korábbi tervezetet a publikáláshoz ezekkel együtt kell felülvizsgálni. Health-adatok tartósan tárolódnak helyben; fájl- és Drive-mentésük alapból kikapcsolt, külön engedélyezhető.
+
 Ez a dokumentum kiinduló tervezet a Google Play és Google OAuth publikáláshoz. A végleges változatot publikus HTTPS oldalon kell közzétenni, és a tényleges kiadási működéssel egyezően kell tartani.
 
 ## Kezelt adatok

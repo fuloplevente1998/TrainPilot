@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
@@ -30,6 +32,15 @@ jobs:
         run: npm ci
       - name: Install Chromium
         run: npx --no-install playwright install --with-deps chromium
+      - name: Benchmark approved v1.0.4 on the same runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_DIR="$RUNNER_TEMP/trainpilot-perf-baseline"
+          git worktree add --detach "$BASE_DIR" 1d84c54dbcb46f3c6aaf7a94435dafd85586a91a
+          ln -s "$GITHUB_WORKSPACE/node_modules" "$BASE_DIR/node_modules"
+          cd "$BASE_DIR"
+          node tests/browser/phase7-performance-19.cjs | tee "$GITHUB_WORKSPACE/phase7-before.log"
       - name: Verify Progress daily filters and latest chart position
         run: node tests/browser/progress-177-issue60.cjs
       - name: Run reproducible benchmark
@@ -45,6 +56,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: TrainPilot-performance-${{ github.run_id }}
-          path: phase7-metrics.log
+          path: |
+            phase7-before.log
+            phase7-metrics.log
           if-no-files-found: ignore
           retention-days: 30

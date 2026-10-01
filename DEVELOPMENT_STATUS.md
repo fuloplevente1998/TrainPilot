@@ -1,15 +1,19 @@
 # TrainPilot — Development Status
 
-Last updated: **2026-09-27**. Earlier Phase 5–7 history remains below; it is historical, not the current release state. See [docs/PHASE_5_6_7_ROADMAP.md](docs/PHASE_5_6_7_ROADMAP.md) and the permanent [performance regression policy](docs/PERFORMANCE_REGRESSION_POLICY.md).
+Last updated: **2026-10-02 (Europe/Budapest)**. Earlier Phase 5–7 history remains below; it is historical. See [docs/PHASE_5_6_7_ROADMAP.md](docs/PHASE_5_6_7_ROADMAP.md) and the permanent [performance regression policy](docs/PERFORMANCE_REGRESSION_POLICY.md).
 
-## Current stable baseline and next phase
+## Current release
 
-- **Current application change: TrainPilot 1.0.1 / Android display version 1.0 / versionCode 2676.** In Progress, total volume, previous-period comparison and two-row date filters occupy the left side of one compact panel; the small chart occupies the right. Expanding shows a wider chart. Bar selection and period-average duration remain available.
-- **Verified CI:** the PR's Release Gate (Node, Chromium UI, signed test APK), and post-merge main Quick Validation and Phase 7 Performance all passed. A physical 1.7.7 → 1.0.0 (2675) data-preserving update test has **not** been independently confirmed.
-- **Publication:** the latest published signed binary is **TrainPilot 1.0.0 / versionCode 2675**, GitHub Release `v1.0.0`. The new `v1.0.1` release keeps that earlier release and includes the 2676 APK plus source ZIP after validation and phone approval.
-- **Previous changes:** #60–#63 and #66–#69 are merged; the 1.0.0 two-tab Journal, shared red-X detailed Statistics modal, Coach → Progress route and equipment/exclusion toggles remain as accepted.
-- **Archive:** the private TrainPilot-Archive contains the 1.0.0 application source, assets, full public Git bundle and the 17 historical GitHub Releases. The old public tags and side branches have been removed; no main-history rewriting or force push.
+- **TrainPilot 1.0.5 / versionCode 2687**, based on published v1.0.4 / `1d84c54dbcb46f3c6aaf7a94435dafd85586a91a`. Application ID and APK signer are preserved.
+- **Scope:** complete Drive dataset merge; opt-in Health export; verified photo ZIP backup and transactional restore; separate erasure/revocation controls; Calendar recreation; bounded request retry and snapshot retention; localized privacy/network messages; patched `brace-expansion` build dependency.
+- **Latest fix:** ZIP export reserves the committed local dataset without waiting for Drive/Calendar networking. Drive defers local application until the picker/export closes and rechecks local edits; local photo deletion follows a successful tombstone commit. Network failures release sync state and schedule automatic retries at least 60 seconds apart. Manual sync remains available.
+- **Design:** the Health export checkbox shares the app's theme-aware 26px checkbox, selected accent color, checkmark, keyboard focus and minimum 44px label target.
+- **Publication authorization:** on 2026-10-02 the user explicitly authorized this final version to merge into main and requested a GitHub Release after validation. This replaces the draft-only restriction for PR #91. It is not a claim that the new build has already passed a physical-phone test.
+- **Phone evidence:** the preceding 2686 APK still blocked ZIP with automatic sync enabled; disabling automatic sync allowed export. The final 2687 fix must still be observed on a real device. Keep future physical upgrade, photo round-trip and account authorization checks separate from CI.
 - **Performance:** retain lazy Journal/Programs details, operation-scoped history snapshots, batched Coach statistics and the permanent performance regression policy.
+- **Google Play/Cloud:** production signing, public policy/contact details, OAuth clients and external-account validation remain configuration work. A GitHub release does not complete these steps.
+
+Release details: [v1.0.5 notes](docs/releases/v1.0.5.md), [implementation and Console work](docs/PUBLICATION_1_0_5.md).
 
 ## Phase 5–7 acceptance boundaries
 
@@ -71,11 +75,11 @@ This requirement is part of **Phase 3 (#29 + #30)** unless explicitly moved late
 2. Confirm phase issue acceptance criteria; implement its scope with targeted tests and protected earlier behavior.
 3. Run targeted tests, **full Node/regression**, **full Chromium/UI**, and build a **signed, upgrade-safe Android APK** with APK/package/source/version checks.
 4. Deliver that phase's APK for a physical Android phone test. If rejected, fix the **same phase branch**, repeat tests and deliver another APK.
-5. **No merge until explicit user phone approval**. After approval merge to `main`, verify the post-merge workflow, record accepted commit/PR/issue status.
+5. **No merge until explicit user approval**. Default to phone approval; an explicit instruction to publish the current validated build can override that gate and must be recorded separately from physical-phone evidence. After approval merge to `main`, verify the post-merge workflow, record accepted commit/PR/issue status.
 6. Only then begin the next UX work from the newly approved `main`. Every UX release requires its own testable, signed APK. Documentation/test-only maintenance cannot silently alter the app artifact.
 
 Never trade data correctness, historical Journal recovery, Drive merge/tombstone safety, app signing continuity, Coach logic, or accepted UX for UI simplification or latency improvements. A completed CI run, a draft PR and a mockup are not phone acceptance.
 
 ## Recovery instruction
 
-At the beginning of a future TrainPilot conversation, read this file, the completed Phase 5–7 roadmap and the permanent performance policy. Verify the current `main` source and the separately published **1.0.0 / 2675** binary independently before making new branches. The signed-APK → physical-phone-approval → merge-to-main → post-merge-validation gate remains mandatory for application/UX changes. The private TrainPilot-Archive and a separate cloud backup preserve historical refs/releases. Any 1.0.1 upgrade must retain application ID, signing certificate and data compatibility, while using Android versionCode 2676.
+At the beginning of a future TrainPilot conversation, read this file, the completed Phase 5–7 roadmap and the permanent performance policy. Verify the current `main` source and its published APK independently. Preserve application ID, signing certificate and data compatibility. The 1.0.5 / 2687 publication was explicitly authorized before its final physical-phone test; do not mistake that exception for a completed device test. Future application changes default to signed APK → physical-phone approval → main merge → post-merge validation.

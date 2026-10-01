@@ -1,3 +1,8 @@
+// Recover an interrupted photo+data restore before the application reads its database.
+(function(){let token='';try{const m=JSON.parse(localStorage.getItem('repforge:archiveRestore105')||'null');if(m){token=m.token;for(const [k,v]of m.old){if(v===null)localStorage.removeItem('repforge:'+k);else localStorage.setItem('repforge:'+k,v);}}}catch(e){throw Error('Interrupted backup restore requires recovery: '+e.message);}
+window.TrainPilotRestore105Pending=token;
+window.addEventListener('DOMContentLoaded',async function(){if(window.Capacitor?.isNativePlatform?.()!==true)return;const p=window.Capacitor?.Plugins?.BackupArchive||window.Capacitor?.registerPlugin?.('BackupArchive');if(!p)return;window.TrainPilotBackupBusy=true;try{await p.recover({rollbackToken:token});localStorage.removeItem('repforge:archiveRestore105');window.TrainPilotBackupBusy=false;window.TrainPilotRestore105Pending='';if(window.TrainPilotBoot?.loading)window.TrainPilotBoot.finish();}catch(e){alert(e.message);}});
+})();
 /* TrainPilot 1.0.2 — canonical application source.
  * Sections retain the tested initialization order of test2.
  * Edit this file directly; no generated version layers or build-time patches.
@@ -72,9 +77,9 @@ var exportData = async function exportData(){
 var chooseImport = async function chooseImport(){
  if(state.session){alert('Előbb fejezd be az edzést.');return;}
  if(!isNative()){document.getElementById('importFile').click();return;}
- try{const r=await nativeFiles().open();if(!r.cancelled)restoreText(r.data);}catch(e){alert('Nem sikerült visszatölteni.\n'+(e.message||e));}
+ try{const r=await nativeFiles().open();if(!r.cancelled)await restoreText(r.data);}catch(e){alert('Nem sikerült visszatölteni.\n'+(e.message||e));}
 };
-var importData = async function importData(file){if(!file)return;try{if(file.size>20*1024*1024)throw Error('Maximum 20 MB.');restoreText(await file.text());}catch(e){alert('Hibás mentésfájl.\n'+e.message);}finally{const e=document.getElementById('importFile');if(e)e.value='';}};
+var importData = async function importData(file){if(!file)return;try{if(file.size>20*1024*1024)throw Error('Maximum 20 MB.');await restoreText(await file.text());}catch(e){alert('Hibás mentésfájl.\n'+e.message);}finally{const e=document.getElementById('importFile');if(e)e.value='';}};
 var validateBackup = function validateBackup(d){
  const fail=()=>{throw Error('A fájl szerkezete nem érvényes RepForge-mentés.');};
  const obj=x=>x&&typeof x==='object'&&!Array.isArray(x),str=x=>typeof x==='string'&&x.length<=2000,num=x=>typeof x==='number'&&Number.isFinite(x)&&x>=0,id=x=>typeof x==='string'&&/^[a-z0-9-]{1,80}$/.test(x);
@@ -199,12 +204,41 @@ var showCloudMessage = function showCloudMessage(t){cloudMessage=t||'';const e=d
 var calendarSyncPending=false;
 var cloudDriveStage='';
 var cloudActiveOperation='';
-var finishCloud = function finishCloud(){cloudBusy=false;cloudActiveOperation='';if(calendarSyncPending){calendarSyncPending=false;void syncCalendar(false);return;}if(cloudDirty){cloudDirty=false;cloudChanged();}};
+var cloudRetryAt=0;
+var cloudBackupWaiters=[];
+var waitForCloudBackup=function(){
+ if(!window.TrainPilotBackupBusy)return Promise.resolve();
+ cloudDriveStage=tp149T('cloud.driveBackupWait');showCloudMessage(cloudMessage);
+ return new Promise(function(resolve){cloudBackupWaiters.push(resolve);});
+};
+var releaseCloudBackup=function(){const pending=cloudBackupWaiters.splice(0);for(const resolve of pending)resolve();};
+var finishCloud = function finishCloud(){
+ cloudBusy=false;cloudActiveOperation='';cloudDriveStage='';showCloudMessage(cloudMessage);
+ // A file picker/restore can remain open after Drive maintenance finishes.
+ // Keep queued work until the backup releases its own lock.
+ if(window.TrainPilotBackupBusy)return;
+ if(calendarSyncPending){calendarSyncPending=false;void syncCalendar(false);return;}
+ if(cloudDirty){cloudDirty=false;cloudChanged();}
+};
 var initCloud = async function initCloud(){if(!isNative()||!googleBridge()?.status)return;try{const r=await googleBridge().status();cloudProfile=r.profile?JSON.parse(r.profile):null;if(state.tab==='settings')render();cloudChanged();}catch(e){showCloudMessage(e.message);}};
 var connectGoogle = async function connectGoogle(){if(cloudBusy)return;if(!isNative()){alert('A Google-kapcsolat Androidon érhető el.');return;}if(!confirm('A kiválasztott Google-fiókhoz kapcsolod a RepForge-ot? A szinkron későbbi bekapcsolása a telefon jelenlegi edzésadatait is ebbe a fiókba menti.'))return;cloudBusy=true;try{const r=await googleBridge().connect();cloudProfile=JSON.parse(r.profile);db.set('cloudPrefs',{drive:false,calendar:false});db.set('cloudStatus',{});render();alert('Google-profil kapcsolva. A Drive és a naptár engedélyét külön kérjük, a funkció bekapcsolásakor.');}catch(e){alert(e.message);}finally{finishCloud();}};
 var disconnectGoogle = async function disconnectGoogle(){if(cloudBusy){alert('Várd meg a szinkron végét.');return;}if(!confirm('Kijelentkezel? A szinkron leáll, a helyi és a Google-ban tárolt adatok megmaradnak.'))return;try{await googleBridge().disconnect();cloudProfile=null;db.set('cloudPrefs',{drive:false,calendar:false});db.set('cloudStatus',{});cloudMessage='';render();}catch(e){alert(e.message);}};
 var setCloudOption = async function setCloudOption(key,on){const p=cloudPrefs();p[key]=on;db.set('cloudPrefs',p);if(on){if(key==='drive')await syncCloud(false);else await syncCalendar(false);}};
-var cloudChanged = function cloudChanged(){if(!cloudProfile||typeof setTimeout==='undefined')return;if(cloudBusy){cloudDirty=true;return;}clearTimeout(cloudTimer);cloudTimer=setTimeout(async()=>{if(cloudBusy){cloudDirty=true;return;}if(cloudPrefs().calendar)await syncCalendar(true);if(cloudPrefs().drive)await syncCloud(true);},1800);};
+var cloudChanged = function cloudChanged(){
+ if(!cloudProfile||typeof setTimeout==='undefined')return;
+ if(!cloudPrefs().drive&&!cloudPrefs().calendar){cloudDirty=false;clearTimeout(cloudTimer);return;}
+ if(cloudBusy||window.TrainPilotBackupBusy){cloudDirty=true;return;}
+ clearTimeout(cloudTimer);
+ cloudTimer=setTimeout(async()=>{
+  cloudTimer=null;
+  if(cloudBusy||window.TrainPilotBackupBusy){cloudDirty=true;return;}
+  if(cloudPrefs().calendar)await syncCalendar(true);
+  // A backup can start, or connectivity can fail, while Calendar is awaiting Google.
+  if(cloudBusy||window.TrainPilotBackupBusy){cloudDirty=true;return;}
+  if(Date.now()<cloudRetryAt){cloudChanged();return;}
+  if(cloudPrefs().drive)await syncCloud(true);
+ },Math.max(1800,cloudRetryAt-Date.now()));
+};
 var canonical = function canonical(x){if(Array.isArray(x))return '['+x.map(canonical).join(',')+']';if(x&&typeof x==='object')return '{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+canonical(x[k])).join(',')+'}';return JSON.stringify(x);};
 var canonicalSyncData = function canonicalSyncData(d){return canonical({history:d.history,weights:d.weights,settings:d.settings,exercises:d.exercises,plan:d.plan,scheduled:d.scheduled});};
 var syncData = function syncData(){return {...makeBackup(),scheduled:scheduled()};};
@@ -226,7 +260,7 @@ var mergeSync = function mergeSync(local,remotes,base,choose){
 var validateSync = function validateSync(d){validateBackup(d);if(!Array.isArray(d.scheduled)||d.scheduled.length>500)throw Error('Hibás tervezett edzések.');for(const p of d.scheduled)if(!p||typeof p.id!=='string'||!/^[a-z0-9-]{8,80}$/.test(p.id)||!['A','B'].includes(p.workout)||!Number.isFinite(Date.parse(p.start))||!Number.isFinite(Date.parse(p.end))||Date.parse(p.end)<=Date.parse(p.start)||typeof p.updatedAt!=='number'||!Number.isFinite(p.updatedAt)||typeof p.cancelled!=='boolean')throw Error('Hibás tervezett edzés.');return d;};
 var storeMerged = function storeMerged(d){const keys=['history','weights','settings','exercises','plan','scheduled'],old=keys.map(k=>localStorage.getItem('repforge:'+k));try{for(const k of keys)localStorage.setItem('repforge:'+k,JSON.stringify(d[k]));}catch(e){for(const k of keys)localStorage.removeItem('repforge:'+k);keys.forEach((k,i)=>{if(old[i]!=null)localStorage.setItem('repforge:'+k,old[i]);});throw Error('Nincs elég hely a szinkronadatoknak.');}};
 var syncCloud = async function syncCloud(silent=false){
- if(cloudBusy||!cloudProfile)return;if(state.session){showCloudMessage('Drive-szinkron az edzés befejezése után.');return;}if(navigator.onLine===false){showCloudMessage('Offline: a helyi adatok megvannak, a szinkron internetre vár.');return;}
+ if(cloudBusy||window.TrainPilotBackupBusy||!cloudProfile)return;if(state.session){showCloudMessage('Drive-szinkron az edzés befejezése után.');return;}if(navigator.onLine===false){showCloudMessage('Offline: a helyi adatok megvannak, a szinkron internetre vár.');return;}
  cloudBusy=true;showCloudMessage('Drive-szinkron…');
  try{
   const owner=cloudProfile.sub,bridge=googleBridge(),local=validateSync(syncData()),startState=canonicalSyncData(local),files=(await bridge.driveList({silent})).files||[];
@@ -239,14 +273,16 @@ var syncCloud = async function syncCloud(silent=false){
   if(state.session||canonicalSyncData(syncData())!==startState)throw Error('Közben változtak az adatok vagy edzés indult. Indítsd újra a szinkront.');
   let device=db.get('cloudDevice',null);if(!device){device=crypto.randomUUID();db.set('cloudDevice',device);}
   if(!base||canonicalSyncData(merged)!==canonicalSyncData(base)||!files.length){const r=await bridge.driveWrite({silent,data:JSON.stringify({app:'RepForgeSync',schema:1,owner,device,data:merged})});if(!r.verified)throw Error('A Drive-mentés ellenőrzése nem sikerült.');}
+  await waitForCloudBackup();
   if(state.session||canonicalSyncData(syncData())!==startState)throw Error('Közben változtak az adatok. A helyi változásokat a következő szinkron egyesíti.');
   storeMerged(merged);db.set('cloudBase:'+owner,merged);db.set('cloudStatus',{...db.get('cloudStatus',{}),drive:new Date().toISOString()});showCloudMessage('Drive-szinkron kész.');render();
+  if(typeof rf130DeleteSyncedPhotos==='function')await rf130DeleteSyncedPhotos(merged);
  }catch(e){showCloudMessage(e.message);if(!silent)alert(cloudMessage);}finally{finishCloud();}
 };
 var eventId = async function eventId(key){const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(key));return 'rf'+Array.from(new Uint8Array(hash),x=>x.toString(16).padStart(2,'0')).join('');};
 var workoutDescription = function workoutDescription(h){return 'RepForge – teljesített edzés\n'+h.exercises.map(e=>e.hu+': '+e.sets.filter(s=>s.done).map(s=>formatSet(e,s)).join('; ')).join('\n');};
 var calendarEvents = async function calendarEvents(){const events=new Map();for(const p of scheduled()){const id=await eventId('plan:'+p.id);events.set(id,p.cancelled?{id,cancelled:true}:{id,summary:'RepForge – Full Body '+p.workout,description:'Tervezett edzés',start:{dateTime:p.start},end:{dateTime:p.end},reminders:{useDefault:false,overrides:[{method:'popup',minutes:30}]}});}for(const h of history()){if(!Number.isFinite(Date.parse(h.finished))||!Number.isFinite(Date.parse(h.started))||Date.parse(h.finished)<=Date.parse(h.started))continue;const id=await eventId(h.scheduleId?'plan:'+h.scheduleId:'workout:'+recordKey('history',h));events.set(id,{id,summary:'✓ RepForge – Full Body '+h.workout,description:workoutDescription(h),start:{dateTime:h.started},end:{dateTime:h.finished},reminders:{useDefault:false}});}return [...events.values()];};
-var syncCalendar = async function syncCalendar(silent=false){if(cloudBusy||!cloudProfile)return;if(navigator.onLine===false){showCloudMessage('Naptárszinkron internetre vár.');return;}cloudBusy=true;try{const events=await calendarEvents();if(!events.length){showCloudMessage('Még nincs naptárba küldhető edzés.');return;}for(let i=0;i<events.length;i+=100)await googleBridge().calendarSync({silent,events:JSON.stringify(events.slice(i,i+100))});db.set('cloudStatus',{...db.get('cloudStatus',{}),calendar:new Date().toISOString()});showCloudMessage('Naptárszinkron kész.');}catch(e){showCloudMessage(e.message);if(!silent)alert(e.message);}finally{finishCloud();}};
+var syncCalendar = async function syncCalendar(silent=false){if(cloudBusy||window.TrainPilotBackupBusy||!cloudProfile)return;if(navigator.onLine===false){showCloudMessage('Naptárszinkron internetre vár.');return;}cloudBusy=true;try{const events=await calendarEvents();if(!events.length){showCloudMessage('Még nincs naptárba küldhető edzés.');return;}for(let i=0;i<events.length;i+=100)await googleBridge().calendarSync({silent,events:JSON.stringify(events.slice(i,i+100))});db.set('cloudStatus',{...db.get('cloudStatus',{}),calendar:new Date().toISOString()});showCloudMessage('Naptárszinkron kész.');}catch(e){showCloudMessage(e.message);if(!silent)alert(e.message);}finally{finishCloud();}};
 var calendarIntent = async function calendarIntent(index,planned=false){try{const x=planned?scheduled()[index]:history()[index];if(!x)throw Error('Nincs ilyen edzés.');const start=Date.parse(planned?x.start:x.started),end=Date.parse(planned?x.end:x.finished);if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start)throw Error('Ehhez az edzéshez nincs érvényes kezdési/befejezési idő.');if(!isNative())throw Error('A naptárgomb Androidon használható.');await nativeFiles().addCalendarEvent({title:'RepForge – Full Body '+x.workout,start,end,description:planned?'Tervezett edzés':workoutDescription(x)});alert('A naptár ablaka megnyílt. Válaszd ki a naptárat, és ott mentsd el. A kézi bejegyzés nem kapcsolódik az automatikus szinkronhoz.');}catch(e){alert(e.message);}};
 var plannerPanel = function plannerPanel(){return `<div class="setting"><label>Edzések tervezése</label><p class="small muted">Válassz kezdőnapot, időpontot és heti napokat. Az alkalmak A/B sorrendben váltakoznak.</p><label>Kezdőnap<input class="field" type="date" id="planDate"></label><label>Időpont<input class="field" type="time" id="planTime"></label><label>Időtartam (perc)<input class="field" type="number" id="planMinutes" min="10" max="240" value="45"></label><label>Hetek száma<input class="field" type="number" id="planWeeks" min="1" max="12" value="4"></label><label>Első edzés<select class="field" id="planFirst"><option>A</option><option>B</option></select></label><p>${['V','H','K','Sze','Cs','P','Szo'].map((d,i)=>`<label style="display:inline-block;margin:6px"><input type="checkbox" name="planDay" value="${i}">${d}</label>`).join('')}</p><button class="btn block" onclick="createSchedule()">Edzések megtervezése</button><br>${scheduled().map((p,i)=>p.cancelled?'':`<div class="card"><strong>Full Body ${p.workout}</strong><p>${esc(fmtDate(p.start))}${history().some(h=>h.scheduleId===p.id)?' • Teljesítve':''}</p><button class="btn secondary" onclick="calendarIntent(${i},true)">Naptárba</button> <button class="btn secondary" onclick="cancelSchedule(${i})">Törlés</button>${!history().some(h=>h.scheduleId===p.id)?` <button class="btn" onclick="startWorkout('${p.workout}','${p.id}')">Indítás</button>`:''}</div>`).join('')}</div>`;};
 var buildSchedule = function buildSchedule(date,time,days,weeks,minutes,first){
@@ -5349,10 +5385,16 @@ var rf130MergeHistoryPhotos = function rf130MergeHistoryPhotos(a,b){
 var rf130SyncWorkoutPhotos = async function rf130SyncWorkoutPhotos(data,bridge,silent){
  const native=rf130PhotoPlugin();if(!native||!bridge?.drivePhotoWrite)return data;let touched=false;
  for(const h of data.history||[])for(const p of h.photos||[]){if(!p?.id)continue;
-  if(p.deletedAt){try{await native.delete({id:p.id})}catch(_){}if(p.driveFileId&&bridge.drivePhotoDelete){await bridge.drivePhotoDelete({id:p.driveFileId,photoId:p.id,silent});p.driveFileId=null;p.updatedAt=Date.now();touched=true}continue;}
+  if(p.deletedAt){if(p.driveFileId&&bridge.drivePhotoDelete){await bridge.drivePhotoDelete({id:p.driveFileId,photoId:p.id,silent});p.driveFileId=null;p.updatedAt=Date.now();touched=true}continue;}
   if(!p.driveFileId){let exists=false;try{exists=!!(await native.exists({id:p.id})).exists}catch(_){}if(exists){const r=await bridge.drivePhotoWrite({photoId:p.id,silent});if(!r?.verified||!r?.id)throw Error('A naplófotó Drive-mentése nem ellenőrizhető.');p.driveFileId=r.id;p.updatedAt=Date.now();touched=true;}}
  }
  if(touched)data.history=[...(data.history||[])];return data;
+};
+// Remove files only after their tombstones are committed locally. A concurrent ZIP
+// either reserves the old dataset before that commit or excludes the deleted photos.
+var rf130DeleteSyncedPhotos=async function(data){
+ const native=rf130PhotoPlugin();if(!native?.delete)return;
+ for(const h of data.history||[])for(const p of h.photos||[])if(p?.id&&p.deletedAt){try{await native.delete({id:p.id});}catch(_){}}
 };
 let rf130PhotoTarget=null,rf130PhotoLabel='after';
 var rf130ClosePhotoModal = function rf130ClosePhotoModal(){document.getElementById('rf130PhotoModal')?.remove();rf130PhotoTarget=null;};
@@ -8567,6 +8609,8 @@ window.TrainPilotI18n.workoutAudit=function(){
   'cloud.verifyFailed':['A Drive-mentés ellenőrzése nem sikerült.','Drive backup verification failed.','Die Überprüfung der Drive-Sicherung ist fehlgeschlagen.','Verificarea copiei Drive a eșuat.'],
   'cloud.changedLocal':['Közben változtak az adatok. A helyi változásokat a következő szinkron egyesíti.','Data changed during sync. Local changes will be merged during the next sync.','Während der Synchronisierung wurden Daten geändert. Lokale Änderungen werden bei der nächsten Synchronisierung zusammengeführt.','Datele s-au modificat în timpul sincronizării. Modificările locale vor fi îmbinate la următoarea sincronizare.'],
   'cloud.driveDone':['Drive-szinkron kész.','Drive sync complete.','Drive-Synchronisierung abgeschlossen.','Sincronizarea Drive este finalizată.'],
+  'cloud.driveBackupWait':['A ZIP-mentés folyamatban van. A Drive helyi adatfrissítése utána folytatódik.','ZIP backup is in progress. Drive will apply local changes afterwards.','ZIP-Sicherung läuft. Drive übernimmt lokale Änderungen danach.','Copia ZIP este în curs. Drive va aplica modificările locale după aceea.'],
+  'cloud.driveCleanup':['Régi Drive-mentések rendezése… A helyi mentés már használható.','Organizing old Drive backups… Local backup is available.','Alte Drive-Sicherungen werden geordnet… Lokale Sicherung ist verfügbar.','Se organizează copiile vechi din Drive… Copia locală este disponibilă.'],
   'cloud.invalidSchedules':['Hibás tervezett edzések.','Invalid scheduled workouts.','Ungültige geplante Trainings.','Antrenamente planificate nevalide.'],
   'cloud.invalidSchedule':['Hibás tervezett edzés.','Invalid scheduled workout.','Ungültiges geplantes Training.','Antrenament planificat nevalid.'],
   'cloud.noStorage':['Nincs elég hely a szinkronadatoknak.','Not enough storage for sync data.','Nicht genug Speicherplatz für Synchronisierungsdaten.','Nu există suficient spațiu pentru datele de sincronizare.'],
@@ -8615,7 +8659,7 @@ cloudPanel=function(){
 connectGoogle=async function(){
  if(cloudBusy)return;
  if(!isNative()){alert(tp149T('cloud.androidOnly'));return;}
- const ok=await tp2628Confirm(tp149T('cloud.connectConfirm'),{title:tp149T('cloud.connectTitle'),confirmText:tp149T('cloud.connectAction')});
+ const ok=await tp2628Confirm(tp149T('cloud.connectConfirm')+'\n\n'+tp105AccountSummary(),{title:tp149T('cloud.connectTitle'),confirmText:tp149T('cloud.connectAction')});
  if(!ok)return;
  cloudBusy=true;
  try{
@@ -8637,8 +8681,8 @@ validateSync=function(d){
  return d;
 };
 storeMerged=function(d){
- const keys=['history','weights','settings','exercises','plan','scheduled'],old=keys.map(function(k){return localStorage.getItem('repforge:'+k);});
- try{for(const k of keys)localStorage.setItem('repforge:'+k,JSON.stringify(d[k]));}
+ const keys=tp105DataKeys(d),old=keys.map(function(k){return localStorage.getItem('repforge:'+k);});
+ try{const next=tp105PreserveLocalHealth(d);for(const k of keys)if(next[k]!==undefined)localStorage.setItem('repforge:'+k,JSON.stringify(next[k]));}
  catch(e){for(const k of keys)localStorage.removeItem('repforge:'+k);keys.forEach(function(k,i){if(old[i]!=null)localStorage.setItem('repforge:'+k,old[i]);});throw Error(tp149T('cloud.noStorage'));}
 };
 var driveLatestHeads=function driveLatestHeads(latest){return Object.fromEntries([...latest].map(function(entry){return [entry[0],entry[1].id];}));};
@@ -8650,7 +8694,7 @@ var driveHeadsUnchanged=function driveHeadsUnchanged(current,previous){
 var driveHasPendingPhotos=function driveHasPendingPhotos(rows){return rows.some(function(h){return (h.photos||[]).some(function(p){return p?.id&&(p.deletedAt||!p.driveFileId);});});};
 
 syncCloud=async function(silent=false){
- if(cloudBusy||!cloudProfile)return;
+ if(cloudBusy||window.TrainPilotBackupBusy||!cloudProfile)return;
  if(state.session){showCloudMessage(tp149T('cloud.driveAfterWorkout'));return;}
  if(navigator.onLine===false){showCloudMessage(tp149T('cloud.offlineDrive'));return;}
  cloudBusy=true;cloudActiveOperation='drive';
@@ -8672,7 +8716,7 @@ syncCloud=async function(silent=false){
    const f=current[i];stage('cloud.driveReading',{index:i+1,total:current.length});
    const snap=JSON.parse((await bridge.driveRead({id:f.id,silent:silent})).data);
    if(snap.app!=='RepForgeSync'||snap.schema!==1||snap.owner!==owner)throw Error(tp149T('cloud.unknownBackup'));
-   remotes.push(validateSync(snap.data));
+   remotes.push(validateSync(tp105Project(snap.data,tp105HealthConsent())));
   }
   let merged,conflict=false;
   try{merged=validateSync(mergeSync(local,remotes,base,function(){conflict=true;throw Error('__TP149_CLOUD_CONFLICT__');}));}
@@ -8691,9 +8735,11 @@ syncCloud=async function(silent=false){
    if(!r.verified)throw Error(tp149T('cloud.verifyFailed'));
    if(r.id)heads[device]=r.id;
   }
+  await waitForCloudBackup();
   if(state.session||canonicalSyncData(syncData())!==startState)throw Error(tp149T('cloud.changedLocal'));
-  storeMerged(merged);db.set('cloudBase:'+owner,merged);db.set('cloudHeads:'+owner,heads);db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{drive:new Date().toISOString()}));
+  storeMerged(merged);document.documentElement.lang=rf212Lang();rf200ApplyTheme();db.set('cloudBase:'+owner,merged);db.set('cloudHeads:'+owner,heads);db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{drive:new Date().toISOString()}));
   cloudDriveStage='';showCloudMessage(tp149T('cloud.driveDone'));render();
+  if(typeof rf130DeleteSyncedPhotos==='function')await rf130DeleteSyncedPhotos(merged);
  }catch(e){cloudDriveStage='';showCloudMessage(e.message);if(!silent)alert(cloudMessage);}finally{cloudDriveStage='';finishCloud();}
 };
 
@@ -8730,19 +8776,19 @@ var calendarDelta=async function(events,previous,forceFull=false){
  return {hashes:hashes,changes:changes};
 };
 syncCalendar=async function(silent=false){
- if(!cloudProfile)return;
+ if(!cloudProfile||window.TrainPilotBackupBusy)return;
  if(cloudBusy){if(!silent){if(cloudActiveOperation==='calendar')showCloudMessage(tp149T('cloud.calendarRunning'));else{calendarSyncPending=true;showCloudMessage(tp149T('cloud.calendarQueued'));}}else cloudDirty=true;return;}
  if(navigator.onLine===false){showCloudMessage(tp149T('cloud.calendarWaiting'));return;}
  cloudBusy=true;cloudActiveOperation='calendar';showCloudMessage(tp149T('cloud.calendarPreparing'));
  try{
-  const owner=cloudProfile.sub,events=await calendarEvents(),key='cloudCalendarSent:'+owner,stored=db.get(key,null);
-  const previous=stored?.schema===1&&stored.hashes&&typeof stored.hashes==='object'?stored:null;
+  const owner=cloudProfile.sub,bridge=googleBridge(),prepared=await bridge.calendarPrepare({silent:silent}),events=await calendarEvents(),key='cloudCalendarSent:'+owner,stored=db.get(key,null);
+  const previous=stored?.schema===1&&stored.calendarId===prepared.id&&stored.hashes&&typeof stored.hashes==='object'?stored:null;
   const full=!previous||!Number.isFinite(previous.fullAt)||Date.now()-previous.fullAt>=7*86400000||Date.now()<previous.fullAt;
   const delta=await calendarDelta(events,previous,full);
   if(!events.length&&!delta.changes.length){showCloudMessage(tp149T('cloud.noCalendarItems'));return;}
   showCloudMessage(tp149T('cloud.calendarDelta',{changed:delta.changes.length,total:events.length}));
-  for(let i=0;i<delta.changes.length;i+=10){showCloudMessage(tp149T('cloud.calendarProgress',{done:i,total:delta.changes.length}));await googleBridge().calendarSync({silent:silent,events:JSON.stringify(delta.changes.slice(i,i+10))});}
-  db.set(key,{schema:1,fullAt:full?Date.now():previous.fullAt,hashes:delta.hashes});
+  for(let i=0;i<delta.changes.length;i+=10){showCloudMessage(tp149T('cloud.calendarProgress',{done:i,total:delta.changes.length}));await googleBridge().calendarSync({silent:silent,calendarId:prepared.id,events:JSON.stringify(delta.changes.slice(i,i+10))});}
+  db.set(key,{schema:1,calendarId:prepared.id,fullAt:full?Date.now():previous.fullAt,hashes:delta.hashes});
   db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{calendar:new Date().toISOString()}));showCloudMessage(tp149T('cloud.calendarDoneCount',{changed:delta.changes.length}));
  }catch(e){showCloudMessage(e.message);if(!silent)alert(e.message);}finally{finishCloud();}
 };
@@ -9145,12 +9191,12 @@ exportData=async function(){
 chooseImport=async function(){
  if(state.session){alert(tp149T('backup.finishWorkout'));return;}
  if(!isNative()){document.getElementById('importFile')?.click();return;}
- try{const r=await nativeFiles().open();if(!r.cancelled)restoreText(r.data);}
+ try{const r=await nativeFiles().open();if(!r.cancelled)await restoreText(r.data);}
  catch(e){alert(tp149T('backup.restoreFailed')+'\n'+(e?.message||e));}
 };
 importData=async function(file){
  if(!file)return;
- try{if(file.size>20*1024*1024)throw Error(tp149T('backup.maxSize'));restoreText(await file.text());}
+ try{if(file.size>20*1024*1024)throw Error(tp149T('backup.maxSize'));await restoreText(await file.text());}
  catch(e){alert(tp149T('backup.invalidFile')+'\n'+(e?.message||e));}
  finally{const input=document.getElementById('importFile');if(input)input.value='';}
 };
@@ -10238,7 +10284,7 @@ var tp1511SaveTraining=function(){const s=settings(),p=activeProgram?.(),x=tp151
 startRest=function(){const s=settings(),rx=state.session?.exercises?.[state.current]?.prescription,pid=state.session?.programId||activeProgramId?.(),pv=Number(s.programRest?.[pid]),rv=Number(rx?.rest),sec=Math.max(30,Math.min(300,Number.isFinite(rv)&&rv>0?rv:(Number.isFinite(pv)?pv:(Number(s.rest)||90))));stopTimer();state.timer=sec;state.restEndAt=Date.now()+sec*1000;state.timerId=setInterval(tickRest,250);};
 const tp1511Plan=planScreen;planScreen=function(){const h=tp1511Plan.apply(this,arguments),p=tp1511TrainingPanel();return p&&!String(h).includes('tp1511-training')?String(h).replace(/(<main\b[^>]*>)/,'$1'+p):h;};
 
-settingsScreen=function(){const backup='<div class="setting tp1511-card"><div class="tp1511-head"><b>⇩</b><div><strong>'+esc(tp149T('backup.title'))+'</strong><p class="small muted">'+esc(tp149T('backup.help'))+'</p></div></div><p class="small muted">'+esc(backupStatus())+'</p><div class="grid2"><button class="btn secondary" onclick="exportData()">'+esc(tp149T('backup.saveFile'))+'</button><button class="btn secondary" onclick="chooseImport()">'+esc(tp149T('backup.restore'))+'</button></div><input id="importFile" type="file" accept=".json,application/json" hidden onchange="importData(this.files[0])"></div>';const profile='<div class="setting tp1511-card"><div class="tp1511-head"><b>◎</b><div><strong>'+esc(tp149T('settings.trainingProfile'))+'</strong><p class="small muted">'+esc(tp149T('settings.trainingProfileHelp'))+'</p></div></div><button class="btn secondary block" onclick="resetStarter()">'+esc(tp149T('settings.gentleProfile'))+'</button><button class="btn danger block" onclick="resetPlan()">'+esc(tp149T('settings.restoreDefaults'))+'</button></div>';return shell('<main class="tp1511-settings"><div class="hero"><h1>'+esc(tp149T('settings.title'))+'</h1><div class="muted">'+esc(tp149T('settings.subtitle'))+'</div></div>'+rf212LanguagePanel()+rf200ThemePanel()+backup+cloudPanel()+profile+'</main>');};
+settingsScreen=function(){const backup='<div class="setting tp1511-card"><div class="tp1511-head"><b>⇩</b><div><strong>'+esc(tp149T('backup.title'))+'</strong><p class="small muted">'+esc(tp149T('backup.help'))+'</p></div></div><p class="small muted">'+esc(backupStatus())+'</p><div class="grid2"><button class="btn secondary" onclick="exportData()">'+esc(tp149T('backup.saveFile'))+'</button><button class="btn secondary" onclick="chooseImport()">'+esc(tp149T('backup.restore'))+'</button></div><input id="importFile" type="file" accept=".json,application/json" hidden onchange="importData(this.files[0])"></div>';const profile='<div class="setting tp1511-card"><div class="tp1511-head"><b>◎</b><div><strong>'+esc(tp149T('settings.trainingProfile'))+'</strong><p class="small muted">'+esc(tp149T('settings.trainingProfileHelp'))+'</p></div></div><button class="btn secondary block" onclick="resetStarter()">'+esc(tp149T('settings.gentleProfile'))+'</button><button class="btn danger block" onclick="resetPlan()">'+esc(tp149T('settings.restoreDefaults'))+'</button></div>';return shell('<main class="tp1511-settings"><div class="hero"><h1>'+esc(tp149T('settings.title'))+'</h1><div class="muted">'+esc(tp149T('settings.subtitle'))+'</div></div>'+rf212LanguagePanel()+rf200ThemePanel()+backup+tp105DataPanel()+cloudPanel()+profile+'</main>');};
 
 var tp1511TimeChange=function(k,v){const p=rf260TemporalPicker;if(!p)return;p[k]=Number(v);const b=document.getElementById('tp1511TimeSave');if(b)b.textContent=rf260TemporalText().save+' • '+String(p.hour).padStart(2,'0')+':'+String(p.minute).padStart(2,'0');};
 rf260TemporalPaintTime=function(){const p=rf260TemporalPicker;if(!p)return;const t=rf260TemporalText(),hours=Array.from({length:24},function(_,i){return '<option value="'+i+'" '+(i===p.hour?'selected':'')+'>'+String(i).padStart(2,'0')+'</option>';}).join(''),mins=Array.from({length:60},function(_,i){return '<option value="'+i+'" '+(i===p.minute?'selected':'')+'>'+String(i).padStart(2,'0')+'</option>';}).join('');p.modal.innerHTML='<div class="tp-modal-card tp-temporal-card tp1511-time" onclick="event.stopPropagation()"><div class="tp-modal-head"><h2 id="tpTemporalTitle">'+esc(p.type==='datetime-local'?t.datetime:t.time)+'</h2><button class="btn secondary tp-modal-close" onclick="rf260TemporalClose()">×</button></div>'+(p.type==='datetime-local'?'<button class="btn secondary block" onclick="rf260TemporalPicker.stage=\'date\';rf260TemporalPaintDate()">← '+esc(t.back)+'</button>':'')+'<div class="tp1511-time-pair"><label>'+esc(t.hour)+'<select class="field" onchange="tp1511TimeChange(\'hour\',this.value)">'+hours+'</select></label><b>:</b><label>'+esc(t.minute)+'<select class="field" onchange="tp1511TimeChange(\'minute\',this.value)">'+mins+'</select></label></div><div class="tp-temporal-actions"><button class="btn secondary" onclick="rf260TemporalCommit(\'\')">'+esc(t.clear)+'</button><button id="tp1511TimeSave" class="btn" onclick="tp152SaveTimeFields(this)">'+esc(t.save)+' • '+String(p.hour).padStart(2,'0')+':'+String(p.minute).padStart(2,'0')+'</button></div></div>';};
@@ -10646,7 +10692,7 @@ rf212LanguagePanel=function(){
 settingsScreen=function(){
  const backup='<div class="setting tp1511-card tp152-settings-backup"><div class="tp1511-head"><b>⇩</b><div><strong>'+esc(tp149T('backup.title'))+'</strong><p class="small muted">'+esc(tp149T('backup.help'))+'</p></div></div><p class="small muted">'+esc(backupStatus())+'</p><div class="grid2"><button class="btn secondary" onclick="exportData()">'+esc(tp149T('backup.saveFile'))+'</button><button class="btn secondary" onclick="chooseImport()">'+esc(tp149T('backup.restore'))+'</button></div><input id="importFile" type="file" accept=".json,application/json" hidden onchange="importData(this.files[0])"></div>';
  const profile='<div class="setting tp1511-card tp152-settings-profile"><div class="tp1511-head"><b>◎</b><div><strong>'+esc(tp149T('settings.trainingProfile'))+'</strong><p class="small muted">'+esc(tp149T('settings.trainingProfileHelp'))+'</p></div></div><button class="btn secondary block" onclick="resetStarter()">'+esc(tp149T('settings.gentleProfile'))+'</button><button class="btn danger block" onclick="resetPlan()">'+esc(tp149T('settings.restoreDefaults'))+'</button></div>';
- return shell('<main class="tp1511-settings tp152-settings"><div class="hero"><h1>'+esc(tp149T('settings.title'))+'</h1><div class="muted">'+esc(tp149T('settings.subtitle'))+'</div></div>'+rf212LanguagePanel()+rf200ThemePanel()+backup+cloudPanel()+profile+'</main>');
+ return shell('<main class="tp1511-settings tp152-settings"><div class="hero"><h1>'+esc(tp149T('settings.title'))+'</h1><div class="muted">'+esc(tp149T('settings.subtitle'))+'</div></div>'+rf212LanguagePanel()+rf200ThemePanel()+backup+tp105DataPanel()+cloudPanel()+profile+'</main>');
 };
 
 rf233CoachScreen=function(){
@@ -14085,6 +14131,137 @@ window.TrainPilotIssue80={version:'80.2',officialRow,officialLibrary,searchUrl,v
 })();
 // @endsection issue80-video-source-safety.js
 
+// @section publication-105.js
+/* Publication data policy: local Health data survives sync, export requires explicit consent. */
+var tp105Text=function(key){
+ const rows={
+ data:['Adatok és adatvédelem','Data and privacy','Daten und Datenschutz','Date și confidențialitate'],
+ health:['Health Connect-adatok a kézi mentésekben és Drive-szinkronban','Include Health Connect data in manual backups and Drive sync','Health-Connect-Daten in Sicherungen und Drive-Synchronisierung','Include date Health Connect în copii și sincronizarea Drive'],
+ healthHelp:['Alapból kikapcsolva. Az egészségadatok helyben megmaradnak. A korábbi exportok és felhőmentések tartalmát ez nem törli. A JSON csak fotóhivatkozásokat tartalmaz; a ZIP a fotófájlokat is.','Off by default. Health data remains on this device. This does not erase previous exports or cloud backups. JSON contains photo references; ZIP also includes photo files.','Standardmäßig aus. Gesundheitsdaten bleiben lokal. Frühere Exporte und Cloud-Sicherungen werden dadurch nicht gelöscht. JSON enthält Fotoverweise; ZIP auch Fotodateien.','Dezactivat implicit. Datele de sănătate rămân pe dispozitiv. Exporturile și copiile vechi nu sunt șterse. JSON conține referințe foto; ZIP include și fotografiile.'],
+ healthConfirm:['Engedélyezed az egészségadatok mentését? Alvás, pulzus, HRV és más Health Connect-adatok is a kiválasztott fájlba vagy saját Google Drive-odba kerülhetnek.','Allow health data in backups? Sleep, heart rate, HRV and other Health Connect data may be copied to the selected file or your Google Drive.','Gesundheitsdaten sichern? Schlaf, Puls, HRV und weitere Health-Connect-Daten können in die Datei oder dein Google Drive kopiert werden.','Permiți salvarea datelor de sănătate? Somnul, pulsul, HRV și alte date Health Connect pot fi copiate în fișier sau în Google Drive.'],
+ zip:['Teljes ZIP-mentés fotókkal','Full ZIP backup with photos','Vollständige ZIP-Sicherung mit Fotos','Copie ZIP completă cu fotografii'],
+ unzip:['ZIP visszatöltése','Restore ZIP','ZIP wiederherstellen','Restaurează ZIP'],
+ native:['Ez a funkció az Android-alkalmazásban érhető el.','This feature is available in the Android app.','Diese Funktion ist in der Android-App verfügbar.','Funcția este disponibilă în aplicația Android.'],
+ privacy:['Adatkezelési tájékoztató','Privacy policy','Datenschutzerklärung','Politica de confidențialitate'],
+ revoke:['Google-engedélyek visszavonása','Revoke Google permissions','Google-Berechtigungen widerrufen','Revocă permisiunile Google'],
+ revokeConfirm:['Visszavonod a TrainPilot Google-engedélyeit és leállítod a szinkront? A helyi és a felhőadatok megmaradnak.','Revoke TrainPilot Google permissions and stop sync? Local and cloud data will remain.','TrainPilot-Berechtigungen widerrufen und Sync stoppen? Lokale und Cloud-Daten bleiben erhalten.','Revoci permisiunile TrainPilot și oprești sincronizarea? Datele locale și cloud rămân.'],
+ driveDelete:['TrainPilot-adatok törlése a Drive-ról','Delete TrainPilot data from Drive','TrainPilot-Daten aus Drive löschen','Șterge datele TrainPilot din Drive'],
+ driveConfirm:['Végleg törlöd e Google-fiók összes TrainPilot/RepForge mentését és naplófotóját az app saját Drive-mappájából? A helyi adatok megmaradnak. Más eszközök újra feltölthetnek: azokon is állítsd le a szinkront.','Permanently delete all TrainPilot/RepForge backups and journal photos in this account’s app Drive folder? Local data remains. Stop sync on other devices too: they can upload again.','Alle TrainPilot/RepForge-Sicherungen und Fotos im App-Drive-Ordner dieses Kontos endgültig löschen? Lokale Daten bleiben. Sync auch auf anderen Geräten stoppen; sie können erneut hochladen.','Ștergi definitiv copiile TrainPilot/RepForge și fotografiile din folderul Drive al aplicației? Datele locale rămân. Oprește sincronizarea și pe alte dispozitive: pot încărca din nou.'],
+ calendarDelete:['TrainPilot-naptár törlése','Delete TrainPilot calendar','TrainPilot-Kalender löschen','Șterge calendarul TrainPilot'],
+ calendarConfirm:['Törlöd a TrainPilot által létrehozott Google-naptárt és annak eseményeit? A helyi tervek megmaradnak. A kézzel más naptárba mentett eseményeket ez nem törli.','Delete the Google calendar created by TrainPilot and its events? Local plans remain. Events manually saved in other calendars are not deleted.','Den von TrainPilot erstellten Google-Kalender und seine Termine löschen? Lokale Pläne bleiben. Manuell in anderen Kalendern gespeicherte Termine werden nicht gelöscht.','Ștergi calendarul Google creat de TrainPilot și evenimentele sale? Planurile locale rămân. Evenimentele salvate manual în alte calendare nu sunt șterse.'],
+ localDelete:['Minden helyi adat törlése','Erase all local data','Alle lokalen Daten löschen','Șterge toate datele locale'],
+ localConfirm:['Végleg törlöd az összes helyi edzést, testsúlyadatot, saját programot, vázlatot, fotót, Health-adatot és beállítást? Előbb készíts ZIP-mentést. A korábbi exportok, Google Drive/Naptár és Health Connect bejegyzések külön törlendők.','Permanently erase all local workouts, weights, custom programs, drafts, photos, health data and settings? Make a ZIP backup first. Previous exports, Google Drive/Calendar and Health Connect records must be deleted separately.','Alle lokalen Trainings-, Gewichts-, Programm-, Entwurfs-, Foto-, Gesundheitsdaten und Einstellungen endgültig löschen? Zuerst ZIP-Sicherung erstellen. Exporte, Google Drive/Kalender und Health-Connect-Einträge sind separat zu löschen.','Ștergi definitiv antrenamentele, greutățile, programele, ciornele, fotografiile, datele de sănătate și setările locale? Creează întâi o copie ZIP. Exporturile, Google Drive/Calendar și Health Connect se șterg separat.'],
+ done:['A művelet befejeződött.','Operation completed.','Vorgang abgeschlossen.','Operațiune finalizată.'],
+ busy:['Előbb fejezd be az edzést és a szinkront.','Finish the workout and sync first.','Training und Synchronisierung zuerst beenden.','Finalizează întâi antrenamentul și sincronizarea.'],
+ account:['A helyi napló közös ezen az eszközön. Másik Google-fiók kapcsolásakor ugyanazok az adatok szinkronizálódhatnak.','This device has one shared local journal. Connecting a different Google account may sync the same data.','Dieses Gerät hat ein gemeinsames lokales Tagebuch. Ein anderes Google-Konto kann dieselben Daten synchronisieren.','Dispozitivul are un singur jurnal local. Conectarea altui cont Google poate sincroniza aceleași date.']
+ };const i={hu:0,en:1,de:2,ro:3}[rf212Lang()]??1;return rows[key]?.[i]||key;
+};
+var tp105AccountSummary=function(){const count=history().length,weight=weights().length,custom=programs().filter(function(p){return !p.builtin;}).length;const labels={hu:['Helyi edzések','Testsúlyadatok','Saját programok'],en:['Local workouts','Weight entries','Custom programs'],de:['Lokale Trainings','Gewichtseinträge','Eigene Programme'],ro:['Antrenamente locale','Înregistrări de greutate','Programe proprii']}[rf212Lang()]||['Local workouts','Weight entries','Custom programs'];return labels[0]+': '+count+' · '+labels[1]+': '+weight+' · '+labels[2]+': '+custom;};
+var tp105ArchiveBridge=function(){const p=window.Capacitor?.Plugins?.BackupArchive||window.Capacitor?.registerPlugin?.('BackupArchive');if(!p)throw Error(tp105Text('native'));return p;};
+// Snapshot retention only touches remote backups; it does not mutate this phone's dataset/photos.
+var tp105DataSyncBusy=function(){return cloudBusy&&cloudActiveOperation!=='maintenance';};
+var tp105HealthConsent=function(){return db.get('privacyPrefs',{}).includeHealth===true;};
+var tp105Project=function(data,includeHealth){
+ const d=JSON.parse(JSON.stringify(data));d.appVersion='1.0.5';d.healthIncluded=includeHealth===true;
+ if(!includeHealth){d.recoveryHistory=[];delete d.healthLedger;delete d.wellnessLatest;d.history=(d.history||[]).map(function(h){delete h.health240;return h;});}
+ return d;
+};
+const tp105BackupBase=makeBackup;
+makeBackup=function(){const d=tp105BackupBase();if(tp105HealthConsent()){d.healthLedger=rf240Ledger();d.wellnessLatest=db.get('wellnessLatest',null);}return tp105Project(d,tp105HealthConsent());};
+syncData=function(){const d=makeBackup();delete d.healthLedger;delete d.wellnessLatest;return d;};
+var tp105DataKeys=function(d){return ['history','weights','settings','exercises','plan','scheduled','programs','activeProgramId','plannerSettings','exerciseFavorites','themeAccent','language',...(d.healthIncluded===true&&tp105HealthConsent()?['recoveryHistory']:[])];};
+canonicalSyncData=function(d){const p=tp105Project(d,tp105HealthConsent());return canonical(Object.fromEntries(tp105DataKeys(p).map(function(k){return [k,p[k]];})));};
+var tp105PreserveLocalHealth=function(data){
+ const d=JSON.parse(JSON.stringify(data));if(d.healthIncluded===true&&tp105HealthConsent())return d;
+ const local=new Map(history().map(function(h){return [h.id||h.started+'|'+h.workout,h];}));
+ for(const h of d.history||[]){delete h.health240;const old=local.get(h.id||h.started+'|'+h.workout);if(old?.health240&&old.started===h.started&&old.finished===h.finished)h.health240=old.health240;}
+ return d;
+};
+var tp105MergeExtras=function(out,local,remotes,base,choose){
+ for(const k of ['exerciseFavorites','themeAccent','language']){
+  let v=local[k];for(const r of remotes||[]){if(r[k]===undefined||canonical(r[k])===canonical(v)||base&&canonical(r[k])===canonical(base[k]))continue;if(base&&canonical(v)===canonical(base[k]))v=r[k];else v=choose(k,v,r[k])?v:r[k];}if(v!==undefined)out[k]=v;
+ }
+ if(tp105HealthConsent()){
+  const rows=new Map();for(const d of [base,local,...remotes])for(const x of d?.recoveryHistory||[]){const old=rows.get(x.day);if(!old||String(x.syncedAt||x.readAt||x.updatedAt||'')>=String(old.syncedAt||old.readAt||old.updatedAt||''))rows.set(x.day,x);}
+  out.recoveryHistory=[...rows.values()].sort(function(a,b){return String(b.day).localeCompare(String(a.day));});
+ }
+ return tp105Project(out,tp105HealthConsent());
+};
+const tp105MergeBase=mergeSync;
+mergeSync=function(local,remotes,base,choose){const select=function(k,a,b){const x=choose(k,a,b);return typeof x==='boolean'?(x?a:b):x;};return tp105MergeExtras(tp105MergeBase(local,remotes,base,select),local,remotes,base,function(k,a,b){return canonical(select(k,a,b))===canonical(a);});};
+const tp105ValidateBase=validateBackup;
+validateBackup=function(d){
+ tp105ValidateBase(d);
+ if(d.exerciseFavorites!==undefined&&(!Array.isArray(d.exerciseFavorites)||d.exerciseFavorites.length>2000||d.exerciseFavorites.some(function(x){return typeof x!=='string'||x.length>100;})))throw Error('Invalid favorites.');
+ if(d.language!==undefined&&!['hu','en','de','ro','system'].includes(d.language))throw Error('Invalid language.');
+ if(d.themeAccent!==undefined&&!Object.hasOwn(RF200_THEMES,d.themeAccent))throw Error('Invalid theme.');
+ if(d.recoveryHistory!==undefined&&(!Array.isArray(d.recoveryHistory)||d.recoveryHistory.length>10000||d.recoveryHistory.some(function(x){return !x||typeof x!=='object'||!/^\d{4}-\d{2}-\d{2}$/.test(x.day);})))throw Error('Invalid recovery history.');
+ return d;
+};
+restoreText=async function(text,archiveToken=null){
+ if(state.session||tp105DataSyncBusy()||window.TrainPilotBackupBusy&&!archiveToken)throw Error(tp105Text('busy'));
+ if(String(text).length>20*1024*1024)throw Error('Maximum 20 MB.');
+ const d=validateBackup(JSON.parse(String(text).replace(/^\uFEFF/,'')));
+ if(!await tp2628Confirm(tp149T('dialog.restore.message',{workouts:d.history.length,weights:d.weights.length}),{title:tp149T('dialog.restore.title'),confirmText:tp149T('backup.restore'),danger:true}))return false;
+ if(state.session||tp105DataSyncBusy()||window.TrainPilotBackupBusy&&!archiveToken)throw Error(tp105Text('busy'));
+ // Manual restore replaces this dataset; cloud sync alone preserves local Health enrichment.
+ const next={...d,programs:d.programs||rf12BuiltinPrograms(),activeProgramId:d.activeProgramId||'home-basic',plannerSettings:d.plannerSettings||plannerSettings(),scheduled:d.scheduled||[],draft:null};
+ for(const h of next.history||[])for(const photo of h.photos||[])if(archiveToken&&!photo.deletedAt)photo.driveFileId=null;
+ const keys=[...tp105DataKeys({...d,healthIncluded:false}),'recoveryHistory','healthLedgerV1','wellnessLatest','draft','schemaVersion'];
+ const old=new Map(keys.map(function(k){return [k,localStorage.getItem('repforge:'+k)];}));let installed=false;
+ try{
+  if(archiveToken){localStorage.setItem('repforge:archiveRestore105',JSON.stringify({token:archiveToken,old:[...old]}));await tp105ArchiveBridge().install({token:archiveToken});installed=true;}
+  for(const k of keys){let v=k==='schemaVersion'?RF12_SCHEMA:k==='healthLedgerV1'?(d.healthLedger||null):k==='wellnessLatest'?(d.wellnessLatest||null):k==='recoveryHistory'?(d.recoveryHistory||[]):next[k];if(v!==undefined)localStorage.setItem('repforge:'+k,JSON.stringify(v));}
+ }catch(e){for(const [k,v]of old){if(v===null)localStorage.removeItem('repforge:'+k);else localStorage.setItem('repforge:'+k,v);}if(archiveToken&&localStorage.getItem('repforge:archiveRestore105'))await tp105ArchiveBridge().rollback({token:archiveToken});localStorage.removeItem('repforge:archiveRestore105');throw e;}
+ if(installed){await tp105ArchiveBridge().commit({token:archiveToken});localStorage.removeItem('repforge:archiveRestore105');}
+ state.health={};migrateTo12();document.documentElement.lang=rf212Lang();rf200ApplyTheme?.();alert(tp149T('backup.restoreDone'));render();return true;
+};
+var tp105SetHealth=async function(on){if(cloudBusy){alert(tp105Text('busy'));render();return;}if(on&&!await tp2628Confirm(tp105Text('healthConfirm'),{title:tp105Text('data')})){render();return;}if(cloudBusy){render();return;}db.set('privacyPrefs',{includeHealth:!!on});if(cloudProfile?.sub){localStorage.removeItem('repforge:cloudBase:'+cloudProfile.sub);localStorage.removeItem('repforge:cloudHeads:'+cloudProfile.sub);}render();};
+var tp105Archive=async function(restore=false){
+ if(!isNative()){alert(tp105Text('native'));return;}if(state.session||(restore?tp105DataSyncBusy():cloudBusy&&!['drive','calendar','maintenance'].includes(cloudActiveOperation))||window.TrainPilotBackupBusy){alert(tp105Text('busy'));return;}
+ const bridge=tp105ArchiveBridge();let token=null;window.TrainPilotBackupBusy=true;
+ try{if(restore){const r=await bridge.open();if(r.cancelled)return;token=r.token;await restoreText(r.data,token);}else{const r=await bridge.save({data:JSON.stringify(makeBackup()),name:'TrainPilot-'+new Date().toISOString().slice(0,10)+'.zip'});if(r.cancelled)return;if(!r.verified)throw Error(tp149T('backup.verifyError'));db.set('lastExport',{name:r.name,date:new Date().toISOString(),bytes:r.bytes});alert(tp149T('backup.exportDone',{name:r.name,bytes:tp149FormatNumber(r.bytes)}));render();}}catch(e){alert(e?.message||String(e));}finally{try{if(token&&!localStorage.getItem('repforge:archiveRestore105'))await bridge.discard({token:token});}finally{window.TrainPilotBackupBusy=false;releaseCloudBackup();if(!cloudBusy)finishCloud();}}
+};
+var tp105ManageData=async function(kind){
+ if(state.session||cloudBusy||window.TrainPilotBackupBusy){alert(tp105Text('busy'));return;}
+ if(!isNative()){alert(tp105Text('native'));return;}
+ if(!await tp2628Confirm(tp105Text(kind+'Confirm'),{title:tp105Text(kind==='local'?'localDelete':kind==='drive'?'driveDelete':kind==='calendar'?'calendarDelete':'revoke'),danger:true}))return;
+ if(state.session||cloudBusy||window.TrainPilotBackupBusy){alert(tp105Text('busy'));return;}
+ cloudBusy=true;cloudActiveOperation='management';
+ try{
+  db.set('cloudPrefs',{drive:false,calendar:false});cloudDirty=false;calendarSyncPending=false;clearTimeout(cloudTimer);
+  const owner=cloudProfile?.sub;
+  if(kind==='drive')await googleBridge().driveDeleteAll();
+  if(kind==='calendar')await googleBridge().calendarDeleteManaged();
+  if(kind==='revoke'){await googleBridge().revoke();cloudProfile=null;}
+  if(kind==='local'){
+   await googleBridge().disconnect();cloudProfile=null;await tp105ArchiveBridge().eraseLocal();
+   const keys=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k?.startsWith('repforge:'))keys.push(k);}for(const k of keys)localStorage.removeItem(k);
+   location.reload();return;
+  }
+  if(owner)for(const suffix of ['cloudBase:','cloudHeads:','cloudCalendarSent:'])localStorage.removeItem('repforge:'+suffix+owner);
+  db.set('cloudStatus',{});alert(tp105Text('done'));render();
+ }catch(e){alert(e?.message||String(e));}finally{cloudBusy=false;cloudActiveOperation='';}
+};
+var tp105DataPanel=function(){
+ const button=function(key,call){return '<button class="btn secondary block" style="margin-top:10px" onclick="'+call+'">'+esc(tp105Text(key))+'</button>';};
+ return '<details class="setting tp105-data"><summary><strong>'+esc(tp105Text('data'))+'</strong></summary><label class="tp105-health-consent"><input type="checkbox" '+(tp105HealthConsent()?'checked':'')+' onchange="tp105SetHealth(this.checked)"> '+esc(tp105Text('health'))+'</label><p class="small muted">'+esc(tp105Text('healthHelp'))+'</p>'+button('zip','tp105Archive(false)')+button('unzip','tp105Archive(true)')+button('privacy','tp105OpenPrivacy()')+'<p class="small muted">'+esc(tp105Text('account'))+'</p>'+(cloudProfile?button('revoke',"tp105ManageData('revoke')")+button('driveDelete',"tp105ManageData('drive')")+button('calendarDelete',"tp105ManageData('calendar')"):'')+button('localDelete',"tp105ManageData('local')")+'</details>';
+};
+var tp105OpenPrivacy=async function(){if(isNative())await tp105ArchiveBridge().privacy({language:rf212Lang()});else window.open('privacy.html','_blank','noopener');};
+const tp105HealthPluginBase=healthPlugin;
+healthPlugin=function(){const p=tp105HealthPluginBase();return new Proxy(p,{get:function(target,key){const method=target[key];if(typeof method!=='function')return method;return function(args={}){return method.call(target,{...args,language:rf212Lang()});};}});};
+const tp105GoogleBridgeBase=googleBridge;
+googleBridge=function(){const p=tp105GoogleBridgeBase();return new Proxy(p,{get:function(target,key){
+ const method=target[key];if(typeof method!=='function')return method;
+ return function(args={}){return Promise.resolve(method.call(target,{...args,language:rf212Lang()})).then(function(result){
+  if(args.silent!==true)cloudRetryAt=0;return result;
+ },function(error){
+  if(error?.code==='GOOGLE_NETWORK'){cloudRetryAt=Date.now()+60000;if(args.silent===true)cloudDirty=true;}
+  throw error;
+ });};
+}});};
+// @endsection publication-105.js
+
 // @section ready.js
-window.TrainPilotBoot.finish();
+if(!window.TrainPilotRestore105Pending)window.TrainPilotBoot.finish();
 // @endsection ready.js
