@@ -1685,7 +1685,7 @@
   if(setHasUserData(sets[i])){
    let ok=false;
    if(typeof tp2628Confirm==='function')ok=await tp2628Confirm(t.confirm,{title:t.removeTitle,confirmText:t.remove,danger:true});
-   else ok=confirm(t.confirm);
+   else return;
    if(!ok)return;
   }
   const y=window.scrollY||0;
