@@ -1,6 +1,6 @@
 // Recover an interrupted photo+data restore before the application reads its database.
 (function(){let token='';try{const m=JSON.parse(localStorage.getItem('repforge:archiveRestore105')||'null');if(m){token=m.token;for(const [k,v]of m.old){if(v===null)localStorage.removeItem('repforge:'+k);else localStorage.setItem('repforge:'+k,v);}}}catch(e){throw Error('Interrupted backup restore requires recovery: '+e.message);}
-window.addEventListener('DOMContentLoaded',async function(){const p=window.Capacitor?.Plugins?.BackupArchive||window.Capacitor?.registerPlugin?.('BackupArchive');if(!p)return;try{await p.recover({rollbackToken:token});localStorage.removeItem('repforge:archiveRestore105');}catch(e){alert(e.message);}});
+window.addEventListener('DOMContentLoaded',async function(){const p=window.Capacitor?.Plugins?.BackupArchive||window.Capacitor?.registerPlugin?.('BackupArchive');if(!p)return;window.TrainPilotBackupBusy=true;try{await p.recover({rollbackToken:token});localStorage.removeItem('repforge:archiveRestore105');window.TrainPilotBackupBusy=false;}catch(e){alert(e.message);}});
 })();
 /* TrainPilot 1.0.2 — canonical application source.
  * Sections retain the tested initialization order of test2.
@@ -14167,7 +14167,7 @@ restoreText=async function(text,archiveToken=null){
  try{
   if(archiveToken){localStorage.setItem('repforge:archiveRestore105',JSON.stringify({token:archiveToken,old:[...old]}));await tp105ArchiveBridge().install({token:archiveToken});installed=true;}
   for(const k of keys){let v=k==='schemaVersion'?RF12_SCHEMA:k==='healthLedgerV1'?(d.healthLedger||null):k==='wellnessLatest'?(d.wellnessLatest||null):k==='recoveryHistory'?(d.recoveryHistory||[]):next[k];if(v!==undefined)localStorage.setItem('repforge:'+k,JSON.stringify(v));}
- }catch(e){for(const [k,v]of old){if(v===null)localStorage.removeItem('repforge:'+k);else localStorage.setItem('repforge:'+k,v);}if(installed)await tp105ArchiveBridge().rollback({token:archiveToken});localStorage.removeItem('repforge:archiveRestore105');throw e;}
+ }catch(e){for(const [k,v]of old){if(v===null)localStorage.removeItem('repforge:'+k);else localStorage.setItem('repforge:'+k,v);}if(archiveToken&&localStorage.getItem('repforge:archiveRestore105'))await tp105ArchiveBridge().rollback({token:archiveToken});localStorage.removeItem('repforge:archiveRestore105');throw e;}
  if(installed){await tp105ArchiveBridge().commit({token:archiveToken});localStorage.removeItem('repforge:archiveRestore105');}
  state.health={};migrateTo12();document.documentElement.lang=rf212Lang();rf200ApplyTheme?.();alert(tp149T('backup.restoreDone'));render();return true;
 };

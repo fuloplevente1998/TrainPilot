@@ -219,10 +219,10 @@ async function audit(page,label){
   const backupText=await persist.evaluate(()=>{db.set('language','ro');document.documentElement.lang=rf212Lang();return JSON.stringify(makeBackup())});
   assert.equal(JSON.parse(backupText).language,'ro','backup must persist language selection');
   await persist.evaluate(()=>{db.set('language','en');document.documentElement.lang=rf212Lang();render()});
-  await persist.evaluate(text=>restoreText(text),backupText);
+  await persist.evaluate(text=>{window.__restore105=restoreText(text);},backupText);
   await persist.waitForSelector('#tp2628Dialog [data-tp2628-confirm]');
   await persist.locator('#tp2628Dialog [data-tp2628-confirm]').click();
-  await persist.waitForFunction(()=>rf212LangSetting()==='ro');
+  await persist.evaluate(()=>window.__restore105);await persist.waitForFunction(()=>rf212LangSetting()==='ro');
   assert.equal(await persist.evaluate(()=>rf212Lang()),'ro','restore must restore language selection');
   await persist.close();
 

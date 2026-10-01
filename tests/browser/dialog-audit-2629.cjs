@@ -78,7 +78,7 @@ const {chromium}=require('playwright');
 
   // Backup restore.
   const backup=await page.evaluate(()=>JSON.stringify(makeBackup()));
-  await page.evaluate(text=>restoreText(text),backup);await expectCancel(/Biztonsági mentés visszatöltése/);
+  await page.evaluate(text=>{window.__restore105=restoreText(text);},backup);await expectCancel(/Biztonsági mentés visszatöltése/);assert.equal(await page.evaluate(()=>window.__restore105),false);
 
   // Google connect/disconnect show themed confirmation before bridge work.
   await page.evaluate(()=>{window.__tp2629OldNative=isNative;isNative=()=>true;cloudBusy=false;void connectGoogle()});
