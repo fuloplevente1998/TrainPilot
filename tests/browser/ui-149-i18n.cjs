@@ -76,12 +76,17 @@ async function audit(page,label){
    for(const [lang,missing] of Object.entries(workoutAudit||{}))assert.deepEqual(missing,[],'workout/progression catalog missing keys for '+lang);
    const workoutWords=await page.evaluate(()=>{
      const out={};
-     for(const lang of ['hu','en','de','ro'])out[lang]={next:t('workout.next',{},lang),finish:t('workout.finish',{},lang),progress:t('progress.title',{},lang),rest:t('workout.rest',{},lang)};
+     for(const lang of ['hu','en','de','ro'])out[lang]={next:t('workout.next',{},lang),finish:t('workout.finish',{},lang),progress:t('progress.title',{},lang),goalNote:t('progress.goalNote',{},lang),rest:t('workout.rest',{},lang)};
      return out;
    });
    assert.equal(workoutWords.en.next,'Next exercise');
    assert.equal(workoutWords.de.finish,'Training beenden');
    assert.equal(workoutWords.ro.rest,'Pauză');
+   assert.equal(workoutWords.hu.progress,'Progresszív cél');
+   assert.equal(workoutWords.en.progress,'Progressive goal');
+   assert.equal(workoutWords.de.progress,'Progressives Ziel');
+   assert.equal(workoutWords.ro.progress,'Obiectiv progresiv');
+   for(const lang of ['hu','en','de','ro'])assert.match(workoutWords[lang].goalNote,/Coach/);
    const cloudAudit=await page.evaluate(()=>TrainPilotI18n.cloudAudit?.());
    for(const [lang,missing] of Object.entries(cloudAudit||{}))assert.deepEqual(missing,[],'cloud/calendar-sync catalog missing keys for '+lang);
    const cloudWords=await page.evaluate(()=>({en:{title:t('cloud.title',{},'en'),drive:t('cloud.syncDriveNow',{},'en')},de:{conflict:t('cloud.conflictTitle',{},'de')},ro:{calendar:t('cloud.syncCalendarNow',{},'ro')}}));
@@ -101,7 +106,7 @@ async function audit(page,label){
    for(const [lang,missing] of Object.entries(settingsAudit||{}))assert.deepEqual(missing,[],'settings/backup catalog missing keys for '+lang);
    const settingsWords=await page.evaluate(()=>({en:t('settings.subtitle',{},'en'),de:t('settings.progression',{},'de'),ro:t('backup.help',{},'ro')}));
    assert.match(settingsWords.en,/Personalization/);
-   assert.match(settingsWords.de,/Progressives Training/);
+   assert.match(settingsWords.de,/Progressives Ziel/);
    assert.equal(settingsWords.ro,'Salvează datele aplicației într-un fișier sau restaurează o copie anterioară.');
    const shellAudit=await page.evaluate(()=>TrainPilotI18n.shellAudit?.());
    for(const [lang,missing] of Object.entries(shellAudit||{}))assert.deepEqual(missing,[],'shell catalog missing keys for '+lang);
