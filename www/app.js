@@ -1,6 +1,7 @@
 // Recover an interrupted photo+data restore before the application reads its database.
 (function(){let token='';try{const m=JSON.parse(localStorage.getItem('repforge:archiveRestore105')||'null');if(m){token=m.token;for(const [k,v]of m.old){if(v===null)localStorage.removeItem('repforge:'+k);else localStorage.setItem('repforge:'+k,v);}}}catch(e){throw Error('Interrupted backup restore requires recovery: '+e.message);}
-window.addEventListener('DOMContentLoaded',async function(){const p=window.Capacitor?.Plugins?.BackupArchive||window.Capacitor?.registerPlugin?.('BackupArchive');if(!p)return;window.TrainPilotBackupBusy=true;try{await p.recover({rollbackToken:token});localStorage.removeItem('repforge:archiveRestore105');window.TrainPilotBackupBusy=false;}catch(e){alert(e.message);}});
+window.TrainPilotRestore105Pending=token;
+window.addEventListener('DOMContentLoaded',async function(){if(window.Capacitor?.isNativePlatform?.()!==true)return;const p=window.Capacitor?.Plugins?.BackupArchive||window.Capacitor?.registerPlugin?.('BackupArchive');if(!p)return;window.TrainPilotBackupBusy=true;try{await p.recover({rollbackToken:token});localStorage.removeItem('repforge:archiveRestore105');window.TrainPilotBackupBusy=false;window.TrainPilotRestore105Pending='';if(window.TrainPilotBoot?.loading)window.TrainPilotBoot.finish();}catch(e){alert(e.message);}});
 })();
 /* TrainPilot 1.0.2 — canonical application source.
  * Sections retain the tested initialization order of test2.
@@ -8619,7 +8620,7 @@ cloudPanel=function(){
 connectGoogle=async function(){
  if(cloudBusy)return;
  if(!isNative()){alert(tp149T('cloud.androidOnly'));return;}
- const ok=await tp2628Confirm(tp149T('cloud.connectConfirm'),{title:tp149T('cloud.connectTitle'),confirmText:tp149T('cloud.connectAction')});
+ const ok=await tp2628Confirm(tp149T('cloud.connectConfirm')+'\n\n'+tp105AccountSummary(),{title:tp149T('cloud.connectTitle'),confirmText:tp149T('cloud.connectAction')});
  if(!ok)return;
  cloudBusy=true;
  try{
@@ -14114,6 +14115,7 @@ var tp105Text=function(key){
  account:['A helyi napló közös ezen az eszközön. Másik Google-fiók kapcsolásakor ugyanazok az adatok szinkronizálódhatnak.','This device has one shared local journal. Connecting a different Google account may sync the same data.','Dieses Gerät hat ein gemeinsames lokales Tagebuch. Ein anderes Google-Konto kann dieselben Daten synchronisieren.','Dispozitivul are un singur jurnal local. Conectarea altui cont Google poate sincroniza aceleași date.']
  };const i={hu:0,en:1,de:2,ro:3}[rf212Lang()]??1;return rows[key]?.[i]||key;
 };
+var tp105AccountSummary=function(){const count=history().length,weight=weights().length,custom=programs().filter(function(p){return !p.builtin;}).length;const labels={hu:['Helyi edzések','Testsúlyadatok','Saját programok'],en:['Local workouts','Weight entries','Custom programs'],de:['Lokale Trainings','Gewichtseinträge','Eigene Programme'],ro:['Antrenamente locale','Înregistrări de greutate','Programe proprii']}[rf212Lang()]||['Local workouts','Weight entries','Custom programs'];return labels[0]+': '+count+' · '+labels[1]+': '+weight+' · '+labels[2]+': '+custom;};
 var tp105ArchiveBridge=function(){const p=window.Capacitor?.Plugins?.BackupArchive||window.Capacitor?.registerPlugin?.('BackupArchive');if(!p)throw Error(tp105Text('native'));return p;};
 var tp105HealthConsent=function(){return db.get('privacyPrefs',{}).includeHealth===true;};
 var tp105Project=function(data,includeHealth){
@@ -14210,5 +14212,5 @@ googleBridge=function(){const p=tp105GoogleBridgeBase();return new Proxy(p,{get:
 // @endsection publication-105.js
 
 // @section ready.js
-window.TrainPilotBoot.finish();
+if(!window.TrainPilotRestore105Pending)window.TrainPilotBoot.finish();
 // @endsection ready.js
