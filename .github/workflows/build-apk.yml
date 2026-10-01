@@ -181,13 +181,18 @@ jobs:
             "SHA256SUMS.txt"
             "apk-badging.txt"
           )
+          NOTES=(--generate-notes)
+          NOTES_FILE="docs/releases/$TAG.md"
+          if [ -f "$NOTES_FILE" ]; then
+            NOTES=(--notes-file "$NOTES_FILE")
+          fi
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "${FILES[@]}" --clobber
           else
             if [ "$GITHUB_REF_TYPE" = "tag" ]; then
-              gh release create "$TAG" "${FILES[@]}" --verify-tag --generate-notes --title "TrainPilot $VERSION"
+              gh release create "$TAG" "${FILES[@]}" --verify-tag "${NOTES[@]}" --title "TrainPilot $VERSION"
             else
-              gh release create "$TAG" "${FILES[@]}" --target "$GITHUB_SHA" --generate-notes --title "TrainPilot $VERSION"
+              gh release create "$TAG" "${FILES[@]}" --target "$GITHUB_SHA" "${NOTES[@]}" --title "TrainPilot $VERSION"
             fi
           fi
 

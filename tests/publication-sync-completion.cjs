@@ -33,7 +33,7 @@ const settle=async predicate=>{const deadline=Date.now()+2000;while(!predicate()
  assert.equal(reads,previous.reads+1,'a real local edit must still run the complete safe merge');assert.equal(writes,previous.writes+1);
  listError='offline test';await run('syncCloud(false)');assert.equal(run('cloudBusy'),false);assert.equal(run('cloudDriveStage'),'');
  const beforeExport=savedBackups;await run('tp105Archive(false)');assert.equal(savedBackups,beforeExport+1,'a failed sync must also release the backup guard');
- run(`cloudBusy=true;cloudActiveOperation='drive';`);await run('tp105Archive(false)');assert.equal(savedBackups,beforeExport+1,'an actual in-flight data sync remains protected');
- run(`cloudBusy=false;state.session={};`);await run('tp105Archive(false)');assert.equal(savedBackups,beforeExport+1,'an active workout remains protected');
+ run(`cloudBusy=true;cloudActiveOperation='drive';`);await run('tp105Archive(false)');assert.equal(savedBackups,beforeExport+2,'ZIP export must work during an in-flight Drive network request');
+ run(`cloudBusy=false;state.session={};`);await run('tp105Archive(false)');assert.equal(savedBackups,beforeExport+2,'an active workout remains protected');
  console.log('PASS publication sync completion: backup during retention, queued calendar after backup, real runtime fast path, edits and error unlock');
 })().catch(e=>{finishPrune();console.error(e);process.exitCode=1});

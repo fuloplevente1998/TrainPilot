@@ -1,6 +1,6 @@
-# TrainPilot 1.0.5 publication candidate
+# TrainPilot 1.0.5 publication
 
-Base: published v1.0.4 / `1d84c54dbcb46f3c6aaf7a94435dafd85586a91a`. Version code: 2686. This is a test candidate; main and v1.0.4 must remain unchanged until phone acceptance.
+Base: published v1.0.4 / `1d84c54dbcb46f3c6aaf7a94435dafd85586a91a`. Version code: 2687. The user authorized merging and publishing this final build on 2026-10-02 (Europe/Budapest), after automated validation. Earlier releases remain unchanged; the final physical-phone test is still separate.
 
 ## Implemented changes
 
@@ -12,6 +12,9 @@ Base: published v1.0.4 / `1d84c54dbcb46f3c6aaf7a94435dafd85586a91a`. Version cod
 - Calendar preparation checks the cached calendar. Missing calendars are rediscovered/recreated, and a changed identity invalidates the delta cache. A calendar changing during a batch causes a retryable manual failure rather than partial-success reporting.
 - Idempotent Google requests retry 429/selected 5xx up to three times with exponential delays and Retry-After handling. Non-idempotent Drive uploads/calendar creation are not repeated blindly. Long server cooldowns end the attempt instead of retrying early.
 - After a verified new snapshot, retention preserves the latest ten snapshots and oldest snapshot of this device. Other devices and legacy snapshots with missing/synthetic IDs are protected. Cleanup failure does not invalidate the verified sync; its result remains in the local diagnostic record. Protected legacy snapshots can therefore exceed this limit.
+- ZIP export is available during Drive/Calendar networking, including DNS failure and delayed requests. It reserves the committed local dataset and photo files while its picker/export is open. Drive waits before applying local changes, then rechecks the starting dataset to preserve intervening edits. Photo tombstones are uploaded first; local files are removed only after a verified snapshot and local metadata commit. ZIP restoration and erasure remain protected against a concurrent data sync. Cancelled or failed export releases queued work.
+- DNS, socket and timeout failures produce HU/EN/DE/RO messages with a distinct network error code. Automatic work waits at least 60 seconds before retrying; manual sync can retry immediately. This does not repair a device/carrier DNS problem.
+- The Health export consent checkbox shares the app's theme-aware checkbox style, accent/checkmark and keyboard focus; consent remains off by default.
 - Drive data sync reports completion before retention starts. Retention displays a separate maintenance status and permits local ZIP backup/restore; new Google operations remain serialized. A queued calendar sync waits for an open backup picker/restore to finish. The actual #18 runtime now skips unchanged snapshot/photo reads after its first complete legacy recovery scan; local edits, changed remote heads and pending photos still take the full merge path.
 - Android automatic backup and device transfer exclude app data. Explicit file backups and Drive sync remain available.
 - Bundled HU/EN/DE/RO privacy policy describes persistent storage, optional exports and deletion limits. Native Health availability messages follow the chosen app language.
@@ -29,7 +32,7 @@ Enable Drive and Calendar APIs in the correct Google Cloud project. Create Andro
 
 Validate on two real accounts outside the developer/test-user list, using a Play internal-testing installation. Validate the separate Drive and Calendar consent flows, revoked permission, offline state, account switch and reconnect. Code tests use mocked Google APIs; they cannot certify these Console settings.
 
-## Required phone checks before merge
+## Remaining physical-phone checks
 
 1. Upgrade v1.0.4 in place; existing workouts, programs, drafts and photos remain available.
 2. JSON export with Health off excludes health summaries; enabling the option makes them appear.
@@ -39,6 +42,6 @@ Validate on two real accounts outside the developer/test-user list, using a Play
 6. Test disconnect vs revoke. Only use erasure controls on a disposable test account/dataset; verify other calendars and Drive files are untouched.
 7. Interrupt ZIP restoration and restart; validate data and photo rollback. Validate low-storage behavior on a test device.
 8. Inspect the new privacy controls in all supported languages at small screen widths.
-9. After Drive/Calendar timestamps update, create a ZIP backup. If old snapshot maintenance is still running, verify its separate message and usable local backup. Cancel the picker and repeat; queued Calendar work must resume after the picker closes. Repeat an unchanged Drive sync and verify it completes without re-downloading all old backups.
+9. With automatic Drive and Calendar enabled, create a ZIP backup during a pending sync and with no working network. Local ZIP must remain usable. After Drive/Calendar timestamps update, create a ZIP backup. If old snapshot maintenance is still running, verify its separate message and usable local backup. Cancel the picker and repeat; queued Calendar work must resume after the picker closes. Repeat an unchanged Drive sync and verify it completes without re-downloading all old backups.
 
 Optional feature proposals (background rest timer, CSV/PDF exports, supersets, warm-up sets, undo, unit conversion, Coach explanations) remain separate feature work. They are not represented as fixes completed by this candidate.

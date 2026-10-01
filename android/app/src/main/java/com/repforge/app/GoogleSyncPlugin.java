@@ -97,7 +97,12 @@ public class GoogleSyncPlugin extends Plugin {
     case "drivePrune":pruneSnapshots(out);break;
     default:throw new IOException("Ismeretlen művelet.");
    }succeed(out);
-  }catch(Exception e){fail(e instanceof ApiError?apiMessage((ApiError)e):e.getMessage());}});
+  }catch(Exception e){
+   String lang=pending==null?Locale.getDefault().getLanguage():pending.getString("language",Locale.getDefault().getLanguage());
+   String network=GoogleRequestPolicy.networkMessage(e,lang);
+   if(network!=null)fail(network,"GOOGLE_NETWORK");
+   else fail(e instanceof ApiError?apiMessage((ApiError)e):e.getMessage());
+  }});
  }
  private void writeSnapshot(JSObject out)throws Exception{
   String data=pending.getString("data","");JSONObject parsed=new JSONObject(data);
@@ -219,4 +224,5 @@ public class GoogleSyncPlugin extends Plugin {
 
  private synchronized void succeed(JSObject out){PluginCall c=pending;pending=null;token=null;if(c!=null)c.resolve(out);}
  private synchronized void fail(String message){PluginCall c=pending;pending=null;token=null;if(c!=null)c.reject(message==null?"Nem sikerült a Google-művelet.":message);}
+ private synchronized void fail(String message,String code){PluginCall c=pending;pending=null;token=null;if(c!=null)c.reject(message,code);}
 }

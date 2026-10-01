@@ -9,6 +9,15 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
   await page.evaluate(lang=>{db.set('language',lang);go('settings');},language);
   await page.waitForSelector('.tp105-data');await page.locator('.tp105-data>summary').click();
   const result=await page.evaluate(()=>({text:document.querySelector('.tp105-data').textContent,checked:document.querySelector('.tp105-data input').checked,overflow:document.documentElement.scrollWidth>innerWidth+1,buttons:[...document.querySelectorAll('.tp105-data button')].map(x=>x.getAttribute('onclick'))}));
+  const consentStyle=await page.evaluate(()=>{
+   const input=document.querySelector('.tp105-health-consent input'),before=getComputedStyle(input);const off={appearance:before.appearance,width:before.width,radius:before.borderRadius};
+   input.checked=true;input.focus();const selected=getComputedStyle(input),mark=getComputedStyle(input,'::after');
+   const ref=document.createElement('span');ref.style.color='var(--accent)';document.body.appendChild(ref);
+   const checked={background:selected.backgroundColor,accent:getComputedStyle(ref).color,markOpacity:mark.opacity,outline:selected.outlineStyle,labelHeight:input.closest('label').getBoundingClientRect().height};
+   ref.remove();input.checked=false;return {off,checked};
+  });
+  assert.equal(consentStyle.off.appearance,'none');assert.equal(consentStyle.off.width,'26px');assert.equal(consentStyle.off.radius,'7px');
+  assert.equal(consentStyle.checked.background,consentStyle.checked.accent);assert.equal(consentStyle.checked.markOpacity,'1');assert.equal(consentStyle.checked.outline,'solid');assert.ok(consentStyle.checked.labelHeight>=44);
   assert.equal(result.checked,false,'health export must require consent');assert.equal(result.overflow,false,`${width}/${language} settings overflow`);assert.ok(result.buttons.includes('tp105Archive(false)'));assert.ok(result.buttons.includes('tp105Archive(true)'));assert.ok(result.text.includes(tpLabel(language)));
   await page.evaluate(()=>{window.tp155R4ClosePanel(false);go('history');go('home');rf200SetTheme('green');go('settings');});await page.waitForSelector('.tp105-data');assert.equal(await page.locator('.tp105-data input').isChecked(),false);assert.deepEqual(errors,[]);await page.close();
  }
@@ -37,8 +46,19 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
  assert.equal(await page.evaluate(()=>tp105SyncProbe.alerts.some(x=>x.includes('Előbb fejezd be'))),false);
  await page.evaluate(()=>tp105FinishPrune());await page.waitForFunction(()=>tp105SyncProbe.finished&&!cloudBusy);
  await page.evaluate(()=>syncCloud(false));assert.equal(await page.evaluate(()=>tp105SyncProbe.reads),1);
+ // An automatic request remains pending, but the real ZIP button must stay usable.
+ await page.evaluate(()=>{
+  db.set('cloudPrefs',{drive:true,calendar:true});
+  Capacitor.Plugins.GoogleSync.driveList=()=>new Promise((resolve,reject)=>{window.tp105FailNetwork=()=>reject(Object.assign(Error('A Google nem érhető el hálózati hiba miatt.'),{code:'GOOGLE_NETWORK'}));});
+  window.tp105PendingSync=syncCloud(true);
+ });
+ await page.locator('[onclick="tp105Archive(false)"]').click();await page.waitForFunction(()=>tp105SyncProbe.saved===2&&!window.TrainPilotBackupBusy);
+ assert.equal(await page.evaluate(()=>cloudBusy),true);assert.equal(await page.evaluate(()=>tp105SyncProbe.alerts.some(x=>x.includes('Előbb fejezd be'))),false);
+ await page.evaluate(async()=>{tp105FailNetwork();await tp105PendingSync;});assert.equal(await page.evaluate(()=>cloudBusy),false);
+ await page.locator('[onclick="tp105Archive(false)"]').click();await page.waitForFunction(()=>tp105SyncProbe.saved===3&&!window.TrainPilotBackupBusy);
+
  assert.equal(await page.evaluate(()=>cloudDriveStage),'');assert.deepEqual(probeErrors,[]);await page.close();
- console.log('PASS publication UI: four languages at 320/360/393/412px, consent off, archive controls, navigation/theme re-entry, actual sync completion and usable backup during retention');
+ console.log('PASS publication UI: four languages at 320/360/393/412px, consent off, archive controls, navigation/theme re-entry, themed Health checkbox, actual sync completion and usable backup during pending network/retention requests');
  }finally{await browser?.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);process.exit(1)});
 function tpLabel(lang){return {hu:'Teljes ZIP',en:'Full ZIP',de:'Vollständige ZIP',ro:'Copie ZIP'}[lang];}

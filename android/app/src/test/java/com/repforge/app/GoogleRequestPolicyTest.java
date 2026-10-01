@@ -2,6 +2,15 @@ package com.repforge.app;
 import org.junit.Test;
 import static org.junit.Assert.*;
 public class GoogleRequestPolicyTest {
+    @Test public void networkFailuresAreReadableAndDistinctFromDataErrors() {
+        String hu=GoogleRequestPolicy.networkMessage(new java.net.UnknownHostException("www.googleapis.com"),"hu");
+        assertTrue(hu.contains("hálózati hiba"));assertTrue(hu.contains("ZIP"));assertFalse(hu.contains("googleapis.com"));
+        assertTrue(GoogleRequestPolicy.networkMessage(new java.net.SocketTimeoutException("timeout"),"en").contains("network error"));
+        assertTrue(GoogleRequestPolicy.networkMessage(new java.net.ConnectException("refused"),"de").contains("Netzwerkfehler"));
+        assertTrue(GoogleRequestPolicy.networkMessage(new java.io.IOException(new java.net.UnknownHostException()),"ro").contains("rețea"));
+        assertNull(GoogleRequestPolicy.networkMessage(new java.io.IOException("Missing photo"),"hu"));
+        assertNull(GoogleRequestPolicy.networkMessage(new java.io.FileNotFoundException("photo.jpg"),"hu"));
+    }
     @Test public void retriesOnlyIdempotentOperations() {
         assertTrue(GoogleRequestPolicy.canRetry("GET", "https://www.googleapis.com/drive/v3/files", ""));
         assertTrue(GoogleRequestPolicy.canRetry("DELETE", "https://www.googleapis.com/drive/v3/files/id", ""));

@@ -204,6 +204,14 @@ var showCloudMessage = function showCloudMessage(t){cloudMessage=t||'';const e=d
 var calendarSyncPending=false;
 var cloudDriveStage='';
 var cloudActiveOperation='';
+var cloudRetryAt=0;
+var cloudBackupWaiters=[];
+var waitForCloudBackup=function(){
+ if(!window.TrainPilotBackupBusy)return Promise.resolve();
+ cloudDriveStage=tp149T('cloud.driveBackupWait');showCloudMessage(cloudMessage);
+ return new Promise(function(resolve){cloudBackupWaiters.push(resolve);});
+};
+var releaseCloudBackup=function(){const pending=cloudBackupWaiters.splice(0);for(const resolve of pending)resolve();};
 var finishCloud = function finishCloud(){
  cloudBusy=false;cloudActiveOperation='';cloudDriveStage='';showCloudMessage(cloudMessage);
  // A file picker/restore can remain open after Drive maintenance finishes.
@@ -216,7 +224,21 @@ var initCloud = async function initCloud(){if(!isNative()||!googleBridge()?.stat
 var connectGoogle = async function connectGoogle(){if(cloudBusy)return;if(!isNative()){alert('A Google-kapcsolat Androidon érhető el.');return;}if(!confirm('A kiválasztott Google-fiókhoz kapcsolod a RepForge-ot? A szinkron későbbi bekapcsolása a telefon jelenlegi edzésadatait is ebbe a fiókba menti.'))return;cloudBusy=true;try{const r=await googleBridge().connect();cloudProfile=JSON.parse(r.profile);db.set('cloudPrefs',{drive:false,calendar:false});db.set('cloudStatus',{});render();alert('Google-profil kapcsolva. A Drive és a naptár engedélyét külön kérjük, a funkció bekapcsolásakor.');}catch(e){alert(e.message);}finally{finishCloud();}};
 var disconnectGoogle = async function disconnectGoogle(){if(cloudBusy){alert('Várd meg a szinkron végét.');return;}if(!confirm('Kijelentkezel? A szinkron leáll, a helyi és a Google-ban tárolt adatok megmaradnak.'))return;try{await googleBridge().disconnect();cloudProfile=null;db.set('cloudPrefs',{drive:false,calendar:false});db.set('cloudStatus',{});cloudMessage='';render();}catch(e){alert(e.message);}};
 var setCloudOption = async function setCloudOption(key,on){const p=cloudPrefs();p[key]=on;db.set('cloudPrefs',p);if(on){if(key==='drive')await syncCloud(false);else await syncCalendar(false);}};
-var cloudChanged = function cloudChanged(){if(!cloudProfile||typeof setTimeout==='undefined')return;if(cloudBusy||window.TrainPilotBackupBusy){cloudDirty=true;return;}clearTimeout(cloudTimer);cloudTimer=setTimeout(async()=>{if(cloudBusy||window.TrainPilotBackupBusy){cloudDirty=true;return;}if(cloudPrefs().calendar)await syncCalendar(true);if(cloudPrefs().drive)await syncCloud(true);},1800);};
+var cloudChanged = function cloudChanged(){
+ if(!cloudProfile||typeof setTimeout==='undefined')return;
+ if(!cloudPrefs().drive&&!cloudPrefs().calendar){cloudDirty=false;clearTimeout(cloudTimer);return;}
+ if(cloudBusy||window.TrainPilotBackupBusy){cloudDirty=true;return;}
+ clearTimeout(cloudTimer);
+ cloudTimer=setTimeout(async()=>{
+  cloudTimer=null;
+  if(cloudBusy||window.TrainPilotBackupBusy){cloudDirty=true;return;}
+  if(cloudPrefs().calendar)await syncCalendar(true);
+  // A backup can start, or connectivity can fail, while Calendar is awaiting Google.
+  if(cloudBusy||window.TrainPilotBackupBusy){cloudDirty=true;return;}
+  if(Date.now()<cloudRetryAt){cloudChanged();return;}
+  if(cloudPrefs().drive)await syncCloud(true);
+ },Math.max(1800,cloudRetryAt-Date.now()));
+};
 var canonical = function canonical(x){if(Array.isArray(x))return '['+x.map(canonical).join(',')+']';if(x&&typeof x==='object')return '{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+canonical(x[k])).join(',')+'}';return JSON.stringify(x);};
 var canonicalSyncData = function canonicalSyncData(d){return canonical({history:d.history,weights:d.weights,settings:d.settings,exercises:d.exercises,plan:d.plan,scheduled:d.scheduled});};
 var syncData = function syncData(){return {...makeBackup(),scheduled:scheduled()};};
@@ -251,8 +273,10 @@ var syncCloud = async function syncCloud(silent=false){
   if(state.session||canonicalSyncData(syncData())!==startState)throw Error('Közben változtak az adatok vagy edzés indult. Indítsd újra a szinkront.');
   let device=db.get('cloudDevice',null);if(!device){device=crypto.randomUUID();db.set('cloudDevice',device);}
   if(!base||canonicalSyncData(merged)!==canonicalSyncData(base)||!files.length){const r=await bridge.driveWrite({silent,data:JSON.stringify({app:'RepForgeSync',schema:1,owner,device,data:merged})});if(!r.verified)throw Error('A Drive-mentés ellenőrzése nem sikerült.');}
+  await waitForCloudBackup();
   if(state.session||canonicalSyncData(syncData())!==startState)throw Error('Közben változtak az adatok. A helyi változásokat a következő szinkron egyesíti.');
   storeMerged(merged);db.set('cloudBase:'+owner,merged);db.set('cloudStatus',{...db.get('cloudStatus',{}),drive:new Date().toISOString()});showCloudMessage('Drive-szinkron kész.');render();
+  if(typeof rf130DeleteSyncedPhotos==='function')await rf130DeleteSyncedPhotos(merged);
  }catch(e){showCloudMessage(e.message);if(!silent)alert(cloudMessage);}finally{finishCloud();}
 };
 var eventId = async function eventId(key){const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(key));return 'rf'+Array.from(new Uint8Array(hash),x=>x.toString(16).padStart(2,'0')).join('');};
@@ -5361,10 +5385,16 @@ var rf130MergeHistoryPhotos = function rf130MergeHistoryPhotos(a,b){
 var rf130SyncWorkoutPhotos = async function rf130SyncWorkoutPhotos(data,bridge,silent){
  const native=rf130PhotoPlugin();if(!native||!bridge?.drivePhotoWrite)return data;let touched=false;
  for(const h of data.history||[])for(const p of h.photos||[]){if(!p?.id)continue;
-  if(p.deletedAt){try{await native.delete({id:p.id})}catch(_){}if(p.driveFileId&&bridge.drivePhotoDelete){await bridge.drivePhotoDelete({id:p.driveFileId,photoId:p.id,silent});p.driveFileId=null;p.updatedAt=Date.now();touched=true}continue;}
+  if(p.deletedAt){if(p.driveFileId&&bridge.drivePhotoDelete){await bridge.drivePhotoDelete({id:p.driveFileId,photoId:p.id,silent});p.driveFileId=null;p.updatedAt=Date.now();touched=true}continue;}
   if(!p.driveFileId){let exists=false;try{exists=!!(await native.exists({id:p.id})).exists}catch(_){}if(exists){const r=await bridge.drivePhotoWrite({photoId:p.id,silent});if(!r?.verified||!r?.id)throw Error('A naplófotó Drive-mentése nem ellenőrizhető.');p.driveFileId=r.id;p.updatedAt=Date.now();touched=true;}}
  }
  if(touched)data.history=[...(data.history||[])];return data;
+};
+// Remove files only after their tombstones are committed locally. A concurrent ZIP
+// either reserves the old dataset before that commit or excludes the deleted photos.
+var rf130DeleteSyncedPhotos=async function(data){
+ const native=rf130PhotoPlugin();if(!native?.delete)return;
+ for(const h of data.history||[])for(const p of h.photos||[])if(p?.id&&p.deletedAt){try{await native.delete({id:p.id});}catch(_){}}
 };
 let rf130PhotoTarget=null,rf130PhotoLabel='after';
 var rf130ClosePhotoModal = function rf130ClosePhotoModal(){document.getElementById('rf130PhotoModal')?.remove();rf130PhotoTarget=null;};
@@ -8579,6 +8609,7 @@ window.TrainPilotI18n.workoutAudit=function(){
   'cloud.verifyFailed':['A Drive-mentés ellenőrzése nem sikerült.','Drive backup verification failed.','Die Überprüfung der Drive-Sicherung ist fehlgeschlagen.','Verificarea copiei Drive a eșuat.'],
   'cloud.changedLocal':['Közben változtak az adatok. A helyi változásokat a következő szinkron egyesíti.','Data changed during sync. Local changes will be merged during the next sync.','Während der Synchronisierung wurden Daten geändert. Lokale Änderungen werden bei der nächsten Synchronisierung zusammengeführt.','Datele s-au modificat în timpul sincronizării. Modificările locale vor fi îmbinate la următoarea sincronizare.'],
   'cloud.driveDone':['Drive-szinkron kész.','Drive sync complete.','Drive-Synchronisierung abgeschlossen.','Sincronizarea Drive este finalizată.'],
+  'cloud.driveBackupWait':['A ZIP-mentés folyamatban van. A Drive helyi adatfrissítése utána folytatódik.','ZIP backup is in progress. Drive will apply local changes afterwards.','ZIP-Sicherung läuft. Drive übernimmt lokale Änderungen danach.','Copia ZIP este în curs. Drive va aplica modificările locale după aceea.'],
   'cloud.driveCleanup':['Régi Drive-mentések rendezése… A helyi mentés már használható.','Organizing old Drive backups… Local backup is available.','Alte Drive-Sicherungen werden geordnet… Lokale Sicherung ist verfügbar.','Se organizează copiile vechi din Drive… Copia locală este disponibilă.'],
   'cloud.invalidSchedules':['Hibás tervezett edzések.','Invalid scheduled workouts.','Ungültige geplante Trainings.','Antrenamente planificate nevalide.'],
   'cloud.invalidSchedule':['Hibás tervezett edzés.','Invalid scheduled workout.','Ungültiges geplantes Training.','Antrenament planificat nevalid.'],
@@ -8704,9 +8735,11 @@ syncCloud=async function(silent=false){
    if(!r.verified)throw Error(tp149T('cloud.verifyFailed'));
    if(r.id)heads[device]=r.id;
   }
+  await waitForCloudBackup();
   if(state.session||canonicalSyncData(syncData())!==startState)throw Error(tp149T('cloud.changedLocal'));
   storeMerged(merged);document.documentElement.lang=rf212Lang();rf200ApplyTheme();db.set('cloudBase:'+owner,merged);db.set('cloudHeads:'+owner,heads);db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{drive:new Date().toISOString()}));
   cloudDriveStage='';showCloudMessage(tp149T('cloud.driveDone'));render();
+  if(typeof rf130DeleteSyncedPhotos==='function')await rf130DeleteSyncedPhotos(merged);
  }catch(e){cloudDriveStage='';showCloudMessage(e.message);if(!silent)alert(cloudMessage);}finally{cloudDriveStage='';finishCloud();}
 };
 
@@ -14185,9 +14218,9 @@ restoreText=async function(text,archiveToken=null){
 };
 var tp105SetHealth=async function(on){if(cloudBusy){alert(tp105Text('busy'));render();return;}if(on&&!await tp2628Confirm(tp105Text('healthConfirm'),{title:tp105Text('data')})){render();return;}if(cloudBusy){render();return;}db.set('privacyPrefs',{includeHealth:!!on});if(cloudProfile?.sub){localStorage.removeItem('repforge:cloudBase:'+cloudProfile.sub);localStorage.removeItem('repforge:cloudHeads:'+cloudProfile.sub);}render();};
 var tp105Archive=async function(restore=false){
- if(!isNative()){alert(tp105Text('native'));return;}if(state.session||tp105DataSyncBusy()||window.TrainPilotBackupBusy){alert(tp105Text('busy'));return;}
+ if(!isNative()){alert(tp105Text('native'));return;}if(state.session||(restore?tp105DataSyncBusy():cloudBusy&&!['drive','calendar','maintenance'].includes(cloudActiveOperation))||window.TrainPilotBackupBusy){alert(tp105Text('busy'));return;}
  const bridge=tp105ArchiveBridge();let token=null;window.TrainPilotBackupBusy=true;
- try{if(restore){const r=await bridge.open();if(r.cancelled)return;token=r.token;await restoreText(r.data,token);}else{const r=await bridge.save({data:JSON.stringify(makeBackup()),name:'TrainPilot-'+new Date().toISOString().slice(0,10)+'.zip'});if(r.cancelled)return;if(!r.verified)throw Error(tp149T('backup.verifyError'));db.set('lastExport',{name:r.name,date:new Date().toISOString(),bytes:r.bytes});alert(tp149T('backup.exportDone',{name:r.name,bytes:tp149FormatNumber(r.bytes)}));render();}}catch(e){alert(e?.message||String(e));}finally{try{if(token&&!localStorage.getItem('repforge:archiveRestore105'))await bridge.discard({token:token});}finally{window.TrainPilotBackupBusy=false;if(!cloudBusy)finishCloud();}}
+ try{if(restore){const r=await bridge.open();if(r.cancelled)return;token=r.token;await restoreText(r.data,token);}else{const r=await bridge.save({data:JSON.stringify(makeBackup()),name:'TrainPilot-'+new Date().toISOString().slice(0,10)+'.zip'});if(r.cancelled)return;if(!r.verified)throw Error(tp149T('backup.verifyError'));db.set('lastExport',{name:r.name,date:new Date().toISOString(),bytes:r.bytes});alert(tp149T('backup.exportDone',{name:r.name,bytes:tp149FormatNumber(r.bytes)}));render();}}catch(e){alert(e?.message||String(e));}finally{try{if(token&&!localStorage.getItem('repforge:archiveRestore105'))await bridge.discard({token:token});}finally{window.TrainPilotBackupBusy=false;releaseCloudBackup();if(!cloudBusy)finishCloud();}}
 };
 var tp105ManageData=async function(kind){
  if(state.session||cloudBusy||window.TrainPilotBackupBusy){alert(tp105Text('busy'));return;}
@@ -14212,13 +14245,21 @@ var tp105ManageData=async function(kind){
 };
 var tp105DataPanel=function(){
  const button=function(key,call){return '<button class="btn secondary block" style="margin-top:10px" onclick="'+call+'">'+esc(tp105Text(key))+'</button>';};
- return '<details class="setting tp105-data"><summary><strong>'+esc(tp105Text('data'))+'</strong></summary><label><input type="checkbox" '+(tp105HealthConsent()?'checked':'')+' onchange="tp105SetHealth(this.checked)"> '+esc(tp105Text('health'))+'</label><p class="small muted">'+esc(tp105Text('healthHelp'))+'</p>'+button('zip','tp105Archive(false)')+button('unzip','tp105Archive(true)')+button('privacy','tp105OpenPrivacy()')+'<p class="small muted">'+esc(tp105Text('account'))+'</p>'+(cloudProfile?button('revoke',"tp105ManageData('revoke')")+button('driveDelete',"tp105ManageData('drive')")+button('calendarDelete',"tp105ManageData('calendar')"):'')+button('localDelete',"tp105ManageData('local')")+'</details>';
+ return '<details class="setting tp105-data"><summary><strong>'+esc(tp105Text('data'))+'</strong></summary><label class="tp105-health-consent"><input type="checkbox" '+(tp105HealthConsent()?'checked':'')+' onchange="tp105SetHealth(this.checked)"> '+esc(tp105Text('health'))+'</label><p class="small muted">'+esc(tp105Text('healthHelp'))+'</p>'+button('zip','tp105Archive(false)')+button('unzip','tp105Archive(true)')+button('privacy','tp105OpenPrivacy()')+'<p class="small muted">'+esc(tp105Text('account'))+'</p>'+(cloudProfile?button('revoke',"tp105ManageData('revoke')")+button('driveDelete',"tp105ManageData('drive')")+button('calendarDelete',"tp105ManageData('calendar')"):'')+button('localDelete',"tp105ManageData('local')")+'</details>';
 };
 var tp105OpenPrivacy=async function(){if(isNative())await tp105ArchiveBridge().privacy({language:rf212Lang()});else window.open('privacy.html','_blank','noopener');};
 const tp105HealthPluginBase=healthPlugin;
 healthPlugin=function(){const p=tp105HealthPluginBase();return new Proxy(p,{get:function(target,key){const method=target[key];if(typeof method!=='function')return method;return function(args={}){return method.call(target,{...args,language:rf212Lang()});};}});};
 const tp105GoogleBridgeBase=googleBridge;
-googleBridge=function(){const p=tp105GoogleBridgeBase();return new Proxy(p,{get:function(target,key){const method=target[key];if(typeof method!=='function')return method;return function(args={}){return method.call(target,{...args,language:rf212Lang()});};}});};
+googleBridge=function(){const p=tp105GoogleBridgeBase();return new Proxy(p,{get:function(target,key){
+ const method=target[key];if(typeof method!=='function')return method;
+ return function(args={}){return Promise.resolve(method.call(target,{...args,language:rf212Lang()})).then(function(result){
+  if(args.silent!==true)cloudRetryAt=0;return result;
+ },function(error){
+  if(error?.code==='GOOGLE_NETWORK'){cloudRetryAt=Date.now()+60000;if(args.silent===true)cloudDirty=true;}
+  throw error;
+ });};
+}});};
 // @endsection publication-105.js
 
 // @section ready.js
