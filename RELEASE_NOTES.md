@@ -1,3 +1,11 @@
+# TrainPilot 1.0.4
+
+- Aktív edzés közben sorozatok hozzáadása és törlése (+/−), azonnali piszkozatmentéssel.
+- Közvetlen videólefedettség helyreállítva mind a 100 gyakorlatnál; a Dumbbell Romanian Deadlift jóváhagyott videója visszaállítva.
+- A „Progresszív edzés” felhasználói megnevezése „Progresszív cél” lett, különválasztva a Coach napi ajánlásától.
+- A Coach elhelyezése és readiness/logikája változatlan maradt.
+- Android `versionCode 2684`, `versionName 1.0.4`.
+
 # TrainPilot 1.0.2 / 2682 – edzésidő és pihenőidőzítő (2026-09-28)
 
 - A pihenőidőzítő az aktív edzés alsó Előző/Következő vezérlői közé kerül, a felső kártya kompakt marad.
