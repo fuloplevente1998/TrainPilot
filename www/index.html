@@ -670,10 +670,16 @@
   if(cloudBusy||window.TrainPilotBackupBusy||!cloudProfile)return;
   if(state.session){showCloudMessage(tp149T('cloud.driveAfterWorkout'));return}
   if(navigator.onLine===false){showCloudMessage(tp149T('cloud.offlineDrive'));return}
-  cloudBusy=true;cloudActiveOperation='drive';showCloudMessage(tp149T('cloud.syncingDrive'));
+  cloudBusy=true;cloudActiveOperation='drive';cloudDriveStage='';showCloudMessage(tp149T('cloud.syncingDrive'));
   try{
    const owner=cloudProfile.sub,bridge=googleBridge(),local=validateSync(syncData()),startState=canonicalSyncData(local),files=(await bridge.driveList({silent:silent})).files||[];
    const selected=tp18SnapshotSelection(files),remotes=[],archives=[];
+   const latest=new Map(selected.current.map(f=>[/^repforge-sync-([a-z0-9-]{36})-/.exec(f.name)[1],f]));
+   const heads=driveLatestHeads(latest),base=db.get('cloudBase:'+owner,null);
+   // Only skip after this recovery-aware path has completed one full legacy scan.
+   if(base&&db.get('cloudScan105:'+owner,0)===1&&driveHeadsUnchanged(heads,db.get('cloudHeads:'+owner,null))&&canonicalSyncData(local)===canonicalSyncData(base)&&!driveHasPendingPhotos(local.history||[])){
+    db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{drive:new Date().toISOString()}));showCloudMessage(tp149T('cloud.driveUnchanged'));return;
+   }
    const readSnapshot=async(f,strict)=>{
     try{
      const snap=JSON.parse((await bridge.driveRead({id:f.id,silent:silent})).data);
@@ -683,7 +689,7 @@
    };
    for(const f of selected.current){const d=await readSnapshot(f,true);if(d)remotes.push(d)}
    for(const f of selected.archive){const d=await readSnapshot(f,false);if(d)archives.push(d)}
-   const base=db.get('cloudBase:'+owner,null);let merged,conflict=false,writtenDevice=null;
+   let merged,conflict=false,writtenDevice=null;
    const attempt=chooser=>validateSync(tp18MergeSync(local,remotes,base,chooser,archives));
    try{merged=attempt(function(){conflict=true;throw Error('__TP18_CLOUD_CONFLICT__')})}
    catch(e){if(e?.message!=='__TP18_CLOUD_CONFLICT__')throw e}
@@ -697,12 +703,14 @@
    let device=db.get('cloudDevice',null);if(!device){device=crypto.randomUUID();db.set('cloudDevice',device)}
    if(!base||canonicalSyncData(merged)!==canonicalSyncData(base)||!files.length){
     const r=await bridge.driveWrite({silent:silent,data:JSON.stringify({app:'RepForgeSync',schema:1,owner:owner,device:device,data:merged})});
-    if(!r.verified)throw Error(tp149T('cloud.verifyFailed'));writtenDevice=device;
+    if(!r.verified)throw Error(tp149T('cloud.verifyFailed'));writtenDevice=device;if(r.id)heads[device]=r.id;
    }
    if(state.session||canonicalSyncData(syncData())!==startState)throw Error(tp149T('cloud.changedLocal'));
-   storeMerged(merged);document.documentElement.lang=rf212Lang();rf200ApplyTheme();db.set('cloudBase:'+owner,merged);db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{drive:new Date().toISOString()}));
-   if(writtenDevice&&typeof bridge.drivePrune==='function'){try{db.set('cloudRetention105',await bridge.drivePrune({device:writtenDevice,silent:true}));}catch(e){db.set('cloudRetention105',{error:e.message});}}
+   storeMerged(merged);document.documentElement.lang=rf212Lang();rf200ApplyTheme();db.set('cloudBase:'+owner,merged);db.set('cloudHeads:'+owner,heads);db.set('cloudScan105:'+owner,1);db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{drive:new Date().toISOString()}));
+   const maintain=writtenDevice&&typeof bridge.drivePrune==='function';
+   if(maintain){cloudActiveOperation='maintenance';cloudDriveStage=tp149T('cloud.driveCleanup');}
    showCloudMessage(tp149T('cloud.driveDone'));render();
+   if(maintain){try{db.set('cloudRetention105',await bridge.drivePrune({device:writtenDevice,silent:true}));}catch(e){db.set('cloudRetention105',{error:e.message});}}
   }catch(e){showCloudMessage(e.message);if(!silent)alert(cloudMessage)}finally{finishCloud()}
  };
  window.TrainPilotIssue18={version:'18',mergeSync:tp18MergeSync,selectSnapshots:tp18SnapshotSelection,legacyId};

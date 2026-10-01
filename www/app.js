@@ -204,12 +204,19 @@ var showCloudMessage = function showCloudMessage(t){cloudMessage=t||'';const e=d
 var calendarSyncPending=false;
 var cloudDriveStage='';
 var cloudActiveOperation='';
-var finishCloud = function finishCloud(){cloudBusy=false;cloudActiveOperation='';if(calendarSyncPending){calendarSyncPending=false;void syncCalendar(false);return;}if(cloudDirty){cloudDirty=false;cloudChanged();}};
+var finishCloud = function finishCloud(){
+ cloudBusy=false;cloudActiveOperation='';cloudDriveStage='';showCloudMessage(cloudMessage);
+ // A file picker/restore can remain open after Drive maintenance finishes.
+ // Keep queued work until the backup releases its own lock.
+ if(window.TrainPilotBackupBusy)return;
+ if(calendarSyncPending){calendarSyncPending=false;void syncCalendar(false);return;}
+ if(cloudDirty){cloudDirty=false;cloudChanged();}
+};
 var initCloud = async function initCloud(){if(!isNative()||!googleBridge()?.status)return;try{const r=await googleBridge().status();cloudProfile=r.profile?JSON.parse(r.profile):null;if(state.tab==='settings')render();cloudChanged();}catch(e){showCloudMessage(e.message);}};
 var connectGoogle = async function connectGoogle(){if(cloudBusy)return;if(!isNative()){alert('A Google-kapcsolat Androidon érhető el.');return;}if(!confirm('A kiválasztott Google-fiókhoz kapcsolod a RepForge-ot? A szinkron későbbi bekapcsolása a telefon jelenlegi edzésadatait is ebbe a fiókba menti.'))return;cloudBusy=true;try{const r=await googleBridge().connect();cloudProfile=JSON.parse(r.profile);db.set('cloudPrefs',{drive:false,calendar:false});db.set('cloudStatus',{});render();alert('Google-profil kapcsolva. A Drive és a naptár engedélyét külön kérjük, a funkció bekapcsolásakor.');}catch(e){alert(e.message);}finally{finishCloud();}};
 var disconnectGoogle = async function disconnectGoogle(){if(cloudBusy){alert('Várd meg a szinkron végét.');return;}if(!confirm('Kijelentkezel? A szinkron leáll, a helyi és a Google-ban tárolt adatok megmaradnak.'))return;try{await googleBridge().disconnect();cloudProfile=null;db.set('cloudPrefs',{drive:false,calendar:false});db.set('cloudStatus',{});cloudMessage='';render();}catch(e){alert(e.message);}};
 var setCloudOption = async function setCloudOption(key,on){const p=cloudPrefs();p[key]=on;db.set('cloudPrefs',p);if(on){if(key==='drive')await syncCloud(false);else await syncCalendar(false);}};
-var cloudChanged = function cloudChanged(){if(!cloudProfile||typeof setTimeout==='undefined')return;if(cloudBusy){cloudDirty=true;return;}clearTimeout(cloudTimer);cloudTimer=setTimeout(async()=>{if(cloudBusy){cloudDirty=true;return;}if(cloudPrefs().calendar)await syncCalendar(true);if(cloudPrefs().drive)await syncCloud(true);},1800);};
+var cloudChanged = function cloudChanged(){if(!cloudProfile||typeof setTimeout==='undefined')return;if(cloudBusy||window.TrainPilotBackupBusy){cloudDirty=true;return;}clearTimeout(cloudTimer);cloudTimer=setTimeout(async()=>{if(cloudBusy||window.TrainPilotBackupBusy){cloudDirty=true;return;}if(cloudPrefs().calendar)await syncCalendar(true);if(cloudPrefs().drive)await syncCloud(true);},1800);};
 var canonical = function canonical(x){if(Array.isArray(x))return '['+x.map(canonical).join(',')+']';if(x&&typeof x==='object')return '{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+canonical(x[k])).join(',')+'}';return JSON.stringify(x);};
 var canonicalSyncData = function canonicalSyncData(d){return canonical({history:d.history,weights:d.weights,settings:d.settings,exercises:d.exercises,plan:d.plan,scheduled:d.scheduled});};
 var syncData = function syncData(){return {...makeBackup(),scheduled:scheduled()};};
@@ -8572,6 +8579,7 @@ window.TrainPilotI18n.workoutAudit=function(){
   'cloud.verifyFailed':['A Drive-mentés ellenőrzése nem sikerült.','Drive backup verification failed.','Die Überprüfung der Drive-Sicherung ist fehlgeschlagen.','Verificarea copiei Drive a eșuat.'],
   'cloud.changedLocal':['Közben változtak az adatok. A helyi változásokat a következő szinkron egyesíti.','Data changed during sync. Local changes will be merged during the next sync.','Während der Synchronisierung wurden Daten geändert. Lokale Änderungen werden bei der nächsten Synchronisierung zusammengeführt.','Datele s-au modificat în timpul sincronizării. Modificările locale vor fi îmbinate la următoarea sincronizare.'],
   'cloud.driveDone':['Drive-szinkron kész.','Drive sync complete.','Drive-Synchronisierung abgeschlossen.','Sincronizarea Drive este finalizată.'],
+  'cloud.driveCleanup':['Régi Drive-mentések rendezése… A helyi mentés már használható.','Organizing old Drive backups… Local backup is available.','Alte Drive-Sicherungen werden geordnet… Lokale Sicherung ist verfügbar.','Se organizează copiile vechi din Drive… Copia locală este disponibilă.'],
   'cloud.invalidSchedules':['Hibás tervezett edzések.','Invalid scheduled workouts.','Ungültige geplante Trainings.','Antrenamente planificate nevalide.'],
   'cloud.invalidSchedule':['Hibás tervezett edzés.','Invalid scheduled workout.','Ungültiges geplantes Training.','Antrenament planificat nevalid.'],
   'cloud.noStorage':['Nincs elég hely a szinkronadatoknak.','Not enough storage for sync data.','Nicht genug Speicherplatz für Synchronisierungsdaten.','Nu există suficient spațiu pentru datele de sincronizare.'],
@@ -14117,6 +14125,8 @@ var tp105Text=function(key){
 };
 var tp105AccountSummary=function(){const count=history().length,weight=weights().length,custom=programs().filter(function(p){return !p.builtin;}).length;const labels={hu:['Helyi edzések','Testsúlyadatok','Saját programok'],en:['Local workouts','Weight entries','Custom programs'],de:['Lokale Trainings','Gewichtseinträge','Eigene Programme'],ro:['Antrenamente locale','Înregistrări de greutate','Programe proprii']}[rf212Lang()]||['Local workouts','Weight entries','Custom programs'];return labels[0]+': '+count+' · '+labels[1]+': '+weight+' · '+labels[2]+': '+custom;};
 var tp105ArchiveBridge=function(){const p=window.Capacitor?.Plugins?.BackupArchive||window.Capacitor?.registerPlugin?.('BackupArchive');if(!p)throw Error(tp105Text('native'));return p;};
+// Snapshot retention only touches remote backups; it does not mutate this phone's dataset/photos.
+var tp105DataSyncBusy=function(){return cloudBusy&&cloudActiveOperation!=='maintenance';};
 var tp105HealthConsent=function(){return db.get('privacyPrefs',{}).includeHealth===true;};
 var tp105Project=function(data,includeHealth){
  const d=JSON.parse(JSON.stringify(data));d.appVersion='1.0.5';d.healthIncluded=includeHealth===true;
@@ -14156,11 +14166,11 @@ validateBackup=function(d){
  return d;
 };
 restoreText=async function(text,archiveToken=null){
- if(state.session||cloudBusy||window.TrainPilotBackupBusy&&!archiveToken)throw Error(tp105Text('busy'));
+ if(state.session||tp105DataSyncBusy()||window.TrainPilotBackupBusy&&!archiveToken)throw Error(tp105Text('busy'));
  if(String(text).length>20*1024*1024)throw Error('Maximum 20 MB.');
  const d=validateBackup(JSON.parse(String(text).replace(/^\uFEFF/,'')));
  if(!await tp2628Confirm(tp149T('dialog.restore.message',{workouts:d.history.length,weights:d.weights.length}),{title:tp149T('dialog.restore.title'),confirmText:tp149T('backup.restore'),danger:true}))return false;
- if(state.session||cloudBusy||window.TrainPilotBackupBusy&&!archiveToken)throw Error(tp105Text('busy'));
+ if(state.session||tp105DataSyncBusy()||window.TrainPilotBackupBusy&&!archiveToken)throw Error(tp105Text('busy'));
  // Manual restore replaces this dataset; cloud sync alone preserves local Health enrichment.
  const next={...d,programs:d.programs||rf12BuiltinPrograms(),activeProgramId:d.activeProgramId||'home-basic',plannerSettings:d.plannerSettings||plannerSettings(),scheduled:d.scheduled||[],draft:null};
  for(const h of next.history||[])for(const photo of h.photos||[])if(archiveToken&&!photo.deletedAt)photo.driveFileId=null;
@@ -14175,9 +14185,9 @@ restoreText=async function(text,archiveToken=null){
 };
 var tp105SetHealth=async function(on){if(cloudBusy){alert(tp105Text('busy'));render();return;}if(on&&!await tp2628Confirm(tp105Text('healthConfirm'),{title:tp105Text('data')})){render();return;}if(cloudBusy){render();return;}db.set('privacyPrefs',{includeHealth:!!on});if(cloudProfile?.sub){localStorage.removeItem('repforge:cloudBase:'+cloudProfile.sub);localStorage.removeItem('repforge:cloudHeads:'+cloudProfile.sub);}render();};
 var tp105Archive=async function(restore=false){
- if(!isNative()){alert(tp105Text('native'));return;}if(state.session||cloudBusy||window.TrainPilotBackupBusy){alert(tp105Text('busy'));return;}
+ if(!isNative()){alert(tp105Text('native'));return;}if(state.session||tp105DataSyncBusy()||window.TrainPilotBackupBusy){alert(tp105Text('busy'));return;}
  const bridge=tp105ArchiveBridge();let token=null;window.TrainPilotBackupBusy=true;
- try{if(restore){const r=await bridge.open();if(r.cancelled)return;token=r.token;await restoreText(r.data,token);}else{const r=await bridge.save({data:JSON.stringify(makeBackup()),name:'TrainPilot-'+new Date().toISOString().slice(0,10)+'.zip'});if(r.cancelled)return;if(!r.verified)throw Error(tp149T('backup.verifyError'));db.set('lastExport',{name:r.name,date:new Date().toISOString(),bytes:r.bytes});alert(tp149T('backup.exportDone',{name:r.name,bytes:tp149FormatNumber(r.bytes)}));render();}}catch(e){alert(e?.message||String(e));}finally{try{if(token&&!localStorage.getItem('repforge:archiveRestore105'))await bridge.discard({token:token});}finally{window.TrainPilotBackupBusy=false;}}
+ try{if(restore){const r=await bridge.open();if(r.cancelled)return;token=r.token;await restoreText(r.data,token);}else{const r=await bridge.save({data:JSON.stringify(makeBackup()),name:'TrainPilot-'+new Date().toISOString().slice(0,10)+'.zip'});if(r.cancelled)return;if(!r.verified)throw Error(tp149T('backup.verifyError'));db.set('lastExport',{name:r.name,date:new Date().toISOString(),bytes:r.bytes});alert(tp149T('backup.exportDone',{name:r.name,bytes:tp149FormatNumber(r.bytes)}));render();}}catch(e){alert(e?.message||String(e));}finally{try{if(token&&!localStorage.getItem('repforge:archiveRestore105'))await bridge.discard({token:token});}finally{window.TrainPilotBackupBusy=false;if(!cloudBusy)finishCloud();}}
 };
 var tp105ManageData=async function(kind){
  if(state.session||cloudBusy||window.TrainPilotBackupBusy){alert(tp105Text('busy'));return;}

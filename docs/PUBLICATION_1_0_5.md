@@ -1,6 +1,6 @@
 # TrainPilot 1.0.5 publication candidate
 
-Base: published v1.0.4 / `1d84c54dbcb46f3c6aaf7a94435dafd85586a91a`. Version code: 2685. This is a test candidate; main and v1.0.4 must remain unchanged until phone acceptance.
+Base: published v1.0.4 / `1d84c54dbcb46f3c6aaf7a94435dafd85586a91a`. Version code: 2686. This is a test candidate; main and v1.0.4 must remain unchanged until phone acceptance.
 
 ## Implemented changes
 
@@ -12,6 +12,7 @@ Base: published v1.0.4 / `1d84c54dbcb46f3c6aaf7a94435dafd85586a91a`. Version cod
 - Calendar preparation checks the cached calendar. Missing calendars are rediscovered/recreated, and a changed identity invalidates the delta cache. A calendar changing during a batch causes a retryable manual failure rather than partial-success reporting.
 - Idempotent Google requests retry 429/selected 5xx up to three times with exponential delays and Retry-After handling. Non-idempotent Drive uploads/calendar creation are not repeated blindly. Long server cooldowns end the attempt instead of retrying early.
 - After a verified new snapshot, retention preserves the latest ten snapshots and oldest snapshot of this device. Other devices and legacy snapshots with missing/synthetic IDs are protected. Cleanup failure does not invalidate the verified sync; its result remains in the local diagnostic record. Protected legacy snapshots can therefore exceed this limit.
+- Drive data sync reports completion before retention starts. Retention displays a separate maintenance status and permits local ZIP backup/restore; new Google operations remain serialized. A queued calendar sync waits for an open backup picker/restore to finish. The actual #18 runtime now skips unchanged snapshot/photo reads after its first complete legacy recovery scan; local edits, changed remote heads and pending photos still take the full merge path.
 - Android automatic backup and device transfer exclude app data. Explicit file backups and Drive sync remain available.
 - Bundled HU/EN/DE/RO privacy policy describes persistent storage, optional exports and deletion limits. Native Health availability messages follow the chosen app language.
 - Separate, manually triggered Play AAB workflow uses separate upload-key secrets. Gradle rejects a debug certificate and missing publisher/contact/privacy configuration for Play builds. No upload to Play or new public Release is performed by this workflow.
@@ -38,5 +39,6 @@ Validate on two real accounts outside the developer/test-user list, using a Play
 6. Test disconnect vs revoke. Only use erasure controls on a disposable test account/dataset; verify other calendars and Drive files are untouched.
 7. Interrupt ZIP restoration and restart; validate data and photo rollback. Validate low-storage behavior on a test device.
 8. Inspect the new privacy controls in all supported languages at small screen widths.
+9. After Drive/Calendar timestamps update, create a ZIP backup. If old snapshot maintenance is still running, verify its separate message and usable local backup. Cancel the picker and repeat; queued Calendar work must resume after the picker closes. Repeat an unchanged Drive sync and verify it completes without re-downloading all old backups.
 
 Optional feature proposals (background rest timer, CSV/PDF exports, supersets, warm-up sets, undo, unit conversion, Coach explanations) remain separate feature work. They are not represented as fixes completed by this candidate.
