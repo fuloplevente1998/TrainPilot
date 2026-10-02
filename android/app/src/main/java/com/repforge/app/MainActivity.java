@@ -15,6 +15,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(GoogleSyncPlugin.class);
         registerPlugin(WorkoutPhotosPlugin.class);
         registerPlugin(HealthBridgePlugin.class);
+        registerPlugin(DistanceTrackerPlugin.class);
         super.onCreate(savedInstanceState);
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override public void handleOnBackPressed() {

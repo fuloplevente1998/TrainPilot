@@ -9,7 +9,7 @@ const {chromium}=require('playwright');
   await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.TrainPilotUiHotfix?.version==='2630b');await page.waitForTimeout(120);
   assert.equal(await page.evaluate(()=>window.TrainPilotUiUnify?.version),'2630-main');
   assert.equal(await page.evaluate(()=>window.TrainPilotUiHotfix?.calendarActionsRestored),true);
-  assert.equal(await page.evaluate(()=>makeBackup().appVersion),'1.0.5');
+  assert.equal(await page.evaluate(()=>makeBackup().appVersion),require('../../package.json').version);
 
   await page.evaluate(()=>{db.set('language','hu');db.set('activeProgramId','home-basic');state.session=null;state.tab='plan';render()});await page.waitForTimeout(60);
   const day=page.locator('.tp146-day-head').first();

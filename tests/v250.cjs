@@ -7,7 +7,7 @@ const index=fs.readFileSync('www/index.html','utf8');
 for(const [,attrs,inline] of index.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)){const src=attrs.match(/src="([^"]+)"/);vm.runInContext(src?fs.readFileSync('www/'+src[1],'utf8'):inline,ctx,{filename:src?.[1]||'inline'});}
 const run=s=>vm.runInContext(s,ctx);
 async function tests(){
- assert.equal(run('makeBackup().appVersion'),'1.0.5');
+ assert.equal(run('makeBackup().appVersion'),'1.0.6');
  // Exact five-step effort weights restored; workout timestamps must be in the past.
  const now=new Date(Date.now()-3600000).toISOString(),later=new Date(Date.now()-1000).toISOString();
  for(const [effort,expected] of Object.entries({easy:100,light:100,good:100,challenging:96,hard:92,pain:80})){

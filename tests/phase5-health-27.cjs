@@ -14,7 +14,7 @@ for(const marker of [
 ])assert.ok(index.includes(marker),'missing Phase 5 marker: '+marker);
 assert.match(index,/healthLedgerV1/);
 assert.match(index,/averageHeartRate/);
-assert.equal(pkg.version,'1.0.5');
-assert.equal(src.version,'1.0.5');assert.equal(src.versionCode,2687);assert.equal(src.baselineCommit,'1d84c54dbcb46f3c6aaf7a94435dafd85586a91a');
-assert.match(gradle,/versionCode\s+2687/);assert.match(gradle,/versionName\s+"1\.0\.5"/);
+assert.equal(pkg.version,'1.0.6');
+assert.equal(src.version,'1.0.6');assert.equal(src.versionCode,2690);assert.equal(src.baselineCommit,'f4a556ab158c0770dfebb42a0580b0bf3089cc2a');
+assert.match(gradle,/versionCode\s+2690/);assert.match(gradle,/versionName\s+"1\.0\.6"/);
 console.log('PASS Phase 5 static: #27 pulse source/calendar window + persistent TrainPilot weight editor.');

@@ -22,7 +22,7 @@ assert.equal(run('rf263ParseDate("2023-02-29")'),null);
 assert.equal(run('rf263DateKey(rf263ParseDate("2024-02-29"))'),'2024-02-29');
 assert.equal(run('rf263ParseDate("<script>")'),null);
 assert.equal(writes,1,'one final startup render');
-assert.equal(run('makeBackup().appVersion'),'1.0.5');
+assert.equal(run('makeBackup().appVersion'),'1.0.6');
 for(let n=0;tasks.length&&n<10;n++){const q=tasks;tasks=[];for(const fn of q)fn();}
 assert.equal(cloudChecks,1);assert.equal(run('window.TrainPilotBoot.finished'),true);
 run('window.TrainPilotBoot.finish()');assert.equal(writes,1,'finish is idempotent');

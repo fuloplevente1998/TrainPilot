@@ -97,6 +97,15 @@ jobs:
       - name: Run full Chromium UI regression suite
         run: npm run test:ui
 
+      - name: Upload custom exercise UI evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: TrainPilot-custom-distance-ui-${{ github.run_id }}
+          path: ui-evidence/*.png
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Stamp source commit
         run: node -e "const fs=require('fs'),s=require('./SOURCE_VERSION.json');s.sourceCommit=process.env.GITHUB_SHA;fs.writeFileSync('SOURCE_VERSION.json',JSON.stringify(s,null,2)+'\n')"
 
