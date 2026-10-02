@@ -7,10 +7,10 @@ for(const [,f] of fs.readFileSync('www/index.html','utf8').matchAll(/<script\b[^
 const run=s=>vm.runInContext(s,ctx);
 assert.equal(run('window.TrainPilotAdaptivePlanner.version'),'1.4.8');
 assert.equal(run('window.TrainPilotHotfix.version'),'1.4.8.1');
-assert.equal(run('exercises().length'),100,'1.4.8 built-in library must contain 100 exercises');
-assert.equal(run('new Set(exercises().map(e=>e.id)).size'),100,'exercise IDs must stay unique');
+assert.equal(run('exercises().length'),106,'1.4.8 built-in library must contain 106 exercises');
+assert.equal(run('new Set(exercises().map(e=>e.id)).size'),106,'exercise IDs must stay unique');
 for(const k of ['bands','pullupbar','dipbars','kettlebell'])assert.ok(run('Object.hasOwn(GEAR132,"'+k+'")'),'missing gear '+k);
-assert.equal(run('exercises().filter(e=>demoInfo(e.id)).length'),100,'all built-in exercises need a demo/search entry');
+assert.equal(run('exercises().filter(e=>demoInfo(e.id)).length'),106,'all built-in exercises need a demo/search entry');
 const presetIds=['home-upper-ab','home-quick-30','calisthenics-ab','bands-ab','kettlebell-ab','gym-upper-lower','gym-ppl','gym-strength-abc'];
 for(const id of presetIds)assert.ok(run("programs().some(p=>p.id==='"+id+"'&&p.builtin)"),'missing built-in preset '+id);
 assert.ok(run('programs().filter(p=>p.builtin).length')>=13,'expanded built-in program library expected');
@@ -78,4 +78,4 @@ assert.ok(!featureSource.includes("'.tp-brand-strip .tag{"),'1.4.8 must not over
 
 assert.ok(backupSource.includes('d.exercises.length>300'),'legacy backup validator should allow expanded/custom libraries');
 assert.ok(!featureSource.match(/generatePersonalProgram=function\(input\)\{[^]{0,900}RF150_HOME/),'final personal generator must not be based on RF150_HOME');
-console.log('PASS TrainPilot 1.4.8: 100 exercises, adaptive exclusions/splits, 20–120 min scaling, localized custom patterns/styles and new gear.');
+console.log('PASS TrainPilot 1.4.8: 106 exercises, adaptive exclusions/splits, 20–120 min scaling, localized custom patterns/styles and new gear.');

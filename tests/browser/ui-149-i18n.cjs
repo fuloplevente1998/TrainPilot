@@ -63,7 +63,7 @@ async function audit(page,label){
     ro:window.t?.('workout.start',{},'ro')
    }));
    assert.deepEqual(engine.missing,[],'key catalog must be complete in all four languages');
-   assert.equal(engine.exerciseNames.total,100,'built-in exercise library must contain exactly 100 exercises');
+   assert.equal(engine.exerciseNames.total,106,'built-in exercise library must contain exactly 106 exercises');
    for(const [field,missing] of Object.entries(engine.exerciseNames.missing))assert.deepEqual(missing,[],'missing exercise localization for '+field);
    assert.equal(engine.programs.total,13,'built-in program library must contain exactly 13 programs');
    assert.deepEqual(engine.programs.missing,[],'built-in program localization must cover every day');
@@ -197,7 +197,7 @@ async function audit(page,label){
     await page.evaluate(()=>rf203ExerciseLibrary());const lt=await audit(page,lang+':library:'+viewport.width+'x'+viewport.height);
     assert.ok(lt.toLocaleLowerCase().includes(expected[lang][9].toLocaleLowerCase()),lang+' library title missing');
     const firstNames=await page.locator('.exercise .ex-name, #libraryResults .tp-library-card h3').allTextContents();
-    assert.equal(firstNames.length,100,lang+' should render the complete 100-exercise library');
+    assert.equal(firstNames.length,106,lang+' should render the complete 106-exercise library');
     const badName=firstNames.find(n=>huLeak.test(n));if(badName)problems.push(lang+' untranslated exercise name: '+badName);
 
     await page.evaluate(()=>customExerciseScreen());await audit(page,lang+':custom:'+viewport.width+'x'+viewport.height);

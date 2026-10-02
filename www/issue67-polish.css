@@ -37,7 +37,16 @@ html body #tp155R4PanelHost[data-panel="stats"] .tp67-stats-heading{padding:0 44
 html body #tp155R4PanelHost[data-panel="stats"] .tp67-stats-heading h2{margin:0;font-size:20px;line-height:1.25}
 html body #tp155R4PanelHost[data-panel="stats"] .tp3-stats-card{margin:0!important}
 
-#tp155R4PanelHost[data-panel="custom-exercise"] .hero{padding-right:46px;margin-top:0}
-#tp155R4PanelHost[data-panel="custom-exercise"] .tp155-r4-panel-close{position:sticky!important;top:8px!important;float:right!important;z-index:20!important}
 .tp106-custom-exercise{padding:4px 0 12px!important}.tp106-custom-exercise .hero h1{font-size:24px!important}.tp106-custom-exercise label{min-width:0}.tp106-custom-exercise .setting{margin-top:8px}
+html body #tp155R4PanelHost:is([data-panel="custom-exercise"],[data-panel="custom-program"]){padding-top:12px!important}
+html body #tp155R4PanelHost:is([data-panel="custom-exercise"],[data-panel="custom-program"]) .tp155-r4-panel{border:1px solid color-mix(in srgb,var(--accent) 42%,var(--line))!important;border-radius:18px!important;margin-top:0!important;padding:0 10px 12px!important;max-height:calc(100% - 8px)!important}
+html body #tp155R4PanelHost .tp106-builder-header{position:sticky;top:0;z-index:25;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;background:var(--card);border-bottom:1px solid var(--line);margin-bottom:8px}
+html body #tp155R4PanelHost .tp106-builder-header strong{font-size:20px;line-height:1.2;min-width:0;overflow-wrap:anywhere}
+html body #tp155R4PanelHost .tp106-builder-header .tp155-r4-panel-close{position:static!important;float:none!important;align-self:center!important;margin:0!important;flex:0 0 36px;z-index:26!important}
+html body #tp155R4PanelHost:is([data-panel="custom-exercise"],[data-panel="custom-program"]) .hero{padding:4px 0 8px!important;margin:0!important}
+html body #tp155R4PanelHost[data-panel="custom-exercise"] .hero h1{display:none!important}
+.tp106-custom-program{min-width:0}.tp106-custom-program .setting{margin-top:8px}.tp106-custom-program .tp152-custom-row{min-width:0}.tp106-custom-program .tp-select{min-width:0;max-width:100%}
+html body main.tp150-programs-compact>.custom-ex-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:10px!important;box-sizing:border-box!important;margin:8px 0!important;padding:10px 12px!important;border:1px solid var(--line)!important;border-radius:14px!important;background:var(--card)!important;overflow:hidden!important}
+html body main.tp150-programs-compact>.custom-ex-row>span{min-width:0!important;overflow-wrap:anywhere!important;font-weight:800!important}
+html body main.tp150-programs-compact>.custom-ex-row>.btn{margin:0!important;max-width:100%!important;justify-self:end!important}
 .tp106-distance-label{min-width:0}.tp106-distance-label input{width:100%;min-width:0}.tp106-gps-card{padding:11px!important;margin:8px 0!important}.tp106-gps-card p{margin:6px 0}

@@ -16,10 +16,13 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   assert.equal(await page.evaluate(()=>state.tab),'programs','overlay preserves Programs route');
   const style=await panel.evaluate(host=>{
    const close=host.querySelector('.tp155-r4-panel-close'),r=close.getBoundingClientRect(),p=host.querySelector('.tp155-r4-panel').getBoundingClientRect();
-   return {color:getComputedStyle(close).backgroundColor,fit:host.scrollWidth<=host.clientWidth+1&&host.querySelector('main').scrollWidth<=host.querySelector('main').clientWidth+1,right:p.right-r.right,top:r.top-p.top,side:r.width,form:!!host.querySelector('#ceMeasure'),selects:host.querySelectorAll('.tp-select').length};
+   return {color:getComputedStyle(close).backgroundColor,fit:host.scrollWidth<=host.clientWidth+1&&host.querySelector('main').scrollWidth<=host.querySelector('main').clientWidth+1,right:p.right-r.right,top:r.top-p.top,side:r.width,form:!!host.querySelector('#ceMeasure'),selects:host.querySelectorAll('.tp-select').length,rounded:parseFloat(getComputedStyle(host.querySelector('.tp155-r4-panel')).borderTopLeftRadius),header:!!close.closest('.tp106-builder-header')};
   });
   assert.equal(style.color,'rgb(71, 37, 41)','shared red X');assert.ok(style.form&&style.side>=36&&style.right>=0&&style.right<=24&&style.top>=0&&style.top<=38,JSON.stringify(style));
   assert.equal(style.fit,true,language+'/'+width+' panel must fit');assert.equal(style.selects,5,'current themed selects are ready on first open');
+  assert.ok(style.rounded>=18&&style.header,'full frame and separate close-button header');
+  await panel.locator('.tp155-r4-panel').evaluate(el=>el.scrollTop=el.scrollHeight);
+  assert.equal(await panel.evaluate(host=>{const h=host.querySelector('.tp106-builder-header').getBoundingClientRect(),x=host.querySelector('.tp155-r4-panel-close').getBoundingClientRect();return x.top>=h.top&&x.bottom<=h.bottom&&x.right<=h.right}),true,'X stays inside the header when scrolled');
   await panel.locator('input[name="ceGear"]').first().evaluate(el=>el.closest('details').open=true);
   const checkbox=panel.locator('input[name="ceGear"]').first();await checkbox.check();
   const checked=await checkbox.evaluate(el=>{const ref=document.createElement('span');ref.style.color='var(--accent)';document.body.appendChild(ref);const cs=getComputedStyle(el),r=el.getBoundingClientRect(),out={appearance:cs.appearance,bg:cs.backgroundColor,accent:getComputedStyle(ref).color,w:r.width,h:r.height,label:el.closest('label').getBoundingClientRect().height};ref.remove();return out});
@@ -30,6 +33,12 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   await opener.click();assert.equal(await panel.locator('#ceHu').inputValue(),'','reopen does not leak cancelled values');
   assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),true);await panel.waitFor({state:'detached'});
   assert.equal(await page.evaluate(()=>state.tab),'programs');
+  const programCount=await page.evaluate(()=>programs().length);
+  await page.locator('button[onclick="createCustomProgram()"]').click();
+  const programPanel=page.locator('#tp155R4PanelHost[data-panel="custom-program"]');await programPanel.waitFor({state:'visible'});
+  assert.equal(await programPanel.locator('#tp106ProgramName').count(),1);
+  assert.equal(await programPanel.evaluate(host=>host.scrollWidth<=host.clientWidth+1&&host.querySelector('.tp155-r4-panel-close').closest('.tp106-builder-header')!==null),true,'new program frame fits '+language+'/'+width);
+  await programPanel.locator('.tp155-r4-panel-close').click();assert.equal(await page.evaluate(()=>programs().length),programCount,'cancel creates no program');
  }
  for(const theme of ['classicBlue','green']){
   await page.evaluate(t=>{rf200SetTheme(t);db.set('language','hu');go('programs')},theme);await opener.click();
@@ -37,7 +46,29 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   assert.equal(await input.evaluate(el=>{const ref=document.createElement('span');ref.style.color='var(--accent)';document.body.appendChild(ref);const match=getComputedStyle(el).backgroundColor===getComputedStyle(ref).color;ref.remove();return match}),true,'checkbox follows '+theme);
   await panel.locator('.tp155-r4-panel-close').click();
  }
- await page.setViewportSize({width:393,height:873});await page.evaluate(()=>{rf200SetTheme('yellow');db.set('language','hu');go('programs')});await opener.click();
+ await page.setViewportSize({width:393,height:873});await page.evaluate(()=>{rf200SetTheme('yellow');db.set('language','hu');go('programs')});
+ await page.locator('button[onclick="createCustomProgram()"]').click();
+ const programPanel=page.locator('#tp155R4PanelHost[data-panel="custom-program"]');
+ await programPanel.locator('#tp106ProgramName').fill('Távolság program');await programPanel.locator('button[type="submit"]').click();
+ const programId=await page.evaluate(()=>tp106ProgramId);assert.ok(programId);assert.equal(await page.evaluate(id=>programById(id).days.length,programId),2);
+ const day=programPanel.locator('.tp152-custom-day').first(),select=day.locator('select').first();
+ await select.locator('..').locator('.tp-select-trigger').click();await select.locator('..').locator('.tp-select-option[data-value="running"]').click();
+ assert.equal(await page.evaluate(id=>programById(id).days[0].exercises[0],programId),'running');
+ await day.locator('button[onclick^="addCustomExercise("]').click();assert.equal(await page.evaluate(id=>programById(id).days[0].exercises.length,programId),4);
+ await day.locator('.tp152-custom-actions .danger').last().click();assert.equal(await page.evaluate(id=>programById(id).days[0].exercises.length,programId),3);
+ fs.mkdirSync('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/custom-program-106.png'});
+ await programPanel.locator('.tp155-r4-panel-close').click();assert.equal(await page.evaluate(()=>state.tab),'programs');
+ await page.evaluate(id=>editCustomProgram(id),programId);assert.equal(await programPanel.locator('select').first().inputValue(),'running');await programPanel.locator('.tp155-r4-panel-close').click();
+ // All six built-in activities can be found and started without making a custom exercise.
+ for(const id of ['running','jogging','inline-skating','cycling','walking','hiking']){
+  await page.evaluate(()=>{state.session=null;db.set('draft',null);go('plan')});await page.locator('.tp150-quick-entry button').click();
+  const name=await page.evaluate(id=>byId(id).hu,id);await page.locator('#tp155QuickQuery, #tp150QuickQuery').first().fill(name);
+  const row=page.locator('#tp150QuickResults [data-exercise-id="'+id+'"]');await row.locator('summary').click();await row.locator('.tp150-quick-start').click();
+  await page.waitForSelector('[data-tp106-distance]');assert.equal(await page.evaluate(()=>state.session.exercises[0].id),id);
+  assert.equal(await page.evaluate(()=>state.session.exercises[0].measurementType),'distance');assert.equal(await page.locator('#tp106GpsButton').count(),1);
+  assert.match(await page.locator('.tp155-workout-coach').innerText(),/Idő és távolság/);
+ }
+ await page.evaluate(()=>{state.session=null;db.set('draft',null);go('programs')});await opener.click();
  await panel.locator('#ceHu').fill('Futás / kocogás / görkori');
  await panel.locator('#ceMeasure').locator('..').locator('.tp-select-trigger').click();await panel.locator('#ceMeasure').locator('..').locator('.tp-select-option[data-value="distance"]').click();
  await panel.locator('#ceMeasure').locator('..').waitFor({state:'visible'});await page.waitForTimeout(180);

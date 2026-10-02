@@ -9,7 +9,7 @@ for(let n=0;tasks.length&&n<10;n++){const q=tasks;tasks=[];for(const fn of q)fn(
 const run=s=>vm.runInContext(s,ctx);
 assert.ok(order.indexOf('v253.js')<order.indexOf('v260.js')&&order.indexOf('v260.js')<order.indexOf('trainpilot-148-adaptive-planner.js')&&order.indexOf('trainpilot-148-adaptive-planner.js')<order.indexOf('ready.js'),'v148 must extend the stable v260 UI before ready');
 assert.equal(run('RF260_UI_VERSION'),'2.6.2');
-assert.equal(run('exercises().length'),100);assert.equal(run('exercises().filter(e=>demoInfo(e.id)).length'),100,'all 100 exercises must have demo/search mappings');
+assert.equal(run('exercises().length'),106);assert.equal(run('exercises().filter(e=>demoInfo(e.id)).length'),106,'all 106 exercises must have demo/search mappings');
 const squat=run("rf201ExerciseRow('A','db-squat',0)"),push=run("rf201ExerciseRow('A','pushup',0)");
 assert.ok(squat.includes("openDemo('db-squat')")&&squat.includes('tp-play-btn'),'workout row must bind video by current exercise ID');
 assert.ok(push.includes("openDemo('pushup')")&&!push.includes("openDemo('db-squat')"),'video binding must change with exercise ID');

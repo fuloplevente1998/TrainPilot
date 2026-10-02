@@ -18,6 +18,18 @@ function runtime(){
 }
 (async()=>{
  const a=runtime(),run=a.run;
+ assert.equal(run('exercises().length'),106);
+ for(const id of ['running','jogging','inline-skating','cycling','walking','hiking']){
+  assert.equal(run(`tp106IsDistance({id:${JSON.stringify(id)},sets:1})`),true,'built-in ID survives older session builders');
+  assert.equal(run(`byId(${JSON.stringify(id)}).measurementType`),'distance');
+  assert.equal(run(`byId(${JSON.stringify(id)}).repUnit`),'mp');
+  assert.equal(run(`available132(${JSON.stringify(id)},{gear:[],excluded:[]})`),false,'strength generator excludes distance activities');
+  assert.equal(run(`rf152Recommendation(${JSON.stringify(id)}).autoApply`),false);
+  assert.equal(run(`window.tp155CoachShortAdvice(${JSON.stringify(id)}).label`),'Idő és távolság');
+ }
+ assert.equal(run('Object.values(tp149ExerciseNameAudit().missing).every(rows=>rows.length===0)'),true,'new activities have complete four-language metadata');
+ run('db.set("exercises",exercises().filter(e=>!TP106_DISTANCE_IDS.has(e.id)))');
+ assert.equal(run('exercises().length'),106,'upgrade adds activities to the saved old 100-entry library');
  run(`const distanceExercise={...exercises()[0],id:'custom-run',hu:'Kocogás',en:'Jogging',custom:true,measurementType:'distance',repUnit:'mp',loadType:'bodyweight',sets:1,reps:'300',style:'conditioning',movementPattern:'other',gearNeeds:[],muscleGroup:'legs'};db.set('exercises',[...exercises(),distanceExercise]);`);
  assert.equal(run(`tp106ParseKm('5,125')`),5125);assert.equal(run(`tp106ParseKm('0.001')`),1);assert.equal(run(`tp106ParseKm('')`),null);
  for(const bad of ['-1','NaN','Infinity','2000.001','5km','1e3'])assert.throws(()=>run(`tp106ParseKm(${JSON.stringify(bad)})`));

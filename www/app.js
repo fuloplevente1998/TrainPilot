@@ -6173,6 +6173,7 @@ const rf148AvailableBase=available132;
 available132=function(id,p){
  const e=exercises().find(function(x){return x.id===id;});
  if(e&&e.custom){
+  if(e.measurementType==='distance')return false;
   if((p&&p.excluded||[]).includes(id))return false;
   const needs=Array.isArray(e.gearNeeds)?e.gearNeeds:[];
   const gear=profileGear132(p||{gear:[]});
@@ -11547,7 +11548,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
 
  let currentPanel='',panelHost=null,panelTrigger=null,bodyOverflow='',panelOpenScrollY=0;
  const panelDomSupported=(()=>{try{const x=document?.createElement?.('div');return !!(x&&typeof x.addEventListener==='function'&&document?.body&&typeof document.body.appendChild==='function')}catch(_){return false}})();
- const PANEL_ROUTES=new Set(['calendar','coach','settings','quick','exercises','stats','custom-exercise']);
+ const PANEL_ROUTES=new Set(['calendar','coach','settings','quick','exercises','stats','custom-exercise','custom-program']);
  const FULL_ROUTES=new Set(['home','plan','health','programs','history']);
 
  const routeFromButton=function(btn){
@@ -11634,6 +11635,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   if(type==='exercises')return typeof window.tp155ExercisePanelHtml==='function'?window.tp155ExercisePanelHtml():'';
   if(type==='stats')return typeof window.tp67FullStatsPanelHtml==='function'?window.tp67FullStatsPanelHtml():'';
   if(type==='custom-exercise')return typeof window.tp106CustomExercisePanelHtml==='function'?window.tp106CustomExercisePanelHtml():'';
+  if(type==='custom-program')return typeof window.tp106CustomProgramPanelHtml==='function'?window.tp106CustomProgramPanelHtml():'';
   return '';
  };
 
@@ -11649,6 +11651,11 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   const panel=panelHost.querySelector('.tp155-r4-panel'),content=panelHost.querySelector('.tp155-r4-panel-content');
   if(!panel||!content)return;
   const y=panel.scrollTop;
+  const builder=currentPanel==='custom-exercise'||currentPanel==='custom-program';
+  let header=panel.querySelector('.tp106-builder-header');
+  if(builder&&!header){header=document.createElement('div');header.className='tp106-builder-header';header.innerHTML='<strong id="tp106BuilderTitle"></strong>';header.appendChild(panel.querySelector('.tp155-r4-panel-close'));panel.prepend(header);}
+  if(!builder&&header){panel.prepend(header.querySelector('.tp155-r4-panel-close'));header.remove();}
+  if(builder){header.querySelector('strong').textContent=currentPanel==='custom-exercise'?tp149T('customExercise.title'):(tp106ProgramId?programById(tp106ProgramId)?.name:tp149T('dialog.customProgram.title'));}
   content.innerHTML=panelHtml(currentPanel);
   try{if(typeof rf260EnhanceSelects==='function')rf260EnhanceSelects()}catch(_){}
   try{if(typeof rf260EnhanceTemporalFields==='function')rf260EnhanceTemporalFields()}catch(_){}
@@ -14273,7 +14280,47 @@ var TP106_DISTANCE_TEXT={
  ro:{measure:'Tip de măsurare',reps:'Repetări',time:'Timp (s)',distance:'Timp și distanță',km:'Distanță (km)',seconds:'Timp (s)',help:'Alergare, jogging, patinaj și alte activități: timp și kilometri introduși manual sau prin măsurare GPS pornită separat.',gps:'Măsurare distanță GPS',start:'Pornește măsurarea GPS',stop:'Oprește și înregistrează',waiting:'Se așteaptă GPS… Distanța măsurată este o estimare.',tracking:'Măsurare GPS activă',stopped:'Măsurare GPS oprită',native:'Măsurarea GPS este disponibilă în aplicația Android. Distanța poate fi introdusă manual.',privacy:'Măsurarea cere localizare precisă și continuă cu notificare când ecranul este blocat. Se salvează doar distanța totală și timpul, fără traseu.',invalid:'Introdu o distanță validă (0–2000 km).',needDistance:'Introdu o distanță pozitivă sau măsoară prin GPS.',busy:'Așteaptă finalizarea operațiunii GPS.',manual:'Distanță manuală',signal:'GPS slab sau absent: segmentele lipsă nu sunt incluse.',saved:'Timpul și distanța GPS au fost înregistrate.'}
 };
 var tp106T=function(key){return (TP106_DISTANCE_TEXT[rf212Lang()]||TP106_DISTANCE_TEXT.en)[key]||key;};
-var tp106IsDistance=function(e){return !!(e&&(e.measurementType==='distance'||Array.isArray(e.sets)&&e.sets.some(function(s){return s&&Object.hasOwn(s,'distanceMeters');})||String(e.id||'').startsWith('custom-')&&byId(e.id)?.measurementType==='distance'));};
+const TP106_ACTIVITIES=[
+ ['running','Futás','Running','Laufen','Alergare'],
+ ['jogging','Kocogás','Jogging','Joggen','Jogging'],
+ ['inline-skating','Görkorcsolyázás / görkori','Inline skating','Inlineskaten','Patinaj pe role'],
+ ['cycling','Kerékpározás / bicikli','Cycling','Radfahren','Ciclism'],
+ ['walking','Séta / gyaloglás','Walking','Gehen','Mers pe jos'],
+ ['hiking','Túrázás','Hiking','Wandern','Drumeție']
+];
+const TP106_DISTANCE_IDS=new Set(TP106_ACTIVITIES.map(function(row){return row[0];}));
+const TP106_ACTIVITY_NOTES=[
+ 'Rögzítsd a megtett kilométert és az időt kézzel, vagy indíts külön GPS-mérést. A GPS csak összesített távot és időt tárol; beltéren add meg a távot kézzel.',
+ 'Record distance and time manually, or start GPS tracking separately. GPS stores only total distance and time; enter indoor distance manually.',
+ 'Strecke und Zeit manuell erfassen oder GPS separat starten. GPS speichert nur Gesamtstrecke und Zeit; Strecken in Innenräumen manuell eingeben.',
+ 'Introdu distanța și timpul manual sau pornește GPS separat. GPS salvează doar distanța totală și timpul; introdu manual distanța în interior.'
+];
+const TP106_ACTIVITY_EQUIPMENT={
+ 'running':['Futócipő','Running shoes','Laufschuhe','Pantofi de alergare'],
+ 'jogging':['Futócipő','Running shoes','Laufschuhe','Pantofi de alergare'],
+ 'inline-skating':['Görkorcsolya','Inline skates','Inlineskates','Role'],
+ 'cycling':['Kerékpár','Bicycle','Fahrrad','Bicicletă'],
+ 'walking':['Gyaloglócipő','Walking shoes','Wanderschuhe','Pantofi de mers'],
+ 'hiking':['Túracipő','Hiking shoes','Wanderschuhe','Pantofi de drumeție']
+};
+for(const row of TP106_ACTIVITIES){
+ const id=row[0],equipment=TP106_ACTIVITY_EQUIPMENT[id][0];
+ EXTRA_EXERCISES.push({id:id,hu:row[1],en:row[2],equipment:equipment,target:'Láb',notes:TP106_ACTIVITY_NOTES[0],sets:1,reps:'300',weight:0,loadType:'bodyweight',repUnit:'mp',measurementType:'distance',movementPattern:'conditioning',difficulty:'beginner',beginnerSafe:true,complexity:'low',compound:false,goalTags:['fitness'],style:'conditioning',gearNeeds:[],muscleGroup:'legs'});
+ MUSCLE_MAP[id]=['legs'];TP149_EX_DE[id]=row[3];TP149_EX_RO[id]=row[4];
+ TP149_EX_NOTE_EN[id]=TP106_ACTIVITY_NOTES[1];TP149_EX_NOTE_DE[id]=TP106_ACTIVITY_NOTES[2];TP149_EX_NOTE_RO[id]=TP106_ACTIVITY_NOTES[3];TP149_EQUIPMENT_ROWS[equipment]=TP106_ACTIVITY_EQUIPMENT[id];
+}
+var tp106IsDistance=function(e){return !!(e&&(e.measurementType==='distance'||TP106_DISTANCE_IDS.has(e.id)||Array.isArray(e.sets)&&e.sets.some(function(s){return s&&Object.hasOwn(s,'distanceMeters');})||String(e.id||'').startsWith('custom-')&&byId(e.id)?.measurementType==='distance'));};
+// These activities can be selected manually, but do not replace lifts in generated strength plans.
+const tp106AvailableBase=available132;
+available132=function(id,p){return TP106_DISTANCE_IDS.has(id)?false:tp106AvailableBase.apply(this,arguments);};
+const tp106DemoBase=demoInfo;
+demoInfo=function(id){if(!TP106_DISTANCE_IDS.has(id))return tp106DemoBase.apply(this,arguments);const e=byId(id);return {provider:null,videoId:null,credit:tp106T('distance'),source:'https://www.youtube.com/results?search_query='+encodeURIComponent(e.en+' technique tutorial'),sourceVerified:false,sourceKind:'unverified-search'};};
+const tp106RecommendationBase=rf152Recommendation;
+rf152Recommendation=function(id,se){if(!tp106IsDistance(se||{id:id}))return tp106RecommendationBase.apply(this,arguments);return {action:'hold',weight:0,autoApply:false,target:tp140Prescription(id,se),historyCount:0,text:tp106T('help')};};
+const tp106AdviceBase=rf233ExerciseAdvice;
+rf233ExerciseAdvice=function(id,decision){if(!tp106IsDistance({id:id}))return tp106AdviceBase.apply(this,arguments);return {action:'hold',label:tp106T('distance'),text:tp106T('help')};};
+const tp106ShortAdviceBase=window.tp155CoachShortAdvice;
+window.tp155CoachShortAdvice=function(id,decision,existing){if(!tp106IsDistance({id:id}))return tp106ShortAdviceBase.apply(this,arguments);return {action:'hold',label:tp106T('distance'),text:tp106T('help')};};
 var tp106Km=function(meters){return Number.isFinite(Number(meters))?tp149FormatNumber(Number(meters)/1000,{maximumFractionDigits:3}):'';};
 var tp106ParseKm=function(value){const raw=String(value).trim().replace(',','.');if(!raw)return null;if(!/^\d+(\.\d{0,3})?$/.test(raw))throw Error(tp106T('invalid'));const km=Number(raw);if(!Number.isFinite(km)||km<0||km>2000)throw Error(tp106T('invalid'));return Math.round(km*1000);};
 var tp106SetDistance=function(set,value){const meters=tp106ParseKm(value);if(meters===null){delete set.distanceMeters;delete set.distanceSource;}else{set.distanceMeters=meters;set.distanceSource='manual';}};
@@ -14285,12 +14332,35 @@ window.tp106CustomExercisePanelHtml=function(){
  const gears=Object.keys(GEAR132).map(function(k){return '<label class="exclude-row"><input type="checkbox" name="ceGear" value="'+esc(k)+'">'+esc(tp149PlannerGear(k))+'</label>';}).join('');
  const field=function(key,id,extra){return '<label>'+esc(tp149T('customExercise.'+key))+'<input id="'+id+'" class="field" maxlength="80" '+(extra||'')+'></label>';};
  return '<main class="tp106-custom-exercise"><div class="hero"><h1>'+esc(tp149T('customExercise.title'))+'</h1><p>'+esc(tp149T('customExercise.intro'))+'</p></div><div class="setting">'+field('name','ceHu')+field('equipment','ceEq')+
- '<label>'+esc(tp106T('measure'))+'<select id="ceMeasure" class="field"><option value="reps">'+esc(tp106T('reps'))+'</option><option value="time">'+esc(tp106T('time'))+'</option><option value="distance">'+esc(tp106T('distance'))+'</option></select></label><p class="small muted">'+esc(tp106T('help'))+'</p>'+
+ '<label>'+esc(tp106T('measure'))+'<select id="ceMeasure" class="field" onchange="tp106MeasureChanged(this.value)"><option value="reps">'+esc(tp106T('reps'))+'</option><option value="time">'+esc(tp106T('time'))+'</option><option value="distance">'+esc(tp106T('distance'))+'</option></select></label><p class="small muted">'+esc(tp106T('help'))+'</p>'+
  '<label>'+esc(tp149T('customExercise.muscle'))+'<select id="ceMuscle" class="field">'+muscles+'</select></label><label>'+esc(tp149T('customExercise.pattern'))+'<select id="cePattern" class="field">'+patterns+'</select></label><label>'+esc(tp149T('customExercise.style'))+'<select id="ceStyle" class="field">'+styles+'</select></label>'+
  '<label>'+esc(tp149T('customExercise.difficulty'))+'<select id="ceDifficulty" class="field"><option value="beginner">'+esc(tp149T('customExercise.beginner'))+'</option><option value="intermediate">'+esc(tp149T('customExercise.intermediate'))+'</option><option value="advanced">'+esc(tp149T('customExercise.advanced'))+'</option></select></label>'+
  '<details><summary>'+esc(tp149T('customExercise.gear'))+'</summary><p class="small muted">'+esc(tp149T('customExercise.gearHelp'))+'</p>'+gears+'</details><label>'+esc(tp149T('customExercise.notes'))+'<textarea id="ceNotes" class="field" maxlength="500"></textarea></label><button type="button" class="btn block" onclick="saveCustomExercise14()">'+esc(tp149T('customExercise.save'))+'</button></div></main>';
 };
 customExerciseScreen=function(){return window.tp155R4OpenPanel('custom-exercise',document.activeElement);};
+var tp106MeasureChanged=function(value){
+ if(value!=='distance')return;
+ for(const pair of [['ceMuscle','legs'],['cePattern','conditioning'],['ceStyle','conditioning']]){const el=document.getElementById(pair[0]);if(el){el.value=pair[1];el.dispatchEvent(new Event('change',{bubbles:true}));}}
+};
+var tp106ProgramId='';
+window.tp106CustomProgramPanelHtml=function(){
+ const p=tp106ProgramId?programById(tp106ProgramId):null;
+ if(!p)return '<main class="tp106-custom-program"><div class="hero"><p>'+esc(tp149T('programEdit.help'))+'</p></div><form class="setting" onsubmit="event.preventDefault();tp106SaveProgram()"><label>'+esc(tp149T('dialog.customProgram.name'))+'<input id="tp106ProgramName" class="field" maxlength="80" oninput="this.setCustomValidity('')" required value="'+esc(tp149T('dialog.customProgram.default'))+'"></label><label>'+esc(tp149T('dialog.customProgram.length'))+'<select id="tp106ProgramDays" class="field">'+Array.from({length:7},function(_,i){return '<option value="'+(i+1)+'" '+(i===1?'selected':'')+'>'+(i+1)+'</option>';}).join('')+'</select></label><button class="btn block" type="submit">'+esc(tp149T('programs.create'))+'</button></form></main>';
+ const id=p.id,options=function(selected){return exercises().map(function(e){return '<option value="'+esc(e.id)+'" '+(e.id===selected?'selected':'')+'>'+esc(tp149ExerciseName(e))+'</option>';}).join('');};
+ const days=p.days.map(function(d,di){
+  const rows=d.exercises.map(function(eid,ei){return '<div class="custom-ex-row tp152-custom-row"><select class="field" onchange="customExercise(\''+esc(id)+'\','+di+','+ei+',this.value)">'+options(eid)+'</select><div class="tp152-custom-actions"><button type="button" class="btn secondary" '+(ei===0?'disabled':'')+' onclick="moveCustomExercise14(\''+esc(id)+'\','+di+','+ei+',-1)">↑</button><button type="button" class="btn secondary" '+(ei===d.exercises.length-1?'disabled':'')+' onclick="moveCustomExercise14(\''+esc(id)+'\','+di+','+ei+',1)">↓</button><button type="button" class="btn danger" onclick="removeCustomExercise(\''+esc(id)+'\','+di+','+ei+')">×</button></div></div>';}).join('');
+  return '<details class="setting tp152-accordion tp152-custom-day" '+(di===0?'open':'')+'><summary><div><strong>'+esc(tp149ProgramDayName(p,d))+'</strong><div class="small muted">'+esc(tp149Plural('exercise.count',d.exercises.length))+'</div></div><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-accordion-body"><label>'+esc(tp149T('programEdit.dayName'))+'<input class="field" value="'+esc(d.name)+'" onchange="customDayName(\''+esc(id)+'\','+di+',this.value)"></label>'+rows+'<button type="button" class="btn secondary block" onclick="addCustomExercise(\''+esc(id)+'\','+di+')">＋ '+esc(tp152T('add'))+'</button></div></details>';
+ }).join('');
+ return '<main class="tp152-custom-program tp106-custom-program"><div class="hero"><p>'+esc(tp149T('programEdit.help'))+'</p></div>'+days+'</main>';
+};
+createCustomProgram=function(){tp106ProgramId='';return window.tp155R4OpenPanel('custom-program',document.activeElement);};
+var tp106SaveProgram=function(){
+ const input=document.getElementById('tp106ProgramName'),name=String(input?.value||'').trim(),count=Number(document.getElementById('tp106ProgramDays')?.value);
+ if(!name){input?.setCustomValidity(tp149T('dialog.customProgram.name'));input?.reportValidity();return;}if(!Number.isInteger(count)||count<1||count>7)return;
+ const p={id:'custom-'+crypto.randomUUID(),name:name.slice(0,80),location:'Egyéni',level:'Egyéni',builtin:false,days:Array.from({length:count},function(_,i){return {id:String.fromCharCode(65+i),name:String.fromCharCode(65+i),exercises:DEFAULT_PLAN.A.slice(0,3)};})};
+ db.set('programs',[...programs(),p]);tp106ProgramId=p.id;render();
+};
+editCustomProgram=function(id){const p=programById(id);if(!p||p.builtin)return;tp106ProgramId=id;if(!window.tp155R4OpenPanel('custom-program',document.activeElement))return;window.tp155R4RefreshPanel();};
 var tp106DistanceBridge=function(){return window.Capacitor?.Plugins?.DistanceTracker||window.Capacitor?.registerPlugin?.('DistanceTracker');};
 var tp106GpsState={active:false},tp106GpsBusy=false,tp106GpsPolling=false,tp106GpsTimer=null;
 var tp106GpsOwner=function(trip){
@@ -14381,111 +14451,6 @@ validateBackup=function(d){
 document.addEventListener('visibilitychange',function(){if(!document.hidden){void tp106SyncGPS();if(tp106GpsState.active&&!tp106GpsTimer)tp106GpsTimer=setInterval(tp106SyncGPS,1000);}});
 setTimeout(function(){void tp106SyncGPS();},0);
 // @endsection custom-exercise-distance-106.js
-
-
-// @section custom-program-panel-layout-106b.js
-/* 1.0.6 phone follow-up: keep custom exercise/program creation in the shared panel,
- * align the red close X, and give saved custom exercises their own compact cards.
- */
-(function(){
- 'use strict';
- if(typeof window.tp155R4OpenPanel!=='function'||typeof window.tp106CustomExercisePanelHtml!=='function')return;
-
- const exercisePanelHtmlBase=window.tp106CustomExercisePanelHtml;
- const createProgramBase=typeof createCustomProgram==='function'?createCustomProgram:null;
- const editProgramBase=typeof editCustomProgram==='function'?editCustomProgram:null;
- let mode='exercise',editingProgramId=null;
-
- const lang=function(){const x=typeof rf212Lang==='function'?rf212Lang():'hu';return ['hu','en','de','ro','sk','pl'].includes(x)?x:'hu'};
- const copy={
-  hu:{title:'Új saját program',help:'Add meg a program nevét és a ciklus hosszát. A napokat és gyakorlatokat ezután ugyanebben az ablakban szerkesztheted.',days:'Ciklus napjai',create:'Program létrehozása',defaultName:'Saját program'},
-  en:{title:'New custom program',help:'Set the program name and cycle length. You can edit days and exercises next in the same panel.',days:'Cycle days',create:'Create program',defaultName:'Custom program'},
-  de:{title:'Neues eigenes Programm',help:'Lege Programmname und Zykluslänge fest. Tage und Übungen kannst du danach im selben Fenster bearbeiten.',days:'Zyklustage',create:'Programm erstellen',defaultName:'Eigenes Programm'},
-  ro:{title:'Program personalizat nou',help:'Setează numele programului și lungimea ciclului. Apoi poți edita zilele și exercițiile în același panou.',days:'Zile în ciclu',create:'Creează programul',defaultName:'Program personalizat'},
-  sk:{title:'Nový vlastný program',help:'Nastav názov programu a dĺžku cyklu. Dni a cviky potom upravíš v tom istom paneli.',days:'Dni cyklu',create:'Vytvoriť program',defaultName:'Vlastný program'},
-  pl:{title:'Nowy własny program',help:'Ustaw nazwę programu i długość cyklu. Dni i ćwiczenia możesz potem edytować w tym samym panelu.',days:'Dni cyklu',create:'Utwórz program',defaultName:'Własny program'}
- };
- const tx=function(k){return copy[lang()]?.[k]||copy.hu[k]||k};
-
- const openShared=function(){
-  const host=document.getElementById('tp155R4PanelHost');
-  if(host?.dataset?.panel==='custom-exercise'){window.tp155R4RefreshPanel?.();return true}
-  return window.tp155R4OpenPanel('custom-exercise',document.activeElement);
- };
-
- const programCreateHtml=function(){
-  const opts=Array.from({length:7},function(_,i){const n=i+1;return '<option value="'+n+'" '+(n===2?'selected':'')+'>'+n+'</option>'}).join('');
-  return '<main class="tp106-custom-exercise tp106-custom-program-create"><div class="hero"><h1>'+esc(tx('title'))+'</h1><p>'+esc(tx('help'))+'</p></div><div class="setting">'+
-   '<label>'+esc(tp149T('customExercise.name'))+'<input id="tp106ProgramName" class="field" maxlength="80" value="'+esc(tx('defaultName'))+'"></label>'+
-   '<label>'+esc(tx('days'))+'<select id="tp106ProgramDays" class="field">'+opts+'</select></label>'+
-   '<button id="tp106CreateProgramButton" type="button" class="btn block" onclick="tp106SaveCustomProgram()">'+esc(tx('create'))+'</button></div></main>';
- };
-
- const programEditHtml=function(id){
-  const p=programById(id);if(!p||p.builtin)return '';
-  const options=function(selected){return exercises().map(function(e){return '<option value="'+esc(e.id)+'" '+(e.id===selected?'selected':'')+'>'+esc(tp149ExerciseName(e))+'</option>'}).join('')};
-  const days=(p.days||[]).map(function(d,di){
-   const rows=(d.exercises||[]).map(function(eid,ei){
-    return '<div class="custom-ex-row tp106-program-ex-row"><select class="field" onchange="customExercise(\''+esc(id)+'\','+di+','+ei+',this.value)">'+options(eid)+'</select>'+
-     '<div class="tp106-program-row-actions"><button type="button" class="btn secondary" '+(ei===0?'disabled':'')+' onclick="moveCustomExercise14(\''+esc(id)+'\','+di+','+ei+',-1)">↑</button>'+
-     '<button type="button" class="btn secondary" '+(ei===(d.exercises||[]).length-1?'disabled':'')+' onclick="moveCustomExercise14(\''+esc(id)+'\','+di+','+ei+',1)">↓</button>'+
-     '<button type="button" class="btn danger" onclick="removeCustomExercise(\''+esc(id)+'\','+di+','+ei+')">×</button></div></div>';
-   }).join('');
-   return '<details class="setting tp152-accordion tp152-custom-day" '+(di===0?'open':'')+'><summary><div><strong>'+esc(tp149ProgramDayName(p,d))+'</strong><div class="small muted">'+esc(tp149Plural('exercise.count',(d.exercises||[]).length))+'</div></div><span class="tp152-chevron" aria-hidden="true">⌄</span></summary>'+
-    '<div class="tp152-accordion-body"><label>'+esc(tp149T('programEdit.dayName'))+'<input class="field" value="'+esc(d.name)+'" onchange="customDayName(\''+esc(id)+'\','+di+',this.value)"></label>'+
-    '<label>'+esc(tp149T('programEdit.exercises'))+'</label>'+rows+
-    '<button type="button" class="btn secondary block" onclick="addCustomExercise(\''+esc(id)+'\','+di+')">＋ '+esc(tp149T('programEdit.add'))+'</button></div></details>';
-  }).join('');
-  return '<main class="tp106-custom-exercise tp106-custom-program-editor"><div class="hero"><h1>'+esc(tp149ProgramMeta(p,'name'))+'</h1><p>'+esc(tp149T('programEdit.help'))+'</p></div>'+days+'</main>';
- };
-
- window.tp106CustomExercisePanelHtml=function(){
-  if(mode==='program-create')return programCreateHtml();
-  if(mode==='program-edit')return programEditHtml(editingProgramId);
-  return exercisePanelHtmlBase();
- };
-
- customExerciseScreen=function(){mode='exercise';editingProgramId=null;return openShared()};
-
- createCustomProgram=function(){
-  if(!window.tp155R4OpenPanel&&createProgramBase)return createProgramBase.apply(this,arguments);
-  mode='program-create';editingProgramId=null;return openShared();
- };
-
- editCustomProgram=function(id){
-  const p=programById(id);
-  if(!p||p.builtin)return editProgramBase?editProgramBase.apply(this,arguments):undefined;
-  mode='program-edit';editingProgramId=id;return openShared();
- };
-
- window.tp106SaveCustomProgram=function(){
-  const input=document.getElementById('tp106ProgramName'),days=document.getElementById('tp106ProgramDays');
-  const name=String(input?.value||'').trim();
-  if(!name){input?.focus?.();return false}
-  const count=Math.max(1,Math.min(7,Number(days?.value)||2));
-  const seed=(DEFAULT_PLAN?.A||[]).slice(0,3);
-  if(!seed.length)return false;
-  const p={id:'custom-'+crypto.randomUUID(),name:name.slice(0,80),location:'Egyéni',level:'Egyéni',builtin:false,days:Array.from({length:count},function(_,i){const key=String.fromCharCode(65+i);return {id:key,name:key,exercises:seed.slice()}})};
-  db.set('programs',[...programs(),p]);mode='program-edit';editingProgramId=p.id;window.tp155R4RefreshPanel?.();return true;
- };
-
- const style=document.createElement('style');style.id='tp106CustomProgramPanelFixCss';style.textContent=[
-  '#tp155R4PanelHost[data-panel="custom-exercise"] .tp155-r4-panel{position:relative!important}',
-  '#tp155R4PanelHost[data-panel="custom-exercise"] .tp155-r4-panel-close{position:absolute!important;top:10px!important;right:10px!important;float:none!important;margin:0!important;z-index:30!important;background:#472529!important;color:#ffd9dc!important;border-color:#6d3238!important}',
-  '#tp155R4PanelHost[data-panel="custom-exercise"] .tp155-r4-panel-content{clear:none!important}',
-  '#tp155R4PanelHost[data-panel="custom-exercise"] .tp106-custom-exercise>.hero{padding-right:50px!important;min-height:40px!important;margin-top:0!important}',
-  'main.tp150-programs-compact>.custom-ex-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:10px!important;box-sizing:border-box!important;margin:8px 0!important;padding:10px 12px!important;border:1px solid var(--line)!important;border-radius:14px!important;background:var(--card)!important;overflow:hidden!important}',
-  'main.tp150-programs-compact>.custom-ex-row>span{min-width:0!important;overflow-wrap:anywhere!important;font-weight:800!important}',
-  'main.tp150-programs-compact>.custom-ex-row>.btn{margin:0!important;max-width:100%!important;justify-self:end!important}',
-  '.tp106-custom-program-create .setting{display:grid;gap:10px}.tp106-custom-program-create .btn{margin-top:2px}',
-  '.tp106-custom-program-editor .tp152-custom-day{margin:8px 0!important}.tp106-program-ex-row{grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important}',
-  '.tp106-program-row-actions{display:flex;gap:6px;align-items:center}.tp106-program-row-actions .btn{min-width:40px;padding:9px 10px!important;margin:0!important}',
-  '@media(max-width:350px){.tp106-program-ex-row{grid-template-columns:1fr!important}.tp106-program-row-actions{justify-content:flex-end!important}}'
- ].join('');
- document.head.appendChild(style);
- window.TrainPilot106PanelFollowup={version:'1.0.6-panel-followup',customProgramPanel:true,customExerciseCards:true,alignedRedClose:true};
-})();
-// @endsection custom-program-panel-layout-106b.js
 
 // @section ready.js
 if(!window.TrainPilotRestore105Pending)window.TrainPilotBoot.finish();

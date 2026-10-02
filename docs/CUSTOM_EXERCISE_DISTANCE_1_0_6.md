@@ -1,4 +1,4 @@
-# TrainPilot 1.0.6 / 2688 – own exercises and distance
+# TrainPilot 1.0.6 / 2689 – own exercises and distance
 
 Candidate based on published v1.0.5/main `f4a556ab158c0770dfebb42a0580b0bf3089cc2a`. This document describes implementation and acceptance checks; it does not assert physical-phone approval.
 
@@ -19,13 +19,21 @@ Choose repetitions, time, or time and distance. Running, jogging, skating and si
 - A session/exercise/set key prevents attaching totals to a different workout. Polling applies an absolute aggregate plus the pre-start totals, avoiding double counting. Notification stop and WebView reload recover totals into the same draft. GPS failure releases the UI and leaves manual totals intact.
 - Reject invalid fixes, accuracy worse than 35m, stale fixes, implausible jumps above 20m/s and stationary jitter. A gap over 30s reanchors without counting a guessed straight line. This is an estimate: missing signal can undercount; corners and device accuracy affect the result. Manual correction is supported.
 
+## Built-in activities and own program panels
+
+The existing 100 exercise entries remain intact. Six distance activities (running, jogging, inline skating, cycling, walking, hiking) are available directly in Quick Workout and in custom-program exercise selection. All six have Hungarian, English, German and Romanian names, equipment and notes. Demonstration links are explicitly unverified searches. Saved old libraries gain the new entries through the normal merge, without rewriting user data.
+
+Distance activity IDs retain measurement semantics through legacy session builders. Their Coach guidance describes time and distance without automatic weight or repetition progression. They are excluded from generated strength programs. Own distance exercises use conditioning defaults when selected.
+
+Both custom builders have a full rounded frame and a separate sticky header containing the red X. New program name/day-count entry and the day editor use the shared overlay; cancelling creation writes nothing. Existing day-name, selection, order and removal operations continue to save immediately. Closing preserves the underlying Programs page.
+
 ## Validation and remaining phone checks
 
 Node regression covers decimal parsing, invalid exports, concurrent starts, permission denial, stop/resume, draft recovery, manual correction and aggregate export. Chromium covers real panel lifecycle, current controls, narrow layouts, workout recording and Journal editing. JVM tests cover the native GPS distance filter. Release Gate builds/signs the APK and verifies source bytes and signer continuity. Performance CI compares against the same published v1.0.5 baseline.
 
-Before phone approval, install 2688 over 2687 without uninstalling and check:
+Before phone approval, install 2689 over 2687 without uninstalling and check:
 
-1. Programs panel: red X, themed checkbox, Android Back, no page jump; create a distance exercise named Futás/Kocogás/Görkori.
+1. Programs panels: full frame, header-contained red X even after scrolling, themed controls, Android Back, no page jump. Create/edit a program and an own distance exercise. Find all six built-in activities directly in Quick Workout.
 2. Enter e.g. `5,25`km / `1800`s, record it, edit in Journal, and round-trip a ZIP containing photos. Confirm existing workouts/Google links remain intact.
 3. Deny precise location or disable GPS: manual recording still works. Grant permission only when starting GPS; verify notification allow/deny paths and rapid repeated taps.
 4. Walk/run a known outdoor segment, lock the screen for several minutes, reopen, stop in the app and via the notification, then complete the workout. Compare approximate distance and elapsed time.

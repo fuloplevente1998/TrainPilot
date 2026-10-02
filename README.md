@@ -39,9 +39,9 @@ A GitHub APK kiadás nem jelenti a Google Play vagy a Google OAuth nyilvános be
 
 A `com.repforge.app`, egyes `repforge:*` helyi adattárolási kulcsok és régi backup/szinkron azonosítók szándékosan megmaradnak a korábbi telepítésekkel és felhasználói adatokkal való kompatibilitás miatt. Az eredeti release-aláírásnak a frissítésnél is változatlannak kell maradnia.
 
-## Következő tesztváltozat: 1.0.6 (2688)
+## Következő tesztváltozat: 1.0.6 (2689)
 
-A saját gyakorlat létrehozása a közös lebegő panelben nyílik meg, piros X-szel és témához igazodó jelölőnégyzetekkel. Az új mérési típusok: ismétlés, idő, illetve idő és távolság. A kilométer kézzel is megadható és szerkeszthető a naplóban; Androidon külön indított GPS-mérés is készül, csak összesített idő- és távadattal, útvonaltárolás nélkül.
+A saját gyakorlat és program létrehozása, illetve a program szerkesztése teljes keretű lebegő panelben nyílik meg, a fejlécen belül maradó piros X-szel és témához igazodó vezérlőkkel. A korábbi 100 gyakorlat mellé hat távolságos mozgás került: futás, kocogás, görkorcsolyázás, kerékpározás, séta és túrázás. Ezek a Gyors edzésben közvetlenül kereshetők, és saját programba is felvehetők. Az új mérési típusok: ismétlés, idő, illetve idő és távolság. A kilométer kézzel is megadható és szerkeszthető a naplóban; Androidon külön indított GPS-mérés is készül, csak összesített idő- és távadattal, útvonaltárolás nélkül.
 
 Ez fejlesztési tesztváltozat, nem publikált Release. A GPS valós kültéri pontossága, képernyőzár, engedélyek és frissítés készülékes ellenőrzésre várnak. [Megvalósítás és tesztlépések](docs/CUSTOM_EXERCISE_DISTANCE_1_0_6.md).
 
