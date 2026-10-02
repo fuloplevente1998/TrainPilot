@@ -14456,13 +14456,13 @@ setTimeout(function(){void tp106SyncGPS();},0);
 
 // Health Connect steps belong to the whole workout's active windows, never to GPS kilometres.
 var TP106_STEPS_TEXT={
- hu:{title:'Edzés lépései · Health Connect',note:'Az edzés aktív szakaszaihoz tartozó lépések. A telefon és az óra késleltetve oszthatja meg az adatokat; percenként frissítünk. A lépésekből nem számolunk GPS-távot.',refresh:'Lépések frissítése',busy:'Lépések lekérése…',pending:'Még nincs megosztott lépésadat ehhez az edzéshez.',permission:'Engedélyezd a lépések olvasását az Egészség → Engedélyek alatt.',unavailable:'Health Connect az Android alkalmazásban érhető el.',error:'A lépések nem frissültek. Próbáld újra; az előző adat megmaradt.',read:'Utolsó lekérés',timeOnly:'Beltéren GPS nélkül is rögzítheted az időt. Ismert távolságot kézzel adhatsz meg.'},
- en:{title:'Workout steps · Health Connect',note:'Steps for the active parts of this workout. Phone and watch data can arrive late; we refresh once a minute. Steps are not converted to GPS distance.',refresh:'Refresh steps',busy:'Reading steps…',pending:'No shared step data for this workout yet.',permission:'Allow reading steps in Health → Permissions.',unavailable:'Health Connect is available in the Android app.',error:'Steps could not be refreshed. Retry; the previous reading was kept.',read:'Last read',timeOnly:'Indoors you can record time without GPS. Enter a known distance manually.'},
- de:{title:'Trainingsschritte · Health Connect',note:'Schritte aus den aktiven Trainingsabschnitten. Telefon und Uhr können Daten verzögert teilen; Aktualisierung einmal pro Minute. Schritte werden nicht in GPS-Strecke umgerechnet.',refresh:'Schritte aktualisieren',busy:'Schritte werden gelesen…',pending:'Noch keine geteilten Schrittdaten für dieses Training.',permission:'Schrittzugriff unter Gesundheit → Berechtigungen erlauben.',unavailable:'Health Connect ist in der Android-App verfügbar.',error:'Schritte konnten nicht aktualisiert werden. Erneut versuchen; der letzte Wert bleibt erhalten.',read:'Zuletzt gelesen',timeOnly:'Innen kannst du Zeit ohne GPS erfassen. Eine bekannte Strecke kannst du manuell eingeben.'},
- ro:{title:'Pașii antrenamentului · Health Connect',note:'Pașii din segmentele active ale antrenamentului. Telefonul și ceasul pot partaja date cu întârziere; actualizăm o dată pe minut. Pașii nu sunt transformați în distanță GPS.',refresh:'Actualizează pașii',busy:'Se citesc pașii…',pending:'Încă nu există pași partajați pentru acest antrenament.',permission:'Permite citirea pașilor în Sănătate → Permisiuni.',unavailable:'Health Connect este disponibil în aplicația Android.',error:'Pașii nu au fost actualizați. Reîncearcă; valoarea anterioară a fost păstrată.',read:'Ultima citire',timeOnly:'În interior poți înregistra timpul fără GPS. Introdu manual o distanță cunoscută.'}
+ hu:{title:'Edzés lépései · Health Connect',note:'Az edzés aktív szakaszaihoz tartozó lépések. A telefon és az óra késleltetve oszthatja meg az adatokat; percenként frissítünk. A lépésekből nem számolunk GPS-távot.',refresh:'Lépések frissítése',grant:'Lépésengedély kérése',busy:'Lépések lekérése…',pending:'Még nincs megosztott lépésadat ehhez az edzéshez.',permission:'A lépések olvasási engedélye hiányzik. Engedélyezd itt vagy az Egészség → Engedélyek alatt.',unavailable:'Health Connect az Android alkalmazásban érhető el.',error:'A lépések nem frissültek. Próbáld újra; az előző adat megmaradt.',read:'Utolsó lekérés',timeOnly:'Beltéren GPS nélkül is rögzítheted az időt. Ismert távolságot kézzel adhatsz meg.'},
+ en:{title:'Workout steps · Health Connect',note:'Steps for the active parts of this workout. Phone and watch data can arrive late; we refresh once a minute. Steps are not converted to GPS distance.',refresh:'Refresh steps',grant:'Allow step access',busy:'Reading steps…',pending:'No shared step data for this workout yet.',permission:'Step read permission is missing. Allow it here or in Health → Permissions.',unavailable:'Health Connect is available in the Android app.',error:'Steps could not be refreshed. Retry; the previous reading was kept.',read:'Last read',timeOnly:'Indoors you can record time without GPS. Enter a known distance manually.'},
+ de:{title:'Trainingsschritte · Health Connect',note:'Schritte aus den aktiven Trainingsabschnitten. Telefon und Uhr können Daten verzögert teilen; Aktualisierung einmal pro Minute. Schritte werden nicht in GPS-Strecke umgerechnet.',refresh:'Schritte aktualisieren',grant:'Schrittzugriff erlauben',busy:'Schritte werden gelesen…',pending:'Noch keine geteilten Schrittdaten für dieses Training.',permission:'Die Berechtigung zum Lesen von Schritten fehlt. Hier oder unter Gesundheit → Berechtigungen erlauben.',unavailable:'Health Connect ist in der Android-App verfügbar.',error:'Schritte konnten nicht aktualisiert werden. Erneut versuchen; der letzte Wert bleibt erhalten.',read:'Zuletzt gelesen',timeOnly:'Innen kannst du Zeit ohne GPS erfassen. Eine bekannte Strecke kannst du manuell eingeben.'},
+ ro:{title:'Pașii antrenamentului · Health Connect',note:'Pașii din segmentele active ale antrenamentului. Telefonul și ceasul pot partaja date cu întârziere; actualizăm o dată pe minut. Pașii nu sunt transformați în distanță GPS.',refresh:'Actualizează pașii',grant:'Permite accesul la pași',busy:'Se citesc pașii…',pending:'Încă nu există pași partajați pentru acest antrenament.',permission:'Lipsește permisiunea de citire a pașilor. Permite-o aici sau în Sănătate → Permisiuni.',unavailable:'Health Connect este disponibil în aplicația Android.',error:'Pașii nu au fost actualizați. Reîncearcă; valoarea anterioară a fost păstrată.',read:'Ultima citire',timeOnly:'În interior poți înregistra timpul fără GPS. Introdu manual o distanță cunoscută.'}
 };
 var tp106StepsT=function(key){return (TP106_STEPS_TEXT[rf212Lang()]||TP106_STEPS_TEXT.hu)[key];};
-var tp106StepsView={session:null,at:0,busy:false,status:''},tp106StepsTimer=null;
+var tp106StepsView={session:null,at:0,busy:false,status:'',permissionDenied:false},tp106StepsTimer=null;
 var tp106StepsWindows=function(session,end=new Date().toISOString()){
  if(!session||!Number.isFinite(Date.parse(session.started))||Date.parse(end)<=Date.parse(session.started))return [];
  const active=Array.isArray(session.activeIntervals)?session.activeIntervals:[{start:session.started,end:null}];
@@ -14474,12 +14474,13 @@ var tp106PaintSteps=function(){
  const count=root.querySelector('[data-tp106-steps-count]');if(count)count.textContent=data?.steps==null?'—':tp149FormatNumber(data.steps,{maximumFractionDigits:0});
  const status=root.querySelector('[data-tp106-steps-status]');if(status)status.textContent=same&&tp106StepsView.busy?tp106StepsT('busy'):same&&tp106StepsView.status?tp106StepsView.status:data?.steps==null?tp106StepsT('pending'):'';
  const read=root.querySelector('[data-tp106-steps-read]');if(read)read.textContent=data?.stepsReadAt?tp106StepsT('read')+': '+tp149FormatDateTime(data.stepsReadAt):'';
- const button=root.querySelector('button');if(button)button.disabled=!!(same&&tp106StepsView.busy);
+ const refresh=root.querySelector('[data-tp106-steps-refresh]');if(refresh)refresh.disabled=!!(same&&tp106StepsView.busy);
+ const grant=root.querySelector('[data-tp106-steps-grant]');if(grant){grant.hidden=!(same&&tp106StepsView.permissionDenied);grant.disabled=!!(same&&tp106StepsView.busy);}
 };
 var tp106RefreshSteps=async function(force=false){
  const session=state.session;if(!session)return false;
  if(tp106StepsView.busy)return false;
- if(tp106StepsView.session!==session)tp106StepsView={session,at:0,busy:false,status:''};
+ if(tp106StepsView.session!==session)tp106StepsView={session,at:0,busy:false,status:'',permissionDenied:false};
  if(!force&&Date.now()-tp106StepsView.at<60000)return false;
  tp106StepsView.at=Date.now();const plugin=rf240Native();
  if(!plugin?.readStepsWindow){tp106StepsView.status=tp106StepsT('unavailable');tp106PaintSteps();return false;}
@@ -14491,15 +14492,15 @@ var tp106RefreshSteps=async function(force=false){
    let steps=0;for(const w of windows){
     if(!view.busy||state.session!==session)throw Error("Obsolete step read");
     const part=await plugin.readStepsWindow({start:w.start,end:w.end,language:rf212Lang()});
-    if(part?.permissions?.READ_STEPS===false)return {status:tp106StepsT('permission')};
+    if(part?.permissions?.READ_STEPS===false)return {status:tp106StepsT('permission'),permissionDenied:true};
     if(part?.warnings?.length)throw Error('Health Connect steps unavailable');
     if(part?.steps==null)return {status:tp106StepsT('pending')};
     if(typeof part.steps!=='number'||!Number.isSafeInteger(part.steps)||part.steps<0)throw Error('Invalid steps');
     steps+=part.steps;if(!Number.isSafeInteger(steps))throw Error('Invalid steps');
-   }return {steps};
+   }return {steps,permissionDenied:false};
   })(),new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Health Connect timeout')),35000);})]);
   if(state.session!==session||tp106StepsView!==view||JSON.stringify(tp106StepsWindows(session,end))!==JSON.stringify(windows))return false;
-  view.status=result.status||'';
+  view.status=result.status||'';view.permissionDenied=!!result.permissionDenied;
   if(result.steps!=null){
    session.health240={...session.health240,steps:result.steps,stepsReadAt:new Date().toISOString(),windowStart:session.started,windowEnd:end,activeIntervals:windows.map(({start,end})=>({start,end})),syncedAt:new Date().toISOString(),source:'all',sources:['all'],sourceLabels:{all:'Health Connect'}};
    persistDraft();return true;
@@ -14507,12 +14508,27 @@ var tp106RefreshSteps=async function(force=false){
  }catch(_){if(state.session===session&&tp106StepsView===view)view.status=tp106StepsT('error');return false;}
  finally{clearTimeout(timeout);view.busy=false;if(tp106StepsView===view)tp106PaintSteps();}
 };
+var tp106RequestSteps=async function(){
+ const session=state.session;if(!session)return false;
+ if(tp106StepsView.session!==session)tp106StepsView={session,at:0,busy:false,status:'',permissionDenied:true};
+ if(tp106StepsView.busy)return false;const plugin=rf240Native(),view=tp106StepsView;
+ if(!plugin?.requestSteps){view.status=tp106StepsT('permission');view.permissionDenied=true;tp106PaintSteps();return false;}
+ view.busy=true;tp106PaintSteps();let granted=false;
+ try{
+  const result=await plugin.requestSteps({language:rf212Lang()});
+  if(state.session!==session||tp106StepsView!==view)return false;
+  granted=result?.granted===true||result?.permissions?.READ_STEPS===true;
+  view.permissionDenied=!granted;view.status=granted?'':tp106StepsT('permission');
+ }catch(_){if(state.session===session&&tp106StepsView===view){view.permissionDenied=true;view.status=tp106StepsT('permission');}}
+ finally{view.busy=false;if(tp106StepsView===view)tp106PaintSteps();}
+ if(granted&&state.session===session){await tp106RefreshSteps(true);return true;}return false;
+};
 const tp106StepsRenderBase=renderWorkout;
 renderWorkout=function(){
  const result=tp106StepsRenderBase.apply(this,arguments),gps=document.getElementById('tp106GPS');if(!gps)return result;
  const note=document.createElement('p');note.className='small muted';note.textContent=tp106StepsT('timeOnly');gps.appendChild(note);
  const panel=document.createElement('section');panel.id='tp106Steps';panel.className='card tp106-gps-card';
- panel.innerHTML='<strong>'+esc(tp106StepsT('title'))+'</strong><p class="small muted">'+esc(tp106StepsT('note'))+'</p><p><strong data-tp106-steps-count>—</strong></p><p class="small" data-tp106-steps-status role="status"></p><p class="small muted" data-tp106-steps-read></p><button type="button" class="btn secondary block" onclick="tp106RefreshSteps(true)">'+esc(tp106StepsT('refresh'))+'</button>';
+ panel.innerHTML='<strong>'+esc(tp106StepsT('title'))+'</strong><p class="small muted">'+esc(tp106StepsT('note'))+'</p><p><strong data-tp106-steps-count>—</strong></p><p class="small" data-tp106-steps-status role="status"></p><p class="small muted" data-tp106-steps-read></p><button type="button" data-tp106-steps-refresh class="btn secondary block" onclick="tp106RefreshSteps(true)">'+esc(tp106StepsT('refresh'))+'</button><button type="button" data-tp106-steps-grant class="btn secondary block" hidden onclick="tp106RequestSteps()">'+esc(tp106StepsT('grant'))+'</button>';
  gps.after(panel);tp106PaintSteps();void tp106RefreshSteps();
  if(!tp106StepsTimer)tp106StepsTimer=setInterval(function(){if(!state.session||!document.getElementById('tp106Steps')){clearInterval(tp106StepsTimer);tp106StepsTimer=null;return;}if(!document.hidden)void tp106RefreshSteps();},60000);
  return result;
