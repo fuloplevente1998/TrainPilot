@@ -54,7 +54,10 @@ const {chromium}=require('playwright');
   const alt=await page.evaluate(()=>programs().find(p=>p.id!==activeProgramId())?.id||null);
   if(alt){await page.evaluate(id=>activateProgram(id),alt);await expectCancel(/Program aktiválása/)}
   await page.evaluate(()=>{void createCustomProgram()});
-  await page.locator('#tp2628Dialog [data-tp2629-input]').waitFor({state:'visible'});await expectCancel(/Új saját program/);
+  const programPanel=page.locator('#tp155R4PanelHost[data-panel="custom-exercise"]');
+  await programPanel.waitFor({state:'visible'});
+  assert.equal(await programPanel.locator('#tp106ProgramName').count(),1,'custom-program creation uses the shared panel instead of a prompt dialog');
+  await programPanel.locator('.tp155-r4-panel-close').click();await programPanel.waitFor({state:'detached'});
   await page.evaluate(()=>{const ps=programs();ps.push({id:'tp2629-custom',name:'Dialog teszt',builtin:false,days:[{id:'A',name:'A',exercises:['db-squat']}],updatedAt:Date.now()});db.set('programs',ps);deleteCustomProgram('tp2629-custom')});
   await expectCancel(/Saját program törlése/);
 
