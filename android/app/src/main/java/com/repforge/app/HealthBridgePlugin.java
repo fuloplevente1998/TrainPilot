@@ -50,6 +50,8 @@ public class HealthBridgePlugin extends Plugin {
  @PluginMethod public void getStatus(PluginCall c){if(!supported(c))return;JSObject r=new JSObject();r.put("permissions",permissionStatus());c.resolve(r);}
  @PluginMethod public void requestRead(PluginCall c){if(!supported(c))return;getActivity().runOnUiThread(()->requestPermissionForAliases(READ_ALIASES,c,"readGranted"));}
  @PermissionCallback private void readGranted(PluginCall c){JSObject r=new JSObject();r.put("granted",anyReadAllowed());r.put("permissions",permissionStatus());c.resolve(r);}
+ @PluginMethod public void requestSteps(PluginCall c){if(!supported(c))return;if(allowed("READ_STEPS")){stepsGranted(c);return;}getActivity().runOnUiThread(()->requestPermissionForAlias("steps",c,"stepsGranted"));}
+ @PermissionCallback private void stepsGranted(PluginCall c){JSObject r=new JSObject();r.put("granted",allowed("READ_STEPS"));r.put("permissions",permissionStatus());c.resolve(r);}
  @PluginMethod public void requestWrite(PluginCall c){if(!supported(c))return;if(allowed("WRITE_EXERCISE")){writeGranted(c);return;}getActivity().runOnUiThread(()->requestPermissionForAlias("writeExercise",c,"writeGranted"));}
  @PermissionCallback private void writeGranted(PluginCall c){JSObject r=new JSObject();r.put("granted",allowed("WRITE_EXERCISE"));c.resolve(r);}
  @PluginMethod public void openSettings(PluginCall c){if(!supported(c))return;try{getActivity().startActivity(new Intent("android.health.connect.action.HEALTH_CONNECT_SETTINGS"));c.resolve();}catch(Exception e){c.reject("Keresd a Health Connect menüt az Android beállításaiban.");}}
