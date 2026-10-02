@@ -14364,6 +14364,8 @@ const tp106NextBase=nextExercise;
 nextExercise=function(){if(!tp106DistanceInputsValid())return;if(tp106GpsBusy){alert(tp106T('busy'));return;}if(tp106GpsState.active||db.get('gpsTrip106',null))return tp106StopGPS().then(function(ok){if(ok)return tp106NextBase();});return tp106NextBase.apply(this,arguments);};
 const tp106PrevBase=prevExercise;
 prevExercise=function(){if(tp106GpsBusy){alert(tp106T('busy'));return;}if(tp106GpsState.active||db.get('gpsTrip106',null))return tp106StopGPS().then(function(ok){if(ok)return tp106PrevBase();});return tp106PrevBase.apply(this,arguments);};
+const tp106QuickStartBase=tp152StartQuickInline;
+tp152StartQuickInline=async function(){if(tp106GpsBusy){alert(tp106T('busy'));return;}if((tp106GpsState.active||db.get('gpsTrip106',null))&&!await tp106StopGPS())return;return tp106QuickStartBase.apply(this,arguments);};
 const tp106FormatSetBase=formatSet;
 formatSet=function(e,set){if(!tp106IsDistance(e)&&!Object.hasOwn(set||{},'distanceMeters'))return tp106FormatSetBase(e,set);const seconds=Number(set.reps)||0;return (Object.hasOwn(set,'distanceMeters')?tp106Km(set.distanceMeters)+' km':'— km')+(seconds>0?' · '+rf110FormatStopwatch(seconds):'');};
 const tp106ValidateBase=validateBackup;

@@ -40,13 +40,14 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  await page.setViewportSize({width:393,height:873});await page.evaluate(()=>{rf200SetTheme('yellow');db.set('language','hu');go('programs')});await opener.click();
  await panel.locator('#ceHu').fill('Futás / kocogás / görkori');
  await panel.locator('#ceMeasure').locator('..').locator('.tp-select-trigger').click();await panel.locator('#ceMeasure').locator('..').locator('.tp-select-option[data-value="distance"]').click();
+ await panel.locator('#ceMeasure').locator('..').waitFor({state:'visible'});await page.waitForTimeout(180);
  fs.mkdirSync('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/custom-exercise-106.png'});
  await panel.locator('button[onclick="saveCustomExercise14()"] ').click();await panel.waitFor({state:'detached'});await page.locator('#tp2628Dialog [data-tp2628-ok]').click();
  const exercise=await page.evaluate(()=>exercises().find(e=>e.custom&&e.hu==='Futás / kocogás / görkori'));
  assert.ok(exercise);assert.equal(exercise.measurementType,'distance');assert.equal(exercise.repUnit,'mp');assert.equal(exercise.loadType,'bodyweight');assert.equal(exercise.sets,1);
  // Use the real Quick picker and current workout renderer rather than constructing a fake form.
  await page.evaluate(()=>go('plan'));await page.locator('.tp150-quick-entry button').click();
- await page.locator('#tp150QuickQuery').fill('Futás / kocogás / görkori');
+ await page.locator('#tp155QuickQuery, #tp150QuickQuery').first().fill('Futás / kocogás / görkori');
  const quick=page.locator('#tp150QuickResults [data-exercise-id="'+exercise.id+'"]');await quick.locator('summary').click();await quick.locator('.tp150-quick-start').click();
  await page.waitForSelector('[data-tp106-distance]');assert.equal(await page.evaluate(()=>state.session.exercises[0].measurementType),'distance');
  await page.locator('[data-tp106-distance]').fill('5,25');await page.locator('.tp153-set-row input[inputmode="numeric"]').first().fill('1800');
@@ -69,11 +70,12 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   db.set('draft',null);state.session=null;go('plan');window.gpsUI={active:false,distanceMeters:0,elapsedSeconds:0};window.gpsUIStarts=0;
   window.Capacitor={isNativePlatform:()=>true,Plugins:{DistanceTracker:{status:async()=>({...gpsUI}),start:async args=>{gpsUIStarts++;gpsUI={...gpsUI,key:args.key,active:true};return {...gpsUI}},stop:async()=>{gpsUI.active=false;return {...gpsUI}}}}};
  });
- await page.locator('.tp150-quick-entry button').click();await page.locator('#tp150QuickQuery').fill('Futás / kocogás / görkori');await quick.locator('summary').click();await quick.locator('.tp150-quick-start').click();
+ await page.locator('.tp150-quick-entry button').click();await page.locator('#tp155QuickQuery, #tp150QuickQuery').first().fill('Futás / kocogás / görkori');await quick.locator('summary').click();await quick.locator('.tp150-quick-start').click();
  await page.waitForSelector('#tp106GpsButton');await page.locator('#tp106GpsButton').click();await page.waitForFunction(()=>tp106GpsState.active&&!tp106GpsBusy);
  assert.equal(await page.locator('[data-tp106-distance]').isDisabled(),true);assert.equal(await page.evaluate(()=>gpsUIStarts),1);
  await page.evaluate(async()=>{gpsUI.distanceMeters=1000;gpsUI.elapsedSeconds=300;gpsUI.hasFix=true;await tp106SyncGPS()});
  assert.equal(await page.locator('[data-tp106-distance]').inputValue(),'1');await page.locator('#tp106GpsButton').click();await page.waitForFunction(()=>!tp106GpsState.active&&!tp106GpsBusy);
  assert.equal(await page.locator('[data-tp106-distance]').isDisabled(),false);assert.equal(await page.evaluate(()=>state.session.exercises[0].sets[0].reps),'300');
+ await page.locator('#tp106GpsButton').click();await page.waitForFunction(()=>tp106GpsState.active&&!tp106GpsBusy);await page.locator('#tp150QuickAdd button').click();await quick.locator('summary').click();await quick.locator('.tp150-quick-start').click();await page.waitForSelector('#tp106GpsButton');assert.equal(await page.evaluate(()=>gpsUI.active),false,'reconfiguring an existing Quick exercise stops native GPS before replacing its sets');assert.equal(await page.evaluate(()=>db.get('gpsTrip106',null)),null);
  assert.deepEqual(errors,[],'page errors');console.log('PASS 1.0.6 custom panel: four languages/mobile widths, cancel/reopen/Back, themed checkbox, real Quick workout km/time, invalid input, Journal editing, GPS controls and field locking.');
 }finally{await browser?.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exit(1)});
