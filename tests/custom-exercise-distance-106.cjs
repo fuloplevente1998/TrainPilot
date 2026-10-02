@@ -62,7 +62,8 @@ function runtime(){
  run('stepValue=15');await run('tp106RefreshSteps(true)');assert.equal(run('state.session.health240.steps'),30,'absolute aggregate replaces previous count');
  run('stepValue=0');await run('tp106RefreshSteps(true)');assert.equal(run('state.session.health240.steps'),0,'real zero remains distinct from missing data');
  run('stepValue=null');await run('tp106RefreshSteps(true)');assert.equal(run('state.session.health240.steps'),0);assert.match(run('tp106StepsView.status'),/Még nincs/);
- run('window.Capacitor.Plugins.HealthBridge.readStepsWindow=async()=>({steps:null,permissions:{READ_STEPS:false}})');await run('tp106RefreshSteps(true)');assert.match(run('tp106StepsView.status'),/Engedélyezd/);
+ run('window.Capacitor.Plugins.HealthBridge.readStepsWindow=async()=>({steps:null,permissions:{READ_STEPS:false}})');await run('tp106RefreshSteps(true)');assert.match(run('tp106StepsView.status'),/engedélye hiányzik/i);assert.equal(run('tp106StepsView.permissionDenied'),true);
+ run('var stepGrantCalls=0;window.Capacitor.Plugins.HealthBridge.requestSteps=async()=>{stepGrantCalls++;window.Capacitor.Plugins.HealthBridge.readStepsWindow=async()=>({steps:21,permissions:{READ_STEPS:true}});return {granted:true,permissions:{READ_STEPS:true}}}');assert.equal(await run('tp106RequestSteps()'),true);assert.equal(run('stepGrantCalls'),1);assert.equal(run('tp106StepsView.permissionDenied'),false);assert.equal(run('state.session.health240.steps'),42);
  run('window.Capacitor.Plugins.HealthBridge.readStepsWindow=async()=>{throw Error("temporary failure")}');await run('tp106RefreshSteps(true)');assert.equal(run('tp106StepsView.busy'),false);assert.match(run('tp106StepsView.status'),/előző adat/);
  run('var resolveSteps;window.Capacitor.Plugins.HealthBridge.readStepsWindow=()=>new Promise(r=>resolveSteps=r)');const lateSteps=run('tp106RefreshSteps(true)');
  assert.equal(await run('tp106RefreshSteps(true)'),false,'manual double tap cannot start another read');
@@ -76,7 +77,7 @@ function runtime(){
  assert.equal(run('tp105Project({history:history()},false).history[0].health240'),undefined,'Health export consent also protects imported steps');
  assert.equal(run('tp105Project({history:history()},true).history[0].health240.steps'),42);
  const native=fs.readFileSync('android/app/src/main/java/com/repforge/app/HealthBridgePlugin.java','utf8');
- assert.match(native,/readStepsWindow/);assert.match(native,/putLongAgg\(out,"steps",p,m,time,"READ_STEPS",StepsRecord.STEPS_COUNT_TOTAL/);
+ assert.match(native,/readStepsWindow/);assert.match(native,/requestSteps/);assert.match(native,/requestPermissionForAlias\("steps",c,"stepsGranted"\)/);assert.match(native,/putLongAgg\(out,"steps",p,m,time,"READ_STEPS",StepsRecord.STEPS_COUNT_TOTAL/);
  assert.ok(!native.includes('WRITE_STEPS'),'imported phone/watch counts must not be written back and duplicated');
  console.log('PASS workout steps: exact active windows, deduped overlaps, polling budget, absolute totals, null/zero, permission/error, late owner, final aggregate and export consent');
  console.log('PASS custom distance: km parsing, concurrent GPS start, stop/resume/draft recovery, permission denial, manual edits, export and malformed data');
