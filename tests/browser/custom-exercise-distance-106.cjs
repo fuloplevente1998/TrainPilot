@@ -41,7 +41,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  await panel.locator('#ceHu').fill('Futás / kocogás / görkori');
  await panel.locator('#ceMeasure').locator('..').locator('.tp-select-trigger').click();await panel.locator('#ceMeasure').locator('..').locator('.tp-select-option[data-value="distance"]').click();
  fs.mkdirSync('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/custom-exercise-106.png'});
- await panel.locator('button[onclick="saveCustomExercise14()"] ').click();await panel.waitFor({state:'detached'});
+ await panel.locator('button[onclick="saveCustomExercise14()"] ').click();await panel.waitFor({state:'detached'});await page.locator('#tp2628Dialog [data-tp2628-ok]').click();
  const exercise=await page.evaluate(()=>exercises().find(e=>e.custom&&e.hu==='Futás / kocogás / görkori'));
  assert.ok(exercise);assert.equal(exercise.measurementType,'distance');assert.equal(exercise.repUnit,'mp');assert.equal(exercise.loadType,'bodyweight');assert.equal(exercise.sets,1);
  // Use the real Quick picker and current workout renderer rather than constructing a fake form.
@@ -60,7 +60,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  const logged=await page.evaluate(()=>history()[0]);assert.equal(logged.exercises[0].sets[0].distanceMeters,5250);assert.equal(logged.exercises[0].sets[0].reps,'1800');
  await page.evaluate(()=>go('history'));await page.locator('details.rf263-history>summary').first().click();
  const item=page.locator('details.tp3-history-ex-item').first();assert.match(await item.locator('summary').innerText(),/5,25 km/);
- const metrics=await page.locator('.tp3-summary-metrics>div').allInnerTexts();assert.ok(metrics.some(x=>/0.*Ismétlések|Ismétlések.*0/s.test(x)),'distance is not counted as reps: '+JSON.stringify(metrics));
+ assert.equal(await page.locator('.tp3-summary-metrics>div').nth(2).locator('strong').innerText(),'0','distance is not counted as repetitions');assert.equal(await page.locator('.tp3-summary-metrics>div').nth(3).locator('strong').innerText(),'—','distance is not lifted volume');
  await item.locator('summary').click();await item.locator('[data-tp106-distance]').fill('6,125');await page.screenshot({path:'ui-evidence/distance-journal-106.png'});
  await item.locator('.tp3-ex-save').click();await page.waitForFunction(()=>history()[0].exercises[0].sets[0].distanceMeters===6125);
  assert.match(await page.locator('details.tp3-history-ex-item summary').first().innerText(),/6,125 km/);assert.equal(await page.evaluate(()=>history()[0].exercises[0].sets[0].distanceSource),'manual');
