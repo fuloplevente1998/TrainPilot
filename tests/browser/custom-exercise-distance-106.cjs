@@ -36,6 +36,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   const programCount=await page.evaluate(()=>programs().length);
   await page.locator('button[onclick="createCustomProgram()"]').click();
   const programPanel=page.locator('#tp155R4PanelHost[data-panel="custom-program"]');await programPanel.waitFor({state:'visible'});
+  assert.equal(await programPanel.evaluate(host=>{const probe=document.createElement('div');probe.style.background='var(--card)';host.appendChild(probe);const expected=getComputedStyle(probe).backgroundColor,actual=getComputedStyle(host.querySelector('.tp155-r4-panel')).backgroundColor;probe.remove();return expected===actual}),true,'program panel has an opaque card background');
   assert.equal(await programPanel.locator('#tp106ProgramName').count(),1);
   assert.equal(await programPanel.evaluate(host=>host.scrollWidth<=host.clientWidth+1&&host.querySelector('.tp155-r4-panel-close').closest('.tp106-builder-header')!==null),true,'new program frame fits '+language+'/'+width);
   await programPanel.locator('.tp155-r4-panel-close').click();assert.equal(await page.evaluate(()=>programs().length),programCount,'cancel creates no program');
