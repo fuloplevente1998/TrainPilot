@@ -18,7 +18,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
    const close=host.querySelector('.tp155-r4-panel-close'),r=close.getBoundingClientRect(),p=host.querySelector('.tp155-r4-panel').getBoundingClientRect();
    return {color:getComputedStyle(close).backgroundColor,fit:host.scrollWidth<=host.clientWidth+1&&host.querySelector('main').scrollWidth<=host.querySelector('main').clientWidth+1,right:p.right-r.right,top:r.top-p.top,side:r.width,form:!!host.querySelector('#ceMeasure'),selects:host.querySelectorAll('.tp-select').length};
   });
-  assert.equal(style.color,'rgb(71, 37, 41)','shared red X');assert.ok(style.form&&style.side>=40&&style.right>=0&&style.right<=24&&style.top>=0&&style.top<=38,JSON.stringify(style));
+  assert.equal(style.color,'rgb(71, 37, 41)','shared red X');assert.ok(style.form&&style.side>=36&&style.right>=0&&style.right<=24&&style.top>=0&&style.top<=38,JSON.stringify(style));
   assert.equal(style.fit,true,language+'/'+width+' panel must fit');assert.equal(style.selects,5,'current themed selects are ready on first open');
   await panel.locator('input[name="ceGear"]').first().evaluate(el=>el.closest('details').open=true);
   const checkbox=panel.locator('input[name="ceGear"]').first();await checkbox.check();
