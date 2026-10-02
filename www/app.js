@@ -14382,6 +14382,111 @@ document.addEventListener('visibilitychange',function(){if(!document.hidden){voi
 setTimeout(function(){void tp106SyncGPS();},0);
 // @endsection custom-exercise-distance-106.js
 
+
+// @section custom-program-panel-layout-106b.js
+/* 1.0.6 phone follow-up: keep custom exercise/program creation in the shared panel,
+ * align the red close X, and give saved custom exercises their own compact cards.
+ */
+(function(){
+ 'use strict';
+ if(typeof window.tp155R4OpenPanel!=='function'||typeof window.tp106CustomExercisePanelHtml!=='function')return;
+
+ const exercisePanelHtmlBase=window.tp106CustomExercisePanelHtml;
+ const createProgramBase=typeof createCustomProgram==='function'?createCustomProgram:null;
+ const editProgramBase=typeof editCustomProgram==='function'?editCustomProgram:null;
+ let mode='exercise',editingProgramId=null;
+
+ const lang=function(){const x=typeof rf212Lang==='function'?rf212Lang():'hu';return ['hu','en','de','ro','sk','pl'].includes(x)?x:'hu'};
+ const copy={
+  hu:{title:'Új saját program',help:'Add meg a program nevét és a ciklus hosszát. A napokat és gyakorlatokat ezután ugyanebben az ablakban szerkesztheted.',days:'Ciklus napjai',create:'Program létrehozása',defaultName:'Saját program'},
+  en:{title:'New custom program',help:'Set the program name and cycle length. You can edit days and exercises next in the same panel.',days:'Cycle days',create:'Create program',defaultName:'Custom program'},
+  de:{title:'Neues eigenes Programm',help:'Lege Programmname und Zykluslänge fest. Tage und Übungen kannst du danach im selben Fenster bearbeiten.',days:'Zyklustage',create:'Programm erstellen',defaultName:'Eigenes Programm'},
+  ro:{title:'Program personalizat nou',help:'Setează numele programului și lungimea ciclului. Apoi poți edita zilele și exercițiile în același panou.',days:'Zile în ciclu',create:'Creează programul',defaultName:'Program personalizat'},
+  sk:{title:'Nový vlastný program',help:'Nastav názov programu a dĺžku cyklu. Dni a cviky potom upravíš v tom istom paneli.',days:'Dni cyklu',create:'Vytvoriť program',defaultName:'Vlastný program'},
+  pl:{title:'Nowy własny program',help:'Ustaw nazwę programu i długość cyklu. Dni i ćwiczenia możesz potem edytować w tym samym panelu.',days:'Dni cyklu',create:'Utwórz program',defaultName:'Własny program'}
+ };
+ const tx=function(k){return copy[lang()]?.[k]||copy.hu[k]||k};
+
+ const openShared=function(){
+  const host=document.getElementById('tp155R4PanelHost');
+  if(host?.dataset?.panel==='custom-exercise'){window.tp155R4RefreshPanel?.();return true}
+  return window.tp155R4OpenPanel('custom-exercise',document.activeElement);
+ };
+
+ const programCreateHtml=function(){
+  const opts=Array.from({length:7},function(_,i){const n=i+1;return '<option value="'+n+'" '+(n===2?'selected':'')+'>'+n+'</option>'}).join('');
+  return '<main class="tp106-custom-exercise tp106-custom-program-create"><div class="hero"><h1>'+esc(tx('title'))+'</h1><p>'+esc(tx('help'))+'</p></div><div class="setting">'+
+   '<label>'+esc(tp149T('customExercise.name'))+'<input id="tp106ProgramName" class="field" maxlength="80" value="'+esc(tx('defaultName'))+'"></label>'+
+   '<label>'+esc(tx('days'))+'<select id="tp106ProgramDays" class="field">'+opts+'</select></label>'+
+   '<button id="tp106CreateProgramButton" type="button" class="btn block" onclick="tp106SaveCustomProgram()">'+esc(tx('create'))+'</button></div></main>';
+ };
+
+ const programEditHtml=function(id){
+  const p=programById(id);if(!p||p.builtin)return '';
+  const options=function(selected){return exercises().map(function(e){return '<option value="'+esc(e.id)+'" '+(e.id===selected?'selected':'')+'>'+esc(tp149ExerciseName(e))+'</option>'}).join('')};
+  const days=(p.days||[]).map(function(d,di){
+   const rows=(d.exercises||[]).map(function(eid,ei){
+    return '<div class="custom-ex-row tp106-program-ex-row"><select class="field" onchange="customExercise(\''+esc(id)+'\','+di+','+ei+',this.value)">'+options(eid)+'</select>'+
+     '<div class="tp106-program-row-actions"><button type="button" class="btn secondary" '+(ei===0?'disabled':'')+' onclick="moveCustomExercise14(\''+esc(id)+'\','+di+','+ei+',-1)">↑</button>'+
+     '<button type="button" class="btn secondary" '+(ei===(d.exercises||[]).length-1?'disabled':'')+' onclick="moveCustomExercise14(\''+esc(id)+'\','+di+','+ei+',1)">↓</button>'+
+     '<button type="button" class="btn danger" onclick="removeCustomExercise(\''+esc(id)+'\','+di+','+ei+')">×</button></div></div>';
+   }).join('');
+   return '<details class="setting tp152-accordion tp152-custom-day" '+(di===0?'open':'')+'><summary><div><strong>'+esc(tp149ProgramDayName(p,d))+'</strong><div class="small muted">'+esc(tp149Plural('exercise.count',(d.exercises||[]).length))+'</div></div><span class="tp152-chevron" aria-hidden="true">⌄</span></summary>'+
+    '<div class="tp152-accordion-body"><label>'+esc(tp149T('programEdit.dayName'))+'<input class="field" value="'+esc(d.name)+'" onchange="customDayName(\''+esc(id)+'\','+di+',this.value)"></label>'+
+    '<label>'+esc(tp149T('programEdit.exercises'))+'</label>'+rows+
+    '<button type="button" class="btn secondary block" onclick="addCustomExercise(\''+esc(id)+'\','+di+')">＋ '+esc(tp149T('programEdit.add'))+'</button></div></details>';
+  }).join('');
+  return '<main class="tp106-custom-exercise tp106-custom-program-editor"><div class="hero"><h1>'+esc(tp149ProgramMeta(p,'name'))+'</h1><p>'+esc(tp149T('programEdit.help'))+'</p></div>'+days+'</main>';
+ };
+
+ window.tp106CustomExercisePanelHtml=function(){
+  if(mode==='program-create')return programCreateHtml();
+  if(mode==='program-edit')return programEditHtml(editingProgramId);
+  return exercisePanelHtmlBase();
+ };
+
+ customExerciseScreen=function(){mode='exercise';editingProgramId=null;return openShared()};
+
+ createCustomProgram=function(){
+  if(!window.tp155R4OpenPanel&&createProgramBase)return createProgramBase.apply(this,arguments);
+  mode='program-create';editingProgramId=null;return openShared();
+ };
+
+ editCustomProgram=function(id){
+  const p=programById(id);
+  if(!p||p.builtin)return editProgramBase?editProgramBase.apply(this,arguments):undefined;
+  mode='program-edit';editingProgramId=id;return openShared();
+ };
+
+ window.tp106SaveCustomProgram=function(){
+  const input=document.getElementById('tp106ProgramName'),days=document.getElementById('tp106ProgramDays');
+  const name=String(input?.value||'').trim();
+  if(!name){input?.focus?.();return false}
+  const count=Math.max(1,Math.min(7,Number(days?.value)||2));
+  const seed=(DEFAULT_PLAN?.A||[]).slice(0,3);
+  if(!seed.length)return false;
+  const p={id:'custom-'+crypto.randomUUID(),name:name.slice(0,80),location:'Egyéni',level:'Egyéni',builtin:false,days:Array.from({length:count},function(_,i){const key=String.fromCharCode(65+i);return {id:key,name:key,exercises:seed.slice()}})};
+  db.set('programs',[...programs(),p]);mode='program-edit';editingProgramId=p.id;window.tp155R4RefreshPanel?.();return true;
+ };
+
+ const style=document.createElement('style');style.id='tp106CustomProgramPanelFixCss';style.textContent=[
+  '#tp155R4PanelHost[data-panel="custom-exercise"] .tp155-r4-panel{position:relative!important}',
+  '#tp155R4PanelHost[data-panel="custom-exercise"] .tp155-r4-panel-close{position:absolute!important;top:10px!important;right:10px!important;float:none!important;margin:0!important;z-index:30!important;background:#472529!important;color:#ffd9dc!important;border-color:#6d3238!important}',
+  '#tp155R4PanelHost[data-panel="custom-exercise"] .tp155-r4-panel-content{clear:none!important}',
+  '#tp155R4PanelHost[data-panel="custom-exercise"] .tp106-custom-exercise>.hero{padding-right:50px!important;min-height:40px!important;margin-top:0!important}',
+  'main.tp150-programs-compact>.custom-ex-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:10px!important;box-sizing:border-box!important;margin:8px 0!important;padding:10px 12px!important;border:1px solid var(--line)!important;border-radius:14px!important;background:var(--card)!important;overflow:hidden!important}',
+  'main.tp150-programs-compact>.custom-ex-row>span{min-width:0!important;overflow-wrap:anywhere!important;font-weight:800!important}',
+  'main.tp150-programs-compact>.custom-ex-row>.btn{margin:0!important;max-width:100%!important;justify-self:end!important}',
+  '.tp106-custom-program-create .setting{display:grid;gap:10px}.tp106-custom-program-create .btn{margin-top:2px}',
+  '.tp106-custom-program-editor .tp152-custom-day{margin:8px 0!important}.tp106-program-ex-row{grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important}',
+  '.tp106-program-row-actions{display:flex;gap:6px;align-items:center}.tp106-program-row-actions .btn{min-width:40px;padding:9px 10px!important;margin:0!important}',
+  '@media(max-width:350px){.tp106-program-ex-row{grid-template-columns:1fr!important}.tp106-program-row-actions{justify-content:flex-end!important}}'
+ ].join('');
+ document.head.appendChild(style);
+ window.TrainPilot106PanelFollowup={version:'1.0.6-panel-followup',customProgramPanel:true,customExerciseCards:true,alignedRedClose:true};
+})();
+// @endsection custom-program-panel-layout-106b.js
+
 // @section ready.js
 if(!window.TrainPilotRestore105Pending)window.TrainPilotBoot.finish();
 // @endsection ready.js
