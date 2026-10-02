@@ -14,8 +14,7 @@ for(const marker of [
  'Testsúly napló és grafikon',
  'rf244UnifiedSync',
  'startWorkout',
- 'rf151SaveHistory\\(false\\)',
- "makeBackup=function(){return {...rf252Backup(),appVersion:RF252_VERSION}}"
+ 'rf151SaveHistory\\(false\\)'
 ])assert.ok(s.includes(marker),'Missing '+marker);
 assert.ok(s.indexOf('danger')<s.indexOf("return 'control'"),'Danger classification must win before control/primary');
 assert.ok(s.includes("if(!el.classList.contains('secondary'))return 'primary'"),'Existing historical primary buttons must stay primary');

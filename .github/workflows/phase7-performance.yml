@@ -32,15 +32,15 @@ jobs:
         run: npm ci
       - name: Install Chromium
         run: npx --no-install playwright install --with-deps chromium
-      - name: Benchmark published v1.0.5 on the same runner
+      - name: Benchmark validated v1.0.6 main on the same runner
         shell: bash
         run: |
           set -euo pipefail
           BASE_DIR="$RUNNER_TEMP/trainpilot-perf-baseline"
-          git worktree add --detach "$BASE_DIR" f4a556ab158c0770dfebb42a0580b0bf3089cc2a
+          git worktree add --detach "$BASE_DIR" ef09c5ee44b61902a7bb265f8ef2b3d2ea8de88e
           ln -s "$GITHUB_WORKSPACE/node_modules" "$BASE_DIR/node_modules"
           cd "$BASE_DIR"
-          node tests/browser/phase7-performance-19.cjs | tee "$GITHUB_WORKSPACE/phase7-before.log"
+          node "$GITHUB_WORKSPACE/tests/browser/phase7-performance-19.cjs" | tee "$GITHUB_WORKSPACE/phase7-before.log"
       - name: Verify Progress daily filters and latest chart position
         run: node tests/browser/progress-177-issue60.cjs
       - name: Run reproducible benchmark

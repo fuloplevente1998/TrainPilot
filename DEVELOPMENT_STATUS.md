@@ -1,6 +1,6 @@
 # TrainPilot — Development Status
 
-Last updated: **2026-10-02 (Europe/Budapest)**. Earlier Phase 5–7 history remains below; it is historical. See [docs/PHASE_5_6_7_ROADMAP.md](docs/PHASE_5_6_7_ROADMAP.md) and the permanent [performance regression policy](docs/PERFORMANCE_REGRESSION_POLICY.md).
+Last updated: **2026-10-03 (Europe/Budapest)**. Earlier Phase 5–7 history remains below; it is historical. See [docs/PHASE_5_6_7_ROADMAP.md](docs/PHASE_5_6_7_ROADMAP.md) and the permanent [performance regression policy](docs/PERFORMANCE_REGRESSION_POLICY.md).
 
 ## Current release
 
@@ -17,6 +17,18 @@ Last updated: **2026-10-02 (Europe/Budapest)**. Earlier Phase 5–7 history rema
 
 Release details: [v1.0.6 notes](docs/releases/v1.0.6.md), [implementation and phone checks](docs/CUSTOM_EXERCISE_DISTANCE_1_0_6.md).
 
+
+## Candidate 1.0.7 / 2691 — backup and GPS consolidation
+
+User-authorized first cleanup step on `fix/backup-gps-consolidation`, based on post-merge-validated main `ef09c5ee44b61902a7bb265f8ef2b3d2ea8de88e` (public 1.0.6 app source verified against its APK).
+
+- Validate imported identifiers and nested rows before restore mutations, preventing imported program IDs from executing through inline actions.
+- Bind GPS trips to stable set IDs, migrate running 1.0.6 trips, stop tracking before removing its owning set, and protect asynchronous deletion.
+- Consolidate 68 historical backup-builder definitions into one. Preserve all exported fields, legacy recovery and call-time Health consent.
+- Local Node: 116 passed; targeted Chromium regression and exact before/after backup field comparison passed; npm audit: zero vulnerabilities. Full UI, performance and signed Android gates run for the candidate.
+- **Candidate only: no physical-phone acceptance or merge approval yet.** Public release remains 1.0.6. Deliver the signed APK, run the phone checks, and obtain explicit acceptance before main merge.
+
+Implementation, verification commands and phone checklist: [docs/BACKUP_GPS_CONSOLIDATION_1_0_7.md](docs/BACKUP_GPS_CONSOLIDATION_1_0_7.md).
 
 ## Phase 5–7 acceptance boundaries
 

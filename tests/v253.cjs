@@ -1,6 +1,6 @@
 const fs=require('fs'),assert=require('node:assert/strict');
 const s=fs.readFileSync('www/v253.js','utf8');
-for(const marker of ["RF253_VERSION='2.5.3'",'RF253_PRIMARY_ACTIONS','RF253_EMPHASIS_ACTIONS','RF253_CONTROL_ACTIONS','RF253_DANGER_ACTIONS','rf253SemanticRole','rf252ButtonRole=rf253SemanticRole','dataset.tpRole','rf253RenderCore','rf253AfterRender','rf253GoCore','RF253_CORE_ROUTES','TrainPilotNavigate',"makeBackup=function(){return {...rf253Backup(),appVersion:RF253_VERSION}}"]){assert.ok(s.includes(marker),'Missing '+marker);}
+for(const marker of ["RF253_VERSION='2.5.3'",'RF253_PRIMARY_ACTIONS','RF253_EMPHASIS_ACTIONS','RF253_CONTROL_ACTIONS','RF253_DANGER_ACTIONS','rf253SemanticRole','rf252ButtonRole=rf253SemanticRole','dataset.tpRole','rf253RenderCore','rf253AfterRender','rf253GoCore','RF253_CORE_ROUTES','TrainPilotNavigate']){assert.ok(s.includes(marker),'Missing '+marker);}
 assert.ok(!/buttonText|Minden támogatott Health-adat szinkronizálása|Testsúly napló és grafikon/.test(s),'role classification must not depend on visible labels');
 assert.ok(s.includes("if(name==='rf151SaveHistory')"));
 assert.ok(s.includes("if(name==='saveHistoryWorkoutTime')"));

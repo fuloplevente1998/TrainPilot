@@ -12,5 +12,4 @@ ok(s.includes('Trendadat'),'trend label');
 ok(s.includes('rf235DecorateRecovery'),'recovery metric labels');
 ok(s.includes('rf235DecorateStats'),'Health stat labels');
 ok(!s.includes('rf220Readiness=function'),'2.3.5 must not rewrite readiness scoring');
-ok(s.includes('appVersion:RF235_VERSION'),'backup version');
 console.log('PASS: TrainPilot 2.3.5 Health Coach access and metric-role labels.');

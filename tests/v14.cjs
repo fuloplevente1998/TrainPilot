@@ -17,7 +17,7 @@ assert.equal(run("rf14ProgressionSummary(h,'pain').action"),'none');
 values.set('repforge:weights',JSON.stringify([{kg:80,date:'2026-09-07T10:00:00Z'},{kg:81,date:'2026-09-08T10:00:00Z'}]));
 assert.equal(run('rf14WeeklyWeights()[0].avg'),80.5);
 assert.equal(run("rf14Meta({id:'x',hu:'X',en:'X',custom:true}).custom"),true);
-assert.equal(run('makeBackup().appVersion'),'1.4.0');
+assert.equal(run('makeBackup().appVersion'),require('../package.json').version);
 assert.ok(run("rf14Alternatives('db-floor-press',p).some(e=>e.movementPattern==='horizontal-push')"));
 console.log('PASS: RepForge 1.4 engine metadata, beginner-safe generator, equipment rules, progression guard, weekly averages, alternatives and backup version.');
 values.set('repforge:programs',JSON.stringify([{id:'c1',name:'C',builtin:false,days:[{id:'A',name:'A',exercises:['db-squat','pushup']}]}]));

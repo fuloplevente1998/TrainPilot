@@ -8,7 +8,6 @@ for(const x of [
  'TP149_KEY_ROWS','TP149_CATALOG','tp149T','window.t=tp149T','tp149Plural',
  'tp149FormatNumber','tp149FormatDate','tp149FormatDateTime','tp149FormatUnit',
  'tp149CatalogAudit','tp149UserValues','tp149TranslateDom','tp149TranslateFreshDom',
- 'language:typeof rf212LangSetting',
  'Kerülendő területek','Areas to avoid','Zu vermeidende Bereiche','Zone de evitat',
  'Gyakorlatkönyvtár','Exercise library','Übungsbibliothek','Bibliotecă de exerciții'
 ])assert.ok(s.includes(x),'Missing '+x);

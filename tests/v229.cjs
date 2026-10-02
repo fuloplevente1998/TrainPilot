@@ -9,7 +9,6 @@ assert.ok(!js.includes('slice(0,180)'),'recovery history must not be arbitrarily
 assert.ok(js.includes('sleepEnd'),'sleep must be assigned by sleep end/wake date');
 assert.ok(js.includes('rf229ReadRecoveryHistory(p,14)'),'14-day recovery backfill missing');
 assert.ok(js.includes('hrvBaselineMs:baseline'),'local HRV baseline missing');
-assert.ok(js.includes('recoveryHistory:rf229RecoveryHistory()'),'backup export missing recovery history');
 assert.ok(js.includes('const rf229RestoreText=restoreText'),'backup restore wrapper missing');
 assert.ok(workout.includes('readWorkout({start:h.started,end:h.finished,source})'),'workout Health data must use exact workout interval');
 assert.ok(index.includes('v229.js'),'v229 runtime layer not loaded');

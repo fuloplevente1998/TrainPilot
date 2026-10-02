@@ -13,5 +13,4 @@ ok(s.includes('startScheduledById'),'today planned workout start');
 ok(s.includes("go('calendar')"),'future workout calendar action');
 ok(s.includes('rf220CoachScreen=rf233CoachScreen'),'coach override');
 ok(s.includes('rf220BindHome=rf233BindHome'),'home coach override');
-ok(s.includes('appVersion:RF233_VERSION'),'backup version');
 console.log('PASS: TrainPilot 2.3.3 actionable Coach checks.');

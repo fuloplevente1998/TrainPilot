@@ -1704,14 +1704,22 @@
   const sets=cur.exercise.sets||[],t=tx(),i=Number(setIndex);
   if(!Number.isInteger(i)||i<0||i>=sets.length)return;
   if(sets.length<=1){alert(t.min);return}
-  if(setHasUserData(sets[i])){
+  const session=state.session,target=sets[i];
+  if(typeof tp106GpsBusy!=='undefined'&&tp106GpsBusy){alert(tp106T('busy'));return;}
+  if(setHasUserData(target)){
    let ok=false;
    if(typeof tp2628Confirm==='function')ok=await tp2628Confirm(t.confirm,{title:t.removeTitle,confirmText:t.remove,danger:true});
    else return;
    if(!ok)return;
   }
+  if(state.session!==session||current()?.exercise!==cur.exercise||sets.length<=1||!sets.includes(target))return;
+  if(typeof tp106BeforeSetRemoval==='function'&&!await tp106BeforeSetRemoval(session,cur.exercise,target))return;
+  // Both the confirmation and native stop can yield. Recheck the actual object,
+  // rather than an index that another edit may have shifted in the meantime.
+  if(state.session!==session||current()?.exercise!==cur.exercise||sets.length<=1)return;
+  const targetIndex=sets.indexOf(target);if(targetIndex<0)return;
   const y=window.scrollY||0;
-  sets.splice(i,1);renumber(cur.exercise);
+  sets.splice(targetIndex,1);renumber(cur.exercise);
   try{persistDraft()}catch(_){}
   repaint(false,y);
  };
