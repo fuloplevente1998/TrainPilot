@@ -70,7 +70,7 @@ function runtime(){
  run('var oldStepsSession=state.session;state.session={started:new Date().toISOString(),exercises:[]};resolveSteps({steps:123,permissions:{READ_STEPS:true}})');
  // Resolve the second interval too; the old operation still has no authority over the new session.
  await new Promise(setImmediate);run('resolveSteps({steps:123,permissions:{READ_STEPS:true}})');await lateSteps;
- assert.equal(run('state.session.health240'),undefined);assert.equal(run('oldStepsSession.health240.steps'),0);
+ assert.equal(run('state.session.health240'),undefined);assert.equal(run('oldStepsSession.health240.steps'),42,'late step responses must preserve the last accepted aggregate');
  const activeHealth=await run(`window.TrainPilotIssue79.readWorkout({readTrainingWindow:async()=>({steps:7,permissions:{READ_STEPS:true}})},{started:oldStepsSession.started,finished:new Date().toISOString(),activeIntervals:tp106StepsWindows(oldStepsSession).map(({start,end})=>({start,end}))})`);
  assert.equal(activeHealth.steps,14);assert.equal(run('rf242HasTrainingMetric({steps:0})'),true,'exact zero must not trigger an expanded time window');
  run(`db.set('history',[{id:'step-log',started:oldStepsSession.started,finished:new Date().toISOString(),exercises:[],health240:{steps:42}}]);db.set('backupIncludeHealth',false)`);
