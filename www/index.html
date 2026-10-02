@@ -1609,6 +1609,10 @@
     const result=window.TrainPilotIssue79?.intervals(h).length
      ?await window.TrainPilotIssue79.readWorkout(plugin,h)
      :await plugin.readWorkout({start:h.started,end:h.finished,source:''});
+    // Persist only if the same workout and its measurement window still exist.
+    const current=history().find(x=>rf240WorkoutKey(x)===rf240WorkoutKey(h));
+    if(!current||current.started!==h.started||current.finished!==h.finished||JSON.stringify(current.activeIntervals||[])!==JSON.stringify(h.activeIntervals||[]))return;
+    rf242SaveMatchedWorkoutHealth(rf240WorkoutKey(h),h,result||{},{});
     rfHistoryHealthCache.set(key,{summary:result||{},loadedAt:Date.now()});
    }catch(e){
     rfHistoryHealthCache.set(key,{error:e?.message||'A Health Connect adatok lekérése nem sikerült.'});

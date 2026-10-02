@@ -57,7 +57,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  assert.equal(await page.evaluate(id=>programById(id).days[0].exercises[0],programId),'running');
  await day.locator('button[onclick^="addCustomExercise("]').click();assert.equal(await page.evaluate(id=>programById(id).days[0].exercises.length,programId),4);
  await day.locator('.tp152-custom-actions .danger').last().click();assert.equal(await page.evaluate(id=>programById(id).days[0].exercises.length,programId),3);
- fs.mkdirSync('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/custom-program-106.png'});
+ fs.mkdirSync('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/custom-program-106.png',animations:'disabled'});
  await programPanel.locator('.tp155-r4-panel-close').click();assert.equal(await page.evaluate(()=>state.tab),'programs');
  await page.evaluate(id=>editCustomProgram(id),programId);assert.equal(await programPanel.locator('select').first().inputValue(),'running');await programPanel.locator('.tp155-r4-panel-close').click();
  // All six built-in activities can be found and started without making a custom exercise.
@@ -109,5 +109,31 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  assert.equal(await page.locator('[data-tp106-distance]').inputValue(),'1');await page.locator('#tp106GpsButton').click();await page.waitForFunction(()=>!tp106GpsState.active&&!tp106GpsBusy);
  assert.equal(await page.locator('[data-tp106-distance]').isDisabled(),false);assert.equal(await page.evaluate(()=>state.session.exercises[0].sets[0].reps),'300');
  await page.locator('#tp106GpsButton').click();await page.waitForFunction(()=>tp106GpsState.active&&!tp106GpsBusy);await page.locator('#tp150QuickAdd button').click();await quick.locator('summary').click();await quick.locator('.tp150-quick-start').click();await page.waitForSelector('#tp106GpsButton');assert.equal(await page.evaluate(()=>gpsUI.active),false,'reconfiguring an existing Quick exercise stops native GPS before replacing its sets');assert.equal(await page.evaluate(()=>db.get('gpsTrip106',null)),null);
+ // Exercise-time steps use a narrow, read-only bridge and update only their own card.
+ await page.evaluate(()=>{
+  state.session.started=new Date(Date.now()-180000).toISOString();state.session.activeIntervals=[{start:state.session.started,end:null}];
+  window.stepUI=84;window.stepUIReads=0;
+  window.Capacitor.Plugins.HealthBridge={readStepsWindow:async()=>{stepUIReads++;return {steps:stepUI,permissions:{READ_STEPS:true}}},readTrainingWindow:async()=>({steps:stepUI,permissions:{READ_STEPS:true},sources:['all'],sourceLabels:{all:'Health Connect'}})};
+ });
+ await page.locator('#tp106Steps button').click();await page.waitForFunction(()=>state.session.health240?.steps===84);
+ const originalMain=await page.locator('main.tp153-workout').elementHandle();
+ await page.evaluate(()=>stepUI=102);await page.locator('#tp106Steps button').click();await page.waitForFunction(()=>state.session.health240?.steps===102);
+ assert.equal(await page.evaluate(el=>el===document.querySelector('main.tp153-workout'),originalMain),true,'step refresh must not redraw the workout');
+ assert.equal(await page.locator('#tp106Steps [data-tp106-steps-count]').innerText(),'102');
+ for(const width of [320,360,393,412]){await page.setViewportSize({width,height:873});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'steps card fits '+width)}
+ await page.evaluate(()=>{window.Capacitor.Plugins.HealthBridge.readStepsWindow=async()=>({steps:null,permissions:{READ_STEPS:false}})});
+ await page.locator('#tp106Steps button').click();await page.waitForFunction(()=>!tp106StepsView.busy);
+ assert.match(await page.locator('[data-tp106-steps-status]').innerText(),/Engedélyezd/);assert.equal(await page.locator('[data-tp106-steps-count]').innerText(),'102');
+ await page.setViewportSize({width:393,height:873});await page.screenshot({path:'ui-evidence/workout-health-steps-106.png',animations:'disabled'});
+ // Indoors, record duration with an unknown distance instead of inventing kilometres.
+ await page.locator('[data-tp106-distance]').fill('');await page.locator('.tp153-set-row input[inputmode="numeric"]').first().fill('180');
+ await page.locator('.tp153-set-row .check').first().click();assert.equal(await page.evaluate(()=>state.session.exercises[0].sets[0].done),true);
+ await page.locator('[data-tp-workout-next]').click();await page.waitForFunction(()=>!state.session);
+ assert.equal(await page.evaluate(()=>history()[0].exercises[0].sets[0].distanceMeters),undefined);assert.equal(await page.evaluate(()=>history()[0].exercises[0].sets[0].reps),'180');
+ await page.evaluate(()=>go('history'));await page.locator('details.rf263-history>summary').first().click();
+ await page.evaluate(()=>healthFromHistory(0));
+ assert.equal(await page.evaluate(()=>history()[0].health240.steps),102,'Journal refresh persists the completed workout steps for export');
+ assert.match(await page.locator('[data-rf-history-health="0"]').innerText(),/Lépések/);assert.match(await page.locator('[data-rf-history-health="0"]').innerText(),/102/);
+ await page.screenshot({path:'ui-evidence/journal-health-steps-106.png',animations:'disabled'});
  assert.deepEqual(errors,[],'page errors');console.log('PASS 1.0.6 custom panel: four languages/mobile widths, cancel/reopen/Back, themed checkbox, real Quick workout km/time, invalid input, Journal editing, GPS controls and field locking.');
 }finally{await browser?.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exit(1)});

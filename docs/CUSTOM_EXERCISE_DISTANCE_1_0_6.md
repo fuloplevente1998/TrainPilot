@@ -1,4 +1,4 @@
-# TrainPilot 1.0.6 / 2689 – own exercises and distance
+# TrainPilot 1.0.6 / 2690 – own exercises and distance
 
 Candidate based on published v1.0.5/main `f4a556ab158c0770dfebb42a0580b0bf3089cc2a`. This document describes implementation and acceptance checks; it does not assert physical-phone approval.
 
@@ -31,7 +31,7 @@ Both custom builders have a full rounded frame and a separate sticky header cont
 
 Node regression covers decimal parsing, invalid exports, concurrent starts, permission denial, stop/resume, draft recovery, manual correction and aggregate export. Chromium covers real panel lifecycle, current controls, narrow layouts, workout recording and Journal editing. JVM tests cover the native GPS distance filter. Release Gate builds/signs the APK and verifies source bytes and signer continuity. Performance CI compares against the same published v1.0.5 baseline.
 
-Before phone approval, install 2689 over 2687 without uninstalling and check:
+Before phone approval, install 2690 over 2687 without uninstalling and check:
 
 1. Programs panels: full frame, header-contained red X even after scrolling, themed controls, Android Back, no page jump. Create/edit a program and an own distance exercise. Find all six built-in activities directly in Quick Workout.
 2. Enter e.g. `5,25`km / `1800`s, record it, edit in Journal, and round-trip a ZIP containing photos. Confirm existing workouts/Google links remain intact.
@@ -43,3 +43,13 @@ Before phone approval, install 2689 over 2687 without uninstalling and check:
 ## Play publication follow-up
 
 The new optional location use and `FOREGROUND_SERVICE_LOCATION` declaration must be reflected in the Play Console's foreground-service use case, privacy policy and Data safety answers before a Play release. Existing OAuth/signing configuration remains separate. Official platform requirements: https://developer.android.com/develop/background-work/services/fgs/service-types#location . Device approval and Console configuration are not replaced by a successful GitHub build.
+
+## Indoor walking and workout steps (2690)
+
+Health Connect `READ_STEPS` now supplies steps for the workout's exact active windows, excluding pauses and merging overlapping intervals. A lightweight aggregate-only endpoint refreshes the distance-workout card at most once per minute automatically; a manual refresh is also available. It uses Health Connect's source deduplication, replaces absolute totals, distinguishes zero from unavailable data, preserves the previous reading on failure, and ignores responses for a replaced session. No imported steps are written back and no step-to-kilometre estimate is made.
+
+The completed workout's Health panel shows and persists steps; the existing Health-data export checkbox protects them inside `health240`. Phone/watch data can be delayed, so refresh the Journal panel after the source sync finishes. Indoors, duration-only recording is allowed; unknown distance is shown as `— km`. GPS weak-signal text describes indoor limitations. The reported three-minute/23-second discrepancy has not been reproduced or attributed to a specific cause; native timing is unchanged.
+
+Additional phone checks: enable/deny Health Connect step reading, walk indoors, refresh after phone/watch sync, complete a duration-only walking workout, reopen its Journal Health panel, and verify a Health-inclusive/exclusive ZIP. Test an interrupted/resumed workout to exclude pause steps. GPS distance and elapsed-time behavior still need an outdoor phone test.
+
+Platform references: https://developer.android.com/health-and-fitness/health-connect/features/steps and https://developer.android.com/health-and-fitness/health-connect/aggregate-data .

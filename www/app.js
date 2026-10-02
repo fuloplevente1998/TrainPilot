@@ -758,12 +758,14 @@ var rfHistoryHealthWindow=function rfHistoryHealthWindow(h){if(!h||!h.started||!
 var rfHistoryHealthNumber=function rfHistoryHealthNumber(v,d=0){if(v==null||v==='')return null;const n=Number(v);return Number.isFinite(n)?n.toLocaleString('hu-HU',{minimumFractionDigits:d,maximumFractionDigits:d}):null;};
 var rfHistoryHealthHtml=function rfHistoryHealthHtml(i){
  const h=history()[i];if(!h)return '';
- const q=rfHistoryHealthCache.get(h.started),windowText=rfHistoryHealthWindow(h);
+ const stored=h.health240,validStored=stored?.windowStart===h.started&&stored?.windowEnd===h.finished;
+ const q=rfHistoryHealthCache.get(h.started)||(validStored?{summary:stored,loadedAt:Date.parse(stored.syncedAt)}:null),windowText=rfHistoryHealthWindow(h);
  if(!q)return `<div class="rf-history-health-empty"><p class="small muted">Health Connect. A blokk csak ennek az edzésnek az időablakát olvassa ki.</p></div>`;
  if(q.loading)return `<div class="rf-history-health-loading"><p class="small muted">Health Connect lekérdezés…</p></div>`;
  if(q.error)return `<div class="rf-history-health-error"><p class="small">${esc(q.error)}</p></div>`;
  const x=q.summary||{},stats=[];
  const active=rfHistoryHealthNumber(x.activeCalories),total=rfHistoryHealthNumber(x.totalCalories),avg=rfHistoryHealthNumber(x.averageHeartRate),max=rfHistoryHealthNumber(x.maxHeartRate),dist=x.distanceMeters==null?NaN:Number(x.distanceMeters),mins=rfHistoryHealthNumber(x.exerciseMinutes),sessions=rfHistoryHealthNumber(x.exerciseSessionCount);
+ const steps=rfHistoryHealthNumber(x.steps);if(steps!==null)stats.push([tp149T('health.steps'),steps]);
  if(active!==null)stats.push(['Aktív kalória',active+' kcal']);
  if(total!==null)stats.push(['Összes energia',total+' kcal']);
  if(avg!==null||max!==null)stats.push(['Átlag / max. pulzus',(avg??'–')+' / '+(max??'–')+' bpm']);
@@ -3401,7 +3403,7 @@ const rf240Backup=makeBackup;makeBackup=function(){return {...rf240Backup(),appV
 // @section v241.js
 var rf241L = function rf241L(){const k=typeof rf212Lang==='function'?rf212Lang():'hu';return RF241_I18N[k]||RF241_I18N.hu};
 var rf241WorkoutData = function rf241WorkoutData(h){const d=h?.health240;if(!d||d.windowStart!==h.started||d.windowEnd!==h.finished)return null;return d};
-var rf241HasMetric = function rf241HasMetric(d){return !!d&&['averageHeartRate','minHeartRate','maxHeartRate','heartRateSamples','activeCalories','totalCalories','exerciseMinutes','exerciseSessionCount','distanceMeters','averageSpeedMps','maxSpeedMps'].some(k=>rf240Num(d[k])!=null&&rf240Num(d[k])>0)};
+var rf241HasMetric = function rf241HasMetric(d){return !!d&&(rf240Num(d.steps)!=null||['steps','averageHeartRate','minHeartRate','maxHeartRate','heartRateSamples','activeCalories','totalCalories','exerciseMinutes','exerciseSessionCount','distanceMeters','averageSpeedMps','maxSpeedMps'].some(k=>rf240Num(d[k])!=null&&rf240Num(d[k])>0))};
 var rf241Kmh = function rf241Kmh(v){const n=rf240Num(v);return n==null?null:n*3.6};
 var rf241Km = function rf241Km(v){const n=rf240Num(v);return n==null?null:n/1000};
 var rf241SourceText = function rf241SourceText(d){const src=Array.isArray(d?.sources)?d.sources:[];if(!src.length)return '';const labels=d?.sourceLabels||{};return src.map(x=>labels?.[x]||x).filter(Boolean).join(', ')};
@@ -3492,7 +3494,7 @@ render();
 
 // @section v242.js
 var rf242HasTrainingMetric = function rf242HasTrainingMetric(d){
-  return !!d&&['averageHeartRate','minHeartRate','maxHeartRate','heartRateSamples','activeCalories','totalCalories','exerciseMinutes','exerciseSessionCount','distanceMeters','averageSpeedMps','maxSpeedMps'].some(k=>rf240Num(d?.[k])!=null&&rf240Num(d[k])>0);
+  return !!d&&(rf240Num(d.steps)!=null||['steps','averageHeartRate','minHeartRate','maxHeartRate','heartRateSamples','activeCalories','totalCalories','exerciseMinutes','exerciseSessionCount','distanceMeters','averageSpeedMps','maxSpeedMps'].some(k=>rf240Num(d?.[k])!=null&&rf240Num(d[k])>0));
 };
 var rf242OverlapMs = function rf242OverlapMs(a0,a1,b0,b1){return Math.max(0,Math.min(a1,b1)-Math.max(a0,b0))};
 var rf242BestSession = function rf242BestSession(result,h){
@@ -13981,6 +13983,7 @@ function aggregate(parts,windows,errors){
  const sessionMinutes=merged.reduce((sum,s)=>sum+s[1]-s[0],0)/60000;
  return {
   averageHeartRate:weighted('averageHeartRate'),minHeartRate:min('minHeartRate'),maxHeartRate:max('maxHeartRate'),heartRateSamples:present('heartRateSamples')?sum('heartRateSamples'):null,
+  steps:!errors.length&&parts.every(p=>num(p.steps)!=null)?sum('steps'):null,
   activeCalories:present('activeCalories')?sum('activeCalories'):null,totalCalories:present('totalCalories')?sum('totalCalories'):null,
   distanceMeters:present('distanceMeters')?sum('distanceMeters'):null,averageSpeedMps:weighted('averageSpeedMps'),maxSpeedMps:max('maxSpeedMps'),
   exerciseMinutes:sessions.length?sessionMinutes:present('exerciseMinutes')?sum('exerciseMinutes'):null,exerciseSessionCount:sessions.length||sum('exerciseSessionCount'),exerciseSessions:sessions,
@@ -14274,10 +14277,10 @@ googleBridge=function(){const p=tp105GoogleBridgeBase();return new Proxy(p,{get:
 // @section custom-exercise-distance-106.js
 /* Custom exercise overlay and opt-in GNSS totals, without route-coordinate storage. */
 var TP106_DISTANCE_TEXT={
- hu:{measure:'Mérés típusa',reps:'Ismétlés',time:'Idő (mp)',distance:'Idő és távolság',km:'Távolság (km)',seconds:'Idő (mp)',help:'Futás, kocogás, görkori és más távolságmérős mozgás: idő és kilométer, kézzel vagy külön indított GPS-méréssel.',gps:'GPS-távolságmérés',start:'GPS-mérés indítása',stop:'Leállítás és rögzítés',waiting:'GPS-jelre vár… A mért táv becslés.',tracking:'GPS-mérés fut',stopped:'GPS-mérés leállítva',native:'A GPS-mérés az Android alkalmazásban használható. A táv kézzel is megadható.',privacy:'A mérés pontos helyengedélyt kér, és lezárt képernyőnél értesítéssel fut. Csak az összesített táv és idő kerül a naplóba; útvonalat nem tárolunk.',invalid:'Adj meg érvényes távolságot (0–2000 km).',needDistance:'Adj meg egy pozitív távolságot, vagy mérj GPS-szel.',busy:'Várd meg a GPS-művelet végét.',manual:'Kézi táv',signal:'Gyenge vagy hiányzó GPS-jel: a hiányzó szakaszt nem számoljuk bele.',saved:'GPS-idő és távolság rögzítve.'},
- en:{measure:'Measurement type',reps:'Repetitions',time:'Time (s)',distance:'Time and distance',km:'Distance (km)',seconds:'Time (s)',help:'Running, jogging, skating and other distance activities: record time and kilometres manually or with separately started GPS tracking.',gps:'GPS distance tracking',start:'Start GPS tracking',stop:'Stop and record',waiting:'Waiting for GPS… The measured distance is an estimate.',tracking:'GPS tracking active',stopped:'GPS tracking stopped',native:'GPS tracking is available in the Android app. Distance can also be entered manually.',privacy:'Tracking requests precise location and runs with a notification when the screen is locked. Only total distance and time enter the log; no route is stored.',invalid:'Enter a valid distance (0–2000 km).',needDistance:'Enter a positive distance or measure it with GPS.',busy:'Wait for the GPS operation to finish.',manual:'Manual distance',signal:'Weak or missing GPS: missing segments are not included.',saved:'GPS time and distance recorded.'},
- de:{measure:'Messart',reps:'Wiederholungen',time:'Zeit (s)',distance:'Zeit und Strecke',km:'Strecke (km)',seconds:'Zeit (s)',help:'Laufen, Joggen, Skaten und andere Streckenaktivitäten: Zeit und Kilometer manuell oder mit separat gestarteter GPS-Messung erfassen.',gps:'GPS-Distanzmessung',start:'GPS-Messung starten',stop:'Stoppen und speichern',waiting:'Warte auf GPS… Die Strecke ist eine Schätzung.',tracking:'GPS-Messung läuft',stopped:'GPS-Messung beendet',native:'GPS-Messung ist in der Android-App verfügbar. Manuelle Streckeneingabe ist möglich.',privacy:'Die Messung benötigt genauen Standortzugriff und läuft bei gesperrtem Bildschirm mit Benachrichtigung. Nur Gesamtstrecke und Zeit werden gespeichert, keine Route.',invalid:'Gültige Strecke eingeben (0–2000 km).',needDistance:'Eine positive Strecke eingeben oder mit GPS messen.',busy:'Warten, bis der GPS-Vorgang beendet ist.',manual:'Manuelle Strecke',signal:'Schwaches oder fehlendes GPS: fehlende Abschnitte werden nicht mitgerechnet.',saved:'GPS-Zeit und Strecke gespeichert.'},
- ro:{measure:'Tip de măsurare',reps:'Repetări',time:'Timp (s)',distance:'Timp și distanță',km:'Distanță (km)',seconds:'Timp (s)',help:'Alergare, jogging, patinaj și alte activități: timp și kilometri introduși manual sau prin măsurare GPS pornită separat.',gps:'Măsurare distanță GPS',start:'Pornește măsurarea GPS',stop:'Oprește și înregistrează',waiting:'Se așteaptă GPS… Distanța măsurată este o estimare.',tracking:'Măsurare GPS activă',stopped:'Măsurare GPS oprită',native:'Măsurarea GPS este disponibilă în aplicația Android. Distanța poate fi introdusă manual.',privacy:'Măsurarea cere localizare precisă și continuă cu notificare când ecranul este blocat. Se salvează doar distanța totală și timpul, fără traseu.',invalid:'Introdu o distanță validă (0–2000 km).',needDistance:'Introdu o distanță pozitivă sau măsoară prin GPS.',busy:'Așteaptă finalizarea operațiunii GPS.',manual:'Distanță manuală',signal:'GPS slab sau absent: segmentele lipsă nu sunt incluse.',saved:'Timpul și distanța GPS au fost înregistrate.'}
+ hu:{measure:'Mérés típusa',reps:'Ismétlés',time:'Idő (mp)',distance:'Idő és távolság',km:'Távolság (km)',seconds:'Idő (mp)',help:'Futás, kocogás, görkori és más távolságmérős mozgás: idő és kilométer, kézzel vagy külön indított GPS-méréssel.',gps:'GPS-távolságmérés',start:'GPS-mérés indítása',stop:'Leállítás és rögzítés',waiting:'GPS-jelre vár… A mért táv becslés.',tracking:'GPS-mérés fut',stopped:'GPS-mérés leállítva',native:'A GPS-mérés az Android alkalmazásban használható. A táv kézzel is megadható.',privacy:'A mérés pontos helyengedélyt kér, és lezárt képernyőnél értesítéssel fut. Csak az összesített táv és idő kerül a naplóba; útvonalat nem tárolunk.',invalid:'Adj meg érvényes távolságot (0–2000 km).',needDistance:'Adj meg időt vagy pozitív távolságot.',busy:'Várd meg a GPS-művelet végét.',manual:'Kézi táv',signal:'GPS-jelre várunk. Beltéren a távolság gyakran nem mérhető; a hiányzó szakaszt nem számoljuk bele.',saved:'GPS-idő és távolság rögzítve.'},
+ en:{measure:'Measurement type',reps:'Repetitions',time:'Time (s)',distance:'Time and distance',km:'Distance (km)',seconds:'Time (s)',help:'Running, jogging, skating and other distance activities: record time and kilometres manually or with separately started GPS tracking.',gps:'GPS distance tracking',start:'Start GPS tracking',stop:'Stop and record',waiting:'Waiting for GPS… The measured distance is an estimate.',tracking:'GPS tracking active',stopped:'GPS tracking stopped',native:'GPS tracking is available in the Android app. Distance can also be entered manually.',privacy:'Tracking requests precise location and runs with a notification when the screen is locked. Only total distance and time enter the log; no route is stored.',invalid:'Enter a valid distance (0–2000 km).',needDistance:'Enter time or a positive distance.',busy:'Wait for the GPS operation to finish.',manual:'Manual distance',signal:'Waiting for GPS. Indoor distance often cannot be measured; missing segments are not included.',saved:'GPS time and distance recorded.'},
+ de:{measure:'Messart',reps:'Wiederholungen',time:'Zeit (s)',distance:'Zeit und Strecke',km:'Strecke (km)',seconds:'Zeit (s)',help:'Laufen, Joggen, Skaten und andere Streckenaktivitäten: Zeit und Kilometer manuell oder mit separat gestarteter GPS-Messung erfassen.',gps:'GPS-Distanzmessung',start:'GPS-Messung starten',stop:'Stoppen und speichern',waiting:'Warte auf GPS… Die Strecke ist eine Schätzung.',tracking:'GPS-Messung läuft',stopped:'GPS-Messung beendet',native:'GPS-Messung ist in der Android-App verfügbar. Manuelle Streckeneingabe ist möglich.',privacy:'Die Messung benötigt genauen Standortzugriff und läuft bei gesperrtem Bildschirm mit Benachrichtigung. Nur Gesamtstrecke und Zeit werden gespeichert, keine Route.',invalid:'Gültige Strecke eingeben (0–2000 km).',needDistance:'Zeit oder eine positive Strecke eingeben.',busy:'Warten, bis der GPS-Vorgang beendet ist.',manual:'Manuelle Strecke',signal:'Warte auf GPS. In Innenräumen ist die Strecke oft nicht messbar; fehlende Abschnitte werden nicht mitgerechnet.',saved:'GPS-Zeit und Strecke gespeichert.'},
+ ro:{measure:'Tip de măsurare',reps:'Repetări',time:'Timp (s)',distance:'Timp și distanță',km:'Distanță (km)',seconds:'Timp (s)',help:'Alergare, jogging, patinaj și alte activități: timp și kilometri introduși manual sau prin măsurare GPS pornită separat.',gps:'Măsurare distanță GPS',start:'Pornește măsurarea GPS',stop:'Oprește și înregistrează',waiting:'Se așteaptă GPS… Distanța măsurată este o estimare.',tracking:'Măsurare GPS activă',stopped:'Măsurare GPS oprită',native:'Măsurarea GPS este disponibilă în aplicația Android. Distanța poate fi introdusă manual.',privacy:'Măsurarea cere localizare precisă și continuă cu notificare când ecranul este blocat. Se salvează doar distanța totală și timpul, fără traseu.',invalid:'Introdu o distanță validă (0–2000 km).',needDistance:'Introdu timpul sau o distanță pozitivă.',busy:'Așteaptă finalizarea operațiunii GPS.',manual:'Distanță manuală',signal:'Se așteaptă GPS. În interior distanța adesea nu poate fi măsurată; segmentele lipsă nu sunt incluse.',saved:'Timpul și distanța GPS au fost înregistrate.'}
 };
 var tp106T=function(key){return (TP106_DISTANCE_TEXT[rf212Lang()]||TP106_DISTANCE_TEXT.en)[key]||key;};
 const TP106_ACTIVITIES=[
@@ -14427,7 +14430,7 @@ renderWorkout=function(){
 };
 var tp106DistanceInputsValid=function(){const bad=document.querySelector('[data-tp106-distance]:invalid');if(bad){bad.reportValidity?.();return false;}return true;};
 const tp106ToggleSetBase=toggleSet;
-toggleSet=function(ei,si){if(!tp106DistanceInputsValid())return;const e=state.session?.exercises?.[ei],set=e?.sets?.[si];if(tp106IsDistance(e)&&!set?.done){if(!(Number(set.distanceMeters)>0)){alert(tp106T('needDistance'));return;}if(tp106GpsBusy){alert(tp106T('busy'));return;}if(tp106GpsState.active)return tp106StopGPS().then(function(ok){if(ok)tp106ToggleSetBase(ei,si);});}return tp106ToggleSetBase.apply(this,arguments);};
+toggleSet=function(ei,si){if(!tp106DistanceInputsValid())return;const e=state.session?.exercises?.[ei],set=e?.sets?.[si];if(tp106IsDistance(e)&&!set?.done){if(!(Number(set.distanceMeters)>0)&&!(Number(set.reps)>0)){alert(tp106T('needDistance'));return;}if(tp106GpsBusy){alert(tp106T('busy'));return;}if(tp106GpsState.active)return tp106StopGPS().then(function(ok){if(ok)tp106ToggleSetBase(ei,si);});}return tp106ToggleSetBase.apply(this,arguments);};
 const tp106FinishWorkoutBase=finishWorkout;
 finishWorkout=function(){if(!tp106DistanceInputsValid())return;if(tp106GpsBusy){alert(tp106T('busy'));return;}if(tp106GpsState.active||db.get('gpsTrip106',null))return tp106StopGPS().then(function(ok){if(ok)return tp106FinishWorkoutBase();});return tp106FinishWorkoutBase.apply(this,arguments);};
 const tp106NextBase=nextExercise;
@@ -14437,7 +14440,7 @@ prevExercise=function(){if(tp106GpsBusy){alert(tp106T('busy'));return;}if(tp106G
 const tp106QuickStartBase=tp152StartQuickInline;
 tp152StartQuickInline=async function(){if(tp106GpsBusy){alert(tp106T('busy'));return;}if((tp106GpsState.active||db.get('gpsTrip106',null))&&!await tp106StopGPS())return;return tp106QuickStartBase.apply(this,arguments);};
 const tp106FormatSetBase=formatSet;
-formatSet=function(e,set){if(!tp106IsDistance(e)&&!Object.hasOwn(set||{},'distanceMeters'))return tp106FormatSetBase(e,set);const seconds=Number(set.reps)||0;return (Object.hasOwn(set,'distanceMeters')?tp106Km(set.distanceMeters)+' km':'— km')+(seconds>0?' · '+rf110FormatStopwatch(seconds):'');};
+formatSet=function(e,set){if(!tp106IsDistance(e)&&!Object.hasOwn(set||{},'distanceMeters'))return tp106FormatSetBase(e,set);const seconds=Number(set.reps)||0;return (Object.hasOwn(set,'distanceMeters')&&!(set.distanceSource==='gps'&&set.distanceMeters===0)?tp106Km(set.distanceMeters)+' km':'— km')+(seconds>0?' · '+rf110FormatStopwatch(seconds):'');};
 const tp106ValidateBase=validateBackup;
 validateBackup=function(d){
  tp106ValidateBase(d);
@@ -14450,6 +14453,72 @@ validateBackup=function(d){
 };
 document.addEventListener('visibilitychange',function(){if(!document.hidden){void tp106SyncGPS();if(tp106GpsState.active&&!tp106GpsTimer)tp106GpsTimer=setInterval(tp106SyncGPS,1000);}});
 setTimeout(function(){void tp106SyncGPS();},0);
+
+// Health Connect steps belong to the whole workout's active windows, never to GPS kilometres.
+var TP106_STEPS_TEXT={
+ hu:{title:'Edzés lépései · Health Connect',note:'Az edzés aktív szakaszaihoz tartozó lépések. A telefon és az óra késleltetve oszthatja meg az adatokat; percenként frissítünk. A lépésekből nem számolunk GPS-távot.',refresh:'Lépések frissítése',busy:'Lépések lekérése…',pending:'Még nincs megosztott lépésadat ehhez az edzéshez.',permission:'Engedélyezd a lépések olvasását az Egészség → Engedélyek alatt.',unavailable:'Health Connect az Android alkalmazásban érhető el.',error:'A lépések nem frissültek. Próbáld újra; az előző adat megmaradt.',read:'Utolsó lekérés',timeOnly:'Beltéren GPS nélkül is rögzítheted az időt. Ismert távolságot kézzel adhatsz meg.'},
+ en:{title:'Workout steps · Health Connect',note:'Steps for the active parts of this workout. Phone and watch data can arrive late; we refresh once a minute. Steps are not converted to GPS distance.',refresh:'Refresh steps',busy:'Reading steps…',pending:'No shared step data for this workout yet.',permission:'Allow reading steps in Health → Permissions.',unavailable:'Health Connect is available in the Android app.',error:'Steps could not be refreshed. Retry; the previous reading was kept.',read:'Last read',timeOnly:'Indoors you can record time without GPS. Enter a known distance manually.'},
+ de:{title:'Trainingsschritte · Health Connect',note:'Schritte aus den aktiven Trainingsabschnitten. Telefon und Uhr können Daten verzögert teilen; Aktualisierung einmal pro Minute. Schritte werden nicht in GPS-Strecke umgerechnet.',refresh:'Schritte aktualisieren',busy:'Schritte werden gelesen…',pending:'Noch keine geteilten Schrittdaten für dieses Training.',permission:'Schrittzugriff unter Gesundheit → Berechtigungen erlauben.',unavailable:'Health Connect ist in der Android-App verfügbar.',error:'Schritte konnten nicht aktualisiert werden. Erneut versuchen; der letzte Wert bleibt erhalten.',read:'Zuletzt gelesen',timeOnly:'Innen kannst du Zeit ohne GPS erfassen. Eine bekannte Strecke kannst du manuell eingeben.'},
+ ro:{title:'Pașii antrenamentului · Health Connect',note:'Pașii din segmentele active ale antrenamentului. Telefonul și ceasul pot partaja date cu întârziere; actualizăm o dată pe minut. Pașii nu sunt transformați în distanță GPS.',refresh:'Actualizează pașii',busy:'Se citesc pașii…',pending:'Încă nu există pași partajați pentru acest antrenament.',permission:'Permite citirea pașilor în Sănătate → Permisiuni.',unavailable:'Health Connect este disponibil în aplicația Android.',error:'Pașii nu au fost actualizați. Reîncearcă; valoarea anterioară a fost păstrată.',read:'Ultima citire',timeOnly:'În interior poți înregistra timpul fără GPS. Introdu manual o distanță cunoscută.'}
+};
+var tp106StepsT=function(key){return (TP106_STEPS_TEXT[rf212Lang()]||TP106_STEPS_TEXT.hu)[key];};
+var tp106StepsView={session:null,at:0,busy:false,status:''},tp106StepsTimer=null;
+var tp106StepsWindows=function(session,end=new Date().toISOString()){
+ if(!session||!Number.isFinite(Date.parse(session.started))||Date.parse(end)<=Date.parse(session.started))return [];
+ const active=Array.isArray(session.activeIntervals)?session.activeIntervals:[{start:session.started,end:null}];
+ return window.TrainPilotIssue79.intervals({...session,finished:end,activeIntervals:active.map(i=>({...i,end:i.end||end}))});
+};
+var tp106PaintSteps=function(){
+ const root=document.getElementById('tp106Steps');if(!root)return;
+ const same=tp106StepsView.session===state.session,data=state.session?.health240;
+ const count=root.querySelector('[data-tp106-steps-count]');if(count)count.textContent=data?.steps==null?'—':tp149FormatNumber(data.steps,{maximumFractionDigits:0});
+ const status=root.querySelector('[data-tp106-steps-status]');if(status)status.textContent=same&&tp106StepsView.busy?tp106StepsT('busy'):same&&tp106StepsView.status?tp106StepsView.status:data?.steps==null?tp106StepsT('pending'):'';
+ const read=root.querySelector('[data-tp106-steps-read]');if(read)read.textContent=data?.stepsReadAt?tp106StepsT('read')+': '+tp149FormatDateTime(data.stepsReadAt):'';
+ const button=root.querySelector('button');if(button)button.disabled=!!(same&&tp106StepsView.busy);
+};
+var tp106RefreshSteps=async function(force=false){
+ const session=state.session;if(!session)return false;
+ if(tp106StepsView.busy)return false;
+ if(tp106StepsView.session!==session)tp106StepsView={session,at:0,busy:false,status:''};
+ if(!force&&Date.now()-tp106StepsView.at<60000)return false;
+ tp106StepsView.at=Date.now();const plugin=rf240Native();
+ if(!plugin?.readStepsWindow){tp106StepsView.status=tp106StepsT('unavailable');tp106PaintSteps();return false;}
+ const end=new Date().toISOString(),windows=tp106StepsWindows(session,end);if(!windows.length)return false;
+ const view=tp106StepsView;view.busy=true;tp106PaintSteps();let timeout;
+ // The operation has one owner and deadline, so retries cannot apply an old response to another workout.
+ try{
+  const result=await Promise.race([(async()=>{
+   let steps=0;for(const w of windows){
+    if(!view.busy||state.session!==session)throw Error("Obsolete step read");
+    const part=await plugin.readStepsWindow({start:w.start,end:w.end,language:rf212Lang()});
+    if(part?.permissions?.READ_STEPS===false)return {status:tp106StepsT('permission')};
+    if(part?.warnings?.length)throw Error('Health Connect steps unavailable');
+    if(part?.steps==null)return {status:tp106StepsT('pending')};
+    if(typeof part.steps!=='number'||!Number.isSafeInteger(part.steps)||part.steps<0)throw Error('Invalid steps');
+    steps+=part.steps;if(!Number.isSafeInteger(steps))throw Error('Invalid steps');
+   }return {steps};
+  })(),new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Health Connect timeout')),35000);})]);
+  if(state.session!==session||tp106StepsView!==view||JSON.stringify(tp106StepsWindows(session,end))!==JSON.stringify(windows))return false;
+  view.status=result.status||'';
+  if(result.steps!=null){
+   session.health240={...session.health240,steps:result.steps,stepsReadAt:new Date().toISOString(),windowStart:session.started,windowEnd:end,activeIntervals:windows.map(({start,end})=>({start,end})),syncedAt:new Date().toISOString(),source:'all',sources:['all'],sourceLabels:{all:'Health Connect'}};
+   persistDraft();return true;
+  }return false;
+ }catch(_){if(state.session===session&&tp106StepsView===view)view.status=tp106StepsT('error');return false;}
+ finally{clearTimeout(timeout);view.busy=false;if(tp106StepsView===view)tp106PaintSteps();}
+};
+const tp106StepsRenderBase=renderWorkout;
+renderWorkout=function(){
+ const result=tp106StepsRenderBase.apply(this,arguments),gps=document.getElementById('tp106GPS');if(!gps)return result;
+ const note=document.createElement('p');note.className='small muted';note.textContent=tp106StepsT('timeOnly');gps.appendChild(note);
+ const panel=document.createElement('section');panel.id='tp106Steps';panel.className='card tp106-gps-card';
+ panel.innerHTML='<strong>'+esc(tp106StepsT('title'))+'</strong><p class="small muted">'+esc(tp106StepsT('note'))+'</p><p><strong data-tp106-steps-count>—</strong></p><p class="small" data-tp106-steps-status role="status"></p><p class="small muted" data-tp106-steps-read></p><button type="button" class="btn secondary block" onclick="tp106RefreshSteps(true)">'+esc(tp106StepsT('refresh'))+'</button>';
+ gps.after(panel);tp106PaintSteps();void tp106RefreshSteps();
+ if(!tp106StepsTimer)tp106StepsTimer=setInterval(function(){if(!state.session||!document.getElementById('tp106Steps')){clearInterval(tp106StepsTimer);tp106StepsTimer=null;return;}if(!document.hidden)void tp106RefreshSteps();},60000);
+ return result;
+};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&document.getElementById('tp106Steps'))void tp106RefreshSteps();});
+
 // @endsection custom-exercise-distance-106.js
 
 // @section ready.js

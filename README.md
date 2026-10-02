@@ -39,7 +39,7 @@ A GitHub APK kiadás nem jelenti a Google Play vagy a Google OAuth nyilvános be
 
 A `com.repforge.app`, egyes `repforge:*` helyi adattárolási kulcsok és régi backup/szinkron azonosítók szándékosan megmaradnak a korábbi telepítésekkel és felhasználói adatokkal való kompatibilitás miatt. Az eredeti release-aláírásnak a frissítésnél is változatlannak kell maradnia.
 
-## Következő tesztváltozat: 1.0.6 (2689)
+## Következő tesztváltozat: 1.0.6 (2690)
 
 A saját gyakorlat és program létrehozása, illetve a program szerkesztése teljes keretű lebegő panelben nyílik meg, a fejlécen belül maradó piros X-szel és témához igazodó vezérlőkkel. A korábbi 100 gyakorlat mellé hat távolságos mozgás került: futás, kocogás, görkorcsolyázás, kerékpározás, séta és túrázás. Ezek a Gyors edzésben közvetlenül kereshetők, és saját programba is felvehetők. Az új mérési típusok: ismétlés, idő, illetve idő és távolság. A kilométer kézzel is megadható és szerkeszthető a naplóban; Androidon külön indított GPS-mérés is készül, csak összesített idő- és távadattal, útvonaltárolás nélkül.
 
@@ -84,3 +84,5 @@ A signing kulcs és a jelszavak nincsenek a repositoryban. A GitHub Actions a k�
 Signing kulcsot, jelszót, OAuth credentialt, `.env` fájlt vagy titkosítatlan helyreállítási mentést tilos commitolni. A privát archívum **sem** tartalmazhat signing titkokat.
 
 A Google Play publikáláshoz hátralévő lépéseket külön [ellenőrzőlista](docs/PLAY_STORE_CHECKLIST_2026.md) tartalmazza.
+
+A 2690-es teszt-APK az edzés aktív szakaszaihoz Health Connect-lépésszámot is lekér és naplóz. Beltéren idővel, GPS-táv nélkül is rögzíthető a mozgás; a lépésekből nem becsül kilométert. A forrás megosztási késése miatt a napló Health-blokkja később frissíthető.

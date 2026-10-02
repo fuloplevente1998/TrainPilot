@@ -54,5 +54,30 @@ function runtime(){
  for(const bad of [-1,Infinity,2000001,'5']){const d=run('makeBackup()');d.history[0].exercises[0].sets[0].distanceMeters=bad;assert.throws(()=>run(`validateBackup(${JSON.stringify(d)})`));}
  assert.ok(!JSON.stringify(backup).includes('latitude')&&!JSON.stringify(backup).includes('longitude'),'coordinate data must not enter workout exports');
  assert.ok(run('window.tp106CustomExercisePanelHtml()').includes('ceMeasure'));assert.ok(run('window.tp106CustomExercisePanelHtml()').includes('ceGear'));
+ // Read only the active windows, merge overlaps, and replace absolute totals rather than adding polls.
+ run(`state.session={started:new Date(Date.now()-600000).toISOString(),exercises:[{id:'walking',measurementType:'distance',sets:[]}],activeIntervals:[{start:new Date(Date.now()-600000).toISOString(),end:new Date(Date.now()-540000).toISOString()},{start:new Date(Date.now()-300000).toISOString(),end:null},{start:new Date(Date.now()-240000).toISOString(),end:null}]};var stepCalls=[],stepValue=12;window.Capacitor.Plugins.HealthBridge={readStepsWindow:async args=>{stepCalls.push(args);return {steps:stepValue,permissions:{READ_STEPS:true}}}};`);
+ assert.equal(await run('tp106RefreshSteps(true)'),true);assert.equal(run('stepCalls.length'),2);assert.equal(run('state.session.health240.steps'),24);
+ assert.equal(run('Date.parse(stepCalls[0].end)-Date.parse(stepCalls[0].start)'),60000);assert.ok(run('Date.parse(stepCalls[1].end)-Date.parse(stepCalls[1].start)')>=300000&&run('Date.parse(stepCalls[1].end)-Date.parse(stepCalls[1].start)')<301000);
+ assert.equal(await run('tp106RefreshSteps()'),false);assert.equal(run('stepCalls.length'),2,'automatic reading is limited to once per minute');
+ run('stepValue=15');await run('tp106RefreshSteps(true)');assert.equal(run('state.session.health240.steps'),30,'absolute aggregate replaces previous count');
+ run('stepValue=0');await run('tp106RefreshSteps(true)');assert.equal(run('state.session.health240.steps'),0,'real zero remains distinct from missing data');
+ run('stepValue=null');await run('tp106RefreshSteps(true)');assert.equal(run('state.session.health240.steps'),0);assert.match(run('tp106StepsView.status'),/Még nincs/);
+ run('window.Capacitor.Plugins.HealthBridge.readStepsWindow=async()=>({steps:null,permissions:{READ_STEPS:false}})');await run('tp106RefreshSteps(true)');assert.match(run('tp106StepsView.status'),/Engedélyezd/);
+ run('window.Capacitor.Plugins.HealthBridge.readStepsWindow=async()=>{throw Error("temporary failure")}');await run('tp106RefreshSteps(true)');assert.equal(run('tp106StepsView.busy'),false);assert.match(run('tp106StepsView.status'),/előző adat/);
+ run('var resolveSteps;window.Capacitor.Plugins.HealthBridge.readStepsWindow=()=>new Promise(r=>resolveSteps=r)');const lateSteps=run('tp106RefreshSteps(true)');
+ assert.equal(await run('tp106RefreshSteps(true)'),false,'manual double tap cannot start another read');
+ run('var oldStepsSession=state.session;state.session={started:new Date().toISOString(),exercises:[]};resolveSteps({steps:123,permissions:{READ_STEPS:true}})');
+ // Resolve the second interval too; the old operation still has no authority over the new session.
+ await new Promise(setImmediate);run('resolveSteps({steps:123,permissions:{READ_STEPS:true}})');await lateSteps;
+ assert.equal(run('state.session.health240'),undefined);assert.equal(run('oldStepsSession.health240.steps'),0);
+ const activeHealth=await run(`window.TrainPilotIssue79.readWorkout({readTrainingWindow:async()=>({steps:7,permissions:{READ_STEPS:true}})},{started:oldStepsSession.started,finished:new Date().toISOString(),activeIntervals:tp106StepsWindows(oldStepsSession).map(({start,end})=>({start,end}))})`);
+ assert.equal(activeHealth.steps,14);assert.equal(run('rf242HasTrainingMetric({steps:0})'),true,'exact zero must not trigger an expanded time window');
+ run(`db.set('history',[{id:'step-log',started:oldStepsSession.started,finished:new Date().toISOString(),exercises:[],health240:{steps:42}}]);db.set('backupIncludeHealth',false)`);
+ assert.equal(run('tp105Project({history:history()},false).history[0].health240'),undefined,'Health export consent also protects imported steps');
+ assert.equal(run('tp105Project({history:history()},true).history[0].health240.steps'),42);
+ const native=fs.readFileSync('android/app/src/main/java/com/repforge/app/HealthBridgePlugin.java','utf8');
+ assert.match(native,/readStepsWindow/);assert.match(native,/putLongAgg\(out,"steps",p,m,time,"READ_STEPS",StepsRecord.STEPS_COUNT_TOTAL/);
+ assert.ok(!native.includes('WRITE_STEPS'),'imported phone/watch counts must not be written back and duplicated');
+ console.log('PASS workout steps: exact active windows, deduped overlaps, polling budget, absolute totals, null/zero, permission/error, late owner, final aggregate and export consent');
  console.log('PASS custom distance: km parsing, concurrent GPS start, stop/resume/draft recovery, permission denial, manual edits, export and malformed data');
 })().catch(e=>{console.error(e);process.exitCode=1;});
