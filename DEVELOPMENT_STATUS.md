@@ -4,22 +4,19 @@ Last updated: **2026-10-02 (Europe/Budapest)**. Earlier Phase 5–7 history rema
 
 ## Current release
 
-- **TrainPilot 1.0.5 / versionCode 2687**, based on published v1.0.4 / `1d84c54dbcb46f3c6aaf7a94435dafd85586a91a`. Application ID and APK signer are preserved.
-- **Scope:** complete Drive dataset merge; opt-in Health export; verified photo ZIP backup and transactional restore; separate erasure/revocation controls; Calendar recreation; bounded request retry and snapshot retention; localized privacy/network messages; patched `brace-expansion` build dependency.
-- **Latest fix:** ZIP export reserves the committed local dataset without waiting for Drive/Calendar networking. Drive defers local application until the picker/export closes and rechecks local edits; local photo deletion follows a successful tombstone commit. Network failures release sync state and schedule automatic retries at least 60 seconds apart. Manual sync remains available.
-- **Design:** the Health export checkbox shares the app's theme-aware 26px checkbox, selected accent color, checkmark, keyboard focus and minimum 44px label target.
-- **Publication authorization:** on 2026-10-02 the user explicitly authorized this final version to merge into main and requested a GitHub Release after validation. This replaces the draft-only restriction for PR #91. It is not a claim that the new build has already passed a physical-phone test.
-- **Phone evidence:** the preceding 2686 APK still blocked ZIP with automatic sync enabled; disabling automatic sync allowed export. The final 2687 fix must still be observed on a real device. Keep future physical upgrade, photo round-trip and account authorization checks separate from CI.
-- **Performance:** retain lazy Journal/Programs details, operation-scoped history snapshots, batched Coach statistics and the permanent performance regression policy.
-- **Google Play/Cloud:** production signing, public policy/contact details, OAuth clients and external-account validation remain configuration work. A GitHub release does not complete these steps.
+- **TrainPilot 1.0.6 / versionCode 2690**, merged from user-approved PR #92 to public `main` as `efb72b5d69102818dfbfdd80073b63298dc346e7`.
+- **Distance activities:** six built-in distance exercises (running, jogging, inline skating, cycling, walking, hiking), available in Quick Workout and own programs.
+- **Measurement model:** repetitions, time, and time+distance. Kilometres remain separate from strength repetitions and lifted volume.
+- **Custom builders:** own exercise/program create/edit flows use the framed shared overlay with a header-contained red X and themed controls.
+- **GPS:** user-started Android location foreground service; aggregate time/distance only, no saved route coordinates. Manual distance entry remains available without GPS/location permission.
+- **Indoor recording:** distance activities may be completed with duration only when GPS distance is unknown.
+- **Workout steps:** Health Connect `READ_STEPS` is aggregated over exact active workout windows, excluding pauses and merging overlaps. A missing step permission is explicitly detected and can be requested from the workout card. Imported steps are not written back and are not converted into GPS distance.
+- **Approval:** the signed 2690 candidate passed Node, Chromium UI, Android/JVM, performance, APK/source and signer-continuity checks. After receiving the test APK, the user explicitly authorized merge to `main`.
+- **Post-merge:** Quick Validation and Phase 7 Performance passed on `efb72b5d...`; the post-merge Release Gate publishes the stable GitHub APK/source release.
+- **Google Play/Cloud:** foreground-location declaration, privacy/Data safety and external OAuth/Cloud settings remain separate publication work.
 
-Release details: [v1.0.5 notes](docs/releases/v1.0.5.md), [implementation and Console work](docs/PUBLICATION_1_0_5.md).
+Release details: [v1.0.6 notes](docs/releases/v1.0.6.md), [implementation and phone checks](docs/CUSTOM_EXERCISE_DISTANCE_1_0_6.md).
 
-## Active candidate: 1.0.6 / 2689
-
-Based on published main `f4a556ab158c0770dfebb42a0580b0bf3089cc2a` (v1.0.5). Custom exercise and program builders now use framed shared overlays with a header-contained red X, focus/scroll restoration and themed controls. The old 100 exercise library is extended with six built-in distance activities, available in Quick Workout and own programs, with four-language metadata and no automatic strength progression. A measurement selector adds time and distance; kilometres remain separate from duration and repetition counts. Android opt-in GPS uses a location foreground service, stop notification and aggregate-only persistence. Manual entry remains available without location permission. GPS stop/reload recovers aggregates into the owned draft; no route coordinates are saved.
-
-The previous publication authorization applies to 1.0.5. This new GPS candidate needs physical-phone review before merge/publication. Automated and device evidence must remain distinct. The performance comparison baseline for this change is published main/v1.0.5. See [implementation and phone checks](docs/CUSTOM_EXERCISE_DISTANCE_1_0_6.md).
 
 ## Phase 5–7 acceptance boundaries
 
