@@ -69,7 +69,7 @@ assert.ok(root.innerHTML.indexOf('Kerülendő területek')<root.innerHTML.indexO
 
 run('muscleLibrary()');
 assert.ok(root.innerHTML.includes('Gumiszalag')&&root.innerHTML.includes('Húzódzkodórúd')&&root.innerHTML.includes('Tolódzkodó')&&root.innerHTML.includes('Kettlebell'),'exercise library must expose new equipment filters');
-run('customExerciseScreen()');
+run("if(window.tp106CustomExercisePanelHtml)render(shell(window.tp106CustomExercisePanelHtml()));else customExerciseScreen();");
 assert.ok(root.innerHTML.includes('Vízszintes tolás')&&root.innerHTML.includes('Törzsstabilizáció')&&root.innerHTML.includes('Kategória / stílus')&&root.innerHTML.includes('Calisthenics'),'custom exercise UI must use localized movement patterns and style');
 
 const backupSource=fs.readFileSync('www/backup.js','utf8'),featureSource=fs.readFileSync('www/trainpilot-148-adaptive-planner.js','utf8');

@@ -845,6 +845,10 @@
   if(k==='weight')s.weight=Math.max(0,Number(String(v).replace(',','.'))||0);
   else s[k]=String(v);
  };
+ window.tp3ExerciseSetDistance=function(si,value,input){
+  const e=tp3ExerciseState()?.draft,set=e?.sets?.[si];if(!set)return;
+  try{tp106SetDistance(set,value);e.measurementType='distance';input?.setCustomValidity?.('');}catch(error){input?.setCustomValidity?.(error.message);}
+ };
  window.tp3ExerciseSetSide=function(si,k,v){
   const e=tp3ExerciseState()?.draft,s=e?.sets?.[si];if(!s||!['leftSeconds','rightSeconds'].includes(k))return;
   const n=Math.max(0,Math.round(Number(String(v).replace(',','.'))||0));s[k]=n;
@@ -864,6 +868,7 @@
   e.sets.splice(si,1);rf151Renumber(e);if(!tp3RefreshExerciseEditor())tp3KeepScroll(()=>render());
  };
  window.tp3SaveExerciseEdit=function(){
+  if(typeof tp106DistanceInputsValid==='function'&&!tp106DistanceInputsValid())return;
   const st=tp3ExerciseState();if(!st)return;
   const i=rf142FindHistoryIndex(st.key),h=history();if(i<0)return;
   const x=rf151Clone(h[i]),e=rf151Clone(st.draft);if(!(e.sets||[]).length){alert('Legalább 1 sorozat szükséges.');return}
@@ -897,7 +902,9 @@
  const tp3ExerciseEditorHtml=(key,e,ei,isNew)=>{
   const w=tx(),meta=rf151SetMeta(e),bilateral=isBilateral(meta);
   const rows=(meta.sets||[]).map((set,si)=>{
-   const load=meta.loadType==='bodyweight'
+   const load=typeof tp106IsDistance==='function'&&tp106IsDistance(meta)
+    ?'<label class="small tp3-load">'+esc(tp106T('km'))+'<input class="field" data-tp106-distance="'+si+'" inputmode="decimal" value="'+esc(Object.hasOwn(set,'distanceMeters')?String(set.distanceMeters/1000):'')+'" oninput="tp3ExerciseSetDistance('+si+',this.value,this)"></label>'
+    :meta.loadType==='bodyweight'
     ?'<span class="small muted tp3-bodyweight">'+esc(tp149T('workout.bodyweight'))+'</span>'
     :'<label class="small tp3-load">'+esc(tp149LoadLabel(meta.loadType))+'<input class="field" inputmode="decimal" value="'+esc(Number(set.weight)||0)+'" oninput="tp3ExerciseSetValue('+si+',\'weight\',this.value)"></label>';
    const reps=bilateral

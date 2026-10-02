@@ -39,6 +39,12 @@ A GitHub APK kiadás nem jelenti a Google Play vagy a Google OAuth nyilvános be
 
 A `com.repforge.app`, egyes `repforge:*` helyi adattárolási kulcsok és régi backup/szinkron azonosítók szándékosan megmaradnak a korábbi telepítésekkel és felhasználói adatokkal való kompatibilitás miatt. Az eredeti release-aláírásnak a frissítésnél is változatlannak kell maradnia.
 
+## Következő tesztváltozat: 1.0.6 (2688)
+
+A saját gyakorlat létrehozása a közös lebegő panelben nyílik meg, piros X-szel és témához igazodó jelölőnégyzetekkel. Az új mérési típusok: ismétlés, idő, illetve idő és távolság. A kilométer kézzel is megadható és szerkeszthető a naplóban; Androidon külön indított GPS-mérés is készül, csak összesített idő- és távadattal, útvonaltárolás nélkül.
+
+Ez fejlesztési tesztváltozat, nem publikált Release. A GPS valós kültéri pontossága, képernyőzár, engedélyek és frissítés készülékes ellenőrzésre várnak. [Megvalósítás és tesztlépések](docs/CUSTOM_EXERCISE_DISTANCE_1_0_6.md).
+
 ## Git-történet és privát archívum
 
 A publikus repository története a **TrainPilot 1.6.0** clean base állapottól indul. A korábbi privát/legacy előzmények nem részei ennek a Git-történetnek. A publikus `main` teljes meglévő commitelőzménye megmarad.

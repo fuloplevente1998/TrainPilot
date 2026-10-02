@@ -15,6 +15,12 @@ Last updated: **2026-10-02 (Europe/Budapest)**. Earlier Phase 5–7 history rema
 
 Release details: [v1.0.5 notes](docs/releases/v1.0.5.md), [implementation and Console work](docs/PUBLICATION_1_0_5.md).
 
+## Active candidate: 1.0.6 / 2688
+
+Based on published main `f4a556ab158c0770dfebb42a0580b0bf3089cc2a` (v1.0.5). Custom-exercise creation now uses the shared overlay, red X, focus/scroll restoration and themed checkboxes. A measurement selector adds time and distance; kilometres remain separate from duration and repetition counts. Android opt-in GPS uses a location foreground service, stop notification and aggregate-only persistence. Manual entry remains available without location permission. GPS stop/reload recovers aggregates into the owned draft; no route coordinates are saved.
+
+The previous publication authorization applies to 1.0.5. This new GPS candidate needs physical-phone review before merge/publication. Automated and device evidence must remain distinct. The performance comparison baseline for this change is published main/v1.0.5. See [implementation and phone checks](docs/CUSTOM_EXERCISE_DISTANCE_1_0_6.md).
+
 ## Phase 5–7 acceptance boundaries
 
 **Phase 5 — Health + shared design system (#27, #41, #44).** Correct 7-calendar-day pulse source/semantics and weight edit; audited common theme-aware chevrons (navigation only; actual play controls remain play), Health chart safe zone and basic-matte/vivid-glow styling; unified 2×3 Today status in **existing** Home/Health positions with `Alvás / HRV / Pulzus / Lépések / Mai edzés / Regeneráció`. Home grid visibly more compact than Health grid; both share one daily data model.
