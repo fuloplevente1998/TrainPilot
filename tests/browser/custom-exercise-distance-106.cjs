@@ -115,15 +115,15 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   window.stepUI=84;window.stepUIReads=0;
   window.Capacitor.Plugins.HealthBridge={readStepsWindow:async()=>{stepUIReads++;return {steps:stepUI,permissions:{READ_STEPS:true}}},readTrainingWindow:async()=>({steps:stepUI,permissions:{READ_STEPS:true},sources:['all'],sourceLabels:{all:'Health Connect'}})};
  });
- await page.locator('#tp106Steps button').click();await page.waitForFunction(()=>state.session.health240?.steps===84);
+ await page.locator('#tp106Steps [data-tp106-steps-refresh]').click();await page.waitForFunction(()=>state.session.health240?.steps===84);
  const originalMain=await page.locator('main.tp153-workout').elementHandle();
- await page.evaluate(()=>stepUI=102);await page.locator('#tp106Steps button').click();await page.waitForFunction(()=>state.session.health240?.steps===102);
+ await page.evaluate(()=>stepUI=102);await page.locator('#tp106Steps [data-tp106-steps-refresh]').click();await page.waitForFunction(()=>state.session.health240?.steps===102);
  assert.equal(await page.evaluate(el=>el===document.querySelector('main.tp153-workout'),originalMain),true,'step refresh must not redraw the workout');
  assert.equal(await page.locator('#tp106Steps [data-tp106-steps-count]').innerText(),'102');
  for(const width of [320,360,393,412]){await page.setViewportSize({width,height:873});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'steps card fits '+width)}
  await page.evaluate(()=>{window.Capacitor.Plugins.HealthBridge.readStepsWindow=async()=>({steps:null,permissions:{READ_STEPS:false}})});
- await page.locator('#tp106Steps button').click();await page.waitForFunction(()=>!tp106StepsView.busy);
- assert.match(await page.locator('[data-tp106-steps-status]').innerText(),/Engedélyezd/);assert.equal(await page.locator('[data-tp106-steps-count]').innerText(),'102');
+ await page.locator('#tp106Steps [data-tp106-steps-refresh]').click();await page.waitForFunction(()=>!tp106StepsView.busy);
+ assert.match(await page.locator('[data-tp106-steps-status]').innerText(),/Engedélyezd/);assert.equal(await page.locator('[data-tp106-steps-count]').innerText(),'102');assert.equal(await page.locator('[data-tp106-steps-grant]').isVisible(),true,'missing READ_STEPS exposes a dedicated permission button');
  await page.setViewportSize({width:393,height:873});await page.screenshot({path:'ui-evidence/workout-health-steps-106.png',animations:'disabled'});
  // Indoors, record duration with an unknown distance instead of inventing kilometres.
  await page.locator('[data-tp106-distance]').fill('');await page.locator('.tp153-set-row input[inputmode="numeric"]').first().fill('180');
