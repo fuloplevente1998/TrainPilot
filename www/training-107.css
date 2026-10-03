@@ -1,7 +1,8 @@
 /* Fixed overview pages; expanded Health and Calendar detail regions remain accessible. */
 html.tp107-fixed-view,body.tp107-fixed-view{height:100dvh;overflow:hidden;overscroll-behavior:none}
-html body #app main.tp107-fit-home,html body #app main.tp107-fit-health{margin:0!important;padding:8px 12px max(12px,env(safe-area-inset-bottom,0px))!important;gap:7px!important;max-height:calc(100dvh - var(--tp107-nav-height,132px));box-sizing:border-box;animation:none!important;transform:none!important}
-html body #app main.tp107-fit-home>.card,html body #app main.tp107-fit-home>.hero,html body #app main.tp107-fit-health>.card{margin:0!important}
+html body #app main.tp107-fit-home,html body #app main.tp107-health-layout{margin:0!important;padding:8px 12px max(12px,env(safe-area-inset-bottom,0px))!important;gap:7px!important;box-sizing:border-box;animation:none!important;transform:none!important}
+html body #app main.tp107-fit-home,html body #app main.tp107-fit-health{max-height:calc(100dvh - var(--tp107-nav-height,132px))}
+html body #app main.tp107-fit-home>.card,html body #app main.tp107-fit-home>.hero,html body #app main.tp107-health-layout>.card{margin:0!important}
 html body #app main.tp107-fit-home:not(.tp-home-draft-compact)>.hero{padding:9px 12px!important}
 html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp155-home-program-left h1{font-size:24px!important;line-height:1.1!important}
 html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp155-home-program-right .tp146-next-title{font-size:17px!important}
@@ -14,19 +15,19 @@ html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard .
 html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard .tp166-home-coach-target{margin:6px 0!important;gap:6px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
 html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard .tp166-home-coach-target>span{padding:6px 8px!important}
 html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard .tp166-home-coach-sub{font-size:11px!important;margin-top:4px!important}
-html body #app main.tp107-fit-health>.tp168-today-card{padding:10px!important}
-html body #app main.tp107-fit-health .tp5-today-full>.tp5-today-metric.stat{height:74px!important;min-height:74px!important}
-html body #app main.tp107-fit-health>.tp168-health-note{margin:0!important;font-size:11px!important;line-height:1.2!important}
-html body #app main.tp107-fit-health>.tp168-sync-tail{padding:8px!important}
-html body #app main.tp107-fit-health>.tp168-sync-tail p{margin:4px 0 0!important}
-html body #app main.tp107-fit-health :is(.tp168-weight-summary,.tp169-pulse-summary){margin:5px 0!important}
-html body #tp155R4PanelHost.tp107-fit-calendar .tp155-r4-panel{height:calc(100% - 8px)!important;max-height:calc(100% - 8px)!important;box-sizing:border-box;display:flex!important;flex-direction:column;overflow:hidden!important;animation:tp160BackdropIn 110ms ease-out both!important;transform:none!important;margin-top:0!important}
-html body #tp155R4PanelHost.tp107-fit-calendar .tp155-r4-panel-content{flex:1;min-height:0;overflow:hidden;height:0;display:flex;flex-direction:column}
-html body #tp155R4PanelHost.tp107-fit-calendar main{height:100%;min-height:0;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;padding:0!important;overflow:hidden}
-html body #tp155R4PanelHost.tp107-fit-calendar .tp151-calendar-frame{flex:0 0 auto;min-height:0;overflow:auto;margin:0!important}
-html body #tp155R4PanelHost.tp107-fit-calendar .tp151-day-panel{flex:1 1 auto;min-height:0;overflow:auto;margin:0!important}
-html body #tp155R4PanelHost.tp107-fit-calendar .tp155-r4-planner-bottom{flex:0 0 auto;min-height:0;overflow:visible;margin:0!important}
-html body #tp155R4PanelHost.tp107-fit-calendar .rf2211-planner{margin:0!important}
+html body #app main.tp107-health-layout>.tp168-today-card{padding:10px!important}
+html body #app main.tp107-health-layout .tp5-today-full>.tp5-today-metric.stat{height:74px!important;min-height:74px!important}
+html body #app main.tp107-health-layout>.tp168-health-note{margin:0!important;font-size:11px!important;line-height:1.2!important}
+html body #app main.tp107-health-layout>.tp168-sync-tail{padding:8px!important}
+html body #app main.tp107-health-layout>.tp168-sync-tail p{margin:4px 0 0!important}
+html body #app main.tp107-health-layout :is(.tp168-weight-summary,.tp169-pulse-summary){margin:5px 0!important}
+html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .tp155-r4-panel{height:auto!important;max-height:calc(100% - 8px)!important;box-sizing:border-box;display:flex!important;flex-direction:column;overflow:hidden!important;animation:tp160BackdropIn 110ms ease-out both!important;transform:none!important;margin-top:0!important}
+html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .tp155-r4-panel-content{flex:1;min-height:0;overflow:hidden;height:auto;display:flex;flex-direction:column}
+html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar main{height:auto;min-height:0;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;padding:0!important;overflow:hidden}
+html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .tp151-calendar-frame{flex:0 0 auto;min-height:0;overflow:auto;margin:0!important}
+html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .tp151-day-panel{flex:1 1 auto;min-height:0;overflow:auto;margin:0!important}
+html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .tp155-r4-planner-bottom{flex:0 0 auto;min-height:0;overflow:visible;margin:0!important}
+html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .rf2211-planner{margin:0!important}
 .tp107-save-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
 .tp107-save-row .btn{min-height:44px;white-space:normal}
 .tp107-save-status{min-height:1.2em;margin:5px 0 10px}
@@ -40,7 +41,7 @@ html body #tp155R4PanelHost.tp107-fit-calendar .rf2211-planner{margin:0!importan
 .tp107-record{display:grid;gap:5px;overflow-wrap:anywhere}
 .tp107-cardio-entry{margin:8px 0}
 html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf223Today .rf223-title{margin-bottom:4px!important}
-html body #tp155R4PanelHost.tp107-fit-calendar .tp155-r4-panel-content>main{flex:1;height:auto!important;min-height:0!important}
+html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .tp155-r4-panel-content>main{flex:1;height:auto!important;min-height:0!important}
 html body #app main.tp107-fit-home>.grid2{margin:0!important;gap:6px!important}
 html body #app main.tp107-fit-home>.grid2>.stat{display:flex!important;align-items:center;justify-content:space-between;gap:5px;padding:5px 7px!important;min-height:36px!important}
 html body #app main.tp107-fit-home>.grid2>.stat small{font-size:10px!important;line-height:1.15}
@@ -61,15 +62,15 @@ html body #app main.tp107-fit-home>br{display:none}
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard .tp166-home-coach-copy p{font-size:12px!important}
 }
 @media(max-height:800px){
- html body #app main.tp107-fit-home,html body #app main.tp107-fit-health{gap:5px!important;padding:6px 10px!important}
+ html body #app main.tp107-fit-home,html body #app main.tp107-health-layout{gap:5px!important;padding:6px 10px!important}
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard .tp166-home-coach-target>span{padding:4px 6px!important;display:flex!important;flex-direction:row!important;align-items:center;justify-content:space-between;gap:4px!important;min-height:32px!important}
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard{padding:7px 9px!important}
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf223Today{padding:6px 8px!important}
- html body #app main.tp107-fit-health .tp5-today-full>.tp5-today-metric.stat{height:62px!important;min-height:62px!important;padding:5px!important}
- html body #app main.tp107-fit-health .tp168-today-head{margin-bottom:5px!important}
- html body #app main.tp107-fit-health>.tp168-more-panel>summary,html body #app main.tp107-fit-health>.tp168-connect-panel>summary{min-height:44px!important;padding:6px 9px!important}
- html body #app main.tp107-fit-health :is(.tp168-weight-summary,.tp169-pulse-summary){min-height:44px!important;padding:6px!important}
- html body #app main.tp107-fit-health>.tp168-health-note{padding:4px 6px!important}
+ html body #app main.tp107-health-layout .tp5-today-full>.tp5-today-metric.stat{height:62px!important;min-height:62px!important;padding:5px!important}
+ html body #app main.tp107-health-layout .tp168-today-head{margin-bottom:5px!important}
+ html body #app main.tp107-health-layout>.tp168-more-panel>summary,html body #app main.tp107-health-layout>.tp168-connect-panel>summary{min-height:44px!important;padding:6px 9px!important}
+ html body #app main.tp107-health-layout :is(.tp168-weight-summary,.tp169-pulse-summary){min-height:44px!important;padding:6px!important}
+ html body #app main.tp107-health-layout>.tp168-health-note{padding:4px 6px!important}
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact)>.hero>.btn{padding:8px 10px!important;min-height:42px!important}
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard .tp167-home-coach-readiness{grid-template-columns:1fr!important}
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard h2{font-size:16px!important}
@@ -91,11 +92,11 @@ html body #app main.tp107-fit-home>.hero.tp155-home-active-card{border-width:1px
 html body #app main.tp107-fit-home #rf223Today .tp5-today-metric.stat{display:grid!important;grid-template-columns:16px minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr) 16px!important;align-items:center!important;justify-items:start!important}
 html body #app main.tp107-fit-home #rf223Today .tp5-today-label{margin:0!important;line-height:1.05!important}
 html body #app main.tp107-fit-home #rf223Today .tp5-today-value{grid-column:1/-1;font-size:13px!important;line-height:16px!important}
-html body #app main.tp107-fit-health .tp5-today-full>.tp5-today-metric.stat{display:grid!important;grid-template-columns:24px minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr) 18px!important;align-items:center!important;justify-items:start!important;gap:2px!important}
-html body #app main.tp107-fit-health .tp5-today-label{margin:0!important}
-html body #app main.tp107-fit-health .tp5-today-value{grid-column:1/-1;line-height:18px!important}
+html body #app main.tp107-health-layout .tp5-today-full>.tp5-today-metric.stat{display:grid!important;grid-template-columns:24px minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr) 18px!important;align-items:center!important;justify-items:start!important;gap:2px!important}
+html body #app main.tp107-health-layout .tp5-today-label{margin:0!important}
+html body #app main.tp107-health-layout .tp5-today-value{grid-column:1/-1;line-height:18px!important}
 
-@media(prefers-reduced-motion:reduce){html body #tp155R4PanelHost.tp107-fit-calendar .tp155-r4-panel{animation:none!important}}
+@media(prefers-reduced-motion:reduce){html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .tp155-r4-panel{animation:none!important}}
 
 @media(max-height:800px){
  html body #app main.tp107-fit-home.tp-home-draft-compact>.card:has(button[onclick*="resumeDraft"])>strong{font-size:13px!important;line-height:1.15!important}
@@ -106,7 +107,7 @@ html body #app main.tp107-fit-health .tp5-today-value{grid-column:1/-1;line-heig
 @media(max-height:800px){html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp155-home-program-left h1{font-size:18px!important}}
 @media(max-width:340px){html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp155-home-program-right .tp146-next-title{font-size:16px!important}}
 
-@media(max-height:800px){html body #app main.tp107-fit-home,html body #app main.tp107-fit-health{padding-bottom:max(4px,env(safe-area-inset-bottom,0px))!important}}
+@media(max-height:800px){html body #app main.tp107-fit-home,html body #app main.tp107-health-layout{padding-bottom:max(4px,env(safe-area-inset-bottom,0px))!important}}
 /* Keep the full planner; recover space from the surrounding summary on small phones. */
 @media(max-height:900px){
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact){gap:3px!important}
@@ -131,15 +132,18 @@ html body #app main.tp107-fit-health .tp5-today-value{grid-column:1/-1;line-heig
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard .tp166-home-coach-target{margin:2px 0!important}
 }
 /* The planner stays fixed; its pickers open in their existing floating panels. */
-html body #tp155R4PanelHost.tp107-fit-calendar .rf2211-planner{height:auto!important}
-html body #tp155R4PanelHost.tp107-fit-calendar .rf2211-planbody{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px!important}
-html body #tp155R4PanelHost.tp107-fit-calendar .rf2211-planbody>.grid2{display:contents!important}
-html body #tp155R4PanelHost.tp107-fit-calendar .rf2211-planbody>label:has(#rf230Mode){grid-column:1;grid-row:1}
-html body #tp155R4PanelHost.tp107-fit-calendar .rf2211-planbody>label:has(#rf2211First){grid-column:2;grid-row:1}
-html body #tp155R4PanelHost.tp107-fit-calendar .rf2211-planbody>:is(.btn,.tp155-custom-plan-hint,.rf2211-weekdays){grid-column:1/-1}
+html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .rf2211-planner{height:auto!important}
+html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .rf2211-planbody{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px!important}
+html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .rf2211-planbody>.grid2{display:contents!important}
+html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .rf2211-planbody>label:has(#rf230Mode){grid-column:1;grid-row:1}
+html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .rf2211-planbody>label:has(#rf2211First){grid-column:2;grid-row:1}
+html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .rf2211-planbody>:is(.btn,.tp155-custom-plan-hint,.rf2211-weekdays){grid-column:1/-1}
 @media(max-height:800px){
- html body #tp155R4PanelHost.tp107-fit-calendar .cal-cell{min-height:32px!important}
- html body #tp155R4PanelHost.tp107-fit-calendar .rf2211-planner{padding:5px!important}
- html body #tp155R4PanelHost.tp107-fit-calendar .tp155-planner-title{min-height:20px;padding-bottom:2px}
- html body #tp155R4PanelHost.tp107-fit-calendar .rf2211-planbody{gap:3px!important}
+ html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .cal-cell{min-height:32px!important;line-height:1!important}
+ html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .rf2211-planner{padding:5px!important}
+ html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .tp155-planner-title{min-height:20px;padding-bottom:2px}
+ html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .rf2211-planbody{gap:3px!important}
 }
+
+/* Keep the rounded top border below the navigation; size the frame to its content. */
+html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar{padding-top:6px!important}

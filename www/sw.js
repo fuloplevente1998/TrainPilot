@@ -1,4 +1,4 @@
-const C='trainpilot-v107-training-2693';
+const C='trainpilot-v107-training-2694';
 const CORE=['./privacy.html','./','./index.html','./styles.css','./health-dashboard-168.css','./global-uiux-177.css','./progress-177.css','./issue67-polish.css','./training-107.css','./progress-anatomy-177.webp','./progress-muscle-chest-177.png','./progress-muscle-back-177.png','./progress-muscle-shoulders-177.png','./progress-muscle-arms-177.png','./progress-muscle-core-177.png','./progress-muscle-legs-177.png','./manifest.json','./runtime-manifest.txt'];
 
 async function runtimeAssets(){

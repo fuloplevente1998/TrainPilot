@@ -1,6 +1,6 @@
-# TrainPilot 1.0.7 / 2693 — program editing and cardio candidate
+# TrainPilot 1.0.7 / 2694 — program editing and cardio candidate
 
-The user expanded PR #94's existing backup/GPS cleanup scope before merge. The base remains the phone-approved, post-merge validated 1.0.6 main `ef09c5ee44b61902a7bb265f8ef2b3d2ea8de88e`. The earlier 2691/2692 APKs are superseded by this upgrade-safe 2693 candidate. Public main remains 1.0.6; automated tests are not physical-phone acceptance.
+The user expanded PR #94's existing backup/GPS cleanup scope before merge. The base remains the phone-approved, post-merge validated 1.0.6 main `ef09c5ee44b61902a7bb265f8ef2b3d2ea8de88e`. The earlier 2691/2692/2693 APKs are superseded by this upgrade-safe 2694 candidate. Public main remains 1.0.6; automated tests are not physical-phone acceptance.
 
 ## Resulting behavior
 
@@ -17,13 +17,13 @@ The user expanded PR #94's existing backup/GPS cleanup scope before merge. The b
 
 - `npm test`: 117 passing regressions, including local week boundaries, weighted pace, comparable records, missing/invalid data, stable owner IDs, pause/resume/draft restoration and manual time corrections.
 - `tests/browser/training-cardio-107.cjs`: actual app DOM at 320×740, 360×800, 393×873 and 412×915, four languages and two themes; normal/draft Home, collapsed/expanded Health, six-row Calendar, visible metric values, active/non-active editor Save/reset/validation, next-workout prescriptions, reload persistence, indoor manual km/pause/resume/delete/finish, real draft reload and cardio/full-statistics integration. Screenshots are archived with existing UI evidence.
-- `npm run test:ui`: the full 52-script Chromium suite protects prior Journal/Drive/Health/Coach/GPS behavior.
+- `npm run test:ui`: the full 53-script Chromium suite protects prior Journal/Drive/Health/Coach/GPS behavior.
 - Performance uses the permanent unchanged budgets and the same 240-workout dataset. Local before/after logs are retained; CI also compares validated main and the final candidate on the same runner. Lazy Programs hydration and the bounded per-render history snapshot remain.
 - The signed Android gate runs Node/Chromium, Android unit tests, package/version/source validation, checksums and signing-certificate continuity. Branch builds upload artifacts without publishing a public release.
 
 ## Physical-phone checklist
 
-1. Install 2693 over the current app or 2691/2692 candidates. Check historical workouts, custom/built-in programs, settings, weights, photos and sync data.
+1. Install 2694 over the current app or 2691/2692/2693 candidates. Check historical workouts, custom/built-in programs, settings, weights, photos and sync data.
 2. Check Home with/without a saved draft, collapsed Health and Calendar on the actual device, including a six-row month. Open Health details, planner controls, day details and close/Back; no content or save control should become inaccessible. Check theme/language changes and keyboard dismissal.
 3. On Workout, edit sets/reps/load/rest and tap Save. Confirm immediate summary update, then start the next workout and check the new prescription. On Programs, edit a different program without activating it; reopen/relaunch and verify persistence. Check Reset changes, invalid values and exercise replacement/removal.
 4. Start indoor timing, background the app, return, pause, correct the seconds manually and resume. Enter kilometres manually. Complete/finish the workout and check duration/distance in Journal. Repeat after a draft reload; reset or remove the timed set and confirm no other set inherits its time. Check switching to/from GPS.
@@ -37,3 +37,9 @@ Explicit user acceptance is required before main merge. No phone result is claim
 The Home personal planner keeps the accepted normal heading, copy and full-width button below the copy when no unfinished workout exists. Only a saved workout draft selects its compact two-column layout. Removing the draft restores the full card, including after navigation, refresh or a theme change. Small-screen summary spacing is adjusted to preserve the fixed Home viewport without compressing the normal planner. Browser regressions cover both profile states, four languages and all four phone sizes.
 
 The user also requested a fixed Calendar planning section. Rhythm, first workout day, start/time, duration/weeks and the planning button share a two-column layout. All planning modes, including weekly days and manual planning, must fit without internal scrolling. Existing themed choice/date/time pickers remain usable above the fixed calendar. The regression matrix uses a six-row month and real dropdown selection, wheel input and first-workout/time pickers in all four languages and phone sizes.
+
+## Layout correction after 2693 phone feedback
+
+The shared Calendar/Coach/Settings host now toggles Calendar sizing both on and off, and Calendar CSS also requires the matching active panel type. The Calendar top border sits 2 px below the navigation; the outer frame fits the month and planner content instead of forcing a viewport-high empty tail. Health has a permanent summary/column layout class and a separate closed-only viewport cap: opening pulse, weight, further data or Health Connect preserves card widths and enables normal page scrolling.
+
+The new browser regression covers populated five-/six-row months, both matte and vivid themes, 320/360/393/412 px plus the phone-like 393×823 viewport, all four Health disclosure families, actual wheel scrolling, Calendar → Coach → Settings → Calendar transitions and visible top/bottom frame geometry. The full UI suite now contains 53 scripts. None of these phone reports is merge acceptance.

@@ -14710,10 +14710,10 @@ renderWorkout=function(){
 var tp107FitViews=function(){
  const home=document.querySelector('#app main.rf221-home'),health=document.querySelector('#app main.tp168-health');
  const expanded=health&&[...health.querySelectorAll('details[open],.tp168-weight-summary[aria-expanded="true"],.tp169-pulse-summary[aria-expanded="true"]')].some(function(e){return e.getClientRects().length>0;});
- home?.classList.add('tp107-fit-home');health?.classList.toggle('tp107-fit-health',!expanded);
+ home?.classList.add('tp107-fit-home');health?.classList.add('tp107-health-layout');health?.classList.toggle('tp107-fit-health',!expanded);
  const fixed=!!home||!!health&&!expanded;document.documentElement.classList.toggle('tp107-fixed-view',fixed);document.body.classList.toggle('tp107-fixed-view',fixed);
  const nav=document.querySelector('.top');if(nav)document.documentElement.style.setProperty('--tp107-nav-height',Math.ceil(nav.getBoundingClientRect().bottom)+'px');
- const calendar=document.querySelector('#tp155R4PanelHost[data-panel="calendar"]');calendar?.classList.add('tp107-fit-calendar');
+ const panelHost=document.getElementById('tp155R4PanelHost');panelHost?.classList.toggle('tp107-fit-calendar',panelHost.dataset.panel==='calendar');
  const progress=document.querySelector('main.tp177-progress');if(progress&&!progress.querySelector('.tp107-cardio-entry')){const button=document.createElement('button');button.type='button';button.className='btn secondary block tp107-cardio-entry';button.textContent=tp107T('cardio');button.onclick=tp107OpenCardio;progress.querySelector('.tp67-full-stats-entry')?.after(button);}
 };
 window.addEventListener?.('DOMContentLoaded',function(){
