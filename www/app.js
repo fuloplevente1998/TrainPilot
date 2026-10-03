@@ -15034,7 +15034,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  function close(){
   ++opening;busy=false;pulse=null;macFilter='';devices.clear();if(timer)clearInterval(timer);timer=null;if(paintTimer)clearTimeout(paintTimer);paintTimer=null;
   const plugin=bridge,old=listener;listener=null;if(old)void old.remove().catch(()=>{});
-  if(plugin)void plugin.disconnect().catch(()=>{});snapshot={...snapshot,state:'disconnected',code:'DISCONNECTED'};
+  if(plugin)void plugin.disconnect().catch(()=>{});snapshot={...snapshot,state:'disconnected',code:'DISCONNECTED',probeReadings:{}};
  }
  function decorate(){
   const settingsRoot=document.querySelector('#tp155R4PanelHost[data-panel="settings"] main');
