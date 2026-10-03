@@ -1,6 +1,6 @@
-# TrainPilot 1.0.7 / 2695 — program editing and cardio candidate
+# TrainPilot 1.0.7 / 2695 — program editing and cardio
 
-The user expanded PR #94's existing backup/GPS cleanup scope before merge. The base remains the phone-approved, post-merge validated 1.0.6 main `ef09c5ee44b61902a7bb265f8ef2b3d2ea8de88e`. The earlier 2691/2692/2693/2694 APKs are superseded by this upgrade-safe 2695 candidate. Public main remains 1.0.6; automated tests are not physical-phone acceptance.
+The user expanded PR #94's existing backup/GPS cleanup scope before merge. The base remains the phone-approved, post-merge validated 1.0.6 main `ef09c5ee44b61902a7bb265f8ef2b3d2ea8de88e`. The earlier 2691/2692/2693/2694 APKs are superseded by this upgrade-safe 2695. The user accepted signed 2695 on 2026-10-03 and explicitly authorized main merge, documentation updates and the APK/source release. Automated tests and this actual phone approval are distinct evidence.
 
 ## Resulting behavior
 
@@ -30,7 +30,7 @@ The user expanded PR #94's existing backup/GPS cleanup scope before merge. The b
 5. Open Journal → Statistics → Cardio statistics. Check weekly km, activity filtering, pace, time-only sessions and two runs on the same distance. Confirm the shorter time is the record and the second-best comparison is correct; cycling and different distances stay separate.
 6. Repeat the [backup/GPS checklist](BACKUP_GPS_CONSOLIDATION_1_0_7.md), normal Journal editing and Drive sync. Compare responsiveness with the current phone baseline.
 
-Explicit user acceptance is required before main merge. No phone result is claimed by this document.
+The user accepted the signed 2695 APK and authorized main merge/publication on 2026-10-03. The checklist above remains useful for subsequent regression checks.
 
 ## Planner correction after 2692 phone feedback
 
@@ -42,7 +42,7 @@ The user also requested a fixed Calendar planning section. Rhythm, first workout
 
 The shared Calendar/Coach/Settings host now toggles Calendar sizing both on and off, and Calendar CSS also requires the matching active panel type. The Calendar top border sits 2 px below the navigation; the outer frame fits the month and planner content instead of forcing a viewport-high empty tail. Health has a permanent summary/column layout class and a separate closed-only viewport cap: opening pulse, weight, further data or Health Connect preserves card widths and enables normal page scrolling.
 
-The new browser regression covers populated five-/six-row months, both matte and vivid themes, 320/360/393/412 px plus the phone-like 393×823 viewport, all four Health disclosure families, actual wheel scrolling, Calendar → Coach → Settings → Calendar transitions and visible top/bottom frame geometry. The full UI suite now contains 54 scripts. None of these phone reports is merge acceptance.
+The new browser regression covers populated five-/six-row months, both matte and vivid themes, 320/360/393/412 px plus the phone-like 393×823 viewport, all four Health disclosure families, actual wheel scrolling, Calendar → Coach → Settings → Calendar transitions and visible top/bottom frame geometry. The full UI suite now contains 54 scripts. Those earlier reports preceded the final 2695 phone acceptance on 2026-10-03.
 
 ## Phone feedback after 2694: issues #95–98
 
@@ -50,4 +50,10 @@ The compact Home Coach keeps its current copy/size and now uses the exact Coach 
 
 Theme selection now uses the same `tp-select` trigger, arrow and menu transition as Language; the two palette columns remain. Shared dropdown closing clears its open state on outside click, Escape, navigation/resize and Android Back. Selection persists without closing Settings.
 
-`tests/browser/phone-ux-95-98.cjs` covers four languages, four phone widths and both matte/vivid themes, real navigation/clicks/scrolling, compact comparison coordinates, matching Coach styles with/without drafts, all exercise records, lazy section switching and matching selector arrows/animation. Recheck all four issues on a phone before accepting the draft PR.
+`tests/browser/phone-ux-95-98.cjs` covers four languages, four phone widths and both matte/vivid themes, real navigation/clicks/scrolling, compact comparison coordinates, matching Coach styles with/without drafts, all exercise records, lazy section switching and matching selector arrows/animation. The final 2695 phone result was accepted on 2026-10-03; all four fixes are included in the approved release.
+
+## Approval and published package
+
+Phone-approved source: `d31d0f9d4140e2fb2505d56c058f3d06d974df0c`. The user approved the signed 2695 APK, main merge, documentation updates and release on 2026-10-03. Only acceptance/release documentation was added afterward; the approved app assets and native code are unchanged. Main CI revalidates the merged source before public publication.
+
+[Release notes](releases/v1.0.7.md) · [GitHub v1.0.7](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.0.7). The release contains the signed APK, exact tagged source ZIP, SHA-256 checksums and Android package metadata. `SOURCE_VERSION.json.sourceCommit` in the ZIP identifies the build's actual source commit.

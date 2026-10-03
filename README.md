@@ -18,28 +18,29 @@ TrainPilot egy Androidra készült, local-first edzéstervező és edzésnapló 
 
 A Google-funkciókhoz külön Google Cloud/OAuth konfiguráció szükséges. A Health Connect és a Google-integrációk tényleges működése eszköz-, Android-verzió-, jogosultság- és fiókbeállítás-függő; kiadás előtt fizikai készülékes ellenőrzés szükséges.
 
-## Aktuális kiadás: TrainPilot 1.0.6 (2690)
+## Aktuális kiadás: TrainPilot 1.0.7 (2695)
 
-Az Android `versionName` **1.0.6**, a `versionCode` **2690**. A kiadás megtartja a korábbi telepítések alkalmazásazonosítóját és aláírását.
+Az Android `versionName` **1.0.7**, a `versionCode` **2695**. A telefonon jóváhagyott kiadás megtartja a korábbi telepítések alkalmazásazonosítóját és aláírását; az 1.0.6-ra és a 2691–2694 tesztverziókra is rátelepíthető.
 
-- [v1.0.6 Release és kiadási megjegyzések](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.0.6)
-- [TrainPilot-1.0.6.apk](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.6/TrainPilot-1.0.6.apk)
-- [Forrás ZIP](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.6/TrainPilot-1.0.6-source.zip)
-- [SHA-256 ellenőrzőösszegek](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.6/SHA256SUMS.txt)
+- [v1.0.7 Release és kiadási megjegyzések](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.0.7)
+- [TrainPilot-1.0.7.apk](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.7/TrainPilot-1.0.7.apk)
+- [Forrás ZIP](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.7/TrainPilot-1.0.7-source.zip)
+- [SHA-256 ellenőrzőösszegek](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.7/SHA256SUMS.txt)
+- [Android csomag- és verzióadatok](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.7/apk-badging.txt)
 
-Az 1.0.6 fő változásai:
+Az 1.0.7 fő változásai:
 
-- A saját gyakorlat és saját program létrehozása/szerkesztése egységes, keretezett overlayt használ, fejlécen belüli piros X-szel.
-- A korábbi 100 gyakorlat mellé hat távolságos mozgás került: futás, kocogás, görkorcsolyázás, kerékpározás, séta és túrázás.
-- Új mérési módok: ismétlés, idő, valamint idő és távolság. A kilométer kézzel megadható és a Naplóban szerkeszthető.
-- Androidon opcionális GPS-mérés használható. A rendszer csak összesített időt/távolságot tart meg; útvonal-koordinátát nem ment.
-- A Health Connect az edzés aktív szakaszaira lépésszámot is olvas. Hiányzó `READ_STEPS` jogosultságnál külön engedélykérés jelenik meg.
-- Beltéri távolságos edzés GPS nélkül, csak idővel is rögzíthető; a lépésekből nem becsülünk GPS-kilométert.
+- Az Edzés és a Programok oldal közös, lenyitáskor betöltődő szerkesztőt használ. A **Mentés** gomb egyszerre menti és azonnal megjeleníti az új értékeket.
+- A Napló **Edzésnapló**, **Fejlődés** és **Statisztikák** füleket kapott. A Statisztikákon belül külön érhetők el a Személyes rekordok és a Kardióstatisztika.
+- A kardió heti kilométert, előző heti és nyolchetes összesítést, távolsággal súlyozott tempót és azonos mozgás/azonos távolság futórekordjait mutatja.
+- Új, **GPS nélküli beltéri időmérő**: indítás, szünet, folytatás és nullázás, kézi kilométerrel és újraindítás után is megőrzött edzésállapottal.
+- A Kezdőlap, a Naptár és a csukott Egészség oldal telefonon fix. A személyes tervező csak megkezdett edzésnél kompakt; az Egészség lenyitáskor megtartja a szélességét és görgethetővé válik.
+- A Coach kártya egységes keretet és témaszínt kapott. A kompakt Fejlődés összehasonlítása jobb felül jelenik meg; a témaválasztó a nyelvválasztó nyilát és animációját használja.
+- Biztonságosabb backup-visszaállítás, stabil GPS-sorozatazonosítók és az ismétlődő backup-kód összevonása.
 
-A GitHub APK kiadás nem jelenti a Google Play vagy a Google OAuth nyilvános beállításainak elkészültét. A foreground-location, Data safety, privacy és Cloud/OAuth konfiguráció külön publikálási feladat.
+A 2695-ös teszt-APK átadása után a felhasználó 2026. október 3-án jóváhagyta a main merge-et és a GitHub kiadást. A kiadási folyamat a mainen is lefuttatja a 117 kódregressziót, az 54 böngészős tesztszkriptet és az Android/aláírás/forrás ellenőrzéseket. A Google Play és a Google OAuth publikálási feladatai külön maradnak.
 
-Részletes megvalósítás és készülékes ellenőrzési pontok: [TrainPilot 1.0.6 — own exercises and distance](docs/CUSTOM_EXERCISE_DISTANCE_1_0_6.md).
-
+Részletes megvalósítás: [programszerkesztés és kardió](docs/TRAINING_CARDIO_1_0_7.md), [backup/GPS összevonás](docs/BACKUP_GPS_CONSOLIDATION_1_0_7.md).
 
 ## Git-történet és privát archívum
 
@@ -81,4 +82,4 @@ Signing kulcsot, jelszót, OAuth credentialt, `.env` fájlt vagy titkosítatlan 
 
 A Google Play publikáláshoz hátralévő lépéseket külön [ellenőrzőlista](docs/PLAY_STORE_CHECKLIST_2026.md) tartalmazza.
 
-A 2690-es teszt-APK az edzés aktív szakaszaihoz Health Connect-lépésszámot is lekér és naplóz. Beltéren idővel, GPS-táv nélkül is rögzíthető a mozgás; a lépésekből nem becsül kilométert. A forrás megosztási késése miatt a napló Health-blokkja később frissíthető.
+Az alkalmazás az edzés aktív szakaszaihoz Health Connect-lépésszámot is lekér és naplóz. Beltéren idővel, GPS-táv nélkül is rögzíthető a mozgás; a lépésekből nem becsül kilométert. A forrás megosztási késése miatt a napló Health-blokkja később frissíthető.

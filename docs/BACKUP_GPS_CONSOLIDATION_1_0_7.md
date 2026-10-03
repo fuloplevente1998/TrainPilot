@@ -1,7 +1,7 @@
-# TrainPilot 1.0.7 / 2695 candidate
+# TrainPilot 1.0.7 / 2695
 
 Date: 2026-10-03, Europe/Budapest. Branch: `fix/backup-gps-consolidation`.
-Baseline: validated main `ef09c5ee44b61902a7bb265f8ef2b3d2ea8de88e`, public 1.0.6 / 2690. The downloaded public APK matches this main's `www/app.js`; its SHA-256 matches the published checksums. This candidate requires physical-phone acceptance before main merge.
+Baseline: validated main `ef09c5ee44b61902a7bb265f8ef2b3d2ea8de88e`, public 1.0.6 / 2690. The downloaded public APK matches this main's `www/app.js`; its SHA-256 matches the published checksums. Signed 2695 received physical-phone approval and explicit main merge/publication authorization on 2026-10-03.
 
 ## Changes
 
@@ -32,4 +32,10 @@ The public app ID and signing configuration are unchanged. Version code 2695 upg
 5. Check GPS permission denial, background/resume, stop/start, draft resume and normal workout finish. Check Quick Workout, Journal editing and manual distance entry.
 6. Check navigation/Coach/Journal responsiveness with the existing dataset. Confirm the accepted UI still behaves as expected.
 
-Do not merge or publish this candidate until the user explicitly accepts the signed APK. No device test is claimed by automated validation.
+The signed 2695 APK was accepted by the user on 2026-10-03, with explicit main merge and GitHub release authorization. Automated validation is recorded separately from that phone approval.
+
+## Approval and published package
+
+Phone-approved source: `d31d0f9d4140e2fb2505d56c058f3d06d974df0c`. The user approved the signed 2695 APK, main merge, documentation updates and release on 2026-10-03. Only acceptance/release documentation was added afterward; the approved app assets and native code are unchanged. Main CI revalidates the merged source before public publication.
+
+[Release notes](releases/v1.0.7.md) · [GitHub v1.0.7](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.0.7). The release contains the signed APK, exact tagged source ZIP, SHA-256 checksums and Android package metadata. `SOURCE_VERSION.json.sourceCommit` in the ZIP identifies the build's actual source commit.
