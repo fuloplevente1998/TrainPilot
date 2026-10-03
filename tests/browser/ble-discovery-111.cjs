@@ -31,6 +31,7 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const file=p
   assert.match(await p.locator('[data-ble-device="anonymous-0"]').innerText(),/#1.*\n.*AA:BB:CC:DD:EE:00/);
   assert.match(await p.locator('[data-ble-device="anonymous-4"]').innerText(),/Realtek/);
   const visibleText=await p.locator('.tp111-ble').innerText();for(const key of ['identify','deviceNumber','macAddress','candidate','scanExport'])assert.ok(!new RegExp('\\b'+key+'\\b').test(visibleText),'no untranslated BLE key '+lang+'/'+key);
+  const inputColors=await p.locator('[data-ble-filter]').evaluate(e=>({background:getComputedStyle(e).backgroundColor,color:getComputedStyle(e).color}));assert.notEqual(inputColors.background,'rgb(255, 255, 255)','MAC input keeps dark app surface');assert.notEqual(inputColors.color,'rgb(0, 0, 0)','MAC input remains readable');
   assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth-innerWidth)<=1,'40 unnamed devices fit '+width+'/'+lang);
   if(width===393&&lang==='hu')await p.screenshot({path:'ui-evidence/ble-unnamed-2700.png'});
  }
