@@ -28,8 +28,6 @@ html body #app #rf223Today .tp110-goal-mini:focus-visible{outline:2px solid var(
 .tp110-signal small{color:var(--muted)}
 html body #tp155R4PanelHost:is([data-panel="goals"],[data-panel="replan"]) .tp155-r4-panel{border:1px solid color-mix(in srgb,var(--line) 82%,var(--accent) 18%)!important;border-radius:18px!important;box-shadow:0 16px 36px rgba(5,10,20,.14)!important}
 html[data-tp-theme-family="basic"] body #tp155R4PanelHost:is([data-panel="goals"],[data-panel="replan"]) .tp155-r4-panel{box-shadow:none!important}
-.tp110-settings-goals>summary{display:flex;align-items:center;justify-content:space-between;gap:8px;list-style:none;cursor:pointer}
-.tp110-settings-goals>summary::-webkit-details-marker{display:none}
 @media(max-width:340px){.tp110-fields{grid-template-columns:1fr}}
 /* Large system text keeps every control reachable; normal phone overviews stay fixed. */
 html.tp110-large-text,html.tp110-large-text body{overflow-y:auto!important;height:auto!important;max-height:none!important}
