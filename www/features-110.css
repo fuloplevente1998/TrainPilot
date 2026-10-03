@@ -10,9 +10,9 @@
 .tp110-goal{display:grid;gap:6px;margin:12px 0;overflow-wrap:anywhere}
 .tp110-goal-heading{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .tp110-goal progress{display:block;width:100%;height:10px;accent-color:var(--accent)}
-html body #app #rf223Today>.rf223-title{position:relative;display:block;padding-right:47%}
-html body #app #rf223Today .tp110-goal-mini{display:flex!important;position:absolute;right:0;top:0;bottom:0;width:45%;min-width:0;min-height:0!important;height:auto!important;flex-direction:column;justify-content:center;gap:2px;padding:0 5px;background:transparent;border:0;border-left:1px solid var(--line);color:var(--accent2);font-size:11px;line-height:1.1;text-align:right;text-transform:none;cursor:pointer}
-html body #app #rf223Today .tp110-goal-mini span{overflow-wrap:anywhere}
+html body #app #rf223Today>.rf223-title{position:relative;display:flex;align-items:center;gap:6px;padding-right:0}
+html body #app #rf223Today .tp110-goal-mini{display:flex!important;position:relative;width:auto;max-width:45%;flex:0 1 auto;min-width:0;min-height:0!important;height:auto!important;flex-direction:column;justify-content:center;gap:2px;padding:0 5px;background:transparent;border:0;border-left:1px solid var(--line);color:var(--accent2);font-size:11px;line-height:1.1;text-align:right;text-transform:none;cursor:pointer}
+html body #app #rf223Today .tp110-goal-mini span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 html body #app #rf223Today .tp110-goal-mini::after{content:"";position:absolute;inset:-4px 0}
 html body #app #rf223Today .tp110-goal-mini:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .tp110-replan-link{margin-left:auto;position:relative;min-height:0!important;height:auto!important;line-height:1.2!important;font-size:11px!important;padding:1px 8px!important}
@@ -39,8 +39,9 @@ html.tp110-large-text body #app main :is(h1,h2,h3,p,small,label,strong,.btn){ove
 html.tp110-large-text body #app main :is(.tp5-today-metric.stat,.rf223-stat,.tp155-home-program-left,.tp155-home-program-right){height:auto!important;min-height:0!important}
 html.tp110-large-text body #app main .tp5-today-metric.stat{display:flex!important;flex-direction:column;align-items:flex-start!important;padding:8px!important;gap:5px!important}
 html.tp110-large-text body #app main .tp5-today-label,html.tp110-large-text body #app main .tp5-today-value{line-height:1.35!important;white-space:normal!important;height:auto!important}
-html.tp110-large-text body #app #rf223Today .tp110-goal-mini{position:static;width:100%;border-left:0;border-top:1px solid var(--line);margin-top:7px;padding:7px 0}
-html.tp110-large-text body #app #rf223Today>.rf223-title{padding-right:0}
+html.tp110-large-text body #app #rf223Today .tp110-goal-mini{position:static;width:100%;max-width:100%;min-height:44px!important;font-size:14px;border-left:0;border-top:1px solid var(--line);margin-top:7px;padding:7px 0}
+html.tp110-large-text body #app #rf223Today>.rf223-title{flex-wrap:wrap;padding-right:0}
+html.tp110-large-text body #app #rf223Today .tp110-goal-mini span{white-space:normal}
 html.tp110-large-text body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .tp155-r4-panel{overflow-y:auto!important}
 html.tp110-large-text body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar :is(.tp155-r4-panel-content,main,.tp151-calendar-frame,.tp151-day-panel){display:block!important;flex:none!important;height:auto!important;max-height:none!important;overflow:visible!important}
 html.tp110-large-text body .top .tp154-nav-cell{height:auto!important;min-height:54px!important}

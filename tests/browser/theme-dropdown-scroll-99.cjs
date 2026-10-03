@@ -26,12 +26,19 @@ const server=http.createServer((q,r)=>{const name=new URL(q.url,'http://local').
    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await p.waitForTimeout(220);
    assert.ok(await menu.evaluate(e=>e.scrollTop>0),label+' touch swipe scroll over column '+column);
    assert.equal(await p.locator('.tp162-theme-dropdown.open').count(),1,label+' menu stays open during touch');
-   // Reach the bottom using a real scroll gesture, then tap the last palette entry.
-   await p.mouse.move(pos.x,(pos.top+pos.bottom)/2);await p.mouse.wheel(0,1500);await p.waitForTimeout(220);
+   // Re-read the hit position after touch/inertia. Reach the last row with real
+   // gestures rather than assuming one synthetic wheel has already settled.
+   for(let attempt=0;attempt<3;attempt++){
+    const pos=await point(column);await p.mouse.move(pos.x,(pos.top+pos.bottom)/2);await p.mouse.wheel(0,1500);await p.waitForTimeout(300);
+    if(await menu.evaluate(e=>e.scrollTop>=e.scrollHeight-e.clientHeight-1))break;
+   }
+   assert.ok(await menu.evaluate(e=>e.scrollTop>=e.scrollHeight-e.clientHeight-1),label+' wheel reaches menu bottom over column '+column);
    const choice=p.locator('.tp155-theme-option[data-theme="'+lastKeys[column]+'"]');
-   // The columns have different lengths: align this column's final row with the menu bottom.
-   const delta=await choice.evaluate(e=>e.getBoundingClientRect().bottom-document.querySelector('#tp162ThemeMenu').getBoundingClientRect().bottom+12);
-   if(delta<0){await p.mouse.wheel(0,delta);await p.waitForTimeout(220);}
+   // The columns have different lengths: align the requested column's final row.
+   for(let attempt=0;attempt<3;attempt++){
+    const delta=await choice.evaluate(e=>{const r=e.getBoundingClientRect(),m=document.querySelector('#tp162ThemeMenu').getBoundingClientRect();return r.top<m.top?r.top-m.top-12:r.bottom>m.bottom?r.bottom-m.bottom+12:0;});
+    if(!delta)break;const pos=await point(column);await p.mouse.move(pos.x,(pos.top+pos.bottom)/2);await p.mouse.wheel(0,delta);await p.waitForTimeout(300);
+   }
    const visible=await choice.evaluate(e=>{const r=e.getBoundingClientRect(),menu=document.querySelector('#tp162ThemeMenu'),m=menu.getBoundingClientRect();return {top:r.top,bottom:r.bottom,menuTop:m.top,menuBottom:m.bottom,scrollTop:menu.scrollTop,maxScroll:menu.scrollHeight-menu.clientHeight,hit:e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))};});assert.ok(visible.top>=visible.menuTop&&visible.bottom<=visible.menuBottom&&visible.hit,label+' last theme is visible and tappable '+JSON.stringify(visible));
    await choice.tap();assert.equal(await p.evaluate(()=>rf200ThemeKey()),lastKeys[column],label+' last palette entry saved');
    assert.equal(await p.locator('.tp162-theme-dropdown.open').count(),0,label+' selection closes menu');
