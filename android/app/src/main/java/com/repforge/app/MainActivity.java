@@ -17,6 +17,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(HealthBridgePlugin.class);
         registerPlugin(DistanceTrackerPlugin.class);
         registerPlugin(AppFeedbackPlugin.class);
+        registerPlugin(BleDiscoveryPlugin.class);
         super.onCreate(savedInstanceState);
         applySystemTextSize();
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {

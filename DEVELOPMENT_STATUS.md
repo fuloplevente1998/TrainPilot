@@ -2,6 +2,12 @@
 
 Last updated: **2026-10-03 (Europe/Budapest)**. Earlier Phase 5–7 history remains below; it is historical. See [docs/PHASE_5_6_7_ROADMAP.md](docs/PHASE_5_6_7_ROADMAP.md) and the permanent [performance regression policy](docs/PERFORMANCE_REGRESSION_POLICY.md).
 
+## Bluetooth investigation candidate — 1.1.1 / 2699 (#105)
+
+- Foreground BLE scan, device selection, GATT discovery and locally verified diagnostic export; standard live pulse is opt-in and remains separate from Health Connect/history/Coach.
+- RDFit 4.1.4 APK static investigation identified distinct device families and history-request selectors. GT4Pro+ physical compatibility and history import are still pending; no proprietary commands are sent by this candidate.
+- Includes the 2698 work below; stable main remains 1.0.9 / 2697. [Procedure and findings](docs/BLUETOOTH_GT4PRO.md), [candidate notes](docs/releases/v1.1.1.md).
+
 ## Candidate — TrainPilot 1.1.0 / 2698 (#103)
 
 - Starts from verified public main `81032d9b3ec697680e7fdb1210e89f94e584b299`. [#103](https://github.com/fuloplevente1998/TrainPilot/issues/103) was recorded before implementation. Stable main/release remains 1.0.9 / 2697 pending physical-phone acceptance.

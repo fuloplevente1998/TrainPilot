@@ -41,12 +41,13 @@ const server=http.createServer((q,r)=>{const name=new URL(q.url,'http://local').
   await tab("go('history')").click();assert.equal(await p.locator('main.tp107-statistics').count(),0);
   await p.evaluate(()=>tp155R4OpenPanel('settings',document.activeElement));
   const language=p.locator('.tp155-language-direct .tp-select-trigger'),themeButton=p.locator('.tp162-theme-dropdown .tp-select-trigger');
+  const settle=async loc=>loc.evaluate(async e=>{await Promise.allSettled(e.getAnimations().map(a=>a.finished));});
   const arrow=async loc=>loc.evaluate(e=>{const c=getComputedStyle(e,'::after');return {clip:c.clipPath,width:c.width,height:c.height,transition:c.transitionDuration,transform:c.transform};});
   assert.equal(await themeButton.evaluate(e=>getComputedStyle(e).display),await language.evaluate(e=>getComputedStyle(e).display),label+' selector layout keeps arrow at the trailing edge');
   assert.deepEqual(await arrow(themeButton),await arrow(language),label+' same closed selector arrow');
-  await language.click();await p.waitForTimeout(180);const languageOpen=await arrow(language);
+  await language.click();await settle(language);await settle(p.locator('.tp155-language-direct .tp-select-menu'));const languageOpen=await arrow(language);
   const animation=await p.locator('.tp155-language-direct .tp-select-menu').evaluate(e=>({duration:getComputedStyle(e).transitionDuration,transform:getComputedStyle(e).transform,opacity:getComputedStyle(e).opacity}));
-  await p.keyboard.press('Escape');await themeButton.click();await p.waitForTimeout(180);assert.deepEqual(await arrow(themeButton),languageOpen,label+' same open selector arrow');
+  await p.keyboard.press('Escape');await themeButton.click();await settle(themeButton);await settle(p.locator('.tp162-theme-dropdown>.tp-select-menu'));assert.deepEqual(await arrow(themeButton),languageOpen,label+' same open selector arrow');
   assert.deepEqual(await p.locator('.tp162-theme-dropdown>.tp-select-menu').evaluate(e=>({duration:getComputedStyle(e).transitionDuration,transform:getComputedStyle(e).transform,opacity:getComputedStyle(e).opacity})),animation,label+' same dropdown animation');
   assert.equal(await p.locator('.tp155-language-direct .tp-select.open').count(),0,label+' opening theme closes Language');
   if(width===393&&lang==='hu'&&theme==='yellow')await p.screenshot({path:'ui-evidence/theme-dropdown-2695.png'});

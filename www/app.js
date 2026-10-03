@@ -55,7 +55,7 @@ window.addEventListener('DOMContentLoaded',async function(){if(window.Capacitor?
 // @endsection startup.js
 
 // @section backup.js
-const TRAINPILOT_VERSION='1.1.0';
+const TRAINPILOT_VERSION='1.1.1';
 var isNative = function isNative(){return !!window.Capacitor?.isNativePlatform?.();};
 var nativeFiles = function nativeFiles(){if(!filesPlugin)filesPlugin=window.Capacitor?.registerPlugin?.('NativeFiles')||window.Capacitor?.Plugins?.NativeFiles;if(!filesPlugin)throw Error('A natív fájlkezelő nem érhető el.');return filesPlugin;};
 var backupStatus = function backupStatus(){const x=db.get('lastExport',null);return x?`Utolsó ellenőrzött mentés: ${x.name} • ${fmtDate(x.date)}`:'Még nincs ellenőrzött fájlmentés.';};
@@ -11568,7 +11568,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
 
  let currentPanel='',panelHost=null,panelTrigger=null,bodyOverflow='',panelOpenScrollY=0;
  const panelDomSupported=(()=>{try{const x=document?.createElement?.('div');return !!(x&&typeof x.addEventListener==='function'&&document?.body&&typeof document.body.appendChild==='function')}catch(_){return false}})();
- const PANEL_ROUTES=new Set(['calendar','coach','settings','quick','exercises','stats','custom-exercise','custom-program','cardio','goals','replan']);
+ const PANEL_ROUTES=new Set(['calendar','coach','settings','quick','exercises','stats','custom-exercise','custom-program','cardio','goals','replan','ble']);
  const FULL_ROUTES=new Set(['home','plan','health','programs','history']);
 
  const routeFromButton=function(btn){
@@ -11648,6 +11648,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  };
 
  const panelHtml=function(type){
+  if(type==='ble')return window.TrainPilotBle?.html()||'';
   if(type==='goals')return window.TrainPilot110?.goalsHtml()||'';
   if(type==='replan')return window.TrainPilot110?.replanHtml()||'';
   if(type==='calendar')return calendarHtml();
@@ -11672,11 +11673,11 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   const panel=panelHost.querySelector('.tp155-r4-panel'),content=panelHost.querySelector('.tp155-r4-panel-content');
   if(!panel||!content)return;
   const y=panel.scrollTop;
-  const builder=['custom-exercise','custom-program','goals','replan'].includes(currentPanel);
+  const builder=['custom-exercise','custom-program','goals','replan','ble'].includes(currentPanel);
   let header=panel.querySelector('.tp106-builder-header');
   if(builder&&!header){header=document.createElement('div');header.className='tp106-builder-header';header.innerHTML='<strong id="tp106BuilderTitle"></strong>';header.appendChild(panel.querySelector('.tp155-r4-panel-close'));panel.prepend(header);}
   if(!builder&&header){panel.prepend(header.querySelector('.tp155-r4-panel-close'));header.remove();}
-  if(builder){header.querySelector('strong').textContent=currentPanel==='goals'?window.TrainPilot110.t('goals'):currentPanel==='replan'?window.TrainPilot110.t('replanTitle'):currentPanel==='custom-exercise'?tp149T('customExercise.title'):(tp106ProgramId?programById(tp106ProgramId)?.name:tp149T('dialog.customProgram.title'));}
+  if(builder){header.querySelector('strong').textContent=currentPanel==='ble'?window.TrainPilotBle.t('title'):currentPanel==='goals'?window.TrainPilot110.t('goals'):currentPanel==='replan'?window.TrainPilot110.t('replanTitle'):currentPanel==='custom-exercise'?tp149T('customExercise.title'):(tp106ProgramId?programById(tp106ProgramId)?.name:tp149T('dialog.customProgram.title'));}
   content.innerHTML=panelHtml(currentPanel);
   try{if(typeof rf260EnhanceSelects==='function')rf260EnhanceSelects()}catch(_){}
   try{if(typeof rf260EnhanceTemporalFields==='function')rf260EnhanceTemporalFields()}catch(_){}
@@ -14896,6 +14897,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(settingsRoot&&!settingsRoot.querySelector('.tp110-settings-goals')){const card=document.createElement('div');card.className='setting tp1511-card tp110-settings-goals';card.innerHTML='<button type="button" class="btn secondary block" onclick="tp155R4OpenPanel(\'goals\',this)">'+esc(t('setGoals'))+'</button>';const anchor=settingsRoot.querySelector('.tp162-theme-setting')||settingsRoot.querySelector('.rf212-language');if(anchor)anchor.after(card);else settingsRoot.appendChild(card);}
 
   const planner=document.querySelector('#tp155R4PanelHost[data-panel="calendar"] .tp155-planner-title');if(planner&&!planner.querySelector('.tp110-replan-link')){planner.style.display='flex';planner.style.alignItems='center';planner.style.gap='8px';const button=document.createElement('button');button.type='button';button.className='btn secondary tp110-replan-link';button.textContent=t('replan');button.onclick=()=>window.tp155R4OpenPanel('replan',button);planner.appendChild(button);}
+  window.TrainPilotBle?.decorate();
   if(document.querySelector('[data-tp110-preview]')&&!preview)previewReplan();
   const indoor=document.getElementById('tp107Indoor');if(indoor&&!indoor.querySelector('.tp110-interval')){indoor.insertAdjacentHTML('beforeend',intervalHtml());paintInterval();}
  }
@@ -14911,6 +14913,128 @@ window.addEventListener?.('DOMContentLoaded',function(){
  });
 })();
 // @endsection features-110.js
+
+
+// @section ble-discovery-111.js
+/* GT4Pro+ investigation: ephemeral foreground BLE data, separate from Health Connect. */
+(function(){
+ 'use strict';
+ const copy={
+  hu:{title:'Bluetooth-óra próba',intro:'GT4Pro+ / RDFit kompatibilitásvizsgálat. Keress órát, kapcsolódj hozzá, majd mentsd el a szolgáltatáslistát.',note:'A próba nem importál alvás-, lépés- vagy korábbi pulzusadatot. Élő pulzus csak szabványos szolgáltatást használó eszközről olvasható.',hint:'Tartsd megnyitva az appot és legyen közel az óra. Ha nem látszik, bontsd az RDFit adatkapcsolatát a próba idejére; az órát nem kell visszaállítani.',scan:'Órakeresés (12 mp)',stop:'Keresés leállítása',connect:'Kapcsolódás',disconnect:'Kapcsolat bontása',pulse:'Pulzusolvasás indítása',export:'Diagnosztika mentése',exportNote:'A JSON a szolgáltatások azonosítóit és képességeit tartalmazza. Bluetooth-cím, nyers csomagok és pulzusértékek nem kerülnek bele.',live:'Élő Bluetooth-pulzus',liveNote:'Csak ebben a próbanézetben jelenik meg; nem kerül a naplóba vagy a Coach pontszámába.',waiting:'Várakozás mérésre…',stale:'Nincs friss jel',unnamed:'Névtelen BLE-eszköz',devices:'Talált eszközök',none:'Még nincs találat.',services:'Elérhető szolgáltatások',noHeart:'Nem található szabványos pulzusszolgáltatás. A diagnosztika segít a következő integrációs lépésben.',supportedHeart:'Szabványos pulzusszolgáltatás elérhető.',idle:'Keresésre kész',scanning:'Órakeresés…',connecting:'Kapcsolódás…',discovering:'Szolgáltatások felderítése…',connected:'Kapcsolódva',subscribing:'Pulzusolvasás indítása…',monitoring:'Pulzusolvasás aktív',disconnected:'Nincs kapcsolat',web:'A Bluetooth-próba az Android APK-ban érhető el.',saved:'Diagnosztika mentve és ellenőrizve.',saveFailed:'A fájlmentés nem sikerült.',PERMISSION_DENIED:'Engedélyezd a Közeli eszközök hozzáférést az app rendszerbeállításaiban. Régebbi Androidon a keresés helyengedélyt igényel.',BLUETOOTH_OFF:'Kapcsold be a Bluetooth-t a telefon beállításaiban.',LOCATION_OFF:'Ezen az Android-verzión a BLE-kereséshez a helyszolgáltatást is be kell kapcsolni.',UNSUPPORTED:'A telefonon nem érhető el Bluetooth LE.',BACKGROUND:'Az app háttérbe került; a kapcsolat leállt. Új keresést indíthatsz.',BUSY:'Egy Bluetooth-művelet már folyamatban van.',DEVICE_EXPIRED:'Indíts új keresést, majd válaszd ki az órát.',SCAN_FAILED:'A keresés nem sikerült. Ellenőrizd a Bluetooth-t, és próbáld újra.',SCAN_FINISHED:'A keresés véget ért. Válassz eszközt, vagy keress újra.',CONNECTION_FAILED:'Nem sikerült kapcsolódni. Bontsd az RDFit adatkapcsolatát, és próbáld újra.',CONNECTION_TIMEOUT:'A kapcsolat nem válaszolt időben. Indíts új keresést.',DISCOVERY_FAILED:'A szolgáltatáslista nem olvasható. Próbáld újra.',SUBSCRIBE_FAILED:'Nem indult el a pulzusolvasás. A kapcsolatot újra létrehozhatod.',NO_HEART_SERVICE:'Nincs elérhető szabványos pulzusszolgáltatás.',DISCONNECTED:'A kapcsolat bontva.',CANCELLED:'A művelet megszakítva.'},
+  en:{title:'Bluetooth watch trial',intro:'GT4Pro+ / RDFit compatibility check. Scan, connect to your watch, then export its service list.',note:'This trial does not import sleep, steps or past heart-rate records. Live heart rate requires a standard service.',hint:'Keep the app open and the watch nearby. If it is missing, disconnect its RDFit data connection temporarily; no watch reset is needed.',scan:'Scan for watches (12 s)',stop:'Stop scan',connect:'Connect',disconnect:'Disconnect',pulse:'Start heart-rate reader',export:'Save diagnostics',exportNote:'The JSON contains service identifiers and capabilities. Bluetooth addresses, raw packets and pulse values are excluded.',live:'Live Bluetooth heart rate',liveNote:'Only displayed in this trial; not added to history or the Coach score.',waiting:'Waiting for a measurement…',stale:'No fresh signal',unnamed:'Unnamed BLE device',devices:'Devices found',none:'No devices found yet.',services:'Available services',noHeart:'No standard heart-rate service found. Diagnostics help determine the next integration step.',supportedHeart:'Standard heart-rate service available.',idle:'Ready to scan',scanning:'Scanning…',connecting:'Connecting…',discovering:'Discovering services…',connected:'Connected',subscribing:'Starting heart-rate reader…',monitoring:'Heart-rate reader active',disconnected:'Disconnected',web:'The Bluetooth trial is available in the Android APK.',saved:'Diagnostics saved and verified.',saveFailed:'File could not be saved.',PERMISSION_DENIED:'Allow Nearby devices in the app system settings. Older Android versions require location permission to scan.',BLUETOOTH_OFF:'Enable Bluetooth in phone settings.',LOCATION_OFF:'This Android version also needs location services enabled for BLE scanning.',UNSUPPORTED:'Bluetooth LE is unavailable on this phone.',BACKGROUND:'The app moved to the background; the connection stopped. You can scan again.',BUSY:'A Bluetooth operation is already running.',DEVICE_EXPIRED:'Scan again and select your watch.',SCAN_FAILED:'Scan failed. Check Bluetooth and try again.',SCAN_FINISHED:'Scan finished. Select a device or scan again.',CONNECTION_FAILED:'Connection failed. Disconnect the RDFit data connection and retry.',CONNECTION_TIMEOUT:'Connection timed out. Scan again.',DISCOVERY_FAILED:'The service list could not be read. Retry.',SUBSCRIBE_FAILED:'Heart-rate reading did not start. Reconnect and retry.',NO_HEART_SERVICE:'No standard heart-rate service available.',DISCONNECTED:'Connection closed.',CANCELLED:'Operation cancelled.'},
+  de:{title:'Bluetooth-Uhr testen',intro:'GT4Pro+ / RDFit prüfen. Uhr suchen, verbinden und die Dienstliste speichern.',note:'Dieser Test importiert weder Schlaf, Schritte noch frühere Pulswerte. Live-Puls benötigt einen Standarddienst.',hint:'App geöffnet und Uhr in der Nähe halten. Bei Bedarf die RDFit-Datenverbindung kurz trennen; kein Zurücksetzen nötig.',scan:'Uhren suchen (12 s)',stop:'Suche stoppen',connect:'Verbinden',disconnect:'Trennen',pulse:'Pulsmessung starten',export:'Diagnose speichern',exportNote:'JSON enthält Dienstkennungen und Fähigkeiten, keine Bluetooth-Adressen, Rohpakete oder Pulswerte.',live:'Live-Bluetooth-Puls',liveNote:'Nur in diesem Test sichtbar; kein Eintrag im Verlauf oder Coach-Score.',waiting:'Warte auf Messung…',stale:'Kein aktuelles Signal',unnamed:'Unbenanntes BLE-Gerät',devices:'Gefundene Geräte',none:'Noch kein Gerät gefunden.',services:'Verfügbare Dienste',noHeart:'Kein Standard-Pulsdienst gefunden. Die Diagnose hilft beim nächsten Integrationsschritt.',supportedHeart:'Standard-Pulsdienst verfügbar.',idle:'Bereit zur Suche',scanning:'Suche…',connecting:'Verbinden…',discovering:'Dienste werden ermittelt…',connected:'Verbunden',subscribing:'Pulsmessung startet…',monitoring:'Pulsmessung aktiv',disconnected:'Getrennt',web:'Der Bluetooth-Test ist in der Android-APK verfügbar.',saved:'Diagnose gespeichert und geprüft.',saveFailed:'Speichern fehlgeschlagen.',PERMISSION_DENIED:'Berechtigung für Geräte in der Nähe erlauben. Ältere Android-Versionen benötigen Standortzugriff.',BLUETOOTH_OFF:'Bluetooth in den Telefoneinstellungen aktivieren.',LOCATION_OFF:'Diese Android-Version benötigt aktivierte Standortdienste für BLE.',UNSUPPORTED:'Bluetooth LE nicht verfügbar.',BACKGROUND:'App im Hintergrund; Verbindung beendet. Suche erneut starten.',BUSY:'Bluetooth-Vorgang läuft bereits.',DEVICE_EXPIRED:'Erneut suchen und die Uhr auswählen.',SCAN_FAILED:'Suche fehlgeschlagen. Bluetooth prüfen und erneut versuchen.',SCAN_FINISHED:'Suche beendet. Gerät auswählen oder erneut suchen.',CONNECTION_FAILED:'Verbindung fehlgeschlagen. RDFit-Datenverbindung trennen und erneut versuchen.',CONNECTION_TIMEOUT:'Zeitüberschreitung. Erneut suchen.',DISCOVERY_FAILED:'Dienstliste nicht lesbar. Erneut versuchen.',SUBSCRIBE_FAILED:'Pulsmessung nicht gestartet. Neu verbinden.',NO_HEART_SERVICE:'Kein Standard-Pulsdienst verfügbar.',DISCONNECTED:'Verbindung beendet.',CANCELLED:'Vorgang abgebrochen.'},
+  ro:{title:'Test ceas Bluetooth',intro:'Verificare GT4Pro+ / RDFit. Caută ceasul, conectează-l și exportă lista serviciilor.',note:'Testul nu importă somn, pași sau puls istoric. Pulsul live necesită un serviciu standard.',hint:'Ține aplicația deschisă și ceasul aproape. Dacă nu apare, deconectează temporar legătura de date RDFit; nu reseta ceasul.',scan:'Caută ceasuri (12 s)',stop:'Oprește căutarea',connect:'Conectează',disconnect:'Deconectează',pulse:'Pornește citirea pulsului',export:'Salvează diagnosticul',exportNote:'JSON conține identificatori și capacități, fără adrese Bluetooth, pachete brute sau valori ale pulsului.',live:'Puls Bluetooth live',liveNote:'Apare doar în acest test; nu intră în istoric sau scorul Coach.',waiting:'Se așteaptă măsurarea…',stale:'Niciun semnal recent',unnamed:'Dispozitiv BLE fără nume',devices:'Dispozitive găsite',none:'Încă nu s-au găsit dispozitive.',services:'Servicii disponibile',noHeart:'Nu există serviciu standard de puls. Diagnosticul ajută la următorul pas al integrării.',supportedHeart:'Serviciu standard de puls disponibil.',idle:'Pregătit pentru căutare',scanning:'Se caută…',connecting:'Se conectează…',discovering:'Se descoperă serviciile…',connected:'Conectat',subscribing:'Se pornește citirea pulsului…',monitoring:'Citirea pulsului activă',disconnected:'Deconectat',web:'Testul Bluetooth este disponibil în APK-ul Android.',saved:'Diagnostic salvat și verificat.',saveFailed:'Fișierul nu a putut fi salvat.',PERMISSION_DENIED:'Permite dispozitivele din apropiere în setările aplicației. Android mai vechi necesită permisiune de locație.',BLUETOOTH_OFF:'Activează Bluetooth în setările telefonului.',LOCATION_OFF:'Această versiune Android necesită și serviciile de locație pentru scanarea BLE.',UNSUPPORTED:'Bluetooth LE indisponibil.',BACKGROUND:'Aplicația a trecut în fundal; conexiunea s-a oprit. Caută din nou.',BUSY:'O operație Bluetooth este deja în curs.',DEVICE_EXPIRED:'Caută din nou și selectează ceasul.',SCAN_FAILED:'Căutarea a eșuat. Verifică Bluetooth și reîncearcă.',SCAN_FINISHED:'Căutarea s-a încheiat. Selectează un dispozitiv sau caută din nou.',CONNECTION_FAILED:'Conexiunea a eșuat. Deconectează legătura RDFit și reîncearcă.',CONNECTION_TIMEOUT:'Conexiunea nu a răspuns la timp. Caută din nou.',DISCOVERY_FAILED:'Lista serviciilor nu poate fi citită. Reîncearcă.',SUBSCRIBE_FAILED:'Citirea pulsului nu a pornit. Reconectează.',NO_HEART_SERVICE:'Niciun serviciu standard de puls.',DISCONNECTED:'Conexiune închisă.',CANCELLED:'Operație anulată.'}
+ };
+ const t=key=>(copy[typeof tp149Lang==='function'?tp149Lang():'hu']||copy.en)[key]||copy.en[key]||key;
+ const uuid=value=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value))?String(value).toLowerCase():null;
+ const limit=value=>String(value||'').slice(0,80);
+ function diagnostic(snapshot,device,version='1.1.1'){
+  const list=(snapshot.services||[]).slice(0,128).filter(s=>uuid(s.uuid)).map(s=>({uuid:uuid(s.uuid),type:Number(s.type)||0,characteristics:(s.characteristics||[]).slice(0,128).filter(c=>uuid(c.uuid)).map(c=>({uuid:uuid(c.uuid),properties:Number(c.properties)||0,descriptors:(c.descriptors||[]).slice(0,64).map(uuid).filter(Boolean)}))}));
+  return {format:'TrainPilot-BLE-diagnostic',schemaVersion:1,appVersion:version,exportedAt:new Date().toISOString(),androidSdk:Number(snapshot.sdk)||null,device:{name:limit(snapshot.deviceName||device?.name),advertisedServices:(device?.advertisedServices||[]).slice(0,128).map(uuid).filter(Boolean),manufacturers:(device?.manufacturers||[]).slice(0,64).map(m=>({companyId:Number(m.companyId)||0,length:Number(m.length)||0}))},connection:{state:limit(snapshot.state),code:limit(snapshot.code),gattStatus:Number(snapshot.gattStatus)||0},standardHeartRateAvailable:snapshot.heartSupported===true,services:list};
+ }
+ window.TrainPilotBleCore={diagnostic,uuid};
+ let bridge=null,listener=null,opening=0,busy=false,timer=null,paintTimer=null,lastPaint=0;
+ let snapshot={state:'idle',code:'',services:[],heartSupported:false},selected=null,pulse=null,devices=new Map();
+ const root=()=>document.querySelector('#tp155R4PanelHost[data-panel="ble"] .tp111-ble');
+ const native=()=>isNative()?(bridge||(bridge=window.Capacitor?.Plugins?.BleDiscovery||window.Capacitor?.registerPlugin?.('BleDiscovery'))):null;
+ const escaped=value=>esc(String(value||''));
+ const button=(action,label)=>'<button type="button" class="btn secondary" data-ble-action="'+action+'" onclick="TrainPilotBle.'+action+'()">'+escaped(t(label))+'</button>';
+ function html(){
+  return '<main class="tp111-ble"><p>'+escaped(t('intro'))+'</p><p class="small muted">'+escaped(t('note'))+'</p><p class="small muted">'+escaped(t('hint'))+'</p><p data-ble-status role="status" aria-live="polite"></p><div class="tp111-actions">'+button('scan','scan')+button('stop','stop')+button('disconnect','disconnect')+'</div><section class="card"><h3>'+escaped(t('devices'))+'</h3><div data-ble-devices></div></section><section class="card tp111-result" data-ble-result hidden><h3 data-ble-name></h3><p data-ble-capability></p><div class="tp111-actions">'+button('heart','pulse')+button('exportReport','export')+'</div><p class="small muted">'+escaped(t('exportNote'))+'</p><p data-ble-export-status role="status"></p><div data-ble-pulse hidden><h3>'+escaped(t('live'))+'</h3><strong data-ble-bpm>—</strong><p class="small muted" data-ble-pulse-note></p><p class="small muted">'+escaped(t('liveNote'))+'</p></div><details><summary>'+escaped(t('services'))+' <span class="tp-global-chevron" aria-hidden="true">›</span></summary><div data-ble-services></div></details></section></main>';
+ }
+ function setText(selector,value){const node=root()?.querySelector(selector);if(node&&node.textContent!==value)node.textContent=value;}
+ function paint(){
+  const node=root();if(!node)return;lastPaint=Date.now();
+  setText('[data-ble-status]',!native()?t('web'):[t(snapshot.state),snapshot.code?t(snapshot.code):''].filter(Boolean).join(' · '));
+  const active=['connecting','discovering','connected','subscribing','monitoring'].includes(snapshot.state),scanning=snapshot.state==='scanning';
+  const unavailable=!native()||snapshot.supported===false;
+  for(const [action,disabled] of [['scan',unavailable||busy||active||scanning],['stop',!scanning||busy],['disconnect',!active||busy],['heart',busy||!snapshot.heartSupported||snapshot.state!=='connected'],['exportReport',busy||!snapshot.services?.length]]){
+   const target=node.querySelector('[data-ble-action="'+action+'"]');if(target)target.disabled=disabled;
+  }
+  const rows=[...devices.values()].sort((a,b)=>(/gt\s*4/i.test(b.name)?1:0)-(/gt\s*4/i.test(a.name)?1:0)||b.rssi-a.rssi);
+  const list=node.querySelector('[data-ble-devices]');
+  const content=rows.length?rows.map(d=>'<button type="button" class="tp111-device btn secondary" data-ble-device="'+escaped(d.id)+'" '+(busy||active?'disabled':'')+'><span>'+escaped(d.name||t('unnamed'))+'</span><small>'+Number(d.rssi)+' dBm · '+escaped(t('connect'))+'</small></button>').join(''):'<p class="muted">'+escaped(t('none'))+'</p>';
+  if(list.innerHTML!==content){list.innerHTML=content;list.querySelectorAll('[data-ble-device]').forEach(button=>button.onclick=()=>connect(button.dataset.bleDevice));}
+  const result=node.querySelector('[data-ble-result]');result.hidden=!snapshot.services?.length;
+  setText('[data-ble-name]',snapshot.deviceName||selected?.name||t('unnamed'));
+  setText('[data-ble-capability]',t(snapshot.heartSupported?'supportedHeart':'noHeart'));
+  const services=node.querySelector('[data-ble-services]');
+  const serviceHtml=(snapshot.services||[]).map(s=>'<div class="tp111-service"><code>'+escaped(s.uuid)+'</code><small>'+s.characteristics?.length+'</small></div>').join('');
+  if(services.innerHTML!==serviceHtml)services.innerHTML=serviceHtml;
+  node.querySelector('[data-ble-pulse]').hidden=!['monitoring','subscribing'].includes(snapshot.state);
+  const fresh=pulse&&Date.now()-Date.parse(pulse.measuredAt)<=10000&&snapshot.state==='monitoring';
+  setText('[data-ble-bpm]',fresh?pulse.bpm+' bpm':'—');
+  setText('[data-ble-pulse-note]',fresh?tp149FormatDateTime(pulse.measuredAt):t(pulse?'stale':'waiting'));
+ }
+ function queuePaint(){if(paintTimer||!root())return;paintTimer=setTimeout(()=>{paintTimer=null;paint();},Math.max(0,300-(Date.now()-lastPaint)));}
+ function event(value){
+  if(!root())return;
+  if(value.kind==='device'&&value.device?.id&&snapshot.state==='scanning'){
+   const d=value.device;if(devices.has(d.id)||devices.size<40)devices.set(d.id,{...d,name:limit(d.name)});queuePaint();
+  }else if(value.kind==='pulse'&&snapshot.state==='monitoring'){
+   const bpm=Number(value.bpm),at=Date.parse(value.measuredAt);if(Number.isInteger(bpm)&&bpm>0&&bpm<=65535&&Number.isFinite(at)&&at<=Date.now()+1000){pulse={bpm,measuredAt:value.measuredAt};queuePaint();}
+  }else if(value.kind==='state'){
+   snapshot={...snapshot,...value};if(!['monitoring','subscribing'].includes(snapshot.state))pulse=null;
+   if(value.code==='BACKGROUND'){devices.clear();busy=false;}
+   paint();
+  }
+ }
+ async function open(){
+  const epoch=++opening;busy=false;paint();const plugin=native();if(!plugin)return;
+  try{
+   if(listener)await listener.remove();listener=null;
+   const added=await plugin.addListener('bleEvent',event);
+   if(epoch!==opening||!root()){await added.remove();return;}listener=added;
+   const result=await plugin.getStatus();if(epoch!==opening||!root())return;snapshot={...snapshot,...result};paint();
+   if(timer)clearInterval(timer);timer=setInterval(()=>{if(root()&&snapshot.state==='monitoring')paint();},1000);
+  }catch(error){if(epoch===opening&&root()){snapshot.code=error.code||'UNSUPPORTED';paint();}}
+ }
+ async function operation(method,args={},success){
+  if(busy||!root()||!native())return;const epoch=opening;busy=true;paint();
+  try{const result=await native()[method](args);if(epoch!==opening||!root())return;snapshot={...snapshot,...result};success?.(result);}
+  catch(error){if(epoch===opening&&root())snapshot.code=error.code||'CONNECTION_FAILED';}
+  finally{if(epoch===opening&&root()){busy=false;paint();}}
+ }
+ function scan(){
+  if(busy||['connecting','discovering','connected','subscribing','monitoring','scanning'].includes(snapshot.state))return;
+  devices.clear();selected=null;pulse=null;snapshot.services=[];snapshot.heartSupported=false;snapshot.code='';return operation('startScan');
+ }
+ function stop(){return operation('stopScan');}
+ function connect(id){if(busy||!devices.has(id))return;selected=devices.get(id);pulse=null;return operation('connect',{id});}
+ function heart(){pulse=null;return operation('startHeartRate');}
+ function disconnect(){pulse=null;return operation('disconnect');}
+ async function exportReport(){
+  if(busy||!snapshot.services?.length)return;busy=true;paint();const epoch=opening;
+  try{
+   const data=JSON.stringify(diagnostic(snapshot,selected,TRAINPILOT_VERSION),null,2),name='TrainPilot-BLE-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';
+   const result=await nativeFiles().save({name,data});if(result.cancelled)return;if(!result.verified)throw Error('verify');
+   if(epoch===opening&&root())setText('[data-ble-export-status]',t('saved'));
+  }catch(_){if(epoch===opening&&root())setText('[data-ble-export-status]',t('saveFailed'));}
+  finally{if(epoch===opening&&root()){busy=false;paint();}}
+ }
+ function close(){
+  ++opening;busy=false;pulse=null;devices.clear();if(timer)clearInterval(timer);timer=null;if(paintTimer)clearTimeout(paintTimer);paintTimer=null;
+  const plugin=bridge,old=listener;listener=null;if(old)void old.remove().catch(()=>{});
+  if(plugin)void plugin.disconnect().catch(()=>{});snapshot={...snapshot,state:'disconnected',code:'DISCONNECTED'};
+ }
+ function decorate(){
+  const settingsRoot=document.querySelector('#tp155R4PanelHost[data-panel="settings"] main');
+  if(settingsRoot&&!settingsRoot.querySelector('.tp111-ble-entry')){
+   const card=document.createElement('div');card.className='setting tp1511-card tp111-ble-entry';card.innerHTML='<button type="button" class="btn secondary block" onclick="tp155R4OpenPanel(\'ble\',this)">'+escaped(t('title'))+'</button>';
+   const anchor=settingsRoot.querySelector('.tp110-settings-goals');if(anchor)anchor.after(card);else settingsRoot.appendChild(card);
+  }
+  if(root())paint();
+ }
+ window.TrainPilotBle={t,html,open,scan,stop,connect,heart,disconnect,exportReport,decorate};
+ window.addEventListener?.('DOMContentLoaded',()=>{
+  const baseOpen=window.tp155R4OpenPanel;window.tp155R4OpenPanel=function(type,trigger){
+   const previous=!!root();if(previous&&type!=='ble')close();const result=baseOpen.apply(this,arguments);if(result&&type==='ble'&&!previous)void open();return result;
+  };
+  const baseClose=window.tp155R4ClosePanel;window.tp155R4ClosePanel=function(){if(root())close();return baseClose.apply(this,arguments);};
+  decorate();
+ });
+})();
+// @endsection ble-discovery-111.js
 
 
 // @section ready.js

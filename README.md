@@ -44,6 +44,10 @@ Az 1.0.9 dizájnfinomításainak részletei: [kiadási megjegyzések](docs/relea
 
 Részletes megvalósítás: [programszerkesztés és kardió](docs/TRAINING_CARDIO_1_0_7.md), [backup/GPS összevonás](docs/BACKUP_GPS_CONSOLIDATION_1_0_7.md).
 
+## Bluetooth tesztverzió: TrainPilot 1.1.1 (2699)
+
+A **Beállítások → Bluetooth-óra próba** felület a GT4Pro+ / RDFit adatkapcsolatának vizsgálatához készült. Órakeresést, szolgáltatás-felderítést és helyi diagnosztikaexportot ad; szabványos pulzusszolgáltatás esetén az élő pulzus is kipróbálható. A korábbi alvás-, lépés- és pulzusadatok importja még további protokollvizsgálatot igényel. A 2698 fejlesztései benne maradnak. [Telefonos próba és RDFit megállapítások](docs/BLUETOOTH_GT4PRO.md).
+
 ## Következő tesztverzió: TrainPilot 1.1.0 (2698)
 
 Az [#103](https://github.com/fuloplevente1998/TrainPilot/issues/103) fejlesztései külön tesztágon készülnek: heti edzés- és havi kilométercél, kihagyott edzések előnézetes újratervezése, beltéri intervallumok, részletes Coach-indoklás és egységes üres/mentési állapotok. A célok a meglévő kezdőlapi „Mai állapot” kártyából és a Beállításokból érhetők el. Nagy Android-betűméretnél a fix áttekintések görgethetővé válnak, hogy minden vezérlő elérhető maradjon.

@@ -1,0 +1,19 @@
+.tp111-ble{min-width:0;display:grid;gap:12px}
+.tp111-ble>p{margin:0}
+.tp111-ble .card{min-width:0;margin:0;padding:12px}
+.tp111-ble h3{margin:0 0 10px}
+.tp111-actions{display:flex;flex-wrap:wrap;gap:8px}
+.tp111-actions .btn{flex:1 1 145px;min-width:0;white-space:normal}
+.tp111-ble [hidden]{display:none!important}
+.tp111-ble [data-ble-devices]{display:grid;gap:8px}
+.tp111-device{width:100%;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;overflow-wrap:anywhere}
+.tp111-device small{color:var(--muted);font-size:12px}
+.tp111-ble details{margin-top:12px}
+.tp111-ble summary{display:flex;justify-content:space-between;align-items:center;cursor:pointer;list-style:none}
+.tp111-ble summary::-webkit-details-marker{display:none}
+.tp111-ble details[open] .tp-global-chevron{transform:rotate(90deg)}
+.tp111-service{display:flex;gap:8px;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line,#ffffff14)}
+.tp111-service code{overflow-wrap:anywhere;min-width:0;font-size:12px}
+.tp111-ble [data-ble-bpm]{font-size:30px;color:var(--accent)}
+.tp111-ble [data-ble-pulse]{margin-top:12px}
+.tp111-ble [data-ble-status]{min-height:1.4em;overflow-wrap:anywhere}

@@ -1,0 +1,15 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const src=fs.existsSync('www/ble-discovery-111.js')?fs.readFileSync('www/ble-discovery-111.js','utf8'):fs.readFileSync('www/app.js','utf8').match(/\/\/ @section ble-discovery-111.js\n([\s\S]*?)\/\/ @endsection ble-discovery-111.js/)[1];
+const context=vm.createContext({window:{addEventListener(){}},Date});vm.runInContext(src,context);
+const core=context.window.TrainPilotBleCore,plain=x=>JSON.parse(JSON.stringify(x));
+const service='0000180d-0000-1000-8000-00805f9b34fb',characteristic='00002a37-0000-1000-8000-00805f9b34fb',cccd='00002902-0000-1000-8000-00805f9b34fb';
+const data=plain(core.diagnostic({state:'connected',sdk:35,deviceName:'GT4Pro+',heartSupported:true,address:'AA:BB:CC:DD:EE:FF',bpm:72,rawBytes:[1,2],services:[{uuid:service,type:0,private:'secret',characteristics:[{uuid:characteristic,properties:16,value:[72],descriptors:[cccd]}]}]}, {id:'opaque-secret',address:'AA:BB:CC:DD:EE:FF',rawAdvertisement:[1,2],advertisedServices:[service,'bad'],manufacturers:[{companyId:4660,length:4,bytes:[1,2,3,4]}]},'1.1.1'));
+assert.equal(data.appVersion,'1.1.1');assert.equal(data.standardHeartRateAvailable,true);
+assert.deepEqual(data.services,[{uuid:service,type:0,characteristics:[{uuid:characteristic,properties:16,descriptors:[cccd]}]}]);
+assert.deepEqual(data.device.manufacturers,[{companyId:4660,length:4}]);assert.deepEqual(data.device.advertisedServices,[service]);
+const serialized=JSON.stringify(data);for(const secret of ['AA:BB:CC:DD:EE:FF','opaque-secret','rawBytes','rawAdvertisement','bpm','private','secret','"value"','"bytes"'])assert.ok(!serialized.includes(secret),'diagnostic must exclude '+secret);
+assert.equal(core.uuid('0000180D-0000-1000-8000-00805F9B34FB'),service);assert.equal(core.uuid('invalid'),null);
+assert.equal(core.diagnostic({services:[{uuid:'bad'}]},null).services.length,0);
+assert.equal(core.diagnostic({deviceName:'x'.repeat(200)},null).device.name.length,80);
+assert.equal(core.diagnostic({services:Array.from({length:200},()=>({uuid:service,characteristics:[]}))},null).services.length,128);
+console.log('PASS #105 BLE diagnostic: service capabilities preserved, invalid UUIDs excluded, bounded report omits addresses, identifiers, packets and pulse samples');
