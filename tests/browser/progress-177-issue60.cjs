@@ -17,7 +17,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   go('history');
  });
  await page.waitForSelector('.tp155-journal-tabs');
- assert.equal(await page.locator('.tp155-journal-tabs button').count(),2,'Journal must have Log / Progress tabs');
+ assert.equal(await page.locator('.tp155-journal-tabs button').count(),3,'Journal must have Log / Progress / Statistics tabs');
  assert.match((await page.locator('.tp155-journal-tabs').innerText()).replace(/\s+/g,' '),/Edzésnapló.*Fejlődés/);
  await page.getByRole('tab',{name:'Fejlődés'}).click();await page.waitForSelector('main.tp177-progress');
  assert.equal(await page.locator('.tp177-volume-panel').count(),1,'total volume and trend share one panel');
@@ -141,7 +141,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  await page.locator('#tp177Dialog .tp177-detail-workout').first().click();await page.waitForSelector('#tp177Dialog .tp177-detail-exercise');
  await page.locator('.tp177-dialog-back').click();await page.waitForSelector('#tp177Dialog .tp177-group-exercise');
  await page.locator('.tp177-dialog-close').click();
- assert.equal(await page.locator('.tp155-journal-tabs button').count(),2);
+ assert.equal(await page.locator('.tp155-journal-tabs button').count(),3);
  assert.equal(await page.getByRole('tab',{name:'Fejlődés'}).getAttribute('aria-selected'),'true');
  await page.locator('.tp177-periods button[data-period="3m"]').click();
  await page.waitForFunction(()=>document.querySelectorAll('.tp177-chart-column').length===13);
@@ -151,5 +151,5 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   await assertPinnedAxis('Compact '+width+'px',true);
  }
  assert.deepEqual(errors,[],'page errors: '+errors.join('\n'));
- console.log('PASS #60 Progress UI: 2 Journal tabs, daily/weekly vertical bars, compact cards, anatomy, nested local details, mobile widths and no invented intensity.');
+ console.log('PASS #60 Progress UI: 3 Journal tabs, daily/weekly vertical bars, compact cards, anatomy, nested local details, mobile widths and no invented intensity.');
 }finally{await browser?.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exit(1)});

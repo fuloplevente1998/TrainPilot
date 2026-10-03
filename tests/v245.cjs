@@ -13,7 +13,7 @@ for(const [,attrs,inline] of index.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>
 }
 const run=s=>vm.runInContext(s,ctx);
 async function tests(){
- assert.equal(run('makeBackup().appVersion'),'1.0.6');
+ assert.equal(run('makeBackup().appVersion'),require('../package.json').version);
  run('state.health={recovery:{sleepMinutes:null,hrvRmssdMs:null}};db.set("history",[])');
  assert.equal(run('rf220Readiness().sleep'),null);
  assert.equal(run('rf220Readiness().score'),null);

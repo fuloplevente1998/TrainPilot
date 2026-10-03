@@ -27,7 +27,7 @@ html body :is(#tp3PlannerPanelHost,main.tp152-profile,.tp105-data,.tp106-custom-
  outline:2px solid var(--accent)!important;outline-offset:3px;
 }
 html body :is(#tp3PlannerPanelHost,main.tp152-profile,.tp105-data,.tp106-custom-exercise) :is(.exclude-row,.rf148-gear-row,.tp105-health-consent) input[type="checkbox"]:disabled{opacity:.5;cursor:not-allowed}
-html body #app .tp155-journal-tabs.tp177-journal-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+html body #app .tp155-journal-tabs.tp177-journal-tabs{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 html body #tp155R4PanelHost[data-panel="coach"] .tp67-coach-progress{margin-top:12px;min-height:44px;border-radius:12px;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--tp-ui-border,var(--line)))}
 
 /* #67 follow-up: restore the full exercise stats via Progress without adding a third tab. */

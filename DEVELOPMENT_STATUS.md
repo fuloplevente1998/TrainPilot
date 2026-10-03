@@ -1,8 +1,17 @@
 # TrainPilot — Development Status
 
-Last updated: **2026-10-02 (Europe/Budapest)**. Earlier Phase 5–7 history remains below; it is historical. See [docs/PHASE_5_6_7_ROADMAP.md](docs/PHASE_5_6_7_ROADMAP.md) and the permanent [performance regression policy](docs/PERFORMANCE_REGRESSION_POLICY.md).
+Last updated: **2026-10-03 (Europe/Budapest)**. Earlier Phase 5–7 history remains below; it is historical. See [docs/PHASE_5_6_7_ROADMAP.md](docs/PHASE_5_6_7_ROADMAP.md) and the permanent [performance regression policy](docs/PERFORMANCE_REGRESSION_POLICY.md).
 
-## Current release
+## Current approved release — TrainPilot 1.0.7 / 2695
+
+- On **2026-10-03**, after receiving signed build **2695**, the user accepted the phone result: “Ez nagyon jol sikerult, mehet mainre, aktualizalhatjuk a doksikat is. Release apk+zip ,stb :)”. This authorizes PR #94 merge and public GitHub APK/source publication.
+- Phone-approved app source: `d31d0f9d4140e2fb2505d56c058f3d06d974df0c`; app SHA-256 `e1e9184b7aaa8431abc3c78fcd26b32033f5ba2451bdb11b6d7fa35d78e389d3`. Acceptance documentation changes do not alter application code, native code, dependencies or version metadata.
+- **117 Node regressions, all 54 Chromium UI scripts, unchanged performance budgets, Android/JVM release tests and APK/source/signer continuity passed.** Evidence: [Quick](https://github.com/fuloplevente1998/TrainPilot/actions/runs/37108589260), [Performance](https://github.com/fuloplevente1998/TrainPilot/actions/runs/37108589267), [signed Android gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/37108587187). Main's release workflow repeats the complete gate before publishing.
+- **PR #94:** backup/GPS consolidation, explicit program Save, fixed overviews, cardio statistics and indoor timing. Phone follow-ups **#95–98** cover Coach styling, compact Progress, Journal Statistics and Theme/Language selector parity.
+- Version code **2695**, app ID `com.repforge.app`; signer matches public 2690 and the 2694 test APK. Existing data and all accepted Phase 3–7 behaviors remain protected.
+- Release files: signed APK, source ZIP with stamped `SOURCE_VERSION.json`, `SHA256SUMS.txt`, `apk-badging.txt`. [v1.0.7 release](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.0.7), [release notes](docs/releases/v1.0.7.md).
+
+## Previous release — 1.0.6
 
 - **TrainPilot 1.0.6 / versionCode 2690**, merged from user-approved PR #92 to public `main` as `efb72b5d69102818dfbfdd80073b63298dc346e7`.
 - **Distance activities:** six built-in distance exercises (running, jogging, inline skating, cycling, walking, hiking), available in Quick Workout and own programs.
@@ -17,6 +26,27 @@ Last updated: **2026-10-02 (Europe/Budapest)**. Earlier Phase 5–7 history rema
 
 Release details: [v1.0.6 notes](docs/releases/v1.0.6.md), [implementation and phone checks](docs/CUSTOM_EXERCISE_DISTANCE_1_0_6.md).
 
+
+## 1.0.7 implementation and phone feedback history
+
+User-authorized first cleanup step on `fix/backup-gps-consolidation`, based on post-merge-validated main `ef09c5ee44b61902a7bb265f8ef2b3d2ea8de88e` (public 1.0.6 app source verified against its APK).
+
+- Validate imported identifiers and nested rows before restore mutations, preventing imported program IDs from executing through inline actions.
+- Bind GPS trips to stable set IDs, migrate running 1.0.6 trips, stop tracking before removing its owning set, and protect asynchronous deletion.
+- Consolidate 68 historical backup-builder definitions into one. Preserve all exported fields, legacy recovery and call-time Health consent.
+- The user explicitly expanded this same unmerged candidate to include fixed Home/Calendar/collapsed Health layouts, a shared explicit-Save program editor, cardio statistics and a GPS-free indoor timer. This scope expansion is authorized; it is not phone acceptance of the earlier 2691 APK.
+- Phone feedback on the 2692 APK: restore the full-size personal planner with its full-width button whenever no workout draft exists. Compact planner styling applies only to an unfinished workout; removing its draft, navigation, refresh and theme changes restore the normal card. On narrow screens, surrounding summaries recover space while all content remains visible.
+- Phone feedback on 2693: keep Calendar's rounded top border below navigation and fit its outer frame to its content. Clear Calendar-only layout when the shared panel switches to Coach or Settings. Keep Health column/card widths and compact summary styling stable when any disclosure expands; expanded content remains normally scrollable. A populated-calendar/two-theme/five-viewport browser regression checks actual wheel scrolling and all four Health disclosure families.
+- Home fits with and without a saved workout draft; expanded Health remains scrollable. Calendar keeps the whole month and the full two-column planning settings visible without scrolling; its selectors and temporal pickers still open above the fixed page. Long selected-day details retain their own scrolling region. Pending workouts use Resume as the primary Home action; starting another workout remains available on Workout.
+- Workout and Programs share a lazy prescription editor. Save validates all fields and updates the summary immediately; editing a non-active program does not activate it. Saved prescriptions feed the next workout.
+- Cardio: local Monday-based weekly kilometres, previous week, eight-week overview, distance-weighted pace and separate same-activity/same-distance fastest records with second-best comparison. Missing distance is not invented.
+- Indoor timer: start/pause/resume/reset without GPS or a permission request, stable set ownership, manual kilometres and paused time corrections, draft reload/background recovery. Internal timer state is removed before history recording.
+- Local Node: 117 passed; the new behavioral Chromium checks cover four languages and 320/360/393/412 px sizes, actual Save/start flows, timer reload/pause/delete/finish and cardio records. The complete final 2695 UI, performance and signed Android gates passed.
+- **Accepted:** signed 2695 was approved on the phone on 2026-10-03, with explicit main merge, documentation and GitHub release authorization.
+
+- Phone feedback on 2694 is recorded before implementation as [#95](https://github.com/fuloplevente1998/TrainPilot/issues/95), [#96](https://github.com/fuloplevente1998/TrainPilot/issues/96), [#97](https://github.com/fuloplevente1998/TrainPilot/issues/97), [#98](https://github.com/fuloplevente1998/TrainPilot/issues/98). Candidate 2695 builds directly on 2694: matching Home Coach frame, upper-right compact Progress comparison, a Journal Statistics destination with Personal records/Cardio sections, and shared Language/Theme dropdown animation. The subsequent 2695 phone approval is recorded above.
+
+Implementation and phone checklists: [backup/GPS consolidation](docs/BACKUP_GPS_CONSOLIDATION_1_0_7.md), [program editing and cardio](docs/TRAINING_CARDIO_1_0_7.md). Version code 2695 upgrades public 2690 and earlier 2691/2692/2693/2694 test candidates.
 
 ## Phase 5–7 acceptance boundaries
 

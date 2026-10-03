@@ -6,7 +6,7 @@ assert.match(html,/TrainPilotActiveWorkoutSetControls/,'active-workout set contr
 assert.match(html,/tpActiveWorkoutAddSet/,'add-set action missing');
 assert.match(html,/tpActiveWorkoutRemoveSet/,'remove-set action missing');
 assert.match(html,/sets\.push\(fresh\)/,'new set is not appended to the running exercise');
-assert.match(html,/sets\.splice\(i,1\)/,'set deletion is not wired to the running exercise');
+assert.match(html,/sets\.splice\(targetIndex,1\)/,'set deletion is not wired to the running exercise');
 assert.match(html,/persistDraft\(\)/,'active set edits must persist to the resumable draft');
 assert.match(html,/sets\.length>=10/,'active set count must keep the existing 10-set upper bound');
 assert.match(html,/sets\.length<=1/,'at least one set must remain');

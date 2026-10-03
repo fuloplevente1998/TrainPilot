@@ -31,7 +31,7 @@ run('restoreText(JSON.stringify(makeBackup()))');
 assert.equal(run('exercises().length'),40);
 assert.ok(run("programById(personal131.id).days[0].exercises.includes('side-plank')"));
 assert.equal(run("byId('side-plank').repUnit"),'mp/oldal');
-assert.equal(run('makeBackup().appVersion'),'1.3.1');
+assert.equal(run('makeBackup().appVersion'),require('../package.json').version);
 console.log('PASS: 40 unique exercises, muscle/video coverage, accent-insensitive search, gear filters, program placement and duplicate protection, dumbbell-only generator and backup roundtrip.');
 
 run("const sideHistory={started:'2026-09-10T10:00:00Z',programId:personal131.id,exercises:[{id:'side-plank',repUnit:'mp/oldal',sets:[{done:true,reps:20}]}],feedback:{suggestion:{action:'reps'}}};db.set('history',[sideHistory]);state.feedbackStarted=sideHistory.started;applyProgression()");

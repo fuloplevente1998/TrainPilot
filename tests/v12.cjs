@@ -22,7 +22,7 @@ assert.equal(run("buildWeeklySchedule('2026-09-14','18:00',[1,3,5],2,45,'A','hom
 // Arbitrary cycle length is supported.
 run("let ps=programs();ps.push({id:'test-abc',name:'ABC',location:'Egyéni',level:'Egyéni',builtin:false,days:[{id:'A',name:'A',exercises:['db-squat']},{id:'B',name:'B',exercises:['pushup']},{id:'C',name:'C',exercises:['plank']}]});db.set('programs',ps)");
 assert.equal(run("buildAlternateSchedule('2026-09-11','18:00',5,45,'A','test-abc').map(x=>x.dayId).join('')"),'ABCAB');
-const backup=run('makeBackup()');assert.equal(backup.version,3);assert.ok(Array.isArray(backup.programs));assert.equal(backup.appVersion,'1.2.1');
+const backup=run('makeBackup()');assert.equal(backup.version,3);assert.ok(Array.isArray(backup.programs));assert.equal(backup.appVersion,require('../package.json').version);
 run("db.set('activeProgramId','test-abc');startWorkout('C')");assert.equal(run("state.session.programId"),'test-abc');assert.equal(run("state.session.exercises[0].id"),'plank');
 run("state.session=null;state.workout=null;state.tab='home';resumeDraft()");assert.equal(run("state.tab"),'plan');assert.equal(run("state.session.programId"),'test-abc');
 console.log('PASS: 1.1.5→1.2 migration, every-other-day weekend rollover, weekly planner, arbitrary A/B/C cycles, program library and v3 backup.');

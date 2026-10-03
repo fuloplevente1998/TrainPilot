@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="hu" class="tp-booting"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0e1015"><title>TrainPilot</title><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="health-dashboard-168.css"><link rel="stylesheet" href="global-uiux-177.css"><link rel="stylesheet" href="progress-177.css"><link rel="stylesheet" href="issue67-polish.css"><style>html,body{margin:0;min-height:100%;background:#0e1015}html.tp-booting #app{visibility:hidden}#tpBoot{position:fixed;inset:0;display:grid;place-items:center;background:#0e1015;color:#f6f8fb;font:900 25px/1.2 system-ui,sans-serif;z-index:999999}</style></head><body><div id="tpBoot" aria-label="Betöltés"></div><div id="app"></div>
+<html lang="hu" class="tp-booting"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0e1015"><title>TrainPilot</title><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="health-dashboard-168.css"><link rel="stylesheet" href="global-uiux-177.css"><link rel="stylesheet" href="progress-177.css"><link rel="stylesheet" href="issue67-polish.css"><link rel="stylesheet" href="training-107.css"><style>html,body{margin:0;min-height:100%;background:#0e1015}html.tp-booting #app{visibility:hidden}#tpBoot{position:fixed;inset:0;display:grid;place-items:center;background:#0e1015;color:#f6f8fb;font:900 25px/1.2 system-ui,sans-serif;z-index:999999}</style></head><body><div id="tpBoot" aria-label="Betöltés"></div><div id="app"></div>
 <script defer src="app.js"></script>
 <script>window.addEventListener("DOMContentLoaded",function(){
 /* Phase 5 #44 — shared, local-day-bound Today summary on Home and Health. */
@@ -1012,7 +1012,7 @@
   if(!rows.length)return '<div class="card"><h2>'+esc(t.progress)+'</h2><p class="muted">'+esc(t.noData)+'</p></div>';
   return '<section class="card tp3-stats-card"><h2>'+esc(t.progress)+' • '+esc(t.records)+'</h2><p class="small muted tp3-stats-hint">'+esc(w.statsHint)+'</p><div class="tp3-stats-list">'+rows.slice(0,12).map(({id,s})=>{
    const max=s.maxWeight?String(s.maxWeight)+' kg':'—',e1=s.e1rm?s.e1rm.toFixed(1)+' kg':'—',best=s.best?String(s.best.w||0)+' kg × '+String(s.best.r||0):'—',vol=s.maxVolume?Math.round(s.maxVolume)+' kg·rep':'—';
-   return '<details class="tp3-stat-row" data-tp3-stat="'+esc(id)+'"><summary><div class="tp3-stat-copy"><strong>'+esc(rf220ExerciseName(id))+'</strong><span class="small muted">'+(s.maxWeight?esc(t.maxWeight+': '+s.maxWeight+' kg'):'')+'</span></div><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary><div class="tp3-stat-detail"><div class="grid2"><div class="stat"><small>'+esc(t.maxWeight)+'</small><strong>'+esc(max)+'</strong></div><div class="stat"><small>'+esc(t.e1rm)+'</small><strong>'+esc(e1)+'</strong></div><div class="stat"><small>'+esc(t.bestSet)+'</small><strong>'+esc(best)+'</strong></div><div class="stat"><small>'+esc(t.volume)+'</small><strong>'+esc(vol)+'</strong></div></div><div class="small muted tp3-stat-note">'+esc(t.approx)+'</div></div></details>';
+   return '<details class="tp3-stat-row" data-tp3-stat="'+esc(id)+'"><summary><div class="tp3-stat-copy"><strong>'+esc(rf220ExerciseName(id))+'</strong><span class="small muted">'+(s.maxWeight?esc(t.maxWeight+': '+s.maxWeight+' kg'):'')+'</span></div><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary><div class="tp3-stat-detail"><div class="grid2"><div class="stat"><small>'+esc(t.maxWeight)+'</small><strong>'+esc(max)+'</strong></div><div class="stat"><small>'+esc(t.e1rm)+'</small><strong>'+esc(e1)+'</strong></div><div class="stat"><small>'+esc(t.bestSet)+'</small><strong>'+esc(best)+'</strong></div><div class="stat"><small>'+esc(t.volume)+'</small><strong>'+esc(vol)+'</strong></div></div><div class="small muted tp3-stat-note">'+esc(s.kind==='distance'?tp107T('rule'):t.approx)+'</div></div></details>';
   }).join('')+'</div></section>';
  };
 
@@ -1255,6 +1255,7 @@
  const fmt=n=>typeof tp149FormatNumber==='function'?tp149FormatNumber(n,{maximumFractionDigits:1}):String(Math.round(n*10)/10);
 
  const tp4ExerciseStatsFromMatches=(id,workouts)=>{
+  if(typeof tp107DistanceStats==='function'&&(TP106_DISTANCE_IDS.has(id)||(workouts||[]).some(x=>(x.matches||[]).some(tp106IsDistance))))return tp107DistanceStats(id,workouts);
   const rows=[],sessions=[],byWorkout={};
   for(const entry of workouts||[]){
    const h=entry.h,matches=entry.matches||[];if(!matches.length)continue;
@@ -1303,6 +1304,7 @@
  };
  const summary=s=>{
   const t=copy();
+  if(s.kind==='distance')return tp107CardioSummary(s);
   if(s.kind==='bilateral')return t.bestSides+': '+fmt(s.maxLeft)+' / '+fmt(s.maxRight)+' mp';
   if(s.kind==='timed')return t.bestTime+': '+fmt(s.maxSeconds)+' mp';
   if(s.kind==='reps')return t.bestReps+': '+fmt(s.maxReps);
@@ -1310,6 +1312,7 @@
  };
  const detail=s=>{
   const t=copy(),label=(a,b)=>'<div class="stat"><small>'+esc(a)+'</small><strong>'+esc(b)+'</strong></div>';
+  if(s.kind==='distance')return tp107CardioDetail(s);
   if(s.kind==='bilateral')return label(t.bestSides,fmt(s.maxLeft)+' / '+fmt(s.maxRight)+' mp')+label(t.last,fmt(s.latest.left)+' / '+fmt(s.latest.right)+' mp')+label(t.sets,fmt(s.count))+label(t.sessions,fmt(s.sessions));
   if(s.kind==='timed')return label(t.bestTime,fmt(s.maxSeconds)+' mp')+label(t.last,fmt(s.latest.seconds)+' mp')+label(t.sets,fmt(s.count))+label(t.sessions,fmt(s.sessions));
   if(s.kind==='reps')return label(t.bestReps,fmt(s.maxReps))+label(t.last,fmt(s.latest.r))+label(t.sets,fmt(s.count))+label(t.sessions,fmt(s.sessions));
@@ -1319,7 +1322,7 @@
   const t=rf220L(),rows=rf220ProgressRows(),x=copy();
   if(!rows.length)return '<div class="card"><h2>'+esc(t.progress)+'</h2><p class="muted">'+esc(t.noData)+'</p></div>';
   return '<section class="card tp3-stats-card tp4-stats-card"><h2>'+esc(t.progress)+' • '+esc(t.records)+'</h2><p class="small muted tp3-stats-hint">'+esc(x.statsHint)+'</p><div class="tp3-stats-list">'+rows.map(({id,s})=>
-   '<details class="tp3-stat-row tp4-stat-row" data-tp3-stat="'+esc(id)+'" data-tp4-kind="'+esc(s.kind)+'"><summary><div class="tp3-stat-copy"><strong>'+esc(rf220ExerciseName(id))+'</strong><span class="small muted">'+esc(summary(s))+'</span></div><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary><div class="tp3-stat-detail"><div class="grid2">'+detail(s)+'</div><div class="small muted tp3-stat-note">'+esc(t.approx)+'</div></div></details>'
+   '<details class="tp3-stat-row tp4-stat-row" data-tp3-stat="'+esc(id)+'" data-tp4-kind="'+esc(s.kind)+'"><summary><div class="tp3-stat-copy"><strong>'+esc(rf220ExerciseName(id))+'</strong><span class="small muted">'+esc(summary(s))+'</span></div><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary><div class="tp3-stat-detail"><div class="grid2">'+detail(s)+'</div><div class="small muted tp3-stat-note">'+esc(s.kind==='distance'?tp107T('rule'):t.approx)+'</div></div></details>'
   ).join('')+'</div></section>';
  };
 
@@ -1704,14 +1707,22 @@
   const sets=cur.exercise.sets||[],t=tx(),i=Number(setIndex);
   if(!Number.isInteger(i)||i<0||i>=sets.length)return;
   if(sets.length<=1){alert(t.min);return}
-  if(setHasUserData(sets[i])){
+  const session=state.session,target=sets[i];
+  if(typeof tp106GpsBusy!=='undefined'&&tp106GpsBusy){alert(tp106T('busy'));return;}
+  if(setHasUserData(target)){
    let ok=false;
    if(typeof tp2628Confirm==='function')ok=await tp2628Confirm(t.confirm,{title:t.removeTitle,confirmText:t.remove,danger:true});
    else return;
    if(!ok)return;
   }
+  if(state.session!==session||current()?.exercise!==cur.exercise||sets.length<=1||!sets.includes(target))return;
+  if(typeof tp106BeforeSetRemoval==='function'&&!await tp106BeforeSetRemoval(session,cur.exercise,target))return;
+  // Both the confirmation and native stop can yield. Recheck the actual object,
+  // rather than an index that another edit may have shifted in the meantime.
+  if(state.session!==session||current()?.exercise!==cur.exercise||sets.length<=1)return;
+  const targetIndex=sets.indexOf(target);if(targetIndex<0)return;
   const y=window.scrollY||0;
-  sets.splice(i,1);renumber(cur.exercise);
+  sets.splice(targetIndex,1);renumber(cur.exercise);
   try{persistDraft()}catch(_){}
   repaint(false,y);
  };

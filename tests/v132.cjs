@@ -28,7 +28,7 @@ const oldHistory=values.get('repforge:history'),oldEx=values.get('repforge:exerc
 run('state.profilePreview=profile132;state.programPreview=generatePersonalProgram(profile132);acceptPersonalProgram()');
 assert.equal(values.get('repforge:history'),oldHistory);assert.equal(values.get('repforge:exercises'),oldEx);
 run('restoreText(JSON.stringify(makeBackup()))');assert.equal(run('trainingProfile().gear.length'),0);
-assert.equal(run('makeBackup().appVersion'),'1.3.2');
+assert.equal(run('makeBackup().appVersion'),require('../package.json').version);
 assert.ok(run('activeProgram().reasons.some(x=>x.includes("nem helyettesíti"))'));
 ctx.document.querySelector=()=>root;
 run('profileScreen()');assert.ok(root.innerHTML.includes('Csak saját testsúly'));assert.ok(root.innerHTML.includes('name="pfGear"'));assert.equal(root.innerHTML.includes('id="pfLocation"'),false);

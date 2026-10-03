@@ -47,7 +47,7 @@ assert.equal(run('activeProgram().prescriptions[generated.days[0].exercises[0]].
 run('applyProgression()');
 assert.equal(run('activeProgram().prescriptions[generated.days[0].exercises[0]].sets'),1);
 const exported=run('makeBackup()');
-assert.equal(exported.appVersion,'1.3.1');
+assert.equal(exported.appVersion,require('../package.json').version);
 assert.equal(exported.settings.profile.height,178);
 assert.ok(exported.programs.find(x=>x.generated).prescriptions);
 run('state.health.summary={activeCalories:100,averageHeartRate:120,sources:[]}');

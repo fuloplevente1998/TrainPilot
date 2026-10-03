@@ -5,7 +5,7 @@ const doc={querySelector:()=>root,querySelectorAll:()=>[],getElementById:()=>nul
 const ctx=vm.createContext({localStorage:ls,document:doc,window:{Capacitor:{isNativePlatform:()=>false},scrollTo(){},open(){}},navigator:{onLine:true},setInterval:()=>1,clearInterval(){},setTimeout:()=>1,clearTimeout(){},Date,crypto,TextEncoder,Blob:function(){},URL:{createObjectURL(){return''},revokeObjectURL(){}},alert(){},confirm:()=>true,prompt:()=>null,console});
 for(const f of ['backup.js','demos.js','cloud.js','app.js','v12.js','catalog131.js','v13.js','library131.js','onboarding132.js','v14.js','v141.js'])vm.runInContext(fs.readFileSync('www/'+f,'utf8'),ctx);
 const run=s=>vm.runInContext(s,ctx);
-assert.equal(run('makeBackup().appVersion'),'1.4.1');
+assert.equal(run('makeBackup().appVersion'),require('../package.json').version);
 assert.equal(run("rf141FmtDuration(435)"),'7 ó 15 p');
 assert.equal(run("rf141Median([40,20,30])"),30);
 assert.equal(run("rf141RecoverySignals({sleepMinutes:420,hrvRmssdMs:55}).length"),2);
