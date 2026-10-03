@@ -17,3 +17,5 @@
 .tp111-ble [data-ble-bpm]{font-size:30px;color:var(--accent)}
 .tp111-ble [data-ble-pulse]{margin-top:12px}
 .tp111-ble [data-ble-status]{min-height:1.4em;overflow-wrap:anywhere}
+.tp111-filter{display:grid;gap:6px;margin:8px 0 12px;font-size:13px;color:var(--muted)}
+.tp111-filter input{width:100%;min-width:0;box-sizing:border-box}

@@ -1,5 +1,7 @@
 # TrainPilot
 
+**Bluetooth-próba javítása — 1.1.2 / 2700:** a névtelen eszközök mellett helyileg látható a MAC-cím az RDFit adataival való összehasonlításhoz. Sorszám és óvatos protokolljelölés segíti a választást; a találati lista kapcsolódás nélkül is menthető. [Telefonos lépések](docs/BLUETOOTH_GT4PRO.md). A teljes Chromium-tesztsor a gyorsított, hatrészes CI-ban fut.
+
 TrainPilot egy Androidra készült, local-first edzéstervező és edzésnapló alkalmazás. A fő edzésfunkciók helyben is használhatók; a Health Connect, Google Drive és Google Naptár integrációk opcionálisak.
 
 ## Fő funkciók
@@ -78,6 +80,8 @@ npm test
 npm run test:ui
 npm run sync
 ```
+
+A CI-ban hat külön Chromium-rész fut, teljes lefedettséggel. [Futtatás és mért idő](docs/UI_TESTS.md).
 
 Részletek: [build és signing](docs/BUILD.md), [fejlesztési állapot](DEVELOPMENT_STATUS.md), [1.0.0 átállási terv](docs/REPOSITORY_MAINTENANCE_2026-09-26.md).
 

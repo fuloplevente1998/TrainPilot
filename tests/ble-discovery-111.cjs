@@ -3,8 +3,8 @@ const src=fs.existsSync('www/ble-discovery-111.js')?fs.readFileSync('www/ble-dis
 const context=vm.createContext({window:{addEventListener(){}},Date});vm.runInContext(src,context);
 const core=context.window.TrainPilotBleCore,plain=x=>JSON.parse(JSON.stringify(x));
 const service='0000180d-0000-1000-8000-00805f9b34fb',characteristic='00002a37-0000-1000-8000-00805f9b34fb',cccd='00002902-0000-1000-8000-00805f9b34fb';
-const data=plain(core.diagnostic({state:'connected',sdk:35,deviceName:'GT4Pro+',heartSupported:true,address:'AA:BB:CC:DD:EE:FF',bpm:72,rawBytes:[1,2],services:[{uuid:service,type:0,private:'secret',characteristics:[{uuid:characteristic,properties:16,value:[72],descriptors:[cccd]}]}]}, {id:'opaque-secret',address:'AA:BB:CC:DD:EE:FF',rawAdvertisement:[1,2],advertisedServices:[service,'bad'],manufacturers:[{companyId:4660,length:4,bytes:[1,2,3,4]}]},'1.1.1'));
-assert.equal(data.appVersion,'1.1.1');assert.equal(data.standardHeartRateAvailable,true);
+const data=plain(core.diagnostic({state:'connected',sdk:35,deviceName:'GT4Pro+',heartSupported:true,address:'AA:BB:CC:DD:EE:FF',bpm:72,rawBytes:[1,2],services:[{uuid:service,type:0,private:'secret',characteristics:[{uuid:characteristic,properties:16,value:[72],descriptors:[cccd]}]}]}, {id:'opaque-secret',address:'AA:BB:CC:DD:EE:FF',rawAdvertisement:[1,2],advertisedServices:[service,'bad'],manufacturers:[{companyId:4660,length:4,bytes:[1,2,3,4]}]},'1.1.2'));
+assert.equal(data.appVersion,'1.1.2');assert.equal(data.standardHeartRateAvailable,true);
 assert.deepEqual(data.services,[{uuid:service,type:0,characteristics:[{uuid:characteristic,properties:16,descriptors:[cccd]}]}]);
 assert.deepEqual(data.device.manufacturers,[{companyId:4660,length:4}]);assert.deepEqual(data.device.advertisedServices,[service]);
 const serialized=JSON.stringify(data);for(const secret of ['AA:BB:CC:DD:EE:FF','opaque-secret','rawBytes','rawAdvertisement','bpm','private','secret','"value"','"bytes"'])assert.ok(!serialized.includes(secret),'diagnostic must exclude '+secret);
@@ -12,4 +12,15 @@ assert.equal(core.uuid('0000180D-0000-1000-8000-00805F9B34FB'),service);assert.e
 assert.equal(core.diagnostic({services:[{uuid:'bad'}]},null).services.length,0);
 assert.equal(core.diagnostic({deviceName:'x'.repeat(200)},null).device.name.length,80);
 assert.equal(core.diagnostic({services:Array.from({length:200},()=>({uuid:service,characteristics:[]}))},null).services.length,128);
+const realtek='6e40ab01-b5a3-f393-e0a9-e50e24dcca9e';
+assert.equal(core.protocolHint({advertisedServices:[realtek.toUpperCase()]}),'realtek');
+assert.equal(core.protocolHint({advertisedServices:['0000ae00-0000-1000-8000-00805f9b34fb']}),'jieli');
+assert.equal(core.protocolHint({advertisedServices:[service]}),'heartRate');
+assert.equal(core.protocolHint({name:'GT4Pro+',advertisedServices:[]} ),null,'a name alone must not invent protocol support');
+assert.equal(core.deviceAddress('aa:bb:cc:dd:ee:ff'),'AA:BB:CC:DD:EE:FF');
+assert.equal(core.deviceAddress('AA:BB:CC'), '');
+const scanned=plain(core.diagnostic({state:'idle',services:[]},null,'1.1.2',Array.from({length:60},(_,i)=>({id:'private-'+i,number:i+1,name:'',rssi:-63,displayAddress:'AA:BB:CC:DD:EE:FF',rawAdvertisement:[1,2],advertisedServices:[realtek]}))));
+assert.equal(scanned.mode,'scan');assert.equal(scanned.scanDevices.length,40);
+assert.equal(scanned.scanDevices[0].number,1);assert.equal(scanned.scanDevices[0].protocolHint,'realtek');
+for(const secret of ['AA:BB:CC:DD:EE:FF','displayAddress','private-','rawAdvertisement'])assert.ok(!JSON.stringify(scanned).includes(secret));
 console.log('PASS #105 BLE diagnostic: service capabilities preserved, invalid UUIDs excluded, bounded report omits addresses, identifiers, packets and pulse samples');

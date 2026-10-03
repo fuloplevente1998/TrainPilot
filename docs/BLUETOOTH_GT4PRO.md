@@ -1,4 +1,4 @@
-# GT4Pro+ / RDFit Bluetooth investigation — 1.1.1 / 2699
+# GT4Pro+ / RDFit Bluetooth investigation — 1.1.2 / 2700
 
 This candidate adds a foreground Android BLE diagnostic client. The 1.1.0 / 2698 features remain included. Stable main remains 1.0.9 / 2697; neither candidate has physical-phone approval yet.
 
@@ -7,9 +7,9 @@ This candidate adds a foreground Android BLE diagnostic client. The 1.1.0 / 2698
 1. Install the signed 2699 APK over the current app. Keep existing data; no uninstall or watch reset is needed.
 2. Open **Settings → Bluetooth watch trial** (Hungarian: **Beállítások → Bluetooth-óra próba**).
 3. Enable phone Bluetooth, keep the watch nearby and allow Nearby devices. Android 11 or earlier also requires location permission/services for BLE scanning; the trial does not request GPS fixes.
-4. Tap **Scan for watches**, then select the GT4Pro+ from the results. Scan stops after 12 seconds; connection/service discovery times out after 20 seconds.
+4. Tap **Scan for watches**. For unnamed devices, compare the locally displayed **MAC address** with RDFit device information, then select the matching GT4Pro+. Each result also has a stable per-scan number, signal strength and a protocol hint when an advertised service is recognized. Signal strength or a protocol hint alone is not device identity. Scan stops after 12 seconds; connection/service discovery times out after 20 seconds.
 5. If the watch is missing or connection fails, temporarily disconnect its RDFit data connection and retry. The separate Bluetooth call connection is not proof that a BLE health-data channel is available. Do not unpair/reset the watch as a first troubleshooting step.
-6. Tap **Save diagnostics**, select a local destination and attach the resulting `TrainPilot-BLE-*.json` to the investigation. This shows the actual watch services needed to choose the next protocol-specific implementation.
+6. After scanning ends (or tapping **Stop scan**), **Save diagnostics** also works without connecting and includes up to 40 scan results. A successful connection adds the actual GATT services. Select a local destination and attach the resulting `TrainPilot-BLE-*.json` to the investigation. This shows the actual watch services needed to choose the next protocol-specific implementation.
 7. If a standard heart-rate service is present, **Start heart-rate reader** enables its standard notification/indication descriptor. A watch with only vendor-specific services still provides a useful diagnostic report. Start the watch's own heart-rate measurement if it does not send samples automatically.
 
 Leaving the trial, putting the app in the background or restarting stops scanning and closes the connection. Returning requires a new scan. Pulse disappears after ten seconds without a valid sample. Diagnostics remain exportable during the current app session after disconnect.
@@ -17,10 +17,11 @@ Leaving the trial, putting the app in the background or restarting stops scannin
 ## What the candidate does
 
 - Discovers up to 40 nearby BLE devices, with user-selected connection, bounded scan/connection/subscription timeouts and cleanup of cancelled/late callbacks.
+- Shows a MAC address only in the current local scan UI for exact comparison with RDFit; it is not persisted, logged or exported. Protocol hints are candidates inferred from advertised services, not verified GT4Pro+ identity.
 - Reads GATT service/characteristic identifiers and properties. Discovery sends no vendor commands, firmware updates, pairing resets or setting changes.
 - Optionally reads **Bluetooth SIG Heart Rate Service 0x180D / Measurement 0x2A37**. The only descriptor writes are the standard 0x2902 notification/indication enable values on that verified service after the user starts the reader. The parser handles unsigned 8/16-bit values, contact flags and optional energy/RR fields; malformed, zero and no-contact readings are rejected.
 - Displays live pulse only in the trial. It does not alter Health Connect, historical health records, training readiness, workout history, backups or Drive data.
-- Exports a locally verified JSON with service UUIDs, capabilities, manufacturer identifiers/payload lengths and connection status. Bluetooth addresses, opaque scan IDs, raw advertisement/characteristic bytes and actual pulse readings are omitted. No report is sent automatically to a server.
+- Exports a locally verified JSON with service UUIDs, capabilities, manufacturer identifiers/payload lengths, scan numbers/signal strengths and connection status. Bluetooth addresses, opaque scan IDs, raw advertisement/characteristic bytes and actual pulse readings are omitted. No report is sent automatically to a server.
 
 Sleep, steps and historical heart rate are **not implemented** by service discovery. The physical watch report is the next dependency.
 

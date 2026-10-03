@@ -1,5 +1,13 @@
 # TrainPilot — Development Status
 
+## Bluetooth identification follow-up — 1.1.2 / 2700
+
+- Physical trial feedback: 30–40 unnamed neighbours with RSSI approximately -63 to -99 dBm make the intended GT4Pro+ impossible to select from name/signal alone.
+- Results now display a local-only full MAC address for comparison with RDFit, stable per-scan numbering and advertised-service protocol hints. The current scan can be saved without connecting; the report explicitly omits MAC addresses and opaque native identifiers.
+- Existing 2698/2699 features remain included. Historical vendor health imports are still pending the real watch report. The independent CI maintenance in [PR #107](https://github.com/fuloplevente1998/TrainPilot/pull/107) reduced approved-main Chromium time from 10m09s to 2m01s (2m31s including setup); the 58-script candidate suite uses the same isolated shard runner.
+- Validation and phone acceptance are tracked in the follow-up PR. Stable app assets and application data remain unchanged until phone approval.
+
+
 Last updated: **2026-10-03 (Europe/Budapest)**. Earlier Phase 5–7 history remains below; it is historical. See [docs/PHASE_5_6_7_ROADMAP.md](docs/PHASE_5_6_7_ROADMAP.md) and the permanent [performance regression policy](docs/PERFORMANCE_REGRESSION_POLICY.md).
 
 ## Bluetooth investigation candidate — 1.1.1 / 2699 (#105)

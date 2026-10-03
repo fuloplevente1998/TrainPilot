@@ -145,6 +145,8 @@ public class BleDiscoveryPlugin extends Plugin {
         if (name == null) try { name = device.getName(); } catch (SecurityException ignored) { }
         JSObject row = new JSObject(); row.put("id", id); row.put("name", name == null ? "" : name);
         row.put("rssi", result.getRssi());
+        // The address is displayed locally to identify unnamed watches; diagnostics omit it.
+        row.put("displayAddress", address != null && address.matches("(?i)([0-9a-f]{2}:){5}[0-9a-f]{2}") ? address : "");
         JSArray advertised = new JSArray(), manufacturers = new JSArray();
         if (record != null) {
             List<ParcelUuid> uuids = record.getServiceUuids();
