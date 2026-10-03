@@ -112,13 +112,14 @@ html body #app main.tp107-fit-health .tp5-today-value{grid-column:1/-1;line-heig
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact){gap:3px!important}
 }
 @media(max-width:340px) and (max-height:800px){
+ html body #app main.tp107-fit-home:not(.tp-home-draft-compact)>.hero{padding:7px 10px!important}
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp155-home-active-grid{grid-template-columns:1fr!important;gap:4px!important}
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp155-home-program-left{display:flex;align-items:center;gap:5px}
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp155-home-program-left h1{font-size:16px!important;margin:0!important}
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp155-home-program-left .badge{font-size:9px!important;padding:3px 5px!important;margin:0!important;white-space:nowrap}
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp155-home-program-right{border:0!important;padding:0!important}
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp146-next{display:flex!important;flex-direction:row!important;flex-wrap:wrap;align-items:center;gap:4px!important}
- html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp146-next-title{margin:0!important}
+ html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp146-next-title{font-size:14px!important;margin:0!important}
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp146-next .small{font-size:10px!important}
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf223Today .tp5-today-metric.stat{height:42px!important;min-height:42px!important}
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard{padding:5px 9px!important}
