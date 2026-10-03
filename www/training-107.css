@@ -1,6 +1,6 @@
 /* Fixed overview pages; expanded Health and Calendar detail regions remain accessible. */
 html.tp107-fixed-view,body.tp107-fixed-view{height:100dvh;overflow:hidden;overscroll-behavior:none}
-html body #app main.tp107-fit-home,html body #app main.tp107-fit-health{margin:0!important;padding:8px 12px max(8px,env(safe-area-inset-bottom,0px))!important;gap:7px!important;max-height:calc(100dvh - var(--tp107-nav-height,132px));box-sizing:border-box;animation:none!important;transform:none!important}
+html body #app main.tp107-fit-home,html body #app main.tp107-fit-health{margin:0!important;padding:8px 12px max(12px,env(safe-area-inset-bottom,0px))!important;gap:7px!important;max-height:calc(100dvh - var(--tp107-nav-height,132px));box-sizing:border-box;animation:none!important;transform:none!important}
 html body #app main.tp107-fit-home>.card,html body #app main.tp107-fit-home>.hero,html body #app main.tp107-fit-health>.card{margin:0!important}
 html body #app main.tp107-fit-home:not(.tp-home-draft-compact)>.onboarding{padding:8px 10px!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto;column-gap:8px;row-gap:2px}
 html body #app main.tp107-fit-home:not(.tp-home-draft-compact)>.onboarding h2{font-size:16px!important;line-height:1.15!important;margin:0!important}
@@ -113,3 +113,5 @@ html body #app main.tp107-fit-health .tp5-today-value{grid-column:1/-1;line-heig
 
 @media(max-height:800px){html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp155-home-program-left h1{font-size:18px!important}}
 @media(max-width:340px){html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp155-home-program-right .tp146-next-title{font-size:16px!important}}
+
+@media(max-height:800px){html body #app main.tp107-fit-home,html body #app main.tp107-fit-health{padding-bottom:max(4px,env(safe-area-inset-bottom,0px))!important}}
