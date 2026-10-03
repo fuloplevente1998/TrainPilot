@@ -112,3 +112,4 @@ html body #app main.tp107-fit-health .tp5-today-value{grid-column:1/-1;line-heig
 }
 
 @media(max-height:800px){html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp155-home-program-left h1{font-size:18px!important}}
+@media(max-width:340px){html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp155-home-program-right .tp146-next-title{font-size:16px!important}}
