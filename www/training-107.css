@@ -147,3 +147,13 @@ html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .rf2211-pl
 
 /* Keep the rounded top border below the navigation; size the frame to its content. */
 html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar{padding-top:6px!important}
+
+/* #97: statistics are a Journal destination, with lazily rendered sections. */
+html body #app main.tp107-statistics{padding:12px 12px 24px!important;min-width:0}
+html body #app .tp107-statistics-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:12px 0}
+html body #app .tp107-statistics-tabs button{min-width:0;min-height:44px;padding:8px 5px;font-size:clamp(11px,3vw,14px);white-space:normal;line-height:1.2}
+html body #app .tp107-statistics-tabs button.active{border-color:var(--accent)!important;background:color-mix(in srgb,var(--accent) 18%,var(--card))!important;color:var(--text)!important}
+html body #app .tp107-statistics :is(.tp107-cardio,.tp107-personal-records){padding:0!important;margin:0!important;min-width:0}
+html body #app .tp107-statistics :is(.tp107-cardio,.tp107-personal-records)>h2{font-size:20px;line-height:1.25;margin:12px 0}
+html body #app .tp107-personal-records>.card{margin:0!important;padding:10px!important}
+html body #app .tp107-personal-records>.card>p:first-child{margin:0 0 10px}

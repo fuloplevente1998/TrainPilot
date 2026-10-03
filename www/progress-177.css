@@ -64,6 +64,12 @@ html body #app .tp177-periods button.active{
  border-color:var(--accent);font-weight:850
 }
 html body #app .tp177-volume-panel .tp177-summary-head{flex-direction:column;align-items:flex-start;margin:0;gap:6px;padding-right:14px}
+/* Compact mode keeps comparison above the chart, beside the total. */
+html body #app .tp177-volume-panel:not(.tp177-volume-expanded){grid-template-columns:minmax(0,46%) minmax(0,54%);grid-template-rows:auto auto}
+html body #app .tp177-volume-panel:not(.tp177-volume-expanded) .tp177-volume-toggle{grid-column:1 / -1}
+html body #app .tp177-volume-panel:not(.tp177-volume-expanded) .tp177-summary-head{flex-direction:row;align-items:flex-start;gap:8px}
+html body #app .tp177-volume-panel:not(.tp177-volume-expanded) .tp177-hero-change{align-items:flex-end;text-align:right;max-width:43%;padding-top:12px}
+html body #app .tp177-volume-panel:not(.tp177-volume-expanded) #tp177VolumeChart{grid-row:2}
 html body #app .tp177-volume-panel .tp177-summary-value{gap:2px;width:100%}
 html body #app .tp177-volume-panel .tp177-summary-value>.tp177-small:last-child{font-size:10px;line-height:1.25}
 html body #app .tp177-volume-panel .tp177-big{font-size:clamp(22px,6vw,30px)}

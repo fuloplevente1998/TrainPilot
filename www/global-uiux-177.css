@@ -53,6 +53,7 @@ html body :is(#app,#tp155R4PanelHost) :is(
    Exactly one main hero per view (Health Today, Coach Today, Home active,
    Plan active or quick start, current Workout head). */
 html body #app main.rf221-home>.hero.tp155-home-active-card,
+html body #app main.rf221-home>#rf220CoachCard.tp166-home-coach,
 html body #app main.tp152-plan>.tp152-active-program,
 html body #app main.tp152-plan>.tp150-quick-entry:first-child:not(:has(~ .tp152-active-program)),
 html body #app main.tp153-workout .tp153-workout-head,
@@ -67,6 +68,7 @@ html body #tp155R4PanelHost[data-panel="coach"] .tp151-coach-recommendation{
 }
 /* Vivid/neon ONLY; basic themes never get glow. */
 html[data-tp-theme-family="vivid"] body #app main.rf221-home>.hero.tp155-home-active-card,
+html[data-tp-theme-family="vivid"] body #app main.rf221-home>#rf220CoachCard.tp166-home-coach,
 html[data-tp-theme-family="vivid"] body #app main.tp152-plan>.tp152-active-program,
 html[data-tp-theme-family="vivid"] body #app main.tp152-plan>.tp150-quick-entry:first-child:not(:has(~ .tp152-active-program)),
 html[data-tp-theme-family="vivid"] body #app main.tp153-workout .tp153-workout-head,

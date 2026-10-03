@@ -37,7 +37,7 @@ const listen=()=>new Promise(r=>server.listen(0,'127.0.0.1',r)),base=()=>'http:/
  // #67: the Journal now has Log and Progress; the duplicate Statistics tab is removed.
  await page.evaluate(()=>go('history'));await page.waitForTimeout(60);
  const journalTabs=page.locator('.tp155-journal-tabs');assert.equal(await journalTabs.count(),1,'Journal tabs must remain');
- assert.equal(await journalTabs.locator('button').count(),2,'Journal shows only the two canonical tabs');
+ assert.equal(await journalTabs.locator('button').count(),3,'Journal shows only the three Journal tabs');
  assert.match((await journalTabs.innerText()).replace(/\s+/g,' '),/Edzésnapló.*Fejlődés/);
  assert.doesNotMatch(await journalTabs.innerText(),/Statisztikák/);
 

@@ -25,7 +25,7 @@ assert.equal(result.exerciseSessionCount,3,'deleted and nearby stale TrainPilot 
 assert.equal(result.exerciseMinutes,40,'minutes must be recomputed from visible sessions');
 assert.deepEqual(Array.from(result.exerciseSessions,s=>s.clientRecordId||s.source),['trainpilot:tpw_kept','com.repforge.app','com.samsung.android.wearable']);
 run("go('settings')");
-assert.match(html,/class="tp162-theme-dropdown"/,'theme chooser must render inline in Settings');
+assert.match(html,/class="tp-select tp162-theme-dropdown /,'theme chooser must render inline in Settings');
 assert.doesNotMatch(html,/onclick="tp155OpenThemePicker\(\)"/,'theme chooser must not open a modal');
 const java=fs.readFileSync('android/app/src/main/java/com/repforge/app/HealthBridgePlugin.java','utf8');
 assert.ok(java.includes('x.put("clientRecordId",r.getMetadata().getClientRecordId())'));

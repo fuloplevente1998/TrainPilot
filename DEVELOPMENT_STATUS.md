@@ -18,7 +18,7 @@ Last updated: **2026-10-03 (Europe/Budapest)**. Earlier Phase 5–7 history rema
 Release details: [v1.0.6 notes](docs/releases/v1.0.6.md), [implementation and phone checks](docs/CUSTOM_EXERCISE_DISTANCE_1_0_6.md).
 
 
-## Candidate 1.0.7 / 2694 — consolidation, program editing and cardio
+## Candidate 1.0.7 / 2695 — consolidation, program editing and cardio
 
 User-authorized first cleanup step on `fix/backup-gps-consolidation`, based on post-merge-validated main `ef09c5ee44b61902a7bb265f8ef2b3d2ea8de88e` (public 1.0.6 app source verified against its APK).
 
@@ -35,7 +35,9 @@ User-authorized first cleanup step on `fix/backup-gps-consolidation`, based on p
 - Local Node: 117 passed; the new behavioral Chromium checks cover four languages and 320/360/393/412 px sizes, actual Save/start flows, timer reload/pause/delete/finish and cardio records. Full UI, performance and signed Android gates run for the final candidate.
 - **Candidate only: no physical-phone acceptance or merge approval yet.** Public release remains 1.0.6. Deliver the signed APK, run the phone checks, and obtain explicit acceptance before main merge.
 
-Implementation and phone checklists: [backup/GPS consolidation](docs/BACKUP_GPS_CONSOLIDATION_1_0_7.md), [program editing and cardio](docs/TRAINING_CARDIO_1_0_7.md). Version code 2694 upgrades public 2690 and earlier 2691/2692/2693 test candidates.
+- Phone feedback on 2694 is recorded before implementation as [#95](https://github.com/fuloplevente1998/TrainPilot/issues/95), [#96](https://github.com/fuloplevente1998/TrainPilot/issues/96), [#97](https://github.com/fuloplevente1998/TrainPilot/issues/97), [#98](https://github.com/fuloplevente1998/TrainPilot/issues/98). Candidate 2695 builds directly on 2694: matching Home Coach frame, upper-right compact Progress comparison, a Journal Statistics destination with Personal records/Cardio sections, and shared Language/Theme dropdown animation. These reports are not acceptance to merge.
+
+Implementation and phone checklists: [backup/GPS consolidation](docs/BACKUP_GPS_CONSOLIDATION_1_0_7.md), [program editing and cardio](docs/TRAINING_CARDIO_1_0_7.md). Version code 2695 upgrades public 2690 and earlier 2691/2692/2693/2694 test candidates.
 
 ## Phase 5–7 acceptance boundaries
 

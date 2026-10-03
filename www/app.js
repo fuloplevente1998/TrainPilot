@@ -4435,7 +4435,7 @@ var rf260FriendlyHealthSource = function rf260FriendlyHealthSource(pkg,label='')
  return l||p||'Health Connect';
 };
 var rf260CloseSelects = function rf260CloseSelects(except=null){
- const all=document.querySelectorAll?.('.tp-select.open')||[];all.forEach(w=>{if(w===except)return;w.classList.remove('open');w.querySelector?.('.tp-select-trigger')?.setAttribute?.('aria-expanded','false')});
+ const all=document.querySelectorAll?.('.tp-select.open')||[];all.forEach(w=>{if(w===except)return;w.classList.remove('open');if(w.classList.contains('tp162-theme-dropdown'))state.tp162ThemeOpen=false;w.querySelector?.('.tp-select-trigger')?.setAttribute?.('aria-expanded','false')});
 };
 var rf260VisualViewport = function rf260VisualViewport(){
  const vv=window.visualViewport,vw=vv?.width||window.innerWidth||document.documentElement?.clientWidth||360,vh=vv?.height||window.innerHeight||document.documentElement?.clientHeight||640;
@@ -11651,8 +11651,6 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   if(type==='coach')return coachHtml();
   if(type==='quick')return typeof window.tp155QuickPanelHtml==='function'?window.tp155QuickPanelHtml():'';
   if(type==='exercises')return typeof window.tp155ExercisePanelHtml==='function'?window.tp155ExercisePanelHtml():'';
-  if(type==='cardio')return tp107CardioHtml();
-  if(type==='stats')return typeof window.tp67FullStatsPanelHtml==='function'?window.tp67FullStatsPanelHtml():'';
   if(type==='custom-exercise')return typeof window.tp106CustomExercisePanelHtml==='function'?window.tp106CustomExercisePanelHtml():'';
   if(type==='custom-program')return typeof window.tp106CustomProgramPanelHtml==='function'?window.tp106CustomProgramPanelHtml():'';
   return '';
@@ -11686,6 +11684,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
 
  window.tp155R4ClosePanel=function(restoreFocus=true){
   if(!currentPanel&&!panelHost)return false;
+  window.tp162CloseThemeDropdown?.();
   const trigger=panelTrigger,restoreY=panelOpenScrollY;
   currentPanel='';panelTrigger=null;panelOpenScrollY=0;
   panelHost?.remove();panelHost=null;
@@ -12720,26 +12719,33 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   const basic=lang==='hu'?'Alap színek':tp1511T('basic'),vivid=lang==='hu'?'Élénk színek':tp1511T('vivid');
   return '<div class="tp155-theme-list tp162-theme-columns"><section class="tp162-theme-column"><div class="small muted tp155-theme-group">'+esc(basic)+'</div><div class="tp162-theme-options">'+themeOptions162(TP1511_BASIC)+'</div></section><section class="tp162-theme-column"><div class="small muted tp155-theme-group">'+esc(vivid)+'</div><div class="tp162-theme-options">'+themeOptions162(TP1511_VIVID)+'</div></section></div>';
  };
- window.tp162ThemeToggle=function(el){
-  state.tp162ThemeOpen=!!el?.open;
-  if(!el?.open)return;
+ window.tp162ThemeToggle=function(button){
+  const el=button.closest('.tp162-theme-dropdown'),open=!el.classList.contains('open');
+  rf260CloseSelects(el);el.classList.toggle('open',open);button.setAttribute('aria-expanded',String(open));
+  state.tp162ThemeOpen=open;
+  if(!open)return;
   requestAnimationFrame(function(){
-   const trigger=el.querySelector('summary'),menu=el.querySelector('.tp162-theme-columns');if(!trigger||!menu)return;
+   const trigger=el.querySelector('.tp-select-trigger'),menu=el.querySelector('.tp-select-menu');if(!trigger||!menu)return;
    const r=trigger.getBoundingClientRect(),vh=window.visualViewport?.height||window.innerHeight||720;
    const below=Math.max(0,vh-r.bottom-8),above=Math.max(0,r.top-8),openTop=below<220&&above>below,available=openTop?above:below;
    menu.dataset.placement=openTop?'top':'bottom';
    menu.style.setProperty('--tp162-theme-max-height',Math.max(120,Math.min(300,vh*.44,Math.max(120,available-8)))+'px');
   });
  };
+ window.tp162ThemeKeydown=function(ev){
+  const wrap=ev.target.closest('.tp162-theme-dropdown'),trigger=wrap.querySelector('.tp-select-trigger');
+  if(ev.key==='ArrowDown'&&!wrap.classList.contains('open')){ev.preventDefault();trigger.click();wrap.querySelector('.tp155-theme-option.active')?.focus()}
+ };
  window.tp162ChooseTheme=function(key){if(!RF200_THEMES[key])return;state.tp162ThemeOpen=false;rf200SetTheme(key)};
  rf200ThemePanel=function(){
   const key=rf200ThemeKey(),theme=RF200_THEMES[key];
-  return '<div class="setting tp1511-card tp155-theme-setting tp162-theme-setting"><div class="tp1511-head"><b>◐</b><div><strong>'+esc(tp152T('theme'))+'</strong><p class="small muted">'+esc(tp1511T('themeHelp'))+'</p></div></div><details class="tp162-theme-dropdown" '+(state.tp162ThemeOpen?'open':'')+' ontoggle="tp162ThemeToggle(this)"><summary class="btn secondary block tp155-theme-open"><span class="tp155-theme-swatch" style="background:'+esc(theme.accent)+'"></span><span>'+esc(tp1511ThemeName(key))+'</span><i aria-hidden="true">⌄</i></summary>'+window.tp162ThemeDropdownHtml()+'</details></div>';
+  return '<div class="setting tp1511-card tp155-theme-setting tp162-theme-setting"><div class="tp1511-head"><b>◐</b><div><strong>'+esc(tp152T('theme'))+'</strong><p class="small muted">'+esc(tp1511T('themeHelp'))+'</p></div></div><div class="tp-select tp162-theme-dropdown '+(state.tp162ThemeOpen?'open':'')+'"><button type="button" class="tp-select-trigger tp155-theme-open" aria-expanded="'+!!state.tp162ThemeOpen+'" aria-controls="tp162ThemeMenu" onkeydown="tp162ThemeKeydown(event)" onclick="event.stopPropagation();tp162ThemeToggle(this)"><span class="tp-select-value"><span class="tp155-theme-swatch" style="background:'+esc(theme.accent)+'"></span><span>'+esc(tp1511ThemeName(key))+'</span></span></button><div id="tp162ThemeMenu" class="tp-select-menu" role="group" aria-label="'+esc(tp152T('theme'))+'">'+window.tp162ThemeDropdownHtml()+'</div></div></div>';
  };
  window.tp162CloseThemeDropdown=function(){
-  const d=document.querySelector('.tp162-theme-dropdown[open]');if(!d)return false;d.open=false;state.tp162ThemeOpen=false;return true;
+  const d=document.querySelector('.tp162-theme-dropdown');if(!d?.classList.contains('open'))return false;d.classList.remove('open');d.querySelector('button').setAttribute('aria-expanded','false');state.tp162ThemeOpen=false;return true;
  };
- document.addEventListener('click',function(ev){const d=document.querySelector('.tp162-theme-dropdown[open]');if(d&&!d.contains(ev.target)){d.open=false;state.tp162ThemeOpen=false}});
+ document.addEventListener('click',function(ev){const d=document.querySelector('.tp162-theme-dropdown');if(d&&!d.contains(ev.target)){tp162CloseThemeDropdown();state.tp162ThemeOpen=false}});
+ document.addEventListener('keydown',function(ev){if(ev.key==='Escape'&&tp162CloseThemeDropdown()){document.querySelector('.tp162-theme-dropdown .tp-select-trigger')?.focus();ev.preventDefault()}});
  if(typeof window.TrainPilotAndroidBack==='function'){
   const tp162AndroidBackBase=window.TrainPilotAndroidBack;
   window.TrainPilotAndroidBack=function(){if(tp162CloseThemeDropdown())return true;return tp162AndroidBackBase.apply(this,arguments)};
@@ -12763,9 +12769,8 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   'main.rf221-home>.onboarding{padding:6px 11px 9px!important;gap:5px!important}',
   'main.rf221-home>.onboarding h2{margin:0!important}',
   'main.rf221-home>.onboarding p{margin:0!important}',
-  '.tp162-theme-setting{overflow:visible!important}.tp162-theme-dropdown{position:relative;margin-top:8px;z-index:21}.tp162-theme-dropdown>summary{list-style:none;margin:0!important}.tp162-theme-dropdown>summary::-webkit-details-marker{display:none}.tp162-theme-dropdown[open] .tp155-theme-open{border-color:var(--accent)!important;box-shadow:0 0 0 2px rgba(var(--accent-rgb),.18)!important}.tp162-theme-dropdown[open] .tp155-theme-open i{transform:rotate(180deg)}',
-  '.tp162-theme-columns{position:absolute!important;left:0!important;right:0!important;top:calc(100% + 4px)!important;z-index:10000!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;max-height:var(--tp162-theme-max-height,min(300px,44dvh))!important;overflow-y:auto!important;overflow-x:hidden!important;padding:8px!important;background:var(--tp-popover,var(--card))!important;border:1px solid rgba(var(--accent-rgb),.42)!important;border-radius:14px!important;box-shadow:0 18px 46px #000c!important;overscroll-behavior:contain!important}',
-  '.tp162-theme-columns[data-placement="top"]{top:auto!important;bottom:calc(100% + 4px)!important}',
+  '.tp162-theme-setting{overflow:visible!important}.tp162-theme-dropdown{position:relative;margin-top:8px;z-index:21}.tp162-theme-dropdown .tp-select-value{display:flex;align-items:center;gap:8px}.tp162-theme-dropdown.open .tp155-theme-open{border-color:var(--accent)!important;box-shadow:0 0 0 2px rgba(var(--accent-rgb),.18)!important}',
+  '.tp162-theme-dropdown>.tp-select-menu{position:absolute!important;left:0!important;right:0!important;top:calc(100% + 4px)!important;width:100%!important;max-height:var(--tp162-theme-max-height,min(300px,44dvh))!important;overflow-y:auto!important;overflow-x:hidden!important;padding:8px!important}.tp162-theme-dropdown>.tp-select-menu[data-placement="top"]{top:auto!important;bottom:calc(100% + 4px)!important}.tp162-theme-columns{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;padding:0!important}',
   '.tp162-theme-column{min-width:0;border:1px solid var(--line);border-radius:12px;background:var(--card2);padding:7px}',
   '.tp162-theme-column .tp155-theme-group{margin:0 0 6px!important;padding:0 2px!important;font-size:12px!important;font-weight:800!important}',
   '.tp162-theme-options{display:grid;gap:5px}',
@@ -13473,8 +13478,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
    stats:'<path d="M3 20h18"/><rect x="5" y="12" width="3" height="8" rx=".5"/><rect x="10.5" y="8" width="3" height="12" rx=".5"/><rect x="16" y="4" width="3" height="16" rx=".5"/>',
    progress:'<path d="M3 17l6-6 4 3 8-9"/><path d="M16 5h5v5"/>'
   };
-  const entries=[['log',tr('log'),"go('history')"],['stats',tr('stats'),"tp155OpenJournalStats()"],
-   ['progress',tr('progress'),"tp177OpenProgress()"]];
+  const entries=[['log',tr('log'),"go('history')"],['progress',tr('progress'),"tp177OpenProgress()"],
+   ['stats',tr('stats'),"tp177OpenStatistics()"]];
   return '<nav class="tp155-journal-tabs tp177-journal-tabs" role="tablist" aria-label="'+escapeHtml(tr('log'))+'">'+
    entries.map(x=>'<button type="button" role="tab" aria-selected="'+(active===x[0]?'true':'false')+'" class="'+(active===x[0]?'active':'')+'" onclick="'+x[2]+'"><svg class="tp177-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'+icons[x[0]]+'</svg><span>'+escapeHtml(x[1])+'</span></button>').join('')+'</nav>';
  }
@@ -13724,6 +13729,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  const journalBase=historyScreen;
  historyScreen=function(){
   if(state.tp177JournalView==='progress')return shell(progressHtml());
+  if(state.tp177JournalView==='stats')return shell(tp107StatisticsHtml(tabs('stats')));
   return replaceTabs(journalBase.apply(this,arguments),'log');
  };
  const statsBase=window.tp155OpenJournalStats;
@@ -13749,6 +13755,12 @@ window.addEventListener?.('DOMContentLoaded',function(){
  window.TrainPilotNavigate=go;
  window.tp177OpenProgress=function(){
   openingProgress=true;state.tp177JournalView='progress';
+  try{return go('history')}finally{openingProgress=false}
+ };
+ window.tp177OpenStatistics=function(section){
+  window.tp155R4ClosePanel?.(false);
+  if(section==='records'||section==='cardio')state.tp107StatsSection=section;
+  openingProgress=true;state.tp177JournalView='stats';
   try{return go('history')}finally{openingProgress=false}
  };
  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.getElementById('tp177Dialog'))window.tp177BackDialog()});
@@ -13795,13 +13807,6 @@ rf263HealthHub=function(){
  const lang=()=>typeof rf212Lang==='function'?rf212Lang():'hu';
  const copy=()=>Object.assign({},labels.hu,labels[lang()]||{});
  const locale=()=>({hu:'hu-HU',en:'en-US',de:'de-DE',ro:'ro-RO',sk:'sk-SK',pl:'pl-PL'}[lang()]||'hu-HU');
- const stripStats=html=>String(html).replace(/(<nav\b[^>]*class="[^"]*\btp155-journal-tabs\b[^"]*"[^>]*>)([\s\S]*?)(<\/nav>)/gi,
-  (all,head,inside,tail)=>head+inside.replace(/<button\b[^>]*onclick="tp155OpenJournalStats\(\)"[\s\S]*?<\/button>/gi,'')+tail);
- function removeLegacyTab(root){
-  root?.querySelectorAll?.('.tp155-journal-tabs button').forEach(button=>{
-   if((button.getAttribute('onclick')||'').includes('tp155OpenJournalStats()'))button.remove();
-  });
- }
  function updateAllTimePr(){
   const panel=document.querySelector('#tp177MetricDetails'),trigger=document.querySelector('.tp177-metric[data-metric="pr"][aria-expanded="true"]');
   if(!panel||panel.hidden||!trigger||!window.TrainPilot177Model||typeof history!=='function')return;
@@ -13824,27 +13829,8 @@ rf263HealthHub=function(){
   }
   panel.appendChild(list);
  }
- // #67 follow-up: retain the full per-exercise Statistics view as a detail of Progress.
- function decorateProgress(root){
-  if(!root||root.querySelector('.tp67-full-stats-entry'))return;
-  const anchor=root.querySelector('#tp177MetricDetails');
-  if(!anchor)return;
-  const button=document.createElement('button');
-  button.type='button';button.className='btn secondary block tp67-full-stats-entry';
-  button.textContent=copy().fullStats+' ›';
-  button.addEventListener('click',()=>window.tp67OpenFullStats(button));
-  anchor.insertAdjacentElement('afterend',button);
- }
- window.tp67FullStatsPanelHtml=function(){
-  // The same full per-exercise statistics renderer used by the former Journal page.
-  const report=typeof rf220ProgressHtml==='function'?rf220ProgressHtml():'';
-  return '<main class="tp67-full-stats-panel"><header class="tp67-stats-heading"><h2>'+esc(copy().fullStats)+'</h2></header>'+report+'</main>';
- };
- window.tp67OpenFullStats=function(trigger){
-  // The shared popup supplies the global red X, backdrop and Android Back.
-  if(!document.querySelector('#app main.tp177-progress'))return false;
-  return !!window.tp155R4OpenPanel?.('stats',trigger||document.activeElement);
- };
+ // Legacy entry points share the current Journal statistics route.
+ window.tp67OpenFullStats=function(){return window.tp177OpenStatistics('records')};
  function decorateCoach(root){
   if(!root||root.querySelector('.tp67-coach-progress'))return;
   // Phase 7 renders a deferred placeholder before the old statistics card hydrates.
@@ -13864,20 +13850,20 @@ rf263HealthHub=function(){
  }
  window.addEventListener?.('DOMContentLoaded',()=>{
   if(typeof historyScreen!=='function'||typeof render!=='function'||!window.TrainPilot177Progress)return;
-  const oldHistory=historyScreen;
-  historyScreen=function(){return stripStats(oldHistory.apply(this,arguments))};
+  window.tp155OpenJournalStats=function(){return window.tp177OpenStatistics('records')};
+  window.tp2627OpenStats=window.tp155OpenJournalStats;
   const oldRender=render;
   render=function(){
    const result=oldRender.apply(this,arguments),main=document.querySelector('#app main');
-   removeLegacyTab(main);
    if(main?.matches('main.tp151-coach'))decorateCoach(main);
-   if(main?.matches('main.tp177-progress')){updateAllTimePr();decorateProgress(main)}
+   if(main?.matches('main.tp177-progress'))updateAllTimePr();
    return result;
   };
   window.render=render;
   const oldGo=go;
   go=function(route){
-   if(route==='stats'||route==='progress')return window.tp177OpenProgress();
+   if(route==='stats')return window.tp177OpenStatistics();
+   if(route==='progress')return window.tp177OpenProgress();
    return oldGo.apply(this,arguments);
   };
   window.TrainPilotNavigate=go;
@@ -13896,7 +13882,7 @@ rf263HealthHub=function(){
     return result;
    };
   }
-  window.TrainPilot67={version:'issue67-rc4',twoJournalTabs:true,allTimePr:true,fullStatsRestored:true,statsPopup:true,coachDeepLink:true,themedCheckboxes:true};
+  window.TrainPilot67={version:'issue67-2695',threeJournalTabs:true,allTimePr:true,fullStatsRestored:true,statsPage:true,coachDeepLink:true,themedCheckboxes:true};
  });
 })();
 
@@ -14644,8 +14630,21 @@ var tp107DistanceStats=function(id,entries){
 var tp107CardioSummary=function(s){return tp107T('distance')+': '+tp106Km(s.cardio.totals.meters)+' km';};
 var tp107CardioDetail=function(s){return '<div class="stat"><small>'+esc(tp107T('distance'))+'</small><strong>'+esc(tp106Km(s.cardio.totals.meters))+' km</strong></div><div class="stat"><small>'+esc(tp107T('pace'))+'</small><strong>'+esc(tp107FormatPace(s.cardio.totals.pace))+'</strong></div><div class="stat"><small>'+esc(tp107T('duration'))+'</small><strong>'+esc(rf110FormatStopwatch(s.cardio.totals.seconds))+'</strong></div><button type="button" class="btn secondary" onclick="tp107OpenCardio()">'+esc(tp107T('records'))+'</button>';};
 var tp107CardioActivity='';
-var tp107OpenCardio=function(){return window.tp155R4OpenPanel?.('cardio',document.activeElement);};
-var tp107ChangeCardio=function(input){tp107CardioActivity=input.value;window.tp155R4RefreshPanel();};
+var tp107OpenCardio=function(){return window.tp177OpenStatistics('cardio');};
+var tp107ChangeCardio=function(input){tp107CardioActivity=input.value;render();};
+var tp107StatsLabels={hu:{records:'Személyes rekordok',stats:'Statisztikák'},en:{records:'Personal records',stats:'Statistics'},de:{records:'Persönliche Rekorde',stats:'Statistiken'},ro:{records:'Recorduri personale',stats:'Statistici'}};
+var tp107SelectStats=function(section){if(section!=='records'&&section!=='cardio')return;state.tp107StatsSection=section;render();};
+var tp107StatisticsHtml=function(tabs){
+ const labels=tp107StatsLabels[rf212Lang()]||tp107StatsLabels.hu,section=state.tp107StatsSection==='cardio'?'cardio':'records';
+ let content;
+ if(section==='cardio')content=tp107CardioHtml().replace('<main class="tp107-cardio">','<section class="tp107-cardio">').replace('</main>','</section>');
+ else{
+  const template=document.createElement('template');template.innerHTML=rf220ProgressHtml();
+  const card=template.content.querySelector('.card');card?.querySelector(':scope > h2')?.remove();
+  content='<section class="tp107-personal-records"><h2>'+esc(labels.records)+'</h2>'+template.innerHTML+'</section>';
+ }
+ return '<main class="tp107-statistics">'+tabs+'<nav class="tp107-statistics-tabs" role="tablist" aria-label="'+esc(labels.stats)+'">'+['records','cardio'].map(function(key){return '<button type="button" role="tab" aria-selected="'+(section===key)+'" class="btn secondary '+(section===key?'active':'')+'" onclick="tp107SelectStats(\''+key+'\')">'+esc(key==='records'?labels.records:tp107T('cardio'))+'</button>';}).join('')+'</nav>'+content+'</main>';
+};
 var tp107CardioHtml=function(){
  const all=history(),m=tp107CardioModel(all,new Date(),tp107CardioActivity),ids=[...new Set(all.flatMap(function(h){return (h.exercises||[]).filter(tp106IsDistance).map(function(e){return e.id;});}))];
  const metric=function(label,value){return '<div class="stat"><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong></div>';};
@@ -14714,7 +14713,6 @@ var tp107FitViews=function(){
  const fixed=!!home||!!health&&!expanded;document.documentElement.classList.toggle('tp107-fixed-view',fixed);document.body.classList.toggle('tp107-fixed-view',fixed);
  const nav=document.querySelector('.top');if(nav)document.documentElement.style.setProperty('--tp107-nav-height',Math.ceil(nav.getBoundingClientRect().bottom)+'px');
  const panelHost=document.getElementById('tp155R4PanelHost');panelHost?.classList.toggle('tp107-fit-calendar',panelHost.dataset.panel==='calendar');
- const progress=document.querySelector('main.tp177-progress');if(progress&&!progress.querySelector('.tp107-cardio-entry')){const button=document.createElement('button');button.type='button';button.className='btn secondary block tp107-cardio-entry';button.textContent=tp107T('cardio');button.onclick=tp107OpenCardio;progress.querySelector('.tp67-full-stats-entry')?.after(button);}
 };
 window.addEventListener?.('DOMContentLoaded',function(){
  const renderBase=render;render=function(){const result=renderBase.apply(this,arguments);tp107FitViews();return result;};
