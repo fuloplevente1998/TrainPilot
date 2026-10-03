@@ -2,7 +2,15 @@
 
 Last updated: **2026-10-03 (Europe/Budapest)**. Earlier Phase 5–7 history remains below; it is historical. See [docs/PHASE_5_6_7_ROADMAP.md](docs/PHASE_5_6_7_ROADMAP.md) and the permanent [performance regression policy](docs/PERFORMANCE_REGRESSION_POLICY.md).
 
-## TrainPilot 1.0.8 / 2696 — theme dropdown scroll fix (#99)
+## TrainPilot 1.0.9 / 2697 — minimal page design polish (#101)
+
+- Phone screenshots and feedback are recorded in [#101](https://github.com/fuloplevente1998/TrainPilot/issues/101). The requested scope is consistent main-page width, the existing Coach-reference faint 1px frame, stable Journal tab position and shared Progress detail arrows.
+- One scoped stylesheet gives root pages the existing Coach/Calendar/Settings outer width, content gutters and themed neutral border. Existing floating panels retain their layout; fixed workout controls follow the same content lane. Journal Log/Progress/Statistics share the same top padding; the root entrance animation fades without translating the frame.
+- Progress arrows use the shared theme-aware chevron. Lazily inserted metric detail rows are decorated locally when opened; disclosure arrows rotate right/down. Compact metric/volume controls keep a smaller footprint. Narrow, short Home/Health pages recover a few pixels from inter-card gaps so translated summaries remain fully visible.
+- Regression coverage compares all main frames/gutters with the Coach reference, checks all three Journal tab positions immediately and after animation, and checks shared chevrons opening/closing across four phone sizes, four languages and matte/vivid themes. The full UI suite now has 56 scripts. Existing fixed-view, editor/cardio, global styling and #99 scrolling regressions remain required.
+- VersionName **1.0.9**, versionCode **2697**, existing app ID/data/signer. The performance baseline and budgets are unchanged. [Release notes](docs/releases/v1.0.9.md). No physical-phone acceptance is claimed for this new polish.
+
+## Previous release — TrainPilot 1.0.8 / 2696, theme dropdown scroll fix (#99)
 
 - The user reported that the published 1.0.7 theme dropdown opens but cannot scroll to the remaining colours. Recorded before implementation as [#99](https://github.com/fuloplevente1998/TrainPilot/issues/99).
 - Reproduced in Chromium: the outer menu has overflowing content, but the legacy inner palette list creates a non-overflowing scroll container with `overscroll-behavior: contain`, blocking the gesture from reaching its parent. The inline two-column palette now allows overflow; the existing outer menu owns scrolling. The separate legacy modal keeps its own scrolling behaviour.

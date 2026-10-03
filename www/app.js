@@ -55,7 +55,7 @@ window.addEventListener('DOMContentLoaded',async function(){if(window.Capacitor?
 // @endsection startup.js
 
 // @section backup.js
-const TRAINPILOT_VERSION='1.0.8';
+const TRAINPILOT_VERSION='1.0.9';
 var isNative = function isNative(){return !!window.Capacitor?.isNativePlatform?.();};
 var nativeFiles = function nativeFiles(){if(!filesPlugin)filesPlugin=window.Capacitor?.registerPlugin?.('NativeFiles')||window.Capacitor?.Plugins?.NativeFiles;if(!filesPlugin)throw Error('A natív fájlkezelő nem érhető el.');return filesPlugin;};
 var backupStatus = function backupStatus(){const x=db.get('lastExport',null);return x?`Utolsó ellenőrzött mentés: ${x.name} • ${fmtDate(x.date)}`:'Még nincs ellenőrzött fájlmentés.';};
@@ -13590,6 +13590,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   openMetric=openMetric===key?null:key;
   const panel=document.getElementById('tp177MetricDetails');if(!panel)return;
   panel.innerHTML=openMetric?metricDetails(openMetric,snapshot()):'';
+  window.tpGlobalApplyChevrons?.(panel);
   panel.hidden=!openMetric;
   document.querySelectorAll('.tp177-metric[data-metric]').forEach(button=>button.setAttribute('aria-expanded',String(button.dataset.metric===openMetric)));
  };
