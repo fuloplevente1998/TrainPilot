@@ -10,6 +10,10 @@ html body #app main:not([hidden]):not([aria-hidden="true"]){
  box-shadow:0 16px 36px rgba(5,10,20,.14)!important;
  box-sizing:border-box;
 }
+/* Fixed workout controls follow the framed content lane at every width. */
+html body #app main.tp153-workout .tp16-workout-actions{
+ width:min(calc(760px - 2 * (var(--tp-page-gutter) + 1px)),calc(100vw - 2 * (var(--tp-page-inset) + var(--tp-page-gutter) + 1px)))!important;
+}
 /* A destination change never shifts the shared Journal tabs or its frame. */
 html body #app main:has(>.tp177-journal-tabs){padding-top:10px!important}
 html body #app main.tp160-page-reveal{animation-name:tp109PageFade!important}
