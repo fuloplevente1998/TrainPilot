@@ -42,6 +42,7 @@ const server=http.createServer((q,r)=>{const name=new URL(q.url,'http://local').
   await p.evaluate(()=>tp155R4OpenPanel('settings',document.activeElement));
   const language=p.locator('.tp155-language-direct .tp-select-trigger'),themeButton=p.locator('.tp162-theme-dropdown .tp-select-trigger');
   const arrow=async loc=>loc.evaluate(e=>{const c=getComputedStyle(e,'::after');return {clip:c.clipPath,width:c.width,height:c.height,transition:c.transitionDuration,transform:c.transform};});
+  assert.equal(await themeButton.evaluate(e=>getComputedStyle(e).display),await language.evaluate(e=>getComputedStyle(e).display),label+' selector layout keeps arrow at the trailing edge');
   assert.deepEqual(await arrow(themeButton),await arrow(language),label+' same closed selector arrow');
   await language.click();await p.waitForTimeout(180);const languageOpen=await arrow(language);
   const animation=await p.locator('.tp155-language-direct .tp-select-menu').evaluate(e=>({duration:getComputedStyle(e).transitionDuration,transform:getComputedStyle(e).transform,opacity:getComputedStyle(e).opacity}));
