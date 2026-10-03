@@ -88,14 +88,14 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  assert.equal(await photos.getAttribute('open'),null,'photo section must start collapsed');
  assert.match((await photos.locator('summary').innerText()).replace(/\s+/g,' '),/Edzésfotók.*2 fotó/,'photo summary must show count');
 
- await page.evaluate(()=>tp155OpenJournalStats());await page.waitForFunction(()=>state.tab==='stats');await page.waitForSelector('.tp3-stat-row');
+ await page.evaluate(()=>tp155OpenJournalStats());await page.waitForFunction(()=>state.tab==='history'&&state.tp177JournalView==='stats');await page.waitForSelector('.tp3-stat-row');
  assert.equal(await page.locator('button[onclick*="rf220Exercise"],[role="button"][onclick*="rf220Exercise"]').count(),0,'Statistics must not navigate to old separate exercise detail screen');
  const stat=page.locator('details.tp3-stat-row').first();assert.equal(await stat.getAttribute('open'),null);await stat.locator('summary').click();assert.notEqual(await stat.getAttribute('open'),null);
  const statChevron=stat.locator('.tp3-unified-chevron');const statStyle=await statChevron.evaluate(e=>{const s=getComputedStyle(e),b=getComputedStyle(e,'::before');return {border:s.borderTopWidth,color:b.color,size:b.fontSize,weight:b.fontWeight}});
  assert.equal(statStyle.border,'0px');assert.equal(statStyle.color,journalStyle.color);assert.equal(statStyle.size,journalStyle.size);assert.equal(statStyle.weight,journalStyle.weight);
  assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),true,'Android Back must consume open Statistics disclosure');
  assert.equal(await stat.getAttribute('open'),null,'Android Back must close inline Statistics details first');
- assert.equal(await page.evaluate(()=>state.tab),'stats','closing Statistics disclosure must not navigate to Coach or another route');
+ assert.equal(await page.evaluate(()=>state.tp177JournalView),'stats','closing Statistics disclosure must not navigate to Coach or another route');
 
  await page.evaluate(()=>go('home'));await page.waitForTimeout(120);
  const homeArrow=page.locator('.tp166-home-coach-chevron').first();assert.equal(await homeArrow.count(),1,'Home Mai javaslat reference chevron missing');
