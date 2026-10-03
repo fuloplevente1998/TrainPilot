@@ -18,7 +18,47 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  ui-tests:
+    name: Chromium UI (${{ matrix.shard }}/6)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Verify UI shard runner
+        run: node --test scripts/ui-runner.test.cjs
+      - name: Install Chromium
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Run full Chromium UI regression shard
+        run: npm run test:ui -- --shard ${{ matrix.shard }}/6
+      - name: Upload UI evidence and test timings
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: TrainPilot-ui-${{ github.run_id }}-shard-${{ matrix.shard }}
+          path: |
+            ui-evidence/*.png
+            ui-results/*.json
+          if-no-files-found: error
+          retention-days: 14
+
   release-gate:
+    needs: ui-tests
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -90,21 +130,6 @@ jobs:
 
       - name: Run TrainPilot regression suite
         run: npm test
-
-      - name: Install Chromium
-        run: npx --no-install playwright install --with-deps chromium
-
-      - name: Run full Chromium UI regression suite
-        run: npm run test:ui
-
-      - name: Upload custom exercise UI evidence
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: TrainPilot-custom-distance-ui-${{ github.run_id }}
-          path: ui-evidence/*.png
-          if-no-files-found: ignore
-          retention-days: 14
 
       - name: Stamp source commit
         run: node -e "const fs=require('fs'),s=require('./SOURCE_VERSION.json');s.sourceCommit=process.env.GITHUB_SHA;fs.writeFileSync('SOURCE_VERSION.json',JSON.stringify(s,null,2)+'\n')"

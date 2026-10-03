@@ -1,5 +1,13 @@
 # TrainPilot — Development Status
 
+## Chromium CI execution maintenance
+
+- Browser regression coverage is preserved in an explicit 56-script manifest on the latest approved main. Six deterministic, duration-balanced Actions jobs replace the sequential browser step; each owns its Chromium and artifacts. APK signing/publication waits for all six successful results.
+- Runner safety tests cover complete one-time assignment, malformed/missing entries and real CLI failure propagation. Per-test elapsed times and source commit are archived on success and failure. Local `npm run test:ui` remains a full sequential run.
+- The dropdown style regression waits for the actual transition to finish before comparing exact final styles; no production animation or assertion is weakened.
+- Baseline: 10 min 9 sec sequential browser time on main. Parallel elapsed time must be recorded from CI before a speedup is claimed. Application source/version and the separate performance guard are unchanged. See [execution details](docs/UI_TESTS.md).
+
+
 Last updated: **2026-10-03 (Europe/Budapest)**. Earlier Phase 5–7 history remains below; it is historical. See [docs/PHASE_5_6_7_ROADMAP.md](docs/PHASE_5_6_7_ROADMAP.md) and the permanent [performance regression policy](docs/PERFORMANCE_REGRESSION_POLICY.md).
 
 ## TrainPilot 1.0.9 / 2697 — minimal page design polish (#101)

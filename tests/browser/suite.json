@@ -1,0 +1,226 @@
+[
+  {
+    "file": "tests/browser/page-design-101.cjs",
+    "estimatedSeconds": 113
+  },
+  {
+    "file": "tests/browser/theme-dropdown-scroll-99.cjs",
+    "estimatedSeconds": 123
+  },
+  {
+    "file": "tests/browser/phone-ux-95-98.cjs",
+    "estimatedSeconds": 46
+  },
+  {
+    "file": "tests/browser/overview-layout-107.cjs",
+    "estimatedSeconds": 53
+  },
+  {
+    "file": "tests/browser/training-cardio-107.cjs",
+    "estimatedSeconds": 40
+  },
+  {
+    "file": "tests/browser/backup-gps-consolidation.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/custom-exercise-distance-106.cjs",
+    "estimatedSeconds": 20
+  },
+  {
+    "file": "tests/browser/home-draft-compact.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/progress-177-issue60.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/issue67-navigation-checkbox.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/global-uiux-177.cjs",
+    "estimatedSeconds": 45
+  },
+  {
+    "file": "tests/browser/nav-active-latency-176.cjs",
+    "estimatedSeconds": 17
+  },
+  {
+    "file": "tests/browser/journal-health-ui-followups-49-50.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/phase7-coach-deferred-progress-19.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/phase7-programs-lazy-19.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/phase7-history-snapshot-19.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/phase7-journal-lazy-19.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/phase7-performance-19.cjs",
+    "estimatedSeconds": 8
+  },
+  {
+    "file": "tests/browser/phase6-journal-media-health-42-43.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/phase5-shared-today-44.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/issue41-global-chevron.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/issue41-no-legacy-triangles.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/phase5-health-27.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/phase4-coach-17-21.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/phase3-journal-29-30.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/drive-sync-issue18.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/home-coach-startup-consistency.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/active-workout-issue16.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/demo-panel-issue15.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/health-dashboard-168.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/issues-22-24-167.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/home-coach-166-issue13.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/journal-open-164-regression.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-161-minor.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-160-release.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-155-next-12.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-155-nav-consistency.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-154-mobile-nav.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-152-ux.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-150-quick-workout.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/journal-date.cjs",
+    "estimatedSeconds": 38
+  },
+  {
+    "file": "tests/browser/progression-140.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/coach-entry-141.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/health-coach-ui-2627.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-health-dialogs-2628.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/dialog-audit-2629.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/inline-compact-2630.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-unify-dialogs-2630.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-148.cjs",
+    "estimatedSeconds": 11
+  },
+  {
+    "file": "tests/browser/ui-149-hotfix-parity.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/resume-draft-1481.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/side-stopwatch-1481.cjs",
+    "estimatedSeconds": 6
+  },
+  {
+    "file": "tests/browser/home-coach-overflow-1481.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-149-i18n.cjs",
+    "estimatedSeconds": 21
+  },
+  {
+    "file": "tests/browser/side-stopwatch-149-i18n.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/publication-105.cjs",
+    "estimatedSeconds": 10
+  }
+]

@@ -69,6 +69,8 @@ npm run test:ui
 npm run sync
 ```
 
+A teljes Chromium-tesztsor a CI-ban hat független részre oszlik; az APK csak mindegyik sikeres ellenőrzése után készül. [Futtatás, lefedettség és időmérés](docs/UI_TESTS.md).
+
 Részletek: [build és signing](docs/BUILD.md), [fejlesztési állapot](DEVELOPMENT_STATUS.md), [1.0.0 átállási terv](docs/REPOSITORY_MAINTENANCE_2026-09-26.md).
 
 ## Signing és titkok
