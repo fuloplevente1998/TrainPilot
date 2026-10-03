@@ -1,10 +1,10 @@
-# GT4Pro+ / RDFit Bluetooth investigation — 1.1.2 / 2700
+# GT4Pro+ / RDFit Bluetooth investigation — 1.1.3 / 2701
 
 This candidate adds a foreground Android BLE diagnostic client. The 1.1.0 / 2698 features remain included. Stable main remains 1.0.9 / 2697; neither candidate has physical-phone approval yet.
 
 ## Phone procedure
 
-1. Install the signed 2699 APK over the current app. Keep existing data; no uninstall or watch reset is needed.
+1. Install the signed 2701 APK over the current app. Keep existing data; no uninstall or watch reset is needed.
 2. Open **Settings → Bluetooth watch trial** (Hungarian: **Beállítások → Bluetooth-óra próba**).
 3. Enable phone Bluetooth, keep the watch nearby and allow Nearby devices. Android 11 or earlier also requires location permission/services for BLE scanning; the trial does not request GPS fixes.
 4. Tap **Scan for watches**. For unnamed devices, compare the locally displayed **MAC address** with RDFit device information, then select the matching GT4Pro+. Each result also has a stable per-scan number, signal strength and a protocol hint when an advertised service is recognized. Signal strength or a protocol hint alone is not device identity. Scan stops after 12 seconds; connection/service discovery times out after 20 seconds.
@@ -14,12 +14,33 @@ This candidate adds a foreground Android BLE diagnostic client. The 1.1.0 / 2698
 
 Leaving the trial, putting the app in the background or restarting stops scanning and closes the connection. Returning requires a new scan. Pulse disappears after ten seconds without a valid sample. Diagnostics remain exportable during the current app session after disconnect.
 
+## Physical GT4Pro+ result and next read trial
+
+The supplied **1.1.2 / 2700** phone report proves `connected`, GATT status **0**, name **GT4Pro+**, RSSI **−51 dBm** and seven GATT services. It advertises `0x0201`, not the default data-channel UUID, so a missing advertising protocol hint does not mean incompatibility. It exposes both the default RDFit MCU channel `6e40ab01/02/03` and the JieLi `ae00/01/02` channel. This identifies available interfaces, not a unique chipset. Standard Heart Rate Service `0x180D` is absent, so the standard pulse button correctly stays disabled.
+
+**1.1.3 / 2701** adds an explicit **RDFit data trial** after a supported connection. It enables notifications on `6e40ab03`, sends only the two traced read queries below to `6e40ab02`, and closes the connection on completion or after 20 seconds. Battery and today's step count appear only in the current trial view. They are cleared after background/navigation/restart and never added to Health Connect, Coach, history, backups or Drive. Diagnostics retain only bounded query/reply counts and success flags, not actual values or packets. Install, scan/select GT4Pro+, press **RDFit data trial**, compare with the watch, then save diagnostics even if the trial times out. No health-history import is included yet.
+
+The checked-in fixture `tests/fixtures/gt4pro-gatt.json` contains only the supplied service/property table; neighbouring devices and their metadata are excluded. The phone report is evidence of GATT discovery, **not** evidence of proprietary replies.
+
+### Traced transport facts
+
+Static inspection of RDFit 4.1.4 / 436 shows that `BleMcuHelper.send` always routes these MCU queries through the default `6e40ab02` writer, separately from its JieLi/OTA handler. Frames have header `ED`, flags, reserved `00`, an 8-bit payload CRC, a two-byte big-endian payload length, then the command payload. Request flags are `40`. CRC starts at `FF`, processes each payload byte least-significant bit first, and uses reflected polynomial `B8`. This is established by `RDMcuConstants.a` and the transport builder; no encryption or reset is added by this query builder.
+
+| Read operation | Source call | Complete request |
+|---|---|---|
+| Battery | `getBattery → send(04, 0B)` | `ED 40 00 33 00 02 04 0B` |
+| Today's steps | `getRealStep → send(0A, 0B)` | `ED 40 00 E7 00 02 0A 0B` |
+
+`RDMcuAnalysisUtils` dispatches `04/0B` to `NordicBatteryBean`: payload byte 2 is battery percent, byte 3 is state. It dispatches `0A/0B` to `NordicStepBean`: the following three unsigned, big-endian 32-bit fields are steps, calorie tenths and distance. This trial displays only steps; it does not infer a distance unit or import the watch's date. The original decoder accepts only CRC-valid, complete battery/step payload shapes, bounded values and supported flags, buffers notification fragments, and ignores other command types. It has no arbitrary-send API. Unit response vectors are **synthetic derivations**, clearly distinct from the physical service fixture.
+
+History uses separate `0A/01` selectors (steps/sleep/heart/sport: 1/2/3/4), chunk requests and next-sync actions in `RDMcuAnalysisUtils`. Its device-buffer side effects, dates, duplicates and actual firmware responses require verification before enabling import. The next dependency is a phone result from these two read queries.
+
 ## What the candidate does
 
 - Discovers up to 40 nearby BLE devices, with user-selected connection, bounded scan/connection/subscription timeouts and cleanup of cancelled/late callbacks.
 - Shows a MAC address only in the current local scan UI for exact comparison with RDFit; it is not persisted, logged or exported. Protocol hints are candidates inferred from advertised services, not verified GT4Pro+ identity.
-- Reads GATT service/characteristic identifiers and properties. Discovery sends no vendor commands, firmware updates, pairing resets or setting changes.
-- Optionally reads **Bluetooth SIG Heart Rate Service 0x180D / Measurement 0x2A37**. The only descriptor writes are the standard 0x2902 notification/indication enable values on that verified service after the user starts the reader. The parser handles unsigned 8/16-bit values, contact flags and optional energy/RR fields; malformed, zero and no-contact readings are rejected.
+- Reads GATT service/characteristic identifiers and properties. Discovery sends no vendor commands. The separately started RDFit trial sends only battery/current-step read queries; no firmware updates, pairing resets or setting changes are exposed.
+- Optionally reads **Bluetooth SIG Heart Rate Service 0x180D / Measurement 0x2A37**. The pulse reader writes the standard 0x2902 notification/indication enable values on that verified service after the user starts it. The separate RDFit trial enables only its verified notification descriptor before its two read queries. The parser handles unsigned 8/16-bit values, contact flags and optional energy/RR fields; malformed, zero and no-contact readings are rejected.
 - Displays live pulse only in the trial. It does not alter Health Connect, historical health records, training readiness, workout history, backups or Drive data.
 - Exports a locally verified JSON with service UUIDs, capabilities, manufacturer identifiers/payload lengths, scan numbers/signal strengths and connection status. Bluetooth addresses, opaque scan IDs, raw advertisement/characteristic bytes and actual pulse readings are omitted. No report is sent automatically to a server.
 
@@ -43,4 +64,4 @@ Sources: [manufacturer download page](https://abroad.rundefit.com/app.html), [RD
 
 ## Release checks
 
-Required: full Node and Chromium regressions, Android/JVM tests, signed APK verification, exact source/bundled asset comparison and unchanged performance budgets. Physical GT4Pro+ connection remains unverified until the phone trial. Merge requires phone approval under [the performance policy](PERFORMANCE_REGRESSION_POLICY.md).
+Required: full Node and Chromium regressions, Android/JVM tests, signed APK verification, exact source/bundled asset comparison and unchanged performance budgets. Physical GT4Pro+ connection and service discovery were verified by the supplied report. Proprietary battery/current-step replies remain unverified until the next phone trial. Merge requires phone approval under [the performance policy](PERFORMANCE_REGRESSION_POLICY.md).

@@ -18,7 +18,7 @@ for(const marker of [
   'tp-brand-strip'
 ]) assert.ok(v260.includes(marker),'missing responsive 2.6.2 marker: '+marker);
 
-assert.ok(sw.includes("trainpilot-v112"),'service worker cache must be 1.1.2');
+assert.ok(sw.includes("trainpilot-v113"),'service worker cache must be 1.1.2');
 
 // All current app dropdowns that use the shared field class are covered by the enhancer.
 let selectCount=0;

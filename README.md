@@ -1,5 +1,7 @@
 # TrainPilot
 
+**RDFit adatpróba — 1.1.3 / 2701:** a GT4Pro+ telefonos diagnosztikája igazolta a kapcsolódást. Külön gombbal próbálható az akkumulátor és a mai lépésszám kiolvasása az RDFit adatcsatornáján. Az értékek csak a próbanézetben jelennek meg; a tényleges válaszok telefonos ellenőrzése még hátravan. [Lépések és protokoll](docs/BLUETOOTH_GT4PRO.md).
+
 **Bluetooth-próba javítása — 1.1.2 / 2700:** a névtelen eszközök mellett helyileg látható a MAC-cím az RDFit adataival való összehasonlításhoz. Sorszám és óvatos protokolljelölés segíti a választást; a találati lista kapcsolódás nélkül is menthető. [Telefonos lépések](docs/BLUETOOTH_GT4PRO.md). A teljes Chromium-tesztsor a gyorsított, hatrészes CI-ban fut.
 
 TrainPilot egy Androidra készült, local-first edzéstervező és edzésnapló alkalmazás. A fő edzésfunkciók helyben is használhatók; a Health Connect, Google Drive és Google Naptár integrációk opcionálisak.

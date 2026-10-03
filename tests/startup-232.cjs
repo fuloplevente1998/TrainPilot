@@ -7,6 +7,6 @@ assert.ok(!index.includes('<div id="tpBoot">TrainPilot</div>'),'boot wordmark is
 assert.ok(startup.includes('requestAnimationFrame'),'startup waits for a paint-stable reveal barrier');
 assert.ok(startup.includes('durationMs'),'startup duration is measured');
 assert.ok(startup.includes('setTimeout(()=>{if(typeof initCloud'), 'cloud init remains deferred');
-assert.ok(ready.includes("appVersion:'1.1.2'"),'final layer reports 2.6.2');
+assert.ok(ready.includes("appVersion:'1.1.3'"),'final layer reports 2.6.2');
 console.log('PASS startup 2.3.2: blank overlay, paint-stable reveal, timing metric, deferred cloud.');
 

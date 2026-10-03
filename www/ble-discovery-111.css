@@ -19,3 +19,5 @@
 .tp111-ble [data-ble-status]{min-height:1.4em;overflow-wrap:anywhere}
 .tp111-filter{display:grid;gap:6px;margin:8px 0 12px;font-size:13px;color:var(--muted)}
 .tp111-filter input{width:100%;min-width:0;box-sizing:border-box}
+
+.tp111-readings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}.tp111-readings>div{min-width:0;padding:12px;background:var(--panel,#ffffff05);border:1px solid var(--line,#ffffff14);border-radius:16px}.tp111-readings span{display:block;font-size:.85em;color:var(--muted)}.tp111-readings strong{display:block;margin-top:6px;font-size:1.3em}

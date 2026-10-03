@@ -10,9 +10,10 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const file=p
   const setStatus=(s,extra={})=>{b.status={...b.status,state:s,...extra};b.emit({kind:'state',...b.status});return {...b.status};};
   const plugin={
    addListener:async(_,fn)=>{b.listeners.add(fn);return {remove:async()=>b.listeners.delete(fn)};},getStatus:async()=>({...b.status}),
-   startScan:async()=>{b.calls.push('scan');if(b.failure){const e=new Error('denied');e.code=b.failure;throw e;}return setStatus('scanning',{services:[],heartSupported:false,code:''});},
+   startScan:async()=>{b.calls.push('scan');b.status.probeReadings={};b.status.probeSupported=false;if(b.failure){const e=new Error('denied');e.code=b.failure;throw e;}return setStatus('scanning',{services:[],heartSupported:false,code:''});},
    stopScan:async()=>{b.calls.push('stop');return setStatus('idle',{code:'SCAN_FINISHED'});},
-   connect:async({id})=>{b.calls.push('connect:'+id);setStatus('connecting');if(b.pending==='connect')return new Promise((resolve,reject)=>b.pendingReject=reject);return setStatus('connected',{deviceName:'GT4Pro+',heartSupported:b.noHeart!==true,services:[{uuid:'0000180d-0000-1000-8000-00805f9b34fb',type:0,characteristics:[{uuid:'00002a37-0000-1000-8000-00805f9b34fb',properties:16,descriptors:['00002902-0000-1000-8000-00805f9b34fb']}]}]});},
+   connect:async({id})=>{b.calls.push('connect:'+id);setStatus('connecting');if(b.pending==='connect')return new Promise((resolve,reject)=>b.pendingReject=reject);return setStatus('connected',{deviceName:'GT4Pro+',probeSupported:b.rdfit===true,rdfitProbe:{status:'idle'},probeReadings:{},heartSupported:b.noHeart!==true,services:b.rdfit?b.rdfitServices:[{uuid:'0000180d-0000-1000-8000-00805f9b34fb',type:0,characteristics:[{uuid:'00002a37-0000-1000-8000-00805f9b34fb',properties:16,descriptors:['00002902-0000-1000-8000-00805f9b34fb']}]}]});},
+   readRdfitData:async()=>{b.calls.push('rdfit');setStatus('probing');if(b.pending==='rdfit')return new Promise((resolve,reject)=>b.pendingReject=reject);return setStatus('disconnected',{code:b.probeFailure||'PROBE_DONE',rdfitProbe:{status:b.probeFailure?'partial':'complete',batteryReceived:true,stepsReceived:!b.probeFailure,notifications:3,requests:2,rejectedFrames:0},probeReadings:{battery:77,steps:b.probeFailure?null:54321}});},
    startHeartRate:async()=>{b.calls.push('heart');return setStatus('monitoring');},
    disconnect:async()=>{b.calls.push('disconnect');if(b.pendingReject){const e=new Error('cancelled');e.code='DISCONNECTED';b.pendingReject(e);b.pendingReject=null;}return setStatus('disconnected',{code:'DISCONNECTED'});}
   };
@@ -58,6 +59,32 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const file=p
   assert.equal(await p.evaluate(()=>JSON.stringify(history())===__ble.history),true);assert.equal(await p.evaluate(()=>JSON.stringify(state.health)===__ble.health),true,'live BLE must not overwrite Health Connect');
   if(width===393&&lang==='hu'&&theme==='blue')await p.screenshot({path:'ui-evidence/ble-live-2700.png'});
  }
+
+ await p.evaluate(services=>{tp155R4ClosePanel(false);__ble.rdfit=true;__ble.noHeart=true;__ble.rdfitServices=services;__ble.saves=[];},JSON.parse(fs.readFileSync('tests/fixtures/gt4pro-gatt.json','utf8')).services);
+ for(const width of [320,360,393,412])for(const lang of ['hu','en','de','ro']){
+  await p.setViewportSize({width,height:873});await p.evaluate(lang=>{tp155R4ClosePanel(false);db.set('language',lang);go('settings');},lang);
+  await p.locator('.tp111-ble-entry button').click();await p.waitForFunction(()=>__ble.listeners.size===1);
+  await p.locator('[data-ble-action="scan"]').click();await p.evaluate(()=>__ble.device('watch'));await p.locator('[data-ble-device="watch"]').click();
+  await p.waitForFunction(()=>document.querySelector('[data-ble-action="probe"]').disabled===false);
+  const calls=await p.evaluate(()=>__ble.calls.length);assert.equal(await p.locator('[data-ble-action="heart"]').isDisabled(),true);
+  assert.equal(await p.evaluate(()=>__ble.calls.slice(-1)[0]),'connect:watch','connection alone must not send proprietary commands');
+  await p.locator('[data-ble-action="probe"]').click();await p.waitForFunction(()=>document.querySelector('[data-ble-steps]').textContent==='54321');
+  assert.equal(await p.locator('[data-ble-battery]').innerText(),'77%');assert.equal(await p.locator('[data-ble-action="probe"]').isDisabled(),true,'reconnect before another trial');
+  const text=await p.locator('[data-ble-rdfit]').innerText();assert.ok(!text.includes('probeNote'),'localized read trial '+lang);for(const key of ['battery','steps'])assert.notEqual(await p.locator('[data-ble-rdfit] .tp111-readings span').nth(key==='battery'?0:1).innerText(),key);
+  assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth-innerWidth)<=1,'RDFit result fits '+width+'/'+lang);
+  assert.equal(await p.evaluate(()=>JSON.stringify(history())===__ble.history&&JSON.stringify(state.health)===__ble.health),true,'RDFit trial never persists Health data');
+  if(width===393&&lang==='hu')await p.screenshot({path:'ui-evidence/rdfit-probe-2701.png'});
+  await p.locator('[data-ble-action="exportReport"]').click();
+  const exported=await p.evaluate(()=>__ble.saves.at(-1));assert.equal(exported.rdfitProbe.status,'complete');assert.equal(exported.rdfitProbe.stepsReceived,true);
+  for(const secret of ['54321','probeReadings','"battery":','"steps":'])assert.ok(!JSON.stringify(exported).includes(secret),'export excludes actual watch readings');
+  assert.equal(await p.locator('[data-ble-steps]').innerText(),'—','background export picker clears local readings');
+ }
+ await p.evaluate(()=>{tp155R4ClosePanel(false);db.set('language','hu');__ble.probeFailure='PROBE_PARTIAL';go('settings');});
+ await p.locator('.tp111-ble-entry button').click();await p.locator('[data-ble-action="scan"]').click();await p.evaluate(()=>__ble.device('watch'));await p.locator('[data-ble-device="watch"]').click();await p.locator('[data-ble-action="probe"]').click();
+ await p.waitForFunction(()=>document.querySelector('[data-ble-status]').textContent.includes('nem érkezett válasz'));assert.equal(await p.locator('[data-ble-steps]').innerText(),'—');assert.equal(await p.locator('[data-ble-battery]').innerText(),'77%');
+ await p.evaluate(()=>{tp155R4ClosePanel(false);__ble.probeFailure=null;__ble.pending='rdfit';go('settings');});await p.locator('.tp111-ble-entry button').click();await p.locator('[data-ble-action="scan"]').click();await p.evaluate(()=>__ble.device('watch'));await p.locator('[data-ble-device="watch"]').click();await p.locator('[data-ble-action="probe"]').click();
+ await p.waitForFunction(()=>__ble.status.state==='probing');assert.equal(await p.locator('[data-ble-action="scan"]').isDisabled(),true);await p.evaluate(()=>go('home'));await p.waitForFunction(()=>__ble.listeners.size===0);assert.equal(await p.evaluate(()=>__ble.calls.at(-1)),'disconnect');
+ await p.evaluate(()=>{__ble.pending=null;__ble.rdfit=false;__ble.noHeart=false;__ble.saves=[];go('settings');});await p.locator('.tp111-ble-entry button').click();await p.locator('[data-ble-action="scan"]').click();await p.evaluate(()=>__ble.device('watch'));await p.locator('[data-ble-device="watch"]').click();await p.locator('[data-ble-action="heart"]').click();
  await p.evaluate(()=>{db.set('language','hu');tp155R4RefreshPanel();});
  await p.evaluate(()=>__ble.emit({kind:'pulse',bpm:85,measuredAt:new Date(Date.now()-20000).toISOString()}));await p.waitForFunction(()=>document.querySelector('[data-ble-bpm]').textContent==='—');
  await p.locator('[data-ble-action="exportReport"]').click();await p.waitForFunction(()=>__ble.saves.length===1);const report=await p.evaluate(()=>__ble.saves[0]);assert.equal(report.format,'TrainPilot-BLE-diagnostic');assert.equal(report.device.name,'GT4Pro+');assert.ok(!JSON.stringify(report).includes('bpm'));assert.ok(!JSON.stringify(report).includes('"id"'));assert.equal(await p.locator('[data-ble-pulse]').isVisible(),false);
@@ -68,5 +95,5 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const file=p
  await p.evaluate(()=>{__ble.emit({kind:'state',...__ble.status,state:'disconnected',code:'BACKGROUND'});});assert.equal(await p.locator('[data-ble-device]').count(),0,'background invalidates scanned devices');assert.equal(await p.locator('[data-ble-pulse]').isVisible(),false);
  await p.evaluate(()=>{__ble.noHeart=false;__ble.pending='connect';});await p.locator('[data-ble-action="scan"]').click();await p.evaluate(()=>__ble.device('watch'));await p.locator('[data-ble-device="watch"]').click();await p.waitForFunction(()=>__ble.status.state==='connecting');await p.evaluate(()=>go('home'));await p.waitForFunction(()=>__ble.listeners.size===0);assert.equal(await p.locator('#tp155R4PanelHost').count(),0);assert.equal(await p.evaluate(()=>__ble.calls.at(-1)),'disconnect');
  await p.reload();await p.waitForFunction(()=>TrainPilotBoot.finished);assert.equal(await p.evaluate(()=>window.__ble),undefined,'BLE sessions do not persist across app restart');
- assert.deepEqual(errors,[]);console.log('PASS #105 BLE UI: 32 phone/language/theme cases, web fallback, scan deduplication, live/old pulse, separate Health data, diagnostic export/failure/cancel, permission denial, missing standard service, background cleanup and cancellation after navigation');
+ assert.deepEqual(errors,[]);console.log('PASS #105 BLE UI: 16 RDFit read/query-language-width cases, partial response and pending-probe cancellation, 32 earlier phone/language/theme cases, web fallback, scan deduplication, live/old pulse, separate Health data, diagnostic export/failure/cancel, permission denial, missing standard service, background cleanup and cancellation after navigation');
 }finally{await browser?.close();await new Promise(r=>server.close(r));}})().catch(e=>{console.error(e);process.exitCode=1;});

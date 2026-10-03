@@ -1,5 +1,9 @@
 # TrainPilot — Development Status
 
+## GT4Pro+ proprietary read-query trial — 1.1.3 / 2701
+
+Physical 2700 report: connected/status 0, seven services, default MCU and JieLi channels, no standard HRS. The foreground trial now explicitly queries only battery/current steps using traced MCU frames. Original bounded decoder and synthetic JVM vectors cover CRC, fragment boundaries, coalescing, malformed/oversized/multipart input and the command allowlist. Diagnostics omit real values and raw packets. Full checks/source/signature verification required; actual proprietary replies and history import remain pending. The earlier proposed MAC-direct-connection change was stopped when the user found the watch and supplied successful discovery evidence.
+
 ## Bluetooth identification follow-up — 1.1.2 / 2700
 
 - Physical trial feedback: 30–40 unnamed neighbours with RSSI approximately -63 to -99 dBm make the intended GT4Pro+ impossible to select from name/signal alone.

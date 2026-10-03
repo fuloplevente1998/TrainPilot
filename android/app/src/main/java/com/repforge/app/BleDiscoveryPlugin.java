@@ -16,7 +16,7 @@ import com.getcapacitor.annotation.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-/** Foreground diagnostic connection. Only standard heart-rate CCCD writes are allowed. */
+/** Foreground diagnostic connection with explicitly started, allowlisted read queries. */
 @CapacitorPlugin(name = "BleDiscovery", permissions = {
     @Permission(alias = "bleScan", strings = {Manifest.permission.BLUETOOTH_SCAN}),
     @Permission(alias = "bleConnect", strings = {Manifest.permission.BLUETOOTH_CONNECT}),
@@ -25,6 +25,9 @@ import java.util.*;
 public class BleDiscoveryPlugin extends Plugin {
     private static final UUID HEART_SERVICE = UUID.fromString("0000180d-0000-1000-8000-00805f9b34fb");
     private static final UUID HEART_MEASUREMENT = UUID.fromString("00002a37-0000-1000-8000-00805f9b34fb");
+    private static final UUID RDFIT_SERVICE = UUID.fromString("6e40ab01-b5a3-f393-e0a9-e50e24dcca9e");
+    private static final UUID RDFIT_WRITE = UUID.fromString("6e40ab02-b5a3-f393-e0a9-e50e24dcca9e");
+    private static final UUID RDFIT_NOTIFY = UUID.fromString("6e40ab03-b5a3-f393-e0a9-e50e24dcca9e");
     private static final UUID CCCD = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     private final Handler main = new Handler(Looper.getMainLooper());
     private final Map<String, BluetoothDevice> devices = new LinkedHashMap<>();
@@ -36,6 +39,16 @@ public class BleDiscoveryPlugin extends Plugin {
     private BluetoothGattCharacteristic heart;
     private BluetoothGattDescriptor heartCccd;
     private ScanCallback scanCallback;
+    private BluetoothGattCharacteristic probeWrite, probeNotify;
+    private BluetoothGattDescriptor probeCccd;
+    private PluginCall probing;
+    private RdfitProtocol probeDecoder;
+    private boolean probeSupported = false, probeWritePending = false, probeBatteryReceived = false, probeStepsReceived = false;
+    private int probeCommand = 0, probeNotifications = 0, probeRequests = 0, probeRejected = 0;
+    private String probeStatus = "idle";
+    private Integer probeBattery;
+    private Long probeSteps;
+    private Runnable probeTimeout;
     private PluginCall connecting, subscribing, pendingPermission;
     private JSArray services = new JSArray();
     private String state = "idle", code = "", deviceName = "";
@@ -69,6 +82,13 @@ public class BleDiscoveryPlugin extends Plugin {
         JSObject out = new JSObject();
         out.put("state", state); out.put("code", code); out.put("gattStatus", gattStatus);
         out.put("deviceName", deviceName); out.put("services", services);
+        out.put("probeSupported", probeSupported);
+        JSObject probe = new JSObject(); probe.put("status", probeStatus);
+        probe.put("batteryReceived", probeBatteryReceived); probe.put("stepsReceived", probeStepsReceived);
+        probe.put("notifications", probeNotifications); probe.put("requests", probeRequests); probe.put("rejectedFrames", probeRejected);
+        out.put("rdfitProbe", probe);
+        JSObject readings = new JSObject(); readings.put("battery", probeBattery == null ? org.json.JSONObject.NULL : probeBattery);
+        readings.put("steps", probeSteps == null ? org.json.JSONObject.NULL : probeSteps); out.put("probeReadings", readings);
         out.put("heartSupported", heartSupported); out.put("permissionGranted", permissions());
         out.put("sdk", Build.VERSION.SDK_INT);
         BluetoothAdapter adapter = adapter();
@@ -106,7 +126,7 @@ public class BleDiscoveryPlugin extends Plugin {
             }
             scanner = adapter.getBluetoothLeScanner();
             if (scanner == null) { call.reject("Bluetooth scanner unavailable", "BLUETOOTH_OFF"); return; }
-            devices.clear(); addresses.clear(); rows.clear(); lastSeen.clear();
+            devices.clear(); addresses.clear(); rows.clear(); lastSeen.clear(); resetProbe();
             services = new JSArray(); deviceName = ""; heartSupported = false; gattStatus = 0;
             ScanCallback callback = new ScanCallback() {
                 @Override public void onScanResult(int type, ScanResult result) {
@@ -177,7 +197,7 @@ public class BleDiscoveryPlugin extends Plugin {
             if (activeGatt != null) { call.reject("Bluetooth is busy", "BUSY"); return; }
             String id = call.getString("id", ""); BluetoothDevice device = devices.get(id);
             if (device == null) { call.reject("Choose a device from a new scan", "DEVICE_EXPIRED"); return; }
-            stopScanInternal(); services = new JSArray(); heartSupported = false; heart = null; heartCccd = null;
+            stopScanInternal(); resetProbe(); services = new JSArray(); heartSupported = false; heart = null; heartCccd = null;
             deviceName = rows.get(id).getString("name", ""); connecting = call; gattStatus = 0;
             transition("connecting", "");
             try {
@@ -211,6 +231,12 @@ public class BleDiscoveryPlugin extends Plugin {
                 if (status != BluetoothGatt.GATT_SUCCESS) { failConnection("DISCOVERY_FAILED"); return; }
                 try {
                 services = describe(gatt);
+                BluetoothGattService rdfitService = gatt.getService(RDFIT_SERVICE);
+                BluetoothGattCharacteristic rdfitWrite = rdfitService == null ? null : rdfitService.getCharacteristic(RDFIT_WRITE);
+                BluetoothGattCharacteristic rdfitNotify = rdfitService == null ? null : rdfitService.getCharacteristic(RDFIT_NOTIFY);
+                probeSupported = rdfitWrite != null && rdfitNotify != null && rdfitNotify.getDescriptor(CCCD) != null
+                    && (rdfitWrite.getProperties() & BluetoothGattCharacteristic.PROPERTY_WRITE) != 0
+                    && (rdfitNotify.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0;
                 BluetoothGattService service = gatt.getService(HEART_SERVICE);
                 heart = service == null ? null : service.getCharacteristic(HEART_MEASUREMENT);
                 heartCccd = heart == null ? null : heart.getDescriptor(CCCD);
@@ -225,20 +251,105 @@ public class BleDiscoveryPlugin extends Plugin {
         }
         @Override public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
             main.post(() -> {
-                if (gatt != activeGatt || descriptor != heartCccd || subscribing == null) return;
+                if (gatt != activeGatt) return;
+                if (probing != null && descriptor == probeCccd && probeCommand == 0) {
+                    gattStatus = status;
+                    if (status != BluetoothGatt.GATT_SUCCESS) finishProbe("PROBE_FAILED");
+                    else sendProbeQuery(RdfitProtocol.BATTERY);
+                    return;
+                }
+                if (descriptor != heartCccd || subscribing == null) return;
                 if (subscriptionTimeout != null) main.removeCallbacks(subscriptionTimeout);
                 PluginCall pending = subscribing; subscribing = null;
                 if (status == BluetoothGatt.GATT_SUCCESS) { transition("monitoring", ""); pending.resolve(snapshot()); }
                 else { transition("connected", "SUBSCRIBE_FAILED"); pending.reject("Pulse subscription failed", "SUBSCRIBE_FAILED"); }
             });
         }
+        @Override public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+            main.post(() -> {
+                if (gatt != activeGatt || characteristic != probeWrite || probing == null) return;
+                gattStatus = status;
+                if (status != BluetoothGatt.GATT_SUCCESS) { finishProbe("PROBE_FAILED"); return; }
+                probeWritePending = false; advanceProbe();
+            });
+        }
         @Override public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+            receiveProbe(gatt, characteristic, characteristic.getValue());
             receivePulse(gatt, characteristic, characteristic.getValue());
         }
         @Override public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, byte[] value) {
+            receiveProbe(gatt, characteristic, value);
             receivePulse(gatt, characteristic, value);
         }
     };
+    private void resetProbe() {
+        probeSupported = false; probeStatus = "idle"; probeBattery = null; probeSteps = null;
+        probeBatteryReceived = false; probeStepsReceived = false; probeNotifications = 0; probeRequests = 0; probeRejected = 0;
+    }
+    @PluginMethod public void readRdfitData(PluginCall call) {
+        main.post(() -> {
+            if (!foreground || !permissions()) { call.reject("Keep Bluetooth available", "PERMISSION_DENIED"); return; }
+            if (activeGatt == null || !state.equals("connected") || !probeSupported || probing != null) {
+                call.reject("No supported RDFit channel", "NO_RDFIT_CHANNEL"); return;
+            }
+            BluetoothGattService service = activeGatt.getService(RDFIT_SERVICE);
+            probeWrite = service == null ? null : service.getCharacteristic(RDFIT_WRITE);
+            probeNotify = service == null ? null : service.getCharacteristic(RDFIT_NOTIFY);
+            probeCccd = probeNotify == null ? null : probeNotify.getDescriptor(CCCD);
+            if (probeWrite == null || probeNotify == null || probeCccd == null) {
+                call.reject("No supported RDFit channel", "NO_RDFIT_CHANNEL"); return;
+            }
+            probeDecoder = new RdfitProtocol(); probeStatus = "running"; probeBattery = null; probeSteps = null;
+            probeNotifications = 0; probeRequests = 0; probeRejected = 0; probeCommand = 0;
+            probeBatteryReceived = false; probeStepsReceived = false; probeWritePending = false; probing = call;
+            transition("probing", "");
+            probeTimeout = () -> finishProbe(probeBatteryReceived ? "PROBE_PARTIAL" : "PROBE_TIMEOUT");
+            main.postDelayed(probeTimeout, 20000);
+            try {
+                if (!activeGatt.setCharacteristicNotification(probeNotify, true)) { finishProbe("PROBE_FAILED"); return; }
+                boolean queued;
+                if (Build.VERSION.SDK_INT >= 33) queued = activeGatt.writeDescriptor(probeCccd, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE) == BluetoothStatusCodes.SUCCESS;
+                else { probeCccd.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE); queued = activeGatt.writeDescriptor(probeCccd); }
+                if (!queued) finishProbe("PROBE_FAILED");
+            } catch (RuntimeException error) { finishProbe("PROBE_FAILED"); }
+        });
+    }
+    private void sendProbeQuery(int command) {
+        if (probing == null || activeGatt == null) return;
+        probeCommand = command; probeWritePending = true;
+        byte[] bytes = RdfitProtocol.request(command);
+        try {
+            boolean queued;
+            if (Build.VERSION.SDK_INT >= 33) queued = activeGatt.writeCharacteristic(probeWrite, bytes, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT) == BluetoothStatusCodes.SUCCESS;
+            else { probeWrite.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT); probeWrite.setValue(bytes); queued = activeGatt.writeCharacteristic(probeWrite); }
+            if (!queued) { finishProbe("PROBE_FAILED"); return; }
+            probeRequests++;
+        } catch (RuntimeException error) { finishProbe("PROBE_FAILED"); }
+    }
+    private void receiveProbe(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, byte[] payload) {
+        byte[] bytes = payload == null ? null : payload.clone();
+        main.post(() -> {
+            if (gatt != activeGatt || characteristic != probeNotify || probing == null) return;
+            if (++probeNotifications > 64) { finishProbe("PROBE_FAILED"); return; }
+            for (RdfitProtocol.Reading reading : probeDecoder.accept(bytes)) {
+                if (reading.command != probeCommand) continue;
+                if (reading.battery != null) { probeBattery = reading.battery; probeBatteryReceived = true; }
+                if (reading.steps != null) { probeSteps = reading.steps; probeStepsReceived = true; }
+            }
+            probeRejected = probeDecoder.rejectedFrames; advanceProbe();
+        });
+    }
+    private void advanceProbe() {
+        if (probing == null || probeWritePending) return;
+        if (probeCommand == RdfitProtocol.BATTERY && probeBatteryReceived) sendProbeQuery(RdfitProtocol.STEPS);
+        else if (probeCommand == RdfitProtocol.STEPS && probeStepsReceived) finishProbe("PROBE_DONE");
+    }
+    private void finishProbe(String reason) {
+        if (probing == null) return;
+        PluginCall pending = probing; probing = null;
+        probeStatus = reason.equals("PROBE_DONE") ? "complete" : probeBatteryReceived ? "partial" : "failed";
+        closeGatt(); transition("disconnected", reason); pending.resolve(snapshot());
+    }
     private JSArray describe(BluetoothGatt gatt) {
         JSArray result = new JSArray();
         for (BluetoothGattService service : gatt.getServices()) {
@@ -294,6 +405,8 @@ public class BleDiscoveryPlugin extends Plugin {
         closeGatt(); transition("disconnected", "SUBSCRIBE_FAILED"); pending.reject("Pulse subscription failed", "SUBSCRIBE_FAILED");
     }
     private void closeGatt() {
+        if (probeTimeout != null) main.removeCallbacks(probeTimeout);
+        probeWrite = null; probeNotify = null; probeCccd = null; probeDecoder = null; probeWritePending = false;
         if (pendingPermission != null) { PluginCall pending = pendingPermission; pendingPermission = null; pending.reject("Operation cancelled", "CANCELLED"); }
         if (connectionTimeout != null) main.removeCallbacks(connectionTimeout);
         if (subscriptionTimeout != null) main.removeCallbacks(subscriptionTimeout);
@@ -302,6 +415,8 @@ public class BleDiscoveryPlugin extends Plugin {
     }
     private void failConnection(String reason) {
         closeGatt();
+        probeBattery = null; probeSteps = null;
+        if (probing != null) { probeStatus = "failed"; PluginCall pending = probing; probing = null; pending.reject("RDFit query ended", reason); }
         if (connecting != null) { PluginCall pending = connecting; connecting = null; pending.reject("Bluetooth connection ended", reason); }
         if (subscribing != null) { PluginCall pending = subscribing; subscribing = null; pending.reject("Pulse subscription ended", reason); }
         transition("disconnected", reason);
