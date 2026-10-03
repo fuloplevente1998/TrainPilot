@@ -20,3 +20,6 @@ android/signing/
 android/app/google-services.json
 google-services.json
 local.properties
+
+# Generated browser shard timings
+ui-results/
