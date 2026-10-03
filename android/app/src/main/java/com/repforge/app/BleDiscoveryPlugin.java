@@ -150,9 +150,9 @@ public class BleDiscoveryPlugin extends Plugin {
             List<ParcelUuid> uuids = record.getServiceUuids();
             if (uuids != null) for (ParcelUuid uuid : uuids) advertised.put(uuid.toString());
             SparseArray<byte[]> data = record.getManufacturerSpecificData();
-            for (int i = 0; i < data.size(); i++) {
+            for (int i = 0; data != null && i < data.size(); i++) {
                 JSObject company = new JSObject(); company.put("companyId", data.keyAt(i));
-                company.put("length", data.valueAt(i).length); manufacturers.put(company);
+                company.put("length", data.valueAt(i) == null ? 0 : data.valueAt(i).length); manufacturers.put(company);
             }
         }
         row.put("advertisedServices", advertised); row.put("manufacturers", manufacturers); rows.put(id, row);
@@ -207,6 +207,7 @@ public class BleDiscoveryPlugin extends Plugin {
                 if (gatt != activeGatt) return;
                 gattStatus = status;
                 if (status != BluetoothGatt.GATT_SUCCESS) { failConnection("DISCOVERY_FAILED"); return; }
+                try {
                 services = describe(gatt);
                 BluetoothGattService service = gatt.getService(HEART_SERVICE);
                 heart = service == null ? null : service.getCharacteristic(HEART_MEASUREMENT);
@@ -216,6 +217,8 @@ public class BleDiscoveryPlugin extends Plugin {
                 if (connectionTimeout != null) main.removeCallbacks(connectionTimeout);
                 transition("connected", "");
                 if (connecting != null) { PluginCall pending = connecting; connecting = null; pending.resolve(snapshot()); }
+                } catch (SecurityException error) { failConnection("PERMISSION_DENIED"); }
+                catch (RuntimeException error) { failConnection("DISCOVERY_FAILED"); }
             });
         }
         @Override public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
