@@ -13,7 +13,7 @@ A normál commit/push CI szintaxisellenőrzést és gyors Node regressziós tesz
 
 ## Teljes Release Gate
 
-A teljes kiadásellenőrzés kézzel (`workflow_dispatch`) vagy verziótag (`v*`) pusholásakor futtatható. A Release Gate:
+A teljes kiadásellenőrzés a `main`, `feat/**` és `fix/**` ágak pusholásakor, verziótag (`v*`) pusholásakor vagy kézzel (`workflow_dispatch`) fut. A Release Gate:
 
 1. ellenőrzi a signing Secrets meglétét;
 2. ideiglenesen materializálja a keystore-t;
@@ -25,7 +25,9 @@ A teljes kiadásellenőrzés kézzel (`workflow_dispatch`) vagy verziótag (`v*`
 8. ellenőrzi az APK package-, verzió- és aláírásadatait;
 9. összehasonlítja az APK-ba csomagolt `www/app.js` fájlt a forrással;
 10. elkészíti az APK-t, source ZIP-et, SHA256SUMS és apk-badging artifactokat;
-11. `v*` tag esetén GitHub Release-ként is publikálja ezeket.
+11. `main` vagy `v*` tag esetén GitHub Release-ként is publikálja ezeket.
+
+A mainen új verzióhoz új tag és fájlok készülnek. Már meglévő verzió main buildje csak a kiadási megjegyzéseket frissíti; a korábban publikált bináris fájlokat megtartja. Alkalmazáskód-javításhoz ezért új verzió és növelt Android `versionCode` szükséges.
 
 A workflow teljes Git-historyt kér le, mert egyes regressziós ellenőrzések publikus baseline commitot használnak. A publikus TrainPilot history 1.6.0-nál kezdődik, ezért teszt nem hivatkozhat ennél korábbi, csak legacy/private historyban létező commitra.
 

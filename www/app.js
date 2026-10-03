@@ -55,7 +55,7 @@ window.addEventListener('DOMContentLoaded',async function(){if(window.Capacitor?
 // @endsection startup.js
 
 // @section backup.js
-const TRAINPILOT_VERSION='1.0.7';
+const TRAINPILOT_VERSION='1.0.8';
 var isNative = function isNative(){return !!window.Capacitor?.isNativePlatform?.();};
 var nativeFiles = function nativeFiles(){if(!filesPlugin)filesPlugin=window.Capacitor?.registerPlugin?.('NativeFiles')||window.Capacitor?.Plugins?.NativeFiles;if(!filesPlugin)throw Error('A natív fájlkezelő nem érhető el.');return filesPlugin;};
 var backupStatus = function backupStatus(){const x=db.get('lastExport',null);return x?`Utolsó ellenőrzött mentés: ${x.name} • ${fmtDate(x.date)}`:'Még nincs ellenőrzött fájlmentés.';};
@@ -12770,7 +12770,8 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   'main.rf221-home>.onboarding h2{margin:0!important}',
   'main.rf221-home>.onboarding p{margin:0!important}',
   '.tp162-theme-setting{overflow:visible!important}.tp162-theme-dropdown{position:relative;margin-top:8px;z-index:21}.tp162-theme-dropdown .tp155-theme-open{display:flex!important;grid-template-columns:none!important;margin:0!important}.tp162-theme-dropdown .tp-select-value{display:flex;align-items:center;gap:8px}.tp162-theme-dropdown.open .tp155-theme-open{border-color:var(--accent)!important;box-shadow:0 0 0 2px rgba(var(--accent-rgb),.18)!important}',
-  '.tp162-theme-dropdown>.tp-select-menu{position:absolute!important;left:0!important;right:0!important;top:calc(100% + 4px)!important;width:100%!important;max-height:var(--tp162-theme-max-height,min(300px,44dvh))!important;overflow-y:auto!important;overflow-x:hidden!important;padding:8px!important}.tp162-theme-dropdown>.tp-select-menu[data-placement="top"]{top:auto!important;bottom:calc(100% + 4px)!important}.tp162-theme-columns{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;padding:0!important}',
+  // The outer menu owns scrolling; the legacy modal list must not contain its gestures.
+  '.tp162-theme-dropdown>.tp-select-menu{position:absolute!important;left:0!important;right:0!important;top:calc(100% + 4px)!important;width:100%!important;max-height:var(--tp162-theme-max-height,min(300px,44dvh))!important;overflow-y:auto!important;overflow-x:hidden!important;padding:8px!important}.tp162-theme-dropdown>.tp-select-menu[data-placement="top"]{top:auto!important;bottom:calc(100% + 4px)!important}.tp162-theme-columns{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;padding:0!important;overflow:visible;overscroll-behavior:auto}',
   '.tp162-theme-column{min-width:0;border:1px solid var(--line);border-radius:12px;background:var(--card2);padding:7px}',
   '.tp162-theme-column .tp155-theme-group{margin:0 0 6px!important;padding:0 2px!important;font-size:12px!important;font-weight:800!important}',
   '.tp162-theme-options{display:grid;gap:5px}',
