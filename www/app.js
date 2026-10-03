@@ -11566,7 +11566,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
 
  let currentPanel='',panelHost=null,panelTrigger=null,bodyOverflow='',panelOpenScrollY=0;
  const panelDomSupported=(()=>{try{const x=document?.createElement?.('div');return !!(x&&typeof x.addEventListener==='function'&&document?.body&&typeof document.body.appendChild==='function')}catch(_){return false}})();
- const PANEL_ROUTES=new Set(['calendar','coach','settings','quick','exercises','stats','custom-exercise','custom-program']);
+ const PANEL_ROUTES=new Set(['calendar','coach','settings','quick','exercises','stats','custom-exercise','custom-program','cardio']);
  const FULL_ROUTES=new Set(['home','plan','health','programs','history']);
 
  const routeFromButton=function(btn){
@@ -11651,6 +11651,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   if(type==='coach')return coachHtml();
   if(type==='quick')return typeof window.tp155QuickPanelHtml==='function'?window.tp155QuickPanelHtml():'';
   if(type==='exercises')return typeof window.tp155ExercisePanelHtml==='function'?window.tp155ExercisePanelHtml():'';
+  if(type==='cardio')return tp107CardioHtml();
   if(type==='stats')return typeof window.tp67FullStatsPanelHtml==='function'?window.tp67FullStatsPanelHtml():'';
   if(type==='custom-exercise')return typeof window.tp106CustomExercisePanelHtml==='function'?window.tp106CustomExercisePanelHtml():'';
   if(type==='custom-program')return typeof window.tp106CustomProgramPanelHtml==='function'?window.tp106CustomProgramPanelHtml():'';
@@ -14569,6 +14570,160 @@ renderWorkout=function(){
 document.addEventListener('visibilitychange',function(){if(!document.hidden&&document.getElementById('tp106Steps'))void tp106RefreshSteps();});
 
 // @endsection custom-exercise-distance-106.js
+
+// @section training-107.js
+/* Shared prescription editor, distance statistics and a draft-persisted indoor clock. */
+var TP107_TEXT={
+ hu:{save:'Mentés',cancel:'Visszaállítás',dirty:'Módosítva – még nincs mentve',saved:'Mentve',cardio:'Kardióstatisztika',week:'Heti kilométer',previous:'Előző hét',pace:'Átlagtempó',duration:'Rögzített idő',records:'Azonos távú rekordok',nextBest:'Második legjobb',difference:'Különbség',rule:'Azonos mozgás és méterre kerekített táv; a rövidebb idő jobb. Nem számolunk át más távra.',empty:'Még nincs rögzített kardióadat.',timeOnly:'Idő távolság nélkül',all:'Minden mozgás',indoor:'Beltéri időmérés · GPS nélkül',start:'Időmérés indítása',pause:'Szünet és rögzítés',resume:'Időmérés folytatása',reset:'Nullázás',timerNote:'Az idő az aktuális sorozatba kerül. A távolság megadható kézzel; GPS-engedély nem szükséges.',stopGps:'Előbb állítsd le a GPS-mérést.',timerRunning:'Időmérés fut',timerPaused:'Idő rögzítve',distance:'Összes távolság'},
+ en:{save:'Save',cancel:'Reset changes',dirty:'Changed – not saved yet',saved:'Saved',cardio:'Cardio statistics',week:'Weekly kilometres',previous:'Previous week',pace:'Average pace',duration:'Recorded time',records:'Same-distance records',nextBest:'Second best',difference:'Difference',rule:'Same activity and distance rounded to metres; a shorter time is better. No extrapolation to other distances.',empty:'No recorded cardio data yet.',timeOnly:'Time without distance',all:'All activities',indoor:'Indoor timer · no GPS',start:'Start timer',pause:'Pause and record',resume:'Resume timer',reset:'Reset',timerNote:'Time is saved into the current set. Distance can be entered manually; no GPS permission is required.',stopGps:'Stop GPS tracking first.',timerRunning:'Timer running',timerPaused:'Time recorded',distance:'Total distance'},
+ de:{save:'Speichern',cancel:'Änderungen zurücksetzen',dirty:'Geändert – noch nicht gespeichert',saved:'Gespeichert',cardio:'Kardiostatistik',week:'Kilometer pro Woche',previous:'Vorwoche',pace:'Durchschnittstempo',duration:'Erfasste Zeit',records:'Rekorde gleicher Strecke',nextBest:'Zweitbeste Zeit',difference:'Differenz',rule:'Gleiche Aktivität und auf Meter gerundete Strecke; kürzere Zeit ist besser. Keine Hochrechnung auf andere Strecken.',empty:'Noch keine Kardiodaten.',timeOnly:'Zeit ohne Strecke',all:'Alle Aktivitäten',indoor:'Indoor-Zeitmessung · ohne GPS',start:'Zeitmessung starten',pause:'Pause und speichern',resume:'Zeitmessung fortsetzen',reset:'Zurücksetzen',timerNote:'Die Zeit wird im aktuellen Satz gespeichert. Strecke manuell eingeben; keine GPS-Berechtigung erforderlich.',stopGps:'Zuerst GPS-Messung stoppen.',timerRunning:'Zeitmessung läuft',timerPaused:'Zeit gespeichert',distance:'Gesamtstrecke'},
+ ro:{save:'Salvează',cancel:'Resetează modificările',dirty:'Modificat – nesalvat',saved:'Salvat',cardio:'Statistici cardio',week:'Kilometri săptămânali',previous:'Săptămâna trecută',pace:'Ritm mediu',duration:'Timp înregistrat',records:'Recorduri pe aceeași distanță',nextBest:'Al doilea cel mai bun',difference:'Diferență',rule:'Aceeași activitate și distanță rotunjită la metri; timpul mai scurt este mai bun. Fără extrapolare la alte distanțe.',empty:'Nu există încă date cardio.',timeOnly:'Timp fără distanță',all:'Toate activitățile',indoor:'Cronometru interior · fără GPS',start:'Pornește cronometrul',pause:'Pauză și înregistrează',resume:'Continuă cronometrul',reset:'Resetează',timerNote:'Timpul se salvează în seria curentă. Distanța poate fi introdusă manual; nu este necesară permisiunea GPS.',stopGps:'Oprește mai întâi GPS-ul.',timerRunning:'Cronometru activ',timerPaused:'Timp înregistrat',distance:'Distanță totală'}
+};
+var tp107T=function(key){return (TP107_TEXT[rf212Lang()]||TP107_TEXT.en)[key]||key;};
+var tp107ProgramRow=function(p,day,id,i){
+ const e=byId(id);if(!e)return '';const rx=tp152Rx(p,id,e);
+ return '<details class="exercise tp146-exercise tp152-exercise tp152-program-exercise tp107-program-editor" data-tp107-program="'+esc(p.id)+'" data-tp146-day="'+esc(day.id)+'" data-tp146-exercise="'+esc(id)+'" data-tp152-program-exercise="'+esc(id)+'" ontoggle="if(this.open)tp107HydrateProgramRow(this)"><summary class="tp146-exercise-summary" onclick="if(!this.parentElement.open)tp107HydrateProgramRow(this.parentElement)"><div class="num">'+(i+1)+'</div><div class="tp146-exercise-copy"><div class="ex-name">'+esc(tp149ExerciseName(e))+'</div><div class="meta">'+esc(tp107RxSummary(e,rx))+'</div></div><div class="tp-exercise-actions">'+rf260VideoButton(id)+'<span class="tp152-chevron tp146-exercise-chevron" aria-hidden="true">⌄</span></div></summary><div class="tp146-exercise-body tp152-exercise-body tp107-editor-body"></div></details>';
+};
+var tp107RxSummary=function(e,rx){return rx.sets+' × '+rx.reps+(e.loadType!=='bodyweight'?' • '+rx.weight+' '+tp149LoadLabel(e.loadType):'')+' • '+rx.rest+' s';};
+var tp107RowContext=function(node){
+ const row=node?.closest?.('.tp107-program-editor');if(!row||!row.isConnected)return null;
+ const ps=programs(),p=ps.find(function(p){return p.id===row.dataset.tp107Program;}),day=p?.days?.find(function(d){return d.id===row.dataset.tp146Day;}),id=row.dataset.tp146Exercise,e=byId(id);
+ return p&&e&&day?.exercises?.includes(id)?{row,ps,p,day,id,e}:null;
+};
+var tp107HydrateProgramRow=function(row){
+ const c=tp107RowContext(row),body=row?.querySelector('.tp107-editor-body');if(!c||!body||body.dataset.hydrated==='true')return;
+ const rx=tp152Rx(c.p,c.id,c.e),field=function(key,label,type,min,max){return '<label>'+esc(label)+'<input class="field" data-tp107-rx="'+key+'" '+(type?'type="'+type+'"':'maxlength="40"')+' '+(min!==undefined?'min="'+min+'"':'')+' '+(max!==undefined?'max="'+max+'"':'')+' '+(key==='weight'?'step="any" inputmode="decimal"':'')+' required value="'+esc(rx[key])+'" oninput="tp107ProgramInput(this)"></label>';};
+ body.innerHTML='<div class="tp152-edit-grid">'+field('sets',tp152T('sets'),'number',1,10)+field('reps',tp106IsDistance(c.e)||c.e.repUnit==='mp'?tp106T('seconds'):tp152T('reps'))+(c.e.loadType!=='bodyweight'?field('weight',tp152LoadFieldLabel(c.e),'number',0,10000):'')+field('rest',tp152T('rest'),'number',30,300)+'</div><div class="tp107-save-row"><button type="button" class="btn" onclick="tp107SaveProgramRow(this)">'+esc(tp107T('save'))+'</button><button type="button" class="btn secondary" onclick="tp107ResetProgramRow(this)">'+esc(tp107T('cancel'))+'</button></div><p class="small muted tp107-save-status" role="status"></p><label>'+esc(tp152T('replace'))+'<select class="field" data-tp107-replace onchange="tp107ReplaceProgramExercise(this)">'+exercises().map(function(e){return '<option value="'+esc(e.id)+'" '+(e.id===c.id?'selected':'')+'>'+esc(tp149ExerciseName(e))+'</option>';}).join('')+'</select></label><button type="button" class="btn danger block" onclick="tp107RemoveProgramExercise(this)">'+esc(tp152T('remove'))+'</button>';
+ body.dataset.hydrated='true';if(typeof rf260EnhanceSelects==='function')rf260EnhanceSelects();window.tpGlobalApplyChevrons?.(body);
+};
+var tp107ProgramInput=function(node){const row=node.closest('.tp107-program-editor');row.dataset.dirty='true';row.querySelector('.tp107-save-status').textContent=tp107T('dirty');};
+var tp107SaveProgramRow=function(node){
+ const c=tp107RowContext(node);if(!c)return false;
+ const fields=[...c.row.querySelectorAll('[data-tp107-rx]')],rx=tp152Rx(c.p,c.id,c.e);
+ for(const input of fields){if(!input.reportValidity())return false;const key=input.dataset.tp107Rx;rx[key]=key==='reps'?input.value.trim().slice(0,40):Number(input.value);}
+ c.p.prescriptions=c.p.prescriptions||{};
+ if(JSON.stringify(c.p.prescriptions[c.id])!==JSON.stringify(rx)){c.p.prescriptions[c.id]=rx;db.set('programs',c.ps);if(typeof cloudChanged==='function')cloudChanged();}
+ c.row.querySelector(':scope > summary .meta').textContent=tp107RxSummary(c.e,rx);
+ c.row.dataset.dirty='false';c.row.querySelector('.tp107-save-status').textContent=tp107T('saved');return true;
+};
+var tp107ResetProgramRow=function(node){const c=tp107RowContext(node);if(!c)return;const rx=tp152Rx(c.p,c.id,c.e);c.row.querySelectorAll('[data-tp107-rx]').forEach(function(input){input.value=rx[input.dataset.tp107Rx];});c.row.dataset.dirty='false';c.row.querySelector('.tp107-save-status').textContent='';};
+var tp107ReplaceProgramExercise=function(node){
+ const c=tp107RowContext(node),id=node.value;if(!c||!byId(id))return;if(c.day.exercises.includes(id)&&id!==c.id){node.value=c.id;alert(tp149T('program.exercise.duplicate'));return;}
+ const i=c.day.exercises.indexOf(c.id);c.day.exercises[i]=id;c.p.prescriptions=c.p.prescriptions||{};c.p.prescriptions[id]=c.p.prescriptions[id]||tp152Rx(c.p,id,byId(id));db.set('programs',c.ps);cloudChanged();
+ const holder=document.createElement('div');holder.innerHTML=tp107ProgramRow(c.p,c.day,id,i);const fresh=holder.firstElementChild;c.row.replaceWith(fresh);fresh.open=true;tp107HydrateProgramRow(fresh);
+};
+var tp107RemoveProgramExercise=async function(node){
+ const c=tp107RowContext(node);if(!c)return;if(c.day.exercises.length<=1){alert(tp149T('program.exercise.oneRequired'));return;}
+ if(!await tp2628Confirm(tp149T('dialog.removeExercise.message'),{title:tp149T('dialog.removeExercise.title'),confirmText:tp149T('common.delete'),danger:true}))return;
+ const fresh=tp107RowContext(node);if(!fresh||fresh.day.exercises.length<=1)return;fresh.day.exercises.splice(fresh.day.exercises.indexOf(fresh.id),1);db.set('programs',fresh.ps);cloudChanged();render();
+};
+tp152ExerciseRow=tp107ProgramRow;tp152ProgramPreviewRow=tp107ProgramRow;
+
+var tp107WeekStart=function(date){const d=new Date(date);d.setHours(0,0,0,0);d.setDate(d.getDate()-(d.getDay()+6)%7);return d;};
+var tp107Pace=function(seconds,meters){return seconds>0&&meters>0?seconds/(meters/1000):null;};
+var tp107FormatPace=function(value){if(!Number.isFinite(value)||value<=0)return '—';const seconds=Math.round(value);return Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0')+' /km';};
+var tp107CardioModel=function(workouts,now=new Date(),activity=''){
+ const rows=[],week=tp107WeekStart(now),next=new Date(week);next.setDate(next.getDate()+7);
+ for(const h of workouts||[]){const date=new Date(h.finished||h.started);if(!Number.isFinite(+date)||date>now)continue;
+  for(const e of h.exercises||[]){if(!tp106IsDistance(e)||activity&&e.id!==activity)continue;
+   for(const set of e.sets||[]){if(!set||set.done===false)continue;const raw=Number(set.reps),seconds=Number.isFinite(raw)&&raw>0?raw:0,meters=typeof set.distanceMeters==='number'&&Number.isFinite(set.distanceMeters)&&set.distanceMeters>0&&set.distanceMeters<=2000000?set.distanceMeters:0;
+    if(!seconds&&!meters)continue;rows.push({id:e.id,date,meters,seconds,pace:tp107Pace(seconds,meters),workoutId:h.id||h.started,setId:set.setId||'',source:set.distanceSource||'manual'});
+   }
+  }
+ }
+ const totals=function(rows){const paired=rows.filter(function(r){return r.pace!==null;});return {meters:rows.reduce(function(n,r){return n+r.meters;},0),seconds:rows.reduce(function(n,r){return n+r.seconds;},0),pace:tp107Pace(paired.reduce(function(n,r){return n+r.seconds;},0),paired.reduce(function(n,r){return n+r.meters;},0)),timeOnlySeconds:rows.filter(function(r){return !r.meters;}).reduce(function(n,r){return n+r.seconds;},0)};};
+ const weeks=[];for(let i=7;i>=0;i--){const start=new Date(week);start.setDate(start.getDate()-i*7);const end=new Date(start);end.setDate(end.getDate()+7);weeks.push({start,...totals(rows.filter(function(r){return r.date>=start&&r.date<end;}))});}
+ const grouped=new Map();for(const r of rows){if(!r.pace||Math.round(r.meters)<=0)continue;const key=r.id+'|'+Math.round(r.meters);if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(r);}
+ const records=[...grouped.values()].map(function(xs){xs.sort(function(a,b){return a.seconds-b.seconds||a.date-b.date;});return {id:xs[0].id,meters:Math.round(xs[0].meters),best:xs[0],previous:xs[1]||null,count:xs.length};}).sort(function(a,b){return a.id.localeCompare(b.id)||a.meters-b.meters;});
+ return {rows,totals:totals(rows),week:weeks.at(-1),previousWeek:weeks.at(-2),weeks,records};
+};
+var tp107DistanceStats=function(id,entries){
+ const m=tp107CardioModel(entries.map(function(x){return x.h;}),new Date(),id);if(!m.rows.length)return null;
+ const rows=m.rows.slice().sort(function(a,b){return b.date-a.date;});return {kind:'distance',maxWeight:0,e1rm:0,maxVolume:0,count:rows.length,sessions:new Set(rows.map(function(r){return r.workoutId;})).size,best:m.records[0]?.best||rows[0],latest:rows[0],cardio:m};
+};
+var tp107CardioSummary=function(s){return tp107T('distance')+': '+tp106Km(s.cardio.totals.meters)+' km';};
+var tp107CardioDetail=function(s){return '<div class="stat"><small>'+esc(tp107T('distance'))+'</small><strong>'+esc(tp106Km(s.cardio.totals.meters))+' km</strong></div><div class="stat"><small>'+esc(tp107T('pace'))+'</small><strong>'+esc(tp107FormatPace(s.cardio.totals.pace))+'</strong></div><div class="stat"><small>'+esc(tp107T('duration'))+'</small><strong>'+esc(rf110FormatStopwatch(s.cardio.totals.seconds))+'</strong></div><button type="button" class="btn secondary" onclick="tp107OpenCardio()">'+esc(tp107T('records'))+'</button>';};
+var tp107CardioActivity='';
+var tp107OpenCardio=function(){return window.tp155R4OpenPanel?.('cardio',document.activeElement);};
+var tp107ChangeCardio=function(input){tp107CardioActivity=input.value;window.tp155R4RefreshPanel();};
+var tp107CardioHtml=function(){
+ const all=history(),m=tp107CardioModel(all,new Date(),tp107CardioActivity),ids=[...new Set(all.flatMap(function(h){return (h.exercises||[]).filter(tp106IsDistance).map(function(e){return e.id;});}))];
+ const metric=function(label,value){return '<div class="stat"><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong></div>';};
+ const maximum=Math.max(1,...m.weeks.map(function(w){return w.meters;}));
+ return '<main class="tp107-cardio"><h2>'+esc(tp107T('cardio'))+'</h2><select class="field" aria-label="'+esc(tp107T('all'))+'" onchange="tp107ChangeCardio(this)"><option value="">'+esc(tp107T('all'))+'</option>'+ids.map(function(id){return '<option value="'+esc(id)+'" '+(id===tp107CardioActivity?'selected':'')+'>'+esc(tp149ExerciseName(byId(id)||{id,hu:id,en:id}))+'</option>';}).join('')+'</select><div class="grid2">'+metric(tp107T('week'),tp106Km(m.week.meters)+' km')+metric(tp107T('previous'),tp106Km(m.previousWeek.meters)+' km')+metric(tp107T('pace'),tp107FormatPace(m.totals.pace))+metric(tp107T('duration'),rf110FormatStopwatch(m.totals.seconds))+'</div>'+(!m.rows.length?'<p>'+esc(tp107T('empty'))+'</p>':'')+'<section class="card tp107-weeks">'+m.weeks.map(function(w){return '<div class="tp107-week"><span>'+esc(tp149FormatDate(w.start,{month:'short',day:'numeric'}))+'</span><span class="tp107-week-bar"><i style="width:'+Math.round(w.meters/maximum*100)+'%"></i></span><strong>'+esc(tp106Km(w.meters))+' km</strong></div>';}).join('')+'</section><p>'+esc(tp107T('timeOnly'))+': '+esc(rf110FormatStopwatch(m.totals.timeOnlySeconds))+'</p><h3>'+esc(tp107T('records'))+'</h3><p class="small muted">'+esc(tp107T('rule'))+'</p>'+m.records.map(function(r){return '<article class="card tp107-record"><strong>'+esc(tp149ExerciseName(byId(r.id)||{id:r.id,hu:r.id,en:r.id}))+' · '+esc(tp106Km(r.meters))+' km</strong><div>'+esc(rf110FormatStopwatch(r.best.seconds))+' · '+esc(tp107FormatPace(r.best.pace))+'</div><small>'+esc(tp149FormatDate(r.best.date))+' · '+r.count+'×</small>'+(r.previous?'<small>'+esc(tp107T('nextBest'))+': '+esc(rf110FormatStopwatch(r.previous.seconds))+' · '+esc(tp107T('difference'))+': '+esc(rf110FormatStopwatch(r.previous.seconds-r.best.seconds))+'</small>':'')+'</article>';}).join('')+'</main>';
+};
+
+var tp107IndoorInterval=null;
+var tp107IndoorInputSeconds=function(value){const n=Number(value);return Number.isFinite(n)&&n>0?n:0;};
+var tp107IndoorOwner=function(){const draft=state.session?null:db.get('draft',null),session=state.session||draft?.session,timer=session?.indoorTimer107,e=session?.exercises?.find(function(e){return e.id===timer?.exerciseId;}),set=e?.sets?.find(function(s){return s.setId===timer?.setId;});return timer&&set?{session,timer,e,set,draft}:null;};
+var tp107IndoorSeconds=function(timer,now=Date.now()){return Math.max(0,Math.floor((timer.elapsedMs+(timer.running?Math.max(0,now-timer.startedAt):0))/1000));};
+var tp107PersistIndoor=function(owner){owner.set.reps=String(tp107IndoorSeconds(owner.timer));if(owner.draft)db.set('draft',owner.draft);else persistDraft();};
+var tp107PaintIndoor=function(){
+ const owner=tp107IndoorOwner(),current=state.session?.exercises?.[state.current],panel=document.getElementById('tp107Indoor'),timer=owner?.timer;
+ if(owner&&timer.running){const sec=tp107IndoorSeconds(timer);if(String(sec)!==owner.set.reps)tp107PersistIndoor(owner);}
+ if(panel){const same=owner?.e===current;panel.querySelector('[data-tp107-clock]').textContent=rf110FormatStopwatch(same?tp107IndoorSeconds(timer):Number(current?.sets?.find(function(s){return !s.done;})?.reps)||0);panel.querySelector('[data-tp107-clock-toggle]').textContent=tp107T(same&&timer.running?'pause':same&&tp107IndoorSeconds(timer)>0?'resume':'start');panel.querySelector('[data-tp107-clock-status]').textContent=same?tp107T(timer.running?'timerRunning':'timerPaused'):'';}
+ if(panel)document.querySelectorAll('.tp153-set-row').forEach(function(row,i){const set=current?.sets?.[i],input=row.querySelector('input[oninput*="reps"]');if(input&&set){input.disabled=!!(timer?.running&&owner.set===set)||!!(tp106GpsState.active&&tp106GpsOwner(db.get('gpsTrip106',null))?.set===set);if(owner?.set===set&&document.activeElement!==input)input.value=set.reps;}});
+ if(!timer?.running&&tp107IndoorInterval){clearInterval(tp107IndoorInterval);tp107IndoorInterval=null;}
+};
+var tp107StopIndoor=function(clear=false){
+ const owner=tp107IndoorOwner();if(!owner)return;
+ if(owner.timer.running){owner.timer.elapsedMs+=Math.max(0,Date.now()-owner.timer.startedAt);owner.timer.running=false;owner.timer.startedAt=0;}
+ tp107PersistIndoor(owner);if(clear){delete owner.session.indoorTimer107;if(owner.draft)db.set('draft',owner.draft);else persistDraft();}tp107PaintIndoor();
+};
+var tp107ToggleIndoor=function(){
+ const owner=tp107IndoorOwner();if(owner?.timer.running){tp107StopIndoor();return;}
+ if(tp106GpsBusy||tp106GpsState.active){alert(tp107T('stopGps'));return;}
+ const session=state.session,e=session?.exercises?.[state.current],set=e?.sets?.find(function(s){return !s.done;});if(!session||!tp106IsDistance(e)||!set)return;
+ set.setId=set.setId||crypto.randomUUID();if(!owner||owner.e!==e||owner.set!==set){tp107StopIndoor(true);session.indoorTimer107={exerciseId:e.id,setId:set.setId,elapsedMs:tp107IndoorInputSeconds(set.reps)*1000,running:false,startedAt:0};}
+ const timer=session.indoorTimer107;timer.running=true;timer.startedAt=Date.now();persistDraft();if(!tp107IndoorInterval)tp107IndoorInterval=setInterval(tp107PaintIndoor,250);tp107PaintIndoor();
+};
+var tp107ResetIndoor=async function(){
+ const original=tp107IndoorOwner();if(!original)return;
+ if(!await tp2628Confirm(tp149T('stopwatch.reset'),{title:tp107T('indoor'),confirmText:tp107T('reset'),danger:true}))return;
+ const owner=tp107IndoorOwner();if(!owner||owner.session!==original.session||owner.set!==original.set||owner.timer!==original.timer)return;owner.timer.running=false;owner.timer.elapsedMs=0;owner.timer.startedAt=0;tp107PersistIndoor(owner);tp107PaintIndoor();
+};
+// Manual corrections while paused become the new starting duration.
+const tp107UpdateSetBase=upd;
+upd=function(ei,si,key,value){
+ const result=tp107UpdateSetBase.apply(this,arguments),owner=tp107IndoorOwner();
+ if(key==='reps'&&owner?.set===state.session?.exercises?.[ei]?.sets?.[si]&&!owner.timer.running){owner.timer.elapsedMs=tp107IndoorInputSeconds(owner.set.reps)*1000;persistDraft();tp107PaintIndoor();}
+ return result;
+};
+const tp107GpsStartBase=tp106StartGPS;
+tp106StartGPS=async function(){tp107StopIndoor(true);return tp107GpsStartBase.apply(this,arguments);};
+const tp107RemoveSetBase=tp106BeforeSetRemoval;
+tp106BeforeSetRemoval=async function(session,e,set){if(tp107IndoorOwner()?.set===set)tp107StopIndoor(true);return tp107RemoveSetBase.apply(this,arguments);};
+const tp107ToggleSetBase=toggleSet;
+toggleSet=function(ei,si){if(tp107IndoorOwner()?.set===state.session?.exercises?.[ei]?.sets?.[si])tp107StopIndoor(true);return tp107ToggleSetBase.apply(this,arguments);};
+const tp107FinishBase=finishWorkout;
+finishWorkout=function(){tp107StopIndoor(true);return tp107FinishBase.apply(this,arguments);};
+const tp107NextExerciseBase=nextExercise,tp107PrevExerciseBase=prevExercise;
+nextExercise=function(){tp107StopIndoor(true);return tp107NextExerciseBase.apply(this,arguments);};
+prevExercise=function(){tp107StopIndoor(true);return tp107PrevExerciseBase.apply(this,arguments);};
+const tp107WorkoutBase=renderWorkout;
+renderWorkout=function(){
+ const result=tp107WorkoutBase.apply(this,arguments),gps=document.getElementById('tp106GPS');if(!gps)return result;
+ const panel=document.createElement('section');panel.id='tp107Indoor';panel.className='card tp107-indoor';panel.innerHTML='<strong>'+esc(tp107T('indoor'))+'</strong><p class="small muted">'+esc(tp107T('timerNote'))+'</p><strong class="tp107-clock" data-tp107-clock>00:00</strong><div class="tp107-save-row"><button type="button" class="btn" data-tp107-clock-toggle onclick="tp107ToggleIndoor()">'+esc(tp107T('start'))+'</button><button type="button" class="btn secondary" onclick="tp107ResetIndoor()">'+esc(tp107T('reset'))+'</button></div><p class="small muted" data-tp107-clock-status role="status"></p>';
+ gps.before(panel);const owner=tp107IndoorOwner();if(owner?.timer.running&&!tp107IndoorInterval)tp107IndoorInterval=setInterval(tp107PaintIndoor,250);tp107PaintIndoor();return result;
+};
+
+var tp107FitViews=function(){
+ const home=document.querySelector('#app main.rf221-home'),health=document.querySelector('#app main.tp168-health');
+ const expanded=health&&[...health.querySelectorAll('details[open],.tp168-weight-summary[aria-expanded="true"],.tp169-pulse-summary[aria-expanded="true"]')].some(function(e){return e.getClientRects().length>0;});
+ home?.classList.add('tp107-fit-home');health?.classList.toggle('tp107-fit-health',!expanded);
+ const fixed=!!home||!!health&&!expanded;document.documentElement.classList.toggle('tp107-fixed-view',fixed);document.body.classList.toggle('tp107-fixed-view',fixed);
+ const nav=document.querySelector('.top');if(nav)document.documentElement.style.setProperty('--tp107-nav-height',Math.ceil(nav.getBoundingClientRect().bottom)+'px');
+ const calendar=document.querySelector('#tp155R4PanelHost[data-panel="calendar"]');calendar?.classList.add('tp107-fit-calendar');
+ const progress=document.querySelector('main.tp177-progress');if(progress&&!progress.querySelector('.tp107-cardio-entry')){const button=document.createElement('button');button.type='button';button.className='btn secondary block tp107-cardio-entry';button.textContent=tp107T('cardio');button.onclick=tp107OpenCardio;progress.querySelector('.tp67-full-stats-entry')?.after(button);}
+};
+window.addEventListener?.('DOMContentLoaded',function(){
+ const renderBase=render;render=function(){const result=renderBase.apply(this,arguments);tp107FitViews();return result;};
+ const refreshBase=window.tp155R4RefreshPanel;window.tp155R4RefreshPanel=function(){const result=refreshBase.apply(this,arguments);tp107FitViews();return result;};
+ document.addEventListener('toggle',function(){requestAnimationFrame(tp107FitViews);},true);
+ document.addEventListener('click',function(){requestAnimationFrame(tp107FitViews);});
+ window.addEventListener('resize',tp107FitViews);document.addEventListener('visibilitychange',function(){if(!document.hidden)tp107PaintIndoor();});tp107FitViews();
+});
+// @endsection training-107.js
 
 // @section ready.js
 if(!window.TrainPilotRestore105Pending)window.TrainPilotBoot.finish();

@@ -1,0 +1,105 @@
+/* Fixed overview pages; expanded Health and Calendar detail regions remain accessible. */
+html.tp107-fixed-view,body.tp107-fixed-view{height:100dvh;overflow:hidden;overscroll-behavior:none}
+html body #app main.tp107-fit-home,html body #app main.tp107-fit-health{margin:0!important;padding:8px 12px max(8px,env(safe-area-inset-bottom,0px))!important;gap:7px!important;max-height:calc(100dvh - var(--tp107-nav-height,132px));box-sizing:border-box;animation:none!important;transform:none!important}
+html body #app main.tp107-fit-home>.card,html body #app main.tp107-fit-home>.hero,html body #app main.tp107-fit-health>.card{margin:0!important}
+html body #app main.tp107-fit-home:not(.tp-home-draft-compact)>.onboarding{padding:8px 10px!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto;column-gap:8px;row-gap:2px}
+html body #app main.tp107-fit-home:not(.tp-home-draft-compact)>.onboarding h2{font-size:16px!important;line-height:1.15!important;margin:0!important}
+html body #app main.tp107-fit-home:not(.tp-home-draft-compact)>.onboarding p{grid-column:1;font-size:12px!important;line-height:1.2!important;margin:0!important}
+html body #app main.tp107-fit-home:not(.tp-home-draft-compact)>.onboarding>.btn{grid-column:2;grid-row:1/span 2;max-width:125px;min-height:42px!important;white-space:normal!important;padding:6px 8px!important}
+html body #app main.tp107-fit-home:not(.tp-home-draft-compact)>.hero{padding:9px 12px!important}
+html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp155-home-program-left h1{font-size:clamp(19px,5vw,25px)!important;line-height:1.1!important}
+html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp155-home-program-right .tp146-next-title{font-size:16px!important}
+html body #app main.tp107-fit-home:not(.tp-home-draft-compact)>.hero>.btn{margin-top:5px!important;min-height:42px!important}
+html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf223Today{padding:8px 10px!important}
+html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf223Today .tp5-today-metric.stat{min-height:56px!important;padding:4px!important;height:56px!important;aspect-ratio:auto!important;gap:2px!important}
+html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard{padding:9px 12px!important}
+html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard h2{font-size:18px!important;margin:0 0 4px!important}
+html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard .tp166-home-coach-copy p{font-size:12px!important;line-height:1.25!important}
+html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard .tp166-home-coach-target{margin:6px 0!important;gap:6px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard .tp166-home-coach-target>span{padding:6px 8px!important}
+html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard .tp166-home-coach-sub{font-size:11px!important;margin-top:4px!important}
+html body #app main.tp107-fit-health>.tp168-today-card{padding:10px!important}
+html body #app main.tp107-fit-health .tp5-today-full>.tp5-today-metric.stat{height:74px!important;min-height:74px!important}
+html body #app main.tp107-fit-health>.tp168-health-note{margin:0!important;font-size:11px!important;line-height:1.2!important}
+html body #app main.tp107-fit-health>.tp168-sync-tail{padding:8px!important}
+html body #app main.tp107-fit-health>.tp168-sync-tail p{margin:4px 0 0!important}
+html body #app main.tp107-fit-health :is(.tp168-weight-summary,.tp169-pulse-summary){margin:5px 0!important}
+html body #tp155R4PanelHost.tp107-fit-calendar .tp155-r4-panel{height:calc(100% - 8px)!important;max-height:calc(100% - 8px)!important;box-sizing:border-box;display:flex!important;flex-direction:column;overflow:hidden!important;animation:tp160BackdropIn 110ms ease-out both!important;transform:none!important;margin-top:0!important}
+html body #tp155R4PanelHost.tp107-fit-calendar .tp155-r4-panel-content{flex:1;min-height:0;overflow:hidden;height:0;display:flex;flex-direction:column}
+html body #tp155R4PanelHost.tp107-fit-calendar main{height:100%;min-height:0;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;padding:0!important;overflow:hidden}
+html body #tp155R4PanelHost.tp107-fit-calendar .tp151-calendar-frame{flex:0 0 auto;min-height:0;overflow:auto;margin:0!important}
+html body #tp155R4PanelHost.tp107-fit-calendar .tp151-day-panel{flex:1 1 auto;min-height:0;overflow:auto;margin:0!important}
+html body #tp155R4PanelHost.tp107-fit-calendar .tp155-r4-planner-bottom{flex:0 1 auto;min-height:48px;overflow:auto;margin:0!important}
+html body #tp155R4PanelHost.tp107-fit-calendar .rf2211-planner{margin:0!important}
+.tp107-save-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+.tp107-save-row .btn{min-height:44px;white-space:normal}
+.tp107-save-status{min-height:1.2em;margin:5px 0 10px}
+.tp107-program-editor[data-dirty="true"] .tp107-save-status{color:var(--accent2,var(--accent))}
+.tp107-clock{display:block;font-variant-numeric:tabular-nums;font-size:32px;color:var(--accent2,var(--accent));margin:10px 0}
+.tp107-cardio .grid2{margin:12px 0}
+.tp107-cardio .stat strong{font-size:clamp(18px,5vw,24px);overflow-wrap:anywhere}
+.tp107-week{display:grid;grid-template-columns:68px minmax(0,1fr) 65px;align-items:center;gap:8px;margin:10px 0;font-size:12px}
+.tp107-week-bar{height:10px;border-radius:8px;background:var(--card2);overflow:hidden}
+.tp107-week-bar i{display:block;height:100%;border-radius:8px;background:var(--accent)}
+.tp107-record{display:grid;gap:5px;overflow-wrap:anywhere}
+.tp107-cardio-entry{margin:8px 0}
+html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf223Today .rf223-title{margin-bottom:4px!important}
+html body #tp155R4PanelHost.tp107-fit-calendar .tp155-r4-panel-content>main{flex:1;height:auto!important;min-height:0!important}
+html body #app main.tp107-fit-home>.grid2{margin:0!important;gap:6px!important}
+html body #app main.tp107-fit-home>.grid2>.stat{display:flex!important;align-items:center;justify-content:space-between;gap:5px;padding:5px 7px!important;min-height:36px!important}
+html body #app main.tp107-fit-home>.grid2>.stat small{font-size:10px!important;line-height:1.15}
+html body #app main.tp107-fit-home>.grid2>.stat strong{font-size:16px!important;white-space:nowrap}
+html body #app main.tp107-fit-home.tp-home-draft-compact>.onboarding{grid-template-columns:minmax(0,1fr) auto!important;gap:2px 7px!important;padding:6px 8px!important}
+html body #app main.tp107-fit-home.tp-home-draft-compact>.onboarding h2{font-size:13px!important;line-height:1.15!important}
+html body #app main.tp107-fit-home.tp-home-draft-compact>.onboarding>.btn{grid-column:2!important;grid-row:1/span 2!important;max-width:88px;font-size:11px!important;line-height:1.2!important;padding:5px!important}
+html body #app main.tp107-fit-home.tp-home-draft-compact #rf223Today .tp5-today-metric.stat{height:46px!important;min-height:46px!important;aspect-ratio:auto!important;padding:3px!important;gap:1px!important}
+html body #app main.tp107-fit-home.tp-home-draft-compact #rf223Today .tp5-today-label{font-size:10px!important;line-height:1.05!important}
+html body #app main.tp107-fit-home.tp-home-draft-compact #rf220CoachCard h2{font-size:15px!important}
+html body #app main.tp107-fit-home.tp-home-draft-compact #rf220CoachCard .tp166-home-coach-copy p{font-size:11px!important;line-height:1.2!important}
+html body #app main.tp107-fit-home.tp-home-draft-compact #rf220CoachCard .tp166-home-coach-target{grid-template-columns:1fr!important}
+html body #app main.tp107-fit-home.tp-home-draft-compact #rf220CoachCard .tp166-home-coach-target>span{display:flex!important;flex-direction:row!important;align-items:center;justify-content:space-between;min-height:30px!important;padding:3px 5px!important}
+html body #app main.tp107-fit-home.tp-home-draft-compact>.hero>.btn{padding:7px 9px!important;min-height:40px!important;display:none!important}
+html body #app main.tp107-fit-home>br{display:none}
+@media(max-width:340px){
+ html body #app main.tp107-fit-home:not(.tp-home-draft-compact)>.onboarding h2{font-size:14px!important}
+ html body #app main.tp107-fit-home:not(.tp-home-draft-compact)>.onboarding>.btn{max-width:105px}
+ html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp155-home-program-left h1{font-size:18px!important}
+ html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard .tp166-home-coach-copy p{font-size:12px!important}
+}
+@media(max-height:800px){
+ html body #app main.tp107-fit-home,html body #app main.tp107-fit-health{gap:5px!important;padding:6px 10px!important}
+ html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard .tp166-home-coach-target>span{padding:4px 6px!important;display:flex!important;flex-direction:row!important;align-items:center;justify-content:space-between;gap:4px!important;min-height:32px!important}
+ html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard{padding:7px 9px!important}
+ html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf223Today{padding:6px 8px!important}
+ html body #app main.tp107-fit-health .tp5-today-full>.tp5-today-metric.stat{height:62px!important;min-height:62px!important;padding:5px!important}
+ html body #app main.tp107-fit-health .tp168-today-head{margin-bottom:5px!important}
+ html body #app main.tp107-fit-health>.tp168-more-panel>summary,html body #app main.tp107-fit-health>.tp168-connect-panel>summary{min-height:44px!important;padding:6px 9px!important}
+ html body #app main.tp107-fit-health :is(.tp168-weight-summary,.tp169-pulse-summary){min-height:44px!important;padding:6px!important}
+ html body #app main.tp107-fit-health>.tp168-health-note{padding:4px 6px!important}
+ html body #app main.tp107-fit-home:not(.tp-home-draft-compact)>.hero>.btn{padding:8px 10px!important;min-height:42px!important}
+ html body #app main.tp107-fit-home:not(.tp-home-draft-compact)>.onboarding>.btn{max-width:90px;font-size:12px!important;line-height:1.2!important}
+ html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard .tp167-home-coach-readiness{grid-template-columns:1fr!important}
+ html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard h2{font-size:16px!important}
+ html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard .tp166-home-coach-copy p{font-size:11px!important;line-height:1.2!important}
+ html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp155-home-program-left .badge{padding:3px 6px!important;margin:1px 0!important}
+ html body #app main.tp107-fit-home{gap:3px!important;padding-block:4px!important}
+ html body #app main.tp107-fit-home.tp-home-draft-compact .tp155-home-active-grid{grid-template-columns:1fr!important;gap:4px!important}
+ html body #app main.tp107-fit-home.tp-home-draft-compact .tp155-home-program-left{display:flex;align-items:center;gap:5px}
+ html body #app main.tp107-fit-home.tp-home-draft-compact .tp155-home-program-left h1{font-size:14px!important;margin:0!important}
+ html body #app main.tp107-fit-home.tp-home-draft-compact .tp155-home-program-left .badge{font-size:9px!important;padding:3px 5px!important;margin:0!important;white-space:nowrap}
+ html body #app main.tp107-fit-home.tp-home-draft-compact .tp155-home-program-right{border:0!important;padding:0!important}
+ html body #app main.tp107-fit-home.tp-home-draft-compact .tp146-next{display:flex!important;flex-direction:row!important;flex-wrap:wrap;align-items:center;gap:4px!important}
+ html body #app main.tp107-fit-home.tp-home-draft-compact .tp146-next-title{font-size:12px!important;margin:0!important}
+ html body #app main.tp107-fit-home.tp-home-draft-compact .tp146-next .small{font-size:10px!important}
+}
+/* Retain the accepted hairline even when legacy skin padding is replaced. */
+html body #app main.tp107-fit-home>.hero.tp155-home-active-card{border-width:1px!important}
+/* Two readable rows avoid clipping the value inside compact Today tiles. */
+html body #app main.tp107-fit-home #rf223Today .tp5-today-metric.stat{display:grid!important;grid-template-columns:16px minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr) 16px!important;align-items:center!important;justify-items:start!important}
+html body #app main.tp107-fit-home #rf223Today .tp5-today-label{margin:0!important;line-height:1.05!important}
+html body #app main.tp107-fit-home #rf223Today .tp5-today-value{grid-column:1/-1;font-size:13px!important;line-height:16px!important}
+html body #app main.tp107-fit-health .tp5-today-full>.tp5-today-metric.stat{display:grid!important;grid-template-columns:24px minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr) 18px!important;align-items:center!important;justify-items:start!important;gap:2px!important}
+html body #app main.tp107-fit-health .tp5-today-label{margin:0!important}
+html body #app main.tp107-fit-health .tp5-today-value{grid-column:1/-1;line-height:18px!important}
+
+@media(prefers-reduced-motion:reduce){html body #tp155R4PanelHost.tp107-fit-calendar .tp155-r4-panel{animation:none!important}}
