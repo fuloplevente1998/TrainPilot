@@ -13,7 +13,7 @@ import android.os.ParcelUuid;
 import android.util.SparseArray;
 import com.getcapacitor.*;
 import com.getcapacitor.annotation.*;
-import java.time.Instant;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /** Foreground diagnostic connection. Only standard heart-rate CCCD writes are allowed. */
@@ -258,7 +258,9 @@ public class BleDiscoveryPlugin extends Plugin {
             if (bpm == null || now - lastPulse < 1000) return;
             lastPulse = now;
             JSObject event = new JSObject(); event.put("kind", "pulse"); event.put("bpm", bpm);
-            event.put("measuredAt", Instant.now().toString()); notifyListeners("bleEvent", event);
+            SimpleDateFormat utc = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+            utc.setTimeZone(TimeZone.getTimeZone("UTC"));
+            event.put("measuredAt", utc.format(new Date())); notifyListeners("bleEvent", event);
         });
     }
     @PluginMethod public void startHeartRate(PluginCall call) {
