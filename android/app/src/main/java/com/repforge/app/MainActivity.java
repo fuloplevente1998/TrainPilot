@@ -16,7 +16,9 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(WorkoutPhotosPlugin.class);
         registerPlugin(HealthBridgePlugin.class);
         registerPlugin(DistanceTrackerPlugin.class);
+        registerPlugin(AppFeedbackPlugin.class);
         super.onCreate(savedInstanceState);
+        applySystemTextSize();
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override public void handleOnBackPressed() {
                 if (getBridge() == null || getBridge().getWebView() == null) {
@@ -40,5 +42,17 @@ public class MainActivity extends BridgeActivity {
             return WindowInsetsCompat.CONSUMED;
         });
         ViewCompat.requestApplyInsets(content);
+    }
+
+    @Override public void onResume() {
+        super.onResume();
+        applySystemTextSize();
+    }
+
+    private void applySystemTextSize() {
+        if (getBridge() != null && getBridge().getWebView() != null) {
+            float scale = getResources().getConfiguration().fontScale;
+            getBridge().getWebView().getSettings().setTextZoom(Math.round(scale * 100));
+        }
     }
 }

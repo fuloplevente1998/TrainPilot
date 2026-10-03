@@ -2,6 +2,17 @@
 
 Last updated: **2026-10-03 (Europe/Budapest)**. Earlier Phase 5–7 history remains below; it is historical. See [docs/PHASE_5_6_7_ROADMAP.md](docs/PHASE_5_6_7_ROADMAP.md) and the permanent [performance regression policy](docs/PERFORMANCE_REGRESSION_POLICY.md).
 
+## Candidate — TrainPilot 1.1.0 / 2698 (#103)
+
+- Starts from verified public main `81032d9b3ec697680e7fdb1210e89f94e584b299`. [#103](https://github.com/fuloplevente1998/TrainPilot/issues/103) was recorded before implementation. Stable main/release remains 1.0.9 / 2697 pending physical-phone acceptance.
+- Weekly saved-workout and monthly cardio-kilometre goals reuse Home's Today header and the shared Goals panel, with settings/backup/Drive persistence. No extra Home card. Zero disables a goal; local Monday/month boundaries and distinct legacy records are preserved.
+- Calendar replanning previews missed and following sessions for the selected program, preserves IDs/day order/duration/local time, and respects alternate/weekly/custom rhythms. Completed/logged/active-draft sessions stay protected; occupied days are avoided. A changed snapshot requires review again before applying.
+- Indoor work/rest intervals reuse the existing timer and stable owner set. Presets are backed up; pause/resume and saved drafts survive restart. The final rest is omitted, elapsed time clamps at the planned end, and set completion remains manual. Foreground audio/native vibration cues require the app open; background elapsed recovery does not promise background alarms.
+- Coach explains the existing sleep/HRV/load/pain weights, dated observations, missing baseline and stale data in HU/EN/DE/RO. The scoring algorithm is unchanged. Empty Journal/filter/search/cardio states offer a next action; successful saves use existing non-blocking feedback while write failures retain explicit errors.
+- Android's system text zoom is honored. Enlarged text enables vertical scrolling for Home, Health and Calendar and wraps controls without horizontal overflow; default overview sizing remains fixed.
+- Added one core regression and one end-to-end UI script: full suites contain **118 Node regressions and 57 Chromium UI scripts**. New UI cases cover four widths/four languages/two themes, failed saves, stale replanning, real timer phases/cues, pause/reload recovery and enlarged-text reachability. Performance budgets and the Phase 7 reference remain unchanged.
+- VersionName **1.1.0**, versionCode **2698**, unchanged application ID/storage/signer. See [implementation and phone checklist](docs/FEATURES_1_1_0.md) and [candidate notes](docs/releases/v1.1.0.md). Physical-phone approval for this candidate is pending.
+
 ## TrainPilot 1.0.9 / 2697 — minimal page design polish (#101)
 
 - Phone screenshots and feedback are recorded in [#101](https://github.com/fuloplevente1998/TrainPilot/issues/101). The requested scope is consistent main-page width, the existing Coach-reference faint 1px frame, stable Journal tab position and shared Progress detail arrows.
