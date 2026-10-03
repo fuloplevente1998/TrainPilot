@@ -30,6 +30,7 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const file=p
   await p.setViewportSize({width,height:width===320?740:873});await p.evaluate(lang=>{db.set('language',lang);tp155R4RefreshPanel();},lang);
   assert.match(await p.locator('[data-ble-device="anonymous-0"]').innerText(),/#1.*\n.*AA:BB:CC:DD:EE:00/);
   assert.match(await p.locator('[data-ble-device="anonymous-4"]').innerText(),/Realtek/);
+  const visibleText=await p.locator('.tp111-ble').innerText();for(const key of ['identify','deviceNumber','macAddress','candidate','scanExport'])assert.ok(!new RegExp('\\b'+key+'\\b').test(visibleText),'no untranslated BLE key '+lang+'/'+key);
   assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth-innerWidth)<=1,'40 unnamed devices fit '+width+'/'+lang);
   if(width===393&&lang==='hu')await p.screenshot({path:'ui-evidence/ble-unnamed-2700.png'});
  }
