@@ -31,10 +31,16 @@ html[data-tp-theme-family="basic"] body #app main:not([hidden]):not([aria-hidden
 /* The narrow reference gutter can wrap translated Health copy onto one more line. */
 @media(max-height:800px){html body #app main.tp107-health-layout{gap:3px!important}}
 /* Preserve the full planner even with long translated copy on 320px phones. */
-@media(max-width:340px) and (max-height:800px){
+@media(max-width:390px) and (max-height:800px){
  html body #app main.tp107-fit-home{gap:2px!important;padding-block:2px!important}
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact)>.hero{padding-block:4px!important}
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf223Today{padding-block:3px!important}
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard{padding-block:3px!important}
  html body #app main.tp107-fit-home:not(.tp-home-draft-compact) #rf220CoachCard .tp166-home-coach-target{margin-block:0!important}
+}
+
+/* Include the frame's top offset in the fixed viewport budget. */
+html body #app main:is(.tp107-fit-home,.tp107-fit-health){
+ max-height:calc(100dvh - var(--tp107-nav-height,132px) - 2px)!important;
+ overflow:hidden;
 }
