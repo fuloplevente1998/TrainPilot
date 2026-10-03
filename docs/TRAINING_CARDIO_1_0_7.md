@@ -1,12 +1,12 @@
-# TrainPilot 1.0.7 / 2692 — program editing and cardio candidate
+# TrainPilot 1.0.7 / 2693 — program editing and cardio candidate
 
-The user expanded PR #94's existing backup/GPS cleanup scope before merge. The base remains the phone-approved, post-merge validated 1.0.6 main `ef09c5ee44b61902a7bb265f8ef2b3d2ea8de88e`. The earlier 2691 APK is superseded by this upgrade-safe 2692 candidate. Public main remains 1.0.6; automated tests are not physical-phone acceptance.
+The user expanded PR #94's existing backup/GPS cleanup scope before merge. The base remains the phone-approved, post-merge validated 1.0.6 main `ef09c5ee44b61902a7bb265f8ef2b3d2ea8de88e`. The earlier 2691/2692 APKs are superseded by this upgrade-safe 2693 candidate. Public main remains 1.0.6; automated tests are not physical-phone acceptance.
 
 ## Resulting behavior
 
 - Home fits in the viewport with or without a saved workout draft. When a draft exists, Resume is the primary Home action; the Workout page can still start another workout. Localized lifetime counters remain available on Home.
 - Collapsed Health fits in the viewport; opening pulse, weight or another section restores normal scrolling. Compact Today tiles keep labels and values visible.
-- Calendar's frame fits below the navigation and shows all days, including six-row months. Long planner/day content scrolls inside its own region, preserving access to every control. Calendar itself does not page-scroll.
+- Calendar's frame fits below the navigation and shows all days, including six-row months. The full two-column planning settings remain fixed without internal scrolling; the themed selectors and date/time pickers open above the fixed page. Long selected-day details retain their own scrolling region. Calendar itself does not page-scroll.
 - The same exercise-row editor works on Workout and Programs, including built-in programs. It hydrates only when opened. Typing marks the row unsaved; Save validates the complete prescription, writes it once, updates the summary immediately and shows Saved. Reset changes restores stored values. Invalid fields cannot partially save. Replacement/removal target the row's own program rather than the active program. Saved set count and rest settings feed the next workout; an in-progress workout retains its original prescription snapshot.
 - Cardio statistics open from Progress beside the existing full-statistics button. Weekly totals use local Monday-to-Sunday weeks, with the previous week and eight-week history. Average pace uses total seconds / total kilometres for sets that have both values. Time-only and distance-only entries do not distort pace. Unfinished, invalid or future entries are excluded.
 - Records compare the same exercise ID and distance rounded to metres. The fastest time wins, with the second-best time and difference shown. Cycling and running are separate; a short run is not extrapolated into a 5 km record. The existing exercise statistics recognize distance activities rather than ranking them as longer timed holds.
@@ -23,7 +23,7 @@ The user expanded PR #94's existing backup/GPS cleanup scope before merge. The b
 
 ## Physical-phone checklist
 
-1. Install 2692 over the current app or 2691 candidate. Check historical workouts, custom/built-in programs, settings, weights, photos and sync data.
+1. Install 2693 over the current app or 2691/2692 candidates. Check historical workouts, custom/built-in programs, settings, weights, photos and sync data.
 2. Check Home with/without a saved draft, collapsed Health and Calendar on the actual device, including a six-row month. Open Health details, planner controls, day details and close/Back; no content or save control should become inaccessible. Check theme/language changes and keyboard dismissal.
 3. On Workout, edit sets/reps/load/rest and tap Save. Confirm immediate summary update, then start the next workout and check the new prescription. On Programs, edit a different program without activating it; reopen/relaunch and verify persistence. Check Reset changes, invalid values and exercise replacement/removal.
 4. Start indoor timing, background the app, return, pause, correct the seconds manually and resume. Enter kilometres manually. Complete/finish the workout and check duration/distance in Journal. Repeat after a draft reload; reset or remove the timed set and confirm no other set inherits its time. Check switching to/from GPS.
@@ -31,3 +31,9 @@ The user expanded PR #94's existing backup/GPS cleanup scope before merge. The b
 6. Repeat the [backup/GPS checklist](BACKUP_GPS_CONSOLIDATION_1_0_7.md), normal Journal editing and Drive sync. Compare responsiveness with the current phone baseline.
 
 Explicit user acceptance is required before main merge. No phone result is claimed by this document.
+
+## Planner correction after 2692 phone feedback
+
+The Home personal planner keeps the accepted normal heading, copy and full-width button below the copy when no unfinished workout exists. Only a saved workout draft selects its compact two-column layout. Removing the draft restores the full card, including after navigation, refresh or a theme change. Small-screen summary spacing is adjusted to preserve the fixed Home viewport without compressing the normal planner. Browser regressions cover both profile states, four languages and all four phone sizes.
+
+The user also requested a fixed Calendar planning section. Rhythm, first workout day, start/time, duration/weeks and the planning button share a two-column layout. All planning modes, including weekly days and manual planning, must fit without internal scrolling. Existing themed choice/date/time pickers remain usable above the fixed calendar. The regression matrix uses a six-row month and real dropdown selection, wheel input and first-workout/time pickers in all four languages and phone sizes.

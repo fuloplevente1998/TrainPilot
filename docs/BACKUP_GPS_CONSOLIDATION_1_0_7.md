@@ -1,4 +1,4 @@
-# TrainPilot 1.0.7 / 2692 candidate
+# TrainPilot 1.0.7 / 2693 candidate
 
 Date: 2026-10-03, Europe/Budapest. Branch: `fix/backup-gps-consolidation`.
 Baseline: validated main `ef09c5ee44b61902a7bb265f8ef2b3d2ea8de88e`, public 1.0.6 / 2690. The downloaded public APK matches this main's `www/app.js`; its SHA-256 matches the published checksums. This candidate requires physical-phone acceptance before main merge.
@@ -10,7 +10,7 @@ Baseline: validated main `ef09c5ee44b61902a7bb265f8ef2b3d2ea8de88e`, public 1.0.
 3. **Backup builder:** 68 historical `makeBackup` definitions become one. It preserves programs, planner, schedules, weights, workouts, distance measurements, photo references, favorites, language, theme and recovery data. Health consent is read at export time; projection clones the payload before redaction, and Drive continues to omit the daily Health ledger/wellness snapshot. Historical compatibility section boundaries remain.
 4. **Evidence:** the performance workflow now compares against validated 1.0.6 main using the same current benchmark on one runner. Metrics record version, source commit and app checksum instead of a fixed historical commit label.
 
-The public app ID and signing configuration are unchanged. Version code 2692 upgrades both public 2690 and the earlier 2691 test candidate. The user expanded this same draft PR with [program editing, fixed overview layouts and cardio features](TRAINING_CARDIO_1_0_7.md).
+The public app ID and signing configuration are unchanged. Version code 2693 upgrades public 2690 and both earlier 2691/2692 test candidates. The user expanded this same draft PR with [program editing, fixed overview layouts and cardio features](TRAINING_CARDIO_1_0_7.md).
 
 ## Verification
 
@@ -25,7 +25,7 @@ The public app ID and signing configuration are unchanged. Version code 2692 upg
 
 ## Phone acceptance checklist
 
-1. Install the signed 1.0.7 / 2692 APK over the existing app. Verify historical workouts, weights, programs, settings and photo references remain available.
+1. Install the signed 1.0.7 / 2693 APK over the existing app. Verify historical workouts, weights, programs, settings and photo references remain available.
 2. Export and restore a test backup with Health inclusion disabled, then enabled. Verify distance/time, programs, favorites, language/theme and photo references. Use a disposable dataset for restore testing.
 3. Start GPS on a distance workout with at least two sets. Remove the measured set: native tracking should stop, and the remaining set should have no inherited kilometres/time.
 4. Start GPS on the second set after completing the first, then remove the first. Tracking should continue on the original second set with its totals intact.

@@ -18,7 +18,7 @@ Last updated: **2026-10-03 (Europe/Budapest)**. Earlier Phase 5–7 history rema
 Release details: [v1.0.6 notes](docs/releases/v1.0.6.md), [implementation and phone checks](docs/CUSTOM_EXERCISE_DISTANCE_1_0_6.md).
 
 
-## Candidate 1.0.7 / 2692 — consolidation, program editing and cardio
+## Candidate 1.0.7 / 2693 — consolidation, program editing and cardio
 
 User-authorized first cleanup step on `fix/backup-gps-consolidation`, based on post-merge-validated main `ef09c5ee44b61902a7bb265f8ef2b3d2ea8de88e` (public 1.0.6 app source verified against its APK).
 
@@ -26,14 +26,15 @@ User-authorized first cleanup step on `fix/backup-gps-consolidation`, based on p
 - Bind GPS trips to stable set IDs, migrate running 1.0.6 trips, stop tracking before removing its owning set, and protect asynchronous deletion.
 - Consolidate 68 historical backup-builder definitions into one. Preserve all exported fields, legacy recovery and call-time Health consent.
 - The user explicitly expanded this same unmerged candidate to include fixed Home/Calendar/collapsed Health layouts, a shared explicit-Save program editor, cardio statistics and a GPS-free indoor timer. This scope expansion is authorized; it is not phone acceptance of the earlier 2691 APK.
-- Home fits with and without a saved workout draft; expanded Health remains scrollable. Calendar keeps the whole month visible and allows its longer planner/day details to scroll inside their regions. Pending workouts use Resume as the primary Home action; starting another workout remains available on Workout.
+- Phone feedback on the 2692 APK: restore the full-size personal planner with its full-width button whenever no workout draft exists. Compact planner styling applies only to an unfinished workout; removing its draft, navigation, refresh and theme changes restore the normal card. On narrow screens, surrounding summaries recover space while all content remains visible.
+- Home fits with and without a saved workout draft; expanded Health remains scrollable. Calendar keeps the whole month and the full two-column planning settings visible without scrolling; its selectors and temporal pickers still open above the fixed page. Long selected-day details retain their own scrolling region. Pending workouts use Resume as the primary Home action; starting another workout remains available on Workout.
 - Workout and Programs share a lazy prescription editor. Save validates all fields and updates the summary immediately; editing a non-active program does not activate it. Saved prescriptions feed the next workout.
 - Cardio: local Monday-based weekly kilometres, previous week, eight-week overview, distance-weighted pace and separate same-activity/same-distance fastest records with second-best comparison. Missing distance is not invented.
 - Indoor timer: start/pause/resume/reset without GPS or a permission request, stable set ownership, manual kilometres and paused time corrections, draft reload/background recovery. Internal timer state is removed before history recording.
 - Local Node: 117 passed; the new behavioral Chromium checks cover four languages and 320/360/393/412 px sizes, actual Save/start flows, timer reload/pause/delete/finish and cardio records. Full UI, performance and signed Android gates run for the final candidate.
 - **Candidate only: no physical-phone acceptance or merge approval yet.** Public release remains 1.0.6. Deliver the signed APK, run the phone checks, and obtain explicit acceptance before main merge.
 
-Implementation and phone checklists: [backup/GPS consolidation](docs/BACKUP_GPS_CONSOLIDATION_1_0_7.md), [program editing and cardio](docs/TRAINING_CARDIO_1_0_7.md). Version code 2692 upgrades both the public 2690 build and the earlier 2691 candidate.
+Implementation and phone checklists: [backup/GPS consolidation](docs/BACKUP_GPS_CONSOLIDATION_1_0_7.md), [program editing and cardio](docs/TRAINING_CARDIO_1_0_7.md). Version code 2693 upgrades public 2690 and both earlier 2691/2692 test candidates.
 
 ## Phase 5–7 acceptance boundaries
 

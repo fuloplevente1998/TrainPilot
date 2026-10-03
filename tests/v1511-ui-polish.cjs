@@ -35,8 +35,8 @@ assert.ok(app.includes("<select class=\"field\" onchange=\"tp1511TimeChange"),'c
 
 assert.equal(pkg.version,'1.0.7');
 assert.equal(src.version,'1.0.7');
-assert.equal(src.versionCode,2692);
-assert.match(gradle,/versionCode\s+2692/);
+assert.equal(src.versionCode,2693);
+assert.match(gradle,/versionCode\s+2693/);
 assert.match(gradle,/versionName\s+"1\.0\.7"/);
 
 console.log('PASS TrainPilot 1.5.1 unified UI polish guards');
