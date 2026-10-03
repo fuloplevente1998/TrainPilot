@@ -27,6 +27,11 @@ const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://loc
  await p.locator('[data-tp110-apply]').click();const replanned=await p.evaluate(()=>scheduled());assert.deepEqual(replanned.slice(0,3).map(x=>x.id),['miss-110','next-110','later-110']);assert.deepEqual(replanned.slice(0,3).map(x=>x.dayId),['A','B','A']);assert.deepEqual(replanned[3],fixture[3]);assert.ok(replanned.every((x,i)=>i===3||Date.parse(x.start)>Date.now()));assert.equal(await p.locator('[data-tp110-replan-status]').getAttribute('data-kind'),'success');
  await p.screenshot({path:'ui-evidence/replan-saved-2698.png'});await p.evaluate(()=>tp155R4ClosePanel(false));
 
+ await p.evaluate(()=>{go('calendar');const mode=document.querySelector('#rf230Mode');mode.value='weekly';mode.dispatchEvent(new Event('change',{bubbles:true}));});
+ await p.locator('input[name="rf2211Weekday"]').evaluateAll(inputs=>{for(const input of inputs){input.checked=[2,4].includes(Number(input.value));input.dispatchEvent(new Event('change',{bubbles:true}));}});
+ assert.deepEqual(await p.evaluate(()=>plannerSettings().weekdays),[2,4],'weekly planner choices must persist for replanning');await p.evaluate(()=>tp155R4RefreshPanel());
+ assert.deepEqual(await p.locator('input[name="rf2211Weekday"]:checked').evaluateAll(inputs=>inputs.map(x=>Number(x.value))),[2,4],'weekly days stay checked after refresh');await p.evaluate(()=>tp155R4ClosePanel(false));
+
  await p.evaluate(()=>{state.session=null;db.set('draft',null);go('plan');});await p.locator('.tp150-quick-entry button').click();const running=p.locator('[data-exercise-id="running"]');await running.locator('.tp150-quick-copy').click();await running.locator('.tp150-quick-start').click();await p.waitForSelector('#tp107Indoor');
  await p.evaluate(()=>{window.__cues110=0;navigator.vibrate=()=>{window.__cues110++;return true;};});await p.locator('.tp110-interval>summary').click();
  const form=p.locator('.tp110-interval form');await form.locator('[name="work"]').fill('1');await form.locator('[name="rest"]').fill('1');await form.locator('[name="rounds"]').fill('2');await form.locator('[name="sound"]').uncheck();await form.locator('button[type="submit"]').click();assert.equal(await form.locator('[data-tp110-interval-status]').getAttribute('data-kind'),'success');

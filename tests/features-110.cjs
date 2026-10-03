@@ -17,6 +17,7 @@ const original=JSON.stringify(rows),options={programId:'home-basic',mode:'altern
 const result=core.replan(rows,[],options);assert.equal(JSON.stringify(rows),original,'preview must not mutate storage');assert.deepEqual(Array.from(result.moved,x=>x.before.id),['missed','next','later']);
 assert.deepEqual(Array.from(result.moved,x=>new Date(x.after.start).getDate()),[6,8,10],'occupied days shift the rhythm without collisions');assert.deepEqual(Array.from(result.moved,x=>x.after.dayId),['A','B','A']);assert.equal(result.rows[3],rows[3]);assert.equal(result.rows[4],rows[4]);
 for(const {before,after} of result.moved){assert.equal(after.id,before.id);assert.equal(new Date(after.start).getHours(),8);assert.equal(Date.parse(after.end)-Date.parse(after.start),2700000);assert.equal(after.updatedAt,+now);}
+assert.ok(core.replan(rows,[],{...options,startDate:'2026-10-03'}).moved.every(x=>Date.parse(x.after.start)>+now),'today cannot create a new appointment whose preserved time has already passed');
 const completed=[{...workout('log','2026-10-01'),scheduleId:'missed'}];assert.equal(core.replan(rows,completed,options).moved.length,0,'logged scheduled workouts cannot be moved as missed');
 assert.equal(core.replan(rows,[],{...options,activeScheduleId:'missed'}).moved.length,0,'active saved draft is protected');
 const weekly=core.replan(rows.filter(x=>x.programId==='home-basic'),[],{...options,mode:'weekly',weekdays:[1,3,5]});assert.deepEqual(Array.from(weekly.moved,x=>new Date(x.after.start).getDay()),[1,3,5]);

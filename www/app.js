@@ -8037,7 +8037,7 @@ var tp149Weekdays=function tp149Weekdays(){return ['weekday.mon','weekday.tue','
 
 rf230WeekdayRow=function(mode){
  const vals=[1,2,3,4,5,6,0],names=tp149Weekdays();
- return '<div id="rf230Weekdays" class="rf2211-weekdays" style="'+(mode==='weekly'?'':'display:none')+'">'+names.map(function(n,i){return '<label><input type="checkbox" name="rf2211Weekday" value="'+vals[i]+'">'+esc(n)+'</label>';}).join('')+'</div>';
+ return '<div id="rf230Weekdays" class="rf2211-weekdays" style="'+(mode==='weekly'?'':'display:none')+'">'+names.map(function(n,i){return '<label><input type="checkbox" name="rf2211Weekday" value="'+vals[i]+'" '+((plannerSettings().weekdays||[]).includes(vals[i])?'checked ':'')+'onchange="tp155SavePlannerBasics()">'+esc(n)+'</label>';}).join('')+'</div>';
 };
 
 rf2211Planner=function(){
@@ -8064,7 +8064,7 @@ rf2211PlanWeeks=function(){
   out.push(makeScheduleItem(p,date,time,minutes,days[cycle%days.length].id));cycle++;
  }
  if(!out.length){alert(tp149T('calendar.error.noEmpty'));return;}
- db.set('plannerSettings',Object.assign({},plannerSettings(),{mode:mode,time:time,minutes:minutes}));addScheduleBatch(out);if(typeof cloudChanged==='function')cloudChanged();render();if(window.TrainPilot110)tp153Toast(window.TrainPilot110.t('replanned'),1800);
+ db.set('plannerSettings',Object.assign({},plannerSettings(),{mode:mode,time:time,minutes:minutes,weekdays:weekdays}));addScheduleBatch(out);if(typeof cloudChanged==='function')cloudChanged();render();if(window.TrainPilot110)tp153Toast(window.TrainPilot110.t('replanned'),1800);
 };
 
 rf2211DayPicker=function(){
@@ -12152,7 +12152,8 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  window.tp155SavePlannerBasics=function(){
   const s=plannerSettings(),mode=document.querySelector('#rf230Mode')?.value||rf230PlannerMode(),time=document.querySelector('#rf2211Time')?.value||s.time||'18:00';
   const minutes=Math.max(10,Math.min(240,Number(document.querySelector('#rf2211Minutes')?.value)||Number(s.minutes)||45));
-  db.set('plannerSettings',Object.assign({},s,{mode:mode,time:time,minutes:minutes}));if(typeof cloudChanged==='function')cloudChanged();
+  const weekdayInputs=[...document.querySelectorAll('input[name="rf2211Weekday"]')],weekdays=mode==='weekly'&&weekdayInputs.length?weekdayInputs.filter(x=>x.checked).map(x=>Number(x.value)):s.weekdays;
+  db.set('plannerSettings',Object.assign({},s,{mode:mode,time:time,minutes:minutes,weekdays:weekdays}));if(typeof cloudChanged==='function')cloudChanged();
  };
  rf230ModeChanged=function(){
   const mode=document.querySelector('#rf230Mode')?.value||'alternate';window.tp155SavePlannerBasics();
@@ -14774,9 +14775,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
     if(mode==='custom'){const a=new Date(dayKey(new Date(previous.start))+'T12:00'),b=new Date(dayKey(new Date(item.start))+'T12:00');gap=Math.max(1,Math.round((b-a)/86400000));}
     cursor=addDays(cursor,gap);
    }
+   const old=new Date(item.start),atTime=()=>{const d=new Date(cursor);d.setHours(old.getHours(),old.getMinutes(),old.getSeconds(),old.getMilliseconds());return d;};
    let attempts=0;
-   while(occupied.has(dayKey(cursor))||mode==='weekly'&&!weekdays.includes(cursor.getDay())){if(++attempts>3660)throw Error('slots');cursor=addDays(cursor,mode==='alternate'?2:1);}
-   const old=new Date(item.start),next=new Date(cursor);next.setHours(old.getHours(),old.getMinutes(),old.getSeconds(),old.getMilliseconds());
+   while(occupied.has(dayKey(cursor))||mode==='weekly'&&!weekdays.includes(cursor.getDay())||atTime()<=now){if(++attempts>3660)throw Error('slots');cursor=addDays(cursor,mode==='alternate'?2:1);}
+   const next=atTime();
    const updated={...item,start:next.toISOString(),end:new Date(+next+Date.parse(item.end)-Date.parse(item.start)).toISOString(),status:'planned',cancelled:false,updatedAt:+now};
    changed.set(item.id,updated);moved.push({before:item,after:updated});occupied.add(dayKey(cursor));previous=item;
   }
@@ -14891,7 +14893,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  function decorate(){
   const settingsRoot=document.querySelector('#tp155R4PanelHost[data-panel="settings"] main');
-  if(settingsRoot&&!settingsRoot.querySelector('.tp110-settings-goals')){const card=document.createElement('details');card.className='setting tp1511-card tp152-accordion tp110-settings-goals';card.innerHTML='<summary><strong>'+esc(t('goals'))+'</strong><span class="tp-global-chevron" aria-hidden="true">›</span></summary><p class="small muted">'+esc(t('goalNote'))+'</p><button type="button" class="btn secondary block" onclick="tp155R4OpenPanel(\'goals\',this)">'+esc(t('setGoals'))+'</button>';settingsRoot.querySelector('.rf212-language')?.after(card);}
+  if(settingsRoot&&!settingsRoot.querySelector('.tp110-settings-goals')){const card=document.createElement('details');card.className='setting tp1511-card tp152-accordion tp110-settings-goals';card.innerHTML='<summary><strong>'+esc(t('goals'))+'</strong><span class="tp-global-chevron" aria-hidden="true">›</span></summary><p class="small muted">'+esc(t('goalNote'))+'</p><button type="button" class="btn secondary block" onclick="tp155R4OpenPanel(\'goals\',this)">'+esc(t('setGoals'))+'</button>';const anchor=settingsRoot.querySelector('.tp162-theme-setting')||settingsRoot.querySelector('.rf212-language');if(anchor)anchor.after(card);else settingsRoot.appendChild(card);}
 
   const planner=document.querySelector('#tp155R4PanelHost[data-panel="calendar"] .tp155-planner-title');if(planner&&!planner.querySelector('.tp110-replan-link')){planner.style.display='flex';planner.style.alignItems='center';planner.style.gap='8px';const button=document.createElement('button');button.type='button';button.className='btn secondary tp110-replan-link';button.textContent=t('replan');button.onclick=()=>window.tp155R4OpenPanel('replan',button);planner.appendChild(button);}
   if(document.querySelector('[data-tp110-preview]')&&!preview)previewReplan();
