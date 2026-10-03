@@ -20,7 +20,7 @@ A Google-funkciókhoz külön Google Cloud/OAuth konfiguráció szükséges. A H
 
 ## Aktuális kiadás: TrainPilot 1.0.9 (2697)
 
-Az Android `versionName` **1.0.9**, a `versionCode` **2697**. A javítókiadás megtartja a korábbi telepítések alkalmazásazonosítóját és aláírását; az 1.0.7 / 2695-re és a korábbi verziókra is rátelepíthető. A témaválasztó mindkét oszlopa fölött működik a görgetés, így az alsó színek is kiválaszthatók ([#99](https://github.com/fuloplevente1998/TrainPilot/issues/99)).
+Az Android `versionName` **1.0.9**, a `versionCode` **2697**. A javítókiadás megtartja a korábbi telepítések alkalmazásazonosítóját és aláírását; az 1.0.8 / 2696-ra és a korábbi verziókra is rátelepíthető. A főoldalak a Coach oldal halvány keretét és egységes szélességét használják; a Napló fülsávja váltáskor a helyén marad, a Fejlődés részletei közös nyilakat kaptak ([#101](https://github.com/fuloplevente1998/TrainPilot/issues/101)). A témaválasztó mindkét oszlopa fölött működik a görgetés, így az alsó színek is kiválaszthatók ([#99](https://github.com/fuloplevente1998/TrainPilot/issues/99)).
 
 - [v1.0.9 Release és kiadási megjegyzések](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.0.9)
 - [TrainPilot-1.0.9.apk](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.9/TrainPilot-1.0.9.apk)
@@ -40,7 +40,7 @@ Az 1.0.7 fő változásai:
 
 A 2695-ös teszt-APK átadása után a felhasználó 2026. október 3-án jóváhagyta a main merge-et és a GitHub kiadást. A kiadási folyamat a mainen is lefuttatja a 117 kódregressziót, az 56 böngészős tesztszkriptet és az Android/aláírás/forrás ellenőrzéseket. A Google Play és a Google OAuth publikálási feladatai külön maradnak.
 
-Az 1.0.8 javítókiadás részletei: [kiadási megjegyzések](docs/releases/v1.0.9.md).
+Az 1.0.9 dizájnfinomításainak részletei: [kiadási megjegyzések](docs/releases/v1.0.9.md). A korábbi [1.0.8 témaválasztó-javítás](docs/releases/v1.0.8.md) megmaradt.
 
 Részletes megvalósítás: [programszerkesztés és kardió](docs/TRAINING_CARDIO_1_0_7.md), [backup/GPS összevonás](docs/BACKUP_GPS_CONSOLIDATION_1_0_7.md).
 
