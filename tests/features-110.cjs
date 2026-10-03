@@ -1,0 +1,32 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+process.env.TZ='Europe/Budapest';
+const bundled=!fs.existsSync('www/features-110.js'),source=fs.readFileSync(bundled?'www/app.js':'www/features-110.js','utf8');
+const section=bundled?source.match(/\/\/ @section features-110.js\n([\s\S]*?)\/\/ @endsection features-110.js/):[null,source];
+assert.ok(section,'feature core must be shipped in the canonical bundle');
+const context=vm.createContext({window:{addEventListener(){}},Date,console});vm.runInContext(section[1],context);const core=context.window.TrainPilot110Core,plain=x=>JSON.parse(JSON.stringify(x));
+const date=s=>new Date(s+'T12:00:00'),now=date('2026-10-03');
+const workout=(id,day,meters=0,done=true)=>({id,started:date(day).toISOString(),finished:date(day).toISOString(),exercises:[{id:'running',sets:[{done,reps:'60',distanceMeters:meters}]}]});
+const entries=[workout('a','2026-09-28',1000),workout('b','2026-10-01',2000),workout('c','2026-10-03',3000),workout('c','2026-10-03',3000),workout('future','2026-10-04',9000),workout('skip','2026-10-02',4000,false),workout('old','2026-09-27',5000),{id:'bad',started:'invalid',exercises:[]}];
+const progress=core.goalProgress(entries,{weekWorkouts:3,monthKm:10},now);assert.equal(progress.week.current,3);assert.equal(progress.month.current,5);assert.equal(progress.week.start.getDay(),1);
+const legacy=[{...workout(null,'2026-10-01',1000)},{...workout(null,'2026-10-01',2000)}];assert.equal(core.goalProgress(legacy,{},now).week.current,2,'distinct ID-less records must both count');
+assert.deepEqual(plain(core.goals({weekWorkouts:NaN,monthKm:Infinity})),{weekWorkouts:0,monthKm:0});
+assert.equal(core.goalProgress([workout('x','2026-09-30',1000),workout('y','2026-10-01',2000)],{},date('2026-10-01')).month.current,2);
+const item=(id,day,dayId='A',status='planned',programId='home-basic')=>({id,start:day+'T08:00:00',end:day+'T08:45:00',dayId,workout:dayId,programId,status,cancelled:false,updatedAt:1});
+const rows=[item('missed','2026-10-01'),item('next','2026-10-03','B'),item('later','2026-10-05'),item('completed','2026-09-29','B','completed'),item('other','2026-10-04','A','planned','gym')];
+const original=JSON.stringify(rows),options={programId:'home-basic',mode:'alternate',startDate:'2026-10-04',now};
+const result=core.replan(rows,[],options);assert.equal(JSON.stringify(rows),original,'preview must not mutate storage');assert.deepEqual(Array.from(result.moved,x=>x.before.id),['missed','next','later']);
+assert.deepEqual(Array.from(result.moved,x=>new Date(x.after.start).getDate()),[6,8,10],'occupied days shift the rhythm without collisions');assert.deepEqual(Array.from(result.moved,x=>x.after.dayId),['A','B','A']);assert.equal(result.rows[3],rows[3]);assert.equal(result.rows[4],rows[4]);
+for(const {before,after} of result.moved){assert.equal(after.id,before.id);assert.equal(new Date(after.start).getHours(),8);assert.equal(Date.parse(after.end)-Date.parse(after.start),2700000);assert.equal(after.updatedAt,+now);}
+assert.ok(core.replan(rows,[],{...options,startDate:'2026-10-03'}).moved.every(x=>Date.parse(x.after.start)>+now),'today cannot create a new appointment whose preserved time has already passed');
+const completed=[{...workout('log','2026-10-01'),scheduleId:'missed'}];assert.equal(core.replan(rows,completed,options).moved.length,0,'logged scheduled workouts cannot be moved as missed');
+assert.equal(core.replan(rows,[],{...options,activeScheduleId:'missed'}).moved.length,0,'active saved draft is protected');
+const weekly=core.replan(rows.filter(x=>x.programId==='home-basic'),[],{...options,mode:'weekly',weekdays:[1,3,5]});assert.deepEqual(Array.from(weekly.moved,x=>new Date(x.after.start).getDay()),[1,3,5]);
+assert.throws(()=>core.replan(rows,[],{...options,mode:'weekly',weekdays:[]}),/weekdays/);assert.throws(()=>core.replan(rows,[],{...options,startDate:'2026-02-31'}),/date/);
+const skipped=[item('s','2026-10-03','A','skipped'),item('n','2026-10-05','B')];assert.equal(core.replan(skipped,[],options).moved[0].after.status,'planned');
+const custom=core.replan([item('a','2026-10-01'),item('b','2026-10-04','B'),item('c','2026-10-09')],[],{...options,mode:'custom'});assert.deepEqual(Array.from(custom.moved,x=>new Date(x.after.start).getDate()),[4,7,12]);
+// Local calendar dates, not 24-hour arithmetic, keep wall-clock time over DST.
+const dst=core.replan([item('a','2026-10-23'),item('b','2026-10-25','B')],[],{...options,now:date('2026-10-24'),startDate:'2026-10-24'});assert.deepEqual(Array.from(dst.moved,x=>new Date(x.after.start).getHours()),[8,8]);
+const c={work:60,rest:30,rounds:3};assert.equal(core.intervalPhase(c,0).phase,'work');assert.equal(core.intervalPhase(c,60000).phase,'rest');assert.equal(core.intervalPhase(c,90000).round,2);assert.equal(core.intervalPhase(c,240000).phase,'complete');assert.equal(core.intervalPhase(c,900000).elapsed,240000,'background completion clamps to the planned duration');assert.equal(core.intervalPhase(c,59500).remaining,1);
+assert.equal(core.intervalPhase({work:1,rest:0,rounds:2},1000).phase,'work');assert.equal(core.intervalPhase({work:1,rest:0,rounds:2},2000).phase,'complete');assert.equal(core.intervalPhase({work:20,rest:10,rounds:1},20000).phase,'complete','there is no rest after the final round');
+for(const invalid of [{work:0,rest:0,rounds:1},{work:1,rest:-1,rounds:1},{work:1,rest:0,rounds:101},{work:3600,rest:3600,rounds:100}])assert.equal(core.intervalConfig(invalid),null);
+console.log('PASS #103 core: local goal boundaries, stable/legacy records, non-mutating rhythm-aware replanning, collisions/completed/active protection, DST and bounded work/rest phases');

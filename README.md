@@ -44,6 +44,12 @@ Az 1.0.9 dizájnfinomításainak részletei: [kiadási megjegyzések](docs/relea
 
 Részletes megvalósítás: [programszerkesztés és kardió](docs/TRAINING_CARDIO_1_0_7.md), [backup/GPS összevonás](docs/BACKUP_GPS_CONSOLIDATION_1_0_7.md).
 
+## Következő tesztverzió: TrainPilot 1.1.0 (2698)
+
+Az [#103](https://github.com/fuloplevente1998/TrainPilot/issues/103) fejlesztései külön tesztágon készülnek: heti edzés- és havi kilométercél, kihagyott edzések előnézetes újratervezése, beltéri intervallumok, részletes Coach-indoklás és egységes üres/mentési állapotok. A célok a meglévő kezdőlapi „Mai állapot” kártyából és a Beállításokból érhetők el. Nagy Android-betűméretnél a fix áttekintések görgethetővé válnak, hogy minden vezérlő elérhető maradjon.
+
+A stabil kiadás továbbra is **1.0.9 / 2697**. A 2698-as teszt-APK telefonos elfogadása és main merge-je még hátravan. Részletek és kipróbálás: [1.1.0 fejlesztések](docs/FEATURES_1_1_0.md), [tesztkiadási megjegyzések](docs/releases/v1.1.0.md).
+
 ## Git-történet és privát archívum
 
 A publikus repository története a **TrainPilot 1.6.0** clean base állapottól indul. A korábbi privát/legacy előzmények nem részei ennek a Git-történetnek. A publikus `main` teljes meglévő commitelőzménye megmarad.
