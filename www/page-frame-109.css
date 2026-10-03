@@ -1,0 +1,32 @@
+/* #101: root pages share the established Coach/Calendar/Settings frame.
+   Nested panel mains retain their existing layout and scroll ownership. */
+:root{--tp-page-inset:8px;--tp-page-gutter:10px}
+html body #app main:not([hidden]):not([aria-hidden="true"]){
+ width:min(760px,calc(100% - 2 * var(--tp-page-inset)))!important;
+ max-width:760px!important;margin-inline:auto!important;margin-top:2px!important;
+ padding-inline:var(--tp-page-gutter)!important;
+ border:1px solid color-mix(in srgb,var(--line) 82%,var(--accent) 18%)!important;
+ border-radius:18px!important;background:var(--tp-ui-card,var(--card));
+ box-shadow:0 16px 36px rgba(5,10,20,.14)!important;
+ box-sizing:border-box;
+}
+/* A destination change never shifts the shared Journal tabs or its frame. */
+html body #app main:has(>.tp177-journal-tabs){padding-top:10px!important}
+html body #app main.tp160-page-reveal{animation-name:tp109PageFade!important}
+@keyframes tp109PageFade{from{opacity:.72}to{opacity:1}}
+/* Keep the compact Progress controls compact, using the same chevron glyph. */
+html body #app .tp177-chevron.tp-global-chevron{
+ width:18px!important;min-width:18px!important;max-width:18px!important;
+ height:24px!important;min-height:24px!important;max-height:24px!important;
+ flex:0 0 18px!important;
+}
+html body #app .tp177-chevron.tp-global-chevron::before{font-size:30px!important}
+html body #app .tp177-volume-panel .tp177-summary-head{padding-right:22px}
+html body #app .tp177-metric[aria-expanded="true"] .tp-global-chevron,
+html body #app .tp177-volume-expanded .tp-global-chevron{transform:rotate(90deg)!important}
+@media(max-width:390px){:root{--tp-page-inset:6px;--tp-page-gutter:8px}}
+@media(max-width:340px){html body #app .tp177-metric-value>strong{font-size:15px}}
+@media(prefers-reduced-motion:reduce){html body #app main.tp160-page-reveal{animation:none!important}}
+html[data-tp-theme-family="basic"] body #app main:not([hidden]):not([aria-hidden="true"]){box-shadow:none!important}
+/* The narrow reference gutter can wrap translated Health copy onto one more line. */
+@media(max-height:800px){html body #app main.tp107-health-layout{gap:3px!important}}

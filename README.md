@@ -18,15 +18,15 @@ TrainPilot egy Androidra készült, local-first edzéstervező és edzésnapló 
 
 A Google-funkciókhoz külön Google Cloud/OAuth konfiguráció szükséges. A Health Connect és a Google-integrációk tényleges működése eszköz-, Android-verzió-, jogosultság- és fiókbeállítás-függő; kiadás előtt fizikai készülékes ellenőrzés szükséges.
 
-## Aktuális kiadás: TrainPilot 1.0.8 (2696)
+## Aktuális kiadás: TrainPilot 1.0.9 (2697)
 
-Az Android `versionName` **1.0.8**, a `versionCode` **2696**. A javítókiadás megtartja a korábbi telepítések alkalmazásazonosítóját és aláírását; az 1.0.7 / 2695-re és a korábbi verziókra is rátelepíthető. A témaválasztó mindkét oszlopa fölött működik a görgetés, így az alsó színek is kiválaszthatók ([#99](https://github.com/fuloplevente1998/TrainPilot/issues/99)).
+Az Android `versionName` **1.0.9**, a `versionCode` **2697**. A javítókiadás megtartja a korábbi telepítések alkalmazásazonosítóját és aláírását; az 1.0.7 / 2695-re és a korábbi verziókra is rátelepíthető. A témaválasztó mindkét oszlopa fölött működik a görgetés, így az alsó színek is kiválaszthatók ([#99](https://github.com/fuloplevente1998/TrainPilot/issues/99)).
 
-- [v1.0.8 Release és kiadási megjegyzések](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.0.8)
-- [TrainPilot-1.0.8.apk](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.8/TrainPilot-1.0.8.apk)
-- [Forrás ZIP](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.8/TrainPilot-1.0.8-source.zip)
-- [SHA-256 ellenőrzőösszegek](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.8/SHA256SUMS.txt)
-- [Android csomag- és verzióadatok](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.8/apk-badging.txt)
+- [v1.0.9 Release és kiadási megjegyzések](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.0.9)
+- [TrainPilot-1.0.9.apk](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.9/TrainPilot-1.0.9.apk)
+- [Forrás ZIP](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.9/TrainPilot-1.0.9-source.zip)
+- [SHA-256 ellenőrzőösszegek](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.9/SHA256SUMS.txt)
+- [Android csomag- és verzióadatok](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.9/apk-badging.txt)
 
 Az 1.0.7 fő változásai:
 
@@ -38,9 +38,9 @@ Az 1.0.7 fő változásai:
 - A Coach kártya egységes keretet és témaszínt kapott. A kompakt Fejlődés összehasonlítása jobb felül jelenik meg; a témaválasztó a nyelvválasztó nyilát és animációját használja.
 - Biztonságosabb backup-visszaállítás, stabil GPS-sorozatazonosítók és az ismétlődő backup-kód összevonása.
 
-A 2695-ös teszt-APK átadása után a felhasználó 2026. október 3-án jóváhagyta a main merge-et és a GitHub kiadást. A kiadási folyamat a mainen is lefuttatja a 117 kódregressziót, az 55 böngészős tesztszkriptet és az Android/aláírás/forrás ellenőrzéseket. A Google Play és a Google OAuth publikálási feladatai külön maradnak.
+A 2695-ös teszt-APK átadása után a felhasználó 2026. október 3-án jóváhagyta a main merge-et és a GitHub kiadást. A kiadási folyamat a mainen is lefuttatja a 117 kódregressziót, az 56 böngészős tesztszkriptet és az Android/aláírás/forrás ellenőrzéseket. A Google Play és a Google OAuth publikálási feladatai külön maradnak.
 
-Az 1.0.8 javítókiadás részletei: [kiadási megjegyzések](docs/releases/v1.0.8.md).
+Az 1.0.8 javítókiadás részletei: [kiadási megjegyzések](docs/releases/v1.0.9.md).
 
 Részletes megvalósítás: [programszerkesztés és kardió](docs/TRAINING_CARDIO_1_0_7.md), [backup/GPS összevonás](docs/BACKUP_GPS_CONSOLIDATION_1_0_7.md).
 
