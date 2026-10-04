@@ -2,6 +2,8 @@
 
 A kanonikus webalkalmazás-forrás a `www/app.js`. Az Android csomag azonosítója: `com.repforge.app`.
 
+Az elfogadott aktuális verzió **1.2.0 /2703**. Kiadási regresszió: 119 Node + 4 futtatóteszt, 60 Chromium-szkript hat párhuzamos CI-jobban, 37 Android/JVM-teszt. A korábbi jelölt APK-k/tag-ek megmaradnak; az új stabil main build a `v1.2.0` release-t publikálja.
+
 ## Gyors ellenőrzés
 
 ```bash
@@ -21,7 +23,7 @@ A teljes kiadásellenőrzés a `main`, `feat/**` és `fix/**` ágak pusholásako
 4. lefuttatja a Node regressziós teszteket;
 5. lefuttatja a teljes Chromium UI suite-ot;
 6. lefuttatja a Capacitor Android syncet;
-7. elkészíti a Gradle release APK-t;
+7. lefuttatja az Android release JVM-teszteket és elkészíti a Gradle release APK-t;
 8. ellenőrzi az APK package-, verzió- és aláírásadatait;
 9. összehasonlítja az APK-ba csomagolt `www/app.js` fájlt a forrással;
 10. elkészíti az APK-t, source ZIP-et, SHA256SUMS és apk-badging artifactokat;

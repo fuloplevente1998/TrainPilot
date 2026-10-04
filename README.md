@@ -1,8 +1,8 @@
 # TrainPilot
 
-**Egészségnapló tesztváltozat — 1.2.0 / 2703:** közös natív Health Connect/BLE-tárolás, dátum- és forrásszűrős napló, 30 napos felületi gyorsítótár. A megjegyzett óra jelenlegi lépései külön bekapcsolható naplózással tárolhatók; átfedő források nem adódnak össze. A teljes **Célok beállítása** szerkesztő a kompakt kezdőlapi gombból nyílik. [Kipróbálás és korlátok](docs/releases/v1.2.0.md) · [#110 állapot](docs/HEALTH_JOURNAL_ROADMAP.md). Háttérszolgáltatás és órás előzmény/HRV még hátravan; main merge telefonos elfogadás után.
+**Aktuális kiadás — 1.2.0 / 2703:** közös natív Health Connect/BLE-tárolás, dátum- és forrásszűrős napló, 30 napos felületi gyorsítótár. A megjegyzett óra jelenlegi lépései külön bekapcsolható naplózással tárolhatók; átfedő források nem adódnak össze. A teljes **Célok beállítása** szerkesztő a kompakt kezdőlapi gombból nyílik. [Kipróbálás és korlátok](docs/releases/v1.2.0.md) · [#110 állapot](docs/HEALTH_JOURNAL_ROADMAP.md). A felhasználó 2026. október 4-én jóváhagyta a kiadást és a main merge-et. A háttérszolgáltatás, órás előzmény/HRV és a forrásonkénti napló-összesítés következő feladatait a [#113](https://github.com/fuloplevente1998/TrainPilot/issues/113) őrzi.
 
-**Bluetooth újracsatlakozás — 1.1.4 / 2702:** a frissített [#110](https://github.com/fuloplevente1998/TrainPilot/issues/110) első fázisa. 60 másodperces, leállítható keresés, legfeljebb 120 találat, megjegyzett óra és automatikus újracsatlakozás a próba megnyitásakor. Az óraválasztás helyi, elfelejthető; a sikertelen próbák korlátozottak. [Telefonos lépések](docs/BLUETOOTH_GT4PRO.md) · [Egységes Health Connect/BLE egészségnapló terve](docs/HEALTH_JOURNAL_ROADMAP.md). A teljes háttérszinkron későbbi fázis; a natív napló a 2703 jelöltben készül.
+**Bluetooth újracsatlakozás — 1.1.4 / 2702:** a frissített [#110](https://github.com/fuloplevente1998/TrainPilot/issues/110) első fázisa. 60 másodperces, leállítható keresés, legfeljebb 120 találat, megjegyzett óra és automatikus újracsatlakozás a próba megnyitásakor. Az óraválasztás helyi, elfelejthető; a sikertelen próbák korlátozottak. [Telefonos lépések](docs/BLUETOOTH_GT4PRO.md) · [Egységes Health Connect/BLE egészségnapló terve](docs/HEALTH_JOURNAL_ROADMAP.md). A teljes háttérszinkron későbbi fázis; a natív napló az 1.2.0 /2703 kiadás része.
 
 **RDFit adatpróba — 1.1.3 / 2701:** a GT4Pro+ telefonos diagnosztikája igazolta a kapcsolódást. Külön gombbal próbálható az akkumulátor és a mai lépésszám kiolvasása az RDFit adatcsatornáján. Az értékek csak a próbanézetben jelennek meg; az akkumulátor és a mai 0 lépés olvasását a telefonos próba igazolta; pozitív lépésszám és az előzmények ellenőrzése még hátravan. [Lépések és protokoll](docs/BLUETOOTH_GT4PRO.md).
 
@@ -26,7 +26,19 @@ TrainPilot egy Androidra készült, local-first edzéstervező és edzésnapló 
 
 A Google-funkciókhoz külön Google Cloud/OAuth konfiguráció szükséges. A Health Connect és a Google-integrációk tényleges működése eszköz-, Android-verzió-, jogosultság- és fiókbeállítás-függő; kiadás előtt fizikai készülékes ellenőrzés szükséges.
 
-## Aktuális kiadás: TrainPilot 1.0.9 (2697)
+## Aktuális kiadás: TrainPilot 1.2.0 (2703)
+
+A kiadás tartalmazza a 2698–2702 fejlesztéseit: célok, előnézetes újratervezés, beltéri intervallumok, Coach-indoklás, Bluetooth-diagnosztika, megjegyzett óra és korlátozott előtéres újracsatlakozás. A 2703 közös natív egészségnaplót, dátum/forrás szerinti lekérdezést és kompakt kezdőlapi célgombot ad. A Samsung Health eredetű rekordokat is a Health Connectből olvassuk. Egy kiválasztott eredeti forrás jelenleg mérési részleteket mutat; a napi HC-összesítés a Minden forrás / Health Connect nézetben érhető el.
+
+- [v1.2.0 Release](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.2.0)
+- [TrainPilot-1.2.0.apk](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.0/TrainPilot-1.2.0.apk)
+- [Forrás ZIP](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.0/TrainPilot-1.2.0-source.zip)
+- [SHA-256 ellenőrzőösszegek](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.0/SHA256SUMS.txt)
+- [Kiadási megjegyzések és használat](docs/releases/v1.2.0.md)
+
+Az alkalmazásazonosító `com.repforge.app`, a verzió **1.2.0 /2703**; az eredeti kiadási aláírás megmarad. Kiadási ellenőrzés: **119 Node-regresszió + 4 futtatóteszt, 60 Chromium-szkript, 37 Android/JVM-teszt**, változatlan teljesítménykapukkal. A main kiadási workflow ezek után ellenőrzi és publikálja az APK-t, a main forrás ZIP-et, az ellenőrzőösszegeket és a csomagadatokat. Részletek: [build](docs/BUILD.md).
+
+## Korábbi kiadás: TrainPilot 1.0.9 (2697)
 
 Az Android `versionName` **1.0.9**, a `versionCode` **2697**. A javítókiadás megtartja a korábbi telepítések alkalmazásazonosítóját és aláírását; az 1.0.8 / 2696-ra és a korábbi verziókra is rátelepíthető. A főoldalak a Coach oldal halvány keretét és egységes szélességét használják; a Napló fülsávja váltáskor a helyén marad, a Fejlődés részletei közös nyilakat kaptak ([#101](https://github.com/fuloplevente1998/TrainPilot/issues/101)). A témaválasztó mindkét oszlopa fölött működik a görgetés, így az alsó színek is kiválaszthatók ([#99](https://github.com/fuloplevente1998/TrainPilot/issues/99)).
 
@@ -52,15 +64,15 @@ Az 1.0.9 dizájnfinomításainak részletei: [kiadási megjegyzések](docs/relea
 
 Részletes megvalósítás: [programszerkesztés és kardió](docs/TRAINING_CARDIO_1_0_7.md), [backup/GPS összevonás](docs/BACKUP_GPS_CONSOLIDATION_1_0_7.md).
 
-## Bluetooth tesztverzió: TrainPilot 1.1.1 (2699)
+## Az 1.2.0-ba bekerült Bluetooth-fejlesztés: 1.1.1 (2699)
 
 A **Beállítások → Bluetooth-óra próba** felület a GT4Pro+ / RDFit adatkapcsolatának vizsgálatához készült. Órakeresést, szolgáltatás-felderítést és helyi diagnosztikaexportot ad; szabványos pulzusszolgáltatás esetén az élő pulzus is kipróbálható. A korábbi alvás-, lépés- és pulzusadatok importja még további protokollvizsgálatot igényel. A 2698 fejlesztései benne maradnak. [Telefonos próba és RDFit megállapítások](docs/BLUETOOTH_GT4PRO.md).
 
-## Következő tesztverzió: TrainPilot 1.1.0 (2698)
+## Az 1.2.0-ba bekerült cél- és intervallumfejlesztés: 1.1.0 (2698)
 
-Az [#103](https://github.com/fuloplevente1998/TrainPilot/issues/103) fejlesztései külön tesztágon készülnek: heti edzés- és havi kilométercél, kihagyott edzések előnézetes újratervezése, beltéri intervallumok, részletes Coach-indoklás és egységes üres/mentési állapotok. A 2703 jelöltben a célok külön kompakt kezdőlapi gombból érhetők el. Nagy Android-betűméretnél a fix áttekintések görgethetővé válnak, hogy minden vezérlő elérhető maradjon.
+Az [#103](https://github.com/fuloplevente1998/TrainPilot/issues/103) elkészült fejlesztései: heti edzés- és havi kilométercél, kihagyott edzések előnézetes újratervezése, beltéri intervallumok, részletes Coach-indoklás és egységes üres/mentési állapotok. A 2703 kiadásban a célok külön kompakt kezdőlapi gombból érhetők el. Nagy Android-betűméretnél a fix áttekintések görgethetővé válnak, hogy minden vezérlő elérhető maradjon.
 
-A stabil kiadás továbbra is **1.0.9 / 2697**. A 2698-as teszt-APK telefonos elfogadása és main merge-je még hátravan. Részletek és kipróbálás: [1.1.0 fejlesztések](docs/FEATURES_1_1_0.md), [tesztkiadási megjegyzések](docs/releases/v1.1.0.md).
+Ezek a fejlesztések az elfogadott **1.2.0 /2703** kiadás részei. Részletek és kipróbálás: [1.1.0 fejlesztések](docs/FEATURES_1_1_0.md), [tesztkiadási megjegyzések](docs/releases/v1.1.0.md).
 
 ## Git-történet és privát archívum
 

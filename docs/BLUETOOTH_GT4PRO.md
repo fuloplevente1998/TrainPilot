@@ -1,10 +1,10 @@
-# GT4Pro+ / RDFit Bluetooth investigation — 1.1.4 / 2702
+# GT4Pro+ / RDFit Bluetooth investigation — 1.2.0 / 2703
 
-This candidate adds a foreground Android BLE diagnostic client. The 1.1.0 / 2698 features remain included. Stable main remains 1.0.9 / 2697; battery/current zero-step replies in 2701 were confirmed by the user. The new 2702 connection behavior awaits its own phone trial.
+The user accepted release 1.2.0 /2703 for main on 2026-10-04, including the earlier foreground BLE diagnostic/reconnection work. Battery/current zero-step replies were physically confirmed; positive values and history remain separate protocol checks in #113. The current native journal stores opted-in remembered-watch step snapshots and permitted HC records.
 
 ## Phone procedure
 
-1. Install the signed 2702 APK over the current app. Keep existing data; no uninstall or watch reset is needed.
+1. Install the signed 2703 APK over the current app. Keep existing data; no uninstall or watch reset is needed.
 2. Open **Settings → Bluetooth watch trial** (Hungarian: **Beállítások → Bluetooth-óra próba**).
 3. Enable phone Bluetooth, keep the watch nearby and allow Nearby devices. Android 11 or earlier also requires location permission/services for BLE scanning; the trial does not request GPS fixes.
 4. Tap **Scan for watches**. For unnamed devices, compare the locally displayed **MAC address** with RDFit device information, then select the matching GT4Pro+. Each result also has a stable per-scan number, signal strength and a protocol hint when an advertised service is recognized. Signal strength or a protocol hint alone is not device identity. Scan stops after 60 seconds; connection/service discovery times out after 20 seconds.
@@ -21,9 +21,13 @@ Leaving the trial, putting the app in the background or restarting stops scannin
 3. Close and reopen the trial, then restart the app and open it again. It should connect to the saved address without another broad scan. Saved-address reconnection checks the required GATT channel before accepting the connection; no vendor data queries start automatically.
 4. Transient reconnect failure allows at most three attempts per open/manual retry, with waits between attempts. Disconnect, Forget watch, scanning, navigation and backgrounding stop queued retries. Missing permissions, Bluetooth off and a changed service profile stop automatic retry. Enable Bluetooth/grant permissions and retry explicitly.
 5. Check Cancel/Disconnect while connecting, Forget watch during connection, scan stop and timeout, and resumed app behavior. If the watch rotates its address, or the saved address no longer identifies it, scan/select/remember again; the app does not guess from name/RSSI alone.
-6. The first phase remains **foreground only**. Closing/backgrounding ends the native connection; reopening the visible trial can reconnect. The RDFit read trial still closes on completion. Background health sync, record storage and Health Connect migration are later phases of [#110](https://github.com/fuloplevente1998/TrainPilot/issues/110), described in [HEALTH_JOURNAL_ROADMAP.md](HEALTH_JOURNAL_ROADMAP.md).
+6. The first phase remains **foreground only**. Closing/backgrounding ends the native connection; reopening the visible trial can reconnect. The RDFit read trial still closes on completion. Native record storage and Health Connect migration are included in 2703. Background health sync and verified watch history continue in [#113](https://github.com/fuloplevente1998/TrainPilot/issues/113), described in [HEALTH_JOURNAL_ROADMAP.md](HEALTH_JOURNAL_ROADMAP.md).
 
 The scan retains at most 120 rows. A selected watch, GT4-like name, vendor service or 0x0201 advertising candidate can replace a lower-priority neighbour even with a weaker signal. Ordinary new devices replace an equally ranked weaker row only with a 4 dBm margin, to reduce churn. Numbers stay stable for retained rows; evictions invalidate the removed selection. Names, RSSI and advertising hints are not identity proof or proof of historical-health compatibility. The 2700 report placed the watch at #21, so the old scan duration/cap was not proven to cause the earlier missed searches.
+
+## 2703 health journal
+
+Health → Health journal has date/source filters and a separate watch-step logging opt-in. Remember the watch in the Bluetooth trial first. Daily cumulative snapshots replace the previous same-device/day value; valid zero is retained, overlapping HC/BLE steps are never added, and a preferred step source can be chosen. The date is the phone observation time. Health Connect refresh on app open is a separate opt-in; no closed-app BLE service or HC background permission is implemented. Full native records can enter a health-consented manual backup, not a Drive snapshot. Bluetooth addresses remain excluded. See [release usage](releases/v1.2.0.md).
 
 ## Physical GT4Pro+ result and next read trial
 
@@ -55,7 +59,7 @@ History uses separate `0A/01` selectors (steps/sleep/heart/sport: 1/2/3/4), chun
 - Displays live pulse only in the trial. It does not alter Health Connect, historical health records, training readiness, workout history, backups or Drive data.
 - Exports a locally verified JSON with service UUIDs, capabilities, manufacturer identifiers/payload lengths, scan numbers/signal strengths and connection status. Bluetooth addresses, opaque scan IDs, raw advertisement/characteristic bytes and actual pulse readings are omitted. No report is sent automatically to a server.
 
-Sleep, steps and historical heart rate are **not implemented** by service discovery. Historical health import and the updated unified native journal remain later dependencies.
+Sleep, steps and historical heart rate are **not implemented** by service discovery. The unified native journal is included in 2703; proprietary historical health import remains a #113 follow-up.
 
 ## RDFit APK static investigation
 

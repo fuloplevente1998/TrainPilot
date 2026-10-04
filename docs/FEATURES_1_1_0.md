@@ -1,10 +1,10 @@
 # TrainPilot 1.1.0 / 2698 — célok, újratervezés és intervallumok
 
-Az [#103](https://github.com/fuloplevente1998/TrainPilot/issues/103) változásai a legutóbbi stabil mainre (`81032d9b3ec697680e7fdb1210e89f94e584b299`, 1.0.9 / 2697) épülnek. Ez tesztverzió; telefonos elfogadása és main merge-je még hátravan.
+Az [#103](https://github.com/fuloplevente1998/TrainPilot/issues/103) változásai a legutóbbi stabil mainre (`81032d9b3ec697680e7fdb1210e89f94e584b299`, 1.0.9 / 2697) épülnek. A funkciók az 1.2.0 /2703 elfogadott kiadásban kerülnek mainre.
 
 ## Használat
 
-- **Célok:** Kezdőlap → Mai állapot → Célok, vagy Beállítások → Célok. Heti edzésdarabszám és havi kardiókilométer állítható; a 0 kikapcsolja az adott célt. A fejlődés a célpanelen sávokkal, a kezdőlapon rövid számmal jelenik meg. A hét hétfőn kezdődik, a hónap helyi idő szerint vált. Mentett, teljesített sorozatot tartalmazó edzések számítanak; a kilométer a naplózott sorozatok távolsága, külön Health-import hozzáadása nélkül.
+- **Célok:** Az 1.2.0-ban: Kezdőlap → Célok beállítása. A korábbi Mai állapot / Beállítások hivatkozásokat a kompakt gomb váltotta fel. Heti edzésdarabszám és havi kardiókilométer állítható; a 0 kikapcsolja az adott célt. A fejlődés a célpanelen sávokkal, a kezdőlapon rövid számmal jelenik meg. A hét hétfőn kezdődik, a hónap helyi idő szerint vált. Mentett, teljesített sorozatot tartalmazó edzések számítanak; a kilométer a naplózott sorozatok távolsága, külön Health-import hozzáadása nélkül.
 - **Újratervezés:** Naptár → Tervezési beállítások → Újratervezés. Válassz programot és új kezdőnapot, ellenőrizd a régi → új időpontokat, majd frissítsd a tervet. A kihagyott és következő tervezett alkalmak mozognak, sorrendjük/azonosítójuk megmarad. A teljesített, naplózott, törölt és megkezdett alkalmak védettek; foglalt napra nem kerül új edzés. Az időközben megváltozott terv új előnézetet kér.
 - **Intervallumok:** idő+távolság típusú gyakorlatnál Beltéri időmérés → Intervallumok. Munka, pihenő, körök, hang és rezgés állítható. Az utolsó kör után nincs extra pihenő. A meglévő Indítás/Szünet/Folytatás/Nullázás vezérlők működnek; az elkészült intervallum nem pipálja ki automatikusan a sorozatot.
 - **Coach:** a „Mi alapján?” részen látható az alvás, saját HRV-átlag, legutóbbi terhelés és fájdalom tényleges pontszámhatása, valamint az adatok dátuma/hiánya. A meglévő képlet változatlan: 70 kiindulópont, 25–100 korlát, friss jel nélkül nincs pontszám.
@@ -31,4 +31,4 @@ A célok és a mentett intervallumbeállítások a meglévő settings/backup/Dri
 4. Coach-indoklás valós Health-adatokkal; üres állapotok és mentési jelzések.
 5. Alap és nagy Android-betűméret: a kezdőlap, Egészség és Naptár alja, a lenyílók és a Mentés gomb elérhető; normál betűméretnél a fix áttekintés megmarad.
 
-A [kiadási szabály](PERFORMANCE_REGRESSION_POLICY.md) szerint új UX-változás telefonos jóváhagyás után merge-elhető mainre. Ezt a tesztverzió még nem kapta meg.
+A [kiadási szabály](PERFORMANCE_REGRESSION_POLICY.md) szerint új UX-változás telefonos jóváhagyás után merge-elhető mainre. A felhasználó az összes fejlesztést tartalmazó 1.2.0 /2703 kiadás main merge-jét 2026. október 4-én jóváhagyta.
