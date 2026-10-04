@@ -1,18 +1,29 @@
-# GT4Pro+ / RDFit Bluetooth investigation — 1.1.3 / 2701
+# GT4Pro+ / RDFit Bluetooth investigation — 1.1.4 / 2702
 
-This candidate adds a foreground Android BLE diagnostic client. The 1.1.0 / 2698 features remain included. Stable main remains 1.0.9 / 2697; neither candidate has physical-phone approval yet.
+This candidate adds a foreground Android BLE diagnostic client. The 1.1.0 / 2698 features remain included. Stable main remains 1.0.9 / 2697; battery/current zero-step replies in 2701 were confirmed by the user. The new 2702 connection behavior awaits its own phone trial.
 
 ## Phone procedure
 
-1. Install the signed 2701 APK over the current app. Keep existing data; no uninstall or watch reset is needed.
+1. Install the signed 2702 APK over the current app. Keep existing data; no uninstall or watch reset is needed.
 2. Open **Settings → Bluetooth watch trial** (Hungarian: **Beállítások → Bluetooth-óra próba**).
 3. Enable phone Bluetooth, keep the watch nearby and allow Nearby devices. Android 11 or earlier also requires location permission/services for BLE scanning; the trial does not request GPS fixes.
-4. Tap **Scan for watches**. For unnamed devices, compare the locally displayed **MAC address** with RDFit device information, then select the matching GT4Pro+. Each result also has a stable per-scan number, signal strength and a protocol hint when an advertised service is recognized. Signal strength or a protocol hint alone is not device identity. Scan stops after 12 seconds; connection/service discovery times out after 20 seconds.
+4. Tap **Scan for watches**. For unnamed devices, compare the locally displayed **MAC address** with RDFit device information, then select the matching GT4Pro+. Each result also has a stable per-scan number, signal strength and a protocol hint when an advertised service is recognized. Signal strength or a protocol hint alone is not device identity. Scan stops after 60 seconds; connection/service discovery times out after 20 seconds.
 5. If the watch is missing or connection fails, temporarily disconnect its RDFit data connection and retry. The separate Bluetooth call connection is not proof that a BLE health-data channel is available. Do not unpair/reset the watch as a first troubleshooting step.
-6. After scanning ends (or tapping **Stop scan**), **Save diagnostics** also works without connecting and includes up to 40 scan results. A successful connection adds the actual GATT services. Select a local destination and attach the resulting `TrainPilot-BLE-*.json` to the investigation. This shows the actual watch services needed to choose the next protocol-specific implementation.
+6. After scanning ends (or tapping **Stop scan**), **Save diagnostics** also works without connecting and includes up to 120 retained scan results. A successful connection adds the actual GATT services. Select a local destination and attach the resulting `TrainPilot-BLE-*.json` to the investigation. This shows the actual watch services needed to choose the next protocol-specific implementation.
 7. If a standard heart-rate service is present, **Start heart-rate reader** enables its standard notification/indication descriptor. A watch with only vendor-specific services still provides a useful diagnostic report. Start the watch's own heart-rate measurement if it does not send samples automatically.
 
-Leaving the trial, putting the app in the background or restarting stops scanning and closes the connection. Returning requires a new scan. Pulse disappears after ten seconds without a valid sample. Diagnostics remain exportable during the current app session after disconnect.
+Leaving the trial, putting the app in the background or restarting stops scanning and closes the connection. Returning can reconnect to an explicitly remembered watch. Pulse disappears after ten seconds without a valid sample. Diagnostics remain exportable during the current app session after disconnect.
+
+## 2702 saved-watch phone procedure (#110 phase 1)
+
+1. Scan and connect to the actual GT4Pro+ using the locally shown RDFit address. Results appear immediately; selecting a row stops the remaining scan. The visible one-minute countdown and Stop scan control remain available.
+2. Before running the read trial, press **Remember watch** (**Óra megjegyzése**). This requires a successful connection with a supported RDFit or standard Heart Rate channel. The native private preference stores only this watch address, name and verified service type. It is not part of diagnostics, JSON/ZIP or Drive, and is removed by **Forget watch** / **Erase all local data**.
+3. Close and reopen the trial, then restart the app and open it again. It should connect to the saved address without another broad scan. Saved-address reconnection checks the required GATT channel before accepting the connection; no vendor data queries start automatically.
+4. Transient reconnect failure allows at most three attempts per open/manual retry, with waits between attempts. Disconnect, Forget watch, scanning, navigation and backgrounding stop queued retries. Missing permissions, Bluetooth off and a changed service profile stop automatic retry. Enable Bluetooth/grant permissions and retry explicitly.
+5. Check Cancel/Disconnect while connecting, Forget watch during connection, scan stop and timeout, and resumed app behavior. If the watch rotates its address, or the saved address no longer identifies it, scan/select/remember again; the app does not guess from name/RSSI alone.
+6. The first phase remains **foreground only**. Closing/backgrounding ends the native connection; reopening the visible trial can reconnect. The RDFit read trial still closes on completion. Background health sync, record storage and Health Connect migration are later phases of [#110](https://github.com/fuloplevente1998/TrainPilot/issues/110), described in [HEALTH_JOURNAL_ROADMAP.md](HEALTH_JOURNAL_ROADMAP.md).
+
+The scan retains at most 120 rows. A selected watch, GT4-like name, vendor service or 0x0201 advertising candidate can replace a lower-priority neighbour even with a weaker signal. Ordinary new devices replace an equally ranked weaker row only with a 4 dBm margin, to reduce churn. Numbers stay stable for retained rows; evictions invalidate the removed selection. Names, RSSI and advertising hints are not identity proof or proof of historical-health compatibility. The 2700 report placed the watch at #21, so the old scan duration/cap was not proven to cause the earlier missed searches.
 
 ## Physical GT4Pro+ result and next read trial
 
@@ -33,18 +44,18 @@ Static inspection of RDFit 4.1.4 / 436 shows that `BleMcuHelper.send` always rou
 
 `RDMcuAnalysisUtils` dispatches `04/0B` to `NordicBatteryBean`: payload byte 2 is battery percent, byte 3 is state. It dispatches `0A/0B` to `NordicStepBean`: the following three unsigned, big-endian 32-bit fields are steps, calorie tenths and distance. This trial displays only steps; it does not infer a distance unit or import the watch's date. The original decoder accepts only CRC-valid, complete battery/step payload shapes, bounded values and supported flags, buffers notification fragments, and ignores other command types. It has no arbitrary-send API. Unit response vectors are **synthetic derivations**, clearly distinct from the physical service fixture.
 
-History uses separate `0A/01` selectors (steps/sleep/heart/sport: 1/2/3/4), chunk requests and next-sync actions in `RDMcuAnalysisUtils`. Its device-buffer side effects, dates, duplicates and actual firmware responses require verification before enabling import. The next dependency is a phone result from these two read queries.
+History uses separate `0A/01` selectors (steps/sleep/heart/sport: 1/2/3/4), chunk requests and next-sync actions in `RDMcuAnalysisUtils`. Its device-buffer side effects, dates, duplicates and actual firmware responses require verification before enabling import. The user has confirmed battery and a valid zero current-step value from these two queries. Positive steps and all history/energy/distance semantics still need physical checks.
 
 ## What the candidate does
 
-- Discovers up to 40 nearby BLE devices, with user-selected connection, bounded scan/connection/subscription timeouts and cleanup of cancelled/late callbacks.
-- Shows a MAC address only in the current local scan UI for exact comparison with RDFit; it is not persisted, logged or exported. Protocol hints are candidates inferred from advertised services, not verified GT4Pro+ identity.
+- Retains up to 120 nearby BLE devices, with user-selected connection, bounded scan/connection/subscription timeouts and cleanup of cancelled/late callbacks.
+- Shows a MAC address only in the current local scan UI for exact comparison with RDFit; it is not logged or exported. Explicit Remember watch stores only the selected address in private native preferences for reconnection. Protocol hints are candidates inferred from advertised services, not verified GT4Pro+ identity.
 - Reads GATT service/characteristic identifiers and properties. Discovery sends no vendor commands. The separately started RDFit trial sends only battery/current-step read queries; no firmware updates, pairing resets or setting changes are exposed.
 - Optionally reads **Bluetooth SIG Heart Rate Service 0x180D / Measurement 0x2A37**. The pulse reader writes the standard 0x2902 notification/indication enable values on that verified service after the user starts it. The separate RDFit trial enables only its verified notification descriptor before its two read queries. The parser handles unsigned 8/16-bit values, contact flags and optional energy/RR fields; malformed, zero and no-contact readings are rejected.
 - Displays live pulse only in the trial. It does not alter Health Connect, historical health records, training readiness, workout history, backups or Drive data.
 - Exports a locally verified JSON with service UUIDs, capabilities, manufacturer identifiers/payload lengths, scan numbers/signal strengths and connection status. Bluetooth addresses, opaque scan IDs, raw advertisement/characteristic bytes and actual pulse readings are omitted. No report is sent automatically to a server.
 
-Sleep, steps and historical heart rate are **not implemented** by service discovery. The physical watch report is the next dependency.
+Sleep, steps and historical heart rate are **not implemented** by service discovery. Historical health import and the updated unified native journal remain later dependencies.
 
 ## RDFit APK static investigation
 
@@ -64,4 +75,4 @@ Sources: [manufacturer download page](https://abroad.rundefit.com/app.html), [RD
 
 ## Release checks
 
-Required: full Node and Chromium regressions, Android/JVM tests, signed APK verification, exact source/bundled asset comparison and unchanged performance budgets. Physical GT4Pro+ connection and service discovery were verified by the supplied report. Proprietary battery/current-step replies remain unverified until the next phone trial. Merge requires phone approval under [the performance policy](PERFORMANCE_REGRESSION_POLICY.md).
+Required: full Node and Chromium regressions, Android/JVM tests, signed APK verification, exact source/bundled asset comparison and unchanged performance budgets. Physical GT4Pro+ connection and service discovery were verified by the supplied report. Battery and a valid zero current-step reply were confirmed by the user on 2701; positive values, new reconnection behavior and history import need further phone trials. Merge requires phone approval under [the performance policy](PERFORMANCE_REGRESSION_POLICY.md).

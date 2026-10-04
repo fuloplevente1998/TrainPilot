@@ -25,7 +25,7 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const file=p
  await p.locator('.tp111-ble-entry button').click();await p.waitForFunction(()=>__ble.listeners.size===1);
  await p.locator('[data-ble-action="scan"]').click();
  await p.evaluate(()=>{for(let i=0;i<42;i++)__ble.emit({kind:'device',device:{id:'anonymous-'+i,name:'',rssi:-63-i,displayAddress:'AA:BB:CC:DD:EE:'+i.toString(16).padStart(2,'0'),advertisedServices:i===4?['6e40ab01-b5a3-f393-e0a9-e50e24dcca9e']:[],manufacturers:[]}});});
- await p.waitForFunction(()=>document.querySelectorAll('[data-ble-device]').length===40);
+ await p.waitForFunction(()=>document.querySelectorAll('[data-ble-device]').length===42);
  assert.equal(await p.locator('[data-ble-device]').first().getAttribute('data-ble-device'),'anonymous-4','known protocol candidate appears before unnamed neighbours');
  for(const width of [320,360,393,412])for(const lang of ['hu','en','de','ro']){
   await p.setViewportSize({width,height:width===320?740:873});await p.evaluate(lang=>{db.set('language',lang);tp155R4RefreshPanel();},lang);
@@ -33,7 +33,7 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const file=p
   assert.match(await p.locator('[data-ble-device="anonymous-4"]').innerText(),/Realtek/);
   const visibleText=await p.locator('.tp111-ble').innerText();for(const key of ['identify','deviceNumber','macAddress','candidate','scanExport'])assert.ok(!new RegExp('\\b'+key+'\\b').test(visibleText),'no untranslated BLE key '+lang+'/'+key);
   const inputColors=await p.locator('[data-ble-filter]').evaluate(e=>({background:getComputedStyle(e).backgroundColor,color:getComputedStyle(e).color}));assert.notEqual(inputColors.background,'rgb(255, 255, 255)','MAC input keeps dark app surface');assert.notEqual(inputColors.color,'rgb(0, 0, 0)','MAC input remains readable');
-  assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth-innerWidth)<=1,'40 unnamed devices fit '+width+'/'+lang);
+  assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth-innerWidth)<=1,'42 unnamed devices fit '+width+'/'+lang);
   if(width===393&&lang==='hu')await p.screenshot({path:'ui-evidence/ble-unnamed-2700.png'});
  }
  await p.evaluate(()=>__ble.emit({kind:'device',device:{id:'anonymous-0',name:'',rssi:-99,displayAddress:'AA:BB:CC:DD:EE:00',advertisedServices:[],manufacturers:[]}}));
@@ -41,11 +41,11 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const file=p
  assert.match(await p.locator('[data-ble-device="anonymous-0"]').innerText(),/#1/,'RSSI sorting must not renumber anonymous devices');
  await p.locator('[data-ble-filter]').fill('aa-bb-cc-dd-ee-04');assert.equal(await p.locator('[data-ble-device]').count(),1);assert.equal(await p.locator('[data-ble-device]').getAttribute('data-ble-device'),'anonymous-4','exact MAC filter finds the known RDFit watch');
  await p.locator('[data-ble-filter]').fill('00:00:00:00:00:00');assert.equal(await p.locator('[data-ble-device]').count(),0,'unmatched MAC must not guess an identity');
- await p.locator('[data-ble-filter]').fill('');assert.equal(await p.locator('[data-ble-device]').count(),40);
+ await p.locator('[data-ble-filter]').fill('');assert.equal(await p.locator('[data-ble-device]').count(),42);
  assert.equal(await p.locator('[data-ble-action="exportReport"]').isDisabled(),true,'finish scanning before opening the file picker');
  await p.locator('[data-ble-action="stop"]').click();assert.equal(await p.locator('[data-ble-action="exportReport"]').isEnabled(),true,'diagnostics without connecting');
  await p.locator('[data-ble-action="exportReport"]').click();await p.waitForFunction(()=>__ble.saves.length===1);
- const scanReport=await p.evaluate(()=>__ble.saves[0]);assert.equal(scanReport.mode,'scan');assert.equal(scanReport.scanDevices.length,40);assert.equal(scanReport.services.length,0);
+ const scanReport=await p.evaluate(()=>__ble.saves[0]);assert.equal(scanReport.mode,'scan');assert.equal(scanReport.scanDevices.length,42);assert.equal(scanReport.services.length,0);
  for(const secret of ['AA:BB:CC:DD:EE:','anonymous-','displayAddress'])assert.ok(!JSON.stringify(scanReport).includes(secret),'saved scan excludes '+secret);
  await p.evaluate(()=>{tp155R4ClosePanel(false);__ble.saves=[];});
  for(const width of [320,360,393,412])for(const lang of ['hu','en','de','ro'])for(const theme of ['classicBlue','blue']){

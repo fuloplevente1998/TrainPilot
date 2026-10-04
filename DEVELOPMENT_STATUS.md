@@ -1,8 +1,14 @@
 # TrainPilot — Development Status
 
+## #110 phase 1 — 1.1.4 /2702
+
+The refreshed issue explicitly requires one native transactional Health journal for **Health Connect and direct BLE**, with source-separated records, Health Connect IDs/lastModifiedTime/dataOrigin, deletion propagation and an idempotent migration from healthLedgerV1. The implementation roadmap is [docs/HEALTH_JOURNAL_ROADMAP.md](docs/HEALTH_JOURNAL_ROADMAP.md). This candidate implements only the issue's first deliverable: 60-second interruptible discovery, a bounded 120-device priority policy, explicit private watch selection, service-checked saved-address reconnect on trial open/resume, at most three foreground attempts, cancellation/forget and local-erasure integration. No background service, health-record import or primary-store migration is claimed.
+
+Physical 2701 feedback confirms battery and valid zero current steps. New connection/discovery behavior requires its own phone trial. Every previous candidate feature stays included; stable main and published 2701 source/tag are unchanged.
+
 ## GT4Pro+ proprietary read-query trial — 1.1.3 / 2701
 
-Physical 2700 report: connected/status 0, seven services, default MCU and JieLi channels, no standard HRS. The foreground trial now explicitly queries only battery/current steps using traced MCU frames. Original bounded decoder and synthetic JVM vectors cover CRC, fragment boundaries, coalescing, malformed/oversized/multipart input and the command allowlist. Diagnostics omit real values and raw packets. Full checks/source/signature verification required; actual proprietary replies and history import remain pending. The earlier proposed MAC-direct-connection change was stopped when the user found the watch and supplied successful discovery evidence.
+Physical 2700 report: connected/status 0, seven services, default MCU and JieLi channels, no standard HRS. The foreground trial now explicitly queries only battery/current steps using traced MCU frames. Original bounded decoder and synthetic JVM vectors cover CRC, fragment boundaries, coalescing, malformed/oversized/multipart input and the command allowlist. Diagnostics omit real values and raw packets. Full checks/source/signature verification required; battery/current zero-step replies were subsequently confirmed by the user; positive-step readings and history import remain pending. The earlier proposed MAC-direct-connection change was stopped when the user found the watch and supplied successful discovery evidence.
 
 ## Bluetooth identification follow-up — 1.1.2 / 2700
 

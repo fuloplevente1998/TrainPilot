@@ -52,11 +52,17 @@ public class BleDiscoveryPlugin extends Plugin {
     private PluginCall connecting, subscribing, pendingPermission;
     private JSArray services = new JSArray();
     private String state = "idle", code = "", deviceName = "";
+    private String expectedService = "";
+    private String scanSavedAddress = "";
+    private long scanEndsAt = 0;
+    private int nextDeviceNumber = 0;
     private int gattStatus = 0;
     private volatile boolean foreground = true;
     private boolean heartSupported = false;
     private long lastPulse = 0;
     private Runnable scanTimeout, connectionTimeout, subscriptionTimeout;
+
+    private BleWatchPreference savedWatch() { return new BleWatchPreference(getContext()); }
 
     private BluetoothAdapter adapter() {
         BluetoothManager manager = (BluetoothManager) getContext().getSystemService(Context.BLUETOOTH_SERVICE);
@@ -82,6 +88,11 @@ public class BleDiscoveryPlugin extends Plugin {
         JSObject out = new JSObject();
         out.put("state", state); out.put("code", code); out.put("gattStatus", gattStatus);
         out.put("deviceName", deviceName); out.put("services", services);
+        JSObject saved = new JSObject();
+        saved.put("present", !savedWatch().address().isEmpty()); saved.put("name", savedWatch().name());
+        out.put("rememberedWatch", saved);
+        out.put("scanRemainingSeconds", scanCallback == null ? 0
+            : Math.max(0, (scanEndsAt - android.os.SystemClock.elapsedRealtime() + 999) / 1000));
         out.put("probeSupported", probeSupported);
         JSObject probe = new JSObject(); probe.put("status", probeStatus);
         probe.put("batteryReceived", probeBatteryReceived); probe.put("stepsReceived", probeStepsReceived);
@@ -126,7 +137,8 @@ public class BleDiscoveryPlugin extends Plugin {
             }
             scanner = adapter.getBluetoothLeScanner();
             if (scanner == null) { call.reject("Bluetooth scanner unavailable", "BLUETOOTH_OFF"); return; }
-            devices.clear(); addresses.clear(); rows.clear(); lastSeen.clear(); resetProbe();
+            devices.clear(); addresses.clear(); rows.clear(); lastSeen.clear(); resetProbe(); nextDeviceNumber = 0;
+            scanSavedAddress = savedWatch().address();
             services = new JSArray(); deviceName = ""; heartSupported = false; gattStatus = 0;
             ScanCallback callback = new ScanCallback() {
                 @Override public void onScanResult(int type, ScanResult result) {
@@ -140,10 +152,11 @@ public class BleDiscoveryPlugin extends Plugin {
                 }
             };
             scanCallback = callback;
+            scanEndsAt = android.os.SystemClock.elapsedRealtime() + BleScanPolicy.DURATION_MS;
             scanner.startScan(null, new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build(), callback);
             transition("scanning", "");
             scanTimeout = () -> { stopScanInternal(); transition("idle", "SCAN_FINISHED"); };
-            main.postDelayed(scanTimeout, 12000);
+            main.postDelayed(scanTimeout, BleScanPolicy.DURATION_MS);
             call.resolve(snapshot());
         } catch (SecurityException error) { stopScanInternal(); call.reject("Bluetooth permission denied", "PERMISSION_DENIED"); }
         catch (RuntimeException error) { stopScanInternal(); call.reject("Bluetooth scan failed", "SCAN_FAILED"); }
@@ -153,13 +166,8 @@ public class BleDiscoveryPlugin extends Plugin {
         String address;
         try { address = device.getAddress(); } catch (SecurityException ignored) { return; }
         String id = addresses.get(address);
-        if (id == null) {
-            if (devices.size() >= 40) return;
-            id = UUID.randomUUID().toString(); addresses.put(address, id); devices.put(id, device);
-        }
         long now = android.os.SystemClock.elapsedRealtime();
-        if (now - lastSeen.getOrDefault(id, -1000L) < 1000) return;
-        lastSeen.put(id, now);
+        if (id != null && now - lastSeen.getOrDefault(id, -1000L) < 1000) return;
         ScanRecord record = result.getScanRecord();
         String name = record == null ? null : record.getDeviceName();
         if (name == null) try { name = device.getName(); } catch (SecurityException ignored) { }
@@ -167,6 +175,7 @@ public class BleDiscoveryPlugin extends Plugin {
         row.put("rssi", result.getRssi());
         // The address is displayed locally to identify unnamed watches; diagnostics omit it.
         row.put("displayAddress", address != null && address.matches("(?i)([0-9a-f]{2}:){5}[0-9a-f]{2}") ? address : "");
+        row.put("remembered", address != null && !scanSavedAddress.isEmpty() && address.equalsIgnoreCase(scanSavedAddress));
         JSArray advertised = new JSArray(), manufacturers = new JSArray();
         if (record != null) {
             List<ParcelUuid> uuids = record.getServiceUuids();
@@ -177,15 +186,42 @@ public class BleDiscoveryPlugin extends Plugin {
                 company.put("length", data.valueAt(i) == null ? 0 : data.valueAt(i).length); manufacturers.put(company);
             }
         }
-        row.put("advertisedServices", advertised); row.put("manufacturers", manufacturers); rows.put(id, row);
+        row.put("advertisedServices", advertised); row.put("manufacturers", manufacturers);
+        String removed = null;
+        if (id == null) {
+            List<BleScanPolicy.Candidate> retained = new ArrayList<>();
+            for (Map.Entry<String, JSObject> item : rows.entrySet()) {
+                if (item.getKey() != null) retained.add(scanCandidate(item.getKey(), item.getValue()));
+            }
+            removed = BleScanPolicy.replacement(retained, scanCandidate("", row));
+            if ("".equals(removed) || nextDeviceNumber >= 65535) return;
+            if (removed != null) {
+                devices.remove(removed); rows.remove(removed); lastSeen.remove(removed);
+                addresses.values().remove(removed);
+            }
+            id = UUID.randomUUID().toString(); addresses.put(address, id); devices.put(id, device);
+            row.put("number", ++nextDeviceNumber);
+        } else row.put("number", rows.get(id).getInteger("number", 1));
+        row.put("id", id); rows.put(id, row); lastSeen.put(id, now);
         JSObject event = new JSObject(); event.put("kind", "device"); event.put("device", row);
+        if (removed != null) event.put("removedId", removed);
         notifyListeners("bleEvent", event);
+    }
+    private BleScanPolicy.Candidate scanCandidate(String id, JSObject row) {
+        String address = row.getString("displayAddress", ""), name = row.getString("name", "");
+        String services = row.optJSONArray("advertisedServices") == null ? "" : row.optJSONArray("advertisedServices").toString().toLowerCase(Locale.ROOT);
+        int priority = !address.isEmpty() && address.equalsIgnoreCase(scanSavedAddress) ? 4
+            : name.toLowerCase(Locale.ROOT).matches(".*gt\\s*4.*") ? 3
+            : services.contains("6e40ab01") || services.contains("0000ae00") || services.contains("00002222") || services.contains("00004444") ? 2
+            : services.contains("00000201") ? 1 : 0;
+        return new BleScanPolicy.Candidate(id, priority, row.getInteger("rssi", -127));
     }
     private void stopScanInternal() {
         ScanCallback callback = scanCallback; scanCallback = null;
         if (scanTimeout != null) main.removeCallbacks(scanTimeout);
         if (scanner != null && callback != null) try { scanner.stopScan(callback); } catch (RuntimeException ignored) { }
         scanner = null;
+        scanEndsAt = 0;
     }
     @PluginMethod public void stopScan(PluginCall call) {
         main.post(() -> { stopScanInternal(); if (state.equals("scanning")) transition("idle", "SCAN_FINISHED"); call.resolve(snapshot()); });
@@ -197,8 +233,49 @@ public class BleDiscoveryPlugin extends Plugin {
             if (activeGatt != null) { call.reject("Bluetooth is busy", "BUSY"); return; }
             String id = call.getString("id", ""); BluetoothDevice device = devices.get(id);
             if (device == null) { call.reject("Choose a device from a new scan", "DEVICE_EXPIRED"); return; }
+            startConnection(call, device, rows.get(id).getString("name", ""), "");
+        });
+    }
+    @PluginMethod public void rememberWatch(PluginCall call) {
+        main.post(() -> {
+            if (activeGatt == null || !state.equals("connected") || !probeSupported && !heartSupported) {
+                call.reject("Connect a supported watch first", "NO_SAVED_WATCH"); return;
+            }
+            try {
+                if (!savedWatch().save(activeGatt.getDevice().getAddress(), deviceName,
+                    (probeSupported ? RDFIT_SERVICE : HEART_SERVICE).toString())) {
+                    call.reject("Cannot save selected watch", "SAVE_WATCH_FAILED"); return;
+                }
+                call.resolve(snapshot());
+            } catch (SecurityException error) { call.reject("Bluetooth permission denied", "PERMISSION_DENIED"); }
+        });
+    }
+    @PluginMethod public void forgetWatch(PluginCall call) {
+        main.post(() -> {
+            if (!savedWatch().clear()) { call.reject("Cannot forget selected watch", "SAVE_WATCH_FAILED"); return; }
+            stopScanInternal(); failConnection("WATCH_FORGOTTEN"); call.resolve(snapshot());
+        });
+    }
+    @PluginMethod public void connectRemembered(PluginCall call) {
+        main.post(() -> {
+            if (!permissions()) { call.reject("Bluetooth permission denied", "PERMISSION_DENIED"); return; }
+            if (!foreground) { call.reject("Keep the app open", "BACKGROUND"); return; }
+            if (activeGatt != null || scanCallback != null) { call.reject("Bluetooth is busy", "BUSY"); return; }
+            BleWatchPreference saved = savedWatch(); String address = saved.address(), service = saved.service();
+            if (address.isEmpty() || !service.equals(RDFIT_SERVICE.toString()) && !service.equals(HEART_SERVICE.toString())) {
+                call.reject("No verified selected watch", "NO_SAVED_WATCH"); return;
+            }
+            try {
+                BluetoothAdapter adapter = adapter();
+                if (adapter == null || !adapter.isEnabled()) { call.reject("Enable Bluetooth", "BLUETOOTH_OFF"); return; }
+                startConnection(call, adapter.getRemoteDevice(address), saved.name(), service);
+            } catch (SecurityException error) { call.reject("Bluetooth permission denied", "PERMISSION_DENIED"); }
+            catch (RuntimeException error) { call.reject("Cannot reconnect", "CONNECTION_FAILED"); }
+        });
+    }
+    private void startConnection(PluginCall call, BluetoothDevice device, String name, String service) {
             stopScanInternal(); resetProbe(); services = new JSArray(); heartSupported = false; heart = null; heartCccd = null;
-            deviceName = rows.get(id).getString("name", ""); connecting = call; gattStatus = 0;
+            deviceName = name; expectedService = service; connecting = call; gattStatus = 0;
             transition("connecting", "");
             try {
                 activeGatt = device.connectGatt(getContext(), false, callbacks, BluetoothDevice.TRANSPORT_LE);
@@ -207,7 +284,6 @@ public class BleDiscoveryPlugin extends Plugin {
                 main.postDelayed(connectionTimeout, 20000);
             } catch (SecurityException error) { failConnection("PERMISSION_DENIED"); }
             catch (RuntimeException error) { failConnection("CONNECTION_FAILED"); }
-        });
     }
     private final BluetoothGattCallback callbacks = new BluetoothGattCallback() {
         @Override public void onConnectionStateChange(BluetoothGatt gatt, int status, int next) {
@@ -242,6 +318,10 @@ public class BleDiscoveryPlugin extends Plugin {
                 heartCccd = heart == null ? null : heart.getDescriptor(CCCD);
                 heartSupported = heart != null && heartCccd != null && (heart.getProperties()
                     & (BluetoothGattCharacteristic.PROPERTY_NOTIFY | BluetoothGattCharacteristic.PROPERTY_INDICATE)) != 0;
+                if (!expectedService.isEmpty() && !(expectedService.equals(RDFIT_SERVICE.toString()) ? probeSupported : heartSupported)) {
+                    services = new JSArray(); probeSupported = false; heartSupported = false;
+                    failConnection("WATCH_CHANGED"); return;
+                }
                 if (connectionTimeout != null) main.removeCallbacks(connectionTimeout);
                 transition("connected", "");
                 if (connecting != null) { PluginCall pending = connecting; connecting = null; pending.resolve(snapshot()); }

@@ -1,0 +1,66 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http'),{chromium}=require('playwright');
+const root=path.resolve('www'),server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+(new URL(req.url,'http://local').pathname==='/'?'/index.html':new URL(req.url,'http://local').pathname));if(!file.startsWith(root+path.sep)){res.writeHead(403);return res.end();}fs.readFile(file,(e,data)=>{if(e){res.writeHead(404);return res.end();}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html');res.end(data);});});
+(async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;try{
+ browser=await chromium.launch({args:['--no-sandbox']});const p=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU'}),errors=[];p.on('pageerror',e=>errors.push(String(e)));fs.mkdirSync('ui-evidence',{recursive:true});
+ await p.addInitScript(()=>{
+  const remembered=JSON.parse(window.name||'null');
+  const b=window.__reconnect={listeners:new Set(),calls:[],saves:[],status:{state:'idle',supported:true,services:[],rememberedWatch:remembered||{present:false}},pending:null,fail:null,scanStop:null};
+  b.emit=e=>{for(const fn of b.listeners)fn(e);};
+  b.set=(state,extra={})=>{b.status={...b.status,state,...extra};b.emit({kind:'state',...b.status});return {...b.status};};
+  const connected=()=>b.set('connected',{code:'',deviceName:'GT4Pro+',probeSupported:true,probeReadings:{},services:[{uuid:'6e40ab01-b5a3-f393-e0a9-e50e24dcca9e',type:0,characteristics:[{uuid:'6e40ab02-b5a3-f393-e0a9-e50e24dcca9e',properties:12,descriptors:[]}]}]});
+  const stop=()=>{clearTimeout(b.scanStop);b.scanStop=null;};
+  const connect=async()=>{stop();b.set('connecting');if(b.pending)return new Promise((resolve,reject)=>{b.resolve=()=>resolve(connected());b.reject=reject;});if(b.fail){b.set('disconnected',{code:b.fail});const e=new Error('reconnect failure');e.code=b.fail;throw e;}return connected();};
+  const plugin={addListener:async(_,fn)=>{b.listeners.add(fn);return {remove:async()=>b.listeners.delete(fn)};},getStatus:async()=>({...b.status}),
+   startScan:async()=>{b.calls.push('scan');stop();b.scanStop=setTimeout(()=>b.set('idle',{code:'SCAN_FINISHED',scanRemainingSeconds:0}),60000);return b.set('scanning',{code:'',services:[],probeSupported:false,scanRemainingSeconds:60});},
+   stopScan:async()=>{b.calls.push('stop');stop();return b.set('idle',{code:'SCAN_FINISHED'});},
+   connect:async({id})=>{b.calls.push('connect:'+id);return connect();},
+   connectRemembered:async()=>{b.calls.push('saved');return connect();},
+   rememberWatch:async()=>{b.calls.push('remember');const remembered={present:true,name:'GT4Pro+',address:'AA:BB:CC:DD:EE:35'};window.name=JSON.stringify(remembered);return b.set('connected',{rememberedWatch:remembered});},
+   forgetWatch:async()=>{b.calls.push('forget');window.name='null';if(b.reject){const e=new Error('forgotten');e.code='WATCH_FORGOTTEN';b.reject(e);b.reject=null;}stop();return b.set('disconnected',{code:'WATCH_FORGOTTEN',services:[],probeReadings:{},rememberedWatch:{present:false}});},
+   disconnect:async()=>{b.calls.push('disconnect');stop();if(b.reject){const e=new Error('cancelled');e.code='DISCONNECTED';b.reject(e);b.reject=null;}return b.set('disconnected',{code:'DISCONNECTED',probeReadings:{}});},
+   readRdfitData:async()=>{b.calls.push('rdfit');return b.set('disconnected',{code:'PROBE_DONE',probeReadings:{battery:77,steps:0}});}
+  };
+  window.Capacitor={isNativePlatform:()=>true,Plugins:{BleDiscovery:plugin,GoogleSync:{profile:async()=>({connected:false}),status:async()=>({connected:false})},HealthBridge:{getStatus:async()=>({supported:true,permissions:{}})},NativeFiles:{save:async args=>{b.saves.push(JSON.parse(args.data));return {verified:true};}}}};
+  b.device=(id,number,extra={})=>b.emit({kind:'device',device:{id,number,name:'',rssi:-55,displayAddress:'AA:BB:CC:DD:EE:'+number.toString(16).padStart(2,'0'),advertisedServices:[],...extra}});
+ });
+ await p.clock.install();
+ await p.goto('http://127.0.0.1:'+server.address().port);await p.waitForFunction(()=>TrainPilotBoot.finished);
+ const open=async()=>{await p.evaluate(()=>go('settings'));await p.locator('.tp111-ble-entry button').click();await p.waitForFunction(()=>__reconnect.listeners.size===1);};
+ await open();assert.equal(await p.locator('[data-ble-remembered]').isVisible(),false);
+ await p.locator('[data-ble-action="scan"]').click();assert.match(await p.locator('[data-ble-countdown-text]').innerText(),/60/);
+ await p.clock.fastForward(13000);assert.equal(await p.evaluate(()=>__reconnect.status.state),'scanning','scan must remain active after the old 12-second cutoff');assert.match(await p.locator('[data-ble-countdown-text]').innerText(),/47/);
+ await p.evaluate(()=>{for(let i=1;i<=120;i++)__reconnect.device('row-'+i,i);__reconnect.emit({kind:'device',removedId:'row-1',device:{id:'watch',number:121,name:'GT4Pro+',rssi:-99,remembered:true,displayAddress:'AA:BB:CC:DD:EE:35',advertisedServices:['00000201-0000-1000-8000-00805f9b34fb']}});});
+ await p.clock.fastForward(350);assert.equal(await p.locator('[data-ble-device]').count(),120);assert.equal(await p.locator('[data-ble-device="row-1"]').count(),0);assert.equal(await p.locator('[data-ble-device]').first().getAttribute('data-ble-device'),'watch','late selected watch remains prominent after native eviction');assert.match(await p.locator('[data-ble-device="row-2"]').innerText(),/#2/,'eviction cannot renumber retained devices');
+ await p.locator('[data-ble-device="watch"]').click();assert.equal(await p.evaluate(()=>__reconnect.status.state),'connected','can connect before the full minute');assert.equal(await p.locator('[data-ble-countdown]').isVisible(),false);
+ await p.locator('[data-ble-action="remember"]').click();await p.waitForFunction(()=>document.querySelector('[data-ble-remembered]').hidden===false);
+ const health=await p.evaluate(()=>JSON.stringify(state.health));
+ await p.evaluate(()=>tp155R4ClosePanel(false));await open();await p.waitForFunction(()=>__reconnect.calls.includes('saved'));assert.equal(await p.evaluate(()=>__reconnect.calls.filter(x=>x==='rdfit').length),0,'reconnection does not silently start a read trial');
+ for(const width of [320,360,393,412])for(const lang of ['hu','en','de','ro'])for(const theme of ['classicBlue','blue']){
+  await p.setViewportSize({width,height:width===320?740:873});await p.evaluate(({lang,theme})=>{tp155R4ClosePanel(false);db.set('language',lang);rf200SetTheme(theme);go('settings');},{lang,theme});await p.locator('.tp111-ble-entry button').click();await p.waitForFunction(()=>__reconnect.status.state==='connected');
+  assert.equal(await p.evaluate(()=>__reconnect.listeners.size),1,'one listener after reopen');const bg=await p.locator('.tp155-r4-panel').evaluate(e=>getComputedStyle(e).backgroundColor);assert.ok(bg!=='rgba(0, 0, 0, 0)'&&bg!=='transparent','BLE panel has an opaque theme surface');assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth-innerWidth)<=1,'saved controls fit '+width+'/'+lang+'/'+theme);
+  for(const key of ['remembered','rememberNote','reconnect','forget'])assert.notEqual(await p.evaluate(key=>TrainPilotBle.t(key),key),key,'translated '+key+'/'+lang);
+  assert.equal(await p.evaluate(()=>JSON.stringify(state.health)),health,'identity settings do not change health data');
+  if(width===393&&lang==='hu'&&theme==='blue')await p.screenshot({path:'ui-evidence/ble-reconnect-2702.png'});
+ }
+ await p.locator('[data-ble-action="probe"]').click();assert.equal(await p.locator('[data-ble-steps]').innerText(),'0','valid physical zero remains a value');assert.equal(await p.locator('[data-ble-action="reconnect"]').isEnabled(),true);
+ await p.clock.fastForward(60000);assert.equal(await p.evaluate(()=>__reconnect.calls.at(-1)),'rdfit','finished probe must not trigger endless automatic reconnect');
+ await p.locator('[data-ble-action="exportReport"]').click();const exported=await p.evaluate(()=>JSON.stringify(__reconnect.saves.at(-1)));for(const privateValue of ['AA:BB:CC:DD:EE:35','rememberedWatch','probeReadings','"steps":'])assert.ok(!exported.includes(privateValue),'export excludes '+privateValue);
+ await p.reload();await p.waitForFunction(()=>TrainPilotBoot.finished);await open();await p.waitForFunction(()=>__reconnect.calls.includes('saved'));assert.equal(await p.locator('[data-ble-remembered]').isVisible(),true,'native preference can restore after reload');
+ await p.locator('[data-ble-action="disconnect"]').click();let n=await p.evaluate(()=>__reconnect.calls.length);await p.clock.fastForward(60000);assert.equal(await p.evaluate(()=>__reconnect.calls.length),n,'manual disconnect stops retry');
+ await p.evaluate(()=>{__reconnect.fail='CONNECTION_TIMEOUT';});await p.locator('[data-ble-action="reconnect"]').click();await p.clock.fastForward(3000);await p.waitForFunction(()=>__reconnect.calls.filter(x=>x==='saved').length===3);await p.clock.fastForward(8000);await p.waitForFunction(()=>__reconnect.calls.filter(x=>x==='saved').length===4);assert.equal(await p.evaluate(()=>__reconnect.calls.filter(x=>x==='saved').length),4,'one initial successful reopen plus at most three failed manual-reconnect attempts');
+ n=await p.evaluate(()=>__reconnect.calls.length);await p.clock.fastForward(60000);assert.equal(await p.evaluate(()=>__reconnect.calls.length),n,'retry budget must end');
+ await p.evaluate(()=>{__reconnect.fail='WATCH_CHANGED';});await p.locator('[data-ble-action="reconnect"]').click();n=await p.evaluate(()=>__reconnect.calls.length);await p.clock.fastForward(60000);assert.equal(await p.evaluate(()=>__reconnect.calls.length),n,'changed services must not repeatedly reconnect');
+ await p.evaluate(()=>{__reconnect.fail='PERMISSION_DENIED';});await p.locator('[data-ble-action="reconnect"]').click();n=await p.evaluate(()=>__reconnect.calls.length);await p.clock.fastForward(60000);assert.equal(await p.evaluate(()=>__reconnect.calls.length),n,'permission denial must not loop');
+ await p.evaluate(()=>{__reconnect.fail='CONNECTION_TIMEOUT';});await p.locator('[data-ble-action="reconnect"]').click();await p.locator('[data-ble-action="disconnect"]').click();n=await p.evaluate(()=>__reconnect.calls.length);await p.clock.fastForward(60000);assert.equal(await p.evaluate(()=>__reconnect.calls.length),n,'disconnect cancels a scheduled retry');
+ await p.evaluate(()=>{__reconnect.fail='CONNECTION_TIMEOUT';});await p.locator('[data-ble-action="reconnect"]').click();await p.evaluate(()=>tp155R4ClosePanel(false));n=await p.evaluate(()=>__reconnect.calls.length);await p.clock.fastForward(60000);assert.equal(await p.evaluate(()=>__reconnect.calls.length),n,'navigation cancels retry');
+ await p.evaluate(()=>{__reconnect.fail=null;});await open();await p.waitForFunction(()=>__reconnect.status.state==='connected');
+ await p.evaluate(()=>__reconnect.set('disconnected',{code:'BACKGROUND',probeReadings:{}}));n=await p.evaluate(()=>__reconnect.calls.length);await p.clock.fastForward(60000);assert.equal(await p.evaluate(()=>__reconnect.calls.length),n,'background does not trigger foreground retry');
+ await p.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));await p.waitForFunction(()=>__reconnect.calls.length>0&&__reconnect.calls.at(-1)==='saved');assert.equal(await p.evaluate(()=>__reconnect.status.state),'connected','visible trial resumes saved-watch connection');
+
+ await p.locator('[data-ble-action="disconnect"]').click();
+ await p.evaluate(()=>{__reconnect.fail=null;__reconnect.pending=true;});await p.locator('[data-ble-action="reconnect"]').click();assert.equal(await p.locator('[data-ble-action="disconnect"]').isEnabled(),true,'cancel remains usable while connecting');await p.locator('[data-ble-action="forget"]').click();await p.waitForFunction(()=>document.querySelector('[data-ble-remembered]').hidden===true);await p.clock.fastForward(60000);assert.equal(await p.evaluate(()=>__reconnect.calls.at(-1)),'forget','forget cancels pending connection and retries');
+ await p.evaluate(()=>{__reconnect.pending=false;tp155R4ClosePanel(false);});await p.reload();await p.waitForFunction(()=>TrainPilotBoot.finished);await open();assert.equal(await p.evaluate(()=>__reconnect.calls.filter(x=>x==='saved').length),0,'forgotten watch cannot reconnect after restart');
+ await p.locator('[data-ble-action="scan"]').click();await p.locator('[data-ble-action="stop"]').click();assert.equal(await p.locator('[data-ble-countdown]').isVisible(),false);assert.equal(await p.locator('[data-ble-action="scan"]').isEnabled(),true);
+ await p.locator('[data-ble-action="scan"]').click();await p.clock.fastForward(60000);assert.equal(await p.evaluate(()=>__reconnect.status.state),'idle','60-second timeout releases scan');assert.equal(await p.locator('[data-ble-countdown]').isVisible(),false);
+ assert.deepEqual(errors,[]);console.log('PASS #110 phase 1: 32 language/width/theme cases, 60-second scan, late watch retention, stable numbers, explicit remember, reopen/restart reconnection, zero steps, redacted export, bounded retries, cancellation and forget');
+}finally{await browser?.close();await new Promise(r=>server.close(r));}})().catch(e=>{console.error(e);process.exitCode=1;});

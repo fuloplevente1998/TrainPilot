@@ -230,5 +230,9 @@
   {
     "file": "tests/browser/publication-105.cjs",
     "estimatedSeconds": 10
+  },
+  {
+    "file": "tests/browser/ble-reconnect-114.cjs",
+    "estimatedSeconds": 35
   }
 ]
