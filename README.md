@@ -1,89 +1,58 @@
 # TrainPilot
 
-**Aktuális kiadás — 1.2.6 /2709:** letisztított, tartós Health Connect-egészségnapló napi összesítésekkel és engedélyezhető háttérfrissítéssel; lebegő napi naptárablak, javított újratervezés és koppintásra megnyíló Coach-készenléti magyarázat. A teljes célbeállító a kompakt kezdőlapi gombból nyílik. [Kiadási megjegyzések](docs/releases/v1.2.6.md) · [Egészségnapló és HRV-követés](docs/HEALTH_JOURNAL_ROADMAP.md). A felhasználó 2026. október 4-én jóváhagyta a main merge-et és a stabil kiadást.
+> **Private commercial repository.** TrainPilot is proprietary software by FulTech Studios. Source access does not grant permission to copy, modify, redistribute, publish, sublicense, or sell the code.
 
-TrainPilot egy Androidra készült, local-first edzéstervező és edzésnapló alkalmazás. A fő edzésfunkciók helyben is használhatók; a Health Connect, Google Drive és Google Naptár integrációk opcionálisak.
+TrainPilot is a local-first Android workout planner, workout log and training companion. It combines configurable training programs, progress tracking, cardio/distance sessions, a readiness-aware Coach, Health Connect integration and optional Google backup/calendar features.
 
-## Fő funkciók
+**Current stable release:** **1.2.6 / Android versionCode 2709**  
+**Application ID:** `com.repforge.app`  
+**Android target:** API 36
 
-- személyre szabható edzésprogramok és gyors edzés;
-- edzésnapló sorozatokkal, ismétlésekkel, terheléssel és időadatokkal;
-- fejlődési nézet, függőleges oszlopos volumentrend, naplóalapú mutatók és részletek;
-- izomábra, TrainPilot Coach, statisztikai összesítések;
-- beépített pihenőidőzítő és kétoldalas gyakorlatokhoz bal/jobb stopper;
-- gyakorlatkönyvtár és saját gyakorlatok;
-- opcionális edzésfotók privát app-tárhelyen;
-- Health Connect integráció az alkalmazás által támogatott fitneszadatokhoz;
-- Google Drive `appDataFolder` alapú mentés és opcionális fotószinkron;
-- Google Naptár szinkron a tervezett edzésekhez;
-- többnyelvű felület és mobilra optimalizált Android/WebView UI.
+## Highlights
 
-A Google-funkciókhoz külön Google Cloud/OAuth konfiguráció szükséges. A Health Connect és a Google-integrációk tényleges működése eszköz-, Android-verzió-, jogosultság- és fiókbeállítás-függő; kiadás előtt fizikai készülékes ellenőrzés szükséges.
+- Custom workout programs and quick workouts.
+- Editable sets, repetitions, load, timed/bilateral exercises and progressive targets.
+- Persistent workout Journal with exercise-level editing, statistics, personal records and cardio metrics.
+- TrainPilot Coach with readiness explanations based on the signals actually available.
+- Calendar planning and reviewed replanning of missed/upcoming workouts.
+- Distance activities with manual distance, indoor timing and optional foreground GPS measurement.
+- Health Connect support for workout-window steps and a persistent native health journal.
+- Optional remembered-watch BLE/RDFit integration for verified watch step snapshots.
+- Optional Google Drive `appDataFolder` backup and Google Calendar synchronization.
+- Private workout photos stored in app-owned storage, with optional backup.
+- Hungarian, English, German and Romanian UI.
 
-## Aktuális kiadás: TrainPilot 1.2.6 (2709)
+## Current 1.2.6 release
 
-Az Egészségnapló dátumonként egy összesítést mutat. Az automatikus mód a legteljesebb napi lépésszámú Health Connect-forrást választja; külön Health Connect prioritás mód is használható. Az átfedő eredetek nem adódnak össze. A részletes mérési rekordok külön lenyithatók és lapozhatók; a Samsung Health felirat a Health Connectből kapott rekord eredetét jelzi.
+The 1.2.6 release focuses on the Health journal, Calendar replanning and Coach readiness details.
 
-A naptári nap edzései külön lebegő ablakban jelennek meg. Az újratervezés a mai elmulasztott edzést is kezeli, megtartja a választott kezdőnapot, és hosszú előnézetnél is elérhető mentést ad. A Coach készenléti értékére koppintva látható a valóban felhasznált adatok és pontszámhatások magyarázata.
+Health Connect data is stored in a transactional native journal. Daily summaries avoid adding overlapping origins together, while measurement records remain inspectable separately. Calendar dates open a dedicated day dialog, replanning protects completed/logged/active sessions, and tapping the Coach readiness score opens the inputs and point effects used by the existing readiness formula.
 
-- [v1.2.6 Release](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.2.6)
-- [TrainPilot-1.2.6.apk](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.6/TrainPilot-1.2.6.apk)
-- [Forrás ZIP](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.6/TrainPilot-1.2.6-source.zip)
-- [SHA-256 ellenőrzőösszegek](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.6/SHA256SUMS.txt)
-- [Android csomagadatok](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.6/apk-badging.txt)
-- [Kiadási megjegyzések](docs/releases/v1.2.6.md)
+Release notes: [docs/releases/v1.2.6.md](docs/releases/v1.2.6.md)
 
-Az alkalmazásazonosító `com.repforge.app`, a verzió **1.2.6 /2709**; az eredeti kiadási aláírás megmarad. Kiadási ellenőrzés: **119 Node-regresszió + 4 futtatóteszt, 62 Chromium-szkript és Android/JVM release-tesztek**, változatlan teljesítménykapukkal. A main kiadási workflow ellenőrzi és publikálja az APK-t, a main forrás ZIP-et, az ellenőrzőösszegeket és a csomagadatokat. A kiadás végrehajtási állapota: [#119](https://github.com/fuloplevente1998/TrainPilot/issues/119). Részletek: [build](docs/BUILD.md).
+## Architecture
 
-## Korábbi kiadás: TrainPilot 1.0.9 (2697)
+TrainPilot uses a Capacitor-based Android shell with a local WebView UI and targeted native Android integrations.
 
-Az Android `versionName` **1.0.9**, a `versionCode` **2697**. A javítókiadás megtartja a korábbi telepítések alkalmazásazonosítóját és aláírását; az 1.0.8 / 2696-ra és a korábbi verziókra is rátelepíthető. A főoldalak a Coach oldal halvány keretét és egységes szélességét használják; a Napló fülsávja váltáskor a helyén marad, a Fejlődés részletei közös nyilakat kaptak ([#101](https://github.com/fuloplevente1998/TrainPilot/issues/101)). A témaválasztó mindkét oszlopa fölött működik a görgetés, így az alsó színek is kiválaszthatók ([#99](https://github.com/fuloplevente1998/TrainPilot/issues/99)).
+- `www/` — application UI/runtime and local-first data model.
+- `android/` — native Android project and Capacitor plugins.
+- `tests/` — Node compatibility/regression tests.
+- `tests/browser/` — Chromium end-to-end UI regressions.
+- `docs/` — release, privacy, Health Connect, performance and publishing documentation.
+- `.github/workflows/` — validation, signed APK release gate, performance checks and guarded Play AAB build.
 
-- [v1.0.9 Release és kiadási megjegyzések](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.0.9)
-- [TrainPilot-1.0.9.apk](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.9/TrainPilot-1.0.9.apk)
-- [Forrás ZIP](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.9/TrainPilot-1.0.9-source.zip)
-- [SHA-256 ellenőrzőösszegek](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.9/SHA256SUMS.txt)
-- [Android csomag- és verzióadatok](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.9/apk-badging.txt)
+Important native components include Health Connect access/journaling, BLE/RDFit communication, distance tracking, private media/backup handling and Google integration.
 
-Az 1.0.7 fő változásai:
+## Development setup
 
-- Az Edzés és a Programok oldal közös, lenyitáskor betöltődő szerkesztőt használ. A **Mentés** gomb egyszerre menti és azonnal megjeleníti az új értékeket.
-- A Napló **Edzésnapló**, **Fejlődés** és **Statisztikák** füleket kapott. A Statisztikákon belül külön érhetők el a Személyes rekordok és a Kardióstatisztika.
-- A kardió heti kilométert, előző heti és nyolchetes összesítést, távolsággal súlyozott tempót és azonos mozgás/azonos távolság futórekordjait mutatja.
-- Új, **GPS nélküli beltéri időmérő**: indítás, szünet, folytatás és nullázás, kézi kilométerrel és újraindítás után is megőrzött edzésállapottal.
-- A Kezdőlap, a Naptár és a csukott Egészség oldal telefonon fix. A személyes tervező csak megkezdett edzésnél kompakt; az Egészség lenyitáskor megtartja a szélességét és görgethetővé válik.
-- A Coach kártya egységes keretet és témaszínt kapott. A kompakt Fejlődés összehasonlítása jobb felül jelenik meg; a témaválasztó a nyelvválasztó nyilát és animációját használja.
-- Biztonságosabb backup-visszaállítás, stabil GPS-sorozatazonosítók és az ismétlődő backup-kód összevonása.
+Recommended toolchain:
 
-A 2695-ös teszt-APK átadása után a felhasználó 2026. október 3-án jóváhagyta a main merge-et és a GitHub kiadást. A kiadási folyamat a mainen is lefuttatja a 117 kódregressziót, az 56 böngészős tesztszkriptet és az Android/aláírás/forrás ellenőrzéseket. A Google Play és a Google OAuth publikálási feladatai külön maradnak.
+- Node.js 22
+- Java 21
+- Android SDK / compileSdk 36
+- npm
 
-Az 1.0.9 dizájnfinomításainak részletei: [kiadási megjegyzések](docs/releases/v1.0.9.md). A korábbi [1.0.8 témaválasztó-javítás](docs/releases/v1.0.8.md) megmaradt.
-
-Részletes megvalósítás: [programszerkesztés és kardió](docs/TRAINING_CARDIO_1_0_7.md), [backup/GPS összevonás](docs/BACKUP_GPS_CONSOLIDATION_1_0_7.md).
-
-## Célok és beltéri intervallumok
-
-Az [#103](https://github.com/fuloplevente1998/TrainPilot/issues/103) elkészült fejlesztései: heti edzés- és havi kilométercél, kihagyott edzések előnézetes újratervezése, beltéri intervallumok, részletes Coach-indoklás és egységes üres/mentési állapotok. A 2703 kiadásban a célok külön kompakt kezdőlapi gombból érhetők el. Nagy Android-betűméretnél a fix áttekintések görgethetővé válnak, hogy minden vezérlő elérhető maradjon.
-
-Ezek a fejlesztések az **1.2.6 /2709** kiadásban is elérhetők. Részletek és kipróbálás: [1.1.0 fejlesztések](docs/FEATURES_1_1_0.md), [tesztkiadási megjegyzések](docs/releases/v1.1.0.md).
-
-## Git-történet és privát archívum
-
-A publikus repository története a **TrainPilot 1.6.0** clean base állapottól indul. A korábbi privát/legacy előzmények nem részei ennek a Git-történetnek. A publikus `main` teljes meglévő commitelőzménye megmarad.
-
-A régi nyilvános ágak, tagek és Release-ek tisztítása előtt a külön, **privát `TrainPilot-Archive`** repositoryba átmásoltuk a teljes Git-történetet és az 1.0.0 fájljait; a 17 régebbi Release és assetjeik is ott szerepelnek. A tisztítás után újabb kiadások is készültek; a korábbi publikus 1.0.x Release-ek megmaradnak. További információ: [repository-karbantartási terv](docs/REPOSITORY_MAINTENANCE_2026-09-26.md).
-
-A régi tagek és mellékágak publikusból való eltávolítása nem jelent Git-history-újraírást: a jelenlegi `main` előzményeit nem squasholjuk vagy force-pusholjuk.
-
-## Fejlesztési és kiadási modell
-
-- `main`: stabil, ellenőrzött állapot;
-- rövid életű `feat/*`, `fix/*`, `maintenance/*` ágak: célzott módosítások;
-- normál commit/push: gyors regressziós ellenőrzések;
-- teljes Release Gate: Node + Chromium regresszió, aláírt Android APK, package/source és checksum ellenőrzés;
-- alkalmazásfunkció módosítása esetén felhasználói jóváhagyás után történhet merge a `main` ágra; a CI és a készülékes teszt eredményeit külön rögzítjük.
-
-Helyi ellenőrzés:
+Install and run the normal checks:
 
 ```bash
 npm ci
@@ -92,21 +61,72 @@ npm run test:ui
 npm run sync
 ```
 
-A CI-ban hat külön Chromium-rész fut, teljes lefedettséggel. [Futtatás és mért idő](docs/UI_TESTS.md).
+Open the Android project:
 
-Részletek: [build és signing](docs/BUILD.md), [fejlesztési állapot](DEVELOPMENT_STATUS.md), [1.0.0 átállási terv](docs/REPOSITORY_MAINTENANCE_2026-09-26.md).
+```bash
+npm run android
+```
 
-## Signing és titkok
+Release signing material is intentionally not stored in the repository.
 
-A signing kulcs és a jelszavak nincsenek a repositoryban. A GitHub Actions a következő Repository Secret neveket használja:
+## Validation and release gates
 
-- `ANDROID_KEYSTORE_BASE64`
-- `ANDROID_STORE_PASSWORD`
-- `ANDROID_KEY_ALIAS`
-- `ANDROID_KEY_PASSWORD`
+TrainPilot treats `main` as the accepted stable line. Application changes are developed on short-lived branches, validated in CI and normally tested on a physical Android phone before merge.
 
-Signing kulcsot, jelszót, OAuth credentialt, `.env` fájlt vagy titkosítatlan helyreállítási mentést tilos commitolni. A privát archívum **sem** tartalmazhat signing titkokat.
+The full release gate includes:
 
-A Google Play publikáláshoz hátralévő lépéseket külön [ellenőrzőlista](docs/PLAY_STORE_CHECKLIST_2026.md) tartalmazza.
+- version/SemVer consistency checks;
+- Node regression tests;
+- six Chromium UI shards;
+- Android/JVM tests;
+- signed release APK build;
+- APK package/version/source verification;
+- signing-certificate continuity checks;
+- source ZIP and SHA-256 generation.
 
-Az alkalmazás az edzés aktív szakaszaihoz Health Connect-lépésszámot is lekér és naplóz. Beltéren idővel, GPS-táv nélkül is rögzíthető a mozgás; a lépésekből nem becsül kilométert. A forrás megosztási késése miatt a napló Health-blokkja később frissíthető.
+The versioning rules are documented in [docs/RELEASE_POLICY.md](docs/RELEASE_POLICY.md). Historical releases are preserved; future phone-test candidates use SemVer prerelease versions such as `1.2.7-rc.1`, while accepted releases use plain versions such as `1.2.7`.
+
+## Health Connect
+
+Health Connect access is permission-gated and optional. TrainPilot does not treat all overlapping sources as additive. It keeps source/origin information where relevant and stores permitted health data in the native journal for the app's own views and recovery workflows.
+
+See:
+
+- [Health journal / HRV roadmap](docs/HEALTH_JOURNAL_ROADMAP.md)
+- [Health Connect implementation notes](docs/HEALTH_CONNECT_IMPLEMENTATION.md)
+- [Privacy policy](www/privacy.html)
+
+Actual Health Connect availability depends on Android version, permissions, device/vendor behavior and which source apps export data.
+
+## Backups and Google integrations
+
+Core workout functionality is local-first. Google functionality is optional and requires separate Google Cloud/OAuth configuration.
+
+TrainPilot supports:
+
+- Google Drive `appDataFolder` synchronization;
+- Google Calendar synchronization for planned workouts;
+- local JSON/ZIP backup and transactional restore;
+- optional inclusion of permitted Health data in manual backups.
+
+Signing secrets, OAuth credentials, private backup data and keystores must never be committed.
+
+## Google Play status
+
+The repository already contains a guarded AAB workflow at [`.github/workflows/build-play-bundle.yml`](.github/workflows/build-play-bundle.yml). Google Play publication still requires the publisher-side configuration and declarations documented in [docs/PLAY_STORE_CHECKLIST_2026.md](docs/PLAY_STORE_CHECKLIST_2026.md), including Play App Signing strategy, store listing assets, Data Safety, Health declarations, privacy/support URLs and final physical-device checks.
+
+## Key documentation
+
+- [Development status](DEVELOPMENT_STATUS.md)
+- [Build and signing](docs/BUILD.md)
+- [Release/version policy](docs/RELEASE_POLICY.md)
+- [Performance regression policy](docs/PERFORMANCE_REGRESSION_POLICY.md)
+- [UI test execution](docs/UI_TESTS.md)
+- [Google Play checklist](docs/PLAY_STORE_CHECKLIST_2026.md)
+- [Repository maintenance history](docs/REPOSITORY_MAINTENANCE_2026-09-26.md)
+
+## Proprietary notice
+
+Copyright © 2026 FulTech Studios. All rights reserved.
+
+This repository intentionally does **not** contain an MIT, Apache-2.0, GPL or other open-source license. Third-party dependencies remain subject to their own licenses.
