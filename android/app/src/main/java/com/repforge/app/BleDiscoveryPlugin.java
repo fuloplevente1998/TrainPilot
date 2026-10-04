@@ -224,6 +224,7 @@ public class BleDiscoveryPlugin extends Plugin {
         if (scanner != null && callback != null) try { scanner.stopScan(callback); } catch (RuntimeException ignored) { }
         scanner = null;
         scanEndsAt = 0;
+        if(activeGatt==null)BleConnectionLease.release(this);
     }
     @PluginMethod public void stopScan(PluginCall call) {
         main.post(() -> { stopScanInternal(); if (state.equals("scanning")) transition("idle", "SCAN_FINISHED"); call.resolve(snapshot()); });
@@ -276,7 +277,9 @@ public class BleDiscoveryPlugin extends Plugin {
         });
     }
     private void startConnection(PluginCall call, BluetoothDevice device, String name, String service) {
-            stopScanInternal(); resetProbe(); services = new JSArray(); heartSupported = false; heart = null; heartCccd = null;
+            stopScanInternal(); HealthBackgroundService.yieldConnection();
+            if(!BleConnectionLease.acquire(this)){call.reject("Bluetooth is busy","BUSY");return;}
+            resetProbe(); services = new JSArray(); heartSupported = false; heart = null; heartCccd = null;
             deviceName = name; expectedService = service; connecting = call; gattStatus = 0;
             transition("connecting", "");
             try {
@@ -504,7 +507,8 @@ public class BleDiscoveryPlugin extends Plugin {
         if (pendingPermission != null) { PluginCall pending = pendingPermission; pendingPermission = null; pending.reject("Operation cancelled", "CANCELLED"); }
         if (connectionTimeout != null) main.removeCallbacks(connectionTimeout);
         if (subscriptionTimeout != null) main.removeCallbacks(subscriptionTimeout);
-        BluetoothGatt old = activeGatt; activeGatt = null; heart = null; heartCccd = null;
+        BluetoothGatt old = activeGatt; activeGatt = null;
+        BleConnectionLease.release(this); heart = null; heartCccd = null;
         if (old != null) { try { old.disconnect(); } catch (RuntimeException ignored) { } try { old.close(); } catch (RuntimeException ignored) { } }
     }
     private void failConnection(String reason) {

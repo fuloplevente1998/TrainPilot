@@ -7,7 +7,8 @@ import android.content.SharedPreferences;
 final class BleWatchPreference {
     private static final String FILE = "ble_selected_watch";
     private final SharedPreferences preferences;
-    BleWatchPreference(Context context) { preferences = context.getSharedPreferences(FILE, Context.MODE_PRIVATE); }
+    private final Context context;
+    BleWatchPreference(Context context) { this.context=context.getApplicationContext();preferences = context.getSharedPreferences(FILE, Context.MODE_PRIVATE); }
     String address() {
         String value = preferences.getString("address", "");
         return value != null && value.matches("(?i)([0-9a-f]{2}:){5}[0-9a-f]{2}") ? value : "";
@@ -27,5 +28,5 @@ final class BleWatchPreference {
         return preferences.edit().putString("journal_id", journalId).putString("address", address).putString("name", name)
             .putString("service", service).commit();
     }
-    boolean clear() { return preferences.edit().clear().commit(); }
+    boolean clear() { try{HealthJournalStore.get(context).setPreferences(new org.json.JSONObject().put("bleBackground",false));}catch(Exception ignored){}HealthBackgroundService.stop(context);return preferences.edit().clear().commit(); }
 }

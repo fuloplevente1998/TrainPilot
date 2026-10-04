@@ -21,6 +21,24 @@ public class HealthJournalStoreTest {
         return new JSONObject().put("channel",HealthJournalStore.HC).put("source","com.samsung.android.app.shealth").put("type","StepsRecord").put("recordId",id).put("lastModifiedMs",modified).put("startMs",now).put("endMs",now+1000).put("day",HealthJournalStore.day(now)).put("data",new JSONObject().put("value",count).put("unit","steps"));
     }
     private JSONObject page()throws Exception{return store.page("2020-01-01","2030-01-01","","",0,0,50);}
+    @Test public void retirementStopsHiddenWatchPreferencesWithoutDeletingHistory()throws Exception {
+        String day=HealthJournalStore.day(now);
+        store.initialize(new JSONObject().put("days",new JSONObject().put(day,new JSONObject().put("steps",6))));
+        store.healthDay(day,new JSONObject().put("steps",2281),store.generation());
+        store.setPreferences(new JSONObject().put("logWatchSteps",true).put("bleBackground",true).put("hcBackground",true).put("hcDailySource","com.sec.android.app.shealth").put("primary",HealthJournalStore.BLE));
+        store.watchSteps("watch-id","GT4Pro+",20,now,now+20,store.generation());
+        store.importRecords(new JSONArray().put(record("hc",now,12)),store.generation());
+        int records=store.exportSnapshot().getJSONArray("records").length();store.retireWatchUi();long epoch=store.generation();store.retireWatchUi();
+        assertEquals(epoch,store.generation());assertFalse(store.preferences().getBoolean("logWatchSteps"));assertFalse(store.preferences().getBoolean("bleBackground"));assertTrue(store.preferences().getBoolean("hcBackground"));assertEquals("auto",store.preferences().getString("hcDailySource"));
+        assertEquals(records,store.exportSnapshot().getJSONArray("records").length());assertEquals(2281,store.projection().getJSONObject("days").getJSONObject(day).getLong("steps"));
+        JSONObject visible=store.page("2020-01-01","2030-01-01","journal","",0,0,30);assertEquals(1,visible.getJSONArray("days").length());assertEquals(1,visible.getJSONArray("records").length());assertEquals(HealthJournalStore.HC,visible.getJSONArray("days").getJSONObject(0).getString("channel"));
+        store.setPreferences(new JSONObject().put("hcDailySource","priority"));store.retireWatchUi();assertEquals("priority",store.preferences().getString("hcDailySource"));
+    }
+    @Test public void cleanJournalKeepsLegacyDaysAndNeverUsesRetiredWatchFallback()throws Exception {
+        String day=HealthJournalStore.day(now);store.initialize(new JSONObject().put("days",new JSONObject().put(day,new JSONObject().put("steps",42))));
+        store.setPreferences(new JSONObject().put("logWatchSteps",true));store.watchSteps("watch-id","GT4Pro+",20,now+86400000,now+86400000,store.generation());store.retireWatchUi();
+        assertEquals(42,store.page("2020-01-01","2030-01-01","journal","",0,0,30).getJSONArray("days").getJSONObject(0).getLong("steps"));assertFalse(store.projection().getJSONObject("days").has(HealthJournalStore.day(now+86400000)));
+    }
     @Test public void migrationIsOnceAndSurvivesRestart()throws Exception {
         String day=HealthJournalStore.day(now);JSONObject legacy=new JSONObject().put("version",1).put("days",new JSONObject().put(day,new JSONObject().put("steps",0)));
         store.initialize(legacy);store.initialize(new JSONObject().put("days",new JSONObject().put(day,new JSONObject().put("steps",900))));
@@ -44,7 +62,7 @@ public class HealthJournalStoreTest {
     }
     @Test public void overlappingSourcesAndRepeatedZeroAreNotAdded()throws Exception {
         String day=HealthJournalStore.day(now);long epoch=store.generation();store.healthDay(day,new JSONObject().put("steps",100).put("activeCalories",50).put("warnings",new JSONArray()),epoch);
-        store.setPreferences(new JSONObject().put("logWatchSteps",true));store.watchSteps("watch-id","GT4Pro+",0,now,now+10,epoch);store.watchSteps("watch-id","GT4Pro+",20,now,now+20,epoch);
+        store.setPreferences(new JSONObject().put("logWatchSteps",true));epoch=store.generation();store.watchSteps("watch-id","GT4Pro+",0,now,now+10,epoch);store.watchSteps("watch-id","GT4Pro+",20,now,now+20,epoch);
         assertEquals(100,store.projection().getJSONObject("days").getJSONObject(day).getLong("steps"));
         store.setPreferences(new JSONObject().put("primary",HealthJournalStore.BLE));assertEquals(20,store.projection().getJSONObject("days").getJSONObject(day).getLong("steps"));
         assertEquals(50,store.projection().getJSONObject("days").getJSONObject(day).getLong("activeCalories"));
@@ -101,4 +119,38 @@ public class HealthJournalStoreTest {
         store.erase();store.initialize(legacy);assertEquals(0,store.projection().getJSONObject("days").length());
     }
 
+    @Test public void perOriginSummariesCannotReplaceMixedDailyProjection()throws Exception {
+        String date=HealthJournalStore.day(now);long epoch=store.generation();
+        store.healthDay(date,new JSONObject().put("steps",1900).put("source","@aggregate").put("activityOrigin","").put("readAt",HealthJournalStore.iso(now)),epoch);
+        store.healthDay(date,new JSONObject().put("steps",2281).put("source",HealthDailySource.SAMSUNG).put("activityOrigin",HealthDailySource.SAMSUNG).put("readAt",HealthJournalStore.iso(now)),epoch);
+        assertEquals(1900,store.projection().getJSONObject("days").getJSONObject(date).getLong("steps"));
+        JSONObject selected=store.page(date,date,HealthJournalStore.HC,HealthDailySource.SAMSUNG,0,0,30);
+        assertEquals(1,selected.getJSONArray("days").length());assertEquals(2281,selected.getJSONArray("days").getJSONObject(0).getLong("steps"));
+        assertEquals(1,store.page(date,date,"","",0,0,30).getJSONArray("days").length());
+    }
+    @Test public void switchingDailySourceInvalidatesInFlightReadsAndMarksCachePartial()throws Exception {
+        String date=HealthJournalStore.day(now);long epoch=store.generation();store.healthDay(date,new JSONObject().put("steps",0),epoch);
+        store.setPreferences(new JSONObject().put("hcDailySource",HealthDailySource.SAMSUNG));
+        assertTrue(store.projection().getJSONObject("days").getJSONObject(date).getBoolean("partial"));
+        try{store.healthDay(date,new JSONObject().put("steps",99),epoch);fail();}catch(IllegalStateException expected){}
+        store.healthDay(date,new JSONObject().put("steps",2281).put("activityOrigin",HealthDailySource.SAMSUNG),store.generation());
+        assertEquals(2281,store.projection().getJSONObject("days").getJSONObject(date).getLong("steps"));
+    }
+    @Test public void backgroundDisablePreventsLateWatchWritesAndIsNotExported()throws Exception {
+        store.setPreferences(new JSONObject().put("logWatchSteps",true).put("bleBackground",true).put("hcBackground",true));long epoch=store.generation();
+        store.watchSteps("watch","GT4Pro+",0,now,now,epoch);
+        store.setPreferences(new JSONObject().put("logWatchSteps",false));assertFalse(store.preferences().getBoolean("bleBackground"));
+        try{store.watchSteps("watch","GT4Pro+",10,now,now+100,epoch);fail();}catch(IllegalStateException expected){}
+        JSONObject backup=store.exportSnapshot();assertFalse(backup.toString().contains("bleBackground"));assertFalse(backup.toString().contains("hcBackground"));
+        store.erase();assertFalse(store.preferences().getBoolean("hcBackground"));assertFalse(store.preferences().getBoolean("bleBackground"));
+    }
+    @Test public void sourceSummaryIsInvalidatedWhenItsRecordIsDeleted()throws Exception {
+        String date=HealthJournalStore.day(now);long epoch=store.generation();
+        store.importRecords(new JSONArray().put(record("one",now,12).put("source",HealthDailySource.SAMSUNG)),epoch);
+        store.healthDay(date,new JSONObject().put("source",HealthDailySource.SAMSUNG).put("steps",12).put("readAt",HealthJournalStore.iso(now+100)),epoch);
+        assertEquals(1,store.page(date,date,HealthJournalStore.HC,HealthDailySource.SAMSUNG,0,0,30).getJSONArray("days").length());
+        store.applyChanges(new JSONArray(),new JSONArray().put(new JSONObject().put("recordId","one").put("deletedMs",now+200)),epoch);
+        assertEquals(0,store.page(date,date,HealthJournalStore.HC,HealthDailySource.SAMSUNG,0,0,30).getJSONArray("days").length());
+        assertTrue(store.needsSourceDay(date,HealthDailySource.SAMSUNG));
+    }
 }

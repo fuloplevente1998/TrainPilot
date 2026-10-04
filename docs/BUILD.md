@@ -2,7 +2,7 @@
 
 A kanonikus webalkalmazás-forrás a `www/app.js`. Az Android csomag azonosítója: `com.repforge.app`.
 
-Az elfogadott aktuális verzió **1.2.0 /2703**. Kiadási regresszió: 119 Node + 4 futtatóteszt, 60 Chromium-szkript hat párhuzamos CI-jobban, 37 Android/JVM-teszt. A korábbi jelölt APK-k/tag-ek megmaradnak; az új stabil main build a `v1.2.0` release-t publikálja.
+Az elfogadott aktuális verzió **1.2.6 /2709**. Kiadási regresszió: 119 Node + 4 futtatóteszt, 62 Chromium-szkript hat párhuzamos CI-jobban, Android/JVM release-tesztek. A korábbi jelölt APK-k/tag-ek megmaradnak; az új stabil main build a `v1.2.6` release-t publikálja.
 
 ## Gyors ellenőrzés
 
@@ -71,3 +71,5 @@ A keystore és a Secret értékek soha ne kerüljenek Gitbe, source ZIP-be vagy 
 - Az Android application ID `com.repforge.app`, az eredeti release signer és a meglévő helyi adattárolási azonosítók változatlanok.
 - Kiadás előtt az eredeti 1.7.7 APK aláírási tanúsítványának SHA-256 ujjlenyomatát az új APK-val össze kell hasonlítani; szükség van meglévő 1.7.7 telepítés fölé történő, adatmegőrző frissítési próbára is.
 - A történeti release-ek és tagek külön privát archiválása nem változtatja meg a publikus `main` commitelőzményét. Lásd [karbantartási terv](REPOSITORY_MAINTENANCE_2026-09-26.md).
+
+Az 1.2.6 /2709 main/release-jóváhagyása és végrehajtási ellenőrzőlistája: [#119](https://github.com/fuloplevente1998/TrainPilot/issues/119). A kiadott taghez tartozó pontos APK/forrás párost és eredeti aláírást a main gate után külön is ellenőrizzük.

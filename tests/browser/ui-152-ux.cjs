@@ -224,8 +224,8 @@ const server=http.createServer((req,res)=>{
   else assert.ok(anchoredSelect.menu.top>=anchoredSelect.trigger.bottom-2,'bottom-placed Calendar menu must remain below its trigger');
   assert.ok(anchoredSelect.menu.left>=anchoredSelect.viewport.left-2&&anchoredSelect.menu.right<=anchoredSelect.viewport.right+2&&anchoredSelect.menu.top>=anchoredSelect.viewport.top-2&&anchoredSelect.menu.bottom<=anchoredSelect.viewport.bottom+2,'Calendar custom select must stay inside the visual viewport');
   await page.evaluate(()=>rf260CloseSelects());
-  await page.evaluate(()=>{state.rf2211CalendarDate='2026-09-28';render()});await page.waitForSelector('#tp155R4PanelHost .tp151-day-panel');
-  assert.equal(await calendarHost.locator('.tp151-day-panel.tp155-r4-accent-surface').count(),1,'selected-day Calendar details must use the shared highlighted surface');
+  await page.evaluate(()=>{toggleCalendarDay('2026-09-28')});await page.waitForSelector('#tp108CalendarDay .tp151-day-panel');
+  assert.equal(await page.locator('#tp108CalendarDay .tp151-day-panel.tp155-r4-accent-surface').count(),1,'selected-day Calendar details must use the shared highlighted surface');await page.evaluate(()=>TrainPilotCalendarDay.close());
   const before=await page.evaluate(()=>scheduled().filter(x=>!x.cancelled).length);
   const dayId=await page.evaluate(()=>activeProgram().days[0].id);
   await page.evaluate(dayId=>{const a=document.createElement('button');a.id='tp152-anchor';a.textContent='anchor';document.querySelector('#tp155R4PanelHost main').appendChild(a);rf2211AddDay(dayId,a)},dayId);
@@ -237,7 +237,7 @@ const server=http.createServer((req,res)=>{
   await page.locator('[data-tp-hour="19"]').click();await page.locator('[data-tp-minute="20"]').click();await page.locator('#tp155R3TimeSave').click();
   assert.equal(await page.evaluate(()=>scheduled().filter(x=>!x.cancelled).length),before+1,'calendar item must save only after time confirmation');
   const addedId=await page.evaluate(()=>scheduled().filter(x=>!x.cancelled).at(-1)?.id);
-  await page.evaluate(id=>tp151EditCalendarItem(id),addedId);await page.waitForSelector('#tp155R4PanelHost .tp151-calendar-item .tp151-form-grid');
+  await page.evaluate(id=>{const x=scheduled().find(x=>x.id===id);toggleCalendarDay(localDateKey(new Date(x.start)));tp151EditCalendarItem(id);},addedId);await page.waitForSelector('#tp108CalendarDay .tp151-calendar-item .tp151-form-grid');
   assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),true);assert.equal(await page.evaluate(()=>state.tp151EditingScheduleId),null,'Android back must leave Calendar inline edit first');
   assert.equal(await page.locator('#tp155R4PanelHost[data-panel="calendar"]').count(),1,'closing Calendar inline edit must keep the Calendar panel open');
   await page.evaluate(()=>{tp155R4ClosePanel(false);state.tab='history';state.rf151HistoryEdit={key:'tp152-back-probe',workout:{}};render()});
