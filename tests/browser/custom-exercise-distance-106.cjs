@@ -74,7 +74,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  await panel.locator('#ceMeasure').locator('..').locator('.tp-select-trigger').click();await panel.locator('#ceMeasure').locator('..').locator('.tp-select-option[data-value="distance"]').click();
  await panel.locator('#ceMeasure').locator('..').waitFor({state:'visible'});await page.waitForTimeout(180);
  fs.mkdirSync('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/custom-exercise-106.png'});
- await panel.locator('button[onclick="saveCustomExercise14()"] ').click();await panel.waitFor({state:'detached'});await page.locator('#tp2628Dialog [data-tp2628-ok]').click();
+ await panel.locator('button[onclick="saveCustomExercise14()"] ').click();await panel.waitFor({state:'detached'});await page.locator('#tp153Toast.show').waitFor({state:'visible'});assert.equal(await page.locator('#tp153Toast').innerText(),await page.evaluate(()=>tp149T('customExercise.saved')));assert.equal(await page.locator('#tp2628Dialog').count(),0,'successful exercise save uses non-blocking feedback');
  const exercise=await page.evaluate(()=>exercises().find(e=>e.custom&&e.hu==='Futás / kocogás / görkori'));
  assert.ok(exercise);assert.equal(exercise.measurementType,'distance');assert.equal(exercise.repUnit,'mp');assert.equal(exercise.loadType,'bodyweight');assert.equal(exercise.sets,1);
  // Use the real Quick picker and current workout renderer rather than constructing a fake form.

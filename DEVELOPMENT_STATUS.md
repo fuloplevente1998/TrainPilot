@@ -1,14 +1,41 @@
 # TrainPilot — Development Status
 
-## Chromium CI execution maintenance
+## #110 phase 1 — 1.1.4 /2702
 
-- Browser regression coverage is preserved in an explicit 56-script manifest on the latest approved main. Six deterministic, duration-balanced Actions jobs replace the sequential browser step; each owns its Chromium and artifacts. APK signing/publication waits for all six successful results.
-- Runner safety tests cover complete one-time assignment, malformed/missing entries and real CLI failure propagation. Per-test elapsed times and source commit are archived on success and failure. Local `npm run test:ui` remains a full sequential run.
-- The dropdown style regression waits for the actual transition to finish before comparing exact final styles; no production animation or assertion is weakened.
-- Baseline: 10 min 9 sec sequential browser time on main. Parallel elapsed time must be recorded from CI before a speedup is claimed. Application source/version and the separate performance guard are unchanged. See [execution details](docs/UI_TESTS.md).
+The refreshed issue explicitly requires one native transactional Health journal for **Health Connect and direct BLE**, with source-separated records, Health Connect IDs/lastModifiedTime/dataOrigin, deletion propagation and an idempotent migration from healthLedgerV1. The implementation roadmap is [docs/HEALTH_JOURNAL_ROADMAP.md](docs/HEALTH_JOURNAL_ROADMAP.md). This candidate implements only the issue's first deliverable: 60-second interruptible discovery, a bounded 120-device priority policy, explicit private watch selection, service-checked saved-address reconnect on trial open/resume, at most three foreground attempts, cancellation/forget and local-erasure integration. No background service, health-record import or primary-store migration is claimed.
+
+Physical 2701 feedback confirms battery and valid zero current steps. New connection/discovery behavior requires its own phone trial. Every previous candidate feature stays included; stable main and published 2701 source/tag are unchanged.
+
+## GT4Pro+ proprietary read-query trial — 1.1.3 / 2701
+
+Physical 2700 report: connected/status 0, seven services, default MCU and JieLi channels, no standard HRS. The foreground trial now explicitly queries only battery/current steps using traced MCU frames. Original bounded decoder and synthetic JVM vectors cover CRC, fragment boundaries, coalescing, malformed/oversized/multipart input and the command allowlist. Diagnostics omit real values and raw packets. Full checks/source/signature verification required; battery/current zero-step replies were subsequently confirmed by the user; positive-step readings and history import remain pending. The earlier proposed MAC-direct-connection change was stopped when the user found the watch and supplied successful discovery evidence.
+
+## Bluetooth identification follow-up — 1.1.2 / 2700
+
+- Physical trial feedback: 30–40 unnamed neighbours with RSSI approximately -63 to -99 dBm make the intended GT4Pro+ impossible to select from name/signal alone.
+- Results now display a local-only full MAC address for comparison with RDFit, stable per-scan numbering and advertised-service protocol hints. The current scan can be saved without connecting; the report explicitly omits MAC addresses and opaque native identifiers.
+- Existing 2698/2699 features remain included. Historical vendor health imports are still pending the real watch report. The independent CI maintenance in [PR #107](https://github.com/fuloplevente1998/TrainPilot/pull/107) reduced approved-main Chromium time from 10m09s to 2m01s (2m31s including setup); the 58-script candidate suite uses the same isolated shard runner.
+- Validation and phone acceptance are tracked in the follow-up PR. Stable app assets and application data remain unchanged until phone approval.
 
 
 Last updated: **2026-10-03 (Europe/Budapest)**. Earlier Phase 5–7 history remains below; it is historical. See [docs/PHASE_5_6_7_ROADMAP.md](docs/PHASE_5_6_7_ROADMAP.md) and the permanent [performance regression policy](docs/PERFORMANCE_REGRESSION_POLICY.md).
+
+## Bluetooth investigation candidate — 1.1.1 / 2699 (#105)
+
+- Foreground BLE scan, device selection, GATT discovery and locally verified diagnostic export; standard live pulse is opt-in and remains separate from Health Connect/history/Coach.
+- RDFit 4.1.4 APK static investigation identified distinct device families and history-request selectors. GT4Pro+ physical compatibility and history import are still pending; no proprietary commands are sent by this candidate.
+- Includes the 2698 work below; stable main remains 1.0.9 / 2697. [Procedure and findings](docs/BLUETOOTH_GT4PRO.md), [candidate notes](docs/releases/v1.1.1.md).
+
+## Candidate — TrainPilot 1.1.0 / 2698 (#103)
+
+- Starts from verified public main `81032d9b3ec697680e7fdb1210e89f94e584b299`. [#103](https://github.com/fuloplevente1998/TrainPilot/issues/103) was recorded before implementation. Stable main/release remains 1.0.9 / 2697 pending physical-phone acceptance.
+- Weekly saved-workout and monthly cardio-kilometre goals reuse Home's Today header and the shared Goals panel, with settings/backup/Drive persistence. No extra Home card. Zero disables a goal; local Monday/month boundaries and distinct legacy records are preserved.
+- Calendar replanning previews missed and following sessions for the selected program, preserves IDs/day order/duration/local time, and respects alternate/weekly/custom rhythms. Completed/logged/active-draft sessions stay protected; occupied days are avoided. A changed snapshot requires review again before applying.
+- Indoor work/rest intervals reuse the existing timer and stable owner set. Presets are backed up; pause/resume and saved drafts survive restart. The final rest is omitted, elapsed time clamps at the planned end, and set completion remains manual. Foreground audio/native vibration cues require the app open; background elapsed recovery does not promise background alarms.
+- Coach explains the existing sleep/HRV/load/pain weights, dated observations, missing baseline and stale data in HU/EN/DE/RO. The scoring algorithm is unchanged. Empty Journal/filter/search/cardio states offer a next action; successful saves use existing non-blocking feedback while write failures retain explicit errors.
+- Android's system text zoom is honored. Enlarged text enables vertical scrolling for Home, Health and Calendar and wraps controls without horizontal overflow; default overview sizing remains fixed.
+- Added one core regression and one end-to-end UI script: full suites contain **118 Node regressions and 57 Chromium UI scripts**. New UI cases cover four widths/four languages/two themes, failed saves, stale replanning, real timer phases/cues, pause/reload recovery and enlarged-text reachability. Performance budgets and the Phase 7 reference remain unchanged.
+- VersionName **1.1.0**, versionCode **2698**, unchanged application ID/storage/signer. See [implementation and phone checklist](docs/FEATURES_1_1_0.md) and [candidate notes](docs/releases/v1.1.0.md). Physical-phone approval for this candidate is pending.
 
 ## TrainPilot 1.0.9 / 2697 — minimal page design polish (#101)
 

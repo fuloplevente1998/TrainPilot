@@ -1,0 +1,49 @@
+/* Goals and interval training reuse the established page/panel surfaces. */
+.tp110-form{display:grid;gap:12px;margin:12px 0}
+.tp110-form label{display:grid;gap:5px;min-width:0}
+.tp110-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tp110-empty{display:grid;justify-items:start;gap:9px;margin:12px 0;overflow-wrap:anywhere}
+.tp110-empty h3,.tp110-empty p{margin:0}
+.tp110-feedback{min-height:1.3em;color:var(--ok);overflow-wrap:anywhere}
+.tp110-feedback[data-kind="error"]{color:var(--bad)}
+.tp110-feedback[data-kind="pending"]{color:var(--muted)}
+.tp110-goal{display:grid;gap:6px;margin:12px 0;overflow-wrap:anywhere}
+.tp110-goal-heading{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.tp110-goal progress{display:block;width:100%;height:10px;accent-color:var(--accent)}
+html body #app #rf223Today>.rf223-title{position:relative;display:flex;align-items:center;gap:6px;padding-right:0}
+html body #app #rf223Today .tp110-goal-mini{display:flex!important;position:relative;width:auto;max-width:45%;flex:0 1 auto;min-width:0;min-height:0!important;height:auto!important;flex-direction:column;justify-content:center;gap:2px;padding:0 5px;background:transparent;border:0;border-left:1px solid var(--line);color:var(--accent2);font-size:11px;line-height:1.1;text-align:right;text-transform:none;cursor:pointer}
+html body #app #rf223Today .tp110-goal-mini span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+html body #app #rf223Today .tp110-goal-mini::after{content:"";position:absolute;inset:-4px 0}
+html body #app #rf223Today .tp110-goal-mini:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tp110-replan-link{margin-left:auto;position:relative;min-height:0!important;height:auto!important;line-height:1.2!important;font-size:11px!important;padding:1px 8px!important}
+.tp110-replan-link::after{content:"";position:absolute;inset:-12px -4px}
+.tp110-replan-row{display:grid;gap:4px;padding:10px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.tp110-replan-row small{color:var(--muted)}
+.tp110-interval>summary{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;list-style:none;padding:9px 0}
+.tp110-interval>summary::-webkit-details-marker{display:none}
+.tp110-checks{display:flex;flex-wrap:wrap;gap:12px;margin:10px 0}
+.tp110-checks label{display:flex;align-items:center;gap:6px}
+.tp110-interval-phase{color:var(--accent2);font-variant-numeric:tabular-nums;font-weight:850}
+.tp110-signal{display:grid;gap:4px;overflow-wrap:anywhere}
+.tp110-signal small{color:var(--muted)}
+html body #tp155R4PanelHost:is([data-panel="goals"],[data-panel="replan"]) .tp155-r4-panel{border:1px solid color-mix(in srgb,var(--line) 82%,var(--accent) 18%)!important;border-radius:18px!important;box-shadow:0 16px 36px rgba(5,10,20,.14)!important}
+html[data-tp-theme-family="basic"] body #tp155R4PanelHost:is([data-panel="goals"],[data-panel="replan"]) .tp155-r4-panel{box-shadow:none!important}
+@media(max-width:340px){.tp110-fields{grid-template-columns:1fr}}
+/* Large system text keeps every control reachable; normal phone overviews stay fixed. */
+html.tp110-large-text,html.tp110-large-text body{overflow-y:auto!important;height:auto!important;max-height:none!important}
+html.tp110-large-text body #app main:is(.tp107-fit-home,.tp107-fit-health){height:auto!important;max-height:none!important;overflow:visible!important}
+html.tp110-large-text body #app main.rf221-home{min-height:0!important;display:flex!important}
+html.tp110-large-text body #app main :is(h1,h2,h3,p,small,label,strong,.btn){overflow-wrap:anywhere}
+html.tp110-large-text body #app main :is(.tp5-today-metric.stat,.rf223-stat,.tp155-home-program-left,.tp155-home-program-right){height:auto!important;min-height:0!important}
+html.tp110-large-text body #app main .tp5-today-metric.stat{display:flex!important;flex-direction:column;align-items:flex-start!important;padding:8px!important;gap:5px!important}
+html.tp110-large-text body #app main .tp5-today-label,html.tp110-large-text body #app main .tp5-today-value{line-height:1.35!important;white-space:normal!important;height:auto!important}
+html.tp110-large-text body #app #rf223Today .tp110-goal-mini{position:static;width:100%;max-width:100%;min-height:44px!important;font-size:14px;border-left:0;border-top:1px solid var(--line);margin-top:7px;padding:7px 0}
+html.tp110-large-text body #app #rf223Today>.rf223-title{flex-wrap:wrap;padding-right:0}
+html.tp110-large-text body #app #rf223Today .tp110-goal-mini span{white-space:normal}
+html.tp110-large-text body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .tp155-r4-panel{overflow-y:auto!important}
+html.tp110-large-text body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar :is(.tp155-r4-panel-content,main,.tp151-calendar-frame,.tp151-day-panel){display:block!important;flex:none!important;height:auto!important;max-height:none!important;overflow:visible!important}
+html.tp110-large-text body .top .tp154-nav-cell{height:auto!important;min-height:54px!important}
+html.tp110-large-text body .top :is(.tp151-nav-label,.tp154-nav-action-label){white-space:normal!important;line-height:1.3!important;overflow:visible!important}
+html.tp110-large-text body .tp110-fields{grid-template-columns:1fr}
+html.tp110-large-text body :is(.field,.tp-select-trigger,.tp-temporal-trigger){height:auto!important;min-height:48px!important;white-space:normal!important}
+html.tp110-large-text body .tp-select-trigger :is(span,strong){white-space:normal!important;overflow:visible!important;text-overflow:clip!important}

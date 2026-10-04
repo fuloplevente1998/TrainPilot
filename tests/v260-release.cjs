@@ -17,11 +17,11 @@ const build=read('.github/workflows/build-apk.yml');
 const validate=read('.github/workflows/validate-branch.yml');
 
 // Final 2.6.2 patch metadata must be internally consistent.
-assert.equal(pkg.version,'1.1.2');
-assert.equal(src.version,'1.1.2');
+assert.equal(pkg.version,'1.1.3');
+assert.equal(src.version,'1.1.3');
 assert.equal(src.versionCode,2609);
 assert.match(android,/versionCode\s+2609/);
-assert.match(android,/versionName\s+"1\.1\.2"/);
+assert.match(android,/versionName\s+"1\.1\.3"/);
 assert.match(ui,/RF260_UI_VERSION='2\.6\.2'/);
 
 // User-facing install metadata must use the current product name.
@@ -37,7 +37,7 @@ for(const file of scripts){
   assert.ok(fs.existsSync(path.join(root,'www',file)),`missing runtime file ${file}`);
 }
 for(const file of runtime)assert.ok(fs.existsSync(path.join(root,'www',file)),`runtime-manifest points to missing ${file}`);
-assert.match(sw,/trainpilot-v112/);
+assert.match(sw,/trainpilot-v113/);
 assert.match(sw,/runtime-manifest\.txt/);
 assert.match(sw,/cache\.addAll\(\[\.\.\.new Set\(assets\)\]\)/);
 

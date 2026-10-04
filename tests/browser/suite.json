@@ -1,5 +1,13 @@
 [
   {
+    "file": "tests/browser/ble-discovery-111.cjs",
+    "estimatedSeconds": 5
+  },
+  {
+    "file": "tests/browser/features-110.cjs",
+    "estimatedSeconds": 36
+  },
+  {
     "file": "tests/browser/page-design-101.cjs",
     "estimatedSeconds": 113
   },
@@ -222,5 +230,13 @@
   {
     "file": "tests/browser/publication-105.cjs",
     "estimatedSeconds": 10
+  },
+  {
+    "file": "tests/browser/ble-reconnect-114.cjs",
+    "estimatedSeconds": 35
+  },
+  {
+    "file": "tests/browser/health-journal-120.cjs",
+    "estimatedSeconds": 35
   }
 ]

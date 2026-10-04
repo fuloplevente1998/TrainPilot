@@ -1,8 +1,16 @@
 # TrainPilot adatvédelmi tájékoztató – publikálás előtti tervezet
 
-Az 1.0.5 jelölt aktuális, négy nyelvű szövege: `www/privacy.html` és a natív `PrivacyPolicy.java`. Az alábbi korábbi tervezetet a publikáláshoz ezekkel együtt kell felülvizsgálni. Health-adatok tartósan tárolódnak helyben; fájl- és Drive-mentésük alapból kikapcsolt, külön engedélyezhető.
+Az 1.2.0 jelölt aktuális, négy nyelvű szövege: `www/privacy.html` és a natív `PrivacyPolicy.java`. Az alábbi korábbi tervezetet a publikáláshoz ezekkel együtt kell felülvizsgálni. Health-adatok tartósan tárolódnak helyben; fájl- és Drive-mentésük alapból kikapcsolt, külön engedélyezhető.
 
 Ez a dokumentum kiinduló tervezet a Google Play és Google OAuth publikáláshoz. A végleges változatot publikus HTTPS oldalon kell közzétenni, és a tényleges kiadási működéssel egyezően kell tartani.
+
+## Megjegyzett Bluetooth-óra
+
+Az Óra megjegyzése gombbal a kiválasztott óra Bluetooth-címe, neve és ellenőrzött szolgáltatástípusa tartósan a telefon privát alkalmazástárhelyére kerül, hogy a próba következő megnyitásakor újracsatlakozhasson. Az Óra elfelejtése vagy Minden helyi adat törlése eltávolítja. Az óraválasztás nem kerül JSON/ZIP-mentésbe, Drive-ra vagy diagnosztikába. Ez a változat még nem végez háttérbeli óraszinkront.
+
+## Natív egészségnapló
+
+A Health Connect eredeti rekordjai és forrásazonosítói, törlésazonosítók, napi összesítések és a külön engedélyezett órás lépéspillanatképek privát SQLite-adatbázisba kerülnek. A WebView legfeljebb 30 napi összesítést és egy rekordlapot olvas. Az órát véletlen helyi azonosító jelöli a naplóban; a Bluetooth-cím továbbra is csak a külön natív óraválasztásban van. A teljes natív napló csak az egészségmentési hozzájárulással indított kézi JSON/ZIP-mentésbe kerül, Drive-pillanatképbe nem. A teljes helyi törlés a natív naplót és beállításait is eltávolítja. Az appnyitáskori frissítés és órás lépésnaplózás külön, alapból kikapcsolt kapcsolók; háttérbeli olvasást nem engedélyeznek.
 
 ## Kezelt adatok
 

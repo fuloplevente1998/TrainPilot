@@ -1,5 +1,13 @@
 # TrainPilot
 
+**Egészségnapló tesztváltozat — 1.2.0 / 2703:** közös natív Health Connect/BLE-tárolás, dátum- és forrásszűrős napló, 30 napos felületi gyorsítótár. A megjegyzett óra jelenlegi lépései külön bekapcsolható naplózással tárolhatók; átfedő források nem adódnak össze. A teljes **Célok beállítása** szerkesztő a kompakt kezdőlapi gombból nyílik. [Kipróbálás és korlátok](docs/releases/v1.2.0.md) · [#110 állapot](docs/HEALTH_JOURNAL_ROADMAP.md). Háttérszolgáltatás és órás előzmény/HRV még hátravan; main merge telefonos elfogadás után.
+
+**Bluetooth újracsatlakozás — 1.1.4 / 2702:** a frissített [#110](https://github.com/fuloplevente1998/TrainPilot/issues/110) első fázisa. 60 másodperces, leállítható keresés, legfeljebb 120 találat, megjegyzett óra és automatikus újracsatlakozás a próba megnyitásakor. Az óraválasztás helyi, elfelejthető; a sikertelen próbák korlátozottak. [Telefonos lépések](docs/BLUETOOTH_GT4PRO.md) · [Egységes Health Connect/BLE egészségnapló terve](docs/HEALTH_JOURNAL_ROADMAP.md). A teljes háttérszinkron későbbi fázis; a natív napló a 2703 jelöltben készül.
+
+**RDFit adatpróba — 1.1.3 / 2701:** a GT4Pro+ telefonos diagnosztikája igazolta a kapcsolódást. Külön gombbal próbálható az akkumulátor és a mai lépésszám kiolvasása az RDFit adatcsatornáján. Az értékek csak a próbanézetben jelennek meg; az akkumulátor és a mai 0 lépés olvasását a telefonos próba igazolta; pozitív lépésszám és az előzmények ellenőrzése még hátravan. [Lépések és protokoll](docs/BLUETOOTH_GT4PRO.md).
+
+**Bluetooth-próba javítása — 1.1.2 / 2700:** a névtelen eszközök mellett helyileg látható a MAC-cím az RDFit adataival való összehasonlításhoz. Sorszám és óvatos protokolljelölés segíti a választást; a találati lista kapcsolódás nélkül is menthető. [Telefonos lépések](docs/BLUETOOTH_GT4PRO.md). A teljes Chromium-tesztsor a gyorsított, hatrészes CI-ban fut.
+
 TrainPilot egy Androidra készült, local-first edzéstervező és edzésnapló alkalmazás. A fő edzésfunkciók helyben is használhatók; a Health Connect, Google Drive és Google Naptár integrációk opcionálisak.
 
 ## Fő funkciók
@@ -44,6 +52,16 @@ Az 1.0.9 dizájnfinomításainak részletei: [kiadási megjegyzések](docs/relea
 
 Részletes megvalósítás: [programszerkesztés és kardió](docs/TRAINING_CARDIO_1_0_7.md), [backup/GPS összevonás](docs/BACKUP_GPS_CONSOLIDATION_1_0_7.md).
 
+## Bluetooth tesztverzió: TrainPilot 1.1.1 (2699)
+
+A **Beállítások → Bluetooth-óra próba** felület a GT4Pro+ / RDFit adatkapcsolatának vizsgálatához készült. Órakeresést, szolgáltatás-felderítést és helyi diagnosztikaexportot ad; szabványos pulzusszolgáltatás esetén az élő pulzus is kipróbálható. A korábbi alvás-, lépés- és pulzusadatok importja még további protokollvizsgálatot igényel. A 2698 fejlesztései benne maradnak. [Telefonos próba és RDFit megállapítások](docs/BLUETOOTH_GT4PRO.md).
+
+## Következő tesztverzió: TrainPilot 1.1.0 (2698)
+
+Az [#103](https://github.com/fuloplevente1998/TrainPilot/issues/103) fejlesztései külön tesztágon készülnek: heti edzés- és havi kilométercél, kihagyott edzések előnézetes újratervezése, beltéri intervallumok, részletes Coach-indoklás és egységes üres/mentési állapotok. A 2703 jelöltben a célok külön kompakt kezdőlapi gombból érhetők el. Nagy Android-betűméretnél a fix áttekintések görgethetővé válnak, hogy minden vezérlő elérhető maradjon.
+
+A stabil kiadás továbbra is **1.0.9 / 2697**. A 2698-as teszt-APK telefonos elfogadása és main merge-je még hátravan. Részletek és kipróbálás: [1.1.0 fejlesztések](docs/FEATURES_1_1_0.md), [tesztkiadási megjegyzések](docs/releases/v1.1.0.md).
+
 ## Git-történet és privát archívum
 
 A publikus repository története a **TrainPilot 1.6.0** clean base állapottól indul. A korábbi privát/legacy előzmények nem részei ennek a Git-történetnek. A publikus `main` teljes meglévő commitelőzménye megmarad.
@@ -69,7 +87,7 @@ npm run test:ui
 npm run sync
 ```
 
-A teljes Chromium-tesztsor a CI-ban hat független részre oszlik; az APK csak mindegyik sikeres ellenőrzése után készül. [Futtatás, lefedettség és időmérés](docs/UI_TESTS.md).
+A CI-ban hat külön Chromium-rész fut, teljes lefedettséggel. [Futtatás és mért idő](docs/UI_TESTS.md).
 
 Részletek: [build és signing](docs/BUILD.md), [fejlesztési állapot](DEVELOPMENT_STATUS.md), [1.0.0 átállási terv](docs/REPOSITORY_MAINTENANCE_2026-09-26.md).
 

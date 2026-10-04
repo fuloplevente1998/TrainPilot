@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="hu" class="tp-booting"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0e1015"><title>TrainPilot</title><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="health-dashboard-168.css"><link rel="stylesheet" href="global-uiux-177.css"><link rel="stylesheet" href="progress-177.css"><link rel="stylesheet" href="issue67-polish.css"><link rel="stylesheet" href="training-107.css"><link rel="stylesheet" href="page-frame-109.css"><style>html,body{margin:0;min-height:100%;background:#0e1015}html.tp-booting #app{visibility:hidden}#tpBoot{position:fixed;inset:0;display:grid;place-items:center;background:#0e1015;color:#f6f8fb;font:900 25px/1.2 system-ui,sans-serif;z-index:999999}</style></head><body><div id="tpBoot" aria-label="Betöltés"></div><div id="app"></div>
+<html lang="hu" class="tp-booting"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0e1015"><title>TrainPilot</title><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="health-dashboard-168.css"><link rel="stylesheet" href="global-uiux-177.css"><link rel="stylesheet" href="progress-177.css"><link rel="stylesheet" href="issue67-polish.css"><link rel="stylesheet" href="training-107.css"><link rel="stylesheet" href="page-frame-109.css"><link rel="stylesheet" href="features-110.css"><link rel="stylesheet" href="ble-discovery-111.css"><link rel="stylesheet" href="health-journal-120.css"><style>html,body{margin:0;min-height:100%;background:#0e1015}html.tp-booting #app{visibility:hidden}#tpBoot{position:fixed;inset:0;display:grid;place-items:center;background:#0e1015;color:#f6f8fb;font:900 25px/1.2 system-ui,sans-serif;z-index:999999}</style></head><body><div id="tpBoot" aria-label="Betöltés"></div><div id="app"></div>
 <script defer src="app.js"></script>
 <script>window.addEventListener("DOMContentLoaded",function(){
 /* Phase 5 #44 — shared, local-day-bound Today summary on Home and Health. */
@@ -90,7 +90,7 @@
  };
  window.rf223StatusHtml=function(){
   const t=labels[lang()]||labels.hu;
-  return '<div class="card rf223-today tp5-home-today" id="rf223Today"><div class="rf223-title"><strong>'+esc(t.today)+'</strong></div>'+window.tp5UnifiedTodayGridHtml('home')+'</div>';
+  return '<div class="card rf223-today tp5-home-today" id="rf223Today"><div class="rf223-title"><strong>'+esc(t.today)+'</strong>'+'</div>'+window.tp5UnifiedTodayGridHtml('home')+'</div>';
  };
  window.tp5ReplaceHomeToday=function(){
   if(state?.tab!=='home')return;
@@ -1009,6 +1009,7 @@
 
  rf220ProgressHtml=function(){
   const t=rf220L(),rows=rf220ProgressRows(),w=tx();
+  if(!rows.length&&window.TrainPilot110)return window.TrainPilot110.empty('log');
   if(!rows.length)return '<div class="card"><h2>'+esc(t.progress)+'</h2><p class="muted">'+esc(t.noData)+'</p></div>';
   return '<section class="card tp3-stats-card"><h2>'+esc(t.progress)+' • '+esc(t.records)+'</h2><p class="small muted tp3-stats-hint">'+esc(w.statsHint)+'</p><div class="tp3-stats-list">'+rows.slice(0,12).map(({id,s})=>{
    const max=s.maxWeight?String(s.maxWeight)+' kg':'—',e1=s.e1rm?s.e1rm.toFixed(1)+' kg':'—',best=s.best?String(s.best.w||0)+' kg × '+String(s.best.r||0):'—',vol=s.maxVolume?Math.round(s.maxVolume)+' kg·rep':'—';
