@@ -35,7 +35,7 @@ public class HealthBackgroundJob extends JobService {
             access.requireForeground();LocalDate today=LocalDate.now();boolean complete=true;
             // Refresh yesterday as well: a health app may export sleep/late activity after midnight.
             for(int i=1;i>=0;i--){LocalDate date=today.minusDays(i);Instant start=date.atStartOfDay(ZoneId.systemDefault()).toInstant(),end=i==0?Instant.now():date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
-                if(end.isAfter(start)){JSObject day=HealthBridgePlugin.Api34.readHealthDay(access,new JSObject().put("start",start.toString()).put("end",end.toString()));if(day.optJSONArray("warnings")!=null&&day.optJSONArray("warnings").length()>0)complete=false;}
+                if(end.isAfter(start)){JSObject day=HealthConnectApi34.readHealthDay(access,new JSObject().put("start",start.toString()).put("end",end.toString()));if(day.optJSONArray("warnings")!=null&&day.optJSONArray("warnings").length()>0)complete=false;}
             }
             access.requireForeground();if(store.generation()!=epoch)throw new IllegalStateException("Dataset changed");JSONObject meta=new JSONObject().put("lastAttemptAt",Instant.now().toString());if(complete)meta.put("lastSyncAt",Instant.now().toString());store.syncMeta(meta);
         }catch(Exception e){retry=!stopped.get()&&permitted(this);}finally{if(!stopped.get())jobFinished(params,retry);}});return true;
