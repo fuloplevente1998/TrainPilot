@@ -30,6 +30,14 @@ Health Connect data is stored in a transactional native journal. Daily summaries
 
 Release notes: [docs/releases/v1.2.6.md](docs/releases/v1.2.6.md)
 
+## Screenshots
+
+| Home | Coach readiness |
+| --- | --- |
+| ![TrainPilot Home](docs/screenshots/home.jpg) | ![TrainPilot Coach readiness details](docs/screenshots/coach-readiness.jpg) |
+
+Screenshots are CI-generated examples from the current TrainPilot UI. Language, theme and data shown may vary by test fixture.
+
 ## Architecture
 
 TrainPilot uses a Capacitor-based Android shell with a local WebView UI and targeted native Android integrations.
@@ -93,7 +101,7 @@ Health Connect access is permission-gated and optional. TrainPilot does not trea
 See:
 
 - [Health journal / HRV roadmap](docs/HEALTH_JOURNAL_ROADMAP.md)
-- [Health Connect implementation notes](docs/HEALTH_CONNECT_IMPLEMENTATION.md)
+- [Bluetooth/watch integration notes](docs/BLUETOOTH_GT4PRO.md)
 - [Privacy policy](www/privacy.html)
 
 Actual Health Connect availability depends on Android version, permissions, device/vendor behavior and which source apps export data.
