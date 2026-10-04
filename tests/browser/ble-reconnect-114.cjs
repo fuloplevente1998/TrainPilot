@@ -40,7 +40,7 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const file=p
   assert.equal(await p.evaluate(()=>__reconnect.listeners.size),1,'one listener after reopen');const bg=await p.locator('.tp155-r4-panel').evaluate(e=>getComputedStyle(e).backgroundColor);assert.ok(bg!=='rgba(0, 0, 0, 0)'&&bg!=='transparent','BLE panel has an opaque theme surface');assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth-innerWidth)<=1,'saved controls fit '+width+'/'+lang+'/'+theme);
   for(const key of ['remembered','rememberNote','reconnect','forget'])assert.notEqual(await p.evaluate(key=>TrainPilotBle.t(key),key),key,'translated '+key+'/'+lang);
   assert.equal(await p.evaluate(()=>JSON.stringify(state.health)),health,'identity settings do not change health data');
-  if(width===393&&lang==='hu'&&theme==='blue')await p.screenshot({path:'ui-evidence/ble-reconnect-2702.png'});
+  if(width===393&&lang==='hu'&&theme==='blue')await p.screenshot({path:'ui-evidence/ble-reconnect-2702.png',animations:'disabled'});
  }
  await p.locator('[data-ble-action="probe"]').click();assert.equal(await p.locator('[data-ble-steps]').innerText(),'0','valid physical zero remains a value');assert.equal(await p.locator('[data-ble-action="reconnect"]').isEnabled(),true);
  await p.clock.fastForward(60000);assert.equal(await p.evaluate(()=>__reconnect.calls.at(-1)),'rdfit','finished probe must not trigger endless automatic reconnect');
