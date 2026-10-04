@@ -168,6 +168,9 @@ html body #app .tp107-personal-records>.card>p:first-child{margin:0 0 10px}
 .tp108-day-close{position:absolute;right:12px;top:12px;z-index:2;width:40px;height:40px;border:1px solid color-mix(in srgb,var(--bad) 35%,var(--line));border-radius:12px;background:color-mix(in srgb,var(--bad) 16%,var(--card2));color:var(--text);font:800 24px/1 sans-serif;display:grid;place-items:center}
 .tp108-day-dialog .tp151-action-row{display:flex;flex-wrap:wrap;gap:7px}
 .tp108-day-dialog .tp151-action-row>.btn{min-height:44px;white-space:normal;max-width:100%}
+.tp108-day-dialog .tp151-calendar-item>.tp151-action-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.tp108-day-dialog .tp151-calendar-item>.tp151-action-row>.btn{min-width:0;padding:7px 6px;font-size:13px;overflow-wrap:anywhere}
+@media(max-width:340px){.tp108-day-dialog .tp151-calendar-item>.tp151-action-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .tp108-day-dialog .tp151-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .tp108-day-dialog .tp151-form-grid>label:first-child{grid-column:1/-1}
 .tp108-day-dialog .field{box-sizing:border-box;min-width:0;width:100%}
