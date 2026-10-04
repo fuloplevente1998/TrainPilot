@@ -27,6 +27,6 @@ assert.deepEqual(Array.from(result.exerciseSessions,s=>s.clientRecordId||s.sourc
 run("go('settings')");
 assert.match(html,/class="tp-select tp162-theme-dropdown /,'theme chooser must render inline in Settings');
 assert.doesNotMatch(html,/onclick="tp155OpenThemePicker\(\)"/,'theme chooser must not open a modal');
-const java=fs.readFileSync('android/app/src/main/java/com/repforge/app/HealthBridgePlugin.java','utf8');
+const java=['HealthBridgePlugin.java','HealthConnectApi34.java'].map(f=>fs.readFileSync('android/app/src/main/java/com/repforge/app/'+f,'utf8')).join('\n');
 assert.ok(java.includes('x.put("clientRecordId",r.getMetadata().getClientRecordId())'));
 console.log('PASS 1.6.2 Health count: stable IDs, legacy exact match, external sessions and visible minutes');

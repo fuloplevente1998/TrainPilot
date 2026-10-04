@@ -4,7 +4,7 @@ const cloud=fs.readFileSync('www/cloud.js','utf8');
 ['function connectGoogle','async function syncCloud','async function syncCalendar','calendarEvents','canonicalSyncData'].forEach(x=>assert.ok(cloud.includes(x),'missing '+x));
 const google=fs.readFileSync('android/app/src/main/java/com/repforge/app/GoogleSyncPlugin.java','utf8');
 ['driveList','driveRead','driveWrite','calendarSync'].forEach(x=>assert.ok(google.includes(x),'missing native Google method '+x));
-const health=fs.readFileSync('android/app/src/main/java/com/repforge/app/HealthBridgePlugin.java','utf8');
+const health=['HealthBridgePlugin.java','HealthConnectApi34.java'].map(f=>fs.readFileSync('android/app/src/main/java/com/repforge/app/'+f,'utf8')).join('\n');
 ['READ_SLEEP','READ_HEART_RATE_VARIABILITY','READ_EXERCISE','READ_WEIGHT','READ_RESPIRATORY_RATE','readHealthDay','readTrainingWindow','createChangeToken','pollChanges','writeWorkout','SleepSessionRecord.Stage','setClientRecordId'].forEach(x=>assert.ok(health.includes(x),'missing Health marker '+x));
 const v250=fs.readFileSync('www/v250.js','utf8');
 ['RF250_CHANGE_TYPES','rf250DesiredTypes','rf250NewTokens','tokensByType','rf250EnsureStableWorkoutIds','healthStableId','rf250Pipeline','rf250Sync'].forEach(x=>assert.ok(v250.includes(x),'missing Health Sync marker '+x));
