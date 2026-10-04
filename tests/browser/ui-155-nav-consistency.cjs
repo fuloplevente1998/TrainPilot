@@ -110,9 +110,9 @@ const server=http.createServer((req,res)=>{
   assert.equal(calendarPanelLayout.tab,'plan','opening Calendar panel must keep the underlying full-page route');
   assert.ok(calendarPanelLayout.plannerTop>calendarPanelLayout.frameTop,'Planning settings must render below the Calendar grid');
   assert.notEqual(calendarPanelLayout.animation,'none','Calendar panel must use the shared reveal motion');
-  await page.evaluate(()=>{state.rf2211CalendarDate='2026-09-28';render()});await page.waitForSelector('#tp155R4PanelHost .tp151-day-panel');
-  assert.equal(await page.locator('#tp155R4PanelHost .tp151-day-panel.tp155-r4-accent-surface').count(),1,'selected Calendar day details must use the shared highlighted surface');
-  assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),true,'Android Back must close Calendar panel');
+  await page.evaluate(()=>{toggleCalendarDay('2026-09-28')});await page.waitForSelector('#tp108CalendarDay .tp151-day-panel');
+  assert.equal(await page.locator('#tp108CalendarDay .tp151-day-panel.tp155-r4-accent-surface').count(),1,'selected Calendar day details must use the shared highlighted surface');
+  assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),true,'Android Back closes selected day first');assert.equal(await page.locator('#tp108CalendarDay').count(),0);assert.equal(await page.locator('#tp155R4PanelHost').count(),1);assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),true,'second Android Back closes Calendar panel');
   assert.equal(await page.locator('#tp155R4PanelHost').count(),0,'Calendar panel must close before changing route');
   assert.equal(await page.evaluate(()=>state.tab),'plan','closing Calendar panel must preserve the underlying route');
 

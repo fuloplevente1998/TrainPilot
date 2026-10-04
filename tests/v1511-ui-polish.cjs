@@ -33,10 +33,10 @@ assert.ok(app.includes("font-size:21px!important"),'larger navigation icons miss
 assert.ok(app.includes("font-size:11px!important"),'larger navigation labels missing');
 assert.ok(app.includes("<select class=\"field\" onchange=\"tp1511TimeChange"),'compact hour/minute selects missing');
 
-assert.equal(pkg.version,'1.2.4');
-assert.equal(src.version,'1.2.4');
-assert.equal(src.versionCode,2707);
-assert.match(gradle,/versionCode\s+2707/);
-assert.match(gradle,/versionName\s+"1\.2\.4"/);
+assert.equal(pkg.version,'1.2.5');
+assert.equal(src.version,'1.2.5');
+assert.equal(src.versionCode,2708);
+assert.match(gradle,/versionCode\s+2708/);
+assert.match(gradle,/versionName\s+"1\.2\.5"/);
 
 console.log('PASS TrainPilot 1.5.1 unified UI polish guards');

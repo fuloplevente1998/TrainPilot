@@ -76,7 +76,7 @@
 // @endsection startup.js
 
 // @section backup.js
-const TRAINPILOT_VERSION='1.2.4';
+const TRAINPILOT_VERSION='1.2.5';
 var isNative = function isNative(){return !!window.Capacitor?.isNativePlatform?.();};
 var nativeFiles = function nativeFiles(){if(!filesPlugin)filesPlugin=window.Capacitor?.registerPlugin?.('NativeFiles')||window.Capacitor?.Plugins?.NativeFiles;if(!filesPlugin)throw Error('A natív fájlkezelő nem érhető el.');return filesPlugin;};
 var backupStatus = function backupStatus(){const x=db.get('lastExport',null);return x?`Utolsó ellenőrzött mentés: ${x.name} • ${fmtDate(x.date)}`:'Még nincs ellenőrzött fájlmentés.';};
@@ -10233,7 +10233,7 @@ tp150AddQuickExercise=function(id){return tp151QuickConfig(id)};
 const tp151RenderWorkoutBase=renderWorkout;
 renderWorkout=function(){const out=tp151RenderWorkoutBase.apply(this,arguments);if(typeof tp150IsQuick==='function'&&tp150IsQuick()){const se=state.session?.exercises?.[state.current];if(se?.targetReps){const m=document.querySelector('main .detail .meta');if(m)m.textContent=tp151T('target')+': '+se.sets.length+' × '+se.targetReps;document.querySelectorAll('main .row input[inputmode="numeric"]').forEach(x=>x.placeholder=se.targetReps)}}return out};
 
-toggleCalendarDay=function(date){state.rf2211CalendarDate=date;state.tp151EditingScheduleId=null;render()};
+toggleCalendarDay=function(date){if(window.TrainPilotCalendarDay?.open(date,document.activeElement))return;state.rf2211CalendarDate=date;state.tp151EditingScheduleId=null;render()};
 var tp151DateTitle=d=>new Date(d+'T12:00').toLocaleDateString(typeof rf233Locale==='function'?rf233Locale():'hu-HU',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 var tp151EditCalendarItem=id=>{state.tp151EditingScheduleId=id;render()};
 var tp151CancelCalendarEdit=()=>{state.tp151EditingScheduleId=null;render()};
@@ -10573,7 +10573,7 @@ settingsScreen=function(){
 window.TrainPilotAndroidBack=function(){
  try{
   if(rf260TemporalPicker){rf260TemporalClose();return true}
-  const dialog=document.querySelector('#tp2628Dialog,[role="dialog"]:not(#tpTemporalPicker),.video-modal,.video-overlay');
+  const dialog=document.querySelector('#tp2628Dialog')||document.querySelector('[role="dialog"]:not(#tpTemporalPicker),.video-modal,.video-overlay');
   if(dialog){const close=dialog.querySelector('[data-tp2628-cancel],[data-tp2628-action="close"],.tp-modal-close,.video-close');if(close){close.click();return true}}
   if(document.querySelector('.tp-select.open')){rf260CloseSelects();return true}
   if(state?.rf151HistoryEdit){rf151CancelHistoryEdit();return true}
@@ -11631,13 +11631,71 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   }
  };
 
+ // A selected day has its own surface; its contents never compete with the fixed month/planner.
+ let dayHost=null,dayTrigger=null,dayDate='',dayBackground=[],daySessionAtOpen=null,dayMarkup='';
+ const dayNestedPicker=()=>!!document.querySelector('#tpTemporalPicker,#tp2628Dialog,.video-modal,.video-overlay');
+ const markCalendarDays=function(){
+  panelHost?.querySelectorAll('.cal-cell[onclick]').forEach(button=>{
+   const date=button.getAttribute('onclick').match(/toggleCalendarDay\(['"]([^'"]+)['"]\)/)?.[1];if(!date)return;
+   button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-expanded',String(!!dayHost&&date===dayDate));
+  });
+ };
+ const closeDay=function(restoreFocus=true){
+  if(!dayHost)return false;
+  if(typeof rf260TemporalPicker!=='undefined'&&rf260TemporalPicker)rf260TemporalClose(false);
+  rf260CloseSelects();dayHost.remove();dayHost=null;dayMarkup='';state.tp151EditingScheduleId=null;
+  for(const [node,inert] of dayBackground)if(node.isConnected)node.inert=inert;dayBackground=[];
+  markCalendarDays();
+  const trigger=dayTrigger?.isConnected?dayTrigger:panelHost?.querySelector('.cal-cell[onclick*="'+dayDate+'"]');dayTrigger=null;
+  if(restoreFocus)trigger?.focus({preventScroll:true});return true;
+ };
+ const refreshDay=function(){
+  if(!dayHost)return;
+  if(currentPanel!=='calendar'){closeDay(false);return;}
+  const content=dayHost.querySelector('.tp108-day-content'),y=content.scrollTop;
+  const html=tp151CalendarDayPanel();if(html===dayMarkup){markCalendarDays();return;}
+  const hadFocus=content.contains(document.activeElement);content.innerHTML=html;dayMarkup=html;
+  const heading=content.querySelector('.tp151-day-title h2');if(heading)heading.id='tp108DayTitle';
+  rf260EnhanceSelects();rf260EnhanceTemporalFields();tp149TranslateFreshDom?.(content);
+  window.tp155R4ApplyHighlightSurfaces?.(content);
+  content.scrollTop=Math.min(y,Math.max(0,content.scrollHeight-content.clientHeight));markCalendarDays();
+  if(hadFocus)dayHost.querySelector('.tp108-day-dialog').focus({preventScroll:true});
+ };
+ const openDay=function(date,trigger){
+  if(currentPanel!=='calendar'||!/^\d{4}-\d{2}-\d{2}$/.test(date))return false;
+  state.rf2211CalendarDate=date;state.tp151EditingScheduleId=null;dayDate=date;dayTrigger=trigger;daySessionAtOpen=state.session;
+  const grid=panelHost.querySelector('.calendar-grid');if(grid)grid.innerHTML=calendarGrid();
+  if(!dayHost){
+   dayHost=document.createElement('div');dayHost.id='tp108CalendarDay';dayHost.className='tp108-day-backdrop';
+   dayHost.innerHTML='<section class="tp108-day-dialog" role="dialog" aria-modal="true" aria-labelledby="tp108DayTitle" tabindex="-1"><button type="button" class="tp108-day-close tp-modal-close" aria-label="'+esc(tp149T('common.close'))+'" onclick="TrainPilotCalendarDay.close()">×</button><div class="tp108-day-content"></div></section>';
+   dayHost.addEventListener('click',event=>{if(event.target===dayHost)closeDay();});
+   dayHost.addEventListener('keydown',event=>{
+    if(dayNestedPicker())return;
+    if(event.key==='Escape'){
+     event.preventDefault();event.stopPropagation();
+     const select=dayHost.querySelector('.tp-select.open');if(select){rf260CloseSelects();select.querySelector('.tp-select-trigger')?.focus();return;}
+     if(state.tp151EditingScheduleId){tp151CancelCalendarEdit();return;}closeDay();return;
+    }
+    if(event.key==='Tab'){
+     const nodes=[...dayHost.querySelectorAll('button,input,select,[tabindex="0"]')].filter(node=>!node.disabled&&node.getClientRects().length&&getComputedStyle(node).visibility!=='hidden');
+     const first=nodes[0],last=nodes.at(-1),active=document.activeElement;
+     if(event.shiftKey&&(active===first||active===dayHost.querySelector('.tp108-day-dialog'))){event.preventDefault();last?.focus();}
+     else if(!event.shiftKey&&(active===last||active===dayHost.querySelector('.tp108-day-dialog'))){event.preventDefault();first?.focus();}
+    }
+   },true);
+   document.body.appendChild(dayHost);
+   dayBackground=[document.getElementById('app'),panelHost].filter(Boolean).map(node=>[node,node.inert]);
+   dayBackground.forEach(([node])=>{node.inert=true;});
+  }
+  refreshDay();dayHost.querySelector('.tp108-day-dialog').focus({preventScroll:true});return true;
+ };
+ window.TrainPilotCalendarDay={open:openDay,close:closeDay,isOpen:()=>!!dayHost};
+
  const calendarHtml=function(){
   const month=tp149FormatDate(new Date(state.calendarMonth+'-01T12:00'),{year:'numeric',month:'long'}),weekdays=tp149Weekdays();
-  const day=typeof tp151CalendarDayPanel==='function'?tp151CalendarDayPanel():'';
   const planner=typeof rf2211Planner==='function'?rf2211Planner():'';
   return '<main class="tp151-calendar tp155-r4-calendar-panel-main">'+
    '<section class="tp151-calendar-frame tp155-r4-calendar-frame"><div class="calendar-head"><button class="btn secondary" onclick="changeCalendarMonth(-1)">‹</button><strong>'+esc(month)+'</strong><button class="btn secondary" onclick="changeCalendarMonth(1)">›</button></div><div class="cal-weekdays">'+weekdays.map(x=>'<span>'+esc(x)+'</span>').join('')+'</div><div class="calendar-grid">'+calendarGrid()+'</div></section>'+
-   day+
    '<div class="tp155-r4-planner-bottom">'+planner+'</div>'+
    '</main>';
  };
@@ -11706,10 +11764,11 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   try{if(typeof tp149TranslateFreshDom==='function')tp149TranslateFreshDom(content)}catch(_){}
   try{if(typeof window.tp155R4ApplyHighlightSurfaces==='function')window.tp155R4ApplyHighlightSurfaces(content)}catch(_){}
   panel.scrollTop=Math.min(y,Math.max(0,panel.scrollHeight-panel.clientHeight));
-  positionPanel();window.tp155R4DecorateNavigation();
+  positionPanel();window.tp155R4DecorateNavigation();markCalendarDays();refreshDay();
  };
 
  window.tp155R4ClosePanel=function(restoreFocus=true){
+  closeDay(false);
   if(!currentPanel&&!panelHost)return false;
   window.tp162CloseThemeDropdown?.();
   const trigger=panelTrigger,restoreY=panelOpenScrollY;
@@ -11726,6 +11785,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
 
  window.tp155R4OpenPanel=function(type,trigger){
   if(type==='ble')return false;
+  if(type!=='calendar')closeDay(false);
   if(!PANEL_ROUTES.has(type)||!panelDomSupported)return false;
   if(currentPanel===type&&panelHost)return true;
   if(!currentPanel){panelOpenScrollY=window.scrollY||window.pageYOffset||0;bodyOverflow=document.body.style.overflow||'';document.body.style.overflow='hidden'}
@@ -11768,6 +11828,13 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   tp153OpenCoachTarget=function(){window.tp155R4ClosePanel(false);return targetBase.apply(this,arguments)};
  }
 
+ // Starting (or confirming replacement of) a workout releases both calendar surfaces.
+ const calendarWorkoutBase=renderWorkout;
+ renderWorkout=function(){
+  if(dayHost&&state.session&&state.session!==daySessionAtOpen)window.tp155R4ClosePanel(false);
+  return calendarWorkoutBase.apply(this,arguments);
+ };
+
  // Calendar/planner/settings actions commonly call render(); keep the underlying full page
  // and refresh the still-open panel from the new state.
  const renderBase=render;
@@ -11781,9 +11848,14 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  const backBase=window.TrainPilotAndroidBack;
  window.TrainPilotAndroidBack=function(){
   if(currentPanel){
+   if(dayHost&&!dayNestedPicker()){
+    const select=dayHost.querySelector('.tp-select.open');if(select){rf260CloseSelects();select.querySelector('.tp-select-trigger')?.focus();return true;}
+    if(state.tp151EditingScheduleId){tp151CancelCalendarEdit();return true;}return closeDay();
+   }
    if(panelHost?.querySelector?.('.tp-select.open')){try{rf260CloseSelects()}catch(_){}return true}
    if(typeof rf260TemporalPicker!=='undefined'&&rf260TemporalPicker)return typeof backBase==='function'?backBase.apply(this,arguments):true;
    if(document.querySelector?.('#tpTemporalPicker,#tp2628Dialog,.video-modal,.video-overlay'))return typeof backBase==='function'?backBase.apply(this,arguments):true;
+   if(!dayHost&&state.rf260MovingScheduleId){window.tp155CancelCalendarMove();return true;}
    if(state?.rf151HistoryEdit||state?.tp151EditingScheduleId)return typeof backBase==='function'?backBase.apply(this,arguments):true;
    const opened=panelHost?[...panelHost.querySelectorAll('details[open]')].reverse():[];
    if(opened.length){opened[0].open=false;return true}
@@ -12196,6 +12268,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  const calendarDayBase=toggleCalendarDay;
  rf260OpenScheduleMove=function(id){
   const item=scheduled().find(function(x){return x.id===id&&!x.cancelled});if(!item)return false;
+  window.TrainPilotCalendarDay?.close(false);
   if(state.rf260MovingScheduleId===id){state.rf260MovingScheduleId=null;render();return true}
   state.rf260MovingScheduleId=id;state.tp151EditingScheduleId=null;state.rf2211CalendarDate=localDateKey(new Date(item.start));render();return true;
  };

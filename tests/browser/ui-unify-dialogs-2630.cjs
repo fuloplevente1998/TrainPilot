@@ -25,9 +25,9 @@ const {chromium}=require('playwright');
   await page.evaluate(()=>{const p=activeProgram(),d=p.days[0],id=crypto.randomUUID(),st=new Date(Date.now()+86400000),en=new Date(st.getTime()+45*60000);db.set('scheduled',[{id,programId:p.id,dayId:d.id,workout:d.id,start:st.toISOString(),end:en.toISOString(),updatedAt:Date.now(),cancelled:false,status:'planned'}]);state.tab='home';render();return id});await page.waitForTimeout(80);
   const next=page.locator('.tp146-next-title');assert.equal(await next.count(),1);assert.match((await next.innerText()).replace(/\s+/g,' '),/Otthoni A\/B\s*[–-]\s*Alap.*A/);assert.ok(parseFloat(await next.evaluate(e=>getComputedStyle(e).fontSize))>=17,'next workout title must be emphasized');
 
-  await page.evaluate(()=>{go('calendar');state.rf2211CalendarDate=localDateKey(new Date(scheduled()[0].start));render()});await page.waitForTimeout(80);
+  await page.evaluate(()=>{go('calendar');toggleCalendarDay(localDateKey(new Date(scheduled()[0].start)))});await page.waitForTimeout(80);
   assert.equal(await page.locator('.tp151-calendar-frame').count(),1,'calendar must use the unified framed layout');
-  assert.equal(await page.locator('.tp151-day-panel').count(),1,'selected day details must render directly below the calendar');
+  assert.equal(await page.locator('.tp151-day-panel').count(),1,'selected day details render in their own floating dialog');
   assert.equal(await page.locator('.tp146-schedule-card').count(),0,'separate legacy planned-workout cards must not be rendered');
   const card=page.locator('.tp151-calendar-item').first();assert.equal(await card.count(),1);assert.match((await card.innerText()).replace(/\s+/g,' '),/Otthoni A\/B\s*[–-]\s*Alap.*A/);
   const actions=await card.locator('.tp151-action-row button').allInnerTexts();

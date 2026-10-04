@@ -238,5 +238,9 @@
   {
     "file": "tests/browser/health-journal-120.cjs",
     "estimatedSeconds": 35
+  },
+  {
+    "file": "tests/browser/calendar-day-dialog-108.cjs",
+    "estimatedSeconds": 15
   }
 ]
