@@ -16,6 +16,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(WorkoutPhotosPlugin.class);
         registerPlugin(HealthBridgePlugin.class);
         registerPlugin(HealthJournalPlugin.class);
+        registerPlugin(HealthBackgroundPlugin.class);
         registerPlugin(DistanceTrackerPlugin.class);
         registerPlugin(AppFeedbackPlugin.class);
         registerPlugin(BleDiscoveryPlugin.class);
@@ -49,6 +50,8 @@ public class MainActivity extends BridgeActivity {
     @Override public void onResume() {
         super.onResume();
         applySystemTextSize();
+        HealthBackgroundService.resume(this);
+        try { HealthBackgroundJob.schedule(this); } catch (Exception ignored) {}
     }
 
     private void applySystemTextSize() {

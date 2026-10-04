@@ -35,3 +35,7 @@ Home receives a compact Goals button that opens the complete existing editor. [U
 - Full existing Node/Chromium/Android/source/signature and unchanged performance gates, then physical-phone verification of the delivered phase.
 
 Release 1.2.0 /2703 integrates the 2698–2703 stack through #112 into main. Historical candidate APKs/tags stay unchanged. New work in #113 starts from the accepted main and requires a new versionCode, regression gates and phone acceptance.
+
+## Current candidate — 1.2.1 /2704 (#113)
+
+The requested current fix adds per-origin daily HC summaries and explicit activity-source selection (automatic Samsung when step records exist, otherwise HC priority), with raw records in a separate disclosure. Default raw imports still preserve all permitted origins. A separate native connectedDevice BLE service retains the remembered watch connection, uses the observed battery/current-step queries and writes verified step snapshots into the same journal. Diagnostic/service GATT ownership is exclusive. HC background work is separate, capability/permission-gated and scheduled by Android; without permission, foreground sync remains available. Operational opt-ins/MAC are excluded from backups. Force-stop/reboot require reopening; watch-history/HRV and phone confirmation remain open. [Candidate usage and limits](releases/v1.2.1.md).
