@@ -1,30 +1,20 @@
 # TrainPilot — Development Status
 
-## #110 phase 1 — 1.1.4 /2702
+Last updated: **2026-10-04**.
 
-The refreshed issue explicitly requires one native transactional Health journal for **Health Connect and direct BLE**, with source-separated records, Health Connect IDs/lastModifiedTime/dataOrigin, deletion propagation and an idempotent migration from healthLedgerV1. The implementation roadmap is [docs/HEALTH_JOURNAL_ROADMAP.md](docs/HEALTH_JOURNAL_ROADMAP.md). This candidate implements only the issue's first deliverable: 60-second interruptible discovery, a bounded 120-device priority policy, explicit private watch selection, service-checked saved-address reconnect on trial open/resume, at most three foreground attempts, cancellation/forget and local-erasure integration. No background service, health-record import or primary-store migration is claimed.
+## Phone-approved stable release — 1.2.6 /2709
 
-Physical 2701 feedback confirms battery and valid zero current steps. New connection/discovery behavior requires its own phone trial. Every previous candidate feature stays included; stable main and published 2701 source/tag are unchanged.
+The user approved main merge and public APK/source release from PR #114 on 2026-10-04. Accepted application source: `b2260cb00da91b7d80073d0f1e4181018c227fce`; APK SHA-256: `c85a3c9fdf9433c1430ddef37435bc5a67515fc400c3b3f796609871813c0f82`.
 
-## GT4Pro+ proprietary read-query trial — 1.1.3 / 2701
+- Clean Health Connect journal: a persistent transactional native store, one summary per day, two aggregation modes and collapsed paginated measurements. Preserve imported IDs/origins/deletions, consented manual backups, restore/erase guards and permitted foreground/background refresh.
+- Floating Calendar day details with existing actions, fixed month/planner sizing, preserved pending values and nested-picker/confirmation Back priority.
+- Replanning includes today's elapsed unfinished session, preserves reviewed program/start date on redraw, protects completed/logged/active sessions and retains identities/order/time/duration/collision rules. Header/apply remain reachable on long previews.
+- Consistent close buttons. Coach readiness explanations open on the score tap and show actual fresh/missing inputs and point effects with the existing formula; exercise advice and deferred statistics remain.
+- **119 Node regressions + 4 runner tests, 62 Chromium scripts, Android release tests and unchanged performance budgets passed** on the accepted source. [Signed gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/37230428304), [Phase 7](https://github.com/fuloplevente1998/TrainPilot/actions/runs/37230432178). Complete ZIP/Git tree, all 25 packaged web assets, checksum/version and original signer were independently verified.
+- Release preparation updates current documentation and removes obsolete product descriptions as requested. The application implementation/dependencies/version remain the accepted source; native/web privacy text receives the same description cleanup and stable-version wording. These changes are checked again by the main gate.
+- Main merge, release commit/run/tag, four public assets and final verification checkpoints are tracked in [#119](https://github.com/fuloplevente1998/TrainPilot/issues/119). Follow-up [#113](https://github.com/fuloplevente1998/TrainPilot/issues/113) is limited to further HRV-source access.
 
-Physical 2700 report: connected/status 0, seven services, default MCU and JieLi channels, no standard HRS. The foreground trial now explicitly queries only battery/current steps using traced MCU frames. Original bounded decoder and synthetic JVM vectors cover CRC, fragment boundaries, coalescing, malformed/oversized/multipart input and the command allowlist. Diagnostics omit real values and raw packets. Full checks/source/signature verification required; battery/current zero-step replies were subsequently confirmed by the user; positive-step readings and history import remain pending. The earlier proposed MAC-direct-connection change was stopped when the user found the watch and supplied successful discovery evidence.
-
-## Bluetooth identification follow-up — 1.1.2 / 2700
-
-- Physical trial feedback: 30–40 unnamed neighbours with RSSI approximately -63 to -99 dBm make the intended GT4Pro+ impossible to select from name/signal alone.
-- Results now display a local-only full MAC address for comparison with RDFit, stable per-scan numbering and advertised-service protocol hints. The current scan can be saved without connecting; the report explicitly omits MAC addresses and opaque native identifiers.
-- Existing 2698/2699 features remain included. Historical vendor health imports are still pending the real watch report. The independent CI maintenance in [PR #107](https://github.com/fuloplevente1998/TrainPilot/pull/107) reduced approved-main Chromium time from 10m09s to 2m01s (2m31s including setup); the 58-script candidate suite uses the same isolated shard runner.
-- Validation and phone acceptance are tracked in the follow-up PR. Stable app assets and application data remain unchanged until phone approval.
-
-
-Last updated: **2026-10-03 (Europe/Budapest)**. Earlier Phase 5–7 history remains below; it is historical. See [docs/PHASE_5_6_7_ROADMAP.md](docs/PHASE_5_6_7_ROADMAP.md) and the permanent [performance regression policy](docs/PERFORMANCE_REGRESSION_POLICY.md).
-
-## Bluetooth investigation candidate — 1.1.1 / 2699 (#105)
-
-- Foreground BLE scan, device selection, GATT discovery and locally verified diagnostic export; standard live pulse is opt-in and remains separate from Health Connect/history/Coach.
-- RDFit 4.1.4 APK static investigation identified distinct device families and history-request selectors. GT4Pro+ physical compatibility and history import are still pending; no proprietary commands are sent by this candidate.
-- Includes the 2698 work below; stable main remains 1.0.9 / 2697. [Procedure and findings](docs/BLUETOOTH_GT4PRO.md), [candidate notes](docs/releases/v1.1.1.md).
+The earlier development history below is historical. Current usage: [release notes](docs/releases/v1.2.6.md), [Health Connect journal](docs/HEALTH_JOURNAL_ROADMAP.md). The permanent [performance policy](docs/PERFORMANCE_REGRESSION_POLICY.md) remains applicable.
 
 ## Candidate — TrainPilot 1.1.0 / 2698 (#103)
 
