@@ -72,4 +72,4 @@ A keystore és a Secret értékek soha ne kerüljenek Gitbe, source ZIP-be vagy 
 - Kiadás előtt az eredeti 1.7.7 APK aláírási tanúsítványának SHA-256 ujjlenyomatát az új APK-val össze kell hasonlítani; szükség van meglévő 1.7.7 telepítés fölé történő, adatmegőrző frissítési próbára is.
 - A történeti release-ek és tagek külön privát archiválása nem változtatja meg a publikus `main` commitelőzményét. Lásd [karbantartási terv](REPOSITORY_MAINTENANCE_2026-09-26.md).
 
-The next test candidate is **1.2.1 /2704**, based on accepted main 1.2.0. New native background/source tests run with the same Android JVM gate; the signed candidate APK must retain the existing certificate and pass the complete UI/performance gate before phone testing. [Candidate notes](releases/v1.2.1.md).
+The next test candidate is **1.2.2 /2705**, based on accepted main 1.2.0. New native background/source tests run with the same Android JVM gate; the signed candidate APK must retain the existing certificate and pass the complete UI/performance gate before phone testing. [Candidate notes](releases/v1.2.2.md).
