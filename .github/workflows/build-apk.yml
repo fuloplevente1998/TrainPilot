@@ -7,6 +7,7 @@ on:
       - main
       - 'feat/**'
       - 'fix/**'
+      - 'maintenance/**'
     tags:
       - 'v*'
 
@@ -108,25 +109,8 @@ jobs:
           chmod 600 "$KEYSTORE"
           echo "ANDROID_KEYSTORE_PATH=$KEYSTORE" >> "$GITHUB_ENV"
 
-      - name: Verify release metadata consistency
-        shell: bash
-        run: |
-          set -euo pipefail
-          node <<'NODE'
-          const fs=require('fs');
-          const pkg=require('./package.json');
-          const src=require('./SOURCE_VERSION.json');
-          const gradle=fs.readFileSync('android/app/build.gradle','utf8');
-          const versionName=gradle.match(/versionName\s+"([^"]+)"/)?.[1];
-          const versionCode=Number(gradle.match(/versionCode\s+(\d+)/)?.[1]);
-          if(pkg.version!==src.version||versionName!==(src.displayVersion||src.version)) throw new Error('Version mismatch');
-          if(Number(src.versionCode)!==versionCode) throw new Error('versionCode mismatch');
-          if(process.env.GITHUB_REF_TYPE==='tag'){
-            const expectedTag=`v${pkg.version}`;
-            if(process.env.GITHUB_REF_NAME!==expectedTag) throw new Error(`Tag/version mismatch: expected ${expectedTag}, got ${process.env.GITHUB_REF_NAME}`);
-          }
-          console.log(`Version metadata OK: ${pkg.version} (${versionCode})`);
-          NODE
+      - name: Verify release metadata consistency and SemVer policy
+        run: npm run check:version
 
       - name: Run TrainPilot regression suite
         run: npm test
@@ -227,13 +211,17 @@ jobs:
           if [ -f "$NOTES_FILE" ]; then
             NOTES=(--notes-file "$NOTES_FILE")
           fi
+          RELEASE_KIND=()
+          if [[ "$VERSION" == *-* ]]; then
+            RELEASE_KIND=(--prerelease)
+          fi
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "${FILES[@]}" --clobber
           else
             if [ "$GITHUB_REF_TYPE" = "tag" ]; then
-              gh release create "$TAG" "${FILES[@]}" --verify-tag "${NOTES[@]}" --title "TrainPilot $VERSION"
+              gh release create "$TAG" "${FILES[@]}" --verify-tag "${NOTES[@]}" "${RELEASE_KIND[@]}" --title "TrainPilot $VERSION"
             else
-              gh release create "$TAG" "${FILES[@]}" --target "$GITHUB_SHA" "${NOTES[@]}" --title "TrainPilot $VERSION"
+              gh release create "$TAG" "${FILES[@]}" --target "$GITHUB_SHA" "${NOTES[@]}" "${RELEASE_KIND[@]}" --title "TrainPilot $VERSION"
             fi
           fi
 

@@ -76,7 +76,7 @@ function runtime(){
  run(`db.set('history',[{id:'step-log',started:oldStepsSession.started,finished:new Date().toISOString(),exercises:[],health240:{steps:42}}]);db.set('backupIncludeHealth',false)`);
  assert.equal(run('tp105Project({history:history()},false).history[0].health240'),undefined,'Health export consent also protects imported steps');
  assert.equal(run('tp105Project({history:history()},true).history[0].health240.steps'),42);
- const native=fs.readFileSync('android/app/src/main/java/com/repforge/app/HealthBridgePlugin.java','utf8');
+ const native=['HealthBridgePlugin.java','HealthConnectApi34.java'].map(f=>fs.readFileSync('android/app/src/main/java/com/repforge/app/'+f,'utf8')).join('\n');
  assert.match(native,/readStepsWindow/);assert.match(native,/requestSteps/);assert.match(native,/requestPermissionForAlias\("steps",c,"stepsGranted"\)/);assert.match(native,/putLongAgg\(out,"steps",p,m,time,"READ_STEPS",StepsRecord.STEPS_COUNT_TOTAL/);
  assert.ok(!native.includes('WRITE_STEPS'),'imported phone/watch counts must not be written back and duplicated');
  console.log('PASS workout steps: exact active windows, deduped overlaps, polling budget, absolute totals, null/zero, permission/error, late owner, final aggregate and export consent');

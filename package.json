@@ -5,8 +5,9 @@
   "scripts": {
     "sync": "cap sync android",
     "android": "cap open android",
-    "test": "node --test scripts/ui-runner.test.cjs && node scripts/test.cjs",
-    "test:ui": "node scripts/test-ui.cjs"
+    "test": "node scripts/check-version-policy.cjs && node --test scripts/ui-runner.test.cjs && node scripts/test.cjs",
+    "test:ui": "node scripts/test-ui.cjs",
+    "check:version": "node scripts/check-version-policy.cjs"
   },
   "dependencies": {
     "@capacitor/android": "7.4.3",

@@ -23,7 +23,7 @@ public class HealthJournalPlugin extends Plugin {
     @PluginMethod public void readPage(PluginCall call) { run(call,()->{
         String source=call.getString("source",""),channel=call.getString("channel","");String warning="";
         if(channel.equals(HealthJournalStore.HC)&&!source.isEmpty()&&android.os.Build.VERSION.SDK_INT>=34){
-            try{HealthBridgePlugin.Api34.sourceDays(new HealthBridgePlugin.Access(getContext(),store().generation(),()->{if(!foreground)throw new IllegalStateException("Keep the app open");}),call.getString("from",""),call.getString("to",""),source);}catch(Exception e){warning="SOURCE_SUMMARY_UNAVAILABLE";}
+            try{HealthConnectApi34.sourceDays(new HealthBridgePlugin.Access(getContext(),store().generation(),()->{if(!foreground)throw new IllegalStateException("Keep the app open");}),call.getString("from",""),call.getString("to",""),source);}catch(Exception e){warning="SOURCE_SUMMARY_UNAVAILABLE";}
         }
         return store().page(call.getString("from",""),call.getString("to",""),channel,source,call.getLong("before",0L),call.getLong("beforeTime",0L),call.getInt("limit",30)).put("sourceSummaryWarning",warning);
     }); }

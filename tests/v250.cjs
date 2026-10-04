@@ -47,7 +47,7 @@ async function tests(){
  assert.ok(run("!!window.TrainPilot155PanelNavigation?.coachPanel"),'Coach must use the Round 3 panel navigation surface');
  assert.ok(!run("rf233CoachScreen.toString().includes(\"readRecoveryHealth().then\")"),'Coach must not run an independent recovery sync');
 
- const java=fs.readFileSync('android/app/src/main/java/com/repforge/app/HealthBridgePlugin.java','utf8');
+ const java=['HealthBridgePlugin.java','HealthConnectApi34.java'].map(f=>fs.readFileSync('android/app/src/main/java/com/repforge/app/'+f,'utf8')).join('\n');
  assert.ok(java.includes('SleepSessionRecord.Stage'));assert.ok(java.includes('isAsleep'));assert.ok(java.includes('clientRecordId'));
  assert.ok(java.includes('READ_BLOOD_PRESSURE')&&java.includes('READ_BLOOD_GLUCOSE')&&java.includes('READ_RESPIRATORY_RATE'));
  assert.ok(java.includes('addNamedType'));

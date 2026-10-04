@@ -9,8 +9,6 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.ParcelUuid;
-import android.util.SparseArray;
 import com.getcapacitor.*;
 import com.getcapacitor.annotation.*;
 import java.text.SimpleDateFormat;
@@ -30,10 +28,7 @@ public class BleDiscoveryPlugin extends Plugin {
     private static final UUID RDFIT_NOTIFY = UUID.fromString("6e40ab03-b5a3-f393-e0a9-e50e24dcca9e");
     private static final UUID CCCD = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     private final Handler main = new Handler(Looper.getMainLooper());
-    private final Map<String, BluetoothDevice> devices = new LinkedHashMap<>();
-    private final Map<String, String> addresses = new HashMap<>();
-    private final Map<String, JSObject> rows = new LinkedHashMap<>();
-    private final Map<String, Long> lastSeen = new HashMap<>();
+    private final BleScanCatalog scanCatalog = new BleScanCatalog();
     private BluetoothLeScanner scanner;
     private BluetoothGatt activeGatt;
     private BluetoothGattCharacteristic heart;
@@ -55,9 +50,7 @@ public class BleDiscoveryPlugin extends Plugin {
     private JSArray services = new JSArray();
     private String state = "idle", code = "", deviceName = "";
     private String expectedService = "";
-    private String scanSavedAddress = "";
     private long scanEndsAt = 0;
-    private int nextDeviceNumber = 0;
     private int gattStatus = 0;
     private volatile boolean foreground = true;
     private boolean heartSupported = false;
@@ -139,8 +132,7 @@ public class BleDiscoveryPlugin extends Plugin {
             }
             scanner = adapter.getBluetoothLeScanner();
             if (scanner == null) { call.reject("Bluetooth scanner unavailable", "BLUETOOTH_OFF"); return; }
-            devices.clear(); addresses.clear(); rows.clear(); lastSeen.clear(); resetProbe(); nextDeviceNumber = 0;
-            scanSavedAddress = savedWatch().address();
+            scanCatalog.reset(savedWatch().address()); resetProbe();
             services = new JSArray(); deviceName = ""; heartSupported = false; gattStatus = 0;
             ScanCallback callback = new ScanCallback() {
                 @Override public void onScanResult(int type, ScanResult result) {
@@ -164,59 +156,11 @@ public class BleDiscoveryPlugin extends Plugin {
         catch (RuntimeException error) { stopScanInternal(); call.reject("Bluetooth scan failed", "SCAN_FAILED"); }
     }
     private void found(ScanResult result) {
-        BluetoothDevice device = result.getDevice();
-        String address;
-        try { address = device.getAddress(); } catch (SecurityException ignored) { return; }
-        String id = addresses.get(address);
-        long now = android.os.SystemClock.elapsedRealtime();
-        if (id != null && now - lastSeen.getOrDefault(id, -1000L) < 1000) return;
-        ScanRecord record = result.getScanRecord();
-        String name = record == null ? null : record.getDeviceName();
-        if (name == null) try { name = device.getName(); } catch (SecurityException ignored) { }
-        JSObject row = new JSObject(); row.put("id", id); row.put("name", name == null ? "" : name);
-        row.put("rssi", result.getRssi());
-        // The address is displayed locally to identify unnamed watches; diagnostics omit it.
-        row.put("displayAddress", address != null && address.matches("(?i)([0-9a-f]{2}:){5}[0-9a-f]{2}") ? address : "");
-        row.put("remembered", address != null && !scanSavedAddress.isEmpty() && address.equalsIgnoreCase(scanSavedAddress));
-        JSArray advertised = new JSArray(), manufacturers = new JSArray();
-        if (record != null) {
-            List<ParcelUuid> uuids = record.getServiceUuids();
-            if (uuids != null) for (ParcelUuid uuid : uuids) advertised.put(uuid.toString());
-            SparseArray<byte[]> data = record.getManufacturerSpecificData();
-            for (int i = 0; data != null && i < data.size(); i++) {
-                JSObject company = new JSObject(); company.put("companyId", data.keyAt(i));
-                company.put("length", data.valueAt(i) == null ? 0 : data.valueAt(i).length); manufacturers.put(company);
-            }
-        }
-        row.put("advertisedServices", advertised); row.put("manufacturers", manufacturers);
-        String removed = null;
-        if (id == null) {
-            List<BleScanPolicy.Candidate> retained = new ArrayList<>();
-            for (Map.Entry<String, JSObject> item : rows.entrySet()) {
-                if (item.getKey() != null) retained.add(scanCandidate(item.getKey(), item.getValue()));
-            }
-            removed = BleScanPolicy.replacement(retained, scanCandidate("", row));
-            if ("".equals(removed) || nextDeviceNumber >= 65535) return;
-            if (removed != null) {
-                devices.remove(removed); rows.remove(removed); lastSeen.remove(removed);
-                addresses.values().remove(removed);
-            }
-            id = UUID.randomUUID().toString(); addresses.put(address, id); devices.put(id, device);
-            row.put("number", ++nextDeviceNumber);
-        } else row.put("number", rows.get(id).getInteger("number", 1));
-        row.put("id", id); rows.put(id, row); lastSeen.put(id, now);
-        JSObject event = new JSObject(); event.put("kind", "device"); event.put("device", row);
-        if (removed != null) event.put("removedId", removed);
+        BleScanCatalog.Accepted accepted = scanCatalog.accept(result);
+        if (accepted == null) return;
+        JSObject event = new JSObject(); event.put("kind", "device"); event.put("device", accepted.row);
+        if (accepted.removedId != null) event.put("removedId", accepted.removedId);
         notifyListeners("bleEvent", event);
-    }
-    private BleScanPolicy.Candidate scanCandidate(String id, JSObject row) {
-        String address = row.getString("displayAddress", ""), name = row.getString("name", "");
-        String services = row.optJSONArray("advertisedServices") == null ? "" : row.optJSONArray("advertisedServices").toString().toLowerCase(Locale.ROOT);
-        int priority = !address.isEmpty() && address.equalsIgnoreCase(scanSavedAddress) ? 4
-            : name.toLowerCase(Locale.ROOT).matches(".*gt\\s*4.*") ? 3
-            : services.contains("6e40ab01") || services.contains("0000ae00") || services.contains("00002222") || services.contains("00004444") ? 2
-            : services.contains("00000201") ? 1 : 0;
-        return new BleScanPolicy.Candidate(id, priority, row.getInteger("rssi", -127));
     }
     private void stopScanInternal() {
         ScanCallback callback = scanCallback; scanCallback = null;
@@ -234,9 +178,9 @@ public class BleDiscoveryPlugin extends Plugin {
             if (!permissions()) { call.reject("Bluetooth permission denied", "PERMISSION_DENIED"); return; }
             if (!foreground) { call.reject("Keep the app open", "BACKGROUND"); return; }
             if (activeGatt != null) { call.reject("Bluetooth is busy", "BUSY"); return; }
-            String id = call.getString("id", ""); BluetoothDevice device = devices.get(id);
+            String id = call.getString("id", ""); BluetoothDevice device = scanCatalog.device(id);
             if (device == null) { call.reject("Choose a device from a new scan", "DEVICE_EXPIRED"); return; }
-            startConnection(call, device, rows.get(id).getString("name", ""), "");
+            startConnection(call, device, scanCatalog.name(id), "");
         });
     }
     @PluginMethod public void rememberWatch(PluginCall call) {
@@ -311,7 +255,7 @@ public class BleDiscoveryPlugin extends Plugin {
                 gattStatus = status;
                 if (status != BluetoothGatt.GATT_SUCCESS) { failConnection("DISCOVERY_FAILED"); return; }
                 try {
-                services = describe(gatt);
+                services = BleGattIntrospection.describe(gatt);
                 BluetoothGattService rdfitService = gatt.getService(RDFIT_SERVICE);
                 BluetoothGattCharacteristic rdfitWrite = rdfitService == null ? null : rdfitService.getCharacteristic(RDFIT_WRITE);
                 BluetoothGattCharacteristic rdfitNotify = rdfitService == null ? null : rdfitService.getCharacteristic(RDFIT_NOTIFY);
@@ -447,21 +391,6 @@ public class BleDiscoveryPlugin extends Plugin {
             } catch (Exception error) { pending.reject("Watch journal write failed; reading was not saved", "HEALTH_JOURNAL_FAILED", error); }
         });
     }
-    private JSArray describe(BluetoothGatt gatt) {
-        JSArray result = new JSArray();
-        for (BluetoothGattService service : gatt.getServices()) {
-            JSObject item = new JSObject(); item.put("uuid", service.getUuid().toString()); item.put("type", service.getType());
-            JSArray characteristics = new JSArray();
-            for (BluetoothGattCharacteristic characteristic : service.getCharacteristics()) {
-                JSObject entry = new JSObject(); entry.put("uuid", characteristic.getUuid().toString()); entry.put("properties", characteristic.getProperties());
-                JSArray descriptors = new JSArray();
-                for (BluetoothGattDescriptor descriptor : characteristic.getDescriptors()) descriptors.put(descriptor.getUuid().toString());
-                entry.put("descriptors", descriptors); characteristics.put(entry);
-            }
-            item.put("characteristics", characteristics); result.put(item);
-        }
-        return result;
-    }
     private void receivePulse(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, byte[] payload) {
         byte[] value = payload == null ? null : payload.clone();
         main.post(() -> {
@@ -524,11 +453,11 @@ public class BleDiscoveryPlugin extends Plugin {
     }
     @Override protected void handleOnPause() {
         foreground = false;
-        main.post(() -> { if (pendingPermission != null) return; stopScanInternal(); failConnection("BACKGROUND"); devices.clear(); addresses.clear(); rows.clear(); });
+        main.post(() -> { if (pendingPermission != null) return; stopScanInternal(); failConnection("BACKGROUND"); scanCatalog.clear(); });
     }
     @Override protected void handleOnResume() { foreground = true; }
     @Override protected void handleOnDestroy() {
         foreground = false;
-        main.post(() -> { stopScanInternal(); failConnection("DISCONNECTED"); devices.clear(); addresses.clear(); rows.clear(); });
+        main.post(() -> { stopScanInternal(); failConnection("DISCONNECTED"); scanCatalog.clear(); });
     }
 }

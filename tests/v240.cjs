@@ -5,6 +5,6 @@ for(const x of ["RF240_VERSION='2.4.0'","healthLedgerV1","healthSyncMetaV1","rf2
 assert.ok(s.includes('rf240RecentDays(30)')||s.includes('rf240RunFull(p,30'),'initial 30-day sync missing');
 assert.ok(!s.includes('rf220Readiness=function'),'2.4 must not rewrite readiness scoring');
 assert.ok(s.includes('windowStart')&&s.includes('windowEnd'),'workout health window must be persisted');
-const j=fs.readFileSync('android/app/src/main/java/com/repforge/app/HealthBridgePlugin.java','utf8');
+const j=['HealthBridgePlugin.java','HealthConnectApi34.java'].map(f=>fs.readFileSync('android/app/src/main/java/com/repforge/app/'+f,'utf8')).join('\n');
 for(const x of ['READ_RESTING_HEART_RATE','READ_TOTAL_CALORIES_BURNED','READ_DISTANCE','READ_SPEED','readHealthDay','readTrainingWindow','createChangeToken','pollChanges','ChangeLogTokenRequest','ChangeLogsRequest','getChangeLogs','RestingHeartRateRecord','TotalCaloriesBurnedRecord','DistanceRecord','SpeedRecord'])assert.ok(j.includes(x),'native missing '+x);
 console.log('PASS: TrainPilot 2.4 Health Sync engine checks.');
