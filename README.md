@@ -1,6 +1,8 @@
 # TrainPilot
 
-**Bluetooth újracsatlakozás — 1.1.4 / 2702:** a frissített [#110](https://github.com/fuloplevente1998/TrainPilot/issues/110) első fázisa. 60 másodperces, leállítható keresés, legfeljebb 120 találat, megjegyzett óra és automatikus újracsatlakozás a próba megnyitásakor. Az óraválasztás helyi, elfelejthető; a sikertelen próbák korlátozottak. [Telefonos lépések](docs/BLUETOOTH_GT4PRO.md) · [Egységes Health Connect/BLE egészségnapló terve](docs/HEALTH_JOURNAL_ROADMAP.md). A teljes háttérszinkron és az új natív egészségnapló következő fázis.
+**Egészségnapló tesztváltozat — 1.2.0 / 2703:** közös natív Health Connect/BLE-tárolás, dátum- és forrásszűrős napló, 30 napos felületi gyorsítótár. A megjegyzett óra jelenlegi lépései külön bekapcsolható naplózással tárolhatók; átfedő források nem adódnak össze. A teljes **Célok beállítása** szerkesztő a kompakt kezdőlapi gombból nyílik. [Kipróbálás és korlátok](docs/releases/v1.2.0.md) · [#110 állapot](docs/HEALTH_JOURNAL_ROADMAP.md). Háttérszolgáltatás és órás előzmény/HRV még hátravan; main merge telefonos elfogadás után.
+
+**Bluetooth újracsatlakozás — 1.1.4 / 2702:** a frissített [#110](https://github.com/fuloplevente1998/TrainPilot/issues/110) első fázisa. 60 másodperces, leállítható keresés, legfeljebb 120 találat, megjegyzett óra és automatikus újracsatlakozás a próba megnyitásakor. Az óraválasztás helyi, elfelejthető; a sikertelen próbák korlátozottak. [Telefonos lépések](docs/BLUETOOTH_GT4PRO.md) · [Egységes Health Connect/BLE egészségnapló terve](docs/HEALTH_JOURNAL_ROADMAP.md). A teljes háttérszinkron későbbi fázis; a natív napló a 2703 jelöltben készül.
 
 **RDFit adatpróba — 1.1.3 / 2701:** a GT4Pro+ telefonos diagnosztikája igazolta a kapcsolódást. Külön gombbal próbálható az akkumulátor és a mai lépésszám kiolvasása az RDFit adatcsatornáján. Az értékek csak a próbanézetben jelennek meg; az akkumulátor és a mai 0 lépés olvasását a telefonos próba igazolta; pozitív lépésszám és az előzmények ellenőrzése még hátravan. [Lépések és protokoll](docs/BLUETOOTH_GT4PRO.md).
 
@@ -56,7 +58,7 @@ A **Beállítások → Bluetooth-óra próba** felület a GT4Pro+ / RDFit adatka
 
 ## Következő tesztverzió: TrainPilot 1.1.0 (2698)
 
-Az [#103](https://github.com/fuloplevente1998/TrainPilot/issues/103) fejlesztései külön tesztágon készülnek: heti edzés- és havi kilométercél, kihagyott edzések előnézetes újratervezése, beltéri intervallumok, részletes Coach-indoklás és egységes üres/mentési állapotok. A célok a meglévő kezdőlapi „Mai állapot” kártyából és a Beállításokból érhetők el. Nagy Android-betűméretnél a fix áttekintések görgethetővé válnak, hogy minden vezérlő elérhető maradjon.
+Az [#103](https://github.com/fuloplevente1998/TrainPilot/issues/103) fejlesztései külön tesztágon készülnek: heti edzés- és havi kilométercél, kihagyott edzések előnézetes újratervezése, beltéri intervallumok, részletes Coach-indoklás és egységes üres/mentési állapotok. A 2703 jelöltben a célok külön kompakt kezdőlapi gombból érhetők el. Nagy Android-betűméretnél a fix áttekintések görgethetővé válnak, hogy minden vezérlő elérhető maradjon.
 
 A stabil kiadás továbbra is **1.0.9 / 2697**. A 2698-as teszt-APK telefonos elfogadása és main merge-je még hátravan. Részletek és kipróbálás: [1.1.0 fejlesztések](docs/FEATURES_1_1_0.md), [tesztkiadási megjegyzések](docs/releases/v1.1.0.md).
 

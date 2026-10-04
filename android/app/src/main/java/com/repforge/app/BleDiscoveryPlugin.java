@@ -49,6 +49,8 @@ public class BleDiscoveryPlugin extends Plugin {
     private Integer probeBattery;
     private Long probeSteps;
     private Runnable probeTimeout;
+    private long probeStartedAt, probeGeneration;
+    private String probeJournalId = "", probeJournalName = "";
     private PluginCall connecting, subscribing, pendingPermission;
     private JSArray services = new JSArray();
     private String state = "idle", code = "", deviceName = "";
@@ -379,6 +381,10 @@ public class BleDiscoveryPlugin extends Plugin {
             if (probeWrite == null || probeNotify == null || probeCccd == null) {
                 call.reject("No supported RDFit channel", "NO_RDFIT_CHANNEL"); return;
             }
+            probeStartedAt = System.currentTimeMillis(); probeGeneration = HealthJournalStore.get(getContext()).generation();
+            BleWatchPreference journalWatch = new BleWatchPreference(getContext());
+            probeJournalId = activeGatt.getDevice().getAddress().equalsIgnoreCase(journalWatch.address()) ? journalWatch.journalId() : "";
+            probeJournalName = journalWatch.name();
             probeDecoder = new RdfitProtocol(); probeStatus = "running"; probeBattery = null; probeSteps = null;
             probeNotifications = 0; probeRequests = 0; probeRejected = 0; probeCommand = 0;
             probeBatteryReceived = false; probeStepsReceived = false; probeWritePending = false; probing = call;
@@ -428,7 +434,15 @@ public class BleDiscoveryPlugin extends Plugin {
         if (probing == null) return;
         PluginCall pending = probing; probing = null;
         probeStatus = reason.equals("PROBE_DONE") ? "complete" : probeBatteryReceived ? "partial" : "failed";
-        closeGatt(); transition("disconnected", reason); pending.resolve(snapshot());
+        final Long steps = probeSteps; final boolean validSteps = probeStepsReceived;
+        final String deviceId = probeJournalId, name = probeJournalName; final long started = probeStartedAt, epoch = probeGeneration, observed = System.currentTimeMillis();
+        closeGatt(); transition("disconnected", reason); final JSObject result = snapshot();
+        getBridge().execute(() -> {
+            try {
+                if (validSteps && steps != null && !deviceId.isEmpty()) HealthJournalStore.get(getContext()).watchSteps(deviceId, name, steps, started, observed, epoch);
+                pending.resolve(result);
+            } catch (Exception error) { pending.reject("Watch journal write failed; reading was not saved", "HEALTH_JOURNAL_FAILED", error); }
+        });
     }
     private JSArray describe(BluetoothGatt gatt) {
         JSArray result = new JSArray();
