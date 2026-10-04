@@ -76,7 +76,7 @@
 // @endsection startup.js
 
 // @section backup.js
-const TRAINPILOT_VERSION='1.2.5';
+const TRAINPILOT_VERSION='1.2.6';
 var isNative = function isNative(){return !!window.Capacitor?.isNativePlatform?.();};
 var nativeFiles = function nativeFiles(){if(!filesPlugin)filesPlugin=window.Capacitor?.registerPlugin?.('NativeFiles')||window.Capacitor?.Plugins?.NativeFiles;if(!filesPlugin)throw Error('A natív fájlkezelő nem érhető el.');return filesPlugin;};
 var backupStatus = function backupStatus(){const x=db.get('lastExport',null);return x?`Utolsó ellenőrzött mentés: ${x.name} • ${fmtDate(x.date)}`:'Még nincs ellenőrzött fájlmentés.';};
@@ -10861,16 +10861,16 @@ var tp153OpenCoachTarget=function(){
  const cards=[].slice.call(document.querySelectorAll('.tp152-day')),card=cards.find(function(el){return String(el.textContent||'').includes(dayName)})||cards.find(function(el){return String(el.textContent||'').includes(String(x.day.id||''))});
  if(card){cards.forEach(function(el){el.open=el===card});if(card.scrollIntoView)card.scrollIntoView({block:'center',behavior:'smooth'})}
 };
-var tp153CoachWhy=function(){const x=document.getElementById('tp153CoachWhy');if(x){if(x.scrollIntoView)x.scrollIntoView({block:'start',behavior:'smooth'});if(x.focus)x.focus({preventScroll:true})}};
+var tp153CoachWhy=function(trigger){return window.TrainPilot110?.openCoachReasons(trigger||document.activeElement)};
 
 var tp153CoachReturn='home';
 rf233CoachScreen=function(){
  if(!state.healthView)tp153CoachReturn=state.tab==='health'?'health':'home';
  state.tab='health';state.healthView=true;if(typeof rf245CoachVisible!=='undefined')rf245CoachVisible=true;
- const t=rf233L(),p=rf233CoachPlan(),r=p.readiness,target=p.target,day=rf240Ledger()&&rf240Ledger().days?rf240Ledger().days[rf240DayKey(new Date())]||{}:{},name=target.day?(target.program?tp149ProgramDayName(target.program,target.day):(target.day.name||target.day.id||'—')):'—';
+ const t=rf233L(),p=rf233CoachPlan(),r=p.readiness,target=p.target,name=target.day?(target.program?tp149ProgramDayName(target.program,target.day):(target.day.name||target.day.id||'—')):'—';
  const score=r.score==null?'—':tp149FormatNumber(r.score)+'/100';
  const action=target.day?'<button class="btn block" onclick="tp153OpenCoachTarget()">'+esc(tp149T('workout.start'))+'</button>':'<button class="btn secondary block" onclick="go(\'calendar\')">'+esc(t.calendar)+'</button>';
- render(shell('<main class="tp151-coach tp153-coach"><div class="tp151-back-row"><button class="btn secondary" onclick="go(\''+esc(tp153CoachReturn)+'\')">← '+esc(tp149T('common.back'))+'</button></div><div class="tp151-page-head"><h1>'+esc(t.coach)+'</h1></div><section class="card tp151-coach-recommendation"><div class="tp151-advice tp152-coach-advice"><span class="tp151-kicker">'+esc(tp151T('todayAdvice'))+'</span><strong>'+esc(p.decision.title)+'</strong><p>'+esc(p.decision.text)+'</p></div><div class="tp151-coach-target"><button type="button" class="tp153-coach-metric" onclick="tp153CoachWhy()"><small>'+esc(tp149T('coach.readiness'))+'</small><strong>'+esc(score)+'</strong></button><button type="button" class="tp153-coach-metric tp153-coach-next" onclick="tp153OpenCoachTarget()"><small>'+esc(rf233TargetTitle(target))+'</small><strong>'+esc(name)+'</strong></button></div><p class="small muted">'+esc(rf233TargetSub(target))+'</p>'+action+'</section><div class="card tp151-coach-context" id="tp153CoachWhy" tabindex="-1"><h2>'+esc(tp151T('why'))+'</h2><div class="rf233-signals">'+rf233SignalHtml(p)+'</div><div class="tp151-pulse"><span>'+esc(tp151T('pulse'))+'</span><strong>'+esc(tp151HeartLine(day))+'</strong></div><button class="btn secondary block" onclick="go(\'health\')">'+esc(tp149T('coach.openHealth'))+'</button></div><div class="section">'+esc(t.exercisePlan)+'</div>'+rf233ExerciseRows(p)+'<p class="small muted">'+esc(t.approx)+'</p>'+rf220ProgressHtml()+'</main>'));
+ render(shell('<main class="tp151-coach tp153-coach"><div class="tp151-back-row"><button class="btn secondary" onclick="go(\''+esc(tp153CoachReturn)+'\')">← '+esc(tp149T('common.back'))+'</button></div><div class="tp151-page-head"><h1>'+esc(t.coach)+'</h1></div><section class="card tp151-coach-recommendation"><div class="tp151-advice tp152-coach-advice"><span class="tp151-kicker">'+esc(tp151T('todayAdvice'))+'</span><strong>'+esc(p.decision.title)+'</strong><p>'+esc(p.decision.text)+'</p></div><div class="tp151-coach-target"><button type="button" class="tp153-coach-metric" aria-haspopup="dialog" aria-expanded="false" onclick="tp153CoachWhy(this)"><small>'+esc(tp149T('coach.readiness'))+'</small><strong>'+esc(score)+'</strong></button><button type="button" class="tp153-coach-metric tp153-coach-next" onclick="tp153OpenCoachTarget()"><small>'+esc(rf233TargetTitle(target))+'</small><strong>'+esc(name)+'</strong></button></div><p class="small muted">'+esc(rf233TargetSub(target))+'</p>'+action+'</section><div class="section">'+esc(t.exercisePlan)+'</div>'+rf233ExerciseRows(p)+'<p class="small muted">'+esc(t.approx)+'</p>'+rf220ProgressHtml()+'</main>'));
 };
 rf220CoachScreen=rf233CoachScreen;
 
@@ -11765,6 +11765,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   try{if(typeof window.tp155R4ApplyHighlightSurfaces==='function')window.tp155R4ApplyHighlightSurfaces(content)}catch(_){}
   panel.scrollTop=Math.min(y,Math.max(0,panel.scrollHeight-panel.clientHeight));
   positionPanel();window.tp155R4DecorateNavigation();markCalendarDays();refreshDay();
+  if(currentPanel==='replan')window.TrainPilot110?.previewReplan();
  };
 
  window.tp155R4ClosePanel=function(restoreFocus=true){
@@ -14869,7 +14870,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const weekdays=(options.weekdays||[]).filter(d=>Number.isInteger(d)&&d>=0&&d<=6);
   if(mode==='weekly'&&!weekdays.length)throw Error('weekdays');
   const available=rows.filter(x=>!x.cancelled&&(x.programId||'home-basic')===options.programId&&!completed.has(x.id)&&['planned','skipped'].includes(x.status||'planned')&&Number.isFinite(Date.parse(x.start))&&Date.parse(x.end)>Date.parse(x.start)).sort((a,b)=>Date.parse(a.start)-Date.parse(b.start));
-  const missed=x=>dayKey(new Date(x.start))<dayKey(today)||x.status==='skipped'&&dayKey(new Date(x.start))<=dayKey(today);
+  const missed=x=>Date.parse(x.start)<+now||x.status==='skipped'&&dayKey(new Date(x.start))<=dayKey(today);
   const first=available.findIndex(missed);if(first<0)return {rows,moved:[]};
   const queue=available.slice(first).filter(x=>(x.status||'planned')==='planned'||missed(x)),ids=new Set(queue.map(x=>x.id));
   const occupied=new Set(rows.filter(x=>!x.cancelled&&!ids.has(x.id)&&Number.isFinite(Date.parse(x.start))).map(x=>dayKey(new Date(x.start))));
@@ -14936,7 +14937,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  let preview=null;
  const replanInputs=()=>({programId:document.querySelector('#tp110ReplanProgram')?.value||activeProgramId(),startDate:document.querySelector('#tp110ReplanDate')?.value||dayKey(addDays(new Date(),1)),mode:plannerSettings().mode,weekdays:plannerSettings().weekdays,activeScheduleId:state.session?.scheduleId||db.get('draft',null)?.session?.scheduleId,now:new Date()});
  function replanHtml(){
-  preview=null;return '<main class="tp110-replan"><p class="muted">'+esc(t('replanNote'))+'</p><div class="tp110-form"><label>'+esc(t('program'))+'<select id="tp110ReplanProgram" class="field" onchange="TrainPilot110.previewReplan()">'+programs().map(p=>'<option value="'+esc(p.id)+'" '+(p.id===activeProgramId()?'selected':'')+'>'+esc(tp149ProgramMeta(p,'name'))+'</option>').join('')+'</select></label><label>'+esc(t('begin'))+'<input id="tp110ReplanDate" class="field" type="date" min="'+dayKey(new Date())+'" value="'+dayKey(addDays(new Date(),1))+'" onchange="TrainPilot110.previewReplan()"></label></div><div data-tp110-preview></div><button type="button" class="btn block" data-tp110-apply onclick="TrainPilot110.applyReplan()">'+esc(t('apply'))+'</button><p data-tp110-replan-status class="tp110-feedback" role="status"></p></main>';
+  const values=replanInputs();preview=null;return '<main class="tp110-replan"><p class="muted">'+esc(t('replanNote'))+'</p><div class="tp110-form"><label>'+esc(t('program'))+'<select id="tp110ReplanProgram" class="field" onchange="TrainPilot110.previewReplan()">'+programs().map(p=>'<option value="'+esc(p.id)+'" '+(p.id===values.programId?'selected':'')+'>'+esc(tp149ProgramMeta(p,'name'))+'</option>').join('')+'</select></label><label>'+esc(t('begin'))+'<input id="tp110ReplanDate" class="field" type="date" min="'+dayKey(new Date())+'" value="'+esc(values.startDate)+'" onchange="TrainPilot110.previewReplan()"></label></div><div data-tp110-preview></div><footer class="tp119-replan-actions"><button type="button" class="btn block" data-tp110-apply disabled onclick="TrainPilot110.applyReplan()">'+esc(t('apply'))+'</button><p data-tp110-replan-status class="tp110-feedback" role="status"></p></footer></main>';
  }
  function previewReplan(){
   const rows=scheduled(),logs=history(),options=replanInputs(),root=document.querySelector('[data-tp110-preview]'),button=document.querySelector('[data-tp110-apply]');if(!root)return;
@@ -14997,7 +14998,41 @@ window.addEventListener?.('DOMContentLoaded',function(){
   rows.push(row(t('pain'),painful.length?painful.join('; '):t('noPain'),painful.length?t('painNote')+' '+effect(-12):''));
   return rows.join('')+'<p class="small muted tp110-score-note">'+esc(t('scoreNote'))+'</p>';
  }
+ let reasonsHost=null,reasonsTrigger=null,reasonsBackground=[];
+ function closeCoachReasons(restoreFocus=true){
+  if(!reasonsHost)return false;
+  reasonsHost.remove();reasonsHost=null;
+  for(const [node,inert] of reasonsBackground)if(node.isConnected)node.inert=inert;reasonsBackground=[];
+  const trigger=reasonsTrigger?.isConnected?reasonsTrigger:document.querySelector('.tp153-coach-metric:not(.tp153-coach-next)');reasonsTrigger=null;
+  trigger?.setAttribute('aria-expanded','false');if(restoreFocus)trigger?.focus({preventScroll:true});return true;
+ }
+ function openCoachReasons(trigger){
+  if(reasonsHost)return true;
+  const build=()=>{
+   const plan={readiness:rf220Readiness()},r=plan.readiness,score=r.score==null?'—':tp149FormatNumber(r.score)+'/100';
+   trigger?.querySelector('strong')?.replaceChildren(document.createTextNode(score));
+   return '<div class="tp151-day-title"><h2 id="tp119ReadinessTitle">'+esc(tp149T('coach.readiness'))+'</h2></div><p class="tp119-readiness-score"><strong>'+esc(score)+'</strong></p><div class="rf233-signals">'+coachReasonsHtml(plan)+'</div><button type="button" class="btn secondary block" onclick="go(\'health\')">'+esc(tp149T('coach.openHealth'))+'</button>';
+  };
+  const html=window.tp7WithHistorySnapshot?window.tp7WithHistorySnapshot(build):build();
+  reasonsTrigger=trigger;trigger?.setAttribute('aria-expanded','true');
+  reasonsHost=document.createElement('div');reasonsHost.id='tp119CoachReasons';reasonsHost.className='tp108-day-backdrop';
+  reasonsHost.innerHTML='<section class="tp108-day-dialog" role="dialog" aria-modal="true" aria-labelledby="tp119ReadinessTitle" tabindex="-1"><button type="button" class="tp108-day-close tp-modal-close" aria-label="'+esc(tp149T('common.close'))+'" onclick="TrainPilot110.closeCoachReasons()">×</button><div class="tp108-day-content tp119-readiness-content">'+html+'</div></section>';
+  reasonsHost.addEventListener('click',event=>{if(event.target===reasonsHost)closeCoachReasons();});
+  reasonsHost.addEventListener('keydown',event=>{
+   if(document.querySelector('#tpTemporalPicker,#tp2628Dialog'))return;
+   if(event.key==='Escape'){event.preventDefault();event.stopPropagation();closeCoachReasons();return;}
+   if(event.key==='Tab'){
+    const nodes=[...reasonsHost.querySelectorAll('button,[tabindex="0"]')].filter(n=>!n.disabled&&n.getClientRects().length),first=nodes[0],last=nodes.at(-1),active=document.activeElement;
+    if(event.shiftKey&&(active===first||active===reasonsHost.querySelector('section'))){event.preventDefault();last?.focus();}
+    else if(!event.shiftKey&&(active===last||active===reasonsHost.querySelector('section'))){event.preventDefault();first?.focus();}
+   }
+  },true);
+  document.body.appendChild(reasonsHost);
+  reasonsBackground=[document.getElementById('app'),document.getElementById('tp155R4PanelHost')].filter(Boolean).map(node=>[node,node.inert]);reasonsBackground.forEach(([node])=>{node.inert=true;});
+  reasonsHost.querySelector('section').focus({preventScroll:true});return true;
+ }
  function decorate(){
+  if(reasonsHost&&!document.querySelector('#tp155R4PanelHost[data-panel="coach"]'))closeCoachReasons(false);
   const settingsRoot=document.querySelector('#tp155R4PanelHost[data-panel="settings"] main');
 
 
@@ -15009,8 +15044,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
  async function updateAppearance(){
   try{const bridge=nativeFeedback();if(bridge?.appearance){const result=await bridge.appearance();const changed=document.documentElement.classList.contains('tp110-large-text')!==(Number(result.fontScale)>1.05);document.documentElement.classList.toggle('tp110-large-text',Number(result.fontScale)>1.05);if(changed)window.dispatchEvent(new Event('resize'));}}catch(_){}
  }
- window.TrainPilot110={t,status,empty,goalMiniHtml,goalsHtml,saveGoals,replanHtml,previewReplan,applyReplan,intervalHtml,saveInterval,startInterval,tickInterval,paintInterval,primeAudio,coachReasonsHtml,decorate,updateAppearance,resetQuick(){state.tp155QuickQuery='';state.tp155QuickGroup='all';state.tp155QuickGear='all';window.tp155R4RefreshPanel?.();}};
+ window.TrainPilot110={t,status,empty,goalMiniHtml,goalsHtml,saveGoals,replanHtml,previewReplan,applyReplan,intervalHtml,saveInterval,startInterval,tickInterval,paintInterval,primeAudio,coachReasonsHtml,openCoachReasons,closeCoachReasons,decorate,updateAppearance,resetQuick(){state.tp155QuickQuery='';state.tp155QuickGroup='all';state.tp155QuickGear='all';window.tp155R4RefreshPanel?.();}};
  window.addEventListener?.('DOMContentLoaded',()=>{
+  const baseGo=go;go=function(){closeCoachReasons(false);return baseGo.apply(this,arguments);};window.go=go;
+  const baseClose=window.tp155R4ClosePanel;window.tp155R4ClosePanel=function(){closeCoachReasons(false);return baseClose.apply(this,arguments);};
+  const baseBack=window.TrainPilotAndroidBack;window.TrainPilotAndroidBack=function(){if(reasonsHost&&!document.querySelector('#tpTemporalPicker,#tp2628Dialog'))return closeCoachReasons();return baseBack.apply(this,arguments);};
   const baseRender=render;render=function(){const result=baseRender.apply(this,arguments);decorate();return result;};window.render=render;
   const baseRefresh=window.tp155R4RefreshPanel;window.tp155R4RefreshPanel=function(){const result=baseRefresh.apply(this,arguments);decorate();return result;};
   document.addEventListener('input',event=>{const form=event.target.closest?.('.tp110-form');if(form)status(form.querySelector('[data-tp110-status],[data-tp110-interval-status]'),t('dirty'),'pending');});

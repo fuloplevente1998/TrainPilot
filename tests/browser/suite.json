@@ -242,5 +242,9 @@
   {
     "file": "tests/browser/calendar-day-dialog-108.cjs",
     "estimatedSeconds": 15
+  },
+  {
+    "file": "tests/browser/calendar-coach-119.cjs",
+    "estimatedSeconds": 20
   }
 ]

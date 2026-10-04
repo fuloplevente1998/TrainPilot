@@ -19,6 +19,17 @@ html body #app #rf223Today .tp110-goal-mini:focus-visible{outline:2px solid var(
 .tp110-replan-link::after{content:"";position:absolute;inset:-12px -4px}
 .tp110-replan-row{display:grid;gap:4px;padding:10px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
 .tp110-replan-row small{color:var(--muted)}
+html body #tp155R4PanelHost[data-panel="replan"] .tp155-r4-panel{display:flex!important;flex-direction:column;overflow:hidden!important;max-height:calc(100% - 2px)!important}
+html body #tp155R4PanelHost[data-panel="replan"] .tp106-builder-header{position:relative;flex:none;top:auto;margin-top:0}
+html body #tp155R4PanelHost[data-panel="replan"] .tp155-r4-panel-content{min-height:0;overflow:auto;overscroll-behavior:contain}
+html body #tp155R4PanelHost[data-panel="replan"] .tp106-builder-header .tp155-r4-panel-close{flex:0 0 36px!important;width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;max-width:36px!important;max-height:36px!important;padding:0!important;font-size:22px!important}
+.tp119-replan-actions{position:sticky;bottom:0;z-index:3;padding:10px 0 0;background:var(--card);border-top:1px solid var(--line)}
+.tp119-replan-actions .tp110-feedback{margin:6px 0;min-height:1.3em}
+.tp119-readiness-score{margin:0 0 12px;color:var(--accent2);font-size:24px}
+.tp119-readiness-content .rf233-signals{display:grid;gap:10px}
+.tp119-readiness-content .tp110-signal{padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--card2)}
+.tp119-readiness-content .tp110-score-note{grid-column:1/-1;margin:2px 0}
+.tp119-readiness-content>.btn{margin-top:12px;min-height:44px;white-space:normal}
 .tp110-interval>summary{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;list-style:none;padding:9px 0}
 .tp110-interval>summary::-webkit-details-marker{display:none}
 .tp110-checks{display:flex;flex-wrap:wrap;gap:12px;margin:10px 0}
