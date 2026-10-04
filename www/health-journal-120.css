@@ -40,3 +40,12 @@ html body #app main.rf221-home>.tp120-home-goals>.tp120-goal-progress{white-spac
 .tp120-raw>summary::after{content:"";width:8px;height:8px;border-right:3px solid var(--accent);border-bottom:3px solid var(--accent);transform:rotate(-45deg);margin-right:5px;transition:transform .2s}
 .tp120-raw[open]>summary::after{transform:rotate(45deg)}
 @media(prefers-reduced-motion:reduce){.tp120-raw>summary::after{transition:none}}
+
+/* Provenance uses the same subtle disclosure arrow as journal settings. */
+.tp120-origin-details{min-width:0;color:var(--muted);font-size:12px}
+.tp120-origin-details>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;min-height:32px;gap:10px}
+.tp120-origin-details>summary::-webkit-details-marker{display:none}
+.tp120-origin-details>summary::after{content:"";width:7px;height:7px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(-45deg);margin-right:5px;transition:transform .2s}
+.tp120-origin-details[open]>summary::after{transform:rotate(45deg)}
+.tp120-origin-details>small{display:block;overflow-wrap:anywhere}
+@media(prefers-reduced-motion:reduce){.tp120-origin-details>summary::after{transition:none}}

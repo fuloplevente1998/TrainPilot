@@ -21,6 +21,24 @@ public class HealthJournalStoreTest {
         return new JSONObject().put("channel",HealthJournalStore.HC).put("source","com.samsung.android.app.shealth").put("type","StepsRecord").put("recordId",id).put("lastModifiedMs",modified).put("startMs",now).put("endMs",now+1000).put("day",HealthJournalStore.day(now)).put("data",new JSONObject().put("value",count).put("unit","steps"));
     }
     private JSONObject page()throws Exception{return store.page("2020-01-01","2030-01-01","","",0,0,50);}
+    @Test public void retirementStopsHiddenWatchPreferencesWithoutDeletingHistory()throws Exception {
+        String day=HealthJournalStore.day(now);
+        store.initialize(new JSONObject().put("days",new JSONObject().put(day,new JSONObject().put("steps",6))));
+        store.healthDay(day,new JSONObject().put("steps",2281),store.generation());
+        store.setPreferences(new JSONObject().put("logWatchSteps",true).put("bleBackground",true).put("hcBackground",true).put("hcDailySource","com.sec.android.app.shealth").put("primary",HealthJournalStore.BLE));
+        store.watchSteps("watch-id","GT4Pro+",20,now,now+20,store.generation());
+        store.importRecords(new JSONArray().put(record("hc",now,12)),store.generation());
+        int records=store.exportSnapshot().getJSONArray("records").length();store.retireWatchUi();long epoch=store.generation();store.retireWatchUi();
+        assertEquals(epoch,store.generation());assertFalse(store.preferences().getBoolean("logWatchSteps"));assertFalse(store.preferences().getBoolean("bleBackground"));assertTrue(store.preferences().getBoolean("hcBackground"));assertEquals("auto",store.preferences().getString("hcDailySource"));
+        assertEquals(records,store.exportSnapshot().getJSONArray("records").length());assertEquals(2281,store.projection().getJSONObject("days").getJSONObject(day).getLong("steps"));
+        JSONObject visible=store.page("2020-01-01","2030-01-01","journal","",0,0,30);assertEquals(1,visible.getJSONArray("days").length());assertEquals(1,visible.getJSONArray("records").length());assertEquals(HealthJournalStore.HC,visible.getJSONArray("days").getJSONObject(0).getString("channel"));
+        store.setPreferences(new JSONObject().put("hcDailySource","priority"));store.retireWatchUi();assertEquals("priority",store.preferences().getString("hcDailySource"));
+    }
+    @Test public void cleanJournalKeepsLegacyDaysAndNeverUsesRetiredWatchFallback()throws Exception {
+        String day=HealthJournalStore.day(now);store.initialize(new JSONObject().put("days",new JSONObject().put(day,new JSONObject().put("steps",42))));
+        store.setPreferences(new JSONObject().put("logWatchSteps",true));store.watchSteps("watch-id","GT4Pro+",20,now+86400000,now+86400000,store.generation());store.retireWatchUi();
+        assertEquals(42,store.page("2020-01-01","2030-01-01","journal","",0,0,30).getJSONArray("days").getJSONObject(0).getLong("steps"));assertFalse(store.projection().getJSONObject("days").has(HealthJournalStore.day(now+86400000)));
+    }
     @Test public void migrationIsOnceAndSurvivesRestart()throws Exception {
         String day=HealthJournalStore.day(now);JSONObject legacy=new JSONObject().put("version",1).put("days",new JSONObject().put(day,new JSONObject().put("steps",0)));
         store.initialize(legacy);store.initialize(new JSONObject().put("days",new JSONObject().put(day,new JSONObject().put("steps",900))));

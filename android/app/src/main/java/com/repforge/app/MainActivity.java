@@ -50,7 +50,8 @@ public class MainActivity extends BridgeActivity {
     @Override public void onResume() {
         super.onResume();
         applySystemTextSize();
-        HealthBackgroundService.resume(this);
+        HealthBackgroundService.stop(this);
+        try { HealthJournalStore.get(this).retireWatchUi(); } catch (Exception ignored) {}
         try { HealthBackgroundJob.schedule(this); } catch (Exception ignored) {}
     }
 

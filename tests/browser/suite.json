@@ -1,7 +1,7 @@
 [
   {
     "file": "tests/browser/ble-discovery-111.cjs",
-    "estimatedSeconds": 5
+    "estimatedSeconds": 7
   },
   {
     "file": "tests/browser/features-110.cjs",
@@ -233,7 +233,7 @@
   },
   {
     "file": "tests/browser/ble-reconnect-114.cjs",
-    "estimatedSeconds": 35
+    "estimatedSeconds": 7
   },
   {
     "file": "tests/browser/health-journal-120.cjs",

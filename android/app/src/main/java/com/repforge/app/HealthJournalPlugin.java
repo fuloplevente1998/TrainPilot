@@ -15,7 +15,7 @@ public class HealthJournalPlugin extends Plugin {
         getBridge().execute(() -> { try { call.resolve(JSObject.fromJSONObject(action.run())); }
             catch(Exception e) { call.reject("Health journal: "+e.getMessage(),"HEALTH_JOURNAL_FAILED",e); } });
     }
-    @PluginMethod public void initialize(PluginCall call) { run(call,()->store().initialize(call.getObject("legacy",new JSObject()))); }
+    @PluginMethod public void initialize(PluginCall call) { run(call,()->{store().retireWatchUi();HealthBackgroundService.stop(getContext());return store().initialize(call.getObject("legacy",new JSObject()));}); }
     @PluginMethod public void getProjection(PluginCall call) { run(call,()->store().projection()); }
     @PluginMethod public void getDirtyDays(PluginCall call) { run(call,()->new JSONObject().put("days",store().dirtyDays())); }
     @PluginMethod public void setPreferences(PluginCall call) { run(call,()->{store().setPreferences(call.getObject("preferences",new JSObject()));return store().projection();}); }
@@ -28,8 +28,8 @@ public class HealthJournalPlugin extends Plugin {
         return store().page(call.getString("from",""),call.getString("to",""),channel,source,call.getLong("before",0L),call.getLong("beforeTime",0L),call.getInt("limit",30)).put("sourceSummaryWarning",warning);
     }); }
     @PluginMethod public void exportSnapshot(PluginCall call) { run(call,()->store().exportSnapshot()); }
-    @PluginMethod public void prepareRestore(PluginCall call) { run(call,()->{HealthBackgroundService.stop(getContext());((android.app.job.JobScheduler)getContext().getSystemService(android.content.Context.JOB_SCHEDULER_SERVICE)).cancel(HealthBackgroundJob.ID);try{return new JSONObject().put("token",store().prepareRestore(call.getObject("snapshot",new JSObject())));}catch(Exception e){if(foreground){HealthBackgroundService.resume(getContext());HealthBackgroundJob.schedule(getContext());}throw e;}}); }
+    @PluginMethod public void prepareRestore(PluginCall call) { run(call,()->{HealthBackgroundService.stop(getContext());((android.app.job.JobScheduler)getContext().getSystemService(android.content.Context.JOB_SCHEDULER_SERVICE)).cancel(HealthBackgroundJob.ID);try{return new JSONObject().put("token",store().prepareRestore(call.getObject("snapshot",new JSObject())));}catch(Exception e){if(foreground){HealthBackgroundService.stop(getContext());HealthBackgroundJob.schedule(getContext());}throw e;}}); }
     @PluginMethod public void installRestore(PluginCall call) { run(call,()->{store().installRestore(call.getString("token",""));return new JSONObject();}); }
-    @PluginMethod public void finishRestore(PluginCall call) { run(call,()->{store().finishRestore(call.getString("token",""),call.getBoolean("commit",false));if(foreground){HealthBackgroundService.resume(getContext());HealthBackgroundJob.schedule(getContext());}return new JSONObject();}); }
+    @PluginMethod public void finishRestore(PluginCall call) { run(call,()->{store().finishRestore(call.getString("token",""),call.getBoolean("commit",false));if(foreground){HealthBackgroundService.stop(getContext());HealthBackgroundJob.schedule(getContext());}return new JSONObject();}); }
     @PluginMethod public void pendingRestore(PluginCall call) { run(call,()->new JSONObject().put("token",store().pendingRestore())); }
 }
