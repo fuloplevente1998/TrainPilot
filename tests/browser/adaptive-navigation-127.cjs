@@ -21,6 +21,10 @@ try{
  return g;
  }
  await geometry('bottom');
+ // The Hungarian equipment label must also fit the narrow landscape filter rail.
+ await page.setViewportSize({width:640,height:360});await settle();await page.evaluate(()=>muscleLibrary());await settle();
+ assert.ok(await page.locator('.tp155-library-filters').evaluate(e=>e.scrollWidth<=e.clientWidth+3),'Hungarian landscape library filters stay inside their rail');
+ await page.evaluate(()=>tp155R4ClosePanel(false));await page.setViewportSize({width:393,height:873});await settle();
  for(const width of [320,360,393,412]){await page.setViewportSize({width,height:873});await geometry('bottom');}
  await page.setViewportSize({width:393,height:873});
  // Layout changes keep actual DOM nodes, open lazy disclosures, and an unsaved input.
