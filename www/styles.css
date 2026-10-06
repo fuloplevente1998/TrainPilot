@@ -431,3 +431,17 @@ html body :is(#app,#tp155R4PanelHost) .cal-cell>b{font-size:14px!important;line-
  html body #tp155R4PanelHost[data-panel="calendar"] .cal-cell{padding-inline:2px!important}
  html body :is(#app,#tp155R4PanelHost) .cal-cell>span{font-size:14px!important;flex-shrink:0}
 }
+
+/* #135 date actions reuse the existing red close/delete and green save colors. */
+html body #tpTemporalPicker :is(.tp-modal-close,.tp-temporal-actions>.btn[onclick="rf260TemporalCommit('')"]),
+html body #app .tp155-journal-actions>.btn[onclick*="Clear"],
+html body .rf263-date-dialog :is(.rf263-date-heading>.btn[onclick="rf263CloseDate()"],.rf263-date-actions>.btn[onclick="rf263PickDate('')"]){background:#472529!important;border-color:#744048!important;color:#ffd9dc!important;box-shadow:none!important}
+html body #tpTemporalPicker .tp-temporal-actions>.btn.secondary[onclick^="rf260TemporalChooseDate("],
+html body #app .tp155-journal-actions>.btn:last-child,
+html body .rf263-date-dialog .rf263-date-actions>.btn:last-child{background:#274b38!important;border-color:#3f7657!important;color:#dff7e8!important;box-shadow:none!important}
+html body #tpTemporalPicker :is(.tp-modal-close,.tp-temporal-actions>.btn[onclick="rf260TemporalCommit('')"]):active,
+html body #app .tp155-journal-actions>.btn[onclick*="Clear"]:active,
+html body .rf263-date-dialog :is(.rf263-date-heading>.btn[onclick="rf263CloseDate()"],.rf263-date-actions>.btn[onclick="rf263PickDate('')"]):active{background:#552b31!important}
+html body #tpTemporalPicker .tp-temporal-actions>.btn.secondary[onclick^="rf260TemporalChooseDate("]:active,
+html body #app .tp155-journal-actions>.btn:last-child:active,
+html body .rf263-date-dialog .rf263-date-actions>.btn:last-child:active{background:#39a866!important;border-color:#66d58d!important;color:#fff!important}
