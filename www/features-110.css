@@ -20,6 +20,7 @@ html body #app #rf223Today .tp110-goal-mini:focus-visible{outline:2px solid var(
 /* Reserve space for the visible action without clipping the fixed phone planner. */
 @media(min-height:641px) and (max-height:800px){
  html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .cal-cell{min-height:28px!important;flex-direction:row;align-items:center;gap:2px}
+ html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .tp151-calendar-frame{padding-block:5px!important}
 }
 @media(min-height:801px) and (max-height:900px){
  html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .cal-cell{min-height:36px!important;flex-direction:row;align-items:center;gap:2px}
