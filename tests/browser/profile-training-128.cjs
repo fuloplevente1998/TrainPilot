@@ -72,15 +72,18 @@ const server=http.createServer((req,res)=>{const f=path.resolve(root,'.'+(new UR
   assert.equal(trends.body.action,'variation');assert.equal(trends.body.autoApply,false);assert.equal(trends.body.nextVariation.id,'decline-pushup');assert.equal(trends.recovery.action,'hold');
 
   const migration=await page.evaluate(()=>{
-   const before=JSON.stringify([activeProgram(),history()]);tp128BuildPreview({...window.__profile128,goal:'muscle'},'home-level2');
+   const before=JSON.stringify([activeProgram(),history()]);tp128BuildPreview({...window.__profile128,goal:'muscle',experience:'intermediate',minutes:90},'home-level2');
    const previewOnly=before===JSON.stringify([activeProgram(),history()]);
    const oldSet=db.set;db.set=function(k,v){if(k==='settings')throw Error('quota');return oldSet(k,v)};acceptPersonalProgram();db.set=oldSet;
    const rolledBack=before===JSON.stringify([activeProgram(),history()]);
-   tp128BuildPreview({...window.__profile128,goal:'muscle'},'home-level2');acceptPersonalProgram();
+   tp128BuildPreview({...window.__profile128,goal:'muscle',experience:'intermediate',minutes:90},'home-level2');acceptPersonalProgram();
    const backup=makeBackup(),roundtrip=validateBackup(JSON.parse(JSON.stringify(backup))),sync=syncData();
    return {previewOnly,rolledBack,p:activeProgram(),same:JSON.stringify(roundtrip.programs)===JSON.stringify(backup.programs),syncSame:JSON.stringify(sync.programs)===JSON.stringify(backup.programs)};
   });
-  assert.equal(migration.previewOnly,true);assert.equal(migration.rolledBack,true);assert.equal(migration.p.sourceTemplateId,'home-level2');assert.equal(migration.same,true);assert.equal(migration.syncSame,true);
+  assert.equal(migration.previewOnly,true);assert.equal(migration.rolledBack,true);assert.equal(migration.p.sourceTemplateId,'home-level2');assert.equal(migration.same,true);assert.equal(migration.syncSame,true);assert.equal(migration.p.prescriptions.crunch.variation,'weighted');
+  await page.evaluate(()=>startWorkout('A',null,activeProgramId()));await page.waitForFunction(()=>!!state.session);
+  const weightedSession=await page.evaluate(()=>{const e=state.session.exercises.find(e=>e.id==='side-plank');const out={loadType:e?.loadType,variation:e?.prescription?.variation,sets:e?.sets?.length};state.session=null;db.set('draft',null);go('home');return out});
+  assert.equal(weightedSession.loadType,'single_dumbbell');assert.equal(weightedSession.variation,'weighted');assert.equal(weightedSession.sets,3);
 
   for(const width of [320,360,393,412])for(const lang of ['hu','en','de','ro']){
    await page.setViewportSize({width,height:873});await page.evaluate(lang=>{tp3ClosePlannerPanel(false);db.set('language',lang);go('plan')},lang);
