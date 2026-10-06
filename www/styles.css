@@ -426,3 +426,8 @@ html body :is(#app,#tp155R4PanelHost) .calendar-grid{grid-auto-rows:1fr;grid-tem
 html body :is(#app,#tp155R4PanelHost) .cal-cell{min-width:0;box-sizing:border-box}
 html body :is(#app,#tp155R4PanelHost) .cal-cell>b{font-size:14px!important;line-height:1.1;min-width:0;white-space:nowrap}
 @media(max-width:360px){html body :is(#app,#tp155R4PanelHost) .cal-cell>b{font-size:12px!important}}
+/* Reserve room for a full marker beside two-digit dates on narrow phones. */
+@media(max-width:360px){
+ html body #tp155R4PanelHost[data-panel="calendar"] .cal-cell{padding-inline:2px!important}
+ html body :is(#app,#tp155R4PanelHost) .cal-cell>span{font-size:14px!important;flex-shrink:0}
+}

@@ -11,7 +11,7 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{
   browser=await chromium.launch({args:['--no-sandbox']});
   const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU',timezoneId:'Europe/Budapest'}),errors=[];
   page.on('pageerror',e=>errors.push(String(e)));await page.addInitScript(()=>localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped')));
-  await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>TrainPilotBoot.finished);fs.mkdirSync('ui-evidence',{recursive:true});
+  await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>TrainPilotBoot.finished);fs.mkdirSync('ui-evidence',{recursive:true});await page.evaluate(()=>document.fonts.ready);
   const initial=await page.evaluate(()=>{
    const p={...tp128Template('home-basic'),id:'calendar-135',builtin:false,name:'My calendar program'};
    p.days.push({...JSON.parse(JSON.stringify(p.days[0])),id:'C',name:'Long custom evening workout'});db.set('programs',[p]);db.set('activeProgramId',p.id);
@@ -22,7 +22,7 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{
    await page.setViewportSize({width,height});await page.evaluate(({lang,month})=>{tp155R4ClosePanel(false);db.set('language',lang);rf200SetTheme(lang==='hu'?'yellow':'classicBlue');state.calendarMonth=month;state.rf2211CalendarDate='';go('calendar');},{lang,month});
    const audit=await page.locator('.calendar-grid').evaluate(grid=>{
     const cells=[...grid.children],marks=[];
-    for(const cell of cells){const badge=cell.querySelector('b');if(!badge)continue;const date=cell.querySelector('span'),a=date.getBoundingClientRect(),b=badge.getBoundingClientRect(),c=cell.getBoundingClientRect(),range=document.createRange();range.selectNodeContents(badge);const glyph=range.getBoundingClientRect();marks.push({label:badge.textContent,size:parseFloat(getComputedStyle(badge).fontSize),fits:b.left>=c.left&&b.right<=c.right+1&&b.top>=c.top&&b.bottom<=c.bottom+1,overlap:Math.min(a.right,b.right)-Math.max(a.left,b.left)>1&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>1,readable:badge.textContent.length>1||glyph.width<=b.width+1});}
+    for(const cell of cells){const badge=cell.querySelector('b');if(!badge)continue;const date=cell.querySelector('span'),a=date.getBoundingClientRect(),b=badge.getBoundingClientRect(),c=cell.getBoundingClientRect(),range=document.createRange();range.selectNodeContents(badge);const glyph=range.getBoundingClientRect();marks.push({label:badge.textContent,width:b.width,glyphWidth:glyph.width,size:parseFloat(getComputedStyle(badge).fontSize),fits:b.left>=c.left&&b.right<=c.right+1&&b.top>=c.top&&b.bottom<=c.bottom+1,overlap:Math.min(a.right,b.right)-Math.max(a.left,b.left)>1&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>1,readable:badge.textContent.length>1||glyph.width<=b.width+1});}
     return {heights:cells.map(c=>c.getBoundingClientRect().height),rows:Math.ceil(cells.length/7),marks,overflow:grid.scrollWidth-grid.clientWidth,planner:document.querySelector('#tp155R4PanelHost .rf2211-planner').getBoundingClientRect().bottom,frame:document.querySelector('#tp155R4PanelHost .tp155-r4-panel').getBoundingClientRect().bottom};
    });
    const label=width+'/'+height+'/'+lang+'/'+month;
