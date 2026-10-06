@@ -76,11 +76,12 @@ const {chromium}=require('playwright');
   await page.evaluate(()=>{const k=rf240DayKey(new Date());rf240Ledger=()=>({days:{[k]:{averageHeartRate:75,restingHeartRate:0,steps:10523}}});TrainPilot168Health.decorate()});await page.waitForTimeout(30);
   const resting=await page.locator('.tp168-pulse-grid').innerText();assert.doesNotMatch(resting,/0\s*bpm/i,'0 bpm must never be presented as a real resting heart-rate measurement');
 
-  const matte=await page.evaluate(()=>({today:getComputedStyle(document.querySelector('.tp168-today-card')).boxShadow,nav:getComputedStyle(document.querySelector('.top.tp154-nav-grid .active')).boxShadow,family:document.documentElement.dataset.tpThemeFamily}));
+  const matte=await page.evaluate(()=>({today:getComputedStyle(document.querySelector('.tp168-today-card')).boxShadow,nav:getComputedStyle(document.querySelector('.top.tp154-nav-grid .tp137-selection')).boxShadow,family:document.documentElement.dataset.tpThemeFamily}));
   assert.equal(matte.family,'basic');assert.equal(matte.today,'none');assert.equal(matte.nav,'none');
   await page.evaluate(()=>rf200SetTheme('green'));await page.waitForTimeout(60);
-  const vivid=await page.evaluate(()=>({today:getComputedStyle(document.querySelector('.tp168-today-card')).boxShadow,nav:getComputedStyle(document.querySelector('.top.tp154-nav-grid .active')).boxShadow,family:document.documentElement.dataset.tpThemeFamily}));
+  const vivid=await page.evaluate(()=>({today:getComputedStyle(document.querySelector('.tp168-today-card')).boxShadow,nav:getComputedStyle(document.querySelector('.top.tp154-nav-grid .tp137-selection')).boxShadow,family:document.documentElement.dataset.tpThemeFamily}));
   assert.equal(vivid.family,'vivid');assert.notEqual(vivid.today,'none');assert.notEqual(vivid.nav,'none');
+  assert.equal(await page.locator('.top.tp154-nav-grid .tp137-selected').evaluate(e=>getComputedStyle(e).boxShadow),'none','Only the moving marker paints the active navigation glow');
 
   assert.equal(await page.locator('main.rf263-health>details.tp168-more-panel').count(),1,'More Health panel missing');
   assert.equal(await page.locator('main.rf263-health>details.tp155-health-bottom-panel').count(),2,'only More Health and Health Connect should remain as bottom panels');

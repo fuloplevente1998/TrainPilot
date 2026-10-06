@@ -26,7 +26,12 @@ const root=path.resolve('www'),server=http.createServer((q,r)=>{const url=new UR
  // existing behavior instead of being replaced with fake tabs.
  await p.evaluate(()=>go('home'));await settled();await p.locator('.tp154-coach-action').click();await settled();assert.equal(await p.locator('#tp155R4PanelHost[data-panel="coach"]').count(),1);await p.locator('.tp154-coach-action').click();await settled();assert.equal(await p.locator('#tp155R4PanelHost').count(),0);
  await p.emulateMedia({reducedMotion:'reduce'});await p.evaluate(()=>go('history'));await tabs.nth(1).evaluate(b=>b.click());assert.equal(await p.locator('.tp137-selection').evaluateAll(es=>es.flatMap(e=>e.getAnimations()).length),0);for(const a of await audit())assert.ok(a.delta<1,JSON.stringify(a));
- await p.emulateMedia({reducedMotion:'no-preference'});await tabs.nth(2).evaluate(b=>b.click());await p.setViewportSize({width:412,height:915});for(const a of await audit())assert.ok(a.delta<1,'resize settles immediately '+JSON.stringify(a));
+ await p.emulateMedia({reducedMotion:'no-preference'});await tabs.nth(2).evaluate(b=>b.click());
+ // setViewportSize can return before Chromium dispatches resize. Observe the
+ // actual event, without waiting for the selection animation to finish.
+ await p.evaluate(()=>{window.tp137ResizeObserved=new Promise(resolve=>window.addEventListener('resize',()=>resolve(true),{once:true}));});
+ await p.setViewportSize({width:412,height:915});await p.evaluate(()=>tp137ResizeObserved);
+ for(const a of await audit())assert.ok(a.delta<1,'resize event settles immediately '+JSON.stringify(a));
  // A long Journal must not create one animation/compositor surface per row.
  // This reproduces the phone lag structurally, without timing thresholds that
  // depend on the CI runner or claiming desktop measurements are Android FPS.
