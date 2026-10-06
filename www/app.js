@@ -7091,11 +7091,15 @@ var tp149ProgramMeta=function tp149ProgramMeta(program,field,lang=rf212Lang()){
 var tp149ProgramDayName=function tp149ProgramDayName(program,day,lang=rf212Lang()){
  if(!program||!day)return '';
  const templateId=program.sourceTemplateId||program.id;
- if(['home-basic','home-level2'].includes(templateId)&&(!day.name||day.name===day.id)){
+ if(['profile-template','coach'].includes(program.sourceType)&&['home-basic','home-level2'].includes(templateId)&&(!day.name||day.name===day.id)){
   const labels=templateId==='home-basic'?['Alap','Basic','Basis','Bază']:['2. szint','Level 2','Stufe 2','Nivel 2'];
   return labels[tp149LangIndex(lang)]+' '+String(day.id||'');
  }
- if(program.generated===true)return tp149PlannerRow('generatedDay',tp149GeneratedDayKey(program,day),lang,day.name||day.id||'');
+ if(program.generated===true){
+  const key=tp149GeneratedDayKey(program,day),defaults=[day.id,...['hu','en','de','ro'].map(l=>tp149PlannerRow('generatedDay',key,l,day.id||''))];
+  if(day.name&&!defaults.includes(day.name))return String(day.name);
+  return tp149PlannerRow('generatedDay',key,lang,day.name||day.id||'');
+ }
  if(program.builtin!==true)return String(day.name||day.id||'');
  const row=TP149_PROGRAM_ROWS[program.id]?.days?.[day.id],idx=tp149LangIndex(lang);
  return row?.[idx]||row?.[1]||String(day.name||day.id||'');
@@ -7797,7 +7801,8 @@ if(typeof rf148PlanDayHeading==='function'){
  rf148PlanDayHeading=function(program,day){
   const badge=String(day?.id||'').trim(),dayName=tp149ProgramDayName(program,day),templateId=program?.sourceTemplateId||program?.id;
   const role=tp124DayWithoutBadge(dayName,badge),standard=['home-basic','home-level2'].includes(templateId)&&(!day?.name||day.name===day.id);
-  const base=standard?role:tp149ProgramMeta(program,'name'),extra=!standard&&role&&role!==base?' · '+role:'';
+  const level=(templateId==='home-basic'?['Alap','Basic','Basis','Bază']:['2. szint','Level 2','Stufe 2','Nivel 2'])[tp149LangIndex(rf212Lang())];
+  const base=standard?(role||level):tp149ProgramMeta(program,'name'),extra=!standard&&role&&role!==base?' · '+role:'';
   return '<div class="tp146-day-headingline"><h2 class="tp146-day-title">'+esc(base+extra)+(badge?' <span class="tp146-day-letter" aria-label="'+esc(badge)+'">'+esc(badge)+'</span>':'')+'</h2></div>';
  };
 }

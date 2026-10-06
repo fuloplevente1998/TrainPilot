@@ -21,7 +21,7 @@ const server=http.createServer((req,res)=>{
    const p=generatePersonalProgram({...profile,templateId:'home-basic'});p.id='personal-124';
    const own={...JSON.parse(JSON.stringify(p)),id:'own-124',name:'My A/B – Evening routine'};
    db.set('programs',[template,advanced,p,own]);db.set('activeProgramId',p.id);
-   db.set('history',[{id:'history-124',programId:p.id,dayId:'B',workout:'B',started:'2026-10-05T16:00:00Z',finished:'2026-10-05T16:45:00Z',exercises:[{...byId('db-floor-press'),sets:[{done:true,reps:10,weight:5}]}]}]);
+   db.set('history',[{id:'history-124',healthStableId:'tpw_'+rf250Hash('history-124'),programId:p.id,dayId:'B',workout:'B',started:'2026-10-05T16:00:00Z',finished:'2026-10-05T16:45:00Z',exercises:[{...byId('db-floor-press'),sets:[{done:true,reps:10,weight:5}]}]}]);
    db.set('scheduled',[{...makeScheduleItem(p,'2026-10-08','18:00',45,'B'),id:'schedule-124'}]);
    return {programs:programs(),history:history(),scheduled:scheduled(),ownName:own.name};
   });
@@ -80,7 +80,7 @@ const server=http.createServer((req,res)=>{
    const journal=page.locator('.tp3-combined-history');await journal.locator(':scope>summary').click();await assertJoined(journal,':scope>.tp3-combined-history-body');
    const frames=await journal.evaluate(d=>{const head=getComputedStyle(d.querySelector('.history-head')),summary=getComputedStyle(d.querySelector('.tp3-workout-summary')),metric=getComputedStyle(d.querySelector('.tp3-summary-metrics>div'));return {head:[head.borderWidth,head.borderRadius],summary:[summary.borderWidth,summary.borderRadius,summary.backgroundColor],metric:metric.borderWidth}});
    assert.deepEqual(frames.head,['0px','0px']);assert.deepEqual(frames.summary,['0px','0px','rgba(0, 0, 0, 0)']);assert.notEqual(frames.metric,'0px','independent metric cards kept');
-   const journalExercise=journal.locator('.tp3-history-ex-item').first();await journalExercise.locator(':scope>summary').click();await assertJoined(journalExercise,':scope>.tp3-exercise-inline-editor');
+   const journalExercise=journal.locator('.tp3-history-ex-item').first();await journalExercise.locator(':scope>summary').click();await journalExercise.locator(':scope>.tp3-exercise-inline-editor').waitFor({state:'visible'});await assertJoined(journalExercise,':scope>.tp3-exercise-inline-editor');
    await journalExercise.locator('button[onclick*="tp3CancelExerciseEdit"]').click();
    const health=journal.locator('.rf-history-health-panel'),toggle=health.locator('.rf-history-health-toggle');await toggle.click();assert.equal(await toggle.getAttribute('aria-expanded'),'false');await toggle.click();assert.equal(await toggle.getAttribute('aria-expanded'),'true');
    if(width===393&&lang==='hu')await page.screenshot({path:'ui-evidence/journal-joined-124.png'});
@@ -94,7 +94,7 @@ const server=http.createServer((req,res)=>{
    const before=JSON.stringify(p),title=tp146ProgramDayTitle(p,{id:'',name:''});
    return {name:tp149ProgramMeta(p,'name'),day:tp149ProgramDayName(p,custom),title,unchanged:before===JSON.stringify(p),safe:tp124DayWithoutBadge('Morning A / recovery','B')};
   });
-  assert.equal(labels.name,original.ownName);assert.equal(labels.title,original.ownName);assert.equal(labels.day,'Evening mobility');assert.equal(labels.safe,'Morning A / recovery');assert.equal(labels.unchanged,true);
+  assert.equal(labels.name,original.ownName);assert.equal(labels.title,original.ownName.replace(/\s*[–—]\s*/g,' - '));assert.equal(labels.day,'Evening mobility');assert.equal(labels.safe,'Morning A / recovery');assert.equal(labels.unchanged,true);
   // Theme/backup/profile accordions share the same frame and Health remains the reference.
   await page.evaluate(()=>{tp155R4ClosePanel(false);tp155R4OpenPanel('settings');});
   for(const accordion of await page.locator('#tp155R4PanelHost .tp152-accordion').all()){
