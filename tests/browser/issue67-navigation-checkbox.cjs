@@ -48,7 +48,14 @@ const server=http.createServer((req,res)=>{
   assert.equal(await stats.locator('.tp4-stat-row[open] .stat').count(),4,'load, 1RM, best set and volume remain available');
   assert.equal(await page.evaluate(()=>window.TrainPilotAndroidBack()),true,'Android Back collapses expanded statistics first');
   assert.equal(await stats.locator('.tp4-stat-row[open]').count(),0);
+  // setViewportSize acknowledges the browser message before the page's
+  // resize event/ResizeObserver necessarily settle the moving selection.
+  // Measure the actual resized layout, preserving the strict width assertion.
+  await page.evaluate(()=>{window.__tp67Resized=false;addEventListener('resize',()=>{window.__tp67Resized=true},{once:true})});
   await page.setViewportSize({width:320,height:740});
+  await page.waitForFunction(()=>window.__tp67Resized&&innerWidth===320);
+  await page.evaluate(()=>document.fonts.ready);
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
   assert.equal(await stats.evaluate(el=>el.scrollWidth<=el.clientWidth+1),true,'Statistics fit the 320px phone width');
   await page.setViewportSize({width:393,height:873});
   await page.getByRole('tab',{name:'Fejlődés',exact:true}).click();
