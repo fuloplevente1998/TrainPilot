@@ -6,7 +6,7 @@ const {chromium}=require('playwright');
  await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;
  try{
   browser=await chromium.launch({headless:true,args:['--no-sandbox']});const page=await browser.newPage({viewport:{width:393,height:720},locale:'hu-HU'});const nativeDialogs=[];page.on('dialog',async d=>{nativeDialogs.push({type:d.type(),message:d.message()});await d.dismiss()});
-  await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.TrainPilotUiHotfix?.version==='2630b');await page.waitForTimeout(120);
+  await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.TrainPilotUiHotfix?.version==='2630b');await page.waitForTimeout(120);
   assert.equal(await page.evaluate(()=>window.TrainPilotUiUnify?.version),'2630-main');
   assert.equal(await page.evaluate(()=>window.TrainPilotUiHotfix?.calendarActionsRestored),true);
   assert.equal(await page.evaluate(()=>makeBackup().appVersion),require('../../package.json').version);

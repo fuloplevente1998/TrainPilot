@@ -19,7 +19,7 @@ const expected={
  de:['Start','Training','Kalender','Programme','Protokoll','Gesundheit','Einstellungen','Zu vermeidende Bereiche','Einzelne Übungsausschlüsse','Übungsbibliothek'],
  ro:['Acasă','Antrenament','Calendar','Programe','Jurnal','Sănătate','Setări','Zone de evitat','Excluderi individuale de exerciții','Bibliotecă de exerciții']
 };
-async function boot(page){await page.goto(base());await page.waitForFunction(()=>window.TrainPilotBoot?.finished);await page.waitForTimeout(80)}
+async function boot(page){await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto(base());await page.waitForFunction(()=>window.TrainPilotBoot?.finished);await page.waitForTimeout(80)}
 async function setLang(page,lang){await page.evaluate(lang=>{db.set('language',lang);document.documentElement.lang=rf212Lang();render();},lang);await page.waitForTimeout(80)}
 async function text(page){return (await page.locator('body').innerText()).replace(/\s+/g,' ').trim()}
 async function audit(page,label){

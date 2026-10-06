@@ -19,7 +19,7 @@ function nativeFixture(){
  window.alert=()=>{};
 }
 (async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;try{
- browser=await chromium.launch({headless:true,args:['--no-sandbox']});const context=await browser.newContext({viewport:{width:393,height:873},locale:'hu-HU',timezoneId:'Europe/Budapest'});await context.addInitScript(nativeFixture);const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>TrainPilotBoot.finished);await page.evaluate(()=>TrainPilotHealthJournal.ready());
+ browser=await chromium.launch({headless:true,args:['--no-sandbox']});const context=await browser.newContext({viewport:{width:393,height:873},locale:'hu-HU',timezoneId:'Europe/Budapest'});await context.addInitScript(nativeFixture);const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>TrainPilotBoot.finished);await page.evaluate(()=>TrainPilotHealthJournal.ready());
  assert.equal(await page.evaluate(()=>Object.keys(db.get('healthLedgerV1').days).length),30,'only a bounded projection is stored in WebView');
  assert.equal(await page.locator('#app .tp110-goal-mini').count(),0);assert.equal(await page.locator('.tp120-home-goals').count(),1);
  for(const width of [320,360,393,412])for(const lang of ['hu','en','de','ro']){

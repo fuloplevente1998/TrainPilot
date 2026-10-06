@@ -4,7 +4,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
 (async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;try{
  browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});
  const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU'}),errors=[];page.on('pageerror',e=>errors.push(String(e)));
- await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.TrainPilotPhase3?.version==='phase3-29-30-37-r6');
+ await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.TrainPilotPhase3?.version==='phase3-29-30-37-r6');
  const key=await page.evaluate(()=>{
   db.set('language','hu');
   const start='2026-09-22T09:36:00.000Z',finish='2026-09-22T10:20:00.000Z';

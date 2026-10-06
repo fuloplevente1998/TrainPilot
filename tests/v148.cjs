@@ -35,7 +35,8 @@ ctx.allGear={...ctx.base,gear:Array.from(run('Object.keys(GEAR132)')),avoidAreas
 ctx.shortP={...ctx.allGear,minutes:20};ctx.longP={...ctx.allGear,minutes:120};
 const shortPlan=JSON.parse(run('JSON.stringify(generatePersonalProgram(shortP))')),longPlan=JSON.parse(run('JSON.stringify(generatePersonalProgram(longP))'));
 assert.ok(longPlan.days[0].exercises.length>shortPlan.days[0].exercises.length,'longer workouts must add exercise capacity');
-assert.ok(Math.max(...Object.values(longPlan.prescriptions).map(x=>x.sets))>Math.max(...Object.values(shortPlan.prescriptions).map(x=>x.sets)),'longer workouts must allow more work sets');
+assert.equal(Math.max(...Object.values(longPlan.prescriptions).map(x=>x.sets)),2,'a longer beginner workout keeps two working sets');
+assert.equal(run('Math.max(...Object.values(generatePersonalProgram({...longP,experience:"intermediate",goal:"muscle"}).prescriptions).map(x=>x.sets))'),3,'long muscle-building workouts can use three sets for experienced users');
 
 ctx.focusP={...ctx.allGear,minutes:60,focus:'chestback'};
 const focused=JSON.parse(run('JSON.stringify(generatePersonalProgram(focusP))'));

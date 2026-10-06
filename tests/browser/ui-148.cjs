@@ -15,7 +15,7 @@ const {chromium}=require('playwright');
   browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});
   for(const viewport of [{width:360,height:640},{width:393,height:780}]){
    const page=await browser.newPage({viewport,locale:'hu-HU'});
-   await page.goto('http://127.0.0.1:'+server.address().port);
+   await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto('http://127.0.0.1:'+server.address().port);
    await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
    await page.waitForTimeout(120);
 

@@ -18,7 +18,7 @@ const {chromium}=require('playwright');
   for(const [w,h] of sizes)for(const [width,height] of [[w,h],[h,w]]){
    const context=await browser.newContext({viewport:{width,height},timezoneId:'Europe/Budapest',locale:'hu-HU'});
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>{errors.push(e.message);console.error(e.stack)});
-   await page.goto(`http://127.0.0.1:${server.address().port}`);
+   await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto(`http://127.0.0.1:${server.address().port}`);
    await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
    await page.evaluate(()=>{
     const rows=['2026-09-15','2026-09-10','2026-09-01'].map((date,i)=>({id:'journal-test-'+i,workout:'A',started:date+'T12:00:00+02:00',finished:date+'T12:30:00+02:00',exercises:[],photos:i===0?[{id:'123e4567-e89b-12d3-a456-426614174000',label:'after',createdAt:date+'T12:31:00+02:00',updatedAt:1,driveFileId:'drive-test-id',deletedAt:null}]:[]}));

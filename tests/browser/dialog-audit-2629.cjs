@@ -16,7 +16,7 @@ const {chromium}=require('playwright');
   const page=await browser.newPage({viewport:{width:393,height:700},locale:'hu-HU'});
   const nativeDialogs=[];
   page.on('dialog',async d=>{nativeDialogs.push({type:d.type(),message:d.message()});await d.dismiss()});
-  await page.goto(`http://127.0.0.1:${server.address().port}`);
+  await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto(`http://127.0.0.1:${server.address().port}`);
   await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
   await page.waitForTimeout(100);
   assert.equal(await page.evaluate(()=>window.TrainPilotDialogAudit?.version),'2629');

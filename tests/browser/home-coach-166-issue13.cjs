@@ -7,7 +7,7 @@ const listen=()=>new Promise(r=>server.listen(0,'127.0.0.1',r)),base=()=>'http:/
 (async()=>{await listen();let browser;try{
  browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});
  const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU'});
- await page.goto(base());await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
+ await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto(base());await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
  await page.evaluate(()=>{db.set('language','hu');state.tab='home';state.session=null;render();});
  await page.waitForFunction(()=>document.querySelector('#rf220CoachCard')?.classList.contains('tp166-home-coach'));
  const card=page.locator('#rf220CoachCard');

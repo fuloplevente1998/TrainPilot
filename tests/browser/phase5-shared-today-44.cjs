@@ -8,7 +8,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   const page=await browser.newPage({viewport:{width:393,height:852},locale:'hu-HU'});
   // Fixed noon keeps relative fixture workouts on the intended local day, including CI at midnight.
   await page.clock.setFixedTime(new Date('2026-10-02T12:00:00Z'));
-  await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
+  await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
   await page.evaluate(()=>{
    db.set('language','hu');state.health=state.health||{};
    const now=new Date(),key=rf240DayKey(now),yesterday=new Date(now);yesterday.setDate(now.getDate()-1);

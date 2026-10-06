@@ -33,7 +33,7 @@ const url=s=>'http://127.0.0.1:'+s.address().port+'/';
 const norm=s=>String(s).replace(/tp-select-menu-\d+-[a-z0-9]+/gi,'tp-select-menu-X').replace(/\s+/g,' ').trim();
 
 async function boot(page,u){
- await page.goto(u,{waitUntil:'load'});
+ await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto(u,{waitUntil:'load'});
  await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
  await page.waitForTimeout(80);
 }

@@ -4,7 +4,7 @@ const root=path.resolve('www');const server=http.createServer((q,r)=>{const file
 (async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));let b;try{
  b=await chromium.launch({args:['--no-sandbox']});const p=await b.newPage({viewport:{width:393,height:873},locale:'hu-HU',timezoneId:'Europe/Budapest'}),errors=[];p.on('pageerror',e=>errors.push(String(e)));p.on('dialog',d=>d.accept());
  fs.mkdirSync('ui-evidence',{recursive:true});
- await p.goto('http://127.0.0.1:'+server.address().port);await p.waitForFunction(()=>window.TrainPilotBoot?.finished);
+ await p.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await p.goto('http://127.0.0.1:'+server.address().port);await p.waitForFunction(()=>window.TrainPilotBoot?.finished);
  for(const [width,height] of [[320,740],[360,800],[393,873],[412,915]])for(const lang of ['hu','en','de','ro']){
   await p.setViewportSize({width,height});await p.evaluate(l=>{state.session=null;db.set('draft',null);db.set('language',l);rf200SetTheme(l==='de'?'green':'classicBlue');go('home');},lang);await p.waitForTimeout(40);
   for(const hasProfile of [false,true]){

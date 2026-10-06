@@ -26,7 +26,7 @@ const server = http.createServer((req, res) => {
       const errors = [];
       page.on('pageerror', error => errors.push(String(error?.stack || error)));
       page.on('dialog', dialog => dialog.accept());
-      await page.goto('http://127.0.0.1:' + server.address().port + '/');
+      await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto('http://127.0.0.1:' + server.address().port + '/');
       await page.waitForFunction(() => window.TrainPilotBoot?.finished);
       for (const theme of ['classicBlue', 'blue']) {
         await page.evaluate(themeName => {

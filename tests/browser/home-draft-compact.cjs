@@ -15,7 +15,7 @@ const server=http.createServer((req,res)=>{
   browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});
   const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU'});
   page.on('dialog',d=>d.accept());
-  await page.goto('http://127.0.0.1:'+server.address().port+'/');
+  await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto('http://127.0.0.1:'+server.address().port+'/');
   await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
   const baseline=await page.evaluate(()=>{
    db.set('language','hu');db.set('settings',{...settings(),profile:{age:30,goal:'fitness',minutes:45}});db.set('draft',null);state.session=null;state.workout=null;go('home');

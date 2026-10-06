@@ -21,7 +21,7 @@ const base=()=>'http://127.0.0.1:'+server.address().port+'/';
   const pageErrors=[];
   page.on('pageerror',e=>pageErrors.push(e?.stack||e?.message||String(e)));
   page.on('dialog',d=>d.accept());
-  await page.goto(base());await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
+  await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto(base());await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
 
   await page.evaluate(()=>{db.set('draft',null);state.session=null;state.workout=null;state.tab='plan';render()});
   await page.waitForSelector('.tp150-quick-entry');

@@ -12,7 +12,7 @@ const median=a=>{const s=[...a].sort((x,y)=>x-y),m=Math.floor(s.length/2);return
   const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU',timezoneId:'Europe/Budapest'}),errors=[];
   page.on('pageerror',e=>errors.push(String(e)));
   const navStart=Date.now();
-  await page.goto('http://127.0.0.1:'+server.address().port+'/',{waitUntil:'domcontentloaded'});
+  await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto('http://127.0.0.1:'+server.address().port+'/',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
   const startup=await page.evaluate(()=>({bootMs:performance.now(),nodes:document.getElementsByTagName('*').length,heap:performance.memory?.usedJSHeapSize||null}));startup.wallMs=Date.now()-navStart;
   const seeded=await page.evaluate(()=>{

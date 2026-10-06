@@ -5,7 +5,7 @@ const server=http.createServer((q,r)=>{const name=new URL(q.url,'http://local').
 (async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;try{
  browser=await chromium.launch({args:['--no-sandbox']});
  const context=await browser.newContext({viewport:{width:393,height:873},hasTouch:true,isMobile:true,locale:'hu-HU'}),p=await context.newPage(),cdp=await context.newCDPSession(p),errors=[];
- p.on('pageerror',e=>errors.push(String(e)));await p.goto('http://127.0.0.1:'+server.address().port);await p.waitForFunction(()=>TrainPilotBoot.finished);
+ p.on('pageerror',e=>errors.push(String(e)));await p.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await p.goto('http://127.0.0.1:'+server.address().port);await p.waitForFunction(()=>TrainPilotBoot.finished);
  const menu=p.locator('#tp162ThemeMenu');
  const open=async()=>{await p.locator('.tp162-theme-dropdown .tp-select-trigger').click();await p.waitForTimeout(160);};
  const point=async column=>p.locator('.tp162-theme-column').nth(column).evaluate(e=>{const m=document.querySelector('#tp162ThemeMenu').getBoundingClientRect(),r=e.getBoundingClientRect();return {x:r.x+r.width/2,top:m.top+24,bottom:Math.min(innerHeight-24,m.bottom-24)};});

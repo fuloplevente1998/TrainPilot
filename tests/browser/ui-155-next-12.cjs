@@ -13,7 +13,7 @@ const {chromium}=require('playwright');
  try{
   browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});
   const page=await browser.newPage({viewport:{width:393,height:720},locale:'hu-HU'});
-  await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.TrainPilot155Next12?.calendarMove&&window.TrainPilot155PhoneRound4?.calendarMoveInPlace);
+  await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.TrainPilot155Next12?.calendarMove&&window.TrainPilot155PhoneRound4?.calendarMoveInPlace);
 
   const initial=await page.evaluate(()=>{
    db.set('language','hu');db.set('activeProgramId','home-basic');db.set('history',[]);db.set('draft',null);

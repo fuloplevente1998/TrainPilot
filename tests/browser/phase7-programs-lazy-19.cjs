@@ -3,7 +3,7 @@ const root=path.resolve('www');
 const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local').pathname;if(p==='/')p='/index.html';const file=path.resolve(root,'.'+p);if(!file.startsWith(root+path.sep)){res.writeHead(403);return res.end()}fs.readFile(file,(e,d)=>{if(e){res.writeHead(404);return res.end()}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'text/plain');res.end(d)})});
 (async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));let b;try{
  b=await chromium.launch({headless:true,args:['--no-sandbox']});const p=await b.newPage({viewport:{width:393,height:873},locale:'hu-HU'});
- await p.goto('http://127.0.0.1:'+server.address().port+'/');await p.waitForFunction(()=>window.TrainPilotBoot?.finished);
+ await p.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await p.goto('http://127.0.0.1:'+server.address().port+'/');await p.waitForFunction(()=>window.TrainPilotBoot?.finished);
  await p.evaluate(()=>go('programs'));await p.waitForSelector('details.tp152-program-card');
  const cards=p.locator('details.tp152-program-card'),count=await cards.count();assert.ok(count>=3,'program cards missing');
  assert.equal(await p.locator('.tp152-program-card-body[data-tp7-hydrated="true"]').count(),0,'collapsed program cards must not eagerly render bodies');

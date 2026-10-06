@@ -15,7 +15,7 @@ const {chromium}=require('playwright');
   for(const width of [320,360,390,412]){
    const context=await browser.newContext({viewport:{width,height:844},timezoneId:'Europe/Budapest',locale:'hu-HU'});
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
-   await page.goto(`http://127.0.0.1:${server.address().port}`);
+   await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto(`http://127.0.0.1:${server.address().port}`);
    await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
    await page.evaluate(()=>{
     const row={id:'phase6-health-photo',workout:'A',programName:'Phase 6 teszt',started:'2026-09-24T10:00:00+02:00',finished:'2026-09-24T11:00:00+02:00',exercises:[],photos:[]};

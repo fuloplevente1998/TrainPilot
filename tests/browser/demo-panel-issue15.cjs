@@ -13,7 +13,7 @@ const {chromium}=require('playwright');
   browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});
   const page=await browser.newPage({viewport:{width:393,height:790},locale:'hu-HU'});
   const errors=[];page.on('pageerror',e=>errors.push(String(e)));
-  await page.goto('http://127.0.0.1:'+server.address().port);
+  await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto('http://127.0.0.1:'+server.address().port);
   await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.TrainPilotDemo15);
   assert.equal(await page.evaluate(()=>TrainPilotDemo15.version),'15');
   const id=await page.evaluate(()=>{

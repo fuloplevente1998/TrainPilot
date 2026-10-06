@@ -1877,4 +1877,42 @@
 })();
 
 });</script>
+<script>window.addEventListener('DOMContentLoaded',function(){
+(function(){
+ const icons={"home": "<path d=\"M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8\" />\n  <path d=\"M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\" />", "plan": "<path d=\"M17.596 12.768a2 2 0 1 0 2.829-2.829l-1.768-1.767a2 2 0 0 0 2.828-2.829l-2.828-2.828a2 2 0 0 0-2.829 2.828l-1.767-1.768a2 2 0 1 0-2.829 2.829z\" />\n  <path d=\"m2.5 21.5 1.4-1.4\" />\n  <path d=\"m20.1 3.9 1.4-1.4\" />\n  <path d=\"M5.343 21.485a2 2 0 1 0 2.829-2.828l1.767 1.768a2 2 0 1 0 2.829-2.829l-6.364-6.364a2 2 0 1 0-2.829 2.829l1.768 1.767a2 2 0 0 0-2.828 2.829z\" />\n  <path d=\"m9.6 14.4 4.8-4.8\" />", "health": "<path d=\"M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5\" />", "programs": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" />\n  <path d=\"M3 9h18\" />\n  <path d=\"M9 21V9\" />", "history": "<path d=\"M2 6h4\" />\n  <path d=\"M2 10h4\" />\n  <path d=\"M2 14h4\" />\n  <path d=\"M2 18h4\" />\n  <rect width=\"16\" height=\"20\" x=\"4\" y=\"2\" rx=\"2\" />\n  <path d=\"M9.5 8h5\" />\n  <path d=\"M9.5 12H16\" />\n  <path d=\"M9.5 16H14\" />", "calendar": "<path d=\"M8 2v3\" />\n  <path d=\"M16 2v3\" />\n  <rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\" />\n  <path d=\"M3 9h18\" />\n  <path d=\"M8 13h.01\" />\n  <path d=\"M12 13h.01\" />\n  <path d=\"M16 13h.01\" />\n  <path d=\"M8 17h.01\" />\n  <path d=\"M12 17h.01\" />\n  <path d=\"M16 17h.01\" />", "coach": "<path d=\"M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z\" />\n  <path d=\"M20 2v4\" />\n  <path d=\"M22 4h-4\" />\n  <circle cx=\"4\" cy=\"20\" r=\"2\" />", "settings": "<path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\" />\n  <circle cx=\"12\" cy=\"12\" r=\"3\" />"};
+ function decorate(){
+  for(const button of document.querySelectorAll('#app .top .tp154-nav-cell')){
+   const route=button.classList.contains('tp154-coach-action')?'coach':button.classList.contains('tp154-settings-action')?'settings':(button.getAttribute('onclick')||'').match(/go\(['"]([^'"]+)/)?.[1];
+   const icon=button.querySelector('.tp151-nav-icon,.tp154-nav-action-icon');
+   if(icon&&icons[route]){icon.innerHTML='<svg class="tp128-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'+icons[route]+'</svg>';icon.setAttribute('aria-hidden','true');}
+  }
+  const main=document.querySelector('#app main'),programList=main?.querySelector('.tp152-program-card');
+  if(state.tab==='programs'&&programList&&!main.querySelector('.tp128-update')){
+   const p=activeProgram();
+   if(['home-basic','home-level2'].includes(p?.id)&&!p.templateVersion){
+    const entry=document.createElement('div');entry.className='card tp128-update';entry.innerHTML='<strong>'+esc(tp128T('update'))+'</strong><button class="btn secondary block" onclick="tp128OpenTemplate()">'+esc(tp128T('preview'))+'</button>';programList.before(entry);
+   }
+   for(const card of main.querySelectorAll('[data-tp7-program-id]')){
+    const p=programById(card.dataset.tp7ProgramId),info=card.querySelector('.rf103-program-info');if(info&&!info.querySelector('.tp128-source')){const b=document.createElement('span');b.className='badge tp128-source';b.textContent=tp128T(p.sourceType==='profile-template'||p.sourceType==='coach'?'adapted':p.builtin?'template':p.generated?'custom':'own');info.prepend(b);}
+   }
+  }
+  for(const host of document.querySelectorAll('.tp151-coach')){
+   const plan=rf233CoachPlan();
+   for(const [index,row] of [...host.querySelectorAll('.tp155-coach-ex')].entries()){
+    const id=plan.exercises[index]?.id,rec=id&&rf152Recommendation(id);
+    if(rec?.action==='variation'&&!row.querySelector('.tp128-variation')){const b=document.createElement('button');b.type='button';b.className='btn secondary tp128-variation';b.textContent=tp128T('variationButton');b.onclick=()=>tp128VariationPreview(id);row.append(b);}
+   }
+   const p=activeProgram();
+   if((p?.sourceTemplateId==='home-basic'||p?.id==='home-basic')&&!host.querySelector('.tp128-level2')){
+    const count=plan.exercises.filter(x=>['increase','variation'].includes(x.advice?.action)&&rf152Recommendation(x.id).historyCount>=3).length;
+    if(count>=3){const entry=document.createElement('div');entry.className='card tp128-level2';entry.innerHTML='<p>'+esc(tp128T('level2'))+'</p><button class="btn secondary block" onclick="tp128OpenTemplate(\'home-level2\')">'+esc(tp128T('preview'))+'</button>';host.append(entry);}
+   }
+  }
+ }
+ const style=document.createElement('style');style.id='tp128IconCss';style.textContent='.tp128-nav-icon{display:block;width:1em;height:1em;overflow:visible}.tp151-nav-icon:has(.tp128-nav-icon),.tp154-nav-action-icon:has(.tp128-nav-icon){display:inline-flex;align-items:center;justify-content:center}.tp128-update .btn,.tp128-welcome .btn{margin-top:10px}.tp128-preview-meta{overflow-wrap:anywhere}.tp128-variation{margin-top:6px}';document.head.appendChild(style);
+ const base=render;render=function(){const out=base.apply(this,arguments);decorate();return out};window.render=render;
+ // Existing installs, restored backups and skipped onboarding keep their original screen.
+ if((tp128FreshInstall||settings().onboarding128==='pending')&&!trainingProfile()&&!['complete','skipped'].includes(settings().onboarding128))tp128Welcome();else decorate();
+})();
+});</script>
 </body></html>
