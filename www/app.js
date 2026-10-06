@@ -15514,6 +15514,12 @@ var tp128OpenTemplate=function(id='recommended'){
  const profile=trainingProfile();if(profile){try{tp128BuildPreview(profile,id);return;}catch(_){}}
  profileScreen();
 };
+var tp128ActivateBase=activateProgram;
+activateProgram=function(id){
+ if(!['home-basic','home-level2'].includes(id))return tp128ActivateBase.apply(this,arguments);
+ if(state.session){alert(tp105Text('busy'));return;}
+ return tp128OpenTemplate(id);
+};
 var tp128Welcome=function(){
  db.set('settings',{...settings(),onboarding128:'pending'});
  state.tab='home';render(shell('<main class="tp128-welcome"><div class="card"><h1>'+esc(tp128T('welcome'))+'</h1><p>'+esc(tp128T('intro'))+'</p><button class="btn block" onclick="tp128BeginOnboarding()">'+esc(tp128T('begin'))+'</button><button class="btn secondary block" onclick="tp128SkipOnboarding()">'+esc(tp128T('skip'))+'</button></div></main>'));

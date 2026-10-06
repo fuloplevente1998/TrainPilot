@@ -25,6 +25,9 @@ const server=http.createServer((req,res)=>{const f=path.resolve(root,'.'+(new UR
   assert.equal(await page.evaluate(()=>activeProgram().sourceType),'profile-template');
   assert.equal(await page.evaluate(()=>settings().onboarding128),'complete');
   await page.reload();await page.waitForFunction(()=>TrainPilotBoot.finished);assert.equal(await page.locator('.tp128-welcome').count(),0);
+  const manual=await page.evaluate(()=>{const before=activeProgramId();activateProgram('home-level2');return {before,after:activeProgramId(),template:state.programPreview?.sourceTemplateId}});
+  assert.equal(manual.after,manual.before,'manual built-in selection waits for preview acceptance');assert.equal(manual.template,'home-level2');
+  await page.evaluate(()=>{tp3ClosePlannerPanel(false);state.programPreview=null;state.profilePreview=null;state.tp128PreviewToken=null;go('home')});
 
   const logic=await page.evaluate(()=>{
    const gear=Object.keys(GEAR132),dumb=gear.find(x=>x==='dumbbells')||gear.find(x=>/dumbbell/.test(x));

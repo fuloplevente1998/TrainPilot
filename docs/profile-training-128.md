@@ -11,6 +11,7 @@ Kiindulás: a felhasználó által elfogadott `b11a112c62e4520398cc8b2190a2c9f92
 - A kezdősúly próbasorozattal állítandó. Magasság/testsúly alapján nem számolunk emelhető súlyt.
 - Az előnézet az időbecslést, ritmust és helyettesítéseket mutatja. Aktív program soha nem írható át profilváltozáskor automatikusan. Elfogadáskor új példány készül; a régi program és napló megmarad. Tárolási hiba esetén minden érintett kulcs visszaáll.
 - Régi Alap/2. szint használónál opcionális frissítési előnézet van a Programokban. Nincs automatikus migráció.
+- Beépített Alap/2. szint kézi aktiválása is a profilhoz igazított előnézetet nyitja, és csak annak elfogadása után vált programot.
 
 ## Coach és progresszió
 
