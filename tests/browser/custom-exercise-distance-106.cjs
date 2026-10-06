@@ -15,12 +15,12 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   await opener.click();await panel.waitFor({state:'visible'});
   assert.equal(await page.evaluate(()=>state.tab),'programs','overlay preserves Programs route');
   const style=await panel.evaluate(host=>{
-   const close=host.querySelector('.tp155-r4-panel-close'),r=close.getBoundingClientRect(),p=host.querySelector('.tp155-r4-panel').getBoundingClientRect();
+   const close=host.querySelector('.tp155-r4-panel-close'),r=close.getBoundingClientRect(),p=close.closest('.tp106-builder-header').getBoundingClientRect();
    return {color:getComputedStyle(close).backgroundColor,fit:host.scrollWidth<=host.clientWidth+1&&host.querySelector('main').scrollWidth<=host.querySelector('main').clientWidth+1,right:p.right-r.right,top:r.top-p.top,side:r.width,form:!!host.querySelector('#ceMeasure'),selects:host.querySelectorAll('.tp-select').length,rounded:parseFloat(getComputedStyle(host.querySelector('.tp155-r4-panel')).borderTopLeftRadius),header:!!close.closest('.tp106-builder-header')};
   });
   assert.equal(style.color,'rgb(71, 37, 41)','shared red X');assert.ok(style.form&&style.side>=36&&style.right>=0&&style.right<=24&&style.top>=0&&style.top<=38,JSON.stringify(style));
   assert.equal(style.fit,true,language+'/'+width+' panel must fit');assert.equal(style.selects,5,'current themed selects are ready on first open');
-  assert.ok(style.rounded>=18&&style.header,'full frame and separate close-button header');
+  assert.ok(style.rounded>=18&&style.header,'full frame and docked close-button header');
   await panel.locator('.tp155-r4-panel').evaluate(el=>el.scrollTop=el.scrollHeight);
   assert.equal(await panel.evaluate(host=>{const h=host.querySelector('.tp106-builder-header').getBoundingClientRect(),x=host.querySelector('.tp155-r4-panel-close').getBoundingClientRect();return x.top>=h.top&&x.bottom<=h.bottom&&x.right<=h.right}),true,'X stays inside the header when scrolled');
   await panel.locator('input[name="ceGear"]').first().evaluate(el=>el.closest('details').open=true);
