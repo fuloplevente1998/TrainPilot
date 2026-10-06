@@ -8,8 +8,8 @@ Kiindulás: a felhasználó által elfogadott `b11a112c62e4520398cc8b2190a2c9f92
 - A `generatePersonalProgram` közös belépési pont. Ajánlott Alap/2. szint, explicit sablon vagy külön személyes felosztás választható.
 - Az A/B sablonok a nagy gyakorlatokkal kezdődnek. A B napon a fekvőtámasz az izolációk elé kerül. Alapesetben két munkasorozat, nagy gyakorlatoknál 120–150, izolációknál 75 mp pihenő és 1–2 RIR szerepel. Három sorozatot megfelelő tapasztalat, izomépítési cél, legalább 60 perc és nem fizikai munkavégzés indokol.
 - A 2. szint nehezebb gyakorlatokat, szűkebb céltartományt és terhelhető törzsvariációt használ. A profil felszerelése, kizárásai és kerülendő területei helyettesítést vagy elhagyást okozhatnak. Húzóeszköz nélküli alapozó tervnél a felület jelzi, hogy a törzsgyakorlat nem helyettesít húzógyakorlatot.
-- A kezdősúly próbasorozattal állítandó. Magasság/testsúly alapján nem számolunk emelhető súlyt.
-- Az előnézet az időbecslést, ritmust és helyettesítéseket mutatja. Aktív program soha nem írható át profilváltozáskor automatikusan. Elfogadáskor új példány készül; a régi program és napló megmarad. Tárolási hiba esetén minden érintett kulcs visszaáll.
+- A kezdősúly próbasorozattal állítandó. A beállítatlan súlyzós recept „Súly: beállítandó” jelzést és üres mezőt kap; nem jelenik meg előírt 0 kg-ként. A numerikus recept és a `trial` jelző megőrzi a régi mentések kompatibilitását. A kézzel mentett súly megszünteti a próbaállapotot, és előzmény nélküli edzésindításkor is kitölti a sorozatokat. A saját testsúly és az explicit megadott nulla külön eset. Magasság/testsúly alapján nem számolunk emelhető súlyt.
+- Az előnézet egy rövid, tagolt összegzésben mutatja az időbecslést és ritmust. Az indokok és helyettesítések lenyithatók; a gyakorlatok a meglévő kompakt sorokat, kis videógombot és lenyitható receptadatokat használják. Nincsenek ismétlődő nagy videókártyák. Az előnézet nem szerkeszti az aktív programot; elfogadáskor új példány készül, a régi program és napló megmarad. Tárolási hiba esetén minden érintett kulcs visszaáll.
 - Régi Alap/2. szint használónál opcionális frissítési előnézet van a Programokban. Nincs automatikus migráció.
 - Beépített Alap/2. szint kézi aktiválása is a profilhoz igazított előnézetet nyitja, és csak annak elfogadása után vált programot.
 
@@ -28,7 +28,7 @@ Referencia: [ACSM 2026 Position Stand](https://pmc.ncbi.nlm.nih.gov/articles/PMC
 
 ## Ellenőrzés és telefonos elfogadás
 
-Új regresszió: `tests/browser/profile-training-128.cjs`. Új telepítés/újraindítás/kihagyás, közös generátor, 20–120 perc, felszerelés/kizárások, programhoz kötött trend, fájdalom/readiness, előnézet/rollback és backup/sync. 320/360/393/412 px, négy nyelv és az eredeti felső, nyolc ikonos elrendezés ellenőrzése.
+Új regresszió: `tests/browser/profile-training-128.cjs`. Új telepítés/újraindítás/kihagyás, közös generátor, 20–120 perc, felszerelés/kizárások, programhoz kötött trend, fájdalom/readiness, előnézet/rollback és backup/sync. A kompakt, csak olvasható előnézet, a videó megnyitása/visszatérés, a beállítatlan súly mentése/visszaállítása és a megadott kezdősúly tényleges edzésindítása is ellenőrzött. 320/360/393/412 px, négy nyelv, bezárógomb melletti cím és az eredeti felső, nyolc ikonos elrendezés ellenőrzése.
 
 A meglévő UI-regressziók visszatérő felhasználói állapotot kapnak. A korábbi kétalkalmas automatikus progresszió-elvárás három alkalomra változik. A kezdő hosszú edzés továbbra is két sorozat; a több sorozat megfelelő profilhoz kötött.
 

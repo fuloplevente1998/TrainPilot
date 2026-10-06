@@ -881,7 +881,7 @@ const rf13Programs=programsScreen;programsScreen=function(){return rf13Programs(
 const rf13Settings=settingsScreen;settingsScreen=function(){return rf13Settings().replace('<main>','<main><div class="grid2"><button class="btn" onclick="profileScreen()">Személyes profil</button><button class="btn secondary" onclick="healthScreen()">Óra és egészségadatok</button></div>');};
 saveSettings=function(){db.set('settings',{...settings(),rest:Math.max(30,Math.min(300,Number($('#rest').value)||90))});alert('Mentve.');};
 // Keep prescriptions in the program/session, never overwrite another program's exercise defaults.
-const rf13Start=startWorkout;startWorkout=function(dayId,scheduleId=null,programId=null){const before=state.session;state.prescriptionProgramId=programId||activeProgramId();try{rf13Start(dayId,scheduleId,programId);}finally{state.prescriptionProgramId=null;}if(!state.session||state.session===before)return;const p=programById(state.session.programId);if(p?.prescriptions){state.session.exercises=state.session.exercises.map(e=>{const rx=p.prescriptions[e.id];if(!rx)return e;const previous=history().filter(h=>h.programId===p.id).flatMap(h=>h.exercises).find(x=>x.id===e.id);return {...e,prescription:{...rx},sets:Array.from({length:rx.sets},(_,i)=>({set:i+1,weight:previous?.sets[i]?.weight??(e.loadType==='bodyweight'?0:''),reps:'',done:false}))};});renderWorkout();}};
+const rf13Start=startWorkout;startWorkout=function(dayId,scheduleId=null,programId=null){const before=state.session;state.prescriptionProgramId=programId||activeProgramId();try{rf13Start(dayId,scheduleId,programId);}finally{state.prescriptionProgramId=null;}if(!state.session||state.session===before)return;const p=programById(state.session.programId);if(p?.prescriptions){state.session.exercises=state.session.exercises.map(e=>{const rx=p.prescriptions[e.id];if(!rx)return e;const previous=history().filter(h=>h.programId===p.id).flatMap(h=>h.exercises).find(x=>x.id===e.id);return {...e,prescription:{...rx},sets:Array.from({length:rx.sets},(_,i)=>({set:i+1,weight:previous?.sets[i]?.weight??(e.loadType==='bodyweight'?0:rx.trial&&Number(rx.weight)===0?'':(rx.weight??'')),reps:'',done:false}))};});renderWorkout();}};
 const rf13Rest=startRest;startRest=function(){rf13Rest();const rx=state.session?.exercises[state.current]?.prescription;if(rx){state.timer=rx.rest;state.restEndAt=Date.now()+state.timer*1000;}};
 // Finish only marks the calendar after the history write really succeeded.
 finishWorkout=function(){if(!state.session)return;const s=state.session;rf12FinishWorkout();if(state.session)return;if(s.scheduleId){const items=scheduled(),i=items.findIndex(x=>x.id===s.scheduleId);if(i>=0){items[i]={...items[i],status:'completed',updatedAt:Date.now()};db.set('scheduled',items);}}feedbackScreen(s.started);};
@@ -14683,18 +14683,18 @@ var TP107_TEXT={
 };
 var tp107T=function(key){return (TP107_TEXT[rf212Lang()]||TP107_TEXT.en)[key]||key;};
 var tp107ProgramRow=function(p,day,id,i){
- const e=byId(id);if(!e)return '';const rx=tp152Rx(p,id,e);
+ const e=tp128ProgramExercise(p,id);if(!e)return '';const rx=tp152Rx(p,id,e);
  return '<details class="exercise tp146-exercise tp152-exercise tp152-program-exercise tp107-program-editor" data-tp107-program="'+esc(p.id)+'" data-tp146-day="'+esc(day.id)+'" data-tp146-exercise="'+esc(id)+'" data-tp152-program-exercise="'+esc(id)+'" ontoggle="if(this.open)tp107HydrateProgramRow(this)"><summary class="tp146-exercise-summary" onclick="if(!this.parentElement.open)tp107HydrateProgramRow(this.parentElement)"><div class="num">'+(i+1)+'</div><div class="tp146-exercise-copy"><div class="ex-name">'+esc(tp149ExerciseName(e))+'</div><div class="meta">'+esc(tp107RxSummary(e,rx))+'</div></div><div class="tp-exercise-actions">'+rf260VideoButton(id)+'<span class="tp152-chevron tp146-exercise-chevron" aria-hidden="true">⌄</span></div></summary><div class="tp146-exercise-body tp152-exercise-body tp107-editor-body"></div></details>';
 };
-var tp107RxSummary=function(e,rx){return rx.sets+' × '+rx.reps+(e.loadType!=='bodyweight'?' • '+rx.weight+' '+tp149LoadLabel(e.loadType):'')+' • '+rx.rest+' s';};
+var tp107RxSummary=function(e,rx){return rx.sets+' × '+rx.reps+(e.loadType!=='bodyweight'?' • '+(tp128NeedsLoad(e,rx)?tp128T('unsetLoad'):rx.weight+' '+tp149LoadLabel(e.loadType)):'')+' • '+rx.rest+' s';};
 var tp107RowContext=function(node){
  const row=node?.closest?.('.tp107-program-editor');if(!row||!row.isConnected)return null;
- const ps=programs(),p=ps.find(function(p){return p.id===row.dataset.tp107Program;}),day=p?.days?.find(function(d){return d.id===row.dataset.tp146Day;}),id=row.dataset.tp146Exercise,e=byId(id);
+ const ps=programs(),p=ps.find(function(p){return p.id===row.dataset.tp107Program;}),day=p?.days?.find(function(d){return d.id===row.dataset.tp146Day;}),id=row.dataset.tp146Exercise,e=tp128ProgramExercise(p,id);
  return p&&e&&day?.exercises?.includes(id)?{row,ps,p,day,id,e}:null;
 };
 var tp107HydrateProgramRow=function(row){
  const c=tp107RowContext(row),body=row?.querySelector('.tp107-editor-body');if(!c||!body||body.dataset.hydrated==='true')return;
- const rx=tp152Rx(c.p,c.id,c.e),field=function(key,label,type,min,max){return '<label>'+esc(label)+'<input class="field" data-tp107-rx="'+key+'" '+(type?'type="'+type+'"':'maxlength="40"')+' '+(min!==undefined?'min="'+min+'"':'')+' '+(max!==undefined?'max="'+max+'"':'')+' '+(key==='weight'?'step="any" inputmode="decimal"':'')+' required value="'+esc(rx[key])+'" oninput="tp107ProgramInput(this)"></label>';};
+ const rx=tp152Rx(c.p,c.id,c.e),field=function(key,label,type,min,max){const unset=key==='weight'&&tp128NeedsLoad(c.e,rx);return '<label>'+esc(label)+'<input class="field" data-tp107-rx="'+key+'" '+(type?'type="'+type+'"':'maxlength="40"')+' '+(min!==undefined?'min="'+min+'"':'')+' '+(max!==undefined?'max="'+max+'"':'')+' '+(key==='weight'?'step="any" inputmode="decimal"':'')+' '+(unset?'placeholder="'+esc(tp128T('trialPlaceholder'))+'"':'required')+' value="'+esc(unset?'':rx[key])+'" oninput="tp107ProgramInput(this)"></label>';};
  body.innerHTML='<div class="tp152-edit-grid">'+field('sets',tp152T('sets'),'number',1,10)+field('reps',tp106IsDistance(c.e)||c.e.repUnit==='mp'?tp106T('seconds'):tp152T('reps'))+(c.e.loadType!=='bodyweight'?field('weight',tp152LoadFieldLabel(c.e),'number',0,10000):'')+field('rest',tp152T('rest'),'number',30,300)+'</div><div class="tp107-save-row"><button type="button" class="btn" onclick="tp107SaveProgramRow(this)">'+esc(tp107T('save'))+'</button><button type="button" class="btn secondary" onclick="tp107ResetProgramRow(this)">'+esc(tp107T('cancel'))+'</button></div><p class="small muted tp107-save-status" role="status"></p><label>'+esc(tp152T('replace'))+'<select class="field" data-tp107-replace onchange="tp107ReplaceProgramExercise(this)">'+exercises().map(function(e){return '<option value="'+esc(e.id)+'" '+(e.id===c.id?'selected':'')+'>'+esc(tp149ExerciseName(e))+'</option>';}).join('')+'</select></label><button type="button" class="btn danger block" onclick="tp107RemoveProgramExercise(this)">'+esc(tp152T('remove'))+'</button>';
  body.dataset.hydrated='true';if(typeof rf260EnhanceSelects==='function')rf260EnhanceSelects();window.tpGlobalApplyChevrons?.(body);
 };
@@ -14702,13 +14702,13 @@ var tp107ProgramInput=function(node){const row=node.closest('.tp107-program-edit
 var tp107SaveProgramRow=function(node){
  const c=tp107RowContext(node);if(!c)return false;
  const fields=[...c.row.querySelectorAll('[data-tp107-rx]')],rx=tp152Rx(c.p,c.id,c.e);
- for(const input of fields){if(!input.reportValidity())return false;const key=input.dataset.tp107Rx;rx[key]=key==='reps'?input.value.trim().slice(0,40):Number(input.value);}
+ for(const input of fields){if(!input.reportValidity())return false;const key=input.dataset.tp107Rx;if(key==='weight'&&['total','per_hand','single_dumbbell'].includes(c.e.loadType))rx.trial=input.value.trim()==='';rx[key]=key==='reps'?input.value.trim().slice(0,40):Number(input.value);}
  c.p.prescriptions=c.p.prescriptions||{};
  if(JSON.stringify(c.p.prescriptions[c.id])!==JSON.stringify(rx)){c.p.prescriptions[c.id]=rx;db.set('programs',c.ps);if(typeof cloudChanged==='function')cloudChanged();}
  c.row.querySelector(':scope > summary .meta').textContent=tp107RxSummary(c.e,rx);
  c.row.dataset.dirty='false';if(window.TrainPilot110)window.TrainPilot110.status(c.row.querySelector('.tp107-save-status'),tp107T('saved'));else c.row.querySelector('.tp107-save-status').textContent=tp107T('saved');return true;
 };
-var tp107ResetProgramRow=function(node){const c=tp107RowContext(node);if(!c)return;const rx=tp152Rx(c.p,c.id,c.e);c.row.querySelectorAll('[data-tp107-rx]').forEach(function(input){input.value=rx[input.dataset.tp107Rx];});c.row.dataset.dirty='false';c.row.querySelector('.tp107-save-status').textContent='';};
+var tp107ResetProgramRow=function(node){const c=tp107RowContext(node);if(!c)return;const rx=tp152Rx(c.p,c.id,c.e);c.row.querySelectorAll('[data-tp107-rx]').forEach(function(input){input.value=input.dataset.tp107Rx==='weight'&&tp128NeedsLoad(c.e,rx)?'':rx[input.dataset.tp107Rx];});c.row.dataset.dirty='false';c.row.querySelector('.tp107-save-status').textContent='';};
 var tp107ReplaceProgramExercise=function(node){
  const c=tp107RowContext(node),id=node.value;if(!c||!byId(id))return;if(c.day.exercises.includes(id)&&id!==c.id){node.value=c.id;alert(tp149T('program.exercise.duplicate'));return;}
  const i=c.day.exercises.indexOf(c.id);c.day.exercises[i]=id;c.p.prescriptions=c.p.prescriptions||{};c.p.prescriptions[id]=c.p.prescriptions[id]||tp152Rx(c.p,id,byId(id));db.set('programs',c.ps);cloudChanged();
@@ -15337,8 +15337,17 @@ var tp128T=function(key,vars={}){
  estimate:['Becsült idő: {min}–{max} perc / edzés.','Estimated time: {min}–{max} minutes / workout.','Geschätzte Dauer: {min}–{max} Minuten / Training.','Durată estimată: {min}–{max} minute / antrenament.'],
  cadence:['Beosztás: {cadence}.','Schedule: {cadence}.','Rhythmus: {cadence}.','Ritm: {cadence}.'],
  substitutions:['Felszerelés vagy kizárás miatti helyettesítések','Equipment or exclusion substitutions','Ersatz wegen Geräten oder Ausschlüssen','Înlocuiri datorate echipamentului sau excluderilor'],
+ substitutionsShort:['Helyettesítések','Substitutions','Ersatzübungen','Înlocuiri'],
  noPull:['Húzóeszköz nélkül ez alapozó terv; a törzsgyakorlat nem helyettesíti az evezést.','Without pulling equipment this is a foundation plan; core work does not replace rowing.','Ohne Zuggerät ist dies ein Grundlagenplan; Rumpfübungen ersetzen kein Rudern.','Fără echipament de tras, acesta este un plan de bază; exercițiile de trunchi nu înlocuiesc ramatul.'],
  trial:['A kezdősúlyt könnyű próbasorozattal válaszd ki; nem testsúlyból számoljuk.','Choose the starting load with an easy trial set; it is not calculated from body weight.','Wähle das Startgewicht mit einem leichten Probesatz; es wird nicht aus dem Körpergewicht berechnet.','Alege greutatea inițială printr-o serie ușoară de probă; nu o calculăm din greutatea corporală.'],
+ unsetLoad:['Súly: beállítandó','Load: not set','Gewicht: noch offen','Greutate: de stabilit'],
+ trialPlaceholder:['Próbasorozat után','After a trial set','Nach einem Probesatz','După seria de probă'],
+ trialShort:['A kezdősúlyt az első könnyű próbasorozat után add meg.','Set the starting load after your first easy trial set.','Trage das Startgewicht nach dem ersten leichten Probesatz ein.','Stabilește greutatea inițială după prima serie ușoară de probă.'],
+ duration:['Becsült edzésidő','Estimated duration','Geschätzte Dauer','Durată estimată'],
+ minutes:['{min}–{max} perc','{min}–{max} min','{min}–{max} Min.','{min}–{max} min'],
+ minuteUnit:['perc','min','Min.','min'],
+ rationale:['Mi alapján készült?','How was it tailored?','Wie wurde es angepasst?','Cum a fost adaptat?'],
+ profileChangedShort:['Új profil alapján készült; csak elfogadáskor aktiválódik.','Based on your updated profile; activated only when accepted.','An dein neues Profil angepasst; erst nach Annahme aktiv.','Adaptat noului profil; se activează doar la acceptare.'],
  hold:['Egy gyengébb edzés miatt még nem csökkentünk. Tartsd a jelenlegi célt.','One weaker workout does not trigger a reduction. Keep the current target.','Ein schwächeres Training löst keine Reduktion aus. Behalte das Ziel bei.','Un singur antrenament mai slab nu declanșează reducerea. Păstrează ținta.'],
  trend:['{count} releváns edzés trendje alapján: {reason}','Based on {count} relevant workouts: {reason}','Auf Basis von {count} relevanten Trainings: {reason}','Pe baza a {count} antrenamente relevante: {reason}'],
  stable:['Legalább három edzésen elérted a felső határt; kis súlynövelés javasolt.','You reached the upper limit in at least three workouts; a small load increase is suggested.','Du hast die Obergrenze in mindestens drei Trainings erreicht; eine kleine Gewichtserhöhung wird empfohlen.','Ai atins limita superioară în cel puțin trei antrenamente; se recomandă o creștere mică.'],
@@ -15358,6 +15367,10 @@ var tp128T=function(key,vars={}){
  };let text=rows[key]?.[{hu:0,en:1,de:2,ro:3}[rf212Lang()]??1]||key;
  for(const [k,v] of Object.entries(vars))text=text.replaceAll('{'+k+'}',String(v));return text;
 };
+// A zero trial value is an unset starting load, not a prescribed zero-kilogram lift.
+// Keep the numeric recipe format compatible with existing backups.
+var tp128NeedsLoad=function(e,rx){return !!rx?.trial&&Number(rx.weight)===0&&['total','per_hand','single_dumbbell'].includes(rx.loadType||e?.loadType)};
+var tp128ProgramExercise=function(p,id){const e=exercises().find(e=>e.id===id);return e?{...e,...p?.prescriptions?.[id]}:null};
 var tp128Rx=function(id,p,level2=false){
  const e=exercises().find(e=>e.id===id)||{},compound=!!e.compound;
  const sets=p.experience==='intermediate'&&p.goal==='muscle'&&p.minutes>=60&&p.activity!=='physical'?3:2;
@@ -15474,28 +15487,34 @@ previewProfile=function(){
  generatePersonalProgram=function(input){return generator({...input,templateId:choice})};
  try{return tp128PreviewBase.apply(this,arguments)}finally{generatePersonalProgram=generator;}
 };
-var tp128PreviewHtmlBase=showPersonalPreview;
+var tp128PreviewExercise=function(p,id,i){
+ const e=tp128ProgramExercise(p,id);if(!e)return '';
+ const rx=tp152Rx(p,id,e),load=e.loadType==='bodyweight'?tp149T('workout.bodyweight'):tp128NeedsLoad(e,rx)?tp128T('unsetLoad'):tp149FormatNumber(rx.weight)+' '+tp149LoadLabel(e.loadType);
+ const stat=(label,value)=>'<div><small class="muted">'+esc(label)+'</small><strong>'+esc(value)+'</strong></div>';
+ return '<details class="exercise tp146-exercise tp152-exercise tp152-program-exercise tp128-preview-exercise" data-tp128-exercise="'+esc(id)+'"><summary class="tp146-exercise-summary"><div class="num">'+(i+1)+'</div><div class="tp146-exercise-copy"><div class="ex-name">'+esc(tp149ExerciseName(e))+'</div><div class="meta">'+esc(tp107RxSummary(e,rx))+'</div></div><div class="tp-exercise-actions">'+rf260VideoButton(id)+'<span class="tp152-chevron tp146-exercise-chevron" aria-hidden="true">⌄</span></div></summary><div class="tp146-exercise-body tp152-program-exercise-body"><div class="tp152-program-exercise-grid">'+stat(tp152T('sets'),rx.sets)+stat(tp152T('reps'),rx.reps)+stat(tp152LoadFieldLabel(e),load)+stat(tp152T('rest'),rx.rest+' s')+'</div><p class="small muted tp152-program-exercise-gear">'+esc(tp149Equipment(e))+'</p></div></details>';
+};
+var tp128ProfileChanged=function(old,profile){
+ if(!old||!profile)return false;
+ return ['age','height','weight','goal','experience','activity','minutes','location','gear','cadence','split','excluded','focus','avoidAreas'].some(k=>JSON.stringify(old[k])!==JSON.stringify(profile[k]));
+};
 showPersonalPreview=function(){
- const p=state.programPreview;if(!p)return;
- const base=render;
- render=function(html){
-  if(typeof html==='string'){
-   const profile=state.profilePreview,old=trainingProfile();
-   let details='<div class="card tp128-preview-meta">';
-   if(old&&JSON.stringify(old)!==JSON.stringify(profile))details+='<p>'+esc(tp128T('profileChanged'))+'</p>';
-   details+='<span class="badge">'+esc(tp128T(p.sourceType==='profile-template'?'adapted':'custom'))+'</span>';
-   if(p.sourceTemplateId)details+='<p>'+esc(tp128T('why'))+'</p><strong>'+esc(tp149ProgramMeta(tp128Template(p.sourceTemplateId),'name'))+'</strong>';
-   if(p.estimatedMinutes)details+='<p>'+esc(tp128T('estimate',{min:Math.max(10,p.estimatedMinutes-5),max:p.estimatedMinutes+5}))+'</p>';
-   if(profile)details+='<p>'+esc(tp128T('cadence',{cadence:tp149PlannerRow('cadence',profile.cadence)}))+'</p>';
-   if(p.substitutions?.length)details+='<details><summary>'+esc(tp128T('substitutions'))+'</summary>'+p.substitutions.map(x=>'<p>'+esc(tp149ExerciseName(byId(x.from)))+' → '+esc(x.to?tp149ExerciseName(byId(x.to)):'—')+'</p>').join('')+'</details>';
-   if(p.sourceTemplateId&&!p.days.some(d=>d.exercises.some(id=>['horizontal-pull','vertical-pull'].includes(byId(id)?.movementPattern))))details+='<p>'+esc(tp128T('noPull'))+'</p>';
-   details+='<p>'+esc(tp128T('trial'))+'</p></div>';
-   html=html.replace(/(<main[^>]*>)/,'$1'+details);
-  }
-  return base(html);
- };
+ const p=state.programPreview,profile=state.profilePreview;if(!p||!profile)return;
  if(!state.tp128PreviewToken)state.tp128PreviewToken=tp128PreviewToken();
- try{return tp128PreviewHtmlBase.apply(this,arguments)}finally{render=base;}
+ const stat=(label,value)=>'<div><small class="muted">'+esc(label)+'</small><strong>'+esc(value)+'</strong></div>';
+ const estimated=p.estimatedMinutes||Math.ceil(Math.max(...p.days.map(d=>4+d.exercises.reduce((sum,id)=>{const r=p.prescriptions[id];return sum+r.sets*.65+(r.sets-1)*r.rest/60+1},0))));
+ let summary='<div class="card tp128-preview-meta"><span class="badge">'+esc(tp128T(p.sourceType==='profile-template'?'adapted':'custom'))+'</span><div class="tp152-program-exercise-grid tp128-preview-stats">'+stat(tp128T('duration'),tp128T('minutes',{min:Math.max(10,estimated-5),max:estimated+5}))+stat(tp149T('planner.cadence'),tp149PlannerRow('cadence',profile.cadence))+'</div>';
+ if(Object.entries(p.prescriptions||{}).some(([id,rx])=>tp128NeedsLoad(tp128ProgramExercise(p,id),rx)))summary+='<p class="small muted">'+esc(tp128T('trialShort'))+'</p>';
+ if(tp128ProfileChanged(trainingProfile(),profile))summary+='<p class="small muted">'+esc(tp128T('profileChangedShort'))+'</p>';
+ summary+='</div>';
+ let rationale='<details class="setting tp152-accordion tp128-preview-rationale"><summary><strong>'+esc(tp128T('rationale'))+'</strong><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-accordion-body">';
+ if(p.sourceTemplateId)rationale+='<p class="small muted">'+esc(tp128T('why'))+'</p>';
+ rationale+='<div class="tp152-program-exercise-grid">'+stat(tp149T('planner.goal'),tp149PlannerRow('goal',profile.goal))+stat(tp149T('planner.experience'),tp149PlannerRow('level',profile.experience))+stat(tp149T('planner.focus'),tp149PlannerRow('focus',profile.focus||'balanced'))+stat(tp149T('planner.minutes'),profile.minutes+' '+tp128T('minuteUnit'))+'</div><p class="small muted">'+esc(tp149T('exercise.equipment'))+': '+esc(profileGear132(profile).map(k=>tp149PlannerGear(k)).join(' · ')||tp149T('planner.locationBodyweight'))+'</p>';
+ if(profile.avoidAreas?.length)rationale+='<p class="small muted">'+esc(tp149T('planner.reasonAvoid',{areas:profile.avoidAreas.map(k=>tp149PlannerRow('area',k)).join(', ')}))+'</p>';
+ rationale+='</div></details>';
+ if(p.substitutions?.length)rationale+='<details class="setting tp152-accordion tp128-preview-rationale"><summary><strong>'+esc(tp128T('substitutionsShort'))+' ('+p.substitutions.length+')</strong><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-accordion-body">'+p.substitutions.map(x=>'<p class="small">'+esc(x.day)+': '+esc(tp149ExerciseName(exercises().find(e=>e.id===x.from)))+' → '+esc(x.to?tp149ExerciseName(tp128ProgramExercise(p,x.to)):'—')+'</p>').join('')+'</div></details>';
+ if(p.sourceTemplateId&&!p.days.some(d=>d.exercises.some(id=>['horizontal-pull','vertical-pull'].includes(tp128ProgramExercise(p,id)?.movementPattern))))summary+='<p class="small muted">'+esc(tp128T('noPull'))+'</p>';
+ const days=p.days.map((d,i)=>'<details class="tp152-program-day tp128-preview-day" '+(i===0?'open':'')+'><summary><strong>'+esc(tp149ProgramDayName(p,d))+'</strong><span class="small muted">'+esc(tp149Plural('exercise.count',d.exercises.length))+'</span><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-program-day-body">'+d.exercises.map((id,n)=>tp128PreviewExercise(p,id,n)).join('')+'</div></details>').join('');
+ render(shell('<main class="tp128-preview"><button class="btn secondary" onclick="profileScreen()">← '+esc(tp149T('planner.title'))+'</button><div class="hero"><h1>'+esc(tp149ProgramMeta(p,'name'))+'</h1><p>'+esc(tp149T('planner.previewLabel'))+'</p></div>'+summary+rationale+days+'<button class="btn block" onclick="acceptPersonalProgram()">'+esc(tp149T('planner.activate'))+'</button></main>'));
 };
 // Atomically install a new instance; never replace existing program objects or history.
 acceptPersonalProgram=function(){
