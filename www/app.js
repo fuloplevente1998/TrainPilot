@@ -15914,7 +15914,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
   records=next;
   if(changedGroup)content(changedGroup);
-  if(observersChanged){resizeObserver?.disconnect();records.forEach(row=>{resizeObserver?.observe(row.group);resizeObserver?.observe(row.active)});}
+  // Padding can change while the grid's content box stays identical. Observe
+  // the enclosing border box too so the selection follows those shifts.
+  if(observersChanged){resizeObserver?.disconnect();records.forEach(row=>{resizeObserver?.observe(row.group,{box:'border-box'});resizeObserver?.observe(row.active,{box:'border-box'})});}
  }
  const baseRender=render;
  render=function(){

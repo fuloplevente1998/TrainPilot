@@ -5,7 +5,7 @@
   --ok:#62d08a; --bad:#ff6c72;
 }
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--tp-ui-font,Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif)}
 button,input,select,textarea{font:inherit}
 button{cursor:pointer}
 #app{max-width:780px;margin:auto;min-height:100vh}

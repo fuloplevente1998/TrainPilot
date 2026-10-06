@@ -282,5 +282,9 @@
   {
     "file": "tests/browser/navigation-motion-137.cjs",
     "estimatedSeconds": 65
+  },
+  {
+    "file": "tests/browser/typography-scroll-137.cjs",
+    "estimatedSeconds": 45
   }
 ]

@@ -1,5 +1,5 @@
-const C='trainpilot-v127-navigation-themes-137-r4';
-const CORE=['./privacy.html','./','./index.html','./styles.css','./health-dashboard-168.css','./global-uiux-177.css','./progress-177.css','./issue67-polish.css','./training-107.css','./page-frame-109.css','./features-110.css','./ble-discovery-111.css','./health-journal-120.css','./progress-anatomy-177.webp','./progress-muscle-chest-177.png','./progress-muscle-back-177.png','./progress-muscle-shoulders-177.png','./progress-muscle-arms-177.png','./progress-muscle-core-177.png','./progress-muscle-legs-177.png','./manifest.json','./runtime-manifest.txt'];
+const C='trainpilot-v127-typography-scroll-137-r5';
+const CORE=['./privacy.html','./','./index.html','./styles.css','./health-dashboard-168.css','./global-uiux-177.css','./typography-137.css','./trainpilot-inter.woff2','./progress-177.css','./issue67-polish.css','./training-107.css','./page-frame-109.css','./features-110.css','./ble-discovery-111.css','./health-journal-120.css','./progress-anatomy-177.webp','./progress-muscle-chest-177.png','./progress-muscle-back-177.png','./progress-muscle-shoulders-177.png','./progress-muscle-arms-177.png','./progress-muscle-core-177.png','./progress-muscle-legs-177.png','./manifest.json','./runtime-manifest.txt'];
 
 async function runtimeAssets(){
   const r=await fetch('./runtime-manifest.txt',{cache:'no-store'});

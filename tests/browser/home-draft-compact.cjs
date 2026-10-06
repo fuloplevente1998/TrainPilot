@@ -24,7 +24,7 @@ const server=http.createServer((req,res)=>{
   assert.equal(baseline.compact,false);
   const normalPlanner=async()=>page.locator('main>.onboarding').evaluate(card=>{const h=card.querySelector('h2'),p=card.querySelector('p'),b=card.querySelector('button');return {heading:getComputedStyle(h).fontSize,copy:getComputedStyle(p).fontSize,height:card.getBoundingClientRect().height,buttonWidth:b.getBoundingClientRect().width,stacked:b.getBoundingClientRect().top>=p.getBoundingClientRect().bottom-1};});
   const normal=await normalPlanner();
-  assert.equal(normal.heading,'24px');assert.equal(normal.copy,'16px');assert.equal(normal.stacked,true,'normal planner keeps its full-width button below the copy');
+  assert.equal(normal.heading,'24px');assert.equal(normal.copy,'14px');assert.equal(normal.stacked,true,'normal planner keeps its full-width button below the copy');
   assert.ok(normal.height>=110,'normal planner retains its full-size card');
   await page.evaluate(()=>{
    startWorkout(activeProgram().days[0].id);persistDraft();state.session=null;state.workout=null;go('home');
