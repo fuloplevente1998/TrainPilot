@@ -15842,8 +15842,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
   .tp137-motion-group:not(.top){position:relative;isolation:isolate}
   .tp137-selection{position:absolute;z-index:-1;box-sizing:border-box;pointer-events:none;display:block}
   html body .tp137-motion-group .tp137-selected{background:transparent!important;border-color:transparent!important;box-shadow:none!important}
-  html body .tp137-motion-group button{position:relative;z-index:2!important;transform:none!important;transition:color 140ms ease!important}
-  html body .top.tp137-motion-group .tp154-nav-cell{z-index:2!important;transform:none!important;transition:color 140ms ease!important}
+  html body .tp137-motion-group button{position:relative;z-index:2!important;transform:none!important;transition:none!important}
+  html body .top.tp137-motion-group .tp154-nav-cell{z-index:2!important;transform:none!important;transition:none!important}
   .tp137-motion-group .tp137-selected::before,.tp137-motion-group .tp137-selected::after{box-shadow:none!important;background:transparent!important}
  `;
  document.head.appendChild(style);
@@ -15868,7 +15868,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
   else if(groupKey==='statistics')elements=[main.querySelector('.tp107-personal-records,.tp107-cardio')];
   else elements=[...main.children].filter(e=>e.tagName!=='NAV'&&!e.contains(to));
   elements.filter(Boolean).forEach(e=>{
-   contentAnimations.push(e.animate([{opacity:.68,transform:'translateX('+direction*8+'px)'},{opacity:1,transform:'translateX(0)'}],{duration:180,easing}));
+   // Full-page folds keep their horizontal geometry even during entry.
+   const frames=groupKey==='navigation'?[{opacity:.68},{opacity:1}]:
+    [{opacity:.68,transform:'translateX('+direction*8+'px)'},{opacity:1,transform:'translateX(0)'}];
+   contentAnimations.push(e.animate(frames,{duration:180,easing}));
   });
  }
  function sync(before=new Map(),animate=true){
