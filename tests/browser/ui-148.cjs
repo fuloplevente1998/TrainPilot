@@ -23,11 +23,11 @@ const {chromium}=require('playwright');
     const strip=document.querySelector('.tp-brand-strip'),top=document.querySelector('.top');
     if(!top)return null;
     const n=top.getBoundingClientRect();
-    return {brandPresent:!!strip,n:{top:n.top,bottom:n.bottom}};
+    return {brandPresent:!!strip,n:{top:n.top,bottom:n.bottom},height:innerHeight};
    });
    assert.ok(head,'sticky navigation must exist');
    assert.equal(head.brandPresent,false,'Home brand/version strip must be physically removed');
-   assert.ok(head.n.top<=1,'primary navigation must be the topmost Home chrome');
+   assert.ok(Math.abs(head.n.bottom-head.height)<=1,'primary navigation is fixed to the bottom edge by default');
 
    await page.evaluate(()=>profileScreen());
    await page.waitForTimeout(80);

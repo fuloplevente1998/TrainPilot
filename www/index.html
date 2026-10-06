@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="hu" class="tp-booting"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0e1015"><title>TrainPilot</title><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="health-dashboard-168.css"><link rel="stylesheet" href="global-uiux-177.css"><link rel="stylesheet" href="progress-177.css"><link rel="stylesheet" href="issue67-polish.css"><link rel="stylesheet" href="training-107.css"><link rel="stylesheet" href="page-frame-109.css"><link rel="stylesheet" href="features-110.css"><link rel="stylesheet" href="ble-discovery-111.css"><link rel="stylesheet" href="health-journal-120.css"><style>html,body{margin:0;min-height:100%;background:#0e1015}html.tp-booting #app{visibility:hidden}#tpBoot{position:fixed;inset:0;display:grid;place-items:center;background:#0e1015;color:#f6f8fb;font:900 25px/1.2 system-ui,sans-serif;z-index:999999}</style></head><body><div id="tpBoot" aria-label="Betöltés"></div><div id="app"></div>
+<html lang="hu" class="tp-booting"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0e1015"><title>TrainPilot</title><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="health-dashboard-168.css"><link rel="stylesheet" href="global-uiux-177.css"><link rel="stylesheet" href="progress-177.css"><link rel="stylesheet" href="issue67-polish.css"><link rel="stylesheet" href="training-107.css"><link rel="stylesheet" href="page-frame-109.css"><link rel="stylesheet" href="features-110.css"><link rel="stylesheet" href="ble-discovery-111.css"><link rel="stylesheet" href="health-journal-120.css"><link rel="stylesheet" href="adaptive-navigation-127.css"><style>html,body{margin:0;min-height:100%;background:#0e1015}html.tp-booting #app{visibility:hidden}#tpBoot{position:fixed;inset:0;display:grid;place-items:center;background:#0e1015;color:#f6f8fb;font:900 25px/1.2 system-ui,sans-serif;z-index:999999}</style></head><body><div id="tpBoot" aria-label="Betöltés"></div><div id="app"></div>
 <script defer src="app.js"></script>
 <script>window.addEventListener("DOMContentLoaded",function(){
 /* Phase 5 #44 — shared, local-day-bound Today summary on Home and Health. */
@@ -346,6 +346,7 @@
   de:{open:'Demo / Anleitung',guide:'Beschreibung und Anleitung',empty:'Für diese Übung ist keine ausführliche Anleitung verfügbar.',source:'Quelle',close:'Übungsdemo schließen'},
   ro:{open:'Demonstrație / instrucțiuni',guide:'Descriere și instrucțiuni',empty:'Nu există instrucțiuni detaliate pentru acest exercițiu.',source:'Sursă',close:'Închide demonstrația'}
  };
+ const attr=(node,name,value)=>{if(node.getAttribute(name)!==value)node.setAttribute(name,value);};
  const copy=()=>labels[(typeof rf212Lang==='function'?rf212Lang():document.documentElement.lang)]||labels.hu;
  let focusReturn=null;
  const closeBase=window.closeDemo;
@@ -447,6 +448,7 @@
   de:{previous:'Vorherige Übung',next:'Nächste Übung',finish:'Training beenden'},
   ro:{previous:'Exercițiul anterior',next:'Exercițiul următor',finish:'Finalizează antrenamentul'}
  };
+ const attr=(node,name,value)=>{if(node.getAttribute(name)!==value)node.setAttribute(name,value);};
  const copy=()=>labels[(typeof rf212Lang==='function'?rf212Lang():(document.documentElement.lang||'hu').slice(0,2))]||labels.hu;
  let raf=0;
 
@@ -1876,5 +1878,164 @@
  window.TrainPilotPhase7Performance={version:'phase7-performance-19-r4',historySnapshot:'operation-scoped',persistentCache:false,lazyPrograms:true,batchedProgressStats:true,deferredCoachProgress:true};
 })();
 
+});</script>
+<script>window.addEventListener('DOMContentLoaded',function(){
+/* #127 — layout-only adaptation: moving existing controls never calls render/go. */
+(function(){
+ 'use strict';
+ if(typeof document.createElement('div').append!=='function')return;
+ const html=document.documentElement,app=document.getElementById('app'),key='trainpilot.navigation.v1';
+ const icons={"home": "<path d=\"M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8\" />\n  <path d=\"M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\" />", "plan": "<path d=\"M17.596 12.768a2 2 0 1 0 2.829-2.829l-1.768-1.767a2 2 0 0 0 2.828-2.829l-2.828-2.828a2 2 0 0 0-2.829 2.828l-1.767-1.768a2 2 0 1 0-2.829 2.829z\" />\n  <path d=\"m2.5 21.5 1.4-1.4\" />\n  <path d=\"m20.1 3.9 1.4-1.4\" />\n  <path d=\"M5.343 21.485a2 2 0 1 0 2.829-2.828l1.767 1.768a2 2 0 1 0 2.829-2.829l-6.364-6.364a2 2 0 1 0-2.829 2.829l1.768 1.767a2 2 0 0 0-2.828 2.829z\" />\n  <path d=\"m9.6 14.4 4.8-4.8\" />", "health": "<path d=\"M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5\" />", "programs": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" />\n  <path d=\"M3 9h18\" />\n  <path d=\"M9 21V9\" />", "history": "<path d=\"M2 6h4\" />\n  <path d=\"M2 10h4\" />\n  <path d=\"M2 14h4\" />\n  <path d=\"M2 18h4\" />\n  <rect width=\"16\" height=\"20\" x=\"4\" y=\"2\" rx=\"2\" />\n  <path d=\"M9.5 8h5\" />\n  <path d=\"M9.5 12H16\" />\n  <path d=\"M9.5 16H14\" />", "calendar": "<path d=\"M8 2v3\" />\n  <path d=\"M16 2v3\" />\n  <rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\" />\n  <path d=\"M3 9h18\" />\n  <path d=\"M8 13h.01\" />\n  <path d=\"M12 13h.01\" />\n  <path d=\"M16 13h.01\" />\n  <path d=\"M8 17h.01\" />\n  <path d=\"M12 17h.01\" />\n  <path d=\"M16 17h.01\" />", "coach": "<path d=\"M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z\" />\n  <path d=\"M20 2v4\" />\n  <path d=\"M22 4h-4\" />\n  <circle cx=\"4\" cy=\"20\" r=\"2\" />", "settings": "<path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\" />\n  <circle cx=\"12\" cy=\"12\" r=\"3\" />"};
+ let formCounter=0;
+ let preferences={portrait:'bottom',landscape:'right'},orientation='',edge='',frame=0,navNode=null,toolNode=null,keyboard=false,stableHeight=innerHeight,stableWidth=innerWidth;
+ try{const saved=JSON.parse(localStorage.getItem(key)||'null');if(saved){if(['top','bottom'].includes(saved.portrait))preferences.portrait=saved.portrait;if(['left','right'].includes(saved.landscape))preferences.landscape=saved.landscape;}}catch(_){}
+ const labels={hu:{top:'Főmenü felülre',bottom:'Főmenü alulra',left:'Főmenü balra',right:'Főmenü jobbra',tools:'Oldalműveletek'},en:{top:'Move menu to top',bottom:'Move menu to bottom',left:'Move menu left',right:'Move menu right',tools:'Page actions'},de:{top:'Menü nach oben',bottom:'Menü nach unten',left:'Menü nach links',right:'Menü nach rechts',tools:'Seitenaktionen'},ro:{top:'Mută meniul sus',bottom:'Mută meniul jos',left:'Mută meniul la stânga',right:'Mută meniul la dreapta',tools:'Acțiuni pagină'}};
+ const attr=(node,name,value)=>{if(node.getAttribute(name)!==value)node.setAttribute(name,value);};
+ const copy=()=>labels[(typeof rf212Lang==='function'?rf212Lang():html.lang)||'en']||labels.en;
+ function setVariable(name,value){const text=value+'px';if(html.style.getPropertyValue('--tp127-'+name)!==text)html.style.setProperty('--tp127-'+name,text);}
+ function routeOf(button){return button.classList.contains('tp154-coach-action')?'coach':button.classList.contains('tp154-settings-action')?'settings':(button.getAttribute('onclick')||'').match(/go\(['"]([^'"]+)/)?.[1];}
+ function decorateNav(){
+  const nav=app.querySelector('.top.tp154-nav-grid');if(!nav)return null;
+  for(const button of nav.querySelectorAll('.tp154-nav-cell')){
+   const route=routeOf(button),paths=icons[route];if(!paths)continue;
+   let icon=button.querySelector('.tp151-nav-icon,.tp154-nav-action-icon');
+   if(!icon){icon=document.createElement('span');icon.className='tp151-nav-icon';icon.setAttribute('aria-hidden','true');button.prepend(icon);}
+   if(!icon.querySelector('.tp127-icon'))icon.innerHTML='<svg class="tp127-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+paths+'</svg>';
+   if(route==='settings'&&!button.querySelector('.tp151-nav-label')){const label=document.createElement('span');label.className='tp151-nav-label';label.textContent=typeof tp151T==='function'?tp151T('settings'):'Settings';button.append(label);}
+   const active=button.classList.contains('active');if(active)attr(button,'aria-current','page');else button.removeAttribute('aria-current');
+  }
+  let change=nav.querySelector('.tp127-edge-switch');
+  if(!change){change=document.createElement('button');change.type='button';change.className='tp127-edge-switch';change.addEventListener('click',()=>setEdge(edge==='bottom'?'top':edge==='top'?'bottom':edge==='right'?'left':'right'));nav.append(change);}
+  const next=edge==='bottom'?'top':edge==='top'?'bottom':edge==='right'?'left':'right',text=copy()[next];
+  const glyph={top:'↑',bottom:'↓',left:'←',right:'→'}[next];if(change.textContent!==glyph)change.textContent=glyph;attr(change,'title',text);attr(change,'aria-label',text);
+  return nav;
+ }
+ const selectors=['.tp150-program-tools','.tp155-journal-tabs','.tp107-statistics-tabs','.tp150-quick-entry','.tp1511-training','.tp120-home-goals','.tp168-sync-tail','.tp16-workout-actions','.tp153-workout-actions','.tp155-panel-sticky','.tp155-library-filters','.tp155-planner-title','.tp119-replan-actions','.tp106-builder-header','.tp152-profile-build','form>button[type=submit]'];
+ function dock(main){
+  if(!main)return null;
+  let host=main.querySelector(':scope > .tp127-page-tools');
+  const builderHeader=main.closest('.tp155-r4-panel')?.querySelector('.tp106-builder-header');
+  const controls=[...main.querySelectorAll(selectors.join(','))].filter(node=>!node.closest('.tp127-page-tools')&&!node.parentElement.closest('.tp16-workout-actions,.tp153-workout-actions')&&!node.parentElement.closest('details:not(.tp1511-training)'));
+  if(builderHeader&&!builderHeader.closest('.tp127-page-tools'))controls.unshift(builderHeader);
+  // Back/Save actions belong to the current editor, not each exercise in a list.
+  for(const child of main.children)if(child.tagName==='BUTTON'&&/\b(?:go|save[A-Z]|tp\d+Save|rf\d+Save)\b/.test(child.getAttribute('onclick')||''))controls.push(child);
+  if(controls.length&&!host){host=document.createElement('div');host.className='tp127-page-tools';host.setAttribute('role','group');main.append(host);}
+  if(host){attr(host,'aria-label',copy().tools);for(const control of controls)if(!controls.some(other=>other!==control&&other.contains(control))){if(control.tagName==='BUTTON'&&control.type==='submit'&&control.form){const form=control.form;if(!form.id)form.id='tp127-form-'+(++formCounter);control.setAttribute('form',form.id);}host.append(control);}const panel=main.closest('#tp155R4PanelHost');if(panel&&['quick','exercises'].includes(panel.dataset.panel)){const close=panel.querySelector('.tp155-r4-panel-close');if(close&&!close.closest('.tp127-page-tools')){close.classList.add('tp127-local-close');(host.querySelector('.tp155-panel-sticky,.tp155-library-filters')||host).append(close);}}}
+  return host;
+ }
+ function panelBounds(){
+  const vv=window.visualViewport,top=keyboard?Math.max(0,vv?.offsetTop||0):0,bottom=keyboard?Math.max(0,innerHeight-(vv?.height||innerHeight)-(vv?.offsetTop||0)):0;
+  return {top:top+(edge==='top'&&!keyboard?size('nav')+size('tools'):0),bottom:bottom+(edge==='bottom'&&!keyboard?size('nav')+size('tools'):0),left:edge==='left'&&!keyboard?size('nav')+size('tools'):0,right:edge==='right'&&!keyboard?size('nav')+size('tools'):0};
+ }
+ const size=name=>parseFloat(html.style.getPropertyValue('--tp127-'+name))||0;
+ function positionPanels(){
+  const bounds=panelBounds();
+  for(const host of document.querySelectorAll('#tp155R4PanelHost,#tp3PlannerPanelHost'))for(const side of ['top','bottom','left','right'])host.style.setProperty(side,bounds[side]+'px','important');
+ }
+ function measure(){
+  frame=0;
+  const nav=app.querySelector('.top.tp154-nav-grid');if(!nav)return;
+  const panel=document.querySelector('#tp3PlannerPanelHost main,#tp155R4PanelHost main'),main=panel||app.querySelector('main');
+  const activeTools=main?.querySelector(':scope > .tp127-page-tools');
+  if(nav!==navNode){if(navNode)resizer.unobserve(navNode);navNode=nav;resizer.observe(nav);}
+  if(activeTools!==toolNode){if(toolNode)resizer.unobserve(toolNode);toolNode=activeTools;if(toolNode)resizer.observe(toolNode);}
+  const side=edge==='left'||edge==='right';
+  setVariable('rail',Math.max(144,Math.min(184,innerWidth*.22)));
+  setVariable('tool-rail',Math.max(120,Math.min(180,innerWidth*.18)));
+  setVariable('nav',keyboard?0:Math.ceil(side?nav.getBoundingClientRect().width:nav.getBoundingClientRect().height));
+  setVariable('tools',keyboard||!activeTools?0:Math.ceil(side?activeTools.getBoundingClientRect().width:activeTools.getBoundingClientRect().height));
+  const bounds=panelBounds();for(const side of ['top','bottom','left','right'])setVariable(side,bounds[side]);
+  for(const host of app.querySelectorAll('.tp127-page-tools'))host.classList.toggle('tp127-background-tools',!!panel);
+  positionPanels();
+ }
+ const resizer=new ResizeObserver(()=>schedule());
+ function schedule(){if(!frame)frame=requestAnimationFrame(measure);}
+ function apply(){
+  if(!edge)updateViewport();
+  decorateNav();
+  for(const main of document.querySelectorAll('#app main,#tp155R4PanelHost main,#tp3PlannerPanelHost main')){if(!main.closest('#app')&&!main.classList.contains('tp127-panel-main'))main.classList.add('tp127-panel-main');dock(main);}
+  measure();schedule();
+ }
+ function setEdge(next){
+  if(!['top','bottom','left','right'].includes(next))return;
+  const mode=['top','bottom'].includes(next)?'portrait':'landscape';
+  if(mode!==orientation)return;
+  preferences[mode]=next;try{localStorage.setItem(key,JSON.stringify(preferences));}catch(_){}
+  edge=next;html.dataset.tpNavEdge=edge;apply();
+ }
+ function editable(){const el=document.activeElement;return !!el&&(el.matches('textarea,[contenteditable=true]')||el.matches('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=range])'));}
+ function updateViewport(){
+  const vv=window.visualViewport;
+  // An IME shrinks the viewport but must not turn a portrait phone into a landscape rail.
+  const lost=Math.max(stableHeight-innerHeight,innerHeight-(vv?.height||innerHeight));
+  keyboard=(editable()||keyboard)&&Math.abs(innerWidth-stableWidth)<2&&lost>120;
+  if(!keyboard){stableHeight=innerHeight;stableWidth=innerWidth;orientation=innerWidth>innerHeight?'landscape':'portrait';edge=preferences[orientation];}
+  html.classList.toggle('tp127-keyboard',keyboard);html.dataset.tpNavEdge=edge;
+  decorateNav();schedule();
+ }
+ let mutationDepth=0;
+ for(const name of ['go','render','tp155R4RefreshPanel','tp155R4OpenPanel','tp155R4ClosePanel','profileScreen','tp3ClosePlannerPanel'])if(typeof window[name]==='function'){
+  const base=window[name];window[name]=function(){if(name==='tp155R4RefreshPanel'){const panel=document.querySelector('#tp155R4PanelHost .tp155-r4-panel'),header=panel?.querySelector('.tp106-builder-header'),close=panel?.querySelector('.tp155-r4-panel-close');if(header)panel.prepend(header);else if(close?.closest('.tp127-page-tools'))panel.prepend(close);}if(name==='tp155R4ClosePanel'||name==='tp3ClosePlannerPanel')for(const host of app.querySelectorAll('.tp127-background-tools'))host.classList.remove('tp127-background-tools');mutationDepth++;try{return base.apply(this,arguments);}finally{if(--mutationDepth===0)apply();}};
+ }
+ // Rail dropdowns open into the content lane, without being clipped by the rail scroll area.
+ if(typeof window.rf260PositionSelect==='function'){
+  const positionSelect=window.rf260PositionSelect;
+  window.rf260PositionSelect=function(wrap){
+   const menu=wrap?.querySelector('.tp-select-menu');if(menu?.dataset.tp127RailMenu){for(const property of ['position','left','top','width','max-height','bottom','right'])menu.style.removeProperty(property);delete menu.dataset.tp127RailMenu;}
+   const result=positionSelect.apply(this,arguments),tools=wrap?.closest('.tp127-page-tools');
+   if(menu&&edge==='bottom'&&!tools&&wrap.closest('#app details[open]')){
+    const r=wrap.querySelector('.tp-select-trigger').getBoundingClientRect(),bounds=panelBounds(),above=r.top-bounds.top-12,below=innerHeight-bounds.bottom-r.bottom-12,up=above>=100||above>=below;
+    const width=Math.min(parseFloat(menu.style.width)||r.width,innerWidth-16),height=Math.min(280,Math.max(44,up?above:below)),left=Math.max(8,Math.min(r.left,innerWidth-width-8));
+    menu.dataset.placement=up?'top':'bottom';
+    for(const [property,value] of Object.entries({position:'fixed',top:up?'auto':(r.bottom+6)+'px',bottom:up?(innerHeight-r.top+6)+'px':'auto',left:left+'px',width:width+'px','max-height':height+'px'}))menu.style.setProperty(property,value,'important');
+   }
+   if(!tools||!menu||keyboard||!['left','right'].includes(edge))return result;
+   const trigger=wrap.querySelector('.tp-select-trigger').getBoundingClientRect(),rail=tools.getBoundingClientRect(),bounds=panelBounds(),vv=window.visualViewport;
+   const available=innerWidth-bounds.left-bounds.right-20,width=Math.min(260,Math.max(80,available)),height=Math.min(280,(vv?.height||innerHeight)-24);
+   const left=edge==='right'?rail.left-width-6:rail.right+6,top=Math.max(12,Math.min(trigger.top,(vv?.height||innerHeight)-height-12));
+   menu.dataset.tp127RailMenu='true';menu.dataset.placement=edge==='right'?'left':'right';
+   for(const [property,value] of Object.entries({position:'fixed',left:left+'px',top:top+'px',width:width+'px','max-height':height+'px',bottom:'auto',right:'auto'}))menu.style.setProperty(property,value,'important');
+   return result;
+  };
+ }
+ if(typeof window.tp162ThemeToggle==='function'){
+  const toggleTheme=window.tp162ThemeToggle;
+  window.tp162ThemeToggle=function(button){const result=toggleTheme.apply(this,arguments);requestAnimationFrame(()=>{
+   const wrap=button.closest('.tp162-theme-dropdown');if(!wrap?.classList.contains('open'))return;
+   const menu=wrap.querySelector('.tp-select-menu'),r=button.getBoundingClientRect(),panel=button.closest('.tp155-r4-panel')?.getBoundingClientRect(),bounds=panelBounds();
+   const top=Math.max(bounds.top,panel?.top||0)+12,bottom=Math.min(innerHeight-bounds.bottom,panel?.bottom||innerHeight)-16;
+   const below=Math.max(0,bottom-r.bottom-6),above=Math.max(0,r.top-top-6),up=below<220&&above>below;
+   menu.dataset.placement=up?'top':'bottom';menu.style.setProperty('--tp162-theme-max-height',Math.max(44,Math.min(300,up?above:below))+'px');
+  });return result;};
+ }
+ // Switching a Journal subpage starts at its heading; edge changes alone keep scroll state.
+ if(typeof window.tp107SelectStats==='function'){const selectStats=window.tp107SelectStats;window.tp107SelectStats=function(){const result=selectStats.apply(this,arguments);window.scrollTo(0,0);return result;};}
+ // Existing panel resize/scroll callbacks call these public geometry hooks.
+ window.tp161AdjustPanel=positionPanels;window.tp3PlannerPosition=positionPanels;
+ new MutationObserver(()=>apply()).observe(app,{childList:true});
+ new MutationObserver(()=>apply()).observe(document.body,{childList:true});
+ window.addEventListener('resize',updateViewport,{passive:true});window.visualViewport?.addEventListener('resize',updateViewport,{passive:true});window.visualViewport?.addEventListener('scroll',schedule,{passive:true});
+ document.addEventListener('focusin',updateViewport);document.addEventListener('focusout',()=>requestAnimationFrame(updateViewport));
+ // Reflow may scroll a newly opened Journal picker into the free area. Keep its list open.
+ let scrollClosing=false;
+ if(typeof window.rf260ScrollState==='function'&&typeof window.rf260CloseSelects==='function'){
+  const scrollState=window.rf260ScrollState,closeSelects=window.rf260CloseSelects;
+  window.rf260ScrollState=function(){scrollClosing=true;queueMicrotask(()=>{scrollClosing=false;});return scrollState.apply(this,arguments);};
+  window.rf260CloseSelects=function(except){if(scrollClosing&&!except&&edge==='bottom'&&app.querySelector('.tp3-add-exercise .tp-select.open')){window.rf260RepositionOpenSelects?.();return;}return closeSelects.apply(this,arguments);};
+ }
+  const disclosureAnchors=new WeakMap();
+ document.addEventListener('click',event=>{const summary=event.target.closest('summary');if(summary?.parentElement.tagName==='DETAILS'&&!summary.parentElement.open)disclosureAnchors.set(summary.parentElement,summary.getBoundingClientRect().bottom);},true);
+ document.addEventListener('toggle',event=>{
+  if(event.target.tagName!=='DETAILS')return;
+  schedule();
+  if(event.target.open&&edge==='bottom'&&disclosureAnchors.has(event.target)&&!event.target.closest('.tp127-page-tools'))requestAnimationFrame(()=>{
+   const summary=event.target.querySelector(':scope > summary');if(!summary)return;
+   const rect=summary.getBoundingClientRect(),limit=Math.min(disclosureAnchors.get(event.target),innerHeight-size('nav')-size('tools')-12);disclosureAnchors.delete(event.target);
+   if(rect.bottom>limit){const scroll=summary.closest('.tp155-panel-scroll,.tp155-library-results,.tp155-r4-panel,.tp3-planner-panel');if(scroll)scroll.scrollTop+=rect.bottom-limit;else window.scrollBy(0,rect.bottom-limit);window.rf260RepositionOpenSelects?.();}
+  });
+ },true);
+ window.TrainPilotNavigation127={setEdge,refresh:apply,get edge(){return edge},get orientation(){return orientation},get keyboard(){return keyboard}};
+ updateViewport();apply();
+})();
 });</script>
 </body></html>

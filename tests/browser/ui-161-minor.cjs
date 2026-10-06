@@ -26,10 +26,10 @@ const {chromium}=require('playwright');
     const host=document.querySelector('#tp155R4PanelHost[data-panel="'+type+'"]');
     const panel=host.querySelector('.tp155-r4-panel'),close=host.querySelector('.tp155-r4-panel-close'),content=host.querySelector('.tp155-r4-panel-content');
     const hr=host.getBoundingClientRect(),pr=panel.getBoundingClientRect(),cr=close.getBoundingClientRect(),xr=content.getBoundingClientRect();
-    return {navBottom:nav.bottom,hostTop:hr.top,panelTop:pr.top,closeTop:cr.top,closeRight:cr.right,panelRight:pr.right,contentTop:xr.top,position:getComputedStyle(close).position,clear:getComputedStyle(content).clear,closeBottom:cr.bottom,firstCardTop:host.querySelector('.tp151-coach-recommendation')?.getBoundingClientRect().top??null};
+    return {navBottom:nav.bottom,expectedTop:parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tp127-top'))||0,hostTop:hr.top,panelTop:pr.top,closeTop:cr.top,closeRight:cr.right,panelRight:pr.right,contentTop:xr.top,position:getComputedStyle(close).position,clear:getComputedStyle(content).clear,closeBottom:cr.bottom,firstCardTop:host.querySelector('.tp151-coach-recommendation')?.getBoundingClientRect().top??null};
    },type);
-   assert.ok(g.hostTop<=g.navBottom+1&&g.hostTop>=g.navBottom-9,type+' panel should sit directly under/slightly overlap the fixed navigation: '+JSON.stringify(g));
-   assert.ok(g.panelTop<=g.navBottom+3&&g.panelTop>=g.navBottom-6,type+' visible panel edge should sit directly against the navigation: '+JSON.stringify(g));
+   assert.ok(Math.abs(g.hostTop-g.expectedTop)<=1,type+' panel should sit directly under/slightly overlap the fixed navigation: '+JSON.stringify(g));
+   assert.ok(g.panelTop>=g.hostTop&&g.panelTop<=g.hostTop+10,type+' visible panel edge should sit directly against the navigation: '+JSON.stringify(g));
    assert.equal(g.clear,'none',type+' content should not clear below the close button');
    const is162=await page.evaluate(()=>!!window.TrainPilot162Followup);
    if(is162){

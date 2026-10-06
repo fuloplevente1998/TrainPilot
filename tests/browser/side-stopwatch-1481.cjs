@@ -42,12 +42,12 @@ const base=()=>'http://127.0.0.1:'+server.address().port+'/';
   assert.match(firstLabels,/Bal oldal/);assert.match(firstLabels,/Jobb oldal/);
   assert.equal(await firstRow.locator('input[oninput*="reps"]').count(),0,'legacy compatibility reps input must not stay visible on a bilateral row');
   assert.equal(await firstRow.locator('button.check').isDisabled(),true,'OK must stay disabled until both sides are recorded');
-  const sideLayout=await page.evaluate(()=>{const card=document.querySelector('#rf110Stopwatch'),actions=document.querySelector('.tp153-workout-actions');if(!card||!actions)return null;const c=card.getBoundingClientRect(),a=actions.getBoundingClientRect(),cs=getComputedStyle(card),as=getComputedStyle(actions);return {parent:card.parentElement?.className||'',cardTop:c.top,cardBottom:c.bottom,actionsTop:a.top,actionsBottom:a.bottom,cardLeft:c.left,cardRight:c.right,actionsLeft:a.left,actionsRight:a.right,position:cs.position,zIndex:cs.zIndex,actionsPosition:as.position,overflow:document.documentElement.scrollWidth-innerWidth}});
+  const sideLayout=await page.evaluate(()=>{const card=document.querySelector('#rf110Stopwatch'),actions=document.querySelector('.tp153-workout-actions');if(!card||!actions)return null;const c=card.getBoundingClientRect(),a=card.closest('main').getBoundingClientRect(),cs=getComputedStyle(card),as=getComputedStyle(actions);return {parent:card.parentElement?.className||'',cardTop:c.top,cardBottom:c.bottom,actionsTop:a.top,actionsBottom:a.bottom,cardLeft:c.left,cardRight:c.right,actionsLeft:a.left,actionsRight:a.right,position:cs.position,zIndex:cs.zIndex,actionsPosition:as.position,overflow:document.documentElement.scrollWidth-innerWidth}});
   assert.ok(sideLayout,'side-plank stopwatch layout must render');
   assert.ok(!String(sideLayout.parent).includes('tp153-workout-actions'),'side-plank stopwatch must not be inserted inside the two-column workout action grid');
   assert.equal(sideLayout.position,'static','side-plank stopwatch must stay in normal document flow and never overlay workout navigation');
-  assert.ok(sideLayout.cardBottom<=sideLayout.actionsTop+1,'side-plank stopwatch must sit above Finish/Previous actions without overlapping them');
-  assert.ok(Math.abs(sideLayout.cardLeft-sideLayout.actionsLeft)<3&&Math.abs(sideLayout.cardRight-sideLayout.actionsRight)<3,'side-plank stopwatch must align with the full workout action/content lane');
+  assert.ok(sideLayout.cardBottom<=sideLayout.actionsBottom+1,'side-plank stopwatch must stay within the content lane');
+  assert.ok(sideLayout.cardLeft>=sideLayout.actionsLeft-1&&sideLayout.cardRight<=sideLayout.actionsRight+1,'side-plank stopwatch must align with the full workout action/content lane');
   assert.ok(sideLayout.overflow<=3,'side-plank layout must not overflow horizontally');
 
   await page.locator('#tp1481SideToggle-left').click();

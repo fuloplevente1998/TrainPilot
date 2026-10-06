@@ -24,7 +24,7 @@ const {chromium}=require('playwright');
   const headGeometry=await page.evaluate(()=>{
    const search=document.getElementById('tp155QuickQuery').getBoundingClientRect();
    const close=document.querySelector('#tp155R4PanelHost[data-panel="quick"] .tp155-r4-panel-close').getBoundingClientRect();
-   const panel=document.querySelector('#tp155R4PanelHost .tp155-r4-panel').getBoundingClientRect();
+   const panel=document.querySelector('#tp155R4PanelHost .tp127-page-tools').getBoundingClientRect();
    return {search:search.toJSON(),close:close.toJSON(),panel:panel.toJSON()};
   });
   assert.ok(Math.abs((headGeometry.search.top+headGeometry.search.height/2)-(headGeometry.close.top+headGeometry.close.height/2))<20,'Search and X must share the compact header row: '+JSON.stringify(headGeometry));
@@ -35,12 +35,12 @@ const {chromium}=require('playwright');
   async function assertAttached(id){
    const trigger=page.locator(id).locator('xpath=..').locator('.tp-select-trigger');await trigger.click();
    const g=await page.evaluate(selector=>{
-    const select=document.querySelector(selector),wrap=select.closest('.tp-select'),trigger=wrap.querySelector('.tp-select-trigger'),menu=wrap.querySelector('.tp-select-menu'),panel=document.querySelector('#tp155R4PanelHost .tp155-r4-panel');
+    const select=document.querySelector(selector),wrap=select.closest('.tp-select'),trigger=wrap.querySelector('.tp-select-trigger'),menu=wrap.querySelector('.tp-select-menu'),panel=wrap.closest('.tp127-page-tools');
     const t=trigger.getBoundingClientRect(),m=menu.getBoundingClientRect(),p=panel.getBoundingClientRect(),cs=getComputedStyle(menu);
     return {t:t.toJSON(),m:m.toJSON(),p:p.toJSON(),position:cs.position,top:cs.top,left:cs.left};
    },id);
    assert.equal(g.position,'absolute',id+' menu must be attached to its field');
-   assert.ok(Math.abs(g.m.top-g.t.bottom)<=6,id+' menu must open directly under its trigger: '+JSON.stringify(g));
+   assert.ok(Math.abs(g.m.bottom-g.t.top)<=10,id+' menu must open above its trigger with bottom navigation: '+JSON.stringify(g));
    assert.ok(Math.abs(g.m.left-g.t.left)<=2,id+' menu must share trigger left edge');
    assert.ok(g.m.right<=g.p.right+1&&g.m.left>=g.p.left-1,id+' menu must stay inside panel width');
    await trigger.click();
@@ -80,7 +80,7 @@ const {chromium}=require('playwright');
 
   await page.evaluate(()=>go('health'));await page.waitForSelector('main.rf263-health');
   assert.equal(await page.locator('main.rf263-health > .hero,main.rf263-health > .tp151-page-head').count(),0,'Health must start directly with real content, without the large title/explanation block');
-  assert.equal(await page.locator('main.rf263-health > .rf263-sync-card').count(),1,'Health sync/content card must be the first functional Health block');
+  assert.equal(await page.locator('main.rf263-health .rf263-sync-card').count(),1,'Health sync/content card remains in the docked controls');
   const healthOverflow=await page.evaluate(()=>({scrollWidth:document.documentElement.scrollWidth,clientWidth:document.documentElement.clientWidth}));
   assert.ok(healthOverflow.scrollWidth<=healthOverflow.clientWidth+1,'Health must not introduce horizontal overflow: '+JSON.stringify(healthOverflow));
 

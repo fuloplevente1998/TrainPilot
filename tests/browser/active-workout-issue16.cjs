@@ -22,7 +22,7 @@ const {chromium}=require('playwright');
   const initial=await page.evaluate(()=>{
    const a=document.querySelector('.tp16-workout-actions'),p=a.querySelector('.tp16-workout-prev'),n=a.querySelector('.tp16-workout-next');
    const ar=a.getBoundingClientRect(),pr=p.getBoundingClientRect(),nr=n.getBoundingClientRect();
-   return {position:getComputedStyle(a).position,prev:p.textContent.trim(),next:n.textContent.trim(),prevDisabled:p.disabled,prevH:pr.height,nextH:nr.height,gap:nr.left-pr.right,order:pr.left<nr.left,actionBottom:ar.bottom,vh:innerHeight,overflow:document.documentElement.scrollWidth-innerWidth};
+   return {position:getComputedStyle(a.closest('.tp127-page-tools')||a).position,prev:p.textContent.trim(),next:n.textContent.trim(),prevDisabled:p.disabled,prevH:pr.height,nextH:nr.height,gap:nr.left-pr.right,order:pr.left<nr.left,actionBottom:ar.bottom,vh:innerHeight,overflow:document.documentElement.scrollWidth-innerWidth};
   });
   assert.equal(initial.position,'fixed','workout controls must stay viewport-fixed');
   assert.equal(initial.prev,'Előző gyakorlat');assert.equal(initial.next,'Következő gyakorlat');assert.equal(initial.prevDisabled,true);

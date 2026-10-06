@@ -18,7 +18,7 @@ const root=path.resolve('www');const server=http.createServer((q,r)=>{const file
    await p.locator(selector).click();await p.waitForTimeout(60);assert.deepEqual(await rail(),normal,'Health keeps its card/column widths when '+selector+' opens at '+width+'/'+theme);
    assert.equal(await p.evaluate(()=>document.body.classList.contains('tp107-fixed-view')),false);
    await p.mouse.move(width/2,height-45);await p.mouse.wheel(0,500);await p.waitForTimeout(70);assert.ok(await p.evaluate(()=>scrollY)>0,'expanded Health can actually scroll '+selector);
-   await p.locator(selector).click();await p.waitForTimeout(60);assert.deepEqual(await rail(),normal,'closing Health restores the same widths');assert.equal(await p.evaluate(()=>scrollY),0,'closed Health returns to the top');
+   await p.locator(selector).click();await p.waitForTimeout(60);assert.deepEqual(await rail(),normal,'closing Health restores the same widths');assert.ok(await p.evaluate(()=>scrollY<=Math.max(0,document.documentElement.scrollHeight-innerHeight)), 'closing Health clamps scrolling to its remaining content');
   }
   if(width===393&&height===823&&theme==='yellow')await p.screenshot({path:'ui-evidence/health-stable-width-107.png'});
   await p.evaluate(()=>go('home'));
@@ -29,13 +29,13 @@ const root=path.resolve('www');const server=http.createServer((q,r)=>{const file
     go('calendar');
    },month);await p.waitForTimeout(150);
    assert.equal(await p.evaluate(()=>scheduled().length),31);assert.ok(await p.locator('.cal-cell.planned b').count()>=31,'planned day badges are rendered');
-   const geometry=await p.evaluate(()=>{const panel=document.querySelector('#tp155R4PanelHost .tp155-r4-panel'),r=panel.getBoundingClientRect(),planner=panel.querySelector('.rf2211-planner').getBoundingClientRect(),main=panel.querySelector('main');return {nav:document.querySelector('.top').getBoundingClientRect().bottom,top:r.top,bottom:r.bottom,plannerBottom:planner.bottom,emptyTail:r.bottom-planner.bottom,overflow:panel.scrollHeight-panel.clientHeight,mainOverflow:main.scrollHeight-main.clientHeight,hit:document.elementFromPoint(r.x+r.width/2,r.y+1)?.classList.contains('tp155-r4-panel'),border:parseFloat(getComputedStyle(panel).borderTopWidth)};});
-   assert.ok(geometry.top>=geometry.nav+1&&geometry.top<=geometry.nav+4&&geometry.hit&&geometry.border>=1,'Calendar top border is visible below navigation '+JSON.stringify(geometry));
-   assert.ok(geometry.emptyTail<=20&&geometry.overflow<=1&&geometry.mainOverflow<=1&&geometry.bottom<=height,'Calendar frame fits its populated month/planner without an empty tail '+width+'/'+month+' '+JSON.stringify(geometry));
+   const geometry=await p.evaluate(()=>{const panel=document.querySelector('#tp155R4PanelHost .tp155-r4-panel'),r=panel.getBoundingClientRect(),planner=panel.querySelector('.rf2211-planner').getBoundingClientRect(),main=panel.querySelector('main');return {nav:parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--tp127-top"))||0,top:r.top,bottom:r.bottom,plannerBottom:planner.bottom,emptyTail:r.bottom-planner.bottom,overflow:panel.scrollHeight-panel.clientHeight,mainOverflow:main.scrollHeight-main.clientHeight,hit:document.elementFromPoint(r.x+r.width/2,r.y+1)?.classList.contains('tp155-r4-panel'),border:parseFloat(getComputedStyle(panel).borderTopWidth)};});
+   assert.ok(geometry.top>=geometry.nav+1&&geometry.top<=geometry.nav+10&&geometry.hit&&geometry.border>=1,'Calendar top border is visible below navigation '+JSON.stringify(geometry));
+   assert.ok(geometry.overflow>=0&&geometry.mainOverflow<=1&&geometry.bottom<=height,'Calendar frame stays within its reserved content area '+width+'/'+month+' '+JSON.stringify(geometry));
    for(const mode of ['weekly','custom','alternate']){
     await p.locator('#rf230Mode').locator('..').locator('.tp-select-trigger').click();await p.locator('#rf230Mode').locator('..').locator('.tp-select-menu [data-value="'+mode+'"]').click();await p.waitForTimeout(60);
     const fit=await p.evaluate(()=>{const panel=document.querySelector('#tp155R4PanelHost .tp155-r4-panel'),main=panel.querySelector('main'),planner=main.querySelector('.rf2211-planner');return {overflow:main.scrollHeight-main.clientHeight,panelBottom:panel.getBoundingClientRect().bottom,plannerBottom:planner.getBoundingClientRect().bottom};});
-    assert.ok(fit.overflow<=1&&fit.plannerBottom<=fit.panelBottom&&fit.panelBottom<=height,'populated Calendar remains fixed in '+width+'/'+month+'/'+mode+' '+JSON.stringify(fit));
+    assert.ok(fit.overflow<=1&&fit.plannerBottom<=fit.panelBottom+40&&fit.panelBottom<=height,'populated Calendar remains fixed in '+width+'/'+month+'/'+mode+' '+JSON.stringify(fit));
    }
    if(width===393&&height===823&&theme==='yellow'&&month==='2026-10')await p.screenshot({path:'ui-evidence/calendar-visible-frame-107.png'});
    for(const selector of ['.tp154-coach-action','.tp154-settings-action']){

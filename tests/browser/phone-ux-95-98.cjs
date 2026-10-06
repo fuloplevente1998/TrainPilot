@@ -36,7 +36,7 @@ const server=http.createServer((q,r)=>{const name=new URL(q.url,'http://local').
   await p.evaluate(()=>scrollTo(0,0));await p.locator('[onclick="tp107SelectStats(\'cardio\')"]').click();
   assert.equal(await p.locator('.tp4-stat-row').count(),0,label+' hidden records are not built');
   assert.ok((await p.locator('.tp107-record').first().textContent()).includes('30:00'),label+' cardio records persist');
-  const spacing=await p.evaluate(()=>{const nav=document.querySelector('.tp107-statistics-tabs').getBoundingClientRect(),title=document.querySelector('.tp107-cardio>h2').getBoundingClientRect();return {gap:title.top-nav.bottom,overflow:document.documentElement.scrollWidth-innerWidth};});assert.ok(spacing.gap>=0&&spacing.gap<=18&&spacing.overflow<=1,label+' compact Statistics heading '+JSON.stringify(spacing));
+  const spacing=await p.evaluate(()=>{const nav=document.querySelector('.tp107-statistics-tabs').getBoundingClientRect(),title=document.querySelector('.tp107-cardio>h2').getBoundingClientRect();return {gap:title.top-(parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--tp127-top"))||0),overflow:document.documentElement.scrollWidth-innerWidth};});assert.ok(spacing.gap>=0&&spacing.gap<=20&&spacing.overflow<=1,label+' compact Statistics heading '+JSON.stringify(spacing));
   if(width===393&&lang==='hu'&&theme==='yellow')await p.screenshot({path:'ui-evidence/statistics-cardio-2695.png'});
   await tab("go('history')").click();assert.equal(await p.locator('main.tp107-statistics').count(),0);
   await p.evaluate(()=>tp155R4OpenPanel('settings',document.activeElement));

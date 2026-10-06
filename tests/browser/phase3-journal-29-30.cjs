@@ -27,11 +27,11 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  const collapsedText=(await page.locator('details.rf263-history>summary').innerText()).replace(/\s+/g,' ');
  assert.doesNotMatch(collapsedText,/Guggolás 2 kézisúlyzóval|Oldalsó plank/,'collapsed Journal row must stay compact without concrete exercise performance');
  assert.equal(await page.getByRole('button',{name:'Edzés módosítása'}).count(),0,'legacy separate edit action must stay removed');
- const beforeOpenY=await page.evaluate(()=>scrollY);
+ const beforeOpenY=await page.locator('details.rf263-history>summary').evaluate(e=>e.getBoundingClientRect().bottom);
  await page.locator('details.rf263-history>summary').click();
  await page.waitForSelector('details.rf263-history[open] .tp3-workout-summary');
- const afterOpenY=await page.evaluate(()=>scrollY);
- assert.ok(Math.abs(afterOpenY-beforeOpenY)<8,'opening a Journal card must not jump down to exercises');
+ await page.waitForTimeout(60);const afterOpenY=await page.locator('details.rf263-history>summary').evaluate(e=>e.getBoundingClientRect().bottom);
+ assert.ok(Math.abs(afterOpenY-beforeOpenY)<8,'opening a Journal card keeps its summary anchored while the body grows upward');
  assert.equal(await page.locator('details.rf263-history[open] .tp3-history-editor').count(),0,'opening a workout must show summary first, not auto-enter edit mode');
  const summaryText=(await page.locator('.tp3-workout-summary').innerText()).replace(/\s+/g,' ');
  assert.match(summaryText,/Edzés összegzés/);

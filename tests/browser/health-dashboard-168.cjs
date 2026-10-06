@@ -84,7 +84,7 @@ const {chromium}=require('playwright');
 
   assert.equal(await page.locator('main.rf263-health>details.tp168-more-panel').count(),1,'More Health panel missing');
   assert.equal(await page.locator('main.rf263-health>details.tp155-health-bottom-panel').count(),2,'only More Health and Health Connect should remain as bottom panels');
-  assert.equal(await page.locator('main.rf263-health>.rf263-sync-card.tp168-sync-tail').count(),1,'Health sync controls must remain available');
+  assert.equal(await page.locator('main.rf263-health .rf263-sync-card.tp168-sync-tail').count(),1,'Health sync controls must remain available');
 
   let overflow=await page.evaluate(()=>({sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth}));assert.ok(overflow.sw<=overflow.cw+1,'393px Health dashboard overflow: '+JSON.stringify(overflow));
   await page.setViewportSize({width:320,height:640});await page.waitForTimeout(60);overflow=await page.evaluate(()=>({sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth}));assert.ok(overflow.sw<=overflow.cw+1,'320px Health dashboard overflow: '+JSON.stringify(overflow));
