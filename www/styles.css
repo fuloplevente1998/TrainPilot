@@ -413,3 +413,16 @@ html body #app .tp152-program-day>summary:has(.tp128-order-open){
   html body #app .tp152-program-day>summary:has(.tp128-order-open)>.tp128-order-open{grid-column:2;grid-row:1 / span 2}
   html body #app .tp152-program-day>summary:has(.tp128-order-open)>.tp152-chevron{grid-column:3;grid-row:1 / span 2}
 }
+
+/* #124 phone feedback: settings and active program share one outer surface. */
+html body #app .tp124-active-program-frame{display:block!important;padding:0!important;overflow:hidden;border-color:color-mix(in srgb,var(--tp-program-accent,var(--accent)) 70%,var(--line))!important}
+html body #app .tp124-active-program-frame>:is(.tp1511-training,.tp152-active-program){margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background-image:none!important}
+html body #app .tp124-active-program-frame>.tp1511-training{background-color:var(--card2)!important}
+html body #app .tp124-active-program-frame>.tp152-active-program{background:transparent!important}
+html body #app .tp124-active-program-frame>.tp1511-training>summary>span{min-width:0;overflow-wrap:anywhere}
+
+/* #135: equal implicit week rows, including the partially empty first week. */
+html body :is(#app,#tp155R4PanelHost) .calendar-grid{grid-auto-rows:1fr;grid-template-columns:repeat(7,minmax(0,1fr))}
+html body :is(#app,#tp155R4PanelHost) .cal-cell{min-width:0;box-sizing:border-box}
+html body :is(#app,#tp155R4PanelHost) .cal-cell>b{font-size:14px!important;line-height:1.1;min-width:0;white-space:nowrap}
+@media(max-width:360px){html body :is(#app,#tp155R4PanelHost) .cal-cell>b{font-size:12px!important}}

@@ -16,7 +16,7 @@ const server=http.createServer((req,res)=>{
   const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU',timezoneId:'Europe/Budapest'});
   const errors=[];page.on('pageerror',e=>errors.push(e?.stack||e?.message||String(e)));page.on('dialog',d=>d.accept());
   await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
-  await page.evaluate(()=>{state.session=null;state.workout=null;go('plan')});await page.waitForSelector('.top.tp154-nav-grid');
+  await page.evaluate(()=>{state.session=null;state.workout=null;go('programs')});await page.waitForSelector('.top.tp154-nav-grid');
 
   const snap=async()=>page.evaluate(()=>{
    const cells=[...document.querySelectorAll('.top.tp154-nav-grid .tp154-nav-cell')].map((el,i)=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el),label=el.querySelector('.tp151-nav-label');return {i,left:r.left,top:r.top,width:r.width,height:r.height,text:(el.textContent||'').trim(),settings:el.classList.contains('tp154-settings-action'),coach:el.classList.contains('tp154-coach-action'),font:label?parseFloat(getComputedStyle(label).fontSize):null,labelH:label?label.getBoundingClientRect().height:null,cellMin:s.minHeight}});
@@ -88,6 +88,7 @@ const server=http.createServer((req,res)=>{
   await assertSharedChevron(workoutDayArrow,'Expanded Workout day disclosure');
   await workoutDay.locator(':scope > summary').click();await page.waitForTimeout(80);
 
+  if(!await workoutDay.evaluate(e=>e.open))await workoutDay.locator(':scope > summary').click();
   const workoutExercise=workoutDay.locator('.tp152-exercise').first();
   const workoutExerciseArrow=workoutExercise.locator(':scope > summary .tp146-exercise-chevron').first();
   await assertSharedChevron(workoutExerciseArrow,'Workout exercise disclosure');

@@ -274,5 +274,9 @@
   {
     "file": "tests/browser/collapsible-program-124.cjs",
     "estimatedSeconds": 30
+  },
+  {
+    "file": "tests/browser/calendar-markers-135.cjs",
+    "estimatedSeconds": 30
   }
 ]

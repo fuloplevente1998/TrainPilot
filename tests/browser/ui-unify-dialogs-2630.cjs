@@ -20,6 +20,7 @@ const {chromium}=require('playwright');
   await page.evaluate(()=>{db.set('language','en');state.tab='plan';render()});await page.waitForTimeout(40);
   const enDayTitle=(await page.locator('.tp146-day-title').first().innerText()).replace(/\s+/g,' ').trim();assert.equal(enDayTitle,'Basic A');assert.ok(!/Homei/.test(enDayTitle),'English title must not partially translate Otthoni');
   await page.evaluate(()=>{db.set('language','hu');state.tab='plan';render()});await page.waitForTimeout(40);
+  await page.locator('.tp152-day').first().locator(':scope > summary').click();
   const ex=page.locator('details.tp146-exercise').first();assert.equal(await ex.count(),1);await ex.locator('summary').click();assert.notEqual(await ex.getAttribute('open'),null,'exercise must expand in place');
 
   await page.evaluate(()=>{const p=activeProgram(),d=p.days[0],id=crypto.randomUUID(),st=new Date(Date.now()+86400000),en=new Date(st.getTime()+45*60000);db.set('scheduled',[{id,programId:p.id,dayId:d.id,workout:d.id,start:st.toISOString(),end:en.toISOString(),updatedAt:Date.now(),cancelled:false,status:'planned'}]);state.tab='home';render();return id});await page.waitForTimeout(80);

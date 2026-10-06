@@ -29,7 +29,7 @@ const server=http.createServer((req,res)=>{
   const assertJoined=async(locator,bodySelector)=>{
    const result=await locator.evaluate((d,bodySelector)=>{
     const summary=d.querySelector(':scope>summary'),body=d.querySelector(bodySelector);
-    const s=getComputedStyle(summary),b=body&&getComputedStyle(body),outer=getComputedStyle(d);
+    const s=getComputedStyle(summary),b=body&&getComputedStyle(body),outer=getComputedStyle(d.classList.contains('tp152-active-program')?d.closest('.tp124-active-program-frame'):d);
     return {summary:[s.borderTopWidth,s.borderBottomWidth,s.borderRadius,s.backgroundColor],body:b&&[b.borderLeftWidth,b.borderRightWidth,b.borderBottomWidth,b.borderRadius,b.backgroundColor],outerBorder:outer.borderTopWidth};
    },bodySelector);
    assert.deepEqual(result.summary,['0px','0px','0px','rgba(0, 0, 0, 0)']);
@@ -58,6 +58,15 @@ const server=http.createServer((req,res)=>{
    await assertJoined(exercise,':scope>.tp107-editor-body');
    await page.evaluate(()=>go('plan'));
    const days=page.locator('.tp152-day');assert.equal(await days.count(),2);
+   assert.equal(await page.locator('.tp152-active-program').evaluate(e=>e.open),true);
+   assert.equal(await page.locator('.tp152-day[open]').count(),0,'day exercise lists start collapsed');
+   const trainingSettings=page.locator('.tp1511-training');
+   const surface=await trainingSettings.evaluate(e=>{const active=document.querySelector('.tp152-active-program'),frame=e.parentElement,probe=document.createElement('span');probe.style.background='var(--card2)';e.appendChild(probe);const color=getComputedStyle(probe).backgroundColor;probe.remove();return {shared:frame===active.parentElement&&frame.classList.contains('tp124-active-program-frame'),frameBorder:getComputedStyle(frame).borderTopWidth,settingsBorder:getComputedStyle(e).borderWidth,activeBorder:getComputedStyle(active).borderWidth,background:getComputedStyle(e).backgroundColor,color,above:e.getBoundingClientRect().bottom<=active.getBoundingClientRect().top+1}});
+   assert.equal(surface.shared,true);assert.notEqual(surface.frameBorder,'0px');assert.equal(surface.settingsBorder,'0px');assert.equal(surface.activeBorder,'0px');assert.equal(surface.background,surface.color);assert.equal(surface.above,true);
+   await trainingSettings.locator(':scope>summary').click();await trainingSettings.locator('#tp1511Rest').waitFor({state:'visible'});
+   assert.equal(await page.locator('.tp152-active-program').evaluate(e=>e.open),true);assert.equal(await page.locator('.tp152-day[open]').count(),0);
+   await trainingSettings.locator(':scope>summary').click();
+   if(width===393&&lang==='hu')await page.screenshot({path:'ui-evidence/training-default-124.png'});
    for(let index=0;index<2;index++){
     const day=days.nth(index),letter=index?'B':'A',title=day.locator(':scope>summary .tp146-day-title');
     assert.equal(await title.locator('.tp146-day-letter').innerText(),letter);
@@ -103,8 +112,15 @@ const server=http.createServer((req,res)=>{
   await page.evaluate(()=>{tp155R4ClosePanel(false);go('health');});
   const more=page.locator('.tp168-more-panel');await more.locator(':scope>summary').click();
   assert.equal(await more.evaluate(d=>d.open),true);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+  await page.evaluate(()=>go('plan'));await page.locator('.tp1511-training>summary').click();
+  await page.locator('#tp1511Rest').fill('130');await page.locator('button[onclick="tp1511SaveTraining()"]').click();
+  assert.equal(await page.evaluate(()=>settings().programRest['personal-124']),130,'settings save still targets the active program');
+  assert.equal(await page.evaluate(()=>settings().programRest['own-124']),undefined,'other program settings remain unchanged');
+  await page.locator('.tp152-day').first().locator(':scope>summary').click();await page.evaluate(()=>{go('home');go('plan');});
+  assert.equal(await page.locator('.tp152-active-program').evaluate(e=>e.open),true);assert.equal(await page.locator('.tp152-day[open]').count(),0,'return restores compact day list');
   await page.reload();await page.waitForFunction(()=>TrainPilotBoot.finished);assert.deepEqual(await data(),{programs:original.programs,history:original.history,scheduled:original.scheduled});
+  assert.equal(await page.evaluate(()=>settings().programRest['personal-124']),130,'program settings survive restart');
   assert.deepEqual(errors,[]);
-  console.log('PASS #124: 12 phone/language cases; joined Journal/history editor/Program/training/exercise/settings frames; metric cards retained; lazy library; personalized names and own names; correct single gold A/B; heading Order action and cancel without toggling; replanner, immutable data and restart');
+  console.log('PASS #124: 12 phone/language cases; joined Journal/history editor/Program/training/exercise/settings frames; metric cards retained; lazy library; personalized names and own names; correct single gold A/B; heading Order action and cancel without toggling; open program with closed days, shared lighter settings frame, settings save, navigation return; replanner, immutable data and restart');
  }finally{await browser?.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);process.exitCode=1;});

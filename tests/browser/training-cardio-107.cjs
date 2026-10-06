@@ -41,6 +41,7 @@ const root=path.resolve('www');const server=http.createServer((q,r)=>{const file
   await p.evaluate(()=>tp155R4ClosePanel(false));
  }
  await p.setViewportSize({width:393,height:873});await p.evaluate(()=>{db.set('language','hu');go('plan');});
+ await p.locator('.tp152-day').first().locator(':scope > summary').click();
  const row=p.locator('.tp107-program-editor').first();await row.locator(':scope > summary').click();
  const before=await p.evaluate(()=>activeProgramId());
  for(const width of [320,360,393,412]){await p.setViewportSize({width,height:873});if(!await row.evaluate(e=>e.open))await row.locator(':scope > summary').click();await row.locator('[data-tp107-rx="sets"]').fill('4');await row.locator('[data-tp107-rx="reps"]').fill('11–13');await row.locator('[data-tp107-rx="rest"]').fill('120');await row.locator('button[onclick="tp107SaveProgramRow(this)"]').click();assert.equal(await row.locator('.tp107-save-status').textContent(),'Mentve');assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'program editor fits '+width);}
