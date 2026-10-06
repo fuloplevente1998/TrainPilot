@@ -62,12 +62,12 @@ const server=http.createServer((req,res)=>{
   for(const i of [0,1,5])assert.deepEqual(saved[i],fixture.rows[i],'protected schedule '+i);
   for(const i of [2,3,4]){assert.equal(saved[i].id,fixture.rows[i].id);assert.equal(saved[i].dayId,fixture.rows[i].dayId);assert.ok(Date.parse(saved[i].start)>Date.parse('2026-10-04T20:30:00+02:00'));}
   assert.deepEqual(await page.evaluate(()=>history()),fixture.history);await page.evaluate(()=>TrainPilotAndroidBack());assert.equal(await host.getAttribute('data-panel'),'calendar','save then back returns to refreshed Calendar');
-  await button.click();assert.equal(await apply.isDisabled(),true);assert.match(await page.locator('[data-tp110-preview]').innerText(),/Nincs újratervezendő/);
+  await button.click();assert.equal(await apply.isEnabled(),true);assert.equal(await page.locator('.tp110-replan-row').count(),3,'future-only plan stays replannable');
   await page.evaluate(()=>go('health'));assert.equal(await host.count(),0,'explicit full-page navigation discards return context');
   await page.evaluate(()=>tp155R4OpenPanel('replan'));await page.locator('.tp106-builder-header button').click();assert.equal(await host.count(),0,'standalone replanner does not invent Calendar origin');
   await page.evaluate(()=>go('calendar'));await button.click();await page.evaluate(()=>tp155R4OpenPanel('settings'));await page.locator('#tp155R4PanelHost .tp155-r4-panel-close').click();assert.equal(await host.count(),0,'panel navigation discards old return context');
   // Entry is always usable with no schedule, and enlarged text still permits closing/applying.
-  await page.evaluate(()=>{db.set('scheduled',[]);go('calendar');});assert.equal(await button.isEnabled(),true);await button.click();assert.equal(await apply.isDisabled(),true);await page.evaluate(()=>TrainPilotAndroidBack());
+  await page.evaluate(()=>{db.set('scheduled',[]);go('calendar');});assert.equal(await button.isEnabled(),true);await button.click();assert.equal(await apply.isEnabled(),true);assert.ok(await page.locator('.tp110-replan-row').count()>0,'empty plan previews a new program cycle');await page.evaluate(()=>TrainPilotAndroidBack());
   await page.addStyleTag({content:'html.tp110-large-text #tp155R4PanelHost :is(p,label,.field,.btn){font-size:20px!important;line-height:1.4!important}'});
   await page.evaluate(()=>{document.documentElement.classList.add('tp110-large-text');db.set('scheduled',Array.from({length:30},(_,i)=>{const p=activeProgram();return {...makeScheduleItem(p,'2026-10-01','08:00',45,p.days[i%p.days.length].id),id:'large123-'+i};}));tp155R4RefreshPanel();});
   for(const width of [320,393]){

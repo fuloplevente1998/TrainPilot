@@ -31,6 +31,7 @@ html body #app #rf223Today .tp110-goal-mini:focus-visible{outline:2px solid var(
 }
 .tp110-replan>p{font-size:13px;line-height:1.4;margin:4px 0 8px}
 .tp110-replan .tp110-form{gap:8px;margin:8px 0}
+@media(max-width:480px){.tp110-replan .tp110-fields{grid-template-columns:1fr}}
 .tp110-replan-row{display:grid;gap:4px;padding:10px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
 .tp110-replan-row small{color:var(--muted)}
 html body #tp155R4PanelHost[data-panel="replan"] .tp155-r4-panel{display:flex!important;flex-direction:column;overflow:hidden!important;max-height:calc(100% - 2px)!important}

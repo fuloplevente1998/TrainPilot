@@ -17,15 +17,15 @@ const original=JSON.stringify(rows),options={programId:'home-basic',mode:'altern
 const result=core.replan(rows,[],options);assert.equal(JSON.stringify(rows),original,'preview must not mutate storage');assert.deepEqual(Array.from(result.moved,x=>x.before.id),['missed','next','later']);
 assert.deepEqual(Array.from(result.moved,x=>new Date(x.after.start).getDate()),[6,8,10],'occupied days shift the rhythm without collisions');assert.deepEqual(Array.from(result.moved,x=>x.after.dayId),['A','B','A']);assert.equal(result.rows[3],rows[3]);assert.equal(result.rows[4],rows[4]);
 for(const {before,after} of result.moved){assert.equal(after.id,before.id);assert.equal(new Date(after.start).getHours(),8);assert.equal(Date.parse(after.end)-Date.parse(after.start),2700000);assert.equal(after.updatedAt,+now);}
-assert.ok(core.replan(rows,[],{...options,startDate:'2026-10-03'}).moved.every(x=>Date.parse(x.after.start)>+now),'today cannot create a new appointment whose preserved time has already passed');
+assert.equal(new Date(core.replan(rows,[],{...options,startDate:'2026-10-03'}).moved[0].after.start).getDate(),3,'an explicitly chosen elapsed time remains a planned appointment, not completed history');
 const completed=[{...workout('log','2026-10-01'),scheduleId:'missed'}];assert.equal(core.replan(rows,completed,options).rows[0],rows[0],'logged scheduled workouts cannot be moved as missed');
 assert.equal(core.replan(rows,[],{...options,activeScheduleId:'missed'}).rows[0],rows[0],'active saved draft is protected');
 const todayMissed=[item('elapsed-today','2026-10-03'),item('future-today','2026-10-03','B'),item('following','2026-10-05')];
 todayMissed[1].start='2026-10-03T18:00:00';todayMissed[1].end='2026-10-03T18:45:00';
 assert.deepEqual(Array.from(core.replan(todayMissed,[],options).moved,x=>x.before.id),['elapsed-today','future-today','following'],'today’s elapsed planned session starts the replanning queue');
-assert.equal(core.replan(todayMissed.slice(1),[],options).moved.length,0,'future-only sessions are not missed');
-assert.equal(core.replan(todayMissed,[],{...options,activeScheduleId:'elapsed-today'}).moved.length,0,'today’s active session is protected');
-assert.equal(core.replan(todayMissed,[{...workout('done-today','2026-10-03'),scheduleId:'elapsed-today'}],options).moved.length,0,'today’s completed session is protected');
+assert.equal(core.replan(todayMissed.slice(1),[],options).moved.length,2,'future-only sessions can be replanned');
+assert.equal(core.replan(todayMissed,[],{...options,activeScheduleId:'elapsed-today'}).moved.length,2,'today’s active session is protected');
+assert.equal(core.replan(todayMissed,[{...workout('done-today','2026-10-03'),scheduleId:'elapsed-today'}],options).moved.length,2,'today’s completed session is protected');
 const weekly=core.replan(rows.filter(x=>x.programId==='home-basic'),[],{...options,mode:'weekly',weekdays:[1,3,5]});assert.deepEqual(Array.from(weekly.moved,x=>new Date(x.after.start).getDay()),[1,3,5]);
 assert.throws(()=>core.replan(rows,[],{...options,mode:'weekly',weekdays:[]}),/weekdays/);assert.throws(()=>core.replan(rows,[],{...options,startDate:'2026-02-31'}),/date/);
 const skipped=[item('s','2026-10-03','A','skipped'),item('n','2026-10-05','B')];assert.equal(core.replan(skipped,[],options).moved[0].after.status,'planned');
