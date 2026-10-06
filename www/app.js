@@ -11824,8 +11824,10 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   document.documentElement.classList.add('tp155-r4-panel-open');document.body.classList.add('tp155-r4-panel-open');
   panelHost.dataset.panel=type;
   window.tp155R4RefreshPanel();
-  const panel=panelHost.querySelector('.tp155-r4-panel'),content=panelHost.querySelector('.tp155-r4-panel-content');
-  if(panel)panel.scrollTop=0;if(content)content.scrollTop=0;
+  if(type==='replan'){
+   const panel=panelHost.querySelector('.tp155-r4-panel'),content=panelHost.querySelector('.tp155-r4-panel-content');
+   if(panel)panel.scrollTop=0;if(content)content.scrollTop=0;
+  }
   panelHost.querySelector('.tp155-r4-panel')?.focus?.({preventScroll:true});
   return true;
  };
