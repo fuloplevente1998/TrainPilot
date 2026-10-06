@@ -9390,7 +9390,7 @@ rf130ShowPhoto=async function(key,id){
  }
  if(!r?.dataUrl)return;rf130ClosePhotoModal();
  const modal=document.createElement('div');modal.id='rf130PhotoModal';modal.className='video-modal';
- modal.innerHTML='<div class="video-dialog rf130-photo-view" role="dialog" aria-modal="true"><button class="btn secondary" onclick="rf130ClosePhotoModal()">✕ '+esc(tp149T('common.close'))+'</button><h2>'+esc(rf130PhotoLabelText(q.p.label))+'</h2><img src="'+r.dataUrl+'" alt="'+esc(rf130PhotoLabelText(q.p.label))+'"><p class="small muted">'+esc(tp149FormatDateTime(q.p.createdAt))+(q.p.driveFileId?' • '+esc(tp149T('photo.driveSaved')):'')+'</p></div>';
+ modal.innerHTML='<div class="video-dialog rf130-photo-view" role="dialog" aria-modal="true" aria-labelledby="tp126PhotoTitle"><div class="tp-modal-head"><h2 id="tp126PhotoTitle">'+esc(rf130PhotoLabelText(q.p.label))+'</h2><button type="button" class="btn danger tp-modal-close tp126-photo-close" aria-label="'+esc(tp149T('common.close'))+'" onclick="rf130ClosePhotoModal()">×</button></div><img src="'+r.dataUrl+'" alt="'+esc(rf130PhotoLabelText(q.p.label))+'"><p class="small muted">'+esc(tp149FormatDateTime(q.p.createdAt))+(q.p.driveFileId?' • '+esc(tp149T('photo.driveSaved')):'')+'</p></div>';
  document.body.appendChild(modal);modal.querySelector('button')?.focus();
 };
 

@@ -434,12 +434,14 @@ html body :is(#app,#tp155R4PanelHost) .cal-cell>b{font-size:14px!important;line-
 
 /* #135 date actions reuse the existing red close/delete and green save colors. */
 html body #tpTemporalPicker :is(.tp-modal-close,.tp-temporal-actions>.btn[onclick="rf260TemporalCommit('')"]),
+html body #rf130PhotoModal .tp126-photo-close,
 html body #app .tp155-journal-actions>.btn[onclick*="Clear"],
 html body .rf263-date-dialog :is(.rf263-date-heading>.btn[onclick="rf263CloseDate()"],.rf263-date-actions>.btn[onclick="rf263PickDate('')"]){background:#472529!important;border-color:#744048!important;color:#ffd9dc!important;box-shadow:none!important}
 html body #tpTemporalPicker .tp-temporal-actions>.btn.secondary[onclick^="rf260TemporalChooseDate("],
 html body #app .tp155-journal-actions>.btn:last-child,
 html body .rf263-date-dialog .rf263-date-actions>.btn:last-child{background:#274b38!important;border-color:#3f7657!important;color:#dff7e8!important;box-shadow:none!important}
 html body #tpTemporalPicker :is(.tp-modal-close,.tp-temporal-actions>.btn[onclick="rf260TemporalCommit('')"]):active,
+html body #rf130PhotoModal .tp126-photo-close:active,
 html body #app .tp155-journal-actions>.btn[onclick*="Clear"]:active,
 html body .rf263-date-dialog :is(.rf263-date-heading>.btn[onclick="rf263CloseDate()"],.rf263-date-actions>.btn[onclick="rf263PickDate('')"]):active{background:#552b31!important}
 html body #tpTemporalPicker .tp-temporal-actions>.btn.secondary[onclick^="rf260TemporalChooseDate("]:active,
@@ -453,3 +455,8 @@ html body input.field[type="search"]::-webkit-search-cancel-button{
  background-color:var(--accent2);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 6l12 12M18 6L6 18' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E") center/24px 24px no-repeat;
  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 6l12 12M18 6L6 18' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E") center/24px 24px no-repeat;
 }
+
+/* #126: photo viewing uses the existing modal heading and red close control. */
+html body #rf130PhotoModal .rf130-photo-view .tp-modal-head{align-items:center}
+html body #rf130PhotoModal .rf130-photo-view .tp-modal-head h2{min-width:0;overflow-wrap:anywhere}
+html body #rf130PhotoModal .tp126-photo-close{flex:0 0 44px;width:44px;height:44px;min-width:44px;min-height:44px;font-size:24px;line-height:1}

@@ -170,6 +170,15 @@ const {chromium}=require('playwright');
    assert.match(await page.locator('#rf130PhotoModal [data-rf130-status]').innerText(),/megszakítva/i,'photo picker button must invoke its handler');
    await page.locator('#rf130PhotoModal [data-rf130-action="close"]').click();
    assert.equal(await page.locator('#rf130PhotoModal').count(),0,'photo modal close button must react');
+   const photosBefore=await page.evaluate(()=>history());
+   await page.evaluate(()=>{rf130PhotoPlugin=()=>({read:async()=>({dataUrl:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a7a8AAAAASUVORK5CYII='}),delete:async()=>{throw Error('close must not delete a photo')}})});
+   for(const action of ['close','escape','android-back']){
+    await firstHistory.locator('[data-rf130-photo-id]').click();await page.locator('#rf130PhotoModal .tp126-photo-close').waitFor({state:'visible'});
+    const close=await page.locator('#rf130PhotoModal .tp126-photo-close').evaluate(e=>{const r=e.getBoundingClientRect(),h=e.closest('.tp-modal-head').getBoundingClientRect(),s=getComputedStyle(e);return {rightGap:h.right-r.right,width:r.width,height:r.height,background:s.backgroundColor,label:e.getAttribute('aria-label'),text:e.textContent}});
+    assert.ok(close.width>=44&&close.height>=44&&Math.abs(close.rightGap)<1,'large close in top-right heading '+JSON.stringify(close));assert.equal(close.background,'rgb(71, 37, 41)');assert.equal(close.label,'Bezárás');assert.equal(close.text,'×');
+    if(action==='close')await page.locator('#rf130PhotoModal .tp126-photo-close').click();else if(action==='escape')await page.keyboard.press('Escape');else assert.equal(await page.evaluate(()=>TrainPilotAndroidBack()),true);
+    assert.equal(await page.locator('#rf130PhotoModal').count(),0);assert.notEqual(await firstHistory.getAttribute('open'),null,'return to the same open Journal workout');assert.deepEqual(await page.evaluate(()=>history()),photosBefore,'close preserves photo metadata and all Journal records');
+   }
    assert.equal(await page.locator('.rf263-history-filter').count(),0,'legacy two-boundary filter is removed');
    const inlineFilter=page.locator('.tp155-journal-filter');
    assert.equal(await inlineFilter.count(),1,'journal has one inline date filter');
