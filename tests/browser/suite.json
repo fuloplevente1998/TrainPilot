@@ -278,5 +278,9 @@
   {
     "file": "tests/browser/calendar-markers-135.cjs",
     "estimatedSeconds": 30
+  },
+  {
+    "file": "tests/browser/navigation-motion-137.cjs",
+    "estimatedSeconds": 65
   }
 ]
