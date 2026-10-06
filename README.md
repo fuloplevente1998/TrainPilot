@@ -1,6 +1,6 @@
 # TrainPilot
 
-**Aktuális kiadás — 1.2.6 /2709:** letisztított, tartós Health Connect-egészségnapló napi összesítésekkel és engedélyezhető háttérfrissítéssel; lebegő napi naptárablak, javított újratervezés és koppintásra megnyíló Coach-készenléti magyarázat. A teljes célbeállító a kompakt kezdőlapi gombból nyílik. [Kiadási megjegyzések](docs/releases/v1.2.6.md) · [Egészségnapló és HRV-követés](docs/HEALTH_JOURNAL_ROADMAP.md). A felhasználó 2026. október 4-én jóváhagyta a main merge-et és a stabil kiadást.
+**Aktuális kiadás — 1.2.7 /2710:** profilvezérelt Otthoni A/B programok, folytatható onboarding, naplóalapú Coach/progresszió és menthető kézi gyakorlat-sorrend. [Kiadási megjegyzések](docs/releases/v1.2.7.md) · [Profilvezérelt edzésrendszer](docs/profile-training-128.md). A felhasználó 2026. október 6-án telefonon elfogadta a #130 buildjét, és jóváhagyta a main merge-et és a stabil kiadást.
 
 TrainPilot egy Androidra készült, local-first edzéstervező és edzésnapló alkalmazás. A fő edzésfunkciók helyben is használhatók; a Health Connect, Google Drive és Google Naptár integrációk opcionálisak.
 
@@ -20,20 +20,20 @@ TrainPilot egy Androidra készült, local-first edzéstervező és edzésnapló 
 
 A Google-funkciókhoz külön Google Cloud/OAuth konfiguráció szükséges. A Health Connect és a Google-integrációk tényleges működése eszköz-, Android-verzió-, jogosultság- és fiókbeállítás-függő; kiadás előtt fizikai készülékes ellenőrzés szükséges.
 
-## Aktuális kiadás: TrainPilot 1.2.6 (2709)
+## Aktuális kiadás: TrainPilot 1.2.7 (2710)
 
-Az Egészségnapló dátumonként egy összesítést mutat. Az automatikus mód a legteljesebb napi lépésszámú Health Connect-forrást választja; külön Health Connect prioritás mód is használható. Az átfedő eredetek nem adódnak össze. A részletes mérési rekordok külön lenyithatók és lapozhatók; a Samsung Health felirat a Health Connectből kapott rekord eredetét jelzi.
+Az Otthoni A/B Alap és 2. szint sablonokból profilhoz igazított, külön elfogadható programpéldány készül. Az onboarding kihagyható és folytatható; a meglévő aktív programot, saját programokat és naplót a frissítés nem írja át automatikusan. A Coach az utóbbi releváns edzések trendjéből ajánl progressziót; a testsúlyos gyakorlatok nehezebb variációja külön előnézetet és elfogadást kap.
 
-A naptári nap edzései külön lebegő ablakban jelennek meg. Az újratervezés a mai elmulasztott edzést is kezeli, megtartja a választott kezdőnapot, és hosszú előnézetnél is elérhető mentést ad. A Coach készenléti értékére koppintva látható a valóban felhasznált adatok és pontszámhatások magyarázata.
+Az Edzés és Programok oldal Sorrend gombjával menthető az adott programnap gyakorlatainak sorrendje. A következő edzés ezt használja; újraindítás, backup és Drive megőrzi. A főmenü az elfogadott elrendezést és indítóikont, Lucide menügrafikákat használ.
 
-- [v1.2.6 Release](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.2.6)
-- [TrainPilot-1.2.6.apk](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.6/TrainPilot-1.2.6.apk)
-- [Forrás ZIP](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.6/TrainPilot-1.2.6-source.zip)
-- [SHA-256 ellenőrzőösszegek](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.6/SHA256SUMS.txt)
-- [Android csomagadatok](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.6/apk-badging.txt)
-- [Kiadási megjegyzések](docs/releases/v1.2.6.md)
+- [v1.2.7 Release](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.2.7)
+- [TrainPilot-1.2.7.apk](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.7/TrainPilot-1.2.7.apk)
+- [Forrás ZIP](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.7/TrainPilot-1.2.7-source.zip)
+- [SHA-256 ellenőrzőösszegek](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.7/SHA256SUMS.txt)
+- [Android csomagadatok](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.7/apk-badging.txt)
+- [Kiadási megjegyzések](docs/releases/v1.2.7.md)
 
-Az alkalmazásazonosító `com.repforge.app`, a verzió **1.2.6 /2709**; az eredeti kiadási aláírás megmarad. Kiadási ellenőrzés: **119 Node-regresszió + 4 futtatóteszt, 62 Chromium-szkript és Android/JVM release-tesztek**, változatlan teljesítménykapukkal. A main kiadási workflow ellenőrzi és publikálja az APK-t, a main forrás ZIP-et, az ellenőrzőösszegeket és a csomagadatokat. A kiadás végrehajtási állapota: [#119](https://github.com/fuloplevente1998/TrainPilot/issues/119). Részletek: [build](docs/BUILD.md).
+Az alkalmazásazonosító `com.repforge.app`, a verzió **1.2.7 /2710**; az eredeti kiadási aláírás megmarad. A #130 telefonon elfogadott 1.2.6 /2709 tesztbuildjétől csak a kiadási verzióadatok és a frissítéshez tartozó cache-jelölés térnek el. A korábbi `v1.2.6` release és fájljai megmaradnak. Kiadási ellenőrzés: **119 Node-regresszió + 4 futtatóteszt, 65 Chromium-szkript és Android/JVM release-tesztek**, változatlan teljesítménykapukkal. A további UI-visszajelzések a [#124](https://github.com/fuloplevente1998/TrainPilot/issues/124) issue-ban szerepelnek. Részletek: [build](docs/BUILD.md).
 
 ## Korábbi kiadás: TrainPilot 1.0.9 (2697)
 
