@@ -375,3 +375,41 @@ html body #tp155R4PanelHost[data-panel="coach"] .tp155-r4-panel-close {
 html body #app .tp63-group-icon{display:inline-block;vertical-align:middle;width:17px;height:17px;min-width:17px;margin-right:7px;color:var(--accent);flex:0 0 17px}
 html body #app main.rf263-health>.tp151-health-card>h2 .tp63-group-icon,
 html body #app main.rf263-health>details.tp151-details>summary>strong .tp63-group-icon{margin-right:6px}
+
+/* #124: the enclosing accordion owns its outline. Its heading and immediate
+   content share that surface; separate metric/exercise cards keep their frames. */
+html body :is(#app,#tp155R4PanelHost,.tp3-planner-panel) details>summary{
+  border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;
+}
+html body #app details.rf263-history>summary .history-head{
+  border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;
+}
+html body #app .tp3-combined-history-body>.tp3-workout-summary{
+  border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;
+}
+html body :is(#app,#tp155R4PanelHost,.tp3-planner-panel) details> :is(
+  .history-body,.tp152-program-body,.tp152-day-body,.tp152-program-card-body,
+  .tp152-program-day-body,.tp146-exercise-body,.tp152-accordion-body,
+  .tp152-inline-add-body,.tp152-quick-body,.tp1511-training-body,
+  .tp3-exercise-inline-editor,.tp3-photo-body,.tp3-add-exercise-body,.tp3-stat-detail
+){
+  border-left:0!important;border-right:0!important;border-bottom:0!important;
+  border-radius:0!important;background:transparent!important;box-shadow:none!important;
+}
+/* Order is a separate action in the existing summary, including lazily opened
+   Program-library days. A tap on it does not toggle the enclosing day. */
+html body #app .tp152-day-title-row{flex-wrap:wrap;gap:8px}
+html body #app .tp152-day-title-copy{flex:1 1 100px;min-width:0}
+html body #app details>summary .tp128-order-open{
+  margin:0!important;min-height:44px!important;flex:none;padding:7px 10px!important;
+  font-size:13px!important;line-height:1.2!important;
+}
+html body #app .tp152-program-day>summary:has(.tp128-order-open){
+  grid-template-columns:minmax(0,1fr) auto auto 18px!important;gap:6px;
+}
+@media(max-width:380px){
+  html body #app .tp152-program-day>summary:has(.tp128-order-open){grid-template-columns:minmax(0,1fr) auto 18px!important}
+  html body #app .tp152-program-day>summary:has(.tp128-order-open)>.small{grid-column:1;grid-row:2}
+  html body #app .tp152-program-day>summary:has(.tp128-order-open)>.tp128-order-open{grid-column:2;grid-row:1 / span 2}
+  html body #app .tp152-program-day>summary:has(.tp128-order-open)>.tp152-chevron{grid-column:3;grid-row:1 / span 2}
+}

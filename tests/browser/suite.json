@@ -270,5 +270,9 @@
   {
     "file": "tests/browser/replan-all-states-123.cjs",
     "estimatedSeconds": 20
+  },
+  {
+    "file": "tests/browser/collapsible-program-124.cjs",
+    "estimatedSeconds": 30
   }
 ]

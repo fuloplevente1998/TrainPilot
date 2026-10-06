@@ -7090,6 +7090,11 @@ var tp149ProgramMeta=function tp149ProgramMeta(program,field,lang=rf212Lang()){
 };
 var tp149ProgramDayName=function tp149ProgramDayName(program,day,lang=rf212Lang()){
  if(!program||!day)return '';
+ const templateId=program.sourceTemplateId||program.id;
+ if(['home-basic','home-level2'].includes(templateId)&&(!day.name||day.name===day.id)){
+  const labels=templateId==='home-basic'?['Alap','Basic','Basis','Bază']:['2. szint','Level 2','Stufe 2','Nivel 2'];
+  return labels[tp149LangIndex(lang)]+' '+String(day.id||'');
+ }
  if(program.generated===true)return tp149PlannerRow('generatedDay',tp149GeneratedDayKey(program,day),lang,day.name||day.id||'');
  if(program.builtin!==true)return String(day.name||day.id||'');
  const row=TP149_PROGRAM_ROWS[program.id]?.days?.[day.id],idx=tp149LangIndex(lang);
@@ -7719,7 +7724,7 @@ if(typeof backupStatus==='function'){
 if(typeof tp146ProgramDayTitle==='function'){
  tp146ProgramDayTitle=function(program,day){
   const name=String(tp149ProgramMeta(program,'name')).replace(/\s*[–—]\s*/g,' - ').replace(/\s+-\s+/g,' - ').trim();
-  const dayName=tp149ProgramDayName(program,day);
+  const dayName=day&&(day.id||day.name)?tp149ProgramDayName(program,day):'';
   return dayName?name+' - '+dayName:name;
  };
  workoutTitle=function(programId,dayId){
@@ -7790,17 +7795,10 @@ if(typeof programCards==='function'){
 const tp149Rf148PlanDayHeadingBase=rf148PlanDayHeading;
 if(typeof rf148PlanDayHeading==='function'){
  rf148PlanDayHeading=function(program,day){
-  if(rf212Lang()==='hu')return tp149Rf148PlanDayHeadingBase.apply(this,arguments);
-  const base=esc(tp146ProgramDayTitle(program,{id:'',name:''}));
-  const dayName=tp149ProgramDayName(program,day);
-  const badge=String(day?.id||'').trim(),translated=String(dayName||'');
-  let suffix='';
-  if(translated){
-   suffix=' <span class="tp146-day-sep">-</span> ';
-   if(badge&&badge===translated)suffix+='<span class="tp146-day-letter" aria-label="'+esc(badge)+'">'+esc(badge)+'</span>';
-   else suffix+=esc(translated)+(badge?' <span class="tp146-day-letter" aria-label="'+esc(badge)+'">'+esc(badge)+'</span>':'');
-  }
-  return '<div class="tp146-day-headingline"><h2 class="tp146-day-title">'+base+suffix+'</h2></div>';
+  const badge=String(day?.id||'').trim(),dayName=tp149ProgramDayName(program,day),templateId=program?.sourceTemplateId||program?.id;
+  const role=tp124DayWithoutBadge(dayName,badge),standard=['home-basic','home-level2'].includes(templateId)&&(!day?.name||day.name===day.id);
+  const base=standard?role:tp149ProgramMeta(program,'name'),extra=!standard&&role&&role!==base?' · '+role:'';
+  return '<div class="tp146-day-headingline"><h2 class="tp146-day-title">'+esc(base+extra)+(badge?' <span class="tp146-day-letter" aria-label="'+esc(badge)+'">'+esc(badge)+'</span>':'')+'</h2></div>';
  };
 }
 const tp149PlanScreenBase=planScreen;
@@ -15570,8 +15568,24 @@ generatePersonalProgram=function(input){
 };
 var tp128MetaBase=tp149ProgramMeta;
 tp149ProgramMeta=function(p,field,lang=rf212Lang()){
- if(field==='name'&&p?.sourceTemplateId&&['profile-template','coach'].includes(p.sourceType)&&tp128Template(p.sourceTemplateId))return tp128MetaBase(tp128Template(p.sourceTemplateId),'name',lang);
+ if(field==='name'&&p?.sourceTemplateId&&['profile-template','coach'].includes(p.sourceType)){
+  const template=tp128Template(p.sourceTemplateId);
+  if(template){
+   const defaults=[template.name,...(TP149_PROGRAM_ROWS[p.sourceTemplateId]?.name||[])];
+   if(p.name&&!defaults.includes(p.name))return String(p.name);
+   const suffix=['személyre szabott','personalized','personalisiert','personalizat'][tp149LangIndex(lang)];
+   return tp128MetaBase(template,'name',lang)+' ('+suffix+')';
+  }
+ }
+ if(field==='name'&&p?.generated&&p.name&&!['hu','en','de','ro'].some(l=>p.name===tp128MetaBase(p,'name',l)))return String(p.name);
  return tp128MetaBase(p,field,lang);
+};
+// Remove only the standalone day marker represented by the adjacent gold badge.
+var tp124DayWithoutBadge=function(name,id){
+ const value=String(name||'').trim(),marker=String(id||'').trim();if(!marker)return value;
+ if(value===marker)return '';
+ const suffix=new RegExp('(?:\\s+[·–—-]?\\s*|\\s*[·–—-]\\s*)'+marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'$');
+ return value.replace(suffix,'').trim();
 };
 var tp128ExerciseBase=rf13Exercise;
 rf13Exercise=function(e){
@@ -15777,9 +15791,9 @@ window.TrainPilot128={version:'128.2',template:tp128Template,generate:generatePe
 
 // User-owned ordering changes only the selected stored program day.
 var tp128OrderT=function(key){const rows={title:['Gyakorlatok sorrendje','Exercise order','Übungsreihenfolge','Ordinea exercițiilor'],button:['Sorrend','Order','Reihenfolge','Ordine'],help:['A fel/le gombokkal rendezd a gyakorlatokat, majd mentsd.','Use the up/down buttons to arrange exercises, then save.','Ordne die Übungen mit den Pfeiltasten und speichere.','Aranjează exercițiile cu butoanele sus/jos, apoi salvează.'],up:['Feljebb','Move up','Nach oben','Mai sus'],down:['Lejjebb','Move down','Nach unten','Mai jos'],changed:['Közben megváltozott az edzésnap. Nyisd meg újra a sorrendet.','The workout day changed. Reopen the order editor.','Der Trainingstag wurde geändert. Öffne die Reihenfolge erneut.','Ziua de antrenament s-a schimbat. Redeschide editorul de ordine.']};return rows[key]?.[['hu','en','de','ro'].indexOf(rf212Lang())]||rows[key]?.[0]||key};
-var tp128OrderButton=function(p,d){return '<button type="button" class="btn secondary tp128-order-open" data-tp128-order-day="'+esc(d.id)+'" onclick="'+esc('event.stopPropagation();tp128OrderOpen('+JSON.stringify(p.id)+','+JSON.stringify(d.id)+')')+'">↕ '+esc(tp128OrderT('button'))+'</button>'};
+var tp128OrderButton=function(p,d){return '<button type="button" class="btn secondary tp128-order-open" data-tp128-order-day="'+esc(d.id)+'" onclick="'+esc('event.preventDefault();event.stopPropagation();tp128OrderOpen('+JSON.stringify(p.id)+','+JSON.stringify(d.id)+')')+'">↕ '+esc(tp128OrderT('button'))+'</button>'};
 var tp128OrderDayBase=tp152DayBlock;
-tp152DayBlock=function(p,d,di){return tp128OrderDayBase.apply(this,arguments).replace('<div class="tp152-day-body">','<div class="tp152-day-body">'+tp128OrderButton(p,d))};
+tp152DayBlock=function(p,d,di){return tp128OrderDayBase.apply(this,arguments).replace('<span class="tp152-chevron" aria-hidden="true">',tp128OrderButton(p,d)+'<span class="tp152-chevron" aria-hidden="true">')};
 var tp128OrderOpen=function(programId,dayId){
  if(state.session){alert(tp105Text('busy'));return;}
  const p=programById(programId),day=p?.days?.find(d=>d.id===dayId);if(!day||!Array.isArray(day.exercises)||day.exercises.length<2)return;
