@@ -250,5 +250,9 @@
   {
     "file": "tests/browser/profile-training-128.cjs",
     "estimatedSeconds": 20
+  },
+  {
+    "file": "tests/browser/profile-history-128.cjs",
+    "estimatedSeconds": 12
   }
 ]

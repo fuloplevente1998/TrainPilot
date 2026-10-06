@@ -15348,6 +15348,11 @@ var tp128T=function(key,vars={}){
  minuteUnit:['perc','min','Min.','min'],
  rationale:['Mi alapján készült?','How was it tailored?','Wie wurde es angepasst?','Cum a fost adaptat?'],
  profileChangedShort:['Új profil alapján készült; csak elfogadáskor aktiválódik.','Based on your updated profile; activated only when accepted.','An dein neues Profil angepasst; erst nach Annahme aktiv.','Adaptat noului profil; se activează doar la acceptare.'],
+ historySummary:['Napló alapján: {count} gyakorlatnál átvettük a súlyt és a teljesítményszintet.','History used: load and performance carried over for {count} exercises.','Tagebuch genutzt: Gewicht und Leistungsniveau für {count} Übungen übernommen.','Istoric folosit: greutatea și nivelul au fost preluate pentru {count} exerciții.'],
+ historyReview:['Friss naplójelzés miatt {count} gyakorlat terhelését ellenőrizd.','Review the load for {count} exercises due to recent journal feedback.','Prüfe die Belastung bei {count} Übungen wegen aktueller Rückmeldungen.','Verifică încărcarea pentru {count} exerciții din cauza feedbackului recent.'],
+ historyDetail:['Átvett előzmény: {count} alkalom; a progresszió innen folytatódik.','Carried-over history: {count} sessions; progression continues from here.','Übernommene Einträge: {count} Trainings; Progression wird fortgeführt.','Istoric preluat: {count} sesiuni; progresia continuă de aici.'],
+ reductionTime:['{day}: az időkeret miatt {fromExercises} → {toExercises} gyakorlat, {fromSets} → {toSets} sorozat.','{day}: time budget changes {fromExercises} → {toExercises} exercises, {fromSets} → {toSets} sets.','{day}: Zeitrahmen ändert {fromExercises} → {toExercises} Übungen, {fromSets} → {toSets} Sätze.','{day}: timpul disponibil schimbă {fromExercises} → {toExercises} exerciții, {fromSets} → {toSets} serii.'],
+ reductionEquipment:['{day}: felszerelés, kizárás vagy új felosztás miatt {fromExercises} → {toExercises} gyakorlat, {fromSets} → {toSets} sorozat.','{day}: equipment, exclusions or a new split change {fromExercises} → {toExercises} exercises, {fromSets} → {toSets} sets.','{day}: Geräte, Ausschlüsse oder neue Aufteilung ändern {fromExercises} → {toExercises} Übungen, {fromSets} → {toSets} Sätze.','{day}: echipamentul, excluderile sau noua împărțire schimbă {fromExercises} → {toExercises} exerciții, {fromSets} → {toSets} serii.'],
  hold:['Egy gyengébb edzés miatt még nem csökkentünk. Tartsd a jelenlegi célt.','One weaker workout does not trigger a reduction. Keep the current target.','Ein schwächeres Training löst keine Reduktion aus. Behalte das Ziel bei.','Un singur antrenament mai slab nu declanșează reducerea. Păstrează ținta.'],
  trend:['{count} releváns edzés trendje alapján: {reason}','Based on {count} relevant workouts: {reason}','Auf Basis von {count} relevanten Trainings: {reason}','Pe baza a {count} antrenamente relevante: {reason}'],
  stable:['Legalább három edzésen elérted a felső határt; kis súlynövelés javasolt.','You reached the upper limit in at least three workouts; a small load increase is suggested.','Du hast die Obergrenze in mindestens drei Trainings erreicht; eine kleine Gewichtserhöhung wird empfohlen.','Ai atins limita superioară în cel puțin trei antrenamente; se recomandă o creștere mică.'],
@@ -15371,6 +15376,72 @@ var tp128T=function(key,vars={}){
 // Keep the numeric recipe format compatible with existing backups.
 var tp128NeedsLoad=function(e,rx){return !!rx?.trial&&Number(rx.weight)===0&&['total','per_hand','single_dumbbell'].includes(rx.loadType||e?.loadType)};
 var tp128ProgramExercise=function(p,id){const e=exercises().find(e=>e.id===id);return e?{...e,...p?.prescriptions?.[id]}:null};
+var tp128Finished=function(h){return Date.parse(h?.finished||'')};
+var tp128RecentWorkout=function(h){const t=tp128Finished(h);return Number.isFinite(t)&&t<=Date.now()&&t>=Date.now()-90*86400000};
+var tp128HistoryKey=function(h){return String(h?.id||h?.started||'')};
+var tp128Metric=function(e){return /mp|sec|second/.test(String(e?.repUnit||''))?'time':'reps'};
+var tp128Compatible=function(e,raw,rx){
+ if(!raw||e?.id!==raw.id||!Array.isArray(e.sets)||!e.sets.length)return false;
+ const load=rx?.loadType||raw.loadType,variation=rx?.variation||'';
+ return (e.loadType||(raw.custom?'':raw.loadType))===load&&(e.prescription?.variation||'')===variation&&tp128Metric({...raw,repUnit:e.repUnit||raw.repUnit})===tp128Metric(raw);
+};
+var tp128BasisMatches=function(raw,rx,basis){return !!raw&&basis?.loadType===(rx?.loadType||raw.loadType)&&basis.variation===(rx?.variation||'')&&basis.metric===tp128Metric(raw)&&Array.isArray(basis.sources)};
+var tp128EstimateDay=function(p,d){return 4+d.exercises.reduce((sum,id)=>{const r=p.prescriptions[id];return sum+r.sets*.65+(r.sets-1)*r.rest/60+1},0)};
+var tp128CompleteSets=function(e){
+ if(!e?.sets?.length||e.sets.length>10)return null;
+ const valid=e.sets.every(s=>s.done===true&&s.reps!=null&&String(s.reps).trim()!==''&&Number.isFinite(Number(s.reps))&&Number(s.reps)>0&&Number(s.reps)<=1000&&s.weight!=null&&String(s.weight).trim()!==''&&Number.isFinite(Number(s.weight))&&Number(s.weight)>=0&&Number(s.weight)<=1000);
+ return valid?e.sets:null;
+};
+var tp128PracticedIds=function(){
+ const raws=new Map(exercises().map(e=>[e.id,e])),ids=new Set();
+ for(const h of history())if(tp128RecentWorkout(h)&&h.feedback?.rating!=='pain')for(const e of h.exercises||[])if(e.effort!=='pain'&&tp128Compatible(e,raws.get(e.id),{})&&tp128CompleteSets(e))ids.add(e.id);
+ return ids;
+};
+// Read history once when generating a preview. No journal/program is changed here.
+var tp128AdaptHistory=function(p,profile){
+ const active=activeProgram(),raws=new Map(exercises().map(e=>[e.id,e]));
+ const rows=history().filter(tp128RecentWorkout).sort((a,b)=>tp128Finished(b)-tp128Finished(a));
+ const basis={version:1,entries:{},reductions:[]};
+ for(const id of new Set(p.days.flatMap(d=>d.exercises))){
+  const raw=raws.get(id),rx=p.prescriptions[id];if(!raw||!rx||tp106IsDistance(raw))continue;
+  const inherited=active?.history128?.entries?.[id],accepted=tp128BasisMatches(raw,rx,inherited)?new Set(inherited.sources.map(s=>s.programId+'|'+s.key)):new Set();
+  const candidates=rows.map(workout=>({workout,exercise:workout.exercises?.find(e=>tp128Compatible(e,raw,rx))})).filter(r=>r.exercise);
+  const owned=candidates.filter(r=>(r.workout.programId||'home-basic')===active?.id||accepted.has((r.workout.programId||'home-basic')+'|'+tp128HistoryKey(r.workout)));
+  const seen=new Set(),relevant=(owned.length?owned:candidates).filter(r=>{const key=(r.workout.programId||'home-basic')+'|'+tp128HistoryKey(r.workout);if(seen.has(key))return false;seen.add(key);return true;}).slice(0,4);
+  if(!relevant.length)continue;
+  const recentPain=relevant.slice(0,3).some(r=>r.exercise.effort==='pain'||r.workout.feedback?.rating==='pain');
+  const complete=recentPain?null:relevant.find(r=>tp128CompleteSets(r.exercise)),sets=complete&&tp128CompleteSets(complete.exercise);
+  const entry={loadType:rx.loadType||raw.loadType,variation:rx.variation||'',metric:tp128Metric(raw),status:sets?'adapted':'review',sources:relevant.map(r=>({programId:r.workout.programId||'home-basic',key:tp128HistoryKey(r.workout)}))};
+  basis.entries[id]=entry;if(!sets)continue;
+  const weights=sets.map(s=>Number(s.weight)),weight=Math.min(...weights),sameLoad=sets.filter(s=>Math.abs(Number(s.weight)-weight)<.01);
+  rx.weight=entry.loadType==='bodyweight'?0:weight;rx.trial=false;
+  rx.sets=Math.max(rx.sets,sets.length);
+  const target=tp140ParseTarget(rx.reps),oldTarget=tp140ParseTarget(complete.exercise.prescription?.reps||''),reps=sameLoad.map(s=>Number(s.reps));
+  if(['reps','time'].includes(target.kind)&&target.max!=null){
+   const max=Math.max(target.max,...reps,oldTarget.kind===target.kind&&oldTarget.max!=null?oldTarget.max:0);
+   // Retain the prior ceiling; lowering it must not manufacture a top-range streak.
+   rx.reps=target.min+'–'+max+(target.kind==='time'?' mp':'');
+  }
+ }
+ for(const day of p.days){
+  const before=active?.days?.find(d=>d.id===day.id),capacity=Math.min(7,rf148Capacity(profile.minutes));
+  const prior=before&&rows.find(h=>(h.programId||'home-basic')===active.id&&(h.dayId||h.workout)===day.id&&h.exercises?.length&&h.exercises.every(e=>tp128CompleteSets(e)));
+  const practiced=before&&rows.find(h=>(h.programId||'home-basic')===active.id&&(h.dayId||h.workout)===day.id&&day.exercises.every(id=>{const e=h.exercises?.find(e=>tp128Compatible(e,raws.get(id),p.prescriptions[id]));return !!tp128CompleteSets(e);})&&Date.parse(h.started)<tp128Finished(h));
+  const fits=practiced&&(tp128Finished(practiced)-Date.parse(practiced.started))/60000<=profile.minutes&&tp128EstimateDay(p,day)<=profile.minutes;
+  if(!fits)day.exercises=day.exercises.slice(0,capacity);
+  // Existing set counts survive unless the chosen time budget cannot hold them.
+  if(tp128EstimateDay(p,day)>profile.minutes){
+   for(const id of [...day.exercises].reverse()){const rx=p.prescriptions[id];while(rx.sets>2&&tp128EstimateDay(p,day)>profile.minutes)rx.sets--;}
+  }
+  const fromSets=prior?prior.exercises.reduce((n,e)=>n+e.sets.length,0):before?.exercises.reduce((n,id)=>n+(basis.entries[id]?.status==='adapted'?p.prescriptions[id]?.sets||0:0),0)||0;
+  const toSets=day.exercises.reduce((n,id)=>n+p.prescriptions[id].sets,0);
+  if(before&&before.exercises.some(id=>basis.entries[id]?.sources.some(source=>source.programId===active.id))&&(day.exercises.length<before.exercises.length||toSets<fromSets))basis.reductions.push({dayId:day.id,reason:day.exercises.some(id=>!before.exercises.includes(id))||before.exercises.some(id=>!raws.get(id)||!available132(id,profile)||profile.excluded.includes(id)||rf148ExerciseAvoided(raws.get(id),profile))?'equipment':'time',fromExercises:before.exercises.length,toExercises:day.exercises.length,fromSets,toSets});
+ }
+ const used=new Set(p.days.flatMap(d=>d.exercises));for(const id of Object.keys(p.prescriptions))if(!used.has(id))delete p.prescriptions[id];for(const id of Object.keys(basis.entries))if(!used.has(id))delete basis.entries[id];
+ if(Object.keys(basis.entries).length||basis.reductions.length)p.history128=basis;
+ p.estimatedMinutes=Math.ceil(Math.max(...p.days.map(d=>tp128EstimateDay(p,d))));
+ return p;
+};
 var tp128Rx=function(id,p,level2=false){
  const e=exercises().find(e=>e.id===id)||{},compound=!!e.compound;
  const sets=p.experience==='intermediate'&&p.goal==='muscle'&&p.minutes>=60&&p.activity!=='physical'?3:2;
@@ -15419,13 +15490,13 @@ generatePersonalProgram=function(input){
  if(!templateId||templateId==='custom'){
   for(const id of Object.keys(result.prescriptions))result.prescriptions[id]=tp128Rx(id,profile);
   result.days.forEach(d=>d.exercises.sort((a,b)=>Number(!!byId(b)?.compound)-Number(!!byId(a)?.compound)));
-  return Object.assign(result,{profileSchemaVersion:1,profileSnapshot:JSON.parse(JSON.stringify(profile)),generatorVersion:'128.1',sourceType:'personal'});
+  return tp128AdaptHistory(Object.assign(result,{profileSchemaVersion:1,profileSnapshot:JSON.parse(JSON.stringify(profile)),generatorVersion:'128.2',sourceType:'personal'}),profile);
  }
  const template=tp128Template(templateId);if(!template||!['home-basic','home-level2'].includes(templateId))throw Error(tp128T('unavailable'));
  const advanced=templateId==='home-level2'&&profile.experience==='intermediate';
- const lib=exercises().filter(e=>available132(e.id,profile)&&!profile.excluded.includes(e.id)&&!rf148ExerciseAvoided(e,profile)&&(profile.experience!=='beginner'||e.beginnerSafe));
+ const practiced=tp128PracticedIds();
+ const lib=exercises().filter(e=>available132(e.id,profile)&&!profile.excluded.includes(e.id)&&!rf148ExerciseAvoided(e,profile)&&(profile.experience!=='beginner'||e.beginnerSafe||practiced.has(e.id)));
  const pools=rf148RolePools(lib,profile),substitutions=[],prescriptions={};
- const dayLimit=Math.min(7,rf148Capacity(profile.minutes));
  const days=template.days.map(d=>{
   const ids=[];
   for(const oldId of d.exercises){
@@ -15433,7 +15504,6 @@ generatePersonalProgram=function(input){
    const original=byId(oldId),role=Object.keys(RF148_ROLE_PATTERNS).find(k=>RF148_ROLE_PATTERNS[k].includes(original?.movementPattern));
    if(!id||ids.includes(id))id=(pools[role]||[]).find(e=>!ids.includes(e.id))?.id;
    if(!id){substitutions.push({day:d.id,from:oldId,to:null});continue;}
-   if(ids.length>=dayLimit)continue;
    ids.push(id);if(id!==oldId)substitutions.push({day:d.id,from:oldId,to:id});
    prescriptions[id]=tp128Rx(id,profile,advanced);
    if(advanced&&['side-plank','crunch'].includes(id)&&profileGear132(profile).some(k=>['dumbbell','dumbbells'].includes(k)))Object.assign(prescriptions[id],{variation:'weighted',loadType:'single_dumbbell',progressionLevel:2});
@@ -15444,9 +15514,9 @@ generatePersonalProgram=function(input){
   return {id:d.id,name:d.name,exercises:ids};
  });
  const minutes=days.map(d=>4+d.exercises.reduce((sum,id)=>{const r=prescriptions[id];return sum+r.sets*.65+(r.sets-1)*r.rest/60+1},0));
- return Object.assign(result,{name:template.name,location:template.location,level:advanced?template.level:tp149PlannerRow('level',profile.experience,'hu'),days,prescriptions,
-  effectiveSplit:'full',i18n:{effectiveSplit:'full',gear:profileGear132(profile),minutes:profile.minutes,capacity:dayLimit,experience:profile.experience,focus:profile.focus,avoidAreas:profile.avoidAreas,changed:profile.split!=='auto'&&profile.split!=='full'},sourceType:'profile-template',sourceTemplateId:templateId,templateVersion:1,generatorVersion:'128.1',profileSchemaVersion:1,
-  profileSnapshot:JSON.parse(JSON.stringify(profile)),substitutions,estimatedMinutes:Math.ceil(Math.max(...minutes)),reasons:[]});
+ return tp128AdaptHistory(Object.assign(result,{name:template.name,location:template.location,level:advanced?template.level:tp149PlannerRow('level',profile.experience,'hu'),days,prescriptions,
+  effectiveSplit:'full',i18n:{effectiveSplit:'full',gear:profileGear132(profile),minutes:profile.minutes,capacity:Math.min(7,rf148Capacity(profile.minutes)),experience:profile.experience,focus:profile.focus,avoidAreas:profile.avoidAreas,changed:profile.split!=='auto'&&profile.split!=='full'},sourceType:'profile-template',sourceTemplateId:templateId,templateVersion:1,generatorVersion:'128.2',profileSchemaVersion:1,
+  profileSnapshot:JSON.parse(JSON.stringify(profile)),substitutions,estimatedMinutes:Math.ceil(Math.max(...minutes)),reasons:[]}),profile);
 };
 var tp128MetaBase=tp149ProgramMeta;
 tp149ProgramMeta=function(p,field,lang=rf212Lang()){
@@ -15462,7 +15532,8 @@ var tp128ExerciseNameBase=tp149ExerciseName;
 tp149ExerciseName=function(e,lang=rf212Lang()){
  const name=tp128ExerciseNameBase(e,lang);return e?.variation?name+' · '+tp128T(e.variation):name;
 };
-var tp128PreviewToken=function(){return JSON.stringify([activeProgramId(),programs(),trainingProfile(),!!state.session])};
+var tp128HistoryStamp=function(){let hash=2166136261;const text=JSON.stringify(history().filter(tp128RecentWorkout));for(let i=0;i<text.length;i++)hash=Math.imul(hash^text.charCodeAt(i),16777619);return hash>>>0};
+var tp128PreviewToken=function(){return JSON.stringify([activeProgramId(),programs(),trainingProfile(),!!state.session,tp128HistoryStamp()])};
 var tp128BuildPreview=function(profile,templateId='recommended'){
  state.profilePreview=validateProfile({...profile,templateId});state.programPreview=generatePersonalProgram(state.profilePreview);state.tp128PreviewToken=tp128PreviewToken();showPersonalPreview();
 };
@@ -15491,7 +15562,8 @@ var tp128PreviewExercise=function(p,id,i){
  const e=tp128ProgramExercise(p,id);if(!e)return '';
  const rx=tp152Rx(p,id,e),load=e.loadType==='bodyweight'?tp149T('workout.bodyweight'):tp128NeedsLoad(e,rx)?tp128T('unsetLoad'):tp149FormatNumber(rx.weight)+' '+tp149LoadLabel(e.loadType);
  const stat=(label,value)=>'<div><small class="muted">'+esc(label)+'</small><strong>'+esc(value)+'</strong></div>';
- return '<details class="exercise tp146-exercise tp152-exercise tp152-program-exercise tp128-preview-exercise" data-tp128-exercise="'+esc(id)+'"><summary class="tp146-exercise-summary"><div class="num">'+(i+1)+'</div><div class="tp146-exercise-copy"><div class="ex-name">'+esc(tp149ExerciseName(e))+'</div><div class="meta">'+esc(tp107RxSummary(e,rx))+'</div></div><div class="tp-exercise-actions">'+rf260VideoButton(id)+'<span class="tp152-chevron tp146-exercise-chevron" aria-hidden="true">⌄</span></div></summary><div class="tp146-exercise-body tp152-program-exercise-body"><div class="tp152-program-exercise-grid">'+stat(tp152T('sets'),rx.sets)+stat(tp152T('reps'),rx.reps)+stat(tp152LoadFieldLabel(e),load)+stat(tp152T('rest'),rx.rest+' s')+'</div><p class="small muted tp152-program-exercise-gear">'+esc(tp149Equipment(e))+'</p></div></details>';
+ const basis=p.history128?.entries?.[id],historyNote=basis?'<p class="small muted">'+esc(tp128T(basis.status==='adapted'?'historyDetail':'historyReview',{count:basis.status==='adapted'?basis.sources.length:1}))+'</p>':'';
+ return '<details class="exercise tp146-exercise tp152-exercise tp152-program-exercise tp128-preview-exercise" data-tp128-exercise="'+esc(id)+'"><summary class="tp146-exercise-summary"><div class="num">'+(i+1)+'</div><div class="tp146-exercise-copy"><div class="ex-name">'+esc(tp149ExerciseName(e))+'</div><div class="meta">'+esc(tp107RxSummary(e,rx))+'</div></div><div class="tp-exercise-actions">'+rf260VideoButton(id)+'<span class="tp152-chevron tp146-exercise-chevron" aria-hidden="true">⌄</span></div></summary><div class="tp146-exercise-body tp152-program-exercise-body"><div class="tp152-program-exercise-grid">'+stat(tp152T('sets'),rx.sets)+stat(tp152T('reps'),rx.reps)+stat(tp152LoadFieldLabel(e),load)+stat(tp152T('rest'),rx.rest+' s')+'</div><p class="small muted tp152-program-exercise-gear">'+esc(tp149Equipment(e))+'</p>'+historyNote+'</div></details>';
 };
 var tp128ProfileChanged=function(old,profile){
  if(!old||!profile)return false;
@@ -15503,6 +15575,10 @@ showPersonalPreview=function(){
  const stat=(label,value)=>'<div><small class="muted">'+esc(label)+'</small><strong>'+esc(value)+'</strong></div>';
  const estimated=p.estimatedMinutes||Math.ceil(Math.max(...p.days.map(d=>4+d.exercises.reduce((sum,id)=>{const r=p.prescriptions[id];return sum+r.sets*.65+(r.sets-1)*r.rest/60+1},0))));
  let summary='<div class="card tp128-preview-meta"><span class="badge">'+esc(tp128T(p.sourceType==='profile-template'?'adapted':'custom'))+'</span><div class="tp152-program-exercise-grid tp128-preview-stats">'+stat(tp128T('duration'),tp128T('minutes',{min:Math.max(10,estimated-5),max:estimated+5}))+stat(tp149T('planner.cadence'),tp149PlannerRow('cadence',profile.cadence))+'</div>';
+ const historyEntries=Object.values(p.history128?.entries||{}),adapted=historyEntries.filter(x=>x.status==='adapted').length,review=historyEntries.length-adapted;
+ if(adapted)summary+='<p class="small muted tp128-history-summary">'+esc(tp128T('historySummary',{count:adapted}))+'</p>';
+ if(review)summary+='<p class="small muted">'+esc(tp128T('historyReview',{count:review}))+'</p>';
+ for(const change of p.history128?.reductions||[])summary+='<p class="small muted tp128-history-reduction">'+esc(tp128T(change.reason==='time'?'reductionTime':'reductionEquipment',{...change,day:change.dayId}))+'</p>';
  if(Object.entries(p.prescriptions||{}).some(([id,rx])=>tp128NeedsLoad(tp128ProgramExercise(p,id),rx)))summary+='<p class="small muted">'+esc(tp128T('trialShort'))+'</p>';
  if(tp128ProfileChanged(trainingProfile(),profile))summary+='<p class="small muted">'+esc(tp128T('profileChangedShort'))+'</p>';
  summary+='</div>';
@@ -15545,10 +15621,13 @@ var tp128Welcome=function(){
 };
 var tp128BeginOnboarding=function(){state.tp128Onboarding=true;state.tp128TemplateChoice='recommended';profileScreen()};
 var tp128SkipOnboarding=function(){db.set('settings',{...settings(),onboarding128:'skipped'});state.tp128Onboarding=false;go('home')};
-// Relevant history is strict per program; no older template/program can trigger auto-load.
+// An accepted preview may explicitly continue compatible earlier exercise history.
+// Unrelated programs never enter progression without these bounded references.
 var tp128Rows=function(id,programId,limit=4){
- const p=programById(programId),rx=p?.prescriptions?.[id],variation=rx?.variation||'';
- return history().filter(h=>(h.programId||'home-basic')===programId).map(h=>({workout:h,exercise:(h.exercises||[]).find(e=>e.id===id&&(e.prescription?.variation||'')===variation)})).filter(x=>x.exercise).slice(0,limit);
+ const p=programById(programId),rx=p?.prescriptions?.[id]||{},raw=exercises().find(e=>e.id===id),basis=p?.history128?.entries?.[id];
+ const inherited=tp128BasisMatches(raw,rx,basis)?new Set(basis.sources.map(s=>s.programId+'|'+s.key)):new Set();
+ const seen=new Set();
+ return history().filter(h=>{const pid=h.programId||'home-basic',key=pid+'|'+tp128HistoryKey(h);if(seen.has(key)||!tp128RecentWorkout(h)||(pid!==programId&&!inherited.has(key)))return false;const e=(h.exercises||[]).find(e=>tp128Compatible(e,raw,rx));if(!e)return false;seen.add(key);return true;}).map(h=>({workout:h,exercise:h.exercises.find(e=>tp128Compatible(e,raw,rx))})).sort((a,b)=>tp128Finished(b.workout)-tp128Finished(a.workout)).slice(0,limit);
 };
 var tp128RecommendationBase=rf152Recommendation;
 rf152Recommendation=function(id,se=null){
@@ -15563,14 +15642,14 @@ rf152Recommendation=function(id,se=null){
  if(recent.slice(0,3).some(x=>x.effort==='pain'||x.row.workout.feedback?.rating==='pain'))return {...hold('pain'),action:'pain'};
  const readiness=rf220Readiness();
  if(Number(readiness.parts)>0&&Number(readiness.score)<55)return {...hold('recovery'),rirMin:2,rirMax:3};
- if(!latest.allDone||latest.effort==='challenging')return hold('hold');
- const same=recent.filter(x=>Math.abs(x.weight-base)<.01),top=same.filter(x=>x.hitTop&&x.safeEffort),bad=same.slice(0,3);
- const declining=bad.length===3&&bad.every(x=>x.allDone&&(x.effort==='hard'||x.belowMin))&&bad[0].avgRep<=bad[1].avgRep&&bad[1].avgRep<=bad[2].avgRep;
+ if(!latest.allDone||latest.effort==='challenging'||latest.row.workout.feedback?.rating==='hard')return hold('hold');
+ const bad=recent.slice(0,3),sameLoad=bad.every(x=>Math.abs(x.weight-base)<.01);
+ const declining=bad.length===3&&sameLoad&&bad.every(x=>x.allDone&&(x.effort==='hard'||x.belowMin))&&bad[0].avgRep<=bad[1].avgRep&&bad[1].avgRep<=bad[2].avgRep;
  if(latest.effort==='hard'||latest.belowMin){
   if(declining&&lib.loadType!=='bodyweight'&&base>0)return {...hold('declining'),action:'reduce',weight:tp140NextWeight(lib,base,-1)};
   return hold('hold');
  }
- const stable=top.length>=3&&latest.hitTop&&latest.safeEffort&&!bad.some(x=>x.adverse);
+ const stable=bad.length===3&&sameLoad&&bad.every(x=>x.hitTop&&x.safeEffort&&!x.adverse);
  if(lib.loadType==='bodyweight'){
   if(!stable)return {...result,action:result.action==='variation'?'hold':result.action,autoApply:false,historyCount:recent.length,target};
   const next=tp128NextVariation(id,rx);return {...hold('hold'),action:'variation',nextVariation:next,text:tp128T('variation',{next:tp128VariationLabel(id,next)}),historyCount:recent.length};
@@ -15594,6 +15673,7 @@ var tp128VariationPreview=function(id){
  if(next.variation==='weighted'&&!profileGear132(profile).some(k=>['dumbbell','dumbbells','barbell'].includes(k)))return;
  const out=JSON.parse(JSON.stringify(p));out.id='personal-'+crypto.randomUUID();out.builtin=false;out.generated=true;out.sourceType='coach';out.parentProgramId=p.id;
  out.days.forEach(d=>{d.exercises=d.exercises.map(e=>e===id?next.id:e)});
+ if(out.history128)delete out.history128.entries[id];
  out.prescriptions=out.prescriptions||{};out.prescriptions[next.id]={...tp128Rx(next.id,profile),variation:next.variation,progressionLevel:next.level,...(next.variation==='weighted'?{loadType:'single_dumbbell'}:{})};
  state.programPreview=out;state.profilePreview=profile;state.tp128PreviewToken=tp128PreviewToken();showPersonalPreview();
 };
@@ -15623,6 +15703,16 @@ validateBackup=function(d){
   if(p.templateVersion!==undefined&&(!Number.isInteger(p.templateVersion)||p.templateVersion<1||p.templateVersion>100))throw Error('Invalid template version.');
   if(p.sourceTemplateId!==undefined&&typeof p.sourceTemplateId!=='string')throw Error('Invalid template reference.');
   if(p.profileSnapshot)validateProfile(p.profileSnapshot);
+  if(p.history128!==undefined){
+   const b=p.history128,obj=x=>x&&typeof x==='object'&&!Array.isArray(x),fail=()=>{throw Error('Invalid history continuity.');};
+   if(!obj(b)||b.version!==1||!obj(b.entries)||Object.keys(b.entries).length>100||!Array.isArray(b.reductions)||b.reductions.length>30)fail();
+   const ids=new Set((p.days||[]).flatMap(d=>d.exercises||[]));
+   for(const [id,e] of Object.entries(b.entries)){
+    if(!ids.has(id)||!obj(e)||!['total','per_hand','single_dumbbell','bodyweight'].includes(e.loadType)||!['','paused','longLever','weighted'].includes(e.variation)||!['reps','time'].includes(e.metric)||!['adapted','review'].includes(e.status)||!Array.isArray(e.sources)||e.sources.length<1||e.sources.length>4)fail();
+    const seen=new Set();for(const source of e.sources){if(!obj(source)||typeof source.programId!=='string'||source.programId.length<1||source.programId.length>80||typeof source.key!=='string'||source.key.length<1||source.key.length>200||/[\u0000-\u001f]/.test(source.programId+source.key))fail();const key=source.programId+'|'+source.key;if(seen.has(key))fail();seen.add(key);}
+   }
+   for(const r of b.reductions)if(!obj(r)||typeof r.dayId!=='string'||r.dayId.length>80||!['time','equipment'].includes(r.reason)||['fromExercises','toExercises','fromSets','toSets'].some(k=>!Number.isInteger(r[k])||r[k]<0||r[k]>300))fail();
+  }
   for(const r of Object.values(p.prescriptions||{})){
    if(r.variation!==undefined&&!['','paused','longLever','weighted'].includes(r.variation))throw Error('Invalid variation.');
    if(r.loadType!==undefined&&!['bodyweight','single_dumbbell','per_hand','total'].includes(r.loadType))throw Error('Invalid load type.');
@@ -15633,7 +15723,7 @@ validateBackup=function(d){
  }
  return out;
 };
-window.TrainPilot128={version:'128.1',template:tp128Template,generate:generatePersonalProgram,relevantHistory:tp128Rows};
+window.TrainPilot128={version:'128.2',template:tp128Template,generate:generatePersonalProgram,relevantHistory:tp128Rows};
 // @endsection profile-training-128.js
 
 

@@ -1108,7 +1108,7 @@
   const liveRender=render,oldTab=state.tab,oldHealth=state.healthView;
   const hadCoach=typeof rf245CoachVisible!=='undefined',oldCoach=hadCoach?rf245CoachVisible:undefined;
   let captured='';
-  try{render=function(custom){captured=String(custom||'');return custom};fn()}
+  try{state.tab='profile';render=function(custom){captured=String(custom||'');return custom};fn()}
   finally{
    render=liveRender;state.tab=oldTab;state.healthView=oldHealth;
    if(hadCoach)rf245CoachVisible=oldCoach;
@@ -1171,7 +1171,7 @@
   return true;
  };
  profileScreen=function(){return tp3RenderPlannerPanel('profile',tp3ProfileScreenBase)};
- showPersonalPreview=function(){return tp3PlannerOpen()?tp3RenderPlannerPanel('preview',tp3ShowPersonalPreviewBase):tp3ShowPersonalPreviewBase()};
+ showPersonalPreview=function(){return tp3RenderPlannerPanel('preview',tp3ShowPersonalPreviewBase)};
  acceptPersonalProgram=function(){if(tp3PlannerOpen())window.tp3ClosePlannerPanel(false);return tp3AcceptPersonalProgramBase.apply(this,arguments)};
 
  const tp3GoBase=go;

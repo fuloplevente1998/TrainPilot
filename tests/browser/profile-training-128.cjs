@@ -86,7 +86,7 @@ const server=http.createServer((req,res)=>{const f=path.resolve(root,'.'+(new UR
    const profile=window.__profile128,p=generatePersonalProgram({...profile,templateId:'home-basic'});p.id='test-128';p.prescriptions['db-floor-press']={sets:2,reps:'8–12',weight:0,rest:120,rir:2};p.prescriptions.pushup={sets:2,reps:'8–15',weight:0,rest:120,rir:2};
    db.set('programs',[...programs(),p]);db.set('activeProgramId',p.id);db.set('settings',{...settings(),profile,onboarding128:'complete'});
    const mk=(id,reps,effort='good',weight=10,pid=p.id,variation='')=>({id:crypto.randomUUID(),programId:pid,started:new Date().toISOString(),finished:new Date().toISOString(),exercises:[{id,effort,loadType:byId(id).loadType,prescription:{variation},sets:reps.map((reps,i)=>({set:i+1,reps,weight,done:true}))}]});
-   const read=rows=>{db.set('history',rows);return rf152Recommendation(rows[0].exercises[0].id)};
+   const read=rows=>{rows.forEach((r,i)=>{r.finished=new Date(Date.now()-i*86400000).toISOString();r.started=new Date(Date.parse(r.finished)-35*60000).toISOString()});db.set('history',rows);return rf152Recommendation(rows[0].exercises[0].id)};
    const oldReadiness=rf220Readiness;rf220Readiness=()=>({parts:0,score:70});
    const a={
     improving:read([mk('db-floor-press',[12,10]),mk('db-floor-press',[11,9]),mk('db-floor-press',[10,8])]),
