@@ -15839,7 +15839,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
  style.textContent=`
   .tp137-motion-group:not(.top){position:relative;isolation:isolate}
   .tp137-selection{position:absolute;z-index:-1;box-sizing:border-box;pointer-events:none;display:block;transform-origin:0 0}
-  html body .tp137-motion-group .tp137-selected{background:transparent!important;border-color:transparent!important;box-shadow:none!important}
+  html[data-tp-theme-family] body .top.tp154-nav-grid.tp137-motion-group .tp154-nav-cell.tp137-selected,
+  html body #app .tp137-motion-group button.tp137-selected{background:transparent!important;border-color:transparent!important;box-shadow:none!important}
   html body .tp137-motion-group button{position:relative;z-index:2!important;transform:none!important;transition:none!important}
   html body .top.tp137-motion-group .tp154-nav-cell{z-index:2!important;transform:none!important;transition:none!important}
   .tp137-motion-group .tp137-selected::before,.tp137-motion-group .tp137-selected::after{box-shadow:none!important;background:transparent!important}

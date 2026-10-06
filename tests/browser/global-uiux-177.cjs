@@ -41,6 +41,9 @@ const server=http.createServer((req,res)=>{
      // Let the existing route entrance transition settle before comparing
      // visual CSS on/off; do not misdiagnose a transient animation as reflow.
      await page.waitForTimeout(350);
+     const marker=await page.locator('.top .tp137-selection').evaluate(e=>{const s=getComputedStyle(e);return {image:s.backgroundImage,shadow:s.boxShadow}});
+     assert.equal(marker.image.includes('gradient'),family==='vivid',width+'/'+theme+'/'+route+': navigation keeps matte/neon family, including Health');
+     assert.equal(marker.shadow==='none',family==='basic',width+'/'+theme+'/'+route+': only vivid navigation glows');
      const result=await page.evaluate(async()=>{
       const link=document.querySelector('link[href="global-uiux-177.css"]'),main=document.querySelector('#app main');
       const nav=document.querySelector('.top.tp154-nav-grid'),buttons=[...nav.querySelectorAll('.tp154-nav-cell')];
@@ -88,7 +91,7 @@ const server=http.createServer((req,res)=>{
      }
      if(result.after.hero){
       assert.equal(result.after.hero.border,'1px',route+': Health-reference Hero has a truly 1px outline');
-      assert.ok(result.after.hero.borderImage.includes('gradient'),route+': hero has visual gradient border');
+      assert.equal(result.after.hero.borderImage.includes('gradient'),family==='vivid',route+': vivid gradient / basic solid matte border');
       assert.equal(result.after.hero.shadow==='none',family==='basic',route+': glow only for vivid theme');
      }
      if(route==='programs'){
@@ -145,9 +148,36 @@ const server=http.createServer((req,res)=>{
       assert.ok(rowStyle.height>30,'Workout set tap targets remain usable');
     }
    }
+   if(width===393){
+    // All available palettes must honor their family, including a theme
+    // change while the sliding navigation marker already exists.
+    const families=await page.evaluate(()=>({basic:TP1511_BASIC,vivid:TP1511_VIVID}));
+    for(const [family,themes] of Object.entries(families))for(const theme of themes){
+     await page.evaluate(t=>{state.session=null;state.workout=null;db.set('draft',null);tp155R4ClosePanel(false);rf200SetTheme(t);go('plan')},theme);
+     await page.waitForTimeout(270);
+     const appearance=await page.evaluate(()=>{
+      const read=selector=>{const e=document.querySelector(selector);if(!e)return null;const s=getComputedStyle(e);return {image:s.backgroundImage,shadow:s.boxShadow,textShadow:s.textShadow,filter:s.filter};};
+      return {family:document.documentElement.dataset.tpThemeFamily,marker:read('.top .tp137-selection'),button:read('.tp150-quick-entry .btn.tp-primary'),letter:read('.tp146-day-letter'),hero:read('.tp124-active-program-frame'),neutral:read('.tp152-day'),selected:read('.top .tp137-selected')};
+     });
+     assert.equal(appearance.family,family,theme);
+     for(const key of ['marker','button','letter','hero']){
+      assert.ok(appearance[key],theme+': real '+key+' exists');
+      assert.equal(appearance[key].shadow==='none',family==='basic',theme+'/'+key+': family shadow');
+      assert.equal(appearance[key].filter,'none',theme+'/'+key+': no blur/filter layer');
+      if(family==='basic'){
+       assert.equal(appearance[key].image,'none',theme+'/'+key+': flat matte fill');
+       assert.equal(appearance[key].textShadow,'none',theme+'/'+key+': no text halo');
+      }
+     }
+     assert.equal(appearance.neutral.shadow,'none',theme+': ordinary day cards stay neutral');
+     assert.equal(appearance.selected.shadow,'none',theme+': only the marker carries the nav glow');
+     // An idle screen must not acquire an endless glow animation.
+     assert.equal(await page.evaluate(()=>document.getAnimations().filter(a=>a.playState==='running'&&a.effect.getTiming().iterations===Infinity).length),0,theme+': no glow loop');
+    }
+   }
    assert.deepEqual(errors,[],width+': no page errors');
    await page.close();
   }
-  console.log('PASS #58 visual-only: exact nav/main geometry, existing panel X and toggle behavior, Health tones, Hero and themes at 320/360/393/412px');
+  console.log('PASS #58/#137: exact nav/main geometry, existing panel X and toggle behavior, Health tones; matte/neon heroes and navigation at 320/360/393/412px; all 26 palettes, primary buttons and A/B badges, neutral cards, one static nav glow');
  }finally{await browser?.close();server.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});

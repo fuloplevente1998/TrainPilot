@@ -98,6 +98,77 @@ html[data-tp-theme-family="basic"] body :is(
 html[data-tp-theme-family="basic"] body :is(#app,#tp155R4PanelHost) :is(
   .progress,.progress>div
 ){box-shadow:none!important;filter:none!important;}
+
+/* #137 r4: theme families apply to every existing accent control, not just
+   the hero. Static shadows only: no filter, extra overlay, animated shadow
+   or permanently promoted layer. Neutral cards and semantic red/green
+   actions retain their own appearance. The moving navigation marker copies
+   its active button's style; never paint a second highlight on that button. */
+html[data-tp-theme-family="basic"] body #app main.rf221-home>.hero.tp155-home-active-card,
+html[data-tp-theme-family="basic"] body #app main.rf221-home>#rf220CoachCard.tp166-home-coach,
+html[data-tp-theme-family="basic"] body #app main.tp152-plan>:is(.tp152-active-program,.tp124-active-program-frame),
+html[data-tp-theme-family="basic"] body #app main.tp152-plan>.tp150-quick-entry:first-child:not(:has(~ :is(.tp152-active-program,.tp124-active-program-frame))),
+html[data-tp-theme-family="basic"] body #app main.tp153-workout .tp153-workout-head,
+html[data-tp-theme-family="basic"] body #app main.tp168-health>.tp168-today-card,
+html[data-tp-theme-family="basic"] body #app main.rf263-health>.tp151-health-card,
+html[data-tp-theme-family="basic"] body #tp155R4PanelHost[data-panel="coach"] .tp151-coach-recommendation{
+  background:var(--tp-ui-card)!important;
+  border-color:color-mix(in srgb,var(--accent) 65%,var(--tp-ui-border))!important;
+}
+html[data-tp-theme-family="basic"] body :is(
+  .btn.tp-primary,.btn.tp-emphasis,.tp146-day-letter,.check.done,.progress>div,
+  .tp155-theme-option.active,.tp1511-theme-chip.active,.tp-play-btn,
+  .tp154-nav-cell.active,.tp154-nav-cell.tp-action-active,
+  .tp177-journal-tabs .active,.tp107-statistics-tabs .active,.tp177-periods .active
+):not(.tp137-selected){
+  background-image:none!important;
+  box-shadow:none!important;
+  filter:none!important;
+  text-shadow:none!important;
+}
+html[data-tp-theme-family="basic"] body :is(
+  .tp154-nav-cell.active,.tp154-nav-cell.tp-action-active,
+  .tp177-journal-tabs .active,.tp107-statistics-tabs .active,.tp177-periods .active
+):not(.tp137-selected){
+  background-color:color-mix(in srgb,var(--accent) 16%,var(--tp-ui-card-raised))!important;
+}
+html[data-tp-theme-family="basic"] body :is(
+  .tp137-selection,.tp146-day-letter,.cal-cell>b,.exercise .num,
+  .tp152-exercise .num,.tp152-exercise .meta,
+  .tp-temporal-day,.rf263-date-day,.tp-time-option,.tp155-time-option
+){box-shadow:none!important;text-shadow:none!important;filter:none!important;}
+/* The legacy Health-only navigation rules have higher specificity than
+   ordinary controls. Resolve the family before the marker copies them. */
+html[data-tp-theme-family="basic"] body .top.tp154-nav-grid .tp154-nav-cell:is(.active,.tp-action-active):not(.tp137-selected){
+  background:color-mix(in srgb,var(--accent) 16%,var(--tp-ui-card-raised))!important;
+  box-shadow:none!important;
+}
+html[data-tp-theme-family="vivid"] body .top.tp154-nav-grid .tp154-nav-cell:is(.active,.tp-action-active):not(.tp137-selected){
+  box-shadow:var(--tp-ui-vivid-glow)!important;
+}
+html[data-tp-theme-family="vivid"] body :is(
+  .btn.tp-primary:not(.danger):not(:disabled):not([onclick*="saveSettings"]),
+  .btn.tp-emphasis:not(.danger):not(:disabled),
+  .tp154-nav-cell.active,.tp154-nav-cell.tp-action-active,
+  .tp177-journal-tabs .active,.tp107-statistics-tabs .active,.tp177-periods .active,
+  .cal-cell.tp-selected-day,.tp-temporal-day[aria-pressed="true"],
+  .rf263-date-day[aria-pressed="true"],.tp-time-option[aria-pressed="true"],
+  .tp155-time-option[aria-pressed="true"],.tp1511-theme-chip.active,
+  .tp155-theme-option.active,.tp162-theme-dropdown.open>.tp-select-trigger,.tp-play-btn,
+  .tp-select.open .tp-select-trigger,.tp-select-option[aria-selected="true"],
+  .btn.tp-selected:not(.danger),.rf232-effort .btn:not(.secondary),
+  .rf232-pain:not(.secondary),
+  .tp146-day-letter,.check.done,.progress>div
+):not(.tp137-selected){box-shadow:var(--tp-ui-vivid-glow)!important;}
+html[data-tp-theme-family="vivid"] body #app .tp152-program-card.active-program{
+  box-shadow:var(--tp-ui-vivid-glow)!important;
+}
+/* Small accent glyphs use a modest text halo rather than a shadow around
+   the whole neutral exercise/calendar card. Icons keep their crisp shape. */
+html[data-tp-theme-family="vivid"] body :is(#app,#tp155R4PanelHost) :is(
+  .cal-cell>b,.tp146-day-letter,.exercise .num,.tp152-exercise .num,
+  .tp152-exercise .meta
+){text-shadow:0 0 8px color-mix(in srgb,var(--accent) 40%,transparent)!important;}
 /* Typography: retain the existing Inter/system stack and all sizes, line
    heights, font weights, wrapping and spacing; no new font downloads. */
 
