@@ -74,12 +74,12 @@ const server=http.createServer((req,res)=>{const f=path.resolve(root,'.'+(new UR
    return {versions,bw,custom,base,advanced,unchanged};
   });
   assert.equal(logic.unchanged,true,'generation is read only');
-  assert.deepEqual(logic.base.days[1].exercises,['bulgarian-split-squat','pushup','barbell-row','db-pullover','lateral-raise','oh-triceps','crunch']);
-  assert.notDeepEqual(logic.base.days,logic.advanced.days);
+  assert.deepEqual(logic.base.days[1].exercises,['bulgarian-split-squat','barbell-row','pushup','db-pullover','lateral-raise','oh-triceps','crunch']);
+  assert.notDeepEqual(logic.base.days,logic.advanced.days);assert.equal(logic.advanced.days[1].exercises[2],'decline-pushup','advanced pushup is third too');
   assert.equal(logic.advanced.prescriptions.crunch.variation,'weighted');
   assert.equal(logic.advanced.prescriptions.crunch.loadType,'single_dumbbell');
   assert.equal(logic.custom.sourceType,'personal','standalone generator remains');
-  for(const v of logic.versions){assert.equal(v.available,true);assert.equal(v.compoundsFirst,true);assert.equal(v.p.templateVersion,1);assert.ok(v.p.profileSnapshot);for(const [id,r] of Object.entries(v.p.prescriptions)){assert.ok(r.sets>=2&&r.sets<=3);assert.ok(r.rest>=60);assert.equal(r.rir,2)}}
+  for(const v of logic.versions){assert.equal(v.available,true);assert.equal(v.compoundsFirst,true);assert.equal(v.p.templateVersion,2);assert.ok(v.p.profileSnapshot);for(const [id,r] of Object.entries(v.p.prescriptions)){assert.ok(r.sets>=2&&r.sets<=3);assert.ok(r.rest>=60);assert.equal(r.rir,2)}}
   assert.ok(logic.bw.days.every(d=>d.exercises.length>=3));
 
   const trends=await page.evaluate(()=>{

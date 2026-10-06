@@ -15466,10 +15466,10 @@ var tp128Template=function(id){
  const advanced=id==='home-level2';
  const slots=advanced?[
  ['db-front-squat','db-floor-press','barbell-row','db-rdl','db-ohp','hammer-curl','side-plank'],
- ['bulgarian-split-squat','decline-pushup','barbell-row','db-pullover','lateral-raise','oh-triceps','crunch']
+ ['bulgarian-split-squat','barbell-row','decline-pushup','db-pullover','lateral-raise','oh-triceps','crunch']
  ]:[
  ['goblet-squat','db-floor-press','one-arm-row','db-rdl','db-ohp','db-curl','side-plank'],
- ['bulgarian-split-squat','pushup','barbell-row','db-pullover','lateral-raise','oh-triceps','crunch']
+ ['bulgarian-split-squat','barbell-row','pushup','db-pullover','lateral-raise','oh-triceps','crunch']
  ];
  p.days=slots.map((exercises,i)=>({id:i?'B':'A',name:i?'B':'A',exercises}));
  const profile={experience:advanced?'intermediate':'beginner',goal:'fitness',minutes:45,activity:'mixed'};
@@ -15477,7 +15477,7 @@ var tp128Template=function(id){
   p.prescriptions[eid]=tp128Rx(eid,profile,advanced);
   if(advanced&&['side-plank','crunch'].includes(eid))Object.assign(p.prescriptions[eid],{variation:'weighted',loadType:'single_dumbbell',progressionLevel:2});
  }
- Object.assign(p,{templateVersion:1,sourceTemplateId:id,sourceType:'template'});tp128TemplateCache[id]=p;return JSON.parse(JSON.stringify(p));
+ Object.assign(p,{templateVersion:2,sourceTemplateId:id,sourceType:'template'});tp128TemplateCache[id]=p;return JSON.parse(JSON.stringify(p));
 };
 var tp128OldBuiltins=rf12BuiltinPrograms;
 rf12BuiltinPrograms=function(){return tp128OldBuiltins().map(p=>['home-basic','home-level2'].includes(p.id)?tp128Template(p.id):p)};
@@ -15515,7 +15515,7 @@ generatePersonalProgram=function(input){
  });
  const minutes=days.map(d=>4+d.exercises.reduce((sum,id)=>{const r=prescriptions[id];return sum+r.sets*.65+(r.sets-1)*r.rest/60+1},0));
  return tp128AdaptHistory(Object.assign(result,{name:template.name,location:template.location,level:advanced?template.level:tp149PlannerRow('level',profile.experience,'hu'),days,prescriptions,
-  effectiveSplit:'full',i18n:{effectiveSplit:'full',gear:profileGear132(profile),minutes:profile.minutes,capacity:Math.min(7,rf148Capacity(profile.minutes)),experience:profile.experience,focus:profile.focus,avoidAreas:profile.avoidAreas,changed:profile.split!=='auto'&&profile.split!=='full'},sourceType:'profile-template',sourceTemplateId:templateId,templateVersion:1,generatorVersion:'128.2',profileSchemaVersion:1,
+  effectiveSplit:'full',i18n:{effectiveSplit:'full',gear:profileGear132(profile),minutes:profile.minutes,capacity:Math.min(7,rf148Capacity(profile.minutes)),experience:profile.experience,focus:profile.focus,avoidAreas:profile.avoidAreas,changed:profile.split!=='auto'&&profile.split!=='full'},sourceType:'profile-template',sourceTemplateId:templateId,templateVersion:template.templateVersion,generatorVersion:'128.2',profileSchemaVersion:1,
   profileSnapshot:JSON.parse(JSON.stringify(profile)),substitutions,estimatedMinutes:Math.ceil(Math.max(...minutes)),reasons:[]}),profile);
 };
 var tp128MetaBase=tp149ProgramMeta;
