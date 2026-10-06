@@ -51,7 +51,7 @@ html body :is(#app,#tp155R4PanelHost) main :is(
   font-weight:700!important;
   line-height:1.25!important;
 }
-html body :is(#app,#tp155R4PanelHost) main p:not(.small):not(.tp177-small){
+html body :is(#app,#tp155R4PanelHost) main:not(.tp-home-draft-compact):not(.tp107-health-layout) p:not(.small):not(.tp177-small){
   font-size:var(--tp-type-body)!important;
   font-weight:400;
   line-height:1.45!important;
@@ -68,6 +68,14 @@ html body :is(#app,#tp155R4PanelHost) main :is(.btn:not([class*="close"]):not([o
 html body :is(#app,#tp155R4PanelHost) main :is(.field,input,select,textarea){
   font-size:var(--tp-type-body)!important;
 }
+/* Longer localized picker values stay within their grid column. */
+html body :is(#app,#tp155R4PanelHost) .rf2211-planbody .tp-select{width:100%!important;max-width:100%!important;min-width:0!important;}
+html body :is(#app,#tp155R4PanelHost) .tp-select-trigger{max-width:100%!important;min-width:0!important;}
+html body :is(#app,#tp155R4PanelHost) .tp-select-value{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+@media(max-width:340px) and (max-height:800px){
+  /* Keep all six calendar rows and weekly controls reachable with Inter. */
+  html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .rf2211-planbody{gap:1px!important;}
+}
 /* The same advice on Home and in Coach uses the same title/body hierarchy. */
 html body :is(#app,#tp155R4PanelHost) :is(.tp151-advice,.tp166-home-coach) :is(.tp151-advice>strong,h2){
   font-size:var(--tp-type-section)!important;
@@ -75,6 +83,11 @@ html body :is(#app,#tp155R4PanelHost) :is(.tp151-advice,.tp166-home-coach) :is(.
   line-height:1.25!important;
 }
 html body :is(#app,#tp155R4PanelHost) .tp153-coach-metric strong{font-weight:700!important;}
+/* The fixed Home overview keeps its viewport height when goal metadata
+   changes the advice text, instead of growing with the font's new metrics. */
+html body #app main.tp107-fit-home{
+  min-height:max(0px,calc(100dvh - var(--tp107-nav-height,132px) - 2px))!important;
+}
 /* Narrow summaries are metadata, not additional page headings. */
 html body #app .tp146-next-title{font-size:var(--tp-type-body)!important;font-weight:600!important;}
 html[lang] body .top.tp154-nav-grid .tp151-nav-label{
@@ -83,6 +96,15 @@ html[lang] body .top.tp154-nav-grid .tp151-nav-label{
 }
 @media(max-width:390px){
   html[lang] body .top.tp154-nav-grid .tp151-nav-label{font-size:12.5px!important;}
+}
+
+/* Older compact rules changed icon sizes by 1px and moved centered labels.
+   Keep identical icon metrics on either side of the scroll threshold. */
+html[lang] body .top.tp154-nav-grid .tp154-nav-cell :is(.tp151-nav-icon,.tp154-nav-action-icon){font-size:20px!important;}
+html[lang] body .top.tp154-nav-grid .tp154-settings-action .tp154-nav-action-icon{font-size:23px!important;}
+@media(max-width:390px){
+  html[lang] body .top.tp154-nav-grid .tp154-nav-cell :is(.tp151-nav-icon,.tp154-nav-action-icon){font-size:21px!important;}
+  html[lang] body .top.tp154-nav-grid .tp154-settings-action .tp154-nav-action-icon{font-size:24px!important;}
 }
 
 /* Scroll must not shine/blur the page's yellow actions through the main menu.

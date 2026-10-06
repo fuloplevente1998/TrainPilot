@@ -18,7 +18,8 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{
   const initial=await page.evaluate(()=>JSON.stringify({programs:programs(),history:history(),scheduled:scheduled()}));
   const cdp=await page.context().newCDPSession(page);await cdp.send('DOM.enable');await cdp.send('CSS.enable');
   async function glyphs(){
-   await page.evaluate(()=>{document.querySelector('#tp137FontProbe')?.remove();const e=document.createElement('span');e.id='tp137FontProbe';e.textContent='Árvíztűrő tükörfúrógép. Știință, înot, înălțime.';document.querySelector('#app main').append(e);});
+   await page.evaluate(()=>{document.querySelector('#tp137FontProbe')?.remove();const e=document.createElement('span');e.id='tp137FontProbe';e.style.cssText='position:fixed;left:20px;top:200px;z-index:9999;font-size:14px';e.textContent='Árvíztűrő tükörfúrógép. Știință, înot, înălțime.';document.querySelector('#app main').append(e);});
+   await page.evaluate(()=>document.fonts.ready);await page.locator('#tp137FontProbe').boundingBox();await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
    const {root}=await cdp.send('DOM.getDocument');const {nodeId}=await cdp.send('DOM.querySelector',{nodeId:root.nodeId,selector:'#tp137FontProbe'});
    const {fonts}=await cdp.send('CSS.getPlatformFontsForNode',{nodeId});
    assert.ok(fonts.length>0,'actual accent glyphs rendered');
@@ -70,12 +71,31 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{
     await page.evaluate(()=>tp155R4OpenPanel('coach',document.activeElement));await page.screenshot({path:'ui-evidence/typography-coach-137.png'});
    }
   }
+  // Real wheel input with animations enabled: record every frame across the
+  // compact-state thresholds. Neither the bar nor its buttons/icons may jump.
+  await page.emulateMedia({reducedMotion:'no-preference'});
+  for(const width of [320,393,412]){
+   await page.setViewportSize({width,height:873});
+   await page.evaluate(()=>{tp155R4ClosePanel(false);db.set('language','hu');go('programs');scrollTo(0,0)});
+   await page.waitForTimeout(260);
+   await page.evaluate(()=>{
+    const rect=e=>{const r=e.getBoundingClientRect();return [r.x,r.y,r.width,r.height]};
+    const snap=()=>[document.querySelector('.top'),...document.querySelectorAll('.top .tp154-nav-cell,.top .tp151-nav-icon,.top .tp154-nav-action-icon,.top .tp151-nav-label')].map(rect);
+    window.__tp137WheelFrames=[];window.__tp137WheelBaseline=snap();window.__tp137WheelRunning=true;
+    function frame(){window.__tp137WheelFrames.push({y:scrollY,compact:document.documentElement.classList.contains('tp-nav-compact'),rects:snap()});if(window.__tp137WheelRunning)requestAnimationFrame(frame)}requestAnimationFrame(frame);
+   });
+   for(const delta of [120,-120,120,-200]){await page.mouse.wheel(0,delta);await page.waitForTimeout(140)}
+   const frames=await page.evaluate(()=>{window.__tp137WheelRunning=false;return {base:window.__tp137WheelBaseline,frames:window.__tp137WheelFrames}});
+   assert.ok(frames.frames.some(f=>f.compact)&&frames.frames.some(f=>!f.compact),width+': wheel crosses both scroll states');
+   assert.ok(frames.frames.length>10,width+': real intermediate frames captured');
+   for(const f of frames.frames)assert.deepEqual(f.rects,frames.base,width+': bar size and all button/icon/label positions stay fixed in every scroll frame');
+  }
   await page.evaluate(()=>{tp155R4ClosePanel(false);go('home')});
   assert.equal(await page.evaluate(()=>JSON.stringify({programs:programs(),history:history(),scheduled:scheduled()})),initial,'visual changes preserve user data');
   // Verify the shipped service-worker cache includes the local font too.
   await page.evaluate(()=>navigator.serviceWorker.register('sw.js'));await page.waitForFunction(()=>navigator.serviceWorker.controller);
   await page.context().setOffline(true);await page.reload();await page.waitForFunction(()=>TrainPilotBoot.finished);await page.evaluate(()=>document.fonts.ready);await glyphs();
   assert.deepEqual(external,[],'no remote font/CDN dependency');assert.deepEqual(errors,[]);
-  console.log('PASS #137 typography/scroll: real Inter Hungarian/Romanian glyphs, offline font restart, shared page/body hierarchy, 4 languages and phone/landscape widths, both theme families; 70 real scroll positions and pixel-identical opaque menu over contrasting actions; immutable data');
+  console.log('PASS #137 typography/scroll: real Inter Hungarian/Romanian glyphs, offline font restart, shared page/body hierarchy, 4 languages and phone/landscape widths, both theme families; 70 real scroll positions, every-frame wheel geometry, and pixel-identical opaque menu over contrasting actions; immutable data');
  }finally{await browser?.close();server.close();}
 })().catch(e=>{console.error(e);process.exitCode=1});
