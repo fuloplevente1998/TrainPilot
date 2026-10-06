@@ -8,7 +8,7 @@ const listen=()=>new Promise(r=>server.listen(0,'127.0.0.1',r)),base=()=>'http:/
  browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});
  const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU'});
  const errors=[];page.on('pageerror',e=>errors.push(String(e?.stack||e)));page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text())});page.on('dialog',d=>d.accept());
- await page.goto(base());await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
+ await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto(base());await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
  const recoveryState=await page.evaluate(()=>{
    const e=byId('side-plank'),now=new Date().toISOString();if(!e)throw Error('side-plank missing');
    const valid={programId:'home-level2',programName:'Otthoni A/B – Haladó',dayId:'A',workout:'A',started:now,finished:now,exercises:[{id:e.id,hu:e.hu,en:e.en,loadType:e.loadType,repUnit:e.repUnit,effort:'good',sets:[{set:1,weight:0,reps:'16',leftSeconds:20,rightSeconds:16,done:true}]}]};

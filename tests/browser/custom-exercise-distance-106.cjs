@@ -6,7 +6,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});
  const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU'}),errors=[];
  page.on('pageerror',e=>errors.push(String(e)));page.on('dialog',d=>d.accept());
- await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.tp106CustomExercisePanelHtml);
+ await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.tp106CustomExercisePanelHtml);
  const opener=page.locator('button[onclick="customExerciseScreen()"]'),panel=page.locator('#tp155R4PanelHost[data-panel="custom-exercise"]');
  for(const language of ['hu','en','de','ro'])for(const width of [320,360,393,412]){
   await page.setViewportSize({width,height:873});

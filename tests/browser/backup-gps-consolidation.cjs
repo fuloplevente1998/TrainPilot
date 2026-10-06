@@ -13,7 +13,7 @@ const server=http.createServer((req,res)=>{
   browser=await chromium.launch({headless:true,args:['--no-sandbox']});
   const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU'});
   page.on('dialog',dialog=>dialog.accept());
-  await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
+  await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
   const imports=await page.evaluate(async()=>{
    const original=makeBackup(),cases=[];
    const check=async(label,mutate)=>{

@@ -5,7 +5,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
  try{browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  for(const width of [320,360,393,412])for(const language of ['hu','en','de','ro']){
   const page=await browser.newPage({viewport:{width,height:800},locale:language});const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
+  await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
   await page.evaluate(lang=>{db.set('language',lang);go('settings');},language);
   await page.waitForSelector('.tp105-data');await page.locator('.tp105-data>summary').click();
   const result=await page.evaluate(()=>({text:document.querySelector('.tp105-data').textContent,checked:document.querySelector('.tp105-data input').checked,overflow:document.documentElement.scrollWidth>innerWidth+1,buttons:[...document.querySelectorAll('.tp105-data button')].map(x=>x.getAttribute('onclick'))}));
@@ -25,7 +25,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
  // Exercise the actual DOMContentLoaded Drive override with an unfinished retention request.
  const page=await browser.newPage({viewport:{width:393,height:800},locale:'hu'});
  const probeErrors=[];page.on('pageerror',e=>probeErrors.push(e.message));
- await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
+ await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
  await page.evaluate(()=>{
   const device='00000000-0000-0000-0000-000000000001';let head='old';
   window.tp105SyncProbe={saved:0,reads:0,alerts:[],started:false,finished:false};

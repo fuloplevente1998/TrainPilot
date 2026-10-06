@@ -16,7 +16,7 @@ const {chromium}=require('playwright');
   const page=await browser.newPage({viewport:{width:393,height:700},locale:'hu-HU'});
   const nativeDialogs=[];
   page.on('dialog',async d=>{nativeDialogs.push({type:d.type(),message:d.message()});await d.dismiss()});
-  await page.goto(`http://127.0.0.1:${server.address().port}`);
+  await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto(`http://127.0.0.1:${server.address().port}`);
   await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
   await page.waitForTimeout(100);
   assert.equal(await page.evaluate(()=>window.TrainPilotDialogAudit?.version),'2629');
@@ -52,7 +52,7 @@ const {chromium}=require('playwright');
 
   // Program activation and custom-program creation/deletion.
   const alt=await page.evaluate(()=>programs().find(p=>p.id!==activeProgramId())?.id||null);
-  if(alt){await page.evaluate(id=>activateProgram(id),alt);await expectCancel(/Program aktiválása/)}
+  if(alt){await page.evaluate(id=>activateProgram(id),alt);if(['home-basic','home-level2'].includes(alt)){assert.equal(await page.locator('#tp3PlannerPanelHost').count(),1);await page.locator('.tp3-planner-close').click();}else await expectCancel(/Program aktiválása/)}
   await page.evaluate(()=>{void createCustomProgram()});
   await page.locator('#tp155R4PanelHost[data-panel="custom-program"] #tp106ProgramName').waitFor({state:'visible'});
   await page.locator('#tp155R4PanelHost .tp155-r4-panel-close').click();await page.locator('#tp155R4PanelHost[data-panel="custom-program"]').waitFor({state:'detached'});

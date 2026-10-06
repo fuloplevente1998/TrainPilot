@@ -3,7 +3,7 @@ const root=path.resolve('www');
 const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local').pathname;if(p==='/')p='/index.html';const file=path.resolve(root,'.'+p);if(!file.startsWith(root+path.sep)){res.writeHead(403);return res.end()}fs.readFile(file,(e,d)=>{if(e){res.writeHead(404);return res.end()}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'text/plain');res.end(d)})});
 (async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;try{
  browser=await chromium.launch({headless:true,args:['--no-sandbox']});const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU'});
- await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
+ await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
  const calls=await page.evaluate(()=>{
   const rows=[];for(let i=0;i<120;i++){const end=new Date(Date.now()-i*86400000),start=new Date(end.getTime()-3600000);rows.push({id:'p7-lazy-'+i,workout:'A',dayId:'A',programId:'home-basic',programName:'Phase 7 lazy',started:start.toISOString(),finished:end.toISOString(),exercises:[{id:'db-squat',loadType:'per_hand',repUnit:'ism.',sets:[{set:1,weight:10,reps:'10',done:true},{set:2,weight:10,reps:'9',done:true}]}],photos:[]})}
   db.set('history',rows);state.session=null;let n=0;const base=window.history;window.history=function(){n++;return base.apply(this,arguments)};go('history');return n;

@@ -246,5 +246,17 @@
   {
     "file": "tests/browser/calendar-coach-119.cjs",
     "estimatedSeconds": 20
+  },
+  {
+    "file": "tests/browser/profile-training-128.cjs",
+    "estimatedSeconds": 20
+  },
+  {
+    "file": "tests/browser/profile-history-128.cjs",
+    "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/exercise-order-128.cjs",
+    "estimatedSeconds": 12
   }
 ]

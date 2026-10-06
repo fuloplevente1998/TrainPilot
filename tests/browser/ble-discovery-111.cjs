@@ -3,7 +3,7 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const file=p
 (async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;try{
  browser=await chromium.launch({args:['--no-sandbox']});const p=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU'}),errors=[];p.on('pageerror',e=>errors.push(String(e)));
  await p.addInitScript(()=>{window.__bleCalls=[];const record=async()=>{__bleCalls.push('native');return {};};window.Capacitor={isNativePlatform:()=>true,Plugins:{BleDiscovery:new Proxy({},{get:()=>record}),GoogleSync:{status:async()=>({connected:false})},HealthBridge:{getStatus:async()=>({supported:true,permissions:{}})}}};});
- await p.goto('http://127.0.0.1:'+server.address().port);await p.waitForFunction(()=>TrainPilotBoot.finished);
+ await p.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await p.goto('http://127.0.0.1:'+server.address().port);await p.waitForFunction(()=>TrainPilotBoot.finished);
  for(const width of [320,360,393,412])for(const lang of ['hu','en','de','ro']){
   await p.setViewportSize({width,height:873});await p.evaluate(lang=>{tp155R4ClosePanel(false);db.set('language',lang);go('home');tp155R4OpenPanel('settings');},lang);
   assert.equal(await p.locator('.tp111-ble-entry, [onclick*=\"ble\"]').count(),0,'no diagnostic entry '+width+'/'+lang);

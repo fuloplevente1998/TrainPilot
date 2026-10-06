@@ -29,7 +29,7 @@ const server=http.createServer((req,res)=>{
   for(const width of [320,360,393,412]){
    const page=await browser.newPage({viewport:{width,height:873},locale:'hu-HU',timezoneId:'Europe/Budapest'});
    const errors=[];page.on('pageerror',e=>errors.push(String(e.message||e)));page.on('dialog',d=>d.accept());
-   await page.goto('http://127.0.0.1:'+server.address().port+'/');
+   await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto('http://127.0.0.1:'+server.address().port+'/');
    await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
    assert.equal(await page.evaluate(()=>!!window.TrainPilotGlobalUi177),false,'Do not install new JS or change toggle logic');
    for(const theme of ['classicBlue','blue']){

@@ -5,7 +5,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const browser=await chromium.launch({headless:true}),page=await browser.newPage({viewport:{width:393,height:852},locale:'hu-HU'}),native=[];
  page.on('dialog',async d=>{native.push({type:d.type(),message:d.message()});await d.dismiss()});
  try{
-  await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
+  await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
   await page.evaluate(()=>{
    db.set('language','hu');document.documentElement.lang='hu';
    const now=new Date();now.setHours(12,0,0,0);const days={};

@@ -16,7 +16,7 @@ const server=http.createServer((req,res)=>{
   browser=await chromium.launch({headless:true,args:['--no-sandbox']});
   const page=await browser.newPage({viewport:{width:393,height:873},locale:'de-DE'});
   page.on('dialog',d=>d.accept());
-  await page.goto('http://127.0.0.1:'+server.address().port+'/');
+  await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto('http://127.0.0.1:'+server.address().port+'/');
   await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
   await page.evaluate(()=>{
    db.set('language','de');document.documentElement.lang=rf212Lang();

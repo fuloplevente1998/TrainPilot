@@ -5,7 +5,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const browser=await chromium.launch({headless:true}),page=await browser.newPage({viewport:{width:393,height:852}});
  try{
-  await page.goto('http://127.0.0.1:'+server.address().port+'/');
+  await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto('http://127.0.0.1:'+server.address().port+'/');
   await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
   const setup=await page.evaluate(()=>{
    db.set('language','hu');document.documentElement.lang='hu';

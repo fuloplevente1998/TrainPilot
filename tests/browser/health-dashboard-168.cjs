@@ -8,7 +8,7 @@ const {chromium}=require('playwright');
  try{
   browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});
   const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU'});
-  await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
+  await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
   await page.evaluate(()=>{
    const now=new Date(),days={};for(let i=6;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);days[rf240DayKey(d)]={averageHeartRate:68+i,restingHeartRate:i===0?58:57,maxHeartRate:118+i,minHeartRate:52+i,steps:10000+i*100}}
    db.set('weights',[{kg:65.9,date:new Date(Date.now()-20*86400000).toISOString()},{kg:66.3,date:new Date(Date.now()-10*86400000).toISOString()},{kg:66.5,date:new Date().toISOString()}]);
