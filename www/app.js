@@ -15821,26 +15821,24 @@ var tp128OrderOpen=function(programId,dayId){
 
 
 // @section navigation-motion-137.js
-/* A shared selection surface follows real navigation state. Rendering stays synchronous:
- * no delayed route writes, cloned pages, action interception or data changes. */
+/* One selection update per navigation transaction, compositor-only motion, and
+ * one content surface regardless of the number of Journal entries. */
 window.addEventListener?.('DOMContentLoaded',function(){
  'use strict';
- const groups=[
-  ['navigation','.top.tp154-nav-grid','.tp154-nav-cell'],
-  ['journal','.tp177-journal-tabs','button'],
-  ['statistics','.tp107-statistics-tabs','button'],
-  ['period','.tp177-periods','button']
- ];
- const resizeObserver=typeof ResizeObserver==='function'?new ResizeObserver(()=>{
-  if([...records.values()].some(row=>{const b=row.group.querySelector('.tp137-selected');if(!b)return false;const r=box(b,row.group);return ['x','y','width','height'].some(k=>Math.abs(r[k]-row.target[k])>.5)}))settle();
- }):null;
+ const groups=[['navigation','.top.tp154-nav-grid','.tp154-nav-cell'],['journal','.tp177-journal-tabs','button'],['statistics','.tp107-statistics-tabs','button'],['period','.tp177-periods','button']];
  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
- let records=new Map(),rendering=0,contentAnimations=[];
  const duration=230,easing='cubic-bezier(.22,.8,.25,1)';
+ let records=new Map(),rendering=0,navigating=0,contentAnimation=null,theme='',appearanceCache=new Map();
+ const resizeObserver=typeof ResizeObserver==='function'?new ResizeObserver(()=>{
+  if([...records.values()].some(row=>{
+   if(!row.active.isConnected)return false;
+   const r=box(row.active,row.group);return ['x','y','width','height'].some(k=>Math.abs(r[k]-row.target[k])>.5);
+  }))settle();
+ }):null;
  const style=document.createElement('style');style.id='tp137NavigationMotionCss';
  style.textContent=`
   .tp137-motion-group:not(.top){position:relative;isolation:isolate}
-  .tp137-selection{position:absolute;z-index:-1;box-sizing:border-box;pointer-events:none;display:block}
+  .tp137-selection{position:absolute;z-index:-1;box-sizing:border-box;pointer-events:none;display:block;transform-origin:0 0}
   html body .tp137-motion-group .tp137-selected{background:transparent!important;border-color:transparent!important;box-shadow:none!important}
   html body .tp137-motion-group button{position:relative;z-index:2!important;transform:none!important;transition:none!important}
   html body .top.tp137-motion-group .tp154-nav-cell{z-index:2!important;transform:none!important;transition:none!important}
@@ -15853,84 +15851,92 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  function snapshot(){
   const result=new Map();
-  records.forEach((row,key)=>{
-   if(row.group.isConnected&&row.marker.isConnected){
-    const running=row.marker.getAnimations().find(a=>a.playState==='running');
-    result.set(key,{key:row.key,rect:box(row.marker,row.group),remaining:running?Math.max(0,Number(running.effect.getTiming().duration)-Number(running.currentTime||0)):0});
-   }
+  records.forEach((row,name)=>{
+   if(!row.group.isConnected)return;
+   // WAAPI's eased progress describes the current transform; no layout read is
+   // needed to continue a rapidly interrupted slide from its visible position.
+   const progress=row.animation?.effect.getComputedTiming().progress;
+   const moving=row.animation?.playState==='running',rect={...row.target};
+   if(progress!=null&&row.from)for(const k of ['x','y','width','height'])rect[k]=row.from[k]+(row.target[k]-row.from[k])*progress;
+   result.set(name,{key:row.key,rect,remaining:moving?Math.max(0,Number(row.animation.effect.getTiming().duration)-Number(row.animation.currentTime||0)):0});
   });
   return result;
  }
- function content(groupKey,direction,to){
-  const main=document.querySelector('#app main');if(!main)return;
-  let elements;
-  if(groupKey==='period')elements=[main.querySelector('.tp177-trend')];
-  else if(groupKey==='statistics')elements=[main.querySelector('.tp107-personal-records,.tp107-cardio')];
-  else elements=[...main.children].filter(e=>e.tagName!=='NAV'&&!e.contains(to));
-  elements.filter(Boolean).forEach(e=>{
-   // Full-page folds keep their horizontal geometry even during entry.
-   const frames=groupKey==='navigation'?[{opacity:.68},{opacity:1}]:
-    [{opacity:.68,transform:'translateX('+direction*8+'px)'},{opacity:1,transform:'translateX(0)'}];
-   contentAnimations.push(e.animate(frames,{duration:180,easing}));
-  });
+ function content(groupKey){
+  contentAnimation?.cancel();
+  const main=document.querySelector('#app main');
+  const surface=groupKey==='period'?main?.querySelector('.tp177-trend'):
+   groupKey==='statistics'?main?.querySelector('.tp107-personal-records,.tp107-cardio'):main;
+  // Opacity preserves the tab bar and disclosure geometry; a single surface
+  // avoids hundreds of card promotions for a long workout history.
+  if(surface)contentAnimation=surface.animate([{opacity:.84},{opacity:1}],{duration:160,easing});
  }
  function sync(before=new Map(),animate=true){
-  if(rendering)return;
-  contentAnimations=contentAnimations.filter(a=>a.playState==='running');
-  const next=new Map();
+  if(rendering||navigating)return;
+  const token=rf200ThemeKey()+'|'+document.documentElement.dataset.tpThemeFamily+'|'+document.documentElement.classList.contains('tp-nav-compact');
+  if(theme!==token){theme=token;appearanceCache.clear();}
+  const prepared=[];
+  // Prepare classes together, then measure every destination before writing
+  // indicator styles. This avoids alternating layout reads and writes.
   for(const [name,selector,buttonSelector] of groups){
    const group=document.querySelector(selector);if(!group)continue;
    const buttons=[...group.querySelectorAll(buttonSelector)],active=buttons.find(b=>b.classList.contains('active'));
-   group.querySelectorAll('.tp137-selected').forEach(b=>b.classList.remove('tp137-selected'));
+   if(!active){group.querySelector(':scope > .tp137-selection')?.remove();continue;}
+   const key=active.getAttribute('onclick')||active.dataset.period||String(buttons.indexOf(active)),cacheKey=name+'|'+key;
+   group.classList.add('tp137-motion-group');
+   group.querySelectorAll('.tp137-selected').forEach(b=>{if(b!==active||!appearanceCache.has(cacheKey))b.classList.remove('tp137-selected')});
+   prepared.push({name,group,active,key,cacheKey});
+  }
+  for(const row of prepared){
+   row.target=box(row.active,row.group);
+   if(!appearanceCache.has(row.cacheKey)){
+    const css=getComputedStyle(row.active),appearance={};
+    for(const prop of ['backgroundColor','backgroundImage','borderRadius','borderTopWidth','borderRightWidth','borderBottomWidth','borderLeftWidth','borderTopStyle','borderRightStyle','borderBottomStyle','borderLeftStyle','borderTopColor','borderRightColor','borderBottomColor','borderLeftColor','boxShadow'])appearance[prop]=css[prop];
+    appearanceCache.set(row.cacheKey,appearance);
+   }
+  }
+  const next=new Map();let changedGroup=null,observersChanged=records.size!==prepared.length;
+  for(const row of prepared){
+   const {name,group,active,key,target}=row,oldRow=records.get(name),previous=before.get(name),changed=previous&&previous.key!==key;
    let marker=group.querySelector(':scope > .tp137-selection');
-   if(!active){marker?.remove();continue;}
-   const key=active.getAttribute('onclick')||active.dataset.period||String(buttons.indexOf(active));
-   const css=getComputedStyle(active),appearance={};
-   for(const prop of ['backgroundColor','backgroundImage','borderRadius','borderTopWidth','borderRightWidth','borderBottomWidth','borderLeftWidth','borderTopStyle','borderRightStyle','borderBottomStyle','borderLeftStyle','borderTopColor','borderRightColor','borderBottomColor','borderLeftColor','boxShadow'])appearance[prop]=css[prop];
    if(!marker){marker=document.createElement('span');marker.className='tp137-selection';marker.setAttribute('aria-hidden','true');group.appendChild(marker);}
    marker.getAnimations().forEach(a=>a.cancel());
-   group.classList.add('tp137-motion-group');
-   const target=box(active,group),previous=before.get(name),changed=previous&&previous.key!==key;
-   Object.assign(marker.style,appearance,{left:target.x+'px',top:target.y+'px',width:target.width+'px',height:target.height+'px'});
-   active.classList.add('tp137-selected');
-   if(animate&&!reduced.matches&&previous&&(changed||previous.remaining>0)){
-    const old=previous.rect;
-    marker.animate([{transform:'translate('+ (old.x-target.x)+'px,'+(old.y-target.y)+'px)',width:old.width+'px',height:old.height+'px'},{transform:'translate(0,0)',width:target.width+'px',height:target.height+'px'}],{duration:changed?duration:previous.remaining,easing});
-    if(changed)content(name,Math.sign(target.x-previous.rect.x)||Math.sign(target.y-previous.rect.y)||1,active);
+   Object.assign(marker.style,appearanceCache.get(row.cacheKey),{left:target.x+'px',top:target.y+'px',width:target.width+'px',height:target.height+'px'});
+   active.classList.add('tp137-selected');row.marker=marker;
+   if(animate&&!reduced.matches&&previous&&(changed||previous.remaining>0)&&target.width>0&&target.height>0){
+    row.from=previous.rect;
+    row.animation=marker.animate([{transform:'translate('+(row.from.x-target.x)+'px,'+(row.from.y-target.y)+'px) scale('+(row.from.width/target.width)+','+(row.from.height/target.height)+')'},{transform:'translate(0,0) scale(1,1)'}],{duration:changed?duration:previous.remaining,easing});
+    if(changed)changedGroup=name;
    }
-   next.set(name,{group,marker,key,target});
+   observersChanged=observersChanged||oldRow?.group!==group||oldRow?.active!==active;
+   next.set(name,row);
   }
   records=next;
-  resizeObserver?.disconnect();records.forEach(row=>{resizeObserver?.observe(row.group);resizeObserver?.observe(row.group.querySelector('.tp137-selected'))});
+  if(changedGroup)content(changedGroup);
+  if(observersChanged){resizeObserver?.disconnect();records.forEach(row=>{resizeObserver?.observe(row.group);resizeObserver?.observe(row.active)});}
  }
  const baseRender=render;
  render=function(){
-  const outer=rendering===0,before=outer?snapshot():null;
-  rendering++;
+  const outer=!rendering&&!navigating,before=outer?snapshot():null;rendering++;
   try{return baseRender.apply(this,arguments)}finally{rendering--;if(outer)sync(before);}
- };
- window.render=render;
+ };window.render=render;
  const baseGo=go;
  go=function(){
-  const before=snapshot(),result=baseGo.apply(this,arguments);
-  sync(before);return result;
- };
- window.TrainPilotNavigate=go;
+  const outer=!navigating,before=outer?snapshot():null;navigating++;
+  try{return baseGo.apply(this,arguments)}finally{navigating--;if(outer)sync(before);}
+ };window.TrainPilotNavigate=go;
  const decorate=window.tp155R4DecorateNavigation;
  if(typeof decorate==='function')window.tp155R4DecorateNavigation=function(){
-  const before=rendering?null:snapshot(),result=decorate.apply(this,arguments);
-  if(!rendering)sync(before);return result;
+  const outer=!rendering&&!navigating,before=outer?snapshot():null,result=decorate.apply(this,arguments);
+  if(outer)sync(before);return result;
  };
  function settle(){
-  records.forEach(row=>row.marker.getAnimations().forEach(a=>a.cancel()));
-  contentAnimations.forEach(a=>a.cancel());contentAnimations=[];
-  sync(new Map(),false);
+  records.forEach(row=>row.animation?.cancel());contentAnimation?.cancel();contentAnimation=null;sync(new Map(),false);
  }
- window.addEventListener('resize',settle,{passive:true});
- reduced.addEventListener?.('change',settle);
+ window.addEventListener('resize',settle,{passive:true});reduced.addEventListener?.('change',settle);
  document.addEventListener('visibilitychange',()=>{if(document.hidden)settle()});
  sync(new Map(),false);
- window.TrainPilot137Motion={version:'137',duration,groups:groups.map(g=>g[0])};
+ window.TrainPilot137Motion={version:'137-smooth',duration,groups:groups.map(g=>g[0])};
 });
 // @endsection navigation-motion-137.js
 

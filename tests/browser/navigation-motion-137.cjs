@@ -27,6 +27,24 @@ const root=path.resolve('www'),server=http.createServer((q,r)=>{const url=new UR
  await p.evaluate(()=>go('home'));await settled();await p.locator('.tp154-coach-action').click();await settled();assert.equal(await p.locator('#tp155R4PanelHost[data-panel="coach"]').count(),1);await p.locator('.tp154-coach-action').click();await settled();assert.equal(await p.locator('#tp155R4PanelHost').count(),0);
  await p.emulateMedia({reducedMotion:'reduce'});await p.evaluate(()=>go('history'));await tabs.nth(1).evaluate(b=>b.click());assert.equal(await p.locator('.tp137-selection').evaluateAll(es=>es.flatMap(e=>e.getAnimations()).length),0);for(const a of await audit())assert.ok(a.delta<1,JSON.stringify(a));
  await p.emulateMedia({reducedMotion:'no-preference'});await tabs.nth(2).evaluate(b=>b.click());await p.setViewportSize({width:412,height:915});for(const a of await audit())assert.ok(a.delta<1,'resize settles immediately '+JSON.stringify(a));
+ // A long Journal must not create one animation/compositor surface per row.
+ // This reproduces the phone lag structurally, without timing thresholds that
+ // depend on the CI runner or claiming desktop measurements are Android FPS.
+ await p.evaluate(()=>{
+  window.tp137SavedHistory=history();
+  db.set('history',Array.from({length:240},(_,i)=>{const id='motion-large-'+i,t=Date.now()-i*86400000;return {id,healthStableId:'tpw_'+rf250Hash(id),programId:activeProgramId(),dayId:'A',programName:'Performance fixture',started:new Date(t-1800000).toISOString(),finished:new Date(t).toISOString(),exercises:[]}}));go('home');
+ });await settled();await p.evaluate(()=>document.fonts.ready);
+ const budget=await p.evaluate(()=>{
+  const base=Element.prototype.animate,result={markers:0,surfaces:0,layoutFrames:0};
+  Element.prototype.animate=function(frames,options){
+   if(this.matches('.tp137-selection')){result.markers++;if(frames.some(f=>Object.keys(f).some(k=>!['transform','offset','easing','composite'].includes(k))))result.layoutFrames++;}
+   else result.surfaces++;
+   return base.call(this,frames,options);
+  };
+  try{go('history');return {...result,entries:document.querySelectorAll('details.rf263-history').length}}finally{Element.prototype.animate=base;}
+ });
+ assert.equal(budget.entries,240,'exercise a genuinely large rendered Journal');assert.equal(budget.markers,1,'one selection animation per route transaction');assert.equal(budget.surfaces,1,'one content animation regardless of history length');assert.equal(budget.layoutFrames,0,'selection changes only transform, never per-frame width/height');await settled();
+ await p.evaluate(()=>{db.set('history',tp137SavedHistory);delete window.tp137SavedHistory;go('home')});
  assert.equal(await p.evaluate(()=>JSON.stringify({history:history(),programs:programs(),scheduled:scheduled()})),initial,'navigation never changes workout data');assert.deepEqual(errors,[]);
- console.log('PASS #137: real intermediate motion, continuous interruption, 24 rapid switches, stationary tabs, records/cardio/period content, portrait/landscape × four languages × three themes, main navigation and overlay toggles, reduced motion, resize, unchanged workout data');
+ console.log('PASS #137: real intermediate motion, continuous interruption, 24 rapid switches, stationary tabs, records/cardio/period content, portrait/landscape × four languages × three themes, main navigation and overlay toggles, reduced motion, resize, unchanged workout data, bounded surfaces with 240 Journal entries');
 }finally{await browser.close();server.close()}})().catch(e=>{console.error(e);process.exitCode=1;server.close()});
