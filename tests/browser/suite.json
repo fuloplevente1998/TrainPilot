@@ -254,5 +254,9 @@
   {
     "file": "tests/browser/profile-history-128.cjs",
     "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/exercise-order-128.cjs",
+    "estimatedSeconds": 12
   }
 ]

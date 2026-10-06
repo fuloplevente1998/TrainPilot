@@ -13,6 +13,12 @@ Kiindulás: a felhasználó által elfogadott `b11a112c62e4520398cc8b2190a2c9f92
 - Régi Alap/2. szint használónál opcionális frissítési előnézet van a Programokban. Nincs automatikus migráció.
 - Beépített Alap/2. szint kézi aktiválása is a profilhoz igazított előnézetet nyitja, és csak annak elfogadása után vált programot.
 
+## Kézi gyakorlat-sorrend
+
+Az Edzés és Programok oldalon az edzésnap Sorrend gombja külön, kompakt szerkesztőt nyit. Fel/le gombokkal mozgathatók a gyakorlatok; a lista csak Mentéskor kerül a kiválasztott programnapba. Mégse, Android Back és Escape elveti a módosítást. A receptek, többi nap, programazonosító és napló megmaradnak; a következő edzés a mentett sorrendben indul. Aktív edzés és közben megváltozott programnap blokkolja a mentést. A beépített és saját programok egyaránt rendezhetők. Hosszan nyomás/húzás helyett a külön Sorrend gomb az első megvalósítás.
+
+Regresszió: `tests/browser/exercise-order-128.cjs`, valódi edzésindítás, mentés/visszavonás/Back, backup/sync, ütközésvédelem, négy nyelv és álló/fekvő geometria.
+
 ## Coach és progresszió
 
 - A generátor a legutóbbi 90 nap befejezett naplóját is használja. Egyező gyakorlat, súlyegység és variáció esetén átveszi a teljesített munkasúlyt, sorozatszámot és megtartja az ismétlési felső határt. Nem alakítja át a kg/kar értéket összsúllyá. Fájdalom, hiányos vagy érvénytelen adatok esetén nem állít be automatikus kezdősúlyt.

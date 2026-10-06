@@ -15724,6 +15724,30 @@ validateBackup=function(d){
  return out;
 };
 window.TrainPilot128={version:'128.2',template:tp128Template,generate:generatePersonalProgram,relevantHistory:tp128Rows};
+
+// User-owned ordering changes only the selected stored program day.
+var tp128OrderT=function(key){const rows={title:['Gyakorlatok sorrendje','Exercise order','Übungsreihenfolge','Ordinea exercițiilor'],button:['Sorrend','Order','Reihenfolge','Ordine'],help:['A fel/le gombokkal rendezd a gyakorlatokat, majd mentsd.','Use the up/down buttons to arrange exercises, then save.','Ordne die Übungen mit den Pfeiltasten und speichere.','Aranjează exercițiile cu butoanele sus/jos, apoi salvează.'],up:['Feljebb','Move up','Nach oben','Mai sus'],down:['Lejjebb','Move down','Nach unten','Mai jos'],changed:['Közben megváltozott az edzésnap. Nyisd meg újra a sorrendet.','The workout day changed. Reopen the order editor.','Der Trainingstag wurde geändert. Öffne die Reihenfolge erneut.','Ziua de antrenament s-a schimbat. Redeschide editorul de ordine.']};return rows[key]?.[['hu','en','de','ro'].indexOf(rf212Lang())]||rows[key]?.[0]||key};
+var tp128OrderButton=function(p,d){return '<button type="button" class="btn secondary tp128-order-open" data-tp128-order-day="'+esc(d.id)+'" onclick="'+esc('event.stopPropagation();tp128OrderOpen('+JSON.stringify(p.id)+','+JSON.stringify(d.id)+')')+'">↕ '+esc(tp128OrderT('button'))+'</button>'};
+var tp128OrderDayBase=tp152DayBlock;
+tp152DayBlock=function(p,d,di){return tp128OrderDayBase.apply(this,arguments).replace('<div class="tp152-day-body">','<div class="tp152-day-body">'+tp128OrderButton(p,d))};
+var tp128OrderOpen=function(programId,dayId){
+ if(state.session){alert(tp105Text('busy'));return;}
+ const p=programById(programId),day=p?.days?.find(d=>d.id===dayId);if(!day||!Array.isArray(day.exercises)||day.exercises.length<2)return;
+ const original=JSON.stringify(day.exercises),draft=day.exercises.slice(),trigger=document.activeElement;
+ const answer=tp2628Confirm(tp128OrderT('help'),{title:tp128OrderT('title')+' · '+tp149ProgramDayName(p,day),confirmText:tp149T('common.save'),cancelText:tp149T('common.cancel')});
+ const host=document.getElementById('tp2628Dialog'),dialog=host?.querySelector('.tp2628-dialog');if(!dialog)return;
+ dialog.classList.add('tp128-order-dialog');const list=document.createElement('div');list.className='tp128-order-list';list.setAttribute('role','list');list.setAttribute('aria-label',tp128OrderT('title'));dialog.querySelector('.tp2628-dialog-actions').before(list);
+ const paint=()=>{list.innerHTML=draft.map((id,i)=>{const e=byId(id),name=e?tp149ExerciseName(e):id;return '<div class="tp128-order-row" role="listitem"><span class="num">'+(i+1)+'</span><strong>'+esc(name)+'</strong>'+[-1,1].map(delta=>'<button type="button" class="btn secondary" data-order-index="'+i+'" data-order-delta="'+delta+'" aria-label="'+esc(tp128OrderT(delta<0?'up':'down')+': '+name)+'" '+(i+delta<0||i+delta>=draft.length?'disabled':'')+'>'+(delta<0?'↑':'↓')+'</button>').join('')+'</div>'}).join('')};
+ list.addEventListener('click',event=>{const button=event.target.closest('[data-order-index]');if(!button||button.disabled)return;const i=Number(button.dataset.orderIndex),delta=Number(button.dataset.orderDelta),j=i+delta;if(!Number.isInteger(i)||![-1,1].includes(delta)||j<0||j>=draft.length)return;[draft[i],draft[j]]=[draft[j],draft[i]];const scroll=list.scrollTop;paint();list.scrollTop=scroll;let focus=list.querySelector('[data-order-index="'+j+'"][data-order-delta="'+delta+'"]');if(focus?.disabled)focus=list.querySelector('[data-order-index="'+j+'"][data-order-delta="'+(-delta)+'"]');focus?.focus({preventScroll:true});focus?.scrollIntoView({block:'nearest'});});paint();
+ void answer.then(ok=>{
+  if(!ok){if(trigger?.isConnected)trigger.focus({preventScroll:true});return;}
+  const ps=programs(),live=ps.find(x=>x.id===programId),target=live?.days?.find(d=>d.id===dayId);
+  if(state.session||!target||JSON.stringify(target.exercises)!==original){alert(tp128OrderT('changed'));return;}
+  if(JSON.stringify(draft)!==original){target.exercises=draft.slice();try{db.set('programs',ps)}catch(_){alert(tp149T('planner.saveFailed'));return;}cloudChanged();}
+  render();
+ });
+};
+
 // @endsection profile-training-128.js
 
 
