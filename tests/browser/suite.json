@@ -262,5 +262,9 @@
   {
     "file": "tests/browser/post-workout-feedback-122.cjs",
     "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/calendar-replan-123.cjs",
+    "estimatedSeconds": 20
   }
 ]
