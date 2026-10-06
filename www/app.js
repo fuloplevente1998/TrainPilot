@@ -620,7 +620,7 @@ var rf12BuiltinPrograms = function rf12BuiltinPrograms(){return [
 {id:'gym-fullbody',name:'Konditermi Full Body',location:'Edzőterem',level:'Kezdő',builtin:true,days:[{id:'A',name:'Full Body',exercises:['leg-press','machine-chest-press','lat-pulldown','leg-curl','machine-shoulder-press','crunch']}]},
 {id:'gym-ab',name:'Konditermi A/B',location:'Edzőterem',level:'Középhaladó',builtin:true,days:[{id:'A',name:'A',exercises:['leg-press','machine-chest-press','seated-cable-row','leg-curl','cable-curl','crunch']},{id:'B',name:'B',exercises:['rdl','lat-pulldown','machine-shoulder-press','reverse-lunge','cable-triceps','plank']}]}
 ];};
-var programs = function programs(){return db.get('programs',rf12BuiltinPrograms());};
+var programs = function programs(){return db.get('programs',null)??rf12BuiltinPrograms();};
 var activeProgramId = function activeProgramId(){return db.get('activeProgramId','home-basic');};
 var activeProgram = function activeProgram(){return programs().find(p=>p.id===activeProgramId())||programs()[0];};
 var programById = function programById(id){return programs().find(p=>p.id===id);};
@@ -6872,12 +6872,12 @@ var tp149Plural=function tp149Plural(key,count,vars={},lang){
 var tp149FormatNumber=function tp149FormatNumber(value,options={},lang){
  const locale=TP149_LOCALES[lang]||tp149Locale(lang);
  const n=Number(value);if(!Number.isFinite(n))return '—';
- try{return new Intl.NumberFormat(locale,options).format(n);}catch(_){return String(n);}
+ try{return (window.tp7Formatter?window.tp7Formatter('number',locale,options):new Intl.NumberFormat(locale,options)).format(n);}catch(_){return String(n);}
 };
 var tp149FormatDate=function tp149FormatDate(value,options={},lang){
  const d=value instanceof Date?value:new Date(value);if(!Number.isFinite(d.getTime()))return '—';
  const locale=TP149_LOCALES[lang]||tp149Locale(lang);
- try{return new Intl.DateTimeFormat(locale,Object.assign({year:'numeric',month:'2-digit',day:'2-digit'},options)).format(d);}catch(_){return d.toISOString().slice(0,10);}
+ try{const format=Object.assign({year:'numeric',month:'2-digit',day:'2-digit'},options);return (window.tp7Formatter?window.tp7Formatter('date',locale,format):new Intl.DateTimeFormat(locale,format)).format(d);}catch(_){return d.toISOString().slice(0,10);}
 };
 var tp149FormatDateTime=function tp149FormatDateTime(value,options={},lang){
  return tp149FormatDate(value,Object.assign({hour:'2-digit',minute:'2-digit'},options),lang);

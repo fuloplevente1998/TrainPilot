@@ -1773,37 +1773,52 @@
 /* Phase 7 — #19 operation-scoped history snapshot for render/Coach calculations. */
 (function(){
  'use strict';
- let depth=0,liveHistory=null,snapshot=null;
+ // Share pure reads/calculations only during one synchronous UI operation.
+ // Never carry results across navigation, edits, imports or Health refreshes.
+ let depth=0,liveHistory=null,cache=null;
+ const valueKey=Symbol('result');
+ function memo(fn,self,args){
+  if(!cache)return fn.apply(self,args);
+  let branch=cache.get(fn);if(!branch){branch=new Map();cache.set(fn,branch);}
+  for(const arg of args){if(!branch.has(arg))branch.set(arg,new Map());branch=branch.get(arg);}
+  if(!branch.has(valueKey))branch.set(valueKey,fn.apply(self,args));
+  return branch.get(valueKey);
+ }
+ const formatter=(kind,locale,options)=>new Intl[kind==='date'?'DateTimeFormat':'NumberFormat'](locale,JSON.parse(options));
+ window.tp7Formatter=(kind,locale,options)=>memo(formatter,null,[kind,locale,JSON.stringify(options)]);
+ function operation(fn){
+  if(depth){depth++;try{return fn()}finally{depth--;}}
+  liveHistory=history;cache=new Map();depth=1;
+  history=function(){return memo(liveHistory,null,[])};
+  try{return fn()}
+  finally{history=liveHistory;liveHistory=null;cache=null;depth=0;}
+ }
  window.tp7WithHistorySnapshot=function tp7WithHistorySnapshot(fn){
-  if(typeof fn!=='function')return undefined;
-  if(depth>0){depth++;try{return fn(snapshot)}finally{depth--}}
-  const current=history;
-  if(typeof current!=='function')return fn(null);
-  const rows=current();
-  liveHistory=current;snapshot=Array.isArray(rows)?rows:[];
-  history=function(){return snapshot};
-  depth=1;
-  try{return fn(snapshot)}
-  finally{
-   depth=0;history=liveHistory;liveHistory=null;snapshot=null;
-  }
+  return typeof fn==='function'?operation(()=>fn(history())):undefined;
  };
+ const setBase=db.set;
+ db.set=function(){
+  cache?.clear();
+  try{return setBase.apply(this,arguments)}finally{cache?.clear();}
+ };
+ function cached(fn,key){return function(){return memo(fn,this,key?key.apply(this,arguments):Array.from(arguments))};}
+ exercises=cached(exercises);
+ programs=cached(programs);
+ activeProgramId=cached(activeProgramId);
+ rf212Lang=cached(rf212Lang);
+ rf220Hist=cached(rf220Hist);
+ rf220Readiness=cached(rf220Readiness,()=>[state.health?.recovery]);
+ rf152Last=cached(rf152Last);
+ rf152Recommendation=cached(rf152Recommendation,(id,se)=>[id,se||null,state.session,state.prescriptionProgramId]);
  const renderBase=render;
- render=function(){
-  const tab=state?.tab,custom=arguments.length>0&&arguments[0]!=null;
-  if(!custom&&['home','history','health','stats'].includes(tab)){
-   const self=this,args=arguments;
-   return window.tp7WithHistorySnapshot(()=>renderBase.apply(self,args));
-  }
-  return renderBase.apply(this,arguments);
- };
+ render=function(){const self=this,args=arguments;return operation(()=>renderBase.apply(self,args));};
  window.render=render;
+ const navigateBase=go;
+ go=function(){const self=this,args=arguments;return operation(()=>navigateBase.apply(self,args));};
+ window.TrainPilotNavigate=go;
  if(typeof rf233CoachPlan==='function'){
   const coachPlanBase=rf233CoachPlan;
-  rf233CoachPlan=function(){
-   const self=this,args=arguments;
-   return window.tp7WithHistorySnapshot(()=>coachPlanBase.apply(self,args));
-  };
+  rf233CoachPlan=function(){const self=this,args=arguments;return operation(()=>memo(coachPlanBase,self,Array.from(args)));};
   window.rf233CoachPlan=rf233CoachPlan;
  }
  let tp7CoachProgressDeferred=false,tp7CoachProgressToken=0;
@@ -1833,20 +1848,17 @@
   };
   window.tp155R4RefreshPanel=function(){
    const coach=document.querySelector('#tp155R4PanelHost[data-panel="coach"]');
-   if(!coach)return refreshBase.apply(this,arguments);
+   if(!coach){const self=this,args=arguments;return operation(()=>refreshBase.apply(self,args));}
    tp7CoachProgressDeferred=true;
-   try{return refreshBase.apply(this,arguments)}
+   try{const self=this,args=arguments;return operation(()=>refreshBase.apply(self,args));}
    finally{tp7CoachProgressDeferred=false;scheduleCoachProgress()}
   };
  }
  if(typeof window.tp155R4OpenPanel==='function'){
   const panelBase=window.tp155R4OpenPanel;
-  window.tp155R4OpenPanel=function(panel){
-   if(panel==='coach'){
-    const self=this,args=arguments;
-    return window.tp7WithHistorySnapshot(()=>panelBase.apply(self,args));
-   }
-   return panelBase.apply(this,arguments);
+  window.tp155R4OpenPanel=function(){
+   const self=this,args=arguments;
+   return operation(()=>panelBase.apply(self,args));
   };
  }
  const tp7ProgramBodyHtml=function(p){
@@ -1873,7 +1885,7 @@
   };
   window.programCards=programCards;
  }
- window.TrainPilotPhase7Performance={version:'phase7-performance-19-r4',historySnapshot:'operation-scoped',persistentCache:false,lazyPrograms:true,batchedProgressStats:true,deferredCoachProgress:true};
+ window.TrainPilotPhase7Performance={version:'phase7-performance-19-r4',historySnapshot:'operation-scoped',persistentCache:false,lazyPrograms:true,batchedProgressStats:true,deferredCoachProgress:true,scopedCalculations:true};
 })();
 
 });</script>
