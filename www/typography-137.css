@@ -86,7 +86,7 @@ html body :is(#app,#tp155R4PanelHost) .tp153-coach-metric strong{font-weight:700
 /* The fixed Home overview keeps its viewport height when goal metadata
    changes the advice text, instead of growing with the font's new metrics. */
 html body #app main.tp107-fit-home{
-  min-height:max(0px,calc(100dvh - var(--tp107-nav-height,132px) - 2px))!important;
+  height:max(0px,calc(100dvh - var(--tp107-nav-height,132px) - 2px))!important;
 }
 /* Narrow summaries are metadata, not additional page headings. */
 html body #app .tp146-next-title{font-size:var(--tp-type-body)!important;font-weight:600!important;}
@@ -100,12 +100,8 @@ html[lang] body .top.tp154-nav-grid .tp151-nav-label{
 
 /* Older compact rules changed icon sizes by 1px and moved centered labels.
    Keep identical icon metrics on either side of the scroll threshold. */
-html[lang] body .top.tp154-nav-grid .tp154-nav-cell :is(.tp151-nav-icon,.tp154-nav-action-icon){font-size:20px!important;}
-html[lang] body .top.tp154-nav-grid .tp154-settings-action .tp154-nav-action-icon{font-size:23px!important;}
-@media(max-width:390px){
-  html[lang] body .top.tp154-nav-grid .tp154-nav-cell :is(.tp151-nav-icon,.tp154-nav-action-icon){font-size:21px!important;}
-  html[lang] body .top.tp154-nav-grid .tp154-settings-action .tp154-nav-action-icon{font-size:24px!important;}
-}
+html[lang] body .top.tp154-nav-grid .tp154-nav-cell :is(.tp151-nav-icon,.tp154-nav-action-icon){font-size:21px!important;}
+html[lang] body .top.tp154-nav-grid .tp154-settings-action .tp154-nav-action-icon{font-size:24px!important;}
 
 /* Scroll must not shine/blur the page's yellow actions through the main menu.
    Keep the same opaque surface in both compact states, without changing its
