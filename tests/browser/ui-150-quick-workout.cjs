@@ -80,6 +80,11 @@ const base=()=>'http://127.0.0.1:'+server.address().port+'/';
 
   await page.locator('#tp150QuickAdd button').click();
   await page.waitForSelector('#tp150QuickQuery');
+  const allAddChoices=await page.locator('#tp150QuickResults .tp150-quick-row').count();
+  await page.locator('#tp150QuickQuery').fill('no-matching-exercise-125');assert.equal(await page.locator('#tp150QuickResults .tp150-quick-row').count(),0);
+  const clearTarget=await page.locator('#tp150QuickQuery').evaluate(e=>{const r=e.getBoundingClientRect();return {x:r.right-parseFloat(getComputedStyle(e).paddingRight)-4,y:r.top+r.height/2+18,height:r.height}});
+  assert.ok(clearTarget.height>=48,'Add exercise search has room for the large native clear control');await page.mouse.click(clearTarget.x,clearTarget.y);
+  assert.equal(await page.locator('#tp150QuickQuery').inputValue(),'');assert.equal(await page.locator('#tp150QuickResults .tp150-quick-row').count(),allAddChoices,'clear restores Add exercise choices without changing the active session');
   await page.locator('#tp150QuickQuery').fill('plank');
   await page.waitForTimeout(50);
   const plankRow=page.locator('#tp150QuickResults .tp150-quick-row[data-exercise-id="plank"]');

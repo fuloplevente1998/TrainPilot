@@ -13,6 +13,15 @@ const {chromium}=require('playwright');
  try{
   browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});
   const page=await browser.newPage({viewport:{width:393,height:720},locale:'hu-HU'});
+  const clearSearch=async(id)=>{
+   const input=page.locator('#'+id);await input.scrollIntoViewIfNeeded();
+   const box=await input.evaluate(e=>{const r=e.getBoundingClientRect();return {right:r.right,y:r.top+r.height/2,height:r.height,padding:parseFloat(getComputedStyle(e).paddingRight)}});
+   assert.ok(box.height>=48,'search field must accommodate a 44px mobile clear target');
+   // Tap near the outer corner of the native clear target, beyond the visible X.
+   await page.mouse.click(box.right-box.padding-4,box.y+18);
+   assert.equal(await input.inputValue(),'','native clear must erase the query');
+   assert.equal(await input.evaluate(e=>document.activeElement===e),true,'clear keeps search focus');
+  };
   await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.TrainPilot155Next12?.calendarMove&&window.TrainPilot155PhoneRound4?.calendarMoveInPlace);
 
   const initial=await page.evaluate(()=>{
@@ -129,12 +138,15 @@ const {chromium}=require('playwright');
   const muscleSelect=quick.locator('#tp155QuickMuscle');const muscleValue=await muscleSelect.locator('option').nth(1).getAttribute('value');
   await muscleSelect.selectOption(muscleValue);await page.waitForTimeout(40);
   const quickAfter=await quick.locator('.tp152-quick-row').count();assert.ok(quickAfter>0&&quickAfter<quickBefore,'muscle filter must narrow Quick Workout results');
+  await page.locator('#tp155QuickQuery').fill('no-matching-exercise-125');assert.equal(await quick.locator('.tp152-quick-row').count(),0);fs.mkdirSync('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/search-clear-quick-125.png'});
+  await clearSearch('tp155QuickQuery');assert.equal(await quick.locator('.tp152-quick-row').count(),quickAfter,'clear restores results within the selected muscle filter');assert.equal(await muscleSelect.inputValue(),muscleValue,'clear preserves muscle selection');assert.equal(await page.evaluate(()=>state.tp155QuickQuery),'','clear updates Quick query state');
   await muscleSelect.selectOption('all');await page.waitForTimeout(30);
   const firstQuick=quick.locator('.tp152-quick-row').first();await firstQuick.locator('summary').click();await firstQuick.locator('.tp150-quick-start').click();await page.waitForFunction(()=>!!state.session);
   assert.equal(await page.locator('#tp155R4PanelHost[data-panel="quick"]').count(),0,'Quick panel must close before the full Workout screen opens');
 
   await page.evaluate(()=>{state.session=null;db.set('draft',null);go('programs');muscleLibrary()});
   const library=page.locator('#tp155R4PanelHost[data-panel="exercises"]');await library.waitFor();assert.equal(await library.locator('#libraryQuery,#libraryMuscle,#libraryGear').count(),3);assert.ok(await library.locator('#libraryResults details.tp-library-card').count()>50);const programsNav=await page.evaluate(()=>[...document.querySelectorAll('.top.tp154-nav-grid .tp151-nav-item')].find(b=>/go\(['"]programs['"]\)/.test(b.getAttribute('onclick')||''))?.classList.contains('active'));assert.equal(programsNav,true,'Programs navigation must remain active in the exercise-library subview');const libraryClose=await library.locator('.tp155-r4-panel-close').evaluate(e=>{const r=e.getBoundingClientRect(),p=e.closest('.tp155-r4-panel').getBoundingClientRect(),c=getComputedStyle(e);return {width:parseFloat(c.width),height:parseFloat(c.height),rightGap:p.right-r.right}});assert.ok(Math.abs(libraryClose.width-closeReference.width)<.05&&Math.abs(libraryClose.height-closeReference.height)<.05,'Exercise library must use the shared X dimensions');assert.ok(libraryClose.rightGap>=-.05&&libraryClose.rightGap<=24,'Exercise library X must stay inside the same top-right panel rail');
+  const libraryCount=await library.locator('#libraryResults details.tp-library-card').count();await page.locator('#libraryQuery').fill('no-matching-exercise-125');assert.equal(await library.locator('#libraryResults details.tp-library-card').count(),0);await page.screenshot({path:'ui-evidence/search-clear-library-125.png'});await clearSearch('libraryQuery');assert.equal(await library.locator('#libraryResults details.tp-library-card').count(),libraryCount,'clear restores the exercise library');assert.equal(await page.evaluate(()=>state.libraryFilter.q),'','clear updates library query state');
   assert.equal(await library.locator('.tp155-r4-panel-close').evaluate(e=>getComputedStyle(e).position),'sticky','Exercise-library X must use sticky positioning');
   const libraryWidth=await library.evaluate(root=>{const p=root.querySelector('.tp155-r4-panel');p.scrollLeft=999;return {client:p.clientWidth,scroll:p.scrollWidth,left:p.scrollLeft}});assert.ok(libraryWidth.scroll<=libraryWidth.client+1&&libraryWidth.left===0,'exercise library must not drift or retain horizontal scroll');
   const pinned=await library.evaluate(root=>{const filters=root.querySelector('.tp155-library-filters'),results=root.querySelector('#libraryResults');const before=filters.getBoundingClientRect().top;results.scrollTop=120;return {before,after:filters.getBoundingClientRect().top,overflow:getComputedStyle(results).overflowY,separate:filters.nextElementSibling===results}});assert.equal(pinned.separate,true);assert.match(pinned.overflow,/auto|scroll/);assert.ok(Math.abs(pinned.after-pinned.before)<1,'exercise filters must stay pinned while only the card list scrolls');
