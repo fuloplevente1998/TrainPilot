@@ -16117,7 +16117,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
    for(const command of commands){
     const id=String(command?.commandId||'');
     if(!id)continue;
-    try{changed=(await applyCommand(command))||changed;}catch(_){}
+    let applied=false;
+    try{applied=await applyCommand(command);}catch(_){}
+    if(!applied)continue;
+    changed=true;
     try{await bridge.ackCommand({commandId:id});}catch(_){}
    }
    if(changed){lastPayload=null;await syncNow();}

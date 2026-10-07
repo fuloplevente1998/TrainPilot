@@ -5,6 +5,8 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.google.android.gms.wearable.DataItem;
+import com.google.android.gms.wearable.DataMapItem;
 import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
@@ -35,17 +37,44 @@ public class WearSyncPlugin extends Plugin {
         JSONObject current = ActiveWorkoutStore.current(getContext());
         result.put("supported", true);
         result.put("snapshot", current == null ? JSONObject.NULL : current);
+        result.put("pendingCommands", WearCommandQueueStore.pending(getContext()).length());
         call.resolve(result);
     }
 
     @PluginMethod
     public void pendingCommands(PluginCall call) {
-        JSObject result = new JSObject();
-        JSONArray commands = WearCommandQueueStore.pending(getContext());
-        JSONObject current = ActiveWorkoutStore.current(getContext());
-        result.put("commands", commands);
-        result.put("revision", current == null ? 0L : current.optLong("revision", 0L));
-        call.resolve(result);
+        // Do not rely only on WearableListenerService delivery. DataItems are
+        // persistent, so scan the local Data Layer view as well before draining
+        // the native queue. This makes foreground phone sync self-healing.
+        Wearable.getDataClient(getContext()).getDataItems()
+                .addOnSuccessListener(items -> {
+                    try {
+                        for (DataItem item : items) {
+                            if (item == null || item.getUri() == null) continue;
+                            String path = item.getUri().getPath();
+                            if (path == null || !path.startsWith(WearCommandListenerService.COMMAND_PATH_PREFIX)) continue;
+                            try {
+                                String raw = DataMapItem.fromDataItem(item).getDataMap().getString("command");
+                                if (raw == null || raw.isEmpty()) continue;
+                                WearCommandQueueStore.enqueue(
+                                        getContext(),
+                                        new JSONObject(raw),
+                                        item.getUri().toString()
+                                );
+                            } catch (Exception ignored) {
+                                // One malformed/stale DataItem must not block the rest.
+                            }
+                        }
+                        resolvePendingCommands(call, null);
+                    } finally {
+                        items.release();
+                    }
+                })
+                .addOnFailureListener(error -> {
+                    // Listener-fed queued commands can still be processed even if
+                    // an explicit Data Layer scan is temporarily unavailable.
+                    resolvePendingCommands(call, error == null ? "scan failed" : error.getMessage());
+                });
     }
 
     @PluginMethod
@@ -53,9 +82,37 @@ public class WearSyncPlugin extends Plugin {
         String commandId = call.getString("commandId", "");
         if (commandId == null || commandId.isEmpty()) { call.reject("Missing commandId."); return; }
         WearCommandQueueStore.ack(getContext(), commandId);
+        deleteCommandDataItem(commandId);
         JSObject result = new JSObject();
         result.put("commandId", commandId);
         call.resolve(result);
+    }
+
+    private void resolvePendingCommands(PluginCall call, String scanError) {
+        JSObject result = new JSObject();
+        JSONArray commands = WearCommandQueueStore.pending(getContext());
+        JSONObject current = ActiveWorkoutStore.current(getContext());
+        result.put("commands", commands);
+        result.put("revision", current == null ? 0L : current.optLong("revision", 0L));
+        if (scanError != null && !scanError.isEmpty()) result.put("scanError", scanError);
+        call.resolve(result);
+    }
+
+    private void deleteCommandDataItem(String commandId) {
+        String expectedPath = WearCommandListenerService.COMMAND_PATH_PREFIX + commandId;
+        Wearable.getDataClient(getContext()).getDataItems()
+                .addOnSuccessListener(items -> {
+                    try {
+                        for (DataItem item : items) {
+                            if (item != null && item.getUri() != null
+                                    && expectedPath.equals(item.getUri().getPath())) {
+                                Wearable.getDataClient(getContext()).deleteDataItems(item.getUri());
+                            }
+                        }
+                    } finally {
+                        items.release();
+                    }
+                });
     }
 
     private void publishSnapshot(JSONObject snapshot, PluginCall call) {
