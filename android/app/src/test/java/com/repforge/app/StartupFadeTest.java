@@ -71,7 +71,7 @@ public class StartupFadeTest {
         assertFalse(view.hasOverlappingRendering());
         assertEquals(102, Color.alpha(frame.getPixel(5,5)));
         assertEquals("Logo pixels must not receive a second background alpha", 102, Color.alpha(frame.getPixel(196,436)));
-        for (int x : new int[]{51,52,53,339,340,341}) {
+        for (int x = 0; x < frame.getWidth(); x++) {
             assertEquals("No doubled alpha or gap at the sprite/background edge",102,Color.alpha(frame.getPixel(x,436)));
         }
         view.opacity = 0f;
