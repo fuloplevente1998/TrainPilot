@@ -7,12 +7,18 @@ data class WearSet(
     val number: Int,
     val reps: String,
     val weight: String,
-    val done: Boolean
+    val done: Boolean,
+    val leftSeconds: Int,
+    val rightSeconds: Int,
+    val distanceMeters: Double
 )
 
 data class WearExercise(
     val id: String,
     val name: String,
+    val loadType: String,
+    val repUnit: String,
+    val measurementType: String,
     val sets: List<WearSet>
 )
 
@@ -22,6 +28,7 @@ data class WearWorkout(
     val workoutId: String,
     val currentExercise: Int,
     val restSeconds: Int,
+    val restEndAt: Long,
     val exercises: List<WearExercise>
 ) {
     val exercise: WearExercise?
@@ -58,8 +65,7 @@ object WorkoutSnapshotStore {
     }
 
     fun load(context: Context): WearWorkout? {
-        val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getString(SNAPSHOT, null)
+        val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(SNAPSHOT, null)
         return raw?.let(::parse)
     }
 
@@ -67,48 +73,49 @@ object WorkoutSnapshotStore {
         return try {
             val root = JSONObject(raw)
             if (!root.optBoolean("active", true)) return null
-
             val source = root.optJSONArray("exercises") ?: return null
             val exercises = buildList {
                 for (i in 0 until source.length()) {
                     val exercise = source.optJSONObject(i) ?: continue
                     val setArray = exercise.optJSONArray("sets")
                     val sets = buildList {
-                        if (setArray != null) {
-                            for (j in 0 until setArray.length()) {
-                                val set = setArray.optJSONObject(j) ?: continue
-                                add(
-                                    WearSet(
-                                        number = set.optInt("set", j + 1),
-                                        reps = set.opt("reps")?.toString().orEmpty(),
-                                        weight = set.opt("weight")?.toString().orEmpty(),
-                                        done = set.optBoolean("done", false)
-                                    )
+                        if (setArray != null) for (j in 0 until setArray.length()) {
+                            val set = setArray.optJSONObject(j) ?: continue
+                            add(
+                                WearSet(
+                                    number = set.optInt("set", j + 1),
+                                    reps = set.opt("reps")?.toString().orEmpty(),
+                                    weight = set.opt("weight")?.toString().orEmpty(),
+                                    done = set.optBoolean("done", false),
+                                    leftSeconds = set.optInt("leftSeconds", 0),
+                                    rightSeconds = set.optInt("rightSeconds", 0),
+                                    distanceMeters = set.optDouble("distanceMeters", 0.0)
                                 )
-                            }
+                            )
                         }
                     }
                     add(
                         WearExercise(
                             id = exercise.optString("id"),
                             name = exercise.optString("name", exercise.optString("id")),
+                            loadType = exercise.optString("loadType"),
+                            repUnit = exercise.optString("repUnit"),
+                            measurementType = exercise.optString("measurementType"),
                             sets = sets
                         )
                     )
                 }
             }
             if (exercises.isEmpty()) return null
-
             WearWorkout(
                 revision = root.optLong("revision", 0L),
                 programName = root.optString("programName"),
                 workoutId = root.optString("workoutId"),
                 currentExercise = root.optInt("currentExercise", 0).coerceIn(0, exercises.lastIndex),
-                restSeconds = root.optInt("restSeconds", 90),
+                restSeconds = root.optInt("restSeconds", 90).coerceAtLeast(1),
+                restEndAt = root.optLong("restEndAt", 0L),
                 exercises = exercises
             )
-        } catch (_: Exception) {
-            null
-        }
+        } catch (_: Exception) { null }
     }
 }

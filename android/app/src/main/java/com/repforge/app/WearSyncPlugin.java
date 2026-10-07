@@ -8,6 +8,7 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 @CapacitorPlugin(name = "WearSync")
@@ -17,25 +18,15 @@ public class WearSyncPlugin extends Plugin {
     @PluginMethod
     public void publish(PluginCall call) {
         JSObject input = call.getObject("snapshot");
-        if (input == null) {
-            call.reject("Missing workout snapshot.");
-            return;
-        }
-        try {
-            JSONObject snapshot = ActiveWorkoutStore.save(getContext(), input);
-            publishSnapshot(snapshot, call);
-        } catch (Exception e) {
-            call.reject("Unable to prepare Wear workout snapshot.", e);
-        }
+        if (input == null) { call.reject("Missing workout snapshot."); return; }
+        try { publishSnapshot(ActiveWorkoutStore.save(getContext(), input), call); }
+        catch (Exception e) { call.reject("Unable to prepare Wear workout snapshot.", e); }
     }
 
     @PluginMethod
     public void clear(PluginCall call) {
-        try {
-            publishSnapshot(ActiveWorkoutStore.clear(getContext()), call);
-        } catch (Exception e) {
-            call.reject("Unable to clear Wear workout snapshot.", e);
-        }
+        try { publishSnapshot(ActiveWorkoutStore.clear(getContext()), call); }
+        catch (Exception e) { call.reject("Unable to clear Wear workout snapshot.", e); }
     }
 
     @PluginMethod
@@ -47,15 +38,33 @@ public class WearSyncPlugin extends Plugin {
         call.resolve(result);
     }
 
+    @PluginMethod
+    public void pendingCommands(PluginCall call) {
+        JSObject result = new JSObject();
+        JSONArray commands = WearCommandQueueStore.pending(getContext());
+        JSONObject current = ActiveWorkoutStore.current(getContext());
+        result.put("commands", commands);
+        result.put("revision", current == null ? 0L : current.optLong("revision", 0L));
+        call.resolve(result);
+    }
+
+    @PluginMethod
+    public void ackCommand(PluginCall call) {
+        String commandId = call.getString("commandId", "");
+        if (commandId == null || commandId.isEmpty()) { call.reject("Missing commandId."); return; }
+        WearCommandQueueStore.ack(getContext(), commandId);
+        JSObject result = new JSObject();
+        result.put("commandId", commandId);
+        call.resolve(result);
+    }
+
     private void publishSnapshot(JSONObject snapshot, PluginCall call) {
         PutDataMapRequest mapRequest = PutDataMapRequest.create(ACTIVE_WORKOUT_PATH);
         mapRequest.getDataMap().putBoolean("active", snapshot.optBoolean("active", true));
         mapRequest.getDataMap().putLong("revision", snapshot.optLong("revision", 0L));
         mapRequest.getDataMap().putString("snapshot", snapshot.toString());
-
         PutDataRequest request = mapRequest.asPutDataRequest().setUrgent();
-        Wearable.getDataClient(getContext())
-                .putDataItem(request)
+        Wearable.getDataClient(getContext()).putDataItem(request)
                 .addOnSuccessListener(item -> {
                     JSObject result = new JSObject();
                     result.put("revision", snapshot.optLong("revision", 0L));

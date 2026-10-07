@@ -18,5 +18,6 @@ class WearDataListenerService : WearableListenerService() {
 
     companion object {
         const val ACTIVE_WORKOUT_PATH = "/trainpilot/active-workout"
+        const val COMMAND_PATH_PREFIX = "/trainpilot/workout-command/"
     }
 }

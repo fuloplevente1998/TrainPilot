@@ -258,3 +258,15 @@ As of the first Phase 1 integration on `feat/wear-os`:
 - the dedicated Wear integration workflow successfully builds both `:app:assembleDebug` and `:wear:assembleDebug` and uploads both APKs.
 
 The next implementation milestone is watch → phone commands (set complete, repetitions/load changes, exercise navigation), followed by rest timer/haptics.
+
+
+## Interactive Wear controls
+
+Implemented on `feat/wear-os` after the initial display-only prototype:
+
+- Watch → phone commands use durable Data Layer DataItems under `/trainpilot/workout-command/<commandId>`.
+- Phone native service persists commands before the WebView handles them; processed command IDs are deduplicated.
+- The watch can adjust weight, reps and timed values, mark the current set complete, move to the previous/next exercise and skip rest.
+- Completing a set starts the rest countdown locally on the watch and vibrates when the countdown ends.
+- The phone applies commands to the canonical `state.session`, calls the existing workout handlers where appropriate, persists the draft and republishes the authoritative snapshot.
+- "Open on phone" via Wear remote activity/deep link remains a later milestone.
