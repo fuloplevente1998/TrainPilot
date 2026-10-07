@@ -32,18 +32,31 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
 
 // @section startup.js
 
-/* TrainPilot 2.3.2: blank fast boot overlay + measured single final render. */
+/* First local render releases the branded Android splash; cloud stays deferred. */
 (function(){
  const boot=window.TrainPilotBoot={loading:true,failed:false,finished:false};
  let watchdog;
  const now=()=>typeof performance!=='undefined'?performance.now():Date.now();
  boot.startedAt=now();
  boot.durationMs=null;
+ const releaseNative=function(failed){
+  try{
+   if(window.Capacitor?.isNativePlatform?.()!==true)return false;
+   const native=window.Capacitor?.Plugins?.AppFeedback||window.Capacitor?.registerPlugin?.('AppFeedback');
+   if(typeof native?.startupReady!=='function')return false;
+   const exit=Promise.resolve(native.startupReady({failed:!!failed})).catch(()=>{});
+   if(!failed)boot.nativeExitFinished=exit;
+   return true;
+  }catch(_){return false;}
+ };
  boot.fail=function(){
   if(boot.failed||boot.finished)return;
   boot.failed=true;clearTimeout(watchdog);
+  releaseNative(true);
   const overlay=document.getElementById('tpBoot');
   if(!overlay)return;
+  overlay.classList?.add('tp-boot-failed');
+  overlay.setAttribute?.('role','alert');
   overlay.textContent='Az alkalmazás betöltése nem sikerült. ';
   const retry=document.createElement('button');retry.type='button';retry.textContent='Újrapróbálás';
   retry.onclick=()=>window.location.reload();overlay.appendChild(retry);
@@ -61,11 +74,37 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
    if(boot.failed)return;
    document.documentElement.classList.remove('tp-booting');
    document.documentElement.classList.add('tp-ready');
-   document.getElementById('tpBoot')?.remove();
    boot.finished=true;boot.readyAt=now();boot.durationMs=Math.max(0,boot.readyAt-boot.startedAt);clearTimeout(watchdog);
+   const overlay=document.getElementById('tpBoot');
+   const native=releaseNative(false);
+   const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+   if(overlay){
+    overlay.style.pointerEvents='none';
+    if(native||reduced||typeof overlay.animate!=='function')overlay.remove();
+    else{
+     const logo=overlay.querySelector('svg');
+     if(!logo){overlay.remove();return;}
+     // Continue from the live loading scale; never snap back to the small icon.
+     const from=new DOMMatrixReadOnly(getComputedStyle(logo).transform).a;
+     const to=Math.max(from,Math.max(innerWidth,innerHeight)*1.4/(logo.clientWidth*.5));
+     logo.style.animation='none';logo.style.transform=`scale(${from})`;
+     const zoomFrames=[],fadeFrames=[];
+     for(let n=0;n<=40;n++){
+      const progress=n/40,t=Math.max(0,Math.min(1,(progress-.55)/.45));
+      zoomFrames.push({offset:progress,transform:`scale(${from*Math.pow(to/from,progress)})`});
+      fadeFrames.push({offset:progress,opacity:1-t*t*(3-2*t)});
+     }
+     const timing={duration:480,easing:'linear',fill:'forwards'};
+     const zoom=logo.animate(zoomFrames,timing),fade=overlay.animate(fadeFrames,timing);
+     Promise.all([zoom.finished,fade.finished]).then(()=>overlay.remove(),()=>overlay.remove());
+    }
+   }
    try{console.info(`[TrainPilot] local UI ready in ${Math.round(boot.durationMs)} ms`)}catch(_){}
-   // Account and cloud work stays off the critical first-paint path.
-   setTimeout(()=>{if(typeof initCloud==='function')initCloud();},0);
+   // Native resolves only after its final fade frame. Keep account/cloud work
+   // outside the compositor hand-off as well as the first local render.
+   const cloudLater=()=>setTimeout(()=>{if(typeof initCloud==='function')initCloud();},0);
+   if(native&&boot.nativeExitFinished)boot.nativeExitFinished.then(cloudLater);
+   else cloudLater();
   };
   const frame=typeof requestAnimationFrame==='function'?requestAnimationFrame:(fn)=>setTimeout(fn,0);
   frame(reveal);
@@ -77,7 +116,7 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
 // @endsection startup.js
 
 // @section backup.js
-const TRAINPILOT_VERSION='1.2.8';
+const TRAINPILOT_VERSION='1.2.8-rc1';
 var isNative = function isNative(){return !!window.Capacitor?.isNativePlatform?.();};
 var nativeFiles = function nativeFiles(){if(!filesPlugin)filesPlugin=window.Capacitor?.registerPlugin?.('NativeFiles')||window.Capacitor?.Plugins?.NativeFiles;if(!filesPlugin)throw Error('A natív fájlkezelő nem érhető el.');return filesPlugin;};
 var backupStatus = function backupStatus(){const x=db.get('lastExport',null);return x?`Utolsó ellenőrzött mentés: ${x.name} • ${fmtDate(x.date)}`:'Még nincs ellenőrzött fájlmentés.';};

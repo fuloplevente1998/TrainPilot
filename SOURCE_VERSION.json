@@ -1,7 +1,7 @@
 {
-  "version": "1.2.8",
-  "displayVersion": "1.2.8",
-  "versionCode": 2711,
+  "version": "1.2.8-rc1",
+  "displayVersion": "1.2.8-rc1",
+  "versionCode": 2712,
   "baselineCommit": "ef09c5ee44b61902a7bb265f8ef2b3d2ea8de88e",
   "source": "www/app.js",
   "sourceCommit": "development"

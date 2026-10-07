@@ -272,6 +272,10 @@ jobs:
           set -euo pipefail
           VERSION="$(node -p "require('./package.json').version")"
           TAG="v$VERSION"
+          RELEASE_FLAGS=()
+          if [[ "$VERSION" == *-* ]]; then
+            RELEASE_FLAGS=(--prerelease --latest=false)
+          fi
           # Main publishes each new version once. If the release already exists,
           # refresh its documented notes while keeping verified binary assets unchanged.
           if [ "$GITHUB_REF" = "refs/heads/main" ] && gh release view "$TAG" >/dev/null 2>&1; then
@@ -301,9 +305,9 @@ jobs:
             gh release upload "$TAG" "${FILES[@]}" --clobber
           else
             if [ "$GITHUB_REF_TYPE" = "tag" ]; then
-              gh release create "$TAG" "${FILES[@]}" --verify-tag "${NOTES[@]}" --title "TrainPilot $VERSION"
+              gh release create "$TAG" "${FILES[@]}" --verify-tag "${NOTES[@]}" "${RELEASE_FLAGS[@]}" --title "TrainPilot $VERSION"
             else
-              gh release create "$TAG" "${FILES[@]}" --target "$GITHUB_SHA" "${NOTES[@]}" --title "TrainPilot $VERSION"
+              gh release create "$TAG" "${FILES[@]}" --target "$GITHUB_SHA" "${NOTES[@]}" "${RELEASE_FLAGS[@]}" --title "TrainPilot $VERSION"
             fi
           fi
 

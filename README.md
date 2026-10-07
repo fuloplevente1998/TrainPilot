@@ -1,5 +1,7 @@
 # TrainPilot
 
+**Új előzetes kiadás: 1.2.8-rc1 /2712**, elfogadott indítási animációval (enyhe akadás még előfordul). [Letöltés](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.2.8-rc1) · [Kiadási megjegyzések](docs/releases/v1.2.8-rc1.md). A stabil 1.2.8 továbbra is elérhető.
+
 **Aktuális kiadás — 1.2.8 /2711:** telefonon elfogadott GUI-javítások, minden állapotból használható naptári újratervezés, gyorsabb Kezdőoldal és Coach, egységes helyi Inter betűk és stabil görgetési főmenü. [Kiadási megjegyzések](docs/releases/v1.2.8.md) · [Profilvezérelt edzésrendszer](docs/profile-training-128.md). A felhasználó 2026. október 7-én elfogadta a #139 r5 buildjét, és jóváhagyta a main merge-et, az érintett issue-k lezárását és a stabil kiadást.
 
 TrainPilot egy Androidra készült, local-first edzéstervező és edzésnapló alkalmazás. A fő edzésfunkciók helyben is használhatók; a Health Connect, Google Drive és Google Naptár integrációk opcionálisak.
