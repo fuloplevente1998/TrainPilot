@@ -15943,11 +15943,6 @@ window.addEventListener?.('DOMContentLoaded',function(){
 });
 // @endsection navigation-motion-137.js
 
-// @section ready.js
-if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
-// @endsection ready.js
-
-
 // @section wear-sync.js
 /* TrainPilot Wear OS companion bridge.
  * Keep this inside the canonical app.js runtime: TrainPilot intentionally ships
@@ -16035,3 +16030,10 @@ if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRe
  if(typeof setTimeout==='function')setTimeout(syncNow,0);
 })();
 // @endsection wear-sync.js
+
+// @section ready.js
+if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
+// @endsection ready.js
+
+
+
