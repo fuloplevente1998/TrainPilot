@@ -52,6 +52,7 @@ data class WatchHomeSnapshot(
             currentExercise = 0,
             restSeconds = restSeconds,
             restEndAt = 0L,
+            dayName = day.name,
             exercises = day.exercises.map { exercise ->
                 WearExercise(
                     id = exercise.id,
@@ -59,6 +60,7 @@ data class WatchHomeSnapshot(
                     loadType = exercise.loadType,
                     repUnit = exercise.repUnit,
                     measurementType = exercise.measurementType,
+                    targetReps = exercise.targetReps,
                     sets = exercise.sets.map { set ->
                         WearSet(
                             number = set.number,
@@ -83,6 +85,7 @@ object WatchHomeStore {
     fun save(context: Context, raw: String?): WatchHomeSnapshot? {
         if (raw.isNullOrBlank()) return null
         val parsed = parse(raw) ?: return null
+        WearClosureStore.acceptResult(context, try { JSONObject(raw).optJSONObject("workoutResult") } catch (_: Exception) { null })
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
             .putString(SNAPSHOT, raw)

@@ -5,62 +5,24 @@ import android.os.CountDownTimer
 import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material3.MaterialTheme
-import androidx.wear.compose.material3.Text
 import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.DataMapItem
-import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import org.json.JSONObject
 import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 import java.util.UUID
 import kotlin.math.max
 import kotlin.math.roundToInt
 
-private val TpBg = Color(0xFF0E1015)
-private val TpCard = Color(0xFF1A1E25)
-private val TpCard2 = Color(0xFF232933)
-private val TpText = Color(0xFFF6F8FB)
-private val TpMuted = Color(0xFF9AA5B6)
-private val TpAccent = Color(0xFFF2BD45)
-
 class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private val workout = mutableStateOf<WearWorkout?>(null)
     private val home = mutableStateOf<WatchHomeSnapshot?>(null)
+    private val closure = mutableStateOf<WearClosure?>(null)
     private val restRemaining = mutableIntStateOf(0)
     private var restTimer: CountDownTimer? = null
 
@@ -68,12 +30,20 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         super.onCreate(savedInstanceState)
         workout.value = WorkoutSnapshotStore.load(this)
         home.value = WatchHomeStore.load(this)
+        closure.value = WearClosureStore.load(this)
         restoreRestFromSnapshot(workout.value)
         setContent {
             TrainPilotWearApp(
                 workout = workout,
                 home = home,
                 restRemaining = restRemaining,
+                closure = closure,
+                onFinish = { closeWorkout("finishWorkout") },
+                onDiscard = { closeWorkout("discardWorkout") },
+                onRetry = ::retryClosure,
+                onDismissClosure = { if (closure.value?.status in listOf("saved", "discarded")) { WearClosureStore.dismiss(this); closure.value = null } },
+                onResumeWorkout = { sendCommand("resumeWorkout") },
+                onSelectExercise = ::selectExercise,
                 onStart = ::startWorkoutFromWatch,
                 onChange = ::changeCurrentSet,
                 onComplete = ::completeCurrentSet,
@@ -88,9 +58,11 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         super.onResume()
         workout.value = WorkoutSnapshotStore.load(this)
         home.value = WatchHomeStore.load(this)
+        closure.value = WearClosureStore.load(this)
         restoreRestFromSnapshot(workout.value)
         Wearable.getDataClient(this).addListener(this)
         refreshFromDataLayer()
+        WearCommandOutbox.flush(this)
     }
 
     override fun onPause() {
@@ -110,15 +82,15 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             val raw = DataMapItem.fromDataItem(item).dataMap.getString("snapshot")
             when (item.uri.path) {
                 WearDataListenerService.ACTIVE_WORKOUT_PATH -> {
-                    val parsed = WorkoutSnapshotStore.save(this, raw)
                     runOnUiThread {
+                        val parsed = WorkoutSnapshotStore.save(this, raw)
                         workout.value = parsed
                         restoreRestFromSnapshot(parsed)
                     }
                 }
                 WearDataListenerService.WATCH_HOME_PATH -> {
                     val parsed = WatchHomeStore.save(this, raw)
-                    runOnUiThread { home.value = parsed }
+                    runOnUiThread { home.value = parsed; closure.value = WearClosureStore.load(this) }
                 }
             }
         }
@@ -128,42 +100,27 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         Wearable.getDataClient(this).getDataItems()
             .addOnSuccessListener { items ->
                 try {
-                    var remoteWorkoutSeen = false
-                    var newestWorkout: WearWorkout? = null
+                    var newestRaw: String? = null
                     var newestRevision = Long.MIN_VALUE
                     var newestHome: WatchHomeSnapshot? = null
                     for (item in items) {
-                        if (item == null || item.uri == null) continue
                         try {
                             val raw = DataMapItem.fromDataItem(item).dataMap.getString("snapshot") ?: continue
                             when (item.uri.path) {
                                 WearDataListenerService.ACTIVE_WORKOUT_PATH -> {
-                                    remoteWorkoutSeen = true
-                                    val parsed = WorkoutSnapshotStore.parse(raw)
-                                    val revision = parsed?.revision ?: Long.MIN_VALUE
-                                    if (revision >= newestRevision) {
-                                        newestRevision = revision
-                                        newestWorkout = parsed
-                                    }
-                                    if (parsed != null) WorkoutSnapshotStore.save(this, raw)
+                                    val revision = JSONObject(raw).optLong("revision", 0L)
+                                    if (revision >= newestRevision) { newestRevision = revision; newestRaw = raw }
                                 }
-                                WearDataListenerService.WATCH_HOME_PATH -> {
-                                    newestHome = WatchHomeStore.save(this, raw) ?: newestHome
-                                }
+                                WearDataListenerService.WATCH_HOME_PATH -> newestHome = WatchHomeStore.save(this, raw) ?: newestHome
                             }
-                        } catch (_: Exception) {
-                            // Ignore malformed stale DataItems and keep scanning.
-                        }
+                        } catch (_: Exception) { /* Keep the cache when a DataItem is malformed. */ }
                     }
-                    runOnUiThread {
-                        if (newestRevision != Long.MIN_VALUE) {
-                            workout.value = newestWorkout
-                            restoreRestFromSnapshot(newestWorkout)
-                        } else if (remoteWorkoutSeen && workout.value == null) {
-                            workout.value = null
-                        }
-                        if (newestHome != null) home.value = newestHome
+                    newestRaw?.let {
+                        workout.value = WorkoutSnapshotStore.save(this, it)
+                        restoreRestFromSnapshot(workout.value)
                     }
+                    if (newestHome != null) home.value = newestHome
+                    closure.value = WearClosureStore.load(this)
                 } finally {
                     items.release()
                 }
@@ -172,7 +129,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
 
     private fun startWorkoutFromWatch(day: WatchHomeDay, scheduleId: String) {
         val source = home.value ?: return
-        if (source.hasDraft || day.exercises.isEmpty()) return
+        if (workout.value != null || source.hasDraft || closure.value?.status in listOf("pending", "error") || day.exercises.isEmpty()) return
         val started = Instant.now().toString()
         val localWorkout = source.createWorkout(day, scheduleId, started)
         workout.value = WorkoutSnapshotStore.saveWorkout(this, localWorkout)
@@ -192,12 +149,14 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             .put("scheduleId", scheduleId)
             .put("started", started)
             .put("createdAt", System.currentTimeMillis())
-        putCommand(commandId, command)
+        val sequence = WearCommandOutbox.enqueue(this, command)
+        workout.value?.let { workout.value = WorkoutSnapshotStore.saveWorkout(this, it.copy(localSequence = sequence)) }
     }
 
     private fun restoreRestFromSnapshot(value: WearWorkout?) {
         val endAt = value?.restEndAt ?: 0L
         if (endAt > System.currentTimeMillis()) startRest(max(1, ((endAt - System.currentTimeMillis() + 999L) / 1000L).toInt()), true)
+        else { restTimer?.cancel(); restRemaining.intValue = 0 }
     }
 
     private fun startRest(seconds: Int, vibrateAtEnd: Boolean) {
@@ -220,6 +179,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private fun skipRest() {
         restTimer?.cancel()
         restRemaining.intValue = 0
+        workout.value?.let { workout.value = WorkoutSnapshotStore.saveWorkout(this, it.copy(restEndAt = 0L)) }
         sendCommand("skipRest")
     }
 
@@ -267,6 +227,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         val perSide = normalizeUnit(exercise.repUnit) == "mp/oldal"
         val valid = if (perSide) set.leftSeconds > 0 && set.rightSeconds > 0 else (set.reps.toIntOrNull() ?: 0) > 0
         if (!valid) return
+        replaceSet(current, exerciseIndex, setIndex, set.copy(done = true))
         sendCommand(
             action = "completeSet",
             exerciseIndex = exerciseIndex,
@@ -276,15 +237,18 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             leftSeconds = set.leftSeconds,
             rightSeconds = set.rightSeconds
         )
-        replaceSet(current, exerciseIndex, setIndex, set.copy(done = true))
-        startRest(current.restSeconds, true)
+        val finishedLastExercise = workout.value?.let { it.currentExercise == it.exercises.lastIndex && it.exerciseComplete } == true
+        workout.value?.let { workout.value = WorkoutSnapshotStore.saveWorkout(this, it.copy(restEndAt = if (finishedLastExercise) 0L else System.currentTimeMillis() + current.restSeconds * 1000L)) }
+        WearStopwatchStore.clear(this)
+        startRest(if (finishedLastExercise) 0 else current.restSeconds, true)
     }
 
     private fun navigateExercise(delta: Int) {
         val current = workout.value ?: return
         val next = (current.currentExercise + delta).coerceIn(0, current.exercises.lastIndex)
         if (next == current.currentExercise) return
-        workout.value = current.copy(currentExercise = next)
+        WearStopwatchStore.pause(this)
+        workout.value = WorkoutSnapshotStore.saveWorkout(this, current.copy(currentExercise = next))
         sendCommand(if (delta > 0) "nextExercise" else "prevExercise")
     }
 
@@ -330,14 +294,40 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         if (weight != null) command.put("weight", weight)
         if (leftSeconds != null) command.put("leftSeconds", leftSeconds)
         if (rightSeconds != null) command.put("rightSeconds", rightSeconds)
-        putCommand(commandId, command)
+        val sequence = WearCommandOutbox.enqueue(this, command)
+        workout.value?.let { workout.value = WorkoutSnapshotStore.saveWorkout(this, it.copy(localSequence = sequence)) }
     }
 
-    private fun putCommand(commandId: String, command: JSONObject) {
-        val map = PutDataMapRequest.create("${WearDataListenerService.COMMAND_PATH_PREFIX}$commandId")
-        map.dataMap.putString("command", command.toString())
-        map.dataMap.putLong("createdAt", System.currentTimeMillis())
-        Wearable.getDataClient(this).putDataItem(map.asPutDataRequest().setUrgent())
+    private fun selectExercise(index: Int) {
+        val current = workout.value ?: return
+        if (index !in current.exercises.indices) return
+        WearStopwatchStore.pause(this)
+        workout.value = WorkoutSnapshotStore.saveWorkout(this, current.copy(currentExercise = index))
+        sendCommand("selectExercise", exerciseIndex = index)
+    }
+
+    private fun closeWorkout(action: String) {
+        val current = workout.value ?: return
+        if (action == "finishWorkout" && current.completedSets == 0) return
+        val command = JSONObject()
+            .put("schema", 1).put("commandId", UUID.randomUUID().toString())
+            .put("workoutId", current.workoutId).put("baseRevision", current.revision)
+            .put("action", action).put("confirmed", true)
+            .put("finishedAt", Instant.now().toString()).put("createdAt", System.currentTimeMillis())
+            .put("finalSnapshot", WorkoutSnapshotStore.encode(current))
+        closure.value = WearClosureStore.close(this, current, command)
+        WearCommandOutbox.enqueue(this, command)
+        WorkoutSnapshotStore.clear(this)
+        WearStopwatchStore.clear(this)
+        workout.value = null
+        restTimer?.cancel()
+        restRemaining.intValue = 0
+    }
+
+    private fun retryClosure() {
+        val command = WearClosureStore.retry(this) ?: return
+        closure.value = WearClosureStore.load(this)
+        WearCommandOutbox.enqueue(this, command)
     }
 
     private fun trimNumber(value: Double): String {
@@ -345,258 +335,3 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         return if (rounded % 1.0 == 0.0) rounded.toInt().toString() else rounded.toString()
     }
 }
-
-@Composable
-private fun TrainPilotWearApp(
-    workout: State<WearWorkout?>,
-    home: State<WatchHomeSnapshot?>,
-    restRemaining: State<Int>,
-    onStart: (WatchHomeDay, String) -> Unit,
-    onChange: (String, Double) -> Unit,
-    onComplete: () -> Unit,
-    onPrevious: () -> Unit,
-    onNext: () -> Unit,
-    onSkipRest: () -> Unit
-) {
-    val showHome = rememberSaveable { mutableStateOf(true) }
-    BackHandler(enabled = !showHome.value && workout.value != null) {
-        showHome.value = true
-    }
-    MaterialTheme {
-        Box(
-            modifier = Modifier.fillMaxSize().background(TpBg).padding(horizontal = 16.dp, vertical = 22.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            if (showHome.value || workout.value == null) {
-                HomeScreen(
-                    home = home.value,
-                    activeWorkout = workout.value,
-                    onStart = { day, scheduleId ->
-                        onStart(day, scheduleId)
-                        if (workout.value != null) showHome.value = false
-                    },
-                    onResume = { showHome.value = false }
-                )
-            } else {
-                WorkoutScreen(workout.value, restRemaining.value, onChange, onComplete,
-                    onPrevious, onNext, onSkipRest, onHome = { showHome.value = true })
-            }
-        }
-    }
-}
-
-@Composable
-private fun HomeScreen(
-    home: WatchHomeSnapshot?,
-    activeWorkout: WearWorkout?,
-    onStart: (WatchHomeDay, String) -> Unit,
-    onResume: () -> Unit
-) {
-    val date = LocalDate.now().format(DateTimeFormatter.ofPattern("MMM d., EEE", Locale("hu", "HU")))
-    Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("TrainPilot", color = TpAccent, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Text(date, color = TpMuted, style = MaterialTheme.typography.labelMedium)
-        Spacer(Modifier.height(8.dp))
-
-        if (activeWorkout != null) {
-            SurfaceCard {
-                Text("Folyamatban lévő edzés", color = TpAccent, fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center)
-                Text(activeWorkout.programName.ifBlank { "TrainPilot" }, color = TpText,
-                    style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
-                Text(activeWorkout.exercise?.name.orEmpty(), color = TpMuted,
-                    style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
-                Spacer(Modifier.height(5.dp))
-                PrimaryButton("Edzés folytatása", onResume)
-            }
-            Spacer(Modifier.height(8.dp))
-        }
-
-        if (home == null) {
-            SurfaceCard {
-                Text("Szinkronizálás…", color = TpText, fontWeight = FontWeight.SemiBold)
-                Text("Nyisd meg egyszer a TrainPilotot a telefonon, hogy az óra megkapja az aktív programot.", color = TpMuted, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
-            }
-            return@Column
-        }
-
-        Text(home.activeProgramName, color = TpText, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(5.dp))
-
-        if (activeWorkout == null && home.hasDraft) {
-            SurfaceCard {
-                Text("Félbehagyott edzés", color = TpAccent, fontWeight = FontWeight.Bold)
-                Text("A telefonon mentett edzés van. Ezt még a telefonon folytasd; órás folytatás későbbi lépés.", color = TpMuted, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
-            }
-        } else if (activeWorkout == null) {
-            val rec = home.recommended
-            if (rec != null) {
-                SurfaceCard {
-                    Text(if (rec.scheduleId.isBlank()) "Következő edzés" else "Tervezett edzés", color = TpAccent, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                    Text(rec.day.name, color = TpText, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-                    Text(recommendedMeta(rec), color = TpMuted, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
-                    Spacer(Modifier.height(5.dp))
-                    PrimaryButton("Edzés indítása") { onStart(rec.day, rec.scheduleId) }
-                }
-            }
-        }
-
-        if (activeWorkout == null && !home.hasDraft && home.days.isNotEmpty()) {
-            Spacer(Modifier.height(8.dp))
-            Text("Program napjai", color = TpMuted, style = MaterialTheme.typography.labelMedium)
-            home.days.forEach { day ->
-                Spacer(Modifier.height(5.dp))
-                DayCard(day) { onStart(day, "") }
-            }
-        }
-        Spacer(Modifier.height(12.dp))
-    }
-}
-
-@Composable
-private fun SurfaceCard(content: @Composable ColumnScope.() -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxWidth().background(TpCard, RoundedCornerShape(18.dp)).padding(horizontal = 12.dp, vertical = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        content = content
-    )
-}
-
-@Composable
-private fun PrimaryButton(text: String, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier.fillMaxWidth().background(TpAccent, RoundedCornerShape(16.dp)).clickable(onClick = onClick).padding(vertical = 9.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(text, color = TpBg, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-private fun DayCard(day: WatchHomeDay, onClick: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxWidth().background(TpCard2, RoundedCornerShape(15.dp)).clickable(onClick = onClick).padding(horizontal = 11.dp, vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(day.name, color = TpText, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-        Text("${day.exercises.size} gyakorlat • indítás", color = TpMuted, style = MaterialTheme.typography.bodySmall)
-    }
-}
-
-private fun recommendedMeta(rec: WatchHomeRecommendation): String {
-    val count = "${rec.day.exercises.size} gyakorlat"
-    if (rec.plannedStart.isBlank()) return count
-    return try {
-        val time = Instant.parse(rec.plannedStart).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm"))
-        "$count • $time"
-    } catch (_: Exception) { count }
-}
-
-@Composable
-private fun WorkoutScreen(
-    workout: WearWorkout?,
-    restRemaining: Int,
-    onChange: (String, Double) -> Unit,
-    onComplete: () -> Unit,
-    onPrevious: () -> Unit,
-    onNext: () -> Unit,
-    onSkipRest: () -> Unit,
-    onHome: () -> Unit
-) {
-    if (workout == null) return
-    val exercise = workout.exercise
-    val set = workout.currentSet
-    val unit = normalizeUnit(exercise?.repUnit.orEmpty())
-    val perSide = unit == "mp/oldal"
-    val timed = unit.startsWith("mp")
-    val bodyweight = exercise?.loadType == "bodyweight"
-    val completeEnabled = set != null && !set.done && if (perSide) {
-        set.leftSeconds > 0 && set.rightSeconds > 0
-    } else (set.reps.toIntOrNull() ?: 0) > 0
-
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Box(
-            modifier = Modifier.fillMaxWidth(.72f).background(TpCard2, RoundedCornerShape(16.dp))
-                .clickable(onClick = onHome).padding(vertical = 8.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("‹ Kezdőlap", color = TpText, style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold)
-        }
-        Spacer(Modifier.height(6.dp))
-        Column(
-            modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(workout.programName.ifBlank { "TrainPilot" }, color = TpAccent, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center)
-            Text(exercise?.name.orEmpty(), color = TpText, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-            Text(
-                if (exercise == null || exercise.sets.isEmpty()) "Nincs sorozat" else "Sorozat ${workout.currentSetIndex + 1} / ${exercise.sets.size}",
-                color = TpMuted,
-                style = MaterialTheme.typography.bodyMedium
-            )
-            if (set != null) {
-                if (!bodyweight) NumericControl("Súly", formatWeight(set.weight), "−", "+", { onChange("weight", -0.5) }, { onChange("weight", 0.5) })
-                if (perSide) {
-                    NumericControl("Bal oldal", "${set.leftSeconds} mp", "−5", "+5", { onChange("leftSeconds", -5.0) }, { onChange("leftSeconds", 5.0) })
-                    NumericControl("Jobb oldal", "${set.rightSeconds} mp", "−5", "+5", { onChange("rightSeconds", -5.0) }, { onChange("rightSeconds", 5.0) })
-                } else {
-                    val step = if (timed) 5.0 else 1.0
-                    val label = if (timed) "Idő" else "Ismétlés"
-                    val value = if (timed) "${set.reps.ifBlank { "0" }} mp" else set.reps.ifBlank { "0" }
-                    NumericControl(label, value, if (timed) "−5" else "−", if (timed) "+5" else "+", { onChange("reps", -step) }, { onChange("reps", step) })
-                }
-                ActionText(if (set.done) "✓ Rögzítve" else "✓ Rögzítés", completeEnabled, onComplete)
-            }
-            if (restRemaining > 0) {
-                Spacer(Modifier.height(5.dp))
-                Text("Pihenő ${formatSeconds(restRemaining)}", color = TpAccent, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                ActionText("Pihenő kihagyása", true, onSkipRest)
-            }
-            Spacer(Modifier.height(5.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                ActionText("← Előző", workout.currentExercise > 0, onPrevious)
-                ActionText("Következő →", workout.currentExercise < workout.exercises.lastIndex, onNext)
-            }
-            Spacer(Modifier.height(18.dp))
-        }
-    }
-}
-
-@Composable
-private fun NumericControl(label: String, value: String, minus: String, plus: String, onMinus: () -> Unit, onPlus: () -> Unit) {
-    Spacer(Modifier.height(5.dp))
-    Text(label, color = TpMuted, style = MaterialTheme.typography.labelSmall)
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-        ActionText(minus, true, onMinus)
-        Text(value, color = TpText, modifier = Modifier.padding(horizontal = 8.dp), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        ActionText(plus, true, onPlus)
-    }
-}
-
-@Composable
-private fun ActionText(text: String, enabled: Boolean, onClick: () -> Unit) {
-    Text(
-        text = text,
-        color = if (enabled) TpText else TpMuted,
-        modifier = Modifier.clickable(enabled = enabled, onClick = onClick).padding(horizontal = 8.dp, vertical = 7.dp),
-        style = MaterialTheme.typography.bodyMedium,
-        fontWeight = if (enabled) FontWeight.SemiBold else FontWeight.Normal,
-        textAlign = TextAlign.Center
-    )
-}
-
-private fun normalizeUnit(unit: String): String = unit.replace("\\s+".toRegex(), "").lowercase()
-
-private fun formatWeight(raw: String): String {
-    val value = raw.toDoubleOrNull() ?: 0.0
-    return if (value % 1.0 == 0.0) "${value.toInt()} kg" else "$value kg"
-}
-
-private fun formatSeconds(seconds: Int): String = "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}"

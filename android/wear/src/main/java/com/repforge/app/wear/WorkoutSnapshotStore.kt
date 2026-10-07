@@ -20,7 +20,8 @@ data class WearExercise(
     val loadType: String,
     val repUnit: String,
     val measurementType: String,
-    val sets: List<WearSet>
+    val sets: List<WearSet>,
+    val targetReps: String = ""
 )
 
 data class WearWorkout(
@@ -34,8 +35,16 @@ data class WearWorkout(
     val currentExercise: Int,
     val restSeconds: Int,
     val restEndAt: Long,
-    val exercises: List<WearExercise>
+    val exercises: List<WearExercise>,
+    val dayName: String = "",
+    val localSequence: Long = 0L
 ) {
+    fun elapsedSeconds(now: Long = System.currentTimeMillis()): Int = try {
+        ((now - java.time.Instant.parse(started).toEpochMilli()).coerceAtLeast(0L) / 1000L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+    } catch (_: Exception) { 0 }
+
+    val completedSets: Int get() = exercises.sumOf { ex -> ex.sets.count { it.done } }
+    val exerciseComplete: Boolean get() = exercise?.sets?.let { it.isNotEmpty() && it.all { set -> set.done } } ?: false
     val exercise: WearExercise?
         get() = exercises.getOrNull(currentExercise.coerceIn(0, (exercises.size - 1).coerceAtLeast(0)))
 
@@ -54,21 +63,33 @@ object WorkoutSnapshotStore {
     private const val PREFS = "trainpilot_wear_snapshot"
     private const val SNAPSHOT = "snapshot"
 
+    @Synchronized
     fun save(context: Context, raw: String?): WearWorkout? {
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        if (raw.isNullOrBlank()) {
-            prefs.edit().remove(SNAPSHOT).apply()
+        val current = load(context)
+        if (raw.isNullOrBlank()) return current
+        val root = try { JSONObject(raw) } catch (_: Exception) { return current }
+        val revision = root.optLong("revision", 0L)
+        if (revision < (current?.revision ?: 0L)) return current
+        if (!root.optBoolean("active", true)) {
+            // Do not let an old phone tombstone erase a newly started offline workout.
+            val localStarted = try { java.time.Instant.parse(current?.started).toEpochMilli() } catch (_: Exception) { 0L }
+            if (current?.revision == 0L && root.optLong("syncedAt") < localStarted) return current
+            clear(context)
             return null
         }
-        val parsed = parse(raw)
-        if (parsed == null) {
-            prefs.edit().remove(SNAPSHOT).apply()
-            return null
-        }
-        prefs.edit().putString(SNAPSHOT, raw).apply()
+        val parsed = parse(raw) ?: return current
+        if (WearClosureStore.isClosed(context, parsed.workoutId)) return current
+        if (current?.workoutId == parsed.workoutId && parsed.localSequence < current.localSequence) return current
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(SNAPSHOT, raw).apply()
         return parsed
     }
 
+    @Synchronized
+    fun clear(context: Context) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(SNAPSHOT).apply()
+    }
+
+    @Synchronized
     fun saveWorkout(context: Context, workout: WearWorkout): WearWorkout {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
@@ -114,7 +135,8 @@ object WorkoutSnapshotStore {
                             loadType = exercise.optString("loadType"),
                             repUnit = exercise.optString("repUnit"),
                             measurementType = exercise.optString("measurementType"),
-                            sets = sets
+                            sets = sets,
+                            targetReps = exercise.optString("targetReps")
                         )
                     )
                 }
@@ -131,16 +153,20 @@ object WorkoutSnapshotStore {
                 currentExercise = root.optInt("currentExercise", 0).coerceIn(0, exercises.lastIndex),
                 restSeconds = root.optInt("restSeconds", 90).coerceAtLeast(1),
                 restEndAt = root.optLong("restEndAt", 0L),
-                exercises = exercises
+                exercises = exercises,
+                dayName = root.optString("dayName", root.optString("dayId")),
+                localSequence = root.optLong("localSequence", root.optLong("watchSequence", 0L))
             )
         } catch (_: Exception) { null }
     }
 
-    private fun encode(workout: WearWorkout): JSONObject {
+    fun encode(workout: WearWorkout): JSONObject {
         val root = JSONObject()
             .put("active", true)
             .put("revision", workout.revision)
             .put("programId", workout.programId)
+            .put("dayName", workout.dayName)
+            .put("localSequence", workout.localSequence)
             .put("programName", workout.programName)
             .put("dayId", workout.dayId)
             .put("scheduleId", workout.scheduleId)
@@ -171,6 +197,7 @@ object WorkoutSnapshotStore {
                     .put("loadType", exercise.loadType)
                     .put("repUnit", exercise.repUnit)
                     .put("measurementType", exercise.measurementType)
+                    .put("targetReps", exercise.targetReps)
                     .put("sets", sets)
             )
         }

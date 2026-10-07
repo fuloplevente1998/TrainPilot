@@ -338,3 +338,36 @@ The launcher artwork reinforces the same warm gold gradient (`#FFF1A0 → #F3C54
 6. [ ] explicit "Open on phone" deep-link action.
 
 Watch-started workouts should start immediately from a locally cached, phone-prepared program snapshot and sync back through the Data Layer. The watch must not require the phone WebView to be visibly open at the moment Start is pressed.
+
+
+## Wear workout UI and lifecycle (PR #143)
+
+The watch uses the approved round-screen TrainPilot design: black OLED background,
+gold primary actions, large values, circular editors, and a horizontally paged
+workout/menu. Home offers a recommended day, separate program-day selection,
+and resume/discard actions for the existing workout. The workout page shows a
+rest countdown automatically and a persistent stopwatch for timed/per-side sets.
+The last exercise offers Finish; partial workouts can also finish from the menu.
+
+Finish/discard require confirmation on the watch. The phone retains its canonical
+`state.session` / draft / history save pipeline, schedule completion and Health
+queue. The watch sends `finishWorkout` or `discardWorkout` with the workout ID,
+confirmation and final set snapshot. Delivery is ordered and retried; saved IDs
+prevent duplicate history entries and late commands from resurrecting a workout.
+A final snapshot can recover an offline watch workout if its start command arrives
+late, but a different phone workout is never replaced or discarded.
+
+A durable watch outbox retries failed Data Layer writes. The Home snapshot carries
+`workoutResult` as the phone's receipt. The watch labels offline closure as pending,
+keeps the final data locally, and only displays phone save success after a receipt.
+Phone drafts are included in active snapshots so they can resume on the watch.
+Snapshot sequences protect local changes from stale phone snapshots.
+
+Testing: phone lifecycle unit scenarios, a browser test through the actual
+canonical finish wrappers, and Wear unit tests for set selection, JSON round trip,
+side times, completion and stopwatch pause/resume. Actual Watch7 layout, gestures,
+haptics and background timing still require the paired device test.
+
+Next: mini calendar, then Watch7 Health Services (live heart rate and workout
+metrics), followed by Tiles/complications and Open on phone. No simulated health
+values are displayed in this implementation.
