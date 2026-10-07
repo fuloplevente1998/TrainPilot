@@ -229,7 +229,7 @@ private fun WorkoutPager(workout: WearWorkout, restRemaining: Int,
         } else WorkoutMenu(workout,
             { onPrevious(); scope.launch { pager.animateScrollToPage(0) } },
             { onNext(); scope.launch { pager.animateScrollToPage(0) } },
-            { index -> onSelect(index); scope.launch { pager.animateScrollToPage(0) } }, onFinish, onHome)
+            { index -> onSelect(index); scope.launch { pager.animateScrollToPage(0) } }, onEdit, onFinish, onHome)
     }
     Box(Modifier.fillMaxSize().padding(bottom = 12.dp), contentAlignment = Alignment.BottomCenter) {
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -394,11 +394,14 @@ private fun ExerciseDoneScreen(workout: WearWorkout, onNext: () -> Unit, onFinis
 
 @Composable
 private fun WorkoutMenu(workout: WearWorkout, onPrevious: () -> Unit, onNext: () -> Unit,
-                        onSelect: (Int) -> Unit, onFinish: () -> Unit, onHome: () -> Unit) {
+                        onSelect: (Int) -> Unit, onEdit: (String) -> Unit, onFinish: () -> Unit, onHome: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(horizontal = 22.dp).verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(27.dp)); Title("Edzésmenü"); Spacer(Modifier.height(9.dp))
         Pill("‹ Kezdőlap", tone = Secondary, onClick = onHome)
+        if (workout.exercise?.loadType != "bodyweight") {
+            Spacer(Modifier.height(7.dp)); Pill("Súly: ${workout.currentSet?.weight?.ifBlank { "0" } ?: "0"} kg", tone = Secondary) { onEdit("weight") }
+        }
         Spacer(Modifier.height(7.dp)); Pill("Edzés befejezése", tone = Danger, enabled = workout.completedSets > 0, onClick = onFinish)
         if (workout.completedSets == 0) Label("Előbb rögzíts egy sorozatot")
         Spacer(Modifier.height(10.dp)); Label("GYAKORLATOK", Gold)
