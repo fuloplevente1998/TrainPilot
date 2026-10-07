@@ -3,6 +3,11 @@ name: Quick TrainPilot Validation
 on:
   workflow_dispatch:
   push:
+    paths-ignore:
+      - 'android/wear/**'
+      - 'docs/WEAR_OS.md'
+      - '.github/workflows/wear-build.yml'
+      - '.github/workflows/wear-release.yml'
   pull_request:
 
 permissions:

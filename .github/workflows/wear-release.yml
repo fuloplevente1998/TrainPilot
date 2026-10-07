@@ -8,7 +8,9 @@ on:
       - 'feat/**'
       - 'fix/**'
     paths:
-      - 'android/wear/**'
+      - 'android/wear/build.gradle'
+      - 'android/wear/proguard-rules.pro'
+      - 'android/wear/src/**'
       - 'android/build.gradle'
       - 'android/settings.gradle'
       - '.github/workflows/wear-release.yml'
