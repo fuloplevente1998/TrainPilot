@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -422,7 +423,7 @@ private fun HomeScreen(home: WatchHomeSnapshot?, onStart: (WatchHomeDay, String)
 }
 
 @Composable
-private fun SurfaceCard(content: @Composable Column.() -> Unit) {
+private fun SurfaceCard(content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth().background(TpCard, RoundedCornerShape(18.dp)).padding(horizontal = 12.dp, vertical = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
