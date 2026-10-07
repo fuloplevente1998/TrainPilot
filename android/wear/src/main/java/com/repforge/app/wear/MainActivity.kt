@@ -67,6 +67,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         workout.value = WorkoutSnapshotStore.load(this)
         restoreRestFromSnapshot(workout.value)
         Wearable.getDataClient(this).addListener(this)
+        refreshSnapshotFromDataLayer()
     }
 
     override fun onPause() {
@@ -91,6 +92,40 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                 restoreRestFromSnapshot(parsed)
             }
         }
+    }
+
+    private fun refreshSnapshotFromDataLayer() {
+        Wearable.getDataClient(this).getDataItems()
+            .addOnSuccessListener { items ->
+                try {
+                    var newest: WearWorkout? = null
+                    var newestRevision = Long.MIN_VALUE
+                    for (item in items) {
+                        if (item == null || item.uri == null) continue
+                        if (item.uri.path != WearDataListenerService.ACTIVE_WORKOUT_PATH) continue
+                        try {
+                            val raw = DataMapItem.fromDataItem(item).dataMap.getString("snapshot")
+                            val parsed = WorkoutSnapshotStore.parse(raw ?: continue)
+                            val revision = parsed?.revision ?: Long.MIN_VALUE
+                            if (revision >= newestRevision) {
+                                newestRevision = revision
+                                newest = parsed
+                            }
+                            WorkoutSnapshotStore.save(this, raw)
+                        } catch (_: Exception) {
+                            // Ignore malformed stale DataItems and keep scanning.
+                        }
+                    }
+                    runOnUiThread {
+                        if (newestRevision != Long.MIN_VALUE) {
+                            workout.value = newest
+                            restoreRestFromSnapshot(newest)
+                        }
+                    }
+                } finally {
+                    items.release()
+                }
+            }
     }
 
     private fun restoreRestFromSnapshot(value: WearWorkout?) {
@@ -227,7 +262,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         if (weight != null) command.put("weight", weight)
         if (leftSeconds != null) command.put("leftSeconds", leftSeconds)
         if (rightSeconds != null) command.put("rightSeconds", rightSeconds)
-        val map = PutDataMapRequest.create("${WearDataListenerService.COMMAND_PATH_PREFIX}#commandId")
+        val map = PutDataMapRequest.create("${WearDataListenerService.COMMAND_PATH_PREFIX}$commandId")
         map.dataMap.putString("command", command.toString())
         map.dataMap.putLong("createdAt", System.currentTimeMillis())
         Wearable.getDataClient(this).putDataItem(map.asPutDataRequest().setUrgent())
@@ -350,7 +385,7 @@ private fun normalizeUnit(unit: String): String = unit.replace("\\s+".toRegex(),
 
 private fun formatWeight(raw: String): String {
     val value = raw.toDoubleOrNull() ?: 0.0
-    return if (value % 1.0 == 0.0) "${value.toInt()} kg" else "#value kg"
+    return if (value % 1.0 == 0.0) "${value.toInt()} kg" else "$value kg"
 }
 
 private fun formatSeconds(seconds: Int): String = "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}"
