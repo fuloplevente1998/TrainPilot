@@ -15946,3 +15946,92 @@ window.addEventListener?.('DOMContentLoaded',function(){
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
 // @endsection ready.js
+
+
+// @section wear-sync.js
+/* TrainPilot Wear OS companion bridge.
+ * Keep this inside the canonical app.js runtime: TrainPilot intentionally ships
+ * one external application script. Wear sync is optional and must never block
+ * the phone workout flow.
+ */
+(function(){
+ 'use strict';
+ let lastPayload=null,cleared=false,busy=false;
+
+ function api(){
+  try{
+   if(typeof window==='undefined'||window.Capacitor?.isNativePlatform?.()!==true)return null;
+   return window.Capacitor?.Plugins?.WearSync||window.Capacitor?.registerPlugin?.('WearSync')||null;
+  }catch(_){return null}
+ }
+ function language(){
+  try{return typeof db!=='undefined'&&db?.get?String(db.get('language','hu')||'hu'):'hu'}catch(_){return'hu'}
+ }
+ function exerciseName(exercise,lang){
+  if(!exercise)return'';
+  return String(exercise[lang]||exercise.hu||exercise.en||exercise.name||exercise.id||'');
+ }
+ function snapshot(){
+  try{
+   if(typeof state==='undefined'||!state?.session)return null;
+   const session=state.session,lang=language(),exercises=Array.isArray(session.exercises)?session.exercises:[];
+   const current=Number.isInteger(state.current)?state.current:0;
+   let restSeconds=90;
+   try{
+    if(typeof settings==='function'){
+     const configured=Number(settings()?.rest);
+     if(Number.isFinite(configured)&&configured>0)restSeconds=configured;
+    }
+   }catch(_){}
+   return {
+    schema:1,
+    workoutId:String(session.workout||session.dayId||''),
+    programId:String(session.programId||''),
+    programName:String(session.programName||''),
+    started:String(session.started||''),
+    currentExercise:Math.max(0,Math.min(current,Math.max(0,exercises.length-1))),
+    restSeconds,
+    language:lang,
+    exercises:exercises.map(exercise=>({
+     id:String(exercise?.id||''),
+     name:exerciseName(exercise,lang),
+     loadType:String(exercise?.loadType||''),
+     sets:(Array.isArray(exercise?.sets)?exercise.sets:[]).map((set,index)=>({
+      set:Number(set?.set||index+1),
+      reps:String(set?.reps??''),
+      weight:set?.weight??'',
+      done:!!set?.done,
+      leftSeconds:set?.leftSeconds??'',
+      rightSeconds:set?.rightSeconds??''
+     }))
+    }))
+   };
+  }catch(_){return null}
+ }
+ async function syncNow(){
+  if(busy)return;
+  const bridge=api();if(!bridge)return;
+  const value=snapshot(),payload=value?JSON.stringify(value):null;
+  if(payload===lastPayload&&(value||cleared))return;
+  busy=true;
+  try{
+   if(value){
+    await bridge.publish({snapshot:value});
+    lastPayload=payload;cleared=false;
+   }else if(!cleared){
+    await bridge.clear();
+    lastPayload=null;cleared=true;
+   }
+  }catch(_){
+   // A missing/disconnected watch never changes phone workout behavior.
+  }finally{busy=false}
+ }
+ if(typeof window!=='undefined'){
+  window.TrainPilotWearSync={syncNow,makeSnapshot:snapshot};
+  window.addEventListener?.('focus',syncNow);
+ }
+ if(typeof document!=='undefined')document.addEventListener?.('visibilitychange',()=>{if(!document.hidden)syncNow()});
+ if(typeof setInterval==='function')setInterval(syncNow,1500);
+ if(typeof setTimeout==='function')setTimeout(syncNow,0);
+})();
+// @endsection wear-sync.js
