@@ -6,8 +6,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
-import android.view.View;
-import android.view.animation.DecelerateInterpolator;
 import androidx.core.splashscreen.SplashScreen;
 
 /** Keeps the launcher logo until the local WebView has rendered its first usable screen. */
@@ -16,6 +14,7 @@ final class StartupScreen {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private boolean ready;
     private boolean failed;
+    private ValueAnimator exitAnimation;
     // If the JS/native bridge cannot signal readiness, reveal the web boot/retry screen.
     private final Runnable fallback = () -> ready(true);
 
@@ -31,14 +30,8 @@ final class StartupScreen {
                 provider.remove();
                 return;
             }
-            View icon = provider.getIconView();
-            if (icon != null) {
-                icon.animate().scaleX(1.08f).scaleY(1.08f)
-                        .setDuration(180).setInterpolator(new DecelerateInterpolator()).start();
-            }
-            provider.getView().animate().alpha(0f).setDuration(180)
-                    .setInterpolator(new DecelerateInterpolator())
-                    .withEndAction(provider::remove).start();
+            exitAnimation = StartupFade.start(provider.getView(), provider.getIconView(),
+                    provider::remove, 180);
         });
         handler.postDelayed(fallback, 8000);
     }
@@ -54,6 +47,7 @@ final class StartupScreen {
     void destroy() {
         ready = true;
         handler.removeCallbacks(fallback);
+        if (exitAnimation != null) exitAnimation.cancel();
     }
 
     private boolean animationsEnabled() {
