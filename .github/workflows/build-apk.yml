@@ -9,6 +9,11 @@ on:
       - 'fix/**'
     tags:
       - 'v*'
+    paths-ignore:
+      - 'android/wear/**'
+      - 'docs/WEAR_OS.md'
+      - '.github/workflows/wear-build.yml'
+      - '.github/workflows/wear-release.yml'
 
 permissions:
   contents: write

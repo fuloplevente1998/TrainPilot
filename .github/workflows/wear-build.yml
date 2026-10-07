@@ -7,12 +7,8 @@ on:
       - 'feat/wear-os'
     paths:
       - 'android/wear/**'
-      - 'android/app/src/main/java/com/repforge/app/**'
-      - 'android/app/build.gradle'
       - 'android/build.gradle'
       - 'android/settings.gradle'
-      - 'www/app.js'
-      - 'www/index.html'
       - '.github/workflows/wear-build.yml'
 
 permissions:
@@ -49,18 +45,16 @@ jobs:
           java-version: '21'
           cache: gradle
 
-      - name: Build phone + Wear OS debug APKs
+      - name: Build Wear OS debug APK
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon :app:assembleDebug :wear:assembleDebug
+          ./gradlew --no-daemon :wear:assembleDebug
 
       - name: Upload debug APKs
         uses: actions/upload-artifact@v7
         with:
-          name: TrainPilot-Wear-integration-debug-${{ github.run_id }}
-          path: |
-            android/app/build/outputs/apk/debug/app-debug.apk
-            android/wear/build/outputs/apk/debug/wear-debug.apk
+          name: TrainPilot-Wear-debug-${{ github.run_id }}
+          path: android/wear/build/outputs/apk/debug/wear-debug.apk
           if-no-files-found: error
           retention-days: 14
