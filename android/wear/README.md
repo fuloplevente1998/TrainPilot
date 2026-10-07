@@ -17,6 +17,6 @@ Build from `android/`:
 ./gradlew :wear:assembleDebug
 ```
 
-The initial screen is static on purpose. Phone/watch Data Layer synchronization is the next implementation step.
+The first phone → watch Data Layer path is implemented. When the phone has an active TrainPilot session, the Wear app caches and renders the current program, exercise and set. The next step is watch → phone workout commands.
 
 See `docs/WEAR_OS.md` for the architecture and roadmap.
