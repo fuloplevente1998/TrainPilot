@@ -9,7 +9,9 @@ import androidx.core.view.WindowInsetsCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+    private StartupScreen startupScreen;
     @Override public void onCreate(Bundle savedInstanceState) {
+        startupScreen = StartupScreen.install(this);
         registerPlugin(NativeFilesPlugin.class);
         registerPlugin(BackupArchivePlugin.class);
         registerPlugin(GoogleSyncPlugin.class);
@@ -60,5 +62,14 @@ public class MainActivity extends BridgeActivity {
             float scale = getResources().getConfiguration().fontScale;
             getBridge().getWebView().getSettings().setTextZoom(Math.round(scale * 100));
         }
+    }
+
+    void finishStartup(boolean failed) {
+        if (startupScreen != null) startupScreen.ready(failed);
+    }
+
+    @Override public void onDestroy() {
+        if (startupScreen != null) startupScreen.destroy();
+        super.onDestroy();
     }
 }

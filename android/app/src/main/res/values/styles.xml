@@ -13,10 +13,17 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <item name="android:windowBackground">@color/trainpilot_startup_background</item>
     </style>
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
+        <item name="windowSplashScreenBackground">@color/trainpilot_startup_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/trainpilot_startup_icon</item>
+        <item name="windowSplashScreenAnimationDuration">280</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+        <item name="android:statusBarColor">@color/trainpilot_startup_background</item>
+        <item name="android:navigationBarColor">@color/trainpilot_startup_background</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>

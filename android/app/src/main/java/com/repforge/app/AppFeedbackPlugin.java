@@ -14,6 +14,15 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 /** Foreground interval cues and the user's system text size. No background alarms. */
 @CapacitorPlugin(name = "AppFeedback")
 public class AppFeedbackPlugin extends Plugin {
+    @PluginMethod public void startupReady(PluginCall call) {
+        getActivity().runOnUiThread(() -> {
+            if (getActivity() instanceof MainActivity) {
+                ((MainActivity) getActivity()).finishStartup(call.getBoolean("failed", false));
+            }
+            call.resolve();
+        });
+    }
+
     @PluginMethod public void appearance(PluginCall call) {
         JSObject result = new JSObject();
         result.put("fontScale", getContext().getResources().getConfiguration().fontScale);

@@ -286,5 +286,9 @@
   {
     "file": "tests/browser/typography-scroll-137.cjs",
     "estimatedSeconds": 45
+  },
+  {
+    "file": "tests/browser/startup-logo-140.cjs",
+    "estimatedSeconds": 4
   }
 ]

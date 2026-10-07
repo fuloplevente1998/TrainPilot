@@ -1,0 +1,28 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http'),{chromium}=require('playwright');
+const root=path.resolve('www');
+const server=http.createServer((req,res)=>{const f=path.resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/\/$/,'/index.html'));if(!f.startsWith(root+path.sep)){res.writeHead(403);return res.end();}fs.readFile(f,(e,b)=>{if(e){res.writeHead(404);return res.end();}res.setHeader('Content-Type',f.endsWith('.js')?'text/javascript':f.endsWith('.css')?'text/css':f.endsWith('.woff2')?'font/woff2':'text/html');res.end(b);});});
+(async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));const browser=await chromium.launch({args:['--no-sandbox']});try{
+ const url='http://127.0.0.1:'+server.address().port;
+ const seed=()=>{localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped'));localStorage.setItem('repforge:language',JSON.stringify('hu'));};
+ fs.mkdirSync('ui-evidence',{recursive:true});
+ for(const width of [320,393,412]){
+  const p=await browser.newPage({viewport:{width,height:873}});await p.addInitScript(seed);let unblock;const wait=new Promise(r=>unblock=r);
+  await p.route('**/app.js',async route=>{await wait;await route.continue();});
+  await p.goto(url,{waitUntil:'commit'});await p.locator('#tpBoot svg').waitFor();
+  const before=await p.evaluate(()=>({width:innerWidth,overflow:document.documentElement.scrollWidth>innerWidth,app:getComputedStyle(document.querySelector('#app')).visibility,bg:getComputedStyle(document.querySelector('#tpBoot')).backgroundColor,animations:[...document.querySelectorAll('#tpBoot svg g')].flatMap(g=>g.getAnimations().map(a=>({duration:a.effect.getTiming().duration,iterations:a.effect.getTiming().iterations})))}));
+  assert.equal(before.overflow,false);assert.equal(before.app,'hidden');assert.equal(before.bg,'rgb(14, 16, 21)');assert.equal(before.animations.length,4);assert.ok(before.animations.every(a=>a.duration===280&&a.iterations===1),'short, single opening animation');
+  if(width===393)await p.screenshot({path:'ui-evidence/startup-logo-140.png'});
+  unblock();await p.waitForFunction(()=>window.TrainPilotBoot?.finished);assert.equal(await p.locator('#app').evaluate(e=>getComputedStyle(e).visibility),'visible');await p.waitForFunction(()=>!document.querySelector('#tpBoot'));
+  const saved=await p.evaluate(()=>Object.fromEntries(Object.keys(localStorage).filter(k=>/repforge:(history|programs|scheduled|draft)$/.test(k)).map(k=>[k,localStorage.getItem(k)])));
+  await p.evaluate(()=>{go('history');go('home');window.dispatchEvent(new Event('pageshow'));});
+  assert.equal(await p.locator('#tpBoot').count(),0,'navigation/resume does not replay splash');assert.deepEqual(await p.evaluate(()=>Object.fromEntries(Object.keys(localStorage).filter(k=>/repforge:(history|programs|scheduled|draft)$/.test(k)).map(k=>[k,localStorage.getItem(k)]))),saved);
+  await p.close();
+ }
+ const mockNative=()=>{window.__startupCalls=[];window.Capacitor={isNativePlatform:()=>true,Plugins:{AppFeedback:{appearance:async()=>({fontScale:1}),signal:async()=>{},startupReady:async data=>{window.__startupCalls.push({failed:data.failed,hasApp:!!document.querySelector('#app')?.innerHTML,finished:!!window.TrainPilotBoot?.finished});}}},registerPlugin(name){return this.Plugins[name];}};};
+ const native=await browser.newPage();await native.addInitScript(seed);await native.addInitScript(mockNative);await native.goto(url);await native.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.__startupCalls.length>0);
+ assert.deepEqual(await native.evaluate(()=>window.__startupCalls),[{failed:false,hasApp:true,finished:true}],'native splash releases only after final local render');await native.evaluate(()=>TrainPilotBoot.finish());assert.equal(await native.evaluate(()=>window.__startupCalls.length),1,'readiness is idempotent');assert.equal(await native.locator('#tpBoot').count(),0);await native.close();
+ const reduced=await browser.newPage({reducedMotion:'reduce'});await reduced.addInitScript(seed);let unblock;const wait=new Promise(r=>unblock=r);await reduced.route('**/app.js',async r=>{await wait;await r.continue();});await reduced.goto(url,{waitUntil:'commit'});await reduced.locator('#tpBoot svg').waitFor();assert.equal(await reduced.evaluate(()=>[...document.querySelectorAll('#tpBoot svg g')].flatMap(g=>g.getAnimations()).length),0);unblock();await reduced.waitForFunction(()=>window.TrainPilotBoot?.finished);assert.equal(await reduced.locator('#tpBoot').count(),0);await reduced.close();
+ const failed=await browser.newPage();await failed.addInitScript(mockNative);await failed.route('**/app.js',r=>r.abort('failed'));await failed.goto(url);await failed.locator('#tpBoot button').waitFor();assert.match(await failed.locator('#tpBoot').textContent(),/betöltése nem sikerült/);assert.equal(await failed.locator('#tpBoot button').isVisible(),true);assert.deepEqual(await failed.evaluate(()=>window.__startupCalls),[{failed:true,hasApp:false,finished:false}],'a missing runtime releases native splash to reachable retry UI');await failed.unroute('**/app.js');await failed.locator('#tpBoot button').click();await failed.waitForFunction(()=>window.TrainPilotBoot?.finished);assert.equal(await failed.locator('#tpBoot').count(),0);await failed.close();
+ console.log('PASS startup logo: immediate inline logo, 320/393/412 px, one short animation, native first-render handshake, reduced motion, no warm-resume replay/data edits, failed runtime and real retry.');
+ }finally{await browser.close();await new Promise(r=>server.close(r));}})().catch(e=>{console.error(e);process.exitCode=1;});

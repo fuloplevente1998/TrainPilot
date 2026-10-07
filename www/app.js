@@ -32,18 +32,30 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
 
 // @section startup.js
 
-/* TrainPilot 2.3.2: blank fast boot overlay + measured single final render. */
+/* First local render releases the branded Android splash; cloud stays deferred. */
 (function(){
  const boot=window.TrainPilotBoot={loading:true,failed:false,finished:false};
  let watchdog;
  const now=()=>typeof performance!=='undefined'?performance.now():Date.now();
  boot.startedAt=now();
  boot.durationMs=null;
+ const releaseNative=function(failed){
+  try{
+   if(window.Capacitor?.isNativePlatform?.()!==true)return false;
+   const native=window.Capacitor?.Plugins?.AppFeedback||window.Capacitor?.registerPlugin?.('AppFeedback');
+   if(typeof native?.startupReady!=='function')return false;
+   Promise.resolve(native.startupReady({failed:!!failed})).catch(()=>{});
+   return true;
+  }catch(_){return false;}
+ };
  boot.fail=function(){
   if(boot.failed||boot.finished)return;
   boot.failed=true;clearTimeout(watchdog);
+  releaseNative(true);
   const overlay=document.getElementById('tpBoot');
   if(!overlay)return;
+  overlay.classList?.add('tp-boot-failed');
+  overlay.setAttribute?.('role','alert');
   overlay.textContent='Az alkalmazás betöltése nem sikerült. ';
   const retry=document.createElement('button');retry.type='button';retry.textContent='Újrapróbálás';
   retry.onclick=()=>window.location.reload();overlay.appendChild(retry);
@@ -61,8 +73,18 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
    if(boot.failed)return;
    document.documentElement.classList.remove('tp-booting');
    document.documentElement.classList.add('tp-ready');
-   document.getElementById('tpBoot')?.remove();
    boot.finished=true;boot.readyAt=now();boot.durationMs=Math.max(0,boot.readyAt-boot.startedAt);clearTimeout(watchdog);
+   const overlay=document.getElementById('tpBoot');
+   const native=releaseNative(false);
+   const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+   if(overlay){
+    overlay.style.pointerEvents='none';
+    if(native||reduced||typeof overlay.animate!=='function')overlay.remove();
+    else{
+     const exit=overlay.animate([{opacity:1},{opacity:0}],{duration:180,easing:'ease-out',fill:'forwards'});
+     exit.finished.then(()=>overlay.remove(),()=>overlay.remove());
+    }
+   }
    try{console.info(`[TrainPilot] local UI ready in ${Math.round(boot.durationMs)} ms`)}catch(_){}
    // Account and cloud work stays off the critical first-paint path.
    setTimeout(()=>{if(typeof initCloud==='function')initCloud();},0);

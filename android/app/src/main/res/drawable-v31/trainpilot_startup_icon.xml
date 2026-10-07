@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector xmlns:aapt="http://schemas.android.com/aapt" xmlns:android="http://schemas.android.com/apk/res/android" android:drawable="@drawable/trainpilot_startup_logo">
+  <target android:name="emblem">
+    <aapt:attr name="android:animation">
+      <set android:ordering="together">
+        <objectAnimator android:propertyName="scaleX" android:valueFrom="0.9" android:valueTo="1" android:valueType="floatType" android:duration="280" android:interpolator="@android:interpolator/fast_out_slow_in" />
+        <objectAnimator android:propertyName="scaleY" android:valueFrom="0.9" android:valueTo="1" android:valueType="floatType" android:duration="280" android:interpolator="@android:interpolator/fast_out_slow_in" />
+      </set>
+    </aapt:attr>
+  </target>
+  <target android:name="left">
+    <aapt:attr name="android:animation">
+      <set android:ordering="together">
+        <objectAnimator android:propertyName="translateX" android:valueFrom="-3" android:valueTo="0" android:valueType="floatType" android:duration="280" android:interpolator="@android:interpolator/fast_out_slow_in" />
+      </set>
+    </aapt:attr>
+  </target>
+  <target android:name="right">
+    <aapt:attr name="android:animation">
+      <set android:ordering="together">
+        <objectAnimator android:propertyName="translateX" android:valueFrom="3" android:valueTo="0" android:valueType="floatType" android:duration="280" android:interpolator="@android:interpolator/fast_out_slow_in" />
+      </set>
+    </aapt:attr>
+  </target>
+  <target android:name="shaft">
+    <aapt:attr name="android:animation">
+      <set android:ordering="together">
+        <objectAnimator android:propertyName="scaleX" android:valueFrom="0.45" android:valueTo="1" android:valueType="floatType" android:duration="280" android:interpolator="@android:interpolator/fast_out_slow_in" />
+      </set>
+    </aapt:attr>
+  </target>
+</animated-vector>
