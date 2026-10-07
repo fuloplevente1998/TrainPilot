@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -111,6 +112,29 @@ private fun Panel(content: @Composable ColumnScope.() -> Unit) {
         Column(Modifier.align(Alignment.Center).width((maxWidth - 44.dp).coerceAtLeast(100.dp))
             .heightIn(max = (maxHeight - 64.dp).coerceAtLeast(80.dp)).verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally, content = content)
+    }
+}
+
+@Composable
+private fun ActionPanel(count: Int = 3, gap: Float = 7f, horizontalPadding: Int = 44,
+                        normalBodyHeight: Int = 103,
+                        actions: @Composable (WearActionLayout) -> Unit,
+                        content: @Composable ColumnScope.(Boolean) -> Unit) {
+    val fontScale = LocalDensity.current.fontScale
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val layout = wearActionLayout(maxWidth.value, maxHeight.value, count, gap)
+        val compact = layout.bodyHeight < normalBodyHeight * fontScale
+        Column(Modifier.align(Alignment.TopCenter).offset(y = layout.bodyTop.dp)
+            .width((minOf(maxWidth, maxHeight) - horizontalPadding.dp).coerceAtLeast(80.dp))
+            .height(layout.bodyHeight.dp).verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            content(compact)
+        }
+        // The footer is a sibling of the scrolling content, not its last item.
+        Box(Modifier.align(Alignment.TopCenter).offset(y = layout.footerTop.dp)
+            .width(layout.footerWidth.dp).height(layout.buttonSize.dp), contentAlignment = Alignment.Center) {
+            actions(layout)
+        }
     }
 }
 
@@ -262,12 +286,13 @@ private fun RestRing(workout: WearWorkout, seconds: Int) {
 }
 
 @Composable
-private fun SetHeading(workout: WearWorkout, restRemaining: Int, onMenu: () -> Unit) {
+private fun SetHeading(workout: WearWorkout, restRemaining: Int, onMenu: () -> Unit,
+                       compact: Boolean = false, detail: String? = null) {
     Column(Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onMenu)
         .semantics { contentDescription = "Edzésmenü" }, horizontalAlignment = Alignment.CenterHorizontally) {
-        Label("${workout.dayName.ifBlank { workout.dayId }} · ${workout.currentExercise + 1}/${workout.exercises.size} · ··")
-        Text(workout.exercise?.name.orEmpty(), modifier = Modifier.heightIn(min = 34.dp),
-            color = White, fontSize = 15.sp, lineHeight = 17.sp, fontWeight = FontWeight.SemiBold,
+        if (!compact) Label("${workout.dayName.ifBlank { workout.dayId }} · ${workout.currentExercise + 1}/${workout.exercises.size} · ··")
+        Text(workout.exercise?.name.orEmpty(), modifier = Modifier.heightIn(min = (if (compact) 30 else 34).dp),
+            color = White, fontSize = (if (compact) 13 else 15).sp, lineHeight = (if (compact) 15 else 17).sp, fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
     val completed = workout.exercise?.sets?.count { it.done } ?: 0
@@ -275,13 +300,14 @@ private fun SetHeading(workout: WearWorkout, restRemaining: Int, onMenu: () -> U
     Label(when {
         restRemaining > 0 -> "Pihenő ${formatSeconds(restRemaining)} · $completed/$count rögzítve"
         workout.exerciseComplete -> "✓ $completed/$count sorozat rögzítve"
-        else -> "Sorozat ${workout.currentSetIndex + 1}/$count"
-    }, Gold, size = 10)
+        else -> detail ?: "${if (compact) "${workout.currentExercise + 1}/${workout.exercises.size} · " else ""}Sorozat ${workout.currentSetIndex + 1}/$count"
+    }, Gold, size = if (compact) 9 else 10)
 }
 
 @Composable
-private fun ValueTile(value: String, label: String, modifier: Modifier, enabled: Boolean = true, onClick: () -> Unit) {
-    Column(modifier.height(44.dp).background(Card, RoundedCornerShape(14.dp))
+private fun ValueTile(value: String, label: String, modifier: Modifier, enabled: Boolean = true,
+                      compact: Boolean = false, onClick: () -> Unit) {
+    Column(modifier.heightIn(min = (if (compact) 36 else 44).dp).background(Card, RoundedCornerShape(14.dp))
         .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
         Text(value, color = White, fontSize = 24.sp, lineHeight = 25.sp, fontWeight = FontWeight.SemiBold,
@@ -293,8 +319,10 @@ private fun ValueTile(value: String, label: String, modifier: Modifier, enabled:
 @Composable
 private fun WorkoutControls(workout: WearWorkout, restRemaining: Int, recordingEnabled: Boolean,
                             recordLabel: String = "Rögzítés", onRecord: () -> Unit,
-                            onPrevious: () -> Unit, onNext: () -> Unit, onSkipRest: () -> Unit, onFinish: () -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                            onPrevious: () -> Unit, onNext: () -> Unit, onSkipRest: () -> Unit, onFinish: () -> Unit,
+                            layout: WearActionLayout) {
+    Row(horizontalArrangement = Arrangement.spacedBy(layout.gap.dp)) {
+        CompositionLocalProvider(LocalActionSize provides layout.buttonSize) {
         RoundControl("‹", enabled = workout.currentExercise > 0, caption = "Előző", description = "Előző gyakorlat", onClick = onPrevious)
         when {
             restRemaining > 0 -> RoundControl("»", caption = "Kihagyás", description = "Pihenő kihagyása", onClick = onSkipRest)
@@ -307,6 +335,7 @@ private fun WorkoutControls(workout: WearWorkout, restRemaining: Int, recordingE
                 enabled = workout.completedSets > 0, caption = "Befejezés", description = "Edzés befejezése", onClick = onFinish)
         else RoundControl("›", if (workout.exerciseComplete) Gold else Secondary,
             caption = "Következő", description = "Következő gyakorlat", onClick = onNext)
+        }
     }
 }
 
@@ -316,31 +345,37 @@ private fun CurrentSetScreen(workout: WearWorkout, restRemaining: Int,
                              onPrevious: () -> Unit, onNext: () -> Unit, onSkipRest: () -> Unit,
                              onFinish: () -> Unit, onMenu: () -> Unit) {
     val set = workout.currentSet
-    Panel {
-        SetHeading(workout, restRemaining, onMenu)
-        Spacer(Modifier.height(4.dp))
+    ActionPanel(actions = { layout ->
+        WorkoutControls(workout, restRemaining, recordingEnabled = set != null && !set.done && (set.reps.toIntOrNull() ?: 0) > 0,
+            onRecord = onComplete, onPrevious = onPrevious, onNext = onNext, onSkipRest = onSkipRest, onFinish = onFinish, layout = layout)
+    }) { compact ->
+        SetHeading(workout, restRemaining, onMenu, compact)
+        Spacer(Modifier.height((if (compact) 2 else 4).dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             if (workout.exercise?.loadType != "bodyweight")
-                ValueTile(set?.weight?.ifBlank { "0" } ?: "0", "kg", Modifier.weight(1f), enabled = set?.done == false) { onEdit("weight") }
-            ValueTile(set?.reps?.ifBlank { "0" } ?: "0", "ismétlés", Modifier.weight(1f), enabled = set?.done == false) { onEdit("reps") }
+                ValueTile(set?.weight?.ifBlank { "0" } ?: "0", "kg", Modifier.weight(1f), enabled = set?.done == false, compact = compact) { onEdit("weight") }
+            ValueTile(set?.reps?.ifBlank { "0" } ?: "0", "ismétlés", Modifier.weight(1f), enabled = set?.done == false, compact = compact) { onEdit("reps") }
         }
-        Spacer(Modifier.height(4.dp))
-        WorkoutControls(workout, restRemaining, recordingEnabled = set != null && !set.done && (set.reps.toIntOrNull() ?: 0) > 0,
-            onRecord = onComplete, onPrevious = onPrevious, onNext = onNext, onSkipRest = onSkipRest, onFinish = onFinish)
     }
 }
+
+private val LocalActionSize = compositionLocalOf { 48f }
 
 @Composable
 private fun RoundControl(text: String, tone: Color = Secondary, enabled: Boolean = true,
                          caption: String? = null, description: String = caption ?: text, onClick: () -> Unit) {
-    Column(Modifier.size(48.dp).background(if (enabled) tone else Card, CircleShape)
+    val fontScale = LocalDensity.current.fontScale
+    val glyph = if (caption == null) 24f else 22f
+    val captionScale = fontScale.coerceAtMost(1.35f)
+    Column(Modifier.size(LocalActionSize.current.dp).background(if (enabled) tone else Card, CircleShape)
         .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
         .semantics { contentDescription = description },
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
         val color = if (!enabled) Muted else if (tone == Gold) Black else if (tone == Danger) DangerText else White
-        Text(text, color = color, fontSize = (if (caption == null) 24 else 22).sp,
-            lineHeight = (if (caption == null) 26 else 24).sp, fontWeight = FontWeight.Medium, maxLines = 1)
-        if (caption != null) Text(caption, color = color, fontSize = 8.5.sp, lineHeight = 10.sp,
+        Text(text, color = color, fontSize = (glyph / fontScale).sp,
+            lineHeight = ((glyph + 2) / fontScale).sp, fontWeight = FontWeight.Medium, maxLines = 1)
+        if (caption != null) Text(caption, modifier = Modifier.widthIn(max = 44.dp),
+            color = color, fontSize = (8.5f * captionScale / fontScale).sp, lineHeight = (10f * captionScale / fontScale).sp,
             textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
@@ -353,20 +388,10 @@ private fun ValueEditor(workout: WearWorkout, field: String, onChange: (String, 
     var edited by rememberSaveable(workout.workoutId, workout.currentExercise, set.number, field) { mutableDoubleStateOf(original) }
     val step = if (field == "weight") .5 else if (field.endsWith("Seconds") || (field == "reps" && normalizeUnit(workout.exercise?.repUnit.orEmpty()).startsWith("mp"))) 5.0 else 1.0
     val title = when (field) { "weight" -> "Súly"; "leftSeconds" -> "Bal oldal"; "rightSeconds" -> "Jobb oldal"; else -> if (step == 5.0) "Idő" else "Ismétlés" }
-    Panel {
-        Label("Sorozat ${workout.currentSetIndex + 1}/${workout.exercise?.sets?.size ?: 0}")
-        Title(title, 20); Spacer(Modifier.height(7.dp))
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            RoundControl("−") { edited = (edited - step).coerceAtLeast(0.0) }
-            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(numberText(edited), color = White, fontSize = 35.sp, lineHeight = 37.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                Label(if (field == "weight") "kg" else if (step == 5.0) "mp" else "ismétlés")
-            }
-            RoundControl("+") { edited += step }
-        }
-        Spacer(Modifier.height(4.dp)); Label("Lépésköz: ${numberText(step)}", size = 9)
-        Spacer(Modifier.height(4.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(13.dp)) {
+    ActionPanel(count = 2, gap = 13f, horizontalPadding = 24, normalBodyHeight = 107,
+        actions = { layout ->
+            CompositionLocalProvider(LocalActionSize provides layout.buttonSize) {
+        Row(horizontalArrangement = Arrangement.spacedBy(layout.gap.dp)) {
             RoundControl("×", Danger, caption = "Mégse", onClick = onBack)
             RoundControl("✓", Gold, caption = "Mentés") {
                 if (field.endsWith("Seconds") || (field == "reps" && normalizeUnit(workout.exercise?.repUnit.orEmpty()).startsWith("mp"))) {
@@ -377,6 +402,20 @@ private fun ValueEditor(workout: WearWorkout, field: String, onChange: (String, 
                 onChange(field, edited - fieldValue(workout.currentSet ?: set, field)); onBack()
             }
         }
+            }
+        }) { compact ->
+        if (!compact) Label("Sorozat ${workout.currentSetIndex + 1}/${workout.exercise?.sets?.size ?: 0}")
+        Title(title, 20); Spacer(Modifier.height((if (compact) 4 else 7).dp))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            RoundControl("−") { edited = (edited - step).coerceAtLeast(0.0) }
+            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(numberText(edited), color = White, fontSize = 35.sp, lineHeight = 37.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                Label(if (field == "weight") "kg" else if (step == 5.0) "mp" else "ismétlés")
+            }
+            RoundControl("+") { edited += step }
+        }
+        Spacer(Modifier.height(4.dp)); Label("Lépésköz: ${numberText(step)}", size = 9)
+
     }
 }
 
@@ -405,26 +444,7 @@ private fun TimedSetScreen(workout: WearWorkout, restRemaining: Int,
             delay(200)
         }
     }
-    Panel {
-        SetHeading(workout, restRemaining, onMenu)
-        val displayed = if (set.done || (timer.startedAt == 0L && elapsed == 0L)) fieldValue(set, field).toInt()
-            else (elapsed / 1000).toInt()
-        Box(Modifier.width(140.dp).height(40.dp).background(Card, RoundedCornerShape(14.dp))
-            .clickable(enabled = restRemaining == 0 && !set.done, role = Role.Button) {
-                timer = WearStopwatchStore.save(context, timer.toggle())
-            }.semantics { contentDescription = if (timer.startedAt > 0) "Stopper szüneteltetése" else "Stopper indítása" },
-            contentAlignment = Alignment.Center) {
-            Text(formatSeconds(displayed), color = White, fontSize = 34.sp, lineHeight = 36.sp, fontWeight = FontWeight.SemiBold)
-        }
-        val hint = when {
-            restRemaining > 0 -> "Pihenő alatt"
-            set.done -> "Rögzített idő"
-            timer.startedAt > 0 -> "Ⅱ Koppints a szünethez"
-            perSide -> if (side == "leftSeconds") "▶ Bal oldal indítása" else "▶ Jobb oldal indítása"
-            else -> "▶ Indítás · cél: ${workout.exercise?.targetReps?.ifBlank { "—" }} mp"
-        }
-        Label(hint, size = 9)
-        Spacer(Modifier.height(2.dp))
+    ActionPanel(normalBodyHeight = 112, actions = { layout ->
         WorkoutControls(workout, restRemaining,
             recordingEnabled = !set.done && (timer.startedAt > 0 || elapsed > 0 || fieldValue(set, field) > 0),
             recordLabel = "Mentés", onRecord = {
@@ -438,7 +458,28 @@ private fun TimedSetScreen(workout: WearWorkout, restRemaining: Int,
                     side = if (side == "leftSeconds") "rightSeconds" else "leftSeconds"
                     WearStopwatchStore.save(context, WearStopwatch("$prefix:$side"))
                 }
-            }, onPrevious = onPrevious, onNext = onNext, onSkipRest = onSkipRest, onFinish = onFinish)
+            }, onPrevious = onPrevious, onNext = onNext, onSkipRest = onSkipRest, onFinish = onFinish, layout = layout)
+    }) { compact ->
+        SetHeading(workout, restRemaining, onMenu, compact,
+            detail = if (perSide) "${if (side == "leftSeconds") "Bal" else "Jobb"} oldal · ${workout.currentSetIndex + 1}/${workout.exercise?.sets?.size ?: 0}" else null)
+        val displayed = if (set.done || (timer.startedAt == 0L && elapsed == 0L)) fieldValue(set, field).toInt()
+            else (elapsed / 1000).toInt()
+        Box(Modifier.width(140.dp).heightIn(min = (if (compact) 36 else 40).dp).background(Card, RoundedCornerShape(14.dp))
+            .clickable(enabled = restRemaining == 0 && !set.done, role = Role.Button) {
+                timer = WearStopwatchStore.save(context, timer.toggle())
+            }.semantics { contentDescription = if (timer.startedAt > 0) "Stopper szüneteltetése" else "Stopper indítása" },
+            contentAlignment = Alignment.Center) {
+            Text(formatSeconds(displayed), color = White, fontSize = (if (compact) 31 else 34).sp, lineHeight = (if (compact) 33 else 36).sp, fontWeight = FontWeight.SemiBold)
+        }
+        val hint = when {
+            restRemaining > 0 -> "Pihenő alatt"
+            set.done -> "Rögzített idő"
+            timer.startedAt > 0 -> "Ⅱ Koppints a szünethez"
+            perSide -> if (side == "leftSeconds") "▶ Bal oldal indítása" else "▶ Jobb oldal indítása"
+            else -> "▶ Indítás · cél: ${workout.exercise?.targetReps?.ifBlank { "—" }} mp"
+        }
+        if (!compact) Label(hint, size = 9)
+
     }
 }
 
