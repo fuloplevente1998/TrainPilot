@@ -5,6 +5,7 @@ import android.os.CountDownTimer
 import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -332,7 +334,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     }
 
     private fun putCommand(commandId: String, command: JSONObject) {
-        val map = PutDataMapRequest.create("${WearDataListenerService.COMMAND_PATH_PREFIX}#commandId")
+        val map = PutDataMapRequest.create("${WearDataListenerService.COMMAND_PATH_PREFIX}$commandId")
         map.dataMap.putString("command", command.toString())
         map.dataMap.putLong("createdAt", System.currentTimeMillis())
         Wearable.getDataClient(this).putDataItem(map.asPutDataRequest().setUrgent())
@@ -356,22 +358,40 @@ private fun TrainPilotWearApp(
     onNext: () -> Unit,
     onSkipRest: () -> Unit
 ) {
+    val showHome = rememberSaveable { mutableStateOf(true) }
+    BackHandler(enabled = !showHome.value && workout.value != null) {
+        showHome.value = true
+    }
     MaterialTheme {
         Box(
-            modifier = Modifier.fillMaxSize().background(TpBg).padding(horizontal = 12.dp, vertical = 7.dp),
+            modifier = Modifier.fillMaxSize().background(TpBg).padding(horizontal = 16.dp, vertical = 22.dp),
             contentAlignment = Alignment.Center
         ) {
-            if (workout.value == null) {
-                HomeScreen(home.value, onStart)
+            if (showHome.value || workout.value == null) {
+                HomeScreen(
+                    home = home.value,
+                    activeWorkout = workout.value,
+                    onStart = { day, scheduleId ->
+                        onStart(day, scheduleId)
+                        if (workout.value != null) showHome.value = false
+                    },
+                    onResume = { showHome.value = false }
+                )
             } else {
-                WorkoutScreen(workout.value, restRemaining.value, onChange, onComplete, onPrevious, onNext, onSkipRest)
+                WorkoutScreen(workout.value, restRemaining.value, onChange, onComplete,
+                    onPrevious, onNext, onSkipRest, onHome = { showHome.value = true })
             }
         }
     }
 }
 
 @Composable
-private fun HomeScreen(home: WatchHomeSnapshot?, onStart: (WatchHomeDay, String) -> Unit) {
+private fun HomeScreen(
+    home: WatchHomeSnapshot?,
+    activeWorkout: WearWorkout?,
+    onStart: (WatchHomeDay, String) -> Unit,
+    onResume: () -> Unit
+) {
     val date = LocalDate.now().format(DateTimeFormatter.ofPattern("MMM d., EEE", Locale("hu", "HU")))
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
@@ -380,6 +400,20 @@ private fun HomeScreen(home: WatchHomeSnapshot?, onStart: (WatchHomeDay, String)
         Text("TrainPilot", color = TpAccent, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Text(date, color = TpMuted, style = MaterialTheme.typography.labelMedium)
         Spacer(Modifier.height(8.dp))
+
+        if (activeWorkout != null) {
+            SurfaceCard {
+                Text("Folyamatban lévő edzés", color = TpAccent, fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center)
+                Text(activeWorkout.programName.ifBlank { "TrainPilot" }, color = TpText,
+                    style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
+                Text(activeWorkout.exercise?.name.orEmpty(), color = TpMuted,
+                    style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(5.dp))
+                PrimaryButton("Edzés folytatása", onResume)
+            }
+            Spacer(Modifier.height(8.dp))
+        }
 
         if (home == null) {
             SurfaceCard {
@@ -392,12 +426,12 @@ private fun HomeScreen(home: WatchHomeSnapshot?, onStart: (WatchHomeDay, String)
         Text(home.activeProgramName, color = TpText, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
         Spacer(Modifier.height(5.dp))
 
-        if (home.hasDraft) {
+        if (activeWorkout == null && home.hasDraft) {
             SurfaceCard {
                 Text("Félbehagyott edzés", color = TpAccent, fontWeight = FontWeight.Bold)
                 Text("A telefonon mentett edzés van. Ezt még a telefonon folytasd; órás folytatás későbbi lépés.", color = TpMuted, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
             }
-        } else {
+        } else if (activeWorkout == null) {
             val rec = home.recommended
             if (rec != null) {
                 SurfaceCard {
@@ -410,7 +444,7 @@ private fun HomeScreen(home: WatchHomeSnapshot?, onStart: (WatchHomeDay, String)
             }
         }
 
-        if (!home.hasDraft && home.days.isNotEmpty()) {
+        if (activeWorkout == null && !home.hasDraft && home.days.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
             Text("Program napjai", color = TpMuted, style = MaterialTheme.typography.labelMedium)
             home.days.forEach { day ->
@@ -469,7 +503,8 @@ private fun WorkoutScreen(
     onComplete: () -> Unit,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
-    onSkipRest: () -> Unit
+    onSkipRest: () -> Unit,
+    onHome: () -> Unit
 ) {
     if (workout == null) return
     val exercise = workout.exercise
@@ -483,40 +518,54 @@ private fun WorkoutScreen(
     } else (set.reps.toIntOrNull() ?: 0) > 0
 
     Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(workout.programName.ifBlank { "TrainPilot" }, color = TpAccent, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center)
-        Text(exercise?.name.orEmpty(), color = TpText, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-        Text(
-            if (exercise == null || exercise.sets.isEmpty()) "Nincs sorozat" else "Sorozat ${workout.currentSetIndex + 1} / ${exercise.sets.size}",
-            color = TpMuted,
-            style = MaterialTheme.typography.bodyMedium
-        )
-        if (set != null) {
-            if (!bodyweight) NumericControl("Súly", formatWeight(set.weight), "−", "+", { onChange("weight", -0.5) }, { onChange("weight", 0.5) })
-            if (perSide) {
-                NumericControl("Bal oldal", "${set.leftSeconds} mp", "−5", "+5", { onChange("leftSeconds", -5.0) }, { onChange("leftSeconds", 5.0) })
-                NumericControl("Jobb oldal", "${set.rightSeconds} mp", "−5", "+5", { onChange("rightSeconds", -5.0) }, { onChange("rightSeconds", 5.0) })
-            } else {
-                val step = if (timed) 5.0 else 1.0
-                val label = if (timed) "Idő" else "Ismétlés"
-                val value = if (timed) "${set.reps.ifBlank { "0" }} mp" else set.reps.ifBlank { "0" }
-                NumericControl(label, value, if (timed) "−5" else "−", if (timed) "+5" else "+", { onChange("reps", -step) }, { onChange("reps", step) })
+        Box(
+            modifier = Modifier.fillMaxWidth(.72f).background(TpCard2, RoundedCornerShape(16.dp))
+                .clickable(onClick = onHome).padding(vertical = 8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("‹ Kezdőlap", color = TpText, style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold)
+        }
+        Spacer(Modifier.height(6.dp))
+        Column(
+            modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(workout.programName.ifBlank { "TrainPilot" }, color = TpAccent, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center)
+            Text(exercise?.name.orEmpty(), color = TpText, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+            Text(
+                if (exercise == null || exercise.sets.isEmpty()) "Nincs sorozat" else "Sorozat ${workout.currentSetIndex + 1} / ${exercise.sets.size}",
+                color = TpMuted,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            if (set != null) {
+                if (!bodyweight) NumericControl("Súly", formatWeight(set.weight), "−", "+", { onChange("weight", -0.5) }, { onChange("weight", 0.5) })
+                if (perSide) {
+                    NumericControl("Bal oldal", "${set.leftSeconds} mp", "−5", "+5", { onChange("leftSeconds", -5.0) }, { onChange("leftSeconds", 5.0) })
+                    NumericControl("Jobb oldal", "${set.rightSeconds} mp", "−5", "+5", { onChange("rightSeconds", -5.0) }, { onChange("rightSeconds", 5.0) })
+                } else {
+                    val step = if (timed) 5.0 else 1.0
+                    val label = if (timed) "Idő" else "Ismétlés"
+                    val value = if (timed) "${set.reps.ifBlank { "0" }} mp" else set.reps.ifBlank { "0" }
+                    NumericControl(label, value, if (timed) "−5" else "−", if (timed) "+5" else "+", { onChange("reps", -step) }, { onChange("reps", step) })
+                }
+                ActionText(if (set.done) "✓ Rögzítve" else "✓ Rögzítés", completeEnabled, onComplete)
             }
-            ActionText(if (set.done) "✓ Rögzítve" else "✓ Rögzítés", completeEnabled, onComplete)
-        }
-        if (restRemaining > 0) {
+            if (restRemaining > 0) {
+                Spacer(Modifier.height(5.dp))
+                Text("Pihenő ${formatSeconds(restRemaining)}", color = TpAccent, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                ActionText("Pihenő kihagyása", true, onSkipRest)
+            }
             Spacer(Modifier.height(5.dp))
-            Text("Pihenő ${formatSeconds(restRemaining)}", color = TpAccent, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            ActionText("Pihenő kihagyása", true, onSkipRest)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                ActionText("← Előző", workout.currentExercise > 0, onPrevious)
+                ActionText("Következő →", workout.currentExercise < workout.exercises.lastIndex, onNext)
+            }
+            Spacer(Modifier.height(18.dp))
         }
-        Spacer(Modifier.height(5.dp))
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            ActionText("← Előző", workout.currentExercise > 0, onPrevious)
-            ActionText("Következő →", workout.currentExercise < workout.exercises.lastIndex, onNext)
-        }
-        Spacer(Modifier.height(10.dp))
     }
 }
 
