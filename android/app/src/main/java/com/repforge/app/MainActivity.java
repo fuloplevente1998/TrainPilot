@@ -65,8 +65,9 @@ public class MainActivity extends BridgeActivity {
         }
     }
 
-    void finishStartup(boolean failed) {
-        if (startupScreen != null) startupScreen.ready(failed);
+    void finishStartup(boolean failed, Runnable complete) {
+        if (startupScreen == null) { complete.run(); return; }
+        startupScreen.ready(getBridge() == null ? null : getBridge().getWebView(), failed, complete);
     }
 
     @Override public void onDestroy() {

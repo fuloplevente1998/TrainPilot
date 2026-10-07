@@ -8,6 +8,9 @@ import android.os.Looper;
 import android.provider.Settings;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebView;
+import java.util.ArrayList;
+import java.util.List;
 import androidx.core.splashscreen.SplashScreen;
 
 /** Release the system splash at the first native frame, then zoom while the WebView loads. */
@@ -17,6 +20,8 @@ final class StartupScreen {
     private boolean attached, started, ready, failed, removed;
     private StartupFade.LogoView overlay;
     private ValueAnimator exitAnimation;
+    private StartupPaint paint;
+    private final List<Runnable> completions = new ArrayList<>();
     private final Runnable fallback = () -> ready(true);
 
     static StartupScreen install(Activity activity) {
@@ -59,7 +64,14 @@ final class StartupScreen {
         decor.invalidate();
     }
 
-    void ready(boolean startupFailed) {
+    void ready(WebView webView, boolean startupFailed, Runnable complete) {
+        if (removed) { complete.run(); return; }
+        completions.add(complete);
+        if (startupFailed || webView == null || !animationsEnabled()) ready(startupFailed);
+        else if (!ready && paint == null) paint = StartupPaint.await(webView, () -> ready(false));
+    }
+
+    private void ready(boolean startupFailed) {
         if (ready || removed) return;
         failed = startupFailed;
         ready = true;
@@ -78,11 +90,15 @@ final class StartupScreen {
         if (removed) return;
         removed = true;
         handler.removeCallbacks(fallback);
+        if (paint != null) paint.cancel();
         if (overlay != null) {
             overlay.stop();
             ViewGroup parent = (ViewGroup) overlay.getParent();
             if (parent != null) parent.removeView(overlay);
         }
+        List<Runnable> finished = new ArrayList<>(completions);
+        completions.clear();
+        for (Runnable complete : finished) complete.run();
     }
 
     void destroy() {

@@ -17,9 +17,8 @@ public class AppFeedbackPlugin extends Plugin {
     @PluginMethod public void startupReady(PluginCall call) {
         getActivity().runOnUiThread(() -> {
             if (getActivity() instanceof MainActivity) {
-                ((MainActivity) getActivity()).finishStartup(call.getBoolean("failed", false));
-            }
-            call.resolve();
+                ((MainActivity) getActivity()).finishStartup(call.getBoolean("failed", false), call::resolve);
+            } else call.resolve();
         });
     }
 

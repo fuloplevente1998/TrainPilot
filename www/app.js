@@ -44,7 +44,8 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
    if(window.Capacitor?.isNativePlatform?.()!==true)return false;
    const native=window.Capacitor?.Plugins?.AppFeedback||window.Capacitor?.registerPlugin?.('AppFeedback');
    if(typeof native?.startupReady!=='function')return false;
-   Promise.resolve(native.startupReady({failed:!!failed})).catch(()=>{});
+   const exit=Promise.resolve(native.startupReady({failed:!!failed})).catch(()=>{});
+   if(!failed)boot.nativeExitFinished=exit;
    return true;
   }catch(_){return false;}
  };
@@ -99,8 +100,11 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
     }
    }
    try{console.info(`[TrainPilot] local UI ready in ${Math.round(boot.durationMs)} ms`)}catch(_){}
-   // Account and cloud work stays off the critical first-paint path.
-   setTimeout(()=>{if(typeof initCloud==='function')initCloud();},0);
+   // Native resolves only after its final fade frame. Keep account/cloud work
+   // outside the compositor hand-off as well as the first local render.
+   const cloudLater=()=>setTimeout(()=>{if(typeof initCloud==='function')initCloud();},0);
+   if(native&&boot.nativeExitFinished)boot.nativeExitFinished.then(cloudLater);
+   else cloudLater();
   };
   const frame=typeof requestAnimationFrame==='function'?requestAnimationFrame:(fn)=>setTimeout(fn,0);
   frame(reveal);
