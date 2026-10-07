@@ -7,8 +7,12 @@ on:
       - 'feat/wear-os'
     paths:
       - 'android/wear/**'
+      - 'android/app/src/main/java/com/repforge/app/**'
+      - 'android/app/build.gradle'
       - 'android/build.gradle'
       - 'android/settings.gradle'
+      - 'www/wear-sync.js'
+      - 'www/index.html'
       - '.github/workflows/wear-build.yml'
 
 permissions:
@@ -35,6 +39,9 @@ jobs:
       - name: Install Capacitor dependencies
         run: npm ci
 
+      - name: Check Wear bridge JavaScript syntax
+        run: node -c www/wear-sync.js
+
       - name: Set up Java 21
         uses: actions/setup-java@v6
         with:
@@ -42,16 +49,18 @@ jobs:
           java-version: '21'
           cache: gradle
 
-      - name: Build Wear OS debug APK
+      - name: Build phone + Wear OS debug APKs
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon :wear:assembleDebug
+          ./gradlew --no-daemon :app:assembleDebug :wear:assembleDebug
 
-      - name: Upload Wear OS debug APK
+      - name: Upload debug APKs
         uses: actions/upload-artifact@v7
         with:
-          name: TrainPilot-Wear-debug-${{ github.run_id }}
-          path: android/wear/build/outputs/apk/debug/wear-debug.apk
+          name: TrainPilot-Wear-integration-debug-${{ github.run_id }}
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/wear/build/outputs/apk/debug/wear-debug.apk
           if-no-files-found: error
           retention-days: 14
