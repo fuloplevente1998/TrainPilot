@@ -24,8 +24,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  chromium-cache:
+    name: Prepare Playwright Chromium cache
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Resolve Playwright version
+        id: playwright-version
+        shell: bash
+        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Restore Playwright Chromium cache
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-chromium-${{ steps.playwright-version.outputs.version }}
+      - name: Download Chromium on cache miss
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx --no-install playwright install chromium
+
   ui-tests:
     name: Chromium UI (${{ matrix.shard }}/6)
+    needs: chromium-cache
     runs-on: ubuntu-latest
     timeout-minutes: 8
     permissions:
@@ -46,10 +77,18 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Resolve Playwright version
+        id: playwright-version
+        shell: bash
+        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Restore Playwright Chromium cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-chromium-${{ steps.playwright-version.outputs.version }}
+          fail-on-cache-miss: true
       - name: Verify UI shard runner
         run: node --test scripts/ui-runner.test.cjs
-      - name: Install Chromium
-        run: npx --no-install playwright install --with-deps chromium
       - name: Run full Chromium UI regression shard
         run: npm run test:ui -- --shard ${{ matrix.shard }}/6
       - name: Upload UI evidence and test timings
