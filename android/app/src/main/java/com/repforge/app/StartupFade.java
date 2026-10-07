@@ -53,7 +53,10 @@ final class StartupFade {
     }
 
     static ValueAnimator start(LogoView overlay, Runnable remove, long durationMs) {
-        float from = overlay.currentScale();
+        final boolean paced = overlay.isAttachedToWindow() && overlay.isHardwareAccelerated();
+        float from = paced && !Float.isNaN(overlay.drawnScale)
+                ? overlay.drawnScale : overlay.currentScale();
+        overlay.scale = from;
         float to = Math.max(from, coveringScale(overlay.getWidth(), overlay.getHeight(), overlay.logoSize));
         overlay.loading = false;
         final Trace trace = TRACE ? Trace.create(overlay.getContext(), from, to, overlay) : null;
@@ -69,8 +72,27 @@ final class StartupFade {
         ValueAnimator zoom = ValueAnimator.ofFloat(0f, 1f);
         zoom.setDuration(durationMs);
         zoom.setInterpolator(new LinearInterpolator());
+        // A wall-clock animator can finish while WebView startup prevents any draws.
+        // On a real window, consume time only after the previous state was drawn and
+        // cap catch-up to two 60 Hz frames. Keep the unattached/software path seekable.
+        if (trace != null) Trace.log("draw-paced exit=" + paced);
+        final long[] lastTick = {SystemClock.uptimeMillis()};
+        final float[] elapsed = {0f};
+        overlay.frameDrawn = true;
+        if (paced) zoom.setRepeatCount(ValueAnimator.INFINITE);
         zoom.addUpdateListener(animation -> {
+            if (removed[0]) return;
             float progress = (float) animation.getAnimatedValue();
+            if (paced) {
+                long now = SystemClock.uptimeMillis();
+                long delta = Math.max(0, now - lastTick[0]);
+                lastTick[0] = now;
+                if (!overlay.frameDrawn) return;
+                elapsed[0] += Math.min(32L, delta);
+                progress = Math.min(1f, elapsed[0] / Math.max(1L, durationMs));
+                overlay.frameDrawn = false;
+                if (progress >= 1f) overlay.finishAfterDraw = zoom::end;
+            }
             overlay.scale = from * (float) Math.pow(to / from, progress);
             overlay.opacity = fadeAlpha(progress);
             if (trace != null) trace.update(progress);
@@ -97,6 +119,9 @@ final class StartupFade {
         private final RectF warmDst = new RectF(0, 0, 1, 1);
         private long startedAt;
         private boolean loading;
+        private float drawnScale = Float.NaN;
+        private boolean frameDrawn;
+        private Runnable finishAfterDraw;
         Trace trace;
         float scale = INITIAL_SCALE;
         float opacity = 1f;
@@ -132,7 +157,11 @@ final class StartupFade {
             return scale;
         }
 
-        void stop() { loading = false; logo = null; }
+        void stop() {
+            loading = false;
+            finishAfterDraw = null;
+            logo = null;
+        }
 
         @Override public boolean hasOverlappingRendering() { return false; }
 
@@ -140,7 +169,8 @@ final class StartupFade {
             super.onDraw(canvas);
             final Trace t = trace;
             final long drawStart = t != null ? System.nanoTime() : 0L;
-            float half = logoSize * currentScale() / 2f;
+            drawnScale = currentScale();
+            float half = logoSize * drawnScale / 2f;
             float x = Float.isNaN(centerX) ? getWidth() / 2f : centerX;
             float y = Float.isNaN(centerY) ? getHeight() / 2f : centerY;
             bounds.set(x - half, y - half, x + half, y + half);
@@ -163,6 +193,14 @@ final class StartupFade {
                 // Drawn last, over opaque identical colour: pixel result is unchanged.
                 paint.setAlpha(254);
                 canvas.drawBitmap(logo, warmSrc, warmDst, paint);
+            }
+            frameDrawn = true;
+            if (finishAfterDraw != null) {
+                Runnable finish = finishAfterDraw;
+                finishAfterDraw = null;
+                // Submit the transparent endpoint before removing the view and releasing
+                // startup completion work. Cancellation still removes immediately.
+                postOnAnimation(finish);
             }
             if (t != null) t.draw(System.nanoTime() - drawStart);
             if (loading) postInvalidateOnAnimation();
