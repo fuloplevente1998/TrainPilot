@@ -879,15 +879,19 @@ var rfHistoryHealthHtml=function rfHistoryHealthHtml(i){
  const x=q.summary||{},stats=[];
  const active=rfHistoryHealthNumber(x.activeCalories),total=rfHistoryHealthNumber(x.totalCalories),avg=rfHistoryHealthNumber(x.averageHeartRate),max=rfHistoryHealthNumber(x.maxHeartRate),dist=x.distanceMeters==null?NaN:Number(x.distanceMeters),mins=rfHistoryHealthNumber(x.exerciseMinutes),sessions=rfHistoryHealthNumber(x.exerciseSessionCount);
  const steps=rfHistoryHealthNumber(x.steps);if(steps!==null)stats.push([tp149T('health.steps'),steps]);
+ const workout=rfHistoryHealthNumber(x.workoutCalories);
+ if(workout!==null)stats.push(['Edzéskalória',workout+' kcal']);
  if(active!==null)stats.push(['Aktív kalória',active+' kcal']);
- if(total!==null)stats.push(['Összes energia',total+' kcal']);
+ if(total!==null)stats.push(['Összes energia (nyugalmival)',total+' kcal']);
  if(avg!==null||max!==null)stats.push(['Átlag / max. pulzus',(avg??'–')+' / '+(max??'–')+' bpm']);
  if(Number.isFinite(dist))stats.push(['Távolság',dist>=1000?rfHistoryHealthNumber(dist/1000,2)+' km':rfHistoryHealthNumber(dist)+' m']);
  if(mins!==null)stats.push(['Health edzésidő',mins+' perc']);
  if(sessions!==null)stats.push(['Edzésrekord',sessions+' db']);
  const src=x.source==='all'?'Health Connect • összes forrás':(x.sourceLabels?.[x.source]||x.source||'Health Connect');
  const loaded=q.loadedAt?new Date(q.loadedAt).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'}):'';
- return `<div class="rf-history-health-result">${stats.length?`<div class="rf-history-health-grid">${stats.map(([k,v])=>`<div class="stat"><small>${esc(k)}</small><strong>${esc(v)}</strong></div>`).join('')}</div>`:'<p class="small muted">Ehhez az edzés-időablakhoz nem találtunk megosztott Health Connect adatot.</p>'}<p class="small muted">${esc(src)}${x.heartRateSamples!=null?' • '+esc(String(x.heartRateSamples))+' pulzusminta':''}${loaded?' • frissítve '+esc(loaded):''}</p></div>`;
+ const energySources=(x.workoutEnergySources||[]).map(s=>x.workoutEnergySourceLabels?.[s]||x.sourceLabels?.[s]||(s==='com.sec.android.app.shealth'?'Samsung Health':s)).join(', ');
+ const energyNote=workout!==null?`Edzéskalória: ${energySources||'Health Connect'} · ${x.workoutEnergyProrated?'az aktív edzésidőre időarányosan illesztve':'az edzéshez megosztott energia'}.`:x.workoutEnergyVersion===1?'Ehhez az edzéshez még nincs megosztott, illeszthető kalóriarekord.':'Az edzéskalória beolvasásához nyomj a Frissítésre.';
+ return `<div class="rf-history-health-result">${stats.length?`<div class="rf-history-health-grid">${stats.map(([k,v])=>`<div class="stat"><small>${esc(k)}</small><strong>${esc(v)}</strong></div>`).join('')}</div>`:'<p class="small muted">Ehhez az edzés-időablakhoz nem találtunk megosztott Health Connect adatot.</p>'}<p class="small muted">${esc(energyNote)}</p><p class="small muted">${esc(src)}${x.heartRateSamples!=null?' • '+esc(String(x.heartRateSamples))+' pulzusminta':''}${loaded?' • frissítve '+esc(loaded):''}</p></div>`;
 };
 var rfHistoryHealthPaint=function rfHistoryHealthPaint(i){const el=document.querySelector(`[data-rf-history-health="${i}"]`);if(el)el.innerHTML=rfHistoryHealthHtml(i);};
 var rfHistoryHealthEnsure=function rfHistoryHealthEnsure(i){const h=history()[i];if(!h||rfHistoryHealthCache.has(h.started))return;healthFromHistory(i);};
@@ -897,7 +901,10 @@ var healthFromHistory = async function healthFromHistory(i){
  if(!h.finished||!(Date.parse(h.finished)>Date.parse(h.started))){rfHistoryHealthCache.set(h.started,{error:'Ehhez az edzéshez nincs érvényes befejezési idő.'});rfHistoryHealthPaint(i);return;}
  rfHistoryHealthCache.set(h.started,{loading:true});rfHistoryHealthPaint(i);
  try{
-  const result=await healthPlugin().readWorkout({start:h.started,end:h.finished,source:''});
+  const plugin=healthPlugin();
+  const hasIntervals=window.TrainPilotIssue79?.intervals(h).length>0;
+  const result=hasIntervals?await window.TrainPilotIssue79.readWorkout(plugin,h):typeof plugin.readTrainingWindow==='function'?await plugin.readTrainingWindow({start:h.started,end:h.finished}):await plugin.readWorkout({start:h.started,end:h.finished,source:''});
+  if(typeof rf242SaveMatchedWorkoutHealth==='function')rf242SaveMatchedWorkoutHealth(rf240WorkoutKey(h),h,result);
   rfHistoryHealthCache.set(h.started,{summary:result||{},loadedAt:Date.now()});
  }catch(e){rfHistoryHealthCache.set(h.started,{error:e?.message||'A Health Connect adatok lekérése nem sikerült.'});}
  rfHistoryHealthPaint(i);
@@ -14165,6 +14172,11 @@ function aggregate(parts,windows,errors){
   averageHeartRate:weighted('averageHeartRate'),minHeartRate:min('minHeartRate'),maxHeartRate:max('maxHeartRate'),heartRateSamples:present('heartRateSamples')?sum('heartRateSamples'):null,
   steps:!errors.length&&parts.every(p=>num(p.steps)!=null)?sum('steps'):null,
   activeCalories:present('activeCalories')?sum('activeCalories'):null,totalCalories:present('totalCalories')?sum('totalCalories'):null,
+  workoutCalories:present('workoutCalories')?sum('workoutCalories'):null,
+  workoutEnergyVersion:parts.every(p=>p.workoutEnergyVersion===1)?1:null,
+  workoutEnergyCoverageMs:sum('workoutEnergyCoverageMs'),workoutEnergyProrated:parts.some(p=>p.workoutEnergyProrated===true),
+  workoutEnergySources:[...new Set(parts.flatMap(p=>p.workoutEnergySources||[]))],workoutEnergySourceLabels:Object.assign({},...parts.map(p=>p.workoutEnergySourceLabels||{})),
+  workoutEnergyTypes:[...new Set(parts.flatMap(p=>p.workoutEnergyTypes||[]))],workoutEnergyRecordIds:[...new Set(parts.flatMap(p=>p.workoutEnergyRecordIds||[]))],
   distanceMeters:present('distanceMeters')?sum('distanceMeters'):null,averageSpeedMps:weighted('averageSpeedMps'),maxSpeedMps:max('maxSpeedMps'),
   exerciseMinutes:sessions.length?sessionMinutes:present('exerciseMinutes')?sum('exerciseMinutes'):null,exerciseSessionCount:sessions.length||sum('exerciseSessionCount'),exerciseSessions:sessions,
   sources,sourceLabels:labels,warnings,permissions:Object.assign({},...parts.map(p=>p.permissions||{})),
@@ -14193,7 +14205,7 @@ async function syncWorkout(p,h,force=false){
   return rf242SaveMatchedWorkoutHealth(key,h,exact,{matchMode:exact.matchMode,sourceWindowStart:exact.sourceWindowStart,sourceWindowEnd:exact.sourceWindowEnd});
  }
  const signature=JSON.stringify(ws.map(w=>[w.start,w.end]));
- if(!force&&old?.activeIntervalSignature===signature&&Date.now()-Date.parse(old.syncedAt||0)<6*3600000&&hasMetric(old))return false;
+ if(!force&&old?.workoutEnergyVersion===1&&old?.activeIntervalSignature===signature&&Date.now()-Date.parse(old.syncedAt||0)<6*3600000&&hasMetric(old))return false;
  const data=await readWorkout(p,h);
  return rf242SaveMatchedWorkoutHealth(key,h,data,{matchMode:'active-intervals',activeIntervalSignature:signature,sourceWindowStart:data.sourceWindowStart,sourceWindowEnd:data.sourceWindowEnd});
 }

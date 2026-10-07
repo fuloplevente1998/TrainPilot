@@ -294,5 +294,9 @@
   {
     "file": "tests/browser/wear-workout-lifecycle.cjs",
     "estimatedSeconds": 5
+  },
+  {
+    "file": "tests/browser/health-workout-energy.cjs",
+    "estimatedSeconds": 6
   }
 ]
