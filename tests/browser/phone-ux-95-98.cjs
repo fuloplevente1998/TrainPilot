@@ -11,7 +11,10 @@ const server=http.createServer((q,r)=>{const name=new URL(q.url,'http://local').
   const label=width+'/'+lang+'/'+theme;await p.setViewportSize({width,height:width===320?740:873});
   await p.evaluate(({lang,theme})=>{state.session=null;db.set('draft',null);db.set('language',lang);rf200SetTheme(theme);go('home');},{lang,theme});
   const paint=async selector=>p.locator(selector).evaluate(e=>{const c=getComputedStyle(e);return {background:c.backgroundImage,border:c.borderTopColor,width:c.borderTopWidth,shadow:c.boxShadow};});
-  const home=await paint('#rf220CoachCard');assert.ok(home.background.includes('gradient')&&home.width==='1px',label+' themed Coach border');
+  const home=await paint('#rf220CoachCard');assert.equal(home.width,'1px',label+' themed Coach border');
+  assert.equal(home.background.includes('gradient'),theme==='yellow',label+' vivid gradient / basic matte Coach');
+  assert.equal(home.shadow==='none',theme==='classicBlue',label+' glow belongs to vivid family');
+  if(theme==='classicBlue')assert.notEqual(home.border,'rgba(0, 0, 0, 0)',label+' matte Coach keeps a solid themed border');
   await p.locator('#rf220CoachCard').click();await p.waitForSelector('#tp155R4PanelHost[data-panel="coach"] .tp151-coach-recommendation');
   assert.deepEqual(await paint('#tp155R4PanelHost[data-panel="coach"] .tp151-coach-recommendation'),home,label+' Home matches Coach theme');
   await p.evaluate(()=>tp155R4ClosePanel(false));

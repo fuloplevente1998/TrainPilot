@@ -10,7 +10,7 @@ const root=path.resolve('www');const server=http.createServer((q,r)=>{const file
   for(const hasProfile of [false,true]){
   await p.evaluate(hasProfile=>{db.set('settings',{...settings(),profile:hasProfile?{age:30,goal:'fitness',experience:'beginner',minutes:45}:null});go('home');},hasProfile);await p.waitForTimeout(40);
   const planner=await p.evaluate(()=>{const card=document.querySelector('main>.onboarding'),h=card.querySelector('h2'),copy=card.querySelector('p'),btn=card.querySelector('button');return {heading:parseFloat(getComputedStyle(h).fontSize),copy:parseFloat(getComputedStyle(copy).fontSize),stacked:btn.getBoundingClientRect().top>=copy.getBoundingClientRect().bottom-1,buttonWidth:btn.getBoundingClientRect().width,cardWidth:card.getBoundingClientRect().width};});
-  assert.ok(planner.heading>=23&&planner.copy>=15&&planner.stacked&&planner.buttonWidth>=planner.cardWidth-30,'full-size planner without a draft '+width+'/'+lang+'/'+hasProfile+' '+JSON.stringify(planner));
+  assert.ok(planner.heading>=23&&planner.copy===14&&planner.stacked&&planner.buttonWidth>=planner.cardWidth-30,'full-size planner without a draft '+width+'/'+lang+'/'+hasProfile+' '+JSON.stringify(planner));
   let layout=await p.evaluate(()=>({cl:document.body.className,main:document.querySelector('main').className,nav:document.querySelector('.top').getBoundingClientRect().bottom,kids:[...document.querySelector('main').children].map(e=>({c:e.className,h:e.getBoundingClientRect().height})),scroll:document.documentElement.scrollHeight-innerHeight,bottom:Math.max(...[...document.querySelector('main').children].map(e=>e.getBoundingClientRect().bottom)),width:document.documentElement.scrollWidth-innerWidth}));
   assert.ok(await p.evaluate(()=>[...document.querySelectorAll('#rf223Today .tp5-today-metric')].every(e=>e.querySelector('.tp5-today-value').getBoundingClientRect().bottom<=e.getBoundingClientRect().bottom-2)),'Home Today values remain fully visible');
   assert.ok(layout.scroll<=1&&layout.bottom<=height+1&&layout.width<=1,'Home fully visible '+width+'/'+height+'/'+lang+' '+JSON.stringify(layout));
@@ -41,6 +41,7 @@ const root=path.resolve('www');const server=http.createServer((q,r)=>{const file
   await p.evaluate(()=>tp155R4ClosePanel(false));
  }
  await p.setViewportSize({width:393,height:873});await p.evaluate(()=>{db.set('language','hu');go('plan');});
+ await p.locator('.tp152-day').first().locator(':scope > summary').click();
  const row=p.locator('.tp107-program-editor').first();await row.locator(':scope > summary').click();
  const before=await p.evaluate(()=>activeProgramId());
  for(const width of [320,360,393,412]){await p.setViewportSize({width,height:873});if(!await row.evaluate(e=>e.open))await row.locator(':scope > summary').click();await row.locator('[data-tp107-rx="sets"]').fill('4');await row.locator('[data-tp107-rx="reps"]').fill('11–13');await row.locator('[data-tp107-rx="rest"]').fill('120');await row.locator('button[onclick="tp107SaveProgramRow(this)"]').click();assert.equal(await row.locator('.tp107-save-status').textContent(),'Mentve');assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'program editor fits '+width);}

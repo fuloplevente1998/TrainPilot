@@ -77,7 +77,7 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
 // @endsection startup.js
 
 // @section backup.js
-const TRAINPILOT_VERSION='1.2.7';
+const TRAINPILOT_VERSION='1.2.8';
 var isNative = function isNative(){return !!window.Capacitor?.isNativePlatform?.();};
 var nativeFiles = function nativeFiles(){if(!filesPlugin)filesPlugin=window.Capacitor?.registerPlugin?.('NativeFiles')||window.Capacitor?.Plugins?.NativeFiles;if(!filesPlugin)throw Error('A natív fájlkezelő nem érhető el.');return filesPlugin;};
 var backupStatus = function backupStatus(){const x=db.get('lastExport',null);return x?`Utolsó ellenőrzött mentés: ${x.name} • ${fmtDate(x.date)}`:'Még nincs ellenőrzött fájlmentés.';};
@@ -620,7 +620,7 @@ var rf12BuiltinPrograms = function rf12BuiltinPrograms(){return [
 {id:'gym-fullbody',name:'Konditermi Full Body',location:'Edzőterem',level:'Kezdő',builtin:true,days:[{id:'A',name:'Full Body',exercises:['leg-press','machine-chest-press','lat-pulldown','leg-curl','machine-shoulder-press','crunch']}]},
 {id:'gym-ab',name:'Konditermi A/B',location:'Edzőterem',level:'Középhaladó',builtin:true,days:[{id:'A',name:'A',exercises:['leg-press','machine-chest-press','seated-cable-row','leg-curl','cable-curl','crunch']},{id:'B',name:'B',exercises:['rdl','lat-pulldown','machine-shoulder-press','reverse-lunge','cable-triceps','plank']}]}
 ];};
-var programs = function programs(){return db.get('programs',rf12BuiltinPrograms());};
+var programs = function programs(){return db.get('programs',null)??rf12BuiltinPrograms();};
 var activeProgramId = function activeProgramId(){return db.get('activeProgramId','home-basic');};
 var activeProgram = function activeProgram(){return programs().find(p=>p.id===activeProgramId())||programs()[0];};
 var programById = function programById(id){return programs().find(p=>p.id===id);};
@@ -811,9 +811,9 @@ var previewProfile = function previewProfile(){try{const p={age:Number($('#pfAge
 var showPersonalPreview = function showPersonalPreview(){const p=state.programPreview;render(shell(`<main><button class="btn secondary" onclick="profileScreen()">← Profil</button><div class="hero"><h1>${esc(p.name)}</h1><p>Javaslat • még nincs aktiválva</p></div><div class="card">${p.reasons.map(x=>`<p>${esc(x)}</p>`).join('')}<p>Az első alkalommal könnyű próbasorozattal válassz terhelést, és rögzítsd a súlyt. A mező kezdetben üres.</p></div>${p.days.map(d=>`<div class="section">${esc(d.name)}</div>${d.exercises.map(id=>{const e=byId(id),r=p.prescriptions[id];return `<div class="card"><strong>${esc(e.hu)}</strong><p>${r.sets} × ${r.reps} • ${r.rest} mp pihenő</p><span class="badge">${MUSCLES[muscleGroups(id)[0]]}</span>${demoCard(id)}</div>`;}).join('')}`).join('')}<button class="btn block" onclick="acceptPersonalProgram()">Terv mentése és aktiválása</button></main>`));};
 var acceptPersonalProgram = function acceptPersonalProgram(){if(!state.programPreview)return;const p=state.programPreview,profile=state.profilePreview;const keys=['settings','programs','activeProgramId','plannerSettings'];const old=keys.map(k=>localStorage.getItem('repforge:'+k));try{db.set('settings',{...settings(),profile});db.set('programs',[...programs(),p]);db.set('activeProgramId',p.id);db.set('plannerSettings',{...plannerSettings(),mode:profile.cadence,minutes:profile.minutes});}catch(e){keys.forEach((k,i)=>old[i]===null?localStorage.removeItem('repforge:'+k):localStorage.setItem('repforge:'+k,old[i]));alert('Nem sikerült menteni. A korábbi terv megmaradt.');return;}state.programPreview=null;state.profilePreview=null;state.tab='calendar';render();alert('A terv kész. A naptárban válaszd ki a kezdőnapot és az alkalmakat.');};
 var muscleLibrary = function muscleLibrary(group='all'){render(shell(`<main><button class="btn secondary" onclick="go('programs')">← Programok</button><div class="hero"><h1>Izomcsoportok</h1><p>A fő és segédizmok szerint is szűrhetsz.</p></div><div class="muscle-chips"><button class="btn secondary" onclick="muscleLibrary()">Összes</button>${Object.entries(MUSCLES).map(([k,v])=>`<button class="btn ${k===group?'':'secondary'}" onclick="muscleLibrary('${k}')">${v}</button>`).join('')}</div>${exercises().filter(e=>group==='all'||muscleGroups(e.id).includes(group)).map(e=>`<div class="card"><h3>${esc(e.hu)}</h3><p class="small">${esc(e.equipment)} • Fő: ${MUSCLES[muscleGroups(e.id)[0]]||esc(e.target)}</p><p class="small muted">${muscleGroups(e.id).slice(1).map(g=>MUSCLES[g]).join(' / ')}</p>${demoCard(e.id)}<p>${esc(e.notes)}</p></div>`).join('')}</main>`));};
-var feedbackScreen = function feedbackScreen(started){const h=history().find(x=>x.started===started);if(!h)return;state.feedbackStarted=started;render(shell(`<main><div class="hero"><h1>Edzés elmentve ✓</h1><p>${esc(h.programName||'Edzés')} • ${sessionDuration(h)}</p></div><div class="card"><h2>Milyen volt?</h2><p>A válaszodból javaslat készül; a terv nem változik automatikusan.</p><div class="muscle-chips">${[['easy','Könnyű'],['right','Megfelelő'],['hard','Túl nehéz'],['pain','Fájdalom volt']].map(([k,v])=>`<button class="btn secondary" onclick="saveFeedback('${k}')">${v}</button>`).join('')}</div></div><button class="btn secondary block" onclick="healthScreen()">Health adatok</button><br><button class="btn block" onclick="go('home')">Kezdőlap</button></main>`));};
+var feedbackScreen = function feedbackScreen(started){const h=history().find(x=>x.started===started);if(!h)return;state.feedbackStarted=started;render(shell(`<main class="tp122-feedback"><div class="hero"><h1>Edzés elmentve ✓</h1><p>${esc(h.programName||'Edzés')} • ${sessionDuration(h)}</p></div><div class="card"><h2>Milyen volt?</h2><p class="small muted">A válaszodból javaslat készül; a terv nem változik automatikusan.</p><div class="muscle-chips">${[['easy','Könnyű'],['right','Megfelelő'],['hard','Túl nehéz'],['pain','Fájdalom volt']].map(([k,v])=>`<button class="btn secondary" onclick="saveFeedback('${k}')">${v}</button>`).join('')}</div></div><div class="grid2 tp122-feedback-actions"><button class="btn secondary block" onclick="healthScreen()">Health adatok</button><button class="btn block" onclick="go('home')">Kezdőlap</button></div></main>`));};
 var progressionSuggestion = function progressionSuggestion(h,rating){const complete=h.exercises.length>0&&h.exercises.every(e=>e.sets.length&&e.sets.every(s=>s.done&&Number(s.reps)>0));if(rating==='pain')return {action:'none',text:'Fájdalmat jeleztél. Nem javasolunk terhelésemelést; a következő tervből ki tudod zárni az érintett gyakorlatot.'};if(rating==='hard')return {action:'reduce',text:'A következő alkalomra gyakorlatonként egy sorozattal kevesebbet javaslunk (legalább egy marad).'};if(rating==='easy'&&complete)return {action:'reps',text:'Minden sorozat elkészült, és könnyűnek érezted. Javaslat: a következő alkalommal gyakorlatonként egy ismétléssel több (planknál 5 másodperccel több). A súly változatlan.'};return {action:'none',text:complete?'Maradjon a mostani terv és terhelés.':'Az edzés részleges vagy hiányoznak ismétlések. Egyelőre nem javasolunk emelést.'};};
-var saveFeedback = function saveFeedback(rating){if(!['easy','right','hard','pain'].includes(rating))return;const h=history(),x=h.find(x=>x.started===state.feedbackStarted);if(!x)return;if(x.feedback?.applied){alert("Ehhez az edzéshez a javaslatot már alkalmaztad.");return;}const suggestion=progressionSuggestion(x,rating);x.feedback={rating,suggestion,updatedAt:Date.now()};db.set('history',h);render(shell(`<main><div class="hero"><h1>Visszajelzés mentve</h1><p>${esc(suggestion.text)}</p></div>${suggestion.action!=='none'&&programById(x.programId)?.generated?'<button class="btn block" onclick="applyProgression()">Javaslat alkalmazása a programra</button>':'<p>A gyakorlatokat a program szerkesztésénél módosíthatod.</p>'}<br><button class="btn secondary block" onclick="go('home')">Kezdőlap</button></main>`));};
+var saveFeedback = function saveFeedback(rating){if(!['easy','right','hard','pain'].includes(rating))return;const h=history(),x=h.find(x=>x.started===state.feedbackStarted);if(!x)return;if(x.feedback?.applied){alert("Ehhez az edzéshez a javaslatot már alkalmaztad.");return;}const suggestion=progressionSuggestion(x,rating);x.feedback={rating,suggestion,updatedAt:Date.now()};db.set('history',h);render(shell(`<main class="tp122-feedback"><div class="hero"><h1>Visszajelzés mentve</h1><p>${esc(suggestion.text)}</p></div>${suggestion.action!=='none'&&programById(x.programId)?.generated?'<button class="btn block" onclick="applyProgression()">Javaslat alkalmazása a programra</button>':'<p>A gyakorlatokat a program szerkesztésénél módosíthatod.</p>'}<div class="tp122-feedback-actions"><button class="btn secondary block" onclick="go('home')">Kezdőlap</button></div></main>`));};
 var applyProgression = function applyProgression(){const hs=history(),h=hs.find(x=>x.started===state.feedbackStarted),f=h?.feedback,p=programById(h?.programId);if(!f||f.applied||!p?.generated)return;if(f.suggestion.action==='none')return;for(const e of h.exercises){const r=p.prescriptions[e.id];if(!r)continue;if(f.suggestion.action==='reduce')r.sets=Math.max(1,r.sets-1);else if(f.suggestion.action==='reps'){const n=Math.max(...e.sets.map(s=>Number(s.reps)||0));r.reps=String(Math.min(String(e.repUnit||byId(e.id)?.repUnit).includes('mp')?120:30,n+(String(e.repUnit||byId(e.id)?.repUnit).includes('mp')?5:1)))+(String(e.repUnit||byId(e.id)?.repUnit).includes('mp')?' mp':'');}}f.applied=true;const oldPrograms=programs(),oldHistory=history();try{db.set('programs',oldPrograms.map(x=>x.id===p.id?p:x));db.set('history',hs);}catch(e){db.set('programs',oldPrograms);db.set('history',oldHistory);alert('A javaslatot nem sikerült menteni.');return;}alert('A következő edzés célértékei frissültek.');go('home');};
 var healthPlugin = function healthPlugin(){if(!isNative())throw Error('A Health Connect kapcsolat az Android APK-ban használható.');const p=window.Capacitor?.Plugins?.HealthBridge;if(!p)throw Error('Ebben az appváltozatban nincs Health Connect modul.');return p;};
 var healthScreen = function healthScreen(){state.healthView=true;const h=state.health,items=history().filter(x=>Date.parse(x.finished)>Date.parse(x.started));render(shell(`<main><button class="btn secondary" onclick="go('settings')">← Beállítások</button><div class="hero"><h1>Óra és egészségadatok</h1><p>Samsung Health, Google Health és más Health Connect-kompatibilis alkalmazások.</p></div><div class="card"><p>Az órád saját alkalmazásában engedélyezd a Health Connect adatmegosztást. Galaxy Watch 7 esetén: óra → Samsung Health → Health Connect → RepForge.</p><p>Android 14 vagy újabb szükséges. Az adatok szinkron után érkeznek; ez nem élő pulzusmérés. Az olvasási és edzésírási engedély külön kérhető.</p><p class="small muted">Csak a kiválasztott edzés időszakának aktív kalóriáját és pulzusát olvassuk. Nem tároljuk a mentésben vagy a Google Drive-on. Az adatforrások listájához az edzésadatok olvasása is szükséges.</p><div class="grid2"><button class="btn" onclick="healthPermission()" ${h.busy?'disabled':''}>Olvasás engedélyezése</button><button class="btn secondary" onclick="healthSettings()">Engedélyek kezelése</button></div><p role="status">${esc(h.message)}</p></div>${items.length?`<div class="setting"><label>Elvégzett edzés<select id="healthWorkout" class="field">${items.map(x=>`<option value="${esc(x.started)}" ${h.workout===x.started?'selected':''}>${esc(fmtDate(x.started))} • ${esc(x.programName||x.workout)}</option>`).join('')}</select></label><label>Adatforrás<select id="healthSource" class="field">${healthSourceOptions()}</select></label><p class="small muted">Az automatikus keresés megmutatja az edzés idején adatot szolgáltató alkalmazásokat. Egyszerre egy forrást számolunk, így nincs kettős kalóriaösszegzés.</p><button class="btn block" onclick="readHealthWorkout()" ${h.busy?'disabled':''}>Órás összesítés frissítése</button><br><button class="btn secondary block" onclick="exportHealthWorkout()" ${h.busy?'disabled':''}>RepForge-edzés hozzáadása a Health Connecthez</button><p class="small muted">Csak az időtartamot és a súlyzós edzés típusát exportáljuk. Ha az óra már rögzítette az edzést, ne exportáld külön is.</p></div>`:'<p>Az első elmentett edzés után itt kérheted le az órás adatokat.</p>'}${healthSummaryHtml()}<button class="btn secondary block" onclick="clearHealthView()">Beolvasott adatok elfelejtése</button></main>`));};
@@ -5337,8 +5337,11 @@ var tp120RemoveProgramStats=function tp120RemoveProgramStats(){
  main.querySelectorAll?.('button,.card,[role="button"]')?.forEach?.(el=>{const txt=String(el.textContent||'').trim(),oc=String(el.getAttribute?.('onclick')||'');if(/statsScreen\s*\(/.test(oc)||/^(Statisztikák|Statistics|Statistiken|Statistici)$/.test(txt)){const card=el.closest?.('.card');if(card&&/Gyakorlat|Exercise|Übung|Exerci/i.test(String(card.textContent||'')))el.remove?.();else if(el.tagName==='BUTTON')el.remove?.()}});
 };
 var tp120AfterRender=function tp120AfterRender(){
+ // Feedback is a separate page even when finishing a workout leaves the Home tab selected.
+ // It must not receive Home cards or the fixed Home viewport.
+ const feedback=document.querySelector?.('#app main.tp122-feedback');
  // All DOM-affecting work is deliberately synchronous: no zero-delay legacy repaint.
- if(state.tab==='home'){
+ if(state.tab==='home'&&!feedback){
   if(typeof rf221Css==='function')rf221Css();if(typeof rf223Css==='function')rf223Css();
   tp120BindCoach();tp120CompactHome();tp120TodayCard();if(typeof rf251RepairHomeCoach==='function')rf251RepairHomeCoach();tp120BindWeightShortcuts();
  }
@@ -6869,12 +6872,12 @@ var tp149Plural=function tp149Plural(key,count,vars={},lang){
 var tp149FormatNumber=function tp149FormatNumber(value,options={},lang){
  const locale=TP149_LOCALES[lang]||tp149Locale(lang);
  const n=Number(value);if(!Number.isFinite(n))return '—';
- try{return new Intl.NumberFormat(locale,options).format(n);}catch(_){return String(n);}
+ try{return (window.tp7Formatter?window.tp7Formatter('number',locale,options):new Intl.NumberFormat(locale,options)).format(n);}catch(_){return String(n);}
 };
 var tp149FormatDate=function tp149FormatDate(value,options={},lang){
  const d=value instanceof Date?value:new Date(value);if(!Number.isFinite(d.getTime()))return '—';
  const locale=TP149_LOCALES[lang]||tp149Locale(lang);
- try{return new Intl.DateTimeFormat(locale,Object.assign({year:'numeric',month:'2-digit',day:'2-digit'},options)).format(d);}catch(_){return d.toISOString().slice(0,10);}
+ try{const format=Object.assign({year:'numeric',month:'2-digit',day:'2-digit'},options);return (window.tp7Formatter?window.tp7Formatter('date',locale,format):new Intl.DateTimeFormat(locale,format)).format(d);}catch(_){return d.toISOString().slice(0,10);}
 };
 var tp149FormatDateTime=function tp149FormatDateTime(value,options={},lang){
  return tp149FormatDate(value,Object.assign({hour:'2-digit',minute:'2-digit'},options),lang);
@@ -7087,7 +7090,16 @@ var tp149ProgramMeta=function tp149ProgramMeta(program,field,lang=rf212Lang()){
 };
 var tp149ProgramDayName=function tp149ProgramDayName(program,day,lang=rf212Lang()){
  if(!program||!day)return '';
- if(program.generated===true)return tp149PlannerRow('generatedDay',tp149GeneratedDayKey(program,day),lang,day.name||day.id||'');
+ const templateId=program.sourceTemplateId||program.id;
+ if(['profile-template','coach'].includes(program.sourceType)&&['home-basic','home-level2'].includes(templateId)&&(!day.name||day.name===day.id)){
+  const labels=templateId==='home-basic'?['Alap','Basic','Basis','Bază']:['2. szint','Level 2','Stufe 2','Nivel 2'];
+  return labels[tp149LangIndex(lang)]+' '+String(day.id||'');
+ }
+ if(program.generated===true){
+  const key=tp149GeneratedDayKey(program,day),defaults=[day.id,...['hu','en','de','ro'].map(l=>tp149PlannerRow('generatedDay',key,l,day.id||''))];
+  if(day.name&&!defaults.includes(day.name))return String(day.name);
+  return tp149PlannerRow('generatedDay',key,lang,day.name||day.id||'');
+ }
  if(program.builtin!==true)return String(day.name||day.id||'');
  const row=TP149_PROGRAM_ROWS[program.id]?.days?.[day.id],idx=tp149LangIndex(lang);
  return row?.[idx]||row?.[1]||String(day.name||day.id||'');
@@ -7716,7 +7728,7 @@ if(typeof backupStatus==='function'){
 if(typeof tp146ProgramDayTitle==='function'){
  tp146ProgramDayTitle=function(program,day){
   const name=String(tp149ProgramMeta(program,'name')).replace(/\s*[–—]\s*/g,' - ').replace(/\s+-\s+/g,' - ').trim();
-  const dayName=tp149ProgramDayName(program,day);
+  const dayName=day&&(day.id||day.name)?tp149ProgramDayName(program,day):'';
   return dayName?name+' - '+dayName:name;
  };
  workoutTitle=function(programId,dayId){
@@ -7787,17 +7799,11 @@ if(typeof programCards==='function'){
 const tp149Rf148PlanDayHeadingBase=rf148PlanDayHeading;
 if(typeof rf148PlanDayHeading==='function'){
  rf148PlanDayHeading=function(program,day){
-  if(rf212Lang()==='hu')return tp149Rf148PlanDayHeadingBase.apply(this,arguments);
-  const base=esc(tp146ProgramDayTitle(program,{id:'',name:''}));
-  const dayName=tp149ProgramDayName(program,day);
-  const badge=String(day?.id||'').trim(),translated=String(dayName||'');
-  let suffix='';
-  if(translated){
-   suffix=' <span class="tp146-day-sep">-</span> ';
-   if(badge&&badge===translated)suffix+='<span class="tp146-day-letter" aria-label="'+esc(badge)+'">'+esc(badge)+'</span>';
-   else suffix+=esc(translated)+(badge?' <span class="tp146-day-letter" aria-label="'+esc(badge)+'">'+esc(badge)+'</span>':'');
-  }
-  return '<div class="tp146-day-headingline"><h2 class="tp146-day-title">'+base+suffix+'</h2></div>';
+  const badge=String(day?.id||'').trim(),dayName=tp149ProgramDayName(program,day),templateId=program?.sourceTemplateId||program?.id;
+  const role=tp124DayWithoutBadge(dayName,badge),standard=['home-basic','home-level2'].includes(templateId)&&(!day?.name||day.name===day.id);
+  const level=(templateId==='home-basic'?['Alap','Basic','Basis','Bază']:['2. szint','Level 2','Stufe 2','Nivel 2'])[tp149LangIndex(rf212Lang())];
+  const base=standard?(role||level):tp149ProgramMeta(program,'name'),extra=!standard&&role&&role!==base?' · '+role:'';
+  return '<div class="tp146-day-headingline"><h2 class="tp146-day-title">'+esc(base+extra)+(badge?' <span class="tp146-day-letter" aria-label="'+esc(badge)+'">'+esc(badge)+'</span>':'')+'</h2></div>';
  };
 }
 const tp149PlanScreenBase=planScreen;
@@ -9384,7 +9390,7 @@ rf130ShowPhoto=async function(key,id){
  }
  if(!r?.dataUrl)return;rf130ClosePhotoModal();
  const modal=document.createElement('div');modal.id='rf130PhotoModal';modal.className='video-modal';
- modal.innerHTML='<div class="video-dialog rf130-photo-view" role="dialog" aria-modal="true"><button class="btn secondary" onclick="rf130ClosePhotoModal()">✕ '+esc(tp149T('common.close'))+'</button><h2>'+esc(rf130PhotoLabelText(q.p.label))+'</h2><img src="'+r.dataUrl+'" alt="'+esc(rf130PhotoLabelText(q.p.label))+'"><p class="small muted">'+esc(tp149FormatDateTime(q.p.createdAt))+(q.p.driveFileId?' • '+esc(tp149T('photo.driveSaved')):'')+'</p></div>';
+ modal.innerHTML='<div class="video-dialog rf130-photo-view" role="dialog" aria-modal="true" aria-labelledby="tp126PhotoTitle"><div class="tp-modal-head"><h2 id="tp126PhotoTitle">'+esc(rf130PhotoLabelText(q.p.label))+'</h2><button type="button" class="btn danger tp-modal-close tp126-photo-close" aria-label="'+esc(tp149T('common.close'))+'" onclick="rf130ClosePhotoModal()">×</button></div><img src="'+r.dataUrl+'" alt="'+esc(rf130PhotoLabelText(q.p.label))+'"><p class="small muted">'+esc(tp149FormatDateTime(q.p.createdAt))+(q.p.driveFileId?' • '+esc(tp149T('photo.driveSaved')):'')+'</p></div>';
  document.body.appendChild(modal);modal.querySelector('button')?.focus();
 };
 
@@ -10432,12 +10438,12 @@ var tp152ExerciseRow=function(p,day,id,i){
 var tp152DayBlock=function(p,d,di){
  const available=exercises().filter(function(e){return !(d.exercises||[]).includes(e.id)});
  const add='<details class="tp152-inline-add"><summary><strong>＋ '+esc(tp152T('add'))+'</strong><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-inline-add-body"><select class="field" data-tp152-add="'+esc(d.id)+'">'+available.map(function(e){return '<option value="'+esc(e.id)+'">'+esc(tp149ExerciseName(e))+'</option>'}).join('')+'</select><button class="btn secondary block" '+(available.length?'':'disabled')+' onclick="event.stopPropagation();tp152AddExercise(\''+esc(d.id)+'\')">＋ '+esc(tp152T('add'))+'</button></div></details>';
- return '<details class="card tp146-day-head tp152-day" '+(di===0?'open':'')+'><summary class="tp152-day-summary"><div class="tp146-day-copy"><span class="badge">'+esc(tp149T('program.workoutDayBadge'))+'</span>'+rf148PlanDayHeading(p,d)+'<div class="small muted">'+esc(tp149T('program.tapDetails',{count:d.exercises?.length||0}))+'</div></div><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-day-body">'+(d.exercises||[]).map(function(id,i){return tp152ExerciseRow(p,d,id,i)}).join('')+add+'<button class="btn block tp152-start-day" onclick="event.stopPropagation();startWorkout(\''+esc(d.id)+'\')">'+esc(tp149T('workout.start'))+'</button></div></details>';
+ return '<details class="card tp146-day-head tp152-day"><summary class="tp152-day-summary"><div class="tp146-day-copy"><span class="badge">'+esc(tp149T('program.workoutDayBadge'))+'</span>'+rf148PlanDayHeading(p,d)+'<div class="small muted">'+esc(tp149T('program.tapDetails',{count:d.exercises?.length||0}))+'</div></div><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-day-body">'+(d.exercises||[]).map(function(id,i){return tp152ExerciseRow(p,d,id,i)}).join('')+add+'<button class="btn block tp152-start-day" onclick="event.stopPropagation();startWorkout(\''+esc(d.id)+'\')">'+esc(tp149T('workout.start'))+'</button></div></details>';
 };
 planScreen=function(){
  const p=activeProgram(),quick=tp150CompactQuickCard();if(!p)return shell('<main class="tp146-plan tp150-plan-compact">'+quick+'<div class="card tp150-active-program"><strong>'+esc(tp149T('program.noActive'))+'</strong><button class="btn secondary" onclick="go(\'programs\')">'+esc(tp149T('program.choose'))+'</button></div></main>');
  const accent=tp152ProgramAccent(p),training=tp1511TrainingPanel();
- return shell('<main class="tp146-plan tp150-plan-compact tp152-plan">'+quick+training+'<details class="card tp150-active-program tp152-active-program" open style="--tp-program-accent:'+esc(accent)+'"><summary><div class="tp150-active-copy"><span class="badge">'+esc(tp149T('program.activeBadge'))+'</span><h2>'+esc(tp149ProgramMeta(p,'name'))+'</h2><div class="small muted">'+esc(tp149ProgramMeta(p,'location'))+(tp149ProgramMeta(p,'level')?' • '+esc(tp149ProgramMeta(p,'level')):'')+' • '+esc(tp149T('program.cycle',{count:p.days?.length||0}))+'</div></div><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-program-body"><button class="btn secondary block tp150-change-program" onclick="event.stopPropagation();go(\'programs\')">'+esc(tp149T('program.chooseAnother'))+'</button>'+(p.days||[]).map(function(d,di){return tp152DayBlock(p,d,di)}).join('')+'</div></details></main>');
+ return shell('<main class="tp146-plan tp150-plan-compact tp152-plan">'+quick+'<section class="card tp150-active-program tp124-active-program-frame" style="--tp-program-accent:'+esc(accent)+'">'+training+'<details class="tp152-active-program" open><summary><div class="tp150-active-copy"><span class="badge">'+esc(tp149T('program.activeBadge'))+'</span><h2>'+esc(tp149ProgramMeta(p,'name'))+'</h2><div class="small muted">'+esc(tp149ProgramMeta(p,'location'))+(tp149ProgramMeta(p,'level')?' • '+esc(tp149ProgramMeta(p,'level')):'')+' • '+esc(tp149T('program.cycle',{count:p.days?.length||0}))+'</div></div><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-program-body"><button class="btn secondary block tp150-change-program" onclick="event.stopPropagation();go(\'programs\')">'+esc(tp149T('program.chooseAnother'))+'</button>'+(p.days||[]).map(function(d,di){return tp152DayBlock(p,d,di)}).join('')+'</div></details></section></main>');
 };
 
 programCards=function(){
@@ -10694,7 +10700,7 @@ tp152ExerciseRow=function(p,day,id,i){
 tp152DayBlock=function(p,d,di){
  const available=exercises().filter(function(e){return !(d.exercises||[]).includes(e.id)});
  const add='<details class="tp152-inline-add"><summary><strong>＋ '+esc(tp152T('add'))+'</strong><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-inline-add-body"><select class="field" data-tp152-add="'+esc(d.id)+'">'+available.map(function(e){return '<option value="'+esc(e.id)+'">'+esc(tp149ExerciseName(e))+'</option>'}).join('')+'</select><button class="btn secondary block" '+(available.length?'':'disabled')+' onclick="event.stopPropagation();tp152AddExercise(\''+esc(d.id)+'\')">＋ '+esc(tp152T('add'))+'</button></div></details>';
- return '<details class="card tp146-day-head tp152-day" '+(di===0?'open':'')+'><summary class="tp152-day-summary"><div class="tp146-day-copy"><span class="badge">'+esc(tp149T('program.workoutDayBadge'))+'</span><div class="tp152-day-title-row"><div class="tp152-day-title-copy">'+rf148PlanDayHeading(p,d)+'</div><span class="tp152-chevron" aria-hidden="true">⌄</span></div><div class="small muted">'+esc(tp149T('program.tapDetails',{count:d.exercises?.length||0}))+'</div></div></summary><div class="tp152-day-body">'+(d.exercises||[]).map(function(id,i){return tp152ExerciseRow(p,d,id,i)}).join('')+add+'<button class="btn block tp152-start-day" onclick="event.stopPropagation();startWorkout(\''+esc(d.id)+'\')">'+esc(tp149T('workout.start'))+'</button></div></details>';
+ return '<details class="card tp146-day-head tp152-day"><summary class="tp152-day-summary"><div class="tp146-day-copy"><span class="badge">'+esc(tp149T('program.workoutDayBadge'))+'</span><div class="tp152-day-title-row"><div class="tp152-day-title-copy">'+rf148PlanDayHeading(p,d)+'</div><span class="tp152-chevron" aria-hidden="true">⌄</span></div><div class="small muted">'+esc(tp149T('program.tapDetails',{count:d.exercises?.length||0}))+'</div></div></summary><div class="tp152-day-body">'+(d.exercises||[]).map(function(id,i){return tp152ExerciseRow(p,d,id,i)}).join('')+add+'<button class="btn block tp152-start-day" onclick="event.stopPropagation();startWorkout(\''+esc(d.id)+'\')">'+esc(tp149T('workout.start'))+'</button></div></details>';
 };
 
 var tp152ProgramPreviewRow=function(p,d,id,i){
@@ -11589,7 +11595,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
 (function(){
  'use strict';
 
- let currentPanel='',panelHost=null,panelTrigger=null,bodyOverflow='',panelOpenScrollY=0;
+ let currentPanel='',panelHost=null,panelTrigger=null,bodyOverflow='',panelOpenScrollY=0,replanCalendarReturn=null;
  const panelDomSupported=(()=>{try{const x=document?.createElement?.('div');return !!(x&&typeof x.addEventListener==='function'&&document?.body&&typeof document.body.appendChild==='function')}catch(_){return false}})();
  const PANEL_ROUTES=new Set(['calendar','coach','settings','quick','exercises','stats','custom-exercise','custom-program','cardio','goals','replan','ble','health-journal']);
  const FULL_ROUTES=new Set(['home','plan','health','programs','history']);
@@ -11628,8 +11634,9 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   }
   const calendar=buttons.find(x=>routeFromButton(x)==='calendar');
   if(calendar){
-   calendar.classList.toggle('active',currentPanel==='calendar');
-   calendar.setAttribute('aria-expanded',currentPanel==='calendar'?'true':'false');
+   const calendarOpen=currentPanel==='calendar'||currentPanel==='replan'&&!!replanCalendarReturn;
+   calendar.classList.toggle('active',calendarOpen);
+   calendar.setAttribute('aria-expanded',calendarOpen?'true':'false');
   }
  };
 
@@ -11774,6 +11781,16 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   closeDay(false);
   if(!currentPanel&&!panelHost)return false;
   window.tp162CloseThemeDropdown?.();
+  // Dismissing the calendar's replanner goes back one step; explicit navigation
+  // (restoreFocus=false) releases the whole panel instead.
+  const calendarReturn=currentPanel==='replan'&&restoreFocus?replanCalendarReturn:null;
+  replanCalendarReturn=null;
+  if(calendarReturn){
+   window.tp155R4OpenPanel('calendar',calendarReturn.trigger);
+   const panel=panelHost.querySelector('.tp155-r4-panel');if(panel)panel.scrollTop=calendarReturn.scrollTop;
+   panelHost.querySelector('.tp110-replan-link')?.focus?.({preventScroll:true});
+   return true;
+  }
   const trigger=panelTrigger,restoreY=panelOpenScrollY;
   currentPanel='';panelTrigger=null;panelOpenScrollY=0;
   panelHost?.remove();panelHost=null;
@@ -11791,17 +11808,29 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   if(type!=='calendar')closeDay(false);
   if(!PANEL_ROUTES.has(type)||!panelDomSupported)return false;
   if(currentPanel===type&&panelHost)return true;
+  replanCalendarReturn=type==='replan'&&currentPanel==='calendar'?{trigger:panelTrigger,scrollTop:panelHost.querySelector('.tp155-r4-panel')?.scrollTop||0}:null;
   if(!currentPanel){panelOpenScrollY=window.scrollY||window.pageYOffset||0;bodyOverflow=document.body.style.overflow||'';document.body.style.overflow='hidden'}
   currentPanel=type;panelTrigger=trigger||document.activeElement||null;
   if(!panelHost){
    panelHost=document.createElement('div');panelHost.id='tp155R4PanelHost';panelHost.className='tp155-r4-panel-host';
    panelHost.innerHTML='<section class="tp155-r4-panel" role="region" tabindex="-1" onclick="event.stopPropagation()"><button type="button" class="tp155-r4-panel-close" aria-label="'+esc(tp149T('common.close'))+'" onclick="tp155R4ClosePanel()">×</button><div class="tp155-r4-panel-content"></div></section>';
    panelHost.addEventListener('click',function(e){if(e.target===panelHost)window.tp155R4ClosePanel()});
+   panelHost.addEventListener('keydown',function(e){
+    if(e.key!=='Escape'||currentPanel!=='replan')return;
+    e.preventDefault();e.stopPropagation();
+    const select=panelHost.querySelector('.tp-select.open');
+    if(select){rf260CloseSelects();select.querySelector('.tp-select-trigger')?.focus();return;}
+    window.tp155R4ClosePanel();
+   },true);
    document.body.appendChild(panelHost);
   }
   document.documentElement.classList.add('tp155-r4-panel-open');document.body.classList.add('tp155-r4-panel-open');
   panelHost.dataset.panel=type;
   window.tp155R4RefreshPanel();
+  if(type==='replan'){
+   const panel=panelHost.querySelector('.tp155-r4-panel'),content=panelHost.querySelector('.tp155-r4-panel-content');
+   if(panel)panel.scrollTop=0;if(content)content.scrollTop=0;
+  }
   panelHost.querySelector('.tp155-r4-panel')?.focus?.({preventScroll:true});
   return true;
  };
@@ -12534,7 +12563,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   '.tp1511-training .tp1511-prog{gap:5px!important}',
   '.tp1511-training .btn.block{min-height:38px!important;margin-top:1px!important;padding:7px 10px!important}'
  ].join('');document.head.appendChild(style);
- const tp155DecorateWorkoutSettings=function(){const el=document.querySelector('.tp1511-training');if(!el)return;el.style.setProperty('border','1px solid var(--accent)','important');el.style.setProperty('background-color','var(--card)','important');el.style.setProperty('background-image','linear-gradient(145deg,var(--card) 0%,var(--card2) 100%)','important');el.style.setProperty('box-shadow','inset 3px 0 0 var(--accent)','important')};
+ const tp155DecorateWorkoutSettings=function(){const el=document.querySelector('.tp1511-training');if(!el)return;if(el.closest('.tp124-active-program-frame')){for(const key of ['border','background-color','background-image','box-shadow'])el.style.removeProperty(key);return;}el.style.setProperty('border','1px solid var(--accent)','important');el.style.setProperty('background-color','var(--card)','important');el.style.setProperty('background-image','linear-gradient(145deg,var(--card) 0%,var(--card2) 100%)','important');el.style.setProperty('box-shadow','inset 3px 0 0 var(--accent)','important')};
  const tp155WorkoutSettingsRenderBase=render;render=function(){const out=tp155WorkoutSettingsRenderBase.apply(this,arguments);tp155DecorateWorkoutSettings();return out};tp155DecorateWorkoutSettings();
  window.TrainPilot155WorkoutSettings={version:'1.5.5-workout-settings',compact:true,colorOutline:true};
 })();
@@ -14866,32 +14895,50 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  const doneIds=logs=>new Set((logs||[]).filter(h=>(h.exercises||[]).some(e=>(e.sets||[]).some(s=>s&&s.done!==false))).map(h=>h.scheduleId).filter(Boolean));
  function replan(rows,logs,options){
-  const now=options.now||new Date(),today=midnight(now),start=new Date(options.startDate+'T12:00:00'),completed=doneIds(logs),mode=options.mode||'alternate';
-  if(options.activeScheduleId)completed.add(options.activeScheduleId);
-  if(!Number.isFinite(+start)||dayKey(start)!==options.startDate||start<today)throw Error('date');
+  const now=options.now||new Date(),start=new Date(options.startDate+'T12:00:00'),completed=doneIds(logs),mode=options.mode||'alternate';
+  for(const id of [options.activeScheduleId,...(options.activeScheduleIds||[])])if(id)completed.add(id);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(options.startDate||'')||!Number.isFinite(+start)||dayKey(start)!==options.startDate)throw Error('date');
   const weekdays=(options.weekdays||[]).filter(d=>Number.isInteger(d)&&d>=0&&d<=6);
   if(mode==='weekly'&&!weekdays.length)throw Error('weekdays');
-  const available=rows.filter(x=>!x.cancelled&&(x.programId||'home-basic')===options.programId&&!completed.has(x.id)&&['planned','skipped'].includes(x.status||'planned')&&Number.isFinite(Date.parse(x.start))&&Date.parse(x.end)>Date.parse(x.start)).sort((a,b)=>Date.parse(a.start)-Date.parse(b.start));
-  const missed=x=>Date.parse(x.start)<+now||x.status==='skipped'&&dayKey(new Date(x.start))<=dayKey(today);
-  const first=available.findIndex(missed);if(first<0)return {rows,moved:[]};
-  const queue=available.slice(first).filter(x=>(x.status||'planned')==='planned'||missed(x)),ids=new Set(queue.map(x=>x.id));
-  const occupied=new Set(rows.filter(x=>!x.cancelled&&!ids.has(x.id)&&Number.isFinite(Date.parse(x.start))).map(x=>dayKey(new Date(x.start))));
+  const days=options.programDays||[],firstIndex=options.firstDayId?days.findIndex(d=>d.id===options.firstDayId):0;
+  if(options.firstDayId&&firstIndex<0)throw Error('programDay');
+  const newId=options.newId||(()=>crypto.randomUUID()),replaced=new Set(rows.map(x=>x.replannedFromId).filter(Boolean));
+  const deleted=x=>x.cancelled||x.status==='cancelled';
+  let queue=rows.filter(x=>(x.programId||'home-basic')===options.programId&&!completed.has(x.id)&&x.status!=='completed'&&(deleted(x)?!replaced.has(x.id):['planned','skipped'].includes(x.status||'planned'))&&Number.isFinite(Date.parse(x.start))&&Date.parse(x.end)>Date.parse(x.start)).sort((a,b)=>Date.parse(a.start)-Date.parse(b.start));
+  // A deleted/finished/empty plan can restart from the program itself. History is
+  // immutable; restored tombstones get new IDs so calendar/cloud deletions stay valid.
+  if(!queue.length){
+   if(!days.length)return {rows,moved:[]};
+   const time=options.time||'18:00',minutes=Number(options.minutes??45);
+   if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)||!Number.isFinite(minutes)||minutes<10||minutes>240)throw Error('time');
+   const at=new Date(options.startDate+'T'+time+':00');
+   queue=days.map((_,i)=>({programId:options.programId,dayId:days[(firstIndex+i)%days.length].id,workout:days[(firstIndex+i)%days.length].id,start:at.toISOString(),end:new Date(+at+minutes*60000).toISOString()}));
+  }
+  const movableIds=new Set(queue.filter(x=>x.id&&!deleted(x)).map(x=>x.id));
+  const occupied=new Set(rows.filter(x=>!deleted(x)&&!movableIds.has(x.id)&&Number.isFinite(Date.parse(x.start))).map(x=>dayKey(new Date(x.start))));
   for(const h of logs||[])if(Number.isFinite(Date.parse(h.started))&&(h.exercises||[]).some(e=>(e.sets||[]).some(s=>s&&s.done!==false)))occupied.add(dayKey(new Date(h.started)));
-  const changed=new Map(),moved=[];let cursor=midnight(start),previous=null;
-  for(const item of queue){
+  const changed=new Map(),added=[],moved=[];let cursor=midnight(start),previous=null;
+  for(let index=0;index<queue.length;index++){
+   const item=queue[index];
    if(previous){
     let gap=mode==='alternate'?2:1;
     if(mode==='custom'){const a=new Date(dayKey(new Date(previous.start))+'T12:00'),b=new Date(dayKey(new Date(item.start))+'T12:00');gap=Math.max(1,Math.round((b-a)/86400000));}
     cursor=addDays(cursor,gap);
    }
-   const old=new Date(item.start),atTime=()=>{const d=new Date(cursor);d.setHours(old.getHours(),old.getMinutes(),old.getSeconds(),old.getMilliseconds());return d;};
    let attempts=0;
-   while(occupied.has(dayKey(cursor))||mode==='weekly'&&!weekdays.includes(cursor.getDay())||atTime()<=now){if(++attempts>3660)throw Error('slots');cursor=addDays(cursor,mode==='alternate'?2:1);}
-   const next=atTime();
-   const updated={...item,start:next.toISOString(),end:new Date(+next+Date.parse(item.end)-Date.parse(item.start)).toISOString(),status:'planned',cancelled:false,updatedAt:+now};
-   changed.set(item.id,updated);moved.push({before:item,after:updated});occupied.add(dayKey(cursor));previous=item;
+   while(occupied.has(dayKey(cursor))||mode==='weekly'&&!weekdays.includes(cursor.getDay())){if(++attempts>3660)throw Error('slots');cursor=addDays(cursor,mode==='alternate'?2:1);}
+   const next=new Date(cursor),old=new Date(item.start);next.setHours(old.getHours(),old.getMinutes(),old.getSeconds(),old.getMilliseconds());
+   if(!Number.isFinite(+next))throw Error('date');
+   const fresh=!item.id||deleted(item),id=fresh?newId():item.id;
+   if(!id||(fresh&&rows.some(x=>x.id===id))||added.some(x=>x.id===id))throw Error('saveFailed');
+   const dayId=options.firstDayId?days[(firstIndex+index)%days.length].id:item.dayId||item.workout;
+   const updated={...item,id,dayId,workout:dayId,start:next.toISOString(),end:new Date(+next+Date.parse(item.end)-Date.parse(item.start)).toISOString(),status:'planned',cancelled:false,updatedAt:+now};
+   if(fresh&&item.id)updated.replannedFromId=item.id;
+   const unchanged=!fresh&&['dayId','workout','start','end','status','cancelled'].every(k=>updated[k]===item[k]),after=unchanged?item:updated;
+   if(fresh)added.push(after);else changed.set(item.id,after);
+   moved.push({before:item.id?item:null,after});occupied.add(dayKey(cursor));previous=item;
   }
-  return {rows:rows.map(x=>changed.get(x.id)||x),moved};
+  return {rows:[...rows.map(x=>changed.get(x.id)||x),...added],moved};
  }
  function intervalConfig(value){
   const work=Number(value?.work),rest=Number(value?.rest),rounds=Number(value?.rounds);
@@ -14908,10 +14955,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
  window.TrainPilot110Core={goals,goalProgress,replan,intervalConfig,intervalPhase};
 
  const text={
-  hu:{goals:'Célok',week:'Heti edzéscél',month:'Havi kilométercél',goalNote:'A mentett edzések számítanak. A hét hétfőn indul; a kilométercél az összes kardiómozgásra vonatkozik. A 0 kikapcsolja a célt.',noGoals:'Még nincs beállított cél.',setGoals:'Célok beállítása',weekShort:'Heti edzések',monthShort:'Havi kilométer',units:'edzés',reached:'Cél teljesítve',save:'Mentés',saved:'Mentve',saveFailed:'A mentés nem sikerült. A korábbi adatok megmaradtak.',dirty:'Módosítva – még nincs mentve',replan:'Újratervezés',replanTitle:'Kihagyott edzések újratervezése',replanNote:'A kihagyott és az utánuk következő tervezett alkalmak a beállított ritmus szerint új időpontot kapnak. Az edzésnapok sorrendje és a teljesített edzések megmaradnak.',begin:'Új kezdőnap',program:'Program',apply:'Terv frissítése',noMissed:'Nincs újratervezendő edzés.',changed:'Az adatok változtak; nézd át a friss előnézetet.',replanned:'A terv frissítve.',date:'Válassz mai vagy későbbi érvényes napot.',weekdays:'Válassz heti edzésnapokat a naptár beállításaiban.',slots:'Nem található megfelelő szabad nap.',interval:'Intervallumok',work:'Munka (mp)',rest:'Pihenő (mp)',rounds:'Körök száma',sound:'Hangjelzés',vibration:'Rezgés',intervalStart:'Intervallum indítása',preset:'Beállítás mentése',intervalNote:'Munka és pihenő együtt kerül a sorozat idejébe; a szünet nem számít. A jelzésekhez tartsd megnyitva az appot. Háttérből visszatérve az idő helyreáll.',invalidInterval:'Adj meg érvényes szakaszokat; legfeljebb 24 óra összidőt.',replaceTime:'Új intervallum indításához nullázod a sorozat eddigi idejét?',workPhase:'Munka',restPhase:'Pihenő',complete:'Intervallum teljesítve',emptyLog:'Még nincs mentett edzés',emptyLogNote:'Az első befejezett edzés után itt lesz a naplód és a fejlődésed.',startWorkout:'Edzés indítása',emptyRange:'Ebben az időszakban nincs adat',emptyRangeNote:'Válassz másik időszakot, vagy töröld a szűrőt.',clearFilter:'Szűrő törlése',emptyCardio:'Még nincs kardióadat',emptyCardioNote:'Rögzíts futást, sétát vagy más kardiómozgást. A kilométert kézzel is megadhatod.',cardioAction:'Kardióedzés választása',emptyQuick:'Nincs találat',emptyQuickNote:'Próbálj másik kifejezést, vagy töröld a szűrőket.',sleep:'Alvás',hrv:'HRV',load:'Edzésterhelés',pain:'Fájdalom-visszajelzés',freshMissing:'Nincs friss adat (36 órán belüli mérés).',baselineMissing:'Az összehasonlításhoz saját HRV-átlag is szükséges.',last:'Utolsó adat',scoreEffect:'Hatás a készenléti pontszámra',recentEffort:'Az elmúlt 14 nap legutóbbi három edzésének terhelési visszajelzései.',noEffort:'Nincs friss terhelési visszajelzés.',painNote:'Friss fájdalom-visszajelzés miatt óvatosabb terhelést javasol.',noPain:'Nincs friss fájdalom-visszajelzés.',scoreNote:'A becslés 70 pontból indul, a fenti tényezőkkel 25–100 közé kerül. Friss adat nélkül nincs pontszám.'},
-  en:{goals:'Goals',week:'Weekly workout goal',month:'Monthly kilometre goal',goalNote:'Saved workouts count. Weeks start on Monday; kilometres cover all cardio activities. Set 0 to disable a goal.',noGoals:'No goals set yet.',setGoals:'Set goals',weekShort:'Weekly workouts',monthShort:'Monthly kilometres',units:'workouts',reached:'Goal reached',save:'Save',saved:'Saved',saveFailed:'Saving failed. Previous data is preserved.',dirty:'Changed – not saved yet',replan:'Replan',replanTitle:'Replan missed workouts',replanNote:'Missed workouts and following planned sessions move to new dates using your rhythm. Workout-day order and completed sessions are preserved.',begin:'New start date',program:'Program',apply:'Update plan',noMissed:'No workouts need replanning.',changed:'Data changed; review the updated preview.',replanned:'Plan updated.',date:'Choose a valid date today or later.',weekdays:'Select weekdays in calendar settings.',slots:'No suitable free date found.',interval:'Intervals',work:'Work (sec)',rest:'Rest (sec)',rounds:'Rounds',sound:'Sound',vibration:'Vibration',intervalStart:'Start intervals',preset:'Save settings',intervalNote:'Work and rest both count toward set duration; pauses do not. Keep the app open for cues. Elapsed time recovers after returning from the background.',invalidInterval:'Enter valid phases; total duration is limited to 24 hours.',replaceTime:'Reset this set’s recorded time to start new intervals?',workPhase:'Work',restPhase:'Rest',complete:'Intervals complete',emptyLog:'No saved workouts yet',emptyLogNote:'Your first finished workout will appear here with your progress.',startWorkout:'Start a workout',emptyRange:'No data in this period',emptyRangeNote:'Choose another period or clear the filter.',clearFilter:'Clear filter',emptyCardio:'No cardio data yet',emptyCardioNote:'Record running, walking or another cardio activity. Distance can also be entered manually.',cardioAction:'Choose cardio workout',emptyQuick:'No matches',emptyQuickNote:'Try another search or clear the filters.',sleep:'Sleep',hrv:'HRV',load:'Workout load',pain:'Pain feedback',freshMissing:'No fresh data (measurement within 36 hours).',baselineMissing:'Your own HRV baseline is also needed for comparison.',last:'Last measurement',scoreEffect:'Effect on readiness score',recentEffort:'Effort feedback from the last three workouts within 14 days.',noEffort:'No recent effort feedback.',painNote:'Recent pain feedback calls for more cautious loading.',noPain:'No recent pain feedback.',scoreNote:'The estimate starts at 70 and is limited to 25–100 after these factors. No score is shown without recent data.'},
-  de:{goals:'Ziele',week:'Trainingsziel pro Woche',month:'Kilometerziel pro Monat',goalNote:'Gespeicherte Trainings zählen. Wochen beginnen montags; Kilometer umfassen alle Kardioaktivitäten. 0 deaktiviert ein Ziel.',noGoals:'Noch keine Ziele eingestellt.',setGoals:'Ziele einstellen',weekShort:'Trainings pro Woche',monthShort:'Kilometer pro Monat',units:'Trainings',reached:'Ziel erreicht',save:'Speichern',saved:'Gespeichert',saveFailed:'Speichern fehlgeschlagen. Bisherige Daten bleiben erhalten.',dirty:'Geändert – noch nicht gespeichert',replan:'Neu planen',replanTitle:'Ausgelassene Trainings neu planen',replanNote:'Ausgelassene und folgende geplante Trainings erhalten Termine nach deinem Rhythmus. Die Reihenfolge der Trainingstage und abgeschlossene Trainings bleiben erhalten.',begin:'Neuer Starttag',program:'Programm',apply:'Plan aktualisieren',noMissed:'Keine Trainings neu zu planen.',changed:'Daten geändert; prüfe die neue Vorschau.',replanned:'Plan aktualisiert.',date:'Wähle ein gültiges Datum ab heute.',weekdays:'Wähle Wochentage in den Kalendereinstellungen.',slots:'Kein geeigneter freier Tag gefunden.',interval:'Intervalle',work:'Belastung (s)',rest:'Erholung (s)',rounds:'Runden',sound:'Tonsignal',vibration:'Vibration',intervalStart:'Intervalle starten',preset:'Einstellungen speichern',intervalNote:'Belastung und Erholung zählen zur Satzzeit; Pausen nicht. Für Signale die App geöffnet lassen. Nach Rückkehr aus dem Hintergrund wird die Zeit wiederhergestellt.',invalidInterval:'Gültige Phasen eingeben; Gesamtdauer höchstens 24 Stunden.',replaceTime:'Bisherige Satzzeit für neue Intervalle zurücksetzen?',workPhase:'Belastung',restPhase:'Erholung',complete:'Intervalle beendet',emptyLog:'Noch keine gespeicherten Trainings',emptyLogNote:'Nach deinem ersten abgeschlossenen Training siehst du hier Verlauf und Fortschritt.',startWorkout:'Training starten',emptyRange:'Keine Daten in diesem Zeitraum',emptyRangeNote:'Wähle einen anderen Zeitraum oder lösche den Filter.',clearFilter:'Filter löschen',emptyCardio:'Noch keine Kardiodaten',emptyCardioNote:'Laufen, Gehen oder andere Kardioaktivität erfassen. Strecke kann manuell eingegeben werden.',cardioAction:'Kardiotraining wählen',emptyQuick:'Keine Treffer',emptyQuickNote:'Andere Suche versuchen oder Filter löschen.',sleep:'Schlaf',hrv:'HRV',load:'Trainingsbelastung',pain:'Schmerzrückmeldung',freshMissing:'Keine aktuellen Daten (Messung innerhalb von 36 Stunden).',baselineMissing:'Zum Vergleich wird auch dein HRV-Basiswert benötigt.',last:'Letzte Messung',scoreEffect:'Einfluss auf den Bereitschaftswert',recentEffort:'Belastungsrückmeldungen der letzten drei Trainings innerhalb von 14 Tagen.',noEffort:'Keine aktuelle Belastungsrückmeldung.',painNote:'Aktuelle Schmerzrückmeldungen sprechen für vorsichtigere Belastung.',noPain:'Keine aktuelle Schmerzrückmeldung.',scoreNote:'Die Schätzung beginnt bei 70 und wird mit diesen Faktoren auf 25–100 begrenzt. Ohne aktuelle Daten wird kein Wert gezeigt.'},
-  ro:{goals:'Obiective',week:'Obiectiv săptămânal de antrenamente',month:'Obiectiv lunar de kilometri',goalNote:'Contează antrenamentele salvate. Săptămâna începe luni; kilometrii includ toate activitățile cardio. 0 dezactivează obiectivul.',noGoals:'Nu există obiective setate.',setGoals:'Setează obiective',weekShort:'Antrenamente săptămânale',monthShort:'Kilometri lunar',units:'antrenamente',reached:'Obiectiv atins',save:'Salvează',saved:'Salvat',saveFailed:'Salvarea a eșuat. Datele anterioare sunt păstrate.',dirty:'Modificat – nesalvat',replan:'Replanifică',replanTitle:'Replanifică antrenamentele omise',replanNote:'Antrenamentele omise și cele planificate ulterior primesc date noi după ritmul ales. Ordinea zilelor și antrenamentele finalizate se păstrează.',begin:'Noua dată de început',program:'Program',apply:'Actualizează planul',noMissed:'Nu există antrenamente de replanificat.',changed:'Datele s-au schimbat; verifică previzualizarea nouă.',replanned:'Plan actualizat.',date:'Alege o dată validă, de azi sau mai târziu.',weekdays:'Selectează zilele săptămânii în setările calendarului.',slots:'Nu există o dată liberă potrivită.',interval:'Intervale',work:'Efort (sec)',rest:'Recuperare (sec)',rounds:'Runde',sound:'Sunet',vibration:'Vibrație',intervalStart:'Pornește intervalele',preset:'Salvează setările',intervalNote:'Efortul și recuperarea intră în durata seriei; pauzele nu. Ține aplicația deschisă pentru semnale. Timpul se recuperează la revenirea din fundal.',invalidInterval:'Introdu faze valide; durata totală este limitată la 24 de ore.',replaceTime:'Resetezi timpul seriei pentru a porni intervale noi?',workPhase:'Efort',restPhase:'Recuperare',complete:'Intervale finalizate',emptyLog:'Nu există antrenamente salvate',emptyLogNote:'Primul antrenament finalizat va apărea aici, împreună cu progresul.',startWorkout:'Pornește un antrenament',emptyRange:'Nu există date în această perioadă',emptyRangeNote:'Alege altă perioadă sau șterge filtrul.',clearFilter:'Șterge filtrul',emptyCardio:'Nu există date cardio',emptyCardioNote:'Înregistrează alergare, mers sau altă activitate cardio. Distanța poate fi introdusă manual.',cardioAction:'Alege antrenament cardio',emptyQuick:'Niciun rezultat',emptyQuickNote:'Încearcă altă căutare sau șterge filtrele.',sleep:'Somn',hrv:'HRV',load:'Încărcare de antrenament',pain:'Feedback privind durerea',freshMissing:'Nu există date recente (măsurare în 36 de ore).',baselineMissing:'Comparația necesită și media HRV personală.',last:'Ultima măsurare',scoreEffect:'Efect asupra scorului de pregătire',recentEffort:'Feedback din ultimele trei antrenamente în cel mult 14 zile.',noEffort:'Nu există feedback recent despre efort.',painNote:'Feedbackul recent privind durerea cere o încărcare mai prudentă.',noPain:'Nu există feedback recent privind durerea.',scoreNote:'Estimarea începe la 70 și este limitată la 25–100 după acești factori. Fără date recente nu apare un scor.'}
+  hu:{goals:'Célok',week:'Heti edzéscél',month:'Havi kilométercél',goalNote:'A mentett edzések számítanak. A hét hétfőn indul; a kilométercél az összes kardiómozgásra vonatkozik. A 0 kikapcsolja a célt.',noGoals:'Még nincs beállított cél.',setGoals:'Célok beállítása',weekShort:'Heti edzések',monthShort:'Havi kilométer',units:'edzés',reached:'Cél teljesítve',save:'Mentés',saved:'Mentve',saveFailed:'A mentés nem sikerült. A korábbi adatok megmaradtak.',dirty:'Módosítva – még nincs mentve',replan:'Újratervezés',autoDay:'Automatikus',newWorkout:'Új alkalom',programDay:'A programnak nincs választható edzésnapja.',time:'Adj meg érvényes időpontot és időtartamot.',replanTitle:'Edzések újratervezése',replanNote:'Bármelyik edzésnappal újratervezhetsz. Ha nincs terv, új programciklus készül; a napló megmarad.',begin:'Új kezdőnap',program:'Program',apply:'Terv frissítése',noMissed:'Nincs újratervezendő edzés.',changed:'Az adatok változtak; nézd át a friss előnézetet.',replanned:'A terv frissítve.',date:'Válassz érvényes dátumot.',weekdays:'Válassz heti edzésnapokat a naptár beállításaiban.',slots:'Nem található megfelelő szabad nap.',interval:'Intervallumok',work:'Munka (mp)',rest:'Pihenő (mp)',rounds:'Körök száma',sound:'Hangjelzés',vibration:'Rezgés',intervalStart:'Intervallum indítása',preset:'Beállítás mentése',intervalNote:'Munka és pihenő együtt kerül a sorozat idejébe; a szünet nem számít. A jelzésekhez tartsd megnyitva az appot. Háttérből visszatérve az idő helyreáll.',invalidInterval:'Adj meg érvényes szakaszokat; legfeljebb 24 óra összidőt.',replaceTime:'Új intervallum indításához nullázod a sorozat eddigi idejét?',workPhase:'Munka',restPhase:'Pihenő',complete:'Intervallum teljesítve',emptyLog:'Még nincs mentett edzés',emptyLogNote:'Az első befejezett edzés után itt lesz a naplód és a fejlődésed.',startWorkout:'Edzés indítása',emptyRange:'Ebben az időszakban nincs adat',emptyRangeNote:'Válassz másik időszakot, vagy töröld a szűrőt.',clearFilter:'Szűrő törlése',emptyCardio:'Még nincs kardióadat',emptyCardioNote:'Rögzíts futást, sétát vagy más kardiómozgást. A kilométert kézzel is megadhatod.',cardioAction:'Kardióedzés választása',emptyQuick:'Nincs találat',emptyQuickNote:'Próbálj másik kifejezést, vagy töröld a szűrőket.',sleep:'Alvás',hrv:'HRV',load:'Edzésterhelés',pain:'Fájdalom-visszajelzés',freshMissing:'Nincs friss adat (36 órán belüli mérés).',baselineMissing:'Az összehasonlításhoz saját HRV-átlag is szükséges.',last:'Utolsó adat',scoreEffect:'Hatás a készenléti pontszámra',recentEffort:'Az elmúlt 14 nap legutóbbi három edzésének terhelési visszajelzései.',noEffort:'Nincs friss terhelési visszajelzés.',painNote:'Friss fájdalom-visszajelzés miatt óvatosabb terhelést javasol.',noPain:'Nincs friss fájdalom-visszajelzés.',scoreNote:'A becslés 70 pontból indul, a fenti tényezőkkel 25–100 közé kerül. Friss adat nélkül nincs pontszám.'},
+  en:{goals:'Goals',week:'Weekly workout goal',month:'Monthly kilometre goal',goalNote:'Saved workouts count. Weeks start on Monday; kilometres cover all cardio activities. Set 0 to disable a goal.',noGoals:'No goals set yet.',setGoals:'Set goals',weekShort:'Weekly workouts',monthShort:'Monthly kilometres',units:'workouts',reached:'Goal reached',save:'Save',saved:'Saved',saveFailed:'Saving failed. Previous data is preserved.',dirty:'Changed – not saved yet',replan:'Replan',autoDay:'Automatic',newWorkout:'New session',programDay:'The program has no available workout day.',time:'Choose a valid time and duration.',replanTitle:'Replan workouts',replanNote:'Replan from any workout day. Without a plan, a new program cycle is created; history is kept.',begin:'New start date',program:'Program',apply:'Update plan',noMissed:'No workouts need replanning.',changed:'Data changed; review the updated preview.',replanned:'Plan updated.',date:'Choose a valid date.',weekdays:'Select weekdays in calendar settings.',slots:'No suitable free date found.',interval:'Intervals',work:'Work (sec)',rest:'Rest (sec)',rounds:'Rounds',sound:'Sound',vibration:'Vibration',intervalStart:'Start intervals',preset:'Save settings',intervalNote:'Work and rest both count toward set duration; pauses do not. Keep the app open for cues. Elapsed time recovers after returning from the background.',invalidInterval:'Enter valid phases; total duration is limited to 24 hours.',replaceTime:'Reset this set’s recorded time to start new intervals?',workPhase:'Work',restPhase:'Rest',complete:'Intervals complete',emptyLog:'No saved workouts yet',emptyLogNote:'Your first finished workout will appear here with your progress.',startWorkout:'Start a workout',emptyRange:'No data in this period',emptyRangeNote:'Choose another period or clear the filter.',clearFilter:'Clear filter',emptyCardio:'No cardio data yet',emptyCardioNote:'Record running, walking or another cardio activity. Distance can also be entered manually.',cardioAction:'Choose cardio workout',emptyQuick:'No matches',emptyQuickNote:'Try another search or clear the filters.',sleep:'Sleep',hrv:'HRV',load:'Workout load',pain:'Pain feedback',freshMissing:'No fresh data (measurement within 36 hours).',baselineMissing:'Your own HRV baseline is also needed for comparison.',last:'Last measurement',scoreEffect:'Effect on readiness score',recentEffort:'Effort feedback from the last three workouts within 14 days.',noEffort:'No recent effort feedback.',painNote:'Recent pain feedback calls for more cautious loading.',noPain:'No recent pain feedback.',scoreNote:'The estimate starts at 70 and is limited to 25–100 after these factors. No score is shown without recent data.'},
+  de:{goals:'Ziele',week:'Trainingsziel pro Woche',month:'Kilometerziel pro Monat',goalNote:'Gespeicherte Trainings zählen. Wochen beginnen montags; Kilometer umfassen alle Kardioaktivitäten. 0 deaktiviert ein Ziel.',noGoals:'Noch keine Ziele eingestellt.',setGoals:'Ziele einstellen',weekShort:'Trainings pro Woche',monthShort:'Kilometer pro Monat',units:'Trainings',reached:'Ziel erreicht',save:'Speichern',saved:'Gespeichert',saveFailed:'Speichern fehlgeschlagen. Bisherige Daten bleiben erhalten.',dirty:'Geändert – noch nicht gespeichert',replan:'Neu planen',autoDay:'Automatisch',newWorkout:'Neuer Termin',programDay:'Das Programm hat keinen verfügbaren Trainingstag.',time:'Wähle eine gültige Uhrzeit und Dauer.',replanTitle:'Trainings neu planen',replanNote:'Ab jedem Trainingstag neu planen. Ohne Plan entsteht ein neuer Programmzyklus; der Verlauf bleibt erhalten.',begin:'Neuer Starttag',program:'Programm',apply:'Plan aktualisieren',noMissed:'Keine Trainings neu zu planen.',changed:'Daten geändert; prüfe die neue Vorschau.',replanned:'Plan aktualisiert.',date:'Wähle ein gültiges Datum.',weekdays:'Wähle Wochentage in den Kalendereinstellungen.',slots:'Kein geeigneter freier Tag gefunden.',interval:'Intervalle',work:'Belastung (s)',rest:'Erholung (s)',rounds:'Runden',sound:'Tonsignal',vibration:'Vibration',intervalStart:'Intervalle starten',preset:'Einstellungen speichern',intervalNote:'Belastung und Erholung zählen zur Satzzeit; Pausen nicht. Für Signale die App geöffnet lassen. Nach Rückkehr aus dem Hintergrund wird die Zeit wiederhergestellt.',invalidInterval:'Gültige Phasen eingeben; Gesamtdauer höchstens 24 Stunden.',replaceTime:'Bisherige Satzzeit für neue Intervalle zurücksetzen?',workPhase:'Belastung',restPhase:'Erholung',complete:'Intervalle beendet',emptyLog:'Noch keine gespeicherten Trainings',emptyLogNote:'Nach deinem ersten abgeschlossenen Training siehst du hier Verlauf und Fortschritt.',startWorkout:'Training starten',emptyRange:'Keine Daten in diesem Zeitraum',emptyRangeNote:'Wähle einen anderen Zeitraum oder lösche den Filter.',clearFilter:'Filter löschen',emptyCardio:'Noch keine Kardiodaten',emptyCardioNote:'Laufen, Gehen oder andere Kardioaktivität erfassen. Strecke kann manuell eingegeben werden.',cardioAction:'Kardiotraining wählen',emptyQuick:'Keine Treffer',emptyQuickNote:'Andere Suche versuchen oder Filter löschen.',sleep:'Schlaf',hrv:'HRV',load:'Trainingsbelastung',pain:'Schmerzrückmeldung',freshMissing:'Keine aktuellen Daten (Messung innerhalb von 36 Stunden).',baselineMissing:'Zum Vergleich wird auch dein HRV-Basiswert benötigt.',last:'Letzte Messung',scoreEffect:'Einfluss auf den Bereitschaftswert',recentEffort:'Belastungsrückmeldungen der letzten drei Trainings innerhalb von 14 Tagen.',noEffort:'Keine aktuelle Belastungsrückmeldung.',painNote:'Aktuelle Schmerzrückmeldungen sprechen für vorsichtigere Belastung.',noPain:'Keine aktuelle Schmerzrückmeldung.',scoreNote:'Die Schätzung beginnt bei 70 und wird mit diesen Faktoren auf 25–100 begrenzt. Ohne aktuelle Daten wird kein Wert gezeigt.'},
+  ro:{goals:'Obiective',week:'Obiectiv săptămânal de antrenamente',month:'Obiectiv lunar de kilometri',goalNote:'Contează antrenamentele salvate. Săptămâna începe luni; kilometrii includ toate activitățile cardio. 0 dezactivează obiectivul.',noGoals:'Nu există obiective setate.',setGoals:'Setează obiective',weekShort:'Antrenamente săptămânale',monthShort:'Kilometri lunar',units:'antrenamente',reached:'Obiectiv atins',save:'Salvează',saved:'Salvat',saveFailed:'Salvarea a eșuat. Datele anterioare sunt păstrate.',dirty:'Modificat – nesalvat',replan:'Replanifică',autoDay:'Automat',newWorkout:'Sesiune nouă',programDay:'Programul nu are o zi de antrenament disponibilă.',time:'Alege o oră și o durată valide.',replanTitle:'Replanifică antrenamente',replanNote:'Replanifică de la orice zi de antrenament. Fără plan, creăm un ciclu nou; istoricul se păstrează.',begin:'Noua dată de început',program:'Program',apply:'Actualizează planul',noMissed:'Nu există antrenamente de replanificat.',changed:'Datele s-au schimbat; verifică previzualizarea nouă.',replanned:'Plan actualizat.',date:'Alege o dată validă.',weekdays:'Selectează zilele săptămânii în setările calendarului.',slots:'Nu există o dată liberă potrivită.',interval:'Intervale',work:'Efort (sec)',rest:'Recuperare (sec)',rounds:'Runde',sound:'Sunet',vibration:'Vibrație',intervalStart:'Pornește intervalele',preset:'Salvează setările',intervalNote:'Efortul și recuperarea intră în durata seriei; pauzele nu. Ține aplicația deschisă pentru semnale. Timpul se recuperează la revenirea din fundal.',invalidInterval:'Introdu faze valide; durata totală este limitată la 24 de ore.',replaceTime:'Resetezi timpul seriei pentru a porni intervale noi?',workPhase:'Efort',restPhase:'Recuperare',complete:'Intervale finalizate',emptyLog:'Nu există antrenamente salvate',emptyLogNote:'Primul antrenament finalizat va apărea aici, împreună cu progresul.',startWorkout:'Pornește un antrenament',emptyRange:'Nu există date în această perioadă',emptyRangeNote:'Alege altă perioadă sau șterge filtrul.',clearFilter:'Șterge filtrul',emptyCardio:'Nu există date cardio',emptyCardioNote:'Înregistrează alergare, mers sau altă activitate cardio. Distanța poate fi introdusă manual.',cardioAction:'Alege antrenament cardio',emptyQuick:'Niciun rezultat',emptyQuickNote:'Încearcă altă căutare sau șterge filtrele.',sleep:'Somn',hrv:'HRV',load:'Încărcare de antrenament',pain:'Feedback privind durerea',freshMissing:'Nu există date recente (măsurare în 36 de ore).',baselineMissing:'Comparația necesită și media HRV personală.',last:'Ultima măsurare',scoreEffect:'Efect asupra scorului de pregătire',recentEffort:'Feedback din ultimele trei antrenamente în cel mult 14 zile.',noEffort:'Nu există feedback recent despre efort.',painNote:'Feedbackul recent privind durerea cere o încărcare mai prudentă.',noPain:'Nu există feedback recent privind durerea.',scoreNote:'Estimarea începe la 70 și este limitată la 25–100 după acești factori. Fără date recente nu apare un scor.'}
  };
  const t=key=>(text[typeof rf212Lang==='function'?rf212Lang():'hu']||text.hu)[key]||text.hu[key]||key;
  const number=(n,d=1)=>tp149FormatNumber(n,{maximumFractionDigits:d});
@@ -14937,19 +14984,25 @@ window.addEventListener?.('DOMContentLoaded',function(){
   try{db.set('settings',{...settings(),activityGoals110:goals(value)});}catch(_){status(form.querySelector('[data-tp110-status]'),t('saveFailed'),'error');return false;}cloudChanged?.();render();window.tp155R4RefreshPanel?.();tp153Toast(t('saved'),1800);return true;
  }
  let preview=null;
- const replanInputs=()=>({programId:document.querySelector('#tp110ReplanProgram')?.value||activeProgramId(),startDate:document.querySelector('#tp110ReplanDate')?.value||dayKey(addDays(new Date(),1)),mode:plannerSettings().mode,weekdays:plannerSettings().weekdays,activeScheduleId:state.session?.scheduleId||db.get('draft',null)?.session?.scheduleId,now:new Date()});
+ function replanInputs(){
+  const programId=document.querySelector('#tp110ReplanProgram')?.value||activeProgramId(),p=programById(programId),planner=plannerSettings();
+  return {programId,programDays:(p?.days||[]).map(d=>({id:d.id})),firstDayId:document.querySelector('#tp110ReplanDay')?.value||'',startDate:document.querySelector('#tp110ReplanDate')?.value||dayKey(addDays(new Date(),1)),mode:planner.mode,weekdays:planner.weekdays,time:planner.time,minutes:planner.minutes,activeScheduleIds:[state.session?.scheduleId,db.get('draft',null)?.session?.scheduleId].filter(Boolean),now:new Date()};
+ }
+ const replanSignature=(rows,logs,options)=>JSON.stringify([rows,logs,options.programId,options.programDays,options.firstDayId,options.startDate,options.mode,options.weekdays,options.time,options.minutes,options.activeScheduleIds]);
  function replanHtml(){
-  const values=replanInputs();preview=null;return '<main class="tp110-replan"><p class="muted">'+esc(t('replanNote'))+'</p><div class="tp110-form"><label>'+esc(t('program'))+'<select id="tp110ReplanProgram" class="field" onchange="TrainPilot110.previewReplan()">'+programs().map(p=>'<option value="'+esc(p.id)+'" '+(p.id===values.programId?'selected':'')+'>'+esc(tp149ProgramMeta(p,'name'))+'</option>').join('')+'</select></label><label>'+esc(t('begin'))+'<input id="tp110ReplanDate" class="field" type="date" min="'+dayKey(new Date())+'" value="'+esc(values.startDate)+'" onchange="TrainPilot110.previewReplan()"></label></div><div data-tp110-preview></div><footer class="tp119-replan-actions"><button type="button" class="btn block" data-tp110-apply disabled onclick="TrainPilot110.applyReplan()">'+esc(t('apply'))+'</button><p data-tp110-replan-status class="tp110-feedback" role="status"></p></footer></main>';
+  const values=replanInputs(),p=programById(values.programId),first=(p?.days||[]).some(d=>d.id===values.firstDayId)?values.firstDayId:'';preview=null;
+  return '<main class="tp110-replan"><p class="muted">'+esc(t('replanNote'))+'</p><div class="tp110-form"><label>'+esc(t('program'))+'<select id="tp110ReplanProgram" class="field" onchange="tp155R4RefreshPanel()">'+programs().map(p=>'<option value="'+esc(p.id)+'" '+(p.id===values.programId?'selected':'')+'>'+esc(tp149ProgramMeta(p,'name'))+'</option>').join('')+'</select></label><div class="tp110-fields"><label>'+esc(tp149T('calendar.firstDay'))+'<select id="tp110ReplanDay" class="field" onchange="TrainPilot110.previewReplan()"><option value="">'+esc(t('autoDay'))+'</option>'+(p?.days||[]).map(d=>'<option value="'+esc(d.id)+'" '+(d.id===first?'selected':'')+'>'+esc(tp149ProgramDayName(p,d))+'</option>').join('')+'</select></label><label>'+esc(t('begin'))+'<input id="tp110ReplanDate" class="field" type="date" value="'+esc(values.startDate)+'" onchange="TrainPilot110.previewReplan()"></label></div></div><div data-tp110-preview></div><footer class="tp119-replan-actions"><button type="button" class="btn block" data-tp110-apply disabled onclick="TrainPilot110.applyReplan()">'+esc(t('apply'))+'</button><p data-tp110-replan-status class="tp110-feedback" role="status"></p></footer></main>';
  }
  function previewReplan(){
   const rows=scheduled(),logs=history(),options=replanInputs(),root=document.querySelector('[data-tp110-preview]'),button=document.querySelector('[data-tp110-apply]');if(!root)return;
   try{
-   const result=replan(rows,logs,options);preview={result,signature:JSON.stringify([rows,logs.map(h=>[h.id,h.scheduleId,h.started,h.finished,(h.exercises||[]).flatMap(e=>e.sets||[]).map(s=>s.done)]),options.programId,options.startDate,options.mode,options.weekdays,options.activeScheduleId])};
-   root.innerHTML=result.moved.length?result.moved.map(({before,after})=>'<div class="tp110-replan-row"><strong>'+esc(before.dayId||before.workout)+'</strong><small>'+esc(tp149FormatDateTime(before.start))+' → '+esc(tp149FormatDateTime(after.start))+'</small></div>').join(''):'<p class="muted">'+esc(t('noMissed'))+'</p>';button.disabled=!result.moved.length;
+   if(!options.programDays.length)throw Error('programDay');
+   const result=replan(rows,logs,options);preview={result,signature:replanSignature(rows,logs,options)};
+   root.innerHTML=result.moved.length?result.moved.map(({before,after})=>'<div class="tp110-replan-row"><strong>'+esc(tp149ProgramDayName(programById(options.programId),programDay(programById(options.programId),after.dayId)))+'</strong><small>'+esc(before?tp149FormatDateTime(before.start):t('newWorkout'))+' → '+esc(tp149FormatDateTime(after.start))+'</small></div>').join(''):'<p class="muted">'+esc(t('noMissed'))+'</p>';button.disabled=!result.moved.length;
   }catch(e){preview=null;root.textContent=t(e.message);button.disabled=true;}
  }
  function applyReplan(){
-  if(!preview)return false;const before=preview.signature;previewReplan();if(!preview||preview.signature!==before){status(document.querySelector('[data-tp110-replan-status]'),t('changed'),'pending');return false;}
+  if(!preview)return false;if(preview.signature!==replanSignature(scheduled(),history(),replanInputs())){previewReplan();status(document.querySelector('[data-tp110-replan-status]'),t('changed'),'pending');return false;}
   if(!preview.result.moved.length)return false;try{db.set('scheduled',preview.result.rows);}catch(_){status(document.querySelector('[data-tp110-replan-status]'),t('saveFailed'),'error');return false;}cloudChanged?.();state.rf260MovingScheduleId=null;state.tp151EditingScheduleId=null;render();window.tp155R4RefreshPanel?.();status(document.querySelector('[data-tp110-replan-status]'),t('replanned'));tp153Toast(t('replanned'),1800);return true;
  }
  let audio=null;
@@ -15038,7 +15091,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const settingsRoot=document.querySelector('#tp155R4PanelHost[data-panel="settings"] main');
 
 
-  const planner=document.querySelector('#tp155R4PanelHost[data-panel="calendar"] .tp155-planner-title');if(planner&&!planner.querySelector('.tp110-replan-link')){planner.style.display='flex';planner.style.alignItems='center';planner.style.gap='8px';const button=document.createElement('button');button.type='button';button.className='btn secondary tp110-replan-link';button.textContent=t('replan');button.onclick=()=>window.tp155R4OpenPanel('replan',button);planner.appendChild(button);}
+  const planner=document.querySelector('#tp155R4PanelHost[data-panel="calendar"] .tp155-planner-title');if(planner&&!planner.querySelector('.tp110-replan-link')){planner.style.display='flex';planner.style.alignItems='center';planner.style.gap='8px';const button=document.createElement('button');button.type='button';button.className='btn tp110-replan-link';button.textContent=t('replan');button.onclick=()=>window.tp155R4OpenPanel('replan',button);planner.appendChild(button);}
   window.TrainPilotBle?.decorate();
   if(document.querySelector('[data-tp110-preview]')&&!preview)previewReplan();
   const indoor=document.getElementById('tp107Indoor');if(indoor&&!indoor.querySelector('.tp110-interval')){indoor.insertAdjacentHTML('beforeend',intervalHtml());paintInterval();}
@@ -15520,8 +15573,24 @@ generatePersonalProgram=function(input){
 };
 var tp128MetaBase=tp149ProgramMeta;
 tp149ProgramMeta=function(p,field,lang=rf212Lang()){
- if(field==='name'&&p?.sourceTemplateId&&['profile-template','coach'].includes(p.sourceType)&&tp128Template(p.sourceTemplateId))return tp128MetaBase(tp128Template(p.sourceTemplateId),'name',lang);
+ if(field==='name'&&p?.sourceTemplateId&&['profile-template','coach'].includes(p.sourceType)){
+  const template=tp128Template(p.sourceTemplateId);
+  if(template){
+   const defaults=[template.name,...(TP149_PROGRAM_ROWS[p.sourceTemplateId]?.name||[])];
+   if(p.name&&!defaults.includes(p.name))return String(p.name);
+   const suffix=['személyre szabott','personalized','personalisiert','personalizat'][tp149LangIndex(lang)];
+   return tp128MetaBase(template,'name',lang)+' ('+suffix+')';
+  }
+ }
+ if(field==='name'&&p?.generated&&p.name&&!['hu','en','de','ro'].some(l=>p.name===tp128MetaBase(p,'name',l)))return String(p.name);
  return tp128MetaBase(p,field,lang);
+};
+// Remove only the standalone day marker represented by the adjacent gold badge.
+var tp124DayWithoutBadge=function(name,id){
+ const value=String(name||'').trim(),marker=String(id||'').trim();if(!marker)return value;
+ if(value===marker)return '';
+ const suffix=new RegExp('(?:\\s+[·–—-]?\\s*|\\s*[·–—-]\\s*)'+marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'$');
+ return value.replace(suffix,'').trim();
 };
 var tp128ExerciseBase=rf13Exercise;
 rf13Exercise=function(e){
@@ -15727,9 +15796,9 @@ window.TrainPilot128={version:'128.2',template:tp128Template,generate:generatePe
 
 // User-owned ordering changes only the selected stored program day.
 var tp128OrderT=function(key){const rows={title:['Gyakorlatok sorrendje','Exercise order','Übungsreihenfolge','Ordinea exercițiilor'],button:['Sorrend','Order','Reihenfolge','Ordine'],help:['A fel/le gombokkal rendezd a gyakorlatokat, majd mentsd.','Use the up/down buttons to arrange exercises, then save.','Ordne die Übungen mit den Pfeiltasten und speichere.','Aranjează exercițiile cu butoanele sus/jos, apoi salvează.'],up:['Feljebb','Move up','Nach oben','Mai sus'],down:['Lejjebb','Move down','Nach unten','Mai jos'],changed:['Közben megváltozott az edzésnap. Nyisd meg újra a sorrendet.','The workout day changed. Reopen the order editor.','Der Trainingstag wurde geändert. Öffne die Reihenfolge erneut.','Ziua de antrenament s-a schimbat. Redeschide editorul de ordine.']};return rows[key]?.[['hu','en','de','ro'].indexOf(rf212Lang())]||rows[key]?.[0]||key};
-var tp128OrderButton=function(p,d){return '<button type="button" class="btn secondary tp128-order-open" data-tp128-order-day="'+esc(d.id)+'" onclick="'+esc('event.stopPropagation();tp128OrderOpen('+JSON.stringify(p.id)+','+JSON.stringify(d.id)+')')+'">↕ '+esc(tp128OrderT('button'))+'</button>'};
+var tp128OrderButton=function(p,d){return '<button type="button" class="btn secondary tp128-order-open" data-tp128-order-day="'+esc(d.id)+'" onclick="'+esc('event.preventDefault();event.stopPropagation();tp128OrderOpen('+JSON.stringify(p.id)+','+JSON.stringify(d.id)+')')+'">↕ '+esc(tp128OrderT('button'))+'</button>'};
 var tp128OrderDayBase=tp152DayBlock;
-tp152DayBlock=function(p,d,di){return tp128OrderDayBase.apply(this,arguments).replace('<div class="tp152-day-body">','<div class="tp152-day-body">'+tp128OrderButton(p,d))};
+tp152DayBlock=function(p,d,di){return tp128OrderDayBase.apply(this,arguments).replace('<span class="tp152-chevron" aria-hidden="true">',tp128OrderButton(p,d)+'<span class="tp152-chevron" aria-hidden="true">')};
 var tp128OrderOpen=function(programId,dayId){
  if(state.session){alert(tp105Text('busy'));return;}
  const p=programById(programId),day=p?.days?.find(d=>d.id===dayId);if(!day||!Array.isArray(day.exercises)||day.exercises.length<2)return;
@@ -15750,6 +15819,129 @@ var tp128OrderOpen=function(programId,dayId){
 
 // @endsection profile-training-128.js
 
+
+// @section navigation-motion-137.js
+/* One selection update per navigation transaction, compositor-only motion, and
+ * one content surface regardless of the number of Journal entries. */
+window.addEventListener?.('DOMContentLoaded',function(){
+ 'use strict';
+ const groups=[['navigation','.top.tp154-nav-grid','.tp154-nav-cell'],['journal','.tp177-journal-tabs','button'],['statistics','.tp107-statistics-tabs','button'],['period','.tp177-periods','button']];
+ const reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
+ const duration=230,easing='cubic-bezier(.22,.8,.25,1)';
+ let records=new Map(),rendering=0,navigating=0,contentAnimation=null,theme='',appearanceCache=new Map();
+ const resizeObserver=typeof ResizeObserver==='function'?new ResizeObserver(()=>{
+  if([...records.values()].some(row=>{
+   if(!row.active.isConnected)return false;
+   const r=box(row.active,row.group);return ['x','y','width','height'].some(k=>Math.abs(r[k]-row.target[k])>.5);
+  }))settle();
+ }):null;
+ const style=document.createElement('style');style.id='tp137NavigationMotionCss';
+ style.textContent=`
+  .tp137-motion-group:not(.top){position:relative;isolation:isolate}
+  .tp137-selection{position:absolute;z-index:-1;box-sizing:border-box;pointer-events:none;display:block;transform-origin:0 0}
+  html[data-tp-theme-family] body .top.tp154-nav-grid.tp137-motion-group .tp154-nav-cell.tp137-selected,
+  html body #app .tp137-motion-group button.tp137-selected{background:transparent!important;border-color:transparent!important;box-shadow:none!important}
+  html body .tp137-motion-group button{position:relative;z-index:2!important;transform:none!important;transition:none!important}
+  html body .top.tp137-motion-group .tp154-nav-cell{z-index:2!important;transform:none!important;transition:none!important}
+  .tp137-motion-group .tp137-selected::before,.tp137-motion-group .tp137-selected::after{box-shadow:none!important;background:transparent!important}
+ `;
+ document.head.appendChild(style);
+ function box(element,group){
+  const r=element.getBoundingClientRect(),g=group.getBoundingClientRect();
+  return {x:r.left-g.left-group.clientLeft+group.scrollLeft,y:r.top-g.top-group.clientTop+group.scrollTop,width:r.width,height:r.height};
+ }
+ function snapshot(){
+  const result=new Map();
+  records.forEach((row,name)=>{
+   if(!row.group.isConnected)return;
+   // WAAPI's eased progress describes the current transform; no layout read is
+   // needed to continue a rapidly interrupted slide from its visible position.
+   const progress=row.animation?.effect.getComputedTiming().progress;
+   const moving=row.animation?.playState==='running',rect={...row.target};
+   if(progress!=null&&row.from)for(const k of ['x','y','width','height'])rect[k]=row.from[k]+(row.target[k]-row.from[k])*progress;
+   result.set(name,{key:row.key,rect,remaining:moving?Math.max(0,Number(row.animation.effect.getTiming().duration)-Number(row.animation.currentTime||0)):0});
+  });
+  return result;
+ }
+ function content(groupKey){
+  contentAnimation?.cancel();
+  const main=document.querySelector('#app main');
+  const surface=groupKey==='period'?main?.querySelector('.tp177-trend'):
+   groupKey==='statistics'?main?.querySelector('.tp107-personal-records,.tp107-cardio'):main;
+  // Opacity preserves the tab bar and disclosure geometry; a single surface
+  // avoids hundreds of card promotions for a long workout history.
+  if(surface)contentAnimation=surface.animate([{opacity:.84},{opacity:1}],{duration:160,easing});
+ }
+ function sync(before=new Map(),animate=true){
+  if(rendering||navigating)return;
+  const token=rf200ThemeKey()+'|'+document.documentElement.dataset.tpThemeFamily+'|'+document.documentElement.classList.contains('tp-nav-compact');
+  if(theme!==token){theme=token;appearanceCache.clear();}
+  const prepared=[];
+  // Prepare classes together, then measure every destination before writing
+  // indicator styles. This avoids alternating layout reads and writes.
+  for(const [name,selector,buttonSelector] of groups){
+   const group=document.querySelector(selector);if(!group)continue;
+   const buttons=[...group.querySelectorAll(buttonSelector)],active=buttons.find(b=>b.classList.contains('active'));
+   if(!active){group.querySelector(':scope > .tp137-selection')?.remove();continue;}
+   const key=active.getAttribute('onclick')||active.dataset.period||String(buttons.indexOf(active)),cacheKey=name+'|'+key;
+   group.classList.add('tp137-motion-group');
+   group.querySelectorAll('.tp137-selected').forEach(b=>{if(b!==active||!appearanceCache.has(cacheKey))b.classList.remove('tp137-selected')});
+   prepared.push({name,group,active,key,cacheKey});
+  }
+  for(const row of prepared){
+   row.target=box(row.active,row.group);
+   if(!appearanceCache.has(row.cacheKey)){
+    const css=getComputedStyle(row.active),appearance={};
+    for(const prop of ['backgroundColor','backgroundImage','borderRadius','borderTopWidth','borderRightWidth','borderBottomWidth','borderLeftWidth','borderTopStyle','borderRightStyle','borderBottomStyle','borderLeftStyle','borderTopColor','borderRightColor','borderBottomColor','borderLeftColor','boxShadow'])appearance[prop]=css[prop];
+    appearanceCache.set(row.cacheKey,appearance);
+   }
+  }
+  const next=new Map();let changedGroup=null,observersChanged=records.size!==prepared.length;
+  for(const row of prepared){
+   const {name,group,active,key,target}=row,oldRow=records.get(name),previous=before.get(name),changed=previous&&previous.key!==key;
+   let marker=group.querySelector(':scope > .tp137-selection');
+   if(!marker){marker=document.createElement('span');marker.className='tp137-selection';marker.setAttribute('aria-hidden','true');group.appendChild(marker);}
+   marker.getAnimations().forEach(a=>a.cancel());
+   Object.assign(marker.style,appearanceCache.get(row.cacheKey),{left:target.x+'px',top:target.y+'px',width:target.width+'px',height:target.height+'px'});
+   active.classList.add('tp137-selected');row.marker=marker;
+   if(animate&&!reduced.matches&&previous&&(changed||previous.remaining>0)&&target.width>0&&target.height>0){
+    row.from=previous.rect;
+    row.animation=marker.animate([{transform:'translate('+(row.from.x-target.x)+'px,'+(row.from.y-target.y)+'px) scale('+(row.from.width/target.width)+','+(row.from.height/target.height)+')'},{transform:'translate(0,0) scale(1,1)'}],{duration:changed?duration:previous.remaining,easing});
+    if(changed)changedGroup=name;
+   }
+   observersChanged=observersChanged||oldRow?.group!==group||oldRow?.active!==active;
+   next.set(name,row);
+  }
+  records=next;
+  if(changedGroup)content(changedGroup);
+  // Padding can change while the grid's content box stays identical. Observe
+  // the enclosing border box too so the selection follows those shifts.
+  if(observersChanged){resizeObserver?.disconnect();records.forEach(row=>{resizeObserver?.observe(row.group,{box:'border-box'});resizeObserver?.observe(row.active,{box:'border-box'})});}
+ }
+ const baseRender=render;
+ render=function(){
+  const outer=!rendering&&!navigating,before=outer?snapshot():null;rendering++;
+  try{return baseRender.apply(this,arguments)}finally{rendering--;if(outer)sync(before);}
+ };window.render=render;
+ const baseGo=go;
+ go=function(){
+  const outer=!navigating,before=outer?snapshot():null;navigating++;
+  try{return baseGo.apply(this,arguments)}finally{navigating--;if(outer)sync(before);}
+ };window.TrainPilotNavigate=go;
+ const decorate=window.tp155R4DecorateNavigation;
+ if(typeof decorate==='function')window.tp155R4DecorateNavigation=function(){
+  const outer=!rendering&&!navigating,before=outer?snapshot():null,result=decorate.apply(this,arguments);
+  if(outer)sync(before);return result;
+ };
+ function settle(){
+  records.forEach(row=>row.animation?.cancel());contentAnimation?.cancel();contentAnimation=null;sync(new Map(),false);
+ }
+ window.addEventListener('resize',settle,{passive:true});reduced.addEventListener?.('change',settle);
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)settle()});
+ sync(new Map(),false);
+ window.TrainPilot137Motion={version:'137-smooth',duration,groups:groups.map(g=>g[0])};
+});
+// @endsection navigation-motion-137.js
 
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();

@@ -258,5 +258,33 @@
   {
     "file": "tests/browser/exercise-order-128.cjs",
     "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/post-workout-feedback-122.cjs",
+    "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/calendar-replan-123.cjs",
+    "estimatedSeconds": 20
+  },
+  {
+    "file": "tests/browser/replan-all-states-123.cjs",
+    "estimatedSeconds": 20
+  },
+  {
+    "file": "tests/browser/collapsible-program-124.cjs",
+    "estimatedSeconds": 30
+  },
+  {
+    "file": "tests/browser/calendar-markers-135.cjs",
+    "estimatedSeconds": 30
+  },
+  {
+    "file": "tests/browser/navigation-motion-137.cjs",
+    "estimatedSeconds": 65
+  },
+  {
+    "file": "tests/browser/typography-scroll-137.cjs",
+    "estimatedSeconds": 45
   }
 ]

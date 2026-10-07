@@ -2,7 +2,7 @@
 
 A kanonikus webalkalmazás-forrás a `www/app.js`. Az Android csomag azonosítója: `com.repforge.app`.
 
-Az elfogadott aktuális verzió **1.2.7 /2710**. Kiadási regresszió: 119 Node + 4 futtatóteszt, 65 Chromium-szkript hat párhuzamos CI-jobban, Android/JVM release-tesztek. A #130 telefonon elfogadott 1.2.6 /2709 buildjének működése változatlan; a stabil kiadás új verziószámot kap, mert a `v1.2.6` release már létezik. A korábbi APK-k/tag-ek megmaradnak; az új stabil main build a `v1.2.7` release-t publikálja.
+Az elfogadott aktuális verzió **1.2.8 /2711**. Kiadási regresszió: 120 Node + 4 futtatóteszt, 72 Chromium-szkript hat párhuzamos CI-jobban, Android/JVM release-tesztek. A #139 telefonon elfogadott r5 buildjének működése változatlan; a stabil kiadás új verziószámot kap, mert a `v1.2.7` release már létezik. A korábbi APK-k/tag-ek megmaradnak; az új stabil main build a `v1.2.8` release-t publikálja.
 
 ## Gyors ellenőrzés
 
@@ -72,4 +72,4 @@ A keystore és a Secret értékek soha ne kerüljenek Gitbe, source ZIP-be vagy 
 - Kiadás előtt az eredeti 1.7.7 APK aláírási tanúsítványának SHA-256 ujjlenyomatát az új APK-val össze kell hasonlítani; szükség van meglévő 1.7.7 telepítés fölé történő, adatmegőrző frissítési próbára is.
 - A történeti release-ek és tagek külön privát archiválása nem változtatja meg a publikus `main` commitelőzményét. Lásd [karbantartási terv](REPOSITORY_MAINTENANCE_2026-09-26.md).
 
-Az 1.2.7 /2710 main/release-jóváhagyása a [#130](https://github.com/fuloplevente1998/TrainPilot/pull/130) telefonos elfogadásán alapul; kiadási megjegyzések: [v1.2.7](releases/v1.2.7.md). A kiadott taghez tartozó pontos APK/forrás párost és eredeti aláírást a main gate után külön is ellenőrizzük.
+Az 1.2.8 /2711 main/release-jóváhagyása a [#139](https://github.com/fuloplevente1998/TrainPilot/pull/139) r5 telefonos elfogadásán alapul (2026-10-07); kiadási megjegyzések: [v1.2.8](releases/v1.2.8.md). A kiadott taghez tartozó pontos APK/forrás párost és eredeti aláírást a main gate után külön is ellenőrizzük.

@@ -24,6 +24,8 @@ const {chromium}=require('playwright');
   // to the separate editor screen.
   await page.evaluate(()=>{state.session=null;state.tab='plan';render()});
   await page.waitForTimeout(80);
+  assert.equal(await page.locator('.tp152-day[open]').count(),0,'workout lists start collapsed');
+  await page.locator('.tp152-day').first().locator(':scope > summary').click();
   const exercises=page.locator('.tp152-day[open] details.tp152-exercise');
   assert.ok(await exercises.count()>0,'Edzés must render inline exercise accordions');
   const first=exercises.first();

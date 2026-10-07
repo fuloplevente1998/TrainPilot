@@ -48,3 +48,17 @@ html body #app main:is(.tp107-fit-home,.tp107-fit-health){
  max-height:calc(100dvh - var(--tp107-nav-height,132px) - 2px)!important;
  overflow:hidden;
 }
+
+/* #122: completed-workout feedback uses the normal page scroll, with compact cards. */
+html body #app main.tp122-feedback{
+ display:flex;flex-direction:column;gap:8px;
+ height:auto;max-height:none;overflow:visible;
+ padding-block:10px max(12px,env(safe-area-inset-bottom,0px))!important;
+}
+main.tp122-feedback>.hero,main.tp122-feedback>.card{margin:0;padding:10px 12px}
+main.tp122-feedback h1{font-size:clamp(20px,5.5vw,26px);line-height:1.2;margin:0 0 4px}
+main.tp122-feedback h2{font-size:18px;line-height:1.2;margin:0 0 6px}
+main.tp122-feedback p{margin:4px 0;line-height:1.35;overflow-wrap:anywhere}
+main.tp122-feedback .muscle-chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0 0}
+main.tp122-feedback .btn{min-width:0;min-height:44px;white-space:normal;overflow-wrap:anywhere;margin:0}
+main.tp122-feedback .tp122-feedback-actions{gap:8px}

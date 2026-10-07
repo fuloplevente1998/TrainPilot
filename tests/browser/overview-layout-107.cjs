@@ -41,7 +41,12 @@ const root=path.resolve('www');const server=http.createServer((q,r)=>{const file
    for(const selector of ['.tp154-coach-action','.tp154-settings-action']){
     await p.locator(selector).click();await p.waitForTimeout(100);
     const panel=p.locator('#tp155R4PanelHost .tp155-r4-panel');assert.equal(await p.locator('#tp155R4PanelHost').evaluate(e=>e.classList.contains('tp107-fit-calendar')),false,'calendar sizing is cleared on panel navigation');
-    assert.equal(await panel.evaluate(e=>getComputedStyle(e).overflowY),'auto');await panel.evaluate(e=>{e.scrollTop=0});await p.mouse.move(width/2,height/2);await p.mouse.wheel(0,500);await p.waitForTimeout(70);assert.ok(await panel.evaluate(e=>e.scrollTop)>0,'Calendar -> '+selector+' actually scrolls');
+    assert.equal(await panel.evaluate(e=>getComputedStyle(e).overflowY),'auto');
+    await panel.evaluate(e=>Promise.all(e.getAnimations({subtree:true}).filter(a=>a.effect.getComputedTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{}))));
+    const scrollContext=await panel.evaluate(e=>({height:e.clientHeight,scroll:e.scrollHeight}));assert.ok(scrollContext.scroll>scrollContext.height,'scrollable panel '+width+'/'+height+'/'+theme+'/'+selector+' '+JSON.stringify(scrollContext));
+    await panel.evaluate(e=>{e.scrollTop=0});await panel.hover();await p.mouse.wheel(0,500);
+    await p.waitForFunction(()=>document.querySelector('#tp155R4PanelHost .tp155-r4-panel')?.scrollTop>0,null,{timeout:2000});
+    assert.ok(await panel.evaluate(e=>e.scrollTop)>0,'Calendar -> '+selector+' actually scrolls '+width+'/'+height+'/'+theme);
     if(selector==='.tp154-coach-action'&&width===393&&height===823&&theme==='yellow')await p.screenshot({path:'ui-evidence/calendar-to-coach-scroll-107.png'});
    }
    await p.locator('.tp151-nav-item[onclick*="calendar"]').click();await p.waitForTimeout(70);assert.equal(await p.locator('#tp155R4PanelHost').evaluate(e=>e.classList.contains('tp107-fit-calendar')),true,'returning to Calendar restores only its own fixed layout');

@@ -93,14 +93,15 @@ const server=http.createServer((req,res)=>{
   await page.waitForSelector('.tp152-active-program');
   const trainingSettings=page.locator('.tp1511-training');assert.equal(await trainingSettings.count(),1,'Workout settings must remain on the Workout page');
   await page.waitForTimeout(250); // Wait for the existing panel entrance to settle before measuring flat card color.
-  const trainingSurface=await trainingSettings.evaluate(e=>({border:parseFloat(getComputedStyle(e).borderTopWidth),background:getComputedStyle(e).backgroundColor,height:e.getBoundingClientRect().height,stylePresent:!!document.getElementById('tp155WorkoutSettingsCompactCss')}));assert.equal(trainingSurface.border,1,'Workout settings have a standard 1px secondary border');assert.equal(trainingSurface.background,'rgb(26, 30, 37)','Workout settings use shared Health card fill');assert.ok(trainingSurface.height<90,'collapsed Workout settings must stay compact');
+  const trainingSurface=await trainingSettings.evaluate(e=>({border:parseFloat(getComputedStyle(e).borderTopWidth),background:getComputedStyle(e).backgroundColor,height:e.getBoundingClientRect().height,stylePresent:!!document.getElementById('tp155WorkoutSettingsCompactCss')}));assert.equal(trainingSurface.border,0,'Workout settings share the active program outer frame');assert.equal(trainingSurface.background,await trainingSettings.evaluate(e=>{const probe=document.createElement('span');probe.style.background='var(--card2)';e.appendChild(probe);const color=getComputedStyle(probe).backgroundColor;probe.remove();return color}),'Workout settings reuse the lighter shared surface');assert.ok(trainingSurface.height<90,'collapsed Workout settings must stay compact');
   await trainingSettings.locator(':scope > summary').click();assert.ok(await trainingSettings.getAttribute('open')!==null);
   const trainingFieldHeight=await trainingSettings.locator('.field').first().evaluate(e=>e.getBoundingClientRect().height);assert.ok(trainingFieldHeight<=38,'Workout settings fields must stay compact');
   const trainingSave=trainingSettings.locator('.btn[onclick*="tp1511SaveTraining"]');const saveNormal=await trainingSave.evaluate(e=>getComputedStyle(e).backgroundColor);assert.match(saveNormal,/rgb\((?:3[0-9]|4[0-9]),\s*(?:7[0-9]|8[0-9]),\s*(?:5[0-9]|6[0-9])\)/,'Workout settings Save must use the dark green resting state');
   await trainingSettings.locator(':scope > summary').click();
   assert.equal(await page.locator('.tp152-active-program').count(),1);
   assert.ok(await page.locator('.tp152-day').count()>=2,'active program must expose workout days hierarchically');
-  assert.equal(await page.locator('.tp152-day[open]').count(),1,'only the first workout day should start expanded');
+  assert.equal(await page.locator('.tp152-day[open]').count(),0,'all workout lists start collapsed');
+  await page.locator('.tp152-day').first().locator(':scope > summary').click();
   const firstDay=page.locator('.tp152-day').first(),firstExercise=firstDay.locator('.tp152-exercise').first();
   assert.equal(await firstExercise.getAttribute('open'),null,'exercise editor starts collapsed');
   await firstExercise.locator('.tp146-exercise-copy').click();assert.ok(await firstExercise.getAttribute('open')!==null,'exercise must expand inline');
