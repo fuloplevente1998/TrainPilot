@@ -169,6 +169,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             }
             override fun onFinish() {
                 restRemaining.intValue = 0
+                workout.value?.let { workout.value = WorkoutSnapshotStore.saveWorkout(this@MainActivity, it.endRest()) }
                 if (vibrateAtEnd) getSystemService(Vibrator::class.java)?.vibrate(
                     VibrationEffect.createOneShot(300L, VibrationEffect.DEFAULT_AMPLITUDE)
                 )
@@ -179,7 +180,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private fun skipRest() {
         restTimer?.cancel()
         restRemaining.intValue = 0
-        workout.value?.let { workout.value = WorkoutSnapshotStore.saveWorkout(this, it.copy(restEndAt = 0L)) }
+        workout.value?.let { workout.value = WorkoutSnapshotStore.saveWorkout(this, it.endRest()) }
         sendCommand("skipRest")
     }
 
@@ -218,6 +219,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     }
 
     private fun completeCurrentSet() {
+        if (restRemaining.intValue > 0) return
         val current = workout.value ?: return
         val exerciseIndex = current.currentExercise
         val exercise = current.exercise ?: return
@@ -246,10 +248,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private fun navigateExercise(delta: Int) {
         val current = workout.value ?: return
         val next = (current.currentExercise + delta).coerceIn(0, current.exercises.lastIndex)
-        if (next == current.currentExercise) return
-        WearStopwatchStore.pause(this)
-        workout.value = WorkoutSnapshotStore.saveWorkout(this, current.copy(currentExercise = next))
-        sendCommand(if (delta > 0) "nextExercise" else "prevExercise")
+        selectExercise(next)
     }
 
     private fun replaceSet(current: WearWorkout, exerciseIndex: Int, setIndex: Int, updated: WearSet) {
@@ -301,9 +300,13 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
 
     private fun selectExercise(index: Int) {
         val current = workout.value ?: return
-        if (index !in current.exercises.indices) return
+        if (current.selectExercise(index) === current) return
         WearStopwatchStore.pause(this)
-        workout.value = WorkoutSnapshotStore.saveWorkout(this, current.copy(currentExercise = index))
+        // Order the durable commands: end the old rest first, then select an
+        // absolute exercise so a different phone screen cannot offset the move.
+        if (restRemaining.intValue > 0 || current.restEndAt > System.currentTimeMillis()) skipRest()
+        val latest = workout.value ?: return
+        workout.value = WorkoutSnapshotStore.saveWorkout(this, latest.selectExercise(index))
         sendCommand("selectExercise", exerciseIndex = index)
     }
 

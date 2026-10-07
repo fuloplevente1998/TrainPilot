@@ -30,4 +30,41 @@ class WearWorkoutTest {
         assertEquals(7000L, paused.toggle(12000).elapsed(14000))
     }
     @Test fun restoredRunningStopwatchKeepsItsAnchor() { assertEquals(9000L, WearStopwatch("set", 2000, 1000).elapsed(8000)) }
+
+    @Test fun endingRestNeverRecordsOrNavigates() {
+        for (allDone in listOf(false, true)) {
+            val value = sample()
+            val resting = value.copy(restEndAt = 999999L, exercises = value.exercises.map { ex ->
+                if (allDone) ex.copy(sets = ex.sets.map { it.copy(done = true) }) else ex
+            })
+            val ended = resting.endRest()
+            assertEquals(0L, ended.restEndAt)
+            assertEquals(resting.currentExercise, ended.currentExercise)
+            assertEquals(resting.currentSetIndex, ended.currentSetIndex)
+            assertEquals(resting.completedSets, ended.completedSets)
+            assertEquals(resting.exercises, ended.exercises)
+            assertEquals(resting.localSequence, ended.localSequence)
+        }
+    }
+
+    @Test fun explicitExerciseSelectionEndsRestAndPreservesMeasurements() {
+        val value = sample()
+        val exercise = value.exercises.first()
+        val resting = value.copy(restEndAt = 999999L, exercises = listOf(exercise, exercise.copy(id = "other")))
+        val next = resting.selectExercise(1)
+        assertEquals(1, next.currentExercise)
+        assertEquals(0L, next.restEndAt)
+        assertEquals(resting.exercises, next.exercises)
+        assertEquals(resting.completedSets, next.completedSets)
+        assertEquals(resting.localSequence, next.localSequence)
+        val previous = next.selectExercise(0)
+        assertEquals(resting.currentSet, previous.currentSet)
+    }
+
+    @Test fun unavailableNavigationDoesNotSkipRest() {
+        val resting = sample().copy(restEndAt = 999999L)
+        assertSame(resting, resting.selectExercise(-1))
+        assertSame(resting, resting.selectExercise(1))
+        assertSame(resting, resting.selectExercise(0))
+    }
 }

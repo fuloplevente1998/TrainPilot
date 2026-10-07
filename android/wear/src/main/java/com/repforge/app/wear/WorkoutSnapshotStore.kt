@@ -57,6 +57,13 @@ data class WearWorkout(
 
     val currentSet: WearSet?
         get() = exercise?.sets?.getOrNull(currentSetIndex)
+
+    /** Rest never completes a set or changes the selected exercise. */
+    fun endRest(): WearWorkout = if (restEndAt == 0L) this else copy(restEndAt = 0L)
+
+    /** Explicit navigation preserves all measurements and completion flags. */
+    fun selectExercise(index: Int): WearWorkout = if (index !in exercises.indices || index == currentExercise) this
+        else copy(currentExercise = index, restEndAt = 0L)
 }
 
 object WorkoutSnapshotStore {

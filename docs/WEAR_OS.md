@@ -371,3 +371,14 @@ haptics and background timing still require the paired device test.
 Next: mini calendar, then Watch7 Health Services (live heart rate and workout
 metrics), followed by Tiles/complications and Open on phone. No simulated health
 values are displayed in this implementation.
+# Wear UX r2: pihenő a gyakorlat képernyőjén
+
+A felhasználó valós Watch7 képei alapján a korábbi sorozatképernyő túl magas volt, az alsó gombok levágódtak. A pihenő Canvas és tartalom külön lapozó-gyökere pedig eltakarta a szöveges visszaszámlálót.
+
+Az elfogadott új felület közvetlen Előző/Rögzítés/Következő kerek vezérlőket használ. A sorozat rögzítése után a gyakorlat oldalán jelenik meg a vékony, fogyó pihenőív és a kis számláló; lejáratkor csak ezek tűnnek el. A Kihagyás kizárólag a pihenőt zárja le. Nincs automatikus sorozatrögzítés vagy gyakorlatváltás. Kész gyakorlatnál ugyanaz az oldal marad, az utolsónál külön megerősített Befejezés érhető el.
+
+Érvényes gyakorlatváltás közben a pihenő lezárása és az abszolút gyakorlatválasztás ebben a sorrendben kerül a tartós Wear parancssorba. Tiltott vagy azonos célú váltás semmit nem módosít. A telefon meglévő skipRest/selectExercise protokollját használjuk.
+
+A hosszú címek két sorba férnek; a főképernyők magassága csökkent, a Mentés/Mégse és a kezdőlapi törlés beljebb került. A középre helyezett tartalom nagyobb rendszer-betűméretnél görgethető. A plank stoppert koppintás indítja/szünetelteti, az időrögzítés külön művelet. Nullázás, oldalváltás és kézi időbeállítás az Edzésmenü / Stopper és oldalak alatt marad.
+
+Új natív regressziók ellenőrzik, hogy a pihenő lezárása nem változtat sorozatot/gyakorlatot, a kézi navigáció megőrzi az összes mérést, és a határgombok nem szakítják meg a pihenőt. A böngészős előnézet ellenőrzése nem helyettesíti a kész APK valós órás tesztjét. A telefonos kód és a startup animáció változatlan.
