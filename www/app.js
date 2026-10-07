@@ -81,8 +81,21 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
     overlay.style.pointerEvents='none';
     if(native||reduced||typeof overlay.animate!=='function')overlay.remove();
     else{
-     const exit=overlay.animate([{opacity:1},{opacity:0}],{duration:180,easing:'ease-out',fill:'forwards'});
-     exit.finished.then(()=>overlay.remove(),()=>overlay.remove());
+     const logo=overlay.querySelector('svg');
+     if(!logo){overlay.remove();return;}
+     // Continue from the live loading scale; never snap back to the small icon.
+     const from=new DOMMatrixReadOnly(getComputedStyle(logo).transform).a;
+     const to=Math.max(from,Math.max(innerWidth,innerHeight)*1.4/(logo.clientWidth*.5));
+     logo.style.animation='none';logo.style.transform=`scale(${from})`;
+     const zoomFrames=[],fadeFrames=[];
+     for(let n=0;n<=40;n++){
+      const progress=n/40,t=Math.max(0,Math.min(1,(progress-.55)/.45));
+      zoomFrames.push({offset:progress,transform:`scale(${from*Math.pow(to/from,progress)})`});
+      fadeFrames.push({offset:progress,opacity:1-t*t*(3-2*t)});
+     }
+     const timing={duration:480,easing:'linear',fill:'forwards'};
+     const zoom=logo.animate(zoomFrames,timing),fade=overlay.animate(fadeFrames,timing);
+     Promise.all([zoom.finished,fade.finished]).then(()=>overlay.remove(),()=>overlay.remove());
     }
    }
    try{console.info(`[TrainPilot] local UI ready in ${Math.round(boot.durationMs)} ms`)}catch(_){}

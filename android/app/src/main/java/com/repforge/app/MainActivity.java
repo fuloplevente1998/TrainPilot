@@ -47,6 +47,7 @@ public class MainActivity extends BridgeActivity {
             return WindowInsetsCompat.CONSUMED;
         });
         ViewCompat.requestApplyInsets(content);
+        startupScreen.attach();
     }
 
     @Override public void onResume() {

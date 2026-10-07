@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="trainpilot_startup_background">#0E1015</color>
-    <drawable name="trainpilot_startup_icon">@drawable/trainpilot_startup_logo</drawable>
+    <drawable name="trainpilot_startup_icon">@drawable/trainpilot_startup_initial</drawable>
 </resources>
