@@ -15944,14 +15944,13 @@ window.addEventListener?.('DOMContentLoaded',function(){
 // @endsection navigation-motion-137.js
 
 // @section wear-sync.js
-/* TrainPilot Wear OS companion bridge.
- * Keep this inside the canonical app.js runtime: TrainPilot intentionally ships
- * one external application script. Wear sync is optional and must never block
- * the phone workout flow.
+/* TrainPilot Wear OS bridge.
+ * Phone remains canonical, but the watch also receives a cached home/program
+ * snapshot so a workout can start immediately from the watch.
  */
 (function(){
  'use strict';
- let lastPayload=null,cleared=false,busy=false,commandBusy=false;
+ let lastPayload=null,lastHomePayload=null,cleared=false,busy=false,homeBusy=false,commandBusy=false;
 
  function api(){
   try{
@@ -15966,29 +15965,114 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(!exercise)return'';
   return String(exercise[lang]||exercise.hu||exercise.en||exercise.name||exercise.id||'');
  }
+ function dayName(program,day){
+  try{
+   if(typeof tp149ProgramDayName==='function')return String(tp149ProgramDayName(program,day)||day?.name||day?.id||'');
+  }catch(_){}
+  return String(day?.name||day?.id||'');
+ }
  function sessionKey(session){
   return String(session?.syncId||session?.id||session?.started||session?.workout||session?.dayId||'');
+ }
+ function configuredRest(){
+  let restSeconds=90;
+  try{
+   if(typeof settings==='function'){
+    const configured=Number(settings()?.rest);
+    if(Number.isFinite(configured)&&configured>0)restSeconds=configured;
+   }
+  }catch(_){}
+  return restSeconds;
+ }
+ function preparedDay(program,day,lang){
+  if(!program||!day)return null;
+  const ids=Array.isArray(day.exercises)?day.exercises:[];
+  const exercises=ids.map(id=>{
+   const source=typeof byId==='function'?byId(id):null;if(!source)return null;
+   const rx=program?.prescriptions?.[id]||{};
+   const loadType=String(rx.loadType||source.loadType||'');
+   const repUnit=String(rx.repUnit||source.repUnit||'');
+   const measurementType=String(rx.measurementType||source.measurementType||'');
+   const setCount=Math.max(1,Math.min(10,Number(rx.sets||source.sets)||1));
+   const baseWeight=Number.isFinite(Number(rx.weight))?Number(rx.weight):(Number(source.weight)||0);
+   let previous=null,recommendation=null;
+   try{if(typeof findLastExercise==='function')previous=findLastExercise(id)}catch(_){}
+   try{if(typeof rf152Recommendation==='function')recommendation=rf152Recommendation(id)}catch(_){}
+   return {
+    id:String(id),
+    name:exerciseName(source,lang),
+    loadType,
+    repUnit,
+    measurementType,
+    targetReps:String(rx.reps||source.reps||''),
+    sets:Array.from({length:setCount},(_,index)=>{
+     let weight=baseWeight;
+     if(previous?.loadType===loadType){
+      const old=previous?.sets?.[index]?.weight??previous?.sets?.[0]?.weight;
+      if(old!==undefined&&old!==null&&old!=='')weight=Number(old)||0;
+     }
+     if(recommendation?.action==='increase'&&Number.isFinite(Number(recommendation.weight)))weight=Number(recommendation.weight);
+     return {set:index+1,reps:'',weight:loadType==='bodyweight'?0:weight,done:false,leftSeconds:0,rightSeconds:0,distanceMeters:0};
+    })
+   };
+  }).filter(Boolean);
+  return {
+   id:String(day.id||''),
+   name:dayName(program,day),
+   programId:String(program.id||''),
+   programName:String(program.name||'TrainPilot'),
+   exercises
+  };
+ }
+ function homeSnapshot(){
+  try{
+   if(typeof activeProgram!=='function'||typeof programDay!=='function')return null;
+   const active=activeProgram();if(!active)return null;
+   const lang=language(),days=(Array.isArray(active.days)?active.days:[]).map(day=>preparedDay(active,day,lang)).filter(Boolean);
+   let planned=null;
+   try{if(typeof nextPlanned==='function')planned=nextPlanned()}catch(_){}
+   let recommendedProgram=active,recommendedDay=null,scheduleId='',plannedStart='';
+   if(planned){
+    try{recommendedProgram=(typeof programById==='function'&&programById(planned.programId))||active}catch(_){recommendedProgram=active}
+    try{recommendedDay=programDay(recommendedProgram,planned.dayId||planned.workout)}catch(_){}
+    scheduleId=String(planned.id||'');plannedStart=String(planned.start||'');
+   }
+   if(!recommendedDay){
+    let id='';
+    try{id=typeof nextWorkout==='function'?String(nextWorkout()||''):''}catch(_){}
+    recommendedProgram=active;
+    recommendedDay=programDay(active,id)||active.days?.[0]||null;
+   }
+   return {
+    schema:1,
+    activeProgramId:String(active.id||''),
+    activeProgramName:String(active.name||'TrainPilot'),
+    restSeconds:configuredRest(),
+    hasDraft:!!(typeof db!=='undefined'&&db?.get&&db.get('draft',null)),
+    recommended:recommendedDay?{
+     scheduleId,
+     plannedStart,
+     day:preparedDay(recommendedProgram,recommendedDay,lang)
+    }:null,
+    days
+   };
+  }catch(_){return null}
  }
  function snapshot(){
   try{
    if(typeof state==='undefined'||!state?.session)return null;
    const session=state.session,lang=language(),exercises=Array.isArray(session.exercises)?session.exercises:[];
    const current=Number.isInteger(state.current)?state.current:0;
-   let restSeconds=90;
-   try{
-    if(typeof settings==='function'){
-     const configured=Number(settings()?.rest);
-     if(Number.isFinite(configured)&&configured>0)restSeconds=configured;
-    }
-   }catch(_){}
    return {
     schema:1,
     workoutId:sessionKey(session),
     programId:String(session.programId||''),
     programName:String(session.programName||''),
+    dayId:String(session.dayId||session.workout||''),
+    scheduleId:String(session.scheduleId||''),
     started:String(session.started||''),
     currentExercise:Math.max(0,Math.min(current,Math.max(0,exercises.length-1))),
-    restSeconds,
+    restSeconds:configuredRest(),
     restEndAt:Number(state.restEndAt||0),
     language:lang,
     exercises:exercises.map(exercise=>({
@@ -16009,6 +16093,15 @@ window.addEventListener?.('DOMContentLoaded',function(){
     }))
    };
   }catch(_){return null}
+ }
+ async function syncHomeNow(){
+  if(homeBusy)return;
+  const bridge=api();if(!bridge?.publishHome)return;
+  const value=homeSnapshot();if(!value)return;
+  const payload=JSON.stringify(value);if(payload===lastHomePayload)return;
+  homeBusy=true;
+  try{await bridge.publishHome({snapshot:value});lastHomePayload=payload}catch(_){}
+  finally{homeBusy=false}
  }
  async function syncNow(){
   if(busy)return;
@@ -16067,9 +16160,28 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
  }
  async function applyCommand(command){
-  if(!command||typeof state==='undefined'||!state.session)return false;
-  if(String(command.workoutId||'')!==sessionKey(state.session))return false;
+  if(!command||typeof state==='undefined')return false;
   const action=String(command.action||'');
+  if(action==='startWorkout'){
+   const expected=String(command.workoutId||command.started||'');
+   if(state.session)return expected&&sessionKey(state.session)===expected;
+   try{if(typeof db!=='undefined'&&db?.get&&db.get('draft',null))return false}catch(_){}
+   const dayId=String(command.dayId||''),programId=String(command.programId||''),scheduleId=String(command.scheduleId||'');
+   if(!dayId||typeof startWorkout!=='function')return false;
+   const result=startWorkout(dayId,scheduleId||null,programId||null);
+   if(result&&typeof result.then==='function')await result;
+   if(!state.session)return false;
+   if(command.started){
+    state.session.started=String(command.started);
+    try{
+     const intervals=typeof workoutIntervals==='function'?workoutIntervals(state.session):state.session.activeIntervals;
+     if(Array.isArray(intervals)&&intervals.length)intervals[0].start=String(command.started);
+    }catch(_){}
+   }
+   persistDraft();renderWorkout();return true;
+  }
+  if(!state.session)return false;
+  if(String(command.workoutId||'')!==sessionKey(state.session))return false;
   if(action==='nextExercise'||action==='prevExercise'){
    const count=state.session.exercises?.length||0;if(!count)return false;
    const delta=action==='nextExercise'?1:-1;
@@ -16123,21 +16235,22 @@ window.addEventListener?.('DOMContentLoaded',function(){
     changed=true;
     try{await bridge.ackCommand({commandId:id});}catch(_){}
    }
-   if(changed){lastPayload=null;await syncNow();}
+   if(changed){lastPayload=null;lastHomePayload=null;await syncNow();await syncHomeNow();}
   }catch(_){
    // Command delivery is best-effort around the canonical local workout state.
   }finally{commandBusy=false}
  }
  if(typeof window!=='undefined'){
-  window.TrainPilotWearSync={syncNow,drainCommands,makeSnapshot:snapshot};
-  window.addEventListener?.('focus',()=>{drainCommands();syncNow();});
+  window.TrainPilotWearSync={syncNow,syncHomeNow,drainCommands,makeSnapshot:snapshot,makeHomeSnapshot:homeSnapshot};
+  window.addEventListener?.('focus',()=>{drainCommands();syncNow();syncHomeNow();});
  }
- if(typeof document!=='undefined')document.addEventListener?.('visibilitychange',()=>{if(!document.hidden){drainCommands();syncNow();}});
+ if(typeof document!=='undefined')document.addEventListener?.('visibilitychange',()=>{if(!document.hidden){drainCommands();syncNow();syncHomeNow();}});
  if(typeof setInterval==='function'){
   setInterval(syncNow,1500);
+  setInterval(syncHomeNow,3000);
   setInterval(drainCommands,900);
  }
- if(typeof setTimeout==='function')setTimeout(()=>{drainCommands();syncNow();},0);
+ if(typeof setTimeout==='function')setTimeout(()=>{drainCommands();syncNow();syncHomeNow();},0);
 })();
 // @endsection wear-sync.js
 

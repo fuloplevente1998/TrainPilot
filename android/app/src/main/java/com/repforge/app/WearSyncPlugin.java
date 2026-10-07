@@ -16,6 +16,7 @@ import org.json.JSONObject;
 @CapacitorPlugin(name = "WearSync")
 public class WearSyncPlugin extends Plugin {
     static final String ACTIVE_WORKOUT_PATH = "/trainpilot/active-workout";
+    static final String WATCH_HOME_PATH = "/trainpilot/watch-home";
 
     @PluginMethod
     public void publish(PluginCall call) {
@@ -23,6 +24,14 @@ public class WearSyncPlugin extends Plugin {
         if (input == null) { call.reject("Missing workout snapshot."); return; }
         try { publishSnapshot(ActiveWorkoutStore.save(getContext(), input), call); }
         catch (Exception e) { call.reject("Unable to prepare Wear workout snapshot.", e); }
+    }
+
+    @PluginMethod
+    public void publishHome(PluginCall call) {
+        JSObject input = call.getObject("snapshot");
+        if (input == null) { call.reject("Missing Wear home snapshot."); return; }
+        try { publishJson(WATCH_HOME_PATH, new JSONObject(input.toString()), call); }
+        catch (Exception e) { call.reject("Unable to prepare Wear home snapshot.", e); }
     }
 
     @PluginMethod
@@ -43,9 +52,6 @@ public class WearSyncPlugin extends Plugin {
 
     @PluginMethod
     public void pendingCommands(PluginCall call) {
-        // Do not rely only on WearableListenerService delivery. DataItems are
-        // persistent, so scan the local Data Layer view as well before draining
-        // the native queue. This makes foreground phone sync self-healing.
         Wearable.getDataClient(getContext()).getDataItems()
                 .addOnSuccessListener(items -> {
                     try {
@@ -56,11 +62,7 @@ public class WearSyncPlugin extends Plugin {
                             try {
                                 String raw = DataMapItem.fromDataItem(item).getDataMap().getString("command");
                                 if (raw == null || raw.isEmpty()) continue;
-                                WearCommandQueueStore.enqueue(
-                                        getContext(),
-                                        new JSONObject(raw),
-                                        item.getUri().toString()
-                                );
+                                WearCommandQueueStore.enqueue(getContext(), new JSONObject(raw), item.getUri().toString());
                             } catch (Exception ignored) {
                                 // One malformed/stale DataItem must not block the rest.
                             }
@@ -70,11 +72,7 @@ public class WearSyncPlugin extends Plugin {
                         items.release();
                     }
                 })
-                .addOnFailureListener(error -> {
-                    // Listener-fed queued commands can still be processed even if
-                    // an explicit Data Layer scan is temporarily unavailable.
-                    resolvePendingCommands(call, error == null ? "scan failed" : error.getMessage());
-                });
+                .addOnFailureListener(error -> resolvePendingCommands(call, error == null ? "scan failed" : error.getMessage()));
     }
 
     @PluginMethod
@@ -104,8 +102,7 @@ public class WearSyncPlugin extends Plugin {
                 .addOnSuccessListener(items -> {
                     try {
                         for (DataItem item : items) {
-                            if (item != null && item.getUri() != null
-                                    && expectedPath.equals(item.getUri().getPath())) {
+                            if (item != null && item.getUri() != null && expectedPath.equals(item.getUri().getPath())) {
                                 Wearable.getDataClient(getContext()).deleteDataItems(item.getUri());
                             }
                         }
@@ -120,11 +117,22 @@ public class WearSyncPlugin extends Plugin {
         mapRequest.getDataMap().putBoolean("active", snapshot.optBoolean("active", true));
         mapRequest.getDataMap().putLong("revision", snapshot.optLong("revision", 0L));
         mapRequest.getDataMap().putString("snapshot", snapshot.toString());
+        put(mapRequest, snapshot.optLong("revision", 0L), call);
+    }
+
+    private void publishJson(String path, JSONObject snapshot, PluginCall call) {
+        PutDataMapRequest mapRequest = PutDataMapRequest.create(path);
+        mapRequest.getDataMap().putString("snapshot", snapshot.toString());
+        mapRequest.getDataMap().putLong("publishedAt", System.currentTimeMillis());
+        put(mapRequest, 0L, call);
+    }
+
+    private void put(PutDataMapRequest mapRequest, long revision, PluginCall call) {
         PutDataRequest request = mapRequest.asPutDataRequest().setUrgent();
         Wearable.getDataClient(getContext()).putDataItem(request)
                 .addOnSuccessListener(item -> {
                     JSObject result = new JSObject();
-                    result.put("revision", snapshot.optLong("revision", 0L));
+                    result.put("revision", revision);
                     result.put("uri", item.getUri().toString());
                     call.resolve(result);
                 })

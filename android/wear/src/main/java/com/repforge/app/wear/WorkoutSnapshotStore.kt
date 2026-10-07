@@ -1,6 +1,7 @@
 package com.repforge.app.wear
 
 import android.content.Context
+import org.json.JSONArray
 import org.json.JSONObject
 
 data class WearSet(
@@ -24,7 +25,11 @@ data class WearExercise(
 
 data class WearWorkout(
     val revision: Long,
+    val programId: String,
     val programName: String,
+    val dayId: String,
+    val scheduleId: String,
+    val started: String,
     val workoutId: String,
     val currentExercise: Int,
     val restSeconds: Int,
@@ -62,6 +67,14 @@ object WorkoutSnapshotStore {
         }
         prefs.edit().putString(SNAPSHOT, raw).apply()
         return parsed
+    }
+
+    fun saveWorkout(context: Context, workout: WearWorkout): WearWorkout {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putString(SNAPSHOT, encode(workout).toString())
+            .apply()
+        return workout
     }
 
     fun load(context: Context): WearWorkout? {
@@ -109,13 +122,58 @@ object WorkoutSnapshotStore {
             if (exercises.isEmpty()) return null
             WearWorkout(
                 revision = root.optLong("revision", 0L),
+                programId = root.optString("programId"),
                 programName = root.optString("programName"),
-                workoutId = root.optString("workoutId"),
+                dayId = root.optString("dayId"),
+                scheduleId = root.optString("scheduleId"),
+                started = root.optString("started"),
+                workoutId = root.optString("workoutId", root.optString("started")),
                 currentExercise = root.optInt("currentExercise", 0).coerceIn(0, exercises.lastIndex),
                 restSeconds = root.optInt("restSeconds", 90).coerceAtLeast(1),
                 restEndAt = root.optLong("restEndAt", 0L),
                 exercises = exercises
             )
         } catch (_: Exception) { null }
+    }
+
+    private fun encode(workout: WearWorkout): JSONObject {
+        val root = JSONObject()
+            .put("active", true)
+            .put("revision", workout.revision)
+            .put("programId", workout.programId)
+            .put("programName", workout.programName)
+            .put("dayId", workout.dayId)
+            .put("scheduleId", workout.scheduleId)
+            .put("started", workout.started)
+            .put("workoutId", workout.workoutId)
+            .put("currentExercise", workout.currentExercise)
+            .put("restSeconds", workout.restSeconds)
+            .put("restEndAt", workout.restEndAt)
+        val exercises = JSONArray()
+        workout.exercises.forEach { exercise ->
+            val sets = JSONArray()
+            exercise.sets.forEach { set ->
+                sets.put(
+                    JSONObject()
+                        .put("set", set.number)
+                        .put("reps", set.reps)
+                        .put("weight", set.weight)
+                        .put("done", set.done)
+                        .put("leftSeconds", set.leftSeconds)
+                        .put("rightSeconds", set.rightSeconds)
+                        .put("distanceMeters", set.distanceMeters)
+                )
+            }
+            exercises.put(
+                JSONObject()
+                    .put("id", exercise.id)
+                    .put("name", exercise.name)
+                    .put("loadType", exercise.loadType)
+                    .put("repUnit", exercise.repUnit)
+                    .put("measurementType", exercise.measurementType)
+                    .put("sets", sets)
+            )
+        }
+        return root.put("exercises", exercises)
     }
 }

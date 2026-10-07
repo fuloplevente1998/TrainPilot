@@ -25,7 +25,7 @@
                 <data
                     android:scheme="wear"
                     android:host="*"
-                    android:path="/trainpilot/active-workout" />
+                    android:pathPrefix="/trainpilot/" />
             </intent-filter>
         </service>
 
