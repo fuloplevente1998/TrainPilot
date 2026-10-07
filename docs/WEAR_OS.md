@@ -61,11 +61,7 @@ android/app/src/main/java/com/repforge/app/
 └── WearDataListenerService.java
 ```
 
-and a small web integration layer such as:
-
-```text
-www/wear-sync.js
-```
+and a small Wear bridge section inside the canonical `www/app.js` runtime. TrainPilot deliberately keeps one external application script, so Wear sync follows that existing single-source rule instead of adding a second runtime JS file.
 
 ## Data ownership and sync
 
@@ -188,7 +184,7 @@ Initial Wear module:
 - same application ID (`com.repforge.app`) for phone/Wear packaging compatibility;
 - separate namespace (`com.repforge.app.wear`) for source organization.
 
-The first module deliberately contains no Data Layer or Health Services logic yet. The goal of the first commit is to prove that the repository can contain a clean native Wear target without destabilizing the phone application.
+The branch now contains the first Data Layer implementation: the phone publishes a versioned active-workout snapshot through a Capacitor `WearSync` plugin, while the Wear module persists and renders the latest snapshot. Health Services and watch → phone commands are intentionally deferred to later phases.
 
 ## Implementation phases
 
@@ -202,11 +198,11 @@ The first module deliberately contains no Data Layer or Health Services logic ye
 
 ### Phase 1 — phone/watch workout sync
 
-- [ ] define versioned `ActiveWorkoutSnapshot` schema;
-- [ ] implement phone `ActiveWorkoutStore`;
-- [ ] implement phone Data Layer service/plugin;
-- [ ] implement Wear Data Layer repository;
-- [ ] mirror start/resume/update/finish lifecycle;
+- [x] define versioned active-workout snapshot schema (schema 1);
+- [x] implement phone `ActiveWorkoutStore`;
+- [x] implement phone Data Layer plugin;
+- [x] implement Wear Data Layer receiver + local snapshot cache;
+- [ ] complete lifecycle mirroring (phone → watch snapshot updates are implemented; watch → phone commands are next);
 - [ ] add revision/event conflict protection;
 - [ ] regression tests around existing `persistDraft()` semantics.
 
@@ -245,3 +241,20 @@ Until a phone-side Wear bridge is introduced:
 - Wear changes are isolated to `android/wear` plus the minimal root Gradle configuration needed to include it.
 
 When synchronization work starts, tests should prove that the same set/reps/load changes result in the same persisted TrainPilot draft regardless of whether the action originated on phone or watch.
+
+
+## Current branch implementation
+
+As of the first Phase 1 integration on `feat/wear-os`:
+
+- `:wear` is a real Wear OS application module;
+- the phone remains Capacitor/WebView + Java and has not been migrated to Kotlin;
+- `WearSyncPlugin` publishes `/trainpilot/active-workout` DataItems;
+- `ActiveWorkoutStore` persists the latest phone-side snapshot and revision;
+- the canonical `www/app.js` creates a normalized snapshot while an active workout exists;
+- the Wear app receives and caches that snapshot and shows the active program, current exercise and current unfinished set;
+- no active workout produces a dedicated idle screen on the watch;
+- the fast TrainPilot regression suite passes;
+- the dedicated Wear integration workflow successfully builds both `:app:assembleDebug` and `:wear:assembleDebug` and uploads both APKs.
+
+The next implementation milestone is watch → phone commands (set complete, repetitions/load changes, exercise navigation), followed by rest timer/haptics.
