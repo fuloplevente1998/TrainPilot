@@ -15982,6 +15982,320 @@ window.addEventListener?.('DOMContentLoaded',function(){
 });
 // @endsection navigation-motion-137.js
 
+// @section wear-sync.js
+/* TrainPilot Wear OS bridge.
+ * Phone remains canonical, but the watch also receives a cached home/program
+ * snapshot so a workout can start immediately from the watch.
+ */
+(function(){
+ 'use strict';
+ let lastPayload=null,lastHomePayload=null,cleared=false,busy=false,homeBusy=false,commandBusy=false;
+
+ function api(){
+  try{
+   if(typeof window==='undefined'||window.Capacitor?.isNativePlatform?.()!==true)return null;
+   return window.Capacitor?.Plugins?.WearSync||window.Capacitor?.registerPlugin?.('WearSync')||null;
+  }catch(_){return null}
+ }
+ function language(){
+  try{return typeof db!=='undefined'&&db?.get?String(db.get('language','hu')||'hu'):'hu'}catch(_){return'hu'}
+ }
+ function exerciseName(exercise,lang){
+  if(!exercise)return'';
+  return String(exercise[lang]||exercise.hu||exercise.en||exercise.name||exercise.id||'');
+ }
+ function dayName(program,day){
+  try{
+   if(typeof tp149ProgramDayName==='function')return String(tp149ProgramDayName(program,day)||day?.name||day?.id||'');
+  }catch(_){}
+  return String(day?.name||day?.id||'');
+ }
+ function sessionKey(session){
+  return String(session?.syncId||session?.id||session?.started||session?.workout||session?.dayId||'');
+ }
+ function configuredRest(){
+  let restSeconds=90;
+  try{
+   if(typeof settings==='function'){
+    const configured=Number(settings()?.rest);
+    if(Number.isFinite(configured)&&configured>0)restSeconds=configured;
+   }
+  }catch(_){}
+  return restSeconds;
+ }
+ function preparedDay(program,day,lang){
+  if(!program||!day)return null;
+  const ids=Array.isArray(day.exercises)?day.exercises:[];
+  const exercises=ids.map(id=>{
+   const source=typeof byId==='function'?byId(id):null;if(!source)return null;
+   const rx=program?.prescriptions?.[id]||{};
+   const loadType=String(rx.loadType||source.loadType||'');
+   const repUnit=String(rx.repUnit||source.repUnit||'');
+   const measurementType=String(rx.measurementType||source.measurementType||'');
+   const setCount=Math.max(1,Math.min(10,Number(rx.sets||source.sets)||1));
+   const baseWeight=Number.isFinite(Number(rx.weight))?Number(rx.weight):(Number(source.weight)||0);
+   let previous=null,recommendation=null;
+   try{if(typeof findLastExercise==='function')previous=findLastExercise(id)}catch(_){}
+   try{if(typeof rf152Recommendation==='function')recommendation=rf152Recommendation(id)}catch(_){}
+   return {
+    id:String(id),
+    name:exerciseName(source,lang),
+    loadType,
+    repUnit,
+    measurementType,
+    targetReps:String(rx.reps||source.reps||''),
+    sets:Array.from({length:setCount},(_,index)=>{
+     let weight=baseWeight;
+     if(previous?.loadType===loadType){
+      const old=previous?.sets?.[index]?.weight??previous?.sets?.[0]?.weight;
+      if(old!==undefined&&old!==null&&old!=='')weight=Number(old)||0;
+     }
+     if(recommendation?.action==='increase'&&Number.isFinite(Number(recommendation.weight)))weight=Number(recommendation.weight);
+     return {set:index+1,reps:'',weight:loadType==='bodyweight'?0:weight,done:false,leftSeconds:0,rightSeconds:0,distanceMeters:0};
+    })
+   };
+  }).filter(Boolean);
+  return {
+   id:String(day.id||''),
+   name:dayName(program,day),
+   programId:String(program.id||''),
+   programName:String(program.name||'TrainPilot'),
+   exercises
+  };
+ }
+ function homeSnapshot(){
+  try{
+   if(typeof activeProgram!=='function'||typeof programDay!=='function')return null;
+   const active=activeProgram();if(!active)return null;
+   const lang=language(),days=(Array.isArray(active.days)?active.days:[]).map(day=>preparedDay(active,day,lang)).filter(Boolean);
+   let planned=null;
+   try{if(typeof nextPlanned==='function')planned=nextPlanned()}catch(_){}
+   let recommendedProgram=active,recommendedDay=null,scheduleId='',plannedStart='';
+   if(planned){
+    try{recommendedProgram=(typeof programById==='function'&&programById(planned.programId))||active}catch(_){recommendedProgram=active}
+    try{recommendedDay=programDay(recommendedProgram,planned.dayId||planned.workout)}catch(_){}
+    scheduleId=String(planned.id||'');plannedStart=String(planned.start||'');
+   }
+   if(!recommendedDay){
+    let id='';
+    try{id=typeof nextWorkout==='function'?String(nextWorkout()||''):''}catch(_){}
+    recommendedProgram=active;
+    recommendedDay=programDay(active,id)||active.days?.[0]||null;
+   }
+   return {
+    schema:1,
+    activeProgramId:String(active.id||''),
+    activeProgramName:String(active.name||'TrainPilot'),
+    restSeconds:configuredRest(),
+    hasDraft:!!(typeof db!=='undefined'&&db?.get&&db.get('draft',null)),
+    recommended:recommendedDay?{
+     scheduleId,
+     plannedStart,
+     day:preparedDay(recommendedProgram,recommendedDay,lang)
+    }:null,
+    days
+   };
+  }catch(_){return null}
+ }
+ function snapshot(){
+  try{
+   if(typeof state==='undefined'||!state?.session)return null;
+   const session=state.session,lang=language(),exercises=Array.isArray(session.exercises)?session.exercises:[];
+   const current=Number.isInteger(state.current)?state.current:0;
+   return {
+    schema:1,
+    workoutId:sessionKey(session),
+    programId:String(session.programId||''),
+    programName:String(session.programName||''),
+    dayId:String(session.dayId||session.workout||''),
+    scheduleId:String(session.scheduleId||''),
+    started:String(session.started||''),
+    currentExercise:Math.max(0,Math.min(current,Math.max(0,exercises.length-1))),
+    restSeconds:configuredRest(),
+    restEndAt:Number(state.restEndAt||0),
+    language:lang,
+    exercises:exercises.map(exercise=>({
+     id:String(exercise?.id||''),
+     name:exerciseName(exercise,lang),
+     loadType:String(exercise?.loadType||''),
+     repUnit:String(exercise?.repUnit||''),
+     measurementType:String(exercise?.measurementType||''),
+     sets:(Array.isArray(exercise?.sets)?exercise.sets:[]).map((set,index)=>({
+      set:Number(set?.set||index+1),
+      reps:String(set?.reps??''),
+      weight:set?.weight??'',
+      done:!!set?.done,
+      leftSeconds:set?.leftSeconds??'',
+      rightSeconds:set?.rightSeconds??'',
+      distanceMeters:set?.distanceMeters??''
+     }))
+    }))
+   };
+  }catch(_){return null}
+ }
+ async function syncHomeNow(){
+  if(homeBusy)return;
+  const bridge=api();if(!bridge?.publishHome)return;
+  const value=homeSnapshot();if(!value)return;
+  const payload=JSON.stringify(value);if(payload===lastHomePayload)return;
+  homeBusy=true;
+  try{await bridge.publishHome({snapshot:value});lastHomePayload=payload}catch(_){}
+  finally{homeBusy=false}
+ }
+ async function syncNow(){
+  if(busy)return;
+  const bridge=api();if(!bridge)return;
+  const value=snapshot(),payload=value?JSON.stringify(value):null;
+  if(payload===lastPayload&&(value||cleared))return;
+  busy=true;
+  try{
+   if(value){
+    await bridge.publish({snapshot:value});
+    lastPayload=payload;cleared=false;
+   }else if(!cleared){
+    await bridge.clear();
+    lastPayload=null;cleared=true;
+   }
+  }catch(_){
+   // A missing/disconnected watch never changes phone workout behavior.
+  }finally{busy=false}
+ }
+ function locateExercise(command){
+  const session=state?.session;if(!session)return null;
+  const list=Array.isArray(session.exercises)?session.exercises:[];
+  const requested=Number(command?.exerciseIndex);
+  if(Number.isInteger(requested)&&requested>=0&&requested<list.length){
+   const ex=list[requested];
+   if(!command.exerciseId||String(ex?.id||'')===String(command.exerciseId))return {exercise:ex,index:requested};
+  }
+  const id=String(command?.exerciseId||'');
+  const index=id?list.findIndex(ex=>String(ex?.id||'')===id):-1;
+  return index>=0?{exercise:list[index],index}:null;
+ }
+ function locateSet(exercise,command){
+  const sets=Array.isArray(exercise?.sets)?exercise.sets:[];
+  const requested=Number(command?.setIndex);
+  if(Number.isInteger(requested)&&requested>=0&&requested<sets.length){
+   const set=sets[requested];
+   if(!command.setNumber||Number(set?.set||requested+1)===Number(command.setNumber))return {set,index:requested};
+  }
+  const number=Number(command?.setNumber);
+  const index=Number.isFinite(number)?sets.findIndex((set,i)=>Number(set?.set||i+1)===number):-1;
+  return index>=0?{set:sets[index],index}:null;
+ }
+ function applySetValues(set,command){
+  if(command?.weight!==undefined){
+   const n=Number(String(command.weight).replace(',','.'));
+   if(Number.isFinite(n))set.weight=Math.max(0,n);
+  }
+  if(command?.reps!==undefined){
+   const n=Math.max(0,Math.round(Number(command.reps)||0));
+   set.reps=n?String(n):'';
+  }
+  if(command?.leftSeconds!==undefined)set.leftSeconds=Math.max(0,Math.round(Number(command.leftSeconds)||0));
+  if(command?.rightSeconds!==undefined)set.rightSeconds=Math.max(0,Math.round(Number(command.rightSeconds)||0));
+  if((command?.leftSeconds!==undefined||command?.rightSeconds!==undefined)&&Number(set.leftSeconds)>0&&Number(set.rightSeconds)>0){
+   set.reps=String(Math.min(Number(set.leftSeconds),Number(set.rightSeconds)));
+  }
+ }
+ async function applyCommand(command){
+  if(!command||typeof state==='undefined')return false;
+  const action=String(command.action||'');
+  if(action==='startWorkout'){
+   const expected=String(command.workoutId||command.started||'');
+   if(state.session)return expected&&sessionKey(state.session)===expected;
+   try{if(typeof db!=='undefined'&&db?.get&&db.get('draft',null))return false}catch(_){}
+   const dayId=String(command.dayId||''),programId=String(command.programId||''),scheduleId=String(command.scheduleId||'');
+   if(!dayId||typeof startWorkout!=='function')return false;
+   const result=startWorkout(dayId,scheduleId||null,programId||null);
+   if(result&&typeof result.then==='function')await result;
+   if(!state.session)return false;
+   if(command.started){
+    state.session.started=String(command.started);
+    try{
+     const intervals=typeof workoutIntervals==='function'?workoutIntervals(state.session):state.session.activeIntervals;
+     if(Array.isArray(intervals)&&intervals.length)intervals[0].start=String(command.started);
+    }catch(_){}
+   }
+   persistDraft();renderWorkout();return true;
+  }
+  if(!state.session)return false;
+  if(String(command.workoutId||'')!==sessionKey(state.session))return false;
+  if(action==='nextExercise'||action==='prevExercise'){
+   const count=state.session.exercises?.length||0;if(!count)return false;
+   const delta=action==='nextExercise'?1:-1;
+   const next=Math.max(0,Math.min(count-1,(Number(state.current)||0)+delta));
+   if(next===state.current)return true;
+   state.current=next;persistDraft();renderWorkout();window.scrollTo?.(0,0);return true;
+  }
+  if(action==='skipRest'){
+   stopTimer();persistDraft();renderWorkout();return true;
+  }
+  const located=locateExercise(command);if(!located)return false;
+  const target=locateSet(located.exercise,command);if(!target)return false;
+  if(action==='updateSet'){
+   const field=String(command.field||'');
+   if(!['weight','reps','leftSeconds','rightSeconds'].includes(field))return false;
+   if(field==='weight'){
+    const n=Number(String(command.value).replace(',','.'));if(!Number.isFinite(n))return false;target.set.weight=Math.max(0,n);
+   }else{
+    const n=Math.max(0,Math.round(Number(command.value)||0));
+    target.set[field]=field==='reps'?(n?String(n):''):n;
+    if((field==='leftSeconds'||field==='rightSeconds')&&Number(target.set.leftSeconds)>0&&Number(target.set.rightSeconds)>0)target.set.reps=String(Math.min(Number(target.set.leftSeconds),Number(target.set.rightSeconds)));
+   }
+   persistDraft();renderWorkout();return true;
+  }
+  if(action==='completeSet'){
+   applySetValues(target.set,command);
+   state.current=located.index;
+   if(!target.set.done){
+    const result=toggleSet(located.index,target.index);
+    if(result&&typeof result.then==='function')await result;
+   }
+   if(target.set.done){persistDraft();return true}
+   return false;
+  }
+  return false;
+ }
+ async function drainCommands(){
+  if(commandBusy)return;
+  const bridge=api();if(!bridge?.pendingCommands||!bridge?.ackCommand)return;
+  commandBusy=true;
+  try{
+   const result=await bridge.pendingCommands();
+   const commands=Array.isArray(result?.commands)?result.commands:[];
+   let changed=false;
+   for(const command of commands){
+    const id=String(command?.commandId||'');
+    if(!id)continue;
+    let applied=false;
+    try{applied=await applyCommand(command);}catch(_){}
+    if(!applied)continue;
+    changed=true;
+    try{await bridge.ackCommand({commandId:id});}catch(_){}
+   }
+   if(changed){lastPayload=null;lastHomePayload=null;await syncNow();await syncHomeNow();}
+  }catch(_){
+   // Command delivery is best-effort around the canonical local workout state.
+  }finally{commandBusy=false}
+ }
+ if(typeof window!=='undefined'){
+  window.TrainPilotWearSync={syncNow,syncHomeNow,drainCommands,makeSnapshot:snapshot,makeHomeSnapshot:homeSnapshot};
+  window.addEventListener?.('focus',()=>{drainCommands();syncNow();syncHomeNow();});
+ }
+ if(typeof document!=='undefined')document.addEventListener?.('visibilitychange',()=>{if(!document.hidden){drainCommands();syncNow();syncHomeNow();}});
+ if(typeof setInterval==='function'){
+  setInterval(syncNow,1500);
+  setInterval(syncHomeNow,3000);
+  setInterval(drainCommands,900);
+ }
+ if(typeof setTimeout==='function')setTimeout(()=>{drainCommands();syncNow();syncHomeNow();},0);
+})();
+// @endsection wear-sync.js
+
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
 // @endsection ready.js
+
+
+

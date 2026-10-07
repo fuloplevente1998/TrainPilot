@@ -1,0 +1,157 @@
+name: Wear Release Gate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+      - 'fix/**'
+    paths:
+      - 'android/wear/build.gradle'
+      - 'android/wear/proguard-rules.pro'
+      - 'android/wear/src/**'
+      - 'android/build.gradle'
+      - 'android/settings.gradle'
+      - '.github/workflows/wear-release.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trainpilot-wear-release-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  wear-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Install Capacitor dependencies
+        run: npm ci
+
+      - name: Sync Capacitor Android project
+        run: npm run sync
+
+      - name: Verify release signing secrets
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          test -n "$ANDROID_STORE_PASSWORD"
+          test -n "$ANDROID_KEY_ALIAS"
+          test -n "$ANDROID_KEY_PASSWORD"
+
+      - name: Materialize temporary release keystore
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          KEYSTORE="$RUNNER_TEMP/trainpilot-release.jks"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
+          chmod 600 "$KEYSTORE"
+          echo "ANDROID_KEYSTORE_PATH=$KEYSTORE" >> "$GITHUB_ENV"
+
+      - name: Verify Wear release metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const pkg=require('./package.json');
+          const src=require('./SOURCE_VERSION.json');
+          const wear=fs.readFileSync('android/wear/build.gradle','utf8');
+          const wearVersion=wear.match(/versionName\s+"([^"]+)"/)?.[1];
+          const wearCode=Number(wear.match(/versionCode\s+(\d+)/)?.[1]);
+          const expectedVersion=src.displayVersion||src.version;
+          if(pkg.version!==src.version) throw new Error('Package/source version mismatch');
+          if(wearVersion!==expectedVersion) throw new Error('Wear version mismatch');
+          if(wearCode!==Number(src.versionCode)) throw new Error('Wear versionCode mismatch');
+          console.log(`Wear metadata OK: ${wearVersion} (${wearCode})`);
+          NODE
+
+      - name: Build signed Wear release APK
+        working-directory: android
+        env:
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :wear:testReleaseUnitTest :wear:assembleRelease
+
+      - name: Verify Wear APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          WEAR_APK=android/wear/build/outputs/apk/release/wear-release.apk
+          VERSION="$(node -p "require('./package.json').version")"
+          CODE="$(node -p "require('./SOURCE_VERSION.json').versionCode")"
+          DISPLAY_VERSION="$(node -p "require('./SOURCE_VERSION.json').displayVersion || require('./package.json').version")"
+          AAPT="$(ls "$ANDROID_HOME"/build-tools/*/aapt | sort -V | tail -1)"
+          SIGNER="$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)"
+
+          "$AAPT" dump badging "$WEAR_APK" > wear-apk-badging.txt
+          grep -q "package: name='com.repforge.app'" wear-apk-badging.txt
+          grep -q "versionCode='$CODE'" wear-apk-badging.txt
+          grep -q "versionName='$DISPLAY_VERSION'" wear-apk-badging.txt
+          "$SIGNER" verify --verbose "$WEAR_APK"
+
+          cp "$WEAR_APK" "TrainPilot-$VERSION-wear.apk"
+          sha256sum "TrainPilot-$VERSION-wear.apk" > WEAR-SHA256SUMS.txt
+
+      - name: Verify signer continuity
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/previous-release"
+          gh release download v1.0.0 --repo "$GITHUB_REPOSITORY" --pattern 'TrainPilot-1.0.0.apk' --dir "$RUNNER_TEMP/previous-release"
+          OLD_APK="$RUNNER_TEMP/previous-release/TrainPilot-1.0.0.apk"
+          WEAR_APK="android/wear/build/outputs/apk/release/wear-release.apk"
+          echo "485817d3c33b0623b030ad919fb5e07af27d5e5890a3f67fb8e4dbe4b729f22a  $OLD_APK" | sha256sum --check --
+          OLD_CERT="$(python3 scripts/apk_signer_cert.py "$OLD_APK")"
+          WEAR_CERT="$(python3 scripts/apk_signer_cert.py "$WEAR_APK")"
+          test -n "$OLD_CERT"
+          test -n "$WEAR_CERT"
+          test "$OLD_CERT" = "$WEAR_CERT" || { echo "::error::Wear signing certificate differs from public v1.0.0"; exit 1; }
+          echo "Wear release signing certificate matches public v1.0.0"
+
+      - name: Remove temporary signing material
+        if: always()
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/trainpilot-release.jks"
+
+      - name: Upload signed Wear release APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: TrainPilot-Wear-release-${{ github.run_id }}-${{ github.sha }}
+          path: |
+            TrainPilot-*-wear.apk
+            WEAR-SHA256SUMS.txt
+            wear-apk-badging.txt
+          if-no-files-found: error
+          retention-days: 14
