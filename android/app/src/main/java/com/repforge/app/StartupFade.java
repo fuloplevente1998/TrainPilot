@@ -33,7 +33,7 @@ final class StartupFade {
      * TEMPORARY measurement switch (logcat tag "StartupFade"). Logs update/draw gaps and,
      * on API 24+, per-frame FrameMetrics for the exit. Set to false once the cause is known.
      */
-    static final boolean TRACE = true;
+    static final boolean TRACE = false;
     private static final String TAG = "StartupFade";
 
     static float loadingScale(long elapsedMs) {

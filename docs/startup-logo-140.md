@@ -30,3 +30,8 @@ Az r1 kis összeállítási mozgása és az r2 külön rendszerikon-rétegre ado
 A 2026-10-07 10:28:59-es telefonos felvételen az r3 nagyítása már megfelel az igénynek, de a halványulás elején a kép közel 0,3 másodpercre megáll, majd a Kezdőoldal hirtelen megjelenik. A felvétel kb. 24 fps-es és egyenletes képkockaidőket tartalmaz; önmagában nem GPU-/főszálprofil.
 
 Az r4 a kódban látható két költséges átadási pontot kezeli: megszünteti a View-szintű alpha miatt a halványítás kezdetekor létrejövő teljes ablakos köztes rajzréteget, és DOM-készültség helyett a WebView már elkészült képkockájához köti a zoomot. A felhős indítás csak a fedőréteg eltávolítása után kezdődik. A jóváhagyott növekedési görbe, méret, 480 ms és utolsó 45%-os halványítás megmarad. A készülékes folyamatosságot az új APK telefonos tesztje igazolhatja; a böngészős előnézet nem méri az Android GPU-terhelését.
+
+
+## Elfogadás — 2026-10-07
+
+A felhasználó az r6 tesztet enyhe megmaradt akadás mellett elfogadta mainre emelésre. Kiadás: 1.2.8-rc1 /2712, TRACE=false. Az enyhe akadás ismert korlát; a teljes folyamatosság nem bizonyított.
