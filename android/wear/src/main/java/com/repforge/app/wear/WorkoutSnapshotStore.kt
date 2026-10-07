@@ -73,12 +73,13 @@ object WorkoutSnapshotStore {
         if (!root.optBoolean("active", true)) {
             // Do not let an old phone tombstone erase a newly started offline workout.
             val localStarted = try { java.time.Instant.parse(current?.started).toEpochMilli() } catch (_: Exception) { 0L }
-            if (current?.revision == 0L && root.optLong("syncedAt") < localStarted) return current
+            if (current?.revision == 0L && (current.localSequence > 0L || root.optLong("syncedAt") < localStarted)) return current
             clear(context)
             return null
         }
         val parsed = parse(raw) ?: return current
         if (WearClosureStore.isClosed(context, parsed.workoutId)) return current
+        if (current?.revision == 0L && current.localSequence > 0L && parsed.workoutId != current.workoutId) return current
         if (current?.workoutId == parsed.workoutId && parsed.localSequence < current.localSequence) return current
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(SNAPSHOT, raw).apply()
         return parsed

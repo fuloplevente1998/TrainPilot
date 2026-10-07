@@ -16218,6 +16218,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const d=db.get('draft',null);if(!d?.session||sessionKey(d.session)!==expected||!Array.isArray(d.session.exercises)||!d.session.exercises.length)return false;
   stopTimer();state.session=d.session;state.workout=d.session.dayId||d.workout;state.current=Math.max(0,Math.min(Number(d.current)||0,d.session.exercises.length-1));state.tab='plan';
   state.restEndAt=Number(d.restEndAt)>Date.now()?Number(d.restEndAt):null;
+  state.timer=state.restEndAt?Math.ceil((state.restEndAt-Date.now())/1000):0;
+  if(state.restEndAt&&typeof tickRest==='function')state.timerId=setInterval(tickRest,250);
   return true;
  }
  function mergeFinalSets(command){

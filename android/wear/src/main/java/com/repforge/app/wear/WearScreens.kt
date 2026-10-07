@@ -242,7 +242,7 @@ private fun WorkoutPager(workout: WearWorkout, restRemaining: Int,
 @Composable
 private fun SetHeading(workout: WearWorkout, onMenu: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Label("${workout.dayName.ifBlank { workout.dayId }} · ${workout.currentExercise + 1}/${workout.exercises.size}")
+        Box(Modifier.weight(1f)) { Label("${workout.dayName.ifBlank { workout.dayId }} · ${workout.currentExercise + 1}/${workout.exercises.size}") }
         Box(Modifier.width(40.dp).height(28.dp).clickable(role = Role.Button, onClick = onMenu), contentAlignment = Alignment.Center) {
             Text("···", color = Muted, fontSize = 20.sp)
         }
@@ -335,7 +335,11 @@ private fun TimedSetScreen(workout: WearWorkout, onChange: (String, Double) -> U
     val context = LocalContext.current
     val set = workout.currentSet ?: return
     val perSide = normalizeUnit(workout.exercise?.repUnit.orEmpty()) == "mp/oldal"
-    var side by rememberSaveable(workout.workoutId, workout.currentExercise, set.number) { mutableStateOf("leftSeconds") }
+    var side by rememberSaveable(workout.workoutId, workout.currentExercise, set.number) {
+        mutableStateOf(WearStopwatchStore.currentField(context, "${workout.workoutId}:${workout.exercise?.id}:${set.number}")
+            ?.takeIf { it == "leftSeconds" || it == "rightSeconds" }
+            ?: if (set.leftSeconds > 0 && set.rightSeconds == 0) "rightSeconds" else "leftSeconds")
+    }
     val field = if (perSide) side else "reps"
     val key = "${workout.workoutId}:${workout.exercise?.id}:${set.number}:$field"
     var timer by remember(key) { mutableStateOf(WearStopwatchStore.load(context, key)) }
@@ -362,7 +366,7 @@ private fun TimedSetScreen(workout: WearWorkout, onChange: (String, Double) -> U
         }
         Spacer(Modifier.height(6.dp))
         Pill(if (perSide) "✓ ${if (side == "leftSeconds") "Bal" else "Jobb"} idő rögzítése" else "✓ Idő rögzítése",
-            enabled = elapsed > 0 || fieldValue(set, field) > 0) {
+            enabled = timer.startedAt > 0 || timer.elapsedMillis > 0 || elapsed > 0 || fieldValue(set, field) > 0) {
             val measured = timer.elapsed()
             val seconds = if (measured > 0) ceil(measured / 1000.0) else fieldValue(set, field)
             onChange(field, seconds - fieldValue(workout.currentSet ?: set, field))

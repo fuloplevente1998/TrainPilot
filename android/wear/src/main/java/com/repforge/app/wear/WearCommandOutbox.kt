@@ -13,7 +13,8 @@ object WearCommandOutbox {
     @Synchronized
     fun enqueue(context: Context, command: JSONObject): Long {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val sequence = prefs.getLong("sequence", 0L) + 1L
+        val floor = maxOf(command.optLong("watchSequence"), command.optJSONObject("finalSnapshot")?.optLong("localSequence") ?: 0L)
+        val sequence = maxOf(prefs.getLong("sequence", 0L), floor) + 1L
         command.put("sequence", sequence)
         val pending = JSONArray(prefs.getString("pending", "[]"))
         pending.put(command)

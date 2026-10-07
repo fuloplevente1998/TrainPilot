@@ -13,6 +13,11 @@ data class WearStopwatch(val key: String, val elapsedMillis: Long = 0L, val star
 
 object WearStopwatchStore {
     private const val PREFS = "trainpilot_wear_stopwatch"
+    fun currentField(context: Context, prefix: String): String? {
+        val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("timer", null) ?: return null
+        val key = JSONObject(raw).optString("key")
+        return if (key.startsWith(prefix + ":")) key.substringAfterLast(":") else null
+    }
     fun load(context: Context, key: String): WearStopwatch {
         val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("timer", null)
         val root = raw?.let(::JSONObject)

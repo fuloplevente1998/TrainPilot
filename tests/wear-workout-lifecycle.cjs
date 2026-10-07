@@ -1,6 +1,6 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const app=fs.readFileSync('www/app.js','utf8');
-const source=app.match(/\/\/ @section wear-sync\.js\n([\s\S]*?)\/\/ @endsection wear-sync\.js/)[1];
+const source=fs.existsSync('www/wear-sync.js')?fs.readFileSync('www/wear-sync.js','utf8'):app.match(/\/\/ @section wear-sync\.js\n([\s\S]*?)\/\/ @endsection wear-sync\.js/)[1];
 function harness(){
  const storage=new Map(),acks=[],pending=[];let savedCalls=0;
  const db={get:(k,d)=>storage.has(k)?structuredClone(storage.get(k)):d,set:(k,v)=>storage.set(k,structuredClone(v))};
