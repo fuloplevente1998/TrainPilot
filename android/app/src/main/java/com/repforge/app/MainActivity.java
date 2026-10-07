@@ -20,6 +20,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(DistanceTrackerPlugin.class);
         registerPlugin(AppFeedbackPlugin.class);
         registerPlugin(BleDiscoveryPlugin.class);
+        registerPlugin(WearSyncPlugin.class);
         super.onCreate(savedInstanceState);
         applySystemTextSize();
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
