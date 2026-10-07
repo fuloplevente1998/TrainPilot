@@ -2,6 +2,18 @@ apply plugin: 'com.android.application'
 apply plugin: 'org.jetbrains.kotlin.android'
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
+def releaseKeystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+def releaseStorePassword = System.getenv("ANDROID_STORE_PASSWORD")
+def releaseKeyAlias = System.getenv("ANDROID_KEY_ALIAS")
+def releaseKeyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+def releaseSigningValues = [releaseKeystorePath, releaseStorePassword, releaseKeyAlias, releaseKeyPassword]
+def releaseSigningComplete = releaseSigningValues.every { it != null && !it.trim().isEmpty() }
+def releaseTaskRequested = gradle.startParameter.taskNames.any { it.toLowerCase().contains("release") }
+
+if (releaseTaskRequested && !releaseSigningComplete) {
+    throw new GradleException("Wear OS release signing requires ANDROID_KEYSTORE_PATH, ANDROID_STORE_PASSWORD, ANDROID_KEY_ALIAS and ANDROID_KEY_PASSWORD.")
+}
+
 android {
     namespace "com.repforge.app.wear"
     compileSdk rootProject.ext.compileSdkVersion
@@ -11,7 +23,18 @@ android {
         minSdkVersion 30
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 2711
-        versionName "1.2.8-wear-dev"
+        versionName "1.2.8"
+    }
+
+    signingConfigs {
+        release {
+            if (releaseSigningComplete) {
+                storeFile file(releaseKeystorePath)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
     }
 
     buildFeatures {
@@ -28,7 +51,11 @@ android {
     }
 
     buildTypes {
+        debug {
+            versionNameSuffix "-wear-dev"
+        }
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
