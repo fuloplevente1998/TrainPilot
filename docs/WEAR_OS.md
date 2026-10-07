@@ -298,3 +298,43 @@ The watch UI should expose the most useful live values during training, for exam
 ```
 
 This milestone is intentionally scheduled **before** Tiles/complications and before the later "Open on phone" deep-link action.
+
+
+## Product direction — full watch experience
+
+The Wear app should evolve from a phone companion/control surface into a focused TrainPilot watch experience. It must stay intentionally smaller than the phone UI and reuse the same program/calendar/workout model instead of creating a parallel product.
+
+Planned watch navigation:
+
+1. **Home** — TrainPilot branding, current date, active workout resume card when present, otherwise the next planned/next cycle workout with a large start action.
+2. **Workout** — current exercise, set/reps/load/time editing, set completion, rest timer, previous/next exercise and an explicit Finish action.
+3. **Mini calendar** — compact 7–14 day workout view with today, planned and completed states; detailed planning/editing remains on the phone.
+4. **Summary** — workout duration, completed exercises/sets and later Health Services metrics.
+5. **Programs** — active program days only, with a short preview and Start; full program editing stays on the phone.
+
+### Wear visual system
+
+Wear should use the existing TrainPilot brand rather than GitHub UI colors.
+
+Canonical TrainPilot colors already used by the phone app:
+
+- background: `#0e1015`
+- card/surface: `#1a1e25`
+- secondary surface: `#232933`
+- text: `#f6f8fb`
+- muted text: `#9aa5b6`
+- primary accent: `#f2bd45`
+- secondary accent: `#ffd975`
+
+The launcher artwork reinforces the same warm gold gradient (`#FFF1A0 → #F3C545 → #DEA12A`). Wear therefore uses an OLED-dark background with TrainPilot gold as the primary action/highlight color.
+
+### Delivery order
+
+1. [ ] branded Wear Home + start workout from watch;
+2. [ ] explicit Finish + post-workout summary;
+3. [ ] mini calendar;
+4. [ ] Galaxy Watch7 Health Services recording and live metrics;
+5. [ ] Tile/complication;
+6. [ ] explicit "Open on phone" deep-link action.
+
+Watch-started workouts should start immediately from a locally cached, phone-prepared program snapshot and sync back through the Data Layer. The watch must not require the phone WebView to be visibly open at the moment Start is pressed.
