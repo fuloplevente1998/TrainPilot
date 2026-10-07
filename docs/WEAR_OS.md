@@ -242,7 +242,6 @@ Until a phone-side Wear bridge is introduced:
 
 When synchronization work starts, tests should prove that the same set/reps/load changes result in the same persisted TrainPilot draft regardless of whether the action originated on phone or watch.
 
-
 ## Current branch implementation
 
 As of the first Phase 1 integration on `feat/wear-os`:
@@ -259,7 +258,6 @@ As of the first Phase 1 integration on `feat/wear-os`:
 
 The next implementation milestone is watch → phone commands (set complete, repetitions/load changes, exercise navigation), followed by rest timer/haptics.
 
-
 ## Interactive Wear controls
 
 Implemented on `feat/wear-os` after the initial display-only prototype:
@@ -270,3 +268,33 @@ Implemented on `feat/wear-os` after the initial display-only prototype:
 - Completing a set starts the rest countdown locally on the watch and vibrates when the countdown ends.
 - The phone applies commands to the canonical `state.session`, calls the existing workout handlers where appropriate, persists the draft and republishes the authoritative snapshot.
 - "Open on phone" via Wear remote activity/deep link remains a later milestone.
+
+## Next milestone — Galaxy Watch7 health recording
+
+After the current watch → phone command reliability fix is proven on-device, the next planned Wear feature is **watch-local health recording on Galaxy Watch7 via Wear OS Health Services**.
+
+Scope:
+
+- request the required health/activity/location permissions directly on the watch;
+- query Health Services capabilities at runtime instead of assuming every metric is supported;
+- start an `ExerciseClient`-based exercise session while a TrainPilot workout is active;
+- record supported metrics directly on the watch, initially prioritizing:
+  - live heart rate;
+  - average/max heart rate for the workout;
+  - steps;
+  - active duration;
+  - calories where supported;
+  - distance/speed/pace/GPS for relevant movement-based workouts;
+- keep collection working independently of the phone screen state;
+- persist a local watch-side summary so temporary phone disconnects do not lose the workout metrics;
+- sync the captured health summary back to the phone through the TrainPilot Data Layer contract;
+- merge the health summary into the same TrainPilot workout/journal entry rather than creating a separate workout record;
+- keep Samsung-specific metrics such as ECG/blood-pressure/vendor-only sensors out of the first Health Services milestone unless a separate supported Samsung integration is later added.
+
+The watch UI should expose the most useful live values during training, for example:
+
+```text
+❤️ 118 bpm · 🔥 34 kcal · ⏱ 12:43
+```
+
+This milestone is intentionally scheduled **before** Tiles/complications and before the later "Open on phone" deep-link action.
