@@ -32,13 +32,22 @@ data class WatchHomeRecommendation(
     val day: WatchHomeDay
 )
 
+data class WatchCalendarEntry(
+    val date: String,
+    val scheduleId: String,
+    val plannedStart: String,
+    val status: String,
+    val day: WatchHomeDay?
+)
+
 data class WatchHomeSnapshot(
     val activeProgramId: String,
     val activeProgramName: String,
     val restSeconds: Int,
     val hasDraft: Boolean,
     val recommended: WatchHomeRecommendation?,
-    val days: List<WatchHomeDay>
+    val days: List<WatchHomeDay>,
+    val calendar: List<WatchCalendarEntry> = emptyList()
 ) {
     fun createWorkout(day: WatchHomeDay, scheduleId: String, started: String): WearWorkout {
         return WearWorkout(
@@ -116,13 +125,31 @@ object WatchHomeStore {
                     day = recommendationDay
                 )
             } else null
+            val calendarDays = root.optJSONArray("calendarDays")
+            val available = days + buildList {
+                if (calendarDays != null) for (i in 0 until calendarDays.length().coerceAtMost(28))
+                    parseDay(calendarDays.optJSONObject(i))?.let(::add)
+            }
+            val entries = root.optJSONArray("calendar")
+            val calendar = buildList {
+                if (entries != null) for (i in 0 until entries.length().coerceAtMost(28)) {
+                    val entry = entries.optJSONObject(i) ?: continue
+                    val date = entry.optString("date")
+                    try { java.time.LocalDate.parse(date) } catch (_: Exception) { continue }
+                    val status = entry.optString("status")
+                    if (status !in listOf("planned", "completed", "skipped", "rest")) continue
+                    add(WatchCalendarEntry(date, entry.optString("scheduleId"), entry.optString("plannedStart"), status,
+                        available.firstOrNull { it.programId == entry.optString("programId") && it.id == entry.optString("dayId") }))
+                }
+            }
             WatchHomeSnapshot(
                 activeProgramId = root.optString("activeProgramId"),
                 activeProgramName = root.optString("activeProgramName", "TrainPilot"),
                 restSeconds = root.optInt("restSeconds", 90).coerceAtLeast(1),
                 hasDraft = root.optBoolean("hasDraft", false),
                 recommended = recommendation,
-                days = days
+                days = days,
+                calendar = calendar
             )
         } catch (_: Exception) { null }
     }

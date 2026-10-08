@@ -35,6 +35,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlin.math.ceil
+import org.json.JSONObject
 
 private val Black = Color.Black
 private val Card = Color(0xFF1A1E25)
@@ -62,9 +63,21 @@ internal fun TrainPilotWearApp(
     onDiscard: () -> Unit,
     onResumeWorkout: () -> Unit,
     onRetry: () -> Unit,
-    onDismissClosure: () -> Unit
+    onDismissClosure: () -> Unit,
+    onOpenPhone: () -> Unit,
+    health: State<JSONObject?>,
+    measuring: State<Boolean>,
+    gpsEnabled: State<Boolean>,
+    requestedRoute: State<String?>,
+    onRouteConsumed: () -> Unit,
+    onEnableHealth: () -> Unit,
+    onDisableHealth: () -> Unit,
+    onToggleGps: () -> Unit
 ) {
     var route by rememberSaveable { mutableStateOf("home") }
+    LaunchedEffect(requestedRoute.value) {
+        requestedRoute.value?.let { route=it;onRouteConsumed() }
+    }
     var editorField by rememberSaveable { mutableStateOf("reps") }
     BackHandler(enabled = route != "home") {
         route = when (route) { "editor", "timer", "finish" -> "workout"; "discard" -> "home"; else -> "home" }
@@ -73,6 +86,12 @@ internal fun TrainPilotWearApp(
         Box(Modifier.fillMaxSize().background(Black)) {
             val active = workout.value
             when {
+                route == "metrics" -> HealthScreen(health.value,measuring.value,gpsEnabled.value,onEnableHealth,onDisableHealth,onToggleGps) { route="menu" }
+                route == "menu" -> MainMenuScreen(active != null, onOpenPhone) { route = it }
+                route == "calendar" -> CalendarScreen(home.value, active == null && home.value?.hasDraft == false && closure.value?.status !in listOf("pending", "error"),
+                    onBack = { route = "menu" }) { entry ->
+                    entry.day?.let { onStart(it, entry.scheduleId); if (workout.value != null) route = "workout" }
+                }
                 route == "summary" && closure.value != null -> SummaryScreen(closure.value!!, onRetry) {
                     onDismissClosure(); route = "home"
                 }
@@ -89,7 +108,7 @@ internal fun TrainPilotWearApp(
                     onStart(day, ""); if (workout.value != null) route = "workout"
                 }
                 route == "workout" && active != null -> WorkoutPager(
-                    active, restRemaining.value, onChange, onComplete, onPrevious, onNext,
+                    active, restRemaining.value, health.value, measuring.value, gpsEnabled.value, onEnableHealth, onDisableHealth, onToggleGps, onChange, onComplete, onPrevious, onNext,
                     onSelectExercise, onSkipRest,
                     onEdit = { editorField = it; route = "editor" },
                     onTimerTools = { route = "timer" },
@@ -98,7 +117,8 @@ internal fun TrainPilotWearApp(
                 else -> HomeScreen(home.value, active, closure.value,
                     onStart = { day, scheduleId -> onStart(day, scheduleId); if (workout.value != null) route = "workout" },
                     onResume = { onResumeWorkout(); route = "workout" },
-                    onDiscard = { route = "discard" }, onDays = { route = "days" }, onResult = { route = "summary" })
+                    onDiscard = { route = "discard" }, onDays = { route = "days" }, onResult = { route = "summary" },
+                    onMenu = { route = "menu" }, onCalendar = { route = "calendar" })
             }
         }
     }
@@ -166,57 +186,130 @@ private fun Pill(text: String, modifier: Modifier = Modifier, tone: Color = Gold
 @Composable
 private fun HomeScreen(home: WatchHomeSnapshot?, active: WearWorkout?, closure: WearClosure?,
                        onStart: (WatchHomeDay, String) -> Unit, onResume: () -> Unit,
-                       onDiscard: () -> Unit, onDays: () -> Unit, onResult: () -> Unit) {
+                       onDiscard: () -> Unit, onDays: () -> Unit, onResult: () -> Unit,
+                       onMenu: () -> Unit, onCalendar: () -> Unit) {
     var elapsed by remember { mutableIntStateOf(active?.elapsedSeconds() ?: 0) }
     LaunchedEffect(active?.workoutId) { while (active != null) { elapsed = active.elapsedSeconds(); delay(1000) } }
-    Panel {
-        if (active != null) {
-            Label("FOLYAMATBAN", Gold)
-            Title(active.exercise?.name ?: active.programName, 15)
-            Label("${active.dayName.ifBlank { active.dayId }} · ${active.currentSetIndex + 1}/${active.exercise?.sets?.size ?: 0}. sorozat", size = 9)
-            Text(formatSeconds(elapsed), color = White, fontSize = 28.sp, lineHeight = 30.sp, fontWeight = FontWeight.SemiBold)
-            Pill("▶ Folytatás", modifier = Modifier.width(160.dp), height = 38, onClick = onResume)
-            Spacer(Modifier.height(4.dp))
-            Pill("Edzés törlése", modifier = Modifier.width(122.dp), tone = Danger, height = 30, size = 11, onClick = onDiscard)
-            return@Panel
+    val waiting = closure?.status in listOf("pending", "error")
+    val rec = home?.recommended
+    ActionPanel(normalBodyHeight = 100, actions = { layout ->
+        Row(horizontalArrangement = Arrangement.spacedBy(layout.gap.dp)) {
+            CompositionLocalProvider(LocalActionSize provides layout.buttonSize) {
+                when {
+                    active != null -> RoundControl("▶", Gold, caption = "Folytatás", description = "Edzés folytatása", onClick = onResume)
+                    waiting -> RoundControl("↻", Gold, caption = "Állapot", description = "Edzés mentésének állapota", onClick = onResult)
+                    rec != null && home?.hasDraft == false -> RoundControl("▶", Gold, caption = "Indítás", description = "Edzés indítása") { onStart(rec.day, rec.scheduleId) }
+                    else -> RoundControl("A/B", Gold, enabled = home != null && home.hasDraft == false && home.days.isNotEmpty(), caption = "Napok", description = "Program napjai", onClick = onDays)
+                }
+                RoundControl("▦", caption = "Naptár", description = "Edzésnaptár", onClick = onCalendar)
+                RoundControl("···", caption = "Menü", description = "Főmenü", onClick = onMenu)
+            }
         }
-        if (closure?.status in listOf("pending", "error")) {
-            Label("TRAINPILOT", Gold)
-            Spacer(Modifier.height(10.dp))
-            Title(if (closure?.status == "error") "Szinkronizálás szükséges" else "Várakozás a telefonra")
-            Spacer(Modifier.height(8.dp))
-            Text("Az edzés adatai az órán megmaradtak.", color = Muted, fontSize = 13.sp, textAlign = TextAlign.Center)
-            Spacer(Modifier.height(13.dp))
-            Pill("Mentés állapota", onClick = onResult)
-            return@Panel
+    }) { compact ->
+        Box(Modifier.fillMaxWidth(.65f).clickable(role = Role.Button, onClick = onMenu)) {
+            Label(if (active != null) "FOLYAMATBAN" else "TRAINPILOT", Gold, if (compact) 9 else 11)
         }
-        Label("TRAINPILOT", Gold)
-        if (home == null) {
-            Spacer(Modifier.height(12.dp)); Title("Szinkronizálás…")
-            Text("Nyisd meg a TrainPilotot a telefonon, hogy az óra megkapja a programot.",
-                color = Muted, fontSize = 13.sp, textAlign = TextAlign.Center)
-            return@Panel
-        }
-        if (home.hasDraft) {
-            Spacer(Modifier.height(12.dp)); Title("Félbehagyott edzés")
-            Text("Nyisd meg a telefonos appot az edzés adatainak szinkronizálásához.",
-                color = Muted, fontSize = 13.sp, textAlign = TextAlign.Center)
-            return@Panel
-        }
-        val rec = home.recommended
         Spacer(Modifier.height(4.dp))
-        Title(rec?.day?.programName ?: home.activeProgramName, 14)
-        Spacer(Modifier.height(2.dp))
-        if (rec != null) {
-            Title(rec.day.name, 26)
-            Label(recommendedMeta(rec))
-            Spacer(Modifier.height(6.dp))
-            Pill("▶ Edzés indítása") { onStart(rec.day, rec.scheduleId) }
-        } else { Title("Válassz edzésnapot", 22); Spacer(Modifier.height(10.dp)) }
-        Spacer(Modifier.height(4.dp))
-        Pill("Program napjai ›", tone = Card, enabled = home.days.isNotEmpty(), onClick = onDays)
+        when {
+            active != null -> {
+                Box(Modifier.fillMaxWidth(.9f)) { Title(active.exercise?.name ?: active.programName, if (compact) 13 else 16) }
+                Label("${active.dayName.ifBlank { active.dayId }} · ${active.currentSetIndex + 1}/${active.exercise?.sets?.size ?: 0}. sorozat", size = 9)
+                Text(formatSeconds(elapsed), color = White, fontSize = (if (compact) 24 else 30).sp, fontWeight = FontWeight.SemiBold)
+            }
+            waiting -> {
+                Title(if (closure?.status == "error") "Szinkronizálás szükséges" else "Várakozás a telefonra", if (compact) 14 else 18)
+                Text("Az edzés az órán megmaradt.", color = Muted, fontSize = 11.sp, textAlign = TextAlign.Center)
+            }
+            home == null -> {
+                Title("Szinkronizálás…", if (compact) 14 else 18)
+                Text("Nyisd meg a TrainPilotot a telefonon.", color = Muted, fontSize = 12.sp, textAlign = TextAlign.Center)
+            }
+            home.hasDraft -> {
+                Title("Félbehagyott edzés", if (compact) 14 else 18)
+                Text("Az edzés adatainak szinkronja a telefonra vár.", color = Muted, fontSize = 11.sp, textAlign = TextAlign.Center)
+            }
+            else -> {
+                Box(Modifier.fillMaxWidth(.88f)) { Title(rec?.day?.programName ?: home.activeProgramName, if (compact) 13 else 15) }
+                Spacer(Modifier.height(2.dp))
+                Title(rec?.day?.name ?: "Válassz edzésnapot", if (compact) 23 else 30)
+                if (rec != null) Label(recommendedMeta(rec), size = if (compact) 9 else 11)
+            }
+        }
     }
 }
+
+@Composable
+private fun RoundList(content: @Composable ColumnScope.() -> Unit) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+            .padding(start = maxWidth * .1f, end = maxWidth * .1f, top = maxHeight * .17f, bottom = maxHeight * .2f),
+            horizontalAlignment = Alignment.CenterHorizontally, content = content)
+    }
+}
+
+@Composable
+private fun MainMenuScreen(hasWorkout: Boolean, onOpenPhone: () -> Unit, onRoute: (String) -> Unit) {
+    RoundList {
+        Label("TRAINPILOT", Gold); Title("Főmenü", 22); Spacer(Modifier.height(8.dp))
+        for ((label, destination) in listOf("Kezdőlap" to "home", "Naptár" to "calendar", "Programnapok" to "days", "Órás mérések" to "metrics")) {
+            Pill(label, tone = Card) { onRoute(destination) }; Spacer(Modifier.height(6.dp))
+        }
+        if (hasWorkout) { Pill("Edzés folytatása") { onRoute("workout") }; Spacer(Modifier.height(6.dp)); Pill("Edzés törlése", tone = Danger) { onRoute("discard") }; Spacer(Modifier.height(6.dp)) }
+        Pill("Megnyitás telefonon", tone = Card, onClick = onOpenPhone)
+    }
+}
+
+@Composable
+private fun CalendarScreen(home: WatchHomeSnapshot?, canStart: Boolean, onBack: () -> Unit, onStart: (WatchCalendarEntry) -> Unit) {
+    val today = java.time.LocalDate.now().toString()
+    RoundList {
+        Label("TRAINPILOT", Gold); Title("Naptár", 22); Label("14 nap · a telefon terve"); Spacer(Modifier.height(8.dp))
+        if (home?.calendar.isNullOrEmpty()) Text("A naptár frissítéséhez nyisd meg a telefonos appot.", color = Muted, fontSize = 12.sp, textAlign = TextAlign.Center)
+        home?.calendar?.forEach { entry ->
+            val startable = canStart && entry.status == "planned" && entry.day != null && entry.date >= today
+            Column(Modifier.fillMaxWidth().background(if (entry.date == today) Secondary else Card, RoundedCornerShape(18.dp))
+                .clickable(enabled = startable, role = Role.Button) { onStart(entry) }.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                val date = java.time.LocalDate.parse(entry.date).format(DateTimeFormatter.ofPattern("MMM d., E", java.util.Locale.forLanguageTag("hu")))
+                Label((if (entry.date == today) "Ma · " else "") + date, if (entry.date == today) Gold else White)
+                entry.day?.let { Title(it.name, 16) }
+                Label(when (entry.status) { "completed" -> "✓ Teljesítve"; "skipped" -> "Kihagyva"; "rest" -> "Pihenőnap"; else -> if (startable) "▶ Indítás" else "Tervezett" }, size = 10)
+            }
+            Spacer(Modifier.height(6.dp))
+        }
+        Pill("‹ Főmenü", tone = Secondary, onClick = onBack)
+    }
+}
+
+@Composable
+private fun HealthScreen(data: JSONObject?, enabled: Boolean, gps: Boolean,
+                         onEnable: () -> Unit, onDisable: () -> Unit, onGps: () -> Unit, onBack: () -> Unit) {
+    fun value(key: String, unit: String, divisor: Double=1.0): String {
+        val number=data?.takeIf { it.has(key) && !it.isNull(key) }?.optDouble(key)
+        return if(number==null || !number.isFinite()) "—" else "${trimWearNumber(number/divisor)} $unit"
+    }
+    RoundList {
+        Label("TRAINPILOT",Gold);Title("Órás mérések",20);Spacer(Modifier.height(8.dp))
+        val fresh=data?.optString("state")=="active" && System.currentTimeMillis()-(data.optLong("lastSampleAt",data.optLong("updatedAt")))<15000
+        Label(if(fresh)"Élő pulzus" else "Pulzus · utolsó mérés",size=10)
+        Title(value("heartRate","bpm"),28)
+        for((title,metric,unit) in listOf(Triple("Átlagpulzus","averageHeartRate","bpm"),Triple("Max. pulzus","maxHeartRate","bpm"),
+            Triple("Összes energia","totalCalories","kcal"),Triple("Lépések","steps","lépés"),Triple("Aktív mérési idő","activeDurationSeconds","s"),Triple("Távolság","distanceMeters","m"),Triple("Sebesség","speedMps","m/s"))) {
+            Label(title,size=10);Title(value(metric,unit),17);Spacer(Modifier.height(5.dp))
+        }
+        val speed=data?.optDouble("speedMps",0.0) ?: 0.0
+        if(speed>0 && speed.isFinite()) { Label("Aktuális tempó");Title("${formatSeconds((1000/speed).toInt())} /km",17) }
+        Text("A hiányzó adatot az óra még nem adta át. Az összes kcal az alapanyagcserét is tartalmazza.",color=Muted,fontSize=10.sp,textAlign=TextAlign.Center)
+        if(data?.optBoolean("partial")==true)Text("Részleges mérés: a rögzítés edzés közben indult újra.",color=Gold,fontSize=11.sp,textAlign=TextAlign.Center)
+        data?.optString("message")?.takeIf { it.isNotBlank() }?.let { Text(it,color=Gold,fontSize=11.sp,textAlign=TextAlign.Center) }
+        Spacer(Modifier.height(8.dp))
+        Pill(if(enabled)"Mérés kikapcsolása" else "Mérések engedélyezése",tone=if(enabled)Secondary else Gold,onClick=if(enabled)onDisable else onEnable)
+        Spacer(Modifier.height(6.dp));Pill(if(gps)"GPS kikapcsolása" else "GPS engedélyezése",tone=Card,onClick=onGps)
+        Text("GPS csak mozgásos edzésnél használható. A mérést engedélyezett edzés közben az óra a háttérben is folytatja.",color=Muted,fontSize=10.sp,textAlign=TextAlign.Center)
+        Spacer(Modifier.height(8.dp));Pill("‹ Vissza",tone=Secondary,onClick=onBack)
+    }
+}
+
+private fun trimWearNumber(number: Double): String = if(number>=100 || number%1.0==0.0)number.toLong().toString() else String.format(java.util.Locale.forLanguageTag("hu"),"%.1f",number)
 
 @Composable
 private fun ProgramDays(home: WatchHomeSnapshot, onBack: () -> Unit, onSelect: (WatchHomeDay) -> Unit) {
@@ -244,11 +337,13 @@ private fun ProgramDays(home: WatchHomeSnapshot, onBack: () -> Unit, onSelect: (
 
 @Composable
 private fun WorkoutPager(workout: WearWorkout, restRemaining: Int,
+                         health: JSONObject?, measuring: Boolean, gps: Boolean,
+                         onEnable: ()->Unit, onDisable: ()->Unit, onGps: ()->Unit,
                          onChange: (String, Double) -> Unit, onComplete: () -> Unit,
                          onPrevious: () -> Unit, onNext: () -> Unit, onSelect: (Int) -> Unit,
                          onSkipRest: () -> Unit, onEdit: (String) -> Unit, onTimerTools: () -> Unit,
                          onFinish: () -> Unit, onHome: () -> Unit) {
-    val pager = rememberPagerState(pageCount = { 2 })
+    val pager = rememberPagerState(pageCount = { 3 })
     val scope = rememberCoroutineScope()
     Box(Modifier.fillMaxSize()) {
         HorizontalPager(state = pager, modifier = Modifier.fillMaxSize()) { page ->
@@ -262,7 +357,8 @@ private fun WorkoutPager(workout: WearWorkout, restRemaining: Int,
                     else CurrentSetScreen(workout, restRemaining, onEdit, onComplete, onPrevious, onNext,
                         onSkipRest, onFinish, onMenu)
                 }
-            } else WorkoutMenu(workout,
+            } else if(page==2)HealthScreen(health,measuring,gps,onEnable,onDisable,onGps) { scope.launch { pager.animateScrollToPage(0) } }
+            else WorkoutMenu(workout,
                 { onPrevious(); scope.launch { pager.animateScrollToPage(0) } },
                 { onNext(); scope.launch { pager.animateScrollToPage(0) } },
                 { index -> onSelect(index); scope.launch { pager.animateScrollToPage(0) } },
@@ -270,7 +366,7 @@ private fun WorkoutPager(workout: WearWorkout, restRemaining: Int,
         }
         Box(Modifier.fillMaxSize().padding(bottom = 12.dp), contentAlignment = Alignment.BottomCenter) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                repeat(2) { index -> Box(Modifier.width(if (pager.currentPage == index) 12.dp else 4.dp).height(4.dp)
+                repeat(3) { index -> Box(Modifier.width(if (pager.currentPage == index) 12.dp else 4.dp).height(4.dp)
                     .background(if (pager.currentPage == index) Gold else Muted.copy(alpha = .45f), CircleShape)) }
             }
         }

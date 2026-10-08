@@ -15,6 +15,8 @@ class WearDataListenerService : WearableListenerService() {
                 ACTIVE_WORKOUT_PATH -> WorkoutSnapshotStore.save(this, raw)
                 WATCH_HOME_PATH -> WatchHomeStore.save(this, raw)
             }
+            if(WorkoutSnapshotStore.load(this)==null && WearHealthStore.active(this).isNotBlank())WearHealthService.stop(this)
+            WearSurfaces.refresh(this,true)
         }
     }
 

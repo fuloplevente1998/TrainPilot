@@ -1,6 +1,23 @@
 # TrainPilot Wear OS – architecture and implementation plan
 
-Status: initial implementation branch (`feat/wear-os`)
+Status: 1.2.9 integration on `fix/wear-sync-replay-navigation-2713` (PR #144).
+
+## 1.2.9 release scope — accepted 2026-10-08
+
+The phone's /2715 backup, sync and navigation fixes were accepted on-device. The user requested the **full planned Wear package** before promoting the combined phone/watch release to main as **1.2.9 /2716**.
+
+- Responsive Home with permanent Start/Resume, Calendar and Menu controls, using the same round-screen action layout as the workout.
+- General watch menu: Home, 14-day mini calendar, program days, workout, watch measurements and Open on phone.
+- Phone-prepared calendar cache; planned/completed/skipped/rest states; starting available planned workouts through the existing canonical phone workflow.
+- Opt-in Health Services workout recording in a foreground service; runtime capability and permission checks; supported HR, measured average/max HR, total kcal, steps, active duration, distance/speed and optional movement-workout GPS. Missing data remains absent. No ECG, blood pressure or invented HRV.
+- Durable, revisioned health summary attached to the same workout ID; replay never creates a history row or adds calories twice. Late final metrics update the existing workout. Total kcal explicitly includes basal metabolism and remains separate from Samsung Health/Health Connect.
+- TrainPilot Tile and short/long text watch-face complication with state-aware tap actions.
+- Explicit Open on phone action via a narrow TrainPilot deep link, with connection failure feedback.
+
+Native/UI/phone regressions and signed release gates must pass before the main promotion. Actual Watch7 clipping, health sensor availability, granted/denied permissions, background recording and Tile/complication behavior still need paired-device verification; CI is not a physical sensor test.
+
+Standalone program editing/account/backup is a later evaluation, outside this accepted release scope.
+
 
 ## Goal
 
@@ -194,7 +211,7 @@ The branch now contains the first Data Layer implementation: the phone publishes
 - [x] document the architecture;
 - [x] add `:wear` Gradle module;
 - [x] add a minimal native Compose Wear application;
-- [ ] verify CI/local Wear debug build.
+- [x] verify CI Wear debug/release builds.
 
 ### Phase 1 — phone/watch workout sync
 
@@ -202,19 +219,19 @@ The branch now contains the first Data Layer implementation: the phone publishes
 - [x] implement phone `ActiveWorkoutStore`;
 - [x] implement phone Data Layer plugin;
 - [x] implement Wear Data Layer receiver + local snapshot cache;
-- [ ] complete lifecycle mirroring (phone → watch snapshot updates are implemented; watch → phone commands are next);
-- [ ] add revision/event conflict protection;
-- [ ] regression tests around existing `persistDraft()` semantics.
+- [x] complete phone/watch lifecycle mirroring;
+- [x] add revision/event conflict protection;
+- [x] regression tests around existing `persistDraft()` semantics.
 
 ### Phase 2 — usable workout controller
 
-- [ ] current exercise screen;
-- [ ] set completion;
-- [ ] reps/load editing;
-- [ ] previous/next exercise;
-- [ ] rest timer + vibration;
-- [ ] workout completion;
-- [ ] reconnection/offline queue.
+- [x] current exercise screen;
+- [x] set completion;
+- [x] reps/load editing;
+- [x] previous/next exercise;
+- [x] rest timer + vibration;
+- [x] workout completion;
+- [x] reconnection/offline queue.
 
 ### Phase 3 — sensors and glanceable surfaces
 
@@ -330,8 +347,8 @@ The launcher artwork reinforces the same warm gold gradient (`#FFF1A0 → #F3C54
 
 ### Delivery order
 
-1. [ ] branded Wear Home + start workout from watch;
-2. [ ] explicit Finish + post-workout summary;
+1. [x] branded Wear Home + start workout from watch;
+2. [x] explicit Finish + post-workout summary;
 3. [ ] mini calendar;
 4. [ ] Galaxy Watch7 Health Services recording and live metrics;
 5. [ ] Tile/complication;
