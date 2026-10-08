@@ -21,7 +21,9 @@ function seed(){
   return {steps:part?(dailyFixture.missing?null:dailyFixture.inconsistent?20000:duration===7200000?1500:1000):days[rf240DayKey(start)]?.steps??null,
    provider,activityOrigin:args.origin||'',start:args.start,end:args.end,permissions:{READ_STEPS:true},warnings:[]};
  };
- window.Capacitor=window.Capacitor||{};window.Capacitor.Plugins={...window.Capacitor.Plugins,SamsungHealth:{readStepsWindow:readStepsWindow('samsung_health')},HealthBridge:{readStepsWindow:readStepsWindow('health_connect')}};
+ // Native startup also checks Google connection status. Keep that unrelated
+ // bridge present with no signed-in account when advancing the test clock.
+ window.Capacitor=window.Capacitor||{};window.Capacitor.Plugins={...window.Capacitor.Plugins,GoogleSync:{status:async()=>({profile:null})},SamsungHealth:{readStepsWindow:readStepsWindow('samsung_health')},HealthBridge:{readStepsWindow:readStepsWindow('health_connect')}};
  tp107CardioActivity='';tp107OpenCardio();
 }
 (async()=>{
@@ -29,7 +31,7 @@ function seed(){
  try{
   browser=await chromium.launch({headless:true,args:['--no-sandbox']});
   const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU',timezoneId:'Europe/Budapest',reducedMotion:'reduce'}),errors=[];
-  page.on('pageerror',e=>errors.push(e.message));await page.clock.setFixedTime(new Date('2026-10-08T12:00:00Z'));
+  page.on('pageerror',e=>errors.push(e.stack||e.message));await page.clock.setFixedTime(new Date('2026-10-08T12:00:00Z'));
   await page.addInitScript(()=>localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped')));
   await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>TrainPilotBoot.finished);await page.evaluate(seed);
   const card=page.locator('.tp-cardio-daily');assert.equal(await card.count(),1);
