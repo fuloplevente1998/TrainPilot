@@ -1,6 +1,6 @@
 {
   "name": "trainpilot",
-  "version": "1.2.8-rc3",
+  "version": "1.2.8-rc4",
   "private": true,
   "scripts": {
     "sync": "cap sync android",

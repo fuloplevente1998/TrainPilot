@@ -14,6 +14,8 @@ import java.util.*;
 final class HealthJournalStore extends SQLiteOpenHelper {
     static final String HC = "health_connect", BLE = "ble_watch", LEGACY = "legacy", SAMSUNG = "samsung_health";
     private static final Object LOCK = new Object();
+    private static final int META_CHUNK_CHARS = 32768;
+    private static final String META_CHUNKS = "\u0001health-meta-chunks-v1";
     private static HealthJournalStore instance;
     static HealthJournalStore get(Context context) {
         synchronized (LOCK) {
@@ -21,7 +23,7 @@ final class HealthJournalStore extends SQLiteOpenHelper {
             return instance;
         }
     }
-    HealthJournalStore(Context context) { super(context, "health-journal.db", null, 1); }
+    HealthJournalStore(Context context) { super(context, "health-journal.db", null, 2); }
     @Override public void onConfigure(SQLiteDatabase db) {
         db.setForeignKeyConstraintsEnabled(true);
         try (Cursor result = db.rawQuery("PRAGMA secure_delete=ON", null)) { result.moveToFirst(); }
@@ -32,10 +34,17 @@ final class HealthJournalStore extends SQLiteOpenHelper {
         db.execSQL("CREATE INDEX records_source ON records(channel,source,day DESC,row_id DESC)");
         db.execSQL("CREATE TABLE days (day TEXT NOT NULL, channel TEXT NOT NULL, source TEXT NOT NULL, json TEXT NOT NULL, PRIMARY KEY(day,channel,source))");
         db.execSQL("CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
+        createMetaParts(db);
         db.execSQL("CREATE TABLE deletions (record_id TEXT PRIMARY KEY, deleted_ms INTEGER NOT NULL)");
         db.execSQL("CREATE TABLE dirty_days (day TEXT PRIMARY KEY)");
     }
-    @Override public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) { throw new IllegalStateException("Unsupported health schema"); }
+    private static void createMetaParts(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE meta_parts (key TEXT NOT NULL, part INTEGER NOT NULL, value TEXT NOT NULL, PRIMARY KEY(key,part), FOREIGN KEY(key) REFERENCES meta(key) ON DELETE CASCADE)");
+    }
+    @Override public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        if (oldVersion == 1 && newVersion == 2) createMetaParts(db);
+        else throw new IllegalStateException("Unsupported health schema");
+    }
     private interface Work<T> { T run(SQLiteDatabase db) throws Exception; }
     private <T> T transaction(Work<T> work) throws Exception {
         synchronized (LOCK) {
@@ -45,11 +54,48 @@ final class HealthJournalStore extends SQLiteOpenHelper {
         }
     }
     private String meta(SQLiteDatabase db, String key, String fallback) {
-        try (Cursor c = db.rawQuery("SELECT value FROM meta WHERE key=?", new String[]{key})) { return c.moveToFirst() ? c.getString(0) : fallback; }
+        // Never select an entire legacy restore snapshot: it may exceed CursorWindow.
+        String first; int length;
+        try (Cursor c = db.rawQuery("SELECT substr(value,1," + META_CHUNK_CHARS + "),length(value) FROM meta WHERE key=?", new String[]{key})) {
+            if (!c.moveToFirst()) return fallback;
+            first = c.getString(0); length = c.getInt(1);
+        }
+        StringBuilder value = new StringBuilder(first);
+        if (META_CHUNKS.equals(first)) {
+            value.setLength(0); int expected = 0;
+            try (Cursor c = db.rawQuery("SELECT part,value FROM meta_parts WHERE key=? ORDER BY part", new String[]{key})) {
+                while (c.moveToNext()) {
+                    if (c.getInt(0) != expected++) throw new IllegalStateException("Incomplete health restore snapshot");
+                    value.append(c.getString(1));
+                }
+            }
+            if (expected == 0) throw new IllegalStateException("Missing health restore snapshot");
+        } else {
+            // SQLite substr/length count Unicode code points, not Java UTF-16 units.
+            for (int start = META_CHUNK_CHARS + 1; start <= length; start += META_CHUNK_CHARS) {
+                try (Cursor c = db.rawQuery("SELECT substr(value,?," + META_CHUNK_CHARS + ") FROM meta WHERE key=?", new String[]{Integer.toString(start),key})) {
+                    if (!c.moveToFirst()) throw new IllegalStateException("Missing health restore snapshot");
+                    value.append(c.getString(0));
+                }
+            }
+        }
+        return value.toString();
     }
     private void putMeta(SQLiteDatabase db, String key, String value) {
-        ContentValues v = new ContentValues(); v.put("key", key); v.put("value", value);
-        db.insertWithOnConflict("meta", null, v, SQLiteDatabase.CONFLICT_REPLACE);
+        boolean chunked = value.length() > META_CHUNK_CHARS || META_CHUNKS.equals(value);
+        ContentValues v = new ContentValues(); v.put("key", key); v.put("value", chunked ? META_CHUNKS : value);
+        // REPLACE removes any former chunks through the foreign key; all callers transact.
+        if (db.insertWithOnConflict("meta", null, v, SQLiteDatabase.CONFLICT_REPLACE) == -1)
+            throw new IllegalStateException("Cannot persist health restore metadata");
+        if (chunked) {
+            int part = 0;
+            for (int start = 0; start < value.length();) {
+                int end = Math.min(start + META_CHUNK_CHARS, value.length());
+                if (end < value.length() && Character.isHighSurrogate(value.charAt(end-1)) && Character.isLowSurrogate(value.charAt(end))) end--;
+                ContentValues chunk = new ContentValues(); chunk.put("key",key); chunk.put("part",part++); chunk.put("value",value.substring(start,end));
+                db.insertOrThrow("meta_parts",null,chunk); start = end;
+            }
+        }
     }
     long generation() { synchronized (LOCK) { return Long.parseLong(meta(getReadableDatabase(), "generation", "0")); } }
     private void writable(SQLiteDatabase db, long generation) {
