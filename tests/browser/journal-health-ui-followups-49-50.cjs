@@ -76,7 +76,9 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   assert.equal(actual.trendCount,1);assert.equal(actual.dayCount,7);
   assert.equal(actual.legacyChartVisible,false,'legacy chart must never become visible during open');
  }
- assert.match(await pulse.locator('.tp5-pulse-source').innerText(),/Health Connect.*healthLedgerV1.*averageHeartRate/i);
+ const source=await pulse.locator('.tp5-pulse-source').innerText();
+ assert.match(source,/Adatforrás: Health Connect/i,'Pulse must identify the actual provider in the app language');
+ assert.doesNotMatch(source,/healthLedgerV1|averageHeartRate/i,'Storage internals must not appear in the source label');
  await page.evaluate(()=>{go('home');go('health')});await page.waitForSelector('main.rf263-health .tp5-pulse-trend-section',{state:'attached'});
  await page.locator('.tp169-pulse-summary').click();
  assert.equal(await page.locator('.tp169-pulse-journal.tp169-open .tp5-pulse-trend-section').count(),1,'pulse still opens correctly after route navigation');
