@@ -15491,7 +15491,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   finally{paintChoices();}
  }
  function choices(){return '<label>'+esc(t('provider'))+'<select class="field" data-health-provider onchange="TrainPilotSamsungHealth.choose(this.value)"><option value="'+HC+'" '+(selected()===HC?'selected':'')+'>Health Connect</option><option value="'+SH+'" '+(selected()===SH?'selected':'')+'>'+esc(t('direct'))+'</option></select></label><p class="small muted">'+esc(t('note'))+'</p>'+(selected()===SH?'<p class="small muted">'+esc(t('hrv'))+'</p>':'');}
- function paintChoices(){for(const el of document.querySelectorAll('[data-health-provider]')){el.value=selected();el.disabled=!!state.health?.busy;window.rf260SyncCustomSelect?.(el);}}
+ function paintChoices(){for(const el of document.querySelectorAll('[data-health-provider]')){el.value=selected();el.disabled=!!state.health?.busy;window.rf260EnhanceSelect?.(el);window.rf260SyncCustomSelect?.(el);}}
  const pipeline=rf250Pipeline;
  rf250Pipeline=async function(p,options={}){
   await journal().ready();
@@ -15534,7 +15534,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  function decorate(){
   const main=document.querySelector('#app main.tp168-health');
-  if(main){const tail=main.querySelector('.tp168-sync-tail');if(tail&&!tail.querySelector('[data-health-provider]')){const block=document.createElement('div');block.className='tp-health-provider';block.innerHTML=choices();tail.prepend(block);}
+  if(main){const tail=main.querySelector('.tp168-sync-tail'),connection=main.querySelector('.tp168-connect-panel');if(connection&&!connection.querySelector('[data-health-provider]')){const block=document.createElement('div');block.className='tp-health-provider';block.innerHTML=choices();connection.querySelector('summary')?.after(block);}
    if(selected()===SH&&!main.querySelector('.tp-samsung-composition')){const html=composition();if(html&&tail)tail.insertAdjacentHTML('beforebegin',html);}
   }
   paintChoices();
