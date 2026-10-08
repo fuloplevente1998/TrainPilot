@@ -1,5 +1,15 @@
 package com.repforge.app.wear
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.wear.remote.interactions.RemoteActivityHelper
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.VibrationEffect
@@ -25,6 +35,54 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private val closure = mutableStateOf<WearClosure?>(null)
     private val restRemaining = mutableIntStateOf(0)
     private var restTimer: CountDownTimer? = null
+    private val health=mutableStateOf<JSONObject?>(null)
+    private val routeRequest=mutableStateOf<String?>(null)
+    private val measuring=mutableStateOf(false)
+    private val gpsEnabled=mutableStateOf(false)
+    private val uiHandler=Handler(Looper.getMainLooper())
+    private val healthTick=object : Runnable {
+        override fun run() {
+            refreshHealth()
+            if(WearHealthStore.active(this@MainActivity).isBlank() && workout.value?.workoutId?.let { WearHealthStore.load(this@MainActivity,it)==null }==true)startHealthIfEnabled()
+            uiHandler.postDelayed(this,1000)
+        }
+    }
+    private val permissionRequest=registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        val allowed=healthAllowed()
+        WearHealthStore.enable(this,allowed);measuring.value=allowed
+        if(WearHealthStore.gps(this) && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED)WearHealthStore.gps(this,false)
+        gpsEnabled.value=WearHealthStore.gps(this)
+        if(allowed){workout.value?.let { WearHealthStore.retry(this,it.workoutId) };startHealthIfEnabled()} else Toast.makeText(this,"Órás méréshez engedély szükséges.",Toast.LENGTH_LONG).show()
+    }
+    private fun healthAllowed(): Boolean = checkSelfPermission(if(Build.VERSION.SDK_INT>=36) "android.permission.health.READ_HEART_RATE" else Manifest.permission.BODY_SENSORS)==PackageManager.PERMISSION_GRANTED || checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION)==PackageManager.PERMISSION_GRANTED
+    private fun refreshHealth() {
+        val id=workout.value?.workoutId ?: closure.value?.workoutId ?: ""
+        health.value=WearHealthStore.load(this,id)?.let { WearHealthAccumulator(it).snapshot() }
+        measuring.value=WearHealthStore.enabled(this);gpsEnabled.value=WearHealthStore.gps(this)
+    }
+    private fun requestHealth(gps: Boolean=false) {
+        WearHealthStore.gps(this,gps)
+        val permissions=mutableListOf(if(Build.VERSION.SDK_INT>=36) "android.permission.health.READ_HEART_RATE" else Manifest.permission.BODY_SENSORS,Manifest.permission.ACTIVITY_RECOGNITION)
+        if(Build.VERSION.SDK_INT>=33)permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        if(gps)permissions.addAll(listOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION))
+        permissionRequest.launch(permissions.toTypedArray())
+    }
+    private fun startHealthIfEnabled() {
+        if(!WearHealthStore.enabled(this) || !healthAllowed())return
+        val current=workout.value ?: return
+        val previous=WearHealthStore.load(this,current.workoutId)
+        if(previous?.optString("state") in listOf("ended","error"))return
+        try { WearHealthService.start(this,current) }catch(error:Exception) { Toast.makeText(this,"A mérés nem indítható: ${error.message}",Toast.LENGTH_LONG).show() }
+    }
+    private fun openOnPhone() {
+        try {
+            val task=RemoteActivityHelper(this,mainExecutor).startRemoteActivity(Intent(Intent.ACTION_VIEW).setData(Uri.parse("trainpilot://wear/open")).addCategory(Intent.CATEGORY_BROWSABLE),null)
+            task.addListener({ try { task.get();Toast.makeText(this,"Megnyitva a telefonon",Toast.LENGTH_SHORT).show() }catch(_:Exception) { Toast.makeText(this,"A telefon nem érhető el. Ellenőrizd a kapcsolatot.",Toast.LENGTH_LONG).show() } },mainExecutor)
+        }catch(_:Exception) { Toast.makeText(this,"A telefon nem érhető el.",Toast.LENGTH_LONG).show() }
+    }
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent);setIntent(intent);routeRequest.value=intent.getStringExtra("destination")?.takeIf { it in listOf("home","workout","summary","menu","calendar") }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,12 +90,23 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         home.value = WatchHomeStore.load(this)
         closure.value = WearClosureStore.load(this)
         restoreRestFromSnapshot(workout.value)
+        refreshHealth()
+        routeRequest.value=intent.getStringExtra("destination")?.takeIf { it in listOf("home","workout","summary","menu","calendar") }
         setContent {
             TrainPilotWearApp(
                 workout = workout,
                 home = home,
                 restRemaining = restRemaining,
                 closure = closure,
+                health = health,
+                measuring = measuring,
+                gpsEnabled = gpsEnabled,
+                requestedRoute = routeRequest,
+                onRouteConsumed = { routeRequest.value=null },
+                onEnableHealth = { requestHealth(WearHealthStore.gps(this)) },
+                onDisableHealth = { WearHealthStore.enable(this,false);WearHealthService.stop(this);refreshHealth() },
+                onToggleGps = { if(WearHealthStore.gps(this)){WearHealthStore.gps(this,false);refreshHealth()}else requestHealth(true) },
+                onOpenPhone = ::openOnPhone,
                 onFinish = { closeWorkout("finishWorkout") },
                 onDiscard = { closeWorkout("discardWorkout") },
                 onRetry = ::retryClosure,
@@ -63,9 +132,13 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         Wearable.getDataClient(this).addListener(this)
         refreshFromDataLayer()
         WearCommandOutbox.flush(this)
+        uiHandler.removeCallbacks(healthTick);uiHandler.post(healthTick)
+        if(workout.value==null && WearHealthStore.active(this).isNotBlank())WearHealthService.stop(this)
+        startHealthIfEnabled()
     }
 
     override fun onPause() {
+        uiHandler.removeCallbacks(healthTick)
         Wearable.getDataClient(this).removeListener(this)
         super.onPause()
     }
@@ -86,6 +159,8 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                         val parsed = WorkoutSnapshotStore.save(this, raw)
                         workout.value = parsed
                         restoreRestFromSnapshot(parsed)
+                        if(parsed==null)WearHealthService.stop(this) else startHealthIfEnabled()
+                        WearSurfaces.refresh(this,true)
                     }
                 }
                 WearDataListenerService.WATCH_HOME_PATH -> {
@@ -130,10 +205,11 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private fun startWorkoutFromWatch(day: WatchHomeDay, scheduleId: String) {
         val source = home.value ?: return
         if (workout.value != null || source.hasDraft || closure.value?.status in listOf("pending", "error") || day.exercises.isEmpty()) return
-        val started = Instant.now().toString()
+        val started = Instant.ofEpochMilli(System.currentTimeMillis()).toString()
         val localWorkout = source.createWorkout(day, scheduleId, started)
         workout.value = WorkoutSnapshotStore.saveWorkout(this, localWorkout)
         sendStartCommand(day, scheduleId, started)
+        startHealthIfEnabled();WearSurfaces.refresh(this,true)
     }
 
     private fun sendStartCommand(day: WatchHomeDay, scheduleId: String, started: String) {
@@ -320,6 +396,8 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             .put("action", action).put("confirmed", true)
             .put("finishedAt", Instant.now().toString()).put("createdAt", System.currentTimeMillis())
             .put("finalSnapshot", WorkoutSnapshotStore.encode(current))
+        WearHealthStore.load(this,current.workoutId)?.let { command.put("healthSummary",WearHealthAccumulator(it).snapshot()) }
+        WearHealthService.stop(this)
         closure.value = WearClosureStore.close(this, current, command)
         WearCommandOutbox.enqueue(this, command)
         WorkoutSnapshotStore.clear(this)
@@ -327,6 +405,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         workout.value = null
         restTimer?.cancel()
         restRemaining.intValue = 0
+        WearSurfaces.refresh(this,true)
     }
 
     private fun retryClosure() {

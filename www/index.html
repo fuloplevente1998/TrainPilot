@@ -1086,9 +1086,11 @@
    const live=history(),index=live.findIndex(v=>rf142WorkoutKey(v)===key);
    if(index<0)return;
    const removed=live[index];
+   const closed=db.get('wearClosedWorkouts',[])||[],workoutId=String(removed.syncId||removed.id||removed.started||'');
+   if(workoutId&&!closed.some(v=>v.workoutId===workoutId))db.set('wearClosedWorkouts',[...closed,{workoutId,status:'discarded',receivedAt:Date.now()}].slice(-128));
    tp3MarkHistoryDeleted(removed);
    live.splice(index,1);db.set('history',live);
-   if(removed.scheduleId){
+   if(removed.scheduleId&&!live.some(v=>v.scheduleId===removed.scheduleId)){
     const s=scheduled(),si=s.findIndex(v=>v.id===removed.scheduleId);
     if(si>=0&&s[si].status==='completed'){s[si]={...s[si],status:'planned',updatedAt:Date.now()};db.set('scheduled',s)}
    }

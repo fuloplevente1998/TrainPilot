@@ -1,14 +1,14 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const app=fs.readFileSync('www/app.js','utf8');
 const source=fs.existsSync('www/wear-sync.js')?fs.readFileSync('www/wear-sync.js','utf8'):app.match(/\/\/ @section wear-sync\.js\n([\s\S]*?)\/\/ @endsection wear-sync\.js/)[1];
-function harness(){
+function harness({normalize=false,ackFailures=0}={}){
  const storage=new Map(),acks=[],pending=[];let savedCalls=0;
  const db={get:(k,d)=>storage.has(k)?structuredClone(storage.get(k)):d,set:(k,v)=>storage.set(k,structuredClone(v))};
  const session=()=>({started:'2026-10-07T08:00:00.000Z',programId:'home-basic',programName:'Otthoni A/B',dayId:'A',scheduleId:'sched-1',exercises:[{id:'squat',hu:'Guggolás',repUnit:'ism.',loadType:'weight',sets:[{set:1,reps:'',weight:5,done:false},{set:2,reps:'',weight:5,done:false}]}]});
  const state={session:session(),current:0,workout:'A'};
- const bridge={pendingCommands:async()=>({commands:pending.slice()}),ackCommand:async({commandId})=>{acks.push(commandId);pending.splice(pending.findIndex(c=>c.commandId===commandId),1)},publish:async()=>{},clear:async()=>{},publishHome:async()=>{}};
+ const bridge={pendingCommands:async()=>({commands:pending.slice()}),ackCommand:async({commandId})=>{if(ackFailures-->0)throw Error('temporary ACK failure');acks.push(commandId);pending.splice(pending.findIndex(c=>c.commandId===commandId),1)},publish:async()=>{},clear:async()=>{},publishHome:async()=>{}};
  const window={Capacitor:{isNativePlatform:()=>true,Plugins:{WearSync:bridge}},addEventListener(){},scrollTo(){}};
- const ctx=vm.createContext({window,document:{addEventListener(){}},state,db,Date,console,setInterval(){},setTimeout(){},settings:()=>({rest:90}),history:()=>db.get('history',[]),
+ const ctx=vm.createContext({window,document:{addEventListener(){}},state,db,Date,console,setInterval(){},setTimeout(){},settings:()=>({rest:90}),history:()=>db.get('history',[]).map(x=>normalize?{...x,started:new Date(x.started).toISOString()}:x),
   activeProgram:()=>({id:'home-basic',name:'Otthoni A/B',days:[{id:'A',name:'Alap A',exercises:['squat']}]}),programById:()=>({id:'home-basic'}),programDay:()=>({id:'A',name:'Alap A'}),byId:()=>({id:'squat',hu:'Guggolás',sets:2,repUnit:'ism.'}),
   stopTimer(){state.restEndAt=null},render(){},renderWorkout(){},persistDraft(){if(state.session)db.set('draft',{session:state.session,current:state.current,workout:state.workout})},
   startWorkout(){state.session=session();state.workout='A'},
@@ -31,5 +31,23 @@ const finish=(id='finish')=>({commandId:id,workoutId:'2026-10-07T08:00:00.000Z',
  {const h=harness();h.state.session=null;const final=h.session();final.workoutId=final.started;final.exercises[0].sets[0]={set:1,reps:'12',weight:5,done:true};h.pending.push({...finish('offline-final'),finalSnapshot:final});await h.sync.drainCommands();assert.equal(h.db.get('history',[]).length,1)}
  {const h=harness();h.pending.push(finish(),{commandId:'set',workoutId:finish().workoutId,action:'completeSet',exerciseIndex:0,setIndex:0,reps:'12',weight:5,createdAt:20,sequence:2});await h.sync.drainCommands();assert.deepEqual(h.acks,['set','finish']);assert.equal(h.db.get('history',[]).length,1)}
  {const h=harness();h.state.session.exercises[0].repUnit='mp/oldal';h.pending.push({commandId:'side',workoutId:finish().workoutId,action:'completeSet',exerciseIndex:0,setIndex:0,reps:'',leftSeconds:30,rightSeconds:35,createdAt:20});await h.sync.drainCommands();assert.equal(h.state.session.exercises[0].sets[0].reps,'30');assert.equal(h.state.session.exercises[0].sets[0].done,true)}
- console.log('PASS Wear lifecycle: partial finish, exactly-once retry, validation, final set recovery, draft resume, guarded discard, offline delivery ordering and side times.');
+ {const id='2026-10-07T08:00:00.123456789Z',h=harness({normalize:true,ackFailures:50});h.state.session=null;
+  const final=h.session();final.started=id;final.workoutId=id;final.exercises[0].sets[0]={set:1,reps:'12',weight:5,done:true};
+  h.pending.push({...finish('nano-offline'),workoutId:id,finalSnapshot:final});
+  for(let i=0;i<51;i++)await h.sync.drainCommands();
+  assert.equal(h.savedCalls(),1,'nanosecond offline finish remains one save through 50 failed ACKs');assert.equal(h.db.get('history',[])[0].syncId,id);assert.equal(h.db.get('wearWorkoutResult').status,'saved');assert.deepEqual(h.acks,['nano-offline']);
+  h.db.set('wearClosedWorkouts',[]);h.pending.push({...finish('new-retry-id'),workoutId:id,finalSnapshot:final});await h.sync.drainCommands();assert.equal(h.savedCalls(),1,'persisted syncId survives loss of the receipt cache');
+ }
+ {const id='2026-10-07T08:00:00.123456789Z',h=harness({normalize:true});const old=h.session();old.started=id;old.finished=finish().finishedAt;h.db.set('history',[old]);h.state.session.started=id;h.db.set('draft',{session:h.state.session,current:0});h.pending.push({...finish('legacy-replay'),workoutId:id});await h.sync.drainCommands();assert.equal(h.savedCalls(),0,'legacy normalized timestamp is recognized');assert.equal(h.state.session,null);assert.equal(h.db.get('draft',null),null);assert.equal(h.db.get('wearWorkoutResult').status,'saved');assert.deepEqual(h.acks,['legacy-replay'])}
+ {const h=harness();h.state.session.syncId='one-stable-id';h.pending.push({...finish('wrong-stable-id'),workoutId:'another-stable-id'});await h.sync.drainCommands();assert.equal(h.savedCalls(),0);assert.equal(h.state.session.syncId,'one-stable-id')}
+ {const h=harness();h.state.session.exercises[0].sets[0]={set:1,reps:'12',weight:5,done:true};
+  const data={schema:1,source:'wear_health_services',workoutId:finish().workoutId,watchId:'watch-one',revision:3,averageHeartRate:123,totalCalories:27,steps:0,activeDurationSeconds:60};
+  h.pending.push({...finish('with-health'),healthSummary:data});await h.sync.drainCommands();assert.equal(h.db.get('history',[]).length,1);assert.equal(h.db.get('history',[])[0].healthWear129.totalCalories,27);
+  h.pending.push({commandId:'final-health',action:'healthSummary',workoutId:data.workoutId,healthSummary:{...data,revision:4,totalCalories:29}});await h.sync.drainCommands();assert.equal(h.db.get('history',[]).length,1);assert.equal(h.db.get('history',[])[0].healthWear129.totalCalories,29);
+  for(const [revision,totalCalories] of [[4,50],[2,80],[5,-1]]){h.pending.push({commandId:'replay-health-'+revision+'-'+totalCalories,action:'healthSummary',workoutId:data.workoutId,healthSummary:{...data,revision,totalCalories}});await h.sync.drainCommands();}assert.equal(h.db.get('history',[])[0].healthWear129.totalCalories,29);
+  h.state.session=h.session();h.state.session.started='different';h.pending.push({commandId:'late-health',action:'healthSummary',workoutId:data.workoutId,healthSummary:{...data,revision:6,totalCalories:30}});await h.sync.drainCommands();assert.equal(h.state.session.started,'different');assert.equal(h.db.get('history',[]).length,1);
+ }
+ {const h=harness();h.state.session=null;h.pending.push({commandId:'orphan-health',action:'healthSummary',workoutId:'orphan',healthSummary:{schema:1,source:'wear_health_services',workoutId:'orphan',watchId:'watch',revision:1,totalCalories:0}});await h.sync.drainCommands();assert.equal(h.db.get('history',[]).length,0);assert.equal(h.acks.length,0)}
+ {const h=harness();const home=h.sync.makeHomeSnapshot();assert.ok(home);assert.equal(home.calendar.length,14);assert.equal(new Set(home.calendar.map(x=>x.date)).size,14);assert.ok(home.calendar.every(x=>x.status==='rest'))}
+ console.log('PASS Wear lifecycle including nanosecond timestamps, 50 failed ACKs, persisted identity and legacy save recovery.');
 })().catch(e=>{console.error(e);process.exitCode=1});

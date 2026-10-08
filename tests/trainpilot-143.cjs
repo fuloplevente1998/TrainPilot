@@ -8,6 +8,6 @@ assert.ok(java.includes('setPackage("com.miui.gallery")'));
 assert.ok(java.includes('Intent.CATEGORY_OPENABLE'));
 assert.ok(java.includes('intent.setType("image/*")'));
 assert.ok(!java.includes('MediaStore.ACTION_PICK_IMAGES'));
-assert.equal(pkg.version,'1.2.8-rc1');assert.equal(src.version,'1.2.8-rc1');assert.equal(src.versionCode,2712);
-assert.match(gradle,/versionCode\s+2712/);assert.match(gradle,/versionName\s+"1\.2\.8-rc1"/);assert.ok(sw.includes('trainpilot-v128'));
+assert.equal(pkg.version,'1.2.9');assert.equal(src.version,'1.2.9');assert.equal(src.versionCode,2716);
+assert.match(gradle,/versionCode\s+2716/);assert.match(gradle,/versionName\s+"1\.2\.9"/);assert.ok(sw.includes('trainpilot-v129'));
 console.log('PASS TrainPilot 2652 local-only gallery picker guards');
