@@ -43,7 +43,13 @@ function fixture(){
   await page.evaluate(()=>samFixture.denied=false);if(!await page.locator('.tp168-connect-panel').evaluate(n=>n.open))await page.locator('.tp168-connect-panel>summary').click();await page.locator('.tp-health-provider .tp-select-trigger').click();await page.locator('.tp-health-provider .tp-select-option[data-value="samsung_health"]').click();
   await page.waitForFunction(()=>TrainPilotSamsungHealth.selected()==='samsung_health'&&!state.health.busy&&samFixture.calls.filter(x=>x==='day').length===30).catch(async error=>{console.error(await page.evaluate(()=>({selected:TrainPilotSamsungHealth.selected(),health:state.health,calls:samFixture.calls,report:db.get('healthSyncReport250'),ledger:rf240Ledger()})));throw error;});
   const day=await page.evaluate(()=>rf240Ledger().days[rf240DayKey(new Date())]);assert.equal(day.activeCalories,392);assert.equal(day.hrvRmssdMs,35);assert.equal(day.bodyFatPercent,18.4);
-  assert.equal(await page.locator('.tp-samsung-composition').count(),1);await page.locator('.tp-samsung-composition>summary').click();assert.match(await page.locator('.tp-samsung-composition').innerText(),/Vázizomtömeg/);
+  assert.equal(await page.locator('.tp-samsung-composition').count(),1);await page.locator('.tp168-more-panel>summary').click();assert.match(await page.locator('.tp-samsung-composition').innerText(),/Vázizomtömeg/);
+  assert.equal(await page.locator('details.tp-samsung-composition').count(),0,'Composition must share the More Health disclosure');
+  assert.equal(await page.locator('.tp168-more-panel [data-health-group]').count(),2,'Both groups need their own heading inside the same frame');
+  await page.locator('.tp168-more-panel>summary').click();
+  await page.locator('.tp5-today-steps').click();assert.equal(await page.locator('.tp168-more-panel').evaluate(n=>n.open),true,'Steps must open their detail');
+  await page.locator('.tp168-more-panel>summary').click();
+  await page.locator('.tp168-more-panel>summary').click();assert.match(await page.locator('[data-health-detail="skeletalMuscleMassKg"]').innerText(),/28,2 kg/);assert.equal(await page.locator('.tp168-today-card .tp5-today-metric').count(),6,'Composition must stay in details');
   const read=await page.evaluate(()=>healthPlugin().readTrainingWindow({start:'2026-10-07T22:00:00Z',end:'2026-10-07T23:00:00Z'}));
   assert.equal(read.workoutCalories,392);assert.equal(read.maxHeartRate,162);assert.equal(read.totalCalories,373);assert.equal(read.metricProviders.workoutCalories,'samsung_health');assert.equal(read.metricProviders.averageHeartRate,'health_connect');
   await page.reload();await page.waitForFunction(()=>TrainPilotBoot.finished);await page.evaluate(()=>TrainPilotHealthJournal.ready());assert.equal(await page.evaluate(()=>TrainPilotSamsungHealth.selected()),'samsung_health');

@@ -300,6 +300,10 @@
     "estimatedSeconds": 6
   },
   {
+    "file": "tests/browser/health-details-ui.cjs",
+    "estimatedSeconds": 14
+  },
+  {
     "file": "tests/browser/samsung-health-provider.cjs",
     "estimatedSeconds": 8
   }

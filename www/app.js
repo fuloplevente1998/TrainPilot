@@ -10322,7 +10322,7 @@ rf235HealthCoachCard=function(){const t=rf235L();if(typeof rf233CoachPlan!=='fun
 rf263HealthHub=function(){
  state.tab='health';state.healthView=false;if(typeof rf225HealthPage!=='undefined')rf225HealthPage='hub';rf240ApplyLedger();
  const ledger=rf240Ledger(),today=ledger.days?.[rf240DayKey(new Date())]||{},rec=state.health?.recovery||{},w=state.health?.wellness||{},all=typeof rf215All==='function'?rf215All():[],manual=Number(all.at?.(-1)?.kg),hw=w.weightKg==null?null:Number(w.weightKg),shown=Number.isFinite(hw)?hw:(Number.isFinite(manual)?manual:null),source=Number.isFinite(hw)?(w.weightProvider==='samsung_health'?(window.TrainPilotSamsungHealth?.t('direct')||'Samsung Health'):'Health Connect'):Number.isFinite(shown)?tp149T('health.localEntry'):'',busy=!!state.health?.busy,sync=ledger.lastSyncAt?tp149FormatDateTime(ledger.lastSyncAt):tp149T('health.never'),bp=w.bloodPressureSystolic==null||w.bloodPressureDiastolic==null?'—':tp149FormatNumber(Math.round(w.bloodPressureSystolic))+'/'+tp149FormatNumber(Math.round(w.bloodPressureDiastolic))+' mmHg';
- const body='<main class="rf263-health tp151-health"><div class="tp151-page-head"><div><h1>'+esc(tp149T('health.title'))+'</h1><p class="small muted">'+esc(tp151T('healthHint'))+'</p></div></div><div class="card rf263-sync-card tp151-health-sync"><div class="grid2 rf263-sync-actions"><button class="btn block" onclick="rf244UnifiedSync()" '+(busy?'disabled':'')+'>'+esc(tp149T('health.sync'))+'</button><button class="btn secondary block" onclick="healthSettings()" '+(busy?'disabled':'')+'>'+esc(tp151T('permissions'))+'</button></div><span class="small muted">'+esc(tp149T('health.lastSync',{time:sync}))+'</span>'+(state.health?.message?'<span class="small" role="status">'+esc(state.health.message)+'</span>':'')+'</div>'+rf235HealthCoachCard()+'<div class="card tp151-health-card"><h2>'+esc(tp151T('today'))+'</h2><div class="grid2">'+rf244Stat(tp149T('health.sleep'),tp149SleepText(rec.sleepMinutes))+rf244Stat('HRV',rec.hrvRmssdMs==null?'—':tp149FormatNumber(Math.round(rec.hrvRmssdMs))+' ms')+rf244Stat(tp149T('health.steps'),today.steps==null?'—':tp149FormatNumber(Math.round(today.steps)))+rf244Stat(tp149T('health.activeEnergy'),today.activeCalories==null?'—':tp149FormatNumber(Math.round(today.activeCalories))+' kcal')+'</div><div class="tp151-pulse"><span>'+esc(tp151T('pulse'))+'</span><strong>'+esc(tp151HeartLine(today))+'</strong></div></div><div class="card tp151-health-card"><h2>'+esc(tp151T('body'))+'</h2><div class="grid2">'+rf244Stat(tp149T('health.weight'),shown==null?'—':tp149HealthFmt(shown,1,' kg'),source)+rf244Stat(tp149T('health.bodyFat'),w.bodyFatPercent==null?'—':tp149HealthFmt(w.bodyFatPercent,1,' %'))+rf244Stat('SpO₂',w.oxygenSaturationPercent==null?'—':tp149HealthFmt(w.oxygenSaturationPercent,1,' %'))+rf244Stat('VO₂max',w.vo2Max==null?'—':tp149HealthFmt(w.vo2Max,1,''))+'</div><button class="btn secondary block" onclick="rf215WeightScreen()">'+esc(tp151T('weightLog'))+'</button></div><details class="card tp151-details"><summary><strong>'+esc(tp151T('more'))+'</strong></summary><div class="grid2">'+rf244Stat(tp149T('health.bloodPressure'),bp)+rf244Stat(tp149T('health.bloodGlucose'),w.bloodGlucoseMmolL==null?'—':tp149HealthFmt(w.bloodGlucoseMmolL,1,' mmol/L'))+rf244Stat(tp149T('health.respiratoryRate'),w.respiratoryRate==null?'—':tp149HealthFmt(w.respiratoryRate,1,' /min'))+rf244Stat(tp149T('health.distance'),today.distanceMeters==null?'—':tp149HealthFmt(today.distanceMeters/1000,2,' km'))+'</div></details><details class="card tp151-details"><summary><strong>'+esc(tp151T('recovery'))+'</strong></summary>'+rf244RecoveryRows()+'</details>'+rf263DiagHtml()+'</main>';render(shell(body));
+ const body='<main class="rf263-health tp151-health"><div class="tp151-page-head"><div><h1>'+esc(tp149T('health.title'))+'</h1><p class="small muted">'+esc(tp151T('healthHint'))+'</p></div></div><div class="card rf263-sync-card tp151-health-sync"><div class="grid2 rf263-sync-actions"><button class="btn block" onclick="rf244UnifiedSync()" '+(busy?'disabled':'')+'>'+esc(tp149T('health.sync'))+'</button><button class="btn secondary block" onclick="healthSettings()" '+(busy?'disabled':'')+'>'+esc(tp151T('permissions'))+'</button></div><span class="small muted">'+esc(tp149T('health.lastSync',{time:sync}))+'</span>'+(state.health?.message?'<span class="small" role="status">'+esc(state.health.message)+'</span>':'')+'</div>'+rf235HealthCoachCard()+'<div class="card tp151-health-card"><h2>'+esc(tp151T('today'))+'</h2><div class="grid2">'+rf244Stat(tp149T('health.sleep'),tp149SleepText(rec.sleepMinutes))+rf244Stat('HRV',rec.hrvRmssdMs==null?'—':tp149FormatNumber(Math.round(rec.hrvRmssdMs))+' ms')+rf244Stat(tp149T('health.steps'),today.steps==null?'—':tp149FormatNumber(Math.round(today.steps)))+rf244Stat(tp149T('health.activeEnergy'),today.activeCalories==null?'—':tp149FormatNumber(Math.round(today.activeCalories))+' kcal')+'</div><div class="tp151-pulse"><span>'+esc(tp151T('pulse'))+'</span><strong>'+esc(tp151HeartLine(today))+'</strong></div></div><div class="card tp151-health-card"><h2>'+esc(tp151T('body'))+'</h2><div class="grid2">'+rf244Stat(tp149T('health.weight'),shown==null?'—':tp149HealthFmt(shown,1,' kg'),source)+rf244Stat(tp149T('health.bodyFat'),w.bodyFatPercent==null?'—':tp149HealthFmt(w.bodyFatPercent,1,' %'))+rf244Stat('SpO₂',w.oxygenSaturationPercent==null?'—':tp149HealthFmt(w.oxygenSaturationPercent,1,' %'))+rf244Stat('VO₂max',w.vo2Max==null?'—':tp149HealthFmt(w.vo2Max,1,''))+'</div><button class="btn secondary block" onclick="rf215WeightScreen()">'+esc(tp151T('weightLog'))+'</button></div><details class="card tp151-details" data-health-panel="more"><summary><strong>'+esc(tp151T('more'))+'</strong></summary><div class="grid2">'+rf244Stat(tp149T('health.bloodPressure'),bp)+rf244Stat(tp149T('health.bloodGlucose'),w.bloodGlucoseMmolL==null?'—':tp149HealthFmt(w.bloodGlucoseMmolL,1,' mmol/L'))+rf244Stat(tp149T('health.respiratoryRate'),w.respiratoryRate==null?'—':tp149HealthFmt(w.respiratoryRate,1,' /min'))+rf244Stat(tp149T('health.distance'),today.distanceMeters==null?'—':tp149HealthFmt(today.distanceMeters/1000,2,' km'))+'</div></details><details class="card tp151-details"><summary><strong>'+esc(tp151T('recovery'))+'</strong></summary>'+rf244RecoveryRows()+'</details>'+rf263DiagHtml()+'</main>';render(shell(body));
 };
 
 rf215WeightScreen=function(){
@@ -14912,8 +14912,9 @@ renderWorkout=function(){
 var tp107FitViews=function(){
  const home=document.querySelector('#app main.rf221-home'),health=document.querySelector('#app main.tp168-health');
  const expanded=health&&[...health.querySelectorAll('details[open],.tp168-weight-summary[aria-expanded="true"],.tp169-pulse-summary[aria-expanded="true"]')].some(function(e){return e.getClientRects().length>0;});
- home?.classList.add('tp107-fit-home');health?.classList.add('tp107-health-layout');health?.classList.toggle('tp107-fit-health',!expanded);
- const fixed=!!home||!!health&&!expanded;document.documentElement.classList.toggle('tp107-fixed-view',fixed);document.body.classList.toggle('tp107-fixed-view',fixed);
+ const scrollable=expanded;
+ home?.classList.add('tp107-fit-home');health?.classList.add('tp107-health-layout');health?.classList.toggle('tp107-fit-health',!scrollable);
+ const fixed=!!home||!!health&&!scrollable;document.documentElement.classList.toggle('tp107-fixed-view',fixed);document.body.classList.toggle('tp107-fixed-view',fixed);
  const nav=document.querySelector('.top');if(nav)document.documentElement.style.setProperty('--tp107-nav-height',Math.ceil(nav.getBoundingClientRect().bottom)+'px');
  const panelHost=document.getElementById('tp155R4PanelHost');panelHost?.classList.toggle('tp107-fit-calendar',panelHost.dataset.panel==='calendar');
 };
@@ -15529,13 +15530,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
   body.weightProvider=body.weightProvider?ledger.days[body.weightProvider]?.metricProviders?.weightKg||HC:null;
   db.set('wellnessLatest',body);
  }return ledger;};
- function composition(){const w=state.health?.wellness||{},fields=[['muscle','skeletalMuscleMassKg','kg'],['fatMass','bodyFatMassKg','kg'],['water','totalBodyWaterLiters','L'],['lean','fatFreeMassKg','kg'],['basal','basalMetabolicRateKcal','kcal']].filter(([,key])=>numeric(w[key]));
-  return fields.length?'<details class="card tp-samsung-composition"><summary><strong>'+esc(t('body'))+'</strong></summary><div class="grid2">'+fields.map(([label,key,unit])=>rf244Stat(t(label),rf250Fmt(w[key],1,' '+unit))).join('')+'</div></details>':'';
- }
  function decorate(){
   const main=document.querySelector('#app main.tp168-health');
-  if(main){const tail=main.querySelector('.tp168-sync-tail'),connection=main.querySelector('.tp168-connect-panel');if(connection&&!connection.querySelector('[data-health-provider]')){const block=document.createElement('div');block.className='tp-health-provider';block.innerHTML=choices();connection.querySelector('summary')?.after(block);}
-   if(selected()===SH&&!main.querySelector('.tp-samsung-composition')){const html=composition();if(html&&tail)tail.insertAdjacentHTML('beforebegin',html);}
+  if(main){const connection=main.querySelector('.tp168-connect-panel');if(connection&&!connection.querySelector('[data-health-provider]')){const block=document.createElement('div');block.className='tp-health-provider';block.innerHTML=choices();connection.querySelector('summary')?.after(block);}
   }
   paintChoices();
  }
@@ -15551,6 +15548,102 @@ window.addEventListener?.('DOMContentLoaded',function(){
  });
 })();
 // @endsection samsung-health-provider.js
+
+// @section health-details.js
+/* Dated metrics for six Today shortcuts and dynamically populated Health details. */
+(function(){
+ 'use strict';
+ const labels={
+  daily:['Napi és egyéb adatok','Daily and other data','Tagesdaten und weitere Werte','Date zilnice și alte valori'],
+  body:['Testösszetétel','Body composition','Körperzusammensetzung','Compoziție corporală'],
+  emptyBody:['Még nincs testösszetételi mérés.','No body composition measurements yet.','Noch keine Messung der Körperzusammensetzung.','Nu există încă măsurători de compoziție corporală.'],
+  samples:['{n} pulzusminta','{n} heart-rate samples','{n} Pulsmesswerte','{n} măsurători de puls'],
+  source:['Adatforrás','Data source','Datenquelle','Sursa datelor'],
+  earlier:['Korábbi adat','Earlier data','Frühere Daten','Date anterioare'],
+  activeCalories:['Aktív kalória','Active calories','Aktive Kalorien','Calorii active'],
+  totalCalories:['Teljes kalória','Total calories','Gesamtkalorien','Calorii totale'],
+  muscle:['Vázizomtömeg','Skeletal muscle','Skelettmuskelmasse','Masă musculară scheletică'],
+  fatMass:['Testzsírtömeg','Fat mass','Fettmasse','Masă de grăsime'],
+  water:['Testvíz','Body water','Körperwasser','Apă corporală'],
+  lean:['Zsírmentes tömeg','Fat-free mass','Fettfreie Masse','Masă fără grăsime'],
+  basal:['Nyugalmi anyagcsere','Basal metabolic rate','Grundumsatz','Metabolism bazal'],
+  bmi:['BMI','BMI','BMI','IMC'],perDay:['kcal/nap','kcal/day','kcal/Tag','kcal/zi'],
+  min:['Min. pulzus','Min. heart rate','Min. Puls','Puls minim'],max:['Max. pulzus','Max. heart rate','Max. Puls','Puls maxim']
+ };
+ const language=()=>typeof rf212Lang==='function'?rf212Lang():'hu';
+ const text=key=>labels[key]?.[['hu','en','de','ro'].indexOf(language())]||labels[key]?.[0]||key;
+ const number=v=>v==null||v===''||!Number.isFinite(Number(v))?null:Number(v);
+ const definitions=[
+  ['steps','health.steps','',0,'daily','more','steps'],
+  ['activeCalories','activeCalories','kcal',0,'daily','more','calories'],
+  ['totalCalories','totalCalories','kcal',0,'daily','more','calories'],
+  ['distanceMeters','health.distance','km',2,'daily','more','steps',null,1000],
+  ['hrvRmssdMs','HRV','ms',0,'daily','more','hrv','hrvTime'],
+  ['bloodPressureSystolic','health.bloodPressure','mmHg',0,'daily','more','pulse','bloodPressureTime'],
+  ['bloodGlucoseMmolL','health.bloodGlucose','mmol/L',1,'daily','more','pulse','bloodGlucoseTime'],
+  ['respiratoryRate','health.respiratoryRate','/min',1,'daily','more','hrv','respiratoryRateTime'],
+  ['restingHeartRate','health.restingHeartRate','bpm',0,'pulse','pulse','pulse'],
+  ['minHeartRate','min','bpm',0,'pulse','pulse','pulse'],
+  ['maxHeartRate','max','bpm',0,'pulse','pulse','pulse'],
+  ['weightKg','health.weight','kg',1,'weight','weight','weight','weightTime'],
+  ['bodyFatPercent','health.bodyFat','%',1,'weight','weight','body','bodyFatTime'],
+  ['oxygenSaturationPercent','SpO₂','%',1,'weight','weight','pulse','oxygenSaturationTime'],
+  ['vo2Max','VO₂max','',1,'weight','weight','hrv','vo2MaxTime'],
+  ['skeletalMuscleMassKg','muscle','kg',1,'body','more','body','skeletalMuscleMassTime'],
+  ['bodyFatMassKg','fatMass','kg',1,'body','more','body','bodyFatMassTime'],
+  ['totalBodyWaterLiters','water','L',1,'body','more','body','totalBodyWaterTime'],
+  ['fatFreeMassKg','lean','kg',1,'body','more','body','fatFreeMassTime'],
+  ['basalMetabolicRateKcal','basal','perDay',0,'body','more','calories','basalMetabolicRateTime'],
+  ['bodyMassIndex','bmi','',1,'body','more','body','bodyMassIndexTime']
+ ];
+ function providerLabel(provider){return provider==='samsung_health'?'Samsung Health':provider==='health_connect'?'Health Connect':text('earlier');}
+ function rows(mode='details'){
+  const ledger=rf240Ledger(),days=ledger.days||{},today=rf240DayKey(new Date()),current=days[today]||{};
+  return definitions.map(([key,label,unit,digits,group,target,icon,time,divisor=1])=>{
+   const latest=mode==='today'||group==='pulse'||['steps','activeCalories','totalCalories','distanceMeters','hrvRmssdMs'].includes(key)?null:rf240Latest(days,key,time);
+   const rowDay=latest?.day||today,data=latest?days[rowDay]:current,value=number(data?.[key]);
+   const timeValue=data?.[time],measurementDay=(timeValue?rf240DayKey(timeValue):rowDay)||rowDay;
+   let valid=value!=null&&value>=0;
+   if(group==='pulse'||['weightKg','vo2Max','respiratoryRate','hrvRmssdMs','bloodPressureSystolic'].includes(key))valid=valid&&value>0;
+   let shown=valid?tp149FormatNumber(value/divisor,{maximumFractionDigits:digits})+(unit?' '+(unit==='perDay'?text(unit):unit):''):'—';
+   if(key==='bloodPressureSystolic'){
+    const diastolic=number(data?.bloodPressureDiastolic);valid=valid&&diastolic>0;
+    shown=valid?tp149FormatNumber(Math.round(value))+'/'+tp149FormatNumber(Math.round(diastolic))+' mmHg':'—';
+   }
+   if(key==='hrvRmssdMs'&&!valid){
+    const recovery=typeof rf229RecoveryHistory==='function'?rf229RecoveryHistory().find(r=>r.day===today):null;
+    const hrv=number(recovery?.hrvRmssdMs);if(hrv>0){valid=true;shown=tp149FormatNumber(Math.round(hrv))+' ms';}
+   }
+   if(mode==='today'&&measurementDay!==today)valid=false;
+   return {key,group,target,icon,label:label.startsWith('health.')?tp149T(label):labels[label]?text(label):label,
+    value,text:shown,valid,day:measurementDay,provider:data?.metricProviders?.[key]||(key==='hrvRmssdMs'?'health_connect':data?.provider||data?.channel||'health_connect')};
+  });
+ }
+ function meta(row){
+  if(!row.valid)return '';
+  const date=tp149FormatDate(new Date(row.day+'T12:00:00'),{month:'short',day:'numeric'});
+  return providerLabel(row.provider)+' · '+date;
+ }
+ function stat(row){return '<div class="stat'+(row.key==='hrvRmssdMs'?' tp5-more-hrv':'')+'" data-health-detail="'+row.key+'" tabindex="-1"><small>'+esc(row.label)+'</small><strong>'+esc(row.text)+'</strong>'+(row.valid?'<span class="tp-health-metric-meta">'+esc(meta(row))+'</span>':'')+'</div>';}
+ function decorate(more){
+  const all=rows(),bodyKeys=['weightKg','bodyFatPercent'],daily=all.filter(r=>(r.group==='daily'||['oxygenSaturationPercent','vo2Max'].includes(r.key))&&(r.valid||['bloodPressureSystolic','bloodGlucoseMmolL','respiratoryRate','distanceMeters','hrvRmssdMs'].includes(r.key))),body=all.filter(r=>(r.group==='body'||bodyKeys.includes(r.key))&&r.valid);
+  let content=more.querySelector(':scope > .tp-health-details');if(!content){more.querySelectorAll(':scope > .grid2').forEach(n=>n.remove());content=document.createElement('div');content.className='tp-health-details';more.appendChild(content);}
+  content.innerHTML='<section data-health-group="daily"><h3>'+esc(text('daily'))+'</h3><div class="grid2">'+daily.map(stat).join('')+'</div></section>'+
+   '<section class="tp-samsung-composition" data-health-group="body"><h3>'+esc(text('body'))+'</h3>'+(body.length?'<div class="grid2">'+body.map(stat).join('')+'</div>':'<p class="small muted">'+esc(text('emptyBody'))+'</p>')+'</section>';
+  const health=window.TrainPilot168Health;if(health){more.open=!!health.moreOpen;more.ontoggle=()=>{if(more.isConnected)health.moreOpen=more.open;};}
+ }
+ function open(key){
+  const row=rows().find(r=>r.key===key);if(!row)return;
+  if(row.target==='pulse')return window.tp168OpenPulse?.();
+  if(row.target==='weight')return window.rf215WeightScreen?.();
+  const more=document.querySelector('main.tp168-health .tp168-more-panel');if(!more)return;
+  more.open=true;if(window.TrainPilot168Health)window.TrainPilot168Health.moreOpen=true;
+  const target=more.querySelector('[data-health-detail="'+key+'"]')||more;
+  requestAnimationFrame(()=>{if(!target.isConnected)return;target.scrollIntoView?.({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});target.focus?.({preventScroll:true});});
+ }
+ window.TrainPilotHealthDetails={rows,decorate,open,text,providerLabel,meta,stat};
+})();
+// @endsection health-details.js
 
 
 // @section profile-training-128.js

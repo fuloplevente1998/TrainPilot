@@ -32,7 +32,8 @@ const {chromium}=require('playwright');
   assert.ok(parseFloat(await titleLine.locator('time').evaluate(e=>getComputedStyle(e).fontSize))>=13,'Today date must use a larger readable size');
   const titleBox=await titleLine.locator('h2').boundingBox(),dateBox=await titleLine.locator('time').boundingBox();assert.ok(titleBox&&dateBox&&dateBox.y<titleBox.y+titleBox.height+5,'Today date must visually share the title line');
 
-  assert.equal(await page.locator('.tp168-today-card .tp5-today-metric').count(),6,'Today status must expose six shared metric tiles');
+  assert.equal(await page.locator('.tp168-today-card .tp5-today-metric').count(),6,'Today status must preserve six shared metric tiles');
+  assert.equal(await page.locator('.tp168-today-card .tp5-today-metric').count(),6,'Extra measurements belong in the detail disclosure');
   assert.equal(await page.locator('.tp168-today-card .tp168-resting').count(),0,'separate resting pulse shortcut must be removed');
 
   const pulse=page.locator('.tp169-pulse-journal');assert.equal(await pulse.count(),1,'Pulse trend disclosure missing');

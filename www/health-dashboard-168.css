@@ -709,3 +709,19 @@ html body #tp155R4PanelHost[data-panel="quick"] .tp152-quick-row>summary .tp152-
   min-width:0;overflow:visible;text-overflow:clip;white-space:normal;
   overflow-wrap:anywhere;line-height:1.35
 }
+/* Shared Health detail disclosure: one frame, two headings, existing theme tokens. */
+#app main.tp168-health>.tp168-more-panel[open]{flex-shrink:0!important}
+#app main.tp168-health>.tp168-more-panel>summary{list-style:none!important}
+#app main.tp168-health>.tp168-more-panel>summary::marker{content:""}
+#app main.tp168-health>.tp168-more-panel>summary::-webkit-details-marker{display:none}
+#app main.tp168-health>.tp168-more-panel>summary::before,
+#app main.tp168-health>.tp168-more-panel>summary::after{content:none!important;display:none!important}
+#app .tp-health-details{padding:0 10px 10px}
+#app .tp-health-details>section+section{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+#app .tp-health-details h3{margin:0 0 9px;font-size:15px;font-weight:700;color:var(--text)}
+#app .tp-health-details .grid2{gap:8px;margin:0}
+#app .tp-health-details .stat{min-width:0;display:flex;flex-direction:column;gap:5px}
+#app .tp-health-details .stat:focus{outline:2px solid var(--accent);outline-offset:2px}
+#app .tp-health-details .stat strong{overflow-wrap:anywhere}
+#app .tp-health-metric-meta,#app .tp-health-pulse-meta{color:var(--muted);font-size:11px;line-height:1.35;font-weight:400}
+#app .tp-health-pulse-meta{margin:7px 0 0}
