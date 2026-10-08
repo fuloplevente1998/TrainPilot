@@ -50,6 +50,7 @@ function seed(){
   assert.match(await more.locator('[data-health-detail="totalCalories"]').innerText(),/2\s*423 kcal/);
   await more.locator('summary').click();await page.locator('.tp5-today-steps').click();assert.equal(await more.evaluate(n=>n.open),true);
   await page.evaluate(()=>TrainPilotHealthDetails.open('totalBodyWaterLiters'));
+  await page.waitForFunction(()=>document.querySelector('[data-health-detail="totalBodyWaterLiters"]')===document.activeElement);
   assert.equal(await more.evaluate(n=>n.open),true);assert.equal(await page.locator('[data-health-detail="totalBodyWaterLiters"]').evaluate(n=>n===document.activeElement),true);
   assert.match(await more.locator('[data-health-detail="totalBodyWaterLiters"]').innerText(),/40,1 L/);
   await page.evaluate(()=>TrainPilotHealthDetails.open('bloodPressureSystolic'));assert.match(await more.locator('[data-health-detail="bloodPressureSystolic"]').innerText(),/126\/82 mmHg/);

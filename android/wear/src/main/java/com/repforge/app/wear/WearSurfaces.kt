@@ -19,7 +19,7 @@ internal fun wearGlance(workout: WearWorkout?, home: WatchHomeSnapshot?, closure
 }
 object WearSurfaces {
     private var lastRefresh=0L
-    fun glance(context: Context) = wearGlance(WorkoutSnapshotStore.load(context),WatchHomeStore.load(context),WearClosureStore.load(context),System.currentTimeMillis())
+    internal fun glance(context: Context) = wearGlance(WorkoutSnapshotStore.load(context),WatchHomeStore.load(context),WearClosureStore.load(context),System.currentTimeMillis())
     fun launch(context: Context): PendingIntent = PendingIntent.getActivity(context,129,
         Intent(context,MainActivity::class.java).putExtra("destination",glance(context).destination).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_NEW_TASK),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)

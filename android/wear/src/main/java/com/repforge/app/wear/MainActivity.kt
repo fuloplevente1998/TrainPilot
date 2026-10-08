@@ -41,14 +41,18 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private val gpsEnabled=mutableStateOf(false)
     private val uiHandler=Handler(Looper.getMainLooper())
     private val healthTick=object : Runnable {
-        override fun run() { refreshHealth();uiHandler.postDelayed(this,1000) }
+        override fun run() {
+            refreshHealth()
+            if(WearHealthStore.active(this@MainActivity).isBlank() && workout.value?.workoutId?.let { WearHealthStore.load(this@MainActivity,it)==null }==true)startHealthIfEnabled()
+            uiHandler.postDelayed(this,1000)
+        }
     }
     private val permissionRequest=registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         val allowed=healthAllowed()
         WearHealthStore.enable(this,allowed);measuring.value=allowed
         if(WearHealthStore.gps(this) && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED)WearHealthStore.gps(this,false)
         gpsEnabled.value=WearHealthStore.gps(this)
-        if(allowed)startHealthIfEnabled() else Toast.makeText(this,"Órás méréshez engedély szükséges.",Toast.LENGTH_LONG).show()
+        if(allowed){workout.value?.let { WearHealthStore.retry(this,it.workoutId) };startHealthIfEnabled()} else Toast.makeText(this,"Órás méréshez engedély szükséges.",Toast.LENGTH_LONG).show()
     }
     private fun healthAllowed(): Boolean = checkSelfPermission(if(Build.VERSION.SDK_INT>=36) "android.permission.health.READ_HEART_RATE" else Manifest.permission.BODY_SENSORS)==PackageManager.PERMISSION_GRANTED || checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION)==PackageManager.PERMISSION_GRANTED
     private fun refreshHealth() {
@@ -66,7 +70,6 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private fun startHealthIfEnabled() {
         if(!WearHealthStore.enabled(this) || !healthAllowed())return
         val current=workout.value ?: return
-        if(WearHealthStore.active(this).let { it.isNotBlank() && it!=current.workoutId })return
         val previous=WearHealthStore.load(this,current.workoutId)
         if(previous?.optString("state") in listOf("ended","error"))return
         try { WearHealthService.start(this,current) }catch(error:Exception) { Toast.makeText(this,"A mérés nem indítható: ${error.message}",Toast.LENGTH_LONG).show() }

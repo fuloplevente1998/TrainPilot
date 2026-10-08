@@ -304,7 +304,7 @@ private fun HealthScreen(data: JSONObject?, enabled: Boolean, gps: Boolean,
         Spacer(Modifier.height(8.dp))
         Pill(if(enabled)"Mérés kikapcsolása" else "Mérések engedélyezése",tone=if(enabled)Secondary else Gold,onClick=if(enabled)onDisable else onEnable)
         Spacer(Modifier.height(6.dp));Pill(if(gps)"GPS kikapcsolása" else "GPS engedélyezése",tone=Card,onClick=onGps)
-        Text("GPS csak mozgásos edzésnél használható. A mérést engedélyezett edzés közben az óra a háttérben is folytatja.",color=Muted,fontSize=10.sp,textAlign=TextAlign.Center)
+        Text("GPS csak mozgásos edzésnél használható, a következő mérés indításától. Az óra az engedélyezett edzésmérést a háttérben is folytatja.",color=Muted,fontSize=10.sp,textAlign=TextAlign.Center)
         Spacer(Modifier.height(8.dp));Pill("‹ Vissza",tone=Secondary,onClick=onBack)
     }
 }

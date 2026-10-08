@@ -36,8 +36,10 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
         val id=intent?.getStringExtra("workoutId") ?: WearHealthStore.active(this)
         if(id.isBlank()) { stopSelf();return START_NOT_STICKY }
         if(summary?.optString("workoutId")==id)return START_STICKY
-        if(summary!=null) { stopSelf();return START_NOT_STICKY }
-        summary=WearHealthStore.begin(this,id)
+        if(summary!=null) { end();return START_STICKY }
+        val oldId=WearHealthStore.active(this)
+        val closePrevious=oldId.isNotBlank() && oldId!=id
+        summary=WearHealthStore.begin(this,if(closePrevious)oldId else id)
         if(summary!!.optString("state")=="ended") { stopSelf();return START_NOT_STICKY }
         try {
             val manager=getSystemService(NotificationManager::class.java)
@@ -53,8 +55,8 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
             await(client.getCurrentExerciseInfoAsync()) { info ->
                 when(info.exerciseTrackedStatus) {
                     ExerciseTrackedStatus.OTHER_APP_IN_PROGRESS -> fail("Másik alkalmazás már edzést mér. A TrainPilot nem szakította meg.")
-                    ExerciseTrackedStatus.OWNED_EXERCISE_IN_PROGRESS -> { owned=true;summary?.put("state","active");persist() }
-                    else -> capabilities(intent?.getStringExtra("exerciseType"),location)
+                    ExerciseTrackedStatus.OWNED_EXERCISE_IN_PROGRESS -> { owned=true;summary?.put("state","active");persist();if(closePrevious)end() }
+                    else -> if(closePrevious){summary?.put("state","ended")?.put("partial",true);persist();summary?.let { WearHealthStore.publish(this,it) };stopSelf()}else capabilities(intent?.getStringExtra("exerciseType"),location)
                 }
             }
         } catch(error: Exception) { fail("A mérés nem indítható: ${error.message ?: "ellenőrizd az engedélyeket"}") }
@@ -72,7 +74,8 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
             val metrics=requestedMetrics.filter { supported.contains(it) && if(it==DataType.HEART_RATE_BPM)heart else activity }.toSet()
             if(metrics.isEmpty()) { fail("Az óra nem kínál támogatott mérési adatot.");return@await }
             val config=ExerciseConfig(type,metrics,isAutoPauseAndResumeEnabled=false,isGpsEnabled=gps && type in listOf(ExerciseType.RUNNING,ExerciseType.WALKING,ExerciseType.BIKING))
-            summary?.let { if(it.optDouble("activeDurationSeconds",0.0)>0)it.put("partial",true);it.put("exerciseType",type.toString()).put("gps",config.isGpsEnabled) }
+            summary?.let { if(it.optDouble("activeDurationSeconds",0.0)>0)it.put("partial",true);for(key in listOf("totalCalories","steps","distanceMeters","activeDurationSeconds"))it.put("offset:$key",it.optDouble(key,0.0))
+                it.put("exerciseType",type.toString()).put("gps",config.isGpsEnabled) }
             await(client.startExerciseAsync(config)) { owned=true;summary?.put("state","active");persist() }
         }
     }
@@ -92,11 +95,14 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
         val origin=if(kotlin.math.abs(currentOrigin-oldOrigin)<10000)oldOrigin else currentOrigin
         data.put("bootOrigin",origin)
         update.latestMetrics.getData(DataType.HEART_RATE_BPM).sortedBy { it.timeDurationFromBoot }.forEach { accumulator.heartRate(origin+it.timeDurationFromBoot.toMillis(),it.value) }
-        accumulator.total("totalCalories",update.latestMetrics.getData(DataType.CALORIES_TOTAL)?.total)
-        accumulator.total("steps",update.latestMetrics.getData(DataType.STEPS_TOTAL)?.total?.toDouble())
-        accumulator.total("distanceMeters",update.latestMetrics.getData(DataType.DISTANCE_TOTAL)?.total)
+        accumulator.total("totalCalories",update.latestMetrics.getData(DataType.CALORIES_TOTAL)?.total?.plus(data.optDouble("offset:totalCalories",0.0)))
+        accumulator.total("steps",update.latestMetrics.getData(DataType.STEPS_TOTAL)?.total?.toDouble()?.plus(data.optDouble("offset:steps",0.0)))
+        accumulator.total("distanceMeters",update.latestMetrics.getData(DataType.DISTANCE_TOTAL)?.total?.plus(data.optDouble("offset:distanceMeters",0.0)))
         accumulator.sample("speedMps",update.latestMetrics.getData(DataType.SPEED).lastOrNull()?.value)
-        accumulator.total("activeDurationSeconds",update.activeDuration.toMillis()/1000.0)
+        update.activeDurationCheckpoint?.let { checkpoint ->
+            val elapsed=if(update.exerciseStateInfo.state.isPaused || update.exerciseStateInfo.state.isEnded)0L else java.time.Duration.between(checkpoint.time,java.time.Instant.now()).toMillis().coerceAtLeast(0L)
+            accumulator.total("activeDurationSeconds",(checkpoint.activeDuration.toMillis()+elapsed)/1000.0+data.optDouble("offset:activeDurationSeconds",0.0))
+        }
         val ended=update.exerciseStateInfo.state.isEnded
         data.put("state",if(ended)"ended" else if(ending)"ending" else "active")
         persist()

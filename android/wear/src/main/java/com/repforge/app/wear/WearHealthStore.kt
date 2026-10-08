@@ -20,7 +20,7 @@ class WearHealthAccumulator(val value: JSONObject) {
     fun sample(key: String, number: Double?) {
         if (number != null && number.isFinite() && number >= 0) value.put(key,number)
     }
-    fun snapshot(): JSONObject = JSONObject(value.toString()).apply { remove("heartRateSum"); remove("bootOrigin"); remove("lastPublishedAt") }
+    fun snapshot(): JSONObject = JSONObject(value.toString()).apply { remove("heartRateSum"); remove("bootOrigin"); remove("lastPublishedAt"); for(key in listOf("totalCalories","steps","distanceMeters","activeDurationSeconds"))remove("offset:$key") }
 }
 
 object WearHealthStore {
@@ -44,6 +44,12 @@ object WearHealthStore {
         val editor=prefs.edit().putString("summary:$id",value.toString()).putString("active",if(value.optString("state") in listOf("starting","active"))id else "")
         while(ids.size>16) { val oldest=ids.minByOrNull { load(context,it)?.optLong("updatedAt") ?: 0L } ?: break;ids.remove(oldest);editor.remove("summary:$oldest") }
         editor.putStringSet("ids",ids).commit()
+    }
+    @Synchronized fun retry(context: Context, id: String) {
+        val value=load(context,id) ?: return
+        if(value.optString("state") in listOf("ended","error")) {
+            value.put("state","starting").put("partial",true).remove("message");save(context,value)
+        }
     }
     @Synchronized fun active(context: Context): String = context.getSharedPreferences(PREFS,0).getString("active","") ?: ""
     @Synchronized fun publish(context: Context, summary: JSONObject) {
