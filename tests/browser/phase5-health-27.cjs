@@ -22,7 +22,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   assert.equal(rows.some(x=>x.value===199),false,'stale older readings must not enter the seven-day trend');
   assert.ok(rows.some(x=>x.value===null),'zero/missing average heart rate must remain missing');
   const pulse=page.locator('.tp169-pulse-journal');assert.equal(await pulse.locator('.tp5-pulse-today').count(),1,'today pulse section missing');assert.equal(await pulse.locator('.tp5-pulse-trend-section').count(),1,'7-day trend section missing');
-  const source=await pulse.locator('.tp5-pulse-source').innerText();assert.match(source,/Health Connect/i);assert.match(source,/healthLedgerV1/i);assert.match(source,/averageHeartRate/i);
+  const source=await pulse.locator('.tp5-pulse-source').innerText();assert.match(source,/Health Connect/i);assert.doesNotMatch(source,/healthLedgerV1|averageHeartRate/i,'Source label must use the app language without storage internals');
   assert.doesNotMatch(await pulse.innerText(),/\b0\s*bpm\b/i,'zero pulse must not render as a real measurement');
   assert.equal(await pulse.locator('.tp5-pulse-day').count(),7,'trend must show seven daily slots');
 

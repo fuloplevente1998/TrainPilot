@@ -12,7 +12,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   await page.evaluate(()=>{
    db.set('language','hu');state.health=state.health||{};
    const now=new Date(),key=rf240DayKey(now),yesterday=new Date(now);yesterday.setDate(now.getDate()-1);
-   const days={[key]:{averageHeartRate:74,restingHeartRate:57,steps:9421,totalCalories:1850}};
+   const days={[key]:{averageHeartRate:74,restingHeartRate:57,steps:9421,totalCalories:1850,activeCalories:392}};
    rf240Ledger=()=>({version:1,days,lastSyncAt:new Date().toISOString()});
    const rec={day:key,sleepMinutes:450,hrvRmssdMs:54,hrvBaselineMs:48,sleepEnd:new Date().toISOString()};
    state.health.recovery=rec;db.set('recoveryHistory',[rec]);
@@ -32,7 +32,8 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   assert.deepEqual(homeTiles.map(x=>x.key),keys.map(x=>'tp5-today-'+x),'Home Today order must be 2x3');
   assert.equal(homeTiles[4].value,'2','Today workouts must count only completed, valid logged sessions');
   assert.equal(homeTiles[2].value,'74 bpm');
-  assert.equal(homeTiles[1].value.replace(/\s/g,''),'1850kcal','Today shows total calories burned for the local day');
+  assert.equal(homeTiles[1].label,'Aktív kalória');
+  assert.equal(homeTiles[1].value.replace(/\s/g,''),'392kcal','Today shows active calories without basal energy');
   const position=await home.evaluate(e=>!!(e.compareDocumentPosition(document.querySelector('#rf220CoachCard'))&Node.DOCUMENT_POSITION_FOLLOWING));
   assert.ok(position,'Today must keep its original position before Coach');
   for(const width of [320,360,393,412]){
@@ -58,16 +59,18 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
    assert.ok(state.sw<=state.cw+1,'Health overflow at '+width+': '+JSON.stringify(state));
   }
   await page.evaluate(()=>{
-   const k=rf240DayKey(new Date());rf240Ledger=()=>({version:1,days:{[k]:{averageHeartRate:0,restingHeartRate:0,steps:null}}});
+   const k=rf240DayKey(new Date());rf240Ledger=()=>({version:1,days:{[k]:{averageHeartRate:0,restingHeartRate:0,steps:null,totalCalories:2000}}});
    state.health.recovery={day:'2000-01-01',sleepMinutes:420,hrvRmssdMs:51};
    db.set('recoveryHistory',[]);TrainPilot168Health.decorate();
   });
   const missing=await read(page.locator('main.tp168-health .tp5-today-grid'));
   assert.equal(missing[0].value,'—','Stale sleep must not be shown as today’s data');
-  assert.equal(missing[1].value,'—','Missing total calories must not become zero');
+  assert.equal(missing[1].value,'—','Missing active calories must not become zero');
   assert.equal(missing[2].value,'—','Zero pulse must be treated as missing');
   assert.equal(missing[3].value,'—','Null steps must not turn into zero');
   assert.equal(missing[5].value,'—','Unknown recovery must not present default readiness as a measured value');
+  await page.evaluate(()=>{const k=rf240DayKey(new Date());rf240Ledger=()=>({version:1,days:{[k]:{activeCalories:0,totalCalories:2000}}});TrainPilot168Health.decorate();});
+  assert.equal((await read(page.locator('main.tp168-health .tp5-today-grid')))[1].value,'0 kcal','Measured zero active energy must remain zero');
   console.log('PASS Phase 5 #44 shared 2x3 Today model, workout provenance, missing data, layouts and placement');
  }finally{if(browser)await browser.close();await new Promise(r=>server.close(r))}
 })().catch(e=>{console.error(e);process.exit(1)});

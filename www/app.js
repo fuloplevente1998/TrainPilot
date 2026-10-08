@@ -509,7 +509,7 @@ var upd = function upd(ei,si,k,v){state.session.exercises[ei].sets[si][k]=k==="w
 var toggleSet = function toggleSet(ei,si){const s=state.session.exercises[ei].sets[si];if(!s.done && (!/^\d+$/.test(String(s.reps)) || Number(s.reps)<1)){alert("Írd be a tényleges ismétlésszámot vagy másodpercet.");return;}s.done=!s.done;if(s.done)startRest();renderWorkout()};
 var prevExercise = function prevExercise(){if(state.current>0){state.current--;renderWorkout();window.scrollTo(0,0)}};
 var nextExercise = function nextExercise(){if(state.current<state.session.exercises.length-1){state.current++;renderWorkout();window.scrollTo(0,0)}else finishWorkout()};
-var finishWorkout = function finishWorkout(){if(!state.session.exercises.some(e=>e.sets.some(s=>s.done))){alert("Előbb jelölj legalább egy sorozatot teljesítettnek.");return;}if(state.session.exercises.some(e=>e.sets.some(s=>!s.done))&&!confirm("Vannak be nem fejezett sorozatok. Elmented a részleges edzést?"))return;const h=history();state.session.finished=new Date().toISOString();closeWorkoutInterval(state.session,state.session.finished);h.unshift(state.session);db.set("history",h);db.set("draft",null);const w=state.workout;stopTimer();state.session=null;state.workout=null;state.tab="home";render(shell(`<main><div class="hero"><h1>Kész ✓</h1><div class="muted">Full Body ${w} elmentve.</div><br><button class="btn block" onclick="go('home')">Kezdőlap</button></div></main>`))};
+var finishWorkout = function finishWorkout(options={}){if(!state.session.exercises.some(e=>e.sets.some(s=>s.done))){alert("Előbb jelölj legalább egy sorozatot teljesítettnek.");return;}if(state.session.exercises.some(e=>e.sets.some(s=>!s.done))&&!confirm("Vannak be nem fejezett sorozatok. Elmented a részleges edzést?"))return;const h=history();const requestedEnd=Date.parse(options.wearFinishedAt||''),startedAt=Date.parse(state.session.started||'');state.session.finished=Number.isFinite(requestedEnd)&&requestedEnd>=startedAt&&requestedEnd<=Date.now()+30000?new Date(requestedEnd).toISOString():new Date().toISOString();closeWorkoutInterval(state.session,state.session.finished);h.unshift(state.session);db.set("history",h);db.set("draft",null);const w=state.workout;stopTimer();state.session=null;state.workout=null;state.tab="home";render(shell(`<main><div class="hero"><h1>Kész ✓</h1><div class="muted">Full Body ${w} elmentve.</div><br><button class="btn block" onclick="go('home')">Kezdőlap</button></div></main>`))};
 var formatSet = function formatSet(e,s){
  // Historical weights are deliberately not reinterpreted: old entries lacked metadata.
  if(!e.loadType)return `${s.weight||0} kg × ${s.reps||'—'} (régi súlyjelölés)`;
@@ -758,7 +758,7 @@ showExercise=function(dayId,i){const p=activeProgram(),d=programDay(p,dayId),e=b
 
 startWorkout=function(dayId,scheduleId=null,programId=null){if(db.get('draft',null)&&!confirm('Új edzést indítasz? A félbehagyott edzés helyére ez kerül.'))return;const p=programById(programId)||activeProgram(),d=programDay(p,dayId);if(!d){alert('Nincs ilyen programnap.');return;}state.tab='plan';state.workout=d.id;state.current=0;state.session={programId:p.id,programName:p.name,dayId:d.id,workout:d.id,...(scheduleId?{scheduleId}:{}),started:new Date().toISOString(),exercises:d.exercises.map(id=>{const e=byId(id),prev=findLastExercise(id);return {id,hu:e.hu,en:e.en,loadType:e.loadType,repUnit:e.repUnit,sets:Array.from({length:e.sets},(_,i)=>({set:i+1,weight:prev?.loadType===e.loadType?(prev?.sets?.[i]?.weight??e.weight):e.weight,reps:'',done:false}))};})};renderWorkout();};
 
-const rf12FinishWorkout=finishWorkout;finishWorkout=function(){if(!state.session)return;const scheduleId=state.session.scheduleId;rf12FinishWorkout();if(scheduleId){const s=scheduled(),i=s.findIndex(x=>x.id===scheduleId);if(i>=0){s[i]={...s[i],status:'completed',updatedAt:Date.now()};db.set('scheduled',s);}}};
+const rf12FinishWorkout=finishWorkout;finishWorkout=function(){if(!state.session)return;const scheduleId=state.session.scheduleId;rf12FinishWorkout.apply(this,arguments);if(scheduleId){const s=scheduled(),i=s.findIndex(x=>x.id===scheduleId);if(i>=0){s[i]={...s[i],status:'completed',updatedAt:Date.now()};db.set('scheduled',s);}}};
 renderWorkout=function(){persistDraft();const i=state.current,p=state.session.exercises.map(x=>x.id),e=byId(p[i]),se=state.session.exercises[i],pct=Math.round((i/p.length)*100);render(shell(`<main><div class="hero"><span class="badge">${esc(state.session.programName||'Edzés')} • ${esc(state.session.dayId||state.workout)}</span><h1>${i+1}/${p.length}</h1><div class="muted">${esc(e.hu)}</div><div class="progress"><div style="width:${pct}%"></div></div></div><div class="card detail"><h2>${esc(e.hu)}</h2><div class="en">${esc(e.en)}</div><div class="meta">Cél: ${e.sets} × ${esc(e.reps)}</div>${motionDemo(e.id)}<p class="note">${esc(e.notes)}</p></div><div class="section">Sorozatok</div>${se.sets.map((s,si)=>`<div class="row"><div class="num">${si+1}</div>${e.loadType==='bodyweight'?'<span class="small muted">Testsúly</span>':`<label class="small">${loadLabel(e.loadType)}<input class="field" inputmode="decimal" value="${s.weight}" oninput="upd(${i},${si},'weight',this.value)"></label>`}<label class="small">${e.repUnit}<input class="field" inputmode="numeric" placeholder="${esc(e.reps)}" value="${esc(s.reps)}" oninput="upd(${i},${si},'reps',this.value)"></label><button class="check ${s.done?'done':''}" onclick="toggleSet(${i},${si})">${s.done?'✓':'OK'}</button></div>`).join('')}<br><button class="btn block" onclick="nextExercise()">${i===p.length-1?'Edzés befejezése':'Következő gyakorlat'}</button><br><br><button class="btn secondary block" onclick="prevExercise()" ${i===0?'disabled':''}>Előző</button></main>`));};
 
 // ----- Calendar planner -----
@@ -879,15 +879,19 @@ var rfHistoryHealthHtml=function rfHistoryHealthHtml(i){
  const x=q.summary||{},stats=[];
  const active=rfHistoryHealthNumber(x.activeCalories),total=rfHistoryHealthNumber(x.totalCalories),avg=rfHistoryHealthNumber(x.averageHeartRate),max=rfHistoryHealthNumber(x.maxHeartRate),dist=x.distanceMeters==null?NaN:Number(x.distanceMeters),mins=rfHistoryHealthNumber(x.exerciseMinutes),sessions=rfHistoryHealthNumber(x.exerciseSessionCount);
  const steps=rfHistoryHealthNumber(x.steps);if(steps!==null)stats.push([tp149T('health.steps'),steps]);
+ const workout=rfHistoryHealthNumber(x.workoutCalories);
+ if(workout!==null)stats.push(['Edzéskalória',workout+' kcal']);
  if(active!==null)stats.push(['Aktív kalória',active+' kcal']);
- if(total!==null)stats.push(['Összes energia',total+' kcal']);
+ if(total!==null)stats.push(['Összes energia (nyugalmival)',total+' kcal']);
  if(avg!==null||max!==null)stats.push(['Átlag / max. pulzus',(avg??'–')+' / '+(max??'–')+' bpm']);
  if(Number.isFinite(dist))stats.push(['Távolság',dist>=1000?rfHistoryHealthNumber(dist/1000,2)+' km':rfHistoryHealthNumber(dist)+' m']);
  if(mins!==null)stats.push(['Health edzésidő',mins+' perc']);
  if(sessions!==null)stats.push(['Edzésrekord',sessions+' db']);
  const src=x.source==='all'?'Health Connect • összes forrás':(x.sourceLabels?.[x.source]||x.source||'Health Connect');
  const loaded=q.loadedAt?new Date(q.loadedAt).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'}):'';
- return `<div class="rf-history-health-result">${stats.length?`<div class="rf-history-health-grid">${stats.map(([k,v])=>`<div class="stat"><small>${esc(k)}</small><strong>${esc(v)}</strong></div>`).join('')}</div>`:'<p class="small muted">Ehhez az edzés-időablakhoz nem találtunk megosztott Health Connect adatot.</p>'}<p class="small muted">${esc(src)}${x.heartRateSamples!=null?' • '+esc(String(x.heartRateSamples))+' pulzusminta':''}${loaded?' • frissítve '+esc(loaded):''}</p></div>`;
+ const energySources=(x.workoutEnergySources||[]).map(s=>x.workoutEnergySourceLabels?.[s]||x.sourceLabels?.[s]||(s==='com.sec.android.app.shealth'?'Samsung Health':s)).join(', ');
+ const energyNote=workout!==null?`Edzéskalória: ${energySources||'Health Connect'} · ${x.workoutEnergyProrated?'az aktív edzésidőre időarányosan illesztve':'az edzéshez megosztott energia'}.`:x.workoutEnergyVersion===1?'Ehhez az edzéshez még nincs megosztott, illeszthető kalóriarekord.':'Az edzéskalória beolvasásához nyomj a Frissítésre.';
+ return `<div class="rf-history-health-result">${stats.length?`<div class="rf-history-health-grid">${stats.map(([k,v])=>`<div class="stat"><small>${esc(k)}</small><strong>${esc(v)}</strong></div>`).join('')}</div>`:'<p class="small muted">Ehhez az edzés-időablakhoz nem találtunk megosztott Health Connect adatot.</p>'}<p class="small muted">${esc(energyNote)}</p><p class="small muted">${esc(src)}${x.heartRateSamples!=null?' • '+esc(String(x.heartRateSamples))+' pulzusminta':''}${loaded?' • frissítve '+esc(loaded):''}</p></div>`;
 };
 var rfHistoryHealthPaint=function rfHistoryHealthPaint(i){const el=document.querySelector(`[data-rf-history-health="${i}"]`);if(el)el.innerHTML=rfHistoryHealthHtml(i);};
 var rfHistoryHealthEnsure=function rfHistoryHealthEnsure(i){const h=history()[i];if(!h||rfHistoryHealthCache.has(h.started))return;healthFromHistory(i);};
@@ -897,7 +901,10 @@ var healthFromHistory = async function healthFromHistory(i){
  if(!h.finished||!(Date.parse(h.finished)>Date.parse(h.started))){rfHistoryHealthCache.set(h.started,{error:'Ehhez az edzéshez nincs érvényes befejezési idő.'});rfHistoryHealthPaint(i);return;}
  rfHistoryHealthCache.set(h.started,{loading:true});rfHistoryHealthPaint(i);
  try{
-  const result=await healthPlugin().readWorkout({start:h.started,end:h.finished,source:''});
+  const plugin=healthPlugin();
+  const hasIntervals=window.TrainPilotIssue79?.intervals(h).length>0;
+  const result=hasIntervals?await window.TrainPilotIssue79.readWorkout(plugin,h):typeof plugin.readTrainingWindow==='function'?await plugin.readTrainingWindow({start:h.started,end:h.finished}):await plugin.readWorkout({start:h.started,end:h.finished,source:''});
+  if(typeof rf242SaveMatchedWorkoutHealth==='function')rf242SaveMatchedWorkoutHealth(rf240WorkoutKey(h),h,result);
   rfHistoryHealthCache.set(h.started,{summary:result||{},loadedAt:Date.now()});
  }catch(e){rfHistoryHealthCache.set(h.started,{error:e?.message||'A Health Connect adatok lekérése nem sikerült.'});}
  rfHistoryHealthPaint(i);
@@ -923,7 +930,7 @@ saveSettings=function(){db.set('settings',{...settings(),rest:Math.max(30,Math.m
 const rf13Start=startWorkout;startWorkout=function(dayId,scheduleId=null,programId=null){const before=state.session;state.prescriptionProgramId=programId||activeProgramId();try{rf13Start(dayId,scheduleId,programId);}finally{state.prescriptionProgramId=null;}if(!state.session||state.session===before)return;const p=programById(state.session.programId);if(p?.prescriptions){state.session.exercises=state.session.exercises.map(e=>{const rx=p.prescriptions[e.id];if(!rx)return e;const previous=history().filter(h=>h.programId===p.id).flatMap(h=>h.exercises).find(x=>x.id===e.id);return {...e,prescription:{...rx},sets:Array.from({length:rx.sets},(_,i)=>({set:i+1,weight:previous?.sets[i]?.weight??(e.loadType==='bodyweight'?0:rx.trial&&Number(rx.weight)===0?'':(rx.weight??'')),reps:'',done:false}))};});renderWorkout();}};
 const rf13Rest=startRest;startRest=function(){rf13Rest();const rx=state.session?.exercises[state.current]?.prescription;if(rx){state.timer=rx.rest;state.restEndAt=Date.now()+state.timer*1000;}};
 // Finish only marks the calendar after the history write really succeeded.
-finishWorkout=function(){if(!state.session)return;const s=state.session;rf12FinishWorkout();if(state.session)return;if(s.scheduleId){const items=scheduled(),i=items.findIndex(x=>x.id===s.scheduleId);if(i>=0){items[i]={...items[i],status:'completed',updatedAt:Date.now()};db.set('scheduled',items);}}feedbackScreen(s.started);};
+finishWorkout=function(){if(!state.session)return;const s=state.session;rf12FinishWorkout.apply(this,arguments);if(state.session)return;if(s.scheduleId){const items=scheduled(),i=items.findIndex(x=>x.id===s.scheduleId);if(i>=0){items[i]={...items[i],status:'completed',updatedAt:Date.now()};db.set('scheduled',items);}}feedbackScreen(s.started);};
 
 
 // Imported Health Connect records live only in memory and are excluded from backup/Drive.
@@ -3985,6 +3992,7 @@ rf245Recovery(rf240Ledger());rf240ApplyLedger();
 var rf250ValidSpan = function rf250ValidSpan(a,b){a=Date.parse(a);b=Date.parse(b);return Number.isFinite(a)&&Number.isFinite(b)&&b>a?[a,b]:null};
 var rf250SleepSpans = function rf250SleepSpans(s){
  const asleep=(s?.stages||[]).filter(x=>x?.isAsleep===true).map(x=>rf250ValidSpan(x.start,x.end)).filter(Boolean);
+ if(s?.provider==='samsung_health'&&s?.stages?.length)return asleep;
  if(asleep.length)return asleep;
  const fallback=rf250ValidSpan(s?.start,s?.end);return fallback?[fallback]:[];
 };
@@ -5312,7 +5320,7 @@ var rf110DecorateTimedWorkout=function rf110DecorateTimedWorkout(){
 const rf110RenderWorkoutBase=renderWorkout;
 renderWorkout=function(){const r=rf110RenderWorkoutBase();rf110DecorateTimedWorkout();return r};
 const rf110FinishWorkoutBase=finishWorkout;
-finishWorkout=function(){const r=rf110FinishWorkoutBase();if(!state.session)rf110StopwatchHalt(true);return r};
+finishWorkout=function(){const r=rf110FinishWorkoutBase.apply(this,arguments);if(!state.session)rf110StopwatchHalt(true);return r};
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&rf110Stopwatch.running)rf110StopwatchPaint()});
 
 rf110InitAutoHealth();
@@ -5889,6 +5897,7 @@ if(typeof finishWorkout==='function'){
  const tp2629FinishWorkoutBase=finishWorkout;
  finishWorkout=function(){
   const ses=state.session;if(!ses)return tp2629FinishWorkoutBase.apply(this,arguments);
+  if(arguments[0]?.wearConfirmed===true)return tp2629ConfirmBypass(()=>tp2629FinishWorkoutBase.apply(this,arguments),true);
   const anyDone=(ses.exercises||[]).some(e=>(e.sets||[]).some(x=>x.done));
   const anyUndone=(ses.exercises||[]).some(e=>(e.sets||[]).some(x=>!x.done));
   if(!(anyDone&&anyUndone))return tp2629FinishWorkoutBase.apply(this,arguments);
@@ -9047,6 +9056,7 @@ startWorkout=function(dayId,scheduleId=null,programId=null){
 };
 finishWorkout=function(){
  const ses=state.session;if(!ses)return TP149_DIALOG_BASES.finishWorkout.apply(this,arguments);
+ if(arguments[0]?.wearConfirmed===true)return tp2629ConfirmBypass(()=>TP149_DIALOG_BASES.finishWorkout.apply(this,arguments),true);
  const anyDone=(ses.exercises||[]).some(function(e){return (e.sets||[]).some(function(x){return x.done;});});
  const anyUndone=(ses.exercises||[]).some(function(e){return (e.sets||[]).some(function(x){return !x.done;});});
  if(!(anyDone&&anyUndone))return tp2629ConfirmBypass(()=>TP149_DIALOG_BASES.finishWorkout.apply(this,arguments),true);
@@ -10311,8 +10321,8 @@ rf235HealthCoachCard=function(){const t=rf235L();if(typeof rf233CoachPlan!=='fun
 
 rf263HealthHub=function(){
  state.tab='health';state.healthView=false;if(typeof rf225HealthPage!=='undefined')rf225HealthPage='hub';rf240ApplyLedger();
- const ledger=rf240Ledger(),today=ledger.days?.[rf240DayKey(new Date())]||{},rec=state.health?.recovery||{},w=state.health?.wellness||{},all=typeof rf215All==='function'?rf215All():[],manual=Number(all.at?.(-1)?.kg),hw=w.weightKg==null?null:Number(w.weightKg),shown=Number.isFinite(hw)?hw:(Number.isFinite(manual)?manual:null),source=Number.isFinite(hw)?'Health Connect':Number.isFinite(shown)?tp149T('health.localEntry'):'',busy=!!state.health?.busy,sync=ledger.lastSyncAt?tp149FormatDateTime(ledger.lastSyncAt):tp149T('health.never'),bp=w.bloodPressureSystolic==null||w.bloodPressureDiastolic==null?'—':tp149FormatNumber(Math.round(w.bloodPressureSystolic))+'/'+tp149FormatNumber(Math.round(w.bloodPressureDiastolic))+' mmHg';
- const body='<main class="rf263-health tp151-health"><div class="tp151-page-head"><div><h1>'+esc(tp149T('health.title'))+'</h1><p class="small muted">'+esc(tp151T('healthHint'))+'</p></div></div><div class="card rf263-sync-card tp151-health-sync"><div class="grid2 rf263-sync-actions"><button class="btn block" onclick="rf244UnifiedSync()" '+(busy?'disabled':'')+'>'+esc(tp149T('health.sync'))+'</button><button class="btn secondary block" onclick="healthSettings()" '+(busy?'disabled':'')+'>'+esc(tp151T('permissions'))+'</button></div><span class="small muted">'+esc(tp149T('health.lastSync',{time:sync}))+'</span>'+(state.health?.message?'<span class="small" role="status">'+esc(state.health.message)+'</span>':'')+'</div>'+rf235HealthCoachCard()+'<div class="card tp151-health-card"><h2>'+esc(tp151T('today'))+'</h2><div class="grid2">'+rf244Stat(tp149T('health.sleep'),tp149SleepText(rec.sleepMinutes))+rf244Stat('HRV',rec.hrvRmssdMs==null?'—':tp149FormatNumber(Math.round(rec.hrvRmssdMs))+' ms')+rf244Stat(tp149T('health.steps'),today.steps==null?'—':tp149FormatNumber(Math.round(today.steps)))+rf244Stat(tp149T('health.activeEnergy'),today.activeCalories==null?'—':tp149FormatNumber(Math.round(today.activeCalories))+' kcal')+'</div><div class="tp151-pulse"><span>'+esc(tp151T('pulse'))+'</span><strong>'+esc(tp151HeartLine(today))+'</strong></div></div><div class="card tp151-health-card"><h2>'+esc(tp151T('body'))+'</h2><div class="grid2">'+rf244Stat(tp149T('health.weight'),shown==null?'—':tp149HealthFmt(shown,1,' kg'),source)+rf244Stat(tp149T('health.bodyFat'),w.bodyFatPercent==null?'—':tp149HealthFmt(w.bodyFatPercent,1,' %'))+rf244Stat('SpO₂',w.oxygenSaturationPercent==null?'—':tp149HealthFmt(w.oxygenSaturationPercent,1,' %'))+rf244Stat('VO₂max',w.vo2Max==null?'—':tp149HealthFmt(w.vo2Max,1,''))+'</div><button class="btn secondary block" onclick="rf215WeightScreen()">'+esc(tp151T('weightLog'))+'</button></div><details class="card tp151-details"><summary><strong>'+esc(tp151T('more'))+'</strong></summary><div class="grid2">'+rf244Stat(tp149T('health.bloodPressure'),bp)+rf244Stat(tp149T('health.bloodGlucose'),w.bloodGlucoseMmolL==null?'—':tp149HealthFmt(w.bloodGlucoseMmolL,1,' mmol/L'))+rf244Stat(tp149T('health.respiratoryRate'),w.respiratoryRate==null?'—':tp149HealthFmt(w.respiratoryRate,1,' /min'))+rf244Stat(tp149T('health.distance'),today.distanceMeters==null?'—':tp149HealthFmt(today.distanceMeters/1000,2,' km'))+'</div></details><details class="card tp151-details"><summary><strong>'+esc(tp151T('recovery'))+'</strong></summary>'+rf244RecoveryRows()+'</details>'+rf263DiagHtml()+'</main>';render(shell(body));
+ const ledger=rf240Ledger(),today=ledger.days?.[rf240DayKey(new Date())]||{},rec=state.health?.recovery||{},w=state.health?.wellness||{},all=typeof rf215All==='function'?rf215All():[],manual=Number(all.at?.(-1)?.kg),hw=w.weightKg==null?null:Number(w.weightKg),shown=Number.isFinite(hw)?hw:(Number.isFinite(manual)?manual:null),source=Number.isFinite(hw)?(w.weightProvider==='samsung_health'?(window.TrainPilotSamsungHealth?.t('direct')||'Samsung Health'):'Health Connect'):Number.isFinite(shown)?tp149T('health.localEntry'):'',busy=!!state.health?.busy,sync=ledger.lastSyncAt?tp149FormatDateTime(ledger.lastSyncAt):tp149T('health.never'),bp=w.bloodPressureSystolic==null||w.bloodPressureDiastolic==null?'—':tp149FormatNumber(Math.round(w.bloodPressureSystolic))+'/'+tp149FormatNumber(Math.round(w.bloodPressureDiastolic))+' mmHg';
+ const body='<main class="rf263-health tp151-health"><div class="tp151-page-head"><div><h1>'+esc(tp149T('health.title'))+'</h1><p class="small muted">'+esc(tp151T('healthHint'))+'</p></div></div><div class="card rf263-sync-card tp151-health-sync"><div class="grid2 rf263-sync-actions"><button class="btn block" onclick="rf244UnifiedSync()" '+(busy?'disabled':'')+'>'+esc(tp149T('health.sync'))+'</button><button class="btn secondary block" onclick="healthSettings()" '+(busy?'disabled':'')+'>'+esc(tp151T('permissions'))+'</button></div><span class="small muted">'+esc(tp149T('health.lastSync',{time:sync}))+'</span>'+(state.health?.message?'<span class="small" role="status">'+esc(state.health.message)+'</span>':'')+'</div>'+rf235HealthCoachCard()+'<div class="card tp151-health-card"><h2>'+esc(tp151T('today'))+'</h2><div class="grid2">'+rf244Stat(tp149T('health.sleep'),tp149SleepText(rec.sleepMinutes))+rf244Stat('HRV',rec.hrvRmssdMs==null?'—':tp149FormatNumber(Math.round(rec.hrvRmssdMs))+' ms')+rf244Stat(tp149T('health.steps'),today.steps==null?'—':tp149FormatNumber(Math.round(today.steps)))+rf244Stat(tp149T('health.activeEnergy'),today.activeCalories==null?'—':tp149FormatNumber(Math.round(today.activeCalories))+' kcal')+'</div><div class="tp151-pulse"><span>'+esc(tp151T('pulse'))+'</span><strong>'+esc(tp151HeartLine(today))+'</strong></div></div><div class="card tp151-health-card"><h2>'+esc(tp151T('body'))+'</h2><div class="grid2">'+rf244Stat(tp149T('health.weight'),shown==null?'—':tp149HealthFmt(shown,1,' kg'),source)+rf244Stat(tp149T('health.bodyFat'),w.bodyFatPercent==null?'—':tp149HealthFmt(w.bodyFatPercent,1,' %'))+rf244Stat('SpO₂',w.oxygenSaturationPercent==null?'—':tp149HealthFmt(w.oxygenSaturationPercent,1,' %'))+rf244Stat('VO₂max',w.vo2Max==null?'—':tp149HealthFmt(w.vo2Max,1,''))+'</div><button class="btn secondary block" onclick="rf215WeightScreen()">'+esc(tp151T('weightLog'))+'</button></div><details class="card tp151-details" data-health-panel="more"><summary><strong>'+esc(tp151T('more'))+'</strong></summary><div class="grid2">'+rf244Stat(tp149T('health.bloodPressure'),bp)+rf244Stat(tp149T('health.bloodGlucose'),w.bloodGlucoseMmolL==null?'—':tp149HealthFmt(w.bloodGlucoseMmolL,1,' mmol/L'))+rf244Stat(tp149T('health.respiratoryRate'),w.respiratoryRate==null?'—':tp149HealthFmt(w.respiratoryRate,1,' /min'))+rf244Stat(tp149T('health.distance'),today.distanceMeters==null?'—':tp149HealthFmt(today.distanceMeters/1000,2,' km'))+'</div></details><details class="card tp151-details"><summary><strong>'+esc(tp151T('recovery'))+'</strong></summary>'+rf244RecoveryRows()+'</details>'+rf263DiagHtml()+'</main>';render(shell(body));
 };
 
 rf215WeightScreen=function(){
@@ -14163,9 +14173,15 @@ function aggregate(parts,windows,errors){
   averageHeartRate:weighted('averageHeartRate'),minHeartRate:min('minHeartRate'),maxHeartRate:max('maxHeartRate'),heartRateSamples:present('heartRateSamples')?sum('heartRateSamples'):null,
   steps:!errors.length&&parts.every(p=>num(p.steps)!=null)?sum('steps'):null,
   activeCalories:present('activeCalories')?sum('activeCalories'):null,totalCalories:present('totalCalories')?sum('totalCalories'):null,
+  workoutCalories:present('workoutCalories')?sum('workoutCalories'):null,
+  workoutEnergyVersion:parts.every(p=>p.workoutEnergyVersion===1)?1:null,
+  workoutEnergyCoverageMs:sum('workoutEnergyCoverageMs'),workoutEnergyProrated:parts.some(p=>p.workoutEnergyProrated===true),
+  workoutEnergySources:[...new Set(parts.flatMap(p=>p.workoutEnergySources||[]))],workoutEnergySourceLabels:Object.assign({},...parts.map(p=>p.workoutEnergySourceLabels||{})),
+  workoutEnergyTypes:[...new Set(parts.flatMap(p=>p.workoutEnergyTypes||[]))],workoutEnergyRecordIds:[...new Set(parts.flatMap(p=>p.workoutEnergyRecordIds||[]))],
   distanceMeters:present('distanceMeters')?sum('distanceMeters'):null,averageSpeedMps:weighted('averageSpeedMps'),maxSpeedMps:max('maxSpeedMps'),
   exerciseMinutes:sessions.length?sessionMinutes:present('exerciseMinutes')?sum('exerciseMinutes'):null,exerciseSessionCount:sessions.length||sum('exerciseSessionCount'),exerciseSessions:sessions,
   sources,sourceLabels:labels,warnings,permissions:Object.assign({},...parts.map(p=>p.permissions||{})),
+  ...(parts.some(p=>p.provider==='samsung_health')?{provider:'samsung_health',metricProviders:Object.assign({},...parts.map(p=>p.metricProviders||{}))}:{}),
   matchMode:'active-intervals',activeIntervals:windows.map(({start,end})=>({start,end})),
   activeDurationMs:windows.reduce((s,w)=>s+w.ms,0),sourceWindowStart:windows[0]?.start||null,sourceWindowEnd:windows.at(-1)?.end||null
  };
@@ -14191,7 +14207,7 @@ async function syncWorkout(p,h,force=false){
   return rf242SaveMatchedWorkoutHealth(key,h,exact,{matchMode:exact.matchMode,sourceWindowStart:exact.sourceWindowStart,sourceWindowEnd:exact.sourceWindowEnd});
  }
  const signature=JSON.stringify(ws.map(w=>[w.start,w.end]));
- if(!force&&old?.activeIntervalSignature===signature&&Date.now()-Date.parse(old.syncedAt||0)<6*3600000&&hasMetric(old))return false;
+ if(!force&&old?.workoutEnergyVersion===1&&old?.activeIntervalSignature===signature&&Date.now()-Date.parse(old.syncedAt||0)<6*3600000&&hasMetric(old))return false;
  const data=await readWorkout(p,h);
  return rf242SaveMatchedWorkoutHealth(key,h,data,{matchMode:'active-intervals',activeIntervalSignature:signature,sourceWindowStart:data.sourceWindowStart,sourceWindowEnd:data.sourceWindowEnd});
 }
@@ -14636,7 +14652,7 @@ var tp106DistanceInputsValid=function(){const bad=document.querySelector('[data-
 const tp106ToggleSetBase=toggleSet;
 toggleSet=function(ei,si){if(!tp106DistanceInputsValid())return;const e=state.session?.exercises?.[ei],set=e?.sets?.[si];if(tp106IsDistance(e)&&!set?.done){if(!(Number(set.distanceMeters)>0)&&!(Number(set.reps)>0)){alert(tp106T('needDistance'));return;}if(tp106GpsBusy){alert(tp106T('busy'));return;}if(tp106GpsState.active)return tp106StopGPS().then(function(ok){if(ok)tp106ToggleSetBase(ei,si);});}return tp106ToggleSetBase.apply(this,arguments);};
 const tp106FinishWorkoutBase=finishWorkout;
-finishWorkout=function(){if(!tp106DistanceInputsValid())return;if(tp106GpsBusy){alert(tp106T('busy'));return;}if(tp106GpsState.active||db.get('gpsTrip106',null))return tp106StopGPS().then(function(ok){if(ok)return tp106FinishWorkoutBase();});return tp106FinishWorkoutBase.apply(this,arguments);};
+finishWorkout=function(){if(!tp106DistanceInputsValid())return;if(tp106GpsBusy){alert(tp106T('busy'));return;}if(tp106GpsState.active||db.get('gpsTrip106',null)){const ctx=this,args=arguments,session=state.session;return tp106StopGPS().then(function(ok){if(ok&&state.session===session)return tp106FinishWorkoutBase.apply(ctx,args);});}return tp106FinishWorkoutBase.apply(this,arguments);};
 const tp106NextBase=nextExercise;
 nextExercise=function(){if(!tp106DistanceInputsValid())return;if(tp106GpsBusy){alert(tp106T('busy'));return;}if(tp106GpsState.active||db.get('gpsTrip106',null))return tp106StopGPS().then(function(ok){if(ok)return tp106NextBase();});return tp106NextBase.apply(this,arguments);};
 const tp106PrevBase=prevExercise;
@@ -14896,8 +14912,9 @@ renderWorkout=function(){
 var tp107FitViews=function(){
  const home=document.querySelector('#app main.rf221-home'),health=document.querySelector('#app main.tp168-health');
  const expanded=health&&[...health.querySelectorAll('details[open],.tp168-weight-summary[aria-expanded="true"],.tp169-pulse-summary[aria-expanded="true"]')].some(function(e){return e.getClientRects().length>0;});
- home?.classList.add('tp107-fit-home');health?.classList.add('tp107-health-layout');health?.classList.toggle('tp107-fit-health',!expanded);
- const fixed=!!home||!!health&&!expanded;document.documentElement.classList.toggle('tp107-fixed-view',fixed);document.body.classList.toggle('tp107-fixed-view',fixed);
+ const scrollable=expanded;
+ home?.classList.add('tp107-fit-home');health?.classList.add('tp107-health-layout');health?.classList.toggle('tp107-fit-health',!scrollable);
+ const fixed=!!home||!!health&&!scrollable;document.documentElement.classList.toggle('tp107-fixed-view',fixed);document.body.classList.toggle('tp107-fixed-view',fixed);
  const nav=document.querySelector('.top');if(nav)document.documentElement.style.setProperty('--tp107-nav-height',Math.ceil(nav.getBoundingClientRect().bottom)+'px');
  const panelHost=document.getElementById('tp155R4PanelHost');panelHost?.classList.toggle('tp107-fit-calendar',panelHost.dataset.panel==='calendar');
 };
@@ -15326,7 +15343,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  for(const [language,extra] of Object.entries({"hu": {"phone": "Telefonadatok", "dailySource": "Napi lépések, távolság és kalória forrása", "sourceAuto": "Legteljesebb napi lépésforrás (automatikus)", "sourcePriority": "Health Connect forrásprioritás", "sourceNote": "Automatikus módban a napra a legnagyobb teljes lépésszámot adó Health Connect-forrást használjuk a lépésekhez, távolsághoz és kalóriához. A forrásokat nem adjuk össze. Külön forrás továbbra is választható.", "bleBackground": "Óra kapcsolata a háttérben", "hcBackground": "Health Connect háttérfrissítése", "backgroundNote": "Óra: tartós kapcsolat, lépések 5 percenként, értesítésből leállítható. Health Connect: külön engedéllyel, időszakos Android-frissítés. A rendszer korlátozhatja; kényszerleállítás után nyisd meg az appot.", "backgroundUnavailable": "A Health Connect háttérolvasása ezen a rendszeren nem érhető el.", "summaryUnavailable": "A kiválasztott forrás összesítése nem frissült. Legfeljebb 31 napot válassz, és ellenőrizd a Health Connect engedélyeit.", "activitySource": "Lépések / távolság / kalória", "connected": "Óra kapcsolódva", "waiting": "Óra kapcsolódása / újracsatlakozás", "stopped": "Háttérkapcsolat kikapcsolva", "autoNote": "Megnyitáskor frissít, ha már van engedély. A háttérfrissítés külön kapcsolható."}, "en": {"phone": "Phone data", "dailySource": "Daily steps, distance and calories source", "sourceAuto": "Most complete daily step source (automatic)", "sourcePriority": "Health Connect source priority", "sourceNote": "Automatic mode uses the Health Connect origin with the largest complete daily step total for steps, distance and calories. Sources are never added together. You can still select a specific origin.", "bleBackground": "Keep watch connected in the background", "hcBackground": "Refresh Health Connect in the background", "backgroundNote": "Watch: persistent connection, steps every 5 minutes, stop from the notification. Health Connect: separate permission and periodic Android updates. The system may delay updates; reopen after force-stop.", "backgroundUnavailable": "Health Connect background reading is unavailable on this system.", "summaryUnavailable": "The selected source summary did not refresh. Choose up to 31 days and check Health Connect permissions.", "activitySource": "Steps / distance / calories", "connected": "Watch connected", "waiting": "Watch connecting / reconnecting", "stopped": "Background connection disabled", "autoNote": "Refreshes when opening with existing permission. Background refresh has its own switch."}, "de": {"phone": "Telefondaten", "dailySource": "Quelle für tägliche Schritte, Distanz und Kalorien", "sourceAuto": "Vollständigste tägliche Schrittquelle (automatisch)", "sourcePriority": "Health Connect Quellenpriorität", "sourceNote": "Im Automatikmodus wird die Health-Connect-Quelle mit der höchsten vollständigen Tagesschrittzahl für Schritte, Distanz und Kalorien verwendet. Quellen werden nicht addiert. Eine bestimmte Quelle bleibt auswählbar.", "bleBackground": "Uhr im Hintergrund verbunden halten", "hcBackground": "Health Connect im Hintergrund aktualisieren", "backgroundNote": "Uhr: dauerhafte Verbindung, Schritte alle 5 Minuten, Stopp über Benachrichtigung. Health Connect: separate Berechtigung und regelmäßige Android-Aktualisierung. Das System kann verzögern; nach erzwungenem Stopp App öffnen.", "backgroundUnavailable": "Health Connect kann auf diesem System nicht im Hintergrund gelesen werden.", "summaryUnavailable": "Die Quellensumme wurde nicht aktualisiert. Bis zu 31 Tage auswählen und Health Connect Berechtigungen prüfen.", "activitySource": "Schritte / Distanz / Kalorien", "connected": "Uhr verbunden", "waiting": "Uhr wird verbunden / erneut verbunden", "stopped": "Hintergrundverbindung deaktiviert", "autoNote": "Aktualisiert beim Öffnen mit vorhandener Berechtigung. Hintergrundaktualisierung separat einschalten."}, "ro": {"phone": "Date telefon", "dailySource": "Sursa zilnică pentru pași, distanță și calorii", "sourceAuto": "Sursa zilnică de pași cea mai completă (automat)", "sourcePriority": "Prioritatea surselor Health Connect", "sourceNote": "În modul automat se folosește sursa Health Connect cu cel mai mare total complet de pași zilnici pentru pași, distanță și calorii. Sursele nu se adună. Poți selecta în continuare o sursă explicită.", "bleBackground": "Păstrează ceasul conectat în fundal", "hcBackground": "Actualizează Health Connect în fundal", "backgroundNote": "Ceas: conexiune persistentă, pași la 5 minute, oprire din notificare. Health Connect: permisiune separată și actualizări periodice Android. Sistemul poate întârzia; redeschide după oprire forțată.", "backgroundUnavailable": "Citirea Health Connect în fundal nu este disponibilă pe acest sistem.", "summaryUnavailable": "Totalul sursei nu s-a actualizat. Alege până la 31 de zile și verifică permisiunile Health Connect.", "activitySource": "Pași / distanță / calorii", "connected": "Ceas conectat", "waiting": "Conectarea / reconectarea ceasului", "stopped": "Conexiune în fundal dezactivată", "autoNote": "Actualizează la deschidere cu permisiunile existente. Actualizarea în fundal se activează separat."}}))Object.assign(texts[language],extra);
  for(const [language,extra] of Object.entries({"hu": {"dailySource": "Napi összesítés", "sourceAuto": "Automatikus", "sourcePriority": "Health Connect prioritás", "sourceNote": "Automatikusan a legteljesebb napi lépésszámú forrást használjuk. Az átfedő adatokat nem adjuk össze.", "backgroundNote": "Külön rendszerengedély szükséges. Az Android időszakosan frissít; kényszerleállítás után nyisd meg az appot."}, "en": {"dailySource": "Daily summary", "sourceAuto": "Automatic", "sourcePriority": "Health Connect priority", "sourceNote": "Automatically uses the most complete daily step source. Overlapping data is never added together.", "backgroundNote": "Requires separate system permission. Android refreshes periodically; reopen the app after force-stop."}, "de": {"dailySource": "Tagessumme", "sourceAuto": "Automatisch", "sourcePriority": "Health Connect Priorität", "sourceNote": "Verwendet automatisch die vollständigste tägliche Schrittquelle. Überlappende Daten werden nicht addiert.", "backgroundNote": "Separate Systemberechtigung erforderlich. Android aktualisiert regelmäßig; nach erzwungenem Stopp App öffnen."}, "ro": {"dailySource": "Total zilnic", "sourceAuto": "Automat", "sourcePriority": "Prioritatea Health Connect", "sourceNote": "Folosește automat sursa cu cei mai compleți pași zilnici. Datele suprapuse nu se adună.", "backgroundNote": "Necesită permisiune separată. Android actualizează periodic; redeschide aplicația după oprire forțată."}}))Object.assign(texts[language],extra);
  for(const language of Object.keys(texts))texts[language].aggregate='Health Connect · '+texts[language].days;
- const t=key=>(texts[typeof rf212Lang==='function'?rf212Lang():'hu']||texts.hu)[key]||key;
+ const t=key=>(texts[typeof rf212Lang==='function'?rf212Lang():'hu']||texts.hu)[key]||window.TrainPilotSamsungHealth?.t(key)||key;
  const bridge=()=>{if(window.Capacitor?.isNativePlatform?.()!==true)return null;return window.Capacitor?.Plugins?.HealthJournal||window.Capacitor?.registerPlugin?.('HealthJournal')||null;};
  const background=()=>window.Capacitor?.Plugins?.HealthBackground||window.Capacitor?.registerPlugin?.('HealthBackground');
  const root=()=>document.querySelector('#tp155R4PanelHost[data-panel="health-journal"] .tp120-journal');
@@ -15349,20 +15366,20 @@ window.addEventListener?.('DOMContentLoaded',function(){
  async function refresh(){const p=await ready();if(p)accept(await p.getProjection());return cache;}
  function legacySnapshot(data){const days=JSON.parse(JSON.stringify(data.healthLedger?.days||{}));for(const row of data.recoveryHistory||[]){if(!/^\d{4}-\d{2}-\d{2}$/.test(row.day))continue;const entry=days[row.day]||(days[row.day]={});entry.legacyRecovery={...row};if(entry.hrvRmssdMs==null&&row.hrvRmssdMs!=null)entry.hrvRmssdMs=row.hrvRmssdMs;}return {schemaVersion:1,records:[],days:Object.entries(days).map(([day,data])=>({day,channel:'legacy',source:'unknown',data})),deletions:[]};}
  async function backup(){const data=makeBackup(),p=await ready();if(p&&tp105HealthConsent())data.healthJournal=await p.exportSnapshot();return tp105Project(data,tp105HealthConsent());}
- const typeLabels={StepsRecord:'steps',StepsSnapshot:'steps',SleepSessionRecord:'sleep',HeartRateRecord:'pulse',RestingHeartRateRecord:'resting',ActiveCaloriesBurnedRecord:'active',TotalCaloriesBurnedRecord:'total',DistanceRecord:'distance',SpeedRecord:'speed',WeightRecord:'weight',BodyFatRecord:'fat',BloodPressureRecord:'pressure',BloodGlucoseRecord:'glucose',RespiratoryRateRecord:'respiratory',HeartRateVariabilityRmssdRecord:'HRV',OxygenSaturationRecord:'SpO₂',Vo2MaxRecord:'VO₂max',ExerciseSessionRecord:'exercise'};
+ const typeLabels={SkeletalMuscleMass:'muscle',BodyFatMass:'fatMass',TotalBodyWater:'water',FatFreeMass:'lean',BasalMetabolicRate:'basal',StepsRecord:'steps',StepsSnapshot:'steps',SleepSessionRecord:'sleep',HeartRateRecord:'pulse',RestingHeartRateRecord:'resting',ActiveCaloriesBurnedRecord:'active',TotalCaloriesBurnedRecord:'total',DistanceRecord:'distance',SpeedRecord:'speed',WeightRecord:'weight',BodyFatRecord:'fat',BloodPressureRecord:'pressure',BloodGlucoseRecord:'glucose',RespiratoryRateRecord:'respiratory',HeartRateVariabilityRmssdRecord:'HRV',OxygenSaturationRecord:'SpO₂',Vo2MaxRecord:'VO₂max',ExerciseSessionRecord:'exercise'};
  const format=(value,unit='')=>typeof value==='number'&&Number.isFinite(value)?tp149FormatNumber(value,{maximumFractionDigits:1})+(unit?' '+unit:''):'—';
- function origin(channel,source,data={}){if(channel==='health_connect')return source==='@aggregate'?t('aggregate'):'Health Connect · '+({'com.sec.android.app.shealth':'Samsung Health','com.google.android.apps.fitness':'Google Fit'}[source]||(source.startsWith('com.android.healthconnect.phone.')?t('phone'):t('hc')));if(channel==='ble_watch')return t('watch')+(data.deviceName?' · '+data.deviceName:'');return t('legacy')+' · '+t('unknown');}
+ function origin(channel,source,data={}){if(channel==='samsung_health')return window.TrainPilotSamsungHealth?.t('direct')||'Samsung Health';if(channel==='health_connect')return source==='@aggregate'?t('aggregate'):'Health Connect · '+({'com.sec.android.app.shealth':'Samsung Health','com.google.android.apps.fitness':'Google Fit'}[source]||(source.startsWith('com.android.healthconnect.phone.')?t('phone'):t('hc')));if(channel==='ble_watch')return t('watch')+(data.deviceName?' · '+data.deviceName:'');return t('legacy')+' · '+t('unknown');}
  function recordHtml(row){
   const data=row.data||{},samples=Array.isArray(data.samples)?data.samples:[];let value=data.steps??data.value,unit=data.unit||'';
   if(samples.length){const valid=samples.map(x=>x.value).filter(x=>typeof x==='number'&&Number.isFinite(x));value=valid.length?valid.reduce((a,b)=>a+b,0)/valid.length:null;}
   const reading=row.type==='BloodPressureRecord'?format(data.systolic)+' / '+format(data.diastolic,'mmHg'):format(value,unit);
-  return '<article class="tp120-record"><div><strong>'+esc(t(typeLabels[row.type]||row.type))+'</strong><b>'+esc(reading)+'</b></div><small>'+esc(tp149FormatDateTime(new Date(row.type==='SleepSessionRecord'?row.endMs:row.startMs)))+'</small><small class="muted">'+esc(t('hc'))+'</small>'+(row.channel==='health_connect'?'<details class="tp120-origin-details"><summary>'+esc(t('source'))+'</summary><small>'+esc(origin(row.channel,row.source,data))+'</small><small class="muted">'+esc(row.source)+'</small></details>':'')+(samples.length?'<small>'+samples.length+' '+esc(t('samples'))+'</small>':'')+(data.dateBasis==='phone_observation'?'<small>'+esc(t('observed'))+'</small>':'')+(data.durationKind==='session'?'<small>'+esc(t('session'))+'</small>':'')+'</article>';
+  return '<article class="tp120-record"><div><strong>'+esc(t(typeLabels[row.type]||row.type))+'</strong><b>'+esc(reading)+'</b></div><small>'+esc(tp149FormatDateTime(new Date(row.type==='SleepSessionRecord'?row.endMs:row.startMs)))+'</small><small class="muted">'+esc(row.channel==='samsung_health'?origin(row.channel,row.source,data):t('hc'))+'</small>'+(['health_connect','samsung_health'].includes(row.channel)?'<details class="tp120-origin-details"><summary>'+esc(t('source'))+'</summary><small>'+esc(origin(row.channel,row.source,data))+'</small><small class="muted">'+esc(row.source)+'</small></details>':'')+(samples.length?'<small>'+samples.length+' '+esc(t('samples'))+'</small>':'')+(data.dateBasis==='phone_observation'?'<small>'+esc(t('observed'))+'</small>':'')+(data.durationKind==='session'?'<small>'+esc(t('session'))+'</small>':'')+'</article>';
  }
  function dayHtml(day){
-  const metrics=[['steps',day.steps,''],['active',day.activeCalories,'kcal'],['total',day.totalCalories,'kcal'],['pulse',day.averageHeartRate,'bpm'],['resting',day.restingHeartRate,'bpm'],['distance',day.distanceMeters,'m'],['weight',day.weightKg,'kg'],['HRV',day.hrvRmssdMs,'ms'],['SpO₂',day.oxygenSaturationPercent,'%']].filter(([,value])=>value!=null);
+  const metrics=[['steps',day.steps,''],['active',day.activeCalories,'kcal'],['total',day.totalCalories,'kcal'],['pulse',day.averageHeartRate,'bpm'],['resting',day.restingHeartRate,'bpm'],['distance',day.distanceMeters,'m'],['weight',day.weightKg,'kg'],['fat',day.bodyFatPercent,'%'],['muscle',day.skeletalMuscleMassKg,'kg'],['fatMass',day.bodyFatMassKg,'kg'],['water',day.totalBodyWaterLiters,'L'],['HRV',day.hrvRmssdMs,'ms'],['SpO₂',day.oxygenSaturationPercent,'%']].filter(([,value])=>value!=null);
   const sessions=(day.sleepSessions||[]).filter(s=>rf240DayKey(s.end)===day.day),source=sessions.some(s=>s.source==='com.sec.android.app.shealth')?'com.sec.android.app.shealth':sessions.slice().sort((a,b)=>Date.parse(b.end)-Date.parse(a.end))[0]?.source;const spans=rf250MergeSpans(sessions.filter(s=>s.source===source).flatMap(rf250SleepSpans));if(spans.length)metrics.push(['sleep',spans.reduce((n,[a,b])=>n+(b-a)/60000,0),'min']);else if(day.legacyRecovery?.sleepMinutes!=null)metrics.push(['sleep',day.legacyRecovery.sleepMinutes,'min']);
   const stale=day.partial||!day.readAt||Date.now()-Date.parse(day.readAt)>36*3600000;
-  return '<article class="tp120-day"><strong>'+esc(tp149FormatDate(new Date(day.day+'T12:00:00')))+'</strong><small>'+esc(origin(day.channel,day.source,day))+'</small><div class="tp120-metrics">'+metrics.map(([key,value,unit])=>'<div><small>'+esc(t(key))+'</small><b>'+esc(format(value,unit))+'</b></div>').join('')+'</div><small class="muted">'+esc(day.readAt?tp149FormatDateTime(day.readAt):'—')+(stale?' · '+esc(t(day.partial?'partial':'stale')):'')+'</small>'+(day.source==='@aggregate'&&day.activityOrigin?'<details class="tp120-origin-details"><summary>'+esc(t('source'))+'</summary><small>'+esc(origin('health_connect',day.activityOrigin))+'</small><small class="muted">'+esc(day.activityOrigin)+'</small></details>':'')+'</article>';
+  return '<article class="tp120-day"><strong>'+esc(tp149FormatDate(new Date(day.day+'T12:00:00')))+'</strong><small>'+esc(origin(day.channel,day.source,day))+'</small><div class="tp120-metrics">'+metrics.map(([key,value,unit])=>'<div><small>'+esc(t(key))+'</small><b>'+esc(format(value,unit))+'</b>'+(day.channel==='samsung_health'&&day.metricProviders?.[key==='HRV'?'hrvRmssdMs':key]==='health_connect'?'<small>Health Connect</small>':'')+'</div>').join('')+'</div><small class="muted">'+esc(day.readAt?tp149FormatDateTime(day.readAt):'—')+(stale?' · '+esc(t(day.partial?'partial':'stale')):'')+'</small>'+(day.source==='@aggregate'&&day.activityOrigin?'<details class="tp120-origin-details"><summary>'+esc(t('source'))+'</summary><small>'+esc(origin('health_connect',day.activityOrigin))+'</small><small class="muted">'+esc(day.activityOrigin)+'</small></details>':'')+'</article>';
  }
  function dailySourceOptions(){return [['auto',t('sourceAuto')],['priority',t('sourcePriority')]].map(([value,label])=>'<option value="'+esc(value)+'" '+(preferences.hcDailySource===value?'selected':'')+'>'+esc(label)+'</option>').join('');}
  function backgroundHtml(){return '<label class="tp120-check"><input type="checkbox" data-health-hcBackground '+(preferences.hcBackground?'checked':'')+' onchange="TrainPilotHealthJournal.backgroundPreference(\'hcBackground\',this.checked)"><span>'+esc(t('hcBackground'))+'</span></label><p class="small muted">'+esc(t('backgroundNote'))+'</p>';}
@@ -15381,7 +15398,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  async function preference(key,value){if(!['autoOnOpen','hcDailySource'].includes(key)||key==='hcDailySource'&&!['auto','priority'].includes(value))return;const p=await ready();if(!p)return;try{if(busy)throw Error(t('busy'));accept(await p.setPreferences({preferences:{[key]:value}}));feedback(t('saved'));if(key==='hcDailySource')await sync();}catch(error){feedback(error?.message||t('failed'),true);}finally{const input=root()?.querySelector(key==='hcDailySource'?'[data-health-daily-source]':'[data-health-auto]');if(input){if(key==='hcDailySource'){input.value=preferences[key];window.rf260SyncCustomSelect?.(input);}else input.checked=preferences[key];}}}
  async function paintBackground(){const input=root()?.querySelector('[data-health-hcBackground]');if(input)input.checked=!!preferences.hcBackground;}
- async function backgroundPreference(key,value){if(key!=='hcBackground')return;try{if(busy||window.TrainPilotBackupBusy)throw Error(t('busy'));const p=background();if(!p)throw Error(t('native'));if(key==='hcBackground'&&value){const hc=rf240Native(),status=await hc.getStatus();if(!status.backgroundSupported)throw Error(t('backgroundUnavailable'));if(!status.backgroundGranted){const result=await hc.requestBackground({language:rf212Lang()});if(!result.granted)throw Error(t('failed'));}}accept(await p.configure({channel:key,enabled:value,language:rf212Lang()}));feedback(t('saved'));}catch(error){feedback(error?.message||t('failed'),true);}finally{await refresh();void paintBackground();}}
+ async function backgroundPreference(key,value){if(key!=='hcBackground')return;try{if(busy||window.TrainPilotBackupBusy)throw Error(t('busy'));const p=background();if(!p)throw Error(t('native'));if(key==='hcBackground'&&value){const hc=window.TrainPilotSamsungHealth?.healthConnectPlugin?.()||rf240Native(),status=await hc.getStatus();if(!status.backgroundSupported)throw Error(t('backgroundUnavailable'));if(!status.backgroundGranted){const result=await hc.requestBackground({language:rf212Lang()});if(!result.granted)throw Error(t('failed'));}}accept(await p.configure({channel:key,enabled:value,language:rf212Lang()}));feedback(t('saved'));}catch(error){feedback(error?.message||t('failed'),true);}finally{await refresh();void paintBackground();}}
  async function sync(){if(busy){feedback(t('busy'));return;}busy=true;try{await ready();await rf250Sync({manual:true});await refresh();await load();}catch(error){feedback(t('failed'),true);}finally{busy=false;}}
  async function auto(){
   if(document.hidden||window.TrainPilotBackupBusy||autoRunning||state.session)return;
@@ -15395,7 +15412,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const home=document.querySelector('#app main.rf221-home');if(home&&!home.querySelector('.tp120-home-goals')){home.querySelector('.tp110-goal-mini')?.remove();const today=home.querySelector('#rf223Today'),button=document.createElement('button');button.type='button';button.className='btn secondary block tp120-home-goals';button.setAttribute('onclick',"tp155R4OpenPanel('goals',this)");const config=settings().activityGoals110||{},goal=config.weekWorkouts||config.monthKm?window.TrainPilot110Core.goalProgress(history(),config):null,row=goal?.week.target?goal.week:goal?.month.target?goal.month:null;button.innerHTML='<span>'+esc(window.TrainPilot110.t('setGoals'))+'</span>'+(row?'<small class="tp120-goal-progress">'+esc(tp149FormatNumber(row.current))+'/'+esc(tp149FormatNumber(row.target))+' '+esc(row===goal.week?window.TrainPilot110.t('units'):'km')+'</small>':'')+'<span class="tp120-chevron" aria-hidden="true"></span>';const oldSummary=home.querySelector(':scope > .grid2');if(oldSummary?.querySelector('.stat'))oldSummary.replaceWith(button);else if(today)today.after(button);else home.appendChild(button);}
   const health=document.querySelector('#app main.tp168-health');if(health&&!health.querySelector('.tp120-journal-entry')){const button=document.createElement('button');button.type='button';button.className='btn secondary block tp120-journal-entry';button.setAttribute('onclick',"tp155R4OpenPanel('health-journal',this)");button.innerHTML='<span>'+esc(t('title'))+'</span><span class="tp120-chevron" aria-hidden="true"></span>';health.querySelector('.tp168-sync-tail .rf263-sync-actions')?.appendChild(button);}
  }
- window.TrainPilotHealthJournal={t,ready,refresh,backup,html,load,preference,backgroundPreference,sync,decorate,auto,compact,legacySnapshot,isSyncing:()=>busy||autoRunning||!!rf250Flight};
+ window.TrainPilotHealthJournal={t,ready,refresh,backup,html,load,preference,backgroundPreference,sync,decorate,auto,compact,legacySnapshot,preferences:()=>({...preferences}),isSyncing:()=>busy||autoRunning||!!rf250Flight};
  const pipelineBase=rf250Pipeline;rf250Pipeline=async function(p,options){const journal=await ready();if(journal){const dirty=await journal.getDirtyDays();options={...options,journalDirtyDays:dirty.days||[]};}const result=await pipelineBase(p,options);if(journal){await journal.saveSyncMeta({meta:Object.fromEntries(['lastSyncAt','lastFullSyncAt','lastAttemptAt'].map(key=>[key,rf240Ledger()[key]]))});await refresh();}return result;};
  window.addEventListener?.('DOMContentLoaded',()=>{
   const renderBase=render;render=function(){const result=renderBase.apply(this,arguments);decorate();return result;};window.render=render;
@@ -15406,6 +15423,327 @@ window.addEventListener?.('DOMContentLoaded',function(){
  });
 })();
 // @endsection health-journal-120.js
+
+// @section samsung-health-provider.js
+/* Read-only Samsung provider alongside the existing Health Connect path. */
+(function(){
+ 'use strict';
+ if(!window.TrainPilotHealthJournal)return;
+ const HC='health_connect',SH='samsung_health',journal=()=>window.TrainPilotHealthJournal;
+ const words={
+  hu:{provider:'Egészségügyi adatforrás',direct:'Samsung Health · közvetlen',note:'A kiválasztott forrás az elsődleges. A hiányzó adatokat a már engedélyezett Health Connect egészítheti ki; az értékeket nem adjuk össze.',hrv:'A közvetlen Samsung-kapcsolat nem ad HRV-t. HRV csak akkor jelenik meg, ha a Health Connectben van megosztott RMSSD-adat.',body:'Samsung testösszetétel',muscle:'Vázizomtömeg',fatMass:'Testzsírtömeg',water:'Testvíz',lean:'Zsírmentes tömeg',basal:'Nyugalmi anyagcsere',busy:'Várd meg a futó szinkron végét.',denied:'Nem kaptunk Samsung Health olvasási engedélyt. A korábbi adatforrás maradt kiválasztva.',failed:'A Samsung Health kapcsolódás nem sikerült. Ellenőrizd a Samsung Health verzióját és a TrainPilot hozzáférését.',missing:'A közvetlen Samsung-kapcsolat ebben az appváltozatban nem érhető el.',permission:'Samsung Health engedélyek',auto:'Egészségadatok frissítése appmegnyitáskor'},
+  en:{provider:'Health data provider',direct:'Samsung Health · direct',note:'The selected provider takes priority. Missing data can be supplemented by already authorized Health Connect data; values are never added together.',hrv:'The direct Samsung connection does not provide HRV. HRV requires a shared RMSSD record in Health Connect.',body:'Samsung body composition',muscle:'Skeletal muscle',fatMass:'Fat mass',water:'Body water',lean:'Fat-free mass',basal:'Basal metabolic rate',busy:'Wait for the current sync.',denied:'Samsung Health read access was not granted. The previous provider remains selected.',failed:'Samsung Health connection failed. Check its version and TrainPilot access.',missing:'Direct Samsung Health is unavailable in this app version.',permission:'Samsung Health permissions',auto:'Refresh health data when opening the app'},
+  de:{provider:'Gesundheitsdatenquelle',direct:'Samsung Health · direkt',note:'Die gewählte Quelle hat Vorrang. Fehlende Daten können durch bereits freigegebene Health Connect Daten ergänzt werden; Werte werden nie addiert.',hrv:'Samsung liefert über diese direkte Verbindung keine HRV. Dafür ist ein geteilter RMSSD-Datensatz in Health Connect nötig.',body:'Samsung Körperzusammensetzung',muscle:'Skelettmuskelmasse',fatMass:'Fettmasse',water:'Körperwasser',lean:'Fettfreie Masse',basal:'Grundumsatz',busy:'Warte auf die laufende Synchronisierung.',denied:'Kein Samsung Health Lesezugriff. Die bisherige Quelle bleibt ausgewählt.',failed:'Samsung Health Verbindung fehlgeschlagen. Version und TrainPilot Zugriff prüfen.',missing:'Direktes Samsung Health ist in dieser App-Version nicht verfügbar.',permission:'Samsung Health Berechtigungen',auto:'Gesundheitsdaten beim Öffnen aktualisieren'},
+  ro:{provider:'Sursa datelor de sănătate',direct:'Samsung Health · direct',note:'Sursa selectată are prioritate. Datele lipsă pot fi completate din Health Connect deja autorizat; valorile nu se adună.',hrv:'Conexiunea directă Samsung nu oferă HRV. Este necesară o înregistrare RMSSD partajată în Health Connect.',body:'Compoziție corporală Samsung',muscle:'Masă musculară scheletică',fatMass:'Masă de grăsime',water:'Apă corporală',lean:'Masă fără grăsime',basal:'Metabolism bazal',busy:'Așteaptă sincronizarea curentă.',denied:'Accesul de citire Samsung Health nu a fost acordat. Sursa anterioară rămâne selectată.',failed:'Conectarea Samsung Health a eșuat. Verifică versiunea și accesul TrainPilot.',missing:'Samsung Health direct nu este disponibil în această versiune.',permission:'Permisiuni Samsung Health',auto:'Actualizează datele de sănătate la deschiderea aplicației'}
+ };
+ const t=key=>(words[typeof rf212Lang==='function'?rf212Lang():'hu']||words.hu)[key]||key;
+ const selected=()=>journal()?.preferences?.().provider||rf240Ledger()?.preferences?.provider||HC;
+ const hcPlugin=healthPlugin;
+ const samsung=()=>{if(!isNative())throw Error(t('missing'));const p=window.Capacitor?.Plugins?.SamsungHealth||window.Capacitor?.registerPlugin?.('SamsungHealth');if(!p)throw Error(t('missing'));return p;};
+ const hasRead=status=>Object.entries(status?.permissions||{}).some(([key,value])=>key.startsWith('READ_')&&value===true);
+ const numeric=value=>typeof value==='number'&&Number.isFinite(value);
+ async function hcRead(method,args){
+  try{const p=hcPlugin();if(!hasRead(await p.getStatus())||typeof p[method]!=='function')return null;return await p[method](args);}catch(_){return null;}
+ }
+ function mergeWorkout(direct,fallback){
+  const out={...direct,provider:SH,metricProviders:{}};
+  const groups=[['averageHeartRate','minHeartRate','maxHeartRate','heartRateSamples'],['steps'],['activeCalories'],['totalCalories'],['distanceMeters'],['averageSpeedMps','maxSpeedMps'],['exerciseSessions','exerciseSessionCount','exerciseMinutes']];
+  for(const fields of groups){const key=fields[0],available=Array.isArray(out[key])?out[key].length>0:numeric(out[key]);
+   const provider=available?SH:HC;
+   if(!available&&fallback)for(const field of fields)if(fallback[field]!=null)out[field]=fallback[field];
+   if(out[key]!=null)for(const field of fields)out.metricProviders[field]=provider;
+  }
+  if(!numeric(out.workoutCalories)&&numeric(fallback?.workoutCalories))for(const [key,value] of Object.entries(fallback))if(key==='workoutCalories'||key.startsWith('workoutEnergy'))out[key]=value;
+  if(numeric(out.workoutCalories))out.metricProviders.workoutCalories=out.workoutEnergyProvider||SH;
+  out.sources=[...new Set([...(direct.sources||[]),...(fallback?.sources||[])])];
+  out.sourceLabels={...(fallback?.sourceLabels||{}),...(direct.sourceLabels||{})};
+  if(fallback?.sources?.includes('com.sec.android.app.shealth')&&Object.values(out.metricProviders).includes(HC))out.sourceLabels['com.sec.android.app.shealth']=t('direct')+' / Health Connect';
+  // A failed SDK read remains visible even if an authorized fallback is available.
+  out.warnings=[...(direct.warnings||[])];
+  return out;
+ }
+ async function recovery(args){
+  const fallback=await hcRead('readRecovery',args)||{},start=Date.parse(args.start),end=Date.parse(args.end);
+  const sleeps=rf240UniqueSleep(rf240Ledger().days||{}).filter(s=>s.provider===SH&&Date.parse(s.end)>=start&&Date.parse(s.end)<end).sort((a,b)=>Date.parse(b.end)-Date.parse(a.end));
+  const sleep=sleeps[0];if(!sleep)return {...fallback,provider:SH};
+  const spans=rf250MergeSpans(rf250SleepSpans(sleep));
+  return {...fallback,provider:SH,sleepMinutes:spans.reduce((sum,[a,b])=>sum+(b-a)/60000,0),sleepStart:sleep.start,sleepEnd:sleep.end,sleepSource:sleep.source,sleepStageBased:!!sleep.stages?.length};
+ }
+ let adapter=null;
+ function plugin(){if(adapter)return adapter;const p=samsung();return adapter={
+  getStatus:()=>p.getStatus(),requestRead:()=>p.requestRead(),openSettings:()=>p.openSettings(),
+  readHealthDay:args=>p.readHealthDay(args),readWellness:args=>p.readWellness(args),
+  readRecovery:recovery,
+  readTrainingWindow:async args=>mergeWorkout(await p.readTrainingWindow(args),await hcRead('readTrainingWindow',args)),
+  readWorkout:async args=>adapter.readTrainingWindow(args)
+ };}
+ healthPlugin=function(){return selected()===SH?plugin():hcPlugin();};
+ async function choose(value){
+  if(![HC,SH].includes(value))return;
+  try{
+   if(journal()?.isSyncing?.()||state.health?.busy||window.TrainPilotBackupBusy)throw Error(t('busy'));
+   const bridge=await journal().ready();if(!bridge)throw Error(t('missing'));
+   if(value===SH){const granted=await samsung().requestRead();if(!hasRead(granted))throw Error(t('denied'));}
+   await bridge.setPreferences({preferences:{provider:value}});await journal().refresh();
+   rfHistoryHealthCache?.clear();
+   const rows=history();for(const row of rows)if(row.health240)row.health240.syncedAt=null;db.set('history',rows);
+   adapter=null;render();await journal().sync();
+  }catch(error){state.health=state.health||{};state.health.message=error?.message||t('failed');render();}
+  finally{paintChoices();}
+ }
+ function choices(){return '<label>'+esc(t('provider'))+'<select class="field" data-health-provider onchange="TrainPilotSamsungHealth.choose(this.value)"><option value="'+HC+'" '+(selected()===HC?'selected':'')+'>Health Connect</option><option value="'+SH+'" '+(selected()===SH?'selected':'')+'>'+esc(t('direct'))+'</option></select></label><p class="small muted">'+esc(t('note'))+'</p>'+(selected()===SH?'<p class="small muted">'+esc(t('hrv'))+'</p>':'');}
+ function paintChoices(){for(const el of document.querySelectorAll('[data-health-provider]')){el.value=selected();el.disabled=!!state.health?.busy;window.rf260EnhanceSelect?.(el);window.rf260SyncCustomSelect?.(el);}}
+ const pipeline=rf250Pipeline;
+ rf250Pipeline=async function(p,options={}){
+  await journal().ready();
+   if(selected()!==SH)return pipeline(p,options);
+  const native=samsung(),report={provider:SH,startedAt:new Date().toISOString(),stages:[],days:0,workouts:0,exported:0,skipped:0,errors:[]};
+  let status=await native.getStatus();if(options.manual){await native.requestRead();status=await native.getStatus();}
+  if(!hasRead(status))throw Error(t('denied'));
+  state.health.permissions=status.permissions;
+  const count=options.full||!db.get('samsungHealthLastFull',null)?30:2,days=rf240RecentDays(count).sort();
+  const startGenerationProvider=selected();
+  for(const [index,day] of days.entries()){
+   rf245Progress(t('direct')+': '+(index+1)+'/'+days.length);
+   try{const args=rf240DayBounds(day);await hcRead('readHealthDay',args);const result=await native.readHealthDay(args);
+    if(selected()!==startGenerationProvider)throw Error(t('busy'));
+    if(result.warnings?.length)report.errors.push(day+': '+result.warnings.join(' · '));else report.days++;
+   }catch(error){report.errors.push(day+': '+rf245Message(error));}
+  }
+  const bridge=await journal().ready(),at=new Date().toISOString();
+  await bridge.saveSyncMeta({meta:{lastAttemptAt:at,...(!report.errors.length?{lastSyncAt:at,...(count===30?{lastFullSyncAt:at}:{})}:{})}});
+  if(!report.errors.length&&count===30)db.set('samsungHealthLastFull',at);
+  await journal().refresh();
+  report.stages.push({name:t('direct'),status:report.errors.length?'partial':'ok',detail:report.days+'/'+days.length});
+  for(const h of history().filter(rf240ValidWorkout).filter(h=>Date.parse(h.finished)>=Date.now()-30*86400000)){
+   try{if(await rf245ReadWorkout(plugin(),h,options.manual||h.health240?.provider!==SH))report.workouts++;}catch(error){report.errors.push('Workout: '+rf245Message(error));}
+  }
+  report.stages.push({name:'Health Connect export',status:'skipped',detail:'Samsung Health: read-only'});
+  report.finishedAt=at;report.status=report.errors.length?'partial':'ok';db.set(RF250_REPORT,report);db.set(RF245_REPORT,report);return report;
+ };
+ const apply=rf240ApplyLedger;
+ rf240ApplyLedger=function(){const ledger=apply();const body=state.health?.wellness;if(body){
+  for(const key of ['bodyFatMassKg','skeletalMuscleMassKg','fatFreeMassKg','totalBodyWaterLiters','basalMetabolicRateKcal','bodyMassIndex']){
+   const value=rf240Latest(ledger.days||{},key,null);body[key]=value?.value??null;
+  }
+  body.weightProvider=rf240Latest(ledger.days||{},'weightKg','weightTime')?.day;
+  body.weightProvider=body.weightProvider?ledger.days[body.weightProvider]?.metricProviders?.weightKg||HC:null;
+  db.set('wellnessLatest',body);
+ }return ledger;};
+ function decorate(){
+  const main=document.querySelector('#app main.tp168-health');
+  if(main){const connection=main.querySelector('.tp168-connect-panel');if(connection&&!connection.querySelector('[data-health-provider]')){const block=document.createElement('div');block.className='tp-health-provider';block.innerHTML=choices();connection.querySelector('summary')?.after(block);}
+  }
+  paintChoices();
+ }
+ const journalHtml=journal().html;journal().html=function(){return journalHtml().replace('<label>'+esc(journal().t('dailySource')),choices()+'<label>'+esc(journal().t('dailySource')));};
+ if(typeof rf110AutoHealthSync==='function'){
+  const auto=rf110AutoHealthSync;
+  rf110AutoHealthSync=function(options){return selected()===SH?journal().auto():auto(options);};
+ }
+ window.TrainPilotSamsungHealth={choose,selected,t,mergeWorkout,plugin,decorate,healthConnectPlugin:hcPlugin};
+ window.addEventListener?.('DOMContentLoaded',()=>{
+  const base=render;render=function(){const result=base.apply(this,arguments);decorate();return result;};window.render=render;
+  decorate();
+ });
+})();
+// @endsection samsung-health-provider.js
+
+// @section health-details.js
+/* Dated metrics for six Today shortcuts and dynamically populated Health details. */
+(function(){
+ 'use strict';
+ const labels={
+  daily:['Napi és egyéb adatok','Daily and other data','Tagesdaten und weitere Werte','Date zilnice și alte valori'],
+  body:['Testösszetétel','Body composition','Körperzusammensetzung','Compoziție corporală'],
+  emptyBody:['Még nincs testösszetételi mérés.','No body composition measurements yet.','Noch keine Messung der Körperzusammensetzung.','Nu există încă măsurători de compoziție corporală.'],
+  samples:['{n} pulzusminta','{n} heart-rate samples','{n} Pulsmesswerte','{n} măsurători de puls'],
+  source:['Adatforrás','Data source','Datenquelle','Sursa datelor'],
+  earlier:['Korábbi adat','Earlier data','Frühere Daten','Date anterioare'],
+  activeCalories:['Aktív kalória','Active calories','Aktive Kalorien','Calorii active'],
+  totalCalories:['Teljes kalória','Total calories','Gesamtkalorien','Calorii totale'],
+  muscle:['Vázizomtömeg','Skeletal muscle','Skelettmuskelmasse','Masă musculară scheletică'],
+  fatMass:['Testzsírtömeg','Fat mass','Fettmasse','Masă de grăsime'],
+  water:['Testvíz','Body water','Körperwasser','Apă corporală'],
+  lean:['Zsírmentes tömeg','Fat-free mass','Fettfreie Masse','Masă fără grăsime'],
+  basal:['Nyugalmi anyagcsere','Basal metabolic rate','Grundumsatz','Metabolism bazal'],
+  bmi:['BMI','BMI','BMI','IMC'],perDay:['kcal/nap','kcal/day','kcal/Tag','kcal/zi'],
+  min:['Min. pulzus','Min. heart rate','Min. Puls','Puls minim'],max:['Max. pulzus','Max. heart rate','Max. Puls','Puls maxim']
+ };
+ const language=()=>typeof rf212Lang==='function'?rf212Lang():'hu';
+ const text=key=>labels[key]?.[['hu','en','de','ro'].indexOf(language())]||labels[key]?.[0]||key;
+ const number=v=>v==null||v===''||!Number.isFinite(Number(v))?null:Number(v);
+ const definitions=[
+  ['steps','health.steps','',0,'daily','more','steps'],
+  ['activeCalories','activeCalories','kcal',0,'daily','more','calories'],
+  ['totalCalories','totalCalories','kcal',0,'daily','more','calories'],
+  ['distanceMeters','health.distance','km',2,'daily','more','steps',null,1000],
+  ['hrvRmssdMs','HRV','ms',0,'daily','more','hrv','hrvTime'],
+  ['bloodPressureSystolic','health.bloodPressure','mmHg',0,'daily','more','pulse','bloodPressureTime'],
+  ['bloodGlucoseMmolL','health.bloodGlucose','mmol/L',1,'daily','more','pulse','bloodGlucoseTime'],
+  ['respiratoryRate','health.respiratoryRate','/min',1,'daily','more','hrv','respiratoryRateTime'],
+  ['restingHeartRate','health.restingHeartRate','bpm',0,'pulse','pulse','pulse'],
+  ['minHeartRate','min','bpm',0,'pulse','pulse','pulse'],
+  ['maxHeartRate','max','bpm',0,'pulse','pulse','pulse'],
+  ['weightKg','health.weight','kg',1,'weight','weight','weight','weightTime'],
+  ['bodyFatPercent','health.bodyFat','%',1,'weight','weight','body','bodyFatTime'],
+  ['oxygenSaturationPercent','SpO₂','%',1,'weight','weight','pulse','oxygenSaturationTime'],
+  ['vo2Max','VO₂max','',1,'weight','weight','hrv','vo2MaxTime'],
+  ['skeletalMuscleMassKg','muscle','kg',1,'body','more','body','skeletalMuscleMassTime'],
+  ['bodyFatMassKg','fatMass','kg',1,'body','more','body','bodyFatMassTime'],
+  ['totalBodyWaterLiters','water','L',1,'body','more','body','totalBodyWaterTime'],
+  ['fatFreeMassKg','lean','kg',1,'body','more','body','fatFreeMassTime'],
+  ['basalMetabolicRateKcal','basal','perDay',0,'body','more','calories','basalMetabolicRateTime'],
+  ['bodyMassIndex','bmi','',1,'body','more','body','bodyMassIndexTime']
+ ];
+ function providerLabel(provider){return provider==='samsung_health'?'Samsung Health':provider==='health_connect'?'Health Connect':text('earlier');}
+ function rows(mode='details'){
+  const ledger=rf240Ledger(),days=ledger.days||{},today=rf240DayKey(new Date()),current=days[today]||{};
+  return definitions.map(([key,label,unit,digits,group,target,icon,time,divisor=1])=>{
+   const latest=mode==='today'||group==='pulse'||['steps','activeCalories','totalCalories','distanceMeters','hrvRmssdMs'].includes(key)?null:rf240Latest(days,key,time);
+   const rowDay=latest?.day||today,data=latest?days[rowDay]:current,value=number(data?.[key]);
+   const timeValue=data?.[time],measurementDay=(timeValue?rf240DayKey(timeValue):rowDay)||rowDay;
+   let valid=value!=null&&value>=0;
+   if(group==='pulse'||['weightKg','vo2Max','respiratoryRate','hrvRmssdMs','bloodPressureSystolic'].includes(key))valid=valid&&value>0;
+   let shown=valid?tp149FormatNumber(value/divisor,{maximumFractionDigits:digits})+(unit?' '+(unit==='perDay'?text(unit):unit):''):'—';
+   if(key==='bloodPressureSystolic'){
+    const diastolic=number(data?.bloodPressureDiastolic);valid=valid&&diastolic>0;
+    shown=valid?tp149FormatNumber(Math.round(value))+'/'+tp149FormatNumber(Math.round(diastolic))+' mmHg':'—';
+   }
+   if(key==='hrvRmssdMs'&&!valid){
+    const recovery=typeof rf229RecoveryHistory==='function'?rf229RecoveryHistory().find(r=>r.day===today):null;
+    const hrv=number(recovery?.hrvRmssdMs);if(hrv>0){valid=true;shown=tp149FormatNumber(Math.round(hrv))+' ms';}
+   }
+   if(mode==='today'&&measurementDay!==today)valid=false;
+   return {key,group,target,icon,label:label.startsWith('health.')?tp149T(label):labels[label]?text(label):label,
+    value,text:shown,valid,day:measurementDay,provider:data?.metricProviders?.[key]||(key==='hrvRmssdMs'?'health_connect':data?.provider||data?.channel||'health_connect')};
+  });
+ }
+ function meta(row){
+  if(!row.valid)return '';
+  const date=tp149FormatDate(new Date(row.day+'T12:00:00'),{month:'short',day:'numeric'});
+  return providerLabel(row.provider)+' · '+date;
+ }
+ function stat(row){return '<div class="stat'+(row.key==='hrvRmssdMs'?' tp5-more-hrv':'')+'" data-health-detail="'+row.key+'" tabindex="-1"><small>'+esc(row.label)+'</small><strong>'+esc(row.text)+'</strong>'+(row.valid?'<span class="tp-health-metric-meta">'+esc(meta(row))+'</span>':'')+'</div>';}
+ function decorate(more){
+  const all=rows(),bodyKeys=['weightKg','bodyFatPercent'],daily=all.filter(r=>(r.group==='daily'||['oxygenSaturationPercent','vo2Max'].includes(r.key))&&(r.valid||['bloodPressureSystolic','bloodGlucoseMmolL','respiratoryRate','distanceMeters','hrvRmssdMs'].includes(r.key))),body=all.filter(r=>(r.group==='body'||bodyKeys.includes(r.key))&&r.valid);
+  let content=more.querySelector(':scope > .tp-health-details');if(!content){more.querySelectorAll(':scope > .grid2').forEach(n=>n.remove());content=document.createElement('div');content.className='tp-health-details';more.appendChild(content);}
+  content.innerHTML='<section data-health-group="daily"><h3>'+esc(text('daily'))+'</h3><div class="grid2">'+daily.map(stat).join('')+'</div></section>'+
+   '<section class="tp-samsung-composition" data-health-group="body"><h3>'+esc(text('body'))+'</h3>'+(body.length?'<div class="grid2">'+body.map(stat).join('')+'</div>':'<p class="small muted">'+esc(text('emptyBody'))+'</p>')+'</section>';
+  const health=window.TrainPilot168Health;if(health){more.open=!!health.moreOpen;more.ontoggle=()=>{if(more.isConnected)health.moreOpen=more.open;};}
+ }
+ function open(key){
+  const row=rows().find(r=>r.key===key);if(!row)return;
+  if(row.target==='pulse')return window.tp168OpenPulse?.();
+  if(row.target==='weight')return window.rf215WeightScreen?.();
+  const more=document.querySelector('main.tp168-health .tp168-more-panel');if(!more)return;
+  more.open=true;if(window.TrainPilot168Health)window.TrainPilot168Health.moreOpen=true;
+  const target=more.querySelector('[data-health-detail="'+key+'"]')||more;
+  requestAnimationFrame(()=>{if(!target.isConnected)return;target.scrollIntoView?.({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});target.focus?.({preventScroll:true});});
+ }
+ window.TrainPilotHealthDetails={rows,decorate,open,text,providerLabel,meta,stat};
+})();
+// @endsection health-details.js
+
+
+// @section cardio-daily.js
+/* Daily activity is separate from recorded cardio distances and personal records. */
+(function(){
+ 'use strict';
+ const labels={
+  title:['Napi aktivitás','Daily activity','Tägliche Aktivität','Activitate zilnică'],
+  group:['Napi aktivitás / lépések','Daily activity / steps','Tägliche Aktivität / Schritte','Activitate zilnică / pași'],
+  today:['Mai összes lépés','Today’s total steps','Schritte heute insgesamt','Total pași azi'],
+  outside:['Edzésen kívül','Outside workouts','Außerhalb des Trainings','În afara antrenamentelor'],
+  week:['Heti lépések','Weekly steps','Schritte diese Woche','Pași săptămânali'],
+  previous:['Előző hét','Previous week','Vorwoche','Săptămâna trecută'],
+  total:['Összes lépés','Total steps','Alle Schritte','Total pași'],
+  refresh:['Lépésadatok frissítése','Refresh step data','Schrittdaten aktualisieren','Actualizează pașii'],
+  busy:['Lépésadatok lekérése…','Reading step data…','Schrittdaten werden gelesen…','Se citesc pașii…'],
+  failed:['Néhány időszak nem frissült. A napi összes adatok megmaradtak.','Some time ranges could not refresh. Daily totals are still available.','Einige Zeiträume konnten nicht aktualisiert werden. Tagessummen bleiben verfügbar.','Unele intervale nu s-au actualizat. Totalurile zilnice rămân disponibile.'],
+  unavailable:['Az időszakos lekéréshez frissített telefonos app és lépésolvasási engedély szükséges.','Reading time ranges requires the updated phone app and steps read access.','Zeitbereiche benötigen die aktualisierte Telefon-App und Lesezugriff auf Schritte.','Citirea intervalelor necesită aplicația actualizată pe telefon și acces de citire la pași.'],
+  note:['A naplózott edzések időszakán kívüli lépések külön jelennek meg. Ha nem különíthetők el, gondolatjelet mutatunk.','Steps outside recorded workout time ranges are shown separately. A dash means they cannot be separated.','Schritte außerhalb protokollierter Trainingszeiten werden separat angezeigt. Ein Strich bedeutet, dass sie nicht getrennt werden können.','Pașii din afara intervalelor antrenamentelor înregistrate apar separat. O liniuță înseamnă că nu pot fi separați.'],
+  coverage:['Szinkronizált napok: {n}/{all}. A heti összesítés ezekből számol.','Synced days: {n}/{all}. Weekly totals use these days.','Synchronisierte Tage: {n}/{all}. Wochensummen verwenden diese Tage.','Zile sincronizate: {n}/{all}. Totalurile săptămânale folosesc aceste zile.'],
+  empty:['Még nincs szinkronizált lépésadat.','No synced step data yet.','Noch keine synchronisierten Schrittdaten.','Nu există încă date sincronizate despre pași.']
+ };
+ const text=key=>labels[key]?.[['hu','en','de','ro'].indexOf(rf212Lang())]||labels[key]?.[0]||key;
+ const count=value=>typeof value==='number'&&Number.isSafeInteger(value)&&value>=0?value:null;
+ const fmt=value=>value==null?'—':tp149FormatNumber(value,{maximumFractionDigits:0});
+ const cache=new Map(),view={busy:false,status:''};
+ function context(){return JSON.stringify(rf240Ledger().preferences||{});}
+ function windows(workouts,start,end,now){
+  const spans=(workouts||[]).filter(h=>rf240ValidWorkout(h)&&Date.parse(h.finished)<=now).map(h=>[Math.max(start,Date.parse(h.started)),Math.min(end,Date.parse(h.finished))]).filter(([a,b])=>b>a).sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+  const merged=[];for(const [a,b] of spans){const last=merged.at(-1);if(last&&a<=last[1])last[1]=Math.max(last[1],b);else merged.push([a,b]);}return merged;
+ }
+ function model(now=new Date()){
+  const ledger=rf240Ledger(),today=rf240DayKey(now),week=tp107WeekStart(now),first=new Date(week);first.setDate(first.getDate()-7);
+  const rows=[],workouts=history(),preference=ledger.preferences||{},stamp=context();
+  for(let date=new Date(first);date<=now;date.setDate(date.getDate()+1)){
+   const day=rf240DayKey(date),data=ledger.days?.[day]||{},next=new Date(date);next.setDate(next.getDate()+1);
+   const start=+date,end=Math.min(+next,+now);if(end<=start)continue;
+   const spans=windows(workouts,start,end,+now),rawProvider=data.metricProviders?.steps||data.provider||data.channel||preference.provider||'health_connect';
+   const provider=rawProvider==='samsung_health'?'samsung_health':'health_connect';
+   const origin=provider==='health_connect'?(data.stepsOrigin||((data.channel||data.provider)!=='samsung_health'?data.activityOrigin:'')||(!['auto','priority',undefined].includes(preference.hcDailySource)?preference.hcDailySource:'')):'';
+   const fingerprint=JSON.stringify([stamp,day,provider,origin,data.steps,data.readAt||ledger.lastSyncAt,day===today?'today':end,spans]);
+   const saved=cache.get(day),reading=saved?.fingerprint===fingerprint?saved:null,total=reading?reading.total:count(data.steps);
+   const outside=reading?reading.outside:!spans.length?total:null;
+   rows.push({day,start,end,spans,provider,origin,fingerprint,total,outside,readAt:reading?.readAt||data.readAt||null});
+  }
+  const sum=items=>({value:items.some(r=>r.total!=null)?items.reduce((n,r)=>n+(r.total??0),0):null,measured:items.filter(r=>r.total!=null).length,days:items.length});
+  return {today,rows,week:sum(rows.filter(r=>r.start>=+week)),previous:sum(rows.filter(r=>r.start<+week)),todayRow:rows.find(r=>r.day===today)||null};
+ }
+ function plugin(provider){
+  if(!isNative())return null;
+  const name=provider==='samsung_health'?'SamsungHealth':'HealthBridge';
+  return window.Capacitor?.Plugins?.[name]||window.Capacitor?.registerPlugin?.(name)||null;
+ }
+ function paint(){const card=document.querySelector('.tp-cardio-daily');if(card){const template=document.createElement('template');template.innerHTML=html();card.replaceWith(template.content.firstElementChild);}}
+ async function refresh(){
+  if(view.busy)return false;
+  const snapshot=model(),stamp=context(),deadline=Date.now()+45000;view.busy=true;view.status='busy';paint();let errors=0,unavailable=0;
+  try{
+   for(const row of snapshot.rows){
+    if(!document.querySelector('.tp-cardio-daily')||context()!==stamp)break;
+    if(Date.now()>deadline){errors++;break;}
+    const p=plugin(row.provider);if(!p?.readStepsWindow){unavailable++;continue;}
+    if(row.spans.length>30){errors++;continue;}
+    let timer;
+    const read=async(start,end)=>{
+     if(Date.now()>deadline)throw Error('deadline');
+     const result=await Promise.race([p.readStepsWindow({start:new Date(start).toISOString(),end:new Date(end).toISOString(),origin:row.origin,language:rf212Lang()}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('timeout')),Math.min(15000,Math.max(1,deadline-Date.now())));})]);clearTimeout(timer);
+     const value=count(result?.steps);if(value==null||result?.permissions?.READ_STEPS===false||(result?.warnings||[]).length)throw Error('missing');
+     if(result?.provider&&result.provider!==row.provider||row.origin&&result.activityOrigin!==row.origin)throw Error('source');
+     return value;
+    };
+    try{
+     const total=await read(row.start,row.end);let recorded=0,complete=true;
+     for(const [start,end] of row.spans){try{recorded+=await read(start,end);}catch(_){complete=false;break;}}
+     const latest=model().rows.find(r=>r.day===row.day);
+     if(context()!==stamp||latest?.fingerprint!==row.fingerprint)continue;
+     const outside=complete&&recorded<=total?total-recorded:null;if(outside==null)errors++;
+     cache.set(row.day,{fingerprint:row.fingerprint,total,outside,readAt:new Date().toISOString()});
+    }catch(_){errors++;}finally{clearTimeout(timer);}
+   }
+   view.status=unavailable?'unavailable':errors?'failed':'';return !errors&&!unavailable;
+  }finally{view.busy=false;paint();}
+ }
+ function html(){
+  const m=model(),metric=(key,value)=>'<div class="stat"><small>'+esc(text(key))+'</small><strong data-daily-metric="'+key+'">'+esc(fmt(value))+'</strong></div>',today=m.todayRow;
+  const recent=m.rows.slice(-7).reverse(),source=row=>(row.provider==='samsung_health'?'Samsung Health':'Health Connect')+(Number.isFinite(Date.parse(row.readAt||''))?' · '+new Date(row.readAt).toLocaleTimeString(typeof rf233Locale==='function'?rf233Locale():undefined,{hour:'2-digit',minute:'2-digit'}):'');
+  return '<section class="card tp-cardio-daily"><h3>'+esc(text('title'))+'</h3><p class="small muted">'+esc(text('note'))+'</p><div class="grid2">'+metric('today',today?.total??null)+metric('outside',today?.outside??null)+metric('week',m.week.value)+metric('previous',m.previous.value)+'</div><p class="small muted">'+esc(text('coverage').replace('{n}',m.week.measured+m.previous.measured).replace('{all}',m.rows.length))+'</p><button class="btn secondary block" type="button" data-daily-refresh onclick="TrainPilotCardioDaily.refresh()" '+(view.busy?'disabled':'')+'>'+esc(text('refresh'))+'</button><p class="small" data-daily-status role="status">'+esc(view.status?text(view.status):'')+'</p>'+
+   '<div class="tp-cardio-daily-head small muted"><span></span><span>'+esc(text('total'))+'</span><span>'+esc(text('outside'))+'</span></div>'+recent.map(row=>'<div class="tp-cardio-daily-row" data-daily-day="'+row.day+'"><div><strong>'+esc(tp149FormatDate(new Date(row.day+'T12:00:00'),{month:'short',day:'numeric'}))+'</strong><small class="muted">'+esc(row.total==null?'—':source(row))+'</small></div><strong data-daily-total>'+esc(fmt(row.total))+'</strong><strong data-daily-outside>'+esc(fmt(row.outside))+'</strong></div>').join('')+(m.rows.some(r=>r.total!=null)?'':'<p class="small muted">'+esc(text('empty'))+'</p>')+'</section>';
+ }
+ const base=tp107CardioHtml;
+ tp107CardioHtml=function(){
+  const result=base();
+  const template=document.createElement('template');template.innerHTML=result;const root=template.content.firstElementChild,select=root.querySelector('select');
+  const option=document.createElement('option');option.value='@daily-steps';option.textContent=text('group');option.toggleAttribute('selected',tp107CardioActivity==='@daily-steps');select.appendChild(option);
+  if(tp107CardioActivity==='@daily-steps'){for(const node of [...root.childNodes])if(node!==root.querySelector('h2')&&node!==select)node.remove();}
+  if(!tp107CardioActivity||tp107CardioActivity==='@daily-steps')root.insertAdjacentHTML('beforeend',html());return root.outerHTML;
+ };
+ window.TrainPilotCardioDaily={model,windows,refresh};
+})();
+// @endsection cardio-daily.js
 
 
 // @section profile-training-128.js
@@ -16088,6 +16426,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     activeProgramName:String(active.name||'TrainPilot'),
     restSeconds:configuredRest(),
     hasDraft:!!(typeof db!=='undefined'&&db?.get&&db.get('draft',null)),
+    workoutResult:db.get('wearWorkoutResult',null),
     recommended:recommendedDay?{
      scheduleId,
      plannedStart,
@@ -16099,12 +16438,15 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  function snapshot(){
   try{
-   if(typeof state==='undefined'||!state?.session)return null;
-   const session=state.session,lang=language(),exercises=Array.isArray(session.exercises)?session.exercises:[];
-   const current=Number.isInteger(state.current)?state.current:0;
+   if(typeof state==='undefined')return null;
+   const draft=state.session?null:db.get('draft',null),session=state.session||draft?.session;if(!session)return null;
+   const lang=language(),exercises=Array.isArray(session.exercises)?session.exercises:[];
+   const current=state.session?(Number.isInteger(state.current)?state.current:0):(Number(draft?.current)||0);
    return {
     schema:1,
     workoutId:sessionKey(session),
+    watchSequence:Number(session.wearSequence)||0,
+    dayName:(()=>{try{const p=programById(session.programId);return dayName(p,programDay(p,session.dayId||session.workout))}catch(_){return String(session.dayId||session.workout||'')}})(),
     programId:String(session.programId||''),
     programName:String(session.programName||''),
     dayId:String(session.dayId||session.workout||''),
@@ -16112,7 +16454,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     started:String(session.started||''),
     currentExercise:Math.max(0,Math.min(current,Math.max(0,exercises.length-1))),
     restSeconds:configuredRest(),
-    restEndAt:Number(state.restEndAt||0),
+    restEndAt:Number((state.session?state.restEndAt:draft?.restEndAt)||0),
     language:lang,
     exercises:exercises.map(exercise=>({
      id:String(exercise?.id||''),
@@ -16120,6 +16462,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
      loadType:String(exercise?.loadType||''),
      repUnit:String(exercise?.repUnit||''),
      measurementType:String(exercise?.measurementType||''),
+     targetReps:String(exercise?.targetReps||exercise?.reps||(typeof byId==='function'?byId(exercise?.id)?.reps:'')||''),
      sets:(Array.isArray(exercise?.sets)?exercise.sets:[]).map((set,index)=>({
       set:Number(set?.set||index+1),
       reps:String(set?.reps??''),
@@ -16198,12 +16541,83 @@ window.addEventListener?.('DOMContentLoaded',function(){
    set.reps=String(Math.min(Number(set.leftSeconds),Number(set.rightSeconds)));
   }
  }
+ function closedWorkouts(){return db.get('wearClosedWorkouts',[])||[]}
+ function isClosed(id){return closedWorkouts().some(x=>x.workoutId===id)||history().some(x=>sessionKey(x)===id&&x.finished)}
+ function recordResult(command,status,message=''){
+  const result={commandId:String(command.commandId),workoutId:String(command.workoutId),action:String(command.action),status,message,finishedAt:String(command.finishedAt||''),receivedAt:Date.now()};
+  db.set('wearWorkoutResult',result);
+  if(status==='saved'||status==='discarded')db.set('wearClosedWorkouts',[...closedWorkouts().filter(x=>x.workoutId!==result.workoutId),result].slice(-128));
+  return true;
+ }
+ function restoreMatchingDraft(expected){
+  if(state.session)return sessionKey(state.session)===expected;
+  const d=db.get('draft',null);if(!d?.session||sessionKey(d.session)!==expected||!Array.isArray(d.session.exercises)||!d.session.exercises.length)return false;
+  stopTimer();state.session=d.session;state.workout=d.session.dayId||d.workout;state.current=Math.max(0,Math.min(Number(d.current)||0,d.session.exercises.length-1));state.tab='plan';
+  state.restEndAt=Number(d.restEndAt)>Date.now()?Number(d.restEndAt):null;
+  state.timer=state.restEndAt?Math.ceil((state.restEndAt-Date.now())/1000):0;
+  if(state.restEndAt&&typeof tickRest==='function')state.timerId=setInterval(tickRest,250);
+  return true;
+ }
+ function mergeFinalSets(command){
+  // A terminal command also carries the final watch values. Delivery order may differ
+  // after reconnecting; only matching exercises/sets of this same session are merged.
+  const final=command.finalSnapshot;if(!Array.isArray(final?.exercises))return;
+  for(const [ei,ex] of final.exercises.entries()){
+   const located=locateExercise({exerciseIndex:ei,exerciseId:ex.id});if(!located)continue;
+   for(const [si,value] of (Array.isArray(ex.sets)?ex.sets:[]).entries()){
+    const target=locateSet(located.exercise,{setIndex:si,setNumber:value.set});if(!target)continue;
+    if(!value.done)continue;
+    applySetValues(target.set,value);
+    const unit=String(located.exercise.repUnit||'').replace(/\s+/g,'').toLowerCase();
+    const valid=unit==='mp/oldal'?Number(target.set.leftSeconds)>0&&Number(target.set.rightSeconds)>0:Number(target.set.reps)>0;
+    if(valid)target.set.done=true;
+   }
+  }
+ }
+ async function closeFromWatch(command){
+  const expected=String(command.workoutId||''),action=String(command.action);
+  if(!expected||command.confirmed!==true)return false;
+  if(isClosed(expected)){
+   const previous=closedWorkouts().find(x=>x.workoutId===expected);
+   return recordResult(command,previous?.status||'saved');
+  }
+  if(!state.session&&!db.get('draft',null)){
+   if(action==='discardWorkout')return recordResult(command,'discarded');
+   const final=command.finalSnapshot;
+   // The final DataItem can arrive before startWorkout after an offline session.
+   if(final?.workoutId===expected&&final.dayId&&final.programId){
+    await applyCommand({...command,action:'startWorkout',dayId:final.dayId,programId:final.programId,scheduleId:final.scheduleId,started:final.started});
+   }
+  }
+  if(!restoreMatchingDraft(expected))return recordResult(command,'error','A telefonon másik edzés van, vagy ez az edzés már nem található.');
+  if(action==='discardWorkout'){
+   // Confirmed on the watch; never delete history or a different phone draft.
+   if(typeof tp107StopIndoor==='function')tp107StopIndoor(false);
+   if(typeof tp106StopGPS==='function'&&(tp106GpsState?.active||db.get('gpsTrip106',null))){const ok=await tp106StopGPS();if(!ok)return false}
+   if(!state.session||sessionKey(state.session)!==expected)return recordResult(command,'error','Az edzés közben megváltozott a telefonon.');
+   if(typeof rf110StopwatchHalt==='function')rf110StopwatchHalt(true);
+   if(typeof tp1481HaltSide==='function')tp1481HaltSide(true);
+   stopTimer();db.set('draft',null);state.session=null;state.workout=null;state.current=0;state.restEndAt=null;state.timer=0;state.tab='home';render();
+   return recordResult(command,'discarded');
+  }
+  mergeFinalSets(command);persistDraft();
+  if(!state.session.exercises.some(e=>e.sets?.some(s=>s.done)))return recordResult(command,'error','Legalább egy rögzített sorozat szükséges.');
+  const result=finishWorkout({wearConfirmed:true,wearFinishedAt:String(command.finishedAt||'')});
+  if(result&&typeof result.then==='function')await result;
+  if(history().some(x=>sessionKey(x)===expected&&x.finished))return recordResult(command,'saved');
+  // A temporarily busy GPS/phone save is retried without acknowledging the command.
+  return false;
+ }
  async function applyCommand(command){
   if(!command||typeof state==='undefined')return false;
-  const action=String(command.action||'');
+  const action=String(command.action||''),expectedId=String(command.workoutId||'');
+  if(action==='finishWorkout'||action==='discardWorkout')return closeFromWatch(command);
+  if(expectedId&&isClosed(expectedId))return true;
+  if(!state.session&&action!=='startWorkout'&&!restoreMatchingDraft(expectedId))return false;
   if(action==='startWorkout'){
    const expected=String(command.workoutId||command.started||'');
    if(state.session)return expected&&sessionKey(state.session)===expected;
+   const existing=db.get('draft',null);if(existing?.session&&sessionKey(existing.session)===expected)return true;
    try{if(typeof db!=='undefined'&&db?.get&&db.get('draft',null))return false}catch(_){}
    const dayId=String(command.dayId||''),programId=String(command.programId||''),scheduleId=String(command.scheduleId||'');
    if(!dayId||typeof startWorkout!=='function')return false;
@@ -16217,10 +16631,16 @@ window.addEventListener?.('DOMContentLoaded',function(){
      if(Array.isArray(intervals)&&intervals.length)intervals[0].start=String(command.started);
     }catch(_){}
    }
+   state.session.wearSequence=Math.max(Number(state.session.wearSequence)||0,Number(command.sequence)||0);
    persistDraft();renderWorkout();return true;
   }
   if(!state.session)return false;
   if(String(command.workoutId||'')!==sessionKey(state.session))return false;
+  state.session.wearSequence=Math.max(Number(state.session.wearSequence)||0,Number(command.sequence)||0);
+  if(action==='resumeWorkout'){persistDraft();renderWorkout();return true}
+  if(action==='selectExercise'){
+   const located=locateExercise(command);if(!located)return false;state.current=located.index;persistDraft();renderWorkout();return true;
+  }
   if(action==='nextExercise'||action==='prevExercise'){
    const count=state.session.exercises?.length||0;if(!count)return false;
    const delta=action==='nextExercise'?1:-1;
@@ -16252,7 +16672,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
     const result=toggleSet(located.index,target.index);
     if(result&&typeof result.then==='function')await result;
    }
-   if(target.set.done){persistDraft();return true}
+   if(target.set.done){
+    if(located.index===state.session.exercises.length-1&&located.exercise.sets.every(s=>s.done))stopTimer();
+    persistDraft();return true
+   }
    return false;
   }
   return false;
@@ -16263,7 +16686,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   commandBusy=true;
   try{
    const result=await bridge.pendingCommands();
-   const commands=Array.isArray(result?.commands)?result.commands:[];
+   const commands=(Array.isArray(result?.commands)?result.commands:[]).slice().sort((a,b)=>(Number(a.createdAt)||0)-(Number(b.createdAt)||0)||(Number(a.sequence)||0)-(Number(b.sequence)||0));
    let changed=false;
    for(const command of commands){
     const id=String(command?.commandId||'');

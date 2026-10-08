@@ -290,5 +290,25 @@
   {
     "file": "tests/browser/startup-logo-140.cjs",
     "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/wear-workout-lifecycle.cjs",
+    "estimatedSeconds": 5
+  },
+  {
+    "file": "tests/browser/health-workout-energy.cjs",
+    "estimatedSeconds": 6
+  },
+  {
+    "file": "tests/browser/health-details-ui.cjs",
+    "estimatedSeconds": 14
+  },
+  {
+    "file": "tests/browser/samsung-health-provider.cjs",
+    "estimatedSeconds": 8
+  },
+  {
+    "file": "tests/browser/cardio-daily.cjs",
+    "estimatedSeconds": 14
   }
 ]

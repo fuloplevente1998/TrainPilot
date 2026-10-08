@@ -178,3 +178,18 @@ html body #app .tp107-personal-records>.card>p:first-child{margin:0 0 10px}
 .tp108-day-dialog .field{box-sizing:border-box;min-width:0;width:100%}
 .tp108-day-dialog .tp151-logged{flex-wrap:wrap}
 @media(max-height:500px){.tp108-day-backdrop{padding:8px}.tp108-day-dialog{max-height:calc(100dvh - 16px)}}
+
+/* Daily steps stay separate from recorded cardio distance and personal records. */
+html body #app .tp-cardio-daily{margin-top:18px!important;padding:12px!important;min-width:0}
+.tp-cardio-daily h3{margin:0 0 8px;font-size:18px;line-height:1.25}
+.tp-cardio-daily .grid2{gap:8px}
+.tp-cardio-daily .stat{min-width:0}
+.tp-cardio-daily .stat small{white-space:normal;overflow-wrap:anywhere}
+.tp-cardio-daily .stat strong{font-size:22px;line-height:1.2}
+.tp-cardio-daily-head,.tp-cardio-daily-row{display:grid;grid-template-columns:minmax(0,1.25fr) repeat(2,minmax(0,1fr));gap:8px;align-items:center}
+.tp-cardio-daily-head{padding:8px 0;line-height:1.25}
+.tp-cardio-daily-row{padding:10px 0;border-top:1px solid var(--line)}
+.tp-cardio-daily-row>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.tp-cardio-daily-row small{font-size:10px;overflow-wrap:anywhere}
+.tp-cardio-daily-row>strong,.tp-cardio-daily-head>span:not(:first-child){text-align:right;overflow-wrap:anywhere}
+.tp-cardio-daily [data-daily-status]:empty{display:none}

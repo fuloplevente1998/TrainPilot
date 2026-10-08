@@ -17,6 +17,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(GoogleSyncPlugin.class);
         registerPlugin(WorkoutPhotosPlugin.class);
         registerPlugin(HealthBridgePlugin.class);
+        registerPlugin(SamsungHealthPlugin.class);
         registerPlugin(HealthJournalPlugin.class);
         registerPlugin(HealthBackgroundPlugin.class);
         registerPlugin(DistanceTrackerPlugin.class);

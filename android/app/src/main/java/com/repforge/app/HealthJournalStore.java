@@ -12,7 +12,7 @@ import java.util.*;
 
 /** The primary health store. The WebView only receives bounded projections/pages. */
 final class HealthJournalStore extends SQLiteOpenHelper {
-    static final String HC = "health_connect", BLE = "ble_watch", LEGACY = "legacy";
+    static final String HC = "health_connect", BLE = "ble_watch", LEGACY = "legacy", SAMSUNG = "samsung_health";
     private static final Object LOCK = new Object();
     private static HealthJournalStore instance;
     static HealthJournalStore get(Context context) {
@@ -70,7 +70,7 @@ final class HealthJournalStore extends SQLiteOpenHelper {
     }
     private void upsert(SQLiteDatabase db, JSONObject r) throws Exception {
         String channel = text(r,"channel",32), source = text(r,"source",255), type = text(r,"type",80), id = text(r,"recordId",200);
-        if (!channel.equals(HC) && !channel.equals(BLE)) throw new IllegalArgumentException("Invalid health channel");
+        if (!channel.equals(HC) && !channel.equals(BLE) && !channel.equals(SAMSUNG)) throw new IllegalArgumentException("Invalid health channel");
         long modified = time(r,"lastModifiedMs"), start = time(r,"startMs"), end = time(r,"endMs");
         if (end < start || !validDay(r.getString("day")) || r.toString().length() > 2*1024*1024) throw new IllegalArgumentException("Invalid health record");
         r.getJSONObject("data");
@@ -134,6 +134,33 @@ final class HealthJournalStore extends SQLiteOpenHelper {
             if(!partial&&source.equals("@aggregate"))db.delete("dirty_days","day=?",new String[]{day});return null;
         });
     }
+    void samsungDay(String day, JSONObject result, JSONArray records, long generation) throws Exception {
+        transaction(db -> {
+            writable(db, generation);
+            JSONObject out = new JSONObject(result.toString());
+            JSONArray failed = out.optJSONArray("failedFields");
+            if (failed != null && failed.length() > 0) {
+                try (Cursor c = db.rawQuery("SELECT json FROM days WHERE day=? AND channel=? AND source='@aggregate'", new String[]{day, SAMSUNG})) {
+                    if (c.moveToFirst()) {
+                        JSONObject previous = new JSONObject(c.getString(0));
+                        for (int i = 0; i < failed.length(); i++) {
+                            String key = failed.getString(i);
+                            if (previous.has(key)) out.put(key, previous.get(key));
+                        }
+                    }
+                }
+            }
+            out.put("day", day).put("source", "@aggregate").put("channel", SAMSUNG)
+                .put("partial", failed != null && failed.length() > 0);
+            for (int i = 0; i < records.length(); i++) {
+                JSONObject record = records.getJSONObject(i);
+                if (!SAMSUNG.equals(record.optString("channel"))) throw new IllegalArgumentException("Invalid Samsung record");
+                upsert(db, record);
+            }
+            saveDay(db, day, SAMSUNG, "@aggregate", out);
+            return null;
+        });
+    }
     void watchSteps(String deviceId, String name, long count, long requestAt, long observedAt, long generation) throws Exception {
         if(count<0||count>1000000||!day(requestAt).equals(day(observedAt)))throw new IllegalArgumentException("Watch reading crossed midnight or is invalid");
         transaction(db -> {
@@ -164,12 +191,14 @@ final class HealthJournalStore extends SQLiteOpenHelper {
             .put("hcDailySource",daily.equals("priority")?"priority":"auto"));
     }
     JSONObject preferences() throws Exception {
-        synchronized(LOCK) { SQLiteDatabase db=getReadableDatabase();return new JSONObject().put("primary",meta(db,"primary",HC)).put("autoOnOpen",Boolean.parseBoolean(meta(db,"autoOnOpen","false"))).put("logWatchSteps",Boolean.parseBoolean(meta(db,"logWatchSteps","false"))).put("hcDailySource",meta(db,"hcDailySource","auto")).put("bleBackground",Boolean.parseBoolean(meta(db,"bleBackground","false"))).put("hcBackground",Boolean.parseBoolean(meta(db,"hcBackground","false"))); }
+        synchronized(LOCK) { SQLiteDatabase db=getReadableDatabase();return new JSONObject().put("provider",meta(db,"provider",HC)).put("primary",meta(db,"primary",HC)).put("autoOnOpen",Boolean.parseBoolean(meta(db,"autoOnOpen","false"))).put("logWatchSteps",Boolean.parseBoolean(meta(db,"logWatchSteps","false"))).put("hcDailySource",meta(db,"hcDailySource","auto")).put("bleBackground",Boolean.parseBoolean(meta(db,"bleBackground","false"))).put("hcBackground",Boolean.parseBoolean(meta(db,"hcBackground","false"))); }
     }
     void setPreferences(JSONObject preferences) throws Exception {
         transaction(db->{writable(db,generation());boolean sourceChanged=false,accessChanged=false;
-            for(String key:new String[]{"primary","autoOnOpen","logWatchSteps","hcDailySource","bleBackground","hcBackground"})if(preferences.has(key)) {
-                String value=key.equals("primary")||key.equals("hcDailySource")?preferences.getString(key):Boolean.toString(preferences.getBoolean(key));
+            for(String key:new String[]{"provider","primary","autoOnOpen","logWatchSteps","hcDailySource","bleBackground","hcBackground"})if(preferences.has(key)) {
+                String value=key.equals("provider")||key.equals("primary")||key.equals("hcDailySource")?preferences.getString(key):Boolean.toString(preferences.getBoolean(key));
+                if(key.equals("provider")&&!value.equals(HC)&&!value.equals(SAMSUNG))throw new IllegalArgumentException("Invalid health provider");
+                if(key.equals("provider")&&!value.equals(meta(db,key,HC)))accessChanged=true;
                 if(key.equals("primary")&&!value.equals(HC)&&!value.equals(BLE))throw new IllegalArgumentException("Invalid primary source");
                 if(key.equals("hcDailySource")&&!value.matches("[A-Za-z0-9_.-]{1,255}"))throw new IllegalArgumentException("Invalid daily source");
                 if(key.equals("hcDailySource")&&!value.equals(meta(db,key,"auto")))sourceChanged=true;
@@ -190,12 +219,12 @@ final class HealthJournalStore extends SQLiteOpenHelper {
             SQLiteDatabase db=getReadableDatabase();JSONObject days=new JSONObject();String primary=meta(db,"primary",HC);
             List<String> keys=new ArrayList<>();try(Cursor c=db.rawQuery("SELECT DISTINCT day FROM days WHERE channel<>'ble_watch' OR "+(Boolean.parseBoolean(meta(db,"logWatchSteps","false"))?"1":"0")+" ORDER BY day DESC LIMIT 30",null)){while(c.moveToNext())keys.add(c.getString(0));}
             for(String day:keys) {
-                JSONObject hc=null,old=null,ble=null;String watchSource=null;
-                try(Cursor c=db.rawQuery("SELECT channel,source,json FROM days WHERE day=?",new String[]{day})) {while(c.moveToNext()){String channel=c.getString(0);JSONObject value=new JSONObject(c.getString(2));if(channel.equals(HC)&&c.getString(1).equals("@aggregate"))hc=value;else if(channel.equals(LEGACY))old=value;else if(channel.equals(BLE)&&(ble==null||value.optString("readAt").compareTo(ble.optString("readAt"))>0)){ble=value;watchSource=c.getString(1);}}}
-                JSONObject out=hc!=null?hc:old!=null?old:new JSONObject();
-                if(hc!=null)out.put("sleepSessions",sleepSessions(db,day,""));
+                JSONObject hc=null,old=null,ble=null,samsung=null;String watchSource=null;
+                try(Cursor c=db.rawQuery("SELECT channel,source,json FROM days WHERE day=?",new String[]{day})) {while(c.moveToNext()){String channel=c.getString(0);JSONObject value=new JSONObject(c.getString(2));if(channel.equals(HC)&&c.getString(1).equals("@aggregate"))hc=value;else if(channel.equals(SAMSUNG)&&c.getString(1).equals("@aggregate"))samsung=value;else if(channel.equals(LEGACY))old=value;else if(channel.equals(BLE)&&(ble==null||value.optString("readAt").compareTo(ble.optString("readAt"))>0)){ble=value;watchSource=c.getString(1);}}}
+                if(hc!=null)hc.put("sleepSessions",sleepSessions(db,day,""));
+                if(hc==null&&old==null&&!(meta(db,"provider",HC).equals(SAMSUNG)&&samsung!=null)&&ble==null)continue;
+                JSONObject out=HealthProviderProjection.day(hc,samsung,old,meta(db,"provider",HC));
                 if(ble!=null&&Boolean.parseBoolean(meta(db,"logWatchSteps","false"))&&(primary.equals(BLE)||out.isNull("steps"))) {out.put("steps",ble.get("steps"));out.put("stepsSource",BLE);out.put("stepsObservedAt",ble.optString("readAt"));out.put("stepsDeviceId",watchSource);}
-                else if(!out.isNull("steps"))out.put("stepsSource",hc!=null?HC:LEGACY);
                 try(Cursor dirty=db.rawQuery("SELECT day FROM dirty_days WHERE day=?",new String[]{day})){if(dirty.moveToFirst())out.put("partial",true);}
                 out.put("day",day);days.put(day,out);
             }
@@ -230,7 +259,7 @@ final class HealthJournalStore extends SQLiteOpenHelper {
     }
     JSONObject page(String from, String to, String channel, String source, long before, long beforeTime, int limit) throws Exception {
         if(!validDay(from)||!validDay(to)||from.compareTo(to)>0)throw new IllegalArgumentException("Invalid health period");
-        if(!channel.isEmpty()&&!channel.equals(HC)&&!channel.equals(BLE)&&!channel.equals(LEGACY)&&!channel.equals("journal"))throw new IllegalArgumentException("Invalid channel");
+        if(!channel.isEmpty()&&!channel.equals(HC)&&!channel.equals(BLE)&&!channel.equals(LEGACY)&&!channel.equals(SAMSUNG)&&!channel.equals("journal"))throw new IllegalArgumentException("Invalid channel");
         synchronized(LOCK) {
             SQLiteDatabase db=getReadableDatabase();limit=Math.max(1,Math.min(50,limit));List<String> args=new ArrayList<>(Arrays.asList(from,to,Long.toString(beforeTime>0?beforeTime:Long.MAX_VALUE),Long.toString(beforeTime>0?beforeTime:Long.MAX_VALUE),Long.toString(before>0?before:Long.MAX_VALUE)));
             String where="day>=? AND day<=? AND (sort_ms<? OR (sort_ms=? AND row_id<?))";if(channel.equals("journal")){where+=" AND channel<>'ble_watch'";}else if(!channel.isEmpty()){where+=" AND channel=?";args.add(channel);}if(!source.isEmpty()){where+=" AND source=?";args.add(source);}
@@ -239,6 +268,28 @@ final class HealthJournalStore extends SQLiteOpenHelper {
             JSONArray origins=new JSONArray();try(Cursor c=db.rawQuery("SELECT channel,source,MAX(row_id),json FROM records GROUP BY channel,source ORDER BY channel,source LIMIT 200",null)){while(c.moveToNext())origins.put(new JSONObject().put("channel",c.getString(0)).put("source",c.getString(1)).put("name",new JSONObject(c.getString(3)).getJSONObject("data").optString("deviceName","")));}
             JSONArray summaries=new JSONArray();List<String> dayArgs=new ArrayList<>(Arrays.asList(from,to));String dayWhere="day>=? AND day<=?";if(channel.equals("journal")){dayWhere+=" AND (channel='health_connect' AND source='@aggregate' OR channel='legacy' AND NOT EXISTS (SELECT 1 FROM days AS hc WHERE hc.day=days.day AND hc.channel='health_connect' AND hc.source='@aggregate'))";}else if(!channel.isEmpty()){dayWhere+=" AND channel=?";dayArgs.add(channel);}if(!source.isEmpty()){dayWhere+=" AND source=?";dayArgs.add(source);}else{dayWhere+=" AND (channel<>'health_connect' OR source='@aggregate')";}
             try(Cursor c=db.rawQuery("SELECT day,channel,source,json FROM days WHERE "+dayWhere+" ORDER BY day DESC,channel,source LIMIT 31",dayArgs.toArray(new String[0]))) {while(c.moveToNext()){JSONObject d=new JSONObject(c.getString(3));if(c.getString(1).equals(HC))d.put("sleepSessions",sleepSessions(db,c.getString(0),c.getString(2).equals("@aggregate")?"":c.getString(2)));try(Cursor dirty=db.rawQuery("SELECT day FROM dirty_days WHERE day=?",new String[]{c.getString(0)})){if(dirty.moveToFirst())d.put("partial",true);}d.put("channel",c.getString(1));d.put("source",c.getString(2));d.put("day",c.getString(0));summaries.put(d);}}
+            if(channel.equals("journal")) {
+                summaries=new JSONArray();
+                String preferred=meta(db,"provider",HC);
+                try(Cursor dates=db.rawQuery("SELECT DISTINCT day FROM days WHERE day>=? AND day<=? AND channel<>'ble_watch' ORDER BY day DESC LIMIT 31",new String[]{from,to})) {
+                    while(dates.moveToNext()) {
+                        String date=dates.getString(0);JSONObject hc=null,samsung=null,legacy=null;
+                        try(Cursor c=db.rawQuery("SELECT channel,source,json FROM days WHERE day=?",new String[]{date})) {
+                            while(c.moveToNext()) {
+                                if(c.getString(0).equals(HC)&&c.getString(1).equals("@aggregate"))hc=new JSONObject(c.getString(2));
+                                else if(c.getString(0).equals(SAMSUNG)&&c.getString(1).equals("@aggregate"))samsung=new JSONObject(c.getString(2));
+                                else if(c.getString(0).equals(LEGACY))legacy=new JSONObject(c.getString(2));
+                            }
+                        }
+                        if(hc==null&&legacy==null&&(!preferred.equals(SAMSUNG)||samsung==null))continue;
+                        if(hc!=null)hc.put("sleepSessions",sleepSessions(db,date,""));
+                        JSONObject selected=HealthProviderProjection.day(hc,samsung,legacy,preferred).put("day",date);
+                        if(!selected.has("source"))selected.put("source",hc!=null||samsung!=null?"@aggregate":"unknown");
+                        try(Cursor dirty=db.rawQuery("SELECT day FROM dirty_days WHERE day=?",new String[]{date})){if(dirty.moveToFirst()&&selected.optString("channel").equals(HC))selected.put("partial",true);}
+                        summaries.put(selected);
+                    }
+                }
+            }
             return new JSONObject().put("records",rows).put("nextCursor",next).put("nextTime",nextTime).put("sources",origins).put("days",summaries).put("preferences",preferences());
         }
     }
@@ -258,7 +309,7 @@ final class HealthJournalStore extends SQLiteOpenHelper {
         db.delete("records",null,null);db.delete("days",null,null);db.delete("deletions",null,null);db.delete("dirty_days",null,null);
         if(deleted!=null)for(int i=0;i<deleted.length();i++){JSONObject d=deleted.getJSONObject(i);ContentValues v=new ContentValues();v.put("record_id",text(d,"recordId",200));v.put("deleted_ms",time(d,"deletedMs"));db.insertOrThrow("deletions",null,v);}
         for(int i=0;i<records.length();i++)upsert(db,records.getJSONObject(i));
-        for(int i=0;i<days.length();i++){JSONObject d=days.getJSONObject(i);String channel=d.getString("channel"),source=d.getString("source");if(!Arrays.asList(HC,BLE,LEGACY).contains(channel)||source.isEmpty()||source.length()>255)throw new IllegalArgumentException("Invalid day source");saveDay(db,d.getString("day"),channel,source,d.getJSONObject("data"));}
+        for(int i=0;i<days.length();i++){JSONObject d=days.getJSONObject(i);String channel=d.getString("channel"),source=d.getString("source");if(!Arrays.asList(HC,BLE,LEGACY,SAMSUNG).contains(channel)||source.isEmpty()||source.length()>255)throw new IllegalArgumentException("Invalid day source");saveDay(db,d.getString("day"),channel,source,d.getJSONObject("data"));}
         JSONObject sync=snapshot.optJSONObject("syncMeta");for(String key:new String[]{"lastSyncAt","lastFullSyncAt","lastAttemptAt"}){if(sync!=null&&!sync.isNull(key))putMeta(db,key,sync.getString(key));else db.delete("meta","key=?",new String[]{key});}
         putMeta(db,"migrated_v1","true");
     }
