@@ -116,7 +116,7 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
 // @endsection startup.js
 
 // @section backup.js
-const TRAINPILOT_VERSION='1.2.8-rc2';
+const TRAINPILOT_VERSION='1.2.8-rc3';
 var isNative = function isNative(){return !!window.Capacitor?.isNativePlatform?.();};
 var nativeFiles = function nativeFiles(){if(!filesPlugin)filesPlugin=window.Capacitor?.registerPlugin?.('NativeFiles')||window.Capacitor?.Plugins?.NativeFiles;if(!filesPlugin)throw Error('A natív fájlkezelő nem érhető el.');return filesPlugin;};
 var backupStatus = function backupStatus(){const x=db.get('lastExport',null);return x?`Utolsó ellenőrzött mentés: ${x.name} • ${fmtDate(x.date)}`:'Még nincs ellenőrzött fájlmentés.';};
@@ -14369,7 +14369,14 @@ var tp105Text=function(key){
 var tp105AccountSummary=function(){const count=history().length,weight=weights().length,custom=programs().filter(function(p){return !p.builtin;}).length;const labels={hu:['Helyi edzések','Testsúlyadatok','Saját programok'],en:['Local workouts','Weight entries','Custom programs'],de:['Lokale Trainings','Gewichtseinträge','Eigene Programme'],ro:['Antrenamente locale','Înregistrări de greutate','Programe proprii']}[rf212Lang()]||['Local workouts','Weight entries','Custom programs'];return labels[0]+': '+count+' · '+labels[1]+': '+weight+' · '+labels[2]+': '+custom;};
 var tp105ArchiveBridge=function(){const p=window.Capacitor?.Plugins?.BackupArchive||window.Capacitor?.registerPlugin?.('BackupArchive');if(!p)throw Error(tp105Text('native'));return p;};
 // Snapshot retention only touches remote backups; it does not mutate this phone's dataset/photos.
-var tp105DataSyncBusy=function(){return cloudBusy&&cloudActiveOperation!=='maintenance'||state.health?.busy||window.TrainPilotHealthJournal?.isSyncing?.()===true;};
+var tp105DataSyncBusy=function(){return cloudBusy&&cloudActiveOperation!=='maintenance'||state.health?.busy||window.TrainPilotHealthJournal?.isSyncing?.()===true||window.TrainPilotWearSync?.isApplyingCommand?.()===true;};
+var tp105RestoreOwner=null;
+var tp105WithRestoreLock=async function(work){
+ if(state.session||tp105DataSyncBusy()||window.TrainPilotBackupBusy)throw Error(tp105Text('busy'));
+ const owner={};tp105RestoreOwner=owner;window.TrainPilotBackupBusy=true;
+ try{return await work(owner);}
+ finally{tp105RestoreOwner=null;window.TrainPilotBackupBusy=false;releaseCloudBackup();if(!cloudBusy)finishCloud();}
+};
 var tp105HealthConsent=function(){return db.get('privacyPrefs',{}).includeHealth===true;};
 var tp105Project=function(data,includeHealth){
  const d=JSON.parse(JSON.stringify(data));d.appVersion=TRAINPILOT_VERSION;d.healthIncluded=includeHealth===true;
@@ -14409,12 +14416,14 @@ validateBackup=function(d){
  if(d.recoveryHistory!==undefined&&(!Array.isArray(d.recoveryHistory)||d.recoveryHistory.length>10000||d.recoveryHistory.some(function(x){return !x||typeof x!=='object'||!/^\d{4}-\d{2}-\d{2}$/.test(x.day);})))throw Error('Invalid recovery history.');
  return d;
 };
-restoreText=async function(text,archiveToken=null){
- if(state.session||tp105DataSyncBusy()||window.TrainPilotBackupBusy&&!archiveToken)throw Error(tp105Text('busy'));
+restoreText=async function(text,archiveToken=null,restoreOwner=null){
+ if(!archiveToken&&!restoreOwner)return tp105WithRestoreLock(owner=>restoreText(text,null,owner));
+ const ownsLock=restoreOwner!==null&&restoreOwner===tp105RestoreOwner;
+ if(state.session||tp105DataSyncBusy()||window.TrainPilotBackupBusy&&!archiveToken&&!ownsLock)throw Error(tp105Text('busy'));
  if(String(text).length>20*1024*1024)throw Error('Maximum 20 MB.');
  const d=validateBackup(JSON.parse(String(text).replace(/^\uFEFF/,'')));
  if(!await tp2628Confirm(tp149T('dialog.restore.message',{workouts:d.history.length,weights:d.weights.length}),{title:tp149T('dialog.restore.title'),confirmText:tp149T('backup.restore'),danger:true}))return false;
- if(state.session||tp105DataSyncBusy()||window.TrainPilotBackupBusy&&!archiveToken)throw Error(tp105Text('busy'));
+ if(state.session||tp105DataSyncBusy()||window.TrainPilotBackupBusy&&!archiveToken&&!ownsLock)throw Error(tp105Text('busy'));
  // Manual restore replaces this dataset; cloud sync alone preserves local Health enrichment.
  const next={...d,programs:d.programs||rf12BuiltinPrograms(),activeProgramId:d.activeProgramId||'home-basic',plannerSettings:d.plannerSettings||plannerSettings(),scheduled:d.scheduled||[],draft:null};
  for(const h of next.history||[])for(const photo of h.photos||[])if(archiveToken&&!photo.deletedAt)photo.driveFileId=null;
@@ -14434,6 +14443,18 @@ restoreText=async function(text,archiveToken=null){
  if(installed)localStorage.removeItem('repforge:archiveRestore105');localStorage.removeItem('repforge:healthRestore120');
  if(journal)await window.TrainPilotHealthJournal.refresh();
  state.health={};migrateTo12();document.documentElement.lang=rf212Lang();rf200ApplyTheme?.();alert(tp149T('backup.restoreDone'));render();return true;
+};
+const tp105ChooseImportBase=chooseImport;
+chooseImport=async function(){
+ if(!isNative())return tp105ChooseImportBase.apply(this,arguments);
+ try{return await tp105WithRestoreLock(async owner=>{const result=await nativeFiles().open();if(!result.cancelled)return restoreText(result.data,null,owner);});}
+ catch(error){alert(tp149T('backup.restoreFailed')+'\n'+(error?.message||error));}
+};
+importData=async function(file){
+ if(!file)return;
+ try{return await tp105WithRestoreLock(async owner=>{if(file.size>20*1024*1024)throw Error(tp149T('backup.maxSize'));return restoreText(await file.text(),null,owner);});}
+ catch(error){alert(tp149T('backup.invalidFile')+'\n'+(error?.message||error));}
+ finally{const input=document.getElementById('importFile');if(input)input.value='';}
 };
 var tp105SetHealth=async function(on){if(cloudBusy){alert(tp105Text('busy'));render();return;}if(on&&!await tp2628Confirm(tp105Text('healthConfirm'),{title:tp105Text('data')})){render();return;}if(cloudBusy){render();return;}db.set('privacyPrefs',{includeHealth:!!on});if(cloudProfile?.sub){localStorage.removeItem('repforge:cloudBase:'+cloudProfile.sub);localStorage.removeItem('repforge:cloudHeads:'+cloudProfile.sub);}render();};
 var tp105Archive=async function(restore=false){
@@ -16707,7 +16728,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   return false;
  }
  async function drainCommands(){
-  if(commandBusy)return;
+  if(commandBusy||window.TrainPilotBackupBusy)return;
   const bridge=api();if(!bridge?.pendingCommands||!bridge?.ackCommand)return;
   commandBusy=true;
   try{
@@ -16715,6 +16736,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const commands=(Array.isArray(result?.commands)?result.commands:[]).slice().sort((a,b)=>(Number(a.createdAt)||0)-(Number(b.createdAt)||0)||(Number(a.sequence)||0)-(Number(b.sequence)||0));
    let changed=false;
    for(const command of commands){
+    if(window.TrainPilotBackupBusy)break;
     const id=String(command?.commandId||'');
     if(!id)continue;
     let applied=false;
@@ -16729,7 +16751,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }finally{commandBusy=false}
  }
  if(typeof window!=='undefined'){
-  window.TrainPilotWearSync={syncNow,syncHomeNow,drainCommands,makeSnapshot:snapshot,makeHomeSnapshot:homeSnapshot};
+  window.TrainPilotWearSync={syncNow,syncHomeNow,drainCommands,makeSnapshot:snapshot,makeHomeSnapshot:homeSnapshot,isApplyingCommand:()=>commandBusy};
   window.addEventListener?.('focus',()=>{drainCommands();syncNow();syncHomeNow();});
  }
  if(typeof document!=='undefined')document.addEventListener?.('visibilitychange',()=>{if(!document.hidden){drainCommands();syncNow();syncHomeNow();}});

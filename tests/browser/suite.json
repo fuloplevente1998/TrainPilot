@@ -314,5 +314,9 @@
   {
     "file": "tests/browser/cardio-daily.cjs",
     "estimatedSeconds": 14
+  },
+  {
+    "file": "tests/browser/json-restore-lifecycle.cjs",
+    "estimatedSeconds": 7
   }
 ]
