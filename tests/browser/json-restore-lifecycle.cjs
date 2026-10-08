@@ -54,6 +54,15 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{
   // Browser file reading and the confirmation also own the lock, not just native JSON.
   await page.evaluate(()=>{restoreProbe.failInstall=false;restoreProbe.promise=importData({size:100,text:()=>new Promise(resolve=>restoreProbe.readFile=resolve)});});
   assert.equal(await page.evaluate(()=>TrainPilotBackupBusy),true);await page.evaluate(()=>chooseImport());assert.equal(await page.evaluate(()=>TrainPilotBackupBusy),true,'a second import cannot release the first lock');await page.evaluate(()=>restoreProbe.readFile(restoreProbe.backup));await page.locator('[data-tp2628-cancel]').click();await page.evaluate(()=>restoreProbe.promise);assert.equal(await page.evaluate(()=>TrainPilotBackupBusy),false);
+  // Even the cooldown projection-only refresh is an in-flight Health operation.
+  await page.evaluate(async()=>{
+   await TrainPilotHealthJournal.auto();const bridge=Capacitor.Plugins.HealthJournal;restoreProbe.projection=bridge.getProjection;
+   bridge.getProjection=()=>new Promise(resolve=>restoreProbe.releaseAuto=resolve);restoreProbe.autoFlight=TrainPilotHealthJournal.auto();
+  });
+  await page.waitForFunction(()=>!!restoreProbe.releaseAuto);
+  const healthFlight=await page.evaluate(async()=>{const opens=restoreProbe.opens;await chooseImport();return {syncing:TrainPilotHealthJournal.isSyncing(),opened:restoreProbe.opens-opens}});
+  assert.deepEqual(healthFlight,{syncing:true,opened:0},'cooldown Health refresh must finish before restore starts');
+  await page.evaluate(async()=>{const bridge=Capacitor.Plugins.HealthJournal;restoreProbe.releaseAuto(await restoreProbe.projection());await restoreProbe.autoFlight;bridge.getProjection=restoreProbe.projection;});
   const inFlight=await page.evaluate(async()=>{
    const bridge=Capacitor.Plugins.WearSync,read=bridge.pendingCommands;bridge.pendingCommands=()=>new Promise(resolve=>restoreProbe.releaseCommand=resolve);
    const pending=TrainPilotWearSync.drainCommands(),opens=restoreProbe.opens;await chooseImport();const blocked=restoreProbe.opens===opens&&TrainPilotWearSync.isApplyingCommand();

@@ -15427,8 +15427,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
  async function sync(){if(busy){feedback(t('busy'));return;}busy=true;try{await ready();await rf250Sync({manual:true});await refresh();await load();}catch(error){feedback(t('failed'),true);}finally{busy=false;}}
  async function auto(){
   if(document.hidden||window.TrainPilotBackupBusy||autoRunning||state.session)return;
-  if(Date.now()-lastAuto<10*60000){await refresh();if(!document.hidden&&!state.session)render();return;}
-  autoRunning=true;try{await ready();await refresh();if(!preferences.autoOnOpen)return;lastAuto=Date.now();
+  autoRunning=true;try{
+   if(Date.now()-lastAuto<10*60000){await refresh();if(!document.hidden&&!window.TrainPilotBackupBusy&&!state.session)render();return;}
+   await ready();await refresh();if(!preferences.autoOnOpen)return;lastAuto=Date.now();
    if(preferences.autoOnOpen){const p=rf240Native();if(p){const status=await p.getStatus();if(Object.entries(status.permissions||{}).some(([key,v])=>key.startsWith('READ_')&&v))await rf250Sync({plugin:p,manual:false});}}
    if(!document.hidden&&!window.TrainPilotBackupBusy&&!state.session)render();
   }catch(_){/* Permission/network failures keep durable records and require no background dialogs. */}finally{autoRunning=false;}
