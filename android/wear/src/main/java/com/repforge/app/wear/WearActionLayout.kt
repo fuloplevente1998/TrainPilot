@@ -13,6 +13,14 @@ internal data class WearActionLayout(
     val bodyHeight: Float
 )
 
+internal data class WearHomePhoneLayout(val width: Float, val height: Float)
+
+internal fun wearHomePhoneLayout(width: Float, height: Float): WearHomePhoneLayout {
+    val diameter = min(width, height)
+    return WearHomePhoneLayout((diameter - 44f).coerceAtLeast(80f) * .65f,
+        if (diameter < 180f) 36f else 48f)
+}
+
 internal fun wearActionLayout(width: Float, height: Float, count: Int, preferredGap: Float): WearActionLayout {
     val diameter = min(width, height)
     val edge = min(8f, diameter * .05f)

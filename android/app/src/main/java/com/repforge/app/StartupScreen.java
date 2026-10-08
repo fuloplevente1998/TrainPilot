@@ -33,23 +33,33 @@ final class StartupScreen {
         // Waiting for JS here would freeze the system logo throughout WebView startup.
         splash.setKeepOnScreenCondition(() -> !attached && !failed && !removed && !activity.isFinishing());
         splash.setOnExitAnimationListener(provider -> {
-            if (removed || failed || !animationsEnabled()) {
+            if (removed || failed || overlay == null || !animationsEnabled()) {
                 provider.remove();
                 removeOverlay();
                 return;
             }
-            View icon = provider.getIconView();
-            int[] origin = new int[2], location = new int[2];
-            overlay.getLocationOnScreen(origin);
-            icon.getLocationOnScreen(location);
+            float[] origin = loadingOrigin(overlay, provider.getIconView());
             // Preserve the system logo's center during the hand-off, including OEM insets.
-            overlay.beginLoading(location[0] - origin[0] + icon.getWidth() / 2f,
-                    location[1] - origin[1] + icon.getHeight() / 2f);
+            overlay.beginLoading(origin[0], origin[1]);
             started = true;
             provider.remove();
             if (ready) finishZoom();
         });
         handler.postDelayed(fallback, 8000);
+    }
+
+    static float[] loadingOrigin(View overlay, View icon) {
+        // External ACTION_VIEW launches can have a solid-colour system splash.
+        // AndroidX supplies an empty View for its missing icon. NaN lets our
+        // own logo stay centred even before the overlay has been laid out.
+        if (icon == null || icon.getWidth() <= 0 || icon.getHeight() <= 0) {
+            return new float[]{Float.NaN, Float.NaN};
+        }
+        int[] origin = new int[2], location = new int[2];
+        overlay.getLocationOnScreen(origin);
+        icon.getLocationOnScreen(location);
+        return new float[]{location[0] - origin[0] + icon.getWidth() / 2f,
+                location[1] - origin[1] + icon.getHeight() / 2f};
     }
 
     void attach() {

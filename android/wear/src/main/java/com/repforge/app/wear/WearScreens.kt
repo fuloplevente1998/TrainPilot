@@ -118,7 +118,7 @@ internal fun TrainPilotWearApp(
                     onStart = { day, scheduleId -> onStart(day, scheduleId); if (workout.value != null) route = "workout" },
                     onResume = { onResumeWorkout(); route = "workout" },
                     onDiscard = { route = "discard" }, onDays = { route = "days" }, onResult = { route = "summary" },
-                    onMenu = { route = "menu" }, onCalendar = { route = "calendar" })
+                    onMenu = { route = "menu" }, onCalendar = { route = "calendar" }, onOpenPhone = onOpenPhone)
             }
         }
     }
@@ -187,12 +187,14 @@ private fun Pill(text: String, modifier: Modifier = Modifier, tone: Color = Gold
 private fun HomeScreen(home: WatchHomeSnapshot?, active: WearWorkout?, closure: WearClosure?,
                        onStart: (WatchHomeDay, String) -> Unit, onResume: () -> Unit,
                        onDiscard: () -> Unit, onDays: () -> Unit, onResult: () -> Unit,
-                       onMenu: () -> Unit, onCalendar: () -> Unit) {
+                       onMenu: () -> Unit, onCalendar: () -> Unit, onOpenPhone: () -> Unit) {
     var elapsed by remember { mutableIntStateOf(active?.elapsedSeconds() ?: 0) }
     LaunchedEffect(active?.workoutId) { while (active != null) { elapsed = active.elapsedSeconds(); delay(1000) } }
     val waiting = closure?.status in listOf("pending", "error")
     val rec = home?.recommended
-    ActionPanel(normalBodyHeight = 100, actions = { layout ->
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+    val phoneControl = wearHomePhoneLayout(maxWidth.value, maxHeight.value)
+    ActionPanel(normalBodyHeight = 130, actions = { layout ->
         Row(horizontalArrangement = Arrangement.spacedBy(layout.gap.dp)) {
             CompositionLocalProvider(LocalActionSize provides layout.buttonSize) {
                 when {
@@ -206,9 +208,9 @@ private fun HomeScreen(home: WatchHomeSnapshot?, active: WearWorkout?, closure: 
             }
         }
     }) { compact ->
-        Box(Modifier.fillMaxWidth(.65f).clickable(role = Role.Button, onClick = onMenu)) {
-            Label(if (active != null) "FOLYAMATBAN" else "TRAINPILOT", Gold, if (compact) 9 else 11)
-        }
+        Pill("Telefon", modifier = Modifier.width(phoneControl.width.dp)
+            .semantics { contentDescription = "Megnyitás telefonon" }, tone = Secondary,
+            height = phoneControl.height.toInt(), size = 11, onClick = onOpenPhone)
         Spacer(Modifier.height(4.dp))
         when {
             active != null -> {
@@ -229,12 +231,13 @@ private fun HomeScreen(home: WatchHomeSnapshot?, active: WearWorkout?, closure: 
                 Text("Az edzés adatainak szinkronja a telefonra vár.", color = Muted, fontSize = 11.sp, textAlign = TextAlign.Center)
             }
             else -> {
-                Box(Modifier.fillMaxWidth(.88f)) { Title(rec?.day?.programName ?: home.activeProgramName, if (compact) 13 else 15) }
+                Box(Modifier.fillMaxWidth(.88f)) { Title(rec?.day?.programName ?: home.activeProgramName, if (compact) 13 else 15, lines = 1) }
                 Spacer(Modifier.height(2.dp))
                 Title(rec?.day?.name ?: "Válassz edzésnapot", if (compact) 23 else 30)
                 if (rec != null) Label(recommendedMeta(rec), size = if (compact) 9 else 11)
             }
         }
+    }
     }
 }
 
