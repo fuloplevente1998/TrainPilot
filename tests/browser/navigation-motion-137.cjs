@@ -48,7 +48,7 @@ const root=path.resolve('www'),server=http.createServer((q,r)=>{const url=new UR
   };
   try{go('history');return {...result,entries:document.querySelectorAll('details.rf263-history').length}}finally{Element.prototype.animate=base;}
  });
- assert.equal(budget.entries,240,'exercise a genuinely large rendered Journal');assert.equal(budget.markers,1,'one selection animation per route transaction');assert.equal(budget.surfaces,1,'one content animation regardless of history length');assert.equal(budget.layoutFrames,0,'selection changes only transform, never per-frame width/height');await settled();
+ assert.equal(budget.entries,240,'exercise a genuinely large rendered Journal');assert.equal(budget.markers,1,'one selection animation per route transaction');assert.equal(budget.surfaces,0,'route changes keep the root page opaque');assert.equal(budget.layoutFrames,0,'selection changes only transform, never per-frame width/height');await settled();
  await p.evaluate(()=>{db.set('history',tp137SavedHistory);delete window.tp137SavedHistory;go('home')});
  assert.equal(await p.evaluate(()=>JSON.stringify({history:history(),programs:programs(),scheduled:scheduled()})),initial,'navigation never changes workout data');assert.deepEqual(errors,[]);
  console.log('PASS #137: real intermediate motion, continuous interruption, 24 rapid switches, stationary tabs, records/cardio/period content, portrait/landscape × four languages × three themes, main navigation and overlay toggles, reduced motion, resize, unchanged workout data, bounded surfaces with 240 Journal entries');

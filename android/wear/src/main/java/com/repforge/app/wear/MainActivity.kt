@@ -130,7 +130,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private fun startWorkoutFromWatch(day: WatchHomeDay, scheduleId: String) {
         val source = home.value ?: return
         if (workout.value != null || source.hasDraft || closure.value?.status in listOf("pending", "error") || day.exercises.isEmpty()) return
-        val started = Instant.now().toString()
+        val started = Instant.ofEpochMilli(System.currentTimeMillis()).toString()
         val localWorkout = source.createWorkout(day, scheduleId, started)
         workout.value = WorkoutSnapshotStore.saveWorkout(this, localWorkout)
         sendStartCommand(day, scheduleId, started)

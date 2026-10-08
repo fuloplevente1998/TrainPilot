@@ -296,6 +296,10 @@
     "estimatedSeconds": 5
   },
   {
+    "file": "tests/browser/wear-sync-recovery.cjs",
+    "estimatedSeconds": 12
+  },
+  {
     "file": "tests/browser/health-workout-energy.cjs",
     "estimatedSeconds": 6
   },
