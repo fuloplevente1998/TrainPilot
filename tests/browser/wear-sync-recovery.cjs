@@ -31,7 +31,7 @@ const server=http.createServer((req,res)=>{
    // Recreate the old-build failure: identical rows with a nanosecond timestamp,
    // no stable identity, and the terminal DataItem still pending on the phone.
    const original=structuredClone(db.get('history')[0]);delete original.syncId;original.started=started;
-   const rows=Array.from({length:56},()=>structuredClone(original));
+   const rows=Array.from({length:56},(_,i)=>{const row=structuredClone(original);row.exercises[0].rf152Recommendation={action:i?'hold':'start',historyCount:i,text:'Derived advice '+i};return row});
    rows[55].photos=[{id:'original-photo',updatedAt:1}];rows[5].photos=[{id:'other-photo',updatedAt:2}];rows[7].feedback={rating:'right'};
    const unrelated=structuredClone(original);unrelated.started=new Date(Date.parse(started)-60000).toISOString();unrelated.exercises[0].sets[0].reps='8';
    db.set('history',[...rows,unrelated]);db.set('wearClosedWorkouts',[]);db.set('wearWorkoutResult',null);

@@ -16758,7 +16758,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
  function fingerprint(row){
   const started=Date.parse(row?.started||''),finished=Date.parse(row?.finished||'');
   if(!Number.isFinite(started)||!Number.isFinite(finished)||!Array.isArray(row?.exercises)||!row.exercises.some(e=>e?.sets?.some(s=>s?.done)))return null;
-  const exercises=row.exercises.map(e=>({...e,sets:(e.sets||[]).map(s=>{const value={...s};delete value.setId;return value})}));
+  const exercises=row.exercises.map(e=>{
+   const value={...e,sets:(e.sets||[]).map(s=>{const set={...s};delete set.setId;return set})};
+   // Recommendations are recomputed from the growing log on every old replay.
+   delete value.rf152Recommendation;return value;
+  });
   return canonical([started,finished,row.programId||'',row.dayId||row.workout||'',row.scheduleId||'',exercises]);
  }
  function groups(rows=raw()){
