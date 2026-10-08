@@ -306,5 +306,9 @@
   {
     "file": "tests/browser/samsung-health-provider.cjs",
     "estimatedSeconds": 8
+  },
+  {
+    "file": "tests/browser/cardio-daily.cjs",
+    "estimatedSeconds": 14
   }
 ]

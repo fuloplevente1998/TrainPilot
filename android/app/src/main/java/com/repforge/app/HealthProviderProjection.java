@@ -39,7 +39,12 @@ final class HealthProviderProjection {
             sources.put("sleepSessions", channel);
         out.put("channel", channel);
         out.put("metricProviders", sources);
-        if (!out.isNull("steps")) out.put("stepsSource", sources.optString("steps", channel));
+        if (!out.isNull("steps")) {
+            String stepsProvider = sources.optString("steps", channel);
+            out.put("stepsSource", stepsProvider);
+            JSONObject stepDay = stepsProvider.equals(SAMSUNG) ? samsung : fallback;
+            out.put("stepsOrigin", stepDay == null ? "" : stepDay.optString("activityOrigin", ""));
+        }
         return out;
     }
     private HealthProviderProjection() {}

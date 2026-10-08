@@ -130,6 +130,13 @@ public class SamsungHealthPlugin extends Plugin {
         run(call, reader -> { Instant[] range = range(call, 24 * 60L); return reader.workout(range[0], range[1]); });
     }
     @PluginMethod public void readWorkout(PluginCall call) { readTrainingWindow(call); }
+    @PluginMethod public void readStepsWindow(PluginCall call) {
+        run(call, reader -> {
+            Instant[] range = range(call, 26 * 60L);
+            if (range[1].isAfter(Instant.now().plusSeconds(60))) throw new IllegalArgumentException("Future steps window.");
+            return reader.stepsWindow(range[0], range[1]);
+        });
+    }
     @PluginMethod public void readWellness(PluginCall call) {
         run(call, reader -> { Instant[] range = range(call, 31 * 24 * 60L); return reader.wellness(range[0], range[1]); });
     }
@@ -303,6 +310,13 @@ public class SamsungHealthPlugin extends Plugin {
                 }
                 out.put("sleepSessions", sessions);
             }, "sleepSessions");
+        }
+        JSObject stepsWindow(Instant start, Instant end) throws Exception {
+            JSObject out = base(start, end);
+            out.put("provider", HealthJournalStore.SAMSUNG);
+            out.put("steps", JSONObject.NULL);
+            safe(DataTypes.STEPS, () -> number(out, "steps", aggregate(DataType.StepsType.TOTAL, start, end)), "steps");
+            return out;
         }
         JSObject daily(Instant start, Instant end) throws Exception {
             JSObject out = wellness(start, end); activity(out, start, end); heart(out, start, end); sleep(out, start, end);

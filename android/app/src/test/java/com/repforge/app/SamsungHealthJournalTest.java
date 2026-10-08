@@ -71,4 +71,14 @@ public class SamsungHealthJournalTest {
         assertFalse(store.projection().getJSONObject("days").has(day));
         assertEquals(0,store.page(day,day,"journal","",0,0,30).getJSONArray("days").length());
     }
+    @Test public void stepOriginFollowsTheActualMetricProviderEvenWithSamsungFallback() throws Exception {
+        JSONObject hc=new JSONObject().put("steps",314).put("activityOrigin","com.android.healthconnect.phone");
+        JSONObject samsung=new JSONObject().put("steps",JSONObject.NULL).put("activityOrigin","com.sec.android.app.shealth");
+        JSONObject value=HealthProviderProjection.day(hc,samsung,null,"samsung_health");
+        assertEquals("health_connect",value.getString("stepsSource"));
+        assertEquals("com.android.healthconnect.phone",value.getString("stepsOrigin"));
+        samsung.put("steps",0);value=HealthProviderProjection.day(hc,samsung,null,"samsung_health");
+        assertEquals("samsung_health",value.getString("stepsSource"));
+        assertEquals("com.sec.android.app.shealth",value.getString("stepsOrigin"));
+    }
 }

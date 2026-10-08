@@ -6,6 +6,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import com.samsung.android.sdk.health.data.HealthDataStore;
 import com.samsung.android.sdk.health.data.data.HealthDataPoint;
+import com.samsung.android.sdk.health.data.data.AggregatedData;
 import com.samsung.android.sdk.health.data.data.entries.ExerciseSession;
 import com.samsung.android.sdk.health.data.permission.*;
 import com.samsung.android.sdk.health.data.request.*;
@@ -65,5 +66,26 @@ public class SamsungHealthReaderTest {
     @Test public void deniedTypesAreNotReadAndMissingWorkoutEnergyStaysMissing() throws Exception {
         JSObject out=reader(null,Collections.emptyList(),null).workout(start,end);
         assertTrue(out.isNull("workoutCalories"));assertEquals(1,out.getInt("workoutEnergyVersion"));assertEquals(0,out.getJSONArray("warnings").length());
+    }
+    private SamsungHealthPlugin.Reader stepsReader(Long value) throws Exception {
+        Constructor<AggregatedData> bucket=AggregatedData.class.getDeclaredConstructor(Object.class,Instant.class,Instant.class);
+        bucket.setAccessible(true);
+        Constructor<DataResponse> constructor=DataResponse.class.getDeclaredConstructor(String.class,ArrayList.class);
+        constructor.setAccessible(true);
+        ArrayList<Object> rows=new ArrayList<>();if(value!=null)rows.add(bucket.newInstance(value,start,end));
+        DataResponse data=constructor.newInstance(null,rows);
+        AsyncSingleFuture future=(AsyncSingleFuture)Proxy.newProxyInstance(getClass().getClassLoader(),new Class[]{AsyncSingleFuture.class},
+            (proxy,method,args)->method.getName().equals("get")?data:method.getName().equals("isDone")?true:null);
+        HealthDataStore store=(HealthDataStore)Proxy.newProxyInstance(getClass().getClassLoader(),new Class[]{HealthDataStore.class},
+            (proxy,method,args)->{if(method.getName().equals("aggregateDataAsync"))return future;throw new AssertionError("Steps must not read other health types: "+method.getName());});
+        return new SamsungHealthPlugin.Reader(store,Collections.singleton(Permission.of(DataTypes.STEPS,AccessType.READ)),()->{});
+    }
+    @Test public void stepsWindowUsesOnlyStepsAndDistinguishesMissingFromZero() throws Exception {
+        JSObject value=stepsReader(420L).stepsWindow(start,end);
+        assertEquals(420,value.getLong("steps"));assertEquals(start.toString(),value.getString("start"));
+        assertEquals(end.toString(),value.getString("end"));assertEquals("samsung_health",value.getString("provider"));
+        assertFalse(value.has("activeCalories"));assertEquals(0,stepsReader(0L).stepsWindow(start,end).getLong("steps"));
+        assertTrue(stepsReader(null).stepsWindow(start,end).isNull("steps"));
+        assertTrue(reader(null,Collections.emptyList(),null).stepsWindow(start,end).isNull("steps"));
     }
 }

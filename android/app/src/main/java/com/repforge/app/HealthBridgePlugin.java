@@ -135,11 +135,12 @@ public class HealthBridgePlugin extends Plugin {
   private static void speedStats(JSObject out,List<SpeedRecord> rows,Instant[] t){double sum=0,max=0;int n=0;for(SpeedRecord r:rows)for(SpeedRecord.SpeedRecordSample s:r.getSamples())if(!s.getTime().isBefore(t[0])&&s.getTime().isBefore(t[1])){double v=s.getSpeed().getInMetersPerSecond();if(Double.isFinite(v)&&v>=0){sum+=v;max=Math.max(max,v);n++;}}out.put("averageSpeedMps",n>0?sum/n:JSONObject.NULL);out.put("maxSpeedMps",n>0?max:JSONObject.NULL);out.put("speedSamples",n);}
   private static JSObject base(Access p,JSArray warnings,Set<String> sources){JSObject out=new JSObject();out.put("warnings",warnings);out.put("permissions",p.permissionStatus());out.put("sources",new JSArray(new ArrayList<>(sources)));out.put("sourceLabels",sourceLabels(p,sources));return out;}
 
-  // Aggregate without a DataOrigin filter: Health Connect applies source priority/deduplication.
+  // Without an explicit origin, Health Connect applies source priority/deduplication.
   // A missing value remains null; it is neither a daily total nor a GPS-distance estimate.
   static JSObject readStepsWindow(Access p,PluginCall c)throws Exception{
-   Instant[] t=range(c,24*60);HealthConnectManager m=p.getContext().getSystemService(HealthConnectManager.class);JSArray warnings=new JSArray();JSObject out=base(p,warnings,Collections.emptySet());
+   Instant[] t=range(c,26*60);p.origin=c.getString("origin","");if(!p.origin.isEmpty()&&!p.origin.matches("[A-Za-z0-9_.-]{1,255}"))throw new IllegalArgumentException("Invalid steps origin");HealthConnectManager m=p.getContext().getSystemService(HealthConnectManager.class);JSArray warnings=new JSArray();JSObject out=base(p,warnings,Collections.emptySet());
    out.put("start",t[0].toString());out.put("end",t[1].toString());
+   out.put("provider",HealthJournalStore.HC);out.put("activityOrigin",p.origin);
    putLongAgg(out,"steps",p,m,filter(t),"READ_STEPS",StepsRecord.STEPS_COUNT_TOTAL,warnings);return out;
   }
 

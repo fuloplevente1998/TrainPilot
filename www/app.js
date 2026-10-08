@@ -15646,6 +15646,106 @@ window.addEventListener?.('DOMContentLoaded',function(){
 // @endsection health-details.js
 
 
+// @section cardio-daily.js
+/* Daily activity is separate from recorded cardio distances and personal records. */
+(function(){
+ 'use strict';
+ const labels={
+  title:['Napi aktivitás','Daily activity','Tägliche Aktivität','Activitate zilnică'],
+  group:['Napi aktivitás / lépések','Daily activity / steps','Tägliche Aktivität / Schritte','Activitate zilnică / pași'],
+  today:['Mai összes lépés','Today’s total steps','Schritte heute insgesamt','Total pași azi'],
+  outside:['Edzésen kívül','Outside workouts','Außerhalb des Trainings','În afara antrenamentelor'],
+  week:['Heti lépések','Weekly steps','Schritte diese Woche','Pași săptămânali'],
+  previous:['Előző hét','Previous week','Vorwoche','Săptămâna trecută'],
+  total:['Összes lépés','Total steps','Alle Schritte','Total pași'],
+  refresh:['Lépésadatok frissítése','Refresh step data','Schrittdaten aktualisieren','Actualizează pașii'],
+  busy:['Lépésadatok lekérése…','Reading step data…','Schrittdaten werden gelesen…','Se citesc pașii…'],
+  failed:['Néhány időszak nem frissült. A napi összes adatok megmaradtak.','Some time ranges could not refresh. Daily totals are still available.','Einige Zeiträume konnten nicht aktualisiert werden. Tagessummen bleiben verfügbar.','Unele intervale nu s-au actualizat. Totalurile zilnice rămân disponibile.'],
+  unavailable:['Az időszakos lekéréshez frissített telefonos app és lépésolvasási engedély szükséges.','Reading time ranges requires the updated phone app and steps read access.','Zeitbereiche benötigen die aktualisierte Telefon-App und Lesezugriff auf Schritte.','Citirea intervalelor necesită aplicația actualizată pe telefon și acces de citire la pași.'],
+  note:['A naplózott edzések időszakán kívüli lépések külön jelennek meg. Ha nem különíthetők el, gondolatjelet mutatunk.','Steps outside recorded workout time ranges are shown separately. A dash means they cannot be separated.','Schritte außerhalb protokollierter Trainingszeiten werden separat angezeigt. Ein Strich bedeutet, dass sie nicht getrennt werden können.','Pașii din afara intervalelor antrenamentelor înregistrate apar separat. O liniuță înseamnă că nu pot fi separați.'],
+  coverage:['Szinkronizált napok: {n}/{all}. A heti összesítés ezekből számol.','Synced days: {n}/{all}. Weekly totals use these days.','Synchronisierte Tage: {n}/{all}. Wochensummen verwenden diese Tage.','Zile sincronizate: {n}/{all}. Totalurile săptămânale folosesc aceste zile.'],
+  empty:['Még nincs szinkronizált lépésadat.','No synced step data yet.','Noch keine synchronisierten Schrittdaten.','Nu există încă date sincronizate despre pași.']
+ };
+ const text=key=>labels[key]?.[['hu','en','de','ro'].indexOf(rf212Lang())]||labels[key]?.[0]||key;
+ const count=value=>typeof value==='number'&&Number.isSafeInteger(value)&&value>=0?value:null;
+ const fmt=value=>value==null?'—':tp149FormatNumber(value,{maximumFractionDigits:0});
+ const cache=new Map(),view={busy:false,status:''};
+ function context(){return JSON.stringify(rf240Ledger().preferences||{});}
+ function windows(workouts,start,end,now){
+  const spans=(workouts||[]).filter(h=>rf240ValidWorkout(h)&&Date.parse(h.finished)<=now).map(h=>[Math.max(start,Date.parse(h.started)),Math.min(end,Date.parse(h.finished))]).filter(([a,b])=>b>a).sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+  const merged=[];for(const [a,b] of spans){const last=merged.at(-1);if(last&&a<=last[1])last[1]=Math.max(last[1],b);else merged.push([a,b]);}return merged;
+ }
+ function model(now=new Date()){
+  const ledger=rf240Ledger(),today=rf240DayKey(now),week=tp107WeekStart(now),first=new Date(week);first.setDate(first.getDate()-7);
+  const rows=[],workouts=history(),preference=ledger.preferences||{},stamp=context();
+  for(let date=new Date(first);date<=now;date.setDate(date.getDate()+1)){
+   const day=rf240DayKey(date),data=ledger.days?.[day]||{},next=new Date(date);next.setDate(next.getDate()+1);
+   const start=+date,end=Math.min(+next,+now);if(end<=start)continue;
+   const spans=windows(workouts,start,end,+now),rawProvider=data.metricProviders?.steps||data.provider||data.channel||preference.provider||'health_connect';
+   const provider=rawProvider==='samsung_health'?'samsung_health':'health_connect';
+   const origin=provider==='health_connect'?(data.stepsOrigin||((data.channel||data.provider)!=='samsung_health'?data.activityOrigin:'')||(!['auto','priority',undefined].includes(preference.hcDailySource)?preference.hcDailySource:'')):'';
+   const fingerprint=JSON.stringify([stamp,day,provider,origin,data.steps,data.readAt||ledger.lastSyncAt,day===today?'today':end,spans]);
+   const saved=cache.get(day),reading=saved?.fingerprint===fingerprint?saved:null,total=reading?reading.total:count(data.steps);
+   const outside=reading?reading.outside:!spans.length?total:null;
+   rows.push({day,start,end,spans,provider,origin,fingerprint,total,outside,readAt:reading?.readAt||data.readAt||null});
+  }
+  const sum=items=>({value:items.some(r=>r.total!=null)?items.reduce((n,r)=>n+(r.total??0),0):null,measured:items.filter(r=>r.total!=null).length,days:items.length});
+  return {today,rows,week:sum(rows.filter(r=>r.start>=+week)),previous:sum(rows.filter(r=>r.start<+week)),todayRow:rows.find(r=>r.day===today)||null};
+ }
+ function plugin(provider){
+  if(!isNative())return null;
+  const name=provider==='samsung_health'?'SamsungHealth':'HealthBridge';
+  return window.Capacitor?.Plugins?.[name]||window.Capacitor?.registerPlugin?.(name)||null;
+ }
+ function paint(){const card=document.querySelector('.tp-cardio-daily');if(card){const template=document.createElement('template');template.innerHTML=html();card.replaceWith(template.content.firstElementChild);}}
+ async function refresh(){
+  if(view.busy)return false;
+  const snapshot=model(),stamp=context(),deadline=Date.now()+45000;view.busy=true;view.status='busy';paint();let errors=0,unavailable=0;
+  try{
+   for(const row of snapshot.rows){
+    if(!document.querySelector('.tp-cardio-daily')||context()!==stamp)break;
+    if(Date.now()>deadline){errors++;break;}
+    const p=plugin(row.provider);if(!p?.readStepsWindow){unavailable++;continue;}
+    if(row.spans.length>30){errors++;continue;}
+    let timer;
+    const read=async(start,end)=>{
+     if(Date.now()>deadline)throw Error('deadline');
+     const result=await Promise.race([p.readStepsWindow({start:new Date(start).toISOString(),end:new Date(end).toISOString(),origin:row.origin,language:rf212Lang()}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('timeout')),Math.min(15000,Math.max(1,deadline-Date.now())));})]);clearTimeout(timer);
+     const value=count(result?.steps);if(value==null||result?.permissions?.READ_STEPS===false||(result?.warnings||[]).length)throw Error('missing');
+     if(result?.provider&&result.provider!==row.provider||row.origin&&result.activityOrigin!==row.origin)throw Error('source');
+     return value;
+    };
+    try{
+     const total=await read(row.start,row.end);let recorded=0,complete=true;
+     for(const [start,end] of row.spans){try{recorded+=await read(start,end);}catch(_){complete=false;break;}}
+     const latest=model().rows.find(r=>r.day===row.day);
+     if(context()!==stamp||latest?.fingerprint!==row.fingerprint)continue;
+     const outside=complete&&recorded<=total?total-recorded:null;if(outside==null)errors++;
+     cache.set(row.day,{fingerprint:row.fingerprint,total,outside,readAt:new Date().toISOString()});
+    }catch(_){errors++;}finally{clearTimeout(timer);}
+   }
+   view.status=unavailable?'unavailable':errors?'failed':'';return !errors&&!unavailable;
+  }finally{view.busy=false;paint();}
+ }
+ function html(){
+  const m=model(),metric=(key,value)=>'<div class="stat"><small>'+esc(text(key))+'</small><strong data-daily-metric="'+key+'">'+esc(fmt(value))+'</strong></div>',today=m.todayRow;
+  const recent=m.rows.slice(-7).reverse(),source=row=>(row.provider==='samsung_health'?'Samsung Health':'Health Connect')+(Number.isFinite(Date.parse(row.readAt||''))?' · '+new Date(row.readAt).toLocaleTimeString(typeof rf233Locale==='function'?rf233Locale():undefined,{hour:'2-digit',minute:'2-digit'}):'');
+  return '<section class="card tp-cardio-daily"><h3>'+esc(text('title'))+'</h3><p class="small muted">'+esc(text('note'))+'</p><div class="grid2">'+metric('today',today?.total??null)+metric('outside',today?.outside??null)+metric('week',m.week.value)+metric('previous',m.previous.value)+'</div><p class="small muted">'+esc(text('coverage').replace('{n}',m.week.measured+m.previous.measured).replace('{all}',m.rows.length))+'</p><button class="btn secondary block" type="button" data-daily-refresh onclick="TrainPilotCardioDaily.refresh()" '+(view.busy?'disabled':'')+'>'+esc(text('refresh'))+'</button><p class="small" data-daily-status role="status">'+esc(view.status?text(view.status):'')+'</p>'+
+   '<div class="tp-cardio-daily-head small muted"><span></span><span>'+esc(text('total'))+'</span><span>'+esc(text('outside'))+'</span></div>'+recent.map(row=>'<div class="tp-cardio-daily-row" data-daily-day="'+row.day+'"><div><strong>'+esc(tp149FormatDate(new Date(row.day+'T12:00:00'),{month:'short',day:'numeric'}))+'</strong><small class="muted">'+esc(row.total==null?'—':source(row))+'</small></div><strong data-daily-total>'+esc(fmt(row.total))+'</strong><strong data-daily-outside>'+esc(fmt(row.outside))+'</strong></div>').join('')+(m.rows.some(r=>r.total!=null)?'':'<p class="small muted">'+esc(text('empty'))+'</p>')+'</section>';
+ }
+ const base=tp107CardioHtml;
+ tp107CardioHtml=function(){
+  const result=base();
+  const template=document.createElement('template');template.innerHTML=result;const root=template.content.firstElementChild,select=root.querySelector('select');
+  const option=document.createElement('option');option.value='@daily-steps';option.textContent=text('group');option.toggleAttribute('selected',tp107CardioActivity==='@daily-steps');select.appendChild(option);
+  if(tp107CardioActivity==='@daily-steps'){for(const node of [...root.childNodes])if(node!==root.querySelector('h2')&&node!==select)node.remove();}
+  if(!tp107CardioActivity||tp107CardioActivity==='@daily-steps')root.insertAdjacentHTML('beforeend',html());return root.outerHTML;
+ };
+ window.TrainPilotCardioDaily={model,windows,refresh};
+})();
+// @endsection cardio-daily.js
+
+
 // @section profile-training-128.js
 /* Shared template initialization and conservative, program-scoped progression. */
 var tp128T=function(key,vars={}){
