@@ -48,7 +48,7 @@ public class SamsungHealthReaderTest {
     }
     @Test public void directExerciseCaloriesAreClippedWithoutBorrowingBasalOrDailyEnergy() throws Exception {
         ExerciseSession session=new ExerciseSession.Builder().setStartTime(start).setEndTime(end)
-            .setDuration(Duration.ofHours(1)).setExerciseType(DataType.ExerciseType.PredefinedExerciseType.values()[0])
+            .setDuration(Duration.ofHours(1)).setExerciseType(DataType.ExerciseType.PredefinedExerciseType.CIRCUIT_TRAINING)
             .setCalories(280f).build();
         HealthDataPoint point=new HealthDataPoint.Builder().setStartTime(start,ZoneOffset.UTC).setEndTime(end,ZoneOffset.UTC)
             .addFieldData(DataType.ExerciseType.SESSIONS,Collections.singletonList(session)).build();
