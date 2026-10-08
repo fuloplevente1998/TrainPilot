@@ -298,5 +298,9 @@
   {
     "file": "tests/browser/health-workout-energy.cjs",
     "estimatedSeconds": 6
+  },
+  {
+    "file": "tests/browser/samsung-health-provider.cjs",
+    "estimatedSeconds": 8
   }
 ]

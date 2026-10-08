@@ -3992,6 +3992,7 @@ rf245Recovery(rf240Ledger());rf240ApplyLedger();
 var rf250ValidSpan = function rf250ValidSpan(a,b){a=Date.parse(a);b=Date.parse(b);return Number.isFinite(a)&&Number.isFinite(b)&&b>a?[a,b]:null};
 var rf250SleepSpans = function rf250SleepSpans(s){
  const asleep=(s?.stages||[]).filter(x=>x?.isAsleep===true).map(x=>rf250ValidSpan(x.start,x.end)).filter(Boolean);
+ if(s?.provider==='samsung_health'&&s?.stages?.length)return asleep;
  if(asleep.length)return asleep;
  const fallback=rf250ValidSpan(s?.start,s?.end);return fallback?[fallback]:[];
 };
@@ -10320,7 +10321,7 @@ rf235HealthCoachCard=function(){const t=rf235L();if(typeof rf233CoachPlan!=='fun
 
 rf263HealthHub=function(){
  state.tab='health';state.healthView=false;if(typeof rf225HealthPage!=='undefined')rf225HealthPage='hub';rf240ApplyLedger();
- const ledger=rf240Ledger(),today=ledger.days?.[rf240DayKey(new Date())]||{},rec=state.health?.recovery||{},w=state.health?.wellness||{},all=typeof rf215All==='function'?rf215All():[],manual=Number(all.at?.(-1)?.kg),hw=w.weightKg==null?null:Number(w.weightKg),shown=Number.isFinite(hw)?hw:(Number.isFinite(manual)?manual:null),source=Number.isFinite(hw)?'Health Connect':Number.isFinite(shown)?tp149T('health.localEntry'):'',busy=!!state.health?.busy,sync=ledger.lastSyncAt?tp149FormatDateTime(ledger.lastSyncAt):tp149T('health.never'),bp=w.bloodPressureSystolic==null||w.bloodPressureDiastolic==null?'—':tp149FormatNumber(Math.round(w.bloodPressureSystolic))+'/'+tp149FormatNumber(Math.round(w.bloodPressureDiastolic))+' mmHg';
+ const ledger=rf240Ledger(),today=ledger.days?.[rf240DayKey(new Date())]||{},rec=state.health?.recovery||{},w=state.health?.wellness||{},all=typeof rf215All==='function'?rf215All():[],manual=Number(all.at?.(-1)?.kg),hw=w.weightKg==null?null:Number(w.weightKg),shown=Number.isFinite(hw)?hw:(Number.isFinite(manual)?manual:null),source=Number.isFinite(hw)?(w.weightProvider==='samsung_health'?(window.TrainPilotSamsungHealth?.t('direct')||'Samsung Health'):'Health Connect'):Number.isFinite(shown)?tp149T('health.localEntry'):'',busy=!!state.health?.busy,sync=ledger.lastSyncAt?tp149FormatDateTime(ledger.lastSyncAt):tp149T('health.never'),bp=w.bloodPressureSystolic==null||w.bloodPressureDiastolic==null?'—':tp149FormatNumber(Math.round(w.bloodPressureSystolic))+'/'+tp149FormatNumber(Math.round(w.bloodPressureDiastolic))+' mmHg';
  const body='<main class="rf263-health tp151-health"><div class="tp151-page-head"><div><h1>'+esc(tp149T('health.title'))+'</h1><p class="small muted">'+esc(tp151T('healthHint'))+'</p></div></div><div class="card rf263-sync-card tp151-health-sync"><div class="grid2 rf263-sync-actions"><button class="btn block" onclick="rf244UnifiedSync()" '+(busy?'disabled':'')+'>'+esc(tp149T('health.sync'))+'</button><button class="btn secondary block" onclick="healthSettings()" '+(busy?'disabled':'')+'>'+esc(tp151T('permissions'))+'</button></div><span class="small muted">'+esc(tp149T('health.lastSync',{time:sync}))+'</span>'+(state.health?.message?'<span class="small" role="status">'+esc(state.health.message)+'</span>':'')+'</div>'+rf235HealthCoachCard()+'<div class="card tp151-health-card"><h2>'+esc(tp151T('today'))+'</h2><div class="grid2">'+rf244Stat(tp149T('health.sleep'),tp149SleepText(rec.sleepMinutes))+rf244Stat('HRV',rec.hrvRmssdMs==null?'—':tp149FormatNumber(Math.round(rec.hrvRmssdMs))+' ms')+rf244Stat(tp149T('health.steps'),today.steps==null?'—':tp149FormatNumber(Math.round(today.steps)))+rf244Stat(tp149T('health.activeEnergy'),today.activeCalories==null?'—':tp149FormatNumber(Math.round(today.activeCalories))+' kcal')+'</div><div class="tp151-pulse"><span>'+esc(tp151T('pulse'))+'</span><strong>'+esc(tp151HeartLine(today))+'</strong></div></div><div class="card tp151-health-card"><h2>'+esc(tp151T('body'))+'</h2><div class="grid2">'+rf244Stat(tp149T('health.weight'),shown==null?'—':tp149HealthFmt(shown,1,' kg'),source)+rf244Stat(tp149T('health.bodyFat'),w.bodyFatPercent==null?'—':tp149HealthFmt(w.bodyFatPercent,1,' %'))+rf244Stat('SpO₂',w.oxygenSaturationPercent==null?'—':tp149HealthFmt(w.oxygenSaturationPercent,1,' %'))+rf244Stat('VO₂max',w.vo2Max==null?'—':tp149HealthFmt(w.vo2Max,1,''))+'</div><button class="btn secondary block" onclick="rf215WeightScreen()">'+esc(tp151T('weightLog'))+'</button></div><details class="card tp151-details"><summary><strong>'+esc(tp151T('more'))+'</strong></summary><div class="grid2">'+rf244Stat(tp149T('health.bloodPressure'),bp)+rf244Stat(tp149T('health.bloodGlucose'),w.bloodGlucoseMmolL==null?'—':tp149HealthFmt(w.bloodGlucoseMmolL,1,' mmol/L'))+rf244Stat(tp149T('health.respiratoryRate'),w.respiratoryRate==null?'—':tp149HealthFmt(w.respiratoryRate,1,' /min'))+rf244Stat(tp149T('health.distance'),today.distanceMeters==null?'—':tp149HealthFmt(today.distanceMeters/1000,2,' km'))+'</div></details><details class="card tp151-details"><summary><strong>'+esc(tp151T('recovery'))+'</strong></summary>'+rf244RecoveryRows()+'</details>'+rf263DiagHtml()+'</main>';render(shell(body));
 };
 
@@ -14180,6 +14181,7 @@ function aggregate(parts,windows,errors){
   distanceMeters:present('distanceMeters')?sum('distanceMeters'):null,averageSpeedMps:weighted('averageSpeedMps'),maxSpeedMps:max('maxSpeedMps'),
   exerciseMinutes:sessions.length?sessionMinutes:present('exerciseMinutes')?sum('exerciseMinutes'):null,exerciseSessionCount:sessions.length||sum('exerciseSessionCount'),exerciseSessions:sessions,
   sources,sourceLabels:labels,warnings,permissions:Object.assign({},...parts.map(p=>p.permissions||{})),
+  ...(parts.some(p=>p.provider==='samsung_health')?{provider:'samsung_health',metricProviders:Object.assign({},...parts.map(p=>p.metricProviders||{}))}:{}),
   matchMode:'active-intervals',activeIntervals:windows.map(({start,end})=>({start,end})),
   activeDurationMs:windows.reduce((s,w)=>s+w.ms,0),sourceWindowStart:windows[0]?.start||null,sourceWindowEnd:windows.at(-1)?.end||null
  };
@@ -15340,7 +15342,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  for(const [language,extra] of Object.entries({"hu": {"phone": "Telefonadatok", "dailySource": "Napi lépések, távolság és kalória forrása", "sourceAuto": "Legteljesebb napi lépésforrás (automatikus)", "sourcePriority": "Health Connect forrásprioritás", "sourceNote": "Automatikus módban a napra a legnagyobb teljes lépésszámot adó Health Connect-forrást használjuk a lépésekhez, távolsághoz és kalóriához. A forrásokat nem adjuk össze. Külön forrás továbbra is választható.", "bleBackground": "Óra kapcsolata a háttérben", "hcBackground": "Health Connect háttérfrissítése", "backgroundNote": "Óra: tartós kapcsolat, lépések 5 percenként, értesítésből leállítható. Health Connect: külön engedéllyel, időszakos Android-frissítés. A rendszer korlátozhatja; kényszerleállítás után nyisd meg az appot.", "backgroundUnavailable": "A Health Connect háttérolvasása ezen a rendszeren nem érhető el.", "summaryUnavailable": "A kiválasztott forrás összesítése nem frissült. Legfeljebb 31 napot válassz, és ellenőrizd a Health Connect engedélyeit.", "activitySource": "Lépések / távolság / kalória", "connected": "Óra kapcsolódva", "waiting": "Óra kapcsolódása / újracsatlakozás", "stopped": "Háttérkapcsolat kikapcsolva", "autoNote": "Megnyitáskor frissít, ha már van engedély. A háttérfrissítés külön kapcsolható."}, "en": {"phone": "Phone data", "dailySource": "Daily steps, distance and calories source", "sourceAuto": "Most complete daily step source (automatic)", "sourcePriority": "Health Connect source priority", "sourceNote": "Automatic mode uses the Health Connect origin with the largest complete daily step total for steps, distance and calories. Sources are never added together. You can still select a specific origin.", "bleBackground": "Keep watch connected in the background", "hcBackground": "Refresh Health Connect in the background", "backgroundNote": "Watch: persistent connection, steps every 5 minutes, stop from the notification. Health Connect: separate permission and periodic Android updates. The system may delay updates; reopen after force-stop.", "backgroundUnavailable": "Health Connect background reading is unavailable on this system.", "summaryUnavailable": "The selected source summary did not refresh. Choose up to 31 days and check Health Connect permissions.", "activitySource": "Steps / distance / calories", "connected": "Watch connected", "waiting": "Watch connecting / reconnecting", "stopped": "Background connection disabled", "autoNote": "Refreshes when opening with existing permission. Background refresh has its own switch."}, "de": {"phone": "Telefondaten", "dailySource": "Quelle für tägliche Schritte, Distanz und Kalorien", "sourceAuto": "Vollständigste tägliche Schrittquelle (automatisch)", "sourcePriority": "Health Connect Quellenpriorität", "sourceNote": "Im Automatikmodus wird die Health-Connect-Quelle mit der höchsten vollständigen Tagesschrittzahl für Schritte, Distanz und Kalorien verwendet. Quellen werden nicht addiert. Eine bestimmte Quelle bleibt auswählbar.", "bleBackground": "Uhr im Hintergrund verbunden halten", "hcBackground": "Health Connect im Hintergrund aktualisieren", "backgroundNote": "Uhr: dauerhafte Verbindung, Schritte alle 5 Minuten, Stopp über Benachrichtigung. Health Connect: separate Berechtigung und regelmäßige Android-Aktualisierung. Das System kann verzögern; nach erzwungenem Stopp App öffnen.", "backgroundUnavailable": "Health Connect kann auf diesem System nicht im Hintergrund gelesen werden.", "summaryUnavailable": "Die Quellensumme wurde nicht aktualisiert. Bis zu 31 Tage auswählen und Health Connect Berechtigungen prüfen.", "activitySource": "Schritte / Distanz / Kalorien", "connected": "Uhr verbunden", "waiting": "Uhr wird verbunden / erneut verbunden", "stopped": "Hintergrundverbindung deaktiviert", "autoNote": "Aktualisiert beim Öffnen mit vorhandener Berechtigung. Hintergrundaktualisierung separat einschalten."}, "ro": {"phone": "Date telefon", "dailySource": "Sursa zilnică pentru pași, distanță și calorii", "sourceAuto": "Sursa zilnică de pași cea mai completă (automat)", "sourcePriority": "Prioritatea surselor Health Connect", "sourceNote": "În modul automat se folosește sursa Health Connect cu cel mai mare total complet de pași zilnici pentru pași, distanță și calorii. Sursele nu se adună. Poți selecta în continuare o sursă explicită.", "bleBackground": "Păstrează ceasul conectat în fundal", "hcBackground": "Actualizează Health Connect în fundal", "backgroundNote": "Ceas: conexiune persistentă, pași la 5 minute, oprire din notificare. Health Connect: permisiune separată și actualizări periodice Android. Sistemul poate întârzia; redeschide după oprire forțată.", "backgroundUnavailable": "Citirea Health Connect în fundal nu este disponibilă pe acest sistem.", "summaryUnavailable": "Totalul sursei nu s-a actualizat. Alege până la 31 de zile și verifică permisiunile Health Connect.", "activitySource": "Pași / distanță / calorii", "connected": "Ceas conectat", "waiting": "Conectarea / reconectarea ceasului", "stopped": "Conexiune în fundal dezactivată", "autoNote": "Actualizează la deschidere cu permisiunile existente. Actualizarea în fundal se activează separat."}}))Object.assign(texts[language],extra);
  for(const [language,extra] of Object.entries({"hu": {"dailySource": "Napi összesítés", "sourceAuto": "Automatikus", "sourcePriority": "Health Connect prioritás", "sourceNote": "Automatikusan a legteljesebb napi lépésszámú forrást használjuk. Az átfedő adatokat nem adjuk össze.", "backgroundNote": "Külön rendszerengedély szükséges. Az Android időszakosan frissít; kényszerleállítás után nyisd meg az appot."}, "en": {"dailySource": "Daily summary", "sourceAuto": "Automatic", "sourcePriority": "Health Connect priority", "sourceNote": "Automatically uses the most complete daily step source. Overlapping data is never added together.", "backgroundNote": "Requires separate system permission. Android refreshes periodically; reopen the app after force-stop."}, "de": {"dailySource": "Tagessumme", "sourceAuto": "Automatisch", "sourcePriority": "Health Connect Priorität", "sourceNote": "Verwendet automatisch die vollständigste tägliche Schrittquelle. Überlappende Daten werden nicht addiert.", "backgroundNote": "Separate Systemberechtigung erforderlich. Android aktualisiert regelmäßig; nach erzwungenem Stopp App öffnen."}, "ro": {"dailySource": "Total zilnic", "sourceAuto": "Automat", "sourcePriority": "Prioritatea Health Connect", "sourceNote": "Folosește automat sursa cu cei mai compleți pași zilnici. Datele suprapuse nu se adună.", "backgroundNote": "Necesită permisiune separată. Android actualizează periodic; redeschide aplicația după oprire forțată."}}))Object.assign(texts[language],extra);
  for(const language of Object.keys(texts))texts[language].aggregate='Health Connect · '+texts[language].days;
- const t=key=>(texts[typeof rf212Lang==='function'?rf212Lang():'hu']||texts.hu)[key]||key;
+ const t=key=>(texts[typeof rf212Lang==='function'?rf212Lang():'hu']||texts.hu)[key]||window.TrainPilotSamsungHealth?.t(key)||key;
  const bridge=()=>{if(window.Capacitor?.isNativePlatform?.()!==true)return null;return window.Capacitor?.Plugins?.HealthJournal||window.Capacitor?.registerPlugin?.('HealthJournal')||null;};
  const background=()=>window.Capacitor?.Plugins?.HealthBackground||window.Capacitor?.registerPlugin?.('HealthBackground');
  const root=()=>document.querySelector('#tp155R4PanelHost[data-panel="health-journal"] .tp120-journal');
@@ -15363,20 +15365,20 @@ window.addEventListener?.('DOMContentLoaded',function(){
  async function refresh(){const p=await ready();if(p)accept(await p.getProjection());return cache;}
  function legacySnapshot(data){const days=JSON.parse(JSON.stringify(data.healthLedger?.days||{}));for(const row of data.recoveryHistory||[]){if(!/^\d{4}-\d{2}-\d{2}$/.test(row.day))continue;const entry=days[row.day]||(days[row.day]={});entry.legacyRecovery={...row};if(entry.hrvRmssdMs==null&&row.hrvRmssdMs!=null)entry.hrvRmssdMs=row.hrvRmssdMs;}return {schemaVersion:1,records:[],days:Object.entries(days).map(([day,data])=>({day,channel:'legacy',source:'unknown',data})),deletions:[]};}
  async function backup(){const data=makeBackup(),p=await ready();if(p&&tp105HealthConsent())data.healthJournal=await p.exportSnapshot();return tp105Project(data,tp105HealthConsent());}
- const typeLabels={StepsRecord:'steps',StepsSnapshot:'steps',SleepSessionRecord:'sleep',HeartRateRecord:'pulse',RestingHeartRateRecord:'resting',ActiveCaloriesBurnedRecord:'active',TotalCaloriesBurnedRecord:'total',DistanceRecord:'distance',SpeedRecord:'speed',WeightRecord:'weight',BodyFatRecord:'fat',BloodPressureRecord:'pressure',BloodGlucoseRecord:'glucose',RespiratoryRateRecord:'respiratory',HeartRateVariabilityRmssdRecord:'HRV',OxygenSaturationRecord:'SpO₂',Vo2MaxRecord:'VO₂max',ExerciseSessionRecord:'exercise'};
+ const typeLabels={SkeletalMuscleMass:'muscle',BodyFatMass:'fatMass',TotalBodyWater:'water',FatFreeMass:'lean',BasalMetabolicRate:'basal',StepsRecord:'steps',StepsSnapshot:'steps',SleepSessionRecord:'sleep',HeartRateRecord:'pulse',RestingHeartRateRecord:'resting',ActiveCaloriesBurnedRecord:'active',TotalCaloriesBurnedRecord:'total',DistanceRecord:'distance',SpeedRecord:'speed',WeightRecord:'weight',BodyFatRecord:'fat',BloodPressureRecord:'pressure',BloodGlucoseRecord:'glucose',RespiratoryRateRecord:'respiratory',HeartRateVariabilityRmssdRecord:'HRV',OxygenSaturationRecord:'SpO₂',Vo2MaxRecord:'VO₂max',ExerciseSessionRecord:'exercise'};
  const format=(value,unit='')=>typeof value==='number'&&Number.isFinite(value)?tp149FormatNumber(value,{maximumFractionDigits:1})+(unit?' '+unit:''):'—';
- function origin(channel,source,data={}){if(channel==='health_connect')return source==='@aggregate'?t('aggregate'):'Health Connect · '+({'com.sec.android.app.shealth':'Samsung Health','com.google.android.apps.fitness':'Google Fit'}[source]||(source.startsWith('com.android.healthconnect.phone.')?t('phone'):t('hc')));if(channel==='ble_watch')return t('watch')+(data.deviceName?' · '+data.deviceName:'');return t('legacy')+' · '+t('unknown');}
+ function origin(channel,source,data={}){if(channel==='samsung_health')return window.TrainPilotSamsungHealth?.t('direct')||'Samsung Health';if(channel==='health_connect')return source==='@aggregate'?t('aggregate'):'Health Connect · '+({'com.sec.android.app.shealth':'Samsung Health','com.google.android.apps.fitness':'Google Fit'}[source]||(source.startsWith('com.android.healthconnect.phone.')?t('phone'):t('hc')));if(channel==='ble_watch')return t('watch')+(data.deviceName?' · '+data.deviceName:'');return t('legacy')+' · '+t('unknown');}
  function recordHtml(row){
   const data=row.data||{},samples=Array.isArray(data.samples)?data.samples:[];let value=data.steps??data.value,unit=data.unit||'';
   if(samples.length){const valid=samples.map(x=>x.value).filter(x=>typeof x==='number'&&Number.isFinite(x));value=valid.length?valid.reduce((a,b)=>a+b,0)/valid.length:null;}
   const reading=row.type==='BloodPressureRecord'?format(data.systolic)+' / '+format(data.diastolic,'mmHg'):format(value,unit);
-  return '<article class="tp120-record"><div><strong>'+esc(t(typeLabels[row.type]||row.type))+'</strong><b>'+esc(reading)+'</b></div><small>'+esc(tp149FormatDateTime(new Date(row.type==='SleepSessionRecord'?row.endMs:row.startMs)))+'</small><small class="muted">'+esc(t('hc'))+'</small>'+(row.channel==='health_connect'?'<details class="tp120-origin-details"><summary>'+esc(t('source'))+'</summary><small>'+esc(origin(row.channel,row.source,data))+'</small><small class="muted">'+esc(row.source)+'</small></details>':'')+(samples.length?'<small>'+samples.length+' '+esc(t('samples'))+'</small>':'')+(data.dateBasis==='phone_observation'?'<small>'+esc(t('observed'))+'</small>':'')+(data.durationKind==='session'?'<small>'+esc(t('session'))+'</small>':'')+'</article>';
+  return '<article class="tp120-record"><div><strong>'+esc(t(typeLabels[row.type]||row.type))+'</strong><b>'+esc(reading)+'</b></div><small>'+esc(tp149FormatDateTime(new Date(row.type==='SleepSessionRecord'?row.endMs:row.startMs)))+'</small><small class="muted">'+esc(row.channel==='samsung_health'?origin(row.channel,row.source,data):t('hc'))+'</small>'+(['health_connect','samsung_health'].includes(row.channel)?'<details class="tp120-origin-details"><summary>'+esc(t('source'))+'</summary><small>'+esc(origin(row.channel,row.source,data))+'</small><small class="muted">'+esc(row.source)+'</small></details>':'')+(samples.length?'<small>'+samples.length+' '+esc(t('samples'))+'</small>':'')+(data.dateBasis==='phone_observation'?'<small>'+esc(t('observed'))+'</small>':'')+(data.durationKind==='session'?'<small>'+esc(t('session'))+'</small>':'')+'</article>';
  }
  function dayHtml(day){
-  const metrics=[['steps',day.steps,''],['active',day.activeCalories,'kcal'],['total',day.totalCalories,'kcal'],['pulse',day.averageHeartRate,'bpm'],['resting',day.restingHeartRate,'bpm'],['distance',day.distanceMeters,'m'],['weight',day.weightKg,'kg'],['HRV',day.hrvRmssdMs,'ms'],['SpO₂',day.oxygenSaturationPercent,'%']].filter(([,value])=>value!=null);
+  const metrics=[['steps',day.steps,''],['active',day.activeCalories,'kcal'],['total',day.totalCalories,'kcal'],['pulse',day.averageHeartRate,'bpm'],['resting',day.restingHeartRate,'bpm'],['distance',day.distanceMeters,'m'],['weight',day.weightKg,'kg'],['fat',day.bodyFatPercent,'%'],['muscle',day.skeletalMuscleMassKg,'kg'],['fatMass',day.bodyFatMassKg,'kg'],['water',day.totalBodyWaterLiters,'L'],['HRV',day.hrvRmssdMs,'ms'],['SpO₂',day.oxygenSaturationPercent,'%']].filter(([,value])=>value!=null);
   const sessions=(day.sleepSessions||[]).filter(s=>rf240DayKey(s.end)===day.day),source=sessions.some(s=>s.source==='com.sec.android.app.shealth')?'com.sec.android.app.shealth':sessions.slice().sort((a,b)=>Date.parse(b.end)-Date.parse(a.end))[0]?.source;const spans=rf250MergeSpans(sessions.filter(s=>s.source===source).flatMap(rf250SleepSpans));if(spans.length)metrics.push(['sleep',spans.reduce((n,[a,b])=>n+(b-a)/60000,0),'min']);else if(day.legacyRecovery?.sleepMinutes!=null)metrics.push(['sleep',day.legacyRecovery.sleepMinutes,'min']);
   const stale=day.partial||!day.readAt||Date.now()-Date.parse(day.readAt)>36*3600000;
-  return '<article class="tp120-day"><strong>'+esc(tp149FormatDate(new Date(day.day+'T12:00:00')))+'</strong><small>'+esc(origin(day.channel,day.source,day))+'</small><div class="tp120-metrics">'+metrics.map(([key,value,unit])=>'<div><small>'+esc(t(key))+'</small><b>'+esc(format(value,unit))+'</b></div>').join('')+'</div><small class="muted">'+esc(day.readAt?tp149FormatDateTime(day.readAt):'—')+(stale?' · '+esc(t(day.partial?'partial':'stale')):'')+'</small>'+(day.source==='@aggregate'&&day.activityOrigin?'<details class="tp120-origin-details"><summary>'+esc(t('source'))+'</summary><small>'+esc(origin('health_connect',day.activityOrigin))+'</small><small class="muted">'+esc(day.activityOrigin)+'</small></details>':'')+'</article>';
+  return '<article class="tp120-day"><strong>'+esc(tp149FormatDate(new Date(day.day+'T12:00:00')))+'</strong><small>'+esc(origin(day.channel,day.source,day))+'</small><div class="tp120-metrics">'+metrics.map(([key,value,unit])=>'<div><small>'+esc(t(key))+'</small><b>'+esc(format(value,unit))+'</b>'+(day.channel==='samsung_health'&&day.metricProviders?.[key==='HRV'?'hrvRmssdMs':key]==='health_connect'?'<small>Health Connect</small>':'')+'</div>').join('')+'</div><small class="muted">'+esc(day.readAt?tp149FormatDateTime(day.readAt):'—')+(stale?' · '+esc(t(day.partial?'partial':'stale')):'')+'</small>'+(day.source==='@aggregate'&&day.activityOrigin?'<details class="tp120-origin-details"><summary>'+esc(t('source'))+'</summary><small>'+esc(origin('health_connect',day.activityOrigin))+'</small><small class="muted">'+esc(day.activityOrigin)+'</small></details>':'')+'</article>';
  }
  function dailySourceOptions(){return [['auto',t('sourceAuto')],['priority',t('sourcePriority')]].map(([value,label])=>'<option value="'+esc(value)+'" '+(preferences.hcDailySource===value?'selected':'')+'>'+esc(label)+'</option>').join('');}
  function backgroundHtml(){return '<label class="tp120-check"><input type="checkbox" data-health-hcBackground '+(preferences.hcBackground?'checked':'')+' onchange="TrainPilotHealthJournal.backgroundPreference(\'hcBackground\',this.checked)"><span>'+esc(t('hcBackground'))+'</span></label><p class="small muted">'+esc(t('backgroundNote'))+'</p>';}
@@ -15395,7 +15397,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  async function preference(key,value){if(!['autoOnOpen','hcDailySource'].includes(key)||key==='hcDailySource'&&!['auto','priority'].includes(value))return;const p=await ready();if(!p)return;try{if(busy)throw Error(t('busy'));accept(await p.setPreferences({preferences:{[key]:value}}));feedback(t('saved'));if(key==='hcDailySource')await sync();}catch(error){feedback(error?.message||t('failed'),true);}finally{const input=root()?.querySelector(key==='hcDailySource'?'[data-health-daily-source]':'[data-health-auto]');if(input){if(key==='hcDailySource'){input.value=preferences[key];window.rf260SyncCustomSelect?.(input);}else input.checked=preferences[key];}}}
  async function paintBackground(){const input=root()?.querySelector('[data-health-hcBackground]');if(input)input.checked=!!preferences.hcBackground;}
- async function backgroundPreference(key,value){if(key!=='hcBackground')return;try{if(busy||window.TrainPilotBackupBusy)throw Error(t('busy'));const p=background();if(!p)throw Error(t('native'));if(key==='hcBackground'&&value){const hc=rf240Native(),status=await hc.getStatus();if(!status.backgroundSupported)throw Error(t('backgroundUnavailable'));if(!status.backgroundGranted){const result=await hc.requestBackground({language:rf212Lang()});if(!result.granted)throw Error(t('failed'));}}accept(await p.configure({channel:key,enabled:value,language:rf212Lang()}));feedback(t('saved'));}catch(error){feedback(error?.message||t('failed'),true);}finally{await refresh();void paintBackground();}}
+ async function backgroundPreference(key,value){if(key!=='hcBackground')return;try{if(busy||window.TrainPilotBackupBusy)throw Error(t('busy'));const p=background();if(!p)throw Error(t('native'));if(key==='hcBackground'&&value){const hc=window.TrainPilotSamsungHealth?.healthConnectPlugin?.()||rf240Native(),status=await hc.getStatus();if(!status.backgroundSupported)throw Error(t('backgroundUnavailable'));if(!status.backgroundGranted){const result=await hc.requestBackground({language:rf212Lang()});if(!result.granted)throw Error(t('failed'));}}accept(await p.configure({channel:key,enabled:value,language:rf212Lang()}));feedback(t('saved'));}catch(error){feedback(error?.message||t('failed'),true);}finally{await refresh();void paintBackground();}}
  async function sync(){if(busy){feedback(t('busy'));return;}busy=true;try{await ready();await rf250Sync({manual:true});await refresh();await load();}catch(error){feedback(t('failed'),true);}finally{busy=false;}}
  async function auto(){
   if(document.hidden||window.TrainPilotBackupBusy||autoRunning||state.session)return;
@@ -15409,7 +15411,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const home=document.querySelector('#app main.rf221-home');if(home&&!home.querySelector('.tp120-home-goals')){home.querySelector('.tp110-goal-mini')?.remove();const today=home.querySelector('#rf223Today'),button=document.createElement('button');button.type='button';button.className='btn secondary block tp120-home-goals';button.setAttribute('onclick',"tp155R4OpenPanel('goals',this)");const config=settings().activityGoals110||{},goal=config.weekWorkouts||config.monthKm?window.TrainPilot110Core.goalProgress(history(),config):null,row=goal?.week.target?goal.week:goal?.month.target?goal.month:null;button.innerHTML='<span>'+esc(window.TrainPilot110.t('setGoals'))+'</span>'+(row?'<small class="tp120-goal-progress">'+esc(tp149FormatNumber(row.current))+'/'+esc(tp149FormatNumber(row.target))+' '+esc(row===goal.week?window.TrainPilot110.t('units'):'km')+'</small>':'')+'<span class="tp120-chevron" aria-hidden="true"></span>';const oldSummary=home.querySelector(':scope > .grid2');if(oldSummary?.querySelector('.stat'))oldSummary.replaceWith(button);else if(today)today.after(button);else home.appendChild(button);}
   const health=document.querySelector('#app main.tp168-health');if(health&&!health.querySelector('.tp120-journal-entry')){const button=document.createElement('button');button.type='button';button.className='btn secondary block tp120-journal-entry';button.setAttribute('onclick',"tp155R4OpenPanel('health-journal',this)");button.innerHTML='<span>'+esc(t('title'))+'</span><span class="tp120-chevron" aria-hidden="true"></span>';health.querySelector('.tp168-sync-tail .rf263-sync-actions')?.appendChild(button);}
  }
- window.TrainPilotHealthJournal={t,ready,refresh,backup,html,load,preference,backgroundPreference,sync,decorate,auto,compact,legacySnapshot,isSyncing:()=>busy||autoRunning||!!rf250Flight};
+ window.TrainPilotHealthJournal={t,ready,refresh,backup,html,load,preference,backgroundPreference,sync,decorate,auto,compact,legacySnapshot,preferences:()=>({...preferences}),isSyncing:()=>busy||autoRunning||!!rf250Flight};
  const pipelineBase=rf250Pipeline;rf250Pipeline=async function(p,options){const journal=await ready();if(journal){const dirty=await journal.getDirtyDays();options={...options,journalDirtyDays:dirty.days||[]};}const result=await pipelineBase(p,options);if(journal){await journal.saveSyncMeta({meta:Object.fromEntries(['lastSyncAt','lastFullSyncAt','lastAttemptAt'].map(key=>[key,rf240Ledger()[key]]))});await refresh();}return result;};
  window.addEventListener?.('DOMContentLoaded',()=>{
   const renderBase=render;render=function(){const result=renderBase.apply(this,arguments);decorate();return result;};window.render=render;
@@ -15420,6 +15422,135 @@ window.addEventListener?.('DOMContentLoaded',function(){
  });
 })();
 // @endsection health-journal-120.js
+
+// @section samsung-health-provider.js
+/* Read-only Samsung provider alongside the existing Health Connect path. */
+(function(){
+ 'use strict';
+ if(!window.TrainPilotHealthJournal)return;
+ const HC='health_connect',SH='samsung_health',journal=()=>window.TrainPilotHealthJournal;
+ const words={
+  hu:{provider:'Egészségügyi adatforrás',direct:'Samsung Health · közvetlen',note:'A kiválasztott forrás az elsődleges. A hiányzó adatokat a már engedélyezett Health Connect egészítheti ki; az értékeket nem adjuk össze.',hrv:'A közvetlen Samsung-kapcsolat nem ad HRV-t. HRV csak akkor jelenik meg, ha a Health Connectben van megosztott RMSSD-adat.',body:'Samsung testösszetétel',muscle:'Vázizomtömeg',fatMass:'Testzsírtömeg',water:'Testvíz',lean:'Zsírmentes tömeg',basal:'Nyugalmi anyagcsere',busy:'Várd meg a futó szinkron végét.',denied:'Nem kaptunk Samsung Health olvasási engedélyt. A korábbi adatforrás maradt kiválasztva.',failed:'A Samsung Health kapcsolódás nem sikerült. Ellenőrizd a Samsung Health verzióját és a TrainPilot hozzáférését.',missing:'A közvetlen Samsung-kapcsolat ebben az appváltozatban nem érhető el.',permission:'Samsung Health engedélyek',auto:'Egészségadatok frissítése appmegnyitáskor'},
+  en:{provider:'Health data provider',direct:'Samsung Health · direct',note:'The selected provider takes priority. Missing data can be supplemented by already authorized Health Connect data; values are never added together.',hrv:'The direct Samsung connection does not provide HRV. HRV requires a shared RMSSD record in Health Connect.',body:'Samsung body composition',muscle:'Skeletal muscle',fatMass:'Fat mass',water:'Body water',lean:'Fat-free mass',basal:'Basal metabolic rate',busy:'Wait for the current sync.',denied:'Samsung Health read access was not granted. The previous provider remains selected.',failed:'Samsung Health connection failed. Check its version and TrainPilot access.',missing:'Direct Samsung Health is unavailable in this app version.',permission:'Samsung Health permissions',auto:'Refresh health data when opening the app'},
+  de:{provider:'Gesundheitsdatenquelle',direct:'Samsung Health · direkt',note:'Die gewählte Quelle hat Vorrang. Fehlende Daten können durch bereits freigegebene Health Connect Daten ergänzt werden; Werte werden nie addiert.',hrv:'Samsung liefert über diese direkte Verbindung keine HRV. Dafür ist ein geteilter RMSSD-Datensatz in Health Connect nötig.',body:'Samsung Körperzusammensetzung',muscle:'Skelettmuskelmasse',fatMass:'Fettmasse',water:'Körperwasser',lean:'Fettfreie Masse',basal:'Grundumsatz',busy:'Warte auf die laufende Synchronisierung.',denied:'Kein Samsung Health Lesezugriff. Die bisherige Quelle bleibt ausgewählt.',failed:'Samsung Health Verbindung fehlgeschlagen. Version und TrainPilot Zugriff prüfen.',missing:'Direktes Samsung Health ist in dieser App-Version nicht verfügbar.',permission:'Samsung Health Berechtigungen',auto:'Gesundheitsdaten beim Öffnen aktualisieren'},
+  ro:{provider:'Sursa datelor de sănătate',direct:'Samsung Health · direct',note:'Sursa selectată are prioritate. Datele lipsă pot fi completate din Health Connect deja autorizat; valorile nu se adună.',hrv:'Conexiunea directă Samsung nu oferă HRV. Este necesară o înregistrare RMSSD partajată în Health Connect.',body:'Compoziție corporală Samsung',muscle:'Masă musculară scheletică',fatMass:'Masă de grăsime',water:'Apă corporală',lean:'Masă fără grăsime',basal:'Metabolism bazal',busy:'Așteaptă sincronizarea curentă.',denied:'Accesul de citire Samsung Health nu a fost acordat. Sursa anterioară rămâne selectată.',failed:'Conectarea Samsung Health a eșuat. Verifică versiunea și accesul TrainPilot.',missing:'Samsung Health direct nu este disponibil în această versiune.',permission:'Permisiuni Samsung Health',auto:'Actualizează datele de sănătate la deschiderea aplicației'}
+ };
+ const t=key=>(words[typeof rf212Lang==='function'?rf212Lang():'hu']||words.hu)[key]||key;
+ const selected=()=>journal()?.preferences?.().provider||rf240Ledger()?.preferences?.provider||HC;
+ const hcPlugin=healthPlugin;
+ const samsung=()=>{if(!isNative())throw Error(t('missing'));const p=window.Capacitor?.Plugins?.SamsungHealth||window.Capacitor?.registerPlugin?.('SamsungHealth');if(!p)throw Error(t('missing'));return p;};
+ const hasRead=status=>Object.entries(status?.permissions||{}).some(([key,value])=>key.startsWith('READ_')&&value===true);
+ const numeric=value=>typeof value==='number'&&Number.isFinite(value);
+ async function hcRead(method,args){
+  try{const p=hcPlugin();if(!hasRead(await p.getStatus())||typeof p[method]!=='function')return null;return await p[method](args);}catch(_){return null;}
+ }
+ function mergeWorkout(direct,fallback){
+  const out={...direct,provider:SH,metricProviders:{}};
+  const groups=[['averageHeartRate','minHeartRate','maxHeartRate','heartRateSamples'],['steps'],['activeCalories'],['totalCalories'],['distanceMeters'],['averageSpeedMps','maxSpeedMps'],['exerciseSessions','exerciseSessionCount','exerciseMinutes']];
+  for(const fields of groups){const key=fields[0],available=Array.isArray(out[key])?out[key].length>0:numeric(out[key]);
+   const provider=available?SH:HC;
+   if(!available&&fallback)for(const field of fields)if(fallback[field]!=null)out[field]=fallback[field];
+   if(out[key]!=null)for(const field of fields)out.metricProviders[field]=provider;
+  }
+  if(!numeric(out.workoutCalories)&&numeric(fallback?.workoutCalories))for(const [key,value] of Object.entries(fallback))if(key==='workoutCalories'||key.startsWith('workoutEnergy'))out[key]=value;
+  if(numeric(out.workoutCalories))out.metricProviders.workoutCalories=out.workoutEnergyProvider||SH;
+  out.sources=[...new Set([...(direct.sources||[]),...(fallback?.sources||[])])];
+  out.sourceLabels={...(fallback?.sourceLabels||{}),...(direct.sourceLabels||{})};
+  if(fallback?.sources?.includes('com.sec.android.app.shealth')&&Object.values(out.metricProviders).includes(HC))out.sourceLabels['com.sec.android.app.shealth']=t('direct')+' / Health Connect';
+  // A failed SDK read remains visible even if an authorized fallback is available.
+  out.warnings=[...(direct.warnings||[])];
+  return out;
+ }
+ async function recovery(args){
+  const fallback=await hcRead('readRecovery',args)||{},start=Date.parse(args.start),end=Date.parse(args.end);
+  const sleeps=rf240UniqueSleep(rf240Ledger().days||{}).filter(s=>s.provider===SH&&Date.parse(s.end)>=start&&Date.parse(s.end)<end).sort((a,b)=>Date.parse(b.end)-Date.parse(a.end));
+  const sleep=sleeps[0];if(!sleep)return {...fallback,provider:SH};
+  const spans=rf250MergeSpans(rf250SleepSpans(sleep));
+  return {...fallback,provider:SH,sleepMinutes:spans.reduce((sum,[a,b])=>sum+(b-a)/60000,0),sleepStart:sleep.start,sleepEnd:sleep.end,sleepSource:sleep.source,sleepStageBased:!!sleep.stages?.length};
+ }
+ let adapter=null;
+ function plugin(){if(adapter)return adapter;const p=samsung();return adapter={
+  getStatus:()=>p.getStatus(),requestRead:()=>p.requestRead(),openSettings:()=>p.openSettings(),
+  readHealthDay:args=>p.readHealthDay(args),readWellness:args=>p.readWellness(args),
+  readRecovery:recovery,
+  readTrainingWindow:async args=>mergeWorkout(await p.readTrainingWindow(args),await hcRead('readTrainingWindow',args)),
+  readWorkout:async args=>adapter.readTrainingWindow(args)
+ };}
+ healthPlugin=function(){return selected()===SH?plugin():hcPlugin();};
+ async function choose(value){
+  if(![HC,SH].includes(value))return;
+  try{
+   if(journal()?.isSyncing?.()||state.health?.busy||window.TrainPilotBackupBusy)throw Error(t('busy'));
+   const bridge=await journal().ready();if(!bridge)throw Error(t('missing'));
+   if(value===SH){const granted=await samsung().requestRead();if(!hasRead(granted))throw Error(t('denied'));}
+   await bridge.setPreferences({preferences:{provider:value}});await journal().refresh();
+   rfHistoryHealthCache?.clear();
+   const rows=history();for(const row of rows)if(row.health240)row.health240.syncedAt=null;db.set('history',rows);
+   adapter=null;render();await journal().sync();
+  }catch(error){state.health=state.health||{};state.health.message=error?.message||t('failed');render();}
+  finally{paintChoices();}
+ }
+ function choices(){return '<label>'+esc(t('provider'))+'<select class="field" data-health-provider onchange="TrainPilotSamsungHealth.choose(this.value)"><option value="'+HC+'" '+(selected()===HC?'selected':'')+'>Health Connect</option><option value="'+SH+'" '+(selected()===SH?'selected':'')+'>'+esc(t('direct'))+'</option></select></label><p class="small muted">'+esc(t('note'))+'</p>'+(selected()===SH?'<p class="small muted">'+esc(t('hrv'))+'</p>':'');}
+ function paintChoices(){for(const el of document.querySelectorAll('[data-health-provider]')){el.value=selected();el.disabled=!!state.health?.busy;window.rf260SyncCustomSelect?.(el);}}
+ const pipeline=rf250Pipeline;
+ rf250Pipeline=async function(p,options={}){
+  await journal().ready();
+   if(selected()!==SH)return pipeline(p,options);
+  const native=samsung(),report={provider:SH,startedAt:new Date().toISOString(),stages:[],days:0,workouts:0,exported:0,skipped:0,errors:[]};
+  let status=await native.getStatus();if(options.manual){await native.requestRead();status=await native.getStatus();}
+  if(!hasRead(status))throw Error(t('denied'));
+  state.health.permissions=status.permissions;
+  const count=options.full||!db.get('samsungHealthLastFull',null)?30:2,days=rf240RecentDays(count).sort();
+  const startGenerationProvider=selected();
+  for(const [index,day] of days.entries()){
+   rf245Progress(t('direct')+': '+(index+1)+'/'+days.length);
+   try{const args=rf240DayBounds(day);await hcRead('readHealthDay',args);const result=await native.readHealthDay(args);
+    if(selected()!==startGenerationProvider)throw Error(t('busy'));
+    if(result.warnings?.length)report.errors.push(day+': '+result.warnings.join(' · '));else report.days++;
+   }catch(error){report.errors.push(day+': '+rf245Message(error));}
+  }
+  const bridge=await journal().ready(),at=new Date().toISOString();
+  await bridge.saveSyncMeta({meta:{lastAttemptAt:at,...(!report.errors.length?{lastSyncAt:at,...(count===30?{lastFullSyncAt:at}:{})}:{})}});
+  if(!report.errors.length&&count===30)db.set('samsungHealthLastFull',at);
+  await journal().refresh();
+  report.stages.push({name:t('direct'),status:report.errors.length?'partial':'ok',detail:report.days+'/'+days.length});
+  for(const h of history().filter(rf240ValidWorkout).filter(h=>Date.parse(h.finished)>=Date.now()-30*86400000)){
+   try{if(await rf245ReadWorkout(plugin(),h,options.manual||h.health240?.provider!==SH))report.workouts++;}catch(error){report.errors.push('Workout: '+rf245Message(error));}
+  }
+  report.stages.push({name:'Health Connect export',status:'skipped',detail:'Samsung Health: read-only'});
+  report.finishedAt=at;report.status=report.errors.length?'partial':'ok';db.set(RF250_REPORT,report);db.set(RF245_REPORT,report);return report;
+ };
+ const apply=rf240ApplyLedger;
+ rf240ApplyLedger=function(){const ledger=apply();const body=state.health?.wellness;if(body){
+  for(const key of ['bodyFatMassKg','skeletalMuscleMassKg','fatFreeMassKg','totalBodyWaterLiters','basalMetabolicRateKcal','bodyMassIndex']){
+   const value=rf240Latest(ledger.days||{},key,null);body[key]=value?.value??null;
+  }
+  body.weightProvider=rf240Latest(ledger.days||{},'weightKg','weightTime')?.day;
+  body.weightProvider=body.weightProvider?ledger.days[body.weightProvider]?.metricProviders?.weightKg||HC:null;
+  db.set('wellnessLatest',body);
+ }return ledger;};
+ function composition(){const w=state.health?.wellness||{},fields=[['muscle','skeletalMuscleMassKg','kg'],['fatMass','bodyFatMassKg','kg'],['water','totalBodyWaterLiters','L'],['lean','fatFreeMassKg','kg'],['basal','basalMetabolicRateKcal','kcal']].filter(([,key])=>numeric(w[key]));
+  return fields.length?'<details class="card tp-samsung-composition"><summary><strong>'+esc(t('body'))+'</strong></summary><div class="grid2">'+fields.map(([label,key,unit])=>rf244Stat(t(label),rf250Fmt(w[key],1,' '+unit))).join('')+'</div></details>':'';
+ }
+ function decorate(){
+  const main=document.querySelector('#app main.tp168-health');
+  if(main){const tail=main.querySelector('.tp168-sync-tail');if(tail&&!tail.querySelector('[data-health-provider]')){const block=document.createElement('div');block.className='tp-health-provider';block.innerHTML=choices();tail.prepend(block);}
+   if(selected()===SH&&!main.querySelector('.tp-samsung-composition')){const html=composition();if(html&&tail)tail.insertAdjacentHTML('beforebegin',html);}
+  }
+  paintChoices();
+ }
+ const journalHtml=journal().html;journal().html=function(){return journalHtml().replace('<label>'+esc(journal().t('dailySource')),choices()+'<label>'+esc(journal().t('dailySource')));};
+ if(typeof rf110AutoHealthSync==='function'){
+  const auto=rf110AutoHealthSync;
+  rf110AutoHealthSync=function(options){return selected()===SH?journal().auto():auto(options);};
+ }
+ window.TrainPilotSamsungHealth={choose,selected,t,mergeWorkout,plugin,decorate,healthConnectPlugin:hcPlugin};
+ window.addEventListener?.('DOMContentLoaded',()=>{
+  const base=render;render=function(){const result=base.apply(this,arguments);decorate();return result;};window.render=render;
+  decorate();
+ });
+})();
+// @endsection samsung-health-provider.js
 
 
 // @section profile-training-128.js

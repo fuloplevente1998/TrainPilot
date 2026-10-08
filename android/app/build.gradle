@@ -68,6 +68,12 @@ android {
 repositories { flatDir { dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs' } }
 
 dependencies {
+    // Samsung's read-only Data SDK; the phone implementation remains Java.
+    implementation files('libs/samsung-health-data-api-1.1.0.aar')
+    implementation 'com.google.code.gson:gson:2.11.0'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:2.1.21'
+    implementation 'org.jetbrains.kotlin:kotlin-parcelize-runtime:2.1.21'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2'
     implementation 'com.google.android.gms:play-services-auth:22.0.0'
     implementation 'com.google.android.gms:play-services-wearable:20.0.1'
     implementation fileTree(include: ['*.jar'], dir: 'libs')
