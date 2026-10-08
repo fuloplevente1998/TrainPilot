@@ -16757,7 +16757,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  const raw=()=>window.tp165RawHistory?.()||db.get('history',[])||[];
  function fingerprint(row){
   const started=Date.parse(row?.started||''),finished=Date.parse(row?.finished||'');
-  if(!Number.isFinite(started)||!Number.isFinite(finished)||!Array.isArray(row?.exercises)||!row.exercises.some(e=>e?.sets?.some(s=>s?.done)))return null;
+  if(!Number.isFinite(started)||!Number.isFinite(finished)||!Array.isArray(row?.exercises)||row.exercises.some(e=>!e||typeof e!=='object'||!Array.isArray(e.sets))||!row.exercises.some(e=>e.sets.some(s=>s?.done)))return null;
   const exercises=row.exercises.map(e=>{
    const value={...e,sets:(e.sets||[]).map(s=>{const set={...s};delete set.setId;return set})};
    // Recommendations are recomputed from the growing log on every old replay.
@@ -16769,7 +16769,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const map=new Map();rows.forEach((row,index)=>{const key=fingerprint(row);if(!key)return;const group=map.get(key)||[];group.push(index);map.set(key,group)});
   return [...map.values()].filter(group=>group.length>1);
  }
- function scan(){const found=groups();return {groups:found.length,copies:found.reduce((n,g)=>n+g.length-1,0)}}
+ function scan(rows){const found=groups(rows);return {groups:found.length,copies:found.reduce((n,g)=>n+g.length-1,0)}}
  async function repair(){
   const rows=raw(),found=groups(rows),count=found.reduce((n,g)=>n+g.length-1,0);if(!count)return false;
   const before=JSON.stringify(rows);
@@ -16793,7 +16793,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  const base=historyScreen;
  historyScreen=function(){
-  const html=String(base.apply(this,arguments)),count=scan().copies;
+  const html=String(base.apply(this,arguments)),count=scan(history()).copies;
   if(!count||state.tp177JournalView==='progress'||state.tp177JournalView==='stats')return html;
   const button='<button type="button" class="btn secondary block tp-history-merge" onclick="TrainPilotHistoryRepair.repair()">'+esc(text('button',count))+'</button>';
   return html.replace(/(<main\b[^>]*>)/,'$1'+button);
