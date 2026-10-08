@@ -19,6 +19,17 @@ class Wear129Test {
         assertEquals(0.0,accumulator.snapshot().getDouble("steps"),.001);assertEquals(20.0,accumulator.snapshot().getDouble("totalCalories"),.001)
         assertFalse(accumulator.snapshot().has("distanceMeters"));assertFalse(accumulator.snapshot().has("speedMps"))
     }
+    @Test fun interruptedMeasurementPreservesPriorTotalsWithoutAddingCumulativeReplays() {
+        val accumulator=WearHealthAccumulator(JSONObject())
+        accumulator.total("steps",100.0);accumulator.total("totalCalories",20.0)
+        accumulator.beginSegment()
+        accumulator.segmentTotal("steps",0.0);accumulator.segmentTotal("steps",15.0);accumulator.segmentTotal("steps",15.0)
+        accumulator.segmentTotal("totalCalories",5.0);accumulator.segmentTotal("distanceMeters",null)
+        accumulator.segmentTotal("steps",-5.0)
+        val data=accumulator.snapshot()
+        assertEquals(115.0,data.getDouble("steps"),.001);assertEquals(25.0,data.getDouble("totalCalories"),.001)
+        assertFalse(data.has("distanceMeters"));assertFalse(data.has("offset:steps"))
+    }
     @Test fun calendarUsesPreparedProgramDaysAndIgnoresInvalidDates() {
         val day=JSONObject("""{"id":"A","name":"Alap A","programId":"p","programName":"Program","exercises":[{"id":"squat","sets":[{"set":1,"weight":5}]}]}""")
         val home=JSONObject().put("schema",1).put("days",org.json.JSONArray().put(day)).put("calendar",org.json.JSONArray()

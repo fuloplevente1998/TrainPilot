@@ -17,6 +17,12 @@ class WearHealthAccumulator(val value: JSONObject) {
         if (number == null || !number.isFinite() || number < 0) return
         value.put(key,maxOf(value.optDouble(key,0.0),number))
     }
+    fun beginSegment() {
+        for(key in listOf("totalCalories","steps","distanceMeters","activeDurationSeconds"))value.put("offset:$key",value.optDouble(key,0.0))
+    }
+    fun segmentTotal(key: String, number: Double?) {
+        if(number!=null && number.isFinite() && number>=0)total(key,number+value.optDouble("offset:$key",0.0))
+    }
     fun sample(key: String, number: Double?) {
         if (number != null && number.isFinite() && number >= 0) value.put(key,number)
     }

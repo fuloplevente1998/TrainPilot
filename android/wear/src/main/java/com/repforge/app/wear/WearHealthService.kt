@@ -26,6 +26,7 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
         if(Build.VERSION.SDK_INT>=33)registerReceiver(stopReceiver,IntentFilter(STOP),Context.RECEIVER_NOT_EXPORTED)
         else registerReceiver(stopReceiver,IntentFilter(STOP))
     }
+    private var stopping=false
     private var ending=false
     private var destroyed=false
     private var watchdog: Runnable?=null
@@ -55,15 +56,17 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
             await(client.getCurrentExerciseInfoAsync()) { info ->
                 when(info.exerciseTrackedStatus) {
                     ExerciseTrackedStatus.OTHER_APP_IN_PROGRESS -> fail("Másik alkalmazás már edzést mér. A TrainPilot nem szakította meg.")
-                    ExerciseTrackedStatus.OWNED_EXERCISE_IN_PROGRESS -> { owned=true;summary?.put("state","active");persist();if(closePrevious)end() }
-                    else -> if(closePrevious){summary?.put("state","ended")?.put("partial",true);persist();summary?.let { WearHealthStore.publish(this,it) };stopSelf()}else capabilities(intent?.getStringExtra("exerciseType"),location)
+                    ExerciseTrackedStatus.OWNED_EXERCISE_IN_PROGRESS -> { owned=true;summary?.put("state","active");persist();if(closePrevious || stopping)end() }
+                    else -> if(closePrevious || stopping){finishWithoutExercise()}else capabilities(intent?.getStringExtra("exerciseType"),location)
                 }
             }
         } catch(error: Exception) { fail("A mérés nem indítható: ${error.message ?: "ellenőrizd az engedélyeket"}") }
         return START_STICKY
     }
     private fun capabilities(requested: String?, gps: Boolean) {
+        if(stopping){finishWithoutExercise();return}
         await(client.getCapabilitiesAsync()) { capabilities ->
+            if(stopping){finishWithoutExercise();return@await}
             val wanted=when(requested) { "running" -> ExerciseType.RUNNING; "walking" -> ExerciseType.WALKING; "cycling" -> ExerciseType.BIKING; else -> ExerciseType.STRENGTH_TRAINING }
             val type=listOf(wanted,ExerciseType.WORKOUT).firstOrNull { capabilities.supportedExerciseTypes.contains(it) }
             if(type==null) { fail("Ezen az órán ez az edzéstípus nem mérhető.");return@await }
@@ -74,9 +77,9 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
             val metrics=requestedMetrics.filter { supported.contains(it) && if(it==DataType.HEART_RATE_BPM)heart else activity }.toSet()
             if(metrics.isEmpty()) { fail("Az óra nem kínál támogatott mérési adatot.");return@await }
             val config=ExerciseConfig(type,metrics,isAutoPauseAndResumeEnabled=false,isGpsEnabled=gps && type in listOf(ExerciseType.RUNNING,ExerciseType.WALKING,ExerciseType.BIKING))
-            summary?.let { if(it.optDouble("activeDurationSeconds",0.0)>0)it.put("partial",true);for(key in listOf("totalCalories","steps","distanceMeters","activeDurationSeconds"))it.put("offset:$key",it.optDouble(key,0.0))
+            summary?.let { if(it.optDouble("activeDurationSeconds",0.0)>0)it.put("partial",true);WearHealthAccumulator(it).beginSegment()
                 it.put("exerciseType",type.toString()).put("gps",config.isGpsEnabled) }
-            await(client.startExerciseAsync(config)) { owned=true;summary?.put("state","active");persist() }
+            await(client.startExerciseAsync(config)) { owned=true;summary?.put("state","active");persist();if(stopping)end() }
         }
     }
     private fun <T> await(future: ListenableFuture<T>, success: (T)->Unit) {
@@ -95,13 +98,13 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
         val origin=if(kotlin.math.abs(currentOrigin-oldOrigin)<10000)oldOrigin else currentOrigin
         data.put("bootOrigin",origin)
         update.latestMetrics.getData(DataType.HEART_RATE_BPM).sortedBy { it.timeDurationFromBoot }.forEach { accumulator.heartRate(origin+it.timeDurationFromBoot.toMillis(),it.value) }
-        accumulator.total("totalCalories",update.latestMetrics.getData(DataType.CALORIES_TOTAL)?.total?.plus(data.optDouble("offset:totalCalories",0.0)))
-        accumulator.total("steps",update.latestMetrics.getData(DataType.STEPS_TOTAL)?.total?.toDouble()?.plus(data.optDouble("offset:steps",0.0)))
-        accumulator.total("distanceMeters",update.latestMetrics.getData(DataType.DISTANCE_TOTAL)?.total?.plus(data.optDouble("offset:distanceMeters",0.0)))
+        accumulator.segmentTotal("totalCalories",update.latestMetrics.getData(DataType.CALORIES_TOTAL)?.total)
+        accumulator.segmentTotal("steps",update.latestMetrics.getData(DataType.STEPS_TOTAL)?.total?.toDouble())
+        accumulator.segmentTotal("distanceMeters",update.latestMetrics.getData(DataType.DISTANCE_TOTAL)?.total)
         accumulator.sample("speedMps",update.latestMetrics.getData(DataType.SPEED).lastOrNull()?.value)
         update.activeDurationCheckpoint?.let { checkpoint ->
             val elapsed=if(update.exerciseStateInfo.state.isPaused || update.exerciseStateInfo.state.isEnded)0L else java.time.Duration.between(checkpoint.time,java.time.Instant.now()).toMillis().coerceAtLeast(0L)
-            accumulator.total("activeDurationSeconds",(checkpoint.activeDuration.toMillis()+elapsed)/1000.0+data.optDouble("offset:activeDurationSeconds",0.0))
+            accumulator.segmentTotal("activeDurationSeconds",(checkpoint.activeDuration.toMillis()+elapsed)/1000.0)
         }
         val ended=update.exerciseStateInfo.state.isEnded
         data.put("state",if(ended)"ended" else if(ending)"ending" else "active")
@@ -109,13 +112,18 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
         if(ended) { WearHealthStore.publish(this,data);stopSelf() }
     }
     private fun persist() { summary?.let { WearHealthStore.save(this,it);WearSurfaces.refresh(this) } }
+    private fun finishWithoutExercise() {
+        summary?.put("state","ended")?.put("partial",true);persist();summary?.let { WearHealthStore.publish(this,it) };stopSelf()
+    }
     private fun fail(message: String) {
-        summary?.put("state","error")?.put("message",message);persist()
+        summary?.put("state","error")?.put("partial",true)?.put("message",message);persist();summary?.let { WearHealthStore.publish(this,it) }
         if(owned)try { client.endExerciseAsync() }catch(_:Exception){}
         stopSelf()
     }
     private fun end() {
-        if(ending)return
+        stopping=true
+        // Do not end a foreign exercise while the ownership check/start future is still pending.
+        if(!owned || ending)return
         if(summary==null) {
             val id=WearHealthStore.active(this);summary=WearHealthStore.load(this,id)
         }

@@ -201,7 +201,7 @@ Initial Wear module:
 - same application ID (`com.repforge.app`) for phone/Wear packaging compatibility;
 - separate namespace (`com.repforge.app.wear`) for source organization.
 
-The branch now contains the first Data Layer implementation: the phone publishes a versioned active-workout snapshot through a Capacitor `WearSync` plugin, while the Wear module persists and renders the latest snapshot. Health Services and watch → phone commands are intentionally deferred to later phases.
+The branch now contains the first Data Layer implementation: the phone publishes a versioned active-workout snapshot through a Capacitor `WearSync` plugin, while the Wear module persists and renders the latest snapshot. The initial phase deferred Health Services and watch → phone commands; both are now implemented in the 1.2.9 integration described above.
 
 ## Implementation phases
 
@@ -235,10 +235,10 @@ The branch now contains the first Data Layer implementation: the phone publishes
 
 ### Phase 3 — sensors and glanceable surfaces
 
-- [ ] Wear Health Services live heart rate;
-- [ ] optional workout exercise session integration;
-- [ ] Tile;
-- [ ] complication.
+- [x] Wear Health Services live heart rate;
+- [x] optional workout exercise session integration;
+- [x] Tile;
+- [x] complication.
 
 ### Phase 4 — standalone evaluation
 
@@ -288,7 +288,7 @@ Implemented on `feat/wear-os` after the initial display-only prototype:
 
 ## Next milestone — Galaxy Watch7 health recording
 
-After the current watch → phone command reliability fix is proven on-device, the next planned Wear feature is **watch-local health recording on Galaxy Watch7 via Wear OS Health Services**.
+The following original milestone is implemented in 1.2.9: **watch-local health recording on Galaxy Watch7 via Wear OS Health Services**. Sensor and permission behavior still require physical paired-device verification.
 
 Scope:
 
@@ -314,7 +314,7 @@ The watch UI should expose the most useful live values during training, for exam
 ❤️ 118 bpm · 🔥 34 kcal · ⏱ 12:43
 ```
 
-This milestone is intentionally scheduled **before** Tiles/complications and before the later "Open on phone" deep-link action.
+The milestone, Tiles/complications and the "Open on phone" action are integrated together in 1.2.9.
 
 
 ## Product direction — full watch experience
@@ -350,8 +350,8 @@ The launcher artwork reinforces the same warm gold gradient (`#FFF1A0 → #F3C54
 1. [x] branded Wear Home + start workout from watch;
 2. [x] explicit Finish + post-workout summary;
 3. [ ] mini calendar;
-4. [ ] Galaxy Watch7 Health Services recording and live metrics;
-5. [ ] Tile/complication;
+4. [x] Galaxy Watch7 Health Services recording and live metrics;
+5. [x] Tile/complication;
 6. [ ] explicit "Open on phone" deep-link action.
 
 Watch-started workouts should start immediately from a locally cached, phone-prepared program snapshot and sync back through the Data Layer. The watch must not require the phone WebView to be visibly open at the moment Start is pressed.
@@ -385,8 +385,8 @@ canonical finish wrappers, and Wear unit tests for set selection, JSON round tri
 side times, completion and stopwatch pause/resume. Actual Watch7 layout, gestures,
 haptics and background timing still require the paired device test.
 
-Next: mini calendar, then Watch7 Health Services (live heart rate and workout
-metrics), followed by Tiles/complications and Open on phone. No simulated health
+The 1.2.9 integration adds the mini calendar, Watch7 Health Services (live heart rate and workout
+metrics), Tiles/complications and Open on phone. No simulated health
 values are displayed in this implementation.
 # Wear UX r2: pihenő a gyakorlat képernyőjén
 
