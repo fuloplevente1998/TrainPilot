@@ -16818,7 +16818,15 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const old=target.healthWear129;
   if(old&&(old.watchId!==measured.watchId||Number(old.revision)>=measured.revision))return true;
   target.healthWear129=measured;
-  if(row)db.set('history',rows);else persistDraft();
+  if(row){
+   db.set('history',rows);
+   // The final watch summary can arrive after the Journal was already opened.
+   // Update just this workout's visible measurements without rebuilding history.
+   try{
+    const viewIndex=typeof history==='function'?history().findIndex(h=>matchesWorkout(h,id)&&h.finished):-1;
+    if(viewIndex>=0&&typeof rfHistoryHealthPaint==='function')rfHistoryHealthPaint(viewIndex);
+   }catch(_){}
+  }else persistDraft();
   return true;
  }
  async function closeFromWatch(command){
@@ -17048,6 +17056,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     if(index!==keep)removed.add(index);
     if(!saved.feedback&&row.feedback)saved.feedback=row.feedback;
     if(!saved.health240&&row.health240)saved.health240=row.health240;
+    if(!saved.healthWear129&&row.healthWear129)saved.healthWear129=row.healthWear129;
     for(const photo of row.photos||[]){const id=photo.id||canonical(photo),old=photos.get(id);if(!old||(Number(photo.updatedAt)||0)>=(Number(old.updatedAt)||0))photos.set(id,photo);}
    }
    if(photos.size)saved.photos=[...photos.values()];
@@ -17097,7 +17106,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
  const card=(label,value)=>value===null?'':'<div class="stat"><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong></div>';
  rfHistoryHealthHtml=function(i){
   const row=history()[i],wear=measured(row);
-  if(!wear)return original(i);
+  if(!wear){
+   const label=row?.finished?'<p class="small muted tp160-source-note">TrainPilot óra: ehhez az edzéshez nem érkezett külön órás mérési összesítés. Az alábbi értékek a Health Connect adatforrásból származnak.</p>':'';
+   return label+original(i);
+  }
   const id=key(row),view=picked.get(id)==='health_connect'?'health_connect':'wear';
   const tab='<div class="tp160-journal-sources" role="group" aria-label="Edzés mérési forrása">'+
    '<button type="button" class="btn secondary" aria-pressed="'+(view==='wear')+'" onclick="TrainPilotWearJournalSource.choose('+i+',\'wear\')">TrainPilot óra</button>'+
