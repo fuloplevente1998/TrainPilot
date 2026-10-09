@@ -328,7 +328,8 @@ private fun CalendarWeekPage(week: LocalDate, entries: List<WatchCalendarEntry>,
             fontWeight = FontWeight.SemiBold, maxLines = 1, textAlign = TextAlign.Center, overflow = TextOverflow.Ellipsis)
         Text(caption.dates, color = Muted, fontSize = textSize(10f), textAlign = TextAlign.Center,
             modifier = Modifier.align(Alignment.TopCenter).offset(y = layout.weekTop.dp)
-                .width(minOf(maxWidth, maxHeight) * .76f), maxLines = 1)
+                .width(minOf(maxWidth, maxHeight) * .76f)
+                .semantics { contentDescription = "${caption.dates}. Átvett hét: $pageNumber / $pageCount. Hétváltás balra vagy jobbra csúsztatással." }, maxLines = 1)
         val dayScale = minOf(1f, layout.buttonSize / 40f)
         val labels = listOf("H", "K", "Sze", "Cs", "P", "Szo", "V")
         layout.days.forEachIndexed { dayIndex, point ->
@@ -357,14 +358,10 @@ private fun CalendarWeekPage(week: LocalDate, entries: List<WatchCalendarEntry>,
                 .offset(x = point.x.dp, y = (point.y + layout.buttonSize / 2f + 2f).dp)
                 .size(4.dp).background(marker, CircleShape))
         }
-        Row(Modifier.align(Alignment.TopCenter).offset(y = layout.menuTop.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Box(Modifier.width(48.dp).height(24.dp).clickable(role = Role.Button, onClick = onBack)
-                .semantics { contentDescription = "Vissza a főmenübe" }, contentAlignment = Alignment.Center) {
-                Text("Menü", color = Muted, fontSize = textSize(10f), maxLines = 1)
-            }
-            Text("$pageNumber / $pageCount", color = Muted, fontSize = textSize(9f), maxLines = 1,
-                modifier = Modifier.semantics { contentDescription = "Átvett hét: $pageNumber / $pageCount. Hétváltás balra vagy jobbra csúsztatással." })
+        Box(Modifier.align(Alignment.TopCenter).offset(y = layout.menuTop.dp)
+            .width(56.dp).height(20.dp).clickable(role = Role.Button, onClick = onBack)
+            .semantics { contentDescription = "Vissza a főmenübe" }, contentAlignment = Alignment.Center) {
+            Text("Menü", color = Muted, fontSize = textSize(9f), maxLines = 1)
         }
     }
 }
