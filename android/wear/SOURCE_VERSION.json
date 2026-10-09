@@ -1,7 +1,7 @@
 {
-  "version": "1.2.13",
-  "displayVersion": "1.2.13",
-  "versionCode": 2720,
+  "version": "1.2.14",
+  "displayVersion": "1.2.14",
+  "versionCode": 2721,
   "source": "android/wear",
   "sourceCommit": "development"
 }
