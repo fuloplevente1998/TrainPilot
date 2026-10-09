@@ -48,7 +48,8 @@ data class WatchHomeSnapshot(
     val recommended: WatchHomeRecommendation?,
     val days: List<WatchHomeDay>,
     val calendar: List<WatchCalendarEntry> = emptyList(),
-    val quickExercises: List<WatchHomeExercise> = emptyList()
+    val quickExercises: List<WatchHomeExercise> = emptyList(),
+    val recentWorkouts: List<MiniJournalWorkout> = emptyList()
 ) {
     fun toWearExercise(exercise: WatchHomeExercise): WearExercise = WearExercise(
         id = exercise.id,
@@ -162,7 +163,8 @@ object WatchHomeStore {
                 calendar = calendar,
                 quickExercises = root.optJSONArray("quickExercises")?.let { library ->
                     parseDay(JSONObject().put("id", "quick").put("exercises", library))?.exercises
-                }.orEmpty()
+                }.orEmpty(),
+                recentWorkouts = WatchMiniJournal.parse(root.optJSONArray("recentWorkouts"))
             )
         } catch (_: Exception) { null }
     }
