@@ -17,8 +17,7 @@ internal data class WearHomePhoneLayout(val width: Float, val height: Float)
 
 internal fun wearHomePhoneLayout(width: Float, height: Float): WearHomePhoneLayout {
     val diameter = min(width, height)
-    return WearHomePhoneLayout((diameter - 44f).coerceAtLeast(80f) * .65f,
-        if (diameter < 180f) 36f else 48f)
+    return WearHomePhoneLayout((diameter * .39f).coerceIn(72f, 96f), 32f)
 }
 
 internal fun wearActionLayout(width: Float, height: Float, count: Int, preferredGap: Float): WearActionLayout {
@@ -41,4 +40,33 @@ internal fun wearActionLayout(width: Float, height: Float, count: Int, preferred
     val bodyTop = (height - diameter) / 2 + diameter * .07f
     return WearActionLayout(button, gap, count * button + (count - 1) * gap,
         footerTop, bodyTop, (footerTop - bodyTop - 5f).coerceAtLeast(1f))
+}
+
+/** Home has a fixed small phone header and three separate controls on a lower arc. */
+internal data class WearHomeLayout(
+    val phone: WearHomePhoneLayout,
+    val phoneTop: Float,
+    val buttonSize: Float,
+    val sideOffset: Float,
+    val sideTop: Float,
+    val centerTop: Float,
+    val bodyTop: Float,
+    val bodyHeight: Float
+)
+
+internal fun wearHomeLayout(width: Float, height: Float): WearHomeLayout {
+    val diameter = min(width, height)
+    val insetTop = (height - diameter) / 2f
+    val phone = wearHomePhoneLayout(width, height)
+    val phoneTop = insetTop + diameter * .065f
+    val button = 48f
+    val sideOffset = min(45f, diameter * .245f)
+    // Neighboring circular touch targets keep at least 4dp of separation.
+    val drop = sqrt(((button + 4f) * (button + 4f) - sideOffset * sideOffset).coerceAtLeast(0f))
+    val centerOffset = min(diameter * .32f, diameter / 2f - 8f - button / 2f - 3f)
+    val centerTop = height / 2f + centerOffset - button / 2f
+    val sideTop = centerTop - drop
+    val bodyTop = phoneTop + phone.height + 5f
+    return WearHomeLayout(phone, phoneTop, button, sideOffset, sideTop, centerTop,
+        bodyTop, (sideTop - bodyTop - 5f).coerceAtLeast(1f))
 }

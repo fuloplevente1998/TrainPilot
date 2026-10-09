@@ -25,6 +25,31 @@ class WearActionLayoutTest {
         assertFits(225f, 192f, 2, 13f)
     }
 
+    @Test fun homeArcTargetsAndCaptionsFitWithoutOverlapping() {
+        for ((width, height) in listOf(160f to 160f, 176f to 176f, 192f to 192f,
+                200f to 200f, 216f to 216f, 225f to 225f, 240f to 240f,
+                254f to 254f, 225f to 192f, 192f to 225f)) {
+            val layout = wearHomeLayout(width, height)
+            val radius = min(width, height) / 2f
+            val centers = listOf(-layout.sideOffset to (layout.sideTop + layout.buttonSize / 2f - height / 2f),
+                0f to (layout.centerTop + layout.buttonSize / 2f - height / 2f),
+                layout.sideOffset to (layout.sideTop + layout.buttonSize / 2f - height / 2f))
+            assertEquals(48f, layout.buttonSize, .001f)
+            assertTrue("Middle action must be lower", layout.centerTop > layout.sideTop)
+            assertTrue("Body must not touch controls", layout.bodyTop + layout.bodyHeight + 4.99f <= layout.sideTop)
+            for ((x, y) in centers) {
+                assertTrue("Home control clipped at $width x $height", hypot(x, y) + layout.buttonSize / 2f <= radius - 7.99f)
+                for (dx in listOf(-22f, 22f)) {
+                    assertTrue("Home caption clipped at $width x $height", hypot(x + dx, y + 20f) <= radius - 5.99f)
+                }
+            }
+            for (a in centers.indices) for (b in a + 1 until centers.size) {
+                assertTrue("Home touch targets overlap", hypot(centers[a].first - centers[b].first,
+                    centers[a].second - centers[b].second) >= layout.buttonSize + 3.99f)
+            }
+        }
+    }
+
     private fun assertFits(width: Float, height: Float, count: Int, gap: Float) {
         val layout = wearActionLayout(width, height, count, gap)
         val radius = min(width, height) / 2
