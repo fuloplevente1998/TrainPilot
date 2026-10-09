@@ -38,11 +38,25 @@ class WearCalendarLayoutTest {
         assertEquals(2026, newYear.get(WeekFields.ISO.weekBasedYear()))
     }
 
-    @Test fun navigationIncludesCachedWeeksAndTodayButIgnoresInvalidDates() {
+    @Test fun navigationIncludesOnlyCachedWeeksAndIgnoresInvalidDates() {
         val today = LocalDate.parse("2026-10-09")
         val entries = listOf(entry("2026-10-06"), entry("2026-10-06"), entry("2026-10-19"), entry("invalid"))
         assertEquals(listOf(LocalDate.parse("2026-10-05"), LocalDate.parse("2026-10-19")), wearCalendarWeeks(entries, today))
         assertEquals(listOf(LocalDate.parse("2026-10-05")), wearCalendarWeeks(emptyList(), today))
+        assertEquals(listOf(LocalDate.parse("2026-09-28")),wearCalendarWeeks(listOf(entry("2026-09-30")),today))
+    }
+
+    @Test fun weekCaptionsFollowTheSelectedDatesAcrossMonthsAndYears() {
+        val today=LocalDate.parse("2026-10-09")
+        val october=wearCalendarCaption(LocalDate.parse("2026-10-05"),today)
+        assertEquals("október",october.month)
+        assertEquals("5–11. · 41. hét",october.dates)
+        val crossing=wearCalendarCaption(LocalDate.parse("2026-10-26"),today)
+        assertTrue(crossing.month.contains("okt."));assertTrue(crossing.month.contains("nov."))
+        assertEquals("26–1. · 44. hét",crossing.dates)
+        val newYear=wearCalendarCaption(LocalDate.parse("2026-12-28"),today)
+        assertTrue(newYear.month.contains("dec."));assertTrue(newYear.month.contains("jan."));assertTrue(newYear.month.contains("2027"))
+        assertEquals("28–3. · 53. hét",newYear.dates)
     }
 
     @Test fun startRequiresAvailablePlannedWorkoutAndNoActiveDraft() {
