@@ -318,5 +318,13 @@
   {
     "file": "tests/browser/json-restore-lifecycle.cjs",
     "estimatedSeconds": 7
+  },
+  {
+    "file": "tests/browser/action-feedback.cjs",
+    "estimatedSeconds": 40
+  },
+  {
+    "file": "tests/browser/calendar-plan-replacement.cjs",
+    "estimatedSeconds": 50
   }
 ]

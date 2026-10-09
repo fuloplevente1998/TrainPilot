@@ -1,9 +1,11 @@
-# TrainPilot 1.2.12 /2719 — telefonos tesztjelölt
+# TrainPilot 1.2.12 /2719 — naptártervezés és visszajelzések
 
-- A Naptár → Újratervezés Program mezőjében választott új program felváltja a régi program hátralévő tervét.
-- A teljesített, naplózott és aktív edzések megmaradnak; ismételt mentés nem hoz létre másolatokat.
-- Az előnézet megmutatja a kiválasztott programot. [Részletek és ellenőrzés](docs/releases/v1.2.12.md).
-- Ez a telefonos javítás készülékes elfogadásra vár.
+- A többhetes naptártervező a választott időszak minden hátralévő tervét az aktív programmal váltja fel, a régi programokét is.
+- A személyre szabott program teljes neve látszik, a naptárból indított edzés annak gyakorlatait és beállításait használja.
+- A teljesített, naplózott, aktív és időszakon kívüli edzések megmaradnak; az ismételt mentés nem ad hozzá másolatokat.
+- Az Újratervezés ablak Program mezőjében választott új program felváltja az eredeti program hátralévő tervét.
+- A mentések és törlések közös, rövid felugró visszajelzést kapnak, külön zöld sikerüzenet nélkül.
+- [Részletek, ellenőrzés és main merge jóváhagyása](docs/releases/v1.2.12.md).
 
 # TrainPilot 1.0.4
 
