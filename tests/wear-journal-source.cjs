@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const app=fs.readFileSync('www/app.js','utf8');
-const source=app.match(/\/\/ @section wear-journal-sources-160\.js\n([\s\S]*?)\/\/ @endsection wear-journal-sources-160\.js/);
+const source=fs.existsSync('www/wear-journal-sources-160.js')?fs.readFileSync('www/wear-journal-sources-160.js','utf8'):app.match(/\/\/ @section wear-journal-sources-160\.js\n([\s\S]*?)\/\/ @endsection wear-journal-sources-160\.js/)?.[1];
 assert.ok(source,'metric-source presenter must be a standalone shipped runtime section');
 const workout={
  started:'2026-10-09T20:00:00Z',finished:'2026-10-09T20:45:00Z',syncId:'watch-001',
@@ -17,7 +17,7 @@ const context=vm.createContext({window,document,history:()=>rows,
  rfHistoryHealthHtml:i=>'<div class="hc-only">HC: '+rows[i].health240.totalCalories+' kcal</div>',
  rfHistoryHealthPaint:()=>paints++,esc:value=>String(value),
  console,Date,Number});
-vm.runInContext(source[1],context);
+vm.runInContext(source,context);
 const output=()=>vm.runInContext('rfHistoryHealthHtml(0)',context);
 assert.match(output(),/TrainPilot óra/);
 assert.match(output(),/390 kcal/,'wear total must be the primary choice');
