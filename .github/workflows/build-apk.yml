@@ -1,4 +1,4 @@
-name: Release Gate + TrainPilot APKs
+name: Phone Release Gate + TrainPilot APK
 
 on:
   workflow_dispatch:
@@ -11,7 +11,9 @@ on:
       - 'v*'
     paths-ignore:
       - 'android/wear/**'
-      - 'docs/WEAR_OS.md'
+      - 'docs/**'
+      # Workflow-only changes are checked without rebuilding phone application code.
+      - '.github/workflows/build-apk.yml'
       - '.github/workflows/wear-build.yml'
       - '.github/workflows/wear-release.yml'
       - '.github/workflows/validate-branch.yml'
@@ -162,21 +164,16 @@ jobs:
           const pkg=require('./package.json');
           const src=require('./SOURCE_VERSION.json');
           const phone=fs.readFileSync('android/app/build.gradle','utf8');
-          const wear=fs.readFileSync('android/wear/build.gradle','utf8');
           const phoneVersion=phone.match(/versionName\s+"([^"]+)"/)?.[1];
           const phoneCode=Number(phone.match(/versionCode\s+(\d+)/)?.[1]);
-          const wearVersion=wear.match(/versionName\s+"([^"]+)"/)?.[1];
-          const wearCode=Number(wear.match(/versionCode\s+(\d+)/)?.[1]);
           const expectedVersion=src.displayVersion||src.version;
           if(pkg.version!==src.version||phoneVersion!==expectedVersion) throw new Error('Phone version mismatch');
           if(Number(src.versionCode)!==phoneCode) throw new Error('Phone versionCode mismatch');
-          if(wearVersion!==expectedVersion) throw new Error('Wear version mismatch');
-          if(wearCode!==phoneCode) throw new Error('Wear versionCode mismatch');
           if(process.env.GITHUB_REF_TYPE==='tag'){
             const expectedTag=`v${pkg.version}`;
             if(process.env.GITHUB_REF_NAME!==expectedTag) throw new Error(`Tag/version mismatch: expected ${expectedTag}, got ${process.env.GITHUB_REF_NAME}`);
           }
-          console.log(`Version metadata OK: phone + Wear ${pkg.version} (${phoneCode})`);
+          console.log(`Version metadata OK: phone ${pkg.version} (${phoneCode})`);
           NODE
 
       - name: Run TrainPilot regression suite
@@ -188,7 +185,7 @@ jobs:
       - name: Sync Capacitor Android project
         run: npm run sync
 
-      - name: Build phone + Wear OS release APKs
+      - name: Build signed phone release APK
         working-directory: android
         env:
           ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
@@ -196,14 +193,13 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon clean testReleaseUnitTest :app:assembleRelease :wear:assembleRelease
+          ./gradlew --no-daemon :app:testReleaseUnitTest :app:assembleRelease
 
-      - name: Verify APKs and package source
+      - name: Verify phone APK and package source
         shell: bash
         run: |
           set -euo pipefail
           PHONE_APK=android/app/build/outputs/apk/release/app-release.apk
-          WEAR_APK=android/wear/build/outputs/apk/release/wear-release.apk
           VERSION="$(node -p "require('./package.json').version")"
           CODE="$(node -p "require('./SOURCE_VERSION.json').versionCode")"
           DISPLAY_VERSION="$(node -p "require('./SOURCE_VERSION.json').displayVersion || require('./package.json').version")"
@@ -215,23 +211,17 @@ jobs:
           grep -q "versionCode='$CODE'" phone-apk-badging.txt
           grep -q "versionName='$DISPLAY_VERSION'" phone-apk-badging.txt
 
-          "$AAPT" dump badging "$WEAR_APK" > wear-apk-badging.txt
-          grep -q "package: name='com.repforge.app'" wear-apk-badging.txt
-          grep -q "versionCode='$CODE'" wear-apk-badging.txt
-          grep -q "versionName='$DISPLAY_VERSION'" wear-apk-badging.txt
 
           "$SIGNER" verify --verbose "$PHONE_APK"
-          "$SIGNER" verify --verbose "$WEAR_APK"
 
           unzip -p "$PHONE_APK" assets/public/app.js > /tmp/packaged-app.js
           cmp www/app.js /tmp/packaged-app.js
 
           cp "$PHONE_APK" "TrainPilot-$VERSION.apk"
-          cp "$WEAR_APK" "TrainPilot-$VERSION-wear.apk"
           git archive --format=zip -o "TrainPilot-$VERSION-source.zip" HEAD
           zip -q -d "TrainPilot-$VERSION-source.zip" SOURCE_VERSION.json || true
           zip -q "TrainPilot-$VERSION-source.zip" SOURCE_VERSION.json
-          sha256sum "TrainPilot-$VERSION.apk" "TrainPilot-$VERSION-wear.apk" "TrainPilot-$VERSION-source.zip" > SHA256SUMS.txt
+          sha256sum "TrainPilot-$VERSION.apk" "TrainPilot-$VERSION-source.zip" > SHA256SUMS.txt
 
       - name: Verify release signer continuity with v1.0.0
         shell: bash
@@ -243,20 +233,15 @@ jobs:
           gh release download v1.0.0 --repo "$GITHUB_REPOSITORY" --pattern 'TrainPilot-1.0.0.apk' --dir "$RUNNER_TEMP/previous-release"
           OLD_APK="$RUNNER_TEMP/previous-release/TrainPilot-1.0.0.apk"
           PHONE_APK="android/app/build/outputs/apk/release/app-release.apk"
-          WEAR_APK="android/wear/build/outputs/apk/release/wear-release.apk"
           echo "485817d3c33b0623b030ad919fb5e07af27d5e5890a3f67fb8e4dbe4b729f22a  $OLD_APK" | sha256sum --check --
           OLD_CERT="$(python3 scripts/apk_signer_cert.py "$OLD_APK")"
           PHONE_CERT="$(python3 scripts/apk_signer_cert.py "$PHONE_APK")"
-          WEAR_CERT="$(python3 scripts/apk_signer_cert.py "$WEAR_APK")"
           test -n "$OLD_CERT"
           test -n "$PHONE_CERT"
-          test -n "$WEAR_CERT"
           echo "Original certificate: $OLD_CERT"
           echo "Phone certificate:    $PHONE_CERT"
-          echo "Wear certificate:     $WEAR_CERT"
           test "$OLD_CERT" = "$PHONE_CERT" || { echo "::error::Phone signing certificate differs from public v1.0.0"; exit 1; }
-          test "$PHONE_CERT" = "$WEAR_CERT" || { echo "::error::Wear signing certificate differs from phone certificate"; exit 1; }
-          echo "Phone + Wear release signing certificates match public v1.0.0"
+          echo "Phone release signing certificate matches public v1.0.0"
 
       - name: Remove temporary signing material
         if: always()
@@ -290,11 +275,9 @@ jobs:
           fi
           FILES=(
             "TrainPilot-$VERSION.apk"
-            "TrainPilot-$VERSION-wear.apk"
             "TrainPilot-$VERSION-source.zip"
             "SHA256SUMS.txt"
             "phone-apk-badging.txt"
-            "wear-apk-badging.txt"
           )
           NOTES=(--generate-notes)
           NOTES_FILE="docs/releases/$TAG.md"
@@ -311,7 +294,7 @@ jobs:
             fi
           fi
 
-      - name: Upload APKs and source
+      - name: Upload phone APK and source
         uses: actions/upload-artifact@v7
         with:
           name: TrainPilot-${{ github.run_id }}-${{ github.sha }}
@@ -320,6 +303,5 @@ jobs:
             TrainPilot-*-source.zip
             SHA256SUMS.txt
             phone-apk-badging.txt
-            wear-apk-badging.txt
           if-no-files-found: error
           retention-days: 14
