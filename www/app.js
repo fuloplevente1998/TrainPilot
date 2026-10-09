@@ -16561,8 +16561,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }));
   try{
    if(typeof history!=='function')return [];
-   return history().filter(h=>h&&h.finished&&Number.isFinite(Date.parse(h.started))&&Number.isFinite(Date.parse(h.finished))&&Date.parse(h.finished)>=Date.parse(h.started))
-    .sort((a,b)=>Date.parse(b.started)-Date.parse(a.started)).slice(0,8).map(h=>{
+   const seen=new Set();
+   const projected=history().filter(h=>h&&h.finished&&Number.isFinite(Date.parse(h.started))&&Number.isFinite(Date.parse(h.finished))&&Date.parse(h.finished)>=Date.parse(h.started))
+    .sort((a,b)=>Date.parse(b.started)-Date.parse(a.started))
+    .filter(h=>{const id=text(h.syncId||h.workoutId||h.started,96);if(!id||seen.has(id))return false;seen.add(id);return true;})
+    .slice(0,8).map(h=>{
      const id=text(h.syncId||h.workoutId||h.started,96);
      const w=h.healthWear129;
      const wearable=w?.source==='wear_health_services'&&String(w.workoutId||'')===id&&w.watchId&&Number.isSafeInteger(w.revision)&&w.revision>0?{
@@ -16584,13 +16587,23 @@ window.addEventListener?.('DOMContentLoaded',function(){
        name:text(ex?.name||ex?.hu||ex?.en||(typeof byId==='function'?exerciseName(byId(ex?.id)||ex,lang):ex?.id)||'Gyakorlat'),
        sets:(Array.isArray(ex?.sets)?ex.sets:[]).slice(0,12).filter(set=>set?.done===true).map((set,index)=>({
         number:Math.max(1,Math.min(1000,Number(set.set)||index+1)),reps:text(set.reps,16),
-        weight:metric(Number(set.weight),0,100000),leftSeconds:metric(Number(set.leftSeconds),0,604800),
-        rightSeconds:metric(Number(set.rightSeconds),0,604800),distanceMeters:metric(Number(set.distanceMeters),0,1000000)
+        weight:set.weight==null||set.weight===''?null:metric(Number(set.weight),0,100000),
+        leftSeconds:set.leftSeconds==null||set.leftSeconds===''?null:metric(Number(set.leftSeconds),0,604800),
+        rightSeconds:set.rightSeconds==null||set.rightSeconds===''?null:metric(Number(set.rightSeconds),0,604800),
+        distanceMeters:set.distanceMeters==null||set.distanceMeters===''?null:metric(Number(set.distanceMeters),0,1000000)
        }))
       })).filter(ex=>ex.sets.length>0),
       wear:wearable,healthConnect:connected
      };
     });
+   // Keep the combined home Data Layer payload small even with custom libraries and huge logs.
+   const bounded=[];let bytes=0;
+   for(const row of projected){
+    const size=JSON.stringify(row).length;
+    if(size>28000||bytes+size>32000)continue;
+    bounded.push(row);bytes+=size;
+   }
+   return bounded;
   }catch(_){return []}
  }
  function watchCalendar(active,lang){
