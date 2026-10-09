@@ -42,7 +42,7 @@ class WatchMiniJournalTest {
                 .put("source", "health_connect")
                 .put("workoutCalories", JSONObject.NULL)
                 .put("totalCalories", -10)
-                .put("averageHeartRate", Double.NaN))
+                .put("averageHeartRate", "not-a-number"))
         val data = WatchMiniJournal.parse(JSONArray().put(row)).single()
         assertNull(data.wear)
         assertNull(data.healthConnect!!.workoutCalories)
