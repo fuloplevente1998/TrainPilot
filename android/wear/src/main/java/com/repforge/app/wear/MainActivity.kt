@@ -119,6 +119,8 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                 onResumeWorkout = { sendCommand("resumeWorkout") },
                 onSelectExercise = ::selectExercise,
                 onStart = ::startWorkoutFromWatch,
+                onStartQuick = ::startQuickWorkoutFromWatch,
+                onAddQuick = ::addQuickExerciseFromWatch,
                 onChange = ::changeCurrentSet,
                 onComplete = ::completeCurrentSet,
                 onPrevious = { navigateExercise(-1) },
@@ -215,6 +217,41 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         workout.value = WorkoutSnapshotStore.saveWorkout(this, localWorkout)
         sendStartCommand(day, scheduleId, started)
         startHealthIfEnabled();WearSurfaces.refresh(this,true)
+    }
+
+    private fun startQuickWorkoutFromWatch(exercise: WatchHomeExercise) {
+        val source = home.value ?: return
+        if (workout.value != null || source.hasDraft ||
+            closure.value?.status in listOf("pending", "error") ||
+            source.quickExercises.none { it.id == exercise.id }) return
+        val started = Instant.ofEpochMilli(System.currentTimeMillis()).toString()
+        val localWorkout = source.createQuickWorkout(exercise, started)
+        workout.value = WorkoutSnapshotStore.saveWorkout(this, localWorkout)
+        val command = JSONObject()
+            .put("schema", 1)
+            .put("commandId", UUID.randomUUID().toString())
+            .put("workoutId", started)
+            .put("action", "startQuickWorkout")
+            .put("exerciseId", exercise.id)
+            .put("started", started)
+            .put("createdAt", System.currentTimeMillis())
+        val sequence = WearCommandOutbox.enqueue(this, command)
+        workout.value?.let { workout.value = WorkoutSnapshotStore.saveWorkout(this, it.copy(localSequence = sequence)) }
+        startHealthIfEnabled()
+        WearSurfaces.refresh(this, true)
+    }
+
+    private fun addQuickExerciseFromWatch(exercise: WatchHomeExercise) {
+        val current = workout.value ?: return
+        val source = home.value ?: return
+        if (!current.quickWorkout || current.exercises.size >= 20 ||
+            current.exercises.any { it.id == exercise.id } ||
+            source.quickExercises.none { it.id == exercise.id }) return
+        val updated = current.copy(exercises = current.exercises + source.toWearExercise(exercise),
+            currentExercise = current.exercises.size, restEndAt = 0L)
+        workout.value = WorkoutSnapshotStore.saveWorkout(this, updated)
+        sendCommand("addQuickExercise", exerciseIndex = updated.currentExercise)
+        WearSurfaces.refresh(this, true)
     }
 
     private fun sendStartCommand(day: WatchHomeDay, scheduleId: String, started: String) {
