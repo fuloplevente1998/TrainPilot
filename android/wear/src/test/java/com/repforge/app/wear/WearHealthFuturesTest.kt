@@ -17,9 +17,9 @@ class WearHealthFuturesTest {
         WearHealthFutures.awaitCompletion(start, direct, { true }, failures::add) { events.add("started") }
         WearHealthFutures.awaitCompletion(end, direct, { true }, failures::add) { events.add("ended") }
         assertTrue(events.isEmpty())
-        start.set(null)
+        WearHealthFutureFixture.completeWithNull(start)
         assertEquals(listOf("started"), events)
-        end.set(null)
+        WearHealthFutureFixture.completeWithNull(end)
         assertEquals(listOf("started", "ended"), events)
         assertTrue(failures.isEmpty())
     }
@@ -30,7 +30,7 @@ class WearHealthFuturesTest {
         var completed = false
         WearHealthFutures.awaitCompletion(future, Executor { queue.add(it) }, { true }, { throw it }) { completed = true }
         assertTrue(queue.isEmpty())
-        future.set(null)
+        WearHealthFutureFixture.completeWithNull(future)
         assertFalse(completed)
         assertEquals(1, queue.size)
         queue.removeAt(0).run()
@@ -65,7 +65,7 @@ class WearHealthFuturesTest {
         var active = true
         var completed = false
         WearHealthFutures.awaitCompletion(future, Executor { queue.add(it) }, { active }, failures::add) { completed = true }
-        future.set(null)
+        WearHealthFutureFixture.completeWithNull(future)
         active = false
         queue.single().run()
         assertFalse(completed)
@@ -87,7 +87,7 @@ class WearHealthFuturesTest {
         val failures = mutableListOf<Exception>()
         var completed = false
         WearHealthFutures.awaitValue(future, direct, { true }, failures::add) { completed = true }
-        future.set(null)
+        WearHealthFutureFixture.completeWithNull(future)
         assertFalse(completed)
         assertTrue(failures.single() is IllegalStateException)
     }
