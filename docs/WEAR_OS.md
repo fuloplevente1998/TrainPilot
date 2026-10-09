@@ -1,8 +1,8 @@
 # TrainPilot Wear OS – architecture and implementation plan
 
-Status: Wear 1.2.14 /2721, compatible with phone 1.2.10.
+Status: previous independent Wear 1.2.15 /2722 validation continues; paired Quick Workout candidate Wear 1.2.16 /2723 + phone 1.2.14 /2721 is in development.
 
-Candidate: Wear **1.2.15 /2722** adds restart-safe active-workout recording, final-update handling, measured workout summary, swipe navigation between cached calendar weeks and release code/resource shrinking. It has not yet been accepted on a physical watch or promoted to main.
+Previous candidate: Wear **1.2.15 /2722** adds restart-safe active-workout recording, final-update handling, measured workout summary, swipe navigation between cached calendar weeks and release code/resource shrinking. Its complete physical-watch acceptance has not yet been documented. The new **Wear 1.2.16 /2723** Quick Workout candidate pairs with phone **1.2.14 /2721** and requires both release gates and paired-device acceptance.
 
 ## Independent phone and Wear releases
 
@@ -11,6 +11,17 @@ Wear-only fixes run `Wear Release Gate`: native Wear unit tests, signed `:wear:a
 Phone changes run `Phone Release Gate + TrainPilot APK`: Chromium UI and phone regressions, native phone unit tests, signed `:app:assembleRelease`, APK metadata and signing-certificate checks. Phone versions use the root `SOURCE_VERSION.json`, `package.json` and phone Gradle metadata, with release tags `v<version>`. The phone gate neither requires matching Wear versions nor builds the Wear module.
 
 Keep the package ID, signing identity and Data Layer protocol compatible across the installed pair. Updating only Wear does not require a phone build unless the change actually needs a new phone-side protocol or feature. Workflow-only and documentation changes do not start the phone APK workflow; platform source changes and manual runs remain covered.
+
+## Quick Workout companion — 1.2.16 /2723 candidate (#155)
+
+- The phone publishes a bounded Quick Workout exercise library in its existing watch-home Data Layer snapshot. The picker on the watch can search and page through that catalog, including custom exercises.
+- Start a true `quickWorkout` / `type:'quick'` session from the watch without a fake program. Existing Wear workout and Health Services measurement controls run as usual.
+- `startQuickWorkout` and `addQuickExercise` commands are processed by the phone's canonical Quick Workout engine. An unrelated active/draft session is never replaced.
+- Quick sessions carry a stable `workoutId`, preserving the same phone Journal entry, set edits, offline completion, deduplicated retries and late health summaries.
+- The new phone protocol requires phone **1.2.14 /2721** and Wear **1.2.16 /2723**, unlike earlier icon/calendar Wear-only changes. Maintain independent phone/Wear gates.
+- Real-device acceptance is pending: watch pushup start, extra exercise, >2-minute background metrics, save-once, reconnect, phone-started quick session and UI/accessibility.
+
+See [phone notes](releases/v1.2.14.md) and [Wear notes](../android/wear/releases/wear-v1.2.16.md).
 
 ## Current next steps — 2026-10-09
 
