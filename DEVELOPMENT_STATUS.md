@@ -1,6 +1,16 @@
 # TrainPilot — Development Status
 
-Last updated: **2026-10-04**.
+Last updated: **2026-10-09**.
+
+## Phone release preparation — 1.2.12 /2719, calendar planning and shared action feedback
+
+Based on main after the approved Wear #151 merge. The multiweek Calendar planner replaces all unfinished plans in the selected start-date/week window with the active program, including older programs. Completed/logged/active/draft entries, previous tombstones and dates outside the window remain protected. Retained/moved rows keep their IDs; surplus plans become sync tombstones. Repeated planning is idempotent and a failed settings write rolls calendar storage back. Personal program names are visible, and calendar-started sessions use their actual exercise list and prescriptions.
+
+The separate Calendar → Replan dialog retains its selected program/first day/date/source across redraws, previews the chosen program and replaces the original program's remaining plan. Saves and confirmed deletions across the app use the existing bottom-centre toast; errors/dirty states and confirmation dialogs remain explicit. One host/timer gives screen-reader feedback without extra full-page renders, including a once-only receipt after local-data erase/reload.
+
+125 Node regressions + four runner tests passed locally. The canonical UI suite now contains 82 scripts, with new action-feedback and personalized multiweek replacement regressions covering 32 phone-size/language/theme cases each. Full Chromium, native tests, signed APK and source/signer checks run in the existing phone gate. Performance budgets remain unchanged. [Release notes and detailed scope](docs/releases/v1.2.12.md).
+
+The user explicitly authorized main merge after completing these requested changes (“Utána az ha megvan mehet mainre :)”), and selected replacement of all remaining plans in the chosen weeks, including previous programs. Main merge follows the final source's complete release gate; no unperformed physical-phone check is claimed. Wear 1.2.15 remains separately released.
 
 ## Phone-approved stable release — 1.2.6 /2709
 
