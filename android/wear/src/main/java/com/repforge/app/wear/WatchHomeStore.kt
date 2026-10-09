@@ -47,10 +47,40 @@ data class WatchHomeSnapshot(
     val hasDraft: Boolean,
     val recommended: WatchHomeRecommendation?,
     val days: List<WatchHomeDay>,
-    val calendar: List<WatchCalendarEntry> = emptyList()
+    val calendar: List<WatchCalendarEntry> = emptyList(),
+    val quickExercises: List<WatchHomeExercise> = emptyList()
 ) {
-    fun createWorkout(day: WatchHomeDay, scheduleId: String, started: String): WearWorkout {
-        return WearWorkout(
+    fun toWearExercise(exercise: WatchHomeExercise): WearExercise = WearExercise(
+        id = exercise.id,
+        name = exercise.name,
+        loadType = exercise.loadType,
+        repUnit = exercise.repUnit,
+        measurementType = exercise.measurementType,
+        targetReps = exercise.targetReps,
+        sets = exercise.sets.map { set ->
+            WearSet(number = set.number, reps = "", weight = set.weight, done = false,
+                leftSeconds = 0, rightSeconds = 0, distanceMeters = 0.0)
+        }
+    )
+
+    fun createQuickWorkout(exercise: WatchHomeExercise, started: String): WearWorkout = WearWorkout(
+        revision = 0L,
+        programId = "",
+        programName = "Gyors edzés",
+        dayId = "quick",
+        scheduleId = "",
+        started = started,
+        workoutId = started,
+        currentExercise = 0,
+        restSeconds = restSeconds,
+        restEndAt = 0L,
+        dayName = "Gyors edzés",
+        quickWorkout = true,
+        exercises = listOf(toWearExercise(exercise))
+    )
+
+    fun createWorkout(day: WatchHomeDay, scheduleId: String, started: String): WearWorkout =
+        WearWorkout(
             revision = 0L,
             programId = day.programId,
             programName = day.programName,
@@ -62,29 +92,9 @@ data class WatchHomeSnapshot(
             restSeconds = restSeconds,
             restEndAt = 0L,
             dayName = day.name,
-            exercises = day.exercises.map { exercise ->
-                WearExercise(
-                    id = exercise.id,
-                    name = exercise.name,
-                    loadType = exercise.loadType,
-                    repUnit = exercise.repUnit,
-                    measurementType = exercise.measurementType,
-                    targetReps = exercise.targetReps,
-                    sets = exercise.sets.map { set ->
-                        WearSet(
-                            number = set.number,
-                            reps = "",
-                            weight = set.weight,
-                            done = false,
-                            leftSeconds = 0,
-                            rightSeconds = 0,
-                            distanceMeters = 0.0
-                        )
-                    }
-                )
-            }
+            exercises = day.exercises.map(::toWearExercise)
         )
-    }
+
 }
 
 object WatchHomeStore {
@@ -149,7 +159,10 @@ object WatchHomeStore {
                 hasDraft = root.optBoolean("hasDraft", false),
                 recommended = recommendation,
                 days = days,
-                calendar = calendar
+                calendar = calendar,
+                quickExercises = root.optJSONArray("quickExercises")?.let { library ->
+                    parseDay(JSONObject().put("id", "quick").put("exercises", library))?.exercises
+                }.orEmpty()
             )
         } catch (_: Exception) { null }
     }
