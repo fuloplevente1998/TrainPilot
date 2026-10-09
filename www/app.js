@@ -16517,6 +16517,24 @@ window.addEventListener?.('DOMContentLoaded',function(){
    exercises
   };
  }
+ function watchQuickExercises(lang){
+  // Keep the selection on the watch, but always validate IDs using the phone's library.
+  // Limit oversized custom libraries so the Data Layer item stays bounded.
+  try{
+   if(typeof exercises!=='function')return [];
+   return exercises().filter(e=>e&&typeof e.id==='string'&&e.id).slice(0,240).map(e=>({
+    id:String(e.id),
+    name:exerciseName(e,lang),
+    loadType:String(e.loadType||''),
+    repUnit:String(e.repUnit||''),
+    measurementType:String(e.measurementType||''),
+    targetReps:String(e.reps||''),
+    sets:Array.from({length:Math.max(1,Math.min(10,Number(e.sets)||3))},(_,i)=>({
+     set:i+1,weight:e.loadType==='bodyweight'?0:(Number(e.weight)||0)
+    }))
+   }));
+  }catch(_){return []}
+ }
  function watchCalendar(active,lang){
   const now=new Date(),calendar=[],calendarDays=[],known=new Set((active.days||[]).map(d=>active.id+'|'+d.id));
   const planned=typeof scheduled==='function'?scheduled().filter(x=>x&&!x.cancelled):[];
@@ -16558,6 +16576,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    return {
     schema:1,
     ...watchCalendar(active,lang),
+    quickExercises:watchQuickExercises(lang),
     activeProgramId:String(active.id||''),
     activeProgramName:String(active.name||'TrainPilot'),
     restSeconds:configuredRest(),
@@ -16582,7 +16601,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
     schema:1,
     workoutId:sessionKey(session),
     watchSequence:Number(session.wearSequence)||0,
-    dayName:(()=>{try{const p=programById(session.programId);return dayName(p,programDay(p,session.dayId||session.workout))}catch(_){return String(session.dayId||session.workout||'')}})(),
+    quickWorkout:session.type==='quick'||session.quickWorkout===true,
+    dayName:(()=>{if(session.type==='quick'||session.quickWorkout===true)return String(session.programName||'Gyors edzés');try{const p=programById(session.programId);return dayName(p,programDay(p,session.dayId||session.workout))}catch(_){return String(session.dayId||session.workout||'')}})(),
     programId:String(session.programId||''),
     programName:String(session.programName||''),
     dayId:String(session.dayId||session.workout||''),
@@ -16746,7 +16766,16 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(action==='discardWorkout')return recordResult(command,'discarded');
    const final=command.finalSnapshot;
    // The final DataItem can arrive before startWorkout after an offline session.
-   if(final?.workoutId===expected&&final.dayId&&final.programId){
+   if(final?.workoutId===expected&&final.quickWorkout===true&&Array.isArray(final.exercises)&&final.exercises.length>0&&final.exercises.length<=20){
+    // A terminal command can arrive without the original start (offline/replay).
+    const first=String(final.exercises[0]?.id||'');
+    if(first)await applyCommand({...command,action:'startQuickWorkout',exerciseId:first,started:final.started});
+    for(const extra of final.exercises.slice(1)){
+     if(!state.session)break;
+     const id=String(extra?.id||'');
+     if(id)await applyCommand({...command,action:'addQuickExercise',exerciseId:id});
+    }
+   }else if(final?.workoutId===expected&&final.dayId&&final.programId){
     await applyCommand({...command,action:'startWorkout',dayId:final.dayId,programId:final.programId,scheduleId:final.scheduleId,started:final.started});
    }
   }
@@ -16776,7 +16805,23 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(action==='healthSummary')return attachMeasuredHealth(command);
   if(action==='finishWorkout'||action==='discardWorkout')return closeFromWatch(command);
   if(expectedId&&isClosed(expectedId))return true;
-  if(!state.session&&action!=='startWorkout'&&!restoreMatchingDraft(expectedId))return false;
+  if(!state.session&&!['startWorkout','startQuickWorkout'].includes(action)&&!restoreMatchingDraft(expectedId))return false;
+  if(action==='startQuickWorkout'){
+   const expected=String(command.workoutId||command.started||''),id=String(command.exerciseId||'');
+   if(!expected||!Number.isFinite(Date.parse(expected))||!id||!byId(id))return false;
+   if(state.session)return matchesWorkout(state.session,expected)&&tp150IsQuick(state.session);
+   const saved=db.get('draft',null);
+   if(saved?.session)return matchesWorkout(saved.session,expected)&&tp150IsQuick(saved.session);
+   // Reuse the canonical phone Quick Workout rather than fabricating a program.
+   const start=window.TrainPilotQuickWorkout?.start;
+   if(typeof start!=='function')return false;
+   await start(id);
+   if(!state.session||!tp150IsQuick(state.session))return false;
+   state.session.syncId=expected;
+   state.session.started=new Date(Date.parse(command.started||expected)).toISOString();
+   state.session.wearSequence=Math.max(Number(state.session.wearSequence)||0,Number(command.sequence)||0);
+   persistDraft();renderWorkout();return true;
+  }
   if(action==='startWorkout'){
    const expected=String(command.workoutId||command.started||'');
    if(state.session)return expected&&matchesWorkout(state.session,expected);
@@ -16802,6 +16847,14 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(!state.session)return false;
   if(!matchesWorkout(state.session,String(command.workoutId||'')))return false;
   state.session.wearSequence=Math.max(Number(state.session.wearSequence)||0,Number(command.sequence)||0);
+  if(action==='addQuickExercise'){
+   if(!tp150IsQuick(state.session))return false;
+   const id=String(command.exerciseId||''),item=byId(id);
+   if(!id||!item||state.session.exercises.length>=20&&!state.session.exercises.some(e=>e.id===id))return false;
+   const add=window.TrainPilotQuickWorkout?.add;
+   if(typeof add!=='function')return false;
+   add(id);persistDraft();return true;
+  }
   if(action==='resumeWorkout'){persistDraft();renderWorkout();return true}
   if(action==='selectExercise'){
    const located=locateExercise(command);if(!located)return false;state.current=located.index;persistDraft();renderWorkout();return true;
