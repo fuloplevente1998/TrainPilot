@@ -1,3 +1,10 @@
+# TrainPilot 1.2.13 /2720 — Egészség felvillanásának javítása (tesztverzió)
+
+- Az Egészség megnyitásakor és ismételt koppintásakor a pulzusgrafikon és a nyilak végleges formája egyben készül el, a régi réteg késleltetett visszaépítése megszűnik.
+- A testsúly és pulzus meglévő műveletei, mérési adatai és hét napos összesítése megmaradnak.
+- 32 változatban képkocka- és feladathatár-ellenőrzés; készülékes ellenőrzésre szánt draft jelölt.
+- [Részletek és ellenőrzés](docs/releases/v1.2.13.md).
+
 # TrainPilot 1.2.12 /2719 — naptártervezés és visszajelzések
 
 - A többhetes naptártervező a választott időszak minden hátralévő tervét az aktív programmal váltja fel, a régi programokét is.

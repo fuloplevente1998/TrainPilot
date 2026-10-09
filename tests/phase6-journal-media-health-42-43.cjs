@@ -5,9 +5,9 @@ const manifest=fs.readFileSync('android/app/src/main/AndroidManifest.xml','utf8'
 const paths=fs.readFileSync('android/app/src/main/res/xml/file_paths.xml','utf8');
 const pkg=require('../package.json'),src=require('../SOURCE_VERSION.json'),gradle=fs.readFileSync('android/app/build.gradle','utf8');
 
-assert.equal(pkg.version,'1.2.12');assert.equal(src.version,'1.2.12');assert.equal(src.versionCode,2719);
+assert.equal(pkg.version,'1.2.13');assert.equal(src.version,'1.2.13');assert.equal(src.versionCode,2720);
 assert.equal(src.baselineCommit,'ef09c5ee44b61902a7bb265f8ef2b3d2ea8de88e');
-assert.match(gradle,/versionCode\s+2719/);assert.match(gradle,/versionName\s+"1\.2\.12"/);
+assert.match(gradle,/versionCode\s+2720/);assert.match(gradle,/versionName\s+"1\.2\.13"/);
 
 for(const marker of ['TrainPilotPhase6','phase6-journal-media-health-42-43-r1','tp6-photo-dialog','tp6-photo-close','silentInlineHealthRefresh:true'])
  assert.ok(index.includes(marker),'missing Phase 6 UI marker '+marker);
