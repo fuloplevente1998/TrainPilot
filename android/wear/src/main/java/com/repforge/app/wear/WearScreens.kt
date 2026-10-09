@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -54,6 +55,8 @@ internal fun TrainPilotWearApp(
     closure: State<WearClosure?>,
     restRemaining: State<Int>,
     onStart: (WatchHomeDay, String) -> Unit,
+    onStartQuick: (WatchHomeExercise) -> Unit,
+    onAddQuick: (WatchHomeExercise) -> Unit,
     onChange: (String, Double) -> Unit,
     onComplete: () -> Unit,
     onPrevious: () -> Unit,
@@ -88,7 +91,15 @@ internal fun TrainPilotWearApp(
             val active = workout.value
             when {
                 route == "metrics" -> HealthScreen(health.value,measuring.value,gpsEnabled.value,onEnableHealth,onDisableHealth,onToggleGps) { route="menu" }
-                route == "menu" -> MainMenuScreen(active != null, onOpenPhone) { route = it }
+                route == "menu" -> MainMenuScreen(active != null, active?.quickWorkout == true, onOpenPhone) { route = it }
+                route == "quick" -> QuickWorkoutPicker(
+                    home.value, active, active == null && home.value?.hasDraft == false &&
+                        closure.value?.status !in listOf("pending", "error"),
+                    onBack = { route = "menu" }) { exercise ->
+                    if (active?.quickWorkout == true) onAddQuick(exercise)
+                    else if (active == null) onStartQuick(exercise)
+                    if (workout.value?.quickWorkout == true) route = "workout"
+                }
                 route == "calendar" -> CalendarScreen(home.value, active == null && home.value?.hasDraft == false && closure.value?.status !in listOf("pending", "error"),
                     onBack = { route = "menu" }) { entry ->
                     entry.day?.let { onStart(it, entry.scheduleId); if (workout.value != null) route = "workout" }
@@ -262,14 +273,79 @@ private fun RoundList(content: @Composable ColumnScope.() -> Unit) {
 }
 
 @Composable
-private fun MainMenuScreen(hasWorkout: Boolean, onOpenPhone: () -> Unit, onRoute: (String) -> Unit) {
+private fun MainMenuScreen(hasWorkout: Boolean, quickWorkout: Boolean, onOpenPhone: () -> Unit, onRoute: (String) -> Unit) {
     RoundList {
         Label("TRAINPILOT", Gold); Title("Főmenü", 22); Spacer(Modifier.height(8.dp))
         for ((label, destination) in listOf("Kezdőlap" to "home", "Naptár" to "calendar", "Programnapok" to "days", "Órás mérések" to "metrics")) {
             Pill(label, tone = Card) { onRoute(destination) }; Spacer(Modifier.height(6.dp))
         }
+        if (!hasWorkout || quickWorkout) {
+            Pill(if (quickWorkout) "+ Gyakorlat" else "Gyors edzés", tone = Gold) { onRoute("quick") }
+            Spacer(Modifier.height(6.dp))
+        }
         if (hasWorkout) { Pill("Edzés folytatása") { onRoute("workout") }; Spacer(Modifier.height(6.dp)); Pill("Edzés törlése", tone = Danger) { onRoute("discard") }; Spacer(Modifier.height(6.dp)) }
         Pill("Megnyitás telefonon", tone = Card, onClick = onOpenPhone)
+    }
+}
+
+
+@Composable
+private fun QuickWorkoutPicker(home: WatchHomeSnapshot?, active: WearWorkout?, canStart: Boolean,
+                               onBack: () -> Unit, onSelect: (WatchHomeExercise) -> Unit) {
+    var query by rememberSaveable { mutableStateOf("") }
+    var page by rememberSaveable { mutableIntStateOf(0) }
+    val adding = active?.quickWorkout == true
+    val catalog = home?.quickExercises.orEmpty()
+    val matches = remember(catalog, query, active?.exercises) {
+        val needle = query.trim()
+        catalog.filter { item ->
+            (needle.isBlank() || item.name.contains(needle, ignoreCase = true) ||
+                item.id.contains(needle, ignoreCase = true)) &&
+                (!adding || active?.exercises?.none { it.id == item.id } == true)
+        }
+    }
+    val pageCount = ((matches.size + 11) / 12).coerceAtLeast(1)
+    val selectedPage = page.coerceIn(0, pageCount - 1)
+    RoundList {
+        Label("TRAINPILOT", Gold)
+        Title(if (adding) "+ Gyakorlat" else "Gyors edzés", 20)
+        Spacer(Modifier.height(8.dp))
+        if (active != null && !adding) {
+            Text("Előbb zárd le a jelenlegi edzést.", color = Muted, fontSize = 12.sp, textAlign = TextAlign.Center)
+        } else if (!adding && !canStart) {
+            Text("A telefonos edzésvázlat vagy a függő szinkron lezárása után indítható.",
+                color = Muted, fontSize = 12.sp, textAlign = TextAlign.Center)
+        } else if (catalog.isEmpty()) {
+            Text("A gyakorlatok szinkronizálásához nyisd meg a TrainPilotot a telefonon.",
+                color = Muted, fontSize = 12.sp, textAlign = TextAlign.Center)
+        } else {
+            BasicTextField(
+                value = query, onValueChange = { query = it.take(60); page = 0 },
+                singleLine = true,
+                textStyle = androidx.compose.ui.text.TextStyle(color = White, fontSize = 13.sp),
+                modifier = Modifier.fillMaxWidth().background(Secondary, RoundedCornerShape(14.dp)).padding(10.dp),
+                decorationBox = { content ->
+                    Box {
+                        if (query.isEmpty()) Text("Gyakorlat keresése…", color = Muted, fontSize = 13.sp)
+                        content()
+                    }
+                }
+            )
+            Spacer(Modifier.height(8.dp))
+            if (matches.isEmpty()) Text("Nincs további választható gyakorlat.", color = Muted,
+                fontSize = 12.sp, textAlign = TextAlign.Center)
+            matches.drop(selectedPage * 12).take(12).forEach { exercise ->
+                Pill(exercise.name, tone = Card, height = 48, size = 12) { onSelect(exercise) }
+                Spacer(Modifier.height(5.dp))
+            }
+            if (pageCount > 1) {
+                Label("${selectedPage + 1} / $pageCount")
+                if (selectedPage > 0) Pill("‹ Előző", tone = Secondary) { page = selectedPage - 1 }
+                if (selectedPage + 1 < pageCount) Pill("További gyakorlatok ›", tone = Secondary) { page = selectedPage + 1 }
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Pill("‹ Vissza", tone = Secondary, onClick = onBack)
     }
 }
 
