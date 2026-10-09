@@ -27,9 +27,11 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const file=p
   await page.evaluate(()=>{db.set('language','en');render();});
   assert.notEqual(await modal.locator('.tp108-day-content').innerHTML(),beforeRedraw,'language swap must force calendar day repaint');
   assert.equal(await modal.locator('#tp151ScheduleMinutes').inputValue(),'65','redraw preserves unsaved day edits');
+  await page.waitForFunction(()=>document.activeElement?.id==='tp151ScheduleMinutes');
   assert.equal(await modal.locator('#tp151ScheduleMinutes').evaluate(node=>node===document.activeElement),true,'redraw preserves duration input focus');
   await page.evaluate(()=>{db.set('language','hu');render();});
   assert.equal(await modal.locator('#tp151ScheduleMinutes').inputValue(),'65','returning language preserves unsaved edits');
+  await page.waitForFunction(()=>document.activeElement?.id==='tp151ScheduleMinutes');
   assert.equal(await modal.locator('#tp151ScheduleMinutes').evaluate(node=>node===document.activeElement),true,'returning language preserves field focus');await modal.locator('button[onclick*="tp151SaveCalendarItem"]').click();assert.equal(await page.evaluate(()=>Math.round((Date.parse(scheduled()[0].end)-Date.parse(scheduled()[0].start))/60000)),65);assert.equal(await modal.count(),1,'saving edits refreshes the day dialog');
  await modal.locator('button[onclick*="skipSchedule"]').click();assert.equal(await page.evaluate(()=>scheduled()[0].status),'skipped');await modal.locator('button[onclick*="skipSchedule"]').click();assert.equal(await page.evaluate(()=>scheduled()[0].status),'planned');
  await modal.locator('button[onclick*="rf209DeleteSchedule"]').click();await page.waitForSelector('#tp2628Dialog');await page.evaluate(()=>TrainPilotAndroidBack());assert.equal(await page.locator('#tp2628Dialog').count(),0,'Back cancels delete confirmation first');assert.equal(await modal.count(),1);assert.equal(await page.evaluate(()=>scheduled()[0].cancelled),false);
