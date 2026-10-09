@@ -1,3 +1,10 @@
+# TrainPilot 1.2.12 /2719 — telefonos tesztjelölt
+
+- A Naptár → Újratervezés Program mezőjében választott új program felváltja a régi program hátralévő tervét.
+- A teljesített, naplózott és aktív edzések megmaradnak; ismételt mentés nem hoz létre másolatokat.
+- Az előnézet megmutatja a kiválasztott programot. [Részletek és ellenőrzés](docs/releases/v1.2.12.md).
+- Ez a telefonos javítás készülékes elfogadásra vár.
+
 # TrainPilot 1.0.4
 
 - Aktív edzés közben sorozatok hozzáadása és törlése (+/−), azonnali piszkozatmentéssel.
