@@ -37,7 +37,8 @@ data class WearWorkout(
     val restEndAt: Long,
     val exercises: List<WearExercise>,
     val dayName: String = "",
-    val localSequence: Long = 0L
+    val localSequence: Long = 0L,
+    val quickWorkout: Boolean = false
 ) {
     fun elapsedSeconds(now: Long = System.currentTimeMillis()): Int = try {
         ((now - java.time.Instant.parse(started).toEpochMilli()).coerceAtLeast(0L) / 1000L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
@@ -163,7 +164,8 @@ object WorkoutSnapshotStore {
                 restEndAt = root.optLong("restEndAt", 0L),
                 exercises = exercises,
                 dayName = root.optString("dayName", root.optString("dayId")),
-                localSequence = root.optLong("localSequence", root.optLong("watchSequence", 0L))
+                localSequence = root.optLong("localSequence", root.optLong("watchSequence", 0L)),
+                quickWorkout = root.optBoolean("quickWorkout", root.optString("dayId") == "quick" && root.optString("programId").isBlank())
             )
         } catch (_: Exception) { null }
     }
@@ -176,6 +178,7 @@ object WorkoutSnapshotStore {
             .put("dayName", workout.dayName)
             .put("localSequence", workout.localSequence)
             .put("programName", workout.programName)
+            .put("quickWorkout", workout.quickWorkout)
             .put("dayId", workout.dayId)
             .put("scheduleId", workout.scheduleId)
             .put("started", workout.started)
