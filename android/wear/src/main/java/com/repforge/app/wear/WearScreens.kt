@@ -192,53 +192,62 @@ private fun HomeScreen(home: WatchHomeSnapshot?, active: WearWorkout?, closure: 
     LaunchedEffect(active?.workoutId) { while (active != null) { elapsed = active.elapsedSeconds(); delay(1000) } }
     val waiting = closure?.status in listOf("pending", "error")
     val rec = home?.recommended
+    val fontScale = LocalDensity.current.fontScale
     BoxWithConstraints(Modifier.fillMaxSize()) {
-    val phoneControl = wearHomePhoneLayout(maxWidth.value, maxHeight.value)
-    ActionPanel(normalBodyHeight = 130, actions = { layout ->
-        Row(horizontalArrangement = Arrangement.spacedBy(layout.gap.dp)) {
-            CompositionLocalProvider(LocalActionSize provides layout.buttonSize) {
+        val layout = wearHomeLayout(maxWidth.value, maxHeight.value)
+        val compact = layout.bodyHeight < 85f * fontScale
+        Box(Modifier.align(Alignment.TopCenter).offset(y = layout.phoneTop.dp)
+            .width(layout.phone.width.dp)) {
+            Pill("Telefon", modifier = Modifier.semantics { contentDescription = "Megnyitás telefonon" },
+                tone = Secondary, height = layout.phone.height.toInt(), size = 11, onClick = onOpenPhone)
+        }
+        Column(Modifier.align(Alignment.TopCenter).offset(y = layout.bodyTop.dp)
+            .width((minOf(maxWidth, maxHeight) - 44.dp).coerceAtLeast(80.dp))
+            .height(layout.bodyHeight.dp).verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            when {
+                active != null -> {
+                    Box(Modifier.fillMaxWidth(.9f)) { Title(active.exercise?.name ?: active.programName, if (compact) 13 else 16) }
+                    Label("${active.dayName.ifBlank { active.dayId }} · ${active.currentSetIndex + 1}/${active.exercise?.sets?.size ?: 0}. sorozat", size = 9)
+                    Text(formatSeconds(elapsed), color = White, fontSize = (if (compact) 24 else 30).sp, fontWeight = FontWeight.SemiBold)
+                }
+                waiting -> {
+                    Title(if (closure?.status == "error") "Szinkronizálás szükséges" else "Várakozás a telefonra", if (compact) 14 else 18)
+                    Text("Az edzés az órán megmaradt.", color = Muted, fontSize = 11.sp, textAlign = TextAlign.Center)
+                }
+                home == null -> {
+                    Title("Szinkronizálás…", if (compact) 14 else 18)
+                    Text("Nyisd meg a TrainPilotot a telefonon.", color = Muted, fontSize = 12.sp, textAlign = TextAlign.Center)
+                }
+                home.hasDraft -> {
+                    Title("Félbehagyott edzés", if (compact) 14 else 18)
+                    Text("Az edzés adatainak szinkronja a telefonra vár.", color = Muted, fontSize = 11.sp, textAlign = TextAlign.Center)
+                }
+                else -> {
+                    Box(Modifier.fillMaxWidth(.88f)) { Title(rec?.day?.programName ?: home.activeProgramName, if (compact) 13 else 15, lines = 1) }
+                    Spacer(Modifier.height(2.dp))
+                    Title(rec?.day?.name ?: "Válassz edzésnapot", if (compact) 23 else 30)
+                    if (rec != null) Label(recommendedMeta(rec), size = if (compact) 9 else 11)
+                }
+            }
+        }
+        CompositionLocalProvider(LocalActionSize provides layout.buttonSize) {
+            Box(Modifier.align(Alignment.TopCenter).offset(x = -layout.sideOffset.dp, y = layout.sideTop.dp)) {
                 when {
                     active != null -> RoundControl("▶", Gold, caption = "Folytatás", description = "Edzés folytatása", onClick = onResume)
                     waiting -> RoundControl("↻", Gold, caption = "Állapot", description = "Edzés mentésének állapota", onClick = onResult)
                     rec != null && home?.hasDraft == false -> RoundControl("▶", Gold, caption = "Indítás", description = "Edzés indítása") { onStart(rec.day, rec.scheduleId) }
                     else -> RoundControl("A/B", Gold, enabled = home != null && home.hasDraft == false && home.days.isNotEmpty(), caption = "Napok", description = "Program napjai", onClick = onDays)
                 }
+            }
+            Box(Modifier.align(Alignment.TopCenter).offset(y = layout.centerTop.dp)) {
                 if (active != null) RoundControl("✕", Danger, caption = "Törlés", description = "Megkezdett edzés törlése", onClick = onDiscard)
                 else RoundControl("▦", caption = "Naptár", description = "Edzésnaptár", onClick = onCalendar)
+            }
+            Box(Modifier.align(Alignment.TopCenter).offset(x = layout.sideOffset.dp, y = layout.sideTop.dp)) {
                 RoundControl("···", caption = "Menü", description = "Főmenü", onClick = onMenu)
             }
         }
-    }) { compact ->
-        Pill("Telefon", modifier = Modifier.width(phoneControl.width.dp)
-            .semantics { contentDescription = "Megnyitás telefonon" }, tone = Secondary,
-            height = phoneControl.height.toInt(), size = 11, onClick = onOpenPhone)
-        Spacer(Modifier.height(4.dp))
-        when {
-            active != null -> {
-                Box(Modifier.fillMaxWidth(.9f)) { Title(active.exercise?.name ?: active.programName, if (compact) 13 else 16) }
-                Label("${active.dayName.ifBlank { active.dayId }} · ${active.currentSetIndex + 1}/${active.exercise?.sets?.size ?: 0}. sorozat", size = 9)
-                Text(formatSeconds(elapsed), color = White, fontSize = (if (compact) 24 else 30).sp, fontWeight = FontWeight.SemiBold)
-            }
-            waiting -> {
-                Title(if (closure?.status == "error") "Szinkronizálás szükséges" else "Várakozás a telefonra", if (compact) 14 else 18)
-                Text("Az edzés az órán megmaradt.", color = Muted, fontSize = 11.sp, textAlign = TextAlign.Center)
-            }
-            home == null -> {
-                Title("Szinkronizálás…", if (compact) 14 else 18)
-                Text("Nyisd meg a TrainPilotot a telefonon.", color = Muted, fontSize = 12.sp, textAlign = TextAlign.Center)
-            }
-            home.hasDraft -> {
-                Title("Félbehagyott edzés", if (compact) 14 else 18)
-                Text("Az edzés adatainak szinkronja a telefonra vár.", color = Muted, fontSize = 11.sp, textAlign = TextAlign.Center)
-            }
-            else -> {
-                Box(Modifier.fillMaxWidth(.88f)) { Title(rec?.day?.programName ?: home.activeProgramName, if (compact) 13 else 15, lines = 1) }
-                Spacer(Modifier.height(2.dp))
-                Title(rec?.day?.name ?: "Válassz edzésnapot", if (compact) 23 else 30)
-                if (rec != null) Label(recommendedMeta(rec), size = if (compact) 9 else 11)
-            }
-        }
-    }
     }
 }
 
