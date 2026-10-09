@@ -449,3 +449,11 @@ Az elfogadott új felület közvetlen Előző/Rögzítés/Következő kerek vez�
 A hosszú címek két sorba férnek; a főképernyők magassága csökkent, a Mentés/Mégse és a kezdőlapi törlés beljebb került. A középre helyezett tartalom nagyobb rendszer-betűméretnél görgethető. A plank stoppert koppintás indítja/szünetelteti, az időrögzítés külön művelet. Nullázás, oldalváltás és kézi időbeállítás az Edzésmenü / Stopper és oldalak alatt marad.
 
 Új natív regressziók ellenőrzik, hogy a pihenő lezárása nem változtat sorozatot/gyakorlatot, a kézi navigáció megőrzi az összes mérést, és a határgombok nem szakítják meg a pihenőt. A böngészős előnézet ellenőrzése nem helyettesíti a kész APK valós órás tesztjét. A telefonos kód és a startup animáció változatlan.
+
+## Mini Napló and measurement provenance (2026-10-09, #158/#159)
+
+The **Wear 1.2.16 /2723** and paired **phone 1.2.14 /2721** feature candidate now includes **Főmenü → Mini napló**. Phone history remains canonical. The watch receives a bounded, cached, read-only list of previously saved workouts (latest eight distinct sessions) with completed exercise sets and a per-source Health summary. New workout logging and late Health Services updates remain handled by the existing durable Data Layer outbox.
+
+**Do not equate Health Connect time-window total calories with the watch's own exercise-session total.** The phone Journal now distinguishes the stored matching `healthWear129` from the independently queried `health240`; it chooses the validated own-watch measurement when available, else preserves the original HC presentation. It never sums calorie sources or synthesizes unavailable data. Old workouts without Wear attachment cannot automatically be upgraded based on a screenshot.
+
+**Acceptance still required:** correct provenance on an actual Galaxy Watch/phone 45-minute training result; realistic values, missing data and late revisions; mini-journal exercise details; remote state/resync and offline snapshot; compact circular display. Draft PR #156 stays unmerged until phone and Wear Release Gates plus physical checks are green.

@@ -20,3 +20,16 @@ A real **Gyors edzés** is available in the watch's main menu. Choose exercises 
 This is an **unaccepted physical-watch candidate**. Keep the PR draft until paired-device checks and both phone/Wear release gates pass.
 
 Related: [#155](https://github.com/fuloplevente1998/TrainPilot/issues/155).
+
+## Mini Napló (paired phone 1.2.14 and Wear 1.2.16 candidate; #159)
+
+From the Wear **Főmenü → Mini napló**, browse the latest phone-saved workouts, then drill down to exercise names, completed sets/repetitions/loads and the separate TrainPilot Wear vs Health Connect metrics. The snapshot is cached on the watch for offline reading.
+
+- It displays only **saved canonical phone sessions**, never half-finished watch sessions or pending outbox commands.
+- Eight distinct workouts maximum; a bounded payload never copies images, full daily Health data or recovery records.
+- Wear total calories correspond to an actual `wear_health_services` metric for the same workout ID. Health Connect window calories remain a distinct data source, not an added workout total; missing readings remain missing and measured zero remains zero.
+- Read-only in this first iteration; no deleting or editing history on the watch. The main app and the Wear recording/release gates remain independent.
+
+**Physical verification pending:** phone/Watch7 pairing, a 15-pushup quick session and a later 45-minute training session, accurate source labels and late Wear summary updates, 8-workout list, offline reopening, 320-pixel round screen and large fonts.
+
+See [#158](https://github.com/fuloplevente1998/TrainPilot/issues/158) and [#159](https://github.com/fuloplevente1998/TrainPilot/issues/159).
