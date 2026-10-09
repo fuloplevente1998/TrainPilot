@@ -7,16 +7,16 @@ on:
       - main
       - 'feat/**'
       - 'fix/**'
+    tags:
+      - 'wear-v*'
     paths:
-      - 'android/wear/build.gradle'
-      - 'android/wear/proguard-rules.pro'
-      - 'android/wear/src/**'
+      - 'android/wear/**'
       - 'android/build.gradle'
       - 'android/settings.gradle'
       - '.github/workflows/wear-release.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: trainpilot-wear-release-${{ github.ref_name }}
@@ -74,23 +74,13 @@ jobs:
           chmod 600 "$KEYSTORE"
           echo "ANDROID_KEYSTORE_PATH=$KEYSTORE" >> "$GITHUB_ENV"
 
-      - name: Verify Wear release metadata
-        shell: bash
+      - name: Verify independent release gates and Wear metadata
         run: |
-          set -euo pipefail
-          node <<'NODE'
-          const fs=require('fs');
-          const pkg=require('./package.json');
-          const src=require('./SOURCE_VERSION.json');
-          const wear=fs.readFileSync('android/wear/build.gradle','utf8');
-          const wearVersion=wear.match(/versionName\s+"([^"]+)"/)?.[1];
-          const wearCode=Number(wear.match(/versionCode\s+(\d+)/)?.[1]);
-          const expectedVersion=src.displayVersion||src.version;
-          if(pkg.version!==src.version) throw new Error('Package/source version mismatch');
-          if(wearVersion!==expectedVersion) throw new Error('Wear version mismatch');
-          if(wearCode!==Number(src.versionCode)) throw new Error('Wear versionCode mismatch');
-          console.log(`Wear metadata OK: ${wearVersion} (${wearCode})`);
-          NODE
+          node --test android/wear/ci/release-gates.test.cjs
+          node android/wear/ci/release-metadata.cjs
+
+      - name: Stamp Wear source commit
+        run: node -e "const fs=require('fs'),p='android/wear/SOURCE_VERSION.json',s=JSON.parse(fs.readFileSync(p));s.sourceCommit=process.env.GITHUB_SHA;fs.writeFileSync(p,JSON.stringify(s,null,2)+'\n')"
 
       - name: Build signed Wear release APK
         working-directory: android
@@ -107,9 +97,9 @@ jobs:
         run: |
           set -euo pipefail
           WEAR_APK=android/wear/build/outputs/apk/release/wear-release.apk
-          VERSION="$(node -p "require('./package.json').version")"
-          CODE="$(node -p "require('./SOURCE_VERSION.json').versionCode")"
-          DISPLAY_VERSION="$(node -p "require('./SOURCE_VERSION.json').displayVersion || require('./package.json').version")"
+          VERSION="$(node -p "require('./android/wear/SOURCE_VERSION.json').version")"
+          CODE="$(node -p "require('./android/wear/SOURCE_VERSION.json').versionCode")"
+          DISPLAY_VERSION="$(node -p "require('./android/wear/SOURCE_VERSION.json').displayVersion || require('./android/wear/SOURCE_VERSION.json').version")"
           AAPT="$(ls "$ANDROID_HOME"/build-tools/*/aapt | sort -V | tail -1)"
           SIGNER="$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)"
 
@@ -120,7 +110,8 @@ jobs:
           "$SIGNER" verify --verbose "$WEAR_APK"
 
           cp "$WEAR_APK" "TrainPilot-$VERSION-wear.apk"
-          sha256sum "TrainPilot-$VERSION-wear.apk" > WEAR-SHA256SUMS.txt
+          cp android/wear/SOURCE_VERSION.json WEAR-SOURCE_VERSION.json
+          sha256sum "TrainPilot-$VERSION-wear.apk" WEAR-SOURCE_VERSION.json > WEAR-SHA256SUMS.txt
 
       - name: Verify signer continuity
         shell: bash
@@ -145,6 +136,36 @@ jobs:
         shell: bash
         run: rm -f "$RUNNER_TEMP/trainpilot-release.jks"
 
+      - name: Publish independent Wear release
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/wear-v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./android/wear/SOURCE_VERSION.json').version")"
+          TAG="wear-v$VERSION"
+          NOTES_FILE="android/wear/releases/$TAG.md"
+          NOTES=(--generate-notes)
+          if [ -f "$NOTES_FILE" ]; then
+            NOTES=(--notes-file "$NOTES_FILE")
+          fi
+          RELEASE_FLAGS=(--latest=false)
+          if [[ "$VERSION" == *-* ]]; then
+            RELEASE_FLAGS+=(--prerelease)
+          fi
+          # A released Wear version remains immutable on reruns and later main pushes.
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Wear release $TAG already exists; keeping verified assets unchanged."
+            exit 0
+          fi
+          FILES=("TrainPilot-$VERSION-wear.apk" "WEAR-SHA256SUMS.txt" "WEAR-SOURCE_VERSION.json" "wear-apk-badging.txt")
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            gh release create "$TAG" "${FILES[@]}" --repo "$GITHUB_REPOSITORY" --verify-tag "${NOTES[@]}" "${RELEASE_FLAGS[@]}" --title "TrainPilot Wear OS $VERSION"
+          else
+            gh release create "$TAG" "${FILES[@]}" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" "${NOTES[@]}" "${RELEASE_FLAGS[@]}" --title "TrainPilot Wear OS $VERSION"
+          fi
+
       - name: Upload signed Wear release APK
         uses: actions/upload-artifact@v7
         with:
@@ -152,6 +173,7 @@ jobs:
           path: |
             TrainPilot-*-wear.apk
             WEAR-SHA256SUMS.txt
+            WEAR-SOURCE_VERSION.json
             wear-apk-badging.txt
           if-no-files-found: error
           retention-days: 14

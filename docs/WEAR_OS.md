@@ -1,6 +1,14 @@
 # TrainPilot Wear OS – architecture and implementation plan
 
-Status: 1.2.9 integration on `fix/wear-sync-replay-navigation-2713` (PR #144).
+Status: Wear 1.2.11 /2718, compatible with phone 1.2.10.
+
+## Independent phone and Wear releases
+
+Wear-only fixes run `Wear Release Gate`: native Wear unit tests, signed `:wear:assembleRelease`, APK metadata and signing-certificate continuity checks. Main publishes `wear-v<version>` with only the Wear APK; it does not replace the latest phone release. Wear metadata and notes live in `android/wear/SOURCE_VERSION.json` and `android/wear/releases/`.
+
+Phone changes run `Phone Release Gate + TrainPilot APK`: Chromium UI and phone regressions, native phone unit tests, signed `:app:assembleRelease`, APK metadata and signing-certificate checks. Phone versions use the root `SOURCE_VERSION.json`, `package.json` and phone Gradle metadata, with release tags `v<version>`. The phone gate neither requires matching Wear versions nor builds the Wear module.
+
+Keep the package ID, signing identity and Data Layer protocol compatible across the installed pair. Updating only Wear does not require a phone build unless the change actually needs a new phone-side protocol or feature. Workflow-only and documentation changes do not start the phone APK workflow; platform source changes and manual runs remain covered.
 
 ## 1.2.9 release scope — accepted 2026-10-08
 
