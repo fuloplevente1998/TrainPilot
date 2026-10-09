@@ -70,6 +70,41 @@ const server=http.createServer((req,res)=>{
    await apply.click();assert.deepEqual(await page.evaluate(()=>scheduled()),saved,'repeated apply is idempotent '+kind);
    await page.reload();await page.waitForFunction(()=>TrainPilotBoot.finished);assert.deepEqual(await page.evaluate(()=>scheduled()),saved,'restart preserves '+kind);
   }
+  // Switching between programs with the same A/B day IDs must keep the
+  // selected program through preview redraws and the actual storage write.
+  await fixture('empty');await page.locator('.tp110-replan-link').click();
+  assert.equal(await page.evaluate(()=>activeProgramId()),'home-basic');
+  for(const id of ['home-level2','home-varied']){
+   await choose('tp110ReplanProgram',id);
+   assert.equal(await page.locator('#tp110ReplanProgram').inputValue(),id);
+   assert.equal(await page.locator('.tp110-replan-row').count(),2);
+  }
+  await choose('tp110ReplanDay','B');
+  await page.locator('#tp110ReplanDate').locator('..').locator('.tp-temporal-trigger').click();
+  await page.locator('#tpTemporalPicker [data-tp-date="2026-10-12"]').click();
+  // A panel can rebuild its controls before rendering the replacement form.
+  // The user's reviewed program/day/date must survive that missing-DOM interval.
+  await page.evaluate(()=>{
+   document.querySelector('.tp155-r4-panel-content').innerHTML='';
+   tp155R4RefreshPanel();
+  });
+  assert.equal(await page.locator('#tp110ReplanProgram').inputValue(),'home-varied');
+  assert.equal(await page.locator('#tp110ReplanDay').inputValue(),'B');
+  assert.equal(await page.locator('#tp110ReplanDate').inputValue(),'2026-10-12');
+  const selectedNames=await page.evaluate(()=>programById('home-varied').days.map(d=>tp149ProgramDayName(programById('home-varied'),d)));
+  assert.deepEqual(await page.locator('.tp110-replan-row strong').allTextContents(),[selectedNames[1],selectedNames[0]]);
+  await apply.click();
+  assert.equal(await status.getAttribute('data-kind'),'success');
+  const selectedSaved=await page.evaluate(()=>scheduled());
+  assert.deepEqual(selectedSaved.map(x=>x.programId),['home-varied','home-varied']);
+  assert.deepEqual(selectedSaved.map(x=>x.dayId),['B','A']);
+  assert.equal(selectedSaved[0].start,'2026-10-12T16:00:00.000Z');
+  assert.equal(await page.locator('#tp110ReplanProgram').inputValue(),'home-varied','save redraw retains selection');
+  await apply.click();assert.deepEqual(await page.evaluate(()=>scheduled()),selectedSaved);
+  await page.evaluate(()=>TrainPilotAndroidBack());await page.locator('.tp110-replan-link').click();
+  assert.equal(await page.locator('#tp110ReplanProgram').inputValue(),'home-basic','new form starts from active program');
+  await page.reload();await page.waitForFunction(()=>TrainPilotBoot.finished);
+  assert.deepEqual(await page.evaluate(()=>scheduled()),selectedSaved,'selected program survives app restart');
   // Switching programs replaces the source plan, without adding a competing cycle.
   await fixture('future');await page.locator('.tp110-replan-link').click();
   const original=await page.evaluate(()=>scheduled());await choose('tp110ReplanProgram','gym-ppl');
@@ -88,7 +123,7 @@ const server=http.createServer((req,res)=>{
    assert.deepEqual(await page.evaluate(()=>scheduled()),source,'switching/preview never writes the calendar');
    const target=await page.evaluate(()=>tp149ProgramMeta(programById('gym-ppl'),'name'));
    assert.ok((await page.locator('.tp110-replan-target').textContent()).includes(target),'preview identifies the selected program');
-   await page.evaluate(()=>{render();tp155R4RefreshPanel();});
+   await page.evaluate(()=>{render();document.querySelector('.tp155-r4-panel-content').innerHTML='';tp155R4RefreshPanel();});
    assert.equal(await page.locator('#tp110ReplanProgram').inputValue(),'gym-ppl','redraw retains selected program');
    assert.equal(await page.locator('#tp110ReplanDay').inputValue(),'C');
    await apply.scrollIntoViewIfNeeded();await apply.click();

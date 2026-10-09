@@ -11861,6 +11861,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   if(type!=='calendar')closeDay(false);
   if(!PANEL_ROUTES.has(type)||!panelDomSupported)return false;
   if(currentPanel===type&&panelHost)return true;
+  if(type==='replan')window.TrainPilot110?.resetReplan();
   replanCalendarReturn=type==='replan'&&currentPanel==='calendar'?{trigger:panelTrigger,scrollTop:panelHost.querySelector('.tp155-r4-panel')?.scrollTop||0}:null;
   if(!currentPanel){panelOpenScrollY=window.scrollY||window.pageYOffset||0;bodyOverflow=document.body.style.overflow||'';document.body.style.overflow='hidden'}
   currentPanel=type;panelTrigger=trigger||document.activeElement||null;
@@ -15069,17 +15070,22 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(!form.reportValidity())return false;const value={weekWorkouts:Number(form.elements.weekWorkouts.value),monthKm:Number(form.elements.monthKm.value)};
   try{db.set('settings',{...settings(),activityGoals110:goals(value)});}catch(_){status(form.querySelector('[data-tp110-status]'),t('saveFailed'),'error');return false;}cloudChanged?.();render();window.tp155R4RefreshPanel?.();tp153Toast(t('saved'),1800);return true;
  }
- let preview=null;
+ let preview=null,replanDraft=null;
+ function resetReplan(){preview=null;replanDraft=null;}
  function replanInputs(){
-  const programId=document.querySelector('#tp110ReplanProgram')?.value||activeProgramId(),p=programById(programId),planner=plannerSettings();
-  const root=document.querySelector('.tp110-replan'),sourceProgramId=root?.dataset.tp110SourceProgram||programId;
-  let sourceScheduleIds=null;try{const ids=JSON.parse(root?.dataset.tp110SourceIds||'null');if(Array.isArray(ids))sourceScheduleIds=ids;}catch(_){}
-  return {programId,sourceProgramId,sourceScheduleIds,programDays:(p?.days||[]).map(d=>({id:d.id})),firstDayId:document.querySelector('#tp110ReplanDay')?.value||'',startDate:document.querySelector('#tp110ReplanDate')?.value||dayKey(addDays(new Date(),1)),mode:planner.mode,weekdays:planner.weekdays,time:planner.time,minutes:planner.minutes,activeScheduleIds:[state.session?.scheduleId,db.get('draft',null)?.session?.scheduleId].filter(Boolean),now:new Date()};
+  // Keep reviewed inputs and the source plan while panel controls are rebuilt.
+  const programId=replanDraft?.programId??document.querySelector('#tp110ReplanProgram')?.value??activeProgramId(),p=programById(programId),planner=plannerSettings();
+  replanDraft={programId,sourceProgramId:replanDraft?.sourceProgramId??programId,sourceScheduleIds:replanDraft?.sourceScheduleIds??null,firstDayId:document.querySelector('#tp110ReplanDay')?.value??replanDraft?.firstDayId??'',startDate:document.querySelector('#tp110ReplanDate')?.value??replanDraft?.startDate??dayKey(addDays(new Date(),1))};
+  return {...replanDraft,programDays:(p?.days||[]).map(d=>({id:d.id})),mode:planner.mode,weekdays:planner.weekdays,time:planner.time,minutes:planner.minutes,activeScheduleIds:[state.session?.scheduleId,db.get('draft',null)?.session?.scheduleId].filter(Boolean),now:new Date()};
+ }
+ function changeReplanProgram(programId){
+  replanInputs();replanDraft.programId=programId;preview=null;
+  window.tp155R4RefreshPanel?.();
  }
  const replanSignature=(rows,logs,options)=>JSON.stringify([rows,logs,options.programId,options.sourceProgramId,options.sourceScheduleIds,options.programDays,options.firstDayId,options.startDate,options.mode,options.weekdays,options.time,options.minutes,options.activeScheduleIds]);
  function replanHtml(){
   const values=replanInputs(),p=programById(values.programId),first=(p?.days||[]).some(d=>d.id===values.firstDayId)?values.firstDayId:'';preview=null;
-  return '<main class="tp110-replan" data-tp110-source-program="'+esc(values.sourceProgramId)+'" data-tp110-source-ids="'+esc(JSON.stringify(values.sourceScheduleIds))+'"><p class="muted">'+esc(t('replanNote'))+'</p><div class="tp110-form"><label>'+esc(t('program'))+'<select id="tp110ReplanProgram" class="field" onchange="tp155R4RefreshPanel()">'+programs().map(p=>'<option value="'+esc(p.id)+'" '+(p.id===values.programId?'selected':'')+'>'+esc(tp149ProgramMeta(p,'name'))+'</option>').join('')+'</select></label><div class="tp110-fields"><label>'+esc(tp149T('calendar.firstDay'))+'<select id="tp110ReplanDay" class="field" onchange="TrainPilot110.previewReplan()"><option value="">'+esc(t('autoDay'))+'</option>'+(p?.days||[]).map(d=>'<option value="'+esc(d.id)+'" '+(d.id===first?'selected':'')+'>'+esc(tp149ProgramDayName(p,d))+'</option>').join('')+'</select></label><label>'+esc(t('begin'))+'<input id="tp110ReplanDate" class="field" type="date" value="'+esc(values.startDate)+'" onchange="TrainPilot110.previewReplan()"></label></div></div><div data-tp110-preview></div><footer class="tp119-replan-actions"><button type="button" class="btn block" data-tp110-apply disabled onclick="TrainPilot110.applyReplan()">'+esc(t('apply'))+'</button><p data-tp110-replan-status class="tp110-feedback" role="status"></p></footer></main>';
+  return '<main class="tp110-replan"><p class="muted">'+esc(t('replanNote'))+'</p><div class="tp110-form"><label>'+esc(t('program'))+'<select id="tp110ReplanProgram" class="field" onchange="TrainPilot110.changeReplanProgram(this.value)">'+programs().map(p=>'<option value="'+esc(p.id)+'" '+(p.id===values.programId?'selected':'')+'>'+esc(tp149ProgramMeta(p,'name'))+'</option>').join('')+'</select></label><div class="tp110-fields"><label>'+esc(tp149T('calendar.firstDay'))+'<select id="tp110ReplanDay" class="field" onchange="TrainPilot110.previewReplan()"><option value="">'+esc(t('autoDay'))+'</option>'+(p?.days||[]).map(d=>'<option value="'+esc(d.id)+'" '+(d.id===first?'selected':'')+'>'+esc(tp149ProgramDayName(p,d))+'</option>').join('')+'</select></label><label>'+esc(t('begin'))+'<input id="tp110ReplanDate" class="field" type="date" value="'+esc(values.startDate)+'" onchange="TrainPilot110.previewReplan()"></label></div></div><div data-tp110-preview></div><footer class="tp119-replan-actions"><button type="button" class="btn block" data-tp110-apply disabled onclick="TrainPilot110.applyReplan()">'+esc(t('apply'))+'</button><p data-tp110-replan-status class="tp110-feedback" role="status"></p></footer></main>';
  }
  function previewReplan(){
   const rows=scheduled(),logs=history(),options=replanInputs(),root=document.querySelector('[data-tp110-preview]'),button=document.querySelector('[data-tp110-apply]');if(!root)return;
@@ -15091,7 +15097,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  function applyReplan(){
   if(!preview)return false;const options=replanInputs();if(preview.signature!==replanSignature(scheduled(),history(),options)){previewReplan();status(document.querySelector('[data-tp110-replan-status]'),t('changed'),'pending');return false;}
-  if(!preview.result.moved.length)return false;try{db.set('scheduled',preview.result.rows);}catch(_){status(document.querySelector('[data-tp110-replan-status]'),t('saveFailed'),'error');return false;}const root=document.querySelector('.tp110-replan');if(root){root.dataset.tp110SourceProgram=options.programId;root.dataset.tp110SourceIds=JSON.stringify(preview.result.moved.map(x=>x.after.id));}cloudChanged?.();state.rf260MovingScheduleId=null;state.tp151EditingScheduleId=null;render();window.tp155R4RefreshPanel?.();status(document.querySelector('[data-tp110-replan-status]'),t('replanned'));tp153Toast(t('replanned'),1800);return true;
+  if(!preview.result.moved.length)return false;try{db.set('scheduled',preview.result.rows);}catch(_){status(document.querySelector('[data-tp110-replan-status]'),t('saveFailed'),'error');return false;}replanDraft.sourceProgramId=options.programId;replanDraft.sourceScheduleIds=preview.result.moved.map(x=>x.after.id);cloudChanged?.();state.rf260MovingScheduleId=null;state.tp151EditingScheduleId=null;render();window.tp155R4RefreshPanel?.();status(document.querySelector('[data-tp110-replan-status]'),t('replanned'));tp153Toast(t('replanned'),1800);return true;
  }
  let audio=null;
  const nativeFeedback=()=>isNative()?window.Capacitor?.Plugins?.AppFeedback||window.Capacitor?.registerPlugin?.('AppFeedback'):null;
@@ -15187,7 +15193,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  async function updateAppearance(){
   try{const bridge=nativeFeedback();if(bridge?.appearance){const result=await bridge.appearance();const changed=document.documentElement.classList.contains('tp110-large-text')!==(Number(result.fontScale)>1.05);document.documentElement.classList.toggle('tp110-large-text',Number(result.fontScale)>1.05);if(changed)window.dispatchEvent(new Event('resize'));}}catch(_){}
  }
- window.TrainPilot110={t,status,empty,goalMiniHtml,goalsHtml,saveGoals,replanHtml,previewReplan,applyReplan,intervalHtml,saveInterval,startInterval,tickInterval,paintInterval,primeAudio,coachReasonsHtml,openCoachReasons,closeCoachReasons,decorate,updateAppearance,resetQuick(){state.tp155QuickQuery='';state.tp155QuickGroup='all';state.tp155QuickGear='all';window.tp155R4RefreshPanel?.();}};
+ window.TrainPilot110={t,status,empty,goalMiniHtml,goalsHtml,saveGoals,resetReplan,changeReplanProgram,replanHtml,previewReplan,applyReplan,intervalHtml,saveInterval,startInterval,tickInterval,paintInterval,primeAudio,coachReasonsHtml,openCoachReasons,closeCoachReasons,decorate,updateAppearance,resetQuick(){state.tp155QuickQuery='';state.tp155QuickGroup='all';state.tp155QuickGear='all';window.tp155R4RefreshPanel?.();}};
  window.addEventListener?.('DOMContentLoaded',()=>{
   const baseGo=go;go=function(){closeCoachReasons(false);return baseGo.apply(this,arguments);};window.go=go;
   const baseClose=window.tp155R4ClosePanel;window.tp155R4ClosePanel=function(){closeCoachReasons(false);return baseClose.apply(this,arguments);};
