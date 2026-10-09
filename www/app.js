@@ -16551,6 +16551,48 @@ window.addEventListener?.('DOMContentLoaded',function(){
    }));
   }catch(_){return []}
  }
+ function watchRecentHistory(lang){
+  // A small, read-only, canonical phone history projection. Do not sync photos,
+  // recovery data or whole-day Health Connect ledgers to the watch.
+  const text=(value,max=48)=>String(value??'').slice(0,max);
+  const metric=(value,min=0,max=1000000)=>typeof value==='number'&&Number.isFinite(value)&&value>=min&&value<=max?value:null;
+  const read=(data,keys)=>Object.fromEntries(keys.flatMap(([key,min,max])=>{
+   const value=metric(data?.[key],min,max);return value===null?[]:[[key,value]];
+  }));
+  try{
+   if(typeof history!=='function')return [];
+   return history().filter(h=>h&&h.finished&&Number.isFinite(Date.parse(h.started))&&Number.isFinite(Date.parse(h.finished))&&Date.parse(h.finished)>=Date.parse(h.started))
+    .sort((a,b)=>Date.parse(b.started)-Date.parse(a.started)).slice(0,8).map(h=>{
+     const id=text(h.syncId||h.workoutId||h.started,96);
+     const w=h.healthWear129;
+     const wearable=w?.source==='wear_health_services'&&String(w.workoutId||'')===id&&w.watchId&&Number.isSafeInteger(w.revision)&&w.revision>0?{
+      source:'wear_health_services',partial:w.partial===true,
+      ...read(w,[['averageHeartRate',20,250],['maxHeartRate',20,250],['totalCalories',0,100000],['steps',0,1000000],['activeDurationSeconds',0,604800]])
+     }:null;
+     const hc=h.health240;
+     const linked=hc?.windowStart===h.started&&hc?.windowEnd===h.finished;
+     const connected=linked?{
+      source:hc.provider==='samsung_health'?'samsung_health':'health_connect',
+      ...read(hc,[['averageHeartRate',20,250],['maxHeartRate',20,250],['workoutCalories',0,100000],['totalCalories',0,100000],['activeCalories',0,100000],['steps',0,1000000],['exerciseMinutes',0,10080]])
+     }:null;
+     const name=(h.type==='quick'||h.quickWorkout===true)?'Gyors edzés':text(h.dayName||h.programName||h.workout||'Edzés');
+     return {
+      workoutId:id,started:text(h.started,40),finished:text(h.finished,40),
+      dayName:name,quickWorkout:h.type==='quick'||h.quickWorkout===true,
+      durationSeconds:Math.round(Math.max(0,(Date.parse(h.finished)-Date.parse(h.started))/1000)),
+      exercises:(Array.isArray(h.exercises)?h.exercises:[]).slice(0,14).map(ex=>({
+       name:text(ex?.name||ex?.hu||ex?.en||(typeof byId==='function'?exerciseName(byId(ex?.id)||ex,lang):ex?.id)||'Gyakorlat'),
+       sets:(Array.isArray(ex?.sets)?ex.sets:[]).slice(0,12).filter(set=>set?.done===true).map((set,index)=>({
+        number:Math.max(1,Math.min(1000,Number(set.set)||index+1)),reps:text(set.reps,16),
+        weight:metric(Number(set.weight),0,100000),leftSeconds:metric(Number(set.leftSeconds),0,604800),
+        rightSeconds:metric(Number(set.rightSeconds),0,604800),distanceMeters:metric(Number(set.distanceMeters),0,1000000)
+       }))
+      })).filter(ex=>ex.sets.length>0),
+      wear:wearable,healthConnect:connected
+     };
+    });
+  }catch(_){return []}
+ }
  function watchCalendar(active,lang){
   const now=new Date(),calendar=[],calendarDays=[],known=new Set((active.days||[]).map(d=>active.id+'|'+d.id));
   const planned=typeof scheduled==='function'?scheduled().filter(x=>x&&!x.cancelled):[];
@@ -16593,6 +16635,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     schema:1,
     ...watchCalendar(active,lang),
     quickExercises:watchQuickExercises(lang),
+    recentWorkouts:watchRecentHistory(lang),
     activeProgramId:String(active.id||''),
     activeProgramName:String(active.name||'TrainPilot'),
     restSeconds:configuredRest(),
@@ -17021,6 +17064,58 @@ window.addEventListener?.('DOMContentLoaded',function(){
  };
 })();
 // @endsection wear-health-details-129.js
+
+// @section wear-journal-sources-160.js
+/* Journal provenance: never display Health Connect window energy as an
+ * independently measured Wear Health Services workout total. */
+(function(){
+ 'use strict';
+ const picked=new Map();
+ const original=rfHistoryHealthHtml;
+ const key=h=>String(h?.syncId||h?.workoutId||h?.started||'');
+ const measured=h=>{
+  const data=h?.healthWear129,id=key(h);
+  if(!data||data.source!=='wear_health_services'||!data.watchId||!Number.isSafeInteger(data.revision)||data.revision<1||
+     !id||data.workoutId!==id)return null;
+  return data;
+ };
+ const textMetric=(value,digits=0)=>typeof value==='number'&&Number.isFinite(value)&&value>=0?
+  value.toLocaleString('hu-HU',{minimumFractionDigits:digits,maximumFractionDigits:digits}):null;
+ const card=(label,value)=>value===null?'':'<div class="stat"><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong></div>';
+ rfHistoryHealthHtml=function(i){
+  const row=history()[i],wear=measured(row);
+  if(!wear)return original(i);
+  const id=key(row),view=picked.get(id)==='health_connect'?'health_connect':'wear';
+  const tab='<div class="tp160-journal-sources" role="group" aria-label="Edzés mérési forrása">'+
+   '<button type="button" class="btn secondary" aria-pressed="'+(view==='wear')+'" onclick="TrainPilotWearJournalSource.choose('+i+',\'wear\')">TrainPilot óra</button>'+
+   '<button type="button" class="btn secondary" aria-pressed="'+(view==='health_connect')+'" onclick="TrainPilotWearJournalSource.choose('+i+',\'health_connect\')">Health Connect / Samsung Health</button></div>';
+  if(view==='health_connect')return tab+'<p class="small muted">Másik adatforrás: a telefon által olvasott egészségadatok. Az értékek nem adódnak az órás méréshez.</p>'+original(i);
+  const stats=[
+   card('Átlagpulzus',textMetric(wear.averageHeartRate,1)?.concat(' bpm')??null),
+   card('Max. pulzus',textMetric(wear.maxHeartRate)?.concat(' bpm')??null),
+   card('Edzés alatt mért összes energia',textMetric(wear.totalCalories)?.concat(' kcal')??null),
+   card('Lépések',textMetric(wear.steps)),
+   card('Aktív mérési idő',textMetric(wear.activeDurationSeconds,1)?.concat(' s')??null),
+   card('Távolság',textMetric(wear.distanceMeters)?.concat(' m')??null)
+  ].join('');
+  return tab+'<div class="rf-history-health-result tp160-wear-history">'+
+   '<p class="small muted">Forrás: TrainPilot Wear OS · Health Services. Közvetlenül az órán mért edzésadatok.</p>'+
+   (stats?'<div class="rf-history-health-grid">'+stats+'</div>':'<p class="small muted">Az óra ehhez az edzéshez még nem küldött értelmezhető mérési összesítést.</p>')+
+   (wear.partial?'<p class="small muted">Figyelem: részleges mérés.</p>':'')+
+   '<p class="small muted">Az órán mért összes energia nem azonos a Health Connect aktív kalóriájával, és nem adjuk őket össze.</p></div>';
+ };
+ window.TrainPilotWearJournalSource={
+  choose(i,source){
+   const row=history()[i];if(!measured(row)||!['wear','health_connect'].includes(source))return false;
+   picked.set(key(row),source);rfHistoryHealthPaint(i);return true;
+  },
+  measured
+ };
+ const css=document.createElement('style');css.id='tp160WearJournalSourceCss';
+ css.textContent='.tp160-journal-sources{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:5px 0 12px}.tp160-journal-sources .btn{font-size:12px;min-height:44px;padding:8px 6px;white-space:normal}.tp160-journal-sources .btn[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 15%,var(--card2));color:var(--text);font-weight:700}@media(max-width:350px){.tp160-journal-sources{grid-template-columns:1fr}}';
+ document.head.appendChild(css);
+})();
+// @endsection wear-journal-sources-160.js
 
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
