@@ -16,8 +16,8 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
     private val executor=Executor { command -> Handler(Looper.getMainLooper()).post(command) }
     private val client by lazy { HealthServices.getClient(this).exerciseClient }
     private var summary: JSONObject?=null
+    private var lifecycle: WearRecordingLifecycle?=null
     private var registered=false
-    private var owned=false
     private val stopReceiver=object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) { end() }
     }
@@ -26,8 +26,6 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
         if(Build.VERSION.SDK_INT>=33)registerReceiver(stopReceiver,IntentFilter(STOP),Context.RECEIVER_NOT_EXPORTED)
         else registerReceiver(stopReceiver,IntentFilter(STOP))
     }
-    private var stopping=false
-    private var ending=false
     private var destroyed=false
     private var watchdog: Runnable?=null
     private val handler=Handler(Looper.getMainLooper())
@@ -41,32 +39,47 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
         val oldId=WearHealthStore.active(this)
         val closePrevious=oldId.isNotBlank() && oldId!=id
         summary=WearHealthStore.begin(this,if(closePrevious)oldId else id)
-        if(summary!!.optString("state")=="ended") { stopSelf();return START_NOT_STICKY }
+        if(summary!!.optString("state") in listOf("ended","error")) { stopSelf();return START_NOT_STICKY }
+        val session=WearRecordingLifecycle(summary!!).also { lifecycle=it }
+        val request=WearRecordingRequest.restore(summary!!,intent?.getStringExtra("exerciseType"),
+            intent?.takeIf { it.hasExtra("gps") }?.getBooleanExtra("gps",false))
+        request.save(summary!!)
+        if(closePrevious || !WearHealthStore.enabled(this) || WearClosureStore.isClosed(this,summary!!.optString("workoutId")) || WorkoutSnapshotStore.load(this)?.workoutId!=summary!!.optString("workoutId"))session.requestStop()
         try {
             val manager=getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(NotificationChannel("workout-health","Edzésmérés",NotificationManager.IMPORTANCE_LOW))
-            val pending=PendingIntent.getActivity(this,0,Intent(this,MainActivity::class.java),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-            val notification=Notification.Builder(this,"workout-health").setSmallIcon(android.R.drawable.ic_media_play)
-                .setContentTitle("TrainPilot edzésmérés").setContentText("Pulzus és támogatott edzésadatok rögzítése").setContentIntent(pending).setOngoing(true).build()
-            val location=intent?.getBooleanExtra("gps",false)==true && checkSelfPermission("android.permission.ACCESS_FINE_LOCATION")==android.content.pm.PackageManager.PERMISSION_GRANTED
+            val pending=PendingIntent.getActivity(this,0,Intent(this,MainActivity::class.java).putExtra("destination","workout"),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            val stop=PendingIntent.getBroadcast(this,129,Intent(STOP).setPackage(packageName),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            val notification=Notification.Builder(this,"workout-health").setSmallIcon(R.drawable.ic_workout_recording)
+                .setContentTitle("TrainPilot edzésmérés").setContentText("A mérés kikapcsolt kijelzővel is folytatódik")
+                .setContentIntent(pending).setOngoing(true).setCategory(Notification.CATEGORY_SERVICE)
+                .addAction(Notification.Action.Builder(android.R.drawable.ic_media_pause,"Mérés leállítása",stop).build()).build()
+            val location=request.gps && checkSelfPermission("android.permission.ACCESS_FINE_LOCATION")==android.content.pm.PackageManager.PERMISSION_GRANTED
             if(Build.VERSION.SDK_INT>=34) startForeground(129,notification,ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH or if(location)ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0)
             else startForeground(129,notification,if(location)ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0)
             WearHealthStore.save(this,summary!!)
-            client.setUpdateCallback(executor,this)
-            await(client.getCurrentExerciseInfoAsync()) { info ->
-                when(info.exerciseTrackedStatus) {
-                    ExerciseTrackedStatus.OTHER_APP_IN_PROGRESS -> fail("Másik alkalmazás már edzést mér. A TrainPilot nem szakította meg.")
-                    ExerciseTrackedStatus.OWNED_EXERCISE_IN_PROGRESS -> { owned=true;summary?.put("state","active");persist();if(closePrevious || stopping)end() }
-                    else -> if(closePrevious || stopping){finishWithoutExercise()}else capabilities(intent?.getStringExtra("exerciseType"),location)
+            // Register before resuming/starting, so the final update cannot be missed.
+            awaitCompletion(client.setUpdateCallback(executor,this)) {
+                registered=true
+                await(client.getCurrentExerciseInfoAsync()) { info ->
+                    when(info.exerciseTrackedStatus) {
+                        ExerciseTrackedStatus.OTHER_APP_IN_PROGRESS -> fail("Másik alkalmazás már edzést mér. A TrainPilot nem szakította meg.")
+                        ExerciseTrackedStatus.OWNED_EXERCISE_IN_PROGRESS -> {
+                            session.confirmOwnership()
+                            summary?.put("state",if(session.stopRequested)"ending" else "active");persist()
+                            if(session.stopRequested)end()
+                        }
+                        else -> if(session.stopRequested){finishWithoutExercise()}else capabilities(request.exerciseType,location)
+                    }
                 }
             }
         } catch(error: Exception) { fail("A mérés nem indítható: ${error.message ?: "ellenőrizd az engedélyeket"}") }
         return START_STICKY
     }
     private fun capabilities(requested: String?, gps: Boolean) {
-        if(stopping){finishWithoutExercise();return}
+        if(lifecycle?.stopRequested==true){finishWithoutExercise();return}
         await(client.getCapabilitiesAsync()) { capabilities ->
-            if(stopping){finishWithoutExercise();return@await}
+            if(lifecycle?.stopRequested==true){finishWithoutExercise();return@await}
             val wanted=when(requested) { "running" -> ExerciseType.RUNNING; "walking" -> ExerciseType.WALKING; "cycling" -> ExerciseType.BIKING; else -> ExerciseType.STRENGTH_TRAINING }
             val type=listOf(wanted,ExerciseType.WORKOUT).firstOrNull { capabilities.supportedExerciseTypes.contains(it) }
             if(type==null) { fail("Ezen az órán ez az edzéstípus nem mérhető.");return@await }
@@ -79,14 +92,19 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
             val config=ExerciseConfig(type,metrics,isAutoPauseAndResumeEnabled=false,isGpsEnabled=gps && type in listOf(ExerciseType.RUNNING,ExerciseType.WALKING,ExerciseType.BIKING))
             summary?.let { if(it.optDouble("activeDurationSeconds",0.0)>0)it.put("partial",true);WearHealthAccumulator(it).beginSegment()
                 it.put("exerciseType",type.toString()).put("gps",config.isGpsEnabled) }
-            awaitCompletion(client.startExerciseAsync(config)) { owned=true;summary?.put("state","active");persist();if(stopping)end() }
+            persist()
+            awaitCompletion(client.startExerciseAsync(config)) {
+                lifecycle?.confirmOwnership()
+                summary?.put("state",if(lifecycle?.stopRequested==true)"ending" else "active");persist()
+                if(lifecycle?.stopRequested==true)end()
+            }
         }
     }
     private fun <T : Any> await(future: ListenableFuture<T>, success: (T)->Unit) {
-        WearHealthFutures.awaitValue(future,executor,{ !destroyed },::futureFailed,success)
+        WearHealthFutures.awaitValue(future,executor,{ !destroyed && lifecycle?.finished!=true },::futureFailed,success)
     }
     private fun awaitCompletion(future: ListenableFuture<Void>, success: ()->Unit) {
-        WearHealthFutures.awaitCompletion(future,executor,{ !destroyed },::futureFailed,success)
+        WearHealthFutures.awaitCompletion(future,executor,{ !destroyed && lifecycle?.finished!=true },::futureFailed,success)
     }
     private fun futureFailed(error: Exception) { fail("Mérési hiba: ${error.cause?.message ?: error.message}") }
     override fun onRegistered() { registered=true }
@@ -95,7 +113,7 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
     override fun onLapSummaryReceived(lapSummary: ExerciseLapSummary) {}
     override fun onExerciseUpdateReceived(update: ExerciseUpdate) {
         val data=summary ?: return
-        if(data.optString("state")=="error")return
+        if(lifecycle?.finished==true || destroyed || data.optString("state")=="error")return
         val accumulator=WearHealthAccumulator(data)
         val currentOrigin=System.currentTimeMillis()-SystemClock.elapsedRealtime()
         val oldOrigin=data.optLong("bootOrigin",currentOrigin)
@@ -111,33 +129,39 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
             accumulator.segmentTotal("activeDurationSeconds",(checkpoint.activeDuration.toMillis()+elapsed)/1000.0)
         }
         val ended=update.exerciseStateInfo.state.isEnded
-        data.put("state",if(ended)"ended" else if(ending)"ending" else "active")
+        data.put("state",if(ended)"ended" else if(lifecycle?.stopRequested==true)"ending" else "active")
         persist()
-        if(ended) { WearHealthStore.publish(this,data);stopSelf() }
+        if(ended)finish()
     }
     private fun persist() { summary?.let { WearHealthStore.save(this,it);WearSurfaces.refresh(this) } }
     private fun finishWithoutExercise() {
-        summary?.put("state","ended")?.put("partial",true);persist();summary?.let { WearHealthStore.publish(this,it) };stopSelf()
+        summary?.put("partial",true);finish()
+    }
+    private fun finish() {
+        if(lifecycle?.finish()!=true)return
+        watchdog?.let { handler.removeCallbacks(it) };watchdog=null
+        persist();summary?.let { WearHealthStore.publish(this,it) };stopSelf()
     }
     private fun fail(message: String) {
+        if(lifecycle?.finished==true)return
+        lifecycle?.finish()
         summary?.put("state","error")?.put("partial",true)?.put("message",message);persist();summary?.let { WearHealthStore.publish(this,it) }
-        if(owned)try { client.endExerciseAsync() }catch(_:Exception){}
+        if(lifecycle?.owned==true)try { client.endExerciseAsync() }catch(_:Exception){}
         stopSelf()
     }
     private fun end() {
-        stopping=true
+        val session=lifecycle ?: return
+        session.requestStop();persist()
         // Do not end a foreign exercise while the ownership check/start future is still pending.
-        if(!owned || ending)return
-        if(summary==null) {
-            val id=WearHealthStore.active(this);summary=WearHealthStore.load(this,id)
-        }
-        if(summary==null) { stopSelf();return }
-        ending=true
+        if(!session.beginEnding())return
         try {
             // End flushes the final cumulative values through the callback.
             awaitCompletion(client.endExerciseAsync()) {
-                summary?.put("state","ended");persist();summary?.let { WearHealthStore.publish(this,it) }
-                watchdog=Runnable { stopSelf() }.also { handler.postDelayed(it,2500) }
+                // Completion is not the final metrics callback. Keep receiving the flush.
+                watchdog=Runnable {
+                    summary?.put("partial",true)?.put("message","Az utolsó mérési csomag nem érkezett meg; a megőrzött adatok láthatók.")
+                    finish()
+                }.also { handler.postDelayed(it,5000) }
             }
         } catch(error: Exception) { fail("A mérés lezárása nem sikerült: ${error.message}") }
     }

@@ -2,6 +2,8 @@
 
 Status: Wear 1.2.14 /2721, compatible with phone 1.2.10.
 
+Candidate: Wear **1.2.15 /2722** adds restart-safe active-workout recording, final-update handling, measured workout summary, swipe navigation between cached calendar weeks and release code/resource shrinking. It has not yet been accepted on a physical watch or promoted to main.
+
 ## Independent phone and Wear releases
 
 Wear-only fixes run `Wear Release Gate`: native Wear unit tests, signed `:wear:assembleRelease`, APK metadata and signing-certificate continuity checks. Main publishes `wear-v<version>` with only the Wear APK; it does not replace the latest phone release. Wear metadata and notes live in `android/wear/SOURCE_VERSION.json` and `android/wear/releases/`.
@@ -17,12 +19,27 @@ The original companion milestones are implemented: Home and locally cached worko
 Remaining work:
 
 1. Physical Galaxy Watch7 validation: real sensor values, permission denial/grant, background recording, reconnect/retry, and final summary merging into one phone workout. Code and native regressions are present; device verification remains separate.
-2. Bring measured workout totals (average/max HR, kcal, steps/distance when available) onto the watch's post-workout summary. Current summary shows duration, exercises, completed sets and save status; detailed measurement values are on the measurements page.
+2. Validate the 1.2.15 candidate's measured workout totals (average/max HR, kcal, steps/distance when available) on the watch's post-workout summary, including missing values, zero steps and late final updates.
 3. Continue real-device layout/accessibility polish, including larger font settings and different round screen sizes.
 4. Later calendar data expansion: the existing phone snapshot covers today minus 3 through today plus 10 days and contains one aggregated record per date. Complete historical weeks, multiple daily workouts/count badges and watch-side planning need additional phone data and protocol work. Missing cached dates are displayed as unknown rather than rest days.
 5. A fully phone-independent product remains a later evaluation: shared domain logic, full local program/calendar/history editing and backup/account behavior. Existing companion-mode local persistence and revision/receipt merge rules already work.
 
 The current icon/calendar changes require only a Wear APK. A new phone APK is needed when the phone-side protocol or functionality actually changes.
+
+### 1.2.15 active-workout recording validation
+
+Recording uses the existing Health Services ExerciseClient in a foreground service. It continues during an active workout when the display turns off or another app is opened; it is not all-day passive health collection. Health Services may batch samples with the display off to save power. No forced high-frequency wakeups or extra background sensor permission is added for passive collection.
+
+The service persists its original exercise/GPS request and pending stop. A restart reattaches to the owned exercise; if the exercise no longer exists, a new segment preserves previous totals and marks the recording partial. A disabled or closed workout finishes rather than restarting. Callback registration is awaited before ownership checks/start, and stop completion waits for the ended metrics update, with a bounded partial-result fallback. Private recovery fields are excluded from the phone summary contract.
+
+Before merging, test on Galaxy Watch7:
+
+- Grant/deny sensor/activity permissions, start a workout, turn off the screen for several minutes and switch to another app. Reopen TrainPilot and check that totals and recording status continue without a second workout.
+- With an active cardio/GPS recording, test service/process recovery while retaining location permission. Confirm that exercise type, GPS and cumulative totals survive; a newly started segment must be marked partial. Android force-stop and reboot are separate cases and are not promised as automatic continuation.
+- Finish/discard or stop measurement from the notification with the screen off; confirm recording ends, does not restart, and final metrics update the same saved phone workout once. Simulate a missing final update and check the partial-result message.
+- Check summary scrolling and controls on small round screens and enlarged text. Missing sensor values must remain absent; measured zero steps must remain visible.
+- Swipe left/right across the weekly calendar, including starting the gesture over a day circle. Only cached weeks should be reachable; dragging must not open day details or start a workout. Tap a day, go Back, and confirm the selected week is retained. Check month/year-crossing captions when such weeks are in the phone cache.
+- Verify launcher icon, Data Layer listener, Tile, complication, notification actions and Health Services callbacks in the shrunk, signed release APK. CI retains the R8 mapping for debugging; APK size is compared against the immutable 1.2.14 release (29,998,682 bytes).
 
 ## 1.2.9 release scope — accepted 2026-10-08
 

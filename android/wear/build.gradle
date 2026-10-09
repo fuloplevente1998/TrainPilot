@@ -22,8 +22,8 @@ android {
         applicationId "com.repforge.app"
         minSdkVersion 30
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2721
-        versionName "1.2.14"
+        versionCode 2722
+        versionName "1.2.15"
     }
 
     signingConfigs {
@@ -56,7 +56,8 @@ android {
         }
         release {
             signingConfig signingConfigs.release
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }

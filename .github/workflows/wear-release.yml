@@ -175,5 +175,6 @@ jobs:
             WEAR-SHA256SUMS.txt
             WEAR-SOURCE_VERSION.json
             wear-apk-badging.txt
+            android/wear/build/outputs/mapping/release/mapping.txt
           if-no-files-found: error
           retention-days: 14

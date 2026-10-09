@@ -26,7 +26,7 @@ class WearHealthAccumulator(val value: JSONObject) {
     fun sample(key: String, number: Double?) {
         if (number != null && number.isFinite() && number >= 0) value.put(key,number)
     }
-    fun snapshot(): JSONObject = JSONObject(value.toString()).apply { remove("heartRateSum"); remove("bootOrigin"); remove("lastPublishedAt"); for(key in listOf("totalCalories","steps","distanceMeters","activeDurationSeconds"))remove("offset:$key") }
+    fun snapshot(): JSONObject = JSONObject(value.toString()).apply { remove("heartRateSum"); remove("bootOrigin"); remove("lastPublishedAt"); remove("recordingExerciseType"); remove("recordingGps"); remove("stopRequested"); for(key in listOf("totalCalories","steps","distanceMeters","activeDurationSeconds"))remove("offset:$key") }
 }
 
 object WearHealthStore {
@@ -47,14 +47,14 @@ object WearHealthStore {
         value.put("revision",value.optLong("revision")+1).put("updatedAt",System.currentTimeMillis())
         val prefs=context.getSharedPreferences(PREFS,0)
         val ids=prefs.getStringSet("ids",emptySet())!!.toMutableSet();ids.add(id)
-        val editor=prefs.edit().putString("summary:$id",value.toString()).putString("active",if(value.optString("state") in listOf("starting","active"))id else "")
+        val editor=prefs.edit().putString("summary:$id",value.toString()).putString("active",if(value.optString("state") in listOf("starting","active","ending"))id else "")
         while(ids.size>16) { val oldest=ids.minByOrNull { load(context,it)?.optLong("updatedAt") ?: 0L } ?: break;ids.remove(oldest);editor.remove("summary:$oldest") }
         editor.putStringSet("ids",ids).commit()
     }
     @Synchronized fun retry(context: Context, id: String) {
         val value=load(context,id) ?: return
         if(value.optString("state") in listOf("ended","error")) {
-            value.put("state","starting").put("partial",true).remove("message");save(context,value)
+            value.put("state","starting").put("partial",true).remove("message");value.remove("stopRequested");save(context,value)
         }
     }
     @Synchronized fun active(context: Context): String = context.getSharedPreferences(PREFS,0).getString("active","") ?: ""

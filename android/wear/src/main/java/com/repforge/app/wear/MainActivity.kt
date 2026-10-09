@@ -408,6 +408,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         WorkoutSnapshotStore.clear(this)
         WearStopwatchStore.clear(this)
         workout.value = null
+        refreshHealth()
         restTimer?.cancel()
         restRemaining.intValue = 0
         WearSurfaces.refresh(this,true)

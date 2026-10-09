@@ -33,7 +33,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
-import java.time.temporal.WeekFields
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlin.math.ceil
@@ -94,7 +93,7 @@ internal fun TrainPilotWearApp(
                     onBack = { route = "menu" }) { entry ->
                     entry.day?.let { onStart(it, entry.scheduleId); if (workout.value != null) route = "workout" }
                 }
-                route == "summary" && closure.value != null -> SummaryScreen(closure.value!!, onRetry) {
+                route == "summary" && closure.value != null -> SummaryScreen(closure.value!!, health.value, onRetry) {
                     onDismissClosure(); route = "home"
                 }
                 route == "discard" && active != null -> ConfirmationScreen(true, active.completedSets) {
@@ -282,9 +281,6 @@ private fun CalendarScreen(home: WatchHomeSnapshot?, canStart: Boolean, onBack: 
     var weekKey by rememberSaveable { mutableStateOf(wearCalendarMonday(today).toString()) }
     var selectedKey by rememberSaveable { mutableStateOf<String?>(null) }
     val week = runCatching { LocalDate.parse(weekKey) }.getOrDefault(wearCalendarMonday(today))
-    LaunchedEffect(weeks, weekKey) {
-        if (week !in weeks) weekKey = wearCalendarMonday(today).toString()
-    }
     BackHandler(enabled = selectedKey != null) { selectedKey = null }
     selectedKey?.let { key ->
         val selected = LocalDate.parse(key)
@@ -301,33 +297,38 @@ private fun CalendarScreen(home: WatchHomeSnapshot?, canStart: Boolean, onBack: 
         }
         return
     }
+    // Native paging consumes a horizontal drag before it can select a day.
+    // Keep only cached weeks, as requested; no unknown future/history pages.
+    key(weeks) {
+        val pager = rememberPagerState(initialPage = weeks.indexOf(week).takeIf { it >= 0 }
+            ?: weeks.indices.minByOrNull { kotlin.math.abs(java.time.temporal.ChronoUnit.DAYS.between(weeks[it],today)) }
+            ?: 0, pageCount = { weeks.size })
+        LaunchedEffect(pager.settledPage) { weekKey = weeks[pager.settledPage].toString() }
+        HorizontalPager(state = pager, modifier = Modifier.fillMaxSize(), key = { weeks[it].toString() }) { page ->
+            CalendarWeekPage(weeks[page], entries, today, page + 1, weeks.size, onBack) {
+                selectedKey = it.toString()
+            }
+        }
+    }
+}
+
+@Composable
+private fun CalendarWeekPage(week: LocalDate, entries: List<WatchCalendarEntry>, today: LocalDate,
+                             pageNumber: Int, pageCount: Int, onBack: () -> Unit, onSelect: (LocalDate) -> Unit) {
     val fontScale = LocalDensity.current.fontScale
     val captionScale = fontScale.coerceAtMost(1.25f)
     fun textSize(size: Float) = (size * captionScale / fontScale).sp
     val locale = java.util.Locale.forLanguageTag("hu")
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val layout = wearCalendarLayout(maxWidth.value, maxHeight.value)
-        val index = weeks.indexOf(week)
-        val monthDate = week.plusDays(3)
-        val month = monthDate.format(DateTimeFormatter.ofPattern(if (monthDate.year == today.year) "MMM" else "MMM yyyy", locale))
-        Text(month, modifier = Modifier.align(Alignment.TopCenter).offset(y = layout.monthTop.dp),
+        val caption = wearCalendarCaption(week, today)
+        Text(caption.month, modifier = Modifier.align(Alignment.TopCenter).offset(y = layout.monthTop.dp)
+            .width((minOf(maxWidth, maxHeight) * .76f)),
             color = White, fontSize = textSize(if (minOf(maxWidth, maxHeight).value < 180f) 16f else 20f),
-            fontWeight = FontWeight.SemiBold, maxLines = 1)
-        Row(Modifier.align(Alignment.TopCenter).offset(y = layout.weekTop.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Box(Modifier.size(layout.navigationSize.dp).background(Card, CircleShape)
-                .clickable(enabled = index > 0, role = Role.Button) { weekKey = weeks[index - 1].toString() }
-                .semantics { contentDescription = "Előző hét" }, contentAlignment = Alignment.Center) {
-                Text("‹", color = if (index > 0) White else Muted, fontSize = textSize(16f), maxLines = 1)
-            }
-            Text("${week.get(WeekFields.ISO.weekOfWeekBasedYear())}. hét", color = Muted, fontSize = textSize(10f),
-                textAlign = TextAlign.Center, modifier = Modifier.width(48.dp), maxLines = 1)
-            Box(Modifier.size(layout.navigationSize.dp).background(Card, CircleShape)
-                .clickable(enabled = index >= 0 && index < weeks.lastIndex, role = Role.Button) { weekKey = weeks[index + 1].toString() }
-                .semantics { contentDescription = "Következő hét" }, contentAlignment = Alignment.Center) {
-                Text("›", color = if (index >= 0 && index < weeks.lastIndex) White else Muted, fontSize = textSize(16f), maxLines = 1)
-            }
-        }
+            fontWeight = FontWeight.SemiBold, maxLines = 1, textAlign = TextAlign.Center, overflow = TextOverflow.Ellipsis)
+        Text(caption.dates, color = Muted, fontSize = textSize(10f), textAlign = TextAlign.Center,
+            modifier = Modifier.align(Alignment.TopCenter).offset(y = layout.weekTop.dp)
+                .width(minOf(maxWidth, maxHeight) * .76f), maxLines = 1)
         val dayScale = minOf(1f, layout.buttonSize / 40f)
         val labels = listOf("H", "K", "Sze", "Cs", "P", "Szo", "V")
         layout.days.forEachIndexed { dayIndex, point ->
@@ -337,7 +338,7 @@ private fun CalendarScreen(home: WatchHomeSnapshot?, canStart: Boolean, onBack: 
             val color = if (current) Black else if (records.isEmpty()) Muted else if (dayIndex == 6) DangerText else White
             Column(Modifier.align(Alignment.TopCenter).offset(x = point.x.dp, y = (point.y - layout.buttonSize / 2f).dp)
                 .size(layout.buttonSize.dp).background(if (current) Gold else if (records.isEmpty()) Card else Secondary, CircleShape)
-                .clickable(role = Role.Button) { selectedKey = date.toString() }
+                .clickable(role = Role.Button) { onSelect(date) }
                 .semantics { contentDescription = date.format(DateTimeFormatter.ofPattern("MMMM d., EEEE", locale)) +
                     if (current) ", ma" else "" },
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
@@ -356,10 +357,14 @@ private fun CalendarScreen(home: WatchHomeSnapshot?, canStart: Boolean, onBack: 
                 .offset(x = point.x.dp, y = (point.y + layout.buttonSize / 2f + 2f).dp)
                 .size(4.dp).background(marker, CircleShape))
         }
-        Box(Modifier.align(Alignment.TopCenter).offset(y = layout.menuTop.dp)
-            .width(56.dp).height(20.dp).clickable(role = Role.Button, onClick = onBack)
-            .semantics { contentDescription = "Vissza a főmenübe" }, contentAlignment = Alignment.Center) {
-            Text("Menü", color = Muted, fontSize = textSize(9f), maxLines = 1)
+        Row(Modifier.align(Alignment.TopCenter).offset(y = layout.menuTop.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(Modifier.width(48.dp).height(24.dp).clickable(role = Role.Button, onClick = onBack)
+                .semantics { contentDescription = "Vissza a főmenübe" }, contentAlignment = Alignment.Center) {
+                Text("Menü", color = Muted, fontSize = textSize(10f), maxLines = 1)
+            }
+            Text("$pageNumber / $pageCount", color = Muted, fontSize = textSize(9f), maxLines = 1,
+                modifier = Modifier.semantics { contentDescription = "Átvett hét: $pageNumber / $pageCount. Hétváltás balra vagy jobbra csúsztatással." })
         }
     }
 }
@@ -405,6 +410,8 @@ private fun HealthScreen(data: JSONObject?, enabled: Boolean, gps: Boolean,
     }
     RoundList {
         Label("TRAINPILOT",Gold);Title("Órás mérések",20);Spacer(Modifier.height(8.dp))
+        Text(wearRecordingStatus(data,enabled),color=Gold,fontSize=11.sp,textAlign=TextAlign.Center)
+        Spacer(Modifier.height(6.dp))
         val fresh=data?.optString("state")=="active" && System.currentTimeMillis()-(data.optLong("lastSampleAt",data.optLong("updatedAt")))<15000
         Label(if(fresh)"Élő pulzus" else "Pulzus · utolsó mérés",size=10)
         Title(value("heartRate","bpm"),28)
@@ -424,8 +431,6 @@ private fun HealthScreen(data: JSONObject?, enabled: Boolean, gps: Boolean,
         Spacer(Modifier.height(8.dp));Pill("‹ Vissza",tone=Secondary,onClick=onBack)
     }
 }
-
-private fun trimWearNumber(number: Double): String = if(number>=100 || number%1.0==0.0)number.toLong().toString() else String.format(java.util.Locale.forLanguageTag("hu"),"%.1f",number)
 
 @Composable
 private fun ProgramDays(home: WatchHomeSnapshot, onBack: () -> Unit, onSelect: (WatchHomeDay) -> Unit) {
@@ -800,7 +805,7 @@ private fun ConfirmationScreen(discard: Boolean, completed: Int, onAnswer: (Bool
 }
 
 @Composable
-private fun SummaryScreen(result: WearClosure, onRetry: () -> Unit, onDone: () -> Unit) {
+private fun SummaryScreen(result: WearClosure, health: JSONObject?, onRetry: () -> Unit, onDone: () -> Unit) {
     Panel {
         val saved = result.status == "saved" || result.status == "discarded"
         Label(if (saved) "✓ TRAINPILOT" else if (result.status == "error") "SZINKRONIZÁLÁS" else "VÁRAKOZÁS A TELEFONRA", Gold)
@@ -817,6 +822,28 @@ private fun SummaryScreen(result: WearClosure, onRetry: () -> Unit, onDone: () -
             }
             Label(if (saved) "Mentve a telefonos naplóba" else "Helyben megőrizve · mentés várakozik")
         } else Label(if (saved) "A félbehagyott edzés törölve" else "A telefonos törlés még várakozik")
+        if(result.action=="finishWorkout") {
+            val metrics=wearMeasuredTotals(health,result.workoutId)
+            if(metrics.isNotEmpty()) {
+                Spacer(Modifier.height(10.dp));Label("ÓRÁN MÉRT ADATOK",Gold,size=10)
+                for(pair in metrics.chunked(2)) {
+                    Spacer(Modifier.height(6.dp))
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)) {
+                        for(metric in pair)Column(Modifier.weight(1f).background(Card,RoundedCornerShape(12.dp)).padding(vertical=7.dp,horizontal=4.dp),horizontalAlignment=Alignment.CenterHorizontally) {
+                            Label(metric.label,size=9);Title(metric.value,14)
+                        }
+                        if(pair.size==1)Spacer(Modifier.weight(1f))
+                    }
+                }
+                Text("Az összes kcal az alapanyagcserét is tartalmazza.",color=Muted,fontSize=10.sp,textAlign=TextAlign.Center)
+            }
+            if(health?.optString("workoutId")==result.workoutId) {
+                if(health.optString("state") in listOf("starting","active","ending")) {
+                    Text("A mérés lezárása folyamatban; az utolsó adatok még frissülhetnek.",color=Gold,fontSize=10.sp,textAlign=TextAlign.Center)
+                }
+                if(health.optBoolean("partial"))Text("Részleges mérés",color=Gold,fontSize=10.sp,textAlign=TextAlign.Center)
+            }
+        }
         Spacer(Modifier.height(10.dp)); Pill(if (saved) "Kész" else "Kezdőlap", onClick = onDone)
     }
 }
