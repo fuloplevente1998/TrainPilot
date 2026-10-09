@@ -108,6 +108,8 @@ jobs:
           grep -q "versionCode='$CODE'" wear-apk-badging.txt
           grep -q "versionName='$DISPLAY_VERSION'" wear-apk-badging.txt
           "$SIGNER" verify --verbose "$WEAR_APK"
+          test -s android/wear/build/outputs/mapping/release/mapping.txt
+          node -e "const fs=require('fs'),source=require('./android/wear/SOURCE_VERSION.json'),report={version:source.version,versionCode:source.versionCode,sourceCommit:source.sourceCommit,apkBytes:fs.statSync('android/wear/build/outputs/apk/release/wear-release.apk').size};fs.writeFileSync('wear-apk-size.json',JSON.stringify(report,null,2)+'\n');console.log('Wear APK size: '+report.apkBytes+' bytes');"
 
           cp "$WEAR_APK" "TrainPilot-$VERSION-wear.apk"
           cp android/wear/SOURCE_VERSION.json WEAR-SOURCE_VERSION.json
@@ -175,6 +177,7 @@ jobs:
             WEAR-SHA256SUMS.txt
             WEAR-SOURCE_VERSION.json
             wear-apk-badging.txt
+            wear-apk-size.json
             android/wear/build/outputs/mapping/release/mapping.txt
           if-no-files-found: error
           retention-days: 14
