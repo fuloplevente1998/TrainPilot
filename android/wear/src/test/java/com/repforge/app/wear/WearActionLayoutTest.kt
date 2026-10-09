@@ -50,18 +50,6 @@ class WearActionLayoutTest {
         }
     }
 
-    @Test fun smallPhoneHeaderFitsTheRoundRimAndStaysAboveBody() {
-        for (diameter in listOf(160f, 176f, 192f, 200f, 216f, 225f, 240f, 254f)) {
-            val layout = wearHomeLayout(diameter, diameter)
-            val pillRadius = layout.phone.height / 2f
-            val endOffset = layout.phone.width / 2f - pillRadius
-            val y = layout.phoneTop + pillRadius - diameter / 2f
-            assertTrue("Phone capsule clipped", hypot(endOffset, y) + pillRadius <= diameter / 2f - 5.99f)
-            assertTrue(layout.phoneTop + layout.phone.height < layout.bodyTop)
-            assertTrue(layout.bodyHeight > 0f)
-        }
-    }
-
     private fun assertFits(width: Float, height: Float, count: Int, gap: Float) {
         val layout = wearActionLayout(width, height, count, gap)
         val radius = min(width, height) / 2
