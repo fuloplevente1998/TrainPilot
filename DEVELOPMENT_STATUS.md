@@ -2,7 +2,15 @@
 
 Last updated: **2026-10-09**.
 
-## Phone release preparation — 1.2.12 /2719, calendar planning and shared action feedback
+## Phone test candidate — 1.2.13 /2720, Health first-frame flash (#153)
+
+Based on released main `dfa3f049ed3f5eb507dec6697f045a3186fffa68` (1.2.12). The reported video shows legacy pulse/chevrons briefly returning during Health navigation. A closed-over deferred base decorator rebuilt the legacy view after final synchronous decoration. All Health entry points, including direct legacy hub calls, now resolve the complete pulse/chevron decorator at call time; competing deferred decoration is removed. Existing pulse subtree preservation, seven-day/source semantics and weight/recovery actions remain.
+
+The new behavioral regression audits timer/mutation boundaries and actual animation frames, first/repeated navigation, synchronous/async refresh, weight range and direct legacy hub entry across 32 phone/language/theme cases. It fails on the previous source and passes with the fix. 125 Node regressions + four runner tests passed locally; the canonical UI gate now has 83 scripts. Existing Health/pulse/training follow-ups and unchanged performance budgets are checked. [Candidate notes](docs/releases/v1.2.13.md).
+
+The new Health fix is prepared as a signed phone test APK and draft PR, pending physical-phone acceptance under the permanent performance policy. No physical acceptance or main merge for this new fix is claimed. The earlier calendar/feedback scope is already merged as PR #152 and publicly released as 1.2.12.
+
+## Released phone — 1.2.12 /2719, calendar planning and shared action feedback
 
 Based on main after the approved Wear #151 merge. The multiweek Calendar planner replaces all unfinished plans in the selected start-date/week window with the active program, including older programs. Completed/logged/active/draft entries, previous tombstones and dates outside the window remain protected. Retained/moved rows keep their IDs; surplus plans become sync tombstones. Repeated planning is idempotent and a failed settings write rolls calendar storage back. Personal program names are visible, and calendar-started sessions use their actual exercise list and prescriptions.
 
@@ -10,7 +18,7 @@ The separate Calendar → Replan dialog retains its selected program/first day/d
 
 125 Node regressions + four runner tests passed locally. The canonical UI suite now contains 82 scripts, with new action-feedback and personalized multiweek replacement regressions covering 32 phone-size/language/theme cases each. Full Chromium, native tests, signed APK and source/signer checks run in the existing phone gate. Performance budgets remain unchanged. [Release notes and detailed scope](docs/releases/v1.2.12.md).
 
-The user explicitly authorized main merge after completing these requested changes (“Utána az ha megvan mehet mainre :)”), and selected replacement of all remaining plans in the chosen weeks, including previous programs. Main merge follows the final source's complete release gate; no unperformed physical-phone check is claimed. Wear 1.2.15 remains separately released.
+The user explicitly authorized main merge after completing these requested changes (“Utána az ha megvan mehet mainre :)”), and selected replacement of all remaining plans in the chosen weeks, including previous programs. PR #152 merged as `dfa3f049ed3f5eb507dec6697f045a3186fffa68`; both branch and main release gates passed and the public v1.2.12 APK/source assets were independently verified. No unperformed physical-phone check is claimed. Wear 1.2.15 remains separately released.
 
 ## Phone-approved stable release — 1.2.6 /2709
 

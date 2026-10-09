@@ -219,9 +219,9 @@
    (a.length?'<div class="tp168-weight-recent"><small>'+escText(c().recent)+'</small>'+a.slice().reverse().slice(0,3).map(x=>'<div><span><strong>'+escText(fmt(x.kg))+' kg</strong><small>'+escText(new Date(x.date).toLocaleDateString(locale()))+'</small></span><span><button type="button" onclick="tp168EditWeight(\''+escText(x.date)+'\')">'+escText(c().edit)+'</button><button type="button" class="danger" onclick="tp168DeleteWeight(\''+escText(x.date)+'\')">'+escText(c().del)+'</button></span></div>').join('')+'</div>':'<div class="tp168-weight-empty">'+escText(c().noData)+'</div>')+
   '</div></section>';
  }
- window.tp168ToggleWeight=function(){window.TrainPilot168Health.weightOpen=!window.TrainPilot168Health.weightOpen;decorate();setTimeout(()=>document.querySelector('.tp168-weight-journal')?.scrollIntoView?.({block:'nearest',behavior:'smooth'}),0)};
- window.tp168SetWeightRange=function(v){state.weightRange=v;window.TrainPilot168Health.weightOpen=true;decorate()};
- window.tp168SaveWeight=function(){const kg=Number(String(document.querySelector('#tp168WeightKg')?.value||'').replace(',','.')),raw=String(document.querySelector('#tp168WeightDate')?.value||'').trim(),fallback=typeof rf215Date==='function'?rf215Date():new Date().toISOString().slice(0,10),d=/^\d{4}-\d{2}-\d{2}$/.test(raw)?raw:fallback;if(!kg||kg<30||kg>300)return alert('30–300 kg');const w=weights();w.unshift({kg:Math.round(kg*10)/10,date:new Date(d+'T12:00:00').toISOString()});db.set('weights',w);window.TrainPilot168Health.weightOpen=true;decorate()};
+ window.tp168ToggleWeight=function(){window.TrainPilot168Health.weightOpen=!window.TrainPilot168Health.weightOpen;refreshHealth();setTimeout(()=>document.querySelector('.tp168-weight-journal')?.scrollIntoView?.({block:'nearest',behavior:'smooth'}),0)};
+ window.tp168SetWeightRange=function(v){state.weightRange=v;window.TrainPilot168Health.weightOpen=true;refreshHealth()};
+ window.tp168SaveWeight=function(){const kg=Number(String(document.querySelector('#tp168WeightKg')?.value||'').replace(',','.')),raw=String(document.querySelector('#tp168WeightDate')?.value||'').trim(),fallback=typeof rf215Date==='function'?rf215Date():new Date().toISOString().slice(0,10),d=/^\d{4}-\d{2}-\d{2}$/.test(raw)?raw:fallback;if(!kg||kg<30||kg>300)return alert('30–300 kg');const w=weights();w.unshift({kg:Math.round(kg*10)/10,date:new Date(d+'T12:00:00').toISOString()});db.set('weights',w);window.TrainPilot168Health.weightOpen=true;refreshHealth()};
  window.tp168EditWeight=function(date){window.TrainPilot168Health.weightOpen=true;return typeof rf215Edit==='function'?rf215Edit(date):undefined};
  window.tp168DeleteWeight=function(date){window.TrainPilot168Health.weightOpen=true;return typeof rf215Del==='function'?rf215Del(date):undefined};
  // Keep the already decorated 7-day trend subtree mounted during disclosure.
@@ -229,7 +229,7 @@
  window.tp168TogglePulse=function(){
   const health=window.TrainPilot168Health,next=!health.pulseOpen,panel=document.querySelector('main.rf263-health .tp169-pulse-journal');
   health.pulseOpen=next;
-  if(!panel){decorate();return}
+  if(!panel){refreshHealth();return}
   panel.classList.toggle('tp169-open',next);
   panel.querySelector('.tp169-pulse-summary')?.setAttribute('aria-expanded',String(next));
   if(next)requestAnimationFrame(()=>{if(panel.isConnected)panel.scrollIntoView?.({block:'nearest',behavior:'smooth'})});
@@ -238,14 +238,14 @@
   if(!window.TrainPilot168Health.pulseOpen)return window.tp168TogglePulse();
   const panel=document.querySelector('main.rf263-health .tp169-pulse-journal');
   if(panel)panel.scrollIntoView?.({block:'center',behavior:'smooth'});
-  else decorate();
+  else refreshHealth();
  };
  const recoveryBase=window.tp153OpenRecovery;
  window.tp153OpenRecovery=function(){
   const panel=document.querySelector('main.rf263-health .tp169-pulse-journal');
   window.TrainPilot168Health.pulseOpen=true;
   if(panel){panel.classList.add('tp169-open');panel.querySelector('.tp169-pulse-summary')?.setAttribute('aria-expanded','true')}
-  else decorate();
+  else refreshHealth();
   setTimeout(()=>{
    const nested=document.querySelector('.tp169-pulse-journal .tp168-recovery-history');
    if(nested){nested.open=true;if(nested.scrollIntoView)nested.scrollIntoView({block:'center',behavior:'smooth'});return}
@@ -290,6 +290,9 @@
    pulseJournal(d,trend,recoveryHistoryHtml())+weightJournal(bodyHtml);
   card.querySelectorAll('[data-tp168-action]').forEach(el=>{const run=()=>el.dataset.tp168Action==='recovery'?window.tp153OpenRecovery?.():window.tp168OpenPulse?.();el.onclick=run;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();run()}}});
  }
+ // All entry points resolve the completed pulse/chevron pipeline at call time.
+ // Scheduling the original decorator alone exposed the legacy design between tasks.
+ const refreshHealth=()=>window.TrainPilot168Health?.decorate?.();
  function decorate(){
   const main=document.querySelector('main.rf263-health');
   const bodyClass=document.body&&document.body.classList;if(bodyClass){if(main)bodyClass.add('tp168-health-view');else bodyClass.remove('tp168-health-view');}
@@ -332,14 +335,19 @@
   window.TrainPilot168Health.weightOpen=true;
   if(state?.tab!=='health'||!document.querySelector('main.rf263-health')){
    if(typeof go==='function')go('health');else if(typeof rf206HealthHub==='function')rf206HealthHub();
-  }else decorate();
-  setTimeout(()=>{decorate();document.querySelector('.tp168-weight-journal')?.scrollIntoView?.({block:'center',behavior:'smooth'})},0);
+  }else refreshHealth();
+  setTimeout(()=>{document.querySelector('.tp168-weight-journal')?.scrollIntoView?.({block:'center',behavior:'smooth'})},0);
   return true;
  };
 
+ // Legacy links can enter the hub directly without going through render().
+ // Decorate once after the enclosing render, or immediately for a direct entry.
+ let renderDepth=0;
+ const healthHubBase=window.rf263HealthHub;
+ if(typeof healthHubBase==='function')window.rf263HealthHub=function(){const out=healthHubBase.apply(this,arguments);if(!renderDepth)refreshHealth();return out};
  const renderBase=window.render;
- if(typeof renderBase==='function')window.render=function(){const out=renderBase.apply(this,arguments);decorate();setTimeout(decorate,0);return out};
- decorate();setTimeout(decorate,0);
+ if(typeof renderBase==='function')window.render=function(){let out;renderDepth++;try{out=renderBase.apply(this,arguments)}finally{renderDepth--}refreshHealth();return out};
+ refreshHealth();
 })();
 
 
@@ -1518,7 +1526,7 @@
   };
  }
  if(typeof window.render==='function'){
-  const base=window.render;window.render=function(){const out=base.apply(this,arguments);decoratePulse();setTimeout(decoratePulse,0);return out};
+  const base=window.render;window.render=function(){const out=base.apply(this,arguments);decoratePulse();return out};
  }
  const style=document.createElement('style');style.id='tp5Health27Css';style.textContent=[
   '.tp5-pulse-today,.tp5-pulse-trend-section{margin:8px 0;padding:10px;border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--card2) 72%,transparent)}',
@@ -1557,9 +1565,6 @@
  if(typeof tp5ChevronRenderBase==='function')window.render=function(){
   const out=tp5ChevronRenderBase.apply(this,arguments);
   window.tpGlobalApplyChevrons(document);
-  if(state?.tab==='health')setTimeout(()=>{
-   if(state?.tab==='health')window.tpGlobalApplyChevrons(document);
-  },0);
   return out;
  };
  if(window.TrainPilot168Health?.decorate){
@@ -1567,9 +1572,6 @@
   window.TrainPilot168Health.decorate=function(){
    const out=originalDecorate.apply(this,arguments);
    window.tpGlobalApplyChevrons(document);
-   if(state?.tab==='health')setTimeout(()=>{
-    if(state?.tab==='health')window.tpGlobalApplyChevrons(document);
-   },0);
    return out;
   };
  }
@@ -1586,7 +1588,7 @@
  }
 
  window.TrainPilotPhase5={version:TP5_VERSION,pulseSource:'healthLedgerV1.averageHeartRate',calendarDays:7,zeroPulseAsMissing:true,persistentWeightEdit:true,ownWeightDialog:true ,globalChevron:true,themeAwareChevron:true,matteHealthBasic:true,pulseSafeZone:true};
- decoratePulse();setTimeout(decoratePulse,0);
+ decoratePulse();
 })();
 
 

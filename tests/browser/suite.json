@@ -326,5 +326,9 @@
   {
     "file": "tests/browser/calendar-plan-replacement.cjs",
     "estimatedSeconds": 50
+  },
+  {
+    "file": "tests/browser/health-first-frame.cjs",
+    "estimatedSeconds": 35
   }
 ]
