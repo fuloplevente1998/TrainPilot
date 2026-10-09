@@ -33,5 +33,6 @@ assert.match(output(),/390 kcal/);
 assert.equal(paints,2);
 rows[0].healthWear129={source:'wear_health_services',workoutId:'unrelated',watchId:'watch7',revision:5,totalCalories:500};
 assert.equal(window.TrainPilotWearJournalSource.measured(rows[0]),null,'foreign workout metrics may not leak into history');
-assert.equal(output(),'<div class="hc-only">HC: 49 kcal</div>','without valid watch data, retain the Health Connect display');
+assert.match(output(),/nem érkezett külön órás mérési összesítés/,'missing Wear summary must be explicit');
+assert.match(output(),/HC: 49 kcal/,'without valid watch data, retain the Health Connect display');
 console.log('PASS Journal provenance: Wear 390 vs HC 49, explicit selection, canonical row immutability, identity checks and no invented calories');
