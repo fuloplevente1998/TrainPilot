@@ -18,6 +18,7 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
     private var summary: JSONObject?=null
     private var lifecycle: WearRecordingLifecycle?=null
     private var registered=false
+    private var afterRegistration: (() -> Unit)?=null
     private val stopReceiver=object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) { end() }
     }
@@ -59,8 +60,7 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
             else startForeground(129,notification,if(location)ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0)
             WearHealthStore.save(this,summary!!)
             // Register before resuming/starting, so the final update cannot be missed.
-            awaitCompletion(client.setUpdateCallback(executor,this)) {
-                registered=true
+            afterRegistration = {
                 await(client.getCurrentExerciseInfoAsync()) { info ->
                     when(info.exerciseTrackedStatus) {
                         ExerciseTrackedStatus.OTHER_APP_IN_PROGRESS -> fail("Másik alkalmazás már edzést mér. A TrainPilot nem szakította meg.")
@@ -73,6 +73,7 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
                     }
                 }
             }
+            client.setUpdateCallback(executor,this)
         } catch(error: Exception) { fail("A mérés nem indítható: ${error.message ?: "ellenőrizd az engedélyeket"}") }
         return START_STICKY
     }
@@ -107,7 +108,11 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
         WearHealthFutures.awaitCompletion(future,executor,{ !destroyed && lifecycle?.finished!=true },::futureFailed,success)
     }
     private fun futureFailed(error: Exception) { fail("Mérési hiba: ${error.cause?.message ?: error.message}") }
-    override fun onRegistered() { registered=true }
+    override fun onRegistered() {
+        registered=true
+        val action=afterRegistration;afterRegistration=null
+        if(!destroyed && lifecycle?.finished!=true)try { action?.invoke() }catch(error:Exception) { futureFailed(error) }
+    }
     override fun onRegistrationFailed(throwable: Throwable) { fail("A mérési kapcsolat nem indult: ${throwable.message}") }
     override fun onAvailabilityChanged(dataType: DataType<*,*>, availability: Availability) { /* Missing measurements stay absent. */ }
     override fun onLapSummaryReceived(lapSummary: ExerciseLapSummary) {}
@@ -166,7 +171,7 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
         } catch(error: Exception) { fail("A mérés lezárása nem sikerült: ${error.message}") }
     }
     override fun onDestroy() {
-        destroyed=true;try { unregisterReceiver(stopReceiver) }catch(_:Exception){};watchdog?.let { handler.removeCallbacks(it) }
+        destroyed=true;afterRegistration=null;try { unregisterReceiver(stopReceiver) }catch(_:Exception){};watchdog?.let { handler.removeCallbacks(it) }
         if(registered)try { client.clearUpdateCallbackAsync(this) }catch(_:Exception){}
         super.onDestroy()
     }
