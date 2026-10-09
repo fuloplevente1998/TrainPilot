@@ -11731,12 +11731,28 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   if(currentPanel!=='calendar'){closeDay(false);return;}
   const content=dayHost.querySelector('.tp108-day-content'),y=content.scrollTop;
   const html=tp151CalendarDayPanel();if(html===dayMarkup){markCalendarDays();return;}
-  const hadFocus=content.contains(document.activeElement);content.innerHTML=html;dayMarkup=html;
+  const focusNode=document.activeElement,hadFocus=content.contains(focusNode);
+  // Rebuilding an edited day can otherwise discard its unsaved inputs and move focus
+  // to the dialog itself. Preserve only the same schedule's draft across this redraw.
+  const editingId=state.tp151EditingScheduleId;
+  const editFields=editingId?['tp151ScheduleDay','tp151ScheduleTime','tp151ScheduleMinutes']:[];
+  const fieldDraft=editFields.map(id=>[id,content.querySelector('#'+id)?.value]).filter(([,value])=>value!==undefined);
+  const focusId=hadFocus&&focusNode?.id&&editFields.includes(focusNode.id)?focusNode.id:'';
+  content.innerHTML=html;dayMarkup=html;
+  if(editingId&&editingId===state.tp151EditingScheduleId){
+   for(const [id,value] of fieldDraft){
+    const field=content.querySelector('#'+id);
+    if(field)field.value=value;
+   }
+  }
   const heading=content.querySelector('.tp151-day-title h2');if(heading)heading.id='tp108DayTitle';
   rf260EnhanceSelects();rf260EnhanceTemporalFields();tp149TranslateFreshDom?.(content);
   window.tp155R4ApplyHighlightSurfaces?.(content);
   content.scrollTop=Math.min(y,Math.max(0,content.scrollHeight-content.clientHeight));markCalendarDays();
-  if(hadFocus)dayHost.querySelector('.tp108-day-dialog').focus({preventScroll:true});
+  if(hadFocus){
+   const target=focusId?content.querySelector('#'+focusId):null;
+   (target||dayHost.querySelector('.tp108-day-dialog'))?.focus({preventScroll:true});
+  }
  };
  const openDay=function(date,trigger){
   if(currentPanel!=='calendar'||!/^\d{4}-\d{2}-\d{2}$/.test(date))return false;
