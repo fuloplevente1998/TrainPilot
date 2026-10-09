@@ -70,7 +70,12 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private fun startHealthIfEnabled() {
         if(!WearHealthStore.enabled(this) || !healthAllowed())return
         val current=workout.value ?: return
-        val previous=WearHealthStore.load(this,current.workoutId)
+        var previous=WearHealthStore.load(this,current.workoutId)
+        if(previous?.optString("state")=="error" && WearHealthFutures.isLegacyNullCompletionError(previous.optString("message"))) {
+            // Recover the old Void-callback bug within the same workout, keeping its measured totals.
+            WearHealthStore.retry(this,current.workoutId)
+            previous=WearHealthStore.load(this,current.workoutId)
+        }
         if(previous?.optString("state") in listOf("ended","error"))return
         try { WearHealthService.start(this,current) }catch(error:Exception) { Toast.makeText(this,"A mérés nem indítható: ${error.message}",Toast.LENGTH_LONG).show() }
     }

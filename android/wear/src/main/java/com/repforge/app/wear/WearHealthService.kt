@@ -79,12 +79,16 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
             val config=ExerciseConfig(type,metrics,isAutoPauseAndResumeEnabled=false,isGpsEnabled=gps && type in listOf(ExerciseType.RUNNING,ExerciseType.WALKING,ExerciseType.BIKING))
             summary?.let { if(it.optDouble("activeDurationSeconds",0.0)>0)it.put("partial",true);WearHealthAccumulator(it).beginSegment()
                 it.put("exerciseType",type.toString()).put("gps",config.isGpsEnabled) }
-            await(client.startExerciseAsync(config)) { owned=true;summary?.put("state","active");persist();if(stopping)end() }
+            awaitCompletion(client.startExerciseAsync(config)) { owned=true;summary?.put("state","active");persist();if(stopping)end() }
         }
     }
-    private fun <T> await(future: ListenableFuture<T>, success: (T)->Unit) {
-        future.addListener({ if(!destroyed)try { success(future.get()) } catch(error: Exception) { fail("Mérési hiba: ${error.cause?.message ?: error.message}") } },executor)
+    private fun <T : Any> await(future: ListenableFuture<T>, success: (T)->Unit) {
+        WearHealthFutures.awaitValue(future,executor,{ !destroyed },::futureFailed,success)
     }
+    private fun awaitCompletion(future: ListenableFuture<Void>, success: ()->Unit) {
+        WearHealthFutures.awaitCompletion(future,executor,{ !destroyed },::futureFailed,success)
+    }
+    private fun futureFailed(error: Exception) { fail("Mérési hiba: ${error.cause?.message ?: error.message}") }
     override fun onRegistered() { registered=true }
     override fun onRegistrationFailed(throwable: Throwable) { fail("A mérési kapcsolat nem indult: ${throwable.message}") }
     override fun onAvailabilityChanged(dataType: DataType<*,*>, availability: Availability) { /* Missing measurements stay absent. */ }
@@ -131,7 +135,7 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
         ending=true
         try {
             // End flushes the final cumulative values through the callback.
-            await(client.endExerciseAsync()) {
+            awaitCompletion(client.endExerciseAsync()) {
                 summary?.put("state","ended");persist();summary?.let { WearHealthStore.publish(this,it) }
                 watchdog=Runnable { stopSelf() }.also { handler.postDelayed(it,2500) }
             }

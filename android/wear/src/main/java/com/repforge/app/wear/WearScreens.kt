@@ -203,7 +203,8 @@ private fun HomeScreen(home: WatchHomeSnapshot?, active: WearWorkout?, closure: 
                     rec != null && home?.hasDraft == false -> RoundControl("▶", Gold, caption = "Indítás", description = "Edzés indítása") { onStart(rec.day, rec.scheduleId) }
                     else -> RoundControl("A/B", Gold, enabled = home != null && home.hasDraft == false && home.days.isNotEmpty(), caption = "Napok", description = "Program napjai", onClick = onDays)
                 }
-                RoundControl("▦", caption = "Naptár", description = "Edzésnaptár", onClick = onCalendar)
+                if (active != null) RoundControl("✕", Danger, caption = "Törlés", description = "Megkezdett edzés törlése", onClick = onDiscard)
+                else RoundControl("▦", caption = "Naptár", description = "Edzésnaptár", onClick = onCalendar)
                 RoundControl("···", caption = "Menü", description = "Főmenü", onClick = onMenu)
             }
         }
