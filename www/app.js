@@ -11709,7 +11709,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  };
 
  // A selected day has its own surface; its contents never compete with the fixed month/planner.
- let dayHost=null,dayTrigger=null,dayDate='',dayBackground=[],daySessionAtOpen=null,dayMarkup='';
+ let dayHost=null,dayTrigger=null,dayDate='',dayBackground=[],daySessionAtOpen=null,dayMarkup='',dayFocusId='';
  const dayNestedPicker=()=>!!document.querySelector('#tpTemporalPicker,#tp2628Dialog,.video-modal,.video-overlay');
  const markCalendarDays=function(){
   panelHost?.querySelectorAll('.cal-cell[onclick]').forEach(button=>{
@@ -11720,7 +11720,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  const closeDay=function(restoreFocus=true){
   if(!dayHost)return false;
   if(typeof rf260TemporalPicker!=='undefined'&&rf260TemporalPicker)rf260TemporalClose(false);
-  rf260CloseSelects();dayHost.remove();dayHost=null;dayMarkup='';state.tp151EditingScheduleId=null;
+  rf260CloseSelects();dayHost.remove();dayHost=null;dayMarkup='';dayFocusId='';state.tp151EditingScheduleId=null;
   for(const [node,inert] of dayBackground)if(node.isConnected)node.inert=inert;dayBackground=[];
   markCalendarDays();
   const trigger=dayTrigger?.isConnected?dayTrigger:panelHost?.querySelector('.cal-cell[onclick*="'+dayDate+'"]');dayTrigger=null;
@@ -11736,8 +11736,11 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   // to the dialog itself. Preserve only the same schedule's draft across this redraw.
   const editingId=state.tp151EditingScheduleId;
   const editFields=editingId?['tp151ScheduleDay','tp151ScheduleTime','tp151ScheduleMinutes']:[];
+  if(!editingId)dayFocusId='';
   const fieldDraft=editFields.map(id=>[id,content.querySelector('#'+id)?.value]).filter(([,value])=>value!==undefined);
-  const focusId=hadFocus&&focusNode?.id&&editFields.includes(focusNode.id)?focusNode.id:'';
+  const focusId=hadFocus&&focusNode?.id&&editFields.includes(focusNode.id)?focusNode.id:
+   (editingId&&editFields.includes(dayFocusId)?dayFocusId:'');
+  if(focusId)dayFocusId=focusId;
   content.innerHTML=html;dayMarkup=html;
   if(editingId&&editingId===state.tp151EditingScheduleId){
    for(const [id,value] of fieldDraft){
@@ -11749,9 +11752,19 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   rf260EnhanceSelects();rf260EnhanceTemporalFields();tp149TranslateFreshDom?.(content);
   window.tp155R4ApplyHighlightSurfaces?.(content);
   content.scrollTop=Math.min(y,Math.max(0,content.scrollHeight-content.clientHeight));markCalendarDays();
-  if(hadFocus){
+  if(hadFocus||focusId){
    const target=focusId?content.querySelector('#'+focusId):null;
    (target||dayHost.querySelector('.tp108-day-dialog'))?.focus({preventScroll:true});
+  }
+  if(focusId){
+   const owner=dayHost;
+   // Other render decorators can repaint a second time in the same turn. Restore
+   // only the still-edited field, after those synchronous decorators complete.
+   Promise.resolve().then(()=>{
+    if(dayHost!==owner||state.tp151EditingScheduleId!==editingId||dayNestedPicker())return;
+    const field=owner.querySelector('#'+focusId);
+    if(field&&field.isConnected&&document.activeElement!==field)field.focus({preventScroll:true});
+   });
   }
  };
  const openDay=function(date,trigger){
@@ -11762,6 +11775,10 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
    dayHost=document.createElement('div');dayHost.id='tp108CalendarDay';dayHost.className='tp108-day-backdrop';
    dayHost.innerHTML='<section class="tp108-day-dialog" role="dialog" aria-modal="true" aria-labelledby="tp108DayTitle" tabindex="-1"><button type="button" class="tp108-day-close tp-modal-close" aria-label="'+esc(tp149T('common.close'))+'" onclick="TrainPilotCalendarDay.close()">×</button><div class="tp108-day-content"></div></section>';
    dayHost.addEventListener('click',event=>{if(event.target===dayHost)closeDay();});
+   dayHost.addEventListener('focusin',event=>{
+    if(['tp151ScheduleDay','tp151ScheduleTime','tp151ScheduleMinutes'].includes(event.target?.id))
+     dayFocusId=event.target.id;
+   });
    dayHost.addEventListener('keydown',event=>{
     if(dayNestedPicker())return;
     if(event.key==='Escape'){
