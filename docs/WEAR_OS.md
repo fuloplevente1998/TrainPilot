@@ -1,6 +1,6 @@
 # TrainPilot Wear OS – architecture and implementation plan
 
-Status: Wear 1.2.11 /2718, compatible with phone 1.2.10.
+Status: Wear 1.2.14 /2721, compatible with phone 1.2.10.
 
 ## Independent phone and Wear releases
 
@@ -9,6 +9,20 @@ Wear-only fixes run `Wear Release Gate`: native Wear unit tests, signed `:wear:a
 Phone changes run `Phone Release Gate + TrainPilot APK`: Chromium UI and phone regressions, native phone unit tests, signed `:app:assembleRelease`, APK metadata and signing-certificate checks. Phone versions use the root `SOURCE_VERSION.json`, `package.json` and phone Gradle metadata, with release tags `v<version>`. The phone gate neither requires matching Wear versions nor builds the Wear module.
 
 Keep the package ID, signing identity and Data Layer protocol compatible across the installed pair. Updating only Wear does not require a phone build unless the change actually needs a new phone-side protocol or feature. Workflow-only and documentation changes do not start the phone APK workflow; platform source changes and manual runs remain covered.
+
+## Current next steps — 2026-10-09
+
+The original companion milestones are implemented: Home and locally cached workout start, workout controls/rest/timers, finish/discard and workout summary, calendar, Health Services recording, Tile, complication and Open on phone. Wear 1.2.13 adds the phone-identical launcher icon. Wear 1.2.14 replaces the calendar list with a 4+3 circular weekly view, cached-week navigation and explicit day details/start action.
+
+Remaining work:
+
+1. Physical Galaxy Watch7 validation: real sensor values, permission denial/grant, background recording, reconnect/retry, and final summary merging into one phone workout. Code and native regressions are present; device verification remains separate.
+2. Bring measured workout totals (average/max HR, kcal, steps/distance when available) onto the watch's post-workout summary. Current summary shows duration, exercises, completed sets and save status; detailed measurement values are on the measurements page.
+3. Continue real-device layout/accessibility polish, including larger font settings and different round screen sizes.
+4. Later calendar data expansion: the existing phone snapshot covers today minus 3 through today plus 10 days and contains one aggregated record per date. Complete historical weeks, multiple daily workouts/count badges and watch-side planning need additional phone data and protocol work. Missing cached dates are displayed as unknown rather than rest days.
+5. A fully phone-independent product remains a later evaluation: shared domain logic, full local program/calendar/history editing and backup/account behavior. Existing companion-mode local persistence and revision/receipt merge rules already work.
+
+The current icon/calendar changes require only a Wear APK. A new phone APK is needed when the phone-side protocol or functionality actually changes.
 
 ## 1.2.9 release scope — accepted 2026-10-08
 
@@ -292,7 +306,7 @@ Implemented on `feat/wear-os` after the initial display-only prototype:
 - The watch can adjust weight, reps and timed values, mark the current set complete, move to the previous/next exercise and skip rest.
 - Completing a set starts the rest countdown locally on the watch and vibrates when the countdown ends.
 - The phone applies commands to the canonical `state.session`, calls the existing workout handlers where appropriate, persists the draft and republishes the authoritative snapshot.
-- "Open on phone" via Wear remote activity/deep link remains a later milestone.
+- "Open on phone" via Wear remote activity/deep link is implemented; phone cold-start support was fixed in 1.2.10.
 
 ## Next milestone — Galaxy Watch7 health recording
 

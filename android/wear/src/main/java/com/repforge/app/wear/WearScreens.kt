@@ -32,6 +32,8 @@ import androidx.wear.compose.material3.Text
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Instant
+import java.time.LocalDate
+import java.time.temporal.WeekFields
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlin.math.ceil
@@ -274,22 +276,123 @@ private fun MainMenuScreen(hasWorkout: Boolean, onOpenPhone: () -> Unit, onRoute
 
 @Composable
 private fun CalendarScreen(home: WatchHomeSnapshot?, canStart: Boolean, onBack: () -> Unit, onStart: (WatchCalendarEntry) -> Unit) {
-    val today = java.time.LocalDate.now().toString()
+    val today = LocalDate.now()
+    val entries = home?.calendar.orEmpty().filter { wearCalendarDate(it) != null }
+    val weeks = wearCalendarWeeks(entries, today)
+    var weekKey by rememberSaveable { mutableStateOf(wearCalendarMonday(today).toString()) }
+    var selectedKey by rememberSaveable { mutableStateOf<String?>(null) }
+    val week = runCatching { LocalDate.parse(weekKey) }.getOrDefault(wearCalendarMonday(today))
+    LaunchedEffect(weeks, weekKey) {
+        if (week !in weeks) weekKey = wearCalendarMonday(today).toString()
+    }
+    BackHandler(enabled = selectedKey != null) { selectedKey = null }
+    selectedKey?.let { key ->
+        val selected = LocalDate.parse(key)
+        CalendarDayScreen(selected, entries.filter { wearCalendarDate(it) == selected }, today, canStart,
+            onBack = { selectedKey = null }, onStart = onStart)
+        return
+    }
+    if (home == null || entries.isEmpty()) {
+        RoundList {
+            Title("Naptár", 22)
+            Text("A naptár frissítéséhez nyisd meg a TrainPilotot a telefonon.", color = Muted,
+                fontSize = 12.sp, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(8.dp)); Pill("‹ Főmenü", tone = Secondary, onClick = onBack)
+        }
+        return
+    }
+    val fontScale = LocalDensity.current.fontScale
+    val captionScale = fontScale.coerceAtMost(1.25f)
+    fun textSize(size: Float) = (size * captionScale / fontScale).sp
+    val locale = java.util.Locale.forLanguageTag("hu")
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val layout = wearCalendarLayout(maxWidth.value, maxHeight.value)
+        val index = weeks.indexOf(week)
+        val monthDate = week.plusDays(3)
+        val month = monthDate.format(DateTimeFormatter.ofPattern(if (monthDate.year == today.year) "MMM" else "MMM yyyy", locale))
+        Text(month, modifier = Modifier.align(Alignment.TopCenter).offset(y = layout.monthTop.dp),
+            color = White, fontSize = textSize(if (minOf(maxWidth, maxHeight).value < 180f) 16f else 20f),
+            fontWeight = FontWeight.SemiBold, maxLines = 1)
+        Row(Modifier.align(Alignment.TopCenter).offset(y = layout.weekTop.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Box(Modifier.size(layout.navigationSize.dp).background(Card, CircleShape)
+                .clickable(enabled = index > 0, role = Role.Button) { weekKey = weeks[index - 1].toString() }
+                .semantics { contentDescription = "Előző hét" }, contentAlignment = Alignment.Center) {
+                Text("‹", color = if (index > 0) White else Muted, fontSize = textSize(16f), maxLines = 1)
+            }
+            Text("${week.get(WeekFields.ISO.weekOfWeekBasedYear())}. hét", color = Muted, fontSize = textSize(10f),
+                textAlign = TextAlign.Center, modifier = Modifier.width(48.dp), maxLines = 1)
+            Box(Modifier.size(layout.navigationSize.dp).background(Card, CircleShape)
+                .clickable(enabled = index >= 0 && index < weeks.lastIndex, role = Role.Button) { weekKey = weeks[index + 1].toString() }
+                .semantics { contentDescription = "Következő hét" }, contentAlignment = Alignment.Center) {
+                Text("›", color = if (index >= 0 && index < weeks.lastIndex) White else Muted, fontSize = textSize(16f), maxLines = 1)
+            }
+        }
+        val dayScale = minOf(1f, layout.buttonSize / 40f)
+        val labels = listOf("H", "K", "Sze", "Cs", "P", "Szo", "V")
+        layout.days.forEachIndexed { dayIndex, point ->
+            val date = week.plusDays(dayIndex.toLong())
+            val records = entries.filter { wearCalendarDate(it) == date }
+            val current = date == today
+            val color = if (current) Black else if (records.isEmpty()) Muted else if (dayIndex == 6) DangerText else White
+            Column(Modifier.align(Alignment.TopCenter).offset(x = point.x.dp, y = (point.y - layout.buttonSize / 2f).dp)
+                .size(layout.buttonSize.dp).background(if (current) Gold else if (records.isEmpty()) Card else Secondary, CircleShape)
+                .clickable(role = Role.Button) { selectedKey = date.toString() }
+                .semantics { contentDescription = date.format(DateTimeFormatter.ofPattern("MMMM d., EEEE", locale)) +
+                    if (current) ", ma" else "" },
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                Text(labels[dayIndex], color = color, fontSize = textSize(9f * dayScale), lineHeight = textSize(10f * dayScale), maxLines = 1)
+                Text("${date.dayOfMonth}", color = color, fontSize = textSize(17f * dayScale), lineHeight = textSize(19f * dayScale),
+                    fontWeight = FontWeight.SemiBold, maxLines = 1)
+            }
+            val status = records.map { it.status }
+            val marker = when {
+                "planned" in status -> Gold
+                "completed" in status -> Color(0xFF7FD4BA)
+                "skipped" in status -> Muted
+                else -> null
+            }
+            if (marker != null) Box(Modifier.align(Alignment.TopCenter)
+                .offset(x = point.x.dp, y = (point.y + layout.buttonSize / 2f + 2f).dp)
+                .size(4.dp).background(marker, CircleShape))
+        }
+        Box(Modifier.align(Alignment.TopCenter).offset(y = layout.menuTop.dp)
+            .width(56.dp).height(20.dp).clickable(role = Role.Button, onClick = onBack)
+            .semantics { contentDescription = "Vissza a főmenübe" }, contentAlignment = Alignment.Center) {
+            Text("Menü", color = Muted, fontSize = textSize(9f), maxLines = 1)
+        }
+    }
+}
+
+@Composable
+private fun CalendarDayScreen(date: LocalDate, entries: List<WatchCalendarEntry>, today: LocalDate,
+                              canStart: Boolean, onBack: () -> Unit, onStart: (WatchCalendarEntry) -> Unit) {
     RoundList {
-        Label("TRAINPILOT", Gold); Title("Naptár", 22); Label("14 nap · a telefon terve"); Spacer(Modifier.height(8.dp))
-        if (home?.calendar.isNullOrEmpty()) Text("A naptár frissítéséhez nyisd meg a telefonos appot.", color = Muted, fontSize = 12.sp, textAlign = TextAlign.Center)
-        home?.calendar?.forEach { entry ->
-            val startable = canStart && entry.status == "planned" && entry.day != null && entry.date >= today
-            Column(Modifier.fillMaxWidth().background(if (entry.date == today) Secondary else Card, RoundedCornerShape(18.dp))
-                .clickable(enabled = startable, role = Role.Button) { onStart(entry) }.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                val date = java.time.LocalDate.parse(entry.date).format(DateTimeFormatter.ofPattern("MMM d., E", java.util.Locale.forLanguageTag("hu")))
-                Label((if (entry.date == today) "Ma · " else "") + date, if (entry.date == today) Gold else White)
-                entry.day?.let { Title(it.name, 16) }
-                Label(when (entry.status) { "completed" -> "✓ Teljesítve"; "skipped" -> "Kihagyva"; "rest" -> "Pihenőnap"; else -> if (startable) "▶ Indítás" else "Tervezett" }, size = 10)
+        Title(date.format(DateTimeFormatter.ofPattern("MMM d., EEEE", java.util.Locale.forLanguageTag("hu"))), 18)
+        Spacer(Modifier.height(8.dp))
+        if (entries.isEmpty()) {
+            Text("Ehhez a naphoz nincs adat az órán. A telefonos naptárban találod meg.", color = Muted,
+                fontSize = 12.sp, textAlign = TextAlign.Center)
+        }
+        entries.forEach { entry ->
+            Column(Modifier.fillMaxWidth().background(Card, RoundedCornerShape(18.dp)).padding(10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally) {
+                entry.day?.let { day ->
+                    Label(day.programName); Title(day.name, 16); Label("${day.exercises.size} gyakorlat", size = 10)
+                }
+                Label(when (entry.status) { "completed" -> "✓ Teljesítve"; "skipped" -> "Kihagyva"; "rest" -> "Pihenőnap"; else -> "Tervezett" }, size = 11)
+                val time = runCatching { Instant.parse(entry.plannedStart).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm")) }.getOrNull()
+                if (time != null) Label(time, size = 10)
+                if (wearCalendarCanStart(entry, today, canStart)) {
+                    Spacer(Modifier.height(6.dp)); Pill("▶ Edzés indítása") { onStart(entry) }
+                } else if (!canStart && entry.status == "planned" && entry.day != null && !date.isBefore(today)) {
+                    Text("Az aktív edzés vagy a függő szinkron lezárása után indítható.", color = Muted, fontSize = 10.sp,
+                        textAlign = TextAlign.Center)
+                }
             }
             Spacer(Modifier.height(6.dp))
         }
-        Pill("‹ Főmenü", tone = Secondary, onClick = onBack)
+        Pill("‹ Heti naptár", tone = Secondary, onClick = onBack)
     }
 }
 
