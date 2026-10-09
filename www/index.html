@@ -340,8 +340,13 @@
   return true;
  };
 
+ // Legacy links can enter the hub directly without going through render().
+ // Decorate once after the enclosing render, or immediately for a direct entry.
+ let renderDepth=0;
+ const healthHubBase=window.rf263HealthHub;
+ if(typeof healthHubBase==='function')window.rf263HealthHub=function(){const out=healthHubBase.apply(this,arguments);if(!renderDepth)refreshHealth();return out};
  const renderBase=window.render;
- if(typeof renderBase==='function')window.render=function(){const out=renderBase.apply(this,arguments);refreshHealth();return out};
+ if(typeof renderBase==='function')window.render=function(){let out;renderDepth++;try{out=renderBase.apply(this,arguments)}finally{renderDepth--}refreshHealth();return out};
  refreshHealth();
 })();
 

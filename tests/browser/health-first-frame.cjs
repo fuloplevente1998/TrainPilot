@@ -29,19 +29,19 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const file=p
    await page.locator(".top .tp151-nav-item[onclick=\"go('health')\"]").click();
    await page.evaluate(()=>__healthAudit('synchronous'));
    await page.evaluate(()=>new Promise(resolve=>{let count=0;const frame=()=>{__healthAudit('paint');if(++count===10)resolve();else requestAnimationFrame(frame);};requestAnimationFrame(frame);}));
-   for(const action of ['repeat-open','refresh','async-refresh','weight-range']){
-    await page.evaluate(action=>{__healthPhase=action;if(action==='repeat-open')[...document.querySelectorAll('.top .tp151-nav-item')].find(e=>e.getAttribute('onclick')==="go('health')").click();else if(action==='refresh')render();else if(action==='async-refresh')setTimeout(()=>{rf240Ledger().days[rf240DayKey(new Date())].averageHeartRate=83;render();},0);else tp168SetWeightRange('30');__healthAudit('synchronous');},action);
+   for(const action of ['repeat-open','refresh','async-refresh','weight-range','direct-hub']){
+    await page.evaluate(action=>{__healthPhase=action;if(action==='repeat-open')[...document.querySelectorAll('.top .tp151-nav-item')].find(e=>e.getAttribute('onclick')==="go('health')").click();else if(action==='refresh')render();else if(action==='async-refresh')setTimeout(()=>{rf240Ledger().days[rf240DayKey(new Date())].averageHeartRate=83;render();},0);else if(action==='direct-hub')rf263HealthHub();else tp168SetWeightRange('30');__healthAudit('synchronous');},action);
     await page.waitForTimeout(80);
     if(action==='async-refresh')assert.equal(await page.locator('.tp5-pulse-day:last-child strong').textContent(),'83','async data refresh reaches the final seven-day trend');
    }
    const frames=await page.evaluate(()=>{__healthRecording=false;return __healthFrames;});
    assert.ok(frames.some(f=>f.kind==='paint')&&frames.some(f=>f.kind==='timer'),'observe real render frames and deferred task boundaries');
    assert.deepEqual(frames.filter(f=>!f.valid),[],'Health must be complete at every potential paint '+width+'/'+lang+'/'+theme);
-   assert.equal(await page.locator('.tp169-pulse-journal').count(),1);assert.equal(await page.locator('.tp5-pulse-day').count(),7);
+   assert.equal(await page.locator('main.rf263-health > details.tp155-health-bottom-panel').count(),2,'legacy pulse/recovery panels stay embedded');assert.equal(await page.locator('.tp169-pulse-journal').count(),1);assert.equal(await page.locator('.tp5-pulse-day').count(),7);
    await page.locator('.tp169-pulse-summary').click();assert.equal(await page.locator('.tp169-pulse-journal.tp169-open').count(),1,'pulse disclosure still works');
    await page.evaluate(()=>{go('home');go('health');});await page.waitForTimeout(40);assert.equal(await page.locator('.tp5-pulse-trend-section').count(),1);
    if(width===393&&lang==='hu'&&theme==='classicBlue'){fs.mkdirSync('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/health-first-frame.png'});}
   }
-  assert.deepEqual(errors,[]);console.log('PASS Health first frame: 32 phone/language/theme cases, first/repeated navigation, render/async data refresh, weight range, timer/mutation/actual animation-frame boundaries, final pulse/chevrons only and retained disclosure/day semantics');
+  assert.deepEqual(errors,[]);console.log('PASS Health first frame: 32 phone/language/theme cases, first/repeated navigation, render/async data refresh, weight range/direct hub, timer/mutation/actual animation-frame boundaries, final pulse/chevrons only and retained disclosure/day semantics');
  }finally{await browser?.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);process.exitCode=1;});
