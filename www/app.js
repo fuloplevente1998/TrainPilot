@@ -15031,8 +15031,13 @@ renderWorkout=function(){
 var tp107FitViews=function(){
  const home=document.querySelector('#app main.rf221-home'),health=document.querySelector('#app main.tp168-health');
  const expanded=health&&[...health.querySelectorAll('details[open],.tp168-weight-summary[aria-expanded="true"],.tp169-pulse-summary[aria-expanded="true"]')].some(function(e){return e.getClientRects().length>0;});
- const scrollable=expanded;
- home?.classList.add('tp107-fit-home');health?.classList.add('tp107-health-layout');health?.classList.toggle('tp107-fit-health',!scrollable);
+ home?.classList.add('tp107-fit-home');health?.classList.add('tp107-health-layout');
+ // Measure the natural content height before fixing the overview. Long labels,
+ // short viewports and large text must never hide the bottom controls.
+ health?.classList.remove('tp107-fit-health');
+ const healthBottom=health?health.getBoundingClientRect().top+(window.scrollY||0)+health.scrollHeight:0;
+ const scrollable=expanded||!!health&&healthBottom>window.innerHeight+1;
+ health?.classList.toggle('tp107-fit-health',!scrollable);
  const fixed=!!home||!!health&&!scrollable;document.documentElement.classList.toggle('tp107-fixed-view',fixed);document.body.classList.toggle('tp107-fixed-view',fixed);
  const nav=document.querySelector('.top');if(nav)document.documentElement.style.setProperty('--tp107-nav-height',Math.ceil(nav.getBoundingClientRect().bottom)+'px');
  const panelHost=document.getElementById('tp155R4PanelHost');panelHost?.classList.toggle('tp107-fit-calendar',panelHost.dataset.panel==='calendar');

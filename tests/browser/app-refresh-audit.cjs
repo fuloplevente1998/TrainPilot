@@ -1,6 +1,7 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 const {chromium}=require('playwright');
+const assertHealthOverview=require('../helpers/health-overview.cjs');
 
 (async()=>{
  const root=path.resolve('www');
@@ -84,8 +85,7 @@ const {chromium}=require('playwright');
     const layout=await page.evaluate(()=>({main:!!document.querySelector('#app main'),nav:!!document.querySelector('.top.tp154-nav-grid'),overflow:document.documentElement.scrollWidth>innerWidth+1,locked:document.body.style.overflow==='hidden',panel:document.getElementById('tp155R4PanelHost')?.dataset.panel}));
     assert.equal(layout.main,true,route+' has a page');assert.equal(layout.nav,true,route+' retains navigation');assert.equal(layout.overflow,false,route+' has no horizontal page overflow at '+width+'/'+lang+'/'+theme);
     if(route==='health'){
-     const healthBottom=await page.locator('#app main').evaluate(main=>Math.max(...[...main.children].map(node=>node.getBoundingClientRect().bottom))-innerHeight);
-     assert.ok(healthBottom<=1,'Closed Health content must fit the viewport at '+width+'/'+lang+'/'+theme+' (bottom overflow '+healthBottom+')');
+     await assertHealthOverview(page,'Closed Health '+width+'/'+lang+'/'+theme);
      const splitWords=await page.locator('.tp168-sync-tail .rf263-sync-actions').evaluate(host=>{
       const failures=[];for(const button of host.querySelectorAll('.btn')){
        if(button.scrollWidth>button.clientWidth+1)failures.push('overflow:'+button.textContent);
