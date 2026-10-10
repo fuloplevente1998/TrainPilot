@@ -4,14 +4,14 @@ const runtime=require('./helpers/app-runtime.cjs');
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
 function fixture(){
  const app=runtime(),events=[],tasks=[];
- let held=null,failPublish=false,failOpen=false,commands=[];
+ let held=null,heldScan=null,failPublish=false,failOpen=false,commands=[];
  const bridge={publish:async({snapshot})=>{events.push(['publish',snapshot.workoutId]);if(held)await held;if(failPublish)throw Error('offline')},clear:async()=>{},publishHome:async()=>{},
  startWatchMeasurement:async({workoutId})=>{events.push(['open',workoutId]);if(failOpen)throw Error('remote refused');return {opened:true}},
- pendingCommands:async()=>({commands:commands.slice()}),ackCommand:async({commandId})=>{commands=commands.filter(c=>c.commandId!==commandId)}};
+ pendingCommands:async()=>{if(heldScan)await heldScan;return {commands:commands.slice()}},ackCommand:async({commandId})=>{commands=commands.filter(c=>c.commandId!==commandId)}};
  app.context.window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:bridge}};
  app.context.setTimeout=fn=>{tasks.push(fn);return 1};
  app.run('db.set("draft",null);state.session=null;state.workout=null;');
- return {...app,events,tasks,sync:app.context.window.TrainPilotWearSync,hold:p=>held=p,failPublish:v=>failPublish=v,failOpen:v=>failOpen=v,commands:v=>commands=v,
+ return {...app,events,tasks,sync:app.context.window.TrainPilotWearSync,hold:p=>held=p,holdScan:p=>heldScan=p,failPublish:v=>failPublish=v,failOpen:v=>failOpen=v,commands:v=>commands=v,
   start:()=>app.run('startWorkout(activeProgram().days[0].id);state.session?.syncId||state.session?.id||state.session?.started')};
 }
 (async()=>{
@@ -26,6 +26,10 @@ function fixture(){
  assert.equal(app.events.filter(e=>e[0]==='open').length,1,'polling and foreground resume cannot repeatedly open the watch');
  app.run('state.session=null;state.workout=null');await app.sync.syncNow();
  assert.equal(app.events.filter(e=>e[0]==='open').length,1,'a restored draft is not a new start');
+
+ const scan=fixture();let releaseScan;scan.holdScan(new Promise(r=>releaseScan=r));const pendingScan=scan.sync.drainCommands();
+ const scanId=scan.start();await flush();assert.deepEqual(scan.events.at(-1),['open',scanId],'routine asynchronous watch queue scanning cannot suppress a real phone start');
+ scan.holdScan(null);releaseScan();await pendingScan;
 
  const canceled=fixture();canceled.run('db.set("draft",{session:{started:"old",exercises:[]}});tp2628Confirm=async()=>false');
  canceled.start();await flush();assert.equal(canceled.events.length,0,'canceled replacement never opens the watch');

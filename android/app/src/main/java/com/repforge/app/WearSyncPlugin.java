@@ -2,6 +2,7 @@ package com.repforge.app;
 
 import android.content.Intent;
 import android.net.Uri;
+import android.os.SystemClock;
 import androidx.core.content.ContextCompat;
 import androidx.wear.remote.interactions.RemoteActivityHelper;
 import com.getcapacitor.JSObject;
@@ -48,9 +49,13 @@ public class WearSyncPlugin extends Plugin {
     @PluginMethod
     public void startWatchMeasurement(PluginCall call) {
         String requestedId = call.getString("workoutId", "");
+        long requestedAt = SystemClock.elapsedRealtime();
         Wearable.getNodeClient(getContext()).getConnectedNodes()
                 .addOnSuccessListener(nodes -> ContextCompat.getMainExecutor(getContext()).execute(() -> {
                     JSONObject current = ActiveWorkoutStore.current(getContext());
+                    if (SystemClock.elapsedRealtime() - requestedAt > 15_000L) {
+                        call.reject("The watch start request expired."); return;
+                    }
                     if (getActivity() == null || !getActivity().hasWindowFocus()) {
                         call.reject("The phone workout must be visible to open the watch."); return;
                     }
