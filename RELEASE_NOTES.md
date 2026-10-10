@@ -68,8 +68,9 @@ Az aktuális köztes javítást is az **1.3** részeként dokumentáljuk. A [#16
 
 Új programos vagy gyors edzés telefonos indítása előbb közzéteszi az aktív edzést, majd megnyitja a csatlakoztatott órán a TrainPilotot. Az óra röviden felébreszti a kijelzőt, ellenőrzi az edzésazonosítót és a friss pillanatképet, majd az engedélyezett mérést az előtérszolgáltatásra bízza. A kijelző ezután kikapcsolhat.
 
-- **Felhasználói visszajelzés, 2026. október 10.:** a telefonról indított app megnyílik az órán.
-- A párosított telefonos/órás automatizált kiadási ellenőrzések sikeresek. A képernyő kikapcsolása melletti tényleges mérés és a végső naplóadat még külön készülékes ellenőrzés.
+- **Felhasználói visszajelzés, 2026. október 10.:** programos edzés telefonos indításakor az app megnyílik az órán, és a háttérmérést is rögzíti.
+- A gyors edzés aktuális, soron belül beállítható gyakorlatválasztójának indításakor ugyanaz az egyszeri órás megnyitás indul az aktív edzés közzététele után. Új gyakorlat hozzáadása nem indít új mérést; megszakított piszkozatcsere és óráról indított edzés nem nyitja vissza az órás appot.
+- A programos háttérmérés felhasználói visszaigazolása megérkezett. A gyors edzés új bekötése és a végső naplóadat teljes készülékes ellenőrzése következik.
 - Megmarad a mérési kapcsoló, a szenzorengedélyek és más alkalmazás futó mérésének védelme.
 - Normál frissítés, telefonos visszatérés vagy visszaállított piszkozat nem nyitogatja az órás appot. Sikertelen megnyitáskor a telefonos edzés megmarad, kézi órás megnyitással folytatható.
 

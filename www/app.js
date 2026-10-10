@@ -10523,6 +10523,7 @@ var tp152QuickFields=function(e){
  return '<div class="tp152-edit-grid"><label>'+esc(tp152T('sets'))+'<select class="field" data-tp152-qsets="'+esc(e.id)+'">'+Array.from({length:10},function(_,i){const n=i+1;return '<option value="'+n+'" '+(n===d.sets?'selected':'')+'>'+n+'</option>'}).join('')+'</select></label><label>'+esc(tp152T('reps'))+'<input class="field" data-tp152-qtarget="'+esc(e.id)+'" value="'+esc(d.target)+'"></label>'+weight+'</div>';
 };
 var tp152StartQuickInline=async function(id){
+ const fromWatch=window.TrainPilotWearSync?.isStartingFromWatch?.()===true;
  const e=byId(id),base=tp150QuickExercise(id);if(!e||!base)return;const root=document.querySelector('[data-exercise-id="'+CSS.escape(id)+'"]');
  const n=Math.max(1,Math.min(10,Number(root?.querySelector('[data-tp152-qsets]')?.value)||base.sets.length||3));
  const target=String(root?.querySelector('[data-tp152-qtarget]')?.value||e.reps||'').trim().slice(0,40);
@@ -10530,6 +10531,7 @@ var tp152StartQuickInline=async function(id){
  base.targetReps=target;base.plannedWeight=w;base.sets=Array.from({length:n},function(_,i){return {set:i+1,weight:w,reps:'',done:false}});
  if(tp150IsQuick()){const existing=state.session.exercises.findIndex(function(x){return x.id===id});if(existing>=0)state.session.exercises[existing]=base;else state.session.exercises.push(base);state.current=existing>=0?existing:state.session.exercises.length-1;persistDraft();renderWorkout();window.scrollTo?.(0,0);return}
  if(!(await tp150QuickConfirmReplace()))return;db.set('draft',null);stopTimer();state.tab='plan';state.workout='quick';state.current=0;state.session={type:'quick',quickWorkout:true,programId:null,programName:tp150qwT('title'),dayId:null,workout:'quick',started:new Date().toISOString(),exercises:[base]};persistDraft();renderWorkout();window.scrollTo?.(0,0);
+ window.TrainPilotWearSync?.phoneWorkoutStarted?.(state.session,{fromWatch});
 };
 tp150QuickResults=function(q=''){
  const needle=String(q||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(),list=exercises().filter(function(e){return !needle||tp150QuickFilterText(e).includes(needle)});

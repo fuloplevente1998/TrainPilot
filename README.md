@@ -2,7 +2,7 @@
 
 Androidos edzéstervező és edzésnapló, natív Wear OS társalkalmazással. A fő edzésfunkciók helyben használhatók; az egészségadatok, a Google Drive és a Google Naptár integrációja opcionális.
 
-**Aktuális kiadáscsalád: 1.3 — telefon és Wear OS.** A mainen lévő párosított kiadás a Mini napló frissítését, az órás mérési előzményeket és az egészségadatok pontos forrásjelölését tartalmazza. A telefonról kezdeményezett órás appindítás javítása szintén az **1.3** leírásához tartozik; ez még a [#160 tesztágon](https://github.com/fuloplevente1998/TrainPilot/pull/160) van. A felhasználó az órás app megnyílását már visszaigazolta, a háttérmérés és a teljes adatút ellenőrzése folyamatban van.
+**Aktuális kiadáscsalád: 1.3 — telefon és Wear OS.** A mainen lévő párosított kiadás a Mini napló frissítését, az órás mérési előzményeket és az egészségadatok pontos forrásjelölését tartalmazza. A telefonról kezdeményezett órás appindítás javítása szintén az **1.3** leírásához tartozik; ez még a [#160 tesztágon](https://github.com/fuloplevente1998/TrainPilot/pull/160) van. A felhasználó a programos edzés órás megnyitását és háttérmérését visszaigazolta. A gyors edzés jelenlegi választójából indított órás megnyitás külön bekötése a tesztág új javítása; a teljes egészségadatút ellenőrzése folytatódik.
 
 [Telefonos 1.3 kiadás](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.0) · [Wear OS 1.3 kiadás](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.0) · [Összevont változáslista](RELEASE_NOTES.md) · [Fejlesztési állapot](DEVELOPMENT_STATUS.md)
 

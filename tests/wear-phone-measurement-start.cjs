@@ -10,6 +10,7 @@ function fixture(){
  pendingCommands:async()=>{if(heldScan)await heldScan;return {commands:commands.slice()}},ackCommand:async({commandId})=>{commands=commands.filter(c=>c.commandId!==commandId)}};
  app.context.window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:bridge}};
  app.context.setTimeout=fn=>{tasks.push(fn);return 1};
+ app.context.CSS={escape:value=>value};
  app.run('db.set("draft",null);state.session=null;state.workout=null;');
  return {...app,events,tasks,sync:app.context.window.TrainPilotWearSync,hold:p=>held=p,holdScan:p=>heldScan=p,failPublish:v=>failPublish=v,failOpen:v=>failOpen=v,commands:v=>commands=v,
   start:()=>app.run('startWorkout(activeProgram().days[0].id);state.session?.syncId||state.session?.id||state.session?.started')};
@@ -41,6 +42,21 @@ function fixture(){
  assert.equal(quick.events.filter(e=>e[0]==='open').length,1,'configured phone quick workout starts measurement');
  await quick.run('tp151SaveQuick(exercises()[1].id)');await quick.sync.syncNow();
  assert.equal(quick.events.filter(e=>e[0]==='open').length,1,'adding an exercise to quick workout does not start another recording');
+
+ // The visible Quick picker uses tp152StartQuickInline, not tp151SaveQuick.
+ const inline=fixture();let releaseInline;inline.hold(new Promise(r=>releaseInline=r));
+ await inline.run('tp152StartQuickInline(exercises()[0].id)');const inlineId=inline.sync.makeSnapshot().workoutId;await flush();
+ assert.deepEqual(inline.events,[['publish',inlineId]],'inline quick workout must publish before opening the watch');
+ inline.hold(null);releaseInline();await flush();assert.deepEqual(inline.events,[['publish',inlineId],['open',inlineId]],'the actual inline quick start opens the matching watch workout once');
+ await inline.run('tp152StartQuickInline(exercises()[1].id)');await inline.sync.syncNow();
+ assert.equal(inline.events.filter(e=>e[0]==='open').length,1,'adding an inline quick exercise must not reopen/restart measurement');
+ const canceledInline=fixture();canceledInline.run('db.set("draft",{session:{started:"old",exercises:[]}});tp2628Confirm=async()=>false');
+ await canceledInline.run('tp152StartQuickInline(exercises()[0].id)');await flush();assert.equal(canceledInline.events.length,0,'canceled inline draft replacement must not launch the watch');
+ const acceptedInline=fixture();acceptedInline.run('db.set("draft",{session:{started:"old",exercises:[]}});tp2628Confirm=async()=>true');
+ await acceptedInline.run('tp152StartQuickInline(exercises()[0].id)');await flush();assert.equal(acceptedInline.events.filter(e=>e[0]==='open').length,1);
+ const watchInline=fixture();watchInline.run('tp150QuickConfirmReplace=()=>new Promise(resolve=>confirmWatch=resolve)');watchInline.sync.isStartingFromWatch=()=>true;
+ const watchInlineStart=watchInline.run('tp152StartQuickInline(exercises()[0].id)');watchInline.sync.isStartingFromWatch=()=>false;watchInline.run('confirmWatch(true)');await watchInlineStart;await flush();await watchInline.sync.syncNow();
+ assert.equal(watchInline.events.filter(e=>e[0]==='open').length,0,'watch origin is captured before asynchronous inline confirmation');
 
  const watch=fixture();watch.commands([{commandId:'start-watch',action:'startWorkout',workoutId:'watch-origin',started:'2026-10-10T10:00:00Z',dayId:watch.run('activeProgram().days[0].id'),programId:watch.run('activeProgram().id'),createdAt:1}]);
  await watch.sync.drainCommands();assert.equal(watch.events.filter(e=>e[0]==='open').length,0,'watch-origin starts cannot bounce the UI back to the watch');
