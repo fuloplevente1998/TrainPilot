@@ -69,6 +69,7 @@ internal fun TrainPilotWearApp(
     onRetry: () -> Unit,
     onDismissClosure: () -> Unit,
     onOpenPhone: () -> Unit,
+    onRefreshJournal: () -> Unit,
     health: State<JSONObject?>,
     measuring: State<Boolean>,
     gpsEnabled: State<Boolean>,
@@ -79,6 +80,9 @@ internal fun TrainPilotWearApp(
     onToggleGps: () -> Unit
 ) {
     var route by rememberSaveable { mutableStateOf("home") }
+    LaunchedEffect(route) {
+        if (route == "journal") onRefreshJournal()
+    }
     LaunchedEffect(requestedRoute.value) {
         requestedRoute.value?.let { route=it;onRouteConsumed() }
     }
@@ -99,7 +103,8 @@ internal fun TrainPilotWearApp(
             when {
                 route == "metrics" -> HealthScreen(health.value,measuring.value,gpsEnabled.value,onEnableHealth,onDisableHealth,onToggleGps) { route="menu" }
                 route == "menu" -> MainMenuScreen(active != null, active?.quickWorkout == true, onOpenPhone) { route = it }
-                route == "journal" -> MiniJournalScreen(home.value?.recentWorkouts.orEmpty(),
+                route == "journal" -> MiniJournalScreen(home.value,
+                    onRefresh = onRefreshJournal, onOpenPhone = onOpenPhone,
                     onBack = { route = "menu" }) { selected ->
                     miniJournalId = selected.workoutId
                     route = "journal-detail"
@@ -317,8 +322,10 @@ private fun miniNumber(value: Double?, decimals: Int = 0): String? {
 }
 
 @Composable
-private fun MiniJournalScreen(items: List<MiniJournalWorkout>, onBack: () -> Unit,
+private fun MiniJournalScreen(home: WatchHomeSnapshot?, onRefresh: () -> Unit,
+                              onOpenPhone: () -> Unit, onBack: () -> Unit,
                               onSelect: (MiniJournalWorkout) -> Unit) {
+    val items = home?.recentWorkouts.orEmpty()
     RoundList {
         Label("TRAINPILOT", Gold)
         Title("Mini napló", 21)
@@ -326,14 +333,27 @@ private fun MiniJournalScreen(items: List<MiniJournalWorkout>, onBack: () -> Uni
         Label("Mentett telefonos edzések · offline másolat", size = 10)
         Spacer(Modifier.height(8.dp))
         if (items.isEmpty()) {
-            Text("Még nincs szinkronizált edzés. Nyisd meg a TrainPilotot a telefonon.",
+            val message = when {
+                home == null -> "Várakozás a telefonos napló szinkronizálására."
+                !home.journalAvailable -> "A telefon legutóbbi adatcsomagja még nem tartalmaz Mini naplót. Frissítsd és nyisd meg a telefonos TrainPilotot."
+                else -> "A telefonos naplóban még nincs átadható, befejezett edzés."
+            }
+            Text(message,
                 color = Muted, fontSize = 12.sp, textAlign = TextAlign.Center)
+        }
+        if (home?.phoneVersion?.isNotBlank() == true) {
+            Label("Telefon: ${home.phoneVersion}", size = 10)
+            Spacer(Modifier.height(5.dp))
         }
         items.forEach { item ->
             Pill("${miniJournalDate(item.started)} • ${item.dayName}", tone = Card, size = 12,
                 height = 47) { onSelect(item) }
             Spacer(Modifier.height(7.dp))
         }
+        Spacer(Modifier.height(5.dp))
+        Pill("Frissítés", tone = Secondary, onClick = onRefresh)
+        Spacer(Modifier.height(5.dp))
+        Pill("Telefon megnyitása", tone = Secondary, onClick = onOpenPhone)
         Spacer(Modifier.height(5.dp))
         Pill("‹ Főmenü", tone = Secondary, onClick = onBack)
     }

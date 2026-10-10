@@ -22,8 +22,8 @@ android {
         applicationId "com.repforge.app"
         minSdkVersion 30
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2723
-        versionName "1.2.16"
+        versionCode 2724
+        versionName "1.2.17"
     }
 
     signingConfigs {

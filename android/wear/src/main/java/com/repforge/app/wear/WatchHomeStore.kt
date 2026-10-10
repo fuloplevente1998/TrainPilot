@@ -49,7 +49,10 @@ data class WatchHomeSnapshot(
     val days: List<WatchHomeDay>,
     val calendar: List<WatchCalendarEntry> = emptyList(),
     val quickExercises: List<WatchHomeExercise> = emptyList(),
-    val recentWorkouts: List<MiniJournalWorkout> = emptyList()
+    val recentWorkouts: List<MiniJournalWorkout> = emptyList(),
+    val phoneVersion: String = "",
+    val journalAvailable: Boolean = false,
+    val publishedAt: Long = 0L
 ) {
     fun toWearExercise(exercise: WatchHomeExercise): WearExercise = WearExercise(
         id = exercise.id,
@@ -102,16 +105,21 @@ object WatchHomeStore {
     private const val PREFS = "trainpilot_wear_home"
     private const val SNAPSHOT = "snapshot"
 
-    fun save(context: Context, raw: String?): WatchHomeSnapshot? {
+    fun save(context: Context, raw: String?, publishedAt: Long = 0L): WatchHomeSnapshot? {
         if (raw.isNullOrBlank()) return null
-        val parsed = parse(raw) ?: return null
+        val parsed = parse(raw)?.let { it.copy(publishedAt = maxOf(it.publishedAt, publishedAt)) } ?: return null
+        val cached = load(context)
+        if (newest(cached, parsed) === cached) return cached
         WearClosureStore.acceptResult(context, try { JSONObject(raw).optJSONObject("workoutResult") } catch (_: Exception) { null })
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
-            .putString(SNAPSHOT, raw)
+            .putString(SNAPSHOT, JSONObject(raw).put("publishedAt", parsed.publishedAt).toString())
             .apply()
         return parsed
     }
+
+    fun newest(current: WatchHomeSnapshot?, incoming: WatchHomeSnapshot): WatchHomeSnapshot =
+        if (current != null && current.publishedAt > incoming.publishedAt) current else incoming
 
     fun load(context: Context): WatchHomeSnapshot? {
         val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(SNAPSHOT, null)
@@ -164,7 +172,10 @@ object WatchHomeStore {
                 quickExercises = root.optJSONArray("quickExercises")?.let { library ->
                     parseDay(JSONObject().put("id", "quick").put("exercises", library))?.exercises
                 }.orEmpty(),
-                recentWorkouts = WatchMiniJournal.parse(root.optJSONArray("recentWorkouts"))
+                recentWorkouts = WatchMiniJournal.parse(root.optJSONArray("recentWorkouts")),
+                phoneVersion = root.optString("phoneVersion").take(32),
+                journalAvailable = root.optInt("journalSchema", 0) == 1 && root.optJSONArray("recentWorkouts") != null,
+                publishedAt = root.optLong("publishedAt", 0L)
             )
         } catch (_: Exception) { null }
     }

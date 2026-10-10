@@ -116,7 +116,7 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
 // @endsection startup.js
 
 // @section backup.js
-const TRAINPILOT_VERSION='1.2.14';
+const TRAINPILOT_VERSION='1.2.15';
 var isNative = function isNative(){return !!window.Capacitor?.isNativePlatform?.();};
 var nativeFiles = function nativeFiles(){if(!filesPlugin)filesPlugin=window.Capacitor?.registerPlugin?.('NativeFiles')||window.Capacitor?.Plugins?.NativeFiles;if(!filesPlugin)throw Error('A natív fájlkezelő nem érhető el.');return filesPlugin;};
 var backupStatus = function backupStatus(){const x=db.get('lastExport',null);return x?`Utolsó ellenőrzött mentés: ${x.name} • ${fmtDate(x.date)}`:'Még nincs ellenőrzött fájlmentés.';};
@@ -16468,6 +16468,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
 (function(){
  'use strict';
  let lastPayload=null,lastHomePayload=null,cleared=false,busy=false,homeBusy=false,commandBusy=false;
+ let homeRefreshPending=false;
 
  function api(){
   try{
@@ -16489,7 +16490,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   return String(day?.name||day?.id||'');
  }
  function sessionKey(session){
-  return String(session?.syncId||session?.id||session?.started||session?.workout||session?.dayId||'');
+  return String(session?.syncId||session?.id||session?.workoutId||session?.started||session?.workout||session?.dayId||'');
  }
  function sameId(a,b){
   if(a===b)return true;
@@ -16557,7 +16558,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(typeof exercises!=='function')return [];
    return exercises().filter(e=>e&&typeof e.id==='string'&&e.id).slice(0,240).map(e=>({
     id:String(e.id),
-    name:exerciseName(e,lang),
+    name:exerciseName(e,lang).slice(0,96),
     loadType:String(e.loadType||''),
     repUnit:String(e.repUnit||''),
     measurementType:String(e.measurementType||''),
@@ -16581,16 +16582,16 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const seen=new Set();
    const projected=history().filter(h=>h&&h.finished&&Number.isFinite(Date.parse(h.started))&&Number.isFinite(Date.parse(h.finished))&&Date.parse(h.finished)>=Date.parse(h.started))
     .sort((a,b)=>Date.parse(b.started)-Date.parse(a.started))
-    .filter(h=>{const id=text(h.syncId||h.workoutId||h.started,96);if(!id||seen.has(id))return false;seen.add(id);return true;})
+    .filter(h=>{const id=sessionKey(h);if(!id||id.length>96||seen.has(id))return false;seen.add(id);return true;})
     .slice(0,8).map(h=>{
-     const id=text(h.syncId||h.workoutId||h.started,96);
+     const id=sessionKey(h);
      const w=h.healthWear129;
-     const wearable=w?.source==='wear_health_services'&&String(w.workoutId||'')===id&&w.watchId&&Number.isSafeInteger(w.revision)&&w.revision>0?{
+     const wearable=w?.source==='wear_health_services'&&matchesWorkout(h,String(w.workoutId||''))&&w.watchId&&Number.isSafeInteger(w.revision)&&w.revision>0?{
       source:'wear_health_services',partial:w.partial===true,
       ...read(w,[['averageHeartRate',20,250],['maxHeartRate',20,250],['totalCalories',0,100000],['steps',0,1000000],['activeDurationSeconds',0,604800]])
      }:null;
      const hc=h.health240;
-     const linked=hc?.windowStart===h.started&&hc?.windowEnd===h.finished;
+     const linked=sameId(hc?.windowStart,h.started)&&sameId(hc?.windowEnd,h.finished);
      const connected=linked?{
       source:hc.provider==='samsung_health'?'samsung_health':'health_connect',
       ...read(hc,[['averageHeartRate',20,250],['maxHeartRate',20,250],['workoutCalories',0,100000],['totalCalories',0,100000],['activeCalories',0,100000],['steps',0,1000000],['exerciseMinutes',0,10080]])
@@ -16616,12 +16617,16 @@ window.addEventListener?.('DOMContentLoaded',function(){
    // Keep the combined home Data Layer payload small even with custom libraries and huge logs.
    const bounded=[];let bytes=0;
    for(const row of projected){
-    const size=JSON.stringify(row).length;
+    const size=jsonBytes(row);
     if(size>28000||bytes+size>32000)continue;
     bounded.push(row);bytes+=size;
    }
    return bounded;
   }catch(_){return []}
+ }
+ function jsonBytes(value){
+  // JSON is well-formed UTF-16; count its encoded UTF-8 bytes, including accents.
+  return encodeURIComponent(JSON.stringify(value)).replace(/%[0-9A-F]{2}|./g,'x').length;
  }
  function watchCalendar(active,lang){
   const now=new Date(),calendar=[],calendarDays=[],known=new Set((active.days||[]).map(d=>active.id+'|'+d.id));
@@ -16645,7 +16650,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  function homeSnapshot(){
   try{
    if(typeof activeProgram!=='function'||typeof programDay!=='function')return null;
-   const active=activeProgram();if(!active)return null;
+   const active=activeProgram()||{id:'',name:'',days:[]};
    const lang=language(),days=(Array.isArray(active.days)?active.days:[]).map(day=>preparedDay(active,day,lang)).filter(Boolean);
    let planned=null;
    try{if(typeof nextPlanned==='function')planned=nextPlanned()}catch(_){}
@@ -16661,8 +16666,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
     recommendedProgram=active;
     recommendedDay=programDay(active,id)||active.days?.[0]||null;
    }
-   return {
+   const home={
     schema:1,
+    phoneVersion:typeof TRAINPILOT_VERSION==='string'?TRAINPILOT_VERSION:'',
+    journalSchema:1,
     ...watchCalendar(active,lang),
     quickExercises:watchQuickExercises(lang),
     recentWorkouts:watchRecentHistory(lang),
@@ -16678,6 +16685,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
     }:null,
     days
    };
+   // DataItems are limited in bytes, not characters. Reserve room for DataMap
+   // metadata; never let a large exercise catalog block the saved Journal.
+   while(jsonBytes(home)>90000&&home.quickExercises.length)home.quickExercises.pop();
+   while(jsonBytes(home)>90000&&home.recentWorkouts.length)home.recentWorkouts.pop();
+   return home;
   }catch(_){return null}
  }
  function snapshot(){
@@ -16721,14 +16733,18 @@ window.addEventListener?.('DOMContentLoaded',function(){
    };
   }catch(_){return null}
  }
- async function syncHomeNow(){
-  if(homeBusy)return;
-  const bridge=api();if(!bridge?.publishHome)return;
-  const value=homeSnapshot();if(!value)return;
-  const payload=JSON.stringify(value);if(payload===lastHomePayload)return;
+ async function syncHomeNow(options={}){
+  const force=options?.force===true;
+  if(homeBusy){if(force)homeRefreshPending=true;return false;}
+  const bridge=api();if(!bridge?.publishHome)return false;
+  const value=homeSnapshot();if(!value)return false;
+  const payload=JSON.stringify(value);if(!force&&payload===lastHomePayload)return true;
   homeBusy=true;
-  try{await bridge.publishHome({snapshot:value});lastHomePayload=payload}catch(_){}
-  finally{homeBusy=false}
+  try{await bridge.publishHome({snapshot:value});lastHomePayload=payload;return true}catch(_){return false;}
+  finally{
+   homeBusy=false;
+   if(homeRefreshPending){homeRefreshPending=false;setTimeout(()=>syncHomeNow({force:true}),0);}
+  }
  }
  async function syncNow(){
   if(busy)return;
@@ -16899,6 +16915,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  async function applyCommand(command){
   if(!command||typeof state==='undefined')return false;
   const action=String(command.action||''),expectedId=String(command.workoutId||'');
+  if(action==='requestHome')return syncHomeNow({force:true});
   if(action==='healthSummary')return attachMeasuredHealth(command);
   if(action==='finishWorkout'||action==='discardWorkout')return closeFromWatch(command);
   if(expectedId&&isClosed(expectedId))return true;
@@ -17010,7 +17027,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     let applied=false;
     try{applied=await applyCommand(command);}catch(_){}
     if(!applied)continue;
-    changed=true;
+    if(command.action!=='requestHome')changed=true;
     try{await bridge.ackCommand({commandId:id});}catch(_){}
    }
    if(changed){lastPayload=null;lastHomePayload=null;await syncNow();await syncHomeNow();}
@@ -17020,9 +17037,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  if(typeof window!=='undefined'){
   window.TrainPilotWearSync={syncNow,syncHomeNow,drainCommands,makeSnapshot:snapshot,makeHomeSnapshot:homeSnapshot,isApplyingCommand:()=>commandBusy};
-  window.addEventListener?.('focus',()=>{drainCommands();syncNow();syncHomeNow();});
+  window.addEventListener?.('focus',()=>{drainCommands();syncNow();syncHomeNow({force:true});});
  }
- if(typeof document!=='undefined')document.addEventListener?.('visibilitychange',()=>{if(!document.hidden){drainCommands();syncNow();syncHomeNow();}});
+ if(typeof document!=='undefined')document.addEventListener?.('visibilitychange',()=>{if(!document.hidden){drainCommands();syncNow();syncHomeNow({force:true});}});
  if(typeof setInterval==='function'){
   setInterval(syncNow,1500);
   setInterval(syncHomeNow,3000);
@@ -17111,11 +17128,12 @@ window.addEventListener?.('DOMContentLoaded',function(){
  'use strict';
  const picked=new Map();
  const original=rfHistoryHealthHtml;
- const key=h=>String(h?.syncId||h?.workoutId||h?.started||'');
+ const key=h=>String(h?.syncId||h?.id||h?.workoutId||h?.started||'');
  const measured=h=>{
   const data=h?.healthWear129,id=key(h);
-  if(!data||data.source!=='wear_health_services'||!data.watchId||!Number.isSafeInteger(data.revision)||data.revision<1||
-     !id||data.workoutId!==id)return null;
+  const same=data?.workoutId===id||(!h?.syncId&&!h?.id&&!h?.workoutId&&
+   Number.isFinite(Date.parse(id))&&Date.parse(data?.workoutId)===Date.parse(id));
+  if(!data||data.source!=='wear_health_services'||!data.watchId||!Number.isSafeInteger(data.revision)||data.revision<1||!id||!same)return null;
   return data;
  };
  const textMetric=(value,digits=0)=>typeof value==='number'&&Number.isFinite(value)&&value>=0?

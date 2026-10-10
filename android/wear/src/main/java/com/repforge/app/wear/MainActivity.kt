@@ -32,6 +32,7 @@ import kotlin.math.roundToInt
 class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private val workout = mutableStateOf<WearWorkout?>(null)
     private val home = mutableStateOf<WatchHomeSnapshot?>(null)
+    private var lastHomeRequestAt = 0L
     private val closure = mutableStateOf<WearClosure?>(null)
     private val restRemaining = mutableIntStateOf(0)
     private var restTimer: CountDownTimer? = null
@@ -112,6 +113,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                 onDisableHealth = { WearHealthStore.enable(this,false);WearHealthService.stop(this);refreshHealth() },
                 onToggleGps = { if(WearHealthStore.gps(this)){WearHealthStore.gps(this,false);refreshHealth()}else requestHealth(true) },
                 onOpenPhone = ::openOnPhone,
+                onRefreshJournal = ::requestHomeSnapshot,
                 onFinish = { closeWorkout("finishWorkout") },
                 onDiscard = { closeWorkout("discardWorkout") },
                 onRetry = ::retryClosure,
@@ -171,11 +173,23 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                     }
                 }
                 WearDataListenerService.WATCH_HOME_PATH -> {
-                    val parsed = WatchHomeStore.save(this, raw)
+                    val parsed = WatchHomeStore.save(this, raw, DataMapItem.fromDataItem(item).dataMap.getLong("publishedAt"))
                     runOnUiThread { home.value = parsed; closure.value = WearClosureStore.load(this) }
                 }
             }
         }
+    }
+
+    private fun requestHomeSnapshot() {
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (lastHomeRequestAt > 0 && now - lastHomeRequestAt < 3000L) return
+        lastHomeRequestAt = now
+        WearCommandOutbox.enqueue(this, JSONObject()
+            .put("schema", 1)
+            .put("commandId", UUID.randomUUID().toString())
+            .put("createdAt", System.currentTimeMillis())
+            .put("action", "requestHome"))
+        refreshFromDataLayer()
     }
 
     private fun refreshFromDataLayer() {
@@ -193,7 +207,8 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                                     val revision = JSONObject(raw).optLong("revision", 0L)
                                     if (revision >= newestRevision) { newestRevision = revision; newestRaw = raw }
                                 }
-                                WearDataListenerService.WATCH_HOME_PATH -> newestHome = WatchHomeStore.save(this, raw) ?: newestHome
+                                WearDataListenerService.WATCH_HOME_PATH -> newestHome = WatchHomeStore.save(this, raw,
+                                    DataMapItem.fromDataItem(item).dataMap.getLong("publishedAt")) ?: newestHome
                             }
                         } catch (_: Exception) { /* Keep the cache when a DataItem is malformed. */ }
                     }

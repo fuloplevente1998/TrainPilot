@@ -13,7 +13,7 @@ class WearDataListenerService : WearableListenerService() {
             val raw = DataMapItem.fromDataItem(item).dataMap.getString("snapshot")
             when (item.uri.path) {
                 ACTIVE_WORKOUT_PATH -> WorkoutSnapshotStore.save(this, raw)
-                WATCH_HOME_PATH -> WatchHomeStore.save(this, raw)
+                WATCH_HOME_PATH -> WatchHomeStore.save(this, raw, DataMapItem.fromDataItem(item).dataMap.getLong("publishedAt"))
             }
             if(WorkoutSnapshotStore.load(this)==null && WearHealthStore.active(this).isNotBlank())WearHealthService.stop(this)
             WearSurfaces.refresh(this,true)

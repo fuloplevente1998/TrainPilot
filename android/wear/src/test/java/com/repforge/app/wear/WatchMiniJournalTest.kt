@@ -6,6 +6,25 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class WatchMiniJournalTest {
+    @Test fun oldPhoneSnapshotIsDifferentFromAnEmptySyncedJournal() {
+        val old = WatchHomeStore.parse("{\"days\":[]}")!!
+        assertFalse(old.journalAvailable)
+        val empty = WatchHomeStore.parse("{\"days\":[],\"journalSchema\":1,\"phoneVersion\":\"1.2.15\",\"recentWorkouts\":[]}")!!
+        assertTrue(empty.journalAvailable)
+        assertEquals("1.2.15", empty.phoneVersion)
+        assertTrue(empty.recentWorkouts.isEmpty())
+    }
+
+    @Test fun anOlderPhoneDataItemCannotReplaceTheSyncedJournal() {
+        val latest = WatchHomeStore.parse(JSONObject().put("publishedAt", 2000)
+            .put("journalSchema", 1).put("phoneVersion", "1.2.15")
+            .put("recentWorkouts", JSONArray().put(sample())).toString())!!
+        val stale = WatchHomeStore.parse("{\"publishedAt\":1000,\"days\":[]}")!!
+        assertEquals(1, WatchHomeStore.newest(latest, stale).recentWorkouts.size)
+        assertEquals(1, WatchHomeStore.newest(stale, latest).recentWorkouts.size)
+        assertTrue(WatchHomeStore.newest(latest, stale).journalAvailable)
+    }
+
     private fun sample(id: String = "2026-10-09T20:00:00Z"): JSONObject {
         val set = JSONObject().put("number", 1).put("reps", "15").put("weight", 0)
             .put("leftSeconds", JSONObject.NULL).put("rightSeconds", JSONObject.NULL)
