@@ -725,3 +725,7 @@ html body #tp155R4PanelHost[data-panel="quick"] .tp152-quick-row>summary .tp152-
 #app .tp-health-details .stat strong{overflow-wrap:anywhere}
 #app .tp-health-metric-meta,#app .tp-health-pulse-meta{color:var(--muted);font-size:11px;line-height:1.35;font-weight:400}
 #app .tp-health-pulse-meta{margin:7px 0 0}
+
+/* Health actions wrap as whole buttons instead of breaking Hungarian labels. */
+.tp168-sync-tail .rf263-sync-actions{display:flex!important;flex-wrap:wrap;align-items:stretch}
+.tp168-sync-tail .rf263-sync-actions .btn{flex:1 1 145px;min-width:0;overflow-wrap:normal!important;word-break:normal;white-space:normal}

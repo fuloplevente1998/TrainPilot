@@ -83,6 +83,16 @@ const {chromium}=require('playwright');
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
     const layout=await page.evaluate(()=>({main:!!document.querySelector('#app main'),nav:!!document.querySelector('.top.tp154-nav-grid'),overflow:document.documentElement.scrollWidth>innerWidth+1,locked:document.body.style.overflow==='hidden',panel:document.getElementById('tp155R4PanelHost')?.dataset.panel}));
     assert.equal(layout.main,true,route+' has a page');assert.equal(layout.nav,true,route+' retains navigation');assert.equal(layout.overflow,false,route+' has no horizontal page overflow at '+width+'/'+lang+'/'+theme);
+    if(route==='health'){
+     const splitWords=await page.locator('.tp168-sync-tail .rf263-sync-actions').evaluate(host=>{
+      const failures=[];for(const button of host.querySelectorAll('.btn')){
+       if(button.scrollWidth>button.clientWidth+1)failures.push('overflow:'+button.textContent);
+       const walker=document.createTreeWalker(button,NodeFilter.SHOW_TEXT);let node;
+       while(node=walker.nextNode())for(const match of node.textContent.matchAll(/\S+/g)){const range=document.createRange();range.setStart(node,match.index);range.setEnd(node,match.index+match[0].length);if(range.getClientRects().length>1)failures.push(match[0]);}
+      }return failures;
+     });assert.deepEqual(splitWords,[],'Health action labels must fit without splitting words at '+width+'/'+lang+'/'+theme);
+    }
+    if(route==='settings')assert.doesNotMatch(await page.locator('#tp155R4PanelHost').innerText(),/RepForge-profilhoz/,'visible account hint uses TrainPilot');
     if(['calendar','settings','coach'].includes(route))assert.equal(layout.panel,route);else assert.equal(layout.locked,false,route+' is not left scroll-locked');
     checks.push({width,lang,theme,route,layout:'pass'});
     if(width===393&&lang==='hu'&&theme==='classicBlue')await page.screenshot({path:'ui-evidence/app-audit-'+route+'.png'});

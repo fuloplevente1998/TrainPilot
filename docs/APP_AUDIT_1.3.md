@@ -13,6 +13,8 @@
 
 ## Ellenőrzési kör
 
+A képernyőképek vizuális átnézése két további hibát mutatott: az Egészség oldal műveletgombjai magyar szavakat betűn belül törtek két sorba, a Google-fiók leírásában pedig régi RepForge márkanév maradt. A gombok most egész gombként rendeződnek új sorba a rendelkezésre álló szélesség szerint; a fiókleírás TrainPilotot nevez meg. A mobilos audit szavankénti szövegtörést és gombon belüli túlcsordulást is ellenőriz.
+
 - A tényleges Edzés → Gyors edzés indítása gomb, késleltetett natív inicializálás, automatikus egészségadat-frissítés és annak ismételt hívása.
 - Beállított sorozatszám, súly, nyitott gyakorlat és keresés megőrzése; explicit bezárás és edzésindítás.
 - Gyakorlatkönyvtár, saját gyakorlat, saját program, célok, Naptár, Beállítások, Coach és egészségnapló panelje, valamint a személyes edzéstervező.
