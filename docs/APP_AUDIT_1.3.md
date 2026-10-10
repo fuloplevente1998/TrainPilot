@@ -9,6 +9,7 @@
 | A gyors edzés választója egy pillanat után bezárul | Felhasználói képernyőfelvétel és késleltetett natív Health Journal inicializálással reprodukált Chromium-hiba | A normál újrarajzolás nem zárja be a választót. Explicit bezárás, navigáció vagy edzésindítás továbbra is bezárja. |
 | Háttéradatok érkezése elveszítheti a beírt sorozatszámot, súlyt, gyakorlat- vagy programnevet | A közös panel frissítése új HTML-re cserélte a meglévő mezőket | Háttérfrissítéskor a panel meglévő vezérlői és értékei megmaradnak; a mögötte lévő adatoldal frissülhet. A profil, a teljes oldalas gyorsválasztó és a futó edzés védett. |
 | Lemondott navigáció közben bezáródhat a választó | A panel bezárása az edzéselhagyás megerősítése előtt történt | Aktív edzésnél csak a jóváhagyott navigáció zárja be. Elutasításkor a panel, keresés és edzés megmarad; jóváhagyáskor a piszkozat továbbra is mentődik. |
+| Hiányzó natív integrációnál JavaScript-kivétel | A natív Health Journal-only auditban a Google-híd hiánya `new Proxy(undefined)` hibát okozott | Az integrációs wrapper megőrzi a hiányzó híd értékét; a meglévő elérhetőségi ellenőrzések tovább működnek. A rendelkezésre álló híd nyelvi és hívási paraméterei változatlanok. |
 
 ## Ellenőrzési kör
 

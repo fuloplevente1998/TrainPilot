@@ -13,7 +13,7 @@ const {chromium}=require('playwright');
  try{
   browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});
   const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU'}),errors=[];
-  page.on('pageerror',error=>errors.push(error.message));page.on('dialog',dialog=>dialog.dismiss());
+  page.on('pageerror',error=>errors.push(error.stack||error.message));page.on('dialog',dialog=>dialog.dismiss());
   await page.addInitScript(()=>{
    localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped'));
    window.auditProjection={version:1,days:{},preferences:{autoOnOpen:false}};
@@ -88,7 +88,7 @@ const {chromium}=require('playwright');
     if(width===393&&lang==='hu'&&theme==='classicBlue')await page.screenshot({path:'ui-evidence/app-audit-'+route+'.png'});
    }
   }
-  fs.writeFileSync('ui-evidence/app-audit.json',JSON.stringify(checks,null,2));
+  fs.mkdirSync('ui-results',{recursive:true});fs.writeFileSync('ui-results/app-audit.json',JSON.stringify(checks,null,2));
   await page.evaluate(()=>{tp155R4ClosePanel(false);go('plan');});
   await page.locator('.tp150-quick-entry button').click();
   const start=page.locator('#tp150QuickResults [data-exercise-id="db-floor-press"]');

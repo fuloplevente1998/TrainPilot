@@ -72,6 +72,7 @@ Az aktuális köztes javítást is az **1.3** részeként dokumentáljuk. A [#16
 - A gyors edzés aktuális, soron belül beállítható gyakorlatválasztójának indításakor ugyanaz az egyszeri órás megnyitás indul az aktív edzés közzététele után. Új gyakorlat hozzáadása nem indít új mérést; megszakított piszkozatcsere és óráról indított edzés nem nyitja vissza az órás appot.
 - A későn beérkező egészségadat-inicializálás és háttérfrissítés nem zárja be a gyorsedzés- vagy gyakorlatválasztót, és nem építi újra a megnyitott panelek szerkesztési mezőit. A már beírt sorozatszám, súly és saját gyakorlat-/programnév megmarad.
 - Aktív edzésnél a navigáció lemondása megőrzi a nyitott választót; csak a jóváhagyott kilépés zárja be, a mentett piszkozat megőrzésével.
+- Hiányzó natív integrációnál a hívást kiegészítő wrapper nem hoz létre érvénytelen Proxy objektumot; a híd elérhetőségi ellenőrzése megmarad.
 - A fő képernyők és panelek további ellenőrzését az [alkalmazásaudit](docs/APP_AUDIT_1.3.md) foglalja össze. A látható verzió és telepítési kód változatlan.
 - A programos háttérmérés felhasználói visszaigazolása megérkezett. A gyors edzés új bekötése és a végső naplóadat teljes készülékes ellenőrzése következik.
 - Megmarad a mérési kapcsoló, a szenzorengedélyek és más alkalmazás futó mérésének védelme.
