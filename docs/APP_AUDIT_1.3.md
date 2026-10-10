@@ -18,7 +18,7 @@ A képernyőképek vizuális átnézése két további hibát mutatott: az Egés
 - A tényleges Edzés → Gyors edzés indítása gomb, késleltetett natív inicializálás, automatikus egészségadat-frissítés és annak ismételt hívása.
 - Beállított sorozatszám, súly, nyitott gyakorlat és keresés megőrzése; explicit bezárás és edzésindítás.
 - Gyakorlatkönyvtár, saját gyakorlat, saját program, célok, Naptár, Beállítások, Coach és egészségnapló panelje, valamint a személyes edzéstervező.
-- Kezdőlap, Edzés, Egészség, Programok, Napló és a három navigációs panel: 320×740, 393×873 és 412×915 px; magyar/angol; Basic/Vivid témák. Összesen 96 méret/nyelv/téma/nézet kombináció. Navigáció, görgetészár feloldása, vízszintes oldaltúlcsordulás és JavaScript-hibák ellenőrzése.
+- Kezdőlap, Edzés, Egészség, Programok, Napló és a három navigációs panel: 320×740, 393×873 és 412×915 px; magyar/angol/német/román; Basic/Vivid témák. Összesen 192 méret/nyelv/téma/nézet kombináció. Navigáció, görgetészár feloldása, vízszintes oldaltúlcsordulás és JavaScript-hibák ellenőrzése. A 360 px-nél keskenyebb Egészség-oldalon a két fő művelet közös sorban, az egészségnapló külön, teljes szélességű sorban marad; így a hosszabb német feliratok sem kényszerítenek harmadik sort.
 - Teljes meglévő Node- és Chromium-regressziók, köztük az órás átadás, edzésnapló, kalóriaforrások, Drive-ütközéskezelés, visszaállítás, naptár, GPS, oldalspecifikus időmérés és szerkesztési folyamatok.
 
 A kiadási ellenőrzések és az aláírt teszttelepítő eredménye a #160 PR-on követhető. A böngészős audit képernyőképei a telefonos kiadási kapu UI-artifactjában találhatók.

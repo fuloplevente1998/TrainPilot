@@ -36,7 +36,7 @@ const {chromium}=require('playwright');
   assert.equal(await floor.locator('[data-tp152-qsets]').inputValue(),'4','late initialization must retain configured sets');
   assert.equal(await floor.locator('[data-tp152-qweight]').inputValue(),'20','late initialization must retain configured weight');
   assert.equal(await floor.evaluate(node=>node.open),true,'expanded exercise must remain open');
-  fs.mkdirSync('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/app-refresh-quick.png'});
+  fs.mkdirSync('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/app-refresh-quick.png',animations:'disabled'});
   await page.evaluate(()=>{auditProjection.preferences.autoOnOpen=true;});
   await page.evaluate(()=>TrainPilotHealthJournal.auto());await page.evaluate(()=>TrainPilotHealthJournal.auto());
   assert.equal(await floor.locator('[data-tp152-qweight]').inputValue(),'20','automatic projection refresh and its cooldown path retain quick configuration');
@@ -74,7 +74,7 @@ const {chromium}=require('playwright');
   await page.evaluate(()=>window.tp3ClosePlannerPanel?.(false));
   // Audit the five full pages and three navigation panels across mobile sizes,
   // languages and themes. Every case must remain navigable without page errors.
-  for(const width of [320,393,412])for(const lang of ['hu','en'])for(const theme of ['classicBlue','blue']){
+  for(const width of [320,393,412])for(const lang of ['hu','en','de','ro'])for(const theme of ['classicBlue','blue']){
    await page.setViewportSize({width,height:width===320?740:width===412?915:873});
    await page.evaluate(({lang,theme})=>{window.tp3ClosePlannerPanel?.(false);tp155R4ClosePanel(false);state.session=null;state.workout=null;db.set('language',lang);rf200SetTheme(theme);},{lang,theme});
    for(const route of ['home','plan','health','programs','history','calendar','settings','coach']){
@@ -97,7 +97,7 @@ const {chromium}=require('playwright');
     if(route==='settings')assert.doesNotMatch(await page.locator('#tp155R4PanelHost').innerText(),/RepForge-profilhoz/,'visible account hint uses TrainPilot');
     if(['calendar','settings','coach'].includes(route))assert.equal(layout.panel,route);else assert.equal(layout.locked,false,route+' is not left scroll-locked');
     checks.push({width,lang,theme,route,layout:'pass'});
-    if(width===393&&lang==='hu'&&theme==='classicBlue')await page.screenshot({path:'ui-evidence/app-audit-'+route+'.png'});
+    if(width===393&&lang==='hu'&&theme==='classicBlue')await page.screenshot({path:'ui-evidence/app-audit-'+route+'.png',animations:'disabled'});
    }
   }
   fs.mkdirSync('ui-results',{recursive:true});fs.writeFileSync('ui-results/app-audit.json',JSON.stringify(checks,null,2));
@@ -119,6 +119,6 @@ const {chromium}=require('playwright');
   assert.equal(await page.locator('#tp155R4PanelHost').count(),0,'confirmed navigation releases the picker');
   assert.equal(await page.evaluate(()=>!!db.get('draft',null)),true,'confirmed navigation preserves the workout draft');
   assert.deepEqual(errors,[]);
-  console.log('PASS app audit: late native initialization and automatic refresh preserve Quick Workout; eight panels and planner retain edits; 96 mobile page/panel/language/theme cases remain navigable without page errors or horizontal overflow');
+  console.log('PASS app audit: late native initialization and automatic refresh preserve Quick Workout; eight panels and planner retain edits; 192 mobile page/panel/language/theme cases remain navigable without page errors or horizontal overflow');
  }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(error=>{console.error(error);process.exitCode=1;});
