@@ -1,31 +1,25 @@
-# TrainPilot Wear OS module
+# TrainPilot Wear OS
 
-Native Wear OS companion target for TrainPilot.
+Natív Kotlin/Compose társalkalmazás Wear OS-re, minimum API 30. A telefonos TrainPilot továbbra is Capacitor/WebView és Java alapú; a Wear modul külön buildelhető és kiadható.
 
-The phone application is intentionally not migrated to Kotlin. The existing Capacitor/WebView application remains in `android/app`; this module is an additional Wear-specific frontend.
+**Aktuális verziócsalád: 1.3.** A mainen edzésvezérlés, gyors edzés, mini naptár, Health Services-mérés, Mini napló és a korábbi mért edzések előzménye érhető el. A telefonról kezdeményezett órás appindítás az 1.3 javítási sorozatának része a [#160 tesztágon](https://github.com/fuloplevente1998/TrainPilot/pull/160). A megnyílást a felhasználó már visszaigazolta; a teljes háttérmérés ellenőrzése folyamatban van.
 
-Initial stack:
+Az 1.2 adta a Wear OS alapfunkciókat; az 1.3 a telefon és az óra közös gyorsedzés-/napló-/mérési adatútját fogja össze. [Összevont változáslista](../../RELEASE_NOTES.md) · [Aktuális fejlesztési állapot](../../DEVELOPMENT_STATUS.md).
 
-- Kotlin;
-- Compose for Wear OS;
-- Wear Material 3;
-- Wear OS 3+ (`minSdk 30`).
+## Modul és ellenőrzés
 
-Build from `android/`:
+A telefon őrzi a mentett edzéseket. Az óra helyi cache-t, tartós offline parancssort és az edzésazonosítóhoz kapcsolt mérési összegzést használ. A Mini napló olvasási nézet; nem külön naplóadatbázis.
+
+Az `android` könyvtárból:
 
 ```bash
 ./gradlew :wear:assembleDebug
+./gradlew :wear:testReleaseUnitTest
+./gradlew :wear:assembleRelease
 ```
 
-The first phone → watch Data Layer path is implemented. When the phone has an active TrainPilot session, the Wear app caches and renders the current program, exercise and set. The next step is watch → phone workout commands.
+Az aláírt release buildhez a [buildleírás](../../docs/BUILD.md) szerinti signing-beállítások szükségesek. Az önálló Wear Release Gate a natív teszteket, APK-metaadatokat és a kiadási aláírás folytonosságát ellenőrzi. Közös telefon–óra protokollváltozásnál a telefonos kapu is szükséges.
 
-See `docs/WEAR_OS.md` for the architecture and roadmap.
-
-
-## Wear-only CI
-
-Changes limited to `android/wear/**` use the dedicated Wear workflows:
-
-- `Wear OS Build` compiles only the Wear debug APK.
-- `Wear Release Gate` builds, signs, verifies, and uploads only the Wear release APK.
-- The full phone Chromium/release gate is skipped for pure Wear-only changes.
+- [Wear OS architektúra, mérési működés és készülékes tesztek](../../docs/WEAR_OS.md)
+- [Órás 1.3 kiadás](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.0)
+- [Történeti kiadási feljegyzések](releases/README.md)

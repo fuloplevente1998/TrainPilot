@@ -1,459 +1,101 @@
-# TrainPilot Wear OS – architecture and implementation plan
+# TrainPilot Wear OS — működés és állapot
 
-Status: previous independent Wear 1.2.15 /2722 validation continues; paired Quick Workout candidate Wear 1.2.16 /2723 + phone 1.2.14 /2721 is in development.
+**Aktuális verziócsalád: 1.3.** A telefon és az óra a [#156](https://github.com/fuloplevente1998/TrainPilot/pull/156) jóváhagyott párosított változata alapján a mainen van. Az 1.2 Wear-alapfunkcióit és az 1.3 közös fejlesztéseit az [összevont változáslista](../RELEASE_NOTES.md) foglalja össze.
 
-Previous candidate: Wear **1.2.15 /2722** adds restart-safe active-workout recording, final-update handling, measured workout summary, swipe navigation between cached calendar weeks and release code/resource shrinking. Its complete physical-watch acceptance has not yet been documented. The new **Wear 1.2.16 /2723** Quick Workout candidate pairs with phone **1.2.14 /2721** and requires both release gates and paired-device acceptance.
+A telefonról indított órás appmegnyitás az 1.3 javítási sorozatának része a [#160 tesztágon](https://github.com/fuloplevente1998/TrainPilot/pull/160); még nincs a main release-ekben. A felhasználó a megnyílást 2026. október 10-én visszaigazolta. A kijelző kikapcsolása melletti tényleges mérés és a végső naplóadat külön ellenőrzés marad.
 
-## Independent phone and Wear releases
+## Architektúra és adatok
 
-Wear-only fixes run `Wear Release Gate`: native Wear unit tests, signed `:wear:assembleRelease`, APK metadata and signing-certificate continuity checks. Main publishes `wear-v<version>` with only the Wear APK; it does not replace the latest phone release. Wear metadata and notes live in `android/wear/SOURCE_VERSION.json` and `android/wear/releases/`.
+A telefon Capacitor/WebView/Java alapú, és őrzi a mentett naplót. Az óra natív Kotlin, Compose és Wear Material 3 alkalmazás, minimum API 30. Az alkalmazásazonosító `com.repforge.app`, az órás névtér `com.repforge.app.wear`; a párosított kiadások aláírója egyezik.
 
-Phone changes run `Phone Release Gate + TrainPilot APK`: Chromium UI and phone regressions, native phone unit tests, signed `:app:assembleRelease`, APK metadata and signing-certificate checks. Phone versions use the root `SOURCE_VERSION.json`, `package.json` and phone Gradle metadata, with release tags `v<version>`. The phone gate neither requires matching Wear versions nor builds the Wear module.
+| Szerep | Megvalósítás |
+| --- | --- |
+| Telefonos adatátadás és parancsfeldolgozás | `WearSyncPlugin`, `ActiveWorkoutStore` és a telefon meglévő edzés-/naplófolyamata |
+| Órás aktív edzés és kezdőlapi/napló-cache | `WorkoutSnapshotStore`, `WatchHomeStore` |
+| Tartós offline parancsok és lezárás | `WearCommandOutbox`, `WearClosureStore` |
+| Edzéshez tartozó mérés | `WearHealthService`, `WearHealthStore` |
 
-Keep the package ID, signing identity and Data Layer protocol compatible across the installed pair. Updating only Wear does not require a phone build unless the change actually needs a new phone-side protocol or feature. Workflow-only and documentation changes do not start the phone APK workflow; platform source changes and manual runs remain covered.
+A Data Layer útvonalai: `/trainpilot/active-workout`, `/trainpilot/watch-home`, `/trainpilot/workout-command/<commandId>`. Az óra a helyi pillanatképből jeleníti meg az adatokat, a módosító parancsok tartós sorból, visszaigazolással jutnak a telefonra.
 
-## Quick Workout companion — 1.2.16 /2723 candidate (#155)
+Egy edzés ugyanazt a stabil azonosítót használja indításkor, offline folytatáskor, befejezéskor és késői méréskor. Ismételt parancs vagy befejezés nem készít új naplóbejegyzést. Másik aktív telefonos edzés/piszkozat nem cserélhető le régi órás paranccsal. Későn érkező indításnál a végső edzésadat is segítheti az offline alkalom helyreállítását; törölt alkalmat a lezárási/törlési állapot nem enged visszahozni.
 
-- The phone publishes a bounded Quick Workout exercise library in its existing watch-home Data Layer snapshot. The picker on the watch can search and page through that catalog, including custom exercises.
-- Start a true `quickWorkout` / `type:'quick'` session from the watch without a fake program. Existing Wear workout and Health Services measurement controls run as usual.
-- `startQuickWorkout` and `addQuickExercise` commands are processed by the phone's canonical Quick Workout engine. An unrelated active/draft session is never replaced.
-- Quick sessions carry a stable `workoutId`, preserving the same phone Journal entry, set edits, offline completion, deduplicated retries and late health summaries.
-- The new phone protocol requires phone **1.2.14 /2721** and Wear **1.2.16 /2723**, unlike earlier icon/calendar Wear-only changes. Maintain independent phone/Wear gates.
-- Real-device acceptance is pending: watch pushup start, extra exercise, >2-minute background metrics, save-once, reconnect, phone-started quick session and UI/accessibility.
+## Órás funkciók
 
-See [phone notes](releases/v1.2.14.md) and [Wear notes](../android/wear/releases/wear-v1.2.16.md).
+- Kezdőlapi Indítás/Folytatás, megerősített Törlés, Menü és Telefon megnyitása.
+- Programos edzés és valódi Gyors edzés a telefonról kapott beépített/saját gyakorlatkatalógusból; edzés közbeni gyakorlat-hozzáadás.
+- Sorozat, ismétlés és terhelés rögzítése, meglévő pihenőidőzítő, befejezés és elvetés.
+- Heti mini naptár, Mini napló, Órás mérések és mérési előzmények.
+- Tile és számlapi kiegészítő, a megfelelő kezdő-/edzésoldal megnyitásával.
 
-## Current next steps — 2026-10-09
+A kezdőlap körkijelzőhöz igazított, görgethető adatmezőkkel és elérhető vezérlőkkel. Az OLED-felület sötét/arany palettát használ. A teljes programszerkesztés, fotókezelés és mentés a telefonon marad.
 
-The original companion milestones are implemented: Home and locally cached workout start, workout controls/rest/timers, finish/discard and workout summary, calendar, Health Services recording, Tile, complication and Open on phone. Wear 1.2.13 adds the phone-identical launcher icon. Wear 1.2.14 replaces the calendar list with a 4+3 circular weekly view, cached-week navigation and explicit day details/start action.
+## Mini naptár
 
-Remaining work:
+A heti nézet 4+3 körgombot, hónap-/hétjelzést, mai kiemelést és állapotpontokat mutat. A cache-ben elérhető hetek közt vízszintes lapozás használható; napra koppintva program, nap, gyakorlatok száma, időpont és állapot látható.
 
-1. Physical Galaxy Watch7 validation: real sensor values, permission denial/grant, background recording, reconnect/retry, and final summary merging into one phone workout. Code and native regressions are present; device verification remains separate.
-2. Validate the 1.2.15 candidate's measured workout totals (average/max HR, kcal, steps/distance when available) on the watch's post-workout summary, including missing values, zero steps and late final updates.
-3. Continue real-device layout/accessibility polish, including larger font settings and different round screen sizes.
-4. Later calendar data expansion: the existing phone snapshot covers today minus 3 through today plus 10 days and contains one aggregated record per date. Complete historical weeks, multiple daily workouts/count badges and watch-side planning need additional phone data and protocol work. Missing cached dates are displayed as unknown rather than rest days.
-5. A fully phone-independent product remains a later evaluation: shared domain logic, full local program/calendar/history editing and backup/account behavior. Existing companion-mode local persistence and revision/receipt merge rules already work.
+A meglévő telefonos csomag a mai nap előtti három és az utána következő tíz napot tartalmazza, naponta egy összesített bejegyzéssel. Hiányzó adat nem minősül pihenőnapnak; több napi edzést vagy távoli történeti hetet nem szabad kitalálni. Ezek bővítéséhez új telefonos adatcsomag szükséges.
 
-The current icon/calendar changes require only a Wear APK. A new phone APK is needed when the phone-side protocol or functionality actually changes.
+Tervezett edzés külön Indítás művelettel indul. Meglévő edzés, telefonos piszkozat vagy függő szinkron mellett a védelmek megmaradnak.
 
-### 1.2.15 active-workout recording validation
+## Mini napló és mérési előzmények
 
-Recording uses the existing Health Services ExerciseClient in a foreground service. It continues during an active workout when the display turns off or another app is opened; it is not all-day passive health collection. Health Services may batch samples with the display off to save power. No forced high-frequency wakeups or extra background sensor permission is added for passive collection.
+A **Főmenü → Mini napló** legfeljebb nyolc különböző, már mentett telefonos edzést mutat. A részletekben a gyakorlatok, teljesített sorozatok/ismétlések/terhelések és külön egészségforrások láthatók. Függő parancs vagy félkész órás edzés nem kerül a mentett listába. A cache offline olvasható.
 
-The service persists its original exercise/GPS request and pending stop. A restart reattaches to the owned exercise; if the exercise no longer exists, a new segment preserves previous totals and marks the recording partial. A disabled or closed workout finishes rather than restarting. Callback registration is awaited before ownership checks/start, and stop completion waits for the ended metrics update, with a bounded partial-result fallback. Private recovery fields are excluded from the phone summary contract.
+Az **Órás mérések** a három legutóbbi mentett, TrainPilot Wear-méréssel rendelkező edzést jeleníti meg: név, dátum, időtartam, rövid gyakorlatinformáció és rendelkezésre álló kalória/átlagpulzus. A részleges mérés jelölt, a nulla megmarad, a hiányzó érték üres marad.
 
-Before merging, test on Galaxy Watch7:
+Előzményre koppintva a Mini napló meglévő részlete nyílik meg; a Vissza az eredeti mérési nézetre vezet. Ez az edzés közbeni mérési oldalról nyitott előzménynél is érvényes.
 
-- Grant/deny sensor/activity permissions, start a workout, turn off the screen for several minutes and switch to another app. Reopen TrainPilot and check that totals and recording status continue without a second workout.
-- With an active cardio/GPS recording, test service/process recovery while retaining location permission. Confirm that exercise type, GPS and cumulative totals survive; a newly started segment must be marked partial. Android force-stop and reboot are separate cases and are not promised as automatic continuation.
-- Finish/discard or stop measurement from the notification with the screen off; confirm recording ends, does not restart, and final metrics update the same saved phone workout once. Simulate a missing final update and check the partial-result message.
-- Check summary scrolling and controls on small round screens and enlarged text. Missing sensor values must remain absent; measured zero steps must remain visible.
-- Swipe left/right across the weekly calendar, including starting the gesture over a day circle. Only cached weeks should be reachable; dragging must not open day details or start a workout. Tap a day, go Back, and confirm the selected week is retained. Check month/year-crossing captions when such weeks are in the phone cache.
-- Verify launcher icon, Data Layer listener, Tile, complication, notification actions and Health Services callbacks in the shrunk, signed release APK. CI retains the R8 mapping for debugging; APK size is compared against the immutable 1.2.14 release (29,998,682 bytes).
+A nézet megnyitása és a kézi frissítés `requestHome` parancsot küld. A telefon előtérbe kerülése változatlan tartalomnál is újraküldi a friss pillanatképet; rutinszerű polling nem küldi újra a változatlant. A parancs csak sikeres közzététel után kap visszaigazolást. A küldési idő alapján régebbi adat nem írhat felül új cache-t.
 
-## 1.2.9 release scope — accepted 2026-10-08
+A csomag teljes UTF-8 mérete korlátozott; nem másol fotókat vagy teljes napi egészségnaplót az órára. Aktív program hiánya nem blokkolhatja a mentett edzések átadását. A telefonverzió és naplótámogatási jelzés megkülönbözteti a régi adatcsomagot az üres naplótól.
 
-The phone's /2715 backup, sync and navigation fixes were accepted on-device. The user requested the **full planned Wear package** before promoting the combined phone/watch release to main as **1.2.9 /2716**.
+## Egészségadatok és kijelző kikapcsolása
 
-- Responsive Home with permanent Start/Resume, Calendar and Menu controls, using the same round-screen action layout as the workout.
-- General watch menu: Home, 14-day mini calendar, program days, workout, watch measurements and Open on phone.
-- Phone-prepared calendar cache; planned/completed/skipped/rest states; starting available planned workouts through the existing canonical phone workflow.
-- Opt-in Health Services workout recording in a foreground service; runtime capability and permission checks; supported HR, measured average/max HR, total kcal, steps, active duration, distance/speed and optional movement-workout GPS. Missing data remains absent. No ECG, blood pressure or invented HRV.
-- Durable, revisioned health summary attached to the same workout ID; replay never creates a history row or adds calories twice. Late final metrics update the existing workout. Total kcal explicitly includes basal metabolism and remains separate from Samsung Health/Health Connect.
-- TrainPilot Tile and short/long text watch-face complication with state-aware tap actions.
-- Explicit Open on phone action via a narrow TrainPilot deep link, with connection failure feedback.
+A TrainPilot Wear a Health Services edzésmérését használja, külön felhasználói engedélyezéssel és szenzorjogosultságokkal. Csak az eszköz által támogatott adatot kéri: például pulzus/átlag/max, összes energia, lépés, időtartam és mozgásnál távolság/sebesség. A GPS külön választható.
 
-Native/UI/phone regressions and signed release gates must pass before the main promotion. Actual Watch7 clipping, health sensor availability, granted/denied permissions, background recording and Tile/complication behavior still need paired-device verification; CI is not a physical sensor test.
+A már elindult mérés előtérszolgáltatásban folytatódik a kijelző kikapcsolásakor. Az adatfrissítés nem feltétlenül folyamatos képernyős ütemű; a szolgáltató csoportosítva is adhat mintákat. A működést friss szenzoradattal és végső mentett összegzéssel kell ellenőrizni. Az app megnyílása vagy egy megmaradt értesítés önmagában nem bizonyít mérést.
 
-Standalone program editing/account/backup is a later evaluation, outside this accepted release scope.
+Újrainduló szolgáltatás a saját edzés típusát és beállításait állítja helyre. A függő lezárás megmarad; a leállítás végső Health Services-frissítést vár, határolt várakozás után jelölt részleges eredménnyel. Meglévő összesítések megőrzendők. Más alkalmazás futó edzésmérését a TrainPilot nem szakíthatja meg. Rendszerszintű kényszerleállítás vagy újraindítás utáni folyamatos mérés nem következik a képernyő kikapcsolása melletti működésből.
 
+| Adatút | Jelentés és megjelenítés |
+| --- | --- |
+| TrainPilot Wear (`healthWear129`) | A pontos edzésazonosítóhoz kapcsolt saját Health Services-mérés; érvényes adat esetén a telefon Naplójának kiemelt alapforrása. |
+| Health Connect / Samsung Health (`health240`) | A kiválasztott szolgáltató időablakos jelentése, külön aktív, összes és edzéshez kötött energiával. |
+| Edzés saját Wear-mérés nélkül | A telefon a kiválasztott szolgáltatóból olvas, ha megosztott adat rendelkezésre áll; közvetlen Wear-mérést nem állít elő utólag. |
 
-## Goal
+Ugyanaz az óra különböző alkalmazásoknak eltérő edzésidőszakot és energiaösszesítést adhat. A Samsung Health saját adata és a Health Connectbe átadott rekord nem garantáltan azonos időben érkezik meg. A három adatút nem összeadható kalóriaforrás.
 
-Add a native Wear OS companion experience to TrainPilot without rewriting the existing Android application.
+Ha az óra nincs a kézen, szenzormérés nem feltételezhető. Ha a kézen van, de a TrainPilot nem indított mérési munkamenetet, más alkalmazás megosztott adata még elérhető lehet. Hiányzó pulzus, HRV, ECG vagy vérnyomás nem becsülhető; ez nem egész napos passzív mérést végző alkalmazás.
 
-The current phone application remains the source product:
+A 20 guggolásos készülékpróba helyes órás adatátadást igazolt. A korábbi **4 órás kcal / 1 aktív és 2 összes telefonos kcal** eltérés továbbra is forrás-, időablak- és szinkronellenőrzést igényel. A már naplózott értékeket és késői frissítéseket meg kell őrizni.
 
-- Capacitor 7 / Android WebView UI;
-- the existing Java Capacitor plugins and Android services remain in place;
-- the existing JavaScript workout model, backup, calendar, Health Connect and phone UX remain unchanged unless a small Wear bridge needs an explicit integration point.
+## Telefonos órás appindítás — 1.3 tesztjavítás
 
-Wear OS is implemented as a **separate native Android application module** inside the same Gradle project.
+A #160 javítás célja, hogy új telefonos edzéshez az órát ne kelljen előbb kézzel megnyitni.
 
-## Why the phone app does not need a Kotlin rewrite
+Új programos vagy gyors edzés indításakor a telefon előbb közzéteszi az aktív pillanatképet, majd az AndroidX `RemoteActivityHelper` segítségével megnyitja a csatlakoztatott órás Activity-t. A handoff útvonala: `trainpilot://wear/start-measurement?workoutId=...&revision=...`. Az óra a megfelelő azonosító/frissítés beérkezése után indítja a meglévő mérést, ha a kapcsoló és jogosultságok engedik.
 
-TrainPilot already has a useful separation between the web workout UI and Android-native capabilities. Rewriting the entire application in Kotlin would be a large migration with little benefit for the first Wear release and would create unnecessary regression risk.
+A kezdeti kijelzőébrenlét és a függő indítás határolt. Telefonos háttérbe kerülés, edzésváltás vagy lejárat megszakítja az indítási kérést. Visszaállított piszkozat, rutinszinkron és óráról indított parancs nem nyitja újra az órás appot. Több csatlakoztatott óra esetén nincs párhuzamos automatikus indítás. Sikertelen megnyitás után a telefonos edzés megmarad és kézi órás megnyitás használható.
 
-Instead:
+**Állapot:** a telefonos megnyitást a felhasználó visszaigazolta; mindkét aláírt build ellenőrzése sikeres. A PR még draft, a háttérben keletkező mérés és a lezárt naplóadat készülékes elfogadása hátravan. A main release-jei még a javítás előtti állapotot tartalmazzák.
 
-```text
-Existing phone app
-Capacitor / WebView / JavaScript
-        |
-        | thin native bridge
-        v
-ActiveWorkoutStore + WearSync
-        |
-        | Wear OS Data Layer
-        v
-Native Wear OS app
-Kotlin + Compose for Wear OS Material 3
-```
-
-Only the Wear client is Kotlin/Compose.
-
-Longer term, individual domain models can be extracted into a shared native module if standalone-watch requirements justify it. That is an optimization, not a prerequisite.
-
-## Module layout
-
-```text
-android/
-├── app/                     existing phone application
-└── wear/                    native Wear OS companion
-    ├── build.gradle
-    └── src/main/
-        ├── AndroidManifest.xml
-        ├── java/com/repforge/app/wear/
-        │   └── MainActivity.kt
-        └── res/
-```
-
-Later phone-side additions are expected to be narrow and additive:
-
-```text
-android/app/src/main/java/com/repforge/app/
-├── WearSyncPlugin.java
-├── ActiveWorkoutStore.java
-└── WearDataListenerService.java
-```
-
-and a small Wear bridge section inside the canonical `www/app.js` runtime. TrainPilot deliberately keeps one external application script, so Wear sync follows that existing single-source rule instead of adding a second runtime JS file.
+## Készülékes ellenőrzés
 
-## Data ownership and sync
+| Próba | Ellenőrizendő eredmény |
+| --- | --- |
+| Telefonos programos/gyors indítás, óra érintése nélkül | Appmegnyílás, a megfelelő edzés új mérése, friss pulzus/kalória és mérési értesítés. |
+| Kijelző kikapcsolása | Mérési adat tovább keletkezik; befejezéskor nem csak régi érték érkezik. |
+| Befejezés telefonon és órán | Egy mentett edzés, hozzá kapcsolt végső órás összegzés a telefonon és a Mini naplóban. |
+| Mérés kikapcsolva vagy engedély elutasítva | Nem indul jogosulatlan mérés; a telefonos edzés használható marad. |
+| Kapcsolatvesztés és újracsatlakozás | Offline sor megmarad, ismétlés nem duplikál, késői mérés a megfelelő edzéshez kerül. |
+| Mini napló/előzmény/részlet/Vissza | Friss lista, helyes források, eredeti nézetre visszatérés és offline cache. |
+| Körkijelző és nagy betűméret | Olvasható adatok, görgethető részletek és elérhető műveletek. |
+| Saját Wear-mérés nélküli telefonos edzés | Csak a választott szolgáltató ténylegesen elérhető adata látszik. |
 
-The first Wear release is a **companion app**, not a completely standalone replacement for the phone app.
+## Build és későbbi bővítések
 
-The current active workout still originates from the TrainPilot phone experience. To avoid depending on a live WebView while the phone is locked, the active workout should be mirrored into a native persisted snapshot.
+A Wear modul saját natív teszt- és aláírt kiadási kaput használ. A kizárólag órás változás nem feltétlenül igényel új telefonos APK-t; adatátadási protokoll változásakor mindkét app ellenőrzése és megfelelő párja kell. A dokumentációban összevont verziócsalád nem módosítja az APK-k technikai verzióját.
 
-### Proposed flow
+További bővítés a részletesebb történeti naptár és több esemény egy napon. Ezekhez a telefonos pillanatképet is bővíteni kell; a jelenlegi cache korlátait nem szabad több adatként bemutatni.
 
-1. JavaScript starts or changes an active workout.
-2. Existing `persistDraft()` behavior continues unchanged.
-3. The Wear bridge writes a normalized active-workout snapshot to `ActiveWorkoutStore`.
-4. The phone sends the snapshot through the Wear OS Data Layer.
-5. Wear renders the workout from its local copy.
-6. A watch action (for example "set complete") creates a small command/event.
-7. The phone native layer stores that event immediately.
-8. When the WebView is active, the event is applied to `state.session` and the normal TrainPilot draft is persisted.
-9. On resume/reload the JS side reconciles pending Wear events before rendering the workout.
-
-This prevents the Wear app from requiring the WebView process to stay alive.
-
-## Initial sync contract
-
-The watch does not need the complete TrainPilot backup or database. The first payload should contain only what is needed during the current workout.
-
-Example:
-
-```json
-{
-  "schema": 1,
-  "workoutId": "A",
-  "programId": "home-basic",
-  "programName": "Otthoni A/B - Alap",
-  "started": "2026-10-07T17:20:00Z",
-  "currentExercise": 0,
-  "restSeconds": 90,
-  "exercises": [
-    {
-      "id": "goblet-squat",
-      "name": "Goblet squat",
-      "sets": [
-        {
-          "set": 1,
-          "reps": "12",
-          "weight": 10,
-          "done": false
-        }
-      ]
-    }
-  ]
-}
-```
-
-The exact schema will be versioned before real phone/watch synchronization is enabled.
-
-## MVP user experience
-
-The first useful Wear build should focus on the active workout:
-
-1. show the active workout;
-2. show the current exercise;
-3. show current set / total sets;
-4. show repetitions and load;
-5. mark a set complete;
-6. adjust repetitions;
-7. adjust load;
-8. start/show the rest timer;
-9. haptic feedback when rest ends;
-10. previous / next exercise;
-11. finish workout;
-12. optional live heart rate from Wear OS Health Services.
-
-The watch UI should remain intentionally smaller than the phone UI. Program editing, detailed journal/history, Coach, backups, photos, Google account flows and complex planning stay on the phone for the initial release.
-
-## Wear Health Services
-
-For live metrics during an active workout, the Wear application should use Wear OS Health Services where supported. This can provide watch-local exercise data such as heart rate without routing every live reading through the phone.
-
-TrainPilot's existing phone Health Connect flow remains responsible for its current phone-side health/journal behavior. Wear Health Services is an additional real-time exercise source, not a replacement for the existing implementation.
-
-## Tiles and complications
-
-These are Phase 2 features after reliable workout synchronization:
-
-- **Tile:** active exercise, set progress, rest timer and a button to open TrainPilot Wear.
-- **Complication:** compact active-workout/rest status.
-- Later, an optional quick-workout launcher can be exposed from a Tile.
-
-## Offline behavior
-
-The watch should cache the latest active-workout snapshot locally. If the phone temporarily disconnects:
-
-- current workout information remains visible;
-- watch interactions are queued locally;
-- queued events are delivered when the phone becomes reachable again;
-- conflict handling uses monotonically increasing revision/event identifiers rather than blindly replacing the entire workout.
-
-## Standalone future
-
-The initial manifest declares the watch app as non-standalone because the phone application owns program selection and the canonical workout workflow.
-
-A future standalone mode can be considered after:
-
-- the workout domain model has a stable versioned native/shared representation;
-- the watch can safely create and complete workouts without phone-side JS;
-- reconciliation and conflict behavior are proven;
-- account/backup implications are designed.
-
-Standalone support must not force an early rewrite of the phone UI.
-
-## Technical choices
-
-Initial Wear module:
-
-- Kotlin;
-- Jetpack Compose;
-- Compose for Wear OS Material 3;
-- min SDK 30 for Wear OS 3+ target;
-- existing TrainPilot `compileSdk` / `targetSdk` values are reused;
-- same application ID (`com.repforge.app`) for phone/Wear packaging compatibility;
-- separate namespace (`com.repforge.app.wear`) for source organization.
-
-The branch now contains the first Data Layer implementation: the phone publishes a versioned active-workout snapshot through a Capacitor `WearSync` plugin, while the Wear module persists and renders the latest snapshot. The initial phase deferred Health Services and watch → phone commands; both are now implemented in the 1.2.9 integration described above.
-
-## Implementation phases
-
-### Phase 0 — project skeleton
-
-- [x] create `feat/wear-os`;
-- [x] document the architecture;
-- [x] add `:wear` Gradle module;
-- [x] add a minimal native Compose Wear application;
-- [x] verify CI Wear debug/release builds.
-
-### Phase 1 — phone/watch workout sync
-
-- [x] define versioned active-workout snapshot schema (schema 1);
-- [x] implement phone `ActiveWorkoutStore`;
-- [x] implement phone Data Layer plugin;
-- [x] implement Wear Data Layer receiver + local snapshot cache;
-- [x] complete phone/watch lifecycle mirroring;
-- [x] add revision/event conflict protection;
-- [x] regression tests around existing `persistDraft()` semantics.
-
-### Phase 2 — usable workout controller
-
-- [x] current exercise screen;
-- [x] set completion;
-- [x] reps/load editing;
-- [x] previous/next exercise;
-- [x] rest timer + vibration;
-- [x] workout completion;
-- [x] reconnection/offline queue.
-
-### Phase 3 — sensors and glanceable surfaces
-
-- [x] Wear Health Services live heart rate;
-- [x] optional workout exercise session integration;
-- [x] Tile;
-- [x] complication.
-
-### Phase 4 — standalone evaluation
-
-- [ ] determine which domain logic should be shared;
-- [ ] local watch workout persistence;
-- [ ] phone/watch merge rules;
-- [ ] decide whether standalone mode should be enabled.
-
-## Regression policy
-
-The Wear work must not silently change existing phone behavior.
-
-Until a phone-side Wear bridge is introduced:
-
-- `android/app` behavior is expected to be identical;
-- existing Node/Chromium regression suites remain authoritative for the phone UI;
-- Wear changes are isolated to `android/wear` plus the minimal root Gradle configuration needed to include it.
-
-When synchronization work starts, tests should prove that the same set/reps/load changes result in the same persisted TrainPilot draft regardless of whether the action originated on phone or watch.
-
-## Current branch implementation
-
-As of the first Phase 1 integration on `feat/wear-os`:
-
-- `:wear` is a real Wear OS application module;
-- the phone remains Capacitor/WebView + Java and has not been migrated to Kotlin;
-- `WearSyncPlugin` publishes `/trainpilot/active-workout` DataItems;
-- `ActiveWorkoutStore` persists the latest phone-side snapshot and revision;
-- the canonical `www/app.js` creates a normalized snapshot while an active workout exists;
-- the Wear app receives and caches that snapshot and shows the active program, current exercise and current unfinished set;
-- no active workout produces a dedicated idle screen on the watch;
-- the fast TrainPilot regression suite passes;
-- the dedicated Wear integration workflow successfully builds both `:app:assembleDebug` and `:wear:assembleDebug` and uploads both APKs.
-
-The next implementation milestone is watch → phone commands (set complete, repetitions/load changes, exercise navigation), followed by rest timer/haptics.
-
-## Interactive Wear controls
-
-Implemented on `feat/wear-os` after the initial display-only prototype:
-
-- Watch → phone commands use durable Data Layer DataItems under `/trainpilot/workout-command/<commandId>`.
-- Phone native service persists commands before the WebView handles them; processed command IDs are deduplicated.
-- The watch can adjust weight, reps and timed values, mark the current set complete, move to the previous/next exercise and skip rest.
-- Completing a set starts the rest countdown locally on the watch and vibrates when the countdown ends.
-- The phone applies commands to the canonical `state.session`, calls the existing workout handlers where appropriate, persists the draft and republishes the authoritative snapshot.
-- "Open on phone" via Wear remote activity/deep link is implemented; phone cold-start support was fixed in 1.2.10.
-
-## Next milestone — Galaxy Watch7 health recording
-
-The following original milestone is implemented in 1.2.9: **watch-local health recording on Galaxy Watch7 via Wear OS Health Services**. Sensor and permission behavior still require physical paired-device verification.
-
-Scope:
-
-- request the required health/activity/location permissions directly on the watch;
-- query Health Services capabilities at runtime instead of assuming every metric is supported;
-- start an `ExerciseClient`-based exercise session while a TrainPilot workout is active;
-- record supported metrics directly on the watch, initially prioritizing:
-  - live heart rate;
-  - average/max heart rate for the workout;
-  - steps;
-  - active duration;
-  - calories where supported;
-  - distance/speed/pace/GPS for relevant movement-based workouts;
-- keep collection working independently of the phone screen state;
-- persist a local watch-side summary so temporary phone disconnects do not lose the workout metrics;
-- sync the captured health summary back to the phone through the TrainPilot Data Layer contract;
-- merge the health summary into the same TrainPilot workout/journal entry rather than creating a separate workout record;
-- keep Samsung-specific metrics such as ECG/blood-pressure/vendor-only sensors out of the first Health Services milestone unless a separate supported Samsung integration is later added.
-
-The watch UI should expose the most useful live values during training, for example:
-
-```text
-❤️ 118 bpm · 🔥 34 kcal · ⏱ 12:43
-```
-
-The milestone, Tiles/complications and the "Open on phone" action are integrated together in 1.2.9.
-
-
-## Product direction — full watch experience
-
-The Wear app should evolve from a phone companion/control surface into a focused TrainPilot watch experience. It must stay intentionally smaller than the phone UI and reuse the same program/calendar/workout model instead of creating a parallel product.
-
-Planned watch navigation:
-
-1. **Home** — TrainPilot branding, current date, active workout resume card when present, otherwise the next planned/next cycle workout with a large start action.
-2. **Workout** — current exercise, set/reps/load/time editing, set completion, rest timer, previous/next exercise and an explicit Finish action.
-3. **Mini calendar** — compact 7–14 day workout view with today, planned and completed states; detailed planning/editing remains on the phone.
-4. **Summary** — workout duration, completed exercises/sets and later Health Services metrics.
-5. **Programs** — active program days only, with a short preview and Start; full program editing stays on the phone.
-
-### Wear visual system
-
-Wear should use the existing TrainPilot brand rather than GitHub UI colors.
-
-Canonical TrainPilot colors already used by the phone app:
-
-- background: `#0e1015`
-- card/surface: `#1a1e25`
-- secondary surface: `#232933`
-- text: `#f6f8fb`
-- muted text: `#9aa5b6`
-- primary accent: `#f2bd45`
-- secondary accent: `#ffd975`
-
-The launcher artwork reinforces the same warm gold gradient (`#FFF1A0 → #F3C545 → #DEA12A`). Wear therefore uses an OLED-dark background with TrainPilot gold as the primary action/highlight color.
-
-### Delivery order
-
-1. [x] branded Wear Home + start workout from watch;
-2. [x] explicit Finish + post-workout summary;
-3. [ ] mini calendar;
-4. [x] Galaxy Watch7 Health Services recording and live metrics;
-5. [x] Tile/complication;
-6. [ ] explicit "Open on phone" deep-link action.
-
-Watch-started workouts should start immediately from a locally cached, phone-prepared program snapshot and sync back through the Data Layer. The watch must not require the phone WebView to be visibly open at the moment Start is pressed.
-
-
-## Wear workout UI and lifecycle (PR #143)
-
-The watch uses the approved round-screen TrainPilot design: black OLED background,
-gold primary actions, large values, circular editors, and a horizontally paged
-workout/menu. Home offers a recommended day, separate program-day selection,
-and resume/discard actions for the existing workout. The workout page shows a
-rest countdown automatically and a persistent stopwatch for timed/per-side sets.
-The last exercise offers Finish; partial workouts can also finish from the menu.
-
-Finish/discard require confirmation on the watch. The phone retains its canonical
-`state.session` / draft / history save pipeline, schedule completion and Health
-queue. The watch sends `finishWorkout` or `discardWorkout` with the workout ID,
-confirmation and final set snapshot. Delivery is ordered and retried; saved IDs
-prevent duplicate history entries and late commands from resurrecting a workout.
-A final snapshot can recover an offline watch workout if its start command arrives
-late, but a different phone workout is never replaced or discarded.
-
-A durable watch outbox retries failed Data Layer writes. The Home snapshot carries
-`workoutResult` as the phone's receipt. The watch labels offline closure as pending,
-keeps the final data locally, and only displays phone save success after a receipt.
-Phone drafts are included in active snapshots so they can resume on the watch.
-Snapshot sequences protect local changes from stale phone snapshots.
-
-Testing: phone lifecycle unit scenarios, a browser test through the actual
-canonical finish wrappers, and Wear unit tests for set selection, JSON round trip,
-side times, completion and stopwatch pause/resume. Actual Watch7 layout, gestures,
-haptics and background timing still require the paired device test.
-
-The 1.2.9 integration adds the mini calendar, Watch7 Health Services (live heart rate and workout
-metrics), Tiles/complications and Open on phone. No simulated health
-values are displayed in this implementation.
-# Wear UX r2: pihenő a gyakorlat képernyőjén
-
-A felhasználó valós Watch7 képei alapján a korábbi sorozatképernyő túl magas volt, az alsó gombok levágódtak. A pihenő Canvas és tartalom külön lapozó-gyökere pedig eltakarta a szöveges visszaszámlálót.
-
-Az elfogadott új felület közvetlen Előző/Rögzítés/Következő kerek vezérlőket használ. A sorozat rögzítése után a gyakorlat oldalán jelenik meg a vékony, fogyó pihenőív és a kis számláló; lejáratkor csak ezek tűnnek el. A Kihagyás kizárólag a pihenőt zárja le. Nincs automatikus sorozatrögzítés vagy gyakorlatváltás. Kész gyakorlatnál ugyanaz az oldal marad, az utolsónál külön megerősített Befejezés érhető el.
-
-Érvényes gyakorlatváltás közben a pihenő lezárása és az abszolút gyakorlatválasztás ebben a sorrendben kerül a tartós Wear parancssorba. Tiltott vagy azonos célú váltás semmit nem módosít. A telefon meglévő skipRest/selectExercise protokollját használjuk.
-
-A hosszú címek két sorba férnek; a főképernyők magassága csökkent, a Mentés/Mégse és a kezdőlapi törlés beljebb került. A középre helyezett tartalom nagyobb rendszer-betűméretnél görgethető. A plank stoppert koppintás indítja/szünetelteti, az időrögzítés külön művelet. Nullázás, oldalváltás és kézi időbeállítás az Edzésmenü / Stopper és oldalak alatt marad.
-
-Új natív regressziók ellenőrzik, hogy a pihenő lezárása nem változtat sorozatot/gyakorlatot, a kézi navigáció megőrzi az összes mérést, és a határgombok nem szakítják meg a pihenőt. A böngészős előnézet ellenőrzése nem helyettesíti a kész APK valós órás tesztjét. A telefonos kód és a startup animáció változatlan.
-
-## Mini Napló and measurement provenance (2026-10-09, #158/#159)
-
-The **Wear 1.2.16 /2723** and paired **phone 1.2.14 /2721** feature candidate now includes **Főmenü → Mini napló**. Phone history remains canonical. The watch receives a bounded, cached, read-only list of previously saved workouts (latest eight distinct sessions) with completed exercise sets and a per-source Health summary. New workout logging and late Health Services updates remain handled by the existing durable Data Layer outbox.
-
-**Do not equate Health Connect time-window total calories with the watch's own exercise-session total.** The phone Journal now distinguishes the stored matching `healthWear129` from the independently queried `health240`; it chooses the validated own-watch measurement when available, else preserves the original HC presentation. It never sums calorie sources or synthesizes unavailable data. Old workouts without Wear attachment cannot automatically be upgraded based on a screenshot.
-
-**Acceptance still required:** correct provenance on an actual Galaxy Watch/phone 45-minute training result; realistic values, missing data and late revisions; mini-journal exercise details; remote state/resync and offline snapshot; compact circular display. Draft PR #156 stays unmerged until phone and Wear Release Gates plus physical checks are green.
+[Modul és helyi parancsok](../android/wear/README.md) · [Build és signing](BUILD.md) · [Aktuális fejlesztési állapot](../DEVELOPMENT_STATUS.md) · [Korábbi részletes feljegyzés](https://github.com/fuloplevente1998/TrainPilot/blob/2fdcf4fde7021fb234bd85fff0a59b698d36c808/docs/WEAR_OS.md).
