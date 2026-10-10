@@ -24,6 +24,6 @@ assert.ok(!manifest.includes('android.permission.CAMERA'));
 assert.ok(!manifest.includes('READ_MEDIA_IMAGES'));
 assert.ok(google.includes('ExecutorService ioExecutor')&&google.includes('ioExecutor.submit(()->{try{'));
 assert.ok(!google.includes('getBridge().execute(()->{try{'));
-assert.equal(pkg.version,'1.3.2');assert.equal(src.version,'1.3.2');assert.equal(src.versionCode,2728);
-assert.match(gradle,/versionCode\s+2728/);assert.match(gradle,/versionName\s+"1\.3\.2"/);
+assert.equal(pkg.version,'1.3.3');assert.equal(src.version,'1.3.3');assert.equal(src.versionCode,2729);
+assert.match(gradle,/versionCode\s+2729/);assert.match(gradle,/versionName\s+"1\.3\.3"/);
 console.log('PASS TrainPilot 2727 private FileProvider camera / OEM return fallback / queue isolation guards');

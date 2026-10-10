@@ -77,7 +77,28 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
  await normalPage.locator('[onclick="syncCloud(false)"]').click();await normalPage.waitForFunction(()=>drive161Probe.reads.length===1&&!cloudBusy);assert.deepEqual(await normalPage.evaluate(()=>drive161Probe.reads),['head']);assert.equal(await normalPage.evaluate(()=>drive161Probe.prunes),0);
  assert.equal(await normalPage.locator('[onclick="syncCloud(false,true)"]').isVisible(),false,'earlier recovery remains collapsed');
  await normalPage.locator('details').filter({has:normalPage.locator('[onclick="syncCloud(false,true)"]')}).last().locator('summary').first().click();await normalPage.locator('[onclick="syncCloud(false,true)"]').click();await normalPage.waitForFunction(()=>!cloudBusy&&weights().length===24);assert.equal(await normalPage.evaluate(()=>drive161Probe.reads.filter(x=>x.startsWith('archive')).length),24);await normalPage.close();
- console.log('PASS publication UI: four languages at 320/360/393/412px, consent off, archive controls, navigation/theme re-entry, themed Health checkbox, actual sync completion and usable backup during pending network/retention requests');
+ // Reproduce the reported conflict with the real Telefon/Felhő dialog buttons.
+ for(const phoneChoice of [true,false]){
+  const conflictPage=await browser.newPage({viewport:{width:393,height:800},locale:'hu'}),conflictErrors=[];
+  conflictPage.on('pageerror',e=>conflictErrors.push(e.message));
+  await conflictPage.addInitScript(()=>localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped')));await conflictPage.goto(`http://127.0.0.1:${server.address().port}`);await conflictPage.waitForFunction(()=>window.TrainPilotBoot?.finished);
+  await conflictPage.evaluate(()=>{
+   const device='00000000-0000-0000-0000-000000000001',local=syncData();local.settings.rest=60;local.exercises[0].reps='8';local.language='hu';local.weights=[{id:'phone-only',kg:65,date:'2026-10-01T12:00:00Z'}];storeMerged(local);
+   const remote=JSON.parse(JSON.stringify(local));remote.settings.rest=90;remote.exercises[0].reps='12';remote.language='en';remote.weights=[{id:'cloud-only',kg:70,date:'2026-10-02T12:00:00Z'}];
+   window.conflictProbe={writes:[],alerts:[]};window.alert=message=>conflictProbe.alerts.push(message);let head='head',snapshot=remote;
+   window.Capacitor={isNativePlatform:()=>true,Plugins:{GoogleSync:{driveList:async()=>({files:[{id:head,name:'repforge-sync-'+device+'-head.json',createdTime:'2026-10-10T12:00:00Z',version:'1'}]}),driveRead:async()=>({version:'1',data:JSON.stringify({app:'RepForgeSync',schema:1,owner:'conflict-test',device,data:snapshot})}),driveWrite:async({data})=>{const parsed=JSON.parse(data);conflictProbe.writes.push(parsed);snapshot=parsed.data;head='written';return {id:head,version:'1',verified:true};}}}};
+   cloudProfile={sub:'conflict-test'};db.set('cloudDevice',device);db.set('cloudPrefs',{drive:false,calendar:false});rf130SyncWorkoutPhotos=async()=>{};go('settings');
+   const button=document.querySelector('[onclick="syncCloud(false)"]');for(let p=button.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS')p.open=true;
+  });
+  await conflictPage.locator('[onclick="syncCloud(false)"]').click();await conflictPage.waitForSelector('#tp2628Dialog');
+  assert.equal(await conflictPage.locator('#tp2628DialogTitle').textContent(),'Szinkronütközés');
+  await conflictPage.locator(phoneChoice?'[data-tp2628-confirm]':'[data-tp2628-cancel]').click();await conflictPage.waitForFunction(()=>!cloudBusy);
+  const saved=await conflictPage.evaluate(()=>({writes:conflictProbe.writes,alerts:conflictProbe.alerts,rest:settings().rest,backup:validateBackup(makeBackup())}));
+  assert.deepEqual(saved.alerts,[]);assert.equal(saved.writes.length,1);assert.equal(saved.rest,phoneChoice?60:90);
+  assert.equal(saved.writes[0].data.exercises[0].reps,phoneChoice?'8':'12');assert.equal(saved.writes[0].data.language,phoneChoice?'hu':'en');assert.equal(saved.backup.weights.length,2,'unique phone and cloud entries survive both choices');
+  await conflictPage.evaluate(()=>syncCloud(false));assert.equal(await conflictPage.locator('#tp2628Dialog').count(),0);assert.deepEqual(conflictErrors,[]);await conflictPage.close();
+ }
+ console.log('PASS publication UI: four languages at 320/360/393/412px, consent off, archive controls, navigation/theme re-entry, themed Health checkbox, actual sync completion, usable backup during pending network/retention requests, and real Telefon/Felhő conflict choices');
  }finally{await browser?.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);process.exit(1)});
 function tpLabel(lang){return {hu:'Teljes ZIP',en:'Full ZIP',de:'Vollständige ZIP',ro:'Copie ZIP'}[lang];}

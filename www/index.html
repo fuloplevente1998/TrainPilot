@@ -655,16 +655,19 @@
   return ensureLegacyIds(kind,items).sort((a,b)=>String(b.started||b.date||'').localeCompare(String(a.started||a.date||'')));
  };
  const tp18MergeSync=(local,remotes,base,choose,archives=[])=>{
+  // The app dialog returns a boolean; older merge callers return a selected
+  // value. Resolve both contracts before storing any field or record.
+  const select=(key,a,b)=>{const value=choose(key,a,b);return typeof value==='boolean'?(value?a:b):value};
   const out=clone(local);
-  out.history=mergeSafeRows('history',local.history,(remotes||[]).map(x=>x.history),base?.history,(archives||[]).map(x=>x.history),choose);
-  out.weights=mergeSafeRows('weights',local.weights,(remotes||[]).map(x=>x.weights),base?.weights,(archives||[]).map(x=>x.weights),choose);
-  out.scheduled=mergeSafeRows('scheduled',local.scheduled,(remotes||[]).map(x=>x.scheduled),base?.scheduled,[],choose);
+  out.history=mergeSafeRows('history',local.history,(remotes||[]).map(x=>x.history),base?.history,(archives||[]).map(x=>x.history),select);
+  out.weights=mergeSafeRows('weights',local.weights,(remotes||[]).map(x=>x.weights),base?.weights,(archives||[]).map(x=>x.weights),select);
+  out.scheduled=mergeSafeRows('scheduled',local.scheduled,(remotes||[]).map(x=>x.scheduled),base?.scheduled,[],select);
   for(const key of ['settings','exercises','plan','programs','activeProgramId','plannerSettings']){
    let selected=local[key];
-   for(const remote of remotes||[]){const x=remote[key];if(x===undefined||canonical(selected)===canonical(x))continue;if(base&&canonical(x)===canonical(base[key]))continue;if(base&&canonical(selected)===canonical(base[key]))selected=x;else selected=choose(key,selected,x)}
+   for(const remote of remotes||[]){const x=remote[key];if(x===undefined||canonical(selected)===canonical(x))continue;if(base&&canonical(x)===canonical(base[key]))continue;if(base&&canonical(selected)===canonical(base[key]))selected=x;else selected=select(key,selected,x)}
    out[key]=selected;
   }
-  return typeof tp105MergeExtras==='function'?tp105MergeExtras(out,local,remotes,base,choose):out;
+  return typeof tp105MergeExtras==='function'?tp105MergeExtras(out,local,remotes,base,(key,a,b)=>canonical(select(key,a,b))===canonical(a)):out;
  };
  const tp18SnapshotSelection=files=>{
   const groups=new Map();

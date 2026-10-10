@@ -33,7 +33,7 @@ A telefon Naplója őrzi a mentett edzéseket. Az órás Mini napló ezek korlá
 
 TrainPilot Wear-mérés nélkül a telefon a kiválasztott egészségadat-szolgáltatóból olvas, ha ott rendelkezésre áll adat. Azonos óra mellett is eltérhet a mérési időszak, a szinkron ideje és az aktív/összes kalória jelentése. [Részletes működés](docs/WEAR_OS.md#egészségadatok-és-kijelző-kikapcsolása).
 
-**Folyamatban lévő ellenőrzések:** kijelző kikapcsolása melletti mérés, naplózott és későn érkező egészségadatok, eltérő kalóriaértékek összehasonlítása. **Nyitott hiba:** a Google Drive-szinkron időnként ismét túl sokáig tart; kivizsgálás szükséges.
+**Folyamatban lévő ellenőrzések:** kijelző kikapcsolása melletti mérés, naplózott és későn érkező egészségadatok, eltérő kalóriaértékek összehasonlítása. Az **1.3** [#160 tesztágán](https://github.com/fuloplevente1998/TrainPilot/pull/160) a normál Drive-szinkron csak a legfrissebb eszközmentéseket olvassa, a Telefon/Felhő ütközésválasztás érvényes adatot ment. A szinkron időtartama és az ütközésfeloldás készülékes elfogadása még nyitott.
 
 ## Telepítés és dokumentáció
 

@@ -81,7 +81,11 @@ TrainPilot Wear-mérés nélkül a telefon a kiválasztott Samsung Health/Health
 
 Folytatandó: háttérmérés, Mini napló frissítése/újracsatlakozása, körkijelzős és nagybetűs nézetek, már naplózott egészségadatok megőrzése, későn érkező értékek és telefonos edzés egészségadatai.
 
-**Nyitott visszatérő hiba:** a Google Drive-szinkron időnként túl sokáig tart. A korábbi mentési/szinkronjavítások megléte nem jelenti ennek lezárását.
+### Drive-szinkron és ütközésfeloldás
+
+Az **1.3** [#160 tesztágán](https://github.com/fuloplevente1998/TrainPilot/pull/160) a normál szinkron csak az eszközönkénti legfrissebb mentést olvassa; a régi mentések olvasása külön, alapból csukott helyreállítási művelet. Normál szinkronkor nincs archív olvasás vagy automatikus archív takarítás.
+
+A Telefon/Felhő ütközésválasztás a kiválasztott adatváltozatot menti; a logikai gombválasz nem kerül adatmező vagy naplóbejegyzés helyére. Az egyedi edzések és testsúlyadatok megmaradnak, a szigorú mentésellenőrzés változatlan. A szinkron időtartamának és a választás utáni sikeres mentésnek készülékes elfogadása még nyitott.
 
 ## Történeti részletek
 
