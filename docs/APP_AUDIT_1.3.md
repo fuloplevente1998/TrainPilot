@@ -13,12 +13,12 @@
 
 ## Ellenőrzési kör
 
-A képernyőképek vizuális átnézése két további hibát mutatott: az Egészség oldal műveletgombjai magyar szavakat betűn belül törtek két sorba, a Google-fiók leírásában pedig régi RepForge márkanév maradt. A gombok most egész gombként rendeződnek új sorba a rendelkezésre álló szélesség szerint; a fiókleírás TrainPilotot nevez meg. A mobilos audit szavankénti szövegtörést és gombon belüli túlcsordulást is ellenőriz.
+A képernyőképek vizuális átnézése két további hibát mutatott: az Egészség oldal műveletgombjai magyar szavakat betűn belül törtek két sorba, a Google-fiók leírásában pedig régi RepForge márkanév maradt. A gombok most a feliratuk tényleges szélessége szerint, egész gombként rendeződnek új sorba; így 320×740 px-en sem növelik az oldalt a kijelző alá. A nagy betűs mód egyoszlopos marad. A fiókleírás TrainPilotot nevez meg. A mobilos audit szavankénti szövegtörést, gombon belüli túlcsordulást és az Egészség oldal alsó szélének láthatóságát is ellenőrzi.
 
 - A tényleges Edzés → Gyors edzés indítása gomb, késleltetett natív inicializálás, automatikus egészségadat-frissítés és annak ismételt hívása.
 - Beállított sorozatszám, súly, nyitott gyakorlat és keresés megőrzése; explicit bezárás és edzésindítás.
 - Gyakorlatkönyvtár, saját gyakorlat, saját program, célok, Naptár, Beállítások, Coach és egészségnapló panelje, valamint a személyes edzéstervező.
-- Kezdőlap, Edzés, Egészség, Programok, Napló és a három navigációs panel: 320, 393 és 412 px szélesség; magyar/angol; Basic/Vivid témák. Összesen 96 méret/nyelv/téma/nézet kombináció. Navigáció, görgetészár feloldása, vízszintes oldaltúlcsordulás és JavaScript-hibák ellenőrzése.
+- Kezdőlap, Edzés, Egészség, Programok, Napló és a három navigációs panel: 320×740, 393×873 és 412×915 px; magyar/angol; Basic/Vivid témák. Összesen 96 méret/nyelv/téma/nézet kombináció. Navigáció, görgetészár feloldása, vízszintes oldaltúlcsordulás és JavaScript-hibák ellenőrzése.
 - Teljes meglévő Node- és Chromium-regressziók, köztük az órás átadás, edzésnapló, kalóriaforrások, Drive-ütközéskezelés, visszaállítás, naptár, GPS, oldalspecifikus időmérés és szerkesztési folyamatok.
 
 A kiadási ellenőrzések és az aláírt teszttelepítő eredménye a #160 PR-on követhető. A böngészős audit képernyőképei a telefonos kiadási kapu UI-artifactjában találhatók.

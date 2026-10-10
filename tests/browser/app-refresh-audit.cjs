@@ -75,7 +75,7 @@ const {chromium}=require('playwright');
   // Audit the five full pages and three navigation panels across mobile sizes,
   // languages and themes. Every case must remain navigable without page errors.
   for(const width of [320,393,412])for(const lang of ['hu','en'])for(const theme of ['classicBlue','blue']){
-   await page.setViewportSize({width,height:873});
+   await page.setViewportSize({width,height:width===320?740:width===412?915:873});
    await page.evaluate(({lang,theme})=>{window.tp3ClosePlannerPanel?.(false);tp155R4ClosePanel(false);state.session=null;state.workout=null;db.set('language',lang);rf200SetTheme(theme);},{lang,theme});
    for(const route of ['home','plan','health','programs','history','calendar','settings','coach']){
     await page.evaluate(()=>tp155R4ClosePanel(false));
@@ -84,6 +84,8 @@ const {chromium}=require('playwright');
     const layout=await page.evaluate(()=>({main:!!document.querySelector('#app main'),nav:!!document.querySelector('.top.tp154-nav-grid'),overflow:document.documentElement.scrollWidth>innerWidth+1,locked:document.body.style.overflow==='hidden',panel:document.getElementById('tp155R4PanelHost')?.dataset.panel}));
     assert.equal(layout.main,true,route+' has a page');assert.equal(layout.nav,true,route+' retains navigation');assert.equal(layout.overflow,false,route+' has no horizontal page overflow at '+width+'/'+lang+'/'+theme);
     if(route==='health'){
+     const healthBottom=await page.locator('#app main').evaluate(main=>Math.max(...[...main.children].map(node=>node.getBoundingClientRect().bottom))-innerHeight);
+     assert.ok(healthBottom<=1,'Closed Health content must fit the viewport at '+width+'/'+lang+'/'+theme+' (bottom overflow '+healthBottom+')');
      const splitWords=await page.locator('.tp168-sync-tail .rf263-sync-actions').evaluate(host=>{
       const failures=[];for(const button of host.querySelectorAll('.btn')){
        if(button.scrollWidth>button.clientWidth+1)failures.push('overflow:'+button.textContent);

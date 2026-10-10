@@ -728,4 +728,5 @@ html body #tp155R4PanelHost[data-panel="quick"] .tp152-quick-row>summary .tp152-
 
 /* Health actions wrap as whole buttons instead of breaking Hungarian labels. */
 .tp168-sync-tail .rf263-sync-actions{display:flex!important;flex-wrap:wrap;align-items:stretch}
-.tp168-sync-tail .rf263-sync-actions .btn{flex:1 1 145px;min-width:0;overflow-wrap:normal!important;word-break:normal;white-space:normal}
+.tp168-sync-tail .rf263-sync-actions .btn{flex:1 1 max-content;width:auto;min-width:0;overflow-wrap:normal!important;word-break:normal;white-space:normal}
+html.tp110-large-text .tp168-sync-tail .rf263-sync-actions .btn{flex-basis:100%;width:100%}
