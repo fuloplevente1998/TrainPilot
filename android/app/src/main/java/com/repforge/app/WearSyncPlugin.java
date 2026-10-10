@@ -1,5 +1,9 @@
 package com.repforge.app;
 
+import android.content.Intent;
+import android.net.Uri;
+import androidx.core.content.ContextCompat;
+import androidx.wear.remote.interactions.RemoteActivityHelper;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -38,6 +42,49 @@ public class WearSyncPlugin extends Plugin {
     public void clear(PluginCall call) {
         try { publishSnapshot(ActiveWorkoutStore.clear(getContext()), call); }
         catch (Exception e) { call.reject("Unable to clear Wear workout snapshot.", e); }
+    }
+
+    /** Called once after an explicit phone workout start, after its urgent publish. */
+    @PluginMethod
+    public void startWatchMeasurement(PluginCall call) {
+        String requestedId = call.getString("workoutId", "");
+        Wearable.getNodeClient(getContext()).getConnectedNodes()
+                .addOnSuccessListener(nodes -> ContextCompat.getMainExecutor(getContext()).execute(() -> {
+                    JSONObject current = ActiveWorkoutStore.current(getContext());
+                    if (getActivity() == null || !getActivity().hasWindowFocus()) {
+                        call.reject("The phone workout must be visible to open the watch."); return;
+                    }
+                    if (current == null || requestedId == null || requestedId.isEmpty()
+                            || !current.optBoolean("active", false)
+                            || !requestedId.equals(current.optString("workoutId"))) {
+                        call.reject("The requested workout is no longer active."); return;
+                    }
+                    // Avoid starting duplicate measurements on several paired watches.
+                    if (nodes.size() != 1) {
+                        call.reject(nodes.isEmpty() ? "No watch is connected." : "More than one watch is connected."); return;
+                    }
+                    Uri uri = new Uri.Builder().scheme("trainpilot").authority("wear")
+                            .path("/start-measurement")
+                            .appendQueryParameter("workoutId", requestedId)
+                            .appendQueryParameter("revision", Long.toString(current.optLong("revision", 0L)))
+                            .build();
+                    Intent intent = new Intent(Intent.ACTION_VIEW).setData(uri).addCategory(Intent.CATEGORY_BROWSABLE);
+                    try {
+                        var task = new RemoteActivityHelper(getContext(), ContextCompat.getMainExecutor(getContext()))
+                                .startRemoteActivity(intent, nodes.get(0).getId());
+                        task.addListener(() -> {
+                            try {
+                                task.get();
+                                JSObject result = new JSObject();
+                                // Opening the Activity is not proof that the sensors are recording.
+                                result.put("opened", true);
+                                result.put("workoutId", requestedId);
+                                call.resolve(result);
+                            } catch (Exception error) { call.reject("Unable to open TrainPilot on the watch.", error); }
+                        }, ContextCompat.getMainExecutor(getContext()));
+                    } catch (Exception error) { call.reject("Unable to open TrainPilot on the watch.", error); }
+                }))
+                .addOnFailureListener(error -> call.reject("Unable to reach the watch.", error));
     }
 
     @PluginMethod

@@ -7,7 +7,7 @@ const sections=[...source.matchAll(/^\/\/ @section ([\w.-]+)\n([\s\S]*?)^\/\/ @e
 if(!sections.length)throw Error('Canonical source sections missing');
 const temp=fs.mkdtempSync(path.join(os.tmpdir(),'trainpilot-test-'));
 let fail=0,count=0;
-const obsolete=new Set(['single-source.cjs','runtime-120.cjs','startup-232.cjs','v112-paint.cjs','v112-product.cjs','v260-release.cjs','v260-responsive.cjs','v261.cjs','v262.cjs','v130-photos.cjs','trainpilot-144.cjs','calendar-delta-v101.cjs','drive-fastpath-v101.cjs','publication-105.cjs','publication-sync-completion.cjs','publication-backup-priority.cjs','custom-exercise-distance-106.cjs','backup-consolidation.cjs','training-cardio-107.cjs','cardio-daily.cjs','wear-journal-resync.cjs']);
+const obsolete=new Set(['single-source.cjs','runtime-120.cjs','startup-232.cjs','v112-paint.cjs','v112-product.cjs','v260-release.cjs','v260-responsive.cjs','v261.cjs','v262.cjs','v130-photos.cjs','trainpilot-144.cjs','calendar-delta-v101.cjs','drive-fastpath-v101.cjs','publication-105.cjs','publication-sync-completion.cjs','publication-backup-priority.cjs','custom-exercise-distance-106.cjs','backup-consolidation.cjs','training-cardio-107.cjs','cardio-daily.cjs','wear-journal-resync.cjs','wear-phone-measurement-start.cjs']);
 try{
  fs.mkdirSync(path.join(temp,'www'));
  for(const [,name,code] of sections)fs.writeFileSync(path.join(temp,'www',name),code);
@@ -22,7 +22,7 @@ try{
   const r=spawnSync(process.execPath,[path.join(temp,'tests',file)],{cwd:temp,encoding:'utf8'});count++;
   if(r.status!==0){fail++;process.stderr.write(`${file}\n${r.stdout}${r.stderr}`)}
  }
- for(const file of ['tests/single-source.cjs','tests/runtime-120.cjs','tests/v130-photos.cjs','tests/trainpilot-144.cjs','tests/calendar-delta-v101.cjs','tests/drive-fastpath-v101.cjs','tests/publication-105.cjs','tests/publication-sync-completion.cjs','tests/publication-backup-priority.cjs','tests/custom-exercise-distance-106.cjs','tests/backup-consolidation.cjs','tests/training-cardio-107.cjs','tests/cardio-daily.cjs','tests/wear-journal-resync.cjs']){
+ for(const file of ['tests/single-source.cjs','tests/runtime-120.cjs','tests/v130-photos.cjs','tests/trainpilot-144.cjs','tests/calendar-delta-v101.cjs','tests/drive-fastpath-v101.cjs','tests/publication-105.cjs','tests/publication-sync-completion.cjs','tests/publication-backup-priority.cjs','tests/custom-exercise-distance-106.cjs','tests/backup-consolidation.cjs','tests/training-cardio-107.cjs','tests/cardio-daily.cjs','tests/wear-journal-resync.cjs','tests/wear-phone-measurement-start.cjs']){
   const r=spawnSync(process.execPath,[file],{cwd:root,encoding:'utf8'});count++;process.stdout.write(r.stdout);if(r.status!==0){fail++;process.stderr.write(`${file}\n${r.stderr}`)}
  }
  console.log(`PASS=${count-fail} FAIL=${fail} (${sections.length} compatibility sections + direct 1.2 runtime)`);

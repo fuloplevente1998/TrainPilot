@@ -116,7 +116,7 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
 // @endsection startup.js
 
 // @section backup.js
-const TRAINPILOT_VERSION='1.3.0';
+const TRAINPILOT_VERSION='1.3.1';
 var isNative = function isNative(){return !!window.Capacitor?.isNativePlatform?.();};
 var nativeFiles = function nativeFiles(){if(!filesPlugin)filesPlugin=window.Capacitor?.registerPlugin?.('NativeFiles')||window.Capacitor?.Plugins?.NativeFiles;if(!filesPlugin)throw Error('A natív fájlkezelő nem érhető el.');return filesPlugin;};
 var backupStatus = function backupStatus(){const x=db.get('lastExport',null);return x?`Utolsó ellenőrzött mentés: ${x.name} • ${fmtDate(x.date)}`:'Még nincs ellenőrzött fájlmentés.';};
@@ -756,7 +756,7 @@ planScreen=function(){const p=activeProgram();return shell(`<main><div class="he
 showWorkout=function(dayId){const p=activeProgram(),d=programDay(p,dayId);state.workout=dayId;state.tab='plan';render(shell(`<main><div class="hero"><h1>${esc(p.name)} • ${esc(d.name)}</h1><div class="muted">${d.exercises.length} gyakorlat</div></div>${d.exercises.map((id,i)=>exCard(byId(id),i,d.id)).join('')}<button class="btn block" onclick="startWorkout('${d.id}')">Edzés indítása</button></main>`));};
 showExercise=function(dayId,i){const p=activeProgram(),d=programDay(p,dayId),e=byId(d.exercises[i]);state.tab='plan';render(shell(`<main><button class="btn secondary" onclick="showWorkout('${dayId}')">← Vissza</button><br><br><div class="card detail"><h2>${esc(e.hu)}</h2><div class="en">${esc(e.en)}</div><div class="meta">${e.sets} × ${esc(e.reps)} • ${e.weight?e.weight+' '+esc(e.unit):esc(e.unit)}</div><br><span class="badge">${esc(e.target)}</span><span class="badge">${esc(e.equipment)}</span>${motionDemo(e.id)}<p class="note">${esc(e.notes)}</p></div></main>`));};
 
-startWorkout=function(dayId,scheduleId=null,programId=null){if(db.get('draft',null)&&!confirm('Új edzést indítasz? A félbehagyott edzés helyére ez kerül.'))return;const p=programById(programId)||activeProgram(),d=programDay(p,dayId);if(!d){alert('Nincs ilyen programnap.');return;}state.tab='plan';state.workout=d.id;state.current=0;state.session={programId:p.id,programName:p.name,dayId:d.id,workout:d.id,...(scheduleId?{scheduleId}:{}),started:new Date().toISOString(),exercises:d.exercises.map(id=>{const e=byId(id),prev=findLastExercise(id);return {id,hu:e.hu,en:e.en,loadType:e.loadType,repUnit:e.repUnit,sets:Array.from({length:e.sets},(_,i)=>({set:i+1,weight:prev?.loadType===e.loadType?(prev?.sets?.[i]?.weight??e.weight):e.weight,reps:'',done:false}))};})};renderWorkout();};
+startWorkout=function(dayId,scheduleId=null,programId=null){if(db.get('draft',null)&&!confirm('Új edzést indítasz? A félbehagyott edzés helyére ez kerül.'))return;const p=programById(programId)||activeProgram(),d=programDay(p,dayId);if(!d){alert('Nincs ilyen programnap.');return;}state.tab='plan';state.workout=d.id;state.current=0;state.session={programId:p.id,programName:p.name,dayId:d.id,workout:d.id,...(scheduleId?{scheduleId}:{}),started:new Date().toISOString(),exercises:d.exercises.map(id=>{const e=byId(id),prev=findLastExercise(id);return {id,hu:e.hu,en:e.en,loadType:e.loadType,repUnit:e.repUnit,sets:Array.from({length:e.sets},(_,i)=>({set:i+1,weight:prev?.loadType===e.loadType?(prev?.sets?.[i]?.weight??e.weight):e.weight,reps:'',done:false}))};})};renderWorkout();const startedSession=state.session,fromWatch=window.TrainPilotWearSync?.isApplyingCommand?.()===true;Promise.resolve().then(()=>window.TrainPilotWearSync?.phoneWorkoutStarted?.(startedSession,{fromWatch}));};
 
 const rf12FinishWorkout=finishWorkout;finishWorkout=function(){if(!state.session)return;const scheduleId=state.session.scheduleId;rf12FinishWorkout.apply(this,arguments);if(scheduleId){const s=scheduled(),i=s.findIndex(x=>x.id===scheduleId);if(i>=0){s[i]={...s[i],status:'completed',updatedAt:Date.now()};db.set('scheduled',s);}}};
 renderWorkout=function(){persistDraft();const i=state.current,p=state.session.exercises.map(x=>x.id),e=byId(p[i]),se=state.session.exercises[i],pct=Math.round((i/p.length)*100);render(shell(`<main><div class="hero"><span class="badge">${esc(state.session.programName||'Edzés')} • ${esc(state.session.dayId||state.workout)}</span><h1>${i+1}/${p.length}</h1><div class="muted">${esc(e.hu)}</div><div class="progress"><div style="width:${pct}%"></div></div></div><div class="card detail"><h2>${esc(e.hu)}</h2><div class="en">${esc(e.en)}</div><div class="meta">Cél: ${e.sets} × ${esc(e.reps)}</div>${motionDemo(e.id)}<p class="note">${esc(e.notes)}</p></div><div class="section">Sorozatok</div>${se.sets.map((s,si)=>`<div class="row"><div class="num">${si+1}</div>${e.loadType==='bodyweight'?'<span class="small muted">Testsúly</span>':`<label class="small">${loadLabel(e.loadType)}<input class="field" inputmode="decimal" value="${s.weight}" oninput="upd(${i},${si},'weight',this.value)"></label>`}<label class="small">${e.repUnit}<input class="field" inputmode="numeric" placeholder="${esc(e.reps)}" value="${esc(s.reps)}" oninput="upd(${i},${si},'reps',this.value)"></label><button class="check ${s.done?'done':''}" onclick="toggleSet(${i},${si})">${s.done?'✓':'OK'}</button></div>`).join('')}<br><button class="btn block" onclick="nextExercise()">${i===p.length-1?'Edzés befejezése':'Következő gyakorlat'}</button><br><br><button class="btn secondary block" onclick="prevExercise()" ${i===0?'disabled':''}>Előző</button></main>`));};
@@ -9932,6 +9932,7 @@ var tp150QuickConfirmReplace=async function tp150QuickConfirmReplace(){
  return await tp2628Confirm(tp150qwT('replaceDraft'),{title:tp150qwT('replaceTitle'),confirmText:tp150qwT('replaceConfirm'),danger:true});
 };
 var tp150StartQuickWorkout=async function tp150StartQuickWorkout(id){
+ const fromWatch=window.TrainPilotWearSync?.isApplyingCommand?.()===true;
  const e=byId(id);if(!e)return;
  if(state.session){
   if(tp150IsQuick())return tp150AddQuickExercise(id);
@@ -9943,6 +9944,7 @@ var tp150StartQuickWorkout=async function tp150StartQuickWorkout(id){
  state.tab='plan';state.workout='quick';state.current=0;
  state.session={type:'quick',quickWorkout:true,programId:null,programName:tp150qwT('title'),dayId:null,workout:'quick',started:new Date().toISOString(),exercises:[first]};
  persistDraft();renderWorkout();window.scrollTo?.(0,0);
+ window.TrainPilotWearSync?.phoneWorkoutStarted?.(state.session,{fromWatch});
 };
 var tp150AddQuickExercise=function tp150AddQuickExercise(id){
  if(!tp150IsQuick())return tp150StartQuickWorkout(id);
@@ -10284,9 +10286,11 @@ var tp151QuickConfig=function(id){
 };
 var tp151BuildQuick=function(id){const e=byId(id),b=tp150QuickExercise(id);if(!e||!b)return null;const n=Math.max(1,Math.min(10,Number(document.getElementById('tp151QuickSets')?.value)||b.sets.length||3)),target=String(document.getElementById('tp151QuickTarget')?.value||e.reps||'').trim().slice(0,40),raw=document.getElementById('tp151QuickWeight')?.value,w=e.loadType==='bodyweight'?0:Math.max(0,Number(String(raw??b.sets?.[0]?.weight??0).replace(',','.'))||0);b.targetReps=target;b.plannedWeight=w;b.sets=Array.from({length:n},(_,i)=>({set:i+1,weight:w,reps:'',done:false}));return b};
 var tp151SaveQuick=async function(id){
+ const fromWatch=window.TrainPilotWearSync?.isApplyingCommand?.()===true;
  const item=tp151BuildQuick(id);if(!item)return;
  if(typeof tp150IsQuick==='function'&&tp150IsQuick()){const i=state.session.exercises.findIndex(x=>x.id===id);if(i>=0){state.session.exercises[i]=item;state.current=i}else{state.session.exercises.push(item);state.current=state.session.exercises.length-1}persistDraft();renderWorkout();window.scrollTo?.(0,0);return}
  if(!(await tp150QuickConfirmReplace()))return;db.set('draft',null);stopTimer();state.tab='plan';state.workout='quick';state.current=0;state.session={type:'quick',quickWorkout:true,programId:null,programName:tp150qwT('title'),dayId:null,workout:'quick',started:new Date().toISOString(),exercises:[item]};persistDraft();renderWorkout();window.scrollTo?.(0,0);
+ window.TrainPilotWearSync?.phoneWorkoutStarted?.(state.session,{fromWatch});
 };
 tp150QuickAction=function(id){if(typeof tp150IsQuick==='function'&&tp150IsQuick()){const i=state.session.exercises.findIndex(x=>x.id===id);if(i>=0){state.current=i;renderWorkout();window.scrollTo?.(0,0);return}}return tp151QuickConfig(id)};
 tp150StartQuickWorkout=function(id){return tp151QuickConfig(id)};
@@ -16469,6 +16473,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  'use strict';
  let lastPayload=null,lastHomePayload=null,cleared=false,busy=false,homeBusy=false,commandBusy=false;
  let homeRefreshPending=false;
+ let pendingWatchStart=null,lastWatchStartId='';
 
  function api(){
   try{
@@ -16746,23 +16751,46 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(homeRefreshPending){homeRefreshPending=false;setTimeout(()=>syncHomeNow({force:true}),0);}
   }
  }
+ function phoneWorkoutStarted(session,{fromWatch=false}={}){
+  const bridge=api(),id=sessionKey(session);
+  if(fromWatch||commandBusy||!bridge?.startWatchMeasurement||!id||id===lastWatchStartId||session!==state?.session)return;
+  lastWatchStartId=id;pendingWatchStart={id,createdAt:Date.now()};
+  void syncNow();
+ }
+ function watchStartFailed(){
+  const messages={hu:'Az órás mérés indítása nem sikerült. Nyisd meg a TrainPilotot az órán.',en:'Watch measurement could not start. Open TrainPilot on your watch.',de:'Die Uhrenmessung konnte nicht starten. Öffne TrainPilot auf der Uhr.',ro:'Măsurarea pe ceas nu a pornit. Deschide TrainPilot pe ceas.',sk:'Meranie na hodinkách sa nespustilo. Otvor TrainPilot na hodinkách.',pl:'Pomiar na zegarku nie rozpoczął się. Otwórz TrainPilot na zegarku.'};
+  if(typeof tp153Toast==='function')tp153Toast(messages[language()]||messages.en,5000);
+ }
  async function syncNow(){
   if(busy)return;
   const bridge=api();if(!bridge)return;
   const value=snapshot(),payload=value?JSON.stringify(value):null;
-  if(payload===lastPayload&&(value||cleared))return;
+  if(pendingWatchStart && (pendingWatchStart.id!==value?.workoutId || document.hidden || Date.now()-pendingWatchStart.createdAt>15000)){
+   const expired=pendingWatchStart.id===value?.workoutId&&!document.hidden;
+   pendingWatchStart=null;if(expired)watchStartFailed();
+  }
+  const requestedId=pendingWatchStart?.id;
+  if(payload===lastPayload&&(value||cleared)&&!requestedId)return;
   busy=true;
   try{
    if(value){
     await bridge.publish({snapshot:value});
     lastPayload=payload;cleared=false;
+    if(pendingWatchStart?.id===value.workoutId && sessionKey(state?.session)===value.workoutId && !document.hidden && Date.now()-pendingWatchStart.createdAt<=15000){
+     pendingWatchStart=null;
+     try{await bridge.startWatchMeasurement({workoutId:value.workoutId});}catch(_){watchStartFailed();}
+    }
    }else if(!cleared){
     await bridge.clear();
     lastPayload=null;cleared=true;
    }
   }catch(_){
    // A missing/disconnected watch never changes phone workout behavior.
-  }finally{busy=false}
+  }finally{
+   busy=false;
+   // Retain a new explicit start that arrived during an earlier snapshot publish.
+   if(pendingWatchStart && pendingWatchStart.id!==requestedId)setTimeout(syncNow,0);
+  }
  }
  function locateExercise(command){
   const session=state?.session;if(!session)return null;
@@ -17036,10 +17064,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }finally{commandBusy=false}
  }
  if(typeof window!=='undefined'){
-  window.TrainPilotWearSync={syncNow,syncHomeNow,drainCommands,makeSnapshot:snapshot,makeHomeSnapshot:homeSnapshot,isApplyingCommand:()=>commandBusy};
+  window.TrainPilotWearSync={syncNow,syncHomeNow,drainCommands,phoneWorkoutStarted,makeSnapshot:snapshot,makeHomeSnapshot:homeSnapshot,isApplyingCommand:()=>commandBusy};
   window.addEventListener?.('focus',()=>{drainCommands();syncNow();syncHomeNow({force:true});});
  }
- if(typeof document!=='undefined')document.addEventListener?.('visibilitychange',()=>{if(!document.hidden){drainCommands();syncNow();syncHomeNow({force:true});}});
+ if(typeof document!=='undefined')document.addEventListener?.('visibilitychange',()=>{if(document.hidden)pendingWatchStart=null;else{drainCommands();syncNow();syncHomeNow({force:true});}});
  if(typeof setInterval==='function'){
   setInterval(syncNow,1500);
   setInterval(syncHomeNow,3000);

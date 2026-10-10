@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
+import android.view.WindowManager
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.wear.remote.interactions.RemoteActivityHelper
 import android.os.Bundle
@@ -41,6 +42,17 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private val measuring=mutableStateOf(false)
     private val gpsEnabled=mutableStateOf(false)
     private val uiHandler=Handler(Looper.getMainLooper())
+    private var activityResumed=false
+    private var remoteMeasurementRequested=false
+    private var remoteMeasurementStart: WearMeasurementStart?=null
+    private var remoteStartNoticeShown=false
+    private val remoteStartTimeout=Runnable {
+        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        setTurnScreenOn(false)
+        val current=workout.value
+        if(activityResumed && remoteMeasurementRequested && remoteMeasurementStart?.matches(current?.workoutId,current?.revision ?: 0L)!=true)
+            Toast.makeText(this,"Az edzés még nem érkezett meg. Ellenőrizd a telefon és az óra kapcsolatát.",Toast.LENGTH_LONG).show()
+    }
     private val healthTick=object : Runnable {
         override fun run() {
             refreshHealth()
@@ -69,8 +81,19 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         permissionRequest.launch(permissions.toTypedArray())
     }
     private fun startHealthIfEnabled() {
-        if(!WearHealthStore.enabled(this) || !healthAllowed())return
+        if(!activityResumed)return
         val current=workout.value ?: return
+        if(remoteMeasurementRequested && remoteMeasurementStart?.matches(current.workoutId,current.revision)!=true)return
+        if(remoteMeasurementRequested){
+            uiHandler.removeCallbacks(remoteStartTimeout)
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);setTurnScreenOn(false)
+            if(!remoteStartNoticeShown){
+                remoteStartNoticeShown=true
+                if(!WearHealthStore.enabled(this))Toast.makeText(this,"Órás mérés kikapcsolva. Az Órás mérések oldalon bekapcsolhatod.",Toast.LENGTH_LONG).show()
+                else if(!healthAllowed())Toast.makeText(this,"Az órás méréshez szenzorengedély szükséges.",Toast.LENGTH_LONG).show()
+            }
+        }
+        if(!WearHealthStore.enabled(this) || !healthAllowed())return
         var previous=WearHealthStore.load(this,current.workoutId)
         if(previous?.optString("state")=="error" && WearHealthFutures.isLegacyNullCompletionError(previous.optString("message"))) {
             // Recover the old Void-callback bug within the same workout, keeping its measured totals.
@@ -80,6 +103,21 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         if(previous?.optString("state") in listOf("ended","error"))return
         try { WearHealthService.start(this,current) }catch(error:Exception) { Toast.makeText(this,"A mérés nem indítható: ${error.message}",Toast.LENGTH_LONG).show() }
     }
+    private fun readLaunchIntent(intent: Intent) {
+        val uri=intent.data
+        remoteMeasurementRequested=intent.action==Intent.ACTION_VIEW && uri?.scheme=="trainpilot" && uri?.host=="wear" && uri?.path=="/start-measurement"
+        remoteMeasurementStart=if(remoteMeasurementRequested)WearMeasurementStart.parse(uri?.getQueryParameter("workoutId"),uri?.getQueryParameter("revision"))else null
+        remoteStartNoticeShown=false;uiHandler.removeCallbacks(remoteStartTimeout)
+        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        setTurnScreenOn(remoteMeasurementRequested && remoteMeasurementStart!=null)
+        if(remoteMeasurementRequested && remoteMeasurementStart!=null){
+            // Hold only the initial handoff, then let the screen sleep normally.
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            uiHandler.postDelayed(remoteStartTimeout,15000)
+        }
+        routeRequest.value=if(remoteMeasurementRequested)"workout" else intent.getStringExtra("destination")?.takeIf { it in listOf("home","workout","summary","menu","calendar") }
+        if(remoteMeasurementRequested && remoteMeasurementStart==null)Toast.makeText(this,"Érvénytelen edzésindítás. Nyisd meg az aktuális edzést.",Toast.LENGTH_LONG).show()
+    }
     private fun openOnPhone() {
         try {
             val task=RemoteActivityHelper(this,mainExecutor).startRemoteActivity(Intent(Intent.ACTION_VIEW).setData(Uri.parse("trainpilot://wear/open")).addCategory(Intent.CATEGORY_BROWSABLE),null)
@@ -87,7 +125,8 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         }catch(_:Exception) { Toast.makeText(this,"A telefon nem érhető el.",Toast.LENGTH_LONG).show() }
     }
     override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent);setIntent(intent);routeRequest.value=intent.getStringExtra("destination")?.takeIf { it in listOf("home","workout","summary","menu","calendar") }
+        super.onNewIntent(intent);setIntent(intent);readLaunchIntent(intent)
+        refreshFromDataLayer();startHealthIfEnabled()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -97,7 +136,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         closure.value = WearClosureStore.load(this)
         restoreRestFromSnapshot(workout.value)
         refreshHealth()
-        routeRequest.value=intent.getStringExtra("destination")?.takeIf { it in listOf("home","workout","summary","menu","calendar") }
+        readLaunchIntent(intent)
         setContent {
             TrainPilotWearApp(
                 workout = workout,
@@ -134,6 +173,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
 
     override fun onResume() {
         super.onResume()
+        activityResumed=true
         workout.value = WorkoutSnapshotStore.load(this)
         home.value = WatchHomeStore.load(this)
         closure.value = WearClosureStore.load(this)
@@ -147,12 +187,14 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     }
 
     override fun onPause() {
+        activityResumed=false
         uiHandler.removeCallbacks(healthTick)
         Wearable.getDataClient(this).removeListener(this)
         super.onPause()
     }
 
     override fun onDestroy() {
+        uiHandler.removeCallbacks(remoteStartTimeout)
         restTimer?.cancel()
         super.onDestroy()
     }
@@ -218,6 +260,8 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                     }
                     if (newestHome != null) home.value = newestHome
                     closure.value = WearClosureStore.load(this)
+                    // The remote Activity may arrive before the urgent DataItem.
+                    startHealthIfEnabled()
                 } finally {
                     items.release()
                 }
@@ -227,6 +271,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private fun startWorkoutFromWatch(day: WatchHomeDay, scheduleId: String) {
         val source = home.value ?: return
         if (workout.value != null || source.hasDraft || closure.value?.status in listOf("pending", "error") || day.exercises.isEmpty()) return
+        remoteMeasurementRequested=false;remoteMeasurementStart=null;setTurnScreenOn(false)
         val started = Instant.ofEpochMilli(System.currentTimeMillis()).toString()
         val localWorkout = source.createWorkout(day, scheduleId, started)
         workout.value = WorkoutSnapshotStore.saveWorkout(this, localWorkout)
@@ -239,6 +284,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         if (workout.value != null || source.hasDraft ||
             closure.value?.status in listOf("pending", "error") ||
             source.quickExercises.none { it.id == exercise.id }) return
+        remoteMeasurementRequested=false;remoteMeasurementStart=null;setTurnScreenOn(false)
         val started = Instant.ofEpochMilli(System.currentTimeMillis()).toString()
         val localWorkout = source.createQuickWorkout(exercise, started)
         workout.value = WorkoutSnapshotStore.saveWorkout(this, localWorkout)
