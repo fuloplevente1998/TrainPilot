@@ -655,16 +655,19 @@
   return ensureLegacyIds(kind,items).sort((a,b)=>String(b.started||b.date||'').localeCompare(String(a.started||a.date||'')));
  };
  const tp18MergeSync=(local,remotes,base,choose,archives=[])=>{
+  // The app dialog returns a boolean; older merge callers return a selected
+  // value. Resolve both contracts before storing any field or record.
+  const select=(key,a,b)=>{const value=choose(key,a,b);return typeof value==='boolean'?(value?a:b):value};
   const out=clone(local);
-  out.history=mergeSafeRows('history',local.history,(remotes||[]).map(x=>x.history),base?.history,(archives||[]).map(x=>x.history),choose);
-  out.weights=mergeSafeRows('weights',local.weights,(remotes||[]).map(x=>x.weights),base?.weights,(archives||[]).map(x=>x.weights),choose);
-  out.scheduled=mergeSafeRows('scheduled',local.scheduled,(remotes||[]).map(x=>x.scheduled),base?.scheduled,[],choose);
+  out.history=mergeSafeRows('history',local.history,(remotes||[]).map(x=>x.history),base?.history,(archives||[]).map(x=>x.history),select);
+  out.weights=mergeSafeRows('weights',local.weights,(remotes||[]).map(x=>x.weights),base?.weights,(archives||[]).map(x=>x.weights),select);
+  out.scheduled=mergeSafeRows('scheduled',local.scheduled,(remotes||[]).map(x=>x.scheduled),base?.scheduled,[],select);
   for(const key of ['settings','exercises','plan','programs','activeProgramId','plannerSettings']){
    let selected=local[key];
-   for(const remote of remotes||[]){const x=remote[key];if(x===undefined||canonical(selected)===canonical(x))continue;if(base&&canonical(x)===canonical(base[key]))continue;if(base&&canonical(selected)===canonical(base[key]))selected=x;else selected=choose(key,selected,x)}
+   for(const remote of remotes||[]){const x=remote[key];if(x===undefined||canonical(selected)===canonical(x))continue;if(base&&canonical(x)===canonical(base[key]))continue;if(base&&canonical(selected)===canonical(base[key]))selected=x;else selected=select(key,selected,x)}
    out[key]=selected;
   }
-  return typeof tp105MergeExtras==='function'?tp105MergeExtras(out,local,remotes,base,choose):out;
+  return typeof tp105MergeExtras==='function'?tp105MergeExtras(out,local,remotes,base,(key,a,b)=>canonical(select(key,a,b))===canonical(a)):out;
  };
  const tp18SnapshotSelection=files=>{
   const groups=new Map();
@@ -680,29 +683,50 @@
   return {current:current.sort((a,b)=>String(a.createdTime).localeCompare(String(b.createdTime))),archive};
  };
  mergeSync=function(local,remotes,base,choose){return tp18MergeSync(local,remotes,base,choose,[])};
- syncCloud=async function(silent=false){
+ // Store only successful scan receipts, never snapshot contents. Bind them to the
+ // committed base so restore, consent changes and another account require a rescan.
+ const archiveBaseHash=async data=>{
+  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(canonicalSyncData(data)));
+  return [...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,'0')).join('');
+ };
+ const snapshotVersion=file=>/^\d+$/.test(String(file?.version||''))?String(file.version):null;
+ syncCloud=async function(silent=false,recoverEarlier=false){
+  recoverEarlier=recoverEarlier===true&&!silent;
   if(cloudBusy||window.TrainPilotBackupBusy||!cloudProfile)return;
   if(state.session){showCloudMessage(tp149T('cloud.driveAfterWorkout'));return}
   if(navigator.onLine===false){showCloudMessage(tp149T('cloud.offlineDrive'));return}
-  cloudBusy=true;cloudActiveOperation='drive';cloudDriveStage='';showCloudMessage(tp149T('cloud.syncingDrive'));
+  cloudBusy=true;cloudActiveOperation='drive';
+  const stage=(key,vars)=>{cloudDriveStage=tp149T(key,vars);showCloudMessage(tp149T('cloud.syncingDrive'));};
+  stage('cloud.driveListing');
   try{
    const owner=cloudProfile.sub,bridge=googleBridge(),local=validateSync(syncData()),startState=canonicalSyncData(local),files=(await bridge.driveList({silent:silent})).files||[];
    const selected=tp18SnapshotSelection(files),remotes=[],archives=[];
    const latest=new Map(selected.current.map(f=>[/^repforge-sync-([a-z0-9-]{36})-/.exec(f.name)[1],f]));
    const heads=driveLatestHeads(latest),base=db.get('cloudBase:'+owner,null);
-   // Only skip after this recovery-aware path has completed one full legacy scan.
-   if(base&&db.get('cloudScan105:'+owner,0)===1&&driveHeadsUnchanged(heads,db.get('cloudHeads:'+owner,null))&&canonicalSyncData(local)===canonicalSyncData(base)&&!driveHasPendingPhotos(local.history||[])){
-    db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{drive:new Date().toISOString()}));showCloudMessage(tp149T('cloud.driveUnchanged'));return;
+   const receiptKey='cloudArchiveScan161:'+owner,receipt=db.get(receiptKey,null);
+   const scanned=base&&receipt?.schema===1&&receipt.baseHash===await archiveBaseHash(base)?receipt.versions||{}:{};
+   // Ordinary sync reads only the current snapshot of each device. Earlier
+   // snapshots are recovery sources only when the user explicitly requests them.
+   const archivePending=recoverEarlier?selected.archive.filter(f=>!snapshotVersion(f)||scanned[f.id]!==snapshotVersion(f)):[];
+   const nextScanned={};
+   for(const f of [...selected.current,...selected.archive])if(snapshotVersion(f)&&scanned[f.id]===snapshotVersion(f))nextScanned[f.id]=snapshotVersion(f);
+   stage('cloud.driveFound',{listed:files.length,current:selected.current.length});
+   // A successful commit permits the normal fast path. Explicit recovery also
+   // requires a matching successful receipt for every selected older snapshot.
+   if(base&&db.get('cloudScan105:'+owner,0)===1&&!archivePending.length&&driveHeadsUnchanged(heads,db.get('cloudHeads:'+owner,null))&&canonicalSyncData(local)===canonicalSyncData(base)&&!driveHasPendingPhotos(local.history||[])){
+    db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{drive:new Date().toISOString()}));cloudDriveStage='';showCloudMessage(tp149T('cloud.driveUnchanged'));return;
    }
    const readSnapshot=async(f,strict)=>{
     try{
-     const snap=JSON.parse((await bridge.driveRead({id:f.id,silent:silent})).data);
+     const read=await bridge.driveRead({id:f.id,silent:silent}),snap=JSON.parse(read.data);
      if(snap.app!=='RepForgeSync'||snap.schema!==1||snap.owner!==owner)throw Error(tp149T('cloud.unknownBackup'));
-     return validateSync(typeof tp105Project==='function'?tp105Project(snap.data,tp105HealthConsent()):snap.data);
+     const data=validateSync(typeof tp105Project==='function'?tp105Project(snap.data,tp105HealthConsent()):snap.data);
+     if(snapshotVersion(f)&&snapshotVersion(read)===snapshotVersion(f))nextScanned[f.id]=snapshotVersion(f);
+     return data;
     }catch(e){if(strict)throw e;return null}
    };
-   for(const f of selected.current){const d=await readSnapshot(f,true);if(d)remotes.push(d)}
-   for(const f of selected.archive){const d=await readSnapshot(f,false);if(d)archives.push(d)}
+   for(let i=0;i<selected.current.length;i++){stage('cloud.driveReading',{index:i+1,total:selected.current.length});const d=await readSnapshot(selected.current[i],true);if(d)remotes.push(d)}
+   for(let i=0;i<archivePending.length;i++){stage('cloud.driveArchiveReading',{index:i+1,total:archivePending.length});const d=await readSnapshot(archivePending[i],false);if(d)archives.push(d)}
    let merged,conflict=false,writtenDevice=null;
    const attempt=chooser=>validateSync(tp18MergeSync(local,remotes,base,chooser,archives));
    try{merged=attempt(function(){conflict=true;throw Error('__TP18_CLOUD_CONFLICT__')})}
@@ -712,17 +736,22 @@
     const phone=await tp2628Confirm(tp149T('cloud.conflict'),{title:tp149T('cloud.conflictTitle'),confirmText:tp149T('cloud.phone'),cancelText:tp149T('cloud.cloud')});
     merged=attempt(function(){return phone});
    }
-   if(typeof rf130SyncWorkoutPhotos==='function')await rf130SyncWorkoutPhotos(merged,bridge,silent);
+   if(typeof rf130SyncWorkoutPhotos==='function'){stage('cloud.drivePhotos');await rf130SyncWorkoutPhotos(merged,bridge,silent);}
    if(state.session||canonicalSyncData(syncData())!==startState)throw Error(tp149T('cloud.changedDuringSync'));
    let device=db.get('cloudDevice',null);if(!device){device=crypto.randomUUID();db.set('cloudDevice',device)}
    if(!base||canonicalSyncData(merged)!==canonicalSyncData(base)||!files.length){
+    stage('cloud.driveWriting');
     const r=await bridge.driveWrite({silent:silent,data:JSON.stringify({app:'RepForgeSync',schema:1,owner:owner,device:device,data:merged})});
-    if(!r.verified)throw Error(tp149T('cloud.verifyFailed'));writtenDevice=device;if(r.id)heads[device]=r.id;
+    if(!r.verified)throw Error(tp149T('cloud.verifyFailed'));writtenDevice=device;if(r.id){heads[device]=driveSnapshotHead(r);if(snapshotVersion(r))nextScanned[r.id]=snapshotVersion(r);}
    }
    await waitForCloudBackup();
    if(state.session||canonicalSyncData(syncData())!==startState)throw Error(tp149T('cloud.changedLocal'));
    storeMerged(merged);document.documentElement.lang=rf212Lang();rf200ApplyTheme();db.set('cloudBase:'+owner,merged);db.set('cloudHeads:'+owner,heads);db.set('cloudScan105:'+owner,1);db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{drive:new Date().toISOString()}));
-   const maintain=writtenDevice&&typeof bridge.drivePrune==='function';
+   // Failed reads/merges/writes never become receipts. A full disk only disables
+   // this optimization; it must not turn a committed sync into a failed one.
+   try{db.set(receiptKey,{schema:1,baseHash:await archiveBaseHash(merged),versions:nextScanned});}catch(_){}
+   cloudDriveStage='';
+   const maintain=recoverEarlier&&writtenDevice&&typeof bridge.drivePrune==='function';
    if(maintain){cloudActiveOperation='maintenance';cloudDriveStage=tp149T('cloud.driveCleanup');}
    showCloudMessage(tp149T('cloud.driveDone'));render();
    if(typeof rf130DeleteSyncedPhotos==='function')await rf130DeleteSyncedPhotos(merged);

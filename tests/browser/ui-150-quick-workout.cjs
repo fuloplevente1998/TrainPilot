@@ -22,6 +22,14 @@ const base=()=>'http://127.0.0.1:'+server.address().port+'/';
   page.on('pageerror',e=>pageErrors.push(e?.stack||e?.message||String(e)));
   page.on('dialog',d=>d.accept());
   await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto(base());await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
+  await page.evaluate(()=>{
+   window.quickWatchProbe=[];
+   window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{
+    publish:async({snapshot})=>quickWatchProbe.push({action:'publish',workoutId:snapshot.workoutId,quickWorkout:snapshot.quickWorkout,exercises:JSON.parse(JSON.stringify(snapshot.exercises))}),
+    startWatchMeasurement:async({workoutId})=>{quickWatchProbe.push({action:'open',workoutId});return {opened:true}},
+    publishHome:async()=>{},clear:async()=>{},pendingCommands:async()=>({commands:[]}),ackCommand:async()=>{}
+   }}};
+  });
 
   await page.evaluate(()=>{db.set('draft',null);state.session=null;state.workout=null;state.tab='plan';render()});
   await page.waitForSelector('.tp150-quick-entry');
@@ -65,6 +73,11 @@ const base=()=>'http://127.0.0.1:'+server.address().port+'/';
   await floor.locator('[data-tp152-qweight]').fill('20');
   await floor.locator('.tp150-quick-start').click();
   await page.waitForFunction(()=>state.session?.type==='quick'&&state.session.exercises.length===1);
+  await page.waitForFunction(()=>quickWatchProbe.filter(x=>x.action==='open').length===1);
+  const handoff=await page.evaluate(()=>({events:quickWatchProbe,id:window.TrainPilotWearSync.makeSnapshot().workoutId}));
+  assert.deepEqual(handoff.events.map(x=>x.action),['publish','open'],'real Quick picker start publishes the configured workout before opening the watch');
+  assert.ok(handoff.events.every(x=>x.workoutId===handoff.id),'the watch opens the same quick workout');
+  assert.equal(handoff.events[0].quickWorkout,true);assert.equal(handoff.events[0].exercises[0].sets.length,4);assert.equal(handoff.events[0].exercises[0].sets[0].weight,20);
   let session=await page.evaluate(()=>({type:state.session.type,programId:state.session.programId,workout:state.session.workout,count:state.session.exercises.length,id:state.session.exercises[0].id,tab:state.tab,sets:state.session.exercises[0].sets.length,target:state.session.exercises[0].targetReps,weight:state.session.exercises[0].sets[0].weight}));
   assert.deepEqual(session,{type:'quick',programId:null,workout:'quick',count:1,id:'db-floor-press',tab:'plan',sets:4,target:'8',weight:20});
   assert.deepEqual(await page.evaluate(()=>{const e=byId('db-floor-press');return {sets:e.sets,reps:e.reps,weight:e.weight}}),libraryBefore,'Quick Workout configuration must not mutate global exercise defaults');
@@ -96,6 +109,7 @@ const base=()=>'http://127.0.0.1:'+server.address().port+'/';
   await page.waitForFunction(()=>state.session?.exercises?.length===2&&state.session.exercises[state.current]?.id==='plank');
   session=await page.evaluate(()=>({count:state.session.exercises.length,current:state.current,ids:state.session.exercises.map(e=>e.id),plankSets:state.session.exercises[1].sets.length,plankTarget:state.session.exercises[1].targetReps}));
   assert.equal(session.count,2);assert.deepEqual(session.ids,['db-floor-press','plank']);assert.equal(session.plankSets,2);assert.equal(session.plankTarget,'30');
+  await page.evaluate(()=>window.TrainPilotWearSync.syncNow());assert.equal(await page.evaluate(()=>quickWatchProbe.filter(x=>x.action==='open').length),1,'Add exercise must not reopen the watch or start another measurement');
 
   await page.evaluate(()=>{
    for(const e of state.session.exercises)for(const s of e.sets){if(!s.reps)s.reps=e.id==='plank'?'30':'8';s.done=true}
@@ -131,6 +145,6 @@ const base=()=>'http://127.0.0.1:'+server.address().port+'/';
   const audit=await page.evaluate(()=>window.TrainPilotQuickWorkout.audit());
   for(const [lang,missing] of Object.entries(audit))assert.deepEqual(missing,[],lang+' Quick Workout translation keys missing');
 
-  console.log('PASS: TrainPilot 1.5.2 Quick Workout edits inline, adds exercises, reuses set engine, logs to Journal and exposes Library start buttons.');
+  console.log('PASS: Quick Workout real inline start publishes configured data before opening the watch once, adding exercises avoids restart; set engine, Journal and Library controls stay usable.');
  }finally{if(browser)await browser.close();await new Promise(r=>server.close(r))}
 })().catch(e=>{console.error(e);process.exit(1)});

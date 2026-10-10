@@ -9,9 +9,9 @@ Frissítve: **2026. október 10.** A felhasználói verzióleírások négy csal
 | Telefon + Wear OS | Az **1.3** párosított kiadás a mainen, a felhasználó által jóváhagyott [#156](https://github.com/fuloplevente1998/TrainPilot/pull/156) után. |
 | Mini napló és mérési előzmények | Mainen: frissítés, legfeljebb nyolc mentett edzés, három legutóbbi mért edzés, részletek és visszanavigálás. |
 | Egészségadatok | A 20 guggolásos próba helyes átadást igazolt. A források, késői adatok és a teljes naplóadat megőrzésének készülékes tesztje folytatódik. |
-| Telefonról indított órás app | Az **1.3** javítási sorozat része a [#160 tesztágon](https://github.com/fuloplevente1998/TrainPilot/pull/160), még nincs mainen. A felhasználó a megnyílást visszaigazolta; a tényleges háttérmérés és lezárt napló ellenőrzése külön marad. |
+| Telefonról indított órás app | Az **1.3** javítási sorozat része a [#160 tesztágon](https://github.com/fuloplevente1998/TrainPilot/pull/160), még nincs mainen. Programos edzés megnyílása és háttérmérése felhasználó által visszaigazolva. A gyors edzés aktuális választójának indítófüggvényében a hiányzó órás megnyitás bekötve; készülékes próba következik. |
 | Kiadási ellenőrzések | A #160 párosított telefonos/órás CI- és aláírt APK-ellenőrzése sikeres. Ez nem helyettesíti a készülékes elfogadást. |
-| Drive-szinkron | Visszatérő felhasználói jelentés: túl sokáig tart. Nyitott kivizsgálás; nem tekinthető lezártnak. |
+| Drive-szinkron | Az **1.3** #160 tesztágán csak a legfrissebb eszközmentések olvasása, külön korábbi-mentés helyreállítás és javított Telefon/Felhő választás. A felhasználó a működő szinkront visszaigazolta; #161 lezárva. |
 
 Az alkalmazás megnyílása vagy a mérési értesítés önmagában nem igazolja, hogy friss szenzoradat keletkezett. A kijelző kikapcsolása után is ellenőrizni kell a mérés folytatását, majd ugyanannak az edzésnek a mentett telefonos és órás részleteit.
 

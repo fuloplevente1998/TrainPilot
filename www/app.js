@@ -116,7 +116,7 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
 // @endsection startup.js
 
 // @section backup.js
-const TRAINPILOT_VERSION='1.3.0';
+const TRAINPILOT_VERSION='1.3.3';
 var isNative = function isNative(){return !!window.Capacitor?.isNativePlatform?.();};
 var nativeFiles = function nativeFiles(){if(!filesPlugin)filesPlugin=window.Capacitor?.registerPlugin?.('NativeFiles')||window.Capacitor?.Plugins?.NativeFiles;if(!filesPlugin)throw Error('A natív fájlkezelő nem érhető el.');return filesPlugin;};
 var backupStatus = function backupStatus(){const x=db.get('lastExport',null);return x?`Utolsó ellenőrzött mentés: ${x.name} • ${fmtDate(x.date)}`:'Még nincs ellenőrzött fájlmentés.';};
@@ -756,7 +756,7 @@ planScreen=function(){const p=activeProgram();return shell(`<main><div class="he
 showWorkout=function(dayId){const p=activeProgram(),d=programDay(p,dayId);state.workout=dayId;state.tab='plan';render(shell(`<main><div class="hero"><h1>${esc(p.name)} • ${esc(d.name)}</h1><div class="muted">${d.exercises.length} gyakorlat</div></div>${d.exercises.map((id,i)=>exCard(byId(id),i,d.id)).join('')}<button class="btn block" onclick="startWorkout('${d.id}')">Edzés indítása</button></main>`));};
 showExercise=function(dayId,i){const p=activeProgram(),d=programDay(p,dayId),e=byId(d.exercises[i]);state.tab='plan';render(shell(`<main><button class="btn secondary" onclick="showWorkout('${dayId}')">← Vissza</button><br><br><div class="card detail"><h2>${esc(e.hu)}</h2><div class="en">${esc(e.en)}</div><div class="meta">${e.sets} × ${esc(e.reps)} • ${e.weight?e.weight+' '+esc(e.unit):esc(e.unit)}</div><br><span class="badge">${esc(e.target)}</span><span class="badge">${esc(e.equipment)}</span>${motionDemo(e.id)}<p class="note">${esc(e.notes)}</p></div></main>`));};
 
-startWorkout=function(dayId,scheduleId=null,programId=null){if(db.get('draft',null)&&!confirm('Új edzést indítasz? A félbehagyott edzés helyére ez kerül.'))return;const p=programById(programId)||activeProgram(),d=programDay(p,dayId);if(!d){alert('Nincs ilyen programnap.');return;}state.tab='plan';state.workout=d.id;state.current=0;state.session={programId:p.id,programName:p.name,dayId:d.id,workout:d.id,...(scheduleId?{scheduleId}:{}),started:new Date().toISOString(),exercises:d.exercises.map(id=>{const e=byId(id),prev=findLastExercise(id);return {id,hu:e.hu,en:e.en,loadType:e.loadType,repUnit:e.repUnit,sets:Array.from({length:e.sets},(_,i)=>({set:i+1,weight:prev?.loadType===e.loadType?(prev?.sets?.[i]?.weight??e.weight):e.weight,reps:'',done:false}))};})};renderWorkout();};
+startWorkout=function(dayId,scheduleId=null,programId=null){if(db.get('draft',null)&&!confirm('Új edzést indítasz? A félbehagyott edzés helyére ez kerül.'))return;const p=programById(programId)||activeProgram(),d=programDay(p,dayId);if(!d){alert('Nincs ilyen programnap.');return;}state.tab='plan';state.workout=d.id;state.current=0;state.session={programId:p.id,programName:p.name,dayId:d.id,workout:d.id,...(scheduleId?{scheduleId}:{}),started:new Date().toISOString(),exercises:d.exercises.map(id=>{const e=byId(id),prev=findLastExercise(id);return {id,hu:e.hu,en:e.en,loadType:e.loadType,repUnit:e.repUnit,sets:Array.from({length:e.sets},(_,i)=>({set:i+1,weight:prev?.loadType===e.loadType?(prev?.sets?.[i]?.weight??e.weight):e.weight,reps:'',done:false}))};})};renderWorkout();const startedSession=state.session,fromWatch=window.TrainPilotWearSync?.isStartingFromWatch?.()===true;Promise.resolve().then(()=>window.TrainPilotWearSync?.phoneWorkoutStarted?.(startedSession,{fromWatch}));};
 
 const rf12FinishWorkout=finishWorkout;finishWorkout=function(){if(!state.session)return;const scheduleId=state.session.scheduleId;rf12FinishWorkout.apply(this,arguments);if(scheduleId){const s=scheduled(),i=s.findIndex(x=>x.id===scheduleId);if(i>=0){s[i]={...s[i],status:'completed',updatedAt:Date.now()};db.set('scheduled',s);}}};
 renderWorkout=function(){persistDraft();const i=state.current,p=state.session.exercises.map(x=>x.id),e=byId(p[i]),se=state.session.exercises[i],pct=Math.round((i/p.length)*100);render(shell(`<main><div class="hero"><span class="badge">${esc(state.session.programName||'Edzés')} • ${esc(state.session.dayId||state.workout)}</span><h1>${i+1}/${p.length}</h1><div class="muted">${esc(e.hu)}</div><div class="progress"><div style="width:${pct}%"></div></div></div><div class="card detail"><h2>${esc(e.hu)}</h2><div class="en">${esc(e.en)}</div><div class="meta">Cél: ${e.sets} × ${esc(e.reps)}</div>${motionDemo(e.id)}<p class="note">${esc(e.notes)}</p></div><div class="section">Sorozatok</div>${se.sets.map((s,si)=>`<div class="row"><div class="num">${si+1}</div>${e.loadType==='bodyweight'?'<span class="small muted">Testsúly</span>':`<label class="small">${loadLabel(e.loadType)}<input class="field" inputmode="decimal" value="${s.weight}" oninput="upd(${i},${si},'weight',this.value)"></label>`}<label class="small">${e.repUnit}<input class="field" inputmode="numeric" placeholder="${esc(e.reps)}" value="${esc(s.reps)}" oninput="upd(${i},${si},'reps',this.value)"></label><button class="check ${s.done?'done':''}" onclick="toggleSet(${i},${si})">${s.done?'✓':'OK'}</button></div>`).join('')}<br><button class="btn block" onclick="nextExercise()">${i===p.length-1?'Edzés befejezése':'Következő gyakorlat'}</button><br><br><button class="btn secondary block" onclick="prevExercise()" ${i===0?'disabled':''}>Előző</button></main>`));};
@@ -8679,6 +8679,9 @@ window.TrainPilotI18n.workoutAudit=function(){
   'cloud.autoCalendar':['Automatikus edzésnaptár','Automatic workout calendar','Automatischer Trainingskalender','Calendar automat de antrenamente'],
   'cloud.autoHelp':['Az app megnyitásakor és adatváltozás után, internet mellett. Bezárt appban nincs háttérszinkron. A naptárkapcsolat iránya: TrainPilot → Google Naptár.','Runs when the app opens and after data changes while online. There is no background sync while the app is closed. Calendar direction: TrainPilot → Google Calendar.','Läuft beim Öffnen der App und nach Datenänderungen bei Internetverbindung. Bei geschlossener App gibt es keine Hintergrundsynchronisierung. Kalenderrichtung: TrainPilot → Google Kalender.','Rulează la deschiderea aplicației și după modificarea datelor, când există internet. Nu există sincronizare în fundal când aplicația este închisă. Direcția calendarului: TrainPilot → Google Calendar.'],
   'cloud.syncDriveNow':['Drive-szinkron most','Sync Drive now','Drive jetzt synchronisieren','Sincronizează Drive acum'],
+  'cloud.earlierBackups':['Korábbi Drive-mentések','Earlier Drive backups','Frühere Drive-Sicherungen','Copii Drive anterioare'],
+  'cloud.earlierHelp':['Csak akkor ellenőrizd, ha egy régi edzés vagy testsúlyadat hiányzik a legfrissebb mentésből. A normál szinkron ezt nem futtatja.','Check these only if an old workout or weight entry is missing from the latest backup. Normal sync does not run this check.','Nur prüfen, wenn ein altes Training oder Gewicht in der neuesten Sicherung fehlt. Die normale Synchronisierung führt diese Prüfung nicht aus.','Verifică doar dacă o înregistrare veche de antrenament sau greutate lipsește din ultima copie. Sincronizarea normală nu face această verificare.'],
+  'cloud.earlierScan':['Korábbi mentések ellenőrzése','Check earlier backups','Frühere Sicherungen prüfen','Verifică copiile anterioare'],
   'cloud.syncCalendarNow':['Naptárszinkron most','Sync calendar now','Kalender jetzt synchronisieren','Sincronizează calendarul acum'],
   'cloud.connect':['Google-fiók kapcsolása','Connect Google account','Google-Konto verbinden','Conectează contul Google'],
   'cloud.lastDrive':['Utolsó Drive-szinkron: {date}','Last Drive sync: {date}','Letzte Drive-Synchronisierung: {date}','Ultima sincronizare Drive: {date}'],
@@ -8698,6 +8701,7 @@ window.TrainPilotI18n.workoutAudit=function(){
   'cloud.driveFound':['{listed} mentés listázva, {current} aktuális eszközmentés.','{listed} backups listed, {current} latest device backups.','{listed} Sicherungen gelistet, {current} aktuelle Gerätesicherungen.','{listed} copii listate, {current} copii curente ale dispozitivelor.'],
   'cloud.driveUnchanged':['Drive naprakész, nincs új mentés vagy helyi változás.','Drive is up to date; no new backup or local changes.','Drive ist aktuell; keine neue Sicherung oder lokale Änderung.','Drive este actualizat; nu există copie nouă sau modificări locale.'],
   'cloud.driveReading':['Aktuális mentés letöltése: {index}/{total}.','Downloading current backup: {index}/{total}.','Aktuelle Sicherung wird geladen: {index}/{total}.','Se descarcă copia curentă: {index}/{total}.'],
+  'cloud.driveArchiveReading':['Korábbi mentés ellenőrzése: {index}/{total}.','Checking earlier backup: {index}/{total}.','Frühere Sicherung wird geprüft: {index}/{total}.','Se verifică o copie anterioară: {index}/{total}.'],
   'cloud.drivePhotos':['Edzésfotók ellenőrzése…','Checking workout photos…','Trainingsfotos werden geprüft…','Se verifică fotografiile antrenamentelor…'],
   'cloud.driveWriting':['Új mentés feltöltése és visszaellenőrzése…','Uploading and verifying the new backup…','Neue Sicherung wird hochgeladen und geprüft…','Se încarcă și se verifică noua copie…'],
   'cloud.unknownBackup':['Ismeretlen vagy más profilhoz tartozó felhőmentés.','Unknown cloud backup or backup belonging to another profile.','Unbekannte Cloud-Sicherung oder Sicherung eines anderen Profils.','Copie cloud necunoscută sau aparținând altui profil.'],
@@ -8742,8 +8746,9 @@ cloudStatus=function(){
  return '<div id="cloudStatus" class="small muted">'+esc(cloudMessage||'')+(cloudDriveStage?'<p>'+esc(cloudDriveStage)+'</p>':'')+(s.drive?'<p>'+esc(tp149T('cloud.lastDrive',{date:tp149FormatDateTime(s.drive)}))+'</p>':'')+(s.calendar?'<p>'+esc(tp149T('cloud.lastCalendar',{date:tp149FormatDateTime(s.calendar)}))+'</p>':'')+'</div>';
 };
 const tp149CloudPanelBase=cloudPanel;
+const tp149CloudRecoveryControl=()=>'<details><summary>'+esc(tp149T('cloud.earlierBackups'))+'</summary><p class="small muted">'+esc(tp149T('cloud.earlierHelp'))+'</p><button class="btn secondary block" onclick="syncCloud(false,true)">'+esc(tp149T('cloud.earlierScan'))+'</button></details>';
 cloudPanel=function(){
- if(rf212Lang()==='hu')return tp149CloudPanelBase.apply(this,arguments);
+ if(rf212Lang()==='hu'){const html=tp149CloudPanelBase.apply(this,arguments);return cloudProfile?html.replace('<div id="cloudStatus"',tp149CloudRecoveryControl()+'<div id="cloudStatus"'):html;}
  const p=cloudPrefs(),profile=cloudProfile;
  const identity=profile?(esc(profile.name||profile.email)+(profile.name&&profile.email?' • '+esc(profile.email):'')):esc(tp149T('cloud.connectHelp'));
  const controls=profile?
@@ -8752,7 +8757,7 @@ cloudPanel=function(){
   '<label><input type="checkbox" '+(p.calendar?'checked':'')+' onchange="setCloudOption(\'calendar\',this.checked)"> '+esc(tp149T('cloud.autoCalendar'))+'</label>'+
   '<p class="small muted">'+esc(tp149T('cloud.autoHelp'))+'</p>'+
   '<button class="btn block" onclick="syncCloud(false)">'+esc(tp149T('cloud.syncDriveNow'))+'</button><br>'+
-  '<button class="btn secondary block" onclick="syncCalendar(false)">'+esc(tp149T('cloud.syncCalendarNow'))+'</button>':
+  '<button class="btn secondary block" onclick="syncCalendar(false)">'+esc(tp149T('cloud.syncCalendarNow'))+'</button>'+tp149CloudRecoveryControl():
   '<button class="btn block" onclick="connectGoogle()">'+esc(tp149T('cloud.connect'))+'</button>';
  return '<div class="setting"><label>'+esc(tp149T('cloud.title'))+'</label><p class="small muted">'+identity+'</p>'+controls+cloudStatus()+'</div>';
 };
@@ -8786,13 +8791,14 @@ storeMerged=function(d){
  try{const next=tp105PreserveLocalHealth(d);for(const k of keys)if(next[k]!==undefined)localStorage.setItem('repforge:'+k,JSON.stringify(next[k]));}
  catch(e){for(const k of keys)localStorage.removeItem('repforge:'+k);keys.forEach(function(k,i){if(old[i]!=null)localStorage.setItem('repforge:'+k,old[i]);});throw Error(tp149T('cloud.noStorage'));}
 };
-var driveLatestHeads=function driveLatestHeads(latest){return Object.fromEntries([...latest].map(function(entry){return [entry[0],entry[1].id];}));};
+var driveLatestHeads=function driveLatestHeads(latest){return Object.fromEntries([...latest].map(function(entry){return [entry[0],driveSnapshotHead(entry[1])];}));};
+var driveSnapshotHead=function driveSnapshotHead(file){return file.id+(/^\d+$/.test(String(file.version||''))?'@'+file.version:'');};
 var driveHeadsUnchanged=function driveHeadsUnchanged(current,previous){
  if(!previous||!current||typeof previous!=='object')return false;
  const keys=Object.keys(current),old=Object.keys(previous);
  return keys.length===old.length&&keys.every(function(k){return Object.hasOwn(previous,k)&&previous[k]===current[k];});
 };
-var driveHasPendingPhotos=function driveHasPendingPhotos(rows){return rows.some(function(h){return (h.photos||[]).some(function(p){return p?.id&&(p.deletedAt||!p.driveFileId);});});};
+var driveHasPendingPhotos=function driveHasPendingPhotos(rows){return rows.some(function(h){return (h.photos||[]).some(function(p){return p?.id&&(p.deletedAt?!!p.driveFileId:!p.driveFileId);});});};
 
 syncCloud=async function(silent=false){
  if(cloudBusy||window.TrainPilotBackupBusy||!cloudProfile)return;
@@ -8834,7 +8840,7 @@ syncCloud=async function(silent=false){
    stage('cloud.driveWriting');
    const r=await bridge.driveWrite({silent:silent,data:JSON.stringify({app:'RepForgeSync',schema:1,owner:owner,device:device,data:merged})});
    if(!r.verified)throw Error(tp149T('cloud.verifyFailed'));
-   if(r.id)heads[device]=r.id;
+   if(r.id)heads[device]=driveSnapshotHead(r);
   }
   await waitForCloudBackup();
   if(state.session||canonicalSyncData(syncData())!==startState)throw Error(tp149T('cloud.changedLocal'));
@@ -9932,6 +9938,7 @@ var tp150QuickConfirmReplace=async function tp150QuickConfirmReplace(){
  return await tp2628Confirm(tp150qwT('replaceDraft'),{title:tp150qwT('replaceTitle'),confirmText:tp150qwT('replaceConfirm'),danger:true});
 };
 var tp150StartQuickWorkout=async function tp150StartQuickWorkout(id){
+ const fromWatch=window.TrainPilotWearSync?.isStartingFromWatch?.()===true;
  const e=byId(id);if(!e)return;
  if(state.session){
   if(tp150IsQuick())return tp150AddQuickExercise(id);
@@ -9943,6 +9950,7 @@ var tp150StartQuickWorkout=async function tp150StartQuickWorkout(id){
  state.tab='plan';state.workout='quick';state.current=0;
  state.session={type:'quick',quickWorkout:true,programId:null,programName:tp150qwT('title'),dayId:null,workout:'quick',started:new Date().toISOString(),exercises:[first]};
  persistDraft();renderWorkout();window.scrollTo?.(0,0);
+ window.TrainPilotWearSync?.phoneWorkoutStarted?.(state.session,{fromWatch});
 };
 var tp150AddQuickExercise=function tp150AddQuickExercise(id){
  if(!tp150IsQuick())return tp150StartQuickWorkout(id);
@@ -10284,9 +10292,11 @@ var tp151QuickConfig=function(id){
 };
 var tp151BuildQuick=function(id){const e=byId(id),b=tp150QuickExercise(id);if(!e||!b)return null;const n=Math.max(1,Math.min(10,Number(document.getElementById('tp151QuickSets')?.value)||b.sets.length||3)),target=String(document.getElementById('tp151QuickTarget')?.value||e.reps||'').trim().slice(0,40),raw=document.getElementById('tp151QuickWeight')?.value,w=e.loadType==='bodyweight'?0:Math.max(0,Number(String(raw??b.sets?.[0]?.weight??0).replace(',','.'))||0);b.targetReps=target;b.plannedWeight=w;b.sets=Array.from({length:n},(_,i)=>({set:i+1,weight:w,reps:'',done:false}));return b};
 var tp151SaveQuick=async function(id){
+ const fromWatch=window.TrainPilotWearSync?.isStartingFromWatch?.()===true;
  const item=tp151BuildQuick(id);if(!item)return;
  if(typeof tp150IsQuick==='function'&&tp150IsQuick()){const i=state.session.exercises.findIndex(x=>x.id===id);if(i>=0){state.session.exercises[i]=item;state.current=i}else{state.session.exercises.push(item);state.current=state.session.exercises.length-1}persistDraft();renderWorkout();window.scrollTo?.(0,0);return}
  if(!(await tp150QuickConfirmReplace()))return;db.set('draft',null);stopTimer();state.tab='plan';state.workout='quick';state.current=0;state.session={type:'quick',quickWorkout:true,programId:null,programName:tp150qwT('title'),dayId:null,workout:'quick',started:new Date().toISOString(),exercises:[item]};persistDraft();renderWorkout();window.scrollTo?.(0,0);
+ window.TrainPilotWearSync?.phoneWorkoutStarted?.(state.session,{fromWatch});
 };
 tp150QuickAction=function(id){if(typeof tp150IsQuick==='function'&&tp150IsQuick()){const i=state.session.exercises.findIndex(x=>x.id===id);if(i>=0){state.current=i;renderWorkout();window.scrollTo?.(0,0);return}}return tp151QuickConfig(id)};
 tp150StartQuickWorkout=function(id){return tp151QuickConfig(id)};
@@ -10513,6 +10523,7 @@ var tp152QuickFields=function(e){
  return '<div class="tp152-edit-grid"><label>'+esc(tp152T('sets'))+'<select class="field" data-tp152-qsets="'+esc(e.id)+'">'+Array.from({length:10},function(_,i){const n=i+1;return '<option value="'+n+'" '+(n===d.sets?'selected':'')+'>'+n+'</option>'}).join('')+'</select></label><label>'+esc(tp152T('reps'))+'<input class="field" data-tp152-qtarget="'+esc(e.id)+'" value="'+esc(d.target)+'"></label>'+weight+'</div>';
 };
 var tp152StartQuickInline=async function(id){
+ const fromWatch=window.TrainPilotWearSync?.isStartingFromWatch?.()===true;
  const e=byId(id),base=tp150QuickExercise(id);if(!e||!base)return;const root=document.querySelector('[data-exercise-id="'+CSS.escape(id)+'"]');
  const n=Math.max(1,Math.min(10,Number(root?.querySelector('[data-tp152-qsets]')?.value)||base.sets.length||3));
  const target=String(root?.querySelector('[data-tp152-qtarget]')?.value||e.reps||'').trim().slice(0,40);
@@ -10520,6 +10531,7 @@ var tp152StartQuickInline=async function(id){
  base.targetReps=target;base.plannedWeight=w;base.sets=Array.from({length:n},function(_,i){return {set:i+1,weight:w,reps:'',done:false}});
  if(tp150IsQuick()){const existing=state.session.exercises.findIndex(function(x){return x.id===id});if(existing>=0)state.session.exercises[existing]=base;else state.session.exercises.push(base);state.current=existing>=0?existing:state.session.exercises.length-1;persistDraft();renderWorkout();window.scrollTo?.(0,0);return}
  if(!(await tp150QuickConfirmReplace()))return;db.set('draft',null);stopTimer();state.tab='plan';state.workout='quick';state.current=0;state.session={type:'quick',quickWorkout:true,programId:null,programName:tp150qwT('title'),dayId:null,workout:'quick',started:new Date().toISOString(),exercises:[base]};persistDraft();renderWorkout();window.scrollTo?.(0,0);
+ window.TrainPilotWearSync?.phoneWorkoutStarted?.(state.session,{fromWatch});
 };
 tp150QuickResults=function(q=''){
  const needle=String(q||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(),list=exercises().filter(function(e){return !needle||tp150QuickFilterText(e).includes(needle)});
@@ -16469,6 +16481,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  'use strict';
  let lastPayload=null,lastHomePayload=null,cleared=false,busy=false,homeBusy=false,commandBusy=false;
  let homeRefreshPending=false;
+ let pendingWatchStart=null,lastWatchStartId='',watchStartDepth=0;
 
  function api(){
   try{
@@ -16746,23 +16759,46 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(homeRefreshPending){homeRefreshPending=false;setTimeout(()=>syncHomeNow({force:true}),0);}
   }
  }
+ function phoneWorkoutStarted(session,{fromWatch=false}={}){
+  const bridge=api(),id=sessionKey(session);
+  if(fromWatch||!bridge?.startWatchMeasurement||!id||id===lastWatchStartId||session!==state?.session)return;
+  lastWatchStartId=id;pendingWatchStart={id,createdAt:Date.now()};
+  void syncNow();
+ }
+ function watchStartFailed(){
+  const messages={hu:'Az órás mérés indítása nem sikerült. Nyisd meg a TrainPilotot az órán.',en:'Watch measurement could not start. Open TrainPilot on your watch.',de:'Die Uhrenmessung konnte nicht starten. Öffne TrainPilot auf der Uhr.',ro:'Măsurarea pe ceas nu a pornit. Deschide TrainPilot pe ceas.',sk:'Meranie na hodinkách sa nespustilo. Otvor TrainPilot na hodinkách.',pl:'Pomiar na zegarku nie rozpoczął się. Otwórz TrainPilot na zegarku.'};
+  if(typeof tp153Toast==='function')tp153Toast(messages[language()]||messages.en,5000);
+ }
  async function syncNow(){
   if(busy)return;
   const bridge=api();if(!bridge)return;
   const value=snapshot(),payload=value?JSON.stringify(value):null;
-  if(payload===lastPayload&&(value||cleared))return;
+  if(pendingWatchStart && (pendingWatchStart.id!==value?.workoutId || document.hidden || Date.now()-pendingWatchStart.createdAt>15000)){
+   const expired=pendingWatchStart.id===value?.workoutId&&!document.hidden;
+   pendingWatchStart=null;if(expired)watchStartFailed();
+  }
+  const requestedId=pendingWatchStart?.id;
+  if(payload===lastPayload&&(value||cleared)&&!requestedId)return;
   busy=true;
   try{
    if(value){
     await bridge.publish({snapshot:value});
     lastPayload=payload;cleared=false;
+    if(pendingWatchStart?.id===value.workoutId && sessionKey(state?.session)===value.workoutId && !document.hidden && Date.now()-pendingWatchStart.createdAt<=15000){
+     pendingWatchStart=null;
+     try{await bridge.startWatchMeasurement({workoutId:value.workoutId});}catch(_){watchStartFailed();}
+    }
    }else if(!cleared){
     await bridge.clear();
     lastPayload=null;cleared=true;
    }
   }catch(_){
    // A missing/disconnected watch never changes phone workout behavior.
-  }finally{busy=false}
+  }finally{
+   busy=false;
+   // Retain a new explicit start that arrived during an earlier snapshot publish.
+   if(pendingWatchStart && pendingWatchStart.id!==requestedId)setTimeout(syncNow,0);
+  }
  }
  function locateExercise(command){
   const session=state?.session;if(!session)return null;
@@ -16929,7 +16965,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
    // Reuse the canonical phone Quick Workout rather than fabricating a program.
    const start=window.TrainPilotQuickWorkout?.start;
    if(typeof start!=='function')return false;
-   await start(id);
+   watchStartDepth++;
+   try{await start(id);}finally{watchStartDepth--;}
    if(!state.session||!tp150IsQuick(state.session))return false;
    state.session.syncId=expected;
    state.session.started=new Date(Date.parse(command.started||expected)).toISOString();
@@ -16943,8 +16980,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
    try{if(typeof db!=='undefined'&&db?.get&&db.get('draft',null))return false}catch(_){}
    const dayId=String(command.dayId||''),programId=String(command.programId||''),scheduleId=String(command.scheduleId||'');
    if(!dayId||typeof startWorkout!=='function')return false;
-   const result=startWorkout(dayId,scheduleId||null,programId||null);
-   if(result&&typeof result.then==='function')await result;
+   watchStartDepth++;
+   try{const result=startWorkout(dayId,scheduleId||null,programId||null);if(result&&typeof result.then==='function')await result;}finally{watchStartDepth--;}
    if(!state.session)return false;
    state.session.syncId=expected;
    if(command.started){
@@ -17036,10 +17073,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }finally{commandBusy=false}
  }
  if(typeof window!=='undefined'){
-  window.TrainPilotWearSync={syncNow,syncHomeNow,drainCommands,makeSnapshot:snapshot,makeHomeSnapshot:homeSnapshot,isApplyingCommand:()=>commandBusy};
+  window.TrainPilotWearSync={syncNow,syncHomeNow,drainCommands,phoneWorkoutStarted,makeSnapshot:snapshot,makeHomeSnapshot:homeSnapshot,isApplyingCommand:()=>commandBusy,isStartingFromWatch:()=>watchStartDepth>0};
   window.addEventListener?.('focus',()=>{drainCommands();syncNow();syncHomeNow({force:true});});
  }
- if(typeof document!=='undefined')document.addEventListener?.('visibilitychange',()=>{if(!document.hidden){drainCommands();syncNow();syncHomeNow({force:true});}});
+ if(typeof document!=='undefined')document.addEventListener?.('visibilitychange',()=>{if(document.hidden)pendingWatchStart=null;else{drainCommands();syncNow();syncHomeNow({force:true});}});
  if(typeof setInterval==='function'){
   setInterval(syncNow,1500);
   setInterval(syncHomeNow,3000);
