@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -54,6 +55,8 @@ internal fun TrainPilotWearApp(
     closure: State<WearClosure?>,
     restRemaining: State<Int>,
     onStart: (WatchHomeDay, String) -> Unit,
+    onStartQuick: (WatchHomeExercise) -> Unit,
+    onAddQuick: (WatchHomeExercise) -> Unit,
     onChange: (String, Double) -> Unit,
     onComplete: () -> Unit,
     onPrevious: () -> Unit,
@@ -66,6 +69,7 @@ internal fun TrainPilotWearApp(
     onRetry: () -> Unit,
     onDismissClosure: () -> Unit,
     onOpenPhone: () -> Unit,
+    onRefreshJournal: () -> Unit,
     health: State<JSONObject?>,
     measuring: State<Boolean>,
     gpsEnabled: State<Boolean>,
@@ -76,19 +80,67 @@ internal fun TrainPilotWearApp(
     onToggleGps: () -> Unit
 ) {
     var route by rememberSaveable { mutableStateOf("home") }
+    LaunchedEffect(route) {
+        if (route == "journal" || route == "metrics") onRefreshJournal()
+    }
     LaunchedEffect(requestedRoute.value) {
         requestedRoute.value?.let { route=it;onRouteConsumed() }
     }
     var editorField by rememberSaveable { mutableStateOf("reps") }
+    var miniJournalId by rememberSaveable { mutableStateOf("") }
+    var miniJournalBackRoute by rememberSaveable { mutableStateOf("journal") }
+    var journalBackRoute by rememberSaveable { mutableStateOf("menu") }
+    var returnWorkoutPage by rememberSaveable { mutableStateOf(0) }
+    fun openMeasurement(item: MiniJournalWorkout, origin: String) {
+        miniJournalId = item.workoutId
+        miniJournalBackRoute = origin
+        if (origin == "workout") returnWorkoutPage = 2
+        route = "journal-detail"
+    }
+    fun openJournal(origin: String) {
+        journalBackRoute = origin
+        if (origin == "workout") returnWorkoutPage = 2
+        route = "journal"
+    }
     BackHandler(enabled = route != "home") {
-        route = when (route) { "editor", "timer", "finish" -> "workout"; "discard" -> "home"; else -> "home" }
+        route = when (route) {
+            "editor", "timer", "finish" -> "workout"
+            "journal-detail" -> miniJournalBackRoute
+            "journal" -> journalBackRoute
+            "discard" -> "home"
+            else -> "home"
+        }
     }
     MaterialTheme {
         Box(Modifier.fillMaxSize().background(Black)) {
             val active = workout.value
             when {
-                route == "metrics" -> HealthScreen(health.value,measuring.value,gpsEnabled.value,onEnableHealth,onDisableHealth,onToggleGps) { route="menu" }
-                route == "menu" -> MainMenuScreen(active != null, onOpenPhone) { route = it }
+                route == "metrics" -> HealthScreen(health.value,measuring.value,gpsEnabled.value,onEnableHealth,onDisableHealth,onToggleGps,
+                    home.value, onRefreshJournal, onOpenJournal = { openJournal("metrics") },
+                    onSelectMeasurement = { openMeasurement(it, "metrics") }, onBack = { route="menu" })
+                route == "menu" -> MainMenuScreen(active != null, active?.quickWorkout == true, onOpenPhone) {
+                    if (it == "journal") openJournal("menu") else route = it
+                }
+                route == "journal" -> MiniJournalScreen(home.value,
+                    onRefresh = onRefreshJournal, onOpenPhone = onOpenPhone,
+                    backLabel = if (journalBackRoute == "menu") "‹ Főmenü" else "‹ Mérések",
+                    onBack = { route = journalBackRoute }) { selected ->
+                    miniJournalId = selected.workoutId
+                    miniJournalBackRoute = "journal"
+                    route = "journal-detail"
+                }
+                route == "journal-detail" -> MiniJournalDetailScreen(
+                    home.value?.recentWorkouts?.firstOrNull { it.workoutId == miniJournalId },
+                    backLabel = if (miniJournalBackRoute == "journal") "‹ Napló" else "‹ Mérések",
+                    onBack = { route = miniJournalBackRoute })
+                route == "quick" -> QuickWorkoutPicker(
+                    home.value, active, active == null && home.value?.hasDraft == false &&
+                        closure.value?.status !in listOf("pending", "error"),
+                    onBack = { route = "menu" }) { exercise ->
+                    if (active?.quickWorkout == true) onAddQuick(exercise)
+                    else if (active == null) onStartQuick(exercise)
+                    if (workout.value?.quickWorkout == true) route = "workout"
+                }
                 route == "calendar" -> CalendarScreen(home.value, active == null && home.value?.hasDraft == false && closure.value?.status !in listOf("pending", "error"),
                     onBack = { route = "menu" }) { entry ->
                     entry.day?.let { onStart(it, entry.scheduleId); if (workout.value != null) route = "workout" }
@@ -111,6 +163,10 @@ internal fun TrainPilotWearApp(
                 route == "workout" && active != null -> WorkoutPager(
                     active, restRemaining.value, health.value, measuring.value, gpsEnabled.value, onEnableHealth, onDisableHealth, onToggleGps, onChange, onComplete, onPrevious, onNext,
                     onSelectExercise, onSkipRest,
+                    home = home.value, onRefreshJournal = onRefreshJournal,
+                    onOpenJournal = { openJournal("workout") },
+                    onSelectMeasurement = { openMeasurement(it, "workout") },
+                    initialPage = returnWorkoutPage, onReturnPageConsumed = { returnWorkoutPage = 0 },
                     onEdit = { editorField = it; route = "editor" },
                     onTimerTools = { route = "timer" },
                     onFinish = { route = "finish" }, onHome = { route = "home" }
@@ -262,14 +318,219 @@ private fun RoundList(content: @Composable ColumnScope.() -> Unit) {
 }
 
 @Composable
-private fun MainMenuScreen(hasWorkout: Boolean, onOpenPhone: () -> Unit, onRoute: (String) -> Unit) {
+private fun MainMenuScreen(hasWorkout: Boolean, quickWorkout: Boolean, onOpenPhone: () -> Unit, onRoute: (String) -> Unit) {
     RoundList {
         Label("TRAINPILOT", Gold); Title("Főmenü", 22); Spacer(Modifier.height(8.dp))
-        for ((label, destination) in listOf("Kezdőlap" to "home", "Naptár" to "calendar", "Programnapok" to "days", "Órás mérések" to "metrics")) {
+        for ((label, destination) in listOf("Kezdőlap" to "home", "Mini napló" to "journal", "Naptár" to "calendar", "Programnapok" to "days", "Órás mérések" to "metrics")) {
             Pill(label, tone = Card) { onRoute(destination) }; Spacer(Modifier.height(6.dp))
+        }
+        if (!hasWorkout || quickWorkout) {
+            Pill(if (quickWorkout) "+ Gyakorlat" else "Gyors edzés", tone = Gold) { onRoute("quick") }
+            Spacer(Modifier.height(6.dp))
         }
         if (hasWorkout) { Pill("Edzés folytatása") { onRoute("workout") }; Spacer(Modifier.height(6.dp)); Pill("Edzés törlése", tone = Danger) { onRoute("discard") }; Spacer(Modifier.height(6.dp)) }
         Pill("Megnyitás telefonon", tone = Card, onClick = onOpenPhone)
+    }
+}
+
+
+
+private fun miniJournalDate(value: String): String = try {
+    DateTimeFormatter.ofPattern("MM. dd. HH:mm").withZone(ZoneId.systemDefault())
+        .format(Instant.parse(value))
+} catch (_: Exception) { "—" }
+
+private fun miniNumber(value: Double?, decimals: Int = 0): String? {
+    if (value == null || !value.isFinite()) return null
+    return if (decimals == 0) kotlin.math.round(value).toInt().toString()
+        else String.format(java.util.Locale.forLanguageTag("hu-HU"), "%.${decimals}f", value)
+}
+
+@Composable
+private fun MiniJournalScreen(home: WatchHomeSnapshot?, onRefresh: () -> Unit,
+                              onOpenPhone: () -> Unit, backLabel: String, onBack: () -> Unit,
+                              onSelect: (MiniJournalWorkout) -> Unit) {
+    val items = home?.recentWorkouts.orEmpty()
+    RoundList {
+        Label("TRAINPILOT", Gold)
+        Title("Mini napló", 21)
+        Spacer(Modifier.height(8.dp))
+        Label("Mentett telefonos edzések · offline másolat", size = 10)
+        Spacer(Modifier.height(8.dp))
+        if (items.isEmpty()) {
+            val message = when {
+                home == null -> "Várakozás a telefonos napló szinkronizálására."
+                !home.journalAvailable -> "A telefon legutóbbi adatcsomagja még nem tartalmaz Mini naplót. Frissítsd és nyisd meg a telefonos TrainPilotot."
+                else -> "A telefonos naplóban még nincs átadható, befejezett edzés."
+            }
+            Text(message,
+                color = Muted, fontSize = 12.sp, textAlign = TextAlign.Center)
+        }
+        if (home?.phoneVersion?.isNotBlank() == true) {
+            Label("Telefon: ${home.phoneVersion}", size = 10)
+            Spacer(Modifier.height(5.dp))
+        }
+        items.forEach { item ->
+            Pill("${miniJournalDate(item.started)} • ${item.dayName}", tone = Card, size = 12,
+                height = 47) { onSelect(item) }
+            Spacer(Modifier.height(7.dp))
+        }
+        Spacer(Modifier.height(5.dp))
+        Pill("Frissítés", tone = Secondary, onClick = onRefresh)
+        Spacer(Modifier.height(5.dp))
+        Pill("Telefon megnyitása", tone = Secondary, onClick = onOpenPhone)
+        Spacer(Modifier.height(5.dp))
+        Pill(backLabel, tone = Secondary, onClick = onBack)
+    }
+}
+
+@Composable
+private fun MiniJournalMetrics(title: String, metrics: MiniJournalMetric, watch: Boolean) {
+    Label(title, Gold, 12)
+    val avg = miniNumber(metrics.averageHeartRate, 1)
+    val max = miniNumber(metrics.maxHeartRate)
+    if (avg != null || max != null) {
+        Text("Pulzus: ${avg ?: "—"} / ${max ?: "—"} bpm", color = White,
+            fontSize = 12.sp, textAlign = TextAlign.Center)
+    }
+    if (watch) {
+        miniNumber(metrics.totalCalories)?.let { value ->
+            Text("Összes mért energia: $value kcal", color = White, fontSize = 12.sp,
+                textAlign = TextAlign.Center)
+        }
+        miniNumber(metrics.activeDurationSeconds)?.let { value ->
+            Label("Órás mérési idő: $value s", size = 11)
+        }
+    } else {
+        miniNumber(metrics.workoutCalories)?.let { value ->
+            Text("Edzéskalória: $value kcal", color = White, fontSize = 12.sp,
+                textAlign = TextAlign.Center)
+        }
+        miniNumber(metrics.totalCalories)?.let { value ->
+            Label("Ablak összenergiája: $value kcal", size = 11)
+        }
+        miniNumber(metrics.activeCalories)?.let { value ->
+            Label("Aktív energia: $value kcal", size = 11)
+        }
+        miniNumber(metrics.exerciseMinutes)?.let { value ->
+            Label("Egészségapp edzésideje: $value perc", size = 11)
+        }
+    }
+    miniNumber(metrics.steps)?.let { Label("Lépések: $it", size = 11) }
+    if (metrics.partial) Label("Részleges órás mérés", Gold, 10)
+}
+
+@Composable
+private fun MiniJournalDetailScreen(item: MiniJournalWorkout?, backLabel: String, onBack: () -> Unit) {
+    RoundList {
+        Label("TRAINPILOT", Gold)
+        Title("Edzésnapló", 20)
+        Spacer(Modifier.height(7.dp))
+        if (item == null) {
+            Text("Ez az edzés már nincs a szinkronizált listában.", color = Muted,
+                fontSize = 12.sp, textAlign = TextAlign.Center)
+        } else {
+            Title(item.dayName, 16)
+            Label(miniJournalDate(item.started), size = 11)
+            Label("${item.durationSeconds / 60} perc · ${item.exercises.size} gyakorlat", size = 11)
+            Spacer(Modifier.height(10.dp))
+            if (item.wear != null) {
+                MiniJournalMetrics("TrainPilot óra · Health Services", item.wear, true)
+                Spacer(Modifier.height(7.dp))
+            } else Label("Nem érkezett órás mérési összesítés", size = 11)
+            if (item.healthConnect != null) {
+                MiniJournalMetrics(
+                    if (item.healthConnect.source == "samsung_health") "Samsung Health"
+                    else "Health Connect", item.healthConnect, false)
+                Spacer(Modifier.height(5.dp))
+                Label("A két mérés nem adódik össze", size = 10)
+            }
+            Spacer(Modifier.height(7.dp))
+            Label("Elvégzett gyakorlatok", Gold, 12)
+            if (item.exercises.isEmpty()) {
+                Label("Nincs rögzített sorozat", size = 11)
+            }
+            item.exercises.forEach { exercise ->
+                Spacer(Modifier.height(6.dp))
+                Text(exercise.name, color = White, fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+                exercise.sets.forEach { set ->
+                    val details = buildList {
+                        if (set.reps.isNotBlank()) add("${set.reps} ism.")
+                        if (set.weight != null && set.weight > 0.0) add("${miniNumber(set.weight, 1)} kg")
+                        if (set.leftSeconds != null && set.rightSeconds != null &&
+                            set.leftSeconds > 0.0 && set.rightSeconds > 0.0)
+                            add("${miniNumber(set.leftSeconds)} / ${miniNumber(set.rightSeconds)} s")
+                        if (set.distanceMeters != null && set.distanceMeters > 0.0)
+                            add("${miniNumber(set.distanceMeters)} m")
+                    }
+                    Label("${set.number}. sorozat • ${details.joinToString(" · ").ifBlank { "Kész" }}",
+                        size = 11)
+                }
+            }
+        }
+        Spacer(Modifier.height(9.dp))
+        Pill(backLabel, tone = Secondary, onClick = onBack)
+    }
+}
+
+@Composable
+private fun QuickWorkoutPicker(home: WatchHomeSnapshot?, active: WearWorkout?, canStart: Boolean,
+                               onBack: () -> Unit, onSelect: (WatchHomeExercise) -> Unit) {
+    var query by rememberSaveable { mutableStateOf("") }
+    var page by rememberSaveable { mutableIntStateOf(0) }
+    val adding = active?.quickWorkout == true
+    val catalog = home?.quickExercises.orEmpty()
+    val matches = remember(catalog, query, active?.exercises) {
+        val needle = query.trim()
+        catalog.filter { item ->
+            (needle.isBlank() || item.name.contains(needle, ignoreCase = true) ||
+                item.id.contains(needle, ignoreCase = true)) &&
+                (!adding || active?.exercises?.none { it.id == item.id } == true)
+        }
+    }
+    val pageCount = ((matches.size + 11) / 12).coerceAtLeast(1)
+    val selectedPage = page.coerceIn(0, pageCount - 1)
+    RoundList {
+        Label("TRAINPILOT", Gold)
+        Title(if (adding) "+ Gyakorlat" else "Gyors edzés", 20)
+        Spacer(Modifier.height(8.dp))
+        if (active != null && !adding) {
+            Text("Előbb zárd le a jelenlegi edzést.", color = Muted, fontSize = 12.sp, textAlign = TextAlign.Center)
+        } else if (!adding && !canStart) {
+            Text("A telefonos edzésvázlat vagy a függő szinkron lezárása után indítható.",
+                color = Muted, fontSize = 12.sp, textAlign = TextAlign.Center)
+        } else if (catalog.isEmpty()) {
+            Text("A gyakorlatok szinkronizálásához nyisd meg a TrainPilotot a telefonon.",
+                color = Muted, fontSize = 12.sp, textAlign = TextAlign.Center)
+        } else {
+            BasicTextField(
+                value = query, onValueChange = { query = it.take(60); page = 0 },
+                singleLine = true,
+                textStyle = androidx.compose.ui.text.TextStyle(color = White, fontSize = 13.sp),
+                modifier = Modifier.fillMaxWidth().background(Secondary, RoundedCornerShape(14.dp)).padding(10.dp),
+                decorationBox = { content ->
+                    Box {
+                        if (query.isEmpty()) Text("Gyakorlat keresése…", color = Muted, fontSize = 13.sp)
+                        content()
+                    }
+                }
+            )
+            Spacer(Modifier.height(8.dp))
+            if (matches.isEmpty()) Text("Nincs további választható gyakorlat.", color = Muted,
+                fontSize = 12.sp, textAlign = TextAlign.Center)
+            matches.drop(selectedPage * 12).take(12).forEach { exercise ->
+                Pill(exercise.name, tone = Card, height = 48, size = 12) { onSelect(exercise) }
+                Spacer(Modifier.height(5.dp))
+            }
+            if (pageCount > 1) {
+                Label("${selectedPage + 1} / $pageCount")
+                if (selectedPage > 0) Pill("‹ Előző", tone = Secondary) { page = selectedPage - 1 }
+                if (selectedPage + 1 < pageCount) Pill("További gyakorlatok ›", tone = Secondary) { page = selectedPage + 1 }
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Pill("‹ Vissza", tone = Secondary, onClick = onBack)
     }
 }
 
@@ -400,7 +661,9 @@ private fun CalendarDayScreen(date: LocalDate, entries: List<WatchCalendarEntry>
 
 @Composable
 private fun HealthScreen(data: JSONObject?, enabled: Boolean, gps: Boolean,
-                         onEnable: () -> Unit, onDisable: () -> Unit, onGps: () -> Unit, onBack: () -> Unit) {
+                         onEnable: () -> Unit, onDisable: () -> Unit, onGps: () -> Unit,
+                         home: WatchHomeSnapshot?, onRefresh: () -> Unit, onOpenJournal: () -> Unit,
+                         onSelectMeasurement: (MiniJournalWorkout) -> Unit, onBack: () -> Unit) {
     fun value(key: String, unit: String, divisor: Double=1.0): String {
         val number=data?.takeIf { it.has(key) && !it.isNull(key) }?.optDouble(key)
         return if(number==null || !number.isFinite()) "—" else "${trimWearNumber(number/divisor)} $unit"
@@ -425,6 +688,37 @@ private fun HealthScreen(data: JSONObject?, enabled: Boolean, gps: Boolean,
         Pill(if(enabled)"Mérés kikapcsolása" else "Mérések engedélyezése",tone=if(enabled)Secondary else Gold,onClick=if(enabled)onDisable else onEnable)
         Spacer(Modifier.height(6.dp));Pill(if(gps)"GPS kikapcsolása" else "GPS engedélyezése",tone=Card,onClick=onGps)
         Text("GPS csak mozgásos edzésnél használható, a következő mérés indításától. Az óra az engedélyezett edzésmérést a háttérben is folytatja.",color=Muted,fontSize=10.sp,textAlign=TextAlign.Center)
+        Spacer(Modifier.height(14.dp))
+        Label("Korábbi órás mérések", Gold, 13)
+        Label("Mentett edzések · TrainPilot óra", size = 10)
+        val previous = WatchMiniJournal.measurementHistory(home?.recentWorkouts.orEmpty()).take(3)
+        if (previous.isEmpty()) {
+            Text(if (home?.journalAvailable == true)
+                "A szinkronizált edzések között még nincs órás mérési összesítés."
+                else "Az előzményekhez nyisd meg a telefonos TrainPilotot, majd frissíts.",
+                color = Muted, fontSize = 11.sp, textAlign = TextAlign.Center)
+        }
+        previous.forEach { item ->
+            Spacer(Modifier.height(8.dp))
+            Column(Modifier.fillMaxWidth().background(Card, RoundedCornerShape(18.dp))
+                .clickable(role = Role.Button) { onSelectMeasurement(item) }.padding(10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(item.dayName, color = White, fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+                Label(miniJournalDate(item.started), size = 10)
+                val duration = if (item.durationSeconds < 60) "${item.durationSeconds} s"
+                    else "${item.durationSeconds / 60} perc"
+                Label("$duration · ${item.exercises.size} gyakorlat", size = 10)
+                item.exercises.take(2).forEach { Label(it.name, size = 10) }
+                val metrics = item.wear!!
+                miniNumber(metrics.totalCalories)?.let { Label("Összes mért energia: $it kcal", Gold, 11) }
+                miniNumber(metrics.averageHeartRate, 1)?.let { Label("Átlagpulzus: $it bpm", size = 11) }
+                if (metrics.partial) Label("Részleges mérés", Gold, 10)
+                Label("Edzés részletei ›", size = 10)
+            }
+        }
+        Spacer(Modifier.height(8.dp));Pill("Mini napló megnyitása",tone=Card,onClick=onOpenJournal)
+        Spacer(Modifier.height(6.dp));Pill("Előzmények frissítése",tone=Secondary,onClick=onRefresh)
         Spacer(Modifier.height(8.dp));Pill("‹ Vissza",tone=Secondary,onClick=onBack)
     }
 }
@@ -460,8 +754,13 @@ private fun WorkoutPager(workout: WearWorkout, restRemaining: Int,
                          onChange: (String, Double) -> Unit, onComplete: () -> Unit,
                          onPrevious: () -> Unit, onNext: () -> Unit, onSelect: (Int) -> Unit,
                          onSkipRest: () -> Unit, onEdit: (String) -> Unit, onTimerTools: () -> Unit,
+                         home: WatchHomeSnapshot?, onRefreshJournal: () -> Unit, onOpenJournal: () -> Unit,
+                         onSelectMeasurement: (MiniJournalWorkout) -> Unit,
+                         initialPage: Int, onReturnPageConsumed: () -> Unit,
                          onFinish: () -> Unit, onHome: () -> Unit) {
-    val pager = rememberPagerState(pageCount = { 3 })
+    val pager = rememberPagerState(initialPage = initialPage, pageCount = { 3 })
+    LaunchedEffect(Unit) { onReturnPageConsumed() }
+    LaunchedEffect(pager.currentPage) { if (pager.currentPage == 2) onRefreshJournal() }
     val scope = rememberCoroutineScope()
     Box(Modifier.fillMaxSize()) {
         HorizontalPager(state = pager, modifier = Modifier.fillMaxSize()) { page ->
@@ -475,7 +774,8 @@ private fun WorkoutPager(workout: WearWorkout, restRemaining: Int,
                     else CurrentSetScreen(workout, restRemaining, onEdit, onComplete, onPrevious, onNext,
                         onSkipRest, onFinish, onMenu)
                 }
-            } else if(page==2)HealthScreen(health,measuring,gps,onEnable,onDisable,onGps) { scope.launch { pager.animateScrollToPage(0) } }
+            } else if(page==2)HealthScreen(health,measuring,gps,onEnable,onDisable,onGps,
+                home,onRefreshJournal,onOpenJournal,onSelectMeasurement) { scope.launch { pager.animateScrollToPage(0) } }
             else WorkoutMenu(workout,
                 { onPrevious(); scope.launch { pager.animateScrollToPage(0) } },
                 { onNext(); scope.launch { pager.animateScrollToPage(0) } },

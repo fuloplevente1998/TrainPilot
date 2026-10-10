@@ -116,7 +116,7 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
 // @endsection startup.js
 
 // @section backup.js
-const TRAINPILOT_VERSION='1.2.13';
+const TRAINPILOT_VERSION='1.3.0';
 var isNative = function isNative(){return !!window.Capacitor?.isNativePlatform?.();};
 var nativeFiles = function nativeFiles(){if(!filesPlugin)filesPlugin=window.Capacitor?.registerPlugin?.('NativeFiles')||window.Capacitor?.Plugins?.NativeFiles;if(!filesPlugin)throw Error('A natív fájlkezelő nem érhető el.');return filesPlugin;};
 var backupStatus = function backupStatus(){const x=db.get('lastExport',null);return x?`Utolsó ellenőrzött mentés: ${x.name} • ${fmtDate(x.date)}`:'Még nincs ellenőrzött fájlmentés.';};
@@ -11709,7 +11709,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  };
 
  // A selected day has its own surface; its contents never compete with the fixed month/planner.
- let dayHost=null,dayTrigger=null,dayDate='',dayBackground=[],daySessionAtOpen=null,dayMarkup='';
+ let dayHost=null,dayTrigger=null,dayDate='',dayBackground=[],daySessionAtOpen=null,dayMarkup='',dayFocusId='';
  const dayNestedPicker=()=>!!document.querySelector('#tpTemporalPicker,#tp2628Dialog,.video-modal,.video-overlay');
  const markCalendarDays=function(){
   panelHost?.querySelectorAll('.cal-cell[onclick]').forEach(button=>{
@@ -11720,7 +11720,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  const closeDay=function(restoreFocus=true){
   if(!dayHost)return false;
   if(typeof rf260TemporalPicker!=='undefined'&&rf260TemporalPicker)rf260TemporalClose(false);
-  rf260CloseSelects();dayHost.remove();dayHost=null;dayMarkup='';state.tp151EditingScheduleId=null;
+  rf260CloseSelects();dayHost.remove();dayHost=null;dayMarkup='';dayFocusId='';state.tp151EditingScheduleId=null;
   for(const [node,inert] of dayBackground)if(node.isConnected)node.inert=inert;dayBackground=[];
   markCalendarDays();
   const trigger=dayTrigger?.isConnected?dayTrigger:panelHost?.querySelector('.cal-cell[onclick*="'+dayDate+'"]');dayTrigger=null;
@@ -11731,12 +11731,41 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   if(currentPanel!=='calendar'){closeDay(false);return;}
   const content=dayHost.querySelector('.tp108-day-content'),y=content.scrollTop;
   const html=tp151CalendarDayPanel();if(html===dayMarkup){markCalendarDays();return;}
-  const hadFocus=content.contains(document.activeElement);content.innerHTML=html;dayMarkup=html;
+  const focusNode=document.activeElement,hadFocus=content.contains(focusNode);
+  // Rebuilding an edited day can otherwise discard its unsaved inputs and move focus
+  // to the dialog itself. Preserve only the same schedule's draft across this redraw.
+  const editingId=state.tp151EditingScheduleId;
+  const editFields=editingId?['tp151ScheduleDay','tp151ScheduleTime','tp151ScheduleMinutes']:[];
+  if(!editingId)dayFocusId='';
+  const fieldDraft=editFields.map(id=>[id,content.querySelector('#'+id)?.value]).filter(([,value])=>value!==undefined);
+  const focusId=hadFocus&&focusNode?.id&&editFields.includes(focusNode.id)?focusNode.id:
+   (editingId&&editFields.includes(dayFocusId)?dayFocusId:'');
+  if(focusId)dayFocusId=focusId;
+  content.innerHTML=html;dayMarkup=html;
+  if(editingId&&editingId===state.tp151EditingScheduleId){
+   for(const [id,value] of fieldDraft){
+    const field=content.querySelector('#'+id);
+    if(field)field.value=value;
+   }
+  }
   const heading=content.querySelector('.tp151-day-title h2');if(heading)heading.id='tp108DayTitle';
   rf260EnhanceSelects();rf260EnhanceTemporalFields();tp149TranslateFreshDom?.(content);
   window.tp155R4ApplyHighlightSurfaces?.(content);
   content.scrollTop=Math.min(y,Math.max(0,content.scrollHeight-content.clientHeight));markCalendarDays();
-  if(hadFocus)dayHost.querySelector('.tp108-day-dialog').focus({preventScroll:true});
+  if(hadFocus||focusId){
+   const target=focusId?content.querySelector('#'+focusId):null;
+   (target||dayHost.querySelector('.tp108-day-dialog'))?.focus({preventScroll:true});
+  }
+  if(focusId){
+   const owner=dayHost;
+   // Other render decorators can repaint a second time in the same turn. Restore
+   // only the still-edited field, after those synchronous decorators complete.
+   Promise.resolve().then(()=>{
+    if(dayHost!==owner||state.tp151EditingScheduleId!==editingId||dayNestedPicker())return;
+    const field=owner.querySelector('#'+focusId);
+    if(field&&field.isConnected&&document.activeElement!==field)field.focus({preventScroll:true});
+   });
+  }
  };
  const openDay=function(date,trigger){
   if(currentPanel!=='calendar'||!/^\d{4}-\d{2}-\d{2}$/.test(date))return false;
@@ -11746,6 +11775,10 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
    dayHost=document.createElement('div');dayHost.id='tp108CalendarDay';dayHost.className='tp108-day-backdrop';
    dayHost.innerHTML='<section class="tp108-day-dialog" role="dialog" aria-modal="true" aria-labelledby="tp108DayTitle" tabindex="-1"><button type="button" class="tp108-day-close tp-modal-close" aria-label="'+esc(tp149T('common.close'))+'" onclick="TrainPilotCalendarDay.close()">×</button><div class="tp108-day-content"></div></section>';
    dayHost.addEventListener('click',event=>{if(event.target===dayHost)closeDay();});
+   dayHost.addEventListener('focusin',event=>{
+    if(['tp151ScheduleDay','tp151ScheduleTime','tp151ScheduleMinutes'].includes(event.target?.id))
+     dayFocusId=event.target.id;
+   });
    dayHost.addEventListener('keydown',event=>{
     if(dayNestedPicker())return;
     if(event.key==='Escape'){
@@ -16435,6 +16468,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
 (function(){
  'use strict';
  let lastPayload=null,lastHomePayload=null,cleared=false,busy=false,homeBusy=false,commandBusy=false;
+ let homeRefreshPending=false;
 
  function api(){
   try{
@@ -16456,7 +16490,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   return String(day?.name||day?.id||'');
  }
  function sessionKey(session){
-  return String(session?.syncId||session?.id||session?.started||session?.workout||session?.dayId||'');
+  return String(session?.syncId||session?.id||session?.workoutId||session?.started||session?.workout||session?.dayId||'');
  }
  function sameId(a,b){
   if(a===b)return true;
@@ -16517,6 +16551,83 @@ window.addEventListener?.('DOMContentLoaded',function(){
    exercises
   };
  }
+ function watchQuickExercises(lang){
+  // Keep the selection on the watch, but always validate IDs using the phone's library.
+  // Limit oversized custom libraries so the Data Layer item stays bounded.
+  try{
+   if(typeof exercises!=='function')return [];
+   return exercises().filter(e=>e&&typeof e.id==='string'&&e.id).slice(0,240).map(e=>({
+    id:String(e.id),
+    name:exerciseName(e,lang).slice(0,96),
+    loadType:String(e.loadType||''),
+    repUnit:String(e.repUnit||''),
+    measurementType:String(e.measurementType||''),
+    targetReps:String(e.reps||''),
+    sets:Array.from({length:Math.max(1,Math.min(10,Number(e.sets)||3))},(_,i)=>({
+     set:i+1,weight:e.loadType==='bodyweight'?0:(Number(e.weight)||0)
+    }))
+   }));
+  }catch(_){return []}
+ }
+ function watchRecentHistory(lang){
+  // A small, read-only, canonical phone history projection. Do not sync photos,
+  // recovery data or whole-day Health Connect ledgers to the watch.
+  const text=(value,max=48)=>String(value??'').slice(0,max);
+  const metric=(value,min=0,max=1000000)=>typeof value==='number'&&Number.isFinite(value)&&value>=min&&value<=max?value:null;
+  const read=(data,keys)=>Object.fromEntries(keys.flatMap(([key,min,max])=>{
+   const value=metric(data?.[key],min,max);return value===null?[]:[[key,value]];
+  }));
+  try{
+   if(typeof history!=='function')return [];
+   const seen=new Set();
+   const projected=history().filter(h=>h&&h.finished&&Number.isFinite(Date.parse(h.started))&&Number.isFinite(Date.parse(h.finished))&&Date.parse(h.finished)>=Date.parse(h.started))
+    .sort((a,b)=>Date.parse(b.started)-Date.parse(a.started))
+    .filter(h=>{const id=sessionKey(h);if(!id||id.length>96||seen.has(id))return false;seen.add(id);return true;})
+    .slice(0,8).map(h=>{
+     const id=sessionKey(h);
+     const w=h.healthWear129;
+     const wearable=w?.source==='wear_health_services'&&matchesWorkout(h,String(w.workoutId||''))&&w.watchId&&Number.isSafeInteger(w.revision)&&w.revision>0?{
+      source:'wear_health_services',partial:w.partial===true,
+      ...read(w,[['averageHeartRate',20,250],['maxHeartRate',20,250],['totalCalories',0,100000],['steps',0,1000000],['activeDurationSeconds',0,604800]])
+     }:null;
+     const hc=h.health240;
+     const linked=sameId(hc?.windowStart,h.started)&&sameId(hc?.windowEnd,h.finished);
+     const connected=linked?{
+      source:hc.provider==='samsung_health'?'samsung_health':'health_connect',
+      ...read(hc,[['averageHeartRate',20,250],['maxHeartRate',20,250],['workoutCalories',0,100000],['totalCalories',0,100000],['activeCalories',0,100000],['steps',0,1000000],['exerciseMinutes',0,10080]])
+     }:null;
+     const name=(h.type==='quick'||h.quickWorkout===true)?'Gyors edzés':text(h.dayName||h.programName||h.workout||'Edzés');
+     return {
+      workoutId:id,started:text(h.started,40),finished:text(h.finished,40),
+      dayName:name,quickWorkout:h.type==='quick'||h.quickWorkout===true,
+      durationSeconds:Math.round(Math.max(0,(Date.parse(h.finished)-Date.parse(h.started))/1000)),
+      exercises:(Array.isArray(h.exercises)?h.exercises:[]).slice(0,14).map(ex=>({
+       name:text(ex?.name||ex?.hu||ex?.en||(typeof byId==='function'?exerciseName(byId(ex?.id)||ex,lang):ex?.id)||'Gyakorlat'),
+       sets:(Array.isArray(ex?.sets)?ex.sets:[]).slice(0,12).filter(set=>set?.done===true).map((set,index)=>({
+        number:Math.max(1,Math.min(1000,Number(set.set)||index+1)),reps:text(set.reps,16),
+        weight:set.weight==null||set.weight===''?null:metric(Number(set.weight),0,100000),
+        leftSeconds:set.leftSeconds==null||set.leftSeconds===''?null:metric(Number(set.leftSeconds),0,604800),
+        rightSeconds:set.rightSeconds==null||set.rightSeconds===''?null:metric(Number(set.rightSeconds),0,604800),
+        distanceMeters:set.distanceMeters==null||set.distanceMeters===''?null:metric(Number(set.distanceMeters),0,1000000)
+       }))
+      })).filter(ex=>ex.sets.length>0),
+      wear:wearable,healthConnect:connected
+     };
+    });
+   // Keep the combined home Data Layer payload small even with custom libraries and huge logs.
+   const bounded=[];let bytes=0;
+   for(const row of projected){
+    const size=jsonBytes(row);
+    if(size>28000||bytes+size>32000)continue;
+    bounded.push(row);bytes+=size;
+   }
+   return bounded;
+  }catch(_){return []}
+ }
+ function jsonBytes(value){
+  // JSON is well-formed UTF-16; count its encoded UTF-8 bytes, including accents.
+  return encodeURIComponent(JSON.stringify(value)).replace(/%[0-9A-F]{2}|./g,'x').length;
+ }
  function watchCalendar(active,lang){
   const now=new Date(),calendar=[],calendarDays=[],known=new Set((active.days||[]).map(d=>active.id+'|'+d.id));
   const planned=typeof scheduled==='function'?scheduled().filter(x=>x&&!x.cancelled):[];
@@ -16539,7 +16650,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  function homeSnapshot(){
   try{
    if(typeof activeProgram!=='function'||typeof programDay!=='function')return null;
-   const active=activeProgram();if(!active)return null;
+   const active=activeProgram()||{id:'',name:'',days:[]};
    const lang=language(),days=(Array.isArray(active.days)?active.days:[]).map(day=>preparedDay(active,day,lang)).filter(Boolean);
    let planned=null;
    try{if(typeof nextPlanned==='function')planned=nextPlanned()}catch(_){}
@@ -16555,9 +16666,13 @@ window.addEventListener?.('DOMContentLoaded',function(){
     recommendedProgram=active;
     recommendedDay=programDay(active,id)||active.days?.[0]||null;
    }
-   return {
+   const home={
     schema:1,
+    phoneVersion:typeof TRAINPILOT_VERSION==='string'?TRAINPILOT_VERSION:'',
+    journalSchema:1,
     ...watchCalendar(active,lang),
+    quickExercises:watchQuickExercises(lang),
+    recentWorkouts:watchRecentHistory(lang),
     activeProgramId:String(active.id||''),
     activeProgramName:String(active.name||'TrainPilot'),
     restSeconds:configuredRest(),
@@ -16570,6 +16685,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
     }:null,
     days
    };
+   // DataItems are limited in bytes, not characters. Reserve room for DataMap
+   // metadata; never let a large exercise catalog block the saved Journal.
+   while(jsonBytes(home)>90000&&home.quickExercises.length)home.quickExercises.pop();
+   while(jsonBytes(home)>90000&&home.recentWorkouts.length)home.recentWorkouts.pop();
+   return home;
   }catch(_){return null}
  }
  function snapshot(){
@@ -16582,7 +16702,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
     schema:1,
     workoutId:sessionKey(session),
     watchSequence:Number(session.wearSequence)||0,
-    dayName:(()=>{try{const p=programById(session.programId);return dayName(p,programDay(p,session.dayId||session.workout))}catch(_){return String(session.dayId||session.workout||'')}})(),
+    quickWorkout:session.type==='quick'||session.quickWorkout===true,
+    dayName:(()=>{if(session.type==='quick'||session.quickWorkout===true)return String(session.programName||'Gyors edzés');try{const p=programById(session.programId);return dayName(p,programDay(p,session.dayId||session.workout))}catch(_){return String(session.dayId||session.workout||'')}})(),
     programId:String(session.programId||''),
     programName:String(session.programName||''),
     dayId:String(session.dayId||session.workout||''),
@@ -16612,14 +16733,18 @@ window.addEventListener?.('DOMContentLoaded',function(){
    };
   }catch(_){return null}
  }
- async function syncHomeNow(){
-  if(homeBusy)return;
-  const bridge=api();if(!bridge?.publishHome)return;
-  const value=homeSnapshot();if(!value)return;
-  const payload=JSON.stringify(value);if(payload===lastHomePayload)return;
+ async function syncHomeNow(options={}){
+  const force=options?.force===true;
+  if(homeBusy){if(force)homeRefreshPending=true;return false;}
+  const bridge=api();if(!bridge?.publishHome)return false;
+  const value=homeSnapshot();if(!value)return false;
+  const payload=JSON.stringify(value);if(!force&&payload===lastHomePayload)return true;
   homeBusy=true;
-  try{await bridge.publishHome({snapshot:value});lastHomePayload=payload}catch(_){}
-  finally{homeBusy=false}
+  try{await bridge.publishHome({snapshot:value});lastHomePayload=payload;return true}catch(_){return false;}
+  finally{
+   homeBusy=false;
+   if(homeRefreshPending){homeRefreshPending=false;setTimeout(()=>syncHomeNow({force:true}),0);}
+  }
  }
  async function syncNow(){
   if(busy)return;
@@ -16726,7 +16851,15 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const old=target.healthWear129;
   if(old&&(old.watchId!==measured.watchId||Number(old.revision)>=measured.revision))return true;
   target.healthWear129=measured;
-  if(row)db.set('history',rows);else persistDraft();
+  if(row){
+   db.set('history',rows);
+   // The final watch summary can arrive after the Journal was already opened.
+   // Update just this workout's visible measurements without rebuilding history.
+   try{
+    const viewIndex=typeof history==='function'?history().findIndex(h=>matchesWorkout(h,id)&&h.finished):-1;
+    if(viewIndex>=0&&typeof rfHistoryHealthPaint==='function')rfHistoryHealthPaint(viewIndex);
+   }catch(_){}
+  }else persistDraft();
   return true;
  }
  async function closeFromWatch(command){
@@ -16746,7 +16879,16 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(action==='discardWorkout')return recordResult(command,'discarded');
    const final=command.finalSnapshot;
    // The final DataItem can arrive before startWorkout after an offline session.
-   if(final?.workoutId===expected&&final.dayId&&final.programId){
+   if(final?.workoutId===expected&&final.quickWorkout===true&&Array.isArray(final.exercises)&&final.exercises.length>0&&final.exercises.length<=20){
+    // A terminal command can arrive without the original start (offline/replay).
+    const first=String(final.exercises[0]?.id||'');
+    if(first)await applyCommand({...command,action:'startQuickWorkout',exerciseId:first,started:final.started});
+    for(const extra of final.exercises.slice(1)){
+     if(!state.session)break;
+     const id=String(extra?.id||'');
+     if(id)await applyCommand({...command,action:'addQuickExercise',exerciseId:id});
+    }
+   }else if(final?.workoutId===expected&&final.dayId&&final.programId){
     await applyCommand({...command,action:'startWorkout',dayId:final.dayId,programId:final.programId,scheduleId:final.scheduleId,started:final.started});
    }
   }
@@ -16773,10 +16915,27 @@ window.addEventListener?.('DOMContentLoaded',function(){
  async function applyCommand(command){
   if(!command||typeof state==='undefined')return false;
   const action=String(command.action||''),expectedId=String(command.workoutId||'');
+  if(action==='requestHome')return syncHomeNow({force:true});
   if(action==='healthSummary')return attachMeasuredHealth(command);
   if(action==='finishWorkout'||action==='discardWorkout')return closeFromWatch(command);
   if(expectedId&&isClosed(expectedId))return true;
-  if(!state.session&&action!=='startWorkout'&&!restoreMatchingDraft(expectedId))return false;
+  if(!state.session&&!['startWorkout','startQuickWorkout'].includes(action)&&!restoreMatchingDraft(expectedId))return false;
+  if(action==='startQuickWorkout'){
+   const expected=String(command.workoutId||command.started||''),id=String(command.exerciseId||'');
+   if(!expected||!Number.isFinite(Date.parse(expected))||!id||!byId(id))return false;
+   if(state.session)return matchesWorkout(state.session,expected)&&tp150IsQuick(state.session);
+   const saved=db.get('draft',null);
+   if(saved?.session)return matchesWorkout(saved.session,expected)&&tp150IsQuick(saved.session);
+   // Reuse the canonical phone Quick Workout rather than fabricating a program.
+   const start=window.TrainPilotQuickWorkout?.start;
+   if(typeof start!=='function')return false;
+   await start(id);
+   if(!state.session||!tp150IsQuick(state.session))return false;
+   state.session.syncId=expected;
+   state.session.started=new Date(Date.parse(command.started||expected)).toISOString();
+   state.session.wearSequence=Math.max(Number(state.session.wearSequence)||0,Number(command.sequence)||0);
+   persistDraft();renderWorkout();return true;
+  }
   if(action==='startWorkout'){
    const expected=String(command.workoutId||command.started||'');
    if(state.session)return expected&&matchesWorkout(state.session,expected);
@@ -16802,6 +16961,14 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(!state.session)return false;
   if(!matchesWorkout(state.session,String(command.workoutId||'')))return false;
   state.session.wearSequence=Math.max(Number(state.session.wearSequence)||0,Number(command.sequence)||0);
+  if(action==='addQuickExercise'){
+   if(!tp150IsQuick(state.session))return false;
+   const id=String(command.exerciseId||''),item=byId(id);
+   if(!id||!item||state.session.exercises.length>=20&&!state.session.exercises.some(e=>e.id===id))return false;
+   const add=window.TrainPilotQuickWorkout?.add;
+   if(typeof add!=='function')return false;
+   add(id);persistDraft();return true;
+  }
   if(action==='resumeWorkout'){persistDraft();renderWorkout();return true}
   if(action==='selectExercise'){
    const located=locateExercise(command);if(!located)return false;state.current=located.index;persistDraft();renderWorkout();return true;
@@ -16860,7 +17027,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     let applied=false;
     try{applied=await applyCommand(command);}catch(_){}
     if(!applied)continue;
-    changed=true;
+    if(command.action!=='requestHome')changed=true;
     try{await bridge.ackCommand({commandId:id});}catch(_){}
    }
    if(changed){lastPayload=null;lastHomePayload=null;await syncNow();await syncHomeNow();}
@@ -16870,9 +17037,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  if(typeof window!=='undefined'){
   window.TrainPilotWearSync={syncNow,syncHomeNow,drainCommands,makeSnapshot:snapshot,makeHomeSnapshot:homeSnapshot,isApplyingCommand:()=>commandBusy};
-  window.addEventListener?.('focus',()=>{drainCommands();syncNow();syncHomeNow();});
+  window.addEventListener?.('focus',()=>{drainCommands();syncNow();syncHomeNow({force:true});});
  }
- if(typeof document!=='undefined')document.addEventListener?.('visibilitychange',()=>{if(!document.hidden){drainCommands();syncNow();syncHomeNow();}});
+ if(typeof document!=='undefined')document.addEventListener?.('visibilitychange',()=>{if(!document.hidden){drainCommands();syncNow();syncHomeNow({force:true});}});
  if(typeof setInterval==='function'){
   setInterval(syncNow,1500);
   setInterval(syncHomeNow,3000);
@@ -16923,6 +17090,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     if(index!==keep)removed.add(index);
     if(!saved.feedback&&row.feedback)saved.feedback=row.feedback;
     if(!saved.health240&&row.health240)saved.health240=row.health240;
+    if(!saved.healthWear129&&row.healthWear129)saved.healthWear129=row.healthWear129;
     for(const photo of row.photos||[]){const id=photo.id||canonical(photo),old=photos.get(id);if(!old||(Number(photo.updatedAt)||0)>=(Number(old.updatedAt)||0))photos.set(id,photo);}
    }
    if(photos.size)saved.photos=[...photos.values()];
@@ -16952,6 +17120,62 @@ window.addEventListener?.('DOMContentLoaded',function(){
  };
 })();
 // @endsection wear-health-details-129.js
+
+// @section wear-journal-sources-160.js
+/* Journal provenance: never display Health Connect window energy as an
+ * independently measured Wear Health Services workout total. */
+(function(){
+ 'use strict';
+ const picked=new Map();
+ const original=rfHistoryHealthHtml;
+ const key=h=>String(h?.syncId||h?.id||h?.workoutId||h?.started||'');
+ const measured=h=>{
+  const data=h?.healthWear129,id=key(h);
+  const same=data?.workoutId===id||(!h?.syncId&&!h?.id&&!h?.workoutId&&
+   Number.isFinite(Date.parse(id))&&Date.parse(data?.workoutId)===Date.parse(id));
+  if(!data||data.source!=='wear_health_services'||!data.watchId||!Number.isSafeInteger(data.revision)||data.revision<1||!id||!same)return null;
+  return data;
+ };
+ const textMetric=(value,digits=0)=>typeof value==='number'&&Number.isFinite(value)&&value>=0?
+  value.toLocaleString('hu-HU',{minimumFractionDigits:digits,maximumFractionDigits:digits}):null;
+ const card=(label,value)=>value===null?'':'<div class="stat"><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong></div>';
+ rfHistoryHealthHtml=function(i){
+  const row=history()[i],wear=measured(row);
+  if(!wear){
+   const label=row?.finished?'<p class="small muted tp160-source-note">TrainPilot óra: ehhez az edzéshez nem érkezett külön órás mérési összesítés. Az alábbi értékek a Health Connect adatforrásból származnak.</p>':'';
+   return label+original(i);
+  }
+  const id=key(row),view=picked.get(id)==='health_connect'?'health_connect':'wear';
+  const tab='<div class="tp160-journal-sources" role="group" aria-label="Edzés mérési forrása">'+
+   '<button type="button" class="btn secondary" aria-pressed="'+(view==='wear')+'" onclick="TrainPilotWearJournalSource.choose('+i+',\'wear\')">TrainPilot óra</button>'+
+   '<button type="button" class="btn secondary" aria-pressed="'+(view==='health_connect')+'" onclick="TrainPilotWearJournalSource.choose('+i+',\'health_connect\')">Health Connect / Samsung Health</button></div>';
+  if(view==='health_connect')return tab+'<p class="small muted">Másik adatforrás: a telefon által olvasott egészségadatok. Az értékek nem adódnak az órás méréshez.</p>'+original(i);
+  const stats=[
+   card('Átlagpulzus',textMetric(wear.averageHeartRate,1)?.concat(' bpm')??null),
+   card('Max. pulzus',textMetric(wear.maxHeartRate)?.concat(' bpm')??null),
+   card('Edzés alatt mért összes energia',textMetric(wear.totalCalories)?.concat(' kcal')??null),
+   card('Lépések',textMetric(wear.steps)),
+   card('Aktív mérési idő',textMetric(wear.activeDurationSeconds,1)?.concat(' s')??null),
+   card('Távolság',textMetric(wear.distanceMeters)?.concat(' m')??null)
+  ].join('');
+  return tab+'<div class="rf-history-health-result tp160-wear-history">'+
+   '<p class="small muted">Forrás: TrainPilot Wear OS · Health Services. Közvetlenül az órán mért edzésadatok.</p>'+
+   (stats?'<div class="rf-history-health-grid">'+stats+'</div>':'<p class="small muted">Az óra ehhez az edzéshez még nem küldött értelmezhető mérési összesítést.</p>')+
+   (wear.partial?'<p class="small muted">Figyelem: részleges mérés.</p>':'')+
+   '<p class="small muted">Az órán mért összes energia nem azonos a Health Connect aktív kalóriájával, és nem adjuk őket össze.</p></div>';
+ };
+ window.TrainPilotWearJournalSource={
+  choose(i,source){
+   const row=history()[i];if(!measured(row)||!['wear','health_connect'].includes(source))return false;
+   picked.set(key(row),source);rfHistoryHealthPaint(i);return true;
+  },
+  measured
+ };
+ const css=document.createElement('style');css.id='tp160WearJournalSourceCss';
+ css.textContent='.tp160-journal-sources{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:5px 0 12px}.tp160-journal-sources .btn{font-size:12px;min-height:44px;padding:8px 6px;white-space:normal}.tp160-journal-sources .btn[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 15%,var(--card2));color:var(--text);font-weight:700}@media(max-width:350px){.tp160-journal-sources{grid-template-columns:1fr}}';
+ document.head.appendChild(css);
+})();
+// @endsection wear-journal-sources-160.js
 
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();

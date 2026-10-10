@@ -1,8 +1,8 @@
 # TrainPilot Wear OS – architecture and implementation plan
 
-Status: Wear 1.2.14 /2721, compatible with phone 1.2.10.
+Status: previous independent Wear 1.2.15 /2722 validation continues; paired Quick Workout candidate Wear 1.2.16 /2723 + phone 1.2.14 /2721 is in development.
 
-Candidate: Wear **1.2.15 /2722** adds restart-safe active-workout recording, final-update handling, measured workout summary, swipe navigation between cached calendar weeks and release code/resource shrinking. It has not yet been accepted on a physical watch or promoted to main.
+Previous candidate: Wear **1.2.15 /2722** adds restart-safe active-workout recording, final-update handling, measured workout summary, swipe navigation between cached calendar weeks and release code/resource shrinking. Its complete physical-watch acceptance has not yet been documented. The new **Wear 1.2.16 /2723** Quick Workout candidate pairs with phone **1.2.14 /2721** and requires both release gates and paired-device acceptance.
 
 ## Independent phone and Wear releases
 
@@ -11,6 +11,17 @@ Wear-only fixes run `Wear Release Gate`: native Wear unit tests, signed `:wear:a
 Phone changes run `Phone Release Gate + TrainPilot APK`: Chromium UI and phone regressions, native phone unit tests, signed `:app:assembleRelease`, APK metadata and signing-certificate checks. Phone versions use the root `SOURCE_VERSION.json`, `package.json` and phone Gradle metadata, with release tags `v<version>`. The phone gate neither requires matching Wear versions nor builds the Wear module.
 
 Keep the package ID, signing identity and Data Layer protocol compatible across the installed pair. Updating only Wear does not require a phone build unless the change actually needs a new phone-side protocol or feature. Workflow-only and documentation changes do not start the phone APK workflow; platform source changes and manual runs remain covered.
+
+## Quick Workout companion — 1.2.16 /2723 candidate (#155)
+
+- The phone publishes a bounded Quick Workout exercise library in its existing watch-home Data Layer snapshot. The picker on the watch can search and page through that catalog, including custom exercises.
+- Start a true `quickWorkout` / `type:'quick'` session from the watch without a fake program. Existing Wear workout and Health Services measurement controls run as usual.
+- `startQuickWorkout` and `addQuickExercise` commands are processed by the phone's canonical Quick Workout engine. An unrelated active/draft session is never replaced.
+- Quick sessions carry a stable `workoutId`, preserving the same phone Journal entry, set edits, offline completion, deduplicated retries and late health summaries.
+- The new phone protocol requires phone **1.2.14 /2721** and Wear **1.2.16 /2723**, unlike earlier icon/calendar Wear-only changes. Maintain independent phone/Wear gates.
+- Real-device acceptance is pending: watch pushup start, extra exercise, >2-minute background metrics, save-once, reconnect, phone-started quick session and UI/accessibility.
+
+See [phone notes](releases/v1.2.14.md) and [Wear notes](../android/wear/releases/wear-v1.2.16.md).
 
 ## Current next steps — 2026-10-09
 
@@ -438,3 +449,11 @@ Az elfogadott új felület közvetlen Előző/Rögzítés/Következő kerek vez�
 A hosszú címek két sorba férnek; a főképernyők magassága csökkent, a Mentés/Mégse és a kezdőlapi törlés beljebb került. A középre helyezett tartalom nagyobb rendszer-betűméretnél görgethető. A plank stoppert koppintás indítja/szünetelteti, az időrögzítés külön művelet. Nullázás, oldalváltás és kézi időbeállítás az Edzésmenü / Stopper és oldalak alatt marad.
 
 Új natív regressziók ellenőrzik, hogy a pihenő lezárása nem változtat sorozatot/gyakorlatot, a kézi navigáció megőrzi az összes mérést, és a határgombok nem szakítják meg a pihenőt. A böngészős előnézet ellenőrzése nem helyettesíti a kész APK valós órás tesztjét. A telefonos kód és a startup animáció változatlan.
+
+## Mini Napló and measurement provenance (2026-10-09, #158/#159)
+
+The **Wear 1.2.16 /2723** and paired **phone 1.2.14 /2721** feature candidate now includes **Főmenü → Mini napló**. Phone history remains canonical. The watch receives a bounded, cached, read-only list of previously saved workouts (latest eight distinct sessions) with completed exercise sets and a per-source Health summary. New workout logging and late Health Services updates remain handled by the existing durable Data Layer outbox.
+
+**Do not equate Health Connect time-window total calories with the watch's own exercise-session total.** The phone Journal now distinguishes the stored matching `healthWear129` from the independently queried `health240`; it chooses the validated own-watch measurement when available, else preserves the original HC presentation. It never sums calorie sources or synthesizes unavailable data. Old workouts without Wear attachment cannot automatically be upgraded based on a screenshot.
+
+**Acceptance still required:** correct provenance on an actual Galaxy Watch/phone 45-minute training result; realistic values, missing data and late revisions; mini-journal exercise details; remote state/resync and offline snapshot; compact circular display. Draft PR #156 stays unmerged until phone and Wear Release Gates plus physical checks are green.

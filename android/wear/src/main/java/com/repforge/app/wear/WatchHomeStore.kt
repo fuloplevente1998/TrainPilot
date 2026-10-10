@@ -47,10 +47,44 @@ data class WatchHomeSnapshot(
     val hasDraft: Boolean,
     val recommended: WatchHomeRecommendation?,
     val days: List<WatchHomeDay>,
-    val calendar: List<WatchCalendarEntry> = emptyList()
+    val calendar: List<WatchCalendarEntry> = emptyList(),
+    val quickExercises: List<WatchHomeExercise> = emptyList(),
+    val recentWorkouts: List<MiniJournalWorkout> = emptyList(),
+    val phoneVersion: String = "",
+    val journalAvailable: Boolean = false,
+    val publishedAt: Long = 0L
 ) {
-    fun createWorkout(day: WatchHomeDay, scheduleId: String, started: String): WearWorkout {
-        return WearWorkout(
+    fun toWearExercise(exercise: WatchHomeExercise): WearExercise = WearExercise(
+        id = exercise.id,
+        name = exercise.name,
+        loadType = exercise.loadType,
+        repUnit = exercise.repUnit,
+        measurementType = exercise.measurementType,
+        targetReps = exercise.targetReps,
+        sets = exercise.sets.map { set ->
+            WearSet(number = set.number, reps = "", weight = set.weight, done = false,
+                leftSeconds = 0, rightSeconds = 0, distanceMeters = 0.0)
+        }
+    )
+
+    fun createQuickWorkout(exercise: WatchHomeExercise, started: String): WearWorkout = WearWorkout(
+        revision = 0L,
+        programId = "",
+        programName = "Gyors edzés",
+        dayId = "quick",
+        scheduleId = "",
+        started = started,
+        workoutId = started,
+        currentExercise = 0,
+        restSeconds = restSeconds,
+        restEndAt = 0L,
+        dayName = "Gyors edzés",
+        quickWorkout = true,
+        exercises = listOf(toWearExercise(exercise))
+    )
+
+    fun createWorkout(day: WatchHomeDay, scheduleId: String, started: String): WearWorkout =
+        WearWorkout(
             revision = 0L,
             programId = day.programId,
             programName = day.programName,
@@ -62,45 +96,30 @@ data class WatchHomeSnapshot(
             restSeconds = restSeconds,
             restEndAt = 0L,
             dayName = day.name,
-            exercises = day.exercises.map { exercise ->
-                WearExercise(
-                    id = exercise.id,
-                    name = exercise.name,
-                    loadType = exercise.loadType,
-                    repUnit = exercise.repUnit,
-                    measurementType = exercise.measurementType,
-                    targetReps = exercise.targetReps,
-                    sets = exercise.sets.map { set ->
-                        WearSet(
-                            number = set.number,
-                            reps = "",
-                            weight = set.weight,
-                            done = false,
-                            leftSeconds = 0,
-                            rightSeconds = 0,
-                            distanceMeters = 0.0
-                        )
-                    }
-                )
-            }
+            exercises = day.exercises.map(::toWearExercise)
         )
-    }
+
 }
 
 object WatchHomeStore {
     private const val PREFS = "trainpilot_wear_home"
     private const val SNAPSHOT = "snapshot"
 
-    fun save(context: Context, raw: String?): WatchHomeSnapshot? {
+    fun save(context: Context, raw: String?, publishedAt: Long = 0L): WatchHomeSnapshot? {
         if (raw.isNullOrBlank()) return null
-        val parsed = parse(raw) ?: return null
+        val parsed = parse(raw)?.let { it.copy(publishedAt = maxOf(it.publishedAt, publishedAt)) } ?: return null
+        val cached = load(context)
+        if (newest(cached, parsed) === cached) return cached
         WearClosureStore.acceptResult(context, try { JSONObject(raw).optJSONObject("workoutResult") } catch (_: Exception) { null })
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
-            .putString(SNAPSHOT, raw)
+            .putString(SNAPSHOT, JSONObject(raw).put("publishedAt", parsed.publishedAt).toString())
             .apply()
         return parsed
     }
+
+    fun newest(current: WatchHomeSnapshot?, incoming: WatchHomeSnapshot): WatchHomeSnapshot =
+        if (current != null && current.publishedAt > incoming.publishedAt) current else incoming
 
     fun load(context: Context): WatchHomeSnapshot? {
         val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(SNAPSHOT, null)
@@ -149,7 +168,14 @@ object WatchHomeStore {
                 hasDraft = root.optBoolean("hasDraft", false),
                 recommended = recommendation,
                 days = days,
-                calendar = calendar
+                calendar = calendar,
+                quickExercises = root.optJSONArray("quickExercises")?.let { library ->
+                    parseDay(JSONObject().put("id", "quick").put("exercises", library))?.exercises
+                }.orEmpty(),
+                recentWorkouts = WatchMiniJournal.parse(root.optJSONArray("recentWorkouts")),
+                phoneVersion = root.optString("phoneVersion").take(32),
+                journalAvailable = root.optInt("journalSchema", 0) == 1 && root.optJSONArray("recentWorkouts") != null,
+                publishedAt = root.optLong("publishedAt", 0L)
             )
         } catch (_: Exception) { null }
     }
