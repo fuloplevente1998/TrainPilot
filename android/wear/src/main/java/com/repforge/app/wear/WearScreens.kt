@@ -81,18 +81,32 @@ internal fun TrainPilotWearApp(
 ) {
     var route by rememberSaveable { mutableStateOf("home") }
     LaunchedEffect(route) {
-        if (route == "journal") onRefreshJournal()
+        if (route == "journal" || route == "metrics") onRefreshJournal()
     }
     LaunchedEffect(requestedRoute.value) {
         requestedRoute.value?.let { route=it;onRouteConsumed() }
     }
     var editorField by rememberSaveable { mutableStateOf("reps") }
     var miniJournalId by rememberSaveable { mutableStateOf("") }
+    var miniJournalBackRoute by rememberSaveable { mutableStateOf("journal") }
+    var journalBackRoute by rememberSaveable { mutableStateOf("menu") }
+    var returnWorkoutPage by rememberSaveable { mutableStateOf(0) }
+    fun openMeasurement(item: MiniJournalWorkout, origin: String) {
+        miniJournalId = item.workoutId
+        miniJournalBackRoute = origin
+        if (origin == "workout") returnWorkoutPage = 2
+        route = "journal-detail"
+    }
+    fun openJournal(origin: String) {
+        journalBackRoute = origin
+        if (origin == "workout") returnWorkoutPage = 2
+        route = "journal"
+    }
     BackHandler(enabled = route != "home") {
         route = when (route) {
             "editor", "timer", "finish" -> "workout"
-            "journal-detail" -> "journal"
-            "journal" -> "menu"
+            "journal-detail" -> miniJournalBackRoute
+            "journal" -> journalBackRoute
             "discard" -> "home"
             else -> "home"
         }
@@ -101,17 +115,24 @@ internal fun TrainPilotWearApp(
         Box(Modifier.fillMaxSize().background(Black)) {
             val active = workout.value
             when {
-                route == "metrics" -> HealthScreen(health.value,measuring.value,gpsEnabled.value,onEnableHealth,onDisableHealth,onToggleGps) { route="menu" }
-                route == "menu" -> MainMenuScreen(active != null, active?.quickWorkout == true, onOpenPhone) { route = it }
+                route == "metrics" -> HealthScreen(health.value,measuring.value,gpsEnabled.value,onEnableHealth,onDisableHealth,onToggleGps,
+                    home.value, onRefreshJournal, onOpenJournal = { openJournal("metrics") },
+                    onSelectMeasurement = { openMeasurement(it, "metrics") }, onBack = { route="menu" })
+                route == "menu" -> MainMenuScreen(active != null, active?.quickWorkout == true, onOpenPhone) {
+                    if (it == "journal") openJournal("menu") else route = it
+                }
                 route == "journal" -> MiniJournalScreen(home.value,
                     onRefresh = onRefreshJournal, onOpenPhone = onOpenPhone,
-                    onBack = { route = "menu" }) { selected ->
+                    backLabel = if (journalBackRoute == "menu") "‹ Főmenü" else "‹ Mérések",
+                    onBack = { route = journalBackRoute }) { selected ->
                     miniJournalId = selected.workoutId
+                    miniJournalBackRoute = "journal"
                     route = "journal-detail"
                 }
                 route == "journal-detail" -> MiniJournalDetailScreen(
                     home.value?.recentWorkouts?.firstOrNull { it.workoutId == miniJournalId },
-                    onBack = { route = "journal" })
+                    backLabel = if (miniJournalBackRoute == "journal") "‹ Napló" else "‹ Mérések",
+                    onBack = { route = miniJournalBackRoute })
                 route == "quick" -> QuickWorkoutPicker(
                     home.value, active, active == null && home.value?.hasDraft == false &&
                         closure.value?.status !in listOf("pending", "error"),
@@ -142,6 +163,10 @@ internal fun TrainPilotWearApp(
                 route == "workout" && active != null -> WorkoutPager(
                     active, restRemaining.value, health.value, measuring.value, gpsEnabled.value, onEnableHealth, onDisableHealth, onToggleGps, onChange, onComplete, onPrevious, onNext,
                     onSelectExercise, onSkipRest,
+                    home = home.value, onRefreshJournal = onRefreshJournal,
+                    onOpenJournal = { openJournal("workout") },
+                    onSelectMeasurement = { openMeasurement(it, "workout") },
+                    initialPage = returnWorkoutPage, onReturnPageConsumed = { returnWorkoutPage = 0 },
                     onEdit = { editorField = it; route = "editor" },
                     onTimerTools = { route = "timer" },
                     onFinish = { route = "finish" }, onHome = { route = "home" }
@@ -323,7 +348,7 @@ private fun miniNumber(value: Double?, decimals: Int = 0): String? {
 
 @Composable
 private fun MiniJournalScreen(home: WatchHomeSnapshot?, onRefresh: () -> Unit,
-                              onOpenPhone: () -> Unit, onBack: () -> Unit,
+                              onOpenPhone: () -> Unit, backLabel: String, onBack: () -> Unit,
                               onSelect: (MiniJournalWorkout) -> Unit) {
     val items = home?.recentWorkouts.orEmpty()
     RoundList {
@@ -355,7 +380,7 @@ private fun MiniJournalScreen(home: WatchHomeSnapshot?, onRefresh: () -> Unit,
         Spacer(Modifier.height(5.dp))
         Pill("Telefon megnyitása", tone = Secondary, onClick = onOpenPhone)
         Spacer(Modifier.height(5.dp))
-        Pill("‹ Főmenü", tone = Secondary, onClick = onBack)
+        Pill(backLabel, tone = Secondary, onClick = onBack)
     }
 }
 
@@ -396,7 +421,7 @@ private fun MiniJournalMetrics(title: String, metrics: MiniJournalMetric, watch:
 }
 
 @Composable
-private fun MiniJournalDetailScreen(item: MiniJournalWorkout?, onBack: () -> Unit) {
+private fun MiniJournalDetailScreen(item: MiniJournalWorkout?, backLabel: String, onBack: () -> Unit) {
     RoundList {
         Label("TRAINPILOT", Gold)
         Title("Edzésnapló", 20)
@@ -445,7 +470,7 @@ private fun MiniJournalDetailScreen(item: MiniJournalWorkout?, onBack: () -> Uni
             }
         }
         Spacer(Modifier.height(9.dp))
-        Pill("‹ Napló", tone = Secondary, onClick = onBack)
+        Pill(backLabel, tone = Secondary, onClick = onBack)
     }
 }
 
@@ -636,7 +661,9 @@ private fun CalendarDayScreen(date: LocalDate, entries: List<WatchCalendarEntry>
 
 @Composable
 private fun HealthScreen(data: JSONObject?, enabled: Boolean, gps: Boolean,
-                         onEnable: () -> Unit, onDisable: () -> Unit, onGps: () -> Unit, onBack: () -> Unit) {
+                         onEnable: () -> Unit, onDisable: () -> Unit, onGps: () -> Unit,
+                         home: WatchHomeSnapshot?, onRefresh: () -> Unit, onOpenJournal: () -> Unit,
+                         onSelectMeasurement: (MiniJournalWorkout) -> Unit, onBack: () -> Unit) {
     fun value(key: String, unit: String, divisor: Double=1.0): String {
         val number=data?.takeIf { it.has(key) && !it.isNull(key) }?.optDouble(key)
         return if(number==null || !number.isFinite()) "—" else "${trimWearNumber(number/divisor)} $unit"
@@ -661,6 +688,37 @@ private fun HealthScreen(data: JSONObject?, enabled: Boolean, gps: Boolean,
         Pill(if(enabled)"Mérés kikapcsolása" else "Mérések engedélyezése",tone=if(enabled)Secondary else Gold,onClick=if(enabled)onDisable else onEnable)
         Spacer(Modifier.height(6.dp));Pill(if(gps)"GPS kikapcsolása" else "GPS engedélyezése",tone=Card,onClick=onGps)
         Text("GPS csak mozgásos edzésnél használható, a következő mérés indításától. Az óra az engedélyezett edzésmérést a háttérben is folytatja.",color=Muted,fontSize=10.sp,textAlign=TextAlign.Center)
+        Spacer(Modifier.height(14.dp))
+        Label("Korábbi órás mérések", Gold, 13)
+        Label("Mentett edzések · TrainPilot óra", size = 10)
+        val previous = WatchMiniJournal.measurementHistory(home?.recentWorkouts.orEmpty()).take(3)
+        if (previous.isEmpty()) {
+            Text(if (home?.journalAvailable == true)
+                "A szinkronizált edzések között még nincs órás mérési összesítés."
+                else "Az előzményekhez nyisd meg a telefonos TrainPilotot, majd frissíts.",
+                color = Muted, fontSize = 11.sp, textAlign = TextAlign.Center)
+        }
+        previous.forEach { item ->
+            Spacer(Modifier.height(8.dp))
+            Column(Modifier.fillMaxWidth().background(Card, RoundedCornerShape(18.dp))
+                .clickable(role = Role.Button) { onSelectMeasurement(item) }.padding(10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(item.dayName, color = White, fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+                Label(miniJournalDate(item.started), size = 10)
+                val duration = if (item.durationSeconds < 60) "${item.durationSeconds} s"
+                    else "${item.durationSeconds / 60} perc"
+                Label("$duration · ${item.exercises.size} gyakorlat", size = 10)
+                item.exercises.take(2).forEach { Label(it.name, size = 10) }
+                val metrics = item.wear!!
+                miniNumber(metrics.totalCalories)?.let { Label("Összes mért energia: $it kcal", Gold, 11) }
+                miniNumber(metrics.averageHeartRate, 1)?.let { Label("Átlagpulzus: $it bpm", size = 11) }
+                if (metrics.partial) Label("Részleges mérés", Gold, 10)
+                Label("Edzés részletei ›", size = 10)
+            }
+        }
+        Spacer(Modifier.height(8.dp));Pill("Mini napló megnyitása",tone=Card,onClick=onOpenJournal)
+        Spacer(Modifier.height(6.dp));Pill("Előzmények frissítése",tone=Secondary,onClick=onRefresh)
         Spacer(Modifier.height(8.dp));Pill("‹ Vissza",tone=Secondary,onClick=onBack)
     }
 }
@@ -696,8 +754,13 @@ private fun WorkoutPager(workout: WearWorkout, restRemaining: Int,
                          onChange: (String, Double) -> Unit, onComplete: () -> Unit,
                          onPrevious: () -> Unit, onNext: () -> Unit, onSelect: (Int) -> Unit,
                          onSkipRest: () -> Unit, onEdit: (String) -> Unit, onTimerTools: () -> Unit,
+                         home: WatchHomeSnapshot?, onRefreshJournal: () -> Unit, onOpenJournal: () -> Unit,
+                         onSelectMeasurement: (MiniJournalWorkout) -> Unit,
+                         initialPage: Int, onReturnPageConsumed: () -> Unit,
                          onFinish: () -> Unit, onHome: () -> Unit) {
-    val pager = rememberPagerState(pageCount = { 3 })
+    val pager = rememberPagerState(initialPage = initialPage, pageCount = { 3 })
+    LaunchedEffect(Unit) { onReturnPageConsumed() }
+    LaunchedEffect(pager.currentPage) { if (pager.currentPage == 2) onRefreshJournal() }
     val scope = rememberCoroutineScope()
     Box(Modifier.fillMaxSize()) {
         HorizontalPager(state = pager, modifier = Modifier.fillMaxSize()) { page ->
@@ -711,7 +774,8 @@ private fun WorkoutPager(workout: WearWorkout, restRemaining: Int,
                     else CurrentSetScreen(workout, restRemaining, onEdit, onComplete, onPrevious, onNext,
                         onSkipRest, onFinish, onMenu)
                 }
-            } else if(page==2)HealthScreen(health,measuring,gps,onEnable,onDisable,onGps) { scope.launch { pager.animateScrollToPage(0) } }
+            } else if(page==2)HealthScreen(health,measuring,gps,onEnable,onDisable,onGps,
+                home,onRefreshJournal,onOpenJournal,onSelectMeasurement) { scope.launch { pager.animateScrollToPage(0) } }
             else WorkoutMenu(workout,
                 { onPrevious(); scope.launch { pager.animateScrollToPage(0) } },
                 { onNext(); scope.launch { pager.animateScrollToPage(0) } },

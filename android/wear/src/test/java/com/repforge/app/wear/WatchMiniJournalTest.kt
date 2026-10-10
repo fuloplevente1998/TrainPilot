@@ -6,6 +6,34 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class WatchMiniJournalTest {
+    @Test fun measurementHistoryUsesOnlyWearAndOrdersRecentWorkoutsFirst() {
+        val old = sample("older").put("started", "2026-10-09T19:00:00Z")
+        val recent = sample("recent").put("started", "2026-10-10T08:00:00Z")
+            .put("finished", "2026-10-10T08:01:00Z")
+        val noWear = sample("phone-only").put("wear", JSONObject.NULL)
+        val wrongSource = sample("external").put("wear", JSONObject()
+            .put("source", "samsung_health").put("totalCalories", 9))
+        val parsed = WatchMiniJournal.parse(JSONArray().put(old).put(noWear)
+            .put(recent).put(wrongSource))
+        val history = WatchMiniJournal.measurementHistory(parsed)
+        assertEquals(listOf("recent", "older"), history.map { it.workoutId })
+        assertEquals("Fekvőtámasz", history.first().exercises.single().name)
+        assertEquals(60, history.first().durationSeconds)
+        assertEquals(49.0, parsed.first().healthConnect!!.totalCalories!!, 0.001)
+        assertEquals(4, parsed.size) // Filtering history never removes saved Journal entries.
+    }
+
+    @Test fun measurementHistoryPreservesZeroMissingAndPartialMeasurements() {
+        val row = sample().put("wear", JSONObject().put("source", "wear_health_services")
+            .put("totalCalories", 0).put("partial", true))
+        val entry = WatchMiniJournal.parse(JSONArray().put(row)).single()
+        val history = WatchMiniJournal.measurementHistory(listOf(entry, entry))
+        assertEquals(1, history.size)
+        assertEquals(0.0, history.single().wear!!.totalCalories!!, 0.001)
+        assertNull(history.single().wear!!.averageHeartRate)
+        assertTrue(history.single().wear!!.partial)
+    }
+
     @Test fun oldPhoneSnapshotIsDifferentFromAnEmptySyncedJournal() {
         val old = WatchHomeStore.parse("{\"days\":[]}")!!
         assertFalse(old.journalAvailable)

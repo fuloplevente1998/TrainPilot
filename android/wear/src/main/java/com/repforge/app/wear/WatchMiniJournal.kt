@@ -42,6 +42,13 @@ data class MiniJournalWorkout(
 )
 
 object WatchMiniJournal {
+    /** Only the watch's own measurements, using the existing saved Journal projection. */
+    fun measurementHistory(workouts: List<MiniJournalWorkout>): List<MiniJournalWorkout> =
+        workouts.filter { it.wear?.source == "wear_health_services" }
+            .sortedByDescending { Instant.parse(it.started) }
+            .distinctBy { it.workoutId }
+            .take(8)
+
     private fun number(value: JSONObject, key: String, min: Double = 0.0, max: Double = 1e7): Double? {
         val raw = value.opt(key)
         if (raw !is Number) return null
