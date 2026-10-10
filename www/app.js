@@ -116,7 +116,7 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
 // @endsection startup.js
 
 // @section backup.js
-const TRAINPILOT_VERSION='1.3.1';
+const TRAINPILOT_VERSION='1.3.2';
 var isNative = function isNative(){return !!window.Capacitor?.isNativePlatform?.();};
 var nativeFiles = function nativeFiles(){if(!filesPlugin)filesPlugin=window.Capacitor?.registerPlugin?.('NativeFiles')||window.Capacitor?.Plugins?.NativeFiles;if(!filesPlugin)throw Error('A natív fájlkezelő nem érhető el.');return filesPlugin;};
 var backupStatus = function backupStatus(){const x=db.get('lastExport',null);return x?`Utolsó ellenőrzött mentés: ${x.name} • ${fmtDate(x.date)}`:'Még nincs ellenőrzött fájlmentés.';};
@@ -8679,6 +8679,9 @@ window.TrainPilotI18n.workoutAudit=function(){
   'cloud.autoCalendar':['Automatikus edzésnaptár','Automatic workout calendar','Automatischer Trainingskalender','Calendar automat de antrenamente'],
   'cloud.autoHelp':['Az app megnyitásakor és adatváltozás után, internet mellett. Bezárt appban nincs háttérszinkron. A naptárkapcsolat iránya: TrainPilot → Google Naptár.','Runs when the app opens and after data changes while online. There is no background sync while the app is closed. Calendar direction: TrainPilot → Google Calendar.','Läuft beim Öffnen der App und nach Datenänderungen bei Internetverbindung. Bei geschlossener App gibt es keine Hintergrundsynchronisierung. Kalenderrichtung: TrainPilot → Google Kalender.','Rulează la deschiderea aplicației și după modificarea datelor, când există internet. Nu există sincronizare în fundal când aplicația este închisă. Direcția calendarului: TrainPilot → Google Calendar.'],
   'cloud.syncDriveNow':['Drive-szinkron most','Sync Drive now','Drive jetzt synchronisieren','Sincronizează Drive acum'],
+  'cloud.earlierBackups':['Korábbi Drive-mentések','Earlier Drive backups','Frühere Drive-Sicherungen','Copii Drive anterioare'],
+  'cloud.earlierHelp':['Csak akkor ellenőrizd, ha egy régi edzés vagy testsúlyadat hiányzik a legfrissebb mentésből. A normál szinkron ezt nem futtatja.','Check these only if an old workout or weight entry is missing from the latest backup. Normal sync does not run this check.','Nur prüfen, wenn ein altes Training oder Gewicht in der neuesten Sicherung fehlt. Die normale Synchronisierung führt diese Prüfung nicht aus.','Verifică doar dacă o înregistrare veche de antrenament sau greutate lipsește din ultima copie. Sincronizarea normală nu face această verificare.'],
+  'cloud.earlierScan':['Korábbi mentések ellenőrzése','Check earlier backups','Frühere Sicherungen prüfen','Verifică copiile anterioare'],
   'cloud.syncCalendarNow':['Naptárszinkron most','Sync calendar now','Kalender jetzt synchronisieren','Sincronizează calendarul acum'],
   'cloud.connect':['Google-fiók kapcsolása','Connect Google account','Google-Konto verbinden','Conectează contul Google'],
   'cloud.lastDrive':['Utolsó Drive-szinkron: {date}','Last Drive sync: {date}','Letzte Drive-Synchronisierung: {date}','Ultima sincronizare Drive: {date}'],
@@ -8698,6 +8701,7 @@ window.TrainPilotI18n.workoutAudit=function(){
   'cloud.driveFound':['{listed} mentés listázva, {current} aktuális eszközmentés.','{listed} backups listed, {current} latest device backups.','{listed} Sicherungen gelistet, {current} aktuelle Gerätesicherungen.','{listed} copii listate, {current} copii curente ale dispozitivelor.'],
   'cloud.driveUnchanged':['Drive naprakész, nincs új mentés vagy helyi változás.','Drive is up to date; no new backup or local changes.','Drive ist aktuell; keine neue Sicherung oder lokale Änderung.','Drive este actualizat; nu există copie nouă sau modificări locale.'],
   'cloud.driveReading':['Aktuális mentés letöltése: {index}/{total}.','Downloading current backup: {index}/{total}.','Aktuelle Sicherung wird geladen: {index}/{total}.','Se descarcă copia curentă: {index}/{total}.'],
+  'cloud.driveArchiveReading':['Korábbi mentés ellenőrzése: {index}/{total}.','Checking earlier backup: {index}/{total}.','Frühere Sicherung wird geprüft: {index}/{total}.','Se verifică o copie anterioară: {index}/{total}.'],
   'cloud.drivePhotos':['Edzésfotók ellenőrzése…','Checking workout photos…','Trainingsfotos werden geprüft…','Se verifică fotografiile antrenamentelor…'],
   'cloud.driveWriting':['Új mentés feltöltése és visszaellenőrzése…','Uploading and verifying the new backup…','Neue Sicherung wird hochgeladen und geprüft…','Se încarcă și se verifică noua copie…'],
   'cloud.unknownBackup':['Ismeretlen vagy más profilhoz tartozó felhőmentés.','Unknown cloud backup or backup belonging to another profile.','Unbekannte Cloud-Sicherung oder Sicherung eines anderen Profils.','Copie cloud necunoscută sau aparținând altui profil.'],
@@ -8742,8 +8746,9 @@ cloudStatus=function(){
  return '<div id="cloudStatus" class="small muted">'+esc(cloudMessage||'')+(cloudDriveStage?'<p>'+esc(cloudDriveStage)+'</p>':'')+(s.drive?'<p>'+esc(tp149T('cloud.lastDrive',{date:tp149FormatDateTime(s.drive)}))+'</p>':'')+(s.calendar?'<p>'+esc(tp149T('cloud.lastCalendar',{date:tp149FormatDateTime(s.calendar)}))+'</p>':'')+'</div>';
 };
 const tp149CloudPanelBase=cloudPanel;
+const tp149CloudRecoveryControl=()=>'<details><summary>'+esc(tp149T('cloud.earlierBackups'))+'</summary><p class="small muted">'+esc(tp149T('cloud.earlierHelp'))+'</p><button class="btn secondary block" onclick="syncCloud(false,true)">'+esc(tp149T('cloud.earlierScan'))+'</button></details>';
 cloudPanel=function(){
- if(rf212Lang()==='hu')return tp149CloudPanelBase.apply(this,arguments);
+ if(rf212Lang()==='hu'){const html=tp149CloudPanelBase.apply(this,arguments);return cloudProfile?html.replace('<div id="cloudStatus"',tp149CloudRecoveryControl()+'<div id="cloudStatus"'):html;}
  const p=cloudPrefs(),profile=cloudProfile;
  const identity=profile?(esc(profile.name||profile.email)+(profile.name&&profile.email?' • '+esc(profile.email):'')):esc(tp149T('cloud.connectHelp'));
  const controls=profile?
@@ -8752,7 +8757,7 @@ cloudPanel=function(){
   '<label><input type="checkbox" '+(p.calendar?'checked':'')+' onchange="setCloudOption(\'calendar\',this.checked)"> '+esc(tp149T('cloud.autoCalendar'))+'</label>'+
   '<p class="small muted">'+esc(tp149T('cloud.autoHelp'))+'</p>'+
   '<button class="btn block" onclick="syncCloud(false)">'+esc(tp149T('cloud.syncDriveNow'))+'</button><br>'+
-  '<button class="btn secondary block" onclick="syncCalendar(false)">'+esc(tp149T('cloud.syncCalendarNow'))+'</button>':
+  '<button class="btn secondary block" onclick="syncCalendar(false)">'+esc(tp149T('cloud.syncCalendarNow'))+'</button>'+tp149CloudRecoveryControl():
   '<button class="btn block" onclick="connectGoogle()">'+esc(tp149T('cloud.connect'))+'</button>';
  return '<div class="setting"><label>'+esc(tp149T('cloud.title'))+'</label><p class="small muted">'+identity+'</p>'+controls+cloudStatus()+'</div>';
 };
@@ -8786,13 +8791,14 @@ storeMerged=function(d){
  try{const next=tp105PreserveLocalHealth(d);for(const k of keys)if(next[k]!==undefined)localStorage.setItem('repforge:'+k,JSON.stringify(next[k]));}
  catch(e){for(const k of keys)localStorage.removeItem('repforge:'+k);keys.forEach(function(k,i){if(old[i]!=null)localStorage.setItem('repforge:'+k,old[i]);});throw Error(tp149T('cloud.noStorage'));}
 };
-var driveLatestHeads=function driveLatestHeads(latest){return Object.fromEntries([...latest].map(function(entry){return [entry[0],entry[1].id];}));};
+var driveLatestHeads=function driveLatestHeads(latest){return Object.fromEntries([...latest].map(function(entry){return [entry[0],driveSnapshotHead(entry[1])];}));};
+var driveSnapshotHead=function driveSnapshotHead(file){return file.id+(/^\d+$/.test(String(file.version||''))?'@'+file.version:'');};
 var driveHeadsUnchanged=function driveHeadsUnchanged(current,previous){
  if(!previous||!current||typeof previous!=='object')return false;
  const keys=Object.keys(current),old=Object.keys(previous);
  return keys.length===old.length&&keys.every(function(k){return Object.hasOwn(previous,k)&&previous[k]===current[k];});
 };
-var driveHasPendingPhotos=function driveHasPendingPhotos(rows){return rows.some(function(h){return (h.photos||[]).some(function(p){return p?.id&&(p.deletedAt||!p.driveFileId);});});};
+var driveHasPendingPhotos=function driveHasPendingPhotos(rows){return rows.some(function(h){return (h.photos||[]).some(function(p){return p?.id&&(p.deletedAt?!!p.driveFileId:!p.driveFileId);});});};
 
 syncCloud=async function(silent=false){
  if(cloudBusy||window.TrainPilotBackupBusy||!cloudProfile)return;
@@ -8834,7 +8840,7 @@ syncCloud=async function(silent=false){
    stage('cloud.driveWriting');
    const r=await bridge.driveWrite({silent:silent,data:JSON.stringify({app:'RepForgeSync',schema:1,owner:owner,device:device,data:merged})});
    if(!r.verified)throw Error(tp149T('cloud.verifyFailed'));
-   if(r.id)heads[device]=r.id;
+   if(r.id)heads[device]=driveSnapshotHead(r);
   }
   await waitForCloudBackup();
   if(state.session||canonicalSyncData(syncData())!==startState)throw Error(tp149T('cloud.changedLocal'));

@@ -15,7 +15,7 @@ const settle=async predicate=>{const deadline=Date.now()+2000;while(!predicate()
  run(`cloudProfile={sub:'owner'};db.set('cloudDevice',${JSON.stringify(device)});db.set('cloudPrefs',{drive:true,calendar:true});rf130SyncWorkoutPhotos=async()=>{};calendarEvents=async()=>[{id:'rf'+'1'.repeat(64),summary:'Workout'}];`);
  snapshot={app:'RepForgeSync',schema:1,owner:'owner',device,data:run('syncData()')};
  await run('syncCalendar(false)');assert.ok(run('db.get("cloudStatus",{}).calendar'));
- const syncing=run('syncCloud(false)');await started;
+ const syncing=run('syncCloud(false,true)');await started;
  assert.ok(run('db.get("cloudStatus",{}).drive'),'the data sync timestamp is already displayed');
  await run('tp105Archive(false)');assert.equal(savedBackups,1,'completed Drive data sync must allow ZIP backup while old snapshots are maintained');
  assert.equal(run('cloudActiveOperation'),'maintenance');assert.equal(run('cloudMessage'),run('tp149T("cloud.driveDone")'));
