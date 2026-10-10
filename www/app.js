@@ -5407,6 +5407,20 @@ var tp120AfterRender=function tp120AfterRender(){
  if(typeof rf260EnhanceActiveStates==='function')rf260EnhanceActiveStates();
 };
 
+// Data arriving asynchronously may refresh the page behind a panel, but must
+// not replace an unfinished editor or restart an active workout view.
+var tpUIRefreshDepth=0;
+var tpRefreshDataUI=function(){
+ if(document.hidden||window.TrainPilotBoot?.loading||window.TrainPilotBackupBusy||state.session)return;
+ if(state.tab==='profile'||state.workout||document.querySelector('#app main.tp150-quick-picker,#app main.tp151-quick-config,#app main.tp128-preview'))return;
+ const focused=document.activeElement;
+ if(focused?.closest?.('#app')&&focused.matches?.('input,textarea,select,[contenteditable="true"]'))return;
+ tpUIRefreshDepth++;
+ try{if(rf245CoachVisible&&!document.getElementById('tp155R4PanelHost'))rf233CoachScreen();else render();}
+ finally{tpUIRefreshDepth--;}
+};
+window.TrainPilotUIRefresh={refresh:tpRefreshDataUI,isBackground:()=>tpUIRefreshDepth>0};
+
 // Final direct renderer. One route => one #app innerHTML write; no historical render wrappers.
 render=function(custom){
  if(window.TrainPilotBoot?.loading)return;
@@ -5448,7 +5462,7 @@ window.TrainPilotNavigate=go;
 // Manual and automatic Health repaint boundary without another wrapper layer.
 rf245Paint=function rf245Paint(){
  if(rf110AutoHealthFlight&&!rf250ActiveManual)return;
- if(!window.TrainPilotBoot?.loading&&!state.session){if(rf245CoachVisible)rf233CoachScreen();else render()}
+ tpRefreshDataUI();
 };
 
 
@@ -9340,6 +9354,7 @@ shell=function(content){
 go=function(route){
  const key=String(route||'home'),target=RF253_CORE_ROUTES?.[key]||key;
  const navigate=function(){
+  window.tp155R4ClosePanel?.(false);
   if(state.session){rf110StopwatchHalt(true);tp1481HaltSide(true);closeWorkoutInterval(state.session);persistDraft();}
   if(typeof stopTimer==='function')stopTimer();
   if(typeof rf245CoachVisible!=='undefined')rf245CoachVisible=false;
@@ -11960,7 +11975,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   const key=String(route||'home'),target=window.TrainPilotRoutes?.[key]||key;
   if(panelDomSupported&&target==='calendar')return window.tp155R4TogglePanel('calendar',document.activeElement);
   if(panelDomSupported&&target==='settings')return window.tp155R4TogglePanel('settings',document.activeElement);
-  if(currentPanel)window.tp155R4ClosePanel(false);
+  if(currentPanel&&!state.session)window.tp155R4ClosePanel(false);
   return goBase.apply(this,arguments);
  };
  window.TrainPilotNavigate=go;
@@ -11987,7 +12002,10 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  render=function(custom){
   const out=renderBase.apply(this,arguments);
   window.tp155R4DecorateNavigation();
-  if(currentPanel)window.tp155R4RefreshPanel();
+  // Pickers keep their editable controls across an ordinary page redraw.
+  // Their filter handlers and explicit RefreshPanel calls update them directly.
+  const keepPicker=custom==null&&['quick','exercises'].includes(currentPanel);
+  if(currentPanel&&!keepPicker&&!window.TrainPilotUIRefresh?.isBackground?.())window.tp155R4RefreshPanel();
   return out;
  };
 
@@ -12327,7 +12345,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  const renderBase=render;
  render=function(){
   const transientPanel=document.querySelector('#tp155R4PanelHost[data-panel="quick"],#tp155R4PanelHost[data-panel="exercises"]');
-  if(transientPanel)window.tp155R4ClosePanel(false);
+  if(transientPanel&&arguments[0]!=null&&!window.TrainPilotUIRefresh?.isBackground?.())window.tp155R4ClosePanel(false);
   const out=renderBase.apply(this,arguments);window.tp155OrderHomeCards();setTimeout(window.tp155OrderHomeCards,0);
   document.querySelector('#rf2211First')?.closest('.tp-select')?.classList.add('tp155-attached-select');return out;
  };
@@ -15549,10 +15567,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
  async function auto(){
   if(document.hidden||window.TrainPilotBackupBusy||autoRunning||state.session)return;
   autoRunning=true;try{
-   if(Date.now()-lastAuto<10*60000){await refresh();if(!document.hidden&&!window.TrainPilotBackupBusy&&!state.session)render();return;}
+   if(Date.now()-lastAuto<10*60000){await refresh();window.TrainPilotUIRefresh.refresh();return;}
    await ready();await refresh();if(!preferences.autoOnOpen)return;lastAuto=Date.now();
    if(preferences.autoOnOpen){const p=rf240Native();if(p){const status=await p.getStatus();if(Object.entries(status.permissions||{}).some(([key,v])=>key.startsWith('READ_')&&v))await rf250Sync({plugin:p,manual:false});}}
-   if(!document.hidden&&!window.TrainPilotBackupBusy&&!state.session)render();
+   window.TrainPilotUIRefresh.refresh();
   }catch(_){/* Permission/network failures keep durable records and require no background dialogs. */}finally{autoRunning=false;}
  }
  function decorate(){
@@ -15565,7 +15583,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const renderBase=render;render=function(){const result=renderBase.apply(this,arguments);decorate();return result;};window.render=render;
   const openBase=window.tp155R4OpenPanel;window.tp155R4OpenPanel=function(type){const result=openBase.apply(this,arguments);if(result&&type==='health-journal')void load();return result;};
   const refreshBase=window.tp155R4RefreshPanel;window.tp155R4RefreshPanel=function(){const result=refreshBase.apply(this,arguments);if(root())void load();return result;};
-  decorate();if(bridge())void ready().then(()=>{if(!document.hidden)render();setTimeout(auto,1500);}).catch(()=>{});
+  decorate();if(bridge())void ready().then(()=>{window.TrainPilotUIRefresh.refresh();setTimeout(auto,1500);}).catch(()=>{});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)void auto();});
  });
 })();

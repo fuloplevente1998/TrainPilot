@@ -753,7 +753,7 @@
    cloudDriveStage='';
    const maintain=recoverEarlier&&writtenDevice&&typeof bridge.drivePrune==='function';
    if(maintain){cloudActiveOperation='maintenance';cloudDriveStage=tp149T('cloud.driveCleanup');}
-   showCloudMessage(tp149T('cloud.driveDone'));render();
+   showCloudMessage(tp149T('cloud.driveDone'));window.TrainPilotUIRefresh.refresh();
    if(typeof rf130DeleteSyncedPhotos==='function')await rf130DeleteSyncedPhotos(merged);
    if(maintain){try{db.set('cloudRetention105',await bridge.drivePrune({device:writtenDevice,silent:true}));}catch(e){db.set('cloudRetention105',{error:e.message});}}
   }catch(e){showCloudMessage(e.message);if(!silent)alert(cloudMessage)}finally{finishCloud()}

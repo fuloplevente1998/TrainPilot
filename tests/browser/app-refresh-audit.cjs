@@ -18,7 +18,8 @@ const {chromium}=require('playwright');
    localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped'));
    window.auditProjection={version:1,days:{},preferences:{autoOnOpen:false}};
    window.Capacitor={isNativePlatform:()=>true,Plugins:{HealthJournal:{
-    pendingRestore:async()=>({}),initialize:()=>new Promise(resolve=>window.auditFinishInitialization=()=>resolve(window.auditProjection)),getProjection:async()=>window.auditProjection
+    pendingRestore:async()=>({}),initialize:()=>new Promise(resolve=>window.auditFinishInitialization=()=>resolve(window.auditProjection)),getProjection:async()=>window.auditProjection,
+    readPage:async()=>({records:[],days:[],nextCursor:0,hasMore:false})
    }}};
   });
   await page.goto('http://127.0.0.1:'+server.address().port);
@@ -36,7 +37,76 @@ const {chromium}=require('playwright');
   assert.equal(await floor.locator('[data-tp152-qweight]').inputValue(),'20','late initialization must retain configured weight');
   assert.equal(await floor.evaluate(node=>node.open),true,'expanded exercise must remain open');
   fs.mkdirSync('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/app-refresh-quick.png'});
+  await page.evaluate(()=>{auditProjection.preferences.autoOnOpen=true;});
+  await page.evaluate(()=>TrainPilotHealthJournal.auto());await page.evaluate(()=>TrainPilotHealthJournal.auto());
+  assert.equal(await floor.locator('[data-tp152-qweight]').inputValue(),'20','automatic projection refresh and its cooldown path retain quick configuration');
+  await page.evaluate(()=>render());
+  assert.equal(await page.locator('#tp155R4PanelHost[data-panel="quick"]').count(),1,'ordinary page redraw must not dismiss Quick Workout');
+  assert.equal(await floor.locator('[data-tp152-qweight]').inputValue(),'20','ordinary redraw retains quick configuration too');
+  assert.equal(await floor.evaluate(node=>node.open),true,'ordinary redraw retains the expanded exercise');
+  await page.locator('#tp155R4PanelHost .tp155-r4-panel-close').click();
+  assert.equal(await page.locator('#tp155R4PanelHost').count(),0,'explicit close still dismisses the picker');
+
+  const checks=[];
+  for(const [type,open,input,value] of [
+   ['exercises','muscleLibrary()','#libraryQuery','press'],
+   ['custom-exercise','customExerciseScreen()','#ceHu','Próbagyakorlat'],
+   ['custom-program','createCustomProgram()','#tp106ProgramName','Próbaprogram'],
+   ['goals',"tp155R4OpenPanel('goals')",null,null],
+   ['calendar',"go('calendar')",null,null],
+   ['settings',"go('settings')",null,null],
+   ['coach','rf233CoachScreen()',null,null],
+   ['health-journal',"tp155R4OpenPanel('health-journal')",null,null]
+  ]){
+   await page.evaluate(()=>tp155R4ClosePanel(false));await page.evaluate(code=>(0,eval)(code),open);
+   const host=page.locator('#tp155R4PanelHost[data-panel="'+type+'"]');await host.waitFor();
+   if(input)await page.locator(input).fill(value);
+   await host.evaluate(node=>{window.auditPanelNode=node;window.auditPanelContent=node.querySelector('.tp155-r4-panel-content');});
+   await page.evaluate(()=>TrainPilotUIRefresh.refresh());await page.evaluate(()=>TrainPilotHealthJournal.auto());
+   assert.equal(await host.count(),1,type+' survives background data');
+   assert.equal(await page.evaluate(()=>auditPanelNode===document.getElementById('tp155R4PanelHost')&&auditPanelContent===auditPanelNode.querySelector('.tp155-r4-panel-content')),true,type+' retains its existing controls');
+   if(input)assert.equal(await page.locator(input).inputValue(),value,type+' retains unsaved input');
+   checks.push({panel:type,backgroundRefresh:'pass'});
+  }
+  await page.evaluate(()=>{tp155R4ClosePanel(false);go('home');profileScreen();});
+  await page.waitForSelector('#pfAge');await page.locator('#pfAge').fill('35');
+  await page.evaluate(()=>TrainPilotUIRefresh.refresh());assert.equal(await page.locator('#pfAge').inputValue(),'35','personal planner retains its draft');
+  await page.evaluate(()=>window.tp3ClosePlannerPanel?.(false));
+  // Audit the five full pages and three navigation panels across mobile sizes,
+  // languages and themes. Every case must remain navigable without page errors.
+  for(const width of [320,393,412])for(const lang of ['hu','en'])for(const theme of ['classicBlue','blue']){
+   await page.setViewportSize({width,height:873});
+   await page.evaluate(({lang,theme})=>{window.tp3ClosePlannerPanel?.(false);tp155R4ClosePanel(false);state.session=null;state.workout=null;db.set('language',lang);rf200SetTheme(theme);},{lang,theme});
+   for(const route of ['home','plan','health','programs','history','calendar','settings','coach']){
+    await page.evaluate(()=>tp155R4ClosePanel(false));
+    await page.evaluate(route=>{if(route==='coach')rf233CoachScreen();else go(route);},route);
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    const layout=await page.evaluate(()=>({main:!!document.querySelector('#app main'),nav:!!document.querySelector('.top.tp154-nav-grid'),overflow:document.documentElement.scrollWidth>innerWidth+1,locked:document.body.style.overflow==='hidden',panel:document.getElementById('tp155R4PanelHost')?.dataset.panel}));
+    assert.equal(layout.main,true,route+' has a page');assert.equal(layout.nav,true,route+' retains navigation');assert.equal(layout.overflow,false,route+' has no horizontal page overflow at '+width+'/'+lang+'/'+theme);
+    if(['calendar','settings','coach'].includes(route))assert.equal(layout.panel,route);else assert.equal(layout.locked,false,route+' is not left scroll-locked');
+    checks.push({width,lang,theme,route,layout:'pass'});
+    if(width===393&&lang==='hu'&&theme==='classicBlue')await page.screenshot({path:'ui-evidence/app-audit-'+route+'.png'});
+   }
+  }
+  fs.writeFileSync('ui-evidence/app-audit.json',JSON.stringify(checks,null,2));
+  await page.evaluate(()=>{tp155R4ClosePanel(false);go('plan');});
+  await page.locator('.tp150-quick-entry button').click();
+  const start=page.locator('#tp150QuickResults [data-exercise-id="db-floor-press"]');
+  await start.locator('summary').click();await start.locator('.tp150-quick-start').click();
+  await page.waitForFunction(()=>state.session?.type==='quick');
+  assert.equal(await page.locator('#tp155R4PanelHost').count(),0,'starting the workout closes the picker');
+  await page.evaluate(()=>tp155R4OpenPanel('quick'));await page.locator('#tp155QuickQuery').fill('press');
+  await page.evaluate(()=>go('home'));await page.locator('#tp2628Dialog').waitFor();
+  await page.locator('#tp2628Dialog [data-tp2628-cancel]').click();
+  assert.equal(await page.locator('#tp155R4PanelHost[data-panel="quick"]').count(),1,'canceling navigation keeps the workout picker');
+  assert.equal(await page.locator('#tp155QuickQuery').inputValue(),'press','canceling navigation retains search');
+  assert.equal(await page.evaluate(()=>state.session.type),'quick');
+  await page.evaluate(()=>TrainPilotUIRefresh.refresh());assert.equal(await page.locator('#tp155R4PanelHost[data-panel="quick"]').count(),1,'background data cannot replace an active workout view');
+  await page.evaluate(()=>go('home'));await page.locator('#tp2628Dialog [data-tp2628-confirm]').click();
+  await page.waitForFunction(()=>state.tab==='home'&&!state.session);
+  assert.equal(await page.locator('#tp155R4PanelHost').count(),0,'confirmed navigation releases the picker');
+  assert.equal(await page.evaluate(()=>!!db.get('draft',null)),true,'confirmed navigation preserves the workout draft');
   assert.deepEqual(errors,[]);
-  console.log('PASS native initialization keeps the real Quick Workout panel and configured exercise intact');
+  console.log('PASS app audit: late native initialization and automatic refresh preserve Quick Workout; eight panels and planner retain edits; 96 mobile page/panel/language/theme cases remain navigable without page errors or horizontal overflow');
  }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -12,6 +12,7 @@ Frissítve: **2026. október 10.** A felhasználói verzióleírások négy csal
 | Telefonról indított órás app | Az **1.3** javítási sorozat része a [#160 tesztágon](https://github.com/fuloplevente1998/TrainPilot/pull/160), még nincs mainen. Programos edzés megnyílása és háttérmérése felhasználó által visszaigazolva. A gyors edzés aktuális választójának indítófüggvényében a hiányzó órás megnyitás bekötve; készülékes próba következik. |
 | Kiadási ellenőrzések | A #160 párosított telefonos/órás CI- és aláírt APK-ellenőrzése sikeres. Ez nem helyettesíti a készülékes elfogadást. |
 | Drive-szinkron | Az **1.3** #160 tesztágán csak a legfrissebb eszközmentések olvasása, külön korábbi-mentés helyreállítás és javított Telefon/Felhő választás. A felhasználó a működő szinkront visszaigazolta; #161 lezárva. |
+| Telefonos UI és navigáció | A gyorsválasztó késői natív inicializálás miatti bezárása Chromiumban reprodukálva. A háttérfrissítés, a panelmezők megőrzése és a lemondott navigáció javítása a #160 tesztág része, változatlan verzióval. [Audit és ellenőrzési kör](docs/APP_AUDIT_1.3.md). |
 
 Az alkalmazás megnyílása vagy a mérési értesítés önmagában nem igazolja, hogy friss szenzoradat keletkezett. A kijelző kikapcsolása után is ellenőrizni kell a mérés folytatását, majd ugyanannak az edzésnek a mentett telefonos és órás részleteit.
 
