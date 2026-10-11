@@ -14,9 +14,11 @@ public class IntervalTimerPlugin extends Plugin {
     private boolean starting;
     @PluginMethod public void status(PluginCall c){getActivity().runOnUiThread(()->{try{c.resolve(new JSObject(IntervalTimerService.snapshot(getContext()).toString()));}catch(Exception e){c.reject(e.getMessage());}});}
     @PluginMethod public void start(PluginCall c){
+        getActivity().runOnUiThread(()->{
         try{IntervalTimerService.validate(c.getData());if(starting)throw new IllegalStateException("Interval is starting");JSONObject previous=IntervalTimerService.snapshot(getContext());if(previous.optBoolean("running")||!previous.optBoolean("stopped",true)&&!"complete".equals(previous.optString("phase"))&&!previous.optBoolean("interrupted"))throw new IllegalStateException("Stop the current interval first");starting=true;
             if(Build.VERSION.SDK_INT>=33&&ContextCompat.checkSelfPermission(getContext(),Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)requestPermissionForAlias("notifications",c,"notificationResult");else begin(c);
         }catch(Exception e){c.reject(e.getMessage());}
+        });
     }
     @PermissionCallback private void notificationResult(PluginCall c){begin(c);}
     private void begin(PluginCall c){getActivity().runOnUiThread(()->{try{
