@@ -12,6 +12,7 @@ class WearHealthAccumulator(val value: JSONObject) {
         val sum = value.optDouble("heartRateSum", 0.0) + bpm
         value.put("lastSampleAt",time).put("heartRate",bpm).put("heartRateSamples",count).put("heartRateSum",sum)
             .put("averageHeartRate",sum/count).put("maxHeartRate",maxOf(value.optDouble("maxHeartRate",bpm),bpm))
+            .put("minHeartRate",minOf(value.optDouble("minHeartRate",bpm),bpm))
     }
     fun total(key: String, number: Double?) {
         if (number == null || !number.isFinite() || number < 0) return
@@ -36,6 +37,9 @@ object WearHealthStore {
     @Synchronized fun gps(context: Context) = context.getSharedPreferences(PREFS,0).getBoolean("gps",false)
     @Synchronized fun gps(context: Context, enabled: Boolean) { context.getSharedPreferences(PREFS,0).edit().putBoolean("gps",enabled).commit() }
     @Synchronized fun load(context: Context, id: String): JSONObject? = context.getSharedPreferences(PREFS,0).getString("summary:$id",null)?.let { try { JSONObject(it) } catch (_: Exception) { null } }
+    @Synchronized fun latest(context: Context): JSONObject? =
+        context.getSharedPreferences(PREFS,0).getStringSet("ids",emptySet()).orEmpty()
+            .mapNotNull { load(context,it) }.maxByOrNull { it.optLong("updatedAt") }
     @Synchronized fun begin(context: Context, id: String): JSONObject {
         load(context,id)?.let { return it }
         val prefs=context.getSharedPreferences(PREFS,0)
@@ -47,7 +51,7 @@ object WearHealthStore {
         value.put("revision",value.optLong("revision")+1).put("updatedAt",System.currentTimeMillis())
         val prefs=context.getSharedPreferences(PREFS,0)
         val ids=prefs.getStringSet("ids",emptySet())!!.toMutableSet();ids.add(id)
-        val editor=prefs.edit().putString("summary:$id",value.toString()).putString("active",if(value.optString("state") in listOf("starting","active","ending"))id else "")
+        val editor=prefs.edit().putString("summary:$id",value.toString()).putString("active",if(value.optString("state") in listOf("starting","active","paused","ending"))id else "")
         while(ids.size>16) { val oldest=ids.minByOrNull { load(context,it)?.optLong("updatedAt") ?: 0L } ?: break;ids.remove(oldest);editor.remove("summary:$oldest") }
         editor.putStringSet("ids",ids).commit()
     }

@@ -2,8 +2,21 @@
 const assert=require('node:assert/strict');
 
 module.exports=async function assertHealthOverview(page,label){
- await page.evaluate(()=>window.scrollTo(0,0));
- await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+ await page.evaluate(async()=>{await document.fonts.ready;window.scrollTo(0,0)});
+ // Disclosure toggle/resize handlers can still change the fit classes after
+ // two frames. Inspect one settled layout, then keep each scroll assertion
+ // inside the awaited predicate instead of taking a second, racing snapshot.
+ await page.evaluate(()=>new Promise((resolve,reject)=>{
+  let previous='',stable=0,frames=0;
+  const tick=()=>{
+   const main=document.querySelector('#app main.tp168-health'),r=main?.getBoundingClientRect();
+   const signature=[r?.height,main?.scrollHeight,document.body.className,innerHeight].join('|');
+   stable=signature===previous?stable+1:0;previous=signature;
+   if(stable>=6)return resolve();
+   if(++frames>=120)return reject(new Error('Health overview layout did not settle'));
+   requestAnimationFrame(tick);
+  };requestAnimationFrame(tick);
+ }));
  const layout=await page.evaluate(()=>{
   const main=document.querySelector('#app main.tp168-health');
   const clipped=[...main.querySelectorAll(':scope>details:not([open])')].filter(node=>{
@@ -19,12 +32,9 @@ module.exports=async function assertHealthOverview(page,label){
  if(layout.fixed){
   assert.ok(layout.footer<=layout.viewport+1,label+' only locks scrolling when the footer fits');
  }else if(layout.footer>layout.viewport+1){
-  await page.mouse.move(150,layout.viewport-50);await page.mouse.wheel(0,400);await page.waitForTimeout(60);
-  assert.ok(await page.evaluate(()=>scrollY)>0,label+' can actually scroll to overflowing content');
+  await page.mouse.move(150,layout.viewport-50);await page.mouse.wheel(0,400);await page.waitForFunction(()=>scrollY>0,null,{timeout:2000});
  }
- await page.locator('.tp168-health-note').scrollIntoViewIfNeeded();
- assert.ok(await page.locator('.tp168-health-note').evaluate(node=>{
-  const rect=node.getBoundingClientRect();return rect.top>=0&&rect.bottom<=innerHeight+1;
- }),label+' footer remains reachable');
+ await page.locator('.tp168-health-note').evaluate(node=>node.scrollIntoView({block:'end',behavior:'instant'}));
+ await page.waitForFunction(()=>{const r=document.querySelector('.tp168-health-note')?.getBoundingClientRect();return r&&r.top>=0&&r.bottom<=innerHeight+1},null,{timeout:2000});
  await page.evaluate(()=>window.scrollTo(0,0));
 };

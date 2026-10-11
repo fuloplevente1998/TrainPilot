@@ -99,6 +99,7 @@ public class WearSyncPlugin extends Plugin {
         result.put("supported", true);
         result.put("snapshot", current == null ? JSONObject.NULL : current);
         result.put("pendingCommands", WearCommandQueueStore.pending(getContext()).length());
+        result.put("liveHealth", WearLiveHealthStore.current(getContext()));
         call.resolve(result);
     }
 
@@ -110,6 +111,11 @@ public class WearSyncPlugin extends Plugin {
                         for (DataItem item : items) {
                             if (item == null || item.getUri() == null) continue;
                             String path = item.getUri().getPath();
+                            if (WearLiveHealthStore.PATH.equals(path)) {
+                                try { WearLiveHealthStore.save(getContext(), DataMapItem.fromDataItem(item).getDataMap().getString("health")); }
+                                catch (Exception ignored) {}
+                                continue;
+                            }
                             if (path == null || !path.startsWith(WearCommandListenerService.COMMAND_PATH_PREFIX)) continue;
                             try {
                                 String raw = DataMapItem.fromDataItem(item).getDataMap().getString("command");
@@ -143,6 +149,7 @@ public class WearSyncPlugin extends Plugin {
         JSONArray commands = WearCommandQueueStore.pending(getContext());
         JSONObject current = ActiveWorkoutStore.current(getContext());
         result.put("commands", commands);
+        result.put("liveHealth", WearLiveHealthStore.current(getContext()));
         result.put("revision", current == null ? 0L : current.optLong("revision", 0L));
         if (scanError != null && !scanError.isEmpty()) result.put("scanError", scanError);
         call.resolve(result);

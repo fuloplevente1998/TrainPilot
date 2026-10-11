@@ -334,5 +334,9 @@
   {
     "file": "tests/browser/health-first-frame.cjs",
     "estimatedSeconds": 35
+  },
+  {
+    "file": "tests/browser/wear-measurement-165.cjs",
+    "estimatedSeconds": 9
   }
 ]

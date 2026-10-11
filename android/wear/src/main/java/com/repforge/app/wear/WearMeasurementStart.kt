@@ -13,3 +13,8 @@ data class WearMeasurementStart(val workoutId: String, val minimumRevision: Long
         }
     }
 }
+
+/** Only the initial handoff is tied to the launching phone intent. */
+internal fun wearMeasurementMayStart(remote: Boolean, accepted: Boolean, request: WearMeasurementStart?,
+                                    currentId: String?, revision: Long): Boolean =
+    !remote || accepted || request?.matches(currentId,revision)==true

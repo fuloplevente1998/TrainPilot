@@ -4,8 +4,13 @@ import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.WearableListenerService
+import com.google.android.gms.wearable.MessageEvent
 
 class WearDataListenerService : WearableListenerService() {
+    override fun onMessageReceived(event: MessageEvent) {
+        if(event.path!=WearWorkoutHandoff.REPLY || event.data.size>100000)return
+        if(WearWorkoutHandoff.accept(this,event.data.toString(Charsets.UTF_8)))WearSurfaces.refresh(this)
+    }
     override fun onDataChanged(dataEvents: DataEventBuffer) {
         for (event in dataEvents) {
             if (event.type != DataEvent.TYPE_CHANGED) continue
