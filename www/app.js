@@ -15583,7 +15583,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const health=document.querySelector('#app main.tp168-health');if(health&&!health.querySelector('.tp120-health-journal')){
    const disclosure=document.createElement('details');disclosure.className='card tp120-health-journal';
    disclosure.dataset.language=rf212Lang();disclosure.dataset.provider=preferences.provider||'health_connect';
-   disclosure.innerHTML='<summary class="tp120-journal-entry"><strong>'+esc(t('title'))+'</strong><span class="tp168-chevron tp-global-chevron" aria-hidden="true">›</span></summary><div data-health-journal-content></div>';
+   disclosure.innerHTML='<summary class="tp120-journal-entry"><span class="tp168-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h13a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1ZM3 7h4M3 12h4M3 17h4"/><path d="M12.5 16.5 9 13a2.3 2.3 0 0 1 3.5-3 2.3 2.3 0 0 1 3.5 3Z"/></svg></span><strong>'+esc(t('title'))+'</strong><span class="tp168-chevron tp-global-chevron" aria-hidden="true">›</span></summary><div data-health-journal-content></div>';
    disclosure.addEventListener('toggle',()=>{if(disclosure.open&&!disclosure.querySelector('.tp120-journal')){disclosure.querySelector('[data-health-journal-content]').innerHTML=window.TrainPilotHealthJournal.html();rf260EnhanceSelects();rf260EnhanceTemporalFields();void load();}tp107FitViews();});
    health.querySelector('.tp168-connect-panel')?.before(disclosure);
   }

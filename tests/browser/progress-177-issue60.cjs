@@ -150,6 +150,28 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true,'Progress must not overflow body at '+width+'px');
   await assertPinnedAxis('Compact '+width+'px',true);
  }
+ // Filled overview: the Coach title must be reachable before any page scroll,
+ // including a viewport shortened by the phone's system bars.
+ await page.evaluate(()=>{
+  const now=Date.now();db.set('history',Array.from({length:19},(_,i)=>({id:'compact-'+i,workout:'A',dayId:'A',programId:'home-basic',started:new Date(now-(i*2+1)*86400000).toISOString(),finished:new Date(now-(i*2+1)*86400000+2700000).toISOString(),exercises:[i===18?{id:'side-plank',repUnit:'mp/oldal',sets:[{leftSeconds:35,rightSeconds:35,reps:'35',done:true}]}:{id:'db-floor-press',repUnit:'ism.',sets:[{weight:65.2333333333,reps:'12',done:true}]}],photos:[]})));tp177OpenProgress();
+ });
+ for(const [width,height] of [[360,873],[393,823],[412,847]])for(const theme of ['classicBlue','yellow']){
+  await page.setViewportSize({width,height});await page.evaluate(t=>{rf200SetTheme(t);scrollTo(0,0)},theme);
+  await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+  const fit=await page.evaluate(()=>{
+   const title=document.querySelector('.tp177-coach-body>strong'),r=title.getBoundingClientRect(),button=title.closest('button');
+   return {top:r.top,bottom:r.bottom,viewport:innerHeight,scroll:scrollY,hit:button.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)),cards:[...document.querySelectorAll('.tp177-metric')].map(e=>e.getBoundingClientRect().height)};
+  });
+  assert.equal(fit.scroll,0);assert.ok(fit.top>0&&fit.bottom<=fit.viewport-4&&fit.hit,'Coach heading is visible and tappable without scrolling '+width+'/'+height+'/'+theme+' '+JSON.stringify(fit));
+  assert.ok(fit.cards.every(h=>h>=44&&h<90),'compact cards retain full touch targets '+width+'/'+height+' '+JSON.stringify(fit));
+ }
+ await page.waitForSelector('#tpBoot',{state:'detached'});
+ await page.screenshot({path:'ui-evidence/progress-coach-visible-177.png'});
+ await page.locator('.tp177-coach-body>strong').click();await page.waitForSelector('#tp155R4PanelHost[data-panel="coach"]');
+ await page.evaluate(()=>tp155R4ClosePanel(false));
+ await page.setViewportSize({width:320,height:740});await page.evaluate(()=>scrollTo(0,0));
+ await page.locator('.tp177-coach').scrollIntoViewIfNeeded();
+ assert.ok(await page.evaluate(()=>scrollY)>0,'short screens retain normal scrolling to Coach');
  assert.deepEqual(errors,[],'page errors: '+errors.join('\n'));
  console.log('PASS #60 Progress UI: 3 Journal tabs, daily/weekly vertical bars, compact cards, anatomy, nested local details, mobile widths and no invented intensity.');
 }finally{await browser?.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exit(1)});

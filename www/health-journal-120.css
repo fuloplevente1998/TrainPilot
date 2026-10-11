@@ -4,6 +4,8 @@ html body #app main.rf221-home>.tp120-home-goals{display:flex!important;align-it
 .tp120-journal{display:grid;gap:10px;min-width:0}
 html body #app main.tp168-health>.tp120-health-journal{padding:0!important;margin:0!important;border-radius:16px!important;min-width:0}
 .tp120-health-journal>.tp120-journal-entry{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;padding:5px 12px;box-sizing:border-box;cursor:pointer;list-style:none;font-size:14px;line-height:1.25}
+.tp120-health-journal>.tp120-journal-entry>strong{flex:1;min-width:0}
+.tp120-health-journal>.tp120-journal-entry .tp168-icon{width:30px;height:30px;flex-basis:30px;border-radius:10px}
 .tp120-health-journal>.tp120-journal-entry .tp168-chevron{width:26px;height:26px}
 .tp120-health-journal>.tp120-journal-entry::-webkit-details-marker{display:none}
 .tp120-health-journal[open]>.tp120-journal-entry .tp168-chevron{transform:rotate(90deg)!important}
