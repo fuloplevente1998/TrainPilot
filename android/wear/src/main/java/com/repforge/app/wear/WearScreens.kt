@@ -670,7 +670,11 @@ private fun HealthScreen(data: JSONObject?, enabled: Boolean, gps: Boolean, hasW
     }
     RoundList {
         Label("TRAINPILOT",Gold);Title("Órás mérések",20);Spacer(Modifier.height(8.dp))
+        if(!hasWorkout && data!=null)Label("Legutóbbi edzés mérése",size=10)
         Text(wearRecordingStatus(data,enabled,hasWorkout),color=Gold,fontSize=11.sp,textAlign=TextAlign.Center)
+        data?.optLong("updatedAt")?.takeIf { it>0L }?.let {
+            Label("Frissítve: ${Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm:ss"))}",size=10)
+        }
         if(wearRecordingNeedsRetry(data,enabled,hasWorkout)) {
             Spacer(Modifier.height(6.dp))
             Pill("Aktuális edzés mérése",tone=Gold,onClick=onEnable)

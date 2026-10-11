@@ -24,6 +24,19 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const pathna
   await page.evaluate(()=>wear165Receive('error',{message:'<img src=x onerror=alert(1)>'}));assert.equal(await page.locator('[data-wear-measurement165] img').count(),0,'remote error text is escaped');
   await page.locator('[data-wear-measurement165] button').click();assert.match(await page.locator('[data-wear-measurement165]').innerText(),/Edzés átadása/);
   await page.evaluate(()=>{go('home');resumeDraft();});assert.equal(await page.locator('[data-wear-measurement165]').count(),1,'navigation retains one status panel');
+  await page.evaluate(()=>{
+   for(const e of state.session.exercises)for(const s of e.sets){s.done=true;s.reps='10';}
+   finishWorkout({wearConfirmed:true});go('history');
+  });
+  assert.equal(await page.evaluate(()=>history()[0].healthWear129.totalCalories),7,'phone save keeps the live Wear measurement');
+  await page.evaluate(async()=>{
+   wear165Payload={...wear165Payload,revision:++wear165Revision,state:'ended',updatedAt:Date.now(),summary:{...wear165Payload.summary,revision:2,state:'ended',averageHeartRate:109,totalCalories:9}};
+   await TrainPilotWearSync.drainCommands();
+  });
+  assert.equal(await page.evaluate(()=>history()[0].healthWear129.totalCalories),9,'late live final updates the saved Journal');
+  assert.equal(await page.evaluate(()=>history().length),1);
+  assert.equal(await page.evaluate(()=>state.session),null);
+  assert.match(await page.evaluate(()=>rfHistoryHealthHtml(0)),/9 kcal/);
   assert.deepEqual(errors,[]);console.log('PASS Wear measurement UI: 8 language/width combinations, real live pulse/energy, paused/error state, escaped errors, manual handoff retry and unchanged sets');
  } finally {await browser?.close();server.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;server.close()});

@@ -62,6 +62,23 @@ internal class WearRecordingLifecycle(private val data: JSONObject) {
 
 internal data class WearMeasuredMetric(val label: String, val value: String)
 
+/** Select only this workout; never borrow the previous workout's live values. */
+internal fun wearHealthDisplaySummary(workoutId: String, stored: JSONObject?, published: JSONObject?): JSONObject? {
+    fun matching(data: JSONObject?): JSONObject? = data?.takeIf {
+        workoutId.isNotBlank() && it.optString("workoutId")==workoutId &&
+            it.optString("source")=="wear_health_services" && it.optLong("revision")>0
+    }
+    val durable=matching(stored)
+    val live=published?.takeIf { it.optString("workoutId")==workoutId }?.optJSONObject("summary")?.let(::matching)
+    val selected=when {
+        durable==null -> live
+        live==null || live.optString("watchId")!=durable.optString("watchId") -> durable
+        live.optLong("revision")>durable.optLong("revision") -> live
+        else -> durable
+    }
+    return selected?.let { WearHealthAccumulator(it).snapshot() }
+}
+
 internal fun wearMeasuredTotals(data: JSONObject?, workoutId: String): List<WearMeasuredMetric> {
     if (data == null || data.optString("workoutId") != workoutId) return emptyList()
     return listOf(

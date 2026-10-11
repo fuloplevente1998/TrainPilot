@@ -16,7 +16,7 @@ ui.waiting('new');assert.equal(ui.receive(live(2)),false,'a manual retry must no
 assert.equal(app.run('state.session.wearMeasurement165.state'),'waitingWorkout');
 assert.equal(app.run('state.session.exercises[0].sets[0].done'),false,'a measurement status never completes a set');
 let payload=live(3),acks=0;
-app.context.window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{pendingCommands:async()=>({commands:[],liveHealth:payload}),ackCommand:async()=>acks++}}};
+app.context.window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{pendingCommands:async()=>({commands:[],liveHealth:payload}),ackCommand:async()=>acks++,publish:async()=>{},clear:async()=>{},publishHome:async()=>{},startWatchMeasurement:async()=>({opened:true})}}};
 (async()=>{
  await app.context.window.TrainPilotWearSync.drainCommands();
  assert.equal(app.run('state.session.healthWear129.heartRate'),105);
@@ -26,5 +26,29 @@ app.context.window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{pendi
  assert.equal(app.run('state.session.healthWear129.revision'),3,'late live summaries cannot roll measurements back');
  app.run('state.session=null;db.set("draft",null)');payload=live(4);await app.context.window.TrainPilotWearSync.drainCommands();
  assert.equal(app.run('state.session'),null,'late reply cannot recreate a closed phone workout');
+ // Actual phone save: live values must remain in the journal, and the final
+ // replaceable DataItem must update that saved row even without an active UI.
+ app.run('db.set("draft",null);startWorkout(activeProgram().days[0].id);');
+ await new Promise(resolve=>setImmediate(resolve));
+ const savedId=app.run('state.session.syncId||state.session.started');
+ assert.equal(app.run('state.session.syncId'),savedId,'phone-started workout pins its handoff identity before save');
+ const measured=(revision,totalCalories,state='active')=>({...live(revision,state),workoutId:savedId,summary:{...live(revision,state).summary,workoutId:savedId,totalCalories}});
+ payload=measured(10,2);await app.context.window.TrainPilotWearSync.drainCommands();
+ app.run('for(const e of state.session.exercises)for(const s of e.sets){s.done=true;s.reps="10";}finishWorkout({wearConfirmed:true});');
+ assert.equal(app.run('history()[0].healthWear129.totalCalories'),2);
+ payload=measured(11,4,'ended');await app.context.window.TrainPilotWearSync.drainCommands();
+ assert.equal(app.run('history()[0].healthWear129.totalCalories'),4,'late live final must attach to the saved phone workout');
+ assert.equal(app.run('history()[0].healthWear129.state'),'ended');
+ assert.match(app.run('rfHistoryHealthHtml(0)'),/4 kcal/);
+ assert.equal(app.run('state.session'),null);
+ assert.equal(app.run('history().length'),1);
+ payload=measured(9,99);await app.context.window.TrainPilotWearSync.drainCommands();
+ assert.equal(app.run('history()[0].healthWear129.totalCalories'),4,'stale live summary cannot overwrite final totals');
+ payload={...measured(12,99),state:'toString'};await app.context.window.TrainPilotWearSync.drainCommands();
+ assert.equal(app.run('history()[0].healthWear129.totalCalories'),4,'invalid live phase cannot persist a summary');
+ app.run('db.set("draft",null);startWorkout(activeProgram().days[0].id);');
+ payload=measured(13,5,'ended');await app.context.window.TrainPilotWearSync.drainCommands();
+ assert.equal(app.run('history()[0].healthWear129.totalCalories'),5,'previous saved workout may update while the next one is active');
+ assert.equal(app.run('state.session.healthWear129'),undefined,'previous workout values must not leak into the next workout');
  console.log('PASS Wear live handoff: identity, revision, pending/paused state, measured data, no set changes, no stale rollback or workout resurrection');
 })().catch(e=>{console.error(e);process.exitCode=1});

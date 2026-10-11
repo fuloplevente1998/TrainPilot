@@ -5,6 +5,35 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class WearRecordingStateTest {
+    private fun measured(id: String, revision: Long, calories: Double) = JSONObject()
+        .put("schema",1).put("source","wear_health_services").put("workoutId",id)
+        .put("watchId","sensor-watch").put("revision",revision).put("state","active")
+        .put("heartRate",93.0).put("totalCalories",calories)
+
+    @Test fun watchUsesTheSameMeasuredPayloadThatReachedThePhoneWhenItsStoreReadIsMissing() {
+        val data=measured("current",3,2.0)
+        val published=JSONObject().put("workoutId","current").put("summary",data)
+        val display=wearHealthDisplaySummary("current",null,published)!!
+        assertEquals(93.0,display.getDouble("heartRate"),.001)
+        assertEquals(2.0,display.getDouble("totalCalories"),.001)
+        data.put("totalCalories",99.0)
+        assertEquals(2.0,display.getDouble("totalCalories"),.001) // Immutable UI snapshot.
+    }
+
+    @Test fun displayPreservesNewerFinalTotalsAndRejectsOtherWorkoutsOrDifferentWatches() {
+        val stored=measured("current",5,4.0).put("state","ended")
+        val older=JSONObject().put("workoutId","current").put("summary",measured("current",3,2.0))
+        assertEquals(4.0,wearHealthDisplaySummary("current",stored,older)!!.getDouble("totalCalories"),.001)
+        val newer=JSONObject().put("workoutId","current").put("summary",measured("current",6,5.0))
+        assertEquals(5.0,wearHealthDisplaySummary("current",stored,newer)!!.getDouble("totalCalories"),.001)
+        assertNull(wearHealthDisplaySummary("next",stored,newer))
+        newer.getJSONObject("summary").put("workoutId","other")
+        assertNull(wearHealthDisplaySummary("current",null,newer))
+        newer.put("summary",measured("current",7,99.0).put("watchId","foreign-watch"))
+        assertEquals(4.0,wearHealthDisplaySummary("current",stored,newer)!!.getDouble("totalCalories"),.001)
+        assertEquals(0.0,wearHealthDisplaySummary("current",measured("current",1,0.0),null)!!.getDouble("totalCalories"),.001)
+    }
+
     @Test fun enabledCurrentWorkoutWithoutMeasurementCanBeStartedExplicitly() {
         assertEquals("Az aktuális edzés mérése még nem indult",wearRecordingStatus(null,true,true))
         assertTrue(wearRecordingNeedsRetry(null,true,true))

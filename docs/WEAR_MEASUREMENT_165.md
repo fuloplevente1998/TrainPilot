@@ -27,3 +27,18 @@ Mind a telefonos, mind a Wear APK frissítése szükséges. A verziószám vált
 - Kikapcsolt mérés és hiányzó szenzorengedély: egyértelmű állapot, nincs hamis „Mérés folyamatban”. A meglévő engedélyek újbóli használata ne nyisson engedélykérőt.
 
 Az automatikus intervallumok #162 / PR #164 külön fejlesztés. A fizikai hibajelenség pontos oka a készülékes próbáig nem tekinthető igazoltnak.
+
+## Készülékes folytatás: élő telefonos adat, üres órás mérési oldal
+
+A felhasználó telefonon indított és telefonon fejezett be egy tervezett edzést. Edzés közben a telefonos fejléc 93 bpm / 2 kcal órás adatot mutatott, az óra Órás mérések oldala végig „—” maradt. A mentett telefonos Napló fotóján nincs külön TrainPilot Wear összesítés; a 3 kcal, 3 lépés és 0 pulzusminta Health Connectből származik. Ez az élő átadást igazolja, az órás kijelzést és a végső naplómentést nem.
+
+A normál telefonos mentés a helyi teljes runtime-próbában megőrzi az élő Wear adatot. Két további adatút javítva:
+
+- Az órás Activity másodpercenként a tartós aktuális edzésből frissíti a kijelzéshez használt azonosítót. A mérési nézet a helyi mérést és a telefonra ténylegesen publikált mérési csomag helyi másolatát ugyanahhoz az azonosítóhoz ellenőrzi, és a frissebb mérési revíziót mutatja. Másik edzés vagy másik mérőóra adata nem helyettesítheti az aktuális saját mérést.
+- Telefonos lezárás után az óra megtartja a legutóbbi mérés látható értékeit, „Legutóbbi edzés mérése” jelöléssel és frissítési idővel. Új edzésnél a korábbi értékek nem látszanak aktuálisként.
+- A telefonra lezárás után érkező érvényes élő mérési csomag összesítése a már mentett edzéshez is kapcsolódik, függetlenül attól, hogy az aktív edzésfejléc még létezik-e. A végső tartós parancsút megmarad. Régi revízió, eltérő azonosító és hibás csomag nem írhatja felül az értékeket vagy nyithatja újra az edzést.
+- A telefonos indítás az órás átadás előtt rögzíti ugyanazt a stabil `syncId`-t, amelyet az óráról indított edzés már használt; mentés és késői összesítés az eredeti edzésazonosítóhoz kapcsolódik.
+
+Célzott regresszió: valódi telefonos indítás és mentés 93 bpm / 2 kcal élő adattal, késői végső adat beérkezése a Naplóba, következő aktív edzés sértetlensége; JVM-próba a publikált és helyi mérés kiválasztására és változatlan UI-pillanatképre. A konkrét Watch7-es kiváltó ok és az órás élő kijelzés elfogadása továbbra is készülékes ellenőrzést igényel.
+
+A következő készülékfotón az órán indított edzés telefonos Naplója már külön TrainPilot óra forrást mutat: 85,1 bpm átlag, 93 bpm maximum és 9 kcal. Az óráról indított összesítés útja tehát működik. Ugyanezen képen a telefonos edzésidő 57 másodperc, az órás aktív mérési idő 96,4 másodperc; a Health Services munkamenet/óra-időablak összevetése külön nyitott pont, nem tekintjük a két időt azonosnak és nem igazítjuk a mért értékeket becsléssel.

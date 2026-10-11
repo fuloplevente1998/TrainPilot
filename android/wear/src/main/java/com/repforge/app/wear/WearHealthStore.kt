@@ -36,6 +36,9 @@ object WearHealthStore {
     @Synchronized fun gps(context: Context) = context.getSharedPreferences(PREFS,0).getBoolean("gps",false)
     @Synchronized fun gps(context: Context, enabled: Boolean) { context.getSharedPreferences(PREFS,0).edit().putBoolean("gps",enabled).commit() }
     @Synchronized fun load(context: Context, id: String): JSONObject? = context.getSharedPreferences(PREFS,0).getString("summary:$id",null)?.let { try { JSONObject(it) } catch (_: Exception) { null } }
+    @Synchronized fun latest(context: Context): JSONObject? =
+        context.getSharedPreferences(PREFS,0).getStringSet("ids",emptySet()).orEmpty()
+            .mapNotNull { load(context,it) }.maxByOrNull { it.optLong("updatedAt") }
     @Synchronized fun begin(context: Context, id: String): JSONObject {
         load(context,id)?.let { return it }
         val prefs=context.getSharedPreferences(PREFS,0)

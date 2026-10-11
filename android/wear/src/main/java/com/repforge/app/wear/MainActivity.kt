@@ -68,6 +68,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private val healthTick=object : Runnable {
         override fun run() {
             refreshHealth()
+            if(workout.value==null && WearHealthStore.active(this@MainActivity).isNotBlank())WearHealthService.stop(this@MainActivity)
             if(remoteMeasurementRequested && !remoteWorkoutAccepted && !remoteStartFinished && remoteMeasurementStart?.matches(workout.value?.workoutId,workout.value?.revision ?: 0L)!=true && android.os.SystemClock.elapsedRealtime()-lastRemoteRefreshAt>=2000L) {
                 lastRemoteRefreshAt=android.os.SystemClock.elapsedRealtime()
                 val cached=WorkoutSnapshotStore.load(this@MainActivity)
@@ -89,8 +90,17 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     }
     private fun healthAllowed(): Boolean = checkSelfPermission(if(Build.VERSION.SDK_INT>=36) "android.permission.health.READ_HEART_RATE" else Manifest.permission.BODY_SENSORS)==PackageManager.PERMISSION_GRANTED || checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION)==PackageManager.PERMISSION_GRANTED
     private fun refreshHealth() {
-        val id=workout.value?.workoutId ?: closure.value?.workoutId ?: ""
-        health.value=WearHealthStore.load(this,id)?.let { WearHealthAccumulator(it).snapshot() }
+        // Data Layer message replies update the durable snapshot independently
+        // of Activity callbacks. Resolve both the workout and metrics afresh.
+        val current=WorkoutSnapshotStore.load(this)
+        if(workout.value!=current) {
+            workout.value=current;restoreRestFromSnapshot(current)
+        }
+        val published=WearLiveHealth.current(this)
+        val latest=if(current==null)WearHealthStore.latest(this) else null
+        val id=current?.workoutId ?: closure.value?.takeIf { it.status in listOf("pending","error") }?.workoutId
+            ?: latest?.optString("workoutId") ?: ""
+        health.value=wearHealthDisplaySummary(id,WearHealthStore.load(this,id),published)
         measuring.value=WearHealthStore.enabled(this);gpsEnabled.value=WearHealthStore.gps(this)
         if(remoteMeasurementRequested && !remoteStartFinished && remoteMeasurementStart?.matches(workout.value?.workoutId,workout.value?.revision ?: 0L)==true && health.value?.optString("state") in listOf("active","paused","ended","error"))releaseRemoteStart()
     }

@@ -16798,6 +16798,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
  function phoneWorkoutStarted(session,{fromWatch=false}={}){
   const bridge=api(),id=sessionKey(session);
   if(fromWatch||!bridge?.startWatchMeasurement||!id||id===lastWatchStartId||session!==state?.session)return;
+  // Pin the same identity used by watch-started workouts before the handoff,
+  // so phone save/restore and late measurements keep the original workout ID.
+  session.syncId=id;persistDraft();
   lastWatchStartId=id;pendingWatchStart={id,createdAt:Date.now()};
   window.TrainPilotWearMeasurement165?.waiting(id);
   void syncNow();
@@ -17093,7 +17096,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
   try{
    const result=await bridge.pendingCommands();
    if(window.TrainPilotBackupBusy)return;
-   if(window.TrainPilotWearMeasurement165?.receive(result?.liveHealth) && result.liveHealth.summary)attachMeasuredHealth({workoutId:result.liveHealth.workoutId,healthSummary:result.liveHealth.summary});
+   const live=result?.liveHealth;
+   // Live status can arrive after the phone saved the workout. Persist its
+   // measured summary independently of the active-workout status panel.
+   if(window.TrainPilotWearMeasurement165?.valid(live) && live.summary)attachMeasuredHealth({workoutId:live.workoutId,healthSummary:live.summary});
+   window.TrainPilotWearMeasurement165?.receive(live);
    window.TrainPilotWearMeasurement165?.paint();
    const commands=(Array.isArray(result?.commands)?result.commands:[]).slice().sort((a,b)=>(Number(a.createdAt)||0)-(Number(b.createdAt)||0)||(Number(a.sequence)||0)-(Number(b.sequence)||0));
    let changed=false;
@@ -17265,10 +17272,12 @@ window.addEventListener?.('DOMContentLoaded',function(){
  };
  const key=s=>String(s?.syncId||s?.started||'');
  const t=k=>(labels[typeof rf212Lang==='function'?rf212Lang():'hu']||labels.en)[k]||k;
+ function valid(value){
+  return !!value&&value.schema===1&&typeof value.workoutId==='string'&&!!value.workoutId&&value.workoutId.length<=512&&typeof value.watchId==='string'&&!!value.watchId&&value.watchId.length<=80&&Number.isSafeInteger(value.revision)&&value.revision>0&&Number.isFinite(value.updatedAt)&&value.updatedAt>0&&Object.hasOwn(labels.en,value.state)&&!['title','stale','retry'].includes(value.state)&&(!value.summary||value.summary.workoutId===value.workoutId);
+ }
  function receive(value){
-  if(!value||value.schema!==1||typeof value.watchId!=='string'||!value.watchId||value.watchId.length>80||!Number.isSafeInteger(value.revision)||value.revision<1||!Number.isFinite(value.updatedAt)||!labels.en[value.state]||value.state==='title'||value.state==='stale'||value.state==='retry')return false;
-  const id=String(value.workoutId||''),s=state.session;if(!s||key(s)!==id)return false;
-  if(value.summary&&key({syncId:value.summary.workoutId})!==id)return false;
+  if(!valid(value))return false;
+  const id=value.workoutId,s=state.session;if(!s||key(s)!==id)return false;
   const old=s.wearMeasurement165;
   if(old?.watchId===value.watchId&&old.revision>=value.revision)return false;
   s.wearMeasurement165={workoutId:id,watchId:value.watchId,revision:value.revision,state:value.state,updatedAt:value.updatedAt,receivedAt:Date.now(),message:typeof value.message==='string'?value.message.slice(0,240):''};
@@ -17291,7 +17300,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const s=state.session,id=key(s),api=window.Capacitor?.Plugins?.WearSync;if(!id||!api?.startWatchMeasurement)return;
   try{await window.TrainPilotWearSync.syncNow();if(state.session!==s)return;waiting(id);await api.startWatchMeasurement({workoutId:id});}catch(_){if(state.session===s){s.wearMeasurement165={...s.wearMeasurement165,workoutId:id,state:'error',receivedAt:Date.now(),message:''};persistDraft();paint();}}
  }
- window.TrainPilotWearMeasurement165={receive,waiting,paint,retry};
+ window.TrainPilotWearMeasurement165={valid,receive,waiting,paint,retry};
  const original=renderWorkout;renderWorkout=function(){const result=original.apply(this,arguments);paint();return result;};
 })();
 // @endsection wear-measurement-165.js
