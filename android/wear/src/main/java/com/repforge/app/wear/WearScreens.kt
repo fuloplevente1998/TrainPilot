@@ -777,9 +777,9 @@ private fun WorkoutPager(workout: WearWorkout, restRemaining: Int,
                     if (restRemaining > 0) RestRing(workout, restRemaining)
                     val onMenu = { scope.launch { pager.animateScrollToPage(1) }; Unit }
                     if (normalizeUnit(workout.exercise?.repUnit.orEmpty()).startsWith("mp"))
-                        TimedSetScreen(workout, restRemaining, onChange, onComplete, onPrevious, onNext,
+                        TimedSetScreen(workout, restRemaining, health, onChange, onComplete, onPrevious, onNext,
                             onSkipRest, onFinish, onMenu)
-                    else CurrentSetScreen(workout, restRemaining, onEdit, onComplete, onPrevious, onNext,
+                    else CurrentSetScreen(workout, restRemaining, health, onEdit, onComplete, onPrevious, onNext,
                         onSkipRest, onFinish, onMenu)
                 }
             } else if(page==2)HealthScreen(health,measuring,gps,true,onEnable,onDisable,onGps,
@@ -862,7 +862,15 @@ private fun WorkoutControls(workout: WearWorkout, restRemaining: Int, recordingE
 }
 
 @Composable
+private fun LiveWorkoutHealth(workout: WearWorkout, health: JSONObject?) {
+    wearLiveWorkoutRows(health, workout.workoutId, System.currentTimeMillis()).forEach {
+        Text(it, color = Gold, fontSize = 10.sp, lineHeight = 12.sp, textAlign = TextAlign.Center)
+    }
+}
+
+@Composable
 private fun CurrentSetScreen(workout: WearWorkout, restRemaining: Int,
+                             health: JSONObject?,
                              onEdit: (String) -> Unit, onComplete: () -> Unit,
                              onPrevious: () -> Unit, onNext: () -> Unit, onSkipRest: () -> Unit,
                              onFinish: () -> Unit, onMenu: () -> Unit) {
@@ -872,6 +880,7 @@ private fun CurrentSetScreen(workout: WearWorkout, restRemaining: Int,
             onRecord = onComplete, onPrevious = onPrevious, onNext = onNext, onSkipRest = onSkipRest, onFinish = onFinish, layout = layout)
     }) { compact ->
         SetHeading(workout, restRemaining, onMenu, compact)
+        LiveWorkoutHealth(workout, health)
         Spacer(Modifier.height((if (compact) 2 else 4).dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             if (workout.exercise?.loadType != "bodyweight")
@@ -943,6 +952,7 @@ private fun ValueEditor(workout: WearWorkout, field: String, onChange: (String, 
 
 @Composable
 private fun TimedSetScreen(workout: WearWorkout, restRemaining: Int,
+                           health: JSONObject?,
                            onChange: (String, Double) -> Unit, onComplete: () -> Unit,
                            onPrevious: () -> Unit, onNext: () -> Unit, onSkipRest: () -> Unit,
                            onFinish: () -> Unit, onMenu: () -> Unit) {
@@ -984,6 +994,7 @@ private fun TimedSetScreen(workout: WearWorkout, restRemaining: Int,
     }) { compact ->
         SetHeading(workout, restRemaining, onMenu, compact,
             detail = if (perSide) "${if (side == "leftSeconds") "Bal" else "Jobb"} oldal · ${workout.currentSetIndex + 1}/${workout.exercise?.sets?.size ?: 0}" else null)
+        LiveWorkoutHealth(workout, health)
         val displayed = if (set.done || (timer.startedAt == 0L && elapsed == 0L)) fieldValue(set, field).toInt()
             else (elapsed / 1000).toInt()
         Box(Modifier.width(140.dp).heightIn(min = (if (compact) 36 else 40).dp).background(Card, RoundedCornerShape(14.dp))

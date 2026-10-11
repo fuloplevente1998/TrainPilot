@@ -50,5 +50,13 @@ app.context.window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{pendi
  payload=measured(13,5,'ended');await app.context.window.TrainPilotWearSync.drainCommands();
  assert.equal(app.run('history()[0].healthWear129.totalCalories'),5,'previous saved workout may update while the next one is active');
  assert.equal(app.run('state.session.healthWear129'),undefined,'previous workout values must not leak into the next workout');
+ payload={...measured(14,6,'ended'),summary:{...measured(14,6,'ended').summary,minHeartRate:80,heartRateSamples:12,steps:123,distanceMeters:150,maxSpeedMps:2}};
+ await app.context.window.TrainPilotWearSync.drainCommands();
+ const journal=app.run('rfHistoryHealthHtml(0)');
+ for(const text of ['Min. pulzus','80 bpm','Pulzusminták','123','150 m','Max. sebesség','7,2 km/h'])assert.ok(journal.includes(text),'journal shows '+text);
+ payload={...payload,revision:15,summary:{...payload.summary,revision:15,steps:null,distanceMeters:null,maxSpeedMps:null}};
+ await app.context.window.TrainPilotWearSync.drainCommands();
+ const missing=app.run('rfHistoryHealthHtml(0)');
+ for(const label of ['Lépések','Távolság','Max. sebesség'])assert.equal(missing.includes(label),false,'unsupported '+label+' remains absent');
  console.log('PASS Wear live handoff: identity, revision, pending/paused state, measured data, no set changes, no stale rollback or workout resurrection');
 })().catch(e=>{console.error(e);process.exitCode=1});

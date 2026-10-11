@@ -10,6 +10,7 @@ class Wear129Test {
         accumulator.heartRate(100,100.0);accumulator.heartRate(100,220.0);accumulator.heartRate(90,120.0)
         accumulator.heartRate(101,Double.NaN);accumulator.heartRate(102,400.0);accumulator.heartRate(103,140.0)
         val data=accumulator.snapshot();assertEquals(2,data.getInt("heartRateSamples"));assertEquals(120.0,data.getDouble("averageHeartRate"),.001);assertEquals(140.0,data.getDouble("maxHeartRate"),.001)
+        assertEquals(100.0,data.getDouble("minHeartRate"),.001)
         assertFalse(data.has("heartRateSum"));assertFalse(data.has("bootOrigin"))
     }
     @Test fun cumulativeTotalsPreserveZeroDoNotSumReplaysAndLeaveUnknownAbsent() {

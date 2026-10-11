@@ -16915,7 +16915,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const value=command.healthSummary,id=String(command.workoutId||'');
   if(!value||value.schema!==1||value.source!=='wear_health_services'||!sameId(value.workoutId,id)||typeof value.watchId!=='string'||!value.watchId||value.watchId.length>80||!Number.isSafeInteger(value.revision)||value.revision<1)return null;
   const out={schema:1,workoutId:id,watchId:value.watchId,revision:value.revision,source:'wear_health_services',state:String(value.state||''),partial:value.partial===true,syncedAt:new Date().toISOString()};
-  const limits={heartRate:[20,250],averageHeartRate:[20,250],maxHeartRate:[20,250],heartRateSamples:[0,10000000],totalCalories:[0,10000000],steps:[0,10000000],activeDurationSeconds:[0,604800],distanceMeters:[0,10000000],speedMps:[0,100]};
+  const limits={heartRate:[20,250],averageHeartRate:[20,250],minHeartRate:[20,250],maxHeartRate:[20,250],heartRateSamples:[0,10000000],totalCalories:[0,10000000],steps:[0,10000000],activeDurationSeconds:[0,604800],distanceMeters:[0,10000000],speedMps:[0,100],maxSpeedMps:[0,100]};
   for(const [key,[min,max]] of Object.entries(limits))if(value[key]!==undefined&&value[key]!==null){if(typeof value[key]!=='number'||!Number.isFinite(value[key])||value[key]<min||value[key]>max)return null;out[key]=value[key];}
   return out;
  }
@@ -17236,11 +17236,14 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(view==='health_connect')return tab+'<p class="small muted">Másik adatforrás: a telefon által olvasott egészségadatok. Az értékek nem adódnak az órás méréshez.</p>'+original(i);
   const stats=[
    card('Átlagpulzus',textMetric(wear.averageHeartRate,1)?.concat(' bpm')??null),
+   card('Min. pulzus',textMetric(wear.minHeartRate)?.concat(' bpm')??null),
    card('Max. pulzus',textMetric(wear.maxHeartRate)?.concat(' bpm')??null),
+   card('Pulzusminták',textMetric(wear.heartRateSamples)),
    card('Edzés alatt mért összes energia',textMetric(wear.totalCalories)?.concat(' kcal')??null),
    card('Lépések',textMetric(wear.steps)),
    card('Aktív mérési idő',textMetric(wear.activeDurationSeconds,1)?.concat(' s')??null),
-   card('Távolság',textMetric(wear.distanceMeters)?.concat(' m')??null)
+   card('Távolság',textMetric(wear.distanceMeters)?.concat(' m')??null),
+   card('Max. sebesség',textMetric(typeof wear.maxSpeedMps==='number'?wear.maxSpeedMps*3.6:null,1)?.concat(' km/h')??null)
   ].join('');
   return tab+'<div class="rf-history-health-result tp160-wear-history">'+
    '<p class="small muted">Forrás: TrainPilot Wear OS · Health Services. Közvetlenül az órán mért edzésadatok.</p>'+
@@ -17272,6 +17275,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
  };
  const key=s=>String(s?.syncId||s?.started||'');
  const t=k=>(labels[typeof rf212Lang==='function'?rf212Lang():'hu']||labels.en)[k]||k;
+ const metricLabels={hu:{steps:'lépés',distance:'Távolság',speed:'Sebesség',totals:'Edzés összesen'},en:{steps:'steps',distance:'Distance',speed:'Speed',totals:'Workout total'},de:{steps:'Schritte',distance:'Distanz',speed:'Geschwindigkeit',totals:'Training gesamt'},ro:{steps:'pași',distance:'Distanță',speed:'Viteză',totals:'Total antrenament'}};
+ const mt=k=>(metricLabels[typeof rf212Lang==='function'?rf212Lang():'hu']||metricLabels.en)[k];
  function valid(value){
   return !!value&&value.schema===1&&typeof value.workoutId==='string'&&!!value.workoutId&&value.workoutId.length<=512&&typeof value.watchId==='string'&&!!value.watchId&&value.watchId.length<=80&&Number.isSafeInteger(value.revision)&&value.revision>0&&Number.isFinite(value.updatedAt)&&value.updatedAt>0&&Object.hasOwn(labels.en,value.state)&&!['title','stale','retry'].includes(value.state)&&(!value.summary||value.summary.workoutId===value.workoutId);
  }
@@ -17291,10 +17296,14 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(!data||key(s)!==data.workoutId){panel?.remove();return;}
   if(!panel){panel=document.createElement('div');panel.dataset.wearMeasurement165='';panel.className='small';panel.style.cssText='margin-top:8px;padding-top:7px;border-top:1px solid var(--line);line-height:1.4';head.append(panel);}
   const stale=Date.now()-data.receivedAt>20000,phase=stale&&['waitingWorkout','starting'].includes(data.state)?'startTimeout':data.state;
-  const metrics=s.healthWear129,values=[];
+  const metrics=window.TrainPilotWearJournalSource.measured(s),values=[],movement=[];
+  const number=(value,digits=0)=>value.toLocaleString(({hu:'hu-HU',en:'en-GB',de:'de-DE',ro:'ro-RO'})[typeof rf212Lang==='function'?rf212Lang():'hu']||'en-GB',{maximumFractionDigits:digits});
+  const available=value=>typeof value==='number'&&Number.isFinite(value)&&value>=0;
   if(metrics?.heartRate!=null)values.push(Math.round(metrics.heartRate)+' bpm');
   if(metrics?.totalCalories!=null)values.push(Math.round(metrics.totalCalories)+' kcal');
-  panel.innerHTML='<b>'+esc(t('title'))+'</b> · '+esc(t(phase))+(stale&&phase==='active'?' · '+esc(t('stale')):'')+(values.length?'<br>'+esc(values.join(' · ')):'')+(data.message?'<br>'+esc(data.message):'')+(['error','disabled','permissionRequired','startTimeout'].includes(phase)?'<br><button class="btn secondary" style="margin-top:5px;min-height:32px;padding:4px 10px" onclick="TrainPilotWearMeasurement165.retry()">'+esc(t('retry'))+'</button>':'');
+  if(available(metrics?.steps))movement.push(number(metrics.steps)+' '+mt('steps'));
+  if(available(metrics?.distanceMeters))movement.push(mt('distance')+': '+number(metrics.distanceMeters)+' m');
+  panel.innerHTML='<b>'+esc(t('title'))+'</b> · '+esc(t(phase))+(stale&&phase==='active'?' · '+esc(t('stale')):'')+(values.length?'<br>'+esc(values.join(' · ')):'')+(movement.length?'<br>'+esc(mt('totals')+': '+movement.join(' · ')):'')+(available(metrics?.speedMps)?'<br>'+esc(mt('speed')+': '+number(metrics.speedMps*3.6,1)+' km/h'):'')+(data.message?'<br>'+esc(data.message):'')+(['error','disabled','permissionRequired','startTimeout'].includes(phase)?'<br><button class="btn secondary" style="margin-top:5px;min-height:32px;padding:4px 10px" onclick="TrainPilotWearMeasurement165.retry()">'+esc(t('retry'))+'</button>':'');
  }
  async function retry(){
   const s=state.session,id=key(s),api=window.Capacitor?.Plugins?.WearSync;if(!id||!api?.startWatchMeasurement)return;

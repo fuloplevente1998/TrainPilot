@@ -18,6 +18,27 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const pathna
   }
   await page.evaluate(async()=>{rf212SetLang('hu');renderWorkout();let payload={schema:1,workoutId:wear165Id,watchId:'watch',revision:++wear165Revision,state:'active',updatedAt:Date.now(),summary:{schema:1,source:'wear_health_services',workoutId:wear165Id,watchId:'sensor',revision:1,state:'active',heartRate:109,totalCalories:7}};window.wear165Payload=payload;window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{pendingCommands:async()=>({commands:[],liveHealth:wear165Payload}),ackCommand:async()=>{},publish:async()=>{},clear:async()=>{},publishHome:async()=>{},startWatchMeasurement:async()=>({opened:true})}}};await TrainPilotWearSync.drainCommands();});
   assert.match(await page.locator('[data-wear-measurement165]').innerText(),/109 bpm · 7 kcal/);
+  const setsBeforeCardio=await page.evaluate(()=>JSON.stringify(state.session.exercises));
+  for(const language of ['hu','en','de','ro'])for(const width of [320,393]){
+   await page.setViewportSize({width,height:873});
+   await page.evaluate(async language=>{
+    rf212SetLang(language);renderWorkout();
+    wear165Payload={...wear165Payload,revision:++wear165Revision,updatedAt:Date.now(),summary:{...wear165Payload.summary,revision:wear165Revision,steps:123,distanceMeters:150,speedMps:2,minHeartRate:80,heartRateSamples:12,maxSpeedMps:3}};
+    await TrainPilotWearSync.drainCommands();
+   },language);
+   const text=await page.locator('[data-wear-measurement165]').innerText();
+   assert.match(text,/123/);assert.match(text,/150 m/);assert.match(text,/7[,.]2 km\/h/);
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'movement metrics fit narrow '+language+' screens');
+  }
+  assert.equal(await page.evaluate(()=>JSON.stringify(state.session.exercises)),setsBeforeCardio,'measured movement never replaces set targets');
+  await page.evaluate(async()=>{
+   rf212SetLang('hu');renderWorkout();wear165Payload={...wear165Payload,revision:++wear165Revision,summary:{...wear165Payload.summary,revision:wear165Revision,steps:0,distanceMeters:0,speedMps:0}};await TrainPilotWearSync.drainCommands();
+  });
+  assert.match(await page.locator('[data-wear-measurement165]').innerText(),/0 lépés/);
+  await page.evaluate(async()=>{
+   wear165Payload={...wear165Payload,revision:++wear165Revision,summary:{schema:1,source:'wear_health_services',workoutId:wear165Id,watchId:'sensor',revision:wear165Revision,state:'active',heartRate:109,totalCalories:7}};await TrainPilotWearSync.drainCommands();
+  });
+  assert.doesNotMatch(await page.locator('[data-wear-measurement165]').innerText(),/lépés|Távolság|Sebesség/,'missing movement stays absent');
   const before=await page.evaluate(()=>JSON.stringify(state.session.exercises));
   await page.evaluate(()=>wear165Receive('paused'));assert.match(await page.locator('[data-wear-measurement165]').innerText(),/szünetel/);
   assert.equal(await page.evaluate(()=>JSON.stringify(state.session.exercises)),before,'measurement messages do not change sets');
@@ -30,13 +51,15 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const pathna
   });
   assert.equal(await page.evaluate(()=>history()[0].healthWear129.totalCalories),7,'phone save keeps the live Wear measurement');
   await page.evaluate(async()=>{
-   wear165Payload={...wear165Payload,revision:++wear165Revision,state:'ended',updatedAt:Date.now(),summary:{...wear165Payload.summary,revision:2,state:'ended',averageHeartRate:109,totalCalories:9}};
+   wear165Payload={...wear165Payload,revision:++wear165Revision,state:'ended',updatedAt:Date.now(),summary:{...wear165Payload.summary,revision:wear165Revision,state:'ended',averageHeartRate:109,minHeartRate:80,heartRateSamples:12,steps:123,distanceMeters:150,maxSpeedMps:3,totalCalories:9}};
    await TrainPilotWearSync.drainCommands();
   });
   assert.equal(await page.evaluate(()=>history()[0].healthWear129.totalCalories),9,'late live final updates the saved Journal');
   assert.equal(await page.evaluate(()=>history().length),1);
   assert.equal(await page.evaluate(()=>state.session),null);
   assert.match(await page.evaluate(()=>rfHistoryHealthHtml(0)),/9 kcal/);
+  assert.match(await page.evaluate(()=>rfHistoryHealthHtml(0)),/150 m/);
+  assert.match(await page.evaluate(()=>rfHistoryHealthHtml(0)),/10,8 km\/h/);
   assert.deepEqual(errors,[]);console.log('PASS Wear measurement UI: 8 language/width combinations, real live pulse/energy, paused/error state, escaped errors, manual handoff retry and unchanged sets');
  } finally {await browser?.close();server.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;server.close()});

@@ -12,6 +12,7 @@ class WearHealthAccumulator(val value: JSONObject) {
         val sum = value.optDouble("heartRateSum", 0.0) + bpm
         value.put("lastSampleAt",time).put("heartRate",bpm).put("heartRateSamples",count).put("heartRateSum",sum)
             .put("averageHeartRate",sum/count).put("maxHeartRate",maxOf(value.optDouble("maxHeartRate",bpm),bpm))
+            .put("minHeartRate",minOf(value.optDouble("minHeartRate",bpm),bpm))
     }
     fun total(key: String, number: Double?) {
         if (number == null || !number.isFinite() || number < 0) return

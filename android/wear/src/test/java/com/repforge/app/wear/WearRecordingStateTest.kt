@@ -5,6 +5,37 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class WearRecordingStateTest {
+    private fun workout(exercise: WearExercise) = WearWorkout(1,"p","Program","A","","2026-10-11T09:00:00Z",
+        "current",0,60,0,listOf(exercise))
+
+    @Test fun stepAndDistanceWorkoutsRequestMovementMetricsWithoutChangingStrengthWorkouts() {
+        val strength=WearExercise("row","Evezés","weight","ism.","reps",emptyList())
+        assertEquals(WearRecordingRequest("strength",false),wearRecordingRequestForWorkout(workout(strength),true))
+        val step=strength.copy(id="custom-walk",name="Lépéses edzés",repUnit="lépés")
+        assertEquals(WearRecordingRequest("walking",false),wearRecordingRequestForWorkout(workout(step),false))
+        assertEquals(WearRecordingRequest("walking",true),wearRecordingRequestForWorkout(workout(step.copy(repUnit="steps")),true))
+        val distance=strength.copy(id="custom",name="Séta",repUnit="mp",measurementType="distance")
+        assertEquals("walking",wearRecordingRequestForWorkout(workout(distance),false).exerciseType)
+        assertEquals("cycling",wearRecordingRequestForWorkout(workout(distance.copy(name="Kerékpár")),true).exerciseType)
+        assertEquals("running",wearRecordingRequestForWorkout(workout(distance.copy(name="Futás")),false).exerciseType)
+        assertEquals("walking",wearRecordingRequestForWorkout(workout(distance.copy(id="walking",name="Walking",measurementType="time")),false).exerciseType)
+    }
+
+    @Test fun workoutRowsShowMeasuredPulseEnergyAndMovementIncludingZeroButNeverBorrowTargetsOrPreviousData() {
+        val data=measured("current",1,2.0).put("steps",0).put("distanceMeters",150).put("updatedAt",100000L)
+        assertEquals(listOf("93 bpm · 2 kcal","Edzés: 0 lépés · 150 m"),wearLiveWorkoutRows(data,"current",100001L))
+        assertTrue(wearLiveWorkoutRows(data,"next",100001L).isEmpty())
+        assertTrue(wearLiveWorkoutRows(null,"current",100001L).isEmpty())
+        data.put("state","paused")
+        assertEquals("Mérés szünetel",wearLiveWorkoutRows(data,"current",100001L).last())
+        data.put("state","active")
+        assertEquals("Legutóbbi adat",wearLiveWorkoutRows(data,"current",130001L).last())
+        data.remove("steps");data.remove("distanceMeters")
+        assertEquals(listOf("93 bpm · 2 kcal"),wearLiveWorkoutRows(data,"current",100001L))
+        data.put("steps",-1);data.put("distanceMeters","NaN")
+        assertEquals(listOf("93 bpm · 2 kcal"),wearLiveWorkoutRows(data,"current",100001L))
+    }
+
     private fun measured(id: String, revision: Long, calories: Double) = JSONObject()
         .put("schema",1).put("source","wear_health_services").put("workoutId",id)
         .put("watchId","sensor-watch").put("revision",revision).put("state","active")

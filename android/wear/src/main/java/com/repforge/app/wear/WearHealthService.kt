@@ -130,7 +130,10 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
         accumulator.segmentTotal("totalCalories",update.latestMetrics.getData(DataType.CALORIES_TOTAL)?.total)
         accumulator.segmentTotal("steps",update.latestMetrics.getData(DataType.STEPS_TOTAL)?.total?.toDouble())
         accumulator.segmentTotal("distanceMeters",update.latestMetrics.getData(DataType.DISTANCE_TOTAL)?.total)
-        accumulator.sample("speedMps",update.latestMetrics.getData(DataType.SPEED).lastOrNull()?.value)
+        update.latestMetrics.getData(DataType.SPEED).sortedBy { it.timeDurationFromBoot }.forEach {
+            accumulator.sample("speedMps",it.value)
+            accumulator.total("maxSpeedMps",it.value)
+        }
         update.activeDurationCheckpoint?.let { checkpoint ->
             val elapsed=if(update.exerciseStateInfo.state.isPaused || update.exerciseStateInfo.state.isEnded)0L else java.time.Duration.between(checkpoint.time,java.time.Instant.now()).toMillis().coerceAtLeast(0L)
             accumulator.segmentTotal("activeDurationSeconds",(checkpoint.activeDuration.toMillis()+elapsed)/1000.0)
@@ -187,10 +190,8 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
     companion object {
         const val STOP="com.repforge.app.wear.STOP_HEALTH"
         fun start(context: Context, workout: WearWorkout) {
-            val cardio=workout.exercises.firstOrNull { it.measurementType == "distance" || it.repUnit.lowercase() in listOf("m","km") }
-            val name=cardio?.name?.lowercase().orEmpty()
-            val type=when { cardio==null -> "strength"; name.contains("kerék") || name.contains("cycl") || name.contains("bic") -> "cycling";name.contains("séta") || name.contains("walk") -> "walking";else -> "running" }
-            context.startForegroundService(Intent(context,WearHealthService::class.java).putExtra("workoutId",workout.workoutId).putExtra("exerciseType",type).putExtra("gps",cardio!=null && WearHealthStore.gps(context)))
+            val request=wearRecordingRequestForWorkout(workout,WearHealthStore.gps(context))
+            context.startForegroundService(Intent(context,WearHealthService::class.java).putExtra("workoutId",workout.workoutId).putExtra("exerciseType",request.exerciseType).putExtra("gps",request.gps))
         }
         fun stop(context: Context) { context.sendBroadcast(Intent(STOP).setPackage(context.packageName)) }
     }

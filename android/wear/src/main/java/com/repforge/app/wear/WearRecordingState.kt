@@ -62,6 +62,51 @@ internal class WearRecordingLifecycle(private val data: JSONObject) {
 
 internal data class WearMeasuredMetric(val label: String, val value: String)
 
+/** Choose a session type that can supply movement metrics for cardio workouts. */
+internal fun wearRecordingRequestForWorkout(workout: WearWorkout, gps: Boolean): WearRecordingRequest {
+    fun unit(exercise: WearExercise) = exercise.repUnit.trim().lowercase(java.util.Locale.ROOT)
+    fun steps(exercise: WearExercise) = exercise.measurementType == "steps" ||
+        unit(exercise) in listOf("lépés", "lépések", "step", "steps", "schritte", "pași")
+    val cardio = workout.exercises.firstOrNull {
+        steps(it) || it.measurementType == "distance" || unit(it) in listOf("m", "km") ||
+            it.id.lowercase(java.util.Locale.ROOT) in listOf("running", "walking", "cycling")
+    } ?: return WearRecordingRequest("strength", false)
+    val name = (cardio.id + " " + cardio.name).lowercase(java.util.Locale.ROOT)
+    val type = when {
+        steps(cardio) -> "walking"
+        name.contains("kerék") || name.contains("cycl") || name.contains("bic") -> "cycling"
+        name.contains("séta") || name.contains("walk") || name.contains("gyalog") -> "walking"
+        else -> "running"
+    }
+    return WearRecordingRequest(type, gps)
+}
+
+/** Compact workout rows show measured session totals, separate from set targets. */
+internal fun wearLiveWorkoutRows(data: JSONObject?, workoutId: String, now: Long): List<String> {
+    if (data == null || workoutId.isBlank() || data.optString("workoutId") != workoutId ||
+        data.optString("source") != "wear_health_services") return emptyList()
+    fun value(key: String, unit: String, minimum: Double = 0.0): String? {
+        val number = if (data.has(key) && !data.isNull(key)) data.optDouble(key) else Double.NaN
+        return if (!number.isFinite() || number < minimum) null else "${trimWearNumber(number)} $unit"
+    }
+    val primary = listOfNotNull(value("heartRate", "bpm", 20.0), value("totalCalories", "kcal"))
+    val movement = listOfNotNull(value("steps", "lépés"), value("distanceMeters", "m"))
+    if (primary.isEmpty() && movement.isEmpty()) return emptyList()
+    val status = when (data.optString("state")) {
+        "paused" -> "Mérés szünetel"
+        "active" -> if (now - data.optLong("updatedAt") > 20000L) "Legutóbbi adat" else null
+        "starting" -> "Mérés indul"
+        "ending" -> "Mérés lezárása"
+        "error" -> "Mérés megszakadt"
+        else -> "Legutóbbi adat"
+    }
+    return listOfNotNull(
+        primary.takeIf { it.isNotEmpty() }?.joinToString(" · "),
+        movement.takeIf { it.isNotEmpty() }?.joinToString(" · ")?.let { "Edzés: $it" },
+        status
+    )
+}
+
 /** Select only this workout; never borrow the previous workout's live values. */
 internal fun wearHealthDisplaySummary(workoutId: String, stored: JSONObject?, published: JSONObject?): JSONObject? {
     fun matching(data: JSONObject?): JSONObject? = data?.takeIf {
