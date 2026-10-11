@@ -5,7 +5,7 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const pathna
  await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;
  try {
   browser=await chromium.launch({headless:true,args:['--no-sandbox']});
-  const page=await browser.newPage({viewport:{width:360,height:800}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  const page=await browser.newPage({viewport:{width:360,height:800},locale:'hu-HU'}),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(()=>localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped')));
   await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>TrainPilotBoot.finished);
   await page.evaluate(()=>{db.set('draft',null);startWorkout(activeProgram().days[0].id);TrainPilotWearMeasurement165.waiting(state.session.syncId||state.session.started);window.wear165Id=state.session.syncId||state.session.started;window.wear165Revision=0;window.wear165Receive=(phase,extra={})=>TrainPilotWearMeasurement165.receive({schema:1,workoutId:wear165Id,watchId:'watch',revision:++wear165Revision,state:phase,updatedAt:Date.now(),...extra});});
