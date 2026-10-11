@@ -4,6 +4,15 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class WearMeasurementStartTest {
+    @Test fun acceptedPhoneLaunchDoesNotBlockMeasurementsForTheNextSyncedWorkout() {
+        val request=WearMeasurementStart("first",42L)
+        assertFalse(wearMeasurementMayStart(true,false,request,"previous",100L))
+        assertFalse(wearMeasurementMayStart(true,false,request,"first",41L))
+        assertTrue(wearMeasurementMayStart(true,false,request,"first",42L))
+        assertTrue(wearMeasurementMayStart(true,true,request,"next",43L))
+        assertFalse(wearMeasurementMayStart(true,false,null,"first",42L))
+        assertTrue(wearMeasurementMayStart(false,false,null,"current",0L))
+    }
     @Test fun remoteOpenBeforeDataDeliveryCannotStartTheCachedPreviousWorkout() {
         val request=WearMeasurementStart.parse("new-phone-workout","42")!!
         assertFalse(request.matches("previous-workout",100L))

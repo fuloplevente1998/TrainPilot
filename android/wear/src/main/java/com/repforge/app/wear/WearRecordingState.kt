@@ -81,12 +81,15 @@ internal fun trimWearNumber(number: Double): String =
     if (number >= 100 || number % 1.0 == 0.0) number.toLong().toString()
     else String.format(java.util.Locale.forLanguageTag("hu"), "%.1f", number)
 
-internal fun wearRecordingStatus(data: JSONObject?, enabled: Boolean): String = when (data?.optString("state")) {
+internal fun wearRecordingNeedsRetry(data: JSONObject?, enabled: Boolean, hasWorkout: Boolean): Boolean =
+    enabled && hasWorkout && data?.optString("state") !in listOf("starting","active","paused","ending")
+
+internal fun wearRecordingStatus(data: JSONObject?, enabled: Boolean, hasWorkout: Boolean=false): String = when (data?.optString("state")) {
     "starting" -> "Mérés indítása…"
     "active" -> "Mérés folyamatban · háttérben is"
     "paused" -> "Az órás mérés szünetel"
     "ending" -> "Mérés lezárása…"
     "ended" -> "Mérés befejezve"
     "error" -> "A mérés megszakadt"
-    else -> if (enabled) "Mérés a következő edzésnél" else "Mérés kikapcsolva"
+    else -> if (!enabled) "Mérés kikapcsolva" else if(hasWorkout) "Az aktuális edzés mérése még nem indult" else "Mérés a következő edzésnél"
 }

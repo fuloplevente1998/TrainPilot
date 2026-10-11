@@ -115,7 +115,7 @@ internal fun TrainPilotWearApp(
         Box(Modifier.fillMaxSize().background(Black)) {
             val active = workout.value
             when {
-                route == "metrics" -> HealthScreen(health.value,measuring.value,gpsEnabled.value,onEnableHealth,onDisableHealth,onToggleGps,
+                route == "metrics" -> HealthScreen(health.value,measuring.value,gpsEnabled.value,active!=null,onEnableHealth,onDisableHealth,onToggleGps,
                     home.value, onRefreshJournal, onOpenJournal = { openJournal("metrics") },
                     onSelectMeasurement = { openMeasurement(it, "metrics") }, onBack = { route="menu" })
                 route == "menu" -> MainMenuScreen(active != null, active?.quickWorkout == true, onOpenPhone) {
@@ -660,7 +660,7 @@ private fun CalendarDayScreen(date: LocalDate, entries: List<WatchCalendarEntry>
 }
 
 @Composable
-private fun HealthScreen(data: JSONObject?, enabled: Boolean, gps: Boolean,
+private fun HealthScreen(data: JSONObject?, enabled: Boolean, gps: Boolean, hasWorkout: Boolean,
                          onEnable: () -> Unit, onDisable: () -> Unit, onGps: () -> Unit,
                          home: WatchHomeSnapshot?, onRefresh: () -> Unit, onOpenJournal: () -> Unit,
                          onSelectMeasurement: (MiniJournalWorkout) -> Unit, onBack: () -> Unit) {
@@ -670,7 +670,11 @@ private fun HealthScreen(data: JSONObject?, enabled: Boolean, gps: Boolean,
     }
     RoundList {
         Label("TRAINPILOT",Gold);Title("Órás mérések",20);Spacer(Modifier.height(8.dp))
-        Text(wearRecordingStatus(data,enabled),color=Gold,fontSize=11.sp,textAlign=TextAlign.Center)
+        Text(wearRecordingStatus(data,enabled,hasWorkout),color=Gold,fontSize=11.sp,textAlign=TextAlign.Center)
+        if(wearRecordingNeedsRetry(data,enabled,hasWorkout)) {
+            Spacer(Modifier.height(6.dp))
+            Pill("Aktuális edzés mérése",tone=Gold,onClick=onEnable)
+        }
         Spacer(Modifier.height(6.dp))
         val fresh=data?.optString("state")=="active" && System.currentTimeMillis()-(data.optLong("lastSampleAt",data.optLong("updatedAt")))<15000
         Label(if(fresh)"Élő pulzus" else "Pulzus · utolsó mérés",size=10)
@@ -774,7 +778,7 @@ private fun WorkoutPager(workout: WearWorkout, restRemaining: Int,
                     else CurrentSetScreen(workout, restRemaining, onEdit, onComplete, onPrevious, onNext,
                         onSkipRest, onFinish, onMenu)
                 }
-            } else if(page==2)HealthScreen(health,measuring,gps,onEnable,onDisable,onGps,
+            } else if(page==2)HealthScreen(health,measuring,gps,true,onEnable,onDisable,onGps,
                 home,onRefreshJournal,onOpenJournal,onSelectMeasurement) { scope.launch { pager.animateScrollToPage(0) } }
             else WorkoutMenu(workout,
                 { onPrevious(); scope.launch { pager.animateScrollToPage(0) } },

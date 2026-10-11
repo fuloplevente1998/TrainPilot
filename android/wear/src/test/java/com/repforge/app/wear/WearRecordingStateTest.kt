@@ -5,6 +5,14 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class WearRecordingStateTest {
+    @Test fun enabledCurrentWorkoutWithoutMeasurementCanBeStartedExplicitly() {
+        assertEquals("Az aktuális edzés mérése még nem indult",wearRecordingStatus(null,true,true))
+        assertTrue(wearRecordingNeedsRetry(null,true,true))
+        for(state in listOf("error","ended"))assertTrue(wearRecordingNeedsRetry(JSONObject().put("state",state),true,true))
+        for(state in listOf("starting","active","paused","ending"))assertFalse(wearRecordingNeedsRetry(JSONObject().put("state",state),true,true))
+        assertFalse(wearRecordingNeedsRetry(null,false,true))
+        assertFalse(wearRecordingNeedsRetry(null,true,false))
+    }
     @Test fun cachedMeasurementIsNotAnAcknowledgementAfterServiceRecovery() {
         val data=JSONObject().put("state","active").put("totalCalories",12.5)
         val lifecycle=WearRecordingLifecycle(data)

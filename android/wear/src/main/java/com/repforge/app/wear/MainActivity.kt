@@ -47,6 +47,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private var remoteMeasurementStart: WearMeasurementStart?=null
     private var remoteStartNoticeShown=false
     private var remoteStartFinished=false
+    private var remoteWorkoutAccepted=false
     private var lastRemoteRefreshAt=0L
     private fun releaseRemoteStart() {
         remoteStartFinished=true;uiHandler.removeCallbacks(remoteStartTimeout)
@@ -67,7 +68,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private val healthTick=object : Runnable {
         override fun run() {
             refreshHealth()
-            if(remoteMeasurementRequested && !remoteStartFinished && remoteMeasurementStart?.matches(workout.value?.workoutId,workout.value?.revision ?: 0L)!=true && android.os.SystemClock.elapsedRealtime()-lastRemoteRefreshAt>=2000L) {
+            if(remoteMeasurementRequested && !remoteWorkoutAccepted && !remoteStartFinished && remoteMeasurementStart?.matches(workout.value?.workoutId,workout.value?.revision ?: 0L)!=true && android.os.SystemClock.elapsedRealtime()-lastRemoteRefreshAt>=2000L) {
                 lastRemoteRefreshAt=android.os.SystemClock.elapsedRealtime()
                 val cached=WorkoutSnapshotStore.load(this@MainActivity)
                 if(remoteMeasurementStart?.matches(cached?.workoutId,cached?.revision ?: 0L)==true) {
@@ -94,6 +95,10 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         if(remoteMeasurementRequested && !remoteStartFinished && remoteMeasurementStart?.matches(workout.value?.workoutId,workout.value?.revision ?: 0L)==true && health.value?.optString("state") in listOf("active","paused","ended","error"))releaseRemoteStart()
     }
     private fun requestHealth(gps: Boolean=false) {
+        // An explicit measurement action uses the current durable workout. A
+        // previous phone launch must not keep a later workout behind its guard.
+        workout.value=WorkoutSnapshotStore.load(this)
+        remoteMeasurementRequested=false;remoteMeasurementStart=null;releaseRemoteStart()
         WearHealthStore.gps(this,gps)
         val permissions=mutableListOf(if(Build.VERSION.SDK_INT>=36) "android.permission.health.READ_HEART_RATE" else Manifest.permission.BODY_SENSORS,Manifest.permission.ACTIVITY_RECOGNITION)
         if(Build.VERSION.SDK_INT>=33)permissions.add(Manifest.permission.POST_NOTIFICATIONS)
@@ -107,7 +112,8 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private fun startHealthIfEnabled() {
         if(!activityResumed)return
         val current=workout.value ?: return
-        if(remoteMeasurementRequested && remoteMeasurementStart?.matches(current.workoutId,current.revision)!=true)return
+        if(!wearMeasurementMayStart(remoteMeasurementRequested,remoteWorkoutAccepted,remoteMeasurementStart,current.workoutId,current.revision))return
+        if(remoteMeasurementRequested)remoteWorkoutAccepted=true
         if(remoteMeasurementRequested){
             if(!remoteStartNoticeShown){
                 remoteStartNoticeShown=true
@@ -142,7 +148,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         val uri=intent.data
         remoteMeasurementRequested=intent.action==Intent.ACTION_VIEW && uri?.scheme=="trainpilot" && uri?.host=="wear" && uri?.path=="/start-measurement"
         remoteMeasurementStart=if(remoteMeasurementRequested)WearMeasurementStart.parse(uri?.getQueryParameter("workoutId"),uri?.getQueryParameter("revision"))else null
-        remoteStartNoticeShown=false;remoteStartFinished=false;lastRemoteRefreshAt=0L;uiHandler.removeCallbacks(remoteStartTimeout)
+        remoteStartNoticeShown=false;remoteStartFinished=false;remoteWorkoutAccepted=false;lastRemoteRefreshAt=0L;uiHandler.removeCallbacks(remoteStartTimeout)
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setTurnScreenOn(remoteMeasurementRequested && remoteMeasurementStart!=null)
         if(remoteMeasurementRequested && remoteMeasurementStart!=null){

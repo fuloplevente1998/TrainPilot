@@ -11,6 +11,9 @@ A távoli Activity megnyitása nem igazolja a mérés indulását. A javítás a
 5. Egy felülírható `/trainpilot/watch-health` DataItem külön küldi a mérési állapotot, valamint legfeljebb 5 másodpercenként a rendelkezésre álló mért adatokat. Nincs korlátlan élőadat-parancssor. A végső összesítés változatlanul a tartós parancssoron is megérkezik.
 6. A telefon az edzés fejlécében mutatja az állapotot, a legutolsó pulzust és összes energiát. A korábbi adatot nem nevezi frissnek, ha 20 másodpercig nincs visszajelzés. Az explicit „Óra megnyitása” gomb egyszeri új átadást kérhet. Minden adat edzés- és revízióazonosítóhoz kötött; az üzenetek nem változtatják a sorozatok értékeit.
 7. A már megadott órás engedélyeket újra használja; kikapcsolt mérés esetén az óra az Órás mérések oldalra lép. A szünetelő Health Services mérés nem jelenik meg aktívként.
+8. Az egyszer már elfogadott telefonos indítás nem blokkolhatja egy következő szinkronizált edzés mérését a korábbi edzésazonosító miatt. Aktív edzés és hiányzó mérés esetén az órás oldal külön jelzi, hogy a mérés még nem indult, és egy „Aktuális edzés mérése” gombbal újraindítható. Az explicit indítás a friss, tartós edzésadatot olvassa, a megadott engedélyeket újra használja, hiba után a megőrzött mért értékeket megtartja.
+
+A 2026. október 11-én küldött készülékfotón „Mérés a következő edzésnél” látszik, mért adatok nélkül. Ez engedélyezett mérési beállítást, de hiányzó aktuális mérési állapotot jelez; a fotó önmagában nem bizonyítja, hogy a készüléken melyik indítási feltétel maradt teljesítetlen.
 
 ## Fizikai ellenőrzés Galaxy Watch7-en
 
