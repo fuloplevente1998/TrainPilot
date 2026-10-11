@@ -33,6 +33,11 @@ internal class WearRecordingLifecycle(private val data: JSONObject) {
     var finished = false
         private set
     val stopRequested: Boolean get() = data.optBoolean("stopRequested") || data.optString("state") == "ending"
+    init {
+        // A cached active/paused summary is not proof that a recovered service owns
+        // a running Health Services exercise. Keep totals, recheck ownership first.
+        if(!stopRequested && data.optString("state") !in listOf("ended","error"))data.put("state","starting")
+    }
 
     fun requestStop() {
         if (!finished) data.put("stopRequested", true).put("state", "ending")

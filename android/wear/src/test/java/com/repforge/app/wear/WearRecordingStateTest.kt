@@ -5,6 +5,16 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class WearRecordingStateTest {
+    @Test fun cachedMeasurementIsNotAnAcknowledgementAfterServiceRecovery() {
+        val data=JSONObject().put("state","active").put("totalCalories",12.5)
+        val lifecycle=WearRecordingLifecycle(data)
+        assertEquals("starting",data.getString("state"))
+        assertFalse(lifecycle.owned)
+        assertEquals(12.5,data.getDouble("totalCalories"),.001)
+        val closing=JSONObject().put("state","ending").put("stopRequested",true)
+        assertTrue(WearRecordingLifecycle(closing).stopRequested)
+        assertEquals("ending",closing.getString("state"))
+    }
     @Test fun processRestartPreservesCardioAndGpsInsteadOfStartingStrengthWithoutGps() {
         val data=JSONObject()
         WearRecordingRequest.restore(data,"running",true).save(data)
