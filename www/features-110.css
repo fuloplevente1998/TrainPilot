@@ -74,3 +74,9 @@ html.tp110-large-text body .top :is(.tp151-nav-label,.tp154-nav-action-label){wh
 html.tp110-large-text body .tp110-fields{grid-template-columns:1fr}
 html.tp110-large-text body :is(.field,.tp-select-trigger,.tp-temporal-trigger){height:auto!important;min-height:48px!important;white-space:normal!important}
 html.tp110-large-text body .tp-select-trigger :is(span,strong){white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+
+/* #162: opt-in interval advancement follows the existing form and icon rhythm. */
+.tp110-form .tp162-auto{display:flex;flex-direction:row;align-items:flex-start;gap:10px;line-height:1.4;margin:10px 0}
+.tp162-auto input{flex:0 0 auto;margin-top:4px;accent-color:var(--accent)}
+.tp162-stop{margin-top:12px;white-space:normal}
+.tp107-indoor .tp110-interval-phase{overflow-wrap:anywhere}
