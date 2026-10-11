@@ -711,7 +711,10 @@
    const latest=new Map(selected.current.map(f=>[/^repforge-sync-([a-z0-9-]{36})-/.exec(f.name)[1],f]));
    const heads=driveLatestHeads(latest),base=db.get('cloudBase:'+owner,null);
    const receiptKey='cloudArchiveScan161:'+owner,receipt=db.get(receiptKey,null);
-   const scanned=base&&receipt?.schema===1&&receipt.baseHash===await archiveBaseHash(base)?receipt.versions||{}:{};
+   const receiptValid=base&&receipt?.schema===1&&receipt.baseHash===await archiveBaseHash(base);
+   const scanned=receiptValid?receipt.versions||{}:{};
+   const previousThemes=receiptValid?receipt.themeByDevice||{}:{},previousHeads=base?db.get('cloudHeads:'+owner,{})||{}:{};
+   const nextThemes={},verifiedReadHeads=new Set();
    // Ordinary sync reads only the current snapshot of each device. Earlier
    // snapshots are recovery sources only when the user explicitly requests them.
    const archivePending=recoverEarlier?selected.archive.filter(f=>!snapshotVersion(f)||scanned[f.id]!==snapshotVersion(f)):[];
@@ -728,11 +731,23 @@
      const read=await bridge.driveRead({id:f.id,silent:silent}),snap=JSON.parse(read.data);
      if(snap.app!=='RepForgeSync'||snap.schema!==1||snap.owner!==owner)throw Error(tp149T('cloud.unknownBackup'));
      const data=validateSync(typeof tp105Project==='function'?tp105Project(snap.data,tp105HealthConsent()):snap.data);
-     if(snapshotVersion(f)&&snapshotVersion(read)===snapshotVersion(f))nextScanned[f.id]=snapshotVersion(f);
+     if(snapshotVersion(f)&&snapshotVersion(read)===snapshotVersion(f)){nextScanned[f.id]=snapshotVersion(f);verifiedReadHeads.add(driveSnapshotHead(f));}
      return data;
     }catch(e){if(strict)throw e;return null}
    };
-   for(let i=0;i<selected.current.length;i++){stage('cloud.driveReading',{index:i+1,total:selected.current.length});const d=await readSnapshot(selected.current[i],true);if(d)remotes.push(d)}
+   for(let i=0;i<selected.current.length;i++){
+    stage('cloud.driveReading',{index:i+1,total:selected.current.length});
+    const f=selected.current[i],d=await readSnapshot(f,true);if(!d)continue;
+    const device=/^repforge-sync-([a-z0-9-]{36})-/.exec(f.name)[1],theme=d.themeAccent??null;
+    nextThemes[device]=theme;
+    // A device's old theme is not a new preference change on every sync.
+    // Compare actual observed colors across new heads too; only successful
+    // commits establish this baseline. Older builds migrate via verified heads.
+    const known=Object.hasOwn(previousThemes,device)?previousThemes[device]===theme:
+     previousHeads[device]===driveSnapshotHead(f)&&verifiedReadHeads.has(driveSnapshotHead(f));
+    if(base&&known){if(base.themeAccent===undefined)delete d.themeAccent;else d.themeAccent=base.themeAccent;}
+    remotes.push(d);
+   }
    for(let i=0;i<archivePending.length;i++){stage('cloud.driveArchiveReading',{index:i+1,total:archivePending.length});const d=await readSnapshot(archivePending[i],false);if(d)archives.push(d)}
    let merged,conflict=false,writtenDevice=null;
    const attempt=chooser=>validateSync(tp18MergeSync(local,remotes,base,chooser,archives));
@@ -756,7 +771,8 @@
    storeMerged(merged);document.documentElement.lang=rf212Lang();rf200ApplyTheme();db.set('cloudBase:'+owner,merged);db.set('cloudHeads:'+owner,heads);db.set('cloudScan105:'+owner,1);db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{drive:new Date().toISOString()}));
    // Failed reads/merges/writes never become receipts. A full disk only disables
    // this optimization; it must not turn a committed sync into a failed one.
-   try{db.set(receiptKey,{schema:1,baseHash:await archiveBaseHash(merged),versions:nextScanned});}catch(_){}
+   if(writtenDevice)nextThemes[writtenDevice]=merged.themeAccent??null;
+   try{db.set(receiptKey,{schema:1,baseHash:await archiveBaseHash(merged),versions:nextScanned,themeByDevice:nextThemes});}catch(_){}
    cloudDriveStage='';
    const maintain=recoverEarlier&&writtenDevice&&typeof bridge.drivePrune==='function';
    if(maintain){cloudActiveOperation='maintenance';cloudDriveStage=tp149T('cloud.driveCleanup');}

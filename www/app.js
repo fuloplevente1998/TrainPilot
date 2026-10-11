@@ -10505,7 +10505,7 @@ const tp152ThemeKeyBase=rf200ThemeKey;
 rf200ThemeKey=function(){const k=db.get('themeAccent',null);return k&&RF200_THEMES[k]?k:'classicBlue';};
 const tp152ApplyThemeBase=rf200ApplyTheme;
 rf200ApplyTheme=function(k=rf200ThemeKey()){tp152ApplyThemeBase(k);const el=typeof document!=='undefined'?document.documentElement:null,family=TP1511_BASIC.includes(k)?'basic':'vivid';if(el?.dataset)el.dataset.tpThemeFamily=family;else el?.setAttribute?.('data-tp-theme-family',family);};
-rf200SetTheme=function(k){if(!RF200_THEMES[k])return;db.set('themeAccent',k);rf200ApplyTheme(k);render();};
+rf200SetTheme=function(k){if(!RF200_THEMES[k])return;db.set('themeAccent',k);rf200ApplyTheme(k);render();if(typeof cloudChanged==='function')cloudChanged();};
 rf200ThemePanel=function(){
  const cur=rf200ThemeKey(),name=tp1511ThemeName(cur);
  return '<details class="setting tp1511-card tp152-accordion tp152-theme"><summary><div class="tp1511-head"><b>◐</b><div><strong>'+esc(tp152T('theme'))+'</strong><p class="small muted">'+esc(name)+'</p></div></div><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-accordion-body"><small class="muted">'+esc(tp1511T('basic'))+'</small>'+tp1511ThemeGrid(TP1511_BASIC)+'<small class="muted tp1511-group-title">'+esc(tp1511T('vivid'))+'</small>'+tp1511ThemeGrid(TP1511_VIVID)+'</div></details>';
