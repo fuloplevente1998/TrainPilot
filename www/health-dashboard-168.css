@@ -732,6 +732,5 @@ html body #tp155R4PanelHost[data-panel="quick"] .tp152-quick-row>summary .tp152-
 html.tp110-large-text .tp168-sync-tail .rf263-sync-actions .btn{flex-basis:100%;width:100%}
 @media(max-width:360px){
  html body #app main.tp168-health .tp168-sync-tail .rf263-sync-actions>.btn{flex-basis:calc((100% - 7px)/2);font-size:12px!important;padding:8px 6px!important}
- html body #app main.tp168-health .tp168-sync-tail .rf263-sync-actions>.tp120-journal-entry{flex-basis:100%}
  html.tp110-large-text body #app main.tp168-health .tp168-sync-tail .rf263-sync-actions>.btn{flex-basis:100%}
 }

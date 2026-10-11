@@ -107,6 +107,18 @@ public class SamsungHealthPlugin extends Plugin {
         getActivity().runOnUiThread(() -> {
             try {
                 foreground();
+                Set<Permission> permissions = requested();
+                sdk().getGrantedPermissionsAsync(permissions).setCallback(Looper.getMainLooper(), granted -> {
+                    if (granted.containsAll(permissions)) call.resolve(status(granted));
+                    else requestReadPermissions(call);
+                }, error -> reject(call, error));
+            } catch (Exception e) { reject(call, e); }
+        });
+    }
+    private void requestReadPermissions(PluginCall call) {
+        getActivity().runOnUiThread(() -> {
+            try {
+                foreground();
                 sdk().requestPermissionsAsync(requested(), getActivity()).setCallback(Looper.getMainLooper(),
                     granted -> call.resolve(status(granted)), error -> reject(call, error));
             } catch (Exception e) { reject(call, e); }
@@ -114,7 +126,7 @@ public class SamsungHealthPlugin extends Plugin {
     }
     @PluginMethod public void openSettings(PluginCall call) {
         // The SDK permission sheet is the supported way to review this app's data access.
-        requestRead(call);
+        requestReadPermissions(call);
     }
     @PluginMethod public void readHealthDay(PluginCall call) {
         run(call, reader -> {

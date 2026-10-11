@@ -10,7 +10,7 @@ function fixture(){
   const hc=saved.hc[day],sh=saved.samsung[day],direct=saved.preferences.provider===SH&&sh;
   days[day]={...(hc||{}),...(direct?sh:{}),channel:direct?SH:HC,source:'@aggregate',day,metricProviders:{steps:direct?SH:HC,hrvRmssdMs:HC}};
  }return {version:1,days,preferences:{...saved.preferences},nativeJournal:true};};
- window.samFixture={calls:[],denied:false};
+ window.samFixture={calls:[],denied:false,granted:saved.preferences.provider===SH};
  window.Capacitor={isNativePlatform:()=>true,getPlatform:()=>'android',Plugins:{
   GoogleSync:{status:async()=>({profile:null})},AppFeedback:{appearance:async()=>({fontScale:1})},BackupArchive:{recover:async()=>({})},
   HealthJournal:{initialize:async()=>projection(),getProjection:async()=>projection(),pendingRestore:async()=>({token:''}),
@@ -20,8 +20,8 @@ function fixture(){
   HealthBridge:{getStatus:async()=>({permissions:{READ_HEART_RATE:true,READ_HEART_RATE_VARIABILITY:true}}),
    readHealthDay:async args=>{const day=args.day||window.rf240DayKey(args.start);saved.hc[day]={day,steps:314,activeCalories:26,totalCalories:2423,hrvRmssdMs:35,readAt:new Date().toISOString()};persist();return saved.hc[day];},
    readTrainingWindow:async()=>({workoutCalories:26,workoutEnergyVersion:1,workoutEnergyProvider:HC,averageHeartRate:111,maxHeartRate:162,heartRateSamples:2945,totalCalories:373,steps:336,sources:['com.sec.android.app.shealth'],warnings:[]})},
-  SamsungHealth:{getStatus:async()=>({permissions:{READ_WEIGHT:true,READ_BODY_FAT:true,READ_EXERCISE:true}}),
-   requestRead:async()=>{samFixture.calls.push('permission');return {permissions:{READ_WEIGHT:!samFixture.denied,READ_BODY_FAT:!samFixture.denied,READ_EXERCISE:!samFixture.denied}};},
+  SamsungHealth:{getStatus:async()=>({permissions:{READ_WEIGHT:samFixture.granted,READ_BODY_FAT:samFixture.granted,READ_EXERCISE:samFixture.granted,READ_HEART_RATE_VARIABILITY:false}}),
+   requestRead:async()=>{samFixture.calls.push('permission');samFixture.granted=!samFixture.denied;return {permissions:{READ_WEIGHT:!samFixture.denied,READ_BODY_FAT:!samFixture.denied,READ_EXERCISE:!samFixture.denied}};},
    readHealthDay:async args=>{const day=args.day||window.rf240DayKey(args.start);samFixture.calls.push('day');saved.samsung[day]={day,provider:SH,steps:6594,activeCalories:392,totalCalories:2423,bodyFatPercent:18.4,skeletalMuscleMassKg:28.2,totalBodyWaterLiters:37.5,readAt:new Date().toISOString(),warnings:[]};persist();return saved.samsung[day];},
    readTrainingWindow:async()=>({provider:SH,workoutCalories:392,workoutEnergyVersion:1,workoutEnergyProvider:SH,workoutEnergySources:['com.sec.android.app.shealth'],workoutEnergySourceLabels:{'com.sec.android.app.shealth':'Samsung Health direct'},source:'com.sec.android.app.shealth',sourceLabels:{'com.sec.android.app.shealth':'Samsung Health direct'},sources:['com.sec.android.app.shealth'],warnings:[]})},
   HealthBackground:{getStatus:async()=>({preferences:saved.preferences})}
@@ -42,6 +42,9 @@ function fixture(){
   assert.equal(await page.evaluate(()=>TrainPilotSamsungHealth.selected()),'health_connect');assert.equal(await page.evaluate(()=>samFixture.calls.includes('day')),false);
   await page.evaluate(()=>samFixture.denied=false);if(!await page.locator('.tp168-connect-panel').evaluate(n=>n.open))await page.locator('.tp168-connect-panel>summary').click();await page.locator('.tp-health-provider .tp-select-trigger').click();await page.locator('.tp-health-provider .tp-select-option[data-value="samsung_health"]').click();
   await page.waitForFunction(()=>TrainPilotSamsungHealth.selected()==='samsung_health'&&!state.health.busy&&samFixture.calls.filter(x=>x==='day').length===30).catch(async error=>{console.error(await page.evaluate(()=>({selected:TrainPilotSamsungHealth.selected(),health:state.health,calls:samFixture.calls,report:db.get('healthSyncReport250'),ledger:rf240Ledger()})));throw error;});
+  assert.equal(await page.evaluate(()=>samFixture.calls.filter(x=>x==='permission').length),2,'provider selection requests access once, sync reuses it');
+  await page.evaluate(()=>TrainPilotHealthJournal.sync());await page.evaluate(()=>rf250Sync({manual:true,full:true}));
+  assert.equal(await page.evaluate(()=>samFixture.calls.filter(x=>x==='permission').length),2,'journal refresh and full sync keep existing Samsung access');
   const day=await page.evaluate(()=>rf240Ledger().days[rf240DayKey(new Date())]);assert.equal(day.activeCalories,392);assert.equal(day.hrvRmssdMs,35);assert.equal(day.bodyFatPercent,18.4);
   assert.equal(await page.locator('.tp-samsung-composition').count(),1);await page.locator('.tp168-more-panel>summary').click();assert.match(await page.locator('.tp-samsung-composition').innerText(),/Vázizomtömeg/);
   assert.equal(await page.locator('details.tp-samsung-composition').count(),0,'Composition must share the More Health disclosure');

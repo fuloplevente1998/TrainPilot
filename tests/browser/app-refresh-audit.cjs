@@ -56,8 +56,7 @@ const assertHealthOverview=require('../helpers/health-overview.cjs');
    ['goals',"tp155R4OpenPanel('goals')",null,null],
    ['calendar',"go('calendar')",null,null],
    ['settings',"go('settings')",null,null],
-   ['coach','rf233CoachScreen()',null,null],
-   ['health-journal',"tp155R4OpenPanel('health-journal')",null,null]
+   ['coach','rf233CoachScreen()',null,null]
   ]){
    await page.evaluate(()=>tp155R4ClosePanel(false));await page.evaluate(code=>(0,eval)(code),open);
    const host=page.locator('#tp155R4PanelHost[data-panel="'+type+'"]');await host.waitFor();
@@ -69,6 +68,18 @@ const assertHealthOverview=require('../helpers/health-overview.cjs');
    if(input)assert.equal(await page.locator(input).inputValue(),value,type+' retains unsaved input');
    checks.push({panel:type,backgroundRefresh:'pass'});
   }
+  await page.evaluate(()=>{tp155R4ClosePanel(false);go('health');tp155R4OpenPanel('health-journal');});
+  await page.waitForSelector('.tp120-journal');
+  await page.locator('[data-health-from]').evaluate(node=>{node.value='2026-01-01';node.dispatchEvent(new Event('change',{bubbles:true}));});
+  await page.locator('.tp120-raw>summary').click();
+  await page.locator('.tp120-journal').evaluate(node=>{window.auditJournalNode=node;});
+  await page.evaluate(()=>TrainPilotUIRefresh.refresh());await page.evaluate(()=>TrainPilotHealthJournal.auto());await page.evaluate(()=>render());
+  assert.equal(await page.evaluate(()=>auditJournalNode===document.querySelector('#app .tp120-journal')),true,'inline journal retains its controls during data refresh');
+  assert.equal(await page.locator('[data-health-from]').inputValue(),'2026-01-01','inline date filter is preserved');
+  assert.equal(await page.locator('.tp120-health-journal').evaluate(node=>node.open),true,'journal stays open');
+  assert.equal(await page.locator('.tp120-raw').evaluate(node=>node.open),true,'measurement records stay open');
+  assert.equal(await page.locator('#tp155R4PanelHost').count(),0,'journal does not open a separate panel');
+  checks.push({inlineJournal: true, backgroundRefresh:'pass'});
   await page.evaluate(()=>{tp155R4ClosePanel(false);go('home');profileScreen();});
   await page.waitForSelector('#pfAge');await page.locator('#pfAge').fill('35');
   await page.evaluate(()=>TrainPilotUIRefresh.refresh());assert.equal(await page.locator('#pfAge').inputValue(),'35','personal planner retains its draft');
@@ -119,6 +130,6 @@ const assertHealthOverview=require('../helpers/health-overview.cjs');
   assert.equal(await page.locator('#tp155R4PanelHost').count(),0,'confirmed navigation releases the picker');
   assert.equal(await page.evaluate(()=>!!db.get('draft',null)),true,'confirmed navigation preserves the workout draft');
   assert.deepEqual(errors,[]);
-  console.log('PASS app audit: late native initialization and automatic refresh preserve Quick Workout; eight panels and planner retain edits; 192 mobile page/panel/language/theme cases remain navigable without page errors or horizontal overflow');
+  console.log('PASS app audit: late native initialization and automatic refresh preserve Quick Workout; seven panels, inline journal and planner retain edits; 192 mobile page/panel/language/theme cases remain navigable without page errors or horizontal overflow');
  }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(error=>{console.error(error);process.exitCode=1;});

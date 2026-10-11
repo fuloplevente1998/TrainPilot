@@ -4013,7 +4013,7 @@ var rf250Exclusive = function rf250Exclusive(fn){const run=rf250Tail.then(fn);rf
 var rf250Pipeline = async function rf250Pipeline(p,{manual=false,full=false,journalDirtyDays=[]}={}){
  const report={startedAt:new Date().toISOString(),stages:[],days:0,workouts:0,exported:0,skipped:0,errors:[]};
  const stage=(name,status,detail)=>report.stages.push({name,status,detail});
- let status=await p.getStatus();if(manual){await p.requestRead();status=await p.getStatus()}
+ let status=await p.getStatus();if(manual&&!Object.entries(status.permissions||{}).some(([key,value])=>key.startsWith('READ_')&&value===true)){await p.requestRead();status=await p.getStatus()}
  const permissions=status.permissions||{};state.health=state.health||{};state.health.permissions=permissions;
  if(!Object.entries(permissions).some(([k,v])=>k.startsWith('READ_')&&v))throw Error('Nincs Health Connect olvasási engedély.');
  stage('Engedélyek','ok','A TrainPilot által támogatott és engedélyezett adattípusokat olvassuk.');
@@ -4057,7 +4057,7 @@ var rf250Pipeline = async function rf250Pipeline(p,{manual=false,full=false,jour
 
  rf250EnsureStableWorkoutIds();const rows=history().filter(rf240ValidWorkout),recent=Date.now()-30*86400000;
  let writeAllowed=permissions.WRITE_EXERCISE===true;
- if(manual&&!writeAllowed&&rows.length){try{await p.requestWrite();writeAllowed=(await p.getStatus()).permissions?.WRITE_EXERCISE===true}catch(e){report.errors.push('Exportengedély: '+rf245Message(e))}}
+ // Sync uses existing write access; missing export access is managed explicitly.
  let workoutErrors=0,exportErrors=0;
  for(const h of rows){
   const activeWindows=window.TrainPilotIssue79?.intervals(h)||[];
@@ -15515,7 +15515,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  const t=key=>(texts[typeof rf212Lang==='function'?rf212Lang():'hu']||texts.hu)[key]||window.TrainPilotSamsungHealth?.t(key)||key;
  const bridge=()=>{if(window.Capacitor?.isNativePlatform?.()!==true)return null;return window.Capacitor?.Plugins?.HealthJournal||window.Capacitor?.registerPlugin?.('HealthJournal')||null;};
  const background=()=>window.Capacitor?.Plugins?.HealthBackground||window.Capacitor?.registerPlugin?.('HealthBackground');
- const root=()=>document.querySelector('#tp155R4PanelHost[data-panel="health-journal"] .tp120-journal');
+ const root=()=>document.querySelector('#app .tp120-health-journal .tp120-journal');
  const compact=ledger=>({...ledger,version:1,days:Object.fromEntries(Object.entries(ledger?.days||{}).sort(([a],[b])=>b.localeCompare(a)).slice(0,30))});
  let initialized=null,cache=null,preferences={primary:'health_connect',autoOnOpen:false,logWatchSteps:false,hcDailySource:'auto',bleBackground:false,hcBackground:false},request=0,busy=false,autoRunning=false,lastAuto=0,nextCursor=0,nextTime=0,filters={from:null,to:null,};
  const ledgerBase=rf240Ledger,saveBase=rf240SaveLedger;
@@ -15552,7 +15552,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  function dailySourceOptions(){return [['auto',t('sourceAuto')],['priority',t('sourcePriority')]].map(([value,label])=>'<option value="'+esc(value)+'" '+(preferences.hcDailySource===value?'selected':'')+'>'+esc(label)+'</option>').join('');}
  function backgroundHtml(){return '<label class="tp120-check"><input type="checkbox" data-health-hcBackground '+(preferences.hcBackground?'checked':'')+' onchange="TrainPilotHealthJournal.backgroundPreference(\'hcBackground\',this.checked)"><span>'+esc(t('hcBackground'))+'</span></label><p class="small muted">'+esc(t('backgroundNote'))+'</p>';}
- function html(){const today=rf240DayKey(new Date());return '<main class="tp120-journal"><div class="tp120-filters"><label>'+esc(t('from'))+'<input class="field" type="date" data-health-from value="'+(filters.from||today)+'" max="'+today+'" onchange="TrainPilotHealthJournal.load()"></label><label>'+esc(t('to'))+'<input class="field" type="date" data-health-to value="'+(filters.to||today)+'" max="'+today+'" onchange="TrainPilotHealthJournal.load()"></label></div><details class="card tp120-preferences"'+(root()?.querySelector('.tp120-preferences')?.open?' open':'')+'><summary>'+esc(t('settings'))+'</summary><label>'+esc(t('dailySource'))+'<select class="field" data-health-daily-source onchange="TrainPilotHealthJournal.preference(\'hcDailySource\',this.value)">'+dailySourceOptions()+'</select></label><p class="small muted">'+esc(t('sourceNote'))+'</p><label class="tp120-check"><input type="checkbox" data-health-auto '+(preferences.autoOnOpen?'checked':'')+' onchange="TrainPilotHealthJournal.preference(\'autoOnOpen\',this.checked)"><span>'+esc(t('auto'))+'</span></label><p class="small muted">'+esc(t('autoNote'))+'</p>'+backgroundHtml()+'</details><button type="button" class="btn secondary block" data-health-sync onclick="TrainPilotHealthJournal.sync()">'+esc(t('refresh'))+'</button><p data-health-status role="status" aria-live="polite"></p><section data-health-days></section><details class="card tp120-raw"><summary>'+esc(t('records'))+'</summary><section data-health-records></section><button type="button" class="btn secondary block" data-health-next hidden onclick="TrainPilotHealthJournal.load(true)">'+esc(t('next'))+'</button></details></main>';}
+ function html(){const today=rf240DayKey(new Date());return '<div class="tp120-journal"><div class="tp120-filters"><label>'+esc(t('from'))+'<input class="field" type="date" data-health-from value="'+(filters.from||today)+'" max="'+today+'" onchange="TrainPilotHealthJournal.load()"></label><label>'+esc(t('to'))+'<input class="field" type="date" data-health-to value="'+(filters.to||today)+'" max="'+today+'" onchange="TrainPilotHealthJournal.load()"></label></div><details class="card tp120-preferences"'+(root()?.querySelector('.tp120-preferences')?.open?' open':'')+'><summary>'+esc(t('settings'))+'</summary><label>'+esc(t('dailySource'))+'<select class="field" data-health-daily-source onchange="TrainPilotHealthJournal.preference(\'hcDailySource\',this.value)">'+dailySourceOptions()+'</select></label><p class="small muted">'+esc(t('sourceNote'))+'</p><label class="tp120-check"><input type="checkbox" data-health-auto '+(preferences.autoOnOpen?'checked':'')+' onchange="TrainPilotHealthJournal.preference(\'autoOnOpen\',this.checked)"><span>'+esc(t('auto'))+'</span></label><p class="small muted">'+esc(t('autoNote'))+'</p>'+backgroundHtml()+'</details><button type="button" class="btn secondary block" data-health-sync onclick="TrainPilotHealthJournal.sync()">'+esc(t('refresh'))+'</button><p data-health-status role="status" aria-live="polite"></p><section data-health-days></section><details class="card tp120-raw"><summary>'+esc(t('records'))+'</summary><section data-health-records></section><button type="button" class="btn secondary block" data-health-next hidden onclick="TrainPilotHealthJournal.load(true)">'+esc(t('next'))+'</button></details></div>';}
  function feedback(message,error=false){const node=root()?.querySelector('[data-health-status]');if(!error&&message===t('saved')){window.TrainPilotFeedback?.success(message,node);return;}if(node){node.textContent=message;node.classList.toggle('tp120-error',error);}}
  async function load(next=false){
   const node=root();if(!node)return;const owner=++request;feedback(t('loading'));
@@ -15580,13 +15580,26 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  function decorate(){
   const home=document.querySelector('#app main.rf221-home');if(home&&!home.querySelector('.tp120-home-goals')){home.querySelector('.tp110-goal-mini')?.remove();const today=home.querySelector('#rf223Today'),button=document.createElement('button');button.type='button';button.className='btn secondary block tp120-home-goals';button.setAttribute('onclick',"tp155R4OpenPanel('goals',this)");const config=settings().activityGoals110||{},goal=config.weekWorkouts||config.monthKm?window.TrainPilot110Core.goalProgress(history(),config):null,row=goal?.week.target?goal.week:goal?.month.target?goal.month:null;button.innerHTML='<span>'+esc(window.TrainPilot110.t('setGoals'))+'</span>'+(row?'<small class="tp120-goal-progress">'+esc(tp149FormatNumber(row.current))+'/'+esc(tp149FormatNumber(row.target))+' '+esc(row===goal.week?window.TrainPilot110.t('units'):'km')+'</small>':'')+'<span class="tp120-chevron" aria-hidden="true"></span>';const oldSummary=home.querySelector(':scope > .grid2');if(oldSummary?.querySelector('.stat'))oldSummary.replaceWith(button);else if(today)today.after(button);else home.appendChild(button);}
-  const health=document.querySelector('#app main.tp168-health');if(health&&!health.querySelector('.tp120-journal-entry')){const button=document.createElement('button');button.type='button';button.className='btn secondary block tp120-journal-entry';button.setAttribute('onclick',"tp155R4OpenPanel('health-journal',this)");button.innerHTML='<span>'+esc(t('title'))+'</span><span class="tp120-chevron" aria-hidden="true"></span>';health.querySelector('.tp168-sync-tail .rf263-sync-actions')?.appendChild(button);}
+  const health=document.querySelector('#app main.tp168-health');if(health&&!health.querySelector('.tp120-health-journal')){
+   const disclosure=document.createElement('details');disclosure.className='card tp120-health-journal';
+   disclosure.dataset.language=rf212Lang();disclosure.dataset.provider=preferences.provider||'health_connect';
+   disclosure.innerHTML='<summary class="tp120-journal-entry"><strong>'+esc(t('title'))+'</strong><span class="tp168-chevron tp-global-chevron" aria-hidden="true">›</span></summary><div data-health-journal-content></div>';
+   disclosure.addEventListener('toggle',()=>{if(disclosure.open&&!disclosure.querySelector('.tp120-journal')){disclosure.querySelector('[data-health-journal-content]').innerHTML=window.TrainPilotHealthJournal.html();rf260EnhanceSelects();rf260EnhanceTemporalFields();void load();}tp107FitViews();});
+   health.querySelector('.tp168-connect-panel')?.before(disclosure);
+  }
  }
+ function open(){if(!document.querySelector('#app main.tp168-health'))go('health');const disclosure=document.querySelector('#app .tp120-health-journal');if(!disclosure)return false;disclosure.open=true;return true;}
  window.TrainPilotHealthJournal={t,ready,refresh,backup,html,load,preference,backgroundPreference,sync,decorate,auto,compact,legacySnapshot,preferences:()=>({...preferences}),isSyncing:()=>busy||autoRunning||!!rf250Flight};
- const pipelineBase=rf250Pipeline;rf250Pipeline=async function(p,options){const journal=await ready();if(journal){const dirty=await journal.getDirtyDays();options={...options,journalDirtyDays:dirty.days||[]};}const result=await pipelineBase(p,options);if(journal){await journal.saveSyncMeta({meta:Object.fromEntries(['lastSyncAt','lastFullSyncAt','lastAttemptAt'].map(key=>[key,rf240Ledger()[key]]))});await refresh();}return result;};
+ const pipelineBase=rf250Pipeline;rf250Pipeline=async function(p,options){const journal=await ready();if(journal){const dirty=await journal.getDirtyDays();options={...options,journalDirtyDays:dirty.days||[]};}const result=await pipelineBase(p,options);if(journal){await journal.saveSyncMeta({meta:Object.fromEntries(['lastSyncAt','lastFullSyncAt','lastAttemptAt'].map(key=>[key,rf240Ledger()[key]]))});await refresh();if(options?.manual)await load();}return result;};
  window.addEventListener?.('DOMContentLoaded',()=>{
-  const renderBase=render;render=function(){const result=renderBase.apply(this,arguments);decorate();return result;};window.render=render;
-  const openBase=window.tp155R4OpenPanel;window.tp155R4OpenPanel=function(type){const result=openBase.apply(this,arguments);if(result&&type==='health-journal')void load();return result;};
+  const renderBase=render;render=function(){
+   const retained=document.querySelector('#app .tp120-health-journal'),scroll=window.scrollY;
+   const result=renderBase.apply(this,arguments);decorate();const replacement=document.querySelector('#app .tp120-health-journal');
+   if(retained&&replacement&&retained.dataset.language===replacement.dataset.language&&retained.dataset.provider===replacement.dataset.provider){replacement.replaceWith(retained);}
+   else if(retained&&replacement&&retained.open)replacement.open=true;
+   tp107FitViews();if(retained?.open&&replacement)window.scrollTo(0,scroll);return result;
+  };window.render=render;
+  const openBase=window.tp155R4OpenPanel;window.tp155R4OpenPanel=function(type){return type==='health-journal'?open():openBase.apply(this,arguments);};
   const refreshBase=window.tp155R4RefreshPanel;window.tp155R4RefreshPanel=function(){const result=refreshBase.apply(this,arguments);if(root())void load();return result;};
   decorate();if(bridge())void ready().then(()=>{window.TrainPilotUIRefresh.refresh();setTimeout(auto,1500);}).catch(()=>{});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)void auto();});
@@ -15653,7 +15666,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   try{
    if(journal()?.isSyncing?.()||state.health?.busy||window.TrainPilotBackupBusy)throw Error(t('busy'));
    const bridge=await journal().ready();if(!bridge)throw Error(t('missing'));
-   if(value===SH){const granted=await samsung().requestRead();if(!hasRead(granted))throw Error(t('denied'));}
+   if(value===SH){let granted=await samsung().getStatus();if(!hasRead(granted))granted=await samsung().requestRead();if(!hasRead(granted))throw Error(t('denied'));}
    await bridge.setPreferences({preferences:{provider:value}});await journal().refresh();
    rfHistoryHealthCache?.clear();
    const rows=history();for(const row of rows)if(row.health240)row.health240.syncedAt=null;db.set('history',rows);
@@ -15668,7 +15681,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   await journal().ready();
    if(selected()!==SH)return pipeline(p,options);
   const native=samsung(),report={provider:SH,startedAt:new Date().toISOString(),stages:[],days:0,workouts:0,exported:0,skipped:0,errors:[]};
-  let status=await native.getStatus();if(options.manual){await native.requestRead();status=await native.getStatus();}
+  let status=await native.getStatus();if(options.manual&&!hasRead(status)){await native.requestRead();status=await native.getStatus();}
   if(!hasRead(status))throw Error(t('denied'));
   state.health.permissions=status.permissions;
   const count=options.full||!db.get('samsungHealthLastFull',null)?30:2,days=rf240RecentDays(count).sort();
@@ -15683,7 +15696,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const bridge=await journal().ready(),at=new Date().toISOString();
   await bridge.saveSyncMeta({meta:{lastAttemptAt:at,...(!report.errors.length?{lastSyncAt:at,...(count===30?{lastFullSyncAt:at}:{})}:{})}});
   if(!report.errors.length&&count===30)db.set('samsungHealthLastFull',at);
-  await journal().refresh();
+  await journal().refresh();if(options.manual)await journal().load();
   report.stages.push({name:t('direct'),status:report.errors.length?'partial':'ok',detail:report.days+'/'+days.length});
   for(const h of history().filter(rf240ValidWorkout).filter(h=>Date.parse(h.finished)>=Date.now()-30*86400000)){
    try{if(await rf245ReadWorkout(plugin(),h,options.manual||h.health240?.provider!==SH))report.workouts++;}catch(error){report.errors.push('Workout: '+rf245Message(error));}

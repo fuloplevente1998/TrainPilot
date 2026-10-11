@@ -1,6 +1,6 @@
 # TrainPilot 1.3 – alkalmazásellenőrzés
 
-2026. október 10. A telefonos látható verzió és telepítési kód változatlan: **1.3.3 /2729**. A javítások a #160 tesztágon vannak; a Wear natív kódja és protokollja változatlan.
+2026. október 11. A telefonos látható verzió és telepítési kód változatlan: **1.3.3 /2729**. A javítások a #160 tesztágon vannak; a Wear natív kódja és protokollja változatlan.
 
 ## Megtalált hibák és javítások
 
@@ -10,6 +10,8 @@
 | Háttéradatok érkezése elveszítheti a beírt sorozatszámot, súlyt, gyakorlat- vagy programnevet | A közös panel frissítése új HTML-re cserélte a meglévő mezőket | Háttérfrissítéskor a panel meglévő vezérlői és értékei megmaradnak; a mögötte lévő adatoldal frissülhet. A profil, a teljes oldalas gyorsválasztó és a futó edzés védett. |
 | Lemondott navigáció közben bezáródhat a választó | A panel bezárása az edzéselhagyás megerősítése előtt történt | Aktív edzésnél csak a jóváhagyott navigáció zárja be. Elutasításkor a panel, keresés és edzés megmarad; jóváhagyáskor a piszkozat továbbra is mentődik. |
 | Hiányzó natív integrációnál JavaScript-kivétel | A natív Health Journal-only auditban a Google-híd hiánya `new Proxy(undefined)` hibát okozott | Az integrációs wrapper megőrzi a hiányzó híd értékét; a meglévő elérhetőségi ellenőrzések tovább működnek. A rendelkezésre álló híd nyelvi és hívási paraméterei változatlanok. |
+| A frissítés és kézi szinkron újra engedélykérést nyitott | Mindkét aktív Health Connect és Samsung Health szinkronág feltétel nélkül kérte újra az olvasási hozzáférést | Meglévő, akár részleges hozzáféréssel közvetlenül olvas. Új olvasási engedélyt csak hozzáférés nélküli kézi kapcsolódás kér; a szinkron nem kér további exportengedélyt. A natív hidak a teljesen megadott olvasási és meglévő háttérengedélyt is újra felhasználják. Az explicit Engedélyek gomb továbbra is kezelhetővé teszi a hozzáférést. |
+| Az egészségnapló külön panelben nyílt | Felhasználói kérés az Egészség oldalon lenyitható naplóra | Önálló lenyíló kártya ugyanazon az oldalon, dátumszűréssel és 30 rekordos lapozással. Háttérfrissítéskor megmarad a szűrő, lap és nyitott részek. Nyitva az oldal görgethető. |
 | Keskeny Egészség-nézetben levágott lenyitható sorok és elérhetetlen oldalláb | A teljes kiadási kapu 320×740 px német nézetben 18,78 px túllógást jelzett; vizuális ellenőrzéskor a lenyitható kártyák 22 px magasra zsugorodtak, miközben a feliratuk ennél magasabb maradt | A kártyák megtartják természetes magasságukat. A zárt Egészség-nézet csak akkor rögzített, ha az összes tartalom elfér; rövid/keskeny kijelzőn vagy nagy betűknél az oldal görgethető. |
 
 ## Ellenőrzési kör
@@ -18,8 +20,10 @@ A képernyőképek vizuális átnézése két további hibát mutatott: az Egés
 
 - A tényleges Edzés → Gyors edzés indítása gomb, késleltetett natív inicializálás, automatikus egészségadat-frissítés és annak ismételt hívása.
 - Beállított sorozatszám, súly, nyitott gyakorlat és keresés megőrzése; explicit bezárás és edzésindítás.
-- Gyakorlatkönyvtár, saját gyakorlat, saját program, célok, Naptár, Beállítások, Coach és egészségnapló panelje, valamint a személyes edzéstervező.
-- Kezdőlap, Edzés, Egészség, Programok, Napló és a három navigációs panel: 320×740, 393×873 és 412×915 px; magyar/angol/német/román; Basic/Vivid témák. Összesen 192 méret/nyelv/téma/nézet kombináció. Navigáció, görgetészár feloldása, vízszintes oldaltúlcsordulás és JavaScript-hibák ellenőrzése. A 360 px-nél keskenyebb Egészség-oldalon a két fő művelet közös sorban, az egészségnapló külön, teljes szélességű sorban marad; így a hosszabb német feliratok sem kényszerítenek harmadik sort.
+- Gyakorlatkönyvtár, saját gyakorlat, saját program, célok, Naptár, Beállítások, Coach panelje, a lenyíló egészségnapló, valamint a személyes edzéstervező.
+- Kezdőlap, Edzés, Egészség, Programok, Napló és a három navigációs panel: 320×740, 393×873 és 412×915 px; magyar/angol/német/román; Basic/Vivid témák. Összesen 192 méret/nyelv/téma/nézet kombináció. Navigáció, görgetészár feloldása, vízszintes oldaltúlcsordulás és JavaScript-hibák ellenőrzése. Az Egészség-oldalon a két fő művelet közös sorban marad; a napló külön lenyíló kártyát kapott. A természetes magasságú tartalom a szükséges helyen görgethető.
+- Health Connect: részleges meglévő olvasási hozzáférés, ismételt és teljes kézi szinkron, hiányzó írási engedély, engedély nélküli háttérfrissítés, első kapcsolódás. Samsung Health: kezdeti elutasítás, sikeres engedélyadás, ismételt és teljes szinkron újabb kérés nélkül. Az Egészség Szinkronizálás és a napló Frissítés gombja a meglévő jogosultságot használja; a háttérkapcsoló újra bekapcsolása sem kér már megadott engedélyt.
+- Lenyíló egészségnapló: 16 méret/nyelv kombináció, ugyanazon az oldalon; szűrés, lapozás, rekordok/alrészek, háttérfrissítés közbeni DOM- és szűrőmegőrzés.
 - Teljes meglévő Node- és Chromium-regressziók, köztük az órás átadás, edzésnapló, kalóriaforrások, Drive-ütközéskezelés, visszaállítás, naptár, GPS, oldalspecifikus időmérés és szerkesztési folyamatok.
 
 A kiadási ellenőrzések és az aláírt teszttelepítő eredménye a #160 PR-on követhető. A böngészős audit képernyőképei a telefonos kiadási kapu UI-artifactjában találhatók.

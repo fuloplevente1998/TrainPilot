@@ -34,10 +34,21 @@ async function tests(){
 
  // Per-record-type change tokens: two granted types => two independent tokens and polls.
  run(`db.set('history',[]);db.set('healthSyncMetaV1',{});db.set('healthLedgerV1',{version:1,days:{},warnings:[]});rf245Paint=()=>{};let tokenTypes=[],polls=0,reads250=0;const perms250={READ_HEART_RATE:true,READ_SLEEP:true,WRITE_EXERCISE:false};const plugin250={getStatus:async()=>({permissions:perms250}),requestRead:async()=>({}),createChangeToken:async a=>{tokenTypes.push(a.recordType);return {token:'tok-'+a.recordType}},pollChanges:async a=>{polls++;return {nextToken:a.token+'-n',changedDays:[],deletedCount:0}},readHealthDay:async()=>{reads250++;return {warnings:[],sleepSessions:[]}},readTrainingWindow:async()=>({warnings:[],exerciseSessions:[]})};`);
+ run(`let readPrompts250=0,writePrompts250=0;plugin250.requestRead=async()=>{readPrompts250++;perms250.READ_SLEEP=true;return {permissions:perms250}};plugin250.requestWrite=async()=>{writePrompts250++;return {}};`);
  await run('rf250Sync({plugin:plugin250,manual:true})');
  assert.deepEqual([...run('tokenTypes')].sort(),['HeartRateRecord','SleepSessionRecord']);
  assert.equal(run('Object.keys(rf240Meta().tokensByType).length'),2);assert.equal(run('reads250'),30);
  await run('rf250Sync({plugin:plugin250,manual:true})');assert.equal(run('polls'),2);
+ assert.equal(run('readPrompts250'),0,'partial granted access must be reused on repeated manual sync');
+ run(`db.set('history',[{id:'no-export-access',started:${JSON.stringify(now)},finished:${JSON.stringify(later)},exercises:[]}]);`);
+ await run('rf250Sync({plugin:plugin250,manual:true,full:true})');
+ assert.equal(run('readPrompts250'),0,'full refresh also reuses existing read access');
+ assert.equal(run('writePrompts250'),0,'sync must not request extra export access');
+ run('perms250.READ_HEART_RATE=false;perms250.READ_SLEEP=false');
+ assert.equal((await run('rf250Sync({plugin:plugin250,manual:false})')).status,'error');
+ assert.equal(run('readPrompts250'),0,'background refresh never prompts without access');
+ await run('rf250Sync({plugin:plugin250,manual:true})');assert.equal(run('readPrompts250'),1,'first manual connection can request missing read access');
+ await run('rf250Sync({plugin:plugin250,manual:true})');assert.equal(run('readPrompts250'),1,'the next refresh uses the granted access');
 
  // One user-visible sync action: Health only; History has none and Coach points to Health.
  run("db.set('language','hu')");
