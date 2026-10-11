@@ -1,0 +1,28 @@
+'use strict';
+const assert=require('node:assert/strict'),runtime=require('./helpers/app-runtime.cjs');
+const app=runtime(),ui=app.context.window.TrainPilotWearMeasurement165;
+app.run('state.session={syncId:"new",started:"2026-10-11T09:00:00Z",exercises:[{id:"e",sets:[{set:1,reps:"10",done:false}]}]};');
+const live=(revision,state='active')=>({schema:1,watchId:'watch',workoutId:'new',revision,state,updatedAt:Date.now(),summary:{schema:1,source:'wear_health_services',workoutId:'new',watchId:'sensor-watch',revision,state,heartRate:105,totalCalories:3}});
+ui.waiting('new');assert.equal(app.run('state.session.wearMeasurement165.state'),'waitingWorkout');
+assert.equal(ui.receive(live(1)),true);
+assert.equal(ui.receive(live(1,'starting')),false,'duplicate cannot replace active state');
+assert.equal(ui.receive({...live(2),workoutId:'old'}),false,'another workout cannot attach its acknowledgement');
+assert.equal(ui.receive({...live(2),summary:{workoutId:'old'}}),false,'mismatching summary is rejected');
+assert.equal(ui.receive({...live(2),revision:NaN}),false);
+assert.equal(ui.receive({...live(2),state:'invented'}),false);
+assert.equal(ui.receive(live(2,'paused')),true);
+assert.equal(app.run('state.session.wearMeasurement165.state'),'paused');
+assert.equal(app.run('state.session.exercises[0].sets[0].done'),false,'a measurement status never completes a set');
+let payload=live(3),acks=0;
+app.context.window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{pendingCommands:async()=>({commands:[],liveHealth:payload}),ackCommand:async()=>acks++}}};
+(async()=>{
+ await app.context.window.TrainPilotWearSync.drainCommands();
+ assert.equal(app.run('state.session.healthWear129.heartRate'),105);
+ assert.equal(app.run('state.session.healthWear129.totalCalories'),3);
+ assert.equal(acks,0,'replaceable live status is not a durable workout command');
+ payload=live(2);await app.context.window.TrainPilotWearSync.drainCommands();
+ assert.equal(app.run('state.session.healthWear129.revision'),3,'late live summaries cannot roll measurements back');
+ app.run('state.session=null;db.set("draft",null)');payload=live(4);await app.context.window.TrainPilotWearSync.drainCommands();
+ assert.equal(app.run('state.session'),null,'late reply cannot recreate a closed phone workout');
+ console.log('PASS Wear live handoff: identity, revision, pending/paused state, measured data, no set changes, no stale rollback or workout resurrection');
+})().catch(e=>{console.error(e);process.exitCode=1});

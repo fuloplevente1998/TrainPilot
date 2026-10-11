@@ -47,7 +47,7 @@ object WearHealthStore {
         value.put("revision",value.optLong("revision")+1).put("updatedAt",System.currentTimeMillis())
         val prefs=context.getSharedPreferences(PREFS,0)
         val ids=prefs.getStringSet("ids",emptySet())!!.toMutableSet();ids.add(id)
-        val editor=prefs.edit().putString("summary:$id",value.toString()).putString("active",if(value.optString("state") in listOf("starting","active","ending"))id else "")
+        val editor=prefs.edit().putString("summary:$id",value.toString()).putString("active",if(value.optString("state") in listOf("starting","active","paused","ending"))id else "")
         while(ids.size>16) { val oldest=ids.minByOrNull { load(context,it)?.optLong("updatedAt") ?: 0L } ?: break;ids.remove(oldest);editor.remove("summary:$oldest") }
         editor.putStringSet("ids",ids).commit()
     }

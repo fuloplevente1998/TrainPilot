@@ -30,6 +30,8 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
     private var destroyed=false
     private var watchdog: Runnable?=null
     private val handler=Handler(Looper.getMainLooper())
+    private var lastLiveAt=0L
+    private var lastLiveState=""
     override fun onBind(intent: Intent?) = null
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if(intent?.action==STOP) { end();return START_NOT_STICKY }
@@ -134,11 +136,18 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
             accumulator.segmentTotal("activeDurationSeconds",(checkpoint.activeDuration.toMillis()+elapsed)/1000.0)
         }
         val ended=update.exerciseStateInfo.state.isEnded
-        data.put("state",if(ended)"ended" else if(lifecycle?.stopRequested==true)"ending" else "active")
+        data.put("state",if(ended)"ended" else if(lifecycle?.stopRequested==true)"ending" else if(update.exerciseStateInfo.state.isPaused)"paused" else "active")
         persist()
         if(ended)finish()
     }
-    private fun persist() { summary?.let { WearHealthStore.save(this,it);WearSurfaces.refresh(this) } }
+    private fun persist() { summary?.let {
+        WearHealthStore.save(this,it);WearSurfaces.refresh(this)
+        val now=SystemClock.elapsedRealtime();val state=it.optString("state")
+        if(state!=lastLiveState || now-lastLiveAt>=5000L) {
+            lastLiveAt=now;lastLiveState=state
+            WearLiveHealth.publish(this,it.optString("workoutId"),state,it.optString("message"),it)
+        }
+    } }
     private fun finishWithoutExercise() {
         summary?.put("partial",true);finish()
     }

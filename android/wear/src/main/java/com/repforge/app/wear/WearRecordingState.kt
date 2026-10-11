@@ -79,6 +79,7 @@ internal fun trimWearNumber(number: Double): String =
 internal fun wearRecordingStatus(data: JSONObject?, enabled: Boolean): String = when (data?.optString("state")) {
     "starting" -> "Mérés indítása…"
     "active" -> "Mérés folyamatban · háttérben is"
+    "paused" -> "Az órás mérés szünetel"
     "ending" -> "Mérés lezárása…"
     "ended" -> "Mérés befejezve"
     "error" -> "A mérés megszakadt"
