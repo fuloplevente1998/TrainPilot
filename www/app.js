@@ -5424,6 +5424,12 @@ var tpRefreshDataUI=function(){
   collapsed:el.querySelector('.rf-history-health-panel')?.classList.contains('collapsed'),
   nested:[...el.querySelectorAll('details')].map(d=>d.open),top:el.getBoundingClientRect().top
  })):[];
+ // An expanded page section can contain a draft even after its input loses
+ // focus. Import data normally, but defer whole-page replacement while the
+ // user reads or edits it. The default active-program banner is not an editor.
+ // Saved workouts use the keyed restoration below so their metrics can update.
+ if(!journal.length&&[...document.querySelectorAll('#app main details[open]:not(.tp152-active-program),#app main [aria-expanded="true"]')].some(el=>
+  el.getClientRects().length&&!el.parentElement?.closest('details:not([open]),[hidden]')))return;
  const anchor=journal.find(row=>row.open),scroll=window.scrollY;
  if(journal.length)state.tp3HistoryOpenKey=anchor?.key||null;
  tpUIRefreshDepth++;

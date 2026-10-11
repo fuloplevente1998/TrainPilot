@@ -19,7 +19,7 @@ const assertHealthOverview=require('../helpers/health-overview.cjs');
    localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped'));
    window.auditProjection={version:1,days:{},preferences:{autoOnOpen:false}};
    window.Capacitor={isNativePlatform:()=>true,Plugins:{HealthJournal:{
-    pendingRestore:async()=>({}),initialize:()=>new Promise(resolve=>window.auditFinishInitialization=()=>resolve(window.auditProjection)),getProjection:async()=>window.auditProjection,
+    pendingRestore:async()=>({}),initialize:()=>new Promise(resolve=>window.auditFinishInitialization=()=>resolve(window.auditProjection)),getProjection:async()=>{window.auditProjectionReads=(window.auditProjectionReads||0)+1;return window.auditProjection;},
     readPage:async()=>({records:[],days:[],nextCursor:0,hasMore:false})
    }}};
   });
@@ -68,6 +68,43 @@ const assertHealthOverview=require('../helpers/health-overview.cjs');
    if(input)assert.equal(await page.locator(input).inputValue(),value,type+' retains unsaved input');
    checks.push({panel:type,backgroundRefresh:'pass'});
   }
+  // Open page disclosures need the same protection as separate panels.
+  // Include nested lazy content, statistics and an unfocused measurement draft.
+  await page.evaluate(()=>{
+   tp155R4ClosePanel(false);db.set('language','hu');const e=byId('db-floor-press');
+   db.set('history',[{id:'refresh-stat-workout',programId:'home-basic',workout:'A',dayId:'A',started:'2026-01-12T10:00:00Z',finished:'2026-01-12T10:20:00Z',exercises:[{...e,sets:[{set:1,weight:5.5,reps:'5',done:true}]}]}]);
+  });
+  for(const [type,route,open] of [
+   ['workout-settings','plan',async()=>{await page.locator('.tp1511-training > summary').click();}],
+   ['workout-day','plan',async()=>{await page.locator('.tp152-day > summary').first().click();}],
+   ['workout-exercise','plan',async()=>{await page.locator('.tp152-day > summary').first().click();await page.locator('.tp152-day').first().locator('.tp107-program-editor > summary').first().click();}],
+   ['program-card','programs',async()=>{await page.locator('[data-tp7-program-id] > summary').first().click();}],
+   ['program-day','programs',async()=>{await page.locator('[data-tp7-program-id] > summary').first().click();await page.locator('[data-tp7-program-id]').first().locator('.tp152-program-day > summary').first().click();}],
+   ['pulse-history','health',async()=>{await page.locator('.tp169-pulse-summary').click();await page.locator('.tp168-recovery-history > summary').click();}],
+   ['weight-draft','health',async()=>{await page.locator('.tp168-weight-summary').click();await page.locator('.tp169-weight-entry > summary').click();await page.locator('#tp168WeightKg').fill('79.4');await page.locator('#tp168WeightKg').evaluate(node=>node.blur());}],
+   ['statistics','history',async()=>{await page.evaluate(()=>tp155OpenJournalStats());await page.locator('.tp3-stat-row > summary').first().click();}]
+  ]){
+   await page.evaluate(route=>{tp155R4ClosePanel(false);go(route);},route);await open();
+   const before=await page.locator('#app main').evaluate(node=>{window.auditPageNode=node;return {scroll:scrollY,open:node.querySelectorAll('details[open]').length,reads:window.auditProjectionReads||0};});
+   await page.evaluate(()=>TrainPilotUIRefresh.refresh());await page.evaluate(()=>TrainPilotHealthJournal.auto());await page.evaluate(()=>TrainPilotHealthJournal.auto());
+   assert.equal(await page.locator('#app main').evaluate(node=>node===auditPageNode),true,type+' keeps its existing visible controls during automatic data refresh');
+   assert.equal(await page.locator('#app main details[open]').count(),before.open,type+' retains all open disclosures');
+   assert.equal(await page.evaluate(()=>scrollY),before.scroll,type+' retains scroll position');
+   assert.ok(await page.evaluate(()=>auditProjectionReads)>before.reads,type+' still imports background data while deferring page replacement');
+   if(type==='weight-draft')assert.equal(await page.locator('#tp168WeightKg').inputValue(),'79.4','unfocused weight draft survives background import');
+   checks.push({pageDisclosure:type,backgroundRefresh:'pass'});
+  }
+  // The default expanded active-program banner must not prevent idle pages
+  // from showing new data; a hidden child disclosure must not block them either.
+  await page.evaluate(()=>{go('plan');const day=document.querySelector('.tp152-day');day.open=false;day.querySelector('details').open=true;window.auditIdlePage=document.querySelector('#app main');});
+  await page.evaluate(()=>TrainPilotUIRefresh.refresh());
+  assert.equal(await page.locator('#app main').evaluate(node=>node!==auditIdlePage),true,'idle page with a default banner and hidden child still refreshes');
+  await page.evaluate(()=>{go('programs');window.auditClosedPage=document.querySelector('#app main');});
+  await page.evaluate(()=>TrainPilotUIRefresh.refresh());
+  assert.equal(await page.locator('#app main').evaluate(node=>node!==auditClosedPage),true,'closed program list still refreshes');
+  await page.locator('[data-tp7-program-id] > summary').first().click();
+  await page.evaluate(()=>{window.auditExplicitPage=document.querySelector('#app main');render();});
+  assert.equal(await page.locator('#app main').evaluate(node=>node!==auditExplicitPage),true,'explicit user redraw is still allowed');
   await page.evaluate(()=>{tp155R4ClosePanel(false);go('health');tp155R4OpenPanel('health-journal');});
   await page.waitForSelector('.tp120-journal');
   await page.locator('[data-health-from]').evaluate(node=>{node.value='2026-01-01';node.dispatchEvent(new Event('change',{bubbles:true}));});
@@ -130,6 +167,6 @@ const assertHealthOverview=require('../helpers/health-overview.cjs');
   assert.equal(await page.locator('#tp155R4PanelHost').count(),0,'confirmed navigation releases the picker');
   assert.equal(await page.evaluate(()=>!!db.get('draft',null)),true,'confirmed navigation preserves the workout draft');
   assert.deepEqual(errors,[]);
-  console.log('PASS app audit: late native initialization and automatic refresh preserve Quick Workout; seven panels, inline journal and planner retain edits; 192 mobile page/panel/language/theme cases remain navigable without page errors or horizontal overflow');
+  console.log('PASS app audit: late native initialization and automatic refresh preserve Quick Workout; seven panels, eight page disclosures, inline journal and planner retain edits while data import continues; idle pages and explicit actions still refresh; 192 mobile page/panel/language/theme cases remain navigable without page errors or horizontal overflow');
  }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(error=>{console.error(error);process.exitCode=1;});

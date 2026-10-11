@@ -20,3 +20,15 @@ Az élő mérés, szinkronizálás és végső összesítés protokollja változ
 - A készülékes elfogadás még szükséges: megnyitott telefonos Napló várakozás és új mérési adat után; órán rövid/hosszú gyakorlatnév, súly/ismétlés és időmérés, pihenő, rögzítés, előző/következő/befejezés, pulzus/kcal és elérhető lépés/távolság.
 
 A korábbi #165 mérésjavítás sikeres készülékes elfogadása megmarad; ez a kijelzési és nézetállapot-javítás külön próba.
+
+## A többi hasonló nézet közös védelme
+
+A felhasználó a többi hasonló ablakra is rákérdezett. A javítás előtti Chromium-próbán az Edzés oldal nyitott edzésbeállításai és edzésnapja is összecsukódtak automatikus frissítéskor. A különálló hét panel és a gyorsedzés-választó korábbi védelme már működött.
+
+A közös háttérfrissítési belépési pont ezért elhalasztja a teljes oldal lecserélését, ha látható nyitott részben olvas vagy szerkeszt a felhasználó. Ez a szokásos `<details>` elemekre és az `aria-expanded` állapottal működő részekre is vonatkozik. A háttéradatok beolvasása és tárolása folytatódik. A naplózott edzés a külön, edzéskulcshoz kötött állapot-visszaállítást használja, így az új mérési értékei nyitott nézetben is megjelennek.
+
+Az alapból nyitott aktívprogram-sáv és az összecsukott szülőben rejtett elemek nem akadályozzák a nyugalmi oldal frissítését. A felhasználó saját műveletei továbbra is azonnal újrarajzolhatják a nézetet.
+
+A böngészős ellenőrzés nyolc teljes oldali esetet fed le: edzésbeállítások, edzésnap, edzésgyakorlat szerkesztője, programkártya, programnap, pulzus/regenerációs előzmény, fókusz nélküli testsúlypiszkozat és statisztikai részlet. Minden esetben megmarad a DOM, a nyitott állapot és a görgetés; a natív projekció beolvasásszáma közben tovább nő. Külön próba ellenőrzi a nyugalmi oldal és a kifejezett felhasználói újrarajzolás működését.
+
+Ehhez új telefonos teszt-APK készül, az órás íves elrendezés az előző ellenőrzött APK-val használható. A készülékes elfogadás továbbra is szükséges.
