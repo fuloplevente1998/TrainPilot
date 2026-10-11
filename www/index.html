@@ -318,7 +318,7 @@
   }
   if(diag){diag.classList.add('tp168-connect-panel');disclosureSummary(diag,c().connect,c().connectSub,'link')}
   const sync=main.querySelector(':scope > .rf263-sync-card');if(sync){sync.classList.add('tp168-sync-tail')}
-  [more,diag].filter(Boolean).forEach(x=>main.appendChild(x));
+  [more,main.querySelector(':scope > .tp120-health-journal'),diag].filter(Boolean).forEach(x=>main.appendChild(x));
   if(sync)main.appendChild(sync);
   const note=document.createElement('div');note.className='tp168-health-note';note.innerHTML='<span aria-hidden="true">ⓘ</span><p>'+escText(c().note)+'</p>';main.appendChild(note);
   window.tp107FitViews?.();

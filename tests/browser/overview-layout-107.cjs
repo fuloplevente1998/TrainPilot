@@ -15,7 +15,7 @@ const root=path.resolve('www');const server=http.createServer((q,r)=>{const file
  for(const [width,height] of [[320,740],[360,800],[393,823],[393,873],[412,915]])for(const theme of ['classicBlue','yellow']){
   await p.setViewportSize({width,height});await p.evaluate(theme=>{go('home');rf200SetTheme(theme);go('health')},theme);await p.waitForTimeout(100);
   const normal=await rail();
-  for(const selector of ['.tp169-pulse-summary','.tp168-weight-summary','.tp168-more-panel>summary','.tp168-connect-panel>summary']){
+  for(const selector of ['.tp169-pulse-summary','.tp168-weight-summary','.tp168-more-panel>summary','.tp120-journal-entry','.tp168-connect-panel>summary']){
    await p.locator(selector).click();await p.waitForTimeout(60);assert.deepEqual(await rail(),normal,'Health keeps its card/column widths when '+selector+' opens at '+width+'/'+theme);
    assert.equal(await p.evaluate(()=>document.body.classList.contains('tp107-fixed-view')),false);
    await p.mouse.move(width/2,height-45);await p.mouse.wheel(0,500);await p.waitForTimeout(70);assert.ok(await p.evaluate(()=>scrollY)>0,'expanded Health can actually scroll '+selector);
