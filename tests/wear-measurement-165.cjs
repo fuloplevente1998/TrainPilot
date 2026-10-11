@@ -12,6 +12,8 @@ assert.equal(ui.receive({...live(2),revision:NaN}),false);
 assert.equal(ui.receive({...live(2),state:'invented'}),false);
 assert.equal(ui.receive(live(2,'paused')),true);
 assert.equal(app.run('state.session.wearMeasurement165.state'),'paused');
+ui.waiting('new');assert.equal(ui.receive(live(2)),false,'a manual retry must not treat the cached acknowledgement as a fresh start');
+assert.equal(app.run('state.session.wearMeasurement165.state'),'waitingWorkout');
 assert.equal(app.run('state.session.exercises[0].sets[0].done'),false,'a measurement status never completes a set');
 let payload=live(3),acks=0;
 app.context.window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{pendingCommands:async()=>({commands:[],liveHealth:payload}),ackCommand:async()=>acks++}}};

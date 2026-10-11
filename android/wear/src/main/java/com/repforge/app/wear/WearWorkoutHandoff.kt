@@ -4,6 +4,9 @@ import android.content.Context
 import com.google.android.gms.wearable.Wearable
 import org.json.JSONObject
 
+internal fun wearHandoffReplyMatches(start: WearMeasurementStart?, expiresAt: Long, now: Long, data: JSONObject): Boolean =
+    start!=null && expiresAt>=now && data.optBoolean("active") && start.matches(data.optString("workoutId"),data.optLong("revision"))
+
 /** Visible phone-start handoff only; messages never start sensors from a background receiver. */
 internal object WearWorkoutHandoff {
     const val REQUEST="/trainpilot/workout-request"
@@ -22,7 +25,7 @@ internal object WearWorkoutHandoff {
         if(System.currentTimeMillis()>prefs.getLong("expiresAt",0))return false
         val start=WearMeasurementStart.parse(prefs.getString("workoutId",null),prefs.getLong("minimumRevision",0).toString()) ?: return false
         val data=try { JSONObject(raw) }catch(_:Exception){return false}
-        if(!data.optBoolean("active") || !start.matches(data.optString("workoutId"),data.optLong("revision")))return false
+        if(!wearHandoffReplyMatches(start,prefs.getLong("expiresAt",0),System.currentTimeMillis(),data))return false
         val workout=WorkoutSnapshotStore.save(context,raw)
         return start.matches(workout?.workoutId,workout?.revision ?: 0L)
     }

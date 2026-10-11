@@ -17092,6 +17092,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   commandBusy=true;
   try{
    const result=await bridge.pendingCommands();
+   if(window.TrainPilotBackupBusy)return;
    if(window.TrainPilotWearMeasurement165?.receive(result?.liveHealth) && result.liveHealth.summary)attachMeasuredHealth({workoutId:result.liveHealth.workoutId,healthSummary:result.liveHealth.summary});
    window.TrainPilotWearMeasurement165?.paint();
    const commands=(Array.isArray(result?.commands)?result.commands:[]).slice().sort((a,b)=>(Number(a.createdAt)||0)-(Number(b.createdAt)||0)||(Number(a.sequence)||0)-(Number(b.sequence)||0));
