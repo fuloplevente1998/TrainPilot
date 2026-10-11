@@ -188,27 +188,31 @@ internal fun TrainPilotWearApp(
 }
 
 @Composable
-private fun Panel(content: @Composable ColumnScope.() -> Unit) {
+private fun CurvedHeader(text: String, color: Color = Gold, sweep: Float = WEAR_HEADER_SWEEP) {
+    val fontScale = LocalDensity.current.fontScale
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        // Keep the first/last controls away from the circular rim. Larger
-        // system fonts can scroll instead of pushing controls off the display.
-        Column(Modifier.align(Alignment.Center).width((maxWidth - 44.dp).coerceAtLeast(100.dp))
-            .heightIn(max = (maxHeight - 64.dp).coerceAtLeast(80.dp)).verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally, content = content)
+        CurvedLayout(Modifier.align(Alignment.Center).size(minOf(maxWidth, maxHeight) - 16.dp)
+            .semantics { contentDescription = text }) {
+            basicCurvedText(text, modifier = CurvedModifier.sizeIn(maxSweepDegrees = sweep),
+                style = CurvedTextStyle(color = color,
+                    fontSize = (12.5f * fontScale.coerceAtMost(1.1f) / fontScale).sp,
+                    fontWeight = FontWeight.SemiBold), overflow = TextOverflow.Ellipsis)
+        }
     }
 }
 
 @Composable
-private fun ActionPanel(count: Int = 3, gap: Float = 7f, horizontalPadding: Int = 44,
+private fun ActionPanel(title: String, count: Int = 2, gap: Float = 7f, horizontalPadding: Int = 44,
                         normalBodyHeight: Int = 103,
                         actions: @Composable (WearActionLayout) -> Unit,
                         content: @Composable ColumnScope.(Boolean) -> Unit) {
     val fontScale = LocalDensity.current.fontScale
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        val layout = wearActionLayout(maxWidth.value, maxHeight.value, count, gap)
+        val layout = wearActionLayout(maxWidth.value, maxHeight.value, count, gap, curvedTitle = true)
         val compact = layout.bodyHeight < normalBodyHeight * fontScale
+        CurvedHeader(title)
         Column(Modifier.align(Alignment.TopCenter).offset(y = layout.bodyTop.dp)
-            .width((minOf(maxWidth, maxHeight) - horizontalPadding.dp).coerceAtLeast(80.dp))
+            .width(minOf(layout.bodyWidth.dp, (minOf(maxWidth, maxHeight) - horizontalPadding.dp).coerceAtLeast(80.dp)))
             .height(layout.bodyHeight.dp).verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             content(compact)
@@ -236,13 +240,17 @@ private fun Title(text: String, size: Int = 19, lines: Int = 2) {
 @Composable
 private fun Pill(text: String, modifier: Modifier = Modifier, tone: Color = Gold,
                  enabled: Boolean = true, height: Int = 48, size: Int = 14, onClick: () -> Unit) {
+    val fontScale = LocalDensity.current.fontScale
+    val captionScale = fontScale.coerceAtMost(1.35f) / fontScale
     Box(modifier.fillMaxWidth().heightIn(min = height.dp)
         .background(if (enabled) tone else Secondary, CircleShape)
-        .clickable(enabled = enabled, role = Role.Button, onClick = onClick).padding(horizontal = 9.dp, vertical = 5.dp),
+        .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+        .semantics { contentDescription = text }.padding(horizontal = 9.dp, vertical = 5.dp),
         contentAlignment = Alignment.Center) {
         Text(text, color = if (!enabled) Muted else if (tone == Gold) Black else if (tone == Danger) DangerText else White,
-            fontSize = size.sp, lineHeight = (size + 2).sp, fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center, maxLines = 2)
+            fontSize = (size * captionScale).sp, lineHeight = ((size + 2) * captionScale).sp,
+            fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center,
+            maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -265,7 +273,8 @@ private fun HomeScreen(home: WatchHomeSnapshot?, active: WearWorkout?, closure: 
                 tone = Secondary, height = layout.phone.height.toInt(), size = 11, onClick = onOpenPhone)
         }
         Column(Modifier.align(Alignment.TopCenter).offset(y = layout.bodyTop.dp)
-            .width((minOf(maxWidth, maxHeight) - 44.dp).coerceAtLeast(80.dp))
+            .width(minOf((minOf(maxWidth, maxHeight) - 44.dp).coerceAtLeast(80.dp),
+                wearRoundBodyWidth(maxWidth.value, maxHeight.value, layout.bodyTop, layout.bodyTop + layout.bodyHeight).dp))
             .height(layout.bodyHeight.dp).verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             when {
@@ -315,18 +324,19 @@ private fun HomeScreen(home: WatchHomeSnapshot?, active: WearWorkout?, closure: 
 }
 
 @Composable
-private fun RoundList(content: @Composable ColumnScope.() -> Unit) {
+private fun RoundList(title: String, content: @Composable ColumnScope.() -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-            .padding(start = maxWidth * .1f, end = maxWidth * .1f, top = maxHeight * .17f, bottom = maxHeight * .2f),
+        val layout = wearRoundViewport(maxWidth.value, maxHeight.value)
+        CurvedHeader(title)
+        Column(Modifier.align(Alignment.TopCenter).offset(y = layout.top.dp)
+            .width(layout.width.dp).height(layout.height.dp).verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally, content = content)
     }
 }
 
 @Composable
 private fun MainMenuScreen(hasWorkout: Boolean, quickWorkout: Boolean, onOpenPhone: () -> Unit, onRoute: (String) -> Unit) {
-    RoundList {
-        Label("TRAINPILOT", Gold); Title("Főmenü", 22); Spacer(Modifier.height(8.dp))
+    RoundList("Főmenü") {
         for ((label, destination) in listOf("Kezdőlap" to "home", "Mini napló" to "journal", "Naptár" to "calendar", "Programnapok" to "days", "Órás mérések" to "metrics")) {
             Pill(label, tone = Card) { onRoute(destination) }; Spacer(Modifier.height(6.dp))
         }
@@ -357,10 +367,7 @@ private fun MiniJournalScreen(home: WatchHomeSnapshot?, onRefresh: () -> Unit,
                               onOpenPhone: () -> Unit, backLabel: String, onBack: () -> Unit,
                               onSelect: (MiniJournalWorkout) -> Unit) {
     val items = home?.recentWorkouts.orEmpty()
-    RoundList {
-        Label("TRAINPILOT", Gold)
-        Title("Mini napló", 21)
-        Spacer(Modifier.height(8.dp))
+    RoundList("Mini napló") {
         Label("Mentett telefonos edzések · offline másolat", size = 10)
         Spacer(Modifier.height(8.dp))
         if (items.isEmpty()) {
@@ -428,10 +435,7 @@ private fun MiniJournalMetrics(title: String, metrics: MiniJournalMetric, watch:
 
 @Composable
 private fun MiniJournalDetailScreen(item: MiniJournalWorkout?, backLabel: String, onBack: () -> Unit) {
-    RoundList {
-        Label("TRAINPILOT", Gold)
-        Title("Edzésnapló", 20)
-        Spacer(Modifier.height(7.dp))
+    RoundList("Edzésnapló") {
         if (item == null) {
             Text("Ez az edzés már nincs a szinkronizált listában.", color = Muted,
                 fontSize = 12.sp, textAlign = TextAlign.Center)
@@ -497,10 +501,7 @@ private fun QuickWorkoutPicker(home: WatchHomeSnapshot?, active: WearWorkout?, c
     }
     val pageCount = ((matches.size + 11) / 12).coerceAtLeast(1)
     val selectedPage = page.coerceIn(0, pageCount - 1)
-    RoundList {
-        Label("TRAINPILOT", Gold)
-        Title(if (adding) "+ Gyakorlat" else "Gyors edzés", 20)
-        Spacer(Modifier.height(8.dp))
+    RoundList(if (adding) "+ Gyakorlat" else "Gyors edzés") {
         if (active != null && !adding) {
             Text("Előbb zárd le a jelenlegi edzést.", color = Muted, fontSize = 12.sp, textAlign = TextAlign.Center)
         } else if (!adding && !canStart) {
@@ -556,8 +557,7 @@ private fun CalendarScreen(home: WatchHomeSnapshot?, canStart: Boolean, onBack: 
         return
     }
     if (home == null || entries.isEmpty()) {
-        RoundList {
-            Title("Naptár", 22)
+        RoundList("Naptár") {
             Text("A naptár frissítéséhez nyisd meg a TrainPilotot a telefonon.", color = Muted,
                 fontSize = 12.sp, textAlign = TextAlign.Center)
             Spacer(Modifier.height(8.dp)); Pill("‹ Főmenü", tone = Secondary, onClick = onBack)
@@ -636,9 +636,7 @@ private fun CalendarWeekPage(week: LocalDate, entries: List<WatchCalendarEntry>,
 @Composable
 private fun CalendarDayScreen(date: LocalDate, entries: List<WatchCalendarEntry>, today: LocalDate,
                               canStart: Boolean, onBack: () -> Unit, onStart: (WatchCalendarEntry) -> Unit) {
-    RoundList {
-        Title(date.format(DateTimeFormatter.ofPattern("MMM d., EEEE", java.util.Locale.forLanguageTag("hu"))), 18)
-        Spacer(Modifier.height(8.dp))
+    RoundList(date.format(DateTimeFormatter.ofPattern("MMM d., EEEE", java.util.Locale.forLanguageTag("hu")))) {
         if (entries.isEmpty()) {
             Text("Ehhez a naphoz nincs adat az órán. A telefonos naptárban találod meg.", color = Muted,
                 fontSize = 12.sp, textAlign = TextAlign.Center)
@@ -674,8 +672,7 @@ private fun HealthScreen(data: JSONObject?, enabled: Boolean, gps: Boolean, hasW
         val number=data?.takeIf { it.has(key) && !it.isNull(key) }?.optDouble(key)
         return if(number==null || !number.isFinite()) "—" else "${trimWearNumber(number/divisor)} $unit"
     }
-    RoundList {
-        Label("TRAINPILOT",Gold);Title("Órás mérések",20);Spacer(Modifier.height(8.dp))
+    RoundList("Órás mérések") {
         if(!hasWorkout && data!=null)Label("Legutóbbi edzés mérése",size=10)
         Text(wearRecordingStatus(data,enabled,hasWorkout),color=Gold,fontSize=11.sp,textAlign=TextAlign.Center)
         data?.optLong("updatedAt")?.takeIf { it>0L }?.let {
@@ -739,10 +736,9 @@ private fun HealthScreen(data: JSONObject?, enabled: Boolean, gps: Boolean, hasW
 
 @Composable
 private fun ProgramDays(home: WatchHomeSnapshot, onBack: () -> Unit, onSelect: (WatchHomeDay) -> Unit) {
-    Column(Modifier.fillMaxSize().padding(horizontal = 22.dp).verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(Modifier.height(29.dp)); Label(home.activeProgramName, Gold)
-        Title("Program napjai"); Spacer(Modifier.height(9.dp))
+    RoundList("Program napjai") {
+        Text(home.activeProgramName, color = Gold, fontSize = 11.sp, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(9.dp))
         home.days.forEach { day ->
             Row(Modifier.fillMaxWidth().heightIn(min = 60.dp).background(Card, RoundedCornerShape(22.dp))
                 .clickable(role = Role.Button) { onSelect(day) }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -757,7 +753,7 @@ private fun ProgramDays(home: WatchHomeSnapshot, onBack: () -> Unit, onSelect: (
             }
             Spacer(Modifier.height(7.dp))
         }
-        Pill("‹ Kezdőlap", tone = Secondary, onClick = onBack); Spacer(Modifier.height(28.dp))
+        Pill("‹ Kezdőlap", tone = Secondary, onClick = onBack)
     }
 }
 
@@ -817,15 +813,9 @@ private fun RestRing(workout: WearWorkout, seconds: Int) {
 private fun WorkoutPanel(workout: WearWorkout, onMenu: () -> Unit,
                          actions: @Composable (WearWorkoutLayout) -> Unit,
                          content: @Composable ColumnScope.() -> Unit) {
-    val fontScale = LocalDensity.current.fontScale
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val layout = wearWorkoutLayout(maxWidth.value, maxHeight.value)
-        CurvedLayout(Modifier.align(Alignment.Center).size(minOf(maxWidth, maxHeight) - 16.dp)) {
-            basicCurvedText(workout.exercise?.name.orEmpty(),
-                modifier = CurvedModifier.sizeIn(maxSweepDegrees = 140f),
-                style = CurvedTextStyle(color = White, fontSize = (12.5f * fontScale.coerceAtMost(1.1f) / fontScale).sp,
-                    fontWeight = FontWeight.SemiBold), overflow = TextOverflow.Ellipsis)
-        }
+        CurvedHeader(workout.exercise?.name.orEmpty(), White, sweep = 140f)
         Box(Modifier.align(Alignment.TopCenter).offset(y = ((maxHeight - minOf(maxWidth, maxHeight)) / 2))
             .width(minOf(maxWidth, maxHeight) * .7f).height(40.dp)
             .clickable(role = Role.Button, onClick = onMenu)
@@ -960,34 +950,26 @@ private fun ValueEditor(workout: WearWorkout, field: String, onChange: (String, 
     var edited by rememberSaveable(workout.workoutId, workout.currentExercise, set.number, field) { mutableDoubleStateOf(original) }
     val step = if (field == "weight") .5 else if (field.endsWith("Seconds") || (field == "reps" && normalizeUnit(workout.exercise?.repUnit.orEmpty()).startsWith("mp"))) 5.0 else 1.0
     val title = when (field) { "weight" -> "Súly"; "leftSeconds" -> "Bal oldal"; "rightSeconds" -> "Jobb oldal"; else -> if (step == 5.0) "Idő" else "Ismétlés" }
-    ActionPanel(count = 2, gap = 13f, horizontalPadding = 24, normalBodyHeight = 107,
-        actions = { layout ->
-            CompositionLocalProvider(LocalActionSize provides layout.buttonSize) {
-        Row(horizontalArrangement = Arrangement.spacedBy(layout.gap.dp)) {
-            RoundControl("×", Danger, caption = "Mégse", onClick = onBack)
-            RoundControl("✓", Gold, caption = "Mentés") {
-                if (field.endsWith("Seconds") || (field == "reps" && normalizeUnit(workout.exercise?.repUnit.orEmpty()).startsWith("mp"))) {
-                    // A manually entered duration must not be overwritten by
-                    // the old paused stopwatch when the set is recorded.
-                    WearStopwatchStore.save(context, WearStopwatch("${workout.workoutId}:${workout.exercise?.id}:${set.number}:$field"))
-                }
-                onChange(field, edited - fieldValue(workout.currentSet ?: set, field)); onBack()
-            }
-        }
-            }
-        }) { compact ->
-        if (!compact) Label("Sorozat ${workout.currentSetIndex + 1}/${workout.exercise?.sets?.size ?: 0}")
-        Title(title, 20); Spacer(Modifier.height((if (compact) 4 else 7).dp))
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            RoundControl("−") { edited = (edited - step).coerceAtLeast(0.0) }
-            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(numberText(edited), color = White, fontSize = 35.sp, lineHeight = 37.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                Label(if (field == "weight") "kg" else if (step == 5.0) "mp" else "ismétlés")
-            }
-            RoundControl("+") { edited += step }
+    RoundList(title) {
+        Label("Sorozat ${workout.currentSetIndex + 1}/${workout.exercise?.sets?.size ?: 0}", size = 9)
+        Text(numberText(edited), color = White, fontSize = 28.sp, lineHeight = 30.sp,
+            fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Label(if (field == "weight") "kg" else if (step == 5.0) "mp" else "ismétlés", size = 9)
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            RoundControl("−", description = "$title csökkentése") { edited = (edited - step).coerceAtLeast(0.0) }
+            RoundControl("+", description = "$title növelése") { edited += step }
         }
         Spacer(Modifier.height(4.dp)); Label("Lépésköz: ${numberText(step)}", size = 9)
-
+        Spacer(Modifier.height(6.dp))
+        Pill("✓ Mentés") {
+            if (field.endsWith("Seconds") || (field == "reps" && normalizeUnit(workout.exercise?.repUnit.orEmpty()).startsWith("mp"))) {
+                // A manually entered duration must not be overwritten by
+                // the old paused stopwatch when the set is recorded.
+                WearStopwatchStore.save(context, WearStopwatch("${workout.workoutId}:${workout.exercise?.id}:${set.number}:$field"))
+            }
+            onChange(field, edited - fieldValue(workout.currentSet ?: set, field)); onBack()
+        }
+        Spacer(Modifier.height(6.dp)); Pill("Mégse", tone = Secondary, onClick = onBack)
     }
 }
 
@@ -1073,14 +1055,25 @@ private fun TimedSetToolsScreen(workout: WearWorkout, onChange: (String, Double)
     var timer by remember(key) { mutableStateOf(WearStopwatchStore.load(context, key)) }
     var elapsed by remember(key) { mutableLongStateOf(timer.elapsed()) }
     LaunchedEffect(key, timer) { while (true) { val now = timer.elapsed(); if (now / 1000 != elapsed / 1000) elapsed = now; delay(200) } }
-    Panel {
+    fun recordTime() {
+        val measured = timer.elapsed()
+        val seconds = if (measured > 0) ceil(measured / 1000.0) else fieldValue(set, field)
+        onChange(field, seconds - fieldValue(workout.currentSet ?: set, field))
+        timer = WearStopwatchStore.save(context, WearStopwatch(key))
+        if (!perSide || (side == "leftSeconds" && set.rightSeconds > 0) || (side == "rightSeconds" && set.leftSeconds > 0)) onComplete()
+        else {
+            side = if (side == "leftSeconds") "rightSeconds" else "leftSeconds"
+            WearStopwatchStore.save(context, WearStopwatch("${workout.workoutId}:${workout.exercise?.id}:${set.number}:$side"))
+        }
+        onBack()
+    }
+    RoundList(workout.exercise?.name.orEmpty()) {
         Label("Sorozat ${workout.currentSetIndex + 1}/${workout.exercise?.sets?.size ?: 0}", Gold)
-        Title(workout.exercise?.name.orEmpty(), 18, 1)
         if (perSide) Label(if (side == "leftSeconds") "Bal oldal · jobb: ${set.rightSeconds} mp" else "Jobb oldal · bal: ${set.leftSeconds} mp")
-        Text(formatSeconds((elapsed / 1000).toInt()), color = White, fontSize = 36.sp,
-            lineHeight = 39.sp, fontWeight = FontWeight.SemiBold)
+        Text(formatSeconds((elapsed / 1000).toInt()), color = White, fontSize = 28.sp,
+            lineHeight = 30.sp, fontWeight = FontWeight.SemiBold)
         Label(workout.exercise?.targetReps?.let { if (it.isBlank()) "Stopper" else "Cél: $it mp" } ?: "Stopper")
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             RoundControl(if (timer.startedAt > 0) "Ⅱ" else "▶", enabled = !set.done,
                 description = if (timer.startedAt > 0) "Stopper szüneteltetése" else "Stopper indítása") { timer = WearStopwatchStore.save(context, timer.toggle()) }
             RoundControl(if (perSide) "B/J" else "↺", enabled = !set.done,
@@ -1093,32 +1086,24 @@ private fun TimedSetToolsScreen(workout: WearWorkout, onChange: (String, Double)
                     WearStopwatchStore.save(context, WearStopwatch("${workout.workoutId}:${workout.exercise?.id}:${set.number}:$side"))
                 } else timer = WearStopwatchStore.save(context, WearStopwatch(key))
             }
-            RoundControl("±", enabled = !set.done, description = "Idő kézi beállítása") { timer = WearStopwatchStore.save(context, timer.copy(elapsedMillis = timer.elapsed(), startedAt = 0L)); onEdit(field) }
         }
         Spacer(Modifier.height(6.dp))
         Pill(if (perSide) "✓ ${if (side == "leftSeconds") "Bal" else "Jobb"} idő rögzítése" else "✓ Idő rögzítése",
-            enabled = !set.done && (timer.startedAt > 0 || timer.elapsedMillis > 0 || elapsed > 0 || fieldValue(set, field) > 0)) {
-            val measured = timer.elapsed()
-            val seconds = if (measured > 0) ceil(measured / 1000.0) else fieldValue(set, field)
-            onChange(field, seconds - fieldValue(workout.currentSet ?: set, field))
-            timer = WearStopwatchStore.save(context, WearStopwatch(key))
-            if (!perSide || (side == "leftSeconds" && set.rightSeconds > 0) || (side == "rightSeconds" && set.leftSeconds > 0)) onComplete()
-            else {
-                side = if (side == "leftSeconds") "rightSeconds" else "leftSeconds"
-                WearStopwatchStore.save(context, WearStopwatch("${workout.workoutId}:${workout.exercise?.id}:${set.number}:$side"))
-            }
-            onBack()
+            enabled = !set.done && (timer.startedAt > 0 || timer.elapsedMillis > 0 || elapsed > 0 || fieldValue(set, field) > 0),
+            size = 12, onClick = ::recordTime)
+        Spacer(Modifier.height(6.dp))
+        Pill("± Kézi időbeállítás", tone = Secondary, enabled = !set.done, size = 11) {
+            timer = WearStopwatchStore.save(context, timer.copy(elapsedMillis = timer.elapsed(), startedAt = 0L))
+            onEdit(field)
         }
-        Spacer(Modifier.height(7.dp)); Pill("‹ Vissza az edzéshez", tone = Secondary, onClick = onBack)
+        Spacer(Modifier.height(6.dp)); Pill("‹ Vissza", tone = Secondary, onClick = onBack)
     }
 }
 
 @Composable
 private fun WorkoutMenu(workout: WearWorkout, onPrevious: () -> Unit, onNext: () -> Unit,
                         onSelect: (Int) -> Unit, onEdit: (String) -> Unit, onTimerTools: () -> Unit, restRemaining: Int, onFinish: () -> Unit, onHome: () -> Unit) {
-    Column(Modifier.fillMaxSize().padding(horizontal = 22.dp).verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(Modifier.height(27.dp)); Title("Edzésmenü"); Spacer(Modifier.height(9.dp))
+    RoundList("Edzésmenü") {
         Pill("‹ Kezdőlap", tone = Secondary, onClick = onHome)
         if (workout.exercise?.loadType != "bodyweight") {
             Spacer(Modifier.height(7.dp)); Pill("Súly: ${workout.currentSet?.weight?.ifBlank { "0" } ?: "0"} kg", tone = Secondary, enabled = !workout.exerciseComplete) { onEdit("weight") }
@@ -1139,38 +1124,50 @@ private fun WorkoutMenu(workout: WearWorkout, onPrevious: () -> Unit, onNext: ()
             }
         }
         Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-            Box(Modifier.weight(1f)) { Pill("‹ Előző", tone = Secondary, enabled = workout.currentExercise > 0, onClick = onPrevious) }
-            Box(Modifier.weight(1f)) { Pill("Következő ›", tone = Secondary, enabled = workout.currentExercise < workout.exercises.lastIndex, onClick = onNext) }
-        }
-        Spacer(Modifier.height(28.dp))
+        Pill("‹ Előző", tone = Secondary, enabled = workout.currentExercise > 0, onClick = onPrevious)
+        Spacer(Modifier.height(6.dp))
+        Pill("Következő ›", tone = Secondary, enabled = workout.currentExercise < workout.exercises.lastIndex, onClick = onNext)
     }
 }
 
 @Composable
 private fun ConfirmationScreen(discard: Boolean, completed: Int, onAnswer: (Boolean) -> Unit) {
-    Panel {
-        Label(if (discard) "FÉLBEHAGYOTT EDZÉS" else "EDZÉS BEFEJEZÉSE", Gold)
-        Spacer(Modifier.height(5.dp)); Title(if (discard) "Törlöd ezt az edzést?" else "Befejezed az edzést?", 19)
+    ActionPanel(if (discard) "Félbehagyott edzés" else "Edzés befejezése", count = 2,
+        normalBodyHeight = 80, actions = { layout ->
+            CompositionLocalProvider(LocalActionSize provides layout.buttonSize) {
+                Row(horizontalArrangement = Arrangement.spacedBy(layout.gap.dp)) {
+                    RoundControl("×", caption = "Mégse", description = "Vissza, az edzés megőrzése") { onAnswer(false) }
+                    RoundControl(if (discard) "✕" else "✓", if (discard) Danger else Gold,
+                        caption = if (discard) "Törlés" else "Befejezés",
+                        description = if (discard) "Edzés törlése" else "Edzés befejezése és mentése") { onAnswer(true) }
+                }
+            }
+        }) { compact ->
+        Title(if (discard) "Törlöd az edzést?" else "Befejezed az edzést?", if (compact) 14 else 17)
         Spacer(Modifier.height(4.dp))
         Text(if (discard) "A félbehagyott edzés elvész.\nA napló megmarad." else "$completed sorozat bekerül a naplóba.\nRészleges edzés is menthető.",
             color = Muted, fontSize = 11.sp, lineHeight = 13.sp, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(8.dp))
-        Pill(if (discard) "Edzés törlése" else "✓ Befejezés", tone = if (discard) Danger else Gold) { onAnswer(true) }
-        Spacer(Modifier.height(6.dp)); Pill("Mégse", tone = Secondary) { onAnswer(false) }
     }
 }
 
 @Composable
 private fun SummaryScreen(result: WearClosure, health: JSONObject?, onRetry: () -> Unit, onDone: () -> Unit) {
-    Panel {
-        val saved = result.status == "saved" || result.status == "discarded"
-        Label(if (saved) "✓ TRAINPILOT" else if (result.status == "error") "SZINKRONIZÁLÁS" else "VÁRAKOZÁS A TELEFONRA", Gold)
-        Spacer(Modifier.height(7.dp))
-        Title(if (result.status == "error") "Még nem menthető" else if (result.action == "discardWorkout") "Edzés törlése" else "Edzés kész", 23)
+    val saved = result.status == "saved" || result.status == "discarded"
+    ActionPanel(if (result.status == "error") "Szinkronizálás" else if (!saved) "Várakozás a telefonra"
+        else if (result.action == "discardWorkout") "Edzés törölve" else "Edzés kész", count = if (result.status == "error") 2 else 1,
+        actions = { layout ->
+            CompositionLocalProvider(LocalActionSize provides layout.buttonSize) {
+                Row(horizontalArrangement = Arrangement.spacedBy(layout.gap.dp)) {
+                    RoundControl(if (saved) "✓" else "‹", if (saved) Gold else Secondary,
+                        caption = if (saved) "Kész" else "Kezdőlap", onClick = onDone)
+                    if (result.status == "error") RoundControl("↻", Gold, caption = "Újrapróba",
+                        description = "Mentés újrapróbálása", onClick = onRetry)
+                }
+            }
+        }) { compact ->
+        if (result.status == "error") Title("Még nem menthető", if (compact) 14 else 19)
         if (result.status == "error") {
             Text(result.message, color = Muted, fontSize = 12.sp, textAlign = TextAlign.Center)
-            Spacer(Modifier.height(8.dp)); Pill("Újrapróbálás", onClick = onRetry)
         } else if (result.action == "finishWorkout") {
             Text(formatSeconds(result.durationSeconds), color = White, fontSize = 33.sp, lineHeight = 35.sp, fontWeight = FontWeight.SemiBold)
             Row(horizontalArrangement = Arrangement.spacedBy(19.dp)) {
@@ -1201,7 +1198,6 @@ private fun SummaryScreen(result: WearClosure, health: JSONObject?, onRetry: () 
                 if(health.optBoolean("partial"))Text("Részleges mérés",color=Gold,fontSize=10.sp,textAlign=TextAlign.Center)
             }
         }
-        Spacer(Modifier.height(10.dp)); Pill(if (saved) "Kész" else "Kezdőlap", onClick = onDone)
     }
 }
 

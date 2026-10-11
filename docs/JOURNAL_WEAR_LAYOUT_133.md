@@ -32,3 +32,15 @@ Az alapból nyitott aktívprogram-sáv és az összecsukott szülőben rejtett e
 A böngészős ellenőrzés nyolc teljes oldali esetet fed le: edzésbeállítások, edzésnap, edzésgyakorlat szerkesztője, programkártya, programnap, pulzus/regenerációs előzmény, fókusz nélküli testsúlypiszkozat és statisztikai részlet. Minden esetben megmarad a DOM, a nyitott állapot és a görgetés; a natív projekció beolvasásszáma közben tovább nő. Külön próba ellenőrzi a nyugalmi oldal és a kifejezett felhasználói újrarajzolás működését.
 
 Ehhez új telefonos teszt-APK készül, az órás íves elrendezés az előző ellenőrzött APK-val használható. A készülékes elfogadás továbbra is szükséges.
+
+## További órás képernyők átvizsgálása
+
+A készülékes fotó a félbehagyott edzés törlésének megerősítésénél levágott gombot mutatott. A törlés/befejezés kérdése és az összesítés ezért a szövegtől független, rögzített 48 dp alsó vezérlőket kap. Hiba esetén az újrapróbálás is ebben a rögzített sorban van.
+
+A Főmenü, Mini napló és részletei, Gyors edzés, Programnapok, napi naptárrészlet, Órás mérések, Edzésmenü, súly/ismétlés/idő szerkesztő és stoppereszközök közös íves fejlécet és a fizikai körbe teljes egészében beférő görgetési téglalapot használnak. A cím rögzített, a hosszabb lista vagy nagyobb rendszerbetű görgethető. A teljes cím akadálymentes leírásként is elérhető. A súly/ismétlés szerkesztőben az érték és a csökkentés/növelés gombjai külön sorba kerülnek; a stopper vezérlői két sorra oszlanak. A listás szerkesztőkben a teljes 48 dp vezérlő görgethető a látótérbe, 160 dp kijelzőn is. A listás gombok felirata legfeljebb 135%-os fizikai betűméretet használ, két sorban ellipszissel; a teljes felirat akadálymentes leírásként megmarad.
+
+A főoldali középső szöveg szélessége szintén a kör sarkaihoz igazodik. A meglévő heti naptár külön, hétgombos elrendezését a saját geometriai tesztje ellenőrzi. A korábban javított aktuális sorozatnézet íves címe, alsó íves vezérlői és mérései megmaradnak.
+
+A geometriai JVM-próbák a listák teljes sarkait, a cím és tartalom elkülönítését, a megerősítés/összesítés egy- és kétgombos láblécét, a teljes gombköröket és feliratokat ellenőrzik 160–320 dp kerek és eltérő oldalarányú nézeteken. A tényleges órán a törlés/befejezés, mentési hiba/újrapróba, nagy betűméret, a listák végén lévő visszagombok és a szerkesztők még ellenőrzendők.
+
+A teljes Wear kezdőlap dizájnmegújítása külön #170 fejlesztési pont, a telefonos lenyíló nézetek lassulása külön #171 hiba. Ez a javítás a meglévő órás képernyők hozzáférhetőségét és elrendezését kezeli.
