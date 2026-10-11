@@ -12,18 +12,18 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const pathna
   assert.match(await page.locator('[data-wear-measurement165]').innerText(),/Edzés átadása/);
   for(const language of ['hu','en','de','ro'])for(const width of [320,393]){
    await page.setViewportSize({width,height:873});
-   await page.evaluate(lang=>{db.set('language',lang);rf212SetLang(lang);go('plan');wear165Receive('permissionRequired');},language);
+   await page.evaluate(lang=>{db.set('language',lang);rf212SetLang(lang);wear165Receive('permissionRequired');renderWorkout();},language);
    const panel=page.locator('[data-wear-measurement165]');assert.equal(await panel.count(),1);assert.equal(await panel.locator('button').count(),1);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'status panel must fit narrow screens');
   }
-  await page.evaluate(async()=>{rf212SetLang('hu');go('plan');let payload={schema:1,workoutId:wear165Id,watchId:'watch',revision:++wear165Revision,state:'active',updatedAt:Date.now(),summary:{schema:1,source:'wear_health_services',workoutId:wear165Id,watchId:'sensor',revision:1,state:'active',heartRate:109,totalCalories:7}};window.wear165Payload=payload;window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{pendingCommands:async()=>({commands:[],liveHealth:wear165Payload}),ackCommand:async()=>{},publish:async()=>{},clear:async()=>{},publishHome:async()=>{},startWatchMeasurement:async()=>({opened:true})}}};await TrainPilotWearSync.drainCommands();});
+  await page.evaluate(async()=>{rf212SetLang('hu');renderWorkout();let payload={schema:1,workoutId:wear165Id,watchId:'watch',revision:++wear165Revision,state:'active',updatedAt:Date.now(),summary:{schema:1,source:'wear_health_services',workoutId:wear165Id,watchId:'sensor',revision:1,state:'active',heartRate:109,totalCalories:7}};window.wear165Payload=payload;window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{pendingCommands:async()=>({commands:[],liveHealth:wear165Payload}),ackCommand:async()=>{},publish:async()=>{},clear:async()=>{},publishHome:async()=>{},startWatchMeasurement:async()=>({opened:true})}}};await TrainPilotWearSync.drainCommands();});
   assert.match(await page.locator('[data-wear-measurement165]').innerText(),/109 bpm · 7 kcal/);
   const before=await page.evaluate(()=>JSON.stringify(state.session.exercises));
   await page.evaluate(()=>wear165Receive('paused'));assert.match(await page.locator('[data-wear-measurement165]').innerText(),/szünetel/);
   assert.equal(await page.evaluate(()=>JSON.stringify(state.session.exercises)),before,'measurement messages do not change sets');
   await page.evaluate(()=>wear165Receive('error',{message:'<img src=x onerror=alert(1)>'}));assert.equal(await page.locator('[data-wear-measurement165] img').count(),0,'remote error text is escaped');
   await page.locator('[data-wear-measurement165] button').click();assert.match(await page.locator('[data-wear-measurement165]').innerText(),/Edzés átadása/);
-  await page.evaluate(()=>{go('home');go('plan');});assert.equal(await page.locator('[data-wear-measurement165]').count(),1,'navigation retains one status panel');
+  await page.evaluate(()=>{go('home');resumeDraft();});assert.equal(await page.locator('[data-wear-measurement165]').count(),1,'navigation retains one status panel');
   assert.deepEqual(errors,[]);console.log('PASS Wear measurement UI: 8 language/width combinations, real live pulse/energy, paused/error state, escaped errors, manual handoff retry and unchanged sets');
  } finally {await browser?.close();server.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;server.close()});
