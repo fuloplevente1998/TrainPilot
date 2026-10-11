@@ -6,6 +6,36 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class WearActionLayoutTest {
+    @Test fun workoutArcKeepsTitlesBodyAndAllThreeTouchTargetsClear() {
+        for ((width, height) in listOf(160f to 160f, 176f to 176f, 192f to 192f,
+                200f to 200f, 216f to 216f, 225f to 225f, 240f to 240f,
+                254f to 254f, 225f to 192f, 192f to 225f)) {
+            val layout = wearWorkoutLayout(width, height)
+            val radius = min(width, height) / 2f
+            val centers = listOf(-layout.sideOffset to (layout.sideTop + 24f - height / 2f),
+                0f to (layout.centerTop + 24f - height / 2f),
+                layout.sideOffset to (layout.sideTop + 24f - height / 2f))
+            assertEquals(48f, layout.buttonSize, .001f)
+            assertTrue("Workout controls must follow an arc", layout.centerTop > layout.sideTop + 15f)
+            assertTrue("Scrolling content must not touch actions", layout.bodyTop + layout.bodyHeight + 4.99f <= layout.sideTop)
+            for ((x, y) in centers) {
+                assertTrue("Workout control clipped at $width x $height", hypot(x, y) + 24f <= radius - 7.99f)
+                for (dx in listOf(-22f, 22f)) {
+                    assertTrue("Workout caption clipped at $width x $height", hypot(x + dx, y + 20f) <= radius - 5.99f)
+                }
+            }
+            for (a in centers.indices) for (b in a + 1 until centers.size) {
+                assertTrue("Workout touch targets overlap", hypot(centers[a].first - centers[b].first,
+                    centers[a].second - centers[b].second) >= 51.99f)
+            }
+            for (y in listOf(layout.bodyTop, layout.bodyTop + layout.bodyHeight)) {
+                assertTrue("Body overlaps curved title or physical rim", hypot(layout.bodyWidth / 2f,
+                    y - height / 2f) <= radius - 25.99f)
+            }
+            assertTrue("Keep room below the middle action for pager dots", layout.centerTop + 48f <= height - 15f)
+        }
+    }
+
     @Test fun workoutCirclesAndCaptionCornersFitRoundDisplays() {
         for (diameter in listOf(160f, 176f, 192f, 200f, 216f, 225f, 240f, 254f)) {
             assertFits(diameter, diameter, 3, 7f)

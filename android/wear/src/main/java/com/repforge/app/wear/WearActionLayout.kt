@@ -70,3 +70,32 @@ internal fun wearHomeLayout(width: Float, height: Float): WearHomeLayout {
     return WearHomeLayout(phone, phoneTop, button, sideOffset, sideTop, centerTop,
         bodyTop, (sideTop - bodyTop - 5f).coerceAtLeast(1f))
 }
+
+/** Workout title follows the top rim; the controls follow the lower arc. */
+internal data class WearWorkoutLayout(
+    val buttonSize: Float,
+    val sideOffset: Float,
+    val sideTop: Float,
+    val centerTop: Float,
+    val bodyTop: Float,
+    val bodyHeight: Float,
+    val bodyWidth: Float
+)
+
+internal fun wearWorkoutLayout(width: Float, height: Float): WearWorkoutLayout {
+    val diameter = min(width, height)
+    val button = 48f
+    val sideOffset = min(45f + 3.8f * ((diameter - 200f) / 25f).coerceIn(0f, 1f), diameter * .245f)
+    val drop = sqrt((52f * 52f - sideOffset * sideOffset).coerceAtLeast(0f))
+    val centerOffset = min(diameter * .32f, diameter / 2f - 42f)
+    val centerTop = height / 2f + centerOffset - button / 2f
+    val sideTop = centerTop - drop
+    val bodyTop = (height - diameter) / 2f + diameter * .20f
+    // The whole scrolling rectangle stays inside the curved title's inner
+    // edge. Its top corners must fit too, not just its centered first line.
+    val innerRadius = diameter / 2f - 26f
+    val topOffset = height / 2f - bodyTop
+    val bodyWidth = min(132f, 2f * sqrt((innerRadius * innerRadius - topOffset * topOffset).coerceAtLeast(0f)) - 4f)
+    return WearWorkoutLayout(button, sideOffset, sideTop, centerTop, bodyTop,
+        (sideTop - bodyTop - 5f).coerceAtLeast(1f), bodyWidth.coerceAtLeast(40f))
+}

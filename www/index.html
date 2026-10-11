@@ -870,7 +870,7 @@
   tp3KeepScroll(()=>render());
  };
  window.tp3ExerciseToggle=function(el,key,ei){
-  if(!el)return;
+  if(!el?.isConnected)return;
   const st=tp3ExerciseState();
   if(el.open){if(!(st&&st.key===key&&!st.isNew&&st.index===ei))window.tp3OpenExerciseEditor(key,ei,el)}
   else if(st&&st.key===key&&!st.isNew&&st.index===ei){tp3ClearExerciseState();el.querySelector(':scope > .tp3-exercise-inline-editor')?.remove()}
@@ -986,7 +986,7 @@
  }
 
  window.tp3HistoryToggle=function(el,key){
-  if(!el)return;
+  if(!el?.isConnected)return;
   if(el.open)state.tp3HistoryOpenKey=key;
   else if(state.tp3HistoryOpenKey===key)state.tp3HistoryOpenKey=null;
  };

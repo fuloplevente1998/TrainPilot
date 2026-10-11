@@ -5415,8 +5415,33 @@ var tpRefreshDataUI=function(){
  if(state.tab==='profile'||state.workout||document.querySelector('#app main.tp150-quick-picker,#app main.tp151-quick-config,#app main.tp128-preview'))return;
  const focused=document.activeElement;
  if(focused?.closest?.('#app')&&focused.matches?.('input,textarea,select,[contenteditable="true"]'))return;
+ // A saved workout is an expanded view, not a separate route. Remember its
+ // identity and disclosures before asynchronous data replaces the journal.
+ // Keys survive a newly synced workout being inserted ahead of the open row.
+ if(state.tab==='history'&&(state.rf151HistoryEdit||state.tp3HistoryExerciseEdit))return;
+ const journal=state.tab==='history'?[...document.querySelectorAll('#app details[data-tp152-history-key]')].map(el=>({
+  key:el.dataset.tp152HistoryKey,open:el.open,
+  collapsed:el.querySelector('.rf-history-health-panel')?.classList.contains('collapsed'),
+  nested:[...el.querySelectorAll('details')].map(d=>d.open),top:el.getBoundingClientRect().top
+ })):[];
+ const anchor=journal.find(row=>row.open),scroll=window.scrollY;
+ if(journal.length)state.tp3HistoryOpenKey=anchor?.key||null;
  tpUIRefreshDepth++;
- try{if(rf245CoachVisible&&!document.getElementById('tp155R4PanelHost'))rf233CoachScreen();else render();}
+ try{
+  if(rf245CoachVisible&&!document.getElementById('tp155R4PanelHost'))rf233CoachScreen();else render();
+  for(const el of document.querySelectorAll('#app details[data-tp152-history-key]')){
+   const saved=journal.find(row=>row.key===el.dataset.tp152HistoryKey);if(!saved)continue;
+   el.open=saved.open;
+   if(saved.open)window.tp3EnsureHistoryBody?.(el,rf142FindHistoryIndex(saved.key),saved.key);
+   const panel=el.querySelector('.rf-history-health-panel');
+   if(panel){panel.classList.toggle('collapsed',!!saved.collapsed);panel.querySelector('.rf-history-health-toggle')?.setAttribute('aria-expanded',String(!saved.collapsed));const body=panel.querySelector('.rf-history-health-body');if(body)body.hidden=!!saved.collapsed;}
+   el.querySelectorAll('details').forEach((d,i)=>{if(i<saved.nested.length)d.open=saved.nested[i]});
+  }
+  if(journal.length){
+   const el=anchor&&[...document.querySelectorAll('#app details[data-tp152-history-key]')].find(el=>el.dataset.tp152HistoryKey===anchor.key);
+   window.scrollTo(0,el?window.scrollY+el.getBoundingClientRect().top-anchor.top:scroll);
+  }
+ }
  finally{tpUIRefreshDepth--;}
 };
 window.TrainPilotUIRefresh={refresh:tpRefreshDataUI,isBackground:()=>tpUIRefreshDepth>0};
