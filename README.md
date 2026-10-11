@@ -2,7 +2,7 @@
 
 Androidos edzéstervező és edzésnapló, natív Wear OS társalkalmazással. A fő edzésfunkciók helyben használhatók; az egészségadatok, a Google Drive és a Google Naptár integrációja opcionális.
 
-**Aktuális kiadáscsalád: 1.3 — telefon és Wear OS.** A mainen lévő párosított kiadás a Mini napló frissítését, az órás mérési előzményeket és az egészségadatok pontos forrásjelölését tartalmazza. A telefonról kezdeményezett órás appindítás javítása szintén az **1.3** leírásához tartozik; ez még a [#160 tesztágon](https://github.com/fuloplevente1998/TrainPilot/pull/160) van. A felhasználó az órás app megnyílását már visszaigazolta, a háttérmérés és a teljes adatút ellenőrzése folyamatban van.
+**Aktuális kiadáscsalád: 1.3 — telefon és Wear OS.** A mainen lévő párosított kiadás a Mini napló frissítését, az órás mérési előzményeket és az egészségadatok pontos forrásjelölését tartalmazza. A telefonról kezdeményezett órás appindítás javítása szintén az **1.3** leírásához tartozik; ez még a [#160 tesztágon](https://github.com/fuloplevente1998/TrainPilot/pull/160) van. A felhasználó a programos edzés órás megnyitását és háttérmérését visszaigazolta. A gyors edzés jelenlegi választójából indított órás megnyitás külön bekötése a tesztág új javítása; a teljes egészségadatút ellenőrzése folytatódik.
 
 [Telefonos 1.3 kiadás](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.0) · [Wear OS 1.3 kiadás](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.0) · [Összevont változáslista](RELEASE_NOTES.md) · [Fejlesztési állapot](DEVELOPMENT_STATUS.md)
 
@@ -33,7 +33,7 @@ A telefon Naplója őrzi a mentett edzéseket. Az órás Mini napló ezek korlá
 
 TrainPilot Wear-mérés nélkül a telefon a kiválasztott egészségadat-szolgáltatóból olvas, ha ott rendelkezésre áll adat. Azonos óra mellett is eltérhet a mérési időszak, a szinkron ideje és az aktív/összes kalória jelentése. [Részletes működés](docs/WEAR_OS.md#egészségadatok-és-kijelző-kikapcsolása).
 
-**Folyamatban lévő ellenőrzések:** kijelző kikapcsolása melletti mérés, naplózott és későn érkező egészségadatok, eltérő kalóriaértékek összehasonlítása. **Nyitott hiba:** a Google Drive-szinkron időnként ismét túl sokáig tart; kivizsgálás szükséges.
+**Folyamatban lévő ellenőrzések:** kijelző kikapcsolása melletti mérés, naplózott és későn érkező egészségadatok, eltérő kalóriaértékek összehasonlítása. Az **1.3** [#160 tesztágán](https://github.com/fuloplevente1998/TrainPilot/pull/160) a normál Drive-szinkron csak a legfrissebb eszközmentéseket olvassa, a Telefon/Felhő ütközésválasztás érvényes adatot ment. A szinkron időtartama és az ütközésfeloldás készülékes elfogadása még nyitott.
 
 ## Telepítés és dokumentáció
 

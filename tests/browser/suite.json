@@ -1,5 +1,9 @@
 [
   {
+    "file": "tests/browser/app-refresh-audit.cjs",
+    "estimatedSeconds": 40
+  },
+  {
     "file": "tests/browser/ble-discovery-111.cjs",
     "estimatedSeconds": 7
   },

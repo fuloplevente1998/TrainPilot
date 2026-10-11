@@ -78,14 +78,14 @@ public class GoogleSyncPlugin extends Plugin {
      prefs().edit().putString("profile",safe.toString()).putString("email",profile.getString("email")).putString("sub",profile.getString("sub")).apply();out.put("profile",safe.toString());break;
     case "driveList":
      JSONArray all=new JSONArray();String page="";
-     do{JSONObject x=request("GET","https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q="+enc("trashed = false and name contains 'repforge-sync-'")+"&fields="+enc("nextPageToken,files(id,name,createdTime)")+"&pageSize=1000"+(page.isEmpty()?"":"&pageToken="+enc(page)),null);
+     do{JSONObject x=request("GET","https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q="+enc("trashed = false and name contains 'repforge-sync-'")+"&fields="+enc("nextPageToken,files(id,name,createdTime,version)")+"&pageSize=1000"+(page.isEmpty()?"":"&pageToken="+enc(page)),null);
       JSONArray a=x.optJSONArray("files");if(a!=null)for(int i=0;i<a.length();i++)all.put(a.get(i));page=x.optString("nextPageToken");
      }while(!page.isEmpty());out.put("files",all);break;
     case "driveRead":
      String id=pending.getString("id","");if(!id.matches("[A-Za-z0-9_-]+"))throw new IOException("Hibás fájlazonosító.");
-     JSONObject meta=request("GET","https://www.googleapis.com/drive/v3/files/"+id+"?fields=name",null);
+     JSONObject meta=request("GET","https://www.googleapis.com/drive/v3/files/"+id+"?fields=name,version",null);
      if(!meta.optString("name").startsWith("repforge-sync-"))throw new IOException("Nem TrainPilot-kompatibilis mentés.");
-     out.put("data",request("GET","https://www.googleapis.com/drive/v3/files/"+id+"?alt=media",null).toString());break;
+     out.put("data",request("GET","https://www.googleapis.com/drive/v3/files/"+id+"?alt=media",null).toString());out.put("version",meta.optString("version"));break;
     case "driveWrite":writeSnapshot(out);break;
     case "drivePhotoWrite":writePhoto(out);break;
     case "drivePhotoRead":readPhoto(out);break;
@@ -111,10 +111,10 @@ public class GoogleSyncPlugin extends Plugin {
   JSONObject meta=new JSONObject();meta.put("name","repforge-sync-"+device+"-"+UUID.randomUUID()+".json");meta.put("parents",new JSONArray().put("appDataFolder"));meta.put("mimeType","application/json");
   String boundary="repforge"+UUID.randomUUID().toString().replace("-","");
   String body="--"+boundary+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+meta+"\r\n--"+boundary+"\r\nContent-Type: application/json\r\n\r\n"+data+"\r\n--"+boundary+"--\r\n";
-  JSONObject created=http("POST","https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id",body,"multipart/related; boundary="+boundary);
+  JSONObject created=http("POST","https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,version",body,"multipart/related; boundary="+boundary);
   JSONObject read=request("GET","https://www.googleapis.com/drive/v3/files/"+created.getString("id")+"?alt=media",null);
   if(!read.toString().equals(parsed.toString()))throw new IOException("A felhőmentés visszaellenőrzése nem sikerült.");
-  out.put("id",created.getString("id"));out.put("verified",true);
+  out.put("id",created.getString("id"));out.put("version",created.optString("version"));out.put("verified",true);
  }
  private String photoId()throws IOException{String id=pending.getString("photoId","");if(!id.matches("[a-f0-9-]{36}"))throw new IOException("Hibás fotóazonosító.");return id;}
  private File photoFile(String id)throws IOException{File d=new File(getContext().getFilesDir(),"workout_photos");if(!d.exists()&&!d.mkdirs())throw new IOException("A fotómappa nem hozható létre.");return new File(d,id+".jpg");}

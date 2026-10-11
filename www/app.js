@@ -116,7 +116,7 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
 // @endsection startup.js
 
 // @section backup.js
-const TRAINPILOT_VERSION='1.3.0';
+const TRAINPILOT_VERSION='1.3.3';
 var isNative = function isNative(){return !!window.Capacitor?.isNativePlatform?.();};
 var nativeFiles = function nativeFiles(){if(!filesPlugin)filesPlugin=window.Capacitor?.registerPlugin?.('NativeFiles')||window.Capacitor?.Plugins?.NativeFiles;if(!filesPlugin)throw Error('A natív fájlkezelő nem érhető el.');return filesPlugin;};
 var backupStatus = function backupStatus(){const x=db.get('lastExport',null);return x?`Utolsó ellenőrzött mentés: ${x.name} • ${fmtDate(x.date)}`:'Még nincs ellenőrzött fájlmentés.';};
@@ -312,7 +312,7 @@ var googleBridge = function googleBridge(){return window.Capacitor?.Plugins?.Goo
 var scheduled = function scheduled(){return db.get('scheduled',[]);};
 var cloudPrefs = function cloudPrefs(){return db.get('cloudPrefs',{drive:false,calendar:false});};
 var cloudStatus = function cloudStatus(){const s=db.get('cloudStatus',{});return `<div id="cloudStatus" class="small muted">${esc(cloudMessage)}${s.drive?'<p>Utolsó Drive-szinkron: '+esc(fmtDate(s.drive))+'</p>':''}${s.calendar?'<p>Utolsó naptárszinkron: '+esc(fmtDate(s.calendar))+'</p>':''}</div>`;};
-var cloudPanel = function cloudPanel(){const p=cloudPrefs();return `<div class="setting"><label>Google-fiók és szinkron</label><p class="small muted">${cloudProfile?esc(cloudProfile.name||cloudProfile.email)+' • '+esc(cloudProfile.email):'Kapcsold a Google-fiókodat a RepForge-profilhoz. A kiadás Google Cloud-beállítása szükséges.'}</p>${cloudProfile?`<button class="btn secondary block" onclick="disconnectGoogle()">Kijelentkezés</button><br><label><input type="checkbox" ${p.drive?'checked':''} onchange="setCloudOption('drive',this.checked)"> Automatikus Drive-szinkron</label><label><input type="checkbox" ${p.calendar?'checked':''} onchange="setCloudOption('calendar',this.checked)"> Automatikus edzésnaptár</label><p class="small muted">Az app megnyitásakor és adatváltozás után, internet mellett. Bezárt appban nincs háttérszinkron. A naptárkapcsolat iránya: RepForge → Google Naptár.</p><button class="btn block" onclick="syncCloud(false)">Drive-szinkron most</button><br><button class="btn secondary block" onclick="syncCalendar(false)">Naptárszinkron most</button>`:`<button class="btn block" onclick="connectGoogle()">Google-fiók kapcsolása</button>`}${cloudStatus()}</div>`;};
+var cloudPanel = function cloudPanel(){const p=cloudPrefs();return `<div class="setting"><label>Google-fiók és szinkron</label><p class="small muted">${cloudProfile?esc(cloudProfile.name||cloudProfile.email)+' • '+esc(cloudProfile.email):'Kapcsold a Google-fiókodat a TrainPilot-profilhoz. A kiadás Google Cloud-beállítása szükséges.'}</p>${cloudProfile?`<button class="btn secondary block" onclick="disconnectGoogle()">Kijelentkezés</button><br><label><input type="checkbox" ${p.drive?'checked':''} onchange="setCloudOption('drive',this.checked)"> Automatikus Drive-szinkron</label><label><input type="checkbox" ${p.calendar?'checked':''} onchange="setCloudOption('calendar',this.checked)"> Automatikus edzésnaptár</label><p class="small muted">Az app megnyitásakor és adatváltozás után, internet mellett. Bezárt appban nincs háttérszinkron. A naptárkapcsolat iránya: RepForge → Google Naptár.</p><button class="btn block" onclick="syncCloud(false)">Drive-szinkron most</button><br><button class="btn secondary block" onclick="syncCalendar(false)">Naptárszinkron most</button>`:`<button class="btn block" onclick="connectGoogle()">Google-fiók kapcsolása</button>`}${cloudStatus()}</div>`;};
 var showCloudMessage = function showCloudMessage(t){cloudMessage=t||'';const e=document.getElementById('cloudStatus');if(e)e.outerHTML=cloudStatus();};
 var calendarSyncPending=false;
 var cloudDriveStage='';
@@ -756,7 +756,7 @@ planScreen=function(){const p=activeProgram();return shell(`<main><div class="he
 showWorkout=function(dayId){const p=activeProgram(),d=programDay(p,dayId);state.workout=dayId;state.tab='plan';render(shell(`<main><div class="hero"><h1>${esc(p.name)} • ${esc(d.name)}</h1><div class="muted">${d.exercises.length} gyakorlat</div></div>${d.exercises.map((id,i)=>exCard(byId(id),i,d.id)).join('')}<button class="btn block" onclick="startWorkout('${d.id}')">Edzés indítása</button></main>`));};
 showExercise=function(dayId,i){const p=activeProgram(),d=programDay(p,dayId),e=byId(d.exercises[i]);state.tab='plan';render(shell(`<main><button class="btn secondary" onclick="showWorkout('${dayId}')">← Vissza</button><br><br><div class="card detail"><h2>${esc(e.hu)}</h2><div class="en">${esc(e.en)}</div><div class="meta">${e.sets} × ${esc(e.reps)} • ${e.weight?e.weight+' '+esc(e.unit):esc(e.unit)}</div><br><span class="badge">${esc(e.target)}</span><span class="badge">${esc(e.equipment)}</span>${motionDemo(e.id)}<p class="note">${esc(e.notes)}</p></div></main>`));};
 
-startWorkout=function(dayId,scheduleId=null,programId=null){if(db.get('draft',null)&&!confirm('Új edzést indítasz? A félbehagyott edzés helyére ez kerül.'))return;const p=programById(programId)||activeProgram(),d=programDay(p,dayId);if(!d){alert('Nincs ilyen programnap.');return;}state.tab='plan';state.workout=d.id;state.current=0;state.session={programId:p.id,programName:p.name,dayId:d.id,workout:d.id,...(scheduleId?{scheduleId}:{}),started:new Date().toISOString(),exercises:d.exercises.map(id=>{const e=byId(id),prev=findLastExercise(id);return {id,hu:e.hu,en:e.en,loadType:e.loadType,repUnit:e.repUnit,sets:Array.from({length:e.sets},(_,i)=>({set:i+1,weight:prev?.loadType===e.loadType?(prev?.sets?.[i]?.weight??e.weight):e.weight,reps:'',done:false}))};})};renderWorkout();};
+startWorkout=function(dayId,scheduleId=null,programId=null){if(db.get('draft',null)&&!confirm('Új edzést indítasz? A félbehagyott edzés helyére ez kerül.'))return;const p=programById(programId)||activeProgram(),d=programDay(p,dayId);if(!d){alert('Nincs ilyen programnap.');return;}state.tab='plan';state.workout=d.id;state.current=0;state.session={programId:p.id,programName:p.name,dayId:d.id,workout:d.id,...(scheduleId?{scheduleId}:{}),started:new Date().toISOString(),exercises:d.exercises.map(id=>{const e=byId(id),prev=findLastExercise(id);return {id,hu:e.hu,en:e.en,loadType:e.loadType,repUnit:e.repUnit,sets:Array.from({length:e.sets},(_,i)=>({set:i+1,weight:prev?.loadType===e.loadType?(prev?.sets?.[i]?.weight??e.weight):e.weight,reps:'',done:false}))};})};renderWorkout();const startedSession=state.session,fromWatch=window.TrainPilotWearSync?.isStartingFromWatch?.()===true;Promise.resolve().then(()=>window.TrainPilotWearSync?.phoneWorkoutStarted?.(startedSession,{fromWatch}));};
 
 const rf12FinishWorkout=finishWorkout;finishWorkout=function(){if(!state.session)return;const scheduleId=state.session.scheduleId;rf12FinishWorkout.apply(this,arguments);if(scheduleId){const s=scheduled(),i=s.findIndex(x=>x.id===scheduleId);if(i>=0){s[i]={...s[i],status:'completed',updatedAt:Date.now()};db.set('scheduled',s);}}};
 renderWorkout=function(){persistDraft();const i=state.current,p=state.session.exercises.map(x=>x.id),e=byId(p[i]),se=state.session.exercises[i],pct=Math.round((i/p.length)*100);render(shell(`<main><div class="hero"><span class="badge">${esc(state.session.programName||'Edzés')} • ${esc(state.session.dayId||state.workout)}</span><h1>${i+1}/${p.length}</h1><div class="muted">${esc(e.hu)}</div><div class="progress"><div style="width:${pct}%"></div></div></div><div class="card detail"><h2>${esc(e.hu)}</h2><div class="en">${esc(e.en)}</div><div class="meta">Cél: ${e.sets} × ${esc(e.reps)}</div>${motionDemo(e.id)}<p class="note">${esc(e.notes)}</p></div><div class="section">Sorozatok</div>${se.sets.map((s,si)=>`<div class="row"><div class="num">${si+1}</div>${e.loadType==='bodyweight'?'<span class="small muted">Testsúly</span>':`<label class="small">${loadLabel(e.loadType)}<input class="field" inputmode="decimal" value="${s.weight}" oninput="upd(${i},${si},'weight',this.value)"></label>`}<label class="small">${e.repUnit}<input class="field" inputmode="numeric" placeholder="${esc(e.reps)}" value="${esc(s.reps)}" oninput="upd(${i},${si},'reps',this.value)"></label><button class="check ${s.done?'done':''}" onclick="toggleSet(${i},${si})">${s.done?'✓':'OK'}</button></div>`).join('')}<br><button class="btn block" onclick="nextExercise()">${i===p.length-1?'Edzés befejezése':'Következő gyakorlat'}</button><br><br><button class="btn secondary block" onclick="prevExercise()" ${i===0?'disabled':''}>Előző</button></main>`));};
@@ -4013,7 +4013,7 @@ var rf250Exclusive = function rf250Exclusive(fn){const run=rf250Tail.then(fn);rf
 var rf250Pipeline = async function rf250Pipeline(p,{manual=false,full=false,journalDirtyDays=[]}={}){
  const report={startedAt:new Date().toISOString(),stages:[],days:0,workouts:0,exported:0,skipped:0,errors:[]};
  const stage=(name,status,detail)=>report.stages.push({name,status,detail});
- let status=await p.getStatus();if(manual){await p.requestRead();status=await p.getStatus()}
+ let status=await p.getStatus();if(manual&&!Object.entries(status.permissions||{}).some(([key,value])=>key.startsWith('READ_')&&value===true)){await p.requestRead();status=await p.getStatus()}
  const permissions=status.permissions||{};state.health=state.health||{};state.health.permissions=permissions;
  if(!Object.entries(permissions).some(([k,v])=>k.startsWith('READ_')&&v))throw Error('Nincs Health Connect olvasási engedély.');
  stage('Engedélyek','ok','A TrainPilot által támogatott és engedélyezett adattípusokat olvassuk.');
@@ -4057,7 +4057,7 @@ var rf250Pipeline = async function rf250Pipeline(p,{manual=false,full=false,jour
 
  rf250EnsureStableWorkoutIds();const rows=history().filter(rf240ValidWorkout),recent=Date.now()-30*86400000;
  let writeAllowed=permissions.WRITE_EXERCISE===true;
- if(manual&&!writeAllowed&&rows.length){try{await p.requestWrite();writeAllowed=(await p.getStatus()).permissions?.WRITE_EXERCISE===true}catch(e){report.errors.push('Exportengedély: '+rf245Message(e))}}
+ // Sync uses existing write access; missing export access is managed explicitly.
  let workoutErrors=0,exportErrors=0;
  for(const h of rows){
   const activeWindows=window.TrainPilotIssue79?.intervals(h)||[];
@@ -5407,6 +5407,20 @@ var tp120AfterRender=function tp120AfterRender(){
  if(typeof rf260EnhanceActiveStates==='function')rf260EnhanceActiveStates();
 };
 
+// Data arriving asynchronously may refresh the page behind a panel, but must
+// not replace an unfinished editor or restart an active workout view.
+var tpUIRefreshDepth=0;
+var tpRefreshDataUI=function(){
+ if(document.hidden||window.TrainPilotBoot?.loading||window.TrainPilotBackupBusy||state.session)return;
+ if(state.tab==='profile'||state.workout||document.querySelector('#app main.tp150-quick-picker,#app main.tp151-quick-config,#app main.tp128-preview'))return;
+ const focused=document.activeElement;
+ if(focused?.closest?.('#app')&&focused.matches?.('input,textarea,select,[contenteditable="true"]'))return;
+ tpUIRefreshDepth++;
+ try{if(rf245CoachVisible&&!document.getElementById('tp155R4PanelHost'))rf233CoachScreen();else render();}
+ finally{tpUIRefreshDepth--;}
+};
+window.TrainPilotUIRefresh={refresh:tpRefreshDataUI,isBackground:()=>tpUIRefreshDepth>0};
+
 // Final direct renderer. One route => one #app innerHTML write; no historical render wrappers.
 render=function(custom){
  if(window.TrainPilotBoot?.loading)return;
@@ -5448,7 +5462,7 @@ window.TrainPilotNavigate=go;
 // Manual and automatic Health repaint boundary without another wrapper layer.
 rf245Paint=function rf245Paint(){
  if(rf110AutoHealthFlight&&!rf250ActiveManual)return;
- if(!window.TrainPilotBoot?.loading&&!state.session){if(rf245CoachVisible)rf233CoachScreen();else render()}
+ tpRefreshDataUI();
 };
 
 
@@ -8679,6 +8693,9 @@ window.TrainPilotI18n.workoutAudit=function(){
   'cloud.autoCalendar':['Automatikus edzésnaptár','Automatic workout calendar','Automatischer Trainingskalender','Calendar automat de antrenamente'],
   'cloud.autoHelp':['Az app megnyitásakor és adatváltozás után, internet mellett. Bezárt appban nincs háttérszinkron. A naptárkapcsolat iránya: TrainPilot → Google Naptár.','Runs when the app opens and after data changes while online. There is no background sync while the app is closed. Calendar direction: TrainPilot → Google Calendar.','Läuft beim Öffnen der App und nach Datenänderungen bei Internetverbindung. Bei geschlossener App gibt es keine Hintergrundsynchronisierung. Kalenderrichtung: TrainPilot → Google Kalender.','Rulează la deschiderea aplicației și după modificarea datelor, când există internet. Nu există sincronizare în fundal când aplicația este închisă. Direcția calendarului: TrainPilot → Google Calendar.'],
   'cloud.syncDriveNow':['Drive-szinkron most','Sync Drive now','Drive jetzt synchronisieren','Sincronizează Drive acum'],
+  'cloud.earlierBackups':['Korábbi Drive-mentések','Earlier Drive backups','Frühere Drive-Sicherungen','Copii Drive anterioare'],
+  'cloud.earlierHelp':['Csak akkor ellenőrizd, ha egy régi edzés vagy testsúlyadat hiányzik a legfrissebb mentésből. A normál szinkron ezt nem futtatja.','Check these only if an old workout or weight entry is missing from the latest backup. Normal sync does not run this check.','Nur prüfen, wenn ein altes Training oder Gewicht in der neuesten Sicherung fehlt. Die normale Synchronisierung führt diese Prüfung nicht aus.','Verifică doar dacă o înregistrare veche de antrenament sau greutate lipsește din ultima copie. Sincronizarea normală nu face această verificare.'],
+  'cloud.earlierScan':['Korábbi mentések ellenőrzése','Check earlier backups','Frühere Sicherungen prüfen','Verifică copiile anterioare'],
   'cloud.syncCalendarNow':['Naptárszinkron most','Sync calendar now','Kalender jetzt synchronisieren','Sincronizează calendarul acum'],
   'cloud.connect':['Google-fiók kapcsolása','Connect Google account','Google-Konto verbinden','Conectează contul Google'],
   'cloud.lastDrive':['Utolsó Drive-szinkron: {date}','Last Drive sync: {date}','Letzte Drive-Synchronisierung: {date}','Ultima sincronizare Drive: {date}'],
@@ -8698,6 +8715,7 @@ window.TrainPilotI18n.workoutAudit=function(){
   'cloud.driveFound':['{listed} mentés listázva, {current} aktuális eszközmentés.','{listed} backups listed, {current} latest device backups.','{listed} Sicherungen gelistet, {current} aktuelle Gerätesicherungen.','{listed} copii listate, {current} copii curente ale dispozitivelor.'],
   'cloud.driveUnchanged':['Drive naprakész, nincs új mentés vagy helyi változás.','Drive is up to date; no new backup or local changes.','Drive ist aktuell; keine neue Sicherung oder lokale Änderung.','Drive este actualizat; nu există copie nouă sau modificări locale.'],
   'cloud.driveReading':['Aktuális mentés letöltése: {index}/{total}.','Downloading current backup: {index}/{total}.','Aktuelle Sicherung wird geladen: {index}/{total}.','Se descarcă copia curentă: {index}/{total}.'],
+  'cloud.driveArchiveReading':['Korábbi mentés ellenőrzése: {index}/{total}.','Checking earlier backup: {index}/{total}.','Frühere Sicherung wird geprüft: {index}/{total}.','Se verifică o copie anterioară: {index}/{total}.'],
   'cloud.drivePhotos':['Edzésfotók ellenőrzése…','Checking workout photos…','Trainingsfotos werden geprüft…','Se verifică fotografiile antrenamentelor…'],
   'cloud.driveWriting':['Új mentés feltöltése és visszaellenőrzése…','Uploading and verifying the new backup…','Neue Sicherung wird hochgeladen und geprüft…','Se încarcă și se verifică noua copie…'],
   'cloud.unknownBackup':['Ismeretlen vagy más profilhoz tartozó felhőmentés.','Unknown cloud backup or backup belonging to another profile.','Unbekannte Cloud-Sicherung oder Sicherung eines anderen Profils.','Copie cloud necunoscută sau aparținând altui profil.'],
@@ -8742,8 +8760,9 @@ cloudStatus=function(){
  return '<div id="cloudStatus" class="small muted">'+esc(cloudMessage||'')+(cloudDriveStage?'<p>'+esc(cloudDriveStage)+'</p>':'')+(s.drive?'<p>'+esc(tp149T('cloud.lastDrive',{date:tp149FormatDateTime(s.drive)}))+'</p>':'')+(s.calendar?'<p>'+esc(tp149T('cloud.lastCalendar',{date:tp149FormatDateTime(s.calendar)}))+'</p>':'')+'</div>';
 };
 const tp149CloudPanelBase=cloudPanel;
+const tp149CloudRecoveryControl=()=>'<details><summary>'+esc(tp149T('cloud.earlierBackups'))+'</summary><p class="small muted">'+esc(tp149T('cloud.earlierHelp'))+'</p><button class="btn secondary block" onclick="syncCloud(false,true)">'+esc(tp149T('cloud.earlierScan'))+'</button></details>';
 cloudPanel=function(){
- if(rf212Lang()==='hu')return tp149CloudPanelBase.apply(this,arguments);
+ if(rf212Lang()==='hu'){const html=tp149CloudPanelBase.apply(this,arguments);return cloudProfile?html.replace('<div id="cloudStatus"',tp149CloudRecoveryControl()+'<div id="cloudStatus"'):html;}
  const p=cloudPrefs(),profile=cloudProfile;
  const identity=profile?(esc(profile.name||profile.email)+(profile.name&&profile.email?' • '+esc(profile.email):'')):esc(tp149T('cloud.connectHelp'));
  const controls=profile?
@@ -8752,7 +8771,7 @@ cloudPanel=function(){
   '<label><input type="checkbox" '+(p.calendar?'checked':'')+' onchange="setCloudOption(\'calendar\',this.checked)"> '+esc(tp149T('cloud.autoCalendar'))+'</label>'+
   '<p class="small muted">'+esc(tp149T('cloud.autoHelp'))+'</p>'+
   '<button class="btn block" onclick="syncCloud(false)">'+esc(tp149T('cloud.syncDriveNow'))+'</button><br>'+
-  '<button class="btn secondary block" onclick="syncCalendar(false)">'+esc(tp149T('cloud.syncCalendarNow'))+'</button>':
+  '<button class="btn secondary block" onclick="syncCalendar(false)">'+esc(tp149T('cloud.syncCalendarNow'))+'</button>'+tp149CloudRecoveryControl():
   '<button class="btn block" onclick="connectGoogle()">'+esc(tp149T('cloud.connect'))+'</button>';
  return '<div class="setting"><label>'+esc(tp149T('cloud.title'))+'</label><p class="small muted">'+identity+'</p>'+controls+cloudStatus()+'</div>';
 };
@@ -8786,13 +8805,14 @@ storeMerged=function(d){
  try{const next=tp105PreserveLocalHealth(d);for(const k of keys)if(next[k]!==undefined)localStorage.setItem('repforge:'+k,JSON.stringify(next[k]));}
  catch(e){for(const k of keys)localStorage.removeItem('repforge:'+k);keys.forEach(function(k,i){if(old[i]!=null)localStorage.setItem('repforge:'+k,old[i]);});throw Error(tp149T('cloud.noStorage'));}
 };
-var driveLatestHeads=function driveLatestHeads(latest){return Object.fromEntries([...latest].map(function(entry){return [entry[0],entry[1].id];}));};
+var driveLatestHeads=function driveLatestHeads(latest){return Object.fromEntries([...latest].map(function(entry){return [entry[0],driveSnapshotHead(entry[1])];}));};
+var driveSnapshotHead=function driveSnapshotHead(file){return file.id+(/^\d+$/.test(String(file.version||''))?'@'+file.version:'');};
 var driveHeadsUnchanged=function driveHeadsUnchanged(current,previous){
  if(!previous||!current||typeof previous!=='object')return false;
  const keys=Object.keys(current),old=Object.keys(previous);
  return keys.length===old.length&&keys.every(function(k){return Object.hasOwn(previous,k)&&previous[k]===current[k];});
 };
-var driveHasPendingPhotos=function driveHasPendingPhotos(rows){return rows.some(function(h){return (h.photos||[]).some(function(p){return p?.id&&(p.deletedAt||!p.driveFileId);});});};
+var driveHasPendingPhotos=function driveHasPendingPhotos(rows){return rows.some(function(h){return (h.photos||[]).some(function(p){return p?.id&&(p.deletedAt?!!p.driveFileId:!p.driveFileId);});});};
 
 syncCloud=async function(silent=false){
  if(cloudBusy||window.TrainPilotBackupBusy||!cloudProfile)return;
@@ -8834,7 +8854,7 @@ syncCloud=async function(silent=false){
    stage('cloud.driveWriting');
    const r=await bridge.driveWrite({silent:silent,data:JSON.stringify({app:'RepForgeSync',schema:1,owner:owner,device:device,data:merged})});
    if(!r.verified)throw Error(tp149T('cloud.verifyFailed'));
-   if(r.id)heads[device]=r.id;
+   if(r.id)heads[device]=driveSnapshotHead(r);
   }
   await waitForCloudBackup();
   if(state.session||canonicalSyncData(syncData())!==startState)throw Error(tp149T('cloud.changedLocal'));
@@ -9334,6 +9354,7 @@ shell=function(content){
 go=function(route){
  const key=String(route||'home'),target=RF253_CORE_ROUTES?.[key]||key;
  const navigate=function(){
+  window.tp155R4ClosePanel?.(false);
   if(state.session){rf110StopwatchHalt(true);tp1481HaltSide(true);closeWorkoutInterval(state.session);persistDraft();}
   if(typeof stopTimer==='function')stopTimer();
   if(typeof rf245CoachVisible!=='undefined')rf245CoachVisible=false;
@@ -9932,6 +9953,7 @@ var tp150QuickConfirmReplace=async function tp150QuickConfirmReplace(){
  return await tp2628Confirm(tp150qwT('replaceDraft'),{title:tp150qwT('replaceTitle'),confirmText:tp150qwT('replaceConfirm'),danger:true});
 };
 var tp150StartQuickWorkout=async function tp150StartQuickWorkout(id){
+ const fromWatch=window.TrainPilotWearSync?.isStartingFromWatch?.()===true;
  const e=byId(id);if(!e)return;
  if(state.session){
   if(tp150IsQuick())return tp150AddQuickExercise(id);
@@ -9943,6 +9965,7 @@ var tp150StartQuickWorkout=async function tp150StartQuickWorkout(id){
  state.tab='plan';state.workout='quick';state.current=0;
  state.session={type:'quick',quickWorkout:true,programId:null,programName:tp150qwT('title'),dayId:null,workout:'quick',started:new Date().toISOString(),exercises:[first]};
  persistDraft();renderWorkout();window.scrollTo?.(0,0);
+ window.TrainPilotWearSync?.phoneWorkoutStarted?.(state.session,{fromWatch});
 };
 var tp150AddQuickExercise=function tp150AddQuickExercise(id){
  if(!tp150IsQuick())return tp150StartQuickWorkout(id);
@@ -10284,9 +10307,11 @@ var tp151QuickConfig=function(id){
 };
 var tp151BuildQuick=function(id){const e=byId(id),b=tp150QuickExercise(id);if(!e||!b)return null;const n=Math.max(1,Math.min(10,Number(document.getElementById('tp151QuickSets')?.value)||b.sets.length||3)),target=String(document.getElementById('tp151QuickTarget')?.value||e.reps||'').trim().slice(0,40),raw=document.getElementById('tp151QuickWeight')?.value,w=e.loadType==='bodyweight'?0:Math.max(0,Number(String(raw??b.sets?.[0]?.weight??0).replace(',','.'))||0);b.targetReps=target;b.plannedWeight=w;b.sets=Array.from({length:n},(_,i)=>({set:i+1,weight:w,reps:'',done:false}));return b};
 var tp151SaveQuick=async function(id){
+ const fromWatch=window.TrainPilotWearSync?.isStartingFromWatch?.()===true;
  const item=tp151BuildQuick(id);if(!item)return;
  if(typeof tp150IsQuick==='function'&&tp150IsQuick()){const i=state.session.exercises.findIndex(x=>x.id===id);if(i>=0){state.session.exercises[i]=item;state.current=i}else{state.session.exercises.push(item);state.current=state.session.exercises.length-1}persistDraft();renderWorkout();window.scrollTo?.(0,0);return}
  if(!(await tp150QuickConfirmReplace()))return;db.set('draft',null);stopTimer();state.tab='plan';state.workout='quick';state.current=0;state.session={type:'quick',quickWorkout:true,programId:null,programName:tp150qwT('title'),dayId:null,workout:'quick',started:new Date().toISOString(),exercises:[item]};persistDraft();renderWorkout();window.scrollTo?.(0,0);
+ window.TrainPilotWearSync?.phoneWorkoutStarted?.(state.session,{fromWatch});
 };
 tp150QuickAction=function(id){if(typeof tp150IsQuick==='function'&&tp150IsQuick()){const i=state.session.exercises.findIndex(x=>x.id===id);if(i>=0){state.current=i;renderWorkout();window.scrollTo?.(0,0);return}}return tp151QuickConfig(id)};
 tp150StartQuickWorkout=function(id){return tp151QuickConfig(id)};
@@ -10317,7 +10342,7 @@ var tp151CalendarDayPanel=function(){
 };
 calendarScreen=function(){const month=tp149FormatDate(new Date(state.calendarMonth+'-01T12:00'),{year:'numeric',month:'long'}),weekdays=tp149Weekdays();return shell('<main class="tp151-calendar"><div class="tp151-page-head"><div><h1>'+esc(tp151T('calendar'))+'</h1><p class="small muted">'+esc(tp151T('calendarHint'))+'</p></div></div>'+rf2211Planner()+'<section class="tp151-calendar-frame"><div class="calendar-head"><button class="btn secondary" onclick="changeCalendarMonth(-1)">‹</button><strong>'+esc(month)+'</strong><button class="btn secondary" onclick="changeCalendarMonth(1)">›</button></div><div class="cal-weekdays">'+weekdays.map(x=>'<span>'+esc(x)+'</span>').join('')+'</div><div class="calendar-grid">'+calendarGrid()+'</div></section>'+tp151CalendarDayPanel()+'</main>')};
 
-healthSettings=async function(){return healthAction(async p=>{let status={};try{status=await p.getStatus()}catch(_){}const perms=status?.permissions||state.health?.permissions||{},keys=Object.keys(perms).filter(k=>k.startsWith('READ_')),missing=!keys.length||keys.some(k=>perms[k]!==true);if(missing){const q=await p.requestRead();state.health.permissions=q?.permissions||perms;return tp151T('permAsk')}await p.openSettings();return tp151T('permOpen')})};
+healthSettings=async function(){return healthAction(async p=>{let status={};try{status=await p.getStatus()}catch(_){}const perms=status?.permissions||state.health?.permissions||{},keys=Object.keys(perms).filter(k=>k.startsWith('READ_')),missing=!keys.some(k=>perms[k]===true);if(missing){const q=await p.requestRead();state.health.permissions=q?.permissions||perms;return tp151T('permAsk')}await p.openSettings();return tp151T('permOpen')})};
 var tp151HealthNumber=function(v){if(v==null||v==='')return null;const n=Number(v);return Number.isFinite(n)?n:null};
 var tp151HeartLine=function(day){const a=tp151HealthNumber(day?.averageHeartRate),n=tp151HealthNumber(day?.minHeartRate),x=tp151HealthNumber(day?.maxHeartRate),s=tp151HealthNumber(day?.heartRateSamples);if(a==null&&n==null&&x==null)return '—';const p=[];if(a!=null)p.push(Math.round(a)+' '+tp151T('avg'));if(n!=null)p.push(Math.round(n)+' '+tp151T('min'));if(x!=null)p.push(Math.round(x)+' '+tp151T('max'));return p.join(' · ')+' bpm'+(s!=null&&s>0?' • '+Math.round(s)+' '+tp151T('samples'):'')};
 
@@ -10513,6 +10538,7 @@ var tp152QuickFields=function(e){
  return '<div class="tp152-edit-grid"><label>'+esc(tp152T('sets'))+'<select class="field" data-tp152-qsets="'+esc(e.id)+'">'+Array.from({length:10},function(_,i){const n=i+1;return '<option value="'+n+'" '+(n===d.sets?'selected':'')+'>'+n+'</option>'}).join('')+'</select></label><label>'+esc(tp152T('reps'))+'<input class="field" data-tp152-qtarget="'+esc(e.id)+'" value="'+esc(d.target)+'"></label>'+weight+'</div>';
 };
 var tp152StartQuickInline=async function(id){
+ const fromWatch=window.TrainPilotWearSync?.isStartingFromWatch?.()===true;
  const e=byId(id),base=tp150QuickExercise(id);if(!e||!base)return;const root=document.querySelector('[data-exercise-id="'+CSS.escape(id)+'"]');
  const n=Math.max(1,Math.min(10,Number(root?.querySelector('[data-tp152-qsets]')?.value)||base.sets.length||3));
  const target=String(root?.querySelector('[data-tp152-qtarget]')?.value||e.reps||'').trim().slice(0,40);
@@ -10520,6 +10546,7 @@ var tp152StartQuickInline=async function(id){
  base.targetReps=target;base.plannedWeight=w;base.sets=Array.from({length:n},function(_,i){return {set:i+1,weight:w,reps:'',done:false}});
  if(tp150IsQuick()){const existing=state.session.exercises.findIndex(function(x){return x.id===id});if(existing>=0)state.session.exercises[existing]=base;else state.session.exercises.push(base);state.current=existing>=0?existing:state.session.exercises.length-1;persistDraft();renderWorkout();window.scrollTo?.(0,0);return}
  if(!(await tp150QuickConfirmReplace()))return;db.set('draft',null);stopTimer();state.tab='plan';state.workout='quick';state.current=0;state.session={type:'quick',quickWorkout:true,programId:null,programName:tp150qwT('title'),dayId:null,workout:'quick',started:new Date().toISOString(),exercises:[base]};persistDraft();renderWorkout();window.scrollTo?.(0,0);
+ window.TrainPilotWearSync?.phoneWorkoutStarted?.(state.session,{fromWatch});
 };
 tp150QuickResults=function(q=''){
  const needle=String(q||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(),list=exercises().filter(function(e){return !needle||tp150QuickFilterText(e).includes(needle)});
@@ -11948,7 +11975,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   const key=String(route||'home'),target=window.TrainPilotRoutes?.[key]||key;
   if(panelDomSupported&&target==='calendar')return window.tp155R4TogglePanel('calendar',document.activeElement);
   if(panelDomSupported&&target==='settings')return window.tp155R4TogglePanel('settings',document.activeElement);
-  if(currentPanel)window.tp155R4ClosePanel(false);
+  if(currentPanel&&!state.session)window.tp155R4ClosePanel(false);
   return goBase.apply(this,arguments);
  };
  window.TrainPilotNavigate=go;
@@ -11975,7 +12002,10 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  render=function(custom){
   const out=renderBase.apply(this,arguments);
   window.tp155R4DecorateNavigation();
-  if(currentPanel)window.tp155R4RefreshPanel();
+  // Pickers keep their editable controls across an ordinary page redraw.
+  // Their filter handlers and explicit RefreshPanel calls update them directly.
+  const keepPicker=custom==null&&['quick','exercises'].includes(currentPanel);
+  if(currentPanel&&!keepPicker&&!window.TrainPilotUIRefresh?.isBackground?.())window.tp155R4RefreshPanel();
   return out;
  };
 
@@ -12315,7 +12345,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  const renderBase=render;
  render=function(){
   const transientPanel=document.querySelector('#tp155R4PanelHost[data-panel="quick"],#tp155R4PanelHost[data-panel="exercises"]');
-  if(transientPanel)window.tp155R4ClosePanel(false);
+  if(transientPanel&&arguments[0]!=null&&!window.TrainPilotUIRefresh?.isBackground?.())window.tp155R4ClosePanel(false);
   const out=renderBase.apply(this,arguments);window.tp155OrderHomeCards();setTimeout(window.tp155OrderHomeCards,0);
   document.querySelector('#rf2211First')?.closest('.tp-select')?.classList.add('tp155-attached-select');return out;
  };
@@ -14553,9 +14583,9 @@ var tp105DataPanel=function(){
 };
 var tp105OpenPrivacy=async function(){if(isNative())await tp105ArchiveBridge().privacy({language:rf212Lang()});else window.open('privacy.html','_blank','noopener');};
 const tp105HealthPluginBase=healthPlugin;
-healthPlugin=function(){const p=tp105HealthPluginBase();return new Proxy(p,{get:function(target,key){const method=target[key];if(typeof method!=='function')return method;return function(args={}){return method.call(target,{...args,language:rf212Lang()});};}});};
+healthPlugin=function(){const p=tp105HealthPluginBase();if(!p)return p;return new Proxy(p,{get:function(target,key){const method=target[key];if(typeof method!=='function')return method;return function(args={}){return method.call(target,{...args,language:rf212Lang()});};}});};
 const tp105GoogleBridgeBase=googleBridge;
-googleBridge=function(){const p=tp105GoogleBridgeBase();return new Proxy(p,{get:function(target,key){
+googleBridge=function(){const p=tp105GoogleBridgeBase();if(!p)return p;return new Proxy(p,{get:function(target,key){
  const method=target[key];if(typeof method!=='function')return method;
  return function(args={}){return Promise.resolve(method.call(target,{...args,language:rf212Lang()})).then(function(result){
   if(args.silent!==true)cloudRetryAt=0;return result;
@@ -15001,8 +15031,13 @@ renderWorkout=function(){
 var tp107FitViews=function(){
  const home=document.querySelector('#app main.rf221-home'),health=document.querySelector('#app main.tp168-health');
  const expanded=health&&[...health.querySelectorAll('details[open],.tp168-weight-summary[aria-expanded="true"],.tp169-pulse-summary[aria-expanded="true"]')].some(function(e){return e.getClientRects().length>0;});
- const scrollable=expanded;
- home?.classList.add('tp107-fit-home');health?.classList.add('tp107-health-layout');health?.classList.toggle('tp107-fit-health',!scrollable);
+ home?.classList.add('tp107-fit-home');health?.classList.add('tp107-health-layout');
+ // Measure the natural content height before fixing the overview. Long labels,
+ // short viewports and large text must never hide the bottom controls.
+ health?.classList.remove('tp107-fit-health');
+ const healthBottom=health?health.getBoundingClientRect().top+(window.scrollY||0)+health.scrollHeight:0;
+ const scrollable=expanded||!!health&&healthBottom>window.innerHeight+1;
+ health?.classList.toggle('tp107-fit-health',!scrollable);
  const fixed=!!home||!!health&&!scrollable;document.documentElement.classList.toggle('tp107-fixed-view',fixed);document.body.classList.toggle('tp107-fixed-view',fixed);
  const nav=document.querySelector('.top');if(nav)document.documentElement.style.setProperty('--tp107-nav-height',Math.ceil(nav.getBoundingClientRect().bottom)+'px');
  const panelHost=document.getElementById('tp155R4PanelHost');panelHost?.classList.toggle('tp107-fit-calendar',panelHost.dataset.panel==='calendar');
@@ -15480,7 +15515,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  const t=key=>(texts[typeof rf212Lang==='function'?rf212Lang():'hu']||texts.hu)[key]||window.TrainPilotSamsungHealth?.t(key)||key;
  const bridge=()=>{if(window.Capacitor?.isNativePlatform?.()!==true)return null;return window.Capacitor?.Plugins?.HealthJournal||window.Capacitor?.registerPlugin?.('HealthJournal')||null;};
  const background=()=>window.Capacitor?.Plugins?.HealthBackground||window.Capacitor?.registerPlugin?.('HealthBackground');
- const root=()=>document.querySelector('#tp155R4PanelHost[data-panel="health-journal"] .tp120-journal');
+ const root=()=>document.querySelector('#app .tp120-health-journal .tp120-journal');
  const compact=ledger=>({...ledger,version:1,days:Object.fromEntries(Object.entries(ledger?.days||{}).sort(([a],[b])=>b.localeCompare(a)).slice(0,30))});
  let initialized=null,cache=null,preferences={primary:'health_connect',autoOnOpen:false,logWatchSteps:false,hcDailySource:'auto',bleBackground:false,hcBackground:false},request=0,busy=false,autoRunning=false,lastAuto=0,nextCursor=0,nextTime=0,filters={from:null,to:null,};
  const ledgerBase=rf240Ledger,saveBase=rf240SaveLedger;
@@ -15517,7 +15552,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  function dailySourceOptions(){return [['auto',t('sourceAuto')],['priority',t('sourcePriority')]].map(([value,label])=>'<option value="'+esc(value)+'" '+(preferences.hcDailySource===value?'selected':'')+'>'+esc(label)+'</option>').join('');}
  function backgroundHtml(){return '<label class="tp120-check"><input type="checkbox" data-health-hcBackground '+(preferences.hcBackground?'checked':'')+' onchange="TrainPilotHealthJournal.backgroundPreference(\'hcBackground\',this.checked)"><span>'+esc(t('hcBackground'))+'</span></label><p class="small muted">'+esc(t('backgroundNote'))+'</p>';}
- function html(){const today=rf240DayKey(new Date());return '<main class="tp120-journal"><div class="tp120-filters"><label>'+esc(t('from'))+'<input class="field" type="date" data-health-from value="'+(filters.from||today)+'" max="'+today+'" onchange="TrainPilotHealthJournal.load()"></label><label>'+esc(t('to'))+'<input class="field" type="date" data-health-to value="'+(filters.to||today)+'" max="'+today+'" onchange="TrainPilotHealthJournal.load()"></label></div><details class="card tp120-preferences"'+(root()?.querySelector('.tp120-preferences')?.open?' open':'')+'><summary>'+esc(t('settings'))+'</summary><label>'+esc(t('dailySource'))+'<select class="field" data-health-daily-source onchange="TrainPilotHealthJournal.preference(\'hcDailySource\',this.value)">'+dailySourceOptions()+'</select></label><p class="small muted">'+esc(t('sourceNote'))+'</p><label class="tp120-check"><input type="checkbox" data-health-auto '+(preferences.autoOnOpen?'checked':'')+' onchange="TrainPilotHealthJournal.preference(\'autoOnOpen\',this.checked)"><span>'+esc(t('auto'))+'</span></label><p class="small muted">'+esc(t('autoNote'))+'</p>'+backgroundHtml()+'</details><button type="button" class="btn secondary block" data-health-sync onclick="TrainPilotHealthJournal.sync()">'+esc(t('refresh'))+'</button><p data-health-status role="status" aria-live="polite"></p><section data-health-days></section><details class="card tp120-raw"><summary>'+esc(t('records'))+'</summary><section data-health-records></section><button type="button" class="btn secondary block" data-health-next hidden onclick="TrainPilotHealthJournal.load(true)">'+esc(t('next'))+'</button></details></main>';}
+ function html(){const today=rf240DayKey(new Date());return '<div class="tp120-journal"><div class="tp120-filters"><label>'+esc(t('from'))+'<input class="field" type="date" data-health-from value="'+(filters.from||today)+'" max="'+today+'" onchange="TrainPilotHealthJournal.load()"></label><label>'+esc(t('to'))+'<input class="field" type="date" data-health-to value="'+(filters.to||today)+'" max="'+today+'" onchange="TrainPilotHealthJournal.load()"></label></div><details class="card tp120-preferences"'+(root()?.querySelector('.tp120-preferences')?.open?' open':'')+'><summary>'+esc(t('settings'))+'</summary><label>'+esc(t('dailySource'))+'<select class="field" data-health-daily-source onchange="TrainPilotHealthJournal.preference(\'hcDailySource\',this.value)">'+dailySourceOptions()+'</select></label><p class="small muted">'+esc(t('sourceNote'))+'</p><label class="tp120-check"><input type="checkbox" data-health-auto '+(preferences.autoOnOpen?'checked':'')+' onchange="TrainPilotHealthJournal.preference(\'autoOnOpen\',this.checked)"><span>'+esc(t('auto'))+'</span></label><p class="small muted">'+esc(t('autoNote'))+'</p>'+backgroundHtml()+'</details><button type="button" class="btn secondary block" data-health-sync onclick="TrainPilotHealthJournal.sync()">'+esc(t('refresh'))+'</button><p data-health-status role="status" aria-live="polite"></p><section data-health-days></section><details class="card tp120-raw"><summary>'+esc(t('records'))+'</summary><section data-health-records></section><button type="button" class="btn secondary block" data-health-next hidden onclick="TrainPilotHealthJournal.load(true)">'+esc(t('next'))+'</button></details></div>';}
  function feedback(message,error=false){const node=root()?.querySelector('[data-health-status]');if(!error&&message===t('saved')){window.TrainPilotFeedback?.success(message,node);return;}if(node){node.textContent=message;node.classList.toggle('tp120-error',error);}}
  async function load(next=false){
   const node=root();if(!node)return;const owner=++request;feedback(t('loading'));
@@ -15537,23 +15572,36 @@ window.addEventListener?.('DOMContentLoaded',function(){
  async function auto(){
   if(document.hidden||window.TrainPilotBackupBusy||autoRunning||state.session)return;
   autoRunning=true;try{
-   if(Date.now()-lastAuto<10*60000){await refresh();if(!document.hidden&&!window.TrainPilotBackupBusy&&!state.session)render();return;}
+   if(Date.now()-lastAuto<10*60000){await refresh();window.TrainPilotUIRefresh.refresh();return;}
    await ready();await refresh();if(!preferences.autoOnOpen)return;lastAuto=Date.now();
    if(preferences.autoOnOpen){const p=rf240Native();if(p){const status=await p.getStatus();if(Object.entries(status.permissions||{}).some(([key,v])=>key.startsWith('READ_')&&v))await rf250Sync({plugin:p,manual:false});}}
-   if(!document.hidden&&!window.TrainPilotBackupBusy&&!state.session)render();
+   window.TrainPilotUIRefresh.refresh();
   }catch(_){/* Permission/network failures keep durable records and require no background dialogs. */}finally{autoRunning=false;}
  }
  function decorate(){
   const home=document.querySelector('#app main.rf221-home');if(home&&!home.querySelector('.tp120-home-goals')){home.querySelector('.tp110-goal-mini')?.remove();const today=home.querySelector('#rf223Today'),button=document.createElement('button');button.type='button';button.className='btn secondary block tp120-home-goals';button.setAttribute('onclick',"tp155R4OpenPanel('goals',this)");const config=settings().activityGoals110||{},goal=config.weekWorkouts||config.monthKm?window.TrainPilot110Core.goalProgress(history(),config):null,row=goal?.week.target?goal.week:goal?.month.target?goal.month:null;button.innerHTML='<span>'+esc(window.TrainPilot110.t('setGoals'))+'</span>'+(row?'<small class="tp120-goal-progress">'+esc(tp149FormatNumber(row.current))+'/'+esc(tp149FormatNumber(row.target))+' '+esc(row===goal.week?window.TrainPilot110.t('units'):'km')+'</small>':'')+'<span class="tp120-chevron" aria-hidden="true"></span>';const oldSummary=home.querySelector(':scope > .grid2');if(oldSummary?.querySelector('.stat'))oldSummary.replaceWith(button);else if(today)today.after(button);else home.appendChild(button);}
-  const health=document.querySelector('#app main.tp168-health');if(health&&!health.querySelector('.tp120-journal-entry')){const button=document.createElement('button');button.type='button';button.className='btn secondary block tp120-journal-entry';button.setAttribute('onclick',"tp155R4OpenPanel('health-journal',this)");button.innerHTML='<span>'+esc(t('title'))+'</span><span class="tp120-chevron" aria-hidden="true"></span>';health.querySelector('.tp168-sync-tail .rf263-sync-actions')?.appendChild(button);}
+  const health=document.querySelector('#app main.tp168-health');if(health&&!health.querySelector('.tp120-health-journal')){
+   const disclosure=document.createElement('details');disclosure.className='card tp120-health-journal';
+   disclosure.dataset.language=rf212Lang();disclosure.dataset.provider=preferences.provider||'health_connect';
+   disclosure.innerHTML='<summary class="tp120-journal-entry"><span class="tp168-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h13a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1ZM3 7h4M3 12h4M3 17h4"/><path d="M12.5 16.5 9 13a2.3 2.3 0 0 1 3.5-3 2.3 2.3 0 0 1 3.5 3Z"/></svg></span><strong>'+esc(t('title'))+'</strong><span class="tp168-chevron tp-global-chevron" aria-hidden="true">›</span></summary><div data-health-journal-content></div>';
+   disclosure.addEventListener('toggle',()=>{if(disclosure.open&&!disclosure.querySelector('.tp120-journal')){disclosure.querySelector('[data-health-journal-content]').innerHTML=window.TrainPilotHealthJournal.html();rf260EnhanceSelects();rf260EnhanceTemporalFields();void load();}tp107FitViews();});
+   health.querySelector('.tp168-connect-panel')?.before(disclosure);
+  }
  }
+ function open(){if(!document.querySelector('#app main.tp168-health'))go('health');const disclosure=document.querySelector('#app .tp120-health-journal');if(!disclosure)return false;disclosure.open=true;return true;}
  window.TrainPilotHealthJournal={t,ready,refresh,backup,html,load,preference,backgroundPreference,sync,decorate,auto,compact,legacySnapshot,preferences:()=>({...preferences}),isSyncing:()=>busy||autoRunning||!!rf250Flight};
- const pipelineBase=rf250Pipeline;rf250Pipeline=async function(p,options){const journal=await ready();if(journal){const dirty=await journal.getDirtyDays();options={...options,journalDirtyDays:dirty.days||[]};}const result=await pipelineBase(p,options);if(journal){await journal.saveSyncMeta({meta:Object.fromEntries(['lastSyncAt','lastFullSyncAt','lastAttemptAt'].map(key=>[key,rf240Ledger()[key]]))});await refresh();}return result;};
+ const pipelineBase=rf250Pipeline;rf250Pipeline=async function(p,options){const journal=await ready();if(journal){const dirty=await journal.getDirtyDays();options={...options,journalDirtyDays:dirty.days||[]};}const result=await pipelineBase(p,options);if(journal){await journal.saveSyncMeta({meta:Object.fromEntries(['lastSyncAt','lastFullSyncAt','lastAttemptAt'].map(key=>[key,rf240Ledger()[key]]))});await refresh();if(options?.manual)await load();}return result;};
  window.addEventListener?.('DOMContentLoaded',()=>{
-  const renderBase=render;render=function(){const result=renderBase.apply(this,arguments);decorate();return result;};window.render=render;
-  const openBase=window.tp155R4OpenPanel;window.tp155R4OpenPanel=function(type){const result=openBase.apply(this,arguments);if(result&&type==='health-journal')void load();return result;};
+  const renderBase=render;render=function(){
+   const retained=document.querySelector('#app .tp120-health-journal'),scroll=window.scrollY;
+   const result=renderBase.apply(this,arguments);decorate();const replacement=document.querySelector('#app .tp120-health-journal');
+   if(retained&&replacement&&retained.dataset.language===replacement.dataset.language&&retained.dataset.provider===replacement.dataset.provider){replacement.replaceWith(retained);}
+   else if(retained&&replacement&&retained.open)replacement.open=true;
+   tp107FitViews();if(retained?.open&&replacement)window.scrollTo(0,scroll);return result;
+  };window.render=render;
+  const openBase=window.tp155R4OpenPanel;window.tp155R4OpenPanel=function(type){return type==='health-journal'?open():openBase.apply(this,arguments);};
   const refreshBase=window.tp155R4RefreshPanel;window.tp155R4RefreshPanel=function(){const result=refreshBase.apply(this,arguments);if(root())void load();return result;};
-  decorate();if(bridge())void ready().then(()=>{if(!document.hidden)render();setTimeout(auto,1500);}).catch(()=>{});
+  decorate();if(bridge())void ready().then(()=>{window.TrainPilotUIRefresh.refresh();setTimeout(auto,1500);}).catch(()=>{});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)void auto();});
  });
 })();
@@ -15618,7 +15666,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   try{
    if(journal()?.isSyncing?.()||state.health?.busy||window.TrainPilotBackupBusy)throw Error(t('busy'));
    const bridge=await journal().ready();if(!bridge)throw Error(t('missing'));
-   if(value===SH){const granted=await samsung().requestRead();if(!hasRead(granted))throw Error(t('denied'));}
+   if(value===SH){let granted=await samsung().getStatus();if(!hasRead(granted))granted=await samsung().requestRead();if(!hasRead(granted))throw Error(t('denied'));}
    await bridge.setPreferences({preferences:{provider:value}});await journal().refresh();
    rfHistoryHealthCache?.clear();
    const rows=history();for(const row of rows)if(row.health240)row.health240.syncedAt=null;db.set('history',rows);
@@ -15633,7 +15681,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   await journal().ready();
    if(selected()!==SH)return pipeline(p,options);
   const native=samsung(),report={provider:SH,startedAt:new Date().toISOString(),stages:[],days:0,workouts:0,exported:0,skipped:0,errors:[]};
-  let status=await native.getStatus();if(options.manual){await native.requestRead();status=await native.getStatus();}
+  let status=await native.getStatus();if(options.manual&&!hasRead(status)){await native.requestRead();status=await native.getStatus();}
   if(!hasRead(status))throw Error(t('denied'));
   state.health.permissions=status.permissions;
   const count=options.full||!db.get('samsungHealthLastFull',null)?30:2,days=rf240RecentDays(count).sort();
@@ -15648,7 +15696,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const bridge=await journal().ready(),at=new Date().toISOString();
   await bridge.saveSyncMeta({meta:{lastAttemptAt:at,...(!report.errors.length?{lastSyncAt:at,...(count===30?{lastFullSyncAt:at}:{})}:{})}});
   if(!report.errors.length&&count===30)db.set('samsungHealthLastFull',at);
-  await journal().refresh();
+  await journal().refresh();if(options.manual)await journal().load();
   report.stages.push({name:t('direct'),status:report.errors.length?'partial':'ok',detail:report.days+'/'+days.length});
   for(const h of history().filter(rf240ValidWorkout).filter(h=>Date.parse(h.finished)>=Date.now()-30*86400000)){
    try{if(await rf245ReadWorkout(plugin(),h,options.manual||h.health240?.provider!==SH))report.workouts++;}catch(error){report.errors.push('Workout: '+rf245Message(error));}
@@ -16469,6 +16517,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  'use strict';
  let lastPayload=null,lastHomePayload=null,cleared=false,busy=false,homeBusy=false,commandBusy=false;
  let homeRefreshPending=false;
+ let pendingWatchStart=null,lastWatchStartId='',watchStartDepth=0;
 
  function api(){
   try{
@@ -16746,23 +16795,46 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(homeRefreshPending){homeRefreshPending=false;setTimeout(()=>syncHomeNow({force:true}),0);}
   }
  }
+ function phoneWorkoutStarted(session,{fromWatch=false}={}){
+  const bridge=api(),id=sessionKey(session);
+  if(fromWatch||!bridge?.startWatchMeasurement||!id||id===lastWatchStartId||session!==state?.session)return;
+  lastWatchStartId=id;pendingWatchStart={id,createdAt:Date.now()};
+  void syncNow();
+ }
+ function watchStartFailed(){
+  const messages={hu:'Az órás mérés indítása nem sikerült. Nyisd meg a TrainPilotot az órán.',en:'Watch measurement could not start. Open TrainPilot on your watch.',de:'Die Uhrenmessung konnte nicht starten. Öffne TrainPilot auf der Uhr.',ro:'Măsurarea pe ceas nu a pornit. Deschide TrainPilot pe ceas.',sk:'Meranie na hodinkách sa nespustilo. Otvor TrainPilot na hodinkách.',pl:'Pomiar na zegarku nie rozpoczął się. Otwórz TrainPilot na zegarku.'};
+  if(typeof tp153Toast==='function')tp153Toast(messages[language()]||messages.en,5000);
+ }
  async function syncNow(){
   if(busy)return;
   const bridge=api();if(!bridge)return;
   const value=snapshot(),payload=value?JSON.stringify(value):null;
-  if(payload===lastPayload&&(value||cleared))return;
+  if(pendingWatchStart && (pendingWatchStart.id!==value?.workoutId || document.hidden || Date.now()-pendingWatchStart.createdAt>15000)){
+   const expired=pendingWatchStart.id===value?.workoutId&&!document.hidden;
+   pendingWatchStart=null;if(expired)watchStartFailed();
+  }
+  const requestedId=pendingWatchStart?.id;
+  if(payload===lastPayload&&(value||cleared)&&!requestedId)return;
   busy=true;
   try{
    if(value){
     await bridge.publish({snapshot:value});
     lastPayload=payload;cleared=false;
+    if(pendingWatchStart?.id===value.workoutId && sessionKey(state?.session)===value.workoutId && !document.hidden && Date.now()-pendingWatchStart.createdAt<=15000){
+     pendingWatchStart=null;
+     try{await bridge.startWatchMeasurement({workoutId:value.workoutId});}catch(_){watchStartFailed();}
+    }
    }else if(!cleared){
     await bridge.clear();
     lastPayload=null;cleared=true;
    }
   }catch(_){
    // A missing/disconnected watch never changes phone workout behavior.
-  }finally{busy=false}
+  }finally{
+   busy=false;
+   // Retain a new explicit start that arrived during an earlier snapshot publish.
+   if(pendingWatchStart && pendingWatchStart.id!==requestedId)setTimeout(syncNow,0);
+  }
  }
  function locateExercise(command){
   const session=state?.session;if(!session)return null;
@@ -16929,7 +17001,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
    // Reuse the canonical phone Quick Workout rather than fabricating a program.
    const start=window.TrainPilotQuickWorkout?.start;
    if(typeof start!=='function')return false;
-   await start(id);
+   watchStartDepth++;
+   try{await start(id);}finally{watchStartDepth--;}
    if(!state.session||!tp150IsQuick(state.session))return false;
    state.session.syncId=expected;
    state.session.started=new Date(Date.parse(command.started||expected)).toISOString();
@@ -16943,8 +17016,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
    try{if(typeof db!=='undefined'&&db?.get&&db.get('draft',null))return false}catch(_){}
    const dayId=String(command.dayId||''),programId=String(command.programId||''),scheduleId=String(command.scheduleId||'');
    if(!dayId||typeof startWorkout!=='function')return false;
-   const result=startWorkout(dayId,scheduleId||null,programId||null);
-   if(result&&typeof result.then==='function')await result;
+   watchStartDepth++;
+   try{const result=startWorkout(dayId,scheduleId||null,programId||null);if(result&&typeof result.then==='function')await result;}finally{watchStartDepth--;}
    if(!state.session)return false;
    state.session.syncId=expected;
    if(command.started){
@@ -17036,10 +17109,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }finally{commandBusy=false}
  }
  if(typeof window!=='undefined'){
-  window.TrainPilotWearSync={syncNow,syncHomeNow,drainCommands,makeSnapshot:snapshot,makeHomeSnapshot:homeSnapshot,isApplyingCommand:()=>commandBusy};
+  window.TrainPilotWearSync={syncNow,syncHomeNow,drainCommands,phoneWorkoutStarted,makeSnapshot:snapshot,makeHomeSnapshot:homeSnapshot,isApplyingCommand:()=>commandBusy,isStartingFromWatch:()=>watchStartDepth>0};
   window.addEventListener?.('focus',()=>{drainCommands();syncNow();syncHomeNow({force:true});});
  }
- if(typeof document!=='undefined')document.addEventListener?.('visibilitychange',()=>{if(!document.hidden){drainCommands();syncNow();syncHomeNow({force:true});}});
+ if(typeof document!=='undefined')document.addEventListener?.('visibilitychange',()=>{if(document.hidden)pendingWatchStart=null;else{drainCommands();syncNow();syncHomeNow({force:true});}});
  if(typeof setInterval==='function'){
   setInterval(syncNow,1500);
   setInterval(syncHomeNow,3000);

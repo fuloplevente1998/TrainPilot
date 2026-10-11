@@ -3,6 +3,9 @@ html.tp107-fixed-view,body.tp107-fixed-view{height:100dvh;overflow:hidden;oversc
 html body #app main.tp107-fit-home,html body #app main.tp107-health-layout{margin:0!important;padding:8px 12px max(12px,env(safe-area-inset-bottom,0px))!important;gap:7px!important;box-sizing:border-box;animation:none!important;transform:none!important}
 html body #app main.tp107-fit-home,html body #app main.tp107-fit-health{max-height:calc(100dvh - var(--tp107-nav-height,132px))}
 html body #app main.tp107-fit-home>.card,html body #app main.tp107-fit-home>.hero,html body #app main.tp107-health-layout>.card{margin:0!important}
+/* Keep disclosure headings and actions at their natural height. The overview
+   releases its scroll lock when the available viewport cannot contain them. */
+html body #app main.tp107-health-layout>*{flex-shrink:0!important}
 html body #app main.tp107-fit-home:not(.tp-home-draft-compact)>.hero{padding:9px 12px!important}
 html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp155-home-program-left h1{font-size:24px!important;line-height:1.1!important}
 html body #app main.tp107-fit-home:not(.tp-home-draft-compact) .tp155-home-program-right .tp146-next-title{font-size:17px!important}

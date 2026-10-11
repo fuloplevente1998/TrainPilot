@@ -1,6 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 const {chromium}=require('playwright');
+const assertHealthOverview=require('../helpers/health-overview.cjs');
 function seed(){
  const key=rf240DayKey(new Date()),days={};
  for(let i=0;i<7;i++){
@@ -41,7 +42,7 @@ function seed(){
   assert.equal(await page.locator('details.tp-samsung-composition').count(),0);
   assert.equal(await more.locator('[data-health-group]>h3').count(),2);
   assert.equal(await more.evaluate(n=>n.open),false);
-  assert.equal(await page.evaluate(()=>document.body.classList.contains('tp107-fixed-view')),true,'Closed Health stays compact with six Today metrics');
+  await assertHealthOverview(page,'Health with closed inline journal');
   assert.equal(await page.locator('.tp168-today-card .tp5-today-metric').count(),6);
   assert.match(await page.locator('.tp5-today-calories').innerText(),/Aktív kalória.*392 kcal/s);
   assert.equal(await more.locator('summary .tp168-chevron').innerText(),'›');

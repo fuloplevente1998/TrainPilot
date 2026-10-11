@@ -1,4 +1,5 @@
 'use strict';
+const assertHealthOverview=require('../helpers/health-overview.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http'),{chromium}=require('playwright');
 const root=path.resolve('www');const server=http.createServer((q,r)=>{const file=path.resolve(root,'.'+(new URL(q.url,'http://local').pathname==='/'?'/index.html':new URL(q.url,'http://local').pathname));if(!file.startsWith(root+path.sep)){r.writeHead(403);return r.end();}fs.readFile(file,(e,d)=>{if(e){r.writeHead(404);return r.end();}r.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html');r.end(d);});});
 (async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));let b;try{
@@ -14,11 +15,11 @@ const root=path.resolve('www');const server=http.createServer((q,r)=>{const file
  for(const [width,height] of [[320,740],[360,800],[393,823],[393,873],[412,915]])for(const theme of ['classicBlue','yellow']){
   await p.setViewportSize({width,height});await p.evaluate(theme=>{go('home');rf200SetTheme(theme);go('health')},theme);await p.waitForTimeout(100);
   const normal=await rail();
-  for(const selector of ['.tp169-pulse-summary','.tp168-weight-summary','.tp168-more-panel>summary','.tp168-connect-panel>summary']){
+  for(const selector of ['.tp169-pulse-summary','.tp168-weight-summary','.tp168-more-panel>summary','.tp120-journal-entry','.tp168-connect-panel>summary']){
    await p.locator(selector).click();await p.waitForTimeout(60);assert.deepEqual(await rail(),normal,'Health keeps its card/column widths when '+selector+' opens at '+width+'/'+theme);
    assert.equal(await p.evaluate(()=>document.body.classList.contains('tp107-fixed-view')),false);
    await p.mouse.move(width/2,height-45);await p.mouse.wheel(0,500);await p.waitForTimeout(70);assert.ok(await p.evaluate(()=>scrollY)>0,'expanded Health can actually scroll '+selector);
-   await p.locator(selector).click();await p.waitForTimeout(60);assert.deepEqual(await rail(),normal,'closing Health restores the same widths');assert.equal(await p.evaluate(()=>document.body.classList.contains('tp107-fixed-view')),true,'Closing details restores compact Health');assert.equal(await p.evaluate(()=>scrollY),0);
+   await p.locator(selector).click();await p.waitForTimeout(60);assert.deepEqual(await rail(),normal,'closing Health restores the same widths');await assertHealthOverview(p,'Collapsed Health '+width+'/'+theme);assert.equal(await p.evaluate(()=>scrollY),0);
   }
   if(width===393&&height===823&&theme==='yellow')await p.screenshot({path:'ui-evidence/health-stable-width-107.png'});
   await p.evaluate(()=>go('home'));

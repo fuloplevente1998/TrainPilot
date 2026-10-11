@@ -68,8 +68,13 @@ Az aktuális köztes javítást is az **1.3** részeként dokumentáljuk. A [#16
 
 Új programos vagy gyors edzés telefonos indítása előbb közzéteszi az aktív edzést, majd megnyitja a csatlakoztatott órán a TrainPilotot. Az óra röviden felébreszti a kijelzőt, ellenőrzi az edzésazonosítót és a friss pillanatképet, majd az engedélyezett mérést az előtérszolgáltatásra bízza. A kijelző ezután kikapcsolhat.
 
-- **Felhasználói visszajelzés, 2026. október 10.:** a telefonról indított app megnyílik az órán.
-- A párosított telefonos/órás automatizált kiadási ellenőrzések sikeresek. A képernyő kikapcsolása melletti tényleges mérés és a végső naplóadat még külön készülékes ellenőrzés.
+- **Felhasználói visszajelzés, 2026. október 10.:** programos edzés telefonos indításakor az app megnyílik az órán, és a háttérmérést is rögzíti.
+- A gyors edzés aktuális, soron belül beállítható gyakorlatválasztójának indításakor ugyanaz az egyszeri órás megnyitás indul az aktív edzés közzététele után. Új gyakorlat hozzáadása nem indít új mérést; megszakított piszkozatcsere és óráról indított edzés nem nyitja vissza az órás appot.
+- A későn beérkező egészségadat-inicializálás és háttérfrissítés nem zárja be a gyorsedzés- vagy gyakorlatválasztót, és nem építi újra a megnyitott panelek szerkesztési mezőit. A már beírt sorozatszám, súly és saját gyakorlat-/programnév megmarad.
+- Aktív edzésnél a navigáció lemondása megőrzi a nyitott választót; csak a jóváhagyott kilépés zárja be, a mentett piszkozat megőrzésével.
+- Hiányzó natív integrációnál a hívást kiegészítő wrapper nem hoz létre érvénytelen Proxy objektumot; a híd elérhetőségi ellenőrzése megmarad.
+- A fő képernyők és panelek további ellenőrzését az [alkalmazásaudit](docs/APP_AUDIT_1.3.md) foglalja össze. A látható verzió és telepítési kód változatlan.
+- A programos háttérmérés felhasználói visszaigazolása megérkezett. A gyors edzés új bekötése és a végső naplóadat teljes készülékes ellenőrzése következik.
 - Megmarad a mérési kapcsoló, a szenzorengedélyek és más alkalmazás futó mérésének védelme.
 - Normál frissítés, telefonos visszatérés vagy visszaállított piszkozat nem nyitogatja az órás appot. Sikertelen megnyitáskor a telefonos edzés megmarad, kézi órás megnyitással folytatható.
 
@@ -81,7 +86,11 @@ TrainPilot Wear-mérés nélkül a telefon a kiválasztott Samsung Health/Health
 
 Folytatandó: háttérmérés, Mini napló frissítése/újracsatlakozása, körkijelzős és nagybetűs nézetek, már naplózott egészségadatok megőrzése, későn érkező értékek és telefonos edzés egészségadatai.
 
-**Nyitott visszatérő hiba:** a Google Drive-szinkron időnként túl sokáig tart. A korábbi mentési/szinkronjavítások megléte nem jelenti ennek lezárását.
+### Drive-szinkron és ütközésfeloldás
+
+Az **1.3** [#160 tesztágán](https://github.com/fuloplevente1998/TrainPilot/pull/160) a normál szinkron csak az eszközönkénti legfrissebb mentést olvassa; a régi mentések olvasása külön, alapból csukott helyreállítási művelet. Normál szinkronkor nincs archív olvasás vagy automatikus archív takarítás.
+
+A Telefon/Felhő ütközésválasztás a kiválasztott adatváltozatot menti; a logikai gombválasz nem kerül adatmező vagy naplóbejegyzés helyére. Az egyedi edzések és testsúlyadatok megmaradnak, a szigorú mentésellenőrzés változatlan. A szinkron időtartamának és a választás utáni sikeres mentésnek készülékes elfogadása még nyitott.
 
 ## Történeti részletek
 
