@@ -547,7 +547,10 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                 compose.onNodeWithText("97 bpm · 7 kcal").assertDoesNotExist()
             if (value in listOf("active", "rest")) {
                 val titleLayouts = mutableListOf<TextLayoutResult>()
-                compose.onNodeWithText(exercise.name).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(titleLayouts) }
+                val title =
+                    if (value == "rest" && diameter < 210f) "Pihenő · ${exercise.name}"
+                    else exercise.name
+                compose.onNodeWithText(title).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(titleLayouts) }
                 assertTrue("Exercise names use two lines", titleLayouts.single().lineCount > 1)
                 assertFalse("The full exercise name fits", titleLayouts.single().hasVisualOverflow)
             }
