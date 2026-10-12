@@ -111,7 +111,7 @@ stateDiagram-v2
 
 ### Telefonos felület
 
-A folyamatban levő edzésben legyen egyértelmű Automata mód állapot, aktuális gyakorlat/sorozat vagy kör és következő gyakorlat. **Felhasználói pontosítás: a visszaszámláló kézi és automata módban is alul marad; az Automata mód kapcsolója kis, visszafogott vezérlő, kisebb az Előző/Következő gomboknál.** A tényleges ismétlés/súly rögzítése, Szünet/Folytatás és pihenő módosítása közvetlenül elérhető. A befejezés és mentés külön művelet. A háttérben frissülő idő vagy szinkron ne csukja össze a megnyitott szerkesztőt vagy edzésrészletet. A színek a választott telefonos témát kövessék.
+A folyamatban levő edzésben legyen egyértelmű Automata mód állapot, aktuális gyakorlat/sorozat vagy kör és következő gyakorlat. **Felhasználói pontosítás: az aktív visszaszámláló kézi és automata módban is alul, az Előző és Következő gomb között marad; az Automata mód kapcsolója kis, visszafogott vezérlő, kisebb az Előző/Következő gomboknál.** A tényleges ismétlés/súly rögzítése, Szünet/Folytatás és pihenő módosítása közvetlenül elérhető. A befejezés és mentés külön művelet. A háttérben frissülő idő vagy szinkron ne csukja össze a megnyitott szerkesztőt vagy edzésrészletet. A színek a választott telefonos témát kövessék.
 
 ### Órás felület
 
