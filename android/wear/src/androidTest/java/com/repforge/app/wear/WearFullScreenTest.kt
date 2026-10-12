@@ -1,6 +1,9 @@
 package com.repforge.app.wear
 
+import android.content.ContentValues
 import android.graphics.Bitmap
+import android.os.Environment
+import android.provider.MediaStore
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -15,11 +18,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.Density
 import androidx.test.platform.app.InstrumentationRegistry
-import java.io.File
 import java.time.Instant
 import java.time.LocalDate
 import org.json.JSONObject
@@ -69,11 +72,14 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         assertEquals("Full viewport width", root.width, list.width, 1f)
     }
 
+    private fun lazyList() =
+        compose.onNode(
+            SemanticsMatcher.keyIsDefined(SemanticsActions.ScrollToIndex) and
+                hasAnyAncestor(hasTestTag("wear-round-list"))
+        )
+
     private fun scrollToEnd(last: String? = null) {
-        if (last != null)
-            compose
-                .onNodeWithTag("wear-round-list")
-                .performScrollToNode(hasContentDescription(last))
+        if (last != null) lazyList().performScrollToNode(hasContentDescription(last))
         repeat(5) {
             compose.onNodeWithTag("wear-round-list").performTouchInput {
                 swipeUp(durationMillis = 300)
@@ -92,17 +98,30 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     }
 
     private fun screenshot(name: String) {
-        val folder =
-            InstrumentationRegistry.getInstrumentation()
-                .targetContext
-                .getExternalFilesDir("wear-ui")!!
-        folder.mkdirs()
-        File(folder, "$name-${diameter.toInt()}dp-font$fontScale.png").outputStream().use {
-            compose
-                .onRoot()
-                .captureToImage()
-                .asAndroidBitmap()
-                .compress(Bitmap.CompressFormat.PNG, 100, it)
+        // MediaStore photos survive Gradle's automatic test-app uninstall; private app files do
+        // not.
+        val resolver = InstrumentationRegistry.getInstrumentation().targetContext.contentResolver
+        val values =
+            ContentValues().apply {
+                put(
+                    MediaStore.Images.Media.DISPLAY_NAME,
+                    "$name-${diameter.toInt()}dp-font$fontScale.png",
+                )
+                put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+                put(
+                    MediaStore.Images.Media.RELATIVE_PATH,
+                    "${Environment.DIRECTORY_PICTURES}/TrainPilot-Wear-layout",
+                )
+            }
+        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)!!
+        resolver.openOutputStream(uri)!!.use {
+            assertTrue(
+                compose
+                    .onRoot()
+                    .captureToImage()
+                    .asAndroidBitmap()
+                    .compress(Bitmap.CompressFormat.PNG, 100, it)
+            )
         }
     }
 
@@ -186,8 +205,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     fun journalDetailsAndAllWorkoutPagerPagesRemainScrollable() {
         val selected = mutableStateOf("journal")
         compose.setContent { Watch { key(selected.value) { Fixture(selected.value) } } }
-        compose
-            .onNodeWithTag("wear-round-list")
+        lazyList()
             .performScrollToNode(hasContentDescription("Hosszú nevű próbaedzés", substring = true))
         compose
             .onNodeWithContentDescription("Hosszú nevű próbaedzés", substring = true)
@@ -220,7 +238,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                 "press",
                 "Földön fekve nyomás hosszú gyakorlatnévvel",
                 "weight",
-                "ism.",
+                if (route == "timed-workout") "mp/oldal" else "ism.",
                 "strength",
                 listOf(set),
             )

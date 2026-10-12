@@ -474,6 +474,7 @@ private fun RoundList(
     title: String,
     initialCenterItemIndex: Int = 1,
     sweep: Float = WEAR_HEADER_SWEEP,
+    headerColor: Color = Gold,
     content: ScalingLazyListScope.() -> Unit,
 ) {
     val state = rememberScalingLazyListState(initialCenterItemIndex = initialCenterItemIndex)
@@ -488,7 +489,7 @@ private fun RoundList(
             verticalArrangement = Arrangement.spacedBy(6.dp),
             content = content,
         )
-        CurvedHeader(title, sweep = sweep)
+        CurvedHeader(title, headerColor, sweep = sweep)
     }
 }
 
@@ -1470,7 +1471,7 @@ private fun WorkoutPanel(
 ) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val layout = wearArcLayout(maxWidth.value, maxHeight.value)
-        RoundList(workout.exercise?.name.orEmpty(), sweep = 140f) {
+        RoundList(workout.exercise?.name.orEmpty(), sweep = 140f, headerColor = White) {
             content()
             item {
                 Box(Modifier.width(layout.width.dp).height(layout.height.dp)) { actions(layout) }
