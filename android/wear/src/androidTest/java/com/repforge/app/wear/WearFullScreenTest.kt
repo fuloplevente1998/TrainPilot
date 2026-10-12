@@ -178,6 +178,8 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             compose.waitForIdle()
             assertFullViewport()
             screenshot(route)
+            if (route == "home")
+                compose.onNodeWithContentDescription("Megnyitás telefonon").assertIsDisplayed()
             scrollToEnd(last)
             compose.onNodeWithContentDescription(last).assertIsDisplayed()
             screenshot("$route-last-control")
@@ -318,6 +320,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         val health =
             JSONObject()
                 .put("workoutId", "layout-test")
+                .put("source", "wear_health_services")
                 .put("state", "active")
                 .put("updatedAt", System.currentTimeMillis())
                 .put("heartRate", 93)

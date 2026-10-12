@@ -4,11 +4,13 @@ A felhasználó 2026. október 12-i főmenüfotója alapján a kiadott 1.3.4 ór
 
 ## Elrendezés
 
-Minden hosszabb oldal teljes képernyős Wear `ScalingLazyColumn`-t használ. A kör közepe 8 dp oldalsó margót kap; a tartalom magassága a teljes képernyőmagasság. A sorokat a Wear könyvtár a perem közelében méretezi és halványítja. A fejléc csak a felső körperemen kap keskeny hátteret, a lista előtt nincs levágó téglalap.
+Minden hosszabb oldal teljes képernyős Wear `ScalingLazyColumn`-t használ. A kör közepe 8 dp oldalsó margót kap; a tartalom magassága a teljes képernyőmagasság. A sorokat a Wear könyvtár a perem közelében méretezi és halványítja. A fejléc a felső körperemen szerepel; nincs gombokba vágó fekete háttérív vagy levágó téglalap.
 
 A gombok, feliratok és mérési sorok külön lazy elemek. A felső/alsó félképernyős tartalmi padding miatt az első és utolsó elemek, illetve hosszabb kártyák végei is a kör közepére görgethetők. Ez tartalmi padding; a görgető nézet továbbra is az egész képernyőt használja. Az alap kezdőpozíció a második elemet középre helyezi, így a lista felső és alsó része is látható.
 
-Az érintett oldalak: főmenü, Mini napló és részletei, gyors edzés/gyakorlatkeresés, programnapok, naptári napi részletek és üres állapot, órás mérések/előzmények, súly/ismétlés/idő szerkesztő, stoppereszközök, edzésmenü, kezdőlap, aktuális sorozat/stopper, törlés/befejezés megerősítése és mentési összesítő/újrapróba. A heti naptár már teljes képernyős saját elrendezése megmarad.
+Az érintett oldalak: főmenü, Mini napló és részletei, gyors edzés/gyakorlatkeresés, programnapok, naptári napi részletek és üres állapot, órás mérések/előzmények, súly/ismétlés/idő szerkesztő, stoppereszközök, edzésmenü, kezdőlap, aktuális sorozat/stopper, törlés/befejezés megerősítése és mentési összesítő/újrapróba. A heti naptár már teljes képernyős saját elrendezése megmarad. Az edzéslapozó előre betöltött, inaktív lapjai nem kapnak forgókorona-fókuszt, és nem teszik elérhetővé a háttérben lévő vezérlőket a képernyőolvasónak.
+
+A kezdőlapon a kompakt Telefon gyorsgomb a felső, koppintható íves címre került; ez egy teljes sort felszabadít az állapotnak és a vezérlőknek.
 
 A három 48 dp vezérlő egy külön görgethető íves elem: a középső lejjebb kerül, az érintési felületek legalább 4 dp-re vannak egymástól. A kisebb súly/ismétlés mezők, a pulzus/kcal és az elérhető mozgásmérések megmaradnak. A képernyő teljes tartalma görgethető; a vezérlőknek nincs külön, állandó középső vagy alsó ablaka. A hosszú cím továbbra is az ívben kaphat ellipszist; a teljes felirat az akadálymentes leírásban szerepel. A teljes kezdőlap-revamp külön #170.
 

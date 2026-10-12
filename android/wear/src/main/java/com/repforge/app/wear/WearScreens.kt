@@ -14,14 +14,13 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -196,23 +195,6 @@ internal fun TrainPilotWearApp(
 private fun CurvedHeader(text: String, color: Color = Gold, sweep: Float = WEAR_HEADER_SWEEP) {
     val fontScale = LocalDensity.current.fontScale
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        Canvas(Modifier.fillMaxSize()) {
-            val diameter = minOf(size.width, size.height)
-            val inset = 16.dp.toPx()
-            drawArc(
-                Black,
-                startAngle = -90f - sweep / 2f,
-                sweepAngle = sweep,
-                useCenter = false,
-                topLeft =
-                    Offset(
-                        (size.width - diameter) / 2f + inset,
-                        (size.height - diameter) / 2f + inset,
-                    ),
-                size = Size(diameter - 2 * inset, diameter - 2 * inset),
-                style = Stroke(28.dp.toPx()),
-            )
-        }
         CurvedLayout(
             Modifier.align(Alignment.Center).size(minOf(maxWidth, maxHeight) - 16.dp).semantics {
                 contentDescription = text
@@ -312,20 +294,14 @@ private fun HomeScreen(
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val phone = wearHomePhoneLayout(maxWidth.value, maxHeight.value)
         val layout = wearArcLayout(maxWidth.value, maxHeight.value)
-        RoundList("TrainPilot") {
-            item {
-                Box(Modifier.width(phone.width.dp)) {
-                    Pill(
-                        "Telefon",
-                        modifier =
-                            Modifier.semantics { contentDescription = "Megnyitás telefonon" },
-                        tone = Secondary,
-                        height = phone.height.toInt(),
-                        size = 11,
-                        onClick = onOpenPhone,
-                    )
-                }
-            }
+        RoundList(
+            "Telefon ↗",
+            initialCenterItemIndex = 0,
+            initialCenterItemScrollOffset =
+                with(LocalDensity.current) { (if (fontScale <= 1.1f) 16.dp else 0.dp).roundToPx() },
+            onTitleClick = onOpenPhone,
+            titleTouchWidth = phone.width,
+        ) {
             item {
                 Column(
                     Modifier.fillMaxWidth(),
@@ -334,7 +310,7 @@ private fun HomeScreen(
                     when {
                         active != null -> {
                             Box(Modifier.fillMaxWidth()) {
-                                Title(active.exercise?.name ?: active.programName, 16)
+                                Title(active.exercise?.name ?: active.programName, 13)
                             }
                             Label(
                                 "${active.dayName.ifBlank { active.dayId }} · ${active.currentSetIndex + 1}/${active.exercise?.sets?.size ?: 0}. sorozat",
@@ -343,7 +319,7 @@ private fun HomeScreen(
                             Text(
                                 formatSeconds(elapsed),
                                 color = White,
-                                fontSize = 30.sp,
+                                fontSize = 24.sp,
                                 fontWeight = FontWeight.SemiBold,
                             )
                         }
@@ -473,23 +449,41 @@ private fun HomeScreen(
 private fun RoundList(
     title: String,
     initialCenterItemIndex: Int = 1,
+    initialCenterItemScrollOffset: Int = 0,
+    onTitleClick: (() -> Unit)? = null,
+    titleTouchWidth: Float = 100f,
     sweep: Float = WEAR_HEADER_SWEEP,
     headerColor: Color = Gold,
     content: ScalingLazyListScope.() -> Unit,
 ) {
-    val state = rememberScalingLazyListState(initialCenterItemIndex = initialCenterItemIndex)
+    val state =
+        rememberScalingLazyListState(
+            initialCenterItemIndex = initialCenterItemIndex,
+            initialCenterItemScrollOffset = initialCenterItemScrollOffset,
+        )
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val viewport = wearRoundViewport(maxWidth.value, maxHeight.value)
         ScalingLazyColumn(
             Modifier.fillMaxSize().hierarchicalFocusGroup(active = true).testTag("wear-round-list"),
             state = state,
             contentPadding =
-                PaddingValues(horizontal = ((maxWidth.value - viewport.width) / 2f).dp, vertical = (viewport.height / 2f).dp),
+                PaddingValues(
+                    horizontal = ((maxWidth.value - viewport.width) / 2f).dp,
+                    vertical = (viewport.height / 2f).dp,
+                ),
             autoCentering = null,
             verticalArrangement = Arrangement.spacedBy(6.dp),
             content = content,
         )
         CurvedHeader(title, headerColor, sweep = sweep)
+        if (onTitleClick != null)
+            Box(
+                Modifier.align(Alignment.TopCenter)
+                    .width(titleTouchWidth.dp)
+                    .height(32.dp)
+                    .clickable(role = Role.Button, onClick = onTitleClick)
+                    .semantics { contentDescription = "Megnyitás telefonon" }
+            )
     }
 }
 
@@ -1361,78 +1355,87 @@ private fun WorkoutPager(
     LaunchedEffect(pager.currentPage) { if (pager.currentPage == 2) onRefreshJournal() }
     val scope = rememberCoroutineScope()
     Box(Modifier.fillMaxSize()) {
-        HorizontalPager(state = pager, modifier = Modifier.fillMaxSize()) { page ->
-            if (page == 0) {
-                Box(Modifier.fillMaxSize()) {
-                    if (restRemaining > 0) RestRing(workout, restRemaining)
-                    val onMenu = {
-                        scope.launch { pager.animateScrollToPage(1) }
-                        Unit
+        HorizontalPager(state = pager, modifier = Modifier.fillMaxSize()) {
+            Box(
+                Modifier.fillMaxSize()
+                    .hierarchicalFocusGroup(active = pager.currentPage == page)
+                    .then(
+                        if (pager.currentPage == page) Modifier
+                        else Modifier.clearAndSetSemantics {}
+                    )
+            ) { page ->
+                if (page == 0) {
+                    Box(Modifier.fillMaxSize()) {
+                        if (restRemaining > 0) RestRing(workout, restRemaining)
+                        val onMenu = {
+                            scope.launch { pager.animateScrollToPage(1) }
+                            Unit
+                        }
+                        if (normalizeUnit(workout.exercise?.repUnit.orEmpty()).startsWith("mp"))
+                            TimedSetScreen(
+                                workout,
+                                restRemaining,
+                                health,
+                                onChange,
+                                onComplete,
+                                onPrevious,
+                                onNext,
+                                onSkipRest,
+                                onFinish,
+                                onMenu,
+                            )
+                        else
+                            CurrentSetScreen(
+                                workout,
+                                restRemaining,
+                                health,
+                                onEdit,
+                                onComplete,
+                                onPrevious,
+                                onNext,
+                                onSkipRest,
+                                onFinish,
+                                onMenu,
+                            )
                     }
-                    if (normalizeUnit(workout.exercise?.repUnit.orEmpty()).startsWith("mp"))
-                        TimedSetScreen(
-                            workout,
-                            restRemaining,
-                            health,
-                            onChange,
-                            onComplete,
-                            onPrevious,
-                            onNext,
-                            onSkipRest,
-                            onFinish,
-                            onMenu,
-                        )
-                    else
-                        CurrentSetScreen(
-                            workout,
-                            restRemaining,
-                            health,
-                            onEdit,
-                            onComplete,
-                            onPrevious,
-                            onNext,
-                            onSkipRest,
-                            onFinish,
-                            onMenu,
-                        )
-                }
-            } else if (page == 2)
-                HealthScreen(
-                    health,
-                    measuring,
-                    gps,
-                    true,
-                    onEnable,
-                    onDisable,
-                    onGps,
-                    home,
-                    onRefreshJournal,
-                    onOpenJournal,
-                    onSelectMeasurement,
-                ) {
-                    scope.launch { pager.animateScrollToPage(0) }
-                }
-            else
-                WorkoutMenu(
-                    workout,
-                    {
-                        onPrevious()
+                } else if (page == 2)
+                    HealthScreen(
+                        health,
+                        measuring,
+                        gps,
+                        true,
+                        onEnable,
+                        onDisable,
+                        onGps,
+                        home,
+                        onRefreshJournal,
+                        onOpenJournal,
+                        onSelectMeasurement,
+                    ) {
                         scope.launch { pager.animateScrollToPage(0) }
-                    },
-                    {
-                        onNext()
-                        scope.launch { pager.animateScrollToPage(0) }
-                    },
-                    { index ->
-                        onSelect(index)
-                        scope.launch { pager.animateScrollToPage(0) }
-                    },
-                    onEdit,
-                    onTimerTools,
-                    restRemaining,
-                    onFinish,
-                    onHome,
-                )
+                    }
+                else
+                    WorkoutMenu(
+                        workout,
+                        {
+                            onPrevious()
+                            scope.launch { pager.animateScrollToPage(0) }
+                        },
+                        {
+                            onNext()
+                            scope.launch { pager.animateScrollToPage(0) }
+                        },
+                        { index ->
+                            onSelect(index)
+                            scope.launch { pager.animateScrollToPage(0) }
+                        },
+                        onEdit,
+                        onTimerTools,
+                        restRemaining,
+                        onFinish,
+                        onHome,
+                    )
+            }
         }
         Box(
             Modifier.fillMaxSize().padding(bottom = 12.dp),
@@ -1471,7 +1474,12 @@ private fun WorkoutPanel(
 ) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val layout = wearArcLayout(maxWidth.value, maxHeight.value)
-        RoundList(workout.exercise?.name.orEmpty(), sweep = 140f, headerColor = White) {
+        RoundList(
+            workout.exercise?.name.orEmpty(),
+            initialCenterItemIndex = if (LocalDensity.current.fontScale > 1.25f) 0 else 1,
+            sweep = 140f,
+            headerColor = White,
+        ) {
             content()
             item {
                 Box(Modifier.width(layout.width.dp).height(layout.height.dp)) { actions(layout) }
