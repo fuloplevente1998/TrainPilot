@@ -245,10 +245,11 @@ private fun FixedRoundPanel(
                 .testTag("wear-fixed-body"),
             contentAlignment = Alignment.Center,
         ) {
+            val scroll = rememberScrollState()
             Column(
                 Modifier.fillMaxWidth()
                     .heightIn(max = layout.bodyHeight.dp)
-                    .verticalScroll(rememberScrollState()),
+                    .verticalScroll(scroll, enabled = scroll.maxValue > 0),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
@@ -535,7 +536,7 @@ private fun RoundList(title: String, content: LazyListScope.() -> Unit) {
         LazyColumn(
             Modifier.fillMaxSize().padding(top = 32.dp).hierarchicalFocusGroup(active = true),
             state = state,
-            contentPadding = PaddingValues(horizontal = 8.dp, top = 4.dp, bottom = 36.dp),
+            contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 36.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             content = content,
@@ -1780,16 +1781,17 @@ internal fun ValueEditor(
                 edited = (edited - step).coerceAtLeast(0.0)
             }
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    numberText(edited),
-                    color = White,
-                    fontSize = 26.sp,
-                    lineHeight = 28.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.testTag("wear-edited-value"),
-                )
+                BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    val measurer = rememberTextMeasurer()
+                    val style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 26.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.sp)
+                    val naturalWidth = measurer.measure(numberText(edited), style).size.width
+                    val available = with(LocalDensity.current) { (maxWidth - 4.dp).toPx() }
+                    val fit = (available / naturalWidth.coerceAtLeast(1)).coerceAtMost(1f)
+                    Text(numberText(edited), style = style, color = White,
+                        fontSize = (26f * fit).sp, lineHeight = (28f * fit).sp,
+                        maxLines = 1, modifier = Modifier.testTag("wear-edited-value"))
+                }
                 Label(if (field == "weight") "kg" else if (step == 5.0) "mp" else "ism.", size = 9)
             }
             RoundControl("+", description = "$title növelése") { edited += step }
