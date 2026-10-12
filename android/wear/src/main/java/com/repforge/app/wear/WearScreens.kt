@@ -1445,8 +1445,8 @@ private fun WorkoutPager(
             }
         }
         Box(
-            Modifier.fillMaxSize().padding(bottom = 4.dp),
-            contentAlignment = Alignment.BottomCenter,
+            Modifier.fillMaxSize().padding(top = 6.dp),
+            contentAlignment = Alignment.TopCenter,
         ) {
             Row(
                 Modifier.testTag("wear-page-indicator"),
@@ -1455,7 +1455,7 @@ private fun WorkoutPager(
                 repeat(3) { index ->
                     Box(
                         Modifier.width(if (pager.currentPage == index) 12.dp else 4.dp)
-                            .height(4.dp)
+                            .height(2.dp)
                             .background(
                                 if (pager.currentPage == index) Gold else Muted.copy(alpha = .45f),
                                 CircleShape,
