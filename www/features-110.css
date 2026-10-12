@@ -89,7 +89,7 @@ html.tp110-large-text body .tp-select-trigger :is(span,strong){white-space:norma
 .tp162-automatic input{width:15px;height:15px;margin:0;accent-color:var(--accent)}
 .tp162-automatic [data-tp162-auto-status]{flex:1;min-width:0;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 html body #app main.tp153-workout .tp16-workout-actions:has(>.tp162-automatic){grid-template-areas:"auto auto" "prev next"!important}
-html body #app main.tp153-workout .tp16-workout-actions:has(>.tp162-automatic):has(>.tp16-rest-timer){grid-template-areas:"auto auto auto" "prev rest next"!important}
+html body #app main.tp153-workout .tp16-workout-actions:has(>.tp162-automatic):has(>.tp16-rest-timer){grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;grid-template-areas:"auto rest" "prev next"!important}
 html body #app main.tp153-workout .tp16-workout-actions .tp162-small{min-height:32px!important;height:32px!important;min-width:28px!important;padding:3px 5px!important;font-size:12px!important;border-radius:9px!important}
 html body #app main.tp153-workout .tp16-workout-actions>.tp162-countdown{max-width:142px!important}
-@media(max-width:340px){html body #app main.tp153-workout .tp16-workout-actions:has(>.tp162-automatic):has(>.tp16-rest-timer){grid-template-areas:"auto auto" "rest rest" "prev next"!important}html body #app main.tp153-workout .tp16-workout-actions:has(>.tp162-automatic):not(:has(>.tp16-rest-timer)){grid-template-areas:"auto" "prev" "next"!important}}
+@media(max-width:340px){html body #app main.tp153-workout .tp16-workout-actions:has(>.tp162-automatic):has(>.tp16-rest-timer){grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;grid-template-areas:"auto rest" "prev next"!important}html body #app main.tp153-workout .tp16-workout-actions:has(>.tp162-automatic):not(:has(>.tp16-rest-timer)){grid-template-areas:"auto" "prev" "next"!important}}
