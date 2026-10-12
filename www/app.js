@@ -16753,6 +16753,16 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
   return {calendar,calendarDays};
  }
+ function watchTheme(){
+  // Use the chosen palette directly: no layout reads or preference writes during sync.
+  try{
+   const key=typeof rf200ThemeKey==='function'?rf200ThemeKey():'classicBlue';
+   const theme=typeof RF200_THEMES==='object'?RF200_THEMES[key]:null;
+   if(!theme||!/^#[0-9a-f]{6}$/i.test(theme.accent)||!/^#[0-9a-f]{6}$/i.test(theme.accent2))return null;
+   return {key,accent:theme.accent,accent2:theme.accent2,
+    family:typeof TP1511_BASIC!=='undefined'&&TP1511_BASIC.includes(key)?'basic':'vivid'};
+  }catch(_){return null}
+ }
  function homeSnapshot(){
   try{
    if(typeof activeProgram!=='function'||typeof programDay!=='function')return null;
@@ -16776,6 +16786,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     schema:1,
     phoneVersion:typeof TRAINPILOT_VERSION==='string'?TRAINPILOT_VERSION:'',
     journalSchema:1,
+    theme:watchTheme(),
     ...watchCalendar(active,lang),
     quickExercises:watchQuickExercises(lang),
     recentWorkouts:watchRecentHistory(lang),

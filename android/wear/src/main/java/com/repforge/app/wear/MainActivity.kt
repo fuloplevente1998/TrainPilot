@@ -2,6 +2,8 @@ package com.repforge.app.wear
 
 import android.Manifest
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -41,6 +43,9 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private val routeRequest=mutableStateOf<String?>(null)
     private val measuring=mutableStateOf(false)
     private val gpsEnabled=mutableStateOf(false)
+    private val phoneConnected=mutableStateOf<Boolean?>(null)
+    private val batteryLevel=mutableStateOf<Int?>(null)
+    private var lastIndicatorRefreshAt=0L
     private val uiHandler=Handler(Looper.getMainLooper())
     private var activityResumed=false
     private var remoteMeasurementRequested=false
@@ -67,7 +72,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     }
     private val healthTick=object : Runnable {
         override fun run() {
-            refreshHealth()
+            refreshHealth();refreshHomeIndicators()
             if(workout.value==null && WearHealthStore.active(this@MainActivity).isNotBlank())WearHealthService.stop(this@MainActivity)
             if(remoteMeasurementRequested && !remoteWorkoutAccepted && !remoteStartFinished && remoteMeasurementStart?.matches(workout.value?.workoutId,workout.value?.revision ?: 0L)!=true && android.os.SystemClock.elapsedRealtime()-lastRemoteRefreshAt>=2000L) {
                 lastRemoteRefreshAt=android.os.SystemClock.elapsedRealtime()
@@ -103,6 +108,18 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         health.value=wearHealthDisplaySummary(id,WearHealthStore.load(this,id),published)
         measuring.value=WearHealthStore.enabled(this);gpsEnabled.value=WearHealthStore.gps(this)
         if(remoteMeasurementRequested && !remoteStartFinished && remoteMeasurementStart?.matches(workout.value?.workoutId,workout.value?.revision ?: 0L)==true && health.value?.optString("state") in listOf("active","paused","ended","error"))releaseRemoteStart()
+    }
+    private fun refreshHomeIndicators(force: Boolean=false) {
+        val now=android.os.SystemClock.elapsedRealtime()
+        if(!force && lastIndicatorRefreshAt>0 && now-lastIndicatorRefreshAt<10000L)return
+        lastIndicatorRefreshAt=now
+        val battery=registerReceiver(null,IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val level=battery?.getIntExtra(BatteryManager.EXTRA_LEVEL,-1) ?: -1
+        val scale=battery?.getIntExtra(BatteryManager.EXTRA_SCALE,-1) ?: -1
+        batteryLevel.value=if(level>=0 && scale>0)(level*100L/scale).toInt().coerceIn(0,100)else null
+        Wearable.getNodeClient(this).connectedNodes
+            .addOnSuccessListener { phoneConnected.value=it.isNotEmpty() }
+            .addOnFailureListener { phoneConnected.value=null }
     }
     private fun requestHealth(gps: Boolean=false) {
         // An explicit measurement action uses the current durable workout. A
@@ -199,6 +216,8 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                 health = health,
                 measuring = measuring,
                 gpsEnabled = gpsEnabled,
+                phoneConnected = phoneConnected,
+                batteryLevel = batteryLevel,
                 requestedRoute = routeRequest,
                 onRouteConsumed = { routeRequest.value=null },
                 onEnableHealth = { requestHealth(WearHealthStore.gps(this)) },
@@ -227,6 +246,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     override fun onResume() {
         super.onResume()
         activityResumed=true
+        refreshHomeIndicators(true)
         workout.value = WorkoutSnapshotStore.load(this)
         home.value = WatchHomeStore.load(this)
         closure.value = WearClosureStore.load(this)
