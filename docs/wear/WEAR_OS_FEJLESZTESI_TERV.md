@@ -11,6 +11,7 @@ Kapcsolódások: [kezdőlap #170](https://github.com/fuloplevente1998/TrainPilot
 - A #178-ban elkészült a telefonos ikonokat és témát követő kezdőlap, a külön Beállítások oldal, az aktív edzés közvetlen törlése megerősítéssel, a felfelé húzással nyitható menü és a Mini napló tördelése. Készülékes elfogadása még szükséges.
 - Jóváhagyott kiegészítés: a gyakorlatoldalon a sorozatadatok mellett kis, halványabb `HH:mm` pontos idő. Egy sorban marad, súlyzós és időzített gyakorlatnál is; megvalósítása a #178 része.
 - A #164 korábbi, készülékesen még nem elfogadott telefonos automata megoldás. Az új telefonos automata mód alapjaként az aktuális, elfogadott mainhez és az itt rögzített működéshez kell igazítani; az órás automata működéshez külön integráció szükséges. A #178 UI-build nem jelenti az automata mód elkészültét egyik alkalmazásban sem.
+- A telefonos első folytatás megvalósítása a #164-ben elindult: kézi rögzítés utáni natív pihenő és sorozat-/gyakorlatváltás, időzített átmenetek, alsó visszaszámláló és kompakt kapcsoló. Ez első tesztváltozat; a teljes készülékes elfogadás és az önálló órás automata integráció továbbra is hátravan.
 - A térkép a #163 külön folytatása. Az időzített futóintervallum és a meglévő GPS-mérés együttműködése már az automata mód része.
 
 ## 2. Wear OS-javaslatok és sorrend
@@ -110,7 +111,7 @@ stateDiagram-v2
 
 ### Telefonos felület
 
-A folyamatban levő edzésben legyen egyértelmű Automata mód állapot, aktuális gyakorlat/sorozat vagy kör, nagy munka-/pihenő-visszaszámlálás és következő gyakorlat. A tényleges ismétlés/súly rögzítése, Szünet/Folytatás és pihenő módosítása közvetlenül elérhető. A befejezés és mentés külön művelet. A háttérben frissülő idő vagy szinkron ne csukja össze a megnyitott szerkesztőt vagy edzésrészletet. A színek a választott telefonos témát kövessék.
+A folyamatban levő edzésben legyen egyértelmű Automata mód állapot, aktuális gyakorlat/sorozat vagy kör és következő gyakorlat. **Felhasználói pontosítás: a visszaszámláló kézi és automata módban is alul marad; az Automata mód kapcsolója kis, visszafogott vezérlő, kisebb az Előző/Következő gomboknál.** A tényleges ismétlés/súly rögzítése, Szünet/Folytatás és pihenő módosítása közvetlenül elérhető. A befejezés és mentés külön művelet. A háttérben frissülő idő vagy szinkron ne csukja össze a megnyitott szerkesztőt vagy edzésrészletet. A színek a választott telefonos témát kövessék.
 
 ### Órás felület
 
