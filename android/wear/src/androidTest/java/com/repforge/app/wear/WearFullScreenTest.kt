@@ -493,7 +493,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                 .put("maxHeartRate", 110.0)
                 .put("steps", 65)
                 .put("activeDurationSeconds", 60.0)
-        if (route == "quick") workout.value = null
+        if (route == "quick" || route == "home") workout.value = null
         TrainPilotWearApp(
             workout = workout,
             home = home,
