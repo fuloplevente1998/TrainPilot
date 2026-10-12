@@ -4,7 +4,7 @@
 
 Az aktuális mainre frissített ágban a folyamatban levő tervezett vagy gyors edzés **Automata mód** kapcsolója engedélyezi a kézi rögzítés utáni automatikus pihenő-/gyakorlatléptetést. A választás elmenthető. Az ismétlést és súlyt továbbra is a felhasználó rögzíti; a pihenő nem ír kitalált sorozatot.
 
-A felhasználó kérése szerint a visszaszámláló manuális és automata módban is a meglévő alsó vezérlősávban marad. Az Automata mód kis, másodlagos kapcsoló, az Előző/Következő gombokhoz képest kisebb. Az automatikus pihenő szünet-/kihagyás vezérlése is kompakt; a fő tartalom fölé nem kerül nagy automata kártya.
+A felhasználó kérése szerint az aktív visszaszámláló manuális és automata módban is a meglévő alsó vezérlősávban, **az Előző és Következő gomb között** marad. Az Automata mód kis, másodlagos kapcsoló fölöttük, az Előző/Következő gombokhoz képest kisebb. Az automatikus pihenő szünet-/kihagyás vezérlése is kompakt; a fő tartalom fölé nem kerül nagy automata kártya.
 
 - Ismétléses gyakorlat: Rögzítés → a gyakorlat/program szerinti pihenő → következő befejezetlen sorozat/gyakorlat. A pihenő szüneteltethető, folytatható és kihagyható. Az utolsó sorozat után nincs felesleges pihenő vagy automatikus végső mentés.
 - Súlyzós → időzített átmenet: a következő időalapú sorozat menetrendje az előző gyakorlat pihenőjével indul, majd automatikusan munkára vált. A kezdő pihenő nem növeli a sorozat mért munkaidejét.
