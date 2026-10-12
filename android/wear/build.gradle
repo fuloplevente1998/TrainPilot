@@ -20,6 +20,7 @@ android {
 
     defaultConfig {
         applicationId "com.repforge.app"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         minSdkVersion 30
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 2730
@@ -64,6 +65,10 @@ android {
 }
 
 dependencies {
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.compose.ui:ui-test-junit4:1.8.2'
+    debugImplementation 'androidx.compose.ui:ui-test-manifest:1.8.2'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.json:json:20240303'
     implementation 'androidx.activity:activity-compose:1.10.1'

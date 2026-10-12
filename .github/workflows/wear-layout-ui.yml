@@ -1,0 +1,62 @@
+name: Wear round display UI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'fix/**', 'feat/**']
+    paths: ['android/wear/**', '.github/workflows/wear-layout-ui.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wear-layout-ui-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  round-display:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - run: npm ci
+      - run: npm run sync
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Build UI test APKs
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :wear:assembleDebug :wear:assembleDebugAndroidTest
+      - name: Verify actual round-screen layout and touch scrolling
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: android-wear
+          arch: x86
+          profile: wearos_small_round
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash android/wear/ci/run-round-ui.sh
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: Wear-round-display-${{ github.run_id }}-${{ github.sha }}
+          path: |
+            wear-ui-evidence/
+            android/wear/build/reports/androidTests/
+            android/wear/build/outputs/androidTest-results/
+          if-no-files-found: error
+          retention-days: 14
