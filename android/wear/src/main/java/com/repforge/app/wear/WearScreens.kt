@@ -1585,7 +1585,8 @@ private fun SetHeading(workout: WearWorkout, restRemaining: Int, detail: String?
         Text(heading, modifier = Modifier.weight(1f, fill = false), color = Gold,
             fontSize = (8 * captionScale).sp, lineHeight = (10 * captionScale).sp,
             maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(" · ", color = Muted, fontSize = (7 * captionScale).sp)
+        Text(" · ", color = Muted, fontSize = (7 * captionScale).sp,
+            lineHeight = (10 * captionScale).sp, maxLines = 1)
         Text(clock, modifier = Modifier.testTag("wear-workout-clock")
             .semantics { contentDescription = "Pontos idő: $clock" },
             color = Muted, fontSize = (7 * captionScale).sp,
