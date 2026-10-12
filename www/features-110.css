@@ -80,3 +80,5 @@ html.tp110-large-text body .tp-select-trigger :is(span,strong){white-space:norma
 .tp162-auto input{flex:0 0 auto;margin-top:4px;accent-color:var(--accent)}
 .tp162-stop{margin-top:12px;white-space:normal}
 .tp107-indoor .tp110-interval-phase{overflow-wrap:anywhere}
+
+.tp162-automatic [hidden]{display:none!important}.tp162-automatic p:empty,.tp162-automatic strong:empty{display:none}.tp162-automatic [data-tp162-auto-clock]{display:block;font-size:24px;color:var(--accent);margin:4px 0}.tp162-automatic .tp162-auto{margin:0}

@@ -17506,7 +17506,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const bridge=()=>{const c=window.Capacitor;return isNative()&&(c?.Plugins?.IntervalTimer||c?.isPluginAvailable?.('IntervalTimer')&&c.registerPlugin('IntervalTimer'))||null;};
   const timed=e=>e&&(e.repUnit==='mp'||byId(e.id)?.repUnit==='mp');
   const identity=s=>String(s?.syncId||s?.started||'');
-  let poll=null,reading=false,changing=false,webKey='',webBegan=0;
+  let poll=null,reading=false,changing=false,webKey='',webBegan=0,knownRestKey='';
   const owner=()=>{const draft=state.session?null:db.get('draft',null),session=state.session||draft?.session,meta=session?.automatic162;return meta?{session,meta,draft}:null;};
   const live=o=>{const n=owner();return n&&identity(n.session)===identity(o.session)&&n.meta.run?.key===o.meta.run?.key?n:null;};
   const save=o=>{if(o.draft){o.draft.savedAt=new Date().toISOString();db.set('draft',o.draft);}else persistDraft();};
@@ -17515,6 +17515,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   function phase(run,elapsed){return TrainPilotInterval162Core.phase(run.steps,false,elapsed,0,true);}
   function ensure(){if(owner()?.meta.run&&!poll)poll=setInterval(sync,250);}
   function finish(o){
+   if(knownRestKey===o.meta.run?.key)knownRestKey='';
    const target=locate(o.session,o.meta.run?.target);if(!target){o.meta.phase='interrupted';o.meta.run=null;save(o);paint();return;}
    if(state.session===o.session)state.current=target.index;else o.draft.current=target.index;
    o.meta.run=null;o.meta.phase='ready';baseStop();save(o);
@@ -17525,17 +17526,18 @@ window.addEventListener?.('DOMContentLoaded',function(){
    o=live(o);if(!o||!o.meta.run||s?.key!==o.meta.run.key||s.steps?.[0]?.setId!==o.meta.run.target.setId)return false;
    const r=o.meta.run,p=phase(r,Number(s.elapsedMs));if(!p)return false;
    r.elapsedMs=p.elapsedMs;r.running=s.running===true&&p.phase!=='complete';r.interrupted=!!s.interrupted;
-   if(s.stopped){o.meta.enabled=false;o.meta.run=null;o.meta.phase='work';save(o);paint();return true;}
+   if(s.stopped){if(knownRestKey===r.key)knownRestKey='';o.meta.enabled=false;o.meta.run=null;o.meta.phase='work';save(o);paint();return true;}
    if(r.interrupted){o.meta.phase='interrupted';save(o);paint();return true;}
    if(p.phase==='complete'){finish(o);return true;}
    o.meta.phase=r.running?'rest':'paused';r.remainingMs=p.remainingMs;const signature=[Math.floor(p.elapsedMs/1000),r.running,r.interrupted].join('|');if(r.savedSignature!==signature){r.savedSignature=signature;save(o);}paint();return true;
   }
   async function sync(){
    if(reading||changing)return;const o=owner(),r=o?.meta.run;
-   if(!r){if(poll){clearInterval(poll);poll=null;}return;}reading=true;
+   if(o?.meta.phase==='preparing')return;
+   if(!r){if(knownRestKey){const key=knownRestKey;knownRestKey='';try{await bridge()?.stop({key});}catch(_){}}if(poll){clearInterval(poll);poll=null;}return;}reading=true;
    try{
     if(!locate(o.session,r.target)){await command('stop');return;}
-    if(r.native){const s=await bridge()?.status();if(s?.key===r.key)apply(o,s);else if(live(o)){o.meta.phase='interrupted';r.running=false;r.interrupted=true;save(o);paint();}}
+    if(r.native){knownRestKey=r.key;const s=await bridge()?.status();if(s?.key===r.key)apply(o,s);else if(live(o)){o.meta.phase='interrupted';r.running=false;r.interrupted=true;save(o);paint();}}
     else{
      if(r.running&&webKey!==r.key){r.running=false;r.interrupted=true;}
      const p=phase(r,r.elapsedMs+(r.running?Math.max(0,performance.now()-webBegan):0));
@@ -17562,7 +17564,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const session=state.session,meta=session?.automatic162;if(!meta?.enabled)return;
    baseStop();const target=next(session,state.current);
    if(!target){meta.phase='complete';meta.run=null;persistDraft();paint();return;}
-   const rest=seconds();target.set.setId=target.set.setId||crypto.randomUUID();
+   const rest=seconds();if(knownRestKey){const key=knownRestKey;knownRestKey='';try{await bridge()?.stop({key});}catch(_){}}if(state.session!==session)return;target.set.setId=target.set.setId||crypto.randomUUID();
    if(timed(target.e)){
     state.current=target.exerciseIndex;meta.phase='work';persistDraft();renderWorkout();
     const ok=await startTimed(rest);if(state.session===session&&!ok){meta.phase='interrupted';meta.message=t('failed');persistDraft();paint();}return;
@@ -17574,7 +17576,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    try{
     const result=run.native?await bridge().start({...run,language:rf212Lang()}):{...phase(run,0),key,steps:run.steps,running:true};
     if(state.session!==session||meta.run?.key!==key){if(run.native)await bridge().stop({key});return;}
-    webKey=key;webBegan=performance.now();apply({session,meta,draft:null},result);ensure();
+    webKey=key;webBegan=performance.now();if(run.native)knownRestKey=key;apply({session,meta,draft:null},result);ensure();
    }catch(e){if(state.session===session&&meta.run?.key===key){meta.run=null;meta.phase='interrupted';meta.message=t('failed');persistDraft();paint();}}
   }
   async function toggle(enabled){
@@ -17585,7 +17587,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
   function paint(){
    const o=owner(),panel=document.querySelector('[data-tp162-automatic]');if(!panel||state.session!==o?.session)return;
-   const m=o.meta,r=m.run;panel.querySelector('[data-tp162-enabled]').checked=!!m.enabled;
+   const m=o.meta,r=m.run;panel.querySelector('[data-tp162-enabled]').checked=!!m.enabled;panel.querySelector('[data-tp162-auto-help]').hidden=!m.enabled;panel.querySelector('[data-tp162-auto-web]')?.toggleAttribute('hidden',!m.enabled);
    const text=(node,value)=>{if(node.textContent!==value)node.textContent=value;};
    const status=panel.querySelector('[data-tp162-auto-status]');text(status,m.message||(!m.enabled?'':t(m.phase==='rest'?'rest':m.phase==='paused'?'paused':m.phase==='interrupted'?'interrupted':m.phase==='complete'?'complete':m.phase==='ready'?'ready':!next(o.session,state.current)?'complete':'work')));
    text(panel.querySelector('[data-tp162-auto-clock]'),r&&['rest','paused'].includes(m.phase)?tstr(Math.ceil((r.remainingMs||0)/1000)):'');
@@ -17599,7 +17601,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(state.session&&!state.session.automatic162)state.session.automatic162={enabled:settings().automaticWorkout162===true,phase:'work'};
    const result=baseRender.apply(this,arguments),main=document.querySelector('main.tp153-workout');if(!main||!state.session)return result;
    const panel=document.createElement('section');panel.className='card tp162-automatic';panel.dataset.tp162Automatic='';
-   panel.innerHTML='<label class="tp162-auto"><input type="checkbox" data-tp162-enabled onchange="TrainPilotAutomatic162.toggle(this.checked)"><b>'+esc(t('title'))+'</b></label><p class="small muted">'+esc(t('help'))+'</p><p class="small" data-tp162-auto-status role="status"></p><strong data-tp162-auto-clock></strong><p class="small muted" data-tp162-auto-next></p><div class="grid2" data-tp162-auto-controls hidden><button class="btn secondary" data-tp162-auto-pause onclick="TrainPilotAutomatic162.command(TrainPilotAutomatic162.owner().meta.run.running?\'pause\':\'resume\')"></button><button class="btn secondary" onclick="TrainPilotAutomatic162.command(\'skipRest\')">'+esc(t('skip'))+'</button></div><button class="btn secondary block" data-tp162-auto-start onclick="TrainPilotAutomatic162.startTimed()">'+esc(t('start'))+'</button>'+(!bridge()?'<p class="small muted">'+esc(t('web'))+'</p>':'');
+   panel.innerHTML='<label class="tp162-auto"><input type="checkbox" data-tp162-enabled onchange="TrainPilotAutomatic162.toggle(this.checked)"><b>'+esc(t('title'))+'</b></label><p class="small muted" data-tp162-auto-help>'+esc(t('help'))+'</p><p class="small" data-tp162-auto-status role="status"></p><strong data-tp162-auto-clock></strong><p class="small muted" data-tp162-auto-next></p><div class="grid2" data-tp162-auto-controls hidden><button class="btn secondary" data-tp162-auto-pause onclick="TrainPilotAutomatic162.command(TrainPilotAutomatic162.owner().meta.run.running?\'pause\':\'resume\')"></button><button class="btn secondary" onclick="TrainPilotAutomatic162.command(\'skipRest\')">'+esc(t('skip'))+'</button></div><button class="btn secondary block" data-tp162-auto-start onclick="TrainPilotAutomatic162.startTimed()">'+esc(t('start'))+'</button>'+(!bridge()?'<p class="small muted" data-tp162-auto-web>'+esc(t('web'))+'</p>':'');
    main.querySelector('.tp153-workout-head')?.after(panel);paint();ensure();return result;
   };
   for(const name of ['toggleSet','nextExercise','prevExercise','finishWorkout']){

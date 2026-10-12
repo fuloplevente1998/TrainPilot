@@ -42,6 +42,7 @@ public class IntervalTimerService extends Service {
     }
     static IntervalTimeline validate(JSONObject plan)throws Exception{
         String key=plan.optString("key");if(!key.matches("[A-Za-z0-9:._|+\\-]{1,200}"))throw new IllegalArgumentException("Invalid interval key");
+        if(plan.has("initialRest")&&plan.getDouble("initialRest")!=plan.getInt("initialRest"))throw new IllegalArgumentException("Invalid initial rest");
         JSONArray rows=plan.getJSONArray("steps");ArrayList<IntervalTimeline.Step> parsed=new ArrayList<>();Set<String> owners=new HashSet<>();
         for(int i=0;i<rows.length();i++){JSONObject row=rows.getJSONObject(i);String set=row.getString("setId");if(!owners.add(set))throw new IllegalArgumentException("Duplicate interval owner");String gps=row.optString("gpsKey","");if(!gps.isEmpty()&&!gps.matches("[A-Za-z0-9:._|+\\-]{1,200}"))throw new IllegalArgumentException("Invalid GPS key");parsed.add(new IntervalTimeline.Step(row.getString("exerciseId"),set,row.optString("name","TrainPilot"),row.getInt("work"),row.getInt("rest"),row.getInt("rounds"),gps));}
         if(!plan.optBoolean("autoAdvance")&&parsed.size()!=1)throw new IllegalArgumentException("Manual interval has one owner");
