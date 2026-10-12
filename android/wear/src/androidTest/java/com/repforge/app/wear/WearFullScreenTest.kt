@@ -178,6 +178,8 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             compose.waitForIdle()
             assertFullViewport()
             screenshot(route)
+            if (route == "workout" || route == "timed-workout")
+                compose.onNodeWithText("93 bpm · 7 kcal").assertIsDisplayed()
             if (route == "home")
                 compose.onNodeWithContentDescription("Megnyitás telefonon").assertIsDisplayed()
             scrollToEnd(last)

@@ -1355,7 +1355,7 @@ private fun WorkoutPager(
     LaunchedEffect(pager.currentPage) { if (pager.currentPage == 2) onRefreshJournal() }
     val scope = rememberCoroutineScope()
     Box(Modifier.fillMaxSize()) {
-        HorizontalPager(state = pager, modifier = Modifier.fillMaxSize()) {
+        HorizontalPager(state = pager, modifier = Modifier.fillMaxSize()) { page ->
             Box(
                 Modifier.fillMaxSize()
                     .hierarchicalFocusGroup(active = pager.currentPage == page)
@@ -1363,7 +1363,7 @@ private fun WorkoutPager(
                         if (pager.currentPage == page) Modifier
                         else Modifier.clearAndSetSemantics {}
                     )
-            ) { page ->
+            ) {
                 if (page == 0) {
                     Box(Modifier.fillMaxSize()) {
                         if (restRemaining > 0) RestRing(workout, restRemaining)
@@ -1477,6 +1477,8 @@ private fun WorkoutPanel(
         RoundList(
             workout.exercise?.name.orEmpty(),
             initialCenterItemIndex = if (LocalDensity.current.fontScale > 1.25f) 0 else 1,
+            initialCenterItemScrollOffset =
+                with(LocalDensity.current) { (if (fontScale > 1.25f) 0.dp else 8.dp).roundToPx() },
             sweep = 140f,
             headerColor = White,
         ) {
@@ -1838,7 +1840,7 @@ private fun TimedSetScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    formatSeconds(displayed),
+                    "${if (set.done) "✓" else if (timer.startedAt > 0 || restRemaining > 0) "Ⅱ" else "▶"} ${formatSeconds(displayed)}",
                     color = White,
                     fontSize = 28.sp,
                     lineHeight = 30.sp,
@@ -1846,16 +1848,6 @@ private fun TimedSetScreen(
                 )
             }
         }
-        val hint =
-            when {
-                restRemaining > 0 -> "Pihenő alatt"
-                set.done -> "Rögzített idő"
-                timer.startedAt > 0 -> "Ⅱ Koppints a szünethez"
-                perSide ->
-                    if (side == "leftSeconds") "▶ Bal oldal indítása" else "▶ Jobb oldal indítása"
-                else -> "▶ Indítás · cél: ${workout.exercise?.targetReps?.ifBlank { "—" }} mp"
-            }
-        item { Label(hint, size = 8) }
     }
 }
 
