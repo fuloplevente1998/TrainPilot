@@ -457,11 +457,11 @@ private fun HomeScreen(
             ) { compact ->
                 when {
                     active != null -> {
-                        Box(Modifier.fillMaxWidth()) {
+                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                             Title(
                                 active.exercise?.name ?: active.programName,
                                 if (compact) 12 else 13,
-                                lines = 1,
+                                lines = if (compact) 1 else 2,
                             )
                         }
                         Label(
@@ -507,7 +507,7 @@ private fun HomeScreen(
                         )
                     }
                     else -> {
-                        Box(Modifier.fillMaxWidth()) {
+                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                             Title(
                                 rec?.day?.programName ?: home.activeProgramName,
                                 if (compact) 11 else 15,
@@ -518,7 +518,7 @@ private fun HomeScreen(
                         Title(
                             rec?.day?.name ?: "Válassz edzésnapot",
                             if (compact) 20 else 26,
-                            lines = 1,
+                            lines = if (compact) 1 else 2,
                         )
                         if (rec != null) Label(recommendedMeta(rec), size = if (compact) 9 else 11)
                     }
