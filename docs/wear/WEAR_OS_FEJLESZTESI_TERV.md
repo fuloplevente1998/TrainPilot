@@ -121,12 +121,12 @@ Javasolt rezgések, még készülékes próbára:
 
 | Esemény | Javasolt jel |
 | --- | --- |
-| Pihenő utolsó 3 másodperce | Másodpercenként egy rövid impulzus |
-| Új munka/sorozat indul | Egy határozottabb impulzus |
+| Visszaszámlálás utolsó 3 másodperce | Másodpercenként egy rövid, 80 ms-os impulzus |
+| Szakasz lejár, új munka/sorozat indul | Egy 1 másodperces, egybefüggő rezgés |
 | Következő gyakorlat | Két elkülönülő impulzus |
 | Edzéssor vége | A fentiektől eltérő, rövid záró jel |
 
-A hang és rezgés külön kapcsolható legyen. Telefonos önálló használatnál a telefon, órás önálló használatnál az óra jelez. Közös használatban egy átmenet csak egy jelzéscsomagot indítson; a telefon és óra együtt ne adjon véletlenül kettős jelzést. A tervezett prioritás az órás rezgés, elérhetetlenség esetén a telefonos beállítás szerinti visszajelzés. A pontos hosszak és az előjelzés ki-/bekapcsolhatósága a következő egyeztetés része.
+A hang és rezgés külön kapcsolható legyen. Telefonos önálló használatnál a telefon, órás önálló használatnál az óra jelez. Közös használatban egy átmenet csak egy jelzéscsomagot indítson; a telefon és óra együtt ne adjon véletlenül kettős jelzést. A tervezett prioritás az órás rezgés, elérhetetlenség esetén a telefonos beállítás szerinti visszajelzés. Felhasználó által elfogadott első minta: 3–2–1 rövid előjelzés, lejáratkor 1 másodperces, egybefüggő rezgés. A telefonos #164 tesztváltozat ezt az egységes mintát kapja; az eseményenként eltérő órás minták integrációja még hátravan. Szünet és leállítás megszakítja a jelzést, ismételt háttérfrissítés nem ismétli meg. Az előjelzés külön ki-/bekapcsolhatósága későbbi finomítás.
 
 ## 6. Telefon–óra együttműködés és megszakítás
 
