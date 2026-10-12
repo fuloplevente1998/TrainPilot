@@ -481,7 +481,7 @@ private fun HomeFitText(
                             maxLines = maxLines,
                             softWrap = maxLines > 1,
                         )
-                    if (result.didOverflowWidth || result.size.height > constraints.maxHeight)
+                    if (result.hasVisualOverflow || result.size.height > constraints.maxHeight)
                         size *= .88f
                 }
                 size.coerceAtLeast(5.5f)
