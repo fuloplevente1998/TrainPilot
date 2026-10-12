@@ -88,7 +88,12 @@ object WorkoutSnapshotStore {
         val parsed = parse(raw) ?: return current
         if (WearClosureStore.isClosed(context, parsed.workoutId)) return current
         if (current?.revision == 0L && current.localSequence > 0L && parsed.workoutId != current.workoutId) return current
-        if (current?.workoutId == parsed.workoutId && parsed.localSequence < current.localSequence) return current
+        if (current?.workoutId == parsed.workoutId && parsed.localSequence < current.localSequence) {
+            // Receipt of a newer phone revision confirms the same workout's handoff,
+            // even while local edits wait for acknowledgement. Keep those edits; do
+            // not leave the measurement start waiting forever for this very revision.
+            return saveWorkout(context, preservePendingWearEdits(current, parsed))
+        }
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(SNAPSHOT, raw).apply()
         return parsed
     }
@@ -215,3 +220,8 @@ object WorkoutSnapshotStore {
         return root.put("exercises", exercises)
     }
 }
+
+internal fun preservePendingWearEdits(current: WearWorkout, incoming: WearWorkout): WearWorkout =
+    if(current.workoutId==incoming.workoutId && incoming.localSequence<current.localSequence)
+        current.copy(revision=maxOf(current.revision,incoming.revision))
+    else incoming

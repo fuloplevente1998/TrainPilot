@@ -1,0 +1,117 @@
+name: Refresh existing verified release assets
+
+on:
+  workflow_dispatch:
+    inputs:
+      phone_run:
+        description: Successful Phone Release Gate run ID
+        required: true
+        type: string
+      wear_run:
+        description: Successful Wear Release Gate run ID
+        required: true
+        type: string
+      source_commit:
+        description: Exact source commit shared by both successful builds and release tags
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: trainpilot-refresh-release-assets
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PHONE_RUN: ${{ inputs.phone_run }}
+      WEAR_RUN: ${{ inputs.wear_run }}
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+    steps:
+      - name: Validate successful independent release gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import json, os, re, subprocess
+          commit = os.environ['SOURCE_COMMIT']
+          if not re.fullmatch('[0-9a-f]{40}', commit):
+              raise SystemExit('A full source commit is required')
+          repo = os.environ['GITHUB_REPOSITORY']
+          for key, path in [('PHONE_RUN', '.github/workflows/build-apk.yml'),
+                            ('WEAR_RUN', '.github/workflows/wear-release.yml')]:
+              run_id = os.environ[key]
+              if not run_id.isdigit():
+                  raise SystemExit('Invalid workflow run ID')
+              run = json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/actions/runs/{run_id}']))
+              if run['head_sha'] != commit or run['conclusion'] != 'success' or run['path'] != path:
+                  raise SystemExit('Release gate does not match the successful source build')
+          PY
+
+      - name: Checkout the tested source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.source_commit }}
+
+      - name: Download the exact verified artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run download "$PHONE_RUN" --repo "$GITHUB_REPOSITORY" --name "TrainPilot-$PHONE_RUN-$SOURCE_COMMIT" --dir phone
+          gh run download "$WEAR_RUN" --repo "$GITHUB_REPOSITORY" --name "TrainPilot-Wear-release-$WEAR_RUN-$SOURCE_COMMIT" --dir wear
+          (cd phone && sha256sum --check SHA256SUMS.txt)
+          (cd wear && sha256sum --check WEAR-SHA256SUMS.txt)
+
+      - name: Verify source, versions, signers and existing release tags
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import json, os, re, subprocess, zipfile
+          from pathlib import Path
+          commit, repo = os.environ['SOURCE_COMMIT'], os.environ['GITHUB_REPOSITORY']
+          source = json.loads(Path('SOURCE_VERSION.json').read_text())
+          version, code = source['version'], source['versionCode']
+          if not re.fullmatch(r'\d+\.\d+\.\d+(?:-[\w.]+)?', version):
+              raise SystemExit('Invalid release version')
+          with zipfile.ZipFile(f'phone/TrainPilot-{version}-source.zip') as archive:
+              metadata = archive.read('SOURCE_VERSION.json').decode().removesuffix('\\n')
+              phone_source = json.loads(metadata)
+          wear_source = json.loads(Path('wear/WEAR-SOURCE_VERSION.json').read_text())
+          for metadata in [phone_source, wear_source]:
+              if metadata['sourceCommit'] != commit or metadata['version'] != version or metadata['versionCode'] != code:
+                  raise SystemExit('Artifact source/version mismatch')
+          with zipfile.ZipFile(f'phone/TrainPilot-{version}.apk') as apk:
+              if apk.read('assets/public/app.js') != Path('www/app.js').read_bytes():
+                  raise SystemExit('Phone runtime does not match the tested source')
+          certificates = []
+          for folder, name in [('phone', f'TrainPilot-{version}.apk'), ('wear', f'TrainPilot-{version}-wear.apk')]:
+              badging = Path(folder, f'{folder}-apk-badging.txt').read_text()
+              if "name='com.repforge.app'" not in badging or f"versionCode='{code}'" not in badging or f"versionName='{version}'" not in badging:
+                  raise SystemExit('APK metadata mismatch')
+              certificates.append(subprocess.check_output(['python3', 'scripts/apk_signer_cert.py', f'{folder}/{name}'], text=True).strip())
+          if certificates != ['4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688'] * 2:
+              raise SystemExit('Release signer mismatch')
+          for tag in [f'v{version}', f'wear-v{version}']:
+              ref = json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/git/ref/tags/{tag}']))
+              if ref['object']['type'] != 'commit' or ref['object']['sha'] != commit:
+                  raise SystemExit('Existing release tag does not match the tested artifacts')
+              subprocess.run(['gh', 'release', 'view', tag, '--repo', repo], check=True, stdout=subprocess.DEVNULL)
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write(f'RELEASE_VERSION={version}\n')
+          PY
+
+      - name: Refresh the existing release files and notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release upload "v$RELEASE_VERSION" "phone/TrainPilot-$RELEASE_VERSION.apk" "phone/TrainPilot-$RELEASE_VERSION-source.zip" phone/SHA256SUMS.txt phone/phone-apk-badging.txt --repo "$GITHUB_REPOSITORY" --clobber
+          gh release edit "v$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" --notes-file "docs/releases/v$RELEASE_VERSION.md" --target "$SOURCE_COMMIT"
+          gh release upload "wear-v$RELEASE_VERSION" "wear/TrainPilot-$RELEASE_VERSION-wear.apk" wear/WEAR-SHA256SUMS.txt wear/WEAR-SOURCE_VERSION.json wear/wear-apk-badging.txt --repo "$GITHUB_REPOSITORY" --clobber
+          gh release edit "wear-v$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" --notes-file "android/wear/releases/wear-v$RELEASE_VERSION.md" --target "$SOURCE_COMMIT"

@@ -116,7 +116,7 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
 // @endsection startup.js
 
 // @section backup.js
-const TRAINPILOT_VERSION='1.3.3';
+const TRAINPILOT_VERSION='1.3.4';
 var isNative = function isNative(){return !!window.Capacitor?.isNativePlatform?.();};
 var nativeFiles = function nativeFiles(){if(!filesPlugin)filesPlugin=window.Capacitor?.registerPlugin?.('NativeFiles')||window.Capacitor?.Plugins?.NativeFiles;if(!filesPlugin)throw Error('A natív fájlkezelő nem érhető el.');return filesPlugin;};
 var backupStatus = function backupStatus(){const x=db.get('lastExport',null);return x?`Utolsó ellenőrzött mentés: ${x.name} • ${fmtDate(x.date)}`:'Még nincs ellenőrzött fájlmentés.';};
@@ -894,7 +894,12 @@ var rfHistoryHealthHtml=function rfHistoryHealthHtml(i){
  return `<div class="rf-history-health-result">${stats.length?`<div class="rf-history-health-grid">${stats.map(([k,v])=>`<div class="stat"><small>${esc(k)}</small><strong>${esc(v)}</strong></div>`).join('')}</div>`:'<p class="small muted">Ehhez az edzés-időablakhoz nem találtunk megosztott Health Connect adatot.</p>'}<p class="small muted">${esc(energyNote)}</p><p class="small muted">${esc(src)}${x.heartRateSamples!=null?' • '+esc(String(x.heartRateSamples))+' pulzusminta':''}${loaded?' • frissítve '+esc(loaded):''}</p></div>`;
 };
 var rfHistoryHealthPaint=function rfHistoryHealthPaint(i){const el=document.querySelector(`[data-rf-history-health="${i}"]`);if(el)el.innerHTML=rfHistoryHealthHtml(i);};
-var rfHistoryHealthEnsure=function rfHistoryHealthEnsure(i){const h=history()[i];if(!h||rfHistoryHealthCache.has(h.started))return;healthFromHistory(i);};
+var rfHistoryHealthEnsure=function rfHistoryHealthEnsure(i,started){
+ // The mounted disclosure already identifies the cached measurement window.
+ // Reopening it needs no full Journal read; explicit Refresh still reads live data.
+ if(started&&rfHistoryHealthCache.has(started))return;
+ const h=history()[i];if(!h||rfHistoryHealthCache.has(h.started))return;healthFromHistory(i);
+};
 var rfHistoryHealthToggle=function rfHistoryHealthToggle(i){const p=document.querySelector(`[data-rf-history-health-panel="${i}"]`);if(!p)return;const body=p.querySelector('.rf-history-health-body'),btn=p.querySelector('.rf-history-health-toggle'),closed=p.classList.toggle('collapsed');if(body)body.hidden=closed;if(btn)btn.setAttribute('aria-expanded',closed?'false':'true');};
 var healthFromHistory = async function healthFromHistory(i){
  const h=history()[i];if(!h)return;
@@ -5415,8 +5420,39 @@ var tpRefreshDataUI=function(){
  if(state.tab==='profile'||state.workout||document.querySelector('#app main.tp150-quick-picker,#app main.tp151-quick-config,#app main.tp128-preview'))return;
  const focused=document.activeElement;
  if(focused?.closest?.('#app')&&focused.matches?.('input,textarea,select,[contenteditable="true"]'))return;
+ // A saved workout is an expanded view, not a separate route. Remember its
+ // identity and disclosures before asynchronous data replaces the journal.
+ // Keys survive a newly synced workout being inserted ahead of the open row.
+ if(state.tab==='history'&&(state.rf151HistoryEdit||state.tp3HistoryExerciseEdit))return;
+ const journal=state.tab==='history'?[...document.querySelectorAll('#app details[data-tp152-history-key]')].map(el=>({
+  key:el.dataset.tp152HistoryKey,open:el.open,
+  collapsed:el.querySelector('.rf-history-health-panel')?.classList.contains('collapsed'),
+  nested:[...el.querySelectorAll('details')].map(d=>d.open),top:el.getBoundingClientRect().top
+ })):[];
+ // An expanded page section can contain a draft even after its input loses
+ // focus. Import data normally, but defer whole-page replacement while the
+ // user reads or edits it. The default active-program banner is not an editor.
+ // Saved workouts use the keyed restoration below so their metrics can update.
+ if(!journal.length&&[...document.querySelectorAll('#app main details[open]:not(.tp152-active-program),#app main [aria-expanded="true"]')].some(el=>
+  el.getClientRects().length&&!el.parentElement?.closest('details:not([open]),[hidden]')))return;
+ const anchor=journal.find(row=>row.open),scroll=window.scrollY;
+ if(journal.length)state.tp3HistoryOpenKey=anchor?.key||null;
  tpUIRefreshDepth++;
- try{if(rf245CoachVisible&&!document.getElementById('tp155R4PanelHost'))rf233CoachScreen();else render();}
+ try{
+  if(rf245CoachVisible&&!document.getElementById('tp155R4PanelHost'))rf233CoachScreen();else render();
+  for(const el of document.querySelectorAll('#app details[data-tp152-history-key]')){
+   const saved=journal.find(row=>row.key===el.dataset.tp152HistoryKey);if(!saved)continue;
+   el.open=saved.open;
+   if(saved.open)window.tp3EnsureHistoryBody?.(el,rf142FindHistoryIndex(saved.key),saved.key);
+   const panel=el.querySelector('.rf-history-health-panel');
+   if(panel){panel.classList.toggle('collapsed',!!saved.collapsed);panel.querySelector('.rf-history-health-toggle')?.setAttribute('aria-expanded',String(!saved.collapsed));const body=panel.querySelector('.rf-history-health-body');if(body)body.hidden=!!saved.collapsed;}
+   el.querySelectorAll('details').forEach((d,i)=>{if(i<saved.nested.length)d.open=saved.nested[i]});
+  }
+  if(journal.length){
+   const el=anchor&&[...document.querySelectorAll('#app details[data-tp152-history-key]')].find(el=>el.dataset.tp152HistoryKey===anchor.key);
+   window.scrollTo(0,el?window.scrollY+el.getBoundingClientRect().top-anchor.top:scroll);
+  }
+ }
  finally{tpUIRefreshDepth--;}
 };
 window.TrainPilotUIRefresh={refresh:tpRefreshDataUI,isBackground:()=>tpUIRefreshDepth>0};
@@ -10469,7 +10505,7 @@ const tp152ThemeKeyBase=rf200ThemeKey;
 rf200ThemeKey=function(){const k=db.get('themeAccent',null);return k&&RF200_THEMES[k]?k:'classicBlue';};
 const tp152ApplyThemeBase=rf200ApplyTheme;
 rf200ApplyTheme=function(k=rf200ThemeKey()){tp152ApplyThemeBase(k);const el=typeof document!=='undefined'?document.documentElement:null,family=TP1511_BASIC.includes(k)?'basic':'vivid';if(el?.dataset)el.dataset.tpThemeFamily=family;else el?.setAttribute?.('data-tp-theme-family',family);};
-rf200SetTheme=function(k){if(!RF200_THEMES[k])return;db.set('themeAccent',k);rf200ApplyTheme(k);render();};
+rf200SetTheme=function(k){if(!RF200_THEMES[k])return;db.set('themeAccent',k);rf200ApplyTheme(k);render();if(typeof cloudChanged==='function')cloudChanged();};
 rf200ThemePanel=function(){
  const cur=rf200ThemeKey(),name=tp1511ThemeName(cur);
  return '<details class="setting tp1511-card tp152-accordion tp152-theme"><summary><div class="tp1511-head"><b>◐</b><div><strong>'+esc(tp152T('theme'))+'</strong><p class="small muted">'+esc(name)+'</p></div></div><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-accordion-body"><small class="muted">'+esc(tp1511T('basic'))+'</small>'+tp1511ThemeGrid(TP1511_BASIC)+'<small class="muted tp1511-group-title">'+esc(tp1511T('vivid'))+'</small>'+tp1511ThemeGrid(TP1511_VIVID)+'</div></details>';
@@ -14896,10 +14932,11 @@ var tp107RowContext=function(node){
  return p&&e&&day?.exercises?.includes(id)?{row,ps,p,day,id,e}:null;
 };
 var tp107HydrateProgramRow=function(row){
- const c=tp107RowContext(row),body=row?.querySelector('.tp107-editor-body');if(!c||!body||body.dataset.hydrated==='true')return;
+ const body=row?.querySelector('.tp107-editor-body');if(!body||body.dataset.hydrated==='true')return;
+ const c=tp107RowContext(row);if(!c)return;
  const rx=tp152Rx(c.p,c.id,c.e),field=function(key,label,type,min,max){const unset=key==='weight'&&tp128NeedsLoad(c.e,rx);return '<label>'+esc(label)+'<input class="field" data-tp107-rx="'+key+'" '+(type?'type="'+type+'"':'maxlength="40"')+' '+(min!==undefined?'min="'+min+'"':'')+' '+(max!==undefined?'max="'+max+'"':'')+' '+(key==='weight'?'step="any" inputmode="decimal"':'')+' '+(unset?'placeholder="'+esc(tp128T('trialPlaceholder'))+'"':'required')+' value="'+esc(unset?'':rx[key])+'" oninput="tp107ProgramInput(this)"></label>';};
  body.innerHTML='<div class="tp152-edit-grid">'+field('sets',tp152T('sets'),'number',1,10)+field('reps',tp106IsDistance(c.e)||c.e.repUnit==='mp'?tp106T('seconds'):tp152T('reps'))+(c.e.loadType!=='bodyweight'?field('weight',tp152LoadFieldLabel(c.e),'number',0,10000):'')+field('rest',tp152T('rest'),'number',30,300)+'</div><div class="tp107-save-row"><button type="button" class="btn" onclick="tp107SaveProgramRow(this)">'+esc(tp107T('save'))+'</button><button type="button" class="btn secondary" onclick="tp107ResetProgramRow(this)">'+esc(tp107T('cancel'))+'</button></div><p class="small muted tp107-save-status" role="status"></p><label>'+esc(tp152T('replace'))+'<select class="field" data-tp107-replace onchange="tp107ReplaceProgramExercise(this)">'+exercises().map(function(e){return '<option value="'+esc(e.id)+'" '+(e.id===c.id?'selected':'')+'>'+esc(tp149ExerciseName(e))+'</option>';}).join('')+'</select></label><button type="button" class="btn danger block" onclick="tp107RemoveProgramExercise(this)">'+esc(tp152T('remove'))+'</button>';
- body.dataset.hydrated='true';if(typeof rf260EnhanceSelects==='function')rf260EnhanceSelects();window.tpGlobalApplyChevrons?.(body);
+ body.dataset.hydrated='true';if(typeof rf260EnhanceSelect==='function')body.querySelectorAll('select.field').forEach((select,i)=>rf260EnhanceSelect(select,i));window.tpGlobalApplyChevrons?.(body);
 };
 var tp107ProgramInput=function(node){const row=node.closest('.tp107-program-editor');row.dataset.dirty='true';row.querySelector('.tp107-save-status').textContent=tp107T('dirty');};
 var tp107SaveProgramRow=function(node){
@@ -15028,26 +15065,46 @@ renderWorkout=function(){
  gps.before(panel);if(window.TrainPilot110)panel.insertAdjacentHTML('beforeend',window.TrainPilot110.intervalHtml());const owner=tp107IndoorOwner();if(owner?.timer.running&&!tp107IndoorInterval)tp107IndoorInterval=setInterval(tp107PaintIndoor,250);tp107PaintIndoor();return result;
 };
 
+var tp107FitFrame=0,tp107FitNav=null,tp107ObservedNav=null,tp107FitNavObserver=null;
+var tp107ScheduleFit=function(){
+ if(tp107FitFrame)return;
+ tp107FitFrame=requestAnimationFrame(()=>{tp107FitFrame=0;tp107FitViews()});
+};
 var tp107FitViews=function(){
  const home=document.querySelector('#app main.rf221-home'),health=document.querySelector('#app main.tp168-health');
  const expanded=health&&[...health.querySelectorAll('details[open],.tp168-weight-summary[aria-expanded="true"],.tp169-pulse-summary[aria-expanded="true"]')].some(function(e){return e.getClientRects().length>0;});
- home?.classList.add('tp107-fit-home');health?.classList.add('tp107-health-layout');
+ if(home&&!home.classList.contains('tp107-fit-home'))home.classList.add('tp107-fit-home');
+ if(health&&!health.classList.contains('tp107-health-layout'))health.classList.add('tp107-health-layout');
  // Measure the natural content height before fixing the overview. Long labels,
  // short viewports and large text must never hide the bottom controls.
- health?.classList.remove('tp107-fit-health');
- const healthBottom=health?health.getBoundingClientRect().top+(window.scrollY||0)+health.scrollHeight:0;
+ if(health?.classList.contains('tp107-fit-health'))health.classList.remove('tp107-fit-health');
+ const healthBottom=health&&!expanded?health.getBoundingClientRect().top+(window.scrollY||0)+health.scrollHeight:0;
  const scrollable=expanded||!!health&&healthBottom>window.innerHeight+1;
  health?.classList.toggle('tp107-fit-health',!scrollable);
- const fixed=!!home||!!health&&!scrollable;document.documentElement.classList.toggle('tp107-fixed-view',fixed);document.body.classList.toggle('tp107-fixed-view',fixed);
- const nav=document.querySelector('.top');if(nav)document.documentElement.style.setProperty('--tp107-nav-height',Math.ceil(nav.getBoundingClientRect().bottom)+'px');
- const panelHost=document.getElementById('tp155R4PanelHost');panelHost?.classList.toggle('tp107-fit-calendar',panelHost.dataset.panel==='calendar');
+ const fixed=!!home||!!health&&!scrollable;
+ for(const el of [document.documentElement,document.body])if(el.classList.contains('tp107-fixed-view')!==fixed)el.classList.toggle('tp107-fixed-view',fixed);
+ const nav=document.querySelector('.top');
+ if(nav&&nav!==tp107FitNav){
+  tp107FitNav=nav;
+  const height=Math.ceil(nav.getBoundingClientRect().bottom)+'px';
+  if(document.documentElement.style.getPropertyValue('--tp107-nav-height')!==height)document.documentElement.style.setProperty('--tp107-nav-height',height);
+  if(nav!==tp107ObservedNav){
+   tp107ObservedNav=nav;tp107FitNavObserver?.disconnect();tp107FitNavObserver?.observe(nav);
+  }
+ }
+ const panelHost=document.getElementById('tp155R4PanelHost'),calendar=panelHost?.dataset.panel==='calendar';
+ if(panelHost&&panelHost.classList.contains('tp107-fit-calendar')!==calendar)panelHost.classList.toggle('tp107-fit-calendar',calendar);
 };
 window.addEventListener?.('DOMContentLoaded',function(){
+ if(typeof ResizeObserver==='function')tp107FitNavObserver=new ResizeObserver(()=>{tp107FitNav=null;tp107ScheduleFit()});
  const renderBase=render;render=function(){const result=renderBase.apply(this,arguments);tp107FitViews();return result;};
  const refreshBase=window.tp155R4RefreshPanel;window.tp155R4RefreshPanel=function(){const result=refreshBase.apply(this,arguments);tp107FitViews();return result;};
- document.addEventListener('toggle',function(){requestAnimationFrame(tp107FitViews);},true);
- document.addEventListener('click',function(){requestAnimationFrame(tp107FitViews);});
- window.addEventListener('resize',tp107FitViews);document.addEventListener('visibilitychange',function(){if(!document.hidden)tp107PaintIndoor();});tp107FitViews();
+ // Only the Health overview changes between a fitted page and a scrolling
+ // disclosure. Program/Journal toggles do not change navigation geometry.
+ const fitHealth=function(event){if(event.target?.closest?.('#app main.tp168-health'))tp107ScheduleFit()};
+ document.addEventListener('toggle',fitHealth,true);
+ document.addEventListener('click',fitHealth);
+ window.addEventListener('resize',()=>{tp107FitNav=null;tp107FitViews()});document.addEventListener('visibilitychange',function(){if(!document.hidden)tp107PaintIndoor();});tp107FitViews();
 });
 // @endsection training-107.js
 
@@ -16798,7 +16855,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
  function phoneWorkoutStarted(session,{fromWatch=false}={}){
   const bridge=api(),id=sessionKey(session);
   if(fromWatch||!bridge?.startWatchMeasurement||!id||id===lastWatchStartId||session!==state?.session)return;
+  // Pin the same identity used by watch-started workouts before the handoff,
+  // so phone save/restore and late measurements keep the original workout ID.
+  session.syncId=id;persistDraft();
   lastWatchStartId=id;pendingWatchStart={id,createdAt:Date.now()};
+  window.TrainPilotWearMeasurement165?.waiting(id);
   void syncNow();
  }
  function watchStartFailed(){
@@ -16911,7 +16972,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const value=command.healthSummary,id=String(command.workoutId||'');
   if(!value||value.schema!==1||value.source!=='wear_health_services'||!sameId(value.workoutId,id)||typeof value.watchId!=='string'||!value.watchId||value.watchId.length>80||!Number.isSafeInteger(value.revision)||value.revision<1)return null;
   const out={schema:1,workoutId:id,watchId:value.watchId,revision:value.revision,source:'wear_health_services',state:String(value.state||''),partial:value.partial===true,syncedAt:new Date().toISOString()};
-  const limits={heartRate:[20,250],averageHeartRate:[20,250],maxHeartRate:[20,250],heartRateSamples:[0,10000000],totalCalories:[0,10000000],steps:[0,10000000],activeDurationSeconds:[0,604800],distanceMeters:[0,10000000],speedMps:[0,100]};
+  const limits={heartRate:[20,250],averageHeartRate:[20,250],minHeartRate:[20,250],maxHeartRate:[20,250],heartRateSamples:[0,10000000],totalCalories:[0,10000000],steps:[0,10000000],activeDurationSeconds:[0,604800],distanceMeters:[0,10000000],speedMps:[0,100],maxSpeedMps:[0,100]};
   for(const [key,[min,max]] of Object.entries(limits))if(value[key]!==undefined&&value[key]!==null){if(typeof value[key]!=='number'||!Number.isFinite(value[key])||value[key]<min||value[key]>max)return null;out[key]=value[key];}
   return out;
  }
@@ -17091,6 +17152,13 @@ window.addEventListener?.('DOMContentLoaded',function(){
   commandBusy=true;
   try{
    const result=await bridge.pendingCommands();
+   if(window.TrainPilotBackupBusy)return;
+   const live=result?.liveHealth;
+   // Live status can arrive after the phone saved the workout. Persist its
+   // measured summary independently of the active-workout status panel.
+   if(window.TrainPilotWearMeasurement165?.valid(live) && live.summary)attachMeasuredHealth({workoutId:live.workoutId,healthSummary:live.summary});
+   window.TrainPilotWearMeasurement165?.receive(live);
+   window.TrainPilotWearMeasurement165?.paint();
    const commands=(Array.isArray(result?.commands)?result.commands:[]).slice().sort((a,b)=>(Number(a.createdAt)||0)-(Number(b.createdAt)||0)||(Number(a.sequence)||0)-(Number(b.sequence)||0));
    let changed=false;
    for(const command of commands){
@@ -17225,11 +17293,14 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(view==='health_connect')return tab+'<p class="small muted">Másik adatforrás: a telefon által olvasott egészségadatok. Az értékek nem adódnak az órás méréshez.</p>'+original(i);
   const stats=[
    card('Átlagpulzus',textMetric(wear.averageHeartRate,1)?.concat(' bpm')??null),
+   card('Min. pulzus',textMetric(wear.minHeartRate)?.concat(' bpm')??null),
    card('Max. pulzus',textMetric(wear.maxHeartRate)?.concat(' bpm')??null),
+   card('Pulzusminták',textMetric(wear.heartRateSamples)),
    card('Edzés alatt mért összes energia',textMetric(wear.totalCalories)?.concat(' kcal')??null),
    card('Lépések',textMetric(wear.steps)),
    card('Aktív mérési idő',textMetric(wear.activeDurationSeconds,1)?.concat(' s')??null),
-   card('Távolság',textMetric(wear.distanceMeters)?.concat(' m')??null)
+   card('Távolság',textMetric(wear.distanceMeters)?.concat(' m')??null),
+   card('Max. sebesség',textMetric(typeof wear.maxSpeedMps==='number'?wear.maxSpeedMps*3.6:null,1)?.concat(' km/h')??null)
   ].join('');
   return tab+'<div class="rf-history-health-result tp160-wear-history">'+
    '<p class="small muted">Forrás: TrainPilot Wear OS · Health Services. Közvetlenül az órán mért edzésadatok.</p>'+
@@ -17249,6 +17320,56 @@ window.addEventListener?.('DOMContentLoaded',function(){
  document.head.appendChild(css);
 })();
 // @endsection wear-journal-sources-160.js
+
+// @section wear-measurement-165.js
+(function(){
+ 'use strict';
+ const labels={
+  hu:{title:'Órás mérés',waitingWorkout:'Edzés átadása az órának…',starting:'Mérés indítása…',active:'Mérés folyamatban',paused:'A mérés szünetel',ending:'Mérés lezárása…',ended:'Mérés befejezve',disabled:'Kapcsold be az órán az Órás méréseket.',permissionRequired:'Az órán szenzorengedély szükséges.',error:'Az órás mérés nem indult vagy megszakadt.',startTimeout:'Nincs mérési visszajelzés. Ellenőrizd az órát és a kapcsolatot.',stale:'Utolsó visszajelzés',retry:'Óra megnyitása'},
+  en:{title:'Watch measurement',waitingWorkout:'Sending workout to watch…',starting:'Starting measurement…',active:'Measurement running',paused:'Measurement paused',ending:'Finishing measurement…',ended:'Measurement finished',disabled:'Enable measurements on your watch.',permissionRequired:'Sensor permission is needed on your watch.',error:'Watch measurement failed or stopped.',startTimeout:'No measurement acknowledgement. Check your watch and connection.',stale:'Last acknowledgement',retry:'Open watch'},
+  de:{title:'Uhrenmessung',waitingWorkout:'Training wird an die Uhr gesendet…',starting:'Messung startet…',active:'Messung läuft',paused:'Messung pausiert',ending:'Messung wird beendet…',ended:'Messung beendet',disabled:'Aktiviere Messungen auf der Uhr.',permissionRequired:'Sensorberechtigung auf der Uhr erforderlich.',error:'Uhrenmessung fehlgeschlagen oder unterbrochen.',startTimeout:'Keine Messbestätigung. Prüfe Uhr und Verbindung.',stale:'Letzte Bestätigung',retry:'Uhr öffnen'},
+  ro:{title:'Măsurare pe ceas',waitingWorkout:'Se trimite antrenamentul pe ceas…',starting:'Se pornește măsurarea…',active:'Măsurare în curs',paused:'Măsurare în pauză',ending:'Se încheie măsurarea…',ended:'Măsurare încheiată',disabled:'Activează măsurările pe ceas.',permissionRequired:'Este necesară permisiunea pentru senzori pe ceas.',error:'Măsurarea a eșuat sau s-a oprit.',startTimeout:'Fără confirmare de măsurare. Verifică ceasul și conexiunea.',stale:'Ultima confirmare',retry:'Deschide ceasul'}
+ };
+ const key=s=>String(s?.syncId||s?.started||'');
+ const t=k=>(labels[typeof rf212Lang==='function'?rf212Lang():'hu']||labels.en)[k]||k;
+ const metricLabels={hu:{steps:'lépés',distance:'Távolság',speed:'Sebesség',totals:'Edzés összesen'},en:{steps:'steps',distance:'Distance',speed:'Speed',totals:'Workout total'},de:{steps:'Schritte',distance:'Distanz',speed:'Geschwindigkeit',totals:'Training gesamt'},ro:{steps:'pași',distance:'Distanță',speed:'Viteză',totals:'Total antrenament'}};
+ const mt=k=>(metricLabels[typeof rf212Lang==='function'?rf212Lang():'hu']||metricLabels.en)[k];
+ function valid(value){
+  return !!value&&value.schema===1&&typeof value.workoutId==='string'&&!!value.workoutId&&value.workoutId.length<=512&&typeof value.watchId==='string'&&!!value.watchId&&value.watchId.length<=80&&Number.isSafeInteger(value.revision)&&value.revision>0&&Number.isFinite(value.updatedAt)&&value.updatedAt>0&&Object.hasOwn(labels.en,value.state)&&!['title','stale','retry'].includes(value.state)&&(!value.summary||value.summary.workoutId===value.workoutId);
+ }
+ function receive(value){
+  if(!valid(value))return false;
+  const id=value.workoutId,s=state.session;if(!s||key(s)!==id)return false;
+  const old=s.wearMeasurement165;
+  if(old?.watchId===value.watchId&&old.revision>=value.revision)return false;
+  s.wearMeasurement165={workoutId:id,watchId:value.watchId,revision:value.revision,state:value.state,updatedAt:value.updatedAt,receivedAt:Date.now(),message:typeof value.message==='string'?value.message.slice(0,240):''};
+  persistDraft();paint();return true;
+ }
+ function waiting(id){if(key(state.session)!==id)return;state.session.wearMeasurement165={...state.session.wearMeasurement165,workoutId:id,state:'waitingWorkout',receivedAt:Date.now(),message:''};persistDraft();paint();}
+ function paint(){
+  const s=state.session,data=s?.wearMeasurement165,head=document.querySelector?.('.tp153-workout-head');
+  if(!head)return;
+  let panel=head.querySelector?.('[data-wear-measurement165]');
+  if(!data||key(s)!==data.workoutId){panel?.remove();return;}
+  if(!panel){panel=document.createElement('div');panel.dataset.wearMeasurement165='';panel.className='small';panel.style.cssText='margin-top:8px;padding-top:7px;border-top:1px solid var(--line);line-height:1.4';head.append(panel);}
+  const stale=Date.now()-data.receivedAt>20000,phase=stale&&['waitingWorkout','starting'].includes(data.state)?'startTimeout':data.state;
+  const metrics=window.TrainPilotWearJournalSource.measured(s),values=[],movement=[];
+  const number=(value,digits=0)=>value.toLocaleString(({hu:'hu-HU',en:'en-GB',de:'de-DE',ro:'ro-RO'})[typeof rf212Lang==='function'?rf212Lang():'hu']||'en-GB',{maximumFractionDigits:digits});
+  const available=value=>typeof value==='number'&&Number.isFinite(value)&&value>=0;
+  if(metrics?.heartRate!=null)values.push(Math.round(metrics.heartRate)+' bpm');
+  if(metrics?.totalCalories!=null)values.push(Math.round(metrics.totalCalories)+' kcal');
+  if(available(metrics?.steps))movement.push(number(metrics.steps)+' '+mt('steps'));
+  if(available(metrics?.distanceMeters))movement.push(mt('distance')+': '+number(metrics.distanceMeters)+' m');
+  panel.innerHTML='<b>'+esc(t('title'))+'</b> · '+esc(t(phase))+(stale&&phase==='active'?' · '+esc(t('stale')):'')+(values.length?'<br>'+esc(values.join(' · ')):'')+(movement.length?'<br>'+esc(mt('totals')+': '+movement.join(' · ')):'')+(available(metrics?.speedMps)?'<br>'+esc(mt('speed')+': '+number(metrics.speedMps*3.6,1)+' km/h'):'')+(data.message?'<br>'+esc(data.message):'')+(['error','disabled','permissionRequired','startTimeout'].includes(phase)?'<br><button class="btn secondary" style="margin-top:5px;min-height:32px;padding:4px 10px" onclick="TrainPilotWearMeasurement165.retry()">'+esc(t('retry'))+'</button>':'');
+ }
+ async function retry(){
+  const s=state.session,id=key(s),api=window.Capacitor?.Plugins?.WearSync;if(!id||!api?.startWatchMeasurement)return;
+  try{await window.TrainPilotWearSync.syncNow();if(state.session!==s)return;waiting(id);await api.startWatchMeasurement({workoutId:id});}catch(_){if(state.session===s){s.wearMeasurement165={...s.wearMeasurement165,workoutId:id,state:'error',receivedAt:Date.now(),message:''};persistDraft();paint();}}
+ }
+ window.TrainPilotWearMeasurement165={valid,receive,waiting,paint,retry};
+ const original=renderWorkout;renderWorkout=function(){const result=original.apply(this,arguments);paint();return result;};
+})();
+// @endsection wear-measurement-165.js
 
 // @section intervals-162.js
 (function(){

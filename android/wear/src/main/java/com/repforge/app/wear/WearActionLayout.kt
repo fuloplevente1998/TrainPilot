@@ -3,70 +3,97 @@ package com.repforge.app.wear
 import kotlin.math.min
 import kotlin.math.sqrt
 
-/** Positions the action row independently of title height, font scale or scrolling. */
-internal data class WearActionLayout(
-    val buttonSize: Float,
-    val gap: Float,
-    val footerWidth: Float,
-    val footerTop: Float,
-    val bodyTop: Float,
-    val bodyHeight: Float
-)
+internal const val WEAR_HEADER_SWEEP = 110f
+
+internal data class WearRoundViewport(val top: Float, val height: Float, val width: Float)
+
+/** The list scrolls over the whole display; individual items scale at the round rim. */
+internal fun wearRoundViewport(width: Float, height: Float): WearRoundViewport =
+    WearRoundViewport(0f, height, (min(width, height) - 16f).coerceAtLeast(1f))
 
 internal data class WearHomePhoneLayout(val width: Float, val height: Float)
 
-internal fun wearHomePhoneLayout(width: Float, height: Float): WearHomePhoneLayout {
-    val diameter = min(width, height)
-    return WearHomePhoneLayout((diameter * .39f).coerceIn(72f, 96f), 32f)
+internal fun wearHomePhoneLayout(width: Float, height: Float): WearHomePhoneLayout =
+    WearHomePhoneLayout((min(width, height) * .39f).coerceIn(72f, 96f), 32f)
+
+internal data class WearActionLayout(val buttonSize: Float, val gap: Float)
+
+internal fun wearActionLayout(
+    width: Float,
+    height: Float,
+    count: Int,
+    preferredGap: Float,
+): WearActionLayout {
+    val available = wearRoundViewport(width, height).width
+    val gap =
+        min(
+            preferredGap,
+            ((available - count * 48f) / (count - 1).coerceAtLeast(1)).coerceAtLeast(0f),
+        )
+    return WearActionLayout(48f, gap)
 }
 
-internal fun wearActionLayout(width: Float, height: Float, count: Int, preferredGap: Float): WearActionLayout {
-    val diameter = min(width, height)
-    val edge = min(8f, diameter * .05f)
-    val gaps = (count - 1).coerceAtLeast(1)
-    val gap = min(preferredGap, ((diameter - 2 * edge - count * 48f) / gaps).coerceAtLeast(0f))
-    val button = min(48f, (diameter - 2 * edge - (count - 1) * gap) / count)
-    val span = (count - 1) * (button + gap) / 2
-    val circleRadius = diameter / 2 - edge
-    val circleLimit = sqrt(((circleRadius - button / 2) * (circleRadius - button / 2) - span * span).coerceAtLeast(0f))
-    // Captions occupy a rectangle inside each circular button. Keep their
-    // outer bottom corners inside the physical display as well as the circles.
-    val captionX = span + min(22f, button / 2 - 2)
-    val captionBottom = min(20f, button / 2 - 4)
-    val captionRadius = diameter / 2 - min(6f, edge)
-    val captionLimit = (sqrt((captionRadius * captionRadius - captionX * captionX).coerceAtLeast(0f)) - captionBottom).coerceAtLeast(0f)
-    val offset = min(diameter * .22f, min(circleLimit, captionLimit))
-    val footerTop = height / 2 + offset - button / 2
-    val bodyTop = (height - diameter) / 2 + diameter * .07f
-    return WearActionLayout(button, gap, count * button + (count - 1) * gap,
-        footerTop, bodyTop, (footerTop - bodyTop - 5f).coerceAtLeast(1f))
-}
-
-/** Home has a fixed small phone header and three separate controls on a lower arc. */
-internal data class WearHomeLayout(
-    val phone: WearHomePhoneLayout,
-    val phoneTop: Float,
+/** A scrollable arc item keeps three separate 48dp controls and 4dp target separation. */
+internal data class WearArcLayout(
     val buttonSize: Float,
     val sideOffset: Float,
-    val sideTop: Float,
     val centerTop: Float,
+) {
+    val width: Float
+        get() = 2f * sideOffset + buttonSize
+
+    val height: Float
+        get() = centerTop + buttonSize
+}
+
+internal fun wearArcLayout(width: Float, height: Float): WearArcLayout {
+    val button = 48f
+    val sideOffset = min(45f, (wearRoundViewport(width, height).width - button) / 2f)
+    val drop = sqrt((52f * 52f - sideOffset * sideOffset).coerceAtLeast(0f))
+    return WearArcLayout(button, sideOffset, drop)
+}
+
+internal data class WearFixedPageLayout(
     val bodyTop: Float,
-    val bodyHeight: Float
+    val bodyHeight: Float,
+    val footerTop: Float,
+    val footerWidth: Float,
+    val footerHeight: Float,
 )
 
-internal fun wearHomeLayout(width: Float, height: Float): WearHomeLayout {
+/** Locate the controls themselves in the circle, without shrinking a whole rectangular page. */
+internal fun wearFixedPageLayout(
+    width: Float,
+    height: Float,
+    arc: Boolean,
+    count: Int = 2,
+    gap: Float = 7f,
+): WearFixedPageLayout {
     val diameter = min(width, height)
-    val insetTop = (height - diameter) / 2f
-    val phone = wearHomePhoneLayout(width, height)
-    val phoneTop = insetTop + diameter * .065f
-    val button = 48f
-    val sideOffset = min(45f, diameter * .245f)
-    // Neighboring circular touch targets keep at least 4dp of separation.
-    val drop = sqrt(((button + 4f) * (button + 4f) - sideOffset * sideOffset).coerceAtLeast(0f))
-    val centerOffset = min(diameter * .32f, diameter / 2f - 8f - button / 2f - 3f)
-    val centerTop = height / 2f + centerOffset - button / 2f
-    val sideTop = centerTop - drop
-    val bodyTop = phoneTop + phone.height + 5f
-    return WearHomeLayout(phone, phoneTop, button, sideOffset, sideTop, centerTop,
-        bodyTop, (sideTop - bodyTop - 5f).coerceAtLeast(1f))
+    val top = (height - diameter) / 2f
+    val footerWidth: Float
+    val footerHeight: Float
+    val footerTop: Float
+    if (arc) {
+        val layout = wearArcLayout(width, height)
+        footerWidth = layout.width
+        footerHeight = layout.height
+        footerTop = top + diameter - 10f - footerHeight
+    } else {
+        val layout = wearActionLayout(width, height, count, gap)
+        footerWidth = count * layout.buttonSize + (count - 1) * layout.gap
+        footerHeight = layout.buttonSize
+        val outerCenterX = (footerWidth - layout.buttonSize) / 2f
+        val radius = diameter / 2f - layout.buttonSize / 2f - 6f
+        val centerY = sqrt((radius * radius - outerCenterX * outerCenterX).coerceAtLeast(0f))
+        footerTop = top + diameter / 2f + centerY - layout.buttonSize / 2f
+    }
+    val bodyTop = top + 32f
+    return WearFixedPageLayout(
+        bodyTop,
+        (footerTop - bodyTop - 4f).coerceAtLeast(1f),
+        footerTop,
+        footerWidth,
+        footerHeight,
+    )
 }

@@ -1,20 +1,21 @@
 # TrainPilot — fejlesztési állapot
 
-Frissítve: **2026. október 10.** A felhasználói verzióleírások négy családot használnak: **1.0, 1.1, 1.2, 1.3**. A buildazonosítók, APK-k, tagek és release-ek megmaradnak.
+Frissítve: **2026. október 12.** A felhasználói verzióleírások négy családot használnak: **1.0, 1.1, 1.2, 1.3**. A buildazonosítók, APK-k, tagek és release-ek megmaradnak.
 
-## Aktuális main és tesztág
+## Aktuális main és következő fejlesztés
 
 | Terület | Állapot |
 | --- | --- |
-| Telefon + Wear OS | Az **1.3** párosított kiadás a mainen, a felhasználó által jóváhagyott [#156](https://github.com/fuloplevente1998/TrainPilot/pull/156) után. |
-| Mini napló és mérési előzmények | Mainen: frissítés, legfeljebb nyolc mentett edzés, három legutóbbi mért edzés, részletek és visszanavigálás. |
-| Egészségadatok | A 20 guggolásos próba helyes átadást igazolt. A források, késői adatok és a teljes naplóadat megőrzésének készülékes tesztje folytatódik. |
-| Telefonról indított órás app | Az **1.3** javítási sorozat része a [#160 tesztágon](https://github.com/fuloplevente1998/TrainPilot/pull/160), még nincs mainen. Programos edzés megnyílása és háttérmérése felhasználó által visszaigazolva. A gyors edzés aktuális választójának indítófüggvényében a hiányzó órás megnyitás bekötve; készülékes próba következik. |
-| Kiadási ellenőrzések | A #160 párosított telefonos/órás CI- és aláírt APK-ellenőrzése sikeres. Ez nem helyettesíti a készülékes elfogadást. |
-| Drive-szinkron | Az **1.3** #160 tesztágán csak a legfrissebb eszközmentések olvasása, külön korábbi-mentés helyreállítás és javított Telefon/Felhő választás. A felhasználó a működő szinkront visszaigazolta; #161 lezárva. |
-| Telefonos UI és navigáció | A gyorsválasztó késői natív inicializálás miatti bezárása Chromiumban reprodukálva. A háttérfrissítés, a panelmezők megőrzése és a lemondott navigáció javítása a #160 tesztág része, változatlan verzióval. [Audit és ellenőrzési kör](docs/APP_AUDIT_1.3.md). |
+| Telefon + Wear OS | **1.3.4 /2730**, a 2026. október 12-én mainre és release-re elfogadott tesztbuild-pár működésével. |
+| Telefonos elfogadott forrás | `083078d6f71df3263b3c1555565f1ef2cf592cd7`: #169 nyitott nézetek, #171 gyorsítás, #173 témaszín-szinkron. |
+| Órás elfogadott forrás | `5b9195eb8a90348fd1944067210f96bf8d548e42`: íves fejlécek/vezérlők, kerek kijelzőbe illesztett listák és rögzített megerősítő gombok. |
+| Mérés és napló | Telefonos indítás, háttérmérés, élő HR/kcal és elérhető kardióadat, Mini napló, források elkülönítése és késői összesítés megmarad. |
+| Kiadási ellenőrzések | 135 telefonos regresszió + 4 futtatóteszt, 87 Chromium-próba, teljesítménykapu, natív telefon/Wear tesztek, aláírás és forrásegyezés. A felhasználói elfogadás külön rögzítve. |
+| Következő: automata mód | #162 / draft PR #164. Beállított munka/pihenő váltás, automatikus gyakorlatléptetés; pihenő végén munkaszakasz-indítás rezgéssel. |
+| Utána: térkép | #163: GPS-útvonal rögzítése és naplóbeli térképe. |
+| Órás kezdőlap | A teljes dizájnmegújítás külön #170 fejlesztés. |
 
-Az alkalmazás megnyílása vagy a mérési értesítés önmagában nem igazolja, hogy friss szenzoradat keletkezett. A kijelző kikapcsolása után is ellenőrizni kell a mérés folytatását, majd ugyanannak az edzésnek a mentett telefonos és órás részleteit.
+[Telefonos kiadás](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.4) · [Wear kiadás](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.4) · [Kiadási feljegyzés](docs/releases/v1.3.4.md).
 
 ## Összevont verziók
 
@@ -27,16 +28,11 @@ Az alkalmazás megnyílása vagy a mérési értesítés önmagában nem igazolj
 
 A részletes felhasználói változáslista a [RELEASE_NOTES.md](RELEASE_NOTES.md). A régi, kiadásonkénti [telefonos](docs/releases/README.md) és [órás](android/wear/releases/README.md) jegyzetek történeti/buildtechnikai archívumok; a bennük rögzített akkori jelöltstátusz nem írja felül ezt az aktuális állapotot.
 
-## Nyitott ellenőrzések
+## Következő készülékes ellenőrzés
 
-- Telefonon indított programos és gyors edzés: érintetlen óra, kezdetben sötét kijelző, új mérés, valódi pulzus/kalória, további mérés kikapcsolt kijelzővel.
-- Befejezés a telefonon és az órán, pontosan egy mentett edzés, azonos órás mérési összegzés a telefon Naplójában és a Mini naplóban.
-- Kikapcsolt mérések, hiányzó engedély, megszakadt kapcsolat, újracsatlakozás és offline parancsok.
-- Órás előzmény → részlet → vissza, frissítés, nagybetűs körkijelző és offline napló.
-- Korábbi 4 órás kcal és 1 aktív / 2 összes telefonos kcal: egyező edzés, szolgáltató, időablak és adatfrissesség vizsgálata. A forrásokat nem szabad összeadni.
-- Telefonos edzés közvetlen Wear-mérés nélkül: csak a kiválasztott szolgáltató ténylegesen elérhető adata jelenhet meg.
-- Már naplózott egészségadatok megőrzése és késői értékek hozzákapcsolása a megfelelő edzéshez.
-- Lassú Drive-szinkron: az elakadás szakasza, hálózati kérések, fotók és változatlan adatok ismételt feldolgozásának kivizsgálása.
+Az automata mód új változata a munka/pihenő/indítás váltásait, rezgését, automatikus sorozat-/gyakorlatléptetését és GPS-együttműködését lezárt kijelző mellett is igazolja majd. Az ismétlések rögzítése tényleges adaton alapul; a pihenő lejárta nem találhat ki elvégzett ismétlést.
+
+A térkép a GPS-útvonalhoz tartozó mentést, jelkimaradást, szünet/folytatást, offline nézetet és visszaállítást külön ellenőrzi. A most elfogadott 1.3.4 működése ezek kiinduló alapja.
 
 ## Megőrzendő adatkezelési szabályok
 

@@ -46,16 +46,37 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private var remoteMeasurementRequested=false
     private var remoteMeasurementStart: WearMeasurementStart?=null
     private var remoteStartNoticeShown=false
+    private var remoteStartFinished=false
+    private var remoteWorkoutAccepted=false
+    private var lastRemoteRefreshAt=0L
+    private fun releaseRemoteStart() {
+        remoteStartFinished=true;uiHandler.removeCallbacks(remoteStartTimeout)
+        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);setTurnScreenOn(false)
+    }
     private val remoteStartTimeout=Runnable {
-        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        setTurnScreenOn(false)
+        releaseRemoteStart()
         val current=workout.value
-        if(activityResumed && remoteMeasurementRequested && remoteMeasurementStart?.matches(current?.workoutId,current?.revision ?: 0L)!=true)
-            Toast.makeText(this,"Az edzés még nem érkezett meg. Ellenőrizd a telefon és az óra kapcsolatát.",Toast.LENGTH_LONG).show()
+        if(activityResumed && remoteMeasurementRequested) {
+            val pending=remoteMeasurementStart ?: return@Runnable
+            val message=if(!pending.matches(current?.workoutId,current?.revision ?: 0L))
+                "Az edzés még nem érkezett meg. Ellenőrizd a telefon és az óra kapcsolatát."
+            else "A mérés indulása még nem igazolt. Nyisd meg az Órás mérések oldalt."
+            WearLiveHealth.publish(this,pending.workoutId,"startTimeout",message)
+            Toast.makeText(this,message,Toast.LENGTH_LONG).show()
+        }
     }
     private val healthTick=object : Runnable {
         override fun run() {
             refreshHealth()
+            if(workout.value==null && WearHealthStore.active(this@MainActivity).isNotBlank())WearHealthService.stop(this@MainActivity)
+            if(remoteMeasurementRequested && !remoteWorkoutAccepted && !remoteStartFinished && remoteMeasurementStart?.matches(workout.value?.workoutId,workout.value?.revision ?: 0L)!=true && android.os.SystemClock.elapsedRealtime()-lastRemoteRefreshAt>=2000L) {
+                lastRemoteRefreshAt=android.os.SystemClock.elapsedRealtime()
+                val cached=WorkoutSnapshotStore.load(this@MainActivity)
+                if(remoteMeasurementStart?.matches(cached?.workoutId,cached?.revision ?: 0L)==true) {
+                    workout.value=cached;restoreRestFromSnapshot(cached);startHealthIfEnabled()
+                } else remoteMeasurementStart?.let { WearWorkoutHandoff.request(this@MainActivity,it) }
+                refreshFromDataLayer()
+            }
             if(WearHealthStore.active(this@MainActivity).isBlank() && workout.value?.workoutId?.let { WearHealthStore.load(this@MainActivity,it)==null }==true)startHealthIfEnabled()
             uiHandler.postDelayed(this,1000)
         }
@@ -69,28 +90,49 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     }
     private fun healthAllowed(): Boolean = checkSelfPermission(if(Build.VERSION.SDK_INT>=36) "android.permission.health.READ_HEART_RATE" else Manifest.permission.BODY_SENSORS)==PackageManager.PERMISSION_GRANTED || checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION)==PackageManager.PERMISSION_GRANTED
     private fun refreshHealth() {
-        val id=workout.value?.workoutId ?: closure.value?.workoutId ?: ""
-        health.value=WearHealthStore.load(this,id)?.let { WearHealthAccumulator(it).snapshot() }
+        // Data Layer message replies update the durable snapshot independently
+        // of Activity callbacks. Resolve both the workout and metrics afresh.
+        val current=WorkoutSnapshotStore.load(this)
+        if(workout.value!=current) {
+            workout.value=current;restoreRestFromSnapshot(current)
+        }
+        val published=WearLiveHealth.current(this)
+        val latest=if(current==null)WearHealthStore.latest(this) else null
+        val id=current?.workoutId ?: closure.value?.takeIf { it.status in listOf("pending","error") }?.workoutId
+            ?: latest?.optString("workoutId") ?: ""
+        health.value=wearHealthDisplaySummary(id,WearHealthStore.load(this,id),published)
         measuring.value=WearHealthStore.enabled(this);gpsEnabled.value=WearHealthStore.gps(this)
+        if(remoteMeasurementRequested && !remoteStartFinished && remoteMeasurementStart?.matches(workout.value?.workoutId,workout.value?.revision ?: 0L)==true && health.value?.optString("state") in listOf("active","paused","ended","error"))releaseRemoteStart()
     }
     private fun requestHealth(gps: Boolean=false) {
+        // An explicit measurement action uses the current durable workout. A
+        // previous phone launch must not keep a later workout behind its guard.
+        workout.value=WorkoutSnapshotStore.load(this)
+        remoteMeasurementRequested=false;remoteMeasurementStart=null;releaseRemoteStart()
         WearHealthStore.gps(this,gps)
         val permissions=mutableListOf(if(Build.VERSION.SDK_INT>=36) "android.permission.health.READ_HEART_RATE" else Manifest.permission.BODY_SENSORS,Manifest.permission.ACTIVITY_RECOGNITION)
         if(Build.VERSION.SDK_INT>=33)permissions.add(Manifest.permission.POST_NOTIFICATIONS)
         if(gps)permissions.addAll(listOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION))
-        permissionRequest.launch(permissions.toTypedArray())
+        val missing=permissions.filter { checkSelfPermission(it)!=PackageManager.PERMISSION_GRANTED }
+        if(missing.isEmpty()) {
+            WearHealthStore.enable(this,healthAllowed());workout.value?.let { WearHealthStore.retry(this,it.workoutId) }
+            refreshHealth();startHealthIfEnabled()
+        } else permissionRequest.launch(missing.toTypedArray())
     }
     private fun startHealthIfEnabled() {
         if(!activityResumed)return
         val current=workout.value ?: return
-        if(remoteMeasurementRequested && remoteMeasurementStart?.matches(current.workoutId,current.revision)!=true)return
+        if(!wearMeasurementMayStart(remoteMeasurementRequested,remoteWorkoutAccepted,remoteMeasurementStart,current.workoutId,current.revision))return
+        if(remoteMeasurementRequested)remoteWorkoutAccepted=true
         if(remoteMeasurementRequested){
-            uiHandler.removeCallbacks(remoteStartTimeout)
-            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);setTurnScreenOn(false)
             if(!remoteStartNoticeShown){
                 remoteStartNoticeShown=true
-                if(!WearHealthStore.enabled(this))Toast.makeText(this,"Órás mérés kikapcsolva. Az Órás mérések oldalon bekapcsolhatod.",Toast.LENGTH_LONG).show()
-                else if(!healthAllowed())Toast.makeText(this,"Az órás méréshez szenzorengedély szükséges.",Toast.LENGTH_LONG).show()
+                val state=if(!WearHealthStore.enabled(this))"disabled" else if(!healthAllowed())"permissionRequired" else null
+                if(state!=null) {
+                    val message=if(state=="disabled")"Órás mérés kikapcsolva. Az Órás mérések oldalon bekapcsolhatod." else "Az órás méréshez szenzorengedély szükséges."
+                    WearLiveHealth.publish(this,current.workoutId,state,message);releaseRemoteStart()
+                    routeRequest.value="metrics";Toast.makeText(this,message,Toast.LENGTH_LONG).show()
+                }
             }
         }
         if(!WearHealthStore.enabled(this) || !healthAllowed())return
@@ -100,20 +142,31 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             WearHealthStore.retry(this,current.workoutId)
             previous=WearHealthStore.load(this,current.workoutId)
         }
-        if(previous?.optString("state") in listOf("ended","error"))return
-        try { WearHealthService.start(this,current) }catch(error:Exception) { Toast.makeText(this,"A mérés nem indítható: ${error.message}",Toast.LENGTH_LONG).show() }
+        if(previous?.optString("state") in listOf("ended","error")) {
+            if(remoteMeasurementRequested && !remoteStartFinished) {
+                WearLiveHealth.publish(this,current.workoutId,previous!!.optString("state"),previous.optString("message"),previous);releaseRemoteStart()
+            }
+            return
+        }
+        try { WearHealthService.start(this,current) }catch(error:Exception) {
+            val message="A mérés nem indítható: ${error.message}"
+            WearLiveHealth.publish(this,current.workoutId,"error",message);releaseRemoteStart()
+            Toast.makeText(this,message,Toast.LENGTH_LONG).show()
+        }
     }
     private fun readLaunchIntent(intent: Intent) {
         val uri=intent.data
         remoteMeasurementRequested=intent.action==Intent.ACTION_VIEW && uri?.scheme=="trainpilot" && uri?.host=="wear" && uri?.path=="/start-measurement"
         remoteMeasurementStart=if(remoteMeasurementRequested)WearMeasurementStart.parse(uri?.getQueryParameter("workoutId"),uri?.getQueryParameter("revision"))else null
-        remoteStartNoticeShown=false;uiHandler.removeCallbacks(remoteStartTimeout)
+        remoteStartNoticeShown=false;remoteStartFinished=false;remoteWorkoutAccepted=false;lastRemoteRefreshAt=0L;uiHandler.removeCallbacks(remoteStartTimeout)
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setTurnScreenOn(remoteMeasurementRequested && remoteMeasurementStart!=null)
         if(remoteMeasurementRequested && remoteMeasurementStart!=null){
             // Hold only the initial handoff, then let the screen sleep normally.
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             uiHandler.postDelayed(remoteStartTimeout,15000)
+            WearLiveHealth.publish(this,remoteMeasurementStart!!.workoutId,"waitingWorkout")
+            WearWorkoutHandoff.request(this,remoteMeasurementStart!!)
         }
         routeRequest.value=if(remoteMeasurementRequested)"workout" else intent.getStringExtra("destination")?.takeIf { it in listOf("home","workout","summary","menu","calendar") }
         if(remoteMeasurementRequested && remoteMeasurementStart==null)Toast.makeText(this,"Érvénytelen edzésindítás. Nyisd meg az aktuális edzést.",Toast.LENGTH_LONG).show()
