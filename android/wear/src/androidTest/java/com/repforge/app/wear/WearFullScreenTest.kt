@@ -295,6 +295,9 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         val selected = mutableStateOf("home")
         compose.setContent { Watch { key(selected.value) { Fixture(selected.value) } } }
         val actions = compose.onNodeWithTag("wear-fixed-actions").fetchSemanticsNode().boundsInRoot
+        val root = compose.onRoot().fetchSemanticsNode().boundsInRoot
+        val program = compose.onNodeWithText("Erősítés").fetchSemanticsNode().boundsInRoot
+        assertEquals("The home program title must be centered", root.center.x, program.center.x, 1f)
         compose.onNodeWithContentDescription("Főmenü").assertIsDisplayed()
         if (fontScale == 1f && diameter >= 192f) {
             val text =
