@@ -81,4 +81,40 @@ class WearActionLayoutTest {
             assertTrue(hypot(centerX, 0f) + 24f <= min(width, height) / 2 - 7.99f)
         }
     }
+
+    @Test
+    fun fixedFootersStayInsideTheCircleAtEverySupportedSize() {
+        for ((width, height) in viewports()) for (arc in listOf(false, true)) {
+            val count = if (arc) 3 else 2
+            val page = wearFixedPageLayout(width, height, arc, count)
+            val diameter = min(width, height)
+            val origin = (height - diameter) / 2f
+            val centers =
+                if (arc) {
+                    val layout = wearArcLayout(width, height)
+                    listOf(
+                        -layout.sideOffset to (page.footerTop + 24f),
+                        0f to (page.footerTop + layout.centerTop + 24f),
+                        layout.sideOffset to (page.footerTop + 24f),
+                    )
+                } else {
+                    val layout = wearActionLayout(width, height, count, 7f)
+                    val x = (layout.buttonSize + layout.gap) / 2f
+                    listOf(-x to (page.footerTop + 24f), x to (page.footerTop + 24f))
+                }
+            for ((x, y) in centers) {
+                assertTrue(
+                    "A fixed footer target must fit the physical round display",
+                    hypot(x, y - origin - diameter / 2f) + 24f <= diameter / 2f - 3.9f,
+                )
+                for (dx in listOf(-22f, 22f)) {
+                    assertTrue(
+                        "Its caption must fit the physical round display",
+                        hypot(x + dx, y + 20f - origin - diameter / 2f) <= diameter / 2f,
+                    )
+                }
+            }
+            assertTrue(page.bodyTop + page.bodyHeight < page.footerTop)
+        }
+    }
 }

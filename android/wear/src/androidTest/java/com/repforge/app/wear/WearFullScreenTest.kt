@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.State
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
@@ -79,6 +80,13 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         )
 
     private fun scrollToEnd(last: String? = null) {
+        if (
+            compose
+                .onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsActions.ScrollToIndex))
+                .fetchSemanticsNodes()
+                .isEmpty()
+        )
+            return
         if (last != null) lazyList().performScrollToNode(hasContentDescription(last))
         repeat(5) {
             compose.onNodeWithTag("wear-round-list").performTouchInput {
@@ -135,10 +143,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         assertFullViewport()
         val root = compose.onRoot().fetchSemanticsNode().boundsInRoot
         val middle =
-            compose
-                .onNodeWithContentDescription(if (diameter < 180f) "Kezdőlap" else "Mini napló")
-                .fetchSemanticsNode()
-                .boundsInRoot
+            compose.onNodeWithContentDescription("Kezdőlap").fetchSemanticsNode().boundsInRoot
         assertTrue(
             "Centered menu button uses at least 80% of the diameter",
             middle.width >= root.width * .8f,
@@ -233,7 +238,8 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     @Test
     fun journalDetailsAndAllWorkoutPagerPagesRemainScrollable() {
         val selected = mutableStateOf("journal")
-        compose.setContent { Watch { key(selected.value) { Fixture(selected.value) } } }
+        val liveHealth = mutableStateOf<JSONObject?>(null)
+        compose.setContent { Watch { key(selected.value) { Fixture(selected.value, liveHealth) } } }
         lazyList()
             .performScrollToNode(hasContentDescription("Hosszú nevű próbaedzés", substring = true))
         compose
@@ -246,6 +252,30 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         compose.runOnIdle { selected.value = "workout" }
         compose.waitForIdle()
         assertFullViewport()
+        val actionsBefore =
+            compose.onNodeWithTag("wear-fixed-actions").fetchSemanticsNode().boundsInRoot
+        compose.runOnIdle {
+            liveHealth.value =
+                JSONObject()
+                    .put("source", "wear_health_services")
+                    .put("workoutId", "layout-test")
+                    .put("state", "active")
+                    .put("updatedAt", System.currentTimeMillis())
+                    .put("heartRate", 93)
+                    .put("totalCalories", 7.0)
+        }
+        compose.onNodeWithText("93 bpm · 7 kcal").assertIsDisplayed()
+        assertEquals(
+            "New measurements must not displace the controls",
+            actionsBefore,
+            compose.onNodeWithTag("wear-fixed-actions").fetchSemanticsNode().boundsInRoot,
+        )
+        compose.onNodeWithTag("wear-fixed-body").performTouchInput { swipeDown() }
+        assertEquals(
+            "Dragging content must not displace the controls",
+            actionsBefore,
+            compose.onNodeWithTag("wear-fixed-actions").fetchSemanticsNode().boundsInRoot,
+        )
         screenshot("workout-strength")
         compose.onNodeWithTag("wear-round-list").performTouchInput { swipeLeft() }
         compose.waitForIdle()
@@ -259,8 +289,115 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         screenshot("workout-measurements")
     }
 
+    @Test
+    fun homeStaysCenteredAndBothSideSwipesOpenTheMenu() {
+        val selected = mutableStateOf("home")
+        compose.setContent { Watch { key(selected.value) { Fixture(selected.value) } } }
+        val actions = compose.onNodeWithTag("wear-fixed-actions").fetchSemanticsNode().boundsInRoot
+        compose.onNodeWithContentDescription("Főmenü").assertIsDisplayed()
+        if (fontScale == 1f && diameter >= 192f) {
+            val text =
+                compose.onNodeWithText("A nap — teljes test").fetchSemanticsNode().boundsInRoot
+            repeat(2) {
+                compose.onNodeWithTag("wear-fixed-body").performTouchInput { swipeUp() }
+                compose.onNodeWithTag("wear-fixed-body").performTouchInput { swipeDown() }
+            }
+            assertEquals(
+                "Short home content must not move after vertical swipes",
+                text,
+                compose.onNodeWithText("A nap — teljes test").fetchSemanticsNode().boundsInRoot,
+            )
+        }
+        assertEquals(
+            actions,
+            compose.onNodeWithTag("wear-fixed-actions").fetchSemanticsNode().boundsInRoot,
+        )
+        screenshot("home-fixed")
+        compose.onNodeWithTag("wear-round-list").performTouchInput { swipeLeft() }
+        compose.onNodeWithContentDescription("Mini napló").assertIsDisplayed()
+        compose.runOnIdle { selected.value = "quick" }
+        compose.runOnIdle { selected.value = "home" }
+        compose.onNodeWithTag("wear-round-list").performTouchInput { swipeRight() }
+        compose.onNodeWithContentDescription("Mini napló").assertIsDisplayed()
+    }
+
+    @Test
+    fun editorsKeepMinusAndPlusBesideTheValueAndSaveCancelVisible() {
+        val field = mutableStateOf("weight")
+        val revision = mutableStateOf(0)
+        val changes = mutableListOf<Pair<String, Double>>()
+        var backs = 0
+        val set = WearSet(1, "5", "5.5", false, 0, 0, 0.0)
+        val workout =
+            WearWorkout(
+                1,
+                "p",
+                "Erősítés",
+                "a",
+                "",
+                Instant.now().toString(),
+                "editor-layout",
+                0,
+                60,
+                0,
+                listOf(
+                    WearExercise(
+                        "press",
+                        "Földön fekve nyomás",
+                        "weight",
+                        "ism.",
+                        "strength",
+                        listOf(set),
+                    )
+                ),
+                "A nap",
+            )
+        compose.setContent {
+            Watch {
+                key(field.value, revision.value) {
+                    ValueEditor(
+                        workout,
+                        field.value,
+                        { name, delta -> changes.add(name to delta) },
+                        { backs++ },
+                    )
+                }
+            }
+        }
+        for ((name, title, step) in
+            listOf(Triple("weight", "Súly", .5), Triple("reps", "Ismétlés", 1.0))) {
+            compose.runOnIdle { field.value = name }
+            compose.onNodeWithContentDescription("✓ Mentés").assertIsDisplayed()
+            compose.onNodeWithContentDescription("Mégse").assertIsDisplayed()
+            val plus = compose.onNodeWithContentDescription("$title növelése")
+            val minus = compose.onNodeWithContentDescription("$title csökkentése")
+            if (fontScale == 1f) {
+                val value =
+                    compose.onNodeWithTag("wear-edited-value").fetchSemanticsNode().boundsInRoot
+                val left = minus.fetchSemanticsNode().boundsInRoot
+                val right = plus.fetchSemanticsNode().boundsInRoot
+                assertTrue(left.right <= value.left && value.right <= right.left)
+                assertTrue(kotlin.math.abs(left.center.y - right.center.y) < 1f)
+                assertTrue(value.center.y in left.top..left.bottom)
+            }
+            plus.performClick()
+            minus.performClick()
+            plus.performClick()
+            assertTrue("Editing alone must not save", changes.none { it.first == name })
+            screenshot("editor-$name-fixed")
+            compose.onNodeWithContentDescription("✓ Mentés").performClick()
+            assertEquals(name to step, changes.last())
+            val savedCount = changes.size
+            compose.runOnIdle { revision.value++ }
+            plus.performClick()
+            compose.onNodeWithContentDescription("Mégse").performClick()
+            assertEquals("Cancel must not save changes", savedCount, changes.size)
+        }
+        assertEquals(4, backs)
+    }
+
     @Composable
-    private fun Fixture(route: String) {
+    private fun Fixture(route: String, liveHealth: State<JSONObject?>? = null) {
         val set = WearSet(1, "5", "5.5", false, 30, 0, 0.0)
         val exercise =
             WearExercise(
@@ -378,7 +515,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             onDismissClosure = {},
             onOpenPhone = {},
             onRefreshJournal = {},
-            health = mutableStateOf(health),
+            health = liveHealth ?: mutableStateOf(health),
             measuring = mutableStateOf(true),
             gpsEnabled = mutableStateOf(false),
             requestedRoute = request,

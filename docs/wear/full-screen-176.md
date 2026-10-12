@@ -1,24 +1,26 @@
-# Teljes kerek kijelző — #176
+# Kerek kijelző és stabil rövid oldalak — #176
 
-A felhasználó 2026. október 12-i főmenüfotója alapján a kiadott 1.3.4 órás app csak egy középső, rövid sávban mutatta a görgethető listát. A korábbi körbe írt téglalap a 200 dp nézetből kb. 98 dp magasságot és 136 dp szélességet engedett használni. Az edzésnézetet egy további belső kör szűkítette. A régi geometriai próbák ezt az elhelyezési szabályt ellenőrizték; a készülékes fotó megmutatta annak használhatósági hibáját.
+A készülékes fotókon a korábbi kiadás középső sávra szűkített listái, majd az első teljes képernyős tesztbuild hibái is láthatók: a kezdőlap feleslegesen görgethetővé vált, a félképernyős térközök nagy üres részt hagytak, és a gombokat le lehetett görgetni az óráról. A súly/ismétlés szerkesztőben a vezérlők külön sorokra kerültek. Az emulátor korábbi elérhetőségi próbái ezeket a használhatósági hibákat nem ellenőrizték.
 
 ## Elrendezés
 
-Minden hosszabb oldal teljes képernyős Wear `ScalingLazyColumn`-t használ. A kör közepe 8 dp oldalsó margót kap; a tartalom magassága a teljes képernyőmagasság. A sorokat a Wear könyvtár a perem közelében méretezi és halványítja. A fejléc a felső körperemen szerepel; nincs gombokba vágó fekete háttérív vagy levágó téglalap.
+A kezdőlap, aktuális sorozat, stopper, szerkesztő, megerősítés és mentési összesítő ismét rögzített fejlécet és külön rögzített gombokat használ. A kör geometriája a gombok tényleges helyét határozza meg; nem szűkíti egy belső téglalapra az egész oldalt. A rövid szöveg középen marad. Csak a valóban túl hosszú tartalom görgethető a fejléc és a gombok között, például nagy betűméretnél vagy részletes mérési összesítésnél. A mérési adatok érkezése nem mozdítja el az alsó vezérlőket.
 
-A gombok, feliratok és mérési sorok külön lazy elemek. A felső/alsó félképernyős tartalmi padding miatt az első és utolsó elemek, illetve hosszabb kártyák végei is a kör közepére görgethetők. Ez tartalmi padding; a görgető nézet továbbra is az egész képernyőt használja. Az alap kezdőpozíció a második elemet középre helyezi, így a lista felső és alsó része is látható.
+A súly/ismétlés/idő szerkesztőben a − és + a szám mellett van. A Mentés és Mégse állandóan látható külön alsó gombok. A kézi időmódosítás továbbra is törli a régi szüneteltetett stopper állapotát, mentés csak a Mentés gombbal történik.
 
-Az érintett oldalak: főmenü, Mini napló és részletei, gyors edzés/gyakorlatkeresés, programnapok, naptári napi részletek és üres állapot, órás mérések/előzmények, súly/ismétlés/idő szerkesztő, stoppereszközök, edzésmenü, kezdőlap, aktuális sorozat/stopper, törlés/befejezés megerősítése és mentési összesítő/újrapróba. A heti naptár már teljes képernyős saját elrendezése megmarad. Az edzéslapozó előre betöltött, inaktív lapjai nem kapnak forgókorona-fókuszt, és nem teszik elérhetővé a háttérben lévő vezérlőket a képernyőolvasónak.
+A kezdőlap mindkét irányú vízszintes húzása a főmenüt nyitja. A Menü és a felső, koppintható Telefon cím is működik. A teljes kezdőlap-revamp külön #170.
 
-A kezdőlapon a kompakt Telefon gyorsgomb a felső, koppintható íves címre került; ez egy teljes sort felszabadít az állapotnak és a vezérlőknek.
+A hosszabb listák szabványos Compose `LazyColumn`-t használnak 8 dp oldalsó margóval, félképernyős térközök és automatikus középre igazítás nélkül. Megnyitáskor az első sor következik a cím alatt. A címet külön hely tartja távol a soroktól; nincs rájuk rajzolt fekete háttérív. A heti naptár saját teljes képernyős elrendezése változatlan. Az edzéslapozó inaktív lapjai nem kapnak forgókorona-fókuszt, és nem duplázzák az akadálymentes vezérlőket. A lapjelző a felső peremen marad.
 
-A három 48 dp vezérlő egy külön görgethető íves elem: a középső lejjebb kerül, az érintési felületek legalább 4 dp-re vannak egymástól. A kisebb súly/ismétlés mezők, a pulzus/kcal és az elérhető mozgásmérések megmaradnak. A képernyő teljes tartalma görgethető; a vezérlőknek nincs külön, állandó középső vagy alsó ablaka. A hosszú cím továbbra is az ívben kaphat ellipszist; a teljes felirat az akadálymentes leírásban szerepel. A teljes kezdőlap-revamp külön #170.
+A várakozó mentés/törlés állapotmondata több sorba törik, nem egysoros ellipszissel jelenik meg.
 
 ## Ellenőrzés
 
-- JVM: teljes magasság és legalább 90% középső körszélesség 160–320 dp és eltérő oldalarányú nézeteken; középre görgetett ív/gombfeliratok körön belül; elkülönített 48 dp célok és kompakt Telefon gomb.
-- Kerek Wear OS 30 emulátor: tényleges Compose méretek, érintéses görgetés, főmenü első/utolsó gombjának megnyomása, összes listás útvonal és heti/napi naptár, naplórészletek, három edzéslap, ismétléses és időméréses nézet.
-- Emulátor-beállítások: 160, 192, 225 dp; normál, 150% és 200% betűméret. A képernyőképek MediaStore-ba kerülnek, így a teszt-APK automatikus eltávolítása után is átadhatók CI-artifactként.
-- A telefonos naptári próbában a rögzített böngészős tesztidő mellett egy dátumfeltétel a Node valós idejét használta. A feltétel most ugyanahhoz a rögzített böngészős időhöz viszonyít; a telefonos alkalmazás kódja nem módosul.
+- Natív kerek Wear OS emulátor: 160, 192 és 225 dp, normál, 150% és 200% betűméret.
+- A főmenü első/utolsó gombja megnyomható, minden hosszú lista és a naptár végigjárható.
+- A rövid kezdőlap szövege függőleges húzások után nem mozdul el; balra és jobbra húzva is megnyílik a menü.
+- A szerkesztő mindkét mezőnél ellenőrzi a −/szám/+ sorrendet, a Mentés/Mégse láthatóságát, az érték változtatását, a mentett különbséget és a mentés nélküli visszalépést.
+- Új pulzus/kcal adat érkezése és függőleges húzás sem mozdítja el az edzés alsó gombjait.
+- A képernyőképek és teszteredmények CI-artifactokban szerepelnek. A futásazonosító és az aláírt APK lenyomata a PR-be kerül.
 
-A futásazonosítók és az APK lenyomata a PR-ben szerepelnek. Az aláírt próba továbbra is 1.3.4 /2730, külön fájlnévvel; a korábbi telefonos 1.3.4-gyel kompatibilis. A készülékes elfogadás még szükséges, a nyilvános 1.3.4 APK-k nem kerülnek automatikusan lecserélésre.
+A tesztbuild továbbra is 1.3.4 /2730, külön fájlnévvel; a korábbi telefonos 1.3.4-gyel kompatibilis. A készülékes elfogadás még szükséges. A nyilvános 1.3.4 kiadás változatlan marad addig.

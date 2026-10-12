@@ -4,18 +4,25 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -34,9 +41,6 @@ import androidx.wear.compose.foundation.CurvedModifier
 import androidx.wear.compose.foundation.CurvedTextStyle
 import androidx.wear.compose.foundation.basicCurvedText
 import androidx.wear.compose.foundation.hierarchicalFocusGroup
-import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
-import androidx.wear.compose.foundation.lazy.ScalingLazyListScope
-import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.foundation.sizeIn
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
@@ -215,34 +219,94 @@ private fun CurvedHeader(text: String, color: Color = Gold, sweep: Float = WEAR_
     }
 }
 
+/** Short pages keep their controls fixed; only content that actually overflows can scroll. */
+@Composable
+private fun FixedRoundPanel(
+    title: String,
+    arc: Boolean = false,
+    count: Int = 2,
+    gap: Float = 7f,
+    headerColor: Color = Gold,
+    sweep: Float = WEAR_HEADER_SWEEP,
+    onTitleClick: (() -> Unit)? = null,
+    footer: @Composable () -> Unit,
+    content: @Composable ColumnScope.(Boolean) -> Unit,
+) {
+    BoxWithConstraints(Modifier.fillMaxSize().testTag("wear-round-list")) {
+        val diameter = minOf(maxWidth, maxHeight).value
+        val layout = wearFixedPageLayout(maxWidth.value, maxHeight.value, arc, count, gap)
+        val compact = layout.bodyHeight < 72f * LocalDensity.current.fontScale
+        CurvedHeader(title, headerColor, sweep)
+        Box(
+            Modifier.align(Alignment.TopCenter)
+                .offset(y = layout.bodyTop.dp)
+                .width((diameter - 24f).dp)
+                .height(layout.bodyHeight.dp)
+                .testTag("wear-fixed-body"),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(
+                Modifier.fillMaxWidth()
+                    .heightIn(max = layout.bodyHeight.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                content(compact)
+            }
+        }
+        Box(
+            Modifier.align(Alignment.TopCenter)
+                .offset(y = layout.footerTop.dp)
+                .width(layout.footerWidth.dp)
+                .height(layout.footerHeight.dp)
+                .testTag("wear-fixed-actions"),
+            contentAlignment = Alignment.TopCenter,
+        ) {
+            footer()
+        }
+        if (onTitleClick != null)
+            Box(
+                Modifier.align(Alignment.TopCenter)
+                    .width((diameter * .7f).dp)
+                    .height(32.dp)
+                    .clickable(role = Role.Button, onClick = onTitleClick)
+                    .semantics { contentDescription = "Megnyitás telefonon" }
+            )
+    }
+}
+
 @Composable
 private fun ActionPanel(
     title: String,
     count: Int = 2,
     gap: Float = 7f,
     actions: @Composable (WearActionLayout) -> Unit,
-    content: ScalingLazyListScope.(Boolean) -> Unit,
+    content: @Composable ColumnScope.(Boolean) -> Unit,
 ) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val layout = wearActionLayout(maxWidth.value, maxHeight.value, count, gap)
-        RoundList(title) {
-            content(false)
-            item {
-                Box(
-                    Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    actions(layout)
-                }
-            }
-        }
+        FixedRoundPanel(
+            title,
+            count = count,
+            gap = gap,
+            footer = { actions(layout) },
+            content = content,
+        )
     }
 }
 
 @Composable
-private fun Label(text: String, color: Color = Muted, size: Int = 11) {
-    Text(text, color = color, fontSize = size.sp, lineHeight = (size + 2).sp, textAlign = TextAlign.Center,
-        maxLines = 1, overflow = TextOverflow.Ellipsis)
+private fun Label(text: String, color: Color = Muted, size: Int = 11, lines: Int = 1) {
+    Text(
+        text,
+        color = color,
+        fontSize = size.sp,
+        lineHeight = (size + 2).sp,
+        textAlign = TextAlign.Center,
+        maxLines = lines,
+        overflow = TextOverflow.Ellipsis,
+    )
 }
 
 @Composable
@@ -291,153 +355,171 @@ private fun HomeScreen(
     }
     val waiting = closure?.status in listOf("pending", "error")
     val rec = home?.recommended
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        val phone = wearHomePhoneLayout(maxWidth.value, maxHeight.value)
-        val layout = wearArcLayout(maxWidth.value, maxHeight.value)
-        RoundList(
-            "Telefon ↗",
-            initialCenterItemIndex = 0,
-            initialCenterItemScrollOffset =
-                with(LocalDensity.current) { (if (fontScale <= 1.1f) 16.dp else 0.dp).roundToPx() },
-            onTitleClick = onOpenPhone,
-            titleTouchWidth = phone.width,
-        ) {
-            item {
-                Column(
-                    Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    when {
-                        active != null -> {
-                            Box(Modifier.fillMaxWidth()) {
-                                Title(active.exercise?.name ?: active.programName, 13)
+    Box(
+        Modifier.fillMaxSize().pointerInput(onMenu) {
+            var distance = 0f
+            detectHorizontalDragGestures(
+                onDragStart = { distance = 0f },
+                onHorizontalDrag = { change, amount ->
+                    distance += amount
+                    change.consume()
+                },
+                onDragEnd = { if (kotlin.math.abs(distance) >= 40.dp.toPx()) onMenu() },
+            )
+        }
+    ) {
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            val layout = wearArcLayout(maxWidth.value, maxHeight.value)
+            FixedRoundPanel(
+                "Telefon ↗",
+                arc = true,
+                onTitleClick = onOpenPhone,
+                footer = {
+                    Box(Modifier.width(layout.width.dp).height(layout.height.dp)) {
+                        CompositionLocalProvider(LocalActionSize provides layout.buttonSize) {
+                            Box(
+                                Modifier.align(Alignment.TopCenter)
+                                    .offset(x = -layout.sideOffset.dp)
+                            ) {
+                                when {
+                                    active != null ->
+                                        RoundControl(
+                                            "▶",
+                                            Gold,
+                                            caption = "Folytatás",
+                                            description = "Edzés folytatása",
+                                            onClick = onResume,
+                                        )
+                                    waiting ->
+                                        RoundControl(
+                                            "↻",
+                                            Gold,
+                                            caption = "Állapot",
+                                            description = "Edzés mentésének állapota",
+                                            onClick = onResult,
+                                        )
+                                    rec != null && home?.hasDraft == false ->
+                                        RoundControl(
+                                            "▶",
+                                            Gold,
+                                            caption = "Indítás",
+                                            description = "Edzés indítása",
+                                        ) {
+                                            onStart(rec.day, rec.scheduleId)
+                                        }
+                                    else ->
+                                        RoundControl(
+                                            "A/B",
+                                            Gold,
+                                            enabled =
+                                                home != null &&
+                                                    home.hasDraft == false &&
+                                                    home.days.isNotEmpty(),
+                                            caption = "Napok",
+                                            description = "Program napjai",
+                                            onClick = onDays,
+                                        )
+                                }
                             }
-                            Label(
-                                "${active.dayName.ifBlank { active.dayId }} · ${active.currentSetIndex + 1}/${active.exercise?.sets?.size ?: 0}. sorozat",
-                                size = 9,
-                            )
-                            Text(
-                                formatSeconds(elapsed),
-                                color = White,
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                        }
-                        waiting -> {
-                            Title(
-                                if (closure?.status == "error") "Szinkronizálás szükséges"
-                                else "Várakozás a telefonra",
-                                18,
-                            )
-                            Text(
-                                "Az edzés az órán megmaradt.",
-                                color = Muted,
-                                fontSize = 11.sp,
-                                textAlign = TextAlign.Center,
-                            )
-                        }
-                        home == null -> {
-                            Title("Szinkronizálás…", 18)
-                            Text(
-                                "Nyisd meg a TrainPilotot a telefonon.",
-                                color = Muted,
-                                fontSize = 12.sp,
-                                textAlign = TextAlign.Center,
-                            )
-                        }
-                        home.hasDraft -> {
-                            Title("Félbehagyott edzés", 18)
-                            Text(
-                                "Az edzés adatainak szinkronja a telefonra vár.",
-                                color = Muted,
-                                fontSize = 11.sp,
-                                textAlign = TextAlign.Center,
-                            )
-                        }
-                        else -> {
-                            Box(Modifier.fillMaxWidth()) {
-                                Title(
-                                    rec?.day?.programName ?: home.activeProgramName,
-                                    15,
-                                    lines = 1,
+                            Box(
+                                Modifier.align(Alignment.TopCenter).offset(y = layout.centerTop.dp)
+                            ) {
+                                if (active != null)
+                                    RoundControl(
+                                        "✕",
+                                        Danger,
+                                        caption = "Törlés",
+                                        description = "Megkezdett edzés törlése",
+                                        onClick = onDiscard,
+                                    )
+                                else
+                                    RoundControl(
+                                        "▦",
+                                        caption = "Naptár",
+                                        description = "Edzésnaptár",
+                                        onClick = onCalendar,
+                                    )
+                            }
+                            Box(
+                                Modifier.align(Alignment.TopCenter).offset(x = layout.sideOffset.dp)
+                            ) {
+                                RoundControl(
+                                    "···",
+                                    caption = "Menü",
+                                    description = "Főmenü",
+                                    onClick = onMenu,
                                 )
                             }
-                            Spacer(Modifier.height(2.dp))
-                            Title(rec?.day?.name ?: "Válassz edzésnapot", 26)
-                            if (rec != null) Label(recommendedMeta(rec), size = 11)
                         }
                     }
-                }
-            }
-            item {
-                Box(Modifier.width(layout.width.dp).height(layout.height.dp)) {
-                    CompositionLocalProvider(LocalActionSize provides layout.buttonSize) {
-                        Box(Modifier.align(Alignment.TopCenter).offset(x = -layout.sideOffset.dp)) {
-                            when {
-                                active != null ->
-                                    RoundControl(
-                                        "▶",
-                                        Gold,
-                                        caption = "Folytatás",
-                                        description = "Edzés folytatása",
-                                        onClick = onResume,
-                                    )
-                                waiting ->
-                                    RoundControl(
-                                        "↻",
-                                        Gold,
-                                        caption = "Állapot",
-                                        description = "Edzés mentésének állapota",
-                                        onClick = onResult,
-                                    )
-                                rec != null && home?.hasDraft == false ->
-                                    RoundControl(
-                                        "▶",
-                                        Gold,
-                                        caption = "Indítás",
-                                        description = "Edzés indítása",
-                                    ) {
-                                        onStart(rec.day, rec.scheduleId)
-                                    }
-                                else ->
-                                    RoundControl(
-                                        "A/B",
-                                        Gold,
-                                        enabled =
-                                            home != null &&
-                                                home.hasDraft == false &&
-                                                home.days.isNotEmpty(),
-                                        caption = "Napok",
-                                        description = "Program napjai",
-                                        onClick = onDays,
-                                    )
-                            }
-                        }
-                        Box(Modifier.align(Alignment.TopCenter).offset(y = layout.centerTop.dp)) {
-                            if (active != null)
-                                RoundControl(
-                                    "✕",
-                                    Danger,
-                                    caption = "Törlés",
-                                    description = "Megkezdett edzés törlése",
-                                    onClick = onDiscard,
-                                )
-                            else
-                                RoundControl(
-                                    "▦",
-                                    caption = "Naptár",
-                                    description = "Edzésnaptár",
-                                    onClick = onCalendar,
-                                )
-                        }
-                        Box(Modifier.align(Alignment.TopCenter).offset(x = layout.sideOffset.dp)) {
-                            RoundControl(
-                                "···",
-                                caption = "Menü",
-                                description = "Főmenü",
-                                onClick = onMenu,
+                },
+            ) { compact ->
+                when {
+                    active != null -> {
+                        Box(Modifier.fillMaxWidth()) {
+                            Title(
+                                active.exercise?.name ?: active.programName,
+                                if (compact) 12 else 13,
+                                lines = 1,
                             )
                         }
+                        Label(
+                            "${active.dayName.ifBlank { active.dayId }} · ${active.currentSetIndex + 1}/${active.exercise?.sets?.size ?: 0}. sorozat",
+                            size = 9,
+                        )
+                        Text(
+                            formatSeconds(elapsed),
+                            color = White,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                    waiting -> {
+                        Title(
+                            if (closure?.status == "error") "Szinkronizálás szükséges"
+                            else "Várakozás a telefonra",
+                            18,
+                        )
+                        Text(
+                            "Az edzés az órán megmaradt.",
+                            color = Muted,
+                            fontSize = 11.sp,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                    home == null -> {
+                        Title("Szinkronizálás…", 18)
+                        Text(
+                            "Nyisd meg a TrainPilotot a telefonon.",
+                            color = Muted,
+                            fontSize = 12.sp,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                    home.hasDraft -> {
+                        Title("Félbehagyott edzés", 18)
+                        Text(
+                            "Az edzés adatainak szinkronja a telefonra vár.",
+                            color = Muted,
+                            fontSize = 11.sp,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                    else -> {
+                        Box(Modifier.fillMaxWidth()) {
+                            Title(
+                                rec?.day?.programName ?: home.activeProgramName,
+                                if (compact) 11 else 15,
+                                lines = 1,
+                            )
+                        }
+                        Spacer(Modifier.height(2.dp))
+                        Title(
+                            rec?.day?.name ?: "Válassz edzésnapot",
+                            if (compact) 20 else 26,
+                            lines = 1,
+                        )
+                        if (rec != null) Label(recommendedMeta(rec), size = if (compact) 9 else 11)
                     }
                 }
             }
@@ -446,49 +528,24 @@ private fun HomeScreen(
 }
 
 @Composable
-private fun RoundList(
-    title: String,
-    initialCenterItemIndex: Int = 1,
-    initialCenterItemScrollOffset: Int = 0,
-    onTitleClick: (() -> Unit)? = null,
-    titleTouchWidth: Float = 100f,
-    sweep: Float = WEAR_HEADER_SWEEP,
-    headerColor: Color = Gold,
-    content: ScalingLazyListScope.() -> Unit,
-) {
-    val state =
-        rememberScalingLazyListState(
-            initialCenterItemIndex = initialCenterItemIndex,
-            initialCenterItemScrollOffset = initialCenterItemScrollOffset,
-        )
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        val viewport = wearRoundViewport(maxWidth.value, maxHeight.value)
-        ScalingLazyColumn(
-            Modifier.fillMaxSize().hierarchicalFocusGroup(active = true).testTag("wear-round-list"),
+private fun RoundList(title: String, content: LazyListScope.() -> Unit) {
+    BoxWithConstraints(Modifier.fillMaxSize().testTag("wear-round-list")) {
+        val state = rememberLazyListState()
+        // No half-screen spacers or initial center offsets: opening starts at the first row.
+        LazyColumn(
+            Modifier.fillMaxSize().padding(top = 32.dp).hierarchicalFocusGroup(active = true),
             state = state,
-            contentPadding =
-                PaddingValues(
-                    horizontal = ((maxWidth.value - viewport.width) / 2f).dp,
-                    vertical = (viewport.height / 2f).dp,
-                ),
-            autoCentering = null,
+            contentPadding = PaddingValues(horizontal = 8.dp, top = 4.dp, bottom = 36.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
             content = content,
         )
-        CurvedHeader(title, headerColor, sweep = sweep)
-        if (onTitleClick != null)
-            Box(
-                Modifier.align(Alignment.TopCenter)
-                    .width(titleTouchWidth.dp)
-                    .height(32.dp)
-                    .clickable(role = Role.Button, onClick = onTitleClick)
-                    .semantics { contentDescription = "Megnyitás telefonon" }
-            )
+        CurvedHeader(title)
     }
 }
 
-/** Each row is a separate lazy item, so even the first and last controls can reach the center. */
-private fun ScalingLazyListScope.centerItem(content: @Composable ColumnScope.() -> Unit) {
+/** Long pages scroll individual rows, without moving the fixed title. */
+private fun LazyListScope.centerItem(content: @Composable ColumnScope.() -> Unit) {
     item {
         Column(
             Modifier.fillMaxWidth(),
@@ -505,36 +562,29 @@ internal fun MainMenuScreen(
     onOpenPhone: () -> Unit,
     onRoute: (String) -> Unit,
 ) {
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        val titleSpace = (112f - minOf(maxWidth, maxHeight).value / 2f).coerceAtLeast(0f)
-        RoundList(
-            "Főmenü",
-            initialCenterItemScrollOffset =
-                with(LocalDensity.current) { (-titleSpace).dp.roundToPx() },
-        ) {
-            for ((label, destination) in
-                listOf(
-                    "Kezdőlap" to "home",
-                    "Mini napló" to "journal",
-                    "Naptár" to "calendar",
-                    "Programnapok" to "days",
-                    "Órás mérések" to "metrics",
-                )) {
-                centerItem { Pill(label, tone = Card) { onRoute(destination) } }
-            }
-            if (!hasWorkout || quickWorkout) {
-                centerItem {
-                    Pill(if (quickWorkout) "+ Gyakorlat" else "Gyors edzés", tone = Gold) {
-                        onRoute("quick")
-                    }
+    RoundList("Főmenü") {
+        for ((label, destination) in
+            listOf(
+                "Kezdőlap" to "home",
+                "Mini napló" to "journal",
+                "Naptár" to "calendar",
+                "Programnapok" to "days",
+                "Órás mérések" to "metrics",
+            )) {
+            centerItem { Pill(label, tone = Card) { onRoute(destination) } }
+        }
+        if (!hasWorkout || quickWorkout) {
+            centerItem {
+                Pill(if (quickWorkout) "+ Gyakorlat" else "Gyors edzés", tone = Gold) {
+                    onRoute("quick")
                 }
             }
-            if (hasWorkout) {
-                centerItem { Pill("Edzés folytatása") { onRoute("workout") } }
-                centerItem { Pill("Edzés törlése", tone = Danger) { onRoute("discard") } }
-            }
-            centerItem { Pill("Megnyitás telefonon", tone = Card, onClick = onOpenPhone) }
         }
+        if (hasWorkout) {
+            centerItem { Pill("Edzés folytatása") { onRoute("workout") } }
+            centerItem { Pill("Edzés törlése", tone = Danger) { onRoute("discard") } }
+        }
+        centerItem { Pill("Megnyitás telefonon", tone = Card, onClick = onOpenPhone) }
     }
 }
 
@@ -602,7 +652,7 @@ private fun MiniJournalScreen(
     }
 }
 
-private fun ScalingLazyListScope.MiniJournalMetrics(
+private fun LazyListScope.MiniJournalMetrics(
     title: String,
     metrics: MiniJournalMetric,
     watch: Boolean,
@@ -1480,26 +1530,23 @@ private fun WorkoutPanel(
     workout: WearWorkout,
     onMenu: () -> Unit,
     actions: @Composable (WearArcLayout) -> Unit,
-    content: ScalingLazyListScope.() -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val layout = wearArcLayout(maxWidth.value, maxHeight.value)
-        RoundList(
+        FixedRoundPanel(
             workout.exercise?.name.orEmpty(),
-            initialCenterItemIndex = if (LocalDensity.current.fontScale > 1.25f) 0 else 1,
-            initialCenterItemScrollOffset =
-                with(LocalDensity.current) { (if (fontScale > 1.25f) 0.dp else 8.dp).roundToPx() },
+            arc = true,
             sweep = 140f,
             headerColor = White,
+            footer = {
+                Box(Modifier.width(layout.width.dp).height(layout.height.dp)) { actions(layout) }
+            },
         ) {
             content()
-            item {
-                Box(Modifier.width(layout.width.dp).height(layout.height.dp)) { actions(layout) }
-            }
         }
         Box(
             Modifier.align(Alignment.TopCenter)
-                .offset(y = ((maxHeight - minOf(maxWidth, maxHeight)) / 2))
                 .width(minOf(maxWidth, maxHeight) * .7f)
                 .height(32.dp)
                 .clickable(role = Role.Button, onClick = onMenu)
@@ -1598,12 +1645,12 @@ private fun CurrentSetScreen(
             )
         },
     ) {
-        centerItem {
+        run {
             SetHeading(workout, restRemaining)
             LiveWorkoutHealth(workout, health)
         }
 
-        centerItem {
+        run {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 if (workout.exercise?.loadType != "bodyweight")
                     ValueTile(
@@ -1659,7 +1706,7 @@ private fun RoundControl(text: String, tone: Color = Secondary, enabled: Boolean
 }
 
 @Composable
-private fun ValueEditor(
+internal fun ValueEditor(
     workout: WearWorkout,
     field: String,
     onChange: (String, Double) -> Unit,
@@ -1691,58 +1738,63 @@ private fun ValueEditor(
             "rightSeconds" -> "Jobb oldal"
             else -> if (step == 5.0) "Idő" else "Ismétlés"
         }
-    RoundList(title) {
-        centerItem {
-            Label(
-                "Sorozat ${workout.currentSetIndex + 1}/${workout.exercise?.sets?.size ?: 0}",
-                size = 9,
-            )
-        }
-        centerItem {
-            Text(
-                numberText(edited),
-                color = White,
-                fontSize = 28.sp,
-                lineHeight = 30.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        centerItem {
-            Label(if (field == "weight") "kg" else if (step == 5.0) "mp" else "ismétlés", size = 9)
-        }
-        centerItem {
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                RoundControl("−", description = "$title csökkentése") {
-                    edited = (edited - step).coerceAtLeast(0.0)
+    ActionPanel(
+        title,
+        actions = { layout ->
+            CompositionLocalProvider(LocalActionSize provides layout.buttonSize) {
+                Row(horizontalArrangement = Arrangement.spacedBy(layout.gap.dp)) {
+                    RoundControl("×", caption = "Mégse", description = "Mégse", onClick = onBack)
+                    RoundControl("✓", Gold, caption = "Mentés", description = "✓ Mentés") {
+                        if (
+                            field.endsWith("Seconds") ||
+                                (field == "reps" &&
+                                    normalizeUnit(workout.exercise?.repUnit.orEmpty())
+                                        .startsWith("mp"))
+                        ) {
+                            // A manually entered duration must not be overwritten by
+                            // the old paused stopwatch when the set is recorded.
+                            WearStopwatchStore.save(
+                                context,
+                                WearStopwatch(
+                                    "${workout.workoutId}:${workout.exercise?.id}:${set.number}:$field"
+                                ),
+                            )
+                        }
+                        onChange(field, edited - fieldValue(workout.currentSet ?: set, field))
+                        onBack()
+                    }
                 }
-                RoundControl("+", description = "$title növelése") { edited += step }
             }
-        }
-        centerItem { Label("Lépésköz: ${numberText(step)}", size = 9) }
-
-        centerItem {
-            Pill("✓ Mentés") {
-                if (
-                    field.endsWith("Seconds") ||
-                        (field == "reps" &&
-                            normalizeUnit(workout.exercise?.repUnit.orEmpty()).startsWith("mp"))
-                ) {
-                    // A manually entered duration must not be overwritten by
-                    // the old paused stopwatch when the set is recorded.
-                    WearStopwatchStore.save(
-                        context,
-                        WearStopwatch(
-                            "${workout.workoutId}:${workout.exercise?.id}:${set.number}:$field"
-                        ),
-                    )
-                }
-                onChange(field, edited - fieldValue(workout.currentSet ?: set, field))
-                onBack()
+        },
+    ) { compact ->
+        Label(
+            "Sorozat ${workout.currentSetIndex + 1}/${workout.exercise?.sets?.size ?: 0}",
+            size = 9,
+        )
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            RoundControl("−", description = "$title csökkentése") {
+                edited = (edited - step).coerceAtLeast(0.0)
             }
+            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    numberText(edited),
+                    color = White,
+                    fontSize = 26.sp,
+                    lineHeight = 28.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.testTag("wear-edited-value"),
+                )
+                Label(if (field == "weight") "kg" else if (step == 5.0) "mp" else "ism.", size = 9)
+            }
+            RoundControl("+", description = "$title növelése") { edited += step }
         }
-        centerItem { Pill("Mégse", tone = Secondary, onClick = onBack) }
+        if (!compact) Label("Lépésköz: ${numberText(step)}", size = 9)
     }
 }
 
@@ -1820,7 +1872,7 @@ private fun TimedSetScreen(
             )
         },
     ) {
-        centerItem {
+        run {
             SetHeading(
                 workout,
                 restRemaining,
@@ -1834,7 +1886,7 @@ private fun TimedSetScreen(
         val displayed =
             if (set.done || (timer.startedAt == 0L && elapsed == 0L)) fieldValue(set, field).toInt()
             else (elapsed / 1000).toInt()
-        item {
+        run {
             Box(
                 Modifier.fillMaxWidth()
                     .heightIn(min = 34.dp)
@@ -2123,14 +2175,14 @@ private fun ConfirmationScreen(discard: Boolean, completed: Int, onAnswer: (Bool
             }
         },
     ) { compact ->
-        centerItem {
+        run {
             Title(
                 if (discard) "Törlöd az edzést?" else "Befejezed az edzést?",
                 if (compact) 14 else 17,
             )
         }
 
-        centerItem {
+        run {
             Text(
                 if (discard) "A félbehagyott edzés elvész.\nA napló megmarad."
                 else "$completed sorozat bekerül a naplóba.\nRészleges edzés is menthető.",
@@ -2177,14 +2229,13 @@ private fun SummaryScreen(
             }
         },
     ) { compact ->
-        if (result.status == "error")
-            centerItem { Title("Még nem menthető", if (compact) 14 else 19) }
+        if (result.status == "error") run { Title("Még nem menthető", if (compact) 14 else 19) }
         if (result.status == "error") {
-            centerItem {
+            run {
                 Text(result.message, color = Muted, fontSize = 12.sp, textAlign = TextAlign.Center)
             }
         } else if (result.action == "finishWorkout") {
-            centerItem {
+            run {
                 Text(
                     formatSeconds(result.durationSeconds),
                     color = White,
@@ -2193,7 +2244,7 @@ private fun SummaryScreen(
                     fontWeight = FontWeight.SemiBold,
                 )
             }
-            centerItem {
+            run {
                 Row(horizontalArrangement = Arrangement.spacedBy(19.dp)) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Title("${result.exerciseCount}", 22)
@@ -2205,26 +2256,28 @@ private fun SummaryScreen(
                     }
                 }
             }
-            centerItem {
+            run {
                 Label(
                     if (saved) "Mentve a telefonos naplóba"
-                    else "Helyben megőrizve · mentés várakozik"
+                    else "Helyben megőrizve · mentés várakozik",
+                    lines = 3,
                 )
             }
         } else
-            centerItem {
+            run {
                 Label(
                     if (saved) "A félbehagyott edzés törölve"
-                    else "A telefonos törlés még várakozik"
+                    else "A telefonos törlés még várakozik",
+                    lines = 3,
                 )
             }
         if (result.action == "finishWorkout") {
             val metrics = wearMeasuredTotals(health, result.workoutId)
             if (metrics.isNotEmpty()) {
-                centerItem { Label("ÓRÁN MÉRT ADATOK", Gold, size = 10) }
+                run { Label("ÓRÁN MÉRT ADATOK", Gold, size = 10) }
                 for (pair in metrics.chunked(2)) {
 
-                    centerItem {
+                    run {
                         Row(
                             Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -2242,7 +2295,7 @@ private fun SummaryScreen(
                         }
                     }
                 }
-                centerItem {
+                run {
                     Text(
                         "Az összes kcal az alapanyagcserét is tartalmazza.",
                         color = Muted,
@@ -2253,7 +2306,7 @@ private fun SummaryScreen(
             }
             if (health?.optString("workoutId") == result.workoutId) {
                 if (health.optString("state") in listOf("starting", "active", "ending")) {
-                    centerItem {
+                    run {
                         Text(
                             "A mérés lezárása folyamatban; az utolsó adatok még frissülhetnek.",
                             color = Gold,
@@ -2263,7 +2316,7 @@ private fun SummaryScreen(
                     }
                 }
                 if (health.optBoolean("partial"))
-                    centerItem {
+                    run {
                         Text(
                             "Részleges mérés",
                             color = Gold,

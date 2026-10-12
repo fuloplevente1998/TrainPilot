@@ -52,3 +52,48 @@ internal fun wearArcLayout(width: Float, height: Float): WearArcLayout {
     val drop = sqrt((52f * 52f - sideOffset * sideOffset).coerceAtLeast(0f))
     return WearArcLayout(button, sideOffset, drop)
 }
+
+internal data class WearFixedPageLayout(
+    val bodyTop: Float,
+    val bodyHeight: Float,
+    val footerTop: Float,
+    val footerWidth: Float,
+    val footerHeight: Float,
+)
+
+/** Locate the controls themselves in the circle, without shrinking a whole rectangular page. */
+internal fun wearFixedPageLayout(
+    width: Float,
+    height: Float,
+    arc: Boolean,
+    count: Int = 2,
+    gap: Float = 7f,
+): WearFixedPageLayout {
+    val diameter = min(width, height)
+    val top = (height - diameter) / 2f
+    val footerWidth: Float
+    val footerHeight: Float
+    val footerTop: Float
+    if (arc) {
+        val layout = wearArcLayout(width, height)
+        footerWidth = layout.width
+        footerHeight = layout.height
+        footerTop = top + diameter - 10f - footerHeight
+    } else {
+        val layout = wearActionLayout(width, height, count, gap)
+        footerWidth = count * layout.buttonSize + (count - 1) * layout.gap
+        footerHeight = layout.buttonSize
+        val outerCenterX = (footerWidth - layout.buttonSize) / 2f
+        val radius = diameter / 2f - layout.buttonSize / 2f - 6f
+        val centerY = sqrt((radius * radius - outerCenterX * outerCenterX).coerceAtLeast(0f))
+        footerTop = top + diameter / 2f + centerY - layout.buttonSize / 2f
+    }
+    val bodyTop = top + 32f
+    return WearFixedPageLayout(
+        bodyTop,
+        (footerTop - bodyTop - 4f).coerceAtLeast(1f),
+        footerTop,
+        footerWidth,
+        footerHeight,
+    )
+}
