@@ -331,6 +331,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         val selected = mutableStateOf("home")
         compose.setContent { Watch { key(selected.value) { Fixture(selected.value) } } }
         compose.onNodeWithContentDescription("Edzésnapló").assertIsDisplayed().performClick()
+        scrollToEnd("‹ Kezdőlap")
         compose.onNodeWithContentDescription("‹ Kezdőlap").performClick()
         compose
             .onNodeWithContentDescription("Beállítások és órás mérések")
@@ -421,7 +422,14 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                 key(variant.value) {
                     WearHomeDashboard(
                         if (variant.value == "missing") null
-                        else home.copy(hasDraft = variant.value == "draft"),
+                        else
+                            home.copy(
+                                hasDraft = variant.value == "draft",
+                                theme =
+                                    if (variant.value == "green")
+                                        WearHomeTheme("green", "#62d08a", "#9cf5ba", "vivid")
+                                    else WearHomeTheme.DEFAULT,
+                            ),
                         if (variant.value in listOf("active", "rest"))
                             work.copy(
                                 restEndAt =
@@ -467,6 +475,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                 "draft",
                 "missing",
                 "offline",
+                "green",
             )) {
             compose.runOnIdle { variant.value = value }
             assertFullViewport()

@@ -128,6 +128,18 @@ internal fun WearHomeDashboard(
             }
         val curveSize = diameter - 12.dp
         val fontScale = LocalDensity.current.fontScale
+        val sideLabel =
+            if (large) model.measurement
+            else
+                when (model.measurement) {
+                    "Mérés folyamatban" -> "Mérés aktív"
+                    "Mérés bekapcsolva" -> "Mérés be"
+                    "Mérés kikapcsolva" -> "Mérés ki"
+                    "Legutóbbi mérés" -> "Korábbi adat"
+                    "Mérés lezárása" -> "Lezárás"
+                    "Mérés lezárva" -> "Lezárva"
+                    else -> model.measurement
+                }
         CurvedLayout(Modifier.align(Alignment.Center).size(curveSize)) {
             curvedComposable {
                 Image(
@@ -197,7 +209,7 @@ internal fun WearHomeDashboard(
                 )
             }
             basicCurvedText(
-                " ${model.measurement}",
+                " $sideLabel",
                 modifier = CurvedModifier.sizeIn(maxSweepDegrees = if (large) 72f else 60f),
                 style =
                     CurvedTextStyle(
@@ -218,7 +230,7 @@ internal fun WearHomeDashboard(
         ) {
             if (large)
                 HomeFitText(
-                    if (model.active) model.phase
+                    if (model.active) "${model.phase} · ${model.detail}"
                     else {
                         val date = Instant.ofEpochMilli(now).atZone(ZoneId.systemDefault())
                         "${listOf("HÉT","KEDD","SZE","CSÜT","PÉN","SZO","VAS")[date.dayOfWeek.value-1]} ${date.dayOfMonth} · ${model.phase}"
@@ -236,7 +248,7 @@ internal fun WearHomeDashboard(
                 mono = true,
             )
             HomeFitText(
-                model.title,
+                if (model.phase == "PIHENŐ" && !large) "Pihenő · ${model.title}" else model.title,
                 Modifier.fillMaxWidth()
                     .height(if (large) 16.dp else if (tiny) 8.dp else 12.dp)
                     .testTag("wear-home-title"),
@@ -246,13 +258,13 @@ internal fun WearHomeDashboard(
             )
             if (!tiny) {
                 if (model.active) {
-                    HomeFitText(model.detail, Modifier.fillMaxWidth().height(9.dp), 7.5f, HomeMuted)
-                    HomeProgress(
-                        model.completed,
-                        model.total,
-                        theme,
-                        Modifier.fillMaxWidth().height(3.dp),
-                    )
+                    if (large)
+                        HomeProgress(
+                            model.completed,
+                            model.total,
+                            theme,
+                            Modifier.fillMaxWidth().height(3.dp),
+                        )
                 } else {
                     HomeFitText(
                         model.subtitle,
@@ -262,7 +274,7 @@ internal fun WearHomeDashboard(
                     )
                     if (large)
                         HomeFitText(
-                            model.detail,
+                            "${model.detail} · ${model.source}",
                             Modifier.fillMaxWidth().height(9.dp),
                             7.5f,
                             HomeMuted,
@@ -289,7 +301,6 @@ internal fun WearHomeDashboard(
             } else if (large) {
                 if (model.total > 0)
                     HomeProgress(0, model.total, theme, Modifier.fillMaxWidth().height(3.dp))
-                HomeFitText(model.source, Modifier.fillMaxWidth().height(8.dp), 6.5f, HomeMuted)
             }
         }
         // Same circular targets as the accepted short-page layout; the menu has its own rim strip.

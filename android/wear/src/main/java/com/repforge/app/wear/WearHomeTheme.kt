@@ -2,7 +2,6 @@ package com.repforge.app.wear
 
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
 import org.json.JSONObject
 
 /** Optional phone palette metadata; old phone snapshots remain readable. */
@@ -36,10 +35,18 @@ data class WearHomeTheme(
         get() = Color(0xFF000000L or accent2.substring(1).toLong(16))
 
     val frame: Color
-        get() = lerp(Color(0xFF2C3440), accentColor, if (family == "vivid") .76f else .66f)
+        get() = mix(Color(0xFF2C3440), accentColor, if (family == "vivid") .76f else .66f)
 
     val button: Color
-        get() = lerp(Color(0xFF232933), accentColor, if (family == "vivid") .24f else .16f)
+        get() = mix(Color(0xFF232933), accentColor, if (family == "vivid") .24f else .16f)
+
+    // Same gamma-encoded sRGB interpolation as the phone's CSS color-mix(in srgb).
+    private fun mix(a: Color, b: Color, amount: Float): Color =
+        Color(
+            red = a.red * (1f - amount) + b.red * amount,
+            green = a.green * (1f - amount) + b.green * amount,
+            blue = a.blue * (1f - amount) + b.blue * amount,
+        )
 }
 
 internal val LocalWearHomeTheme = staticCompositionLocalOf { WearHomeTheme.DEFAULT }

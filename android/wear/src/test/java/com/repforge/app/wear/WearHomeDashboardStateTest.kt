@@ -66,7 +66,7 @@ class WearHomeDashboardStateTest {
         val data = metrics(workout.workoutId)
         val value = state(workout, health = data)
         assertEquals(listOf("97 bpm · 7 kcal", "65 lépés"), value.metrics)
-        assertEquals("1:05", value.clock)
+        assertEquals("01:05", value.clock)
         assertEquals(HomeAction.RESUME, value.action)
         data.put("updatedAt", now - 30000L)
         assertEquals("Legutóbbi mérés", state(workout, health = data).measurement)
@@ -101,7 +101,7 @@ class WearHomeDashboardStateTest {
             )
         val value = state(active)
         assertEquals("PIHENŐ", value.phase)
-        assertEquals("0:20", value.clock)
+        assertEquals("00:20", value.clock)
         assertEquals(1, value.completed)
         assertEquals(2, value.total)
         assertEquals("Sorozat 2/2", value.detail)
@@ -120,5 +120,18 @@ class WearHomeDashboardStateTest {
         assertEquals("vivid", WearHomeTheme.parse(theme).family)
         theme.put("accent", "transparent")
         assertEquals(WearHomeTheme.DEFAULT, WearHomeTheme.parse(theme))
+    }
+
+    @Test
+    fun framesAndButtonSurfacesMatchThePhoneSrgbColorMix() {
+        val theme = WearHomeTheme.DEFAULT
+        val frame = theme.frame
+        assertEquals(66f / 255f, frame.red, 1f / 255f)
+        assertEquals(112f / 255f, frame.green, 1f / 255f)
+        assertEquals(147f / 255f, frame.blue, 1f / 255f)
+        val button = theme.button
+        assertEquals(42f / 255f, button.red, 1f / 255f)
+        assertEquals(57f / 255f, button.green, 1f / 255f)
+        assertEquals(73f / 255f, button.blue, 1f / 255f)
     }
 }

@@ -42,10 +42,12 @@ internal fun wearHomeDashboardState(
         if (home?.publishedAt?.let { it > 0L && it <= now + 5000 } == true)
             "Adat ${clock.format(Instant.ofEpochMilli(home.publishedAt))}"
         else "Helyi adat"
-    val measurementId = workout?.workoutId ?: closure?.takeIf { it.status in listOf("pending", "error") }?.workoutId
+    val measurementId =
+        workout?.workoutId ?: closure?.takeIf { it.status in listOf("pending", "error") }?.workoutId
     val currentHealth =
         health?.takeIf {
             measurementId != null &&
+                measurementId.isNotBlank() &&
                 it.optString("workoutId") == measurementId &&
                 it.optString("source") == "wear_health_services"
         }
@@ -97,7 +99,7 @@ internal fun wearHomeDashboardState(
                 .map { it.removePrefix("Edzés: ") }
         return WearHomeDashboardState(
             if (rest > 0) "PIHENŐ" else "EDZÉS",
-            formatSeconds(if (rest > 0) rest else workout.elapsedSeconds(now)),
+            formatSeconds(if (rest > 0) rest else workout.elapsedSeconds(now)).padStart(5, '0'),
             workout.exercise?.name ?: workout.programName,
             workout.dayName,
             if (completed == sets.size && sets.isNotEmpty()) "$completed/${sets.size} sorozat kész"
