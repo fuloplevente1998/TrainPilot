@@ -2,9 +2,9 @@
 
 Androidos edzéstervező és edzésnapló, natív Wear OS társalkalmazással. A fő edzésfunkciók helyben használhatók; az egészségadatok, a Google Drive és a Google Naptár integrációja opcionális.
 
-**Aktuális kiadáscsalád: 1.3 — telefon és Wear OS.** A mainen lévő párosított kiadás a Mini napló frissítését, az órás mérési előzményeket és az egészségadatok pontos forrásjelölését tartalmazza. A telefonról kezdeményezett órás appindítás javítása szintén az **1.3** leírásához tartozik; ez még a [#160 tesztágon](https://github.com/fuloplevente1998/TrainPilot/pull/160) van. A felhasználó a programos edzés órás megnyitását és háttérmérését visszaigazolta. A gyors edzés jelenlegi választójából indított órás megnyitás külön bekötése a tesztág új javítása; a teljes egészségadatút ellenőrzése folytatódik.
+**Aktuális kiadás: 1.3.4 — telefon és Wear OS.** A felhasználó 2026. október 12-én elfogadta a legutóbbi párosított tesztbuildet mainre és release-re. A kiadás a nyitott nézetek és piszkozatok védelmét, a telefonos lenyílók gyorsítását, a témaszín szinkron közbeni megőrzését és a kerek órás kijelző elrendezését tartalmazza. Megmarad az órás mérésindítás, az élő egészségadat és a forráshű napló.
 
-[Telefonos 1.3 kiadás](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.0) · [Wear OS 1.3 kiadás](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.0) · [Összevont változáslista](RELEASE_NOTES.md) · [Fejlesztési állapot](DEVELOPMENT_STATUS.md)
+[Telefonos 1.3.4](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.4) · [Wear OS 1.3.4](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.4) · [Változáslista](docs/releases/v1.3.4.md) · [Fejlesztési állapot](DEVELOPMENT_STATUS.md)
 
 ## Verziók áttekintése
 
@@ -33,11 +33,11 @@ A telefon Naplója őrzi a mentett edzéseket. Az órás Mini napló ezek korlá
 
 TrainPilot Wear-mérés nélkül a telefon a kiválasztott egészségadat-szolgáltatóból olvas, ha ott rendelkezésre áll adat. Azonos óra mellett is eltérhet a mérési időszak, a szinkron ideje és az aktív/összes kalória jelentése. [Részletes működés](docs/WEAR_OS.md#egészségadatok-és-kijelző-kikapcsolása).
 
-**Folyamatban lévő ellenőrzések:** kijelző kikapcsolása melletti mérés, naplózott és későn érkező egészségadatok, eltérő kalóriaértékek összehasonlítása. Az **1.3** [#160 tesztágán](https://github.com/fuloplevente1998/TrainPilot/pull/160) a normál Drive-szinkron csak a legfrissebb eszközmentéseket olvassa, a Telefon/Felhő ütközésválasztás érvényes adatot ment. A szinkron időtartama és az ütközésfeloldás készülékes elfogadása még nyitott.
+**Következő fejlesztések:** [automatikus munka/pihenő és gyakorlatléptetés #162](https://github.com/fuloplevente1998/TrainPilot/issues/162), majd [GPS-útvonaltérkép #163](https://github.com/fuloplevente1998/TrainPilot/issues/163). Az órás kezdőlap teljes dizájnmegújítása külön [#170](https://github.com/fuloplevente1998/TrainPilot/issues/170) feladat.
 
 ## Telepítés és dokumentáció
 
-A [GitHub Releases](https://github.com/fuloplevente1998/TrainPilot/releases) oldalon a telefonos és órás APK-k külön találhatók. A hozzájuk tartozó forrás, ellenőrzőösszeg és csomagadat a megfelelő release mellékleteiben marad. A telefonos órás appindítás tesztjéhez a #160-hoz átadott párosított teszt-APK-k szükségesek; a jelenlegi main release-ek még nem tartalmazzák ezt a javítást.
+A [GitHub Releases](https://github.com/fuloplevente1998/TrainPilot/releases) oldalon a telefonos és órás APK-k külön találhatók. A hozzájuk tartozó forrás, ellenőrzőösszeg és csomagadat a megfelelő release mellékleteiben marad. Az 1.3.4 telefonos és órás APK a korábbi változat fölé telepíthető; a napló és beállítások megmaradnak.
 
 - [Build és aláírás](docs/BUILD.md)
 - [Wear OS működés és készülékes ellenőrzés](docs/WEAR_OS.md)

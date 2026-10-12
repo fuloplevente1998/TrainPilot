@@ -44,3 +44,7 @@ A főoldali középső szöveg szélessége szintén a kör sarkaihoz igazodik. 
 A geometriai JVM-próbák a listák teljes sarkait, a cím és tartalom elkülönítését, a megerősítés/összesítés egy- és kétgombos láblécét, a teljes gombköröket és feliratokat ellenőrzik 160–320 dp kerek és eltérő oldalarányú nézeteken. A tényleges órán a törlés/befejezés, mentési hiba/újrapróba, nagy betűméret, a listák végén lévő visszagombok és a szerkesztők még ellenőrzendők.
 
 A teljes Wear kezdőlap dizájnmegújítása külön #170 fejlesztési pont, a telefonos lenyíló nézetek lassulása külön #171 hiba. Ez a javítás a meglévő órás képernyők hozzáférhetőségét és elrendezését kezeli.
+
+## Elfogadás és kiadás — 2026. október 12.
+
+A felhasználó a legutóbbi telefonos (`083078d`) és órás (`5b9195e`) tesztbuildet mainre és 1.3.4 kiadásra elfogadta. A korábbi függő elfogadási státuszt ez felváltja. A kiadási verzió 1.3.4 /2730; [kiadási feljegyzés](releases/v1.3.4.md).

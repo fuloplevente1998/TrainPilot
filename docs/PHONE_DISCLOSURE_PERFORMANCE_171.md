@@ -54,3 +54,7 @@ Ellenőrzés: hideg/ismételt nyitás, olvasási korlátok, helyi választómez�
 Az új telefonos APK-val az Edzés, Programok, Napló és Egészség lenyílóit többször megnyitni/csukni, közben egy súly- és egy testsúlyértéket beírni. Ellenőrizni a gördülékeny reakciót, a nyitott állapot és piszkozat megmaradását háttérszinkron közben, majd a mentést és az új adatok megjelenését. A #171 készülékes elfogadása és a nyilvános 1.3.3 kiadás frissítése ennek visszajelzésére vár.
 
 A telefonos tesztbuild örökli a #169 javításait; a Wear alkalmazás forrása ebben a változtatásban nem módosul. A hozzá tartozó legutóbbi órás tesztbuild a `5b9195e` forrásból készült `TrainPilot-1.3.3-Wear-kepernyok.apk`.
+
+## Elfogadás és kiadás — 2026. október 12.
+
+A felhasználó a legutóbbi telefonos (`083078d`) és órás (`5b9195e`) tesztbuildet mainre és 1.3.4 kiadásra elfogadta. A korábbi függő elfogadási státuszt ez felváltja. A kiadási verzió 1.3.4 /2730; [kiadási feljegyzés](releases/v1.3.4.md).

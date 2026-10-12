@@ -17,3 +17,7 @@ Ellenőrzések:
 A telefonos build örökli a #169 és #171 javításait, verziója 1.3.3 /2729. A hozzá tartozó órás tesztbuild továbbra is a `5b9195e` forrású `TrainPilot-1.3.3-Wear-kepernyok.apk`.
 
 Végső próba: a kívánt témaszín kiválasztása után egy edzés vagy mérés mentése és több szinkron; ellenőrizni, hogy a szín megmarad az app újranyitása után is. A korábbi hibában már felülírt színt újra ki kell választani. A nyilvános 1.3.3 kiadás frissítése és az issue elfogadása a készülékes visszajelzésre vár.
+
+## Elfogadás és kiadás — 2026. október 12.
+
+A felhasználó a legutóbbi telefonos (`083078d`) és órás (`5b9195e`) tesztbuildet mainre és 1.3.4 kiadásra elfogadta. A korábbi függő elfogadási státuszt ez felváltja. A kiadási verzió 1.3.4 /2730; [kiadási feljegyzés](releases/v1.3.4.md).
