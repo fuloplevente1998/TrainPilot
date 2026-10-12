@@ -49,16 +49,7 @@ jobs:
           profile: wearos_small_round
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: |
-            adb shell setprop persist.sys.timezone UTC
-            adb shell settings put system accelerometer_rotation 0
-            adb shell settings put system user_rotation 0
-            cd android && ./gradlew --no-daemon :wear:connectedDebugAndroidTest
-      - name: Collect screenshots
-        if: always()
-        run: |
-          mkdir -p wear-ui-evidence
-          adb pull /sdcard/Android/data/com.repforge.app/files/wear-ui wear-ui-evidence/ || true
+          script: bash android/wear/ci/run-round-ui.sh
       - uses: actions/upload-artifact@v7
         if: always()
         with:

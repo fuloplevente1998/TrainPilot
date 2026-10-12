@@ -152,6 +152,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                 "finish" to "Edzés befejezése és mentése",
                 "summary" to "Kész",
                 "workout" to "Edzés befejezése",
+                "timed-workout" to "Edzés befejezése",
             )
         for ((route, last) in routes) {
             compose.runOnIdle { selected.value = route }
@@ -187,9 +188,9 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         compose.setContent { Watch { key(selected.value) { Fixture(selected.value) } } }
         compose
             .onNodeWithTag("wear-round-list")
-            .performScrollToNode(hasContentDescription("10. 12. 06:00 • Hosszú nevű próbaedzés"))
+            .performScrollToNode(hasContentDescription("Hosszú nevű próbaedzés", substring = true))
         compose
-            .onNodeWithContentDescription("10. 12. 06:00 • Hosszú nevű próbaedzés")
+            .onNodeWithContentDescription("Hosszú nevű próbaedzés", substring = true)
             .performClick()
         assertFullViewport()
         scrollToEnd()
@@ -295,7 +296,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             mutableStateOf<WearClosure?>(
                 WearClosure("c", "layout-test", "finishWorkout", "saved", "", 60, 1, 1)
             )
-        val request = mutableStateOf<String?>(route)
+        val request = mutableStateOf<String?>(if (route == "timed-workout") "workout" else route)
         val health =
             JSONObject()
                 .put("workoutId", "layout-test")
