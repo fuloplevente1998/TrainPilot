@@ -107,6 +107,7 @@ internal fun TrainPilotWearApp(
     var miniJournalBackRoute by rememberSaveable { mutableStateOf("journal") }
     var journalBackRoute by rememberSaveable { mutableStateOf("menu") }
     var metricsBackRoute by rememberSaveable { mutableStateOf("menu") }
+    var settingsBackRoute by rememberSaveable { mutableStateOf("home") }
     var returnWorkoutPage by rememberSaveable { mutableStateOf(0) }
     fun openMeasurement(item: MiniJournalWorkout, origin: String) {
         miniJournalId = item.workoutId
@@ -128,6 +129,7 @@ internal fun TrainPilotWearApp(
                 "journal-detail" -> miniJournalBackRoute
                 "journal" -> journalBackRoute
                 "metrics" -> metricsBackRoute
+                "settings" -> settingsBackRoute
                 "discard" -> "home"
                 else -> "home"
             }
@@ -139,6 +141,21 @@ internal fun TrainPilotWearApp(
             Box(Modifier.fillMaxSize().background(Black)) {
                 val active = workout.value
                 when {
+                    route == "settings" ->
+                        SettingsScreen(
+                            measuring.value,
+                            gpsEnabled.value,
+                            onEnableHealth,
+                            onDisableHealth,
+                            onToggleGps,
+                            onMetrics = {
+                                metricsBackRoute = "settings"
+                                route = "metrics"
+                            },
+                            onOpenPhone = onOpenPhone,
+                            backLabel = if (settingsBackRoute == "home") "‹ Kezdőlap" else "‹ Főmenü",
+                            onBack = { route = settingsBackRoute },
+                        )
                     route == "metrics" ->
                         HealthScreen(
                             health.value,
@@ -159,6 +176,7 @@ internal fun TrainPilotWearApp(
                             if (it == "journal") openJournal("menu")
                             else {
                                 if (it == "metrics") metricsBackRoute = "menu"
+                                if (it == "settings") settingsBackRoute = "menu"
                                 route = it
                             }
                         }
@@ -301,9 +319,10 @@ internal fun TrainPilotWearApp(
                             onDays = { route = "days" },
                             onResult = { route = "summary" },
                             onJournal = { openJournal("home") },
+                            onDiscard = { route = "discard" },
                             onSettings = {
-                                metricsBackRoute = "home"
-                                route = "metrics"
+                                settingsBackRoute = "home"
+                                route = "settings"
                             },
                             onMenu = { route = "menu" },
                             onOpenPhone = onOpenPhone,
@@ -437,18 +456,20 @@ private fun Title(text: String, size: Int = 19, lines: Int = 2) {
 
 @Composable
 private fun Pill(text: String, modifier: Modifier = Modifier, tone: Color = Gold,
-                 enabled: Boolean = true, height: Int = 48, size: Int = 14, onClick: () -> Unit) {
+                 enabled: Boolean = true, height: Int = 48, size: Int = 14,
+                 lines: Int = 2, onClick: () -> Unit) {
     val fontScale = LocalDensity.current.fontScale
     val captionScale = fontScale.coerceAtMost(1.35f) / fontScale
+    val shape = if (lines == Int.MAX_VALUE) RoundedCornerShape(18.dp) else CircleShape
     Box(modifier.fillMaxWidth().heightIn(min = height.dp)
-        .background(if (enabled) tone else Secondary, CircleShape)
+        .background(if (enabled) tone else Secondary, shape)
         .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
         .semantics { contentDescription = text }.padding(horizontal = 9.dp, vertical = 5.dp),
         contentAlignment = Alignment.Center) {
         Text(text, color = if (!enabled) Muted else if (tone == Gold) Black else if (tone == Danger) DangerText else White,
             fontSize = (size * captionScale).sp, lineHeight = ((size + 2) * captionScale).sp,
             fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center,
-            maxLines = 2, overflow = TextOverflow.Ellipsis)
+            maxLines = lines, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -495,6 +516,7 @@ internal fun MainMenuScreen(
                 "Naptár" to "calendar",
                 "Programnapok" to "days",
                 "Órás mérések" to "metrics",
+                "Beállítások" to "settings",
             )) {
             centerItem { Pill(label, tone = Card) { onRoute(destination) } }
         }
@@ -511,6 +533,60 @@ internal fun MainMenuScreen(
         }
         centerItem { Pill("Megnyitás telefonon", tone = Card, onClick = onOpenPhone) }
     }
+}
+
+@Composable
+private fun SettingsScreen(
+    enabled: Boolean,
+    gps: Boolean,
+    onEnable: () -> Unit,
+    onDisable: () -> Unit,
+    onGps: () -> Unit,
+    onMetrics: () -> Unit,
+    onOpenPhone: () -> Unit,
+    backLabel: String,
+    onBack: () -> Unit,
+) {
+    RoundList("Beállítások") {
+        centerItem { JournalText(if (enabled) "Edzésmérés bekapcsolva" else "Edzésmérés kikapcsolva", Gold, 12) }
+        centerItem {
+            Pill(
+                if (enabled) "Mérés kikapcsolása" else "Mérések engedélyezése",
+                tone = if (enabled) Secondary else Gold,
+                onClick = if (enabled) onDisable else onEnable,
+            )
+        }
+        centerItem {
+            Pill(if (gps) "GPS kikapcsolása" else "GPS engedélyezése", tone = Card, onClick = onGps)
+        }
+        centerItem {
+            JournalText("A GPS a következő mozgásos edzés mérésétől használható.", size = 11)
+        }
+        centerItem { Pill("Órás mérések", tone = Card, onClick = onMetrics) }
+        centerItem { JournalText("A színek a telefonon választott témát követik.", size = 11) }
+        centerItem { Pill("Telefon megnyitása", tone = Secondary, onClick = onOpenPhone) }
+        centerItem { Pill(backLabel, tone = Secondary, onClick = onBack) }
+    }
+}
+
+/** Journal paragraphs keep the entire text and leave room for the curved screen edge. */
+@Composable
+private fun JournalText(
+    text: String,
+    color: Color = Muted,
+    size: Int = 11,
+    weight: FontWeight = FontWeight.Normal,
+) {
+    Text(
+        text,
+        modifier = Modifier.fillMaxWidth(.8f),
+        color = color,
+        fontSize = size.sp,
+        lineHeight = (size + 2).sp,
+        fontWeight = weight,
+        textAlign = TextAlign.Center,
+        softWrap = true,
+    )
 }
 
 private fun miniJournalDate(value: String): String =
@@ -539,7 +615,7 @@ private fun MiniJournalScreen(
 ) {
     val items = home?.recentWorkouts.orEmpty()
     RoundList("Mini napló") {
-        centerItem { Label("Mentett telefonos edzések · offline másolat", size = 10) }
+        centerItem { JournalText("Mentett telefonos edzések · offline másolat", size = 10) }
 
         if (items.isEmpty()) {
             val message =
@@ -550,19 +626,21 @@ private fun MiniJournalScreen(
                     else -> "A telefonos naplóban még nincs átadható, befejezett edzés."
                 }
             centerItem {
-                Text(message, color = Muted, fontSize = 12.sp, textAlign = TextAlign.Center)
+                JournalText(message, size = 12)
             }
         }
         if (home?.phoneVersion?.isNotBlank() == true) {
-            centerItem { Label("Telefon: ${home.phoneVersion}", size = 10) }
+            centerItem { JournalText("Telefon: ${home.phoneVersion}", size = 10) }
         }
         items.forEach { item ->
             centerItem {
                 Pill(
-                    "${miniJournalDate(item.started)} • ${item.dayName}",
+                    "${miniJournalDate(item.started)}\n${item.dayName}",
+                    modifier = Modifier.fillMaxWidth(.84f).testTag("wear-journal-entry"),
                     tone = Card,
                     size = 12,
                     height = 47,
+                    lines = Int.MAX_VALUE,
                 ) {
                     onSelect(item)
                 }
@@ -582,56 +660,53 @@ private fun LazyListScope.MiniJournalMetrics(
     metrics: MiniJournalMetric,
     watch: Boolean,
 ) {
-    centerItem { Label(title, Gold, 12) }
+    centerItem { JournalText(title, Gold, 12) }
     val avg = miniNumber(metrics.averageHeartRate, 1)
     val max = miniNumber(metrics.maxHeartRate)
     if (avg != null || max != null) {
         centerItem {
-            Text(
+            JournalText(
                 "Pulzus: ${avg ?: "—"} / ${max ?: "—"} bpm",
                 color = White,
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center,
+                size = 12,
             )
         }
     }
     if (watch) {
         miniNumber(metrics.totalCalories)?.let { value ->
             centerItem {
-                Text(
+                JournalText(
                     "Összes mért energia: $value kcal",
                     color = White,
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.Center,
+                    size = 12,
                 )
             }
         }
         miniNumber(metrics.activeDurationSeconds)?.let { value ->
-            centerItem { Label("Órás mérési idő: $value s", size = 11) }
+            centerItem { JournalText("Órás mérési idő: $value s", size = 11) }
         }
     } else {
         miniNumber(metrics.workoutCalories)?.let { value ->
             centerItem {
-                Text(
+                JournalText(
                     "Edzéskalória: $value kcal",
                     color = White,
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.Center,
+                    size = 12,
                 )
             }
         }
         miniNumber(metrics.totalCalories)?.let { value ->
-            centerItem { Label("Ablak összenergiája: $value kcal", size = 11) }
+            centerItem { JournalText("Ablak összenergiája: $value kcal", size = 11) }
         }
         miniNumber(metrics.activeCalories)?.let { value ->
-            centerItem { Label("Aktív energia: $value kcal", size = 11) }
+            centerItem { JournalText("Aktív energia: $value kcal", size = 11) }
         }
         miniNumber(metrics.exerciseMinutes)?.let { value ->
-            centerItem { Label("Egészségapp edzésideje: $value perc", size = 11) }
+            centerItem { JournalText("Egészségapp edzésideje: $value perc", size = 11) }
         }
     }
-    miniNumber(metrics.steps)?.let { centerItem { Label("Lépések: $it", size = 11) } }
-    if (metrics.partial) centerItem { Label("Részleges órás mérés", Gold, 10) }
+    miniNumber(metrics.steps)?.let { centerItem { JournalText("Lépések: $it", size = 11) } }
+    if (metrics.partial) centerItem { JournalText("Részleges órás mérés", Gold, 10) }
 }
 
 @Composable
@@ -643,18 +718,16 @@ private fun MiniJournalDetailScreen(
     RoundList("Edzésnapló") {
         if (item == null) {
             centerItem {
-                Text(
+                JournalText(
                     "Ez az edzés már nincs a szinkronizált listában.",
-                    color = Muted,
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.Center,
+                    size = 12,
                 )
             }
         } else {
-            centerItem { Title(item.dayName, 16) }
-            centerItem { Label(miniJournalDate(item.started), size = 11) }
+            centerItem { JournalText(item.dayName, White, 16, FontWeight.SemiBold) }
+            centerItem { JournalText(miniJournalDate(item.started), size = 11) }
             centerItem {
-                Label(
+                JournalText(
                     "${item.durationSeconds / 60} perc · ${item.exercises.size} gyakorlat",
                     size = 11,
                 )
@@ -662,7 +735,7 @@ private fun MiniJournalDetailScreen(
 
             if (item.wear != null) {
                 MiniJournalMetrics("TrainPilot óra · Health Services", item.wear, true)
-            } else centerItem { Label("Nem érkezett órás mérési összesítés", size = 11) }
+            } else centerItem { JournalText("Nem érkezett órás mérési összesítés", size = 11) }
             if (item.healthConnect != null) {
                 MiniJournalMetrics(
                     if (item.healthConnect.source == "samsung_health") "Samsung Health"
@@ -671,21 +744,20 @@ private fun MiniJournalDetailScreen(
                     false,
                 )
 
-                centerItem { Label("A két mérés nem adódik össze", size = 10) }
+                centerItem { JournalText("A két mérés nem adódik össze", size = 10) }
             }
 
-            centerItem { Label("Elvégzett gyakorlatok", Gold, 12) }
+            centerItem { JournalText("Elvégzett gyakorlatok", Gold, 12) }
             if (item.exercises.isEmpty()) {
-                centerItem { Label("Nincs rögzített sorozat", size = 11) }
+                centerItem { JournalText("Nincs rögzített sorozat", size = 11) }
             }
             item.exercises.forEach { exercise ->
                 centerItem {
-                    Text(
+                    JournalText(
                         exercise.name,
                         color = White,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center,
+                        size = 13,
+                        weight = FontWeight.SemiBold,
                     )
                 }
                 exercise.sets.forEach { set ->
@@ -706,7 +778,7 @@ private fun MiniJournalDetailScreen(
                             add("${miniNumber(set.distanceMeters)} m")
                     }
                     centerItem {
-                        Label(
+                        JournalText(
                             "${set.number}. sorozat • ${details.joinToString(" · ").ifBlank { "Kész" }}",
                             size = 11,
                         )

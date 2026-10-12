@@ -61,6 +61,18 @@ class WearHomeDashboardStateTest {
     }
 
     @Test
+    fun idleClockShowsSecondsAndChangesEverySecondWithoutChangingSnapshotTime() {
+        val first = wearHomeDashboardState(home, null, null, null, true, now)
+        val next = wearHomeDashboardState(home, null, null, null, true, now + 1000L)
+        val formatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss")
+            .withZone(java.time.ZoneId.systemDefault())
+        assertEquals(formatter.format(java.time.Instant.ofEpochMilli(now)), first.clock)
+        assertEquals(formatter.format(java.time.Instant.ofEpochMilli(now + 1000L)), next.clock)
+        assertNotEquals(first.clock, next.clock)
+        assertEquals(first.source, next.source)
+    }
+
+    @Test
     fun currentMetricsAreSessionMatchedAndStaleDataIsExplicit() {
         assertTrue(state(workout, health = metrics("previous")).metrics.isEmpty())
         val data = metrics(workout.workoutId)

@@ -5,7 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.*
@@ -58,6 +58,7 @@ internal fun WearHomeDashboard(
     onDays: () -> Unit,
     onResult: () -> Unit,
     onJournal: () -> Unit,
+    onDiscard: () -> Unit,
     onSettings: () -> Unit,
     onMenu: () -> Unit,
     onOpenPhone: () -> Unit,
@@ -66,7 +67,7 @@ internal fun WearHomeDashboard(
     LaunchedEffect(active?.workoutId) {
         while (true) {
             now = System.currentTimeMillis()
-            delay(if (active != null) 1000L else 60000L - now % 60000L)
+            delay(1000L - now % 1000L)
         }
     }
     val model = wearHomeDashboardState(home, active, closure, health, enabled, now)
@@ -95,13 +96,17 @@ internal fun WearHomeDashboard(
             .testTag("wear-round-list")
             .pointerInput(onMenu) {
                 var distance = 0f
-                detectHorizontalDragGestures(
-                    onDragStart = { distance = 0f },
-                    onHorizontalDrag = { change, amount ->
-                        distance += amount
-                        change.consume()
+                var fromBottom = false
+                detectVerticalDragGestures(
+                    onDragStart = {
+                        distance = 0f
+                        fromBottom = it.y >= size.height * .6f
                     },
-                    onDragEnd = { if (kotlin.math.abs(distance) >= 40.dp.toPx()) onMenu() },
+                    onVerticalDrag = { change, amount ->
+                        distance += amount
+                        if (fromBottom) change.consume()
+                    },
+                    onDragEnd = { if (fromBottom && distance <= -40.dp.toPx()) onMenu() },
                 )
             }
     ) {
@@ -250,11 +255,18 @@ internal fun WearHomeDashboard(
             HomeFitText(
                 if (model.phase == "PIHENŐ" && !large) "Pihenő · ${model.title}" else model.title,
                 Modifier.fillMaxWidth()
-                    .height(if (large) 16.dp else if (tiny) 8.dp else 12.dp)
+                    .height(
+                        if (model.active) {
+                            if (large) 32.dp else if (tiny) 16.dp else 24.dp
+                        } else if (large) 16.dp else if (tiny) 8.dp else 12.dp
+                    )
                     .testTag("wear-home-title"),
-                if (large) 14f else if (tiny) 7f else 10.5f,
+                if (model.active) {
+                    if (large) 17f else if (tiny) 10f else 13f
+                } else if (large) 14f else if (tiny) 7f else 10.5f,
                 HomeWhite,
                 weight = FontWeight.SemiBold,
+                maxLines = if (model.active) 2 else 1,
             )
             if (!tiny) {
                 if (model.active) {
@@ -312,12 +324,13 @@ internal fun WearHomeDashboard(
                 .testTag("wear-fixed-actions")
         ) {
             HomeQuickButton(
-                R.drawable.ic_tp_journal,
-                "Napló",
-                "Edzésnapló",
+                if (model.active) R.drawable.ic_tp_delete else R.drawable.ic_tp_journal,
+                if (model.active) "Törlés" else "Napló",
+                if (model.active) "Megkezdett edzés törlése" else "Edzésnapló",
                 theme,
                 false,
-                onJournal,
+                if (model.active) onDiscard else onJournal,
+                danger = model.active,
             )
             Box(Modifier.offset(x = arc.sideOffset.dp, y = arc.centerTop.dp)) {
                 HomeQuickButton(
@@ -334,7 +347,7 @@ internal fun WearHomeDashboard(
                 HomeQuickButton(
                     R.drawable.ic_tp_settings,
                     "Beállít.",
-                    "Beállítások és órás mérések",
+                    "Beállítások",
                     theme,
                     false,
                     onSettings,
@@ -370,11 +383,19 @@ private fun HomeQuickButton(
     theme: WearHomeTheme,
     primary: Boolean,
     onClick: () -> Unit,
+    danger: Boolean = false,
 ) {
     Column(
         Modifier.size(48.dp)
-            .background(if (primary) theme.button else Color(0xFF232933), CircleShape)
-            .border(1.dp, if (primary) theme.frame else HomeLine, CircleShape)
+            .background(
+                if (danger) Color(0xFF3B232A) else if (primary) theme.button else Color(0xFF232933),
+                CircleShape,
+            )
+            .border(
+                1.dp,
+                if (danger) Color(0xFF7D4653) else if (primary) theme.frame else HomeLine,
+                CircleShape,
+            )
             .clickable(role = Role.Button, onClick = onClick)
             .semantics { contentDescription = description },
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -384,7 +405,9 @@ private fun HomeQuickButton(
             painterResource(icon),
             null,
             Modifier.size(22.dp),
-            colorFilter = ColorFilter.tint(if (primary) theme.secondaryColor else HomeWhite),
+            colorFilter = ColorFilter.tint(
+                if (danger) Color(0xFFEFBCC3) else if (primary) theme.secondaryColor else HomeWhite
+            ),
         )
         HomeFitText(caption, Modifier.width(44.dp).height(13.dp), 8.5f, HomeWhite)
     }
@@ -426,6 +449,7 @@ private fun HomeFitText(
     color: Color,
     weight: FontWeight = FontWeight.Normal,
     mono: Boolean = false,
+    maxLines: Int = 1,
 ) {
     BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
         val density = LocalDensity.current
@@ -440,6 +464,7 @@ private fun HomeFitText(
                 requested,
                 weight,
                 font,
+                maxLines,
             ) {
                 var size = requested * density.fontScale.coerceAtMost(1.1f)
                 repeat(8) {
@@ -453,8 +478,8 @@ private fun HomeFitText(
                                 fontFamily = font,
                             ),
                             constraints = Constraints(maxWidth = constraints.maxWidth),
-                            maxLines = 1,
-                            softWrap = false,
+                            maxLines = maxLines,
+                            softWrap = maxLines > 1,
                         )
                     if (result.didOverflowWidth || result.size.height > constraints.maxHeight)
                         size *= .88f
@@ -469,7 +494,8 @@ private fun HomeFitText(
             fontFamily = font,
             fontWeight = weight,
             textAlign = TextAlign.Center,
-            maxLines = 1,
+            maxLines = maxLines,
+            softWrap = maxLines > 1,
             overflow = TextOverflow.Ellipsis,
         )
     }

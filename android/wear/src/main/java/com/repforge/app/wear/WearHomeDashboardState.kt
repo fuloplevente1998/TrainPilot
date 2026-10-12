@@ -38,6 +38,7 @@ internal fun wearHomeDashboardState(
     now: Long,
 ): WearHomeDashboardState {
     val clock = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault())
+    val homeClock = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault())
     val source =
         if (home?.publishedAt?.let { it > 0L && it <= now + 5000 } == true)
             "Adat ${clock.format(Instant.ofEpochMilli(home.publishedAt))}"
@@ -76,7 +77,7 @@ internal fun wearHomeDashboardState(
     ) =
         WearHomeDashboardState(
             phase,
-            clock.format(Instant.ofEpochMilli(now)),
+            homeClock.format(Instant.ofEpochMilli(now)),
             title,
             subtitle,
             detail,

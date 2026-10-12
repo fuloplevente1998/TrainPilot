@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.Density
@@ -181,6 +182,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                 "journal-detail" to "‹ Napló",
                 "quick" to "‹ Vissza",
                 "metrics" to "‹ Vissza",
+                "settings" to "‹ Kezdőlap",
                 "days" to "‹ Kezdőlap",
                 "editor" to "Mégse",
                 "timer" to "‹ Vissza",
@@ -293,7 +295,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     }
 
     @Test
-    fun homeStaysCenteredAndBothSideSwipesOpenTheMenu() {
+    fun homeStaysCenteredAndOnlyBottomUpSwipeOpensTheMenu() {
         val selected = mutableStateOf("home")
         compose.setContent { Watch { key(selected.value) { Fixture(selected.value) } } }
         val actions = compose.onNodeWithTag("wear-fixed-actions").fetchSemanticsNode().boundsInRoot
@@ -319,10 +321,12 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         )
         screenshot("home-fixed")
         compose.onNodeWithTag("wear-round-list").performTouchInput { swipeLeft() }
-        compose.onNodeWithContentDescription("Mini napló").assertIsDisplayed()
-        compose.runOnIdle { selected.value = "quick" }
-        compose.runOnIdle { selected.value = "home" }
+        compose.onNodeWithContentDescription("Edzés indítása").assertIsDisplayed()
         compose.onNodeWithTag("wear-round-list").performTouchInput { swipeRight() }
+        compose.onNodeWithContentDescription("Edzés indítása").assertIsDisplayed()
+        compose.onNodeWithTag("wear-round-list").performTouchInput { swipeDown() }
+        compose.onNodeWithContentDescription("Edzés indítása").assertIsDisplayed()
+        compose.onNodeWithTag("wear-round-list").performTouchInput { swipeUp() }
         compose.onNodeWithContentDescription("Mini napló").assertIsDisplayed()
     }
 
@@ -334,22 +338,56 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         scrollToEnd("‹ Kezdőlap")
         compose.onNodeWithContentDescription("‹ Kezdőlap").performClick()
         compose
-            .onNodeWithContentDescription("Beállítások és órás mérések")
+            .onNodeWithContentDescription("Beállítások")
             .assertIsDisplayed()
             .performClick()
+        compose.onNodeWithText("Edzésmérés bekapcsolva").assertIsDisplayed()
+        lazyList().performScrollToNode(hasContentDescription("Órás mérések"))
+        compose.onNodeWithContentDescription("Órás mérések").performClick()
         scrollToEnd("‹ Vissza")
         compose.onNodeWithContentDescription("‹ Vissza").performClick()
+        scrollToEnd("‹ Kezdőlap")
+        compose.onNodeWithContentDescription("‹ Kezdőlap").performClick()
         compose.onNodeWithContentDescription("Edzés indítása").assertIsDisplayed()
         compose.runOnIdle { selected.value = "active-home" }
         compose.onNodeWithContentDescription("Edzés folytatása").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Főmenü").performClick()
-        scrollToEnd("Edzés törlése")
-        compose.onNodeWithContentDescription("Edzés törlése").performClick()
+        compose.onNodeWithContentDescription("Megkezdett edzés törlése").performClick()
         compose
             .onNodeWithContentDescription("Vissza, az edzés megőrzése")
             .assertIsDisplayed()
             .performClick()
         compose.onNodeWithContentDescription("Edzés folytatása").assertIsDisplayed()
+    }
+
+    @Test
+    fun miniJournalKeepsLongNamesAndNotesOnMultipleLines() {
+        val selected = mutableStateOf("journal")
+        compose.setContent { Watch { key(selected.value) { Fixture(selected.value) } } }
+        val note = "Mentett telefonos edzések · offline másolat"
+        val layouts = mutableListOf<TextLayoutResult>()
+        compose.onNodeWithText(note).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+        assertFalse(layouts.single().hasVisualOverflow)
+        assertTrue("Long journal note must wrap rather than truncate", layouts.single().lineCount > 1)
+        lazyList().performScrollToNode(hasTestTag("wear-journal-entry"))
+        val entry = compose.onNodeWithTag("wear-journal-entry")
+        screenshot("journal-wrapped-entry")
+        entry.performClick()
+        val title = "Hosszú nevű próbaedzés a teljes edzésnap nevével és további részletekkel"
+        layouts.clear()
+        compose.onNodeWithText(title).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+        assertFalse(layouts.single().hasVisualOverflow)
+        assertTrue(layouts.single().lineCount > 1)
+        screenshot("journal-wrapped-title")
+        val exercise = "Földön fekve nyomás hosszú gyakorlatnévvel"
+        lazyList().performScrollToNode(hasText(exercise))
+        layouts.clear()
+        compose.onNodeWithText(exercise).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+        assertFalse(layouts.single().hasVisualOverflow)
+        assertTrue(layouts.single().lineCount > 1)
+        screenshot("journal-wrapped-exercise")
+        scrollToEnd("‹ Napló")
+        compose.onNodeWithContentDescription("‹ Napló").performClick()
+        compose.onNodeWithText(note).assertExists()
     }
 
     @Test
@@ -453,14 +491,15 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                         true,
                         variant.value != "offline",
                         67,
-                        { _, _ -> },
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
+                        onStart = { _, _ -> },
+                        onResume = {},
+                        onDays = {},
+                        onResult = {},
+                        onJournal = {},
+                        onDiscard = {},
+                        onSettings = {},
+                        onMenu = {},
+                        onOpenPhone = {},
                     )
                 }
             }
@@ -479,7 +518,10 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             )) {
             compose.runOnIdle { variant.value = value }
             assertFullViewport()
-            for (description in listOf("Edzésnapló", "Beállítások és órás mérések")) {
+            for (description in listOf(
+                if (value in listOf("active", "rest")) "Megkezdett edzés törlése" else "Edzésnapló",
+                "Beállítások",
+            )) {
                 val bounds =
                     compose
                         .onNodeWithContentDescription(description)
@@ -503,6 +545,12 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                     .assertIsDisplayed()
             if (value !in listOf("active", "rest"))
                 compose.onNodeWithText("97 bpm · 7 kcal").assertDoesNotExist()
+            if (value in listOf("active", "rest")) {
+                val titleLayouts = mutableListOf<TextLayoutResult>()
+                compose.onNodeWithText(exercise.name).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(titleLayouts) }
+                assertTrue("Exercise names use two lines", titleLayouts.single().lineCount > 1)
+                assertFalse("The full exercise name fits", titleLayouts.single().hasVisualOverflow)
+            }
             screenshot("home-revamp-$value")
         }
     }
@@ -643,7 +691,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                 "journal-layout",
                 "2026-10-12T06:00:00Z",
                 "2026-10-12T06:10:00Z",
-                "Hosszú nevű próbaedzés",
+                "Hosszú nevű próbaedzés a teljes edzésnap nevével és további részletekkel",
                 false,
                 600,
                 listOf(
