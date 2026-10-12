@@ -1768,10 +1768,11 @@ internal fun ValueEditor(
             }
         },
     ) { compact ->
-        Label(
-            "Sorozat ${workout.currentSetIndex + 1}/${workout.exercise?.sets?.size ?: 0}",
-            size = 9,
-        )
+        val fontScale = LocalDensity.current.fontScale
+        val series = "Sorozat ${workout.currentSetIndex + 1}/${workout.exercise?.sets?.size ?: 0}"
+        if (compact) Text(series, color = Muted, fontSize = (8f / fontScale).sp,
+            lineHeight = (10f / fontScale).sp, textAlign = TextAlign.Center)
+        else Label(series, size = 9)
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -1783,16 +1784,21 @@ internal fun ValueEditor(
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     val measurer = rememberTextMeasurer()
+                    val valueSize = if (compact) 26f / fontScale else 26f
+                    val valueLine = if (compact) 28f / fontScale else 28f
                     val style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 26.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.sp)
+                        fontSize = valueSize.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.sp)
                     val naturalWidth = measurer.measure(numberText(edited), style).size.width
                     val available = with(LocalDensity.current) { (maxWidth - 4.dp).toPx() }
                     val fit = (available / naturalWidth.coerceAtLeast(1)).coerceAtMost(1f)
                     Text(numberText(edited), style = style, color = White,
-                        fontSize = (26f * fit).sp, lineHeight = (28f * fit).sp,
+                        fontSize = (valueSize * fit).sp, lineHeight = (valueLine * fit).sp,
                         maxLines = 1, modifier = Modifier.testTag("wear-edited-value"))
                 }
-                Label(if (field == "weight") "kg" else if (step == 5.0) "mp" else "ism.", size = 9)
+                val unit = if (field == "weight") "kg" else if (step == 5.0) "mp" else "ism."
+                if (compact) Text(unit, color = Muted, fontSize = (9f / fontScale).sp,
+                    lineHeight = (11f / fontScale).sp, textAlign = TextAlign.Center)
+                else Label(unit, size = 9)
             }
             RoundControl("+", description = "$title növelése") { edited += step }
         }

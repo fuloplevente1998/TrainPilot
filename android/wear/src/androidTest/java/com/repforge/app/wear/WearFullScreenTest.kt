@@ -375,6 +375,13 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             compose.onNodeWithContentDescription("Mégse").assertIsDisplayed()
             val plus = compose.onNodeWithContentDescription("$title növelése")
             val minus = compose.onNodeWithContentDescription("$title csökkentése")
+            val root = compose.onRoot().fetchSemanticsNode().boundsInRoot
+            for (button in listOf(plus, minus)) {
+                val bounds = button.assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+                assertEquals("The whole 48dp editor target must be visible", root.width * 48f / diameter,
+                    bounds.height, 1f)
+                assertEquals("The editor target must not be clipped", bounds.width, bounds.height, 1f)
+            }
             if (fontScale == 1f) {
                 val value =
                     compose.onNodeWithTag("wear-edited-value").fetchSemanticsNode().boundsInRoot
