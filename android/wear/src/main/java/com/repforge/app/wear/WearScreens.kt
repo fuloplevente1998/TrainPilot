@@ -505,29 +505,36 @@ internal fun MainMenuScreen(
     onOpenPhone: () -> Unit,
     onRoute: (String) -> Unit,
 ) {
-    RoundList("Főmenü") {
-        for ((label, destination) in
-            listOf(
-                "Kezdőlap" to "home",
-                "Mini napló" to "journal",
-                "Naptár" to "calendar",
-                "Programnapok" to "days",
-                "Órás mérések" to "metrics",
-            )) {
-            centerItem { Pill(label, tone = Card) { onRoute(destination) } }
-        }
-        if (!hasWorkout || quickWorkout) {
-            centerItem {
-                Pill(if (quickWorkout) "+ Gyakorlat" else "Gyors edzés", tone = Gold) {
-                    onRoute("quick")
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val titleSpace = (112f - minOf(maxWidth, maxHeight).value / 2f).coerceAtLeast(0f)
+        RoundList(
+            "Főmenü",
+            initialCenterItemScrollOffset =
+                with(LocalDensity.current) { (-titleSpace).dp.roundToPx() },
+        ) {
+            for ((label, destination) in
+                listOf(
+                    "Kezdőlap" to "home",
+                    "Mini napló" to "journal",
+                    "Naptár" to "calendar",
+                    "Programnapok" to "days",
+                    "Órás mérések" to "metrics",
+                )) {
+                centerItem { Pill(label, tone = Card) { onRoute(destination) } }
+            }
+            if (!hasWorkout || quickWorkout) {
+                centerItem {
+                    Pill(if (quickWorkout) "+ Gyakorlat" else "Gyors edzés", tone = Gold) {
+                        onRoute("quick")
+                    }
                 }
             }
+            if (hasWorkout) {
+                centerItem { Pill("Edzés folytatása") { onRoute("workout") } }
+                centerItem { Pill("Edzés törlése", tone = Danger) { onRoute("discard") } }
+            }
+            centerItem { Pill("Megnyitás telefonon", tone = Card, onClick = onOpenPhone) }
         }
-        if (hasWorkout) {
-            centerItem { Pill("Edzés folytatása") { onRoute("workout") } }
-            centerItem { Pill("Edzés törlése", tone = Danger) { onRoute("discard") } }
-        }
-        centerItem { Pill("Megnyitás telefonon", tone = Card, onClick = onOpenPhone) }
     }
 }
 
@@ -1438,10 +1445,13 @@ private fun WorkoutPager(
             }
         }
         Box(
-            Modifier.fillMaxSize().padding(bottom = 12.dp),
+            Modifier.fillMaxSize().padding(bottom = 4.dp),
             contentAlignment = Alignment.BottomCenter,
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                Modifier.testTag("wear-page-indicator"),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
                 repeat(3) { index ->
                     Box(
                         Modifier.width(if (pager.currentPage == index) 12.dp else 4.dp)

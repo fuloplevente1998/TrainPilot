@@ -135,10 +135,19 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         assertFullViewport()
         val root = compose.onRoot().fetchSemanticsNode().boundsInRoot
         val middle =
-            compose.onNodeWithContentDescription("Mini napló").fetchSemanticsNode().boundsInRoot
+            compose
+                .onNodeWithContentDescription(if (diameter < 180f) "Kezdőlap" else "Mini napló")
+                .fetchSemanticsNode()
+                .boundsInRoot
         assertTrue(
             "Centered menu button uses at least 80% of the diameter",
             middle.width >= root.width * .8f,
+        )
+        val first =
+            compose.onNodeWithContentDescription("Kezdőlap").fetchSemanticsNode().boundsInRoot
+        assertTrue(
+            "The first button must start below the curved title",
+            first.top >= root.height * 32f / diameter,
         )
         screenshot("menu-initial")
         scrollToStart()
@@ -178,8 +187,24 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             compose.waitForIdle()
             assertFullViewport()
             screenshot(route)
-            if (route == "workout" || route == "timed-workout")
+            if (route == "workout" || route == "timed-workout") {
                 compose.onNodeWithText("93 bpm · 7 kcal").assertIsDisplayed()
+                val caption =
+                    compose
+                        .onNodeWithText(
+                            if (route == "workout") "Rögzítés" else "Mentés",
+                            useUnmergedTree = true,
+                        )
+                        .fetchSemanticsNode()
+                        .boundsInRoot
+                val dots =
+                    compose.onNodeWithTag("wear-page-indicator").fetchSemanticsNode().boundsInRoot
+                if (caption.height > 0f)
+                    assertFalse(
+                        "Pager dots must not paint over the action caption",
+                        caption.overlaps(dots),
+                    )
+            }
             if (route == "home")
                 compose.onNodeWithContentDescription("Megnyitás telefonon").assertIsDisplayed()
             scrollToEnd(last)
