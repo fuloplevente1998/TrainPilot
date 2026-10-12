@@ -338,5 +338,13 @@
   {
     "file": "tests/browser/wear-measurement-165.cjs",
     "estimatedSeconds": 9
+  },
+  {
+    "file": "tests/browser/disclosure-performance-171.cjs",
+    "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/theme-sync-persistence-173.cjs",
+    "estimatedSeconds": 10
   }
 ]

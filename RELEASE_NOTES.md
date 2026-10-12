@@ -49,7 +49,7 @@ Egészségnapló, személyre szabás, telefonos felület és Wear OS alapok:
 
 ## 1.3
 
-**Aktuális telefonos és Wear OS kiadáscsalád.** A [#156](https://github.com/fuloplevente1998/TrainPilot/pull/156) felhasználói jóváhagyással mainre került. [Telefonos kiadás](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.0) · [Órás kiadás](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.0).
+**Aktuális telefonos és Wear OS kiadáscsalád, legutóbb 1.3.4.** A [#156](https://github.com/fuloplevente1998/TrainPilot/pull/156) felhasználói jóváhagyással mainre került. [Telefonos kiadás](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.4) · [Órás kiadás](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.4).
 
 A közös fejlesztési sorozat összevont tartalma:
 
@@ -64,7 +64,7 @@ A közös fejlesztési sorozat összevont tartalma:
 
 ### Telefonról kezdeményezett órás appindítás
 
-Az aktuális köztes javítást is az **1.3** részeként dokumentáljuk. A [#160 PR](https://github.com/fuloplevente1998/TrainPilot/pull/160) még tesztág; a mainre kiadott APK-k ezt a javítást még nem tartalmazzák.
+A telefonos órás appindítás és mérés javításai a mainen és az elfogadott **1.3.4** kiadásban szerepelnek.
 
 Új programos vagy gyors edzés telefonos indítása előbb közzéteszi az aktív edzést, majd megnyitja a csatlakoztatott órán a TrainPilotot. Az óra röviden felébreszti a kijelzőt, ellenőrzi az edzésazonosítót és a friss pillanatképet, majd az engedélyezett mérést az előtérszolgáltatásra bízza. A kijelző ezután kikapcsolhat.
 
@@ -74,7 +74,7 @@ Az aktuális köztes javítást is az **1.3** részeként dokumentáljuk. A [#16
 - Aktív edzésnél a navigáció lemondása megőrzi a nyitott választót; csak a jóváhagyott kilépés zárja be, a mentett piszkozat megőrzésével.
 - Hiányzó natív integrációnál a hívást kiegészítő wrapper nem hoz létre érvénytelen Proxy objektumot; a híd elérhetőségi ellenőrzése megmarad.
 - A fő képernyők és panelek további ellenőrzését az [alkalmazásaudit](docs/APP_AUDIT_1.3.md) foglalja össze. A látható verzió és telepítési kód változatlan.
-- A programos háttérmérés felhasználói visszaigazolása megérkezett. A gyors edzés új bekötése és a végső naplóadat teljes készülékes ellenőrzése következik.
+- A felhasználó a legutóbbi telefonos/órás tesztbuildet 2026. október 12-én mainre és 1.3.4 kiadásra elfogadta.
 - Megmarad a mérési kapcsoló, a szenzorengedélyek és más alkalmazás futó mérésének védelme.
 - Normál frissítés, telefonos visszatérés vagy visszaállított piszkozat nem nyitogatja az órás appot. Sikertelen megnyitáskor a telefonos edzés megmarad, kézi órás megnyitással folytatható.
 
@@ -84,13 +84,13 @@ A 20 guggolásos próba során a mért órás érték helyesen érkezett át. A 
 
 TrainPilot Wear-mérés nélkül a telefon a kiválasztott Samsung Health/Health Connect szolgáltatóból olvas. Ha óra nincs a kézen, vagy a TrainPilot nem indított saját mérést, abból nem állítható elő utólag közvetlen Wear-edzésösszegzés. Más alkalmazás ugyanazon órán mért és megosztott adata külön adatút.
 
-Folytatandó: háttérmérés, Mini napló frissítése/újracsatlakozása, körkijelzős és nagybetűs nézetek, már naplózott egészségadatok megőrzése, későn érkező értékek és telefonos edzés egészségadatai.
+Az 1.3.4 megtartja a késői mérési adatok kapcsolását és a Mini naplót; javítja a körkijelzős listákat és vezérlőket, a nyitott telefonos nézetek védelmét, a lenyílók teljesítményét és a témaszín szinkronját. [Részletes 1.3.4 feljegyzés](docs/releases/v1.3.4.md).
 
 ### Drive-szinkron és ütközésfeloldás
 
-Az **1.3** [#160 tesztágán](https://github.com/fuloplevente1998/TrainPilot/pull/160) a normál szinkron csak az eszközönkénti legfrissebb mentést olvassa; a régi mentések olvasása külön, alapból csukott helyreállítási művelet. Normál szinkronkor nincs archív olvasás vagy automatikus archív takarítás.
+Az **1.3.4** kiadásban a normál szinkron csak az eszközönkénti legfrissebb mentést olvassa; a régi mentések olvasása külön, alapból csukott helyreállítási művelet. Normál szinkronkor nincs archív olvasás vagy automatikus archív takarítás.
 
-A Telefon/Felhő ütközésválasztás a kiválasztott adatváltozatot menti; a logikai gombválasz nem kerül adatmező vagy naplóbejegyzés helyére. Az egyedi edzések és testsúlyadatok megmaradnak, a szigorú mentésellenőrzés változatlan. A szinkron időtartamának és a választás utáni sikeres mentésnek készülékes elfogadása még nyitott.
+A Telefon/Felhő ütközésválasztás a kiválasztott adatváltozatot menti; a logikai gombválasz nem kerül adatmező vagy naplóbejegyzés helyére. Az egyedi edzések és testsúlyadatok megmaradnak, a szigorú mentésellenőrzés változatlan. A témaszín megőrzésének javítása is a felhasználó által elfogadott 1.3.4 telefonos build része.
 
 ## Történeti részletek
 

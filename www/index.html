@@ -219,7 +219,14 @@
    (a.length?'<div class="tp168-weight-recent"><small>'+escText(c().recent)+'</small>'+a.slice().reverse().slice(0,3).map(x=>'<div><span><strong>'+escText(fmt(x.kg))+' kg</strong><small>'+escText(new Date(x.date).toLocaleDateString(locale()))+'</small></span><span><button type="button" onclick="tp168EditWeight(\''+escText(x.date)+'\')">'+escText(c().edit)+'</button><button type="button" class="danger" onclick="tp168DeleteWeight(\''+escText(x.date)+'\')">'+escText(c().del)+'</button></span></div>').join('')+'</div>':'<div class="tp168-weight-empty">'+escText(c().noData)+'</div>')+
   '</div></section>';
  }
- window.tp168ToggleWeight=function(){window.TrainPilot168Health.weightOpen=!window.TrainPilot168Health.weightOpen;refreshHealth();setTimeout(()=>document.querySelector('.tp168-weight-journal')?.scrollIntoView?.({block:'nearest',behavior:'smooth'}),0)};
+ window.tp168ToggleWeight=function(){
+  const health=window.TrainPilot168Health,next=!health.weightOpen,panel=document.querySelector('main.rf263-health .tp168-weight-journal');
+  health.weightOpen=next;
+  if(!panel){refreshHealth();return}
+  panel.classList.toggle('tp168-open',next);
+  panel.querySelector('.tp168-weight-summary')?.setAttribute('aria-expanded',String(next));
+  if(next)requestAnimationFrame(()=>{if(panel.isConnected)panel.scrollIntoView?.({block:'nearest',behavior:'smooth'})});
+ };
  window.tp168SetWeightRange=function(v){state.weightRange=v;window.TrainPilot168Health.weightOpen=true;refreshHealth()};
  window.tp168SaveWeight=function(){const kg=Number(String(document.querySelector('#tp168WeightKg')?.value||'').replace(',','.')),raw=String(document.querySelector('#tp168WeightDate')?.value||'').trim(),fallback=typeof rf215Date==='function'?rf215Date():new Date().toISOString().slice(0,10),d=/^\d{4}-\d{2}-\d{2}$/.test(raw)?raw:fallback;if(!kg||kg<30||kg>300)return alert('30–300 kg');const w=weights();w.unshift({kg:Math.round(kg*10)/10,date:new Date(d+'T12:00:00').toISOString()});db.set('weights',w);window.TrainPilot168Health.weightOpen=true;refreshHealth()};
  window.tp168EditWeight=function(date){window.TrainPilot168Health.weightOpen=true;return typeof rf215Edit==='function'?rf215Edit(date):undefined};
@@ -704,7 +711,10 @@
    const latest=new Map(selected.current.map(f=>[/^repforge-sync-([a-z0-9-]{36})-/.exec(f.name)[1],f]));
    const heads=driveLatestHeads(latest),base=db.get('cloudBase:'+owner,null);
    const receiptKey='cloudArchiveScan161:'+owner,receipt=db.get(receiptKey,null);
-   const scanned=base&&receipt?.schema===1&&receipt.baseHash===await archiveBaseHash(base)?receipt.versions||{}:{};
+   const receiptValid=base&&receipt?.schema===1&&receipt.baseHash===await archiveBaseHash(base);
+   const scanned=receiptValid?receipt.versions||{}:{};
+   const previousThemes=receiptValid?receipt.themeByDevice||{}:{},previousHeads=base?db.get('cloudHeads:'+owner,{})||{}:{};
+   const nextThemes={},verifiedReadHeads=new Set();
    // Ordinary sync reads only the current snapshot of each device. Earlier
    // snapshots are recovery sources only when the user explicitly requests them.
    const archivePending=recoverEarlier?selected.archive.filter(f=>!snapshotVersion(f)||scanned[f.id]!==snapshotVersion(f)):[];
@@ -721,11 +731,23 @@
      const read=await bridge.driveRead({id:f.id,silent:silent}),snap=JSON.parse(read.data);
      if(snap.app!=='RepForgeSync'||snap.schema!==1||snap.owner!==owner)throw Error(tp149T('cloud.unknownBackup'));
      const data=validateSync(typeof tp105Project==='function'?tp105Project(snap.data,tp105HealthConsent()):snap.data);
-     if(snapshotVersion(f)&&snapshotVersion(read)===snapshotVersion(f))nextScanned[f.id]=snapshotVersion(f);
+     if(snapshotVersion(f)&&snapshotVersion(read)===snapshotVersion(f)){nextScanned[f.id]=snapshotVersion(f);verifiedReadHeads.add(driveSnapshotHead(f));}
      return data;
     }catch(e){if(strict)throw e;return null}
    };
-   for(let i=0;i<selected.current.length;i++){stage('cloud.driveReading',{index:i+1,total:selected.current.length});const d=await readSnapshot(selected.current[i],true);if(d)remotes.push(d)}
+   for(let i=0;i<selected.current.length;i++){
+    stage('cloud.driveReading',{index:i+1,total:selected.current.length});
+    const f=selected.current[i],d=await readSnapshot(f,true);if(!d)continue;
+    const device=/^repforge-sync-([a-z0-9-]{36})-/.exec(f.name)[1],theme=d.themeAccent??null;
+    nextThemes[device]=theme;
+    // A device's old theme is not a new preference change on every sync.
+    // Compare actual observed colors across new heads too; only successful
+    // commits establish this baseline. Older builds migrate via verified heads.
+    const known=Object.hasOwn(previousThemes,device)?previousThemes[device]===theme:
+     previousHeads[device]===driveSnapshotHead(f)&&verifiedReadHeads.has(driveSnapshotHead(f));
+    if(base&&known){if(base.themeAccent===undefined)delete d.themeAccent;else d.themeAccent=base.themeAccent;}
+    remotes.push(d);
+   }
    for(let i=0;i<archivePending.length;i++){stage('cloud.driveArchiveReading',{index:i+1,total:archivePending.length});const d=await readSnapshot(archivePending[i],false);if(d)archives.push(d)}
    let merged,conflict=false,writtenDevice=null;
    const attempt=chooser=>validateSync(tp18MergeSync(local,remotes,base,chooser,archives));
@@ -749,7 +771,8 @@
    storeMerged(merged);document.documentElement.lang=rf212Lang();rf200ApplyTheme();db.set('cloudBase:'+owner,merged);db.set('cloudHeads:'+owner,heads);db.set('cloudScan105:'+owner,1);db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{drive:new Date().toISOString()}));
    // Failed reads/merges/writes never become receipts. A full disk only disables
    // this optimization; it must not turn a committed sync into a failed one.
-   try{db.set(receiptKey,{schema:1,baseHash:await archiveBaseHash(merged),versions:nextScanned});}catch(_){}
+   if(writtenDevice)nextThemes[writtenDevice]=merged.themeAccent??null;
+   try{db.set(receiptKey,{schema:1,baseHash:await archiveBaseHash(merged),versions:nextScanned,themeByDevice:nextThemes});}catch(_){}
    cloudDriveStage='';
    const maintain=recoverEarlier&&writtenDevice&&typeof bridge.drivePrune==='function';
    if(maintain){cloudActiveOperation='maintenance';cloudDriveStage=tp149T('cloud.driveCleanup');}
@@ -870,7 +893,7 @@
   tp3KeepScroll(()=>render());
  };
  window.tp3ExerciseToggle=function(el,key,ei){
-  if(!el)return;
+  if(!el?.isConnected)return;
   const st=tp3ExerciseState();
   if(el.open){if(!(st&&st.key===key&&!st.isNew&&st.index===ei))window.tp3OpenExerciseEditor(key,ei,el)}
   else if(st&&st.key===key&&!st.isNew&&st.index===ei){tp3ClearExerciseState();el.querySelector(':scope > .tp3-exercise-inline-editor')?.remove()}
@@ -986,7 +1009,7 @@
  }
 
  window.tp3HistoryToggle=function(el,key){
-  if(!el)return;
+  if(!el?.isConnected)return;
   if(el.open)state.tp3HistoryOpenKey=key;
   else if(state.tp3HistoryOpenKey===key)state.tp3HistoryOpenKey=null;
  };
@@ -1042,7 +1065,7 @@
    const exerciseCount=typeof tp149T==='function'?tp149T('journal.exerciseCount',{count:x.exercises.length}):x.exercises.length+' gyakorlat';
    const photoLabel=photoCount?(typeof tp149T==='function'?tp149T('journal.photoCount',{count:photoCount}):photoCount+' fotó'):'';
    const body='<div class="history-body tp3-combined-history-body" data-tp3-hydrated="'+(open?'true':'false')+'">'+(open?tp3HistoryBodyHtml(x,key,originalIndex):'')+'</div>';
-   return '<details data-tp152-history-key="'+esc(key)+'" '+(open?'open ':'')+'class="history rf263-history rf103-history tp3-combined-history" ontoggle="if(this.open){tp3EnsureHistoryBody(this,'+originalIndex+',\''+esc(key)+'\');rf130LoadHistoryPhotos(this);rfHistoryHealthEnsure('+originalIndex+')}tp3HistoryToggle(this,\''+esc(key)+'\')"><summary onclick="if(!this.parentElement.open)tp3EnsureHistoryBody(this.parentElement,'+originalIndex+',\''+esc(key)+'\')"><div class="history-head"><div class="history-title-row"><div><div class="history-title">'+esc(title)+'</div><div class="history-date">'+esc(dateText)+'</div></div><div class="rf103-history-side"><span class="badge">'+esc(exerciseCount+(photoLabel?' • '+photoLabel:''))+'</span><span class="rf103-history-chevron" aria-hidden="true">›</span></div></div><div class="history-badges"><span class="history-badge">⏱ '+esc(sessionDuration(x))+'</span><span class="history-badge">✓ '+esc(typeof tp149T==='function'?tp149T('journal.setCount',{done:c.done,total:c.total}):c.done+'/'+c.total+' sorozat')+'</span></div></div></summary>'+body+'</details>';
+   return '<details data-tp152-history-key="'+esc(key)+'" '+(open?'open ':'')+'class="history rf263-history rf103-history tp3-combined-history" ontoggle="if(this.open){tp3EnsureHistoryBody(this,'+originalIndex+',\''+esc(key)+'\');rf130LoadHistoryPhotos(this);rfHistoryHealthEnsure('+originalIndex+',\''+esc(x.started)+'\')}tp3HistoryToggle(this,\''+esc(key)+'\')"><summary onclick="if(!this.parentElement.open)tp3EnsureHistoryBody(this.parentElement,'+originalIndex+',\''+esc(key)+'\')"><div class="history-head"><div class="history-title-row"><div><div class="history-title">'+esc(title)+'</div><div class="history-date">'+esc(dateText)+'</div></div><div class="rf103-history-side"><span class="badge">'+esc(exerciseCount+(photoLabel?' • '+photoLabel:''))+'</span><span class="rf103-history-chevron" aria-hidden="true">›</span></div></div><div class="history-badges"><span class="history-badge">⏱ '+esc(sessionDuration(x))+'</span><span class="history-badge">✓ '+esc(typeof tp149T==='function'?tp149T('journal.setCount',{done:c.done,total:c.total}):c.done+'/'+c.total+' sorozat')+'</span></div></div></summary>'+body+'</details>';
   }catch(error){
    try{console.error('[TrainPilot] Phase 3 Journal row recovery',originalIndex,error)}catch(_){}
    const date=typeof fmtDate==='function'?fmtDate(safe?.started):'';
@@ -1918,6 +1941,13 @@
   try{window.tpGlobalApplyChevrons?.(body)}catch(_){}
   return body;
  };
+ // Lazy disclosures run outside render(). Share reads only for their current
+ // synchronous operation, then release them before edits/imports/native work.
+ for(const name of ['tp3EnsureHistoryBody','tp3OpenExerciseEditor','rfHistoryHealthEnsure',
+                    'tp107HydrateProgramRow','tp7EnsureProgramBody']){
+  const base=window[name];if(typeof base!=='function')continue;
+  window[name]=function(){const self=this,args=arguments;return operation(()=>base.apply(self,args))};
+ }
  if(typeof programCards==='function'){
   programCards=function(){
    const list=programs(),activeId=activeProgramId();
