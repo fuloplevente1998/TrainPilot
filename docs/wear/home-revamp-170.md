@@ -43,3 +43,5 @@ A telefonos `makeHomeSnapshot` opcionális `theme` mezője a meglevő választot
 A kapcsolatot a NodeClient, az akkumulátort az óra rendszerállapota szolgáltatja. A státuszok a látható Activityben tíz másodpercenként frissülnek. Egy tárolt programadat nem válik kapcsolatbizonyítékká. A Beállítások külön oldal, ahol a mérés és GPS kapcsolható, onnan nyithatók az Órás mérések. A Napló és Beállítások visszalépése a kezdőlapra tér vissza.
 
 A funkcionális natív próbák a teljes körgombok láthatóságát, a menügesztusokat, a visszautakat és a törlés megerősítését is ellenőrzik, 160/192/225 dp és normál/150%/200% betűméret mellett. A futásazonosítók és az APK-k lenyomatai a PR-be kerülnek.
+
+Az edzés gyakorlatoldalán a sorozatadat mellett kisebb, halványabb `HH:mm` pontos idő is látszik. Ugyanabban a sorban marad súlyzós, időzített és pihenő állapotban; percfordulón frissül.

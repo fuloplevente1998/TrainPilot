@@ -199,6 +199,11 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             screenshot(route)
             if (route == "workout" || route == "timed-workout") {
                 compose.onNodeWithText("93 bpm · 7 kcal").assertIsDisplayed()
+                val clockLayouts = mutableListOf<TextLayoutResult>()
+                compose.onNodeWithTag("wear-workout-clock").assertIsDisplayed()
+                    .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(clockLayouts) }
+                assertTrue(clockLayouts.single().layoutInput.text.text.matches(Regex("\\d{2}:\\d{2}")))
+                assertFalse("Wall clock must fit alongside the set heading", clockLayouts.single().hasVisualOverflow)
                 val caption =
                     compose
                         .onNodeWithText(

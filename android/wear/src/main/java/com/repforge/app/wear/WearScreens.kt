@@ -1564,11 +1564,33 @@ private fun WorkoutPanel(
 private fun SetHeading(workout: WearWorkout, restRemaining: Int, detail: String? = null) {
     val completed = workout.exercise?.sets?.count { it.done } ?: 0
     val count = workout.exercise?.sets?.size ?: 0
-    Label(when {
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            now = System.currentTimeMillis()
+            delay(60000L - now % 60000L)
+        }
+    }
+    val clock = Instant.ofEpochMilli(now).atZone(ZoneId.systemDefault())
+        .format(DateTimeFormatter.ofPattern("HH:mm"))
+    val heading = when {
         restRemaining > 0 -> "Pihenő ${formatSeconds(restRemaining)} · $completed/$count"
         workout.exerciseComplete -> "✓ $completed/$count sorozat rögzítve"
         else -> detail ?: "${workout.currentExercise + 1}/${workout.exercises.size} · Sorozat ${workout.currentSetIndex + 1}/$count"
-    }, Gold, size = 8)
+    }
+    val fontScale = LocalDensity.current.fontScale
+    val captionScale = fontScale.coerceAtMost(1.35f) / fontScale
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically) {
+        Text(heading, modifier = Modifier.weight(1f, fill = false), color = Gold,
+            fontSize = (8 * captionScale).sp, lineHeight = (10 * captionScale).sp,
+            maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(" · ", color = Muted, fontSize = (7 * captionScale).sp)
+        Text(clock, modifier = Modifier.testTag("wear-workout-clock")
+            .semantics { contentDescription = "Pontos idő: $clock" },
+            color = Muted, fontSize = (7 * captionScale).sp,
+            lineHeight = (10 * captionScale).sp, maxLines = 1)
+    }
 }
 
 @Composable
