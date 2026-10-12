@@ -10,6 +10,7 @@ A felhasználó kérése szerint az aktív visszaszámláló manuális és autom
 - Súlyzós → időzített átmenet: a következő időalapú sorozat menetrendje az előző gyakorlat pihenőjével indul, majd automatikusan munkára vált. A kezdő pihenő nem növeli a sorozat mért munkaidejét.
 - Az önálló ismétléses pihenő is ugyanazt a natív Android foreground időzítőt használja. Lezárt telefon mellett a szolgáltatás időzít és jelez; az előkészített következő sorozatot a felület visszatéréskor ugyanahhoz az azonosítóhoz illeszti. A készre jelölés kézi marad.
 - Az Android értesítésből Szünet/Folytatás és Leállítás érhető el. A GPS tervezett pihenőben és kézi szünetben is szünetel; munkára visszatérve új horgonyt vesz fel.
+- Bekapcsolt rezgésnél a natív automata/intervallum-visszaszámlálás utolsó 3 másodpercében másodpercenként egy 80 ms-os rövid impulzus jelez. Szakaszváltáskor és lejáratkor egy 1 másodperces, egybefüggő rezgés következik. Szünet vagy leállítás megszakítja a rezgést; folytatás és ismételt állapotlekérés nem ismétli meg a már jelzett másodpercet. Rövid szakasznál csak a rendelkezésre álló előjelzések szólalnak meg, és nem vágják félbe az előző hosszú jelzést. A böngészős tartalék működés ugyanezt a mintát használja, amíg az oldal meg van nyitva.
 - Visszapipálás, kézi léptetés, sorozattörlés, új edzés és későn visszatérő natív válasz nem rögzíthet másik edzésbe. Megszakadt szolgáltatásból nincs kitalált folytatás.
 - A korábban átadott Wear-kezdőlap témaszinkronja megmarad a telefonos home snapshotban.
 

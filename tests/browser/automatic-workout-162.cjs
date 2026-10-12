@@ -37,5 +37,17 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const file=p
  await p.evaluate(async()=>{fixtureAuto162();await TrainPilotAutomatic162.toggle(true);__auto162.wait=true;void toggleSet(0,0);});await p.waitForFunction(()=>!!__auto162.release);await p.evaluate(()=>{fixtureAuto162();state.session.syncId='replacement';state.session.exercises[0].sets[0].reps='77';__auto162.wait=false;__auto162.release();});await p.waitForTimeout(350);assert.equal(await p.evaluate(()=>state.session.exercises[0].sets[0].reps),'77');assert.equal(await p.evaluate(()=>__auto162.stopped),true);
  // A plain browser does not promise background timing or resume lost elapsed time.
  await p.evaluate(async()=>{window.Capacitor={isNativePlatform:()=>false};fixtureAuto162();await TrainPilotAutomatic162.toggle(true);await toggleSet(0,0);});assert.equal(await p.evaluate(()=>state.session.automatic162.run.native),false);await p.locator('[data-tp162-automatic]').scrollIntoViewIfNeeded();await p.locator('.tp153-toast.show').waitFor({state:'hidden',timeout:5000});fs.mkdirSync('ui-evidence',{recursive:true});await p.screenshot({path:'ui-evidence/automatic-workout-162.png'});assert.deepEqual(errors,[]);
- console.log('PASS automatic workout: 16 layouts, manual repetition records, native rest pause/skip, next exercise, timed transition, undo/draft/interruption, stale-owner protection and browser fallback');
+ const hapticSignals=await p.evaluate(async()=>{
+  const signals=[];Object.defineProperty(navigator,'vibrate',{configurable:true,value:ms=>{signals.push(ms);return true;}});
+  await TrainPilotAutomatic162.sync();signals.length=0;
+  state.session.automatic162.run.elapsedMs=27000;await TrainPilotAutomatic162.sync();await TrainPilotAutomatic162.sync();
+  await TrainPilotAutomatic162.command('pause');await TrainPilotAutomatic162.sync();
+  await TrainPilotAutomatic162.command('resume');
+  state.session.automatic162.run.elapsedMs=28000;await TrainPilotAutomatic162.sync();
+  state.session.automatic162.run.elapsedMs=29000;await TrainPilotAutomatic162.sync();
+  state.session.automatic162.run.elapsedMs=30000;await TrainPilotAutomatic162.sync();await TrainPilotAutomatic162.sync();
+  return signals;
+ });
+ assert.deepEqual(hapticSignals,[80,0,80,80,1000],'browser rest has three short cues, cancels on pause, and finishes once with one second');
+ console.log('PASS automatic workout: 16 layouts, manual repetition records, native rest pause/skip, next exercise, timed transition, undo/draft/interruption, stale-owner protection, browser fallback and 3–2–1 haptics');
 }finally{await browser?.close();await new Promise(r=>server.close(r));}})().catch(e=>{console.error(e);process.exitCode=1;});

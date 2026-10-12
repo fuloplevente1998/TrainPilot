@@ -17400,7 +17400,14 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  function locate(session,step){const e=session?.exercises?.find(e=>e.id===step.exerciseId&&e.sets?.some(s=>s.setId===step.setId)),set=e?.sets.find(s=>s.setId===step.setId);return set?{e,set,index:session.exercises.indexOf(e)}:null;}
  function owned(session,run){return !!run&&session?.started===run.started&&Array.isArray(run.steps)&&run.steps.length>0&&run.steps.every(s=>locate(session,s));}
- window.TrainPilotInterval162Core={config,duration,phase,locate,owned};
+ function hapticCue(memory,p,running){
+  if(!running||!p)return 0;
+  const remaining=Math.ceil(p.remainingMs/1000);
+  if(p.token!==memory.token){const transition=!!memory.token;memory.token=p.token;memory.second=remaining;const duration=transition||p.phase==='complete'?1000:remaining>=1&&remaining<=3?80:100;memory.quietUntil=p.elapsedMs+duration;return duration;}
+  if(p.phase!=='complete'&&remaining>=1&&remaining<=3&&remaining!==memory.second){memory.second=remaining;if(p.elapsedMs>=memory.quietUntil){memory.quietUntil=p.elapsedMs+80;return 80;}}
+  return 0;
+ }
+ window.TrainPilotInterval162Core={config,duration,phase,locate,owned,hapticCue};
  window.addEventListener?.('DOMContentLoaded',function(){
   if(!window.TrainPilot110)return;
   const COPY={
@@ -17412,7 +17419,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const t=k=>(COPY[rf212Lang()]||COPY.hu)[k];
   const native=()=>{const c=window.Capacitor;if(!isNative()||!c?.Plugins?.IntervalTimer&&!c?.isPluginAvailable?.('IntervalTimer'))return null;return c.Plugins?.IntervalTimer||c.registerPlugin('IntervalTimer');};
   const timed=e=>e&&(e.repUnit==='mp'||byId(e.id)?.repUnit==='mp');
-  let busy=false,polling=false,webBegan=0,webKey='',lastWebToken='',timer=null,knownNativeKey='';
+  let busy=false,polling=false,webBegan=0,webKey='',lastWebToken='',webHaptics={},timer=null,knownNativeKey='';
   const owner=()=>{const draft=state.session?null:db.get('draft',null),session=state.session||draft?.session,run=session?.interval162;return owned(session,run)?{session,run,draft}:null;};
   const persist=o=>{if(o.draft){o.draft.savedAt=new Date().toISOString();db.set('draft',o.draft);}else persistDraft();};
   const currentOwner=o=>{const live=owner();return live&&live.session.started===o.session.started&&live.run.key===o.run.key?live:null;};
@@ -17436,7 +17443,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
   async function sync(){if(polling||busy)return;const o=owner();if(!o){if(timer){clearInterval(timer);timer=null;}if(knownNativeKey){const key=knownNativeKey;knownNativeKey='';try{await native()?.stop({key});}catch(_){}}return;}if(o.run.syncedComplete&&o.run.phase?.phase==='complete')return;polling=true;try{if(o.run.native){knownNativeKey=o.run.key;const s=await native()?.status();if(s?.key===o.run.key)apply(o,s);else if(currentOwner(o)){o.run.running=false;o.run.interrupted=true;persist(o);paint();}}else{
     if(o.run.running&&webKey!==o.run.key){o.run.running=false;o.run.interrupted=true;persist(o);}const elapsed=o.run.elapsedMs+(o.run.running?Math.max(0,performance.now()-webBegan):0),p=phase(o.run.steps,o.run.autoAdvance,elapsed,o.run.initialRest||0);if(!p)return;
-    if(o.run.running&&p.token!==lastWebToken){lastWebToken=p.token;if(!document.hidden){if(o.run.vibration)navigator.vibrate?.(p.phase==='complete'?300:100);if(o.run.sound)try{const a=window.AudioContext||window.webkitAudioContext,ctx=window.__tp162Audio||(window.__tp162Audio=new a()),osc=ctx.createOscillator(),gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.frequency.value=p.phase==='complete'?880:660;gain.gain.value=.12;osc.start();osc.stop(ctx.currentTime+.18);}catch(_){}}}
+    const vibrationMs=hapticCue(webHaptics,p,o.run.running);if(vibrationMs&&o.run.vibration&&!document.hidden)navigator.vibrate?.(vibrationMs);
+    if(o.run.running&&p.token!==lastWebToken){lastWebToken=p.token;if(!document.hidden){if(o.run.sound)try{const a=window.AudioContext||window.webkitAudioContext,ctx=window.__tp162Audio||(window.__tp162Audio=new a()),osc=ctx.createOscillator(),gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.frequency.value=p.phase==='complete'?880:660;gain.gain.value=.12;osc.start();osc.stop(ctx.currentTime+.18);}catch(_){}}}
     const running=o.run.running&&p.phase!=='complete';apply(o,{...p,key:o.run.key,running,stopped:o.run.stopped,interrupted:o.run.interrupted});if(running)webBegan=performance.now();
    }}catch(_){/* A transient bridge failure does not change the owning workout. */}finally{polling=false;}}
   function ensure(){if(owner()&&!timer)timer=setInterval(sync,250);}
@@ -17454,11 +17462,12 @@ window.addEventListener?.('DOMContentLoaded',function(){
     tp107StopIndoor(true);session.interval162=run;persistDraft();
     const result=run.native?await native().start({...run,language:rf212Lang()}):{...phase(steps,c.autoAdvance,0,initialRest),key,running:true};
     if(state.session!==session||session.interval162?.key!==key){if(run.native)await native().stop({key});return false;}
-    webBegan=performance.now();webKey=key;lastWebToken='';if(run.native)knownNativeKey=key;run.running=true;apply({session,run,draft:null},result);ensure();paint();status(form,t('running'));return true;
+    webBegan=performance.now();webKey=key;lastWebToken='';webHaptics={};if(run.native)knownNativeKey=key;run.running=true;apply({session,run,draft:null},result);ensure();paint();status(form,t('running'));return true;
    }catch(error){if(state.session===session&&session.interval162?.key===key){delete session.interval162;persistDraft();}status(form,error?.message||t('failed'),true);return false;}finally{busy=false;}
   };
   async function command(action){if(busy)return false;const o=owner();if(!o)return true;busy=true;try{
    let s;if(o.run.native)s=await native()[action]({key:o.run.key});else{let elapsed=o.run.elapsedMs+(o.run.running?Math.max(0,performance.now()-webBegan):0);let p=phase(o.run.steps,o.run.autoAdvance,elapsed,o.run.initialRest||0);if(action==='skipRest'){if(p.phase!=='rest')return false;elapsed+=p.remainingMs;p=phase(o.run.steps,o.run.autoAdvance,elapsed,o.run.initialRest||0);}s={...p,key:o.run.key,running:action==='resume'||action==='skipRest',stopped:action==='stop'};webBegan=performance.now();webKey=o.run.key;}
+   if(!o.run.native&&o.run.vibration&&(action==='pause'||action==='stop'))navigator.vibrate?.(0);
    apply(o,s);if(action==='stop'&&currentOwner(o)){o.run.stopped=true;o.run.running=false;persist(o);}paint();return true;
   }catch(e){if(action==='stop'&&currentOwner(o)&&!o.run.running){const live=currentOwner(o);delete live.session.interval162;persist(live);if(state.session===live.session&&state.tab==='plan')renderWorkout();paint();return true;}alert(e?.message||t('failed'));return false;}finally{busy=false;}}
   function paint(){const o=owner();if(!o)return;const r=o.run,p=r.phase||phase(r.steps,r.autoAdvance,r.elapsedMs,r.initialRest||0),panel=document.getElementById('tp107Indoor');if(!panel||!p)return;const l=locate(o.session,r.steps[p.stepIndex]);if(l?.e!==state.session?.exercises?.[state.current])return;
@@ -17507,7 +17516,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const bridge=()=>{const c=window.Capacitor;return isNative()&&(c?.Plugins?.IntervalTimer||c?.isPluginAvailable?.('IntervalTimer')&&c.registerPlugin('IntervalTimer'))||null;};
   const timed=e=>e&&(e.repUnit==='mp'||byId(e.id)?.repUnit==='mp');
   const identity=s=>String(s?.syncId||s?.started||'');
-  let poll=null,reading=false,changing=false,webKey='',webBegan=0,knownRestKey='';
+  let poll=null,reading=false,changing=false,webKey='',webBegan=0,webHaptics={},knownRestKey='';
   const owner=()=>{const draft=state.session?null:db.get('draft',null),session=state.session||draft?.session,meta=session?.automatic162;return meta?{session,meta,draft}:null;};
   const live=o=>{const n=owner();return n&&identity(n.session)===identity(o.session)&&n.meta.run?.key===o.meta.run?.key?n:null;};
   const save=o=>{if(o.draft){o.draft.savedAt=new Date().toISOString();db.set('draft',o.draft);}else persistDraft();};
@@ -17542,7 +17551,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     else{
      if(r.running&&webKey!==r.key){r.running=false;r.interrupted=true;}
      const p=phase(r,r.elapsedMs+(r.running?Math.max(0,performance.now()-webBegan):0));
-     if(p?.phase==='complete'&&r.running&&!document.hidden&&r.vibration)navigator.vibrate?.(200);
+     const vibrationMs=TrainPilotInterval162Core.hapticCue(webHaptics,p,r.running);if(vibrationMs&&!document.hidden&&r.vibration)navigator.vibrate?.(vibrationMs);
      apply(o,{...p,key:r.key,steps:r.steps,running:r.running,interrupted:r.interrupted});webBegan=performance.now();
     }
    }catch(_){/* Keep the owning workout and its measurements on bridge failure. */}finally{reading=false;}
@@ -17553,6 +17562,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     let s;
     if(r.native){try{s=await bridge()[action]({key:r.key});}catch(e){if(action!=='stop'||r.running)throw e;s={key:r.key,steps:r.steps,elapsedMs:r.elapsedMs,stopped:true};}}
     else{const elapsed=r.elapsedMs+(r.running?Math.max(0,performance.now()-webBegan):0);s={...phase(r,action==='skipRest'?r.steps[0].rest*1000:elapsed),key:r.key,steps:r.steps,running:action==='resume',stopped:action==='stop'};webBegan=performance.now();webKey=r.key;}
+    if(!r.native&&r.vibration&&(action==='pause'||action==='stop'))navigator.vibrate?.(0);
     return apply(o,s);
    }catch(e){if(live(o)){o.meta.message=t('failed');save(o);paint();}return false;}finally{changing=false;}
   }
@@ -17577,7 +17587,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    try{
     const result=run.native?await bridge().start({...run,language:rf212Lang()}):{...phase(run,0),key,steps:run.steps,running:true};
     if(state.session!==session||meta.run?.key!==key){if(run.native)await bridge().stop({key});return;}
-    webKey=key;webBegan=performance.now();if(run.native)knownRestKey=key;apply({session,meta,draft:null},result);ensure();
+    webKey=key;webBegan=performance.now();webHaptics={};if(run.native)knownRestKey=key;apply({session,meta,draft:null},result);ensure();
    }catch(e){if(state.session===session&&meta.run?.key===key){meta.run=null;meta.phase='interrupted';meta.message=t('failed');persistDraft();paint();}}
   }
   async function toggle(enabled){

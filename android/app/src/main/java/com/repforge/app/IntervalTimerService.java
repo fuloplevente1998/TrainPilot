@@ -25,6 +25,7 @@ public class IntervalTimerService extends Service {
     private int gpsStep;
     private PowerManager.WakeLock wake;
     private ToneGenerator tones;
+    private IntervalHapticCues haptics=new IntervalHapticCues();
     private final Runnable tick=new Runnable(){public void run(){if(!running)return;update();if(running)handler.postDelayed(this,200);}};
     @Override public void onCreate(){super.onCreate();instance=this;}
     @Override public IBinder onBind(Intent intent){return null;}
@@ -50,13 +51,15 @@ public class IntervalTimerService extends Service {
     }
     private void parse(JSONObject plan)throws Exception{
         timeline=validate(plan);steps.clear();JSONArray rows=plan.getJSONArray("steps");for(int i=0;i<rows.length();i++){JSONObject row=rows.getJSONObject(i);steps.add(new IntervalTimeline.Step(row.getString("exerciseId"),row.getString("setId"),row.optString("name","TrainPilot"),row.getInt("work"),row.getInt("rest"),row.getInt("rounds"),row.optString("gpsKey","")));}
-        initialRest=plan.optInt("initialRest",0);restOnly=plan.optBoolean("restOnly");timeline=new IntervalTimeline(steps,plan.optBoolean("autoAdvance"),initialRest,restOnly);key=plan.getString("key");language=plan.optString("language","en");advance=plan.optBoolean("autoAdvance");sound=plan.optBoolean("sound",true);vibration=plan.optBoolean("vibration",true);while(segments.length()>0)segments.remove(0);gpsStep=0;lastToken="";
+        initialRest=plan.optInt("initialRest",0);restOnly=plan.optBoolean("restOnly");timeline=new IntervalTimeline(steps,plan.optBoolean("autoAdvance"),initialRest,restOnly);key=plan.getString("key");language=plan.optString("language","en");advance=plan.optBoolean("autoAdvance");sound=plan.optBoolean("sound",true);vibration=plan.optBoolean("vibration",true);while(segments.length()>0)segments.remove(0);gpsStep=0;lastToken="";haptics=new IntervalHapticCues();
     }
     private long now(){return elapsed+(running?Math.max(0,SystemClock.elapsedRealtime()-began):0);}
     private void update(){
         if(timeline==null)return;IntervalTimeline.Phase p=timeline.at(now());
         if(p.step!=gpsStep||running&&"complete".equals(p.phase))handoff(p);
         DistanceTrackingService.pauseOwned(this,steps.get(p.step).gpsKey,!running||!"work".equals(p.phase));
+        int vibrationMs=haptics.next(p,running&&!stopped);
+        if(vibrationMs>0)vibrate(vibrationMs);
         if(!p.token.equals(lastToken)){lastToken=p.token;if(!stopped)cue("complete".equals(p.phase));notifyStatus();}
         if("complete".equals(p.phase)){elapsed=p.elapsedMs;running=false;began=0;release();handler.removeCallbacks(tick);save();stopForeground(true);stopSelf();}else if(p.elapsedMs/1000!=lastSavedSecond){lastSavedSecond=p.elapsedMs/1000;save();notifyStatus();}
     }
@@ -77,8 +80,10 @@ public class IntervalTimerService extends Service {
     private void release(){if(wake!=null&&wake.isHeld())wake.release();}
     private void cue(boolean complete){
         if(sound)try{if(tones==null)tones=new ToneGenerator(AudioManager.STREAM_MUSIC,80);tones.startTone(complete?ToneGenerator.TONE_PROP_ACK:ToneGenerator.TONE_PROP_BEEP,complete?450:180);}catch(Exception ignored){}
-        if(vibration)try{Vibrator v=Build.VERSION.SDK_INT>=31?((VibratorManager)getSystemService(VIBRATOR_MANAGER_SERVICE)).getDefaultVibrator():(Vibrator)getSystemService(VIBRATOR_SERVICE);if(v!=null&&v.hasVibrator()){if(Build.VERSION.SDK_INT>=26)v.vibrate(VibrationEffect.createOneShot(complete?300:100,VibrationEffect.DEFAULT_AMPLITUDE));else v.vibrate(complete?300:100);}}catch(Exception ignored){}
     }
+    private Vibrator vibrator(){return Build.VERSION.SDK_INT>=31?((VibratorManager)getSystemService(VIBRATOR_MANAGER_SERVICE)).getDefaultVibrator():(Vibrator)getSystemService(VIBRATOR_SERVICE);}
+    private void vibrate(int milliseconds){if(vibration)try{Vibrator v=vibrator();if(v!=null&&v.hasVibrator()){if(Build.VERSION.SDK_INT>=26)v.vibrate(VibrationEffect.createOneShot(milliseconds,VibrationEffect.DEFAULT_AMPLITUDE));else v.vibrate(milliseconds);}}catch(Exception ignored){}}
+    private void cancelVibration(){try{Vibrator v=vibrator();if(v!=null)v.cancel();}catch(Exception ignored){}}
     private JSONObject current(){
         JSONObject out=new JSONObject();if(timeline==null)return out;IntervalTimeline.Phase p=timeline.at(now());try{
             out.put("key",key).put("running",running).put("stopped",stopped).put("restOnly",restOnly).put("initialRest",initialRest).put("autoAdvance",advance).put("sound",sound).put("vibration",vibration).put("language",language).put("elapsedMs",p.elapsedMs).put("stepElapsedMs",p.stepElapsedMs).put("stepIndex",p.step).put("completed",p.completed).put("phase",p.phase).put("round",p.round).put("remainingMs",p.remainingMs).put("totalMs",p.totalMs);
@@ -97,7 +102,7 @@ public class IntervalTimerService extends Service {
         return new NotificationCompat.Builder(this,CHANNEL).setSmallIcon(R.mipmap.ic_launcher).setContentTitle(title).setContentText(body).setContentIntent(open).setOngoing(true).setOnlyAlertOnce(true).addAction(0,toggleLabel,toggle).addAction(0,DistanceTrackingService.text(language,"Leállítás","Stop","Stoppen","Oprește"),stop).build();
     }
     private void notifyStatus(){((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).notify(NOTIFICATION,notification());}
-    private void pauseRun(){if(!running)return;update();if(!running)return;elapsed=now();running=false;began=0;handler.removeCallbacks(tick);release();DistanceTrackingService.pauseOwned(this,steps.get(gpsStep).gpsKey,true);save();notifyStatus();}
+    private void pauseRun(){if(!running){cancelVibration();return;}update();cancelVibration();if(!running)return;elapsed=now();running=false;began=0;handler.removeCallbacks(tick);release();DistanceTrackingService.pauseOwned(this,steps.get(gpsStep).gpsKey,true);save();notifyStatus();}
     private void stopRun(){pauseRun();stopped=true;DistanceTrackingService.stopOwned(this,steps.get(gpsStep).gpsKey);save();stopForeground(true);stopSelf();}
     static JSONObject snapshot(Context context){
         IntervalTimerService service=instance;if(service!=null&&service.timeline!=null){service.update();return service.current();}
@@ -113,5 +118,5 @@ public class IntervalTimerService extends Service {
         IntervalTimerService s=instance;if(s==null||!key.equals(s.key)||s.timeline.at(s.now()).step!=index||s.stopped||"complete".equals(s.timeline.at(s.now()).phase))throw new IllegalStateException("Interval owner changed");JSONObject gps=DistanceTrackingService.snapshot(context);if(!tracking.equals(gps.optString("key"))||!gps.optBoolean("active"))throw new IllegalStateException("GPS owner changed");s.steps.get(index).gpsKey=tracking;DistanceTrackingService.pauseOwned(context,tracking,!s.running||!"work".equals(s.timeline.at(s.now()).phase));s.save();return s.current();
     }
     @Override public void onTaskRemoved(Intent root){if(timeline!=null)stopRun();}
-    @Override public void onDestroy(){if(running){elapsed=now();running=false;stopped=true;DistanceTrackingService.stopOwned(this,steps.get(gpsStep).gpsKey);save();}handler.removeCallbacks(tick);release();if(tones!=null)tones.release();if(instance==this)instance=null;super.onDestroy();}
+    @Override public void onDestroy(){if(running){cancelVibration();elapsed=now();running=false;stopped=true;DistanceTrackingService.stopOwned(this,steps.get(gpsStep).gpsKey);save();}handler.removeCallbacks(tick);release();if(tones!=null)tones.release();if(instance==this)instance=null;super.onDestroy();}
 }

@@ -16,3 +16,15 @@ const rest=[{exerciseId:'press',setId:'a',work:1,rest:30,rounds:1}];assert.equal
 const automaticSource=fs.existsSync('www/automatic-workout-162.js')?[null,fs.readFileSync('www/automatic-workout-162.js','utf8')]:source.match(/\/\/ @section automatic-workout-162.js\n([\s\S]*?)\/\/ @endsection automatic-workout-162.js/);vm.runInContext(automaticSource[1],c);const automatic=c.window.TrainPilotAutomatic162Core;
 const planned={exercises:[{id:'press',sets:[{setId:'p1',done:true},{setId:'p2',done:false,reps:'0'}]},{id:'squat',sets:[{setId:'s1',done:false}]}]};assert.equal(automatic.next(planned,0).set.setId,'p2');assert.equal(automatic.locate(planned,{exerciseId:'press',setId:'p2'}).index,0);planned.exercises[0].sets[1].done=true;assert.equal(automatic.next(planned,0).e.id,'squat');assert.equal(automatic.locate(planned,{exerciseId:'press',setId:'p2'}),null);planned.exercises[1].sets[0].done=true;assert.equal(automatic.next(planned,0),null);
 console.log('PASS automatic rest: leading rest, no invented work time, stable unfinished target and completed workout');
+
+const cueMemory={},cuePlan=[{...steps[0],rest:30,rounds:1}];
+const cueTimes=[0,26000,27000,27200,28000,29000,30000,31000];
+assert.deepEqual(cueTimes.map(ms=>core.hapticCue(cueMemory,core.phase(cuePlan,false,ms,0,true),true)),[100,0,80,0,80,80,1000,0]);
+const pauseMemory={};core.hapticCue(pauseMemory,core.phase(cuePlan,false,27000,0,true),true);
+assert.equal(core.hapticCue(pauseMemory,core.phase(cuePlan,false,28000,0,true),false),0);
+assert.equal(core.hapticCue(pauseMemory,core.phase(cuePlan,false,28000,0,true),true),80);
+assert.equal(core.hapticCue(pauseMemory,core.phase(cuePlan,false,28000,0,true),true),0);
+const lateMemory={};core.hapticCue(lateMemory,core.phase(cuePlan,false,0,0,true),true);
+assert.equal(core.hapticCue(lateMemory,core.phase(cuePlan,false,29500,0,true),true),80);
+assert.equal(core.hapticCue(lateMemory,core.phase(cuePlan,false,30000,0,true),true),1000);
+console.log('PASS countdown haptics: 3–2–1, one-second finish, duplicate/pause/late-callback suppression');
