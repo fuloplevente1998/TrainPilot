@@ -82,7 +82,8 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     private fun scrollToEnd(last: String? = null) {
         if (
             compose
-                .onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsActions.ScrollToIndex))
+                .onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsActions.ScrollToIndex) and
+                    hasAnyAncestor(hasTestTag("wear-round-list")))
                 .fetchSemanticsNodes()
                 .isEmpty()
         )
