@@ -345,7 +345,14 @@
   },
   {
     "file": "tests/browser/theme-sync-persistence-173.cjs",
+    "estimatedSeconds": 10
+  },
+  {
     "file": "tests/browser/intervals-162.cjs",
     "estimatedSeconds": 10
+  },
+  {
+    "file": "tests/browser/automatic-workout-162.cjs",
+    "estimatedSeconds": 15
   }
 ]

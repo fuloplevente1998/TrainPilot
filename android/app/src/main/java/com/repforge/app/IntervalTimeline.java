@@ -23,15 +23,25 @@ final class IntervalTimeline {
     }
     private final List<Step> steps;
     private final boolean advance;
+    private final boolean restOnly;
+    private final long initialRest;
     private final long total;
     IntervalTimeline(List<Step> steps,boolean advance){
-        if(steps==null||steps.isEmpty()||steps.size()>100)throw new IllegalArgumentException("Invalid interval plan");
-        this.steps=steps;this.advance=advance;long sum=0;for(int i=0;i<steps.size();i++){sum+=duration(i);if(sum>MAX_MS)throw new IllegalArgumentException("Interval plan exceeds 24 hours");}total=sum;
+        this(steps,advance,0,false);
     }
-    long duration(int i){return steps.get(i).duration()+(advance&&i<steps.size()-1?steps.get(i).rest*1000L:0);}
+    IntervalTimeline(List<Step> steps,boolean advance,int initialRestSeconds,boolean restOnly){
+        if(steps==null||steps.isEmpty()||steps.size()>100)throw new IllegalArgumentException("Invalid interval plan");
+        if(initialRestSeconds<0||initialRestSeconds>3600||restOnly&&(steps.size()!=1||advance||initialRestSeconds!=0))throw new IllegalArgumentException("Invalid rest plan");
+        this.steps=steps;this.advance=advance;this.restOnly=restOnly;initialRest=initialRestSeconds*1000L;
+        long sum=initialRest;for(int i=0;i<steps.size();i++){sum+=duration(i);if(sum>MAX_MS)throw new IllegalArgumentException("Interval plan exceeds 24 hours");}total=sum;
+    }
+    long duration(int i){return restOnly?steps.get(i).rest*1000L:steps.get(i).duration()+(advance&&i<steps.size()-1?steps.get(i).rest*1000L:0);}
     Phase at(long milliseconds){
         long elapsed=Math.max(0,Math.min(total,milliseconds)),offset=elapsed;
+        if(restOnly)return new Phase(0,1,elapsed==total?1:0,elapsed,0,total-elapsed,total,elapsed==total?"complete":"rest");
         if(elapsed==total){int i=steps.size()-1;return new Phase(i,steps.get(i).rounds,steps.size(),elapsed,duration(i),0,total,"complete");}
+        if(elapsed<initialRest)return new Phase(0,1,0,elapsed,0,initialRest-elapsed,total,"rest");
+        offset-=initialRest;
         for(int i=0;i<steps.size();i++){
             long length=duration(i);if(offset>=length){offset-=length;continue;}
             Step s=steps.get(i);long left=offset;

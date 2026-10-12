@@ -10,4 +10,7 @@ public class IntervalTimelineTest {
  @Test(expected=IllegalArgumentException.class) public void invalidWorkRejected(){step("a",0,1,2);}
  @Test(expected=IllegalArgumentException.class) public void tooManyOwnersRejected(){ArrayList<IntervalTimeline.Step> rows=new ArrayList<>();for(int i=0;i<101;i++)rows.add(step("a"+i,1,0,1));new IntervalTimeline(rows,true);}
  @Test(expected=IllegalArgumentException.class) public void excessiveTotalRejected(){new IntervalTimeline(Arrays.asList(step("a",3600,3600,20)),true);}
+ @Test public void initialRestStartsTimedWorkWithoutAddingRestToMeasuredSet(){IntervalTimeline t=new IntervalTimeline(Collections.singletonList(step("a",2,1,1)),true,30,false);assertEquals("rest",t.at(29999).phase);assertEquals(0,t.at(29999).stepElapsedMs);assertEquals("work",t.at(30000).phase);assertEquals(0,t.at(30000).stepElapsedMs);assertEquals("complete",t.at(32000).phase);assertEquals(2000,t.at(32000).stepElapsedMs);}
+ @Test public void repetitionRestNeverMeasuresOrCompletesAWorkSet(){IntervalTimeline t=new IntervalTimeline(Collections.singletonList(step("a",1,30,1)),false,0,true);assertEquals("rest",t.at(0).phase);assertEquals(30000,t.at(0).remainingMs);assertEquals("complete",t.at(30000).phase);assertEquals(0,t.at(30000).stepElapsedMs);assertEquals(30000,t.at(Long.MAX_VALUE).elapsedMs);}
+ @Test(expected=IllegalArgumentException.class) public void restCannotHaveMultipleOwners(){new IntervalTimeline(Arrays.asList(step("a",1,30,1),step("b",1,30,1)),false,0,true);}
 }

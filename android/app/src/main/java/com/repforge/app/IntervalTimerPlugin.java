@@ -29,5 +29,6 @@ public class IntervalTimerPlugin extends Plugin {
     @PluginMethod public void pause(PluginCall c){command(c,"pause");}
     @PluginMethod public void resume(PluginCall c){command(c,"resume");}
     @PluginMethod public void stop(PluginCall c){command(c,"stop");}
+    @PluginMethod public void skipRest(PluginCall c){command(c,"skipRest");}
     @PluginMethod public void attachGPS(PluginCall c){getActivity().runOnUiThread(()->{try{c.resolve(new JSObject(IntervalTimerService.attachGPS(getContext(),c.getString("key",""),c.getInt("index",-1),c.getString("trackingKey","")).toString()));}catch(Exception e){c.reject(e.getMessage());}});}
 }
