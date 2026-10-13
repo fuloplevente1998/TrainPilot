@@ -30,6 +30,13 @@
     "phoneSourceMatchesIntegratedMain": true,
     "wearSourceUnchangedInIntegratedMain": true
   },
-  "physicalDeviceAcceptance": "pending: automatic haptics/background behavior and user JSON/full ZIP save/readback",
-  "originalReleaseApkAssetsReplaced": false
+  "physicalDeviceAcceptance": "pending: automatic haptics/background behavior",
+  "originalReleaseApkAssetsReplaced": false,
+  "backupAcceptance": {
+    "status": "accepted",
+    "date": "2026-10-13",
+    "issue": 180,
+    "userFeedback": "rendben van a mentés is",
+    "restoreTest": "not separately reported"
+  }
 }
