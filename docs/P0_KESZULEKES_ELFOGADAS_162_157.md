@@ -2,7 +2,22 @@
 
 Frissítve: **2026. október 13.** Közös draft PR: [#195](https://github.com/fuloplevente1998/TrainPilot/pull/195). Forráság: `fix/p0-162-157-safe-wear-sync`. Verzió mindkét appban **1.3.4 /2730**. A main és a nyilvános kiadások nem változnak; #162 és #157 a tényleges telefonos/órás eredményig nyitva marad.
 
-## Tesztpár
+## Aktuális telefonos javító APK — `0f49583`
+
+A `859a6a1` készülékes próbájában (#2412) a szinkron nullás távolságmezője súlyzós gyakorlatokra is bekapcsolta a GPS/beltéri/lépés paneleket, az alsó automata állapotszöveg levágódott. A javítás ezeket megszünteti, a korábban hibásan besorolt aktív piszkozatot is helyreállítja; a súly, ismétlés és kész állapot megmarad. Futásnál, görkorcsolyánál és valódi távolsági gyakorlatnál a mérési panelek továbbra is elérhetők. Az alsó állapotszöveg teljes szélességű, tördelhető sorba kerül; a visszaszámláló az alsó két gomb között marad.
+
+- Telefonos APK-forrás: **`0f495837cd26e048ed91ccb724ac22e4a38035f1`**, verzió **1.3.4 /2730**.
+- [Telefonos artifact](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38422923652/artifacts/11827871641): ZIP, benne `TrainPilot-1.3.4.apk`. Az átadott név: `TrainPilot-1.3.4-P0-0f49583-Telefon.apk`.
+- APK SHA-256: `3fc1fed2c9394883b5dab16116a0e3c7d5c093341e975351ed472b9bb3f29bae`; méret 5 810 801 byte.
+- [Phone Release Gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38422923652): SUCCESS, **91 Chromium-csomag**, release JVM-tesztek és aláírt APK.
+- [Quick Validation](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38422931446) és [Performance](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38422931428): SUCCESS.
+- Letöltés után a csomag, verzió, valódi aláírás és eredeti aláíró ellenőrizve; az APK csomagolt `app.js` és `features-110.css` fájlja byte-ra megegyezik a javított forrással. A lenti aláíró tanúsítvány megmaradt.
+
+A célzott regresszió a korábbi forráson három téves mérési panelt reprodukált, a javításon sikeres. Vizsgáltuk a tényleges Wear nullás mezőjét, a hibás meglévő súlyzós/időalapú piszkozatot, változatlan sorozatértékeket, négy nyelvet, 320/393 px szélességet és a megmaradó futás/görkorcsolya/egyéni/legacy távolságkezelést. A javító APK készülékes elfogadása még hátravan; main és release változatlan, #195 draft, #162 és #157 nyitott.
+
+**Most ezt az új telefonos APK-t kell a meglévő telefonos app fölé telepíteni.** Az órán az alább rögzített `859a6a1` Wear APK használható: az órás natív kód ebben a javításban nem változott. Először súlyzós edzésnél kapcsold be az automata módot, ellenőrizd az eltűnt téves paneleket és a teljes alsó szöveget; utána futás/görkorcsolya gyakorlatnál a megmaradó mérési lehetőségeket. A további P0 próbák a lenti táblázat szerint folytatandók.
+
+## Korábbi közös tesztpár — `859a6a1` (az órás APK tovább használható)
 
 **A 8–9. kör elkészült, készülékes visszajelzésre vár.** A két aláírt APK közös forráscommitja **`859a6a15d1d7d02ebbfaba4385e857eb9e824014`**. A későbbi, kizárólag `docs/` alatti dokumentációs commitok nem módosítják az APK-k kódját. A régebbi, azonos verziószámú APK-k nem azonosítják ezt a P0 forrást.
 
@@ -38,7 +53,7 @@ A 6–7. kör teljes natív debug-validációja ugyanennek a natív kódnak 145 
 
 ## Telepítés
 
-Mindkét friss APK-t a meglévő telepítés fölé kell telepíteni. Az alkalmazás eltávolítása nem része a próbának. Az órán az Órás mérések legyen bekapcsolva, a korábban kért szenzorengedélyek megadva; másik alkalmazás ne mérjen párhuzamos edzést. A két eszköz legyen kapcsolódva. Sikertelen indításkor a pontos órás/telefonos állapotot is rögzítsük; az app megnyílása önmagában nem bizonyít szenzormérést.
+A friss APK-kat a meglévő telepítés fölé kell telepíteni; az aktuális telefonos javító csomagot a fenti szakasz azonosítja. Az alkalmazás eltávolítása nem része a próbának. Az órán az Órás mérések legyen bekapcsolva, a korábban kért szenzorengedélyek megadva; másik alkalmazás ne mérjen párhuzamos edzést. A két eszköz legyen kapcsolódva. Sikertelen indításkor a pontos órás/telefonos állapotot is rögzítsük; az app megnyílása önmagában nem bizonyít szenzormérést.
 
 ## Rövid próbamenet
 

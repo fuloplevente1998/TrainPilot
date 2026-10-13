@@ -1,5 +1,7 @@
 # Build és ellenőrzés
 
+**Legfrissebb P0 telefonos javító teszt-APK:** `0f495837cd26e048ed91ccb724ac22e4a38035f1`, változatlan **1.3.4 /2730**, 91 Chromium-csomaggal sikeres teljes telefonos gate. A téves GPS/beltéri panelek és az automata alsó szöveg javítása; az órás natív kód nem változott, a `859a6a1` Wear teszt-APK használható. Aktuális letöltés/hash/CI: [P0 átadási lap](P0_KESZULEKES_ELFOGADAS_162_157.md).
+
 A kanonikus webalkalmazás-forrás a `www/app.js`. Az Android csomag azonosítója: `com.repforge.app`.
 
 Az aktuális main fejlesztési bázisa **1.3.4 / 2730**, a #179-ben egyesített telefonos/Wear megvalósítással. Az eredeti 1.3.4 release és a legutóbbi automata tesztpár külön forrásazonosítóval rendelkezik; aktuális részletek: [DEVELOPMENT_STATUS.md](../DEVELOPMENT_STATUS.md).

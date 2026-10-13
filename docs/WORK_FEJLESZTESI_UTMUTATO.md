@@ -4,7 +4,7 @@ Frissítve: **2026. október 13.** Ez az egy fájl új Work-beszélgetésbe felt
 
 ## Most futó P0 kör
 
-**Új készülékes visszajelzés:** a `859a6a1` telefonos próbában az automata súlyzós edzés téves GPS/időmérési paneleket mutatott, az alsó állapotszöveg levágódott. Javítás a #195 forráságán; a következő telefonos APK aktuális adatai a [P0 átadási lap](P0_KESZULEKES_ELFOGADAS_162_157.md) tetején szerepelnek. A korábbi tesztpár nem elfogadott végleges állapot. Az órás natív kód nem változik.
+**Aktuális telefonos javító APK: `0f495837cd26e048ed91ccb724ac22e4a38035f1`, 1.3.4 /2730.** A `859a6a1` telefonos készülékes próbájának téves GPS/beltéri besorolása és levágott alsó szövege javítva. A teljes telefonos gate 91 Chromium-csomaggal, a gyors validáció és a teljesítményellenőrzés sikeres. Letöltés, hash és visszaellenőrzés: [P0 átadási lap](P0_KESZULEKES_ELFOGADAS_162_157.md). A készülékes elfogadás még hátravan. Az órás natív kód változatlan, az órás teszt-APK továbbra is `859a6a1` forrású.
 
 **Aktuális állapot: 9/10 — készülékes visszajelzésre vár.** A #157 közös ellenőrzése és a telefonos/Wear tesztpár elkészítése befejeződött. Az APK-k közös, ellenőrzött forrása **`859a6a15d1d7d02ebbfaba4385e857eb9e824014`**. A folytatási forrás a #195 **`fix/p0-162-157-safe-wear-sync`** ága, amely a későbbi dokumentációfrissítést is tartalmazza. A `work/p0-162-native` az előző, 6–7. kör pillanatképe. APK, SHA-256, sikeres gate-ek és készülékes próba: [P0 átadási lap](P0_KESZULEKES_ELFOGADAS_162_157.md). Mainre emelés és publikált release még nincs jóváhagyva ebben a P0 körben.
 
