@@ -195,3 +195,7 @@ Elfogadási próbák:
 - Az érintészár kézi kapcsoló legyen-e első körben, vagy automatikusan is bekapcsolható induláskor?
 
 Ezek nyitott tervezési kérdések. A súlyzós sorozat kézi rögzítése és a pihenő utáni automatikus indulás már eldöntött követelmény.
+
+## 9. Samsung energiapontszám és Coach — külön telefonos tervezési feladat
+
+A [#184](https://github.com/fuloplevente1998/TrainPilot/issues/184) a Samsung tényleges napi energiapontszámának olvasását és a Coach közös edzésajánlását tervezi. A repó Samsung SDK 1.1.0 csomagja támogatja az `ENERGY_SCORE` típust, de az olvasás még nincs bekötve. Javaslat: változatlan Samsung-pontszám mint regenerációs kiindulás, ehhez TrainPilot gyakorlatspecifikus progresszió/terhelés/fájdalom; az alvás/HRV/aktivitás ne számítson kétszer. Előbb forráshű összehasonlító teszt, majd a közös ajánlás szabályai. Részletes kutatás, SDK-hozzáférési feltételek és megvalósítási terv: [WORK_FEJLESZTESI_UTMUTATO.md](../WORK_FEJLESZTESI_UTMUTATO.md). A #162 és #163 sorrendje e kutatástól nem változik; a konkrét következő fejlesztést a felhasználó aktuális kérése határozza meg.

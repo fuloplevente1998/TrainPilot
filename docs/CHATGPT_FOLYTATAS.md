@@ -23,6 +23,8 @@ A javítás kompakt, veszteségmentes JSON-t exportál, és a 20 MiB korlátot U
 
 **Készülékes mentés elfogadva 2026. október 13-án:** a felhasználó visszajelzése: „rendben van a mentés is”. A #180 mentési hibajegy lezárható; a következő feladat az automata működés készülékes elfogadása és továbbfejlesztése, majd a #163 térkép. Külön kézi visszaállítási próbáról nem érkezett visszajelzés.
 
+A Workban használt eszközök, ágkezelés, buildfolyamat és Samsung/Coach kutatás egy fájlban: [WORK_FEJLESZTESI_UTMUTATO.md](WORK_FEJLESZTESI_UTMUTATO.md).
+
 ## Projekt és kiinduló alap
 
 - Repository: **https://github.com/fuloplevente1998/TrainPilot**.
@@ -99,4 +101,4 @@ Napló, saját program, fotó, piszkozat, téma és meglévő egészségadat nem
 
 ## Rövid indító szöveg bemásoláshoz
 
-> Folytassuk a TrainPilot fejlesztését: https://github.com/fuloplevente1998/TrainPilot. A friss mainből dolgozz; előbb olvasd a docs/CHATGPT_FOLYTATAS.md, DEVELOPMENT_STATUS.md és docs/wear/WEAR_OS_FEJLESZTESI_TERV.md fájlokat, valamint a #162, #163 és #170 issue aktuális állapotát. A #179 egyesíti a telefonos/órás automata módot és a Wear-kezdőlapot. Korábbi referencia-tesztpár: telefon 1650906, Wear e3db5e2, mindkettő 1.3.4 /2730; fizikai automata elfogadás még hátravan. Először az óráról történő telefonos háttérrögzítést és a munka/pihenő naplóbontását folytassuk, utána a #163 térképet. Súlyzós sorozatot én rögzítek; utána automata pihenő/léptetés. A számláló telefonon az alsó két gomb között, az automata kapcsoló kicsi marad. Rezgés: 3–2–1 rövid + lejáratkor 1 másodperc egybefüggően. Az új döntéseket a közös tervbe is vezesd át.
+> Folytassuk a TrainPilot fejlesztését: https://github.com/fuloplevente1998/TrainPilot. A friss mainből dolgozz; előbb olvasd a docs/CHATGPT_FOLYTATAS.md, DEVELOPMENT_STATUS.md és docs/wear/WEAR_OS_FEJLESZTESI_TERV.md fájlokat, valamint a #162, #163 és #170 issue aktuális állapotát. A #179 egyesíti a telefonos/órás automata módot és a Wear-kezdőlapot. Aktuális átadott tesztpár: telefon 612f8cb, Wear c623af7, mindkettő 1.3.4 /2730; #180 mentés elfogadva, fizikai automata elfogadás még hátravan. A docs/WORK_FEJLESZTESI_UTMUTATO.md rögzíti a munkamenetet és a #184 Samsung energiapontszám/Coach tervet; ez az új integráció még nincs implementálva. Először az óráról történő telefonos háttérrögzítést és a munka/pihenő naplóbontását folytassuk, utána a #163 térképet. Súlyzós sorozatot én rögzítek; utána automata pihenő/léptetés. A számláló telefonon az alsó két gomb között, az automata kapcsoló kicsi marad. Rezgés: 3–2–1 rövid + lejáratkor 1 másodperc egybefüggően. Az új döntéseket a közös tervbe is vezesd át.

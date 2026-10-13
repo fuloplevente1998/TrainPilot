@@ -80,3 +80,18 @@ References:
 - https://developer.samsung.com/health/data/process.html
 - https://developer.samsung.com/health/data/api-reference/index.html
 - https://developer.samsung.com/health/sensor/faq.html
+
+## Energy Score investigation — 2026-10-13
+
+The bundled SDK 1.1.0 exposes `DataTypes.ENERGY_SCORE` and
+`DataType.EnergyScoreType.ENERGY_SCORE`; the classes and field names were checked
+in the repository AAR against Samsung's official API reference. The current
+plugin does not request or read this type. #184 tracks optional read permission,
+dated/provenance-preserving journal storage, comparison with the existing Coach,
+and a later shared recommendation without counting sleep/HRV/activity twice.
+Actual device access and public-distribution registration remain separate checks.
+The SDK score does not provide an HRV measurement or a documented full factor
+breakdown. Research and the proposed workflow are recorded in
+[WORK_FEJLESZTESI_UTMUTATO.md](WORK_FEJLESZTESI_UTMUTATO.md).
+
+- [Official EnergyScoreType reference](https://developer.samsung.com/health/data/api-reference/-shd/com.samsung.android.sdk.health.data.request/-data-type/-energy-score-type/index.html)
