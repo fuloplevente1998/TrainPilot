@@ -45,6 +45,19 @@
 Frissítve: **2026. október 13.** A felhasználói verzióleírások négy családot használnak: **1.0, 1.1, 1.2, 1.3**. A buildazonosítók, APK-k, tagek és release-ek megmaradnak.
 
 
+## P0 fejlesztési kör: #162 → #157 (2026. október 13., tesztelésre vár)
+
+A közös `fix/p0-162-157-safe-wear-sync` munkában a következő **részjavítások** készültek; ezek önmagukban nem jelentik a két Issue végleges teljesítését:
+
+- **#162, natív adatbiztonság:** a telefon órás parancssora nem dobhatja el észrevétlenül a legrégebbi, még nem nyugtázott sorozatrögzítést, amikor eléri a 64 elemnyi keretet. A Data Layer tétel nyitva marad, és a kapacitás felszabadulása után újra felolvasható. A nyugtázás és duplikációvédelmi jelző tartós mentést használ; sikertelen tartós nyugtázásnál a Data Layer tétel nem törlődik. Robolectric regressziók készültek a telítődésre, újrafelvételre és az automata állapotpillanatkép cseréjére.
+- **#157, gyors edzés:** a meglévő telefonos inline gyorsindításban ellenőrizendő az előbb snapshot, utána egyszeri óranyitás sorrend. A célzott Node-regresszió kiegészült sikertelen küldés/gyors helyreállás és visszautasított óranyitás tesztjével; nincs új óranyitás puszta polling miatt.
+
+**Még nyitott:** #162-ben az alvó telefonos WebView nélküli teljes natív ismétlésrögzítés, az óráról indított új telefonos menetrend és a munka/pihenő/szünet egységes időnaplója; #157-ben a tényleges gyorsedzés-indítás és friss mérés ellenőrzése fizikai órán. A #162 és #157 Issue egyelőre **nyitva marad**.
+
+**Készülékes elfogadás (mindkét feladathoz):** új telefonos gyors edzés → óra app egyszer nyílik → friss HR/kcal indul → telefon és óra lezárva mérés folytatódik → sorozatrögzítés, pihenő, kapcsolatvesztés/visszatérés → egyetlen naplóbejegyzés és külön eredetű mért adatok. Ismételjük meg tervezett edzéssel, önálló órás és önálló telefonos indítással; rögzítsük a tényleges eredményeket az Issue-kban.
+
+**Kiadási szabály:** a felhasználó kérésére a közös release gate eredményét és az új teszt-APK-kat **csak a #162 és #157 végrehajtása után** szabad átadni; verziószámot előzetes jóváhagyás nélkül nem változtatunk. A CI-eredmény és a fizikai készülékes elfogadás külön igazolandó.
+
 ## Mentési javítás — #180
 
 A #179 mainre került (`c623af7`), a #164 és #178 is egyesítve. A [#180](https://github.com/fuloplevente1998/TrainPilot/issues/180) új felhasználói visszajelzése: aktív edzés nélkül a JSON-export „Érvénytelen vagy túl nagy mentés”, a ZIP „hiányzó fotó” hibát ad; a fotók a telefonon megnyithatók.
