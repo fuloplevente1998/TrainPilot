@@ -32,7 +32,7 @@ function fixture(nativeResult=result()){
  const api={executionStatus:async()=>copy(state),acknowledgeExecution:async({sequence})=>{
   calls.push(['ack',sequence]);const saved=JSON.parse(app.values.get('repforge:draft'));assert.equal(saved.session.phoneExecution162.sequence,sequence,'ack follows durable cursor');
   if(failedAck)throw Error('bridge interrupted');state.events=[];
- },prepareExecution:async({snapshot,expectedRevision})=>{calls.push(['prepare',expectedRevision]);if(failPrepare)throw Error('CAS conflict');assert.equal(expectedRevision,state.snapshot.executionRevision);state.snapshot={...copy(snapshot),executionRevision:expectedRevision+1};return {snapshot:copy(state.snapshot)};},
+ },prepareExecution:async({snapshot,expectedRevision})=>{calls.push(['prepare',expectedRevision]);if(failPrepare)throw Error('revisionConflict');assert.equal(expectedRevision,state.snapshot.executionRevision);state.snapshot={...copy(snapshot),executionRevision:expectedRevision+1};return {snapshot:copy(state.snapshot)};},
  closeExecution:async()=>{calls.push(['close']);state.snapshot.active=false;},suspendExecution:async()=>calls.push(['suspend']),
  publish:async()=>calls.push(['publish']),publishHome:async()=>{},blockExecution:async({blocked})=>calls.push(['block',blocked])};
  const clock={armWorkout:async()=>calls.push(['arm']),disarmWorkout:async()=>calls.push(['disarm'])};
@@ -61,6 +61,12 @@ function fixture(nativeResult=result()){
  ready.run('state.session.automatic162.enabled=true;');assert.equal(await ready.native.sync(),true);assert.deepEqual(ready.calls.slice(-2),[['prepare',2],['arm']],'reenabling same workout preserves execution identity');
  const conflict=fixture({snapshot:{active:true,workoutId:'workout',generation:10,executionRevision:1},events:[],timer:{}});conflict.failPrepare(true);
  await conflict.context.window.TrainPilotWearSync.syncNow();assert.deepEqual(conflict.calls,[['prepare',1]],'failed prepare cannot publish stale controls or arm a timer');
+ assert.equal(conflict.native.failure().code,'E162-PREPARE-revisionConflict','native failure is distinguishable from missing implementation');
+ conflict.failPrepare(false);assert.equal(await conflict.native.sync(),true);assert.equal(conflict.native.failure(),null,'successful retry clears failure');
+ const armFailure=fixture({snapshot:{active:true,workoutId:'workout',generation:10,executionRevision:1},events:[],timer:{}});
+ armFailure.context.window.Capacitor.Plugins.IntervalTimer.armWorkout=async()=>{throw Error('Open the phone workout before enabling automatic background control');};
+ assert.equal(await armFailure.native.sync(),false);assert.equal(armFailure.native.failure().code,'E162-ARM-FOCUS');
+ assert.equal(armFailure.run('state.session.exercises[0].sets[1].done'),false,'failed arming never records a set');
  const phone=fixture({snapshot:{active:true,workoutId:'workout',generation:10,executionRevision:1},events:[],timer:{}});
  phone.api.executeCommand=async({command})=>{
   assert.equal(command.setId,'a');assert.equal(command.exerciseId,'press');assert.equal(command.reps,'9');assert.equal(command.weight,7);assert.equal(command.executionRevision,2);
@@ -77,6 +83,18 @@ function fixture(nativeResult=result()){
  modern.windowEvents.get('DOMContentLoaded').at(-1)();
  assert.equal(await modern.run('toggleSet(0,1)'),true,'phone UI uses the native recording path with the modern plugin registry');
  assert.deepEqual(modern.calls,[['prepare',1],['arm'],['ack',1]]);
+ for(const unit of ['/kar','/láb']){
+  const unilateral=fixture({snapshot:{active:true,workoutId:'workout',generation:10,executionRevision:1},events:[],timer:{}});
+  unilateral.context.unit=unit;unilateral.run('state.session.exercises[0].repUnit=unit;');
+  unilateral.api.executeCommand=async({command})=>{
+   assert.equal(command.setId,'a');assert.equal(command.reps,'9');
+   unilateral.setResult({snapshot:{active:true,workoutId:'workout',generation:10,executionRevision:3},events:[{sequence:1,workoutId:'workout',generation:10,executionRevision:3,exerciseId:'press',setId:'a',values:{done:true,reps:'9',weight:7},before:{reps:'9',weight:7}}],timer:{}});return {status:'applied'};
+  };
+  unilateral.windowEvents.get('DOMContentLoaded').at(-1)();
+  assert.equal(await unilateral.run('toggleSet(0,1)'),true,'unilateral phone UI records natively '+unit);
+  assert.deepEqual(unilateral.calls,[['prepare',1],['arm'],['ack',1]],'no legacy rest fallback '+unit);
+  assert.equal(unilateral.run('state.session.exercises[0].sets[1].reps'),'9','per-side counts are not doubled');
+ }
  const transport=fixture({snapshot:{active:true,workoutId:'workout',generation:10,executionRevision:1},events:[],timer:{}});
  transport.api.executeCommand=async()=>{throw Error('transport unavailable');};
  assert.equal(await transport.native.recordPhoneSet(0,1),false);assert.equal(transport.run('state.session.exercises[0].sets[1].done'),false,'failed transport cannot invent a completion');

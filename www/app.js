@@ -16692,7 +16692,17 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const result={};for(const e of frame.exercises||[])for(const set of e.sets||[])if(set.done){const base={};for(const key of ['done','reps','weight','leftSeconds','rightSeconds','distanceMeters'])if(key in set)base[key]=set[key];result[set.setId]=base;}return result;
  }
  window.TrainPilotPhoneExecution162Core={merge};
- let busy=false,lastPrepared='',lastArmed='',warned=false;
+ let busy=false,lastPrepared='',lastArmed='',warned=false,lastFailure=null;
+ function failure(error,stage){
+  const known=['missingFrame','invalidVersion','invalidGeneration','revisionConflict','missingIdentity','duplicateSetIdentity','invalidSetState','inactiveOrOtherOwner','invalidTimerConfig','executionIdentityChanged','restoreInProgress','pendingRecordingEvents','closedOrStaleExecution','recordedValuesChanged','completedSetRemoved','amendmentConflict','amendmentTargetRemoved'];
+  const reason=known.includes(error?.message)?error.message:stage==='arm'&&String(error?.message).includes('Open the phone workout')?'FOCUS':stage==='arm'&&String(error?.message).includes('did not start')?'TIMEOUT':error?.name==='ReferenceError'?'REFERENCE':error?.name==='TypeError'?'TYPE':'NATIVE';
+  lastFailure={code:'E162-'+stage.toUpperCase()+'-'+reason,stage,at:new Date().toISOString()};
+  if(!warned&&state.session&&!document.hidden){
+   warned=true;
+   const words={hu:'A háttérvezérlés nem indult el. Tartsd nyitva a telefonos edzést. Hibakód: ',en:'Background control could not start. Keep the phone workout open. Error code: ',de:'Die Hintergrundsteuerung konnte nicht starten. Lass das Training am Telefon geöffnet. Fehlercode: ',ro:'Controlul în fundal nu a pornit. Păstrează antrenamentul deschis pe telefon. Cod eroare: '};
+   window.tp153Toast?.((words[rf212Lang()]||words.en)+lastFailure.code,8000);
+  }
+ }
  const bridge=()=>window.Capacitor?.Plugins?.WearSync||window.Capacitor?.isPluginAvailable?.('WearSync')&&window.Capacitor.registerPlugin('WearSync');
  const clock=()=>window.Capacitor?.Plugins?.IntervalTimer||window.Capacitor?.isPluginAvailable?.('IntervalTimer')&&window.Capacitor.registerPlugin('IntervalTimer');
  const blocked=()=>window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||window.TrainPilotBoot?.loading;
@@ -16722,11 +16732,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
   return true;
  }
  async function sync({prepare=true}={}){
-  const api=bridge();if(!api?.executionStatus)return true;if(busy||blocked())return false;busy=true;
+  const api=bridge();if(!api?.executionStatus)return true;if(busy||blocked())return false;busy=true;let stage='reconcile';
   try{
    if(!await reconcile(api))return false;
    const current=draft(),session=current?.session;
-   const remote=await api.executionStatus();if(blocked())return false;if(remote.controllerArmed===false)lastArmed='';
+   stage='status';const remote=await api.executionStatus();if(blocked())return false;if(remote.controllerArmed===false)lastArmed='';
    const enabled=session?.automatic162?.enabled===true&&(session.timerOwner||'phone')==='phone';
    // GPS acquisition has its own owner; background handoff is enabled after that owner is prepared separately.
    const supported=enabled&&!session.exercises.some(e=>e.measurementType==='distance');
@@ -16765,18 +16775,19 @@ window.addEventListener?.('DOMContentLoaded',function(){
     const changedCompleted=Object.entries(meta.completedBase||{}).some(([id,base])=>{
      const set=frame.exercises.flatMap(e=>e.sets).find(s=>s.setId===id);return !set||Object.keys(base).some(k=>String(set[k])!==String(base[k]));
     });
+    stage=changedCompleted&&edit?'amend':'prepare';
     const result=changedCompleted&&edit?await api.amendExecution({snapshot:frame,expectedRevision:edit.revision,bases:edit.bases}):await api.prepareExecution({snapshot:frame,expectedRevision:meta.revision});
     if(blocked()||identity(draft()?.session)!==frame.workoutId)return false;
     session.phoneExecution162.revision=result.snapshot.executionRevision;session.phoneExecution162.completedBase=completedBase(result.snapshot);delete session.phoneEdit162;commit(draft());lastPrepared=signature;
    }
    const armKey=frame.workoutId+'|'+meta.generation;
    if(lastArmed!==armKey&&!document.hidden&&state.session===session){
-    if(!clock()?.armWorkout)throw Error('Native automatic controller unavailable');
+    stage='arm';if(!clock()?.armWorkout)throw Error('Native automatic controller unavailable');
     await clock().armWorkout({workoutId:frame.workoutId,generation:meta.generation,language:frame.language});lastArmed=armKey;
    }
-   warned=false;return true;
+   warned=false;lastFailure=null;return true;
   }catch(error){
-   if(!warned&&state.session&&!document.hidden){warned=true;window.tp153Toast?.(rf212Lang()==='hu'?'Az órás háttérvezérlés még nem áll készen. Tartsd nyitva a telefonos edzést.':'Watch background control is not ready. Keep the phone workout open.',5000);}
+   failure(error,stage);
    return false;
   }finally{busy=false;}
  }
@@ -16819,7 +16830,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    return ['applied','duplicate'].includes(result?.status)&&await sync({prepare:false});
   }catch(_){await sync({prepare:false});return false;}
  }
- window.TrainPilotPhoneExecution162={sync,finishFence,recordPhoneSet,isReconciling:()=>busy,block:async value=>{const api=bridge();if(api?.blockExecution)await api.blockExecution({blocked:value});}};
+ window.TrainPilotPhoneExecution162={sync,finishFence,recordPhoneSet,failure:()=>lastFailure?{...lastFailure}:null,isReconciling:()=>busy,block:async value=>{const api=bridge();if(api?.blockExecution)await api.blockExecution({blocked:value});}};
 })();
 // @endsection phone-execution-162.js
 
@@ -18078,7 +18089,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    try{if(window.Capacitor?.isNativePlatform?.()===true)api=window.Capacitor?.Plugins?.WearSync||window.Capacitor?.registerPlugin?.('WearSync');}catch(_){}
    const eligible=api?.executionStatus&&session?.automatic162?.enabled&&(session.timerOwner||'phone')==='phone'&&
     !session.exercises.some(e=>e.measurementType==='distance')&&!window.TrainPilotWearSync?.isApplyingCommand?.()&&
-    set&&!set.done&&['','ism.','reps'].includes(e.repUnit||'')&&/^\d+$/.test(String(set.reps))&&Number(set.reps)>0;
+    set&&!set.done&&['','ism.','reps','/kar','/láb'].includes(e.repUnit||'')&&/^\d+$/.test(String(set.reps))&&Number(set.reps)>0;
    return eligible?window.TrainPilotPhoneExecution162.recordPhoneSet(ei,si):base.apply(this,arguments);
   };
  });

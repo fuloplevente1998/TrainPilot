@@ -79,7 +79,7 @@ final class PhoneWorkoutRecording {
                 if (!exerciseId.equals(id(exercise, "id"))) throw new IllegalArgumentException("targetChanged");
                 if (set.getBoolean("done")) throw new IllegalArgumentException("alreadyRecorded");
                 String unit = exercise.optString("repUnit");
-                if (!(unit.isEmpty() || "ism.".equals(unit) || "reps".equals(unit))
+                if (!(unit.isEmpty() || "ism.".equals(unit) || "reps".equals(unit) || "/kar".equals(unit) || "/láb".equals(unit))
                         || "distance".equals(exercise.optString("measurementType")))
                     throw new IllegalArgumentException("unsupportedMeasurement");
                 return new Target(exercise, set, i);

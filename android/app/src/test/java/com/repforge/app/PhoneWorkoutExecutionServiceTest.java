@@ -54,6 +54,22 @@ public class PhoneWorkoutExecutionServiceTest {
         org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idleFor(Duration.ofSeconds(90));assertEquals("complete",IntervalTimerService.snapshot(context).getString("phase"));
         assertTrue(IntervalTimerService.armed("workout",1)); // Ready for the next explicit repetition recording.
     }
+    private void unilateralRest(String unit) throws Exception {
+        JSONObject frame=store.snapshot();frame.getJSONArray("exercises").getJSONObject(0).put("repUnit",unit);store.prepare(frame,1);
+        arm();JSONObject command=command();
+        assertEquals("applied",PhoneWorkoutExecution.execute(context,command).getString("status"));
+        assertEquals("7",store.snapshot().getJSONArray("exercises").getJSONObject(0).getJSONArray("sets").getJSONObject(0).getString("reps"));
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idleFor(Duration.ofSeconds(30));
+        assertEquals("rest",IntervalTimerService.snapshot(context).getString("phase"));
+        assertEquals(90000,IntervalTimerService.snapshot(context).getLong("remainingMs"));
+        assertEquals("duplicate",PhoneWorkoutExecution.execute(context,command).getString("status"));
+        assertEquals(90000,IntervalTimerService.snapshot(context).getLong("remainingMs"));
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idleFor(Duration.ofSeconds(90));
+        assertEquals("complete",IntervalTimerService.snapshot(context).getString("phase"));
+        assertTrue(IntervalTimerService.armed("workout",1));
+    }
+    @Test public void perArmRecordingStartsBackgroundRestWithoutDoublingRepetitions() throws Exception {unilateralRest("/kar");}
+    @Test public void perLegRecordingStartsBackgroundRestWithoutDoublingRepetitions() throws Exception {unilateralRest("/láb");}
     @Test public void unarmedOrSuspendedControllerCannotMutateExecution() throws Exception {
         assertEquals("controllerNotArmed",PhoneWorkoutExecution.execute(context,command()).getString("reason"));
         arm();store.suspendCommands(true);assertEquals("executionNotPrepared",PhoneWorkoutExecution.execute(context,command()).getString("reason"));
