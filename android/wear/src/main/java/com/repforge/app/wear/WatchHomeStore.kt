@@ -52,7 +52,8 @@ data class WatchHomeSnapshot(
     val recentWorkouts: List<MiniJournalWorkout> = emptyList(),
     val phoneVersion: String = "",
     val journalAvailable: Boolean = false,
-    val publishedAt: Long = 0L
+    val publishedAt: Long = 0L,
+    val theme: WearHomeTheme = WearHomeTheme.DEFAULT
 ) {
     fun toWearExercise(exercise: WatchHomeExercise): WearExercise = WearExercise(
         id = exercise.id,
@@ -175,7 +176,8 @@ object WatchHomeStore {
                 recentWorkouts = WatchMiniJournal.parse(root.optJSONArray("recentWorkouts")),
                 phoneVersion = root.optString("phoneVersion").take(32),
                 journalAvailable = root.optInt("journalSchema", 0) == 1 && root.optJSONArray("recentWorkouts") != null,
-                publishedAt = root.optLong("publishedAt", 0L)
+                publishedAt = root.optLong("publishedAt", 0L),
+                theme = WearHomeTheme.parse(root.optJSONObject("theme"))
             )
         } catch (_: Exception) { null }
     }
