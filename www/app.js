@@ -16800,8 +16800,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const command={nativeExecutionProtocol:2,commandId:crypto.randomUUID(),action:'completeSet',workoutId:identity(session),
    generation:meta.generation,executionRevision:meta.revision,exerciseId:e.id,setId:target.setId,reps:String(target.reps)};
   if(target.weight!==''&&target.weight!=null)command.weight=target.weight;
-  const result=await api.executeCommand({command});
-  return ['applied','duplicate'].includes(result?.status)&&await sync({prepare:false});
+  try{
+   const result=await api.executeCommand({command});
+   return ['applied','duplicate'].includes(result?.status)&&await sync({prepare:false});
+  }catch(_){await sync({prepare:false});return false;}
  }
  window.TrainPilotPhoneExecution162={sync,finishFence,recordPhoneSet,isReconciling:()=>busy,block:async value=>{const api=bridge();if(api?.blockExecution)await api.blockExecution({blocked:value});}};
 })();
@@ -18056,7 +18058,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
  'use strict';
  window.addEventListener?.('DOMContentLoaded',()=>{
   const base=toggleSet;toggleSet=function(ei,si){
-   const session=state.session,e=session?.exercises?.[ei],set=e?.sets?.[si],api=window.Capacitor?.Plugins?.WearSync;
+   const session=state.session,e=session?.exercises?.[ei],set=e?.sets?.[si];let api=null;
+   try{if(window.Capacitor?.isNativePlatform?.()===true)api=window.Capacitor?.Plugins?.WearSync||window.Capacitor?.registerPlugin?.('WearSync');}catch(_){}
    const eligible=api?.executionStatus&&session?.automatic162?.enabled&&(session.timerOwner||'phone')==='phone'&&
     !session.exercises.some(e=>e.measurementType==='distance')&&!window.TrainPilotWearSync?.isApplyingCommand?.()&&
     set&&!set.done&&['','ism.','reps'].includes(e.repUnit||'')&&/^\d+$/.test(String(set.reps))&&Number(set.reps)>0;

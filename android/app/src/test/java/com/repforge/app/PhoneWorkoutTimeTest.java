@@ -53,6 +53,19 @@ public class PhoneWorkoutTimeTest {
         start();advance(4);JSONObject current=IntervalTimerService.snapshot(context),older=new JSONObject(current.toString());advance(2);
         assertFalse(store.checkpointTimer(older,android.os.SystemClock.elapsedRealtime()));assertEquals(5000,store.snapshot().getJSONObject("timeLogs162").getJSONObject(current.getString("key")).getLong("workMs"));
     }
+    @Test public void editingPreviousTimedSetPreservesCurrentManualWork()throws Exception{
+        start();advance(13);JSONArray events=store.pendingEvents("workout",1,0);
+        store.acknowledgeEvents("workout",1,events.getJSONObject(events.length()-1).getLong("sequence"));advance(2);
+        JSONObject frame=store.snapshot(),set=frame.getJSONArray("exercises").getJSONObject(0).getJSONArray("sets").getJSONObject(0);
+        JSONObject bases=new JSONObject().put("a",PhoneWorkoutExecutionStore.recordedBase(set));set.put("reps","14");
+        store.amend(frame,frame.getLong("executionRevision"),bases);store.beginManualWork("workout",1,android.os.SystemClock.elapsedRealtime());advance(3);
+        JSONObject command=new JSONObject().put("nativeExecutionProtocol",2).put("commandId","record").put("action","completeSet")
+            .put("workoutId","workout").put("generation",1).put("executionRevision",store.snapshot().getLong("executionRevision"))
+            .put("exerciseId","press").put("setId","b").put("reps","7");
+        assertEquals("applied",PhoneWorkoutExecution.execute(context,command).getString("status"));
+        JSONObject logs=store.snapshot().getJSONObject("timeLogs162");long work=0;
+        for(java.util.Iterator<String> i=logs.keys();i.hasNext();)work+=logs.getJSONObject(i.next()).getLong("workMs");assertEquals(15000,work);
+    }
     @Test public void explicitAmendmentRequiresImportedEventsAndExactBase()throws Exception{
         start();advance(13);JSONObject frame=store.snapshot(),set=frame.getJSONArray("exercises").getJSONObject(0).getJSONArray("sets").getJSONObject(0);
         JSONObject bases=new JSONObject().put("a",PhoneWorkoutExecutionStore.recordedBase(set));

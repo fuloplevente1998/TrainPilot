@@ -68,6 +68,18 @@ function fixture(nativeResult=result()){
  };
  assert.equal(await phone.native.recordPhoneSet(0,1),true);assert.equal(phone.run('state.session.exercises[0].sets[1].done'),true);
  assert.deepEqual(phone.calls,[['prepare',1],['arm'],['ack',1]],'phone recording shares the prepared native path and acknowledges only committed data');
+ const modern=fixture({snapshot:{active:true,workoutId:'workout',generation:10,executionRevision:1},events:[],timer:{}});
+ const plugins=modern.context.window.Capacitor.Plugins;modern.context.window.Capacitor={isNativePlatform:()=>true,isPluginAvailable:name=>!!plugins[name],registerPlugin:name=>plugins[name]};
+ modern.api.executeCommand=async({command})=>{
+  assert.equal(command.setId,'a');assert.equal(command.nativeExecutionProtocol,2);
+  modern.setResult({snapshot:{active:true,workoutId:'workout',generation:10,executionRevision:3},events:[{sequence:1,workoutId:'workout',generation:10,executionRevision:3,exerciseId:'press',setId:'a',values:{done:true,reps:'9',weight:7},before:{reps:'9',weight:7}}],timer:{}});return {status:'applied'};
+ };
+ modern.windowEvents.get('DOMContentLoaded').at(-1)();
+ assert.equal(await modern.run('toggleSet(0,1)'),true,'phone UI uses the native recording path with the modern plugin registry');
+ assert.deepEqual(modern.calls,[['prepare',1],['arm'],['ack',1]]);
+ const transport=fixture({snapshot:{active:true,workoutId:'workout',generation:10,executionRevision:1},events:[],timer:{}});
+ transport.api.executeCommand=async()=>{throw Error('transport unavailable');};
+ assert.equal(await transport.native.recordPhoneSet(0,1),false);assert.equal(transport.run('state.session.exercises[0].sets[1].done'),false,'failed transport cannot invent a completion');
  const source=fs.readFileSync('www/app.js','utf8'),section=source.match(/\/\/ @section automatic-workout-162.js\n([\s\S]*?)\/\/ @endsection automatic-workout-162.js/)[1];
  const functionSource=section.match(/async function startTimed\(initialRest=0\)\{([\s\S]*?)\n  \}/)[0];
  let started;const c=vm.createContext({settings:()=>({intervalPreset110:{work:20,rest:10,rounds:3,vibration:false}}),TrainPilotIntervals162:{startConfigured:async(config,rest)=>{started={config,rest};return true;}},document:{querySelector(){throw Error('DOM dependency');}}});

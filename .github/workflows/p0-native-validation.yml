@@ -3,6 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: ['work/p0-162-native']
+    paths-ignore: ['**/*.md']
 permissions:
   contents: read
 concurrency:
@@ -30,6 +31,22 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon :app:testDebugUnitTest :wear:testDebugUnitTest
+      - name: Summarize native test results
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from xml.etree import ElementTree
+          for module in ('app', 'wear'):
+              reports = list(Path(f'android/{module}/build/test-results/testDebugUnitTest').glob('TEST-*.xml'))
+              assert reports, f'Missing {module} test reports'
+              totals = dict.fromkeys(('tests', 'failures', 'errors', 'skipped'), 0)
+              for report in reports:
+                  suite = ElementTree.parse(report).getroot()
+                  for field in totals:
+                      totals[field] += int(suite.get(field, 0))
+              print(f'{module}: {totals}', flush=True)
+              assert totals['tests'] > 0 and totals['failures'] == 0 and totals['errors'] == 0
+          PY
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v7

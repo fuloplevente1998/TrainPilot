@@ -59,6 +59,24 @@ public class PhoneWorkoutExecutionServiceTest {
         arm();store.suspendCommands(true);assertEquals("executionNotPrepared",PhoneWorkoutExecution.execute(context,command()).getString("reason"));
         assertEquals(0,store.pendingEvents("workout",1,0).length());
     }
+    @Test public void amendmentAndRearmDuringRestCannotCountRestAsManualWork() throws Exception {
+        arm();JSONObject event=PhoneWorkoutExecution.execute(context,command());
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idleFor(Duration.ofSeconds(30));
+        assertTrue(store.acknowledgeEvents("workout",1,event.getLong("sequence")));
+        JSONObject frame=store.snapshot(),first=frame.getJSONArray("exercises").getJSONObject(0).getJSONArray("sets").getJSONObject(0);
+        JSONObject bases=new JSONObject().put("a",PhoneWorkoutExecutionStore.recordedBase(first));first.put("reps","8");
+        store.amend(frame,frame.getLong("executionRevision"),bases);
+        store.beginManualWork("workout",1,android.os.SystemClock.elapsedRealtime());
+        controller.get().onStartCommand(new Intent(context,IntervalTimerService.class).setAction(IntervalTimerService.ARM)
+            .putExtra("workoutId","workout").putExtra("generation",1L).putExtra("language","hu"),0,2);
+        assertFalse(store.snapshot().has("manualAnchor162"));
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idleFor(Duration.ofSeconds(92));
+        JSONObject next=command().put("commandId","record-b").put("setId","b");
+        assertEquals("applied",PhoneWorkoutExecution.execute(context,next).getString("status"));
+        JSONObject logs=store.snapshot().getJSONObject("timeLogs162");long work=0,rest=0;
+        for(java.util.Iterator<String> i=logs.keys();i.hasNext();){JSONObject log=logs.getJSONObject(i.next());work+=log.getLong("workMs");rest+=log.getLong("restMs");}
+        assertEquals(2000,work);assertEquals(120000,rest);
+    }
     @Test public void failedRecordingCommitCannotStartTimeline() throws Exception {
         arm();store.getWritableDatabase().execSQL("CREATE TRIGGER fail BEFORE INSERT ON execution BEGIN SELECT RAISE(ABORT, 'injected'); END");
         assertThrows(android.database.sqlite.SQLiteException.class,()->PhoneWorkoutExecution.execute(context,command()));
