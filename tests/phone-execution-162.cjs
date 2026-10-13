@@ -80,6 +80,15 @@ function fixture(nativeResult=result()){
  const transport=fixture({snapshot:{active:true,workoutId:'workout',generation:10,executionRevision:1},events:[],timer:{}});
  transport.api.executeCommand=async()=>{throw Error('transport unavailable');};
  assert.equal(await transport.native.recordPhoneSet(0,1),false);assert.equal(transport.run('state.session.exercises[0].sets[1].done'),false,'failed transport cannot invent a completion');
+ const preflight=fixture();let finishPreflight,reads=0;
+ preflight.api.pendingCommands=async()=>{reads++;return {commands:[]};};preflight.api.ackCommand=async()=>{};
+ preflight.run('state.session=null;');
+ preflight.context.window.TrainPilotPhoneExecution162.sync=()=>new Promise(resolve=>{finishPreflight=resolve;});
+ const commandFlight=preflight.context.window.TrainPilotWearSync.drainCommands();
+ assert.equal(preflight.context.window.TrainPilotWearSync.isApplyingCommand(),true,'native preflight immediately reserves the command lock');
+ await assert.rejects(()=>preflight.run('tp105WithRestoreLock(async()=>true)'),undefined,'restore cannot overlap native preflight');
+ assert.equal(reads,0);finishPreflight(true);await commandFlight;assert.equal(reads,1);
+ assert.equal(preflight.context.window.TrainPilotWearSync.isApplyingCommand(),false,'completed preflight releases its command lock');
  const source=fs.readFileSync('www/app.js','utf8'),section=source.match(/\/\/ @section automatic-workout-162.js\n([\s\S]*?)\/\/ @endsection automatic-workout-162.js/)[1];
  const functionSource=section.match(/async function startTimed\(initialRest=0\)\{([\s\S]*?)\n  \}/)[0];
  let started;const c=vm.createContext({settings:()=>({intervalPreset110:{work:20,rest:10,rounds:3,vibration:false}}),TrainPilotIntervals162:{startConfigured:async(config,rest)=>{started={config,rest};return true;}},document:{querySelector(){throw Error('DOM dependency');}}});

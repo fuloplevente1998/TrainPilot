@@ -43,7 +43,9 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{
   const snapshot=()=>page.evaluate(()=>JSON.stringify(Object.fromEntries(Object.keys(localStorage).filter(k=>k.startsWith('repforge:')).sort().map(k=>[k,localStorage.getItem(k)]))));
   for(const mode of ['picker-cancel','invalid-json','confirm-cancel','install-failure']){
    const before=await snapshot();
-   await page.evaluate(mode=>{restoreProbe.failInstall=mode==='install-failure';restoreProbe.promise=chooseImport();restoreProbe.select(mode==='picker-cancel'?{cancelled:true}:{data:mode==='invalid-json'?'not JSON':restoreProbe.backup});},mode);
+   await page.evaluate(mode=>{restoreProbe.failInstall=mode==='install-failure';restoreProbe.select=null;restoreProbe.promise=chooseImport();},mode);
+   await page.waitForFunction(()=>typeof restoreProbe.select==='function');
+   await page.evaluate(mode=>restoreProbe.select(mode==='picker-cancel'?{cancelled:true}:{data:mode==='invalid-json'?'not JSON':restoreProbe.backup}),mode);
    if(mode==='confirm-cancel'||mode==='install-failure')await page.locator(mode==='confirm-cancel'?'[data-tp2628-cancel]':'[data-tp2628-confirm]').click();
    await page.evaluate(()=>restoreProbe.promise);assert.equal(await page.evaluate(()=>TrainPilotBackupBusy),false,mode+' releases restore lock');assert.equal(await snapshot(),before,mode+' preserves every previous local key');
   }

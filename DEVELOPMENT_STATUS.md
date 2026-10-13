@@ -53,6 +53,8 @@ A felhasználó jóváhagyta a közös gate- és tesztbuild-kört. A #157 jelenl
 
 Az aktuális gyorsindítás runtime-regressziója a #162 új natív vezérlésével együtt is ellenőrizve: előkészítés → vezérlés élesítése → egyező generáció/revízió publikálása → egyszeri óranyitás. Sikertelen natív előkészítésnél nincs élesítés, publikálás vagy óranyitás; sikeres közeli újrapróbálás után az eredeti függő átadás egyszer végrehajtható. A meglévő lemondási, piszkozat-, offline-, órás eredet- és óranyitási hibatesztek megmaradnak.
 
+Az első közös telefonos gate a JSON-visszatöltési fixture-ben várakozva időkorlátba futott: a teszt a már aszinkron natív restore-védelem miatt még meg nem nyílt új fájlválasztó helyett az előző callbacket oldotta fel. A fixture most megvárja az aktuális választót; a teljes visszatöltési próba célzott Chromium-futása sikeres. A kapcsolódó natív előkészítés is az órás parancszár teljes hatálya alá került, ezért restore nem indulhat két aszinkron preflight lépés közé. Erre külön runtime-regresszió készült; egyik ellenőrzést sem távolítottuk el a teljes gate-ből.
+
 A közös forrás a #195 **`fix/p0-162-157-safe-wear-sync`** ágára kerül. Ezen fut a telefonos Release Gate, Wear Release Gate, Wear kerek kijelzős UI és a PR teljesítményellenőrzése. A signing a meglévő GitHub Secretsből történik; verzió **1.3.4 /2730**. Az APK-k a branch workflow artifactjai, nem publikált release-ek. A pontos tesztpár, commit, SHA-256, gate-eredmény és készülékes próbamenet a [P0 készülékes átadási lapban](docs/P0_KESZULEKES_ELFOGADAS_162_157.md) szerepel, amely a build után frissül. A #195 draft; main és kiadás változatlan, #162 és #157 nyitott.
 
 ### Folytatás — 6–7/10: egységes időnapló és #162 regresszió

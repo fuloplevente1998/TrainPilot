@@ -17444,10 +17444,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  async function drainCommands(){
   if(commandBusy||window.TrainPilotBackupBusy)return;
-  if(api()?.executionStatus&&window.TrainPilotPhoneExecution162&&!await window.TrainPilotPhoneExecution162.sync({prepare:false}))return;
   const bridge=api();if(!bridge?.pendingCommands||!bridge?.ackCommand)return;
   commandBusy=true;
   try{
+   if(bridge.executionStatus&&window.TrainPilotPhoneExecution162&&!await window.TrainPilotPhoneExecution162.sync({prepare:false}))return;
+   if(window.TrainPilotBackupBusy)return;
    const result=await bridge.pendingCommands();
    if(window.TrainPilotBackupBusy)return;
    const live=result?.liveHealth;
