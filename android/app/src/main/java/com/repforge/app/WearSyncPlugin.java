@@ -22,6 +22,31 @@ import org.json.JSONObject;
 public class WearSyncPlugin extends Plugin {
     static final String ACTIVE_WORKOUT_PATH = "/trainpilot/active-workout";
     static final String WATCH_HOME_PATH = "/trainpilot/watch-home";
+    static final String AUTOMATIC_COMMAND_PREFIX = "/trainpilot/automatic-command/";
+
+    @PluginMethod public void automaticCommand(PluginCall call) {
+        JSObject input=call.getObject("command");
+        if(input==null||input.optString("commandId").isEmpty()||input.optString("workoutId").isEmpty()){call.reject("Missing automatic command identity.");return;}
+        JSONObject current=ActiveWorkoutStore.current(getContext());
+        if(current==null||!current.optString("workoutId").equals(input.optString("workoutId"))){call.reject("Workout changed.");return;}
+        PutDataMapRequest map=PutDataMapRequest.create(AUTOMATIC_COMMAND_PREFIX+input.optString("commandId"));
+        map.getDataMap().putString("command",input.toString());
+        map.getDataMap().putLong("createdAt",System.currentTimeMillis());
+        if("start".equals(input.optString("action"))||"resume".equals(input.optString("action"))||"record".equals(input.optString("action"))||
+            "toggle".equals(input.optString("action"))&&input.optBoolean("enabled")){
+            if(getActivity()==null||!getActivity().hasWindowFocus()){call.reject("The phone workout must be visible.");return;}
+            Wearable.getDataClient(getContext()).putDataItem(map.asPutDataRequest().setUrgent());
+            Wearable.getNodeClient(getContext()).getConnectedNodes().addOnSuccessListener(nodes->{
+                if(nodes.size()!=1){call.reject("One connected watch is required.");return;}
+                Intent intent=new Intent(Intent.ACTION_VIEW).setData(new Uri.Builder().scheme("trainpilot").authority("wear")
+                    .path("/automatic-command").appendQueryParameter("command",input.toString()).build()).addCategory(Intent.CATEGORY_BROWSABLE);
+                var task=new RemoteActivityHelper(getContext(),ContextCompat.getMainExecutor(getContext())).startRemoteActivity(intent,nodes.get(0).getId());
+                task.addListener(()->{try{task.get();call.resolve();}catch(Exception error){call.reject("Unable to open the watch timer.",error);}},ContextCompat.getMainExecutor(getContext()));
+            }).addOnFailureListener(error->call.reject("Unable to reach the watch.",error));
+            return;
+        }
+        put(map,0,call);
+    }
 
     @PluginMethod
     public void publish(PluginCall call) {
@@ -116,7 +141,7 @@ public class WearSyncPlugin extends Plugin {
                                 catch (Exception ignored) {}
                                 continue;
                             }
-                            if (path == null || !path.startsWith(WearCommandListenerService.COMMAND_PATH_PREFIX)) continue;
+                            if (path == null || !path.startsWith(WearCommandListenerService.COMMAND_PATH_PREFIX)&&!path.equals("/trainpilot/watch-automatic")) continue;
                             try {
                                 String raw = DataMapItem.fromDataItem(item).getDataMap().getString("command");
                                 if (raw == null || raw.isEmpty()) continue;
@@ -161,7 +186,9 @@ public class WearSyncPlugin extends Plugin {
                 .addOnSuccessListener(items -> {
                     try {
                         for (DataItem item : items) {
-                            if (item != null && item.getUri() != null && expectedPath.equals(item.getUri().getPath())) {
+                            if (item != null && item.getUri() != null && (expectedPath.equals(item.getUri().getPath())||
+                                "/trainpilot/watch-automatic".equals(item.getUri().getPath())&&
+                                sameWatchStateCommand(item,commandId))) {
                                 Wearable.getDataClient(getContext()).deleteDataItems(item.getUri());
                             }
                         }
@@ -169,6 +196,10 @@ public class WearSyncPlugin extends Plugin {
                         items.release();
                     }
                 });
+    }
+    private boolean sameWatchStateCommand(DataItem item,String id){
+        try {return new JSONObject(DataMapItem.fromDataItem(item).getDataMap().getString("command")).optString("commandId").equals(id);}
+        catch(Exception ignored){return false;}
     }
 
     private void publishSnapshot(JSONObject snapshot, PluginCall call) {

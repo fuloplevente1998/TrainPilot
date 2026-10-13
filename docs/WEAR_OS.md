@@ -1,8 +1,8 @@
 # TrainPilot Wear OS — működés és állapot
 
-**Aktuális verziócsalád: 1.3.** A telefon és az óra a [#156](https://github.com/fuloplevente1998/TrainPilot/pull/156) jóváhagyott párosított változata alapján a mainen van. Az 1.2 Wear-alapfunkcióit és az 1.3 közös fejlesztéseit az [összevont változáslista](../RELEASE_NOTES.md) foglalja össze.
+**Aktuális main fejlesztési bázis: 1.3.4 / 2730**, a [#179](https://github.com/fuloplevente1998/TrainPilot/pull/179) közös telefon/Wear megvalósításával. A megújult kezdőlap és az első natív automata integráció a main fejlesztési alapjában szerepel; a fizikai automata elfogadás külön következő feladat. A korábbi telefonos órás appindítás és mérés javításai az eredeti 1.3.4 kiadás részei.
 
-A telefonról indított órás appmegnyitás az 1.3 javítási sorozatának része a [#160 tesztágon](https://github.com/fuloplevente1998/TrainPilot/pull/160); még nincs a main release-ekben. A felhasználó a megnyílást 2026. október 10-én visszaigazolta. A kijelző kikapcsolása melletti tényleges mérés és a végső naplóadat külön ellenőrzés marad.
+A publikált 1.3.4 release APK-k és a legutóbbi automata tesztpár forrása különbözik. [Pontos buildazonosítók és ellenőrzések](../DEVELOPMENT_STATUS.md) · [Közös fejlesztési terv](wear/WEAR_OS_FEJLESZTESI_TERV.md) · [ChatGPT-folytatási leírás](CHATGPT_FOLYTATAS.md).
 
 ## Architektúra és adatok
 
@@ -14,8 +14,10 @@ A telefon Capacitor/WebView/Java alapú, és őrzi a mentett naplót. Az óra na
 | Órás aktív edzés és kezdőlapi/napló-cache | `WorkoutSnapshotStore`, `WatchHomeStore` |
 | Tartós offline parancsok és lezárás | `WearCommandOutbox`, `WearClosureStore` |
 | Edzéshez tartozó mérés | `WearHealthService`, `WearHealthStore` |
+| Órás automata időzítő és parancsok | `WearAutomaticService`, `WearAutomaticController`, `WearAutomaticEngine` |
+| Telefonos natív időzítő órás tükrözése | `IntervalTimerService`, `WearPhoneAutomatic`, `WearPhoneAutomaticProjection` |
 
-A Data Layer útvonalai: `/trainpilot/active-workout`, `/trainpilot/watch-home`, `/trainpilot/workout-command/<commandId>`. Az óra a helyi pillanatképből jeleníti meg az adatokat, a módosító parancsok tartós sorból, visszaigazolással jutnak a telefonra.
+A Data Layer útvonalai: `/trainpilot/active-workout`, `/trainpilot/watch-home`, `/trainpilot/workout-command/<commandId>`. Az automata integráció ezekhez adja a `/trainpilot/watch-automatic`, `/trainpilot/phone-automatic` és `/trainpilot/automatic-command/<commandId>` útvonalakat. Az óra a helyi pillanatképből jeleníti meg az adatokat, a módosító parancsok tartós sorból, visszaigazolással jutnak a telefonra.
 
 Egy edzés ugyanazt a stabil azonosítót használja indításkor, offline folytatáskor, befejezéskor és késői méréskor. Ismételt parancs vagy befejezés nem készít új naplóbejegyzést. Másik aktív telefonos edzés/piszkozat nem cserélhető le régi órás paranccsal. Későn érkező indításnál a végső edzésadat is segítheti az offline alkalom helyreállítását; törölt alkalmat a lezárási/törlési állapot nem enged visszahozni.
 
@@ -27,7 +29,7 @@ Egy edzés ugyanazt a stabil azonosítót használja indításkor, offline folyt
 - Heti mini naptár, Mini napló, Órás mérések és mérési előzmények.
 - Tile és számlapi kiegészítő, a megfelelő kezdő-/edzésoldal megnyitásával.
 
-A kezdőlap körkijelzőhöz igazított, görgethető adatmezőkkel és elérhető vezérlőkkel. Az OLED-felület sötét/arany palettát használ. A teljes programszerkesztés, fotókezelés és mentés a telefonon marad.
+A kezdőlap a körkijelzőt használja, rövid tartalommal rögzített elrendezésű; a menü lentről felfelé húzással is megnyílik. A színek és ikonok a telefonos témát követik. A hosszú listák görgethetők, a megerősítések/szerkesztők fontos gombjai elérhetők maradnak. A teljes programszerkesztés, fotókezelés és mentés a telefonon marad.
 
 ## Mini naptár
 
@@ -69,7 +71,7 @@ Ha az óra nincs a kézen, szenzormérés nem feltételezhető. Ha a kézen van,
 
 A 20 guggolásos készülékpróba helyes órás adatátadást igazolt. A korábbi **4 órás kcal / 1 aktív és 2 összes telefonos kcal** eltérés továbbra is forrás-, időablak- és szinkronellenőrzést igényel. A már naplózott értékeket és késői frissítéseket meg kell őrizni.
 
-## Telefonos órás appindítás — 1.3 tesztjavítás
+## Telefonos órás appindítás — 1.3.4 kiadott javítás
 
 A #160 javítás célja, hogy új telefonos edzéshez az órát ne kelljen előbb kézzel megnyitni.
 
@@ -77,7 +79,15 @@ A #160 javítás célja, hogy új telefonos edzéshez az órát ne kelljen előb
 
 A kezdeti kijelzőébrenlét és a függő indítás határolt. Telefonos háttérbe kerülés, edzésváltás vagy lejárat megszakítja az indítási kérést. Visszaállított piszkozat, rutinszinkron és óráról indított parancs nem nyitja újra az órás appot. Több csatlakoztatott óra esetén nincs párhuzamos automatikus indítás. Sikertelen megnyitás után a telefonos edzés megmarad és kézi órás megnyitás használható.
 
-**Állapot:** a telefonos megnyitást a felhasználó visszaigazolta; mindkét aláírt build ellenőrzése sikeres. A PR még draft, a háttérben keletkező mérés és a lezárt naplóadat készülékes elfogadása hátravan. A main release-jei még a javítás előtti állapotot tartalmazzák.
+**Állapot:** a telefonról indított órás app és mérés javítása a mainben és az eredeti 1.3.4 kiadásban szerepel; a korábbi #160 már történeti hivatkozás. A legutóbbi automata mód fizikailag ellenőrizendő háttérműködését ettől külön kell kezelni.
+
+## Automata mód — jelenlegi megvalósítás
+
+Az órán indított edzés `watch`, a telefonon indított `phone` időzítőtulajdonost kap. A másik eszköz vezérlő/megjelenítő; két független automatikus idővonal nem indulhat. A natív órás szolgáltatás Health Services-engedélytől független, munka/pihenő alatt háttérben is időzít, megszakítás után mentett szünetből állítható helyre.
+
+A gyakorlatoldal kis A/M kapcsolója és az edzésmenü munka/pihenő/kör/rezgés beállításai vezérlik. Ismétlést a felhasználó rögzít, utána a pihenő automatikusan a következő sorozatra/gyakorlatra vezet. Pontosan `mp` egységnél a munkaszakaszok és körök automatikusak; oldalankénti mérés kézi marad. A végső mentés külön művelet. Nyitott szerkesztőből nem menthető adat a közben aktívvá vált másik sorozatba.
+
+Telefonos tulajdonnál a natív számláló és szünet/folytatás/kihagyás tükrözése már működik, de az órás ismétlésrögzítés/új telefonos menetrend alvó webfelület mellett még várhat. Az óra „Telefonra vár” állapotot mutat. Az eltérő időösszesítés, a teljes háttérrögzítés, az órás GPS-szakaszok és a készülékes próbák a [közös terv](wear/WEAR_OS_FEJLESZTESI_TERV.md) következő feladatai.
 
 ## Készülékes ellenőrzés
 

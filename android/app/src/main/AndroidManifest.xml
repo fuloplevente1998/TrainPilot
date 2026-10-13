@@ -51,6 +51,8 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-feature android:name="android.hardware.location" android:required="false" />
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
@@ -68,6 +70,9 @@
 
         <service android:name=".HealthBackgroundService" android:foregroundServiceType="connectedDevice" android:exported="false" android:stopWithTask="false" />
         <service android:name=".HealthBackgroundJob" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="false" />
+        <service android:name=".IntervalTimerService" android:foregroundServiceType="specialUse" android:exported="false" android:stopWithTask="true">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-started finite fitness interval timer providing audible and vibration phase cues while the screen is locked; always stoppable from its ongoing notification." />
+        </service>
         <service android:name=".DistanceTrackingService" android:foregroundServiceType="location" android:exported="false" android:stopWithTask="true" />
         <service
             android:name=".WearCommandListenerService"

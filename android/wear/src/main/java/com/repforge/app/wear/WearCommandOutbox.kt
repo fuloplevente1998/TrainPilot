@@ -17,6 +17,8 @@ object WearCommandOutbox {
         val sequence = maxOf(prefs.getLong("sequence", 0L), floor) + 1L
         command.put("sequence", sequence)
         val pending = JSONArray(prefs.getString("pending", "[]"))
+        if(command.optString("action")=="watchAutomationState")for(i in pending.length()-1 downTo 0)
+            if(pending.optJSONObject(i)?.optString("action")=="watchAutomationState")pending.remove(i)
         pending.put(command)
         prefs.edit().putLong("sequence", sequence).putString("pending", pending.toString()).commit()
         flush(context)
@@ -29,7 +31,8 @@ object WearCommandOutbox {
         for (i in 0 until pending.length()) {
             val command = pending.optJSONObject(i) ?: continue
             val id = command.optString("commandId")
-            val map = PutDataMapRequest.create("${WearDataListenerService.COMMAND_PATH_PREFIX}$id")
+            val path=if(command.optString("action")=="watchAutomationState")"/trainpilot/watch-automatic" else "${WearDataListenerService.COMMAND_PATH_PREFIX}$id"
+            val map = PutDataMapRequest.create(path)
             map.dataMap.putString("command", command.toString())
             map.dataMap.putLong("createdAt", command.optLong("createdAt"))
             Wearable.getDataClient(context).putDataItem(map.asPutDataRequest().setUrgent())

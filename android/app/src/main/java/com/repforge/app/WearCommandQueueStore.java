@@ -39,6 +39,13 @@ final class WearCommandQueueStore {
         if (id.isEmpty()) return;
         JSONArray pending = read(context, PENDING), seen = read(context, SEEN);
         if (containsId(pending, id) || containsId(seen, id)) return;
+        if("watchAutomationState".equals(input.optString("action")))for(int i=pending.length()-1;i>=0;i--){
+            JSONObject older=pending.optJSONObject(i);
+            if(older!=null&&"watchAutomationState".equals(older.optString("action"))&&input.optString("workoutId").equals(older.optString("workoutId"))){
+                if(older.optLong("sequence")>=input.optLong("sequence"))return;
+                pending.remove(i);
+            }
+        }
         JSONObject command = new JSONObject(input.toString());
         command.put("receivedAt", System.currentTimeMillis());
         if (uri != null) command.put("_uri", uri);
@@ -51,6 +58,7 @@ final class WearCommandQueueStore {
         try { return new JSONArray(read(context, PENDING).toString()); }
         catch (Exception ignored) { return new JSONArray(); }
     }
+    static synchronized boolean seen(Context context,String id){return containsId(read(context,SEEN),id);}
 
     static synchronized void ack(Context context, String commandId) {
         if (commandId == null || commandId.isEmpty()) return;

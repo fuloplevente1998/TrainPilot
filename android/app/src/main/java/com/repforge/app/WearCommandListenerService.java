@@ -42,11 +42,27 @@ public class WearCommandListenerService extends WearableListenerService {
                 catch (Exception ignored) {}
                 continue;
             }
-            if (path == null || !path.startsWith(COMMAND_PATH_PREFIX)) continue;
+            if (path == null || !path.startsWith(COMMAND_PATH_PREFIX)&&!path.equals("/trainpilot/watch-automatic")) continue;
             try {
                 String raw = DataMapItem.fromDataItem(event.getDataItem()).getDataMap().getString("command");
                 if (raw == null || raw.isEmpty()) continue;
-                WearCommandQueueStore.enqueue(this, new JSONObject(raw), event.getDataItem().getUri().toString());
+                JSONObject command=new JSONObject(raw);
+                if("automaticControl".equals(command.optString("action"))&&!WearCommandQueueStore.seen(this,command.optString("commandId"))){
+                    JSONObject timer=IntervalTimerService.snapshot(this),active=ActiveWorkoutStore.current(this);
+                    String action=command.optString("value");
+                    if(active!=null&&command.optJSONObject("automation")!=null&&active.optString("workoutId").equals(command.optString("workoutId"))&&
+                        timer.optString("key").equals(command.optJSONObject("automation")==null?"":command.optJSONObject("automation").optString("key"))&&
+                        java.util.Arrays.asList("pause","resume","skipRest").contains(action)){
+                        try {
+                            long expectedPhase=command.optJSONObject("automation").optLong("phaseNumber");
+                            IntervalTimerService.command(this,timer.optString("key"),expectedPhase==timer.optLong("phaseNumber")?action:"status");
+                            WearCommandQueueStore.ack(this,command.optString("commandId"));
+                            Wearable.getDataClient(this).deleteDataItems(event.getDataItem().getUri());continue;
+                        }
+                        catch(Exception ignored){}
+                    }
+                }
+                WearCommandQueueStore.enqueue(this, command, event.getDataItem().getUri().toString());
             } catch (Exception ignored) {
                 // Invalid or stale watch commands must never affect the phone workout.
             }

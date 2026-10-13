@@ -52,7 +52,9 @@ data class WatchHomeSnapshot(
     val recentWorkouts: List<MiniJournalWorkout> = emptyList(),
     val phoneVersion: String = "",
     val journalAvailable: Boolean = false,
-    val publishedAt: Long = 0L
+    val publishedAt: Long = 0L,
+    val theme: WearHomeTheme = WearHomeTheme.DEFAULT,
+    val automaticProtocol: Int = 0
 ) {
     fun toWearExercise(exercise: WatchHomeExercise): WearExercise = WearExercise(
         id = exercise.id,
@@ -63,7 +65,7 @@ data class WatchHomeSnapshot(
         targetReps = exercise.targetReps,
         sets = exercise.sets.map { set ->
             WearSet(number = set.number, reps = "", weight = set.weight, done = false,
-                leftSeconds = 0, rightSeconds = 0, distanceMeters = 0.0)
+                leftSeconds = 0, rightSeconds = 0, distanceMeters = 0.0,setId=java.util.UUID.randomUUID().toString())
         }
     )
 
@@ -80,7 +82,7 @@ data class WatchHomeSnapshot(
         restEndAt = 0L,
         dayName = "Gyors edzés",
         quickWorkout = true,
-        exercises = listOf(toWearExercise(exercise))
+        exercises = listOf(toWearExercise(exercise)),timerOwner="watch"
     )
 
     fun createWorkout(day: WatchHomeDay, scheduleId: String, started: String): WearWorkout =
@@ -96,7 +98,7 @@ data class WatchHomeSnapshot(
             restSeconds = restSeconds,
             restEndAt = 0L,
             dayName = day.name,
-            exercises = day.exercises.map(::toWearExercise)
+            exercises = day.exercises.map(::toWearExercise),timerOwner="watch"
         )
 
 }
@@ -114,12 +116,14 @@ object WatchHomeStore {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
             .putString(SNAPSHOT, JSONObject(raw).put("publishedAt", parsed.publishedAt).toString())
+            .putInt("automaticProtocol",parsed.automaticProtocol)
             .apply()
         return parsed
     }
 
     fun newest(current: WatchHomeSnapshot?, incoming: WatchHomeSnapshot): WatchHomeSnapshot =
         if (current != null && current.publishedAt > incoming.publishedAt) current else incoming
+    fun automaticProtocol(context: Context)=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).getInt("automaticProtocol",0)
 
     fun load(context: Context): WatchHomeSnapshot? {
         val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(SNAPSHOT, null)
@@ -175,7 +179,9 @@ object WatchHomeStore {
                 recentWorkouts = WatchMiniJournal.parse(root.optJSONArray("recentWorkouts")),
                 phoneVersion = root.optString("phoneVersion").take(32),
                 journalAvailable = root.optInt("journalSchema", 0) == 1 && root.optJSONArray("recentWorkouts") != null,
-                publishedAt = root.optLong("publishedAt", 0L)
+                publishedAt = root.optLong("publishedAt", 0L),
+                theme = WearHomeTheme.parse(root.optJSONObject("theme")),
+                automaticProtocol = root.optInt("automaticProtocol",0)
             )
         } catch (_: Exception) { null }
     }

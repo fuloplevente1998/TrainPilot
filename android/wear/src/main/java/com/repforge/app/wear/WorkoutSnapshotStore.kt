@@ -11,7 +11,8 @@ data class WearSet(
     val done: Boolean,
     val leftSeconds: Int,
     val rightSeconds: Int,
-    val distanceMeters: Double
+    val distanceMeters: Double,
+    val setId: String = ""
 )
 
 data class WearExercise(
@@ -38,7 +39,9 @@ data class WearWorkout(
     val exercises: List<WearExercise>,
     val dayName: String = "",
     val localSequence: Long = 0L,
-    val quickWorkout: Boolean = false
+    val quickWorkout: Boolean = false,
+    val automation: WearAutomatic? = null,
+    val timerOwner: String = "phone"
 ) {
     fun elapsedSeconds(now: Long = System.currentTimeMillis()): Int = try {
         ((now - java.time.Instant.parse(started).toEpochMilli()).coerceAtLeast(0L) / 1000L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
@@ -94,6 +97,11 @@ object WorkoutSnapshotStore {
             // not leave the measurement start waiting forever for this very revision.
             return saveWorkout(context, preservePendingWearEdits(current, parsed))
         }
+        if(current?.workoutId==parsed.workoutId && current.timerOwner=="watch" && current.automation!=null &&
+            (parsed.automation?.key!=current.automation.key || ((parsed.automation?.phaseNumber ?: -1)<current.automation.phaseNumber)))
+            return saveWorkout(context,current.copy(revision=maxOf(current.revision,parsed.revision)))
+        if(current?.workoutId==parsed.workoutId && current.automation?.enabled==true && current.automation.owner=="watch")
+            return saveWorkout(context,current.copy(revision=maxOf(current.revision,parsed.revision)))
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(SNAPSHOT, raw).apply()
         return parsed
     }
@@ -105,11 +113,13 @@ object WorkoutSnapshotStore {
 
     @Synchronized
     fun saveWorkout(context: Context, workout: WearWorkout): WearWorkout {
+        val current=load(context)
+        val saved=if(current?.workoutId==workout.workoutId)workout.copy(localSequence=maxOf(current.localSequence,workout.localSequence),revision=maxOf(current.revision,workout.revision))else workout
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
-            .putString(SNAPSHOT, encode(workout).toString())
+            .putString(SNAPSHOT, encode(saved).toString())
             .apply()
-        return workout
+        return saved
     }
 
     fun load(context: Context): WearWorkout? {
@@ -137,7 +147,8 @@ object WorkoutSnapshotStore {
                                     done = set.optBoolean("done", false),
                                     leftSeconds = set.optInt("leftSeconds", 0),
                                     rightSeconds = set.optInt("rightSeconds", 0),
-                                    distanceMeters = set.optDouble("distanceMeters", 0.0)
+                                    distanceMeters = set.optDouble("distanceMeters", 0.0),
+                                    setId = set.optString("setId")
                                 )
                             )
                         }
@@ -165,12 +176,14 @@ object WorkoutSnapshotStore {
                 started = root.optString("started"),
                 workoutId = root.optString("workoutId", root.optString("started")),
                 currentExercise = root.optInt("currentExercise", 0).coerceIn(0, exercises.lastIndex),
-                restSeconds = root.optInt("restSeconds", 90).coerceAtLeast(1),
+                restSeconds = root.optInt("restSeconds", 90).coerceIn(0,3600),
                 restEndAt = root.optLong("restEndAt", 0L),
                 exercises = exercises,
                 dayName = root.optString("dayName", root.optString("dayId")),
                 localSequence = root.optLong("localSequence", root.optLong("watchSequence", 0L)),
-                quickWorkout = root.optBoolean("quickWorkout", root.optString("dayId") == "quick" && root.optString("programId").isBlank())
+                quickWorkout = root.optBoolean("quickWorkout", root.optString("dayId") == "quick" && root.optString("programId").isBlank()),
+                automation = WearAutomatic.parse(root.optJSONObject("automation")),
+                timerOwner = root.optString("timerOwner",root.optJSONObject("automation")?.optString("owner") ?: "phone")
             )
         } catch (_: Exception) { null }
     }
@@ -191,6 +204,8 @@ object WorkoutSnapshotStore {
             .put("currentExercise", workout.currentExercise)
             .put("restSeconds", workout.restSeconds)
             .put("restEndAt", workout.restEndAt)
+            .put("timerOwner",workout.timerOwner)
+        workout.automation?.let { root.put("automation",it.json()) }
         val exercises = JSONArray()
         workout.exercises.forEach { exercise ->
             val sets = JSONArray()
@@ -204,6 +219,7 @@ object WorkoutSnapshotStore {
                         .put("leftSeconds", set.leftSeconds)
                         .put("rightSeconds", set.rightSeconds)
                         .put("distanceMeters", set.distanceMeters)
+                        .put("setId",set.setId)
                 )
             }
             exercises.put(

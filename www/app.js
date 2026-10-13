@@ -16753,6 +16753,16 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
   return {calendar,calendarDays};
  }
+ function watchTheme(){
+  // Use the chosen palette directly: no layout reads or preference writes during sync.
+  try{
+   const key=typeof rf200ThemeKey==='function'?rf200ThemeKey():'classicBlue';
+   const theme=typeof RF200_THEMES==='object'?RF200_THEMES[key]:null;
+   if(!theme||!/^#[0-9a-f]{6}$/i.test(theme.accent)||!/^#[0-9a-f]{6}$/i.test(theme.accent2))return null;
+   return {key,accent:theme.accent,accent2:theme.accent2,
+    family:typeof TP1511_BASIC!=='undefined'&&TP1511_BASIC.includes(key)?'basic':'vivid'};
+  }catch(_){return null}
+ }
  function homeSnapshot(){
   try{
    if(typeof activeProgram!=='function'||typeof programDay!=='function')return null;
@@ -16775,7 +16785,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const home={
     schema:1,
     phoneVersion:typeof TRAINPILOT_VERSION==='string'?TRAINPILOT_VERSION:'',
+    automaticProtocol:1,
     journalSchema:1,
+    theme:watchTheme(),
     ...watchCalendar(active,lang),
     quickExercises:watchQuickExercises(lang),
     recentWorkouts:watchRecentHistory(lang),
@@ -16818,6 +16830,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
     currentExercise:Math.max(0,Math.min(current,Math.max(0,exercises.length-1))),
     restSeconds:configuredRest(),
     restEndAt:Number((state.session?state.restEndAt:draft?.restEndAt)||0),
+    timerOwner:session.timerOwner||'phone',
+    automation:session.watchAutomation162?(()=>{const {snapshot,...value}=session.watchAutomation162;return value;})():window.TrainPilotAutomatic162?.snapshotForWatch?.(session)||null,
     language:lang,
     exercises:exercises.map(exercise=>({
      id:String(exercise?.id||''),
@@ -16828,6 +16842,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
      targetReps:String(exercise?.targetReps||exercise?.reps||(typeof byId==='function'?byId(exercise?.id)?.reps:'')||''),
      sets:(Array.isArray(exercise?.sets)?exercise.sets:[]).map((set,index)=>({
       set:Number(set?.set||index+1),
+      setId:String(set?.setId||''),
       reps:String(set?.reps??''),
       weight:set?.weight??'',
       done:!!set?.done,
@@ -16933,6 +16948,14 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(command?.rightSeconds!==undefined)set.rightSeconds=Math.max(0,Math.round(Number(command.rightSeconds)||0));
   if((command?.leftSeconds!==undefined||command?.rightSeconds!==undefined)&&Number(set.leftSeconds)>0&&Number(set.rightSeconds)>0){
    set.reps=String(Math.min(Number(set.leftSeconds),Number(set.rightSeconds)));
+  }
+ }
+ function adoptWatchIdentity(command,preserveMode=false){
+  const root=command.finalSnapshot,s=state.session;if(!s||!root||root.workoutId!==command.workoutId)return;
+  s.timerOwner='watch';if(!preserveMode)s.automatic162={enabled:false,owner:'watch',phase:'work'};
+  for(let e=0;e<(root.exercises||[]).length;e++)for(let i=0;i<(root.exercises[e].sets||[]).length;i++){
+   const remote=root.exercises[e].sets[i],local=s.exercises[e]?.sets?.[i];
+   if(local&&s.exercises[e].id===root.exercises[e].id&&typeof remote.setId==='string'&&remote.setId.length<=128&&remote.setId)local.setId=remote.setId;
   }
  }
  function closedWorkouts(){return db.get('wearClosedWorkouts',[])||[]}
@@ -17050,6 +17073,14 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const action=String(command.action||''),expectedId=String(command.workoutId||'');
   if(action==='requestHome')return syncHomeNow({force:true});
   if(action==='healthSummary')return attachMeasuredHealth(command);
+  if(action==='watchAutomationState'){
+   if(expectedId&&isClosed(expectedId))return true;
+   const root=command.finalSnapshot;if(!root||root.workoutId!==expectedId)return false;
+   if(!state.session&&!db.get('draft',null))await applyCommand({...command,action:root.quickWorkout?'startQuickWorkout':'startWorkout',
+    exerciseId:root.exercises?.[0]?.id,started:root.started,programId:root.programId,dayId:root.dayId,scheduleId:root.scheduleId});
+   if(!state.session&&!restoreMatchingDraft(expectedId))return false;
+   return window.TrainPilotWearAutomatic162?.accept?.(command)===true;
+  }
   if(action==='finishWorkout'||action==='discardWorkout')return closeFromWatch(command);
   if(expectedId&&isClosed(expectedId))return true;
   if(!state.session&&!['startWorkout','startQuickWorkout'].includes(action)&&!restoreMatchingDraft(expectedId))return false;
@@ -17068,7 +17099,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    state.session.syncId=expected;
    state.session.started=new Date(Date.parse(command.started||expected)).toISOString();
    state.session.wearSequence=Math.max(Number(state.session.wearSequence)||0,Number(command.sequence)||0);
-   persistDraft();renderWorkout();return true;
+   adoptWatchIdentity(command);persistDraft();renderWorkout();return true;
   }
   if(action==='startWorkout'){
    const expected=String(command.workoutId||command.started||'');
@@ -17090,7 +17121,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     }catch(_){}
    }
    state.session.wearSequence=Math.max(Number(state.session.wearSequence)||0,Number(command.sequence)||0);
-   persistDraft();renderWorkout();return true;
+   adoptWatchIdentity(command);persistDraft();renderWorkout();return true;
   }
   if(!state.session)return false;
   if(!matchesWorkout(state.session,String(command.workoutId||'')))return false;
@@ -17101,9 +17132,20 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(!id||!item||state.session.exercises.length>=20&&!state.session.exercises.some(e=>e.id===id))return false;
    const add=window.TrainPilotQuickWorkout?.add;
    if(typeof add!=='function')return false;
-   add(id);persistDraft();return true;
+   add(id);adoptWatchIdentity(command,true);persistDraft();return true;
   }
   if(action==='resumeWorkout'){persistDraft();renderWorkout();return true}
+  if(action==='toggleAutomatic')return TrainPilotAutomatic162.toggle(command.value===true);
+  if(action==='automaticControl'){
+   if(command.automation?.owner!=='phone')return true;
+   await TrainPilotAutomatic162.sync();await TrainPilotIntervals162.sync();
+   const run=TrainPilotAutomatic162.owner()?.meta.run||TrainPilotIntervals162.owner()?.run;
+   if(command.automation?.key&&run?.key!==command.automation.key)return true;
+   const expectedPhase=Number(command.automation?.phaseNumber)||0,actualPhase=Number(run?.phaseNumber)||0;
+   if(expectedPhase>actualPhase)return false;
+   if(expectedPhase<actualPhase)return true;
+   return command.value==='start'?TrainPilotAutomatic162.startTimed():TrainPilotAutomatic162.dockCommand(String(command.value||''));
+  }
   if(action==='selectExercise'){
    const located=locateExercise(command);if(!located)return false;state.current=located.index;persistDraft();renderWorkout();return true;
   }
@@ -17132,6 +17174,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    persistDraft();renderWorkout();return true;
   }
   if(action==='completeSet'){
+   if(command.automation?.owner==='watch'&&state.session.timerOwner==='watch')state.session.automatic162={...state.session.automatic162,owner:'watch',enabled:command.automation.enabled===true};
    applySetValues(target.set,command);
    state.current=located.index;
    if(!target.set.done){
@@ -17370,6 +17413,383 @@ window.addEventListener?.('DOMContentLoaded',function(){
  const original=renderWorkout;renderWorkout=function(){const result=original.apply(this,arguments);paint();return result;};
 })();
 // @endsection wear-measurement-165.js
+
+// @section intervals-162.js
+(function(){
+ 'use strict';
+ const MAX=86400000;
+ function config(v){if(!v)return null;const work=Number(v.work),rest=Number(v.rest),rounds=Number(v.rounds);if(!Number.isInteger(work)||work<1||work>3600||!Number.isInteger(rest)||rest<0||rest>3600||!Number.isInteger(rounds)||rounds<1||rounds>100||(work*rounds+rest*(rounds-1))*1000>MAX)return null;return {work,rest,rounds,sound:v.sound!==false,vibration:v.vibration!==false,autoAdvance:v.autoAdvance===true};}
+ function duration(steps,advance,i){const s=steps[i];return (s.work*s.rounds+s.rest*(s.rounds-1)+(advance&&i<steps.length-1?s.rest:0))*1000;}
+ function phase(steps,advance,milliseconds,initialRest=0,restOnly=false){
+  if(!Number.isInteger(initialRest)||initialRest<0||initialRest>3600||restOnly&&(steps?.length!==1||advance||initialRest!==0))return null;
+  if(!Array.isArray(steps)||!steps.length||steps.length>100||steps.some(s=>!config(s)))return null;
+  const totalMs=restOnly?steps[0].rest*1000:initialRest*1000+steps.reduce((n,s,i)=>n+duration(steps,advance,i),0);if(totalMs>MAX||!Number.isFinite(milliseconds))return null;
+  const elapsedMs=Math.max(0,Math.min(totalMs,milliseconds));let offset=elapsedMs;
+  if(restOnly)return {stepIndex:0,round:1,completed:elapsedMs===totalMs?1:0,elapsedMs,stepElapsedMs:0,remainingMs:totalMs-elapsedMs,totalMs,phase:elapsedMs===totalMs?'complete':'rest',token:'rest:'+String(elapsedMs===totalMs)};
+  if(elapsedMs===totalMs){const i=steps.length-1;return {stepIndex:i,round:steps[i].rounds,completed:steps.length,elapsedMs,stepElapsedMs:duration(steps,advance,i),remainingMs:0,totalMs,phase:'complete',token:i+':'+steps[i].rounds+':complete'};}
+  if(elapsedMs<initialRest*1000)return {stepIndex:0,round:1,completed:0,elapsedMs,stepElapsedMs:0,remainingMs:initialRest*1000-elapsedMs,totalMs,phase:'rest',token:'initial:rest'};offset-=initialRest*1000;
+  for(let i=0;i<steps.length;i++){const length=duration(steps,advance,i);if(offset>=length){offset-=length;continue;}const s=steps[i];let left=offset;for(let round=1;round<=s.rounds;round++){if(left<s.work*1000)return {stepIndex:i,round,completed:i,elapsedMs,stepElapsedMs:offset,remainingMs:s.work*1000-left,totalMs,phase:'work',token:i+':'+round+':work'};left-=s.work*1000;if(round<s.rounds||advance&&i<steps.length-1){if(left<s.rest*1000)return {stepIndex:i,round,completed:i,elapsedMs,stepElapsedMs:offset,remainingMs:s.rest*1000-left,totalMs,phase:'rest',token:i+':'+round+':rest'};left-=s.rest*1000;}}}return null;
+ }
+ function locate(session,step){const e=session?.exercises?.find(e=>e.id===step.exerciseId&&e.sets?.some(s=>s.setId===step.setId)),set=e?.sets.find(s=>s.setId===step.setId);return set?{e,set,index:session.exercises.indexOf(e)}:null;}
+ function owned(session,run){return !!run&&session?.started===run.started&&Array.isArray(run.steps)&&run.steps.length>0&&run.steps.every(s=>locate(session,s));}
+ function hapticCue(memory,p,running){
+  if(!running||!p)return 0;
+  const remaining=Math.ceil(p.remainingMs/1000);
+  if(p.token!==memory.token){const transition=!!memory.token;memory.token=p.token;memory.second=remaining;const duration=transition||p.phase==='complete'?1000:remaining>=1&&remaining<=3?80:100;memory.quietUntil=p.elapsedMs+duration;return duration;}
+  if(p.phase!=='complete'&&remaining>=1&&remaining<=3&&remaining!==memory.second){memory.second=remaining;if(p.elapsedMs>=memory.quietUntil){memory.quietUntil=p.elapsedMs+80;return 80;}}
+  return 0;
+ }
+ window.TrainPilotInterval162Core={config,duration,phase,locate,owned,hapticCue};
+ window.addEventListener?.('DOMContentLoaded',function(){
+  if(!window.TrainPilot110)return;
+  const COPY={
+   hu:{auto:'Automatikus sorozat- és gyakorlatléptetés',note:'Bekapcsolva minden hátralévő időalapú sorozatra ugyanez az intervallum érvényes. Ismétléses sorozatot te rögzítesz; Automata módban utána a pihenő léptet tovább. Az edzést a végén te mented el.',native:'A telefon lezárva is jelzi a váltásokat. GPS-méréssel együtt használható.',web:'Böngészőben tartsd nyitva az oldalt. Lezárt képernyőhöz használd a telefonos appot.',stop:'Időzítő leállítása',done:'Intervallumok teljesítve – az edzés menthető.',invalid:'Válassz egy befejezetlen, időalapú sorozatot.',busy:'Előbb állítsd le a futó intervallumidőzítőt.',interrupted:'Az időzítő megszakadt. Ellenőrizd az adatokat, majd indíts új időzítőt.',paused:'Szünetel – a GPS-mérés is szünetel.',running:'Az intervallumidőzítő fut.',failed:'Az időzítő nem indult el. Próbáld újra az app megnyitása után.',reset:'Leállítod az intervallumidőzítőt? A mért idő és távolság megmarad.',limit:'A teljes intervallumprogram legfeljebb 24 óra és 100 sorozat lehet.'},
+   en:{auto:'Automatically advance sets and exercises',note:'When enabled, this interval applies to every remaining timed set. Record repetition-based sets yourself; Automatic mode advances after their rest. Save the workout yourself.',native:'Phase cues continue with the phone locked. GPS tracking can run alongside.',web:'Keep this page open in a browser. Use the phone app for locked-screen cues.',stop:'Stop interval timer',done:'Intervals complete – you can save the workout.',invalid:'Select an unfinished timed set.',busy:'Stop the current interval timer first.',interrupted:'The timer was interrupted. Check the data, then start a new timer.',paused:'Paused – GPS tracking is paused too.',running:'Interval timer is running.',failed:'The timer could not start. Retry with the app open.',reset:'Stop the interval timer? Recorded time and distance are kept.',limit:'The full interval plan is limited to 24 hours and 100 sets.'},
+   de:{auto:'Sätze und Übungen automatisch weiterschalten',note:'Aktiviert gilt dieses Intervall für alle verbleibenden zeitbasierten Sätze. Wiederholungssätze selbst erfassen; im Automatikmodus folgt danach die Pause. Das Training selbst speichern.',native:'Phasensignale auch bei gesperrtem Telefon. GPS-Messung kann gleichzeitig laufen.',web:'Im Browser die Seite geöffnet lassen. Für Signale bei gesperrtem Bildschirm die Handy-App nutzen.',stop:'Intervalltimer stoppen',done:'Intervalle abgeschlossen – Training kann gespeichert werden.',invalid:'Einen offenen zeitbasierten Satz auswählen.',busy:'Zuerst den laufenden Intervalltimer stoppen.',interrupted:'Timer unterbrochen. Daten prüfen und einen neuen Timer starten.',paused:'Pausiert – auch die GPS-Messung pausiert.',running:'Der Intervalltimer läuft.',failed:'Timer konnte nicht starten. In der geöffneten App erneut versuchen.',reset:'Intervalltimer stoppen? Gemessene Zeit und Strecke bleiben erhalten.',limit:'Der gesamte Intervallplan ist auf 24 Stunden und 100 Sätze begrenzt.'},
+   ro:{auto:'Avansează automat seriile și exercițiile',note:'Când este activat, intervalul se aplică tuturor seriilor cronometrate rămase. Înregistrează singur seriile cu repetări; modul automat avansează după odihnă. Salvează singur antrenamentul.',native:'Semnalele continuă cu telefonul blocat. Măsurarea GPS poate rula simultan.',web:'În browser, păstrează pagina deschisă. Pentru semnale cu ecranul blocat, folosește aplicația de telefon.',stop:'Oprește cronometrul',done:'Intervale finalizate – poți salva antrenamentul.',invalid:'Selectează o serie cronometrată nefinalizată.',busy:'Oprește întâi cronometrul curent.',interrupted:'Cronometrul a fost întrerupt. Verifică datele, apoi pornește unul nou.',paused:'În pauză – măsurarea GPS este și ea în pauză.',running:'Cronometrul rulează.',failed:'Cronometrul nu a pornit. Reîncearcă din aplicația deschisă.',reset:'Oprești cronometrul? Timpul și distanța înregistrate se păstrează.',limit:'Programul de intervale este limitat la 24 de ore și 100 de serii.'}
+  };
+  const t=k=>(COPY[rf212Lang()]||COPY.hu)[k];
+  const native=()=>{const c=window.Capacitor;if(!isNative()||!c?.Plugins?.IntervalTimer&&!c?.isPluginAvailable?.('IntervalTimer'))return null;return c.Plugins?.IntervalTimer||c.registerPlugin('IntervalTimer');};
+  const timed=e=>e&&(e.repUnit==='mp'||byId(e.id)?.repUnit==='mp');
+  let busy=false,polling=false,webBegan=0,webKey='',lastWebToken='',webHaptics={},timer=null,knownNativeKey='';
+  const owner=()=>{const draft=state.session?null:db.get('draft',null),session=state.session||draft?.session,run=session?.interval162;return owned(session,run)?{session,run,draft}:null;};
+  const persist=o=>{if(o.draft){o.draft.savedAt=new Date().toISOString();db.set('draft',o.draft);}else persistDraft();};
+  const currentOwner=o=>{const live=owner();return live&&live.session.started===o.session.started&&live.run.key===o.run.key?live:null;};
+  const status=(form,message,error=false)=>TrainPilot110.status(form?.querySelector('[data-tp110-interval-status]'),message,error?'error':'success');
+  const oldHtml=TrainPilot110.intervalHtml,oldSave=TrainPilot110.saveInterval,oldStart=TrainPilot110.startInterval,oldPaint=TrainPilot110.paintInterval;
+  TrainPilot110.intervalHtml=function(){let html=oldHtml(),c=settings().intervalPreset110||{};html=html.replace('</div><p class="small muted">','</div><label class="tp162-auto"><input type="checkbox" name="autoAdvance" '+(c.autoAdvance?'checked':'')+'>'+esc(t('auto'))+'</label><p class="small muted">'+esc(t('note'))+'</p><p class="small muted">');return html.replace(esc(TrainPilot110.t('intervalNote')),esc(t(native()?'native':'web')));};
+  TrainPilot110.saveInterval=function(form){const saved=oldSave(form);if(saved!==false&&form?.reportValidity()){try{const c=config({...Object.fromEntries(['work','rest','rounds'].map(k=>[k,form.elements[k].value])),sound:form.elements.sound.checked,vibration:form.elements.vibration.checked,autoAdvance:form.elements.autoAdvance?.checked});if(c){db.set('settings',{...settings(),intervalPreset110:c});cloudChanged?.();}}catch(e){status(form,TrainPilot110.t('storageError'),true);return false;}}return saved;};
+  function queue(session,index,c,key){const steps=[];let reached=false;for(let ei=index;ei<session.exercises.length;ei++){const e=session.exercises[ei];if(!timed(e))break;for(const set of e.sets||[]){if(set.done)continue;set.setId=set.setId||crypto.randomUUID();steps.push({...c,exerciseId:e.id,setId:set.setId,name:tp149ExerciseName(byId(e.id)||e),baseSeconds:Number(set.reps)||0,baseMeters:Number(set.distanceMeters)||0,gpsKey:tp106IsDistance(e)?key+'|gps|'+steps.length:''});if(!c.autoAdvance){reached=true;break;}}if(reached)break;}return steps;}
+  function gpsApply(o,snapshot,step){if(!snapshot||!step||snapshot.key!==step.gpsKey)return false;const located=locate(o.session,step),meters=Number(snapshot.distanceMeters);if(!located||!Number.isFinite(meters)||meters<0||meters>2000000)return false;located.set.distanceMeters=Math.min(2000000,Math.round((step.baseMeters+meters)*10)/10);located.set.distanceSource='gps';return true;}
+  function gpsTrip(o,step,snapshot){const l=locate(o.session,step);if(!l||!snapshot?.active)return;db.set('gpsTrip106',{key:snapshot.key,started:o.session.started,exerciseIndex:l.index,exerciseId:l.e.id,setIndex:l.e.sets.indexOf(l.set),setId:l.set.setId,baseMeters:step.baseMeters,baseSeconds:step.baseSeconds});}
+  function apply(o,s){o=currentOwner(o);if(!o||s?.key!==o.run.key)return false;const r=o.run,p=phase(r.steps,r.autoAdvance,Number(s.elapsedMs),r.initialRest||0);if(!p)return false;
+   // Never accept a response for a different plan, even if a key was reused incorrectly.
+   if(s.steps&&(s.steps.length!==r.steps.length||s.steps.some((v,i)=>v.setId!==r.steps[i].setId||v.exerciseId!==r.steps[i].exerciseId)))return false;
+   for(const v of s.steps||[])if(v.gpsKey)r.steps.find(x=>x.setId===v.setId).gpsKey=v.gpsKey;
+   for(const segment of s.gpsSegments||[]){const step=r.steps.find(x=>x.setId===segment.setId&&x.exerciseId===segment.exerciseId);gpsApply(o,segment,step);}
+   const step=r.steps[p.stepIndex];if(s.gps){gpsApply(o,s.gps,step);tp106GpsState=s.gps;gpsTrip(o,step,s.gps);if(!s.gps.active&&db.get('gpsTrip106',null)?.key===s.gps.key)localStorage.removeItem('repforge:gpsTrip106');}
+   for(let i=0;i<=p.stepIndex;i++){const l=locate(o.session,r.steps[i]);l.set.reps=String(Math.floor(r.steps[i].baseSeconds+(i<p.completed?duration(r.steps,r.autoAdvance,i):p.stepElapsedMs)/1000));if(r.autoAdvance&&i<p.completed)l.set.done=true;}
+   r.elapsedMs=p.elapsedMs;r.phaseNumber=Number(s.phaseNumber)||0;r.running=s.running===true&&p.phase!=='complete';r.stopped=s.stopped===true;r.interrupted=s.interrupted===true;r.phase=p;r.completed=p.completed;r.syncedComplete=p.phase==='complete';
+   let changed=false;if(state.session===o.session&&r.autoAdvance){let target=locate(o.session,step).index;if(p.phase==='complete'){const last=target;if(o.session.exercises[last].sets.every(x=>x.done)&&last+1<o.session.exercises.length)target=last+1;}if(state.current!==target){state.current=target;changed=true;}}
+   if(r.stopped){delete o.session.interval162;persist(o);if(state.session===o.session&&state.tab==='plan')renderWorkout();return true;}persist(o);if(changed&&state.tab==='plan')renderWorkout();paint();return true;
+  }
+  async function sync(){if(polling||busy)return;const o=owner();if(!o){if(timer){clearInterval(timer);timer=null;}if(knownNativeKey){const key=knownNativeKey;knownNativeKey='';try{await native()?.stop({key});}catch(_){}}return;}if(o.run.syncedComplete&&o.run.phase?.phase==='complete')return;polling=true;try{if(o.run.native){knownNativeKey=o.run.key;const s=await native()?.status();if(s?.key===o.run.key)apply(o,s);else if(currentOwner(o)){o.run.running=false;o.run.interrupted=true;persist(o);paint();}}else{
+    if(o.run.running&&webKey!==o.run.key){o.run.running=false;o.run.interrupted=true;persist(o);}const elapsed=o.run.elapsedMs+(o.run.running?Math.max(0,performance.now()-webBegan):0),p=phase(o.run.steps,o.run.autoAdvance,elapsed,o.run.initialRest||0);if(!p)return;
+    const vibrationMs=hapticCue(webHaptics,p,o.run.running);if(vibrationMs&&o.run.vibration&&!document.hidden)navigator.vibrate?.(vibrationMs);
+    if(o.run.running&&p.token!==lastWebToken){lastWebToken=p.token;if(!document.hidden){if(o.run.sound)try{const a=window.AudioContext||window.webkitAudioContext,ctx=window.__tp162Audio||(window.__tp162Audio=new a()),osc=ctx.createOscillator(),gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.frequency.value=p.phase==='complete'?880:660;gain.gain.value=.12;osc.start();osc.stop(ctx.currentTime+.18);}catch(_){}}}
+    const running=o.run.running&&p.phase!=='complete';apply(o,{...p,key:o.run.key,running,stopped:o.run.stopped,interrupted:o.run.interrupted});if(running)webBegan=performance.now();
+   }}catch(_){/* A transient bridge failure does not change the owning workout. */}finally{polling=false;}}
+  function ensure(){if(owner()&&!timer)timer=setInterval(sync,250);}
+  TrainPilot110.startInterval=async function(form,initialRest=0){
+   if(!Number.isInteger(initialRest)||initialRest<0||initialRest>3600)return false;
+   if(busy)return false;const c=config({work:form?.elements.work.value,rest:form?.elements.rest.value,rounds:form?.elements.rounds.value,sound:form?.elements.sound.checked,vibration:form?.elements.vibration.checked,autoAdvance:form?.elements.autoAdvance?.checked});if(!form?.reportValidity()||!c)return false;
+   const previous=owner();if(previous&&!previous.run.stopped&&previous.run.phase?.phase!=='complete'){status(form,t('busy'),true);return false;}
+   if(!native()&&!c.autoAdvance&&!tp106GpsState.active&&!initialRest)return oldStart(form);
+   const session=state.session,index=state.current,e=session?.exercises?.[index];if(!session||!timed(e)||!e.sets?.some(s=>!s.done)){status(form,t('invalid'),true);return false;}
+   if(tp106GpsBusy){status(form,tp106T('busy'),true);return false;}busy=true;
+   const key='iv|'+crypto.randomUUID(),steps=queue(session,index,c,key);if(!phase(steps,c.autoAdvance,0,initialRest)){busy=false;status(form,t('limit'),true);return false;}
+   const run={...c,key,initialRest,workoutId:session.syncId||session.started,started:session.started,steps,elapsedMs:0,running:false,stopped:false,native:!!native()};
+   try{
+    const trip=db.get('gpsTrip106',null),gpsOwner=tp106GpsOwner(trip);if(tp106GpsState.active){if(gpsOwner?.session!==session||gpsOwner?.set?.setId!==steps[0].setId)throw Error(t('busy'));steps[0].gpsKey=trip.key;steps[0].baseMeters=trip.baseMeters;}
+    tp107StopIndoor(true);session.interval162=run;persistDraft();
+    const result=run.native?await native().start({...run,language:rf212Lang()}):{...phase(steps,c.autoAdvance,0,initialRest),key,running:true};
+    if(state.session!==session||session.interval162?.key!==key){if(run.native)await native().stop({key});return false;}
+    webBegan=performance.now();webKey=key;lastWebToken='';webHaptics={};if(run.native)knownNativeKey=key;run.running=true;apply({session,run,draft:null},result);ensure();paint();status(form,t('running'));return true;
+   }catch(error){if(state.session===session&&session.interval162?.key===key){delete session.interval162;persistDraft();}status(form,error?.message||t('failed'),true);return false;}finally{busy=false;}
+  };
+  async function command(action){if(busy)return false;const o=owner();if(!o)return true;busy=true;try{
+   let s;if(o.run.native)s=await native()[action]({key:o.run.key});else{let elapsed=o.run.elapsedMs+(o.run.running?Math.max(0,performance.now()-webBegan):0);let p=phase(o.run.steps,o.run.autoAdvance,elapsed,o.run.initialRest||0);if(action==='skipRest'){if(p.phase!=='rest')return false;elapsed+=p.remainingMs;p=phase(o.run.steps,o.run.autoAdvance,elapsed,o.run.initialRest||0);}s={...p,key:o.run.key,running:action==='resume'||action==='skipRest',stopped:action==='stop'};webBegan=performance.now();webKey=o.run.key;}
+   if(!o.run.native&&o.run.vibration&&(action==='pause'||action==='stop'))navigator.vibrate?.(0);
+   apply(o,s);if(action==='stop'&&currentOwner(o)){o.run.stopped=true;o.run.running=false;persist(o);}paint();return true;
+  }catch(e){if(action==='stop'&&currentOwner(o)&&!o.run.running){const live=currentOwner(o);delete live.session.interval162;persist(live);if(state.session===live.session&&state.tab==='plan')renderWorkout();paint();return true;}alert(e?.message||t('failed'));return false;}finally{busy=false;}}
+  function paint(){const o=owner();if(!o)return;const r=o.run,p=r.phase||phase(r.steps,r.autoAdvance,r.elapsedMs,r.initialRest||0),panel=document.getElementById('tp107Indoor');if(!panel||!p)return;const l=locate(o.session,r.steps[p.stepIndex]);if(l?.e!==state.session?.exercises?.[state.current])return;
+   panel.querySelector('[data-tp107-clock]').textContent=rf110FormatStopwatch(Number(l.set.reps)||0);const toggle=panel.querySelector('[data-tp107-clock-toggle]');toggle.textContent=tp107T(r.running?'pause':'resume');toggle.disabled=busy||r.stopped||r.interrupted||p.phase==='complete';panel.querySelector('[data-tp107-clock-status]').textContent=t(r.interrupted?'interrupted':p.phase==='complete'?'done':r.running?'running':'paused');
+   const phaseNode=panel.querySelector('[data-tp110-phase]');if(phaseNode)phaseNode.textContent=p.phase==='complete'?t('done'):TrainPilot110.t(p.phase==='work'?'workPhase':'restPhase')+' · '+p.round+'/'+r.rounds+(r.autoAdvance?' · '+(p.stepIndex+1)+'/'+r.steps.length:'');const remaining=panel.querySelector('[data-tp110-remaining]');if(remaining)remaining.textContent=p.phase==='complete'?'':rf110FormatStopwatch(Math.ceil(p.remainingMs/1000));
+   panel.querySelectorAll('.tp110-interval input,.tp110-interval button').forEach(n=>n.disabled=busy||!r.stopped&&p.phase!=='complete');panel.querySelector('[data-tp162-stop]')?.toggleAttribute('disabled',busy||r.stopped||p.phase==='complete');
+   document.querySelectorAll('.tp153-set-row').forEach((row,i)=>{const set=l.e.sets[i],locked=r.steps.some(s=>s.setId===set?.setId)&&!r.stopped&&p.phase!=='complete';for(const input of row.querySelectorAll('input[oninput*="reps"],[data-tp106-distance]')){input.disabled=locked||input.disabled;if(input.getAttribute('oninput')?.includes('reps')&&set&&document.activeElement!==input)input.value=set.reps;}});
+   window.TrainPilotAutomatic162?.paint();
+  }
+  TrainPilot110.paintInterval=function(){oldPaint();paint();};
+  const oldIndoorPaint=tp107PaintIndoor;tp107PaintIndoor=function(){const result=oldIndoorPaint();paint();return result;};
+  const oldToggle=tp107ToggleIndoor;tp107ToggleIndoor=function(){const o=owner();if(o&&!o.run.stopped&&o.run.phase?.phase!=='complete')return command(o.run.running?'pause':'resume');return oldToggle.apply(this,arguments);};
+  const oldReset=tp107ResetIndoor;tp107ResetIndoor=async function(){const o=owner();if(!o)return oldReset.apply(this,arguments);if(await tp2628Confirm(t('reset'),{title:TrainPilot110.t('interval'),confirmText:t('stop'),danger:true})&&currentOwner(o))await command('stop');};
+  const oldGPSApply=tp106ApplyGPS;tp106ApplyGPS=function(s){const o=owner(),step=o?.run.steps.find(v=>v.gpsKey===s?.key);if(step){tp106GpsState=s;if(gpsApply(o,s,step)){gpsTrip(o,step,s);persist(o);if(!s.active&&db.get('gpsTrip106',null)?.key===s.key)localStorage.removeItem('repforge:gpsTrip106');return true;}}return oldGPSApply.apply(this,arguments);};
+  const oldGPSSync=tp106SyncGPS;tp106SyncGPS=async function(){const o=owner();if(!o?.run.native||o.run.stopped)return oldGPSSync.apply(this,arguments);if(tp106GpsBusy||tp106GpsPolling)return;tp106GpsPolling=true;try{await sync();if(!currentOwner(o))return;const s=await tp106DistanceBridge()?.status();if(!currentOwner(o))return;if(s&&o.run.steps.some(v=>v.gpsKey===s.key))tp106ApplyGPS(s);tp106PaintGPS();paint();}finally{tp106GpsPolling=false;}};
+  const oldGPSStart=tp106StartGPS;tp106StartGPS=async function(){const before=owner(),wasRunning=before?.run.running;if(wasRunning&&!before.run.native){alert(t('web'));return;}if(wasRunning&&!await command('pause'))return;try{const result=await oldGPSStart.apply(this,arguments),o=owner(),trip=db.get('gpsTrip106',null);if(o?.run.native&&!o.run.stopped&&o.run.phase?.phase!=='complete'&&trip&&tp106GpsOwner(trip)?.session===o.session){const p=o.run.phase||phase(o.run.steps,o.run.autoAdvance,o.run.elapsedMs,o.run.initialRest||0),s=o.run.steps[p.stepIndex];if(s.setId!==trip.setId){await tp106StopGPS();return;}try{s.baseMeters=trip.baseMeters;const snapshot=await native().attachGPS({key:o.run.key,index:p.stepIndex,trackingKey:trip.key});apply(o,snapshot);}catch(e){await tp106StopGPS();alert(e?.message||t('failed'));}}return result;}finally{if(wasRunning&&currentOwner(before)&&!owner().run.stopped)await command('resume');}};
+  const oldWorkout=renderWorkout;renderWorkout=function(){const result=oldWorkout.apply(this,arguments),e=state.session?.exercises?.[state.current],main=document.querySelector('main.tp153-workout');if(!timed(e)||!main)return result;let panel=document.getElementById('tp107Indoor');if(!panel){panel=document.createElement('section');panel.id='tp107Indoor';panel.className='card tp107-indoor';panel.innerHTML='<strong>'+esc(TrainPilot110.t('interval'))+'</strong><strong class="tp107-clock" data-tp107-clock>00:00</strong><div class="tp107-save-row"><button type="button" class="btn" data-tp107-clock-toggle onclick="tp107ToggleIndoor()" disabled>'+esc(tp107T('start'))+'</button><button type="button" class="btn secondary" onclick="tp107ResetIndoor()">'+esc(tp107T('reset'))+'</button></div><p class="small muted" data-tp107-clock-status role="status"></p>'+TrainPilot110.intervalHtml();main.querySelector('.tp153-sets-title')?.before(panel);}if(!panel.querySelector('[data-tp162-stop]'))panel.insertAdjacentHTML('beforeend','<button type="button" class="btn secondary block tp162-stop" data-tp162-stop onclick="TrainPilotIntervals162.stop()">'+esc(t('stop'))+'</button>');panel.querySelector('[data-tp162-stop]').hidden=!owner();paint();ensure();return result;};
+  function wrapAction(name){const base=window[name];window[name]=function(){const o=owner(),session=state.session,args=arguments,ctx=this;if(!o||o.run.stopped||o.run.phase?.phase==='complete')return base.apply(ctx,args);return command('stop').then(ok=>{if(ok&&state.session===session)return base.apply(ctx,args);});};}
+  for(const name of ['nextExercise','prevExercise','finishWorkout','toggleSet'])wrapAction(name);
+  const oldRemove=tp106BeforeSetRemoval;tp106BeforeSetRemoval=async function(session,e,set){const o=owner();if(o?.session===session&&o.run.steps.some(s=>s.setId===set.setId)&&!await command('stop'))return false;return oldRemove.apply(this,arguments);};
+  window.TrainPilotIntervals162={stop:()=>command('stop'),command,sync,owner,paint};
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)void sync();});ensure();void sync();
+ });
+})();
+// @endsection intervals-162.js
+
+// @section automatic-workout-162.js
+(function(){
+ 'use strict';
+ function next(session,index){
+  for(let ei=index;ei<(session?.exercises?.length||0);ei++){
+   const e=session.exercises[ei],si=e.sets?.findIndex(s=>!s.done);
+   if(si>=0)return {exerciseIndex:ei,setIndex:si,e,set:e.sets[si]};
+  }return null;
+ }
+ const locate=(session,target)=>{const e=session?.exercises?.find(e=>e.id===target?.exerciseId&&e.sets?.some(s=>s.setId===target?.setId)),set=e?.sets.find(s=>s.setId===target.setId);return set&&!set.done?{e,set,index:session.exercises.indexOf(e)}:null;};
+ window.TrainPilotAutomatic162Core={next,locate};
+ window.addEventListener?.('DOMContentLoaded',function(){
+  const words={
+   hu:{active:'Munka',finished:'Kész',title:'Automata mód',help:'A sorozatot te rögzíted. A pihenő végén a következő sorozat vagy gyakorlat automatikusan indul.',work:'Rögzítsd a tényleges sorozatot.',rest:'Pihenő',paused:'Szünetel',ready:'Következő sorozat indul',complete:'A menetrend végére értél. Ellenőrizd és mentsd az edzést.',next:'Következő',pause:'Szünet',resume:'Folytatás',skip:'Pihenő kihagyása',start:'Időzített automata indítása',failed:'Az automata időzítő nem indult el. Ellenőrizd, majd próbáld újra.',interrupted:'Az időzítő megszakadt. Folytatás előtt ellenőrizd az edzést.',web:'Böngészőben tartsd nyitva az oldalt. Háttérjelzéshez a telefonos app szükséges.'},
+   en:{active:'Work',finished:'Done',title:'Automatic mode',help:'Record each repetition-based set yourself. The next set or exercise starts automatically after rest.',work:'Record the actual set.',rest:'Rest',paused:'Paused',ready:'Next set starts',complete:'You reached the end of the sequence. Review and save the workout.',next:'Next',pause:'Pause',resume:'Resume',skip:'Skip rest',start:'Start timed automatic mode',failed:'The automatic timer did not start. Check and retry.',interrupted:'The timer was interrupted. Check the workout before continuing.',web:'Keep the browser page open. Use the phone app for background cues.'},
+   de:{active:'Arbeit',finished:'Fertig',title:'Automatischer Modus',help:'Wiederholungssätze selbst erfassen. Nach der Pause startet der nächste Satz oder die nächste Übung automatisch.',work:'Den tatsächlichen Satz erfassen.',rest:'Pause',paused:'Pausiert',ready:'Nächster Satz startet',complete:'Ablauf beendet. Training prüfen und speichern.',next:'Als Nächstes',pause:'Anhalten',resume:'Fortsetzen',skip:'Pause überspringen',start:'Zeitbasierten Automatikmodus starten',failed:'Automatiktimer konnte nicht starten. Prüfen und erneut versuchen.',interrupted:'Timer unterbrochen. Training vor dem Fortsetzen prüfen.',web:'Browserseite geöffnet lassen. Für Hintergrundsignale die Handy-App nutzen.'},
+   ro:{active:'Efort',finished:'Gata',title:'Mod automat',help:'Înregistrează singur fiecare serie cu repetări. După odihnă începe automat seria sau exercițiul următor.',work:'Înregistrează seria efectuată.',rest:'Odihnă',paused:'În pauză',ready:'Începe seria următoare',complete:'Ai ajuns la final. Verifică și salvează antrenamentul.',next:'Urmează',pause:'Pauză',resume:'Continuă',skip:'Sari peste odihnă',start:'Pornește modul automat cronometrat',failed:'Cronometrul automat nu a pornit. Verifică și reîncearcă.',interrupted:'Cronometrul a fost întrerupt. Verifică antrenamentul înainte de a continua.',web:'Păstrează pagina deschisă în browser. Folosește aplicația pentru semnale în fundal.'}
+  };
+  const t=k=>(words[rf212Lang()]||words.hu)[k];
+  const bridge=()=>{const c=window.Capacitor;return isNative()&&(c?.Plugins?.IntervalTimer||c?.isPluginAvailable?.('IntervalTimer')&&c.registerPlugin('IntervalTimer'))||null;};
+  const timed=e=>e&&(e.repUnit==='mp'||byId(e.id)?.repUnit==='mp');
+  const identity=s=>String(s?.syncId||s?.started||'');
+  let poll=null,reading=false,changing=false,webKey='',webBegan=0,webHaptics={},knownRestKey='';
+  const owner=()=>{const draft=state.session?null:db.get('draft',null),session=state.session||draft?.session,meta=session?.automatic162;return meta?{session,meta,draft}:null;};
+  const live=o=>{const n=owner();return n&&identity(n.session)===identity(o.session)&&n.meta.run?.key===o.meta.run?.key?n:null;};
+  const save=o=>{if(o.draft){o.draft.savedAt=new Date().toISOString();db.set('draft',o.draft);}else persistDraft();};
+  const baseStop=stopTimer;
+  const seconds=()=>{const e=state.session?.exercises?.[state.current],s=settings(),program=state.session?.programId;const value=Number(e?.prescription?.rest??s.programRest?.[program]??s.rest);return Number.isFinite(value)?Math.max(0,Math.min(3600,Math.round(value))):90;};
+  function phase(run,elapsed){return TrainPilotInterval162Core.phase(run.steps,false,elapsed,0,true);}
+  function ensure(){if(owner()?.meta.run&&!poll)poll=setInterval(sync,250);}
+  function finish(o){
+   if(knownRestKey===o.meta.run?.key)knownRestKey='';
+   const target=locate(o.session,o.meta.run?.target);if(!target){o.meta.phase='interrupted';o.meta.run=null;save(o);paint();return;}
+   if(state.session===o.session)state.current=target.index;else o.draft.current=target.index;
+   o.meta.run=null;o.meta.phase='ready';baseStop();save(o);
+   if(state.session===o.session&&state.tab==='plan')renderWorkout();
+   void window.TrainPilotWearSync?.syncNow?.();
+  }
+  function apply(o,s){
+   o=live(o);if(!o||!o.meta.run||s?.key!==o.meta.run.key||s.steps?.[0]?.setId!==o.meta.run.target.setId)return false;
+   const r=o.meta.run,p=phase(r,Number(s.elapsedMs));if(!p)return false;
+   r.elapsedMs=p.elapsedMs;r.phaseNumber=Number(s.phaseNumber)||0;r.running=s.running===true&&p.phase!=='complete';r.interrupted=!!s.interrupted;
+   if(s.stopped){if(knownRestKey===r.key)knownRestKey='';o.meta.enabled=false;o.meta.run=null;o.meta.phase='work';save(o);paint();return true;}
+   if(r.interrupted){o.meta.phase='interrupted';save(o);paint();return true;}
+   if(p.phase==='complete'){finish(o);return true;}
+   o.meta.phase=r.running?'rest':'paused';r.remainingMs=p.remainingMs;const signature=[Math.floor(p.elapsedMs/1000),r.running,r.interrupted].join('|');if(r.savedSignature!==signature){r.savedSignature=signature;save(o);}paint();return true;
+  }
+  async function sync(){
+   if(reading||changing)return;const o=owner(),r=o?.meta.run;
+   if(o?.meta.phase==='preparing')return;
+   if(!r){if(knownRestKey){const key=knownRestKey;knownRestKey='';try{await bridge()?.stop({key});}catch(_){}}if(poll){clearInterval(poll);poll=null;}return;}reading=true;
+   try{
+    if(!locate(o.session,r.target)){await command('stop');return;}
+    if(r.native){knownRestKey=r.key;const s=await bridge()?.status();if(s?.key===r.key)apply(o,s);else if(live(o)){o.meta.phase='interrupted';r.running=false;r.interrupted=true;save(o);paint();}}
+    else{
+     if(r.running&&webKey!==r.key){r.running=false;r.interrupted=true;}
+     const p=phase(r,r.elapsedMs+(r.running?Math.max(0,performance.now()-webBegan):0));
+     const vibrationMs=TrainPilotInterval162Core.hapticCue(webHaptics,p,r.running);if(vibrationMs&&!document.hidden&&r.vibration)navigator.vibrate?.(vibrationMs);
+     apply(o,{...p,key:r.key,steps:r.steps,running:r.running,interrupted:r.interrupted});webBegan=performance.now();
+    }
+   }catch(_){/* Keep the owning workout and its measurements on bridge failure. */}finally{reading=false;}
+  }
+  async function command(action){
+   if(changing)return false;let o=owner(),r=o?.meta.run;if(!r)return true;changing=true;
+   try{
+    let s;
+    if(r.native){try{s=await bridge()[action]({key:r.key});}catch(e){if(action!=='stop'||r.running)throw e;s={key:r.key,steps:r.steps,elapsedMs:r.elapsedMs,stopped:true};}}
+    else{const elapsed=r.elapsedMs+(r.running?Math.max(0,performance.now()-webBegan):0);s={...phase(r,action==='skipRest'?r.steps[0].rest*1000:elapsed),key:r.key,steps:r.steps,running:action==='resume',stopped:action==='stop'};webBegan=performance.now();webKey=r.key;}
+    if(!r.native&&r.vibration&&(action==='pause'||action==='stop'))navigator.vibrate?.(0);
+    return apply(o,s);
+   }catch(e){if(live(o)){o.meta.message=t('failed');save(o);paint();}return false;}finally{changing=false;}
+  }
+  async function startTimed(initialRest=0){
+   const form=document.querySelector('.tp110-interval form');if(!form)return false;
+   if(form.elements.autoAdvance)form.elements.autoAdvance.checked=true;
+   return TrainPilot110.startInterval(form,initialRest);
+  }
+  async function beginRest(){
+   const session=state.session,meta=session?.automatic162;if(!meta?.enabled)return;
+   if(meta.owner==='watch'){baseStop();return;}
+   baseStop();const target=next(session,state.current);
+   if(!target){meta.phase='complete';meta.run=null;persistDraft();paint();return;}
+   const rest=seconds();if(knownRestKey){const key=knownRestKey;knownRestKey='';try{await bridge()?.stop({key});}catch(_){}}if(state.session!==session)return;target.set.setId=target.set.setId||crypto.randomUUID();
+   if(timed(target.e)){
+    state.current=target.exerciseIndex;meta.phase='work';persistDraft();renderWorkout();
+    const ok=await startTimed(rest);if(state.session===session&&!ok){meta.phase='interrupted';meta.message=t('failed');persistDraft();paint();}return;
+   }
+   const key='rest|'+crypto.randomUUID(),preset=settings().intervalPreset110||{};
+   const run={key,workoutId:session.syncId||session.started,native:!!bridge(),restOnly:true,autoAdvance:false,started:identity(session),elapsedMs:0,running:false,sound:preset.sound===true,vibration:preset.vibration!==false,target:{exerciseId:target.e.id,setId:target.set.setId},steps:[{exerciseId:target.e.id,setId:target.set.setId,name:tp149ExerciseName(byId(target.e.id)||target.e),work:1,rest,rounds:1,gpsKey:''}]};
+   meta.run=run;meta.phase='preparing';meta.message='';persistDraft();paint();
+   if(!rest){finish({session,meta,draft:null});return;}
+   try{
+    const result=run.native?await bridge().start({...run,language:rf212Lang()}):{...phase(run,0),key,steps:run.steps,running:true};
+    if(state.session!==session||meta.run?.key!==key){if(run.native)await bridge().stop({key});return;}
+    webKey=key;webBegan=performance.now();webHaptics={};if(run.native)knownRestKey=key;apply({session,meta,draft:null},result);ensure();
+   }catch(e){if(state.session===session&&meta.run?.key===key){meta.run=null;meta.phase='interrupted';meta.message=t('failed');persistDraft();paint();}}
+  }
+  async function toggle(enabled){
+   if(changing)return false;const s=state.session;if(!s)return false;
+   if(!enabled){if(!await command('stop')||state.session!==s)return false;if(!await TrainPilotIntervals162.stop()||state.session!==s)return false;}
+   s.automatic162=s.automatic162||{};s.automatic162.enabled=!!enabled;s.automatic162.phase='work';s.automatic162.message='';
+   db.set('settings',{...settings(),automaticWorkout162:!!enabled});persistDraft();renderWorkout();return true;
+  }
+  function dockCommand(action){
+   const rest=owner()?.meta.run,interval=TrainPilotIntervals162.owner()?.run;
+   if(action==='toggle')action=(rest||interval)?.running?'pause':'resume';
+   return rest?command(action):TrainPilotIntervals162.command(action);
+  }
+  function paint(){
+   const o=owner(),panel=document.querySelector('[data-tp162-automatic]');if(!panel||state.session!==o?.session)return;
+   const m=o.meta,r=m.run,external=m.owner==='watch'&&m.enabled?m.watch:null,iv=TrainPilotIntervals162.owner(),interval=iv?.session===o.session?iv.run:null;
+   const ip=interval?.phase,intervalActive=interval&&!interval.stopped&&!interval.interrupted&&ip&&ip.phase!=='complete';
+   const text=(node,value)=>{if(node&&node.textContent!==value)node.textContent=value;};
+   panel.querySelector('[data-tp162-enabled]').checked=!!m.enabled;
+   const target=r&&locate(o.session,r.target),description=target?t('next')+': '+tp149ExerciseName(byId(target.e.id)||target.e)+' · '+(target.e.sets.indexOf(target.set)+1)+'/'+target.e.sets.length:'';
+   const status=panel.querySelector('[data-tp162-auto-status]');const label=!m.enabled?'':m.phase==='interrupted'?t('interrupted'):m.phase==='paused'?t('paused'):r?t('rest'):intervalActive?(interval.running?TrainPilot110.t(ip.phase==='work'?'workPhase':'restPhase'):t('paused')):m.phase==='complete'||!next(o.session,state.current)?t('finished'):t('active');text(status,m.message?'⚠ '+t('failed'):label);status.title=m.message||description||t(m.phase==='complete'?'complete':'work');
+   panel.querySelector('[data-tp162-auto-start]').hidden=!m.enabled||!timed(state.session.exercises[state.current])||!!intervalActive;
+   const actions=document.querySelector('main.tp153-workout .tp153-workout-actions');let dock=document.querySelector('[data-tp162-countdown]'),geometry=false;
+   const activeRest=r&&!r.interrupted,externalActive=external&&['work','rest'].includes(external.phase)&&external.remainingMs>0;
+   if((activeRest||intervalActive||externalActive)&&actions){
+    if(!dock){dock=document.createElement('div');dock.className='timer tp162-countdown';dock.dataset.tp162Countdown='';dock.innerHTML='<strong data-tp162-auto-clock></strong><span class="muted" data-tp162-dock-label></span><button type="button" class="btn secondary tp162-small" data-tp162-auto-pause onclick="TrainPilotAutomatic162.dockCommand(\'toggle\')"></button><button type="button" class="btn secondary tp162-small" data-tp162-auto-skip onclick="TrainPilotAutomatic162.dockCommand(\'skipRest\')">»</button>';actions.append(dock);geometry=true;}
+    const remaining=externalActive?(external.paused?external.remainingMs:Math.max(0,external.deadlineAt-Date.now())):activeRest?(r.remainingMs??r.steps[0].rest*1000):ip.remainingMs,
+     running=externalActive?!external.paused:(activeRest?r:interval).running;
+    text(dock.querySelector('[data-tp162-auto-clock]'),tstr(Math.ceil(remaining/1000)));
+    text(dock.querySelector('[data-tp162-dock-label]'),activeRest||external?.phase==='rest'||ip?.phase==='rest'?t('rest'):TrainPilot110.t('workPhase'));
+    const pause=dock.querySelector('[data-tp162-auto-pause]'),skip=dock.querySelector('[data-tp162-auto-skip]');text(pause,running?'Ⅱ':'▶');pause.setAttribute('aria-label',t(running?'pause':'resume'));pause.title=t(running?'pause':'resume');skip.setAttribute('aria-label',t('skip'));skip.title=t('skip');skip.hidden=!activeRest&&ip?.phase!=='rest'&&external?.phase!=='rest';dock.title=description;
+    dock.querySelectorAll('button').forEach(n=>n.disabled=changing||m.phase==='preparing');
+    document.querySelector('[data-tp110-remaining]')?.toggleAttribute('hidden',!!intervalActive);
+   }else if(dock){dock.remove();geometry=true;document.querySelector('[data-tp110-remaining]')?.removeAttribute('hidden');}
+   panel.querySelectorAll('button,input').forEach(n=>{const disabled=changing||m.phase==='preparing';if(n.disabled!==disabled)n.disabled=disabled;});
+   if(geometry)window.TrainPilotIssue16?.decorateWorkout?.();
+  }
+  const baseRest=startRest;startRest=function(){if(state.session?.automatic162?.enabled){void beginRest();return;}return baseRest.apply(this,arguments);};
+  const baseRender=renderWorkout;renderWorkout=function(){
+   if(state.session&&!state.session.automatic162)state.session.automatic162={enabled:settings().automaticWorkout162===true,phase:'work'};
+   const result=baseRender.apply(this,arguments),main=document.querySelector('main.tp153-workout');if(!main||!state.session)return result;
+   const panel=document.createElement('div');panel.className='tp162-automatic';panel.dataset.tp162Automatic='';
+   panel.innerHTML='<label class="tp162-auto" title="'+esc(t('help')+(!bridge()?' '+t('web'):''))+'"><input type="checkbox" data-tp162-enabled onchange="TrainPilotAutomatic162.toggle(this.checked)"><span>'+esc(t('title'))+'</span></label><span class="small muted" data-tp162-auto-status role="status"></span><button type="button" class="btn secondary tp162-small" data-tp162-auto-start aria-label="'+esc(t('start'))+'" title="'+esc(t('start'))+'" onclick="TrainPilotAutomatic162.startTimed()">▶</button>';
+   main.querySelector('.tp153-workout-actions')?.prepend(panel);paint();window.TrainPilotIssue16?.decorateWorkout?.();ensure();return result;
+  };
+  for(const name of ['toggleSet','nextExercise','prevExercise','finishWorkout']){
+   const base=window[name];window[name]=async function(){const s=state.session,args=arguments,enabled=s?.automatic162?.enabled;if(owner()?.meta.run&&!await command('stop'))return false;if(state.session!==s)return false;if(name==='toggleSet'&&s?.automatic162)s.automatic162.enabled=enabled;const result=await base.apply(this,args);return result;};
+  }
+  const baseRemoval=tp106BeforeSetRemoval;tp106BeforeSetRemoval=async function(){if(owner()?.meta.run&&!await command('stop'))return false;return baseRemoval.apply(this,arguments);};
+  const baseSkip=skipTimer;skipTimer=function(){return owner()?.meta.run?command('skipRest'):baseSkip.apply(this,arguments);};
+  const baseResume=resumeDraft;resumeDraft=function(){const result=baseResume.apply(this,arguments);ensure();void sync();return result;};
+  window.TrainPilotAutomatic162={toggle,command,dockCommand,startTimed,sync,owner,paint};
+  window.TrainPilotAutomatic162.snapshotForWatch=function(s){
+   const m=s?.automatic162,iv=s?.interval162,p=iv?.phase,r=m?.run;
+   if(!m?.enabled&&!iv)return null;
+   const phase=r?'rest':p?.phase==='work'||p?.phase==='rest'?p.phase:m?.phase==='complete'?'complete':'ready';
+   const remainingMs=r?.remainingMs??p?.remainingMs??0,paused=r?r.running!==true:iv?iv.running!==true:false;
+   const step=r?.steps?.[0]||iv?.steps?.[p?.stepIndex||0];
+   const restSeconds=r?Number(step?.rest):p?.token==='initial:rest'?Number(iv.initialRest):Number(step?.rest??iv?.rest??settings().rest??90);
+   return {enabled:m?.enabled===true,owner:'phone',phase,paused,remainingMs,deadlineAt:remainingMs&&!paused?Date.now()+remainingMs:0,
+    key:r?.key||iv?.key||'',phaseNumber:r?.phaseNumber||iv?.phaseNumber||0,targetExercise:state.current,workSeconds:Number(step?.work??iv?.work??30),restSeconds,vibration:false,interrupted:r?.interrupted||iv?.interrupted||false};
+  };
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)void sync();});ensure();void sync();
+ });
+})();
+// @endsection automatic-workout-162.js
+
+// @section wear-automatic-162.js
+(function(){
+ 'use strict';
+ function valid(command,session){
+  const root=command?.finalSnapshot,a=root?.automation,id=session?.syncId||session?.started;
+  if(!root||root.workoutId!==id||command.workoutId!==id||session.timerOwner!=='watch'||root.timerOwner!=='watch'||a?.owner!=='watch')return false;
+  if(typeof a.enabled!=='boolean'||typeof a.key!=='string'||!a.key||a.key.length>200||!['ready','work','rest','complete'].includes(a.phase))return false;
+  if(!Number.isInteger(a.workSeconds)||a.workSeconds<1||a.workSeconds>3600||!Number.isInteger(a.restSeconds)||a.restSeconds<0||a.restSeconds>3600)return false;
+  if(!Number.isFinite(a.remainingMs)||a.remainingMs<0||a.remainingMs>3600000||!Number.isSafeInteger(command.sequence)||command.sequence<1)return false;
+  if(!Array.isArray(root.exercises)||root.exercises.length!==session.exercises?.length||!Number.isInteger(root.currentExercise)||root.currentExercise<0||root.currentExercise>=root.exercises.length)return false;
+  return root.exercises.every((e,i)=>e.id===session.exercises[i].id&&Array.isArray(e.sets)&&e.sets.length===session.exercises[i].sets.length&&e.sets.every((s,j)=>{
+   const own=session.exercises[i].sets[j];return typeof s.setId==='string'&&s.setId===own.setId&&typeof s.done==='boolean'&&Number.isFinite(Number(s.reps||0))&&Number(s.reps||0)>=0&&Number(s.reps||0)<=86400&&Number.isFinite(Number(s.weight||0));
+  }));
+ }
+ window.TrainPilotWearAutomatic162Core={valid};
+ window.addEventListener?.('DOMContentLoaded',function(){
+  if(!window.TrainPilotAutomatic162)return;
+  const COPY={hu:{waiting:'Várakozás az órára',unavailable:'Az óra nem válaszol. Ellenőrizd a kapcsolatot.',owner:'Az óra vezérli'},en:{waiting:'Waiting for watch',unavailable:'The watch is not responding. Check the connection.',owner:'Watch controls timing'},de:{waiting:'Warte auf die Uhr',unavailable:'Die Uhr antwortet nicht. Verbindung prüfen.',owner:'Uhr steuert den Timer'},ro:{waiting:'Se așteaptă ceasul',unavailable:'Ceasul nu răspunde. Verifică conexiunea.',owner:'Ceasul controlează timpul'}};
+  const t=k=>(COPY[rf212Lang()]||COPY.hu)[k];
+  const external=()=>state.session?.timerOwner==='watch'&&state.session?.automatic162?.owner==='watch';
+  function accept(command){
+   const s=state.session;if(!valid(command,s))return false;
+   if(command.sequence<=Math.max(s.watchAutomationSequence162||0,s.wearSequence||0))return true;
+   const root=command.finalSnapshot,a=root.automation;let changed=state.current!==root.currentExercise;
+   const before=s.watchAutomation162;
+   root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{
+    const own=s.exercises[i].sets[j],previous=before?.snapshot?.exercises?.[i]?.sets?.[j];
+    if(own.done!==v.done)changed=true;
+    own.done=v.done;
+    // Keep a phone edit until the watch actually changes the same value.
+    for(const field of ['reps','weight','leftSeconds','rightSeconds','distanceMeters']){
+     if(!previous||String(previous[field]??'')!==String(v[field]??'')||String(own[field]??'')===String(previous[field]??''))own[field]=v[field]??own[field];
+    }
+   }));
+   state.current=Math.max(0,Math.min(root.currentExercise,s.exercises.length-1));
+   s.watchAutomationSequence162=command.sequence;s.wearSequence=Math.max(s.wearSequence||0,command.sequence);
+   s.watchAutomation162={...a,snapshot:root};
+   s.automatic162={enabled:a.enabled,owner:'watch',phase:a.phase==='ready'?'work':a.phase,watch:a,run:null,pending:false};
+   stopTimer();persistDraft();
+   if(changed&&state.tab==='plan')renderWorkout();else paint();
+   return true;
+  }
+  async function remote(action,values={}){
+   const s=state.session;if(!external()||!s)return false;
+   const command={schema:1,commandId:crypto.randomUUID(),workoutId:s.syncId||s.started,key:s.watchAutomation162?.key||'',phaseNumber:s.watchAutomation162?.phaseNumber||0,action,createdAt:Date.now(),...values};
+   const c=window.Capacitor,api=c?.Plugins?.WearSync||c?.registerPlugin?.('WearSync');
+   try{
+    if(!api?.automaticCommand)throw Error('No watch bridge');
+    s.automatic162.pending=true;paint();await api.automaticCommand({command});
+    setTimeout(()=>{if(state.session===s&&s.automatic162?.pending){s.automatic162.pending=false;paint();alert(t('unavailable'));}},12000);
+    return true;
+   }catch(_){if(state.session===s){s.automatic162.pending=false;paint();}alert(t('unavailable'));return false;}
+  }
+  let clockPoll=null;
+  function paint(){
+   const counting=external()&&state.session.automatic162.enabled&&['work','rest'].includes(state.session.automatic162.watch?.phase)&&!state.session.automatic162.watch?.paused;
+   if(counting&&!clockPoll)clockPoll=setInterval(paint,250);
+   else if(!counting&&clockPoll){clearInterval(clockPoll);clockPoll=null;}
+   if(!external())return;
+   TrainPilotAutomatic162.paint();const s=state.session,m=s.automatic162,a=m?.watch;
+   const node=document.querySelector('[data-tp162-auto-status]');if(node){node.textContent=m.pending?t('waiting'):m.enabled&&['work','rest'].includes(a?.phase)?TrainPilot110.t(a.phase==='rest'?'restPhase':'workPhase'):t('owner');node.title=t('owner');}
+   document.querySelector('[data-tp162-auto-start]')?.toggleAttribute('hidden',!m.enabled||!WearTimed(s.exercises[state.current])||a?.phase==='work'||a?.phase==='rest');
+   const form=document.querySelector('.tp110-interval');if(form)form.hidden=!!m.enabled;
+   if(a?.phase==='work'){
+    const clock=document.querySelector('[data-tp107-clock]');if(clock)clock.textContent=rf110FormatStopwatch(Number(s.exercises[state.current]?.sets?.find(v=>!v.done)?.reps)||0);
+   }
+   document.querySelectorAll('.tp153-set-row').forEach((row,index)=>{
+    const set=s.exercises[state.current]?.sets[index];if(!set)return;
+    const counting=m.enabled&&['work','rest'].includes(a?.phase);
+    row.querySelectorAll('input').forEach(input=>{
+     const reps=input.getAttribute('oninput')?.includes('reps');
+     input.disabled=set.done||!!(counting&&(!a.paused||reps&&a.phase==='work'));
+     if(document.activeElement!==input){if(reps)input.value=set.reps||'0';else if(input.getAttribute('oninput')?.includes('weight'))input.value=set.weight||'0';}
+    });
+    row.querySelectorAll('button[onclick*=\"toggleSet\"]').forEach(button=>button.disabled=!!(m.enabled&&(set.done||counting||a?.paused||m.pending)));
+   });
+   if(m.pending)document.querySelector('[data-tp162-automatic]')?.querySelectorAll('input,button').forEach(n=>n.disabled=true);
+  }
+  const WearTimed=e=>e?.repUnit==='mp'||byId(e?.id)?.repUnit==='mp';
+  const auto=TrainPilotAutomatic162,baseToggle=auto.toggle,baseStart=auto.startTimed,baseDock=auto.dockCommand;
+  auto.toggle=function(enabled){return external()?remote('toggle',{enabled:!!enabled}):baseToggle.apply(this,arguments);};
+  auto.startTimed=function(){return external()?remote('start'):baseStart.apply(this,arguments);};
+  auto.dockCommand=function(action){if(!external())return baseDock.apply(this,arguments);if(action==='toggle')action=state.session.watchAutomation162?.paused?'resume':'pause';return remote(action);};
+  const baseRecord=toggleSet;toggleSet=function(e,s){
+   const session=state.session;
+   if(external()&&session.automatic162.enabled&&!TrainPilotWearSync?.isApplyingCommand?.()){
+    const ex=session.exercises[e],set=ex?.sets?.[s];if(!set||set.done)return false;
+    if(['work','rest'].includes(session.watchAutomation162?.phase)||session.watchAutomation162?.paused)return false;
+    return remote('record',{exerciseIndex:e,exerciseId:ex.id,setIndex:s,setId:set.setId,reps:String(set.reps||'0'),weight:String(set.weight||'0'),leftSeconds:Number(set.leftSeconds)||0,rightSeconds:Number(set.rightSeconds)||0});
+   }
+   return baseRecord.apply(this,arguments);
+  };
+  const baseNext=nextExercise,basePrevious=prevExercise;
+  nextExercise=function(){return external()&&state.session.automatic162.enabled&&state.current<state.session.exercises.length-1?remote('selectExercise',{exerciseIndex:state.current+1}):baseNext.apply(this,arguments);};
+  prevExercise=function(){return external()&&state.session.automatic162.enabled&&state.current>0?remote('selectExercise',{exerciseIndex:state.current-1}):basePrevious.apply(this,arguments);};
+  const baseRender=renderWorkout;renderWorkout=function(){const result=baseRender.apply(this,arguments);paint();return result;};
+  const baseIndoor=tp107ToggleIndoor;tp107ToggleIndoor=function(){return external()&&state.session.automatic162.enabled&&WearTimed(state.session.exercises[state.current])?auto.dockCommand(state.session.watchAutomation162?.phase==='ready'?'start':'toggle'):baseIndoor.apply(this,arguments);};
+  window.TrainPilotWearAutomatic162={accept,remote,paint};
+
+ });
+})();
+// @endsection wear-automatic-162.js
 
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();

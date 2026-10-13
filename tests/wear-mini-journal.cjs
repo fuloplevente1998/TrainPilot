@@ -78,3 +78,17 @@ const snapshot=()=>JSON.parse(JSON.stringify(win.TrainPilotWearSync.makeHomeSnap
  assert.ok(JSON.stringify(home.recentWorkouts).length<33000,'wear mini journal has a hard payload budget');
 }
 console.log('PASS Wear mini-journal: canonical history, 390 vs 49 provenance, missing/zero, exercise sets, duplicate/stale filters and payload budget');
+
+// The optional palette follows the persisted selection without writing preferences or reading layout.
+{
+ let key='classicBlue';
+ ctx.rf200ThemeKey=()=>key;
+ ctx.RF200_THEMES={classicBlue:{accent:'#4d8fbe',accent2:'#7cb4d6'},green:{accent:'#62d08a',accent2:'#9cf5ba'}};
+ ctx.TP1511_BASIC=['classicBlue'];
+ assert.deepEqual(snapshot().theme,{key:'classicBlue',accent:'#4d8fbe',accent2:'#7cb4d6',family:'basic'});
+ key='green';
+ assert.deepEqual(snapshot().theme,{key:'green',accent:'#62d08a',accent2:'#9cf5ba',family:'vivid'});
+ key='unknown';assert.equal(snapshot().theme,null);
+ key='green';ctx.RF200_THEMES.green.accent='rgba(0,0,0,0)';assert.equal(snapshot().theme,null);
+ assert.equal(store.has('themeAccent'),false,'Wear snapshots must not overwrite phone theme preferences');
+}

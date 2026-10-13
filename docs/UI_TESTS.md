@@ -4,6 +4,12 @@ The release gate runs the complete browser suite in six independent GitHub Actio
 
 The accepted main baseline ran 56 browser scripts sequentially in **10 min 9 sec** ([run 37121932726](https://github.com/fuloplevente1998/TrainPilot/actions/runs/37121932726)). The initial six-shard plan estimates roughly two minutes per shard; measure actual Actions times before claiming the target is met. Runner setup, queue time and APK compilation are separate from browser-test duration.
 
+## Current verification baseline — 2026-10-13
+
+The #179 integration contains 90 browser test scripts in the canonical manifest. All six shards passed on the latest tested phone source `1650906` ([run 38352741468](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38352741468)); phone source is unchanged in the paired Wear commit `e3db5e2`. Quick regression reports 137 application checks plus the separate runner checks.
+
+Wear uses actual Compose instrumentation on a round API 30 emulator: 51 tests passed at 160/192/225 dp and normal/1.5×/2× font sizes, including the real automatic foreground service with the Activity stopped ([run 38352812492](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38352812492)). This does not replace physical vibration, locked-device, pairing or OEM battery-management acceptance.
+
 ## Commands
 
 ```sh

@@ -4,7 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -22,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -30,6 +28,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
@@ -53,14 +53,18 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
-private val Black = Color.Black
+private val Black = Color(0xFF0E1015)
 private val Card = Color(0xFF1A1E25)
 private val Secondary = Color(0xFF232933)
 private val White = Color(0xFFF6F8FB)
 private val Muted = Color(0xFF9AA5B6)
-private val Gold = Color(0xFFF2BD45)
+private val Gold: Color
+    @Composable get() = LocalWearHomeTheme.current.accentColor
 private val Danger = Color(0xFF3B232A)
 private val DangerText = Color(0xFFEFBCC3)
+private val LocalAutomaticToggle = compositionLocalOf<(() -> Unit)?> { null }
+private val LocalAutomaticCommand = compositionLocalOf<((String) -> Unit)?> { null }
+private val LocalEditorSave = compositionLocalOf<((String,Double,String)->Boolean)?> { null }
 
 @Composable
 internal fun TrainPilotWearApp(
@@ -91,19 +95,30 @@ internal fun TrainPilotWearApp(
     onRouteConsumed: () -> Unit,
     onEnableHealth: () -> Unit,
     onDisableHealth: () -> Unit,
-    onToggleGps: () -> Unit
+    onToggleGps: () -> Unit,
+    phoneConnected: State<Boolean?>? = null,
+    batteryLevel: State<Int?>? = null,
+    onToggleAutomatic: (() -> Unit)? = null,
+    onAutomaticCommand: ((String) -> Unit)? = null,
+    onEditorSave: ((String,Double,String)->Boolean)? = null,
 ) {
     var route by rememberSaveable { mutableStateOf("home") }
-    LaunchedEffect(route) {
-        if (route == "journal" || route == "metrics") onRefreshJournal()
-    }
+    LaunchedEffect(route) { if (route == "journal" || route == "metrics") onRefreshJournal() }
     LaunchedEffect(requestedRoute.value) {
-        requestedRoute.value?.let { route=it;onRouteConsumed() }
+        requestedRoute.value?.let {
+            route = it
+            onRouteConsumed()
+        }
+    }
+    LaunchedEffect(workout.value?.automation?.enabled, route) {
+        if (workout.value?.automation?.enabled == true && route == "timer") route = "workout"
     }
     var editorField by rememberSaveable { mutableStateOf("reps") }
     var miniJournalId by rememberSaveable { mutableStateOf("") }
     var miniJournalBackRoute by rememberSaveable { mutableStateOf("journal") }
     var journalBackRoute by rememberSaveable { mutableStateOf("menu") }
+    var metricsBackRoute by rememberSaveable { mutableStateOf("menu") }
+    var settingsBackRoute by rememberSaveable { mutableStateOf("home") }
     var returnWorkoutPage by rememberSaveable { mutableStateOf(0) }
     fun openMeasurement(item: MiniJournalWorkout, origin: String) {
         miniJournalId = item.workoutId
@@ -117,79 +132,216 @@ internal fun TrainPilotWearApp(
         route = "journal"
     }
     BackHandler(enabled = route != "home") {
-        route = when (route) {
-            "editor", "timer", "finish" -> "workout"
-            "journal-detail" -> miniJournalBackRoute
-            "journal" -> journalBackRoute
-            "discard" -> "home"
-            else -> "home"
-        }
+        route =
+            when (route) {
+                "editor",
+                "timer",
+                "finish" -> "workout"
+                "journal-detail" -> miniJournalBackRoute
+                "journal" -> journalBackRoute
+                "metrics" -> metricsBackRoute
+                "settings" -> settingsBackRoute
+                "discard" -> "home"
+                else -> "home"
+            }
     }
-    MaterialTheme {
-        Box(Modifier.fillMaxSize().background(Black)) {
-            val active = workout.value
-            when {
-                route == "metrics" -> HealthScreen(health.value,measuring.value,gpsEnabled.value,active!=null,onEnableHealth,onDisableHealth,onToggleGps,
-                    home.value, onRefreshJournal, onOpenJournal = { openJournal("metrics") },
-                    onSelectMeasurement = { openMeasurement(it, "metrics") }, onBack = { route="menu" })
-                route == "menu" -> MainMenuScreen(active != null, active?.quickWorkout == true, onOpenPhone) {
-                    if (it == "journal") openJournal("menu") else route = it
+    CompositionLocalProvider(
+        LocalWearHomeTheme provides (home.value?.theme ?: WearHomeTheme.DEFAULT),
+        LocalAutomaticToggle provides onToggleAutomatic,
+        LocalAutomaticCommand provides onAutomaticCommand,
+        LocalEditorSave provides onEditorSave
+    ) {
+        MaterialTheme {
+            Box(Modifier.fillMaxSize().background(Black)) {
+                val active = workout.value
+                when {
+                    route == "settings" ->
+                        SettingsScreen(
+                            measuring.value,
+                            gpsEnabled.value,
+                            onEnableHealth,
+                            onDisableHealth,
+                            onToggleGps,
+                            onMetrics = {
+                                metricsBackRoute = "settings"
+                                route = "metrics"
+                            },
+                            onOpenPhone = onOpenPhone,
+                            backLabel = if (settingsBackRoute == "home") "‹ Kezdőlap" else "‹ Főmenü",
+                            onBack = { route = settingsBackRoute },
+                        )
+                    route == "metrics" ->
+                        HealthScreen(
+                            health.value,
+                            measuring.value,
+                            gpsEnabled.value,
+                            active != null,
+                            onEnableHealth,
+                            onDisableHealth,
+                            onToggleGps,
+                            home.value,
+                            onRefreshJournal,
+                            onOpenJournal = { openJournal("metrics") },
+                            onSelectMeasurement = { openMeasurement(it, "metrics") },
+                            onBack = { route = metricsBackRoute },
+                        )
+                    route == "menu" ->
+                        MainMenuScreen(active != null, active?.quickWorkout == true, onOpenPhone) {
+                            if (it == "journal") openJournal("menu")
+                            else {
+                                if (it == "metrics") metricsBackRoute = "menu"
+                                if (it == "settings") settingsBackRoute = "menu"
+                                route = it
+                            }
+                        }
+                    route == "journal" ->
+                        MiniJournalScreen(
+                            home.value,
+                            onRefresh = onRefreshJournal,
+                            onOpenPhone = onOpenPhone,
+                            backLabel =
+                                when (journalBackRoute) {
+                                    "menu" -> "‹ Főmenü"
+                                    "home" -> "‹ Kezdőlap"
+                                    else -> "‹ Mérések"
+                                },
+                            onBack = { route = journalBackRoute },
+                        ) { selected ->
+                            miniJournalId = selected.workoutId
+                            miniJournalBackRoute = "journal"
+                            route = "journal-detail"
+                        }
+                    route == "journal-detail" ->
+                        MiniJournalDetailScreen(
+                            home.value?.recentWorkouts?.firstOrNull {
+                                it.workoutId == miniJournalId
+                            },
+                            backLabel =
+                                if (miniJournalBackRoute == "journal") "‹ Napló" else "‹ Mérések",
+                            onBack = { route = miniJournalBackRoute },
+                        )
+                    route == "quick" ->
+                        QuickWorkoutPicker(
+                            home.value,
+                            active,
+                            active == null &&
+                                home.value?.hasDraft == false &&
+                                closure.value?.status !in listOf("pending", "error"),
+                            onBack = { route = "menu" },
+                        ) { exercise ->
+                            if (active?.quickWorkout == true) onAddQuick(exercise)
+                            else if (active == null) onStartQuick(exercise)
+                            if (workout.value?.quickWorkout == true) route = "workout"
+                        }
+                    route == "calendar" ->
+                        CalendarScreen(
+                            home.value,
+                            active == null &&
+                                home.value?.hasDraft == false &&
+                                closure.value?.status !in listOf("pending", "error"),
+                            onBack = { route = "menu" },
+                        ) { entry ->
+                            entry.day?.let {
+                                onStart(it, entry.scheduleId)
+                                if (workout.value != null) route = "workout"
+                            }
+                        }
+                    route == "summary" && closure.value != null ->
+                        SummaryScreen(closure.value!!, health.value, onRetry) {
+                            onDismissClosure()
+                            route = "home"
+                        }
+                    route == "discard" && active != null ->
+                        ConfirmationScreen(true, active.completedSets) {
+                            if (it) {
+                                onDiscard()
+                                route = "summary"
+                            } else route = "home"
+                        }
+                    route == "finish" && active != null ->
+                        ConfirmationScreen(false, active.completedSets) {
+                            if (it) {
+                                onFinish()
+                                route = "summary"
+                            } else route = "workout"
+                        }
+                    route == "editor" && active != null ->
+                        ValueEditor(active, editorField, onChange) { route = "workout" }
+                    route == "timer" && active != null ->
+                        TimedSetToolsScreen(
+                            active,
+                            onChange,
+                            onComplete,
+                            onEdit = {
+                                editorField = it
+                                route = "editor"
+                            },
+                            onBack = { route = "workout" },
+                        )
+                    route == "days" && home.value != null ->
+                        ProgramDays(home.value!!, onBack = { route = "home" }) { day ->
+                            onStart(day, "")
+                            if (workout.value != null) route = "workout"
+                        }
+                    route == "workout" && active != null ->
+                        WorkoutPager(
+                            active,
+                            restRemaining.value,
+                            health.value,
+                            measuring.value,
+                            gpsEnabled.value,
+                            onEnableHealth,
+                            onDisableHealth,
+                            onToggleGps,
+                            onChange,
+                            onComplete,
+                            onPrevious,
+                            onNext,
+                            onSelectExercise,
+                            onSkipRest,
+                            home = home.value,
+                            onRefreshJournal = onRefreshJournal,
+                            onOpenJournal = { openJournal("workout") },
+                            onSelectMeasurement = { openMeasurement(it, "workout") },
+                            initialPage = returnWorkoutPage,
+                            onReturnPageConsumed = { returnWorkoutPage = 0 },
+                            onEdit = {
+                                editorField = it
+                                route = "editor"
+                            },
+                            onTimerTools = { route = "timer" },
+                            onFinish = { route = "finish" },
+                            onHome = { route = "home" },
+                        )
+                    else ->
+                        WearHomeDashboard(
+                            home.value,
+                            active,
+                            closure.value,
+                            health.value,
+                            measuring.value,
+                            phoneConnected?.value,
+                            batteryLevel?.value,
+                            onStart = { day, scheduleId ->
+                                onStart(day, scheduleId)
+                                if (workout.value != null) route = "workout"
+                            },
+                            onResume = {
+                                onResumeWorkout()
+                                route = "workout"
+                            },
+                            onDays = { route = "days" },
+                            onResult = { route = "summary" },
+                            onJournal = { openJournal("home") },
+                            onDiscard = { route = "discard" },
+                            onSettings = {
+                                settingsBackRoute = "home"
+                                route = "settings"
+                            },
+                            onMenu = { route = "menu" },
+                            onOpenPhone = onOpenPhone,
+                        )
                 }
-                route == "journal" -> MiniJournalScreen(home.value,
-                    onRefresh = onRefreshJournal, onOpenPhone = onOpenPhone,
-                    backLabel = if (journalBackRoute == "menu") "‹ Főmenü" else "‹ Mérések",
-                    onBack = { route = journalBackRoute }) { selected ->
-                    miniJournalId = selected.workoutId
-                    miniJournalBackRoute = "journal"
-                    route = "journal-detail"
-                }
-                route == "journal-detail" -> MiniJournalDetailScreen(
-                    home.value?.recentWorkouts?.firstOrNull { it.workoutId == miniJournalId },
-                    backLabel = if (miniJournalBackRoute == "journal") "‹ Napló" else "‹ Mérések",
-                    onBack = { route = miniJournalBackRoute })
-                route == "quick" -> QuickWorkoutPicker(
-                    home.value, active, active == null && home.value?.hasDraft == false &&
-                        closure.value?.status !in listOf("pending", "error"),
-                    onBack = { route = "menu" }) { exercise ->
-                    if (active?.quickWorkout == true) onAddQuick(exercise)
-                    else if (active == null) onStartQuick(exercise)
-                    if (workout.value?.quickWorkout == true) route = "workout"
-                }
-                route == "calendar" -> CalendarScreen(home.value, active == null && home.value?.hasDraft == false && closure.value?.status !in listOf("pending", "error"),
-                    onBack = { route = "menu" }) { entry ->
-                    entry.day?.let { onStart(it, entry.scheduleId); if (workout.value != null) route = "workout" }
-                }
-                route == "summary" && closure.value != null -> SummaryScreen(closure.value!!, health.value, onRetry) {
-                    onDismissClosure(); route = "home"
-                }
-                route == "discard" && active != null -> ConfirmationScreen(true, active.completedSets) {
-                    if (it) { onDiscard(); route = "summary" } else route = "home"
-                }
-                route == "finish" && active != null -> ConfirmationScreen(false, active.completedSets) {
-                    if (it) { onFinish(); route = "summary" } else route = "workout"
-                }
-                route == "editor" && active != null -> ValueEditor(active, editorField, onChange) { route = "workout" }
-                route == "timer" && active != null -> TimedSetToolsScreen(active, onChange, onComplete,
-                    onEdit = { editorField = it; route = "editor" }, onBack = { route = "workout" })
-                route == "days" && home.value != null -> ProgramDays(home.value!!, onBack = { route = "home" }) { day ->
-                    onStart(day, ""); if (workout.value != null) route = "workout"
-                }
-                route == "workout" && active != null -> WorkoutPager(
-                    active, restRemaining.value, health.value, measuring.value, gpsEnabled.value, onEnableHealth, onDisableHealth, onToggleGps, onChange, onComplete, onPrevious, onNext,
-                    onSelectExercise, onSkipRest,
-                    home = home.value, onRefreshJournal = onRefreshJournal,
-                    onOpenJournal = { openJournal("workout") },
-                    onSelectMeasurement = { openMeasurement(it, "workout") },
-                    initialPage = returnWorkoutPage, onReturnPageConsumed = { returnWorkoutPage = 0 },
-                    onEdit = { editorField = it; route = "editor" },
-                    onTimerTools = { route = "timer" },
-                    onFinish = { route = "finish" }, onHome = { route = "home" }
-                )
-                else -> HomeScreen(home.value, active, closure.value,
-                    onStart = { day, scheduleId -> onStart(day, scheduleId); if (workout.value != null) route = "workout" },
-                    onResume = { onResumeWorkout(); route = "workout" },
-                    onDiscard = { route = "discard" }, onDays = { route = "days" }, onResult = { route = "summary" },
-                    onMenu = { route = "menu" }, onCalendar = { route = "calendar" }, onOpenPhone = onOpenPhone)
             }
         }
     }
@@ -318,213 +470,20 @@ private fun Title(text: String, size: Int = 19, lines: Int = 2) {
 
 @Composable
 private fun Pill(text: String, modifier: Modifier = Modifier, tone: Color = Gold,
-                 enabled: Boolean = true, height: Int = 48, size: Int = 14, onClick: () -> Unit) {
+                 enabled: Boolean = true, height: Int = 48, size: Int = 14,
+                 lines: Int = 2, onClick: () -> Unit) {
     val fontScale = LocalDensity.current.fontScale
     val captionScale = fontScale.coerceAtMost(1.35f) / fontScale
+    val shape = if (lines == Int.MAX_VALUE) RoundedCornerShape(18.dp) else CircleShape
     Box(modifier.fillMaxWidth().heightIn(min = height.dp)
-        .background(if (enabled) tone else Secondary, CircleShape)
+        .background(if (enabled) tone else Secondary, shape)
         .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
         .semantics { contentDescription = text }.padding(horizontal = 9.dp, vertical = 5.dp),
         contentAlignment = Alignment.Center) {
         Text(text, color = if (!enabled) Muted else if (tone == Gold) Black else if (tone == Danger) DangerText else White,
             fontSize = (size * captionScale).sp, lineHeight = ((size + 2) * captionScale).sp,
             fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center,
-            maxLines = 2, overflow = TextOverflow.Ellipsis)
-    }
-}
-
-@Composable
-private fun HomeScreen(
-    home: WatchHomeSnapshot?,
-    active: WearWorkout?,
-    closure: WearClosure?,
-    onStart: (WatchHomeDay, String) -> Unit,
-    onResume: () -> Unit,
-    onDiscard: () -> Unit,
-    onDays: () -> Unit,
-    onResult: () -> Unit,
-    onMenu: () -> Unit,
-    onCalendar: () -> Unit,
-    onOpenPhone: () -> Unit,
-) {
-    var elapsed by remember { mutableIntStateOf(active?.elapsedSeconds() ?: 0) }
-    LaunchedEffect(active?.workoutId) {
-        while (active != null) {
-            elapsed = active.elapsedSeconds()
-            delay(1000)
-        }
-    }
-    val waiting = closure?.status in listOf("pending", "error")
-    val rec = home?.recommended
-    Box(
-        Modifier.fillMaxSize().pointerInput(onMenu) {
-            var distance = 0f
-            detectHorizontalDragGestures(
-                onDragStart = { distance = 0f },
-                onHorizontalDrag = { change, amount ->
-                    distance += amount
-                    change.consume()
-                },
-                onDragEnd = { if (kotlin.math.abs(distance) >= 40.dp.toPx()) onMenu() },
-            )
-        }
-    ) {
-        BoxWithConstraints(Modifier.fillMaxSize()) {
-            val layout = wearArcLayout(maxWidth.value, maxHeight.value)
-            FixedRoundPanel(
-                "Telefon ↗",
-                arc = true,
-                onTitleClick = onOpenPhone,
-                footer = {
-                    Box(Modifier.width(layout.width.dp).height(layout.height.dp)) {
-                        CompositionLocalProvider(LocalActionSize provides layout.buttonSize) {
-                            Box(
-                                Modifier.align(Alignment.TopCenter)
-                                    .offset(x = -layout.sideOffset.dp)
-                            ) {
-                                when {
-                                    active != null ->
-                                        RoundControl(
-                                            "▶",
-                                            Gold,
-                                            caption = "Folytatás",
-                                            description = "Edzés folytatása",
-                                            onClick = onResume,
-                                        )
-                                    waiting ->
-                                        RoundControl(
-                                            "↻",
-                                            Gold,
-                                            caption = "Állapot",
-                                            description = "Edzés mentésének állapota",
-                                            onClick = onResult,
-                                        )
-                                    rec != null && home?.hasDraft == false ->
-                                        RoundControl(
-                                            "▶",
-                                            Gold,
-                                            caption = "Indítás",
-                                            description = "Edzés indítása",
-                                        ) {
-                                            onStart(rec.day, rec.scheduleId)
-                                        }
-                                    else ->
-                                        RoundControl(
-                                            "A/B",
-                                            Gold,
-                                            enabled =
-                                                home != null &&
-                                                    home.hasDraft == false &&
-                                                    home.days.isNotEmpty(),
-                                            caption = "Napok",
-                                            description = "Program napjai",
-                                            onClick = onDays,
-                                        )
-                                }
-                            }
-                            Box(
-                                Modifier.align(Alignment.TopCenter).offset(y = layout.centerTop.dp)
-                            ) {
-                                if (active != null)
-                                    RoundControl(
-                                        "✕",
-                                        Danger,
-                                        caption = "Törlés",
-                                        description = "Megkezdett edzés törlése",
-                                        onClick = onDiscard,
-                                    )
-                                else
-                                    RoundControl(
-                                        "▦",
-                                        caption = "Naptár",
-                                        description = "Edzésnaptár",
-                                        onClick = onCalendar,
-                                    )
-                            }
-                            Box(
-                                Modifier.align(Alignment.TopCenter).offset(x = layout.sideOffset.dp)
-                            ) {
-                                RoundControl(
-                                    "···",
-                                    caption = "Menü",
-                                    description = "Főmenü",
-                                    onClick = onMenu,
-                                )
-                            }
-                        }
-                    }
-                },
-            ) { compact ->
-                when {
-                    active != null -> {
-                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            Title(
-                                active.exercise?.name ?: active.programName,
-                                if (compact) 12 else 13,
-                                lines = if (compact) 1 else 2,
-                            )
-                        }
-                        Label(
-                            "${active.dayName.ifBlank { active.dayId }} · ${active.currentSetIndex + 1}/${active.exercise?.sets?.size ?: 0}. sorozat",
-                            size = 9,
-                        )
-                        Text(
-                            formatSeconds(elapsed),
-                            color = White,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                    }
-                    waiting -> {
-                        Title(
-                            if (closure?.status == "error") "Szinkronizálás szükséges"
-                            else "Várakozás a telefonra",
-                            18,
-                        )
-                        Text(
-                            "Az edzés az órán megmaradt.",
-                            color = Muted,
-                            fontSize = 11.sp,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                    home == null -> {
-                        Title("Szinkronizálás…", 18)
-                        Text(
-                            "Nyisd meg a TrainPilotot a telefonon.",
-                            color = Muted,
-                            fontSize = 12.sp,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                    home.hasDraft -> {
-                        Title("Félbehagyott edzés", 18)
-                        Text(
-                            "Az edzés adatainak szinkronja a telefonra vár.",
-                            color = Muted,
-                            fontSize = 11.sp,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                    else -> {
-                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            Title(
-                                rec?.day?.programName ?: home.activeProgramName,
-                                if (compact) 11 else 15,
-                                lines = 1,
-                            )
-                        }
-                        Spacer(Modifier.height(2.dp))
-                        Title(
-                            rec?.day?.name ?: "Válassz edzésnapot",
-                            if (compact) 20 else 26,
-                            lines = if (compact) 1 else 2,
-                        )
-                        if (rec != null) Label(recommendedMeta(rec), size = if (compact) 9 else 11)
-                    }
-                }
-            }
-        }
+            maxLines = lines, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -571,6 +530,7 @@ internal fun MainMenuScreen(
                 "Naptár" to "calendar",
                 "Programnapok" to "days",
                 "Órás mérések" to "metrics",
+                "Beállítások" to "settings",
             )) {
             centerItem { Pill(label, tone = Card) { onRoute(destination) } }
         }
@@ -587,6 +547,60 @@ internal fun MainMenuScreen(
         }
         centerItem { Pill("Megnyitás telefonon", tone = Card, onClick = onOpenPhone) }
     }
+}
+
+@Composable
+private fun SettingsScreen(
+    enabled: Boolean,
+    gps: Boolean,
+    onEnable: () -> Unit,
+    onDisable: () -> Unit,
+    onGps: () -> Unit,
+    onMetrics: () -> Unit,
+    onOpenPhone: () -> Unit,
+    backLabel: String,
+    onBack: () -> Unit,
+) {
+    RoundList("Beállítások") {
+        centerItem { JournalText(if (enabled) "Edzésmérés bekapcsolva" else "Edzésmérés kikapcsolva", Gold, 12) }
+        centerItem {
+            Pill(
+                if (enabled) "Mérés kikapcsolása" else "Mérések engedélyezése",
+                tone = if (enabled) Secondary else Gold,
+                onClick = if (enabled) onDisable else onEnable,
+            )
+        }
+        centerItem {
+            Pill(if (gps) "GPS kikapcsolása" else "GPS engedélyezése", tone = Card, onClick = onGps)
+        }
+        centerItem {
+            JournalText("A GPS a következő mozgásos edzés mérésétől használható.", size = 11)
+        }
+        centerItem { Pill("Órás mérések", tone = Card, onClick = onMetrics) }
+        centerItem { JournalText("A színek a telefonon választott témát követik.", size = 11) }
+        centerItem { Pill("Telefon megnyitása", tone = Secondary, onClick = onOpenPhone) }
+        centerItem { Pill(backLabel, tone = Secondary, onClick = onBack) }
+    }
+}
+
+/** Journal paragraphs keep the entire text and leave room for the curved screen edge. */
+@Composable
+private fun JournalText(
+    text: String,
+    color: Color = Muted,
+    size: Int = 11,
+    weight: FontWeight = FontWeight.Normal,
+) {
+    Text(
+        text,
+        modifier = Modifier.fillMaxWidth(.8f),
+        color = color,
+        fontSize = size.sp,
+        lineHeight = (size + 2).sp,
+        fontWeight = weight,
+        textAlign = TextAlign.Center,
+        softWrap = true,
+    )
 }
 
 private fun miniJournalDate(value: String): String =
@@ -615,7 +629,7 @@ private fun MiniJournalScreen(
 ) {
     val items = home?.recentWorkouts.orEmpty()
     RoundList("Mini napló") {
-        centerItem { Label("Mentett telefonos edzések · offline másolat", size = 10) }
+        centerItem { JournalText("Mentett telefonos edzések · offline másolat", size = 10) }
 
         if (items.isEmpty()) {
             val message =
@@ -626,19 +640,21 @@ private fun MiniJournalScreen(
                     else -> "A telefonos naplóban még nincs átadható, befejezett edzés."
                 }
             centerItem {
-                Text(message, color = Muted, fontSize = 12.sp, textAlign = TextAlign.Center)
+                JournalText(message, size = 12)
             }
         }
         if (home?.phoneVersion?.isNotBlank() == true) {
-            centerItem { Label("Telefon: ${home.phoneVersion}", size = 10) }
+            centerItem { JournalText("Telefon: ${home.phoneVersion}", size = 10) }
         }
         items.forEach { item ->
             centerItem {
                 Pill(
-                    "${miniJournalDate(item.started)} • ${item.dayName}",
+                    "${miniJournalDate(item.started)}\n${item.dayName}",
+                    modifier = Modifier.fillMaxWidth(.84f).testTag("wear-journal-entry"),
                     tone = Card,
                     size = 12,
                     height = 47,
+                    lines = Int.MAX_VALUE,
                 ) {
                     onSelect(item)
                 }
@@ -658,56 +674,53 @@ private fun LazyListScope.MiniJournalMetrics(
     metrics: MiniJournalMetric,
     watch: Boolean,
 ) {
-    centerItem { Label(title, Gold, 12) }
+    centerItem { JournalText(title, Gold, 12) }
     val avg = miniNumber(metrics.averageHeartRate, 1)
     val max = miniNumber(metrics.maxHeartRate)
     if (avg != null || max != null) {
         centerItem {
-            Text(
+            JournalText(
                 "Pulzus: ${avg ?: "—"} / ${max ?: "—"} bpm",
                 color = White,
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center,
+                size = 12,
             )
         }
     }
     if (watch) {
         miniNumber(metrics.totalCalories)?.let { value ->
             centerItem {
-                Text(
+                JournalText(
                     "Összes mért energia: $value kcal",
                     color = White,
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.Center,
+                    size = 12,
                 )
             }
         }
         miniNumber(metrics.activeDurationSeconds)?.let { value ->
-            centerItem { Label("Órás mérési idő: $value s", size = 11) }
+            centerItem { JournalText("Órás mérési idő: $value s", size = 11) }
         }
     } else {
         miniNumber(metrics.workoutCalories)?.let { value ->
             centerItem {
-                Text(
+                JournalText(
                     "Edzéskalória: $value kcal",
                     color = White,
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.Center,
+                    size = 12,
                 )
             }
         }
         miniNumber(metrics.totalCalories)?.let { value ->
-            centerItem { Label("Ablak összenergiája: $value kcal", size = 11) }
+            centerItem { JournalText("Ablak összenergiája: $value kcal", size = 11) }
         }
         miniNumber(metrics.activeCalories)?.let { value ->
-            centerItem { Label("Aktív energia: $value kcal", size = 11) }
+            centerItem { JournalText("Aktív energia: $value kcal", size = 11) }
         }
         miniNumber(metrics.exerciseMinutes)?.let { value ->
-            centerItem { Label("Egészségapp edzésideje: $value perc", size = 11) }
+            centerItem { JournalText("Egészségapp edzésideje: $value perc", size = 11) }
         }
     }
-    miniNumber(metrics.steps)?.let { centerItem { Label("Lépések: $it", size = 11) } }
-    if (metrics.partial) centerItem { Label("Részleges órás mérés", Gold, 10) }
+    miniNumber(metrics.steps)?.let { centerItem { JournalText("Lépések: $it", size = 11) } }
+    if (metrics.partial) centerItem { JournalText("Részleges órás mérés", Gold, 10) }
 }
 
 @Composable
@@ -719,18 +732,16 @@ private fun MiniJournalDetailScreen(
     RoundList("Edzésnapló") {
         if (item == null) {
             centerItem {
-                Text(
+                JournalText(
                     "Ez az edzés már nincs a szinkronizált listában.",
-                    color = Muted,
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.Center,
+                    size = 12,
                 )
             }
         } else {
-            centerItem { Title(item.dayName, 16) }
-            centerItem { Label(miniJournalDate(item.started), size = 11) }
+            centerItem { JournalText(item.dayName, White, 16, FontWeight.SemiBold) }
+            centerItem { JournalText(miniJournalDate(item.started), size = 11) }
             centerItem {
-                Label(
+                JournalText(
                     "${item.durationSeconds / 60} perc · ${item.exercises.size} gyakorlat",
                     size = 11,
                 )
@@ -738,7 +749,7 @@ private fun MiniJournalDetailScreen(
 
             if (item.wear != null) {
                 MiniJournalMetrics("TrainPilot óra · Health Services", item.wear, true)
-            } else centerItem { Label("Nem érkezett órás mérési összesítés", size = 11) }
+            } else centerItem { JournalText("Nem érkezett órás mérési összesítés", size = 11) }
             if (item.healthConnect != null) {
                 MiniJournalMetrics(
                     if (item.healthConnect.source == "samsung_health") "Samsung Health"
@@ -747,21 +758,20 @@ private fun MiniJournalDetailScreen(
                     false,
                 )
 
-                centerItem { Label("A két mérés nem adódik össze", size = 10) }
+                centerItem { JournalText("A két mérés nem adódik össze", size = 10) }
             }
 
-            centerItem { Label("Elvégzett gyakorlatok", Gold, 12) }
+            centerItem { JournalText("Elvégzett gyakorlatok", Gold, 12) }
             if (item.exercises.isEmpty()) {
-                centerItem { Label("Nincs rögzített sorozat", size = 11) }
+                centerItem { JournalText("Nincs rögzített sorozat", size = 11) }
             }
             item.exercises.forEach { exercise ->
                 centerItem {
-                    Text(
+                    JournalText(
                         exercise.name,
                         color = White,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center,
+                        size = 13,
+                        weight = FontWeight.SemiBold,
                     )
                 }
                 exercise.sets.forEach { set ->
@@ -782,7 +792,7 @@ private fun MiniJournalDetailScreen(
                             add("${miniNumber(set.distanceMeters)} m")
                     }
                     centerItem {
-                        Label(
+                        JournalText(
                             "${set.number}. sorozat • ${details.joinToString(" · ").ifBlank { "Kész" }}",
                             size = 11,
                         )
@@ -1429,7 +1439,9 @@ private fun WorkoutPager(
                             scope.launch { pager.animateScrollToPage(1) }
                             Unit
                         }
-                        if (normalizeUnit(workout.exercise?.repUnit.orEmpty()).startsWith("mp"))
+                        if(workout.automation?.enabled==true && WearAutomaticEngine.timed(workout.exercise))
+                            AutomaticTimedSetScreen(workout,restRemaining,health,onPrevious,onNext,onSkipRest,onFinish,onMenu)
+                        else if (normalizeUnit(workout.exercise?.repUnit.orEmpty()).startsWith("mp"))
                             TimedSetScreen(
                                 workout,
                                 restRemaining,
@@ -1520,9 +1532,17 @@ private fun WorkoutPager(
 
 @Composable
 private fun RestRing(workout: WearWorkout, seconds: Int) {
-    Canvas(Modifier.fillMaxSize().padding(8.dp)) {
-        drawArc(Gold, -90f, 360f * (seconds.toFloat() / workout.restSeconds.coerceAtLeast(1)).coerceIn(0f, 1f),
-            false, style = Stroke(2.dp.toPx()))
+    val color = Gold
+    val remainingFraction=wearRestProgress(workout,seconds)
+    Canvas(Modifier.fillMaxSize().padding(8.dp).testTag("wear-rest-ring")
+        .semantics { progressBarRangeInfo=ProgressBarRangeInfo(remainingFraction,0f..1f) }) {
+        drawArc(
+            color,
+            -90f,
+            360f * remainingFraction,
+            false,
+            style = Stroke(2.dp.toPx()),
+        )
     }
 }
 
@@ -1559,14 +1579,48 @@ private fun WorkoutPanel(
 }
 
 @Composable
-private fun SetHeading(workout: WearWorkout, restRemaining: Int, detail: String? = null) {
+private fun SetHeading(workout: WearWorkout, restRemaining: Int, detail: String? = null, compact: Boolean = false) {
     val completed = workout.exercise?.sets?.count { it.done } ?: 0
     val count = workout.exercise?.sets?.size ?: 0
-    Label(when {
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            now = System.currentTimeMillis()
+            delay(60000L - now % 60000L)
+        }
+    }
+    val clock = Instant.ofEpochMilli(now).atZone(ZoneId.systemDefault())
+        .format(DateTimeFormatter.ofPattern("HH:mm"))
+    val automatic=workout.automation
+    val command=LocalAutomaticCommand.current
+    val toggle=LocalAutomaticToggle.current
+    val heading = when {
+        automatic?.awaitingPhone==true -> "Telefonra vár"
+        automatic?.enabled==true && automatic.interrupted -> "Megszakadt · folytatható"
+        automatic?.enabled==true && automatic.paused -> "Szünet · ${formatSeconds((automatic.remaining(android.os.SystemClock.elapsedRealtime())/1000).toInt())}"
+        automatic?.enabled==true && automatic.phase=="rest" -> "Pihenő ${formatSeconds(restRemaining)}"
         restRemaining > 0 -> "Pihenő ${formatSeconds(restRemaining)} · $completed/$count"
         workout.exerciseComplete -> "✓ $completed/$count sorozat rögzítve"
         else -> detail ?: "${workout.currentExercise + 1}/${workout.exercises.size} · Sorozat ${workout.currentSetIndex + 1}/$count"
-    }, Gold, size = 8)
+    }
+    val fontScale = LocalDensity.current.fontScale
+    val captionScale = fontScale.coerceAtMost(if(compact)1f else 1.35f) / fontScale
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically) {
+        Text(heading, modifier = Modifier.weight(1f, fill = false).then(if(automatic?.enabled==true&&automatic.counting&&command!=null)
+            Modifier.clickable(role=Role.Button){command(if(automatic.paused)"resume" else "pause")}else Modifier), color = Gold,
+            fontSize = (8 * captionScale).sp, lineHeight = (10 * captionScale).sp,
+            maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(" · ", color = Muted, fontSize = (7 * captionScale).sp,
+            lineHeight = (10 * captionScale).sp, maxLines = 1)
+        Text(clock, modifier = Modifier.testTag("wear-workout-clock")
+            .semantics { contentDescription = "Pontos idő: $clock" },
+            color = Muted, fontSize = (7 * captionScale).sp,
+            lineHeight = (10 * captionScale).sp, maxLines = 1)
+        if(toggle!=null) Text(if(automatic?.enabled==true)" A" else " M",color=if(automatic?.enabled==true)Gold else Muted,
+            fontSize=(7*captionScale).sp,modifier=Modifier.size(if(compact)16.dp else 20.dp).clickable(role=Role.Button,onClick=toggle)
+                .testTag("wear-automatic-toggle").semantics { contentDescription=if(automatic?.enabled==true)"Automata mód kikapcsolása" else "Automata mód bekapcsolása" })
+    }
 }
 
 @Composable
@@ -1586,12 +1640,16 @@ private fun WorkoutControls(workout: WearWorkout, restRemaining: Int, recordingE
                             recordLabel: String = "Rögzítés", onRecord: () -> Unit,
                             onPrevious: () -> Unit, onNext: () -> Unit, onSkipRest: () -> Unit, onFinish: () -> Unit,
                             layout: WearArcLayout) {
+    val automatic=workout.automation
+    val command=LocalAutomaticCommand.current
     CompositionLocalProvider(LocalActionSize provides layout.buttonSize) {
         Box {
             RoundControl("‹", enabled = workout.currentExercise > 0, caption = "Előző", description = "Előző gyakorlat", onClick = onPrevious)
         }
         Box(Modifier.offset(x = layout.sideOffset.dp, y = (layout.centerTop).dp)) {
             when {
+                automatic?.awaitingPhone==true -> RoundControl("…",enabled=false,caption="Telefon",description="Várakozás a telefonra",onClick={})
+                automatic?.enabled==true&&automatic.paused&&command!=null -> RoundControl("▶",caption="Folytatás",description="Automata folytatása",onClick={command("resume")})
                 restRemaining > 0 -> RoundControl("»", caption = "Kihagyás", description = "Pihenő kihagyása", onClick = onSkipRest)
                 workout.exerciseComplete -> RoundControl("✓", enabled = false, caption = "Rögzítve", onClick = {})
                 else -> RoundControl("✓", Gold, enabled = recordingEnabled, caption = recordLabel,
@@ -1604,6 +1662,42 @@ private fun WorkoutControls(workout: WearWorkout, restRemaining: Int, recordingE
                     enabled = workout.completedSets > 0, caption = "Befejezés", description = "Edzés befejezése", onClick = onFinish)
             else RoundControl("›", if (workout.exerciseComplete) Gold else Secondary,
                 caption = "Következő", description = "Következő gyakorlat", onClick = onNext)
+        }
+    }
+}
+
+@Composable
+private fun AutomaticTimedSetScreen(workout: WearWorkout,restRemaining: Int,health: JSONObject?,
+    onPrevious: ()->Unit,onNext: ()->Unit,onSkipRest: ()->Unit,onFinish: ()->Unit,onMenu: ()->Unit) {
+    val a=workout.automation ?: return
+    val command=LocalAutomaticCommand.current
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val bodyHeight=wearFixedPageLayout(maxWidth.value,maxHeight.value,true).bodyHeight
+        val tiny=bodyHeight<55f
+        val fontScale=LocalDensity.current.fontScale
+        val scale=fontScale.coerceAtMost(if(tiny)1f else 1.25f)/fontScale
+        val rows=wearLiveWorkoutRows(health,workout.workoutId,System.currentTimeMillis())
+        WorkoutPanel(workout,onMenu,actions={layout->WorkoutControls(workout,restRemaining,false,
+            onRecord={},onPrevious=onPrevious,onNext=onNext,onSkipRest=onSkipRest,onFinish=onFinish,layout=layout)}) {
+            // On the smallest circle, measurements share the heading instead of pushing
+            // the actionable countdown below the fixed body. Full metrics remain on page 3.
+            SetHeading(workout,restRemaining,detail=if(tiny)rows.firstOrNull() else null,compact=tiny)
+            if(!tiny)rows.take(if(bodyHeight>=96f&&fontScale<1.5f)2 else 1).forEach {
+                Text(it,color=Gold,fontSize=(9*scale).sp,lineHeight=(11*scale).sp,maxLines=1,overflow=TextOverflow.Ellipsis)
+            }
+            val waiting=a.phase=="ready"
+            val remaining=if(waiting)a.workSeconds else ((a.remaining(android.os.SystemClock.elapsedRealtime())+999)/1000).toInt()
+            val label=if(a.phase=="rest")"Pihenő" else if(a.phase=="complete")"Rögzítve" else "Munka"
+            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(4.dp)) {
+                Text("${if(a.paused||waiting)"▶" else "Ⅱ"} ${formatSeconds(remaining)}",color=White,
+                    fontSize=((if(tiny)18 else 24)*scale).sp,lineHeight=((if(tiny)20 else 28)*scale).sp,
+                    fontWeight=FontWeight.SemiBold,maxLines=1,modifier=Modifier.weight(1f).testTag("wear-automatic-clock")
+                        .clickable(enabled=command!=null&&a.phase!="complete",role=Role.Button){command?.invoke(if(waiting)"start" else if(a.paused)"resume" else "pause")}
+                        .semantics { contentDescription=if(waiting)"Automata munkaszakasz indítása" else if(a.paused)"Automata folytatása" else "Automata szüneteltetése" })
+                Text(label+if(a.rounds>1)" · ${if(waiting)1 else a.round}/${a.rounds}. kör" else "",color=Muted,
+                    fontSize=((if(tiny)8 else 9)*scale).sp,lineHeight=((if(tiny)9 else 10)*scale).sp,maxLines=2,
+                    textAlign=TextAlign.Center,modifier=Modifier.weight(1f))
+            }
         }
     }
 }
@@ -1658,7 +1752,7 @@ private fun CurrentSetScreen(
                         set?.weight?.ifBlank { "0" } ?: "0",
                         "kg",
                         Modifier.weight(1f),
-                        enabled = set?.done == false,
+                        enabled = set?.done == false && (workout.automation?.counting!=true||workout.automation.paused),
                     ) {
                         onEdit("weight")
                     }
@@ -1666,7 +1760,7 @@ private fun CurrentSetScreen(
                     set?.reps?.ifBlank { "0" } ?: "0",
                     "ismétlés",
                     Modifier.weight(1f),
-                    enabled = set?.done == false,
+                    enabled = set?.done == false && (workout.automation?.counting!=true||workout.automation.paused),
                 ) {
                     onEdit("reps")
                 }
@@ -1715,12 +1809,16 @@ internal fun ValueEditor(
 ) {
     val context = LocalContext.current
     val set = workout.currentSet ?: return
+    val expected=rememberSaveable(workout.workoutId,field){WearAutomaticEngine.targetId(workout,workout.currentExercise,workout.currentSetIndex)}
+    val editable=expected==WearAutomaticEngine.targetId(workout,workout.currentExercise,workout.currentSetIndex)&&!set.done&&
+        (workout.automation?.counting!=true||workout.automation.paused)
+    val save=LocalEditorSave.current
     val original =
-        remember(workout.workoutId, workout.currentExercise, set.number, field) {
+        remember(workout.workoutId, expected, field) {
             fieldValue(set, field)
         }
     var edited by
-        rememberSaveable(workout.workoutId, workout.currentExercise, set.number, field) {
+        rememberSaveable(workout.workoutId, expected, field) {
             mutableDoubleStateOf(original)
         }
     val step =
@@ -1745,7 +1843,8 @@ internal fun ValueEditor(
             CompositionLocalProvider(LocalActionSize provides layout.buttonSize) {
                 Row(horizontalArrangement = Arrangement.spacedBy(layout.gap.dp)) {
                     RoundControl("×", caption = "Mégse", description = "Mégse", onClick = onBack)
-                    RoundControl("✓", Gold, caption = "Mentés", description = "✓ Mentés") {
+                    RoundControl("✓", Gold, enabled=editable,caption = "Mentés", description = "✓ Mentés") {
+                        if(save!=null&&!save(field,edited,expected))return@RoundControl
                         if (
                             field.endsWith("Seconds") ||
                                 (field == "reps" &&
@@ -1761,7 +1860,7 @@ internal fun ValueEditor(
                                 ),
                             )
                         }
-                        onChange(field, edited - fieldValue(workout.currentSet ?: set, field))
+                        if(save==null)onChange(field, edited - fieldValue(workout.currentSet ?: set, field))
                         onBack()
                     }
                 }
@@ -1769,7 +1868,7 @@ internal fun ValueEditor(
         },
     ) { compact ->
         val fontScale = LocalDensity.current.fontScale
-        val series = "Sorozat ${workout.currentSetIndex + 1}/${workout.exercise?.sets?.size ?: 0}"
+        val series = if(editable)"Sorozat ${workout.currentSetIndex + 1}/${workout.exercise?.sets?.size ?: 0}"else "A sorozat közben változott"
         if (compact) Text(series, color = Muted, fontSize = (8f / fontScale).sp,
             lineHeight = (10f / fontScale).sp, textAlign = TextAlign.Center)
         else Label(series, size = 9)
@@ -1778,7 +1877,7 @@ internal fun ValueEditor(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            RoundControl("−", description = "$title csökkentése") {
+            RoundControl("−", enabled=editable,description = "$title csökkentése") {
                 edited = (edited - step).coerceAtLeast(0.0)
             }
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -1800,7 +1899,7 @@ internal fun ValueEditor(
                     lineHeight = (11f / fontScale).sp, textAlign = TextAlign.Center)
                 else Label(unit, size = 9)
             }
-            RoundControl("+", description = "$title növelése") { edited += step }
+            RoundControl("+", enabled=editable,description = "$title növelése") { edited += step }
         }
         if (!compact) Label("Lépésköz: ${numberText(step)}", size = 9)
     }
@@ -2081,8 +2180,26 @@ private fun WorkoutMenu(
     onFinish: () -> Unit,
     onHome: () -> Unit,
 ) {
+    val automaticToggle=LocalAutomaticToggle.current
+    val automaticCommand=LocalAutomaticCommand.current
     RoundList("Edzésmenü") {
         centerItem { Pill("‹ Kezdőlap", tone = Secondary, onClick = onHome) }
+        if(automaticToggle!=null) centerItem {
+            Text("Automata mód: ${if(workout.automation?.enabled==true)"Be" else "Ki"}",color=Gold,fontSize=11.sp,
+                modifier=Modifier.fillMaxWidth().heightIn(min=30.dp).clickable(role=Role.Button,onClick=automaticToggle)
+                    .padding(6.dp).semantics { contentDescription="Automata mód kapcsoló" },textAlign=TextAlign.Center)
+        }
+        if(workout.automation?.enabled==true&&automaticCommand!=null) {
+            for((name,seconds,field) in listOf(Triple("Munka",workout.automation.workSeconds,"work"),Triple("Pihenő",workout.automation.restSeconds,"rest"),Triple("Kör",workout.automation.rounds,"rounds"))) centerItem {
+                Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween) {
+                    Text("−",color=White,modifier=Modifier.size(30.dp).clickable(enabled=!workout.automation.counting,role=Role.Button){automaticCommand(field+"Minus")}.semantics { contentDescription="$name csökkentése" })
+                    Text("$name $seconds mp",color=Muted,fontSize=10.sp)
+                    Text("+",color=White,modifier=Modifier.size(30.dp).clickable(enabled=!workout.automation.counting,role=Role.Button){automaticCommand(field+"Plus")}.semantics { contentDescription="$name növelése" })
+                }
+            }
+            centerItem { Text("Rezgés: ${if(workout.automation.vibration)"Be" else "Ki"}",color=Muted,fontSize=10.sp,
+                modifier=Modifier.fillMaxWidth().heightIn(min=30.dp).clickable(role=Role.Button){automaticCommand("vibration")}.padding(6.dp)) }
+        }
         if (workout.exercise?.loadType != "bodyweight") {
             centerItem {
                 Pill(
@@ -2094,7 +2211,7 @@ private fun WorkoutMenu(
                 }
             }
         }
-        if (normalizeUnit(workout.exercise?.repUnit.orEmpty()).startsWith("mp")) {
+        if (normalizeUnit(workout.exercise?.repUnit.orEmpty()).startsWith("mp")&&!(workout.automation?.enabled==true&&WearAutomaticEngine.timed(workout.exercise))) {
             centerItem {
                 Pill(
                     "Stopper és oldalak",

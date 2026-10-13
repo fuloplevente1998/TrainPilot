@@ -6,6 +6,7 @@ final class DistanceAccumulator {
     private long at;
     private boolean anchor;
     double totalMeters(){return total;}
+    void resetAnchor(){anchor=false;}
     boolean add(double latitude,double longitude,double accuracyMeters,long elapsedMillis,double speedMps){
         if(!Double.isFinite(latitude)||!Double.isFinite(longitude)||Math.abs(latitude)>90||Math.abs(longitude)>180
                 ||!Double.isFinite(accuracyMeters)||accuracyMeters<0||accuracyMeters>35||elapsedMillis<0)return false;
