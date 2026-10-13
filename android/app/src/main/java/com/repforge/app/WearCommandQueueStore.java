@@ -49,9 +49,13 @@ final class WearCommandQueueStore {
         JSONObject command = new JSONObject(input.toString());
         command.put("receivedAt", System.currentTimeMillis());
         if (uri != null) command.put("_uri", uri);
+        // Never evict an unacknowledged recording/finish command when the phone
+        // WebView is sleeping. Its Wear DataItem remains until acknowledged and
+        // can be re-scanned when capacity becomes available.
+        if (pending.length() >= MAX_PENDING) return;
         pending.put(command);
-        while (pending.length() > MAX_PENDING) pending.remove(0);
-        prefs(context).edit().putString(PENDING, pending.toString()).apply();
+        if (!prefs(context).edit().putString(PENDING, pending.toString()).commit())
+            throw new IllegalStateException("Unable to persist watch command");
     }
 
     static synchronized JSONArray pending(Context context) {
@@ -60,8 +64,8 @@ final class WearCommandQueueStore {
     }
     static synchronized boolean seen(Context context,String id){return containsId(read(context,SEEN),id);}
 
-    static synchronized void ack(Context context, String commandId) {
-        if (commandId == null || commandId.isEmpty()) return;
+    static synchronized boolean ack(Context context, String commandId) {
+        if (commandId == null || commandId.isEmpty()) return false;
         JSONArray pending = read(context, PENDING), next = new JSONArray();
         for (int i = 0; i < pending.length(); i++) {
             JSONObject command = pending.optJSONObject(i);
@@ -70,6 +74,8 @@ final class WearCommandQueueStore {
         JSONArray seen = read(context, SEEN);
         if (!containsId(seen, commandId)) seen.put(commandId);
         while (seen.length() > MAX_SEEN) seen.remove(0);
-        prefs(context).edit().putString(PENDING, next.toString()).putString(SEEN, seen.toString()).apply();
+        // Acknowledge only after both the pending queue and dedupe receipt
+        // have reached durable storage; a process crash must not replay a set.
+        return prefs(context).edit().putString(PENDING, next.toString()).putString(SEEN, seen.toString()).commit();
     }
 }
