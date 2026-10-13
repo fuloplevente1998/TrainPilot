@@ -47,7 +47,11 @@ public class WearCommandListenerService extends WearableListenerService {
                 String raw = DataMapItem.fromDataItem(event.getDataItem()).getDataMap().getString("command");
                 if (raw == null || raw.isEmpty()) continue;
                 JSONObject command=new JSONObject(raw);
-                if("automaticControl".equals(command.optString("action"))&&!WearCommandQueueStore.seen(this,command.optString("commandId"))){
+                if("automaticControl".equals(command.optString("action"))){
+                    if(WearCommandQueueStore.seen(this,command.optString("commandId"))){
+                        Wearable.getDataClient(this).deleteDataItems(event.getDataItem().getUri());
+                        continue;
+                    }
                     JSONObject timer=IntervalTimerService.snapshot(this),active=ActiveWorkoutStore.current(this);
                     String action=command.optString("value");
                     if(active!=null&&command.optJSONObject("automation")!=null&&active.optString("workoutId").equals(command.optString("workoutId"))&&
@@ -56,8 +60,10 @@ public class WearCommandListenerService extends WearableListenerService {
                         try {
                             long expectedPhase=command.optJSONObject("automation").optLong("phaseNumber");
                             IntervalTimerService.command(this,timer.optString("key"),expectedPhase==timer.optLong("phaseNumber")?action:"status");
-                            WearCommandQueueStore.ack(this,command.optString("commandId"));
-                            Wearable.getDataClient(this).deleteDataItems(event.getDataItem().getUri());continue;
+                            // Keep the DataItem available for replay if a durable receipt fails.
+                            if(WearCommandQueueStore.ack(this,command.optString("commandId")))
+                                Wearable.getDataClient(this).deleteDataItems(event.getDataItem().getUri());
+                            continue;
                         }
                         catch(Exception ignored){}
                     }
