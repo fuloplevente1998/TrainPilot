@@ -14,7 +14,7 @@ A felhasználó kérése szerint az aktív visszaszámláló manuális és autom
 - Visszapipálás, kézi léptetés, sorozattörlés, új edzés és későn visszatérő natív válasz nem rögzíthet másik edzésbe. Megszakadt szolgáltatásból nincs kitalált folytatás.
 - A korábban átadott Wear-kezdőlap témaszinkronja megmarad a telefonos home snapshotban.
 
-Ez a folytatás **telefonos megvalósítás**. Az önálló órás automata mód és az eszközök közös idővonalának integrációja következő lépés; a mostani Wear app nem kap új automata funkciót ettől a telefonos ágtól. A közös terv egy fájlban: [WEAR_OS_FEJLESZTESI_TERV.md](https://github.com/fuloplevente1998/TrainPilot/blob/feat/wear-home-revamp-170/docs/wear/WEAR_OS_FEJLESZTESI_TERV.md).
+A telefonos alaphoz a `feat/wear-automatic-162` közös ágban órás natív automata tesztváltozat is társul. Órán indított edzésnél az óra vezérli az időzítést, a telefon távoli vezérlő és megjelenítő; telefonos indításnál a telefon marad a tulajdonos. Az első integráció működése, telepítése és még hátralévő korlátai a közös tervben vannak: [WEAR_OS_FEJLESZTESI_TERV.md](wear/WEAR_OS_FEJLESZTESI_TERV.md).
 
 ## Időzített sorozatok
 

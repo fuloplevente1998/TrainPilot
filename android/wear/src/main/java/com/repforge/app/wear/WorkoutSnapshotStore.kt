@@ -114,7 +114,7 @@ object WorkoutSnapshotStore {
     @Synchronized
     fun saveWorkout(context: Context, workout: WearWorkout): WearWorkout {
         val current=load(context)
-        val saved=if(current?.workoutId==workout.workoutId)workout.copy(localSequence=maxOf(current.localSequence,workout.localSequence))else workout
+        val saved=if(current?.workoutId==workout.workoutId)workout.copy(localSequence=maxOf(current.localSequence,workout.localSequence),revision=maxOf(current.revision,workout.revision))else workout
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
             .putString(SNAPSHOT, encode(saved).toString())

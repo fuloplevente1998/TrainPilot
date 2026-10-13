@@ -62,6 +62,7 @@ private val Danger = Color(0xFF3B232A)
 private val DangerText = Color(0xFFEFBCC3)
 private val LocalAutomaticToggle = compositionLocalOf<(() -> Unit)?> { null }
 private val LocalAutomaticCommand = compositionLocalOf<((String) -> Unit)?> { null }
+private val LocalEditorSave = compositionLocalOf<((String,Double,String)->Boolean)?> { null }
 
 @Composable
 internal fun TrainPilotWearApp(
@@ -97,6 +98,7 @@ internal fun TrainPilotWearApp(
     batteryLevel: State<Int?>? = null,
     onToggleAutomatic: (() -> Unit)? = null,
     onAutomaticCommand: ((String) -> Unit)? = null,
+    onEditorSave: ((String,Double,String)->Boolean)? = null,
 ) {
     var route by rememberSaveable { mutableStateOf("home") }
     LaunchedEffect(route) { if (route == "journal" || route == "metrics") onRefreshJournal() }
@@ -105,6 +107,9 @@ internal fun TrainPilotWearApp(
             route = it
             onRouteConsumed()
         }
+    }
+    LaunchedEffect(workout.value?.automation?.enabled, route) {
+        if (workout.value?.automation?.enabled == true && route == "timer") route = "workout"
     }
     var editorField by rememberSaveable { mutableStateOf("reps") }
     var miniJournalId by rememberSaveable { mutableStateOf("") }
@@ -141,7 +146,8 @@ internal fun TrainPilotWearApp(
     CompositionLocalProvider(
         LocalWearHomeTheme provides (home.value?.theme ?: WearHomeTheme.DEFAULT),
         LocalAutomaticToggle provides onToggleAutomatic,
-        LocalAutomaticCommand provides onAutomaticCommand
+        LocalAutomaticCommand provides onAutomaticCommand,
+        LocalEditorSave provides onEditorSave
     ) {
         MaterialTheme {
             Box(Modifier.fillMaxSize().background(Black)) {
@@ -1585,8 +1591,10 @@ private fun SetHeading(workout: WearWorkout, restRemaining: Int, detail: String?
     val command=LocalAutomaticCommand.current
     val toggle=LocalAutomaticToggle.current
     val heading = when {
+        automatic?.awaitingPhone==true -> "Telefonra vár"
         automatic?.enabled==true && automatic.interrupted -> "Megszakadt · folytatható"
         automatic?.enabled==true && automatic.paused -> "Szünet · ${formatSeconds((automatic.remaining(android.os.SystemClock.elapsedRealtime())/1000).toInt())}"
+        automatic?.enabled==true && automatic.phase=="rest" -> "Pihenő ${formatSeconds(restRemaining)}"
         restRemaining > 0 -> "Pihenő ${formatSeconds(restRemaining)} · $completed/$count"
         workout.exerciseComplete -> "✓ $completed/$count sorozat rögzítve"
         else -> detail ?: "${workout.currentExercise + 1}/${workout.exercises.size} · Sorozat ${workout.currentSetIndex + 1}/$count"
@@ -1636,6 +1644,7 @@ private fun WorkoutControls(workout: WearWorkout, restRemaining: Int, recordingE
         }
         Box(Modifier.offset(x = layout.sideOffset.dp, y = (layout.centerTop).dp)) {
             when {
+                automatic?.awaitingPhone==true -> RoundControl("…",enabled=false,caption="Telefon",description="Várakozás a telefonra",onClick={})
                 automatic?.enabled==true&&automatic.paused&&command!=null -> RoundControl("▶",caption="Folytatás",description="Automata folytatása",onClick={command("resume")})
                 restRemaining > 0 -> RoundControl("»", caption = "Kihagyás", description = "Pihenő kihagyása", onClick = onSkipRest)
                 workout.exerciseComplete -> RoundControl("✓", enabled = false, caption = "Rögzítve", onClick = {})
@@ -1664,11 +1673,13 @@ private fun AutomaticTimedSetScreen(workout: WearWorkout,restRemaining: Int,heal
         LiveWorkoutHealth(workout,health)
         val waiting=a.phase=="ready"
         val remaining=if(waiting)a.workSeconds else ((a.remaining(android.os.SystemClock.elapsedRealtime())+999)/1000).toInt()
-        Text("${if(a.paused||waiting)"▶" else "Ⅱ"} ${formatSeconds(remaining)}",color=White,fontSize=24.sp,
+        val scale=LocalDensity.current.fontScale.let { it.coerceAtMost(1.35f)/it }
+        Text("${if(a.paused||waiting)"▶" else "Ⅱ"} ${formatSeconds(remaining)}",color=White,fontSize=(24*scale).sp,
             fontWeight=FontWeight.SemiBold,modifier=Modifier.testTag("wear-automatic-clock")
                 .clickable(enabled=command!=null&&a.phase!="complete",role=Role.Button){command?.invoke(if(waiting)"start" else if(a.paused)"resume" else "pause")}
                 .semantics { contentDescription=if(waiting)"Automata munkaszakasz indítása" else if(a.paused)"Automata folytatása" else "Automata szüneteltetése" })
-        Label(if(a.phase=="rest")"Pihenő" else if(a.phase=="complete")"Rögzítve" else "Munka",size=9)
+        val label=if(a.phase=="rest")"Pihenő" else if(a.phase=="complete")"Rögzítve" else "Munka"
+        Text(label+if(a.rounds>1)" · ${if(waiting)1 else a.round}/${a.rounds}. kör" else "",color=Muted,fontSize=(9*scale).sp,maxLines=1)
     }
 }
 
@@ -1722,7 +1733,7 @@ private fun CurrentSetScreen(
                         set?.weight?.ifBlank { "0" } ?: "0",
                         "kg",
                         Modifier.weight(1f),
-                        enabled = set?.done == false,
+                        enabled = set?.done == false && (workout.automation?.counting!=true||workout.automation.paused),
                     ) {
                         onEdit("weight")
                     }
@@ -1730,7 +1741,7 @@ private fun CurrentSetScreen(
                     set?.reps?.ifBlank { "0" } ?: "0",
                     "ismétlés",
                     Modifier.weight(1f),
-                    enabled = set?.done == false,
+                    enabled = set?.done == false && (workout.automation?.counting!=true||workout.automation.paused),
                 ) {
                     onEdit("reps")
                 }
@@ -1779,12 +1790,16 @@ internal fun ValueEditor(
 ) {
     val context = LocalContext.current
     val set = workout.currentSet ?: return
+    val expected=rememberSaveable(workout.workoutId,field){WearAutomaticEngine.targetId(workout,workout.currentExercise,workout.currentSetIndex)}
+    val editable=expected==WearAutomaticEngine.targetId(workout,workout.currentExercise,workout.currentSetIndex)&&!set.done&&
+        (workout.automation?.counting!=true||workout.automation.paused)
+    val save=LocalEditorSave.current
     val original =
-        remember(workout.workoutId, workout.currentExercise, set.number, field) {
+        remember(workout.workoutId, expected, field) {
             fieldValue(set, field)
         }
     var edited by
-        rememberSaveable(workout.workoutId, workout.currentExercise, set.number, field) {
+        rememberSaveable(workout.workoutId, expected, field) {
             mutableDoubleStateOf(original)
         }
     val step =
@@ -1809,7 +1824,8 @@ internal fun ValueEditor(
             CompositionLocalProvider(LocalActionSize provides layout.buttonSize) {
                 Row(horizontalArrangement = Arrangement.spacedBy(layout.gap.dp)) {
                     RoundControl("×", caption = "Mégse", description = "Mégse", onClick = onBack)
-                    RoundControl("✓", Gold, caption = "Mentés", description = "✓ Mentés") {
+                    RoundControl("✓", Gold, enabled=editable,caption = "Mentés", description = "✓ Mentés") {
+                        if(save!=null&&!save(field,edited,expected))return@RoundControl
                         if (
                             field.endsWith("Seconds") ||
                                 (field == "reps" &&
@@ -1825,7 +1841,7 @@ internal fun ValueEditor(
                                 ),
                             )
                         }
-                        onChange(field, edited - fieldValue(workout.currentSet ?: set, field))
+                        if(save==null)onChange(field, edited - fieldValue(workout.currentSet ?: set, field))
                         onBack()
                     }
                 }
@@ -1833,7 +1849,7 @@ internal fun ValueEditor(
         },
     ) { compact ->
         val fontScale = LocalDensity.current.fontScale
-        val series = "Sorozat ${workout.currentSetIndex + 1}/${workout.exercise?.sets?.size ?: 0}"
+        val series = if(editable)"Sorozat ${workout.currentSetIndex + 1}/${workout.exercise?.sets?.size ?: 0}"else "A sorozat közben változott"
         if (compact) Text(series, color = Muted, fontSize = (8f / fontScale).sp,
             lineHeight = (10f / fontScale).sp, textAlign = TextAlign.Center)
         else Label(series, size = 9)
@@ -1842,7 +1858,7 @@ internal fun ValueEditor(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            RoundControl("−", description = "$title csökkentése") {
+            RoundControl("−", enabled=editable,description = "$title csökkentése") {
                 edited = (edited - step).coerceAtLeast(0.0)
             }
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -1864,7 +1880,7 @@ internal fun ValueEditor(
                     lineHeight = (11f / fontScale).sp, textAlign = TextAlign.Center)
                 else Label(unit, size = 9)
             }
-            RoundControl("+", description = "$title növelése") { edited += step }
+            RoundControl("+", enabled=editable,description = "$title növelése") { edited += step }
         }
         if (!compact) Label("Lépésköz: ${numberText(step)}", size = 9)
     }
@@ -2155,7 +2171,7 @@ private fun WorkoutMenu(
                     .padding(6.dp).semantics { contentDescription="Automata mód kapcsoló" },textAlign=TextAlign.Center)
         }
         if(workout.automation?.enabled==true&&automaticCommand!=null) {
-            for((name,seconds,field) in listOf(Triple("Munka",workout.automation.workSeconds,"work"),Triple("Pihenő",workout.automation.restSeconds,"rest"))) centerItem {
+            for((name,seconds,field) in listOf(Triple("Munka",workout.automation.workSeconds,"work"),Triple("Pihenő",workout.automation.restSeconds,"rest"),Triple("Kör",workout.automation.rounds,"rounds"))) centerItem {
                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween) {
                     Text("−",color=White,modifier=Modifier.size(30.dp).clickable(enabled=!workout.automation.counting,role=Role.Button){automaticCommand(field+"Minus")}.semantics { contentDescription="$name csökkentése" })
                     Text("$name $seconds mp",color=Muted,fontSize=10.sp)
@@ -2176,7 +2192,7 @@ private fun WorkoutMenu(
                 }
             }
         }
-        if (normalizeUnit(workout.exercise?.repUnit.orEmpty()).startsWith("mp")) {
+        if (normalizeUnit(workout.exercise?.repUnit.orEmpty()).startsWith("mp")&&!(workout.automation?.enabled==true&&WearAutomaticEngine.timed(workout.exercise))) {
             centerItem {
                 Pill(
                     "Stopper és oldalak",

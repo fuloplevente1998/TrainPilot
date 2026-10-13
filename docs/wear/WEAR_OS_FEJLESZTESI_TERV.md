@@ -1,6 +1,6 @@
 # Telefonos és Wear OS automata mód, Wear UI-fejlesztési terv
 
-Frissítve: 2026. október 12. Állapot: közös munkaterv, nem kész funkciók listája.
+Frissítve: 2026. október 13. Állapot: közös munkaterv, nem kész funkciók listája.
 
 Ez az egy fájl fogja össze a **telefonos és órás automata mód közös tervét**, valamint a Wear OS UI- és funkcióötleteket. Az automata mód mindkét alkalmazás fejlesztési feladata. A következő döntéseket és pontosításokat is itt vezetjük tovább.
 
@@ -13,6 +13,24 @@ Kapcsolódások: [kezdőlap #170](https://github.com/fuloplevente1998/TrainPilot
 - A #164 korábbi, készülékesen még nem elfogadott telefonos automata megoldás. Az új telefonos automata mód alapjaként az aktuális, elfogadott mainhez és az itt rögzített működéshez kell igazítani; az órás automata működéshez külön integráció szükséges. A #178 UI-build nem jelenti az automata mód elkészültét egyik alkalmazásban sem.
 - A telefonos első folytatás megvalósítása a #164-ben elindult: kézi rögzítés utáni natív pihenő és sorozat-/gyakorlatváltás, időzített átmenetek, alsó visszaszámláló és kompakt kapcsoló. Ez első tesztváltozat; a teljes készülékes elfogadás és az önálló órás automata integráció továbbra is hátravan.
 - A térkép a #163 külön folytatása. Az időzített futóintervallum és a meglévő GPS-mérés együttműködése már az automata mód része.
+
+### Első közös tesztváltozat — 2026. október 13.
+
+Az új `feat/wear-automatic-162` ág a legutóbbi telefonos `3e66ab0` és órás `e41f09f` buildet egyesíti. Megmarad a telefonos zoomjavítás, az alsó visszaszámláló, a témaszinkron és az órás kezdőlap; az új funkciók tesztváltozatban kerülnek melléjük.
+
+- Órán indított tervezett/gyors edzés: az óra az időzítő tulajdonosa. Az órás alkalmazás háttérbe tétele és a telefonkapcsolat elvesztése sem állítja le a natív időzítést; Health Services-engedély nem kell hozzá.
+- Ismétléses sorozatot a felhasználó rögzít. A beállított pihenő után a következő sorozat/gyakorlat aktív, az ismétlést nem találja ki az app. Pontosan `mp` egységű sorozatnál a munkaszakaszok és körök automatikusan futnak. Oldalankénti mérés továbbra is kézi, utána automatikus pihenővel.
+- Kis A/M kapcsoló a gyakorlatoldal órája mellett; munka/pihenő/kör és rezgés az edzésmenüben. A munkaszakasz első indítása kézi. Szünet/folytatás és pihenőkihagyás elérhető, a végső edzésmentés továbbra is külön megerősített művelet.
+- Az órás jelzés: 80 ms a 3–2–1 másodpercnél, majd 1 másodperces egybefüggő rezgés. Szünet/leállítás megszakítja; ismételt állapotfrissítés nem ismétli meg.
+- Óra által vezérelt edzésnél a telefon csak tükrözi a számlálót, és az órának küldi a rögzítést/szünetet/folytatást/kihagyást. Kézi gyakorlatváltás leállítja az automatikát. Stabil sorozatazonosító, szakaszszám és eseményazonosító védi a régi/dupla parancsoktól.
+- Telefonon indított edzésnél a telefon marad a tulajdonos. A natív telefonos óra közvetlenül frissíti az órás kijelzést, az órás szünet/folytatás/kihagyás a telefon natív szolgáltatását vezérli. Nem indul második órás időzítő vagy kettős rezgés.
+- Megszakadt szolgáltatás/újraindítás után az utolsó mentett hátralévő időből szünetelt állapot áll vissza; nincs utólag kitalált sorozat. Nyitott szerkesztőből nem menthető véletlenül a közben aktívvá vált másik sorozatba.
+
+**Telepítés:** mindkét új APK szükséges. Az első használat előtt meg kell nyitni a telefonos appot és frissíteni az órás adatokat; az új közös protokoll ezután helyben is elérhető. Verzió: 1.3.4 / 2730; a tesztpárt a forráscommit különbözteti meg.
+
+**Még hátravan:** telefonon indított ismétléses sorozat órás rögzítése és egy új telefonos menetrend óráról indítása a telefonos webfelület háttérben alvásakor még a telefon visszatéréséig várhat. Az óra ilyenkor „Telefonra vár” állapotot jelez. Emiatt a három használati irány teljes készülékes elfogadása még nincs kész. Az órás automata időmérés most a tényleges munka másodperceit összegzi, a meglévő telefonos intervallum a korábbi munka+pihenő értéket tartja; az egységes naplóbontás külön folytatás, régi adatok átírása nélkül. Órás GPS-szakaszok, visszavonás, érintészár, forgatható szerkesztés és új rezgésminták továbbra is tervben vannak. A fizikai rezgés és OEM háttérkezelés készülékes próbát igényel.
+
+Ellenőrzés: tiszta Kotlin állapotgép- és telefonos tükrözési tesztek; telefonos böngészőteszt a távoli vezérlésre és alsó számlálóra; valódi Compose felületvizsgálat kis kerek kijelzőn és nagy betűvel; emulátoros foreground-service próba háttérbe tett Activityvel, szünettel/folytatással, Health engedély nélkül; teljes kiadási ellenőrzések és aláírt telefon/Wear APK. A lefutott eredményeket a PR és az Actions rögzíti.
 
 ## 2. Wear OS-javaslatok és sorrend
 

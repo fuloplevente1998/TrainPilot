@@ -354,5 +354,9 @@
   {
     "file": "tests/browser/automatic-workout-162.cjs",
     "estimatedSeconds": 15
+  },
+  {
+    "file": "tests/browser/wear-automatic-162.cjs",
+    "estimatedSeconds": 15
   }
 ]

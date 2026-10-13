@@ -83,4 +83,19 @@ class WearAutomaticTest {
         val a=WearAutomatic(enabled=true,key="run",phase="rest",paused=true,remainingMs=4321,anchorMs=1234,boot=7,targetId="s2",phaseNumber=9)
         assertEquals(a,WearAutomatic.parse(a.json()))
     }
+    @Test fun intervalRoundsAccumulateWorkAndRecordOnce() {
+        val initial=enable(fixture(true)).let { it.copy(automation=it.automation!!.copy(rounds=2,restSeconds=1)) }
+        val work=WearAutomaticEngine.ready(initial,1000,1)
+        val rest=WearAutomaticEngine.tick(work,3000,1).workout
+        assertEquals(0,rest.completedSets);assertEquals(2,rest.automation!!.round);assertEquals("2",rest.currentSet!!.reps)
+        val second=WearAutomaticEngine.tick(rest,4000,1).workout
+        val complete=WearAutomaticEngine.tick(second,6000,1)
+        assertEquals(1,complete.workout.completedSets);assertEquals("4",complete.workout.exercises[0].sets[0].reps)
+        assertEquals(1,complete.workout.automation!!.round);assertEquals(0,complete.completedSet)
+    }
+    @Test fun interruptedClockKeepsCheckpointRatherThanCountingUnobservedTime() {
+        val work=WearAutomaticEngine.ready(enable(fixture(true)),1000,1)
+        val interrupted=WearAutomaticEngine.tick(work,999999,2).workout
+        assertEquals(2000,interrupted.automation!!.remainingMs);assertEquals(0,interrupted.completedSets)
+    }
 }

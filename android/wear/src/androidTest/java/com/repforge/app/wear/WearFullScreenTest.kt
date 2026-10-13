@@ -654,15 +654,46 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         assertEquals(4, backs)
     }
 
+    @Test
+    fun automaticTimedWorkKeepsSmallModeClockAndBottomControlsVisible() {
+        val commands=mutableListOf<String>()
+        compose.setContent { Watch { Fixture("automatic-timed",automaticCommands=commands) } }
+        val toggle=compose.onNodeWithTag("wear-automatic-toggle").assertIsDisplayed()
+        val width=toggle.fetchSemanticsNode().boundsInRoot.width
+        val root=compose.onRoot().fetchSemanticsNode().boundsInRoot
+        assertTrue("Mode is a compact secondary control",width<root.width*.16f)
+        compose.onNodeWithTag("wear-workout-clock").assertIsDisplayed()
+        compose.onNodeWithTag("wear-automatic-clock").assertIsDisplayed().performClick()
+        assertEquals(listOf("start"),commands)
+        compose.onNodeWithContentDescription("Edzés befejezése").assertIsDisplayed()
+        compose.onNodeWithText("Munka · 1/3. kör").assertIsDisplayed()
+        screenshot("automatic-timed-ready")
+        toggle.performClick();assertEquals("toggle",commands.last())
+    }
+
+    @Test
+    fun automaticPausedRestKeepsResumeBetweenBottomButtons() {
+        val commands=mutableListOf<String>()
+        compose.setContent { Watch { Fixture("automatic-rest",automaticCommands=commands) } }
+        val resume=compose.onNodeWithContentDescription("Automata folytatása").assertIsDisplayed()
+        val root=compose.onRoot().fetchSemanticsNode().boundsInRoot
+        val button=resume.fetchSemanticsNode().boundsInRoot
+        assertEquals(root.center.x,button.center.x,1f)
+        assertTrue("Resume remains in lower controls",button.center.y>root.center.y)
+        compose.onNodeWithTag("wear-workout-clock").assertIsDisplayed()
+        screenshot("automatic-paused-rest")
+        resume.performClick();assertEquals(listOf("resume"),commands)
+    }
+
     @Composable
-    private fun Fixture(route: String, liveHealth: State<JSONObject?>? = null) {
+    private fun Fixture(route: String, liveHealth: State<JSONObject?>? = null, automaticCommands: MutableList<String>? = null) {
         val set = WearSet(1, "5", "5.5", false, 30, 0, 0.0)
         val exercise =
             WearExercise(
                 "press",
                 "Földön fekve nyomás hosszú gyakorlatnévvel",
                 "weight",
-                if (route == "timed-workout") "mp/oldal" else "ism.",
+                if (route == "automatic-timed") "mp" else if (route == "timed-workout") "mp/oldal" else "ism.",
                 "strength",
                 listOf(set),
             )
@@ -683,6 +714,10 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                     "A nap",
                 )
             )
+        if(route.startsWith("automatic-"))workout.value=workout.value!!.copy(timerOwner="watch",
+            automation=WearAutomatic(enabled=true,key="layout-auto",phase=if(route=="automatic-rest")"rest" else "ready",
+                paused=route=="automatic-rest",remainingMs=if(route=="automatic-rest")5000 else 0,
+                workSeconds=30,restSeconds=5,rounds=3,anchorMs=android.os.SystemClock.elapsedRealtime()))
         val quickExercise =
             WatchHomeExercise(
                 "press",
@@ -740,7 +775,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             )
         val request =
             mutableStateOf<String?>(
-                if (route == "timed-workout") "workout"
+                if (route == "timed-workout" || route.startsWith("automatic-")) "workout"
                 else if (route == "active-home") "home" else route
             )
         val health =
@@ -760,7 +795,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             workout = workout,
             home = home,
             closure = closure,
-            restRemaining = mutableStateOf(0),
+            restRemaining = mutableStateOf(if(route=="automatic-rest")5 else 0),
             onStart = { _, _ -> },
             onStartQuick = {},
             onAddQuick = {},
@@ -785,6 +820,8 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             onEnableHealth = {},
             onDisableHealth = {},
             onToggleGps = {},
+            onToggleAutomatic = if(automaticCommands==null)null else ({automaticCommands.add("toggle")}),
+            onAutomaticCommand = if(automaticCommands==null)null else ({automaticCommands.add(it)}),
         )
     }
 }

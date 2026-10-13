@@ -16785,6 +16785,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const home={
     schema:1,
     phoneVersion:typeof TRAINPILOT_VERSION==='string'?TRAINPILOT_VERSION:'',
+    automaticProtocol:1,
     journalSchema:1,
     theme:watchTheme(),
     ...watchCalendar(active,lang),
@@ -16829,6 +16830,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
     currentExercise:Math.max(0,Math.min(current,Math.max(0,exercises.length-1))),
     restSeconds:configuredRest(),
     restEndAt:Number((state.session?state.restEndAt:draft?.restEndAt)||0),
+    timerOwner:session.timerOwner||'phone',
+    automation:session.watchAutomation162?(()=>{const {snapshot,...value}=session.watchAutomation162;return value;})():window.TrainPilotAutomatic162?.snapshotForWatch?.(session)||null,
     language:lang,
     exercises:exercises.map(exercise=>({
      id:String(exercise?.id||''),
@@ -16839,6 +16842,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
      targetReps:String(exercise?.targetReps||exercise?.reps||(typeof byId==='function'?byId(exercise?.id)?.reps:'')||''),
      sets:(Array.isArray(exercise?.sets)?exercise.sets:[]).map((set,index)=>({
       set:Number(set?.set||index+1),
+      setId:String(set?.setId||''),
       reps:String(set?.reps??''),
       weight:set?.weight??'',
       done:!!set?.done,
@@ -16944,6 +16948,14 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(command?.rightSeconds!==undefined)set.rightSeconds=Math.max(0,Math.round(Number(command.rightSeconds)||0));
   if((command?.leftSeconds!==undefined||command?.rightSeconds!==undefined)&&Number(set.leftSeconds)>0&&Number(set.rightSeconds)>0){
    set.reps=String(Math.min(Number(set.leftSeconds),Number(set.rightSeconds)));
+  }
+ }
+ function adoptWatchIdentity(command){
+  const root=command.finalSnapshot,s=state.session;if(!s||!root||root.workoutId!==command.workoutId)return;
+  s.timerOwner='watch';s.automatic162={enabled:false,owner:'watch',phase:'work'};
+  for(let e=0;e<(root.exercises||[]).length;e++)for(let i=0;i<(root.exercises[e].sets||[]).length;i++){
+   const remote=root.exercises[e].sets[i],local=s.exercises[e]?.sets?.[i];
+   if(local&&s.exercises[e].id===root.exercises[e].id&&typeof remote.setId==='string'&&remote.setId.length<=128&&remote.setId)local.setId=remote.setId;
   }
  }
  function closedWorkouts(){return db.get('wearClosedWorkouts',[])||[]}
@@ -17061,6 +17073,14 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const action=String(command.action||''),expectedId=String(command.workoutId||'');
   if(action==='requestHome')return syncHomeNow({force:true});
   if(action==='healthSummary')return attachMeasuredHealth(command);
+  if(action==='watchAutomationState'){
+   if(expectedId&&isClosed(expectedId))return true;
+   const root=command.finalSnapshot;if(!root||root.workoutId!==expectedId)return false;
+   if(!state.session&&!db.get('draft',null))await applyCommand({...command,action:root.quickWorkout?'startQuickWorkout':'startWorkout',
+    exerciseId:root.exercises?.[0]?.id,started:root.started,programId:root.programId,dayId:root.dayId,scheduleId:root.scheduleId});
+   if(!state.session&&!restoreMatchingDraft(expectedId))return false;
+   return window.TrainPilotWearAutomatic162?.accept?.(command)===true;
+  }
   if(action==='finishWorkout'||action==='discardWorkout')return closeFromWatch(command);
   if(expectedId&&isClosed(expectedId))return true;
   if(!state.session&&!['startWorkout','startQuickWorkout'].includes(action)&&!restoreMatchingDraft(expectedId))return false;
@@ -17079,7 +17099,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    state.session.syncId=expected;
    state.session.started=new Date(Date.parse(command.started||expected)).toISOString();
    state.session.wearSequence=Math.max(Number(state.session.wearSequence)||0,Number(command.sequence)||0);
-   persistDraft();renderWorkout();return true;
+   adoptWatchIdentity(command);persistDraft();renderWorkout();return true;
   }
   if(action==='startWorkout'){
    const expected=String(command.workoutId||command.started||'');
@@ -17101,7 +17121,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     }catch(_){}
    }
    state.session.wearSequence=Math.max(Number(state.session.wearSequence)||0,Number(command.sequence)||0);
-   persistDraft();renderWorkout();return true;
+   adoptWatchIdentity(command);persistDraft();renderWorkout();return true;
   }
   if(!state.session)return false;
   if(!matchesWorkout(state.session,String(command.workoutId||'')))return false;
@@ -17115,6 +17135,17 @@ window.addEventListener?.('DOMContentLoaded',function(){
    add(id);persistDraft();return true;
   }
   if(action==='resumeWorkout'){persistDraft();renderWorkout();return true}
+  if(action==='toggleAutomatic')return TrainPilotAutomatic162.toggle(command.value===true);
+  if(action==='automaticControl'){
+   if(command.automation?.owner!=='phone')return true;
+   await TrainPilotAutomatic162.sync();await TrainPilotIntervals162.sync();
+   const run=TrainPilotAutomatic162.owner()?.meta.run||TrainPilotIntervals162.owner()?.run;
+   if(command.automation?.key&&run?.key!==command.automation.key)return true;
+   const expectedPhase=Number(command.automation?.phaseNumber)||0,actualPhase=Number(run?.phaseNumber)||0;
+   if(expectedPhase>actualPhase)return false;
+   if(expectedPhase<actualPhase)return true;
+   return command.value==='start'?TrainPilotAutomatic162.startTimed():TrainPilotAutomatic162.dockCommand(String(command.value||''));
+  }
   if(action==='selectExercise'){
    const located=locateExercise(command);if(!located)return false;state.current=located.index;persistDraft();renderWorkout();return true;
   }
@@ -17143,6 +17174,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    persistDraft();renderWorkout();return true;
   }
   if(action==='completeSet'){
+   if(command.automation?.owner==='watch'&&state.session.timerOwner==='watch')state.session.automatic162={...state.session.automatic162,owner:'watch',enabled:command.automation.enabled===true};
    applySetValues(target.set,command);
    state.current=located.index;
    if(!target.set.done){
@@ -17437,7 +17469,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    for(const segment of s.gpsSegments||[]){const step=r.steps.find(x=>x.setId===segment.setId&&x.exerciseId===segment.exerciseId);gpsApply(o,segment,step);}
    const step=r.steps[p.stepIndex];if(s.gps){gpsApply(o,s.gps,step);tp106GpsState=s.gps;gpsTrip(o,step,s.gps);if(!s.gps.active&&db.get('gpsTrip106',null)?.key===s.gps.key)localStorage.removeItem('repforge:gpsTrip106');}
    for(let i=0;i<=p.stepIndex;i++){const l=locate(o.session,r.steps[i]);l.set.reps=String(Math.floor(r.steps[i].baseSeconds+(i<p.completed?duration(r.steps,r.autoAdvance,i):p.stepElapsedMs)/1000));if(r.autoAdvance&&i<p.completed)l.set.done=true;}
-   r.elapsedMs=p.elapsedMs;r.running=s.running===true&&p.phase!=='complete';r.stopped=s.stopped===true;r.interrupted=s.interrupted===true;r.phase=p;r.completed=p.completed;r.syncedComplete=p.phase==='complete';
+   r.elapsedMs=p.elapsedMs;r.phaseNumber=Number(s.phaseNumber)||0;r.running=s.running===true&&p.phase!=='complete';r.stopped=s.stopped===true;r.interrupted=s.interrupted===true;r.phase=p;r.completed=p.completed;r.syncedComplete=p.phase==='complete';
    let changed=false;if(state.session===o.session&&r.autoAdvance){let target=locate(o.session,step).index;if(p.phase==='complete'){const last=target;if(o.session.exercises[last].sets.every(x=>x.done)&&last+1<o.session.exercises.length)target=last+1;}if(state.current!==target){state.current=target;changed=true;}}
    if(r.stopped){delete o.session.interval162;persist(o);if(state.session===o.session&&state.tab==='plan')renderWorkout();return true;}persist(o);if(changed&&state.tab==='plan')renderWorkout();paint();return true;
   }
@@ -17456,7 +17488,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const session=state.session,index=state.current,e=session?.exercises?.[index];if(!session||!timed(e)||!e.sets?.some(s=>!s.done)){status(form,t('invalid'),true);return false;}
    if(tp106GpsBusy){status(form,tp106T('busy'),true);return false;}busy=true;
    const key='iv|'+crypto.randomUUID(),steps=queue(session,index,c,key);if(!phase(steps,c.autoAdvance,0,initialRest)){busy=false;status(form,t('limit'),true);return false;}
-   const run={...c,key,initialRest,started:session.started,steps,elapsedMs:0,running:false,stopped:false,native:!!native()};
+   const run={...c,key,initialRest,workoutId:session.syncId||session.started,started:session.started,steps,elapsedMs:0,running:false,stopped:false,native:!!native()};
    try{
     const trip=db.get('gpsTrip106',null),gpsOwner=tp106GpsOwner(trip);if(tp106GpsState.active){if(gpsOwner?.session!==session||gpsOwner?.set?.setId!==steps[0].setId)throw Error(t('busy'));steps[0].gpsKey=trip.key;steps[0].baseMeters=trip.baseMeters;}
     tp107StopIndoor(true);session.interval162=run;persistDraft();
@@ -17535,7 +17567,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   function apply(o,s){
    o=live(o);if(!o||!o.meta.run||s?.key!==o.meta.run.key||s.steps?.[0]?.setId!==o.meta.run.target.setId)return false;
    const r=o.meta.run,p=phase(r,Number(s.elapsedMs));if(!p)return false;
-   r.elapsedMs=p.elapsedMs;r.running=s.running===true&&p.phase!=='complete';r.interrupted=!!s.interrupted;
+   r.elapsedMs=p.elapsedMs;r.phaseNumber=Number(s.phaseNumber)||0;r.running=s.running===true&&p.phase!=='complete';r.interrupted=!!s.interrupted;
    if(s.stopped){if(knownRestKey===r.key)knownRestKey='';o.meta.enabled=false;o.meta.run=null;o.meta.phase='work';save(o);paint();return true;}
    if(r.interrupted){o.meta.phase='interrupted';save(o);paint();return true;}
    if(p.phase==='complete'){finish(o);return true;}
@@ -17573,6 +17605,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
   async function beginRest(){
    const session=state.session,meta=session?.automatic162;if(!meta?.enabled)return;
+   if(meta.owner==='watch'){baseStop();return;}
    baseStop();const target=next(session,state.current);
    if(!target){meta.phase='complete';meta.run=null;persistDraft();paint();return;}
    const rest=seconds();if(knownRestKey){const key=knownRestKey;knownRestKey='';try{await bridge()?.stop({key});}catch(_){}}if(state.session!==session)return;target.set.setId=target.set.setId||crypto.randomUUID();
@@ -17581,7 +17614,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     const ok=await startTimed(rest);if(state.session===session&&!ok){meta.phase='interrupted';meta.message=t('failed');persistDraft();paint();}return;
    }
    const key='rest|'+crypto.randomUUID(),preset=settings().intervalPreset110||{};
-   const run={key,native:!!bridge(),restOnly:true,autoAdvance:false,started:identity(session),elapsedMs:0,running:false,sound:preset.sound===true,vibration:preset.vibration!==false,target:{exerciseId:target.e.id,setId:target.set.setId},steps:[{exerciseId:target.e.id,setId:target.set.setId,name:tp149ExerciseName(byId(target.e.id)||target.e),work:1,rest,rounds:1,gpsKey:''}]};
+   const run={key,workoutId:session.syncId||session.started,native:!!bridge(),restOnly:true,autoAdvance:false,started:identity(session),elapsedMs:0,running:false,sound:preset.sound===true,vibration:preset.vibration!==false,target:{exerciseId:target.e.id,setId:target.set.setId},steps:[{exerciseId:target.e.id,setId:target.set.setId,name:tp149ExerciseName(byId(target.e.id)||target.e),work:1,rest,rounds:1,gpsKey:''}]};
    meta.run=run;meta.phase='preparing';meta.message='';persistDraft();paint();
    if(!rest){finish({session,meta,draft:null});return;}
    try{
@@ -17603,7 +17636,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
   function paint(){
    const o=owner(),panel=document.querySelector('[data-tp162-automatic]');if(!panel||state.session!==o?.session)return;
-   const m=o.meta,r=m.run,iv=TrainPilotIntervals162.owner(),interval=iv?.session===o.session?iv.run:null;
+   const m=o.meta,r=m.run,external=m.owner==='watch'&&m.enabled?m.watch:null,iv=TrainPilotIntervals162.owner(),interval=iv?.session===o.session?iv.run:null;
    const ip=interval?.phase,intervalActive=interval&&!interval.stopped&&!interval.interrupted&&ip&&ip.phase!=='complete';
    const text=(node,value)=>{if(node&&node.textContent!==value)node.textContent=value;};
    panel.querySelector('[data-tp162-enabled]').checked=!!m.enabled;
@@ -17611,13 +17644,14 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const status=panel.querySelector('[data-tp162-auto-status]');const label=!m.enabled?'':m.phase==='interrupted'?t('interrupted'):m.phase==='paused'?t('paused'):r?t('rest'):intervalActive?(interval.running?TrainPilot110.t(ip.phase==='work'?'workPhase':'restPhase'):t('paused')):m.phase==='complete'||!next(o.session,state.current)?t('finished'):t('active');text(status,m.message?'⚠ '+t('failed'):label);status.title=m.message||description||t(m.phase==='complete'?'complete':'work');
    panel.querySelector('[data-tp162-auto-start]').hidden=!m.enabled||!timed(state.session.exercises[state.current])||!!intervalActive;
    const actions=document.querySelector('main.tp153-workout .tp153-workout-actions');let dock=document.querySelector('[data-tp162-countdown]'),geometry=false;
-   const activeRest=r&&!r.interrupted;
-   if((activeRest||intervalActive)&&actions){
+   const activeRest=r&&!r.interrupted,externalActive=external&&['work','rest'].includes(external.phase)&&external.remainingMs>0;
+   if((activeRest||intervalActive||externalActive)&&actions){
     if(!dock){dock=document.createElement('div');dock.className='timer tp162-countdown';dock.dataset.tp162Countdown='';dock.innerHTML='<strong data-tp162-auto-clock></strong><span class="muted" data-tp162-dock-label></span><button type="button" class="btn secondary tp162-small" data-tp162-auto-pause onclick="TrainPilotAutomatic162.dockCommand(\'toggle\')"></button><button type="button" class="btn secondary tp162-small" data-tp162-auto-skip onclick="TrainPilotAutomatic162.dockCommand(\'skipRest\')">»</button>';actions.append(dock);geometry=true;}
-    const remaining=activeRest?(r.remainingMs??r.steps[0].rest*1000):ip.remainingMs,running=(activeRest?r:interval).running;
+    const remaining=externalActive?(external.paused?external.remainingMs:Math.max(0,external.deadlineAt-Date.now())):activeRest?(r.remainingMs??r.steps[0].rest*1000):ip.remainingMs,
+     running=externalActive?!external.paused:(activeRest?r:interval).running;
     text(dock.querySelector('[data-tp162-auto-clock]'),tstr(Math.ceil(remaining/1000)));
-    text(dock.querySelector('[data-tp162-dock-label]'),activeRest||ip?.phase==='rest'?t('rest'):TrainPilot110.t('workPhase'));
-    const pause=dock.querySelector('[data-tp162-auto-pause]'),skip=dock.querySelector('[data-tp162-auto-skip]');text(pause,running?'Ⅱ':'▶');pause.setAttribute('aria-label',t(running?'pause':'resume'));pause.title=t(running?'pause':'resume');skip.setAttribute('aria-label',t('skip'));skip.title=t('skip');skip.hidden=!activeRest&&ip?.phase!=='rest';dock.title=description;
+    text(dock.querySelector('[data-tp162-dock-label]'),activeRest||external?.phase==='rest'||ip?.phase==='rest'?t('rest'):TrainPilot110.t('workPhase'));
+    const pause=dock.querySelector('[data-tp162-auto-pause]'),skip=dock.querySelector('[data-tp162-auto-skip]');text(pause,running?'Ⅱ':'▶');pause.setAttribute('aria-label',t(running?'pause':'resume'));pause.title=t(running?'pause':'resume');skip.setAttribute('aria-label',t('skip'));skip.title=t('skip');skip.hidden=!activeRest&&ip?.phase!=='rest'&&external?.phase!=='rest';dock.title=description;
     dock.querySelectorAll('button').forEach(n=>n.disabled=changing||m.phase==='preparing');
     document.querySelector('[data-tp110-remaining]')?.toggleAttribute('hidden',!!intervalActive);
    }else if(dock){dock.remove();geometry=true;document.querySelector('[data-tp110-remaining]')?.removeAttribute('hidden');}
@@ -17639,10 +17673,117 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const baseSkip=skipTimer;skipTimer=function(){return owner()?.meta.run?command('skipRest'):baseSkip.apply(this,arguments);};
   const baseResume=resumeDraft;resumeDraft=function(){const result=baseResume.apply(this,arguments);ensure();void sync();return result;};
   window.TrainPilotAutomatic162={toggle,command,dockCommand,startTimed,sync,owner,paint};
+  window.TrainPilotAutomatic162.snapshotForWatch=function(s){
+   const m=s?.automatic162,iv=s?.interval162,p=iv?.phase,r=m?.run;
+   if(!m?.enabled&&!iv)return null;
+   const phase=r?'rest':p?.phase==='work'||p?.phase==='rest'?p.phase:m?.phase==='complete'?'complete':'ready';
+   const remainingMs=r?.remainingMs??p?.remainingMs??0,paused=r?r.running!==true:iv?iv.running!==true:false;
+   return {enabled:m?.enabled===true,owner:'phone',phase,paused,remainingMs,deadlineAt:remainingMs&&!paused?Date.now()+remainingMs:0,
+    key:r?.key||iv?.key||'',phaseNumber:r?.phaseNumber||iv?.phaseNumber||0,targetExercise:state.current,workSeconds:iv?.work||30,restSeconds:settings().rest||90,vibration:false,interrupted:r?.interrupted||iv?.interrupted||false};
+  };
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)void sync();});ensure();void sync();
  });
 })();
 // @endsection automatic-workout-162.js
+
+// @section wear-automatic-162.js
+(function(){
+ 'use strict';
+ function valid(command,session){
+  const root=command?.finalSnapshot,a=root?.automation,id=session?.syncId||session?.started;
+  if(!root||root.workoutId!==id||command.workoutId!==id||session.timerOwner!=='watch'||root.timerOwner!=='watch'||a?.owner!=='watch')return false;
+  if(typeof a.enabled!=='boolean'||typeof a.key!=='string'||!a.key||a.key.length>200||!['ready','work','rest','complete'].includes(a.phase))return false;
+  if(!Number.isInteger(a.workSeconds)||a.workSeconds<1||a.workSeconds>3600||!Number.isInteger(a.restSeconds)||a.restSeconds<0||a.restSeconds>3600)return false;
+  if(!Number.isFinite(a.remainingMs)||a.remainingMs<0||a.remainingMs>3600000||!Number.isSafeInteger(command.sequence)||command.sequence<1)return false;
+  if(!Array.isArray(root.exercises)||root.exercises.length!==session.exercises?.length||!Number.isInteger(root.currentExercise)||root.currentExercise<0||root.currentExercise>=root.exercises.length)return false;
+  return root.exercises.every((e,i)=>e.id===session.exercises[i].id&&Array.isArray(e.sets)&&e.sets.length===session.exercises[i].sets.length&&e.sets.every((s,j)=>{
+   const own=session.exercises[i].sets[j];return typeof s.setId==='string'&&s.setId===own.setId&&typeof s.done==='boolean'&&Number.isFinite(Number(s.reps||0))&&Number(s.reps||0)>=0&&Number(s.reps||0)<=86400&&Number.isFinite(Number(s.weight||0));
+  }));
+ }
+ window.TrainPilotWearAutomatic162Core={valid};
+ window.addEventListener?.('DOMContentLoaded',function(){
+  if(!window.TrainPilotAutomatic162)return;
+  const COPY={hu:{waiting:'Várakozás az órára',unavailable:'Az óra nem válaszol. Ellenőrizd a kapcsolatot.',owner:'Az óra vezérli'},en:{waiting:'Waiting for watch',unavailable:'The watch is not responding. Check the connection.',owner:'Watch controls timing'},de:{waiting:'Warte auf die Uhr',unavailable:'Die Uhr antwortet nicht. Verbindung prüfen.',owner:'Uhr steuert den Timer'},ro:{waiting:'Se așteaptă ceasul',unavailable:'Ceasul nu răspunde. Verifică conexiunea.',owner:'Ceasul controlează timpul'}};
+  const t=k=>(COPY[rf212Lang()]||COPY.hu)[k];
+  const external=()=>state.session?.timerOwner==='watch'&&state.session?.automatic162?.owner==='watch';
+  function accept(command){
+   const s=state.session;if(!valid(command,s))return false;
+   if(command.sequence<=Math.max(s.watchAutomationSequence162||0,s.wearSequence||0))return true;
+   const root=command.finalSnapshot,a=root.automation;let changed=state.current!==root.currentExercise;
+   const before=s.watchAutomation162;
+   root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{
+    const own=s.exercises[i].sets[j],previous=before?.snapshot?.exercises?.[i]?.sets?.[j];
+    if(own.done!==v.done)changed=true;
+    own.done=v.done;
+    // Keep a phone edit until the watch actually changes the same value.
+    for(const field of ['reps','weight','leftSeconds','rightSeconds','distanceMeters']){
+     if(!previous||String(previous[field]??'')!==String(v[field]??'')||String(own[field]??'')===String(previous[field]??''))own[field]=v[field]??own[field];
+    }
+   }));
+   state.current=Math.max(0,Math.min(root.currentExercise,s.exercises.length-1));
+   s.watchAutomationSequence162=command.sequence;s.wearSequence=Math.max(s.wearSequence||0,command.sequence);
+   s.watchAutomation162={...a,snapshot:root};
+   s.automatic162={enabled:a.enabled,owner:'watch',phase:a.phase==='ready'?'work':a.phase,watch:a,run:null,pending:false};
+   stopTimer();persistDraft();
+   if(changed&&state.tab==='plan')renderWorkout();else paint();
+   return true;
+  }
+  async function remote(action,values={}){
+   const s=state.session;if(!external()||!s)return false;
+   const command={schema:1,commandId:crypto.randomUUID(),workoutId:s.syncId||s.started,key:s.watchAutomation162?.key||'',phaseNumber:s.watchAutomation162?.phaseNumber||0,action,createdAt:Date.now(),...values};
+   const c=window.Capacitor,api=c?.Plugins?.WearSync||c?.registerPlugin?.('WearSync');
+   try{
+    if(!api?.automaticCommand)throw Error('No watch bridge');
+    s.automatic162.pending=true;paint();await api.automaticCommand({command});
+    setTimeout(()=>{if(state.session===s&&s.automatic162?.pending){s.automatic162.pending=false;paint();alert(t('unavailable'));}},12000);
+    return true;
+   }catch(_){if(state.session===s){s.automatic162.pending=false;paint();}alert(t('unavailable'));return false;}
+  }
+  function paint(){
+   if(!external())return;
+   TrainPilotAutomatic162.paint();const s=state.session,m=s.automatic162,a=m?.watch;
+   const node=document.querySelector('[data-tp162-auto-status]');if(node)node.textContent=m.pending?t('waiting'):t('owner');
+   document.querySelector('[data-tp162-auto-start]')?.toggleAttribute('hidden',!m.enabled||!WearTimed(s.exercises[state.current])||a?.phase==='work'||a?.phase==='rest');
+   const form=document.querySelector('.tp110-interval');if(form)form.hidden=!!m.enabled;
+   if(a?.phase==='work'){
+    const clock=document.querySelector('[data-tp107-clock]');if(clock)clock.textContent=rf110FormatStopwatch(Number(s.exercises[state.current]?.sets?.find(v=>!v.done)?.reps)||0);
+   }
+   document.querySelectorAll('.tp153-set-row').forEach((row,index)=>{
+    const set=s.exercises[state.current]?.sets[index];if(!set)return;
+    const counting=m.enabled&&['work','rest'].includes(a?.phase);
+    row.querySelectorAll('input').forEach(input=>{
+     const reps=input.getAttribute('oninput')?.includes('reps');
+     input.disabled=set.done||!!(counting&&(!a.paused||reps&&a.phase==='work'));
+     if(document.activeElement!==input){if(reps)input.value=set.reps||'0';else if(input.getAttribute('oninput')?.includes('weight'))input.value=set.weight||'0';}
+    });
+    row.querySelectorAll('button[onclick*=\"toggleSet\"]').forEach(button=>button.disabled=!!(m.enabled&&(set.done||counting||a?.paused||m.pending)));
+   });
+   if(m.pending)document.querySelector('[data-tp162-automatic]')?.querySelectorAll('input,button').forEach(n=>n.disabled=true);
+  }
+  const WearTimed=e=>e?.repUnit==='mp'||byId(e?.id)?.repUnit==='mp';
+  const auto=TrainPilotAutomatic162,baseToggle=auto.toggle,baseStart=auto.startTimed,baseDock=auto.dockCommand;
+  auto.toggle=function(enabled){return external()?remote('toggle',{enabled:!!enabled}):baseToggle.apply(this,arguments);};
+  auto.startTimed=function(){return external()?remote('start'):baseStart.apply(this,arguments);};
+  auto.dockCommand=function(action){if(!external())return baseDock.apply(this,arguments);if(action==='toggle')action=state.session.watchAutomation162?.paused?'resume':'pause';return remote(action);};
+  const baseRecord=toggleSet;toggleSet=function(e,s){
+   const session=state.session;
+   if(external()&&session.automatic162.enabled&&!TrainPilotWearSync?.isApplyingCommand?.()){
+    const ex=session.exercises[e],set=ex?.sets?.[s];if(!set||set.done)return false;
+    if(['work','rest'].includes(session.watchAutomation162?.phase)||session.watchAutomation162?.paused)return false;
+    return remote('record',{exerciseIndex:e,exerciseId:ex.id,setIndex:s,setId:set.setId,reps:String(set.reps||'0'),weight:String(set.weight||'0'),leftSeconds:Number(set.leftSeconds)||0,rightSeconds:Number(set.rightSeconds)||0});
+   }
+   return baseRecord.apply(this,arguments);
+  };
+  const baseNext=nextExercise,basePrevious=prevExercise;
+  nextExercise=function(){return external()&&state.session.automatic162.enabled&&state.current<state.session.exercises.length-1?remote('selectExercise',{exerciseIndex:state.current+1}):baseNext.apply(this,arguments);};
+  prevExercise=function(){return external()&&state.session.automatic162.enabled&&state.current>0?remote('selectExercise',{exerciseIndex:state.current-1}):basePrevious.apply(this,arguments);};
+  const baseRender=renderWorkout;renderWorkout=function(){const result=baseRender.apply(this,arguments);paint();return result;};
+  const baseIndoor=tp107ToggleIndoor;tp107ToggleIndoor=function(){return external()&&state.session.automatic162.enabled&&WearTimed(state.session.exercises[state.current])?auto.dockCommand(state.session.watchAutomation162?.phase==='ready'?'start':'toggle'):baseIndoor.apply(this,arguments);};
+  window.TrainPilotWearAutomatic162={accept,remote,paint};
+  setInterval(()=>{if(external())paint();},250);
+ });
+})();
+// @endsection wear-automatic-162.js
 
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();

@@ -68,6 +68,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="trainpilot" android:host="wear" android:path="/start-measurement" />
+                <data android:scheme="trainpilot" android:host="wear" android:path="/automatic-command" />
             </intent-filter>
         </activity>
 

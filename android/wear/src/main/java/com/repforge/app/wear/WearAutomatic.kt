@@ -25,7 +25,8 @@ data class WearAutomatic(
     val deadlineAt: Long = 0,
     val rounds: Int = 1,
     val round: Int = 1,
-    val handledCommands: List<String> = emptyList()
+    val handledCommands: List<String> = emptyList(),
+    val awaitingPhone: Boolean = false
 ) {
     val counting get() = enabled && phase in listOf("work", "rest")
     fun remaining(now: Long): Long = if(owner=="phone"&&counting&&!paused&&deadlineAt>0)(deadlineAt-System.currentTimeMillis()).coerceAtLeast(0)
@@ -35,7 +36,7 @@ data class WearAutomatic(
         .put("vibration",vibration).put("key",key).put("targetExercise",targetExercise)
         .put("targetSet",targetSet).put("targetId",targetId).put("remainingMs",remainingMs)
         .put("anchorMs",anchorMs).put("boot",boot).put("phaseNumber",phaseNumber)
-        .put("baseSeconds",baseSeconds).put("interrupted",interrupted).put("deadlineAt",deadlineAt).put("rounds",rounds).put("round",round).put("handledCommands",JSONArray(handledCommands))
+        .put("baseSeconds",baseSeconds).put("interrupted",interrupted).put("deadlineAt",deadlineAt).put("rounds",rounds).put("round",round).put("handledCommands",JSONArray(handledCommands)).put("awaitingPhone",awaitingPhone)
     companion object {
         fun parse(root: JSONObject?): WearAutomatic? {
             root ?: return null
@@ -47,7 +48,7 @@ data class WearAutomatic(
                 root.optInt("targetExercise"),root.optInt("targetSet"),root.optString("targetId"),
                 root.optLong("remainingMs").coerceIn(0,3600000),root.optLong("anchorMs"),root.optInt("boot",-1),
                 root.optLong("phaseNumber").coerceAtLeast(0),root.optInt("baseSeconds").coerceAtLeast(0),root.optBoolean("interrupted"),root.optLong("deadlineAt"),root.optInt("rounds",1).coerceIn(1,100),root.optInt("round",1).coerceIn(1,100),
-                root.optJSONArray("handledCommands")?.let { array -> (0 until array.length()).takeLast(128).map { array.optString(it) } } ?: emptyList())
+                root.optJSONArray("handledCommands")?.let { array -> (maxOf(0,array.length()-128) until array.length()).map { array.optString(it) } } ?: emptyList(),root.optBoolean("awaitingPhone"))
         }
     }
 }
@@ -85,9 +86,12 @@ object WearAutomaticEngine {
         return if(timed(selected.exercise))phase(selected,a,target,"work",a.workSeconds,now,boot)
         else phase(selected,a,target,"ready",0,now,boot)
     }
+    fun durationAllowed(workout: WearWorkout,work: Int,rest: Int,rounds: Int=1): Boolean =
+        workout.exercises.sumOf { ex -> ex.sets.count { !it.done }.toLong() *
+            (if(timed(ex))rounds.toLong()*(work+rest) else rest.toLong()) } <= 86400
     fun enable(workout: WearWorkout, key: String, work: Int, rest: Int, vibration: Boolean, now: Long, boot: Int): WearWorkout {
         require(key.isNotBlank() && work in 1..3600 && rest in 0..3600)
-        require(workout.exercises.sumOf { it.sets.count { set -> !set.done } }.toLong()*(work+rest)<=86400)
+        require(durationAllowed(workout,work,rest))
         // Enabling does not start an unrequested timed set. Its Start action is explicit.
         val target=next(workout)
         val a=WearAutomatic(enabled=true,key=key,workSeconds=work,restSeconds=rest,vibration=vibration,
@@ -110,7 +114,7 @@ object WearAutomaticEngine {
     fun tick(workout: WearWorkout, now: Long, boot: Int): WearAutomaticTransition {
         val a=workout.automation ?: return WearAutomaticTransition(workout)
         if(!a.enabled||a.owner!="watch"||!a.counting||a.paused)return WearAutomaticTransition(workout)
-        if(a.boot!=boot||now<a.anchorMs||!validTarget(workout,a))return WearAutomaticTransition(interrupt(workout,now))
+        if(a.boot!=boot||now<a.anchorMs||!validTarget(workout,a))return WearAutomaticTransition(interrupt(workout,a.anchorMs))
         val remaining=a.remaining(now)
         var current=workout
         if(a.phase=="work") {
