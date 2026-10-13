@@ -4,7 +4,7 @@ A kanonikus webalkalmazás-forrás a `www/app.js`. Az Android csomag azonosító
 
 Az aktuális main fejlesztési bázisa **1.3.4 / 2730**, a #179-ben egyesített telefonos/Wear megvalósítással. Az eredeti 1.3.4 release és a legutóbbi automata tesztpár külön forrásazonosítóval rendelkezik; aktuális részletek: [DEVELOPMENT_STATUS.md](../DEVELOPMENT_STATUS.md).
 
-A legutóbbi ellenőrzött kódon 137 telefonos regresszió, külön futtatótesztek, 90 Chromium-tesztcsomag hat CI-jobban, natív telefon/Wear release-tesztek és 51 Wear-emulátoros próba sikeres. A pontos tesztlista a `tests/browser/suite.json`, az aktuális futások a GitHub Actionsön találhatók. A fizikai rezgés és OEM háttérkezelés elfogadása külön készülékes próba.
+A legutóbbi ellenőrzött kódon 138 telefonos regresszió, külön futtatótesztek, 90 Chromium-tesztcsomag hat CI-jobban, natív telefon/Wear release-tesztek és 51 Wear-emulátoros próba sikeres. A pontos tesztlista a `tests/browser/suite.json`, az aktuális futások a GitHub Actionsön találhatók. A fizikai rezgés és OEM háttérkezelés elfogadása külön készülékes próba.
 
 ## Gyors ellenőrzés
 
@@ -31,7 +31,7 @@ A teljes kiadásellenőrzés a `main`, `feat/**` és `fix/**` ágak pusholásako
 10. elkészíti az APK-t, source ZIP-et, SHA256SUMS és apk-badging artifactokat;
 11. `main` vagy `v*` tag esetén GitHub Release-ként is publikálja ezeket.
 
-A mainen új verzióhoz új tag és fájlok készülnek. Már meglévő verzió main buildje csak a kiadási megjegyzéseket frissíti; a korábban publikált bináris fájlokat megtartja. Alkalmazáskód-javításhoz ezért új verzió és növelt Android `versionCode` szükséges.
+A mainen új verzióhoz új tag és fájlok készülnek. Már meglévő verzió main buildje csak a kiadási megjegyzéseket frissíti; a korábban publikált bináris fájlokat megtartja. Új publikált kiadáshoz új verzió és növelt Android `versionCode` szükséges. Köztes teszt-APK ugyanazon verzióval is készülhet; ilyenkor a forráscommit és SHA-256 azonosítja, és a meglévő release fájljait nem cseréljük le.
 
 A workflow teljes Git-historyt kér le, mert egyes regressziós ellenőrzések publikus baseline commitot használnak. A publikus TrainPilot history 1.6.0-nál kezdődik, ezért teszt nem hivatkozhat ennél korábbi, csak legacy/private historyban létező commitra.
 
