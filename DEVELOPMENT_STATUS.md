@@ -47,6 +47,14 @@ Frissítve: **2026. október 13.** A felhasználói verzióleírások négy csal
 
 ## P0 fejlesztési kör: #162 → #157 (2026. október 13., készülékes elfogadásra vár)
 
+### Készülékes visszajelzés — #162 megjelenítési javítás
+
+A `859a6a1` telefonos tesztbuild felhasználói próbájában (#2412 kép) az automata módnál súlyzós gyakorlatokra is megjelent a beltéri/GPS/lépésmérési blokk, az alsó állapotszöveg levágódott. Ez **nem készülékes elfogadás**, a #162 továbbra is nyitott.
+
+Az ok reprodukálva: a WearSet az opcionális távolságot nullával küldi, a telefon korábbi besorolása pedig a mező puszta jelenlétét távolsági gyakorlatnak vette. A javítás elkülöníti az üres/nullás szinkronmezőt a tényleges távolsági típustól, helyreállítja a korábban tévesen jelölt aktív piszkozatot, és nem kapcsol üres GPS-szolgáltatásállapotot időalapú erőgyakorlathoz. A súly/ismétlés/kész jelölés és a valódi futás/görkorcsolya/GPS funkció megmarad. Az automata állapot teljes szélességű, tördelhető második sorba kerül, a visszaszámláló az alsó két gomb között marad.
+
+Az új böngészős regresszió a régi forráson három téves mérési panelt reprodukált, a javításon sikeres. Négy nyelv, 320/393 px, meglévő hibás piszkozat, szinkronból jövő nullás mező, valódi távolsági aktivitás és a szokásos automata időzítés ellenőrizve. A teljes telefonos gate a #195 ágon készíti a javító APK-t; a végső commit/hash/letöltés a [P0 átadási lapban](docs/P0_KESZULEKES_ELFOGADAS_162_157.md) frissül. Órás natív változás nincs; a korábbi ellenőrzött órás APK tovább használható.
+
 ### Folytatás — 8–9/10: #157 közös ellenőrzése és tesztbuild
 
 A felhasználó jóváhagyta a közös gate- és tesztbuild-kört. A #157 jelenlegi telefonos gyorsindítása előbb publikálja az azonosított edzést, majd egyszer nyitja meg az órát. A forrásellenőrzés szerint az órás indítás megvárja az edzésazonosítót és a kért revíziót; a szenzorindítás látható Activityből, engedélyezett foreground szolgáltatásban történik. Egy korábbi edzés cache-e nem jogosít fel új mérés indítására.
