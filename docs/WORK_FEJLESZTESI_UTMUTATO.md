@@ -4,6 +4,8 @@ Frissítve: **2026. október 13.** Ez az egy fájl új Work-beszélgetésbe felt
 
 ## Most futó P0 kör
 
+**Aktuális kör: 8–9/10.** A felhasználó jóváhagyta a #157 közös ellenőrzését és a telefonos/Wear tesztpár elkészítését. Ettől a gate-szakasztól a folytatási forrás a #195 **`fix/p0-162-157-safe-wear-sync`** ága. A `work/p0-162-native` az előző, 6–7. kör ellenőrzött pillanatképe. A végső forráscommit, APK, SHA-256 és készülékes próba: [P0 átadási lap](P0_KESZULEKES_ELFOGADAS_162_157.md). Mainre emelés és publikált release még nincs jóváhagyva ebben a P0 körben.
+
 A sorrend a #194 `0b37ced` commitja alapján **#162 → #157**. A közös draft [#195](https://github.com/fuloplevente1998/TrainPilot/pull/195) eredeti remote feje `e528d1e`; erre épülnek a `3fff44c`, `b986f9c` helyi alapok és a 6–7. lépés. A mostani, továbbfejlesztett forrás **a GitHub `work/p0-162-native` tesztágán** található. Új Work-munkamenetben ezt kell checkoutolni, majd a [DEVELOPMENT_STATUS.md](../DEVELOPMENT_STATUS.md) aktuális P0 bejegyzését elolvasni. A korábbi 5/10-es helyi patch csak régebbi pillanatkép.
 
 A `work/` tesztágon Quick Validation és APK nélküli natív Gradle-tesztek futnak. A `fix/*` közös ág pushja a teljes release gate-et indítja, ezért azt a #157 elkészülte utáni közös gate-szakaszban frissítjük. A main és a **1.3.4 /2730** verzió változatlan; új APK még nincs. A GitHub Actions eredménye nem fizikai telefonos/órás elfogadás.
@@ -15,7 +17,7 @@ A felhasználó gyorsabb, nagyobb köröket kért. A 6–7. lépés közös: nat
 ## 1. Honnan dolgozunk?
 
 - Repository: **https://github.com/fuloplevente1998/TrainPilot**.
-- Új feladat kiinduló ága a GitHub **aktuális mainje**, külön feladatágon folytatva. A folyamatban lévő P0 munkát viszont **`origin/work/p0-162-native`** alapján folytatjuk, mert a main még nem tartalmazza a 4–7. lépés fejlesztését. A kör végén ellenőrzött main: `0b37cedca5ca5ef0f42cbfdc380e9127e9775973`.
+- Új feladat kiinduló ága a GitHub **aktuális mainje**, külön feladatágon folytatva. A folyamatban lévő P0 munkát a gate-szakasztól **`origin/fix/p0-162-157-safe-wear-sync`** alapján folytatjuk, mert a main még nem tartalmazza a 4–9. lépés fejlesztését. A kör előtt ellenőrzött main: `0b37cedca5ca5ef0f42cbfdc380e9127e9775973`.
 - A #179 egyesítette a telefonos/órás automata módot és a Wear-kezdőlapot. A #181 mentésjavítása is mainen van. A #180 mentést a felhasználó elfogadta, a hibajegy lezárva.
 - Verzió mindkét appban: **1.3.4 /2730**. Több teszt-APK használja ezt a verziót; a pontos forráscommit és SHA-256 azonosítja a csomagot.
 - Az eredeti `v1.3.4` és `wear-v1.3.4` release binárisai korábbi kiadott forrást őriznek. Az alábbi APK-pár korábbi készülékesen elfogadott alap; a mostani P0 fejlesztésből még nem készült teszt-APK.
@@ -45,7 +47,7 @@ Ha csak GitHub-eszközök vannak, a dokumentáció és PR előkészíthető, és
 
 1. Ellenőrizd a felhasználó legutóbbi kérését, az aktuális main/issue/PR állapotot és az esetleges helyi módosításokat. A régi dokumentum nem írja felül az új felhasználói döntést.
 2. Új munkaterületen klónozd a repót, vagy frissítsd a meglévőt. Más ember módosítását ne töröld és ne keverd automatikusan a saját feladatodba.
-3. Új feladathoz a friss mainből készíts feladatágat. A jelenlegi P0 folytatásához checkoutold az `origin/work/p0-162-native` ágat; a `fix/` közös ágat csak a kijelölt gate-körben frissítsd. A régi #164/#178 munkafákból ne készüljön külön eltérő folytatás.
+3. Új feladathoz a friss mainből készíts feladatágat. A jelenlegi P0 folytatásához checkoutold az `origin/fix/p0-162-157-safe-wear-sync` ágat. A régi #164/#178 munkafákból ne készüljön külön eltérő folytatás.
 4. Nézd át az érintett adatút és a meglevő tesztek működését. A `www/app.js` szakaszcímeit `rg`-vel keresd; a legutolsó függvényfelülírás számít, nem feltétlenül az első találat.
 5. Készíts célzott változtatást. A meglévő napló, piszkozat, téma, szinkron és mérés viselkedését őrizd meg.
 6. Futtasd a változáshoz szükséges ellenőrzéseket, majd push és review-zható PR. A PR írja le az új működést, a bizonyítékot és a fennmaradó korlátot.
@@ -58,7 +60,7 @@ Az aktuális P0 folytatása tiszta munkaterületen:
 git clone https://github.com/fuloplevente1998/TrainPilot.git
 cd TrainPilot
 git fetch origin
-git switch -c work/p0-162-native origin/work/p0-162-native
+git switch -c fix/p0-162-157-safe-wear-sync origin/fix/p0-162-157-safe-wear-sync
 npm ci
 ```
 

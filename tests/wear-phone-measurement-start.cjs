@@ -2,17 +2,28 @@
 const assert=require('node:assert/strict');
 const runtime=require('./helpers/app-runtime.cjs');
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
-function fixture(){
+function fixture(nativeAutomatic=false){
  const app=runtime(),events=[],tasks=[];
- let held=null,heldScan=null,failPublish=false,failOpen=false,commands=[];
- const bridge={publish:async({snapshot})=>{events.push(['publish',snapshot.workoutId]);if(held)await held;if(failPublish)throw Error('offline')},clear:async()=>{},publishHome:async()=>{},
+ let held=null,heldScan=null,failPublish=false,failOpen=false,failPrepare=false,commands=[],nativeFrame=null,armed=false;
+ const bridge={publish:async({snapshot})=>{if(nativeAutomatic){assert.equal(snapshot.nativeExecutionProtocol,2);assert.equal(snapshot.generation,nativeFrame.generation);assert.equal(snapshot.executionRevision,nativeFrame.executionRevision);assert.equal(snapshot.workoutId,nativeFrame.workoutId);}events.push(['publish',snapshot.workoutId]);if(held)await held;if(failPublish)throw Error('offline')},clear:async()=>{},publishHome:async()=>{},
  startWatchMeasurement:async({workoutId})=>{events.push(['open',workoutId]);if(failOpen)throw Error('remote refused');return {opened:true}},
  pendingCommands:async()=>{if(heldScan)await heldScan;return {commands:commands.slice()}},ackCommand:async({commandId})=>{commands=commands.filter(c=>c.commandId!==commandId)}};
  app.context.window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:bridge}};
+ if(nativeAutomatic){
+  bridge.executionStatus=async()=>({snapshot:nativeFrame?JSON.parse(JSON.stringify(nativeFrame)):null,events:[],timer:{},controllerArmed:armed});
+  bridge.prepareExecution=async({snapshot,expectedRevision})=>{
+   events.push(['prepare',snapshot.workoutId]);if(failPrepare)throw Error('native not prepared');
+   assert.equal(expectedRevision,nativeFrame?.executionRevision||0);assert.ok(snapshot.exercises.every(e=>e.sets.every(s=>s.setId)));
+   nativeFrame={...JSON.parse(JSON.stringify(snapshot)),executionRevision:expectedRevision+1};return {snapshot:JSON.parse(JSON.stringify(nativeFrame))};
+  };
+  app.context.window.Capacitor.Plugins.IntervalTimer={armWorkout:async({workoutId,generation})=>{assert.equal(workoutId,nativeFrame.workoutId);assert.equal(generation,nativeFrame.generation);events.push(['arm',workoutId]);armed=true;}};
+  app.context.TrainPilotInterval162Core=app.context.window.TrainPilotInterval162Core;
+  app.run('nativeQuickRender=renderWorkout;renderWorkout=function(){if(state.session&&!state.session.automatic162)state.session.automatic162={enabled:true,phase:"work"};return nativeQuickRender.apply(this,arguments)}');
+ }
  app.context.setTimeout=fn=>{tasks.push(fn);return 1};
  app.context.CSS={escape:value=>value};
  app.run('db.set("draft",null);state.session=null;state.workout=null;');
- return {...app,events,tasks,sync:app.context.window.TrainPilotWearSync,hold:p=>held=p,holdScan:p=>heldScan=p,failPublish:v=>failPublish=v,failOpen:v=>failOpen=v,commands:v=>commands=v,
+ return {...app,events,tasks,sync:app.context.window.TrainPilotWearSync,hold:p=>held=p,holdScan:p=>heldScan=p,failPublish:v=>failPublish=v,failOpen:v=>failOpen=v,failPrepare:v=>failPrepare=v,commands:v=>commands=v,
   start:()=>app.run('startWorkout(activeProgram().days[0].id);state.session?.syncId||state.session?.id||state.session?.started')};
 }
 (async()=>{
@@ -66,6 +77,17 @@ function fixture(){
  assert.equal(rejectedInline.events.filter(e=>e[0]==='open').length,1,'a refused quick-start is not reopened automatically');
  assert.ok(rejectedInline.run('state.session && db.get("draft",null)'),'watch refusal cannot discard the phone quick workout');
 
+ const automaticInline=fixture(true);await automaticInline.run('tp152StartQuickInline(exercises()[0].id)');await flush();
+ const automaticId=automaticInline.sync.makeSnapshot().workoutId;
+ assert.deepEqual(automaticInline.events,[['prepare',automaticId],['arm',automaticId],['publish',automaticId],['open',automaticId]],'native automatic quick-start prepares and arms before publishing and opening the same workout');
+ await automaticInline.sync.syncNow();await automaticInline.sync.syncNow();
+ assert.equal(automaticInline.events.filter(e=>e[0]==='open').length,1,'native clock polling cannot repeat the quick-start launch');
+ const preparationRetry=fixture(true);preparationRetry.failPrepare(true);
+ await preparationRetry.run('tp152StartQuickInline(exercises()[0].id)');await flush();
+ assert.equal(preparationRetry.events.filter(e=>['publish','open','arm'].includes(e[0])).length,0,'failed native preparation cannot publish or open stale controls');
+ preparationRetry.failPrepare(false);await preparationRetry.sync.syncNow();await preparationRetry.sync.syncNow();
+ assert.equal(preparationRetry.events.filter(e=>e[0]==='open').length,1,'quick-start retries its pending handoff after successful native preparation');
+
  const canceledInline=fixture();canceledInline.run('db.set("draft",{session:{started:"old",exercises:[]}});tp2628Confirm=async()=>false');
  await canceledInline.run('tp152StartQuickInline(exercises()[0].id)');await flush();assert.equal(canceledInline.events.length,0,'canceled inline draft replacement must not launch the watch');
  const acceptedInline=fixture();acceptedInline.run('db.set("draft",{session:{started:"old",exercises:[]}});tp2628Confirm=async()=>true');
@@ -104,5 +126,5 @@ function fixture(){
  const refused=fixture();refused.failOpen(true);refused.start();await flush();await refused.sync.syncNow();
  assert.ok(refused.run('state.session && db.get("draft",null)'),'remote refusal must preserve the phone workout');
  assert.equal(refused.events.filter(e=>e[0]==='open').length,1,'remote refusal is not retried by routine polling');
- console.log('PASS full runtime phone → watch measurement handoff: publish order, real program/quick starts, async confirmation, origin, busy/retry, restore, cancellation and remote refusal');
+ console.log('PASS full runtime phone → watch measurement handoff: publish order, real program/quick starts, native automatic preparation/retry, async confirmation, origin, busy/retry, restore, cancellation and remote refusal');
 })().catch(error=>{console.error(error);process.exitCode=1});

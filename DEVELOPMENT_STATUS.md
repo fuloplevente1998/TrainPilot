@@ -47,6 +47,14 @@ Frissítve: **2026. október 13.** A felhasználói verzióleírások négy csal
 
 ## P0 fejlesztési kör: #162 → #157 (2026. október 13., készülékes elfogadásra vár)
 
+### Folytatás — 8–9/10: #157 közös ellenőrzése és tesztbuild
+
+A felhasználó jóváhagyta a közös gate- és tesztbuild-kört. A #157 jelenlegi telefonos gyorsindítása előbb publikálja az azonosított edzést, majd egyszer nyitja meg az órát. A forrásellenőrzés szerint az órás indítás megvárja az edzésazonosítót és a kért revíziót; a szenzorindítás látható Activityből, engedélyezett foreground szolgáltatásban történik. Egy korábbi edzés cache-e nem jogosít fel új mérés indítására.
+
+Az aktuális gyorsindítás runtime-regressziója a #162 új natív vezérlésével együtt is ellenőrizve: előkészítés → vezérlés élesítése → egyező generáció/revízió publikálása → egyszeri óranyitás. Sikertelen natív előkészítésnél nincs élesítés, publikálás vagy óranyitás; sikeres közeli újrapróbálás után az eredeti függő átadás egyszer végrehajtható. A meglévő lemondási, piszkozat-, offline-, órás eredet- és óranyitási hibatesztek megmaradnak.
+
+A közös forrás a #195 **`fix/p0-162-157-safe-wear-sync`** ágára kerül. Ezen fut a telefonos Release Gate, Wear Release Gate, Wear kerek kijelzős UI és a PR teljesítményellenőrzése. A signing a meglévő GitHub Secretsből történik; verzió **1.3.4 /2730**. Az APK-k a branch workflow artifactjai, nem publikált release-ek. A pontos tesztpár, commit, SHA-256, gate-eredmény és készülékes próbamenet a [P0 készülékes átadási lapban](docs/P0_KESZULEKES_ELFOGADAS_162_157.md) szerepel, amely a build után frissül. A #195 draft; main és kiadás változatlan, #162 és #157 nyitott.
+
 ### Folytatás — 6–7/10: egységes időnapló és #162 regresszió
 
 A felhasználó kérésére a 6. és 7. lépés közös fejlesztési kör. Az új forrás GitHub-tesztága **`work/p0-162-native`**; a #195 eredeti `fix/` ágát és a main-t még nem módosítjuk. Ezen az ágon a Quick Validation és az új **P0 native validation (no APK)** fut. A második ellenőrzés a valódi Android-projekt telefonos és Wear unit tesztjeit fordítja/futtatja; nem készít és nem publikál APK-t, nem indítja a közös release gate-et.
