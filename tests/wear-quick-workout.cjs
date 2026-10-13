@@ -77,6 +77,7 @@ const finish=key=>command('finishWorkout',key,{confirmed:true,finishedAt:'2026-1
   assert.deepEqual(h.acks,['start']);assert.equal(h.stats().starts,1);
   assert.equal(h.state.session?.type,'quick');assert.equal(h.state.session?.quickWorkout,true);
   assert.equal(h.state.session?.syncId,id);assert.equal(h.state.session?.started,id);
+  assert.equal(h.state.session.timerOwner,'watch','a watch start keeps watch ownership even for an older packet without a final snapshot');
   assert.equal(h.sync.makeSnapshot().workoutId,id);
   assert.equal(h.sync.makeSnapshot().dayName,'Gyors edzés');
   assert.equal(h.sync.makeSnapshot().quickWorkout,true);
@@ -109,6 +110,25 @@ const finish=key=>command('finishWorkout',key,{confirmed:true,finishedAt:'2026-1
  }
  {const h=harness();h.pending.push(command('addQuickExercise','orphan-add',{exerciseId:'plank'}));
   await h.sync.drainCommands();assert.equal(h.acks.length,0);
+ }
+ {const h=harness();
+  h.state.session={type:'quick',quickWorkout:true,started:id,syncId:id,timerOwner:'phone',
+   automatic162:{enabled:false,owner:'phone',phase:'work'},exercises:[mkExercise(library[0])]};
+  const root={workoutId:id,timerOwner:'phone',exercises:[
+   {id:'pushup',sets:[{setId:'phone-a'},{setId:'phone-b'}]},
+   {id:'plank',sets:[{setId:'watch-added'}]}]};
+  h.pending.push(command('addQuickExercise','phone-owned-add',{exerciseId:'plank',sequence:1,finalSnapshot:root}));
+  await h.sync.drainCommands();
+  assert.deepEqual(h.acks,['phone-owned-add']);assert.equal(h.state.session.exercises.length,2);
+  assert.equal(h.state.session.exercises[1].sets[0].setId,'watch-added');
+  assert.equal(h.state.session.timerOwner,'phone','adding from the watch does not take ownership of a phone-started workout');
+  assert.equal(h.sync.makeSnapshot().timerOwner,'phone');
+ }
+ {const h=harness();
+  h.state.session={type:'quick',quickWorkout:true,started:id,exercises:[mkExercise(library[0])]};
+  h.sync.phoneWorkoutStarted(h.state.session);
+  assert.equal(h.state.session.timerOwner,'phone','explicit phone start pins its owner even without a measurement bridge');
+  assert.equal(h.db.get('draft').session.timerOwner,'phone');
  }
  console.log('PASS Wear Quick Workout: synced library, pushups, add exercise, offline finish, health merge, replay and draft guards');
 })().catch(error=>{console.error(error);process.exitCode=1});

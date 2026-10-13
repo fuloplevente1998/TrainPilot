@@ -17169,10 +17169,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  function phoneWorkoutStarted(session,{fromWatch=false}={}){
   const bridge=api(),id=sessionKey(session);
-  if(fromWatch||!bridge?.startWatchMeasurement||!id||id===lastWatchStartId||session!==state?.session)return;
+  if(fromWatch||!id||session!==state?.session)return;
   // Pin the same identity used by watch-started workouts before the handoff,
   // so phone save/restore and late measurements keep the original workout ID.
-  session.syncId=id;persistDraft();
+  session.syncId=id;session.timerOwner='phone';persistDraft();
+  if(!bridge?.startWatchMeasurement||id===lastWatchStartId)return;
   lastWatchStartId=id;pendingWatchStart={id,createdAt:Date.now()};
   window.TrainPilotWearMeasurement165?.waiting(id);
   void syncNow();
@@ -17253,8 +17254,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
  }
  function adoptWatchIdentity(command,preserveMode=false){
-  const root=command.finalSnapshot,s=state.session;if(!s||!root||root.workoutId!==command.workoutId)return;
-  s.timerOwner='watch';if(!preserveMode)s.automatic162={enabled:false,owner:'watch',phase:'work'};
+  const root=command.finalSnapshot,s=state.session;if(!s||root&&root.workoutId!==command.workoutId)return;
+  // An added exercise shares stable set IDs without transferring the timer.
+  if(!preserveMode){const owner=root?.timerOwner==='phone'?'phone':'watch';s.timerOwner=owner;s.automatic162={enabled:false,owner,phase:'work'};}
+  if(!root)return;
   for(let e=0;e<(root.exercises||[]).length;e++)for(let i=0;i<(root.exercises[e].sets||[]).length;i++){
    const remote=root.exercises[e].sets[i],local=s.exercises[e]?.sets?.[i];
    if(local&&s.exercises[e].id===root.exercises[e].id&&typeof remote.setId==='string'&&remote.setId.length<=128&&remote.setId)local.setId=remote.setId;

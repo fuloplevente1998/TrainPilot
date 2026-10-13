@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http'),{chromium}=require('playwright');
 const root=path.resolve('www'),server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+(new URL(req.url,'http://local').pathname==='/'?'/index.html':new URL(req.url,'http://local').pathname));if(!file.startsWith(root+path.sep)){res.writeHead(403);return res.end();}fs.readFile(file,(e,d)=>{if(e){res.writeHead(404);return res.end();}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html');res.end(d);});});
 (async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;try{
- browser=await chromium.launch({args:['--no-sandbox']});const p=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU'}),errors=[];p.on('pageerror',e=>errors.push(String(e)));p.on('dialog',d=>d.accept());
+ browser=await chromium.launch({executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});const p=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU'}),errors=[],dialogs=[];p.on('pageerror',e=>errors.push(String(e)));p.on('dialog',d=>{dialogs.push(d.message());return d.accept();});
  await p.addInitScript(()=>localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped')));await p.goto('http://127.0.0.1:'+server.address().port);await p.waitForFunction(()=>TrainPilotBoot.finished);
  await p.evaluate(()=>{
   window.__watchCommands=[];window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{automaticCommand:async({command})=>{__watchCommands.push(command);return {};},publish:async()=>({revision:1}),publishHome:async()=>({}),pendingCommands:async()=>({commands:[]}),ackCommand:async()=>({})}}};
@@ -38,6 +38,30 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const file=p
  await p.evaluate(()=>prevExercise());assert.equal(await p.evaluate(()=>__watchCommands.at(-1).action),'selectExercise');
  assert.equal(await p.evaluate(()=>__watchCommands.at(-1).exerciseIndex),0);assert.equal(await p.evaluate(()=>state.current),1,'navigation waits for watch owner');
  await p.evaluate(()=>TrainPilotWearAutomatic162.accept(watchPacket(8,{enabled:false,phaseNumber:6},0)));assert.equal(await p.evaluate(()=>state.current),0);
- fs.mkdirSync('ui-evidence',{recursive:true});await p.screenshot({path:'ui-evidence/wear-automatic-phone-162.png'});assert.deepEqual(errors,[]);
- console.log('PASS watch-owned phone controls: 8 layouts, authoritative record/rest, paused clock, phase-bound remote commands, no second timer, stale/invalid mirror and protocol support');
+ fs.mkdirSync('ui-evidence',{recursive:true});await p.screenshot({path:'ui-evidence/wear-automatic-phone-162.png'});
+ for(const quick of [true,false]){
+  const started=await p.evaluate(async quick=>{
+   state.session=null;state.workout=null;db.set('draft',null);db.set('settings',{...settings(),automaticWorkout162:false});
+   if(quick)await TrainPilotQuickWorkout.start('db-floor-press');
+   else{const program=activeProgram();await startWorkout(program.days[0].id,null,program.id);await Promise.resolve();}
+   const s=state.session;
+   if(quick){
+    const extra=tp150QuickExercise('goblet-squat');
+    const root={workoutId:s.syncId||s.started,timerOwner:'phone',exercises:[...s.exercises,extra].map(e=>({...e,sets:e.sets.map((set,i)=>({...set,setId:set.setId||e.id+'-'+i}))}))};
+    const pending=[{schema:1,action:'addQuickExercise',commandId:'phone-added-from-watch',workoutId:root.workoutId,exerciseId:extra.id,sequence:1,createdAt:Date.now(),finalSnapshot:root}];
+    Capacitor.Plugins.WearSync.pendingCommands=async()=>({commands:pending.slice()});
+    Capacitor.Plugins.WearSync.ackCommand=async()=>{pending.length=0;};
+    await TrainPilotWearSync.drainCommands();
+   }
+   return {owner:s.timerOwner,saved:db.get('draft').session.timerOwner,commands:__watchCommands.length};
+  },quick);
+  assert.equal(started.owner,'phone');assert.equal(started.saved,'phone');
+  await p.locator('[data-tp162-enabled]').check();
+  assert.equal(await p.evaluate(()=>state.session.automatic162.enabled),true);
+  assert.equal(await p.evaluate(()=>__watchCommands.length),started.commands,'phone toggle never waits for a remote watch timer');
+  assert.equal(await p.locator('[data-tp162-auto-status]').textContent(),'Munka');
+  assert.equal(await p.evaluate(()=>TrainPilotWearSync.makeSnapshot().timerOwner),'phone');
+ }
+ assert.deepEqual(dialogs,[],'phone-started toggles show no connection alert');assert.deepEqual(errors,[]);
+ console.log('PASS watch-owned controls in 8 layouts and actual phone quick/planned starts: stable owner after watch additions, phone toggle without remote requests or alerts, authoritative record/rest, paused clock and stale/invalid mirror guards');
 }finally{await browser?.close();await new Promise(r=>server.close(r));}})().catch(e=>{console.error(e);process.exitCode=1;});
