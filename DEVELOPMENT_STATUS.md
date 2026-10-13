@@ -13,7 +13,34 @@
 7. **Dokumentálás:** A részfeladat lezárásakor frissítjük az érintett Issue/PR állapotát és szükség szerint ezt a fájlt: mi készült el, mi maradt hátra, mi tesztelt, mi igényel készülékes visszajelzést.
 8. **Fejlesztési szakaszok:** (1) állapotfelmérés; (2) feladatok/Issues összevetése; (3) prioritások; (4) Issue-rendezés; (5) egyenkénti fejlesztés; (6) tesztelés; (7) PR és jóváhagyás; (8) dokumentáció és következő kör.
 
-**Aktuális előfeltétel:** E munkaprotokoll rögzítése és jóváhagyása elsőbbséget élvez a 2. szakasz (Issue-felmérés) előtt.
+**Munkaprotokoll állapota:** 2026. október 13-án jóváhagyva, a mainre egyesítve (#187). A feladatfelmérés és az új Issue-k létrehozása megtörtént; az alábbi sorrend az elfogadott kiinduló terv.
+
+## Jóváhagyott GitHub-prioritások — 2026. október 13.
+
+**12 nyitott fejlesztési Issue.** A P0–P3 besorolás a GitHub Issue-címkéken is szerepel. A sorrend a tervezett munkavégzés prioritását jelzi, **nem** azt, hogy a feladat már elkészült vagy készülékesen elfogadott.
+
+| Prioritás | Issue | Fejlesztés / következő teendő |
+| --- | --- | --- |
+| **P0 – kritikus** | [#162](https://github.com/fuloplevente1998/TrainPilot/issues/162) | Automata edzés készülékes elfogadása, telefonos natív háttérrögzítés, egységes munka/pihenő/szünet naplózás |
+| **P0 – kritikus** | [#157](https://github.com/fuloplevente1998/TrainPilot/issues/157) | Gyors edzésből órás appindítás és tényleges háttérmérés készülékes visszaellenőrzése |
+| **P1 – magas** | [#158](https://github.com/fuloplevente1998/TrainPilot/issues/158) | TrainPilot Wear és Health Connect mért adatainak forráshű megjelenítése |
+| **P1 – magas** | [#159](https://github.com/fuloplevente1998/TrainPilot/issues/159) | Wear Mini Napló bővítése, hitelesített edzés- és mérési adatok |
+| **P1 – magas** | [#191](https://github.com/fuloplevente1998/TrainPilot/issues/191) | Órás helyi mentés, függő szinkron, visszaigazolás és hibakezelés egyértelmű állapotai |
+| **P1 – magas** | [#163](https://github.com/fuloplevente1998/TrainPilot/issues/163) | Telefonos GPS-útvonalpontok rögzítése és naplótérkép |
+| **P2 – közepes** | [#188](https://github.com/fuloplevente1998/TrainPilot/issues/188) | Utolsó sorozatrögzítés biztonságos visszavonása |
+| **P2 – közepes** | [#189](https://github.com/fuloplevente1998/TrainPilot/issues/189) | Wear érintészár edzés közben |
+| **P2 – közepes** | [#192](https://github.com/fuloplevente1998/TrainPilot/issues/192) | Oldalankénti (bal/jobb) automata időzítés és oldalcserés pihenő |
+| **P2 – közepes** | [#193](https://github.com/fuloplevente1998/TrainPilot/issues/193) | Önálló órás GPS-útvonalszakaszok, tárolás és szinkron |
+| **P3 – későbbi** | [#190](https://github.com/fuloplevente1998/TrainPilot/issues/190) | Korona/lünetta alapú súly- és ismétlésszerkesztés |
+| **P3 – későbbi** | [#184](https://github.com/fuloplevente1998/TrainPilot/issues/184) | Samsung Health energiapontszám és TrainPilot Coach közös ajánlásának tervezése |
+
+**Kötelező fejlesztési függőségek és indítási feltételek:**
+1. Először a **P0** automata rendszer és gyorsindítás készülékes hibáit vizsgáljuk, különösen a három használati irányt (csak telefon, önálló óra, párosított működés), a kijelzőzárat és a szinkront. A #162-ben külön rögzítjük a fizikai elfogadás eredményét.
+2. A **#163 telefonos térképet** csak a #162 alapműködésének stabilizálása után kezdjük. Az órás **#193 GPS-bővítés** a #163 mentési/megjelenítési modelljére épít, nem helyettesíti azt.
+3. A #191 mentési állapot és a #159 Mini Napló a tényleges szinkron-visszaigazolásra és hiteles mérési forrásokra épül. A #192 az automata idővonal és a munka/pihenő naplóbontás rendezése után következik.
+4. A P2/P3 feladatok külön Issue-n, külön ágon és külön PR-ben haladnak. Egy feladat után megállunk a felhasználó jóváhagyásáig; verzióemelés és mainre emelés külön engedélyhez kötött.
+
+**Nem tervezett:** [#120 – HRV-adathozzáférés](https://github.com/fuloplevente1998/TrainPilot/issues/120) felhasználói kérésre `closed / not_planned` állapotú. A szükséges adatok megbízható hozzáférése jelenleg nem igazolt; nem része a 12 nyitott fejlesztésnek.
 
 Frissítve: **2026. október 13.** A felhasználói verzióleírások négy családot használnak: **1.0, 1.1, 1.2, 1.3**. A buildazonosítók, APK-k, tagek és release-ek megmaradnak.
 
