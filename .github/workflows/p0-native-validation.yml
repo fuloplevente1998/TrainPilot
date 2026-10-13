@@ -1,0 +1,44 @@
+name: P0 native validation (no APK)
+on:
+  workflow_dispatch:
+  push:
+    branches: ['work/p0-162-native']
+permissions:
+  contents: read
+concurrency:
+  group: p0-native-${{ github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run sync
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - name: Native phone and Wear unit tests
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :app:testDebugUnitTest :wear:testDebugUnitTest
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: P0-native-test-reports-${{ github.run_id }}
+          path: |
+            android/app/build/reports/tests/
+            android/app/build/test-results/
+            android/wear/build/reports/tests/
+            android/wear/build/test-results/
+          if-no-files-found: warn
+          retention-days: 7

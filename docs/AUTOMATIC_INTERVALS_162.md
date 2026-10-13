@@ -36,6 +36,16 @@ Piszkozatból a szolgáltatás ugyanazon azonosítóihoz csatlakozik vissza. Ha 
 
 Böngészőben a manuális időzítő kompatibilis marad; automatikus módban az oldalt nyitva kell tartani. Újratöltés után a böngészős program megszakad, nem folytatódik észrevétlenül.
 
+## Egységes időnapló — #162 P0 folytatás
+
+A `session.automaticTime162` új, külön időnapló. A `logs` gyűjtemény kulcsa a konkrét telefonos, órás vagy böngészős idővonal azonosítója; egy újabb snapshot ugyanazt a hozzájárulást frissíti. A `workMs`, `restMs`, `pausedMs` külön érték, milliszekundumban. Ismételt kézbesítés nem számolja kétszer az időt, kihagyott pihenő nem növeli a mért pihenőt. Az összesítő nem a korábbi sorozat-`reps` mezőt adja hozzá az időnaplóhoz.
+
+A telefonos foreground szolgáltatás a munkát/pihenőt monotón órából méri, a kézi szünetet külön számolja. Az elkészült időalapú sorozat, az időnapló és a tartós importesemény egy tranzakcióban mentődik. A felület visszatérésekor a mentett snapshotból dolgozik, és csak a piszkozat + eseménykurzor mentése után nyugtáz. Folyamatmegszakadás után nincs ismeretlen idő utólagos hozzászámítása vagy rezgés-visszajátszás.
+
+Az önálló órás automata exportálja ugyanezt a formát. A korábbi Wear-szabály megmarad: késői callbacknél legfeljebb egy fázist léptet, a nem igazolt további köröket nem írja késznek. A telefon a készüléktulajdonoshoz tartozó adatot menti, az eltérő készülékek méréseit nem összeadott másolatként kezeli.
+
+A támogatott telefonos kézi, ismétléses rögzítés is a natív útvonalat használja. A javítás/visszavonás explicit, revízióval és előző értékekkel ellenőrzött művelet; elavult snapshot nem írja felül a kész sorozatot. A távolsági/GPS-tulajdonos további előkészítése külön marad.
+
 ## Ellenőrzés
 
 - Node: fázishatárok, nulla pihenő, sorozatok közti pihenő, késői callback, 24 órás / 100 sorozatos korlát, duplikált gyakorlat mellett stabil tulajdonos.

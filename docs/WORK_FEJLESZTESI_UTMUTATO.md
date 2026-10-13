@@ -2,13 +2,13 @@
 
 Frissítve: **2026. október 13.** Ez az egy fájl új Work-beszélgetésbe feltölthető vagy bemásolható. A Samsung energiapontszám kutatása és a javasolt Coach-integráció is itt szerepel.
 
-## Most futó, még helyi P0 kör
+## Most futó P0 kör
 
-A felhasználó a #194 `0b37ced` commitjában rögzített sorrendet kérte: **#162 → #157**, utána a következő prioritás. A folytatás forrása a draft [#195](https://github.com/fuloplevente1998/TrainPilot/pull/195) `e528d1e` remote feje, az erre épülő helyi `local/p0-162-native` ágban. A 4/10-es alap helyi commitja `3fff44c`; az 5/10-es natív bekötés állapota és korlátai a [DEVELOPMENT_STATUS.md](../DEVELOPMENT_STATUS.md) elején találhatók.
+A sorrend a #194 `0b37ced` commitja alapján **#162 → #157**. A közös draft [#195](https://github.com/fuloplevente1998/TrainPilot/pull/195) eredeti remote feje `e528d1e`; erre épülnek a `3fff44c`, `b986f9c` helyi alapok és a 6–7. lépés. A mostani, továbbfejlesztett forrás **a GitHub `work/p0-162-native` tesztágán** található. Új Work-munkamenetben ezt kell checkoutolni, majd a [DEVELOPMENT_STATUS.md](../DEVELOPMENT_STATUS.md) aktuális P0 bejegyzését elolvasni. A korábbi 5/10-es helyi patch csak régebbi pillanatkép.
 
-Ebben a körben a kódot nem pusholjuk a közös gate-szakasz előtt, mert a `fix/*` push automatikusan release ellenőrzéseket indít. Új Work-munkamenetben az átadott helyi patch-eket is alkalmazni kell: a mostani natív folytatás még **nincs a GitHub mainen vagy a #195 remote ágán**. Verzió: **1.3.4 /2730**, APK még nem készült. A következő jóváhagyandó részfeladat a **6/10: egységes munka/pihenő/szünet naplózás**; #157 készülékes mérésigazolása később következik.
+A `work/` tesztágon Quick Validation és APK nélküli natív Gradle-tesztek futnak. A `fix/*` közös ág pushja a teljes release gate-et indítja, ezért azt a #157 elkészülte utáni közös gate-szakaszban frissítjük. A main és a **1.3.4 /2730** verzió változatlan; új APK még nincs. A GitHub Actions eredménye nem fizikai telefonos/órás elfogadás.
 
-A munkamenet rövid, összefüggő részfeladatokban halad. A felhasználó engedte a kód teljes részfeladatonkénti megírását; nem kell mesterséges 40–50 soros kódrészekre bontani. Az elfogadott lépés végén a megálló és a rövid státuszjelzés megmarad.
+A felhasználó gyorsabb, nagyobb köröket kért. A 6–7. lépés közös: natív időnapló + #162 regresszió. A következő kör #157 + közös gate/tesztbuild, utána készülékes próba és dokumentáció. Összefüggő kódrészekkel haladunk; nem bontjuk mesterséges 40–50 sorokra. Körönként egy jóváhagyási megálló marad.
 
 ## 1. Honnan dolgozunk?
 

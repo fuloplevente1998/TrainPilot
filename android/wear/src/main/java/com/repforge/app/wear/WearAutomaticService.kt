@@ -56,7 +56,7 @@ class WearAutomaticService : Service() {
         val current=WorkoutSnapshotStore.load(this)
         if(intent!=null&&current!=null&&current.workoutId!=intent.getStringExtra("workoutId"))return START_NOT_STICKY
         if(intent==null||current==null||current.automation?.enabled!=true||current.automation.owner!="watch"){finish();return START_NOT_STICKY}
-        if(!initialized&&!intent.getBooleanExtra("fresh",false)&&current.automation.counting&&!current.automation.paused)
+        if(!initialized&&!intent.getBooleanExtra("fresh",false)&&(current.automation.counting||current.automation.phase=="ready"&&!WearAutomaticEngine.timed(current.exercise))&&!current.automation.paused)
             WorkoutSnapshotStore.saveWorkout(this,WearAutomaticEngine.interrupt(current,current.automation.anchorMs))
         initialized=true;shuttingDown=false
         id=current.workoutId

@@ -47,6 +47,18 @@ Frissítve: **2026. október 13.** A felhasználói verzióleírások négy csal
 
 ## P0 fejlesztési kör: #162 → #157 (2026. október 13., tesztelésre vár)
 
+### Folytatás — 6–7/10: egységes időnapló és #162 regresszió
+
+A felhasználó kérésére a 6. és 7. lépés közös fejlesztési kör. Az új forrás GitHub-tesztága **`work/p0-162-native`**; a #195 eredeti `fix/` ágát és a main-t még nem módosítjuk. Ezen az ágon a Quick Validation és az új **P0 native validation (no APK)** fut. A második ellenőrzés a valódi Android-projekt telefonos és Wear unit tesztjeit fordítja/futtatja; nem készít és nem publikál APK-t, nem indítja a közös release gate-et.
+
+A `IntervalTimeLedger` külön menti a tényleges munka-, pihenő- és kézi szünetidőt. A kihagyott pihenő csak a menetrend pozícióját lépteti, nem kap mért időt. A natív checkpoint a teljes időnaplót, az aktuális órát és az időalapú kész sorozatot egy SQLite-tranzakcióban menti. Csak a kész sorozatok kapnak importálandó eseményt; az egy másodperces checkpointok nem növelik korlátlanul az eseménysort. Így egy alvó WebView mellett befejezett időalapú gyakorlat után is fogadható a következő ismétléses rögzítés.
+
+A telefonos kézi rögzítés a támogatott ismétléses, automata edzésben ugyanarra a natív parancsútra kerül, mint az órás rögzítés. A kézi munkafázis a foreground vezérlés/előző pihenő végétől a tényleges rögzítésig számolható; új folyamatban az előző horgony nem használható ismeretlen kimaradt időre. A telefonos explicit javítás/visszavonás külön, revízióval és előző értékekkel ellenőrzött API-t használ; a szokásos pillanatkép továbbra sem írhatja felül a mért kész sorozatot.
+
+Az önálló Wear automata ugyanazt a `schema:1`, `key`, `owner`, `workMs`, `restMs`, `pausedMs`, `positionMs` időadat-szerződést exportálja. A telefon kulcsonként kumulatív hozzájárulásként menti a `session.automaticTime162` mezőbe; a duplikált snapshot nem adja hozzá kétszer. Böngészős időzítésnél a tartalék megoldás ugyanezt a formát használja. A korábbi időalapú `reps` mező konvencióját nem használjuk újra összegzéshez: a külön időnapló az egységes adatforrás.
+
+**Ellenőrzés:** helyben 39 natív Robolectric teszt, célzott Wear modell/időnapló próbák és a Node-regressziók; a GitHub-futások pontos eredménye/commitja a kör végén rögzítendő. **Készülékes elfogadás nem történt.** A GPS-tulajdonos külön előkészítése marad a korábban kijelölt hatókörben, a nem támogatott mérések meglévő útvonala megmarad. A #162 és #157 nyitott, verzió **1.3.4 /2730**. Következő közös kör: #157, majd a megállapodott release gate és tesztbuild.
+
 ### Helyi folytatás — 5/10: natív parancsbekötés és űrlapfüggetlen indítás
 
 A helyi `local/p0-162-native` ág a #195 `e528d1e` forrásából és a 4/10-es `3fff44c` alapból folytatódik. A GitHub sorrendjének alapja továbbra is a #194 `0b37ced` commitja: **#162 → #157**.

@@ -11,6 +11,7 @@ import org.json.JSONObject;
 
 /** Native execution state and receipts commit together before transport acknowledgement. */
 final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
+    private static final String PROCESS=java.util.UUID.randomUUID().toString();
     static final String DATABASE = "trainpilot_phone_execution.db";
     PhoneWorkoutExecutionStore(Context context) { super(context.getApplicationContext(), DATABASE, null, 1); }
 
@@ -71,6 +72,7 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
                 if (pending(db, old.getString("workoutId"), old.getLong("generation")))
                     throw new IllegalStateException("pendingRecordingEvents");
                 PhoneWorkoutRecording.retainCompleted(old, incoming);
+                for(String key:new String[]{"timeLogs162","latestTimer162","manualAnchor162"})if(old.has(key))incoming.put(key,old.get(key));
                 if (old.has("transition")) {
                     JSONObject transition=old.getJSONObject("transition"),plan=transition.optJSONObject("plan"),automation=incoming.optJSONObject("automation");
                     if (plan!=null&&automation!=null&&plan.optString("key").equals(automation.optString("key"))) incoming.put("transition",transition);
@@ -108,6 +110,7 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
             JSONObject next;
             try {
                 next = PhoneWorkoutRecording.record(frame, command);
+                finishManual(next,command,android.os.SystemClock.elapsedRealtime());
                 JSONObject transition = PhoneWorkoutPlans.afterRecord(next, next.getInt("currentExercise"));
                 if (transition != null) next.put("transition", transition);
             }
@@ -133,6 +136,122 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
         } finally { db.endTransaction(); }
     }
 
+
+    /** Cumulative checkpoints stay in the snapshot; only completed sets create journal events. */
+    synchronized boolean checkpointTimer(JSONObject timer, long monotonic) throws JSONException {
+        SQLiteDatabase db=getWritableDatabase();db.beginTransaction();
+        try {
+            JSONObject frame=current(db);if(frame==null||!frame.optBoolean("active")||!frame.optString("workoutId").equals(timer.optString("workoutId"))
+                    ||frame.optLong("generation")!=timer.optLong("generation"))return false;
+            JSONObject ledger=timer.getJSONObject("ledger"),logs=frame.optJSONObject("timeLogs162");if(logs==null)logs=new JSONObject();
+            String key=PhoneWorkoutRecording.id(timer,"key");JSONObject previous=logs.optJSONObject(key);
+            if(previous!=null&&(ledger.getLong("positionMs")<previous.getLong("positionMs")||ledger.getLong("workMs")<previous.getLong("workMs")
+                    ||ledger.getLong("restMs")<previous.getLong("restMs")||ledger.getLong("pausedMs")<previous.getLong("pausedMs")))return false;
+            JSONObject log=new JSONObject(ledger.toString()).put("key",key).put("phase",timer.optString("phase"))
+                    .put("interrupted",timer.optBoolean("interrupted")).put("stopped",timer.optBoolean("stopped"));
+            logs.put(key,log);frame.put("timeLogs162",logs).put("latestTimer162",timer);
+            JSONArray changes=new JSONArray(),rows=timer.getJSONArray("steps"),parts=ledger.getJSONArray("steps");
+            if(timer.optBoolean("autoAdvance")&&!timer.optBoolean("restOnly"))for(int i=0;i<timer.optInt("completed");i++){
+                JSONObject row=rows.getJSONObject(i),part=parts.getJSONObject(i),set=findSet(frame,row);
+                if(set==null)throw new IllegalArgumentException("timerTargetRemoved");
+                if(!set.getBoolean("done")){
+                    JSONObject before=new JSONObject().put("reps",set.opt("reps"));
+                    String reps=String.valueOf((long)Math.floor(row.optDouble("baseSeconds",0)+(part.getLong("workMs")+part.getLong("restMs"))/1000.0));
+                    set.put("done",true).put("reps",reps);
+                    changes.put(new JSONObject().put("exerciseId",row.getString("exerciseId")).put("setId",row.getString("setId"))
+                            .put("values",new JSONObject().put("done",true).put("reps",reps)).put("before",before));
+                }
+            }
+            if(changes.length()>0){
+                frame.put("executionRevision",PhoneWorkoutRecording.advance(frame.getLong("executionRevision")));
+                JSONObject event=new JSONObject().put("kind","timedSets").put("workoutId",frame.getString("workoutId"))
+                        .put("generation",frame.getLong("generation")).put("executionRevision",frame.getLong("executionRevision"))
+                        .put("key",key).put("changes",changes);
+                ContentValues row=new ContentValues();row.put("command_id","timer:"+key+":"+timer.getInt("completed"));
+                row.put("workout_id",frame.getString("workoutId"));row.put("generation",frame.getLong("generation"));row.put("fingerprint",event.toString());row.put("event",event.toString());
+                db.insertOrThrow("recordings",null,row);
+            }
+            if(timer.optBoolean("autoAdvance")){
+                JSONObject step=rows.getJSONObject(timer.optInt("stepIndex"));JSONArray exercises=frame.getJSONArray("exercises");
+                for(int e=0;e<exercises.length();e++)if(findSet(new JSONObject().put("exercises",new JSONArray().put(exercises.getJSONObject(e))),step)!=null){
+                    int selected=e;
+                    if("complete".equals(timer.optString("phase"))&&e+1<exercises.length())selected=e+1;
+                    frame.put("currentExercise",selected);break;
+                }
+            }
+            if("complete".equals(timer.optString("phase"))&&!timer.optBoolean("stopped"))anchorManual(frame,monotonic);
+            save(db,frame);db.setTransactionSuccessful();return changes.length()>0;
+        }finally{db.endTransaction();}
+    }
+    private static JSONObject findSet(JSONObject frame,JSONObject target)throws JSONException{
+        JSONArray exercises=frame.getJSONArray("exercises");
+        for(int e=0;e<exercises.length();e++){
+            JSONObject exercise=exercises.getJSONObject(e);if(!exercise.getString("id").equals(target.getString("exerciseId")))continue;
+            JSONArray sets=exercise.getJSONArray("sets");for(int s=0;s<sets.length();s++)if(sets.getJSONObject(s).getString("setId").equals(target.getString("setId")))return sets.getJSONObject(s);
+        }return null;
+    }
+    private static void anchorManual(JSONObject frame,long monotonic)throws JSONException{
+        if(frame.has("manualAnchor162")&&PROCESS.equals(frame.getJSONObject("manualAnchor162").optString("process")))return;
+        frame.remove("manualAnchor162");if(!frame.optBoolean("automaticEnabled"))return;
+        JSONArray exercises=frame.getJSONArray("exercises");
+        for(int e=frame.optInt("currentExercise");e<exercises.length();e++){
+            JSONObject exercise=exercises.getJSONObject(e);JSONArray sets=exercise.getJSONArray("sets");
+            for(int s=0;s<sets.length();s++)if(!sets.getJSONObject(s).getBoolean("done")){
+                if(!java.util.Arrays.asList("","ism.","reps").contains(exercise.optString("repUnit")))return;
+                JSONObject anchor=new JSONObject().put("exerciseId",exercise.getString("id")).put("setId",sets.getJSONObject(s).getString("setId"))
+                        .put("began",monotonic).put("process",PROCESS).put("key","manual|"+frame.getLong("generation")+"|"+frame.getLong("executionRevision")+"|"+sets.getJSONObject(s).getString("setId"));
+                frame.put("manualAnchor162",anchor);return;
+            }
+        }
+    }
+    synchronized void beginManualWork(String workoutId,long generation,long monotonic)throws JSONException{
+        SQLiteDatabase db=getWritableDatabase();db.beginTransaction();
+        try{JSONObject frame=current(db);if(frame!=null&&frame.optBoolean("active")&&workoutId.equals(frame.optString("workoutId"))&&generation==frame.optLong("generation")){
+            anchorManual(frame,monotonic);save(db,frame);db.setTransactionSuccessful();
+        }}finally{db.endTransaction();}
+    }
+    private static void finishManual(JSONObject next,JSONObject command,long now)throws JSONException{
+        JSONObject anchor=next.optJSONObject("manualAnchor162");next.remove("manualAnchor162");
+        if(anchor==null||!PROCESS.equals(anchor.optString("process"))||!anchor.optString("exerciseId").equals(command.optString("exerciseId"))||!anchor.optString("setId").equals(command.optString("setId")))return;
+        long work=Math.min(IntervalTimeline.MAX_MS,Math.max(0,now-anchor.getLong("began")));
+        JSONObject log=new JSONObject().put("schema",1).put("owner","phone").put("key",anchor.getString("key"))
+                .put("positionMs",work).put("workMs",work).put("restMs",0).put("pausedMs",0)
+                .put("steps",new JSONArray().put(new JSONObject().put("exerciseId",anchor.getString("exerciseId")).put("setId",anchor.getString("setId"))
+                        .put("workMs",work).put("restMs",0).put("pausedMs",0)));
+        JSONObject logs=next.optJSONObject("timeLogs162");if(logs==null)logs=new JSONObject();logs.put(anchor.getString("key"),log);next.put("timeLogs162",logs);
+    }
+
+    /** Explicit phone edits use a CAS and a matching base; ordinary snapshots still cannot undo recordings. */
+    synchronized JSONObject amend(JSONObject input,long expectedRevision,JSONObject bases)throws JSONException{
+        JSONObject incoming=new JSONObject(input.toString());PhoneWorkoutRecording.validateFrame(incoming);PhoneWorkoutPlans.validateConfig(incoming);
+        SQLiteDatabase db=getWritableDatabase();db.beginTransaction();
+        try{
+            JSONObject old=current(db);
+            if(blocked(db)||old==null||!old.optBoolean("active")||!old.getString("workoutId").equals(incoming.getString("workoutId"))
+                ||old.getLong("generation")!=incoming.getLong("generation")||old.getLong("executionRevision")!=expectedRevision
+                ||incoming.getLong("executionRevision")!=expectedRevision||pending(db,old.getString("workoutId"),old.getLong("generation")))throw new IllegalStateException("amendmentConflict");
+            JSONArray exercises=old.getJSONArray("exercises");
+            for(int e=0;e<exercises.length();e++){
+                JSONObject exercise=exercises.getJSONObject(e);JSONArray sets=exercise.getJSONArray("sets");
+                for(int s=0;s<sets.length();s++){
+                    JSONObject set=sets.getJSONObject(s);if(!set.getBoolean("done"))continue;
+                    JSONObject target=new JSONObject().put("exerciseId",exercise.getString("id")).put("setId",set.getString("setId"));
+                    JSONObject edited=findSet(incoming,target);if(edited==null)throw new IllegalStateException("amendmentTargetRemoved");
+                    JSONObject base=bases.optJSONObject(set.getString("setId"));
+                    if(base==null||!base.toString().equals(recordedBase(set).toString()))throw new IllegalStateException("amendmentConflict");
+                }
+            }
+            for(String key:new String[]{"timeLogs162","latestTimer162"})if(old.has(key))incoming.put(key,old.get(key));
+            incoming.remove("manualAnchor162");
+            JSONObject previousTransition=old.optJSONObject("transition"),automation=incoming.optJSONObject("automation");
+            if(previousTransition!=null&&previousTransition.optJSONObject("plan")!=null&&automation!=null&&previousTransition.getJSONObject("plan").optString("key").equals(automation.optString("key")))incoming.put("transition",previousTransition);
+            else incoming.remove("transition");
+            incoming.put("executionRevision",PhoneWorkoutRecording.advance(expectedRevision));save(db,incoming);db.setTransactionSuccessful();return incoming;
+        }finally{db.endTransaction();}
+    }
+    static JSONObject recordedBase(JSONObject set)throws JSONException{
+        JSONObject result=new JSONObject();for(String key:new String[]{"done","reps","weight","leftSeconds","rightSeconds","distanceMeters"})if(set.has(key))result.put(key,set.get(key));return result;
+    }
 
     synchronized JSONObject receipt(JSONObject command) throws JSONException {
         String id = PhoneWorkoutRecording.id(command, "commandId");

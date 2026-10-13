@@ -37,6 +37,11 @@ public class WearSyncPlugin extends Plugin {
         JSONObject frame=db.prepare(call.getObject("snapshot"),call.getData().getLong("expectedRevision"));
         db.suspendCommands(false);return new JSONObject().put("snapshot",frame);
     }); }
+    @PluginMethod public void amendExecution(PluginCall call){execution(call,()->{
+        PhoneWorkoutExecutionStore db=PhoneWorkoutExecution.store(getContext());
+        JSONObject frame=db.amend(call.getObject("snapshot"),call.getData().getLong("expectedRevision"),call.getObject("bases"));
+        db.suspendCommands(false);db.beginManualWork(frame.getString("workoutId"),frame.getLong("generation"),android.os.SystemClock.elapsedRealtime());return new JSONObject().put("snapshot",frame);
+    });}
     @PluginMethod public void executeCommand(PluginCall call) { execution(call,()->PhoneWorkoutExecution.execute(getContext(),call.getObject("command"))); }
     @PluginMethod public void acknowledgeExecution(PluginCall call) { execution(call,()->{
         boolean ok=PhoneWorkoutExecution.store(getContext()).acknowledgeEvents(call.getString("workoutId"),call.getData().getLong("generation"),call.getData().getLong("sequence"));

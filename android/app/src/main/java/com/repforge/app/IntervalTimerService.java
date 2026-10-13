@@ -20,6 +20,8 @@ public class IntervalTimerService extends Service {
     private final ArrayList<IntervalTimeline.Step> steps=new ArrayList<>();
     private final JSONArray segments=new JSONArray();
     private IntervalTimeline timeline;
+    private IntervalTimeLedger timeLedger;
+    private long executionGeneration;
     private String key="",language="en",lastToken="";
     private String workoutId="", armedWorkoutId="";
     private long armedGeneration;
@@ -45,7 +47,9 @@ public class IntervalTimerService extends Service {
             if(timeline!=null&&!stopped&&!"complete".equals(timeline.at(now()).phase)&&!requested.equals(workoutId))return START_NOT_STICKY;
             if(!requested.equals(armedWorkoutId)){handler.removeCallbacks(expire);handler.postDelayed(expire,IntervalTimeline.MAX_MS);}
             armedWorkoutId=requested;armedGeneration=intent.getLongExtra("generation",0);language=intent.getStringExtra("language");
-            channel();startForeground(NOTIFICATION,notification());return START_NOT_STICKY;
+            channel();startForeground(NOTIFICATION,notification());
+            try{PhoneWorkoutExecution.store(this).beginManualWork(requested,armedGeneration,SystemClock.elapsedRealtime());}catch(Exception ignored){}
+            return START_NOT_STICKY;
         }
         if(PAUSE.equals(intent.getAction())||RESUME.equals(intent.getAction())){try{command(this,intent.getStringExtra("key"),PAUSE.equals(intent.getAction())?"pause":"resume");}catch(Exception ignored){}return START_NOT_STICKY;}
         if(!START.equals(intent.getAction())||running)return START_NOT_STICKY;
@@ -83,19 +87,22 @@ public class IntervalTimerService extends Service {
     private void parse(JSONObject plan)throws Exception{
         JSONObject current=ActiveWorkoutStore.current(this);
         workoutId=plan.optString("workoutId",current==null?"":current.optString("workoutId"));
+        JSONObject execution=PhoneWorkoutExecution.store(this).snapshot();
+        executionGeneration=plan.optLong("generation",execution!=null&&execution.optString("workoutId").equals(workoutId)?execution.optLong("generation"):0);
         planSteps=new JSONArray(plan.getJSONArray("steps").toString());phaseNumber=0;
-        timeline=validate(plan);interrupted=false;lastSavedSecond=-1;steps.clear();JSONArray rows=plan.getJSONArray("steps");for(int i=0;i<rows.length();i++){JSONObject row=rows.getJSONObject(i);steps.add(new IntervalTimeline.Step(row.getString("exerciseId"),row.getString("setId"),row.optString("name","TrainPilot"),row.getInt("work"),row.getInt("rest"),row.getInt("rounds"),row.optString("gpsKey","")));}
+        timeline=validate(plan);timeLedger=new IntervalTimeLedger(plan.getJSONArray("steps").length(),SystemClock.elapsedRealtime());interrupted=false;lastSavedSecond=-1;steps.clear();JSONArray rows=plan.getJSONArray("steps");for(int i=0;i<rows.length();i++){JSONObject row=rows.getJSONObject(i);steps.add(new IntervalTimeline.Step(row.getString("exerciseId"),row.getString("setId"),row.optString("name","TrainPilot"),row.getInt("work"),row.getInt("rest"),row.getInt("rounds"),row.optString("gpsKey","")));}
         initialRest=plan.optInt("initialRest",0);restOnly=plan.optBoolean("restOnly");timeline=new IntervalTimeline(steps,plan.optBoolean("autoAdvance"),initialRest,restOnly);key=plan.getString("key");language=plan.optString("language","en");advance=plan.optBoolean("autoAdvance");sound=plan.optBoolean("sound",true);vibration=plan.optBoolean("vibration",true);while(segments.length()>0)segments.remove(0);gpsStep=0;lastToken="";haptics=new IntervalHapticCues();
     }
     private long now(){return elapsed+(running?Math.max(0,SystemClock.elapsedRealtime()-began):0);}
     private void update(){
         if(timeline==null)return;IntervalTimeline.Phase p=timeline.at(now());
+        timeLedger.sample(timeline,p.elapsedMs,SystemClock.elapsedRealtime(),running,stopped,interrupted);
         if(p.step!=gpsStep||running&&"complete".equals(p.phase))handoff(p);
         DistanceTrackingService.pauseOwned(this,steps.get(p.step).gpsKey,!running||!"work".equals(p.phase));
         int vibrationMs=haptics.next(p,running&&!stopped);
         if(vibrationMs>0)vibrate(vibrationMs);
         if(!p.token.equals(lastToken)){lastToken=p.token;phaseNumber++;if(!stopped)cue("complete".equals(p.phase));notifyStatus();publishWatchClock();}
-        if("complete".equals(p.phase)){elapsed=p.elapsedMs;running=false;began=0;release();handler.removeCallbacks(tick);save();if(armedWorkoutId.isEmpty()){stopForeground(true);stopSelf();}else notifyStatus();}else if(p.elapsedMs/1000!=lastSavedSecond){lastSavedSecond=p.elapsedMs/1000;save();notifyStatus();}
+        if("complete".equals(p.phase)){elapsed=p.elapsedMs;running=false;began=0;release();handler.removeCallbacks(tick);save();if(armedWorkoutId.isEmpty()){stopForeground(true);stopSelf();}else notifyStatus();}else if((running?p.elapsedMs:SystemClock.elapsedRealtime())/1000!=lastSavedSecond){lastSavedSecond=(running?p.elapsedMs:SystemClock.elapsedRealtime())/1000;save();notifyStatus();}
     }
     private void handoff(IntervalTimeline.Phase p){
         IntervalTimeline.Step old=steps.get(gpsStep);String tracking=old.gpsKey;
@@ -127,7 +134,7 @@ public class IntervalTimerService extends Service {
                 .put("remainingMs",p.remainingMs).put("deadlineAt",running?System.currentTimeMillis()+p.remainingMs:0)
                 .put("workSeconds",steps.get(p.step).work).put("restSeconds","rest".equals(p.phase)?timeline.phaseDurationMs(p)/1000:steps.get(p.step).rest).put("rounds",steps.get(p.step).rounds).put("round",p.round).put("vibration",false)
                 .put("autoAdvance",advance).put("restOnly",restOnly).put("stopped",stopped).put("completed",p.completed)
-                .put("stepIndex",p.step).put("stepElapsedMs",p.stepElapsedMs).put("steps",planSteps).put("phaseNumber",phaseNumber);
+                .put("ledger",timeLedger.json(planSteps)).put("stepIndex",p.step).put("stepElapsedMs",p.stepElapsedMs).put("steps",planSteps).put("phaseNumber",phaseNumber);
             PutDataMapRequest map=PutDataMapRequest.create("/trainpilot/phone-automatic");
             map.getDataMap().putString("automatic",value.toString());map.getDataMap().putLong("publishedAt",System.currentTimeMillis());
             Wearable.getDataClient(this).putDataItem(map.asPutDataRequest().setUrgent());
@@ -135,11 +142,18 @@ public class IntervalTimerService extends Service {
     }
     private JSONObject current(){
         JSONObject out=new JSONObject();if(timeline==null)return out;IntervalTimeline.Phase p=timeline.at(now());try{
-            out.put("key",key).put("interrupted",interrupted).put("phaseNumber",phaseNumber).put("running",running).put("stopped",stopped).put("restOnly",restOnly).put("initialRest",initialRest).put("autoAdvance",advance).put("sound",sound).put("vibration",vibration).put("language",language).put("elapsedMs",p.elapsedMs).put("stepElapsedMs",p.stepElapsedMs).put("stepIndex",p.step).put("completed",p.completed).put("phase",p.phase).put("round",p.round).put("remainingMs",p.remainingMs).put("totalMs",p.totalMs);
-            JSONArray rows=new JSONArray();for(IntervalTimeline.Step s:steps)rows.put(new JSONObject().put("exerciseId",s.exerciseId).put("setId",s.setId).put("name",s.name).put("work",s.work).put("rest",s.rest).put("rounds",s.rounds).put("gpsKey",s.gpsKey));out.put("steps",rows).put("gpsSegments",segments);JSONObject gps=DistanceTrackingService.snapshot(this);if(steps.get(p.step).gpsKey.equals(gps.optString("key"))&&!steps.get(p.step).gpsKey.isEmpty())out.put("gps",gps);
+            out.put("key",key).put("workoutId",workoutId).put("generation",executionGeneration).put("ledger",timeLedger.json(planSteps)).put("interrupted",interrupted).put("phaseNumber",phaseNumber).put("running",running).put("stopped",stopped).put("restOnly",restOnly).put("initialRest",initialRest).put("autoAdvance",advance).put("sound",sound).put("vibration",vibration).put("language",language).put("elapsedMs",p.elapsedMs).put("stepElapsedMs",p.stepElapsedMs).put("stepIndex",p.step).put("completed",p.completed).put("phase",p.phase).put("round",p.round).put("remainingMs",p.remainingMs).put("totalMs",p.totalMs);
+            JSONArray rows=new JSONArray();for(int i=0;i<steps.size();i++){IntervalTimeline.Step s=steps.get(i);rows.put(new JSONObject(planSteps.getJSONObject(i).toString()).put("exerciseId",s.exerciseId).put("setId",s.setId).put("name",s.name).put("work",s.work).put("rest",s.rest).put("rounds",s.rounds).put("gpsKey",s.gpsKey));}out.put("steps",rows).put("gpsSegments",segments);JSONObject gps=DistanceTrackingService.snapshot(this);if(steps.get(p.step).gpsKey.equals(gps.optString("key"))&&!steps.get(p.step).gpsKey.isEmpty())out.put("gps",gps);
         }catch(Exception ignored){}return out;
     }
-    private void save(){if(!key.isEmpty()&&!getSharedPreferences(PREFS,MODE_PRIVATE).edit().putString("state",current().toString()).commit())throw new IllegalStateException("Unable to checkpoint interval");}
+    private void save(){
+        if(key.isEmpty())return;
+        timeLedger.sample(timeline,timeline.at(now()).elapsedMs,SystemClock.elapsedRealtime(),running,stopped,interrupted);
+        JSONObject checkpoint=current();
+        try{if(executionGeneration>0)if(PhoneWorkoutExecution.store(this).checkpointTimer(checkpoint,SystemClock.elapsedRealtime()))PhoneWorkoutExecution.publish(this);}
+        catch(Exception error){throw new IllegalStateException("Unable to checkpoint workout",error);}
+        if(!getSharedPreferences(PREFS,MODE_PRIVATE).edit().putString("state",checkpoint.toString()).commit())throw new IllegalStateException("Unable to checkpoint interval");
+    }
     private Notification notification(){
         String title=DistanceTrackingService.text(language,"Intervallumidőzítő","Interval timer","Intervalltimer","Cronometru de intervale"),pause=DistanceTrackingService.text(language,"Szünetel","Paused","Pausiert","În pauză");
         if(timeline==null||!armedWorkoutId.isEmpty()&&!running&&"complete".equals(timeline.at(now()).phase)){
@@ -166,8 +180,8 @@ public class IntervalTimerService extends Service {
     }
     static JSONObject command(Context context,String key,String action)throws Exception{
         IntervalTimerService s=instance;if(s==null||!key.equals(s.key))throw new IllegalStateException("Interval owner is no longer active");
-        if("pause".equals(action))s.pauseRun();else if("stop".equals(action))s.stopRun();else if("resume".equals(action)&&!s.running&&!s.stopped&&!"complete".equals(s.timeline.at(s.elapsed).phase)){s.began=SystemClock.elapsedRealtime();s.running=true;s.acquire();DistanceTrackingService.pauseOwned(context,s.steps.get(s.gpsStep).gpsKey,!"work".equals(s.timeline.at(s.elapsed).phase));s.handler.post(s.tick);s.save();}
-        else if("skipRest".equals(action)&&!s.stopped){IntervalTimeline.Phase p=s.timeline.at(s.now());if(!"rest".equals(p.phase))throw new IllegalStateException("Not resting");s.handler.removeCallbacks(s.tick);s.elapsed=p.elapsedMs+p.remainingMs;s.began=SystemClock.elapsedRealtime();s.running=true;s.acquire();s.update();if(s.running)s.handler.post(s.tick);}
+        if("pause".equals(action))s.pauseRun();else if("stop".equals(action))s.stopRun();else if("resume".equals(action)&&!s.running&&!s.stopped&&!"complete".equals(s.timeline.at(s.elapsed).phase)){s.timeLedger.sample(s.timeline,s.elapsed,SystemClock.elapsedRealtime(),false,false,false);s.began=SystemClock.elapsedRealtime();s.running=true;s.acquire();DistanceTrackingService.pauseOwned(context,s.steps.get(s.gpsStep).gpsKey,!"work".equals(s.timeline.at(s.elapsed).phase));s.handler.post(s.tick);s.save();}
+        else if("skipRest".equals(action)&&!s.stopped){IntervalTimeline.Phase p=s.timeline.at(s.now());if(!"rest".equals(p.phase))throw new IllegalStateException("Not resting");s.handler.removeCallbacks(s.tick);s.timeLedger.sample(s.timeline,p.elapsedMs,SystemClock.elapsedRealtime(),s.running,s.stopped,s.interrupted);s.elapsed=p.elapsedMs+p.remainingMs;s.timeLedger.skipTo(s.elapsed);s.began=SystemClock.elapsedRealtime();s.running=true;s.acquire();s.update();if(s.running)s.handler.post(s.tick);}
         s.publishWatchClock();return s.current();
     }
     static JSONObject attachGPS(Context context,String key,int index,String tracking)throws Exception{

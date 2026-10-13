@@ -66,6 +66,11 @@ final class PhoneWorkoutExecution {
         PhoneWorkoutExecutionStore db = store(context); JSONObject frame = db.snapshot();
         JSONArray events = frame == null ? new JSONArray() : db.pendingEvents(frame.getString("workoutId"), frame.getLong("generation"), 0);
         JSONObject timer = IntervalTimerService.snapshot(context);
+        if(frame!=null){frame=db.snapshot();JSONObject latest=frame.optJSONObject("latestTimer162");
+            if(latest!=null&&(!timer.optString("key").equals(latest.optString("key"))||!IntervalTimerService.armed(frame.getString("workoutId"),frame.getLong("generation")))){
+                timer=new JSONObject(latest.toString()).put("running",false).put("interrupted",true);
+            }
+        }
         JSONObject transition = frame == null ? null : frame.optJSONObject("transition"), plan = transition == null ? null : transition.optJSONObject("plan");
         // A killed service is reported as interrupted; reopening the WebView never replays past work or cues.
         if (frame != null && frame.optBoolean("active") && plan != null && !"interrupted".equals(transition.optString("state"))
@@ -73,12 +78,13 @@ final class PhoneWorkoutExecution {
                     || !plan.getString("key").equals(timer.optString("key")))) {
             db.markTransition(plan.getString("key"), "interrupted"); frame = db.snapshot();
         }
-        return new JSONObject().put("snapshot", frame == null ? JSONObject.NULL : frame).put("events", events).put("timer", timer);
+        events=frame==null?new JSONArray():db.pendingEvents(frame.getString("workoutId"),frame.getLong("generation"),0);
+        return new JSONObject().put("controllerArmed",frame!=null&&IntervalTimerService.armed(frame.optString("workoutId"),frame.optLong("generation"))).put("snapshot", frame == null ? JSONObject.NULL : frame).put("events", events).put("timer", timer);
     }
     static JSONObject display(Context context) throws Exception {
         JSONObject frame = store(context).snapshot(); if (frame == null || !frame.optBoolean("active")) return null;
         JSONObject value = new JSONObject(frame.toString());
-        value.remove("timerConfig"); value.remove("automaticEnabled"); value.remove("transition");
+        value.remove("timeLogs162");value.remove("latestTimer162");value.remove("manualAnchor162");value.remove("timerConfig"); value.remove("automaticEnabled"); value.remove("transition");
         value.put("nativeExecutionProtocol", 2);
         JSONObject transition = frame.optJSONObject("transition"), plan = transition == null ? null : transition.optJSONObject("plan");
         if (plan != null) {
