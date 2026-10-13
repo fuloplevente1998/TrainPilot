@@ -1,5 +1,20 @@
 # TrainPilot — fejlesztési állapot
 
+## Kötelező közös munkaprotokoll — 2026. október 13-tól
+
+**Prioritás:** A következő fejlesztési és hibajavítási feladatok előtt ezt a munkarendet követjük. A `DEVELOPMENT_STATUS.md` a központi állapotnyilvántartás, a GitHub Issues az egyedi feladatok nyilvántartása; a kettőt szinkronban kell tartani.
+
+1. **Mikrolépések:** Az összetett munkát előzetesen 5–10 átlátható részfeladatra bontjuk. Egy körben csak **egy** részfeladatot végzünk el.
+2. **Kötelező jóváhagyási pont:** Minden részfeladat után megállunk; a következő csak a felhasználó kifejezett „Mehet tovább” / „Folytasd” jóváhagyásával kezdődik. A jóváhagyás nem terjed ki automatikusan a mainre emelésre vagy kiadásra.
+3. **Rövid válaszok:** Legfeljebb 200–300 szó vagy 40–50 sor kód válaszonként, fókuszált eredménnyel és a szükséges hivatkozásokkal. A nagyobb változtatásokat kisebb, áttekinthető egységekre bontjuk.
+4. **Állapotjelzés:** Minden kör végén kötelező a `[Aktuális lépés: X/Y | Állapot: Jóváhagyásra vár]` sor, a tényleges lépés és státusz alapján.
+5. **GitHub-követés:** Felméréskor először a main, ez a fájl, a részletes fejlesztési terv és a meglévő Issues/PR-ek aktuális állapotát vizsgáljuk. Meglévő feladatot nem duplikálunk. Az új fejlesztés vagy hiba saját Issue-t, elfogadási feltételeket és indokolt prioritást kap.
+6. **Biztonságos változtatás:** Célzott fejlesztési ág → ellenőrzés/tesztek → PR → felhasználói jóváhagyás → main. A tesztelt és a fizikai eszközön elfogadott állapot külön szerepel. Verziószámot, release-t és APK-t nem változtatunk önkényesen.
+7. **Dokumentálás:** A részfeladat lezárásakor frissítjük az érintett Issue/PR állapotát és szükség szerint ezt a fájlt: mi készült el, mi maradt hátra, mi tesztelt, mi igényel készülékes visszajelzést.
+8. **Fejlesztési szakaszok:** (1) állapotfelmérés; (2) feladatok/Issues összevetése; (3) prioritások; (4) Issue-rendezés; (5) egyenkénti fejlesztés; (6) tesztelés; (7) PR és jóváhagyás; (8) dokumentáció és következő kör.
+
+**Aktuális előfeltétel:** E munkaprotokoll rögzítése és jóváhagyása elsőbbséget élvez a 2. szakasz (Issue-felmérés) előtt.
+
 Frissítve: **2026. október 13.** A felhasználói verzióleírások négy családot használnak: **1.0, 1.1, 1.2, 1.3**. A buildazonosítók, APK-k, tagek és release-ek megmaradnak.
 
 
