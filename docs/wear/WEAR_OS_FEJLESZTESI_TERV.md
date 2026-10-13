@@ -163,8 +163,8 @@ A hang és rezgés külön kapcsolható legyen. Telefonos önálló használatn�
 1. **Készülékes tesztpár-ellenőrzés:** telefon `1650906` + Wear `e3db5e2`, mindkét APK frissítése és első adatszinkron. Külön telefonos, önálló órás és párosított indítás; lezárt kijelző, tényleges rezgés és újracsatlakozás. A #179 már egyesíti a Wear UI-t és a telefonos/órás első automata módot.
 2. **Telefonos tulajdon háttérrögzítése:** az órás ismétlésrögzítés és egy új telefonos menetrend indítása az alvó webfelület visszatérésére várhat. Ezt natív, stabil sorozatazonosítóhoz kötött feldolgozással kell folytatni, a telefonos felület és a háttérszolgáltatás kettős léptetése nélkül. Ütközés, duplikált/késői parancs, folyamatújraindítás és draft-védelem a regresszió része.
 3. **Munka/pihenő/szünet és GPS:** az órás munkaidő és a régi telefonos munka+pihenő összesítés egységes, forráshű naplóbontása; a régi adatok változatlanok. Oldalankénti automata menetrend és órás GPS-szakaszok külön bővítések, nem kész támogatás.
-4. **Kényelmi Wear-funkciók:** visszavonás, érintészár, lünetta/korona-szerkesztés és mentési/szinkronállapot finomítása, külön ellenőrizhető változtatásokban. A #170 kezdőlap első revampja kész; további UI-hibák készülékes visszajelzés alapján.
-5. **Térkép #163:** az automata működés elfogadása után, elsőként a telefon GPS-ére építve. Útvonalpontok tárolása, megszakított szakaszok, offline nézet, mentés/visszaállítás/törlés és forráshű adatok szükségesek; órás útvonalrögzítés további hatókör.
+4. **Térkép #163:** az automata működés elfogadása után, elsőként a telefon GPS-ére építve. Útvonalpontok tárolása, megszakított szakaszok, offline nézet, mentés/visszaállítás/törlés és forráshű adatok szükségesek; órás útvonalrögzítés további hatókör.
+5. **Kényelmi Wear-funkciók:** visszavonás, érintészár, lünetta/korona-szerkesztés és mentési/szinkronállapot finomítása, külön ellenőrizhető változtatásokban. A #170 kezdőlap első revampja kész; további UI-hibák készülékes visszajelzés alapján. Ezek tervezett bővítések; nem feltételei a #163 telefonos térkép elkezdésének.
 
 
 Elfogadási próbák:

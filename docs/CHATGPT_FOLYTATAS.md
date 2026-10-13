@@ -48,8 +48,9 @@ A fenti buildek a legutóbbi átadott tesztpár. Az új main buildek az Actions�
 
 1. **#162:** a legutóbbi tesztpár fizikai próbája mindhárom használattal (telefon, önálló óra, párosított); utána a fenti telefonos háttérrögzítés/új idővonal natív feldolgozása, stabil azonosítókkal, újraküldés-/újraindítás-/draft-védelemmel. Az issue addig nyitott.
 2. Munka/pihenő/szünet naplózásának egységesítése és GPS/intervallum határok; nincs kettős mérés vagy másik sorozatba kerülő adat.
-3. **Wear kényelmi terv:** utolsó rögzítés visszavonása az automata átmenettel együtt; érintészár; lünetta/korona a szerkesztőben; világos „Órán mentve” / „Szinkronra vár” visszajelzés. A #170 első kezdőlap-revampja már megvalósított, finomítás készülékes visszajelzés alapján.
-4. **#163 térkép:** az automata működés elfogadása után, elsőként telefonos GPS-útvonalrögzítés és naplóbeli térkép. Pontatlanság/jelkimaradás/szünet ne rajzoljon kitalált összekötő szakaszt; offline nézet, mentés/visszaállítás/törlés és forráshű adatok szükségesek. A régi vagy kézi távolságból nem készül kitalált útvonal. Órás útvonal későbbi hatókör.
+3. **#163 térkép:** az automata működés elfogadása után, elsőként telefonos GPS-útvonalrögzítés és naplóbeli térkép. Pontatlanság/jelkimaradás/szünet ne rajzoljon kitalált összekötő szakaszt; offline nézet, mentés/visszaállítás/törlés és forráshű adatok szükségesek. A régi vagy kézi távolságból nem készül kitalált útvonal. Órás útvonal későbbi hatókör.
+4. **Wear kényelmi terv:** utolsó rögzítés visszavonása az automata átmenettel együtt; érintészár; lünetta/korona a szerkesztőben; világos „Órán mentve” / „Szinkronra vár” visszajelzés. A #170 első kezdőlap-revampja már megvalósított, finomítás készülékes visszajelzés alapján. E bővítések nem előfeltételei a telefonos térképnek.
+
 
 Részletek és további döntések **egy kanonikus fájlban**: [docs/wear/WEAR_OS_FEJLESZTESI_TERV.md](wear/WEAR_OS_FEJLESZTESI_TERV.md). Ezt frissítsd a következő megvalósításkor.
 
