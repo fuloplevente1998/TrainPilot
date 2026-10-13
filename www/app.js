@@ -9334,7 +9334,8 @@ saveSettings=function(){
 
 exportData=async function(){
  try{
-  const data=JSON.stringify(await (window.TrainPilotHealthJournal?.backup?.()||makeBackup()),null,2),name='trainpilot-backup-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';
+  const data=JSON.stringify(await (window.TrainPilotHealthJournal?.backup?.()||makeBackup())),name='trainpilot-backup-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';
+  if(new Blob([data]).size>20*1024*1024)throw Error(tp149T('backup.maxSize'));
   if(isNative()){
    const r=await nativeFiles().save({name:name,data:data});if(r.cancelled)return;if(!r.verified)throw Error(tp149T('backup.verifyError'));
    db.set('lastExport',{name:r.name,date:new Date().toISOString(),bytes:r.bytes});
@@ -14587,10 +14588,36 @@ importData=async function(file){
  finally{const input=document.getElementById('importFile');if(input)input.value='';}
 };
 var tp105SetHealth=async function(on){if(cloudBusy){alert(tp105Text('busy'));render();return;}if(on&&!await tp2628Confirm(tp105Text('healthConfirm'),{title:tp105Text('data')})){render();return;}if(cloudBusy){render();return;}db.set('privacyPrefs',{includeHealth:!!on});if(cloudProfile?.sub){localStorage.removeItem('repforge:cloudBase:'+cloudProfile.sub);localStorage.removeItem('repforge:cloudHeads:'+cloudProfile.sub);}render();};
+// Full backups use the same local-file/Drive recovery as the photo viewer.
+var tp180PhotoFailure=function(kind,workout){
+ const text={
+  hu:{missing:'A teljes mentéshez hiányzik egy fotófájl. Kapcsolódj a fotót tároló Google-fiókhoz és az internethez, majd próbáld újra.',empty:'A teljes mentéshez tartozó fotófájl üres vagy sérült.',large:'Egy fotófájl meghaladja a teljes mentés 6 MB-os képenkénti korlátját. A fotó megmaradt; a teljes mentés nem készült el.'},
+  en:{missing:'A photo file is missing from the full backup. Connect to its Google account and the internet, then retry.',empty:'A photo file for the full backup is empty or damaged.',large:'A photo exceeds the full backup limit of 6 MB per image. The photo is preserved; no full backup was created.'},
+  de:{missing:'Eine Fotodatei fehlt für die vollständige Sicherung. Mit dem zugehörigen Google-Konto und dem Internet verbinden und erneut versuchen.',empty:'Eine Fotodatei für die vollständige Sicherung ist leer oder beschädigt.',large:'Ein Foto überschreitet das Limit von 6 MB pro Bild. Das Foto bleibt erhalten; die vollständige Sicherung wurde nicht erstellt.'},
+  ro:{missing:'Lipsește un fișier foto pentru copia completă. Conectează contul Google corespunzător și internetul, apoi reîncearcă.',empty:'Un fișier foto pentru copia completă este gol sau deteriorat.',large:'O fotografie depășește limita de 6 MB pe imagine. Fotografia rămâne intactă; copia completă nu a fost creată.'}
+ };
+ const label=[workout.workout||workout.dayId,workout.started].filter(Boolean).join(' · ');
+ return Error((text[rf212Lang()]||text.en)[kind]+(label?'\n'+label:''));
+};
+var tp180PreparePhotos=async function(data){
+ const native=rf130PhotoPlugin();if(!native?.exists)return;
+ const seen=new Set();
+ for(const workout of data.history||[])for(const photo of workout.photos||[]){
+  if(photo.deletedAt||seen.has(photo.id))continue;seen.add(photo.id);
+  let status=await native.exists({id:photo.id});
+  if((!status.exists||status.bytes===0)&&photo.driveFileId&&cloudProfile&&navigator.onLine!==false&&googleBridge()?.drivePhotoRead){
+   try{await googleBridge().drivePhotoRead({id:photo.driveFileId,photoId:photo.id,silent:true});status=await native.exists({id:photo.id});}
+   catch(error){throw Error(tp180PhotoFailure(status.exists?'empty':'missing',workout).message+'\n'+(error?.message||error));}
+  }
+  if(!status.exists)throw tp180PhotoFailure('missing',workout);
+  if(status.bytes===0)throw tp180PhotoFailure('empty',workout);
+  if(status.bytes>6*1024*1024)throw tp180PhotoFailure('large',workout);
+ }
+};
 var tp105Archive=async function(restore=false){
  if(!isNative()){alert(tp105Text('native'));return;}if(state.session||(restore?tp105DataSyncBusy():cloudBusy&&!['drive','calendar','maintenance'].includes(cloudActiveOperation))||window.TrainPilotBackupBusy){alert(tp105Text('busy'));return;}
  const bridge=tp105ArchiveBridge();let token=null;window.TrainPilotBackupBusy=true;
- try{if(restore){const r=await bridge.open();if(r.cancelled)return;token=r.token;await restoreText(r.data,token);}else{const r=await bridge.save({data:JSON.stringify(await (window.TrainPilotHealthJournal?.backup?.()||makeBackup())),name:'TrainPilot-'+new Date().toISOString().slice(0,10)+'.zip'});if(r.cancelled)return;if(!r.verified)throw Error(tp149T('backup.verifyError'));db.set('lastExport',{name:r.name,date:new Date().toISOString(),bytes:r.bytes});window.TrainPilotFeedback?.success(tp149T('backup.exportDone',{name:r.name,bytes:tp149FormatNumber(r.bytes)}));render();}}catch(e){alert(e?.message||String(e));}finally{try{if(token&&!localStorage.getItem('repforge:archiveRestore105'))await bridge.discard({token:token});}finally{window.TrainPilotBackupBusy=false;releaseCloudBackup();if(!cloudBusy)finishCloud();}}
+ try{if(restore){const r=await bridge.open();if(r.cancelled)return;token=r.token;await restoreText(r.data,token);}else{const snapshot=await (window.TrainPilotHealthJournal?.backup?.()||makeBackup()),data=JSON.stringify(snapshot);if(new Blob([data]).size>20*1024*1024)throw Error(tp149T('backup.maxSize'));await tp180PreparePhotos(snapshot);const r=await bridge.save({data:data,name:'TrainPilot-'+new Date().toISOString().slice(0,10)+'.zip'});if(r.cancelled)return;if(!r.verified)throw Error(tp149T('backup.verifyError'));db.set('lastExport',{name:r.name,date:new Date().toISOString(),bytes:r.bytes});window.TrainPilotFeedback?.success(tp149T('backup.exportDone',{name:r.name,bytes:tp149FormatNumber(r.bytes)}));render();}}catch(e){alert(e?.message||String(e));}finally{try{if(token&&!localStorage.getItem('repforge:archiveRestore105'))await bridge.discard({token:token});}finally{window.TrainPilotBackupBusy=false;releaseCloudBackup();if(!cloudBusy)finishCloud();}}
 };
 var tp105ManageData=async function(kind){
  if(state.session||cloudBusy||tp105DataSyncBusy()||window.TrainPilotBackupBusy){alert(tp105Text('busy'));return;}

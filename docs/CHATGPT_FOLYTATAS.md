@@ -2,6 +2,15 @@
 
 Frissítve: **2026. október 13.** Ez a fájl bemásolható egy új beszélgetésbe. A funkciók részletes, továbbvezetendő terve a [WEAR_OS_FEJLESZTESI_TERV.md](wear/WEAR_OS_FEJLESZTESI_TERV.md); az aktuális állapot a [DEVELOPMENT_STATUS.md](../DEVELOPMENT_STATUS.md). A folytatáskor először a GitHub aktuális mainjét és a nyitott issue-kat kell ellenőrizni, mert később változhatnak.
 
+
+## Mentési javítás — #180
+
+A #179 mainre került (`c623af7`), a #164 és #178 is egyesítve. A [#180](https://github.com/fuloplevente1998/TrainPilot/issues/180) új felhasználói visszajelzése: aktív edzés nélkül a JSON-export „Érvénytelen vagy túl nagy mentés”, a ZIP „hiányzó fotó” hibát ad; a fotók a telefonon megnyithatók.
+
+A javítás kompakt, veszteségmentes JSON-t exportál, és a 20 MiB korlátot UTF-8 bájtban ellenőrzi. A ZIP az élő fotóhivatkozásokat előzetesen ellenőrzi, a hiányzó/üres fájlt a meglévő Google-fiókból próbálja visszatölteni, majd újra ellenőrzi. A hiányzó, üres és 6 MiB-nál nagyobb eredeti képfájlt külön, négy nyelven és az edzés azonosításával jelzi; a nagy kép előnézete megnyitható lehet. A képek és egészségadatok nem maradhatnak ki csendben. A 20 MiB JSON / 6 MiB kép / 500 MiB archívum korlát és a korábbi visszaállítási formátum megmarad.
+
+Készülékes elfogadás szükséges: JSON és teljes ZIP mentése, visszaolvasása; ha még hibázik, a pontos új üzenet alapján folytatandó. A felhasználó adatcsomagja nincs nálunk, ezért az adott mentés teljes sikerét még nem igazoltuk. Ez az automata elfogadás és a #163 térkép előtt ellenőrzendő.
+
 ## Projekt és kiinduló alap
 
 - Repository: **https://github.com/fuloplevente1998/TrainPilot**.
