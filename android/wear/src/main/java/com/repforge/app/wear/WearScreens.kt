@@ -471,7 +471,7 @@ private fun Pill(text: String, modifier: Modifier = Modifier, tone: Color = Gold
                  enabled: Boolean = true, height: Int = 48, size: Int = 14,
                  lines: Int = 2, onClick: () -> Unit) {
     val fontScale = LocalDensity.current.fontScale
-    val captionScale = fontScale.coerceAtMost(1.35f) / fontScale
+    val captionScale = fontScale.coerceAtMost(if(compact)1f else 1.35f) / fontScale
     val shape = if (lines == Int.MAX_VALUE) RoundedCornerShape(18.dp) else CircleShape
     Box(modifier.fillMaxWidth().heightIn(min = height.dp)
         .background(if (enabled) tone else Secondary, shape)
@@ -1575,7 +1575,7 @@ private fun WorkoutPanel(
 }
 
 @Composable
-private fun SetHeading(workout: WearWorkout, restRemaining: Int, detail: String? = null) {
+private fun SetHeading(workout: WearWorkout, restRemaining: Int, detail: String? = null, compact: Boolean = false) {
     val completed = workout.exercise?.sets?.count { it.done } ?: 0
     val count = workout.exercise?.sets?.size ?: 0
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -1600,7 +1600,7 @@ private fun SetHeading(workout: WearWorkout, restRemaining: Int, detail: String?
         else -> detail ?: "${workout.currentExercise + 1}/${workout.exercises.size} · Sorozat ${workout.currentSetIndex + 1}/$count"
     }
     val fontScale = LocalDensity.current.fontScale
-    val captionScale = fontScale.coerceAtMost(1.35f) / fontScale
+    val captionScale = fontScale.coerceAtMost(if(compact)1f else 1.35f) / fontScale
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically) {
         Text(heading, modifier = Modifier.weight(1f, fill = false).then(if(automatic?.enabled==true&&automatic.counting&&command!=null)
@@ -1614,7 +1614,7 @@ private fun SetHeading(workout: WearWorkout, restRemaining: Int, detail: String?
             color = Muted, fontSize = (7 * captionScale).sp,
             lineHeight = (10 * captionScale).sp, maxLines = 1)
         if(toggle!=null) Text(if(automatic?.enabled==true)" A" else " M",color=if(automatic?.enabled==true)Gold else Muted,
-            fontSize=(7*captionScale).sp,modifier=Modifier.size(20.dp).clickable(role=Role.Button,onClick=toggle)
+            fontSize=(7*captionScale).sp,modifier=Modifier.size(if(compact)16.dp else 20.dp).clickable(role=Role.Button,onClick=toggle)
                 .testTag("wear-automatic-toggle").semantics { contentDescription=if(automatic?.enabled==true)"Automata mód kikapcsolása" else "Automata mód bekapcsolása" })
     }
 }
@@ -1667,19 +1667,34 @@ private fun AutomaticTimedSetScreen(workout: WearWorkout,restRemaining: Int,heal
     onPrevious: ()->Unit,onNext: ()->Unit,onSkipRest: ()->Unit,onFinish: ()->Unit,onMenu: ()->Unit) {
     val a=workout.automation ?: return
     val command=LocalAutomaticCommand.current
-    WorkoutPanel(workout,onMenu,actions={layout->WorkoutControls(workout,restRemaining,false,
-        onRecord={},onPrevious=onPrevious,onNext=onNext,onSkipRest=onSkipRest,onFinish=onFinish,layout=layout)}) {
-        SetHeading(workout,restRemaining)
-        LiveWorkoutHealth(workout,health)
-        val waiting=a.phase=="ready"
-        val remaining=if(waiting)a.workSeconds else ((a.remaining(android.os.SystemClock.elapsedRealtime())+999)/1000).toInt()
-        val scale=LocalDensity.current.fontScale.let { it.coerceAtMost(1.35f)/it }
-        Text("${if(a.paused||waiting)"▶" else "Ⅱ"} ${formatSeconds(remaining)}",color=White,fontSize=(24*scale).sp,
-            fontWeight=FontWeight.SemiBold,modifier=Modifier.testTag("wear-automatic-clock")
-                .clickable(enabled=command!=null&&a.phase!="complete",role=Role.Button){command?.invoke(if(waiting)"start" else if(a.paused)"resume" else "pause")}
-                .semantics { contentDescription=if(waiting)"Automata munkaszakasz indítása" else if(a.paused)"Automata folytatása" else "Automata szüneteltetése" })
-        val label=if(a.phase=="rest")"Pihenő" else if(a.phase=="complete")"Rögzítve" else "Munka"
-        Text(label+if(a.rounds>1)" · ${if(waiting)1 else a.round}/${a.rounds}. kör" else "",color=Muted,fontSize=(9*scale).sp,maxLines=1)
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val bodyHeight=wearFixedPageLayout(maxWidth.value,maxHeight.value,true).bodyHeight
+        val tiny=bodyHeight<55f
+        val fontScale=LocalDensity.current.fontScale
+        val scale=fontScale.coerceAtMost(if(tiny)1f else 1.25f)/fontScale
+        val rows=wearLiveWorkoutRows(health,workout.workoutId,System.currentTimeMillis())
+        WorkoutPanel(workout,onMenu,actions={layout->WorkoutControls(workout,restRemaining,false,
+            onRecord={},onPrevious=onPrevious,onNext=onNext,onSkipRest=onSkipRest,onFinish=onFinish,layout=layout)}) {
+            // On the smallest circle, measurements share the heading instead of pushing
+            // the actionable countdown below the fixed body. Full metrics remain on page 3.
+            SetHeading(workout,restRemaining,detail=if(tiny)rows.firstOrNull() else null,compact=tiny)
+            if(!tiny)rows.take(if(bodyHeight>=96f&&fontScale<1.5f)2 else 1).forEach {
+                Text(it,color=Gold,fontSize=(9*scale).sp,lineHeight=(11*scale).sp,maxLines=1,overflow=TextOverflow.Ellipsis)
+            }
+            val waiting=a.phase=="ready"
+            val remaining=if(waiting)a.workSeconds else ((a.remaining(android.os.SystemClock.elapsedRealtime())+999)/1000).toInt()
+            val label=if(a.phase=="rest")"Pihenő" else if(a.phase=="complete")"Rögzítve" else "Munka"
+            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(4.dp)) {
+                Text("${if(a.paused||waiting)"▶" else "Ⅱ"} ${formatSeconds(remaining)}",color=White,
+                    fontSize=((if(tiny)18 else 24)*scale).sp,lineHeight=((if(tiny)20 else 28)*scale).sp,
+                    fontWeight=FontWeight.SemiBold,maxLines=1,modifier=Modifier.weight(1f).testTag("wear-automatic-clock")
+                        .clickable(enabled=command!=null&&a.phase!="complete",role=Role.Button){command?.invoke(if(waiting)"start" else if(a.paused)"resume" else "pause")}
+                        .semantics { contentDescription=if(waiting)"Automata munkaszakasz indítása" else if(a.paused)"Automata folytatása" else "Automata szüneteltetése" })
+                Text(label+if(a.rounds>1)" · ${if(waiting)1 else a.round}/${a.rounds}. kör" else "",color=Muted,
+                    fontSize=((if(tiny)8 else 9)*scale).sp,lineHeight=((if(tiny)9 else 10)*scale).sp,maxLines=2,
+                    textAlign=TextAlign.Center,modifier=Modifier.weight(1f))
+            }
+        }
     }
 }
 

@@ -658,6 +658,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     fun automaticTimedWorkKeepsSmallModeClockAndBottomControlsVisible() {
         val commands=mutableListOf<String>()
         compose.setContent { Watch { Fixture("automatic-timed",automaticCommands=commands) } }
+        screenshot("automatic-timed-ready")
         val toggle=compose.onNodeWithTag("wear-automatic-toggle").assertIsDisplayed()
         val width=toggle.fetchSemanticsNode().boundsInRoot.width
         val root=compose.onRoot().fetchSemanticsNode().boundsInRoot
@@ -667,7 +668,6 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         assertEquals(listOf("start"),commands)
         compose.onNodeWithContentDescription("Edzés befejezése").assertIsDisplayed()
         compose.onNodeWithText("Munka · 1/3. kör").assertIsDisplayed()
-        screenshot("automatic-timed-ready")
         toggle.performClick();assertEquals("toggle",commands.last())
     }
 

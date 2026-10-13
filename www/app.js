@@ -17739,7 +17739,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
     return true;
    }catch(_){if(state.session===s){s.automatic162.pending=false;paint();}alert(t('unavailable'));return false;}
   }
+  let clockPoll=null;
   function paint(){
+   const counting=external()&&state.session.automatic162.enabled&&['work','rest'].includes(state.session.automatic162.watch?.phase)&&!state.session.automatic162.watch?.paused;
+   if(counting&&!clockPoll)clockPoll=setInterval(paint,250);
+   else if(!counting&&clockPoll){clearInterval(clockPoll);clockPoll=null;}
    if(!external())return;
    TrainPilotAutomatic162.paint();const s=state.session,m=s.automatic162,a=m?.watch;
    const node=document.querySelector('[data-tp162-auto-status]');if(node)node.textContent=m.pending?t('waiting'):t('owner');
@@ -17780,7 +17784,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const baseRender=renderWorkout;renderWorkout=function(){const result=baseRender.apply(this,arguments);paint();return result;};
   const baseIndoor=tp107ToggleIndoor;tp107ToggleIndoor=function(){return external()&&state.session.automatic162.enabled&&WearTimed(state.session.exercises[state.current])?auto.dockCommand(state.session.watchAutomation162?.phase==='ready'?'start':'toggle'):baseIndoor.apply(this,arguments);};
   window.TrainPilotWearAutomatic162={accept,remote,paint};
-  setInterval(()=>{if(external())paint();},250);
+
  });
 })();
 // @endsection wear-automatic-162.js
