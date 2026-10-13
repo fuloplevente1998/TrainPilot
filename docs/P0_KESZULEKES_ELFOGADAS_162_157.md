@@ -2,7 +2,20 @@
 
 Frissítve: **2026. október 13.** Közös draft PR: [#195](https://github.com/fuloplevente1998/TrainPilot/pull/195). Forráság: `fix/p0-162-157-safe-wear-sync`. Verzió mindkét appban **1.3.4 /2730**. A main és a nyilvános kiadások nem változnak; #162 és #157 a tényleges telefonos/órás eredményig nyitva marad.
 
-## Aktuális telefonos javító APK — `c613a75`
+## Aktuális telefonos részeredmény és hibakereső APK — `0bcc1ea`
+
+**Ez még nem a közös háttérhiba igazolt megoldása.** A `c613a75` készülékes próbájában (#2417–2418) telefonról indított automata edzésnél, a sorozat telefonos rögzítésekor háttérvezérlési figyelmeztetés jelent meg. A felhasználó utóbb megerősítette: **minden edzésnél előjött**, nem csak gyorsedzésnél vagy oldalankénti ismétlésnél. A korábbi általános figyelmeztetés eltakarta a hibát kiváltó lépést; a pontos készülékes ok továbbra sem igazolt.
+
+- A `/kar` és `/láb` ismétléses gyakorlatok telefonos és natív rögzítése közös natív útvonalra került. Az oldalankénti szám nem duplázódik; pihenő, lezárt/alvó felület melletti vezérlés és ismételt parancs védelme külön tesztelt.
+- Az előkészítés/összevezetés/élesítés hibája `E162-...` kódot kap. A figyelmeztetés többé nem állítja, hogy a funkció még nincs elkészítve. A hibakód ismert hibatípust és műveletet tartalmaz, edzésazonosítót, mérési adatot vagy nyers hibaüzenetet nem. Sikeres újrapróbálás törli az aktuális hibajelzést.
+- Forrás: **`0bcc1ea33a08cc9ba372f744e431b7b17f0fd337`**, **1.3.4 /2730**. [Telefonos artifact](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38434295383/artifacts/11833450023), az átadott név `TrainPilot-1.3.4-P0-0bcc1ea-Telefon.apk`.
+- SHA-256: `40b51fdc5de73d80f9b1d4de20075a4f26d72503c230dddbcf10ae7ae4d1f806`; méret **5 811 389 byte**.
+- [Phone Release Gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38434295383): SUCCESS; 91 Chromium-csomag, natív release tesztek, aláírt APK. [Quick Validation](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38434300455) és [Performance](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38434300435): SUCCESS.
+- Letöltés után a hash, csomag/verzió, eredeti aláíró és valódi aláírás ellenőrizve; a csomagolt JS/CSS megegyezik a forrással, a natív rögzítés forrása is egyezik. A célzott helyi Robolectric integrációs harness 43 tesztet futtatott sikeresen; ez nem fizikai készülékes elfogadás.
+
+**Következő próba:** a meglévő telefonos app fölé telepítsd ezt az APK-t, az órán maradhat a `859a6a1` Wear APK. Telefonon indíts sima fekve nyomást, kapcsold be az automata módot, majd rögzíts egy sorozatot. Ha figyelmeztet, az új `E162-...` kódot kell rögzíteni; addig a közös háttérhiba nincs megoldottnak tekintve. Ha nincs figyelmeztetés, jöhet a pihenő és a következő órás rögzítés lezárt telefon mellett, majd ugyanez tervezett edzésnél. Main/release változatlan; #195 draft, #162/#157 nyitott.
+
+## Korábbi telefonos megjelenítési APK — `c613a75`
 
 A `859a6a1` készülékes próbájában (#2412) a szinkron nullás távolságmezője súlyzós gyakorlatokra is bekapcsolta a GPS/beltéri/lépés paneleket, az alsó automata állapotszöveg levágódott. A `0f49583` javítás ezeket megszünteti, a korábban hibásan besorolt aktív piszkozatot is helyreállítja; a súly, ismétlés és kész állapot megmarad. Futásnál, görkorcsolyánál és valódi távolsági gyakorlatnál a mérési panelek továbbra is elérhetők. A #2415 visszajelzés alapján a `c613a75` megszünteti a kényszerített második sort: az „Az óra vezérli” és a rövid munka/pihenő jelzés az „Automata mód” mellett látható, hosszabb szöveg a teljes alsó panelszélességet használva szükség szerint tördelhető. A visszaszámláló az alsó két gomb között marad.
 
@@ -15,7 +28,7 @@ A `859a6a1` készülékes próbájában (#2412) a szinkron nullás távolságmez
 
 A célzott regresszió a korábbi forráson három téves mérési panelt reprodukált, a javításon sikeres. Vizsgáltuk a tényleges Wear nullás mezőjét, a hibás meglévő súlyzós/időalapú piszkozatot, változatlan sorozatértékeket, négy nyelvet, 320/393 px szélességet és a megmaradó futás/görkorcsolya/egyéni/legacy távolságkezelést. Az új megjelenítési állítások mindkét szélességen igazolják, hogy az „Az óra vezérli” a módválasztóval egy sorban marad. A javító APK készülékes elfogadása még hátravan; main és release változatlan, #195 draft, #162 és #157 nyitott.
 
-**Most ezt az új telefonos APK-t kell a meglévő telefonos app fölé telepíteni.** Az órán az alább rögzített `859a6a1` Wear APK használható: az órás natív kód ebben a javításban nem változott. Először súlyzós edzésnél kapcsold be az automata módot, ellenőrizd az eltűnt téves paneleket és a teljes alsó szöveget; utána futás/görkorcsolya gyakorlatnál a megmaradó mérési lehetőségeket. A további P0 próbák a lenti táblázat szerint folytatandók.
+**Ez a korábbi megjelenítési csomag; az aktuális telefonos APK-t a fenti szakasz azonosítja.** Az órán az alább rögzített `859a6a1` Wear APK használható: az órás natív kód ebben a javításban nem változott. Először súlyzós edzésnél kapcsold be az automata módot, ellenőrizd az eltűnt téves paneleket és a teljes alsó szöveget; utána futás/görkorcsolya gyakorlatnál a megmaradó mérési lehetőségeket. A további P0 próbák a lenti táblázat szerint folytatandók.
 
 ## Korábbi közös tesztpár — `859a6a1` (az órás APK tovább használható)
 
