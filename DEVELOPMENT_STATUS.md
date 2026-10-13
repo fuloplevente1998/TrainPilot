@@ -4,9 +4,9 @@
 
 **Prioritás:** A következő fejlesztési és hibajavítási feladatok előtt ezt a munkarendet követjük. A `DEVELOPMENT_STATUS.md` a központi állapotnyilvántartás, a GitHub Issues az egyedi feladatok nyilvántartása; a kettőt szinkronban kell tartani.
 
-1. **Mikrolépések:** Az összetett munkát előzetesen 5–10 átlátható részfeladatra bontjuk. Egy körben csak **egy** részfeladatot végzünk el.
-2. **Kötelező jóváhagyási pont:** Minden részfeladat után megállunk; a következő csak a felhasználó kifejezett „Mehet tovább” / „Folytasd” jóváhagyásával kezdődik. A jóváhagyás nem terjed ki automatikusan a mainre emelésre vagy kiadásra.
-3. **Rövid válaszok:** Legfeljebb 200–300 szó vagy 40–50 sor kód válaszonként, fókuszált eredménnyel és a szükséges hivatkozásokkal. A nagyobb változtatásokat kisebb, áttekinthető egységekre bontjuk.
+1. **Átlátható körök:** Az összetett munkát előzetesen 5–10 átlátható részfeladatra bontjuk. A felhasználó későbbi kérésére az összefüggő részfeladatok közös, nagyobb fejlesztési körben végezhetők; a P0 körben a 6–7., majd a 8–9. lépés együtt halad.
+2. **Kötelező jóváhagyási pont:** Minden közösen kijelölt kör után megállunk; a következő csak a felhasználó kifejezett „Mehet tovább” / „Folytasd” jóváhagyásával kezdődik. A jóváhagyás nem terjed ki automatikusan a mainre emelésre vagy kiadásra.
+3. **Rövid válaszok:** Legfeljebb 200–300 szó válaszonként, fókuszált eredménnyel és a szükséges hivatkozásokkal. A kódszerkesztést nem bontjuk mesterséges 40–50 soros darabokra; az összefüggő változtatások és ellenőrzéseik egy körben készülnek el.
 4. **Állapotjelzés:** Minden kör végén kötelező a `[Aktuális lépés: X/Y | Állapot: Jóváhagyásra vár]` sor, a tényleges lépés és státusz alapján.
 5. **GitHub-követés:** Felméréskor először a main, ez a fájl, a részletes fejlesztési terv és a meglévő Issues/PR-ek aktuális állapotát vizsgáljuk. Meglévő feladatot nem duplikálunk. Az új fejlesztés vagy hiba saját Issue-t, elfogadási feltételeket és indokolt prioritást kap.
 6. **Biztonságos változtatás:** Célzott fejlesztési ág → ellenőrzés/tesztek → PR → felhasználói jóváhagyás → main. A tesztelt és a fizikai eszközön elfogadott állapot külön szerepel. Verziószámot, release-t és APK-t nem változtatunk önkényesen.
@@ -45,7 +45,7 @@
 Frissítve: **2026. október 13.** A felhasználói verzióleírások négy családot használnak: **1.0, 1.1, 1.2, 1.3**. A buildazonosítók, APK-k, tagek és release-ek megmaradnak.
 
 
-## P0 fejlesztési kör: #162 → #157 (2026. október 13., tesztelésre vár)
+## P0 fejlesztési kör: #162 → #157 (2026. október 13., készülékes elfogadásra vár)
 
 ### Folytatás — 6–7/10: egységes időnapló és #162 regresszió
 
@@ -57,7 +57,11 @@ A telefonos kézi rögzítés a támogatott ismétléses, automata edzésben ugy
 
 Az önálló Wear automata ugyanazt a `schema:1`, `key`, `owner`, `workMs`, `restMs`, `pausedMs`, `positionMs` időadat-szerződést exportálja. A telefon kulcsonként kumulatív hozzájárulásként menti a `session.automaticTime162` mezőbe; a duplikált snapshot nem adja hozzá kétszer. Böngészős időzítésnél a tartalék megoldás ugyanezt a formát használja. A korábbi időalapú `reps` mező konvencióját nem használjuk újra összegzéshez: a külön időnapló az egységes adatforrás.
 
-**Ellenőrzés:** helyben 39 natív Robolectric teszt, célzott Wear modell/időnapló próbák és a Node-regressziók; a GitHub-futások pontos eredménye/commitja a kör végén rögzítendő. **Készülékes elfogadás nem történt.** A GPS-tulajdonos külön előkészítése marad a korábban kijelölt hatókörben, a nem támogatott mérések meglévő útvonala megmarad. A #162 és #157 nyitott, verzió **1.3.4 /2730**. Következő közös kör: #157, majd a megállapodott release gate és tesztbuild.
+Pihenő közbeni telefonos javítás vagy ismételt vezérlés-előkészítés nem indít kézi munkafázist; a pihenő nem számolódhat munkaidőként is. Egy korábbi kész sorozat javítása megőrzi az éppen végzett kézi sorozat időhorgonyát. A telefonos rögzítési útvonal a modern Capacitor plugin-regiszterrel is működik, a sikertelen bridge-hívás pedig nem állítja készre a sorozatot.
+
+**Végső GitHub-ellenőrzés — `1fff2ecd465369b7f7dd9ecf795a2820f00805de`:** a [Quick Validation](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38402839749) **140 sikeres / 0 hibás** Node-tesztcsomaggal zárult. Az [APK nélküli natív Gradle-validáció](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38402839765) a teljes telefonos modulban **145**, a Wear modulban **97** unit tesztet futtatott: **0 hiba, 0 kihagyás**. A tényleges telefonos Java- és Wear Kotlin-forrás is fordult. Helyben az új P0 alap 41 natív Robolectric tesztje és 32 Wear modelltesztje sikeres volt; ezek a részhalmazok nem adódnak hozzá a teljes CI-tesztszámokhoz. A kizárólag Markdown-fájlokat módosító későbbi push nem ismétli meg a natív Gradle-futást.
+
+**Készülékes elfogadás nem történt.** A GPS-tulajdonos külön előkészítése marad a korábban kijelölt hatókörben, a nem támogatott mérések meglévő útvonala megmarad. A #162 és #157 nyitott, verzió **1.3.4 /2730**. Következő, külön jóváhagyandó közös kör: #157, majd a megállapodott release gate és tesztbuild. Az alábbi 4–5/10 bejegyzések a korábbi lépések akkori helyi állapotát őrzik; a mostani forrás már a fenti GitHub-tesztágon található.
 
 ### Helyi folytatás — 5/10: natív parancsbekötés és űrlapfüggetlen indítás
 

@@ -10,13 +10,15 @@ A `work/` tesztágon Quick Validation és APK nélküli natív Gradle-tesztek fu
 
 A felhasználó gyorsabb, nagyobb köröket kért. A 6–7. lépés közös: natív időnapló + #162 regresszió. A következő kör #157 + közös gate/tesztbuild, utána készülékes próba és dokumentáció. Összefüggő kódrészekkel haladunk; nem bontjuk mesterséges 40–50 sorokra. Körönként egy jóváhagyási megálló marad.
 
+**A 6–7. kör ellenőrzött forrása:** `1fff2ecd465369b7f7dd9ecf795a2820f00805de`. A [Quick Validation](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38402839749) 140 sikeres tesztcsomaggal, a [natív Gradle-validáció](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38402839765) 145 telefonos és 97 Wear unit teszttel sikeres. A kör végén **7/10**, jóváhagyásra vár; hátravan a közös 8–9. kör és a 10. készülékes visszaellenőrzés. A #162 és #157 továbbra is nyitott, a #195 draft. A tesztág forrását nem szabad mainen elfogadott vagy kiadott állapotként leírni.
+
 ## 1. Honnan dolgozunk?
 
 - Repository: **https://github.com/fuloplevente1998/TrainPilot**.
-- Kiinduló ág: mindig a GitHub **aktuális mainje**, külön feladatágon folytatva. A dokumentum készítése előtti main: `f88d9c10682d0a80bedc44e7a29ebdd929ab2873`; ez azonosítás, nem utasítás egy később elavuló commithoz való visszatérésre.
+- Új feladat kiinduló ága a GitHub **aktuális mainje**, külön feladatágon folytatva. A folyamatban lévő P0 munkát viszont **`origin/work/p0-162-native`** alapján folytatjuk, mert a main még nem tartalmazza a 4–7. lépés fejlesztését. A kör végén ellenőrzött main: `0b37cedca5ca5ef0f42cbfdc380e9127e9775973`.
 - A #179 egyesítette a telefonos/órás automata módot és a Wear-kezdőlapot. A #181 mentésjavítása is mainen van. A #180 mentést a felhasználó elfogadta, a hibajegy lezárva.
 - Verzió mindkét appban: **1.3.4 /2730**. Több teszt-APK használja ezt a verziót; a pontos forráscommit és SHA-256 azonosítja a csomagot.
-- Az eredeti `v1.3.4` és `wear-v1.3.4` release binárisai korábbi kiadott forrást őriznek. Folytatáshoz a main és az alábbi tesztpár az alap.
+- Az eredeti `v1.3.4` és `wear-v1.3.4` release binárisai korábbi kiadott forrást őriznek. Az alábbi APK-pár korábbi készülékesen elfogadott alap; a mostani P0 fejlesztésből még nem készült teszt-APK.
 - Egy régi chat `/workspace` könyvtára és letöltési linkje nem garantáltan érhető el az új környezetben. A GitHubon tárolt forrás, dokumentáció és buildazonosító a tartós alap.
 
 Elsőként olvasandó:
@@ -43,20 +45,20 @@ Ha csak GitHub-eszközök vannak, a dokumentáció és PR előkészíthető, és
 
 1. Ellenőrizd a felhasználó legutóbbi kérését, az aktuális main/issue/PR állapotot és az esetleges helyi módosításokat. A régi dokumentum nem írja felül az új felhasználói döntést.
 2. Új munkaterületen klónozd a repót, vagy frissítsd a meglévőt. Más ember módosítását ne töröld és ne keverd automatikusan a saját feladatodba.
-3. A friss mainből készíts `feat/...`, `fix/...` vagy dokumentációhoz `docs/...` ágat. A régi #164/#178 munkafákból ne készüljön külön eltérő folytatás.
+3. Új feladathoz a friss mainből készíts feladatágat. A jelenlegi P0 folytatásához checkoutold az `origin/work/p0-162-native` ágat; a `fix/` közös ágat csak a kijelölt gate-körben frissítsd. A régi #164/#178 munkafákból ne készüljön külön eltérő folytatás.
 4. Nézd át az érintett adatút és a meglevő tesztek működését. A `www/app.js` szakaszcímeit `rg`-vel keresd; a legutolsó függvényfelülírás számít, nem feltétlenül az első találat.
 5. Készíts célzott változtatást. A meglévő napló, piszkozat, téma, szinkron és mérés viselkedését őrizd meg.
 6. Futtasd a változáshoz szükséges ellenőrzéseket, majd push és review-zható PR. A PR írja le az új működést, a bizonyítékot és a fennmaradó korlátot.
 7. Az aktuális felhasználói felhatalmazás szerint emeld mainre és kezeld a kiadást. A már megadott engedélyt ne kérd újra; egy korábbi konkrét kiadás elfogadását ne állítsd egy későbbi, még nem tesztelt funkció elfogadásának.
 8. A tesztbuild mellett add át a forráscommitot, SHA-256-ot, verziót és CI-linket. A fizikai próba visszajelzését rögzítsd; a közös tervet és folytatási leírást aktualizáld.
 
-Indítás tiszta munkaterületen, példa:
+Az aktuális P0 folytatása tiszta munkaterületen:
 
 ```bash
 git clone https://github.com/fuloplevente1998/TrainPilot.git
 cd TrainPilot
 git fetch origin
-git switch -c feat/feladat-neve origin/main
+git switch -c work/p0-162-native origin/work/p0-162-native
 npm ci
 ```
 
@@ -69,7 +71,7 @@ Terminál nélkül ne állítsd, hogy e parancsok lefutottak. A GitHub-kapcsolat
 | Telefonos UI | `www/app.js`, `www/features-110.css`, `www/index.html`, `www/sw.js` |
 | Telefonos natív kód | `android/app/src/main/java/com/repforge/app/` — Java/Capacitor |
 | Wear app | `android/wear/src/main/java/com/repforge/app/wear/` — natív Kotlin/Compose |
-| Telefonos/órás automata | JS `automatic-workout-162.js`, `intervals-162.js`, `wear-automatic-162.js` szakaszok; natív `IntervalTimerService`, `WearAutomaticService`, állapottárolók és parancssorok |
+| Telefonos/órás automata | JS `automatic-workout-162.js`, `intervals-162.js`, `automatic-time-162.js`, `phone-execution-162.js`, `phone-recording-162.js`, `wear-automatic-162.js` szakaszok; natív `PhoneWorkoutExecutionStore`, `PhoneWorkoutExecution`, `IntervalTimerService`, `IntervalTimeLedger`, `WearAutomaticService` |
 | Samsung és egészségnapló | `SamsungHealthPlugin.java`, `HealthJournalPlugin.java`, `HealthJournalStore.java`, `docs/SAMSUNG_HEALTH.md` |
 | Coach pontozás | A `www/app.js` aktuális `rf220Readiness`, `rf220EffortLoad`, `rf245Fresh` és regenerációs projekciói |
 
