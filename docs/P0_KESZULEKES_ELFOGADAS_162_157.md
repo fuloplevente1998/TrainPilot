@@ -2,7 +2,23 @@
 
 Frissítve: **2026. október 13.** Közös draft PR: [#195](https://github.com/fuloplevente1998/TrainPilot/pull/195). Forráság: `fix/p0-162-157-safe-wear-sync`. Verzió mindkét appban **1.3.4 /2730**. A main és a nyilvános kiadások nem változnak; #162 és #157 a tényleges telefonos/órás eredményig nyitva marad.
 
-## Aktuális javító telefonos APK — `1b8fb43`
+## Aktuális TIME_ORDER javító telefonos APK — `8746b14`
+
+A `1b8fb43` készülékes próbájának 2422-es képén **`E162-RECONCILE-TIME_ORDER`** jelent meg. Az élő natív időzítő gyakrabban szolgáltat friss mérést, mint az egyszer másodpercenként mentett natív checkpoint. Az összevezetés ezért egy frissebb élő mérés után régebbi mentett adatot is kaphatott; a korábbi kód ezt tiltott időcsökkenésként elutasította.
+
+A javítás azonos kulcsú és azonos forrású időnaplónál a teljes egészében régebbi számlálóvektort mellőzi, és az egész frissebb mérést megtartja. Nem csökkenti az időket, nem ad hozzá újra már beszámított időt, és nem állít össze külön mezőkből mesterséges maximumokat. A nem összehasonlítható, egymásnak ellentmondó adatok továbbra is hibát jelentenek; forrásváltás azonos kulcson külön `TIME_OWNER` hiba. Az új sorozat/esemény és a mentési kurzor régebbi idő-checkpoint mellett is tartósan feldolgozható és nyugtázható.
+
+- Forrás: **`8746b14a606045579df790d831cd068d47e86b21`**, **1.3.4 /2730**. [Telefonos artifact](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38442346873/artifacts/11837876879). Átadott fájl: `TrainPilot-1.3.4-P0-8746b14-Telefon.apk`.
+- SHA-256: `13a16eee207d4846fc17bb9fb8bde5c7e3fd19ca02c2171a7ccde198b29b3208`; méret **5 811 649 byte**.
+- [Phone Release Gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38442346873): SUCCESS; mind a 91 Chromium-csomag, natív release tesztek, aláírt APK. Az első próbában a böngészős haptikus fixture egy rövid jelzést kihagyott; ugyanaz a csoport változatlan kóddal és változatlan elvárással újrafuttatva sikeres. A tesztet nem hagytuk ki és nem gyengítettük.
+- [Quick Validation](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38442356204) és [Performance](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38442356313): SUCCESS.
+- [Kibővített Android–WebView próba](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38442346888): SUCCESS. A tényleges natív API-ból mért frissebb élő ledger és régebbi mentett ledger közti eltérés megfigyelése kötelező; utána az összevezetés, élesített vezérlő és futó natív pihenő hiba nélkül ellenőrzött. [Teszt/logcat artifact](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38442346888/artifacts/11837300761).
+- A célzott időnapló-regresszió a régi forráson az `Automatic time moved backwards` hibát reprodukálta, a javításon sikeres. Külön vizsgáltuk a frissebb mért idő megőrzését, a natív sorozat és kurzor feldolgozását, az atomikus mentést, valamint a továbbra is elutasított ellentmondó és eltérő forrású naplókat.
+- Letöltés után a csomag/verzió, hash, valódi aláírás és eredeti aláíró ellenőrizve; a csomagolt JS/CSS és a source ZIP érintett natív forrásai egyeznek az ellenőrzött commit fájljaival.
+
+**Újrapróba:** ezt az APK-t a meglévő telefonos app fölé kell telepíteni; az órán maradhat a `859a6a1` csomag. Telefonról indított automata fekve nyomásnál rögzíts egy sorozatot, és hagyd futni a pihenőt néhány másodpercig a telefonos oldalon is, hogy a sűrűbb élő időfrissítés megtörténjen. Ha nincs üzenet, zárd le a telefont, és folytasd az órán. Rövid tervezett edzésen is ismétlendő. A 2422-es készülékes eset elfogadása még hátravan; #162/#157 nyitott, #195 draft, main és release változatlan.
+
+## Korábbi rögzítési zár javítása — `1b8fb43`
 
 A `0bcc1ea` készülékes próbájának 2420-as képén a hiba **`E162-RECONCILE-NATIVE`**: az összevezetésnél, az élesítés előtt vagy a rögzítés utáni összevezetéskor történt elakadás. A teljes Android–WebView próba egy valódi rögzítési versenyt reprodukált: a natív sorozat és nyugtázás elkészült, de a hívó telefonos művelet hibás `false` eredménnyel tért vissza, mert a párhuzamos frissítés átvette az összevezetést.
 
