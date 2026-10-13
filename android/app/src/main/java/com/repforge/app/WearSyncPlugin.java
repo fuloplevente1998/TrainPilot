@@ -24,6 +24,37 @@ public class WearSyncPlugin extends Plugin {
     static final String WATCH_HOME_PATH = "/trainpilot/watch-home";
     static final String AUTOMATIC_COMMAND_PREFIX = "/trainpilot/automatic-command/";
 
+    private interface ExecutionCall { JSONObject run() throws Exception; }
+    private void execution(PluginCall call, ExecutionCall work) {
+        new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
+            try { call.resolve(new JSObject(work.run().toString())); } catch(Exception error) { call.reject(error.getMessage(), error); }
+        });
+    }
+    @PluginMethod public void executionStatus(PluginCall call) { execution(call,()->PhoneWorkoutExecution.status(getContext())); }
+    @PluginMethod public void prepareExecution(PluginCall call) { execution(call,()->{
+        PhoneWorkoutExecutionStore db=PhoneWorkoutExecution.store(getContext());
+        db.suspendCommands(true); // An unsuccessful CAS cannot leave stale prepared controls available.
+        JSONObject frame=db.prepare(call.getObject("snapshot"),call.getData().getLong("expectedRevision"));
+        db.suspendCommands(false);return new JSONObject().put("snapshot",frame);
+    }); }
+    @PluginMethod public void executeCommand(PluginCall call) { execution(call,()->PhoneWorkoutExecution.execute(getContext(),call.getObject("command"))); }
+    @PluginMethod public void acknowledgeExecution(PluginCall call) { execution(call,()->{
+        boolean ok=PhoneWorkoutExecution.store(getContext()).acknowledgeEvents(call.getString("workoutId"),call.getData().getLong("generation"),call.getData().getLong("sequence"));
+        if(!ok)throw new IllegalStateException("Native event acknowledgement changed owner");return new JSONObject();
+    }); }
+    @PluginMethod public void blockExecution(PluginCall call) { execution(call,()->{
+        PhoneWorkoutExecution.store(getContext()).setRestoreBlocked(call.getBoolean("blocked",true));return new JSONObject();
+    }); }
+    @PluginMethod public void suspendExecution(PluginCall call) { execution(call,()->{
+        PhoneWorkoutExecution.store(getContext()).suspendCommands(call.getBoolean("suspended",true));return new JSONObject();
+    }); }
+    @PluginMethod public void closeExecution(PluginCall call) { execution(call,()->{
+        PhoneWorkoutExecutionStore db=PhoneWorkoutExecution.store(getContext());
+        db.setRestoreBlocked(false); // Close and release the finish fence in this same main-looper operation.
+        boolean ok=db.closeExecution(call.getString("workoutId"),call.getData().getLong("generation"),call.getData().getLong("executionRevision"));
+        if(!ok)throw new IllegalStateException("Reconcile native events before closing execution");IntervalTimerService.closeWorkout(call.getString("workoutId"),call.getData().getLong("generation"));return new JSONObject();
+    }); }
+
     @PluginMethod public void automaticCommand(PluginCall call) {
         JSObject input=call.getObject("command");
         if(input==null||input.optString("commandId").isEmpty()||input.optString("workoutId").isEmpty()){call.reject("Missing automatic command identity.");return;}
@@ -52,8 +83,19 @@ public class WearSyncPlugin extends Plugin {
     public void publish(PluginCall call) {
         JSObject input = call.getObject("snapshot");
         if (input == null) { call.reject("Missing workout snapshot."); return; }
-        try { publishSnapshot(ActiveWorkoutStore.save(getContext(), input), call); }
-        catch (Exception e) { call.reject("Unable to prepare Wear workout snapshot.", e); }
+        new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
+            try {
+                JSONObject value=input;
+                if(input.optInt("nativeExecutionProtocol")==2){
+                    JSONObject frame=PhoneWorkoutExecution.store(getContext()).snapshot();
+                    if(frame==null||!frame.optBoolean("active")||!input.optString("workoutId").equals(frame.optString("workoutId"))
+                        || input.optLong("generation")!=frame.optLong("generation")||input.optLong("executionRevision")!=frame.optLong("executionRevision"))
+                        throw new IllegalStateException("Reconcile native execution before publishing");
+                    value=PhoneWorkoutExecution.display(getContext());
+                }
+                publishSnapshot(ActiveWorkoutStore.save(getContext(), value), call);
+            } catch(Exception e){call.reject("Unable to prepare Wear workout snapshot.",e);}
+        });
     }
 
     @PluginMethod

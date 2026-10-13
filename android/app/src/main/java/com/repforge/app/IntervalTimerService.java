@@ -13,7 +13,7 @@ import com.google.android.gms.wearable.Wearable;
 
 /** Explicitly started, finite fitness timer with an ongoing Stop notification. */
 public class IntervalTimerService extends Service {
-    static final String START="interval.START",STOP="interval.STOP",PAUSE="interval.PAUSE",RESUME="interval.RESUME",PREFS="trainpilot-interval",CHANNEL="trainpilot_interval";
+    static final String ARM="interval.ARM",START="interval.START",STOP="interval.STOP",PAUSE="interval.PAUSE",RESUME="interval.RESUME",PREFS="trainpilot-interval",CHANNEL="trainpilot_interval";
     private static final int NOTIFICATION=162;
     private static IntervalTimerService instance;
     private final Handler handler=new Handler(Looper.getMainLooper());
@@ -21,27 +21,37 @@ public class IntervalTimerService extends Service {
     private final JSONArray segments=new JSONArray();
     private IntervalTimeline timeline;
     private String key="",language="en",lastToken="";
-    private String workoutId="";
+    private String workoutId="", armedWorkoutId="";
+    private long armedGeneration;
     private JSONArray planSteps=new JSONArray();
     private long phaseNumber=0;
-    private boolean running,advance,sound,vibration,stopped,restOnly;
+    private boolean running,advance,sound,vibration,stopped,restOnly,interrupted;
     private int initialRest;
     private long elapsed,began,lastSavedSecond=-1;
     private int gpsStep;
     private PowerManager.WakeLock wake;
     private ToneGenerator tones;
     private IntervalHapticCues haptics=new IntervalHapticCues();
+    private final Runnable expire=()->{armedWorkoutId="";if(timeline!=null)stopRun();else{stopForeground(true);stopSelf();}};
     private final Runnable tick=new Runnable(){public void run(){if(!running)return;update();if(running)handler.postDelayed(this,200);}};
     @Override public void onCreate(){super.onCreate();instance=this;}
     @Override public IBinder onBind(Intent intent){return null;}
     @Override public int onStartCommand(Intent intent,int flags,int id){
         if(intent==null){stopSelf();return START_NOT_STICKY;}
-        if(STOP.equals(intent.getAction())){if(key.equals(intent.getStringExtra("key")))stopRun();return START_NOT_STICKY;}
+        if(STOP.equals(intent.getAction())){if(key.equals(intent.getStringExtra("key"))){armedWorkoutId="";stopRun();}return START_NOT_STICKY;}
+        if(ARM.equals(intent.getAction())){
+            String requested=intent.getStringExtra("workoutId");
+            if(requested==null||requested.isEmpty()||intent.getLongExtra("generation",0)<=0)return START_NOT_STICKY;
+            if(timeline!=null&&!stopped&&!"complete".equals(timeline.at(now()).phase)&&!requested.equals(workoutId))return START_NOT_STICKY;
+            if(!requested.equals(armedWorkoutId)){handler.removeCallbacks(expire);handler.postDelayed(expire,IntervalTimeline.MAX_MS);}
+            armedWorkoutId=requested;armedGeneration=intent.getLongExtra("generation",0);language=intent.getStringExtra("language");
+            channel();startForeground(NOTIFICATION,notification());return START_NOT_STICKY;
+        }
         if(PAUSE.equals(intent.getAction())||RESUME.equals(intent.getAction())){try{command(this,intent.getStringExtra("key"),PAUSE.equals(intent.getAction())?"pause":"resume");}catch(Exception ignored){}return START_NOT_STICKY;}
         if(!START.equals(intent.getAction())||running)return START_NOT_STICKY;
         try{
             JSONObject plan=new JSONObject(intent.getStringExtra("plan"));parse(plan);stopped=false;elapsed=plan.optLong("elapsedMs",0);began=SystemClock.elapsedRealtime();running=true;
-            if(Build.VERSION.SDK_INT>=26)((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).createNotificationChannel(new NotificationChannel(CHANNEL,"TrainPilot intervals",NotificationManager.IMPORTANCE_LOW));
+            channel();
             startForeground(NOTIFICATION,notification());acquire();handler.post(tick);save();
         }catch(Exception e){running=false;release();stopForeground(true);stopSelf();}
         return START_NOT_STICKY;
@@ -54,11 +64,27 @@ public class IntervalTimerService extends Service {
         if(!plan.optBoolean("autoAdvance")&&parsed.size()!=1)throw new IllegalArgumentException("Manual interval has one owner");
         return new IntervalTimeline(parsed,plan.optBoolean("autoAdvance"),plan.optInt("initialRest",0),plan.optBoolean("restOnly"));
     }
+    private void channel(){if(Build.VERSION.SDK_INT>=26)((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).createNotificationChannel(new NotificationChannel(CHANNEL,"TrainPilot intervals",NotificationManager.IMPORTANCE_LOW));}
+    static boolean armed(String workoutId,long generation){return instance!=null&&workoutId.equals(instance.armedWorkoutId)&&generation==instance.armedGeneration;}
+    /** Runs only on the main looper, in a service already started by a visible phone workout. */
+    static boolean startPrepared(JSONObject plan)throws Exception{
+        IntervalTimerService s=instance;
+        if(s==null||!armed(plan.getString("workoutId"),plan.getLong("generation")))return false;
+        if(plan.optString("key").equals(s.key))return true; // Retried outbox delivery must not reset elapsed time.
+        if(s.timeline!=null&&!s.stopped&&!"complete".equals(s.timeline.at(s.now()).phase))return false;
+        s.handler.removeCallbacks(s.tick);s.parse(plan);s.stopped=false;s.elapsed=0;s.began=SystemClock.elapsedRealtime();s.running=true;
+        s.save();s.acquire();s.handler.post(s.tick);s.notifyStatus();s.publishWatchClock();return true;
+    }
+    static void closeWorkout(String workoutId,long generation){
+        IntervalTimerService s=instance;if(s==null||!armed(workoutId,generation))return;
+        s.armedWorkoutId="";if(s.timeline==null){s.stopForeground(true);s.stopSelf();}else if(workoutId.equals(s.workoutId))s.stopRun();
+    }
+    static void disarm(){IntervalTimerService s=instance;if(s==null)return;s.armedWorkoutId="";if(s.timeline==null){s.stopForeground(true);s.stopSelf();}else if(!s.running&&"complete".equals(s.timeline.at(s.now()).phase)){s.stopForeground(true);s.stopSelf();}}
     private void parse(JSONObject plan)throws Exception{
         JSONObject current=ActiveWorkoutStore.current(this);
         workoutId=plan.optString("workoutId",current==null?"":current.optString("workoutId"));
         planSteps=new JSONArray(plan.getJSONArray("steps").toString());phaseNumber=0;
-        timeline=validate(plan);steps.clear();JSONArray rows=plan.getJSONArray("steps");for(int i=0;i<rows.length();i++){JSONObject row=rows.getJSONObject(i);steps.add(new IntervalTimeline.Step(row.getString("exerciseId"),row.getString("setId"),row.optString("name","TrainPilot"),row.getInt("work"),row.getInt("rest"),row.getInt("rounds"),row.optString("gpsKey","")));}
+        timeline=validate(plan);interrupted=false;lastSavedSecond=-1;steps.clear();JSONArray rows=plan.getJSONArray("steps");for(int i=0;i<rows.length();i++){JSONObject row=rows.getJSONObject(i);steps.add(new IntervalTimeline.Step(row.getString("exerciseId"),row.getString("setId"),row.optString("name","TrainPilot"),row.getInt("work"),row.getInt("rest"),row.getInt("rounds"),row.optString("gpsKey","")));}
         initialRest=plan.optInt("initialRest",0);restOnly=plan.optBoolean("restOnly");timeline=new IntervalTimeline(steps,plan.optBoolean("autoAdvance"),initialRest,restOnly);key=plan.getString("key");language=plan.optString("language","en");advance=plan.optBoolean("autoAdvance");sound=plan.optBoolean("sound",true);vibration=plan.optBoolean("vibration",true);while(segments.length()>0)segments.remove(0);gpsStep=0;lastToken="";haptics=new IntervalHapticCues();
     }
     private long now(){return elapsed+(running?Math.max(0,SystemClock.elapsedRealtime()-began):0);}
@@ -69,7 +95,7 @@ public class IntervalTimerService extends Service {
         int vibrationMs=haptics.next(p,running&&!stopped);
         if(vibrationMs>0)vibrate(vibrationMs);
         if(!p.token.equals(lastToken)){lastToken=p.token;phaseNumber++;if(!stopped)cue("complete".equals(p.phase));notifyStatus();publishWatchClock();}
-        if("complete".equals(p.phase)){elapsed=p.elapsedMs;running=false;began=0;release();handler.removeCallbacks(tick);save();stopForeground(true);stopSelf();}else if(p.elapsedMs/1000!=lastSavedSecond){lastSavedSecond=p.elapsedMs/1000;save();notifyStatus();}
+        if("complete".equals(p.phase)){elapsed=p.elapsedMs;running=false;began=0;release();handler.removeCallbacks(tick);save();if(armedWorkoutId.isEmpty()){stopForeground(true);stopSelf();}else notifyStatus();}else if(p.elapsedMs/1000!=lastSavedSecond){lastSavedSecond=p.elapsedMs/1000;save();notifyStatus();}
     }
     private void handoff(IntervalTimeline.Phase p){
         IntervalTimeline.Step old=steps.get(gpsStep);String tracking=old.gpsKey;
@@ -109,13 +135,20 @@ public class IntervalTimerService extends Service {
     }
     private JSONObject current(){
         JSONObject out=new JSONObject();if(timeline==null)return out;IntervalTimeline.Phase p=timeline.at(now());try{
-            out.put("key",key).put("phaseNumber",phaseNumber).put("running",running).put("stopped",stopped).put("restOnly",restOnly).put("initialRest",initialRest).put("autoAdvance",advance).put("sound",sound).put("vibration",vibration).put("language",language).put("elapsedMs",p.elapsedMs).put("stepElapsedMs",p.stepElapsedMs).put("stepIndex",p.step).put("completed",p.completed).put("phase",p.phase).put("round",p.round).put("remainingMs",p.remainingMs).put("totalMs",p.totalMs);
+            out.put("key",key).put("interrupted",interrupted).put("phaseNumber",phaseNumber).put("running",running).put("stopped",stopped).put("restOnly",restOnly).put("initialRest",initialRest).put("autoAdvance",advance).put("sound",sound).put("vibration",vibration).put("language",language).put("elapsedMs",p.elapsedMs).put("stepElapsedMs",p.stepElapsedMs).put("stepIndex",p.step).put("completed",p.completed).put("phase",p.phase).put("round",p.round).put("remainingMs",p.remainingMs).put("totalMs",p.totalMs);
             JSONArray rows=new JSONArray();for(IntervalTimeline.Step s:steps)rows.put(new JSONObject().put("exerciseId",s.exerciseId).put("setId",s.setId).put("name",s.name).put("work",s.work).put("rest",s.rest).put("rounds",s.rounds).put("gpsKey",s.gpsKey));out.put("steps",rows).put("gpsSegments",segments);JSONObject gps=DistanceTrackingService.snapshot(this);if(steps.get(p.step).gpsKey.equals(gps.optString("key"))&&!steps.get(p.step).gpsKey.isEmpty())out.put("gps",gps);
         }catch(Exception ignored){}return out;
     }
-    private void save(){if(!key.isEmpty())getSharedPreferences(PREFS,MODE_PRIVATE).edit().putString("state",current().toString()).apply();}
+    private void save(){if(!key.isEmpty()&&!getSharedPreferences(PREFS,MODE_PRIVATE).edit().putString("state",current().toString()).commit())throw new IllegalStateException("Unable to checkpoint interval");}
     private Notification notification(){
         String title=DistanceTrackingService.text(language,"Intervallumidőzítő","Interval timer","Intervalltimer","Cronometru de intervale"),pause=DistanceTrackingService.text(language,"Szünetel","Paused","Pausiert","În pauză");
+        if(timeline==null||!armedWorkoutId.isEmpty()&&!running&&"complete".equals(timeline.at(now()).phase)){
+            PendingIntent open=PendingIntent.getActivity(this,162,new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP),PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
+            PendingIntent stop=PendingIntent.getService(this,162,new Intent(this,IntervalTimerService.class).setAction(STOP).putExtra("key",key),PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
+            return new NotificationCompat.Builder(this,CHANNEL).setSmallIcon(R.mipmap.ic_launcher).setContentTitle(title)
+                .setContentText(DistanceTrackingService.text(language,"Automata edzés · Sorozat rögzítésére vár","Automatic workout · Waiting for set recording","Automatiktraining · Satz erfassen","Antrenament automat · Înregistrează seria"))
+                .setContentIntent(open).setOngoing(true).setOnlyAlertOnce(true).addAction(0,DistanceTrackingService.text(language,"Leállítás","Stop","Stoppen","Oprește"),stop).build();
+        }
         IntervalTimeline.Phase p=timeline.at(now());String label=DistanceTrackingService.text(language,"Munka","Work","Belastung","Efort");if("rest".equals(p.phase))label=DistanceTrackingService.text(language,"Pihenő","Rest","Pause","Odihnă");
         String body=(running?label+" · "+p.round+"/"+steps.get(p.step).rounds+" · "+(p.remainingMs+999)/1000+" s":pause)+" · "+steps.get(p.step).name;
         PendingIntent open=PendingIntent.getActivity(this,162,new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP),PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
@@ -126,7 +159,7 @@ public class IntervalTimerService extends Service {
     }
     private void notifyStatus(){((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).notify(NOTIFICATION,notification());}
     private void pauseRun(){if(!running){cancelVibration();return;}update();cancelVibration();if(!running)return;elapsed=now();running=false;began=0;handler.removeCallbacks(tick);release();DistanceTrackingService.pauseOwned(this,steps.get(gpsStep).gpsKey,true);save();notifyStatus();publishWatchClock();}
-    private void stopRun(){pauseRun();stopped=true;DistanceTrackingService.stopOwned(this,steps.get(gpsStep).gpsKey);save();publishWatchClock();stopForeground(true);stopSelf();}
+    private void stopRun(){if(timeline==null){stopForeground(true);stopSelf();return;}pauseRun();stopped=true;DistanceTrackingService.stopOwned(this,steps.get(gpsStep).gpsKey);save();publishWatchClock();stopForeground(true);stopSelf();}
     static JSONObject snapshot(Context context){
         IntervalTimerService service=instance;if(service!=null&&service.timeline!=null){service.update();return service.current();}
         try{JSONObject out=new JSONObject(context.getSharedPreferences(PREFS,MODE_PRIVATE).getString("state","{}"));if(out.optBoolean("running")){out.put("running",false).put("interrupted",true);context.getSharedPreferences(PREFS,MODE_PRIVATE).edit().putString("state",out.toString()).apply();}return out;}catch(Exception ignored){return new JSONObject();}
@@ -140,6 +173,6 @@ public class IntervalTimerService extends Service {
     static JSONObject attachGPS(Context context,String key,int index,String tracking)throws Exception{
         IntervalTimerService s=instance;if(s==null||!key.equals(s.key)||s.timeline.at(s.now()).step!=index||s.stopped||"complete".equals(s.timeline.at(s.now()).phase))throw new IllegalStateException("Interval owner changed");JSONObject gps=DistanceTrackingService.snapshot(context);if(!tracking.equals(gps.optString("key"))||!gps.optBoolean("active"))throw new IllegalStateException("GPS owner changed");s.steps.get(index).gpsKey=tracking;DistanceTrackingService.pauseOwned(context,tracking,!s.running||!"work".equals(s.timeline.at(s.now()).phase));s.save();return s.current();
     }
-    @Override public void onTaskRemoved(Intent root){if(timeline!=null)stopRun();}
-    @Override public void onDestroy(){if(running){cancelVibration();elapsed=now();running=false;stopped=true;DistanceTrackingService.stopOwned(this,steps.get(gpsStep).gpsKey);save();}handler.removeCallbacks(tick);release();if(tones!=null)tones.release();if(instance==this)instance=null;super.onDestroy();}
+    @Override public void onTaskRemoved(Intent root){armedWorkoutId="";if(timeline!=null)stopRun();else{stopForeground(true);stopSelf();}}
+    @Override public void onDestroy(){if(running){cancelVibration();elapsed=now();running=false;interrupted=true;DistanceTrackingService.stopOwned(this,steps.get(gpsStep).gpsKey);save();}handler.removeCallbacks(tick);handler.removeCallbacks(expire);release();if(tones!=null)tones.release();if(instance==this)instance=null;super.onDestroy();}
 }

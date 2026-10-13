@@ -621,6 +621,12 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             .put("workoutId", current.workoutId)
             .put("action", action)
             .put("createdAt", System.currentTimeMillis())
+        if (nativePhoneExecution(current, action, exercise, value)) {
+            command.put("nativeExecutionProtocol", 2).put("generation", current.generation).put("executionRevision", current.executionRevision)
+        }
+        if (action == "automaticControl" && value == "start") {
+            command.put("exerciseId", current.exercise?.id).put("setId", current.currentSet?.setId)
+        }
         if (action == "addQuickExercise") command.put("finalSnapshot",WorkoutSnapshotStore.encode(current))
         if (exerciseIndex != null) command.put("exerciseIndex", exerciseIndex)
         if (exercise != null) command.put("exerciseId", exercise.id)

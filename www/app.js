@@ -18,7 +18,7 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
     if(pending.token){if(pending.token!==health.token)throw Error('Health restore token mismatch.');await journal.finishRestore({token:health.token,commit:false});revert(health);}
     else rollback=''; // The native commit is the final durable commit point for all domains.
    }
-   await archive.recover({rollbackToken:rollback});localStorage.removeItem('repforge:archiveRestore105');localStorage.removeItem('repforge:healthRestore120');
+   await archive.recover({rollbackToken:rollback});await window.TrainPilotPhoneExecution162?.block?.(false);localStorage.removeItem('repforge:archiveRestore105');localStorage.removeItem('repforge:healthRestore120');
    window.TrainPilotBackupBusy=false;window.TrainPilotRestore105Pending='';
    if(window.TrainPilotBoot?.loading)window.TrainPilotBoot.finish();
   })();
@@ -14505,8 +14505,8 @@ var tp105RestoreOwner=null;
 var tp105WithRestoreLock=async function(work){
  if(state.session||tp105DataSyncBusy()||window.TrainPilotBackupBusy)throw Error(tp105Text('busy'));
  const owner={};tp105RestoreOwner=owner;window.TrainPilotBackupBusy=true;
- try{return await work(owner);}
- finally{tp105RestoreOwner=null;window.TrainPilotBackupBusy=false;releaseCloudBackup();if(!cloudBusy)finishCloud();}
+ try{await window.TrainPilotPhoneExecution162?.block?.(true);return await work(owner);}
+ finally{try{await window.TrainPilotPhoneExecution162?.block?.(false);}finally{tp105RestoreOwner=null;window.TrainPilotBackupBusy=false;releaseCloudBackup();if(!cloudBusy)finishCloud();}}
 };
 var tp105HealthConsent=function(){return db.get('privacyPrefs',{}).includeHealth===true;};
 var tp105Project=function(data,includeHealth){
@@ -14617,7 +14617,7 @@ var tp180PreparePhotos=async function(data){
 var tp105Archive=async function(restore=false){
  if(!isNative()){alert(tp105Text('native'));return;}if(state.session||(restore?tp105DataSyncBusy():cloudBusy&&!['drive','calendar','maintenance'].includes(cloudActiveOperation))||window.TrainPilotBackupBusy){alert(tp105Text('busy'));return;}
  const bridge=tp105ArchiveBridge();let token=null;window.TrainPilotBackupBusy=true;
- try{if(restore){const r=await bridge.open();if(r.cancelled)return;token=r.token;await restoreText(r.data,token);}else{const snapshot=await (window.TrainPilotHealthJournal?.backup?.()||makeBackup()),data=JSON.stringify(snapshot);if(new Blob([data]).size>20*1024*1024)throw Error(tp149T('backup.maxSize'));await tp180PreparePhotos(snapshot);const r=await bridge.save({data:data,name:'TrainPilot-'+new Date().toISOString().slice(0,10)+'.zip'});if(r.cancelled)return;if(!r.verified)throw Error(tp149T('backup.verifyError'));db.set('lastExport',{name:r.name,date:new Date().toISOString(),bytes:r.bytes});window.TrainPilotFeedback?.success(tp149T('backup.exportDone',{name:r.name,bytes:tp149FormatNumber(r.bytes)}));render();}}catch(e){alert(e?.message||String(e));}finally{try{if(token&&!localStorage.getItem('repforge:archiveRestore105'))await bridge.discard({token:token});}finally{window.TrainPilotBackupBusy=false;releaseCloudBackup();if(!cloudBusy)finishCloud();}}
+ try{if(restore){await window.TrainPilotPhoneExecution162?.block?.(true);const r=await bridge.open();if(r.cancelled)return;token=r.token;await restoreText(r.data,token);}else{const snapshot=await (window.TrainPilotHealthJournal?.backup?.()||makeBackup()),data=JSON.stringify(snapshot);if(new Blob([data]).size>20*1024*1024)throw Error(tp149T('backup.maxSize'));await tp180PreparePhotos(snapshot);const r=await bridge.save({data:data,name:'TrainPilot-'+new Date().toISOString().slice(0,10)+'.zip'});if(r.cancelled)return;if(!r.verified)throw Error(tp149T('backup.verifyError'));db.set('lastExport',{name:r.name,date:new Date().toISOString(),bytes:r.bytes});window.TrainPilotFeedback?.success(tp149T('backup.exportDone',{name:r.name,bytes:tp149FormatNumber(r.bytes)}));render();}}catch(e){alert(e?.message||String(e));}finally{try{if(token&&!localStorage.getItem('repforge:archiveRestore105'))await bridge.discard({token:token});}finally{try{if(restore)await window.TrainPilotPhoneExecution162?.block?.(false);}finally{window.TrainPilotBackupBusy=false;releaseCloudBackup();if(!cloudBusy)finishCloud();}}}
 };
 var tp105ManageData=async function(kind){
  if(state.session||cloudBusy||tp105DataSyncBusy()||window.TrainPilotBackupBusy){alert(tp105Text('busy'));return;}
@@ -16592,6 +16592,152 @@ window.addEventListener?.('DOMContentLoaded',function(){
 });
 // @endsection navigation-motion-137.js
 
+// @section phone-execution-162.js
+(function(){
+ 'use strict';
+ const clone=v=>JSON.parse(JSON.stringify(v)),identity=s=>String(s?.syncId||s?.started||'');
+ function merge(draft,result){
+  const frame=result?.snapshot,original=draft?.session,meta=original?.phoneExecution162;
+  if(!frame?.active||frame.workoutId!==identity(original)||frame.generation!==meta?.generation)return null;
+  const events=(result.events||[]).slice().sort((a,b)=>a.sequence-b.sequence),savedCursor=Number(meta.sequence)||0;
+  if(!events.some(e=>e.sequence>savedCursor)&&frame.executionRevision===meta.revision)return {draft,changed:false,sequence:savedCursor,needsCommit:false};
+  const next=clone(draft),session=next.session;
+  let cursor=savedCursor,changed=false,transition=null;
+  for(const event of events){
+   if(event.workoutId!==frame.workoutId||event.generation!==frame.generation||!Number.isSafeInteger(event.sequence)||event.sequence<1)throw Error('Native event identity mismatch');
+   if(event.sequence<=cursor)continue;
+   if(event.kind!=='startTimeline'){
+    const e=session.exercises.find(e=>e.id===event.exerciseId&&e.sets?.some(s=>s.setId===event.setId)),set=e?.sets.find(s=>s.setId===event.setId);
+    if(!set||event.values?.done!==true||!/^\d+$/.test(String(event.values.reps))||Number(event.values.reps)<1)throw Error('Native recording target changed');
+    if(event.before){
+     for(const field of ['reps','weight'])if(field in event.values){
+      const normal=v=>field==='weight'&&v!==''&&v!=null?Number(String(v).replace(',','.')):String(v??'');
+      if(normal(set[field])!==normal(event.before[field])&&normal(set[field])!==normal(event.values[field]))throw Error('Recorded set has conflicting edits');
+     }
+    }
+    if(set.done&&(String(set.reps)!==String(event.values.reps)||'weight' in event.values&&Number(set.weight)!==Number(event.values.weight)))throw Error('Recorded set has conflicting edits');
+    Object.assign(set,event.values);next.current=session.exercises.indexOf(e);changed=true;
+   }
+   cursor=event.sequence;transition=event.transition||null;
+  }
+  if(transition){
+   const t=frame.transition||transition,plan=t.plan,timer=result.timer;
+   session.automatic162={...session.automatic162,enabled:true,phase:t.phase};
+   if(plan){
+    const interrupted=t.state==='interrupted'||timer?.key!==plan.key||timer?.interrupted===true;
+    const run={...clone(plan),elapsedMs:timer?.key===plan.key?Number(timer.elapsedMs)||0:0,
+     phaseNumber:timer?.key===plan.key?Number(timer.phaseNumber)||0:0,running:!interrupted&&timer?.running===true,interrupted};
+    if(plan.restOnly){session.automatic162.run=run;session.automatic162.phase=interrupted?'interrupted':run.running?'rest':'paused';delete session.interval162;}
+    else{session.interval162=run;session.automatic162.run=null;session.automatic162.phase=interrupted?'interrupted':'work';next.current=t.currentExercise;}
+   }else{session.automatic162.run=null;session.automatic162.phase=t.phase;next.current=t.currentExercise;}
+   next.restEndAt=null;changed=true;
+  }
+  session.phoneExecution162={...meta,revision:frame.executionRevision,sequence:cursor};
+  next.savedAt=new Date().toISOString();return {draft:next,changed,sequence:cursor,needsCommit:changed||cursor!==(Number(meta.sequence)||0)||frame.executionRevision!==meta.revision};
+ }
+ window.TrainPilotPhoneExecution162Core={merge};
+ let busy=false,lastPrepared='',lastArmed='',warned=false;
+ const bridge=()=>window.Capacitor?.Plugins?.WearSync||window.Capacitor?.isPluginAvailable?.('WearSync')&&window.Capacitor.registerPlugin('WearSync');
+ const clock=()=>window.Capacitor?.Plugins?.IntervalTimer||window.Capacitor?.isPluginAvailable?.('IntervalTimer')&&window.Capacitor.registerPlugin('IntervalTimer');
+ const blocked=()=>window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||window.TrainPilotBoot?.loading;
+ const draft=()=>state.session?{session:state.session,workout:state.workout,current:state.current,restEndAt:state.restEndAt||null}:db.get('draft',null);
+ function commit(value){
+  db.set('draft',value); // Draft and event cursor share one localStorage commit. No acknowledgement before this succeeds.
+  if(state.session&&identity(state.session)===identity(value.session)){
+   const own=state.session,exercises=own.exercises;
+   // Keep live editor/set references valid after the atomic storage commit.
+   value.session.exercises.forEach((e,i)=>e.sets.forEach(s=>{const target=exercises[i]?.sets.find(v=>v.setId===s.setId);if(target)Object.assign(target,s);}));
+   Object.assign(own,value.session,{exercises});state.current=value.current;state.restEndAt=value.restEndAt;
+  }
+ }
+ async function reconcile(api){
+  const result=await api.executionStatus();if(blocked())return false;
+  const current=draft(),value=merge(current,result);
+  if(!value)return true;
+  if(value.needsCommit)commit(value.draft);
+  if(value.sequence&&result.events?.length)await api.acknowledgeExecution({workoutId:identity(value.draft.session),generation:value.draft.session.phoneExecution162.generation,sequence:value.sequence});
+  if(value.changed){
+   lastPrepared='';
+   // Preserve unfinished text in open editors. Refresh the workout after the editor closes.
+   const editing=document.activeElement?.matches?.('input,textarea,select')||document.querySelector('dialog[open],[role="dialog"]');
+   if(state.session&&state.tab==='plan'&&!editing)renderWorkout();
+   window.TrainPilotAutomatic162?.adoptNative?.();window.TrainPilotIntervals162?.adoptNative?.();
+  }
+  return true;
+ }
+ async function sync({prepare=true}={}){
+  const api=bridge();if(!api?.executionStatus)return true;if(busy||blocked())return false;busy=true;
+  try{
+   if(!await reconcile(api))return false;
+   const current=draft(),session=current?.session;
+   const remote=await api.executionStatus();if(blocked())return false;
+   const enabled=session?.automatic162?.enabled===true&&(session.timerOwner||'phone')==='phone';
+   // GPS acquisition has its own owner; background handoff is enabled after that owner is prepared separately.
+   const supported=enabled&&!session.exercises.some(e=>e.measurementType==='distance');
+   if(!supported){
+    if(remote.snapshot?.active){
+     if(remote.events?.length)return false;
+     if(identity(session)===remote.snapshot.workoutId){await api.suspendExecution({suspended:true});await clock()?.disarmWorkout?.();}
+     else await api.closeExecution({workoutId:remote.snapshot.workoutId,generation:remote.snapshot.generation,executionRevision:remote.snapshot.executionRevision});
+    }
+    lastPrepared='';lastArmed='';return true;
+   }
+   if(!prepare)return true;
+   if(remote.snapshot?.active&&remote.snapshot.workoutId!==identity(session)){
+    if(remote.events?.length)return false;
+    await api.closeExecution({workoutId:remote.snapshot.workoutId,generation:remote.snapshot.generation,executionRevision:remote.snapshot.executionRevision});
+   }
+   const live=draft();if(identity(live?.session)!==identity(session))return false;
+   if(!session.phoneExecution162){
+    const generation=Math.max(Date.now(),Number(db.get('phoneExecutionGeneration162',0))+1,Number(remote.snapshot?.generation||0)+1);
+    db.set('phoneExecutionGeneration162',generation);session.phoneExecution162={generation,revision:0,sequence:0};commit(current);
+   }
+   let assigned=false;for(const e of session.exercises)for(const set of e.sets||[])if(!set.setId){set.setId=crypto.randomUUID();assigned=true;}
+   if(assigned)commit(current);
+   const value=window.TrainPilotWearSync?.makeSnapshot?.();if(!value)return false;
+   const c=TrainPilotInterval162Core.config({...{work:60,rest:60,rounds:8,sound:true,vibration:true},...settings().intervalPreset110,autoAdvance:true});
+   if(!c)return false;
+   const meta=session.phoneExecution162,frame={...value,active:true,generation:meta.generation,executionRevision:meta.revision,automaticEnabled:true,timerConfig:c};
+   const preferences=settings();frame.exercises=frame.exercises.map((e,i)=>{
+    const value=Number(session.exercises[i]?.prescription?.rest??preferences.programRest?.[session.programId]??preferences.rest);
+    return {...e,restSeconds162:Number.isFinite(value)?Math.max(0,Math.min(3600,Math.round(value))):90};
+   });
+   frame.restSeconds=frame.exercises[frame.currentExercise]?.restSeconds162??90;
+   const signature=JSON.stringify({workoutId:frame.workoutId,generation:frame.generation,currentExercise:frame.currentExercise,exercises:frame.exercises,restSeconds:frame.restSeconds,timerConfig:c,language:frame.language});
+   if(signature!==lastPrepared){
+    const result=await api.prepareExecution({snapshot:frame,expectedRevision:meta.revision});
+    if(blocked()||identity(draft()?.session)!==frame.workoutId)return false;
+    session.phoneExecution162.revision=result.snapshot.executionRevision;commit(draft());lastPrepared=signature;
+   }
+   const armKey=frame.workoutId+'|'+meta.generation;
+   if(lastArmed!==armKey&&!document.hidden&&state.session===session){
+    if(!clock()?.armWorkout)throw Error('Native automatic controller unavailable');
+    await clock().armWorkout({workoutId:frame.workoutId,generation:meta.generation,language:frame.language});lastArmed=armKey;
+   }
+   warned=false;return true;
+  }catch(error){
+   if(!warned&&state.session&&!document.hidden){warned=true;window.tp153Toast?.(rf212Lang()==='hu'?'Az órás háttérvezérlés még nem áll készen. Tartsd nyitva a telefonos edzést.':'Watch background control is not ready. Keep the phone workout open.',5000);}
+   return false;
+  }finally{busy=false;}
+ }
+ async function finishFence(work){
+  const api=bridge(),session=state.session;if(!api?.executionStatus||!session?.phoneExecution162)return work();
+  if(busy||blocked())return false;busy=true;
+  try{
+   await api.blockExecution({blocked:true});
+   if(!await reconcile(api))return false;
+   const result=await work();
+   if(state.session!==session){
+    const native=await api.executionStatus(),frame=native.snapshot;
+    if(frame?.active&&frame.workoutId===identity(session))await api.closeExecution({workoutId:frame.workoutId,generation:frame.generation,executionRevision:frame.executionRevision});
+   }
+   return result;
+  }finally{try{await api.blockExecution({blocked:false});}finally{busy=false;}}
+ }
+ window.TrainPilotPhoneExecution162={sync,finishFence,isReconciling:()=>busy,block:async value=>{const api=bridge();if(api?.blockExecution)await api.blockExecution({blocked:value});}};
+})();
+// @endsection phone-execution-162.js
+
 // @section wear-sync.js
 /* TrainPilot Wear OS bridge.
  * Phone remains canonical, but the watch also receives a cached home/program
@@ -16845,6 +16991,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const current=state.session?(Number.isInteger(state.current)?state.current:0):(Number(draft?.current)||0);
    return {
     schema:1,
+    ...(session.phoneExecution162&&session.automatic162?.enabled===true&&(session.timerOwner||'phone')==='phone'&&!session.exercises.some(e=>e.measurementType==='distance')?{nativeExecutionProtocol:2,generation:session.phoneExecution162.generation,executionRevision:session.phoneExecution162.revision}:{}),
     workoutId:sessionKey(session),
     watchSequence:Number(session.wearSequence)||0,
     quickWorkout:session.type==='quick'||session.quickWorkout===true,
@@ -16909,7 +17056,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(typeof tp153Toast==='function')tp153Toast(messages[language()]||messages.en,5000);
  }
  async function syncNow(){
-  if(busy)return;
+  if(busy||window.TrainPilotBackupBusy)return;
+  if(api()?.executionStatus&&window.TrainPilotPhoneExecution162&&!await window.TrainPilotPhoneExecution162.sync())return;
   const bridge=api();if(!bridge)return;
   const value=snapshot(),payload=value?JSON.stringify(value):null;
   if(pendingWatchStart && (pendingWatchStart.id!==value?.workoutId || document.hidden || Date.now()-pendingWatchStart.createdAt>15000)){
@@ -16953,6 +17101,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  function locateSet(exercise,command){
   const sets=Array.isArray(exercise?.sets)?exercise.sets:[];
+  if(command?.setId){const index=sets.findIndex(s=>s.setId===command.setId);return index>=0?{set:sets[index],index}:null;}
   const requested=Number(command?.setIndex);
   if(Number.isInteger(requested)&&requested>=0&&requested<sets.length){
    const set=sets[requested];
@@ -17098,6 +17247,12 @@ window.addEventListener?.('DOMContentLoaded',function(){
  async function applyCommand(command){
   if(!command||typeof state==='undefined')return false;
   const action=String(command.action||''),expectedId=String(command.workoutId||'');
+  if(command.nativeExecutionProtocol===2&&expectedId&&isClosed(expectedId))return true;
+  if(command.nativeExecutionProtocol===2&&['completeSet','automaticControl'].includes(action)&&(action==='completeSet'||command.value==='start')){
+   const result=await api()?.executeCommand?.({command});
+   if(['applied','duplicate'].includes(result?.status))return window.TrainPilotPhoneExecution162.sync({prepare:false});
+   return recordResult(command,'error',rf212Lang()==='hu'?'Az órás parancs elavult vagy az időzítő nem áll készen. Ellenőrizd az edzést.':'The watch command is stale or the timer is not ready. Check the workout.');
+  }
   if(action==='requestHome')return syncHomeNow({force:true});
   if(action==='healthSummary')return attachMeasuredHealth(command);
   if(action==='watchAutomationState'){
@@ -17218,6 +17373,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  async function drainCommands(){
   if(commandBusy||window.TrainPilotBackupBusy)return;
+  if(api()?.executionStatus&&window.TrainPilotPhoneExecution162&&!await window.TrainPilotPhoneExecution162.sync({prepare:false}))return;
   const bridge=api();if(!bridge?.pendingCommands||!bridge?.ackCommand)return;
   commandBusy=true;
   try{
@@ -17508,10 +17664,14 @@ window.addEventListener?.('DOMContentLoaded',function(){
    }}catch(_){/* A transient bridge failure does not change the owning workout. */}finally{polling=false;}}
   function ensure(){if(owner()&&!timer)timer=setInterval(sync,250);}
   TrainPilot110.startInterval=async function(form,initialRest=0){
-   if(!Number.isInteger(initialRest)||initialRest<0||initialRest>3600)return false;
-   if(busy)return false;const c=config({work:form?.elements.work.value,rest:form?.elements.rest.value,rounds:form?.elements.rounds.value,sound:form?.elements.sound.checked,vibration:form?.elements.vibration.checked,autoAdvance:form?.elements.autoAdvance?.checked});if(!form?.reportValidity()||!c)return false;
-   const previous=owner();if(previous&&!previous.run.stopped&&previous.run.phase?.phase!=='complete'){status(form,t('busy'),true);return false;}
+   const c=config({work:form?.elements.work.value,rest:form?.elements.rest.value,rounds:form?.elements.rounds.value,sound:form?.elements.sound.checked,vibration:form?.elements.vibration.checked,autoAdvance:form?.elements.autoAdvance?.checked});
+   if(!form?.reportValidity()||!c)return false;
    if(!native()&&!c.autoAdvance&&!tp106GpsState.active&&!initialRest)return oldStart(form);
+   return startConfigured(c,initialRest,form);
+  };
+  async function startConfigured(value,initialRest=0,form=null){
+   const c=config(value);if(busy||!c||!Number.isInteger(initialRest)||initialRest<0||initialRest>3600)return false;
+   const previous=owner();if(previous&&!previous.run.stopped&&previous.run.phase?.phase!=='complete'){status(form,t('busy'),true);return false;}
    const session=state.session,index=state.current,e=session?.exercises?.[index];if(!session||!timed(e)||!e.sets?.some(s=>!s.done)){status(form,t('invalid'),true);return false;}
    if(tp106GpsBusy){status(form,tp106T('busy'),true);return false;}busy=true;
    const key='iv|'+crypto.randomUUID(),steps=queue(session,index,c,key);if(!phase(steps,c.autoAdvance,0,initialRest)){busy=false;status(form,t('limit'),true);return false;}
@@ -17547,7 +17707,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   function wrapAction(name){const base=window[name];window[name]=function(){const o=owner(),session=state.session,args=arguments,ctx=this;if(!o||o.run.stopped||o.run.phase?.phase==='complete')return base.apply(ctx,args);return command('stop').then(ok=>{if(ok&&state.session===session)return base.apply(ctx,args);});};}
   for(const name of ['nextExercise','prevExercise','finishWorkout','toggleSet'])wrapAction(name);
   const oldRemove=tp106BeforeSetRemoval;tp106BeforeSetRemoval=async function(session,e,set){const o=owner();if(o?.session===session&&o.run.steps.some(s=>s.setId===set.setId)&&!await command('stop'))return false;return oldRemove.apply(this,arguments);};
-  window.TrainPilotIntervals162={stop:()=>command('stop'),command,sync,owner,paint};
+  window.TrainPilotIntervals162={stop:()=>command('stop'),command,sync,owner,paint,startConfigured,adoptNative(){ensure();void sync();}};
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)void sync();});ensure();void sync();
  });
 })();
@@ -17626,9 +17786,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
    }catch(e){if(live(o)){o.meta.message=t('failed');save(o);paint();}return false;}finally{changing=false;}
   }
   async function startTimed(initialRest=0){
-   const form=document.querySelector('.tp110-interval form');if(!form)return false;
-   if(form.elements.autoAdvance)form.elements.autoAdvance.checked=true;
-   return TrainPilot110.startInterval(form,initialRest);
+   const c={work:60,rest:60,rounds:8,sound:true,vibration:true,...settings().intervalPreset110,autoAdvance:true};
+   return TrainPilotIntervals162.startConfigured(c,initialRest);
   }
   async function beginRest(){
    const session=state.session,meta=session?.automatic162;if(!meta?.enabled)return;
@@ -17699,7 +17858,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const baseRemoval=tp106BeforeSetRemoval;tp106BeforeSetRemoval=async function(){if(owner()?.meta.run&&!await command('stop'))return false;return baseRemoval.apply(this,arguments);};
   const baseSkip=skipTimer;skipTimer=function(){return owner()?.meta.run?command('skipRest'):baseSkip.apply(this,arguments);};
   const baseResume=resumeDraft;resumeDraft=function(){const result=baseResume.apply(this,arguments);ensure();void sync();return result;};
-  window.TrainPilotAutomatic162={toggle,command,dockCommand,startTimed,sync,owner,paint};
+  window.TrainPilotAutomatic162={toggle,command,dockCommand,startTimed,sync,owner,paint,adoptNative(){ensure();void sync();}};
   window.TrainPilotAutomatic162.snapshotForWatch=function(s){
    const m=s?.automatic162,iv=s?.interval162,p=iv?.phase,r=m?.run;
    if(!m?.enabled&&!iv)return null;
@@ -17710,6 +17869,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
    return {enabled:m?.enabled===true,owner:'phone',phase,paused,remainingMs,deadlineAt:remainingMs&&!paused?Date.now()+remainingMs:0,
     key:r?.key||iv?.key||'',phaseNumber:r?.phaseNumber||iv?.phaseNumber||0,targetExercise:state.current,workSeconds:Number(step?.work??iv?.work??30),restSeconds,vibration:false,interrupted:r?.interrupted||iv?.interrupted||false};
   };
+  const nativeFinish=window.finishWorkout;
+  window.finishWorkout=function(){const args=arguments,ctx=this;return window.TrainPilotPhoneExecution162?.finishFence?window.TrainPilotPhoneExecution162.finishFence(()=>nativeFinish.apply(ctx,args)):nativeFinish.apply(ctx,args);};
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)void sync();});ensure();void sync();
  });
 })();

@@ -41,7 +41,10 @@ data class WearWorkout(
     val localSequence: Long = 0L,
     val quickWorkout: Boolean = false,
     val automation: WearAutomatic? = null,
-    val timerOwner: String = "phone"
+    val timerOwner: String = "phone",
+    val nativeExecutionProtocol: Int = 0,
+    val generation: Long = 0L,
+    val executionRevision: Long = 0L
 ) {
     fun elapsedSeconds(now: Long = System.currentTimeMillis()): Int = try {
         ((now - java.time.Instant.parse(started).toEpochMilli()).coerceAtLeast(0L) / 1000L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
@@ -183,7 +186,10 @@ object WorkoutSnapshotStore {
                 localSequence = root.optLong("localSequence", root.optLong("watchSequence", 0L)),
                 quickWorkout = root.optBoolean("quickWorkout", root.optString("dayId") == "quick" && root.optString("programId").isBlank()),
                 automation = WearAutomatic.parse(root.optJSONObject("automation")),
-                timerOwner = root.optString("timerOwner",root.optJSONObject("automation")?.optString("owner") ?: "phone")
+                timerOwner = root.optString("timerOwner",root.optJSONObject("automation")?.optString("owner") ?: "phone"),
+                nativeExecutionProtocol = root.optInt("nativeExecutionProtocol"),
+                generation = root.optLong("generation"),
+                executionRevision = root.optLong("executionRevision")
             )
         } catch (_: Exception) { null }
     }
@@ -205,6 +211,9 @@ object WorkoutSnapshotStore {
             .put("restSeconds", workout.restSeconds)
             .put("restEndAt", workout.restEndAt)
             .put("timerOwner",workout.timerOwner)
+            .put("nativeExecutionProtocol",workout.nativeExecutionProtocol)
+            .put("generation",workout.generation)
+            .put("executionRevision",workout.executionRevision)
         workout.automation?.let { root.put("automation",it.json()) }
         val exercises = JSONArray()
         workout.exercises.forEach { exercise ->
@@ -239,5 +248,11 @@ object WorkoutSnapshotStore {
 
 internal fun preservePendingWearEdits(current: WearWorkout, incoming: WearWorkout): WearWorkout =
     if(current.workoutId==incoming.workoutId && incoming.localSequence<current.localSequence)
-        current.copy(revision=maxOf(current.revision,incoming.revision))
+        current.copy(revision=maxOf(current.revision,incoming.revision),nativeExecutionProtocol=incoming.nativeExecutionProtocol,generation=incoming.generation,executionRevision=incoming.executionRevision)
     else incoming
+
+/** Unsupported measurements keep their existing recorder; no phone-owned clock is created by the watch. */
+internal fun nativePhoneExecution(workout: WearWorkout, action: String, exercise: WearExercise?, value: Any?): Boolean =
+    workout.nativeExecutionProtocol == 2 && workout.generation > 0 && workout.executionRevision > 0 && workout.timerOwner == "phone" &&
+        (action == "automaticControl" && value == "start" || action == "completeSet" && exercise != null &&
+            exercise.repUnit.replace("\\s+".toRegex(), "").lowercase() in listOf("", "ism.", "reps") && exercise.measurementType != "distance")

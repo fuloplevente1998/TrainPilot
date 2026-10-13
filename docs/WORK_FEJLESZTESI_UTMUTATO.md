@@ -2,6 +2,14 @@
 
 Frissítve: **2026. október 13.** Ez az egy fájl új Work-beszélgetésbe feltölthető vagy bemásolható. A Samsung energiapontszám kutatása és a javasolt Coach-integráció is itt szerepel.
 
+## Most futó, még helyi P0 kör
+
+A felhasználó a #194 `0b37ced` commitjában rögzített sorrendet kérte: **#162 → #157**, utána a következő prioritás. A folytatás forrása a draft [#195](https://github.com/fuloplevente1998/TrainPilot/pull/195) `e528d1e` remote feje, az erre épülő helyi `local/p0-162-native` ágban. A 4/10-es alap helyi commitja `3fff44c`; az 5/10-es natív bekötés állapota és korlátai a [DEVELOPMENT_STATUS.md](../DEVELOPMENT_STATUS.md) elején találhatók.
+
+Ebben a körben a kódot nem pusholjuk a közös gate-szakasz előtt, mert a `fix/*` push automatikusan release ellenőrzéseket indít. Új Work-munkamenetben az átadott helyi patch-eket is alkalmazni kell: a mostani natív folytatás még **nincs a GitHub mainen vagy a #195 remote ágán**. Verzió: **1.3.4 /2730**, APK még nem készült. A következő jóváhagyandó részfeladat a **6/10: egységes munka/pihenő/szünet naplózás**; #157 készülékes mérésigazolása később következik.
+
+A munkamenet rövid, összefüggő részfeladatokban halad. A felhasználó engedte a kód teljes részfeladatonkénti megírását; nem kell mesterséges 40–50 soros kódrészekre bontani. Az elfogadott lépés végén a megálló és a rövid státuszjelzés megmarad.
+
 ## 1. Honnan dolgozunk?
 
 - Repository: **https://github.com/fuloplevente1998/TrainPilot**.

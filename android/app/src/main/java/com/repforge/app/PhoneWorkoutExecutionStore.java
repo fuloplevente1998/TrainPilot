@@ -9,7 +9,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/** Native recording state and durable receipts. Integration is deliberately a separate step. */
+/** Native execution state and receipts commit together before transport acknowledgement. */
 final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
     static final String DATABASE = "trainpilot_phone_execution.db";
     PhoneWorkoutExecutionStore(Context context) { super(context.getApplicationContext(), DATABASE, null, 1); }
@@ -53,6 +53,7 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
         if (input == null) throw new IllegalArgumentException("missingFrame");
         JSONObject incoming = new JSONObject(input.toString());
         PhoneWorkoutRecording.validateFrame(incoming);
+        PhoneWorkoutPlans.validateConfig(incoming);
         if (PhoneWorkoutRecording.version(incoming, "executionRevision") != expectedRevision)
             throw new IllegalArgumentException("revisionConflict");
         SQLiteDatabase db = getWritableDatabase(); db.beginTransaction();
@@ -70,6 +71,11 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
                 if (pending(db, old.getString("workoutId"), old.getLong("generation")))
                     throw new IllegalStateException("pendingRecordingEvents");
                 PhoneWorkoutRecording.retainCompleted(old, incoming);
+                if (old.has("transition")) {
+                    JSONObject transition=old.getJSONObject("transition"),plan=transition.optJSONObject("plan"),automation=incoming.optJSONObject("automation");
+                    if (plan!=null&&automation!=null&&plan.optString("key").equals(automation.optString("key"))) incoming.put("transition",transition);
+                    else incoming.remove("transition");
+                }
             } else if (expectedRevision != 0 || incoming.getLong("generation") <= old.getLong("generation")
                     || incoming.getString("workoutId").equals(old.getString("workoutId"))) {
                 throw new IllegalArgumentException("closedOrStaleExecution");
@@ -100,7 +106,11 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
             JSONObject frame = current(db);
             if (frame == null) return rejected("noExecution");
             JSONObject next;
-            try { next = PhoneWorkoutRecording.record(frame, command); }
+            try {
+                next = PhoneWorkoutRecording.record(frame, command);
+                JSONObject transition = PhoneWorkoutPlans.afterRecord(next, next.getInt("currentExercise"));
+                if (transition != null) next.put("transition", transition);
+            }
             catch (JSONException | IllegalArgumentException invalid) {
                 return rejected(invalid instanceof JSONException ? "invalidCommand" : invalid.getMessage());
             }
@@ -110,7 +120,10 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
                     .put("workoutId", next.getString("workoutId")).put("generation", next.getLong("generation"))
                     .put("executionRevision", next.getLong("executionRevision"))
                     .put("exerciseId", target.exercise.getString("id")).put("setId", target.set.getString("setId"))
-                    .put("recordedAt", System.currentTimeMillis()).put("values", values);
+                    .put("recordedAt", System.currentTimeMillis()).put("values", values)
+                    .put("before",new JSONObject().put("reps",target.set.opt("reps")).put("weight",target.set.opt("weight")));
+            if (next.has("transition")) result.put("transition", next.getJSONObject("transition"));
+            next.put("watchSequence", Math.max(next.optLong("watchSequence"), command.optLong("sequence")));
             ContentValues row = new ContentValues(); row.put("command_id", id); row.put("fingerprint", fingerprint);
             row.put("workout_id", next.getString("workoutId")); row.put("generation", next.getLong("generation"));
             row.put("event", result.toString());
@@ -118,6 +131,80 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
             save(db, next); result.put("sequence", sequence);
             db.setTransactionSuccessful(); return result;
         } finally { db.endTransaction(); }
+    }
+
+
+    synchronized JSONObject receipt(JSONObject command) throws JSONException {
+        String id = PhoneWorkoutRecording.id(command, "commandId");
+        try (Cursor c = getReadableDatabase().rawQuery("SELECT seq, fingerprint, event FROM recordings WHERE command_id=?", new String[]{id})) {
+            if (!c.moveToFirst()) return null;
+            if (!PhoneWorkoutRecording.fingerprint(command).equals(c.getString(1))) return rejected("commandIdentityCollision");
+            return new JSONObject(c.getString(2)).put("sequence", c.getLong(0)).put("status", "duplicate");
+        }
+    }
+
+    /** Explicit watch start uses the same durable outbox as a recorded repetition set. */
+    synchronized JSONObject startTimeline(JSONObject command) throws JSONException {
+        String id = PhoneWorkoutRecording.id(command, "commandId");
+        SQLiteDatabase db = getWritableDatabase(); db.beginTransaction();
+        try {
+            if (blocked(db)) return rejected("restoreInProgress");
+            String fingerprint = PhoneWorkoutRecording.fingerprint(command);
+            try (Cursor c = db.rawQuery("SELECT seq, fingerprint, event FROM recordings WHERE command_id=?", new String[]{id})) {
+                if (c.moveToFirst()) {
+                    if (!fingerprint.equals(c.getString(1))) return rejected("commandIdentityCollision");
+                    return new JSONObject(c.getString(2)).put("sequence", c.getLong(0)).put("status", "duplicate");
+                }
+            }
+            JSONObject old = current(db);
+            if (old == null) return rejected("noExecution");
+            JSONObject next = new JSONObject(old.toString());
+            try {
+                PhoneWorkoutRecording.validateFrame(next);
+                if (!"automaticControl".equals(command.optString("action")) || !"start".equals(command.optString("value")))
+                    throw new IllegalArgumentException("unsupportedAction");
+                if (!next.getString("workoutId").equals(PhoneWorkoutRecording.id(command, "workoutId"))
+                        || next.getLong("generation") != PhoneWorkoutRecording.version(command, "generation")
+                        || next.getLong("executionRevision") != PhoneWorkoutRecording.version(command, "executionRevision"))
+                    throw new IllegalArgumentException("revisionConflict");
+                next.put("executionRevision", PhoneWorkoutRecording.advance(next.getLong("executionRevision")));
+                JSONObject transition=PhoneWorkoutPlans.startTimed(next),first=transition.getJSONObject("plan").getJSONArray("steps").getJSONObject(0);
+                if (!first.getString("exerciseId").equals(PhoneWorkoutRecording.id(command,"exerciseId"))
+                        || !first.getString("setId").equals(PhoneWorkoutRecording.id(command,"setId")))
+                    throw new IllegalArgumentException("targetChanged");
+                next.put("transition",transition);
+            } catch (JSONException | IllegalArgumentException invalid) { return rejected("invalidTimelineStart"); }
+            next.put("watchSequence", Math.max(next.optLong("watchSequence"), command.optLong("sequence")));
+            JSONObject event = new JSONObject().put("status", "applied").put("kind", "startTimeline")
+                    .put("commandId", id).put("workoutId", next.getString("workoutId"))
+                    .put("generation", next.getLong("generation")).put("executionRevision", next.getLong("executionRevision"))
+                    .put("transition", next.getJSONObject("transition"));
+            ContentValues row = new ContentValues(); row.put("command_id", id); row.put("fingerprint", fingerprint);
+            row.put("workout_id", next.getString("workoutId")); row.put("generation", next.getLong("generation"));
+            row.put("event", event.toString()); long sequence = db.insertOrThrow("recordings", null, row);
+            save(db, next); event.put("sequence", sequence); db.setTransactionSuccessful(); return event;
+        } finally { db.endTransaction(); }
+    }
+
+    /** Delivery progress changes no user data and cannot consume a newer timeline request. */
+    synchronized boolean markTransition(String key, String state) throws JSONException {
+        if (!java.util.Arrays.asList("started", "interrupted").contains(state)) throw new IllegalArgumentException("invalidTransitionState");
+        SQLiteDatabase db = getWritableDatabase(); db.beginTransaction();
+        try {
+            JSONObject frame = current(db), t = frame == null ? null : frame.optJSONObject("transition");
+            JSONObject plan = t == null ? null : t.optJSONObject("plan");
+            if (frame == null || !frame.optBoolean("active") || plan == null || !key.equals(plan.optString("key"))) return false;
+            t.put("state", state); save(db, frame); db.setTransactionSuccessful(); return true;
+        } finally { db.endTransaction(); }
+    }
+
+    synchronized void suspendCommands(boolean value) {
+        getWritableDatabase().execSQL("INSERT OR REPLACE INTO flags(name,value) VALUES('suspended',?)", new Object[]{value ? 1 : 0});
+    }
+    synchronized boolean commandsSuspended() {
+        try (Cursor c = getReadableDatabase().rawQuery("SELECT value FROM flags WHERE name='suspended'", null)) {
+            return c.moveToFirst() && c.getInt(0) != 0;
+        }
     }
 
     synchronized JSONArray pendingEvents(String workoutId, long generation, long afterSequence) throws JSONException {
@@ -145,6 +232,8 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
             db.setTransactionSuccessful(); return true;
         } finally { db.endTransaction(); }
     }
+
+    synchronized boolean restoreBlocked() { return blocked(getReadableDatabase()); }
 
     synchronized void setRestoreBlocked(boolean value) {
         getWritableDatabase().execSQL("INSERT OR REPLACE INTO flags(name,value) VALUES('restore',?)", new Object[]{value ? 1 : 0});

@@ -47,11 +47,27 @@ Frissítve: **2026. október 13.** A felhasználói verzióleírások négy csal
 
 ## P0 fejlesztési kör: #162 → #157 (2026. október 13., tesztelésre vár)
 
-### Helyi folytatás — 4/10: natív rögzítési alap
+### Helyi folytatás — 5/10: natív parancsbekötés és űrlapfüggetlen indítás
+
+A helyi `local/p0-162-native` ág a #195 `e528d1e` forrásából és a 4/10-es `3fff44c` alapból folytatódik. A GitHub sorrendjének alapja továbbra is a #194 `0b37ced` commitja: **#162 → #157**.
+
+- A `WearCommandListenerService` a 2-es protokollú ismétlésrögzítést és új telefonos idővonal indítását már a natív végrehajtónak adja át. Stabil gyakorlat-/sorozat-ID, generáció és külön végrehajtási revízió azonosítja a célt. A régi órás protokoll és a nem támogatott mérések a korábbi útvonalon maradnak.
+- A rögzítés, a bizonylat és az előkészített következő idővonal egy SQLite-tranzakcióban mentődik. A terv állapota `pending`, `started` vagy `interrupted`; az ismételt kézbesítés nem indít második órát és nem nullázza az eltelt időt. A gyakorlat saját pihenője felülírja az általános beállítást.
+- A telefonon látható edzés előre indítja az automata vezérlőt a meglévő foreground szolgáltatásban. Háttérből új foreground szolgáltatás indítására nem támaszkodunk. Az értesítésből leállítható, az edzés lezárásakor megszűnik; az előkészített vezérlés felső időkorlátja 24 óra. Megszakadás után nincs automatikus utólagos munka vagy rezgéssorozat.
+- A JavaScript előbb összevezeti a natív eredményt, egy mentésben tárolja a piszkozatot és az eseménykurzort, majd nyugtáz és publikál. A nyitott szerkesztőt és élő sorozatreferenciákat megtartja. Újabb, ütköző telefonos értéket nem ír felül; sikertelen mentésnél nincs nyugta. Restore és telefonos befejezés körül natív írási védelem működik.
+- A `startTimed` a mentett intervallumbeállítást használja; nem keres HTML-űrlapot. Az óra csak a támogatott, telefon által vezérelt műveletekhez adja az új protokollmezőket.
+
+**Helyi ellenőrzés:** 34 Android 33 Robolectric/JUnit teszt a rögzítési tárolóra, tervekre és valódi natív szolgáltatáslogikára; 12 Wear JVM modell-/protokollteszt; 139 Node-regressziós csomag, köztük a teljes telefonos runtime új összevezetési és űrlapfüggetlen indítási próbái. A Java integráció API 35 osztályokkal és a valódi Capacitor/AndroidX/Play Services API-kkal fordult. A helyi izolált szolgáltatásharness generált erőforráskötéseket és az érintetlen GPS-szolgáltatás helyettesítőjét használja: ez **nem Gradle APK-build, fizikai Data Layer vagy készülékes elfogadás**.
+
+**A 6/10-es lépésben folytatandó:** munka/pihenő/szünet teljes natív időnaplója, időalapú befejezések tartós beolvasztása, explicit telefonos javítás/visszavonás és azok ütközéskezelése. A már rögzített értékeket a jelenlegi előkészítési API nem engedi egyszerű pillanatkép-felülírással módosítani. Amíg az időalapú eredmény nincs összevezetve, a natív vezérlő nem engedi egy új menetrenddel felülírni. A GPS-tulajdonos előkészítése továbbra is külön feladat; a távolsági edzés meglévő útvonala marad használatban.
+
+**GitHub / kiadás:** mindez egyelőre helyi, ellenőrizhető fejlesztési részeredmény. A #195 továbbra is draft, a remote fej `e528d1e`; a main, a kiadások és az **1.3.4 /2730** verzió nem változik. Nincs kódpush, közös Release Gate vagy új APK. A #162 és #157 nem zárható a mostani teszteredményből.
+
+### Előző helyi lépés — 4/10: natív rögzítési alap (`3fff44c`)
 
 A #195 `e528d1e` forrásából külön helyi munkafában készült a `PhoneWorkoutExecutionStore` és `PhoneWorkoutRecording`. A külön SQLite-adatbázis egy tranzakcióban menti a sorozatot és az idempotens parancsbizonylatot; generáció/revízió és stabil sorozat-ID védi a célt. A JavaScript által később beolvasandó események külön nyugtázhatók, a parancsbizonylat akkor is megmarad. A már rögzített sorozat értékeit egy elavult pillanatkép nem módosíthatja. A restore-zárolás, lezárt edzés és hiányzó protokollmezők védelme is része az alapnak.
 
-**Hatókör:** kézi, ismétléses sorozat natív adatrögzítési alapja. A szolgáltatás/órás parancs/WebView még nincs bekötve; a pihenő- és idővonalindítás, időalapú/távolsági sorozat és egységes időnapló későbbi lépés. Ez még nem oldja meg a #162 készülékes háttérműködését, és nem zárja a #157-et.
+**Hatókör:** kézi, ismétléses sorozat natív adatrögzítési alapja. A 4/10-es lépés végén a szolgáltatás/órás parancs/WebView még nem volt bekötve; a pihenő- és idővonalindítás, időalapú/távolsági sorozat és egységes időnapló későbbi lépés. Ez még nem oldja meg a #162 készülékes háttérműködését, és nem zárja a #157-et.
 
 **Ellenőrzés:** 18 sikeres helyi Robolectric/JUnit teszt Android 33 környezetben, az új forrásokat Java 17 célra fordítva. Valós SQLite-tranzakció visszagörgetése injektált írási hibánál, újranyitás előtti/utáni parancsismétlés, párhuzamos duplikáció, részleges eseménynyugtázás, stale pillanatkép, értékfelülírás, restore-zár, generációváltás és valódi nulla vizsgálva. A helyi futtató nem a teljes Android Release Gate; APK nem készült.
 
@@ -63,7 +79,7 @@ A közös `fix/p0-162-157-safe-wear-sync` munkában a következő **részjavít�
 - **#162, natív adatbiztonság:** a telefon órás parancssora nem dobhatja el észrevétlenül a legrégebbi, még nem nyugtázott sorozatrögzítést, amikor eléri a 64 elemnyi keretet. A Data Layer tétel nyitva marad, és a kapacitás felszabadulása után újra felolvasható. A nyugtázás és duplikációvédelmi jelző tartós mentést használ; sikertelen tartós nyugtázásnál a Data Layer tétel nem törlődik. Robolectric regressziók készültek a telítődésre, újrafelvételre és az automata állapotpillanatkép cseréjére.
 - **#157, gyors edzés:** a meglévő telefonos inline gyorsindításban ellenőrizendő az előbb snapshot, utána egyszeri óranyitás sorrend. A célzott Node-regresszió kiegészült sikertelen küldés/gyors helyreállás és visszautasított óranyitás tesztjével; nincs új óranyitás puszta polling miatt.
 
-**Még nyitott:** #162-ben az alvó telefonos WebView nélküli teljes natív ismétlésrögzítés, az óráról indított új telefonos menetrend és a munka/pihenő/szünet egységes időnaplója; #157-ben a tényleges gyorsedzés-indítás és friss mérés ellenőrzése fizikai órán. A #162 és #157 Issue egyelőre **nyitva marad**.
+**Még nyitott:** #162-ben a fenti helyi natív integráció teljes körű ellenőrzése, az időalapú eredmények és a munka/pihenő/szünet egységes natív naplója; #157-ben a tényleges gyorsedzés-indítás és friss mérés ellenőrzése fizikai órán. A #162 és #157 Issue egyelőre **nyitva marad**.
 
 **Készülékes elfogadás (mindkét feladathoz):** új telefonos gyors edzés → óra app egyszer nyílik → friss HR/kcal indul → telefon és óra lezárva mérés folytatódik → sorozatrögzítés, pihenő, kapcsolatvesztés/visszatérés → egyetlen naplóbejegyzés és külön eredetű mért adatok. Ismételjük meg tervezett edzéssel, önálló órás és önálló telefonos indítással; rögzítsük a tényleges eredményeket az Issue-kban.
 
