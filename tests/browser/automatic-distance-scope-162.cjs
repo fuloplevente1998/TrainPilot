@@ -23,9 +23,14 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+(new
  for(const width of [320,393])for(const lang of ['hu','en','de','ro']){
   await p.setViewportSize({width,height:873});await p.evaluate(lang=>{db.set('language',lang);renderWorkout();},lang);
   assert.ok(await p.evaluate(()=>{const n=document.querySelector('[data-tp162-auto-status]'),r=n.getBoundingClientRect();return r.width>40&&n.scrollWidth<=n.clientWidth+1&&n.scrollHeight<=n.clientHeight+1&&r.bottom<=innerHeight&&document.documentElement.scrollWidth<=innerWidth+1;}),'full status fits the bottom dock '+width+'/'+lang);
+  if(lang==='hu')assert.ok(await p.evaluate(()=>{const n=document.querySelector('[data-tp162-auto-status]'),r=n.getBoundingClientRect(),label=document.querySelector('.tp162-automatic .tp162-auto').getBoundingClientRect();return n.textContent.trim().length>0&&Math.abs((r.top+r.bottom-label.top-label.bottom)/2)<2&&r.height<20;}),'short status shares the automatic-mode row '+width);
   assert.equal(await p.locator('#tp106GPS,#tp106Steps,#tp107Indoor').count(),0);
  }
- await p.setViewportSize({width:393,height:873});await p.evaluate(()=>{db.set('language','hu');renderWorkout();});fs.mkdirSync('ui-evidence',{recursive:true});await p.screenshot({path:'ui-evidence/automatic-strength-scope-162.png'});
+ for(const width of [320,393]){
+  await p.setViewportSize({width,height:873});await p.evaluate(()=>{db.set('language','hu');scopeFixture('db-floor-press');});
+  assert.ok(await p.evaluate(()=>{const n=document.querySelector('[data-tp162-auto-status]'),r=n.getBoundingClientRect(),label=document.querySelector('.tp162-automatic .tp162-auto').getBoundingClientRect();return n.textContent==='Az óra vezérli'&&Math.abs((r.top+r.bottom-label.top-label.bottom)/2)<2&&r.height<20;}),'watch-owner text stays inline '+width);
+ }
+ fs.mkdirSync('ui-evidence',{recursive:true});await p.screenshot({path:'ui-evidence/automatic-strength-scope-162.png'});
  for(const id of ['db-floor-press','goblet-squat','plank']){
   await p.evaluate(id=>scopeFixture(id,true),id);
   assert.equal(await p.locator('#tp106GPS,#tp106Steps').count(),0,'existing polluted draft is repaired for '+id);
