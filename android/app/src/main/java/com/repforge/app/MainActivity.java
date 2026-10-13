@@ -2,6 +2,7 @@ package com.repforge.app;
 
 import android.os.Bundle;
 import android.view.View;
+import android.webkit.WebSettings;
 import androidx.activity.OnBackPressedCallback;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -26,7 +27,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(BleDiscoveryPlugin.class);
         registerPlugin(WearSyncPlugin.class);
         super.onCreate(savedInstanceState);
-        applySystemTextSize();
+        applyWebViewDisplaySettings();
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override public void handleOnBackPressed() {
                 if (getBridge() == null || getBridge().getWebView() == null) {
@@ -55,16 +56,20 @@ public class MainActivity extends BridgeActivity {
 
     @Override public void onResume() {
         super.onResume();
-        applySystemTextSize();
+        applyWebViewDisplaySettings();
         HealthBackgroundService.stop(this);
         try { HealthJournalStore.get(this).retireWatchUi(); } catch (Exception ignored) {}
         try { HealthBackgroundJob.schedule(this); } catch (Exception ignored) {}
     }
 
-    private void applySystemTextSize() {
+    private void applyWebViewDisplaySettings() {
         if (getBridge() != null && getBridge().getWebView() != null) {
+            WebSettings webSettings = getBridge().getWebView().getSettings();
+            webSettings.setSupportZoom(false);
+            webSettings.setBuiltInZoomControls(false);
+            webSettings.setDisplayZoomControls(false);
             float scale = getResources().getConfiguration().fontScale;
-            getBridge().getWebView().getSettings().setTextZoom(Math.round(scale * 100));
+            webSettings.setTextZoom(Math.round(scale * 100));
         }
     }
 
