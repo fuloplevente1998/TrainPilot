@@ -68,6 +68,51 @@ function fixture(nativeResult=result()){
  assert.equal(await ready.native.sync(),true);assert.deepEqual(ready.calls,[['prepare',1],['arm']],'ordinary polling cannot churn execution revision or rearm');
  ready.run('state.session.automatic162.enabled=false;');assert.equal(await ready.native.sync(),true);assert.deepEqual(ready.calls.slice(-2),[['suspend'],['disarm']]);
  ready.run('state.session.automatic162.enabled=true;');assert.equal(await ready.native.sync(),true);assert.deepEqual(ready.calls.slice(-2),[['prepare',2],['arm']],'reenabling same workout preserves execution identity');
+ const completedFrame={active:true,workoutId:'workout',generation:10,executionRevision:1,exercises:copy(draft().session.exercises)};
+ completedFrame.exercises[0].sets[1].done=true;
+ function editFixture(){
+  const editing=fixture({snapshot:completedFrame,events:[],timer:{}});
+  editing.run('state.session.exercises[0].sets[1].done=true;upd=function(ei,si,key,value){state.session.exercises[ei].sets[si][key]=value;persistDraft();};toggleSet=function(ei,si){const set=state.session.exercises[ei].sets[si];set.done=!set.done;persistDraft();};');
+  const hook=editing.windowEvents.get('DOMContentLoaded').find(fn=>fn.toString().includes('function nativeEdit'));
+  assert.ok(hook);hook();return editing;
+ }
+ const editWhilePolling=editFixture();editWhilePolling.context.window.TrainPilotWearSync.isApplyingCommand=()=>true;
+ editWhilePolling.run("upd(0,1,'reps','10');");
+ assert.ok(editWhilePolling.run('state.session.phoneEdit162?.targets.includes("a")'),'phone correction is marked even while ordinary command polling is reserved');
+ const inFlight=editFixture();let finishPrepare,prepareStarted;
+ const preparing=new Promise(resolve=>{prepareStarted=resolve;});
+ inFlight.api.prepareExecution=async({snapshot,expectedRevision})=>{
+  await new Promise(resolve=>{finishPrepare=resolve;prepareStarted();});
+  const frame={...copy(snapshot),executionRevision:expectedRevision+1};inFlight.setResult({snapshot:frame,events:[],timer:{}});return {snapshot:frame};
+ };
+ inFlight.api.amendExecution=async({snapshot,expectedRevision,bases})=>{
+  inFlight.calls.push(['amend',expectedRevision]);assert.equal(expectedRevision,2);assert.equal(bases.a.done,true);
+  assert.equal(snapshot.exercises[0].sets.find(s=>s.setId==='a').done,false);
+  const frame={...copy(snapshot),executionRevision:expectedRevision+1};inFlight.setResult({snapshot:frame,events:[],timer:{}});return {snapshot:frame};
+ };
+ const preparingFlight=inFlight.native.sync();await preparing;
+ inFlight.run('toggleSet(0,1);');finishPrepare();assert.equal(await preparingFlight,true);
+ assert.equal(inFlight.run('state.session.phoneEdit162?.revision'),2,'an in-flight prepare preserves and rebases the later undo');
+ assert.equal(inFlight.run('state.session.exercises[0].sets[1].done'),false);
+ assert.equal(await inFlight.native.sync(),true);
+ assert.equal(inFlight.calls.some(c=>c[0]==='amend'),true,'explicit undo goes through amendment, not ordinary prepare');
+ assert.equal(inFlight.run('state.session.phoneEdit162||null'),null,'only the submitted edit is consumed');
+ const changingEdit=editFixture();changingEdit.run("upd(0,1,'reps','10');");let finishAmend,amendStarted;
+ const amending=new Promise(resolve=>{amendStarted=resolve;});
+ changingEdit.api.amendExecution=async({snapshot,expectedRevision})=>{
+  await new Promise(resolve=>{finishAmend=resolve;amendStarted();});
+  const frame={...copy(snapshot),executionRevision:expectedRevision+1};changingEdit.setResult({snapshot:frame,events:[],timer:{}});return {snapshot:frame};
+ };
+ const amendFlight=changingEdit.native.sync();await amending;
+ changingEdit.run("upd(0,1,'reps','11');");finishAmend();assert.equal(await amendFlight,true);
+ assert.equal(changingEdit.run('state.session.phoneEdit162?.revision'),2);
+ assert.equal(changingEdit.run('state.session.phoneEdit162.bases.a.reps'),'10','later correction rebases on the actual submitted amendment');
+ assert.equal(changingEdit.run('state.session.exercises[0].sets[1].reps'),'11','in-flight amendment cannot overwrite newer text');
+ changingEdit.api.amendExecution=async({snapshot,expectedRevision,bases})=>{
+  assert.equal(expectedRevision,2);assert.equal(bases.a.reps,'10');assert.equal(snapshot.exercises[0].sets[1].reps,'11');
+  const frame={...copy(snapshot),executionRevision:expectedRevision+1};changingEdit.setResult({snapshot:frame,events:[],timer:{}});return {snapshot:frame};
+ };
+ assert.equal(await changingEdit.native.sync(),true);assert.equal(changingEdit.run('state.session.phoneEdit162||null'),null);
  const conflict=fixture({snapshot:{active:true,workoutId:'workout',generation:10,executionRevision:1},events:[],timer:{}});conflict.failPrepare(true);
  await conflict.context.window.TrainPilotWearSync.syncNow();assert.deepEqual(conflict.calls,[['prepare',1]],'failed prepare cannot publish stale controls or arm a timer');
  assert.equal(conflict.native.failure().code,'E162-PREPARE-revisionConflict','native failure is distinguishable from missing implementation');

@@ -46,6 +46,16 @@ public class PhoneWorkoutWebViewTest {
                 +"if(!lagObserved)throw Error('No live/persisted checkpoint lag observed');"
                 +"let reconciled=false;for(let i=0;i<100;i++){if(!TrainPilotPhoneExecution162.isReconciling()&&!TrainPilotWearSync.isApplyingCommand()){reconciled=await TrainPilotPhoneExecution162.sync({prepare:false});if(reconciled||TrainPilotPhoneExecution162.failure())break;}await new Promise(r=>setTimeout(r,25));}"
                 +"if(!reconciled)throw Error('checkpoint: '+JSON.stringify(TrainPilotPhoneExecution162.failure()));"
+                +"upd(0,0,'reps','7');"
+                +"let corrected=false;for(let i=0;i<100;i++){if(!TrainPilotPhoneExecution162.isReconciling()){corrected=await TrainPilotPhoneExecution162.sync();if(corrected||TrainPilotPhoneExecution162.failure())break;}await new Promise(r=>setTimeout(r,25));}"
+                +"if(!corrected)throw Error('correction: '+JSON.stringify(TrainPilotPhoneExecution162.failure()));"
+                +"const edited=await api.executionStatus();if(edited.snapshot.exercises[0].sets[0].reps!=='7'||!edited.snapshot.exercises[0].sets[0].done)throw Error('corrected set did not reach native storage');"
+                +"await toggleSet(0,0);"
+                +"let undone=false;for(let i=0;i<100;i++){if(!TrainPilotPhoneExecution162.isReconciling()){undone=await TrainPilotPhoneExecution162.sync();if(undone||TrainPilotPhoneExecution162.failure())break;}await new Promise(r=>setTimeout(r,25));}"
+                +"if(!undone)throw Error('undo: '+JSON.stringify(TrainPilotPhoneExecution162.failure()));"
+                +"const reversed=await api.executionStatus();if(reversed.snapshot.exercises[0].sets[0].done||exercise.sets[0].done)throw Error('explicit undo did not reach native storage');"
+                +"let rerecorded=false;for(let i=0;i<100;i++){if(!TrainPilotPhoneExecution162.isReconciling()&&!TrainPilotWearSync.isApplyingCommand()){rerecorded=await TrainPilotPhoneExecution162.recordPhoneSet(0,0);if(rerecorded||TrainPilotPhoneExecution162.failure())break;}await new Promise(r=>setTimeout(r,25));}"
+                +"if(!rerecorded)throw Error('rerecord: '+JSON.stringify(TrainPilotPhoneExecution162.failure()));"
                 +"const result=await api.executionStatus();window.__executionTest={done:true,recorded:exercise.sets[0].done,controllerArmed:result.controllerArmed,phase:result.timer.phase,remainingMs:result.timer.remainingMs,failure:TrainPilotPhoneExecution162.failure()};"
                 +"}catch(e){window.__executionTest={done:true,error:String(e),stack:e.stack};}})();true");
             waitFor(view,"window.__executionTest?.done");

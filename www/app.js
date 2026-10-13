@@ -16788,8 +16788,19 @@ window.addEventListener?.('DOMContentLoaded',function(){
     });
     stage=changedCompleted&&edit?'amend':'prepare';
     const result=changedCompleted&&edit?await api.amendExecution({snapshot:frame,expectedRevision:edit.revision,bases:edit.bases}):await api.prepareExecution({snapshot:frame,expectedRevision:meta.revision});
-    if(blocked()||identity(draft()?.session)!==frame.workoutId)return false;
-    session.phoneExecution162.revision=result.snapshot.executionRevision;session.phoneExecution162.completedBase=completedBase(result.snapshot);delete session.phoneEdit162;commit(draft());lastPrepared=signature;
+    if(blocked()||identity(draft()?.session)!==frame.workoutId||session.phoneExecution162?.generation!==frame.generation)return false;
+    session.phoneExecution162.revision=result.snapshot.executionRevision;session.phoneExecution162.completedBase=completedBase(result.snapshot);
+    const pendingEdit=session.phoneEdit162;
+    if(pendingEdit){
+     const localSets=session.exercises.flatMap(e=>e.sets),nativeSets=result.snapshot.exercises.flatMap(e=>e.sets);
+     const submitted=pendingEdit===edit&&pendingEdit.targets.every(id=>{
+      const own=localSets.find(s=>s.setId===id),saved=nativeSets.find(s=>s.setId===id);
+      return own&&saved&&['done','reps','weight','leftSeconds','rightSeconds','distanceMeters'].every(k=>String(own[k]??'')===String(saved[k]??''));
+     });
+     if(submitted)delete session.phoneEdit162;
+     else if(pendingEdit.generation===frame.generation)session.phoneEdit162={...pendingEdit,revision:result.snapshot.executionRevision,bases:clone(session.phoneExecution162.completedBase)};
+    }
+    commit(draft());lastPrepared=signature;
    }
    const armKey=frame.workoutId+'|'+meta.generation;
    if(lastArmed!==armKey&&!document.hidden&&state.session===session){
@@ -16823,8 +16834,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
  window.addEventListener?.('DOMContentLoaded',()=>{
   function nativeEdit(ei,si){
    const session=state.session,meta=session?.phoneExecution162,set=session?.exercises?.[ei]?.sets?.[si];
-   if(!meta||!set?.done||window.TrainPilotWearSync?.isApplyingCommand?.())return;
-   const edit=session.phoneEdit162||{revision:meta.revision,generation:meta.generation,bases:clone(meta.completedBase||{}),targets:[]};
+   if(!meta||!set?.done||(session.timerOwner||'phone')!=='phone')return;
+   const previous=session.phoneEdit162;
+   const edit=previous?{...previous,targets:[...previous.targets]}:{revision:meta.revision,generation:meta.generation,bases:clone(meta.completedBase||{}),targets:[]};
    if(!edit.targets.includes(set.setId))edit.targets.push(set.setId);session.phoneEdit162=edit;
   }
   const update=upd;upd=function(ei,si){nativeEdit(ei,si);return update.apply(this,arguments);};
