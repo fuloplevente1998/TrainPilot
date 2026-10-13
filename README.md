@@ -2,7 +2,7 @@
 
 Androidos edzéstervező és edzésnapló, natív Wear OS társalkalmazással. A fő edzésfunkciók helyben használhatók; az egészségadatok, a Google Drive és a Google Naptár integrációja opcionális.
 
-**Aktuális kiadás: 1.3.4 — telefon és Wear OS.** A felhasználó 2026. október 12-én elfogadta a legutóbbi párosított tesztbuildet mainre és release-re. A kiadás a nyitott nézetek és piszkozatok védelmét, a telefonos lenyílók gyorsítását, a témaszín szinkron közbeni megőrzését és a kerek órás kijelző elrendezését tartalmazza. Megmarad az órás mérésindítás, az élő egészségadat és a forráshű napló.
+**Kiadott verzió: 1.3.4 — telefon és Wear OS.** Az eredeti kiadás a nyitott nézetek védelmét, a lenyílók gyorsítását, a témaszín megőrzését és a kerek órás elrendezést tartalmazza. **Az aktuális main fejlesztési alapja** a 2026. október 13-án mainre jóváhagyott [#179](https://github.com/fuloplevente1998/TrainPilot/pull/179): megújult Wear-kezdőlap, telefonos zoomjavítás, telefonos és órás automata tesztváltozat. Az automata mód készülékes elfogadása és a telefonon indított edzés teljes háttérvezérlése még hátravan. A korábbi release APK-k az eredeti kiadást őrzik; az új tesztpár forrásazonosítóval külön szerepel a [fejlesztési állapotban](DEVELOPMENT_STATUS.md).
 
 [Telefonos 1.3.4](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.4) · [Wear OS 1.3.4](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.4) · [Változáslista](docs/releases/v1.3.4.md) · [Fejlesztési állapot](DEVELOPMENT_STATUS.md)
 
@@ -26,6 +26,8 @@ A repó leírásai a köztes javításokat négy verziócsaládba vonják össze
 - Opcionális GPS-távolságmérés és GPS nélküli beltéri időmérő/intervallumok.
 - Health Connect vagy Samsung Health közvetlen adatforrás, tartós egészségnapló és külön jelölt órás edzésmérés.
 - Wear OS edzésvezérlés, gyors edzés, mini naptár, Mini napló, mérési előzmények, Tile és számlapi kiegészítő.
+- Megújult, telefonos ikonokat és témát követő Wear-kezdőlap; külön Beállítások, közvetlen edzéstörlés és felfelé húzással nyitható menü.
+- Telefonos és órás automata tesztváltozat: kézi ismétlésrögzítés után automatikus pihenő/léptetés, időalapú munka/pihenő/körök és rezgésjelzés; egyetlen időzítőtulajdonos.
 - Helyi JSON/ZIP-mentés, Google Drive `appDataFolder` szinkron és opcionális fotószinkron.
 - Google Naptár, többnyelvű felület és matt/élénk témák.
 
@@ -33,12 +35,14 @@ A telefon Naplója őrzi a mentett edzéseket. Az órás Mini napló ezek korlá
 
 TrainPilot Wear-mérés nélkül a telefon a kiválasztott egészségadat-szolgáltatóból olvas, ha ott rendelkezésre áll adat. Azonos óra mellett is eltérhet a mérési időszak, a szinkron ideje és az aktív/összes kalória jelentése. [Részletes működés](docs/WEAR_OS.md#egészségadatok-és-kijelző-kikapcsolása).
 
-**Következő fejlesztések:** [automatikus munka/pihenő és gyakorlatléptetés #162](https://github.com/fuloplevente1998/TrainPilot/issues/162), majd [GPS-útvonaltérkép #163](https://github.com/fuloplevente1998/TrainPilot/issues/163). Az órás kezdőlap teljes dizájnmegújítása külön [#170](https://github.com/fuloplevente1998/TrainPilot/issues/170) feladat.
+**Következő fejlesztések:** az [automata mód #162](https://github.com/fuloplevente1998/TrainPilot/issues/162) készülékes próbája és a telefonos tulajdon teljes háttérvezérlése, majd [GPS-útvonaltérkép #163](https://github.com/fuloplevente1998/TrainPilot/issues/163). Az első [Wear-kezdőlap revamp #170](https://github.com/fuloplevente1998/TrainPilot/issues/170) elkészült; további finomítások és kényelmi funkciók a [közös fejlesztési tervben](docs/wear/WEAR_OS_FEJLESZTESI_TERV.md).
 
 ## Telepítés és dokumentáció
 
 A [GitHub Releases](https://github.com/fuloplevente1998/TrainPilot/releases) oldalon a telefonos és órás APK-k külön találhatók. A hozzájuk tartozó forrás, ellenőrzőösszeg és csomagadat a megfelelő release mellékleteiben marad. Az 1.3.4 telefonos és órás APK a korábbi változat fölé telepíthető; a napló és beállítások megmaradnak.
 
+- [Új ChatGPT-beszélgetéshez: folytatási leírás](docs/CHATGPT_FOLYTATAS.md)
+- [Közös telefon/Wear fejlesztési terv](docs/wear/WEAR_OS_FEJLESZTESI_TERV.md)
 - [Build és aláírás](docs/BUILD.md)
 - [Wear OS működés és készülékes ellenőrzés](docs/WEAR_OS.md)
 - [Profilvezérelt edzésrendszer](docs/profile-training-128.md)

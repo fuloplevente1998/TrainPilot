@@ -2,7 +2,9 @@
 
 A kanonikus webalkalmazás-forrás a `www/app.js`. Az Android csomag azonosítója: `com.repforge.app`.
 
-Az elfogadott aktuális verzió **1.2.8 /2711**. Kiadási regresszió: 120 Node + 4 futtatóteszt, 72 Chromium-szkript hat párhuzamos CI-jobban, Android/JVM release-tesztek. A #139 telefonon elfogadott r5 buildjének működése változatlan; a stabil kiadás új verziószámot kap, mert a `v1.2.7` release már létezik. A korábbi APK-k/tag-ek megmaradnak; az új stabil main build a `v1.2.8` release-t publikálja.
+Az aktuális main fejlesztési bázisa **1.3.4 / 2730**, a #179-ben egyesített telefonos/Wear megvalósítással. Az eredeti 1.3.4 release és a legutóbbi automata tesztpár külön forrásazonosítóval rendelkezik; aktuális részletek: [DEVELOPMENT_STATUS.md](../DEVELOPMENT_STATUS.md).
+
+A legutóbbi ellenőrzött kódon 137 telefonos regresszió, külön futtatótesztek, 90 Chromium-tesztcsomag hat CI-jobban, natív telefon/Wear release-tesztek és 51 Wear-emulátoros próba sikeres. A pontos tesztlista a `tests/browser/suite.json`, az aktuális futások a GitHub Actionsön találhatók. A fizikai rezgés és OEM háttérkezelés elfogadása külön készülékes próba.
 
 ## Gyors ellenőrzés
 
@@ -72,4 +74,4 @@ A keystore és a Secret értékek soha ne kerüljenek Gitbe, source ZIP-be vagy 
 - Kiadás előtt az eredeti 1.7.7 APK aláírási tanúsítványának SHA-256 ujjlenyomatát az új APK-val össze kell hasonlítani; szükség van meglévő 1.7.7 telepítés fölé történő, adatmegőrző frissítési próbára is.
 - A történeti release-ek és tagek külön privát archiválása nem változtatja meg a publikus `main` commitelőzményét. Lásd [karbantartási terv](REPOSITORY_MAINTENANCE_2026-09-26.md).
 
-Az 1.2.8 /2711 main/release-jóváhagyása a [#139](https://github.com/fuloplevente1998/TrainPilot/pull/139) r5 telefonos elfogadásán alapul (2026-10-07); kiadási megjegyzések: [v1.2.8](releases/v1.2.8.md). A kiadott taghez tartozó pontos APK/forrás párost és eredeti aláírást a main gate után külön is ellenőrizzük.
+Történeti adat: az 1.2.8 /2711 main/release-jóváhagyása a [#139](https://github.com/fuloplevente1998/TrainPilot/pull/139) r5 telefonos elfogadásán alapul (2026-10-07); kiadási megjegyzések: [v1.2.8](releases/v1.2.8.md). A kiadott taghez tartozó pontos APK/forrás párost és eredeti aláírást a main gate után külön is ellenőrizzük.

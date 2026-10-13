@@ -92,6 +92,17 @@ Az **1.3.4** kiadásban a normál szinkron csak az eszközönkénti legfrissebb 
 
 A Telefon/Felhő ütközésválasztás a kiválasztott adatváltozatot menti; a logikai gombválasz nem kerül adatmező vagy naplóbejegyzés helyére. Az egyedi edzések és testsúlyadatok megmaradnak, a szigorú mentésellenőrzés változatlan. A témaszín megőrzésének javítása is a felhasználó által elfogadott 1.3.4 telefonos build része.
 
+### Main folytatás — 2026. október 13.
+
+A [#179](https://github.com/fuloplevente1998/TrainPilot/pull/179) mainre jóváhagyott integráció az eredeti 1.3.4 kiadáson túl tartalmazza:
+
+- A megújult Wear-kezdőlapot a telefonos ikonokkal/témával, külön Beállításokkal, közvetlen törléssel és felfelé húzható menüvel; a tördelt Mini naplót és kis gyakorlatoldali pontos időt.
+- A telefonos natív lapzoom tiltását, a rendszerbetűméret megőrzésével.
+- Telefonos és órás automata tesztváltozatot: kézi súlyzós rögzítés utáni automatikus pihenő/léptetés, időzített munka/pihenő/körök, kompakt kapcsoló és alsó telefonos számláló.
+- 3–2–1 rövid, 80 ms-os előjelzést és lejáratkor 1 másodperces rezgést; egyetlen időzítőtulajdonost, fázishoz kötött távoli vezérlést és megszakításkor mentett szünetet.
+
+A legutóbbi tesztpár 1.3.4 / 2730 marad, külön forráscommitokkal. A publikált 1.3.4 APK-k az eredeti kiadást őrzik. Az új automata mód fizikai elfogadása, a telefonos tulajdon teljes háttérrögzítése és az egységes időnapló még feladat; ezután következik a #163 térkép. [Aktuális állapot](DEVELOPMENT_STATUS.md) · [Közös terv](docs/wear/WEAR_OS_FEJLESZTESI_TERV.md) · [ChatGPT-folytatás](docs/CHATGPT_FOLYTATAS.md).
+
 ## Történeti részletek
 
 A korábbi, különálló javítási feljegyzéseket a [Git-történet](https://github.com/fuloplevente1998/TrainPilot/blob/2fdcf4fde7021fb234bd85fff0a59b698d36c808/RELEASE_NOTES.md) és a meglévő release-ek őrzik. A régi belső számozás nem az aktuális nyilvános verziócsaládok folytatása. A jelenlegi állapotot a [fejlesztési áttekintés](DEVELOPMENT_STATUS.md) tartalmazza.

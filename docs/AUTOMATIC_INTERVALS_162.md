@@ -2,7 +2,7 @@
 
 ## Telefonos folytatás — 1.3.4
 
-Az aktuális mainre frissített ágban a folyamatban levő tervezett vagy gyors edzés **Automata mód** kapcsolója engedélyezi a kézi rögzítés utáni automatikus pihenő-/gyakorlatléptetést. A választás elmenthető. Az ismétlést és súlyt továbbra is a felhasználó rögzíti; a pihenő nem ír kitalált sorozatot.
+A #179-ben mainre integrált első tesztváltozatban a folyamatban levő tervezett vagy gyors edzés **Automata mód** kapcsolója engedélyezi a kézi rögzítés utáni automatikus pihenő-/gyakorlatléptetést. A választás elmenthető. Az ismétlést és súlyt továbbra is a felhasználó rögzíti; a pihenő nem ír kitalált sorozatot.
 
 A felhasználó kérése szerint az aktív visszaszámláló manuális és automata módban is a meglévő alsó vezérlősávban, **az Előző és Következő gomb között** marad. Az Automata mód kis, másodlagos kapcsoló fölöttük, az Előző/Következő gombokhoz képest kisebb. Az automatikus pihenő szünet-/kihagyás vezérlése is kompakt; a fő tartalom fölé nem kerül nagy automata kártya.
 
@@ -14,7 +14,7 @@ A felhasználó kérése szerint az aktív visszaszámláló manuális és autom
 - Visszapipálás, kézi léptetés, sorozattörlés, új edzés és későn visszatérő natív válasz nem rögzíthet másik edzésbe. Megszakadt szolgáltatásból nincs kitalált folytatás.
 - A korábban átadott Wear-kezdőlap témaszinkronja megmarad a telefonos home snapshotban.
 
-A telefonos alaphoz a `feat/wear-automatic-162` közös ágban órás natív automata tesztváltozat is társul. Órán indított edzésnél az óra vezérli az időzítést, a telefon távoli vezérlő és megjelenítő; telefonos indításnál a telefon marad a tulajdonos. Az első integráció működése, telepítése és még hátralévő korlátai a közös tervben vannak: [WEAR_OS_FEJLESZTESI_TERV.md](wear/WEAR_OS_FEJLESZTESI_TERV.md).
+A #179 a telefonos alaphoz órás natív automata tesztváltozatot is integrál a main fejlesztési alapjába. Órán indított edzésnél az óra vezérli az időzítést, a telefon távoli vezérlő és megjelenítő; telefonos indításnál a telefon marad a tulajdonos. Az első integráció működése, telepítése és még hátralévő korlátai a közös tervben vannak: [WEAR_OS_FEJLESZTESI_TERV.md](wear/WEAR_OS_FEJLESZTESI_TERV.md).
 
 ## Időzített sorozatok
 
