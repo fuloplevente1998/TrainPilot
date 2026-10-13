@@ -471,7 +471,7 @@ private fun Pill(text: String, modifier: Modifier = Modifier, tone: Color = Gold
                  enabled: Boolean = true, height: Int = 48, size: Int = 14,
                  lines: Int = 2, onClick: () -> Unit) {
     val fontScale = LocalDensity.current.fontScale
-    val captionScale = fontScale.coerceAtMost(if(compact)1f else 1.35f) / fontScale
+    val captionScale = fontScale.coerceAtMost(1.35f) / fontScale
     val shape = if (lines == Int.MAX_VALUE) RoundedCornerShape(18.dp) else CircleShape
     Box(modifier.fillMaxWidth().heightIn(min = height.dp)
         .background(if (enabled) tone else Secondary, shape)
