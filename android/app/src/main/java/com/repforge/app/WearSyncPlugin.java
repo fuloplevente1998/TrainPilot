@@ -162,7 +162,9 @@ public class WearSyncPlugin extends Plugin {
     public void ackCommand(PluginCall call) {
         String commandId = call.getString("commandId", "");
         if (commandId == null || commandId.isEmpty()) { call.reject("Missing commandId."); return; }
-        WearCommandQueueStore.ack(getContext(), commandId);
+        if (!WearCommandQueueStore.ack(getContext(), commandId)) {
+            call.reject("Unable to persist the watch command receipt."); return;
+        }
         deleteCommandDataItem(commandId);
         JSObject result = new JSObject();
         result.put("commandId", commandId);
