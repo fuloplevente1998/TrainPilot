@@ -74,6 +74,16 @@ function fixture(nativeResult=result()){
  };
  assert.equal(await phone.native.recordPhoneSet(0,1),true);assert.equal(phone.run('state.session.exercises[0].sets[1].done'),true);
  assert.deepEqual(phone.calls,[['prepare',1],['arm'],['ack',1]],'phone recording shares the prepared native path and acknowledges only committed data');
+ const serial=fixture({snapshot:{active:true,workoutId:'workout',generation:10,executionRevision:1},events:[],timer:{}});
+ let releaseRecord,recordStarted;const nativeRecordStarted=new Promise(resolve=>{recordStarted=resolve;});serial.api.executeCommand=async()=>{
+  serial.setResult(result());await new Promise(resolve=>{releaseRecord=resolve;recordStarted();});return {status:'applied'};
+ };
+ const recordFlight=serial.native.recordPhoneSet(0,1);await nativeRecordStarted;
+ assert.ok(releaseRecord);assert.equal(serial.native.isReconciling(),true);
+ assert.equal(await serial.native.sync({prepare:false}),false,'background poll cannot take over an in-flight phone recording');
+ assert.equal(serial.calls.some(c=>c[0]==='ack'),false,'competing poll cannot acknowledge before the recording owns the commit');
+ releaseRecord();assert.equal(await recordFlight,true);assert.equal(serial.native.isReconciling(),false);
+ assert.equal(serial.run('state.session.exercises[0].sets[1].reps'),'6');assert.deepEqual(serial.calls,[['prepare',1],['arm'],['ack',1]]);
  const modern=fixture({snapshot:{active:true,workoutId:'workout',generation:10,executionRevision:1},events:[],timer:{}});
  const plugins=modern.context.window.Capacitor.Plugins;modern.context.window.Capacitor={isNativePlatform:()=>true,isPluginAvailable:name=>!!plugins[name],registerPlugin:name=>plugins[name]};
  modern.api.executeCommand=async({command})=>{

@@ -197,7 +197,7 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
         for(int e=frame.optInt("currentExercise");e<exercises.length();e++){
             JSONObject exercise=exercises.getJSONObject(e);JSONArray sets=exercise.getJSONArray("sets");
             for(int s=0;s<sets.length();s++)if(!sets.getJSONObject(s).getBoolean("done")){
-                if(!java.util.Arrays.asList("","ism.","reps").contains(exercise.optString("repUnit")))return;
+                if(!java.util.Arrays.asList("","ism.","reps","/kar","/láb").contains(exercise.optString("repUnit")))return;
                 if(previous!=null&&PROCESS.equals(previous.optString("process"))&&exercise.getString("id").equals(previous.optString("exerciseId"))
                     &&sets.getJSONObject(s).getString("setId").equals(previous.optString("setId"))){frame.put("manualAnchor162",previous);return;}
                 JSONObject anchor=new JSONObject().put("exerciseId",exercise.getString("id")).put("setId",sets.getJSONObject(s).getString("setId"))

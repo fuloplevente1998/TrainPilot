@@ -16695,7 +16695,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
  let busy=false,lastPrepared='',lastArmed='',warned=false,lastFailure=null;
  function failure(error,stage){
   const known=['missingFrame','invalidVersion','invalidGeneration','revisionConflict','missingIdentity','duplicateSetIdentity','invalidSetState','inactiveOrOtherOwner','invalidTimerConfig','executionIdentityChanged','restoreInProgress','pendingRecordingEvents','closedOrStaleExecution','recordedValuesChanged','completedSetRemoved','amendmentConflict','amendmentTargetRemoved'];
-  const reason=known.includes(error?.message)?error.message:stage==='arm'&&String(error?.message).includes('Open the phone workout')?'FOCUS':stage==='arm'&&String(error?.message).includes('did not start')?'TIMEOUT':error?.name==='ReferenceError'?'REFERENCE':error?.name==='TypeError'?'TYPE':'NATIVE';
+  const mergeErrors={'Native event identity mismatch':'EVENT_ID','Timed recording conflicts with phone edit':'TIMED_EDIT','Native recording target changed':'TARGET','Recorded set has conflicting edits':'EDIT','Invalid automatic time log':'TIME_DATA','Automatic time moved backwards':'TIME_ORDER','Native event acknowledgement changed owner':'ACK_OWNER'};
+  const reason=mergeErrors[error?.message]|| (known.includes(error?.message)?error.message:stage==='arm'&&String(error?.message).includes('Open the phone workout')?'FOCUS':stage==='arm'&&String(error?.message).includes('did not start')?'TIMEOUT':error?.name==='ReferenceError'?'REFERENCE':error?.name==='TypeError'?'TYPE':'NATIVE');
   lastFailure={code:'E162-'+stage.toUpperCase()+'-'+reason,stage,at:new Date().toISOString()};
   if(!warned&&state.session&&!document.hidden){
    warned=true;
@@ -16731,8 +16732,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
   return true;
  }
- async function sync({prepare=true}={}){
-  const api=bridge();if(!api?.executionStatus)return true;if(busy||blocked())return false;busy=true;let stage='reconcile';
+ async function syncLocked({prepare=true}={}){
+  const api=bridge();if(!api?.executionStatus)return true;if(blocked())return false;let stage='reconcile';
   try{
    if(!await reconcile(api))return false;
    const current=draft(),session=current?.session;
@@ -16789,7 +16790,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }catch(error){
    failure(error,stage);
    return false;
-  }finally{busy=false;}
+  }
+ }
+ async function sync(options={}){
+  if(busy||blocked())return false;busy=true;
+  try{return await syncLocked(options);}finally{busy=false;}
  }
  async function finishFence(work){
   const api=bridge(),session=state.session;if(!api?.executionStatus||!session?.phoneExecution162)return work();
@@ -16818,17 +16823,20 @@ window.addEventListener?.('DOMContentLoaded',function(){
  async function recordPhoneSet(ei,si){
   const api=bridge(),session=state.session,target=session?.exercises?.[ei]?.sets?.[si];
   if(!api?.executeCommand||!target||target.done||busy||blocked())return false;
-  if(session.automatic162?.run&&!await window.TrainPilotAutomatic162.command('stop'))return false;
-  if(state.session!==session)return false;session.automatic162.enabled=true;
-  if(!await sync()||state.session!==session||target.done)return false;
-  const meta=session.phoneExecution162,e=session.exercises[ei];
-  const command={nativeExecutionProtocol:2,commandId:crypto.randomUUID(),action:'completeSet',workoutId:identity(session),
-   generation:meta.generation,executionRevision:meta.revision,exerciseId:e.id,setId:target.setId,reps:String(target.reps)};
-  if(target.weight!==''&&target.weight!=null)command.weight=target.weight;
+  // The recording owns the lock through durable reconciliation and acknowledgement.
+  // Polling cannot consume its result between executeCommand and the owning UI call.
+  busy=true;
   try{
+   if(session.automatic162?.run&&!await window.TrainPilotAutomatic162.command('stop'))return false;
+   if(state.session!==session)return false;session.automatic162.enabled=true;
+   if(!await syncLocked()||state.session!==session||target.done)return false;
+   const meta=session.phoneExecution162,e=session.exercises[ei];
+   const command={nativeExecutionProtocol:2,commandId:crypto.randomUUID(),action:'completeSet',workoutId:identity(session),
+    generation:meta.generation,executionRevision:meta.revision,exerciseId:e.id,setId:target.setId,reps:String(target.reps)};
+   if(target.weight!==''&&target.weight!=null)command.weight=target.weight;
    const result=await api.executeCommand({command});
-   return ['applied','duplicate'].includes(result?.status)&&await sync({prepare:false});
-  }catch(_){await sync({prepare:false});return false;}
+   return ['applied','duplicate'].includes(result?.status)&&await syncLocked({prepare:false});
+  }catch(_){await syncLocked({prepare:false});return false;}finally{busy=false;}
  }
  window.TrainPilotPhoneExecution162={sync,finishFence,recordPhoneSet,failure:()=>lastFailure?{...lastFailure}:null,isReconciling:()=>busy,block:async value=>{const api=bridge();if(api?.blockExecution)await api.blockExecution({blocked:value});}};
 })();

@@ -56,7 +56,7 @@ public class PhoneWorkoutExecutionServiceTest {
     }
     private void unilateralRest(String unit) throws Exception {
         JSONObject frame=store.snapshot();frame.getJSONArray("exercises").getJSONObject(0).put("repUnit",unit);store.prepare(frame,1);
-        arm();JSONObject command=command();
+        arm();assertTrue("Per-side repetitions retain the manual work-time anchor",store.snapshot().has("manualAnchor162"));JSONObject command=command();
         assertEquals("applied",PhoneWorkoutExecution.execute(context,command).getString("status"));
         assertEquals("7",store.snapshot().getJSONArray("exercises").getJSONObject(0).getJSONArray("sets").getJSONObject(0).getString("reps"));
         org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idleFor(Duration.ofSeconds(30));
