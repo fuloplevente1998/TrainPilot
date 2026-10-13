@@ -59,6 +59,16 @@ final class WearCommandQueueStore {
         catch (Exception ignored) { return new JSONArray(); }
     }
     static synchronized boolean seen(Context context,String id){return containsId(read(context,SEEN),id);}
+    static synchronized boolean claimed(Context context,String id){
+        JSONArray rows=read(context,PENDING);
+        for(int i=0;i<rows.length();i++){JSONObject row=rows.optJSONObject(i);if(row!=null&&id.equals(row.optString("commandId")))return row.optBoolean("phoneClaimed162");}
+        return false;
+    }
+    static synchronized void claim(Context context,String id)throws Exception{
+        JSONArray rows=read(context,PENDING);
+        for(int i=0;i<rows.length();i++){JSONObject row=rows.optJSONObject(i);if(row!=null&&id.equals(row.optString("commandId")))row.put("phoneClaimed162",true);}
+        if(!prefs(context).edit().putString(PENDING,rows.toString()).commit())throw new IllegalStateException("Command claim could not be saved");
+    }
 
     static synchronized void ack(Context context, String commandId) {
         if (commandId == null || commandId.isEmpty()) return;

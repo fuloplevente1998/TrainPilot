@@ -1,0 +1,33 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http'),{chromium}=require('playwright');
+const root=path.resolve('www'),server=http.createServer((req,res)=>{const pathname=new URL(req.url,'http://local').pathname,file=path.resolve(root,'.'+(pathname==='/'?'/index.html':pathname));if(!file.startsWith(root+path.sep)){res.writeHead(403);return res.end();}fs.readFile(file,(e,d)=>{if(e){res.writeHead(404);return res.end();}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html');res.end(d);});});
+(async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;try{
+ browser=await chromium.launch({args:['--no-sandbox']});const p=await browser.newPage({viewport:{width:393,height:873}}),errors=[];p.on('pageerror',e=>errors.push(String(e)));p.on('dialog',d=>d.accept());
+ await p.addInitScript(()=>localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped')));await p.goto('http://127.0.0.1:'+server.address().port);await p.waitForFunction(()=>TrainPilotBoot.finished);
+ await p.evaluate(()=>{
+  db.set('language','hu');window.__bg={commands:[],receipts:{},acks:[],starts:0,stops:0,arms:0,elapsed:10000,plan:null};
+  const status=()=>__bg.plan?{...TrainPilotInterval162Core.phase(__bg.plan.steps,__bg.plan.autoAdvance,__bg.elapsed,__bg.plan.initialRest||0,__bg.plan.restOnly),key:__bg.plan.key,steps:__bg.plan.steps,phaseNumber:1,running:true}:{};
+  window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{publish:async()=>({revision:1}),publishHome:async()=>({}),pendingCommands:async()=>({commands:__bg.commands}),claimAutomatic:async({commandId})=>({receipt:__bg.receipts[commandId]||null}),ackCommand:async({commandId})=>{__bg.acks.push(commandId);__bg.commands=__bg.commands.filter(c=>c.commandId!==commandId);}},IntervalTimer:{arm:async()=>{__bg.arms++;},disarm:async()=>{},status:async()=>status(),start:async()=>{__bg.starts++;throw Error('must adopt the already-running native plan');},stop:async()=>{__bg.stops++;return {...status(),stopped:true};}}}};
+  const ex=(id,ids)=>({...byId(id),sets:ids.map((setId,i)=>({set:i+1,setId,reps:'5',weight:5.5,done:false}))});
+  state.session={started:'2026-10-13T08:00:00Z',syncId:'phone-background',timerOwner:'phone',type:'quick',quickWorkout:true,exercises:[ex('db-floor-press',['s1','s2']),ex('plank',['t1'])],automatic162:{enabled:true,phase:'work'}};
+  state.session.exercises[1].sets[0].reps='0';state.current=0;state.workout='quick';state.tab='plan';db.set('settings',{...settings(),rest:120,intervalPreset110:{work:2,rest:1,rounds:1,sound:false,vibration:true}});persistDraft();renderWorkout();
+  const snapshot=TrainPilotWearSync.makeSnapshot();snapshot.exercises[0].sets[0]={...snapshot.exercises[0].sets[0],done:true,reps:'7',weight:12.5};
+  const plan={key:'bg|command-1',workoutId:snapshot.workoutId,restOnly:true,autoAdvance:false,steps:[{exerciseId:'db-floor-press',setId:'s2',name:'Press',work:1,rest:120,rounds:1,gpsKey:''}],target:{exerciseId:'db-floor-press',setId:'s2'},native:true};
+  snapshot.automation={enabled:true,owner:'phone',phase:'rest',key:plan.key};snapshot.watchSequence=4;
+  const receipt={commandId:'command-1',workoutId:snapshot.workoutId,snapshot,plan,currentExercise:0};
+  __bg.plan=plan;__bg.receipts['command-1']=receipt;__bg.commands=[{action:'completeSet',commandId:'command-1',workoutId:snapshot.workoutId,exerciseId:'db-floor-press',setId:'s1',reps:'7',weight:'12.5',nativeAutomatic162:receipt}];
+ });
+ await p.evaluate(()=>TrainPilotWearSync.drainCommands());await p.waitForFunction(()=>state.session.automatic162.run?.remainingMs===110000);
+ assert.deepEqual(await p.evaluate(()=>[__bg.starts,__bg.stops,state.session.exercises[0].sets[0].reps,state.session.exercises[0].sets[0].weight,state.session.exercises[0].sets[1].done]),[0,0,'7',12.5,false]);
+ assert.deepEqual(await p.evaluate(()=>[state.session.backgroundApplied162,__bg.acks]),[['command-1'],['command-1']]);
+ assert.equal(await p.locator('[data-tp162-dock-label]').textContent(),'Pihenő');
+ await p.evaluate(()=>{state.session.exercises[0].sets[0].reps='9';__bg.commands=[{action:'completeSet',commandId:'command-1',workoutId:'phone-background',nativeAutomatic162:__bg.receipts['command-1']}];});
+ await p.evaluate(()=>TrainPilotWearSync.drainCommands());assert.equal(await p.evaluate(()=>state.session.exercises[0].sets[0].reps),'9','replay cannot undo a later edit');
+ await p.evaluate(()=>{const receipt=JSON.parse(JSON.stringify(__bg.receipts['command-1']));receipt.commandId='command-2';receipt.snapshot.exercises[0].sets[1].done=true;receipt.snapshot.exercises[0].sets[1].reps='8';receipt.currentExercise=1;receipt.plan={key:'bg|command-2',workoutId:'phone-background',native:true,autoAdvance:true,restOnly:false,initialRest:120,steps:[{exerciseId:'plank',setId:'t1',name:'Plank',work:2,rest:1,rounds:1,baseSeconds:0,baseMeters:0,gpsKey:''}]};receipt.snapshot.automation={enabled:true,owner:'phone',phase:'rest',key:receipt.plan.key};__bg.receipts['command-2']=receipt;__bg.plan=receipt.plan;__bg.elapsed=121000;__bg.commands=[{action:'completeSet',commandId:'command-2',workoutId:'phone-background',nativeAutomatic162:receipt}];});
+ await p.evaluate(()=>TrainPilotWearSync.drainCommands());await p.waitForFunction(()=>state.session.interval162?.phase?.phase==='work');
+ assert.deepEqual(await p.evaluate(()=>[__bg.starts,state.current,state.session.exercises[1].sets[0].done,state.session.interval162.key]),[0,1,false,'bg|command-2']);
+ await p.evaluate(async()=>{__bg.elapsed=122000;await TrainPilotIntervals162.sync();});assert.equal(await p.evaluate(()=>state.session.exercises[1].sets[0].done),true);assert.equal(await p.evaluate(()=>history().length),0);
+ await p.evaluate(()=>{state.session.syncId='replacement';state.session.exercises[0].sets[0].reps='77';__bg.commands=[{action:'completeSet',commandId:'old-record',workoutId:'phone-background',nativeAutomatic162:__bg.receipts['command-1']}];});
+ await p.evaluate(()=>TrainPilotWearSync.drainCommands());assert.equal(await p.evaluate(()=>state.session.exercises[0].sets[0].reps),'77');assert.equal(await p.evaluate(()=>__bg.acks.includes('old-record')),false);
+ assert.deepEqual(errors,[]);console.log('PASS phone background reconciliation: stable recordings, running rest adoption, no second timer, replay/edit protection, timed handoff, manual final save and replacement draft protection');
+}finally{await browser?.close();await new Promise(r=>server.close(r));}})().catch(e=>{console.error(e);process.exitCode=1;});

@@ -102,6 +102,9 @@ object WorkoutSnapshotStore {
             return saveWorkout(context,current.copy(revision=maxOf(current.revision,parsed.revision)))
         if(current?.workoutId==parsed.workoutId && current.automation?.enabled==true && current.automation.owner=="watch")
             return saveWorkout(context,current.copy(revision=maxOf(current.revision,parsed.revision)))
+        if(current?.workoutId==parsed.workoutId && current.timerOwner=="phone" && current.automation!=null &&
+            parsed.automation?.key==current.automation.key && (parsed.automation?.phaseNumber ?: 0)<current.automation.phaseNumber)
+            return saveWorkout(context,current.copy(revision=maxOf(current.revision,parsed.revision)))
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(SNAPSHOT, raw).apply()
         return parsed
     }

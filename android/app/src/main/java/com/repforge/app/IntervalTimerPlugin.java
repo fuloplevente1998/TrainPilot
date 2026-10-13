@@ -11,7 +11,19 @@ import org.json.JSONObject;
 
 @CapacitorPlugin(name="IntervalTimer",permissions={@Permission(alias="notifications",strings={Manifest.permission.POST_NOTIFICATIONS})})
 public class IntervalTimerPlugin extends Plugin {
+    static volatile boolean foregroundVisible;
+    @Override public void load(){foregroundVisible=getActivity()!=null&&getActivity().hasWindowFocus();}
+    @Override protected void handleOnResume(){foregroundVisible=true;}
+    @Override protected void handleOnPause(){foregroundVisible=false;}
     private boolean starting;
+    @PluginMethod public void arm(PluginCall c){getActivity().runOnUiThread(()->{try{
+        String id=c.getString("workoutId","");
+        if(!getActivity().hasWindowFocus()||id.isEmpty())throw new IllegalStateException("Open the phone workout to enable background control");
+        if(!IntervalTimerService.armed(id))ContextCompat.startForegroundService(getContext(),new Intent(getContext(),IntervalTimerService.class)
+            .setAction(IntervalTimerService.ARM).putExtra("workoutId",id).putExtra("language",c.getString("language","en")));
+        c.resolve();
+    }catch(Exception e){c.reject(e.getMessage());}});}
+    @PluginMethod public void disarm(PluginCall c){getActivity().runOnUiThread(()->{IntervalTimerService.disarm(c.getString("workoutId",""));c.resolve();});}
     @PluginMethod public void status(PluginCall c){getActivity().runOnUiThread(()->{try{c.resolve(new JSObject(IntervalTimerService.snapshot(getContext()).toString()));}catch(Exception e){c.reject(e.getMessage());}});}
     @PluginMethod public void start(PluginCall c){
         getActivity().runOnUiThread(()->{

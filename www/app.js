@@ -16858,6 +16858,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
     restSeconds:configuredRest(),
     restEndAt:Number((state.session?state.restEndAt:draft?.restEndAt)||0),
     timerOwner:session.timerOwner||'phone',
+    backgroundApplied162:session.backgroundApplied162||[],
+    backgroundAutomatic162:{enabled:session.automatic162?.enabled===true&&session.timerOwner!=='watch',restSound:settings().intervalPreset110?.sound===true,preset:window.TrainPilotInterval162Core?.config?.(settings().intervalPreset110)||{work:60,rest:60,rounds:8,sound:true,vibration:true}},
     automation:session.watchAutomation162?(()=>{const {snapshot,...value}=session.watchAutomation162;return value;})():window.TrainPilotAutomatic162?.snapshotForWatch?.(session)||null,
     language:lang,
     exercises:exercises.map(exercise=>({
@@ -16866,6 +16868,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
      loadType:String(exercise?.loadType||''),
      repUnit:String(exercise?.repUnit||''),
      measurementType:String(exercise?.measurementType||''),
+     automaticRestSeconds:Math.max(0,Math.min(3600,Math.round(Number(exercise?.prescription?.rest??settings().programRest?.[session.programId]??settings().rest??90)))),
      targetReps:String(exercise?.targetReps||exercise?.reps||(typeof byId==='function'?byId(exercise?.id)?.reps:'')||''),
      sets:(Array.isArray(exercise?.sets)?exercise.sets:[]).map((set,index)=>({
       set:Number(set?.set||index+1),
@@ -16953,6 +16956,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  function locateSet(exercise,command){
   const sets=Array.isArray(exercise?.sets)?exercise.sets:[];
+  if(command?.setId){const index=sets.findIndex(set=>set.setId===command.setId);return index>=0?{set:sets[index],index}:null;}
   const requested=Number(command?.setIndex);
   if(Number.isInteger(requested)&&requested>=0&&requested<sets.length){
    const set=sets[requested];
@@ -17152,6 +17156,12 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
   if(!state.session)return false;
   if(!matchesWorkout(state.session,String(command.workoutId||'')))return false;
+  if(action==='completeSet'||action==='automaticControl'&&command.value==='start'){
+   let receipt=command.nativeAutomatic162;
+   const bridge=api();
+   if(bridge?.claimAutomatic){const result=await bridge.claimAutomatic({commandId:String(command.commandId||'')});receipt=result?.receipt||receipt;}
+   if(receipt)return window.TrainPilotAutomatic162?.acceptBackground?.(receipt)===true;
+  }
   state.session.wearSequence=Math.max(Number(state.session.wearSequence)||0,Number(command.sequence)||0);
   if(action==='addQuickExercise'){
    if(!tp150IsQuick(state.session))return false;
@@ -17575,7 +17585,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const bridge=()=>{const c=window.Capacitor;return isNative()&&(c?.Plugins?.IntervalTimer||c?.isPluginAvailable?.('IntervalTimer')&&c.registerPlugin('IntervalTimer'))||null;};
   const timed=e=>e&&(e.repUnit==='mp'||byId(e.id)?.repUnit==='mp');
   const identity=s=>String(s?.syncId||s?.started||'');
-  let poll=null,reading=false,changing=false,webKey='',webBegan=0,webHaptics={},knownRestKey='';
+  let poll=null,reading=false,changing=false,webKey='',webBegan=0,webHaptics={},knownRestKey='',armedFor='',arming=false;
   const owner=()=>{const draft=state.session?null:db.get('draft',null),session=state.session||draft?.session,meta=session?.automatic162;return meta?{session,meta,draft}:null;};
   const live=o=>{const n=owner();return n&&identity(n.session)===identity(o.session)&&n.meta.run?.key===o.meta.run?.key?n:null;};
   const save=o=>{if(o.draft){o.draft.savedAt=new Date().toISOString();db.set('draft',o.draft);}else persistDraft();};
@@ -17651,7 +17661,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    }catch(e){if(state.session===session&&meta.run?.key===key){meta.run=null;meta.phase='interrupted';meta.message=t('failed');persistDraft();paint();}}
   }
   async function toggle(enabled){
-   if(changing)return false;const s=state.session;if(!s)return false;
+   if(changing)return false;if(!window.TrainPilotWearSync?.isApplyingCommand?.())await window.TrainPilotWearSync?.drainCommands?.();const s=state.session;if(!s)return false;
    if(!enabled){if(!await command('stop')||state.session!==s)return false;if(!await TrainPilotIntervals162.stop()||state.session!==s)return false;}
    s.automatic162=s.automatic162||{};s.automatic162.enabled=!!enabled;s.automatic162.phase='work';s.automatic162.message='';
    db.set('settings',{...settings(),automaticWorkout162:!!enabled});persistDraft();renderWorkout();return true;
@@ -17691,15 +17701,43 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const result=baseRender.apply(this,arguments),main=document.querySelector('main.tp153-workout');if(!main||!state.session)return result;
    const panel=document.createElement('div');panel.className='tp162-automatic';panel.dataset.tp162Automatic='';
    panel.innerHTML='<label class="tp162-auto" title="'+esc(t('help')+(!bridge()?' '+t('web'):''))+'"><input type="checkbox" data-tp162-enabled onchange="TrainPilotAutomatic162.toggle(this.checked)"><span>'+esc(t('title'))+'</span></label><span class="small muted" data-tp162-auto-status role="status"></span><button type="button" class="btn secondary tp162-small" data-tp162-auto-start aria-label="'+esc(t('start'))+'" title="'+esc(t('start'))+'" onclick="TrainPilotAutomatic162.startTimed()">▶</button>';
-   main.querySelector('.tp153-workout-actions')?.prepend(panel);paint();window.TrainPilotIssue16?.decorateWorkout?.();ensure();return result;
+   main.querySelector('.tp153-workout-actions')?.prepend(panel);paint();window.TrainPilotIssue16?.decorateWorkout?.();ensure();void armBackground();return result;
   };
   for(const name of ['toggleSet','nextExercise','prevExercise','finishWorkout']){
-   const base=window[name];window[name]=async function(){const s=state.session,args=arguments,enabled=s?.automatic162?.enabled;if(owner()?.meta.run&&!await command('stop'))return false;if(state.session!==s)return false;if(name==='toggleSet'&&s?.automatic162)s.automatic162.enabled=enabled;const result=await base.apply(this,args);return result;};
+   const base=window[name];window[name]=async function(){const args=arguments,expectedSession=state.session,target=name==='toggleSet'?expectedSession?.exercises?.[args[0]]?.sets?.[args[1]]:null,wasDone=target?.done;if(!window.TrainPilotWearSync?.isApplyingCommand?.())await window.TrainPilotWearSync?.drainCommands?.();const s=state.session;if(s!==expectedSession||target&&target.done!==wasDone)return false;const enabled=s?.automatic162?.enabled;if(owner()?.meta.run&&!await command('stop'))return false;if(state.session!==s)return false;if(name==='toggleSet'&&s?.automatic162)s.automatic162.enabled=enabled;const result=await base.apply(this,args);return result;};
   }
   const baseRemoval=tp106BeforeSetRemoval;tp106BeforeSetRemoval=async function(){if(owner()?.meta.run&&!await command('stop'))return false;return baseRemoval.apply(this,arguments);};
   const baseSkip=skipTimer;skipTimer=function(){return owner()?.meta.run?command('skipRest'):baseSkip.apply(this,arguments);};
   const baseResume=resumeDraft;resumeDraft=function(){const result=baseResume.apply(this,arguments);ensure();void sync();return result;};
   window.TrainPilotAutomatic162={toggle,command,dockCommand,startTimed,sync,owner,paint};
+  async function armBackground(){
+   const s=state.session,id=identity(s),b=bridge();if(!b?.arm||document.hidden||arming)return;
+   if(!s?.automatic162?.enabled||s.timerOwner==='watch'){if(armedFor){const old=armedFor;armedFor='';try{await b.disarm({workoutId:old});}catch(_){}}return;}
+   if(armedFor===id)return;arming=true;
+   try{await window.TrainPilotWearSync?.syncNow?.();if(state.session!==s||!s.automatic162.enabled)return;await b.arm({workoutId:id,language:rf212Lang()});armedFor=id;}
+   catch(_){/* The existing foreground path remains available if Android refuses arming. */}finally{arming=false;}
+  }
+  window.TrainPilotAutomatic162.acceptBackground=function(receipt){
+   const s=state.session;if(!s||identity(s)!==receipt?.workoutId||!receipt.commandId||!Array.isArray(receipt.snapshot?.exercises))return false;
+   s.backgroundApplied162=s.backgroundApplied162||[];
+   if(s.backgroundApplied162.includes(receipt.commandId))return true;
+   // A native receipt bypasses toggleSet: that wrapper would stop/restart the same rest.
+   for(const e of receipt.snapshot.exercises)for(const value of e.sets||[]){
+    const target=s.exercises.find(x=>x.id===e.id&&x.sets?.some(set=>set.setId===value.setId))?.sets.find(set=>set.setId===value.setId);
+    if(target&&value.done&&!target.done){target.done=true;target.reps=String(value.reps??'');target.weight=value.weight??target.weight;}
+   }
+   baseStop();s.automatic162={...s.automatic162,enabled:true,owner:'phone',phase:receipt.snapshot.automation?.phase||'ready',run:null};
+   delete s.interval162;
+   const plan=receipt.plan;
+   if(plan?.key&&Array.isArray(plan.steps)&&plan.steps.every(step=>TrainPilotInterval162Core.locate(s,step))){
+    const run={...plan,started:s.started,native:true,running:false};
+    if(plan.restOnly)s.automatic162.run=run;else s.interval162=run;
+   }
+   state.current=Math.max(0,Math.min(s.exercises.length-1,Number(receipt.currentExercise)||0));
+   s.wearSequence=Math.max(Number(s.wearSequence)||0,Number(receipt.snapshot.watchSequence)||0);
+   s.backgroundApplied162.push(receipt.commandId);s.backgroundApplied162=s.backgroundApplied162.slice(-256);
+   persistDraft();renderWorkout();void sync();void TrainPilotIntervals162.sync();return true;
+  };
   window.TrainPilotAutomatic162.snapshotForWatch=function(s){
    const m=s?.automatic162,iv=s?.interval162,p=iv?.phase,r=m?.run;
    if(!m?.enabled&&!iv)return null;

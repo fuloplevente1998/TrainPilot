@@ -1,5 +1,16 @@
 # TrainPilot — fejlesztési állapot
 
+
+## #162 — natív telefonos háttérrögzítés, 2026. október 13.
+
+Külön feladatág: `fix/162-phone-background-recording`, a friss `e02dcf5` mainből. Az új tesztkód a telefonon bekapcsolt automata módot a látható Activityből előkészített foreground szolgáltatáshoz köti. Órás, stabil sorozatazonosítós rögzítés natívan menti a tényleges ismétlést/súlyt, majd a következő pihenőt vagy beltéri időalapú menetrendet indítja. Az óráról indított új beltéri időmenetrendnek nem kell telefonos HTML-űrlap. A telefon felébresztéskor a meglévő natív menetrendet veszi át.
+
+A rögzítés és a visszajátszást védő bizonylat egyetlen tartós tranzakció. A foreground parancsfoglalás megakadályozza, hogy ugyanazt a kérést a háttérfigyelő és a webes felület is feldolgozza. Későbbi javítás, idegen edzés/piszkozat, már teljesített sorozat, megszakított vagy eltérő fázis nem írható felül. A Wear az ugyanazon menetrendből késve érkező régebbi fázist elutasítja. A szolgáltatás pihenő után is készenlétben marad, mérési wake lock nélkül; kikapcsolás, edzéslezárás, értesítési Stop, feladateltávolítás vagy legfeljebb 24 óra után leáll.
+
+Hatókör: a telefonos automata módnak az edzésből már előkészítettnek kell lennie. Folyamatleállítás/újraindítás után nincs automatikus szolgáltatásindítás vagy kimaradt sorozatok kitalálása. Harminc másodpercnél régebbi órás kérés a foreground feldolgozásra vár. GPS-indítás és oldalankénti időmenetrend továbbra is külön bővítés; az új natív menetrend ezeket nem indítja a háttérből. A munka/pihenő/kézi szünet naplóbontása és a #163 térkép hátravan.
+
+Ellenőrzés: 138 meglévő Node-regresszió és az automata/Wear böngészős próbák helyben sikeresek; új `phone-background-162.cjs` ellenőrzi az állapotátvételt, a kettős időzítő kizárását, az ismételt kérést és a másik piszkozat védelmét. A natív `PhoneAutomaticBackgroundTest` a CI gate része. Helyi Android SDK/JDK nincs, ezért a natív és aláírt APK-eredményt a GitHub Actionsből kell igazolni. Fizikai telefon–óra, rezgés, lezárt kijelző és OEM háttérkezelés még nincs elfogadva. Verzió változatlan: 1.3.4 /2730.
+
 Frissítve: **2026. október 13.** A felhasználói verzióleírások négy családot használnak: **1.0, 1.1, 1.2, 1.3**. A buildazonosítók, APK-k, tagek és release-ek megmaradnak.
 
 

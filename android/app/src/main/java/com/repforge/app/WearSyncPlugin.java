@@ -52,7 +52,13 @@ public class WearSyncPlugin extends Plugin {
     public void publish(PluginCall call) {
         JSObject input = call.getObject("snapshot");
         if (input == null) { call.reject("Missing workout snapshot."); return; }
-        try { publishSnapshot(ActiveWorkoutStore.save(getContext(), input), call); }
+        try {
+            JSONObject previous=ActiveWorkoutStore.current(getContext());
+            if(previous!=null&&(!previous.optString("workoutId").equals(input.optString("workoutId"))||
+                input.optJSONObject("backgroundAutomatic162")==null||!input.optJSONObject("backgroundAutomatic162").optBoolean("enabled")))
+                getActivity().runOnUiThread(()->IntervalTimerService.disarm(previous.optString("workoutId")));
+            publishSnapshot(ActiveWorkoutStore.save(getContext(), input), call);
+        }
         catch (Exception e) { call.reject("Unable to prepare Wear workout snapshot.", e); }
     }
 
@@ -66,7 +72,7 @@ public class WearSyncPlugin extends Plugin {
 
     @PluginMethod
     public void clear(PluginCall call) {
-        try { publishSnapshot(ActiveWorkoutStore.clear(getContext()), call); }
+        try { JSONObject previous=ActiveWorkoutStore.current(getContext());if(previous!=null)getActivity().runOnUiThread(()->IntervalTimerService.disarm(previous.optString("workoutId")));publishSnapshot(ActiveWorkoutStore.clear(getContext()), call); }
         catch (Exception e) { call.reject("Unable to clear Wear workout snapshot.", e); }
     }
 
@@ -159,10 +165,28 @@ public class WearSyncPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void claimAutomatic(PluginCall call) {
+        getActivity().runOnUiThread(()->{
+            try {
+                String id=call.getString("commandId","");
+                JSONObject receipt=ActiveWorkoutStore.receipt(getContext(),id);
+                if(receipt==null)for(int i=0;i<WearCommandQueueStore.pending(getContext()).length();i++){
+                    JSONObject command=WearCommandQueueStore.pending(getContext()).optJSONObject(i);
+                    if(command!=null&&id.equals(command.optString("commandId"))){IntervalTimerService.acceptWatchRecording(getContext(),command);break;}
+                }
+                WearCommandQueueStore.claim(getContext(),id);
+                receipt=ActiveWorkoutStore.receipt(getContext(),id);
+                JSObject out=new JSObject();out.put("receipt",receipt==null?JSONObject.NULL:receipt);call.resolve(out);
+            } catch(Exception error){call.reject("Unable to claim automatic command.",error);}
+        });
+    }
+
+    @PluginMethod
     public void ackCommand(PluginCall call) {
         String commandId = call.getString("commandId", "");
         if (commandId == null || commandId.isEmpty()) { call.reject("Missing commandId."); return; }
         WearCommandQueueStore.ack(getContext(), commandId);
+        ActiveWorkoutStore.acknowledgeBackground(getContext(), commandId);
         deleteCommandDataItem(commandId);
         JSObject result = new JSObject();
         result.put("commandId", commandId);
@@ -172,6 +196,12 @@ public class WearSyncPlugin extends Plugin {
     private void resolvePendingCommands(PluginCall call, String scanError) {
         JSObject result = new JSObject();
         JSONArray commands = WearCommandQueueStore.pending(getContext());
+        for (int i = 0; i < commands.length(); i++) {
+            JSONObject command = commands.optJSONObject(i);
+            if (command == null) continue;
+            JSONObject receipt = ActiveWorkoutStore.receipt(getContext(), command.optString("commandId"));
+            if (receipt != null) command.put("nativeAutomatic162", receipt);
+        }
         JSONObject current = ActiveWorkoutStore.current(getContext());
         result.put("commands", commands);
         result.put("liveHealth", WearLiveHealthStore.current(getContext()));

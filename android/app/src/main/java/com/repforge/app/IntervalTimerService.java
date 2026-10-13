@@ -13,7 +13,7 @@ import com.google.android.gms.wearable.Wearable;
 
 /** Explicitly started, finite fitness timer with an ongoing Stop notification. */
 public class IntervalTimerService extends Service {
-    static final String START="interval.START",STOP="interval.STOP",PAUSE="interval.PAUSE",RESUME="interval.RESUME",PREFS="trainpilot-interval",CHANNEL="trainpilot_interval";
+    static final String START="interval.START",ARM="interval.ARM",STOP="interval.STOP",PAUSE="interval.PAUSE",RESUME="interval.RESUME",PREFS="trainpilot-interval",CHANNEL="trainpilot_interval";
     private static final int NOTIFICATION=162;
     private static IntervalTimerService instance;
     private final Handler handler=new Handler(Looper.getMainLooper());
@@ -22,6 +22,8 @@ public class IntervalTimerService extends Service {
     private IntervalTimeline timeline;
     private String key="",language="en",lastToken="";
     private String workoutId="";
+    private String armedWorkoutId="";
+    private final Runnable expireArm=()->{armedWorkoutId="";if(timeline!=null)stopRun();else stopSelf();};
     private JSONArray planSteps=new JSONArray();
     private long phaseNumber=0;
     private boolean running,advance,sound,vibration,stopped,restOnly;
@@ -36,7 +38,15 @@ public class IntervalTimerService extends Service {
     @Override public IBinder onBind(Intent intent){return null;}
     @Override public int onStartCommand(Intent intent,int flags,int id){
         if(intent==null){stopSelf();return START_NOT_STICKY;}
-        if(STOP.equals(intent.getAction())){if(key.equals(intent.getStringExtra("key")))stopRun();return START_NOT_STICKY;}
+        if(ARM.equals(intent.getAction())){
+            String requested=intent.getStringExtra("workoutId");
+            if(requested==null||requested.isEmpty()||!armedWorkoutId.isEmpty()&&!armedWorkoutId.equals(requested)){stopSelf(id);return START_NOT_STICKY;}
+            armedWorkoutId=requested;language=intent.getStringExtra("language");if(language==null)language="en";
+            if(Build.VERSION.SDK_INT>=26)((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).createNotificationChannel(new NotificationChannel(CHANNEL,"TrainPilot intervals",NotificationManager.IMPORTANCE_LOW));
+            startForeground(NOTIFICATION,notification());handler.removeCallbacks(expireArm);handler.postDelayed(expireArm,IntervalTimeline.MAX_MS);
+            return START_NOT_STICKY;
+        }
+        if(STOP.equals(intent.getAction())){if(key.equals(intent.getStringExtra("key"))){armedWorkoutId="";stopRun();}return START_NOT_STICKY;}
         if(PAUSE.equals(intent.getAction())||RESUME.equals(intent.getAction())){try{command(this,intent.getStringExtra("key"),PAUSE.equals(intent.getAction())?"pause":"resume");}catch(Exception ignored){}return START_NOT_STICKY;}
         if(!START.equals(intent.getAction())||running)return START_NOT_STICKY;
         try{
@@ -69,7 +79,7 @@ public class IntervalTimerService extends Service {
         int vibrationMs=haptics.next(p,running&&!stopped);
         if(vibrationMs>0)vibrate(vibrationMs);
         if(!p.token.equals(lastToken)){lastToken=p.token;phaseNumber++;if(!stopped)cue("complete".equals(p.phase));notifyStatus();publishWatchClock();}
-        if("complete".equals(p.phase)){elapsed=p.elapsedMs;running=false;began=0;release();handler.removeCallbacks(tick);save();stopForeground(true);stopSelf();}else if(p.elapsedMs/1000!=lastSavedSecond){lastSavedSecond=p.elapsedMs/1000;save();notifyStatus();}
+        if("complete".equals(p.phase)){elapsed=p.elapsedMs;running=false;began=0;release();handler.removeCallbacks(tick);save();if(armedWorkoutId.isEmpty()){stopForeground(true);stopSelf();}else notifyStatus();}else if(p.elapsedMs/1000!=lastSavedSecond){lastSavedSecond=p.elapsedMs/1000;save();notifyStatus();}
     }
     private void handoff(IntervalTimeline.Phase p){
         IntervalTimeline.Step old=steps.get(gpsStep);String tracking=old.gpsKey;
@@ -102,6 +112,7 @@ public class IntervalTimerService extends Service {
                 .put("workSeconds",steps.get(p.step).work).put("restSeconds","rest".equals(p.phase)?timeline.phaseDurationMs(p)/1000:steps.get(p.step).rest).put("rounds",steps.get(p.step).rounds).put("round",p.round).put("vibration",false)
                 .put("autoAdvance",advance).put("restOnly",restOnly).put("stopped",stopped).put("completed",p.completed)
                 .put("stepIndex",p.step).put("stepElapsedMs",p.stepElapsedMs).put("steps",planSteps).put("phaseNumber",phaseNumber);
+            ActiveWorkoutStore.backgroundClock(this,value);
             PutDataMapRequest map=PutDataMapRequest.create("/trainpilot/phone-automatic");
             map.getDataMap().putString("automatic",value.toString());map.getDataMap().putLong("publishedAt",System.currentTimeMillis());
             Wearable.getDataClient(this).putDataItem(map.asPutDataRequest().setUrgent());
@@ -116,6 +127,13 @@ public class IntervalTimerService extends Service {
     private void save(){if(!key.isEmpty())getSharedPreferences(PREFS,MODE_PRIVATE).edit().putString("state",current().toString()).apply();}
     private Notification notification(){
         String title=DistanceTrackingService.text(language,"Intervallumidőzítő","Interval timer","Intervalltimer","Cronometru de intervale"),pause=DistanceTrackingService.text(language,"Szünetel","Paused","Pausiert","În pauză");
+        if(timeline==null||!armedWorkoutId.isEmpty()&&!running&&(stopped||"complete".equals(timeline.at(now()).phase))){
+            PendingIntent open=PendingIntent.getActivity(this,162,new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP),PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
+            PendingIntent stop=PendingIntent.getService(this,164,new Intent(this,IntervalTimerService.class).setAction(STOP).putExtra("key",key),PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
+            return new NotificationCompat.Builder(this,CHANNEL).setSmallIcon(R.mipmap.ic_launcher).setContentTitle(title)
+                .setContentText(DistanceTrackingService.text(language,"Automata edzés · rögzítésre vár","Automatic workout · waiting for a set","Automatisches Training · wartet auf Satz","Antrenament automat · așteaptă o serie"))
+                .setContentIntent(open).setOngoing(true).setOnlyAlertOnce(true).addAction(0,DistanceTrackingService.text(language,"Leállítás","Stop","Stoppen","Oprește"),stop).build();
+        }
         IntervalTimeline.Phase p=timeline.at(now());String label=DistanceTrackingService.text(language,"Munka","Work","Belastung","Efort");if("rest".equals(p.phase))label=DistanceTrackingService.text(language,"Pihenő","Rest","Pause","Odihnă");
         String body=(running?label+" · "+p.round+"/"+steps.get(p.step).rounds+" · "+(p.remainingMs+999)/1000+" s":pause)+" · "+steps.get(p.step).name;
         PendingIntent open=PendingIntent.getActivity(this,162,new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP),PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
@@ -126,7 +144,7 @@ public class IntervalTimerService extends Service {
     }
     private void notifyStatus(){((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).notify(NOTIFICATION,notification());}
     private void pauseRun(){if(!running){cancelVibration();return;}update();cancelVibration();if(!running)return;elapsed=now();running=false;began=0;handler.removeCallbacks(tick);release();DistanceTrackingService.pauseOwned(this,steps.get(gpsStep).gpsKey,true);save();notifyStatus();publishWatchClock();}
-    private void stopRun(){pauseRun();stopped=true;DistanceTrackingService.stopOwned(this,steps.get(gpsStep).gpsKey);save();publishWatchClock();stopForeground(true);stopSelf();}
+    private void stopRun(){if(timeline!=null){pauseRun();stopped=true;DistanceTrackingService.stopOwned(this,steps.get(gpsStep).gpsKey);save();publishWatchClock();}if(armedWorkoutId.isEmpty()){stopForeground(true);stopSelf();}else notifyStatus();}
     static JSONObject snapshot(Context context){
         IntervalTimerService service=instance;if(service!=null&&service.timeline!=null){service.update();return service.current();}
         try{JSONObject out=new JSONObject(context.getSharedPreferences(PREFS,MODE_PRIVATE).getString("state","{}"));if(out.optBoolean("running")){out.put("running",false).put("interrupted",true);context.getSharedPreferences(PREFS,MODE_PRIVATE).edit().putString("state",out.toString()).apply();}return out;}catch(Exception ignored){return new JSONObject();}
@@ -140,6 +158,22 @@ public class IntervalTimerService extends Service {
     static JSONObject attachGPS(Context context,String key,int index,String tracking)throws Exception{
         IntervalTimerService s=instance;if(s==null||!key.equals(s.key)||s.timeline.at(s.now()).step!=index||s.stopped||"complete".equals(s.timeline.at(s.now()).phase))throw new IllegalStateException("Interval owner changed");JSONObject gps=DistanceTrackingService.snapshot(context);if(!tracking.equals(gps.optString("key"))||!gps.optBoolean("active"))throw new IllegalStateException("GPS owner changed");s.steps.get(index).gpsKey=tracking;DistanceTrackingService.pauseOwned(context,tracking,!s.running||!"work".equals(s.timeline.at(s.now()).phase));s.save();return s.current();
     }
-    @Override public void onTaskRemoved(Intent root){if(timeline!=null)stopRun();}
-    @Override public void onDestroy(){if(running){cancelVibration();elapsed=now();running=false;stopped=true;DistanceTrackingService.stopOwned(this,steps.get(gpsStep).gpsKey);save();}handler.removeCallbacks(tick);release();if(tones!=null)tones.release();if(instance==this)instance=null;super.onDestroy();}
+    static void disarm(String workoutId){IntervalTimerService s=instance;if(s!=null&&workoutId.equals(s.armedWorkoutId)){s.armedWorkoutId="";s.handler.removeCallbacks(s.expireArm);s.stopRun();}}
+    static boolean armed(String workoutId){return instance!=null&&workoutId.equals(instance.armedWorkoutId);}
+    static JSONObject acceptWatchRecording(Context context,JSONObject command)throws Exception{
+        IntervalTimerService s=instance;
+        long age=System.currentTimeMillis()-command.optLong("createdAt");
+        if(s==null||!armed(command.optString("workoutId"))||age<0||age>30000||WearCommandQueueStore.claimed(context,command.optString("commandId")))return null;
+        JSONObject timer=snapshot(context);
+        if(timer.optBoolean("running")||!timer.optBoolean("stopped",true)&&!"complete".equals(timer.optString("phase"))&&!timer.optBoolean("interrupted"))return null;
+        JSONObject receipt=ActiveWorkoutStore.recordBackground(context,command,timer);if(receipt==null)return null;
+        JSONObject plan=receipt.optJSONObject("plan");
+        if(plan!=null){
+            s.handler.removeCallbacks(s.tick);s.parse(plan);s.stopped=false;s.elapsed=0;s.began=SystemClock.elapsedRealtime();s.running=true;
+            s.lastSavedSecond=-1;s.acquire();s.update();s.save();s.notifyStatus();if(s.running)s.handler.post(s.tick);
+        }
+        return receipt;
+    }
+    @Override public void onTaskRemoved(Intent root){armedWorkoutId="";if(timeline!=null)stopRun();else stopSelf();}
+    @Override public void onDestroy(){if(running){cancelVibration();elapsed=now();running=false;DistanceTrackingService.stopOwned(this,steps.get(gpsStep).gpsKey);try{getSharedPreferences(PREFS,MODE_PRIVATE).edit().putString("state",current().put("interrupted",true).toString()).commit();}catch(Exception ignored){save();}}handler.removeCallbacks(tick);handler.removeCallbacks(expireArm);release();if(tones!=null)tones.release();if(instance==this)instance=null;super.onDestroy();}
 }

@@ -47,22 +47,34 @@ public class WearCommandListenerService extends WearableListenerService {
                 String raw = DataMapItem.fromDataItem(event.getDataItem()).getDataMap().getString("command");
                 if (raw == null || raw.isEmpty()) continue;
                 JSONObject command=new JSONObject(raw);
-                if("automaticControl".equals(command.optString("action"))&&!WearCommandQueueStore.seen(this,command.optString("commandId"))){
-                    JSONObject timer=IntervalTimerService.snapshot(this),active=ActiveWorkoutStore.current(this);
-                    String action=command.optString("value");
-                    if(active!=null&&command.optJSONObject("automation")!=null&&active.optString("workoutId").equals(command.optString("workoutId"))&&
-                        timer.optString("key").equals(command.optJSONObject("automation")==null?"":command.optJSONObject("automation").optString("key"))&&
-                        java.util.Arrays.asList("pause","resume","skipRest").contains(action)){
-                        try {
-                            long expectedPhase=command.optJSONObject("automation").optLong("phaseNumber");
-                            IntervalTimerService.command(this,timer.optString("key"),expectedPhase==timer.optLong("phaseNumber")?action:"status");
-                            WearCommandQueueStore.ack(this,command.optString("commandId"));
-                            Wearable.getDataClient(this).deleteDataItems(event.getDataItem().getUri());continue;
-                        }
-                        catch(Exception ignored){}
-                    }
-                }
                 WearCommandQueueStore.enqueue(this, command, event.getDataItem().getUri().toString());
+                // The timer is already foreground, armed while the phone workout was visible.
+                // A Data Layer callback is not permission to start a new background FGS.
+                String commandUri=event.getDataItem().getUri().toString();
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                    try {
+                        if (WearCommandQueueStore.seen(this, command.optString("commandId"))) return;
+                        if("automaticControl".equals(command.optString("action"))&&command.optJSONObject("automation")!=null){
+                            JSONObject timer=IntervalTimerService.snapshot(this),active=ActiveWorkoutStore.current(this),auto=command.getJSONObject("automation");
+                            String action=command.optString("value");
+                            if(active!=null&&"phone".equals(active.optString("timerOwner"))&&active.optString("workoutId").equals(command.optString("workoutId"))&&
+                                timer.optString("key").equals(auto.optString("key"))&&java.util.Arrays.asList("pause","resume","skipRest").contains(action)){
+                                IntervalTimerService.command(this,timer.optString("key"),auto.optLong("phaseNumber")==timer.optLong("phaseNumber")?action:"status");
+                                WearCommandQueueStore.ack(this,command.optString("commandId"));
+                                Wearable.getDataClient(this).deleteDataItems(android.net.Uri.parse(commandUri));return;
+                            }
+                        }
+                        if(IntervalTimerPlugin.foregroundVisible)return;
+                        JSONObject receipt = IntervalTimerService.acceptWatchRecording(this, command);
+                        if (receipt == null) return;
+                        JSONObject snapshot = ActiveWorkoutStore.current(this);
+                        PutDataMapRequest map = PutDataMapRequest.create(WearSyncPlugin.ACTIVE_WORKOUT_PATH);
+                        map.getDataMap().putString("snapshot", snapshot.toString());
+                        map.getDataMap().putBoolean("active", true);
+                        map.getDataMap().putLong("revision", snapshot.optLong("revision"));
+                        Wearable.getDataClient(this).putDataItem(map.asPutDataRequest().setUrgent());
+                    } catch (Exception ignored) { /* Durable command remains for foreground reconciliation. */ }
+                });
             } catch (Exception ignored) {
                 // Invalid or stale watch commands must never affect the phone workout.
             }
