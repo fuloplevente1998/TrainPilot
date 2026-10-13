@@ -3,6 +3,18 @@
 Frissítve: **2026. október 13.** Ez a fájl bemásolható egy új beszélgetésbe. A funkciók részletes, továbbvezetendő terve a [WEAR_OS_FEJLESZTESI_TERV.md](wear/WEAR_OS_FEJLESZTESI_TERV.md); az aktuális állapot a [DEVELOPMENT_STATUS.md](../DEVELOPMENT_STATUS.md). A folytatáskor először a GitHub aktuális mainjét és a nyitott issue-kat kell ellenőrizni, mert később változhatnak.
 
 
+
+## Aktuális, átadott tesztpár — main #179 + #181
+
+A közös kód mainre egyesítve: `3411f5506fa7e9d6197d6f891f2709bcb26e8f5f`. A két APK forrása ennek része; a telefonos forrás megegyezik a mainbe egyesített telefonnal, a Wear-forrás a #181-ben változatlan. A verzió **1.3.4 /2730**, a korábbi kiadások aláírásával frissíthetők.
+
+| Alkalmazás | Forráscommit | APK SHA-256 | Sikeres build |
+| --- | --- | --- | --- |
+| Telefon: automata, pihenőfelirat és mentésjavítás | `612f8cb7da7d342fbd7b4670ef2b6225045f9cc6` | `3ed875fbe9926df1b76d87c5e2f70310f5bd3d28bdbf002db972f9aa6b8a2774` | [38358320014](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38358320014) |
+| Wear: revamp, automata és arányos pihenőkör | `c623af74291fdf2ba9c59e505e623ce1b0c42d65` | `76cd485698844ec07db0f3a88662404a7fa100d05e6f6ad67833544e2334e4f9` | [38357730174](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38357730174) |
+
+Ellenőrzött: **138/138 telefonos regresszió**, **90 Chromium-tesztcsomag**, natív release gate és **51/51 Wear-emulátoros teszt** ([38357730023](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38357730023)). Az APK-aláírás, ellenőrzőösszeg, forrásazonosító, becsomagolt telefonos webes fájlok és zoomtiltás külön ellenőrizve. A [buildbizonylat](builds/2026-10-13-main.json) tartalmazza az azonosítókat. Fizikai automata/rezgés és a felhasználó saját adatainak JSON/ZIP mentése-visszaolvasása még ellenőrizendő; #180 ezért nyitva marad. A meglévő release APK-k/tagek változatlanok.
+
 ## Mentési javítás — #180
 
 A #179 mainre került (`c623af7`), a #164 és #178 is egyesítve. A [#180](https://github.com/fuloplevente1998/TrainPilot/issues/180) új felhasználói visszajelzése: aktív edzés nélkül a JSON-export „Érvénytelen vagy túl nagy mentés”, a ZIP „hiányzó fotó” hibát ad; a fotók a telefonon megnyithatók.
