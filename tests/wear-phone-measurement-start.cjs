@@ -50,6 +50,22 @@ function fixture(){
  inline.hold(null);releaseInline();await flush();assert.deepEqual(inline.events,[['publish',inlineId],['open',inlineId]],'the actual inline quick start opens the matching watch workout once');
  await inline.run('tp152StartQuickInline(exercises()[1].id)');await inline.sync.syncNow();
  assert.equal(inline.events.filter(e=>e[0]==='open').length,1,'adding an inline quick exercise must not reopen/restart measurement');
+ // #157: the user-visible inline quick-start must survive transport failures
+ // without opening the watch on stale data or relaunching it on polling.
+ const offlineInline=fixture();offlineInline.failPublish(true);
+ await offlineInline.run('tp152StartQuickInline(exercises()[0].id)');await flush();
+ const offlineInlineId=offlineInline.sync.makeSnapshot().workoutId;
+ assert.equal(offlineInline.events.filter(e=>e[0]==='open').length,0,'an offline quick-start cannot launch stale watch data');
+ offlineInline.failPublish(false);await offlineInline.sync.syncNow();
+ assert.deepEqual(offlineInline.events.at(-1),['open',offlineInlineId],'a prompt successful retry opens the current quick workout');
+ await offlineInline.sync.syncNow();
+ assert.equal(offlineInline.events.filter(e=>e[0]==='open').length,1,'quick-start handoff is not repeated by polling');
+ const rejectedInline=fixture();rejectedInline.failOpen(true);
+ await rejectedInline.run('tp152StartQuickInline(exercises()[0].id)');await flush();
+ await rejectedInline.sync.syncNow();
+ assert.equal(rejectedInline.events.filter(e=>e[0]==='open').length,1,'a refused quick-start is not reopened automatically');
+ assert.ok(rejectedInline.run('state.session && db.get("draft",null)'),'watch refusal cannot discard the phone quick workout');
+
  const canceledInline=fixture();canceledInline.run('db.set("draft",{session:{started:"old",exercises:[]}});tp2628Confirm=async()=>false');
  await canceledInline.run('tp152StartQuickInline(exercises()[0].id)');await flush();assert.equal(canceledInline.events.length,0,'canceled inline draft replacement must not launch the watch');
  const acceptedInline=fixture();acceptedInline.run('db.set("draft",{session:{started:"old",exercises:[]}});tp2628Confirm=async()=>true');
