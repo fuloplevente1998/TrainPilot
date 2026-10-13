@@ -4,7 +4,7 @@ Frissítve: **2026. október 13.** Ez az egy fájl új Work-beszélgetésbe felt
 
 ## Most futó P0 kör
 
-**Aktuális kör: 8–9/10.** A felhasználó jóváhagyta a #157 közös ellenőrzését és a telefonos/Wear tesztpár elkészítését. Ettől a gate-szakasztól a folytatási forrás a #195 **`fix/p0-162-157-safe-wear-sync`** ága. A `work/p0-162-native` az előző, 6–7. kör ellenőrzött pillanatképe. A végső forráscommit, APK, SHA-256 és készülékes próba: [P0 átadási lap](P0_KESZULEKES_ELFOGADAS_162_157.md). Mainre emelés és publikált release még nincs jóváhagyva ebben a P0 körben.
+**Aktuális állapot: 9/10 — készülékes visszajelzésre vár.** A #157 közös ellenőrzése és a telefonos/Wear tesztpár elkészítése befejeződött. Az APK-k közös, ellenőrzött forrása **`859a6a15d1d7d02ebbfaba4385e857eb9e824014`**. A folytatási forrás a #195 **`fix/p0-162-157-safe-wear-sync`** ága, amely a későbbi dokumentációfrissítést is tartalmazza. A `work/p0-162-native` az előző, 6–7. kör pillanatképe. APK, SHA-256, sikeres gate-ek és készülékes próba: [P0 átadási lap](P0_KESZULEKES_ELFOGADAS_162_157.md). Mainre emelés és publikált release még nincs jóváhagyva ebben a P0 körben.
 
 A sorrend a #194 `0b37ced` commitja alapján **#162 → #157**. A közös draft [#195](https://github.com/fuloplevente1998/TrainPilot/pull/195) eredeti remote feje `e528d1e`; erre épülnek a `3fff44c`, `b986f9c` helyi alapok és a 6–7. lépés. A **6–7. kör ellenőrzött pillanatképe** a GitHub `work/p0-162-native` ágán található; a 8–9. kör továbbfejlesztett forrása a fenti `fix/` ág. Új Work-munkamenetben az aktuális forráságat kell checkoutolni, majd a [DEVELOPMENT_STATUS.md](../DEVELOPMENT_STATUS.md) aktuális P0 bejegyzését elolvasni. A korábbi 5/10-es helyi patch csak régebbi pillanatkép.
 
@@ -20,7 +20,7 @@ A felhasználó gyorsabb, nagyobb köröket kért. A 6–7. lépés közös: nat
 - Új feladat kiinduló ága a GitHub **aktuális mainje**, külön feladatágon folytatva. A folyamatban lévő P0 munkát a gate-szakasztól **`origin/fix/p0-162-157-safe-wear-sync`** alapján folytatjuk, mert a main még nem tartalmazza a 4–9. lépés fejlesztését. A kör előtt ellenőrzött main: `0b37cedca5ca5ef0f42cbfdc380e9127e9775973`.
 - A #179 egyesítette a telefonos/órás automata módot és a Wear-kezdőlapot. A #181 mentésjavítása is mainen van. A #180 mentést a felhasználó elfogadta, a hibajegy lezárva.
 - Verzió mindkét appban: **1.3.4 /2730**. Több teszt-APK használja ezt a verziót; a pontos forráscommit és SHA-256 azonosítja a csomagot.
-- Az eredeti `v1.3.4` és `wear-v1.3.4` release binárisai korábbi kiadott forrást őriznek. Az alábbi APK-pár korábbi készülékesen elfogadott alap; a mostani P0 fejlesztésből még nem készült teszt-APK.
+- Az eredeti `v1.3.4` és `wear-v1.3.4` release binárisai korábbi kiadott forrást őriznek. A dokumentum későbbi régi APK-párja történeti, készülékesen elfogadott alap; az aktuális P0 tesztpár a fenti átadási lapon szereplő **`859a6a1`** forrásból készült.
 - Egy régi chat `/workspace` könyvtára és letöltési linkje nem garantáltan érhető el az új környezetben. A GitHubon tárolt forrás, dokumentáció és buildazonosító a tartós alap.
 
 Elsőként olvasandó:

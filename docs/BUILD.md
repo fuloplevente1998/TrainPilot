@@ -4,6 +4,8 @@ A kanonikus webalkalmazás-forrás a `www/app.js`. Az Android csomag azonosító
 
 Az aktuális main fejlesztési bázisa **1.3.4 / 2730**, a #179-ben egyesített telefonos/Wear megvalósítással. Az eredeti 1.3.4 release és a legutóbbi automata tesztpár külön forrásazonosítóval rendelkezik; aktuális részletek: [DEVELOPMENT_STATUS.md](../DEVELOPMENT_STATUS.md).
 
+**Aktuális P0 branch tesztpár:** #195, `fix/p0-162-157-safe-wear-sync`, közös APK-forrás **`859a6a15d1d7d02ebbfaba4385e857eb9e824014`**, változatlan 1.3.4 /2730 verzió. A teljes telefonos és Wear release gate, 140 Node-csomag, 90 Chromium-csomag és teljesítményellenőrzés sikeres; a változatlan Wear-forrás 51 kerek emulátoros próbája sikeres. A két telepítő eredeti aláírással, branch artifactként készült. A main és a kiadott assetek változatlanok; készülékes elfogadás nincs. Pontos letöltés, hash, CI-forrás és próbamenet: [P0 átadási lap](P0_KESZULEKES_ELFOGADAS_162_157.md).
+
 A legutóbbi ellenőrzött kódon 138 telefonos regresszió, külön futtatótesztek, 90 Chromium-tesztcsomag hat CI-jobban, natív telefon/Wear release-tesztek és 51 Wear-emulátoros próba sikeres. A pontos tesztlista a `tests/browser/suite.json`, az aktuális futások a GitHub Actionsön találhatók. A fizikai rezgés és OEM háttérkezelés elfogadása külön készülékes próba.
 
 ## Gyors ellenőrzés
