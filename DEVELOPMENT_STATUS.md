@@ -47,6 +47,17 @@ Frissítve: **2026. október 13.** A felhasználói verzióleírások négy csal
 
 ## P0 fejlesztési kör: #162 → #157 (2026. október 13., tesztelésre vár)
 
+### Helyi folytatás — 4/10: natív rögzítési alap
+
+A #195 `e528d1e` forrásából külön helyi munkafában készült a `PhoneWorkoutExecutionStore` és `PhoneWorkoutRecording`. A külön SQLite-adatbázis egy tranzakcióban menti a sorozatot és az idempotens parancsbizonylatot; generáció/revízió és stabil sorozat-ID védi a célt. A JavaScript által később beolvasandó események külön nyugtázhatók, a parancsbizonylat akkor is megmarad. A már rögzített sorozat értékeit egy elavult pillanatkép nem módosíthatja. A restore-zárolás, lezárt edzés és hiányzó protokollmezők védelme is része az alapnak.
+
+**Hatókör:** kézi, ismétléses sorozat natív adatrögzítési alapja. A szolgáltatás/órás parancs/WebView még nincs bekötve; a pihenő- és idővonalindítás, időalapú/távolsági sorozat és egységes időnapló későbbi lépés. Ez még nem oldja meg a #162 készülékes háttérműködését, és nem zárja a #157-et.
+
+**Ellenőrzés:** 18 sikeres helyi Robolectric/JUnit teszt Android 33 környezetben, az új forrásokat Java 17 célra fordítva. Valós SQLite-tranzakció visszagörgetése injektált írási hibánál, újranyitás előtti/utáni parancsismétlés, párhuzamos duplikáció, részleges eseménynyugtázás, stale pillanatkép, értékfelülírás, restore-zár, generációváltás és valódi nulla vizsgálva. A helyi futtató nem a teljes Android Release Gate; APK nem készült.
+
+A kód és ez az állapotfeljegyzés egyelőre helyi commit; a #195 remote fejét, main-t és verziót ez a lépés nem módosítja. A kódpush a már rögzített közös gate-szakaszban történik.
+
+
 A közös `fix/p0-162-157-safe-wear-sync` munkában a következő **részjavítások** készültek; ezek önmagukban nem jelentik a két Issue végleges teljesítését:
 
 - **#162, natív adatbiztonság:** a telefon órás parancssora nem dobhatja el észrevétlenül a legrégebbi, még nem nyugtázott sorozatrögzítést, amikor eléri a 64 elemnyi keretet. A Data Layer tétel nyitva marad, és a kapacitás felszabadulása után újra felolvasható. A nyugtázás és duplikációvédelmi jelző tartós mentést használ; sikertelen tartós nyugtázásnál a Data Layer tétel nem törlődik. Robolectric regressziók készültek a telítődésre, újrafelvételre és az automata állapotpillanatkép cseréjére.
