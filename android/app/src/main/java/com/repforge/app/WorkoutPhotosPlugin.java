@@ -323,7 +323,7 @@ public class WorkoutPhotosPlugin extends Plugin {
     }
 
     @PluginMethod public void exists(PluginCall call) {
-        try { JSObject r = new JSObject(); r.put("exists", photoFile(call.getString("id", "")).isFile()); call.resolve(r); }
+        try { JSObject r = new JSObject(); File file = photoFile(call.getString("id", "")); r.put("exists", file.isFile()); r.put("bytes", file.isFile() ? file.length() : 0); call.resolve(r); }
         catch (Exception e) { call.reject(e.getMessage()); }
     }
 

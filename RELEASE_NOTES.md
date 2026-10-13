@@ -107,3 +107,10 @@ A legutóbbi tesztpár 1.3.4 / 2730 marad, külön forráscommitokkal. A publik�
 ## Történeti részletek
 
 A korábbi, különálló javítási feljegyzéseket a [Git-történet](https://github.com/fuloplevente1998/TrainPilot/blob/2fdcf4fde7021fb234bd85fff0a59b698d36c808/RELEASE_NOTES.md) és a meglévő release-ek őrzik. A régi belső számozás nem az aktuális nyilvános verziócsaládok folytatása. A jelenlegi állapotot a [fejlesztési áttekintés](DEVELOPMENT_STATUS.md) tartalmazza.
+
+### Main — mentésjavítás #180 (1.3.4 /2730)
+
+- A JSON fájlmentés kompakt formátumot használ, változatlan adattartalommal; a behúzások nem okozhatnak fölösleges mérettúllépést.
+- A teljes ZIP mentés előzetesen ellenőrzi a fotókat, és a Drive-on elérhető hiányzó fájlokat megpróbálja letölteni.
+- Hiányzó, üres és túl nagy fotó külön, lokalizált hibát kap. Hiba esetén nem készül hiányos „teljes” mentés; az eredeti fotók változatlanok.
+- Az eredeti publikált 1.3.4 APK-k változatlanok; az új main tesztbuildet fizikai telefonon ellenőrizni kell.
