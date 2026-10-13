@@ -13,4 +13,14 @@ public class IntervalTimelineTest {
  @Test public void initialRestStartsTimedWorkWithoutAddingRestToMeasuredSet(){IntervalTimeline t=new IntervalTimeline(Collections.singletonList(step("a",2,1,1)),true,30,false);assertEquals("rest",t.at(29999).phase);assertEquals(0,t.at(29999).stepElapsedMs);assertEquals("work",t.at(30000).phase);assertEquals(0,t.at(30000).stepElapsedMs);assertEquals("complete",t.at(32000).phase);assertEquals(2000,t.at(32000).stepElapsedMs);}
  @Test public void repetitionRestNeverMeasuresOrCompletesAWorkSet(){IntervalTimeline t=new IntervalTimeline(Collections.singletonList(step("a",1,30,1)),false,0,true);assertEquals("rest",t.at(0).phase);assertEquals(30000,t.at(0).remainingMs);assertEquals("complete",t.at(30000).phase);assertEquals(0,t.at(30000).stepElapsedMs);assertEquals(30000,t.at(Long.MAX_VALUE).elapsedMs);}
  @Test(expected=IllegalArgumentException.class) public void restCannotHaveMultipleOwners(){new IntervalTimeline(Arrays.asList(step("a",1,30,1),step("b",1,30,1)),false,0,true);}
+ @Test public void phaseDurationKeepsLongInitialRestSeparateFromShortIntervalRest(){
+  IntervalTimeline t=new IntervalTimeline(Collections.singletonList(step("a",30,15,2)),false,120,false);
+  assertEquals(120000,t.phaseDurationMs(t.at(0)));assertEquals(120000,t.phaseDurationMs(t.at(60000)));
+  assertEquals(120000,t.phaseDurationMs(t.at(119999)));assertEquals(30000,t.phaseDurationMs(t.at(120000)));
+  assertEquals(15000,t.phaseDurationMs(t.at(150000)));assertEquals(0,t.phaseDurationMs(t.at(195000)));
+ }
+ @Test public void repetitionRestDurationDoesNotShrinkWithRemainingTime(){
+  IntervalTimeline t=new IntervalTimeline(Collections.singletonList(step("a",1,120,1)),false,0,true);
+  assertEquals(120000,t.phaseDurationMs(t.at(0)));assertEquals(120000,t.phaseDurationMs(t.at(60000)));
+ }
 }

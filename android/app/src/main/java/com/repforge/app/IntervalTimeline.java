@@ -36,6 +36,12 @@ final class IntervalTimeline {
         long sum=initialRest;for(int i=0;i<steps.size();i++){sum+=duration(i);if(sum>MAX_MS)throw new IllegalArgumentException("Interval plan exceeds 24 hours");}total=sum;
     }
     long duration(int i){return restOnly?steps.get(i).rest*1000L:steps.get(i).duration()+(advance&&i<steps.size()-1?steps.get(i).rest*1000L:0);}
+    long phaseDurationMs(Phase p){
+        if("work".equals(p.phase))return steps.get(p.step).work*1000L;
+        if(!"rest".equals(p.phase))return 0;
+        if(!restOnly&&p.elapsedMs<initialRest)return initialRest;
+        return steps.get(p.step).rest*1000L;
+    }
     Phase at(long milliseconds){
         long elapsed=Math.max(0,Math.min(total,milliseconds)),offset=elapsed;
         if(restOnly)return new Phase(0,1,elapsed==total?1:0,elapsed,0,total-elapsed,total,elapsed==total?"complete":"rest");

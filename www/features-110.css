@@ -95,3 +95,10 @@ html body #app main.tp153-workout .tp16-workout-actions>.tp162-countdown{max-wid
 @media(max-width:340px){html body #app main.tp153-workout .tp16-workout-actions:has(>.tp162-automatic):has(>.tp16-rest-timer){grid-template-columns:minmax(0,1fr) minmax(0,auto) minmax(0,1fr)!important;grid-template-areas:"auto auto auto" "prev rest next"!important}html body #app main.tp153-workout .tp16-workout-actions:has(>.tp162-automatic):not(:has(>.tp16-rest-timer)){grid-template-areas:"auto" "prev" "next"!important}}
 
 html body #app main.tp153-workout .tp16-workout-actions:has(>.timer):has(>.tp162-automatic)>.tp16-workout-prev,html body #app main.tp153-workout .tp16-workout-actions:has(>.timer):has(>.tp162-automatic)>.tp16-workout-next{font-size:13px!important;padding-inline:5px!important;line-height:1.15!important}
+
+/* Keep the phase name visible after the shared compact timer decorator runs. */
+html body #app main.tp153-workout .tp16-workout-actions>.tp162-countdown.tp16-rest-timer{display:grid!important;grid-template-columns:minmax(43px,1fr) auto auto!important;grid-template-rows:auto auto!important;align-items:center!important;column-gap:3px!important;row-gap:0!important}
+html body #app main.tp153-workout .tp16-workout-actions>.tp162-countdown [data-tp162-dock-label]{display:block!important;grid-column:1!important;grid-row:1!important;font-size:10px!important;line-height:12px!important;text-align:center!important;white-space:nowrap!important}
+html body #app main.tp153-workout .tp16-workout-actions>.tp162-countdown [data-tp162-auto-clock]{grid-column:1!important;grid-row:2!important;text-align:center!important}
+html body #app main.tp153-workout .tp16-workout-actions>.tp162-countdown [data-tp162-auto-pause]{grid-column:2!important;grid-row:1/3!important}
+html body #app main.tp153-workout .tp16-workout-actions>.tp162-countdown [data-tp162-auto-skip]{grid-column:3!important;grid-row:1/3!important}

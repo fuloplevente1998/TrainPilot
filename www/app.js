@@ -17678,8 +17678,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(!m?.enabled&&!iv)return null;
    const phase=r?'rest':p?.phase==='work'||p?.phase==='rest'?p.phase:m?.phase==='complete'?'complete':'ready';
    const remainingMs=r?.remainingMs??p?.remainingMs??0,paused=r?r.running!==true:iv?iv.running!==true:false;
+   const step=r?.steps?.[0]||iv?.steps?.[p?.stepIndex||0];
+   const restSeconds=r?Number(step?.rest):p?.token==='initial:rest'?Number(iv.initialRest):Number(step?.rest??iv?.rest??settings().rest??90);
    return {enabled:m?.enabled===true,owner:'phone',phase,paused,remainingMs,deadlineAt:remainingMs&&!paused?Date.now()+remainingMs:0,
-    key:r?.key||iv?.key||'',phaseNumber:r?.phaseNumber||iv?.phaseNumber||0,targetExercise:state.current,workSeconds:iv?.work||30,restSeconds:settings().rest||90,vibration:false,interrupted:r?.interrupted||iv?.interrupted||false};
+    key:r?.key||iv?.key||'',phaseNumber:r?.phaseNumber||iv?.phaseNumber||0,targetExercise:state.current,workSeconds:Number(step?.work??iv?.work??30),restSeconds,vibration:false,interrupted:r?.interrupted||iv?.interrupted||false};
   };
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)void sync();});ensure();void sync();
  });
@@ -17746,7 +17748,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    else if(!counting&&clockPoll){clearInterval(clockPoll);clockPoll=null;}
    if(!external())return;
    TrainPilotAutomatic162.paint();const s=state.session,m=s.automatic162,a=m?.watch;
-   const node=document.querySelector('[data-tp162-auto-status]');if(node)node.textContent=m.pending?t('waiting'):t('owner');
+   const node=document.querySelector('[data-tp162-auto-status]');if(node){node.textContent=m.pending?t('waiting'):m.enabled&&['work','rest'].includes(a?.phase)?TrainPilot110.t(a.phase==='rest'?'restPhase':'workPhase'):t('owner');node.title=t('owner');}
    document.querySelector('[data-tp162-auto-start]')?.toggleAttribute('hidden',!m.enabled||!WearTimed(s.exercises[state.current])||a?.phase==='work'||a?.phase==='rest');
    const form=document.querySelector('.tp110-interval');if(form)form.hidden=!!m.enabled;
    if(a?.phase==='work'){

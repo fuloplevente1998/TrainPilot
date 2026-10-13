@@ -11,7 +11,7 @@ Frissítve: **2026. október 13.** Ez a fájl bemásolható egy új beszélgeté
 - A mainre emelés jóváhagyása mellett az új automata mód **fizikai készülékes elfogadása még hátravan**. Az eredeti `v1.3.4` és `wear-v1.3.4` release APK-k a korábbi kiadott állapotot őrzik; a jelen mainfrissítés nem cseréli le ezeket.
 - A felhasználó magyarul kommunikál, telefonon és valódi órán tesztel. Korábbi képein a kerek kijelzőn levágott gombok, keskeny középső tartalom, hibás szerkesztő és háttérfrissítéskor összecsukódó telefonos nézetek szerepeltek; ezek javításait meg kell őrizni.
 
-## Legutóbbi átadott, ellenőrzött tesztpár
+## Korábban átadott, ellenőrzött referencia-tesztpár
 
 Mindkét APK szükséges, majd a telefonos app megnyitásával első telefon–óra adatszinkron. Ez adja át az új automata protokollt; utána az órán indított edzés helyben is időzíthet.
 
@@ -24,7 +24,7 @@ A telefonos forrás a két commit között változatlan. Alkalmazásazonosító:
 
 Ellenőrzött: 137 telefonos regresszió, külön futtatótesztek, 90 Chromium-tesztcsomag, 16 új Kotlin állapot-/tükrözési teszt, natív kiadási kapuk és **51 Wear-emulátoros teszt** ([38352812492](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38352812492)). Utóbbi 160/192/225 dp kerek kijelzőt, normál/1,5×/2× betűméretet és háttérbe tett Activity mellett valódi időzítő-szünet/folytatást ellenőriz. A fizikai rezgést és OEM háttérkezelést ez nem igazolja.
 
-A fenti buildek a legutóbbi átadott tesztpár. Az új main buildek az Actionsön azonosíthatók; későbbi beszélgetésben ellenőrizd a forrást és a sikeres eredményt. Az Actions-artefaktok megőrzése véges (jelenleg 14 nap), lejárat után az adott forrásból új aláírt build készíthető. Egy korábbi beszélgetés `/workspace` fájljaira ne építs.
+A fenti buildek a most jelzett pihenőhibák javítása előtti, korábban átadott tesztpár. Az aktuális javítást tartalmazó main buildek az Actionsön azonosíthatók; későbbi beszélgetésben ellenőrizd a forrást és a sikeres eredményt. Az Actions-artefaktok megőrzése véges (jelenleg 14 nap), lejárat után az adott forrásból új aláírt build készíthető. Egy korábbi beszélgetés `/workspace` fájljaira ne építs.
 
 ## Elkészült működés és rögzített felhasználói döntések
 
@@ -36,6 +36,13 @@ A fenti buildek a legutóbbi átadott tesztpár. Az új main buildek az Actions�
 6. **Wear-edzés:** nagyobb/olvasható gyakorlatnév, ahol indokolt íves fejléc; kis `HH:mm` pontos idő, kompakt A/M kapcsoló; munka/pihenő/kör és rezgés az edzésmenüben. Kis körkijelzőn is elérhető alsó vezérlők. A súly/ismétlés szerkesztőben a mínusz/plusz a szám két oldalán, a Mentés/Mégse elérhető. Hosszú Mini napló-szöveg tördelődik.
 7. **Állapotvédelem:** mentés/szinkron/frissítés nem csukhatja össze a nyitott telefonos nézetet, nem veszítheti el a piszkozatot vagy a témát. Régi parancs nem módosíthat másik sorozatot/edzést; sorozatváltás közben nyitott szerkesztő nem menthet az új célba.
 8. **Egy időzítőtulajdonos:** órás indításnál `watch`, telefonosnál `phone`. A másik eszköz vezérlő és kijelző; nem futhat kettős automatikus léptetés/rezgés. Kapcsolatvesztéskor a tulajdonos folytat, megszakadt szolgáltatásból mentett szünet áll vissza, kitalált utólagos sorozat nélkül.
+
+## A most jelzett pihenőhibák javítása — #179
+
+- A telefonos kompakt időzítő közös dekorátora elrejtette a fázisfeliratot. Az automata időzítő saját, kompakt rácselrendezésben tartja láthatóan a **Munka/Pihenő** feliratot, az alsó Előző/Következő gomb között. Órás tulajdonnál a telefonos státusz is az aktuális fázist mutatja.
+- Az órás pihenőkör az edzés alap pihenőértékéből számolt, amely eltérhetett az aktuális automata szakaszétól. Most a **hátralévő / teljes szakaszidő** arányát használja: 120 mp pihenőnél 119 mp = 119/120 kör, 60 mp = fél kör. Szünetben ugyanott marad.
+- A telefon a kezdeti gyakorlatközi pihenő valódi hosszát is átadja, amely eltérhet a következő intervallum pihenőidejétől. A kijelzésekhez ugyanaz az aktuális szakaszidő kerül.
+- Az ellenőrzés kiegészült ténylegesen látható telefonos fázisfelirattal 16 aktív méret/nyelv/téma kombinációban, 4 új órás arányteszttel, 2 új natív telefonos szakaszidő-teszttel és a 120 mp-es pihenő emulátoros megjelenítésével. A sikeres CI-futások a #179-en és a main Actionsön követhetők.
 
 ## Ismert nyitott korlátok — ezt kell először folytatni
 
@@ -71,4 +78,4 @@ Napló, saját program, fotó, piszkozat, téma és meglévő egészségadat nem
 
 ## Rövid indító szöveg bemásoláshoz
 
-> Folytassuk a TrainPilot fejlesztését: https://github.com/fuloplevente1998/TrainPilot. A friss mainből dolgozz; előbb olvasd a docs/CHATGPT_FOLYTATAS.md, DEVELOPMENT_STATUS.md és docs/wear/WEAR_OS_FEJLESZTESI_TERV.md fájlokat, valamint a #162, #163 és #170 issue aktuális állapotát. A #179 egyesíti a telefonos/órás automata módot és a Wear-kezdőlapot. Legutóbbi átadott tesztpár: telefon 1650906, Wear e3db5e2, mindkettő 1.3.4 /2730; fizikai automata elfogadás még hátravan. Először az óráról történő telefonos háttérrögzítést és a munka/pihenő naplóbontását folytassuk, utána a #163 térképet. Súlyzós sorozatot én rögzítek; utána automata pihenő/léptetés. A számláló telefonon az alsó két gomb között, az automata kapcsoló kicsi marad. Rezgés: 3–2–1 rövid + lejáratkor 1 másodperc egybefüggően. Az új döntéseket a közös tervbe is vezesd át.
+> Folytassuk a TrainPilot fejlesztését: https://github.com/fuloplevente1998/TrainPilot. A friss mainből dolgozz; előbb olvasd a docs/CHATGPT_FOLYTATAS.md, DEVELOPMENT_STATUS.md és docs/wear/WEAR_OS_FEJLESZTESI_TERV.md fájlokat, valamint a #162, #163 és #170 issue aktuális állapotát. A #179 egyesíti a telefonos/órás automata módot és a Wear-kezdőlapot. Korábbi referencia-tesztpár: telefon 1650906, Wear e3db5e2, mindkettő 1.3.4 /2730; fizikai automata elfogadás még hátravan. Először az óráról történő telefonos háttérrögzítést és a munka/pihenő naplóbontását folytassuk, utána a #163 térképet. Súlyzós sorozatot én rögzítek; utána automata pihenő/léptetés. A számláló telefonon az alsó két gomb között, az automata kapcsoló kicsi marad. Rezgés: 3–2–1 rövid + lejáratkor 1 másodperc egybefüggően. Az új döntéseket a közös tervbe is vezesd át.

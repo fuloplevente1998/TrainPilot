@@ -99,7 +99,7 @@ public class IntervalTimerService extends Service {
             JSONObject value=new JSONObject().put("workoutId",workoutId).put("key",key).put("owner","phone")
                 .put("enabled",!stopped).put("phase",stopped?"ready":p.phase).put("paused",!running)
                 .put("remainingMs",p.remainingMs).put("deadlineAt",running?System.currentTimeMillis()+p.remainingMs:0)
-                .put("workSeconds",steps.get(p.step).work).put("restSeconds",steps.get(p.step).rest).put("rounds",steps.get(p.step).rounds).put("round",p.round).put("vibration",false)
+                .put("workSeconds",steps.get(p.step).work).put("restSeconds","rest".equals(p.phase)?timeline.phaseDurationMs(p)/1000:steps.get(p.step).rest).put("rounds",steps.get(p.step).rounds).put("round",p.round).put("vibration",false)
                 .put("autoAdvance",advance).put("restOnly",restOnly).put("stopped",stopped).put("completed",p.completed)
                 .put("stepIndex",p.step).put("stepElapsedMs",p.stepElapsedMs).put("steps",planSteps).put("phaseNumber",phaseNumber);
             PutDataMapRequest map=PutDataMapRequest.create("/trainpilot/phone-automatic");

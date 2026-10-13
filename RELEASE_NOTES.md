@@ -99,6 +99,7 @@ A [#179](https://github.com/fuloplevente1998/TrainPilot/pull/179) mainre jóváh
 - A megújult Wear-kezdőlapot a telefonos ikonokkal/témával, külön Beállításokkal, közvetlen törléssel és felfelé húzható menüvel; a tördelt Mini naplót és kis gyakorlatoldali pontos időt.
 - A telefonos natív lapzoom tiltását, a rendszerbetűméret megőrzésével.
 - Telefonos és órás automata tesztváltozatot: kézi súlyzós rögzítés utáni automatikus pihenő/léptetés, időzített munka/pihenő/körök, kompakt kapcsoló és alsó telefonos számláló.
+- Megmaradó telefonos Munka/Pihenő feliratot és az órán a teljes automata pihenőidőhöz arányos kört, 1 percnél hosszabb szakasznál is.
 - 3–2–1 rövid, 80 ms-os előjelzést és lejáratkor 1 másodperces rezgést; egyetlen időzítőtulajdonost, fázishoz kötött távoli vezérlést és megszakításkor mentett szünetet.
 
 A legutóbbi tesztpár 1.3.4 / 2730 marad, külön forráscommitokkal. A publikált 1.3.4 APK-k az eredeti kiadást őrzik. Az új automata mód fizikai elfogadása, a telefonos tulajdon teljes háttérrögzítése és az egységes időnapló még feladat; ezután következik a #163 térkép. [Aktuális állapot](DEVELOPMENT_STATUS.md) · [Közös terv](docs/wear/WEAR_OS_FEJLESZTESI_TERV.md) · [ChatGPT-folytatás](docs/CHATGPT_FOLYTATAS.md).

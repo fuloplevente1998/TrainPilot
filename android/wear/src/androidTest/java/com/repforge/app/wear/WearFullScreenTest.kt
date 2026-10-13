@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -676,6 +677,8 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         val commands=mutableListOf<String>()
         compose.setContent { Watch { Fixture("automatic-rest",automaticCommands=commands) } }
         val resume=compose.onNodeWithContentDescription("Automata folytatása").assertIsDisplayed()
+        val progress=compose.onNodeWithTag("wear-rest-ring").fetchSemanticsNode().config[SemanticsProperties.ProgressBarRangeInfo].current
+        assertEquals("Two-minute rest is already shrinking above one minute",115f/120,progress,.00001f)
         val root=compose.onRoot().fetchSemanticsNode().boundsInRoot
         val button=resume.fetchSemanticsNode().boundsInRoot
         assertEquals(root.center.x,button.center.x,1f)
@@ -716,8 +719,8 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             )
         if(route.startsWith("automatic-"))workout.value=workout.value!!.copy(timerOwner="watch",
             automation=WearAutomatic(enabled=true,key="layout-auto",phase=if(route=="automatic-rest")"rest" else "ready",
-                paused=route=="automatic-rest",remainingMs=if(route=="automatic-rest")5000 else 0,
-                workSeconds=30,restSeconds=5,rounds=3,anchorMs=android.os.SystemClock.elapsedRealtime()))
+                paused=route=="automatic-rest",remainingMs=if(route=="automatic-rest")115000 else 0,
+                workSeconds=30,restSeconds=if(route=="automatic-rest")120 else 5,rounds=3,anchorMs=android.os.SystemClock.elapsedRealtime()))
         val quickExercise =
             WatchHomeExercise(
                 "press",
@@ -795,7 +798,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             workout = workout,
             home = home,
             closure = closure,
-            restRemaining = mutableStateOf(if(route=="automatic-rest")5 else 0),
+            restRemaining = mutableStateOf(if(route=="automatic-rest")115 else 0),
             onStart = { _, _ -> },
             onStartQuick = {},
             onAddQuick = {},

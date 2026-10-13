@@ -28,6 +28,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
@@ -1531,11 +1533,13 @@ private fun WorkoutPager(
 @Composable
 private fun RestRing(workout: WearWorkout, seconds: Int) {
     val color = Gold
-    Canvas(Modifier.fillMaxSize().padding(8.dp)) {
+    val remainingFraction=wearRestProgress(workout,seconds)
+    Canvas(Modifier.fillMaxSize().padding(8.dp).testTag("wear-rest-ring")
+        .semantics { progressBarRangeInfo=ProgressBarRangeInfo(remainingFraction,0f..1f) }) {
         drawArc(
             color,
             -90f,
-            360f * (seconds.toFloat() / workout.restSeconds.coerceAtLeast(1)).coerceIn(0f, 1f),
+            360f * remainingFraction,
             false,
             style = Stroke(2.dp.toPx()),
         )
