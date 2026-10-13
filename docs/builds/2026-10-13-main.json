@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-13",
+  "version": "1.3.4",
+  "versionCode": 2730,
+  "appId": "com.repforge.app",
+  "mainCodeIntegrationCommit": "3411f5506fa7e9d6197d6f891f2709bcb26e8f5f",
+  "certificateSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+  "phone": {
+    "file": "TrainPilot-1.3.4-telefon-mentes-612f8cb.apk",
+    "sourceCommit": "612f8cb7da7d342fbd7b4670ef2b6225045f9cc6",
+    "runId": 38358320014,
+    "artifactId": 11793823543,
+    "sha256": "3ed875fbe9926df1b76d87c5e2f70310f5bd3d28bdbf002db972f9aa6b8a2774"
+  },
+  "wear": {
+    "file": "TrainPilot-1.3.4-Wear-main-c623af7.apk",
+    "sourceCommit": "c623af74291fdf2ba9c59e505e623ce1b0c42d65",
+    "runId": 38357730174,
+    "artifactId": 11793551331,
+    "uiRunId": 38357730023,
+    "uiTests": 51,
+    "sha256": "76cd485698844ec07db0f3a88662404a7fa100d05e6f6ad67833544e2334e4f9"
+  },
+  "verification": {
+    "phoneRegressionSuites": 138,
+    "chromiumSuites": 90,
+    "releaseSignaturesVerified": true,
+    "phonePackagedWebAssetsMatchSource": true,
+    "nativeZoomDisabled": true,
+    "phoneSourceMatchesIntegratedMain": true,
+    "wearSourceUnchangedInIntegratedMain": true
+  },
+  "physicalDeviceAcceptance": "pending: automatic haptics/background behavior and user JSON/full ZIP save/readback",
+  "originalReleaseApkAssetsReplaced": false
+}
