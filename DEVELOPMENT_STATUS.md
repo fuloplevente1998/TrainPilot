@@ -9,7 +9,7 @@ A #179 mainre került (`c623af7`), a #164 és #178 is egyesítve. A [#180](https
 
 A javítás kompakt, veszteségmentes JSON-t exportál, és a 20 MiB korlátot UTF-8 bájtban ellenőrzi. A ZIP az élő fotóhivatkozásokat előzetesen ellenőrzi, a hiányzó/üres fájlt a meglévő Google-fiókból próbálja visszatölteni, majd újra ellenőrzi. A hiányzó, üres és 6 MiB-nál nagyobb eredeti képfájlt külön, négy nyelven és az edzés azonosításával jelzi; a nagy kép előnézete megnyitható lehet. A képek és egészségadatok nem maradhatnak ki csendben. A 20 MiB JSON / 6 MiB kép / 500 MiB archívum korlát és a korábbi visszaállítási formátum megmarad.
 
-Készülékes elfogadás szükséges: JSON és teljes ZIP mentése, visszaolvasása; ha még hibázik, a pontos új üzenet alapján folytatandó. A felhasználó adatcsomagja nincs nálunk, ezért az adott mentés teljes sikerét még nem igazoltuk. Ez az automata elfogadás és a #163 térkép előtt ellenőrzendő.
+**Készülékes mentés elfogadva 2026. október 13-án:** a felhasználó visszajelzése: „rendben van a mentés is”. A #180 mentési hibajegy lezárható; a következő feladat az automata működés készülékes elfogadása és továbbfejlesztése, majd a #163 térkép. Külön kézi visszaállítási próbáról nem érkezett visszajelzés.
 
 ## Aktuális main és következő fejlesztés
 

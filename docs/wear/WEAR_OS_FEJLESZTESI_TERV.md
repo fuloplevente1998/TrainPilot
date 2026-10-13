@@ -164,7 +164,7 @@ A hang és rezgés külön kapcsolható legyen. Telefonos önálló használatn�
 
 ## 7. Megvalósítási lépések és elfogadás
 
-0. **Mentés #180:** a nagy JSON-export és a teljes ZIP fotó-előellenőrzés javítása; készülékes JSON/ZIP mentés és visszaolvasás. Nem volt aktív edzés, a fotók megnyithatók; az előnézet és az eredeti fájl mérete külön ellenőrizendő. Hiányos mentés nem jelenthető teljesként.
+0. **Mentés #180 — elfogadva:** a JSON-export és a teljes ZIP fotó-előellenőrzés javítása mainen. A felhasználó 2026. október 13-án visszaigazolta: „rendben van a mentés is”. A hibajegy lezárva; ez már nem blokkolja a következő fejlesztéseket. Külön kézi visszaállítási próbáról nincs visszajelzés.
 1. **Készülékes tesztpár-ellenőrzés:** a pihenőjavításokat is tartalmazó aktuális main telefon/Wear pár (korábbi referencia: `1650906` + `e3db5e2`), mindkét APK frissítése és első adatszinkron. Külön telefonos, önálló órás és párosított indítás; lezárt kijelző, tényleges rezgés és újracsatlakozás. A #179 már egyesíti a Wear UI-t és a telefonos/órás első automata módot.
 2. **Telefonos tulajdon háttérrögzítése:** az órás ismétlésrögzítés és egy új telefonos menetrend indítása az alvó webfelület visszatérésére várhat. Ezt natív, stabil sorozatazonosítóhoz kötött feldolgozással kell folytatni, a telefonos felület és a háttérszolgáltatás kettős léptetése nélkül. Ütközés, duplikált/késői parancs, folyamatújraindítás és draft-védelem a regresszió része.
 3. **Munka/pihenő/szünet és GPS:** az órás munkaidő és a régi telefonos munka+pihenő összesítés egységes, forráshű naplóbontása; a régi adatok változatlanok. Oldalankénti automata menetrend és órás GPS-szakaszok külön bővítések, nem kész támogatás.

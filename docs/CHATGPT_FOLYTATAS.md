@@ -13,7 +13,7 @@ A közös kód mainre egyesítve: `3411f5506fa7e9d6197d6f891f2709bcb26e8f5f`. A 
 | Telefon: automata, pihenőfelirat és mentésjavítás | `612f8cb7da7d342fbd7b4670ef2b6225045f9cc6` | `3ed875fbe9926df1b76d87c5e2f70310f5bd3d28bdbf002db972f9aa6b8a2774` | [38358320014](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38358320014) |
 | Wear: revamp, automata és arányos pihenőkör | `c623af74291fdf2ba9c59e505e623ce1b0c42d65` | `76cd485698844ec07db0f3a88662404a7fa100d05e6f6ad67833544e2334e4f9` | [38357730174](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38357730174) |
 
-Ellenőrzött: **138/138 telefonos regresszió**, **90 Chromium-tesztcsomag**, natív release gate és **51/51 Wear-emulátoros teszt** ([38357730023](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38357730023)). Az APK-aláírás, ellenőrzőösszeg, forrásazonosító, becsomagolt telefonos webes fájlok és zoomtiltás külön ellenőrizve. A [buildbizonylat](builds/2026-10-13-main.json) tartalmazza az azonosítókat. Fizikai automata/rezgés és a felhasználó saját adatainak JSON/ZIP mentése-visszaolvasása még ellenőrizendő; #180 ezért nyitva marad. A meglévő release APK-k/tagek változatlanok.
+Ellenőrzött: **138/138 telefonos regresszió**, **90 Chromium-tesztcsomag**, natív release gate és **51/51 Wear-emulátoros teszt** ([38357730023](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38357730023)). Az APK-aláírás, ellenőrzőösszeg, forrásazonosító, becsomagolt telefonos webes fájlok és zoomtiltás külön ellenőrizve. A [buildbizonylat](builds/2026-10-13-main.json) tartalmazza az azonosítókat. A fizikai automata/rezgés próbája még ellenőrizendő. A mentést a felhasználó 2026. október 13-án elfogadta („rendben van a mentés is”), #180 lezárva. A meglévő release APK-k/tagek változatlanok.
 
 ## Mentési javítás — #180
 
@@ -21,7 +21,7 @@ A #179 mainre került (`c623af7`), a #164 és #178 is egyesítve. A [#180](https
 
 A javítás kompakt, veszteségmentes JSON-t exportál, és a 20 MiB korlátot UTF-8 bájtban ellenőrzi. A ZIP az élő fotóhivatkozásokat előzetesen ellenőrzi, a hiányzó/üres fájlt a meglévő Google-fiókból próbálja visszatölteni, majd újra ellenőrzi. A hiányzó, üres és 6 MiB-nál nagyobb eredeti képfájlt külön, négy nyelven és az edzés azonosításával jelzi; a nagy kép előnézete megnyitható lehet. A képek és egészségadatok nem maradhatnak ki csendben. A 20 MiB JSON / 6 MiB kép / 500 MiB archívum korlát és a korábbi visszaállítási formátum megmarad.
 
-Készülékes elfogadás szükséges: JSON és teljes ZIP mentése, visszaolvasása; ha még hibázik, a pontos új üzenet alapján folytatandó. A felhasználó adatcsomagja nincs nálunk, ezért az adott mentés teljes sikerét még nem igazoltuk. Ez az automata elfogadás és a #163 térkép előtt ellenőrzendő.
+**Készülékes mentés elfogadva 2026. október 13-án:** a felhasználó visszajelzése: „rendben van a mentés is”. A #180 mentési hibajegy lezárható; a következő feladat az automata működés készülékes elfogadása és továbbfejlesztése, majd a #163 térkép. Külön kézi visszaállítási próbáról nem érkezett visszajelzés.
 
 ## Projekt és kiinduló alap
 
