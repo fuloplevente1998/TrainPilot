@@ -2,7 +2,23 @@
 
 Frissítve: **2026. október 13.** Közös draft PR: [#195](https://github.com/fuloplevente1998/TrainPilot/pull/195). Forráság: `fix/p0-162-157-safe-wear-sync`. Verzió mindkét appban **1.3.4 /2730**. A main és a nyilvános kiadások nem változnak; #162 és #157 a tényleges telefonos/órás eredményig nyitva marad.
 
-## Aktuális TIME_ORDER javító telefonos APK — `8746b14`
+## Aktuális javítás/visszavonás telefonos APK — `9e7de31`
+
+A `8746b14` készülékes próbájának 2424-es képén **`E162-PREPARE-completedSetRemoved`** jelent meg. Az edzés befejezhető volt; a felhasználó megerősítette, hogy az üzenet **kész sorozat javításakor vagy visszavonásakor** jelent meg.
+
+A telefonos szerkesztési szándék jelölése korábban kimaradhatott a rutin háttérszinkron foglalt állapota mellett, illetve egy később létrejött javítást a korábbi előkészítés válasza törölhetett. A javítás a felhasználói műveletet szinkron mellett is rögzíti. A natív válasz csak a ténylegesen beküldött, azóta nem változtatott szerkesztést nyugtázza; az újabb módosítás megmarad, és a sikeres saját művelet új revíziójához igazodik. A kész sorozatok véletlen eltűnését tiltó natív `completedSetRemoved` védelem megmarad; a szándékos javítás/visszavonás a revízióval és alapértékekkel ellenőrzött `amendExecution` útvonalon történik.
+
+- Forrás: **`9e7de31e400005ecf0e52d42dd6198c7a46d9535`**, **1.3.4 /2730**. [Telefonos artifact](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38447117606/artifacts/11838134842). Átadott fájl: `TrainPilot-1.3.4-P0-9e7de31-Telefon.apk`.
+- SHA-256: `60e8c3bb25ebb431ec89fc69c94eeaa0ae00f2d1fe395ab2826cdf3f932e1b6e`; méret **5 811 829 byte**.
+- [Phone Release Gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38447117606): SUCCESS; mind a 91 Chromium-csomag, natív release tesztek, aláírt APK. A haptikus teszt óráját a fixture vezérli, ezért a CPU időzítése nem lépteti át véletlenül az előjelzési határt; az elvárt három rövid és egy 1 másodperces jelzés, valamint az alkalmazás rezgéskódja változatlan.
+- [Quick Validation](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38447127439) és [Performance](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38447127264): SUCCESS.
+- [Kibővített Android–WebView próba](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38447117686): SUCCESS; 1 teszt, 0 hiba, 0 kihagyás. Tényleges csomagolt WebView, Capacitor, SQLite és foreground szolgáltatás: rögzítés → ismétlésszám-javítás → kész jelölés visszavonása → újrarögzítés. A natív tárolóban külön ellenőrzött javítás/visszavonás után a vezérlő élesített, a 120 mp-es pihenő fut, hibajelzés nincs. Az élő/mentett idő-checkpoint késésének korábbi regressziója is megmaradt. [Teszt/logcat artifact](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38447117686/artifacts/11838677586).
+- A célzott Node-teszt a korábbi forráson a kimaradó szerkesztési jelölést reprodukálta. A javításon a foglalt szinkron melletti jelölés, a folyamatban lévő előkészítés alatti visszavonás és az előző javítás válasza előtt bevitt újabb érték megőrzése sikeres.
+- Letöltés után a hash, csomag/verzió, valódi aláírás és eredeti aláíró ellenőrizve; a csomagolt JS/CSS és a forrás ZIP érintett natív fájljai egyeznek az ellenőrzött committal. A korábbi rögzítési zár és `TIME_ORDER` javítás is része az APK-nak.
+
+**Újrapróba:** a telefonos app fölé ezt az APK-t kell telepíteni; az órán maradhat a `859a6a1` csomag. Telefonról indított automata edzésnél rögzíts egy sorozatot, módosítsd a kész sorozat ismétlésszámát/súlyát, majd vond vissza a kész jelölést és rögzítsd újra. Ellenőrizd, hogy a javítás megmarad és nincs `E162` figyelmeztetés. Utána pihenő alatt zárd le a telefont, és folytasd az órán; rövid tervezett edzésen is ismétlendő. A fizikai eredmény még hiányzik; #162/#157 nyitott, #195 draft, main és release változatlan. A teszt a kész jelölés visszavonását ellenőrzi, nem a kész sorozat teljes törlését a mínusz gombbal.
+
+## Korábbi TIME_ORDER javító telefonos APK — `8746b14`
 
 A `1b8fb43` készülékes próbájának 2422-es képén **`E162-RECONCILE-TIME_ORDER`** jelent meg. Az élő natív időzítő gyakrabban szolgáltat friss mérést, mint az egyszer másodpercenként mentett natív checkpoint. Az összevezetés ezért egy frissebb élő mérés után régebbi mentett adatot is kaphatott; a korábbi kód ezt tiltott időcsökkenésként elutasította.
 
