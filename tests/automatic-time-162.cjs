@@ -12,8 +12,12 @@ core.sample(run,6000,10000,true);core.sample(run,8000,10000,true,false,true);con
 assert.equal(log.workMs,10000);assert.equal(log.restMs,1000);assert.equal(log.pausedMs,4000);
 const session={notes:'Keep notes'};assert.equal(core.merge(session,{[log.key]:log}),true);assert.equal(core.merge(session,{[log.key]:log}),false);
 assert.equal(session.automaticTime162.workMs,10000);assert.equal(session.notes,'Keep notes');
-assert.throws(()=>core.merge(session,{[log.key]:{...log,workMs:1}}),/backwards/);
+const saved=JSON.stringify(session.automaticTime162);
+assert.equal(core.merge(session,{[log.key]:{...log,workMs:1}}),false,'older cumulative checkpoint cannot replace newer live timing');
+assert.equal(JSON.stringify(session.automaticTime162),saved,'stale input keeps every newer timing field intact');
+assert.throws(()=>core.merge(session,{[log.key]:{...log,workMs:1,restMs:log.restMs+1}}),/backwards/,'incomparable timing remains a conflict');
+assert.throws(()=>core.merge(session,{[log.key]:{...log,owner:'phone'}}),/owner/,'same clock key cannot change owner');
 assert.throws(()=>core.merge(session,{[log.key]:{...log,pausedMs:NaN}}),/Invalid/);
 const watch={schema:1,owner:'watch',key:'watch-clock',positionMs:3000,workMs:2000,restMs:1000,pausedMs:0};
 core.merge(session,{[watch.key]:watch});assert.equal(session.automaticTime162.workMs,12000);
-console.log('PASS unified automatic time: actual work/rest/pause, skipped rest, idempotent phone/watch/browser contributions and rejected rollback');
+console.log('PASS unified automatic time: actual work/rest/pause, skipped rest, idempotent contributions, retained newer checkpoint and rejected incomparable/owner changes');

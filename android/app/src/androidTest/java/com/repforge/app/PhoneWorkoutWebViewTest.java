@@ -41,6 +41,11 @@ public class PhoneWorkoutWebViewTest {
                 +"let ready=false;for(let i=0;i<100;i++){if(!TrainPilotPhoneExecution162.isReconciling()&&!TrainPilotWearSync.isApplyingCommand()){ready=await TrainPilotPhoneExecution162.sync();if(ready||TrainPilotPhoneExecution162.failure())break;}await new Promise(r=>setTimeout(r,50));}"
                 +"if(!ready)throw Error('prepare: '+JSON.stringify(TrainPilotPhoneExecution162.failure()));"
                 +"const recorded=await TrainPilotPhoneExecution162.recordPhoneSet(0,0);if(!recorded)throw Error('record: '+JSON.stringify(TrainPilotPhoneExecution162.failure()));"
+                +"const clock=window.Capacitor.Plugins.IntervalTimer||window.Capacitor.registerPlugin('IntervalTimer');let lagObserved=false;"
+                +"for(let i=0;i<25;i++){const live=await clock.status();const cached=await api.executionStatus();const older=cached.snapshot.timeLogs162?.[live.key];if(live.ledger&&older&&live.ledger.positionMs>older.positionMs){TrainPilotTime162Core.merge(state.session,{[live.key]:{...live.ledger,key:live.key}});persistDraft();lagObserved=true;break;}await new Promise(r=>setTimeout(r,25));}"
+                +"if(!lagObserved)throw Error('No live/persisted checkpoint lag observed');"
+                +"let reconciled=false;for(let i=0;i<100;i++){if(!TrainPilotPhoneExecution162.isReconciling()&&!TrainPilotWearSync.isApplyingCommand()){reconciled=await TrainPilotPhoneExecution162.sync({prepare:false});if(reconciled||TrainPilotPhoneExecution162.failure())break;}await new Promise(r=>setTimeout(r,25));}"
+                +"if(!reconciled)throw Error('checkpoint: '+JSON.stringify(TrainPilotPhoneExecution162.failure()));"
                 +"const result=await api.executionStatus();window.__executionTest={done:true,recorded:exercise.sets[0].done,controllerArmed:result.controllerArmed,phase:result.timer.phase,remainingMs:result.timer.remainingMs,failure:TrainPilotPhoneExecution162.failure()};"
                 +"}catch(e){window.__executionTest={done:true,error:String(e),stack:e.stack};}})();true");
             waitFor(view,"window.__executionTest?.done");

@@ -26,6 +26,15 @@ assert.equal(resumed.automatic162.run.elapsedMs,37000);assert.equal(resumed.auto
 assert.equal(resumed.exercises[0].sets[0].reps,'','rest cannot invent repetitions');
 rest.snapshot.transition.state='interrupted';assert.equal(merge(original,rest).draft.session.automatic162.phase,'interrupted');
 assert.equal(merge(original,rest).draft.session.automatic162.run.running,false);
+const liveTiming=draft(),checkpoint=rest;
+const newerLog={schema:1,owner:'phone',key:plan.key,positionMs:5000,workMs:0,restMs:5000,pausedMs:0};
+liveTiming.session.automaticTime162={schema:1,logs:{[plan.key]:newerLog},workMs:0,restMs:5000,pausedMs:0};
+checkpoint.snapshot.timeLogs162={[plan.key]:{...newerLog,positionMs:4000,restMs:4000}};
+const reconciled=merge(liveTiming,checkpoint);
+assert.equal(reconciled.draft.session.exercises[0].sets[1].done,true,'native recording survives an older persisted time checkpoint');
+assert.equal(reconciled.draft.session.phoneExecution162.sequence,1);
+assert.equal(reconciled.draft.session.automaticTime162.restMs,5000,'newer live rest remains intact');
+assert.equal(liveTiming.session.exercises[0].sets[1].done,false,'merge still commits atomically');
 console.log('PASS native reconciliation: stable IDs, atomic draft/cursor, preserved annotations, stale generations, replay/conflict and interrupted clocks');
 function fixture(nativeResult=result()){
  const app=runtime(),calls=[];let state=copy(nativeResult),failedAck=false,failPrepare=false;

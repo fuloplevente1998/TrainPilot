@@ -16616,7 +16616,17 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const current=session.automaticTime162?.logs||{},next={...current};let changed=false;
   for(const [key,log] of Object.entries(logs)){
    if(!valid(log)||key!==log.key)throw Error('Invalid automatic time log');
-   const old=current[key];if(old&&(old.owner!==log.owner||fields.some(k=>log[k]<old[k])||log.positionMs<old.positionMs))throw Error('Automatic time moved backwards');
+   const old=current[key];
+   if(old){
+    if(old.owner!==log.owner)throw Error('Automatic time owner changed');
+    const counters=[...fields,'positionMs'];
+    if(counters.some(k=>log[k]<old[k])){
+     // The live timer can be newer than the once-per-second durable checkpoint.
+     // Keep the entire newer measurement; never splice independent counter maxima.
+     if(counters.every(k=>log[k]<=old[k]))continue;
+     throw Error('Automatic time moved backwards');
+    }
+   }
    if(JSON.stringify(old)!==JSON.stringify(log)){next[key]=JSON.parse(JSON.stringify(log));changed=true;}
   }
   if(changed){const totals=Object.values(next).reduce((a,v)=>{for(const k of fields)a[k]+=v[k];return a;},{workMs:0,restMs:0,pausedMs:0});session.automaticTime162={schema:1,logs:next,...totals};}
@@ -16695,7 +16705,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  let busy=false,lastPrepared='',lastArmed='',warned=false,lastFailure=null;
  function failure(error,stage){
   const known=['missingFrame','invalidVersion','invalidGeneration','revisionConflict','missingIdentity','duplicateSetIdentity','invalidSetState','inactiveOrOtherOwner','invalidTimerConfig','executionIdentityChanged','restoreInProgress','pendingRecordingEvents','closedOrStaleExecution','recordedValuesChanged','completedSetRemoved','amendmentConflict','amendmentTargetRemoved'];
-  const mergeErrors={'Native event identity mismatch':'EVENT_ID','Timed recording conflicts with phone edit':'TIMED_EDIT','Native recording target changed':'TARGET','Recorded set has conflicting edits':'EDIT','Invalid automatic time log':'TIME_DATA','Automatic time moved backwards':'TIME_ORDER','Native event acknowledgement changed owner':'ACK_OWNER'};
+  const mergeErrors={'Native event identity mismatch':'EVENT_ID','Timed recording conflicts with phone edit':'TIMED_EDIT','Native recording target changed':'TARGET','Recorded set has conflicting edits':'EDIT','Invalid automatic time log':'TIME_DATA','Automatic time moved backwards':'TIME_ORDER','Automatic time owner changed':'TIME_OWNER','Native event acknowledgement changed owner':'ACK_OWNER'};
   const reason=mergeErrors[error?.message]|| (known.includes(error?.message)?error.message:stage==='arm'&&String(error?.message).includes('Open the phone workout')?'FOCUS':stage==='arm'&&String(error?.message).includes('did not start')?'TIMEOUT':error?.name==='ReferenceError'?'REFERENCE':error?.name==='TypeError'?'TYPE':'NATIVE');
   lastFailure={code:'E162-'+stage.toUpperCase()+'-'+reason,stage,at:new Date().toISOString()};
   if(!warned&&state.session&&!document.hidden){
