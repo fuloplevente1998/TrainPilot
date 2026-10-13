@@ -22,6 +22,18 @@ import org.json.JSONObject;
 public class WearSyncPlugin extends Plugin {
     static final String ACTIVE_WORKOUT_PATH = "/trainpilot/active-workout";
     static final String WATCH_HOME_PATH = "/trainpilot/watch-home";
+    static final String AUTOMATIC_COMMAND_PREFIX = "/trainpilot/automatic-command/";
+
+    @PluginMethod public void automaticCommand(PluginCall call) {
+        JSObject input=call.getObject("command");
+        if(input==null||input.optString("commandId").isEmpty()||input.optString("workoutId").isEmpty()){call.reject("Missing automatic command identity.");return;}
+        JSONObject current=ActiveWorkoutStore.current(getContext());
+        if(current==null||!current.optString("workoutId").equals(input.optString("workoutId"))){call.reject("Workout changed.");return;}
+        PutDataMapRequest map=PutDataMapRequest.create(AUTOMATIC_COMMAND_PREFIX+input.optString("commandId"));
+        map.getDataMap().putString("command",input.toString());
+        map.getDataMap().putLong("createdAt",System.currentTimeMillis());
+        put(map,0,call);
+    }
 
     @PluginMethod
     public void publish(PluginCall call) {

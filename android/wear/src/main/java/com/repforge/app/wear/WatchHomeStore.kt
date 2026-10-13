@@ -64,7 +64,7 @@ data class WatchHomeSnapshot(
         targetReps = exercise.targetReps,
         sets = exercise.sets.map { set ->
             WearSet(number = set.number, reps = "", weight = set.weight, done = false,
-                leftSeconds = 0, rightSeconds = 0, distanceMeters = 0.0)
+                leftSeconds = 0, rightSeconds = 0, distanceMeters = 0.0,setId=java.util.UUID.randomUUID().toString())
         }
     )
 
@@ -81,7 +81,7 @@ data class WatchHomeSnapshot(
         restEndAt = 0L,
         dayName = "Gyors edzés",
         quickWorkout = true,
-        exercises = listOf(toWearExercise(exercise))
+        exercises = listOf(toWearExercise(exercise)),timerOwner="watch"
     )
 
     fun createWorkout(day: WatchHomeDay, scheduleId: String, started: String): WearWorkout =
@@ -97,7 +97,7 @@ data class WatchHomeSnapshot(
             restSeconds = restSeconds,
             restEndAt = 0L,
             dayName = day.name,
-            exercises = day.exercises.map(::toWearExercise)
+            exercises = day.exercises.map(::toWearExercise),timerOwner="watch"
         )
 
 }

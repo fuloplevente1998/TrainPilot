@@ -60,6 +60,8 @@ private val Gold: Color
     @Composable get() = LocalWearHomeTheme.current.accentColor
 private val Danger = Color(0xFF3B232A)
 private val DangerText = Color(0xFFEFBCC3)
+private val LocalAutomaticToggle = compositionLocalOf<(() -> Unit)?> { null }
+private val LocalAutomaticCommand = compositionLocalOf<((String) -> Unit)?> { null }
 
 @Composable
 internal fun TrainPilotWearApp(
@@ -93,6 +95,8 @@ internal fun TrainPilotWearApp(
     onToggleGps: () -> Unit,
     phoneConnected: State<Boolean?>? = null,
     batteryLevel: State<Int?>? = null,
+    onToggleAutomatic: (() -> Unit)? = null,
+    onAutomaticCommand: ((String) -> Unit)? = null,
 ) {
     var route by rememberSaveable { mutableStateOf("home") }
     LaunchedEffect(route) { if (route == "journal" || route == "metrics") onRefreshJournal() }
@@ -135,7 +139,9 @@ internal fun TrainPilotWearApp(
             }
     }
     CompositionLocalProvider(
-        LocalWearHomeTheme provides (home.value?.theme ?: WearHomeTheme.DEFAULT)
+        LocalWearHomeTheme provides (home.value?.theme ?: WearHomeTheme.DEFAULT),
+        LocalAutomaticToggle provides onToggleAutomatic,
+        LocalAutomaticCommand provides onAutomaticCommand
     ) {
         MaterialTheme {
             Box(Modifier.fillMaxSize().background(Black)) {
@@ -1425,7 +1431,9 @@ private fun WorkoutPager(
                             scope.launch { pager.animateScrollToPage(1) }
                             Unit
                         }
-                        if (normalizeUnit(workout.exercise?.repUnit.orEmpty()).startsWith("mp"))
+                        if(workout.automation?.enabled==true && WearAutomaticEngine.timed(workout.exercise))
+                            AutomaticTimedSetScreen(workout,restRemaining,health,onPrevious,onNext,onSkipRest,onFinish,onMenu)
+                        else if (normalizeUnit(workout.exercise?.repUnit.orEmpty()).startsWith("mp"))
                             TimedSetScreen(
                                 workout,
                                 restRemaining,
@@ -1573,7 +1581,12 @@ private fun SetHeading(workout: WearWorkout, restRemaining: Int, detail: String?
     }
     val clock = Instant.ofEpochMilli(now).atZone(ZoneId.systemDefault())
         .format(DateTimeFormatter.ofPattern("HH:mm"))
+    val automatic=workout.automation
+    val command=LocalAutomaticCommand.current
+    val toggle=LocalAutomaticToggle.current
     val heading = when {
+        automatic?.enabled==true && automatic.interrupted -> "Megszakadt · folytatható"
+        automatic?.enabled==true && automatic.paused -> "Szünet · ${formatSeconds((automatic.remaining(android.os.SystemClock.elapsedRealtime())/1000).toInt())}"
         restRemaining > 0 -> "Pihenő ${formatSeconds(restRemaining)} · $completed/$count"
         workout.exerciseComplete -> "✓ $completed/$count sorozat rögzítve"
         else -> detail ?: "${workout.currentExercise + 1}/${workout.exercises.size} · Sorozat ${workout.currentSetIndex + 1}/$count"
@@ -1582,7 +1595,8 @@ private fun SetHeading(workout: WearWorkout, restRemaining: Int, detail: String?
     val captionScale = fontScale.coerceAtMost(1.35f) / fontScale
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically) {
-        Text(heading, modifier = Modifier.weight(1f, fill = false), color = Gold,
+        Text(heading, modifier = Modifier.weight(1f, fill = false).then(if(automatic?.enabled==true&&automatic.counting&&command!=null)
+            Modifier.clickable(role=Role.Button){command(if(automatic.paused)"resume" else "pause")}else Modifier), color = Gold,
             fontSize = (8 * captionScale).sp, lineHeight = (10 * captionScale).sp,
             maxLines = 1, overflow = TextOverflow.Ellipsis)
         Text(" · ", color = Muted, fontSize = (7 * captionScale).sp,
@@ -1591,6 +1605,9 @@ private fun SetHeading(workout: WearWorkout, restRemaining: Int, detail: String?
             .semantics { contentDescription = "Pontos idő: $clock" },
             color = Muted, fontSize = (7 * captionScale).sp,
             lineHeight = (10 * captionScale).sp, maxLines = 1)
+        if(toggle!=null) Text(if(automatic?.enabled==true)" A" else " M",color=if(automatic?.enabled==true)Gold else Muted,
+            fontSize=(7*captionScale).sp,modifier=Modifier.size(20.dp).clickable(role=Role.Button,onClick=toggle)
+                .testTag("wear-automatic-toggle").semantics { contentDescription=if(automatic?.enabled==true)"Automata mód kikapcsolása" else "Automata mód bekapcsolása" })
     }
 }
 
@@ -1611,12 +1628,15 @@ private fun WorkoutControls(workout: WearWorkout, restRemaining: Int, recordingE
                             recordLabel: String = "Rögzítés", onRecord: () -> Unit,
                             onPrevious: () -> Unit, onNext: () -> Unit, onSkipRest: () -> Unit, onFinish: () -> Unit,
                             layout: WearArcLayout) {
+    val automatic=workout.automation
+    val command=LocalAutomaticCommand.current
     CompositionLocalProvider(LocalActionSize provides layout.buttonSize) {
         Box {
             RoundControl("‹", enabled = workout.currentExercise > 0, caption = "Előző", description = "Előző gyakorlat", onClick = onPrevious)
         }
         Box(Modifier.offset(x = layout.sideOffset.dp, y = (layout.centerTop).dp)) {
             when {
+                automatic?.enabled==true&&automatic.paused&&command!=null -> RoundControl("▶",caption="Folytatás",description="Automata folytatása",onClick={command("resume")})
                 restRemaining > 0 -> RoundControl("»", caption = "Kihagyás", description = "Pihenő kihagyása", onClick = onSkipRest)
                 workout.exerciseComplete -> RoundControl("✓", enabled = false, caption = "Rögzítve", onClick = {})
                 else -> RoundControl("✓", Gold, enabled = recordingEnabled, caption = recordLabel,
@@ -1630,6 +1650,25 @@ private fun WorkoutControls(workout: WearWorkout, restRemaining: Int, recordingE
             else RoundControl("›", if (workout.exerciseComplete) Gold else Secondary,
                 caption = "Következő", description = "Következő gyakorlat", onClick = onNext)
         }
+    }
+}
+
+@Composable
+private fun AutomaticTimedSetScreen(workout: WearWorkout,restRemaining: Int,health: JSONObject?,
+    onPrevious: ()->Unit,onNext: ()->Unit,onSkipRest: ()->Unit,onFinish: ()->Unit,onMenu: ()->Unit) {
+    val a=workout.automation ?: return
+    val command=LocalAutomaticCommand.current
+    WorkoutPanel(workout,onMenu,actions={layout->WorkoutControls(workout,restRemaining,false,
+        onRecord={},onPrevious=onPrevious,onNext=onNext,onSkipRest=onSkipRest,onFinish=onFinish,layout=layout)}) {
+        SetHeading(workout,restRemaining)
+        LiveWorkoutHealth(workout,health)
+        val waiting=a.phase=="ready"
+        val remaining=if(waiting)a.workSeconds else ((a.remaining(android.os.SystemClock.elapsedRealtime())+999)/1000).toInt()
+        Text("${if(a.paused||waiting)"▶" else "Ⅱ"} ${formatSeconds(remaining)}",color=White,fontSize=24.sp,
+            fontWeight=FontWeight.SemiBold,modifier=Modifier.testTag("wear-automatic-clock")
+                .clickable(enabled=command!=null&&a.phase!="complete",role=Role.Button){command?.invoke(if(waiting)"start" else if(a.paused)"resume" else "pause")}
+                .semantics { contentDescription=if(waiting)"Automata munkaszakasz indítása" else if(a.paused)"Automata folytatása" else "Automata szüneteltetése" })
+        Label(if(a.phase=="rest")"Pihenő" else if(a.phase=="complete")"Rögzítve" else "Munka",size=9)
     }
 }
 
@@ -2106,8 +2145,26 @@ private fun WorkoutMenu(
     onFinish: () -> Unit,
     onHome: () -> Unit,
 ) {
+    val automaticToggle=LocalAutomaticToggle.current
+    val automaticCommand=LocalAutomaticCommand.current
     RoundList("Edzésmenü") {
         centerItem { Pill("‹ Kezdőlap", tone = Secondary, onClick = onHome) }
+        if(automaticToggle!=null) centerItem {
+            Text("Automata mód: ${if(workout.automation?.enabled==true)"Be" else "Ki"}",color=Gold,fontSize=11.sp,
+                modifier=Modifier.fillMaxWidth().heightIn(min=30.dp).clickable(role=Role.Button,onClick=automaticToggle)
+                    .padding(6.dp).semantics { contentDescription="Automata mód kapcsoló" },textAlign=TextAlign.Center)
+        }
+        if(workout.automation?.enabled==true&&automaticCommand!=null) {
+            for((name,seconds,field) in listOf(Triple("Munka",workout.automation.workSeconds,"work"),Triple("Pihenő",workout.automation.restSeconds,"rest"))) centerItem {
+                Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween) {
+                    Text("−",color=White,modifier=Modifier.size(30.dp).clickable(enabled=!workout.automation.counting,role=Role.Button){automaticCommand(field+"Minus")}.semantics { contentDescription="$name csökkentése" })
+                    Text("$name $seconds mp",color=Muted,fontSize=10.sp)
+                    Text("+",color=White,modifier=Modifier.size(30.dp).clickable(enabled=!workout.automation.counting,role=Role.Button){automaticCommand(field+"Plus")}.semantics { contentDescription="$name növelése" })
+                }
+            }
+            centerItem { Text("Rezgés: ${if(workout.automation.vibration)"Be" else "Ki"}",color=Muted,fontSize=10.sp,
+                modifier=Modifier.fillMaxWidth().heightIn(min=30.dp).clickable(role=Role.Button){automaticCommand("vibration")}.padding(6.dp)) }
+        }
         if (workout.exercise?.loadType != "bodyweight") {
             centerItem {
                 Pill(

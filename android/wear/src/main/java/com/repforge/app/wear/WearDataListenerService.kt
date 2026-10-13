@@ -15,6 +15,11 @@ class WearDataListenerService : WearableListenerService() {
         for (event in dataEvents) {
             if (event.type != DataEvent.TYPE_CHANGED) continue
             val item = event.dataItem
+            if(item.uri.path?.startsWith("/trainpilot/automatic-command/")==true){
+                val command=DataMapItem.fromDataItem(item).dataMap.getString("command")
+                if(command!=null&&command.length<16000)try { WearAutomaticController.remote(this,org.json.JSONObject(command)) }catch(_:Exception){}
+                continue
+            }
             val raw = DataMapItem.fromDataItem(item).dataMap.getString("snapshot")
             when (item.uri.path) {
                 ACTIVE_WORKOUT_PATH -> WorkoutSnapshotStore.save(this, raw)
