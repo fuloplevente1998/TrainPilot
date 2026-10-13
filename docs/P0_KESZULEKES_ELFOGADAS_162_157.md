@@ -2,7 +2,23 @@
 
 Frissítve: **2026. október 13.** Közös draft PR: [#195](https://github.com/fuloplevente1998/TrainPilot/pull/195). Forráság: `fix/p0-162-157-safe-wear-sync`. Verzió mindkét appban **1.3.4 /2730**. A main és a nyilvános kiadások nem változnak; #162 és #157 a tényleges telefonos/órás eredményig nyitva marad.
 
-## Aktuális javítás/visszavonás telefonos APK — `9e7de31`
+## Aktuális telefonos időzítő-tulajdonos javítás — `539f136`
+
+A `9e7de31` készülékes próbájának 2426-os képén **„Az óra nem válaszol. Ellenőrizd a kapcsolatot.”** jelenik meg, miközben a felhasználó szerint a gyakorlatváltás és a két eszköz frissítése működik. Megerősítés: az edzés telefonról indult, és az üzenet az automata mód telefonos bekapcsolásakor jelent meg. Ez részleges pozitív szinkron-visszajelzés; önmagában nem igazolja a lezárt telefon melletti működést és nem zárja le a P0 elfogadást.
+
+A forrásban az óráról hozzáadott gyorsedzés-gyakorlat végső pillanatképe feltétel nélkül órásra állíthatta az időzítő tulajdonosát. Ezt a célzott teszt a régi forráson reprodukálta. A telefonos indítás most a mérésindítási bridge meglététől függetlenül tartósan rögzíti a telefonos tulajdonost; egy későbbi órás gyakorlat-hozzáadás a stabil sorozatazonosítókat veszi át, az időzítő tulajdonosát megőrzi. A valóban órán indított edzés továbbra is órás tulajdonú, a régebbi, végső pillanatkép nélküli indítócsomag is ezt kapja. A 2426-os kép előtti teljes parancssor nem áll rendelkezésre, ezért az ottani konkrét tulajdonosváltási útvonal még nem bizonyított.
+
+- Telefonos APK-forrás: **`539f1366f7d9b20a6482c4369ddcbdb6d0966577`**, változatlan **1.3.4 /2730**. [Telefonos artifact](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38451845379/artifacts/11841606329). Átadott fájl: `TrainPilot-1.3.4-P0-539f136-Telefon.apk`.
+- SHA-256: `b7b178b3b400bc99d4ad57603b417debc2229fc405e10fff8f6d4a02be7125b3`; méret **5 811 901 byte**.
+- [Phone Release Gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38451845379): SUCCESS; 91 Chromium-csomag, natív release tesztek, aláírt APK. [Android–WebView próba](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38451845504): SUCCESS; 1 teszt, 0 hiba, 0 kihagyás. A rögzítés/javítás/visszavonás/újrarögzítés és az élő/mentett checkpoint regressziója az új csomagolt forráson is sikeres. [Teszt/logcat artifact](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38451845504/artifacts/11840626973).
+- [Quick Validation](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38451851010) és [Performance](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38451850840): SUCCESS.
+- Helyi célzott Node-próbák sikeresek: órás gyakorlat hozzáadása telefonos tulajdon megőrzésével, telefonos tulajdon tartós mentése mérésindítási bridge nélkül, régi órás indítócsomag tulajdonosa, mérésindítás, napló-életciklus és natív rögzítési/szerkesztési regresszió.
+- Valódi Chromium UI: tényleges telefonos gyors és tervezett indítás, a gyorsedzésbe óráról érkező új gyakorlat, majd az automata checkbox bekapcsolása. Telefonos tulajdon és mentés, `Munka` állapot, nulla órás távoli időzítőparancs és nulla kapcsolatüzenet. Az órás távoli vezérlés korábbi 8 elrendezése és tulajdonosi védelmei is sikeresek.
+- Letöltés után a hash, csomag/verzió, valódi aláírás és eredeti aláíró ellenőrizve; a csomagolt JS/CSS és a source ZIP érintett natív forrásai egyeznek az ellenőrzött committal. A korábbi natív rögzítési, időrendi és szerkesztési védelmek megmaradnak; órás natív változás nincs.
+
+**Újrapróba:** az ellenőrzött új telefonos APK telepítése után új telefonos gyorsedzésen és új tervezett edzésen kapcsold be az automata módot, majd rögzíts egy sorozatot. A bekapcsolás nem várhat órás időzítőengedélyre. Ezután pihenő alatt zárd le a telefont, és folytasd az órán. Az órán a `859a6a1` APK maradhat. A korábbi hibás tulajdonosú aktív piszkozatban nem végzünk automatikus időzítő-tulajdonosváltást. #162/#157 nyitott, #195 draft, main és release változatlan; a 2426-os újrapróba még szükséges.
+
+## Korábbi javítás/visszavonás telefonos APK — `9e7de31`
 
 A `8746b14` készülékes próbájának 2424-es képén **`E162-PREPARE-completedSetRemoved`** jelent meg. Az edzés befejezhető volt; a felhasználó megerősítette, hogy az üzenet **kész sorozat javításakor vagy visszavonásakor** jelent meg.
 
