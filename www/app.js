@@ -16950,9 +16950,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
    set.reps=String(Math.min(Number(set.leftSeconds),Number(set.rightSeconds)));
   }
  }
- function adoptWatchIdentity(command){
+ function adoptWatchIdentity(command,preserveMode=false){
   const root=command.finalSnapshot,s=state.session;if(!s||!root||root.workoutId!==command.workoutId)return;
-  s.timerOwner='watch';s.automatic162={enabled:false,owner:'watch',phase:'work'};
+  s.timerOwner='watch';if(!preserveMode)s.automatic162={enabled:false,owner:'watch',phase:'work'};
   for(let e=0;e<(root.exercises||[]).length;e++)for(let i=0;i<(root.exercises[e].sets||[]).length;i++){
    const remote=root.exercises[e].sets[i],local=s.exercises[e]?.sets?.[i];
    if(local&&s.exercises[e].id===root.exercises[e].id&&typeof remote.setId==='string'&&remote.setId.length<=128&&remote.setId)local.setId=remote.setId;
@@ -17132,7 +17132,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(!id||!item||state.session.exercises.length>=20&&!state.session.exercises.some(e=>e.id===id))return false;
    const add=window.TrainPilotQuickWorkout?.add;
    if(typeof add!=='function')return false;
-   add(id);persistDraft();return true;
+   add(id);adoptWatchIdentity(command,true);persistDraft();return true;
   }
   if(action==='resumeWorkout'){persistDraft();renderWorkout();return true}
   if(action==='toggleAutomatic')return TrainPilotAutomatic162.toggle(command.value===true);

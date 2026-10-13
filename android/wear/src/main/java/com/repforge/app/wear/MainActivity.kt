@@ -419,15 +419,18 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
 
     private fun addQuickExerciseFromWatch(exercise: WatchHomeExercise) {
         synchronized(WearAutomaticController) { synchronized(WorkoutSnapshotStore) {
-        val current = WorkoutSnapshotStore.load(this) ?: return
+        var current = WorkoutSnapshotStore.load(this) ?: return
         val source = home.value ?: return
         if (!current.quickWorkout || current.exercises.size >= 20 ||
             current.exercises.any { it.id == exercise.id } ||
             source.quickExercises.none { it.id == exercise.id }) return
+        if(current.automation?.enabled==true&&current.automation.owner=="watch")
+            current=WearAutomaticController.command(this,"disable",current.workoutId) ?: return
         val updated = current.copy(exercises = current.exercises + source.toWearExercise(exercise),
             currentExercise = current.exercises.size, restEndAt = 0L)
         workout.value = WorkoutSnapshotStore.saveWorkout(this, updated)
         sendCommand("addQuickExercise", exerciseIndex = updated.currentExercise)
+        workout.value?.let { WearAutomaticController.publish(this,it) }
         WearSurfaces.refresh(this, true)
 
         }}
@@ -618,6 +621,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             .put("workoutId", current.workoutId)
             .put("action", action)
             .put("createdAt", System.currentTimeMillis())
+        if (action == "addQuickExercise") command.put("finalSnapshot",WorkoutSnapshotStore.encode(current))
         if (exerciseIndex != null) command.put("exerciseIndex", exerciseIndex)
         if (exercise != null) command.put("exerciseId", exercise.id)
         if (setIndex != null) command.put("setIndex", setIndex)
