@@ -2,7 +2,24 @@
 
 Frissítve: **2026. október 13.** Közös draft PR: [#195](https://github.com/fuloplevente1998/TrainPilot/pull/195). Forráság: `fix/p0-162-157-safe-wear-sync`. Verzió mindkét appban **1.3.4 /2730**. A main és a nyilvános kiadások nem változnak; #162 és #157 a tényleges telefonos/órás eredményig nyitva marad.
 
-## Aktuális telefonos részeredmény és hibakereső APK — `0bcc1ea`
+## Aktuális javító telefonos APK — `1b8fb43`
+
+A `0bcc1ea` készülékes próbájának 2420-as képén a hiba **`E162-RECONCILE-NATIVE`**: az összevezetésnél, az élesítés előtt vagy a rögzítés utáni összevezetéskor történt elakadás. A teljes Android–WebView próba egy valódi rögzítési versenyt reprodukált: a natív sorozat és nyugtázás elkészült, de a hívó telefonos művelet hibás `false` eredménnyel tért vissza, mert a párhuzamos frissítés átvette az összevezetést.
+
+A javítás ugyanazzal a zárral védi az egész telefonos rögzítést: előkészítés → natív parancs → tartós telefonos mentés → nyugtázás. A polling és az órás parancssor nem léphet a telefonos művelet közepébe. A `/kar` és `/láb` natív útvonala megmarad, és az oldalankénti kézi munkaidő rögzítése is támogatott. Az összevezetés ismert adat-/idő-/szerkesztési hibái külön `E162` kódot kapnak.
+
+**Igazolás és korlát:** ugyanaz a teljes Android 35 emulátoros teszt [a javítás előtt elbukott](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38437293282) (`2c33196`), [a javításon sikeres](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38438431181) (`1b8fb43`). Valódi csomagolt WebView, Capacitor, SQLite és foreground szolgáltatás futott: rögzített sorozat, élesített vezérlő, futó 120 mp-es natív pihenő, sikeres visszatérés, hibajelzés nélkül. A teszt nem párosított fizikai óra, kijelzőzár vagy tényleges Health Services mérés; az emulátor a rögzítési versenyt, nem a fizikai hibakód teljes eredetét igazolta. A 2420-as készülékes esetet újra kell próbálni.
+
+- Forrás: **`1b8fb43cb4cf22ab2fa708ee5dca5838037eedae`**, **1.3.4 /2730**. [Telefonos artifact](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38438430983/artifacts/11834252261). Átadott fájl: `TrainPilot-1.3.4-P0-1b8fb43-Telefon.apk`.
+- SHA-256: `0a5b4037b051fb6c55ced3568f0a362eff8cc7ff9f023cea227b994042506754`; méret **5 811 549 byte**.
+- [Phone Release Gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38438430983): SUCCESS; 91 Chromium-csomag, teljes natív release tesztek, aláírt APK.
+- [Quick Validation](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38438438200) és [Performance](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38438438072): SUCCESS.
+- [Teljes telefonos Android–WebView próba](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38438431181): SUCCESS, egy célzott emulátoros teszt. [Teszt/logcat artifact](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38438431181/artifacts/11834585558).
+- Letöltés után a csomag/verzió, hash és valódi aláírás ellenőrizve; az eredeti aláíró megmarad. A csomagolt JS/CSS egyezik a forrással; a forrás ZIP natív rögzítő/tároló/szolgáltatás fájljai is egyeznek.
+
+**Újrapróba:** telepítsd a telefonos app fölé ezt az APK-t; a `859a6a1` órás csomag maradhat. Telefonon indíts sima fekve nyomást, kapcsold be az automata módot, majd rögzíts egy sorozatot. Ha nincs figyelmeztetés, a pihenő alatt zárd le a telefont, és az órán rögzítsd a következő sorozatot. Ezután rövid tervezett edzésen is ellenőrizd. Új hiba esetén a pontos `E162-...` kódot rögzítsük. A fizikai eredményig #162/#157 nyitott, #195 draft; main, verzió és nyilvános release változatlan.
+
+## Korábbi részeredmény és hibakereső APK — `0bcc1ea`
 
 **Ez még nem a közös háttérhiba igazolt megoldása.** A `c613a75` készülékes próbájában (#2417–2418) telefonról indított automata edzésnél, a sorozat telefonos rögzítésekor háttérvezérlési figyelmeztetés jelent meg. A felhasználó utóbb megerősítette: **minden edzésnél előjött**, nem csak gyorsedzésnél vagy oldalankénti ismétlésnél. A korábbi általános figyelmeztetés eltakarta a hibát kiváltó lépést; a pontos készülékes ok továbbra sem igazolt.
 

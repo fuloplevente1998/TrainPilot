@@ -1,6 +1,8 @@
 # Build és ellenőrzés
 
-**Legfrissebb P0 telefonos részeredmény és hibakereső teszt-APK:** `0bcc1ea33a08cc9ba372f744e431b7b17f0fd337`, változatlan **1.3.4 /2730**. A `/kar` és `/láb` egységek natív rögzítése javítva; az előkészítés/élesítés hibája `E162-...` kódot kap. A minden edzésnél jelzett közös készülékes háttérhiba még nincs igazoltan megoldva. A teljes telefonos gate 91 Chromium-csomaggal, natív release tesztekkel sikeres; az órás `859a6a1` APK tovább használható. Aktuális letöltés/hash/CI/próba: [P0 átadási lap](P0_KESZULEKES_ELFOGADAS_162_157.md).
+**Legfrissebb P0 javító telefonos teszt-APK:** `1b8fb43cb4cf22ab2fa708ee5dca5838037eedae`, változatlan **1.3.4 /2730**. A rögzítés zára a natív előkészítéstől a tartós mentésen át a nyugtázásig tart. A teljes Android–WebView próba reprodukálta a korábbi rögzítési versenyt, a javításon sikeres. A teljes telefonos gate 91 Chromium-csomaggal és natív release tesztekkel sikeres. Fizikai elfogadás még nincs; az órás `859a6a1` APK maradhat. Letöltés/hash/CI/próba: [P0 átadási lap](P0_KESZULEKES_ELFOGADAS_162_157.md).
+
+A `.github/workflows/phone-execution-ui.yml` a folyamatban lévő P0 ágon Android 35 emulátoron a csomagolt telefonos WebView–Capacitor–SQLite–foreground szolgáltatás láncot ellenőrzi, szintetikus edzésen. Az artifact tartalmazza a tesztjelentést és a teszt logcatját. Ez nem helyettesíti a párosított fizikai telefon/óra próbát.
 
 A kanonikus webalkalmazás-forrás a `www/app.js`. Az Android csomag azonosítója: `com.repforge.app`.
 
