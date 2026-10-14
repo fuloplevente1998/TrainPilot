@@ -16746,8 +16746,21 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const api=bridge();if(!api?.executionStatus)return true;if(blocked())return false;let stage='reconcile';
   try{
    if(!await reconcile(api))return false;
-   const current=draft(),session=current?.session;
-   stage='status';const remote=await api.executionStatus();if(blocked())return false;if(remote.controllerArmed===false)lastArmed='';
+   let current=draft(),session=current?.session;
+   stage='status';let remote=await api.executionStatus();if(blocked())return false;if(remote.controllerArmed===false)lastArmed='';
+   if(remote.snapshot?.active&&window.TrainPilotWearSync?.isDiscarded?.(remote.snapshot.workoutId)){
+    // An older phone build may have deleted the draft while leaving pending native events.
+    const closed=remote.snapshot;stage='discard';await api.blockExecution({blocked:true});
+    try{
+     const latest=(await api.executionStatus()).snapshot;
+     if(latest?.active&&latest.workoutId===closed.workoutId&&latest.generation===closed.generation)
+      await api.discardExecution({workoutId:latest.workoutId,generation:latest.generation,executionRevision:latest.executionRevision,confirmed:true});
+    }finally{await api.blockExecution({blocked:false});}
+    if(identity(session)===closed.workoutId){
+     stopTimer();db.set('draft',null);state.session=null;state.workout=null;state.current=0;state.restEndAt=null;state.timer=0;state.tab='home';render();
+    }
+    current=draft();session=current?.session;remote=await api.executionStatus();lastPrepared='';lastArmed='';
+   }
    const enabled=session?.automatic162?.enabled===true&&(session.timerOwner||'phone')==='phone';
    // GPS acquisition has its own owner; background handoff is enabled after that owner is prepared separately.
    const supported=enabled&&!session.exercises.some(e=>e.measurementType==='distance');
@@ -17579,7 +17592,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }finally{commandBusy=false}
  }
  if(typeof window!=='undefined'){
-  window.TrainPilotWearSync={syncNow,syncHomeNow,drainCommands,phoneWorkoutStarted,discardDraft,makeSnapshot:snapshot,makeHomeSnapshot:homeSnapshot,isApplyingCommand:()=>commandBusy,isStartingFromWatch:()=>watchStartDepth>0};
+  window.TrainPilotWearSync={syncNow,syncHomeNow,drainCommands,phoneWorkoutStarted,discardDraft,isDiscarded:id=>closedWorkouts().some(x=>x.status==='discarded'&&sameId(x.workoutId,id)),makeSnapshot:snapshot,makeHomeSnapshot:homeSnapshot,isApplyingCommand:()=>commandBusy,isStartingFromWatch:()=>watchStartDepth>0};
   window.addEventListener?.('focus',()=>{drainCommands();syncNow();syncHomeNow({force:true});});
  }
  if(typeof document!=='undefined')document.addEventListener?.('visibilitychange',()=>{if(document.hidden)pendingWatchStart=null;else{drainCommands();syncNow();syncHomeNow({force:true});}});

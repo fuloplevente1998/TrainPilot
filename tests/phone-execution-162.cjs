@@ -185,5 +185,10 @@ function fixture(nativeResult=result()){
  foreign.api.discardExecution=async()=>{throw Error('A different execution must not be discarded');};
  assert.equal(await foreign.native.discardFence(foreign.run('state.session'),async()=>true,()=>true),true);
  assert.deepEqual(foreign.calls,[['block',true],['block',false]]);
+ const orphan=fixture();orphan.run("db.set('wearClosedWorkouts',[{workoutId:'workout',status:'discarded'}]);state.session=null;db.set('draft',null);");
+ orphan.api.discardExecution=async args=>{assert.equal(args.workoutId,'workout');assert.equal(args.confirmed,true);orphan.calls.push(['discard','workout']);orphan.setResult({snapshot:{active:false,workoutId:'workout',generation:10,executionRevision:3},events:[],timer:{}});};
+ assert.equal(await orphan.native.sync(),true,'an already discarded orphan execution cannot block a fresh workout');
+ assert.equal(orphan.calls.some(call=>call[0]==='discard'),true);
+ assert.equal(orphan.calls.some(call=>call[0]==='ack'),false);
  console.log('PASS full runtime native bridge: durable reconciliation, guarded discard/pending events/foreign owner, recording lifecycle and DOM-free timed start');
 })().catch(error=>{console.error(error);process.exitCode=1;});
