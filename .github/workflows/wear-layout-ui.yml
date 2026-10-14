@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       test_filter:
-        description: 'Optional AndroidJUnit class#method filter; empty runs the full round UI suite'
+        description: 'Optional AndroidJUnit filter; parameterized methods need exact case names; empty runs the full suite'
         required: false
         type: string
         default: ''
