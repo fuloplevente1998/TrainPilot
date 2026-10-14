@@ -80,6 +80,7 @@ final class GpsRouteTrace {
 
     int pointCount() { return pointCount; }
     int segmentCount() { return segments.size(); }
+    Point lastPoint() { return anchor; }
     boolean isTruncated() { return truncated; }
 
     /** Immutable defensive copies; later GPS callbacks cannot mutate a saved snapshot. */
