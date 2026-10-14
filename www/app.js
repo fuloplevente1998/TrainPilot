@@ -17153,6 +17153,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
     family:typeof TP1511_BASIC!=='undefined'&&TP1511_BASIC.includes(key)?'basic':'vivid'};
   }catch(_){return null}
  }
+ function workoutResultWithFeedback(){
+  const result=db.get('wearWorkoutResult',null);if(!result)return null;
+  const h=history().find(h=>matchesWorkout(h,result.workoutId)&&h.finished);
+  return {...result,feedbackAnswered:!!(h?.feedback?.rating||h?.feedback?.skipped)};
+ }
  function homeSnapshot(){
   try{
    if(typeof activeProgram!=='function'||typeof programDay!=='function')return null;
@@ -17185,7 +17190,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     activeProgramName:String(active.name||'TrainPilot'),
     restSeconds:configuredRest(),
     hasDraft:!!(typeof db!=='undefined'&&db?.get&&db.get('draft',null)),
-    workoutResult:db.get('wearWorkoutResult',null),
+    workoutResult:workoutResultWithFeedback(),
     pendingFeedback:window.TrainPilotWorkoutFeedback?.pending()||null,
     recommended:recommendedDay?{
      scheduleId,

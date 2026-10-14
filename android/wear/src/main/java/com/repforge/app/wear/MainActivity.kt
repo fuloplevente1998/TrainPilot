@@ -250,7 +250,6 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                 onOpenPhone = ::openOnPhone,
                 onRefreshJournal = ::requestHomeSnapshot,
                 onFinish = { closeWorkout("finishWorkout") },
-                onFinishFeedback = { effort -> closeWorkout("finishWorkout", WearWorkoutFeedback.answer(effort)) },
                 onWorkoutFeedback = ::saveWorkoutFeedback,
                 onDiscard = { closeWorkout("discardWorkout") },
                 onRetry = ::retryClosure,
@@ -667,10 +666,12 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             .put("action", "saveWorkoutFeedback").put("workoutId", pending.workoutId)
             .put("createdAt", System.currentTimeMillis()).put("feedback", WearWorkoutFeedback.answer(effort))
         WearCommandOutbox.enqueue(this, command)
+        WearClosureStore.answer(this, pending.workoutId, command.getJSONObject("feedback"))
+        closure.value = WearClosureStore.load(this)
         WearWorkoutFeedback.markAnswered(this, pending.workoutId)
     }
 
-    private fun closeWorkout(action: String, feedback: JSONObject? = null) {
+    private fun closeWorkout(action: String) {
         val current = workout.value ?: return
         if (action == "finishWorkout" && current.completedSets == 0) return
         val command = JSONObject()
@@ -680,7 +681,6 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             .put("action", action).put("confirmed", true)
             .put("finishedAt", Instant.now().toString()).put("createdAt", System.currentTimeMillis())
             .put("finalSnapshot", WorkoutSnapshotStore.encode(current))
-        if (feedback != null) command.put("feedback", feedback)
         WearHealthStore.load(this,current.workoutId)?.let { command.put("healthSummary",WearHealthAccumulator(it).snapshot()) }
         WearHealthService.stop(this)
         WearAutomaticService.stop(this)

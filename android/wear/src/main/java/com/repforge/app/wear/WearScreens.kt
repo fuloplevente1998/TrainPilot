@@ -101,13 +101,15 @@ internal fun TrainPilotWearApp(
     onToggleAutomatic: (() -> Unit)? = null,
     onAutomaticCommand: ((String) -> Unit)? = null,
     onEditorSave: ((String,Double,String)->Boolean)? = null,
-    onFinishFeedback: ((String?) -> Unit)? = null,
     onWorkoutFeedback: ((WatchWorkoutFeedback, String?) -> Unit)? = null,
 ) {
     var route by rememberSaveable { mutableStateOf("home") }
     val context = LocalContext.current
     var answeredWorkout by rememberSaveable { mutableStateOf("") }
-    val pendingFeedback = home.value?.pendingFeedback?.takeUnless {
+    val localFeedback = closure.value?.takeIf { it.needsFeedback && it.status != "error" }?.let {
+        WatchWorkoutFeedback.parse(JSONObject().put("workoutId", it.workoutId).put("started", it.started))
+    }
+    val pendingFeedback = (home.value?.pendingFeedback ?: localFeedback)?.takeUnless {
         it.workoutId == answeredWorkout || WearWorkoutFeedback.answered(context, it.workoutId)
     }
     LaunchedEffect(pendingFeedback?.workoutId, workout.value?.workoutId) {
@@ -147,8 +149,7 @@ internal fun TrainPilotWearApp(
             when (route) {
                 "editor",
                 "timer",
-                "finish",
-                "finish-feedback" -> "workout"
+                "finish" -> "workout"
                 "feedback" -> {
                     answeredWorkout = pendingFeedback?.workoutId.orEmpty()
                     pendingFeedback?.let { onWorkoutFeedback?.invoke(it, null) }
@@ -176,11 +177,6 @@ internal fun TrainPilotWearApp(
                         WorkoutFeedbackScreen { effort ->
                             onWorkoutFeedback?.invoke(pendingFeedback, effort)
                             answeredWorkout = pendingFeedback.workoutId
-                            route = "home"
-                        }
-                    route == "finish-feedback" && active != null ->
-                        WorkoutFeedbackScreen { effort ->
-                            if (onFinishFeedback != null) onFinishFeedback(effort) else onFinish()
                             route = "home"
                         }
                     route == "settings" ->
@@ -289,7 +285,8 @@ internal fun TrainPilotWearApp(
                     route == "finish" && active != null ->
                         ConfirmationScreen(false, active.completedSets) {
                             if (it) {
-                                route = "finish-feedback"
+                                onFinish()
+                                route = if (onWorkoutFeedback != null) "feedback" else "summary"
                             } else route = "workout"
                         }
                     route == "editor" && active != null ->

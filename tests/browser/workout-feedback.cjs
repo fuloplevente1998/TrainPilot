@@ -39,6 +39,7 @@ const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://local
   return {row:history()[0],count:history().length,prompt:!!document.querySelector('.tp122-feedback'),pending:TrainPilotWearSync.makeHomeSnapshot().pendingFeedback};
  });
  assert.equal(watch.count,2);assert.equal(watch.row.feedback.effort,'light');assert.equal(watch.row.feedback.source,'watch');assert.equal(watch.prompt,false);assert.equal(watch.pending,null);
+ assert.equal(await page.evaluate(()=>TrainPilotWearSync.makeHomeSnapshot().workoutResult.feedbackAnswered),true);
  const sharedId=await finishPhone();
  assert.equal(await page.evaluate(()=>TrainPilotWearSync.makeHomeSnapshot().pendingFeedback.workoutId),sharedId);
  await page.evaluate(async(id)=>{__feedbackTrial.commands=[{commandId:'watch-answer',action:'saveWorkoutFeedback',workoutId:id,feedback:{effort:'good'},sequence:3}];await TrainPilotWearSync.drainCommands();},sharedId);
@@ -46,6 +47,17 @@ const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://local
  assert.equal(await page.evaluate(()=>history()[0].feedback.effortScore),3);
  await page.evaluate(async(id)=>{__feedbackTrial.commands=[{commandId:'answer-replay',action:'saveWorkoutFeedback',workoutId:id,feedback:{effort:'hard'},sequence:4}];await TrainPilotWearSync.drainCommands();},sharedId);
  assert.equal(await page.evaluate(()=>history()[0].feedback.effort),'good');
+ const reordered=await page.evaluate(async()=>{
+  await TrainPilotQuickWorkout.start('db-floor-press');
+  for(const e of state.session.exercises)for(const s of e.sets){s.done=true;s.reps='10';}persistDraft();
+  const id=state.session.syncId,before=history().length;
+  __feedbackTrial.commands=[{commandId:'early-answer',action:'saveWorkoutFeedback',workoutId:id,feedback:{effort:'easy'},sequence:5}];
+  await TrainPilotWearSync.drainCommands();const earlyAck=__feedbackTrial.acks.includes('early-answer');
+  __feedbackTrial.commands.push({commandId:'unrated-finish',action:'finishWorkout',workoutId:id,confirmed:true,finishedAt:new Date().toISOString(),sequence:6});
+  await TrainPilotWearSync.drainCommands();await TrainPilotWearSync.drainCommands();
+  return {earlyAck,count:history().length-before,effort:history()[0].feedback.effort,acks:__feedbackTrial.acks};
+ });
+ assert.equal(reordered.earlyAck,false,'offline answer waits for its canonical finished workout');assert.equal(reordered.count,1);assert.equal(reordered.effort,'easy');assert.ok(reordered.acks.includes('early-answer'));
  assert.equal(await page.evaluate(()=>TrainPilotWorkoutFeedback.accept('other-workout',{effort:'hard'})),false);
  assert.equal(await page.evaluate(id=>TrainPilotWorkoutFeedback.accept(id,{effort:'invalid'}),phoneId),false);
  await finishPhone();await page.getByRole('button',{name:'Most kihagyom'}).click();

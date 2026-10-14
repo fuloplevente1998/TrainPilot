@@ -13,12 +13,15 @@ data class WearClosure(
     val message: String,
     val durationSeconds: Int,
     val exerciseCount: Int,
-    val completedSets: Int
+    val completedSets: Int,
+    val started: String = "",
+    val needsFeedback: Boolean = false
 )
 
 object WearClosureStore {
     private const val PREFS = "trainpilot_wear_closure"
 
+    @Synchronized
     fun close(context: Context, workout: WearWorkout, command: JSONObject): WearClosure {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val closed = JSONArray(prefs.getString("closed", "[]"))
@@ -32,6 +35,8 @@ object WearClosureStore {
             .put("durationSeconds", workout.elapsedSeconds())
             .put("exerciseCount", workout.exercises.count { ex -> ex.sets.any { it.done } })
             .put("completedSets", workout.exercises.sumOf { ex -> ex.sets.count { it.done } })
+            .put("started", workout.started)
+            .put("needsFeedback", command.optString("action") == "finishWorkout" && !command.has("feedback"))
             .put("command", command)
         prefs.edit().putString("closed", closed.toString()).putString("result", result.toString()).commit()
         return parse(result)
@@ -42,6 +47,7 @@ object WearClosureStore {
         return (0 until closed.length()).any { closed.optString(it) == workoutId }
     }
 
+    @Synchronized
     fun acceptResult(context: Context, result: JSONObject?) {
         result ?: return
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -49,12 +55,25 @@ object WearClosureStore {
         if (local.optString("commandId") != result.optString("commandId")) return
         local.put("status", result.optString("status", "pending"))
         local.put("message", result.optString("message"))
+        if (result.optBoolean("feedbackAnswered")) local.put("needsFeedback", false)
         prefs.edit().putString("result", local.toString()).apply()
     }
 
     fun load(context: Context): WearClosure? = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         .getString("result", null)?.let { parse(JSONObject(it)) }
 
+    @Synchronized
+    fun answer(context: Context, workoutId: String, feedback: JSONObject) {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val local = prefs.getString("result", null)?.let(::JSONObject) ?: return
+        if (local.optString("workoutId") != workoutId) return
+        local.put("needsFeedback", false)
+        // A later explicit retry of the terminal command carries the answer too.
+        local.optJSONObject("command")?.put("feedback", feedback)
+        prefs.edit().putString("result", local.toString()).commit()
+    }
+
+    @Synchronized
     fun retry(context: Context): JSONObject? {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val local = prefs.getString("result", null)?.let(::JSONObject) ?: return null
@@ -66,6 +85,7 @@ object WearClosureStore {
         return command
     }
 
+    @Synchronized
     fun dismiss(context: Context) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove("result").apply()
     }
@@ -74,6 +94,7 @@ object WearClosureStore {
         commandId = value.optString("commandId"), workoutId = value.optString("workoutId"),
         action = value.optString("action"), status = value.optString("status", "pending"),
         message = value.optString("message"), durationSeconds = value.optInt("durationSeconds"),
-        exerciseCount = value.optInt("exerciseCount"), completedSets = value.optInt("completedSets")
+        exerciseCount = value.optInt("exerciseCount"), completedSets = value.optInt("completedSets"),
+        started = value.optString("started"), needsFeedback = value.optBoolean("needsFeedback")
     )
 }
