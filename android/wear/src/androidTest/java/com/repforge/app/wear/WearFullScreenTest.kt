@@ -103,7 +103,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         WearClosureStore.close(context, workout, command)
         WearClosureStore.acceptResult(context, JSONObject().put("commandId", command.getString("commandId"))
             .put("status", "saved").put("feedbackAnswered", true))
-        assertFalse(WearClosureStore.load(context)!!.needsFeedback, "a phone answer closes the watch question")
+        assertFalse("a phone answer closes the watch question", WearClosureStore.load(context)!!.needsFeedback)
         WearClosureStore.dismiss(context)
     }
 
