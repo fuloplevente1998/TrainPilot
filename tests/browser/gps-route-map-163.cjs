@@ -38,7 +38,7 @@ const server=http.createServer((req,res)=>{
    const strength={...item,id:'gps-163-strength',started:'2026-10-13T16:20:00Z',
     finished:'2026-10-13T16:50:00Z',exercises:[lift]};
    db.set('history',[item,strength]);state.session=null;db.set('draft',null);
-   window.__routeCalls=0;
+   window.__routeCalls=0;window.__routeDeletes=[];
    window.Capacitor={isNativePlatform:()=>true,Plugins:{DistanceTracker:{
     route:async ({key:asked})=>{
      window.__routeCalls++;
@@ -49,7 +49,8 @@ const server=http.createServer((req,res)=>{
       {ordinal:2,points:[{latitude:47.04,longitude:19.02,accuracyMeters:4,elapsedMillis:6000,epochMillis:105000},
        {latitude:47.041,longitude:19.03,accuracyMeters:6,elapsedMillis:10000,epochMillis:109000}]}
      ]};
-    }
+    },
+    deleteRoute:async ({key:asked})=>{window.__routeDeletes.push(asked);return {deleted:true};}
    }}};
    go('history');
    return {hasRoute:!!TrainPilotGpsMap163,refs:TrainPilotGpsMap163.references(item).length};
@@ -84,6 +85,17 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
   await page.locator('.tp163-close').click();
   assert.equal(await page.locator('#tp163-route-overlay').count(),0);
+  // A cancelled history deletion must retain native GPS routes.
+  await row.locator('.tp155-history-delete').click();
+  await page.locator('#tp2628Dialog [data-tp2628-cancel]').click();
+  assert.deepEqual(await page.evaluate(()=>window.__routeDeletes),[]);
+  assert.equal(await row.count(),1);
+  // Confirmed deletion must erase only the removed workout's route owners.
+  await row.locator('.tp155-history-delete').click();
+  await page.locator('#tp2628Dialog [data-tp2628-confirm]').click();
+  await page.waitForFunction(()=>window.__routeDeletes.length===1);
+  assert.deepEqual(await page.evaluate(()=>window.__routeDeletes),['gps-163:route-one']);
+  assert.equal(await page.evaluate(()=>history().some(x=>x.id==='gps-163-workout')),false);
   const xss=await page.evaluate(()=>{
    const malicious={id:'wrong',exercises:[{sets:[{gpsRouteKey163:'../private'}]}]};
    const safe=TrainPilotGpsMap163.references(malicious).length===0;
