@@ -7,6 +7,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,6 +26,15 @@ public class PhoneWorkoutWebViewTest {
         do{if("true".equals(evaluate(view,"Boolean("+expression+")")))return;Thread.sleep(100);}while(System.currentTimeMillis()<end);
         fail("WebView condition timed out: "+expression);
     }
+    private void waitForWindowFocus(MainActivity activity) throws Exception {
+        long end=System.currentTimeMillis()+30000;AtomicBoolean focused=new AtomicBoolean();
+        do{
+            InstrumentationRegistry.getInstrumentation().runOnMainSync(()->focused.set(activity.hasWindowFocus()));
+            if(focused.get())return;
+            Thread.sleep(100);
+        }while(System.currentTimeMillis()<end);
+        fail("The foreground phone Activity did not receive window focus");
+    }
     @Test public void phoneRecordingUsesRealNativeBackgroundController() throws Exception {
         Intent launch=new Intent(InstrumentationRegistry.getInstrumentation().getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         MainActivity activity=(MainActivity)InstrumentationRegistry.getInstrumentation().startActivitySync(launch);
@@ -32,6 +42,7 @@ public class PhoneWorkoutWebViewTest {
             AtomicReference<WebView> reference=new AtomicReference<>();
             InstrumentationRegistry.getInstrumentation().runOnMainSync(()->reference.set(activity.getBridge().getWebView()));
             WebView view=reference.get();waitFor(view,"window.TrainPilotBoot?.finished");
+            waitForWindowFocus(activity);
             evaluate(view,"window.__executionTest={};(async()=>{try{"
                 +"const api=window.Capacitor.Plugins.WearSync||window.Capacitor.registerPlugin('WearSync');"
                 +"const initial=await api.executionStatus();"

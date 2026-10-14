@@ -52,6 +52,8 @@ jobs:
           script: |
             adb install -r android/app/build/outputs/apk/debug/app-debug.apk
             adb shell pm grant com.repforge.app android.permission.POST_NOTIFICATIONS
+            adb shell input keyevent KEYCODE_WAKEUP
+            adb shell wm dismiss-keyguard
             cd android && ./gradlew --no-daemon :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.repforge.app.PhoneWorkoutWebViewTest
       - uses: actions/upload-artifact@v7
         if: always()
