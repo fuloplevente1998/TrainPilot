@@ -1,8 +1,12 @@
 # TrainPilot — fejlesztés folytatása Workban
 
-## Aktuális munka — P1 #158
+## Aktuális állapot — #158 elfogadva, #159 megvalósítva
 
-A P0 #195 mainre került (`cac8937`), a #162/#157 készülékesen elfogadva és lezárva. A folytatás első feladata **#158**, külön `fix/158-health-source-provenance` ágon, ebből a mainből. A mérési eredet/csatorna felirat és a stabil edzésazonosítóhoz kötött naplófrissítés elkészült, a `c800b4e` telefonos teszt-APK ellenőrizve (140 Node + 93 Chromium csomag, natív gate, Quick és Performance sikeres); pontos tesztbuild, CI és készülékes elfogadási lista: [P1 átadási lap](P1_158_MERESI_FORRASOK.md). A #158 rövid készülékes forrás-/mentési-/szinkronellenőrzésre vár. Nincs 45 perces technikai minimum; a hosszabb összehasonlítás a következő rendes edzésben utóellenőrzés, és nem blokkolja a következő feladatok előkészítését. Utána #159 → #191 → #163. Verzió továbbra is 1.3.4 /2730; az elfogadott Wear `9b94a10` változatlanul használható.
+A felhasználó 2026. október 14-én a `c800b4e` telefonos tesztbuild #158 működését elfogadta: **„#158 rendben, mehetünk tovább, de elvileg a #159 is készen van már.”** A visszajelzésből nem következtetünk külön 45 perces próba elvégzésére. Verzió marad **1.3.4 /2730**, Wear `9b94a10` változatlan.
+
+A #159 alapfunkciója már a mainben megvalósított: `b35a567` (korlátos offline Mini Napló) és `d7a6e2e` (mérési előzmények), későbbi kerek kijelzős szövegtördeléssel és a #158 stabil késői frissítésével. A legutóbbi 8 kanonikus telefonos edzés, kész sorozatok/súly/ismétlés, elérhető oldalankénti idő/táv és külön Wear/telefonos mérés olvasható; nincs órás naplószerkesztés vagy második edzéstörténet. Az időtartam és mérési forrás a részletekben látszik. A jelen kör nem építi meg újra ezt a funkciót.
+
+A következő prioritás **#191 → #163**. A #191 az órás helyi mentés, függő Data Layer-kézbesítés, tényleges telefonos visszaigazolás és hibajelzés elkülönítése. A meglévő adatút megőrzendő; nem készül második Mini Napló vagy második kanonikus mentési rendszer. Pontos #158 APK/hash/CI: [P1 átadási lap](P1_158_MERESI_FORRASOK.md).
 
 ## Elfogadott állapot és következő munkamenet
 
