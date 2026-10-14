@@ -24,4 +24,22 @@ class WearPhoneAutomaticProjectionTest {
         val w=workout();val next=projectPhoneAutomatic(w,JSONObject().put("stopped",true),w.automation!!.copy(enabled=false))
         assertEquals(w.exercises,next.exercises);assertEquals(0,next.completedSets)
     }
+    @Test fun completedRepetitionRestReturnsToRecordingRatherThanResume() {
+        val w=workout().copy(currentExercise=2)
+        val wire=JSONObject().put("steps",JSONArray().put(JSONObject().put("exerciseId","press").put("setId","s3")))
+            .put("restOnly",true).put("autoAdvance",false).put("completed",1).put("stepIndex",0)
+        val next=projectPhoneAutomatic(w,wire,w.automation!!.copy(phase="complete",paused=true,remainingMs=0))
+        assertEquals("ready",next.automation!!.phase)
+        assertFalse("A finished rest is not a paused timer",next.automation!!.paused)
+        assertFalse(next.currentSet!!.done);assertEquals(w.exercises,next.exercises)
+    }
+    @Test fun realPauseAndInterruptedRestAreNotSilentlyResumed() {
+        val w=workout().copy(currentExercise=2)
+        val wire=JSONObject().put("steps",JSONArray()).put("restOnly",true)
+        for(a in listOf(w.automation!!.copy(phase="rest",paused=true,remainingMs=5000),
+            w.automation!!.copy(phase="complete",paused=true,interrupted=true))) {
+            val next=projectPhoneAutomatic(w,wire,a)
+            assertTrue(next.automation!!.paused);assertEquals(w.exercises,next.exercises)
+        }
+    }
 }

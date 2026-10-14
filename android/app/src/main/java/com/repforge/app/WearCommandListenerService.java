@@ -51,15 +51,13 @@ public class WearCommandListenerService extends WearableListenerService {
                 String raw = DataMapItem.fromDataItem(event.getDataItem()).getDataMap().getString("command");
                 if (raw == null || raw.isEmpty()) continue;
                 JSONObject command=new JSONObject(raw);
-                if(WearCommandQueueStore.seen(this,command.optString("commandId"))){Wearable.getDataClient(this).deleteDataItems(event.getDataItem().getUri());continue;}
+                if(WearCommandQueueStore.seen(this,command.optString("commandId"))){WearCommandReceipts.replay(this,command,event.getDataItem().getUri());continue;}
                 if(PhoneWorkoutExecution.compatible(command)){
                     android.net.Uri uri=event.getDataItem().getUri();
                     new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
                         try{
                             JSONObject result=PhoneWorkoutExecution.execute(this,command);
-                            if(java.util.Arrays.asList("applied","duplicate").contains(result.optString("status"))&&WearCommandQueueStore.ack(this,command.optString("commandId")))
-                                Wearable.getDataClient(this).deleteDataItems(uri);
-                            else queue(command,uri);
+                            if(!java.util.Arrays.asList("applied","duplicate").contains(result.optString("status"))||!WearCommandReceipts.complete(this,command,"applied",uri)) queue(command,uri);
                         }catch(Exception error){queue(command,uri);}
                     });continue;
                 }
@@ -67,7 +65,7 @@ public class WearCommandListenerService extends WearableListenerService {
                     android.net.Uri uri=event.getDataItem().getUri();
                     new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
                     if(WearCommandQueueStore.seen(this,command.optString("commandId"))){
-                        Wearable.getDataClient(this).deleteDataItems(uri);
+                        WearCommandReceipts.replay(this,command,uri);
                         return;
                     }
                     JSONObject timer=IntervalTimerService.snapshot(this),active=ActiveWorkoutStore.current(this);
@@ -79,8 +77,7 @@ public class WearCommandListenerService extends WearableListenerService {
                             long expectedPhase=command.optJSONObject("automation").optLong("phaseNumber");
                             IntervalTimerService.command(this,timer.optString("key"),expectedPhase==timer.optLong("phaseNumber")?action:"status");
                             // Keep the DataItem available for replay if a durable receipt fails.
-                            if(WearCommandQueueStore.ack(this,command.optString("commandId")))
-                                Wearable.getDataClient(this).deleteDataItems(uri);
+                            WearCommandReceipts.complete(this,command,expectedPhase==timer.optLong("phaseNumber")?"applied":"superseded",uri);
                             return;
                         }
                         catch(Exception ignored){}

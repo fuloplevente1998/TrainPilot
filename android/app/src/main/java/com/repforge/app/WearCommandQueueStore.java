@@ -64,6 +64,39 @@ final class WearCommandQueueStore {
     }
     static synchronized boolean seen(Context context,String id){return containsId(read(context,SEEN),id);}
 
+    static synchronized JSONObject receipt(Context context, String id) {
+        JSONArray seen=read(context,SEEN);
+        for(int i=0;i<seen.length();i++) {
+            JSONObject row=seen.optJSONObject(i);
+            if(row!=null&&id.equals(row.optString("commandId")))return row;
+        }
+        return null;
+    }
+
+    static synchronized boolean ack(Context context, JSONObject command, String status) {
+        String id=command.optString("commandId");
+        if(id.isEmpty())return false;
+        JSONArray pending=read(context,PENDING),next=new JSONArray(),seen=read(context,SEEN);
+        for(int i=0;i<pending.length();i++) {
+            JSONObject row=pending.optJSONObject(i);
+            if(row!=null&&!id.equals(row.optString("commandId")))next.put(row);
+        }
+        if(!containsId(seen,id))try {
+            seen.put(new JSONObject().put("schema",1).put("commandId",id)
+                .put("workoutId",command.optString("workoutId")).put("action",command.optString("action"))
+                .put("sequence",command.optLong("sequence")).put("status",status)
+                .put("receivedAt",System.currentTimeMillis()));
+        } catch(Exception error) {return false;}
+        while(seen.length()>MAX_SEEN)seen.remove(0);
+        SharedPreferences p=prefs(context);
+        String beforePending=p.getString(PENDING,"[]"),beforeSeen=p.getString(SEEN,"[]");
+        if(p.edit().putString(PENDING,next.toString()).putString(SEEN,seen.toString()).commit())return true;
+        // commit(false) may still change the in-memory preferences. Never replay
+        // that volatile receipt as a durable phone acknowledgement.
+        p.edit().putString(PENDING,beforePending).putString(SEEN,beforeSeen).commit();
+        return false;
+    }
+
     static synchronized boolean ack(Context context, String commandId) {
         if (commandId == null || commandId.isEmpty()) return false;
         JSONArray pending = read(context, PENDING), next = new JSONArray();

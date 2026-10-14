@@ -115,6 +115,7 @@ object WearAutomaticController {
     @Synchronized fun toggle(context: Context,enabled: Boolean): WearWorkout? {
         synchronized(WorkoutSnapshotStore) {
         val current=restore(context) ?: return null
+        if(current.workoutPaused)return current
         if(enabled&&WatchHomeStore.automaticProtocol(context)!=1){android.widget.Toast.makeText(context,"Frissítsd a telefonos appot, majd frissítsd az órás adatokat.",android.widget.Toast.LENGTH_LONG).show();return current}
         if(current.timerOwner!="watch")return current
         if(current.automation?.owner=="phone" && current.automation.enabled)return current
@@ -137,6 +138,7 @@ object WearAutomaticController {
     @Synchronized fun command(context: Context,action: String,expectedId: String): WearWorkout? {
         synchronized(WorkoutSnapshotStore) {
         val current=WorkoutSnapshotStore.load(context) ?: return null
+        if(current.workoutPaused)return current
         if(current.workoutId!=expectedId||current.automation?.enabled!=true||current.automation.owner!="watch")return current
         val now=clock();val boot=WearAutomaticService.boot(context)
         val transition=WearAutomaticEngine.tick(current,now,boot)
@@ -174,6 +176,7 @@ object WearAutomaticController {
         synchronized(WorkoutSnapshotStore) {
         val current=WorkoutSnapshotStore.load(context) ?: return null
         val a=current.automation ?: return current
+        if(current.workoutPaused)return current
         if(!a.enabled||a.owner!="watch"||a.counting||a.paused||commandId in a.handledCommands)return current
         val exercise=current.exercises.getOrNull(e) ?: return current
         val set=exercise.sets.getOrNull(s) ?: return current
@@ -194,6 +197,7 @@ object WearAutomaticController {
         synchronized(WorkoutSnapshotStore) {
         val current=restore(context) ?: return
         val id=input.optString("commandId");val action=input.optString("action")
+        if(current.workoutPaused)return
         if(System.currentTimeMillis()-input.optLong("createdAt") !in 0..15000)return
         if(id.isBlank()||id.length>128||current.workoutId!=input.optString("workoutId")||current.timerOwner!="watch")return
         val a=current.automation
@@ -236,7 +240,7 @@ object WearAutomaticController {
             .put("action","watchAutomationState").put("workoutId",workout.workoutId).put("createdAt",System.currentTimeMillis())
             .put("watchSequence",workout.localSequence).put("finalSnapshot",snapshot)
         val sequence=WearCommandOutbox.enqueue(context,command)
-        WorkoutSnapshotStore.saveWorkout(context,workout.copy(localSequence=sequence))
+        WorkoutSnapshotStore.saveWorkout(context,workout.copy(localSequence=maxOf(workout.localSequence,sequence)))
 
         }
     }
@@ -249,7 +253,7 @@ object WearAutomaticController {
             .put("setIndex",s).put("setNumber",set.number).put("setId",set.setId).put("reps",set.reps).put("weight",set.weight)
             .put("automation",workout.automation?.json())
         val sequence=WearCommandOutbox.enqueue(context,command)
-        WorkoutSnapshotStore.saveWorkout(context,workout.copy(localSequence=sequence))
+        WorkoutSnapshotStore.saveWorkout(context,workout.copy(localSequence=maxOf(workout.localSequence,sequence)))
 
         }
     }

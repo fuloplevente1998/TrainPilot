@@ -1,5 +1,11 @@
 # TrainPilot — fejlesztési állapot
 
+## 2026-10-14 — P0 lezárás, #199 integráció és következő P1 GPS-térkép
+
+A felhasználó a korábbi **#162 / #157 P0** kör lezárását ismét megerősítette; ezek már a mainen vannak (#195). A [#199](https://github.com/fuloplevente1998/TrainPilot/pull/199) közös P1 integrációra jóváhagyta a release gate-et és a mainre kerülést, valamint a **#191 mentési/szinkron** és **#200 pihenőkihagyási** Issue-k lezárását a sikeres integráció után. A #201 közös szüneteltetés ugyanennek a kódágnak a része; a készüléken visszaigazolt, hogy a telefonos explicit kilépés az órás edzést is megállítja. Az órás önálló folytatás **külön #202 P2 fejlesztés**, nem része a #201 hibajavításnak.
+
+**Integrációs elvárás:** csak a friss main dokumentációját (#197, #202) megtartó forrás, megfelelő telefonos és Wear CI/release gate, egyetlen kanonikus edzésnapló és változatlan **1.3.4 /2730** verzió. A jelen dokumentációs bejegyzés nem igazolja előre a kapuk eredményét vagy az Issue-k lezárását. Ezen kör után a következő P1 [#163 — telefonos GPS-útvonalrögzítés és térképes napló](https://github.com/fuloplevente1998/TrainPilot/issues/163), külön feat ág és PR; az önálló órás GPS [#193](https://github.com/fuloplevente1998/TrainPilot/issues/193) P2 marad.
+
 ## Új P2 Wear fejlesztés — #202: órás edzésátvétel és offline folytatás (2026. október 14.)
 
 **Felhasználó által jóváhagyott irány, még nem implementáció:** [#202 – Telefonról indított edzés átvétele az órán](https://github.com/fuloplevente1998/TrainPilot/issues/202) (**P2 / enhancement**). A telefonon elindított **aktív vagy szándékosan szüneteltetett** edzés az órán tudatos „Edzés átvétele” művelettel átadható; az óra ezután telefonkapcsolat nélkül is kezeli az edzést, majd újracsatlakozáskor ugyanarra a kanonikus naplóra szinkronizál.

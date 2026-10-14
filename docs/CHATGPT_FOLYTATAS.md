@@ -1,4 +1,17 @@
+## Legfrissebb folyamatban lévő javítás — 2026-10-14, #201
+
+Munkaforrás: `feat/191-wear-save-sync-status`, draft PR #199. A #191 mentés/szinkron és #200 pihenőkihagyás javításai után a felhasználó jelentette: **kifejezett telefonos edzéselhagyás / félbehagyás** nem szünetelteti az órát. Nem képernyőlezárásról van szó. Ezt javítjuk a [#201 leírás](wear/P1_201_EDZESSZUNET.md) szerint. A GitHub build igazolt eredménye és az új párosított APK forrása a buildjegyzékbe kerül befejezés után. A korábban átadott c503887 pár még nem tartalmazza #201-et.
+
+A natív aktív edzés képernyőlezárás mellett továbbra is működjön; csak a kifejezett elhagyás zárja az aktív időablakot és szünetelteti a visszaszámlálót / órás Health Services-t. Folytatás megőrzi az edzést és hátralévő időt. Új készülékes elfogadásig PR draft, #191/#200/#201 nyitott, main és 1.3.4 /2730 release változatlan. Meglévő #197 P2 státuszt meg kell őrizni.
+
 # TrainPilot — folytatási leírás új ChatGPT-beszélgetéshez
+
+## Aktuális folytatás — #191 / #200 tesztpár
+
+Az elfogadott main alkalmazáskód `20fe5ce`; a main aktuális feje `a377717` (#198 csak a #197 P2 igényt dokumentálta). #158/#159 lezárva. Folyamatban a [#199 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/199), `feat/191-wear-save-sync-status` ágon. #191 helyi mentés / átadás / tartós telefonos nyugta és kompakt újrapróbálás kész. A felhasználó élő edzésben jelzett #200 hibája is javítva: telefonon kihagyott pihenő után az óra Folytatásban és előző kész gyakorlaton maradhatott; a befejezett pihenő után a következő sorozat/gyakorlat rögzíthető.
+
+**Utolsó átadott telefonos és Wear APK forrása egyaránt `c503887`, 1.3.4 /2730.** Teljes 140 Node / 93 Chromium, 264 natív és 86 kerek Wear UI-teszt, aláírás/forrás/hash ellenőrzés sikeres. [Átadási lap és rövid fizikai próba](wear/P1_191_MENTES_SZINKRON.md). Main/release változatlan; #191/#200 nyitva, készülékes elfogadásra várunk. Következő fejlesztés a #163 telefonos térkép, a #191/#200 konkrét tesztpárjának visszajelzése után. A régebbi APK-k és alábbi állapotok történeti adatok; a folytatáskor ezt a felső állapotot és az aktuális GitHub headeket ellenőrizd.
+
 
 ## Elfogadott #158, meglévő #159 és következő P1 — 2026. október 14.
 

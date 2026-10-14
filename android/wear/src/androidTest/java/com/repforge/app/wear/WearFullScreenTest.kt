@@ -114,6 +114,141 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         WearClosureStore.dismiss(context)
     }
 
+    @Test
+    fun saveSyncStatesAndRetryRemainReadableOnRoundDisplays() {
+        val state=mutableStateOf(WearSaveSyncState("workout",WearSavePhase.LOCAL,2,true))
+        var retries=0;var backs=0
+        compose.setContent { Watch { SaveSyncScreen(state.value,{retries++},{backs++}) } }
+        assertFullViewport()
+        for(phase in WearSavePhase.entries) {
+            compose.runOnIdle { state.value=WearSaveSyncState("workout",phase,2,phase!=WearSavePhase.SYNCED,
+                if(phase==WearSavePhase.ERROR)"timeout" else "") }
+            lazyList().performScrollToNode(hasText(wearSaveLabel(phase)))
+            compose.onNodeWithText(wearSaveLabel(phase)).assertIsDisplayed()
+            if(phase!=WearSavePhase.SYNCED) {
+                lazyList().performScrollToNode(hasContentDescription(wearSaveRetry()))
+                compose.onNodeWithContentDescription(wearSaveRetry()).assertIsDisplayed().performClick()
+            } else compose.onNodeWithContentDescription(wearSaveRetry()).assertDoesNotExist()
+        }
+        assertEquals(4,retries)
+        lazyList().performScrollToNode(hasContentDescription(wearSaveBack()))
+        compose.onNodeWithContentDescription(wearSaveBack()).assertIsDisplayed().performClick()
+        assertEquals(1,backs)
+        screenshot("save-sync-retry")
+    }
+
+    @Test
+    fun actualOutboxKeepsDataUntilMatchingPhoneReceiptAndRetryReusesIdentity() {
+        val context=InstrumentationRegistry.getInstrumentation().targetContext
+        val id=java.util.UUID.randomUUID().toString()
+        val command=JSONObject().put("commandId",id).put("workoutId",id).put("action","healthSummary")
+            .put("createdAt",System.currentTimeMillis()).put("healthSummary",JSONObject().put("steps",0))
+        assertTrue(WearCommandOutbox.enqueue(context,command)>0)
+        val sequence=command.getLong("sequence")
+        val receipt=JSONObject().put("schema",1).put("commandId",id).put("workoutId",id)
+            .put("action","healthSummary").put("sequence",sequence).put("status","applied").put("receivedAt",System.currentTimeMillis())
+        assertNotEquals(WearSavePhase.SYNCED,WearCommandOutbox.state(context,id)!!.phase)
+        WearCommandOutbox.retry(context,id)
+        assertEquals(sequence,command.getLong("sequence"))
+        val path=WearCommandOutbox.RECEIPT_PREFIX+id
+        assertFalse(WearCommandOutbox.acceptReceipt(context,path,JSONObject(receipt.toString()).put("workoutId","foreign").toString()))
+        assertNotEquals(WearSavePhase.SYNCED,WearCommandOutbox.state(context,id)!!.phase)
+        assertTrue(WearCommandOutbox.acceptReceipt(context,path,receipt.toString()))
+        assertEquals(WearSavePhase.SYNCED,WearCommandOutbox.state(context,id)!!.phase)
+        assertTrue(WearCommandOutbox.acceptReceipt(context,path,receipt.toString()))
+        assertFalse(WearCommandOutbox.acceptReceipt(context,path,JSONObject(receipt.toString()).put("status","error").toString()))
+        assertEquals(WearSavePhase.SYNCED,WearCommandOutbox.state(context,id)!!.phase)
+    }
+
+    @Test
+    fun failedLocalCommitCannotReportSavedOrConsumeReceipt() {
+        val context=InstrumentationRegistry.getInstrumentation().targetContext
+        val real=context.getSharedPreferences("trainpilot_wear_outbox",0)
+        val failing=java.lang.reflect.Proxy.newProxyInstance(javaClass.classLoader,arrayOf(android.content.SharedPreferences::class.java)) { _,method,args ->
+            if(method.name!="edit")method.invoke(real,*(args ?: emptyArray())) else {
+                val editor=real.edit()
+                java.lang.reflect.Proxy.newProxyInstance(javaClass.classLoader,arrayOf(android.content.SharedPreferences.Editor::class.java)) { proxy,m,a ->
+                    val result=m.invoke(editor,*(a ?: emptyArray()))
+                    if(m.name=="commit")false else if(result===editor)proxy else result
+                }
+            }
+        } as android.content.SharedPreferences
+        val wrapper=object:android.content.ContextWrapper(context) {
+            override fun getSharedPreferences(name:String,mode:Int):android.content.SharedPreferences =
+                if(name=="trainpilot_wear_outbox")failing else super.getSharedPreferences(name,mode)
+        }
+        val id=java.util.UUID.randomUUID().toString()
+        val command=JSONObject().put("commandId",id).put("workoutId",id).put("action","healthSummary").put("createdAt",System.currentTimeMillis())
+        assertEquals(0L,WearCommandOutbox.enqueue(wrapper,command))
+        val failed=WearCommandOutbox.state(context,id)!!
+        assertEquals(WearSavePhase.ERROR,failed.phase);assertEquals("local",failed.reason)
+        WearCommandOutbox.retry(context,id)
+        val pending=org.json.JSONArray(real.getString("pending","[]"))
+        val stored=(0 until pending.length()).mapNotNull { pending.optJSONObject(it) }.single { it.optString("commandId")==id }
+        val receipt=JSONObject().put("schema",1).put("commandId",id).put("workoutId",id).put("action","healthSummary")
+            .put("sequence",stored.getLong("sequence")).put("status","applied").put("receivedAt",System.currentTimeMillis())
+        val path=WearCommandOutbox.RECEIPT_PREFIX+id
+        assertFalse(WearCommandOutbox.acceptReceipt(wrapper,path,receipt.toString()))
+        assertNotEquals(WearSavePhase.SYNCED,WearCommandOutbox.state(context,id)!!.phase)
+        assertTrue(WearCommandOutbox.acceptReceipt(context,path,receipt.toString()))
+        assertEquals(WearSavePhase.SYNCED,WearCommandOutbox.state(context,id)!!.phase)
+        val before=real.getString("pending","[]")
+        val damagedId=java.util.UUID.randomUUID().toString()
+        val damaged=JSONObject().put("commandId",damagedId).put("workoutId",damagedId).put("action","healthSummary")
+        synchronized(WearCommandOutbox) {
+        try {
+            real.edit().putString("pending","unreadable").commit()
+            assertEquals(0L,WearCommandOutbox.enqueue(context,damaged))
+            WearCommandOutbox.flush(context)
+            assertEquals("unreadable",real.getString("pending",""))
+            assertFalse(WearCommandOutbox.acceptReceipt(context,path,receipt.toString()))
+        } finally { real.edit().putString("pending",before).commit() }
+        }
+        WearCommandOutbox.retry(context,damagedId)
+        val restored=org.json.JSONArray(real.getString("pending","[]"))
+        val queued=(0 until restored.length()).mapNotNull { restored.optJSONObject(it) }.single { it.optString("commandId")==damagedId }
+        val recovered=JSONObject(receipt.toString()).put("commandId",damagedId).put("workoutId",damagedId).put("sequence",queued.getLong("sequence"))
+        assertTrue(WearCommandOutbox.acceptReceipt(context,WearCommandOutbox.RECEIPT_PREFIX+damagedId,recovered.toString()))
+    }
+
+    @Test
+    fun explicitWorkoutPauseShowsOnlySafeContinuationControls() {
+        val actions=mutableListOf<String>()
+        compose.setContent { Watch { Fixture("workout-paused",automaticCommands=actions) } }
+        screenshot("workout-paused-opening")
+        assertTrue(compose.onAllNodesWithContentDescription("Edzés szünetel").fetchSemanticsNodes().isNotEmpty())
+        // Curved text has multiple virtual accessibility nodes. Verify the actual
+        // theme-colored glyphs in the fixed top arc, instead of assuming one rectangular Text node.
+        val picture=compose.onRoot().captureToImage().asAndroidBitmap()
+        val expected=android.graphics.Color.parseColor(WearHomeTheme.DEFAULT.accent)
+        var accentPixels=0
+        for(y in 0 until picture.height/4)for(x in 0 until picture.width){
+            val pixel=picture.getPixel(x,y)
+            if(kotlin.math.abs(android.graphics.Color.red(pixel)-android.graphics.Color.red(expected))<20&&
+                kotlin.math.abs(android.graphics.Color.green(pixel)-android.graphics.Color.green(expected))<20&&
+                kotlin.math.abs(android.graphics.Color.blue(pixel)-android.graphics.Color.blue(expected))<20)accentPixels++
+        }
+        assertTrue("The curved pause heading must actually be visible",accentPixels>20)
+        compose.onNodeWithContentDescription("Sorozat rögzítése").assertDoesNotExist()
+        assertFullViewport()
+        lazyList().performScrollToNode(hasContentDescription("Folytatás telefonon"))
+        compose.onNodeWithContentDescription("Folytatás telefonon").assertIsDisplayed().performClick()
+        assertEquals(listOf("openPhone"),actions)
+        lazyList().performScrollToNode(hasContentDescription("Kezdőlap"))
+        compose.onNodeWithContentDescription("Kezdőlap").assertIsDisplayed()
+        screenshot("workout-paused-continuation")
+    }
+
+    @Test
+    fun skippedPhoneRestReturnsToAnEnabledRecordingButton() {
+        val actions=mutableListOf<String>()
+        compose.setContent { Watch { Fixture("phone-rest-finished",automaticCommands=actions) } }
+        compose.onNodeWithContentDescription("Automata folytatása").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Sorozat rögzítése").assertIsDisplayed().assertIsEnabled().performClick()
+        assertEquals(listOf("record"),actions)
+        screenshot("phone-rest-finished-recording")
+    }
+
     @Composable
     private fun Watch(content: @Composable () -> Unit) {
         BoxWithConstraints(Modifier.fillMaxSize().background(Color.Black)) {
@@ -777,7 +912,11 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                     listOf(exercise),
                     "A nap",
                 ).let { initial ->
-                    if (route.startsWith("automatic-")) initial.copy(timerOwner="watch",
+                    if (route=="workout-paused") initial.copy(workoutPaused=true,pauseRevision=1)
+                    else if (route=="phone-rest-finished") projectPhoneAutomatic(initial,
+                        JSONObject().put("restOnly",true).put("steps",org.json.JSONArray()),
+                        WearAutomatic(enabled=true,owner="phone",phase="complete",paused=true,key="phone-rest",remainingMs=0))
+                    else if (route.startsWith("automatic-")) initial.copy(timerOwner="watch",
                         automation=WearAutomatic(enabled=true,key="layout-auto",phase=if(route=="automatic-rest")"rest" else "ready",
                             paused=route=="automatic-rest",remainingMs=if(route=="automatic-rest")115000 else 0,
                             workSeconds=30,restSeconds=if(route=="automatic-rest")120 else 5,rounds=3,anchorMs=android.os.SystemClock.elapsedRealtime()))
@@ -845,7 +984,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         }
         val request = remember {
             mutableStateOf<String?>(
-                if (route == "timed-workout" || route.startsWith("automatic-")) "workout"
+                if (route == "timed-workout" || route.startsWith("automatic-") || route in listOf("phone-rest-finished","workout-paused")) "workout"
                 else if (route == "active-home") "home" else route
             )
         }
@@ -871,7 +1010,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             onStartQuick = {},
             onAddQuick = {},
             onChange = { _, _ -> },
-            onComplete = {},
+            onComplete = { if(route=="phone-rest-finished")automaticCommands?.add("record") },
             onPrevious = {},
             onNext = {},
             onSelectExercise = {},
@@ -891,7 +1030,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             onResumeWorkout = {},
             onRetry = {},
             onDismissClosure = {},
-            onOpenPhone = {},
+            onOpenPhone = { if(route=="workout-paused")automaticCommands?.add("openPhone") },
             onRefreshJournal = {},
             health = liveHealth ?: mutableStateOf(health),
             measuring = mutableStateOf(true),

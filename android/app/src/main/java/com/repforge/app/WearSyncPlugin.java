@@ -53,6 +53,9 @@ public class WearSyncPlugin extends Plugin {
     @PluginMethod public void suspendExecution(PluginCall call) { execution(call,()->{
         PhoneWorkoutExecution.store(getContext()).suspendCommands(call.getBoolean("suspended",true));return new JSONObject();
     }); }
+    @PluginMethod public void setWorkoutPause(PluginCall call) { execution(call,()->{
+        PhoneWorkoutExecution.setWorkoutPause(getContext(),call.getObject("snapshot"));return new JSONObject();
+    }); }
     @PluginMethod public void closeExecution(PluginCall call) { execution(call,()->{
         PhoneWorkoutExecutionStore db=PhoneWorkoutExecution.store(getContext());
         db.setRestoreBlocked(false); // Close and release the finish fence in this same main-looper operation.
@@ -99,6 +102,9 @@ public class WearSyncPlugin extends Plugin {
         new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
             try {
                 JSONObject value=input;
+                JSONObject prior=ActiveWorkoutStore.current(getContext());
+                if(prior!=null&&input.optString("workoutId").equals(prior.optString("workoutId"))&&input.optLong("pauseRevision")<prior.optLong("pauseRevision"))
+                    for(String key:new String[]{"workoutPaused","pauseRevision","activeIntervals"})if(prior.has(key))value.put(key,prior.get(key));
                 if(input.optInt("nativeExecutionProtocol")==2){
                     JSONObject frame=PhoneWorkoutExecution.store(getContext()).snapshot();
                     if(frame==null||!frame.optBoolean("active")||!input.optString("workoutId").equals(frame.optString("workoutId"))
@@ -217,10 +223,20 @@ public class WearSyncPlugin extends Plugin {
     public void ackCommand(PluginCall call) {
         String commandId = call.getString("commandId", "");
         if (commandId == null || commandId.isEmpty()) { call.reject("Missing commandId."); return; }
-        if (!WearCommandQueueStore.ack(getContext(), commandId)) {
-            call.reject("Unable to persist the watch command receipt."); return;
+        JSONObject command=null;
+        JSONArray pending=WearCommandQueueStore.pending(getContext());
+        for(int i=0;i<pending.length();i++)if(pending.optJSONObject(i)!=null&&commandId.equals(pending.optJSONObject(i).optString("commandId")))command=pending.optJSONObject(i);
+        if(command==null)command=WearCommandQueueStore.receipt(getContext(),commandId);
+        if(command==null){
+            if(!WearCommandQueueStore.ack(getContext(),commandId)){call.reject("Unable to persist the watch command receipt.");return;}
+            deleteCommandDataItem(commandId);
+        }else{
+            String status=call.getString("status","processed");
+            if(!java.util.Arrays.asList("applied","saved","discarded","error","superseded","processed").contains(status)){call.reject("Invalid command result.");return;}
+            if(!WearCommandQueueStore.ack(getContext(),command,status)){call.reject("Unable to persist the watch command receipt.");return;}
+            WearCommandReceipts.replay(getContext(),command,null);
+            deleteCommandDataItem(commandId);
         }
-        deleteCommandDataItem(commandId);
         JSObject result = new JSObject();
         result.put("commandId", commandId);
         call.resolve(result);
@@ -246,7 +262,7 @@ public class WearSyncPlugin extends Plugin {
                             if (item != null && item.getUri() != null && (expectedPath.equals(item.getUri().getPath())||
                                 "/trainpilot/watch-automatic".equals(item.getUri().getPath())&&
                                 sameWatchStateCommand(item,commandId))) {
-                                Wearable.getDataClient(getContext()).deleteDataItems(item.getUri());
+                                try { WearCommandReceipts.replay(getContext(), new JSONObject().put("commandId",commandId), item.getUri()); } catch(Exception ignored) {}
                             }
                         }
                     } finally {

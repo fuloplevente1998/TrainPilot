@@ -64,6 +64,8 @@ private val Danger = Color(0xFF3B232A)
 private val DangerText = Color(0xFFEFBCC3)
 private val LocalAutomaticToggle = compositionLocalOf<(() -> Unit)?> { null }
 private val LocalAutomaticCommand = compositionLocalOf<((String) -> Unit)?> { null }
+internal val LocalSaveSync = compositionLocalOf<WearSaveSyncState?> { null }
+private val LocalOpenSaveSync = compositionLocalOf<(() -> Unit)?> { null }
 private val LocalEditorSave = compositionLocalOf<((String,Double,String)->Boolean)?> { null }
 
 @Composable
@@ -102,6 +104,8 @@ internal fun TrainPilotWearApp(
     onAutomaticCommand: ((String) -> Unit)? = null,
     onEditorSave: ((String,Double,String)->Boolean)? = null,
     onWorkoutFeedback: ((WatchWorkoutFeedback, String?) -> Unit)? = null,
+    saveSync: State<WearSaveSyncState?>? = null,
+    onRetrySync: ((String) -> Unit)? = null,
 ) {
     var route by rememberSaveable { mutableStateOf("home") }
     val context = LocalContext.current
@@ -130,6 +134,7 @@ internal fun TrainPilotWearApp(
     var miniJournalId by rememberSaveable { mutableStateOf("") }
     var miniJournalBackRoute by rememberSaveable { mutableStateOf("journal") }
     var journalBackRoute by rememberSaveable { mutableStateOf("menu") }
+    var syncBackRoute by rememberSaveable { mutableStateOf("home") }
     var metricsBackRoute by rememberSaveable { mutableStateOf("menu") }
     var settingsBackRoute by rememberSaveable { mutableStateOf("home") }
     var returnWorkoutPage by rememberSaveable { mutableStateOf(0) }
@@ -155,6 +160,7 @@ internal fun TrainPilotWearApp(
                     pendingFeedback?.let { onWorkoutFeedback?.invoke(it, null) }
                     "home"
                 }
+                "save-sync" -> syncBackRoute
                 "journal-detail" -> miniJournalBackRoute
                 "journal" -> journalBackRoute
                 "metrics" -> metricsBackRoute
@@ -167,7 +173,9 @@ internal fun TrainPilotWearApp(
         LocalWearHomeTheme provides (home.value?.theme ?: WearHomeTheme.DEFAULT),
         LocalAutomaticToggle provides onToggleAutomatic,
         LocalAutomaticCommand provides onAutomaticCommand,
-        LocalEditorSave provides onEditorSave
+        LocalEditorSave provides onEditorSave,
+        LocalSaveSync provides saveSync?.value,
+        LocalOpenSaveSync provides { syncBackRoute=route;route="save-sync" }
     ) {
         MaterialTheme {
             Box(Modifier.fillMaxSize().background(Black)) {
@@ -209,6 +217,9 @@ internal fun TrainPilotWearApp(
                             onSelectMeasurement = { openMeasurement(it, "metrics") },
                             onBack = { route = metricsBackRoute },
                         )
+                    route == "save-sync" -> SaveSyncScreen(saveSync?.value,
+                        onRetry = { saveSync?.value?.let { onRetrySync?.invoke(it.workoutId) } },
+                        onBack = { route=syncBackRoute })
                     route == "menu" ->
                         MainMenuScreen(active != null, active?.quickWorkout == true, onOpenPhone) {
                             if (it == "journal") openJournal("menu")
@@ -307,6 +318,14 @@ internal fun TrainPilotWearApp(
                             onStart(day, "")
                             if (workout.value != null) route = "workout"
                         }
+                    route in listOf("workout","editor","timer") && active?.workoutPaused==true ->
+                        RoundList("Edzés szünetel") {
+                            centerItem { Text(active.exercise?.name.orEmpty(),color=White,fontSize=14.sp,
+                                textAlign=TextAlign.Center,modifier=Modifier.fillMaxWidth()) }
+                            centerItem { Text("A mérés és az időzítő szünetel.",color=Muted,fontSize=11.sp,textAlign=TextAlign.Center) }
+                            centerItem { Pill("Folytatás telefonon",tone=Gold) { onOpenPhone() } }
+                            centerItem { Pill("Kezdőlap",tone=Secondary) { route="home" } }
+                        }
                     route == "workout" && active != null ->
                         WorkoutPager(
                             active,
@@ -351,7 +370,7 @@ internal fun TrainPilotWearApp(
                                 if (workout.value != null) route = "workout"
                             },
                             onResume = {
-                                onResumeWorkout()
+                                if(active?.workoutPaused==true)onOpenPhone()else onResumeWorkout()
                                 route = "workout"
                             },
                             onDays = { route = "days" },
@@ -539,6 +558,33 @@ private fun LazyListScope.centerItem(content: @Composable ColumnScope.() -> Unit
     }
 }
 
+/** Status lives in the existing menus, leaving workout controls and timers intact. */
+private fun LazyListScope.saveSyncItem() {
+    centerItem {
+        val status=LocalSaveSync.current
+        val open=LocalOpenSaveSync.current
+        if(status!=null && open!=null) {
+            Text(wearSaveLabel(status.phase),color=if(status.phase==WearSavePhase.ERROR)DangerText else Gold,
+                fontSize=11.sp,textAlign=TextAlign.Center,
+                modifier=Modifier.fillMaxWidth().heightIn(min=44.dp).clickable(role=Role.Button,onClick=open)
+                    .padding(horizontal=12.dp,vertical=8.dp).testTag("wear-save-status")
+                    .semantics { contentDescription=wearSaveTitle()+": "+wearSaveLabel(status.phase) })
+        }
+    }
+}
+
+@Composable
+internal fun SaveSyncScreen(state: WearSaveSyncState?,onRetry: ()->Unit,onBack: ()->Unit) {
+    RoundList(wearSaveTitle()) {
+        centerItem { Text(state?.let { wearSaveLabel(it.phase) } ?: wearSaveEmpty(),color=Gold,
+            fontSize=14.sp,textAlign=TextAlign.Center,modifier=Modifier.fillMaxWidth().padding(horizontal=16.dp)) }
+        centerItem { Text(wearSaveDetail(state),color=Muted,fontSize=11.sp,textAlign=TextAlign.Center,
+            modifier=Modifier.fillMaxWidth().padding(horizontal=16.dp).testTag("wear-save-detail")) }
+        if(state?.retryable==true)centerItem { Pill(wearSaveRetry(),tone=Secondary,onClick=onRetry) }
+        centerItem { Pill(wearSaveBack(),tone=Secondary,onClick=onBack) }
+    }
+}
+
 @Composable
 internal fun MainMenuScreen(
     hasWorkout: Boolean,
@@ -546,7 +592,9 @@ internal fun MainMenuScreen(
     onOpenPhone: () -> Unit,
     onRoute: (String) -> Unit,
 ) {
+    val status=LocalSaveSync.current
     RoundList("Főmenü") {
+        if(status!=null)saveSyncItem()
         for ((label, destination) in
             listOf(
                 "Kezdőlap" to "home",
@@ -2206,7 +2254,9 @@ private fun WorkoutMenu(
 ) {
     val automaticToggle=LocalAutomaticToggle.current
     val automaticCommand=LocalAutomaticCommand.current
+    val status=LocalSaveSync.current
     RoundList("Edzésmenü") {
+        if(status!=null)saveSyncItem()
         centerItem { Pill("‹ Kezdőlap", tone = Secondary, onClick = onHome) }
         if(automaticToggle!=null) centerItem {
             Text("Automata mód: ${if(workout.automation?.enabled==true)"Be" else "Ki"}",color=Gold,fontSize=11.sp,

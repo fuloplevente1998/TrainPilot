@@ -72,7 +72,9 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
                 if (pending(db, old.getString("workoutId"), old.getLong("generation")))
                     throw new IllegalStateException("pendingRecordingEvents");
                 PhoneWorkoutRecording.retainCompleted(old, incoming);
-                for(String key:new String[]{"timeLogs162","latestTimer162","manualAnchor162"})if(old.has(key))incoming.put(key,old.get(key));
+                if(incoming.optLong("pauseRevision")<=old.optLong("pauseRevision"))
+                    for(String key:new String[]{"pauseRevision","workoutPaused","activeIntervals"})if(old.has(key))incoming.put(key,old.get(key));
+                for(String key:new String[]{"timeLogs162","latestTimer162","manualAnchor162","resumeTimerOnContinue201"})if(old.has(key))incoming.put(key,old.get(key));
                 if (old.has("transition")) {
                     JSONObject transition=old.getJSONObject("transition"),plan=transition.optJSONObject("plan"),automation=incoming.optJSONObject("automation");
                     if (plan!=null&&automation!=null&&plan.optString("key").equals(automation.optString("key"))) incoming.put("transition",transition);
@@ -192,7 +194,7 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
     }
     private static void anchorManual(JSONObject frame,long monotonic)throws JSONException{
         JSONObject previous=frame.optJSONObject("manualAnchor162");
-        frame.remove("manualAnchor162");if(!frame.optBoolean("automaticEnabled"))return;
+        frame.remove("manualAnchor162");if(!frame.optBoolean("automaticEnabled")||frame.optBoolean("workoutPaused")){if(previous!=null)frame.put("manualAnchor162",previous);return;}
         JSONArray exercises=frame.getJSONArray("exercises");
         for(int e=frame.optInt("currentExercise");e<exercises.length();e++){
             JSONObject exercise=exercises.getJSONObject(e);JSONArray sets=exercise.getJSONArray("sets");
@@ -217,7 +219,7 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
     private static void finishManual(JSONObject next,JSONObject command,long now)throws JSONException{
         JSONObject anchor=next.optJSONObject("manualAnchor162");next.remove("manualAnchor162");
         if(anchor==null||!PROCESS.equals(anchor.optString("process"))||!anchor.optString("exerciseId").equals(command.optString("exerciseId"))||!anchor.optString("setId").equals(command.optString("setId")))return;
-        long work=Math.min(IntervalTimeline.MAX_MS,Math.max(0,now-anchor.getLong("began")));
+        long work=Math.min(IntervalTimeline.MAX_MS,anchor.optLong("priorWorkMs201")+(anchor.optBoolean("paused201")?0:Math.max(0,now-anchor.getLong("began"))));
         JSONObject log=new JSONObject().put("schema",1).put("owner","phone").put("key",anchor.getString("key"))
                 .put("positionMs",work).put("workMs",work).put("restMs",0).put("pausedMs",0)
                 .put("steps",new JSONArray().put(new JSONObject().put("exerciseId",anchor.getString("exerciseId")).put("setId",anchor.getString("setId"))
@@ -324,6 +326,32 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
             if (frame == null || !frame.optBoolean("active") || plan == null || !key.equals(plan.optString("key"))) return false;
             t.put("state", state); save(db, frame); db.setTransactionSuccessful(); return true;
         } finally { db.endTransaction(); }
+    }
+
+    /** A separate revision fences stale transport snapshots without invalidating pending set receipts. */
+    synchronized JSONObject setWorkoutPause(JSONObject input,long monotonic,boolean running)throws JSONException {
+        String id=input.optString("workoutId");long revision=input.optLong("pauseRevision");
+        if(id.isEmpty()||revision<1||revision>9007199254740991L)throw new IllegalArgumentException("invalidWorkoutPause");
+        SQLiteDatabase db=getWritableDatabase();db.beginTransaction();
+        try{
+            JSONObject frame=current(db);
+            if(frame==null||!frame.optBoolean("active")||!id.equals(frame.optString("workoutId")))return null;
+            if(revision<frame.optLong("pauseRevision"))throw new IllegalStateException("staleWorkoutPause");
+            boolean paused=input.optBoolean("workoutPaused");
+            if(revision==frame.optLong("pauseRevision")&&paused!=frame.optBoolean("workoutPaused"))throw new IllegalStateException("staleWorkoutPause");
+            if(revision>frame.optLong("pauseRevision")){
+                if(paused&&!frame.optBoolean("workoutPaused"))frame.put("resumeTimerOnContinue201",running);
+                JSONObject anchor=frame.optJSONObject("manualAnchor162");
+                if(anchor!=null&&PROCESS.equals(anchor.optString("process"))){
+                    if(paused&&!anchor.optBoolean("paused201"))anchor.put("priorWorkMs201",anchor.optLong("priorWorkMs201")+Math.max(0,monotonic-anchor.optLong("began")));
+                    anchor.put("paused201",paused).put("began",monotonic);
+                }
+                frame.put("workoutPaused",paused).put("pauseRevision",revision);
+                if(input.optJSONArray("activeIntervals")!=null)frame.put("activeIntervals",new JSONArray(input.getJSONArray("activeIntervals").toString()));
+                save(db,frame);
+            }
+            db.setTransactionSuccessful();return frame;
+        }finally{db.endTransaction();}
     }
 
     synchronized void suspendCommands(boolean value) {

@@ -70,6 +70,7 @@ internal fun WearHomeDashboard(
             delay(1000L - now % 1000L)
         }
     }
+    val saveStatus=LocalSaveSync.current
     val model = wearHomeDashboardState(home, active, closure, health, enabled, now)
     val theme = home?.theme ?: WearHomeTheme.DEFAULT
     val onPrimary = {
@@ -279,7 +280,7 @@ internal fun WearHomeDashboard(
                         )
                 } else {
                     HomeFitText(
-                        model.subtitle,
+                        saveStatus?.let { wearSaveLabel(it.phase) } ?: model.subtitle,
                         Modifier.fillMaxWidth().height(10.dp),
                         8f,
                         HomeMuted,
