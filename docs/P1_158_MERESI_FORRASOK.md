@@ -18,7 +18,18 @@ Feladat: [#158](https://github.com/fuloplevente1998/TrainPilot/issues/158). Alap
 
 Meglévő `health-workout-energy.cjs`: külön edzés-, aktív- és nyugalmi energiát is tartalmazó kalória, aktív időablakok/éjfél, hiányzó kalória. Meglévő `phase6-journal-media-health-42-43.cjs`: nyitott napló, scroll és frissítés megőrzése 320/360/390/412 px méreten. A Node-forrásválasztó teszt HU/EN/DE/RO szöveget, nullát, invalid pulzust, tényleges provider/origin metaadatot ellenőriz.
 
-**CI és APK:** a teljes telefonos GitHub Actions gate lefutása után kerül ide a pontos commit, CI, SHA-256 és letöltési azonosító. A jelen dokumentum nem állít fizikai mérési elfogadást.
+## Ellenőrzött tesztbuild — 2026. október 14.
+
+- Fejlesztési PR: [#196, draft](https://github.com/fuloplevente1998/TrainPilot/pull/196).
+- APK forrása: `c800b4ee49ba2aeb566eab3cba347349c5a784d7`; verzió **1.3.4 /2730**.
+- [Teljes telefonos gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38557899870): **140/140 Node-csomag, 93/93 Chromium-csomag, natív unit tesztek és aláírt APK-build sikeres**.
+- [Quick Validation](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38557899869) és [Performance Baseline](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38557896097): sikeres.
+- [APK + forrás + ellenőrzőösszegek](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38557899870/artifacts/11891970699). Az Actions artifact 14 napig elérhető; a forráscommit és a hash tartós azonosító.
+- APK SHA-256: `17ec80ee73ce6e9b86b6679a32025d7a76671efc701a4fbd8bcbf6d5fd7cc2e5`; **5817681 bájt**.
+- Eredeti tanúsítvány SHA-256: `4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688`. A csomag kriptográfiai aláírása, package/verzió, sourceCommit, forrás-archívum, becsomagolt webes fájlok és érintett natív források külön ellenőrizve.
+
+Az APK a fenti kódcommitból készült; a későbbi átadási dokumentáció commitjai nem változtatják meg az alkalmazás forrását. [Gépi buildbizonylat](builds/2026-10-14-p1-158.json). **Fizikai mérési elfogadás még nincs**; az órán továbbra is a készülékesen elfogadott `9b94a10` APK használható.
+
 
 ## Készülékes elfogadás
 
