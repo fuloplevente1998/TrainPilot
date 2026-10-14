@@ -1,6 +1,16 @@
 # TrainPilot — fejlesztési állapot
 
-## Aktuális P1 kör — #158 (2026. október 14.)
+## Elfogadott #158, meglévő #159 és következő P1 — 2026. október 14.
+
+A felhasználó 2026. október 14-én a `c800b4e` telefonos tesztbuild #158 működését elfogadta: **„#158 rendben, mehetünk tovább, de elvileg a #159 is készen van már.”** A visszajelzésből nem következtetünk külön 45 perces próba elvégzésére. Verzió marad **1.3.4 /2730**, Wear `9b94a10` változatlan.
+
+A #159 alapfunkciója már a mainben megvalósított: `b35a567` (korlátos offline Mini Napló) és `d7a6e2e` (mérési előzmények), későbbi kerek kijelzős szövegtördeléssel és a #158 stabil késői frissítésével. A legutóbbi 8 kanonikus telefonos edzés, kész sorozatok/súly/ismétlés, elérhető oldalankénti idő/táv és külön Wear/telefonos mérés olvasható; nincs órás naplószerkesztés vagy második edzéstörténet. Az időtartam és mérési forrás a részletekben látszik. A jelen kör nem építi meg újra ezt a funkciót.
+
+Ellenőrzés: `tests/wear-journal-resync.cjs` most is sikeres (újraszinkron, cache-vesztés, sikertelen küldés/újrapróbálás, külön 4/2 kcal, UTF-8 keret); meglévő 8 `WatchMiniJournalTest` és a hosszú nevek/tördelés Wear UI-próbája. [Main Wear release](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38553667882) és [66 kerek UI-teszt](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38553668063) sikeres. A Wear teljes fája byte szerint megegyezik az elfogadott `9b94a10` forrásával. A #159-re ebben a körben nem állítunk új, külön készülékes próbát.
+
+**Következő valódi P1 feladat: #191 → #163.** A #191 a helyi mentést, Data Layer-átadást és a telefon által ténylegesen visszaigazolt mentést külön mutatja. A meglévő lezárási visszaigazolást és parancsbizonylatokat kell felhasználni, párhuzamos mentési rendszer nélkül. A #158 elfogadása és a #159 megvalósított állapota alapján a következő kör a #191 felmérése/fejlesztése; verzióemelés vagy új release nincs automatikusan engedélyezve.
+
+## Előző P1 fejlesztési kör — #158 (a készülékes elfogadás előtt)
 
 A #195 mainre került (`cac8937`), a készülékesen elfogadott #162/#157 lezárva. A jóváhagyott folytatás első feladata a **#158**, külön `fix/158-health-source-provenance` ágon, a friss mainből. Utána #159 → #191 → #163 következik.
 
@@ -45,8 +55,8 @@ Ellenőrzött: 140 Node-csomag, 92 Chromium-csomag, teljes natív release gate-e
 | --- | --- | --- |
 | **P0 – kritikus** | [#162](https://github.com/fuloplevente1998/TrainPilot/issues/162) | **Elkészült, készülékesen elfogadva — #195** |
 | **P0 – kritikus** | [#157](https://github.com/fuloplevente1998/TrainPilot/issues/157) | **Elkészült, készülékesen elfogadva — #195** |
-| **P1 – magas** | [#158](https://github.com/fuloplevente1998/TrainPilot/issues/158) | TrainPilot Wear és Health Connect mért adatainak forráshű megjelenítése |
-| **P1 – magas** | [#159](https://github.com/fuloplevente1998/TrainPilot/issues/159) | Wear Mini Napló bővítése, hitelesített edzés- és mérési adatok |
+| **P1 – magas** | [#158](https://github.com/fuloplevente1998/TrainPilot/issues/158) | **Készülékesen elfogadva — #196** |
+| **P1 – magas** | [#159](https://github.com/fuloplevente1998/TrainPilot/issues/159) | **Meglévő megvalósítás ellenőrizve; nincs újrafejlesztés** |
 | **P1 – magas** | [#191](https://github.com/fuloplevente1998/TrainPilot/issues/191) | Órás helyi mentés, függő szinkron, visszaigazolás és hibakezelés egyértelmű állapotai |
 | **P1 – magas** | [#163](https://github.com/fuloplevente1998/TrainPilot/issues/163) | Telefonos GPS-útvonalpontok rögzítése és naplótérkép |
 | **P2 – közepes** | [#188](https://github.com/fuloplevente1998/TrainPilot/issues/188) | Utolsó sorozatrögzítés biztonságos visszavonása |
