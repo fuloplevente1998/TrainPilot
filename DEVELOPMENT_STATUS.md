@@ -1,10 +1,12 @@
 # TrainPilot — fejlesztési állapot
 
-## 2026-10-14 — P0 lezárás, #199 integráció és következő P1 GPS-térkép
+## 2026-10-14 — #199 main, #191/#200 lezárva, P1 folytatás: #163
 
-A felhasználó a korábbi **#162 / #157 P0** kör lezárását ismét megerősítette; ezek már a mainen vannak (#195). A [#199](https://github.com/fuloplevente1998/TrainPilot/pull/199) közös P1 integrációra jóváhagyta a release gate-et és a mainre kerülést, valamint a **#191 mentési/szinkron** és **#200 pihenőkihagyási** Issue-k lezárását a sikeres integráció után. A #201 közös szüneteltetés ugyanennek a kódágnak a része; a készüléken visszaigazolt, hogy a telefonos explicit kilépés az órás edzést is megállítja. Az órás önálló folytatás **külön #202 P2 fejlesztés**, nem része a #201 hibajavításnak.
+**Main integráció:** [#199](https://github.com/fuloplevente1998/TrainPilot/pull/199) egyesítve (`442b366`); a #191 órás mentés/szinkron és a #200 kihagyott pihenő felhasználói kérésre lezárva. A #201 explicit telefonos kilépéskor közös mérési/óra-szüneteltetés készülékes részpróbája sikeres; #201 nyitva marad a teljes regressziós/készülékes ellenőrzésig. Az órás önálló edzésátvétel a külön [#202](https://github.com/fuloplevente1998/TrainPilot/issues/202) P2 terv része. A korábbi P0 #162/#157 már #195-tel mainre került, újraépíteni nem kell.
 
-**Integrációs elvárás:** csak a friss main dokumentációját (#197, #202) megtartó forrás, megfelelő telefonos és Wear CI/release gate, egyetlen kanonikus edzésnapló és változatlan **1.3.4 /2730** verzió. A jelen dokumentációs bejegyzés nem igazolja előre a kapuk eredményét vagy az Issue-k lezárását. Ezen kör után a következő P1 [#163 — telefonos GPS-útvonalrögzítés és térképes napló](https://github.com/fuloplevente1998/TrainPilot/issues/163), külön feat ág és PR; az önálló órás GPS [#193](https://github.com/fuloplevente1998/TrainPilot/issues/193) P2 marad.
+**Release gate:** a #199 branch `7302d54` forrásán a telefonos [release gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38612855231) sikeres; a Wear `2ce7288` forrásán [release gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38587157455), újabb `9d17e7d` tesztkódján [kerek UI](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38598720507) sikeres. A köztes újabb commitok csak teszt/CI fájlokat változtattak, alkalmazáskódot nem. **A main aktuális commitjára a friss telefonos és Wear gate-et külön is le kell futtatni/igazolni**; korábbi eredmény nem azonos a main gate elfogadásával. A főági verzió továbbra is **1.3.4 /2730**, új felhasználói kiadás nincs önkényesen bejelentve.
+
+**Következő P1:** [#163 – telefonos GPS-útvonalpontok mentése és térképes edzésnapló](https://github.com/fuloplevente1998/TrainPilot/issues/163). A meglévő `DistanceTrackingService` eddig csak idő/táv és GPS-státusz összegzést ment; útvonalpont és térkép később, külön feat ág/PR, valós pontokkal, pontos szakaszhatárokkal és biztonságos törléssel. Az önálló órás GPS #193 továbbra is P2, nincs duplikált helyadatfolyam.
 
 ## Új P2 Wear fejlesztés — #202: órás edzésátvétel és offline folytatás (2026. október 14.)
 
