@@ -1,5 +1,16 @@
 # TrainPilot — fejlesztési állapot
 
+## Új P2 fejlesztési igény — #197 (2026. október 14.)
+
+**Jóváhagyott igény, tervezés alatt:** [#197 – Választható edzésstílusok és progressziós módok](https://github.com/fuloplevente1998/TrainPilot/issues/197) (**P2 / enhancement**). Az október 14-i négy edzésnapló-képernyőkép alapján a felhasználó külön, kézzel választható progressziós megközelítéseket kért (HIT és egyéb módszerek); nem automatikus programátállítást vagy jelen körös kódmódosítást.
+
+- **Edzésstílus** és **progressziós szabály** külön beállítás: normál hipertrófia / biztonságos, alacsony volumenű HIT-inspirált mód; illetve dupla progresszió / lineáris terhelésnövelés / RIR- és trendalapú Coach. Később haladó volumenorientált mód is bővíthető.
+- A Coach az elérhető súlylépcsőt, 3–4 releváns edzés trendjét, RIR-t, fáradtságot, saját testsúlyos nehezítési utat és a programcélokat figyelembe véve **előnézettel és felhasználói jóváhagyással** ajánljon változást. A HIT mód nem jelent automatikus bukásig edzést vagy kényszerített ismétlést.
+- Az új mód nem írhatja felül a meglévő programokat/naplókat; a váltás visszavonható, a mobilos és Wear-adatokkal kompatibilis. A sorozat-, ismétlés- és kg-volumenmutatókat a célhoz illően, egymástól elkülönítve kell értelmezni.
+- **Kapcsolódás:** [#128](https://github.com/fuloplevente1998/TrainPilot/issues/128) korábbi adaptív A/B és Coach-alapelvei újrafelhasználandók; a #197 azoktól eltérő, felhasználó által választható módokat ad.
+- **Prioritás / sorrend:** új P2 backlog, nem előzi a már kijelölt **#191 → #163** P1 feladatokat. Az alábbi „2026. október 13-i” prioritási táblázat történeti pillanatkép; az új #197 annak dátum utáni kiegészítése.
+- **Állapot:** Issue rögzítve; implementáció, teszt, APK vagy release még nincs; meglévő **1.3.4 /2730** verzió változatlan. Fejlesztés csak külön ág → tesztek → PR → kifejezett jóváhagyás szerint indulhat.
+
 ## Elfogadott #158, meglévő #159 és következő P1 — 2026. október 14.
 
 A felhasználó 2026. október 14-én a `c800b4e` telefonos tesztbuild #158 működését elfogadta: **„#158 rendben, mehetünk tovább, de elvileg a #159 is készen van már.”** A visszajelzésből nem következtetünk külön 45 perces próba elvégzésére. Verzió marad **1.3.4 /2730**, Wear `9b94a10` változatlan.
