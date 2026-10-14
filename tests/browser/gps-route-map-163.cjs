@@ -58,8 +58,14 @@ const server=http.createServer((req,res)=>{
   assert.deepEqual(fixture,{hasRoute:true,refs:1});
   const row=page.locator('details[data-tp152-history-key="gps-163-workout"]');
   await row.locator('summary').click();
-  await page.waitForFunction(()=>document.querySelector('.tp163-route-button'));
-  assert.equal(await page.locator('.tp163-route-button').count(),1,'Only GPS history should have route');
+  await page.waitForTimeout(150);
+  const debug=await page.evaluate(()=>({
+    tab:state.tab,entries:document.querySelectorAll('details[data-tp152-history-key]').length,
+    hydrated:document.querySelectorAll('.tp3-combined-history-body[data-tp3-hydrated="true"]').length,
+    routes:document.querySelectorAll('.tp163-route-button').length,
+    refs:TrainPilotGpsMap163.references(history().find(x=>x.id==='gps-163-workout')).length
+  }));
+  assert.equal(debug.routes,1,'Lazy journal route button: '+JSON.stringify(debug));
   assert.equal(await page.evaluate(()=>window.__routeCalls),0,'Never retrieve coordinates when scrolling log');
 
   await page.locator('.tp163-route-button').click();
