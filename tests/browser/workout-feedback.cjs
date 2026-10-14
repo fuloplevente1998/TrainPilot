@@ -28,7 +28,8 @@ const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://local
  await page.locator('details.history').first().evaluate(node=>node.open=true);
  await page.getByRole('button',{name:'Edzésértékelés · Kicsit nehéz'}).click();
  assert.equal(await page.locator('.tp122-feedback').count(),1,'saved suggestion remains reachable from Journal');
- await page.getByRole('button',{name:'4 Kicsit nehéz'}).click();
+ await page.getByRole('button',{name:'Most kihagyom'}).click();
+ assert.equal(await page.evaluate(()=>history()[0].feedback.effort),'challenging','leaving a Journal review preserves the saved answer');
  assert.equal(await page.evaluate(()=>tp140Occurrence({workout:history()[0],exercise:history()[0].exercises[0]},{}).effort),'challenging');
  assert.equal(await page.evaluate(()=>tp140Occurrence({workout:history()[0],exercise:{effort:'light',sets:[]}},{}).effort),'light','exercise answer has priority');
  const watch=await page.evaluate(async()=>{

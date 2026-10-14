@@ -16450,7 +16450,11 @@ var TrainPilotWorkoutFeedback=window.TrainPilotWorkoutFeedback=(function(){
   if(valid(options?.wearFeedback)&&accept(id(h),options.wearFeedback)){go('home');return;}
   db.set(key,{workoutId:id(h),started:h.started});feedbackScreen(h.started);
  }
- function skip(){if(accept(String(state.feedbackStarted||''),{skipped:true},'phone',state.feedbackEditing===true)){go('home');void window.TrainPilotWearSync?.syncHomeNow?.({force:true});}}
+ function skip(){
+  // Leaving a Journal review is not an instruction to delete its saved answer.
+  if(state.feedbackEditing===true){go('home');return;}
+  if(accept(String(state.feedbackStarted||''),{skipped:true},'phone')){go('home');void window.TrainPilotWearSync?.syncHomeNow?.({force:true});}
+ }
  function historyButton(h,index){
   const l=rf232L(),title={hu:'Edzésértékelés',en:'Workout feedback',de:'Trainingsbewertung',ro:'Evaluare antrenament'}[rf212Lang()]||'Edzésértékelés';
   const answer=l[h.feedback?.effort]||({easy:l.easy,right:l.good,hard:l.hard,pain:l.pain}[h.feedback?.rating])||'';
