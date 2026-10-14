@@ -5,6 +5,10 @@ import org.json.JSONObject
 internal fun projectPhoneAutomatic(current: WearWorkout,value: JSONObject,a: WearAutomatic): WearWorkout {
     var workout=current.copy(automation=a,restEndAt=0)
     if(value.optBoolean("stopped"))return workout
+    // A finished phone clock is idle, not paused. Older phone builds publish
+    // paused=!running even for completion; never offer Resume for that clock.
+    if(a.phase=="complete"&&a.remainingMs==0L&&!a.interrupted)
+        workout=workout.copy(automation=a.copy(paused=false))
     val rows=value.optJSONArray("steps") ?: return workout
     val currentStep=value.optInt("stepIndex")
     var selected=current.currentExercise
@@ -25,5 +29,6 @@ internal fun projectPhoneAutomatic(current: WearWorkout,value: JSONObject,a: Wea
     if(a.phase=="complete"&&value.optBoolean("autoAdvance")&&workout.exercises.getOrNull(selected)?.sets?.all { it.done }==true)
         selected=(selected+1).coerceAtMost(workout.exercises.lastIndex)
     val next=WearAutomaticEngine.next(workout.copy(currentExercise=selected))
-    return workout.copy(currentExercise=selected,automation=if(a.phase=="complete"&&next!=null)a.copy(phase="ready")else a)
+    val normalized=workout.automation ?: a
+    return workout.copy(currentExercise=selected,automation=if(a.phase=="complete"&&next!=null)normalized.copy(phase="ready")else normalized)
 }

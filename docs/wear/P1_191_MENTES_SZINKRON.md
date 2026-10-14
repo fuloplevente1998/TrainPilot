@@ -15,6 +15,14 @@ Friss main: `20fe5ceaf992bc2658be7422d5c3f45b9c060ace`, a készülékesen elfoga
 - Kis státuszsor a főmenüben és edzésmenüben, külön görgethető „Mentés és szinkron” oldal, biztonságos újrapróbálás. A főoldal meglévő alcímhelye lezárt edzésnél mutatja a státuszt. Az edzésvezérlés és alsó időzítő mérete/helye megmarad. Magyar, angol, német és román státuszszövegek a rendszer nyelvét követik.
 - A régi, csak azonosítót tartalmazó telefonos bizonylatból nem gyártunk kitalált sikeres nyugtát; ezért a #191 próbához mindkét APK frissítendő. A telefon korábbi natív/JS műveleti protokollja és a Mini Napló kanonikus története megmarad.
 
+## Teszt közben jelzett automata-regresszió — #200
+
+A felhasználó telefonon indított edzésben órán rögzített, majd telefonon kihagyta a pihenőt; a következő gyakorlatnál az óra Folytatásban maradt. A #191 előtti mainben is létező eltérést hibázó Wear modell- és natív telefonos teszttel reprodukáltuk: a befejezett clock nem fut, ezért paused jelzést kapott; a natív pillanatkép emellett az előző, már kész gyakorlatot mutathatta.
+
+Javítás: a befejezett, nem megszakított clock nem paused; a lezárult ismétléses pihenő pillanatképe a terv tényleges következő gyakorlatát mutatja. A Wear a korábbi telefonos complete/paused jelzést is normalizálja. A tényleges szünet/megszakítás, időalapú munkafázis, mért idő és az ismétlés kézi rögzítése megmarad. Telefonos OK nélkül kipróbálandó a következő sorozat és következő gyakorlat rögzítése, telefonon és órán kihagyott pihenővel is.
+
+A [#200](https://github.com/fuloplevente1998/TrainPilot/issues/200) a #199 draft PR-ban készül a #191 mellett. A korábbi `0d4e9d7`/`9f7ff75` APK-kat ehhez az új körhöz nem adjuk át; új telefonos és órás build készül a javítással. Készülékes elfogadás nincs.
+
 ## Ellenőrzés / következő lépés
 
 Helyi 140 telefonos regresszió, 7 új Wear állapotmodell-/nyelvi teszt és 6 telefonos outbox/bizonylat JVM-teszt sikeres. Új tényleges Wear outbox-írási hiba, duplikált nyugta és körkijelzős státusz/újrapróbálás próbák a GitHub emulátoros gate-ben. A két natív release gate és a körkijelzős teszt eredménye az átadáskor kerül ide; APK és készülékes elfogadás még nincs.
@@ -29,7 +37,7 @@ Rövid készülékes próba: órás sorozatrögzítés, telefon nélkül helyi/v
 - `WearClosureStore` már külön `pending`/`saved`/`discarded`/`error` lezárási eredményt használ, a beérkező eredményt `commandId` alapján illeszti. Ez újrafelhasználandó működés; a #158/#162 által elfogadott befejezés, értékelés, törlési védelem és automata idővonal megmarad.
 - A Mini Napló a telefon kanonikus történetének offline nézete. Egy órán helyben megőrzött, még vissza nem igazolt parancs nem kerülhet bele második naplóbejegyzésként.
 
-## Következő fejlesztési kör
+## Eredeti munkaterv és ellenőrzési feltételek
 
 1. **Állapottábla és bizonylat:** stabil edzés-/sorozat-/parancsazonosítóval külön helyi mentés, szállításra várás, átadás és valódi telefonos nyugta. Térképezzük fel a meglévő natív és JS parancsbizonylatokat; ne épüljön párhuzamos mentési protokoll.
 2. **Tartós átmenetek:** helyi írási hiba, sikertelen küldés, időtúllépés, kapcsolat-visszatérés és újraindítás. A sikeres Data Layer-küldés önmagában nem lehet „Szinkronizálva”. A sikertelen tartós írást nem jelezhetjük „Órán mentve” állapotként.

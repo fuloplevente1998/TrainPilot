@@ -1,10 +1,12 @@
 # TrainPilot — fejlesztési állapot
 
-## Aktuális munka — #191 implementáció és ellenőrzés
+## Aktuális munka — #191 szinkron és #200 kihagyott pihenő
 
 A #158 / #196 mainre került (`20fe5ce`), a felhasználó elfogadta, a #158 lezárva. A #159 meglévő Mini Napló-megvalósítása forrás és regresszió alapján ellenőrizve; a GitHub-jegy megvalósítottként lezárva, nem indul újrafejlesztés.
 
 A következő P1 **#191 → #163**. A `feat/191-wear-save-sync-status` ágon megvalósítva az ellenőrzött helyi írás, Data Layer-átadástól külön telefonos tartós nyugta, eredeti commandId-val újrapróbálás és kompakt, négy nyelvű órás állapotoldal. A meglévő outbox/bizonylattár és kanonikus napló használatos. [Adatút, tesztek és készülékes próba](docs/wear/P1_191_MENTES_SZINKRON.md).
+
+A teszt közbeni új #200 jelzés külön reprodukálva: telefonon kihagyott pihenő után az óra befejezett időzítőt próbál folytatni és az előző kész gyakorlatot mutathatja. A natív telefonos állapot és Wear-projekció korrigálva; következő sorozat/gyakorlat, természetes lejárat, időalapú kör és valódi szünet ellenőrzése készül a #199-ben.
 
 **A teljes CI és az új telefonos/Wear tesztpár átadása még folyamatban; készülékes elfogadás nincs.** Main `20fe5ce` és verzió 1.3.4 /2730 változatlan. Helyi 140 telefonos regresszió, 7 Wear modellteszt és 6 telefonos bizonylattesztes JVM-próba sikeres.
 

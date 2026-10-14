@@ -53,6 +53,42 @@ public class PhoneWorkoutExecutionServiceTest {
         assertEquals(1,store.pendingEvents("workout",1,0).length());
         org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idleFor(Duration.ofSeconds(90));assertEquals("complete",IntervalTimerService.snapshot(context).getString("phase"));
         assertTrue(IntervalTimerService.armed("workout",1)); // Ready for the next explicit repetition recording.
+        assertFalse("Natural rest completion also returns to recording",PhoneWorkoutExecution.display(context).getJSONObject("automation").getBoolean("paused"));
+    }
+    @Test public void skippedRepetitionRestUnlocksWatchRecordingWithoutPhoneConfirmation() throws Exception { skippedRest(false); }
+    @Test public void skippedRestBetweenExercisesUnlocksTheNextExerciseWithoutPhoneConfirmation() throws Exception { skippedRest(true); }
+    private void skippedRest(boolean nextExercise) throws Exception {
+        if(nextExercise) {
+            JSONObject frame=store.snapshot(),first=frame.getJSONArray("exercises").getJSONObject(0);
+            JSONObject second=new JSONObject(first.toString()).put("id","row")
+                .put("sets",new org.json.JSONArray().put(first.getJSONArray("sets").getJSONObject(1)));
+            first.getJSONArray("sets").remove(1);frame.getJSONArray("exercises").put(second);
+            store.prepare(frame,frame.getLong("executionRevision"));
+        }
+        arm();PhoneWorkoutExecution.execute(context,command());
+        ShadowLooper.idleMainLooper(30000);
+        JSONObject before=IntervalTimerService.snapshot(context);
+        assertEquals("rest",before.getString("phase"));
+        IntervalTimerService.command(context,before.getString("key"),"skipRest");
+        assertEquals("complete",IntervalTimerService.snapshot(context).getString("phase"));
+        JSONObject display=PhoneWorkoutExecution.display(context).getJSONObject("automation");
+        assertEquals("ready",display.getString("phase"));
+        assertFalse("A completed rest must expose recording, not an unusable Resume action",display.getBoolean("paused"));
+        assertEquals(nextExercise?1:0,PhoneWorkoutExecution.display(context).getInt("currentExercise"));
+        JSONObject next=command().put("commandId","record-b-after-skip").put("setId","b").put("exerciseId",nextExercise?"row":"press");
+        assertEquals("applied",PhoneWorkoutExecution.execute(context,next).getString("status"));
+        assertEquals(2,store.pendingEvents("workout",1,0).length());
+    }
+    @Test public void skippedTimedRestContinuesTheWorkPhaseWithoutInventingRepetitions() throws Exception {
+        JSONObject frame=store.snapshot();frame.getJSONArray("exercises").getJSONObject(0).put("repUnit","mp");store.prepare(frame,1);
+        arm();PhoneWorkoutExecution.execute(context,command().put("action","automaticControl").put("value","start"));
+        ShadowLooper.idleMainLooper(5000);JSONObject timer=IntervalTimerService.snapshot(context);
+        assertEquals("rest",timer.getString("phase"));
+        IntervalTimerService.command(context,timer.getString("key"),"skipRest");
+        JSONObject display=PhoneWorkoutExecution.display(context);
+        assertEquals("work",display.getJSONObject("automation").getString("phase"));
+        assertFalse(display.getJSONObject("automation").getBoolean("paused"));
+        assertFalse(store.snapshot().getJSONArray("exercises").getJSONObject(0).getJSONArray("sets").getJSONObject(0).getBoolean("done"));
     }
     private void unilateralRest(String unit) throws Exception {
         JSONObject frame=store.snapshot();frame.getJSONArray("exercises").getJSONObject(0).put("repUnit",unit);store.prepare(frame,1);

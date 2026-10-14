@@ -93,10 +93,14 @@ final class PhoneWorkoutExecution {
                 boolean interrupted = "interrupted".equals(transition.optString("state")) || timer.optBoolean("interrupted");
                 boolean running = timer.optBoolean("running") && !interrupted;
                 long remaining = timer.optLong("remainingMs");
+                boolean restComplete=plan.optBoolean("restOnly") && "complete".equals(timer.optString("phase"));
+                // The last recorded exercise stays in the execution frame while
+                // resting. Once rest ends, display the plan's actual next target.
+                if(restComplete&&!interrupted)value.put("currentExercise",transition.getInt("currentExercise"));
                 JSONObject phaseStep = plan.getJSONArray("steps").getJSONObject(timer.optInt("stepIndex"));
                 value.put("automation", new JSONObject().put("owner", "phone").put("enabled", true).put("key", plan.getString("key"))
                         .put("phase", interrupted ? "ready" : plan.optBoolean("restOnly") && "complete".equals(timer.optString("phase")) ? "ready" : timer.optString("phase"))
-                        .put("paused", !running).put("remainingMs", remaining).put("deadlineAt", running ? System.currentTimeMillis() + remaining : 0)
+                        .put("paused", interrupted || !running && !"complete".equals(timer.optString("phase"))).put("remainingMs", remaining).put("deadlineAt", running ? System.currentTimeMillis() + remaining : 0)
                         .put("workSeconds", phaseStep.getInt("work")).put("restSeconds", "rest".equals(timer.optString("phase")) && plan.optInt("initialRest") > 0 && timer.optLong("elapsedMs") < plan.optLong("initialRest") * 1000 ? plan.getInt("initialRest") : phaseStep.getInt("rest"))
                         .put("phaseNumber", timer.optLong("phaseNumber")).put("targetExercise", transition.getInt("currentExercise"))
                         .put("vibration", false).put("interrupted", interrupted));

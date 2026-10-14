@@ -195,6 +195,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         val before=real.getString("pending","[]")
         val damagedId=java.util.UUID.randomUUID().toString()
         val damaged=JSONObject().put("commandId",damagedId).put("workoutId",damagedId).put("action","healthSummary")
+        synchronized(WearCommandOutbox) {
         try {
             real.edit().putString("pending","unreadable").commit()
             assertEquals(0L,WearCommandOutbox.enqueue(context,damaged))
@@ -202,11 +203,22 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             assertEquals("unreadable",real.getString("pending",""))
             assertFalse(WearCommandOutbox.acceptReceipt(context,path,receipt.toString()))
         } finally { real.edit().putString("pending",before).commit() }
+        }
         WearCommandOutbox.retry(context,damagedId)
         val restored=org.json.JSONArray(real.getString("pending","[]"))
         val queued=(0 until restored.length()).mapNotNull { restored.optJSONObject(it) }.single { it.optString("commandId")==damagedId }
         val recovered=JSONObject(receipt.toString()).put("commandId",damagedId).put("workoutId",damagedId).put("sequence",queued.getLong("sequence"))
         assertTrue(WearCommandOutbox.acceptReceipt(context,WearCommandOutbox.RECEIPT_PREFIX+damagedId,recovered.toString()))
+    }
+
+    @Test
+    fun skippedPhoneRestReturnsToAnEnabledRecordingButton() {
+        val actions=mutableListOf<String>()
+        compose.setContent { Watch { Fixture("phone-rest-finished",automaticCommands=actions) } }
+        compose.onNodeWithContentDescription("Automata folytatása").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Sorozat rögzítése").assertIsDisplayed().assertIsEnabled().performClick()
+        assertEquals(listOf("record"),actions)
+        screenshot("phone-rest-finished-recording")
     }
 
     @Composable
@@ -872,7 +884,10 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                     listOf(exercise),
                     "A nap",
                 ).let { initial ->
-                    if (route.startsWith("automatic-")) initial.copy(timerOwner="watch",
+                    if (route=="phone-rest-finished") projectPhoneAutomatic(initial,
+                        JSONObject().put("restOnly",true).put("steps",org.json.JSONArray()),
+                        WearAutomatic(enabled=true,owner="phone",phase="complete",paused=true,key="phone-rest",remainingMs=0))
+                    else if (route.startsWith("automatic-")) initial.copy(timerOwner="watch",
                         automation=WearAutomatic(enabled=true,key="layout-auto",phase=if(route=="automatic-rest")"rest" else "ready",
                             paused=route=="automatic-rest",remainingMs=if(route=="automatic-rest")115000 else 0,
                             workSeconds=30,restSeconds=if(route=="automatic-rest")120 else 5,rounds=3,anchorMs=android.os.SystemClock.elapsedRealtime()))
@@ -940,7 +955,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         }
         val request = remember {
             mutableStateOf<String?>(
-                if (route == "timed-workout" || route.startsWith("automatic-")) "workout"
+                if (route == "timed-workout" || route.startsWith("automatic-") || route=="phone-rest-finished") "workout"
                 else if (route == "active-home") "home" else route
             )
         }
@@ -966,7 +981,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             onStartQuick = {},
             onAddQuick = {},
             onChange = { _, _ -> },
-            onComplete = {},
+            onComplete = { if(route=="phone-rest-finished")automaticCommands?.add("record") },
             onPrevious = {},
             onNext = {},
             onSelectExercise = {},
