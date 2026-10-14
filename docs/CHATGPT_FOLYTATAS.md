@@ -1,14 +1,14 @@
 # TrainPilot — folytatási leírás új ChatGPT-beszélgetéshez
 
-## P1 folytatás — #158, készülékes tesztre vár
+## Elfogadott #158, meglévő #159 és következő P1 — 2026. október 14.
 
-A P0 #195 mainre került (`cac8937`), a #162/#157 készülékesen elfogadva és lezárva. A következő kör a **#158**, külön `fix/158-health-source-provenance` ágon, [#196 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/196).
+A felhasználó 2026. október 14-én a `c800b4e` telefonos tesztbuild #158 működését elfogadta: **„#158 rendben, mehetünk tovább, de elvileg a #159 is készen van már.”** A visszajelzésből nem következtetünk külön 45 perces próba elvégzésére. Verzió marad **1.3.4 /2730**, Wear `9b94a10` változatlan.
 
-Elkészült a telefonos Napló hiteles olvasási csatorna/alkalmazáseredet jelölése, natív forrásmetaadat megőrzése, stabil edzésazonosítóhoz kötött forrásválasztás és késői frissítés. A Samsung hiányzó adatainak HC-pótlása megtartja a tényleges providerét, az aktív időablakok eltérő csatornái megmaradnak. A nyitott napló és kézi választás megmarad, hibás olvasás nem rejti el a korábbi érvényes adatot.
+A #159 alapfunkciója már a mainben megvalósított: `b35a567` (korlátos offline Mini Napló) és `d7a6e2e` (mérési előzmények), későbbi kerek kijelzős szövegtördeléssel és a #158 stabil késői frissítésével. A legutóbbi 8 kanonikus telefonos edzés, kész sorozatok/súly/ismétlés, elérhető oldalankénti idő/táv és külön Wear/telefonos mérés olvasható; nincs órás naplószerkesztés vagy második edzéstörténet. Az időtartam és mérési forrás a részletekben látszik. A jelen kör nem építi meg újra ezt a funkciót.
 
-**Ellenőrzött telefonos APK: `c800b4e`, 1.3.4 /2730; 140 Node + 93 Chromium csomag, teljes natív gate, Quick és Performance sikeres.** Pontos hash/CI/letöltés és készülékes lista: [P1 átadási lap](P1_158_MERESI_FORRASOK.md). Wear-változás nincs, az elfogadott `9b94a10` használható.
+Ellenőrzés: `tests/wear-journal-resync.cjs` most is sikeres (újraszinkron, cache-vesztés, sikertelen küldés/újrapróbálás, külön 4/2 kcal, UTF-8 keret); meglévő 8 `WatchMiniJournalTest` és a hosszú nevek/tördelés Wear UI-próbája. [Main Wear release](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38553667882) és [66 kerek UI-teszt](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38553668063) sikeres. A Wear teljes fája byte szerint megegyezik az elfogadott `9b94a10` forrásával. A #159-re ebben a körben nem állítunk új, külön készülékes próbát.
 
-**#158 ellenőrzés: először rövid készülékes mérési és késői szinkronpróba.** Nincs 45 perces technikai minimum; a hosszabb összehasonlítás a következő rendes edzésben utóellenőrzés, és nem blokkolja a további fejlesztés előkészítését. A #158 nyitott, a #196 draft; ez a kör nem main-egyesítés vagy release. A következő prioritás #159 → #191 → #163; a hosszabb próba nem új fejlesztési előfeltétel. Új beszélgetésben a GitHub aktuális mainjét és a #196 állapotát ellenőrizd, ne indulj régi P0 tesztágból.
+**Következő valódi P1 feladat: #191 → #163.** A #191 a helyi mentést, Data Layer-átadást és a telefon által ténylegesen visszaigazolt mentést külön mutatja. A meglévő lezárási visszaigazolást és parancsbizonylatokat kell felhasználni, párhuzamos mentési rendszer nélkül. A #158 elfogadása és a #159 megvalósított állapota alapján a következő kör a #191 felmérése/fejlesztése; verzióemelés vagy új release nincs automatikusan engedélyezve.
 
 ## Legfrissebb elfogadott állapot — #195
 
