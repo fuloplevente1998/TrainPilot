@@ -67,4 +67,24 @@ class WearWorkoutTest {
         assertSame(resting, resting.selectExercise(1))
         assertSame(resting, resting.selectExercise(0))
     }
+
+    @Test fun nativeExecutionIdentitySurvivesEncodingAndPendingEdits() {
+        val current=sample().copy(nativeExecutionProtocol=2,generation=42,executionRevision=7)
+        assertEquals(current,WorkoutSnapshotStore.parse(WorkoutSnapshotStore.encode(current).toString()))
+        val incoming=current.copy(revision=2,localSequence=16,executionRevision=8)
+        val preserved=preservePendingWearEdits(current,incoming)
+        assertEquals(current.exercises,preserved.exercises)
+        assertEquals(8L,preserved.executionRevision)
+        assertEquals(42L,preserved.generation)
+    }
+    @Test fun onlySupportedPhoneOwnedCommandsUseNativeExecution() {
+        val current=sample().copy(nativeExecutionProtocol=2,generation=42,executionRevision=7)
+        assertTrue(nativePhoneExecution(current,"automaticControl",current.exercise,"start"))
+        assertFalse(nativePhoneExecution(current,"completeSet",current.exercise,null))
+        val reps=current.exercise!!.copy(repUnit="ism.",measurementType="reps")
+        assertTrue(nativePhoneExecution(current,"completeSet",reps,null))
+        assertFalse(nativePhoneExecution(current,"completeSet",reps.copy(measurementType="distance"),null))
+        assertFalse(nativePhoneExecution(current.copy(timerOwner="watch"),"completeSet",reps,null))
+        assertFalse(nativePhoneExecution(current.copy(nativeExecutionProtocol=0),"completeSet",reps,null))
+    }
 }

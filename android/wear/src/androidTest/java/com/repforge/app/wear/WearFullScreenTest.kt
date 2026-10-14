@@ -14,6 +14,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -52,6 +53,66 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     }
 
     @get:Rule val compose = createComposeRule()
+
+    @Test
+    fun workoutFeedbackAllFiveChoicesAndSkipAreReachableOnRoundScreens() {
+        val answers = mutableListOf<String?>()
+        compose.setContent { Watch { WorkoutFeedbackScreen { answers.add(it) } } }
+        assertFullViewport()
+        WearWorkoutFeedback.choices.forEachIndexed { index, (key, label) ->
+            val caption = "${index + 1} · $label"
+            lazyList().performScrollToNode(hasContentDescription(caption))
+            compose.onNodeWithContentDescription(caption).assertIsDisplayed().performClick()
+            assertEquals(key, answers.last())
+        }
+        lazyList().performScrollToNode(hasContentDescription("Fájdalom / kellemetlenség"))
+        compose.onNodeWithContentDescription("Fájdalom / kellemetlenség").assertIsDisplayed().performClick()
+        assertEquals("pain", answers.last())
+        lazyList().performScrollToNode(hasContentDescription("Most kihagyom"))
+        compose.onNodeWithContentDescription("Most kihagyom").assertIsDisplayed().performClick()
+        assertNull(answers.last())
+        screenshot("workout-feedback-last-choice")
+    }
+
+    @Test
+    fun watchAndPhoneCompletionFeedbackReturnDirectlyHome() {
+        val selected = mutableStateOf("finish")
+        val answers = mutableListOf<String?>()
+        compose.setContent { Watch { key(selected.value) { Fixture(selected.value, feedbackAnswers = answers) } } }
+        compose.onNodeWithContentDescription("Edzés befejezése és mentése").performClick()
+        lazyList().performScrollToNode(hasContentDescription("3 · Pont jó"))
+        compose.onNodeWithContentDescription("3 · Pont jó").assertIsDisplayed().performClick()
+        assertEquals(listOf("good"), answers)
+        compose.onNodeWithTag("wear-home-clock").assertIsDisplayed()
+        compose.onNodeWithText("3 · Pont jó").assertDoesNotExist()
+        compose.runOnIdle { selected.value = "phone-feedback" }
+        lazyList().performScrollToNode(hasContentDescription("4 · Kicsit nehéz"))
+        compose.onNodeWithContentDescription("4 · Kicsit nehéz").assertIsDisplayed().performClick()
+        assertEquals(listOf("good", "challenging"), answers)
+        compose.onNodeWithTag("wear-home-clock").assertIsDisplayed()
+        screenshot("workout-feedback-return-home")
+    }
+
+    @Test
+    fun closureQuestionAndAnswerSurviveReloadAndTerminalRetry() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val id = java.util.UUID.randomUUID().toString()
+        val workout = WearWorkout(1, "p", "Program", "a", "", "2026-10-14T10:00:00Z", id, 0, 60, 0,
+            listOf(WearExercise("press", "Nyomás", "weight", "ism.", "strength", listOf(WearSet(1, "10", "5", true, 0, 0, 0.0)))))
+        val command = JSONObject().put("commandId", id).put("action", "finishWorkout").put("workoutId", id)
+        WearClosureStore.close(context, workout, command)
+        assertTrue(WearClosureStore.load(context)!!.needsFeedback)
+        assertEquals(workout.started, WearClosureStore.load(context)!!.started)
+        WearClosureStore.answer(context, id, WearWorkoutFeedback.answer("hard"))
+        assertFalse(WearClosureStore.load(context)!!.needsFeedback)
+        val retry = WearClosureStore.retry(context)!!
+        assertEquals("hard", retry.getJSONObject("feedback").getString("effort"))
+        WearClosureStore.close(context, workout, command)
+        WearClosureStore.acceptResult(context, JSONObject().put("commandId", command.getString("commandId"))
+            .put("status", "saved").put("feedbackAnswered", true))
+        assertFalse("a phone answer closes the watch question", WearClosureStore.load(context)!!.needsFeedback)
+        WearClosureStore.dismiss(context)
+    }
 
     @Composable
     private fun Watch(content: @Composable () -> Unit) {
@@ -689,8 +750,8 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     }
 
     @Composable
-    private fun Fixture(route: String, liveHealth: State<JSONObject?>? = null, automaticCommands: MutableList<String>? = null) {
-        val set = WearSet(1, "5", "5.5", false, 30, 0, 0.0)
+    private fun Fixture(route: String, liveHealth: State<JSONObject?>? = null, automaticCommands: MutableList<String>? = null, feedbackAnswers: MutableList<String?>? = null) {
+        val set = WearSet(1, "5", "5.5", feedbackAnswers != null, 30, 0, 0.0)
         val exercise =
             WearExercise(
                 "press",
@@ -700,7 +761,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                 "strength",
                 listOf(set),
             )
-        val workout =
+        val workout = remember {
             mutableStateOf<WearWorkout?>(
                 WearWorkout(
                     1,
@@ -715,12 +776,15 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                     0,
                     listOf(exercise),
                     "A nap",
-                )
+                ).let { initial ->
+                    if (route.startsWith("automatic-")) initial.copy(timerOwner="watch",
+                        automation=WearAutomatic(enabled=true,key="layout-auto",phase=if(route=="automatic-rest")"rest" else "ready",
+                            paused=route=="automatic-rest",remainingMs=if(route=="automatic-rest")115000 else 0,
+                            workSeconds=30,restSeconds=if(route=="automatic-rest")120 else 5,rounds=3,anchorMs=android.os.SystemClock.elapsedRealtime()))
+                    else initial
+                }
             )
-        if(route.startsWith("automatic-"))workout.value=workout.value!!.copy(timerOwner="watch",
-            automation=WearAutomatic(enabled=true,key="layout-auto",phase=if(route=="automatic-rest")"rest" else "ready",
-                paused=route=="automatic-rest",remainingMs=if(route=="automatic-rest")115000 else 0,
-                workSeconds=30,restSeconds=if(route=="automatic-rest")120 else 5,rounds=3,anchorMs=android.os.SystemClock.elapsedRealtime()))
+        }
         val quickExercise =
             WatchHomeExercise(
                 "press",
@@ -756,7 +820,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                 ),
                 null,
             )
-        val home =
+        val home = remember {
             mutableStateOf<WatchHomeSnapshot?>(
                 WatchHomeSnapshot(
                     "p",
@@ -770,17 +834,21 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                     listOf(journal),
                     "1.3.4",
                     true,
+                    pendingFeedback = if (route == "phone-feedback") WatchWorkoutFeedback("layout-test", workout.value!!.started) else null,
                 )
             )
-        val closure =
+        }
+        val closure = remember {
             mutableStateOf<WearClosure?>(
                 WearClosure("c", "layout-test", "finishWorkout", "saved", "", 60, 1, 1)
             )
-        val request =
+        }
+        val request = remember {
             mutableStateOf<String?>(
                 if (route == "timed-workout" || route.startsWith("automatic-")) "workout"
                 else if (route == "active-home") "home" else route
             )
+        }
         val health =
             JSONObject()
                 .put("workoutId", "layout-test")
@@ -793,7 +861,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                 .put("maxHeartRate", 110.0)
                 .put("steps", 65)
                 .put("activeDurationSeconds", 60.0)
-        if (route == "quick" || route == "home") workout.value = null
+        if (route == "quick" || route == "home" || route == "phone-feedback") workout.value = null
         TrainPilotWearApp(
             workout = workout,
             home = home,
@@ -808,7 +876,17 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             onNext = {},
             onSelectExercise = {},
             onSkipRest = {},
-            onFinish = {},
+            onFinish = {
+                if (feedbackAnswers != null) {
+                    closure.value = closure.value?.copy(status = "pending", started = workout.value!!.started, needsFeedback = true)
+                    workout.value = null
+                }
+            },
+            onWorkoutFeedback = if (feedbackAnswers == null) null else ({ _, answer ->
+                feedbackAnswers.add(answer)
+                home.value = home.value?.copy(pendingFeedback = null)
+                closure.value = closure.value?.copy(needsFeedback = false)
+            }),
             onDiscard = {},
             onResumeWorkout = {},
             onRetry = {},

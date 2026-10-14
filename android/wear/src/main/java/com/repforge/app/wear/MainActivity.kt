@@ -250,6 +250,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                 onOpenPhone = ::openOnPhone,
                 onRefreshJournal = ::requestHomeSnapshot,
                 onFinish = { closeWorkout("finishWorkout") },
+                onWorkoutFeedback = ::saveWorkoutFeedback,
                 onDiscard = { closeWorkout("discardWorkout") },
                 onRetry = ::retryClosure,
                 onDismissClosure = { if (closure.value?.status in listOf("saved", "discarded")) { WearClosureStore.dismiss(this); closure.value = null } },
@@ -621,6 +622,12 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             .put("workoutId", current.workoutId)
             .put("action", action)
             .put("createdAt", System.currentTimeMillis())
+        if (nativePhoneExecution(current, action, exercise, value)) {
+            command.put("nativeExecutionProtocol", 2).put("generation", current.generation).put("executionRevision", current.executionRevision)
+        }
+        if (action == "automaticControl" && value == "start") {
+            command.put("exerciseId", current.exercise?.id).put("setId", current.currentSet?.setId)
+        }
         if (action == "addQuickExercise") command.put("finalSnapshot",WorkoutSnapshotStore.encode(current))
         if (exerciseIndex != null) command.put("exerciseIndex", exerciseIndex)
         if (exercise != null) command.put("exerciseId", exercise.id)
@@ -652,6 +659,16 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         sendCommand("selectExercise", exerciseIndex = index)
 
         }}
+    }
+
+    private fun saveWorkoutFeedback(pending: WatchWorkoutFeedback, effort: String?) {
+        val command = JSONObject().put("schema", 1).put("commandId", UUID.randomUUID().toString())
+            .put("action", "saveWorkoutFeedback").put("workoutId", pending.workoutId)
+            .put("createdAt", System.currentTimeMillis()).put("feedback", WearWorkoutFeedback.answer(effort))
+        WearCommandOutbox.enqueue(this, command)
+        WearClosureStore.answer(this, pending.workoutId, command.getJSONObject("feedback"))
+        closure.value = WearClosureStore.load(this)
+        WearWorkoutFeedback.markAnswered(this, pending.workoutId)
     }
 
     private fun closeWorkout(action: String) {

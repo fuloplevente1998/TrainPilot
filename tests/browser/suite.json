@@ -300,6 +300,10 @@
     "estimatedSeconds": 5
   },
   {
+    "file": "tests/browser/workout-feedback.cjs",
+    "estimatedSeconds": 5
+  },
+  {
     "file": "tests/browser/wear-sync-recovery.cjs",
     "estimatedSeconds": 12
   },
@@ -358,5 +362,9 @@
   {
     "file": "tests/browser/wear-automatic-162.cjs",
     "estimatedSeconds": 15
+  },
+  {
+    "file": "tests/browser/automatic-distance-scope-162.cjs",
+    "estimatedSeconds": 8
   }
 ]

@@ -1,12 +1,22 @@
 # TrainPilot — fejlesztési állapot
 
+## Készülékesen elfogadott P0 kör — #195
+
+A felhasználó 2026. október 14-én a telefonos `b9dbf7b` / órás `9b94a10` tesztpárt készülékesen elfogadta: **„Minden szuper, menjen mainre, zarjuk az issuet :)”**. A #195 main-egyesítése és a kapcsolódó #162/#157 lezárása jóváhagyva. Verzió mindkét appban **1.3.4 /2730**.
+
+Elkészült a telefonos natív háttérrögzítés, az egységes munka/pihenő/szünet időnapló, az órás indítás és mérés szinkronja, a kész sorozat javítása/visszavonása és a félbehagyott edzés végleges törlése. Telefonon és órán is öt fokozatú edzésértékelés után közvetlen kezdőlap; tartós, ismétlés ellen védett válasz, meglévő gyakorlatértékelések elsőbbségével.
+
+Ellenőrzött: 140 Node-csomag, 92 Chromium-csomag, teljes natív release gate-ek, 66 kerek Wear-próba és a valódi Android–WebView háttérvezérlési teszt. Mindkét APK eredeti aláírással és ellenőrzött forrás/hash/verzió adatokkal készült. [Buildek és elfogadás](docs/P0_KESZULEKES_ELFOGADAS_162_157.md).
+
+**Folytatás:** a #195 egyesítése után friss `origin/main`-ből készül új feladatág. A tesztág és a korábbi munkafák történeti források. Következő jóváhagyott prioritás: #158, #159, #191, majd #163 térkép; a részletes terv és a Samsung Health energiapontszám/Coach kutatás a [Work-útmutatóban](docs/WORK_FEJLESZTESI_UTMUTATO.md) marad. Az alábbi korábbi naplók az akkori állapotot őrzik.
+
 ## Kötelező közös munkaprotokoll — 2026. október 13-tól
 
 **Prioritás:** A következő fejlesztési és hibajavítási feladatok előtt ezt a munkarendet követjük. A `DEVELOPMENT_STATUS.md` a központi állapotnyilvántartás, a GitHub Issues az egyedi feladatok nyilvántartása; a kettőt szinkronban kell tartani.
 
-1. **Mikrolépések:** Az összetett munkát előzetesen 5–10 átlátható részfeladatra bontjuk. Egy körben csak **egy** részfeladatot végzünk el.
-2. **Kötelező jóváhagyási pont:** Minden részfeladat után megállunk; a következő csak a felhasználó kifejezett „Mehet tovább” / „Folytasd” jóváhagyásával kezdődik. A jóváhagyás nem terjed ki automatikusan a mainre emelésre vagy kiadásra.
-3. **Rövid válaszok:** Legfeljebb 200–300 szó vagy 40–50 sor kód válaszonként, fókuszált eredménnyel és a szükséges hivatkozásokkal. A nagyobb változtatásokat kisebb, áttekinthető egységekre bontjuk.
+1. **Átlátható körök:** Az összetett munkát előzetesen 5–10 átlátható részfeladatra bontjuk. A felhasználó későbbi kérésére az összefüggő részfeladatok közös, nagyobb fejlesztési körben végezhetők; a P0 körben a 6–7., majd a 8–9. lépés együtt halad.
+2. **Kötelező jóváhagyási pont:** Minden közösen kijelölt kör után megállunk; a következő csak a felhasználó kifejezett „Mehet tovább” / „Folytasd” jóváhagyásával kezdődik. A jóváhagyás nem terjed ki automatikusan a mainre emelésre vagy kiadásra.
+3. **Rövid válaszok:** Legfeljebb 200–300 szó válaszonként, fókuszált eredménnyel és a szükséges hivatkozásokkal. A kódszerkesztést nem bontjuk mesterséges 40–50 soros darabokra; az összefüggő változtatások és ellenőrzéseik egy körben készülnek el.
 4. **Állapotjelzés:** Minden kör végén kötelező a `[Aktuális lépés: X/Y | Állapot: Jóváhagyásra vár]` sor, a tényleges lépés és státusz alapján.
 5. **GitHub-követés:** Felméréskor először a main, ez a fájl, a részletes fejlesztési terv és a meglévő Issues/PR-ek aktuális állapotát vizsgáljuk. Meglévő feladatot nem duplikálunk. Az új fejlesztés vagy hiba saját Issue-t, elfogadási feltételeket és indokolt prioritást kap.
 6. **Biztonságos változtatás:** Célzott fejlesztési ág → ellenőrzés/tesztek → PR → felhasználói jóváhagyás → main. A tesztelt és a fizikai eszközön elfogadott állapot külön szerepel. Verziószámot, release-t és APK-t nem változtatunk önkényesen.
@@ -17,12 +27,12 @@
 
 ## Jóváhagyott GitHub-prioritások — 2026. október 13.
 
-**12 nyitott fejlesztési Issue.** A P0–P3 besorolás a GitHub Issue-címkéken is szerepel. A sorrend a tervezett munkavégzés prioritását jelzi, **nem** azt, hogy a feladat már elkészült vagy készülékesen elfogadott.
+**2026. október 13-i prioritási pillanatkép: akkor 12 nyitott fejlesztési Issue.** A #162/#157 P0 kör azóta elkészült és készülékesen elfogadott. A P0–P3 besorolás a GitHub Issue-címkéken is szerepel. A sorrend a tervezett munkavégzés prioritását jelzi, **nem** azt, hogy a feladat már elkészült vagy készülékesen elfogadott.
 
 | Prioritás | Issue | Fejlesztés / következő teendő |
 | --- | --- | --- |
-| **P0 – kritikus** | [#162](https://github.com/fuloplevente1998/TrainPilot/issues/162) | Automata edzés készülékes elfogadása, telefonos natív háttérrögzítés, egységes munka/pihenő/szünet naplózás |
-| **P0 – kritikus** | [#157](https://github.com/fuloplevente1998/TrainPilot/issues/157) | Gyors edzésből órás appindítás és tényleges háttérmérés készülékes visszaellenőrzése |
+| **P0 – kritikus** | [#162](https://github.com/fuloplevente1998/TrainPilot/issues/162) | **Elkészült, készülékesen elfogadva — #195** |
+| **P0 – kritikus** | [#157](https://github.com/fuloplevente1998/TrainPilot/issues/157) | **Elkészült, készülékesen elfogadva — #195** |
 | **P1 – magas** | [#158](https://github.com/fuloplevente1998/TrainPilot/issues/158) | TrainPilot Wear és Health Connect mért adatainak forráshű megjelenítése |
 | **P1 – magas** | [#159](https://github.com/fuloplevente1998/TrainPilot/issues/159) | Wear Mini Napló bővítése, hitelesített edzés- és mérési adatok |
 | **P1 – magas** | [#191](https://github.com/fuloplevente1998/TrainPilot/issues/191) | Órás helyi mentés, függő szinkron, visszaigazolás és hibakezelés egyértelmű állapotai |
@@ -44,6 +54,82 @@
 
 Frissítve: **2026. október 13.** A felhasználói verzióleírások négy családot használnak: **1.0, 1.1, 1.2, 1.3**. A buildazonosítók, APK-k, tagek és release-ek megmaradnak.
 
+
+## P0 fejlesztési kör: #162 → #157 (2026. október 13., készülékes elfogadásra vár)
+
+### Készülékes visszajelzés — #162 megjelenítési javítás
+
+A `c613a75` telefonos próbájában (#2417–2418) a felhasználó telefonról indított gyorsedzés, automata mód és telefonos sorozatrögzítés mellett háttérvezérlési hibát jelentett egykezes evezésnél és sima fekve nyomásnál is. A #162 nem elfogadott. A `/kar` és `/láb` ismétléses egységek JS/native útvonalhiánya javítandó; ez **önmagában nem magyarázza** a sima ismétléses gyakorlat hibáját. Az új tesztbuild a natív előkészítés/összevezetés/élesítés hibáját külön, személyes adatot nem tartalmazó `E162-...` kóddal jelzi. A teljes készülékes ok csak ezzel az eredménnyel igazolható. A pihenő alatt alvó felület, változatlan oldalankénti ismétlés és duplikált parancs elleni védelem célzott tesztje megmarad; pontos APK/CI a [P0 átadási lapon](docs/P0_KESZULEKES_ELFOGADAS_162_157.md).
+
+A `859a6a1` telefonos tesztbuild felhasználói próbájában (#2412 kép) az automata módnál súlyzós gyakorlatokra is megjelent a beltéri/GPS/lépésmérési blokk, az alsó állapotszöveg levágódott. Ez **nem készülékes elfogadás**, a #162 továbbra is nyitott.
+
+Az ok reprodukálva: a WearSet az opcionális távolságot nullával küldi, a telefon korábbi besorolása pedig a mező puszta jelenlétét távolsági gyakorlatnak vette. A javítás elkülöníti az üres/nullás szinkronmezőt a tényleges távolsági típustól, helyreállítja a korábban tévesen jelölt aktív piszkozatot, és nem kapcsol üres GPS-szolgáltatásállapotot időalapú erőgyakorlathoz. A súly/ismétlés/kész jelölés és a valódi futás/görkorcsolya/GPS funkció megmarad. A #2415 képes visszajelzés alapján az automata állapot az alsó panel teljes szélességét használja: rövid szöveg az „Automata mód” mellett, hosszabb szöveg szükség szerint tördelve, kényszerített második sor nélkül. A visszaszámláló az alsó két gomb között marad.
+
+Az új böngészős regresszió a régi forráson három téves mérési panelt reprodukált, a javításon sikeres. Négy nyelv, 320/393 px, meglévő hibás piszkozat, szinkronból jövő nullás mező, valódi távolsági aktivitás és a szokásos automata időzítés ellenőrizve. A teljes telefonos gate a #195 ágon készíti a javító APK-t; a végső commit/hash/letöltés a [P0 átadási lapban](docs/P0_KESZULEKES_ELFOGADAS_162_157.md) frissül. Órás natív változás nincs; a korábbi ellenőrzött órás APK tovább használható.
+
+### Folytatás — 8–9/10: #157 közös ellenőrzése és tesztbuild
+
+A felhasználó jóváhagyta a közös gate- és tesztbuild-kört. A #157 jelenlegi telefonos gyorsindítása előbb publikálja az azonosított edzést, majd egyszer nyitja meg az órát. A forrásellenőrzés szerint az órás indítás megvárja az edzésazonosítót és a kért revíziót; a szenzorindítás látható Activityből, engedélyezett foreground szolgáltatásban történik. Egy korábbi edzés cache-e nem jogosít fel új mérés indítására.
+
+Az aktuális gyorsindítás runtime-regressziója a #162 új natív vezérlésével együtt is ellenőrizve: előkészítés → vezérlés élesítése → egyező generáció/revízió publikálása → egyszeri óranyitás. Sikertelen natív előkészítésnél nincs élesítés, publikálás vagy óranyitás; sikeres közeli újrapróbálás után az eredeti függő átadás egyszer végrehajtható. A meglévő lemondási, piszkozat-, offline-, órás eredet- és óranyitási hibatesztek megmaradnak.
+
+Az első közös telefonos gate a JSON-visszatöltési fixture-ben várakozva időkorlátba futott: a teszt a már aszinkron natív restore-védelem miatt még meg nem nyílt új fájlválasztó helyett az előző callbacket oldotta fel. A fixture most megvárja az aktuális választót; a teljes visszatöltési próba célzott Chromium-futása sikeres. A kapcsolódó natív előkészítés is az órás parancszár teljes hatálya alá került, ezért restore nem indulhat két aszinkron preflight lépés közé. Erre külön runtime-regresszió készült; egyik ellenőrzést sem távolítottuk el a teljes gate-ből.
+
+A közös forrás a #195 **`fix/p0-162-157-safe-wear-sync`** ágára kerül. Ezen fut a telefonos Release Gate, Wear Release Gate, Wear kerek kijelzős UI és a PR teljesítményellenőrzése. A signing a meglévő GitHub Secretsből történik; verzió **1.3.4 /2730**. Az APK-k a branch workflow artifactjai, nem publikált release-ek. A pontos tesztpár, commit, SHA-256, gate-eredmény és készülékes próbamenet a [P0 készülékes átadási lapban](docs/P0_KESZULEKES_ELFOGADAS_162_157.md) szerepel, amely a build után frissül. A #195 draft; main és kiadás változatlan, #162 és #157 nyitott.
+
+### Folytatás — 6–7/10: egységes időnapló és #162 regresszió
+
+A felhasználó kérésére a 6. és 7. lépés közös fejlesztési kör. Az új forrás GitHub-tesztága **`work/p0-162-native`**; a #195 eredeti `fix/` ágát és a main-t még nem módosítjuk. Ezen az ágon a Quick Validation és az új **P0 native validation (no APK)** fut. A második ellenőrzés a valódi Android-projekt telefonos és Wear unit tesztjeit fordítja/futtatja; nem készít és nem publikál APK-t, nem indítja a közös release gate-et.
+
+A `IntervalTimeLedger` külön menti a tényleges munka-, pihenő- és kézi szünetidőt. A kihagyott pihenő csak a menetrend pozícióját lépteti, nem kap mért időt. A natív checkpoint a teljes időnaplót, az aktuális órát és az időalapú kész sorozatot egy SQLite-tranzakcióban menti. Csak a kész sorozatok kapnak importálandó eseményt; az egy másodperces checkpointok nem növelik korlátlanul az eseménysort. Így egy alvó WebView mellett befejezett időalapú gyakorlat után is fogadható a következő ismétléses rögzítés.
+
+A telefonos kézi rögzítés a támogatott ismétléses, automata edzésben ugyanarra a natív parancsútra kerül, mint az órás rögzítés. A kézi munkafázis a foreground vezérlés/előző pihenő végétől a tényleges rögzítésig számolható; új folyamatban az előző horgony nem használható ismeretlen kimaradt időre. A telefonos explicit javítás/visszavonás külön, revízióval és előző értékekkel ellenőrzött API-t használ; a szokásos pillanatkép továbbra sem írhatja felül a mért kész sorozatot.
+
+Az önálló Wear automata ugyanazt a `schema:1`, `key`, `owner`, `workMs`, `restMs`, `pausedMs`, `positionMs` időadat-szerződést exportálja. A telefon kulcsonként kumulatív hozzájárulásként menti a `session.automaticTime162` mezőbe; a duplikált snapshot nem adja hozzá kétszer. Böngészős időzítésnél a tartalék megoldás ugyanezt a formát használja. A korábbi időalapú `reps` mező konvencióját nem használjuk újra összegzéshez: a külön időnapló az egységes adatforrás.
+
+Pihenő közbeni telefonos javítás vagy ismételt vezérlés-előkészítés nem indít kézi munkafázist; a pihenő nem számolódhat munkaidőként is. Egy korábbi kész sorozat javítása megőrzi az éppen végzett kézi sorozat időhorgonyát. A telefonos rögzítési útvonal a modern Capacitor plugin-regiszterrel is működik, a sikertelen bridge-hívás pedig nem állítja készre a sorozatot.
+
+**Végső GitHub-ellenőrzés — `1fff2ecd465369b7f7dd9ecf795a2820f00805de`:** a [Quick Validation](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38402839749) **140 sikeres / 0 hibás** Node-tesztcsomaggal zárult. Az [APK nélküli natív Gradle-validáció](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38402839765) a teljes telefonos modulban **145**, a Wear modulban **97** unit tesztet futtatott: **0 hiba, 0 kihagyás**. A tényleges telefonos Java- és Wear Kotlin-forrás is fordult. Helyben az új P0 alap 41 natív Robolectric tesztje és 32 Wear modelltesztje sikeres volt; ezek a részhalmazok nem adódnak hozzá a teljes CI-tesztszámokhoz. A kizárólag Markdown-fájlokat módosító későbbi push nem ismétli meg a natív Gradle-futást.
+
+**Készülékes elfogadás nem történt.** A GPS-tulajdonos külön előkészítése marad a korábban kijelölt hatókörben, a nem támogatott mérések meglévő útvonala megmarad. A #162 és #157 nyitott, verzió **1.3.4 /2730**. Következő, külön jóváhagyandó közös kör: #157, majd a megállapodott release gate és tesztbuild. Az alábbi 4–5/10 bejegyzések a korábbi lépések akkori helyi állapotát őrzik; a mostani forrás már a fenti GitHub-tesztágon található.
+
+### Helyi folytatás — 5/10: natív parancsbekötés és űrlapfüggetlen indítás
+
+A helyi `local/p0-162-native` ág a #195 `e528d1e` forrásából és a 4/10-es `3fff44c` alapból folytatódik. A GitHub sorrendjének alapja továbbra is a #194 `0b37ced` commitja: **#162 → #157**.
+
+- A `WearCommandListenerService` a 2-es protokollú ismétlésrögzítést és új telefonos idővonal indítását már a natív végrehajtónak adja át. Stabil gyakorlat-/sorozat-ID, generáció és külön végrehajtási revízió azonosítja a célt. A régi órás protokoll és a nem támogatott mérések a korábbi útvonalon maradnak.
+- A rögzítés, a bizonylat és az előkészített következő idővonal egy SQLite-tranzakcióban mentődik. A terv állapota `pending`, `started` vagy `interrupted`; az ismételt kézbesítés nem indít második órát és nem nullázza az eltelt időt. A gyakorlat saját pihenője felülírja az általános beállítást.
+- A telefonon látható edzés előre indítja az automata vezérlőt a meglévő foreground szolgáltatásban. Háttérből új foreground szolgáltatás indítására nem támaszkodunk. Az értesítésből leállítható, az edzés lezárásakor megszűnik; az előkészített vezérlés felső időkorlátja 24 óra. Megszakadás után nincs automatikus utólagos munka vagy rezgéssorozat.
+- A JavaScript előbb összevezeti a natív eredményt, egy mentésben tárolja a piszkozatot és az eseménykurzort, majd nyugtáz és publikál. A nyitott szerkesztőt és élő sorozatreferenciákat megtartja. Újabb, ütköző telefonos értéket nem ír felül; sikertelen mentésnél nincs nyugta. Restore és telefonos befejezés körül natív írási védelem működik.
+- A `startTimed` a mentett intervallumbeállítást használja; nem keres HTML-űrlapot. Az óra csak a támogatott, telefon által vezérelt műveletekhez adja az új protokollmezőket.
+
+**Helyi ellenőrzés:** 34 Android 33 Robolectric/JUnit teszt a rögzítési tárolóra, tervekre és valódi natív szolgáltatáslogikára; 12 Wear JVM modell-/protokollteszt; 139 Node-regressziós csomag, köztük a teljes telefonos runtime új összevezetési és űrlapfüggetlen indítási próbái. A Java integráció API 35 osztályokkal és a valódi Capacitor/AndroidX/Play Services API-kkal fordult. A helyi izolált szolgáltatásharness generált erőforráskötéseket és az érintetlen GPS-szolgáltatás helyettesítőjét használja: ez **nem Gradle APK-build, fizikai Data Layer vagy készülékes elfogadás**.
+
+**A 6/10-es lépésben folytatandó:** munka/pihenő/szünet teljes natív időnaplója, időalapú befejezések tartós beolvasztása, explicit telefonos javítás/visszavonás és azok ütközéskezelése. A már rögzített értékeket a jelenlegi előkészítési API nem engedi egyszerű pillanatkép-felülírással módosítani. Amíg az időalapú eredmény nincs összevezetve, a natív vezérlő nem engedi egy új menetrenddel felülírni. A GPS-tulajdonos előkészítése továbbra is külön feladat; a távolsági edzés meglévő útvonala marad használatban.
+
+**GitHub / kiadás:** mindez egyelőre helyi, ellenőrizhető fejlesztési részeredmény. A #195 továbbra is draft, a remote fej `e528d1e`; a main, a kiadások és az **1.3.4 /2730** verzió nem változik. Nincs kódpush, közös Release Gate vagy új APK. A #162 és #157 nem zárható a mostani teszteredményből.
+
+### Előző helyi lépés — 4/10: natív rögzítési alap (`3fff44c`)
+
+A #195 `e528d1e` forrásából külön helyi munkafában készült a `PhoneWorkoutExecutionStore` és `PhoneWorkoutRecording`. A külön SQLite-adatbázis egy tranzakcióban menti a sorozatot és az idempotens parancsbizonylatot; generáció/revízió és stabil sorozat-ID védi a célt. A JavaScript által később beolvasandó események külön nyugtázhatók, a parancsbizonylat akkor is megmarad. A már rögzített sorozat értékeit egy elavult pillanatkép nem módosíthatja. A restore-zárolás, lezárt edzés és hiányzó protokollmezők védelme is része az alapnak.
+
+**Hatókör:** kézi, ismétléses sorozat natív adatrögzítési alapja. A 4/10-es lépés végén a szolgáltatás/órás parancs/WebView még nem volt bekötve; a pihenő- és idővonalindítás, időalapú/távolsági sorozat és egységes időnapló későbbi lépés. Ez még nem oldja meg a #162 készülékes háttérműködését, és nem zárja a #157-et.
+
+**Ellenőrzés:** 18 sikeres helyi Robolectric/JUnit teszt Android 33 környezetben, az új forrásokat Java 17 célra fordítva. Valós SQLite-tranzakció visszagörgetése injektált írási hibánál, újranyitás előtti/utáni parancsismétlés, párhuzamos duplikáció, részleges eseménynyugtázás, stale pillanatkép, értékfelülírás, restore-zár, generációváltás és valódi nulla vizsgálva. A helyi futtató nem a teljes Android Release Gate; APK nem készült.
+
+A kód és ez az állapotfeljegyzés egyelőre helyi commit; a #195 remote fejét, main-t és verziót ez a lépés nem módosítja. A kódpush a már rögzített közös gate-szakaszban történik.
+
+
+A közös `fix/p0-162-157-safe-wear-sync` munkában a következő **részjavítások** készültek; ezek önmagukban nem jelentik a két Issue végleges teljesítését:
+
+- **#162, natív adatbiztonság:** a telefon órás parancssora nem dobhatja el észrevétlenül a legrégebbi, még nem nyugtázott sorozatrögzítést, amikor eléri a 64 elemnyi keretet. A Data Layer tétel nyitva marad, és a kapacitás felszabadulása után újra felolvasható. A nyugtázás és duplikációvédelmi jelző tartós mentést használ; sikertelen tartós nyugtázásnál a Data Layer tétel nem törlődik. Robolectric regressziók készültek a telítődésre, újrafelvételre és az automata állapotpillanatkép cseréjére.
+- **#157, gyors edzés:** a meglévő telefonos inline gyorsindításban ellenőrizendő az előbb snapshot, utána egyszeri óranyitás sorrend. A célzott Node-regresszió kiegészült sikertelen küldés/gyors helyreállás és visszautasított óranyitás tesztjével; nincs új óranyitás puszta polling miatt.
+
+**Még nyitott:** #162-ben a fenti helyi natív integráció teljes körű ellenőrzése, az időalapú eredmények és a munka/pihenő/szünet egységes natív naplója; #157-ben a tényleges gyorsedzés-indítás és friss mérés ellenőrzése fizikai órán. A #162 és #157 Issue egyelőre **nyitva marad**.
+
+**Készülékes elfogadás (mindkét feladathoz):** új telefonos gyors edzés → óra app egyszer nyílik → friss HR/kcal indul → telefon és óra lezárva mérés folytatódik → sorozatrögzítés, pihenő, kapcsolatvesztés/visszatérés → egyetlen naplóbejegyzés és külön eredetű mért adatok. Ismételjük meg tervezett edzéssel, önálló órás és önálló telefonos indítással; rögzítsük a tényleges eredményeket az Issue-kban.
+
+**Kiadási szabály:** a felhasználó kérésére a közös release gate eredményét és az új teszt-APK-kat **csak a #162 és #157 végrehajtása után** szabad átadni; verziószámot előzetes jóváhagyás nélkül nem változtatunk. A CI-eredmény és a fizikai készülékes elfogadás külön igazolandó.
 
 ## Mentési javítás — #180
 

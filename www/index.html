@@ -1020,7 +1020,8 @@
   const refreshText=typeof tp149T==='function'?tp149T('common.refresh'):'Frissítés';
   const tools='<div class="tp3-history-aux"><button class="btn secondary block" type="button" onclick="event.stopPropagation();calendarIntent('+originalIndex+')">'+esc(calendarText)+'</button><button class="btn danger block tp155-history-delete" type="button" onclick="event.stopPropagation();tp3DeleteHistoryWorkout(\''+esc(key)+'\')">'+esc(tx().deleteWorkout)+'</button></div>';
   const health='<div class="rf-history-health-panel" data-rf-history-health-panel="'+originalIndex+'"><button type="button" class="rf-history-health-toggle" aria-expanded="true" onclick="event.stopPropagation();rfHistoryHealthToggle('+originalIndex+')"><div class="tp3-health-toggle-copy"><strong>'+esc(healthText)+'</strong><span class="small muted"> • '+esc(rfHistoryHealthWindow(x))+'</span></div><span class="rf-history-health-chevron" aria-hidden="true">›</span></button><div class="rf-history-health-body"><div class="rf-history-health" data-rf-history-health="'+originalIndex+'">'+rfHistoryHealthHtml(originalIndex)+'</div><button type="button" class="btn secondary block rf-history-health-refresh" onclick="event.stopPropagation();healthFromHistory('+originalIndex+')">'+esc(refreshText)+'</button></div></div>';
-  return tp3WorkoutSummaryHtml(x,key)+tools+health+rf130PhotoSection(x,key);
+  const feedback=window.TrainPilotWorkoutFeedback?.historyButton(x,originalIndex)||'';
+  return tp3WorkoutSummaryHtml(x,key)+feedback+tools+health+rf130PhotoSection(x,key);
  };
  window.tp3EnsureHistoryBody=function(el,originalIndex,key){
   const body=el?.querySelector?.(':scope > .tp3-combined-history-body');if(!body||body.dataset.tp3Hydrated==='true')return body;

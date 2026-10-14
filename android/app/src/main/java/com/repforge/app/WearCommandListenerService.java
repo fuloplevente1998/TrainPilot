@@ -13,6 +13,10 @@ import org.json.JSONObject;
 public class WearCommandListenerService extends WearableListenerService {
     static final String COMMAND_PATH_PREFIX = "/trainpilot/workout-command/";
 
+    private void queue(JSONObject command, android.net.Uri uri) {
+        try { WearCommandQueueStore.enqueue(this,command,uri.toString()); }
+        catch(Exception ignored) { /* Retain the DataItem for scanning after storage recovers. */ }
+    }
     @Override public void onMessageReceived(MessageEvent event) {
         if (!WearWorkoutHandoff.REQUEST.equals(event.getPath()) || event.getData().length > 4096) return;
         try {
@@ -47,7 +51,25 @@ public class WearCommandListenerService extends WearableListenerService {
                 String raw = DataMapItem.fromDataItem(event.getDataItem()).getDataMap().getString("command");
                 if (raw == null || raw.isEmpty()) continue;
                 JSONObject command=new JSONObject(raw);
-                if("automaticControl".equals(command.optString("action"))&&!WearCommandQueueStore.seen(this,command.optString("commandId"))){
+                if(WearCommandQueueStore.seen(this,command.optString("commandId"))){Wearable.getDataClient(this).deleteDataItems(event.getDataItem().getUri());continue;}
+                if(PhoneWorkoutExecution.compatible(command)){
+                    android.net.Uri uri=event.getDataItem().getUri();
+                    new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
+                        try{
+                            JSONObject result=PhoneWorkoutExecution.execute(this,command);
+                            if(java.util.Arrays.asList("applied","duplicate").contains(result.optString("status"))&&WearCommandQueueStore.ack(this,command.optString("commandId")))
+                                Wearable.getDataClient(this).deleteDataItems(uri);
+                            else queue(command,uri);
+                        }catch(Exception error){queue(command,uri);}
+                    });continue;
+                }
+                if("automaticControl".equals(command.optString("action"))){
+                    android.net.Uri uri=event.getDataItem().getUri();
+                    new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
+                    if(WearCommandQueueStore.seen(this,command.optString("commandId"))){
+                        Wearable.getDataClient(this).deleteDataItems(uri);
+                        return;
+                    }
                     JSONObject timer=IntervalTimerService.snapshot(this),active=ActiveWorkoutStore.current(this);
                     String action=command.optString("value");
                     if(active!=null&&command.optJSONObject("automation")!=null&&active.optString("workoutId").equals(command.optString("workoutId"))&&
@@ -56,11 +78,15 @@ public class WearCommandListenerService extends WearableListenerService {
                         try {
                             long expectedPhase=command.optJSONObject("automation").optLong("phaseNumber");
                             IntervalTimerService.command(this,timer.optString("key"),expectedPhase==timer.optLong("phaseNumber")?action:"status");
-                            WearCommandQueueStore.ack(this,command.optString("commandId"));
-                            Wearable.getDataClient(this).deleteDataItems(event.getDataItem().getUri());continue;
+                            // Keep the DataItem available for replay if a durable receipt fails.
+                            if(WearCommandQueueStore.ack(this,command.optString("commandId")))
+                                Wearable.getDataClient(this).deleteDataItems(uri);
+                            return;
                         }
                         catch(Exception ignored){}
                     }
+                        queue(command,uri);
+                    });continue;
                 }
                 WearCommandQueueStore.enqueue(this, command, event.getDataItem().getUri().toString());
             } catch (Exception ignored) {

@@ -1,0 +1,61 @@
+name: P0 native validation (no APK)
+on:
+  workflow_dispatch:
+  push:
+    branches: ['work/p0-162-native']
+    paths-ignore: ['**/*.md']
+permissions:
+  contents: read
+concurrency:
+  group: p0-native-${{ github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run sync
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - name: Native phone and Wear unit tests
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :app:testDebugUnitTest :wear:testDebugUnitTest
+      - name: Summarize native test results
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from xml.etree import ElementTree
+          for module in ('app', 'wear'):
+              reports = list(Path(f'android/{module}/build/test-results/testDebugUnitTest').glob('TEST-*.xml'))
+              assert reports, f'Missing {module} test reports'
+              totals = dict.fromkeys(('tests', 'failures', 'errors', 'skipped'), 0)
+              for report in reports:
+                  suite = ElementTree.parse(report).getroot()
+                  for field in totals:
+                      totals[field] += int(suite.get(field, 0))
+              print(f'{module}: {totals}', flush=True)
+              assert totals['tests'] > 0 and totals['failures'] == 0 and totals['errors'] == 0
+          PY
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: P0-native-test-reports-${{ github.run_id }}
+          path: |
+            android/app/build/reports/tests/
+            android/app/build/test-results/
+            android/wear/build/reports/tests/
+            android/wear/build/test-results/
+          if-no-files-found: warn
+          retention-days: 7

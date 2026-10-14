@@ -1,10 +1,17 @@
 # TrainPilot — folytatási leírás új ChatGPT-beszélgetéshez
 
+## Legfrissebb elfogadott állapot — #195
+
+A felhasználó 2026. október 14-én a telefonos `b9dbf7b` / órás `9b94a10` tesztpárt készülékesen elfogadta: **„Minden szuper, menjen mainre, zarjuk az issuet :)”**. A #195 main-egyesítése és a kapcsolódó #162/#157 lezárása jóváhagyva. Verzió mindkét appban **1.3.4 /2730**.
+
+Folytatás a #195-öt tartalmazó friss `origin/main`-ből, új feladatágon. Aktuális forrás és szabályok: [Work-útmutató](WORK_FEJLESZTESI_UTMUTATO.md); pontos APK/hash/CI: [P0 átadási lap](P0_KESZULEKES_ELFOGADAS_162_157.md). Következő prioritás #158/#159/#191, majd #163 térkép. Az alábbi régebbi tesztpár és jegyzetek történeti adatok.
+
+
 Frissítve: **2026. október 13.** Ez a fájl bemásolható egy új beszélgetésbe. A funkciók részletes, továbbvezetendő terve a [WEAR_OS_FEJLESZTESI_TERV.md](wear/WEAR_OS_FEJLESZTESI_TERV.md); az aktuális állapot a [DEVELOPMENT_STATUS.md](../DEVELOPMENT_STATUS.md). A folytatáskor először a GitHub aktuális mainjét és a nyitott issue-kat kell ellenőrizni, mert később változhatnak.
 
 
 
-## Aktuális, átadott tesztpár — main #179 + #181
+## Korábbi, átadott tesztpár — main #179 + #181
 
 A közös kód mainre egyesítve: `3411f5506fa7e9d6197d6f891f2709bcb26e8f5f`. A két APK forrása ennek része; a telefonos forrás megegyezik a mainbe egyesített telefonnal, a Wear-forrás a #181-ben változatlan. A verzió **1.3.4 /2730**, a korábbi kiadások aláírásával frissíthetők.
 

@@ -1,0 +1,66 @@
+name: P0 Phone WebView Background Regression
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['fix/p0-162-157-safe-wear-sync']
+    paths: ['www/app.js', 'android/app/**', '.github/workflows/phone-execution-ui.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phone-execution-ui-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  phone-webview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - run: npm ci
+      - run: npm run sync
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Build test APKs
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :app:assembleDebug :app:assembleDebugAndroidTest
+      - name: Run actual WebView and native execution regression
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
+          script: |
+            adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+            adb shell pm grant com.repforge.app android.permission.POST_NOTIFICATIONS
+            adb shell input keyevent KEYCODE_WAKEUP
+            adb shell wm dismiss-keyguard
+            cd android && ./gradlew --no-daemon :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.repforge.app.PhoneWorkoutWebViewTest
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: Phone-WebView-${{ github.run_id }}-${{ github.sha }}
+          path: |
+            android/app/build/reports/androidTests/
+            android/app/build/outputs/androidTest-results/
+          if-no-files-found: warn
+          retention-days: 14

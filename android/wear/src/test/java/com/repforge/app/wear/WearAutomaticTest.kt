@@ -55,7 +55,11 @@ class WearAutomaticTest {
     @Test fun pauseDoesNotCountPausedTimeOrReplayARecord() {
         val work=WearAutomaticEngine.ready(enable(fixture(true)),1000,1)
         val paused=WearAutomaticEngine.pause(work,2000,1)
-        assertEquals(1000,paused.automation!!.remainingMs);assertEquals(paused,WearAutomaticEngine.tick(paused,100000,1).workout)
+        assertEquals(1000,paused.automation!!.remainingMs);val sampled=WearAutomaticEngine.tick(paused,100000,1).workout
+        assertEquals(paused.exercises,sampled.exercises)
+        assertEquals(paused.automation!!.remainingMs,sampled.automation!!.remainingMs)
+        assertEquals(98000L,sampled.automation.pausedMs)
+        assertEquals(paused.automation.workMs,sampled.automation.workMs)
         val resumed=WearAutomaticEngine.resume(paused,100000,1)
         assertEquals(1,WearAutomaticEngine.tick(resumed,101000,1).workout.completedSets)
     }

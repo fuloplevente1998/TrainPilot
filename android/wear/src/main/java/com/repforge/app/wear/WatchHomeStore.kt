@@ -54,7 +54,8 @@ data class WatchHomeSnapshot(
     val journalAvailable: Boolean = false,
     val publishedAt: Long = 0L,
     val theme: WearHomeTheme = WearHomeTheme.DEFAULT,
-    val automaticProtocol: Int = 0
+    val automaticProtocol: Int = 0,
+    val pendingFeedback: WatchWorkoutFeedback? = null
 ) {
     fun toWearExercise(exercise: WatchHomeExercise): WearExercise = WearExercise(
         id = exercise.id,
@@ -181,7 +182,8 @@ object WatchHomeStore {
                 journalAvailable = root.optInt("journalSchema", 0) == 1 && root.optJSONArray("recentWorkouts") != null,
                 publishedAt = root.optLong("publishedAt", 0L),
                 theme = WearHomeTheme.parse(root.optJSONObject("theme")),
-                automaticProtocol = root.optInt("automaticProtocol",0)
+                automaticProtocol = root.optInt("automaticProtocol",0),
+                pendingFeedback = WatchWorkoutFeedback.parse(root.optJSONObject("pendingFeedback"))
             )
         } catch (_: Exception) { null }
     }

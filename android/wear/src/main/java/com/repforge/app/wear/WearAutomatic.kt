@@ -26,7 +26,10 @@ data class WearAutomatic(
     val rounds: Int = 1,
     val round: Int = 1,
     val handledCommands: List<String> = emptyList(),
-    val awaitingPhone: Boolean = false
+    val awaitingPhone: Boolean = false,
+    val workMs: Long = 0,
+    val restMs: Long = 0,
+    val pausedMs: Long = 0
 ) {
     val counting get() = enabled && phase in listOf("work", "rest")
     fun remaining(now: Long): Long = if(owner=="phone"&&counting&&!paused&&deadlineAt>0)(deadlineAt-System.currentTimeMillis()).coerceAtLeast(0)
@@ -36,7 +39,8 @@ data class WearAutomatic(
         .put("vibration",vibration).put("key",key).put("targetExercise",targetExercise)
         .put("targetSet",targetSet).put("targetId",targetId).put("remainingMs",remainingMs)
         .put("anchorMs",anchorMs).put("boot",boot).put("phaseNumber",phaseNumber)
-        .put("baseSeconds",baseSeconds).put("interrupted",interrupted).put("deadlineAt",deadlineAt).put("rounds",rounds).put("round",round).put("handledCommands",JSONArray(handledCommands)).put("awaitingPhone",awaitingPhone)
+        .put("baseSeconds",baseSeconds).put("interrupted",interrupted).put("deadlineAt",deadlineAt).put("rounds",rounds).put("round",round).put("handledCommands",JSONArray(handledCommands)).put("awaitingPhone",awaitingPhone).put("timeLog",JSONObject().put("schema",1).put("owner",owner).put("key",key)
+            .put("positionMs",workMs+restMs+pausedMs).put("workMs",workMs).put("restMs",restMs).put("pausedMs",pausedMs))
     companion object {
         fun parse(root: JSONObject?): WearAutomatic? {
             root ?: return null
@@ -48,7 +52,7 @@ data class WearAutomatic(
                 root.optInt("targetExercise"),root.optInt("targetSet"),root.optString("targetId"),
                 root.optLong("remainingMs").coerceIn(0,3600000),root.optLong("anchorMs"),root.optInt("boot",-1),
                 root.optLong("phaseNumber").coerceAtLeast(0),root.optInt("baseSeconds").coerceAtLeast(0),root.optBoolean("interrupted"),root.optLong("deadlineAt"),root.optInt("rounds",1).coerceIn(1,100),root.optInt("round",1).coerceIn(1,100),
-                root.optJSONArray("handledCommands")?.let { array -> (maxOf(0,array.length()-128) until array.length()).map { array.optString(it) } } ?: emptyList(),root.optBoolean("awaitingPhone"))
+                root.optJSONArray("handledCommands")?.let { array -> (maxOf(0,array.length()-128) until array.length()).map { array.optString(it) } } ?: emptyList(),root.optBoolean("awaitingPhone"),root.optJSONObject("timeLog")?.optLong("workMs") ?: 0,root.optJSONObject("timeLog")?.optLong("restMs") ?: 0,root.optJSONObject("timeLog")?.optLong("pausedMs") ?: 0)
         }
     }
 }
@@ -101,11 +105,15 @@ object WearAutomaticEngine {
         return workout.copy(restEndAt=0,automation=a)
     }
     fun afterRecord(workout: WearWorkout, now: Long, boot: Int): WearWorkout {
-        val a=workout.automation ?: return workout
+        val original=workout.automation ?: return workout
+        val manual=original.phase=="ready"&&!original.paused&&!original.interrupted&&original.boot==boot&&now>=original.anchorMs&&
+            !timed(workout.exercises.getOrNull(original.targetExercise))
+        val a=if(manual)original.copy(workMs=original.workMs+now-original.anchorMs,anchorMs=now)else original
+        val accounted=workout.copy(automation=a)
         if(!a.enabled||a.owner!="watch")return workout
         val target=next(workout) ?: return workout.copy(restEndAt=0,automation=a.copy(phase="complete",remainingMs=0,paused=false,phaseNumber=a.phaseNumber+1))
-        if(a.restSeconds==0)return ready(workout.copy(automation=a.copy(round=1)),now,boot)
-        return phase(workout,a.copy(round=1),target,"rest",a.restSeconds,now,boot)
+        if(a.restSeconds==0)return ready(accounted.copy(automation=a.copy(round=1)),now,boot)
+        return phase(accounted,a.copy(round=1),target,"rest",a.restSeconds,now,boot)
     }
     fun interrupt(workout: WearWorkout, now: Long): WearWorkout {
         val a=workout.automation ?: return workout
@@ -113,20 +121,29 @@ object WearAutomaticEngine {
     }
     fun tick(workout: WearWorkout, now: Long, boot: Int): WearAutomaticTransition {
         val a=workout.automation ?: return WearAutomaticTransition(workout)
-        if(!a.enabled||a.owner!="watch"||!a.counting||a.paused)return WearAutomaticTransition(workout)
+        if(!a.enabled||a.owner!="watch"||a.phase=="complete")return WearAutomaticTransition(workout)
         if(a.boot!=boot||now<a.anchorMs||!validTarget(workout,a))return WearAutomaticTransition(interrupt(workout,a.anchorMs))
+        val manual=a.phase=="ready"&&!timed(workout.exercises.getOrNull(a.targetExercise))
+        if(!manual&&!a.counting&&!a.paused)return WearAutomaticTransition(workout)
+        val delta=(now-a.anchorMs).coerceAtLeast(0)
+        val credited=if(a.paused)0L else if(manual)delta else if(a.counting)minOf(delta,a.remainingMs)else 0L
+        val totals=a.copy(workMs=a.workMs+if(a.phase=="work"||manual)credited else 0,
+            restMs=a.restMs+if(a.phase=="rest")credited else 0,
+            pausedMs=a.pausedMs+if(a.paused&&!a.interrupted)delta else 0)
+        if(a.paused||!a.counting)return WearAutomaticTransition(workout.copy(automation=totals.copy(anchorMs=now)))
+        val counted=workout.copy(automation=totals)
         val remaining=a.remaining(now)
-        var current=workout
+        var current=counted
         if(a.phase=="work") {
             val seconds=a.baseSeconds+((a.workSeconds*1000L-remaining).coerceIn(0,a.workSeconds*1000L)/1000).toInt()
             val previous=current.exercises[a.targetExercise].sets[a.targetSet]
             current=set(current,a.targetExercise,a.targetSet,previous.copy(reps=seconds.toString()))
         }
-        if(remaining>0)return WearAutomaticTransition(current.copy(automation=a.copy(remainingMs=remaining,anchorMs=now)))
+        if(remaining>0)return WearAutomaticTransition(current.copy(automation=totals.copy(remainingMs=remaining,anchorMs=now)))
         // Advance once, rather than inventing multiple sets after a delayed/restarted callback.
         if(a.phase=="rest")return WearAutomaticTransition(ready(current,now,boot))
         if(a.round<a.rounds){
-            val next=a.copy(round=a.round+1)
+            val next=totals.copy(round=a.round+1)
             return WearAutomaticTransition(if(a.restSeconds==0)phase(current,next,a.targetExercise to a.targetSet,"work",a.workSeconds,now,boot)
                 else phase(current,next,a.targetExercise to a.targetSet,"rest",a.restSeconds,now,boot))
         }
@@ -139,12 +156,16 @@ object WearAutomaticEngine {
         return current.copy(automation=a.copy(paused=true,anchorMs=now))
     }
     fun resume(workout: WearWorkout, now: Long, boot: Int): WearWorkout {
-        val a=workout.automation ?: return workout
+        val current=tick(workout,now,boot).workout
+        val a=current.automation ?: return current
         if(!a.enabled||a.owner!="watch")return workout
-        return workout.copy(automation=a.copy(paused=false,interrupted=false,anchorMs=now,boot=boot))
+        return current.copy(automation=a.copy(paused=false,interrupted=false,anchorMs=now,boot=boot))
     }
-    fun skipRest(workout: WearWorkout, now: Long, boot: Int): WearWorkout =
-        if(workout.automation?.phase=="rest" && workout.automation.owner=="watch")ready(workout,now,boot)else workout
+    fun skipRest(workout: WearWorkout, now: Long, boot: Int): WearWorkout {
+        if(workout.automation?.phase!="rest"||workout.automation.owner!="watch")return workout
+        val current=tick(workout,now,boot).workout
+        return if(current.automation?.phase=="rest")ready(current,now,boot)else current
+    }
     fun disable(workout: WearWorkout, now: Long, boot: Int): WearWorkout {
         val current=tick(workout,now,boot).workout
         return current.copy(restEndAt=0,automation=current.automation?.copy(enabled=false,paused=false,phase="ready",remainingMs=0,phaseNumber=(current.automation?.phaseNumber ?: 0)+1))

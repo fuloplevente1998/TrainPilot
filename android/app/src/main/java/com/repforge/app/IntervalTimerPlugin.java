@@ -12,6 +12,27 @@ import org.json.JSONObject;
 @CapacitorPlugin(name="IntervalTimer",permissions={@Permission(alias="notifications",strings={Manifest.permission.POST_NOTIFICATIONS})})
 public class IntervalTimerPlugin extends Plugin {
     private boolean starting;
+    @PluginMethod public void armWorkout(PluginCall c){
+        getActivity().runOnUiThread(()->{
+            if(Build.VERSION.SDK_INT>=33&&ContextCompat.checkSelfPermission(getContext(),Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)
+                requestPermissionForAlias("notifications",c,"armNotifications");
+            else armBegin(c);
+        });
+    }
+    @PermissionCallback private void armNotifications(PluginCall c){armBegin(c);}
+    private void armBegin(PluginCall c){
+        getActivity().runOnUiThread(()->{try{
+            if(!getActivity().hasWindowFocus())throw new IllegalStateException("Open the phone workout before enabling automatic background control");
+            String id=c.getString("workoutId","");long generation=c.getData().getLong("generation");
+            if(id.isEmpty()||generation<=0)throw new IllegalArgumentException("Missing execution identity");
+            ContextCompat.startForegroundService(getContext(),new Intent(getContext(),IntervalTimerService.class).setAction(IntervalTimerService.ARM)
+                .putExtra("workoutId",id).putExtra("generation",generation).putExtra("language",c.getString("language","en")));
+            Handler h=new Handler(Looper.getMainLooper());h.postDelayed(new Runnable(){int count;public void run(){
+                if(IntervalTimerService.armed(id,generation))c.resolve();else if(++count<30)h.postDelayed(this,100);else c.reject("Automatic background controller did not start");
+            }},100);
+        }catch(Exception e){c.reject(e.getMessage());}});
+    }
+    @PluginMethod public void disarmWorkout(PluginCall c){getActivity().runOnUiThread(()->{IntervalTimerService.disarm();c.resolve();});}
     @PluginMethod public void status(PluginCall c){getActivity().runOnUiThread(()->{try{c.resolve(new JSObject(IntervalTimerService.snapshot(getContext()).toString()));}catch(Exception e){c.reject(e.getMessage());}});}
     @PluginMethod public void start(PluginCall c){
         getActivity().runOnUiThread(()->{
