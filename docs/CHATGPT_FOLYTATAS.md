@@ -1,5 +1,15 @@
 # TrainPilot — folytatási leírás új ChatGPT-beszélgetéshez
 
+## P1 folytatás — #158, készülékes tesztre vár
+
+A P0 #195 mainre került (`cac8937`), a #162/#157 készülékesen elfogadva és lezárva. A következő kör a **#158**, külön `fix/158-health-source-provenance` ágon, [#196 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/196).
+
+Elkészült a telefonos Napló hiteles olvasási csatorna/alkalmazáseredet jelölése, natív forrásmetaadat megőrzése, stabil edzésazonosítóhoz kötött forrásválasztás és késői frissítés. A Samsung hiányzó adatainak HC-pótlása megtartja a tényleges providerét, az aktív időablakok eltérő csatornái megmaradnak. A nyitott napló és kézi választás megmarad, hibás olvasás nem rejti el a korábbi érvényes adatot.
+
+**Ellenőrzött telefonos APK: `c800b4e`, 1.3.4 /2730; 140 Node + 93 Chromium csomag, teljes natív gate, Quick és Performance sikeres.** Pontos hash/CI/letöltés és készülékes lista: [P1 átadási lap](P1_158_MERESI_FORRASOK.md). Wear-változás nincs, az elfogadott `9b94a10` használható.
+
+**Következő lépés: #158 fizikai 45 perces mérési és késői szinkronpróbája.** A #158 nyitott, a #196 draft; ez a kör nem main-egyesítés vagy release. Visszaigazolás után #159 → #191 → #163. Új beszélgetésben a GitHub aktuális mainjét és a #196 állapotát ellenőrizd, ne indulj régi P0 tesztágból.
+
 ## Legfrissebb elfogadott állapot — #195
 
 A felhasználó 2026. október 14-én a telefonos `b9dbf7b` / órás `9b94a10` tesztpárt készülékesen elfogadta: **„Minden szuper, menjen mainre, zarjuk az issuet :)”**. A #195 main-egyesítése és a kapcsolódó #162/#157 lezárása jóváhagyva. Verzió mindkét appban **1.3.4 /2730**.
