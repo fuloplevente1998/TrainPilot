@@ -688,7 +688,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                         onDiscard = {},
                         onSettings = {},
                         onMenu = {},
-                        onOpenPhone = { if(route=="workout-paused")automaticCommands?.add("openPhone") },
+                        onOpenPhone = {},
                     )
                 }
             }
@@ -1017,7 +1017,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             onResumeWorkout = {},
             onRetry = {},
             onDismissClosure = {},
-            onOpenPhone = {},
+            onOpenPhone = { if(route=="workout-paused")automaticCommands?.add("openPhone") },
             onRefreshJournal = {},
             health = liveHealth ?: mutableStateOf(health),
             measuring = mutableStateOf(true),
