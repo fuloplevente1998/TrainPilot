@@ -17672,7 +17672,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
      if(!expected)status='error';
      else if(!measured||Object.keys(expected).some(key=>key!=='syncedAt'&&measured[key]!==expected[key]))status='superseded';
     }
-    if(command.action==='saveWorkoutFeedback'&&!window.TrainPilotWorkoutFeedback?.valid(command.feedback))status='error';
+    if(command.action==='saveWorkoutFeedback'){
+     const row=history().find(h=>matchesWorkout(h,command.workoutId)&&h.finished),answer=row?.feedback;
+     if(!window.TrainPilotWorkoutFeedback?.valid(command.feedback))status='error';
+     else if(!row||(command.feedback.skipped===true?answer?.skipped!==true:answer?.effort!==command.feedback.effort))status='superseded';
+    }
     try{await bridge.ackCommand({commandId:id,status});}catch(_){}
    }
    if(changed){lastPayload=null;lastHomePayload=null;await syncNow();await syncHomeNow();}

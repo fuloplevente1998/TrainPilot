@@ -7,10 +7,10 @@ const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://local
  await page.addInitScript(()=>localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped')));
  await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
  await page.evaluate(()=>{
-  window.__feedbackTrial={commands:[],acks:[]};
+  window.__feedbackTrial={commands:[],acks:[],ackResults:[]};
   window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{publish:async()=>{},publishHome:async()=>{},clear:async()=>{},
    startWatchMeasurement:async()=>({opened:true}),pendingCommands:async()=>({commands:__feedbackTrial.commands.slice()}),
-   ackCommand:async({commandId})=>{__feedbackTrial.acks.push(commandId);__feedbackTrial.commands=__feedbackTrial.commands.filter(c=>c.commandId!==commandId);}}}};
+   ackCommand:async({commandId,status})=>{__feedbackTrial.acks.push(commandId);__feedbackTrial.ackResults.push({commandId,status});__feedbackTrial.commands=__feedbackTrial.commands.filter(c=>c.commandId!==commandId);}}}};
   db.set('history',[]);db.set('draft',null);db.set('wearClosedWorkouts',[]);
  });
  async function finishPhone(){return page.evaluate(async()=>{
@@ -48,6 +48,8 @@ const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://local
  assert.equal(await page.evaluate(()=>history()[0].feedback.effortScore),3);
  await page.evaluate(async(id)=>{__feedbackTrial.commands=[{commandId:'answer-replay',action:'saveWorkoutFeedback',workoutId:id,feedback:{effort:'hard'},sequence:4}];await TrainPilotWearSync.drainCommands();},sharedId);
  assert.equal(await page.evaluate(()=>history()[0].feedback.effort),'good');
+ assert.equal(await page.evaluate(()=>__feedbackTrial.ackResults.find(r=>r.commandId==='watch-answer').status),'applied');
+ assert.equal(await page.evaluate(()=>__feedbackTrial.ackResults.find(r=>r.commandId==='answer-replay').status),'superseded');
  const reordered=await page.evaluate(async()=>{
   await TrainPilotQuickWorkout.start('db-floor-press');
   for(const e of state.session.exercises)for(const s of e.sets){s.done=true;s.reps='10';}persistDraft();

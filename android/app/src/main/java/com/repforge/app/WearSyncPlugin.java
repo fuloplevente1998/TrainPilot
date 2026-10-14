@@ -228,6 +228,7 @@ public class WearSyncPlugin extends Plugin {
             String status=call.getString("status","processed");
             if(!java.util.Arrays.asList("applied","saved","discarded","error","superseded","processed").contains(status)){call.reject("Invalid command result.");return;}
             if(!WearCommandQueueStore.ack(getContext(),command,status)){call.reject("Unable to persist the watch command receipt.");return;}
+            WearCommandReceipts.replay(getContext(),command,null);
             deleteCommandDataItem(commandId);
         }
         JSObject result = new JSObject();

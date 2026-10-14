@@ -59,6 +59,13 @@ class WearSaveSyncTest {
         val c=command("legacy",301);val result=WearSaveSyncModel.accept(JSONArray().put(c),results,receipt(c,"processed"))!!
         assertEquals(WearSavePhase.ERROR,WearSaveSyncModel.view(result.first,result.second,"workout",10000)!!.phase)
     }
+    @Test fun anUnresolvedRejectionSurvivesReceiptCachePressure() {
+        val failed=command("failed")
+        var results=WearSaveSyncModel.accept(JSONArray().put(failed),JSONArray(),receipt(failed,"error"))!!.second
+        for(i in 2L..300L) {val c=command("record-$i",i);results=WearSaveSyncModel.accept(JSONArray().put(c),results,receipt(c))!!.second}
+        assertEquals(256,results.length())
+        assertEquals(WearSavePhase.ERROR,WearSaveSyncModel.view(JSONArray(),results,"workout",10000)!!.phase)
+    }
     @Test fun supportedLanguagesHaveDistinctLabelsForLocalAndConfirmedSaving() {
         for(language in listOf("hu","en","de","ro")) {
             assertNotEquals(wearSaveLabel(WearSavePhase.LOCAL,language),wearSaveLabel(WearSavePhase.SYNCED,language))

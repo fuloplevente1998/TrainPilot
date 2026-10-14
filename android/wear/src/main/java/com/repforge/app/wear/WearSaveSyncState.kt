@@ -47,7 +47,18 @@ object WearSaveSyncModel {
         // Retain bounded command receipts, including earlier rejected operations.
         // A later ordinary edit must not conceal a rejected earlier edit.
         val next=JSONArray(results.toString()).put(JSONObject(receipt.toString()))
-        while(next.length()>256)next.remove(0)
+        while(next.length()>256) {
+            // Keep an unresolved rejection even after hundreds of successful
+            // edits in the same workout. Resolved/older receipts may expire.
+            val rows=(0 until next.length()).mapNotNull { next.optJSONObject(it) }
+            val removable=rows.indexOfFirst { row ->
+                row.optString("status") in setOf("applied","saved","discarded") || rows.any {
+                    it.optString("workoutId")==row.optString("workoutId") && it.optLong("sequence")>row.optLong("sequence") &&
+                        (it.optString("status") in setOf("saved","discarded") || it.optString("status") !in setOf("applied","saved","discarded"))
+                }
+            }
+            next.remove(if(removable>=0)removable else 0)
+        }
         return remaining to next
     }
 }

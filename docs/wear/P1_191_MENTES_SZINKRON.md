@@ -17,7 +17,7 @@ Friss main: `20fe5ceaf992bc2658be7422d5c3f45b9c060ace`, a készülékesen elfoga
 
 ## Ellenőrzés / következő lépés
 
-Helyi 140 telefonos regresszió, 6 új Wear állapotmodell-/nyelvi teszt és 6 telefonos outbox/bizonylat JVM-teszt sikeres. Új tényleges Wear outbox-írási hiba, duplikált nyugta és körkijelzős státusz/újrapróbálás próbák a GitHub emulátoros gate-ben. A két natív release gate és a körkijelzős teszt eredménye az átadáskor kerül ide; APK és készülékes elfogadás még nincs.
+Helyi 140 telefonos regresszió, 7 új Wear állapotmodell-/nyelvi teszt és 6 telefonos outbox/bizonylat JVM-teszt sikeres. Új tényleges Wear outbox-írási hiba, duplikált nyugta és körkijelzős státusz/újrapróbálás próbák a GitHub emulátoros gate-ben. A két natív release gate és a körkijelzős teszt eredménye az átadáskor kerül ide; APK és készülékes elfogadás még nincs.
 
 Rövid készülékes próba: órás sorozatrögzítés, telefon nélkül helyi/várakozó státusz, telefon-visszakapcsolás után valódi nyugta, appújranyitás és edzésbefejezés után egyetlen naplóbejegyzés. Telefonos indítás mellett egy órás rögzítés és lezárt telefonos automata-pihenő ellenőrzése is szükséges; nincs 45 perces minimum.
 
