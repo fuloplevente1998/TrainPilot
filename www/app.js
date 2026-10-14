@@ -1264,7 +1264,7 @@ render();
 // @endsection v142.js
 
 // @section v143.js
-var discardDraft143 = async function discardDraft143(){const d=db.get('draft',null);if(!d){alert('Nincs félbehagyott edzés.');return false;}if(!await tp2628Confirm('Biztosan törlöd a félbehagyott edzést? A naplóba nem kerül be.',{title:'Félbehagyott edzés törlése',confirmText:'Törlés',danger:true}))return false;const ok=await window.TrainPilotWearSync?.discardDraft?.(d.session);if(ok){alert('A félbehagyott edzés törölve.');go('home');}else{alert('Az edzés közben változott, vagy a törlés nem fejeződött be. Próbáld újra.');}return !!ok;};
+var discardDraft143 = function discardDraft143(){const d=db.get('draft',null);if(!d){alert('Nincs félbehagyott edzés.');return;}const failed=()=>alert('Az edzés közben változott, vagy a törlés nem fejeződött be. Próbáld újra.');void tp2628Confirm('Biztosan törlöd a félbehagyott edzést? A naplóba nem kerül be.',{title:'Félbehagyott edzés törlése',confirmText:'Törlés',danger:true}).then(async ok=>{if(!ok)return;const discarded=await window.TrainPilotWearSync?.discardDraft?.(d.session);if(discarded){alert('A félbehagyott edzés törölve.');go('home');}else failed();}).catch(failed);};
 /* RepForge 1.4.3: 60-exercise library, curated online demos, generator integration, and safe home-screen draft deletion. */
 const RF143_VERSION='1.4.3';
 const RF143_NEW_EXERCISES=[
