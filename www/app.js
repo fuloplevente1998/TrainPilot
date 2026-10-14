@@ -17663,7 +17663,17 @@ window.addEventListener?.('DOMContentLoaded',function(){
     try{applied=await applyCommand(command);}catch(_){}
     if(!applied)continue;
     if(command.action!=='requestHome')changed=true;
-    try{await bridge.ackCommand({commandId:id});}catch(_){}
+    const outcome=db.get('wearWorkoutResult',null);
+    let status=outcome?.commandId===id&&['saved','discarded','error'].includes(outcome.status)?outcome.status:
+     command.workoutId&&isClosed(command.workoutId)&&!['finishWorkout','discardWorkout','saveWorkoutFeedback','healthSummary'].includes(command.action)?'superseded':'applied';
+    if(command.action==='healthSummary'){
+     const row=history().find(h=>matchesWorkout(h,command.workoutId))||state.session;
+     const measured=row?.healthWear129,expected=measuredHealth(command);
+     if(!expected)status='error';
+     else if(!measured||Object.keys(expected).some(key=>key!=='syncedAt'&&measured[key]!==expected[key]))status='superseded';
+    }
+    if(command.action==='saveWorkoutFeedback'&&!window.TrainPilotWorkoutFeedback?.valid(command.feedback))status='error';
+    try{await bridge.ackCommand({commandId:id,status});}catch(_){}
    }
    if(changed){lastPayload=null;lastHomePayload=null;await syncNow();await syncHomeNow();}
   }catch(_){

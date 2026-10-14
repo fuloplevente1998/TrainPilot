@@ -1,12 +1,12 @@
 # TrainPilot — fejlesztési állapot
 
-## Aktuális munka — #191 forrásfelmérés
+## Aktuális munka — #191 implementáció és ellenőrzés
 
 A #158 / #196 mainre került (`20fe5ce`), a felhasználó elfogadta, a #158 lezárva. A #159 meglévő Mini Napló-megvalósítása forrás és regresszió alapján ellenőrizve; a GitHub-jegy megvalósítottként lezárva, nem indul újrafejlesztés.
 
-A következő P1 **#191 → #163**. Új ág: `feat/191-wear-save-sync-status`, a friss mainből. A #191 forrásfelmérése kész: az outbox Data Layer-átadási sikere még nem telefonos mentési nyugta; a helyi commit ellenőrzése és a tényleges visszaigazoláshoz kötött kompakt UI külön feladat. A meglévő lezárási nyugtát, kanonikus naplót és automata adatvédelmeket megőrizzük. [Pontos forrástérkép és fejlesztési kör](docs/wear/P1_191_MENTES_SZINKRON.md).
+A következő P1 **#191 → #163**. A `feat/191-wear-save-sync-status` ágon megvalósítva az ellenőrzött helyi írás, Data Layer-átadástól külön telefonos tartós nyugta, eredeti commandId-val újrapróbálás és kompakt, négy nyelvű órás állapotoldal. A meglévő outbox/bizonylattár és kanonikus napló használatos. [Adatút, tesztek és készülékes próba](docs/wear/P1_191_MENTES_SZINKRON.md).
 
-**Még nincs #191 kódváltozás, új tesztbuild vagy készülékes elfogadás.** Verzió 1.3.4 /2730. A korábbi #158 telefonos `c800b4e` és elfogadott Wear `9b94a10` használható.
+**A teljes CI és az új telefonos/Wear tesztpár átadása még folyamatban; készülékes elfogadás nincs.** Main `20fe5ce` és verzió 1.3.4 /2730 változatlan. Helyi 140 telefonos regresszió, 6 Wear modellteszt és 6 telefonos bizonylattesztes JVM-próba sikeres.
 
 ## Elfogadott #158, meglévő #159 és következő P1 — 2026. október 14.
 

@@ -236,7 +236,7 @@ object WearAutomaticController {
             .put("action","watchAutomationState").put("workoutId",workout.workoutId).put("createdAt",System.currentTimeMillis())
             .put("watchSequence",workout.localSequence).put("finalSnapshot",snapshot)
         val sequence=WearCommandOutbox.enqueue(context,command)
-        WorkoutSnapshotStore.saveWorkout(context,workout.copy(localSequence=sequence))
+        WorkoutSnapshotStore.saveWorkout(context,workout.copy(localSequence=maxOf(workout.localSequence,sequence)))
 
         }
     }
@@ -249,7 +249,7 @@ object WearAutomaticController {
             .put("setIndex",s).put("setNumber",set.number).put("setId",set.setId).put("reps",set.reps).put("weight",set.weight)
             .put("automation",workout.automation?.json())
         val sequence=WearCommandOutbox.enqueue(context,command)
-        WorkoutSnapshotStore.saveWorkout(context,workout.copy(localSequence=sequence))
+        WorkoutSnapshotStore.saveWorkout(context,workout.copy(localSequence=maxOf(workout.localSequence,sequence)))
 
         }
     }

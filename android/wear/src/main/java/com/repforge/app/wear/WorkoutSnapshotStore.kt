@@ -127,7 +127,27 @@ object WorkoutSnapshotStore {
 
     fun load(context: Context): WearWorkout? {
         val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(SNAPSHOT, null)
-        return raw?.let(::parse)
+        val parsed=raw?.let(::parse) ?: return null
+        // A crash between durable enqueue and the Activity's async sequence
+        // write must not allow an older phone snapshot to replace local edits.
+        val delivery=context.getSharedPreferences("trainpilot_wear_outbox",Context.MODE_PRIVATE)
+        var sequence=parsed.localSequence
+        for(key in listOf("pending","results191"))try {
+            val commands=JSONArray(delivery.getString(key,"[]"))
+            for(i in 0 until commands.length())commands.optJSONObject(i)?.let {
+                if(it.optString("workoutId")==parsed.workoutId && it.optString("action") !in setOf("healthSummary","saveWorkoutFeedback"))
+                    sequence=maxOf(sequence,it.optLong("sequence"))
+            }
+        }catch(_:Exception) { /* Keep the existing draft when delivery metadata is unreadable. */ }
+        return parsed.copy(localSequence=sequence)
+    }
+
+    /** Flush the existing draft at a recording boundary; timers keep async writes. */
+    @Synchronized fun persist(context: Context,workoutId: String): Boolean {
+        val prefs=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE)
+        val raw=prefs.getString(SNAPSHOT,null) ?: return false
+        if(parse(raw)?.workoutId!=workoutId)return false
+        return prefs.edit().putString(SNAPSHOT,raw).commit()
     }
 
     fun parse(raw: String): WearWorkout? {

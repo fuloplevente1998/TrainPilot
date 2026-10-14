@@ -4,7 +4,7 @@
 
 A P0 #162/#157 készülékesen elfogadva és mainen (#195), az automata háttérvezérlés és időnapló elkészült. A #158 mérési forrásjelzés a #196-tal mainre került (`20fe5ce`), a felhasználó elfogadta, az Issue lezárva. A #159 Mini Napló meglévő megvalósítását ellenőriztük és a hibajegyet megvalósítottként lezártuk; nincs második órás történet vagy újraépítés.
 
-Következő P1: **#191 → #163**. A #191 helyi mentés / Data Layer-átadás / valódi telefonos nyugta felmérése külön `feat/191-wear-save-sync-status` ágon megkezdve; [forrástérkép és fejlesztési kör](P1_191_MENTES_SZINKRON.md). Még nincs új #191 implementáció vagy APK. Verzió 1.3.4 /2730. Az alábbi október 13-i tesztpár és akkori nyitott feladatok történeti állapotot őriznek; az új munkában ez a felső állapot és a GitHub aktuális Issue-k az irányadók.
+Következő P1: **#191 → #163**. A #191 külön `feat/191-wear-save-sync-status` ágon megvalósítás és ellenőrzés alatt: helyi mentés, Data Layer-átadás és tartós telefonos nyugta külön státusszal, eredeti parancs újrapróbálásával. [Adatút, tesztek és átadás](P1_191_MENTES_SZINKRON.md). A teljes CI és teszt-APK átadása még folyamatban; készülékes elfogadás nincs. Verzió 1.3.4 /2730. Az alábbi október 13-i tesztpár és akkori nyitott feladatok történeti állapotot őriznek; az új munkában ez a felső állapot és a GitHub aktuális Issue-k az irányadók.
 
 Frissítve: 2026. október 13. Állapot: aktuális main megvalósítás + következő lépések; a készülékes elfogadás külön jelölt.
 

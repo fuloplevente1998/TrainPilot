@@ -36,6 +36,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private val workout = mutableStateOf<WearWorkout?>(null)
     private val home = mutableStateOf<WatchHomeSnapshot?>(null)
     private var lastHomeRequestAt = 0L
+    private val saveSync = mutableStateOf<WearSaveSyncState?>(null)
     private val closure = mutableStateOf<WearClosure?>(null)
     private val restRemaining = mutableIntStateOf(0)
     private var restTimer: CountDownTimer? = null
@@ -73,6 +74,8 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private val healthTick=object : Runnable {
         override fun run() {
             refreshHealth();refreshHomeIndicators()
+            WearCommandOutbox.flush(this@MainActivity)
+            refreshSaveSync()
             if(workout.value==null && WearHealthStore.active(this@MainActivity).isNotBlank())WearHealthService.stop(this@MainActivity)
             if(remoteMeasurementRequested && !remoteWorkoutAccepted && !remoteStartFinished && remoteMeasurementStart?.matches(workout.value?.workoutId,workout.value?.revision ?: 0L)!=true && android.os.SystemClock.elapsedRealtime()-lastRemoteRefreshAt>=2000L) {
                 lastRemoteRefreshAt=android.os.SystemClock.elapsedRealtime()
@@ -237,6 +240,8 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                 home = home,
                 restRemaining = restRemaining,
                 closure = closure,
+                saveSync = saveSync,
+                onRetrySync = { id -> WearCommandOutbox.retry(this,id);refreshSaveSync() },
                 health = health,
                 measuring = measuring,
                 gpsEnabled = gpsEnabled,
@@ -317,6 +322,12 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         for (event in dataEvents) {
             if (event.type != DataEvent.TYPE_CHANGED) continue
             val item = event.dataItem
+            if(item.uri.path?.startsWith(WearCommandOutbox.RECEIPT_PREFIX)==true) {
+                if(WearCommandOutbox.acceptReceipt(this,item.uri.path,DataMapItem.fromDataItem(item).dataMap.getString("receipt")))
+                    Wearable.getDataClient(this).deleteDataItems(item.uri)
+                runOnUiThread { refreshSaveSync() }
+                continue
+            }
             val raw = DataMapItem.fromDataItem(item).dataMap.getString("snapshot")
             when (item.uri.path) {
                 WearPhoneAutomatic.PATH -> WearPhoneAutomatic.receive(this,DataMapItem.fromDataItem(item).dataMap.getString("automatic"))
@@ -358,6 +369,11 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                     var newestHome: WatchHomeSnapshot? = null
                     for (item in items) {
                         try {
+                            if(item.uri.path?.startsWith(WearCommandOutbox.RECEIPT_PREFIX)==true) {
+                                if(WearCommandOutbox.acceptReceipt(this,item.uri.path,DataMapItem.fromDataItem(item).dataMap.getString("receipt")))
+                                    Wearable.getDataClient(this).deleteDataItems(item.uri)
+                                continue
+                            }
                             val raw = DataMapItem.fromDataItem(item).dataMap.getString("snapshot") ?: continue
                             when (item.uri.path) {
                                 WearDataListenerService.ACTIVE_WORKOUT_PATH -> {
@@ -375,6 +391,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                     }
                     if (newestHome != null) home.value = newestHome
                     closure.value = WearClosureStore.load(this)
+                    refreshSaveSync()
                     // The remote Activity may arrive before the urgent DataItem.
                     startHealthIfEnabled()
                 } finally {
@@ -413,7 +430,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             .put("createdAt", System.currentTimeMillis())
             .put("finalSnapshot",WorkoutSnapshotStore.encode(workout.value ?: return))
         val sequence = WearCommandOutbox.enqueue(this, command)
-        workout.value?.let { workout.value = WorkoutSnapshotStore.saveWorkout(this, it.copy(localSequence = sequence)) }
+        workout.value?.let { workout.value = WorkoutSnapshotStore.saveWorkout(this, it.copy(localSequence = maxOf(it.localSequence,sequence))) }
         startHealthIfEnabled()
         WearSurfaces.refresh(this, true)
     }
@@ -452,7 +469,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             .put("createdAt", System.currentTimeMillis())
             .put("finalSnapshot",WorkoutSnapshotStore.encode(workout.value ?: return))
         val sequence = WearCommandOutbox.enqueue(this, command)
-        workout.value?.let { workout.value = WorkoutSnapshotStore.saveWorkout(this, it.copy(localSequence = sequence)) }
+        workout.value?.let { workout.value = WorkoutSnapshotStore.saveWorkout(this, it.copy(localSequence = maxOf(it.localSequence,sequence))) }
     }
 
     private fun restoreRestFromSnapshot(value: WearWorkout?) {
@@ -642,7 +659,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         if (leftSeconds != null) command.put("leftSeconds", leftSeconds)
         if (rightSeconds != null) command.put("rightSeconds", rightSeconds)
         val sequence = WearCommandOutbox.enqueue(this, command)
-        workout.value?.let { workout.value = WorkoutSnapshotStore.saveWorkout(this, it.copy(localSequence = sequence)) }
+        workout.value?.let { workout.value = WorkoutSnapshotStore.saveWorkout(this, it.copy(localSequence = maxOf(it.localSequence,sequence))) }
     }
 
     private fun selectExercise(index: Int) {
@@ -661,11 +678,18 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         }}
     }
 
+    private fun refreshSaveSync() {
+        closure.value=WearClosureStore.load(this)
+        saveSync.value=WearCommandOutbox.state(this,workout.value?.workoutId ?: closure.value?.takeIf { it.status in listOf("pending","error") }?.workoutId)
+    }
+
     private fun saveWorkoutFeedback(pending: WatchWorkoutFeedback, effort: String?) {
         val command = JSONObject().put("schema", 1).put("commandId", UUID.randomUUID().toString())
             .put("action", "saveWorkoutFeedback").put("workoutId", pending.workoutId)
             .put("createdAt", System.currentTimeMillis()).put("feedback", WearWorkoutFeedback.answer(effort))
-        WearCommandOutbox.enqueue(this, command)
+        if(WearCommandOutbox.enqueue(this, command)==0L) {
+            refreshSaveSync();Toast.makeText(this,"A mentés nem sikerült. Próbáld újra a Mentés és szinkron oldalon.",Toast.LENGTH_LONG).show();return
+        }
         WearClosureStore.answer(this, pending.workoutId, command.getJSONObject("feedback"))
         closure.value = WearClosureStore.load(this)
         WearWorkoutFeedback.markAnswered(this, pending.workoutId)
@@ -685,7 +709,9 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         WearHealthService.stop(this)
         WearAutomaticService.stop(this)
         closure.value = WearClosureStore.close(this, current, command)
-        WearCommandOutbox.enqueue(this, command)
+        if(closure.value?.status=="error" || WearCommandOutbox.enqueue(this, command)==0L) {
+            refreshSaveSync();Toast.makeText(this,"A mentés nem sikerült. Az edzés adatai megmaradtak az órán.",Toast.LENGTH_LONG).show();return
+        }
         WorkoutSnapshotStore.clear(this)
         WearStopwatchStore.clear(this)
         workout.value = null
@@ -696,6 +722,10 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     }
 
     private fun retryClosure() {
+        closure.value?.let { local ->
+            val status=WearCommandOutbox.state(this,local.workoutId)
+            if(status?.retryable==true) { WearCommandOutbox.retry(this,local.workoutId);refreshSaveSync();return }
+        }
         val command = WearClosureStore.retry(this) ?: return
         closure.value = WearClosureStore.load(this)
         WearCommandOutbox.enqueue(this, command)

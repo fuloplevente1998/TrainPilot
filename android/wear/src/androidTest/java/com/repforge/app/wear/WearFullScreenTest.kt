@@ -114,6 +114,86 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         WearClosureStore.dismiss(context)
     }
 
+    @Test
+    fun saveSyncStatesAndRetryRemainReadableOnRoundDisplays() {
+        val state=mutableStateOf(WearSaveSyncState("workout",WearSavePhase.LOCAL,2,true))
+        var retries=0;var backs=0
+        compose.setContent { Watch { SaveSyncScreen(state.value,{retries++},{backs++}) } }
+        assertFullViewport()
+        for(phase in WearSavePhase.entries) {
+            compose.runOnIdle { state.value=WearSaveSyncState("workout",phase,2,phase!=WearSavePhase.SYNCED,
+                if(phase==WearSavePhase.ERROR)"timeout" else "") }
+            lazyList().performScrollToNode(hasText(wearSaveLabel(phase)))
+            compose.onNodeWithText(wearSaveLabel(phase)).assertIsDisplayed()
+            if(phase!=WearSavePhase.SYNCED) {
+                lazyList().performScrollToNode(hasContentDescription(wearSaveRetry()))
+                compose.onNodeWithContentDescription(wearSaveRetry()).assertIsDisplayed().performClick()
+            } else compose.onNodeWithContentDescription(wearSaveRetry()).assertDoesNotExist()
+        }
+        assertEquals(4,retries)
+        lazyList().performScrollToNode(hasContentDescription(wearSaveBack()))
+        compose.onNodeWithContentDescription(wearSaveBack()).assertIsDisplayed().performClick()
+        assertEquals(1,backs)
+        screenshot("save-sync-retry")
+    }
+
+    @Test
+    fun actualOutboxKeepsDataUntilMatchingPhoneReceiptAndRetryReusesIdentity() {
+        val context=InstrumentationRegistry.getInstrumentation().targetContext
+        val id=java.util.UUID.randomUUID().toString()
+        val command=JSONObject().put("commandId",id).put("workoutId",id).put("action","healthSummary")
+            .put("createdAt",System.currentTimeMillis()).put("healthSummary",JSONObject().put("steps",0))
+        assertTrue(WearCommandOutbox.enqueue(context,command)>0)
+        val sequence=command.getLong("sequence")
+        val receipt=JSONObject().put("schema",1).put("commandId",id).put("workoutId",id)
+            .put("action","healthSummary").put("sequence",sequence).put("status","applied").put("receivedAt",System.currentTimeMillis())
+        assertNotEquals(WearSavePhase.SYNCED,WearCommandOutbox.state(context,id)!!.phase)
+        WearCommandOutbox.retry(context,id)
+        assertEquals(sequence,command.getLong("sequence"))
+        val path=WearCommandOutbox.RECEIPT_PREFIX+id
+        assertFalse(WearCommandOutbox.acceptReceipt(context,path,JSONObject(receipt.toString()).put("workoutId","foreign").toString()))
+        assertNotEquals(WearSavePhase.SYNCED,WearCommandOutbox.state(context,id)!!.phase)
+        assertTrue(WearCommandOutbox.acceptReceipt(context,path,receipt.toString()))
+        assertEquals(WearSavePhase.SYNCED,WearCommandOutbox.state(context,id)!!.phase)
+        assertTrue(WearCommandOutbox.acceptReceipt(context,path,receipt.toString()))
+        assertFalse(WearCommandOutbox.acceptReceipt(context,path,JSONObject(receipt.toString()).put("status","error").toString()))
+        assertEquals(WearSavePhase.SYNCED,WearCommandOutbox.state(context,id)!!.phase)
+    }
+
+    @Test
+    fun failedLocalCommitCannotReportSavedOrConsumeReceipt() {
+        val context=InstrumentationRegistry.getInstrumentation().targetContext
+        val real=context.getSharedPreferences("trainpilot_wear_outbox",0)
+        val failing=java.lang.reflect.Proxy.newProxyInstance(javaClass.classLoader,arrayOf(android.content.SharedPreferences::class.java)) { _,method,args ->
+            if(method.name!="edit")method.invoke(real,*(args ?: emptyArray())) else {
+                val editor=real.edit()
+                java.lang.reflect.Proxy.newProxyInstance(javaClass.classLoader,arrayOf(android.content.SharedPreferences.Editor::class.java)) { proxy,m,a ->
+                    val result=m.invoke(editor,*(a ?: emptyArray()))
+                    if(m.name=="commit")false else if(result===editor)proxy else result
+                }
+            }
+        } as android.content.SharedPreferences
+        val wrapper=object:android.content.ContextWrapper(context) {
+            override fun getSharedPreferences(name:String,mode:Int):android.content.SharedPreferences =
+                if(name=="trainpilot_wear_outbox")failing else super.getSharedPreferences(name,mode)
+        }
+        val id=java.util.UUID.randomUUID().toString()
+        val command=JSONObject().put("commandId",id).put("workoutId",id).put("action","healthSummary").put("createdAt",System.currentTimeMillis())
+        assertEquals(0L,WearCommandOutbox.enqueue(wrapper,command))
+        val failed=WearCommandOutbox.state(context,id)!!
+        assertEquals(WearSavePhase.ERROR,failed.phase);assertEquals("local",failed.reason)
+        WearCommandOutbox.retry(context,id)
+        val pending=org.json.JSONArray(real.getString("pending","[]"))
+        val stored=(0 until pending.length()).mapNotNull { pending.optJSONObject(it) }.single { it.optString("commandId")==id }
+        val receipt=JSONObject().put("schema",1).put("commandId",id).put("workoutId",id).put("action","healthSummary")
+            .put("sequence",stored.getLong("sequence")).put("status","applied").put("receivedAt",System.currentTimeMillis())
+        val path=WearCommandOutbox.RECEIPT_PREFIX+id
+        assertFalse(WearCommandOutbox.acceptReceipt(wrapper,path,receipt.toString()))
+        assertNotEquals(WearSavePhase.SYNCED,WearCommandOutbox.state(context,id)!!.phase)
+        assertTrue(WearCommandOutbox.acceptReceipt(context,path,receipt.toString()))
+        assertEquals(WearSavePhase.SYNCED,WearCommandOutbox.state(context,id)!!.phase)
+    }
+
     @Composable
     private fun Watch(content: @Composable () -> Unit) {
         BoxWithConstraints(Modifier.fillMaxSize().background(Color.Black)) {

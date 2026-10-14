@@ -21,6 +21,13 @@ data class WearClosure(
 object WearClosureStore {
     private const val PREFS = "trainpilot_wear_closure"
 
+    @Synchronized fun persist(context: Context,workoutId: String): Boolean {
+        val prefs=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE)
+        val raw=prefs.getString("result",null) ?: return false
+        if(JSONObject(raw).optString("workoutId")!=workoutId)return false
+        return prefs.edit().putString("result",raw).putString("closed",prefs.getString("closed","[]")).commit()
+    }
+
     @Synchronized
     fun close(context: Context, workout: WearWorkout, command: JSONObject): WearClosure {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -38,7 +45,11 @@ object WearClosureStore {
             .put("started", workout.started)
             .put("needsFeedback", command.optString("action") == "finishWorkout" && !command.has("feedback"))
             .put("command", command)
-        prefs.edit().putString("closed", closed.toString()).putString("result", result.toString()).commit()
+        val beforeClosed=prefs.getString("closed","[]");val beforeResult=prefs.getString("result",null)
+        if(!prefs.edit().putString("closed", closed.toString()).putString("result", result.toString()).commit()) {
+            prefs.edit().putString("closed",beforeClosed).putString("result",beforeResult).commit()
+            return parse(result.put("status","error").put("message","A helyi mentés nem sikerült."))
+        }
         return parse(result)
     }
 
@@ -59,8 +70,17 @@ object WearClosureStore {
         prefs.edit().putString("result", local.toString()).apply()
     }
 
-    fun load(context: Context): WearClosure? = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        .getString("result", null)?.let { parse(JSONObject(it)) }
+    fun load(context: Context): WearClosure? {
+        val local=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).getString("result",null)?.let(::JSONObject) ?: return null
+        // The outbox receipt and command removal commit atomically. Reconstruct
+        // closure status from that proof after a crash between preference stores.
+        val receipts=JSONArray(context.getSharedPreferences("trainpilot_wear_outbox",Context.MODE_PRIVATE).getString("results191","[]"))
+        for(i in 0 until receipts.length())receipts.optJSONObject(i)?.let {
+            if(it.optString("commandId")==local.optString("commandId") && it.optString("workoutId")==local.optString("workoutId") &&
+                it.optString("status") in setOf("saved","discarded","error"))local.put("status",it.optString("status"))
+        }
+        return parse(local)
+    }
 
     @Synchronized
     fun answer(context: Context, workoutId: String, feedback: JSONObject) {

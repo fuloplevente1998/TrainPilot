@@ -4,9 +4,24 @@
 
 Friss main: `20fe5ceaf992bc2658be7422d5c3f45b9c060ace`, a készülékesen elfogadott #158 / #196 után. A #158 és #159 lezárva; a Mini Napló meglévő funkció, nem készül újra. Fejlesztési ág: `feat/191-wear-save-sync-status`. Verzió **1.3.4 /2730**.
 
-Állapot: **forrásfelmérés és terv**, még nem megvalósított #191, nincs új APK vagy készülékes elfogadás.
+Állapot: **implementáció és automatizált ellenőrzés folyamatban**. A meglévő outbox és telefonos parancsbizonylat bővítve, készülékes elfogadás még nincs. Main változatlan.
 
-## Meglévő adatút és tényleges hiány
+## Megvalósított adatút
+
+- A helyi draft rögzítési határán ellenőrzött tartós írás, majd az eredeti outbox ellenőrzött `commit()`. Sikertelen írás nem jelenik meg „Órán mentve” állapotként; az aktív draft nem törlődik. A gyors időzítőfrissítések továbbra is aszinkronok.
+- A Data Layer-átadás csak várakozást jelent. A rögzítőparancs az outboxban marad, amíg a telefon tartós parancsbizonylata vissza nem érkezik. Újrapróbálás az eredeti commandId-val, automatikus átadási kísérletek legfeljebb percenként; újracsatlakozáskor és appnyitáskor ismételt átadás.
+- A telefon a meglévő `seen` bizonylattárba írja a parancs eredményét; ebből minimális `/trainpilot/command-receipt/<commandId>` DataItem készül. Egészségérték, GPS és edzéssorozat nem kerül a nyugtába. Sikeres nyugtapublikáció után törölhető az eredeti DataItem. Ismételt parancs ugyanazt a megőrzött nyugtát küldi vissza, nem hajtja újra végre az edzést.
+- Az óra schema, commandId, workoutId, action és sequence alapján illeszti az eredményt. Az outboxból kivétel és a nyugta megőrzése egy tartós írás. A duplikált, késői és idegen eredmény nem készít naplómásolatot. Korábbi elutasított művelet látható marad; egy későbbi visszaigazolt végső mentés/törlés feloldhatja.
+- Kis státuszsor a főmenüben és edzésmenüben, külön görgethető „Mentés és szinkron” oldal, biztonságos újrapróbálás. A főoldal meglévő alcímhelye lezárt edzésnél mutatja a státuszt. Az edzésvezérlés és alsó időzítő mérete/helye megmarad. Magyar, angol, német és román státuszszövegek a rendszer nyelvét követik.
+- A régi, csak azonosítót tartalmazó telefonos bizonylatból nem gyártunk kitalált sikeres nyugtát; ezért a #191 próbához mindkét APK frissítendő. A telefon korábbi natív/JS műveleti protokollja és a Mini Napló kanonikus története megmarad.
+
+## Ellenőrzés / következő lépés
+
+Helyi 140 telefonos regresszió, 6 új Wear állapotmodell-/nyelvi teszt és 6 telefonos outbox/bizonylat JVM-teszt sikeres. Új tényleges Wear outbox-írási hiba, duplikált nyugta és körkijelzős státusz/újrapróbálás próbák a GitHub emulátoros gate-ben. A két natív release gate és a körkijelzős teszt eredménye az átadáskor kerül ide; APK és készülékes elfogadás még nincs.
+
+Rövid készülékes próba: órás sorozatrögzítés, telefon nélkül helyi/várakozó státusz, telefon-visszakapcsolás után valódi nyugta, appújranyitás és edzésbefejezés után egyetlen naplóbejegyzés. Telefonos indítás mellett egy órás rögzítés és lezárt telefonos automata-pihenő ellenőrzése is szükséges; nincs 45 perces minimum.
+
+## Kiinduláskori adatút és hiány (a módosítás előtt)
 
 - `WearCommandOutbox.enqueue()` a sorozatparancsot SharedPreferencesbe írja és Data Layerre küldi. A lokális `commit()` eredménye jelenleg nincs ellenőrizve. A `putDataItem()` sikeres visszatérése után a lokális küldési sorból kiveszi a parancsot: ez a Data Layer-átadás sikere, nem annak bizonyítéka, hogy a telefon edzésadataiba már bekerült.
 - `WearDataListenerService` jelenleg a `TYPE_CHANGED` eseményeket dolgozza fel; az általános parancsokra nincs az órás felületen közös, tartós telefonos visszaigazolási státusz. A Data Item törlés vagy a beérkező pillanatkép megfelelő bizonylatát csak az azonosítók és a telefonos tartós mentés feltételeinek ellenőrzése után szabad nyugtának tekinteni.
