@@ -1,5 +1,8 @@
 # TrainPilot — fejlesztés folytatása Workban
 
+**Aktuális telepítendő pár:** telefon `b9dbf7b`, Wear `9b94a10`, mindkettő **1.3.4 /2730**; közös forráság `fix/p0-162-157-safe-wear-sync`, #195 draft. A befejezés és közös öt fokozatú értékelés, pontos hash/CI/próbasorrend: [P0 átadási lap](P0_KESZULEKES_ELFOGADAS_162_157.md). Az órás teljes forrásfa ugyanaz a telefonos build commitjában; a verziószám önmagában nem különbözteti meg a régebbi APK-kat. A régi `84c872c` / `859a6a1` funkcióját a felhasználó elfogadta; a mostani értékelési UX készülékes próbája még hátra van.
+
+
 ## Legfrissebb folytatási pont — befejezési UX
 
 2026. október 14-én a felhasználó a `84c872c` telefonos / `859a6a1` órás pár funkcióját működőnek igazolta. Most az edzés lezárását egyszerűsítjük: értékelés után automatikus kezdőlap, órán is ugyanaz az öt fokozat, közös kanonikus visszajelzés, külön fájdalom/kihagyás. Az órán is megválaszolható a telefonon befejezett edzés még nyitott értékelése. Duplikált üzenet nem írja felül az első választ; a Naplóban szándékosan szerkeszthető. A progressziónál a külön gyakorlatértékelés elsőbbséget élvez, a teljes edzésértékelés csak hiányában szolgál alapul. Nincs automatikus programátírás a válasz megadásakor.

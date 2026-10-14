@@ -1,5 +1,30 @@
 # P0 #162 → #157 — közös tesztpár és készülékes elfogadás
 
+## Aktuális edzésértékelési tesztpár — 2026. október 14.
+
+Telefon: **`b9dbf7b4fd327b8155fcebdb1a4a68c623516a99`**. Wear: **`9b94a10e0edf19a15369d4c8bdf1905fecbfdd29`**; a teljes `android/wear` fa változatlan a telefonos build forrásában. Mindkét app **1.3.4 /2730**, csomag `com.repforge.app`, eredeti aláíróval. A main/release változatlan, [#195](https://github.com/fuloplevente1998/TrainPilot/pull/195) draft.
+
+- Telefon: `TrainPilot-1.3.4-P0-b9dbf7b-Telefon.apk`, **5 814 881 byte**, SHA-256 `248dfc59065f2a3f8504090d591224994e9d10373053d27f154f4b14242a2a8c`.
+- Óra: `TrainPilot-1.3.4-Feedback-9b94a10-Wear.apk`, **4 075 019 byte**, SHA-256 `b03b913cf6d0981ac214981b4be297e8eeec540c36e2dc5c09908578f9bdc29b`.
+- Mindkét aláírás ténylegesen ellenőrzött; tanúsítvány SHA-256 `4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688`. A telefonos csomagolt JS/HTML/CSS és érintett natív forrás egyezik a build forrás-ZIP-jével és a munkafával. A Wear metaadat/hash/verzió és egyező forrásfa is ellenőrzött.
+
+**Működés:** befejezés → azonos öt fokozatú értékelés → automatikus kezdőlap; külön fájdalom és kihagyás. Az óra a befejezéskor azonnal leállítja a mérést és időzítőt, utána kérdez. Az offline lezárás és megválaszolatlan kérdés tartósan megmarad; a válasz külön parancsban utazik, a végső parancs újrapróbálásában is szerepel. Telefonos befejezés után az órán is megadható a még nyitott válasz. A fogadó telefon konkrét, elmentett edzéshez kapcsolja; korán érkezett válasz a lezárásig vár, duplikáció nem írja át az első választ. Az egyik eszközön elmentett válasz lezárja a másik kérdését.
+
+Az értékelés `history[].feedback.effort`, `effortScore`, régi formátummal kompatibilis `rating`, `source` és `updatedAt` mezőkben tárolódik. A gyakorlat saját `effort` adata elsőbbséget élvez, hiányában a teljes edzés értékelését használja a progresszió/Coach. Nem készítünk hamis gyakorlatértékeléseket és nem módosítjuk a programot a válasz mentésétől. A Napló → Edzésértékelés alatt később megtekinthető/szándékosan javítható; a nézetből való kilépés megőrzi a meglévő választ.
+
+**GitHub-telepítők:** [Telefonos artifact](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38535772902/artifacts/11880690342), [Wear artifact](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38535432653/artifacts/11879218859). Mindkettő a fix ágról készült; nincs nyilvános release-publikálás.
+
+**Ellenőrzések:**
+
+- [Phone Release Gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38535772902): SUCCESS; mind a **92 Chromium-csomag**, teljes natív release tesztek és aláírt APK. Négy nyelv, álló/fekvő/kis képernyő, nagy betű, érintési célok és tényleges görgetés; közvetlen kezdőlap és megmaradó Health-művelet.
+- [Quick Validation](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38535779558) és [Performance](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38535779801): SUCCESS. Helyben **140 Node-csomag / 0 hiba**; közös értékelés, elsőbbség, újraindítás, korai/duplikált órás parancs és naplóbeli kilépés célzott Chromium-próbája sikeres.
+- [Android–WebView háttérvezérlés](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38535773109): SUCCESS; tényleges jelentés **1 teszt / 0 hiba / 0 kihagyás**. Az emulátor felébresztése/feloldása és Activity-fókusz megvárása stabilizálja az indulási feltételt; az alkalmazás fókuszvédelmét nem módosítottuk. [Tesztjelentés/logcat](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38535773109/artifacts/11879014851).
+- [Wear Release Gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38535432653): SUCCESS; release unit tesztek és eredeti aláírású APK.
+- [Wear kerek kijelzős próba](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38535432511): SUCCESS; tényleges jelentés **66 teszt / 0 hiba / 0 kihagyás**, 160/192/225 dp és nagy betűk. Mind az öt fokozat, fájdalom/kihagyás, telefonos és órás befejezés közvetlen kezdőlappal, tartós kérdés és újrapróba vizsgálva. [Képek és tesztjelentés](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38535432511/artifacts/11880681011).
+
+**Mindkét APK telepítendő. Készülékes próba:** rövid gyors/tervezett edzés telefonon befejezve → értékelés → kezdőlap; órán befejezve → mérés megáll → öt fokozat → kezdőlap és egy naplóbejegyzés. Egy telefonon befejezett próbában az órán válaszolj: a telefonos kérdés tűnjön el. Órás kapcsolatvesztés/visszatérés után is ugyanahhoz az edzéshez érkezzen meg a válasz; kihagyás és fájdalom külön ellenőrizendő. Az új UX fizikai elfogadása még várakozik.
+
+
 ## Új készülékes eredmény és befejezési értékelés
 
 **2026. október 14.:** a felhasználó a `84c872c` telefonos és `859a6a1` órás tesztpár működését elfogadta: „Most már a funkció jól működik”. Ez a beszámolt funkció elfogadása; a teljes korábbi P0 tesztmátrix minden esete nem lett külön visszaigazolva.
@@ -11,7 +36,7 @@ Következő tesztpár: telefonon értékelés után közvetlen kezdőlap; órán
 
 Frissítve: **2026. október 14.** Közös draft PR: [#195](https://github.com/fuloplevente1998/TrainPilot/pull/195). Forráság: `fix/p0-162-157-safe-wear-sync`. Verzió mindkét appban **1.3.4 /2730**. A main és a nyilvános kiadások nem változnak; #162 és #157 a tényleges telefonos/órás eredményig nyitva marad.
 
-## Aktuális félbehagyott edzés törlésének javítása — `84c872c`
+## Korábban átadott, elfogadott törlési javítás — `84c872c`
 
 A `539f136` próbájában a telefonon törölt félbehagyott edzés újra és újra megjelent. A felhasználó megerősítette: **az órán törölve megszűnt az ismétlődés**. A telefonos törlés korábban csak a helyi piszkozatot törölte; nem hagyott tartós lezárási jelölést, és nem zárta le a hozzá tartozó natív háttérvezérlést.
 
