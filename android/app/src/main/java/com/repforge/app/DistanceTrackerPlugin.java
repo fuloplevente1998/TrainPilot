@@ -44,4 +44,48 @@ public class DistanceTrackerPlugin extends Plugin {
    }},100);
   }catch(Exception e){starting=false;c.reject(message(c,"A GPS-mérés nem indult el. Nyisd meg az appot és ellenőrizd az engedélyeket.","GPS did not start. Open the app and check permissions.","GPS startete nicht. App öffnen und Berechtigungen prüfen.","GPS nu a pornit. Deschide aplicația și verifică permisiunile."));}
  });}
+
+ /** Sensitive coordinates only cross the native bridge after an explicit matching-key request. */
+ @PluginMethod public void route(PluginCall call){
+  String key=call.getString("key","");
+  if(!GpsRouteStore.validKey(key)){call.reject("Invalid route owner key");return;}
+  getBridge().execute(()->{
+   try{
+    GpsRouteStore.Route track=new GpsRouteStore(getContext().getNoBackupFilesDir()).read(key);
+    JSObject result=new JSObject();
+    result.put("key",key);result.put("pointCount",track.pointCount);result.put("partial",track.partial);
+    JSArray sections=new JSArray();
+    for(GpsRouteTrace.Segment segment:track.segments){
+     JSObject section=new JSObject();
+     section.put("ordinal",segment.ordinal);
+     JSArray points=new JSArray();
+     for(GpsRouteTrace.Point point:segment.points){
+      JSObject p=new JSObject();
+      p.put("latitude",point.latitude);p.put("longitude",point.longitude);
+      p.put("accuracyMeters",point.accuracyMeters);
+      p.put("elapsedMillis",point.elapsedMillis);p.put("epochMillis",point.epochMillis);
+      points.put(p);
+     }
+     section.put("points",points);sections.put(section);
+    }
+    result.put("segments",sections);call.resolve(result);
+   }catch(Exception e){call.reject("Route unavailable",e);}
+  });
+ }
+
+ /** Separate explicit erasure for a deleted workout; never delete routes on ordinary STOP. */
+ @PluginMethod public void deleteRoute(PluginCall call){
+  String key=call.getString("key","");
+  if(!GpsRouteStore.validKey(key)){call.reject("Invalid route owner key");return;}
+  getBridge().execute(()->{
+   try{
+    // Never remove an actively recorded owner's route.
+    org.json.JSONObject status=DistanceTrackingService.snapshot(getContext());
+    if(status.optBoolean("active")&&key.equals(status.optString("key"))){call.reject("Recording still active");return;}
+    boolean deleted=new GpsRouteStore(getContext().getNoBackupFilesDir()).delete(key);
+    if(!deleted){call.reject("Route could not be erased");return;}
+    JSObject result=new JSObject();result.put("deleted",true);call.resolve(result);
+   }catch(Exception e){call.reject("Route erase failed",e);}
+  });
+ }
 }
