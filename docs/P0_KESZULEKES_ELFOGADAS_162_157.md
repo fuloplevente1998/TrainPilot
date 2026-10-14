@@ -1,8 +1,29 @@
 # P0 #162 → #157 — közös tesztpár és készülékes elfogadás
 
-Frissítve: **2026. október 13.** Közös draft PR: [#195](https://github.com/fuloplevente1998/TrainPilot/pull/195). Forráság: `fix/p0-162-157-safe-wear-sync`. Verzió mindkét appban **1.3.4 /2730**. A main és a nyilvános kiadások nem változnak; #162 és #157 a tényleges telefonos/órás eredményig nyitva marad.
+Frissítve: **2026. október 14.** Közös draft PR: [#195](https://github.com/fuloplevente1998/TrainPilot/pull/195). Forráság: `fix/p0-162-157-safe-wear-sync`. Verzió mindkét appban **1.3.4 /2730**. A main és a nyilvános kiadások nem változnak; #162 és #157 a tényleges telefonos/órás eredményig nyitva marad.
 
-## Aktuális telefonos időzítő-tulajdonos javítás — `539f136`
+## Aktuális félbehagyott edzés törlésének javítása — `84c872c`
+
+A `539f136` próbájában a telefonon törölt félbehagyott edzés újra és újra megjelent. A felhasználó megerősítette: **az órán törölve megszűnt az ismétlődés**. A telefonos törlés korábban csak a helyi piszkozatot törölte; nem hagyott tartós lezárási jelölést, és nem zárta le a hozzá tartozó natív háttérvezérlést.
+
+A megerősített törlés az aszinkron leállítások előtt tartósan megjelöli a konkrét edzés azonosítóját. Késői órás indítás és automata pillanatkép nem hozhatja vissza, a lezárt piszkozat nem publikálható új aktív edzésként. A telefonos és óráról érkező törlés közös útvonalon állítja le az edzés saját időzítőit/GPS-ét, lezárja a natív vezérlőt, majd törli a piszkozatot és küldi a végleges visszaigazolást. A törlés az időközben másikra cserélt edzést nem törölheti; folyamatban lévő natív művelet befejezését megvárja.
+
+A korábbi buildből visszamaradt, már megerősítetten törölt natív végrehajtás a következő szinkronnál is lezárható: a függő régi adatok így nem akadályozzák az új edzést. A híd válaszára várás közben elindított új edzést ez a takarítás megőrzi; a lezárás végén az aktuális piszkozat azonosságát ellenőrzi. Mindkét helyzet célzott Node-regressziója a javítás előtt elbukott, a javításon sikeres.
+
+Külön, megerősítést igénylő natív `discardExecution` készült. Az edzésazonosító, generáció és friss revízió ellenőrzése megmarad; a kifejezett törlés függő rögzítések mellett is lezárhatja az adott végrehajtást. A rendes `closeExecution` továbbra is megköveteli a függő események összevezetését. A natív rögzítési bizonylatok megmaradnak; más edzést vagy eltérő generációt nem törlünk, a naplóbejegyzések megmaradnak.
+
+- Telefonos APK-forrás: **`84c872cf32df0dbe69eb63828042800b7eb0a4d2`**, változatlan **1.3.4 /2730**. [Telefonos artifact](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38509519434/artifacts/11869093580). Átadott fájl: `TrainPilot-1.3.4-P0-84c872c-Telefon.apk`.
+- SHA-256: `55ff64c669e0a9ad274b9f7e82b3cbf104124ea4cb5a5df97b9b7f03b3fcd497`; méret **5 812 925 byte**.
+- [Phone Release Gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38509519434): SUCCESS; 91 Chromium-csomag, natív release tesztek, aláírt APK. A törlés megerősítőablakának korábbi, nem blokkoló hívási módja megmarad; a meglévő párbeszédablak-teszt is sikeres.
+- [Kibővített Android–WebView próba](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38509519266): SUCCESS; 1 teszt, 0 hiba, 0 kihagyás. Tényleges WebView, Capacitor, SQLite és foreground szolgáltatás: a korábbi rögzítés/javítás/visszavonás/újrarögzítés és checkpoint próba után megerősített törlés, inaktív natív végrehajtás, leállított vezérlő, üres telefonos piszkozat és elutasított késői natív sorozatrögzítés. [Teszt/logcat artifact](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38509519266/artifacts/11869386895).
+- [Quick Validation](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38509522968) és [Performance](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38509522891): SUCCESS.
+- A tényleges Chromium telefonos törléspróba a régi forráson az újralétrejövő piszkozatot reprodukálta. A javításon a Mégse megőrzi a piszkozatot; a megerősített törlés után a késői órás indítás és automata üzenet nyugtázódik, nincs új piszkozat, a napló megmarad, és új gyorsedzés indítható.
+- A célzott helyi natív integrációs harness 44 tesztje sikeres. Külön ellenőrzött a függő rögzítés melletti kifejezett törlés, a megmaradó rögzítési bizonylat, a lezárt végrehajtás újraindításának elutasítása, új végrehajtás indítása, valamint a másik azonosító/generáció/revízió és restore-zár védelme. Ez nem fizikai készülékes teszt.
+- A letöltött csomag hash/verzió/eredeti aláíró/valódi aláírás ellenőrizve. A csomagolt JS/CSS és a source ZIP érintett natív forrásai egyeznek az ellenőrzött committal; a release DEX tartalmazza az új `discardExecution` API-t. Órás natív változás nincs.
+
+**Újrapróba:** a telefonos APK telepítése után indíts egy új rövid edzést telefonon, kapcsold be az automata módot és rögzíts egy sorozatot. Hagyd félbe, majd a telefon kezdőlapján töröld a félbehagyott edzést. Mindkét eszközön ellenőrizd, hogy megszűnik az aktív edzés, és több frissítés után sem tér vissza; utána lehessen új edzést indítani. Az órás `859a6a1` APK maradhat. A korábbi telefonos tulajdonos-, rögzítési, időrendi és javítás/visszavonás javítások is részei a forrásnak. #162/#157 nyitott, #195 draft, main és release változatlan; a javított telefonos törlés fizikai elfogadása még szükséges.
+
+## Korábbi telefonos időzítő-tulajdonos javítás — `539f136`
 
 A `9e7de31` készülékes próbájának 2426-os képén **„Az óra nem válaszol. Ellenőrizd a kapcsolatot.”** jelenik meg, miközben a felhasználó szerint a gyakorlatváltás és a két eszköz frissítése működik. Megerősítés: az edzés telefonról indult, és az üzenet az automata mód telefonos bekapcsolásakor jelent meg. Ez részleges pozitív szinkron-visszajelzés; önmagában nem igazolja a lezárt telefon melletti működést és nem zárja le a P0 elfogadást.
 
