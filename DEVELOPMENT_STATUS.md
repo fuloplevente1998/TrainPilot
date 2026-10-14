@@ -1,5 +1,14 @@
 # TrainPilot — fejlesztési állapot
 
+## #163 GPS – 5/8 térképes napló és szelektív törlés (2026. október 14.)
+
+A [#205 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/205) a korábbi 2–4/8 natív GPS-szakaszmodell és privát mentés után **kísérleti edzésnapló-térképet** kapott. A valódi GPS útvonallal rendelkező sorozatnál `gpsRouteKey163` történeti kulcs kerül a draftba/naplóba; csak ilyen naplóbejegyzésnél jelenik meg `GPS-útvonal megtekintése` gomb. Kattintásra az eddig is ismert `DistanceTracker.route({key})` célozza a készülékprivát helyadatokat; a napló böngészése koordinátaolvasás és tile letöltés nélkül működik.
+
+- **Térkép:** a felhasználó által választott sötét vizuális téma, élénkzöld, szakaszhatárok között **nem összekötött** vonal, rajt/cél és kompakt táv/pontosság. Online Leaflet 1.9.4 + OSM csempe szükség szerinti betöltéssel; offline a GPS-útvonal SVG-vetülete térképcsempe nélkül is elérhető. Publikus OSM csempe offline/bulk letöltése nincs.
+- **Naplótörlés adatvédelme:** kizárólag **megerősített** naplótörlés után a kapcsolódó `gpsRouteKey163`-ok `DistanceTracker.deleteRoute` hívással törlődnek. Megszakított megerősítés nem töröl. A törlés sikertelensége külön felhasználói figyelmeztetés, nem csendes adatmegőrzés.
+- **TrainPilot single-source startup:** az első plusz külső JS betöltés megbukott a szigorú kompatibilitási kapun; a nézetet a `www/index.html` végén lévő **záró inline rétegbe** illesztettük. A JS-manifeszt továbbra is kizárólag `app.js`; a célzott `tests/browser/gps-route-map-163.cjs` a meglévő hat-shard Playwright suite része. A lusta naplómegnyitásra a render- és megnyitási hookok mellett közvetlen UI forrás-bekötés is készült.
+- **Állapot:** natív és böngészős regressziók az aktuális commiton újrafuttatandók. A már megtalált lusta napló gombhiány és single-source hiba javításait ne tekintsük zöldnek **CI-igazolás nélkül**. Felhő/backup útvonalexport még nincs, újratelepítés utáni GPS-restaurálás nem ígért. Verzió **1.3.4 /2730**, nincs main merge vagy kiadás; csak külön jóváhagyással.
+
 ## #163 GPS – 4/8 privát, kulcshoz kötött útvonaltárolás (2026. október 14.)
 
 A [#205 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/205) legújabb részfeladata a `GpsRouteStore` per-mérési-kulcs tartós útvonalnapló, a telefonos `DistanceTrackingService` háttérmentése, a `DistanceTracker.route({key})` célzott koordinátaolvasás és a `DistanceTracker.deleteRoute({key})` explicit törlés. A sorozatot/edzést az eddig használt GPS mérési `key` köti a fájlhoz; a térképes naplómegjelenítés és a napló-törléshez kötött automatikus adattisztítás a következő UI-integrációban történhet.
