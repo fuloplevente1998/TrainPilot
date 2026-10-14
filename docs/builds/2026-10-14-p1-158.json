@@ -16,12 +16,15 @@
     "versionCode": 2730
   },
   "signerCertificateSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
-  "physicalAcceptance": false,
+  "physicalAcceptance": true,
   "wearUnchanged": true,
   "acceptedWearSourceCommit": "9b94a10e0edf19a15369d4c8bdf1905fecbfdd29",
   "pullRequest": 196,
   "verifiedSourceArchive": true,
   "verifiedPackagedWebAssets": true,
   "verifiedNativeSources": true,
-  "verifiedApkSignature": true
+  "verifiedApkSignature": true,
+  "acceptedAt": "2026-10-14",
+  "acceptanceQuote": "#158 rendben, mehetunk tovabb, de elvileg a #159 is készen van már.",
+  "acceptanceNote": "A felhasználó a #158 működését elfogadta; külön 45 perces próba nincs igazolva."
 }
