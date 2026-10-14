@@ -20,12 +20,32 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
     private var registered=false
     private var afterRegistration: (() -> Unit)?=null
     private val stopReceiver=object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) { end() }
+        override fun onReceive(context: Context?, intent: Intent?) { if(intent?.action==SYNC_PAUSE)syncWorkoutPause() else end() }
     }
     override fun onCreate() {
         super.onCreate()
-        if(Build.VERSION.SDK_INT>=33)registerReceiver(stopReceiver,IntentFilter(STOP),Context.RECEIVER_NOT_EXPORTED)
-        else registerReceiver(stopReceiver,IntentFilter(STOP))
+        if(Build.VERSION.SDK_INT>=33)registerReceiver(stopReceiver,IntentFilter(STOP).apply { addAction(SYNC_PAUSE) },Context.RECEIVER_NOT_EXPORTED)
+        else registerReceiver(stopReceiver,IntentFilter(STOP).apply { addAction(SYNC_PAUSE) })
+    }
+    private var pauseInFlight=false
+    private var appliedPause=false
+    private fun syncWorkoutPause() {
+        val data=summary ?: return
+        val session=lifecycle ?: return
+        if(!session.owned||session.stopRequested||session.finished||destroyed||pauseInFlight)return
+        val workout=WorkoutSnapshotStore.load(this) ?: return
+        if(workout.workoutId!=data.optString("workoutId"))return
+        val desired=workout.workoutPaused
+        if(data.optBoolean("workoutPauseRequested201")!=desired||!data.has("workoutPauseRequested201")){data.put("workoutPauseRequested201",desired);persist()}
+        if(desired==appliedPause)return
+        pauseInFlight=true
+        try {
+            awaitCompletion(if(desired)client.pauseExerciseAsync() else client.resumeExerciseAsync()) {
+                pauseInFlight=false;appliedPause=desired
+                data.put("workoutPauseApplied201",desired).put("state",if(desired)"paused" else "active");persist()
+                syncWorkoutPause() // A newer explicit continuation may have arrived during the future.
+            }
+        }catch(error:Exception){pauseInFlight=false;futureFailed(error)}
     }
     private var destroyed=false
     private var watchdog: Runnable?=null
@@ -37,12 +57,13 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
         if(intent?.action==STOP) { end();return START_NOT_STICKY }
         val id=intent?.getStringExtra("workoutId") ?: WearHealthStore.active(this)
         if(id.isBlank()) { stopSelf();return START_NOT_STICKY }
-        if(summary?.optString("workoutId")==id)return START_STICKY
+        if(summary?.optString("workoutId")==id){syncWorkoutPause();return START_STICKY}
         if(summary!=null) { end();return START_STICKY }
         val oldId=WearHealthStore.active(this)
         val closePrevious=oldId.isNotBlank() && oldId!=id
         summary=WearHealthStore.begin(this,if(closePrevious)oldId else id)
         if(summary!!.optString("state") in listOf("ended","error")) { stopSelf();return START_NOT_STICKY }
+        appliedPause=summary!!.optBoolean("workoutPauseApplied201",summary!!.optString("state")=="paused")
         val session=WearRecordingLifecycle(summary!!).also { lifecycle=it }
         val request=WearRecordingRequest.restore(summary!!,intent?.getStringExtra("exerciseType"),
             intent?.takeIf { it.hasExtra("gps") }?.getBooleanExtra("gps",false))
@@ -68,8 +89,8 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
                         ExerciseTrackedStatus.OTHER_APP_IN_PROGRESS -> fail("Másik alkalmazás már edzést mér. A TrainPilot nem szakította meg.")
                         ExerciseTrackedStatus.OWNED_EXERCISE_IN_PROGRESS -> {
                             session.confirmOwnership()
-                            summary?.put("state",if(session.stopRequested)"ending" else "active");persist()
-                            if(session.stopRequested)end()
+                            summary?.put("state",if(session.stopRequested)"ending" else if(appliedPause)"paused" else "active");persist()
+                            if(session.stopRequested)end() else syncWorkoutPause()
                         }
                         else -> if(session.stopRequested){finishWithoutExercise()}else capabilities(request.exerciseType,location)
                     }
@@ -97,9 +118,10 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
                 it.put("exerciseType",type.toString()).put("gps",config.isGpsEnabled) }
             persist()
             awaitCompletion(client.startExerciseAsync(config)) {
-                lifecycle?.confirmOwnership()
+                lifecycle?.confirmOwnership();appliedPause=false
+                summary?.put("workoutPauseApplied201",false)
                 summary?.put("state",if(lifecycle?.stopRequested==true)"ending" else "active");persist()
-                if(lifecycle?.stopRequested==true)end()
+                if(lifecycle?.stopRequested==true)end() else syncWorkoutPause()
             }
         }
     }
@@ -138,10 +160,12 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
             val elapsed=if(update.exerciseStateInfo.state.isPaused || update.exerciseStateInfo.state.isEnded)0L else java.time.Duration.between(checkpoint.time,java.time.Instant.now()).toMillis().coerceAtLeast(0L)
             accumulator.segmentTotal("activeDurationSeconds",(checkpoint.activeDuration.toMillis()+elapsed)/1000.0)
         }
+        appliedPause=update.exerciseStateInfo.state.isPaused
+        data.put("workoutPauseApplied201",appliedPause)
         val ended=update.exerciseStateInfo.state.isEnded
         data.put("state",if(ended)"ended" else if(lifecycle?.stopRequested==true)"ending" else if(update.exerciseStateInfo.state.isPaused)"paused" else "active")
         persist()
-        if(ended)finish()
+        if(ended)finish() else syncWorkoutPause()
     }
     private fun persist() { summary?.let {
         WearHealthStore.save(this,it);WearSurfaces.refresh(this)
@@ -188,8 +212,15 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
         super.onDestroy()
     }
     companion object {
+        const val SYNC_PAUSE="com.repforge.app.wear.SYNC_WORKOUT_PAUSE"
+        fun syncPause(context: Context) {
+            val workout=WorkoutSnapshotStore.load(context) ?: return
+            if(workout.workoutPaused){WearStopwatchStore.pause(context);context.getSystemService(Vibrator::class.java)?.cancel()}
+            context.sendBroadcast(Intent(SYNC_PAUSE).setPackage(context.packageName))
+        }
         const val STOP="com.repforge.app.wear.STOP_HEALTH"
         fun start(context: Context, workout: WearWorkout) {
+            if(workout.workoutPaused)return
             val request=wearRecordingRequestForWorkout(workout,WearHealthStore.gps(context))
             context.startForegroundService(Intent(context,WearHealthService::class.java).putExtra("workoutId",workout.workoutId).putExtra("exerciseType",request.exerciseType).putExtra("gps",request.gps))
         }

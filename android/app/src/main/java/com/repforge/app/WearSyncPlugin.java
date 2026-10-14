@@ -53,6 +53,9 @@ public class WearSyncPlugin extends Plugin {
     @PluginMethod public void suspendExecution(PluginCall call) { execution(call,()->{
         PhoneWorkoutExecution.store(getContext()).suspendCommands(call.getBoolean("suspended",true));return new JSONObject();
     }); }
+    @PluginMethod public void setWorkoutPause(PluginCall call) { execution(call,()->{
+        PhoneWorkoutExecution.setWorkoutPause(getContext(),call.getObject("snapshot"));return new JSONObject();
+    }); }
     @PluginMethod public void closeExecution(PluginCall call) { execution(call,()->{
         PhoneWorkoutExecutionStore db=PhoneWorkoutExecution.store(getContext());
         db.setRestoreBlocked(false); // Close and release the finish fence in this same main-looper operation.
@@ -99,6 +102,9 @@ public class WearSyncPlugin extends Plugin {
         new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
             try {
                 JSONObject value=input;
+                JSONObject prior=ActiveWorkoutStore.current(getContext());
+                if(prior!=null&&input.optString("workoutId").equals(prior.optString("workoutId"))&&input.optLong("pauseRevision")<prior.optLong("pauseRevision"))
+                    for(String key:new String[]{"workoutPaused","pauseRevision","activeIntervals"})if(prior.has(key))value.put(key,prior.get(key));
                 if(input.optInt("nativeExecutionProtocol")==2){
                     JSONObject frame=PhoneWorkoutExecution.store(getContext()).snapshot();
                     if(frame==null||!frame.optBoolean("active")||!input.optString("workoutId").equals(frame.optString("workoutId"))

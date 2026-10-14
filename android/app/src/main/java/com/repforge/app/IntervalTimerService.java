@@ -180,6 +180,10 @@ public class IntervalTimerService extends Service {
     }
     static JSONObject command(Context context,String key,String action)throws Exception{
         IntervalTimerService s=instance;if(s==null||!key.equals(s.key))throw new IllegalStateException("Interval owner is no longer active");
+        if(("resume".equals(action)||"skipRest".equals(action))&&s.executionGeneration>0){
+            JSONObject frame=PhoneWorkoutExecution.store(context).snapshot();
+            if(frame!=null&&s.workoutId.equals(frame.optString("workoutId"))&&frame.optBoolean("workoutPaused"))throw new IllegalStateException("Workout is suspended");
+        }
         if("pause".equals(action))s.pauseRun();else if("stop".equals(action))s.stopRun();else if("resume".equals(action)&&!s.running&&!s.stopped&&!"complete".equals(s.timeline.at(s.elapsed).phase)){s.timeLedger.sample(s.timeline,s.elapsed,SystemClock.elapsedRealtime(),false,false,false);s.began=SystemClock.elapsedRealtime();s.running=true;s.acquire();DistanceTrackingService.pauseOwned(context,s.steps.get(s.gpsStep).gpsKey,!"work".equals(s.timeline.at(s.elapsed).phase));s.handler.post(s.tick);s.save();}
         else if("skipRest".equals(action)&&!s.stopped){IntervalTimeline.Phase p=s.timeline.at(s.now());if(!"rest".equals(p.phase))throw new IllegalStateException("Not resting");s.handler.removeCallbacks(s.tick);s.timeLedger.sample(s.timeline,p.elapsedMs,SystemClock.elapsedRealtime(),s.running,s.stopped,s.interrupted);s.elapsed=p.elapsedMs+p.remainingMs;s.timeLedger.skipTo(s.elapsed);s.began=SystemClock.elapsedRealtime();s.running=true;s.acquire();s.update();if(s.running)s.handler.post(s.tick);}
         s.publishWatchClock();return s.current();

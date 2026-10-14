@@ -121,6 +121,7 @@ object WearAutomaticEngine {
     }
     fun tick(workout: WearWorkout, now: Long, boot: Int): WearAutomaticTransition {
         val a=workout.automation ?: return WearAutomaticTransition(workout)
+        if(workout.workoutPaused)return WearAutomaticTransition(workout)
         if(!a.enabled||a.owner!="watch"||a.phase=="complete")return WearAutomaticTransition(workout)
         if(a.boot!=boot||now<a.anchorMs||!validTarget(workout,a))return WearAutomaticTransition(interrupt(workout,a.anchorMs))
         val manual=a.phase=="ready"&&!timed(workout.exercises.getOrNull(a.targetExercise))

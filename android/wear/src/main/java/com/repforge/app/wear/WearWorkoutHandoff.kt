@@ -27,6 +27,7 @@ internal object WearWorkoutHandoff {
         val data=try { JSONObject(raw) }catch(_:Exception){return false}
         if(!wearHandoffReplyMatches(start,prefs.getLong("expiresAt",0),System.currentTimeMillis(),data))return false
         val workout=WorkoutSnapshotStore.save(context,raw)
+        WearHealthService.syncPause(context)
         return start.matches(workout?.workoutId,workout?.revision ?: 0L)
     }
 }

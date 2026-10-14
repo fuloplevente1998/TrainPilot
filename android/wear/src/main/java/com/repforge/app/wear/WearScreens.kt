@@ -318,6 +318,14 @@ internal fun TrainPilotWearApp(
                             onStart(day, "")
                             if (workout.value != null) route = "workout"
                         }
+                    route in listOf("workout","editor","timer") && active?.workoutPaused==true ->
+                        RoundList("Edzés szünetel") {
+                            centerItem { Text(active.exercise?.name.orEmpty(),color=White,fontSize=14.sp,
+                                textAlign=TextAlign.Center,modifier=Modifier.fillMaxWidth()) }
+                            centerItem { Text("A mérés és az időzítő szünetel.",color=Muted,fontSize=11.sp,textAlign=TextAlign.Center) }
+                            centerItem { Pill("Folytatás telefonon",tone=Gold) { onOpenPhone() } }
+                            centerItem { Pill("Kezdőlap",tone=Secondary) { route="home" } }
+                        }
                     route == "workout" && active != null ->
                         WorkoutPager(
                             active,
@@ -362,7 +370,7 @@ internal fun TrainPilotWearApp(
                                 if (workout.value != null) route = "workout"
                             },
                             onResume = {
-                                onResumeWorkout()
+                                if(active?.workoutPaused==true)onOpenPhone()else onResumeWorkout()
                                 route = "workout"
                             },
                             onDays = { route = "days" },

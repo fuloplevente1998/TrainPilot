@@ -28,11 +28,11 @@ final class PhoneWorkoutExecution {
         JSONObject receipt = db.receipt(command);
         if (receipt != null) {
             JSONObject requested=receipt.optJSONObject("transition"),current=frame==null?null:frame.optJSONObject("transition");
-            if(frame!=null&&frame.optBoolean("active")&&!db.restoreBlocked()&&!db.commandsSuspended()&&"duplicate".equals(receipt.optString("status"))&&requested!=null&&requested.optJSONObject("plan")!=null&&current!=null&&current.optJSONObject("plan")!=null
+            if(frame!=null&&frame.optBoolean("active")&&!db.restoreBlocked()&&!db.commandsSuspended()&&!frame.optBoolean("workoutPaused")&&"duplicate".equals(receipt.optString("status"))&&requested!=null&&requested.optJSONObject("plan")!=null&&current!=null&&current.optJSONObject("plan")!=null
                 && requested.getJSONObject("plan").optString("key").equals(current.getJSONObject("plan").optString("key"))&&"pending".equals(current.optString("state"))){deliver(context);publish(context);}
             return receipt;
         }
-        if (frame == null || !frame.optBoolean("active") || !frame.optBoolean("automaticEnabled") || db.commandsSuspended())
+        if (frame == null || !frame.optBoolean("active") || !frame.optBoolean("automaticEnabled") || db.commandsSuspended() || frame.optBoolean("workoutPaused"))
             return new JSONObject().put("status", "rejected").put("reason", "executionNotPrepared");
         if(db.restoreBlocked())return new JSONObject().put("status","rejected").put("reason","restoreInProgress");
         if (!IntervalTimerService.armed(frame.getString("workoutId"), frame.getLong("generation")))
@@ -55,7 +55,7 @@ final class PhoneWorkoutExecution {
     }
     static void deliver(Context context) throws Exception {
         PhoneWorkoutExecutionStore db = store(context); JSONObject frame = db.snapshot();
-        if (frame == null || !frame.optBoolean("active")) return;
+        if (frame == null || !frame.optBoolean("active") || frame.optBoolean("workoutPaused")) return;
         JSONObject transition = frame.optJSONObject("transition"), plan = transition == null ? null : transition.optJSONObject("plan");
         if (plan == null || !"pending".equals(transition.optString("state"))) return;
         boolean started = false;
@@ -107,7 +107,33 @@ final class PhoneWorkoutExecution {
             }
         } else if (transition != null) value.put("automation", new JSONObject().put("enabled", true).put("owner", "phone")
                 .put("phase", transition.optString("phase", "ready")).put("remainingMs", 0).put("key", "").put("paused", false));
+        if(frame.optBoolean("workoutPaused")){
+            JSONObject a=value.optJSONObject("automation");if(a!=null)a.put("paused",true).put("deadlineAt",0);
+            value.put("restEndAt",0);
+        }
         return value;
+    }
+    static void setWorkoutPause(Context context,JSONObject input) throws Exception {
+
+        if(input==null||input.optString("workoutId").isEmpty())throw new IllegalArgumentException("missingWorkoutPause");
+        JSONObject active=ActiveWorkoutStore.current(context);
+        PhoneWorkoutExecutionStore db=PhoneWorkoutExecution.store(context);JSONObject before=db.snapshot();
+        boolean nativeOwner=before!=null&&before.optBoolean("active")&&input.optString("workoutId").equals(before.optString("workoutId"));
+        if(!nativeOwner&&active!=null&&active.optBoolean("active")&&!input.optString("workoutId").equals(active.optString("workoutId")))throw new IllegalStateException("Workout changed");
+        JSONObject timer=IntervalTimerService.snapshot(context);
+        JSONObject frame=db.setWorkoutPause(input,android.os.SystemClock.elapsedRealtime(),timer.optBoolean("running"));
+        if(frame!=null){
+            if(frame.optBoolean("workoutPaused")&&timer.optBoolean("running"))IntervalTimerService.command(context,timer.optString("key"),"pause");
+            else if(before!=null&&input.optLong("pauseRevision")>before.optLong("pauseRevision")&&!frame.optBoolean("workoutPaused")&&frame.optBoolean("resumeTimerOnContinue201")&&!timer.optBoolean("running")&&!timer.optBoolean("interrupted")&&!timer.optBoolean("stopped")&&!"complete".equals(timer.optString("phase")))
+                IntervalTimerService.command(context,timer.optString("key"),"resume");
+            PhoneWorkoutExecution.publish(context);
+        }else{
+            if(active!=null&&input.optString("workoutId").equals(active.optString("workoutId"))&&input.optLong("pauseRevision")<active.optLong("pauseRevision"))throw new IllegalStateException("staleWorkoutPause");
+            JSONObject saved=ActiveWorkoutStore.save(context,input);
+            PutDataMapRequest map=PutDataMapRequest.create(WearSyncPlugin.ACTIVE_WORKOUT_PATH);
+            map.getDataMap().putString("snapshot",saved.toString());map.getDataMap().putBoolean("active",true);map.getDataMap().putLong("revision",saved.optLong("revision"));
+            Wearable.getDataClient(context).putDataItem(map.asPutDataRequest().setUrgent());
+        }
     }
     static void publish(Context context) throws Exception {
         JSONObject value = display(context); if (value == null) return;

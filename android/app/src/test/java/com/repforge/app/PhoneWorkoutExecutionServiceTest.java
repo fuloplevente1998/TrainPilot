@@ -169,4 +169,40 @@ public class PhoneWorkoutExecutionServiceTest {
         assertEquals("duplicate",PhoneWorkoutExecution.execute(context,command).getString("status"));
         assertFalse(store.snapshot().getBoolean("active"));
     }
+    private JSONObject pauseInput(boolean paused,long revision)throws Exception {
+        return new JSONObject(store.snapshot().toString()).put("workoutPaused",paused).put("pauseRevision",revision)
+            .put("activeIntervals",new org.json.JSONArray().put(new JSONObject().put("start","2026-10-14T10:00:00Z").put("end",paused?"2026-10-14T10:00:30Z":JSONObject.NULL)));
+    }
+    @Test public void explicitWorkoutPauseFreezesNativeRestForTwentyMinutesAndOnlyExplicitlyResumes() throws Exception {
+        arm();PhoneWorkoutExecution.execute(context,command());ShadowLooper.idleMainLooper(30000);
+        long remaining=IntervalTimerService.snapshot(context).getLong("remainingMs");
+        PhoneWorkoutExecution.setWorkoutPause(context,pauseInput(true,1));
+        assertTrue(store.snapshot().getBoolean("workoutPaused"));assertFalse(IntervalTimerService.snapshot(context).getBoolean("running"));
+        ShadowLooper.idleMainLooper(1200000);
+        assertEquals(remaining,IntervalTimerService.snapshot(context).getLong("remainingMs"));
+        assertFalse(store.snapshot().getJSONArray("exercises").getJSONObject(0).getJSONArray("sets").getJSONObject(1).getBoolean("done"));
+        assertTrue(PhoneWorkoutExecution.display(context).getBoolean("workoutPaused"));
+        try {IntervalTimerService.command(context,IntervalTimerService.snapshot(context).getString("key"),"skipRest");fail("Suspended workout accepted skip");}catch(IllegalStateException expected){}
+        PhoneWorkoutExecution.setWorkoutPause(context,pauseInput(false,2));
+        assertTrue(IntervalTimerService.snapshot(context).getBoolean("running"));
+        assertEquals(remaining,IntervalTimerService.snapshot(context).getLong("remainingMs"));
+    }
+    @Test public void pollingAndStalePreparationCannotClearAnExplicitWorkoutPause() throws Exception {
+        arm();JSONObject stale=new JSONObject(store.snapshot().toString());
+        PhoneWorkoutExecution.setWorkoutPause(context,pauseInput(true,3));
+        JSONObject result=store.prepare(stale,store.snapshot().getLong("executionRevision"));
+        assertTrue(result.getBoolean("workoutPaused"));assertEquals(3,result.getLong("pauseRevision"));
+        assertEquals("rejected",PhoneWorkoutExecution.execute(context,command()).getString("status"));
+        try{PhoneWorkoutExecution.setWorkoutPause(context,stale.put("pauseRevision",2).put("workoutPaused",false));fail("Stale continuation accepted");}catch(IllegalStateException expected){}
+    }
+    @Test public void manualWorkExcludesTheLongSuspension() throws Exception {
+        arm();store.beginManualWork("workout",1,android.os.SystemClock.elapsedRealtime());ShadowLooper.idleMainLooper(5000);
+        PhoneWorkoutExecution.setWorkoutPause(context,pauseInput(true,1));ShadowLooper.idleMainLooper(1200000);
+        PhoneWorkoutExecution.setWorkoutPause(context,pauseInput(false,2));ShadowLooper.idleMainLooper(2000);
+        assertEquals("applied",PhoneWorkoutExecution.execute(context,command()).getString("status"));
+        JSONObject logs=store.snapshot().getJSONObject("timeLogs162");long work=0;
+        for(java.util.Iterator<String> keys=logs.keys();keys.hasNext();)work+=logs.getJSONObject(keys.next()).optLong("workMs");
+        assertEquals(7000,work);
+    }
+
 }

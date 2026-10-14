@@ -212,6 +212,21 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     }
 
     @Test
+    fun explicitWorkoutPauseShowsOnlySafeContinuationControls() {
+        val actions=mutableListOf<String>()
+        compose.setContent { Watch { Fixture("workout-paused",automaticCommands=actions) } }
+        compose.onNodeWithText("Edzés szünetel").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Sorozat rögzítése").assertDoesNotExist()
+        assertFullViewport()
+        lazyList().performScrollToNode(hasContentDescription("Folytatás telefonon"))
+        compose.onNodeWithContentDescription("Folytatás telefonon").assertIsDisplayed().performClick()
+        assertEquals(listOf("openPhone"),actions)
+        lazyList().performScrollToNode(hasContentDescription("Kezdőlap"))
+        compose.onNodeWithContentDescription("Kezdőlap").assertIsDisplayed()
+        screenshot("workout-paused-continuation")
+    }
+
+    @Test
     fun skippedPhoneRestReturnsToAnEnabledRecordingButton() {
         val actions=mutableListOf<String>()
         compose.setContent { Watch { Fixture("phone-rest-finished",automaticCommands=actions) } }
@@ -673,7 +688,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                         onDiscard = {},
                         onSettings = {},
                         onMenu = {},
-                        onOpenPhone = {},
+                        onOpenPhone = { if(route=="workout-paused")automaticCommands?.add("openPhone") },
                     )
                 }
             }
@@ -884,7 +899,8 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                     listOf(exercise),
                     "A nap",
                 ).let { initial ->
-                    if (route=="phone-rest-finished") projectPhoneAutomatic(initial,
+                    if (route=="workout-paused") initial.copy(workoutPaused=true,pauseRevision=1)
+                    else if (route=="phone-rest-finished") projectPhoneAutomatic(initial,
                         JSONObject().put("restOnly",true).put("steps",org.json.JSONArray()),
                         WearAutomatic(enabled=true,owner="phone",phase="complete",paused=true,key="phone-rest",remainingMs=0))
                     else if (route.startsWith("automatic-")) initial.copy(timerOwner="watch",
@@ -955,7 +971,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         }
         val request = remember {
             mutableStateOf<String?>(
-                if (route == "timed-workout" || route.startsWith("automatic-") || route=="phone-rest-finished") "workout"
+                if (route == "timed-workout" || route.startsWith("automatic-") || route in listOf("phone-rest-finished","workout-paused")) "workout"
                 else if (route == "active-home") "home" else route
             )
         }

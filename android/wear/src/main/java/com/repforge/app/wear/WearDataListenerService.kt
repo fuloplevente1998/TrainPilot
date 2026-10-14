@@ -37,6 +37,7 @@ class WearDataListenerService : WearableListenerService() {
             }
             WearCommandOutbox.flush(this)
             WearPhoneAutomatic.applyCached(this)
+            WearHealthService.syncPause(this)
             if(WorkoutSnapshotStore.load(this)==null && WearHealthStore.active(this).isNotBlank())WearHealthService.stop(this)
             WearSurfaces.refresh(this,true)
         }

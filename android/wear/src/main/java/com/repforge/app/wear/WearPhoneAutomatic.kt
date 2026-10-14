@@ -18,6 +18,7 @@ object WearPhoneAutomatic {
     }
     private fun apply(context: Context,value: JSONObject) {
         val current=WorkoutSnapshotStore.load(context) ?: return
+        if(current.workoutPaused)return
         if(current.timerOwner!="phone"||value.optString("workoutId")!=current.workoutId)return
         val previous=current.automation ?: return
         if(previous.key!=value.optString("key")||previous.interrupted||previous.awaitingPhone)return

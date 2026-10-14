@@ -44,10 +44,17 @@ data class WearWorkout(
     val timerOwner: String = "phone",
     val nativeExecutionProtocol: Int = 0,
     val generation: Long = 0L,
-    val executionRevision: Long = 0L
+    val executionRevision: Long = 0L,
+    val workoutPaused: Boolean = false,
+    val pauseRevision: Long = 0L,
+    val activeIntervals: List<WearActiveInterval>? = null,
+    val resumeAutomaticOnContinue: Boolean = false,
+    val pausedRestMillis: Long = 0L
 ) {
     fun elapsedSeconds(now: Long = System.currentTimeMillis()): Int = try {
-        ((now - java.time.Instant.parse(started).toEpochMilli()).coerceAtLeast(0L) / 1000L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+        val duration=activeIntervals?.sumOf { (if(it.end>0)it.end else now).minus(it.start).coerceAtLeast(0) }
+            ?: (now-java.time.Instant.parse(started).toEpochMilli()).coerceAtLeast(0L)
+        (duration/1000L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
     } catch (_: Exception) { 0 }
 
     val completedSets: Int get() = exercises.sumOf { ex -> ex.sets.count { it.done } }
@@ -91,7 +98,7 @@ object WorkoutSnapshotStore {
             clear(context)
             return null
         }
-        val parsed = parse(raw) ?: return current
+        val parsed = mergeWorkoutPause(current,parse(raw) ?: return current,android.os.SystemClock.elapsedRealtime(),System.currentTimeMillis())
         if (WearClosureStore.isClosed(context, parsed.workoutId)) return current
         if (current?.revision == 0L && current.localSequence > 0L && parsed.workoutId != current.workoutId) return current
         if (current?.workoutId == parsed.workoutId && parsed.localSequence < current.localSequence) {
@@ -102,11 +109,11 @@ object WorkoutSnapshotStore {
         }
         if(current?.workoutId==parsed.workoutId && current.timerOwner=="watch" && current.automation!=null &&
             (parsed.automation?.key!=current.automation.key || ((parsed.automation?.phaseNumber ?: -1)<current.automation.phaseNumber)))
-            return saveWorkout(context,current.copy(revision=maxOf(current.revision,parsed.revision)))
+            return saveWorkout(context,preserveWorkoutPause(current.copy(revision=maxOf(current.revision,parsed.revision)),parsed))
         if(current?.workoutId==parsed.workoutId && current.automation?.enabled==true && current.automation.owner=="watch")
-            return saveWorkout(context,current.copy(revision=maxOf(current.revision,parsed.revision)))
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(SNAPSHOT, raw).apply()
-        return parsed
+            return saveWorkout(context,preserveWorkoutPause(current.copy(revision=maxOf(current.revision,parsed.revision)),parsed))
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(SNAPSHOT, encode(parsed).toString()).commit()
+        return load(context)
     }
 
     @Synchronized
@@ -117,11 +124,10 @@ object WorkoutSnapshotStore {
     @Synchronized
     fun saveWorkout(context: Context, workout: WearWorkout): WearWorkout {
         val current=load(context)
-        val saved=if(current?.workoutId==workout.workoutId)workout.copy(localSequence=maxOf(current.localSequence,workout.localSequence),revision=maxOf(current.revision,workout.revision))else workout
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit()
-            .putString(SNAPSHOT, encode(saved).toString())
-            .apply()
+        val safe=if(current?.workoutId==workout.workoutId&&(workout.pauseRevision<current.pauseRevision||workout.pauseRevision==current.pauseRevision&&current.workoutPaused))preserveWorkoutPause(workout,current)else workout
+        val saved=if(current?.workoutId==safe.workoutId)safe.copy(localSequence=maxOf(current.localSequence,safe.localSequence),revision=maxOf(current.revision,safe.revision))else safe
+        val committed=context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(SNAPSHOT, encode(saved).toString()).commit()
+        if(!committed)throw IllegalStateException("Workout snapshot could not be saved")
         return saved
     }
 
@@ -209,7 +215,18 @@ object WorkoutSnapshotStore {
                 timerOwner = root.optString("timerOwner",root.optJSONObject("automation")?.optString("owner") ?: "phone"),
                 nativeExecutionProtocol = root.optInt("nativeExecutionProtocol"),
                 generation = root.optLong("generation"),
-                executionRevision = root.optLong("executionRevision")
+                executionRevision = root.optLong("executionRevision"),
+                workoutPaused = root.optBoolean("workoutPaused"),
+                pauseRevision = root.optLong("pauseRevision"),
+                activeIntervals = root.optJSONArray("activeIntervals")?.let { rows -> buildList {
+                    for(i in 0 until rows.length())rows.optJSONObject(i)?.let { row ->
+                        val start=runCatching { java.time.Instant.parse(row.optString("start")).toEpochMilli() }.getOrNull()
+                        val end=runCatching { java.time.Instant.parse(row.optString("end")).toEpochMilli() }.getOrDefault(0L)
+                        if(start!=null)add(WearActiveInterval(start,end))
+                    }
+                } },
+                resumeAutomaticOnContinue = root.optBoolean("resumeAutomaticOnContinue"),
+                pausedRestMillis = root.optLong("pausedRestMillis")
             )
         } catch (_: Exception) { null }
     }
@@ -234,6 +251,12 @@ object WorkoutSnapshotStore {
             .put("nativeExecutionProtocol",workout.nativeExecutionProtocol)
             .put("generation",workout.generation)
             .put("executionRevision",workout.executionRevision)
+            .put("workoutPaused",workout.workoutPaused).put("pauseRevision",workout.pauseRevision)
+            .put("resumeAutomaticOnContinue",workout.resumeAutomaticOnContinue).put("pausedRestMillis",workout.pausedRestMillis)
+        workout.activeIntervals?.let { rows -> root.put("activeIntervals",JSONArray().also { json -> rows.forEach {
+            json.put(JSONObject().put("start",java.time.Instant.ofEpochMilli(it.start).toString())
+                .put("end",if(it.end>0)java.time.Instant.ofEpochMilli(it.end).toString() else JSONObject.NULL))
+        } }) }
         workout.automation?.let { root.put("automation",it.json()) }
         val exercises = JSONArray()
         workout.exercises.forEach { exercise ->
@@ -268,7 +291,7 @@ object WorkoutSnapshotStore {
 
 internal fun preservePendingWearEdits(current: WearWorkout, incoming: WearWorkout): WearWorkout =
     if(current.workoutId==incoming.workoutId && incoming.localSequence<current.localSequence)
-        current.copy(revision=maxOf(current.revision,incoming.revision),nativeExecutionProtocol=incoming.nativeExecutionProtocol,generation=incoming.generation,executionRevision=incoming.executionRevision)
+        preserveWorkoutPause(current.copy(revision=maxOf(current.revision,incoming.revision),nativeExecutionProtocol=incoming.nativeExecutionProtocol,generation=incoming.generation,executionRevision=incoming.executionRevision),incoming)
     else incoming
 
 /** Unsupported measurements keep their existing recorder; no phone-owned clock is created by the watch. */

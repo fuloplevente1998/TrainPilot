@@ -141,8 +141,10 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         } else permissionRequest.launch(missing.toTypedArray())
     }
     private fun startHealthIfEnabled() {
+        WearHealthService.syncPause(this)
         if(!activityResumed)return
         val current=workout.value ?: return
+        if(current.workoutPaused)return
         if(!wearMeasurementMayStart(remoteMeasurementRequested,remoteWorkoutAccepted,remoteMeasurementStart,current.workoutId,current.revision))return
         if(remoteMeasurementRequested)remoteWorkoutAccepted=true
         if(remoteMeasurementRequested){
@@ -513,6 +515,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private fun changeCurrentSet(field: String, delta: Double) {
         synchronized(WearAutomaticController) { synchronized(WorkoutSnapshotStore) {
         val current = WorkoutSnapshotStore.load(this) ?: return
+        if(current.workoutPaused)return
         if(current.automation?.enabled==true && current.automation.owner=="watch" && current.automation.phase=="work" && field=="reps")return
         val exerciseIndex = current.currentExercise
         val exercise = current.exercise ?: return
@@ -551,6 +554,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private fun saveEditorValue(field: String,value: Double,expected: String): Boolean {
         synchronized(WearAutomaticController){synchronized(WorkoutSnapshotStore){
             val current=WorkoutSnapshotStore.load(this) ?: return false
+        if(current.workoutPaused)return false
             if(!value.isFinite()||current.currentSet?.done!=false||WearAutomaticEngine.targetId(current,current.currentExercise,current.currentSetIndex)!=expected||
                 current.automation?.let { it.enabled&&it.phase=="work"&&field=="reps" }==true||
                 current.automation?.let { it.counting&&!it.paused }==true){Toast.makeText(this,"A sorozat közben változott. Nyisd meg újra.",Toast.LENGTH_SHORT).show();return false}
@@ -563,6 +567,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         synchronized(WearAutomaticController) { synchronized(WorkoutSnapshotStore) {
         if (restRemaining.intValue > 0) return
         val current = WorkoutSnapshotStore.load(this) ?: return
+        if(current.workoutPaused)return
         if(current.automation?.awaitingPhone==true)return
         if(current.automation?.enabled==true && current.automation.owner=="watch" && current.automation.counting)return
         val exerciseIndex = current.currentExercise
@@ -627,14 +632,15 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         leftSeconds: Int? = null,
         rightSeconds: Int? = null
     ) {
-        val current = workout.value ?: return
+        val current = WorkoutSnapshotStore.load(this) ?: return
+        if(current.workoutPaused&&action !in listOf("resumeWorkout","finishWorkout","discardWorkout"))return
         val exercise = exerciseIndex?.let { current.exercises.getOrNull(it) }
         val set = if (exercise != null && setIndex != null) exercise.sets.getOrNull(setIndex) else null
         val commandId = UUID.randomUUID().toString()
         val command = JSONObject()
             .put("schema", 1)
             .put("commandId", commandId)
-            .put("baseRevision", current.revision)
+            .put("baseRevision", current.revision).put("pauseRevision",current.pauseRevision)
             .put("watchSequence", current.localSequence)
             .put("workoutId", current.workoutId)
             .put("action", action)

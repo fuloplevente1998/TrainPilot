@@ -1,3 +1,11 @@
+## 2026-10-14 — #201: kifejezett félbehagyáskor közös edzésszünet
+
+A felhasználó pontosítása szerint a telefonon az edzés elhagyása / félbehagyása után az óra 20 perces szünet alatt is tovább mért. A javítás a #199 draft körbe került, #191 és #200 megőrzésével. [#201](https://github.com/fuloplevente1998/TrainPilot/issues/201), [részletes működés](docs/wear/P1_201_EDZESSZUNET.md).
+
+A kifejezett kilépés tartós, azonosított szünetet küld a natív telefonos időzítőnek és a Wear mérésnek / órának. Régi szinkroncsomag és háttérlekérés nem oldja fel. A kijelzőlezárás továbbra sem edzésszünet. Az aktív összidőből kimarad a félbehagyott időszak. Az órán külön szünetnézet és telefonmegnyitás látható.
+
+Helyi új regressziók sikeresek; a GitHub teljes kapuk és az új, azonos forrású telefon+Wear pár eredménye még készül. A korábbi c503887 pár tartalmazza #191/#200-at, de **#201-et még nem**. Main / verzió / release változatlan: 1.3.4 / 2730. Készülékes elfogadás nincs, az érintett issue-k nyitottak. A P1 #163 előtt ez a friss edzés közben jelzett regresszió kerül ellenőrzésre; #197 továbbra is P2 terv.
+
 # TrainPilot — fejlesztési állapot
 
 ## Aktuális munka — #191 szinkron és #200 kihagyott pihenő
