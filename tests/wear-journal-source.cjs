@@ -40,7 +40,8 @@ assert.equal(api.sourceText({source:'all'}),'Health Connect','unknown origin nev
 assert.equal(api.sourceText({source:'all',sources:['com.fitbit.FitbitMobile'],sourceLabels:{'com.fitbit.FitbitMobile':'Fitbit'}}),'Health Connect · Fitbit');
 assert.equal(api.sourceText({sources:['com.sec.android.app.shealth']}),'Health Connect · Samsung Health','reported Samsung origin is distinct from the reading channel');
 assert.match(api.sourceText({provider:'samsung_health'}),/Samsung Health · közvetlen/);
-assert.match(api.sourceText({provider:'samsung_health',metricProviders:{steps:'health_connect'}}),/Samsung Health \/ Health Connect/);
+assert.match(api.sourceText({provider:'samsung_health',metricProviders:{steps:'health_connect',averageHeartRate:'samsung_health'}}),/Samsung Health \/ Health Connect/);
+assert.equal(api.sourceText({provider:'samsung_health',metricProviders:{steps:'health_connect'},sources:['com.fitbit.FitbitMobile'],sourceLabels:{'com.fitbit.FitbitMobile':'Fitbit'}}),'Health Connect · Fitbit','HC-only fallback does not become direct Samsung data');
 rows[0].healthWear129={...workout.healthWear129,source:'wear_health_services',workoutId:'watch-001',watchId:'watch7',revision:6,totalCalories:0,steps:0,averageHeartRate:999,partial:true};
 for(const [language,watch,partial] of [['hu','TrainPilot óra','Részleges mérés'],['en','TrainPilot watch','Partial measurement'],['de','TrainPilot Uhr','Teilweise Messung'],['ro','Ceas TrainPilot','Măsurare parțială']]){
  context.rf212Lang=()=>language;

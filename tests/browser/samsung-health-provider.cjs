@@ -32,7 +32,7 @@ function fixture(){
  const root=path.resolve('www'),server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/\/$/,'/index.html'));if(!file.startsWith(root+path.sep)){res.writeHead(403);return res.end();}fs.readFile(file,(e,data)=>{if(e){res.writeHead(404);return res.end();}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'application/octet-stream');res.end(data);});});
  await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;
  try{
-  browser=await chromium.launch({headless:true,args:['--no-sandbox']});const page=await browser.newPage({viewport:{width:360,height:800},locale:'hu-HU',timezoneId:'Europe/Budapest'}),errors=[];
+  browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});const page=await browser.newPage({viewport:{width:360,height:800},locale:'hu-HU',timezoneId:'Europe/Budapest'}),errors=[];
   page.on('pageerror',e=>errors.push(e.message));await page.addInitScript(fixture);await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>TrainPilotBoot.finished);
   await page.evaluate(async()=>{await TrainPilotHealthJournal.ready();go('health');});
   assert.equal(await page.locator('[data-health-provider]').count(),1);
@@ -56,6 +56,14 @@ function fixture(){
   await page.locator('.tp168-more-panel>summary').click();assert.match(await page.locator('[data-health-detail="skeletalMuscleMassKg"]').innerText(),/28,2 kg/);assert.equal(await page.locator('.tp168-today-card .tp5-today-metric').count(),6,'Composition must stay in details');
   const read=await page.evaluate(()=>healthPlugin().readTrainingWindow({start:'2026-10-07T22:00:00Z',end:'2026-10-07T23:00:00Z'}));
   assert.equal(read.workoutCalories,392);assert.equal(read.maxHeartRate,162);assert.equal(read.totalCalories,373);assert.equal(read.metricProviders.workoutCalories,'samsung_health');assert.equal(read.metricProviders.averageHeartRate,'health_connect');
+  const fallback=await page.evaluate(async()=>{
+   Capacitor.Plugins.SamsungHealth.readTrainingWindow=async()=>({workoutCalories:null,sources:[],warnings:[]});
+   Capacitor.Plugins.HealthBridge.readTrainingWindow=async()=>({workoutCalories:26,workoutEnergyVersion:1,totalCalories:49,sources:['com.fitbit.FitbitMobile'],sourceLabels:{'com.fitbit.FitbitMobile':'Fitbit'}});
+   const data=await healthPlugin().readTrainingWindow({start:'2026-10-07T22:00:00Z',end:'2026-10-07T23:00:00Z'});
+   return {data,label:TrainPilotWearJournalSource.sourceText(data)};
+  });
+  assert.equal(fallback.data.workoutCalories,26);assert.equal(fallback.data.metricProviders.workoutCalories,'health_connect','HC workout-energy fallback retains its real channel even when native result has no energy-provider field');
+  assert.equal(fallback.label,'Health Connect · Fitbit','a selected Samsung preference cannot claim HC-only data');
   await page.reload();await page.waitForFunction(()=>TrainPilotBoot.finished);await page.evaluate(()=>TrainPilotHealthJournal.ready());assert.equal(await page.evaluate(()=>TrainPilotSamsungHealth.selected()),'samsung_health');
   await page.evaluate(()=>{go('health');tp155R4OpenPanel('health-journal');});await page.waitForSelector('.tp120-day');
   assert.match(await page.locator('.tp120-day').innerText(),/Samsung Health/);assert.match(await page.locator('.tp120-day').innerText(),/Testzsír/);assert.match(await page.locator('.tp120-day').innerText(),/Health Connect/);

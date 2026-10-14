@@ -14322,7 +14322,7 @@ function aggregate(parts,windows,errors){
   distanceMeters:present('distanceMeters')?sum('distanceMeters'):null,averageSpeedMps:weighted('averageSpeedMps'),maxSpeedMps:max('maxSpeedMps'),
   exerciseMinutes:sessions.length?sessionMinutes:present('exerciseMinutes')?sum('exerciseMinutes'):null,exerciseSessionCount:sessions.length||sum('exerciseSessionCount'),exerciseSessions:sessions,
   sources,sourceLabels:labels,warnings,permissions:Object.assign({},...parts.map(p=>p.permissions||{})),
-  ...(parts.some(p=>p.provider==='samsung_health')?{provider:'samsung_health',metricProviders:Object.assign({},...parts.map(p=>p.metricProviders||{}))}:{}),
+  ...(parts.some(p=>p.provider==='samsung_health')?{provider:'samsung_health',metricProviders:Object.assign({},...parts.map(p=>p.metricProviders||{})),measurementProviders:[...new Set(parts.flatMap(p=>Array.isArray(p.measurementProviders)?p.measurementProviders:Object.values(p.metricProviders||{})))].filter(p=>p==='samsung_health'||p==='health_connect')}:{}),
   matchMode:'active-intervals',activeIntervals:windows.map(({start,end})=>({start,end})),
   activeDurationMs:windows.reduce((s,w)=>s+w.ms,0),sourceWindowStart:windows[0]?.start||null,sourceWindowEnd:windows.at(-1)?.end||null
  };
@@ -15740,7 +15740,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(!available&&fallback)for(const field of fields)if(fallback[field]!=null)out[field]=fallback[field];
    if(out[key]!=null)for(const field of fields)out.metricProviders[field]=provider;
   }
-  if(!numeric(out.workoutCalories)&&numeric(fallback?.workoutCalories))for(const [key,value] of Object.entries(fallback))if(key==='workoutCalories'||key.startsWith('workoutEnergy'))out[key]=value;
+  if(!numeric(out.workoutCalories)&&numeric(fallback?.workoutCalories)){
+   for(const [key,value] of Object.entries(fallback))if(key==='workoutCalories'||key.startsWith('workoutEnergy'))out[key]=value;
+   out.workoutEnergyProvider=fallback.workoutEnergyProvider||HC;
+  }
   if(numeric(out.workoutCalories))out.metricProviders.workoutCalories=out.workoutEnergyProvider||SH;
   out.sources=[...new Set([...(direct.sources||[]),...(fallback?.sources||[])])];
   out.sourceLabels={...(fallback?.sourceLabels||{}),...(direct.sourceLabels||{})};
@@ -17780,7 +17783,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  function channel(data){
   if(data?.provider!=='samsung_health')return 'Health Connect';
-  return Object.values(data.metricProviders||{}).includes('health_connect')?t('mixed'):t('direct');
+  const providers=Array.isArray(data.measurementProviders)?data.measurementProviders:Object.values(data.metricProviders||{});
+  if(providers.includes('health_connect')&&!providers.includes('samsung_health'))return 'Health Connect';
+  return providers.includes('health_connect')?t('mixed'):t('direct');
  }
  function sourceText(data){
   const origins=[...new Set([...(Array.isArray(data?.sources)?data.sources:[]),data?.source].filter(s=>typeof s==='string'&&s&&!['all','@aggregate','health_connect','samsung_health'].includes(s)))];

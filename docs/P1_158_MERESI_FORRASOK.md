@@ -6,6 +6,7 @@ Feladat: [#158](https://github.com/fuloplevente1998/TrainPilot/issues/158). Alap
 
 - Az adott edzéshez érkezett, ellenőrzött saját órás mérés az alapértelmezett forrás. Külön választható a telefon által olvasott adat. Ha nincs órás összesítés, a hiány egyértelműen szerepel.
 - A Health Connect olvasási csatornája és az adatot közlő alkalmazás külön információ. Például `Health Connect · Samsung Health` csak ténylegesen közölt Samsung-eredetnél; a globális provider-preferencia ezt nem bizonyítja. Közvetlen Samsung SDK-válasz és vegyes provider külön jelölést kap.
+- Ha a Samsung hiányzó edzésadatait teljes egészében Health Connect pótolja, a csatorna Health Connect marad; a pótolt edzésenergia is megtartja a saját providerét. Több aktív időablak eltérő csatornái együtt megmaradnak a forrásjelölésben.
 - A Wear és a telefon által olvasott energia nem adódik össze. A hiányzó értékből nincs nulla; a valódi nulla megmarad. Az órás átlag/min/max pulzus, mintaszám, kalória, lépés, mérési idő, távolság és max. sebesség csak érvényes, rendelkezésre álló értéknél jelenik meg.
 - A késői órás revízió ugyanahhoz az edzéshez tartozik. Megmarad a nyitott napló és a kézzel kiválasztott adatforrás, listaátrendezés esetén is. A meglévő Mini Napló-publikáció a frissített összesítést küldi tovább.
 - Az idegen edzéshez vagy más időablakhoz tartozó cache elutasítva. Sikertelen olvasás nem rejti el a korábbi, ugyanarra az időablakra mentett érvényes adatot; mellette megjelenik a hiba. A részleges eredmény külön jelölést kap.

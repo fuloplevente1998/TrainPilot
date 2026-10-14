@@ -52,6 +52,21 @@ const {chromium}=require('playwright');
    const row=history()[0];row.health240.metricProviders={steps:'health_connect',heartRate:'samsung_health'};db.set('history',[row]);rfHistoryHealthPaint(0);
   });
   assert.equal(await block.getByRole('button',{name:'Samsung Health / Health Connect',exact:true}).count(),1);
+  const intervalLabel=await page.evaluate(async()=>{
+   const result=await TrainPilotIssue79.readWorkout({readTrainingWindow:async args=>({provider:'samsung_health',averageHeartRate:120,metricProviders:{averageHeartRate:Date.parse(args.start)===Date.parse('2026-10-14T08:00:00Z')?'samsung_health':'health_connect'}})},
+    {...fixture158,activeIntervals:[{start:'2026-10-14T08:00:00Z',end:'2026-10-14T08:10:00Z'},{start:'2026-10-14T08:20:00Z',end:'2026-10-14T08:45:36Z'}]});
+   return TrainPilotWearJournalSource.sourceText(result);
+  });
+  assert.equal(intervalLabel,'Samsung Health / Health Connect','both reading channels survive active-interval aggregation');
+  await page.evaluate(()=>{
+   const row=history()[0];row.health240.metricProviders={steps:'health_connect',averageHeartRate:'health_connect'};
+   row.health240.sources=['com.fitbit.FitbitMobile'];row.health240.sourceLabels={'com.fitbit.FitbitMobile':'Fitbit'};db.set('history',[row]);rfHistoryHealthPaint(0);
+  });
+  assert.equal(await block.getByRole('button',{name:'Health Connect',exact:true}).count(),1,'HC-only fallback has no direct Samsung channel');
+  assert.doesNotMatch(await block.innerText(),/Samsung Health/);
+  await page.evaluate(()=>{
+   const row=history()[0];row.health240.metricProviders={steps:'health_connect',averageHeartRate:'samsung_health'};db.set('history',[row]);rfHistoryHealthPaint(0);
+  });
   // Keep the original disclosure mounted while its index moves from 0 to 1.
   await page.evaluate(()=>{
    const other={...structuredClone(fixture158),id:'other158',syncId:'other158',started:'2026-10-14T09:00:00Z',finished:'2026-10-14T09:01:00Z'};
