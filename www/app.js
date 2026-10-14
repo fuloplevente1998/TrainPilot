@@ -16424,9 +16424,9 @@ progressionSuggestion=function(h,rating){
 };
 // One canonical end-of-workout answer, shared by phone and watch. Replays cannot
 // replace an answer; editing from the Journal remains an explicit phone action.
-window.TrainPilotWorkoutFeedback=(function(){
+var TrainPilotWorkoutFeedback=window.TrainPilotWorkoutFeedback=(function(){
  const key='workoutFeedbackPending';
- const id=h=>String(h?.syncId||h?.id||h?.started||'');
+ const id=h=>String(h?.syncId||h?.id||h?.workoutId||h?.started||'');
  const matches=(h,expected)=>id(h)===expected||h?.started===expected;
  const valid=f=>f&&typeof f==='object'&&(RF232_EFFORT_KEYS.includes(f.effort)||f.effort==='pain'||f.skipped===true);
  function pending(){
@@ -16451,7 +16451,12 @@ window.TrainPilotWorkoutFeedback=(function(){
   db.set(key,{workoutId:id(h),started:h.started});feedbackScreen(h.started);
  }
  function skip(){if(accept(String(state.feedbackStarted||''),{skipped:true},'phone',state.feedbackEditing===true)){go('home');void window.TrainPilotWearSync?.syncHomeNow?.({force:true});}}
- return {pending,accept,afterFinish,skip,valid};
+ function historyButton(h,index){
+  const l=rf232L(),title={hu:'Edzésértékelés',en:'Workout feedback',de:'Trainingsbewertung',ro:'Evaluare antrenament'}[rf212Lang()]||'Edzésértékelés';
+  const answer=l[h.feedback?.effort]||({easy:l.easy,right:l.good,hard:l.hard,pain:l.pain}[h.feedback?.rating])||'';
+  return `<button class="btn secondary block" onclick="feedbackFromHistory(${Number(index)})">${esc(title)}${answer?' · '+esc(answer):''}</button>`;
+ }
+ return {pending,accept,afterFinish,skip,valid,historyButton};
 })();
 feedbackScreen=function(started){
  const h=history().find(h=>h.started===started);if(!h)return;state.feedbackStarted=started;state.feedbackEditing=!!(h.feedback?.rating||h.feedback?.skipped);
@@ -16468,11 +16473,8 @@ saveFeedback=function(effort){
 };
 const tpWorkoutFeedbackHistoryItem=rf263HistoryItem;
 rf263HistoryItem=function(h,index,visibleIndex){
- const html=String(tpWorkoutFeedbackHistoryItem.apply(this,arguments)),l=rf232L();
- const title={hu:'Edzésértékelés',en:'Workout feedback',de:'Trainingsbewertung',ro:'Evaluare antrenament'}[rf212Lang()]||'Edzésértékelés';
- const answer=l[h.feedback?.effort]||({easy:l.easy,right:l.good,hard:l.hard,pain:l.pain}[h.feedback?.rating])||'';
- const button=`<button class="btn secondary block" onclick="feedbackFromHistory(${Number(index)})">${esc(title)}${answer?' · '+esc(answer):''}</button>`;
- return html.replace(/(<div class="history-body"[^>]*>)/,'$1'+button);
+ const html=String(tpWorkoutFeedbackHistoryItem.apply(this,arguments)),button=TrainPilotWorkoutFeedback.historyButton(h,index);
+ return html.replace(/(<div class="[^"]*\bhistory-body\b[^"]*"[^>]*>)/,'$1'+button);
 };
 var tp128ValidateBase=validateBackup;
 validateBackup=function(d){
@@ -17446,7 +17448,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(!expected||command.confirmed!==true)return false;
   if(isClosed(expected)){
    attachMeasuredHealth(command);
-   if(action==='finishWorkout'&&TrainPilotWorkoutFeedback.valid(command.feedback))TrainPilotWorkoutFeedback.accept(expected,command.feedback);
+   if(action==='finishWorkout'&&window.TrainPilotWorkoutFeedback?.valid(command.feedback))window.TrainPilotWorkoutFeedback.accept(expected,command.feedback);
    const previous=closedWorkouts().find(x=>sameId(x.workoutId,expected));
    if(previous?.status==='discarding'&&matchesWorkout(state.session||db.get('draft',null)?.session,expected))return discardDraft(state.session||db.get('draft').session,command);
    // Recover an old unacknowledged save without reviving its stale draft.
@@ -17497,8 +17499,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
   if(action==='requestHome')return syncHomeNow({force:true});
   if(action==='saveWorkoutFeedback'){
-   if(!TrainPilotWorkoutFeedback.valid(command.feedback))return true;
-   return TrainPilotWorkoutFeedback.accept(expectedId,command.feedback);
+   if(!window.TrainPilotWorkoutFeedback?.valid(command.feedback))return true;
+   if(expectedId&&isClosed(expectedId)&&!history().some(h=>matchesWorkout(h,expectedId)&&h.finished))return true;
+   return window.TrainPilotWorkoutFeedback.accept(expectedId,command.feedback);
   }
   if(action==='healthSummary')return attachMeasuredHealth(command);
   if(action==='watchAutomationState'){
