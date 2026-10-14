@@ -86,6 +86,27 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         screenshot("workout-feedback-return-home")
     }
 
+    @Test
+    fun closureQuestionAndAnswerSurviveReloadAndTerminalRetry() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val id = java.util.UUID.randomUUID().toString()
+        val workout = WearWorkout(1, "p", "Program", "a", "", "2026-10-14T10:00:00Z", id, 0, 60, 0,
+            listOf(WearExercise("press", "Nyomás", "weight", "ism.", "strength", listOf(WearSet(1, "10", "5", true, 0, 0, 0.0)))))
+        val command = JSONObject().put("commandId", id).put("action", "finishWorkout").put("workoutId", id)
+        WearClosureStore.close(context, workout, command)
+        assertTrue(WearClosureStore.load(context)!!.needsFeedback)
+        assertEquals(workout.started, WearClosureStore.load(context)!!.started)
+        WearClosureStore.answer(context, id, WearWorkoutFeedback.answer("hard"))
+        assertFalse(WearClosureStore.load(context)!!.needsFeedback)
+        val retry = WearClosureStore.retry(context)!!
+        assertEquals("hard", retry.getJSONObject("feedback").getString("effort"))
+        WearClosureStore.close(context, workout, command)
+        WearClosureStore.acceptResult(context, JSONObject().put("commandId", command.getString("commandId"))
+            .put("status", "saved").put("feedbackAnswered", true))
+        assertFalse(WearClosureStore.load(context)!!.needsFeedback, "a phone answer closes the watch question")
+        WearClosureStore.dismiss(context)
+    }
+
     @Composable
     private fun Watch(content: @Composable () -> Unit) {
         BoxWithConstraints(Modifier.fillMaxSize().background(Color.Black)) {

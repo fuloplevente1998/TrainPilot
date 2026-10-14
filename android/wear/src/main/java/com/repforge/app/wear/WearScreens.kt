@@ -112,16 +112,16 @@ internal fun TrainPilotWearApp(
     val pendingFeedback = (home.value?.pendingFeedback ?: localFeedback)?.takeUnless {
         it.workoutId == answeredWorkout || WearWorkoutFeedback.answered(context, it.workoutId)
     }
-    LaunchedEffect(pendingFeedback?.workoutId, workout.value?.workoutId) {
-        if (pendingFeedback != null && workout.value == null && onWorkoutFeedback != null) route = "feedback"
-        else if (route == "feedback") route = "home"
-    }
     LaunchedEffect(route) { if (route == "journal" || route == "metrics") onRefreshJournal() }
     LaunchedEffect(requestedRoute.value) {
         requestedRoute.value?.let {
             route = it
             onRouteConsumed()
         }
+    }
+    LaunchedEffect(pendingFeedback?.workoutId, workout.value?.workoutId, requestedRoute.value) {
+        if (pendingFeedback != null && workout.value == null && onWorkoutFeedback != null) route = "feedback"
+        else if (route == "feedback") route = "home"
     }
     LaunchedEffect(workout.value?.automation?.enabled, route) {
         if (workout.value?.automation?.enabled == true && route == "timer") route = "workout"
