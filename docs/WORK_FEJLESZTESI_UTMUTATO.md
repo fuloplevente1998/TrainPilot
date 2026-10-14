@@ -2,7 +2,7 @@
 
 ## Aktuális munka — P1 #158
 
-A P0 #195 mainre került (`cac8937`), a #162/#157 készülékesen elfogadva és lezárva. A folytatás első feladata **#158**, külön `fix/158-health-source-provenance` ágon, ebből a mainből. A mérési eredet/csatorna felirat és a stabil edzésazonosítóhoz kötött naplófrissítés készül; pontos tesztbuild, CI és készülékes elfogadási lista: [P1 átadási lap](P1_158_MERESI_FORRASOK.md). A #158 nyitva marad a fizikai 45 perces mérési próbáig. Utána #159 → #191 → #163. Verzió továbbra is 1.3.4 /2730; az elfogadott Wear `9b94a10` változatlanul használható.
+A P0 #195 mainre került (`cac8937`), a #162/#157 készülékesen elfogadva és lezárva. A folytatás első feladata **#158**, külön `fix/158-health-source-provenance` ágon, ebből a mainből. A mérési eredet/csatorna felirat és a stabil edzésazonosítóhoz kötött naplófrissítés elkészült, a `c800b4e` telefonos teszt-APK ellenőrizve (140 Node + 93 Chromium csomag, natív gate, Quick és Performance sikeres); pontos tesztbuild, CI és készülékes elfogadási lista: [P1 átadási lap](P1_158_MERESI_FORRASOK.md). A #158 nyitva marad a fizikai 45 perces mérési próbáig. Utána #159 → #191 → #163. Verzió továbbra is 1.3.4 /2730; az elfogadott Wear `9b94a10` változatlanul használható.
 
 ## Elfogadott állapot és következő munkamenet
 
