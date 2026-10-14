@@ -1,5 +1,14 @@
 # TrainPilot — fejlesztési állapot
 
+## #163 GPS – 3/8 natív pontgyűjtés és szakaszkezelés (2026. október 14.)
+
+**Fejlesztési ág:** `feat/163-phone-gps-route-model`, [draft PR #205](https://github.com/fuloplevente1998/TrainPilot/pull/205). A 2/8. lépésben elkészült `GpsRouteTrace` pont-/szakaszlimites, szűrt, memóriabeli útvonalmodell és 8 teszt. A jelen **3/8. lépésben** a `GpsRouteCapture` a meglévő `DistanceAccumulator` változatlan elfogadási/távolságmérési logikája mellé kapcsolja a trace-t, és a `DistanceTrackingService` valós GPS-fixeivel táplálja.
+
+- Kifejezett telefonos szünet, GPS provider kiesése, leállítás és új mérésszakasz esetén route-határ; átadás/új workout key esetén új route. A korábbi `pauseOwned`, `stopOwned` és `rollover` tulajdonosi ellenőrzések megmaradnak.
+- A GPS plugin állapotába **csak pont-/szakaszszám és részleges (limitált) jelző kerül**, a koordináták nem. Nincs térkép, WebView-s helyadatátadás vagy tartós koordinátamentés; ez a következő, **4/8** lépés feladata.
+- `GpsRouteCaptureTest` új regressziók ellenőrzik, hogy a távolság változatlan, szünet/jelkiesés nem köt össze koordinátákat, hibás mérés nem növeli a távot, álló zajból nem lesz útvonal. A natív release gate **eredményét ellenőrizni kell**, és csak sikeres teszt után tekinthető zöldnek.
+- **Térképmotor:** a felhasználó Leaflet + OpenStreetMap és sötét, zöld útvonalas vizuális irányt jóváhagyta. A csempeprovider/licenc és offline stratégia későbbi #163 részlépés. Verzió változatlan: **1.3.4 /2730**; nem kerül mainre automatikusan.
+
 ## 2026-10-14 — #199 main, #191/#200 lezárva, P1 folytatás: #163
 
 **Main integráció:** [#199](https://github.com/fuloplevente1998/TrainPilot/pull/199) egyesítve (`442b366`); a #191 órás mentés/szinkron és a #200 kihagyott pihenő felhasználói kérésre lezárva. A #201 explicit telefonos kilépéskor közös mérési/óra-szüneteltetés készülékes részpróbája sikeres; #201 nyitva marad a teljes regressziós/készülékes ellenőrzésig. Az órás önálló edzésátvétel a külön [#202](https://github.com/fuloplevente1998/TrainPilot/issues/202) P2 terv része. A korábbi P0 #162/#157 már #195-tel mainre került, újraépíteni nem kell.
