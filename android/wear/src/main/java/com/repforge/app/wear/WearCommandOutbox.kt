@@ -14,7 +14,7 @@ object WearCommandOutbox {
     private val failedWrites=linkedMapOf<String,JSONObject>()
     private val writing=mutableSetOf<String>()
     private fun prefs(context: Context)=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE)
-    private fun read(context: Context,key: String)=try { JSONArray(prefs(context).getString(key,"[]")) }catch(_:Exception){JSONArray()}
+    private fun read(context: Context,key: String)=JSONArray(prefs(context).getString(key,"[]"))
 
     fun enqueue(context: Context, command: JSONObject): Long {
         // Persist the draft before taking the outbox lock: workout editing takes
@@ -24,7 +24,12 @@ object WearCommandOutbox {
                 WorkoutSnapshotStore.persist(context,command.optString("workoutId")) ||
                 WearClosureStore.persist(context,command.optString("workoutId"))
         } catch(_:Exception) { false }
-        return synchronized(this) { enqueuePersisted(context,command,localReady) }
+        return synchronized(this) {
+            try { enqueuePersisted(context,command,localReady) } catch(_:Exception) {
+                if(WearSaveSyncModel.tracked(command))failedWrites[command.optString("commandId")]=JSONObject(command.toString())
+                0L
+            }
+        }
     }
 
     private fun enqueuePersisted(context: Context, command: JSONObject,localReady: Boolean): Long {
@@ -59,10 +64,12 @@ object WearCommandOutbox {
     }
 
     @Synchronized fun state(context: Context,workoutId: String?,now: Long=System.currentTimeMillis()): WearSaveSyncState? {
+        try {
         val id=workoutId?.takeIf { it.isNotBlank() } ?: latestWorkoutId(context) ?: return null
         if(id in writing)return WearSaveSyncState(id,WearSavePhase.SAVING)
         if(failedWrites.values.any { it.optString("workoutId")==id })return WearSaveSyncState(id,WearSavePhase.ERROR,retryable=true,reason="local")
         return WearSaveSyncModel.view(read(context,"pending"),read(context,"results191"),id,now)
+        } catch(_:Exception) { return WearSaveSyncState(workoutId.orEmpty(),WearSavePhase.ERROR,reason="local") }
     }
 
     private fun latestWorkoutId(context: Context): String? {
@@ -76,7 +83,7 @@ object WearCommandOutbox {
         val failures=synchronized(this) { failedWrites.values.filter { it.optString("workoutId")==workoutId }.map { JSONObject(it.toString()) } }
         for(command in failures)enqueue(context,command)
         synchronized(this) {
-        val rows=read(context,"pending");val before=rows.toString()
+        val rows=try { read(context,"pending") } catch(_:Exception) { return };val before=rows.toString()
         for(i in 0 until rows.length())rows.optJSONObject(i)?.takeIf { it.optString("workoutId")==workoutId }?.apply { remove("_sent191");remove("_error191");remove("_attempt191") }
         if(prefs(context).edit().putString("pending",rows.toString()).commit())flush(context,true,workoutId)
         else prefs(context).edit().putString("pending",before).commit()
@@ -87,7 +94,8 @@ object WearCommandOutbox {
         if(raw==null||raw.length>4096||path==null||!path.startsWith(RECEIPT_PREFIX))return false
         val receipt=try { JSONObject(raw) }catch(_:Exception){return false}
         if(path!=RECEIPT_PREFIX+receipt.optString("commandId"))return false
-        val pending=read(context,"pending");val results=read(context,"results191")
+        val pending=try { read(context,"pending") } catch(_:Exception) { return false }
+        val results=try { read(context,"results191") } catch(_:Exception) { return false }
         val next=WearSaveSyncModel.accept(pending,results,receipt)
         if(next==null)return (0 until results.length()).mapNotNull { results.optJSONObject(it) }.any {
             WearSaveSyncModel.sameReceipt(it,receipt)
@@ -100,7 +108,7 @@ object WearCommandOutbox {
     }
 
     @Synchronized fun flush(context: Context,force: Boolean=false,workoutId: String?=null) {
-        val pending=read(context,"pending");val now=System.currentTimeMillis()
+        val pending=try { read(context,"pending") } catch(_:Exception) { return };val now=System.currentTimeMillis()
         for(i in 0 until pending.length()) {
             val command=pending.optJSONObject(i) ?: continue;val id=command.optString("commandId")
             val attempt=android.os.SystemClock.elapsedRealtime()
@@ -121,7 +129,7 @@ object WearCommandOutbox {
 
     @Synchronized private fun finishSend(context: Context,id: String,success: Boolean,attempt: Long) {
         if(sending[id]!=attempt)return
-        sending.remove(id);val pending=read(context,"pending");val before=pending.toString();val next=JSONArray()
+        sending.remove(id);val pending=try { read(context,"pending") } catch(_:Exception) { return };val before=pending.toString();val next=JSONArray()
         for(i in 0 until pending.length()) {
             val row=pending.optJSONObject(i) ?: continue
             if(row.optString("commandId")==id) {
