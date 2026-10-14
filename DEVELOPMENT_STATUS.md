@@ -1,22 +1,21 @@
-## 2026-10-14 — #201: kifejezett félbehagyáskor közös edzésszünet
-
-A felhasználó pontosítása szerint a telefonon az edzés elhagyása / félbehagyása után az óra 20 perces szünet alatt is tovább mért. A javítás a #199 draft körbe került, #191 és #200 megőrzésével. [#201](https://github.com/fuloplevente1998/TrainPilot/issues/201), [részletes működés](docs/wear/P1_201_EDZESSZUNET.md).
-
-A kifejezett kilépés tartós, azonosított szünetet küld a natív telefonos időzítőnek és a Wear mérésnek / órának. Régi szinkroncsomag és háttérlekérés nem oldja fel. A kijelzőlezárás továbbra sem edzésszünet. Az aktív összidőből kimarad a félbehagyott időszak. Az órán külön szünetnézet és telefonmegnyitás látható.
-
-Helyi új regressziók sikeresek; a GitHub teljes kapuk és az új, azonos forrású telefon+Wear pár eredménye még készül. A korábbi c503887 pár tartalmazza #191/#200-at, de **#201-et még nem**. Main / verzió / release változatlan: 1.3.4 / 2730. Készülékes elfogadás nincs, az érintett issue-k nyitottak. A P1 #163 előtt ez a friss edzés közben jelzett regresszió kerül ellenőrzésre; #197 továbbra is P2 terv.
-
 # TrainPilot — fejlesztési állapot
 
-## Aktuális munka — #191 szinkron és #200 kihagyott pihenő
+## 2026-10-14 — P0 lezárás, #199 integráció és következő P1 GPS-térkép
 
-A #158 / #196 mainre került (`20fe5ce`), a felhasználó elfogadta, a #158 lezárva. A #159 meglévő Mini Napló-megvalósítása forrás és regresszió alapján ellenőrizve; a GitHub-jegy megvalósítottként lezárva, nem indul újrafejlesztés.
+A felhasználó a korábbi **#162 / #157 P0** kör lezárását ismét megerősítette; ezek már a mainen vannak (#195). A [#199](https://github.com/fuloplevente1998/TrainPilot/pull/199) közös P1 integrációra jóváhagyta a release gate-et és a mainre kerülést, valamint a **#191 mentési/szinkron** és **#200 pihenőkihagyási** Issue-k lezárását a sikeres integráció után. A #201 közös szüneteltetés ugyanennek a kódágnak a része; a készüléken visszaigazolt, hogy a telefonos explicit kilépés az órás edzést is megállítja. Az órás önálló folytatás **külön #202 P2 fejlesztés**, nem része a #201 hibajavításnak.
 
-A következő P1 **#191 → #163**. A `feat/191-wear-save-sync-status` ágon megvalósítva az ellenőrzött helyi írás, Data Layer-átadástól külön telefonos tartós nyugta, eredeti commandId-val újrapróbálás és kompakt, négy nyelvű órás állapotoldal. A meglévő outbox/bizonylattár és kanonikus napló használatos. [Adatút, tesztek és készülékes próba](docs/wear/P1_191_MENTES_SZINKRON.md).
+**Integrációs elvárás:** csak a friss main dokumentációját (#197, #202) megtartó forrás, megfelelő telefonos és Wear CI/release gate, egyetlen kanonikus edzésnapló és változatlan **1.3.4 /2730** verzió. A jelen dokumentációs bejegyzés nem igazolja előre a kapuk eredményét vagy az Issue-k lezárását. Ezen kör után a következő P1 [#163 — telefonos GPS-útvonalrögzítés és térképes napló](https://github.com/fuloplevente1998/TrainPilot/issues/163), külön feat ág és PR; az önálló órás GPS [#193](https://github.com/fuloplevente1998/TrainPilot/issues/193) P2 marad.
 
-A teszt közbeni új #200 jelzés külön reprodukálva: telefonon kihagyott pihenő után az óra befejezett időzítőt próbál folytatni és az előző kész gyakorlatot mutathatja. A natív telefonos állapot és Wear-projekció korrigálva; következő sorozat/gyakorlat, természetes lejárat, időalapú kör és valódi szünet ellenőrzése készül a #199-ben.
+## Új P2 Wear fejlesztés — #202: órás edzésátvétel és offline folytatás (2026. október 14.)
 
-**Tesztpár átadva:** telefon és Wear `c503887`, verzió 1.3.4 /2730, korábbi aláírással. Sikeres 140 Node / 93 Chromium, 156 telefonos + 108 Wear natív, 86 körkijelzős próba, Quick és Phase 7. [Hash-ek, buildek és rövid készülékes próba](docs/wear/P1_191_MENTES_SZINKRON.md). A main `a377717` (#198 csak a #197 P2 dokumentációját egészíti ki), alkalmazáskódja és release-jei változatlanok. #199 draft, #191/#200 nyitva; készülékes elfogadás még nincs.
+**Felhasználó által jóváhagyott irány, még nem implementáció:** [#202 – Telefonról indított edzés átvétele az órán](https://github.com/fuloplevente1998/TrainPilot/issues/202) (**P2 / enhancement**). A telefonon elindított **aktív vagy szándékosan szüneteltetett** edzés az órán tudatos „Edzés átvétele” művelettel átadható; az óra ezután telefonkapcsolat nélkül is kezeli az edzést, majd újracsatlakozáskor ugyanarra a kanonikus naplóra szinkronizál.
+
+- **Átadás:** a meglévő telefon/óra tulajdonosi modellt kell továbbfejleszteni. Azonos `workoutId`, monotón tulajdonosi revízió, tartós kézfogás/nyugta és biztonságos szünet/fallback akadályozza a kettős futtatást, az elavult üzenet miatti újraindítást és a dupla edzésnaplót. Offline csak hitelesen már átvett órás tulajdonnal folytatható.
+- **Órán teljes kezelés:** folytatás/szünet, aktuális gyakorlat, sorozat, ismétlés, súly, pihenő és automata időzítő; saját Health Services mérések; helyi adatmegőrzés és újracsatlakozás utáni egyszeri szinkron. A telefonos visszavétel külön igazolt átadás, nem automatikus tulajdonoscserélődés.
+- **Biztonsági határ:** a #201 szerinti kifejezett telefonos edzéselhagyás továbbra is mindkét készüléken megállítja az aktív számolást; órán csak tudatos átadás és folytatás indulhat. A szünet nem növelheti az aktív időt vagy a szünetben elszámolt kalóriát; háttérbe helyezés önmagában nem szünet.
+- **Kapcsolatok / újrafelhasználás:** [#199](https://github.com/fuloplevente1998/TrainPilot/pull/199) draft PR, [#201](https://github.com/fuloplevente1998/TrainPilot/issues/201) közös szünet, [#191](https://github.com/fuloplevente1998/TrainPilot/issues/191) mentési nyugta, #200, #155, #159, #188, #190 és #193. Nincs párhuzamos edzésmotor vagy második napló.
+- **Sorrend:** a #199/#201 aktuális készülékes ellenőrzése és stabilizálása elsődleges; a #202 külön P2 backlog-fejlesztés, nem írja felül a meglévő P1/P2 prioritásokat. Az október 13-i prioritási táblázat történeti pillanatkép, az új igény annál későbbi.
+- **Állapot:** kizárólag fejlesztési terv/Issue rögzítve. Nincs új alkalmazáskód, teszt-APK, verzióemelés vagy kiadás; **1.3.4 /2730 változatlan**. Megvalósításnál külön ág → tesztek → PR → felhasználói készülékes elfogadás → külön main/kiadási jóváhagyás.
 
 ## Új P2 fejlesztési igény — #197 (2026. október 14.)
 
@@ -85,7 +84,7 @@ Ellenőrzött: 140 Node-csomag, 92 Chromium-csomag, teljes natív release gate-e
 | **P0 – kritikus** | [#162](https://github.com/fuloplevente1998/TrainPilot/issues/162) | **Elkészült, készülékesen elfogadva — #195** |
 | **P0 – kritikus** | [#157](https://github.com/fuloplevente1998/TrainPilot/issues/157) | **Elkészült, készülékesen elfogadva — #195** |
 | **P1 – magas** | [#158](https://github.com/fuloplevente1998/TrainPilot/issues/158) | **Készülékesen elfogadva — #196** |
-| **P1 – magas** | [#159](https://github.com/fuloplevente1998/TrainPilot/issues/159) | **Meglévő megvalósítás ellenőrizve; Issue lezárva** |
+| **P1 – magas** | [#159](https://github.com/fuloplevente1998/TrainPilot/issues/159) | **Meglévő megvalósítás ellenőrizve; nincs újrafejlesztés** |
 | **P1 – magas** | [#191](https://github.com/fuloplevente1998/TrainPilot/issues/191) | Órás helyi mentés, függő szinkron, visszaigazolás és hibakezelés egyértelmű állapotai |
 | **P1 – magas** | [#163](https://github.com/fuloplevente1998/TrainPilot/issues/163) | Telefonos GPS-útvonalpontok rögzítése és naplótérkép |
 | **P2 – közepes** | [#188](https://github.com/fuloplevente1998/TrainPilot/issues/188) | Utolsó sorozatrögzítés biztonságos visszavonása |
