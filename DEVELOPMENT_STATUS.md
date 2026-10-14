@@ -1,5 +1,16 @@
 # TrainPilot — fejlesztési állapot
 
+## Új P2 Wear fejlesztés — #202: órás edzésátvétel és offline folytatás (2026. október 14.)
+
+**Felhasználó által jóváhagyott irány, még nem implementáció:** [#202 – Telefonról indított edzés átvétele az órán](https://github.com/fuloplevente1998/TrainPilot/issues/202) (**P2 / enhancement**). A telefonon elindított **aktív vagy szándékosan szüneteltetett** edzés az órán tudatos „Edzés átvétele” művelettel átadható; az óra ezután telefonkapcsolat nélkül is kezeli az edzést, majd újracsatlakozáskor ugyanarra a kanonikus naplóra szinkronizál.
+
+- **Átadás:** a meglévő telefon/óra tulajdonosi modellt kell továbbfejleszteni. Azonos `workoutId`, monotón tulajdonosi revízió, tartós kézfogás/nyugta és biztonságos szünet/fallback akadályozza a kettős futtatást, az elavult üzenet miatti újraindítást és a dupla edzésnaplót. Offline csak hitelesen már átvett órás tulajdonnal folytatható.
+- **Órán teljes kezelés:** folytatás/szünet, aktuális gyakorlat, sorozat, ismétlés, súly, pihenő és automata időzítő; saját Health Services mérések; helyi adatmegőrzés és újracsatlakozás utáni egyszeri szinkron. A telefonos visszavétel külön igazolt átadás, nem automatikus tulajdonoscserélődés.
+- **Biztonsági határ:** a #201 szerinti kifejezett telefonos edzéselhagyás továbbra is mindkét készüléken megállítja az aktív számolást; órán csak tudatos átadás és folytatás indulhat. A szünet nem növelheti az aktív időt vagy a szünetben elszámolt kalóriát; háttérbe helyezés önmagában nem szünet.
+- **Kapcsolatok / újrafelhasználás:** [#199](https://github.com/fuloplevente1998/TrainPilot/pull/199) draft PR, [#201](https://github.com/fuloplevente1998/TrainPilot/issues/201) közös szünet, [#191](https://github.com/fuloplevente1998/TrainPilot/issues/191) mentési nyugta, #200, #155, #159, #188, #190 és #193. Nincs párhuzamos edzésmotor vagy második napló.
+- **Sorrend:** a #199/#201 aktuális készülékes ellenőrzése és stabilizálása elsődleges; a #202 külön P2 backlog-fejlesztés, nem írja felül a meglévő P1/P2 prioritásokat. Az október 13-i prioritási táblázat történeti pillanatkép, az új igény annál későbbi.
+- **Állapot:** kizárólag fejlesztési terv/Issue rögzítve. Nincs új alkalmazáskód, teszt-APK, verzióemelés vagy kiadás; **1.3.4 /2730 változatlan**. Megvalósításnál külön ág → tesztek → PR → felhasználói készülékes elfogadás → külön main/kiadási jóváhagyás.
+
 ## Új P2 fejlesztési igény — #197 (2026. október 14.)
 
 **Jóváhagyott igény, tervezés alatt:** [#197 – Választható edzésstílusok és progressziós módok](https://github.com/fuloplevente1998/TrainPilot/issues/197) (**P2 / enhancement**). Az október 14-i négy edzésnapló-képernyőkép alapján a felhasználó külön, kézzel választható progressziós megközelítéseket kért (HIT és egyéb módszerek); nem automatikus programátállítást vagy jelen körös kódmódosítást.
