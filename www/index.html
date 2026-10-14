@@ -2053,7 +2053,6 @@
     row.prepend(entry);
   }
   function mountAll(){
-    if(typeof state==='undefined'||state.tab!=='history')return;
     document.querySelectorAll('details[data-tp152-history-key] > .tp3-combined-history-body[data-tp3-hydrated="true"]').forEach(mountRow);
   }
   function coordinates(result){
@@ -2248,6 +2247,10 @@
         return out;
       };
     }
+    document.addEventListener('click',function(event){
+      var summary=event.target?.closest?.('details.tp3-combined-history > summary');
+      if(summary)requestAnimationFrame(mountAll);
+    },true);
     mountAll();
   }
   window.TrainPilotGpsMap163={references:references,coordinates:coordinates,drawOffline:drawOffline,openRoute:openRoute,closeRoute:closeRoute,mountAll:mountAll,eraseRoutesForWorkout:eraseRoutesForWorkout};
