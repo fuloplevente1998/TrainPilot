@@ -215,7 +215,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     fun explicitWorkoutPauseShowsOnlySafeContinuationControls() {
         val actions=mutableListOf<String>()
         compose.setContent { Watch { Fixture("workout-paused",automaticCommands=actions) } }
-        compose.onNodeWithContentDescription("Edzés szünetel").assertIsDisplayed()
+        compose.onNode(hasContentDescription("Edzés szünetel") and !hasText("Edzés szünetel")).assertIsDisplayed()
         compose.onNodeWithContentDescription("Sorozat rögzítése").assertDoesNotExist()
         assertFullViewport()
         lazyList().performScrollToNode(hasContentDescription("Folytatás telefonon"))
