@@ -8,7 +8,7 @@ Elkészült a telefonos Napló hiteles olvasási csatorna/alkalmazáseredet jel�
 
 **Ellenőrzött telefonos APK: `c800b4e`, 1.3.4 /2730; 140 Node + 93 Chromium csomag, teljes natív gate, Quick és Performance sikeres.** Pontos hash/CI/letöltés és készülékes lista: [P1 átadási lap](P1_158_MERESI_FORRASOK.md). Wear-változás nincs, az elfogadott `9b94a10` használható.
 
-**Következő lépés: #158 fizikai 45 perces mérési és késői szinkronpróbája.** A #158 nyitott, a #196 draft; ez a kör nem main-egyesítés vagy release. Visszaigazolás után #159 → #191 → #163. Új beszélgetésben a GitHub aktuális mainjét és a #196 állapotát ellenőrizd, ne indulj régi P0 tesztágból.
+**#158 ellenőrzés: először rövid készülékes mérési és késői szinkronpróba.** Nincs 45 perces technikai minimum; a hosszabb összehasonlítás a következő rendes edzésben utóellenőrzés, és nem blokkolja a további fejlesztés előkészítését. A #158 nyitott, a #196 draft; ez a kör nem main-egyesítés vagy release. A következő prioritás #159 → #191 → #163; a hosszabb próba nem új fejlesztési előfeltétel. Új beszélgetésben a GitHub aktuális mainjét és a #196 állapotát ellenőrizd, ne indulj régi P0 tesztágból.
 
 ## Legfrissebb elfogadott állapot — #195
 
