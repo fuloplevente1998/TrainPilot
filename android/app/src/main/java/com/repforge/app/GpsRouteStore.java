@@ -91,16 +91,15 @@ final class GpsRouteStore {
                         partial = true; break;
                     }
                     if (nextOrdinal != ordinal) {
+                        if (section != null) segments.add(new GpsRouteTrace.Segment(ordinal, section));
                         section = new ArrayList<>();
-                        segments.add(new GpsRouteTrace.Segment(nextOrdinal, section));
                         ordinal = nextOrdinal;
                     }
-                    // Segment holds an immutable snapshot; replace after each append.
                     section.add(new GpsRouteTrace.Point(lat, lon, accuracy, elapsed, epoch));
-                    segments.set(segments.size() - 1, new GpsRouteTrace.Segment(ordinal, section));
                 } catch (NumberFormatException e) { partial = true; break; }
             }
         }
+        if (section != null) segments.add(new GpsRouteTrace.Segment(ordinal, section));
         return new Route(segments, Math.min(count, GpsRouteTrace.MAX_POINTS), partial);
     }
 
