@@ -8,7 +8,7 @@ A következő P1 **#191 → #163**. A `feat/191-wear-save-sync-status` ágon meg
 
 A teszt közbeni új #200 jelzés külön reprodukálva: telefonon kihagyott pihenő után az óra befejezett időzítőt próbál folytatni és az előző kész gyakorlatot mutathatja. A natív telefonos állapot és Wear-projekció korrigálva; következő sorozat/gyakorlat, természetes lejárat, időalapú kör és valódi szünet ellenőrzése készül a #199-ben.
 
-**A teljes CI és az új telefonos/Wear tesztpár átadása még folyamatban; készülékes elfogadás nincs.** Main `20fe5ce` és verzió 1.3.4 /2730 változatlan. Helyi 140 telefonos regresszió, 7 Wear modellteszt és 6 telefonos bizonylattesztes JVM-próba sikeres.
+**Tesztpár átadva:** telefon és Wear `c503887`, verzió 1.3.4 /2730, korábbi aláírással. Sikeres 140 Node / 93 Chromium, 156 telefonos + 108 Wear natív, 86 körkijelzős próba, Quick és Phase 7. [Hash-ek, buildek és rövid készülékes próba](docs/wear/P1_191_MENTES_SZINKRON.md). A main `20fe5ce` és release-ek változatlanok. #199 draft, #191/#200 nyitva; készülékes elfogadás még nincs.
 
 ## Elfogadott #158, meglévő #159 és következő P1 — 2026. október 14.
 

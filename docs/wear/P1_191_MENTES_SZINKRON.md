@@ -4,7 +4,7 @@
 
 Friss main: `20fe5ceaf992bc2658be7422d5c3f45b9c060ace`, a készülékesen elfogadott #158 / #196 után. A #158 és #159 lezárva; a Mini Napló meglévő funkció, nem készül újra. Fejlesztési ág: `feat/191-wear-save-sync-status`. Verzió **1.3.4 /2730**.
 
-Állapot: **implementáció és automatizált ellenőrzés folyamatban**. A meglévő outbox és telefonos parancsbizonylat bővítve, készülékes elfogadás még nincs. Main változatlan.
+Állapot: **implementáció és automatizált ellenőrzés kész; aláírt tesztpár átadva, készülékes elfogadásra vár**. A meglévő outbox és telefonos parancsbizonylat bővítve. [#199 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/199); #191/#200 nyitva, main változatlan.
 
 ## Megvalósított adatút
 
@@ -23,11 +23,26 @@ Javítás: a befejezett, nem megszakított clock nem paused; a lezárult ismétl
 
 A [#200](https://github.com/fuloplevente1998/TrainPilot/issues/200) a #199 draft PR-ban készül a #191 mellett. A korábbi `0d4e9d7`/`9f7ff75` APK-kat ehhez az új körhöz nem adjuk át; új telefonos és órás build készül a javítással. Készülékes elfogadás nincs.
 
-## Ellenőrzés / következő lépés
+## Ellenőrzött tesztpár — `c503887`
 
-Helyi 140 telefonos regresszió, 7 új Wear állapotmodell-/nyelvi teszt és 6 telefonos outbox/bizonylat JVM-teszt sikeres. Új tényleges Wear outbox-írási hiba, duplikált nyugta és körkijelzős státusz/újrapróbálás próbák a GitHub emulátoros gate-ben. A két natív release gate és a körkijelzős teszt eredménye az átadáskor kerül ide; APK és készülékes elfogadás még nincs.
+Mindkét APK forrása: `c503887b5977cd2c3f1591d8b2ac02ee1d9becfd`. Verzió 1.3.4 /2730; a verziószám egyedül nem azonosítja a tesztbuildet. A fájlnevet és hash-t kell követni. Mindkét APK a korábbi aláírással frissíthető; aláírás, forrásazonosító, SHA-256, becsomagolt telefonos webes és natív forrás, Wear forrásarchívum és feature-jelenlét külön ellenőrizve.
 
-Rövid készülékes próba: órás sorozatrögzítés, telefon nélkül helyi/várakozó státusz, telefon-visszakapcsolás után valódi nyugta, appújranyitás és edzésbefejezés után egyetlen naplóbejegyzés. Telefonos indítás mellett egy órás rögzítés és lezárt telefonos automata-pihenő ellenőrzése is szükséges; nincs 45 perces minimum.
+| APK | SHA-256 | Sikeres build |
+| --- | --- | --- |
+| `TrainPilot-1.3.4-P1-191-200-c503887-Telefon.apk` | `3bb02f683ef2e1683c9fd6da2fac79369bb86013b407299f2dfdf34ceb13bd8a` | [38575222927](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38575222927) |
+| `TrainPilot-1.3.4-P1-191-200-c503887-Wear.apk` | `2ccc65c1f9417fd8c2ad1c8af757891667438e209ddd2893428f8399d5de51ac` | [38575222264](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38575222264) |
+
+Sikeres: **140 Node regresszió és 93 Chromium-csomag**, **156 telefonos + 108 Wear natív teszt** ([264 natív próba](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38575455390)), **86 valódi Wear-emulátoros teszt** ([38575222210](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38575222210)), [Quick validation](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38575222378), [Phase 7 performance](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38575460586). A 86 közül öt körkijelző/betűméret-kombináció ellenőrzi a #200 rögzítőgombot, és ugyanezeken futnak az outbox-írási hiba, duplikált nyugta és újrapróbálás próbák. A korábbi hibás queue-szimuláció versenyhelyzetét javítottuk; a teljes emulátoros kör újra sikeres.
+
+Gépi bizonylat: [2026-10-14-p1-191-200.json](../builds/2026-10-14-p1-191-200.json). Az átadás utáni dokumentációs commit nem változtat az APK-k kódján. Nincs új release vagy main-egyesítés.
+
+### Rövid készülékes ellenőrzés
+
+1. **Mindkét új APK frissítendő.** Telefonon indított automata edzésben órán töltsd ki és rögzítsd az első sorozatot; telefonon hagyd ki a pihenőt. A következő sorozat és következő gyakorlat órás ismétlésmezője és Rögzítés gombja legyen használható külön telefonos OK nélkül. Órás pihenőkihagyással is próbálható.
+2. Egy pihenő járjon le természetesen. Valódi szünetnél maradjon Folytatás, befejezett pihenőnél rögzítés. Időalapú körnél a kihagyás a következő munkafázist indítja, nem talál ki ismétlést.
+3. #191: órás indítás és rögzítés telefon nélkül → helyi/várakozó állapot; kapcsolat visszatér → valódi nyugta után Szinkronizálva. Menü → Mentés és szinkron alatt újrapróbálás, appújranyitás, majd befejezés után egyetlen telefonos naplóbejegyzés. A meglévő mérési források külön maradjanak.
+
+Nincs általános 45 perces minimum. A fizikai óra/telefon, lezárt kijelző és offline/online működés elfogadását a felhasználó visszajelzése igazolja; az emulátor és natív teszt nem helyettesíti ezt. A #191/#200 és a #199 draft PR addig nyitva marad.
 
 ## Kiinduláskori adatút és hiány (a módosítás előtt)
 
