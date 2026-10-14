@@ -1,38 +1,22 @@
 # TrainPilot — fejlesztés folytatása Workban
 
-**Aktuális telepítendő pár:** telefon `b9dbf7b`, Wear `9b94a10`, mindkettő **1.3.4 /2730**; közös forráság `fix/p0-162-157-safe-wear-sync`, #195 draft. A befejezés és közös öt fokozatú értékelés, pontos hash/CI/próbasorrend: [P0 átadási lap](P0_KESZULEKES_ELFOGADAS_162_157.md). Az órás teljes forrásfa ugyanaz a telefonos build commitjában; a verziószám önmagában nem különbözteti meg a régebbi APK-kat. A régi `84c872c` / `859a6a1` funkcióját a felhasználó elfogadta; a mostani értékelési UX készülékes próbája még hátra van.
+## Elfogadott állapot és következő munkamenet
 
+A felhasználó 2026. október 14-én a telefonos `b9dbf7b` / órás `9b94a10` tesztpárt készülékesen elfogadta: **„Minden szuper, menjen mainre, zarjuk az issuet :)”**. A #195 main-egyesítése és a kapcsolódó #162/#157 lezárása jóváhagyva. Verzió mindkét appban **1.3.4 /2730**.
 
-## Legfrissebb folytatási pont — befejezési UX
+**A további munka alapja a friss `origin/main`, a #195 egyesítése után.** Az elfogadott APK-k pontos hash/CI/bizonyítékai: [P0 átadási lap](P0_KESZULEKES_ELFOGADAS_162_157.md). A `fix/p0-162-157-safe-wear-sync` és `work/p0-162-native` ágak megőrzött fejlesztési pillanatképek; új funkcióhoz a mainből készül külön ág.
 
-2026. október 14-én a felhasználó a `84c872c` telefonos / `859a6a1` órás pár funkcióját működőnek igazolta. Most az edzés lezárását egyszerűsítjük: értékelés után automatikus kezdőlap, órán is ugyanaz az öt fokozat, közös kanonikus visszajelzés, külön fájdalom/kihagyás. Az órán is megválaszolható a telefonon befejezett edzés még nyitott értékelése. Duplikált üzenet nem írja felül az első választ; a Naplóban szándékosan szerkeszthető. A progressziónál a külön gyakorlatértékelés elsőbbséget élvez, a teljes edzésértékelés csak hiányában szolgál alapul. Nincs automatikus programátírás a válasz megadásakor.
+Elkészült a natív telefonos/órás automata háttérvezérlés, időnapló, sorozatjavítás és végleges törlés. A közös öt fokozatú értékelés után mindkét eszköz közvetlen kezdőlapra tér vissza; a külön gyakorlatértékelés elsőbbséget élvez a progressziónál. A szinkronált válasz tartós, a program nem módosul az értékeléstől.
 
-A `fix/p0-162-157-safe-wear-sync` ág / #195 draft a közös forrás; a verzió **1.3.4 /2730**, main/release változatlan. Az alábbi `84c872c` buildadatok az előző, elfogadott pár bizonyítékai. Az új UX-hez mindkét app új tesztbuildje szükséges, és annak készülékes próbája még hátra van.
-
-
-Frissítve: **2026. október 14.** Ez az egy fájl új Work-beszélgetésbe feltölthető vagy bemásolható. A Samsung energiapontszám kutatása és a javasolt Coach-integráció is itt szerepel.
-
-## Most futó P0 kör
-
-**Aktuális javító telefonos APK: `84c872cf32df0dbe69eb63828042800b7eb0a4d2`, 1.3.4 /2730.** A telefonon törölt félbehagyott edzés újra megjelent; a felhasználó szerint órán törölve megszűnt az ismétlődés. A megerősített törlés most tartós lezárási jelölést rögzít az aszinkron leállítás előtt, lezárja az adott natív végrehajtást és törli a piszkozatot; a késői órás indítás és automata állapot nem hozhatja vissza. A már visszaigazoltan törölt edzés visszamaradt natív végrehajtását a szinkron is lezárja, így a régi függő adatok nem blokkolják az új indítást; a közben elindított új edzés megmarad. A rendes mentési/lezárási védelem megmarad, csak a kifejezett törlés engedi a függő események elhagyását; másik edzés/generáció/revízió védett, a napló megmarad. A régi kódon reprodukált böngészős visszatérés a javításon megszűnt. A teljes 91 Chromium-csomag, natív release gate, kibővített Android–WebView törlés/vezérlőleállítás/késői rögzítés próba, Quick Validation és Performance sikeres; hash/verzió/forrás/aláírás ellenőrizve. APK/hash/CI/próba: [P0 átadási lap](P0_KESZULEKES_ELFOGADAS_162_157.md). A `859a6a1` órás APK maradhat. A korábbi telefonos tulajdonos-, időrendi és szerkesztési javítások is benne vannak. A javított telefonos törlés és a lezárt telefon/órás szinkron készülékes elfogadása még hiányzik. #195 draft, #162/#157 nyitott, main/release változatlan.
-
-**Korábbi 8–9. kör átadása:** a közös telefonos/Wear tesztpár forrása `859a6a15d1d7d02ebbfaba4385e857eb9e824014` volt. A készülékes visszajelzés után a telefonos javító APK ezt a telefonos csomagot váltja; aktuális forrása a fenti `84c872c`. A folytatási forrás a #195 **`fix/p0-162-157-safe-wear-sync`** ága, amely a dokumentációfrissítést is tartalmazza. A `work/p0-162-native` a 6–7. kör pillanatképe. APK, SHA-256, sikeres gate-ek és készülékes próba: [P0 átadási lap](P0_KESZULEKES_ELFOGADAS_162_157.md). Mainre emelés és publikált release még nincs jóváhagyva ebben a P0 körben.
-
-A sorrend a #194 `0b37ced` commitja alapján **#162 → #157**. A közös draft [#195](https://github.com/fuloplevente1998/TrainPilot/pull/195) eredeti remote feje `e528d1e`; erre épülnek a `3fff44c`, `b986f9c` helyi alapok és a 6–7. lépés. A **6–7. kör ellenőrzött pillanatképe** a GitHub `work/p0-162-native` ágán található; a 8–9. kör továbbfejlesztett forrása a fenti `fix/` ág. Új Work-munkamenetben az aktuális forráságat kell checkoutolni, majd a [DEVELOPMENT_STATUS.md](../DEVELOPMENT_STATUS.md) aktuális P0 bejegyzését elolvasni. A korábbi 5/10-es helyi patch csak régebbi pillanatkép.
-
-A `work/` tesztágon Quick Validation és APK nélküli natív Gradle-tesztek futnak. A `fix/*` közös ág pushja a teljes release gate-et indítja, ezért azt a #157 elkészülte utáni közös gate-szakaszban frissítjük. A main és a **1.3.4 /2730** verzió változatlan; a készülékes próbához átadott aktuális APK-t a fenti szakasz azonosítja. A GitHub Actions eredménye nem fizikai telefonos/órás elfogadás.
-
-A felhasználó gyorsabb, nagyobb köröket kért. A 6–7. lépés közös: natív időnapló + #162 regresszió. A következő kör #157 + közös gate/tesztbuild, utána készülékes próba és dokumentáció. Összefüggő kódrészekkel haladunk; nem bontjuk mesterséges 40–50 sorokra. Körönként egy jóváhagyási megálló marad.
-
-**A 6–7. kör ellenőrzött forrása:** `1fff2ecd465369b7f7dd9ecf795a2820f00805de`. A [Quick Validation](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38402839749) 140 sikeres tesztcsomaggal, a [natív Gradle-validáció](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38402839765) 145 telefonos és 97 Wear unit teszttel sikeres. A kör végén **7/10**, jóváhagyásra vár; hátravan a közös 8–9. kör és a 10. készülékes visszaellenőrzés. A #162 és #157 továbbra is nyitott, a #195 draft. A tesztág forrását nem szabad mainen elfogadott vagy kiadott állapotként leírni.
+A következő prioritás #158 → #159 → #191 → #163; az oldalankénti automata és önálló órás GPS külön feladat. A Samsung energiapontszám/Coach-integráció kutatása és javasolt terve lent, a 6–8. szakaszban szerepel. Ez a fájl új Work-beszélgetésbe bemásolható.
 
 ## 1. Honnan dolgozunk?
 
 - Repository: **https://github.com/fuloplevente1998/TrainPilot**.
-- Új feladat kiinduló ága a GitHub **aktuális mainje**, külön feladatágon folytatva. A folyamatban lévő P0 munkát a gate-szakasztól **`origin/fix/p0-162-157-safe-wear-sync`** alapján folytatjuk, mert a main még nem tartalmazza a 4–9. lépés fejlesztését. A kör előtt ellenőrzött main: `0b37cedca5ca5ef0f42cbfdc380e9127e9775973`.
+- Új feladat kiinduló ága a GitHub **aktuális mainje**, külön feladatágon folytatva. A P0 kör a #195 main-egyesítésével lezárul. A korábbi bázis `0b37ced` volt; új munkamenetben mindig az aktuális main állapotát kell lekérni.
 - A #179 egyesítette a telefonos/órás automata módot és a Wear-kezdőlapot. A #181 mentésjavítása is mainen van. A #180 mentést a felhasználó elfogadta, a hibajegy lezárva.
 - Verzió mindkét appban: **1.3.4 /2730**. Több teszt-APK használja ezt a verziót; a pontos forráscommit és SHA-256 azonosítja a csomagot.
-- Az eredeti `v1.3.4` és `wear-v1.3.4` release binárisai korábbi kiadott forrást őriznek. A dokumentum későbbi régi APK-párja történeti, készülékesen elfogadott alap; az aktuális P0 tesztpár forrása a fenti átadási lapon rögzített telefonos **`84c872c`** és órás **`859a6a1`**.
+- A release bináris és az elfogadott teszt-APK forrását külön azonosítjuk. A mainre emelt csomag készülékesen elfogadott forrása: telefon **`b9dbf7b`**, Wear **`9b94a10`**; hash/CI az átadási lapon.
 - Egy régi chat `/workspace` könyvtára és letöltési linkje nem garantáltan érhető el az új környezetben. A GitHubon tárolt forrás, dokumentáció és buildazonosító a tartós alap.
 
 Elsőként olvasandó:
@@ -59,20 +43,20 @@ Ha csak GitHub-eszközök vannak, a dokumentáció és PR előkészíthető, és
 
 1. Ellenőrizd a felhasználó legutóbbi kérését, az aktuális main/issue/PR állapotot és az esetleges helyi módosításokat. A régi dokumentum nem írja felül az új felhasználói döntést.
 2. Új munkaterületen klónozd a repót, vagy frissítsd a meglévőt. Más ember módosítását ne töröld és ne keverd automatikusan a saját feladatodba.
-3. Új feladathoz a friss mainből készíts feladatágat. A jelenlegi P0 folytatásához checkoutold az `origin/fix/p0-162-157-safe-wear-sync` ágat. A régi #164/#178 munkafákból ne készüljön külön eltérő folytatás.
+3. Új feladathoz a friss mainből készíts feladatágat. A P0 kör elfogadott; a megőrzött tesztágakból ne induljon párhuzamos, eltérő folytatás. A régi #164/#178 munkafákból ne készüljön külön eltérő folytatás.
 4. Nézd át az érintett adatút és a meglevő tesztek működését. A `www/app.js` szakaszcímeit `rg`-vel keresd; a legutolsó függvényfelülírás számít, nem feltétlenül az első találat.
 5. Készíts célzott változtatást. A meglévő napló, piszkozat, téma, szinkron és mérés viselkedését őrizd meg.
 6. Futtasd a változáshoz szükséges ellenőrzéseket, majd push és review-zható PR. A PR írja le az új működést, a bizonyítékot és a fennmaradó korlátot.
 7. Az aktuális felhasználói felhatalmazás szerint emeld mainre és kezeld a kiadást. A már megadott engedélyt ne kérd újra; egy korábbi konkrét kiadás elfogadását ne állítsd egy későbbi, még nem tesztelt funkció elfogadásának.
 8. A tesztbuild mellett add át a forráscommitot, SHA-256-ot, verziót és CI-linket. A fizikai próba visszajelzését rögzítsd; a közös tervet és folytatási leírást aktualizáld.
 
-Az aktuális P0 folytatása tiszta munkaterületen:
+Új feladat kezdése tiszta munkaterületen:
 
 ```bash
 git clone https://github.com/fuloplevente1998/TrainPilot.git
 cd TrainPilot
 git fetch origin
-git switch -c fix/p0-162-157-safe-wear-sync origin/fix/p0-162-157-safe-wear-sync
+git switch -c feat/kovetkezo-feladat origin/main
 npm ci
 ```
 
@@ -113,10 +97,10 @@ A natív parancsokhoz megfelelő JDK és Android SDK kell. A CI Node 22 / Java 2
 
 | App | Forrás | Sikeres Actions-futás |
 | --- | --- | --- |
-| Telefon | `612f8cb7da7d342fbd7b4670ef2b6225045f9cc6` | [38358320014](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38358320014) |
-| Wear | `c623af74291fdf2ba9c59e505e623ce1b0c42d65` | [38357730174](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38357730174) |
+| Telefon | `b9dbf7b4fd327b8155fcebdb1a4a68c623516a99` | [38535772902](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38535772902) |
+| Wear | `9b94a10e0edf19a15369d4c8bdf1905fecbfdd29` | [38535432653](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38535432653) |
 
-SHA-256, tanúsítvány és teljes bizonylat: [2026-10-13-main.json](builds/2026-10-13-main.json). Ellenőrzött: 138 regresszió, 90 Chromium-tesztcsomag, natív gate-ek, 51 Wear-emulátoros teszt. Actions-artefaktok jelenleg 14 napig élnek; lejárat után az azonosított forrásból új build készíthető.
+SHA-256, tanúsítvány és teljes bizonylat: [P0 átadási lap](P0_KESZULEKES_ELFOGADAS_162_157.md). Ellenőrzött: 140 Node-csomag, 92 Chromium-csomag, natív gate-ek, 66 Wear-emulátoros teszt és valódi telefonos WebView háttérvezérlés. Actions-artefaktok jelenleg 14 napig élnek; lejárat után az azonosított forrásból új build készíthető.
 
 Megőrzendő felhasználói döntések:
 
@@ -128,7 +112,7 @@ Megőrzendő felhasználói döntések:
 - Háttérfrissítés/szinkron nem csukja össze a nyitott nézetet, nem veszíti el a piszkozatot/témát. Telefonos zoomtiltás mellett a rendszerbetűméret megmarad.
 - Hiányzó egészségadat nem nulla, a források kalóriája nem adódik össze. A Health-mentés hozzájárulása, fotóhivatkozások, stabil azonosítók és törlésjelzők megmaradnak.
 
-Következő funkciók: #162 telefonos háttérvezérlés és időnapló-egységesítés; utána #163 GPS-útvonaltérkép. A fizikai automata/rezgés elfogadás még nyitott. Az energiapontszám új, külön tervezési feladat: [#184](https://github.com/fuloplevente1998/TrainPilot/issues/184).
+A #162/#157 kör készülékesen elfogadott, lezárása jóváhagyva. Következő prioritás: #158, #159, #191, majd #163 GPS-útvonaltérkép. Az energiapontszám új, külön tervezési feladat: [#184](https://github.com/fuloplevente1998/TrainPilot/issues/184).
 
 ## 6. Samsung Health energiapontszám — kutatási eredmény
 

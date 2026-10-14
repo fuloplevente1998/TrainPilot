@@ -1,8 +1,15 @@
 # P0 #162 → #157 — közös tesztpár és készülékes elfogadás
 
+## Készülékes elfogadás és mainre emelés
+
+A felhasználó 2026. október 14-én a telefonos `b9dbf7b` / órás `9b94a10` tesztpárt készülékesen elfogadta: **„Minden szuper, menjen mainre, zarjuk az issuet :)”**. A #195 main-egyesítése és a kapcsolódó #162/#157 lezárása jóváhagyva. Verzió mindkét appban **1.3.4 /2730**.
+
+Az alábbi tesztpár elfogadott. A további fejlesztés kiindulópontja a #195-öt tartalmazó aktuális main; az APK-forráscommitok és sikeres ellenőrzések megmaradnak a buildbizonylatban. A további alább megőrzött próbamondatok történeti ellenőrzési útmutatók.
+
+
 ## Aktuális edzésértékelési tesztpár — 2026. október 14.
 
-Telefon: **`b9dbf7b4fd327b8155fcebdb1a4a68c623516a99`**. Wear: **`9b94a10e0edf19a15369d4c8bdf1905fecbfdd29`**; a teljes `android/wear` fa változatlan a telefonos build forrásában. Mindkét app **1.3.4 /2730**, csomag `com.repforge.app`, eredeti aláíróval. A main/release változatlan, [#195](https://github.com/fuloplevente1998/TrainPilot/pull/195) draft.
+Telefon: **`b9dbf7b4fd327b8155fcebdb1a4a68c623516a99`**. Wear: **`9b94a10e0edf19a15369d4c8bdf1905fecbfdd29`**; a teljes `android/wear` fa változatlan a telefonos build forrásában. Mindkét app **1.3.4 /2730**, csomag `com.repforge.app`, eredeti aláíróval. A [#195](https://github.com/fuloplevente1998/TrainPilot/pull/195) mainre emelése készülékes elfogadás után jóváhagyva.
 
 - Telefon: `TrainPilot-1.3.4-P0-b9dbf7b-Telefon.apk`, **5 814 881 byte**, SHA-256 `248dfc59065f2a3f8504090d591224994e9d10373053d27f154f4b14242a2a8c`.
 - Óra: `TrainPilot-1.3.4-Feedback-9b94a10-Wear.apk`, **4 075 019 byte**, SHA-256 `b03b913cf6d0981ac214981b4be297e8eeec540c36e2dc5c09908578f9bdc29b`.
@@ -22,7 +29,7 @@ Az értékelés `history[].feedback.effort`, `effortScore`, régi formátummal k
 - [Wear Release Gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38535432653): SUCCESS; release unit tesztek és eredeti aláírású APK.
 - [Wear kerek kijelzős próba](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38535432511): SUCCESS; tényleges jelentés **66 teszt / 0 hiba / 0 kihagyás**, 160/192/225 dp és nagy betűk. Mind az öt fokozat, fájdalom/kihagyás, telefonos és órás befejezés közvetlen kezdőlappal, tartós kérdés és újrapróba vizsgálva. [Képek és tesztjelentés](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38535432511/artifacts/11880681011).
 
-**Mindkét APK telepítendő. Készülékes próba:** rövid gyors/tervezett edzés telefonon befejezve → értékelés → kezdőlap; órán befejezve → mérés megáll → öt fokozat → kezdőlap és egy naplóbejegyzés. Egy telefonon befejezett próbában az órán válaszolj: a telefonos kérdés tűnjön el. Órás kapcsolatvesztés/visszatérés után is ugyanahhoz az edzéshez érkezzen meg a válasz; kihagyás és fájdalom külön ellenőrizendő. Az új UX fizikai elfogadása még várakozik.
+**Mindkét APK telepítendő. Készülékes próba:** rövid gyors/tervezett edzés telefonon befejezve → értékelés → kezdőlap; órán befejezve → mérés megáll → öt fokozat → kezdőlap és egy naplóbejegyzés. Egy telefonon befejezett próbában az órán válaszolj: a telefonos kérdés tűnjön el. Órás kapcsolatvesztés/visszatérés után is ugyanahhoz az edzéshez érkezzen meg a válasz; kihagyás és fájdalom külön ellenőrizendő. Az új UX fizikai elfogadása megtörtént; a felhasználó jóváhagyta a mainre emelést és az issue-k lezárását.
 
 
 ## Új készülékes eredmény és befejezési értékelés

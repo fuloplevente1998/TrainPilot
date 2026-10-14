@@ -1,15 +1,14 @@
 # TrainPilot — fejlesztési állapot
 
-## Aktuális készülékes visszajelzés és új befejezési UX — 2026. október 14.
+## Készülékesen elfogadott P0 kör — #195
 
-A felhasználó a `84c872c` telefonos / `859a6a1` órás tesztpár után jelezte: **„Most már a funkció jól működik”**. Ezt elfogadott funkcionális készülékes visszajelzésként rögzítjük. Nem jelent külön dokumentált eredményt a #157/#162 teljes kapcsolatvesztéses és mérésindítási tesztmátrixának minden pontjára. A korábbi, alább megőrzött „elfogadás nem történt” megjegyzések az akkori állapotot írják le.
+A felhasználó 2026. október 14-én a telefonos `b9dbf7b` / órás `9b94a10` tesztpárt készülékesen elfogadta: **„Minden szuper, menjen mainre, zarjuk az issuet :)”**. A #195 main-egyesítése és a kapcsolódó #162/#157 lezárása jóváhagyva. Verzió mindkét appban **1.3.4 /2730**.
 
-Új jóváhagyott feladat: telefonon az edzés végi értékelés mentése után automatikus visszatérés a kezdőlapra, kötelező köztes összesítő nélkül. Órán is az azonos **öt fokozat**: Túl könnyű / Kicsit könnyű / Pont jó / Kicsit nehéz / Túl nehéz; külön fájdalomjelzés és kihagyás. Az óra előbb lezárja az edzést és a mérést, majd az értékelést külön tartós parancs küldi; a lezárás újrapróbálásakor is megmarad a válasz; a telefonon befejezett, még megválaszolatlan értékelést az óra is bekérheti. Egy kanonikus naplóbejegyzés, tartós órás parancsküldés, ismétlések ellen védett válasz. A telefonos kérdés eltűnik, ha az óra válasza megérkezett.
+Elkészült a telefonos natív háttérrögzítés, az egységes munka/pihenő/szünet időnapló, az órás indítás és mérés szinkronja, a kész sorozat javítása/visszavonása és a félbehagyott edzés végleges törlése. Telefonon és órán is öt fokozatú edzésértékelés után közvetlen kezdőlap; tartós, ismétlés ellen védett válasz, meglévő gyakorlatértékelések elsőbbségével.
 
-A progresszió és Coach a meglévő gyakorlatértékelést használja elsőként; annak hiányában az új teljes edzésértékelés a tartalék adat. A külön gyakorlatértékelések nem íródnak át. A program nem módosul pusztán az értékeléstől; a javaslat később a Napló → Edzésértékelés alatt elérhető. A befejezés és a félbehagyott edzés törlésének P0 védelmei megmaradnak.
+Ellenőrzött: 140 Node-csomag, 92 Chromium-csomag, teljes natív release gate-ek, 66 kerek Wear-próba és a valódi Android–WebView háttérvezérlési teszt. Mindkét APK eredeti aláírással és ellenőrzött forrás/hash/verzió adatokkal készült. [Buildek és elfogadás](docs/P0_KESZULEKES_ELFOGADAS_162_157.md).
 
-Forrás: **`fix/p0-162-157-safe-wear-sync`**, közös [#195 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/195). A main és release változatlan; mindkét alkalmazás **1.3.4 /2730**. Az új UX készülékes próbája a GitHub-ellenőrzések és az új, aláírt telefonos/órás tesztpár után következik.
-
+**Folytatás:** a #195 egyesítése után friss `origin/main`-ből készül új feladatág. A tesztág és a korábbi munkafák történeti források. Következő jóváhagyott prioritás: #158, #159, #191, majd #163 térkép; a részletes terv és a Samsung Health energiapontszám/Coach kutatás a [Work-útmutatóban](docs/WORK_FEJLESZTESI_UTMUTATO.md) marad. Az alábbi korábbi naplók az akkori állapotot őrzik.
 
 ## Kötelező közös munkaprotokoll — 2026. október 13-tól
 
@@ -28,12 +27,12 @@ Forrás: **`fix/p0-162-157-safe-wear-sync`**, közös [#195 draft PR](https://gi
 
 ## Jóváhagyott GitHub-prioritások — 2026. október 13.
 
-**12 nyitott fejlesztési Issue.** A P0–P3 besorolás a GitHub Issue-címkéken is szerepel. A sorrend a tervezett munkavégzés prioritását jelzi, **nem** azt, hogy a feladat már elkészült vagy készülékesen elfogadott.
+**2026. október 13-i prioritási pillanatkép: akkor 12 nyitott fejlesztési Issue.** A #162/#157 P0 kör azóta elkészült és készülékesen elfogadott. A P0–P3 besorolás a GitHub Issue-címkéken is szerepel. A sorrend a tervezett munkavégzés prioritását jelzi, **nem** azt, hogy a feladat már elkészült vagy készülékesen elfogadott.
 
 | Prioritás | Issue | Fejlesztés / következő teendő |
 | --- | --- | --- |
-| **P0 – kritikus** | [#162](https://github.com/fuloplevente1998/TrainPilot/issues/162) | Automata edzés készülékes elfogadása, telefonos natív háttérrögzítés, egységes munka/pihenő/szünet naplózás |
-| **P0 – kritikus** | [#157](https://github.com/fuloplevente1998/TrainPilot/issues/157) | Gyors edzésből órás appindítás és tényleges háttérmérés készülékes visszaellenőrzése |
+| **P0 – kritikus** | [#162](https://github.com/fuloplevente1998/TrainPilot/issues/162) | **Elkészült, készülékesen elfogadva — #195** |
+| **P0 – kritikus** | [#157](https://github.com/fuloplevente1998/TrainPilot/issues/157) | **Elkészült, készülékesen elfogadva — #195** |
 | **P1 – magas** | [#158](https://github.com/fuloplevente1998/TrainPilot/issues/158) | TrainPilot Wear és Health Connect mért adatainak forráshű megjelenítése |
 | **P1 – magas** | [#159](https://github.com/fuloplevente1998/TrainPilot/issues/159) | Wear Mini Napló bővítése, hitelesített edzés- és mérési adatok |
 | **P1 – magas** | [#191](https://github.com/fuloplevente1998/TrainPilot/issues/191) | Órás helyi mentés, függő szinkron, visszaigazolás és hibakezelés egyértelmű állapotai |
