@@ -59,6 +59,14 @@ public class WearSyncPlugin extends Plugin {
         boolean ok=db.closeExecution(call.getString("workoutId"),call.getData().getLong("generation"),call.getData().getLong("executionRevision"));
         if(!ok)throw new IllegalStateException("Reconcile native events before closing execution");IntervalTimerService.closeWorkout(call.getString("workoutId"),call.getData().getLong("generation"));return new JSONObject();
     }); }
+    @PluginMethod public void discardExecution(PluginCall call) { execution(call,()->{
+        if (!call.getBoolean("confirmed",false)) throw new IllegalArgumentException("Discard must be confirmed");
+        PhoneWorkoutExecutionStore db=PhoneWorkoutExecution.store(getContext());
+        db.setRestoreBlocked(false);
+        boolean ok=db.discardExecution(call.getString("workoutId"),call.getData().getLong("generation"),call.getData().getLong("executionRevision"));
+        if(!ok)throw new IllegalStateException("Discard execution identity changed");
+        IntervalTimerService.closeWorkout(call.getString("workoutId"),call.getData().getLong("generation"));return new JSONObject();
+    }); }
 
     @PluginMethod public void automaticCommand(PluginCall call) {
         JSObject input=call.getObject("command");

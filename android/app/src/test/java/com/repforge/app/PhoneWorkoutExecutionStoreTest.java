@@ -161,6 +161,7 @@ public class PhoneWorkoutExecutionStoreTest {
         assertEquals("restoreInProgress", store.record(command).getString("reason"));
         assertThrows(IllegalStateException.class, () -> store.prepare(store.snapshot(), 1));
         assertFalse(store.closeExecution("workout", 1, 1)); assertEquals(before, store.snapshot().toString());
+        assertFalse(store.discardExecution("workout", 1, 1));
         store.setRestoreBlocked(false); assertEquals("applied", store.record(command).getString("status"));
     }
 
@@ -173,6 +174,22 @@ public class PhoneWorkoutExecutionStoreTest {
         assertThrows(IllegalArgumentException.class, () -> store.prepare(frame("new-workout", 1), 0));
         assertEquals("new-workout", store.prepare(frame("new-workout", 2), 0).getString("workoutId"));
         assertEquals("executionIdentityChanged", store.record(late).getString("reason"));
+    }
+    @Test public void explicitDiscardClosesPendingExecutionAndRejectsReplay() throws Exception {
+        JSONObject request=command("pending-discard","a"),event=store.record(request);
+        long revision=store.snapshot().getLong("executionRevision");
+        String before=store.snapshot().toString();
+        assertFalse(store.closeExecution("workout",1,revision));
+        assertFalse(store.discardExecution("other",1,revision));
+        assertFalse(store.discardExecution("workout",2,revision));
+        assertFalse(store.discardExecution("workout",1,revision-1));
+        assertEquals(before,store.snapshot().toString());
+        assertTrue(store.discardExecution("workout",1,revision));
+        assertFalse(store.snapshot().getBoolean("active"));
+        assertEquals(1,store.pendingEvents("workout",1,0).length());
+        assertEquals(event.getLong("sequence"),store.receipt(request).getLong("sequence"));
+        assertEquals("inactiveOrOtherOwner",store.record(command("after-discard","b")).getString("reason"));
+        assertEquals("fresh",store.prepare(frame("fresh",2),0).getString("workoutId"));
     }
 
     @Test public void malformedStaleAndUnsupportedCommandsHaveNoSideEffects() throws Exception {

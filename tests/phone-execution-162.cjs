@@ -175,5 +175,15 @@ function fixture(nativeResult=result()){
  const functionSource=section.match(/async function startTimed\(initialRest=0\)\{([\s\S]*?)\n  \}/)[0];
  let started;const c=vm.createContext({settings:()=>({intervalPreset110:{work:20,rest:10,rounds:3,vibration:false}}),TrainPilotIntervals162:{startConfigured:async(config,rest)=>{started={config,rest};return true;}},document:{querySelector(){throw Error('DOM dependency');}}});
  vm.runInContext(functionSource,c);assert.equal(await c.startTimed(120),true);assert.equal(started.rest,120);assert.equal(started.config.work,20);assert.equal(started.config.autoAdvance,true);assert.equal(started.config.vibration,false);
- console.log('PASS full runtime native bridge: commit-before-ack, crash retry, quota/restore/editor guards, prepare-before-arm, toggle lifecycle and DOM-free timed start');
+ const discarded=fixture();let discardedIdentity=null;
+ discarded.api.discardExecution=async args=>{discardedIdentity=args;discarded.calls.push(['discard',args.workoutId]);};
+ assert.equal(await discarded.native.discardFence(discarded.run('state.session'),async()=>true,()=>{discarded.run("db.set('draft',null);state.session=null");return true;}),true);
+ assert.equal(discardedIdentity.confirmed,true);assert.equal(discardedIdentity.workoutId,'workout');assert.equal(discardedIdentity.generation,10);
+ assert.deepEqual(discarded.calls,[['block',true],['discard','workout'],['block',false]],'explicit discard closes its exact execution without pretending to import pending events');
+ assert.equal(discarded.run('db.get("draft",null)'),null);
+ const foreign=fixture({snapshot:{active:true,workoutId:'other',generation:20,executionRevision:1},events:[],timer:{}});
+ foreign.api.discardExecution=async()=>{throw Error('A different execution must not be discarded');};
+ assert.equal(await foreign.native.discardFence(foreign.run('state.session'),async()=>true,()=>true),true);
+ assert.deepEqual(foreign.calls,[['block',true],['block',false]]);
+ console.log('PASS full runtime native bridge: durable reconciliation, guarded discard/pending events/foreign owner, recording lifecycle and DOM-free timed start');
 })().catch(error=>{console.error(error);process.exitCode=1;});

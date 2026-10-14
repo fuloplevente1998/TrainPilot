@@ -368,12 +368,19 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
     }
 
     synchronized boolean closeExecution(String workoutId, long generation, long expectedRevision) throws JSONException {
+        return endExecution(workoutId, generation, expectedRevision, false);
+    }
+    /** Explicit confirmed discard may abandon pending events; ordinary close still requires reconciliation. */
+    synchronized boolean discardExecution(String workoutId, long generation, long expectedRevision) throws JSONException {
+        return endExecution(workoutId, generation, expectedRevision, true);
+    }
+    private boolean endExecution(String workoutId, long generation, long expectedRevision, boolean discard) throws JSONException {
         SQLiteDatabase db = getWritableDatabase(); db.beginTransaction();
         try {
             JSONObject frame = current(db);
             if (blocked(db) || frame == null || !workoutId.equals(frame.getString("workoutId"))
                     || generation != frame.getLong("generation") || expectedRevision != frame.getLong("executionRevision")
-                    || pending(db, workoutId, generation)) return false;
+                    || !discard && pending(db, workoutId, generation)) return false;
             if (frame.getBoolean("active")) {
                 frame.put("active", false).put("executionRevision", PhoneWorkoutRecording.advance(expectedRevision)); save(db, frame);
             }

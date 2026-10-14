@@ -56,7 +56,11 @@ public class PhoneWorkoutWebViewTest {
                 +"const reversed=await api.executionStatus();if(reversed.snapshot.exercises[0].sets[0].done||exercise.sets[0].done)throw Error('explicit undo did not reach native storage');"
                 +"let rerecorded=false;for(let i=0;i<100;i++){if(!TrainPilotPhoneExecution162.isReconciling()&&!TrainPilotWearSync.isApplyingCommand()){rerecorded=await TrainPilotPhoneExecution162.recordPhoneSet(0,0);if(rerecorded||TrainPilotPhoneExecution162.failure())break;}await new Promise(r=>setTimeout(r,25));}"
                 +"if(!rerecorded)throw Error('rerecord: '+JSON.stringify(TrainPilotPhoneExecution162.failure()));"
-                +"const result=await api.executionStatus();window.__executionTest={done:true,recorded:exercise.sets[0].done,controllerArmed:result.controllerArmed,phase:result.timer.phase,remainingMs:result.timer.remainingMs,failure:TrainPilotPhoneExecution162.failure()};"
+                +"const result=await api.executionStatus();window.__executionTest={done:false,recorded:exercise.sets[0].done,controllerArmed:result.controllerArmed,phase:result.timer.phase,remainingMs:result.timer.remainingMs,failure:TrainPilotPhoneExecution162.failure()};"
+                +"const old=result.snapshot;const discarded=await TrainPilotWearSync.discardDraft(state.session);if(!discarded)throw Error('native discard did not finish');"
+                +"const closed=await api.executionStatus();if(closed.snapshot.active||closed.controllerArmed||db.get('draft')||state.session)throw Error('discard left an active execution or draft');"
+                +"const late=await api.executeCommand({command:{nativeExecutionProtocol:2,commandId:'after-discard',action:'completeSet',workoutId:old.workoutId,generation:old.generation,executionRevision:old.executionRevision,exerciseId:old.exercises[0].id,setId:old.exercises[0].sets[1].setId,reps:'6'}});if(late.status!=='rejected')throw Error('discarded native command was accepted');"
+                +"window.__executionTest.done=true;"
                 +"}catch(e){window.__executionTest={done:true,error:String(e),stack:e.stack};}})();true");
             waitFor(view,"window.__executionTest?.done");
             String encoded=evaluate(view,"JSON.stringify(window.__executionTest)");

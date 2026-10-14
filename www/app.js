@@ -1264,7 +1264,7 @@ render();
 // @endsection v142.js
 
 // @section v143.js
-var discardDraft143 = function discardDraft143(){const d=db.get('draft',null);if(!d){alert('Nincs félbehagyott edzés.');return;}tp2628Confirm('Biztosan törlöd a félbehagyott edzést? A naplóba nem kerül be.',{title:'Félbehagyott edzés törlése',confirmText:'Törlés',danger:true}).then(ok=>{if(!ok)return;db.set('draft',null);stopTimer();state.session=null;state.workout=null;state.current=0;state.restEndAt=null;state.timer=0;alert('A félbehagyott edzés törölve.');go('home');});};
+var discardDraft143 = async function discardDraft143(){const d=db.get('draft',null);if(!d){alert('Nincs félbehagyott edzés.');return false;}if(!await tp2628Confirm('Biztosan törlöd a félbehagyott edzést? A naplóba nem kerül be.',{title:'Félbehagyott edzés törlése',confirmText:'Törlés',danger:true}))return false;const ok=await window.TrainPilotWearSync?.discardDraft?.(d.session);if(ok){alert('A félbehagyott edzés törölve.');go('home');}else{alert('Az edzés közben változott, vagy a törlés nem fejeződött be. Próbáld újra.');}return !!ok;};
 /* RepForge 1.4.3: 60-exercise library, curated online demos, generator integration, and safe home-screen draft deletion. */
 const RF143_VERSION='1.4.3';
 const RF143_NEW_EXERCISES=[
@@ -16702,7 +16702,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const result={};for(const e of frame.exercises||[])for(const set of e.sets||[])if(set.done){const base={};for(const key of ['done','reps','weight','leftSeconds','rightSeconds','distanceMeters'])if(key in set)base[key]=set[key];result[set.setId]=base;}return result;
  }
  window.TrainPilotPhoneExecution162Core={merge};
- let busy=false,lastPrepared='',lastArmed='',warned=false,lastFailure=null;
+ let busy=false,discarding=false,lastPrepared='',lastArmed='',warned=false,lastFailure=null;
  function failure(error,stage){
   const known=['missingFrame','invalidVersion','invalidGeneration','revisionConflict','missingIdentity','duplicateSetIdentity','invalidSetState','inactiveOrOtherOwner','invalidTimerConfig','executionIdentityChanged','restoreInProgress','pendingRecordingEvents','closedOrStaleExecution','recordedValuesChanged','completedSetRemoved','amendmentConflict','amendmentTargetRemoved'];
   const mergeErrors={'Native event identity mismatch':'EVENT_ID','Timed recording conflicts with phone edit':'TIMED_EDIT','Native recording target changed':'TARGET','Recorded set has conflicting edits':'EDIT','Invalid automatic time log':'TIME_DATA','Automatic time moved backwards':'TIME_ORDER','Automatic time owner changed':'TIME_OWNER','Native event acknowledgement changed owner':'ACK_OWNER'};
@@ -16814,12 +16814,12 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
  }
  async function sync(options={}){
-  if(busy||blocked())return false;busy=true;
+  if(busy||discarding||blocked())return false;busy=true;
   try{return await syncLocked(options);}finally{busy=false;}
  }
  async function finishFence(work){
   const api=bridge(),session=state.session;if(!api?.executionStatus||!session?.phoneExecution162)return work();
-  if(busy||blocked())return false;busy=true;
+  if(busy||discarding||blocked())return false;busy=true;
   try{
    await api.blockExecution({blocked:true});
    if(!await reconcile(api))return false;
@@ -16830,6 +16830,30 @@ window.addEventListener?.('DOMContentLoaded',function(){
    }
    return result;
   }finally{try{await api.blockExecution({blocked:false});}finally{busy=false;}}
+ }
+ async function discardFence(session,before,work){
+  const api=bridge();if(discarding||blocked())return false;discarding=true;
+  let locked=false,nativeBlocked=false;
+  try{
+   const deadline=Date.now()+5000;
+   while(busy&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,25));
+   if(busy||blocked()||identity(draft()?.session)!==identity(session))return false;
+   busy=true;locked=true;
+   if(api?.blockExecution){await api.blockExecution({blocked:true});nativeBlocked=true;}
+   if(!await before())return false;
+   if(api?.executionStatus){
+    const {snapshot:frame}=await api.executionStatus();
+    if(frame?.active&&frame.workoutId===identity(session)){
+     const generation=session.phoneExecution162?.generation;
+     if(generation&&generation!==frame.generation)return false;
+     const close=api.discardExecution||api.closeExecution;
+     await close.call(api,{workoutId:frame.workoutId,generation:frame.generation,executionRevision:frame.executionRevision,confirmed:true});
+    }
+   }
+   if(identity(draft()?.session)!==identity(session))return false;
+   const result=await work();lastPrepared='';lastArmed='';return result;
+  }catch(_){return false;}
+  finally{try{if(nativeBlocked)await api.blockExecution({blocked:false});}finally{if(locked)busy=false;discarding=false;}}
  }
  window.addEventListener?.('DOMContentLoaded',()=>{
   function nativeEdit(ei,si){
@@ -16844,7 +16868,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  });
  async function recordPhoneSet(ei,si){
   const api=bridge(),session=state.session,target=session?.exercises?.[ei]?.sets?.[si];
-  if(!api?.executeCommand||!target||target.done||busy||blocked())return false;
+  if(!api?.executeCommand||!target||target.done||busy||discarding||blocked())return false;
   // The recording owns the lock through durable reconciliation and acknowledgement.
   // Polling cannot consume its result between executeCommand and the owning UI call.
   busy=true;
@@ -16860,7 +16884,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    return ['applied','duplicate'].includes(result?.status)&&await syncLocked({prepare:false});
   }catch(_){await syncLocked({prepare:false});return false;}finally{busy=false;}
  }
- window.TrainPilotPhoneExecution162={sync,finishFence,recordPhoneSet,failure:()=>lastFailure?{...lastFailure}:null,isReconciling:()=>busy,block:async value=>{const api=bridge();if(api?.blockExecution)await api.blockExecution({blocked:value});}};
+ window.TrainPilotPhoneExecution162={sync,finishFence,discardFence,recordPhoneSet,failure:()=>lastFailure?{...lastFailure}:null,isReconciling:()=>busy||discarding,block:async value=>{const api=bridge();if(api?.blockExecution)await api.blockExecution({blocked:value});}};
 })();
 // @endsection phone-execution-162.js
 
@@ -17112,7 +17136,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  function snapshot(){
   try{
    if(typeof state==='undefined')return null;
-   const draft=state.session?null:db.get('draft',null),session=state.session||draft?.session;if(!session)return null;
+   const draft=state.session?null:db.get('draft',null),session=state.session||draft?.session;if(!session||isClosed(sessionKey(session)))return null;
    const lang=language(),exercises=Array.isArray(session.exercises)?session.exercises:[];
    const current=state.session?(Number.isInteger(state.current)?state.current:0):(Number(draft?.current)||0);
    return {
@@ -17271,6 +17295,34 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(status==='saved'||status==='discarded')db.set('wearClosedWorkouts',[...closedWorkouts().filter(x=>x.workoutId!==result.workoutId),result].slice(-128));
   return true;
  }
+ async function discardDraft(session,command=null){
+  const id=sessionKey(session),matches=()=>sessionKey(state.session||db.get('draft',null)?.session)===id;
+  if(!id||!matches()||window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending)return false;
+  const receipt=command||{commandId:crypto.randomUUID(),action:'discardWorkout',workoutId:id};
+  const before=async()=>{
+   if(!matches())return false;
+   // Commit the closed identity before any asynchronous stop, so queued starts cannot recreate it.
+   db.set('wearClosedWorkouts',[...closedWorkouts().filter(x=>!sameId(x.workoutId,id)),{workoutId:id,status:'discarding',receivedAt:Date.now()}].slice(-128));
+   if(pendingWatchStart?.id===id)pendingWatchStart=null;
+   if(window.TrainPilotAutomatic162&&!await window.TrainPilotAutomatic162.command('stop'))return false;
+   if(!matches())return false;
+   if(window.TrainPilotIntervals162&&!await window.TrainPilotIntervals162.stop())return false;
+   if(!matches())return false;
+   if(typeof tp107StopIndoor==='function')tp107StopIndoor(false);
+   if(typeof tp106StopGPS==='function'&&(tp106GpsState?.active||db.get('gpsTrip106',null))&&!await tp106StopGPS())return false;
+   return matches();
+  };
+  const work=()=>{
+   if(!matches())return false;
+   recordResult(receipt,'discarded');
+   if(typeof rf110StopwatchHalt==='function')rf110StopwatchHalt(true);
+   if(typeof tp1481HaltSide==='function')tp1481HaltSide(true);
+   stopTimer();db.set('draft',null);state.session=null;state.workout=null;state.current=0;state.restEndAt=null;state.timer=0;state.tab='home';render();return true;
+  };
+  const ok=window.TrainPilotPhoneExecution162?await window.TrainPilotPhoneExecution162.discardFence(session,before,work):await before()&&work();
+  if(ok){lastPayload=null;lastHomePayload=null;await syncNow();await syncHomeNow({force:true});}
+  return ok;
+ }
  function restoreMatchingDraft(expected){
   if(state.session)return matchesWorkout(state.session,expected);
   const d=db.get('draft',null);if(!d?.session||!matchesWorkout(d.session,expected)||!Array.isArray(d.session.exercises)||!d.session.exercises.length)return false;
@@ -17329,6 +17381,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(isClosed(expected)){
    attachMeasuredHealth(command);
    const previous=closedWorkouts().find(x=>sameId(x.workoutId,expected));
+   if(previous?.status==='discarding'&&matchesWorkout(state.session||db.get('draft',null)?.session,expected))return discardDraft(state.session||db.get('draft').session,command);
    // Recover an old unacknowledged save without reviving its stale draft.
    if(matchesWorkout(db.get('draft',null)?.session,expected))db.set('draft',null);
    if(state.session&&matchesWorkout(state.session,expected)){
@@ -17356,14 +17409,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(!restoreMatchingDraft(expected))return recordResult(command,'error','A telefonon másik edzés van, vagy ez az edzés már nem található.');
   state.session.syncId=expected;
   if(action==='discardWorkout'){
-   // Confirmed on the watch; never delete history or a different phone draft.
-   if(typeof tp107StopIndoor==='function')tp107StopIndoor(false);
-   if(typeof tp106StopGPS==='function'&&(tp106GpsState?.active||db.get('gpsTrip106',null))){const ok=await tp106StopGPS();if(!ok)return false}
-   if(!state.session||sessionKey(state.session)!==expected)return recordResult(command,'error','Az edzés közben megváltozott a telefonon.');
-   if(typeof rf110StopwatchHalt==='function')rf110StopwatchHalt(true);
-   if(typeof tp1481HaltSide==='function')tp1481HaltSide(true);
-   stopTimer();db.set('draft',null);state.session=null;state.workout=null;state.current=0;state.restEndAt=null;state.timer=0;state.tab='home';render();
-   return recordResult(command,'discarded');
+   return discardDraft(state.session,command);
   }
   mergeFinalSets(command);attachMeasuredHealth(command);persistDraft();
   if(!state.session.exercises.some(e=>e.sets?.some(s=>s.done)))return recordResult(command,'error','Legalább egy rögzített sorozat szükséges.');
@@ -17533,7 +17579,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }finally{commandBusy=false}
  }
  if(typeof window!=='undefined'){
-  window.TrainPilotWearSync={syncNow,syncHomeNow,drainCommands,phoneWorkoutStarted,makeSnapshot:snapshot,makeHomeSnapshot:homeSnapshot,isApplyingCommand:()=>commandBusy,isStartingFromWatch:()=>watchStartDepth>0};
+  window.TrainPilotWearSync={syncNow,syncHomeNow,drainCommands,phoneWorkoutStarted,discardDraft,makeSnapshot:snapshot,makeHomeSnapshot:homeSnapshot,isApplyingCommand:()=>commandBusy,isStartingFromWatch:()=>watchStartDepth>0};
   window.addEventListener?.('focus',()=>{drainCommands();syncNow();syncHomeNow({force:true});});
  }
  if(typeof document!=='undefined')document.addEventListener?.('visibilitychange',()=>{if(document.hidden)pendingWatchStart=null;else{drainCommands();syncNow();syncHomeNow({force:true});}});

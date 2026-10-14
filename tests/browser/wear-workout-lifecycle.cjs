@@ -27,5 +27,30 @@ const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://local
  });
  assert.equal(result.assertFirstWatchStart,true,'real browser phone start opens the matching watch workout');assert.equal(result.watchOpens.length,2,'watch commands and draft resume cannot reopen the watch');
  assert.deepEqual(result.first,{history:1,status:'saved',session:false,draft:false,dialog:false},JSON.stringify(result));assert.equal(result.retry,1);assert.equal(result.finishedMatches,true);assert.equal(result.scheduleStatus,'completed');assert.equal(result.draftSnapshot,true);assert.equal(result.lastStatus,'discarded');assert.equal(result.draft,false);assert.equal(result.history,1);assert.deepEqual(result.acks,['watch-finish','watch-retry','watch-discard']);
- console.log('PASS Wear phone-start handoff and canonical lifecycle: partial finish without a second dialog, one history entry on retry, draft snapshot and confirmed discard.');
+ const deleted=await page.evaluate(async()=>{
+  await TrainPilotQuickWorkout.start('db-floor-press');await Promise.resolve();
+  const snapshot=TrainPilotWearSync.makeSnapshot();
+  window.__discardTrial={snapshot,commands:[],acks:[]};
+  Capacitor.Plugins.WearSync.pendingCommands=async()=>({commands:__discardTrial.commands.slice()});
+  Capacitor.Plugins.WearSync.ackCommand=async({commandId})=>{__discardTrial.acks.push(commandId);__discardTrial.commands=__discardTrial.commands.filter(c=>c.commandId!==commandId);};
+  persistDraft();state.session=null;state.workout=null;go('home');
+  return snapshot.workoutId;
+ });
+ await page.evaluate(()=>{void discardDraft143();});await page.locator('[data-tp2628-cancel]').click();
+ assert.equal(await page.evaluate(()=>db.get('draft').session.syncId),deleted,'cancel keeps the original draft');
+ await page.evaluate(()=>{void discardDraft143();});await page.locator('[data-tp2628-confirm]').click();await page.waitForFunction(()=>!db.get('draft'));
+ const replay=await page.evaluate(async()=>{
+  const root=__discardTrial.snapshot,id=root.workoutId;
+  __discardTrial.commands=[
+   {schema:1,commandId:'deleted-start',action:'startQuickWorkout',workoutId:id,started:root.started,exerciseId:root.exercises[0].id,sequence:1,createdAt:1,finalSnapshot:root},
+   {schema:1,commandId:'deleted-auto',action:'watchAutomationState',workoutId:id,sequence:2,createdAt:2,finalSnapshot:{...root,timerOwner:'watch',automation:{owner:'watch',enabled:true,phase:'ready',key:'old-watch-clock',phaseNumber:1,workSeconds:30,restSeconds:90,remainingMs:0}}}
+  ];
+  await TrainPilotWearSync.drainCommands();await TrainPilotWearSync.drainCommands();
+  return {draft:!!db.get('draft'),session:!!state.session,history:history().length,acks:__discardTrial.acks,receipt:db.get('wearWorkoutResult')?.status};
+ });
+ assert.equal(replay.draft,false,'late watch packets cannot recreate a phone-deleted draft');
+ assert.equal(replay.session,false);assert.equal(replay.history,1);assert.deepEqual(replay.acks,['deleted-start','deleted-auto']);assert.equal(replay.receipt,'discarded');
+ await page.evaluate(()=>TrainPilotQuickWorkout.start('goblet-squat'));
+ assert.notEqual(await page.evaluate(()=>state.session.syncId),deleted,'a fresh workout still starts normally');
+ console.log('PASS Wear handoff/lifecycle and real phone draft discard: confirmation/cancel, durable closed identity, late start/automation replay, preserved history and fresh start.');
 }finally{await browser?.close();server.close()}})().catch(e=>{console.error(e);process.exitCode=1});
