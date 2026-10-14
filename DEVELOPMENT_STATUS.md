@@ -10,7 +10,7 @@ A nyitott mérési blokk, forrásválasztás, Frissítés és összecsukás stab
 
 Új teljes böngészős regresszió: külön 390/49 kcal, 45:36 szintetikus időablak, késői 400 kcal, listaátrendezés, forrásválasztás és nyitott napló megőrzése. A régi mainen a hamis Samsung-felirat reprodukálva. A korábbi kalória/időablak és nyitott napló tesztek megmaradnak; a forrásszövegek négy nyelven ellenőrizve. A CI és teszt-APK pontos bizonyítékai az [átadási lapon](docs/P1_158_MERESI_FORRASOK.md) követhetők.
 
-**Verzió: 1.3.4 /2730.** A #158 nyitva marad a fizikai, legalább 45 perces mérési és késői szinkronpróbáig. Ez a kör nem módosítja az órás alkalmazást; a készülékesen elfogadott Wear `9b94a10` tovább használható. A mainre emeléshez az új telefonos build készülékes elfogadása szükséges.
+**Verzió: 1.3.4 /2730.** A #158 rövid készülékes mérési és késői szinkronellenőrzésre vár. A 45 perc az eredeti hibajelzés időtartama, nem technikai minimum: a hosszabb összehasonlítás a következő rendes edzésben utóellenőrzésként végezhető, és nem blokkolja a további fejlesztés előkészítését. Ez a kör nem módosítja az órás alkalmazást; a készülékesen elfogadott Wear `9b94a10` tovább használható. A mainre emeléshez az új telefonos build készülékes elfogadása szükséges.
 
 ## Készülékesen elfogadott P0 kör — #195
 
