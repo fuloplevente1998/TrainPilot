@@ -33,10 +33,10 @@ Az APK a fenti kódcommitból készült; a későbbi átadási dokumentáció co
 
 ## Készülékes elfogadás
 
-1. Az új telefonos APK és az elfogadott Wear `9b94a10` használatával végezz legalább **45 perces** edzést. Azonosítsd a konkrét edzést, írd fel az óra befejezéskori kcal/pulzus/idő értékeit.
+1. Az új telefonos APK és az elfogadott Wear `9b94a10` használatával először végezz rövid, például **3–5 perces** edzést. Ez az új forrásjelölés, mentés és késői frissítés első készülékes ellenőrzése; nincs 45 perces technikai minimum. Azonosítsd a konkrét edzést, írd fel az óra befejezéskori kcal/pulzus/idő értékeit.
 2. Telefonos Napló → ugyanaz az edzés → **TrainPilot óra**. A beérkezett saját órás összesítés legyen az alapértelmezés, az adatok az órás összesítéssel egyezzenek; a kijelző kerekítése számíthat. HC aktív/összes energia nem helyettesítheti ezeket.
 3. Válts **Health Connect** forrásra. Külön adatokat és a ténylegesen közölt alkalmazáseredetet kell látni; nem kell a két külön mérés számainak azonosnak lenniük. Ne történjen összeadás vagy adatnullázás.
 4. Rövid kapcsolatmegszakítás után a nyitott naplóban érkezzen meg a végső órás összesítés. Maradjon egyetlen edzés; a nyitott rész és a kézi forrásválasztás megmaradjon. Az órás Mini Napló ugyanazt a friss összesítést kapja.
 5. Kapcsolat/olvasási hiba mellett a már beérkezett érvényes adat maradjon meg; hiányzó/részleges mérés ne váljon teljesnek vagy nullának. Ellenőrizd a Frissítés működését mindkét forrásnál.
 
-A #158 mindaddig nyitott, amíg ez a próba nincs visszaigazolva. Main-egyesítés és release külön felhasználói elfogadással. Következő feladat #159 → #191 → #163; jelen körben nincs új Wear UI vagy térképfunkció.
+A #158 rövid készülékes ellenőrzése még nincs visszaigazolva, ezért nyitott. A hosszabb összehasonlítás az eredeti, 45:36 hosszú edzés kcal-eltéréséhez kapcsolódó utóellenőrzés: a következő rendes edzésben végezhető, külön 45 perces tesztedzés és az emiatti fejlesztési megállás nélkül. Main-egyesítés és release külön felhasználói elfogadással. Következő feladat #159 → #191 → #163; jelen körben nincs új Wear UI vagy térképfunkció.
