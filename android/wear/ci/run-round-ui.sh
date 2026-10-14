@@ -18,16 +18,6 @@ total=sum(int(ElementTree.parse(p).getroot().get('tests',0)) for p in reports)
 assert total>0, 'No round-screen UI tests executed; check the AndroidJUnit filter'
 print(f'Round UI executed tests: {total}',flush=True)
 XML
-# AndroidJUnit may return success when a parameterized method filter selects nothing.
-# A green job must prove that tests actually ran.
-python3 - <<'XML' || result=1
-from pathlib import Path
-from xml.etree import ElementTree
-reports=list(Path('android/wear/build/outputs/androidTest-results/connected').rglob('TEST-*.xml'))
-total=sum(int(ElementTree.parse(p).getroot().get('tests',0)) for p in reports)
-assert total>0, 'No round-screen UI tests executed; check the AndroidJUnit filter'
-print(f'Round UI executed tests: {total}',flush=True)
-XML
 mkdir -p wear-ui-evidence
 # The emulator runner stops the device after the script: collect evidence while it is alive.
 adb pull /sdcard/Pictures/TrainPilot-Wear-layout wear-ui-evidence/ || true
