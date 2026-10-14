@@ -1,5 +1,13 @@
 # TrainPilot — fejlesztési állapot
 
+## Aktuális munka — #191 forrásfelmérés
+
+A #158 / #196 mainre került (`20fe5ce`), a felhasználó elfogadta, a #158 lezárva. A #159 meglévő Mini Napló-megvalósítása forrás és regresszió alapján ellenőrizve; a GitHub-jegy megvalósítottként lezárva, nem indul újrafejlesztés.
+
+A következő P1 **#191 → #163**. Új ág: `feat/191-wear-save-sync-status`, a friss mainből. A #191 forrásfelmérése kész: az outbox Data Layer-átadási sikere még nem telefonos mentési nyugta; a helyi commit ellenőrzése és a tényleges visszaigazoláshoz kötött kompakt UI külön feladat. A meglévő lezárási nyugtát, kanonikus naplót és automata adatvédelmeket megőrizzük. [Pontos forrástérkép és fejlesztési kör](docs/wear/P1_191_MENTES_SZINKRON.md).
+
+**Még nincs #191 kódváltozás, új tesztbuild vagy készülékes elfogadás.** Verzió 1.3.4 /2730. A korábbi #158 telefonos `c800b4e` és elfogadott Wear `9b94a10` használható.
+
 ## Elfogadott #158, meglévő #159 és következő P1 — 2026. október 14.
 
 A felhasználó 2026. október 14-én a `c800b4e` telefonos tesztbuild #158 működését elfogadta: **„#158 rendben, mehetünk tovább, de elvileg a #159 is készen van már.”** A visszajelzésből nem következtetünk külön 45 perces próba elvégzésére. Verzió marad **1.3.4 /2730**, Wear `9b94a10` változatlan.
@@ -56,7 +64,7 @@ Ellenőrzött: 140 Node-csomag, 92 Chromium-csomag, teljes natív release gate-e
 | **P0 – kritikus** | [#162](https://github.com/fuloplevente1998/TrainPilot/issues/162) | **Elkészült, készülékesen elfogadva — #195** |
 | **P0 – kritikus** | [#157](https://github.com/fuloplevente1998/TrainPilot/issues/157) | **Elkészült, készülékesen elfogadva — #195** |
 | **P1 – magas** | [#158](https://github.com/fuloplevente1998/TrainPilot/issues/158) | **Készülékesen elfogadva — #196** |
-| **P1 – magas** | [#159](https://github.com/fuloplevente1998/TrainPilot/issues/159) | **Meglévő megvalósítás ellenőrizve; nincs újrafejlesztés** |
+| **P1 – magas** | [#159](https://github.com/fuloplevente1998/TrainPilot/issues/159) | **Meglévő megvalósítás ellenőrizve; Issue lezárva** |
 | **P1 – magas** | [#191](https://github.com/fuloplevente1998/TrainPilot/issues/191) | Órás helyi mentés, függő szinkron, visszaigazolás és hibakezelés egyértelmű állapotai |
 | **P1 – magas** | [#163](https://github.com/fuloplevente1998/TrainPilot/issues/163) | Telefonos GPS-útvonalpontok rögzítése és naplótérkép |
 | **P2 – közepes** | [#188](https://github.com/fuloplevente1998/TrainPilot/issues/188) | Utolsó sorozatrögzítés biztonságos visszavonása |
