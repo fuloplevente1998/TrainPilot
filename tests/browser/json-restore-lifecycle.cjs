@@ -20,7 +20,7 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{
    window.Capacitor={isNativePlatform:()=>true,Plugins:{
     NativeFiles:{open:()=>{probe.opens++;return new Promise(resolve=>probe.select=resolve)}},
     HealthJournal:{pendingRestore:async()=>({}),initialize:async()=>projection,getProjection:async()=>{probe.projectionReads++;return projection},prepareRestore:async({snapshot})=>{probe.prepared.push(snapshot);return {token:'restore-probe'}},installRestore:async()=>{if(probe.failInstall)throw Error('install failed')},finishRestore:async()=>{}},
-    WearSync:{publish:async()=>{},publishHome:async()=>{},clear:async()=>{},pendingCommands:async()=>{probe.wearReads++;return {commands:[probe.command]}},ackCommand:async()=>{probe.acked=true}}
+    WearSync:{publish:async()=>{},publishHome:async()=>{},clear:async()=>{},pendingCommands:async()=>{probe.wearReads++;return {commands:probe.allowCommand?[probe.command]:[]}},ackCommand:async()=>{probe.acked=true}}
    }};
    window.alert=message=>probe.alerts.push(String(message));
    await TrainPilotHealthJournal.ready();
@@ -71,7 +71,7 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{
    restoreProbe.releaseCommand({commands:[]});await pending;bridge.pendingCommands=read;return blocked;
   });assert.equal(inFlight,true,'in-flight Wear command owns its state until complete');
   // Deferred Wear commands resume after the completed/cancelled restore.
-  await page.evaluate(()=>TrainPilotWearSync.drainCommands());assert.equal(await page.evaluate(()=>restoreProbe.acked),true);assert.equal(await page.evaluate(()=>state.session.syncId), '2026-10-08T09:00:00.000Z');
+  await page.evaluate(()=>{restoreProbe.allowCommand=true;return TrainPilotWearSync.drainCommands()});assert.equal(await page.evaluate(()=>restoreProbe.acked),true);assert.equal(await page.evaluate(()=>state.session.syncId), '2026-10-08T09:00:00.000Z');
   assert.deepEqual(errors,[]);
   console.log('PASS native JSON restore: picker/resume/confirmation lock, pre-Samsung backup legacy Health migration, deferred Wear command, cancellation/invalid JSON/install rollback, browser file read and active workout/sync protection.');
  }finally{await browser?.close();server.close()}
