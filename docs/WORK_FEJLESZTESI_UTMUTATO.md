@@ -1,5 +1,13 @@
 # TrainPilot — fejlesztés folytatása Workban
 
+## Aktuális állapot — #158 elfogadva, #159 megvalósítva
+
+A felhasználó 2026. október 14-én a `c800b4e` telefonos tesztbuild #158 működését elfogadta: **„#158 rendben, mehetünk tovább, de elvileg a #159 is készen van már.”** A visszajelzésből nem következtetünk külön 45 perces próba elvégzésére. Verzió marad **1.3.4 /2730**, Wear `9b94a10` változatlan.
+
+A #159 alapfunkciója már a mainben megvalósított: `b35a567` (korlátos offline Mini Napló) és `d7a6e2e` (mérési előzmények), későbbi kerek kijelzős szövegtördeléssel és a #158 stabil késői frissítésével. A legutóbbi 8 kanonikus telefonos edzés, kész sorozatok/súly/ismétlés, elérhető oldalankénti idő/táv és külön Wear/telefonos mérés olvasható; nincs órás naplószerkesztés vagy második edzéstörténet. Az időtartam és mérési forrás a részletekben látszik. A jelen kör nem építi meg újra ezt a funkciót.
+
+A következő prioritás **#191 → #163**. A #191 az órás helyi mentés, függő Data Layer-kézbesítés, tényleges telefonos visszaigazolás és hibajelzés elkülönítése. A meglévő adatút megőrzendő; nem készül második Mini Napló vagy második kanonikus mentési rendszer. Pontos #158 APK/hash/CI: [P1 átadási lap](P1_158_MERESI_FORRASOK.md).
+
 ## Elfogadott állapot és következő munkamenet
 
 A felhasználó 2026. október 14-én a telefonos `b9dbf7b` / órás `9b94a10` tesztpárt készülékesen elfogadta: **„Minden szuper, menjen mainre, zarjuk az issuet :)”**. A #195 main-egyesítése és a kapcsolódó #162/#157 lezárása jóváhagyva. Verzió mindkét appban **1.3.4 /2730**.

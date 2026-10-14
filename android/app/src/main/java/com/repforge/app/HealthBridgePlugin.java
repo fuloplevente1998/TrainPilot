@@ -67,7 +67,7 @@ public class HealthBridgePlugin extends Plugin {
  @PluginMethod public void requestWrite(PluginCall c){if(!supported(c))return;if(allowed("WRITE_EXERCISE")){writeGranted(c);return;}getActivity().runOnUiThread(()->requestPermissionForAlias("writeExercise",c,"writeGranted"));}
  @PermissionCallback private void writeGranted(PluginCall c){JSObject r=new JSObject();r.put("granted",allowed("WRITE_EXERCISE"));c.resolve(r);}
  @PluginMethod public void openSettings(PluginCall c){if(!supported(c))return;try{getActivity().startActivity(new Intent("android.health.connect.action.HEALTH_CONNECT_SETTINGS"));c.resolve();}catch(Exception e){c.reject("Keresd a Health Connect menüt az Android beállításaiban.");}}
- @PluginMethod public void readWorkout(PluginCall c){journalRead(c,()->{JSObject r=Api34.readTrainingWindow(access(),c);r.put("source","all");JSArray a=new JSArray();a.put("all");r.put("sources",a);JSObject labels=new JSObject();labels.put("all","Health Connect • összes forrás");r.put("sourceLabels",labels);return r;});}
+ @PluginMethod public void readWorkout(PluginCall c){journalRead(c,()->{JSObject r=Api34.readTrainingWindow(access(),c);r.put("source","all");return r;});}
  @PluginMethod public void readTrainingWindow(PluginCall c){journalRead(c,()->Api34.readTrainingWindow(access(),c));}
  @PluginMethod public void readStepsWindow(PluginCall c){if(!supported(c))return;getBridge().execute(()->{try{c.resolve(Api34.readStepsWindow(access(),c));}catch(Exception e){c.reject(message(e));}});}
  @PluginMethod public void readHealthDay(PluginCall c){journalRead(c,()->Api34.readHealthDay(access(),c.getData()));}
