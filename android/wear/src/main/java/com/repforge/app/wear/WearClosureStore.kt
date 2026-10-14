@@ -74,7 +74,8 @@ object WearClosureStore {
         val local=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).getString("result",null)?.let(::JSONObject) ?: return null
         // The outbox receipt and command removal commit atomically. Reconstruct
         // closure status from that proof after a crash between preference stores.
-        val receipts=JSONArray(context.getSharedPreferences("trainpilot_wear_outbox",Context.MODE_PRIVATE).getString("results191","[]"))
+        val receipts=try { JSONArray(context.getSharedPreferences("trainpilot_wear_outbox",Context.MODE_PRIVATE).getString("results191","[]")) }
+            catch(_:Exception) { return parse(local) }
         for(i in 0 until receipts.length())receipts.optJSONObject(i)?.let {
             if(it.optString("commandId")==local.optString("commandId") && it.optString("workoutId")==local.optString("workoutId") &&
                 it.optString("status") in setOf("saved","discarded","error"))local.put("status",it.optString("status"))

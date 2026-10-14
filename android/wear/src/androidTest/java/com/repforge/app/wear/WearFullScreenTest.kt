@@ -192,6 +192,21 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         assertNotEquals(WearSavePhase.SYNCED,WearCommandOutbox.state(context,id)!!.phase)
         assertTrue(WearCommandOutbox.acceptReceipt(context,path,receipt.toString()))
         assertEquals(WearSavePhase.SYNCED,WearCommandOutbox.state(context,id)!!.phase)
+        val before=real.getString("pending","[]")
+        val damagedId=java.util.UUID.randomUUID().toString()
+        val damaged=JSONObject().put("commandId",damagedId).put("workoutId",damagedId).put("action","healthSummary")
+        try {
+            real.edit().putString("pending","unreadable").commit()
+            assertEquals(0L,WearCommandOutbox.enqueue(context,damaged))
+            WearCommandOutbox.flush(context)
+            assertEquals("unreadable",real.getString("pending",""))
+            assertFalse(WearCommandOutbox.acceptReceipt(context,path,receipt.toString()))
+        } finally { real.edit().putString("pending",before).commit() }
+        WearCommandOutbox.retry(context,damagedId)
+        val restored=org.json.JSONArray(real.getString("pending","[]"))
+        val queued=(0 until restored.length()).mapNotNull { restored.optJSONObject(it) }.single { it.optString("commandId")==damagedId }
+        val recovered=JSONObject(receipt.toString()).put("commandId",damagedId).put("workoutId",damagedId).put("sequence",queued.getLong("sequence"))
+        assertTrue(WearCommandOutbox.acceptReceipt(context,WearCommandOutbox.RECEIPT_PREFIX+damagedId,recovered.toString()))
     }
 
     @Composable
