@@ -9,7 +9,7 @@ const server=http.createServer((q,r)=>{
 (async()=>{
  await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;
  try{
-  browser=await chromium.launch({args:['--no-sandbox']});const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU'}),errors=[];
+  browser=await chromium.launch({executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU'}),errors=[];
   page.on('pageerror',e=>errors.push(String(e)));page.on('dialog',d=>d.accept());fs.mkdirSync('ui-evidence',{recursive:true});
   await page.addInitScript(()=>localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped')));
   await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
@@ -21,8 +21,8 @@ const server=http.createServer((q,r)=>{
   for(const lang of ['hu','en','de','ro'])for(const [width,height,large] of [[393,873,false],[320,568,false],[873,393,false],[320,568,true]]){
    await page.setViewportSize({width,height});await page.evaluate(({lang,started})=>{db.set('language',lang);go('home');feedbackScreen(started);window.scrollTo(0,0);},{lang,started});
    const scale=await page.addStyleTag({content:large?'main.tp122-feedback :is(h1,h2,p,.btn){font-size:150%!important}':'/* default text size */'});
-   const main=page.locator('#app main'),ratings=main.locator('button[onclick^="saveFeedback"]'),home=main.locator('button[onclick="go(\'home\')"]');
-   assert.equal(await ratings.count(),4);assert.equal(await page.locator('#rf220CoachCard,#rf223Today,.tp120-home-goals').count(),0);
+   const main=page.locator('#app main'),ratings=main.locator('button[onclick^="saveFeedback"]'),home=main.locator('button[onclick="TrainPilotWorkoutFeedback.skip()"]');
+   assert.equal(await ratings.count(),6,'five effort levels plus a separate pain choice');assert.equal(await page.locator('#rf220CoachCard,#rf223Today,.tp120-home-goals').count(),0);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'feedback must not overflow horizontally '+lang+'/'+width+'/'+large);
    for(const button of await ratings.all())assert.ok((await button.boundingBox()).height>=40,'feedback touch targets stay usable');
    const initialBounds=await home.boundingBox(),bottom=initialBounds.y+initialBounds.height;
@@ -33,16 +33,17 @@ const server=http.createServer((q,r)=>{
    if(lang==='de'&&large)await page.screenshot({path:'ui-evidence/post-workout-feedback-122-large-font.png'});
    await scale.evaluate(e=>e.remove());await home.click();assert.equal(await page.locator('main.rf221-home').count(),1,'return to Home restores its dashboard');
   }
-  for(const rating of ['easy','right','hard','pain']){
-   await page.evaluate(started=>feedbackScreen(started),started);await page.locator('button[onclick="saveFeedback(\''+rating+'\')"]').click();
-   assert.equal(await page.evaluate(()=>history()[0].feedback.rating),rating,'rating is saved to the completed workout');
-   assert.equal(await page.evaluate(()=>document.body.classList.contains('tp107-fixed-view')),false,'saved feedback also remains scrollable');
-   const home=page.locator('#app main button[onclick="go(\'home\')"]');await home.scrollIntoViewIfNeeded();await home.click();
+  for(const [effort,rating] of [['easy','easy'],['light','easy'],['good','right'],['challenging','hard'],['hard','hard'],['pain','pain']]){
+   await page.evaluate(started=>feedbackScreen(started),started);await page.locator('button[onclick="saveFeedback(\''+effort+'\')"]').click();
+   assert.equal(await page.evaluate(()=>history()[0].feedback.rating),rating,'legacy rating is saved to the completed workout');
+   assert.equal(await page.evaluate(()=>history()[0].feedback.effort),effort,'exact five-step effort is retained');
+   assert.equal(await page.locator('main.rf221-home').count(),1,'rating returns Home automatically');
+   assert.equal(await page.locator('main.tp122-feedback').count(),0,'there is no mandatory intermediate saved screen');
   }
   assert.equal(await page.evaluate(()=>JSON.stringify(programs())),programsBefore,'feedback does not automatically change program recipes');
   await page.reload();await page.waitForFunction(()=>window.TrainPilotBoot?.finished);assert.equal(await page.evaluate(()=>history()[0].feedback.rating),'pain','feedback survives restart');
   await page.evaluate(()=>{go('history');feedbackFromHistory(0);});assert.equal(await page.locator('main.tp122-feedback').count(),1,'history reopens the same compact feedback screen');
   await page.locator('#app main button[onclick="healthScreen()"]').click();assert.equal(await page.locator('main.tp122-feedback').count(),0,'Health action remains functional');
-  assert.deepEqual(errors,[]);console.log('PASS #122: real workout completion, compact feedback, actual overflow scrolling, four languages, portrait/landscape/large text, saved ratings/restart and navigation');
+  assert.deepEqual(errors,[]);console.log('PASS #122: real workout completion, five-step feedback/pain, automatic Home, actual overflow scrolling, four languages, portrait/landscape/large text, saved ratings/restart and navigation');
  }finally{await browser?.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);process.exitCode=1;});
