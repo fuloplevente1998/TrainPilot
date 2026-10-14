@@ -1,5 +1,14 @@
 # TrainPilot — fejlesztési állapot
 
+## #163 GPS – 4/8 privát, kulcshoz kötött útvonaltárolás (2026. október 14.)
+
+A [#205 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/205) legújabb részfeladata a `GpsRouteStore` per-mérési-kulcs tartós útvonalnapló, a telefonos `DistanceTrackingService` háttérmentése, a `DistanceTracker.route({key})` célzott koordinátaolvasás és a `DistanceTracker.deleteRoute({key})` explicit törlés. A sorozatot/edzést az eddig használt GPS mérési `key` köti a fájlhoz; a térképes naplómegjelenítés és a napló-törléshez kötött automatikus adattisztítás a következő UI-integrációban történhet.
+
+- **Adatvédelem:** `noBackupFilesDir/gps_routes/SHA256(key).route`, helyi készüléktár, nincs automatikus felhőszinkron vagy általános backup GPS-koordinátával. Célzott kiolvasáskor szakaszokban kapja csak meg a WebView az útvonalat; normál GPS státuszban koordináta nincs.
+- **Védelmek:** 12 000 pont, 256 szakasz, max. 2 MiB/fájl, 512 fájl, sérülés és mentéshiba jelzés, az aktív mérési kulcs nem törölhető. A régi `DistanceAccumulator` hitelesített távolsága továbbra is változatlan; hiba esetén az edzés megy tovább.
+- **Regresszió:** tároló újraolvasás, másik workout izoláció, törlés, helytelen azonosító és megszakadt rekord JUnit-tesztek. Kötelező a legújabb commit telefonos release gate és natív teszteredményeinek ellenőrzése, **nem előre igazolt**.
+- **Részletek:** [GPS route storage terv](docs/gps/P1_163_ROUTE_STORAGE.md), [#163 issue](https://github.com/fuloplevente1998/TrainPilot/issues/163). **Nincs main-merge, release vagy verzióemelés. Marad 1.3.4 /2730.**
+
 ## #163 GPS – 3/8 natív pontgyűjtés és szakaszkezelés (2026. október 14.)
 
 **Fejlesztési ág:** `feat/163-phone-gps-route-model`, [draft PR #205](https://github.com/fuloplevente1998/TrainPilot/pull/205). A 2/8. lépésben elkészült `GpsRouteTrace` pont-/szakaszlimites, szűrt, memóriabeli útvonalmodell és 8 teszt. A jelen **3/8. lépésben** a `GpsRouteCapture` a meglévő `DistanceAccumulator` változatlan elfogadási/távolságmérési logikája mellé kapcsolja a trace-t, és a `DistanceTrackingService` valós GPS-fixeivel táplálja.
