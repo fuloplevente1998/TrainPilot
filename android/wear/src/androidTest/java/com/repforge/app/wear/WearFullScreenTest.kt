@@ -218,14 +218,17 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         screenshot("workout-paused-opening")
         assertTrue(compose.onAllNodesWithContentDescription("Edzés szünetel").fetchSemanticsNodes().isNotEmpty())
         // Curved text has multiple virtual accessibility nodes. Verify the actual
-        // gold glyphs in the fixed top arc, instead of assuming one rectangular Text node.
+        // theme-colored glyphs in the fixed top arc, instead of assuming one rectangular Text node.
         val picture=compose.onRoot().captureToImage().asAndroidBitmap()
-        var gold=0
+        val expected=android.graphics.Color.parseColor(WearHomeTheme.DEFAULT.accent)
+        var accentPixels=0
         for(y in 0 until picture.height/4)for(x in 0 until picture.width){
             val pixel=picture.getPixel(x,y)
-            if(android.graphics.Color.red(pixel)>150&&android.graphics.Color.green(pixel)>100&&android.graphics.Color.blue(pixel)<130)gold++
+            if(kotlin.math.abs(android.graphics.Color.red(pixel)-android.graphics.Color.red(expected))<20&&
+                kotlin.math.abs(android.graphics.Color.green(pixel)-android.graphics.Color.green(expected))<20&&
+                kotlin.math.abs(android.graphics.Color.blue(pixel)-android.graphics.Color.blue(expected))<20)accentPixels++
         }
-        assertTrue("The curved pause heading must actually be visible",gold>20)
+        assertTrue("The curved pause heading must actually be visible",accentPixels>20)
         compose.onNodeWithContentDescription("Sorozat rögzítése").assertDoesNotExist()
         assertFullViewport()
         lazyList().performScrollToNode(hasContentDescription("Folytatás telefonon"))
