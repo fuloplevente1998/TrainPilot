@@ -53,6 +53,22 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
 
     @get:Rule val compose = createComposeRule()
 
+    @Test
+    fun workoutFeedbackAllFiveChoicesAndSkipAreReachableOnRoundScreens() {
+        val answers = mutableListOf<String?>()
+        compose.setContent { Watch { WorkoutFeedbackScreen { answers.add(it) } } }
+        assertFullViewport()
+        WearWorkoutFeedback.choices.forEachIndexed { index, (key, label) ->
+            compose.onNodeWithText("${index + 1} · $label").performScrollTo().assertIsDisplayed().performClick()
+            assertEquals(key, answers.last())
+        }
+        compose.onNodeWithText("Fájdalom / kellemetlenség").performScrollTo().assertIsDisplayed().performClick()
+        assertEquals("pain", answers.last())
+        compose.onNodeWithText("Most kihagyom").performScrollTo().assertIsDisplayed().performClick()
+        assertNull(answers.last())
+        screenshot("workout-feedback-last-choice")
+    }
+
     @Composable
     private fun Watch(content: @Composable () -> Unit) {
         BoxWithConstraints(Modifier.fillMaxSize().background(Color.Black)) {

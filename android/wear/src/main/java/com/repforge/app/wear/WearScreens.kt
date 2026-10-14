@@ -101,8 +101,19 @@ internal fun TrainPilotWearApp(
     onToggleAutomatic: (() -> Unit)? = null,
     onAutomaticCommand: ((String) -> Unit)? = null,
     onEditorSave: ((String,Double,String)->Boolean)? = null,
+    onFinishFeedback: ((String?) -> Unit)? = null,
+    onWorkoutFeedback: ((WatchWorkoutFeedback, String?) -> Unit)? = null,
 ) {
     var route by rememberSaveable { mutableStateOf("home") }
+    val context = LocalContext.current
+    var answeredWorkout by rememberSaveable { mutableStateOf("") }
+    val pendingFeedback = home.value?.pendingFeedback?.takeUnless {
+        it.workoutId == answeredWorkout || WearWorkoutFeedback.answered(context, it.workoutId)
+    }
+    LaunchedEffect(pendingFeedback?.workoutId, workout.value?.workoutId) {
+        if (pendingFeedback != null && workout.value == null && onWorkoutFeedback != null) route = "feedback"
+        else if (route == "feedback") route = "home"
+    }
     LaunchedEffect(route) { if (route == "journal" || route == "metrics") onRefreshJournal() }
     LaunchedEffect(requestedRoute.value) {
         requestedRoute.value?.let {
@@ -136,7 +147,13 @@ internal fun TrainPilotWearApp(
             when (route) {
                 "editor",
                 "timer",
-                "finish" -> "workout"
+                "finish",
+                "finish-feedback" -> "workout"
+                "feedback" -> {
+                    answeredWorkout = pendingFeedback?.workoutId.orEmpty()
+                    pendingFeedback?.let { onWorkoutFeedback?.invoke(it, null) }
+                    "home"
+                }
                 "journal-detail" -> miniJournalBackRoute
                 "journal" -> journalBackRoute
                 "metrics" -> metricsBackRoute
@@ -155,6 +172,17 @@ internal fun TrainPilotWearApp(
             Box(Modifier.fillMaxSize().background(Black)) {
                 val active = workout.value
                 when {
+                    route == "feedback" && pendingFeedback != null ->
+                        WorkoutFeedbackScreen { effort ->
+                            onWorkoutFeedback?.invoke(pendingFeedback, effort)
+                            answeredWorkout = pendingFeedback.workoutId
+                            route = "home"
+                        }
+                    route == "finish-feedback" && active != null ->
+                        WorkoutFeedbackScreen { effort ->
+                            if (onFinishFeedback != null) onFinishFeedback(effort) else onFinish()
+                            route = "home"
+                        }
                     route == "settings" ->
                         SettingsScreen(
                             measuring.value,
@@ -261,8 +289,7 @@ internal fun TrainPilotWearApp(
                     route == "finish" && active != null ->
                         ConfirmationScreen(false, active.completedSets) {
                             if (it) {
-                                onFinish()
-                                route = "summary"
+                                route = "finish-feedback"
                             } else route = "workout"
                         }
                     route == "editor" && active != null ->
@@ -2317,6 +2344,17 @@ private fun ConfirmationScreen(discard: Boolean, completed: Int, onAnswer: (Bool
                 textAlign = TextAlign.Center,
             )
         }
+    }
+}
+
+@Composable
+internal fun WorkoutFeedbackScreen(onAnswer: (String?) -> Unit) {
+    RoundList("Milyen volt az edzés?") {
+        WearWorkoutFeedback.choices.forEachIndexed { index, (value, label) ->
+            centerItem { Pill("${index + 1} · $label", tone = Card) { onAnswer(value) } }
+        }
+        centerItem { Pill("Fájdalom / kellemetlenség", tone = Danger) { onAnswer("pain") } }
+        centerItem { Pill("Most kihagyom", tone = Secondary) { onAnswer(null) } }
     }
 }
 

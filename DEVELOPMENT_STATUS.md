@@ -1,5 +1,16 @@
 # TrainPilot — fejlesztési állapot
 
+## Aktuális készülékes visszajelzés és új befejezési UX — 2026. október 14.
+
+A felhasználó a `84c872c` telefonos / `859a6a1` órás tesztpár után jelezte: **„Most már a funkció jól működik”**. Ezt elfogadott funkcionális készülékes visszajelzésként rögzítjük. Nem jelent külön dokumentált eredményt a #157/#162 teljes kapcsolatvesztéses és mérésindítási tesztmátrixának minden pontjára. A korábbi, alább megőrzött „elfogadás nem történt” megjegyzések az akkori állapotot írják le.
+
+Új jóváhagyott feladat: telefonon az edzés végi értékelés mentése után automatikus visszatérés a kezdőlapra, kötelező köztes összesítő nélkül. Órán is az azonos **öt fokozat**: Túl könnyű / Kicsit könnyű / Pont jó / Kicsit nehéz / Túl nehéz; külön fájdalomjelzés és kihagyás. Az órán befejezett edzés végső parancsában utazik az értékelés; a telefonon befejezett, még megválaszolatlan értékelést az óra is bekérheti. Egy kanonikus naplóbejegyzés, tartós órás parancsküldés, ismétlések ellen védett válasz. A telefonos kérdés eltűnik, ha az óra válasza megérkezett.
+
+A progresszió és Coach a meglévő gyakorlatértékelést használja elsőként; annak hiányában az új teljes edzésértékelés a tartalék adat. A külön gyakorlatértékelések nem íródnak át. A program nem módosul pusztán az értékeléstől; a javaslat később a Napló → Edzésértékelés alatt elérhető. A befejezés és a félbehagyott edzés törlésének P0 védelmei megmaradnak.
+
+Forrás: **`fix/p0-162-157-safe-wear-sync`**, közös [#195 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/195). A main és release változatlan; mindkét alkalmazás **1.3.4 /2730**. Az új UX készülékes próbája a GitHub-ellenőrzések és az új, aláírt telefonos/órás tesztpár után következik.
+
+
 ## Kötelező közös munkaprotokoll — 2026. október 13-tól
 
 **Prioritás:** A következő fejlesztési és hibajavítási feladatok előtt ezt a munkarendet követjük. A `DEVELOPMENT_STATUS.md` a központi állapotnyilvántartás, a GitHub Issues az egyedi feladatok nyilvántartása; a kettőt szinkronban kell tartani.

@@ -250,6 +250,8 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                 onOpenPhone = ::openOnPhone,
                 onRefreshJournal = ::requestHomeSnapshot,
                 onFinish = { closeWorkout("finishWorkout") },
+                onFinishFeedback = { effort -> closeWorkout("finishWorkout", WearWorkoutFeedback.answer(effort)) },
+                onWorkoutFeedback = ::saveWorkoutFeedback,
                 onDiscard = { closeWorkout("discardWorkout") },
                 onRetry = ::retryClosure,
                 onDismissClosure = { if (closure.value?.status in listOf("saved", "discarded")) { WearClosureStore.dismiss(this); closure.value = null } },
@@ -660,7 +662,15 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         }}
     }
 
-    private fun closeWorkout(action: String) {
+    private fun saveWorkoutFeedback(pending: WatchWorkoutFeedback, effort: String?) {
+        val command = JSONObject().put("schema", 1).put("commandId", UUID.randomUUID().toString())
+            .put("action", "saveWorkoutFeedback").put("workoutId", pending.workoutId)
+            .put("createdAt", System.currentTimeMillis()).put("feedback", WearWorkoutFeedback.answer(effort))
+        WearCommandOutbox.enqueue(this, command)
+        WearWorkoutFeedback.markAnswered(this, pending.workoutId)
+    }
+
+    private fun closeWorkout(action: String, feedback: JSONObject? = null) {
         val current = workout.value ?: return
         if (action == "finishWorkout" && current.completedSets == 0) return
         val command = JSONObject()
@@ -670,6 +680,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             .put("action", action).put("confirmed", true)
             .put("finishedAt", Instant.now().toString()).put("createdAt", System.currentTimeMillis())
             .put("finalSnapshot", WorkoutSnapshotStore.encode(current))
+        if (feedback != null) command.put("feedback", feedback)
         WearHealthStore.load(this,current.workoutId)?.let { command.put("healthSummary",WearHealthAccumulator(it).snapshot()) }
         WearHealthService.stop(this)
         WearAutomaticService.stop(this)

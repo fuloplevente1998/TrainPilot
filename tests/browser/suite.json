@@ -300,6 +300,10 @@
     "estimatedSeconds": 5
   },
   {
+    "file": "tests/browser/workout-feedback.cjs",
+    "estimatedSeconds": 5
+  },
+  {
     "file": "tests/browser/wear-sync-recovery.cjs",
     "estimatedSeconds": 12
   },

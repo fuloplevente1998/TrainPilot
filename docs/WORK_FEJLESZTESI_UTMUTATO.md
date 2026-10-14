@@ -1,5 +1,12 @@
 # TrainPilot — fejlesztés folytatása Workban
 
+## Legfrissebb folytatási pont — befejezési UX
+
+2026. október 14-én a felhasználó a `84c872c` telefonos / `859a6a1` órás pár funkcióját működőnek igazolta. Most az edzés lezárását egyszerűsítjük: értékelés után automatikus kezdőlap, órán is ugyanaz az öt fokozat, közös kanonikus visszajelzés, külön fájdalom/kihagyás. Az órán is megválaszolható a telefonon befejezett edzés még nyitott értékelése. Duplikált üzenet nem írja felül az első választ; a Naplóban szándékosan szerkeszthető. A progressziónál a külön gyakorlatértékelés elsőbbséget élvez, a teljes edzésértékelés csak hiányában szolgál alapul. Nincs automatikus programátírás a válasz megadásakor.
+
+A `fix/p0-162-157-safe-wear-sync` ág / #195 draft a közös forrás; a verzió **1.3.4 /2730**, main/release változatlan. Az alábbi `84c872c` buildadatok az előző, elfogadott pár bizonyítékai. Az új UX-hez mindkét app új tesztbuildje szükséges, és annak készülékes próbája még hátra van.
+
+
 Frissítve: **2026. október 14.** Ez az egy fájl új Work-beszélgetésbe feltölthető vagy bemásolható. A Samsung energiapontszám kutatása és a javasolt Coach-integráció is itt szerepel.
 
 ## Most futó P0 kör

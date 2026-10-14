@@ -1,5 +1,14 @@
 # P0 #162 → #157 — közös tesztpár és készülékes elfogadás
 
+## Új készülékes eredmény és befejezési értékelés
+
+**2026. október 14.:** a felhasználó a `84c872c` telefonos és `859a6a1` órás tesztpár működését elfogadta: „Most már a funkció jól működik”. Ez a beszámolt funkció elfogadása; a teljes korábbi P0 tesztmátrix minden esete nem lett külön visszaigazolva.
+
+Következő tesztpár: telefonon értékelés után közvetlen kezdőlap; órán ugyanaz az öt fokozat (a felhasználó külön megerősítette), fájdalom és kihagyás. Telefonos befejezéskor az óra is megválaszolhatja a még nyitott kérdést; az első válasz megmarad ismételt kézbesítéskor. Az önálló órás befejezés értékelése a tartós végső parancsban utazik. A naplóból elérhető az értékelés és a javaslat; a külön gyakorlatértékelés elsőbbséget élvez a teljes edzés visszajelzésével szemben.
+
+**Készülékes próba:** (1) telefonon befejez → öt fokozat egyike → automatikus kezdőlap; (2) órán befejez → ugyanaz az öt fokozat → kezdőlap, egy telefonos naplóbejegyzés; (3) telefonon befejez, de az órán válaszol → telefonos kérdés eltűnik; (4) kapcsolat megszakítása az órás befejezésnél, majd visszatérés → az értékelés megérkezik, a napló nem duplázódik; (5) fájdalom és kihagyás, valamint a korábbi háttérvezérlés/törlés rövid regressziója. Az új UX készülékes elfogadása még várakozik.
+
+
 Frissítve: **2026. október 14.** Közös draft PR: [#195](https://github.com/fuloplevente1998/TrainPilot/pull/195). Forráság: `fix/p0-162-157-safe-wear-sync`. Verzió mindkét appban **1.3.4 /2730**. A main és a nyilvános kiadások nem változnak; #162 és #157 a tényleges telefonos/órás eredményig nyitva marad.
 
 ## Aktuális félbehagyott edzés törlésének javítása — `84c872c`

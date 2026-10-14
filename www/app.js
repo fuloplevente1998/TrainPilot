@@ -935,7 +935,7 @@ saveSettings=function(){db.set('settings',{...settings(),rest:Math.max(30,Math.m
 const rf13Start=startWorkout;startWorkout=function(dayId,scheduleId=null,programId=null){const before=state.session;state.prescriptionProgramId=programId||activeProgramId();try{rf13Start(dayId,scheduleId,programId);}finally{state.prescriptionProgramId=null;}if(!state.session||state.session===before)return;const p=programById(state.session.programId);if(p?.prescriptions){state.session.exercises=state.session.exercises.map(e=>{const rx=p.prescriptions[e.id];if(!rx)return e;const previous=history().filter(h=>h.programId===p.id).flatMap(h=>h.exercises).find(x=>x.id===e.id);return {...e,prescription:{...rx},sets:Array.from({length:rx.sets},(_,i)=>({set:i+1,weight:previous?.sets[i]?.weight??(e.loadType==='bodyweight'?0:rx.trial&&Number(rx.weight)===0?'':(rx.weight??'')),reps:'',done:false}))};});renderWorkout();}};
 const rf13Rest=startRest;startRest=function(){rf13Rest();const rx=state.session?.exercises[state.current]?.prescription;if(rx){state.timer=rx.rest;state.restEndAt=Date.now()+state.timer*1000;}};
 // Finish only marks the calendar after the history write really succeeded.
-finishWorkout=function(){if(!state.session)return;const s=state.session;rf12FinishWorkout.apply(this,arguments);if(state.session)return;if(s.scheduleId){const items=scheduled(),i=items.findIndex(x=>x.id===s.scheduleId);if(i>=0){items[i]={...items[i],status:'completed',updatedAt:Date.now()};db.set('scheduled',items);}}feedbackScreen(s.started);};
+finishWorkout=function(){if(!state.session)return;const s=state.session;rf12FinishWorkout.apply(this,arguments);if(state.session)return;if(s.scheduleId){const items=scheduled(),i=items.findIndex(x=>x.id===s.scheduleId);if(i>=0){items[i]={...items[i],status:'completed',updatedAt:Date.now()};db.set('scheduled',items);}}if(window.TrainPilotWorkoutFeedback)TrainPilotWorkoutFeedback.afterFinish(s,arguments[0]);else feedbackScreen(s.started);};
 
 
 // Imported Health Connect records live only in memory and are excluded from backup/Drive.
@@ -4127,7 +4127,7 @@ const RF250_CHANGE_TYPES=[
 // 2.4.6 – restore the original five-step effort weights exactly.
 rf220EffortLoad=function(){
  let score=100,n=0;const delta={easy:3,light:1,good:0,challenging:-4,hard:-8,pain:-20};
- for(const h of rf245RecentHistory())for(const e of h.exercises||[]){if(!e.effort)continue;n++;score+=delta[e.effort]||0}
+ for(const h of rf245RecentHistory())for(const e of h.exercises||[]){const effort=e.effort||h.feedback?.effort;if(!effort)continue;n++;score+=delta[effort]||0}
  return {score:Math.max(20,Math.min(100,score)),n};
 };
 
@@ -5630,7 +5630,7 @@ var tp140Recent=function tp140Recent(id,programId=null,limit=3){
 };
 var tp140Median=function tp140Median(a){const x=a.filter(Number.isFinite).sort((m,n)=>m-n);if(!x.length)return 0;const i=Math.floor(x.length/2);return x.length%2?x[i]:(x[i-1]+x[i])/2;};
 var tp140Occurrence=function tp140Occurrence(row,target){
- const e=row?.exercise||{},allSets=e.sets||[],done=allSets.filter(s=>s.done),reps=done.map(s=>Number(s.reps)).filter(Number.isFinite),weights=done.map(s=>Number(s.weight)).filter(Number.isFinite),effort=e.effort||null;
+ const e=row?.exercise||{},allSets=e.sets||[],done=allSets.filter(s=>s.done),reps=done.map(s=>Number(s.reps)).filter(Number.isFinite),weights=done.map(s=>Number(s.weight)).filter(Number.isFinite),effort=e.effort||row?.workout?.feedback?.effort||null;
  const allDone=!!allSets.length&&done.length===allSets.length&&(!target.sets||done.length>=target.sets),weight=tp140Median(weights),minRep=reps.length?Math.min(...reps):null,maxRep=reps.length?Math.max(...reps):null,avgRep=reps.length?reps.reduce((a,b)=>a+b,0)/reps.length:null;
  const metricKind=target.kind==='time'?'time':target.kind==='reps'?'reps':target.kind;
  const hitTop=(metricKind==='reps'||metricKind==='time')&&allDone&&target.max!=null&&minRep!=null&&minRep>=target.max;
@@ -16422,6 +16422,58 @@ progressionSuggestion=function(h,rating){
  if(rating==='pain')return {action:'none',text:tp128T('pain')};
  return {action:'none',text:rating==='hard'?tp128T('hold'):tp149T('progress.goalNote')};
 };
+// One canonical end-of-workout answer, shared by phone and watch. Replays cannot
+// replace an answer; editing from the Journal remains an explicit phone action.
+window.TrainPilotWorkoutFeedback=(function(){
+ const key='workoutFeedbackPending';
+ const id=h=>String(h?.syncId||h?.id||h?.started||'');
+ const matches=(h,expected)=>id(h)===expected||h?.started===expected;
+ const valid=f=>f&&typeof f==='object'&&(RF232_EFFORT_KEYS.includes(f.effort)||f.effort==='pain'||f.skipped===true);
+ function pending(){
+  const p=db.get(key,null),h=p&&history().find(h=>matches(h,p.workoutId)&&h.finished);
+  return h&&!h.feedback?.rating&&!h.feedback?.skipped?{workoutId:id(h),started:h.started}:null;
+ }
+ function accept(expected,f,source='watch',replace=false){
+  if(!valid(f)||window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending)return false;
+  const rows=history(),h=rows.find(h=>matches(h,expected)&&h.finished);if(!h)return false;
+  if(!h.feedback?.applied&&(replace||!h.feedback?.rating&&!h.feedback?.skipped)){
+   const effort=f.skipped===true?null:f.effort;
+   const rating=effort==='pain'?'pain':['challenging','hard'].includes(effort)?'hard':effort==='good'?'right':'easy';
+   h.feedback=effort?{effort,effortScore:rf232EffortScore(effort),rating,suggestion:progressionSuggestion(h,rating),source,updatedAt:Date.now()}:{skipped:true,source,updatedAt:Date.now()};
+   db.set('history',rows);
+  }
+  const p=db.get(key,null);if(p&&matches(h,p.workoutId))db.set(key,null);
+  if(source==='watch'&&state.feedbackStarted===h.started&&document.querySelector('.tp122-feedback'))go('home');
+  return true;
+ }
+ function afterFinish(h,options={}){
+  if(valid(options?.wearFeedback)&&accept(id(h),options.wearFeedback)){go('home');return;}
+  db.set(key,{workoutId:id(h),started:h.started});feedbackScreen(h.started);
+ }
+ function skip(){if(accept(String(state.feedbackStarted||''),{skipped:true},'phone',state.feedbackEditing===true)){go('home');void window.TrainPilotWearSync?.syncHomeNow?.({force:true});}}
+ return {pending,accept,afterFinish,skip,valid};
+})();
+feedbackScreen=function(started){
+ const h=history().find(h=>h.started===started);if(!h)return;state.feedbackStarted=started;state.feedbackEditing=!!(h.feedback?.rating||h.feedback?.skipped);
+ const l=rf232L(),lang=rf212Lang(),title={hu:'Milyen volt az edzés?',en:'How was the workout?',de:'Wie war das Training?',ro:'Cum a fost antrenamentul?'}[lang]||'Milyen volt az edzés?';
+ const skip={hu:'Most kihagyom',en:'Skip for now',de:'Jetzt überspringen',ro:'Omite acum'}[lang]||'Most kihagyom';
+ render(shell(`<main class="tp122-feedback"><div class="hero"><h1>${esc(title)}</h1><p>${esc(h.programName||'Edzés')} • ${sessionDuration(h)}</p></div>${h.feedback?.suggestion?`<div class="card"><p>${esc(h.feedback.suggestion.text)}</p>${h.feedback.suggestion.action!=='none'&&!h.feedback.applied&&programById(h.programId)?.generated?'<button class="btn block" onclick="applyProgression()">Javaslat alkalmazása a programra</button>':''}</div>`:''}<div class="card"><div class="rf232-effort">${RF232_EFFORT_KEYS.map((k,i)=>`<button class="btn secondary" onclick="saveFeedback('${k}')"><span class="n">${i+1}</span><span class="lbl">${esc(l[k])}</span></button>`).join('')}</div><button class="btn secondary block rf232-pain" onclick="saveFeedback('pain')">${esc(l.pain)}</button></div><button class="btn secondary block" onclick="TrainPilotWorkoutFeedback.skip()">${esc(skip)}</button></main>`));
+};
+saveFeedback=function(effort){
+ // Keep old callers/backup ratings readable without conflating the five scores.
+ if(effort==='right')effort='good';
+ if(TrainPilotWorkoutFeedback.accept(String(state.feedbackStarted||''),{effort},'phone',state.feedbackEditing===true)){
+  go('home');window.TrainPilotFeedback?.saved();void window.TrainPilotWearSync?.syncHomeNow?.({force:true});
+ }
+};
+const tpWorkoutFeedbackHistoryItem=rf263HistoryItem;
+rf263HistoryItem=function(h,index,visibleIndex){
+ const html=String(tpWorkoutFeedbackHistoryItem.apply(this,arguments)),l=rf232L();
+ const title={hu:'Edzésértékelés',en:'Workout feedback',de:'Trainingsbewertung',ro:'Evaluare antrenament'}[rf212Lang()]||'Edzésértékelés';
+ const answer=l[h.feedback?.effort]||({easy:l.easy,right:l.good,hard:l.hard,pain:l.pain}[h.feedback?.rating])||'';
+ const button=`<button class="btn secondary block" onclick="feedbackFromHistory(${Number(index)})">${esc(title)}${answer?' · '+esc(answer):''}</button>`;
+ return html.replace(/(<div class="history-body"[^>]*>)/,'$1'+button);
+};
 var tp128ValidateBase=validateBackup;
 validateBackup=function(d){
  const out=tp128ValidateBase(d);
@@ -17132,6 +17184,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     restSeconds:configuredRest(),
     hasDraft:!!(typeof db!=='undefined'&&db?.get&&db.get('draft',null)),
     workoutResult:db.get('wearWorkoutResult',null),
+    pendingFeedback:window.TrainPilotWorkoutFeedback?.pending()||null,
     recommended:recommendedDay?{
      scheduleId,
      plannedStart,
@@ -17393,6 +17446,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(!expected||command.confirmed!==true)return false;
   if(isClosed(expected)){
    attachMeasuredHealth(command);
+   if(action==='finishWorkout'&&TrainPilotWorkoutFeedback.valid(command.feedback))TrainPilotWorkoutFeedback.accept(expected,command.feedback);
    const previous=closedWorkouts().find(x=>sameId(x.workoutId,expected));
    if(previous?.status==='discarding'&&matchesWorkout(state.session||db.get('draft',null)?.session,expected))return discardDraft(state.session||db.get('draft').session,command);
    // Recover an old unacknowledged save without reviving its stale draft.
@@ -17426,7 +17480,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
   mergeFinalSets(command);attachMeasuredHealth(command);persistDraft();
   if(!state.session.exercises.some(e=>e.sets?.some(s=>s.done)))return recordResult(command,'error','Legalább egy rögzített sorozat szükséges.');
-  const result=finishWorkout({wearConfirmed:true,wearFinishedAt:String(command.finishedAt||'')});
+  const result=finishWorkout({wearConfirmed:true,wearFinishedAt:String(command.finishedAt||''),wearFeedback:command.feedback});
   if(result&&typeof result.then==='function')await result;
   if(history().some(x=>matchesWorkout(x,expected)&&x.finished))return recordResult(command,'saved');
   // A temporarily busy GPS/phone save is retried without acknowledging the command.
@@ -17442,6 +17496,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
    return recordResult(command,'error',rf212Lang()==='hu'?'Az órás parancs elavult vagy az időzítő nem áll készen. Ellenőrizd az edzést.':'The watch command is stale or the timer is not ready. Check the workout.');
   }
   if(action==='requestHome')return syncHomeNow({force:true});
+  if(action==='saveWorkoutFeedback'){
+   if(!TrainPilotWorkoutFeedback.valid(command.feedback))return true;
+   return TrainPilotWorkoutFeedback.accept(expectedId,command.feedback);
+  }
   if(action==='healthSummary')return attachMeasuredHealth(command);
   if(action==='watchAutomationState'){
    if(expectedId&&isClosed(expectedId))return true;
