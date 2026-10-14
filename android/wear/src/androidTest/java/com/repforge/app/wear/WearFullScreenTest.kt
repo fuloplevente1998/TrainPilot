@@ -60,12 +60,16 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         compose.setContent { Watch { WorkoutFeedbackScreen { answers.add(it) } } }
         assertFullViewport()
         WearWorkoutFeedback.choices.forEachIndexed { index, (key, label) ->
-            compose.onNodeWithText("${index + 1} · $label").performScrollTo().assertIsDisplayed().performClick()
+            val caption = "${index + 1} · $label"
+            lazyList().performScrollToNode(hasContentDescription(caption))
+            compose.onNodeWithContentDescription(caption).assertIsDisplayed().performClick()
             assertEquals(key, answers.last())
         }
-        compose.onNodeWithText("Fájdalom / kellemetlenség").performScrollTo().assertIsDisplayed().performClick()
+        lazyList().performScrollToNode(hasContentDescription("Fájdalom / kellemetlenség"))
+        compose.onNodeWithContentDescription("Fájdalom / kellemetlenség").assertIsDisplayed().performClick()
         assertEquals("pain", answers.last())
-        compose.onNodeWithText("Most kihagyom").performScrollTo().assertIsDisplayed().performClick()
+        lazyList().performScrollToNode(hasContentDescription("Most kihagyom"))
+        compose.onNodeWithContentDescription("Most kihagyom").assertIsDisplayed().performClick()
         assertNull(answers.last())
         screenshot("workout-feedback-last-choice")
     }
@@ -76,12 +80,14 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         val answers = mutableListOf<String?>()
         compose.setContent { Watch { key(selected.value) { Fixture(selected.value, feedbackAnswers = answers) } } }
         compose.onNodeWithContentDescription("Edzés befejezése és mentése").performClick()
-        compose.onNodeWithText("3 · Pont jó").performScrollTo().assertIsDisplayed().performClick()
+        lazyList().performScrollToNode(hasContentDescription("3 · Pont jó"))
+        compose.onNodeWithContentDescription("3 · Pont jó").assertIsDisplayed().performClick()
         assertEquals(listOf("good"), answers)
         compose.onNodeWithTag("wear-home-clock").assertIsDisplayed()
         compose.onNodeWithText("3 · Pont jó").assertDoesNotExist()
         compose.runOnIdle { selected.value = "phone-feedback" }
-        compose.onNodeWithText("4 · Kicsit nehéz").performScrollTo().assertIsDisplayed().performClick()
+        lazyList().performScrollToNode(hasContentDescription("4 · Kicsit nehéz"))
+        compose.onNodeWithContentDescription("4 · Kicsit nehéz").assertIsDisplayed().performClick()
         assertEquals(listOf("good", "challenging"), answers)
         compose.onNodeWithTag("wear-home-clock").assertIsDisplayed()
         screenshot("workout-feedback-return-home")
