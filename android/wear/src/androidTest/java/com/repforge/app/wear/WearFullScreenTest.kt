@@ -14,6 +14,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -754,7 +755,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                 "strength",
                 listOf(set),
             )
-        val workout =
+        val workout = remember {
             mutableStateOf<WearWorkout?>(
                 WearWorkout(
                     1,
@@ -769,12 +770,15 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                     0,
                     listOf(exercise),
                     "A nap",
-                )
+                ).let { initial ->
+                    if (route.startsWith("automatic-")) initial.copy(timerOwner="watch",
+                        automation=WearAutomatic(enabled=true,key="layout-auto",phase=if(route=="automatic-rest")"rest" else "ready",
+                            paused=route=="automatic-rest",remainingMs=if(route=="automatic-rest")115000 else 0,
+                            workSeconds=30,restSeconds=if(route=="automatic-rest")120 else 5,rounds=3,anchorMs=android.os.SystemClock.elapsedRealtime()))
+                    else initial
+                }
             )
-        if(route.startsWith("automatic-"))workout.value=workout.value!!.copy(timerOwner="watch",
-            automation=WearAutomatic(enabled=true,key="layout-auto",phase=if(route=="automatic-rest")"rest" else "ready",
-                paused=route=="automatic-rest",remainingMs=if(route=="automatic-rest")115000 else 0,
-                workSeconds=30,restSeconds=if(route=="automatic-rest")120 else 5,rounds=3,anchorMs=android.os.SystemClock.elapsedRealtime()))
+        }
         val quickExercise =
             WatchHomeExercise(
                 "press",
@@ -810,7 +814,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                 ),
                 null,
             )
-        val home =
+        val home = remember {
             mutableStateOf<WatchHomeSnapshot?>(
                 WatchHomeSnapshot(
                     "p",
@@ -824,20 +828,21 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                     listOf(journal),
                     "1.3.4",
                     true,
+                    pendingFeedback = if (route == "phone-feedback") WatchWorkoutFeedback("layout-test", workout.value!!.started) else null,
                 )
             )
-        val closure =
+        }
+        val closure = remember {
             mutableStateOf<WearClosure?>(
                 WearClosure("c", "layout-test", "finishWorkout", "saved", "", 60, 1, 1)
             )
-        if (route == "phone-feedback") home.value = home.value?.copy(
-            pendingFeedback = WatchWorkoutFeedback("layout-test", workout.value!!.started)
-        )
-        val request =
+        }
+        val request = remember {
             mutableStateOf<String?>(
                 if (route == "timed-workout" || route.startsWith("automatic-")) "workout"
                 else if (route == "active-home") "home" else route
             )
+        }
         val health =
             JSONObject()
                 .put("workoutId", "layout-test")
