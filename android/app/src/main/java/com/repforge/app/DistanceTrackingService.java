@@ -21,7 +21,7 @@ public class DistanceTrackingService extends Service implements LocationListener
     private final Handler handler=new Handler(Looper.getMainLooper());
     private GpsRouteCapture capture=new GpsRouteCapture();
     private GpsRouteStore routeStore;
-    private int routeSegmentOffset, routeSavedPoints;
+    private int routeSegmentOffset, routeSavedPoints, routePriorPointCount;
     private boolean routeSaveError;
     private LocationManager locations;
     private volatile boolean active;
@@ -32,6 +32,15 @@ public class DistanceTrackingService extends Service implements LocationListener
     private float accuracy;
     private final Runnable tick=new Runnable(){public void run(){if(!active)return;save();notifyStatus();handler.postDelayed(this,5000);}};
     static String text(String lang,String hu,String en,String de,String ro){return "hu".equals(lang)?hu:"de".equals(lang)?de:"ro".equals(lang)?ro:en;}
+    private void prepareRouteOwner(String ownerKey){
+        routeSavedPoints=0;routePriorPointCount=0;routeSegmentOffset=0;routeSaveError=false;
+        try{
+            GpsRouteStore.Route old=routeStore.read(ownerKey);
+            routeSegmentOffset=old.lastOrdinal();
+            routePriorPointCount=old.pointCount;
+            routeSaveError=old.partial||old.pointCount>=GpsRouteTrace.MAX_POINTS;
+        }catch(IOException e){routeSaveError=true;}
+    }
     @Override public void onCreate(){super.onCreate();instance=this;locations=(LocationManager)getSystemService(LOCATION_SERVICE);routeStore=new GpsRouteStore(getNoBackupFilesDir());}
     @Override public IBinder onBind(Intent intent){return null;}
     @Override public int onStartCommand(Intent intent,int flags,int startId){
@@ -40,8 +49,7 @@ public class DistanceTrackingService extends Service implements LocationListener
         if(active)return START_NOT_STICKY;
         key=intent.getStringExtra("key");name=intent.getStringExtra("name");language=intent.getStringExtra("language");
         if(key==null||language==null){stopSelf();return START_NOT_STICKY;}
-        capture=new GpsRouteCapture();routeSavedPoints=0;routeSaveError=false;
-        try{routeSegmentOffset=routeStore.lastOrdinal(key);}catch(IOException e){routeSegmentOffset=0;routeSaveError=true;}
+        capture=new GpsRouteCapture();prepareRouteOwner(key);
         paused=false;accumulated=0;lastFix=0;accuracy=0;error="";began=SystemClock.elapsedRealtime();
         try{
             if(ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED)throw new SecurityException("location");
@@ -59,7 +67,8 @@ public class DistanceTrackingService extends Service implements LocationListener
         int priorPoints=capture.routePointCount();
         if(capture.addFix(location.getLatitude(),location.getLongitude(),location.getAccuracy(),stamp,location.getTime(),location.hasSpeed()?location.getSpeed():Double.NaN)){
             if(capture.routePointCount()>priorPoints && !routeSaveError){
-                try{
+                if(routeSavedPoints+routePriorPointCount>=GpsRouteTrace.MAX_POINTS)routeSaveError=true;
+                else try{
                     routeStore.append(key,routeSegmentOffset+capture.routeSegmentCount(),capture.route().lastPoint());
                     routeSavedPoints++;
                 }catch(IOException e){routeSaveError=true;}
@@ -103,9 +112,8 @@ public class DistanceTrackingService extends Service implements LocationListener
     static JSONObject rollover(Context context,String expected,String next,String name){
         DistanceTrackingService s=instance;if(s==null||!s.active||!expected.equals(s.key))return stopOwned(context,expected);
         JSONObject previous=s.current();s.key=next;s.name=name;s.capture=new GpsRouteCapture();
-        s.routeSavedPoints=0;s.routeSaveError=false;
-        try{s.routeSegmentOffset=s.routeStore.lastOrdinal(next);}catch(IOException e){s.routeSegmentOffset=0;s.routeSaveError=true;}
+        s.prepareRouteOwner(next);
         s.accumulated=0;s.began=SystemClock.elapsedRealtime();s.lastFix=0;s.accuracy=0;s.save();s.notifyStatus();return previous;
     }
-    static void erase(Context context){stop(context);DistanceTrackingService service=instance;if(service!=null){service.key="";service.error="";service.capture=new GpsRouteCapture();service.routeSavedPoints=0;service.routeSaveError=false;}context.getSharedPreferences(PREFS,MODE_PRIVATE).edit().clear().apply();}
+    static void erase(Context context){stop(context);DistanceTrackingService service=instance;if(service!=null){service.key="";service.error="";service.capture=new GpsRouteCapture();service.routeSavedPoints=0;service.routePriorPointCount=0;service.routeSegmentOffset=0;service.routeSaveError=false;}context.getSharedPreferences(PREFS,MODE_PRIVATE).edit().clear().apply();}
 }
