@@ -2,7 +2,7 @@
 
 ## Aktuális folytatás — #191 / #200 tesztpár
 
-A friss, elfogadott main `20fe5ce`; #158/#159 lezárva. Folyamatban a [#199 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/199), `feat/191-wear-save-sync-status` ágon. #191 helyi mentés / átadás / tartós telefonos nyugta és kompakt újrapróbálás kész. A felhasználó élő edzésben jelzett #200 hibája is javítva: telefonon kihagyott pihenő után az óra Folytatásban és előző kész gyakorlaton maradhatott; a befejezett pihenő után a következő sorozat/gyakorlat rögzíthető.
+Az elfogadott main alkalmazáskód `20fe5ce`; a main aktuális feje `a377717` (#198 csak a #197 P2 igényt dokumentálta). #158/#159 lezárva. Folyamatban a [#199 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/199), `feat/191-wear-save-sync-status` ágon. #191 helyi mentés / átadás / tartós telefonos nyugta és kompakt újrapróbálás kész. A felhasználó élő edzésben jelzett #200 hibája is javítva: telefonon kihagyott pihenő után az óra Folytatásban és előző kész gyakorlaton maradhatott; a befejezett pihenő után a következő sorozat/gyakorlat rögzíthető.
 
 **Utolsó átadott telefonos és Wear APK forrása egyaránt `c503887`, 1.3.4 /2730.** Teljes 140 Node / 93 Chromium, 264 natív és 86 kerek Wear UI-teszt, aláírás/forrás/hash ellenőrzés sikeres. [Átadási lap és rövid fizikai próba](wear/P1_191_MENTES_SZINKRON.md). Main/release változatlan; #191/#200 nyitva, készülékes elfogadásra várunk. Következő fejlesztés a #163 telefonos térkép, a #191/#200 konkrét tesztpárjának visszajelzése után. A régebbi APK-k és alábbi állapotok történeti adatok; a folytatáskor ezt a felső állapotot és az aktuális GitHub headeket ellenőrizd.
 
