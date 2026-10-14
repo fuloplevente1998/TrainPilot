@@ -190,5 +190,13 @@ function fixture(nativeResult=result()){
  assert.equal(await orphan.native.sync(),true,'an already discarded orphan execution cannot block a fresh workout');
  assert.equal(orphan.calls.some(call=>call[0]==='discard'),true);
  assert.equal(orphan.calls.some(call=>call[0]==='ack'),false);
+ const replaced=fixture();replaced.run("db.set('wearClosedWorkouts',[{workoutId:'workout',status:'discarded'}]);");
+ let closeStarted,finishClose;const closing=new Promise(resolve=>{closeStarted=resolve;});
+ replaced.api.discardExecution=async()=>{await new Promise(resolve=>{finishClose=resolve;closeStarted();});replaced.setResult({snapshot:{active:false,workoutId:'workout',generation:10,executionRevision:3},events:[],timer:{}});};
+ const oldClose=replaced.native.sync();await closing;
+ replaced.run("state.session={...inputDraft.session,syncId:'fresh-owner',automatic162:{enabled:false}};db.set('draft',{session:state.session,current:0,workout:'fresh'});");finishClose();
+ assert.equal(await oldClose,true);
+ assert.equal(replaced.run('state.session?.syncId'),'fresh-owner','old cleanup cannot remove a new workout started while the bridge was awaiting closure');
+ assert.equal(replaced.run('db.get("draft").session.syncId'),'fresh-owner');
  console.log('PASS full runtime native bridge: durable reconciliation, guarded discard/pending events/foreign owner, recording lifecycle and DOM-free timed start');
 })().catch(error=>{console.error(error);process.exitCode=1;});

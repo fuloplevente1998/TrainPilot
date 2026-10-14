@@ -16756,7 +16756,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
      if(latest?.active&&latest.workoutId===closed.workoutId&&latest.generation===closed.generation)
       await api.discardExecution({workoutId:latest.workoutId,generation:latest.generation,executionRevision:latest.executionRevision,confirmed:true});
     }finally{await api.blockExecution({blocked:false});}
-    if(identity(session)===closed.workoutId){
+    if(identity(draft()?.session)===closed.workoutId){
      stopTimer();db.set('draft',null);state.session=null;state.workout=null;state.current=0;state.restEndAt=null;state.timer=0;state.tab='home';render();
     }
     current=draft();session=current?.session;remote=await api.executionStatus();lastPrepared='';lastArmed='';
