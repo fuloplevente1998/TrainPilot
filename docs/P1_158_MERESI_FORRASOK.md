@@ -1,5 +1,11 @@
 # P1 #158 — telefonos napló mérési forrásai
 
+## Készülékesen elfogadva
+
+A felhasználó 2026. október 14-én a `c800b4e` telefonos tesztbuild #158 működését elfogadta: **„#158 rendben, mehetünk tovább, de elvileg a #159 is készen van már.”** A visszajelzésből nem következtetünk külön 45 perces próba elvégzésére. Verzió marad **1.3.4 /2730**, Wear `9b94a10` változatlan.
+
+A #159 már meglévő Mini Napló-megvalósítás; a következő prioritás #191 → #163. Az alábbi készülékes lista a korábban átadott ellenőrzési útmutató, nem új tesztkérés.
+
 Feladat: [#158](https://github.com/fuloplevente1998/TrainPilot/issues/158). Alap: `cac8937559f064b5141b068a9687b71a704f760a`, a készülékesen elfogadott P0 #195 main-egyesítése. Fejlesztési ág: `fix/158-health-source-provenance`. Verzió: **1.3.4 /2730**.
 
 ## Működés
@@ -28,7 +34,7 @@ Meglévő `health-workout-energy.cjs`: külön edzés-, aktív- és nyugalmi ene
 - APK SHA-256: `17ec80ee73ce6e9b86b6679a32025d7a76671efc701a4fbd8bcbf6d5fd7cc2e5`; **5817681 bájt**.
 - Eredeti tanúsítvány SHA-256: `4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688`. A csomag kriptográfiai aláírása, package/verzió, sourceCommit, forrás-archívum, becsomagolt webes fájlok és érintett natív források külön ellenőrizve.
 
-Az APK a fenti kódcommitból készült; a későbbi átadási dokumentáció commitjai nem változtatják meg az alkalmazás forrását. [Gépi buildbizonylat](builds/2026-10-14-p1-158.json). **Fizikai mérési elfogadás még nincs**; az órán továbbra is a készülékesen elfogadott `9b94a10` APK használható.
+Az APK a fenti kódcommitból készült; a későbbi átadási dokumentáció commitjai nem változtatják meg az alkalmazás forrását. [Gépi buildbizonylat](builds/2026-10-14-p1-158.json). **A #158 készülékesen elfogadva 2026. október 14-én**; az órán továbbra is a készülékesen elfogadott `9b94a10` APK használható.
 
 
 ## Készülékes elfogadás
@@ -39,4 +45,4 @@ Az APK a fenti kódcommitból készült; a későbbi átadási dokumentáció co
 4. Rövid kapcsolatmegszakítás után a nyitott naplóban érkezzen meg a végső órás összesítés. Maradjon egyetlen edzés; a nyitott rész és a kézi forrásválasztás megmaradjon. Az órás Mini Napló ugyanazt a friss összesítést kapja.
 5. Kapcsolat/olvasási hiba mellett a már beérkezett érvényes adat maradjon meg; hiányzó/részleges mérés ne váljon teljesnek vagy nullának. Ellenőrizd a Frissítés működését mindkét forrásnál.
 
-A #158 rövid készülékes ellenőrzése még nincs visszaigazolva, ezért nyitott. A hosszabb összehasonlítás az eredeti, 45:36 hosszú edzés kcal-eltéréséhez kapcsolódó utóellenőrzés: a következő rendes edzésben végezhető, külön 45 perces tesztedzés és az emiatti fejlesztési megállás nélkül. Main-egyesítés és release külön felhasználói elfogadással. Következő feladat #159 → #191 → #163; jelen körben nincs új Wear UI vagy térképfunkció.
+A #158 rövid készülékes ellenőrzési körét a felhasználó elfogadta. A hosszabb összehasonlítás az eredeti, 45:36 hosszú edzés kcal-eltéréséhez kapcsolódó utóellenőrzés: a következő rendes edzésben végezhető, külön 45 perces tesztedzés és az emiatti fejlesztési megállás nélkül. Main-egyesítés és release külön felhasználói elfogadással. A meglévő #159 megvalósítás ellenőrzése után következő feladat #191 → #163; jelen körben nincs új Wear UI vagy térképfunkció.
