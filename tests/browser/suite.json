@@ -366,5 +366,9 @@
   {
     "file": "tests/browser/automatic-distance-scope-162.cjs",
     "estimatedSeconds": 8
+  },
+  {
+    "file": "tests/browser/health-source-provenance-158.cjs",
+    "estimatedSeconds": 8
   }
 ]

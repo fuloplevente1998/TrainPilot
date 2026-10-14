@@ -1019,7 +1019,7 @@
   const healthText=typeof tp149T==='function'?tp149T('journal.healthData'):'Health adatok';
   const refreshText=typeof tp149T==='function'?tp149T('common.refresh'):'Frissítés';
   const tools='<div class="tp3-history-aux"><button class="btn secondary block" type="button" onclick="event.stopPropagation();calendarIntent('+originalIndex+')">'+esc(calendarText)+'</button><button class="btn danger block tp155-history-delete" type="button" onclick="event.stopPropagation();tp3DeleteHistoryWorkout(\''+esc(key)+'\')">'+esc(tx().deleteWorkout)+'</button></div>';
-  const health='<div class="rf-history-health-panel" data-rf-history-health-panel="'+originalIndex+'"><button type="button" class="rf-history-health-toggle" aria-expanded="true" onclick="event.stopPropagation();rfHistoryHealthToggle('+originalIndex+')"><div class="tp3-health-toggle-copy"><strong>'+esc(healthText)+'</strong><span class="small muted"> • '+esc(rfHistoryHealthWindow(x))+'</span></div><span class="rf-history-health-chevron" aria-hidden="true">›</span></button><div class="rf-history-health-body"><div class="rf-history-health" data-rf-history-health="'+originalIndex+'">'+rfHistoryHealthHtml(originalIndex)+'</div><button type="button" class="btn secondary block rf-history-health-refresh" onclick="event.stopPropagation();healthFromHistory('+originalIndex+')">'+esc(refreshText)+'</button></div></div>';
+  const health='<div class="rf-history-health-panel" data-rf-history-health-panel="'+originalIndex+'"><button type="button" class="rf-history-health-toggle" aria-expanded="true" onclick="event.stopPropagation();TrainPilotWearJournalSource.toggleKey('+esc(JSON.stringify(rfHistoryHealthScope(x).workoutId))+')"><div class="tp3-health-toggle-copy"><strong>'+esc(healthText)+'</strong><span class="small muted"> • '+esc(rfHistoryHealthWindow(x))+'</span></div><span class="rf-history-health-chevron" aria-hidden="true">›</span></button><div class="rf-history-health-body"><div class="rf-history-health" data-rf-history-health="'+originalIndex+'">'+rfHistoryHealthHtml(originalIndex)+'</div><button type="button" class="btn secondary block rf-history-health-refresh" onclick="event.stopPropagation();TrainPilotWearJournalSource.refresh('+esc(JSON.stringify(rfHistoryHealthScope(x).workoutId))+')">'+esc(refreshText)+'</button></div></div>';
   const feedback=window.TrainPilotWorkoutFeedback?.historyButton(x,originalIndex)||'';
   return tp3WorkoutSummaryHtml(x,key)+feedback+tools+health+rf130PhotoSection(x,key);
  };
@@ -1672,8 +1672,10 @@
    rfHistoryHealthCache.set(h.started,{error:'Ehhez az edzéshez nincs érvényes befejezési idő.'});rfHistoryHealthPaint(i);return;
   }
   const key=h.started;
-  if(tp6HistoryHealthFlights.has(key))return tp6HistoryHealthFlights.get(key);
-  const panel=document.querySelector('[data-rf-history-health-panel="'+i+'"]'),refresh=panel?.querySelector('.rf-history-health-refresh');
+  const flightKey=JSON.stringify(rfHistoryHealthScope(h));
+  if(tp6HistoryHealthFlights.has(flightKey))return tp6HistoryHealthFlights.get(flightKey);
+  const mounted=[...document.querySelectorAll('[data-tp158-workout-key]')].find(node=>node.dataset.tp158WorkoutKey===rfHistoryHealthScope(h).workoutId);
+  const panel=mounted?.closest('.rf-history-health-panel'),refresh=panel?.querySelector('.rf-history-health-refresh');
   panel?.classList.add('tp6-health-refreshing');
   if(refresh){refresh.disabled=true;refresh.setAttribute('aria-busy','true')}
   const task=(async()=>{
@@ -1686,21 +1688,22 @@
     const current=history().find(x=>rf240WorkoutKey(x)===rf240WorkoutKey(h));
     if(!current||current.started!==h.started||current.finished!==h.finished||JSON.stringify(current.activeIntervals||[])!==JSON.stringify(h.activeIntervals||[]))return;
     rf242SaveMatchedWorkoutHealth(rf240WorkoutKey(h),h,result||{},{});
-    rfHistoryHealthCache.set(key,{summary:result||{},loadedAt:Date.now()});
+    rfHistoryHealthCache.set(key,{...rfHistoryHealthScope(h),summary:result||{},loadedAt:Date.now()});
    }catch(e){
-    rfHistoryHealthCache.set(key,{error:e?.message||'A Health Connect adatok lekérése nem sikerült.'});
+    rfHistoryHealthCache.set(key,{...rfHistoryHealthScope(h),error:e?.message||'A Health Connect adatok lekérése nem sikerült.'});
    }
    // Paint only the final result. Never replace the inline block with the transient loading state.
    // The Health result is not a scroll anchor; restore the current offset synchronously after replacement.
    const sx=window.scrollX||0,sy=window.scrollY||0;
-   rfHistoryHealthPaint(i);
+   const currentIndex=history().findIndex(x=>rfHistoryHealthScope(x).workoutId===rfHistoryHealthScope(h).workoutId);
+   if(currentIndex>=0)rfHistoryHealthPaint(currentIndex);
    window.scrollTo(sx,sy);
   })().finally(()=>{
    panel?.classList.remove('tp6-health-refreshing');
    if(refresh){refresh.disabled=false;refresh.removeAttribute('aria-busy')}
-   tp6HistoryHealthFlights.delete(key);
+   tp6HistoryHealthFlights.delete(flightKey);
   });
-  tp6HistoryHealthFlights.set(key,task);
+  tp6HistoryHealthFlights.set(flightKey,task);
   return task;
  };
  window.healthFromHistory=healthFromHistory;

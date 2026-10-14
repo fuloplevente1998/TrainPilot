@@ -1,5 +1,17 @@
 # TrainPilot — fejlesztési állapot
 
+## Aktuális P1 kör — #158 (2026. október 14.)
+
+A #195 mainre került (`cac8937`), a készülékesen elfogadott #162/#157 lezárva. A jóváhagyott folytatás első feladata a **#158**, külön `fix/158-health-source-provenance` ágon, a friss mainből. Utána #159 → #191 → #163 következik.
+
+A meglévő naplós forrásválasztó pontosítva: saját, azonosított órás mérés az alapértelmezés; a Health Connect olvasási csatornáját és a tényleges adatot közlő alkalmazást külön jelöljük. Samsung név csak a mérési eredményben közölt eredet/provider alapján szerepel. A natív telefonos lekérés megtartja az eredeti forrásmetaadatokat.
+
+A nyitott mérési blokk, forrásválasztás, Frissítés és összecsukás stabil edzésazonosítót használ. A késői Wear revízió ugyanazt az edzést és a Mini Napló-publikációt frissíti. Az idegen edzés/időablak cache-e nem jelenik meg; sikertelen frissítés mellett a korábbi érvényes adat és a hiba együtt látszik. Valódi nulla és hiányzó adat elkülönül, részleges mérés jelölve.
+
+Új teljes böngészős regresszió: külön 390/49 kcal, 45:36 szintetikus időablak, késői 400 kcal, listaátrendezés, forrásválasztás és nyitott napló megőrzése. A régi mainen a hamis Samsung-felirat reprodukálva. A korábbi kalória/időablak és nyitott napló tesztek megmaradnak; a forrásszövegek négy nyelven ellenőrizve. A CI és teszt-APK pontos bizonyítékai az [átadási lapon](docs/P1_158_MERESI_FORRASOK.md) követhetők.
+
+**Verzió: 1.3.4 /2730.** A #158 nyitva marad a fizikai, legalább 45 perces mérési és késői szinkronpróbáig. Ez a kör nem módosítja az órás alkalmazást; a készülékesen elfogadott Wear `9b94a10` tovább használható. A mainre emeléshez az új telefonos build készülékes elfogadása szükséges.
+
 ## Készülékesen elfogadott P0 kör — #195
 
 A felhasználó 2026. október 14-én a telefonos `b9dbf7b` / órás `9b94a10` tesztpárt készülékesen elfogadta: **„Minden szuper, menjen mainre, zarjuk az issuet :)”**. A #195 main-egyesítése és a kapcsolódó #162/#157 lezárása jóváhagyva. Verzió mindkét appban **1.3.4 /2730**.
