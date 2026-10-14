@@ -215,7 +215,17 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     fun explicitWorkoutPauseShowsOnlySafeContinuationControls() {
         val actions=mutableListOf<String>()
         compose.setContent { Watch { Fixture("workout-paused",automaticCommands=actions) } }
-        compose.onNode(hasContentDescription("Edzés szünetel") and !hasText("Edzés szünetel")).assertIsDisplayed()
+        screenshot("workout-paused-opening")
+        assertTrue(compose.onAllNodesWithContentDescription("Edzés szünetel").fetchSemanticsNodes().isNotEmpty())
+        // Curved text has multiple virtual accessibility nodes. Verify the actual
+        // gold glyphs in the fixed top arc, instead of assuming one rectangular Text node.
+        val picture=compose.onRoot().captureToImage().asAndroidBitmap()
+        var gold=0
+        for(y in 0 until picture.height/4)for(x in 0 until picture.width){
+            val pixel=picture.getPixel(x,y)
+            if(android.graphics.Color.red(pixel)>150&&android.graphics.Color.green(pixel)>100&&android.graphics.Color.blue(pixel)<130)gold++
+        }
+        assertTrue("The curved pause heading must actually be visible",gold>20)
         compose.onNodeWithContentDescription("Sorozat rögzítése").assertDoesNotExist()
         assertFullViewport()
         lazyList().performScrollToNode(hasContentDescription("Folytatás telefonon"))

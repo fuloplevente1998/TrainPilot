@@ -2,6 +2,12 @@ name: Wear round display UI
 
 on:
   workflow_dispatch:
+    inputs:
+      test_filter:
+        description: 'Optional AndroidJUnit class#method filter; empty runs the full round UI suite'
+        required: false
+        type: string
+        default: ''
   push:
     branches: [main, 'fix/**', 'feat/**']
     paths: ['android/wear/**', '.github/workflows/wear-layout-ui.yml']
@@ -42,6 +48,8 @@ jobs:
           ./gradlew --no-daemon :wear:assembleDebug :wear:assembleDebugAndroidTest
       - name: Verify actual round-screen layout and touch scrolling
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          TRAINPILOT_WEAR_UI_FILTER: ${{ inputs.test_filter || '' }}
         with:
           api-level: 30
           target: android-wear
