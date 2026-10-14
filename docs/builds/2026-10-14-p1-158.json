@@ -1,0 +1,27 @@
+{
+  "sourceCommit": "c800b4ee49ba2aeb566eab3cba347349c5a784d7",
+  "baseCommit": "cac8937559f064b5141b068a9687b71a704f760a",
+  "nodePackages": 140,
+  "browserPackages": 93,
+  "runId": 38557899870,
+  "artifactId": 11891970699,
+  "quickRunId": 38557899869,
+  "perfRunId": 38557896097,
+  "apk": {
+    "file": "TrainPilot-1.3.4-P1-158-c800b4e-Telefon.apk",
+    "sha256": "17ec80ee73ce6e9b86b6679a32025d7a76671efc701a4fbd8bcbf6d5fd7cc2e5",
+    "bytes": 5817681,
+    "sourceCommit": "c800b4ee49ba2aeb566eab3cba347349c5a784d7",
+    "version": "1.3.4",
+    "versionCode": 2730
+  },
+  "signerCertificateSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+  "physicalAcceptance": false,
+  "wearUnchanged": true,
+  "acceptedWearSourceCommit": "9b94a10e0edf19a15369d4c8bdf1905fecbfdd29",
+  "pullRequest": 196,
+  "verifiedSourceArchive": true,
+  "verifiedPackagedWebAssets": true,
+  "verifiedNativeSources": true,
+  "verifiedApkSignature": true
+}
