@@ -1,0 +1,25 @@
+# P1 #191 — órás mentés és visszaigazolt szinkron
+
+## Kiindulás
+
+Friss main: `20fe5ceaf992bc2658be7422d5c3f45b9c060ace`, a készülékesen elfogadott #158 / #196 után. A #158 és #159 lezárva; a Mini Napló meglévő funkció, nem készül újra. Fejlesztési ág: `feat/191-wear-save-sync-status`. Verzió **1.3.4 /2730**.
+
+Állapot: **forrásfelmérés és terv**, még nem megvalósított #191, nincs új APK vagy készülékes elfogadás.
+
+## Meglévő adatút és tényleges hiány
+
+- `WearCommandOutbox.enqueue()` a sorozatparancsot SharedPreferencesbe írja és Data Layerre küldi. A lokális `commit()` eredménye jelenleg nincs ellenőrizve. A `putDataItem()` sikeres visszatérése után a lokális küldési sorból kiveszi a parancsot: ez a Data Layer-átadás sikere, nem annak bizonyítéka, hogy a telefon edzésadataiba már bekerült.
+- `WearDataListenerService` jelenleg a `TYPE_CHANGED` eseményeket dolgozza fel; az általános parancsokra nincs az órás felületen közös, tartós telefonos visszaigazolási státusz. A Data Item törlés vagy a beérkező pillanatkép megfelelő bizonylatát csak az azonosítók és a telefonos tartós mentés feltételeinek ellenőrzése után szabad nyugtának tekinteni.
+- `MainActivity.sendCommand()` az outbox sorszámát átírja a helyi edzéspillanatképbe. Az új UI-jelzésnek a valóban megőrzött helyi adatot, a kézbesítést és a telefonos elfogadást külön kell követnie.
+- `WearClosureStore` már külön `pending`/`saved`/`discarded`/`error` lezárási eredményt használ, a beérkező eredményt `commandId` alapján illeszti. Ez újrafelhasználandó működés; a #158/#162 által elfogadott befejezés, értékelés, törlési védelem és automata idővonal megmarad.
+- A Mini Napló a telefon kanonikus történetének offline nézete. Egy órán helyben megőrzött, még vissza nem igazolt parancs nem kerülhet bele második naplóbejegyzésként.
+
+## Következő fejlesztési kör
+
+1. **Állapottábla és bizonylat:** stabil edzés-/sorozat-/parancsazonosítóval külön helyi mentés, szállításra várás, átadás és valódi telefonos nyugta. Térképezzük fel a meglévő natív és JS parancsbizonylatokat; ne épüljön párhuzamos mentési protokoll.
+2. **Tartós átmenetek:** helyi írási hiba, sikertelen küldés, időtúllépés, kapcsolat-visszatérés és újraindítás. A sikeres Data Layer-küldés önmagában nem lehet „Szinkronizálva”. A sikertelen tartós írást nem jelezhetjük „Órán mentve” állapotként.
+3. **Kompakt Wear UI:** „Mentés folyamatban”, „Órán mentve”, „Szinkronra vár”, „Szinkronizálva”, „Hiba / újrapróbálás”. A jelzés kis körkijelzőn és nagy betűvel is olvasható, a sorozatgombok és alsó számláló megmaradnak. Az Újrapróbálás a meglévő, azonosított műveletre vonatkozik.
+4. **Regresszió:** valódi visszaigazolás vs. puszta átadás; párosított és önálló óra; offline → online; újraindítás; duplikált, késői és idegen eredmény; törlés után nincs feltámadás. Az automata, mért adatok, nyitott szerkesztő és Mini Napló megmarad.
+5. **Átadás:** érintett telefonos/Wear tesztek és natív gate-ek, aláírt tesztbuild csak a működés bekötése után. Fizikai próba rövid működésellenőrzésből és szükség szerint normál edzés alatti megfigyelésből; nincs általános 45 perces minimum. Main-egyesítés a konkrét tesztbuild elfogadása után.
+
+Kapcsolódó [#191](https://github.com/fuloplevente1998/TrainPilot/issues/191). Utána a következő P1 a [#163 telefonos térkép](https://github.com/fuloplevente1998/TrainPilot/issues/163). P2/P3 funkciók nem kerülnek ebbe a körbe.
