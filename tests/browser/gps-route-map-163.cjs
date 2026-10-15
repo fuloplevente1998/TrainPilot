@@ -22,7 +22,7 @@ const server=http.createServer((req,res)=>{
   page.on('pageerror',e=>errors.push(String(e)));
   await page.addInitScript(()=>{
    localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped'));
-   Object.defineProperty(navigator,'onLine',{get:()=>false,configurable:true}); // Pure offline fallback.
+   Object.defineProperty(navigator,'onLine',{get:()=>!!window.__tp163Online,configurable:true}); // Offline unless deliberately enabled.
   });
   await page.goto('http://127.0.0.1:'+server.address().port);
   await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.TrainPilotGpsMap163);
@@ -91,7 +91,28 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
   await page.locator('.tp163-close').click();
   assert.equal(await page.locator('#tp163-route-overlay').count(),0);
-  // A cancelled history deletion must retain native GPS routes.
+  // Online state alone must not initiate tile/CDN requests or expose the track.
+  await page.evaluate(()=>window.__tp163Online=true);
+  await row.locator('.tp163-route-button').click();
+  await page.waitForSelector('.tp163-route-svg');
+  assert.equal(await page.locator('.tp163-online-button').count(),0,
+   'Android WebView must not auto-use the community tile server');
+  assert.match(await page.locator('.tp163-map-consent').innerText(),/nincsenek beállítva|not configured/);
+  await page.locator('.tp163-close').click();
+  await page.evaluate(()=>{
+   window.TrainPilotGps163TileProvider={
+     enabled:true,url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+     attribution:'&copy; OpenStreetMap contributors',maxZoom:16
+   };
+  });
+  assert.equal(await page.evaluate(()=>TrainPilotGpsMap163.tileProvider()?.maxZoom),16);
+  await row.locator('.tp163-route-button').click();
+  await page.waitForSelector('.tp163-online-button');
+  assert.equal(await page.locator('.tp163-route-svg').count(),1,'Preview stays offline until a second tap');
+  assert.match(await page.locator('.tp163-map-consent').innerText(),/külső szolgáltatónak|external provider/);
+  await page.locator('.tp163-close').click();
+  await page.evaluate(()=>{window.__tp163Online=false;delete window.TrainPilotGps163TileProvider;});
+    // A cancelled history deletion must retain native GPS routes.
   await row.locator('.tp155-history-delete').click();
   await page.locator('#tp2628Dialog [data-tp2628-cancel]').click();
   assert.deepEqual(await page.evaluate(()=>window.__routeDeletes),[]);
