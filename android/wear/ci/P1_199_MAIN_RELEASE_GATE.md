@@ -16,3 +16,9 @@ A #191 mentési és szinkronstátusz, #200 pihenőkihagyás, #201 telefonos expl
 4. Órás önálló átvétel/folytatás nem része e release scope-nak (külön #202); a #201 teljes, többperces szünet/újraindítás/késői frame próbáit az Issue lezárása előtt külön igazoljuk.
 
 A napló, mérési források és korábbi programok nem veszhetnek el, verziót és release taget automatikusan nem emelünk.
+
+## #206 – közös TrainPilot 1.3.51 /2732 gate
+
+A [#208 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/208) alapján a felhasználó a GPS-es távolsági gyakorlatok **explicit natív GPS STOP utáni tulajdonoshoz kötött automatikus teljesítését** és a két egymás melletti **GPS-mérés / Beltéri időmérés** gombot **egy közös 1.3.51 /2732** verzióban hagyta jóvá. Az 1.3.5 /2731-ben működő Wear Health Services távolság-/sebességmérés és telefonos szinkron változatlan; a telefonos saját GPS-koordinátákból rajzolt élő/naplótérkép megmarad. Nincs önálló órás GPS nyomvonal állítás (#193 külön).
+
+**Ugyanazon SHA kapu:** az aktuális `feat/206-distance-auto-complete-compact-1351` fejlesztési commiton Quick, Performance, 6/6 Chromium, natív JUnit, telefonos aláírt Release APK, Wear aláírt Release APK és wear round UI teszt sikeressége szükséges. Ez a dokumentációs változtatás szándékosan újraindítja a Wear Release Gate-et és a körkijelzőteszteket, hogy ne egy régi SHA-n készült órás APK-t adjunk a telefonos 1.3.51 mellé. Mindkét APK-nál versionName **1.3.51**, versionCode **2732**, a kézbesítésnél külön egyező forrás-SHA és aláírás ellenőrzendő. Tilos main merge vagy kész kiadásként való átadás valamennyi fenti gate nélkül; a készülékes elfogadás marad a felhasználó tesztje.

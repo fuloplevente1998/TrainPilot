@@ -1,5 +1,14 @@
 # TrainPilot — fejlesztési állapot
 
+## 2026-10-15 – #206 GPS-aktivitás és kompakt mérés (1.3.51 /2732 release candidate)
+
+**Felhasználói döntés:** a [#206](https://github.com/fuloplevente1998/TrainPilot/issues/206) GPS-aktivitás automatikus teljesítése és az ugyanott jóváhagyott, képen kért **két egymás melletti GPS/Beltéri időmérés gomb**, tömör státusz és szükség esetén megjelenő beltéri stopper **egy közös telefon+Wear 1.3.51 /2732 kiadásjelöltbe** kerüljön. A kiinduló main `f64ad09` 1.3.5 /2731 mind az öt release/CI kapuja sikeres volt. A jelen fejlesztés külön `feat/206-distance-auto-complete-compact-1351` ág/PR, **mainre csak az aktuális commit új gate-je után**.
+
+- **GPS teljesítés:** a már eredményesen rögzített és explicit *felhasználói* `tp106ToggleGPS` STOP után a natív `key`, `started`, `exerciseIndex`, `setId` alapján a pontosan egyező távolsági egység `done=true`, azonnali draft-perzisztálással. Pozitív hitelesített natív megtett távolság és idő kell. A térkép X, implicit/kényszerített STOP, jelhiány, mérés nélküli szakasz, késői ACK **nem teljesít automatikusan**, és semmit nem dupláz.
+- **Kompakt UX:** a létező `#tp106GpsButton` és `[data-tp107-clock-toggle]` **egy 2-oszlopos kártyába** kerül; a korábbi GPS adatvédelmi/timer magyarázó szöveg nem tölti a képernyőt. A beltéri óra és ↺ csak értelmes futó/megállított mérésnél látszik. Az eredeti Health Connect `#tp106Steps` panelt a megszüntetett GPS-kártyán kívül megőrizzük. A `Sorozatok` kézi/beviteli rész és a súlyzós OK érintetlen; a teljes GPS-szakaszhoz többé nem kell extra OK.
+- **1.3.51 /2732 verzió:** telefonos és Wear Gradle `versionName`/`versionCode`, Wear `SOURCE_VERSION.json`, npm `package.json` és lock összehangolva. Az órás Health Services mérés, órás telefonos szinkron és a #163 térkép ugyanazon forrásból épül, az órás önálló koordinátaszinkron #193 külön marad.
+- **Kiadási kapu:** 6/6 Chromium és #206 célzott UI/regresszió, Quick, Performance, Phone Release Gate natív JUnit + APK, Wear Release Gate és körkijelzős UI. A fizikai telefon/Wear GPS-próba és az összevont buildforrás SHA ellenőrzése után a kifejezett felhasználói main-jóváhagyás már megvan, de gate hiba esetén **tilos összevonni**; nem állítunk sikeres release-t előre.
+
 ## 2026-10-15 – TrainPilot 1.3.5 /2731 közös P1 release candidate
 
 **Felhasználói jóváhagyás:** a már valós órán működő 35b4108-as Health Services GPS-adatokat, a telefon és Wear szinkronját, a #163 telefonos saját GPS-fixből rajzolt élő és naplótérképet egységesíteni, mindkét Android APK-t ugyanarról a forráscommitból **1.3.5 /2731** verzióra építeni, és a P1 kört csak kiadási kapu + készülékes teszt után lezárni.
