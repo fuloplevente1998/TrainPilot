@@ -58,7 +58,7 @@ const server=http.createServer((req,res)=>{
        segments:m.points.length?[{ordinal:1,points:m.points}]:[]};
     }
    }}};
-   go('workout');
+   renderWorkout();
    return {native:isNative(),exercise:state.session.exercises[0].id,gpsButton:!!document.getElementById('tp106GpsButton')};
   });
   assert.deepEqual(setup,{native:true,exercise:'running',gpsButton:true});
