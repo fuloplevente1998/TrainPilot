@@ -23,3 +23,7 @@
 .tp163-leaflet .leaflet-bar a{background:#263541!important;color:#d9e5ed!important;border-color:#596c78!important}
 .tp163-empty{padding:16px;color:#c0ccd6}
 @media(max-width:350px){.tp163-route-dialog{padding:9px;border-radius:13px}.tp163-route-head h2{font-size:17px}.tp163-metric strong{font-size:14px}.tp163-map-area{min-height:240px;height:48vh}}
+
+.tp163-map-consent{font-size:12px;line-height:1.42;color:#c9d7de;margin:0!important;padding:9px 10px;background:#22323b;border:1px solid #3e4c59;border-radius:11px}
+.tp163-online-button{min-height:44px!important;width:100%;border-radius:11px!important;background:#254b3a!important;color:#e4f9ec!important;border:1px solid #39996b!important;font-weight:800!important}
+.tp163-online-button:disabled{opacity:.7;cursor:default}
