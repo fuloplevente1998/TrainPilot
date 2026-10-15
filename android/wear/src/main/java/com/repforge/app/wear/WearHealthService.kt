@@ -105,15 +105,15 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
         await(client.getCapabilitiesAsync()) { capabilities ->
             if(lifecycle?.stopRequested==true){finishWithoutExercise();return@await}
             val wanted=when(requested) { "running" -> ExerciseType.RUNNING; "walking" -> ExerciseType.WALKING; "cycling" -> ExerciseType.BIKING; else -> ExerciseType.STRENGTH_TRAINING }
-            val type=listOf(wanted,ExerciseType.WORKOUT).firstOrNull { capabilities.supportedExerciseTypes.contains(it) }
+            val location=checkSelfPermission("android.permission.ACCESS_FINE_LOCATION")==android.content.pm.PackageManager.PERMISSION_GRANTED
+            val type=wearRecordingType(wanted,capabilities.supportedExerciseTypes,location)
             if(type==null) { fail("Ezen az órán ez az edzéstípus nem mérhető.");return@await }
             val supported=capabilities.getExerciseTypeCapabilities(type).supportedDataTypes
-            val requestedMetrics=setOf(DataType.HEART_RATE_BPM,DataType.CALORIES_TOTAL,DataType.STEPS_TOTAL,DataType.DISTANCE_TOTAL,DataType.SPEED)
             val heart=checkSelfPermission(if(Build.VERSION.SDK_INT>=36) "android.permission.health.READ_HEART_RATE" else "android.permission.BODY_SENSORS")==android.content.pm.PackageManager.PERMISSION_GRANTED
             val activity=checkSelfPermission("android.permission.ACTIVITY_RECOGNITION")==android.content.pm.PackageManager.PERMISSION_GRANTED
-            val metrics=requestedMetrics.filter { supported.contains(it) && if(it==DataType.HEART_RATE_BPM)heart else activity }.toSet()
+            val metrics=wearRecordingMetrics(supported,heart,activity,location)
             if(metrics.isEmpty()) { fail("Az óra nem kínál támogatott mérési adatot.");return@await }
-            val config=ExerciseConfig(type,metrics,isAutoPauseAndResumeEnabled=false,isGpsEnabled=gps && type in listOf(ExerciseType.RUNNING,ExerciseType.WALKING,ExerciseType.BIKING))
+            val config=ExerciseConfig(type,metrics,isAutoPauseAndResumeEnabled=false,isGpsEnabled=gps && location && type in listOf(ExerciseType.RUNNING,ExerciseType.WALKING,ExerciseType.BIKING))
             summary?.let { if(it.optDouble("activeDurationSeconds",0.0)>0)it.put("partial",true);WearHealthAccumulator(it).beginSegment()
                 it.put("exerciseType",type.toString()).put("gps",config.isGpsEnabled) }
             persist()

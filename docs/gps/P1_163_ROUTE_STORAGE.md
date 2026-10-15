@@ -1,5 +1,13 @@
 # #163 GPS – 4/8. Tartós útvonalnapló és tulajdonosi kulcs
 
+## Készülékes visszajelzés utáni OSM-beállítás és bezárás
+
+A #205 folytatásában a térkép piros X-et kap, 44 px érintési céllal és négy nyelven megnevezett bezárással. Az Android `appendUserAgent` a Capacitor támogatott beállításával `TrainPilot/1.3.4 (+https://github.com/fuloplevente1998/TrainPilot)` azonosítást küld. Csak ennek meglétekor engedélyezett natív alapértelmezésként `https://tile.openstreetmap.org/{z}/{x}/{y}.png`; általános WebView továbbra sem használhatja automatikusan. A cserélhető provider-konfiguráció megmarad.
+
+A háttér csak a külön tájékoztató utáni gombra indul. Látható © OpenStreetMap contributors / copyright-link, alapértelmezett WebView HTTP-cache a szerver fejlécei szerint, kizárólag a látható térképnézet kérései; nincs csempearchívum, előtöltés vagy offline-letöltés. A Leaflet 1.9.4 CDN-fájlok SRI hash-sel rögzítettek (BSD-2-Clause); a `leaflet` npm devDependency csak a hálózatfüggetlen CI-fixture forrása. A réteg az első sikeres csempéig nem takarja el az SVG-t; 7 másodperces limit vagy provider-hiba után a helyi route és újrapróbálás megmarad. A CI valódi Leafletet és elfogott, mesterséges csempéket használ; nem vizsgál valódi földrajzi területet az OSM szerverén.
+
+Szabályzat és licencek: [OSMF tile policy](https://operations.osmfoundation.org/policies/tiles/), [OSM copyright/ODbL](https://www.openstreetmap.org/copyright), [Leaflet licence](https://github.com/Leaflet/Leaflet/blob/v1.9.4/LICENSE). A közösségi csempeszolgáltatás elérhetősége nem garantált; a saját útvonal ettől függetlenül helyben megmarad. A felhasználó a korábbi útvonalnézetet kezdetnek megfelelőnek találta; ez nem helyettesíti az új APK teljes készülékes GPS-mátrixát. Az alábbi korábbi provider-tiltás történeti állapot.
+
 **Aktuális 8/8 folytatás (2026-10-15):** a `3af303b` gate-jén a GPS-visszaállítási Chromium-teszt elbukott; nem készült APK. A javított bekötés megvárja az aszinkron, jóváhagyott `restoreText` eredményét, és csak a tényleges, zárolt visszaállítás után takarít egyszer. A teszt a valódi párbeszéd elutasítását, tárhelyhibás rollbacket, hibás JSON-t és sikeres cserét is vizsgálja. Az új forrás GitHub CI-eredménye még igazolandó; a fizikai GPS-mátrix a #163-ban van. A lenti 4–7/8 szakaszok a megvalósítás történetét őrzik.
 
 Állapot: **fejlesztési draft, csak a `feat/163-phone-gps-route-model` ágon**, a #205 PR részeként. A verzió változatlan: **1.3.4 /2730**.

@@ -5,7 +5,8 @@
 .tp163-route-dialog{width:min(100%,560px);max-height:100%;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;border:1px solid #455263;border-radius:20px;background:#151c24;color:#f0f6f8;box-shadow:0 24px 75px #000b;padding:12px;display:flex;flex-direction:column;gap:10px}
 .tp163-route-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:0 0 auto}
 .tp163-route-head h2{font-size:19px;margin:0;font-weight:850;color:#eaf1f6}
-.tp163-close{min-width:94px!important;min-height:44px!important;color:#eaf1f6!important;background:#303c47!important;border:1px solid #53616e!important}
+.tp163-close{flex:0 0 44px!important;width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;padding:0!important;display:grid!important;place-items:center;border-radius:11px!important;color:#ffd9dc!important;background:#472529!important;border:1px solid #ff737b!important;font:900 28px/1 system-ui,sans-serif!important;box-shadow:none!important;cursor:pointer}
+.tp163-close:focus-visible{outline:2px solid var(--accent)!important;outline-offset:3px}
 .tp163-route-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
 .tp163-metric{min-width:0;display:grid;gap:3px;background:#27313c;border:1px solid #3c4853;border-radius:12px;padding:9px 7px;overflow-wrap:anywhere}
 .tp163-metric span{font-size:10px;color:#adbcc8;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
@@ -16,7 +17,7 @@
 .tp163-route-line{fill:none;stroke:#3be68a;stroke-width:4.5;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 3px #2dd58888)}
 .tp163-route-start{fill:#20dbf5;stroke:#dcffff;stroke-width:2.5}
 .tp163-route-finish{fill:#f2b83e;stroke:#fff3d0;stroke-width:2.5}
-.tp163-leaflet{width:100%;height:100%;background:#111e23}
+.tp163-leaflet{position:absolute;inset:0;width:100%;height:100%;background:#111e23}
 .tp163-leaflet .leaflet-tile-pane{filter:grayscale(1) invert(.91) hue-rotate(170deg) brightness(.71) contrast(1.08)}
 .tp163-leaflet .leaflet-control-attribution{font:10px system-ui,sans-serif!important;background:#17232deb!important;color:#d2dde4!important}
 .tp163-leaflet .leaflet-control-attribution a{color:#78e6b8!important}

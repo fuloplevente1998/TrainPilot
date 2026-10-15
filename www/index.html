@@ -2022,6 +2022,10 @@
     de:{open:'GPS-Route anzeigen',title:'Trainingsroute',close:'Schließen',loading:'Gespeicherte Route laden…',none:'Keine gespeicherte GPS-Route vorhanden.',offline:'Offline-Route – ohne Kartenkacheln',partial:'Unvollständige Route.',failed:'Route derzeit nicht verfügbar.',km:'Distanz',points:'GPS-Punkte',signal:'Letzte Genauigkeit',map:'Karte',start:'Start',finish:'Ziel',online:'Onlinekarte laden',notice:'Online-Kartenkacheln können den betrachteten Bereich und deine IP-Adresse an externe Anbieter übermitteln.',unavailable:'Online-Kartenkacheln sind auf diesem Gerät noch nicht eingerichtet.'},
     ro:{open:'Vezi traseul GPS',title:'Traseul antrenamentului',close:'Închide',loading:'Se încarcă traseul…',none:'Nu există un traseu GPS salvat.',offline:'Traseu offline – fără harta de fundal',partial:'Traseu parțial.',failed:'Traseul nu poate fi citit.',km:'Distanță',points:'Puncte GPS',signal:'Ultima precizie',map:'Hartă',start:'Start',finish:'Sosire',online:'Încarcă harta online',notice:'Plăcile hărții online pot divulga zona vizualizată și adresa IP către un furnizor extern.',unavailable:'Hărțile online nu sunt încă configurate pe acest dispozitiv.'}
   };
+  labels.hu.onlineReady='Online térkép · OpenStreetMap';labels.hu.onlineFailed='A térképháttér nem tölthető be. A mentett útvonal továbbra is látható.';
+  labels.en.onlineReady='Online map · OpenStreetMap';labels.en.onlineFailed='The map background could not load. Your saved route is still visible.';
+  labels.de.onlineReady='Onlinekarte · OpenStreetMap';labels.de.onlineFailed='Die Hintergrundkarte konnte nicht geladen werden. Deine gespeicherte Route bleibt sichtbar.';
+  labels.ro.onlineReady='Hartă online · OpenStreetMap';labels.ro.onlineFailed='Harta de fundal nu s-a încărcat. Traseul salvat rămâne vizibil.';
   var t=function(k){var language=typeof rf212Lang==='function'?rf212Lang():'hu';return (labels[language]||labels.hu)[k]||labels.hu[k]||k;};
   function bridge(){return window.Capacitor?.Plugins?.DistanceTracker||window.Capacitor?.registerPlugin?.('DistanceTracker');}
   function references(workout){
@@ -2084,8 +2088,8 @@
     });
     host.appendChild(svg);
   }
-  // Production Android WebView must use an explicitly configured, policy-compliant
-  // tile provider. Do not assume its default WebView User-Agent identifies TrainPilot.
+  // Capacitor appends our stable app/contact identity; keep generic native clients
+  // disabled. WebView HTTP caching follows OSM's response headers (LOAD_DEFAULT).
   function tileProvider(){
     var configured=window.TrainPilotGps163TileProvider;
     if(configured){
@@ -2095,9 +2099,11 @@
          ||!String(configured.attribution||'').trim())return null;
       return {url:url,attribution:String(configured.attribution),maxZoom:Math.min(19,Math.max(1,Number(configured.maxZoom)||18))};
     }
-    if(window.Capacitor?.isNativePlatform?.())return null;
+    if(window.Capacitor?.isNativePlatform?.()&&
+       (!/TrainPilot\/[\d.]+/.test(navigator.userAgent)||
+        !navigator.userAgent.includes('https://github.com/fuloplevente1998/TrainPilot')))return null;
     return {url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-      attribution:'&copy; OpenStreetMap contributors',maxZoom:18};
+      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>',maxZoom:18};
   }
   var leafletPromise=null;
   function getLeaflet(){
@@ -2105,8 +2111,11 @@
     if(leafletPromise)return leafletPromise;
     leafletPromise=new Promise(function(resolve,reject){
       var link=document.createElement('link');link.rel='stylesheet';
-      link.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';document.head.appendChild(link);
+      link.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      link.integrity='sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';link.crossOrigin='anonymous';
+      document.head.appendChild(link);
       var script=document.createElement('script');script.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.integrity='sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';script.crossOrigin='anonymous';
       script.referrerPolicy='no-referrer';
       var settled=false;
       var timer=setTimeout(function(){finish(false);},4800);
@@ -2119,8 +2128,9 @@
     }).catch(function(error){leafletPromise=null;throw error;});
     return leafletPromise;
   }
-  var activeMap=null,previousFocus=null,oldOverflow='';
+  var activeMap=null,pendingMapCancel=null,previousFocus=null,oldOverflow='';
   function closeRoute(){
+    if(pendingMapCancel){pendingMapCancel();pendingMapCancel=null;}
     if(activeMap){activeMap.remove();activeMap=null;}
     var node=document.getElementById(MAP_ID);
     if(node)node.remove();
@@ -2133,29 +2143,42 @@
     var box=append('div',parent,'tp163-metric');append('span',box,null,label);append('strong',box,null,value);
   }
   function renderLeaflet(host,segments,provider){
-    if(!navigator.onLine||!segments.length||!provider)return;
-    getLeaflet().then(function(L){
-      if(!host.isConnected||document.getElementById(MAP_ID)==null)return;
-      var pane=append('div',null,'tp163-leaflet');
-      host.replaceChildren(pane);
+    if(!navigator.onLine||!segments.length||!provider)return Promise.resolve(false);
+    return getLeaflet().then(function(L){
+      if(!host.isConnected||document.getElementById(MAP_ID)==null)return false;
+      return new Promise(function(resolve){
+      var pane=append('div',host,'tp163-leaflet');pane.style.visibility='hidden';
       var map=L.map(pane,{attributionControl:true,scrollWheelZoom:false,preferCanvas:true,zoomControl:true});
       activeMap=map;
-      L.tileLayer(provider.url,{
+      var settled=false,timer;
+      function finish(ok){
+        if(settled)return;settled=true;clearTimeout(timer);pendingMapCancel=null;
+        if(ok){host.querySelector('.tp163-route-svg')?.remove();pane.style.visibility='';}
+        else{map.remove();pane.remove();if(activeMap===map)activeMap=null;}
+        resolve(ok);
+      }
+      pendingMapCancel=function(){finish(false);};
+      timer=setTimeout(function(){finish(false);},7000);
+      var tiles=L.tileLayer(provider.url,{
         attribution:provider.attribution,maxZoom:provider.maxZoom,
         minZoom:1,updateWhenIdle:true,keepBuffer:1
-      }).addTo(map);
+      });
+      tiles.on('tileload',function(){finish(true);});
+      tiles.on('load',function(){if(!settled)finish(false);});
+      tiles.addTo(map);
       var coords=[];
       segments.forEach(function(section){
         L.polyline(section,{color:'#3be68a',weight:5,opacity:.96,lineJoin:'round'}).addTo(map);
         coords.push.apply(coords,section);
       });
-      if(!coords.length)return;
+      if(!coords.length){finish(false);return;}
       L.circleMarker(coords[0],{radius:7,color:'#e7faff',fillColor:'#30dff2',fillOpacity:1,weight:2}).bindTooltip(t('start')).addTo(map);
       L.circleMarker(coords[coords.length-1],{radius:7,color:'#ffe4b5',fillColor:'#ffb93d',fillOpacity:1,weight:2}).bindTooltip(t('finish')).addTo(map);
       var bounds=L.latLngBounds(coords);
       if(bounds.isValid())map.fitBounds(bounds.pad(.14),{maxZoom:16,animate:false});
       requestAnimationFrame(function(){if(pane.isConnected)map.invalidateSize();});
-    }).catch(function(){/* The rendered offline route remains available. */});
+      });
+    }).catch(function(){return false;/* The rendered offline route remains available. */});
   }
   async function openRoute(workoutKey){
     var workout=history().find(function(w){return rf142WorkoutKey(w)===workoutKey;});
@@ -2170,7 +2193,8 @@
     modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label',t('title'));
     var head=append('header',modal,'tp163-route-head');
     append('h2',head,null,t('title'));
-    var close=append('button',head,'btn secondary tp163-close',t('close'));close.type='button';close.onclick=closeRoute;
+    var close=append('button',head,'tp163-close','×');close.type='button';close.onclick=closeRoute;
+    close.setAttribute('aria-label',t('close'));close.title=t('close');
     var metrics=append('div',modal,'tp163-route-metrics');
     var hint=append('p',modal,'tp163-route-hint',t('loading'));
     var mapHost=append('div',modal,'tp163-map-area');
@@ -2209,10 +2233,13 @@
           var notice=append('p',modal,'tp163-map-consent',t('notice'));
           var button=append('button',modal,'btn secondary tp163-online-button',t('online'));
           button.type='button';
-          button.addEventListener('click',function(){
+          button.addEventListener('click',async function(){
             if(button.disabled)return;
             button.disabled=true;
-            renderLeaflet(mapHost,sections,provider);
+            var ok=await renderLeaflet(mapHost,sections,provider);
+            if(!mapHost.isConnected)return;
+            hint.textContent=(partial?t('partial')+' ':'')+t(ok?'onlineReady':'onlineFailed');
+            button.disabled=ok;
           });
         }else{
           append('p',modal,'tp163-map-consent',t('unavailable'));

@@ -1,4 +1,8 @@
-## Aktuális folytatás — 2026-10-15, #163 GPS 8/8
+## Legfrissebb visszajelzés — #163 térkép és órás helyengedély
+
+A felhasználó a `97cce85` térképét kezdetnek elfogadta, piros X bezárást kért, és az órán `Missing permissions: ACCESS_FINE_LOCATION` hibát mutatott. A #205 draft folytatása: akadálymentes piros X; azonosítható Capacitor User-Agent mellett opt-in OSM-háttér, copyright-link és HTTP-cache, hibánál megmaradó SVG. Órán helyengedély nélkül általános szenzormérés, GPS-táv/sebesség nélkül; az órás GPS külön engedélyt kér. A régi konkrét helyengedélyhibás indítás újrapróbálható a megőrzött összesítésekkel. Az új forrás friss GitHub CI-je és aláírt **telefonos + Wear tesztpárja** szükséges; helyi teljes teszt/build nincs. **1.3.4 /2730**, main/release változatlan. Aktuális eredmény és hash az #163/#205 oldalán; az alábbi korábbi provider-korlátok az új forráson már módosultak.
+
+## Előző folytatás — 2026-10-15, #163 GPS 8/8
 
 A #199 már mainen van; az aktív munka **#163 / #205 draft PR**, `feat/163-phone-gps-route-model`. A `3af303b` [release gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38673756408) a GPS-visszaállítási Chromium-teszten elbukott, így APK nem készült. A mostani javítás megvárja az aszinkron `restoreText` sikerét, és a zárolást megszerző belépés helyett csak a tényleges visszaállításnál takarít egyszer; elutasítás, hibás JSON és tárhelyhiba megőrzi a route-okat. A teszt valódi jóváhagyó párbeszédet és rollbacket ellenőriz. Az új commit GitHub-gate-jét ellenőrizni kell, korábbi zöld forrás nem elég.
 

@@ -2,6 +2,7 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),http=require('node:http'),path=require('node:path');
 const {chromium}=require('playwright');
+const appUserAgent=require('../../capacitor.config.json').android.appendUserAgent;
 const root=path.resolve('www');
 const server=http.createServer((req,res)=>{
  const route=new URL(req.url,'http://localhost').pathname;
@@ -18,11 +19,28 @@ const server=http.createServer((req,res)=>{
  let browser;
  try{
   browser=await chromium.launch({headless:true,args:['--no-sandbox'],executablePath:process.env.TRAINPILOT_CHROMIUM||undefined});
-  const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU'}),errors=[];
+  const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU',userAgent:'Mozilla/5.0 '+appUserAgent}),errors=[];
+  const externalRequests=[],tiles=[];
+  let failTiles=false;
+  page.on('request',request=>{if(!request.url().startsWith('http://127.0.0.1:'))externalRequests.push(request.url());});
+  // Exercise real Leaflet with fixture tiles; never scan the public OSM server in CI.
+  await page.route('https://unpkg.com/leaflet@1.9.4/dist/*',route=>{
+    const name=new URL(route.request().url()).pathname.endsWith('.css')?'leaflet.css':'leaflet.js';
+    return route.fulfill({path:require.resolve('leaflet/dist/'+name),
+      contentType:name.endsWith('.css')?'text/css':'text/javascript',headers:{'Access-Control-Allow-Origin':'*'}});
+  });
+  await page.route('https://tile.openstreetmap.org/**',route=>{
+    tiles.push(route.request().url());
+    assert.ok(route.request().headers()['user-agent'].includes(appUserAgent),'Stable app/contact tile identity');
+    return failTiles?route.fulfill({status:503,body:'Unavailable'}):route.fulfill({contentType:'image/png',
+      body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aNyUAAAAASUVORK5CYII=','base64')});
+  });
   page.on('pageerror',e=>errors.push(String(e)));
   await page.addInitScript(()=>{
    localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped'));
    Object.defineProperty(navigator,'onLine',{get:()=>!!window.__tp163Online,configurable:true}); // Offline unless deliberately enabled.
+   const identified=navigator.userAgent;
+   Object.defineProperty(navigator,'userAgent',{get:()=>window.__tp163Identified?identified:'Generic Android WebView',configurable:true});
   });
   await page.goto('http://127.0.0.1:'+server.address().port);
   await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.TrainPilotGpsMap163);
@@ -82,6 +100,12 @@ const server=http.createServer((req,res)=>{
    return {fit:outer.scrollWidth<=innerWidth+1,card:rect.width<=innerWidth+1,accent:!!document.querySelector('.tp163-route-line')};
   });
   assert.deepEqual(fit,{fit:true,card:true,accent:true});
+  assert.equal(await page.locator('.tp163-close').innerText(),'×');
+  assert.equal(await page.locator('.tp163-close').getAttribute('aria-label'),'Bezárás');
+  assert.deepEqual(await page.locator('.tp163-close').evaluate(button=>{
+    const style=getComputedStyle(button),box=button.getBoundingClientRect();
+    return {red:style.backgroundColor==='rgb(71, 37, 41)',touch:box.width>=44&&box.height>=44};
+  }),{red:true,touch:true});
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#tp163-route-overlay').count(),0);
 
@@ -110,6 +134,29 @@ const server=http.createServer((req,res)=>{
   await page.waitForSelector('.tp163-online-button');
   assert.equal(await page.locator('.tp163-route-svg').count(),1,'Preview stays offline until a second tap');
   assert.match(await page.locator('.tp163-map-consent').innerText(),/külső szolgáltatónak|external provider/);
+  assert.deepEqual(externalRequests,[],'No CDN or tile request before the separate informed action');
+  await page.locator('.tp163-close').click();
+  // The shipped Capacitor identity enables the configured OSM layer on Android.
+  await page.evaluate(()=>{window.__tp163Identified=true;delete window.TrainPilotGps163TileProvider;});
+  assert.match(await page.evaluate(()=>TrainPilotGpsMap163.tileProvider().url),/^https:\/\/tile\.openstreetmap\.org\//);
+  await row.locator('.tp163-route-button').click();
+  await page.waitForSelector('.tp163-route-svg');
+  assert.deepEqual(externalRequests,[]);
+  await page.locator('.tp163-online-button').click();
+  await page.waitForFunction(()=>!document.querySelector('.tp163-route-svg')&&document.querySelector('.leaflet-tile-loaded'));
+  assert.ok(tiles.length>0&&tiles.length<50,'Only a bounded visible map viewport is requested');
+  assert.match(await page.locator('.leaflet-control-attribution').innerText(),/OpenStreetMap contributors/);
+  assert.match(await page.locator('.tp163-route-hint').innerText(),/Online térkép/);
+  await page.locator('.leaflet-control-zoom-in').click();
+  await page.locator('.tp163-close').click();
+  // A failed provider must retain the exact saved offline route and permit retry.
+  failTiles=true;
+  await row.locator('.tp163-route-button').click();
+  await page.locator('.tp163-online-button').click();
+  await page.waitForFunction(()=>document.querySelector('.tp163-route-hint')?.textContent.includes('nem tölthető be'));
+  assert.equal(await page.locator('.tp163-route-line').count(),2);
+  assert.equal(await page.locator('.tp163-leaflet').count(),0);
+  assert.equal(await page.locator('.tp163-online-button').isEnabled(),true);
   await page.locator('.tp163-close').click();
   await page.evaluate(()=>{window.__tp163Online=false;delete window.TrainPilotGps163TileProvider;});
     // A cancelled history deletion must retain native GPS routes.

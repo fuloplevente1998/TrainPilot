@@ -1,6 +1,26 @@
 package com.repforge.app.wear
 
 import org.json.JSONObject
+import androidx.health.services.client.data.DataType
+import androidx.health.services.client.data.ExerciseType
+
+/** Some watch providers require location for outdoor profiles even with GNSS off.
+ * Keep the independent sensor recording usable without claiming a GPS distance. */
+internal fun wearRecordingType(wanted: ExerciseType, supported: Set<ExerciseType>, location: Boolean): ExerciseType? {
+    val outdoor=wanted in setOf(ExerciseType.RUNNING,ExerciseType.WALKING,ExerciseType.BIKING)
+    val candidates=if(outdoor&&!location)listOf(ExerciseType.WORKOUT,ExerciseType.STRENGTH_TRAINING)
+        else listOf(wanted,ExerciseType.WORKOUT)
+    return candidates.firstOrNull { it in supported }
+}
+
+internal fun wearRecordingMetrics(supported: Set<DataType<*,*>>, heart: Boolean, activity: Boolean,
+                                  location: Boolean): Set<DataType<*,*>> =
+    setOf(DataType.HEART_RATE_BPM,DataType.CALORIES_TOTAL,DataType.STEPS_TOTAL,DataType.DISTANCE_TOTAL,DataType.SPEED)
+        .filter { it in supported && when(it) {
+            DataType.HEART_RATE_BPM -> heart
+            DataType.DISTANCE_TOTAL,DataType.SPEED -> activity&&location
+            else -> activity
+        } }.toSet()
 
 /** Persist the request separately from the device's fallback ExerciseType. */
 internal data class WearRecordingRequest(val exerciseType: String, val gps: Boolean) {

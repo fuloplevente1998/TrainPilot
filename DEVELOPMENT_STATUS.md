@@ -1,5 +1,13 @@
 # TrainPilot — fejlesztési állapot
 
+## #163 készülékes visszajelzés – piros X, OSM és órás helyengedély (2026. október 15.)
+
+A felhasználó a `97cce85` térképét kezdetnek megfelelőnek találta; a képen 1,62 km / 31 GPS-pont / ±10 m látszik. Ez nem igazolja a teljes kültéri elfogadási mátrixot. Az órás képen `Missing permissions: ACCESS_FINE_LOCATION` mérési hiba szerepel.
+
+**Aktuális javítás a #205 draft ágán:** a térkép bezárása 44 px-es, lokalizált akadálymentes nevű piros X. Az Android Capacitor User-Agent stabil TrainPilot/verzió/projektazonosítást kap; csak ilyen natív kliensnél engedélyezett a standard HTTPS OSM-csempeprovider. A megnyitás továbbra is helyi SVG, a külső kérés külön tájékoztatott gombnyomásra indul. Látható OSM copyright-link, WebView alapértelmezett HTTP-cache, nincs előtöltés/offline csempeletöltés. Az első sikeres csempéig megmarad az SVG; provider-hibánál helyi útvonal és újrapróbálás.
+
+**Órás javítás:** pontos helyengedély nélkül a kültéri profil helyett támogatott általános/súlyzós profil és csak az engedélyezett pulzus/kalória/lépés mérhető; GPS-táv/sebesség nem kérhető. Az órás GPS külön pontos helyengedélyt kér, elutasításkor kikapcsolva marad. A korábbi konkrét helyengedélyhibás mérés a megfelelő edzésen újrapróbálható az összesítések megőrzésével. Új JUnit és valódi Leafletet, de mesterséges csempéket használó Chromium-regresszió; friss GitHub-kapuk és **új telefonos + Wear APK-pár** még igazolandók. Verzió **1.3.4 /2730**, main/release nincs.
+
 ## #163 GPS – 8/8 release gate folytatása (2026. október 15.)
 
 A `3af303b` forrás [38673756408 release gate-je](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38673756408) nem maradt folyamatban: 5/6 Chromium-shard sikeres, az új GPS-visszaállítási teszt hibás, ezért a natív gate/APK-build kimaradt. A `restoreText` aszinkron eredményét a GPS-bekötés nem várta meg; a javítás a tényleges, zárolt visszaállítást várja, és siker után egyszer törli a már nem hivatkozott route-okat. A regresszió valódi megerősítő párbeszéddel ellenőrzi az elutasítást, a tárhelyhibás rollbacket és a sikeres cserét; a hibás JSON sem törölhet GPS-fájlt.

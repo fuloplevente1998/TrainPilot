@@ -1,5 +1,7 @@
 # Telefonos és Wear OS automata mód, Wear UI-fejlesztési terv
 
+**Legfrissebb készülékes visszajelzés:** #163 térkép kezdetnek jó; órán `Missing permissions: ACCESS_FINE_LOCATION`. A #205 folytatásában helyengedély nélkül az órás pulzus/kalória/lépés szenzormérés engedélyezett általános profillal folytatható, kültéri GPS-táv/sebesség nélkül. Órás GPS bekapcsolásakor külön pontos helyengedély szükséges; elutasítás kikapcsolja a GPS-t. A korábbi konkrét helyengedélyhibás indítás újrapróbálható a saját edzés összesítéseinek megtartásával. Új JUnit, GitHub Wear gate és új aláírt telefon/Wear pár szükséges. A telefonos térkép piros X-et és opt-in, azonosítható OSM-hátteret kap; részletek az aktuális státuszban és GPS-dokumentumban. Verzió 1.3.4 /2730, Wear útvonalrögzítés továbbra is külön #193.
+
 **Aktuális P1 – 2026-10-15:** a #199 mainre került; most #163 telefonos GPS / #205 draft, **8/8 release gate és készülékes elfogadás**. A `3af303b` gate-je a GPS-visszaállítási teszten elbukott; az aszinkron visszaállítás és route-takarítás javítása után a friss GitHub CI igazolása szükséges. Teljes teszt és aláírt APK-build a felhasználó kérésére Actionsön fut. Részletek: [aktuális státusz](../../DEVELOPMENT_STATUS.md), [GPS-tárolás](../gps/P1_163_ROUTE_STORAGE.md), #163 készülékes mátrix. **1.3.4 /2730**, Wear GPS továbbra is külön #193; fizikai elfogadás és térképcsempe-provider döntése még hiányzik. Az alábbi korábbi állapot történeti.
 
 ## Aktuális állapot — 2026. október 14.

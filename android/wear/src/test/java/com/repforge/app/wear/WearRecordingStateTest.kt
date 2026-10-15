@@ -3,8 +3,42 @@ package com.repforge.app.wear
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
+import androidx.health.services.client.data.DataType
+import androidx.health.services.client.data.ExerciseType
 
 class WearRecordingStateTest {
+    private val sensorMetrics: Set<DataType<*,*>> = setOf(DataType.HEART_RATE_BPM,DataType.CALORIES_TOTAL,
+        DataType.STEPS_TOTAL,DataType.DISTANCE_TOTAL,DataType.SPEED)
+
+    @Test fun deniedLocationKeepsIndependentSensorsAndAvoidsOutdoorProviderPermissionFailure() {
+        val types=setOf(ExerciseType.RUNNING,ExerciseType.WORKOUT,ExerciseType.STRENGTH_TRAINING)
+        for(type in listOf(ExerciseType.RUNNING,ExerciseType.WALKING,ExerciseType.BIKING)) {
+            assertEquals(ExerciseType.WORKOUT,wearRecordingType(type,types,false))
+        }
+        assertEquals(setOf(DataType.HEART_RATE_BPM,DataType.CALORIES_TOTAL,DataType.STEPS_TOTAL),
+            wearRecordingMetrics(sensorMetrics,true,true,false))
+        assertEquals(ExerciseType.STRENGTH_TRAINING,wearRecordingType(ExerciseType.RUNNING,
+            setOf(ExerciseType.RUNNING,ExerciseType.STRENGTH_TRAINING),false))
+        assertNull(wearRecordingType(ExerciseType.RUNNING,setOf(ExerciseType.RUNNING),false))
+        assertEquals(ExerciseType.STRENGTH_TRAINING,wearRecordingType(ExerciseType.STRENGTH_TRAINING,types,false))
+    }
+
+    @Test fun preciseLocationAllowsSupportedMovementMetricsAndOtherDeniedSensorsStayAbsent() {
+        assertEquals(ExerciseType.RUNNING,wearRecordingType(ExerciseType.RUNNING,
+            setOf(ExerciseType.RUNNING,ExerciseType.WORKOUT),true))
+        assertEquals(sensorMetrics,wearRecordingMetrics(sensorMetrics,true,true,true))
+        assertEquals(setOf(DataType.HEART_RATE_BPM),wearRecordingMetrics(sensorMetrics,true,false,true))
+        assertEquals(sensorMetrics-DataType.HEART_RATE_BPM,wearRecordingMetrics(sensorMetrics,false,true,true))
+        assertTrue(wearRecordingMetrics(sensorMetrics,false,false,true).isEmpty())
+        assertEquals(setOf(DataType.STEPS_TOTAL),wearRecordingMetrics(setOf(DataType.STEPS_TOTAL),true,true,true))
+    }
+
+    @Test fun onlyTheReportedMissingLocationPermissionErrorIsEligibleForRecovery() {
+        assertTrue(WearHealthFutures.isMissingLocationError("Mérési hiba: Missing permissions: [android.permission.ACCESS_FINE_LOCATION]"))
+        assertFalse(WearHealthFutures.isMissingLocationError("Missing permissions: [android.permission.BODY_SENSORS]"))
+        assertFalse(WearHealthFutures.isMissingLocationError("A mérési kapcsolat megszakadt"))
+    }
+
     private fun workout(exercise: WearExercise) = WearWorkout(1,"p","Program","A","","2026-10-11T09:00:00Z",
         "current",0,60,0,listOf(exercise))
 

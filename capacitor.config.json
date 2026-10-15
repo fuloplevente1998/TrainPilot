@@ -1,1 +1,1 @@
-{"appId":"com.repforge.app","appName":"TrainPilot","webDir":"www","android":{"backgroundColor":"#0e1015","zoomEnabled":false}}
+{"appId":"com.repforge.app","appName":"TrainPilot","webDir":"www","android":{"backgroundColor":"#0e1015","zoomEnabled":false,"appendUserAgent":"TrainPilot/1.3.4 (+https://github.com/fuloplevente1998/TrainPilot)"}}
