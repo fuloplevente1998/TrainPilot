@@ -378,5 +378,9 @@
   {
     "file": "tests/browser/gps-live-map-163.cjs",
     "estimatedSeconds": 8
+  },
+  {
+    "file": "tests/browser/distance-auto-complete-206.cjs",
+    "estimatedSeconds": 9
   }
 ]
