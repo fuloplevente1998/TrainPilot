@@ -2220,18 +2220,36 @@
       }
     }catch(_){if(mapHost.isConnected)hint.textContent=t('failed');}
   }
-  async function eraseRoutesForWorkout(workout){
-    var refs=references(workout),plugin=bridge();
-    if(!refs.length||!plugin?.deleteRoute)return;
-    var failed=0;
-    for(var ref of refs){
-      try{var result=await plugin.deleteRoute({key:ref.key});if(!result?.deleted)failed++;}
+  function allRouteKeys(workouts){
+    var unique=new Set();
+    for(var workout of workouts||[])for(var exercise of workout?.exercises||[])
+      for(var set of exercise?.sets||[]) {
+        var key=set?.gpsRouteKey163;
+        if(typeof key==='string'&&KEY.test(key))unique.add(key);
+      }
+    return Array.from(unique);
+  }
+  async function eraseKeys(keys){
+    if(!keys.length)return;
+    var plugin=bridge(),failed=0;
+    if(!plugin?.deleteRoute)failed=keys.length;
+    else for(var key of keys){
+      try{var result=await plugin.deleteRoute({key:key});if(!result?.deleted)failed++;}
       catch(_){failed++;}
     }
     if(failed&&typeof alert==='function'){
       var language=typeof rf212Lang==='function'?rf212Lang():'hu';
-      alert(language==='hu'?'Az edzés törölve, de egyes GPS-útvonalakat nem sikerült eltávolítani a készülékről.':'The workout was deleted, but some GPS routes could not be removed from this device.');
+      alert(language==='hu'
+        ?'Egyes GPS-útvonalak helyi törlése nem sikerült. Ellenőrizd a telefon tárhelyét és a mentett útvonalakat.'
+        :'Some local GPS routes could not be deleted. Check the device storage and saved routes.');
     }
+  }
+  async function eraseRoutesForWorkout(workout){
+    return eraseKeys(allRouteKeys([workout]));
+  }
+  function pruneRoutesAfterRestore(previous,restored){
+    var keep=new Set(allRouteKeys(restored));
+    return eraseKeys(allRouteKeys(previous).filter(function(key){return !keep.has(key);}));
   }
   function install(){
     // Keep the per-set route owner in the saved draft/history; gpsTrip106 is temporary.
@@ -2250,9 +2268,24 @@
         return applied;
       };
     }
-
+    // restoreText only returns true after the user confirmed and the entire
+    // replacement succeeded. Cancelled/failed imports must preserve old GPS files.
+    if(typeof restoreText==='function'){
+      var originalRestoreText=restoreText;
+      restoreText=function(){
+        var previous;
+        try{previous=history();}catch(_){previous=[];}
+        var result=originalRestoreText.apply(this,arguments);
+        if(result===true){
+          var restored;
+          try{restored=history();}catch(_){restored=[];}
+          void pruneRoutesAfterRestore(previous,restored);
+        }
+        return result;
+      };
+    }
   }
-  window.TrainPilotGpsMap163={references:references,text:t,coordinates:coordinates,drawOffline:drawOffline,openRoute:openRoute,closeRoute:closeRoute,eraseRoutesForWorkout:eraseRoutesForWorkout,tileProvider:tileProvider};
+  window.TrainPilotGpsMap163={references:references,text:t,coordinates:coordinates,drawOffline:drawOffline,openRoute:openRoute,closeRoute:closeRoute,eraseRoutesForWorkout:eraseRoutesForWorkout,tileProvider:tileProvider,allRouteKeys:allRouteKeys,pruneRoutesAfterRestore:pruneRoutesAfterRestore};
   document.addEventListener('DOMContentLoaded',install);
 })();
 
