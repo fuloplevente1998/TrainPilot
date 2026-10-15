@@ -1,5 +1,15 @@
 # TrainPilot — fejlesztési állapot
 
+## 2026-10-15 – TrainPilot 1.3.5 /2731 közös P1 release candidate
+
+**Felhasználói jóváhagyás:** a már valós órán működő 35b4108-as Health Services GPS-adatokat, a telefon és Wear szinkronját, a #163 telefonos saját GPS-fixből rajzolt élő és naplótérképet egységesíteni, mindkét Android APK-t ugyanarról a forráscommitból **1.3.5 /2731** verzióra építeni, és a P1 kört csak kiadási kapu + készülékes teszt után lezárni.
+
+**Integrációs ág:** `feat/163-phone-gps-route-model` / [#205 draft](https://github.com/fuloplevente1998/TrainPilot/pull/205). A Wear 35b4108 javítás már a közös ágon van; nem kell cherry-pickelni. Az élő telefonos térkép sikeres GPS-indítás után felugrik, X nem stop; az órás távolság/gyorsaság telefonos szinkronja változatlan. Wear-only koordinátarögzítés **még nincs**; #193 külön fejlesztés, nem része az 1.3.5 P1 feltételnek.
+
+**Gate:** a korábbi `bac4ad4` telefonos full gate **piros** volt: a kötelező új térképablak a régi, más funkciót tesztelő Playwright-kattintásokat fedte el, és a célzott új live map fixture nem rajzolta be az edzést a teszt DOM-ba. A teszteket az új jogos UI-folyamathoz igazítjuk: a popup X bezárása mérésstop nélkül, illetve korrekt `renderWorkout` fixture. Az aktuális 1.3.5 HEAD-on újra sikeres kell legyen **Quick, Performance, 6/6 Chromium, telefonos JUnit/signature APK, Wear JUnit/signature APK és kerek Wear UI**; régi zöld commit nem elég.
+
+**Állapot:** 1.3.5/2731 **kiadásjelölt**, nem mainen jóváhagyott release. APK-k letöltése és valódi telefonos futás/útvonal/napló, illetve Wear mérés/szinkron megerősítése után merge/release/P1 lezárási döntés. Ne állítsuk, hogy a Wear mért távja automatikusan térképes GPS-nyomvonalat jelent.
+
 ## #163 élő GPS-térkép – automatikus popup telefonos mérésindításkor (2026. október 15.)
 
 A felhasználó megerősítette: az órás Health Services már valós készüléken mér távolságot és sebességet, a telefon megkapja, **de a térkép hiányzik a futó edzésben és a naplóban is**. Jóváhagyta, hogy telefonon futás/séta/kerékpár jellegű **távolsági gyakorlatok saját GPS-mérésének sikeres indítása után automatikusan nyíljon meg egy élő térképablak**. A meglévő 1.0.6 `tp106StartGPS` natív indítás és a #163 2–7/8 privát route-tároló változatlanul a mérési forrás; az új ablak csak a már eltárolt GPS-fixeket olvassa.
