@@ -35,6 +35,12 @@ object WearCommandOutbox {
     private fun enqueuePersisted(context: Context, command: JSONObject,localReady: Boolean): Long {
         val p=prefs(context);val old=read(context,"pending");val before=old.toString();val oldSequence=p.getLong("sequence",0)
         val id=command.optString("commandId");val workoutId=command.optString("workoutId")
+        // Recovery can race with a receipt committed just before its snapshot
+        // marker is reconciled. Reuse that sequence instead of reviving delivery.
+        val acknowledged=read(context,"results191")
+        for(i in 0 until acknowledged.length())acknowledged.optJSONObject(i)?.let {
+            if(it.optString("commandId")==id&&it.optString("workoutId")==workoutId&&it.optString("action")==command.optString("action"))return it.optLong("sequence")
+        }
         val existing=(0 until old.length()).mapNotNull { old.optJSONObject(it) }.firstOrNull { it.optString("commandId")==id }
         val floor=maxOf(command.optLong("watchSequence"),command.optJSONObject("finalSnapshot")?.optLong("localSequence") ?: 0L)
         val sequence=existing?.optLong("sequence") ?: (maxOf(oldSequence,floor)+1)
