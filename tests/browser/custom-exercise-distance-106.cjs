@@ -103,12 +103,12 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   window.Capacitor={isNativePlatform:()=>true,Plugins:{DistanceTracker:{status:async()=>({...gpsUI}),start:async args=>{gpsUIStarts++;gpsUI={...gpsUI,key:args.key,active:true};return {...gpsUI}},stop:async()=>{gpsUI.active=false;return {...gpsUI}}}}};
  });
  await page.locator('.tp150-quick-entry button').click();await page.locator('#tp155QuickQuery, #tp150QuickQuery').first().fill('Futás / kocogás / görkori');await quick.locator('summary').click();await quick.locator('.tp150-quick-start').click();
- await page.waitForSelector('#tp106GpsButton');await page.locator('#tp106GpsButton').click();await page.waitForFunction(()=>tp106GpsState.active&&!tp106GpsBusy);
+ await page.waitForSelector('#tp106GpsButton');await page.locator('#tp106GpsButton').click();await page.waitForFunction(()=>tp106GpsState.active&&!tp106GpsBusy);await page.locator('.tp163-live-dialog .tp163-close').click();
  assert.equal(await page.locator('[data-tp106-distance]').isDisabled(),true);assert.equal(await page.evaluate(()=>gpsUIStarts),1);
  await page.evaluate(async()=>{gpsUI.distanceMeters=1000;gpsUI.elapsedSeconds=300;gpsUI.hasFix=true;await tp106SyncGPS()});
  assert.equal(await page.locator('[data-tp106-distance]').inputValue(),'1');await page.locator('#tp106GpsButton').click();await page.waitForFunction(()=>!tp106GpsState.active&&!tp106GpsBusy);
  assert.equal(await page.locator('[data-tp106-distance]').isDisabled(),false);assert.equal(await page.evaluate(()=>state.session.exercises[0].sets[0].reps),'300');
- await page.locator('#tp106GpsButton').click();await page.waitForFunction(()=>tp106GpsState.active&&!tp106GpsBusy);await page.locator('#tp150QuickAdd button').click();await quick.locator('summary').click();await quick.locator('.tp150-quick-start').click();await page.waitForSelector('#tp106GpsButton');assert.equal(await page.evaluate(()=>gpsUI.active),false,'reconfiguring an existing Quick exercise stops native GPS before replacing its sets');assert.equal(await page.evaluate(()=>db.get('gpsTrip106',null)),null);
+ await page.locator('#tp106GpsButton').click();await page.waitForFunction(()=>tp106GpsState.active&&!tp106GpsBusy);await page.locator('.tp163-live-dialog .tp163-close').click();await page.locator('#tp150QuickAdd button').click();await quick.locator('summary').click();await quick.locator('.tp150-quick-start').click();await page.waitForSelector('#tp106GpsButton');assert.equal(await page.evaluate(()=>gpsUI.active),false,'reconfiguring an existing Quick exercise stops native GPS before replacing its sets');assert.equal(await page.evaluate(()=>db.get('gpsTrip106',null)),null);
  // Exercise-time steps use a narrow, read-only bridge and update only their own card.
  await page.evaluate(()=>{
   state.session.started=new Date(Date.now()-180000).toISOString();state.session.activeIntervals=[{start:state.session.started,end:null}];
