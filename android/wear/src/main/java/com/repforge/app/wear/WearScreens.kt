@@ -1274,6 +1274,13 @@ private fun HealthScreen(
                 textAlign = TextAlign.Center,
             )
         }
+        // Put the actual reason beside the failure, before the empty metric rows.
+        data?.optString("message")?.takeIf { it.isNotBlank() }?.let { message ->
+            centerItem {
+                Text(message, color = Gold, fontSize = 11.sp, textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 10.dp).testTag("wear-health-message"))
+            }
+        }
         data
             ?.optLong("updatedAt")
             ?.takeIf { it > 0L }
@@ -1331,15 +1338,6 @@ private fun HealthScreen(
                     textAlign = TextAlign.Center,
                 )
             }
-        data
-            ?.optString("message")
-            ?.takeIf { it.isNotBlank() }
-            ?.let {
-                centerItem {
-                    Text(it, color = Gold, fontSize = 11.sp, textAlign = TextAlign.Center)
-                }
-            }
-
         centerItem {
             Pill(
                 if (enabled) "Mérés kikapcsolása" else "Mérések engedélyezése",

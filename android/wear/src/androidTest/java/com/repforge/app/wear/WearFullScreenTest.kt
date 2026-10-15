@@ -533,6 +533,26 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     }
 
     @Test
+    fun measurementFailureShowsItsReasonBeforeEmptyMetricsAndKeepsRetryReachable() {
+        val reason=WEAR_LOCATION_PERMISSION_MESSAGE
+        val data=mutableStateOf<JSONObject?>(JSONObject().put("workoutId","layout-test")
+            .put("source","wear_health_services").put("state","error")
+            .put("updatedAt",System.currentTimeMillis()).put("message",reason).put("locationPermissionRequired",true))
+        val retries=mutableListOf<String>()
+        compose.setContent { Watch { Fixture("metrics",liveHealth=data,measurementActions=retries) } }
+        // At normal font sizes the reason is in the initial viewport, above retry.
+        if(fontScale==1f)compose.onNodeWithTag("wear-health-message").assertIsDisplayed()
+        lazyList().performScrollToNode(hasTestTag("wear-health-message"))
+        compose.onNodeWithText(reason).assertIsDisplayed()
+        screenshot("measurement-failure-reason")
+        lazyList().performScrollToNode(hasContentDescription("Aktuális edzés mérése"))
+        compose.onNodeWithContentDescription("Aktuális edzés mérése").assertIsDisplayed().performClick()
+        assertEquals(listOf("retry"),retries)
+        lazyList().performScrollToNode(hasText("Pulzus · utolsó mérés"))
+        compose.onNodeWithText("Pulzus · utolsó mérés").assertIsDisplayed()
+    }
+
+    @Test
     fun homeShortcutsReturnHomeAndDeleteStillRequiresConfirmation() {
         val selected = mutableStateOf("home")
         compose.setContent { Watch { key(selected.value) { Fixture(selected.value) } } }
@@ -885,7 +905,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     }
 
     @Composable
-    private fun Fixture(route: String, liveHealth: State<JSONObject?>? = null, automaticCommands: MutableList<String>? = null, feedbackAnswers: MutableList<String?>? = null) {
+    private fun Fixture(route: String, liveHealth: State<JSONObject?>? = null, automaticCommands: MutableList<String>? = null, feedbackAnswers: MutableList<String?>? = null, measurementActions: MutableList<String>? = null) {
         val set = WearSet(1, "5", "5.5", feedbackAnswers != null, 30, 0, 0.0)
         val exercise =
             WearExercise(
@@ -1037,7 +1057,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             gpsEnabled = mutableStateOf(false),
             requestedRoute = request,
             onRouteConsumed = { request.value = null },
-            onEnableHealth = {},
+            onEnableHealth = { measurementActions?.add("retry") },
             onDisableHealth = {},
             onToggleGps = {},
             onToggleAutomatic = if(automaticCommands==null)null else ({automaticCommands.add("toggle")}),

@@ -4,6 +4,28 @@ import org.json.JSONObject
 import androidx.health.services.client.data.DataType
 import androidx.health.services.client.data.ExerciseType
 
+internal const val WEAR_LOCATION_PERMISSION_MESSAGE =
+    "A mérési szolgáltatás pontos helyengedélyt kér. Engedélyezés: Aktuális edzés mérése."
+
+/** A device can require location for Health Services even with GNSS disabled. */
+internal data class WearRecordingAccess(val gpsRequested: Boolean, val providerRequiresLocation: Boolean,
+                                        val fineLocationGranted: Boolean) {
+    val needsFineLocation: Boolean get() = gpsRequested || providerRequiresLocation
+    val locationBlocked: Boolean get() = needsFineLocation && !fineLocationGranted
+    val gpsEnabled: Boolean get() = gpsRequested && fineLocationGranted
+    // Granted while-in-use location must remain available to Health Services in
+    // the foreground service, including non-GNSS movement metrics.
+    val foregroundLocation: Boolean get() = fineLocationGranted
+}
+
+internal fun wearRetryRecording(previous: JSONObject): JSONObject? {
+    if(previous.optString("state") !in listOf("ended","error"))return null
+    return JSONObject(previous.toString()).apply {
+        put("state","starting").put("partial",true)
+        remove("message");remove("stopRequested");remove("locationPermissionRequired")
+    }
+}
+
 /** Some watch providers require location for outdoor profiles even with GNSS off.
  * Keep the independent sensor recording usable without claiming a GPS distance. */
 internal fun wearRecordingType(wanted: ExerciseType, supported: Set<ExerciseType>, location: Boolean): ExerciseType? {
@@ -172,6 +194,7 @@ internal fun wearRecordingStatus(data: JSONObject?, enabled: Boolean, hasWorkout
     "paused" -> "Az órás mérés szünetel"
     "ending" -> "Mérés lezárása…"
     "ended" -> "Mérés befejezve"
-    "error" -> "A mérés megszakadt"
+    "error" -> if(data.optBoolean("locationPermissionRequired") || WearHealthFutures.isMissingLocationError(data.optString("message")))
+        "Pontos helyengedély szükséges" else "A mérés megszakadt"
     else -> if (!enabled) "Mérés kikapcsolva" else if(hasWorkout) "Az aktuális edzés mérése még nem indult" else "Mérés a következő edzésnél"
 }

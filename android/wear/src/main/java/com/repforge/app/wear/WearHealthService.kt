@@ -78,7 +78,9 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
                 .setContentTitle("TrainPilot edzésmérés").setContentText("A mérés kikapcsolt kijelzővel is folytatódik")
                 .setContentIntent(pending).setOngoing(true).setCategory(Notification.CATEGORY_SERVICE)
                 .addAction(Notification.Action.Builder(android.R.drawable.ic_media_pause,"Mérés leállítása",stop).build()).build()
-            val location=request.gps && checkSelfPermission("android.permission.ACCESS_FINE_LOCATION")==android.content.pm.PackageManager.PERMISSION_GRANTED
+            val access=WearRecordingAccess(request.gps,WearHealthStore.providerRequiresLocation(this),
+                checkSelfPermission("android.permission.ACCESS_FINE_LOCATION")==android.content.pm.PackageManager.PERMISSION_GRANTED)
+            val location=access.foregroundLocation
             if(Build.VERSION.SDK_INT>=34) startForeground(129,notification,ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH or if(location)ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0)
             else startForeground(129,notification,if(location)ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0)
             WearHealthStore.save(this,summary!!)
@@ -92,7 +94,7 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
                             summary?.put("state",if(session.stopRequested)"ending" else if(appliedPause)"paused" else "active");persist()
                             if(session.stopRequested)end() else syncWorkoutPause()
                         }
-                        else -> if(session.stopRequested){finishWithoutExercise()}else capabilities(request.exerciseType,location)
+                        else -> if(session.stopRequested){finishWithoutExercise()}else capabilities(request.exerciseType,access.gpsEnabled)
                     }
                 }
             }
@@ -186,7 +188,11 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
     private fun fail(message: String) {
         if(lifecycle?.finished==true)return
         lifecycle?.finish()
-        summary?.put("state","error")?.put("partial",true)?.put("message",message);persist();summary?.let { WearHealthStore.publish(this,it) }
+        val locationMissing=WearHealthFutures.isMissingLocationError(message)
+        if(locationMissing)WearHealthStore.requireProviderLocation(this)
+        summary?.put("state","error")?.put("partial",true)?.put("message",if(locationMissing)WEAR_LOCATION_PERMISSION_MESSAGE else message)
+        if(locationMissing)summary?.put("locationPermissionRequired",true)
+        persist();summary?.let { WearHealthStore.publish(this,it) }
         if(lifecycle?.owned==true)try { client.endExerciseAsync() }catch(_:Exception){}
         stopSelf()
     }

@@ -7,6 +7,46 @@ import androidx.health.services.client.data.DataType
 import androidx.health.services.client.data.ExerciseType
 
 class WearRecordingStateTest {
+    @Test fun grantedWhileInUseLocationNeedsLocationServiceEvenWhenGpsIsOff() {
+        val access=WearRecordingAccess(gpsRequested=false,providerRequiresLocation=false,fineLocationGranted=true)
+        assertTrue(access.foregroundLocation)
+        assertFalse(access.gpsEnabled)
+        assertFalse(access.locationBlocked)
+    }
+
+    @Test fun knownProviderLocationRequirementRequestsPermissionWithoutEnablingGps() {
+        val denied=WearRecordingAccess(false,true,false)
+        assertTrue(denied.needsFineLocation)
+        assertTrue(denied.locationBlocked)
+        assertFalse(denied.foregroundLocation)
+        assertFalse(denied.gpsEnabled)
+        val granted=denied.copy(fineLocationGranted=true)
+        assertFalse(granted.locationBlocked)
+        assertTrue(granted.foregroundLocation)
+        assertFalse(granted.gpsEnabled)
+        assertTrue(WearRecordingAccess(true,false,true).gpsEnabled)
+        val independent=WearRecordingAccess(false,false,false)
+        assertFalse(independent.needsFineLocation)
+        assertFalse(independent.locationBlocked)
+        assertFalse(independent.foregroundLocation)
+    }
+
+    @Test fun retryPreservesRealTotalsAndGpsIntentWhileClearingTheResolvedPermissionFailure() {
+        val previous=JSONObject().put("state","error").put("locationPermissionRequired",true)
+            .put("message",WEAR_LOCATION_PERMISSION_MESSAGE).put("stopRequested",true)
+            .put("totalCalories",4.5).put("steps",12).put("recordingGps",false)
+            .put("recordingExerciseType","running")
+        val retry=wearRetryRecording(previous)!!
+        assertEquals("starting",retry.getString("state"))
+        assertFalse(retry.has("message"));assertFalse(retry.has("locationPermissionRequired"));assertFalse(retry.has("stopRequested"))
+        assertEquals(4.5,retry.getDouble("totalCalories"),.001)
+        assertEquals(12,retry.getInt("steps"));assertFalse(retry.getBoolean("recordingGps"))
+        assertEquals("running",retry.getString("recordingExerciseType"))
+        assertEquals("error",previous.getString("state"))
+        assertNull(wearRetryRecording(JSONObject().put("state","active")))
+        assertEquals("Pontos helyengedély szükséges",wearRecordingStatus(previous,true,true))
+    }
+
     private val sensorMetrics: Set<DataType<*,*>> = setOf(DataType.HEART_RATE_BPM,DataType.CALORIES_TOTAL,
         DataType.STEPS_TOTAL,DataType.DISTANCE_TOTAL,DataType.SPEED)
 
