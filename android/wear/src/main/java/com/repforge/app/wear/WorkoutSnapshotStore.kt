@@ -49,7 +49,9 @@ data class WearWorkout(
     val pauseRevision: Long = 0L,
     val activeIntervals: List<WearActiveInterval>? = null,
     val resumeAutomaticOnContinue: Boolean = false,
-    val pausedRestMillis: Long = 0L
+    val pausedRestMillis: Long = 0L,
+    val lastRecord188: String? = null,
+    val undo188: String? = null
 ) {
     fun elapsedSeconds(now: Long = System.currentTimeMillis()): Int = try {
         val duration=activeIntervals?.sumOf { (if(it.end>0)it.end else now).minus(it.start).coerceAtLeast(0) }
@@ -98,7 +100,8 @@ object WorkoutSnapshotStore {
             clear(context)
             return null
         }
-        val parsed = mergeWorkoutPause(current,parse(raw) ?: return current,android.os.SystemClock.elapsedRealtime(),System.currentTimeMillis())
+        var parsed = mergeWorkoutPause(current,parse(raw) ?: return current,android.os.SystemClock.elapsedRealtime(),System.currentTimeMillis())
+        if(current?.workoutId==parsed.workoutId)parsed=parsed.copy(lastRecord188=parsed.lastRecord188 ?: current.lastRecord188,undo188=current.undo188)
         if (WearClosureStore.isClosed(context, parsed.workoutId)) return current
         if (current?.revision == 0L && current.localSequence > 0L && parsed.workoutId != current.workoutId) return current
         if (current?.workoutId == parsed.workoutId && parsed.localSequence < current.localSequence) {
@@ -226,7 +229,9 @@ object WorkoutSnapshotStore {
                     }
                 } },
                 resumeAutomaticOnContinue = root.optBoolean("resumeAutomaticOnContinue"),
-                pausedRestMillis = root.optLong("pausedRestMillis")
+                pausedRestMillis = root.optLong("pausedRestMillis"),
+                lastRecord188 = root.optJSONObject("lastRecord188")?.toString(),
+                undo188 = root.optJSONObject("undo188")?.toString()
             )
         } catch (_: Exception) { null }
     }
@@ -258,6 +263,8 @@ object WorkoutSnapshotStore {
                 .put("end",if(it.end>0)java.time.Instant.ofEpochMilli(it.end).toString() else JSONObject.NULL))
         } }) }
         workout.automation?.let { root.put("automation",it.json()) }
+        workout.lastRecord188?.let { root.put("lastRecord188",JSONObject(it)) }
+        workout.undo188?.let { root.put("undo188",JSONObject(it)) }
         val exercises = JSONArray()
         workout.exercises.forEach { exercise ->
             val sets = JSONArray()
@@ -297,5 +304,5 @@ internal fun preservePendingWearEdits(current: WearWorkout, incoming: WearWorkou
 /** Unsupported measurements keep their existing recorder; no phone-owned clock is created by the watch. */
 internal fun nativePhoneExecution(workout: WearWorkout, action: String, exercise: WearExercise?, value: Any?): Boolean =
     workout.nativeExecutionProtocol == 2 && workout.generation > 0 && workout.executionRevision > 0 && workout.timerOwner == "phone" &&
-        (action == "automaticControl" && value == "start" || action == "completeSet" && exercise != null &&
+        (action == "automaticControl" && (value == "start" || value == "resumeUndo") || action == "completeSet" && exercise != null &&
             exercise.repUnit.replace("\\s+".toRegex(), "").lowercase() in listOf("", "ism.", "reps") && exercise.measurementType != "distance")

@@ -16769,6 +16769,15 @@ window.addEventListener?.('DOMContentLoaded',function(){
      Object.assign(set,change.values);changed=true;
     }
     next.current=frame.currentExercise;
+   }else if(event.kind==='undoSet'){
+    const e=session.exercises.find(e=>e.id===event.exerciseId),set=e?.sets.find(s=>s.setId===event.setId);
+    if(!set||event.values?.done!==false||!event.recordId||session.phoneEdit162?.targets?.includes(event.setId))throw Error('Recorded set has conflicting edits');
+    for(const field of ['reps','weight','leftSeconds','rightSeconds','distanceMeters']){
+     const normal=v=>v==null||v===''?0:Number(String(v).replace(',','.'));
+     if(normal(set[field])!==normal(event.before?.[field])&&normal(set[field])!==normal(event.values[field]))throw Error('Recorded set has conflicting edits');
+    }
+    Object.assign(set,event.values);delete session.interval162;
+    session.automatic162={...session.automatic162,undoKey188:'undo188:'+event.commandId};next.current=session.exercises.indexOf(e);changed=true;
    }else if(event.kind!=='startTimeline'){
     const e=session.exercises.find(e=>e.id===event.exerciseId&&e.sets?.some(s=>s.setId===event.setId)),set=e?.sets.find(s=>s.setId===event.setId);
     if(!set||event.values?.done!==true||!/^\d+$/.test(String(event.values.reps))||Number(event.values.reps)<1)throw Error('Native recording target changed');
@@ -16795,6 +16804,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    }else{session.automatic162.run=null;session.automatic162.phase=t.phase;next.current=t.currentExercise;}
    next.restEndAt=null;changed=true;
   }
+  if(frame.undo188)session.undo188=clone(frame.undo188);
   const timeChanged=window.TrainPilotTime162Core.merge(session,frame.timeLogs162||{});
   session.phoneExecution162={...meta,revision:frame.executionRevision,sequence:cursor,timeSignature,completedBase:completedBase(frame)};
   next.savedAt=new Date().toISOString();return {draft:next,changed,sequence:cursor,needsCommit:timeSignature!==meta.timeSignature||timeChanged||changed||cursor!==(Number(meta.sequence)||0)||frame.executionRevision!==meta.revision};
@@ -17005,6 +17015,36 @@ window.addEventListener?.('DOMContentLoaded',function(){
  window.TrainPilotPhoneExecution162={sync,finishFence,discardFence,recordPhoneSet,failure:()=>lastFailure?{...lastFailure}:null,isReconciling:()=>busy||discarding,block:async value=>{const api=bridge();if(api?.blockExecution)await api.blockExecution({blocked:value});}};
 })();
 // @endsection phone-execution-162.js
+
+// @section workout-undo-188.js
+(function(){
+ 'use strict';
+ const fields=['reps','weight','leftSeconds','rightSeconds','distanceMeters'];
+ const number=v=>v==null||v===''?0:Number(String(v).replace(',','.'));
+ function guard(exercises){return (exercises||[]).flatMap(e=>(e.sets||[]).map(s=>[String(e.id),String(s.setId),s.done===true,...fields.map(k=>number(s[k]))]));}
+ function same(a,b){return Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.every((row,i)=>Array.isArray(row)&&row.length===8&&b[i]?.length===8&&row.every((v,j)=>j<3?v===b[i][j]:Number.isFinite(v)&&v===b[i][j]));}
+ function values(set){return {done:set.done===true,...Object.fromEntries(fields.map(k=>[k,set[k]??(k==='reps'?'':0)]))};}
+ function capture(session,command,before){session.lastRecord188={recordId:command.commandId,workoutId:command.workoutId,exerciseId:command.exerciseId,setId:command.setId,before,expected:guard(session.exercises),recordedAt:Date.now()};}
+ function inverse(session,command){
+  if(session.undo188?.commandId===command.commandId)return session.undo188.fingerprint===JSON.stringify([command.recordId,command.expected]);
+  const last=session.lastRecord188;
+  if(!last||last.workoutId!==command.workoutId||last.recordId!==command.recordId||last.exerciseId!==command.exerciseId||last.setId!==command.setId||!same(last.expected,guard(session.exercises))||!same(command.expected,last.expected))return false;
+  const e=session.exercises.find(e=>e.id===last.exerciseId),set=e?.sets.find(s=>s.setId===last.setId);
+  if(!set?.done)return false;
+  Object.assign(set,last.before,{done:false});
+  session.undo188={commandId:command.commandId,recordId:command.recordId,status:'applied',fingerprint:JSON.stringify([command.recordId,command.expected])};
+  session.undoneRecords188=[...(session.undoneRecords188||[]),command.recordId].slice(-128);
+  delete session.lastRecord188;delete session.interval162;
+  const a=command.automation||{};
+  if(session.timerOwner==='watch'){
+   session.watchAutomation162={...a,paused:true,phase:'ready',remainingMs:0,deadlineAt:0};
+   session.automatic162={...session.automatic162,enabled:a.enabled===true,owner:'watch',phase:'paused',watch:session.watchAutomation162,run:null};
+  }else session.automatic162={...session.automatic162,phase:'paused',run:null,undoKey188:'undo188:'+command.commandId};
+  return true;
+ }
+ window.TrainPilotUndo188={guard,same,values,capture,inverse};
+})();
+// @endsection workout-undo-188.js
 
 // @section wear-sync.js
 /* TrainPilot Wear OS bridge.
@@ -17268,6 +17308,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     ...(session.phoneExecution162&&session.automatic162?.enabled===true&&(session.timerOwner||'phone')==='phone'&&!session.exercises.some(e=>e.measurementType==='distance')?{nativeExecutionProtocol:2,generation:session.phoneExecution162.generation,executionRevision:session.phoneExecution162.revision}:{}),
     workoutId:sessionKey(session),
     watchSequence:Number(session.wearSequence)||0,
+    ...(session.undo188?{undo188:session.undo188}:{}),
     quickWorkout:session.type==='quick'||session.quickWorkout===true,
     dayName:(()=>{if(session.type==='quick'||session.quickWorkout===true)return String(session.programName||'Gyors edzés');try{const p=programById(session.programId);return dayName(p,programDay(p,session.dayId||session.workout))}catch(_){return String(session.dayId||session.workout||'')}})(),
     programId:String(session.programId||''),
@@ -17561,7 +17602,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    return state.session?.workoutPaused===false;
   }
 
-  if(command.nativeExecutionProtocol===2&&['completeSet','automaticControl'].includes(action)&&(action==='completeSet'||command.value==='start')){
+  if(command.nativeExecutionProtocol===2&&['completeSet','undoSet','automaticControl'].includes(action)&&(action==='completeSet'||action==='undoSet'||command.value==='start'||command.value==='resumeUndo')){
    const result=await api()?.executeCommand?.({command});
    if(['applied','duplicate'].includes(result?.status))return window.TrainPilotPhoneExecution162.sync({prepare:false});
    return recordResult(command,'error',rf212Lang()==='hu'?'Az órás parancs elavult vagy az időzítő nem áll készen. Ellenőrizd az edzést.':'The watch command is stale or the timer is not ready. Check the workout.');
@@ -17573,6 +17614,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
    return window.TrainPilotWorkoutFeedback.accept(expectedId,command.feedback);
   }
   if(action==='healthSummary')return attachMeasuredHealth(command);
+  if(command.undoDependency188&&action!=='watchAutomationState'&&savedPause?.undo188?.commandId!==command.undoDependency188){
+   if(savedPause?.undoRejected188===command.undoDependency188)return recordResult(command,'error','A visszavonás ütközött. Ellenőrizd az edzést.');
+   return false;
+  }
   if(action==='watchAutomationState'){
    if(expectedId&&isClosed(expectedId))return true;
    const root=command.finalSnapshot;if(!root||root.workoutId!==expectedId)return false;
@@ -17634,9 +17679,23 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(typeof add!=='function')return false;
    add(id);adoptWatchIdentity(command,true);persistDraft();return true;
   }
+  if(action==='undoSet'){
+   if(state.session.undo188?.commandId!==command.commandId&&state.session.timerOwner!=='watch'){
+    if(!await TrainPilotAutomatic162.command('pause')||!await TrainPilotIntervals162.command('pause'))return false;
+   }
+   if(!window.TrainPilotUndo188.inverse(state.session,command)){
+    state.session.undoRejected188=command.commandId;
+    if(state.session.watchAutomation162)Object.assign(state.session.watchAutomation162,{paused:true,deadlineAt:0});
+    persistDraft();
+    return recordResult(command,'error','A sorozatok időközben megváltoztak. Használd a rendes szerkesztést.');
+   }
+   state.current=state.session.exercises.findIndex(e=>e.id===command.exerciseId);stopTimer();state.restEndAt=null;
+   persistDraft();renderWorkout();return true;
+  }
   if(action==='resumeWorkout'){persistDraft();renderWorkout();return true}
   if(action==='toggleAutomatic')return TrainPilotAutomatic162.toggle(command.value===true);
   if(action==='automaticControl'){
+   if(command.value==='resumeUndo'&&state.session.automatic162?.undoKey188===command.automation?.key){state.session.automatic162.phase='work';delete state.session.automatic162.undoKey188;persistDraft();renderWorkout();return true;}
    if(command.automation?.owner!=='phone')return true;
    await TrainPilotAutomatic162.sync();await TrainPilotIntervals162.sync();
    const run=TrainPilotAutomatic162.owner()?.meta.run||TrainPilotIntervals162.owner()?.run;
@@ -17674,6 +17733,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
    persistDraft();renderWorkout();return true;
   }
   if(action==='completeSet'){
+   if(state.session.undoneRecords188?.includes(command.commandId))return true;
+   const before188=window.TrainPilotUndo188.values(target.set);
    if(command.automation?.owner==='watch'&&state.session.timerOwner==='watch')state.session.automatic162={...state.session.automatic162,owner:'watch',enabled:command.automation.enabled===true};
    applySetValues(target.set,command);
    state.current=located.index;
@@ -17682,6 +17743,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     if(result&&typeof result.then==='function')await result;
    }
    if(target.set.done){
+    window.TrainPilotUndo188.capture(state.session,command,before188);
     if(located.index===state.session.exercises.length-1&&located.exercise.sets.every(s=>s.done))stopTimer();
     persistDraft();return true
    }
@@ -17728,6 +17790,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
      if(!window.TrainPilotWorkoutFeedback?.valid(command.feedback))status='error';
      else if(!row||(command.feedback.skipped===true?answer?.skipped!==true:answer?.effort!==command.feedback.effort))status='superseded';
     }
+    if(command.action==='undoSet'){lastPayload=null;await syncNow();}
     try{await bridge.ackCommand({commandId:id,status});}catch(_){}
    }
    if(changed){lastPayload=null;lastHomePayload=null;await syncNow();await syncHomeNow();}
@@ -18264,11 +18327,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const m=s?.automatic162,iv=s?.interval162,p=iv?.phase,r=m?.run;
    if(!m?.enabled&&!iv)return null;
    const phase=r?'rest':p?.phase==='work'||p?.phase==='rest'?p.phase:m?.phase==='complete'?'complete':'ready';
-   const remainingMs=r?.remainingMs??p?.remainingMs??0,paused=r?r.running!==true:iv?iv.running!==true:false;
+   const remainingMs=r?.remainingMs??p?.remainingMs??0,paused=r?r.running!==true:iv?iv.running!==true:m?.phase==='paused';
    const step=r?.steps?.[0]||iv?.steps?.[p?.stepIndex||0];
    const restSeconds=r?Number(step?.rest):p?.token==='initial:rest'?Number(iv.initialRest):Number(step?.rest??iv?.rest??settings().rest??90);
    return {enabled:m?.enabled===true,owner:'phone',phase,paused,remainingMs,deadlineAt:remainingMs&&!paused?Date.now()+remainingMs:0,
-    key:r?.key||iv?.key||'',phaseNumber:r?.phaseNumber||iv?.phaseNumber||0,targetExercise:state.current,workSeconds:Number(step?.work??iv?.work??30),restSeconds,vibration:false,interrupted:r?.interrupted||iv?.interrupted||false};
+    key:r?.key||iv?.key||m?.undoKey188||'',phaseNumber:r?.phaseNumber||iv?.phaseNumber||0,targetExercise:state.current,workSeconds:Number(step?.work??iv?.work??30),restSeconds,vibration:false,interrupted:r?.interrupted||iv?.interrupted||false};
   };
   const nativeFinish=window.finishWorkout;
   window.finishWorkout=function(){const args=arguments,ctx=this;return window.TrainPilotPhoneExecution162?.finishFence?window.TrainPilotPhoneExecution162.finishFence(()=>nativeFinish.apply(ctx,args)):nativeFinish.apply(ctx,args);};
@@ -18300,7 +18363,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
   function accept(command){
    const s=state.session;if(!valid(command,s))return false;
    if(command.sequence<=Math.max(s.watchAutomationSequence162||0,s.wearSequence||0))return true;
-   const root=command.finalSnapshot,a=root.automation;let changed=state.current!==root.currentExercise;
+   const root=command.finalSnapshot,a=root.automation;
+   if(root.undo188?.commandId&&s.undo188?.commandId!==root.undo188.commandId)return false;
+   let changed=state.current!==root.currentExercise;
    const before=s.watchAutomation162;
    root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{
     const own=s.exercises[i].sets[j],previous=before?.snapshot?.exercises?.[i]?.sets?.[j];
@@ -18313,6 +18378,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     }
    }));
    state.current=Math.max(0,Math.min(root.currentExercise,s.exercises.length-1));
+   if(root.lastRecord188&&window.TrainPilotUndo188.same(root.lastRecord188.expected,window.TrainPilotUndo188.guard(s.exercises)))s.lastRecord188=root.lastRecord188;
    s.watchAutomationSequence162=command.sequence;s.wearSequence=Math.max(s.wearSequence||0,command.sequence);
    s.watchAutomation162={...a,snapshot:root};
    s.automatic162={enabled:a.enabled,owner:'watch',phase:a.phase==='ready'?'work':a.phase,watch:a,run:null,pending:false};

@@ -57,7 +57,10 @@ public class WearCommandListenerService extends WearableListenerService {
                     new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
                         try{
                             JSONObject result=PhoneWorkoutExecution.execute(this,command);
-                            if(!java.util.Arrays.asList("applied","duplicate").contains(result.optString("status"))||!WearCommandReceipts.complete(this,command,"applied",uri)) queue(command,uri);
+                            if("undoSet".equals(command.optString("action"))&&"rejected".equals(result.optString("status"))){
+                                PhoneWorkoutExecution.publish(this);
+                                if(!WearCommandReceipts.complete(this,command,"error",uri))queue(command,uri);
+                            }else if(!java.util.Arrays.asList("applied","duplicate").contains(result.optString("status"))||!WearCommandReceipts.complete(this,command,"applied",uri)) queue(command,uri);
                         }catch(Exception error){queue(command,uri);}
                     });continue;
                 }

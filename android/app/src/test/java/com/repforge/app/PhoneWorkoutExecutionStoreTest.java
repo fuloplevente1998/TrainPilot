@@ -257,4 +257,28 @@ public class PhoneWorkoutExecutionStoreTest {
         assertFalse(second.getJSONObject("values").has("weight"));
         assertEquals(5, set(store.snapshot(), 0, 1).getInt("weight"));
     }
+
+    private JSONObject undo188(String id)throws Exception {
+        JSONObject frame=store.snapshot(),last=frame.getJSONObject("lastRecord188");
+        return new JSONObject(last.toString()).put("commandId",id).put("action","undoSet")
+            .put("generation",frame.getLong("generation")).put("executionRevision",frame.getLong("executionRevision"));
+    }
+    @Test public void undoIsAnAppendOnlyInverseWithReplayAndCollisionProtection()throws Exception {
+        JSONObject complete=command("record188","a");store.record(complete);JSONObject undo=undo188("undo188").put("sequence",12);
+        JSONObject result=store.undo(undo);assertEquals("applied",result.getString("status"));
+        JSONObject frame=store.snapshot();assertFalse(set(frame,0,0).getBoolean("done"));assertEquals("",set(frame,0,0).getString("reps"));
+        assertEquals("Keep my draft",frame.getString("notes"));assertEquals("pain",frame.getJSONArray("exercises").getJSONObject(0).getString("effort"));
+        assertEquals(2,store.pendingEvents("workout",1,0).length());assertEquals(12,frame.getLong("watchSequence"));
+        assertEquals("duplicate",store.undo(undo).getString("status"));assertEquals("duplicate",store.record(complete).getString("status"));
+        assertFalse(set(store.snapshot(),0,0).getBoolean("done"));
+        undo.put("recordId","other");assertEquals("commandIdentityCollision",store.undo(undo).getString("reason"));
+    }
+    @Test public void newerRecordingOrEditCannotBeOverwrittenByOldUndo()throws Exception {
+        store.record(command("first188","a"));JSONObject old=undo188("oldUndo188");
+        store.record(command("second188","b"));assertEquals("undoConflict",store.undo(old).getString("reason"));
+        JSONObject fresh=undo188("freshUndo188"),edit=store.snapshot();
+        store.acknowledgeEvents("workout",1,store.pendingEvents("workout",1,0).getJSONObject(1).getLong("sequence"));
+        set(edit,1,0).put("reps","2");store.prepare(edit,edit.getLong("executionRevision"));
+        assertEquals("undoConflict",store.undo(fresh).getString("reason"));assertTrue(set(store.snapshot(),0,1).getBoolean("done"));
+    }
 }

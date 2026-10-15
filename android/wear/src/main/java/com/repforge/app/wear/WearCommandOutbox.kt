@@ -90,8 +90,13 @@ object WearCommandOutbox {
         }
     }
 
-    @Synchronized fun acceptReceipt(context: Context,path: String?,raw: String?): Boolean {
-        if(raw==null||raw.length>4096||path==null||!path.startsWith(RECEIPT_PREFIX))return false
+    fun acceptReceipt(context: Context,path: String?,raw: String?): Boolean {
+        val accepted=acceptReceiptLocked(context,path,raw)
+        if(accepted&&raw!=null)WearUndo188.receipt(context,JSONObject(raw))
+        return accepted
+    }
+    @Synchronized private fun acceptReceiptLocked(context: Context,path: String?,raw: String?): Boolean {
+        if(raw==null||raw.length>100000||path==null||!path.startsWith(RECEIPT_PREFIX))return false
         val receipt=try { JSONObject(raw) }catch(_:Exception){return false}
         if(path!=RECEIPT_PREFIX+receipt.optString("commandId"))return false
         val pending=try { read(context,"pending") } catch(_:Exception) { return false }

@@ -72,12 +72,17 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
                 if (pending(db, old.getString("workoutId"), old.getLong("generation")))
                     throw new IllegalStateException("pendingRecordingEvents");
                 PhoneWorkoutRecording.retainCompleted(old, incoming);
+                if(old.has("undo188"))incoming.put("undo188",old.get("undo188"));
+                JSONObject last=old.optJSONObject("lastRecord188");
+                if(last!=null&&WorkoutUndo188.same(last.optJSONArray("expected"),WorkoutUndo188.guard(incoming)))incoming.put("lastRecord188",last);
+                else incoming.remove("lastRecord188");
                 if(incoming.optLong("pauseRevision")<=old.optLong("pauseRevision"))
                     for(String key:new String[]{"pauseRevision","workoutPaused","activeIntervals"})if(old.has(key))incoming.put(key,old.get(key));
-                for(String key:new String[]{"timeLogs162","latestTimer162","manualAnchor162","resumeTimerOnContinue201"})if(old.has(key))incoming.put(key,old.get(key));
+                for(String key:new String[]{"timeLogs162","latestTimer162","retiredTimers188","manualAnchor162","resumeTimerOnContinue201","retiredTimers188"})if(old.has(key))incoming.put(key,old.get(key));
                 if (old.has("transition")) {
                     JSONObject transition=old.getJSONObject("transition"),plan=transition.optJSONObject("plan"),automation=incoming.optJSONObject("automation");
                     if (plan!=null&&automation!=null&&plan.optString("key").equals(automation.optString("key"))) incoming.put("transition",transition);
+                    else if("paused".equals(transition.optString("state"))&&automation!=null&&automation.optBoolean("paused")&&automation.optString("key").startsWith("undo188:"))incoming.put("transition",transition);
                     else incoming.remove("transition");
                 }
             } else if (expectedRevision != 0 || incoming.getLong("generation") <= old.getLong("generation")
@@ -119,6 +124,7 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
             catch (JSONException | IllegalArgumentException invalid) {
                 return rejected(invalid instanceof JSONException ? "invalidCommand" : invalid.getMessage());
             }
+            next.put("lastRecord188",WorkoutUndo188.capture(frame,next,command,id));
             PhoneWorkoutRecording.Target target = PhoneWorkoutRecording.target(frame, command);
             JSONObject values = PhoneWorkoutRecording.recordedValues(next, command);
             JSONObject result = new JSONObject().put("status", "applied").put("commandId", id)
@@ -139,12 +145,44 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
     }
 
 
+    /** Append a guarded inverse beside the original event; never delete recordings or measured time. */
+    synchronized JSONObject undo(JSONObject command)throws JSONException {
+        String id=PhoneWorkoutRecording.id(command,"commandId");SQLiteDatabase db=getWritableDatabase();db.beginTransaction();
+        try{
+            if(blocked(db))return rejected("restoreInProgress");
+            JSONObject replay=receipt(command);if(replay!=null)return replay;
+            JSONObject old=current(db);if(old==null)return rejected("noExecution");
+            JSONObject next;
+            try{
+                JSONObject accounted=new JSONObject(old.toString()),anchor=accounted.optJSONObject("manualAnchor162");
+                if(anchor!=null)finishManual(accounted,anchor,android.os.SystemClock.elapsedRealtime());
+                next=WorkoutUndo188.inverse(accounted,command);
+                JSONObject timer=old.optJSONObject("latestTimer162");
+                if(timer!=null&&!timer.optString("key").isEmpty()){
+                    JSONArray retired=next.optJSONArray("retiredTimers188");if(retired==null)retired=new JSONArray();
+                    retired.put(timer.getString("key"));next.put("retiredTimers188",retired);
+                }
+            }catch(JSONException|IllegalArgumentException conflict){return rejected("undoConflict");}
+            JSONObject event=new JSONObject().put("kind","undoSet").put("status","applied").put("commandId",id)
+                .put("recordId",command.getString("recordId")).put("workoutId",next.getString("workoutId")).put("generation",next.getLong("generation"))
+                .put("executionRevision",next.getLong("executionRevision")).put("exerciseId",command.getString("exerciseId")).put("setId",command.getString("setId"))
+                .put("before",WorkoutUndo188.values(WorkoutUndo188.find(old,command))).put("values",WorkoutUndo188.values(WorkoutUndo188.find(next,command)))
+                .put("transition",next.getJSONObject("transition"));
+            next.put("watchSequence",Math.max(next.optLong("watchSequence"),command.optLong("sequence")));
+            ContentValues row=new ContentValues();row.put("command_id",id);row.put("workout_id",next.getString("workoutId"));row.put("generation",next.getLong("generation"));
+            row.put("fingerprint",PhoneWorkoutRecording.fingerprint(command));row.put("event",event.toString());
+            long seq=db.insertOrThrow("recordings",null,row);save(db,next);event.put("sequence",seq);db.setTransactionSuccessful();return event;
+        }finally{db.endTransaction();}
+    }
+
     /** Cumulative checkpoints stay in the snapshot; only completed sets create journal events. */
     synchronized boolean checkpointTimer(JSONObject timer, long monotonic) throws JSONException {
         SQLiteDatabase db=getWritableDatabase();db.beginTransaction();
         try {
             JSONObject frame=current(db);if(frame==null||!frame.optBoolean("active")||!frame.optString("workoutId").equals(timer.optString("workoutId"))
                     ||frame.optLong("generation")!=timer.optLong("generation"))return false;
+            JSONArray retired=frame.optJSONArray("retiredTimers188");
+            if(retired!=null)for(int r=0;r<retired.length();r++)if(retired.getString(r).equals(timer.optString("key")))return false;
             JSONObject ledger=timer.getJSONObject("ledger"),logs=frame.optJSONObject("timeLogs162");if(logs==null)logs=new JSONObject();
             String key=PhoneWorkoutRecording.id(timer,"key");JSONObject previous=logs.optJSONObject(key);
             if(previous!=null&&(ledger.getLong("positionMs")<previous.getLong("positionMs")||ledger.getLong("workMs")<previous.getLong("workMs")
@@ -152,6 +190,7 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
             JSONObject log=new JSONObject(ledger.toString()).put("key",key).put("phase",timer.optString("phase"))
                     .put("interrupted",timer.optBoolean("interrupted")).put("stopped",timer.optBoolean("stopped"));
             logs.put(key,log);frame.put("timeLogs162",logs).put("latestTimer162",timer);
+            JSONObject beforeUndo188=new JSONObject(frame.toString());
             JSONArray changes=new JSONArray(),rows=timer.getJSONArray("steps"),parts=ledger.getJSONArray("steps");
             if(timer.optBoolean("autoAdvance")&&!timer.optBoolean("restOnly"))for(int i=0;i<timer.optInt("completed");i++){
                 JSONObject row=rows.getJSONObject(i),part=parts.getJSONObject(i),set=findSet(frame,row);
@@ -172,6 +211,8 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
                 ContentValues row=new ContentValues();row.put("command_id","timer:"+key+":"+timer.getInt("completed"));
                 row.put("workout_id",frame.getString("workoutId"));row.put("generation",frame.getLong("generation"));row.put("fingerprint",event.toString());row.put("event",event.toString());
                 db.insertOrThrow("recordings",null,row);
+                JSONObject lastChange=changes.getJSONObject(changes.length()-1);
+                frame.put("lastRecord188",WorkoutUndo188.capture(beforeUndo188,frame,lastChange,"timer:"+key+":"+timer.getInt("completed")));
             }
             if(timer.optBoolean("autoAdvance")){
                 JSONObject step=rows.getJSONObject(timer.optInt("stepIndex"));JSONArray exercises=frame.getJSONArray("exercises");
@@ -211,6 +252,7 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
     synchronized void beginManualWork(String workoutId,long generation,long monotonic)throws JSONException{
         SQLiteDatabase db=getWritableDatabase();db.beginTransaction();
         try{JSONObject frame=current(db);if(frame!=null&&frame.optBoolean("active")&&workoutId.equals(frame.optString("workoutId"))&&generation==frame.optLong("generation")){
+            if(frame.optJSONObject("transition")!=null&&"paused".equals(frame.getJSONObject("transition").optString("state")))return;
             JSONObject timer=frame.optJSONObject("latestTimer162");
             if(timer!=null&&!timer.optBoolean("stopped")&&!timer.optBoolean("interrupted")&&!"complete".equals(timer.optString("phase")))return;
             anchorManual(frame,monotonic);save(db,frame);db.setTransactionSuccessful();
@@ -247,7 +289,9 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
                     if(base==null||!base.toString().equals(recordedBase(set).toString()))throw new IllegalStateException("amendmentConflict");
                 }
             }
-            for(String key:new String[]{"timeLogs162","latestTimer162"})if(old.has(key))incoming.put(key,old.get(key));
+            incoming.remove("lastRecord188");
+            if(old.has("undo188"))incoming.put("undo188",old.get("undo188"));
+            for(String key:new String[]{"timeLogs162","latestTimer162","retiredTimers188"})if(old.has(key))incoming.put(key,old.get(key));
             incoming.remove("manualAnchor162");
             JSONObject anchor=old.optJSONObject("manualAnchor162");
             if(anchor!=null&&old.optInt("currentExercise")==incoming.optInt("currentExercise")){
@@ -291,18 +335,25 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
             JSONObject next = new JSONObject(old.toString());
             try {
                 PhoneWorkoutRecording.validateFrame(next);
-                if (!"automaticControl".equals(command.optString("action")) || !"start".equals(command.optString("value")))
+                if (!"automaticControl".equals(command.optString("action")) || !("start".equals(command.optString("value"))||"resumeUndo".equals(command.optString("value"))))
                     throw new IllegalArgumentException("unsupportedAction");
                 if (!next.getString("workoutId").equals(PhoneWorkoutRecording.id(command, "workoutId"))
                         || next.getLong("generation") != PhoneWorkoutRecording.version(command, "generation")
                         || next.getLong("executionRevision") != PhoneWorkoutRecording.version(command, "executionRevision"))
                     throw new IllegalArgumentException("revisionConflict");
                 next.put("executionRevision", PhoneWorkoutRecording.advance(next.getLong("executionRevision")));
+                if("resumeUndo".equals(command.optString("value"))){
+                    if(!"paused".equals(next.optJSONObject("transition")==null?"":next.getJSONObject("transition").optString("state")))throw new IllegalArgumentException("notUndoPaused");
+                    next.put("transition",new JSONObject().put("state","ready").put("phase","ready").put("currentExercise",next.optInt("currentExercise")));
+                    JSONObject a=next.optJSONObject("automation");if(a!=null)a.put("paused",false);
+                    anchorManual(next,android.os.SystemClock.elapsedRealtime());
+                }else{
                 JSONObject transition=PhoneWorkoutPlans.startTimed(next),first=transition.getJSONObject("plan").getJSONArray("steps").getJSONObject(0);
                 if (!first.getString("exerciseId").equals(PhoneWorkoutRecording.id(command,"exerciseId"))
                         || !first.getString("setId").equals(PhoneWorkoutRecording.id(command,"setId")))
                     throw new IllegalArgumentException("targetChanged");
                 next.put("transition",transition);
+                }
             } catch (JSONException | IllegalArgumentException invalid) { return rejected("invalidTimelineStart"); }
             next.put("watchSequence", Math.max(next.optLong("watchSequence"), command.optLong("sequence")));
             JSONObject event = new JSONObject().put("status", "applied").put("kind", "startTimeline")

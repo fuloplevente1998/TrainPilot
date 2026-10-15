@@ -36,6 +36,19 @@ assert.equal(reconciled.draft.session.phoneExecution162.sequence,1);
 assert.equal(reconciled.draft.session.automaticTime162.restMs,5000,'newer live rest remains intact');
 assert.equal(liveTiming.session.exercises[0].sets[1].done,false,'merge still commits atomically');
 console.log('PASS native reconciliation: stable IDs, atomic draft/cursor, preserved annotations, stale generations, replay/conflict and interrupted clocks');
+{
+ const undoResult=result();undoResult.snapshot.executionRevision=3;undoResult.snapshot.undo188={commandId:'undo188',status:'applied'};
+ undoResult.snapshot.transition={state:'paused',phase:'paused',currentExercise:0};
+ undoResult.events.push({kind:'undoSet',sequence:2,commandId:'undo188',recordId:'record188',workoutId:'workout',generation:10,executionRevision:3,exerciseId:'press',setId:'a',before:{done:true,reps:'6',weight:5.5},values:{done:false,reps:'9',weight:7},transition:undoResult.snapshot.transition});
+ const withHealth=draft();withHealth.session.healthWear129={totalCalories:7,heartRate:93};withHealth.session.interval162={key:'old'};
+ const undone=merge(withHealth,undoResult).draft;
+ assert.equal(undone.session.exercises[0].sets[1].done,false);assert.equal(undone.session.exercises[0].sets[1].reps,'9');
+ assert.equal(undone.session.automatic162.phase,'paused');assert.equal(undone.session.interval162,undefined);
+ assert.equal(undone.session.phoneExecution162.sequence,2);assert.deepEqual(copy(undone.session.healthWear129),withHealth.session.healthWear129);
+ assert.equal(merge(undone,undoResult).draft.session.exercises[0].sets[1].done,false,'old completion cannot resurrect an undone set');
+ assert.equal(withHealth.session.exercises[0].sets[1].done,false,'inverse merge stays atomic');
+ console.log('PASS #188 native inverse import, cursor replay, paused timeline and measured health preservation');
+}
 function fixture(nativeResult=result()){
  const app=runtime(),calls=[];let state=copy(nativeResult),failedAck=false,failPrepare=false;
  const api={executionStatus:async()=>copy(state),acknowledgeExecution:async({sequence})=>{

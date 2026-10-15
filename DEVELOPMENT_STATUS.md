@@ -1,5 +1,18 @@
 # TrainPilot — fejlesztési állapot
 
+## P2 #188 — utolsó órás rögzítés visszavonása (2026. október 15.)
+
+**Fejlesztési ág:** `feat/188-safe-wear-undo`, alap: main `66dbc02` (#208). Verzió változatlan: **1.3.51 / 2732**. A hivatalos kiadást és a maint ez a fejlesztés nem módosítja.
+
+1. Követelmények és rögzítési utak feltárva: kézi, órás automata, telefonos natív automata.
+2. Egyetlen utolsó rögzítés stabil edzés-/gyakorlat-/sorozat-/eseményazonosítókkal, teljes szerkeszthető sorozatállapot ellenőrzésével. Újabb módosítás/rögzítés blokkolja a régi inverzt.
+3. 8 másodperces gyors Visszavonás, később edzésmenü; ugyanaz a kör alakú vezérlő és görgethető menü nagy betűméretnél is.
+4. Automata először szünetel; csak az érintett sorozat áll vissza, a pihenő lezárul, a célgyakorlat újra kijelölődik. Mért egészségadat és az időnapló megmarad. A korábbi natív időzítőből később érkező checkpoint nem élesztheti újra a sorozatot.
+5. Tartós outbox és nyugta: újraküldés idempotens; az offline órás folytatás későbbi parancsai a visszavonás eredményétől függnek. Telefonvezérlésnél a helyi visszavonás nyugtáig egyeztetés alatt áll. Ütközéskor nincs régi teljes draft-visszaállítás; a telefonos állapot biztonságos korrekciója vagy látható, szüneteltetett konfliktus következik.
+6. Célzott JS/Kotlin/natív tároló- és szolgáltatásregresszió, kerek kijelzős UI-esetek hozzáadva. Teljes ellenőrzés és aláírt teszt-APK-k **GitHub Actionsben**. A futások konkrét eredménye a kapcsolódó draft PR-on szerepel; fizikai óra/telefon elfogadás még szükséges.
+
+**Következő:** azonos commitra zöld kapuk → teszt-APK-pár → fizikai próba. Mainre olvasztás csak külön felhasználói jóváhagyással. A #193 önálló órás GPS/térkép továbbra is külön P2 feladat.
+
 ## 2026-10-15 – #206 GPS-aktivitás és kompakt mérés (1.3.51 /2732 release candidate)
 
 **Felhasználói döntés:** a [#206](https://github.com/fuloplevente1998/TrainPilot/issues/206) GPS-aktivitás automatikus teljesítése és az ugyanott jóváhagyott, képen kért **két egymás melletti GPS/Beltéri időmérés gomb**, tömör státusz és szükség esetén megjelenő beltéri stopper **egy közös telefon+Wear 1.3.51 /2732 kiadásjelöltbe** kerüljön. A kiinduló main `f64ad09` 1.3.5 /2731 mind az öt release/CI kapuja sikeres volt. A jelen fejlesztés külön `feat/206-distance-auto-complete-compact-1351` ág/PR, **mainre csak az aktuális commit új gate-je után**.

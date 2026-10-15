@@ -18,8 +18,8 @@ final class PhoneWorkoutExecution {
     }
     static boolean compatible(JSONObject command) {
         return command.optInt("nativeExecutionProtocol") == 2 && command.optLong("generation") > 0
-                && ("completeSet".equals(command.optString("action")) ||
-                    "automaticControl".equals(command.optString("action")) && "start".equals(command.optString("value")));
+                && ("completeSet".equals(command.optString("action")) || "undoSet".equals(command.optString("action")) ||
+                    "automaticControl".equals(command.optString("action")) && ("start".equals(command.optString("value"))||"resumeUndo".equals(command.optString("value"))));
     }
     static JSONObject execute(Context context, JSONObject command) throws Exception {
         if (!compatible(command)) return new JSONObject().put("status", "legacy");
@@ -35,6 +35,21 @@ final class PhoneWorkoutExecution {
         if (frame == null || !frame.optBoolean("active") || !frame.optBoolean("automaticEnabled") || db.commandsSuspended() || frame.optBoolean("workoutPaused"))
             return new JSONObject().put("status", "rejected").put("reason", "executionNotPrepared");
         if(db.restoreBlocked())return new JSONObject().put("status","rejected").put("reason","restoreInProgress");
+        String dependency=command.optString("undoDependency188");
+        if(!dependency.isEmpty()&&(frame.optJSONObject("undo188")==null||!dependency.equals(frame.getJSONObject("undo188").optString("commandId"))))return new JSONObject().put("status","rejected").put("reason","undoConflict");
+        if("undoSet".equals(command.optString("action"))){
+            if(!frame.getString("workoutId").equals(command.optString("workoutId"))||frame.getLong("generation")!=command.optLong("generation"))return new JSONObject().put("status","rejected").put("reason","undoConflict");
+            JSONObject running=IntervalTimerService.snapshot(context);
+            if(frame.getString("workoutId").equals(running.optString("workoutId"))&&!running.optBoolean("stopped")){
+                try{IntervalTimerService.pauseForUndo(context,running.optString("key"));}
+                catch(IllegalStateException inactive){if(running.optBoolean("running"))throw inactive;}
+            }
+            if(running.optBoolean("autoAdvance")&&!running.optBoolean("restOnly")&&running.optLong("stepElapsedMs")>0&&"work".equals(running.optString("phase"))){
+                JSONObject target=running.getJSONArray("steps").getJSONObject(running.optInt("stepIndex"));
+                if(!target.optString("setId").equals(command.optString("setId"))){publish(context);return new JSONObject().put("status","rejected").put("reason","undoConflict");}
+            }
+            JSONObject undone=db.undo(command);publish(context);return undone;
+        }
         if (!IntervalTimerService.armed(frame.getString("workoutId"), frame.getLong("generation")))
             return new JSONObject().put("status", "rejected").put("reason", "controllerNotArmed");
         JSONObject timer = IntervalTimerService.snapshot(context);
@@ -106,7 +121,8 @@ final class PhoneWorkoutExecution {
                         .put("vibration", false).put("interrupted", interrupted));
             }
         } else if (transition != null) value.put("automation", new JSONObject().put("enabled", true).put("owner", "phone")
-                .put("phase", transition.optString("phase", "ready")).put("remainingMs", 0).put("key", "").put("paused", false));
+                .put("phase", "paused".equals(transition.optString("phase"))?"ready":transition.optString("phase", "ready")).put("remainingMs", 0)
+                .put("key", "paused".equals(transition.optString("state"))?"undo188:"+frame.optJSONObject("undo188").optString("commandId"):"").put("paused", "paused".equals(transition.optString("state"))));
         if(frame.optBoolean("workoutPaused")){
             JSONObject a=value.optJSONObject("automation");if(a!=null)a.put("paused",true).put("deadlineAt",0);
             value.put("restEndAt",0);
