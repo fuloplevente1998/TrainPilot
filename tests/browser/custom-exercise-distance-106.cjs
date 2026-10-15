@@ -108,6 +108,8 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  await page.evaluate(async()=>{gpsUI.distanceMeters=1000;gpsUI.elapsedSeconds=300;gpsUI.hasFix=true;await tp106SyncGPS()});
  assert.equal(await page.locator('[data-tp106-distance]').inputValue(),'1');await page.locator('#tp106GpsButton').click();await page.waitForFunction(()=>!tp106GpsState.active&&!tp106GpsBusy);
  assert.equal(await page.locator('[data-tp106-distance]').isDisabled(),false);assert.equal(await page.evaluate(()=>state.session.exercises[0].sets[0].reps),'300');
+ assert.equal(await page.evaluate(()=>state.session.exercises[0].sets[0].done),true,'user GPS STOP completes the measured leg');
+ await page.evaluate(()=>{const e=state.session.exercises[0];e.sets.push({set:e.sets.length+1,setId:crypto.randomUUID(),reps:'0',weight:0,done:false});persistDraft();renderWorkout();});
  await page.locator('#tp106GpsButton').click();await page.waitForFunction(()=>tp106GpsState.active&&!tp106GpsBusy);await page.locator('.tp163-live-dialog .tp163-close').click();await page.locator('#tp150QuickAdd button').click();await quick.locator('summary').click();await quick.locator('.tp150-quick-start').click();await page.waitForSelector('#tp106GpsButton');assert.equal(await page.evaluate(()=>gpsUI.active),false,'reconfiguring an existing Quick exercise stops native GPS before replacing its sets');assert.equal(await page.evaluate(()=>db.get('gpsTrip106',null)),null);
  // Exercise-time steps use a narrow, read-only bridge and update only their own card.
  await page.evaluate(()=>{

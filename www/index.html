@@ -2136,12 +2136,12 @@
     return trip;
   }
   function liveButton(){
-    var panel=document.getElementById('tp106GPS');
+    var panel=document.getElementById('tp107Indoor')||document.getElementById('tp106GPS');
     if(!panel)return;
-    var button=panel.querySelector('#tp163LiveMapButton'),trip=currentLiveTrip();
+    var button=document.getElementById('tp163LiveMapButton'),trip=currentLiveTrip();
     var visible=!!trip&&tp106GpsOwner(trip)?.e===state.session?.exercises?.[state.current];
     if(!visible){button?.remove();return;}
-    if(button)return;
+    if(button){if(button.parentElement!==panel)panel.appendChild(button);return;}
     button=append('button',panel,'btn secondary block tp163-live-reopen',t('viewLive'));
     button.id='tp163LiveMapButton';button.type='button';
     button.addEventListener('click',function(){openLiveRoute();});

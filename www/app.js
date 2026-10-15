@@ -15141,6 +15141,8 @@ renderWorkout=function(){
  if(gpsButton)panel.querySelector('.tp206-gps-slot').appendChild(gpsButton);
  if(gpsStatus)panel.querySelector('.tp206-gps-status').replaceWith(gpsStatus);
  gps.classList.add('tp206-source-anchor');
+ const liveButton=gps.querySelector('#tp163LiveMapButton');
+ if(liveButton)panel.appendChild(liveButton);
  if(window.TrainPilot110)panel.insertAdjacentHTML('beforeend',window.TrainPilot110.intervalHtml());const owner=tp107IndoorOwner();if(owner?.timer.running&&!tp107IndoorInterval)tp107IndoorInterval=setInterval(tp107PaintIndoor,250);tp107PaintIndoor();return result;
 };
 
