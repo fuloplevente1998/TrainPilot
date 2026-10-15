@@ -14797,7 +14797,7 @@ var tp106ApplyGPS=function(result){
 };
 var tp106PaintGPS=function(){
  const status=document.getElementById('tp106GpsStatus');if(status){status.textContent=tp106GpsBusy?tp106T('busy'):tp106GpsState.active?(tp106GpsState.hasFix?tp106T('tracking'):tp106T('signal')):tp106T('stopped');}
- const button=document.getElementById('tp106GpsButton');if(button){button.disabled=tp106GpsBusy;button.textContent=tp106T(tp106GpsState.active?'stop':'start');}
+ const button=document.getElementById('tp106GpsButton');if(button){button.disabled=tp106GpsBusy;button.textContent=tp106GpsState.active?({hu:'Mérés befejezése',en:'Finish GPS',de:'GPS beenden',ro:'Oprește GPS'}[rf212Lang()]||tp106T('stop')):tp106T('gps');}
  const trip=db.get('gpsTrip106',null),owner=tp106GpsOwner(trip);
  document.querySelectorAll('[data-tp106-distance]').forEach(function(input){const index=Number(input.dataset.tp106Distance),set=state.session?.exercises?.[state.current]?.sets?.[index],locked=tp106GpsState.active&&owner?.set===set;input.disabled=locked;if(set&&document.activeElement!==input)input.value=Object.hasOwn(set,'distanceMeters')?String(Math.round(set.distanceMeters)/1000):'';});
  document.querySelectorAll('.tp153-set-row').forEach(function(row,si){const set=state.session?.exercises?.[state.current]?.sets?.[si],time=row.querySelector('input[oninput*="reps"]');if(time){time.disabled=!!(tp106GpsState.active&&owner?.set===set);if(set&&document.activeElement!==time)time.value=set.reps;}});
@@ -14825,7 +14825,28 @@ var tp106StopGPS=async function(){
  if(tp106GpsBusy){alert(tp106T('busy'));return false;}if(!tp106GpsState.active&&!db.get('gpsTrip106',null))return true;
  tp106GpsBusy=true;tp106PaintGPS();try{tp106ApplyGPS(await tp106DistanceBridge().stop());if(tp106GpsTimer){clearInterval(tp106GpsTimer);tp106GpsTimer=null;}return true;}catch(error){alert(error?.message||String(error));return false;}finally{tp106GpsBusy=false;tp106PaintGPS();}
 };
-var tp106ToggleGPS=async function(){if(tp106GpsState.active){await tp106StopGPS();if(state.session)renderWorkout();}else await tp106StartGPS();};
+// #206: only an explicit, successful user STOP may complete an owned GPS distance leg.
+var tp206CompleteStoppedGps=function(trip,owner,status){
+ if(!trip||!owner||!status||status.active!==false||status.key!==trip.key)return false;
+ const session=state.session,e=session?.exercises?.[trip.exerciseIndex],set=e?.sets?.find(function(v){return v.setId===trip.setId;});
+ if(!session||session!==owner.session||session.started!==trip.started||e!==owner.e||set!==owner.set||!tp106IsDistance(e))return false;
+ if(set.done)return false; // idempotent: late native frames or repeated STOP never add records.
+ const meters=Number(status.distanceMeters),seconds=Number(status.elapsedSeconds);
+ if(!Number.isFinite(meters)||!Number.isFinite(seconds)||meters<=0||seconds<=0||set.distanceSource!=='gps'||!(Number(set.distanceMeters)>0)||!(Number(set.reps)>0))return false;
+ set.done=true;
+ persistDraft();
+ return true;
+};
+var tp106ToggleGPS=async function(){
+ if(tp106GpsState.active){
+  const trip=db.get('gpsTrip106',null),owner=tp106GpsOwner(trip);
+  const success=await tp106StopGPS();
+  if(success)tp206CompleteStoppedGps(trip,owner,tp106GpsState);
+  if(state.session)renderWorkout();
+  return success;
+ }
+ return tp106StartGPS();
+};
 var tp106WorkoutDistance=function(ei,si,value,input){
  const set=state.session?.exercises?.[ei]?.sets?.[si];if(!set||tp106GpsState.active&&tp106GpsOwner(db.get('gpsTrip106',null))?.set===set)return;
  try{tp106SetDistance(set,value);input?.setCustomValidity?.('');persistDraft();}catch(error){input?.setCustomValidity?.(error.message);}
@@ -15063,7 +15084,9 @@ var tp107PaintIndoor=function(){
  const owner=tp107IndoorOwner(),current=state.session?.exercises?.[state.current],panel=document.getElementById('tp107Indoor'),timer=owner?.timer;
  window.TrainPilot110?.tickInterval(owner);
  if(owner&&timer.running){const sec=tp107IndoorSeconds(timer);if(String(sec)!==owner.set.reps)tp107PersistIndoor(owner);}
- if(panel){const same=owner?.e===current;panel.querySelector('[data-tp107-clock]').textContent=rf110FormatStopwatch(same?tp107IndoorSeconds(timer):Number(current?.sets?.find(function(s){return !s.done;})?.reps)||0);panel.querySelector('[data-tp107-clock-toggle]').textContent=tp107T(same&&timer.running?'pause':same&&tp107IndoorSeconds(timer)>0?'resume':'start');panel.querySelector('[data-tp107-clock-status]').textContent=same?tp107T(timer.running?'timerRunning':'timerPaused'):'';}
+ if(panel){const same=owner?.e===current;panel.querySelector('[data-tp107-clock]').textContent=rf110FormatStopwatch(same?tp107IndoorSeconds(timer):Number(current?.sets?.find(function(s){return !s.done;})?.reps)||0);panel.querySelector('[data-tp107-clock-toggle]').textContent=(same&&timer.running?tp107T('pause'):same&&tp107IndoorSeconds(timer)>0?tp107T('resume'):tp107T('indoor'));
+ panel.classList.toggle('tp206-timer-visible',!!(same&&(timer.running||tp107IndoorSeconds(timer)>0)));
+ panel.classList.toggle('tp206-gps-active',!!tp106GpsState.active);panel.querySelector('[data-tp107-clock-status]').textContent=same?tp107T(timer.running?'timerRunning':'timerPaused'):'';}
  if(panel)document.querySelectorAll('.tp153-set-row').forEach(function(row,i){const set=current?.sets?.[i],input=row.querySelector('input[oninput*="reps"]');if(input&&set){input.disabled=!!(timer?.running&&owner.set===set)||!!(tp106GpsState.active&&tp106GpsOwner(db.get('gpsTrip106',null))?.set===set);if(owner?.set===set&&document.activeElement!==input)input.value=set.reps;}});
  window.TrainPilot110?.paintInterval();
  if(!timer?.running&&tp107IndoorInterval){clearInterval(tp107IndoorInterval);tp107IndoorInterval=null;}
@@ -15107,8 +15130,15 @@ prevExercise=function(){tp107StopIndoor(true);return tp107PrevExerciseBase.apply
 const tp107WorkoutBase=renderWorkout;
 renderWorkout=function(){
  const result=tp107WorkoutBase.apply(this,arguments),gps=document.getElementById('tp106GPS');if(!gps)return result;
- const panel=document.createElement('section');panel.id='tp107Indoor';panel.className='card tp107-indoor';panel.innerHTML='<strong>'+esc(tp107T('indoor'))+'</strong><p class="small muted">'+esc(tp107T('timerNote'))+'</p><strong class="tp107-clock" data-tp107-clock>00:00</strong><div class="tp107-save-row"><button type="button" class="btn" data-tp107-clock-toggle onclick="tp107ToggleIndoor()">'+esc(tp107T('start'))+'</button><button type="button" class="btn secondary" onclick="tp107ResetIndoor()">'+esc(tp107T('reset'))+'</button></div><p class="small muted" data-tp107-clock-status role="status"></p>';
- gps.before(panel);if(window.TrainPilot110)panel.insertAdjacentHTML('beforeend',window.TrainPilot110.intervalHtml());const owner=tp107IndoorOwner();if(owner?.timer.running&&!tp107IndoorInterval)tp107IndoorInterval=setInterval(tp107PaintIndoor,250);tp107PaintIndoor();return result;
+ const panel=document.createElement('section');panel.id='tp107Indoor';panel.className='card tp107-indoor';panel.classList.add('tp206-activity');
+ panel.innerHTML='<div class="tp206-actions"><div class="tp206-gps-slot"></div><button type="button" class="btn secondary tp206-indoor-start" data-tp107-clock-toggle onclick="tp107ToggleIndoor()">'+esc(tp107T('indoor'))+'</button></div><div class="tp206-readout"><strong class="tp107-clock" data-tp107-clock>00:00</strong><span class="small muted" data-tp107-clock-status role="status"></span><button type="button" class="btn secondary tp206-indoor-reset" onclick="tp107ResetIndoor()" aria-label="'+esc(tp107T('reset'))+'" title="'+esc(tp107T('reset'))+'">↺</button></div><p class="small tp206-gps-status" aria-live="polite"></p>';
+
+ gps.before(panel);
+ const gpsButton=gps.querySelector('#tp106GpsButton'),gpsStatus=gps.querySelector('#tp106GpsStatus');
+ if(gpsButton)panel.querySelector('.tp206-gps-slot').appendChild(gpsButton);
+ if(gpsStatus)panel.querySelector('.tp206-gps-status').replaceWith(gpsStatus);
+ gps.classList.add('tp206-source-anchor');
+ if(window.TrainPilot110)panel.insertAdjacentHTML('beforeend',window.TrainPilot110.intervalHtml());const owner=tp107IndoorOwner();if(owner?.timer.running&&!tp107IndoorInterval)tp107IndoorInterval=setInterval(tp107PaintIndoor,250);tp107PaintIndoor();return result;
 };
 
 var tp107FitFrame=0,tp107FitNav=null,tp107ObservedNav=null,tp107FitNavObserver=null;
