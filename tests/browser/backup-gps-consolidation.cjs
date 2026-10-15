@@ -48,6 +48,7 @@ const server=http.createServer((req,res)=>{
     state.current=0;state.tab='plan';state.session={started:new Date().toISOString(),workout:'quick',type:'quick',quickWorkout:true,exercises:[{...byId('running'),sets:[{set:1,weight:0,reps:'',done:false},{set:2,weight:0,reps:'',done:false}]}]};renderWorkout();
    },theme);
    await page.locator('#tp106GpsButton').click();await page.waitForFunction(()=>tp106GpsState.active&&!tp106GpsBusy);
+   await page.locator('.tp163-live-dialog .tp163-close').click(); // New modal is UI-only; keep the legacy set-management test interactive.
    await page.evaluate(async()=>{window.__gps.distanceMeters=100;window.__gps.elapsedSeconds=30;await tp106SyncGPS();});
    await page.locator('.tp-active-set-remove').first().click();
    await page.waitForFunction(()=>state.session.exercises[0].sets.length===1&&!tp106GpsBusy);

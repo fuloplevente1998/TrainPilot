@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-15",
+  "version": "1.3.4",
+  "versionCode": 2730,
+  "appId": "com.repforge.app",
+  "certificateSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+  "wear": {
+    "file": "TrainPilot-wear-1.3.4-35b4108.apk",
+    "sourceCommit": "35b41086b6b08854a4b65c0d2e1dad5d6e5e7bec",
+    "runId": 38708278336,
+    "artifactId": 11959502334,
+    "sha256": "361ab1d1eab271ddf3d92758dbca6fd4ef21b790bdef9b89887fd0cc7aaa1b7c",
+    "artifactZipSha256": "c684ebd75718a6ee9ae3cd26dc22aca6eeb338eb3ad413f2c79937c3d571fd4c",
+    "uiAndPlatformRunId": 38708278649,
+    "uiAndPlatformStatus": "success",
+    "instrumentedTests": 102,
+    "uiAndPlatformArtifactId": 11960082278
+  },
+  "phone": {
+    "sourceCommit": "0d1ecf1c66034081f197f1eb2bf82f5152553d23",
+    "unchanged": true,
+    "runId": 38677624128,
+    "artifactId": 11947191366,
+    "sha256": "10ac3af79f5e84253bd518c3e30b412edbb50aa68b7709dda52085470f94604b"
+  },
+  "verification": {
+    "artifactDigestAndFileHashesVerified": true,
+    "sourceStampVerified": true,
+    "newSystemLocationMessageAndActionInDex": true,
+    "releaseSignaturesVerified": true,
+    "wearNativeGate": "success",
+    "quickRunId": 38708285723,
+    "quickStatus": "success",
+    "performanceRunId": 38708285810,
+    "performanceStatus": "success",
+    "allBuildsAndFullTestsOnGitHub": true
+  },
+  "physicalDeviceAcceptance": "pending: user confirmed watch-wide location was off and is enabling it before retrying",
+  "originalReleaseApkAssetsReplaced": false,
+  "pullRequest": 205,
+  "pullRequestDraft": true,
+  "issue": 163,
+  "issueOpen": true
+}

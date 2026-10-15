@@ -370,5 +370,13 @@
   {
     "file": "tests/browser/health-source-provenance-158.cjs",
     "estimatedSeconds": 8
+  },
+  {
+    "file": "tests/browser/gps-route-map-163.cjs",
+    "estimatedSeconds": 7
+  },
+  {
+    "file": "tests/browser/gps-live-map-163.cjs",
+    "estimatedSeconds": 8
   }
 ]

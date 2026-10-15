@@ -1,6 +1,72 @@
 package com.repforge.app.wear
 
 import org.json.JSONObject
+import androidx.health.services.client.data.DataType
+import androidx.health.services.client.data.ExerciseType
+
+internal const val WEAR_LOCATION_PERMISSION_MESSAGE =
+    "A mérési szolgáltatás pontos helyengedélyt kér. Engedélyezés: Aktuális edzés mérése."
+internal const val WEAR_LOCATION_SERVICES_MESSAGE =
+    "Az óra helyszolgáltatása ki van kapcsolva. Kapcsold be a Helyadatok beállításnál, majd próbáld újra."
+
+/** A device can require location for Health Services even with GNSS disabled. */
+internal data class WearRecordingAccess(val gpsRequested: Boolean, val providerRequiresLocation: Boolean,
+                                        val fineLocationGranted: Boolean, val systemLocationEnabled: Boolean) {
+    val needsFineLocation: Boolean get() = gpsRequested || providerRequiresLocation
+    val locationPermissionBlocked: Boolean get() = needsFineLocation && !fineLocationGranted
+    val locationServicesBlocked: Boolean get() = needsFineLocation && !systemLocationEnabled
+    val locationBlocked: Boolean get() = locationPermissionBlocked || locationServicesBlocked
+    val locationAvailable: Boolean get() = fineLocationGranted && systemLocationEnabled
+    val gpsEnabled: Boolean get() = gpsRequested && locationAvailable
+    // Granted while-in-use location must remain available to Health Services in
+    // the foreground service, including non-GNSS movement metrics.
+    val foregroundLocation: Boolean get() = locationAvailable
+}
+
+internal fun wearHasLocationFailure(data: JSONObject): Boolean =
+    data.optBoolean("locationPermissionRequired") || data.optBoolean("locationServicesRequired") ||
+        WearHealthFutures.isMissingLocationError(data.optString("message"))
+
+/** A provider's Missing permissions error can also mean the watch-wide switch is off. */
+internal fun wearApplyLocationFailure(data: JSONObject, access: WearRecordingAccess, providerMessage: String) {
+    data.put("state","error").put("partial",true)
+        .put("locationPermissionRequired",!access.fineLocationGranted)
+        .put("locationServicesRequired",!access.systemLocationEnabled)
+        .put("message",when {
+            !access.fineLocationGranted -> WEAR_LOCATION_PERMISSION_MESSAGE
+            !access.systemLocationEnabled -> WEAR_LOCATION_SERVICES_MESSAGE
+            else -> providerMessage // Do not claim a granted permission is missing.
+        })
+}
+
+internal fun wearRecordingRetryLabel(data: JSONObject?): String =
+    if(data?.optBoolean("locationServicesRequired")==true) "Helyadatok bekapcsolása" else "Aktuális edzés mérése"
+
+internal fun wearRetryRecording(previous: JSONObject): JSONObject? {
+    if(previous.optString("state") !in listOf("ended","error"))return null
+    return JSONObject(previous.toString()).apply {
+        put("state","starting").put("partial",true)
+        remove("message");remove("stopRequested");remove("locationPermissionRequired");remove("locationServicesRequired")
+    }
+}
+
+/** Some watch providers require location for outdoor profiles even with GNSS off.
+ * Keep the independent sensor recording usable without claiming a GPS distance. */
+internal fun wearRecordingType(wanted: ExerciseType, supported: Set<ExerciseType>, location: Boolean): ExerciseType? {
+    val outdoor=wanted in setOf(ExerciseType.RUNNING,ExerciseType.WALKING,ExerciseType.BIKING)
+    val candidates=if(outdoor&&!location)listOf(ExerciseType.WORKOUT,ExerciseType.STRENGTH_TRAINING)
+        else listOf(wanted,ExerciseType.WORKOUT)
+    return candidates.firstOrNull { it in supported }
+}
+
+internal fun wearRecordingMetrics(supported: Set<DataType<*,*>>, heart: Boolean, activity: Boolean,
+                                  location: Boolean): Set<DataType<*,*>> =
+    setOf(DataType.HEART_RATE_BPM,DataType.CALORIES_TOTAL,DataType.STEPS_TOTAL,DataType.DISTANCE_TOTAL,DataType.SPEED)
+        .filter { it in supported && when(it) {
+            DataType.HEART_RATE_BPM -> heart
+            DataType.DISTANCE_TOTAL,DataType.SPEED -> activity&&location
+            else -> activity
+        } }.toSet()
 
 /** Persist the request separately from the device's fallback ExerciseType. */
 internal data class WearRecordingRequest(val exerciseType: String, val gps: Boolean) {
@@ -152,6 +218,10 @@ internal fun wearRecordingStatus(data: JSONObject?, enabled: Boolean, hasWorkout
     "paused" -> "Az órás mérés szünetel"
     "ending" -> "Mérés lezárása…"
     "ended" -> "Mérés befejezve"
-    "error" -> "A mérés megszakadt"
+    "error" -> when {
+        data.optBoolean("locationServicesRequired") -> "Helyszolgáltatás kikapcsolva"
+        data.optBoolean("locationPermissionRequired") -> "Pontos helyengedély szükséges"
+        else -> "A mérés megszakadt"
+    }
     else -> if (!enabled) "Mérés kikapcsolva" else if(hasWorkout) "Az aktuális edzés mérése még nem indult" else "Mérés a következő edzésnél"
 }

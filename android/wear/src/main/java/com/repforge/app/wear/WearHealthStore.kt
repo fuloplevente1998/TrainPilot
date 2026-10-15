@@ -36,6 +36,16 @@ object WearHealthStore {
     @Synchronized fun enable(context: Context, enabled: Boolean) { context.getSharedPreferences(PREFS,0).edit().putBoolean("enabled",enabled).commit() }
     @Synchronized fun gps(context: Context) = context.getSharedPreferences(PREFS,0).getBoolean("gps",false)
     @Synchronized fun gps(context: Context, enabled: Boolean) { context.getSharedPreferences(PREFS,0).edit().putBoolean("gps",enabled).commit() }
+    @Synchronized fun providerRequiresLocation(context: Context) = context.getSharedPreferences(PREFS,0).getBoolean("providerRequiresLocation",false)
+    @Synchronized fun requireProviderLocation(context: Context) { context.getSharedPreferences(PREFS,0).edit().putBoolean("providerRequiresLocation",true).commit() }
+    @Synchronized internal fun blockForLocation(context: Context, id: String, access: WearRecordingAccess) {
+        val value=begin(context,id)
+        if(value.optString("state")=="error" && value.optBoolean("locationPermissionRequired")==!access.fineLocationGranted &&
+            value.optBoolean("locationServicesRequired")==!access.systemLocationEnabled && wearHasLocationFailure(value))return
+        wearApplyLocationFailure(value,access,WEAR_LOCATION_PERMISSION_MESSAGE)
+        save(context,value);publish(context,value)
+        WearLiveHealth.publish(context,id,"permissionRequired",value.optString("message"),value)
+    }
     @Synchronized fun load(context: Context, id: String): JSONObject? = context.getSharedPreferences(PREFS,0).getString("summary:$id",null)?.let { try { JSONObject(it) } catch (_: Exception) { null } }
     @Synchronized fun latest(context: Context): JSONObject? =
         context.getSharedPreferences(PREFS,0).getStringSet("ids",emptySet()).orEmpty()
@@ -57,9 +67,7 @@ object WearHealthStore {
     }
     @Synchronized fun retry(context: Context, id: String) {
         val value=load(context,id) ?: return
-        if(value.optString("state") in listOf("ended","error")) {
-            value.put("state","starting").put("partial",true).remove("message");value.remove("stopRequested");save(context,value)
-        }
+        wearRetryRecording(value)?.let { save(context,it) }
     }
     @Synchronized fun active(context: Context): String = context.getSharedPreferences(PREFS,0).getString("active","") ?: ""
     @Synchronized fun publish(context: Context, summary: JSONObject) {

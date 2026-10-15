@@ -23,8 +23,8 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         minSdkVersion 30
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2730
-        versionName "1.3.4"
+        versionCode 2731
+        versionName "1.3.5"
     }
 
     signingConfigs {

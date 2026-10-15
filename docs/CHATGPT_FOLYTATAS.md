@@ -1,4 +1,32 @@
-## Legfrissebb folyamatban lévő javítás — 2026-10-14, #201
+## Legfrissebb Wear-visszajelzés — kikapcsolt központi helyszolgáltatás
+
+A `3eb33ff` utáni videón az új helyengedélyüzenet és eredménytelen explicit újrapróbálás látszik. A felhasználó ezután megerősítette: **az óra központi helyszolgáltatása ki volt kapcsolva**, bekapcsolja és újrapróbálja. A TrainPilot pontos, „használat közben” engedélye ettől függetlenül már megvolt. A tényleges siker még visszajelzésre vár; a korábbi foreground-javítást nem tekintjük a készülékes hiba teljes megoldásának.
+
+A javítás külön olvassa az appengedélyt és a `LocationManager.isLocationEnabled` állapotot az Activityben és a service-ben. Kikapcsolt rendszerhely esetén külön szöveg és **Helyadatok bekapcsolása** gomb nyitja a rendszer helybeállítását; visszatéréskor csak bekapcsolt hely mellett próbál újra, megőrzött összesítéssel és külön órás GPS-szándékkal. A helytípusú foreground és a helyhez kötött metrikák csak ténylegesen elérhető helyhozzáféréssel indulnak. Ha mindkét ellenőrzés rendben van, az eredeti szolgáltatói hiba marad meg, nem állítjuk újra, hogy nincs appengedély.
+
+Új JUnit regresszió, kerek Compose-ellenőrzés és **valódi platformengedély + ki-/bekapcsolt rendszerhely** instrumentált teszt is sikeres a GitHub CI-ben. Aláírt Wear APK elkészült; telefonos `0d1ecf1` forrás változatlan, **1.3.4 /2730**, #205 draft / #163 nyitott. A [Google mintaprojekt azonos Samsung-hibája](https://github.com/android/health-samples/issues/212) és a [hivatalos ExerciseClient-leírás](https://developer.android.com/health-and-fitness/health-services/active-data) is elkülöníti a rendszerhelyet az appengedélytől. Az aktuális CI/APK/hash az issue/PR tetején ellenőrizendő.
+
+**Ellenőrzött alkalmazásforrás: `35b41086b6b08854a4b65c0d2e1dad5d6e5e7bec`.** [Wear gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38708278336) sikeres; [kerek UI és platformhely](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38708278649) **102/102 sikeres**. [Aláírt APK](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38708278336/artifacts/11959502334), SHA-256: `361ab1d1eab271ddf3d92758dbca6fd4ef21b790bdef9b89887fd0cc7aaa1b7c`. Forrás/fájlhash, verzió, eredeti tanúsítvány és a DEX új üzenete/gombja ellenőrizve. A [buildbizonylat](builds/2026-10-15-wear-system-location.json) tartósan rögzíti az átadást. A későbbi dokumentációs commit nem módosít alkalmazáskódot. Fizikai siker továbbra is visszajelzésre vár.
+
+## Korábbi készülékes hiba — az engedély megvan, a Wear mérés mégis leáll
+
+A felhasználó megerősítette a `0d1ecf1` Wear telepítését és az újrapróbálás utáni hibát. Új fotón `Missing permissions: ACCESS_FINE_LOCATION`, majd a rendszerbeállításban **Pontos helyadatok bekapcsolva / Az app használata közben** látszik. Nem tekintjük a mérést elfogadottnak, és nem állítjuk, hogy a felhasználó nem adott engedélyt.
+
+Feltárt kódhiba: a `WearHealthService` a `location` foreground típust csak a GPS-kapcsoló mellett kérte, miközben Health Services a már engedélyezett helyhez kötött mozgásadatokat GPS nélkül is kérhette. Javítás: a service `location` típusa a meglévő pontos helyengedélyhez igazodik; az `ExerciseConfig.isGpsEnabled` külön, a felhasználó GPS-szándékát őrzi. A konkrét helyengedélyhiba megjegyzése után az explicit újrapróbálás tud helyengedélyt kérni; elutasításkor nincs hibás indítás vagy kitalált adat. A hiba oka a mérési oldal elejére kerül, az összesítések megmaradnak. Új JUnit és 160/192/225 dp + nagy betűs Compose-regresszió szükséges GitHubon.
+
+Ez **Wear-javítás**; a telefonos `0d1ecf1` APK/map forrása változatlan. Új aláírt órás APK és fizikai próba szükséges; a verzió továbbra is **1.3.4 /2730**, #205 draft / #163 nyitott. Az aktuális CI/APK/hash az issue/PR tetején ellenőrizendő. Az alábbi korábbi helyengedély-magyarázatot ez pontosítja.
+
+## Előző visszajelzés — #163 térkép és órás helyengedély
+
+A felhasználó a `97cce85` térképét kezdetnek elfogadta, piros X bezárást kért, és az órán `Missing permissions: ACCESS_FINE_LOCATION` hibát mutatott. A #205 draft folytatása: akadálymentes piros X; azonosítható Capacitor User-Agent mellett opt-in OSM-háttér, copyright-link és HTTP-cache, hibánál megmaradó SVG. Órán helyengedély nélkül általános szenzormérés, GPS-táv/sebesség nélkül; az órás GPS külön engedélyt kér. A régi konkrét helyengedélyhibás indítás újrapróbálható a megőrzött összesítésekkel. Az új forrás friss GitHub CI-je és aláírt **telefonos + Wear tesztpárja** szükséges; helyi teljes teszt/build nincs. **1.3.4 /2730**, main/release változatlan. Aktuális eredmény és hash az #163/#205 oldalán; az alábbi korábbi provider-korlátok az új forráson már módosultak.
+
+## Előző folytatás — 2026-10-15, #163 GPS 8/8
+
+A #199 már mainen van; az aktív munka **#163 / #205 draft PR**, `feat/163-phone-gps-route-model`. A `3af303b` [release gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38673756408) a GPS-visszaállítási Chromium-teszten elbukott, így APK nem készült. A mostani javítás megvárja az aszinkron `restoreText` sikerét, és a zárolást megszerző belépés helyett csak a tényleges visszaállításnál takarít egyszer; elutasítás, hibás JSON és tárhelyhiba megőrzi a route-okat. A teszt valódi jóváhagyó párbeszédet és rollbacket ellenőriz. Az új commit GitHub-gate-jét ellenőrizni kell, korábbi zöld forrás nem elég.
+
+**Felhasználói munkamód:** amit lehet, GitHubon végezzünk; teljes teszt és aláírt build Actionsön, helyben csak célzott javítás/gyors ellenőrzés. Nincs verzióemelés: **1.3.4 /2730**. Következő: friss CI és aláírt telefonos teszt-APK, majd a #163 8/8 fizikai GPS-mátrixa. Online térképcsempe-provider még nincs konfigurálva Androidon; az offline helyi route működésétől külön termékdöntés szükséges. Main/release csak az új funkció külön elfogadásával. Az alábbi #201/#199 állapotok történetiek.
+
+## Korábbi folyamatban lévő javítás — 2026-10-14, #201
 
 Munkaforrás: `feat/191-wear-save-sync-status`, draft PR #199. A #191 mentés/szinkron és #200 pihenőkihagyás javításai után a felhasználó jelentette: **kifejezett telefonos edzéselhagyás / félbehagyás** nem szünetelteti az órát. Nem képernyőlezárásról van szó. Ezt javítjuk a [#201 leírás](wear/P1_201_EDZESSZUNET.md) szerint. A GitHub build igazolt eredménye és az új párosított APK forrása a buildjegyzékbe kerül befejezés után. A korábban átadott c503887 pár még nem tartalmazza #201-et.
 

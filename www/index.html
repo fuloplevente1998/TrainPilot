@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="hu" class="tp-booting"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0e1015"><title>TrainPilot</title><link rel="manifest" href="manifest.json"><link rel="preload" href="trainpilot-inter.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="health-dashboard-168.css"><link rel="stylesheet" href="global-uiux-177.css"><link rel="stylesheet" href="progress-177.css"><link rel="stylesheet" href="issue67-polish.css"><link rel="stylesheet" href="training-107.css"><link rel="stylesheet" href="page-frame-109.css"><link rel="stylesheet" href="features-110.css"><link rel="stylesheet" href="ble-discovery-111.css"><link rel="stylesheet" href="health-journal-120.css"><link rel="stylesheet" href="typography-137.css"><style>html,body{margin:0;min-height:100%;background:#0e1015}html.tp-booting #app{visibility:hidden}#tpBoot{position:fixed;inset:0;display:grid;place-items:center;background:#0e1015;color:#f6f8fb;font:600 16px/1.5 system-ui,sans-serif;z-index:999999}#tpBoot{overflow:hidden}#tpBoot svg{width:288px;height:288px;max-width:90vw;max-height:70vh;transform:scale(.55);transform-origin:center;animation:tp-boot-grow 30000ms linear both;will-change:transform}@keyframes tp-boot-grow{0%{transform:scale(0.550000)}0.333333%{transform:scale(0.656522)}0.666667%{transform:scale(0.754167)}1.33333%{transform:scale(0.926923)}2.66667%{transform:scale(1.203333)}5%{transform:scale(1.543243)}8.33333%{transform:scale(1.853191)}13.3333%{transform:scale(2.130645)}26.6667%{transform:scale(2.471569)}50%{transform:scale(2.686628)}100%{transform:scale(2.832609)}}#tpBoot.tp-boot-failed{box-sizing:border-box;padding:24px;align-content:center;gap:18px;text-align:center}#tpBoot.tp-boot-failed button{min-height:48px;padding:12px 20px;border:0;border-radius:14px;background:#f3c545;color:#16191f;font:700 16px system-ui,sans-serif}@media(prefers-reduced-motion:reduce){#tpBoot svg{animation:none;transform:scale(.55)}}</style><script>window.TrainPilotStartupAssetError=function(){if(window.TrainPilotBoot)return window.TrainPilotBoot.fail();const overlay=document.getElementById('tpBoot');if(overlay){overlay.classList.add('tp-boot-failed');overlay.setAttribute('role','alert');overlay.textContent='Az alkalmazás betöltése nem sikerült. ';const retry=document.createElement('button');retry.type='button';retry.textContent='Újrapróbálás';retry.onclick=()=>window.location.reload();overlay.appendChild(retry);}try{const c=window.Capacitor;if(c?.isNativePlatform?.()===true){const p=c.Plugins?.AppFeedback||c.registerPlugin?.('AppFeedback');Promise.resolve(p?.startupReady?.({failed:true})).catch(()=>{});}}catch(_){}};</script></head><body><div id="tpBoot" aria-label="Betöltés"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 144" width="288" height="288" aria-hidden="true"><defs><linearGradient id="tpBootGold" x1="54" y1="33" x2="54" y2="75" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF1A0"/><stop offset=".48" stop-color="#F3C545"/><stop offset="1" stop-color="#DEA12A"/></linearGradient><linearGradient id="tpBootCard" x1="18" y1="18" x2="90" y2="90" gradientUnits="userSpaceOnUse"><stop stop-color="#24282C"/><stop offset="1" stop-color="#090B10"/></linearGradient></defs><g transform="translate(18 18)"><g class="tp-boot-emblem"><path d="M34,18 H74 Q90,18 90,34 V74 Q90,90 74,90 H34 Q18,90 18,74 V34 Q18,18 34,18 Z" fill="url(#tpBootCard)" stroke="#D6AF57" stroke-width=".8"/><g class="tp-boot-left"><path d="M27,41 H29 Q32,41 32,44 V64 Q32,67 29,67 H27 Q24,67 24,64 V44 Q24,41 27,41 Z M39,33 H42 Q46,33 46,37 V71 Q46,75 42,75 H39 Q35,75 35,71 V37 Q35,33 39,33 Z" fill="url(#tpBootGold)" stroke="#E8BF58" stroke-width=".5"/></g><g class="tp-boot-shaft"><path d="M47,50 H61 Q62,50 62,51 V57 Q62,58 61,58 H47 Q46,58 46,57 V51 Q46,50 47,50 Z" fill="url(#tpBootGold)" stroke="#E8BF58" stroke-width=".5"/></g><g class="tp-boot-right"><path d="M66,33 H69 Q73,33 73,37 V71 Q73,75 69,75 H66 Q62,75 62,71 V37 Q62,33 66,33 Z M79,41 H81 Q84,41 84,44 V64 Q84,67 81,67 H79 Q76,67 76,64 V44 Q76,41 79,41 Z" fill="url(#tpBootGold)" stroke="#E8BF58" stroke-width=".5"/></g></g></g></svg></div><div id="app"></div>
+<html lang="hu" class="tp-booting"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0e1015"><title>TrainPilot</title><link rel="manifest" href="manifest.json"><link rel="preload" href="trainpilot-inter.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="health-dashboard-168.css"><link rel="stylesheet" href="global-uiux-177.css"><link rel="stylesheet" href="progress-177.css"><link rel="stylesheet" href="issue67-polish.css"><link rel="stylesheet" href="training-107.css"><link rel="stylesheet" href="page-frame-109.css"><link rel="stylesheet" href="features-110.css"><link rel="stylesheet" href="ble-discovery-111.css"><link rel="stylesheet" href="health-journal-120.css"><link rel="stylesheet" href="typography-137.css"><style>html,body{margin:0;min-height:100%;background:#0e1015}html.tp-booting #app{visibility:hidden}#tpBoot{position:fixed;inset:0;display:grid;place-items:center;background:#0e1015;color:#f6f8fb;font:600 16px/1.5 system-ui,sans-serif;z-index:999999}#tpBoot{overflow:hidden}#tpBoot svg{width:288px;height:288px;max-width:90vw;max-height:70vh;transform:scale(.55);transform-origin:center;animation:tp-boot-grow 30000ms linear both;will-change:transform}@keyframes tp-boot-grow{0%{transform:scale(0.550000)}0.333333%{transform:scale(0.656522)}0.666667%{transform:scale(0.754167)}1.33333%{transform:scale(0.926923)}2.66667%{transform:scale(1.203333)}5%{transform:scale(1.543243)}8.33333%{transform:scale(1.853191)}13.3333%{transform:scale(2.130645)}26.6667%{transform:scale(2.471569)}50%{transform:scale(2.686628)}100%{transform:scale(2.832609)}}#tpBoot.tp-boot-failed{box-sizing:border-box;padding:24px;align-content:center;gap:18px;text-align:center}#tpBoot.tp-boot-failed button{min-height:48px;padding:12px 20px;border:0;border-radius:14px;background:#f3c545;color:#16191f;font:700 16px system-ui,sans-serif}@media(prefers-reduced-motion:reduce){#tpBoot svg{animation:none;transform:scale(.55)}}</style><script>window.TrainPilotStartupAssetError=function(){if(window.TrainPilotBoot)return window.TrainPilotBoot.fail();const overlay=document.getElementById('tpBoot');if(overlay){overlay.classList.add('tp-boot-failed');overlay.setAttribute('role','alert');overlay.textContent='Az alkalmazás betöltése nem sikerült. ';const retry=document.createElement('button');retry.type='button';retry.textContent='Újrapróbálás';retry.onclick=()=>window.location.reload();overlay.appendChild(retry);}try{const c=window.Capacitor;if(c?.isNativePlatform?.()===true){const p=c.Plugins?.AppFeedback||c.registerPlugin?.('AppFeedback');Promise.resolve(p?.startupReady?.({failed:true})).catch(()=>{});}}catch(_){}};</script><link rel="stylesheet" href="gps-route-map-163.css"></head><body><div id="tpBoot" aria-label="Betöltés"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 144" width="288" height="288" aria-hidden="true"><defs><linearGradient id="tpBootGold" x1="54" y1="33" x2="54" y2="75" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF1A0"/><stop offset=".48" stop-color="#F3C545"/><stop offset="1" stop-color="#DEA12A"/></linearGradient><linearGradient id="tpBootCard" x1="18" y1="18" x2="90" y2="90" gradientUnits="userSpaceOnUse"><stop stop-color="#24282C"/><stop offset="1" stop-color="#090B10"/></linearGradient></defs><g transform="translate(18 18)"><g class="tp-boot-emblem"><path d="M34,18 H74 Q90,18 90,34 V74 Q90,90 74,90 H34 Q18,90 18,74 V34 Q18,18 34,18 Z" fill="url(#tpBootCard)" stroke="#D6AF57" stroke-width=".8"/><g class="tp-boot-left"><path d="M27,41 H29 Q32,41 32,44 V64 Q32,67 29,67 H27 Q24,67 24,64 V44 Q24,41 27,41 Z M39,33 H42 Q46,33 46,37 V71 Q46,75 42,75 H39 Q35,75 35,71 V37 Q35,33 39,33 Z" fill="url(#tpBootGold)" stroke="#E8BF58" stroke-width=".5"/></g><g class="tp-boot-shaft"><path d="M47,50 H61 Q62,50 62,51 V57 Q62,58 61,58 H47 Q46,58 46,57 V51 Q46,50 47,50 Z" fill="url(#tpBootGold)" stroke="#E8BF58" stroke-width=".5"/></g><g class="tp-boot-right"><path d="M66,33 H69 Q73,33 73,37 V71 Q73,75 69,75 H66 Q62,75 62,71 V37 Q62,33 66,33 Z M79,41 H81 Q84,41 84,44 V64 Q84,67 81,67 H79 Q76,67 76,64 V44 Q76,41 79,41 Z" fill="url(#tpBootGold)" stroke="#E8BF58" stroke-width=".5"/></g></g></g></svg></div><div id="app"></div>
 <script defer src="app.js"></script><script>document.querySelector('script[src="app.js"]')?.addEventListener('error',window.TrainPilotStartupAssetError);</script>
 <script>window.addEventListener("DOMContentLoaded",function(){
 /* Phase 5 #44 — shared, local-day-bound Today summary on Home and Health. */
@@ -1021,7 +1021,9 @@
   const tools='<div class="tp3-history-aux"><button class="btn secondary block" type="button" onclick="event.stopPropagation();calendarIntent('+originalIndex+')">'+esc(calendarText)+'</button><button class="btn danger block tp155-history-delete" type="button" onclick="event.stopPropagation();tp3DeleteHistoryWorkout(\''+esc(key)+'\')">'+esc(tx().deleteWorkout)+'</button></div>';
   const health='<div class="rf-history-health-panel" data-rf-history-health-panel="'+originalIndex+'"><button type="button" class="rf-history-health-toggle" aria-expanded="true" onclick="event.stopPropagation();TrainPilotWearJournalSource.toggleKey('+esc(JSON.stringify(rfHistoryHealthScope(x).workoutId))+')"><div class="tp3-health-toggle-copy"><strong>'+esc(healthText)+'</strong><span class="small muted"> • '+esc(rfHistoryHealthWindow(x))+'</span></div><span class="rf-history-health-chevron" aria-hidden="true">›</span></button><div class="rf-history-health-body"><div class="rf-history-health" data-rf-history-health="'+originalIndex+'">'+rfHistoryHealthHtml(originalIndex)+'</div><button type="button" class="btn secondary block rf-history-health-refresh" onclick="event.stopPropagation();TrainPilotWearJournalSource.refresh('+esc(JSON.stringify(rfHistoryHealthScope(x).workoutId))+')">'+esc(refreshText)+'</button></div></div>';
   const feedback=window.TrainPilotWorkoutFeedback?.historyButton(x,originalIndex)||'';
-  return tp3WorkoutSummaryHtml(x,key)+feedback+tools+health+rf130PhotoSection(x,key);
+  const routeAction=window.TrainPilotGpsMap163?.references?.(x)?.length
+   ?'<div class="tp163-route-entry"><button class="btn secondary block tp163-route-button" type="button" onclick="event.stopPropagation();TrainPilotGpsMap163.openRoute('+esc(JSON.stringify(key))+')">↗ '+esc(window.TrainPilotGpsMap163.text('open'))+'</button></div>':'';
+  return tp3WorkoutSummaryHtml(x,key)+routeAction+feedback+tools+health+rf130PhotoSection(x,key);
  };
  window.tp3EnsureHistoryBody=function(el,originalIndex,key){
   const body=el?.querySelector?.(':scope > .tp3-combined-history-body');if(!body||body.dataset.tp3Hydrated==='true')return body;
@@ -1151,6 +1153,7 @@
    if(workoutId&&!closed.some(v=>v.workoutId===workoutId))db.set('wearClosedWorkouts',[...closed,{workoutId,status:'discarded',receivedAt:Date.now()}].slice(-128));
    tp3MarkHistoryDeleted(removed);
    live.splice(index,1);db.set('history',live);
+   void window.TrainPilotGpsMap163?.eraseRoutesForWorkout?.(removed);
    if(removed.scheduleId&&!live.some(v=>v.scheduleId===removed.scheduleId)){
     const s=scheduled(),si=s.findIndex(v=>v.id===removed.scheduleId);
     if(si>=0&&s[si].status==='completed'){s[si]={...s[si],status:'planned',updatedAt:Date.now()};db.set('scheduled',s)}
@@ -2005,4 +2008,462 @@
  if((tp128FreshInstall||settings().onboarding128==='pending')&&!trainingProfile()&&!['complete','skipped'].includes(settings().onboarding128))tp128Welcome();else decorate();
 })();
 });</script>
+<script>
+/* #163 Step 5: on-demand, device-local journal route rendering.
+ * No third-party map code or location request runs until the user opens a saved route.
+ * On unreliable/offline networks, an offline SVG shows the same stored points. */
+(function () {
+  'use strict';
+  var KEY=/^[A-Za-z0-9:._|+\-]{1,200}$/;
+  var MAP_ID='tp163-route-overlay';
+  var labels={
+    hu:{open:'GPS-útvonal megtekintése',title:'Edzésútvonal',close:'Bezárás',loading:'Mentett útvonal betöltése…',none:'Ehhez az edzéshez még nincs mentett GPS-útvonal.',offline:'Offline útvonalnézet – térképháttér nélkül',partial:'Az útvonal részleges. Egyes GPS-pontok hiányozhatnak.',failed:'Az útvonal jelenleg nem olvasható.',km:'Távolság',points:'GPS-pont',signal:'Utolsó pontosság',map:'Térkép',start:'Rajt',finish:'Cél',live:'Élő GPS-térkép',viewLive:'Élő térkép',waiting:'GPS-jelet keresünk – az útvonal az első pontos mérés után jelenik meg.',liveEnded:'A GPS-mérés véget ért.',seconds:'Idő',average:'Átl. sebesség',online:'Online térkép betöltése',notice:'Az online térképháttér külső szolgáltatónak felfedheti a megtekintett földrajzi területet és az IP-címedet.',unavailable:'Online térképcsempék ezen a készüléken még nincsenek beállítva.'},
+    en:{open:'View GPS route',title:'Workout route',close:'Close',loading:'Loading saved route…',none:'No saved GPS route for this workout yet.',offline:'Offline route view – no map tiles',partial:'Partial route. Some GPS fixes might be missing.',failed:'The route cannot be read right now.',km:'Distance',points:'GPS fixes',signal:'Last accuracy',map:'Map',start:'Start',finish:'Finish',live:'Live GPS map',viewLive:'Live map',waiting:'Waiting for GPS – the route will appear after the first accurate fix.',liveEnded:'GPS recording has ended.',seconds:'Time',average:'Average speed',online:'Load online map',notice:'Online map tiles can reveal the viewed area and your IP address to an external provider.',unavailable:'Online map tiles are not configured for this device yet.'},
+    de:{open:'GPS-Route anzeigen',title:'Trainingsroute',close:'Schließen',loading:'Gespeicherte Route laden…',none:'Keine gespeicherte GPS-Route vorhanden.',offline:'Offline-Route – ohne Kartenkacheln',partial:'Unvollständige Route.',failed:'Route derzeit nicht verfügbar.',km:'Distanz',points:'GPS-Punkte',signal:'Letzte Genauigkeit',map:'Karte',start:'Start',finish:'Ziel',live:'Live-GPS-Karte',viewLive:'Live-Karte',waiting:'GPS-Signal wird gesucht – die Route erscheint nach der ersten gültigen Position.',liveEnded:'GPS-Messung beendet.',seconds:'Zeit',average:'Ø Geschwindigkeit',online:'Onlinekarte laden',notice:'Online-Kartenkacheln können den betrachteten Bereich und deine IP-Adresse an externe Anbieter übermitteln.',unavailable:'Online-Kartenkacheln sind auf diesem Gerät noch nicht eingerichtet.'},
+    ro:{open:'Vezi traseul GPS',title:'Traseul antrenamentului',close:'Închide',loading:'Se încarcă traseul…',none:'Nu există un traseu GPS salvat.',offline:'Traseu offline – fără harta de fundal',partial:'Traseu parțial.',failed:'Traseul nu poate fi citit.',km:'Distanță',points:'Puncte GPS',signal:'Ultima precizie',map:'Hartă',start:'Start',finish:'Sosire',live:'Hartă GPS live',viewLive:'Hartă live',waiting:'Se caută semnal GPS – traseul apare după primul punct valid.',liveEnded:'Înregistrarea GPS s-a încheiat.',seconds:'Timp',average:'Viteză medie',online:'Încarcă harta online',notice:'Plăcile hărții online pot divulga zona vizualizată și adresa IP către un furnizor extern.',unavailable:'Hărțile online nu sunt încă configurate pe acest dispozitiv.'}
+  };
+  labels.hu.onlineReady='Online térkép · OpenStreetMap';labels.hu.onlineFailed='A térképháttér nem tölthető be. A mentett útvonal továbbra is látható.';
+  labels.en.onlineReady='Online map · OpenStreetMap';labels.en.onlineFailed='The map background could not load. Your saved route is still visible.';
+  labels.de.onlineReady='Onlinekarte · OpenStreetMap';labels.de.onlineFailed='Die Hintergrundkarte konnte nicht geladen werden. Deine gespeicherte Route bleibt sichtbar.';
+  labels.ro.onlineReady='Hartă online · OpenStreetMap';labels.ro.onlineFailed='Harta de fundal nu s-a încărcat. Traseul salvat rămâne vizibil.';
+  var t=function(k){var language=typeof rf212Lang==='function'?rf212Lang():'hu';return (labels[language]||labels.hu)[k]||labels.hu[k]||k;};
+  function bridge(){return window.Capacitor?.Plugins?.DistanceTracker||window.Capacitor?.registerPlugin?.('DistanceTracker');}
+  function references(workout){
+    var rows=[],seen=new Set();
+    for(var exercise of workout?.exercises||[])for(var set of exercise?.sets||[]){
+      var key=set?.gpsRouteKey163;
+      if(typeof key==='string'&&KEY.test(key)&&!seen.has(key)){
+        rows.push({key:key,exercise:exercise.id||'',setId:set.setId||''});seen.add(key);
+      }
+    }
+    return rows.slice(0,32);
+  }
+  function append(tag,parent,classname,txt){
+    var node=document.createElement(tag);
+    if(classname)node.className=classname;
+    if(txt!=null)node.textContent=String(txt);
+    if(parent)parent.appendChild(node);
+    return node;
+  }
+  function coordinates(result){
+    var sections=[],count=0,partial=!!result?.partial,accuracy=null;
+    for(var raw of result?.segments||[]){
+      if(sections.length>=256||count>=20000){partial=true;break;}
+      if(!Array.isArray(raw.points))continue;
+      var pts=[];
+      for(var p of raw.points){
+        if(count>=20000){partial=true;break;}
+        var lat=Number(p.latitude),lon=Number(p.longitude),acc=Number(p.accuracyMeters);
+        if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>85||Math.abs(lon)>180)continue;
+        pts.push([lat,lon]);accuracy=Number.isFinite(acc)&&acc>=0?acc:accuracy;
+        count++;
+      }
+      if(pts.length)sections.push(pts);
+    }
+    return {sections:sections,count:count,partial:partial,accuracy:accuracy};
+  }
+  function mercator(lat){var a=Math.min(85,Math.max(-85,lat))*Math.PI/180;return Math.log(Math.tan(Math.PI/4+a/2));}
+  function drawOffline(host,sections){
+    var NS='http://www.w3.org/2000/svg',svg=document.createElementNS(NS,'svg');
+    svg.setAttribute('viewBox','0 0 400 460');
+    svg.setAttribute('class','tp163-route-svg');
+    svg.setAttribute('role','img');svg.setAttribute('aria-label',t('offline'));
+    var points=sections.flat().map(function(p){return [p[1]*Math.PI/180,-mercator(p[0])];});
+    if(!points.length){append('p',host,'tp163-empty',t('none'));return;}
+    var xs=points.map(function(p){return p[0];}),ys=points.map(function(p){return p[1];});
+    var minX=Math.min.apply(null,xs),maxX=Math.max.apply(null,xs),minY=Math.min.apply(null,ys),maxY=Math.max.apply(null,ys);
+    var width=Math.max(maxX-minX,0.00001),height=Math.max(maxY-minY,0.00001);
+    var scale=Math.min(352/width,410/height),cx=(minX+maxX)/2,cy=(minY+maxY)/2;
+    var xy=function(p){return [200+(p[1]*Math.PI/180-cx)*scale,230+(-mercator(p[0])-cy)*scale];};
+    sections.forEach(function(section){
+      var path=document.createElementNS(NS,'path');
+      path.setAttribute('d',section.map(function(p,i){var v=xy(p);return (i?'L':'M')+v[0].toFixed(2)+' '+v[1].toFixed(2);}).join(' '));
+      path.setAttribute('class','tp163-route-line');svg.appendChild(path);
+    });
+    [sections[0][0],sections[sections.length-1].slice(-1)[0]].forEach(function(p,i){
+      var marker=document.createElementNS(NS,'circle'),v=xy(p);
+      marker.setAttribute('cx',v[0]);marker.setAttribute('cy',v[1]);marker.setAttribute('r',i?7:6);
+      marker.setAttribute('class',i?'tp163-route-finish':'tp163-route-start');
+      svg.appendChild(marker);
+    });
+    host.appendChild(svg);
+  }
+  // Capacitor appends our stable app/contact identity; keep generic native clients
+  // disabled. WebView HTTP caching follows OSM's response headers (LOAD_DEFAULT).
+  function tileProvider(){
+    var configured=window.TrainPilotGps163TileProvider;
+    if(configured){
+      var url=String(configured.url||'');
+      if(configured.enabled!==true||!/^https:\/\/[^\s/]+\//.test(url)
+         ||!url.includes('{z}')||!url.includes('{x}')||!url.includes('{y}')
+         ||!String(configured.attribution||'').trim())return null;
+      return {url:url,attribution:String(configured.attribution),maxZoom:Math.min(19,Math.max(1,Number(configured.maxZoom)||18))};
+    }
+    if(window.Capacitor?.isNativePlatform?.()&&
+       (!/TrainPilot\/[\d.]+/.test(navigator.userAgent)||
+        !navigator.userAgent.includes('https://github.com/fuloplevente1998/TrainPilot')))return null;
+    return {url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>',maxZoom:18};
+  }
+  var leafletPromise=null;
+  function getLeaflet(){
+    if(window.L?.map)return Promise.resolve(window.L);
+    if(leafletPromise)return leafletPromise;
+    leafletPromise=new Promise(function(resolve,reject){
+      var link=document.createElement('link');link.rel='stylesheet';
+      link.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      link.integrity='sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';link.crossOrigin='anonymous';
+      document.head.appendChild(link);
+      var script=document.createElement('script');script.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.integrity='sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';script.crossOrigin='anonymous';
+      script.referrerPolicy='no-referrer';
+      var settled=false;
+      var timer=setTimeout(function(){finish(false);},4800);
+      function finish(ok){
+        if(settled)return;settled=true;clearTimeout(timer);
+        if(ok&&window.L?.map)resolve(window.L);else reject(new Error('Leaflet unavailable'));
+      }
+      script.onload=function(){finish(true);};script.onerror=function(){finish(false);};
+      document.head.appendChild(script);
+    }).catch(function(error){leafletPromise=null;throw error;});
+    return leafletPromise;
+  }
+  var activeMap=null,pendingMapCancel=null,previousFocus=null,oldOverflow='';
+  var liveState=null,liveTimer=null,liveNonce=0,liveMapLayers=[];
+  function currentLiveTrip(){
+    var trip=typeof db!=='undefined'?db.get('gpsTrip106',null):null;
+    if(!trip||!KEY.test(trip.key)||!tp106GpsState?.active||!tp106GpsOwner(trip))return null;
+    return trip;
+  }
+  function liveButton(){
+    var panel=document.getElementById('tp106GPS');
+    if(!panel)return;
+    var button=panel.querySelector('#tp163LiveMapButton'),trip=currentLiveTrip();
+    var visible=!!trip&&tp106GpsOwner(trip)?.e===state.session?.exercises?.[state.current];
+    if(!visible){button?.remove();return;}
+    if(button)return;
+    button=append('button',panel,'btn secondary block tp163-live-reopen',t('viewLive'));
+    button.id='tp163LiveMapButton';button.type='button';
+    button.addEventListener('click',function(){openLiveRoute();});
+  }
+  function liveMapUpdate(sections){
+    if(!activeMap||!liveState||!window.L?.polyline)return;
+    for(var layer of liveMapLayers)try{activeMap.removeLayer(layer);}catch(_){}
+    liveMapLayers=[];
+    var all=[];
+    sections.forEach(function(section){
+      liveMapLayers.push(L.polyline(section,{color:'#3be68a',weight:5,opacity:.96}).addTo(activeMap));
+      all.push.apply(all,section);
+    });
+    if(all.length){
+      liveMapLayers.push(L.circleMarker(all[0],{radius:7,color:'#e7faff',fillColor:'#30dff2',fillOpacity:1}).addTo(activeMap));
+      liveMapLayers.push(L.circleMarker(all[all.length-1],{radius:7,color:'#ffe4b5',fillColor:'#ffb93d',fillOpacity:1}).addTo(activeMap));
+      if(!activeMap.getBounds().contains(all[all.length-1]))activeMap.panTo(all[all.length-1],{animate:false});
+    }
+  }
+  function liveDuration(seconds){
+    var v=Math.max(0,Math.round(Number(seconds)||0));
+    return [Math.floor(v/3600),Math.floor(v/60)%60,v%60].map(function(n){return String(n).padStart(2,'0');}).join(':');
+  }
+  async function updateLiveRoute(){
+    var stateNow=liveState;
+    if(!stateNow||stateNow.busy)return;
+    var trip=currentLiveTrip();
+    if(!trip||trip.key!==stateNow.key){closeRoute();return;}
+    var plugin=bridge();
+    if(!plugin?.status||!plugin?.route){stateNow.hint.textContent=t('failed');return;}
+    stateNow.busy=true;
+    try{
+      var status=await plugin.status();
+      if(liveState!==stateNow)return;
+      if(!status?.active||status.key!==stateNow.key){closeRoute();return;}
+      var reply=await plugin.route({key:stateNow.key});
+      if(liveState!==stateNow)return;
+      var parsed=coordinates(reply),meters=Math.max(0,Number(status.distanceMeters)||0),seconds=Math.max(0,Number(status.elapsedSeconds)||0);
+      stateNow.km.textContent=(meters/1000).toLocaleString('hu-HU',{maximumFractionDigits:2})+' km';
+      stateNow.time.textContent=liveDuration(seconds);
+      stateNow.speed.textContent=(seconds>0?meters*3.6/seconds:0).toLocaleString('hu-HU',{maximumFractionDigits:1})+' km/h';
+      if(parsed.count!==stateNow.pointCount||parsed.partial!==stateNow.partial){
+        stateNow.pointCount=parsed.count;stateNow.partial=parsed.partial;
+        if(activeMap){liveMapUpdate(parsed.sections);}
+        else{
+          stateNow.map.replaceChildren();
+          if(parsed.count)drawOffline(stateNow.map,parsed.sections);
+          else append('p',stateNow.map,'tp163-empty tp163-live-wait',t('waiting'));
+        }
+      }
+      if(!parsed.count)stateNow.hint.textContent=t('waiting');
+      else stateNow.hint.textContent=parsed.partial?t('partial'):t('offline')+' · '+parsed.count+' '+t('points');
+      if(activeMap&&parsed.count)stateNow.hint.textContent=t('onlineReady')+' · '+parsed.count+' '+t('points');
+      stateNow.sections=parsed.sections;
+      // The route has no background tile/Leaflet requests until explicit online consent.
+      if(parsed.count&&navigator.onLine&&!stateNow.consent){
+        stateNow.consent=true;
+        var provider=tileProvider();
+        if(provider){
+          append('p',stateNow.modal,'tp163-map-consent',t('notice'));
+          var online=append('button',stateNow.modal,'btn secondary tp163-online-button',t('online'));
+          online.type='button';
+          online.addEventListener('click',async function(){
+            if(online.disabled)return;
+            online.disabled=true;
+            var ok=await renderLeaflet(stateNow.map,stateNow.sections,provider);
+            if(liveState!==stateNow)return;
+            if(ok){stateNow.hint.textContent=t('onlineReady');liveMapUpdate(stateNow.sections);}
+            online.disabled=ok;
+            if(!ok)stateNow.hint.textContent=t('onlineFailed');
+          });
+        }else append('p',stateNow.modal,'tp163-map-consent',t('unavailable'));
+      }
+    }catch(_){if(liveState===stateNow)stateNow.hint.textContent=t('failed');}
+    finally{stateNow.busy=false;}
+  }
+  function openLiveRoute(requestedTrip){
+    var trip=currentLiveTrip();
+    if(!trip||requestedTrip?.key&&requestedTrip.key!==trip.key)return false;
+    closeRoute();
+    previousFocus=document.activeElement;oldOverflow=document.body.style.overflow;
+    var veil=append('div',document.body,'tp163-route-veil');veil.id=MAP_ID;
+    veil.setAttribute('role','presentation');
+    var modal=append('section',veil,'tp163-route-dialog tp163-live-dialog');
+    modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label',t('live'));
+    var head=append('header',modal,'tp163-route-head');append('h2',head,null,t('live'));
+    var close=append('button',head,'tp163-close','×');close.type='button';close.onclick=closeRoute;
+    close.setAttribute('aria-label',t('close'));close.title=t('close');
+    var metrics=append('div',modal,'tp163-route-metrics');
+    function metric(name){var el=append('div',metrics,'tp163-metric');append('span',el,null,t(name));return append('strong',el,null,'–');}
+    var km=metric('km'),time=metric('seconds'),speed=metric('average');
+    var hint=append('p',modal,'tp163-route-hint',t('waiting'));
+    var map=append('div',modal,'tp163-map-area');map.setAttribute('aria-label',t('map'));
+    append('p',map,'tp163-empty tp163-live-wait',t('waiting'));
+    veil.addEventListener('click',function(event){if(event.target===veil)closeRoute();});
+    document.addEventListener('keydown',escapeHandler,true);
+    document.body.style.overflow='hidden';close.focus();
+    liveState={key:trip.key,modal,map,hint,km,time,speed,pointCount:-1,partial:false,sections:[],consent:false,busy:false,nonce:++liveNonce};
+    void updateLiveRoute();
+    liveTimer=setInterval(function(){
+      if(document.visibilityState==='hidden')return; // Native recording continues with no UI wakeups.
+      void updateLiveRoute();
+    },5000);
+    return true;
+  }
+  function closeRoute(){
+    liveState=null;liveNonce++;
+    if(liveTimer!==null){clearInterval(liveTimer);liveTimer=null;}
+    liveMapLayers=[];
+    if(pendingMapCancel){pendingMapCancel();pendingMapCancel=null;}
+    if(activeMap){activeMap.remove();activeMap=null;}
+    var node=document.getElementById(MAP_ID);
+    if(node)node.remove();
+    document.body.style.overflow=oldOverflow;
+    document.removeEventListener('keydown',escapeHandler,true);
+    if(previousFocus?.isConnected)previousFocus.focus({preventScroll:true});
+  }
+  function escapeHandler(event){if(event.key==='Escape'){event.preventDefault();closeRoute();}}
+  function textMetric(parent,label,value){
+    var box=append('div',parent,'tp163-metric');append('span',box,null,label);append('strong',box,null,value);
+  }
+  function renderLeaflet(host,segments,provider){
+    if(!navigator.onLine||!segments.length||!provider)return Promise.resolve(false);
+    return getLeaflet().then(function(L){
+      if(!host.isConnected||document.getElementById(MAP_ID)==null)return false;
+      return new Promise(function(resolve){
+      var pane=append('div',host,'tp163-leaflet');pane.style.visibility='hidden';
+      var map=L.map(pane,{attributionControl:true,scrollWheelZoom:false,preferCanvas:true,zoomControl:true,
+        zoomAnimation:false,fadeAnimation:false,markerZoomAnimation:false});
+      activeMap=map;
+      var settled=false,timer;
+      function finish(ok){
+        if(settled)return;settled=true;clearTimeout(timer);pendingMapCancel=null;
+        if(ok){host.querySelector('.tp163-route-svg')?.remove();pane.style.visibility='';}
+        else{map.remove();pane.remove();if(activeMap===map)activeMap=null;}
+        resolve(ok);
+      }
+      pendingMapCancel=function(){finish(false);};
+      timer=setTimeout(function(){finish(false);},7000);
+      var tiles=L.tileLayer(provider.url,{
+        attribution:provider.attribution,maxZoom:provider.maxZoom,
+        minZoom:1,updateWhenIdle:true,keepBuffer:1
+      });
+      tiles.on('tileload',function(){finish(true);});
+      // Leaflet still uses its layer/map after emitting load. Dispose only once
+      // that event has returned, including the all-tiles-failed path.
+      tiles.on('load',function(){if(!settled)Promise.resolve().then(function(){finish(false);});});
+      tiles.addTo(map);
+      var coords=[];
+      var liveLayers=[];
+      segments.forEach(function(section){
+        var path=L.polyline(section,{color:'#3be68a',weight:5,opacity:.96,lineJoin:'round'}).addTo(map);
+        if(liveState&&host===liveState.map)liveLayers.push(path);
+        coords.push.apply(coords,section);
+      });
+      if(!coords.length){finish(false);return;}
+      L.circleMarker(coords[0],{radius:7,color:'#e7faff',fillColor:'#30dff2',fillOpacity:1,weight:2}).bindTooltip(t('start')).addTo(map);
+      L.circleMarker(coords[coords.length-1],{radius:7,color:'#ffe4b5',fillColor:'#ffb93d',fillOpacity:1,weight:2}).bindTooltip(t('finish')).addTo(map);
+      if(liveState&&host===liveState.map)liveMapLayers=liveLayers;
+      var bounds=L.latLngBounds(coords);
+      if(bounds.isValid())map.fitBounds(bounds.pad(.14),{maxZoom:16,animate:false});
+      requestAnimationFrame(function(){if(pane.isConnected)map.invalidateSize();});
+      });
+    }).catch(function(){return false;/* The rendered offline route remains available. */});
+  }
+  async function openRoute(workoutKey){
+    var workout=history().find(function(w){return rf142WorkoutKey(w)===workoutKey;});
+    var refs=references(workout);
+    if(!refs.length)return;
+    closeRoute();
+    previousFocus=document.activeElement;
+    oldOverflow=document.body.style.overflow;
+    var veil=append('div',document.body,'tp163-route-veil');
+    veil.id=MAP_ID;veil.setAttribute('role','presentation');
+    var modal=append('section',veil,'tp163-route-dialog');
+    modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label',t('title'));
+    var head=append('header',modal,'tp163-route-head');
+    append('h2',head,null,t('title'));
+    var close=append('button',head,'tp163-close','×');close.type='button';close.onclick=closeRoute;
+    close.setAttribute('aria-label',t('close'));close.title=t('close');
+    var metrics=append('div',modal,'tp163-route-metrics');
+    var hint=append('p',modal,'tp163-route-hint',t('loading'));
+    var mapHost=append('div',modal,'tp163-map-area');
+    mapHost.setAttribute('aria-label',t('map'));
+    veil.addEventListener('click',function(event){if(event.target===veil)closeRoute();});
+    document.addEventListener('keydown',escapeHandler,true);
+    document.body.style.overflow='hidden';close.focus();
+    var plugin=bridge();
+    if(!plugin?.route){hint.textContent=t('failed');return;}
+    try{
+      var replies=[];
+      for(var ref of refs)replies.push(await plugin.route({key:ref.key}));
+      if(!mapHost.isConnected)return;
+      var sections=[],pointCount=0,partial=false,accuracy=null;
+      for(var reply of replies){
+        var valid=coordinates(reply);
+        pointCount+=valid.count;partial=partial||valid.partial;
+        if(valid.accuracy!==null)accuracy=valid.accuracy;
+        sections.push.apply(sections,valid.sections);
+      }
+      hint.textContent=partial?t('partial'):t('offline');
+      var meters=(workout.exercises||[]).reduce(function(sum,e){
+        return sum+(e.sets||[]).reduce(function(acc,set){
+          return acc+(set.gpsRouteKey163&&Number.isFinite(Number(set.distanceMeters))?Number(set.distanceMeters):0);
+        },0);
+      },0);
+      textMetric(metrics,t('km'),(meters/1000).toLocaleString('hu-HU',{maximumFractionDigits:2})+' km');
+      textMetric(metrics,t('points'),String(pointCount));
+      if(accuracy!==null)textMetric(metrics,t('signal'),'± '+Math.round(accuracy)+' m');
+      drawOffline(mapHost,sections);
+      // Offline view is the default even when connected. No provider sees an
+      // exercise location without a second explicit, informed action.
+      if(pointCount&&navigator.onLine){
+        var provider=tileProvider();
+        if(provider){
+          var notice=append('p',modal,'tp163-map-consent',t('notice'));
+          var button=append('button',modal,'btn secondary tp163-online-button',t('online'));
+          button.type='button';
+          button.addEventListener('click',async function(){
+            if(button.disabled)return;
+            button.disabled=true;
+            var ok=await renderLeaflet(mapHost,sections,provider);
+            if(!mapHost.isConnected)return;
+            hint.textContent=(partial?t('partial')+' ':'')+t(ok?'onlineReady':'onlineFailed');
+            button.disabled=ok;
+          });
+        }else{
+          append('p',modal,'tp163-map-consent',t('unavailable'));
+        }
+      }
+    }catch(_){if(mapHost.isConnected)hint.textContent=t('failed');}
+  }
+  function allRouteKeys(workouts){
+    var unique=new Set();
+    for(var workout of workouts||[])for(var exercise of workout?.exercises||[])
+      for(var set of exercise?.sets||[]) {
+        var key=set?.gpsRouteKey163;
+        if(typeof key==='string'&&KEY.test(key))unique.add(key);
+      }
+    return Array.from(unique);
+  }
+  async function eraseKeys(keys){
+    if(!keys.length)return;
+    var plugin=bridge(),failed=0;
+    if(!plugin?.deleteRoute)failed=keys.length;
+    else for(var key of keys){
+      try{var result=await plugin.deleteRoute({key:key});if(!result?.deleted)failed++;}
+      catch(_){failed++;}
+    }
+    if(failed&&typeof alert==='function'){
+      var language=typeof rf212Lang==='function'?rf212Lang():'hu';
+      alert(language==='hu'
+        ?'Egyes GPS-útvonalak helyi törlése nem sikerült. Ellenőrizd a telefon tárhelyét és a mentett útvonalakat.'
+        :'Some local GPS routes could not be deleted. Check the device storage and saved routes.');
+    }
+  }
+  async function eraseRoutesForWorkout(workout){
+    return eraseKeys(allRouteKeys([workout]));
+  }
+  function pruneRoutesAfterRestore(previous,restored){
+    var keep=new Set(allRouteKeys(restored));
+    return eraseKeys(allRouteKeys(previous).filter(function(key){return !keep.has(key);}));
+  }
+  function install(){
+    // One existing native GPS service: only its confirmed start can open this overlay.
+    if(typeof tp106StartGPS==='function'){
+      var gpsStart=tp106StartGPS;
+      tp106StartGPS=async function(){
+        var previous=db.get('gpsTrip106',null)?.key;
+        var response=await gpsStart.apply(this,arguments);
+        var current=currentLiveTrip();
+        if(current&&current.key!==previous)openLiveRoute(current);
+        return response;
+      };
+    }
+    if(typeof tp106PaintGPS==='function'){
+      var gpsPaint=tp106PaintGPS;
+      tp106PaintGPS=function(){
+        var response=gpsPaint.apply(this,arguments);
+        liveButton();
+        if(liveState&&!currentLiveTrip())closeRoute();
+        return response;
+      };
+    }
+    // Keep the per-set route owner in the saved draft/history; gpsTrip106 is temporary.
+    if(typeof window.tp106ApplyGPS==='function'){
+      var base=window.tp106ApplyGPS;
+      window.tp106ApplyGPS=function(result){
+        var trip=db.get('gpsTrip106',null),owner=typeof tp106GpsOwner==='function'?tp106GpsOwner(trip):null;
+        var applied=base.apply(this,arguments);
+        if(applied&&trip&&owner?.set&&result?.key===trip.key&&Number(result.routeSavedPoints)>0){
+          if(owner.set.gpsRouteKey163!==trip.key){
+            owner.set.gpsRouteKey163=trip.key;
+            if(owner.draft){owner.draft.savedAt=new Date().toISOString();db.set('draft',owner.draft);}
+            else persistDraft();
+          }
+        }
+        return applied;
+      };
+    }
+    // Await the confirmed replacement before pruning. The lock-acquiring entry
+    // calls restoreText again with an owner/token; only that inner call prunes.
+    // Cancelled/failed imports must preserve old GPS files.
+    if(typeof restoreText==='function'){
+      var originalRestoreText=restoreText;
+      restoreText=async function(){
+        if(!arguments[1]&&!arguments[2])return originalRestoreText.apply(this,arguments);
+        var previous;
+        try{previous=history();}catch(_){previous=[];}
+        var result=await originalRestoreText.apply(this,arguments);
+        if(result===true){
+          var restored;
+          try{restored=history();}catch(_){restored=[];}
+          await pruneRoutesAfterRestore(previous,restored);
+        }
+        return result;
+      };
+    }
+  }
+  window.TrainPilotGpsMap163={references:references,text:t,coordinates:coordinates,drawOffline:drawOffline,openRoute:openRoute,openLiveRoute:openLiveRoute,updateLiveRoute:updateLiveRoute,closeRoute:closeRoute,eraseRoutesForWorkout:eraseRoutesForWorkout,tileProvider:tileProvider,allRouteKeys:allRouteKeys,pruneRoutesAfterRestore:pruneRoutesAfterRestore};
+  document.addEventListener('DOMContentLoaded',install);
+})();
+
+</script>
 </body></html>

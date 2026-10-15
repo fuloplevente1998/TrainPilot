@@ -28,6 +28,9 @@ internal object WearHealthFutures {
             (message.contains("com.repforge.app.wear.WearHealthService.capabilities") ||
                 message.contains("com.repforge.app.wear.WearHealthService.end"))
 
+    fun isMissingLocationError(message: String): Boolean =
+        message.contains("ACCESS_FINE_LOCATION") && message.contains("permission",ignoreCase=true)
+
     private fun listen(future: ListenableFuture<*>, executor: Executor,
                        isActive: () -> Boolean, onFailure: (Exception) -> Unit,
                        success: () -> Unit) {

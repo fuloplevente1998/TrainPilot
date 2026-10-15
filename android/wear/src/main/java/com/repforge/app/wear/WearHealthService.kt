@@ -78,7 +78,9 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
                 .setContentTitle("TrainPilot edzésmérés").setContentText("A mérés kikapcsolt kijelzővel is folytatódik")
                 .setContentIntent(pending).setOngoing(true).setCategory(Notification.CATEGORY_SERVICE)
                 .addAction(Notification.Action.Builder(android.R.drawable.ic_media_pause,"Mérés leállítása",stop).build()).build()
-            val location=request.gps && checkSelfPermission("android.permission.ACCESS_FINE_LOCATION")==android.content.pm.PackageManager.PERMISSION_GRANTED
+            val access=wearRecordingAccess(this,request.gps,WearHealthStore.providerRequiresLocation(this))
+            if(access.locationBlocked && !session.stopRequested){fail("A méréshez helyhozzáférés szükséges.",access);return START_NOT_STICKY}
+            val location=access.foregroundLocation
             if(Build.VERSION.SDK_INT>=34) startForeground(129,notification,ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH or if(location)ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0)
             else startForeground(129,notification,if(location)ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0)
             WearHealthStore.save(this,summary!!)
@@ -92,7 +94,7 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
                             summary?.put("state",if(session.stopRequested)"ending" else if(appliedPause)"paused" else "active");persist()
                             if(session.stopRequested)end() else syncWorkoutPause()
                         }
-                        else -> if(session.stopRequested){finishWithoutExercise()}else capabilities(request.exerciseType,location)
+                        else -> if(session.stopRequested){finishWithoutExercise()}else capabilities(request.exerciseType,access.gpsEnabled)
                     }
                 }
             }
@@ -105,15 +107,15 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
         await(client.getCapabilitiesAsync()) { capabilities ->
             if(lifecycle?.stopRequested==true){finishWithoutExercise();return@await}
             val wanted=when(requested) { "running" -> ExerciseType.RUNNING; "walking" -> ExerciseType.WALKING; "cycling" -> ExerciseType.BIKING; else -> ExerciseType.STRENGTH_TRAINING }
-            val type=listOf(wanted,ExerciseType.WORKOUT).firstOrNull { capabilities.supportedExerciseTypes.contains(it) }
+            val location=wearRecordingAccess(this,gps,WearHealthStore.providerRequiresLocation(this)).locationAvailable
+            val type=wearRecordingType(wanted,capabilities.supportedExerciseTypes,location)
             if(type==null) { fail("Ezen az órán ez az edzéstípus nem mérhető.");return@await }
             val supported=capabilities.getExerciseTypeCapabilities(type).supportedDataTypes
-            val requestedMetrics=setOf(DataType.HEART_RATE_BPM,DataType.CALORIES_TOTAL,DataType.STEPS_TOTAL,DataType.DISTANCE_TOTAL,DataType.SPEED)
             val heart=checkSelfPermission(if(Build.VERSION.SDK_INT>=36) "android.permission.health.READ_HEART_RATE" else "android.permission.BODY_SENSORS")==android.content.pm.PackageManager.PERMISSION_GRANTED
             val activity=checkSelfPermission("android.permission.ACTIVITY_RECOGNITION")==android.content.pm.PackageManager.PERMISSION_GRANTED
-            val metrics=requestedMetrics.filter { supported.contains(it) && if(it==DataType.HEART_RATE_BPM)heart else activity }.toSet()
+            val metrics=wearRecordingMetrics(supported,heart,activity,location)
             if(metrics.isEmpty()) { fail("Az óra nem kínál támogatott mérési adatot.");return@await }
-            val config=ExerciseConfig(type,metrics,isAutoPauseAndResumeEnabled=false,isGpsEnabled=gps && type in listOf(ExerciseType.RUNNING,ExerciseType.WALKING,ExerciseType.BIKING))
+            val config=ExerciseConfig(type,metrics,isAutoPauseAndResumeEnabled=false,isGpsEnabled=gps && location && type in listOf(ExerciseType.RUNNING,ExerciseType.WALKING,ExerciseType.BIKING))
             summary?.let { if(it.optDouble("activeDurationSeconds",0.0)>0)it.put("partial",true);WearHealthAccumulator(it).beginSegment()
                 it.put("exerciseType",type.toString()).put("gps",config.isGpsEnabled) }
             persist()
@@ -183,10 +185,17 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
         watchdog?.let { handler.removeCallbacks(it) };watchdog=null
         persist();summary?.let { WearHealthStore.publish(this,it) };stopSelf()
     }
-    private fun fail(message: String) {
+    private fun fail(message: String, blockedAccess: WearRecordingAccess?=null) {
         if(lifecycle?.finished==true)return
         lifecycle?.finish()
-        summary?.put("state","error")?.put("partial",true)?.put("message",message);persist();summary?.let { WearHealthStore.publish(this,it) }
+        val locationMissing=WearHealthFutures.isMissingLocationError(message)
+        if(locationMissing)WearHealthStore.requireProviderLocation(this)
+        summary?.put("state","error")?.put("partial",true)?.put("message",message)
+        if(locationMissing || blockedAccess!=null)summary?.let {
+            wearApplyLocationFailure(it,blockedAccess ?: wearRecordingAccess(this,
+                WearHealthStore.gps(this),WearHealthStore.providerRequiresLocation(this)),message)
+        }
+        persist();summary?.let { WearHealthStore.publish(this,it) }
         if(lifecycle?.owned==true)try { client.endExerciseAsync() }catch(_:Exception){}
         stopSelf()
     }
