@@ -151,6 +151,12 @@ const server=http.createServer((req,res)=>{
   await page.locator('.tp163-close').click();
   // A failed provider must retain the exact saved offline route and permit retry.
   failTiles=true;
+  await page.evaluate(()=>{
+    // A distinct fixture URL avoids reusing an image from Chromium's memory cache.
+    window.TrainPilotGps163TileProvider={enabled:true,
+      url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png?fixture=unavailable',
+      attribution:'&copy; OpenStreetMap contributors',maxZoom:18};
+  });
   await row.locator('.tp163-route-button').click();
   await page.locator('.tp163-online-button').click();
   await page.waitForFunction(()=>document.querySelector('.tp163-route-hint')?.textContent.includes('nem tölthető be'));

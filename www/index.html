@@ -2148,7 +2148,8 @@
       if(!host.isConnected||document.getElementById(MAP_ID)==null)return false;
       return new Promise(function(resolve){
       var pane=append('div',host,'tp163-leaflet');pane.style.visibility='hidden';
-      var map=L.map(pane,{attributionControl:true,scrollWheelZoom:false,preferCanvas:true,zoomControl:true});
+      var map=L.map(pane,{attributionControl:true,scrollWheelZoom:false,preferCanvas:true,zoomControl:true,
+        zoomAnimation:false,fadeAnimation:false,markerZoomAnimation:false});
       activeMap=map;
       var settled=false,timer;
       function finish(ok){
@@ -2164,7 +2165,9 @@
         minZoom:1,updateWhenIdle:true,keepBuffer:1
       });
       tiles.on('tileload',function(){finish(true);});
-      tiles.on('load',function(){if(!settled)finish(false);});
+      // Leaflet still uses its layer/map after emitting load. Dispose only once
+      // that event has returned, including the all-tiles-failed path.
+      tiles.on('load',function(){if(!settled)Promise.resolve().then(function(){finish(false);});});
       tiles.addTo(map);
       var coords=[];
       segments.forEach(function(section){
