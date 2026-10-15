@@ -123,7 +123,33 @@ const server=http.createServer((req,res)=>{
   await page.waitForFunction(()=>window.__routeDeletes.length===1);
   assert.deepEqual(await page.evaluate(()=>window.__routeDeletes),['gps-163:route-one']);
   assert.equal(await page.evaluate(()=>history().some(x=>x.id==='gps-163-workout')),false);
-  const xss=await page.evaluate(()=>{
+  // Importing a replacement backup prunes old GPS tracks ONLY after confirmation.
+  const restoreCheck=await page.evaluate(()=>{
+    const source=history()[0], clone=JSON.parse(JSON.stringify(source));
+    const exercise={...byId('running'),sets:[{set:1,done:true,reps:'500',weight:0,
+      gpsRouteKey163:'gps-163:retained'}]};
+    const retained={...clone,id:'gps-163-retained',exercises:[exercise]};
+    const dropped={...clone,id:'gps-163-discarded',
+      exercises:[{...exercise,sets:[{...exercise.sets[0],gpsRouteKey163:'gps-163:discarded'}]}]};
+    db.set('history',[retained]);
+    const archive=JSON.stringify(makeBackup());
+    db.set('history',[retained,dropped]);
+    const priorConfirm=window.confirm,priorAlert=window.alert;
+    window.confirm=()=>false;window.alert=()=>{};
+    let cancelled,successful;
+    try{
+      cancelled=restoreText(archive);
+      const untouched=history().length===2;
+      window.confirm=()=>true;
+      successful=restoreText(archive);
+      return {cancelled,successful,untouched,restoredCount:history().length};
+    }finally{window.confirm=priorConfirm;window.alert=priorAlert;}
+  });
+  assert.deepEqual(restoreCheck,{cancelled:false,successful:true,untouched:true,restoredCount:1});
+  await page.waitForFunction(()=>window.__routeDeletes.includes('gps-163:discarded'));
+  assert.equal(await page.evaluate(()=>window.__routeDeletes.includes('gps-163:retained')),false,
+    'Backup replacement must preserve GPS files still referenced by imported history');
+    const xss=await page.evaluate(()=>{
    const malicious={id:'wrong',exercises:[{sets:[{gpsRouteKey163:'../private'}]}]};
    const safe=TrainPilotGpsMap163.references(malicious).length===0;
    const a=TrainPilotGpsMap163.coordinates({segments:[{points:[
