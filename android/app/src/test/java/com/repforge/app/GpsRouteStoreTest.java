@@ -99,4 +99,49 @@ public class GpsRouteStoreTest {
         try { store.read(KEY); fail("Oversized file must be rejected"); }
         catch (IOException expected) { /* Does not read unbounded locations. */ }
     }
+
+    @Test public void corruptedButParsablePointDoesNotCountAsSaved() throws Exception {
+        File root = Files.createTempDirectory("trainpilot-route-invalid").toFile();
+        GpsRouteStore store = new GpsRouteStore(root);
+        store.append(KEY, 1, p(47d, 1000));
+        File file = new File(root, "gps_routes").listFiles()[0];
+        try (FileOutputStream output = new FileOutputStream(file, true)) {
+            output.write("1\\t95\\t19\\t5\\t2000\\t1700000002000\\n"
+                    .replace("\\t", "\t").replace("\\n", "\n")
+                    .getBytes(StandardCharsets.UTF_8));
+        }
+        GpsRouteStore.Route saved = store.read(KEY);
+        assertEquals(1, saved.pointCount);
+        assertEquals(1, saved.segments.get(0).points.size());
+        assertTrue(saved.partial);
+    }
+
+    @Test public void rejectsReplayedTimestampInsideSameSegment() throws Exception {
+        File root = Files.createTempDirectory("trainpilot-route-replay").toFile();
+        GpsRouteStore store = new GpsRouteStore(root);
+        store.append(KEY, 1, p(47d, 1000));
+        File file = new File(root, "gps_routes").listFiles()[0];
+        try (FileOutputStream output = new FileOutputStream(file, true)) {
+            output.write("1\\t47.0001000\\t19.0000000\\t5.0\\t1000\\t1700000003000\\n"
+                    .replace("\\t", "\t").replace("\\n", "\n")
+                    .getBytes(StandardCharsets.UTF_8));
+        }
+        GpsRouteStore.Route saved = store.read(KEY);
+        assertEquals(1, saved.pointCount);
+        assertTrue(saved.partial);
+    }
+
+    @Test public void appendRejectsInvalidPointBeforeFileIsCreated() throws Exception {
+        File root = Files.createTempDirectory("trainpilot-route-noinvalid").toFile();
+        GpsRouteStore store = new GpsRouteStore(root);
+        try {
+            store.append(KEY, 1, new GpsRouteTrace.Point(Double.NaN, 19d, 5d, 1000, 1700000001000L));
+            fail("Invalid coordinates cannot enter the journal");
+        } catch (IOException expected) { /* rejected */ }
+        try {
+            store.append(KEY, 1, new GpsRouteTrace.Point(47d, 19d, 40d, 1000, 1700000001000L));
+            fail("Inaccurate fixes cannot be journaled");
+        } catch (IOException expected) { /* rejected */ }
+        assertEquals(0, store.read(KEY).pointCount);
+    }
 }
