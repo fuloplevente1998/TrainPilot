@@ -15134,6 +15134,9 @@ renderWorkout=function(){
  panel.innerHTML='<div class="tp206-actions"><div class="tp206-gps-slot"></div><button type="button" class="btn secondary tp206-indoor-start" data-tp107-clock-toggle onclick="tp107ToggleIndoor()">'+esc(tp107T('indoor'))+'</button></div><div class="tp206-readout"><strong class="tp107-clock" data-tp107-clock>00:00</strong><span class="small muted" data-tp107-clock-status role="status"></span><button type="button" class="btn secondary tp206-indoor-reset" onclick="tp107ResetIndoor()" aria-label="'+esc(tp107T('reset'))+'" title="'+esc(tp107T('reset'))+'">↺</button></div><p class="small tp206-gps-status" aria-live="polite"></p>';
 
  gps.before(panel);
+ // Preserve Health Connect steps: they used to be nested inside the GPS card.
+ const steps=gps.querySelector('#tp106Steps');
+ if(steps)gps.after(steps);
  const gpsButton=gps.querySelector('#tp106GpsButton'),gpsStatus=gps.querySelector('#tp106GpsStatus');
  if(gpsButton)panel.querySelector('.tp206-gps-slot').appendChild(gpsButton);
  if(gpsStatus)panel.querySelector('.tp206-gps-status').replaceWith(gpsStatus);
