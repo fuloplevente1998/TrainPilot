@@ -1,5 +1,16 @@
 # TrainPilot — fejlesztési állapot
 
+## #163 élő GPS-térkép – automatikus popup telefonos mérésindításkor (2026. október 15.)
+
+A felhasználó megerősítette: az órás Health Services már valós készüléken mér távolságot és sebességet, a telefon megkapja, **de a térkép hiányzik a futó edzésben és a naplóban is**. Jóváhagyta, hogy telefonon futás/séta/kerékpár jellegű **távolsági gyakorlatok saját GPS-mérésének sikeres indítása után automatikusan nyíljon meg egy élő térképablak**. A meglévő 1.0.6 `tp106StartGPS` natív indítás és a #163 2–7/8 privát route-tároló változatlanul a mérési forrás; az új ablak csak a már eltárolt GPS-fixeket olvassa.
+
+- **Implementáció:** [#205 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/205), `www/index.html` inline GPS-nézete. A megerősített, saját `gpsTrip106.key` mérésindítást követően **automatikus, kontrasztos sötét GPS-popup** nyílik; GPS-fix előtt egyértelmű jelkeresési felirat, utána valós szakaszolt zöld útvonal. 5 másodpercenként `DistanceTracker.status()` és célzott `route({key})` alapján frissül. A mért távolság / aktív idő marad a natív mérésből; az ablakban az **átlagsebesség** csak ezek hányadosából számolt, így nem állítunk élő pillanatnyi szenzorsebességet.
+- **Mérésfüggetlen bezárás:** 44 px-es piros X, háttérben a GPS **nem áll le**; a popup saját 5 másodperces frissítője megszűnik, az eredeti natív háttérszolgáltatás és 1 másodperces status poll folytatódik. A futó GPS-mérés mellett megjelenik az **Élő térkép** újranyitó gomb; a stop és az azonosító eltűnésekor a popup záródik. Ugyanazon felhasználói GPS owner alatt nincs második service vagy távolságösszesítés.
+- **Offline/privacy:** nyers koordináták kizárólag natív privát route-ból, szakaszok között nincs rajzolt átkötés. Offline helyi SVG az alapnézet, sem webes Leaflet, sem harmadik félnek küldött helyadat nem indul automatikusan. Online OSM csak külön tájékoztatás és gombnyomás után.
+- **Órás határ:** a [#193](https://github.com/fuloplevente1998/TrainPilot/issues/193) Wear GPS-útvonalpontok rögzítése/szinkronizálása **továbbra sincs implementálva**. A Wear órás táv/gyorsaság önmagában nem route, abból nem rajzolunk kitalált térképet, és nem indítunk párhuzamos telefonos rögzítést egyeztetés nélkül. A mentett naplótérkép csak akkor jelenik meg, ha a bejegyzés valóban megtartotta a `gpsRouteKey163` route kulcsot.
+- **Regresszió:** `tests/browser/gps-live-map-163.cjs` felvéve a hat Chromium-shard tesztbe: valós owner-hez kötött sikeres indítás, keresési állapot, friss route, táv/idő és átlagsebesség, X nem állítja le a mérőt, újranyitás, 320px kijelző, offline tile-tilalom, Wear-only aggregátum nem válik fantom útvonallá. A legfrissebb commit összes natív/Chromium/performance gate-je még igazolandó, csak utána készülékes elfogadás.
+- **Verzió és release:** `1.3.4 /2730` változatlan; draft PR, nincs `main`-merge, új APK-átadás vagy release tag a jóváhagyott P1 kapu előtt.
+
 ## #163 készülékes visszajelzés – piros X, OSM és órás helyengedély (2026. október 15.)
 
 A felhasználó a `97cce85` térképét kezdetnek megfelelőnek találta; a képen 1,62 km / 31 GPS-pont / ±10 m látszik. Ez nem igazolja a teljes kültéri elfogadási mátrixot. Az órás képen `Missing permissions: ACCESS_FINE_LOCATION` mérési hiba szerepel.
