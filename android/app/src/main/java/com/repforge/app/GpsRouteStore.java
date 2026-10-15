@@ -70,6 +70,7 @@ final class GpsRouteStore {
         ArrayList<GpsRouteTrace.Segment> segments = new ArrayList<>();
         ArrayList<GpsRouteTrace.Point> section = null;
         int ordinal = 0, count = 0;
+        long lastElapsed = -1;
         boolean partial = false;
         try (BufferedReader input = new BufferedReader(new InputStreamReader(
                 new FileInputStream(file), StandardCharsets.UTF_8))) {
@@ -87,7 +88,8 @@ final class GpsRouteStore {
                             || !Double.isFinite(lat) || !Double.isFinite(lon)
                             || Math.abs(lat) > 90 || Math.abs(lon) > 180
                             || !Double.isFinite(accuracy) || accuracy < 0 || accuracy > 35
-                            || elapsed < 0 || epoch <= 0 || ++count > GpsRouteTrace.MAX_POINTS) {
+                            || elapsed < 0 || epoch <= 0 || count >= GpsRouteTrace.MAX_POINTS
+                            || (nextOrdinal == ordinal && elapsed <= lastElapsed)) {
                         partial = true; break;
                     }
                     if (nextOrdinal != ordinal) {
@@ -96,6 +98,8 @@ final class GpsRouteStore {
                         ordinal = nextOrdinal;
                     }
                     section.add(new GpsRouteTrace.Point(lat, lon, accuracy, elapsed, epoch));
+                    lastElapsed = elapsed;
+                    count++;
                 } catch (NumberFormatException e) { partial = true; break; }
             }
         }
@@ -108,7 +112,11 @@ final class GpsRouteStore {
 
     /** A failed write never changes the prior completed log lines. No WebView or network output. */
     synchronized void append(String key, int ordinal, GpsRouteTrace.Point point) throws IOException {
-        if (point == null || ordinal <= 0 || ordinal > GpsRouteTrace.MAX_SEGMENTS) {
+        if (point == null || ordinal <= 0 || ordinal > GpsRouteTrace.MAX_SEGMENTS
+                || !Double.isFinite(point.latitude) || !Double.isFinite(point.longitude)
+                || Math.abs(point.latitude) > 90 || Math.abs(point.longitude) > 180
+                || !Double.isFinite(point.accuracyMeters) || point.accuracyMeters < 0
+                || point.accuracyMeters > 35 || point.elapsedMillis < 0 || point.epochMillis <= 0) {
             throw new IOException("Invalid route point/section");
         }
         File file = fileFor(key);
