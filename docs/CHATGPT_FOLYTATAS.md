@@ -1,4 +1,10 @@
-## Legfrissebb folyamatban lévő javítás — 2026-10-14, #201
+## Aktuális folytatás — 2026-10-15, #163 GPS 8/8
+
+A #199 már mainen van; az aktív munka **#163 / #205 draft PR**, `feat/163-phone-gps-route-model`. A `3af303b` [release gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38673756408) a GPS-visszaállítási Chromium-teszten elbukott, így APK nem készült. A mostani javítás megvárja az aszinkron `restoreText` sikerét, és a zárolást megszerző belépés helyett csak a tényleges visszaállításnál takarít egyszer; elutasítás, hibás JSON és tárhelyhiba megőrzi a route-okat. A teszt valódi jóváhagyó párbeszédet és rollbacket ellenőriz. Az új commit GitHub-gate-jét ellenőrizni kell, korábbi zöld forrás nem elég.
+
+**Felhasználói munkamód:** amit lehet, GitHubon végezzünk; teljes teszt és aláírt build Actionsön, helyben csak célzott javítás/gyors ellenőrzés. Nincs verzióemelés: **1.3.4 /2730**. Következő: friss CI és aláírt telefonos teszt-APK, majd a #163 8/8 fizikai GPS-mátrixa. Online térképcsempe-provider még nincs konfigurálva Androidon; az offline helyi route működésétől külön termékdöntés szükséges. Main/release csak az új funkció külön elfogadásával. Az alábbi #201/#199 állapotok történetiek.
+
+## Korábbi folyamatban lévő javítás — 2026-10-14, #201
 
 Munkaforrás: `feat/191-wear-save-sync-status`, draft PR #199. A #191 mentés/szinkron és #200 pihenőkihagyás javításai után a felhasználó jelentette: **kifejezett telefonos edzéselhagyás / félbehagyás** nem szünetelteti az órát. Nem képernyőlezárásról van szó. Ezt javítjuk a [#201 leírás](wear/P1_201_EDZESSZUNET.md) szerint. A GitHub build igazolt eredménye és az új párosított APK forrása a buildjegyzékbe kerül befejezés után. A korábban átadott c503887 pár még nem tartalmazza #201-et.
 

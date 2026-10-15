@@ -1,5 +1,7 @@
 # Telefonos és Wear OS automata mód, Wear UI-fejlesztési terv
 
+**Aktuális P1 – 2026-10-15:** a #199 mainre került; most #163 telefonos GPS / #205 draft, **8/8 release gate és készülékes elfogadás**. A `3af303b` gate-je a GPS-visszaállítási teszten elbukott; az aszinkron visszaállítás és route-takarítás javítása után a friss GitHub CI igazolása szükséges. Teljes teszt és aláírt APK-build a felhasználó kérésére Actionsön fut. Részletek: [aktuális státusz](../../DEVELOPMENT_STATUS.md), [GPS-tárolás](../gps/P1_163_ROUTE_STORAGE.md), #163 készülékes mátrix. **1.3.4 /2730**, Wear GPS továbbra is külön #193; fizikai elfogadás és térképcsempe-provider döntése még hiányzik. Az alábbi korábbi állapot történeti.
+
 ## Aktuális állapot — 2026. október 14.
 
 A P0 #162/#157 készülékesen elfogadva és mainen (#195), az automata háttérvezérlés és időnapló elkészült. A #158 mérési forrásjelzés a #196-tal mainre került (`20fe5ce`), a felhasználó elfogadta, az Issue lezárva. A #159 Mini Napló meglévő megvalósítását ellenőriztük és a hibajegyet megvalósítottként lezártuk; nincs második órás történet vagy újraépítés.

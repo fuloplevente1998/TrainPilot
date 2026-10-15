@@ -2268,18 +2268,20 @@
         return applied;
       };
     }
-    // restoreText only returns true after the user confirmed and the entire
-    // replacement succeeded. Cancelled/failed imports must preserve old GPS files.
+    // Await the confirmed replacement before pruning. The lock-acquiring entry
+    // calls restoreText again with an owner/token; only that inner call prunes.
+    // Cancelled/failed imports must preserve old GPS files.
     if(typeof restoreText==='function'){
       var originalRestoreText=restoreText;
-      restoreText=function(){
+      restoreText=async function(){
+        if(!arguments[1]&&!arguments[2])return originalRestoreText.apply(this,arguments);
         var previous;
         try{previous=history();}catch(_){previous=[];}
-        var result=originalRestoreText.apply(this,arguments);
+        var result=await originalRestoreText.apply(this,arguments);
         if(result===true){
           var restored;
           try{restored=history();}catch(_){restored=[];}
-          void pruneRoutesAfterRestore(previous,restored);
+          await pruneRoutesAfterRestore(previous,restored);
         }
         return result;
       };

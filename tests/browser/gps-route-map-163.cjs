@@ -124,7 +124,7 @@ const server=http.createServer((req,res)=>{
   assert.deepEqual(await page.evaluate(()=>window.__routeDeletes),['gps-163:route-one']);
   assert.equal(await page.evaluate(()=>history().some(x=>x.id==='gps-163-workout')),false);
   // Importing a replacement backup prunes old GPS tracks ONLY after confirmation.
-  const restoreCheck=await page.evaluate(()=>{
+  await page.evaluate(()=>{
     const source=history()[0], clone=JSON.parse(JSON.stringify(source));
     const exercise={...byId('running'),sets:[{set:1,done:true,reps:'500',weight:0,
       gpsRouteKey163:'gps-163:retained'}]};
@@ -132,23 +132,47 @@ const server=http.createServer((req,res)=>{
     const dropped={...clone,id:'gps-163-discarded',
       exercises:[{...exercise,sets:[{...exercise.sets[0],gpsRouteKey163:'gps-163:discarded'}]}]};
     db.set('history',[retained]);
-    const archive=JSON.stringify(makeBackup());
+    window.__routeArchive=JSON.stringify(makeBackup());
     db.set('history',[retained,dropped]);
-    const priorConfirm=window.confirm,priorAlert=window.alert;
-    window.confirm=()=>false;window.alert=()=>{};
-    let cancelled,successful;
-    try{
-      cancelled=restoreText(archive);
-      const untouched=history().length===2;
-      window.confirm=()=>true;
-      successful=restoreText(archive);
-      return {cancelled,successful,untouched,restoredCount:history().length};
-    }finally{window.confirm=priorConfirm;window.alert=priorAlert;}
+    window.alert=()=>{};
+    window.__routeRestoreResult=null;
+    void restoreText(window.__routeArchive).then(result=>{window.__routeRestoreResult=result;});
   });
-  assert.deepEqual(restoreCheck,{cancelled:false,successful:true,untouched:true,restoredCount:1});
-  await page.waitForFunction(()=>window.__routeDeletes.includes('gps-163:discarded'));
-  assert.equal(await page.evaluate(()=>window.__routeDeletes.includes('gps-163:retained')),false,
-    'Backup replacement must preserve GPS files still referenced by imported history');
+  await page.locator('#tp2628Dialog [data-tp2628-cancel]').click();
+  await page.waitForFunction(()=>window.__routeRestoreResult===false);
+  assert.deepEqual(await page.evaluate(()=>({count:history().length,deleted:window.__routeDeletes})),
+    {count:2,deleted:['gps-163:route-one']},'Cancelled async restore must preserve every GPS file');
+  // A failure after confirmation must roll back history without erasing routes.
+  await page.evaluate(()=>{
+    const base=Storage.prototype.setItem;
+    Storage.prototype.setItem=function(key,value){
+      if(key==='repforge:history'){
+        Storage.prototype.setItem=base;
+        throw Error('Simulated restore storage failure');
+      }
+      return base.call(this,key,value);
+    };
+    window.__routeRestoreError=null;
+    void restoreText(window.__routeArchive).catch(error=>{window.__routeRestoreError=error.message;});
+  });
+  await page.locator('#tp2628Dialog [data-tp2628-confirm]').click();
+  await page.waitForFunction(()=>window.__routeRestoreError!==null);
+  assert.match(await page.evaluate(()=>window.__routeRestoreError),/Simulated restore storage failure/);
+  assert.deepEqual(await page.evaluate(()=>({count:history().length,deleted:window.__routeDeletes})),
+    {count:2,deleted:['gps-163:route-one']},'Failed async restore must preserve every GPS file');
+  await page.evaluate(()=>{
+    window.__routeRestoreResult=null;
+    void restoreText(window.__routeArchive).then(result=>{window.__routeRestoreResult=result;});
+  });
+  await page.locator('#tp2628Dialog [data-tp2628-confirm]').click();
+  await page.waitForFunction(()=>window.__routeRestoreResult===true);
+  assert.deepEqual(await page.evaluate(()=>({count:history().length,deleted:window.__routeDeletes})),
+    {count:1,deleted:['gps-163:route-one','gps-163:discarded']},
+    'Successful async restore must delete each orphan once and retain referenced GPS files');
+  assert.equal(await page.evaluate(async()=>{
+    try{await restoreText('{invalid');return false;}catch(_){return true;}
+  }),true,'Invalid backup must reject');
+  assert.deepEqual(await page.evaluate(()=>window.__routeDeletes),['gps-163:route-one','gps-163:discarded']);
     const xss=await page.evaluate(()=>{
    const malicious={id:'wrong',exercises:[{sets:[{gpsRouteKey163:'../private'}]}]};
    const safe=TrainPilotGpsMap163.references(malicious).length===0;

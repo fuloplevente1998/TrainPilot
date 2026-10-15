@@ -49,6 +49,8 @@ Ha csak GitHub-eszközök vannak, a dokumentáció és PR előkészíthető, és
 
 ## 3. Munkamenet
 
+**2026-10-15-i felhasználói döntés:** a trainPilot környezetben a teljes teszteket és APK-építést lehetőség szerint a meglévő GitHub Actions workflow-kra bízzuk. A helyi munka célzott feltárás, szerkesztés és rövid ellenőrzés; ne építsünk fel és futtassunk újra teljes Android/Chromium környezetet rutinszerűen. A friss commit kapui és a build aláírása továbbra is kötelezők; a futásokat pontos linkkel és eredménnyel adjuk át.
+
 1. Ellenőrizd a felhasználó legutóbbi kérését, az aktuális main/issue/PR állapotot és az esetleges helyi módosításokat. A régi dokumentum nem írja felül az új felhasználói döntést.
 2. Új munkaterületen klónozd a repót, vagy frissítsd a meglévőt. Más ember módosítását ne töröld és ne keverd automatikusan a saját feladatodba.
 3. Új feladathoz a friss mainből készíts feladatágat. A P0 kör elfogadott; a megőrzött tesztágakból ne induljon párhuzamos, eltérő folytatás. A régi #164/#178 munkafákból ne készüljön külön eltérő folytatás.

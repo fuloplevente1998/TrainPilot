@@ -1,5 +1,11 @@
 # TrainPilot — fejlesztési állapot
 
+## #163 GPS – 8/8 release gate folytatása (2026. október 15.)
+
+A `3af303b` forrás [38673756408 release gate-je](https://github.com/fuloplevente1998/TrainPilot/actions/runs/38673756408) nem maradt folyamatban: 5/6 Chromium-shard sikeres, az új GPS-visszaállítási teszt hibás, ezért a natív gate/APK-build kimaradt. A `restoreText` aszinkron eredményét a GPS-bekötés nem várta meg; a javítás a tényleges, zárolt visszaállítást várja, és siker után egyszer törli a már nem hivatkozott route-okat. A regresszió valódi megerősítő párbeszéddel ellenőrzi az elutasítást, a tárhelyhibás rollbacket és a sikeres cserét; a hibás JSON sem törölhet GPS-fájlt.
+
+**Ellenőrzési munkamód:** a felhasználó kérésére a teljes Chromium, Node, natív JUnit és aláírt APK-build GitHub Actionsön fut; helyben csak célzott feltárás, szerkesztés és gyors szintaxis/diff-ellenőrzés. Az új commit CI-eredménye külön igazolandó. A #205 draft; **1.3.4 /2730**, fizikai GPS-elfogadás és online csempeprovider-döntés továbbra is szükséges. A 8/8 készülékes mátrix a [#163 issue-ban](https://github.com/fuloplevente1998/TrainPilot/issues/163) található.
+
 ## #163 GPS – 7/8 natív és naplós regressziók (2026. október 15.)
 
 **Fejlesztési hely:** [#205 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/205); nincs main-egyesítés vagy verzióemelés (**1.3.4 /2730**). Az előző, `e16287b` commiton **mind a hat Chromium-shard sikeres** volt (így a korábbi #171 naplóolvasási többletjavítás igazolt), de a natív build-folyamatot újabb commitok következtében a legfrissebb forráson ismét ellenőrizni kell.

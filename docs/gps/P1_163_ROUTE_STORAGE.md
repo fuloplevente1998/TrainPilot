@@ -1,5 +1,7 @@
 # #163 GPS – 4/8. Tartós útvonalnapló és tulajdonosi kulcs
 
+**Aktuális 8/8 folytatás (2026-10-15):** a `3af303b` gate-jén a GPS-visszaállítási Chromium-teszt elbukott; nem készült APK. A javított bekötés megvárja az aszinkron, jóváhagyott `restoreText` eredményét, és csak a tényleges, zárolt visszaállítás után takarít egyszer. A teszt a valódi párbeszéd elutasítását, tárhelyhibás rollbacket, hibás JSON-t és sikeres cserét is vizsgálja. Az új forrás GitHub CI-eredménye még igazolandó; a fizikai GPS-mátrix a #163-ban van. A lenti 4–7/8 szakaszok a megvalósítás történetét őrzik.
+
 Állapot: **fejlesztési draft, csak a `feat/163-phone-gps-route-model` ágon**, a #205 PR részeként. A verzió változatlan: **1.3.4 /2730**.
 
 ## Kötés a meglévő edzéshez
