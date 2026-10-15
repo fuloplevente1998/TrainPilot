@@ -38,3 +38,11 @@ Az alap GPS-útvonal magánjellegű, a készülék privát tárhelyén van; az o
 Megfelelőségi forrás: https://operations.osmfoundation.org/policies/tiles/ — tilos az offline/bulk előtöltés, szükséges az alkalmazásazonosítás, és el kell helyezni a forrásmegjelölést. A TrainPilot alkalmazás számára tartósan használható térkép-szolgáltató és esetleges jogszerű offline csempecsomag a következő részlépésben, külön elfogadással választható ki.
 
 **Teljesítmény-bukás lezárási feltétel:** a `ccab9e5` kódon a többlet naplóolvasás miatt az `#171` disclosure teszt bukott; a fölösleges route UI render/DOM-adatolvasó hook eltávolítva. A legutóbbi kód CI-je még folyamatban; nem tekinthető zöldnek addig, amíg a natív és mind a hat Chromium UI shard sikeresen le nem futott. Verzió változatlan.
+
+## 7/8 – biztonságos visszaolvasás, mentés-visszaállítás és regressziók
+
+A natív `GpsRouteStore` sérült sorát a visszaolvasás **nem** adja hozzá az érvényes pontszámhoz; a hibás koordináta, pontosság és azonos szakaszon visszafelé ugró monoton időbélyeg kizárt. A sérült tail `partial` jelzést ad; nem törli automatikusan az előző érvényes szakaszokat. Külön teszt ellenőrzi az érvényesen formázott, de érvénytelen latitúdót és a visszajátszott időbélyeget, valamint a közvetlen írás megtagadását.
+
+Napló import/export: a route-fájlok szándékosan **nem kerülnek bele** a hagyományos backupba; a `gpsRouteKey163` hivatkozás önmagában nem GPS-nyomvonal. A TrainPiloton belüli `restoreText` helyreállítás után a **korábbi helyben megmaradt útvonalakat** csak a megerősített, sikeres naplócsere után és csak akkor töröljük, ha az új történet már nem hivatkozik rájuk. Elutasított visszaállításkor vagy kivétel esetén nem törlünk; ha a natív törlés sikertelen, ezt jelezzük a felhasználónak. A megfelelő Playwright regresszió a célzott `gps-route-map-163.cjs` teszt része. A fájlok app-újratelepítéskor és adatok teljes törlésekor elveszhetnek; nem ígérhető Google Drive/Google Sync GPS-koordináta-backup.
+
+**Kötelező további elfogadás:** a teljes, aktuális commiton futó telefonos `release gate`, JUnit natív tesztek, összes Chromium shard és valós készülékes GPS-séta. A kód a PR-ben draft, nem került a mainre, **1.3.4 /2730** változatlan.

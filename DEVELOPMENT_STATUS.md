@@ -1,5 +1,14 @@
 # TrainPilot — fejlesztési állapot
 
+## #163 GPS – 7/8 natív és naplós regressziók (2026. október 15.)
+
+**Fejlesztési hely:** [#205 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/205); nincs main-egyesítés vagy verzióemelés (**1.3.4 /2730**). Az előző, `e16287b` commiton **mind a hat Chromium-shard sikeres** volt (így a korábbi #171 naplóolvasási többletjavítás igazolt), de a natív build-folyamatot újabb commitok következtében a legfrissebb forráson ismét ellenőrizni kell.
+
+- **Útvonalnapló-tesztbővítés:** a `GpsRouteStore.read()` pontosan annyi pontot jelent, amennyi valóban validált és hozzáadott; sérült, de feldolgozható GPS-sor nem számít megtartott pontnak. Az ismétlődő monoton időbélyeget azonos szakaszon visszautasítja; `append()` közvetlen használata sem enged NaN, hibás koordinátát, 35 m feletti pontatlanságot. 3 célzott új JUnit negatív teszt.
+- **Visszaállítás és helyadat-megőrzés:** a `restoreText` naplóimport csak **megerősített és teljesen sikeres** állapotban indíthatja a korábbi, importált naplóban már nem szereplő `gpsRouteKey163`-ok fájltörlését. Visszavonás/hibás import esetén GPS nem törölhető; az új napló által megtartott útvonalak megmaradnak. Célzott Playwright eset hozzáadva.
+- **Adatvédelmi határ:** a route pontok csak az Android `noBackupFilesDir` lokális mappájában vannak; a hagyományos export/import nem tartalmazza a koordinátákat. Másik készülékre importálva az adott route gomb üres térképet jelezhet, nem generálhat kitalált útvonalat. Külső térképcsempék továbbra is csak explicit opt-in esetén kérhetők.
+- **Kiadási feltétel:** a `#205` **legfrissebb commitján** mind a hat Chromium UI shard, Quick, Performance, `:app:testReleaseUnitTest` és `:app:assembleRelease` legyen sikeres. Friss SHA nélküli korábbi zöld futás **nem** release gate. A nyílt/törölt napló, GPS-jelkimaradás, restart, szünet és offline/online váltás valódi készülékes tesztje még a 8/8 elfogadási kör része; új kiadás nincs.
+
 ## #163 GPS – 6/8 offline térkép, adatvédelem, teljesítményregresszió (2026. október 15.)
 
 **Fejlesztési ág:** `feat/163-phone-gps-route-model`, [draft #205 PR](https://github.com/fuloplevente1998/TrainPilot/pull/205). A korábbi 5/8 térképes napló tesztje (`gps-route-map-163.cjs`) a `ccab9e5` commit Chromium shard-1 körében **sikeres** volt, ám a teljes telefonos release gate megbukott: a `disclosure-performance-171.cjs` naplókártya-bontásnál három előzményolvasást talált a megengedett kettő helyett. A 6/8 lépésben eltávolítottuk a felesleges `mountRow/mountAll` DOM-figyelőket és render-wrapper-t; a gomb közvetlenül a meglévő lusta `tp3HistoryBodyHtml` generátorból épül, így nem adhat többlet naplóolvasást. **Az új commit teljes kapuját frissen meg kell várni.**
