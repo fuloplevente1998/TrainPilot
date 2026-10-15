@@ -14825,7 +14825,23 @@ var tp106StopGPS=async function(){
  if(tp106GpsBusy){alert(tp106T('busy'));return false;}if(!tp106GpsState.active&&!db.get('gpsTrip106',null))return true;
  tp106GpsBusy=true;tp106PaintGPS();try{tp106ApplyGPS(await tp106DistanceBridge().stop());if(tp106GpsTimer){clearInterval(tp106GpsTimer);tp106GpsTimer=null;}return true;}catch(error){alert(error?.message||String(error));return false;}finally{tp106GpsBusy=false;tp106PaintGPS();}
 };
-var tp106ToggleGPS=async function(){if(tp106GpsState.active){await tp106StopGPS();if(state.session)renderWorkout();}else await tp106StartGPS();};
+// #207: only the user's explicit phone GPS STOP can complete its owned distance section.
+// Internal STOP paths (set removal, workout change, stale owner) remain non-completing.
+var tp106ToggleGPS=async function(){
+ if(!tp106GpsState.active){await tp106StartGPS();return;}
+ const trip=db.get('gpsTrip106',null),owner=tp106GpsOwner(trip);
+ const stopped=await tp106StopGPS();
+ if(stopped&&!tp106GpsState.active&&owner?.session===state.session
+   &&owner.e===state.session?.exercises?.[trip.exerciseIndex]
+   &&owner.e?.sets?.includes(owner.set)&&!owner.set.done
+   &&owner.set.distanceSource==='gps'
+   &&Number(owner.set.distanceMeters)>Number(trip.baseMeters||0)
+   &&Number(owner.set.reps)>Number(trip.baseSeconds||0)){
+  owner.set.done=true;
+  persistDraft();
+ }
+ if(state.session)renderWorkout();
+};
 var tp106WorkoutDistance=function(ei,si,value,input){
  const set=state.session?.exercises?.[ei]?.sets?.[si];if(!set||tp106GpsState.active&&tp106GpsOwner(db.get('gpsTrip106',null))?.set===set)return;
  try{tp106SetDistance(set,value);input?.setCustomValidity?.('');persistDraft();}catch(error){input?.setCustomValidity?.(error.message);}
@@ -14847,6 +14863,23 @@ renderWorkout=function(){
   load.outerHTML='<label class="small tp106-distance-label">'+esc(tp106T('km'))+'<input class="field" data-tp106-distance="'+si+'" aria-label="'+esc(tp106T('km'))+'" inputmode="decimal" placeholder="0,00" value="'+esc(Object.hasOwn(set,'distanceMeters')?String(set.distanceMeters/1000):'')+'" oninput="tp106WorkoutDistance('+state.current+','+si+',this.value,this)"></label>';
  });
  const panel=document.createElement('section');panel.id='tp106GPS';panel.className='card tp106-gps-card';panel.innerHTML='<strong>'+esc(tp106T('gps'))+'</strong><p class="small muted">'+esc(tp106T('privacy'))+'</p><p class="small" id="tp106GpsStatus" aria-live="polite"></p><button type="button" id="tp106GpsButton" class="btn secondary block" onclick="tp106ToggleGPS()">'+esc(tp106T('start'))+'</button>';
+ // A distance workout records sections, not weightlifting sets.
+ const labels={
+  hu:{title:'Szakaszok',note:'A GPS leállításakor a mért szakasz automatikusan teljesített lesz.',tracking:'GPS-mérés folyamatban'},
+  en:{title:'Segments',note:'Stopping GPS automatically completes the measured segment.',tracking:'GPS recording in progress'},
+  de:{title:'Abschnitte',note:'Nach dem GPS-Stopp wird der gemessene Abschnitt automatisch abgeschlossen.',tracking:'GPS-Aufzeichnung läuft'},
+  ro:{title:'Segmente',note:'Oprirea GPS-ului finalizează automat segmentul măsurat.',tracking:'Înregistrare GPS în curs'}
+ };
+ const words=labels[rf212Lang()]||labels.en;
+ const heading=main.querySelector('.tp153-sets-title');
+ if(heading)heading.textContent=words.title;
+ const note=document.createElement('p');note.className='small muted tp207-gps-completion-note';
+ note.textContent=words.note;panel.appendChild(note);
+ const activeOwner=tp106GpsState.active?tp106GpsOwner(db.get('gpsTrip106',null)):null;
+ main.querySelectorAll('.tp153-set-row').forEach(function(row,si){
+  const button=row.querySelector('.check'),set=e.sets[si];
+  if(button&&activeOwner?.set===set){button.disabled=true;button.title=words.tracking;button.textContent='●';}
+ });
  main.querySelector('.tp153-sets-title')?.before(panel);tp106PaintGPS();return result;
 };
 var tp106DistanceInputsValid=function(){const bad=document.querySelector('[data-tp106-distance]:invalid');if(bad){bad.reportValidity?.();return false;}return true;};
