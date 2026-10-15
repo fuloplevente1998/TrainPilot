@@ -8,14 +8,14 @@ import androidx.health.services.client.data.ExerciseType
 
 class WearRecordingStateTest {
     @Test fun grantedWhileInUseLocationNeedsLocationServiceEvenWhenGpsIsOff() {
-        val access=WearRecordingAccess(gpsRequested=false,providerRequiresLocation=false,fineLocationGranted=true)
+        val access=WearRecordingAccess(gpsRequested=false,providerRequiresLocation=false,fineLocationGranted=true,systemLocationEnabled=true)
         assertTrue(access.foregroundLocation)
         assertFalse(access.gpsEnabled)
         assertFalse(access.locationBlocked)
     }
 
     @Test fun knownProviderLocationRequirementRequestsPermissionWithoutEnablingGps() {
-        val denied=WearRecordingAccess(false,true,false)
+        val denied=WearRecordingAccess(false,true,false,true)
         assertTrue(denied.needsFineLocation)
         assertTrue(denied.locationBlocked)
         assertFalse(denied.foregroundLocation)
@@ -24,11 +24,52 @@ class WearRecordingStateTest {
         assertFalse(granted.locationBlocked)
         assertTrue(granted.foregroundLocation)
         assertFalse(granted.gpsEnabled)
-        assertTrue(WearRecordingAccess(true,false,true).gpsEnabled)
-        val independent=WearRecordingAccess(false,false,false)
+        assertTrue(WearRecordingAccess(true,false,true,true).gpsEnabled)
+        val independent=WearRecordingAccess(false,false,false,true)
         assertFalse(independent.needsFineLocation)
         assertFalse(independent.locationBlocked)
         assertFalse(independent.foregroundLocation)
+    }
+
+    @Test fun grantedAppPermissionDoesNotOverrideDisabledSystemLocation() {
+        val access=WearRecordingAccess(false,true,true,false)
+        assertTrue(access.locationBlocked)
+        assertTrue(access.locationServicesBlocked)
+        assertFalse(access.locationPermissionBlocked)
+        assertFalse(access.locationAvailable)
+        assertFalse(access.foregroundLocation)
+        assertFalse(access.gpsEnabled)
+        val summary=JSONObject().put("state","error").put("locationPermissionRequired",true).put("steps",12)
+        wearApplyLocationFailure(summary,access,"Missing permissions: [android.permission.ACCESS_FINE_LOCATION]")
+        assertEquals(WEAR_LOCATION_SERVICES_MESSAGE,summary.getString("message"))
+        assertFalse(summary.getBoolean("locationPermissionRequired"))
+        assertEquals("Helyszolgáltatás kikapcsolva",wearRecordingStatus(summary,true,true))
+        assertEquals("Helyadatok bekapcsolása",wearRecordingRetryLabel(summary))
+        assertTrue(wearHasLocationFailure(summary))
+        val ready=access.copy(systemLocationEnabled=true)
+        assertFalse(ready.locationBlocked);assertTrue(ready.foregroundLocation)
+        assertFalse("A global setting must not enable the user's GNSS toggle",ready.gpsEnabled)
+        val retry=wearRetryRecording(summary)!!
+        assertEquals(12,retry.getInt("steps"));assertTrue(retry.getBoolean("partial"))
+        assertFalse(retry.has("locationServicesRequired"));assertFalse(retry.has("message"))
+        assertFalse(wearHasLocationFailure(retry))
+        assertEquals("Aktuális edzés mérése",wearRecordingRetryLabel(retry))
+    }
+
+    @Test fun providerFailureWithBothLocationChecksSatisfiedKeepsTheActualReason() {
+        val raw="Mérési hiba: Missing permissions: [android.permission.ACCESS_FINE_LOCATION]"
+        val summary=JSONObject()
+        wearApplyLocationFailure(summary,WearRecordingAccess(false,true,true,true),raw)
+        assertEquals(raw,summary.getString("message"))
+        assertFalse(summary.getBoolean("locationPermissionRequired"))
+        assertFalse(summary.getBoolean("locationServicesRequired"))
+        assertEquals("A mérés megszakadt",wearRecordingStatus(summary,true,true))
+        assertTrue(wearHasLocationFailure(summary))
+        val denied=JSONObject()
+        wearApplyLocationFailure(denied,WearRecordingAccess(true,false,false,true),raw)
+        assertEquals(WEAR_LOCATION_PERMISSION_MESSAGE,denied.getString("message"))
+        assertEquals("Pontos helyengedély szükséges",wearRecordingStatus(denied,true,true))
+        assertEquals("Aktuális edzés mérése",wearRecordingRetryLabel(denied))
     }
 
     @Test fun retryPreservesRealTotalsAndGpsIntentWhileClearingTheResolvedPermissionFailure() {

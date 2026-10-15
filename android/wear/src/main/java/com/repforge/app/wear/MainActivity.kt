@@ -89,6 +89,11 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             uiHandler.postDelayed(this,1000)
         }
     }
+    private val locationSettingsRequest=registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        // Returning without enabling location must not reopen Settings in a loop.
+        if(WearHealthStore.enabled(this) && recordingAccess().systemLocationEnabled)continueHealthRequest()
+        else refreshHealth()
+    }
     private val permissionRequest=registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         val allowed=healthAllowed()
         WearHealthStore.enable(this,allowed);measuring.value=allowed
@@ -96,18 +101,13 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         if(gpsDenied)WearHealthStore.gps(this,false)
         gpsEnabled.value=WearHealthStore.gps(this)
         if(allowed){
-            if(recordingAccess().locationBlocked){
-                workout.value?.let { WearHealthStore.blockForLocation(this,it.workoutId) }
-                refreshHealth();Toast.makeText(this,WEAR_LOCATION_PERMISSION_MESSAGE,Toast.LENGTH_LONG).show()
-                return@registerForActivityResult
-            }
-            workout.value?.let { WearHealthStore.retry(this,it.workoutId) };startHealthIfEnabled()
+            continueHealthRequest()
             if(gpsDenied)Toast.makeText(this,"Pontos helyengedély nélkül az órás GPS kikapcsolva marad. Az engedélyezett szenzorok mérése folytatódhat.",Toast.LENGTH_LONG).show()
         } else Toast.makeText(this,"Órás méréshez engedély szükséges.",Toast.LENGTH_LONG).show()
     }
     private fun healthAllowed(): Boolean = checkSelfPermission(if(Build.VERSION.SDK_INT>=36) "android.permission.health.READ_HEART_RATE" else Manifest.permission.BODY_SENSORS)==PackageManager.PERMISSION_GRANTED || checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION)==PackageManager.PERMISSION_GRANTED
-    private fun recordingAccess(): WearRecordingAccess = WearRecordingAccess(WearHealthStore.gps(this),
-        WearHealthStore.providerRequiresLocation(this),checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED)
+    private fun recordingAccess(): WearRecordingAccess = wearRecordingAccess(this,WearHealthStore.gps(this),
+        WearHealthStore.providerRequiresLocation(this))
     private fun refreshHealth() {
         // Data Layer message replies update the durable snapshot independently
         // of Activity callbacks. Resolve both the workout and metrics afresh.
@@ -142,17 +142,31 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         workout.value=WorkoutSnapshotStore.load(this)
         remoteMeasurementRequested=false;remoteMeasurementStart=null;releaseRemoteStart()
         WearHealthStore.gps(this,gps)
-        if(workout.value?.let { WearHealthStore.load(this,it.workoutId) }?.let {
-                it.optBoolean("locationPermissionRequired") || WearHealthFutures.isMissingLocationError(it.optString("message")) }==true)
+        if(workout.value?.let { WearHealthStore.load(this,it.workoutId) }?.let(::wearHasLocationFailure)==true)
             WearHealthStore.requireProviderLocation(this)
         val permissions=mutableListOf(if(Build.VERSION.SDK_INT>=36) "android.permission.health.READ_HEART_RATE" else Manifest.permission.BODY_SENSORS,Manifest.permission.ACTIVITY_RECOGNITION)
         if(Build.VERSION.SDK_INT>=33)permissions.add(Manifest.permission.POST_NOTIFICATIONS)
         if(recordingAccess().needsFineLocation)permissions.addAll(listOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION))
         val missing=permissions.filter { checkSelfPermission(it)!=PackageManager.PERMISSION_GRANTED }
         if(missing.isEmpty()) {
-            WearHealthStore.enable(this,healthAllowed());workout.value?.let { WearHealthStore.retry(this,it.workoutId) }
-            refreshHealth();startHealthIfEnabled()
+            WearHealthStore.enable(this,healthAllowed());continueHealthRequest()
         } else permissionRequest.launch(missing.toTypedArray())
+    }
+    private fun continueHealthRequest() {
+        val access=recordingAccess()
+        if(access.locationBlocked){
+            workout.value?.let { WearHealthStore.blockForLocation(this,it.workoutId,access) }
+            refreshHealth()
+            if(access.fineLocationGranted && access.locationServicesBlocked){
+                try { locationSettingsRequest.launch(wearLocationSettingsIntent()) }
+                catch(_:android.content.ActivityNotFoundException) {
+                    Toast.makeText(this,WEAR_LOCATION_SERVICES_MESSAGE,Toast.LENGTH_LONG).show()
+                }
+            } else Toast.makeText(this,WEAR_LOCATION_PERMISSION_MESSAGE,Toast.LENGTH_LONG).show()
+            return
+        }
+        workout.value?.let { WearHealthStore.retry(this,it.workoutId) }
+        refreshHealth();startHealthIfEnabled()
     }
     private fun startHealthIfEnabled() {
         WearHealthService.syncPause(this)
@@ -162,24 +176,29 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         if(!wearMeasurementMayStart(remoteMeasurementRequested,remoteWorkoutAccepted,remoteMeasurementStart,current.workoutId,current.revision))return
         if(remoteMeasurementRequested)remoteWorkoutAccepted=true
         var previous=WearHealthStore.load(this,current.workoutId)
-        if(previous?.let { it.optBoolean("locationPermissionRequired") || WearHealthFutures.isMissingLocationError(it.optString("message")) }==true)
+        if(previous?.let(::wearHasLocationFailure)==true)
             WearHealthStore.requireProviderLocation(this)
-        val locationRequired=recordingAccess().locationBlocked
-        if(locationRequired)WearHealthStore.blockForLocation(this,current.workoutId)
+        val access=recordingAccess()
+        val locationRequired=access.locationBlocked
+        if(locationRequired && WearHealthStore.enabled(this))WearHealthStore.blockForLocation(this,current.workoutId,access)
         if(remoteMeasurementRequested){
             if(!remoteStartNoticeShown){
                 remoteStartNoticeShown=true
                 val state=if(!WearHealthStore.enabled(this))"disabled" else if(!healthAllowed()||locationRequired)"permissionRequired" else null
                 if(state!=null) {
-                    val message=if(state=="disabled")"Órás mérés kikapcsolva. Az Órás mérések oldalon bekapcsolhatod." else if(locationRequired)WEAR_LOCATION_PERMISSION_MESSAGE else "Az órás méréshez szenzorengedély szükséges."
+                    val message=when {
+                        state=="disabled" -> "Órás mérés kikapcsolva. Az Órás mérések oldalon bekapcsolhatod."
+                        locationRequired && access.fineLocationGranted && access.locationServicesBlocked -> WEAR_LOCATION_SERVICES_MESSAGE
+                        locationRequired -> WEAR_LOCATION_PERMISSION_MESSAGE
+                        else -> "Az órás méréshez szenzorengedély szükséges."
+                    }
                     WearLiveHealth.publish(this,current.workoutId,state,message);releaseRemoteStart()
                     routeRequest.value="metrics";Toast.makeText(this,message,Toast.LENGTH_LONG).show()
                 }
             }
         }
         if(!WearHealthStore.enabled(this) || !healthAllowed() || locationRequired)return
-        if(previous?.optString("state")=="error" && (previous.optBoolean("locationPermissionRequired") || WearHealthFutures.isLegacyNullCompletionError(previous.optString("message")) ||
-                WearHealthFutures.isMissingLocationError(previous.optString("message")))) {
+        if(previous?.optString("state")=="error" && (wearHasLocationFailure(previous) || WearHealthFutures.isLegacyNullCompletionError(previous.optString("message")))) {
             // Retry known startup failures with the corrected config; keep measured totals.
             WearHealthStore.retry(this,current.workoutId)
             previous=WearHealthStore.load(this,current.workoutId)

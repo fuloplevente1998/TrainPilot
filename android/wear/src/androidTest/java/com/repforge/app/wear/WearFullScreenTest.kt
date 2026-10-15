@@ -553,6 +553,27 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     }
 
     @Test
+    fun disabledSystemLocationShowsItsOwnSettingsActionAndPreservesMeasuredTotals() {
+        val data=mutableStateOf<JSONObject?>(JSONObject().put("workoutId","layout-test")
+            .put("source","wear_health_services").put("state","error")
+            .put("updatedAt",System.currentTimeMillis()).put("message",WEAR_LOCATION_SERVICES_MESSAGE)
+            .put("locationServicesRequired",true).put("locationPermissionRequired",false).put("steps",12))
+        val actions=mutableListOf<String>()
+        compose.setContent { Watch { Fixture("metrics",liveHealth=data,measurementActions=actions) } }
+        lazyList().performScrollToNode(hasTestTag("wear-health-message"))
+        compose.onNodeWithText(WEAR_LOCATION_SERVICES_MESSAGE).assertIsDisplayed()
+        lazyList().performScrollToNode(hasContentDescription("Helyadatok bekapcsolása"))
+        compose.onNodeWithContentDescription("Helyadatok bekapcsolása").assertIsDisplayed().performClick()
+        assertEquals(listOf("retry"),actions)
+        screenshot("measurement-system-location-off")
+        compose.runOnIdle { data.value=wearRetryRecording(data.value!!) }
+        compose.onNodeWithText(WEAR_LOCATION_SERVICES_MESSAGE).assertDoesNotExist()
+        compose.onNodeWithContentDescription("Helyadatok bekapcsolása").assertDoesNotExist()
+        lazyList().performScrollToNode(hasText("12 lépés"))
+        compose.onNodeWithText("12 lépés").assertIsDisplayed()
+    }
+
+    @Test
     fun homeShortcutsReturnHomeAndDeleteStillRequiresConfirmation() {
         val selected = mutableStateOf("home")
         compose.setContent { Watch { key(selected.value) { Fixture(selected.value) } } }

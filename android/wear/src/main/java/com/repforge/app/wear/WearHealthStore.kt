@@ -38,12 +38,13 @@ object WearHealthStore {
     @Synchronized fun gps(context: Context, enabled: Boolean) { context.getSharedPreferences(PREFS,0).edit().putBoolean("gps",enabled).commit() }
     @Synchronized fun providerRequiresLocation(context: Context) = context.getSharedPreferences(PREFS,0).getBoolean("providerRequiresLocation",false)
     @Synchronized fun requireProviderLocation(context: Context) { context.getSharedPreferences(PREFS,0).edit().putBoolean("providerRequiresLocation",true).commit() }
-    @Synchronized fun blockForLocation(context: Context, id: String) {
+    @Synchronized internal fun blockForLocation(context: Context, id: String, access: WearRecordingAccess) {
         val value=begin(context,id)
-        if(value.optString("state")=="error" && value.optBoolean("locationPermissionRequired"))return
-        value.put("state","error").put("locationPermissionRequired",true).put("message",WEAR_LOCATION_PERMISSION_MESSAGE)
+        if(value.optString("state")=="error" && value.optBoolean("locationPermissionRequired")==!access.fineLocationGranted &&
+            value.optBoolean("locationServicesRequired")==!access.systemLocationEnabled && wearHasLocationFailure(value))return
+        wearApplyLocationFailure(value,access,WEAR_LOCATION_PERMISSION_MESSAGE)
         save(context,value);publish(context,value)
-        WearLiveHealth.publish(context,id,"permissionRequired",WEAR_LOCATION_PERMISSION_MESSAGE,value)
+        WearLiveHealth.publish(context,id,"permissionRequired",value.optString("message"),value)
     }
     @Synchronized fun load(context: Context, id: String): JSONObject? = context.getSharedPreferences(PREFS,0).getString("summary:$id",null)?.let { try { JSONObject(it) } catch (_: Exception) { null } }
     @Synchronized fun latest(context: Context): JSONObject? =

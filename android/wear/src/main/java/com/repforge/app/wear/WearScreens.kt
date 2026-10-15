@@ -1294,7 +1294,7 @@ private fun HealthScreen(
             }
         if (wearRecordingNeedsRetry(data, enabled, hasWorkout)) {
 
-            centerItem { Pill("Aktuális edzés mérése", tone = Gold, onClick = onEnable) }
+            centerItem { Pill(wearRecordingRetryLabel(data), tone = Gold, onClick = onEnable) }
         }
 
         val fresh =

@@ -1,4 +1,12 @@
-## Legfrissebb készülékes hiba — az engedély megvan, a Wear mérés mégis leáll
+## Legfrissebb Wear-visszajelzés — kikapcsolt központi helyszolgáltatás
+
+A `3eb33ff` utáni videón az új helyengedélyüzenet és eredménytelen explicit újrapróbálás látszik. A felhasználó ezután megerősítette: **az óra központi helyszolgáltatása ki volt kapcsolva**, bekapcsolja és újrapróbálja. A TrainPilot pontos, „használat közben” engedélye ettől függetlenül már megvolt. A tényleges siker még visszajelzésre vár; a korábbi foreground-javítást nem tekintjük a készülékes hiba teljes megoldásának.
+
+A javítás külön olvassa az appengedélyt és a `LocationManager.isLocationEnabled` állapotot az Activityben és a service-ben. Kikapcsolt rendszerhely esetén külön szöveg és **Helyadatok bekapcsolása** gomb nyitja a rendszer helybeállítását; visszatéréskor csak bekapcsolt hely mellett próbál újra, megőrzött összesítéssel és külön órás GPS-szándékkal. A helytípusú foreground és a helyhez kötött metrikák csak ténylegesen elérhető helyhozzáféréssel indulnak. Ha mindkét ellenőrzés rendben van, az eredeti szolgáltatói hiba marad meg, nem állítjuk újra, hogy nincs appengedély.
+
+Új JUnit regresszió, kerek Compose-ellenőrzés és **valódi platformengedély + ki-/bekapcsolt rendszerhely** instrumentált teszt kerül a GitHub CI-be. Aláírt Wear APK szükséges; telefonos `0d1ecf1` forrás változatlan, **1.3.4 /2730**, #205 draft / #163 nyitott. A [Google mintaprojekt azonos Samsung-hibája](https://github.com/android/health-samples/issues/212#issuecomment-1929015266) és a [hivatalos ExerciseClient-leírás](https://developer.android.com/health-and-fitness/health-services/active-data) is elkülöníti a rendszerhelyet az appengedélytől. Az aktuális CI/APK/hash az issue/PR tetején ellenőrizendő.
+
+## Korábbi készülékes hiba — az engedély megvan, a Wear mérés mégis leáll
 
 A felhasználó megerősítette a `0d1ecf1` Wear telepítését és az újrapróbálás utáni hibát. Új fotón `Missing permissions: ACCESS_FINE_LOCATION`, majd a rendszerbeállításban **Pontos helyadatok bekapcsolva / Az app használata közben** látszik. Nem tekintjük a mérést elfogadottnak, és nem állítjuk, hogy a felhasználó nem adott engedélyt.
 
