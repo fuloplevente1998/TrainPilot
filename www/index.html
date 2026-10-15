@@ -2041,22 +2041,6 @@
     if(parent)parent.appendChild(node);
     return node;
   }
-  function mountRow(row){
-    if(!row||row.querySelector('.tp163-route-entry'))return;
-    var detail=row.closest('details[data-tp152-history-key]'),key=detail?.dataset.tp152HistoryKey;
-    if(!key)return;
-    var workout=history().find(function(v){return rf142WorkoutKey(v)===key;});
-    var refs=references(workout);
-    if(!refs.length)return;
-    var entry=append('div',null,'tp163-route-entry');
-    var button=append('button',entry,'btn secondary block tp163-route-button','↗ '+t('open'));
-    button.type='button';
-    button.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();openRoute(key);});
-    row.prepend(entry);
-  }
-  function mountAll(){
-    document.querySelectorAll('details[data-tp152-history-key] > .tp3-combined-history-body[data-tp3-hydrated="true"]').forEach(mountRow);
-  }
   function coordinates(result){
     var sections=[],count=0,partial=!!result?.partial,accuracy=null;
     for(var raw of result?.segments||[]){
@@ -2235,27 +2219,9 @@
         return applied;
       };
     }
-    if(typeof window.tp3EnsureHistoryBody==='function'){
-      var ensure=window.tp3EnsureHistoryBody;
-      window.tp3EnsureHistoryBody=function(){
-        var body=ensure.apply(this,arguments);mountRow(body);return body;
-      };
-    }
-    if(typeof window.render==='function'){
-      var baseRender=window.render;
-      window.render=function(){
-        var out=baseRender.apply(this,arguments);
-        if(typeof state!=='undefined'&&state.tab==='history')requestAnimationFrame(mountAll);
-        return out;
-      };
-    }
-    document.addEventListener('click',function(event){
-      var summary=event.target?.closest?.('details.tp3-combined-history > summary');
-      if(summary)requestAnimationFrame(mountAll);
-    },true);
-    mountAll();
+
   }
-  window.TrainPilotGpsMap163={references:references,text:t,coordinates:coordinates,drawOffline:drawOffline,openRoute:openRoute,closeRoute:closeRoute,mountAll:mountAll,eraseRoutesForWorkout:eraseRoutesForWorkout};
+  window.TrainPilotGpsMap163={references:references,text:t,coordinates:coordinates,drawOffline:drawOffline,openRoute:openRoute,closeRoute:closeRoute,eraseRoutesForWorkout:eraseRoutesForWorkout};
   document.addEventListener('DOMContentLoaded',install);
 })();
 
