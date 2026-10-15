@@ -2017,10 +2017,10 @@
   var KEY=/^[A-Za-z0-9:._|+\-]{1,200}$/;
   var MAP_ID='tp163-route-overlay';
   var labels={
-    hu:{open:'GPS-útvonal megtekintése',title:'Edzésútvonal',close:'Bezárás',loading:'Mentett útvonal betöltése…',none:'Ehhez az edzéshez még nincs mentett GPS-útvonal.',offline:'Offline útvonalnézet – térképháttér nélkül',partial:'Az útvonal részleges. Egyes GPS-pontok hiányozhatnak.',failed:'Az útvonal jelenleg nem olvasható.',km:'Távolság',points:'GPS-pont',signal:'Utolsó pontosság',map:'Térkép',start:'Rajt',finish:'Cél',online:'Online térkép betöltése',notice:'Az online térképháttér külső szolgáltatónak felfedheti a megtekintett földrajzi területet és az IP-címedet.',unavailable:'Online térképcsempék ezen a készüléken még nincsenek beállítva.'},
-    en:{open:'View GPS route',title:'Workout route',close:'Close',loading:'Loading saved route…',none:'No saved GPS route for this workout yet.',offline:'Offline route view – no map tiles',partial:'Partial route. Some GPS fixes might be missing.',failed:'The route cannot be read right now.',km:'Distance',points:'GPS fixes',signal:'Last accuracy',map:'Map',start:'Start',finish:'Finish',online:'Load online map',notice:'Online map tiles can reveal the viewed area and your IP address to an external provider.',unavailable:'Online map tiles are not configured for this device yet.'},
-    de:{open:'GPS-Route anzeigen',title:'Trainingsroute',close:'Schließen',loading:'Gespeicherte Route laden…',none:'Keine gespeicherte GPS-Route vorhanden.',offline:'Offline-Route – ohne Kartenkacheln',partial:'Unvollständige Route.',failed:'Route derzeit nicht verfügbar.',km:'Distanz',points:'GPS-Punkte',signal:'Letzte Genauigkeit',map:'Karte',start:'Start',finish:'Ziel',online:'Onlinekarte laden',notice:'Online-Kartenkacheln können den betrachteten Bereich und deine IP-Adresse an externe Anbieter übermitteln.',unavailable:'Online-Kartenkacheln sind auf diesem Gerät noch nicht eingerichtet.'},
-    ro:{open:'Vezi traseul GPS',title:'Traseul antrenamentului',close:'Închide',loading:'Se încarcă traseul…',none:'Nu există un traseu GPS salvat.',offline:'Traseu offline – fără harta de fundal',partial:'Traseu parțial.',failed:'Traseul nu poate fi citit.',km:'Distanță',points:'Puncte GPS',signal:'Ultima precizie',map:'Hartă',start:'Start',finish:'Sosire',online:'Încarcă harta online',notice:'Plăcile hărții online pot divulga zona vizualizată și adresa IP către un furnizor extern.',unavailable:'Hărțile online nu sunt încă configurate pe acest dispozitiv.'}
+    hu:{open:'GPS-útvonal megtekintése',title:'Edzésútvonal',close:'Bezárás',loading:'Mentett útvonal betöltése…',none:'Ehhez az edzéshez még nincs mentett GPS-útvonal.',offline:'Offline útvonalnézet – térképháttér nélkül',partial:'Az útvonal részleges. Egyes GPS-pontok hiányozhatnak.',failed:'Az útvonal jelenleg nem olvasható.',km:'Távolság',points:'GPS-pont',signal:'Utolsó pontosság',map:'Térkép',start:'Rajt',finish:'Cél',live:'Élő GPS-térkép',viewLive:'Élő térkép',waiting:'GPS-jelet keresünk – az útvonal az első pontos mérés után jelenik meg.',liveEnded:'A GPS-mérés véget ért.',seconds:'Idő',average:'Átl. sebesség',online:'Online térkép betöltése',notice:'Az online térképháttér külső szolgáltatónak felfedheti a megtekintett földrajzi területet és az IP-címedet.',unavailable:'Online térképcsempék ezen a készüléken még nincsenek beállítva.'},
+    en:{open:'View GPS route',title:'Workout route',close:'Close',loading:'Loading saved route…',none:'No saved GPS route for this workout yet.',offline:'Offline route view – no map tiles',partial:'Partial route. Some GPS fixes might be missing.',failed:'The route cannot be read right now.',km:'Distance',points:'GPS fixes',signal:'Last accuracy',map:'Map',start:'Start',finish:'Finish',live:'Live GPS map',viewLive:'Live map',waiting:'Waiting for GPS – the route will appear after the first accurate fix.',liveEnded:'GPS recording has ended.',seconds:'Time',average:'Average speed',online:'Load online map',notice:'Online map tiles can reveal the viewed area and your IP address to an external provider.',unavailable:'Online map tiles are not configured for this device yet.'},
+    de:{open:'GPS-Route anzeigen',title:'Trainingsroute',close:'Schließen',loading:'Gespeicherte Route laden…',none:'Keine gespeicherte GPS-Route vorhanden.',offline:'Offline-Route – ohne Kartenkacheln',partial:'Unvollständige Route.',failed:'Route derzeit nicht verfügbar.',km:'Distanz',points:'GPS-Punkte',signal:'Letzte Genauigkeit',map:'Karte',start:'Start',finish:'Ziel',live:'Live-GPS-Karte',viewLive:'Live-Karte',waiting:'GPS-Signal wird gesucht – die Route erscheint nach der ersten gültigen Position.',liveEnded:'GPS-Messung beendet.',seconds:'Zeit',average:'Ø Geschwindigkeit',online:'Onlinekarte laden',notice:'Online-Kartenkacheln können den betrachteten Bereich und deine IP-Adresse an externe Anbieter übermitteln.',unavailable:'Online-Kartenkacheln sind auf diesem Gerät noch nicht eingerichtet.'},
+    ro:{open:'Vezi traseul GPS',title:'Traseul antrenamentului',close:'Închide',loading:'Se încarcă traseul…',none:'Nu există un traseu GPS salvat.',offline:'Traseu offline – fără harta de fundal',partial:'Traseu parțial.',failed:'Traseul nu poate fi citit.',km:'Distanță',points:'Puncte GPS',signal:'Ultima precizie',map:'Hartă',start:'Start',finish:'Sosire',live:'Hartă GPS live',viewLive:'Hartă live',waiting:'Se caută semnal GPS – traseul apare după primul punct valid.',liveEnded:'Înregistrarea GPS s-a încheiat.',seconds:'Timp',average:'Viteză medie',online:'Încarcă harta online',notice:'Plăcile hărții online pot divulga zona vizualizată și adresa IP către un furnizor extern.',unavailable:'Hărțile online nu sunt încă configurate pe acest dispozitiv.'}
   };
   labels.hu.onlineReady='Online térkép · OpenStreetMap';labels.hu.onlineFailed='A térképháttér nem tölthető be. A mentett útvonal továbbra is látható.';
   labels.en.onlineReady='Online map · OpenStreetMap';labels.en.onlineFailed='The map background could not load. Your saved route is still visible.';
@@ -2129,7 +2129,128 @@
     return leafletPromise;
   }
   var activeMap=null,pendingMapCancel=null,previousFocus=null,oldOverflow='';
+  var liveState=null,liveTimer=null,liveNonce=0,liveMapLayers=[];
+  function currentLiveTrip(){
+    var trip=typeof db!=='undefined'?db.get('gpsTrip106',null):null;
+    if(!trip||!KEY.test(trip.key)||!tp106GpsState?.active||!tp106GpsOwner(trip))return null;
+    return trip;
+  }
+  function liveButton(){
+    var panel=document.getElementById('tp106GPS');
+    if(!panel)return;
+    var button=panel.querySelector('#tp163LiveMapButton'),trip=currentLiveTrip();
+    var visible=!!trip&&tp106GpsOwner(trip)?.e===state.session?.exercises?.[state.current];
+    if(!visible){button?.remove();return;}
+    if(button)return;
+    button=append('button',panel,'btn secondary block tp163-live-reopen',t('viewLive'));
+    button.id='tp163LiveMapButton';button.type='button';
+    button.addEventListener('click',function(){openLiveRoute();});
+  }
+  function liveMapUpdate(sections){
+    if(!activeMap||!liveState||!window.L?.polyline)return;
+    for(var layer of liveMapLayers)try{activeMap.removeLayer(layer);}catch(_){}
+    liveMapLayers=[];
+    var all=[];
+    sections.forEach(function(section){
+      liveMapLayers.push(L.polyline(section,{color:'#3be68a',weight:5,opacity:.96}).addTo(activeMap));
+      all.push.apply(all,section);
+    });
+    if(all.length){
+      liveMapLayers.push(L.circleMarker(all[0],{radius:7,color:'#e7faff',fillColor:'#30dff2',fillOpacity:1}).addTo(activeMap));
+      liveMapLayers.push(L.circleMarker(all[all.length-1],{radius:7,color:'#ffe4b5',fillColor:'#ffb93d',fillOpacity:1}).addTo(activeMap));
+      if(!activeMap.getBounds().contains(all[all.length-1]))activeMap.panTo(all[all.length-1],{animate:false});
+    }
+  }
+  function liveDuration(seconds){
+    var v=Math.max(0,Math.round(Number(seconds)||0));
+    return [Math.floor(v/3600),Math.floor(v/60)%60,v%60].map(function(n){return String(n).padStart(2,'0');}).join(':');
+  }
+  async function updateLiveRoute(){
+    var stateNow=liveState;
+    if(!stateNow||stateNow.busy)return;
+    var trip=currentLiveTrip();
+    if(!trip||trip.key!==stateNow.key){closeRoute();return;}
+    var plugin=bridge();
+    if(!plugin?.status||!plugin?.route){stateNow.hint.textContent=t('failed');return;}
+    stateNow.busy=true;
+    try{
+      var status=await plugin.status();
+      if(liveState!==stateNow)return;
+      if(!status?.active||status.key!==stateNow.key){closeRoute();return;}
+      var reply=await plugin.route({key:stateNow.key});
+      if(liveState!==stateNow)return;
+      var parsed=coordinates(reply),meters=Math.max(0,Number(status.distanceMeters)||0),seconds=Math.max(0,Number(status.elapsedSeconds)||0);
+      stateNow.km.textContent=(meters/1000).toLocaleString('hu-HU',{maximumFractionDigits:2})+' km';
+      stateNow.time.textContent=liveDuration(seconds);
+      stateNow.speed.textContent=(seconds>0?meters*3.6/seconds:0).toLocaleString('hu-HU',{maximumFractionDigits:1})+' km/h';
+      if(parsed.count!==stateNow.pointCount||parsed.partial!==stateNow.partial){
+        stateNow.pointCount=parsed.count;stateNow.partial=parsed.partial;
+        if(activeMap){liveMapUpdate(parsed.sections);}
+        else{
+          stateNow.map.replaceChildren();
+          if(parsed.count)drawOffline(stateNow.map,parsed.sections);
+          else append('p',stateNow.map,'tp163-empty tp163-live-wait',t('waiting'));
+        }
+      }
+      if(!parsed.count)stateNow.hint.textContent=t('waiting');
+      else stateNow.hint.textContent=parsed.partial?t('partial'):t('offline')+' · '+parsed.count+' '+t('points');
+      if(activeMap&&parsed.count)stateNow.hint.textContent=t('onlineReady')+' · '+parsed.count+' '+t('points');
+      stateNow.sections=parsed.sections;
+      // The route has no background tile/Leaflet requests until explicit online consent.
+      if(parsed.count&&navigator.onLine&&!stateNow.consent){
+        stateNow.consent=true;
+        var provider=tileProvider();
+        if(provider){
+          append('p',stateNow.modal,'tp163-map-consent',t('notice'));
+          var online=append('button',stateNow.modal,'btn secondary tp163-online-button',t('online'));
+          online.type='button';
+          online.addEventListener('click',async function(){
+            if(online.disabled)return;
+            online.disabled=true;
+            var ok=await renderLeaflet(stateNow.map,stateNow.sections,provider);
+            if(liveState!==stateNow)return;
+            if(ok){stateNow.hint.textContent=t('onlineReady');liveMapUpdate(stateNow.sections);}
+            online.disabled=ok;
+            if(!ok)stateNow.hint.textContent=t('onlineFailed');
+          });
+        }else append('p',stateNow.modal,'tp163-map-consent',t('unavailable'));
+      }
+    }catch(_){if(liveState===stateNow)stateNow.hint.textContent=t('failed');}
+    finally{stateNow.busy=false;}
+  }
+  function openLiveRoute(requestedTrip){
+    var trip=currentLiveTrip();
+    if(!trip||requestedTrip?.key&&requestedTrip.key!==trip.key)return false;
+    closeRoute();
+    previousFocus=document.activeElement;oldOverflow=document.body.style.overflow;
+    var veil=append('div',document.body,'tp163-route-veil');veil.id=MAP_ID;
+    veil.setAttribute('role','presentation');
+    var modal=append('section',veil,'tp163-route-dialog tp163-live-dialog');
+    modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label',t('live'));
+    var head=append('header',modal,'tp163-route-head');append('h2',head,null,t('live'));
+    var close=append('button',head,'tp163-close','×');close.type='button';close.onclick=closeRoute;
+    close.setAttribute('aria-label',t('close'));close.title=t('close');
+    var metrics=append('div',modal,'tp163-route-metrics');
+    function metric(name){var el=append('div',metrics,'tp163-metric');append('span',el,null,t(name));return append('strong',el,null,'–');}
+    var km=metric('km'),time=metric('seconds'),speed=metric('average');
+    var hint=append('p',modal,'tp163-route-hint',t('waiting'));
+    var map=append('div',modal,'tp163-map-area');map.setAttribute('aria-label',t('map'));
+    append('p',map,'tp163-empty tp163-live-wait',t('waiting'));
+    veil.addEventListener('click',function(event){if(event.target===veil)closeRoute();});
+    document.addEventListener('keydown',escapeHandler,true);
+    document.body.style.overflow='hidden';close.focus();
+    liveState={key:trip.key,modal,map,hint,km,time,speed,pointCount:-1,partial:false,sections:[],consent:false,busy:false,nonce:++liveNonce};
+    void updateLiveRoute();
+    liveTimer=setInterval(function(){
+      if(document.visibilityState==='hidden')return; // Native recording continues with no UI wakeups.
+      void updateLiveRoute();
+    },5000);
+    return true;
+  }
   function closeRoute(){
+    liveState=null;liveNonce++;
+    if(liveTimer!==null){clearInterval(liveTimer);liveTimer=null;}
+    liveMapLayers=[];
     if(pendingMapCancel){pendingMapCancel();pendingMapCancel=null;}
     if(activeMap){activeMap.remove();activeMap=null;}
     var node=document.getElementById(MAP_ID);
@@ -2170,13 +2291,16 @@
       tiles.on('load',function(){if(!settled)Promise.resolve().then(function(){finish(false);});});
       tiles.addTo(map);
       var coords=[];
+      var liveLayers=[];
       segments.forEach(function(section){
-        L.polyline(section,{color:'#3be68a',weight:5,opacity:.96,lineJoin:'round'}).addTo(map);
+        var path=L.polyline(section,{color:'#3be68a',weight:5,opacity:.96,lineJoin:'round'}).addTo(map);
+        if(liveState&&host===liveState.map)liveLayers.push(path);
         coords.push.apply(coords,section);
       });
       if(!coords.length){finish(false);return;}
       L.circleMarker(coords[0],{radius:7,color:'#e7faff',fillColor:'#30dff2',fillOpacity:1,weight:2}).bindTooltip(t('start')).addTo(map);
       L.circleMarker(coords[coords.length-1],{radius:7,color:'#ffe4b5',fillColor:'#ffb93d',fillOpacity:1,weight:2}).bindTooltip(t('finish')).addTo(map);
+      if(liveState&&host===liveState.map)liveMapLayers=liveLayers;
       var bounds=L.latLngBounds(coords);
       if(bounds.isValid())map.fitBounds(bounds.pad(.14),{maxZoom:16,animate:false});
       requestAnimationFrame(function(){if(pane.isConnected)map.invalidateSize();});
@@ -2282,6 +2406,26 @@
     return eraseKeys(allRouteKeys(previous).filter(function(key){return !keep.has(key);}));
   }
   function install(){
+    // One existing native GPS service: only its confirmed start can open this overlay.
+    if(typeof tp106StartGPS==='function'){
+      var gpsStart=tp106StartGPS;
+      tp106StartGPS=async function(){
+        var previous=db.get('gpsTrip106',null)?.key;
+        var response=await gpsStart.apply(this,arguments);
+        var current=currentLiveTrip();
+        if(current&&current.key!==previous)openLiveRoute(current);
+        return response;
+      };
+    }
+    if(typeof tp106PaintGPS==='function'){
+      var gpsPaint=tp106PaintGPS;
+      tp106PaintGPS=function(){
+        var response=gpsPaint.apply(this,arguments);
+        liveButton();
+        if(liveState&&!currentLiveTrip())closeRoute();
+        return response;
+      };
+    }
     // Keep the per-set route owner in the saved draft/history; gpsTrip106 is temporary.
     if(typeof window.tp106ApplyGPS==='function'){
       var base=window.tp106ApplyGPS;
@@ -2317,7 +2461,7 @@
       };
     }
   }
-  window.TrainPilotGpsMap163={references:references,text:t,coordinates:coordinates,drawOffline:drawOffline,openRoute:openRoute,closeRoute:closeRoute,eraseRoutesForWorkout:eraseRoutesForWorkout,tileProvider:tileProvider,allRouteKeys:allRouteKeys,pruneRoutesAfterRestore:pruneRoutesAfterRestore};
+  window.TrainPilotGpsMap163={references:references,text:t,coordinates:coordinates,drawOffline:drawOffline,openRoute:openRoute,openLiveRoute:openLiveRoute,updateLiveRoute:updateLiveRoute,closeRoute:closeRoute,eraseRoutesForWorkout:eraseRoutesForWorkout,tileProvider:tileProvider,allRouteKeys:allRouteKeys,pruneRoutesAfterRestore:pruneRoutesAfterRestore};
   document.addEventListener('DOMContentLoaded',install);
 })();
 
