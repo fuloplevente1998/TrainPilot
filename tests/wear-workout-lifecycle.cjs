@@ -15,11 +15,24 @@ function harness({normalize=false,ackFailures=0}={}){
   toggleSet(ei,si){const s=state.session.exercises[ei].sets[si];if(Number(s.reps)>0)s.done=!s.done},
   finishWorkout(options){savedCalls++;assert.equal(options.wearConfirmed,true);const saved={...structuredClone(state.session),finished:options.wearFinishedAt||new Date().toISOString()};db.set('history',[saved,...db.get('history',[])]);db.set('draft',null);state.session=null}
  });
- vm.runInContext(source,ctx);
- return {state,db,pending,acks,ackResults,sync:window.TrainPilotWearSync,session,savedCalls:()=>savedCalls};
+ const undoSource=fs.existsSync('www/workout-undo-188.js')?fs.readFileSync('www/workout-undo-188.js','utf8'):app.match(/\/\/ @section workout-undo-188\.js\n([\s\S]*?)\/\/ @endsection workout-undo-188\.js/)[1];
+ vm.runInContext(undoSource,ctx);vm.runInContext(source,ctx);
+ return {state,db,pending,acks,ackResults,undo:window.TrainPilotUndo188,sync:window.TrainPilotWearSync,session,savedCalls:()=>savedCalls};
 }
 const finish=(id='finish')=>({commandId:id,workoutId:'2026-10-07T08:00:00.000Z',action:'finishWorkout',confirmed:true,createdAt:30,sequence:3,finishedAt:'2026-10-07T08:42:16.000Z'});
 (async()=>{
+ {const h=harness(),id=finish().workoutId;h.state.session.timerOwner='watch';h.state.session.healthWear129={heartRate:93,totalCalories:7};
+  h.state.session.exercises[0].sets.forEach((s,i)=>s.setId='s'+i);
+  const completed=structuredClone(h.state.session.exercises);completed[0].sets[0].done=true;completed[0].sets[0].reps='12';
+  const undo={commandId:'undo188',recordId:'record188',workoutId:id,exerciseId:'squat',setId:'s0',action:'undoSet',expected:h.undo.guard(completed),sequence:3,createdAt:30};
+  h.pending.push(undo);await h.sync.drainCommands();assert.deepEqual(h.acks,[],'inverse waits for its out-of-order original');
+  const record={commandId:'record188',workoutId:id,exerciseId:'squat',setId:'s0',action:'completeSet',reps:'12',weight:5,createdAt:20,sequence:2};
+  h.pending.push(record);await h.sync.drainCommands();assert.deepEqual(h.acks,['record188','undo188']);
+  assert.equal(h.state.session.exercises[0].sets[0].done,false);assert.equal(h.state.session.automatic162.phase,'paused');
+  assert.equal(h.state.session.healthWear129.totalCalories,7);h.pending.push(record);await h.sync.drainCommands();
+  assert.equal(h.state.session.exercises[0].sets[0].done,false,'late original cannot resurrect completion');
+ }
+
  {const h=harness();h.state.session.exercises[0].sets[0]={set:1,reps:'12',weight:6,done:true};h.pending.push(finish());await h.sync.drainCommands();assert.equal(h.db.get('history',[]).length,1);assert.equal(h.db.get('history',[])[0].finished,'2026-10-07T08:42:16.000Z');assert.equal(h.db.get('wearWorkoutResult').status,'saved');assert.deepEqual(h.acks,['finish']);h.pending.push(finish('retry'));await h.sync.drainCommands();assert.equal(h.savedCalls(),1);assert.equal(h.db.get('history',[]).length,1)}
  {const h=harness();h.pending.push(finish());await h.sync.drainCommands();assert.equal(h.db.get('history',[]).length,0);assert.equal(h.db.get('wearWorkoutResult').status,'error');assert.equal(h.ackResults[0].status,'error')}
  {const h=harness();h.pending.push({...finish(),confirmed:false});await h.sync.drainCommands();assert.equal(h.acks.length,0);assert.ok(h.state.session)}

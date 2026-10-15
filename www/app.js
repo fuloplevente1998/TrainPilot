@@ -17031,6 +17031,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(!last||last.workoutId!==command.workoutId||last.recordId!==command.recordId||last.exerciseId!==command.exerciseId||last.setId!==command.setId||!same(last.expected,guard(session.exercises))||!same(command.expected,last.expected))return false;
   const e=session.exercises.find(e=>e.id===last.exerciseId),set=e?.sets.find(s=>s.setId===last.setId);
   if(!set?.done)return false;
+  if(session.phoneExecution162&&session.timerOwner!=='watch'){
+   const meta=session.phoneExecution162,edit=session.phoneEdit162;
+   session.phoneEdit162=edit||{revision:meta.revision,generation:meta.generation,bases:JSON.parse(JSON.stringify(meta.completedBase||{})),targets:[]};
+   if(!session.phoneEdit162.targets.includes(last.setId))session.phoneEdit162.targets.push(last.setId);
+  }
   Object.assign(set,last.before,{done:false});
   session.undo188={commandId:command.commandId,recordId:command.recordId,status:'applied',fingerprint:JSON.stringify([command.recordId,command.expected])};
   session.undoneRecords188=[...(session.undoneRecords188||[]),command.recordId].slice(-128);
@@ -17605,6 +17610,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(command.nativeExecutionProtocol===2&&['completeSet','undoSet','automaticControl'].includes(action)&&(action==='completeSet'||action==='undoSet'||command.value==='start'||command.value==='resumeUndo')){
    const result=await api()?.executeCommand?.({command});
    if(['applied','duplicate'].includes(result?.status))return window.TrainPilotPhoneExecution162.sync({prepare:false});
+   if(result?.status==='deferred')return false;
    return recordResult(command,'error',rf212Lang()==='hu'?'Az órás parancs elavult vagy az időzítő nem áll készen. Ellenőrizd az edzést.':'The watch command is stale or the timer is not ready. Check the workout.');
   }
   if(action==='requestHome')return syncHomeNow({force:true});
@@ -17680,6 +17686,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    add(id);adoptWatchIdentity(command,true);persistDraft();return true;
   }
   if(action==='undoSet'){
+   if(!state.session.lastRecord188&&state.session.undo188?.commandId!==command.commandId&&!state.session.undoneRecords188?.includes(command.recordId))return false;
    if(state.session.undo188?.commandId!==command.commandId&&state.session.timerOwner!=='watch'){
     if(!await TrainPilotAutomatic162.command('pause')||!await TrainPilotIntervals162.command('pause'))return false;
    }

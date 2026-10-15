@@ -37,7 +37,7 @@ final class WorkoutUndo188 {
     }
     static JSONObject capture(JSONObject before,JSONObject after,JSONObject target,String recordId)throws JSONException {
         return new JSONObject().put("recordId",recordId).put("workoutId",before.getString("workoutId"))
-            .put("exerciseId",target.getString("exerciseId")).put("setId",target.getString("setId"))
+            .put("native188",true).put("exerciseId",target.getString("exerciseId")).put("setId",target.getString("setId"))
             .put("before",values(find(before,target))).put("expected",guard(after)).put("recordedAt",System.currentTimeMillis());
     }
     static JSONObject find(JSONObject frame,JSONObject target)throws JSONException {

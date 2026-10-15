@@ -305,4 +305,4 @@ internal fun preservePendingWearEdits(current: WearWorkout, incoming: WearWorkou
 internal fun nativePhoneExecution(workout: WearWorkout, action: String, exercise: WearExercise?, value: Any?): Boolean =
     workout.nativeExecutionProtocol == 2 && workout.generation > 0 && workout.executionRevision > 0 && workout.timerOwner == "phone" &&
         (action == "automaticControl" && (value == "start" || value == "resumeUndo") || action == "completeSet" && exercise != null &&
-            exercise.repUnit.replace("\\s+".toRegex(), "").lowercase() in listOf("", "ism.", "reps") && exercise.measurementType != "distance")
+            exercise.repUnit.replace("\\s+".toRegex(), "").lowercase() in listOf("", "ism.", "reps", "/kar", "/láb") && exercise.measurementType != "distance")

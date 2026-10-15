@@ -308,6 +308,11 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
         JSONObject result=new JSONObject();for(String key:new String[]{"done","reps","weight","leftSeconds","rightSeconds","distanceMeters"})if(set.has(key))result.put(key,set.get(key));return result;
     }
 
+    synchronized boolean recorded188(String workoutId,long generation,String recordId) {
+        try(Cursor c=getReadableDatabase().rawQuery("SELECT seq FROM recordings WHERE command_id=? AND workout_id=? AND generation=?",
+            new String[]{recordId,workoutId,Long.toString(generation)})){return c.moveToFirst();}
+    }
+
     synchronized JSONObject receipt(JSONObject command) throws JSONException {
         String id = PhoneWorkoutRecording.id(command, "commandId");
         try (Cursor c = getReadableDatabase().rawQuery("SELECT seq, fingerprint, event FROM recordings WHERE command_id=?", new String[]{id})) {

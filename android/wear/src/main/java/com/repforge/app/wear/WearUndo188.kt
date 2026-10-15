@@ -30,6 +30,7 @@ object WearUndo188 {
         val set=exercise.sets.getOrNull(s) ?: return after
         if(set.done||recordId.isBlank()||set.setId.isBlank())return after.copy(lastRecord188=null)
         val record=JSONObject().put("recordId",recordId).put("workoutId",before.workoutId)
+            .put("native188",nativePhoneExecution(before,"completeSet",exercise,null))
             .put("exerciseId",exercise.id).put("setId",set.setId).put("before",values(set))
             .put("expected",guard(after)).put("recordedAt",now)
         return after.copy(lastRecord188=record.toString())
@@ -76,7 +77,8 @@ object WearUndo188 {
                 .put("createdAt",System.currentTimeMillis()).put("watchSequence",current.localSequence)
                 .put("generation",current.generation).put("executionRevision",current.executionRevision)
                 .put("automation",next.automation?.json()).put("pauseRevision",current.pauseRevision)
-            if(current.nativeExecutionProtocol==2&&current.timerOwner=="phone")command.put("nativeExecutionProtocol",2)
+            marker(current)?.let { command.put("undoDependency188",it.optString("commandId")) }
+            if(r.optBoolean("native188")&&current.nativeExecutionProtocol==2&&current.timerOwner=="phone")command.put("nativeExecutionProtocol",2)
             // Persist inverse and its marker before transport; the outbox remains the only delivery queue.
             val durable=next.copy(undo188=JSONObject(next.undo188!!).put("command",command).toString())
             WorkoutSnapshotStore.saveWorkout(context,durable)

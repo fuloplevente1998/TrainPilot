@@ -226,4 +226,15 @@ public class PhoneWorkoutExecutionServiceTest {
         assertFalse(PhoneWorkoutExecution.display(context).getJSONObject("automation").getBoolean("paused"));
         assertEquals("applied",PhoneWorkoutExecution.execute(context,command().put("commandId","record-again188")).getString("status"));
     }
+
+    @Test public void inverseBeforeCompletionDefersWithoutInventingOrRejectingARecord()throws Exception {
+        arm();JSONObject original=command(),before=store.snapshot();
+        JSONObject after=PhoneWorkoutRecording.record(before,original),candidate=WorkoutUndo188.capture(before,after,original,original.getString("commandId"));
+        JSONObject undo=new JSONObject(candidate.toString()).put("action","undoSet").put("commandId","out-of-order188")
+            .put("nativeExecutionProtocol",2).put("generation",1).put("executionRevision",before.getLong("executionRevision"));
+        assertEquals("deferred",PhoneWorkoutExecution.execute(context,undo).getString("status"));assertEquals(0,store.pendingEvents("workout",1,0).length());
+        assertEquals("applied",PhoneWorkoutExecution.execute(context,original).getString("status"));
+        assertEquals("applied",PhoneWorkoutExecution.execute(context,undo).getString("status"));
+        assertFalse(store.snapshot().getJSONArray("exercises").getJSONObject(0).getJSONArray("sets").getJSONObject(0).getBoolean("done"));
+    }
 }

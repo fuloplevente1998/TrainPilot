@@ -18,4 +18,6 @@ for(const edit of [set=>set.reps='1',set=>set.done=true,set=>set.setId='other'])
 const next=recorded(),old=command(next);next.exercises[0].sets[1].done=true;core.capture(next,{...complete,commandId:'later',setId:'b'},core.values(before.exercises[0].sets[1]));
 assert.equal(core.inverse(next,old),false,'a newer recording supersedes the former candidate');
 const formatted=recorded();formatted.exercises[0].sets[0].weight='5,500';assert.equal(core.same(formatted.lastRecord188.expected,core.guard(formatted.exercises)),true);
+const phone=recorded();phone.timerOwner='phone';phone.phoneExecution162={generation:4,revision:5,completedBase:{a:{done:true,reps:'9',weight:5.5}}};
+assert.equal(core.inverse(phone,command(phone)),true);assert.deepEqual(copy(phone.phoneEdit162.targets),['a']);assert.equal(phone.phoneEdit162.revision,5,'legacy phone inverse requests a CAS amendment');
 console.log('PASS #188 inverse: stable identities, one last event, newer edit/record guard, replay, numeric formatting, health/time preservation');

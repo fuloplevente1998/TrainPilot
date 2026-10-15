@@ -39,6 +39,9 @@ final class PhoneWorkoutExecution {
         if(!dependency.isEmpty()&&(frame.optJSONObject("undo188")==null||!dependency.equals(frame.getJSONObject("undo188").optString("commandId"))))return new JSONObject().put("status","rejected").put("reason","undoConflict");
         if("undoSet".equals(command.optString("action"))){
             if(!frame.getString("workoutId").equals(command.optString("workoutId"))||frame.getLong("generation")!=command.optLong("generation"))return new JSONObject().put("status","rejected").put("reason","undoConflict");
+            if(!db.recorded188(frame.getString("workoutId"),frame.getLong("generation"),command.optString("recordId"))){
+                return new JSONObject().put("status",frame.getLong("executionRevision")<=command.optLong("executionRevision")?"deferred":"rejected").put("reason","recordingAwaitingDelivery");
+            }
             JSONObject running=IntervalTimerService.snapshot(context);
             if(frame.getString("workoutId").equals(running.optString("workoutId"))&&!running.optBoolean("stopped")){
                 try{IntervalTimerService.pauseForUndo(context,running.optString("key"));}
