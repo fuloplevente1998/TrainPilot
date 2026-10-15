@@ -498,6 +498,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     }
 
     private fun sendStartCommand(day: WatchHomeDay, scheduleId: String, started: String) {
+        val commandId=UUID.randomUUID().toString()
         val command = JSONObject()
             .put("schema", 1)
             .put("commandId", commandId)

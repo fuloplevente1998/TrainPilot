@@ -99,7 +99,7 @@ final class PhoneWorkoutExecution {
     static JSONObject display(Context context) throws Exception {
         JSONObject frame = store(context).snapshot(); if (frame == null || !frame.optBoolean("active")) return null;
         JSONObject value = new JSONObject(frame.toString());
-        value.remove("timeLogs162");value.remove("latestTimer162");value.remove("manualAnchor162");value.remove("timerConfig"); value.remove("automaticEnabled"); value.remove("transition");
+        value.remove("retiredTimers188");value.remove("timeLogs162");value.remove("latestTimer162");value.remove("manualAnchor162");value.remove("timerConfig"); value.remove("automaticEnabled"); value.remove("transition");
         value.put("nativeExecutionProtocol", 2);
         JSONObject transition = frame.optJSONObject("transition"), plan = transition == null ? null : transition.optJSONObject("plan");
         if (plan != null) {

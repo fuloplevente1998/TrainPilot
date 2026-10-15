@@ -78,7 +78,7 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
                 else incoming.remove("lastRecord188");
                 if(incoming.optLong("pauseRevision")<=old.optLong("pauseRevision"))
                     for(String key:new String[]{"pauseRevision","workoutPaused","activeIntervals"})if(old.has(key))incoming.put(key,old.get(key));
-                for(String key:new String[]{"timeLogs162","latestTimer162","retiredTimers188","manualAnchor162","resumeTimerOnContinue201","retiredTimers188"})if(old.has(key))incoming.put(key,old.get(key));
+                for(String key:new String[]{"timeLogs162","latestTimer162","retiredTimers188","manualAnchor162","resumeTimerOnContinue201"})if(old.has(key))incoming.put(key,old.get(key));
                 if (old.has("transition")) {
                     JSONObject transition=old.getJSONObject("transition"),plan=transition.optJSONObject("plan"),automation=incoming.optJSONObject("automation");
                     if (plan!=null&&automation!=null&&plan.optString("key").equals(automation.optString("key"))) incoming.put("transition",transition);
