@@ -80,10 +80,10 @@ object WearUndo188 {
             marker(current)?.let { command.put("undoDependency188",it.optString("commandId")) }
             if(r.optBoolean("native188")&&current.nativeExecutionProtocol==2&&current.timerOwner=="phone")command.put("nativeExecutionProtocol",2)
             // Persist inverse and its marker before transport; the outbox remains the only delivery queue.
-            val durable=next.copy(undo188=JSONObject(next.undo188!!).put("command",command).toString())
+            val durable=next.copy(localSequence=current.localSequence+1,undo188=JSONObject(next.undo188!!).put("command",command).toString())
             WorkoutSnapshotStore.saveWorkout(context,durable)
             val seq=WearCommandOutbox.enqueue(context,command)
-            WorkoutSnapshotStore.saveWorkout(context,durable.copy(localSequence=maxOf(next.localSequence,seq)))
+            WorkoutSnapshotStore.saveWorkout(context,durable.copy(localSequence=maxOf(durable.localSequence,seq)))
             WearStopwatchStore.clear(context)
             context.getSystemService(android.os.Vibrator::class.java)?.cancel()
             if(current.timerOwner=="watch")WearAutomaticController.publish(context,WorkoutSnapshotStore.load(context)!!)

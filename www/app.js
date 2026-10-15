@@ -18376,8 +18376,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const before=s.watchAutomation162;
    root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{
     const own=s.exercises[i].sets[j],previous=before?.snapshot?.exercises?.[i]?.sets?.[j];
-    if(own.done!==v.done)changed=true;
-    own.done=v.done;
+    // A mirror cannot revert a newer phone edit while the watch still reports its old value.
+    if(!previous||own.done===previous.done||v.done!==previous.done){
+     if(own.done!==v.done)changed=true;
+     own.done=v.done;
+    }
     // Keep a phone edit until the watch actually changes the same value.
     for(const field of ['reps','weight','leftSeconds','rightSeconds','distanceMeters']){
      if(field==='distanceMeters'&&(v[field]==null||v[field]===''||Number(v[field])===0&&!tp106IsDistance(s.exercises[i])))continue;
