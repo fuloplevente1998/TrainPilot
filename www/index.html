@@ -2017,10 +2017,10 @@
   var KEY=/^[A-Za-z0-9:._|+\-]{1,200}$/;
   var MAP_ID='tp163-route-overlay';
   var labels={
-    hu:{open:'GPS-útvonal megtekintése',title:'Edzésútvonal',close:'Bezárás',loading:'Mentett útvonal betöltése…',none:'Ehhez az edzéshez még nincs mentett GPS-útvonal.',offline:'Offline útvonalnézet – térképháttér nélkül',partial:'Az útvonal részleges. Egyes GPS-pontok hiányozhatnak.',failed:'Az útvonal jelenleg nem olvasható.',km:'Távolság',points:'GPS-pont',signal:'Utolsó pontosság',map:'Térkép',start:'Rajt',finish:'Cél'},
-    en:{open:'View GPS route',title:'Workout route',close:'Close',loading:'Loading saved route…',none:'No saved GPS route for this workout yet.',offline:'Offline route view – no map tiles',partial:'Partial route. Some GPS fixes might be missing.',failed:'The route cannot be read right now.',km:'Distance',points:'GPS fixes',signal:'Last accuracy',map:'Map',start:'Start',finish:'Finish'},
-    de:{open:'GPS-Route anzeigen',title:'Trainingsroute',close:'Schließen',loading:'Gespeicherte Route laden…',none:'Keine gespeicherte GPS-Route vorhanden.',offline:'Offline-Route – ohne Kartenkacheln',partial:'Unvollständige Route.',failed:'Route derzeit nicht verfügbar.',km:'Distanz',points:'GPS-Punkte',signal:'Letzte Genauigkeit',map:'Karte',start:'Start',finish:'Ziel'},
-    ro:{open:'Vezi traseul GPS',title:'Traseul antrenamentului',close:'Închide',loading:'Se încarcă traseul…',none:'Nu există un traseu GPS salvat.',offline:'Traseu offline – fără harta de fundal',partial:'Traseu parțial.',failed:'Traseul nu poate fi citit.',km:'Distanță',points:'Puncte GPS',signal:'Ultima precizie',map:'Hartă',start:'Start',finish:'Sosire'}
+    hu:{open:'GPS-útvonal megtekintése',title:'Edzésútvonal',close:'Bezárás',loading:'Mentett útvonal betöltése…',none:'Ehhez az edzéshez még nincs mentett GPS-útvonal.',offline:'Offline útvonalnézet – térképháttér nélkül',partial:'Az útvonal részleges. Egyes GPS-pontok hiányozhatnak.',failed:'Az útvonal jelenleg nem olvasható.',km:'Távolság',points:'GPS-pont',signal:'Utolsó pontosság',map:'Térkép',start:'Rajt',finish:'Cél',online:'Online térkép betöltése',notice:'Az online térképháttér külső szolgáltatónak felfedheti a megtekintett földrajzi területet és az IP-címedet.',unavailable:'Online térképcsempék ezen a készüléken még nincsenek beállítva.'},
+    en:{open:'View GPS route',title:'Workout route',close:'Close',loading:'Loading saved route…',none:'No saved GPS route for this workout yet.',offline:'Offline route view – no map tiles',partial:'Partial route. Some GPS fixes might be missing.',failed:'The route cannot be read right now.',km:'Distance',points:'GPS fixes',signal:'Last accuracy',map:'Map',start:'Start',finish:'Finish',online:'Load online map',notice:'Online map tiles can reveal the viewed area and your IP address to an external provider.',unavailable:'Online map tiles are not configured for this device yet.'},
+    de:{open:'GPS-Route anzeigen',title:'Trainingsroute',close:'Schließen',loading:'Gespeicherte Route laden…',none:'Keine gespeicherte GPS-Route vorhanden.',offline:'Offline-Route – ohne Kartenkacheln',partial:'Unvollständige Route.',failed:'Route derzeit nicht verfügbar.',km:'Distanz',points:'GPS-Punkte',signal:'Letzte Genauigkeit',map:'Karte',start:'Start',finish:'Ziel',online:'Onlinekarte laden',notice:'Online-Kartenkacheln können den betrachteten Bereich und deine IP-Adresse an externe Anbieter übermitteln.',unavailable:'Online-Kartenkacheln sind auf diesem Gerät noch nicht eingerichtet.'},
+    ro:{open:'Vezi traseul GPS',title:'Traseul antrenamentului',close:'Închide',loading:'Se încarcă traseul…',none:'Nu există un traseu GPS salvat.',offline:'Traseu offline – fără harta de fundal',partial:'Traseu parțial.',failed:'Traseul nu poate fi citit.',km:'Distanță',points:'Puncte GPS',signal:'Ultima precizie',map:'Hartă',start:'Start',finish:'Sosire',online:'Încarcă harta online',notice:'Plăcile hărții online pot divulga zona vizualizată și adresa IP către un furnizor extern.',unavailable:'Hărțile online nu sunt încă configurate pe acest dispozitiv.'}
   };
   var t=function(k){var language=typeof rf212Lang==='function'?rf212Lang():'hu';return (labels[language]||labels.hu)[k]||labels.hu[k]||k;};
   function bridge(){return window.Capacitor?.Plugins?.DistanceTracker||window.Capacitor?.registerPlugin?.('DistanceTracker');}
@@ -2084,6 +2084,21 @@
     });
     host.appendChild(svg);
   }
+  // Production Android WebView must use an explicitly configured, policy-compliant
+  // tile provider. Do not assume its default WebView User-Agent identifies TrainPilot.
+  function tileProvider(){
+    var configured=window.TrainPilotGps163TileProvider;
+    if(configured){
+      var url=String(configured.url||'');
+      if(configured.enabled!==true||!/^https:\/\/[^\s/]+\//.test(url)
+         ||!url.includes('{z}')||!url.includes('{x}')||!url.includes('{y}')
+         ||!String(configured.attribution||'').trim())return null;
+      return {url:url,attribution:String(configured.attribution),maxZoom:Math.min(19,Math.max(1,Number(configured.maxZoom)||18))};
+    }
+    if(window.Capacitor?.isNativePlatform?.())return null;
+    return {url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      attribution:'&copy; OpenStreetMap contributors',maxZoom:18};
+  }
   var leafletPromise=null;
   function getLeaflet(){
     if(window.L?.map)return Promise.resolve(window.L);
@@ -2117,16 +2132,16 @@
   function textMetric(parent,label,value){
     var box=append('div',parent,'tp163-metric');append('span',box,null,label);append('strong',box,null,value);
   }
-  function renderLeaflet(host,segments){
-    if(!navigator.onLine||!segments.length)return;
+  function renderLeaflet(host,segments,provider){
+    if(!navigator.onLine||!segments.length||!provider)return;
     getLeaflet().then(function(L){
       if(!host.isConnected||document.getElementById(MAP_ID)==null)return;
       var pane=append('div',null,'tp163-leaflet');
       host.replaceChildren(pane);
       var map=L.map(pane,{attributionControl:true,scrollWheelZoom:false,preferCanvas:true,zoomControl:true});
       activeMap=map;
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
-        attribution:'&copy; OpenStreetMap contributors',maxZoom:18,
+      L.tileLayer(provider.url,{
+        attribution:provider.attribution,maxZoom:provider.maxZoom,
         minZoom:1,updateWhenIdle:true,keepBuffer:1
       }).addTo(map);
       var coords=[];
@@ -2186,7 +2201,23 @@
       textMetric(metrics,t('points'),String(pointCount));
       if(accuracy!==null)textMetric(metrics,t('signal'),'± '+Math.round(accuracy)+' m');
       drawOffline(mapHost,sections);
-      if(pointCount)renderLeaflet(mapHost,sections);
+      // Offline view is the default even when connected. No provider sees an
+      // exercise location without a second explicit, informed action.
+      if(pointCount&&navigator.onLine){
+        var provider=tileProvider();
+        if(provider){
+          var notice=append('p',modal,'tp163-map-consent',t('notice'));
+          var button=append('button',modal,'btn secondary tp163-online-button',t('online'));
+          button.type='button';
+          button.addEventListener('click',function(){
+            if(button.disabled)return;
+            button.disabled=true;
+            renderLeaflet(mapHost,sections,provider);
+          });
+        }else{
+          append('p',modal,'tp163-map-consent',t('unavailable'));
+        }
+      }
     }catch(_){if(mapHost.isConnected)hint.textContent=t('failed');}
   }
   async function eraseRoutesForWorkout(workout){
@@ -2221,7 +2252,7 @@
     }
 
   }
-  window.TrainPilotGpsMap163={references:references,text:t,coordinates:coordinates,drawOffline:drawOffline,openRoute:openRoute,closeRoute:closeRoute,eraseRoutesForWorkout:eraseRoutesForWorkout};
+  window.TrainPilotGpsMap163={references:references,text:t,coordinates:coordinates,drawOffline:drawOffline,openRoute:openRoute,closeRoute:closeRoute,eraseRoutesForWorkout:eraseRoutesForWorkout,tileProvider:tileProvider};
   document.addEventListener('DOMContentLoaded',install);
 })();
 
