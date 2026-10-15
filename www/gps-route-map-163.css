@@ -28,3 +28,9 @@
 .tp163-map-consent{font-size:12px;line-height:1.42;color:#c9d7de;margin:0!important;padding:9px 10px;background:#22323b;border:1px solid #3e4c59;border-radius:11px}
 .tp163-online-button{min-height:44px!important;width:100%;border-radius:11px!important;background:#254b3a!important;color:#e4f9ec!important;border:1px solid #39996b!important;font-weight:800!important}
 .tp163-online-button:disabled{opacity:.7;cursor:default}
+
+/* Live distance activities: the status panel remains usable after dismissing the map. */
+.tp163-live-reopen{min-height:46px!important;margin-top:10px!important;border:1px solid #39996b!important;background:color-mix(in srgb,#3be68a 11%,var(--card2))!important;color:var(--text)!important;font-weight:800!important;border-radius:12px!important}
+.tp163-live-dialog .tp163-route-hint{min-height:18px}
+.tp163-live-dialog .tp163-map-area{height:min(63vh,540px)}
+.tp163-live-dialog .tp163-live-wait{display:grid;place-content:center;text-align:center;min-height:220px;margin:0;color:#bed5cb;font-size:14px}
