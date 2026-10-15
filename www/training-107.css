@@ -214,4 +214,16 @@ html body #app .tp-cardio-daily{margin-top:18px!important;padding:12px!important
 #tp107Indoor.tp206-activity #tp106GpsStatus{display:none;margin:3px 1px 0;font-size:11px;line-height:1.3;color:var(--muted)}
 #tp107Indoor.tp206-activity.tp206-gps-active #tp106GpsStatus{display:block}
 #tp107Indoor.tp206-activity .tp110-interval{margin-top:5px}
+#tp107Indoor.tp206-activity>.tp110-interval-phase{margin:4px 0;line-height:1.3}
+#tp107Indoor.tp206-activity>.tp110-interval-phase:not(:has([data-tp110-phase]:not(:empty),[data-tp110-remaining]:not(:empty))){display:none}
+#tp106Steps.tp106-steps-card{display:grid;gap:5px;padding:10px 12px!important;min-width:0}
+#tp106Steps .tp106-steps-heading{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:3px 8px}
+#tp106Steps .tp106-steps-heading>strong{font-size:14px;line-height:1.25}
+#tp106Steps .tp106-steps-heading>small{font-size:11px;line-height:1.25;color:var(--muted)}
+#tp106Steps .tp106-steps-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:8px;align-items:center}
+#tp106Steps [data-tp106-steps-count]{font-size:22px;line-height:1.1;overflow-wrap:anywhere}
+#tp106Steps .small{margin:0!important;font-size:12px;line-height:1.3}
+#tp106Steps .small:empty{display:none}
+#tp106Steps .btn{min-height:48px;padding:7px 8px;font-size:13px;line-height:1.25;white-space:normal;overflow-wrap:anywhere}
+#tp106Steps [hidden]{display:none!important}
 @media(max-width:340px){#tp107Indoor.tp206-activity{padding:8px!important}#tp107Indoor.tp206-activity .tp206-actions{gap:6px}#tp107Indoor.tp206-activity .tp206-actions .btn{min-height:48px;font-size:12px;padding:7px 4px!important}}

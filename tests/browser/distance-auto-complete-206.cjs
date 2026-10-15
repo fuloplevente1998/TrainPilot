@@ -44,12 +44,22 @@ const server=http.createServer((req,res)=>{
    await page.setViewportSize({width,height:873});
    const layout=await page.evaluate(()=>{
     const gps=document.querySelector('#tp106GpsButton').getBoundingClientRect(),
-      indoor=document.querySelector('[data-tp107-clock-toggle]').getBoundingClientRect();
+      indoor=document.querySelector('[data-tp107-clock-toggle]').getBoundingClientRect(),
+      panel=document.querySelector('#tp107Indoor').getBoundingClientRect(),
+      interval=document.querySelector('#tp107Indoor .tp110-interval').getBoundingClientRect(),
+      count=document.querySelector('[data-tp106-steps-count]').getBoundingClientRect(),
+      refresh=document.querySelector('[data-tp106-steps-refresh]').getBoundingClientRect(),
+      note=document.querySelector('.tp106-steps-note').getBoundingClientRect();
     return {sideBySide:gps.right<=indoor.left+2&&Math.abs(gps.top-indoor.top)<3,
      fit:document.documentElement.scrollWidth<=innerWidth+1,
-     idleReadout:getComputedStyle(document.querySelector('.tp206-readout')).display==='none'};
+     idleReadout:getComputedStyle(document.querySelector('.tp206-readout')).display==='none',
+     noEmptyIntervalTail:panel.bottom-interval.bottom<=16,
+     compactSteps:count.right<=refresh.left&&Math.abs((count.top+count.bottom-refresh.top-refresh.bottom)/2)<2,
+     refreshBeforeNote:refresh.bottom<=note.top,
+     refreshTouchTarget:refresh.height>=48};
    });
-   assert.deepEqual(layout,{sideBySide:true,fit:true,idleReadout:true});
+   assert.deepEqual(layout,{sideBySide:true,fit:true,idleReadout:true,noEmptyIntervalTail:true,
+    compactSteps:true,refreshBeforeNote:true,refreshTouchTarget:true});
   }
   await page.setViewportSize({width:393,height:873});
   await page.locator('#tp106GpsButton').click();await page.waitForSelector('.tp163-live-dialog');
