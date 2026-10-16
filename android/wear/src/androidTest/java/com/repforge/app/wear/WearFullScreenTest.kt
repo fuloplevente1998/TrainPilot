@@ -973,6 +973,30 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     }
 
     @Test
+    fun touchLockKeepsTheExistingManualStopwatchVisibleAndRunning() {
+        val context=InstrumentationRegistry.getInstrumentation().targetContext
+        val initial=touchWorkout189().copy(exercises=touchWorkout189().exercises.map { it.copy(repUnit="mp") })
+        val work=mutableStateOf<WearWorkout?>(initial)
+        val key="${initial.workoutId}:${initial.exercise!!.id}:1:reps"
+        val timer=WearStopwatch(key,8000L,System.currentTimeMillis()-4000L)
+        WearStopwatchStore.save(context,timer)
+        try {
+            compose.setContent { Watch { Fixture("touch-workout",externalWorkout=work) } }
+            compose.onNodeWithTag("wear-touch-lock").performClick()
+            val before=compose.onNodeWithTag("wear-locked-clock").fetchSemanticsNode().config[SemanticsProperties.Text].single().text
+            Thread.sleep(1200)
+            compose.mainClock.advanceTimeBy(1500)
+            compose.waitForIdle()
+            val after=compose.onNodeWithTag("wear-locked-clock").fetchSemanticsNode().config[SemanticsProperties.Text].single().text
+            fun seconds(value: String)=value.substringBefore(':').toInt()*60+value.substringAfter(':').toInt()
+            assertTrue(seconds(before)>=12);assertTrue(seconds(after)>seconds(before))
+            assertEquals(timer,WearStopwatchStore.load(context,key))
+            compose.onNodeWithTag("wear-touch-locked").assertIsDisplayed()
+            screenshot("touch189-manual-stopwatch")
+        }finally{WearStopwatchStore.clear(context)}
+    }
+
+    @Test
     fun touchLockInstructionsFitFourLanguagesOnEveryRoundScreen() {
         val language=mutableStateOf("hu")
         val work=touchWorkout189()
@@ -1148,6 +1172,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                 .put("activeDurationSeconds", 60.0)
         if (route == "quick" || route == "home" || route == "phone-feedback") workout.value = null
         TrainPilotWearApp(
+            touchClock189 = { compose.mainClock.currentTime },
             workout = workout,
             home = home,
             closure = closure,

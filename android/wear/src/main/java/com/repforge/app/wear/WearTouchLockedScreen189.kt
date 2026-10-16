@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.testTag
@@ -43,10 +44,12 @@ internal fun WearLockIcon189(color: Color,modifier: Modifier=Modifier) {
 
 /** The normal pager, editors and confirmation dialogs are absent while locked. */
 @Composable
-internal fun WearTouchLockedScreen189(workout: WearWorkout,restRemaining: Int,health: JSONObject?,copy: WearTouchCopy189,onUnlock: ()->Unit) {
+internal fun WearTouchLockedScreen189(workout: WearWorkout,restRemaining: Int,health: JSONObject?,copy: WearTouchCopy189,onUnlock: ()->Unit,
+    nowMillis: ()->Long=SystemClock::uptimeMillis) {
     val gesture=remember(workout.workoutId,workout.started) { WearUnlockGesture189() }
     val unlock by rememberUpdatedState(onUnlock)
-    var now by remember { mutableLongStateOf(SystemClock.uptimeMillis()) }
+    val clock by rememberUpdatedState(nowMillis)
+    var now by remember { mutableLongStateOf(clock()) }
     val owner=LocalView.current.findViewTreeLifecycleOwner()
     var foreground by remember(owner) { mutableStateOf(owner?.lifecycle?.currentState?.isAtLeast(Lifecycle.State.RESUMED)!=false) }
     DisposableEffect(owner) {
@@ -58,7 +61,7 @@ internal fun WearTouchLockedScreen189(workout: WearWorkout,restRemaining: Int,he
         onDispose { gesture.cancel();owner?.lifecycle?.removeObserver(observer) }
     }
     LaunchedEffect(foreground,gesture) {
-        if(foreground)while(true){now=SystemClock.uptimeMillis();delay(if(gesture.phase(now)>=2)32 else 250)}
+        if(foreground)while(true){now=clock();delay(if(gesture.phase(now)>=2)32 else 250)}
     }
     val phase=gesture.phase(now);val progress=gesture.progress(now)
     val hint=when(phase){1,2->copy.hold;3->copy.release;else->copy.tap}
@@ -66,10 +69,19 @@ internal fun WearTouchLockedScreen189(workout: WearWorkout,restRemaining: Int,he
     val slop=LocalViewConfiguration.current.touchSlop
     val fontScale=LocalDensity.current.fontScale
     val automatic=workout.automation
+    val context=LocalContext.current
+    val manual=if(automatic?.enabled!=true&&workout.exercise?.repUnit?.startsWith("mp")==true)runCatching {
+        val prefix="${workout.workoutId}:${workout.exercise?.id}:${workout.currentSet?.number}"
+        WearStopwatchStore.currentField(context,prefix)?.takeIf { it in listOf("reps","leftSeconds","rightSeconds") }
+            ?.let { WearStopwatchStore.load(context,"$prefix:$it") }?.takeIf { it.startedAt>0||it.elapsedMillis>0 }
+    }.getOrNull() else null
     val status=when {workout.workoutPaused||automatic?.paused==true->copy.paused;restRemaining>0||automatic?.enabled==true&&automatic.phase=="rest"->copy.rest
-        automatic?.enabled==true&&automatic.phase=="work"->copy.work;workout.exerciseComplete->copy.saved;else->copy.ready}
+        automatic?.enabled==true&&automatic.phase=="work"->copy.work;workout.exerciseComplete->copy.saved
+        manual?.startedAt?.let { it>0 }==true->copy.work;manual!=null->copy.paused;else->copy.ready}
     val remaining=if(automatic?.enabled==true&&automatic.counting)((automatic.remaining(SystemClock.elapsedRealtime())+999)/1000).toInt() else restRemaining
-    val counter=if(remaining>0||automatic?.counting==true)formatSeconds(remaining) else "${workout.currentExercise+1}/${workout.exercises.size} · ${workout.currentSetIndex+1}/${workout.exercise?.sets?.size ?: 0}"
+    val counter=if(remaining>0||automatic?.counting==true)formatSeconds(remaining)
+        else if(manual!=null)formatSeconds((manual.elapsed()/1000).toInt())
+        else "${workout.currentExercise+1}/${workout.exercises.size} · ${workout.currentSetIndex+1}/${workout.exercise?.sets?.size ?: 0}"
     val rows=wearLiveWorkoutRows(health,workout.workoutId,System.currentTimeMillis())
     Box(Modifier.fillMaxSize().testTag("wear-touch-locked")) {
         FixedRoundPanel(workout.exercise?.name.orEmpty(),count=1,footer={
@@ -78,7 +90,9 @@ internal fun WearTouchLockedScreen189(workout: WearWorkout,restRemaining: Int,he
                     progressBarRangeInfo=ProgressBarRangeInfo(progress,0f..1f) }
                 .pointerInput(gesture) {
                     awaitEachGesture {
-                        val first=awaitFirstDown(requireUnconsumed=false);first.consume();gesture.down(first.uptimeMillis);now=first.uptimeMillis
+                        // Input, progress, expiry and release share one monotonic clock.
+                        // Pointer timestamps may use a different epoch in injected/platform events.
+                        val first=awaitFirstDown(requireUnconsumed=false);first.consume();gesture.down(clock());now=clock()
                         var released=false;var cancelled=false
                         try {
                             while(true){
@@ -88,8 +102,8 @@ internal fun WearTouchLockedScreen189(workout: WearWorkout,restRemaining: Int,he
                                 }
                                 event.changes.forEach { it.consume() }
                                 if(current==null||!current.pressed){
-                                    val unlocked=!cancelled&&current!=null&&gesture.up(current.uptimeMillis)
-                                    released=true;now=SystemClock.uptimeMillis();if(unlocked)unlock();break
+                                    val unlocked=!cancelled&&current!=null&&gesture.up(clock())
+                                    released=true;now=clock();if(unlocked)unlock();break
                                 }
                             }
                         }finally{if(!released)gesture.cancel()}

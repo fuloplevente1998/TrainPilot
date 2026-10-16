@@ -109,6 +109,7 @@ internal fun TrainPilotWearApp(
     saveSync: State<WearSaveSyncState?>? = null,
     onRetrySync: ((String) -> Unit)? = null,
     onUndo: ((String) -> Unit)? = null,
+    touchClock189: ()->Long = { android.os.SystemClock.uptimeMillis() },
 ) {
     var route by rememberSaveable { mutableStateOf("home") }
     val context = LocalContext.current
@@ -195,9 +196,9 @@ internal fun TrainPilotWearApp(
             Box(Modifier.fillMaxSize().background(Black)) {
                 val active = workout.value
                 when {
-                    touchLocked && active != null -> WearTouchLockedScreen189(active,restRemaining.value,health.value,touchCopy) {
+                    touchLocked && active != null -> WearTouchLockedScreen189(active,restRemaining.value,health.value,touchCopy,onUnlock={
                         if(WearTouchLock189.set(context,active,false)){touchLocked=false;returnWorkoutPage=0;route="workout"}
-                    }
+                    },nowMillis=touchClock189)
                     route == "feedback" && pendingFeedback != null ->
                         WorkoutFeedbackScreen { effort ->
                             onWorkoutFeedback?.invoke(pendingFeedback, effort)
