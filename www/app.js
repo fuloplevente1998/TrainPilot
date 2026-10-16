@@ -16769,6 +16769,15 @@ window.addEventListener?.('DOMContentLoaded',function(){
      Object.assign(set,change.values);changed=true;
     }
     next.current=frame.currentExercise;
+   }else if(event.kind==='undoSet'){
+    const e=session.exercises.find(e=>e.id===event.exerciseId),set=e?.sets.find(s=>s.setId===event.setId);
+    if(!set||event.values?.done!==false||!event.recordId||session.phoneEdit162?.targets?.includes(event.setId))throw Error('Recorded set has conflicting edits');
+    for(const field of ['reps','weight','leftSeconds','rightSeconds','distanceMeters']){
+     const normal=v=>v==null||v===''?0:Number(String(v).replace(',','.'));
+     if(normal(set[field])!==normal(event.before?.[field])&&normal(set[field])!==normal(event.values[field]))throw Error('Recorded set has conflicting edits');
+    }
+    Object.assign(set,event.values);delete session.interval162;
+    session.automatic162={...session.automatic162,undoKey188:'undo188:'+event.commandId};next.current=session.exercises.indexOf(e);changed=true;
    }else if(event.kind!=='startTimeline'){
     const e=session.exercises.find(e=>e.id===event.exerciseId&&e.sets?.some(s=>s.setId===event.setId)),set=e?.sets.find(s=>s.setId===event.setId);
     if(!set||event.values?.done!==true||!/^\d+$/.test(String(event.values.reps))||Number(event.values.reps)<1)throw Error('Native recording target changed');
@@ -16794,6 +16803,12 @@ window.addEventListener?.('DOMContentLoaded',function(){
     else{session.interval162=run;session.automatic162.run=null;session.automatic162.phase=interrupted?'interrupted':'work';next.current=t.currentExercise;}
    }else{session.automatic162.run=null;session.automatic162.phase=t.phase;next.current=t.currentExercise;}
    next.restEndAt=null;changed=true;
+  }
+  if(frame.undo188)session.undo188=clone(frame.undo188);
+  if(Array.isArray(frame.exercises)){
+   const record=frame.lastRecord188;
+   const candidate=record&&record.workoutId===identity(session)&&window.TrainPilotUndo188.same(record.expected,window.TrainPilotUndo188.guard(session.exercises))?clone(record):null;
+   if(JSON.stringify(session.lastRecord188||null)!==JSON.stringify(candidate)){session.lastRecord188=candidate;changed=true;}
   }
   const timeChanged=window.TrainPilotTime162Core.merge(session,frame.timeLogs162||{});
   session.phoneExecution162={...meta,revision:frame.executionRevision,sequence:cursor,timeSignature,completedBase:completedBase(frame)};
@@ -16841,6 +16856,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(state.session&&state.tab==='plan'&&!editing)renderWorkout();
    window.TrainPilotAutomatic162?.adoptNative?.();window.TrainPilotIntervals162?.adoptNative?.();
   }
+  window.TrainPilotPhoneUndo188?.paint?.();
   return true;
  }
  async function syncLocked({prepare=true}={}){
@@ -17002,9 +17018,62 @@ window.addEventListener?.('DOMContentLoaded',function(){
    return ['applied','duplicate'].includes(result?.status)&&await syncLocked({prepare:false});
   }catch(_){await syncLocked({prepare:false});return false;}finally{busy=false;}
  }
- window.TrainPilotPhoneExecution162={sync,finishFence,discardFence,recordPhoneSet,failure:()=>lastFailure?{...lastFailure}:null,isReconciling:()=>busy||discarding,block:async value=>{const api=bridge();if(api?.blockExecution)await api.blockExecution({blocked:value});}};
+ async function undoPhoneSet(recordId){
+  const api=bridge(),session=state.session;
+  if(!api?.executeCommand||busy||discarding||blocked())return false;
+  busy=true;
+  try{
+   if(!await syncLocked()||state.session!==session||!window.TrainPilotUndo188.available(session)||session.lastRecord188.recordId!==recordId)return false;
+   const meta=session.phoneExecution162;
+   const command={...clone(session.lastRecord188),schema:1,nativeExecutionProtocol:2,action:'undoSet',commandId:crypto.randomUUID(),
+    generation:meta.generation,executionRevision:meta.revision,createdAt:Date.now()};
+   const result=await api.executeCommand({command});
+   return ['applied','duplicate'].includes(result?.status)&&await syncLocked({prepare:false});
+  }catch(_){await syncLocked({prepare:false});return false;}finally{busy=false;}
+ }
+ window.TrainPilotPhoneExecution162={sync,finishFence,discardFence,recordPhoneSet,undoPhoneSet,failure:()=>lastFailure?{...lastFailure}:null,isReconciling:()=>busy||discarding,block:async value=>{const api=bridge();if(api?.blockExecution)await api.blockExecution({blocked:value});}};
 })();
 // @endsection phone-execution-162.js
+
+// @section workout-undo-188.js
+(function(){
+ 'use strict';
+ const fields=['reps','weight','leftSeconds','rightSeconds','distanceMeters'];
+ const number=v=>v==null||v===''?0:Number(String(v).replace(',','.'));
+ function guard(exercises){return (exercises||[]).flatMap(e=>(e.sets||[]).map(s=>[String(e.id),String(s.setId),s.done===true,...fields.map(k=>number(s[k]))]));}
+ function same(a,b){return Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.every((row,i)=>Array.isArray(row)&&row.length===8&&b[i]?.length===8&&row.every((v,j)=>j<3?v===b[i][j]:Number.isFinite(v)&&v===b[i][j]));}
+ function values(set){return {done:set.done===true,...Object.fromEntries(fields.map(k=>[k,set[k]??(k==='reps'?'':0)]))};}
+ function capture(session,command,before){session.lastRecord188={recordId:command.commandId,workoutId:command.workoutId,exerciseId:command.exerciseId,setId:command.setId,before,expected:guard(session.exercises),recordedAt:Date.now()};}
+ function available(session){
+  const r=session?.lastRecord188;
+  return !!(r&&!session.workoutPaused&&r.workoutId===String(session.syncId||session.started||'')&&
+   same(r.expected,guard(session.exercises))&&session.exercises.some(e=>e.id===r.exerciseId&&e.sets.some(s=>s.setId===r.setId&&s.done)));
+ }
+ function inverse(session,command){
+  if(session.undo188?.commandId===command.commandId)return session.undo188.fingerprint===JSON.stringify([command.recordId,command.expected]);
+  const last=session.lastRecord188;
+  if(!last||last.workoutId!==command.workoutId||last.recordId!==command.recordId||last.exerciseId!==command.exerciseId||last.setId!==command.setId||!same(last.expected,guard(session.exercises))||!same(command.expected,last.expected))return false;
+  const e=session.exercises.find(e=>e.id===last.exerciseId),set=e?.sets.find(s=>s.setId===last.setId);
+  if(!set?.done)return false;
+  if(session.phoneExecution162&&session.timerOwner!=='watch'){
+   const meta=session.phoneExecution162,edit=session.phoneEdit162;
+   session.phoneEdit162=edit||{revision:meta.revision,generation:meta.generation,bases:JSON.parse(JSON.stringify(meta.completedBase||{})),targets:[]};
+   if(!session.phoneEdit162.targets.includes(last.setId))session.phoneEdit162.targets.push(last.setId);
+  }
+  Object.assign(set,last.before,{done:false});
+  session.undo188={commandId:command.commandId,recordId:command.recordId,status:'applied',fingerprint:JSON.stringify([command.recordId,command.expected])};
+  session.undoneRecords188=[...(session.undoneRecords188||[]),command.recordId].slice(-128);
+  delete session.lastRecord188;delete session.interval162;
+  const a=command.automation||{};
+  if(session.timerOwner==='watch'){
+   session.watchAutomation162={...a,paused:true,phase:'ready',remainingMs:0,deadlineAt:0};
+   session.automatic162={...session.automatic162,enabled:a.enabled===true,owner:'watch',phase:'paused',watch:session.watchAutomation162,run:null};
+  }else session.automatic162={...session.automatic162,phase:'paused',run:null,undoKey188:'undo188:'+command.commandId};
+  return true;
+ }
+ window.TrainPilotUndo188={guard,same,values,capture,inverse,available};
+})();
+// @endsection workout-undo-188.js
 
 // @section wear-sync.js
 /* TrainPilot Wear OS bridge.
@@ -17268,6 +17337,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
     ...(session.phoneExecution162&&session.automatic162?.enabled===true&&(session.timerOwner||'phone')==='phone'&&!session.exercises.some(e=>e.measurementType==='distance')?{nativeExecutionProtocol:2,generation:session.phoneExecution162.generation,executionRevision:session.phoneExecution162.revision}:{}),
     workoutId:sessionKey(session),
     watchSequence:Number(session.wearSequence)||0,
+    ...(session.undo188?{undo188:session.undo188}:{}),
+    ...(session.lastRecord188?{lastRecord188:session.lastRecord188}:{}),
     quickWorkout:session.type==='quick'||session.quickWorkout===true,
     dayName:(()=>{if(session.type==='quick'||session.quickWorkout===true)return String(session.programName||'Gyors edzés');try{const p=programById(session.programId);return dayName(p,programDay(p,session.dayId||session.workout))}catch(_){return String(session.dayId||session.workout||'')}})(),
     programId:String(session.programId||''),
@@ -17318,12 +17389,30 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(homeRefreshPending){homeRefreshPending=false;setTimeout(()=>syncHomeNow({force:true}),0);}
   }
  }
+ function persistWearSetIdentities(session,savedDraft=null){
+  if(!session)return false;
+  const missing=[];
+  for(const e of session.exercises||[])for(const set of e.sets||[]){
+   if(typeof set.setId==='string'&&set.setId.trim())continue;
+   missing.push({set,had:Object.prototype.hasOwnProperty.call(set,'setId'),before:set.setId,id:crypto.randomUUID()});
+  }
+  if(!missing.length)return false;
+  for(const row of missing)row.set.setId=row.id;
+  try{
+   if(savedDraft)db.set('draft',{...savedDraft,savedAt:new Date().toISOString()});
+   else persistDraft();
+  }catch(error){
+   for(const row of missing){if(row.had)row.set.setId=row.before;else delete row.set.setId;}
+   throw error;
+  }
+  return true;
+ }
  function phoneWorkoutStarted(session,{fromWatch=false}={}){
   const bridge=api(),id=sessionKey(session);
   if(fromWatch||!id||session!==state?.session)return;
   // Pin the same identity used by watch-started workouts before the handoff,
   // so phone save/restore and late measurements keep the original workout ID.
-  session.syncId=id;session.timerOwner='phone';persistDraft();
+  session.syncId=id;session.timerOwner='phone';if(!persistWearSetIdentities(session))persistDraft();
   if(!bridge?.startWatchMeasurement||id===lastWatchStartId)return;
   lastWatchStartId=id;pendingWatchStart={id,createdAt:Date.now()};
   window.TrainPilotWearMeasurement165?.waiting(id);
@@ -17335,6 +17424,12 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  async function syncNow(){
   if(busy||window.TrainPilotBackupBusy)return;
+  // Manual workouts need the same durable identities as native automatic
+  // execution. Repair older drafts before publishing any watch controls.
+  try{
+   const saved=state.session?null:db.get('draft',null);
+   persistWearSetIdentities(state.session||saved?.session,saved);
+  }catch(_){return;}
   if(api()?.executionStatus&&window.TrainPilotPhoneExecution162&&!await window.TrainPilotPhoneExecution162.sync())return;
   const bridge=api();if(!bridge)return;
   const value=snapshot(),payload=value?JSON.stringify(value):null;
@@ -17561,9 +17656,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
    return state.session?.workoutPaused===false;
   }
 
-  if(command.nativeExecutionProtocol===2&&['completeSet','automaticControl'].includes(action)&&(action==='completeSet'||command.value==='start')){
+  if(command.nativeExecutionProtocol===2&&['completeSet','undoSet','automaticControl'].includes(action)&&(action==='completeSet'||action==='undoSet'||command.value==='start'||command.value==='resumeUndo')){
    const result=await api()?.executeCommand?.({command});
    if(['applied','duplicate'].includes(result?.status))return window.TrainPilotPhoneExecution162.sync({prepare:false});
+   if(result?.status==='deferred')return false;
    return recordResult(command,'error',rf212Lang()==='hu'?'Az órás parancs elavult vagy az időzítő nem áll készen. Ellenőrizd az edzést.':'The watch command is stale or the timer is not ready. Check the workout.');
   }
   if(action==='requestHome')return syncHomeNow({force:true});
@@ -17573,6 +17669,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
    return window.TrainPilotWorkoutFeedback.accept(expectedId,command.feedback);
   }
   if(action==='healthSummary')return attachMeasuredHealth(command);
+  if(command.undoDependency188&&action!=='watchAutomationState'&&savedPause?.undo188?.commandId!==command.undoDependency188){
+   if(savedPause?.undoRejected188===command.undoDependency188)return recordResult(command,'error','A visszavonás ütközött. Ellenőrizd az edzést.');
+   return false;
+  }
   if(action==='watchAutomationState'){
    if(expectedId&&isClosed(expectedId))return true;
    const root=command.finalSnapshot;if(!root||root.workoutId!==expectedId)return false;
@@ -17634,9 +17734,24 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(typeof add!=='function')return false;
    add(id);adoptWatchIdentity(command,true);persistDraft();return true;
   }
+  if(action==='undoSet'){
+   if(!state.session.lastRecord188&&state.session.undo188?.commandId!==command.commandId&&!state.session.undoneRecords188?.includes(command.recordId))return false;
+   if(state.session.undo188?.commandId!==command.commandId&&state.session.timerOwner!=='watch'){
+    if(!await TrainPilotAutomatic162.command('pause')||!await TrainPilotIntervals162.command('pause'))return false;
+   }
+   if(!window.TrainPilotUndo188.inverse(state.session,command)){
+    state.session.undoRejected188=command.commandId;
+    if(state.session.watchAutomation162)Object.assign(state.session.watchAutomation162,{paused:true,deadlineAt:0});
+    persistDraft();
+    return recordResult(command,'error','A sorozatok időközben megváltoztak. Használd a rendes szerkesztést.');
+   }
+   state.current=state.session.exercises.findIndex(e=>e.id===command.exerciseId);stopTimer();state.restEndAt=null;
+   persistDraft();renderWorkout();return true;
+  }
   if(action==='resumeWorkout'){persistDraft();renderWorkout();return true}
   if(action==='toggleAutomatic')return TrainPilotAutomatic162.toggle(command.value===true);
   if(action==='automaticControl'){
+   if(command.value==='resumeUndo'&&state.session.automatic162?.undoKey188===command.automation?.key){state.session.automatic162.phase='work';delete state.session.automatic162.undoKey188;persistDraft();renderWorkout();return true;}
    if(command.automation?.owner!=='phone')return true;
    await TrainPilotAutomatic162.sync();await TrainPilotIntervals162.sync();
    const run=TrainPilotAutomatic162.owner()?.meta.run||TrainPilotIntervals162.owner()?.run;
@@ -17674,6 +17789,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
    persistDraft();renderWorkout();return true;
   }
   if(action==='completeSet'){
+   if(state.session.undoneRecords188?.includes(command.commandId))return true;
+   const before188=window.TrainPilotUndo188.values(target.set);
    if(command.automation?.owner==='watch'&&state.session.timerOwner==='watch')state.session.automatic162={...state.session.automatic162,owner:'watch',enabled:command.automation.enabled===true};
    applySetValues(target.set,command);
    state.current=located.index;
@@ -17682,8 +17799,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
     if(result&&typeof result.then==='function')await result;
    }
    if(target.set.done){
+    window.TrainPilotUndo188.capture(state.session,command,before188);
     if(located.index===state.session.exercises.length-1&&located.exercise.sets.every(s=>s.done))stopTimer();
-    persistDraft();return true
+    persistDraft();window.TrainPilotPhoneUndo188?.paint?.();return true
    }
    return false;
   }
@@ -17728,6 +17846,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
      if(!window.TrainPilotWorkoutFeedback?.valid(command.feedback))status='error';
      else if(!row||(command.feedback.skipped===true?answer?.skipped!==true:answer?.effort!==command.feedback.effort))status='superseded';
     }
+    if(command.action==='undoSet'){lastPayload=null;await syncNow();}
     try{await bridge.ackCommand({commandId:id,status});}catch(_){}
    }
    if(changed){lastPayload=null;lastHomePayload=null;await syncNow();await syncHomeNow();}
@@ -17736,7 +17855,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }finally{commandBusy=false}
  }
  if(typeof window!=='undefined'){
-  window.TrainPilotWearSync={syncNow,syncHomeNow,drainCommands,phoneWorkoutStarted,discardDraft,isDiscarded:id=>closedWorkouts().some(x=>x.status==='discarded'&&sameId(x.workoutId,id)),makeSnapshot:snapshot,makeHomeSnapshot:homeSnapshot,isApplyingCommand:()=>commandBusy,isStartingFromWatch:()=>watchStartDepth>0};
+  window.TrainPilotWearSync={syncNow,syncHomeNow,drainCommands,phoneWorkoutStarted,discardDraft,ensureSetIdentities:()=>persistWearSetIdentities(state.session),isDiscarded:id=>closedWorkouts().some(x=>x.status==='discarded'&&sameId(x.workoutId,id)),makeSnapshot:snapshot,makeHomeSnapshot:homeSnapshot,isApplyingCommand:()=>commandBusy,isStartingFromWatch:()=>watchStartDepth>0};
   window.addEventListener?.('focus',()=>{drainCommands();syncNow();syncHomeNow({force:true});});
  }
  if(typeof document!=='undefined')document.addEventListener?.('visibilitychange',()=>{if(document.hidden)pendingWatchStart=null;else{drainCommands();syncNow();syncHomeNow({force:true});}});
@@ -18264,11 +18383,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const m=s?.automatic162,iv=s?.interval162,p=iv?.phase,r=m?.run;
    if(!m?.enabled&&!iv)return null;
    const phase=r?'rest':p?.phase==='work'||p?.phase==='rest'?p.phase:m?.phase==='complete'?'complete':'ready';
-   const remainingMs=r?.remainingMs??p?.remainingMs??0,paused=r?r.running!==true:iv?iv.running!==true:false;
+   const remainingMs=r?.remainingMs??p?.remainingMs??0,paused=r?r.running!==true:iv?iv.running!==true:m?.phase==='paused';
    const step=r?.steps?.[0]||iv?.steps?.[p?.stepIndex||0];
    const restSeconds=r?Number(step?.rest):p?.token==='initial:rest'?Number(iv.initialRest):Number(step?.rest??iv?.rest??settings().rest??90);
    return {enabled:m?.enabled===true,owner:'phone',phase,paused,remainingMs,deadlineAt:remainingMs&&!paused?Date.now()+remainingMs:0,
-    key:r?.key||iv?.key||'',phaseNumber:r?.phaseNumber||iv?.phaseNumber||0,targetExercise:state.current,workSeconds:Number(step?.work??iv?.work??30),restSeconds,vibration:false,interrupted:r?.interrupted||iv?.interrupted||false};
+    key:r?.key||iv?.key||m?.undoKey188||'',phaseNumber:r?.phaseNumber||iv?.phaseNumber||0,targetExercise:state.current,workSeconds:Number(step?.work??iv?.work??30),restSeconds,vibration:false,interrupted:r?.interrupted||iv?.interrupted||false};
   };
   const nativeFinish=window.finishWorkout;
   window.finishWorkout=function(){const args=arguments,ctx=this;return window.TrainPilotPhoneExecution162?.finishFence?window.TrainPilotPhoneExecution162.finishFence(()=>nativeFinish.apply(ctx,args)):nativeFinish.apply(ctx,args);};
@@ -18300,12 +18419,17 @@ window.addEventListener?.('DOMContentLoaded',function(){
   function accept(command){
    const s=state.session;if(!valid(command,s))return false;
    if(command.sequence<=Math.max(s.watchAutomationSequence162||0,s.wearSequence||0))return true;
-   const root=command.finalSnapshot,a=root.automation;let changed=state.current!==root.currentExercise;
+   const root=command.finalSnapshot,a=root.automation;
+   if(root.undo188?.commandId&&s.undo188?.commandId!==root.undo188.commandId)return false;
+   let changed=state.current!==root.currentExercise;
    const before=s.watchAutomation162;
    root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{
     const own=s.exercises[i].sets[j],previous=before?.snapshot?.exercises?.[i]?.sets?.[j];
-    if(own.done!==v.done)changed=true;
-    own.done=v.done;
+    // A mirror cannot revert a newer phone edit while the watch still reports its old value.
+    if(!previous||own.done===previous.done||v.done!==previous.done){
+     if(own.done!==v.done)changed=true;
+     own.done=v.done;
+    }
     // Keep a phone edit until the watch actually changes the same value.
     for(const field of ['reps','weight','leftSeconds','rightSeconds','distanceMeters']){
      if(field==='distanceMeters'&&(v[field]==null||v[field]===''||Number(v[field])===0&&!tp106IsDistance(s.exercises[i])))continue;
@@ -18313,6 +18437,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     }
    }));
    state.current=Math.max(0,Math.min(root.currentExercise,s.exercises.length-1));
+   if(root.lastRecord188&&window.TrainPilotUndo188.same(root.lastRecord188.expected,window.TrainPilotUndo188.guard(s.exercises)))s.lastRecord188=root.lastRecord188;
    s.watchAutomationSequence162=command.sequence;s.wearSequence=Math.max(s.wearSequence||0,command.sequence);
    s.watchAutomation162={...a,snapshot:root};
    s.automatic162={enabled:a.enabled,owner:'watch',phase:a.phase==='ready'?'work':a.phase,watch:a,run:null,pending:false};
@@ -18321,7 +18446,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    return true;
   }
   async function remote(action,values={}){
-   const s=state.session;if(!external()||!s)return false;
+   const s=state.session;if(!s||!(external()||action==='undo'&&s.timerOwner==='watch'))return false;
    const command={schema:1,commandId:crypto.randomUUID(),workoutId:s.syncId||s.started,key:s.watchAutomation162?.key||'',phaseNumber:s.watchAutomation162?.phaseNumber||0,action,createdAt:Date.now(),...values};
    const c=window.Capacitor,api=c?.Plugins?.WearSync||c?.registerPlugin?.('WearSync');
    try{
@@ -18442,11 +18567,82 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const eligible=api?.executionStatus&&session?.automatic162?.enabled&&(session.timerOwner||'phone')==='phone'&&
     !session.exercises.some(e=>e.measurementType==='distance')&&!window.TrainPilotWearSync?.isApplyingCommand?.()&&
     set&&!set.done&&['','ism.','reps','/kar','/láb'].includes(e.repUnit||'')&&/^\d+$/.test(String(set.reps))&&Number(set.reps)>0;
-   return eligible?window.TrainPilotPhoneExecution162.recordPhoneSet(ei,si):base.apply(this,arguments);
+   if(eligible)return window.TrainPilotPhoneExecution162.recordPhoneSet(ei,si);
+   const capture=session&&(session.timerOwner||'phone')==='phone'&&!window.TrainPilotWearSync?.isApplyingCommand?.()&&set&&!set.done;
+   if(!capture)return base.apply(this,arguments);
+   window.TrainPilotWearSync?.ensureSetIdentities?.();
+   const before=window.TrainPilotUndo188.values(set),recordId=crypto.randomUUID();
+   const recorded=result=>{
+    if(state.session===session&&e.sets[si]===set&&set.done&&set.setId){
+     const previous=session.lastRecord188;
+     window.TrainPilotUndo188.capture(session,{commandId:recordId,workoutId:String(session.syncId||session.started||''),exerciseId:e.id,setId:set.setId},before);
+     try{persistDraft();}catch(error){if(previous===undefined)delete session.lastRecord188;else session.lastRecord188=previous;throw error;}
+     void window.TrainPilotWearSync?.syncNow?.();
+     window.TrainPilotPhoneUndo188?.paint?.();
+    }
+    return result;
+   };
+   const result=base.apply(this,arguments);
+   return result&&typeof result.then==='function'?result.then(recorded):recorded(result);
   };
  });
 })();
 // @endsection phone-recording-162.js
+
+// @section phone-undo-188.js
+(function(){
+ 'use strict';
+ const core=window.TrainPilotUndo188,copy=v=>JSON.parse(JSON.stringify(v));let busy=false,poll=null;
+ const COPY={hu:{undo:'Visszavonás',label:'Utolsó sorozat visszavonása',waiting:'Egyeztetés…',failed:'A sorozat nem vonható vissza. Ellenőrizd a kapcsolatot vagy használd a szerkesztést.'},en:{undo:'Undo',label:'Undo last set',waiting:'Syncing…',failed:'The set could not be undone. Check the connection or edit it.'},de:{undo:'Rückgängig',label:'Letzten Satz rückgängig machen',waiting:'Abgleich…',failed:'Der Satz konnte nicht zurückgenommen werden. Verbindung prüfen oder bearbeiten.'},ro:{undo:'Anulează',label:'Anulează ultima serie',waiting:'Sincronizare…',failed:'Seria nu a putut fi anulată. Verifică conexiunea sau editează seria.'}};
+ const t=k=>(COPY[rf212Lang()]||COPY.hu)[k];
+ const blocked=()=>window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||window.TrainPilotBoot?.loading||window.TrainPilotWearSync?.isApplyingCommand?.();
+ function paint(){
+  const s=state.session,waiting=busy||s?.automatic162?.pending===true,button=document.querySelector('[data-tp188-undo]');
+  if(button){
+   const hidden=!core.available(s)&&!waiting;
+   const changed=button.hidden!==hidden;button.hidden=hidden;
+   button.disabled=waiting||blocked()||window.TrainPilotPhoneExecution162?.isReconciling?.()||!core.available(s);
+   button.textContent=waiting?t('waiting'):'↶ '+t('undo');button.setAttribute('aria-label',t('label'));button.setAttribute('aria-busy',String(waiting));
+   if(changed)window.TrainPilotIssue16?.syncGeometry?.();
+  }
+  if(s&&(s.lastRecord188||waiting)&&!poll)poll=setInterval(paint,500);
+  else if((!s||!s.lastRecord188&&!waiting)&&poll){clearInterval(poll);poll=null;}
+ }
+ async function undo(){
+  const s=state.session;if(busy||blocked()||!core.available(s)||s.automatic162?.pending)return false;
+  const recordId=s.lastRecord188.recordId;busy=true;paint();let applied=false;
+  try{
+   if(s.timerOwner==='watch')return await window.TrainPilotWearAutomatic162.remote('undo',{recordId});
+   if(s.lastRecord188.native188&&s.phoneExecution162&&s.automatic162?.enabled){
+    applied=await window.TrainPilotPhoneExecution162.undoPhoneSet(recordId);
+   }else{
+    if(!await window.TrainPilotAutomatic162.command('pause')||!await window.TrainPilotIntervals162.command('pause'))return false;
+    if(state.session!==s||!core.available(s)||s.lastRecord188.recordId!==recordId||blocked())return false;
+    const next=copy(s),command={...copy(s.lastRecord188),commandId:crypto.randomUUID()};
+    if(!core.inverse(next,command))return false;
+    const current=next.exercises.findIndex(e=>e.id===command.exerciseId);
+    db.set('draft',{...db.get('draft',{}),session:next,workout:state.workout,current,restEndAt:null,savedAt:new Date().toISOString()});
+    const exercises=s.exercises;next.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>Object.assign(exercises[i].sets[j],v)));
+    Object.assign(s,next,{exercises});state.current=current;stopTimer();state.restEndAt=null;applied=true;renderWorkout();
+   }
+   if(applied)void window.TrainPilotWearSync?.syncNow?.();
+   return applied;
+  }catch(_){return false;}
+  finally{busy=false;paint();if(!applied&&state.session===s&&s.timerOwner!=='watch')window.tp153Toast?.(t('failed'),5000);}
+ }
+ window.TrainPilotPhoneUndo188={undo,paint};
+ window.addEventListener?.('DOMContentLoaded',()=>{
+  const base=renderWorkout;renderWorkout=function(){
+   const result=base.apply(this,arguments),panel=document.querySelector('[data-tp162-automatic]');
+   if(panel&&!panel.querySelector('[data-tp188-undo]')){
+    const button=document.createElement('button');button.type='button';button.className='btn secondary tp162-small tp188-undo';button.dataset.tp188Undo='';button.hidden=true;button.addEventListener('click',undo);panel.append(button);
+   }
+   paint();window.TrainPilotIssue16?.syncGeometry?.();return result;
+  };
+  const auto=window.TrainPilotAutomatic162;if(auto){const original=auto.paint;auto.paint=function(){const result=original.apply(this,arguments);paint();return result;};}
+ });
+})();
+// @endsection phone-undo-188.js
 
 
 

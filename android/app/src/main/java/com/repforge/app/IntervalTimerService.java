@@ -156,7 +156,7 @@ public class IntervalTimerService extends Service {
     }
     private Notification notification(){
         String title=DistanceTrackingService.text(language,"Intervallumidőzítő","Interval timer","Intervalltimer","Cronometru de intervale"),pause=DistanceTrackingService.text(language,"Szünetel","Paused","Pausiert","În pauză");
-        if(timeline==null||!armedWorkoutId.isEmpty()&&!running&&"complete".equals(timeline.at(now()).phase)){
+        if(timeline==null||!armedWorkoutId.isEmpty()&&!running&&(stopped||"complete".equals(timeline.at(now()).phase))){
             PendingIntent open=PendingIntent.getActivity(this,162,new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP),PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
             PendingIntent stop=PendingIntent.getService(this,162,new Intent(this,IntervalTimerService.class).setAction(STOP).putExtra("key",key),PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
             return new NotificationCompat.Builder(this,CHANNEL).setSmallIcon(R.mipmap.ic_launcher).setContentTitle(title)
@@ -174,6 +174,12 @@ public class IntervalTimerService extends Service {
     private void notifyStatus(){((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).notify(NOTIFICATION,notification());}
     private void pauseRun(){if(!running){cancelVibration();return;}update();cancelVibration();if(!running)return;elapsed=now();running=false;began=0;handler.removeCallbacks(tick);release();DistanceTrackingService.pauseOwned(this,steps.get(gpsStep).gpsKey,true);save();notifyStatus();publishWatchClock();}
     private void stopRun(){if(timeline==null){stopForeground(true);stopSelf();return;}pauseRun();stopped=true;DistanceTrackingService.stopOwned(this,steps.get(gpsStep).gpsKey);save();publishWatchClock();stopForeground(true);stopSelf();}
+    /** Retire the old clock after accounting real elapsed time, while retaining the foreground controller. */
+    static void pauseForUndo(Context context,String key)throws Exception {
+        IntervalTimerService s=instance;
+        if(s==null||!key.equals(s.key))return;
+        s.pauseRun();s.stopped=true;s.handler.removeCallbacks(s.tick);s.release();s.cancelVibration();s.save();s.notifyStatus();
+    }
     static JSONObject snapshot(Context context){
         IntervalTimerService service=instance;if(service!=null&&service.timeline!=null){service.update();return service.current();}
         try{JSONObject out=new JSONObject(context.getSharedPreferences(PREFS,MODE_PRIVATE).getString("state","{}"));if(out.optBoolean("running")){out.put("running",false).put("interrupted",true);context.getSharedPreferences(PREFS,MODE_PRIVATE).edit().putString("state",out.toString()).apply();}return out;}catch(Exception ignored){return new JSONObject();}

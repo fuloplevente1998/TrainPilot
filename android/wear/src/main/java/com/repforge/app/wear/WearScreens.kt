@@ -66,6 +66,7 @@ private val LocalAutomaticToggle = compositionLocalOf<(() -> Unit)?> { null }
 private val LocalAutomaticCommand = compositionLocalOf<((String) -> Unit)?> { null }
 internal val LocalSaveSync = compositionLocalOf<WearSaveSyncState?> { null }
 private val LocalOpenSaveSync = compositionLocalOf<(() -> Unit)?> { null }
+private val LocalUndo = compositionLocalOf<((String)->Unit)?> { null }
 private val LocalEditorSave = compositionLocalOf<((String,Double,String)->Boolean)?> { null }
 
 @Composable
@@ -106,6 +107,7 @@ internal fun TrainPilotWearApp(
     onWorkoutFeedback: ((WatchWorkoutFeedback, String?) -> Unit)? = null,
     saveSync: State<WearSaveSyncState?>? = null,
     onRetrySync: ((String) -> Unit)? = null,
+    onUndo: ((String) -> Unit)? = null,
 ) {
     var route by rememberSaveable { mutableStateOf("home") }
     val context = LocalContext.current
@@ -174,6 +176,7 @@ internal fun TrainPilotWearApp(
         LocalAutomaticToggle provides onToggleAutomatic,
         LocalAutomaticCommand provides onAutomaticCommand,
         LocalEditorSave provides onEditorSave,
+        LocalUndo provides onUndo,
         LocalSaveSync provides saveSync?.value,
         LocalOpenSaveSync provides { syncBackRoute=route;route="save-sync" }
     ) {
@@ -1712,12 +1715,20 @@ private fun WorkoutControls(workout: WearWorkout, restRemaining: Int, recordingE
                             layout: WearArcLayout) {
     val automatic=workout.automation
     val command=LocalAutomaticCommand.current
+    val undo=LocalUndo.current
+    var quickUndo by remember(workout.lastRecord188,workout.exercises) { mutableStateOf(WearUndo188.quick(workout,System.currentTimeMillis())) }
+    LaunchedEffect(workout.lastRecord188,workout.exercises) {
+        val age=System.currentTimeMillis()-(WearUndo188.record(workout)?.optLong("recordedAt") ?: 0L)
+        if(quickUndo){delay((WearUndo188.QUICK_MILLIS-age).coerceAtLeast(0));quickUndo=false}
+    }
     CompositionLocalProvider(LocalActionSize provides layout.buttonSize) {
         Box {
             RoundControl("‹", enabled = workout.currentExercise > 0, caption = "Előző", description = "Előző gyakorlat", onClick = onPrevious)
         }
         Box(Modifier.offset(x = layout.sideOffset.dp, y = (layout.centerTop).dp)) {
             when {
+                quickUndo&&undo!=null&&WearUndo188.available(workout) -> RoundControl("↶",Gold,caption="Visszavonás",description="Utolsó sorozat visszavonása",onClick={WearUndo188.record(workout)?.optString("recordId")?.let(undo)})
+                WearUndo188.blocked(workout) -> RoundControl("…",enabled=false,caption="Egyeztetés",description="Visszavonás egyeztetése",onClick={})
                 automatic?.awaitingPhone==true -> RoundControl("…",enabled=false,caption="Telefon",description="Várakozás a telefonra",onClick={})
                 automatic?.enabled==true&&automatic.paused&&command!=null -> RoundControl("▶",caption="Folytatás",description="Automata folytatása",onClick={command("resume")})
                 restRemaining > 0 -> RoundControl("»", caption = "Kihagyás", description = "Pihenő kihagyása", onClick = onSkipRest)
@@ -1729,7 +1740,7 @@ private fun WorkoutControls(workout: WearWorkout, restRemaining: Int, recordingE
         Box(Modifier.offset(x = (2 * layout.sideOffset).dp)) {
             if (workout.currentExercise == workout.exercises.lastIndex)
                 RoundControl("✓", if (workout.exerciseComplete) Gold else Secondary,
-                    enabled = workout.completedSets > 0, caption = "Befejezés", description = "Edzés befejezése", onClick = onFinish)
+                    enabled = workout.completedSets > 0 && !WearUndo188.blocked(workout), caption = "Befejezés", description = "Edzés befejezése", onClick = onFinish)
             else RoundControl("›", if (workout.exerciseComplete) Gold else Secondary,
                 caption = "Következő", description = "Következő gyakorlat", onClick = onNext)
         }
@@ -2253,7 +2264,12 @@ private fun WorkoutMenu(
     val automaticToggle=LocalAutomaticToggle.current
     val automaticCommand=LocalAutomaticCommand.current
     val status=LocalSaveSync.current
+    val undo=LocalUndo.current
     RoundList("Edzésmenü") {
+        if(undo!=null&&WearUndo188.available(workout))centerItem {
+            Pill("Utolsó sorozat visszavonása",tone=Gold) { WearUndo188.record(workout)?.optString("recordId")?.let(undo) }
+        }
+        if(WearUndo188.marker(workout)?.optString("status")=="conflict")centerItem { Label("Eltérő módosítás. Ellenőrizd a telefonon.") }
         if(status!=null)saveSyncItem()
         centerItem { Pill("‹ Kezdőlap", tone = Secondary, onClick = onHome) }
         if(automaticToggle!=null) centerItem {
@@ -2297,7 +2313,7 @@ private fun WorkoutMenu(
             Pill(
                 "Edzés befejezése",
                 tone = Danger,
-                enabled = workout.completedSets > 0,
+                enabled = workout.completedSets > 0 && !WearUndo188.blocked(workout),
                 onClick = onFinish,
             )
         }

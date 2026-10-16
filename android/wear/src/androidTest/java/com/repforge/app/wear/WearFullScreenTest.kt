@@ -925,9 +925,40 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         resume.performClick();assertEquals(listOf("resume"),commands)
     }
 
+    @Test
+    fun quickUndoHasReachableControlAndNeverFinishesWorkout() {
+        val actions=mutableListOf<String>()
+        compose.setContent { Watch { Fixture("undo-quick",automaticCommands=actions) } }
+        compose.onNodeWithContentDescription("Utolsó sorozat visszavonása").assertIsDisplayed().performClick()
+        assertEquals(listOf("record188"),actions)
+        compose.onNodeWithContentDescription("Sorozat rögzítése").assertIsDisplayed()
+        assertFullViewport();screenshot("undo188-restored")
+    }
+    @Test
+    fun expiredQuickUndoRemainsReachableInWorkoutMenuWithLargeText() {
+        val actions=mutableListOf<String>()
+        compose.setContent { Watch { Fixture("undo-menu",automaticCommands=actions) } }
+        compose.onNodeWithContentDescription("Utolsó sorozat visszavonása").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Edzésmenü",substring=true).performClick()
+        lazyList().performScrollToNode(hasContentDescription("Utolsó sorozat visszavonása"))
+        compose.onNodeWithContentDescription("Utolsó sorozat visszavonása").assertIsDisplayed().performClick()
+        assertEquals(listOf("record188"),actions);assertFullViewport();screenshot("undo188-menu")
+    }
+    @Test
+    fun phoneStartedManualWorkoutHasUndoAndWaitsForItsReceipt() {
+        val actions=mutableListOf<String>()
+        compose.setContent { Watch { Fixture("undo-phone",automaticCommands=actions) } }
+        compose.onNodeWithContentDescription("Utolsó sorozat visszavonása").assertIsDisplayed().performClick()
+        assertEquals(listOf("record188"),actions)
+        compose.onNodeWithContentDescription("Visszavonás egyeztetése").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Sorozat rögzítése").assertDoesNotExist()
+        compose.onNodeWithText("93 bpm · 7 kcal").assertIsDisplayed()
+        assertFullViewport();screenshot("undo188-phone-started")
+    }
+
     @Composable
     private fun Fixture(route: String, liveHealth: State<JSONObject?>? = null, automaticCommands: MutableList<String>? = null, feedbackAnswers: MutableList<String?>? = null, measurementActions: MutableList<String>? = null) {
-        val set = WearSet(1, "5", "5.5", feedbackAnswers != null, 30, 0, 0.0)
+        val set = WearSet(1, "5", "5.5", feedbackAnswers != null, 30, 0, 0.0,if(route.startsWith("undo-"))"s188" else "")
         val exercise =
             WearExercise(
                 "press",
@@ -953,7 +984,8 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                     listOf(exercise),
                     "A nap",
                 ).let { initial ->
-                    if (route=="workout-paused") initial.copy(workoutPaused=true,pauseRevision=1)
+                    if(route.startsWith("undo-"))WearUndo188.capture(initial,initial.copy(timerOwner=if(route=="undo-phone")"phone" else "watch",exercises=listOf(exercise.copy(sets=listOf(set.copy(done=true))))),0,0,"record188",System.currentTimeMillis()-if(route=="undo-menu")9000L else 0L)
+                    else if (route=="workout-paused") initial.copy(workoutPaused=true,pauseRevision=1)
                     else if (route=="phone-rest-finished") projectPhoneAutomatic(initial,
                         JSONObject().put("restOnly",true).put("steps",org.json.JSONArray()),
                         WearAutomatic(enabled=true,owner="phone",phase="complete",paused=true,key="phone-rest",remainingMs=0))
@@ -1025,7 +1057,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         }
         val request = remember {
             mutableStateOf<String?>(
-                if (route == "timed-workout" || route.startsWith("automatic-") || route in listOf("phone-rest-finished","workout-paused")) "workout"
+                if (route == "timed-workout" || route.startsWith("automatic-") || route in listOf("phone-rest-finished","workout-paused") || route.startsWith("undo-")) "workout"
                 else if (route == "active-home") "home" else route
             )
         }
@@ -1051,6 +1083,10 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             onStartQuick = {},
             onAddQuick = {},
             onChange = { _, _ -> },
+            onUndo = if(!route.startsWith("undo-"))null else ({ id ->
+                automaticCommands?.add(id)
+                workout.value=WearUndo188.inverse(workout.value!!,"ui-undo",android.os.SystemClock.elapsedRealtime(),-1)
+            }),
             onComplete = { if(route=="phone-rest-finished")automaticCommands?.add("record") },
             onPrevious = {},
             onNext = {},

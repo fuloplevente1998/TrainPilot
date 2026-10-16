@@ -131,7 +131,7 @@ final class PhoneWorkoutRecording {
     static String fingerprint(JSONObject command) throws JSONException {
         JSONArray values = new JSONArray();
         for (String key : new String[]{"action", "workoutId", "generation", "executionRevision",
-                "exerciseId", "setId", "reps", "weight", "value"})
+                "exerciseId", "setId", "reps", "weight", "value", "recordId", "expected", "undoDependency188"})
             values.put(new JSONArray().put(command.has(key)).put(command.opt(key)));
         return values.toString();
     }

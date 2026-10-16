@@ -8,6 +8,7 @@ import com.google.android.gms.wearable.MessageEvent
 
 class WearDataListenerService : WearableListenerService() {
     override fun onPeerConnected(peer: com.google.android.gms.wearable.Node) {
+        WearUndo188.recover(this)
         WearCommandOutbox.flush(this,true)
     }
     override fun onMessageReceived(event: MessageEvent) {

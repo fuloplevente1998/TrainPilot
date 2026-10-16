@@ -35,6 +35,20 @@ public class WearCommandListenerService extends WearableListenerService {
         } catch (Exception ignored) {}
     }
 
+    /** A reconnected watch can deliver its inverse before its completion; retry without waking the WebView. */
+    private void drainNativeUndo188() {
+        org.json.JSONArray pending=WearCommandQueueStore.pending(this);
+        for(int i=0;i<pending.length();i++)try{
+            JSONObject command=pending.getJSONObject(i);
+            if(!"undoSet".equals(command.optString("action"))||!PhoneWorkoutExecution.compatible(command))continue;
+            JSONObject result=PhoneWorkoutExecution.execute(this,command);String status=result.optString("status");
+            if(java.util.Arrays.asList("applied","duplicate","rejected").contains(status)){
+                PhoneWorkoutExecution.publish(this);
+                WearCommandReceipts.complete(this,command,"rejected".equals(status)?"error":"applied",null);
+            }
+        }catch(Exception ignored){/* Durable pending command remains retryable. */}
+    }
+
     @Override
     public void onDataChanged(DataEventBuffer dataEvents) {
         for (DataEvent event : dataEvents) {
@@ -51,13 +65,17 @@ public class WearCommandListenerService extends WearableListenerService {
                 String raw = DataMapItem.fromDataItem(event.getDataItem()).getDataMap().getString("command");
                 if (raw == null || raw.isEmpty()) continue;
                 JSONObject command=new JSONObject(raw);
-                if(WearCommandQueueStore.seen(this,command.optString("commandId"))){WearCommandReceipts.replay(this,command,event.getDataItem().getUri());continue;}
+                if(WearCommandQueueStore.seen(this,command.optString("commandId"))){WearCommandReceipts.replay(this,command,event.getDataItem().getUri());new android.os.Handler(android.os.Looper.getMainLooper()).post(this::drainNativeUndo188);continue;}
                 if(PhoneWorkoutExecution.compatible(command)){
                     android.net.Uri uri=event.getDataItem().getUri();
                     new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
                         try{
                             JSONObject result=PhoneWorkoutExecution.execute(this,command);
-                            if(!java.util.Arrays.asList("applied","duplicate").contains(result.optString("status"))||!WearCommandReceipts.complete(this,command,"applied",uri)) queue(command,uri);
+                            if("undoSet".equals(command.optString("action"))&&"rejected".equals(result.optString("status"))){
+                                PhoneWorkoutExecution.publish(this);
+                                if(!WearCommandReceipts.complete(this,command,"error",uri))queue(command,uri);
+                            }else if(!java.util.Arrays.asList("applied","duplicate").contains(result.optString("status"))||!WearCommandReceipts.complete(this,command,"applied",uri)) queue(command,uri);
+                            drainNativeUndo188();
                         }catch(Exception error){queue(command,uri);}
                     });continue;
                 }

@@ -5,7 +5,12 @@ const flush=()=>new Promise(resolve=>setImmediate(resolve));
 function fixture(nativeAutomatic=false){
  const app=runtime(),events=[],tasks=[];
  let held=null,heldScan=null,failPublish=false,failOpen=false,failPrepare=false,commands=[],nativeFrame=null,armed=false;
- const bridge={publish:async({snapshot})=>{if(nativeAutomatic){assert.equal(snapshot.nativeExecutionProtocol,2);assert.equal(snapshot.generation,nativeFrame.generation);assert.equal(snapshot.executionRevision,nativeFrame.executionRevision);assert.equal(snapshot.workoutId,nativeFrame.workoutId);}events.push(['publish',snapshot.workoutId]);if(held)await held;if(failPublish)throw Error('offline')},clear:async()=>{},publishHome:async()=>{},
+ const bridge={publish:async({snapshot})=>{
+  const ids=snapshot.exercises.flatMap(e=>e.sets.map(s=>s.setId));
+  assert.ok(ids.every(id=>typeof id==='string'&&id.length>0),'every phone-published set needs an identity for watch undo');
+  assert.equal(new Set(ids).size,ids.length,'set identities are unique across the workout');
+  assert.deepEqual(app.run('db.get("draft").session.exercises.flatMap(e=>e.sets.map(s=>s.setId))').join('|'),ids.join('|'),'identities reach the durable draft before publication');
+  if(nativeAutomatic){assert.equal(snapshot.nativeExecutionProtocol,2);assert.equal(snapshot.generation,nativeFrame.generation);assert.equal(snapshot.executionRevision,nativeFrame.executionRevision);assert.equal(snapshot.workoutId,nativeFrame.workoutId);}events.push(['publish',snapshot.workoutId]);if(held)await held;if(failPublish)throw Error('offline')},clear:async()=>{},publishHome:async()=>{},
  startWatchMeasurement:async({workoutId})=>{events.push(['open',workoutId]);if(failOpen)throw Error('remote refused');return {opened:true}},
  pendingCommands:async()=>{if(heldScan)await heldScan;return {commands:commands.slice()}},ackCommand:async({commandId})=>{commands=commands.filter(c=>c.commandId!==commandId)}};
  app.context.window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:bridge}};
@@ -33,7 +38,9 @@ function fixture(nativeAutomatic=false){
  assert.deepEqual(app.events,[['publish',id]],'publish must complete before a remote open');
  app.hold(null);release();await flush();
  assert.deepEqual(app.events,[['publish',id],['open',id]],'one explicit program start opens the matching watch workout');
+ const publishedIds=app.run('state.session.exercises.flatMap(e=>e.sets.map(s=>s.setId)).join("|")');
  await app.sync.syncNow();await app.sync.syncNow();
+ assert.equal(app.run('state.session.exercises.flatMap(e=>e.sets.map(s=>s.setId)).join("|")'),publishedIds,'routine sync preserves published identities');
  for(const fn of app.windowEvents.get('focus')||[])fn();await flush();
  assert.equal(app.events.filter(e=>e[0]==='open').length,1,'polling and foreground resume cannot repeatedly open the watch');
  app.run('state.session=null;state.workout=null');await app.sync.syncNow();
@@ -123,8 +130,42 @@ function fixture(nativeAutomatic=false){
  const future=Date.now()+16000;expired.context.Date=class extends Date{static now(){return future}};
  await expired.sync.syncNow();assert.equal(expired.events.filter(e=>e[0]==='open').length,0,'reconnecting later must not open an old workout automatically');
 
+ const restored=fixture();restored.run('state.session=null;db.set("draft",{session:{syncId:"restored-phone",started:"2026-10-15T12:00:00Z",timerOwner:"phone",notes:"Keep notes",healthWear129:{totalCalories:7},exercises:[{id:"x",sets:[{set:1,setId:"keep-id",reps:"5",weight:5,done:true},{set:2,reps:"",weight:5,done:false}]}]},current:0,workout:"A",restEndAt:1234,custom:"Keep draft"})');
+ await restored.sync.syncNow();
+ const saved=JSON.parse(restored.values.get('repforge:draft')),savedIds=saved.session.exercises[0].sets.map(s=>s.setId);
+ assert.equal(savedIds[0],'keep-id');assert.ok(savedIds[1]);assert.equal(saved.restEndAt,1234);assert.equal(saved.custom,'Keep draft');
+ assert.equal(saved.session.notes,'Keep notes');assert.equal(saved.session.healthWear129.totalCalories,7);assert.equal(saved.session.exercises[0].sets[0].done,true);
+ await restored.sync.syncNow();assert.equal(JSON.parse(restored.values.get('repforge:draft')).session.exercises[0].sets[1].setId,savedIds[1],'restored draft identities survive repeated publication');
+ assert.equal(restored.run('state.session'),null,'repairing a saved draft does not resume the workout');
+ const quota=fixture();quota.run('state.session={syncId:"quota",started:"2026-10-16T08:00:00Z",timerOwner:"phone",exercises:[{id:"x",sets:[{set:1,reps:"5",done:false}]}]};persistDraft()');
+ const write=quota.context.localStorage.setItem;quota.context.localStorage.setItem=(k,v)=>{if(k==='repforge:draft')throw Error('quota');return write(k,v);};
+ await quota.sync.syncNow();assert.equal(quota.events.length,0,'uncommitted identities cannot reach the watch');assert.equal(quota.run('state.session.exercises[0].sets[0].setId'),undefined,'failed persistence restores the prior identity');
+ quota.context.localStorage.setItem=write;await quota.sync.syncNow();assert.equal(quota.events.length,1,'retry persists identities before publishing');
+
+ const phoneRecord=fixture();phoneRecord.run('state.session={syncId:"phone-record",started:"2026-10-16T08:00:00Z",timerOwner:"phone",automatic162:{enabled:false,phase:"work"},notes:"Keep notes",healthWear129:{totalCalories:7},exercises:[{id:"db-floor-press",repUnit:"ism.",loadType:"weight",sets:[{set:1,reps:"5",weight:5.5,done:false},{set:2,reps:"",weight:5.5,done:false}]}]};state.current=0;state.workout="quick";');
+ phoneRecord.windowEvents.get('DOMContentLoaded').find(fn=>fn.toString().includes('const base=toggleSet;toggleSet=function'))();
+ await phoneRecord.run('toggleSet(0,0)');await flush();
+ const recordedSnapshot=phoneRecord.sync.makeSnapshot(),candidate=recordedSnapshot.lastRecord188;
+ assert.ok(candidate?.recordId,'phone UI completion publishes a durable undo candidate to the watch');
+ assert.equal(candidate.setId,recordedSnapshot.exercises[0].sets[0].setId);assert.equal(recordedSnapshot.exercises[0].sets[0].done,true);
+ assert.equal(phoneRecord.run('db.get("draft").session.lastRecord188.recordId'),candidate.recordId);
+ phoneRecord.context.TrainPilotAutomatic162={command:async()=>true};phoneRecord.context.TrainPilotIntervals162={command:async()=>true};
+ phoneRecord.commands([{...candidate,commandId:'watch-undo-phone-record',action:'undoSet',sequence:1,createdAt:Date.now()}]);
+ await phoneRecord.sync.drainCommands();
+ assert.equal(phoneRecord.run('state.session.exercises[0].sets[0].done'),false,'watch inverse also reverses a set completed on the phone');
+ assert.equal(phoneRecord.run('state.session.healthWear129.totalCalories'),7);assert.equal(phoneRecord.run('state.session.notes'),'Keep notes');
+ assert.equal(phoneRecord.run('state.session.undo188.status'),'applied');
+
+ const metadataQuota=fixture();metadataQuota.run('state.session={syncId:"metadata-quota",started:"2026-10-16T08:00:00Z",timerOwner:"phone",automatic162:{enabled:false},exercises:[{id:"db-floor-press",repUnit:"ism.",loadType:"weight",sets:[{set:1,setId:"stable",reps:"5",weight:5.5,done:false}]}]};state.current=0;');
+ metadataQuota.windowEvents.get('DOMContentLoaded').find(fn=>fn.toString().includes('const base=toggleSet;toggleSet=function'))();
+ const metadataWrite=metadataQuota.context.localStorage.setItem;
+ metadataQuota.context.localStorage.setItem=(k,v)=>{if(k==='repforge:draft'&&JSON.parse(v)?.session?.lastRecord188)throw Error('metadata quota');return metadataWrite(k,v);};
+ let quotaFailed=false;try{await metadataQuota.run('toggleSet(0,0)');}catch(_){quotaFailed=true;}
+ assert.equal(quotaFailed,true);assert.equal(metadataQuota.run('state.session.lastRecord188'),undefined,'uncommitted undo metadata is rolled back');
+ metadataQuota.context.localStorage.setItem=metadataWrite;await metadataQuota.sync.syncNow();assert.equal(metadataQuota.sync.makeSnapshot().lastRecord188,undefined,'polling cannot publish failed undo metadata');
+
  const refused=fixture();refused.failOpen(true);refused.start();await flush();await refused.sync.syncNow();
  assert.ok(refused.run('state.session && db.get("draft",null)'),'remote refusal must preserve the phone workout');
  assert.equal(refused.events.filter(e=>e[0]==='open').length,1,'remote refusal is not retried by routine polling');
- console.log('PASS full runtime phone → watch measurement handoff: publish order, real program/quick starts, native automatic preparation/retry, async confirmation, origin, busy/retry, restore, cancellation and remote refusal');
+ console.log('PASS full runtime phone → watch measurement handoff: publish order, real program/quick starts, native automatic preparation/retry, async confirmation, origin, stable manual IDs, draft repair/quota rollback, phone recording → watch inverse, busy/retry, restore, cancellation and remote refusal');
 })().catch(error=>{console.error(error);process.exitCode=1});

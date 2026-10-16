@@ -21,7 +21,7 @@ const store=new Map(),rows=[workout];
 const db={get:(key,fallback)=>store.has(key)?structuredClone(store.get(key)):fallback,
  set:(key,value)=>store.set(key,structuredClone(value))};
 const win={Capacitor:{isNativePlatform:()=>false},addEventListener(){}};
-const ctx=vm.createContext({window:win,document:{addEventListener(){}},state:{session:null},
+const ctx=vm.createContext({crypto:require("node:crypto").webcrypto,window:win,document:{addEventListener(){}},state:{session:null},
  db,Date,console,setInterval(){},setTimeout(){},
  history:()=>rows,exercises:()=>[exercise],activeProgram:()=>program,
  programDay:(p,id)=>p?.days?.find(d=>d.id===id),programById:()=>program,

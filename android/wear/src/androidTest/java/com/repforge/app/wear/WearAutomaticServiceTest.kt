@@ -12,6 +12,67 @@ import org.junit.runner.RunWith
 /** Real foreground timer with Activity stopped, no phone and no health permission. */
 @RunWith(AndroidJUnit4::class)
 class WearAutomaticServiceTest {
+    @Test fun phoneUndoUsesTheWatchOwnerAndDuplicateRequestCannotUndoANewerRecord() {
+        val instrumentation=InstrumentationRegistry.getInstrumentation();val context=instrumentation.targetContext
+        instrumentation.runOnMainSync {
+            WearAutomaticService.stop(context);WorkoutSnapshotStore.clear(context)
+            val delivery=context.getSharedPreferences("trainpilot_wear_outbox",android.content.Context.MODE_PRIVATE);delivery.edit().clear().commit()
+            val before=WearWorkout(1,"p","Program","a","",java.time.Instant.now().toString(),"phone-undo188",0,30,0,
+                listOf(WearExercise("press","Nyomás","weight","ism.","strength",listOf(WearSet(1,"5","5.5",false,0,0,0.0,"set188")))),timerOwner="watch",
+                automation=WearAutomatic(enabled=false,key="manual188"))
+            val after=before.copy(exercises=listOf(before.exercises[0].copy(sets=listOf(before.exercises[0].sets[0].copy(done=true)))))
+            WorkoutSnapshotStore.saveWorkout(context,WearUndo188.capture(before,after,0,0,"record188",System.currentTimeMillis()))
+            val request=JSONObject().put("commandId","phone-request188").put("action","undo").put("recordId","record188")
+                .put("workoutId",before.workoutId).put("key","manual188").put("phaseNumber",0).put("createdAt",System.currentTimeMillis())
+            WearAutomaticController.remote(context,JSONObject(request.toString()).put("recordId","stale"))
+            assertTrue(WorkoutSnapshotStore.load(context)!!.exercises[0].sets[0].done)
+            WearAutomaticController.remote(context,request)
+            val undone=WorkoutSnapshotStore.load(context)!!
+            assertFalse(undone.exercises[0].sets[0].done);assertTrue(undone.automation!!.paused)
+            assertTrue(undone.automation!!.handledCommands.contains("phone-request188"))
+            val inverseId=WearUndo188.marker(undone)!!.getString("commandId")
+            val rerecorded=undone.copy(exercises=after.exercises)
+            WorkoutSnapshotStore.saveWorkout(context,WearUndo188.capture(undone,rerecorded,0,0,"new-record188",System.currentTimeMillis()))
+            WearAutomaticController.remote(context,request)
+            val latest=WorkoutSnapshotStore.load(context)!!
+            assertTrue(latest.exercises[0].sets[0].done);assertEquals("new-record188",WearUndo188.record(latest)!!.getString("recordId"))
+            assertEquals(inverseId,WearUndo188.marker(latest)!!.getString("commandId"))
+            WorkoutSnapshotStore.clear(context);delivery.edit().clear().commit()
+        }
+    }
+    @Test fun offlineUndoAndReceiptRecoveryCannotReviveAnAcknowledgedCommand() {
+        val instrumentation=InstrumentationRegistry.getInstrumentation()
+        val context=instrumentation.targetContext
+        instrumentation.runOnMainSync {
+            WearAutomaticService.stop(context);WorkoutSnapshotStore.clear(context)
+            val delivery=context.getSharedPreferences("trainpilot_wear_outbox",android.content.Context.MODE_PRIVATE)
+            delivery.edit().clear().commit()
+            val before=WearWorkout(1,"p","Program","a","",java.time.Instant.now().toString(),"offline-undo188",0,30,0,
+                listOf(WearExercise("press","Nyomás","weight","ism.","strength",listOf(WearSet(1,"5","5.5",false,0,0,0.0,"set188")))),timerOwner="watch")
+            val after=before.copy(exercises=listOf(before.exercises[0].copy(sets=listOf(before.exercises[0].sets[0].copy(done=true)))))
+            WorkoutSnapshotStore.saveWorkout(context,WearUndo188.capture(before,after,0,0,"record188",System.currentTimeMillis()))
+            val measured=context.getSharedPreferences("trainpilot_wear_health",android.content.Context.MODE_PRIVATE).all.toMap()
+            val undone=WearUndo188.undo(context,"record188")!!
+            assertFalse(undone.exercises[0].sets[0].done)
+            assertEquals("pending",WearUndo188.marker(undone)!!.getString("status"))
+            val command=org.json.JSONArray(delivery.getString("pending","[]")).getJSONObject(0)
+            assertEquals("undoSet",command.getString("action"))
+            val receipt=JSONObject().put("schema",1).put("commandId",command.getString("commandId"))
+                .put("workoutId",before.workoutId).put("action","undoSet").put("sequence",command.getLong("sequence"))
+                .put("status","applied").put("receivedAt",System.currentTimeMillis())
+            assertTrue(WearCommandOutbox.acceptReceipt(context,WearCommandOutbox.RECEIPT_PREFIX+command.getString("commandId"),receipt.toString()))
+            assertEquals(command.getLong("sequence"),WearCommandOutbox.enqueue(context,command))
+            assertEquals(0,org.json.JSONArray(delivery.getString("pending","[]")).length())
+            // Simulate death after receipt storage but before snapshot reconciliation.
+            WorkoutSnapshotStore.saveWorkout(context,undone)
+            WearUndo188.recover(context)
+            assertEquals("applied",WearUndo188.marker(WorkoutSnapshotStore.load(context)!!)!!.getString("status"))
+            assertEquals(0,org.json.JSONArray(delivery.getString("pending","[]")).length())
+            assertFalse(WorkoutSnapshotStore.load(context)!!.exercises[0].sets[0].done)
+            assertEquals(measured,context.getSharedPreferences("trainpilot_wear_health",android.content.Context.MODE_PRIVATE).all.toMap())
+            WorkoutSnapshotStore.clear(context);delivery.edit().clear().commit()
+        }
+    }
     @Test fun backgroundWorkAndRestPauseResumeRecordEachSetOnce() {
         val instrumentation=InstrumentationRegistry.getInstrumentation()
         val context=instrumentation.targetContext

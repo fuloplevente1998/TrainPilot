@@ -38,6 +38,13 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const file=p
  await p.evaluate(()=>prevExercise());assert.equal(await p.evaluate(()=>__watchCommands.at(-1).action),'selectExercise');
  assert.equal(await p.evaluate(()=>__watchCommands.at(-1).exerciseIndex),0);assert.equal(await p.evaluate(()=>state.current),1,'navigation waits for watch owner');
  await p.evaluate(()=>TrainPilotWearAutomatic162.accept(watchPacket(8,{enabled:false,phaseNumber:6},0)));assert.equal(await p.evaluate(()=>state.current),0);
+ await p.evaluate(()=>{
+  const delayed=watchPacket(9,{enabled:false,phaseNumber:6},0);
+  state.session.exercises[1].sets[0].done=true;state.session.exercises[1].sets[0].reps='11';
+  if(!TrainPilotWearAutomatic162.accept(delayed))throw Error('delayed mirror rejected');
+ });
+ assert.equal(await p.evaluate(()=>state.session.exercises[1].sets[0].done),true,'delayed owner mirror cannot erase newer phone completion');
+ assert.equal(await p.evaluate(()=>state.session.exercises[1].sets[0].reps),'11','delayed mirror preserves newer edited values for the inverse guard');
  fs.mkdirSync('ui-evidence',{recursive:true});await p.screenshot({path:'ui-evidence/wear-automatic-phone-162.png'});
  for(const quick of [true,false]){
   const started=await p.evaluate(async quick=>{

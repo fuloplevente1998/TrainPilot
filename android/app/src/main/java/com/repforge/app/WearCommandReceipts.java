@@ -24,6 +24,10 @@ final class WearCommandReceipts {
             if(uri!=null)Wearable.getDataClient(context).deleteDataItems(uri);
             return; // Legacy dedupe entries never manufacture a success receipt.
         }
+        if("undoSet".equals(command.optString("action"))){
+            JSONObject active=ActiveWorkoutStore.current(context);
+            if(active!=null&&active.optString("workoutId").equals(receipt.optString("workoutId")))try{receipt.put("undoFrame",active);}catch(Exception ignored){}
+        }
         PutDataMapRequest map=PutDataMapRequest.create(PREFIX+id);
         map.getDataMap().putString("receipt",receipt.toString());
         Wearable.getDataClient(context).putDataItem(map.asPutDataRequest().setUrgent())

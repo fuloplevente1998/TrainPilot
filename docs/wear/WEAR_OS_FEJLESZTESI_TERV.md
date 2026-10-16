@@ -1,5 +1,21 @@
 # Telefonos és Wear OS automata mód, Wear UI-fejlesztési terv
 
+### #188 telefonos indítás javítása — 2026. október 16.
+
+Készülékes hiba: telefonról indított kézi edzésnél hiányzott az órás Visszavonás, mert a telefon automatika nélkül nem osztott stabil sorozatazonosítókat. A #209 draft publikálás előtti tartós azonosítással javul (új és régi draft), meglévő azonosítók és mérési adatok megőrzésével. Célzott telefonos indítás/szinkron/kvóta és órás telefonvezérelt kézi UI-regresszió bővült. Teljes ellenőrzés és aláírt tesztcsomag GitHub Actionsben; fizikai elfogadás továbbra is hátravan. A telefonon rögzített kézi sorozat tartós visszavonási jelöltje is átkerül az órának, a telefonos készrejelölés → órás inverz út regresszióval fedett. A pontosított igény szerint a telefon alsó edzésvezérlő sora is kap külön **Visszavonás** gombot. Telefonos kézi/natív automata és óravezérelt edzésnél ugyanaz a védett inverz működik; óravezérlésnél tulajdonosi visszaigazolásig vár. Gyors/tervezett telefonos Chromium-próba nyolc méret/nyelv kombinációban, natív tranzakciós dupla kattintás és valódi órás távoli parancs/újraküldés regresszió védi. Az új funkcióhoz azonos forrású telefonos + Wear tesztcsomag kell. Verzió/main/release változatlan.
+
+## P2 #188 megvalósítás — 2026. október 15.
+
+A dokumentált P2-sorrend első feladata külön `feat/188-safe-wear-undo` ágon készül, a #208 utáni `66dbc02` mainből. Verzióemelés nincs (1.3.51 / 2732).
+
+- Egy utolsó sorozatrögzítés: 8 másodperces közvetlen Visszavonás és későbbi edzésmenü-művelet.
+- Előzetes automata-szünet, célzott sorozatinverz, pihenő lezárása és visszalépés a célgyakorlatra; egészségminták és valóban mért munka/pihenő/szünet időnapló megőrzése.
+- Stabil eseményazonosító és teljes sorozatérték-ellenőrzés; újabb adatot nem ír felül. Telefonos natív háttérút és órás offline outbox is érintett. Régi időzítő-checkpoint és újraküldött rögzítés nem élesztheti újra az inverzt.
+- Telefonvezérlésnél nyugtáig egyeztetés; órás offline folytatáskor a későbbi parancsok a visszavonás eredményére hivatkoznak. Ütköző későbbi helyi módosítást nem törlünk: az óra szüneteltetett konfliktust mutat, amely telefonos ellenőrzést igényel.
+- Célzott JS/Kotlin/natív és 160–225 dp / nagy betűs kerek UI-regressziók; teljes gate és aláírt telefon/Wear tesztbuild GitHub Actionsben, eredmény a draft PR-on. Fizikai elfogadás és main-jóváhagyás még külön lépés.
+
+A további dokumentált sorrend: #189 → #192 → #193; az órás térkép nem része ennek a változtatásnak.
+
 **Legújabb Wear-visszajelzés:** a `3eb33ff` videóján az újrapróbálás továbbra sem indít mérést. A felhasználó megerősítette: **a központi helyszolgáltatás ki volt kapcsolva**, miközben a TrainPilot pontos helyengedélye megvolt; bekapcsolja és újrapróbálja, siker még nincs igazolva. Külön platformellenőrzés (`LocationManager.isLocationEnabled`), külön rendszerhely-üzenet és Helyadatok bekapcsolása gomb szükséges. A gomb a rendszer helybeállítására vezet, engedélyezés után az összesítést és a külön GPS-szándékot őrző retry következik, visszautasításkor nincs Settings-hurok. GitHubon JUnit + kerek Compose + valódi platformhely-ki/be instrumentált próba és aláírt Wear APK; telefon változatlan `0d1ecf1`, verzió 1.3.4 /2730, main/release nélkül. Az alábbi korábbi foreground-javítás önmagában nem igazolta a fizikai sikert.
 
 **Átadási bizonyíték:** `35b4108` alkalmazásforrás, Wear gate sikeres, **102/102 kerek UI/platform teszt sikeres**. [Buildbizonylat és ellenőrzött APK/hash](../builds/2026-10-15-wear-system-location.json). A rendszerhely bekapcsolása utáni fizikai szenzorsiker még nincs visszaigazolva. Az alábbi korábbi állapotok történetiek.

@@ -221,7 +221,10 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             val raw=uri.getQueryParameter("command")
             if(raw!=null&&raw.length<16000)try {
                 val command=JSONObject(raw);val current=WorkoutSnapshotStore.load(this);val a=current?.automation
-                if(current!=null&&current.timerOwner=="watch"&&current.workoutId==command.optString("workoutId")&&
+                if(command.optString("action")=="undo"){
+                    WearAutomaticController.remote(this,command);workout.value=WorkoutSnapshotStore.load(this);restoreRestFromSnapshot(workout.value)
+                }
+                if(command.optString("action")!="undo"&&current!=null&&current.timerOwner=="watch"&&current.workoutId==command.optString("workoutId")&&
                     command.optString("key")==a?.key.orEmpty()&&System.currentTimeMillis()-command.optLong("createdAt") in 0..15000&&
                     (command.optString("action")=="toggle"||command.optLong("phaseNumber")==a?.phaseNumber)&&
                     a?.handledCommands?.contains(command.optString("commandId"))!=true){
@@ -268,6 +271,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WearUndo188.recover(this)
         workout.value = WearAutomaticController.restore(this)
         home.value = WatchHomeStore.load(this)
         closure.value = WearClosureStore.load(this)
@@ -306,6 +310,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                 onAddQuick = ::addQuickExerciseFromWatch,
                 onChange = ::changeCurrentSet,
                 onComplete = ::completeCurrentSet,
+                onUndo = { id -> workout.value=WearUndo188.undo(this,id);restoreRestFromSnapshot(workout.value) },
                 onPrevious = { navigateExercise(-1) },
                 onNext = { navigateExercise(1) },
                 onSkipRest = ::skipRest,
@@ -320,7 +325,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                 onAutomaticCommand = { action ->
                     val current=WorkoutSnapshotStore.load(this)
                     if(current!=null){
-                        if(current.timerOwner=="phone")sendCommand("automaticControl",value=action)
+                        if(current.timerOwner=="phone")sendCommand("automaticControl",value=if(action=="resume"&&current.automation?.key?.startsWith("undo188:")==true)"resumeUndo" else action)
                         else {workout.value=WearAutomaticController.command(this,action,current.workoutId);restoreRestFromSnapshot(workout.value)}
                     }
                 }
@@ -332,6 +337,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         super.onResume()
         activityResumed=true
         refreshHomeIndicators(true)
+        WearUndo188.recover(this)
         workout.value = WearAutomaticController.restore(this)
         workout.value?.takeIf { it.automation?.enabled==true && it.automation.owner=="watch" }?.let { WearAutomaticService.ensure(this,it) }
         home.value = WatchHomeStore.load(this)
@@ -495,7 +501,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     }
 
     private fun sendStartCommand(day: WatchHomeDay, scheduleId: String, started: String) {
-        val commandId = UUID.randomUUID().toString()
+        val commandId=UUID.randomUUID().toString()
         val command = JSONObject()
             .put("schema", 1)
             .put("commandId", commandId)
@@ -553,7 +559,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private fun changeCurrentSet(field: String, delta: Double) {
         synchronized(WearAutomaticController) { synchronized(WorkoutSnapshotStore) {
         val current = WorkoutSnapshotStore.load(this) ?: return
-        if(current.workoutPaused)return
+        if(current.workoutPaused||WearUndo188.blocked(current))return
         if(current.automation?.enabled==true && current.automation.owner=="watch" && current.automation.phase=="work" && field=="reps")return
         val exerciseIndex = current.currentExercise
         val exercise = current.exercise ?: return
@@ -592,7 +598,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private fun saveEditorValue(field: String,value: Double,expected: String): Boolean {
         synchronized(WearAutomaticController){synchronized(WorkoutSnapshotStore){
             val current=WorkoutSnapshotStore.load(this) ?: return false
-        if(current.workoutPaused)return false
+        if(current.workoutPaused||WearUndo188.blocked(current))return false
             if(!value.isFinite()||current.currentSet?.done!=false||WearAutomaticEngine.targetId(current,current.currentExercise,current.currentSetIndex)!=expected||
                 current.automation?.let { it.enabled&&it.phase=="work"&&field=="reps" }==true||
                 current.automation?.let { it.counting&&!it.paused }==true){Toast.makeText(this,"A sorozat közben változott. Nyisd meg újra.",Toast.LENGTH_SHORT).show();return false}
@@ -605,7 +611,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         synchronized(WearAutomaticController) { synchronized(WorkoutSnapshotStore) {
         if (restRemaining.intValue > 0) return
         val current = WorkoutSnapshotStore.load(this) ?: return
-        if(current.workoutPaused)return
+        if(current.workoutPaused||WearUndo188.blocked(current))return
         if(current.automation?.awaitingPhone==true)return
         if(current.automation?.enabled==true && current.automation.owner=="watch" && current.automation.counting)return
         val exerciseIndex = current.currentExercise
@@ -621,8 +627,10 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             WearStopwatchStore.clear(this);restoreRestFromSnapshot(workout.value);return
         }
         replaceSet(current, exerciseIndex, setIndex, set.copy(done = true))
+        val recordId=UUID.randomUUID().toString()
+        workout.value=WorkoutSnapshotStore.saveWorkout(this,WearUndo188.capture(current,workout.value!!,exerciseIndex,setIndex,recordId,System.currentTimeMillis()))
         sendCommand(
-            action = "completeSet",
+            action = "completeSet",commandId=recordId,
             exerciseIndex = exerciseIndex,
             setIndex = setIndex,
             reps = set.reps.ifBlank { "0" },
@@ -668,13 +676,14 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         reps: String? = null,
         weight: String? = null,
         leftSeconds: Int? = null,
-        rightSeconds: Int? = null
+        rightSeconds: Int? = null,
+        commandId: String = UUID.randomUUID().toString()
     ) {
         val current = WorkoutSnapshotStore.load(this) ?: return
+        if(WearUndo188.blocked(current))return
         if(current.workoutPaused&&action !in listOf("resumeWorkout","finishWorkout","discardWorkout"))return
         val exercise = exerciseIndex?.let { current.exercises.getOrNull(it) }
         val set = if (exercise != null && setIndex != null) exercise.sets.getOrNull(setIndex) else null
-        val commandId = UUID.randomUUID().toString()
         val command = JSONObject()
             .put("schema", 1)
             .put("commandId", commandId)
@@ -689,6 +698,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         if (action == "automaticControl" && value == "start") {
             command.put("exerciseId", current.exercise?.id).put("setId", current.currentSet?.setId)
         }
+        WearUndo188.marker(current)?.let { command.put("undoDependency188",it.optString("commandId")) }
         if (action == "addQuickExercise") command.put("finalSnapshot",WorkoutSnapshotStore.encode(current))
         if (exerciseIndex != null) command.put("exerciseIndex", exerciseIndex)
         if (exercise != null) command.put("exerciseId", exercise.id)
@@ -741,6 +751,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
 
     private fun closeWorkout(action: String) {
         val current = workout.value ?: return
+        if(WearUndo188.blocked(current))return
         if (action == "finishWorkout" && current.completedSets == 0) return
         val command = JSONObject()
             .put("schema", 1).put("commandId", UUID.randomUUID().toString())
@@ -749,6 +760,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             .put("action", action).put("confirmed", true)
             .put("finishedAt", Instant.now().toString()).put("createdAt", System.currentTimeMillis())
             .put("finalSnapshot", WorkoutSnapshotStore.encode(current))
+        WearUndo188.marker(current)?.let { command.put("undoDependency188",it.optString("commandId")) }
         WearHealthStore.load(this,current.workoutId)?.let { command.put("healthSummary",WearHealthAccumulator(it).snapshot()) }
         WearHealthService.stop(this)
         WearAutomaticService.stop(this)

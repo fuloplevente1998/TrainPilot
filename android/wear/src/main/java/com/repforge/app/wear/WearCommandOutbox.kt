@@ -35,6 +35,12 @@ object WearCommandOutbox {
     private fun enqueuePersisted(context: Context, command: JSONObject,localReady: Boolean): Long {
         val p=prefs(context);val old=read(context,"pending");val before=old.toString();val oldSequence=p.getLong("sequence",0)
         val id=command.optString("commandId");val workoutId=command.optString("workoutId")
+        // Recovery can race with a receipt committed just before its snapshot
+        // marker is reconciled. Reuse that sequence instead of reviving delivery.
+        val acknowledged=read(context,"results191")
+        for(i in 0 until acknowledged.length())acknowledged.optJSONObject(i)?.let {
+            if(it.optString("commandId")==id&&it.optString("workoutId")==workoutId&&it.optString("action")==command.optString("action"))return it.optLong("sequence")
+        }
         val existing=(0 until old.length()).mapNotNull { old.optJSONObject(it) }.firstOrNull { it.optString("commandId")==id }
         val floor=maxOf(command.optLong("watchSequence"),command.optJSONObject("finalSnapshot")?.optLong("localSequence") ?: 0L)
         val sequence=existing?.optLong("sequence") ?: (maxOf(oldSequence,floor)+1)
@@ -90,8 +96,13 @@ object WearCommandOutbox {
         }
     }
 
-    @Synchronized fun acceptReceipt(context: Context,path: String?,raw: String?): Boolean {
-        if(raw==null||raw.length>4096||path==null||!path.startsWith(RECEIPT_PREFIX))return false
+    fun acceptReceipt(context: Context,path: String?,raw: String?): Boolean {
+        val accepted=acceptReceiptLocked(context,path,raw)
+        if(accepted&&raw!=null)WearUndo188.receipt(context,JSONObject(raw))
+        return accepted
+    }
+    @Synchronized private fun acceptReceiptLocked(context: Context,path: String?,raw: String?): Boolean {
+        if(raw==null||raw.length>100000||path==null||!path.startsWith(RECEIPT_PREFIX))return false
         val receipt=try { JSONObject(raw) }catch(_:Exception){return false}
         if(path!=RECEIPT_PREFIX+receipt.optString("commandId"))return false
         val pending=try { read(context,"pending") } catch(_:Exception) { return false }
