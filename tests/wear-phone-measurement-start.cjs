@@ -142,8 +142,30 @@ function fixture(nativeAutomatic=false){
  await quota.sync.syncNow();assert.equal(quota.events.length,0,'uncommitted identities cannot reach the watch');assert.equal(quota.run('state.session.exercises[0].sets[0].setId'),undefined,'failed persistence restores the prior identity');
  quota.context.localStorage.setItem=write;await quota.sync.syncNow();assert.equal(quota.events.length,1,'retry persists identities before publishing');
 
+ const phoneRecord=fixture();phoneRecord.run('state.session={syncId:"phone-record",started:"2026-10-16T08:00:00Z",timerOwner:"phone",automatic162:{enabled:false,phase:"work"},notes:"Keep notes",healthWear129:{totalCalories:7},exercises:[{id:"db-floor-press",repUnit:"ism.",loadType:"weight",sets:[{set:1,reps:"5",weight:5.5,done:false},{set:2,reps:"",weight:5.5,done:false}]}]};state.current=0;state.workout="quick";');
+ phoneRecord.windowEvents.get('DOMContentLoaded').at(-1)();
+ await phoneRecord.run('toggleSet(0,0)');await flush();
+ const recordedSnapshot=phoneRecord.sync.makeSnapshot(),candidate=recordedSnapshot.lastRecord188;
+ assert.ok(candidate?.recordId,'phone UI completion publishes a durable undo candidate to the watch');
+ assert.equal(candidate.setId,recordedSnapshot.exercises[0].sets[0].setId);assert.equal(recordedSnapshot.exercises[0].sets[0].done,true);
+ assert.equal(phoneRecord.run('db.get("draft").session.lastRecord188.recordId'),candidate.recordId);
+ phoneRecord.context.TrainPilotAutomatic162={command:async()=>true};phoneRecord.context.TrainPilotIntervals162={command:async()=>true};
+ phoneRecord.commands([{...candidate,commandId:'watch-undo-phone-record',action:'undoSet',sequence:1,createdAt:Date.now()}]);
+ await phoneRecord.sync.drainCommands();
+ assert.equal(phoneRecord.run('state.session.exercises[0].sets[0].done'),false,'watch inverse also reverses a set completed on the phone');
+ assert.equal(phoneRecord.run('state.session.healthWear129.totalCalories'),7);assert.equal(phoneRecord.run('state.session.notes'),'Keep notes');
+ assert.equal(phoneRecord.run('state.session.undo188.status'),'applied');
+
+ const metadataQuota=fixture();metadataQuota.run('state.session={syncId:"metadata-quota",started:"2026-10-16T08:00:00Z",timerOwner:"phone",automatic162:{enabled:false},exercises:[{id:"db-floor-press",repUnit:"ism.",loadType:"weight",sets:[{set:1,setId:"stable",reps:"5",weight:5.5,done:false}]}]};state.current=0;');
+ metadataQuota.windowEvents.get('DOMContentLoaded').at(-1)();
+ const metadataWrite=metadataQuota.context.localStorage.setItem;
+ metadataQuota.context.localStorage.setItem=(k,v)=>{if(k==='repforge:draft'&&JSON.parse(v)?.session?.lastRecord188)throw Error('metadata quota');return metadataWrite(k,v);};
+ let quotaFailed=false;try{await metadataQuota.run('toggleSet(0,0)');}catch(_){quotaFailed=true;}
+ assert.equal(quotaFailed,true);assert.equal(metadataQuota.run('state.session.lastRecord188'),undefined,'uncommitted undo metadata is rolled back');
+ metadataQuota.context.localStorage.setItem=metadataWrite;await metadataQuota.sync.syncNow();assert.equal(metadataQuota.sync.makeSnapshot().lastRecord188,undefined,'polling cannot publish failed undo metadata');
+
  const refused=fixture();refused.failOpen(true);refused.start();await flush();await refused.sync.syncNow();
  assert.ok(refused.run('state.session && db.get("draft",null)'),'remote refusal must preserve the phone workout');
  assert.equal(refused.events.filter(e=>e[0]==='open').length,1,'remote refusal is not retried by routine polling');
- console.log('PASS full runtime phone → watch measurement handoff: publish order, real program/quick starts, native automatic preparation/retry, async confirmation, origin, stable manual IDs, draft repair/quota rollback, busy/retry, restore, cancellation and remote refusal');
+ console.log('PASS full runtime phone → watch measurement handoff: publish order, real program/quick starts, native automatic preparation/retry, async confirmation, origin, stable manual IDs, draft repair/quota rollback, phone recording → watch inverse, busy/retry, restore, cancellation and remote refusal');
 })().catch(error=>{console.error(error);process.exitCode=1});

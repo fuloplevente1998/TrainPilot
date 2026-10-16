@@ -17314,6 +17314,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     workoutId:sessionKey(session),
     watchSequence:Number(session.wearSequence)||0,
     ...(session.undo188?{undo188:session.undo188}:{}),
+    ...(session.lastRecord188?{lastRecord188:session.lastRecord188}:{}),
     quickWorkout:session.type==='quick'||session.quickWorkout===true,
     dayName:(()=>{if(session.type==='quick'||session.quickWorkout===true)return String(session.programName||'Gyors edzés');try{const p=programById(session.programId);return dayName(p,programDay(p,session.dayId||session.workout))}catch(_){return String(session.dayId||session.workout||'')}})(),
     programId:String(session.programId||''),
@@ -17830,7 +17831,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }finally{commandBusy=false}
  }
  if(typeof window!=='undefined'){
-  window.TrainPilotWearSync={syncNow,syncHomeNow,drainCommands,phoneWorkoutStarted,discardDraft,isDiscarded:id=>closedWorkouts().some(x=>x.status==='discarded'&&sameId(x.workoutId,id)),makeSnapshot:snapshot,makeHomeSnapshot:homeSnapshot,isApplyingCommand:()=>commandBusy,isStartingFromWatch:()=>watchStartDepth>0};
+  window.TrainPilotWearSync={syncNow,syncHomeNow,drainCommands,phoneWorkoutStarted,discardDraft,ensureSetIdentities:()=>persistWearSetIdentities(state.session),isDiscarded:id=>closedWorkouts().some(x=>x.status==='discarded'&&sameId(x.workoutId,id)),makeSnapshot:snapshot,makeHomeSnapshot:homeSnapshot,isApplyingCommand:()=>commandBusy,isStartingFromWatch:()=>watchStartDepth>0};
   window.addEventListener?.('focus',()=>{drainCommands();syncNow();syncHomeNow({force:true});});
  }
  if(typeof document!=='undefined')document.addEventListener?.('visibilitychange',()=>{if(document.hidden)pendingWatchStart=null;else{drainCommands();syncNow();syncHomeNow({force:true});}});
@@ -18542,7 +18543,22 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const eligible=api?.executionStatus&&session?.automatic162?.enabled&&(session.timerOwner||'phone')==='phone'&&
     !session.exercises.some(e=>e.measurementType==='distance')&&!window.TrainPilotWearSync?.isApplyingCommand?.()&&
     set&&!set.done&&['','ism.','reps','/kar','/láb'].includes(e.repUnit||'')&&/^\d+$/.test(String(set.reps))&&Number(set.reps)>0;
-   return eligible?window.TrainPilotPhoneExecution162.recordPhoneSet(ei,si):base.apply(this,arguments);
+   if(eligible)return window.TrainPilotPhoneExecution162.recordPhoneSet(ei,si);
+   const capture=api&&session&&(session.timerOwner||'phone')==='phone'&&!window.TrainPilotWearSync?.isApplyingCommand?.()&&set&&!set.done;
+   if(!capture)return base.apply(this,arguments);
+   window.TrainPilotWearSync?.ensureSetIdentities?.();
+   const before=window.TrainPilotUndo188.values(set),recordId=crypto.randomUUID();
+   const recorded=result=>{
+    if(state.session===session&&e.sets[si]===set&&set.done&&set.setId){
+     const previous=session.lastRecord188;
+     window.TrainPilotUndo188.capture(session,{commandId:recordId,workoutId:String(session.syncId||session.started||''),exerciseId:e.id,setId:set.setId},before);
+     try{persistDraft();}catch(error){if(previous===undefined)delete session.lastRecord188;else session.lastRecord188=previous;throw error;}
+     void window.TrainPilotWearSync?.syncNow?.();
+    }
+    return result;
+   };
+   const result=base.apply(this,arguments);
+   return result&&typeof result.then==='function'?result.then(recorded):recorded(result);
   };
  });
 })();

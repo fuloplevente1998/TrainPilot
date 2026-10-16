@@ -39,7 +39,7 @@ function harness({draft=false}={}){
   }
  };
  const active={id:'p',name:'Program',days:[{id:'A',name:'Első nap',exercises:['pushup']}]};
- const context=vm.createContext({window,document:{addEventListener(){}},state,db,Date,console,
+ const context=vm.createContext({crypto:require("node:crypto").webcrypto,window,document:{addEventListener(){}},state,db,Date,console,
   setInterval(){},setTimeout(){},settings:()=>({rest:75}),exercises:()=>library,
   history:()=>db.get('history',[]),activeProgram:()=>active,
   programById:()=>active,programDay:()=>active.days[0],byId:key=>library.find(e=>e.id===key),

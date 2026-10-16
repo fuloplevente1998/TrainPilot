@@ -6,6 +6,8 @@ A felhasználó visszajelzése: óráról indított gyors/tervezett edzésnél v
 
 A `feat/188-safe-wear-undo` / [#209 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/209) javítása publikálás előtt tartós, stabil sorozatazonosítókat ad a telefonos kézi edzéseknek és a korábbi draftoknak. A meglévő azonosítók, mért adatok és szerkesztések megmaradnak; sikertelen tároláskor az új azonosító nem publikálható. A tervezett/gyors indítás, folyamatos szinkron, régi draft és tárolási hiba regressziója bővült, továbbá külön telefonvezérelt kézi órás UI-eset készült mind az öt kerek kijelzős konfigurációhoz.
 
+A telefonon végzett kézi készrejelölés visszavonási jelöltje is tartósan mentődik és átkerül az órának; az órás művelet így mindkét rögzítési hely után működhet. Külön regresszió ellenőrzi a telefonos rögzítés → órás visszavonás útját is.
+
 A külön telefonos gyors Visszavonás-gomb továbbra sem része a #188 órás felületének. Verzió változatlan 1.3.51 / 2732; main/release változatlan. Az új commit teljes GitHub-kapuinak eredménye és teszt-APK-párja a PR-on rögzítendő; készülékes elfogadás szükséges.
 
 ## P2 #188 — utolsó órás rögzítés visszavonása (2026. október 15.)

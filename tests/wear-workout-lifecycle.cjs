@@ -8,7 +8,7 @@ function harness({normalize=false,ackFailures=0}={}){
  const state={session:session(),current:0,workout:'A'};
  const bridge={pendingCommands:async()=>({commands:pending.slice()}),ackCommand:async({commandId,status})=>{if(ackFailures-->0)throw Error('temporary ACK failure');acks.push(commandId);ackResults.push({commandId,status});pending.splice(pending.findIndex(c=>c.commandId===commandId),1)},publish:async()=>{},clear:async()=>{},publishHome:async()=>{}};
  const window={Capacitor:{isNativePlatform:()=>true,Plugins:{WearSync:bridge}},addEventListener(){},scrollTo(){}};
- const ctx=vm.createContext({window,document:{addEventListener(){}},state,db,Date,console,setInterval(){},setTimeout(){},settings:()=>({rest:90}),history:()=>db.get('history',[]).map(x=>normalize?{...x,started:new Date(x.started).toISOString()}:x),
+ const ctx=vm.createContext({crypto:require("node:crypto").webcrypto,window,document:{addEventListener(){}},state,db,Date,console,setInterval(){},setTimeout(){},settings:()=>({rest:90}),history:()=>db.get('history',[]).map(x=>normalize?{...x,started:new Date(x.started).toISOString()}:x),
   activeProgram:()=>({id:'home-basic',name:'Otthoni A/B',days:[{id:'A',name:'Alap A',exercises:['squat']}]}),programById:()=>({id:'home-basic'}),programDay:()=>({id:'A',name:'Alap A'}),byId:()=>({id:'squat',hu:'Guggolás',sets:2,repUnit:'ism.'}),
   stopTimer(){state.restEndAt=null},render(){},renderWorkout(){},persistDraft(){if(state.session)db.set('draft',{session:state.session,current:state.current,workout:state.workout})},
   startWorkout(){state.session=session();state.workout='A'},

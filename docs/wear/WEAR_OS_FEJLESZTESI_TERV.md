@@ -2,7 +2,7 @@
 
 ### #188 telefonos indítás javítása — 2026. október 16.
 
-Készülékes hiba: telefonról indított kézi edzésnél hiányzott az órás Visszavonás, mert a telefon automatika nélkül nem osztott stabil sorozatazonosítókat. A #209 draft publikálás előtti tartós azonosítással javul (új és régi draft), meglévő azonosítók és mérési adatok megőrzésével. Célzott telefonos indítás/szinkron/kvóta és órás telefonvezérelt kézi UI-regresszió bővült. Teljes ellenőrzés és aláírt tesztcsomag GitHub Actionsben; fizikai elfogadás továbbra is hátravan. Ez a telefonról indított edzés **órás** visszavonását javítja; külön telefonos gyorsgombot nem vezet be. Verzió/main/release változatlan.
+Készülékes hiba: telefonról indított kézi edzésnél hiányzott az órás Visszavonás, mert a telefon automatika nélkül nem osztott stabil sorozatazonosítókat. A #209 draft publikálás előtti tartós azonosítással javul (új és régi draft), meglévő azonosítók és mérési adatok megőrzésével. Célzott telefonos indítás/szinkron/kvóta és órás telefonvezérelt kézi UI-regresszió bővült. Teljes ellenőrzés és aláírt tesztcsomag GitHub Actionsben; fizikai elfogadás továbbra is hátravan. A telefonon rögzített kézi sorozat tartós visszavonási jelöltje is átkerül az órának, a telefonos készrejelölés → órás inverz út regresszióval fedett. Ez a telefonról indított edzés **órás** visszavonását javítja; külön telefonos gyorsgombot nem vezet be. Verzió/main/release változatlan.
 
 ## P2 #188 megvalósítás — 2026. október 15.
 
