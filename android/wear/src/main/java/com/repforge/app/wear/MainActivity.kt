@@ -221,7 +221,10 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             val raw=uri.getQueryParameter("command")
             if(raw!=null&&raw.length<16000)try {
                 val command=JSONObject(raw);val current=WorkoutSnapshotStore.load(this);val a=current?.automation
-                if(current!=null&&current.timerOwner=="watch"&&current.workoutId==command.optString("workoutId")&&
+                if(command.optString("action")=="undo"){
+                    WearAutomaticController.remote(this,command);workout.value=WorkoutSnapshotStore.load(this);restoreRestFromSnapshot(workout.value)
+                }
+                if(command.optString("action")!="undo"&&current!=null&&current.timerOwner=="watch"&&current.workoutId==command.optString("workoutId")&&
                     command.optString("key")==a?.key.orEmpty()&&System.currentTimeMillis()-command.optLong("createdAt") in 0..15000&&
                     (command.optString("action")=="toggle"||command.optLong("phaseNumber")==a?.phaseNumber)&&
                     a?.handledCommands?.contains(command.optString("commandId"))!=true){

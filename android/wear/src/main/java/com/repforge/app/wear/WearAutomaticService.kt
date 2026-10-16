@@ -204,6 +204,15 @@ object WearAutomaticController {
         if(a?.handledCommands?.contains(id)==true){publish(context,current);return}
         if(input.optString("key")!=(a?.key ?: "")){if(a!=null)publish(context,current);return}
         if(a!=null&&action!="toggle"&&input.optLong("phaseNumber",-1)!=a.phaseNumber){publish(context,current);return}
+        if(action=="undo"){
+            val recordId=input.optString("recordId")
+            if(recordId.isBlank())return
+            val next=WearUndo188.undo(context,recordId) ?: return
+            if(WearUndo188.marker(next)?.optString("recordId")!=recordId){publish(context,next);return}
+            val state=next.automation ?: WearAutomatic(enabled=false,owner="watch",key="undo188:$id",paused=true)
+            val saved=WorkoutSnapshotStore.saveWorkout(context,next.copy(automation=state.copy(handledCommands=(state.handledCommands+id).takeLast(128))))
+            publish(context,saved);return
+        }
         if(action in listOf("start","resume","record")&&!WearAutomaticService.active(current.workoutId)){publish(context,current);return}
         if(action=="record"){
             val e=input.optInt("exerciseIndex",-1);val s=input.optInt("setIndex",-1)

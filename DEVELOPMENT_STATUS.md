@@ -8,7 +8,7 @@ A `feat/188-safe-wear-undo` / [#209 draft PR](https://github.com/fuloplevente199
 
 A telefonon végzett kézi készrejelölés visszavonási jelöltje is tartósan mentődik és átkerül az órának; az órás művelet így mindkét rögzítési hely után működhet. Külön regresszió ellenőrzi a telefonos rögzítés → órás visszavonás útját is.
 
-A külön telefonos gyors Visszavonás-gomb továbbra sem része a #188 órás felületének. Verzió változatlan 1.3.51 / 2732; main/release változatlan. Az új commit teljes GitHub-kapuinak eredménye és teszt-APK-párja a PR-on rögzítendő; készülékes elfogadás szükséges.
+A felhasználó pontosítása alapján a telefon alsó edzésvezérlő sora is kap **Visszavonás** gombot az utolsó biztonságosan visszavonható sorozathoz. Gyors/tervezett, telefonos/órás indításnál is elérhető. A telefonos natív automatika ugyanazon tartós inverztranzakciót használja; óravezérlésnél a telefon az órától kér inverzt, és visszaigazolásig vár. Dupla koppintás, újabb szerkesztés, késői parancs és mért egészségadat védelme célzott regresszióval fedett; a gomb nyolc kis telefonos méret/nyelv kombinációban ellenőrzött. Az új telefonos és Wear APK együttes frissítése szükséges az óravezérelt telefonos gombhoz. Verzió változatlan 1.3.51 / 2732; main/release változatlan. Az új commit teljes GitHub-kapuinak eredménye és teszt-APK-párja a PR-on rögzítendő; készülékes elfogadás szükséges.
 
 ## P2 #188 — utolsó órás rögzítés visszavonása (2026. október 15.)
 

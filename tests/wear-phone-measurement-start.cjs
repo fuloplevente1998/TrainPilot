@@ -143,7 +143,7 @@ function fixture(nativeAutomatic=false){
  quota.context.localStorage.setItem=write;await quota.sync.syncNow();assert.equal(quota.events.length,1,'retry persists identities before publishing');
 
  const phoneRecord=fixture();phoneRecord.run('state.session={syncId:"phone-record",started:"2026-10-16T08:00:00Z",timerOwner:"phone",automatic162:{enabled:false,phase:"work"},notes:"Keep notes",healthWear129:{totalCalories:7},exercises:[{id:"db-floor-press",repUnit:"ism.",loadType:"weight",sets:[{set:1,reps:"5",weight:5.5,done:false},{set:2,reps:"",weight:5.5,done:false}]}]};state.current=0;state.workout="quick";');
- phoneRecord.windowEvents.get('DOMContentLoaded').at(-1)();
+ phoneRecord.windowEvents.get('DOMContentLoaded').find(fn=>fn.toString().includes('const base=toggleSet;toggleSet=function'))();
  await phoneRecord.run('toggleSet(0,0)');await flush();
  const recordedSnapshot=phoneRecord.sync.makeSnapshot(),candidate=recordedSnapshot.lastRecord188;
  assert.ok(candidate?.recordId,'phone UI completion publishes a durable undo candidate to the watch');
@@ -157,7 +157,7 @@ function fixture(nativeAutomatic=false){
  assert.equal(phoneRecord.run('state.session.undo188.status'),'applied');
 
  const metadataQuota=fixture();metadataQuota.run('state.session={syncId:"metadata-quota",started:"2026-10-16T08:00:00Z",timerOwner:"phone",automatic162:{enabled:false},exercises:[{id:"db-floor-press",repUnit:"ism.",loadType:"weight",sets:[{set:1,setId:"stable",reps:"5",weight:5.5,done:false}]}]};state.current=0;');
- metadataQuota.windowEvents.get('DOMContentLoaded').at(-1)();
+ metadataQuota.windowEvents.get('DOMContentLoaded').find(fn=>fn.toString().includes('const base=toggleSet;toggleSet=function'))();
  const metadataWrite=metadataQuota.context.localStorage.setItem;
  metadataQuota.context.localStorage.setItem=(k,v)=>{if(k==='repforge:draft'&&JSON.parse(v)?.session?.lastRecord188)throw Error('metadata quota');return metadataWrite(k,v);};
  let quotaFailed=false;try{await metadataQuota.run('toggleSet(0,0)');}catch(_){quotaFailed=true;}

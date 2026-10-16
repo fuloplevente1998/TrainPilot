@@ -157,7 +157,7 @@ function fixture(nativeResult=result()){
   assert.equal(command.setId,'a');assert.equal(command.nativeExecutionProtocol,2);
   modern.setResult({snapshot:{active:true,workoutId:'workout',generation:10,executionRevision:3},events:[{sequence:1,workoutId:'workout',generation:10,executionRevision:3,exerciseId:'press',setId:'a',values:{done:true,reps:'9',weight:7},before:{reps:'9',weight:7}}],timer:{}});return {status:'applied'};
  };
- modern.windowEvents.get('DOMContentLoaded').at(-1)();
+ modern.windowEvents.get('DOMContentLoaded').find(fn=>fn.toString().includes('const base=toggleSet;toggleSet=function'))();
  assert.equal(await modern.run('toggleSet(0,1)'),true,'phone UI uses the native recording path with the modern plugin registry');
  assert.deepEqual(modern.calls,[['prepare',1],['arm'],['ack',1]]);
  for(const unit of ['/kar','/láb']){
@@ -167,11 +167,35 @@ function fixture(nativeResult=result()){
    assert.equal(command.setId,'a');assert.equal(command.reps,'9');
    unilateral.setResult({snapshot:{active:true,workoutId:'workout',generation:10,executionRevision:3},events:[{sequence:1,workoutId:'workout',generation:10,executionRevision:3,exerciseId:'press',setId:'a',values:{done:true,reps:'9',weight:7},before:{reps:'9',weight:7}}],timer:{}});return {status:'applied'};
   };
-  unilateral.windowEvents.get('DOMContentLoaded').at(-1)();
+  unilateral.windowEvents.get('DOMContentLoaded').find(fn=>fn.toString().includes('const base=toggleSet;toggleSet=function'))();
   assert.equal(await unilateral.run('toggleSet(0,1)'),true,'unilateral phone UI records natively '+unit);
   assert.deepEqual(unilateral.calls,[['prepare',1],['arm'],['ack',1]],'no legacy rest fallback '+unit);
   assert.equal(unilateral.run('state.session.exercises[0].sets[1].reps'),'9','per-side counts are not doubled');
  }
+ const undoPhone=fixture({snapshot:{active:true,workoutId:'workout',generation:10,executionRevision:1},events:[],timer:{}});
+ undoPhone.run("state.session.exercises[0].sets[1].done=true;state.session.healthWear129={heartRate:93,totalCalories:7};window.TrainPilotUndo188.capture(state.session,{commandId:'native-record188',workoutId:'workout',exerciseId:'press',setId:'a'},{done:false,reps:'9',weight:7,leftSeconds:0,rightSeconds:0,distanceMeters:0});state.session.lastRecord188.native188=true;");
+ const nativeCandidate=copy(undoPhone.run('state.session.lastRecord188'));
+ const candidateFrame={...result(),snapshot:{...result().snapshot,exercises:copy(undoPhone.run('state.session.exercises')),lastRecord188:copy(undoPhone.run('state.session.lastRecord188'))},events:[]};
+ const localCompleted=draft();localCompleted.session.exercises[0].sets[1].done=true;
+ assert.equal(merge(localCompleted,candidateFrame).draft.session.lastRecord188.recordId,'native-record188','native status imports the durable candidate for the actual phone button');
+
+ const undoFrame={active:true,workoutId:'workout',generation:10,executionRevision:1,exercises:copy(undoPhone.run('state.session.exercises')),lastRecord188:nativeCandidate};
+ undoPhone.setResult({snapshot:undoFrame,events:[],timer:{}});
+ let releaseUndo,signalUndo;const enteredUndo=new Promise(resolve=>signalUndo=resolve);
+ undoPhone.api.executeCommand=async({command})=>{
+  assert.equal(command.action,'undoSet');assert.equal(command.nativeExecutionProtocol,2);assert.equal(command.recordId,'native-record188');assert.equal(command.generation,10);
+  await new Promise(resolve=>{releaseUndo=resolve;signalUndo();});
+  const transition={state:'paused',phase:'paused',currentExercise:0},frame={...undoFrame,executionRevision:3,lastRecord188:null,undo188:{commandId:command.commandId,status:'applied'},transition};
+  frame.exercises=copy(undoFrame.exercises);frame.exercises[0].sets[1].done=false;
+  undoPhone.setResult({snapshot:frame,events:[{kind:'undoSet',sequence:1,commandId:command.commandId,recordId:command.recordId,workoutId:'workout',generation:10,exerciseId:'press',setId:'a',before:{done:true,reps:'9',weight:7},values:nativeCandidate.before,transition}],timer:{}});
+  return {status:'applied'};
+ };
+ const undoFlight=undoPhone.native.undoPhoneSet('native-record188');await enteredUndo;
+ assert.equal(await undoPhone.native.undoPhoneSet('native-record188'),false,'double native undo cannot compete with the owning transaction');
+ assert.equal(await undoPhone.native.sync({prepare:false}),false);releaseUndo();assert.equal(await undoFlight,true);
+ assert.equal(undoPhone.run('state.session.exercises[0].sets[1].done'),false);assert.equal(undoPhone.run('db.get("draft").session.exercises[0].sets[1].done'),false);
+ assert.equal(undoPhone.run('state.session.lastRecord188'),null,'native candidate is removed after durable inverse import');
+ assert.equal(undoPhone.run('state.session.healthWear129.heartRate'),93);assert.equal(undoPhone.run('state.session.automatic162.phase'),'paused');
  const transport=fixture({snapshot:{active:true,workoutId:'workout',generation:10,executionRevision:1},events:[],timer:{}});
  transport.api.executeCommand=async()=>{throw Error('transport unavailable');};
  assert.equal(await transport.native.recordPhoneSet(0,1),false);assert.equal(transport.run('state.session.exercises[0].sets[1].done'),false,'failed transport cannot invent a completion');

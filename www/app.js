@@ -16805,6 +16805,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
    next.restEndAt=null;changed=true;
   }
   if(frame.undo188)session.undo188=clone(frame.undo188);
+  if(Array.isArray(frame.exercises)){
+   const record=frame.lastRecord188;
+   const candidate=record&&record.workoutId===identity(session)&&window.TrainPilotUndo188.same(record.expected,window.TrainPilotUndo188.guard(session.exercises))?clone(record):null;
+   if(JSON.stringify(session.lastRecord188||null)!==JSON.stringify(candidate)){session.lastRecord188=candidate;changed=true;}
+  }
   const timeChanged=window.TrainPilotTime162Core.merge(session,frame.timeLogs162||{});
   session.phoneExecution162={...meta,revision:frame.executionRevision,sequence:cursor,timeSignature,completedBase:completedBase(frame)};
   next.savedAt=new Date().toISOString();return {draft:next,changed,sequence:cursor,needsCommit:timeSignature!==meta.timeSignature||timeChanged||changed||cursor!==(Number(meta.sequence)||0)||frame.executionRevision!==meta.revision};
@@ -16851,6 +16856,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(state.session&&state.tab==='plan'&&!editing)renderWorkout();
    window.TrainPilotAutomatic162?.adoptNative?.();window.TrainPilotIntervals162?.adoptNative?.();
   }
+  window.TrainPilotPhoneUndo188?.paint?.();
   return true;
  }
  async function syncLocked({prepare=true}={}){
@@ -17012,7 +17018,20 @@ window.addEventListener?.('DOMContentLoaded',function(){
    return ['applied','duplicate'].includes(result?.status)&&await syncLocked({prepare:false});
   }catch(_){await syncLocked({prepare:false});return false;}finally{busy=false;}
  }
- window.TrainPilotPhoneExecution162={sync,finishFence,discardFence,recordPhoneSet,failure:()=>lastFailure?{...lastFailure}:null,isReconciling:()=>busy||discarding,block:async value=>{const api=bridge();if(api?.blockExecution)await api.blockExecution({blocked:value});}};
+ async function undoPhoneSet(recordId){
+  const api=bridge(),session=state.session;
+  if(!api?.executeCommand||busy||discarding||blocked())return false;
+  busy=true;
+  try{
+   if(!await syncLocked()||state.session!==session||!window.TrainPilotUndo188.available(session)||session.lastRecord188.recordId!==recordId)return false;
+   const meta=session.phoneExecution162;
+   const command={...clone(session.lastRecord188),schema:1,nativeExecutionProtocol:2,action:'undoSet',commandId:crypto.randomUUID(),
+    generation:meta.generation,executionRevision:meta.revision,createdAt:Date.now()};
+   const result=await api.executeCommand({command});
+   return ['applied','duplicate'].includes(result?.status)&&await syncLocked({prepare:false});
+  }catch(_){await syncLocked({prepare:false});return false;}finally{busy=false;}
+ }
+ window.TrainPilotPhoneExecution162={sync,finishFence,discardFence,recordPhoneSet,undoPhoneSet,failure:()=>lastFailure?{...lastFailure}:null,isReconciling:()=>busy||discarding,block:async value=>{const api=bridge();if(api?.blockExecution)await api.blockExecution({blocked:value});}};
 })();
 // @endsection phone-execution-162.js
 
@@ -17025,6 +17044,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
  function same(a,b){return Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.every((row,i)=>Array.isArray(row)&&row.length===8&&b[i]?.length===8&&row.every((v,j)=>j<3?v===b[i][j]:Number.isFinite(v)&&v===b[i][j]));}
  function values(set){return {done:set.done===true,...Object.fromEntries(fields.map(k=>[k,set[k]??(k==='reps'?'':0)]))};}
  function capture(session,command,before){session.lastRecord188={recordId:command.commandId,workoutId:command.workoutId,exerciseId:command.exerciseId,setId:command.setId,before,expected:guard(session.exercises),recordedAt:Date.now()};}
+ function available(session){
+  const r=session?.lastRecord188;
+  return !!(r&&!session.workoutPaused&&r.workoutId===String(session.syncId||session.started||'')&&
+   same(r.expected,guard(session.exercises))&&session.exercises.some(e=>e.id===r.exerciseId&&e.sets.some(s=>s.setId===r.setId&&s.done)));
+ }
  function inverse(session,command){
   if(session.undo188?.commandId===command.commandId)return session.undo188.fingerprint===JSON.stringify([command.recordId,command.expected]);
   const last=session.lastRecord188;
@@ -17047,7 +17071,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }else session.automatic162={...session.automatic162,phase:'paused',run:null,undoKey188:'undo188:'+command.commandId};
   return true;
  }
- window.TrainPilotUndo188={guard,same,values,capture,inverse};
+ window.TrainPilotUndo188={guard,same,values,capture,inverse,available};
 })();
 // @endsection workout-undo-188.js
 
@@ -17777,7 +17801,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(target.set.done){
     window.TrainPilotUndo188.capture(state.session,command,before188);
     if(located.index===state.session.exercises.length-1&&located.exercise.sets.every(s=>s.done))stopTimer();
-    persistDraft();return true
+    persistDraft();window.TrainPilotPhoneUndo188?.paint?.();return true
    }
    return false;
   }
@@ -18422,7 +18446,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    return true;
   }
   async function remote(action,values={}){
-   const s=state.session;if(!external()||!s)return false;
+   const s=state.session;if(!s||!(external()||action==='undo'&&s.timerOwner==='watch'))return false;
    const command={schema:1,commandId:crypto.randomUUID(),workoutId:s.syncId||s.started,key:s.watchAutomation162?.key||'',phaseNumber:s.watchAutomation162?.phaseNumber||0,action,createdAt:Date.now(),...values};
    const c=window.Capacitor,api=c?.Plugins?.WearSync||c?.registerPlugin?.('WearSync');
    try{
@@ -18544,7 +18568,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     !session.exercises.some(e=>e.measurementType==='distance')&&!window.TrainPilotWearSync?.isApplyingCommand?.()&&
     set&&!set.done&&['','ism.','reps','/kar','/láb'].includes(e.repUnit||'')&&/^\d+$/.test(String(set.reps))&&Number(set.reps)>0;
    if(eligible)return window.TrainPilotPhoneExecution162.recordPhoneSet(ei,si);
-   const capture=api&&session&&(session.timerOwner||'phone')==='phone'&&!window.TrainPilotWearSync?.isApplyingCommand?.()&&set&&!set.done;
+   const capture=session&&(session.timerOwner||'phone')==='phone'&&!window.TrainPilotWearSync?.isApplyingCommand?.()&&set&&!set.done;
    if(!capture)return base.apply(this,arguments);
    window.TrainPilotWearSync?.ensureSetIdentities?.();
    const before=window.TrainPilotUndo188.values(set),recordId=crypto.randomUUID();
@@ -18554,6 +18578,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
      window.TrainPilotUndo188.capture(session,{commandId:recordId,workoutId:String(session.syncId||session.started||''),exerciseId:e.id,setId:set.setId},before);
      try{persistDraft();}catch(error){if(previous===undefined)delete session.lastRecord188;else session.lastRecord188=previous;throw error;}
      void window.TrainPilotWearSync?.syncNow?.();
+     window.TrainPilotPhoneUndo188?.paint?.();
     }
     return result;
    };
@@ -18563,6 +18588,61 @@ window.addEventListener?.('DOMContentLoaded',function(){
  });
 })();
 // @endsection phone-recording-162.js
+
+// @section phone-undo-188.js
+(function(){
+ 'use strict';
+ const core=window.TrainPilotUndo188,copy=v=>JSON.parse(JSON.stringify(v));let busy=false,poll=null;
+ const COPY={hu:{undo:'Visszavonás',label:'Utolsó sorozat visszavonása',waiting:'Egyeztetés…',failed:'A sorozat nem vonható vissza. Ellenőrizd a kapcsolatot vagy használd a szerkesztést.'},en:{undo:'Undo',label:'Undo last set',waiting:'Syncing…',failed:'The set could not be undone. Check the connection or edit it.'},de:{undo:'Rückgängig',label:'Letzten Satz rückgängig machen',waiting:'Abgleich…',failed:'Der Satz konnte nicht zurückgenommen werden. Verbindung prüfen oder bearbeiten.'},ro:{undo:'Anulează',label:'Anulează ultima serie',waiting:'Sincronizare…',failed:'Seria nu a putut fi anulată. Verifică conexiunea sau editează seria.'}};
+ const t=k=>(COPY[rf212Lang()]||COPY.hu)[k];
+ const blocked=()=>window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||window.TrainPilotBoot?.loading||window.TrainPilotWearSync?.isApplyingCommand?.();
+ function paint(){
+  const s=state.session,waiting=busy||s?.automatic162?.pending===true,button=document.querySelector('[data-tp188-undo]');
+  if(button){
+   const hidden=!core.available(s)&&!waiting;
+   const changed=button.hidden!==hidden;button.hidden=hidden;
+   button.disabled=waiting||blocked()||window.TrainPilotPhoneExecution162?.isReconciling?.()||!core.available(s);
+   button.textContent=waiting?t('waiting'):'↶ '+t('undo');button.setAttribute('aria-label',t('label'));button.setAttribute('aria-busy',String(waiting));
+   if(changed)window.TrainPilotIssue16?.syncGeometry?.();
+  }
+  if(s&&(s.lastRecord188||waiting)&&!poll)poll=setInterval(paint,500);
+  else if((!s||!s.lastRecord188&&!waiting)&&poll){clearInterval(poll);poll=null;}
+ }
+ async function undo(){
+  const s=state.session;if(busy||blocked()||!core.available(s)||s.automatic162?.pending)return false;
+  const recordId=s.lastRecord188.recordId;busy=true;paint();let applied=false;
+  try{
+   if(s.timerOwner==='watch')return await window.TrainPilotWearAutomatic162.remote('undo',{recordId});
+   if(s.lastRecord188.native188&&s.phoneExecution162&&s.automatic162?.enabled){
+    applied=await window.TrainPilotPhoneExecution162.undoPhoneSet(recordId);
+   }else{
+    if(!await window.TrainPilotAutomatic162.command('pause')||!await window.TrainPilotIntervals162.command('pause'))return false;
+    if(state.session!==s||!core.available(s)||s.lastRecord188.recordId!==recordId||blocked())return false;
+    const next=copy(s),command={...copy(s.lastRecord188),commandId:crypto.randomUUID()};
+    if(!core.inverse(next,command))return false;
+    const current=next.exercises.findIndex(e=>e.id===command.exerciseId);
+    db.set('draft',{...db.get('draft',{}),session:next,workout:state.workout,current,restEndAt:null,savedAt:new Date().toISOString()});
+    const exercises=s.exercises;next.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>Object.assign(exercises[i].sets[j],v)));
+    Object.assign(s,next,{exercises});state.current=current;stopTimer();state.restEndAt=null;applied=true;renderWorkout();
+   }
+   if(applied)void window.TrainPilotWearSync?.syncNow?.();
+   return applied;
+  }catch(_){return false;}
+  finally{busy=false;paint();if(!applied&&state.session===s&&s.timerOwner!=='watch')window.tp153Toast?.(t('failed'),5000);}
+ }
+ window.TrainPilotPhoneUndo188={undo,paint};
+ window.addEventListener?.('DOMContentLoaded',()=>{
+  const base=renderWorkout;renderWorkout=function(){
+   const result=base.apply(this,arguments),panel=document.querySelector('[data-tp162-automatic]');
+   if(panel&&!panel.querySelector('[data-tp188-undo]')){
+    const button=document.createElement('button');button.type='button';button.className='btn secondary tp162-small tp188-undo';button.dataset.tp188Undo='';button.hidden=true;button.addEventListener('click',undo);panel.append(button);
+   }
+   paint();window.TrainPilotIssue16?.syncGeometry?.();return result;
+  };
+  const auto=window.TrainPilotAutomatic162;if(auto){const original=auto.paint;auto.paint=function(){const result=original.apply(this,arguments);paint();return result;};}
+ });
+})();
+// @endsection phone-undo-188.js
 
 
 

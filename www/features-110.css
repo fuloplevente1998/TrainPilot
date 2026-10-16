@@ -88,6 +88,7 @@ html.tp110-large-text body .tp-select-trigger :is(span,strong){white-space:norma
 .tp162-automatic .tp162-auto{display:flex;align-items:center;gap:5px;min-height:32px;margin:0;font-size:12px;font-weight:500;color:var(--muted);white-space:nowrap}
 .tp162-automatic input{width:15px;height:15px;margin:0;accent-color:var(--accent)}
 .tp162-automatic [data-tp162-auto-status]{flex:1 1 auto;min-width:0;font-size:11px;line-height:1.35;overflow:visible;text-overflow:clip;white-space:normal;overflow-wrap:anywhere}
+.tp162-automatic .tp188-undo{flex:0 1 auto;color:var(--accent);max-width:100%}
 html body #app main.tp153-workout .tp16-workout-actions:has(>.tp162-automatic){grid-template-areas:"auto auto" "prev next"!important}
 html body #app main.tp153-workout .tp16-workout-actions:has(>.tp162-automatic):has(>.tp16-rest-timer){grid-template-columns:minmax(0,1fr) minmax(0,auto) minmax(0,1fr)!important;grid-template-areas:"auto auto auto" "prev rest next"!important}
 html body #app main.tp153-workout .tp16-workout-actions .tp162-small{min-height:32px!important;height:32px!important;min-width:28px!important;padding:3px 5px!important;font-size:12px!important;border-radius:9px!important}
