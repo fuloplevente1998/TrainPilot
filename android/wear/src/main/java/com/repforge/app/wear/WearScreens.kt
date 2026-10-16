@@ -67,6 +67,7 @@ private val LocalAutomaticCommand = compositionLocalOf<((String) -> Unit)?> { nu
 internal val LocalSaveSync = compositionLocalOf<WearSaveSyncState?> { null }
 private val LocalOpenSaveSync = compositionLocalOf<(() -> Unit)?> { null }
 private val LocalUndo = compositionLocalOf<((String)->Unit)?> { null }
+private val LocalTouchLock189 = compositionLocalOf<(() -> Unit)?> { null }
 private val LocalEditorSave = compositionLocalOf<((String,Double,String)->Boolean)?> { null }
 
 @Composable
@@ -140,6 +141,15 @@ internal fun TrainPilotWearApp(
     var metricsBackRoute by rememberSaveable { mutableStateOf("menu") }
     var settingsBackRoute by rememberSaveable { mutableStateOf("home") }
     var returnWorkoutPage by rememberSaveable { mutableStateOf(0) }
+    val touchIdentity=WearTouchLock189.identity(workout.value)
+    var touchLocked by remember(touchIdentity) { mutableStateOf(WearTouchLock189.locked(context,workout.value)) }
+    val touchCopy=WearTouchCopy189.language(java.util.Locale.getDefault().language)
+    LaunchedEffect(touchIdentity) { WearTouchLock189.retain(context,workout.value) }
+    fun lockTouches() {
+        val active=workout.value ?: return
+        if(WearTouchLock189.set(context,active,true)) { returnWorkoutPage=0;route="workout";touchLocked=true }
+    }
+    BackHandler(enabled=touchLocked) { /* System Home/Power remain available; Back cannot open a hidden app action. */ }
     fun openMeasurement(item: MiniJournalWorkout, origin: String) {
         miniJournalId = item.workoutId
         miniJournalBackRoute = origin
@@ -151,7 +161,7 @@ internal fun TrainPilotWearApp(
         if (origin == "workout") returnWorkoutPage = 2
         route = "journal"
     }
-    BackHandler(enabled = route != "home") {
+    BackHandler(enabled = route != "home" && !touchLocked) {
         route =
             when (route) {
                 "editor",
@@ -177,6 +187,7 @@ internal fun TrainPilotWearApp(
         LocalAutomaticCommand provides onAutomaticCommand,
         LocalEditorSave provides onEditorSave,
         LocalUndo provides onUndo,
+        LocalTouchLock189 provides if(workout.value!=null)({lockTouches()})else null,
         LocalSaveSync provides saveSync?.value,
         LocalOpenSaveSync provides { syncBackRoute=route;route="save-sync" }
     ) {
@@ -184,6 +195,9 @@ internal fun TrainPilotWearApp(
             Box(Modifier.fillMaxSize().background(Black)) {
                 val active = workout.value
                 when {
+                    touchLocked && active != null -> WearTouchLockedScreen189(active,restRemaining.value,health.value,touchCopy) {
+                        if(WearTouchLock189.set(context,active,false)){touchLocked=false;returnWorkoutPage=0;route="workout"}
+                    }
                     route == "feedback" && pendingFeedback != null ->
                         WorkoutFeedbackScreen { effort ->
                             onWorkoutFeedback?.invoke(pendingFeedback, effort)
@@ -419,7 +433,7 @@ private fun CurvedHeader(text: String, color: Color = Gold, sweep: Float = WEAR_
 
 /** Short pages keep their controls fixed; only content that actually overflows can scroll. */
 @Composable
-private fun FixedRoundPanel(
+internal fun FixedRoundPanel(
     title: String,
     arc: Boolean = false,
     count: Int = 2,
@@ -1667,6 +1681,7 @@ private fun SetHeading(workout: WearWorkout, restRemaining: Int, detail: String?
     val automatic=workout.automation
     val command=LocalAutomaticCommand.current
     val toggle=LocalAutomaticToggle.current
+    val touchLock=LocalTouchLock189.current
     val heading = when {
         automatic?.awaitingPhone==true -> "Telefonra vár"
         automatic?.enabled==true && automatic.interrupted -> "Megszakadt · folytatható"
@@ -1693,6 +1708,10 @@ private fun SetHeading(workout: WearWorkout, restRemaining: Int, detail: String?
         if(toggle!=null) Text(if(automatic?.enabled==true)" A" else " M",color=if(automatic?.enabled==true)Gold else Muted,
             fontSize=(7*captionScale).sp,modifier=Modifier.size(if(compact)16.dp else 20.dp).clickable(role=Role.Button,onClick=toggle)
                 .testTag("wear-automatic-toggle").semantics { contentDescription=if(automatic?.enabled==true)"Automata mód kikapcsolása" else "Automata mód bekapcsolása" })
+        if(touchLock!=null)Box(Modifier.size(24.dp).clickable(role=Role.Button,onClick=touchLock).testTag("wear-touch-lock")
+            .semantics { contentDescription=WearTouchCopy189.language(java.util.Locale.getDefault().language).lock },contentAlignment=Alignment.Center) {
+            WearLockIcon189(Muted,Modifier.size(14.dp))
+        }
     }
 }
 
@@ -2265,7 +2284,9 @@ private fun WorkoutMenu(
     val automaticCommand=LocalAutomaticCommand.current
     val status=LocalSaveSync.current
     val undo=LocalUndo.current
+    val touchLock=LocalTouchLock189.current
     RoundList("Edzésmenü") {
+        touchLock?.let { lock -> centerItem { Pill(WearTouchCopy189.language(java.util.Locale.getDefault().language).lock,tone=Secondary,onClick=lock) } }
         if(undo!=null&&WearUndo188.available(workout))centerItem {
             Pill("Utolsó sorozat visszavonása",tone=Gold) { WearUndo188.record(workout)?.optString("recordId")?.let(undo) }
         }

@@ -1,5 +1,11 @@
 # TrainPilot — fejlesztési állapot
 
+## P2 #188 elfogadva; következő #189 — 2026. október 16.
+
+A felhasználó az azonos forrású `0694413` telefonos/Wear 1.3.51 /2732 tesztpárt elfogadta: **„Zárhatjuk, jók vagyunk :) Folytathatod”**. A #209 a `a06485ca5b502d21a482a5c7ada26794e8b0b634` main commitba került, #188 lezárva. Bizonyíték: 143/143 regresszió, 6/6 telefonos Chromium-futás + natív gate, Wear build, 119/119 kerek UI/háttér/szinkron; pontos APK/checksum a #209-ben. Az elfogadásból nem állítunk külön hosszú vagy minden offline kombinációra kiterjedő fizikai próbát.
+
+Következő P2: **#189 órás érintészár**, külön `feat/189-wear-touch-lock` ágon a friss mainből. Helyi, edzésazonosítóhoz kötött zár; a mérés, háttéridőzítő, automata átmenetek és telefonos vezérlés tovább működik. Zárás az aktív edzésről és menüből, olvasható gyakorlat/szakasz/számláló/HR/kcal; tudatos feloldás külön rövid koppintás után 3 másodpercig tartott, majd elengedett lakattal. Mozgatás, több ujj, túl rövid/hosszú vagy háttérbe kerülő nyomás megszakítja a próbát. App-visszatérés és folyamat-újraindítás ugyanahhoz az edzéshez megőrzi a zárat, új/lezárt edzés nem örökli. Rendszer Home/Power és telefonos műveletek megmaradnak. Külön Kotlin/UI/életciklus/háttér regresszió és GitHub Wear-kapuk szükségesek; új funkció készülékes elfogadása még hátravan. Verzió változatlan, új main/release csak elfogadás után.
+
 ## #188 készülékes javítás — telefonról indított kézi edzés (2026. október 16.)
 
 A felhasználó visszajelzése: óráról indított gyors/tervezett edzésnél van órás Visszavonás, telefonról indítva az órán nincs. Reprodukálva: automatika nélkül a telefon üres `setId` értékeket publikált; az órás biztonsági ellenőrzés ezért nem készített visszavonási jelöltet. A korábbi CI ezt az indulási módot nem fedte le hiányzó azonosítókkal.

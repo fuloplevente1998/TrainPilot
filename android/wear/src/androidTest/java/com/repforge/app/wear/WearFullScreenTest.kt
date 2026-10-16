@@ -53,6 +53,8 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     }
 
     @get:Rule val compose = createComposeRule()
+    @org.junit.Before fun clearTouchLock189() { InstrumentationRegistry.getInstrumentation().targetContext.getSharedPreferences("trainpilot_wear_touch_lock189",android.content.Context.MODE_PRIVATE).edit().clear().commit() }
+    @org.junit.After fun cleanupTouchLock189() { clearTouchLock189() }
 
     @Test
     fun workoutFeedbackAllFiveChoicesAndSkipAreReachableOnRoundScreens() {
@@ -926,6 +928,76 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     }
 
     @Test
+    fun touchLockBlocksAccidentalActionsAndRequiresTheArmedThreeSecondRelease() {
+        val actions=mutableListOf<String>()
+        compose.setContent { Watch { Fixture("touch-workout",touchActions=actions) } }
+        compose.onNodeWithTag("wear-touch-lock").assertIsDisplayed().performClick()
+        compose.onNodeWithTag("wear-touch-locked").assertIsDisplayed()
+        compose.onNodeWithText("93 bpm · 7 kcal").assertIsDisplayed()
+        for(label in listOf("Sorozat rögzítése","Edzés befejezése","Előző gyakorlat","Pihenő kihagyása"))
+            compose.onNodeWithContentDescription(label).assertDoesNotExist()
+        compose.onRoot().performTouchInput { click(center);swipeLeft();swipeUp();doubleClick(center) }
+        val unlock=compose.onNodeWithTag("wear-touch-unlock").assertIsDisplayed()
+        unlock.performTouchInput { down(center);advanceEventTime(3500);up() }
+        compose.onNodeWithTag("wear-touch-locked").assertIsDisplayed()
+        unlock.performTouchInput { click(center);advanceEventTime(100);down(center);advanceEventTime(800);up() }
+        compose.onNodeWithTag("wear-touch-locked").assertIsDisplayed()
+        unlock.performTouchInput { click(center);advanceEventTime(100);down(center);moveTo(center+androidx.compose.ui.geometry.Offset(35f,0f));advanceEventTime(3200);up() }
+        compose.onNodeWithTag("wear-touch-locked").assertIsDisplayed()
+        unlock.performTouchInput { click(center);advanceEventTime(100);down(0,center);down(1,center);advanceEventTime(3200);up(1);up(0) }
+        compose.onNodeWithTag("wear-touch-locked").assertIsDisplayed()
+        assertTrue(actions.isEmpty());screenshot("touch189-locked")
+        unlock.performTouchInput { click(center);advanceEventTime(100);down(center);advanceEventTime(3100);up() }
+        compose.onNodeWithTag("wear-touch-locked").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Sorozat rögzítése").assertIsDisplayed().performClick()
+        assertEquals(listOf("record"),actions)
+    }
+
+    @Test
+    fun touchLockMenuReloadAndPhoneUpdatesStayBoundToOneWorkout() {
+        val work=mutableStateOf<WearWorkout?>(touchWorkout189())
+        val generation=mutableStateOf(0)
+        compose.setContent { Watch { key(generation.value) { Fixture("touch-workout",externalWorkout=work) } } }
+        compose.onNodeWithContentDescription("Edzésmenü",substring=true).performClick()
+        val title=WearTouchCopy189.language(java.util.Locale.getDefault().language).lock
+        lazyList().performScrollToNode(hasContentDescription(title))
+        compose.onNodeWithContentDescription(title).performClick()
+        compose.runOnIdle { generation.value++ }
+        compose.onNodeWithTag("wear-touch-locked").assertIsDisplayed()
+        compose.runOnIdle { work.value=work.value!!.copy(currentExercise=1) }
+        compose.onNodeWithTag("wear-locked-clock").assertTextEquals("2/2 · 1/1")
+        compose.onNodeWithTag("wear-touch-locked").assertIsDisplayed()
+        compose.runOnIdle { work.value=work.value!!.copy(workoutId="touch-next",started=Instant.now().toString()) }
+        compose.onNodeWithTag("wear-touch-locked").assertDoesNotExist()
+        compose.onNodeWithTag("wear-touch-lock").assertIsDisplayed()
+    }
+
+    @Test
+    fun touchLockInstructionsFitFourLanguagesOnEveryRoundScreen() {
+        val language=mutableStateOf("hu")
+        val work=touchWorkout189()
+        val measured=JSONObject().put("workoutId",work.workoutId).put("source","wear_health_services")
+            .put("state","active").put("updatedAt",System.currentTimeMillis()).put("heartRate",93).put("totalCalories",7)
+        compose.setContent { Watch { WearTouchLockedScreen189(work,57,measured,WearTouchCopy189.language(language.value),{}) } }
+        for(lang in listOf("hu","en","de","ro")){
+            compose.runOnIdle { language.value=lang }
+            compose.onNodeWithTag("wear-touch-unlock").assertIsDisplayed()
+            compose.onNodeWithTag("wear-locked-clock").assertIsDisplayed().assertTextEquals("0:57")
+            compose.onNodeWithText("93 bpm · 7 kcal").assertIsDisplayed()
+            val layouts=mutableListOf<TextLayoutResult>()
+            compose.onNodeWithTag("wear-touch-hint").assertIsDisplayed().performSemanticsAction(SemanticsActions.GetTextLayoutResult){it(layouts)}
+            assertFalse("Unlock instructions fit $lang",layouts.single().hasVisualOverflow)
+            screenshot("touch189-$lang")
+        }
+    }
+
+    private fun touchWorkout189(): WearWorkout {
+        val exercise=WearExercise("press","Földön fekve nyomás","weight","ism.","strength",listOf(WearSet(1,"5","5.5",false,0,0,0.0,"touch-set")))
+        return WearWorkout(1,"p","Program","a","", "2026-10-16T10:00:00Z","layout-test",0,60,0,
+            listOf(exercise,exercise.copy(id="squat",name="Guggolás",sets=listOf(exercise.sets[0].copy(setId="touch-set2")))))
+    }
+
+    @Test
     fun quickUndoHasReachableControlAndNeverFinishesWorkout() {
         val actions=mutableListOf<String>()
         compose.setContent { Watch { Fixture("undo-quick",automaticCommands=actions) } }
@@ -957,7 +1029,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     }
 
     @Composable
-    private fun Fixture(route: String, liveHealth: State<JSONObject?>? = null, automaticCommands: MutableList<String>? = null, feedbackAnswers: MutableList<String?>? = null, measurementActions: MutableList<String>? = null) {
+    private fun Fixture(route: String, liveHealth: State<JSONObject?>? = null, automaticCommands: MutableList<String>? = null, feedbackAnswers: MutableList<String?>? = null, measurementActions: MutableList<String>? = null, touchActions: MutableList<String>? = null, externalWorkout: androidx.compose.runtime.MutableState<WearWorkout?>? = null) {
         val set = WearSet(1, "5", "5.5", feedbackAnswers != null, 30, 0, 0.0,if(route.startsWith("undo-"))"s188" else "")
         val exercise =
             WearExercise(
@@ -968,7 +1040,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                 "strength",
                 listOf(set),
             )
-        val workout = remember {
+        val localWorkout = remember {
             mutableStateOf<WearWorkout?>(
                 WearWorkout(
                     1,
@@ -997,6 +1069,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                 }
             )
         }
+        val workout=externalWorkout ?: localWorkout
         val quickExercise =
             WatchHomeExercise(
                 "press",
@@ -1057,7 +1130,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         }
         val request = remember {
             mutableStateOf<String?>(
-                if (route == "timed-workout" || route.startsWith("automatic-") || route in listOf("phone-rest-finished","workout-paused") || route.startsWith("undo-")) "workout"
+                if (route == "timed-workout" || route.startsWith("automatic-") || route in listOf("phone-rest-finished","workout-paused") || route.startsWith("undo-") || route=="touch-workout") "workout"
                 else if (route == "active-home") "home" else route
             )
         }
@@ -1087,7 +1160,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                 automaticCommands?.add(id)
                 workout.value=WearUndo188.inverse(workout.value!!,"ui-undo",android.os.SystemClock.elapsedRealtime(),-1)
             }),
-            onComplete = { if(route=="phone-rest-finished")automaticCommands?.add("record") },
+            onComplete = { touchActions?.add("record");if(route=="phone-rest-finished")automaticCommands?.add("record") },
             onPrevious = {},
             onNext = {},
             onSelectExercise = {},

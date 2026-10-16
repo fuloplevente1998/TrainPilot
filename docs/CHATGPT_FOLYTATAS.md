@@ -1,3 +1,7 @@
+## Aktuális folytatás — 2026. október 16., P2 #189
+
+#188 telefonos és órás Visszavonás elfogadva: **„Zárhatjuk, jók vagyunk :) Folytathatod”**. #209 beolvasztva a `a06485c` mainbe; #188 lezárva. Elfogadott APK-forrás `0694413`, mindkettő 1.3.51 /2732. A következő dokumentált P2 **#189 érintészár**, külön `feat/189-wear-touch-lock` ágon a friss mainből. Teljes teszt/build GitHub Actionsben, helyben célzott feltárás és gyors ellenőrzés. A #189 új funkcióhoz még külön készülékes elfogadás kell; nincs automatikus verzióemelés vagy új mainre emelés. Aktuális részletek: DEVELOPMENT_STATUS és közös Wear-terv. Az alábbi korábbi folytatások történetiek.
+
 ## Legfrissebb Wear-visszajelzés — kikapcsolt központi helyszolgáltatás
 
 A `3eb33ff` utáni videón az új helyengedélyüzenet és eredménytelen explicit újrapróbálás látszik. A felhasználó ezután megerősítette: **az óra központi helyszolgáltatása ki volt kapcsolva**, bekapcsolja és újrapróbálja. A TrainPilot pontos, „használat közben” engedélye ettől függetlenül már megvolt. A tényleges siker még visszajelzésre vár; a korábbi foreground-javítást nem tekintjük a készülékes hiba teljes megoldásának.
