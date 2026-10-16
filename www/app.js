@@ -17364,12 +17364,30 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(homeRefreshPending){homeRefreshPending=false;setTimeout(()=>syncHomeNow({force:true}),0);}
   }
  }
+ function persistWearSetIdentities(session,savedDraft=null){
+  if(!session)return false;
+  const missing=[];
+  for(const e of session.exercises||[])for(const set of e.sets||[]){
+   if(typeof set.setId==='string'&&set.setId.trim())continue;
+   missing.push({set,had:Object.prototype.hasOwnProperty.call(set,'setId'),before:set.setId,id:crypto.randomUUID()});
+  }
+  if(!missing.length)return false;
+  for(const row of missing)row.set.setId=row.id;
+  try{
+   if(savedDraft)db.set('draft',{...savedDraft,savedAt:new Date().toISOString()});
+   else persistDraft();
+  }catch(error){
+   for(const row of missing){if(row.had)row.set.setId=row.before;else delete row.set.setId;}
+   throw error;
+  }
+  return true;
+ }
  function phoneWorkoutStarted(session,{fromWatch=false}={}){
   const bridge=api(),id=sessionKey(session);
   if(fromWatch||!id||session!==state?.session)return;
   // Pin the same identity used by watch-started workouts before the handoff,
   // so phone save/restore and late measurements keep the original workout ID.
-  session.syncId=id;session.timerOwner='phone';persistDraft();
+  session.syncId=id;session.timerOwner='phone';if(!persistWearSetIdentities(session))persistDraft();
   if(!bridge?.startWatchMeasurement||id===lastWatchStartId)return;
   lastWatchStartId=id;pendingWatchStart={id,createdAt:Date.now()};
   window.TrainPilotWearMeasurement165?.waiting(id);
@@ -17381,6 +17399,12 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  async function syncNow(){
   if(busy||window.TrainPilotBackupBusy)return;
+  // Manual workouts need the same durable identities as native automatic
+  // execution. Repair older drafts before publishing any watch controls.
+  try{
+   const saved=state.session?null:db.get('draft',null);
+   persistWearSetIdentities(state.session||saved?.session,saved);
+  }catch(_){return;}
   if(api()?.executionStatus&&window.TrainPilotPhoneExecution162&&!await window.TrainPilotPhoneExecution162.sync())return;
   const bridge=api();if(!bridge)return;
   const value=snapshot(),payload=value?JSON.stringify(value):null;

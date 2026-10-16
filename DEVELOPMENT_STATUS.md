@@ -1,5 +1,13 @@
 # TrainPilot — fejlesztési állapot
 
+## #188 készülékes javítás — telefonról indított kézi edzés (2026. október 16.)
+
+A felhasználó visszajelzése: óráról indított gyors/tervezett edzésnél van órás Visszavonás, telefonról indítva az órán nincs. Reprodukálva: automatika nélkül a telefon üres `setId` értékeket publikált; az órás biztonsági ellenőrzés ezért nem készített visszavonási jelöltet. A korábbi CI ezt az indulási módot nem fedte le hiányzó azonosítókkal.
+
+A `feat/188-safe-wear-undo` / [#209 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/209) javítása publikálás előtt tartós, stabil sorozatazonosítókat ad a telefonos kézi edzéseknek és a korábbi draftoknak. A meglévő azonosítók, mért adatok és szerkesztések megmaradnak; sikertelen tároláskor az új azonosító nem publikálható. A tervezett/gyors indítás, folyamatos szinkron, régi draft és tárolási hiba regressziója bővült, továbbá külön telefonvezérelt kézi órás UI-eset készült mind az öt kerek kijelzős konfigurációhoz.
+
+A külön telefonos gyors Visszavonás-gomb továbbra sem része a #188 órás felületének. Verzió változatlan 1.3.51 / 2732; main/release változatlan. Az új commit teljes GitHub-kapuinak eredménye és teszt-APK-párja a PR-on rögzítendő; készülékes elfogadás szükséges.
+
 ## P2 #188 — utolsó órás rögzítés visszavonása (2026. október 15.)
 
 **Fejlesztési ág:** `feat/188-safe-wear-undo`, alap: main `66dbc02` (#208). Verzió változatlan: **1.3.51 / 2732**. A hivatalos kiadást és a maint ez a fejlesztés nem módosítja.

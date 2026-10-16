@@ -944,6 +944,17 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         compose.onNodeWithContentDescription("Utolsó sorozat visszavonása").assertIsDisplayed().performClick()
         assertEquals(listOf("record188"),actions);assertFullViewport();screenshot("undo188-menu")
     }
+    @Test
+    fun phoneStartedManualWorkoutHasUndoAndWaitsForItsReceipt() {
+        val actions=mutableListOf<String>()
+        compose.setContent { Watch { Fixture("undo-phone",automaticCommands=actions) } }
+        compose.onNodeWithContentDescription("Utolsó sorozat visszavonása").assertIsDisplayed().performClick()
+        assertEquals(listOf("record188"),actions)
+        compose.onNodeWithContentDescription("Visszavonás egyeztetése").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Sorozat rögzítése").assertDoesNotExist()
+        compose.onNodeWithText("93 bpm · 7 kcal").assertIsDisplayed()
+        assertFullViewport();screenshot("undo188-phone-started")
+    }
 
     @Composable
     private fun Fixture(route: String, liveHealth: State<JSONObject?>? = null, automaticCommands: MutableList<String>? = null, feedbackAnswers: MutableList<String?>? = null, measurementActions: MutableList<String>? = null) {
@@ -973,7 +984,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                     listOf(exercise),
                     "A nap",
                 ).let { initial ->
-                    if(route.startsWith("undo-"))WearUndo188.capture(initial,initial.copy(timerOwner="watch",exercises=listOf(exercise.copy(sets=listOf(set.copy(done=true))))),0,0,"record188",System.currentTimeMillis()-if(route=="undo-menu")9000L else 0L)
+                    if(route.startsWith("undo-"))WearUndo188.capture(initial,initial.copy(timerOwner=if(route=="undo-phone")"phone" else "watch",exercises=listOf(exercise.copy(sets=listOf(set.copy(done=true))))),0,0,"record188",System.currentTimeMillis()-if(route=="undo-menu")9000L else 0L)
                     else if (route=="workout-paused") initial.copy(workoutPaused=true,pauseRevision=1)
                     else if (route=="phone-rest-finished") projectPhoneAutomatic(initial,
                         JSONObject().put("restOnly",true).put("steps",org.json.JSONArray()),

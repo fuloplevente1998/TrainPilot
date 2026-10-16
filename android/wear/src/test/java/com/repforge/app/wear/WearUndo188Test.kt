@@ -46,4 +46,16 @@ class WearUndo188Test {
         assertEquals("undo",JSONObject(WorkoutSnapshotStore.parse(WorkoutSnapshotStore.encode(next).toString())!!.undo188!!).getString("commandId"))
         assertTrue(WearUndo188.blocked(next.copy(timerOwner="phone")));assertFalse(WearUndo188.blocked(next))
     }
+    @Test fun phoneStartedManualWorkoutHasQuickAndMenuUndoWithoutNativeAutomaticExecution() {
+        val b=before().copy(timerOwner="phone",automation=null)
+        val ex=b.exercises[0]
+        val after=b.copy(exercises=listOf(ex.copy(sets=listOf(ex.sets[0].copy(done=true),ex.sets[1]))))
+        val recorded=WearUndo188.capture(b,after,0,0,"phone-manual-record",2000)
+        assertTrue(WearUndo188.quick(recorded,3000));assertTrue(WearUndo188.available(recorded))
+        assertFalse(WearUndo188.quick(recorded,11000));assertTrue(WearUndo188.available(recorded))
+        assertFalse(WearUndo188.record(recorded)!!.getBoolean("native188"))
+        val undone=WearUndo188.inverse(recorded,"phone-manual-undo",3000,1)!!
+        assertFalse(undone.exercises[0].sets[0].done);assertEquals(ex.sets[1],undone.exercises[0].sets[1])
+        assertTrue(WearUndo188.blocked(undone));assertEquals("pending",WearUndo188.marker(undone)!!.getString("status"))
+    }
 }
