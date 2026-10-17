@@ -18,7 +18,7 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const url=ne
  }
  await page.evaluate(()=>{db.set('language','hu');document.documentElement.style.fontSize='';renderWorkout();__bi192.supported=false;});await page.evaluate(()=>TrainPilotAutomatic162.startTimed());assert.equal(await page.evaluate(()=>__bi192.starts),0,'Unsupported paired watch prevents automatic start');await page.locator('#tp2628Dialog button').last().click();
  await page.evaluate(()=>{__bi192.supported=true;});assert.equal(await page.evaluate(()=>TrainPilotAutomatic162.startTimed()),true);assert.equal(await page.evaluate(()=>__bi192.starts),1);
- assert.equal(await page.evaluate(()=>state.session.interval162.phase.totalMs),220000);
+ assert.equal(await page.evaluate(()=>state.session.interval162.phase.totalMs),220000);assert.match(await page.locator('[data-tp162-dock-label]').innerText(),/Bal.*→.*Jobb/,'Phone shows the current and next side');
  await page.evaluate(()=>__biAdvance192(15000));assert.equal(await page.evaluate(()=>state.session.exercises[0].sets[0].leftSeconds),15);assert.equal(await page.evaluate(()=>state.session.exercises[0].sets[0].done),false);
  assert.equal(await page.locator('#tp1481SideToggle-left').isDisabled(),true,'Manual and automatic side timers cannot run together');
  await page.evaluate(()=>TrainPilotIntervals162.command('pause'));await page.evaluate(()=>__biAdvance192(4000));

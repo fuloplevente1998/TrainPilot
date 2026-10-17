@@ -83,6 +83,14 @@ class WearBilateral192Test {
             try { WearBilateralConfig192.parse(WearBilateralConfig192().json().put("schema",schema));fail("Invalid protocol schema accepted") } catch(_: IllegalArgumentException) {}
         }
     }
+    @Test fun skippedPairKeepsItsOwnHeadingUntilItsSecondSideFinishes() {
+        var w=workout("left",2,3,1,0,2)
+        w=WearAutomaticEngine.skipSide192(w,0,1)
+        assertEquals(0,w.currentSetIndex);assertEquals("set1",w.currentSet!!.setId)
+        w=WearAutomaticEngine.tick(w,1000,1).workout;assertEquals(0,w.currentSetIndex)
+        w=WearAutomaticEngine.tick(w,4000,1).workout
+        assertEquals(1,w.currentSetIndex);assertFalse(w.exercises[0].sets[0].done)
+    }
     @Test fun phoneProjectionUsesMeasuredSidesInsteadOfVirtualElapsed() {
         val current=workout("left",2,3,1,0,1).copy(timerOwner="phone")
         val a=current.automation!!.copy(owner="phone",side192="right",phase="rest",restKind192="side")

@@ -18815,7 +18815,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
   function label(p,a){
    if(!p)return '';const current=p.side192||a?.side192;if(!current)return '';
    const phase=p.phase||a?.phase,kind=p.restKind192||a?.restKind192;
-   return phase==='rest'?(kind==='side'?t('switchRest'):t('rest'))+' → '+side(current):side(current)+' · '+t('work');
+   if(phase==='rest')return (kind==='side'?t('switchRest'):t('rest'))+' → '+side(current);
+   const own=TrainPilotIntervals162.owner(),run=own?.session===state.session?own.run:null,row=run?.steps?.[p.stepIndex],c=core.config(row?.bilateral192||exercise()?.bilateral192),more=(p.round||a?.round||1)<(row?.rounds||run?.rounds||a?.rounds||1),nextRow=run?.steps?.[p.stepIndex+1],futureSet=!run&&exercise()?.sets?.some(s=>s.setId!==a?.targetId&&!s.done&&!s.sideState192?.skipped);
+   const next=current===c?.first?side(current==='left'?'right':'left'):more||futureSet?side(c.first):nextRow?.bilateral192?side(nextRow.bilateral192.first):nextRow?.name||t('done');
+   return side(current)+' · '+t('work')+' → '+next;
   }
   function paint(){
    const e=exercise();if(!core.isSide(e))return;

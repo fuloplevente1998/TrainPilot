@@ -70,6 +70,8 @@ data class WearWorkout(
     val currentSetIndex: Int
         get() {
             val sets = exercise?.sets.orEmpty()
+            val a=automation
+            if(WearBilateral192.isSide(exercise)&&a?.enabled==true&&a.counting&&a.targetExercise==currentExercise&&a.targetSet in sets.indices)return a.targetSet
             val firstOpen = sets.indexOfFirst { !it.done&&!WearBilateral192.skipped(it) }
             return if (firstOpen >= 0) firstOpen else (sets.size - 1).coerceAtLeast(0)
         }
