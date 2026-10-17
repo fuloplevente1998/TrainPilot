@@ -85,9 +85,13 @@ public final class WorkoutOwnership193 {
         JSONObject h=transfer(frozen),a=transfer(accepted);
         require(same(h,a) && frozen.optString("workoutId").equals(accepted.optString("workoutId"))
                 && "accepted".equals(a.optString("state")) && localNode.equals(h.optString("sourceNode"))
-                && peerNode.equals(h.optString("targetNode")));
-        if("committed".equals(h.optString("state")))return copy(frozen);
-        require("offered".equals(h.optString("state")) && frozen.optBoolean("workoutPaused"));
+                && peerNode.equals(h.optString("targetNode")) && h.optInt("protocol")==PROTOCOL && h.optLong("epoch")>0);
+        if("committed".equals(h.optString("state"))) {
+            require(epoch(frozen)==h.optLong("epoch") && h.optString("target").equals(frozen.optString("timerOwner")));
+            return copy(frozen);
+        }
+        require("offered".equals(h.optString("state")) && frozen.optBoolean("workoutPaused")
+                && epoch(frozen)==h.optLong("epoch")-1 && h.optString("source").equals(frozen.optString("timerOwner")));
         JSONObject result=copy(frozen);
         result.put("ownerEpoch193",h.getLong("epoch")).put("timerOwner",h.getString("target"));
         result.remove("nativeExecutionProtocol");result.remove("generation");result.remove("executionRevision");
@@ -103,6 +107,7 @@ public final class WorkoutOwnership193 {
                 && ("accepted".equals(h.optString("state")) || "committed".equals(h.optString("state")))
                 && "committed".equals(c.optString("state")) && localNode.equals(c.optString("targetNode"))
                 && peerNode.equals(c.optString("sourceNode")) && epoch(committed)==c.optLong("epoch")
+                && epoch(accepted)==c.optLong("epoch")-("accepted".equals(h.optString("state"))?1:0)
                 && c.optString("target").equals(committed.optString("timerOwner")) && committed.optBoolean("workoutPaused"));
         // A duplicate commit must never erase the target's subsequent offline edits.
         if("committed".equals(h.optString("state")))return copy(accepted);
@@ -110,7 +115,10 @@ public final class WorkoutOwnership193 {
     }
     public static boolean stale(JSONObject current, JSONObject incoming) {
         if(current==null)return false;
-        if(!current.optString("workoutId").equals(incoming.optString("workoutId")))return pending(current);
-        return epoch(incoming)<epoch(current) || pending(current) && !same(transfer(current),transfer(incoming));
+        if(!current.optString("workoutId").equals(incoming.optString("workoutId")))
+            return current.optBoolean("active",true) && (pending(current)||epoch(current)>0);
+        return epoch(incoming)<epoch(current)
+                || epoch(incoming)==epoch(current) && !current.optString("timerOwner","phone").equals(incoming.optString("timerOwner","phone"))
+                || pending(current) && !same(transfer(current),transfer(incoming));
     }
 }

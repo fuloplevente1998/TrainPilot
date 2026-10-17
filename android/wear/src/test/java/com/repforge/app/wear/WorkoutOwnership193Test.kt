@@ -72,4 +72,12 @@ class WorkoutOwnership193Test {
         assertTrue(returned.getBoolean("workoutPaused"))
         rejected { Ownership.offer(returned,"phone","phone-a","watch-a","handoff:3",0,30000) }
     }
+    @Test fun sameEpochCannotChangeOwnerAndAnotherWorkoutCannotEraseTransferredDraft() {
+        val current=committed()
+        assertTrue(Ownership.stale(current,Ownership.copy(current).put("timerOwner","phone")))
+        assertTrue(Ownership.stale(current,current().put("workoutId","different")))
+        assertFalse(Ownership.stale(current,Ownership.copy(current)))
+        val corrupt=offer().put("ownerEpoch193",5)
+        rejected { Ownership.commit(corrupt,accepted(),"phone-a","watch-a") }
+    }
 }
