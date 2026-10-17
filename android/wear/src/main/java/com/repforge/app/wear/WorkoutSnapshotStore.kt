@@ -241,7 +241,7 @@ object WorkoutSnapshotStore {
 
     fun encode(workout: WearWorkout): JSONObject {
         val root = JSONObject()
-            .put("bilateralProtocol192",1)
+            .put("bilateralProtocol192",workout.bilateralProtocol192)
             .put("active", true)
             .put("revision", workout.revision)
             .put("programId", workout.programId)

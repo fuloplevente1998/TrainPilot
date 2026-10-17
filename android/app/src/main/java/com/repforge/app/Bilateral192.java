@@ -42,8 +42,8 @@ final class Bilateral192 {
         long left=part.getLong("leftWorkMs"),right=part.getLong("rightWorkMs");
         boolean skipped=part.optBoolean("skippedWork192");
         JSONObject state=new JSONObject().put("schema",1).put("key",key).put("skipped",skipped)
-            .put("left",left>=row.optLong("targetLeftMs192",c.left*1000L*rounds)?"complete":left>0?"partial":"pending")
-            .put("right",right>=row.optLong("targetRightMs192",c.right*1000L*rounds)?"complete":right>0?"partial":"pending")
+            .put("left",left>=row.optLong("targetLeftMs192",c.left*1000L*rounds)?"complete":left>0?"partial":part.optBoolean("skippedLeft192")?"skipped":"pending")
+            .put("right",right>=row.optLong("targetRightMs192",c.right*1000L*rounds)?"complete":right>0?"partial":part.optBoolean("skippedRight192")?"skipped":"pending")
             .put("timeLogKey",key);
         long l=row.optLong("baseLeftSeconds")+left/1000,r=row.optLong("baseRightSeconds")+right/1000;
         return new JSONObject().put("leftSeconds",l).put("rightSeconds",r).put("reps",String.valueOf(Math.min(l,r)))

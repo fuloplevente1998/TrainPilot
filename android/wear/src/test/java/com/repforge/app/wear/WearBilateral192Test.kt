@@ -61,6 +61,28 @@ class WearBilateral192Test {
         w=WearAutomaticEngine.tick(w,2000,1).workout;w=WearAutomaticEngine.tick(w,5000,1).workout
         assertEquals("complete",w.automation!!.phase);assertFalse(w.currentSet!!.done);assertEquals(1,w.currentSet!!.leftSeconds);assertEquals(3,w.currentSet!!.rightSeconds);assertTrue(WearBilateral192.skipped(w.currentSet!!))
     }
+    @Test fun undoAndRepeatedPairRetainAllActuallyMeasuredTime() {
+        val initial=workout("left",2,3,1,0,1)
+        val lastWork=WearAutomaticEngine.tick(WearAutomaticEngine.tick(initial,2000,1).workout,3000,1).workout
+        val done=WearAutomaticEngine.tick(lastWork,6000,1).workout
+        val captured=WearUndo188.capture(lastWork,done,0,0,"record192",6000)
+        val inverse=WearUndo188.inverse(captured,"undo192",6000,1)!!
+        assertFalse(inverse.currentSet!!.done);assertEquals(5000L,inverse.automation!!.workMs)
+        val restarted=WearAutomaticEngine.ready(WearAutomaticEngine.resume(inverse,6000,1),6000,1)
+        val repeated=finish(restarted)
+        assertEquals(10000L,repeated.automation!!.workMs);assertEquals(2000L,repeated.automation!!.restMs)
+        val row=repeated.automation!!.json().getJSONObject("timeLog").getJSONArray("steps").getJSONObject(0)
+        assertEquals(4000L,row.getLong("leftWorkMs"));assertEquals(6000L,row.getLong("rightWorkMs"));assertTrue(repeated.currentSet!!.done)
+    }
+    @Test fun completelySkippedSideStaysSkippedAndProtocolSchemaIsStrict() {
+        var w=WearAutomaticEngine.skipSide192(workout("left",2,3,0,0,1),0,1)
+        w=WearAutomaticEngine.tick(w,3000,1).workout
+        assertEquals("complete",w.automation!!.phase);assertFalse(w.currentSet!!.done)
+        assertEquals("skipped",JSONObject(w.currentSet!!.sideState192!!).getString("left"))
+        for(schema in listOf<Any>("1",1.5,2)) {
+            try { WearBilateralConfig192.parse(WearBilateralConfig192().json().put("schema",schema));fail("Invalid protocol schema accepted") } catch(_: IllegalArgumentException) {}
+        }
+    }
     @Test fun phoneProjectionUsesMeasuredSidesInsteadOfVirtualElapsed() {
         val current=workout("left",2,3,1,0,1).copy(timerOwner="phone")
         val a=current.automation!!.copy(owner="phone",side192="right",phase="rest",restKind192="side")

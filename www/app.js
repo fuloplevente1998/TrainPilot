@@ -16760,7 +16760,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const leftMs=part.leftWorkMs,rightMs=part.rightWorkMs,skipped=part.skippedWork192===true;
   const left=row.baseLeftSeconds+Math.floor(leftMs/1000),right=row.baseRightSeconds+Math.floor(rightMs/1000);
   return {leftSeconds:left,rightSeconds:right,reps:String(Math.min(left,right)),done:!skipped&&leftMs>=(row.targetLeftMs192??c.leftSeconds*1000*row.rounds)&&rightMs>=(row.targetRightMs192??c.rightSeconds*1000*row.rounds),
-   sideState192:{schema:1,key,skipped,left:leftMs>=(row.targetLeftMs192??c.leftSeconds*1000*row.rounds)?'complete':leftMs>0?'partial':'pending',right:rightMs>=(row.targetRightMs192??c.rightSeconds*1000*row.rounds)?'complete':rightMs>0?'partial':'pending',timeLogKey:key}};
+   sideState192:{schema:1,key,skipped,left:leftMs>=(row.targetLeftMs192??c.leftSeconds*1000*row.rounds)?'complete':leftMs>0?'partial':part.skippedLeft192?'skipped':'pending',right:rightMs>=(row.targetRightMs192??c.rightSeconds*1000*row.rounds)?'complete':rightMs>0?'partial':part.skippedRight192?'skipped':'pending',timeLogKey:key}};
  }
  function validLog(log){
   const safe=n=>integer(n,0,604800000);
@@ -18295,7 +18295,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   };
   async function command(action){if(busy)return false;const o=owner();if(!o)return true;busy=true;try{
    let s;if(o.run.native)s=await native()[action]({key:o.run.key});else{let elapsed=o.run.elapsedMs+(o.run.running?Math.max(0,performance.now()-webBegan):0);let p=phase(o.run.steps,o.run.autoAdvance,elapsed,o.run.initialRest||0,false,o.run.durationOverrides192||{});window.TrainPilotTime162Core.sample(o.run,p.elapsedMs,performance.now(),o.run.running,o.run.stopped);if(action==='restPlus192'||action==='restMinus192'){window.TrainPilotBilateral192Core.adjustRest(o.run,p,action==='restPlus192'?5000:-5000);p=phase(o.run.steps,o.run.autoAdvance,elapsed,o.run.initialRest||0,false,o.run.durationOverrides192);}
-   if(action==='skipSide192'){if(p.phase!=='work'||!p.side192)return false;const part=o.run.timeLedger162.steps[p.stepIndex];part.skippedWork192=true;window.TrainPilotBilateral192Core.account(part,p,0);part.segments192.find(s=>s.id===p.token).skipped=true;}
+   if(action==='skipSide192'){if(p.phase!=='work'||!p.side192)return false;const part=o.run.timeLedger162.steps[p.stepIndex];part.skippedWork192=true;part[p.side192==='left'?'skippedLeft192':'skippedRight192']=true;window.TrainPilotBilateral192Core.account(part,p,0);part.segments192.find(s=>s.id===p.token).skipped=true;}
    if(action==='skipRest'||action==='skipSide192'){if(action==='skipRest'&&p.phase!=='rest')return false;elapsed+=p.remainingMs;p=phase(o.run.steps,o.run.autoAdvance,elapsed,o.run.initialRest||0,false,o.run.durationOverrides192||{});}s={...p,key:o.run.key,ledger:window.TrainPilotTime162Core.sample(o.run,p.elapsedMs,performance.now(),action==='resume'||action==='skipRest'||action==='skipSide192'||(action==='restPlus192'||action==='restMinus192')&&o.run.running,action==='stop',action==='skipRest'||action==='skipSide192'),running:action==='resume'||action==='skipRest'||action==='skipSide192'||(action==='restPlus192'||action==='restMinus192')&&o.run.running,stopped:action==='stop'};webBegan=performance.now();webKey=o.run.key;}
    if(!o.run.native&&o.run.vibration&&(action==='pause'||action==='stop'))navigator.vibrate?.(0);
    apply(o,s);if(action==='stop'&&currentOwner(o)){o.run.stopped=true;o.run.running=false;persist(o);}paint();return true;
@@ -18827,7 +18827,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(form?.elements.sideFirst192){
     form.querySelectorAll('[data-tp192-settings] input,[data-tp192-settings] select').forEach(n=>n.disabled=!!(active&&run.running));
     form.elements.sideFirst192.disabled=!!active;
-    if(active&&!run.running){form.elements.work.disabled=false;form.elements.rest.disabled=false;for(const button of form.querySelectorAll('button'))if(button.getAttribute('onclick')?.includes('saveInterval'))button.disabled=false;}
+    if(active&&!run.running){form.elements.work.disabled=false;form.elements.rest.disabled=false;for(const button of form.querySelectorAll('button'))if(button.type==='submit'||button.getAttribute('onclick')?.includes('saveInterval'))button.disabled=false;}
    }
    const panel=document.getElementById('tp107Indoor');if(!panel)return;
    const manual=document.getElementById('rf110Stopwatch');if(manual&&manual.nextElementSibling!==panel)manual.after(panel);

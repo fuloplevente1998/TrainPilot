@@ -12,7 +12,7 @@ data class WearBilateralConfig192(val first: String="left",val leftSeconds: Int=
     companion object {
         fun parse(value: JSONObject?): WearBilateralConfig192? {
             value ?: return null
-            require(value.optInt("schema")==1)
+            val schema=value.get("schema");require((schema is Int||schema is Long)&&(schema as Number).toLong()==1L)
             fun seconds(field: String,min: Int=0,default: Int?=null): Int {
                 if(!value.has(field)&&default!=null)return default
                 val n=value.get(field);require(n is Int||n is Long);return (n as Number).toLong().also { require(it in min.toLong()..3600L) }.toInt()
@@ -40,7 +40,7 @@ internal object WearBilateral192 {
             .put("leftWorkMs",0).put("rightWorkMs",0).put("sideRestMs",0).put("setRestMs",0).put("pausedMs",0).put("segments",JSONArray())
         val field=if(a.phase=="work")if(a.side192=="left")"leftWorkMs" else "rightWorkMs" else if(a.restKind192=="side")"sideRestMs" else "setRestMs"
         state.put(field,state.optLong(field)+work+rest).put("pausedMs",state.optLong("pausedMs")+pause)
-        if(skip)state.put("skipped",true)
+        if(skip)state.put("skipped",true).put(if(a.side192=="left")"skippedLeft192" else "skippedRight192",true)
         val parts=state.getJSONArray("segments")
         val token="${ex.id}:${old.setId.ifBlank { old.number.toString() }}:${a.round}:${a.phase}:${a.side192}:${a.restKind192}:${a.phaseNumber}"
         var part=(0 until parts.length()).map { parts.getJSONObject(it) }.firstOrNull { it.optString("id")==token }
@@ -53,8 +53,8 @@ internal object WearBilateral192 {
             val completed=a.side192+"CompletedRounds192";state.put(completed,state.optInt(completed)+1);part.put("counted192",true)
         }
         val left=state.optLong("leftWorkMs");val right=state.optLong("rightWorkMs")
-        state.put("left",if(state.optInt("leftCompletedRounds192")>=a.rounds)"complete" else if(left>0)"partial" else if(skip&&a.side192=="left")"skipped" else "pending")
-            .put("right",if(state.optInt("rightCompletedRounds192")>=a.rounds)"complete" else if(right>0)"partial" else if(skip&&a.side192=="right")"skipped" else "pending")
+        state.put("left",if(state.optInt("leftCompletedRounds192")>=a.rounds)"complete" else if(left>0)"partial" else if(state.optBoolean("skippedLeft192"))"skipped" else "pending")
+            .put("right",if(state.optInt("rightCompletedRounds192")>=a.rounds)"complete" else if(right>0)"partial" else if(state.optBoolean("skippedRight192"))"skipped" else "pending")
         // Counters retain every measured phase. Keep bounded recent phase detail in
         // live snapshots; a long round sequence must still fit a Data Layer item.
         if(parts.length()>4){while(parts.length()>4)parts.remove(0);state.put("segmentsCompacted192",true)}

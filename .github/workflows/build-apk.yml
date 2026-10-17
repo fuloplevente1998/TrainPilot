@@ -195,6 +195,15 @@ jobs:
           chmod +x gradlew
           ./gradlew --no-daemon :app:testReleaseUnitTest :app:assembleRelease
 
+      - name: Upload phone native unit-test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: TrainPilot-phone-unit-tests-${{ github.run_id }}-${{ github.sha }}
+          path: android/app/build/test-results/testReleaseUnitTest/
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Verify phone APK and package source
         shell: bash
         run: |

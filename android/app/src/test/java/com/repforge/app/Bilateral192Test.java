@@ -48,6 +48,12 @@ public class Bilateral192Test {
         JSONObject part=l.json(rows(a)).getJSONArray("steps").getJSONObject(0),v=Bilateral192.values(rows(a).getJSONObject(0),part,"clock");
         assertEquals(1000,part.getLong("leftWorkMs"));assertFalse(v.getBoolean("done"));assertTrue(v.getJSONObject("sideState192").getBoolean("skipped"));
     }
+    @Test public void entirelySkippedSideRetainsExplicitStatusAfterOtherWork()throws Exception{
+        IntervalTimeline.Step a=row("a","left",3,4,0,0,1);IntervalTimeline t=new IntervalTimeline(Collections.singletonList(a),true);IntervalTimeLedger l=new IntervalTimeLedger(1,0);
+        l.skipWork(t.at(0));l.skipTo(3000);l.sample(t,7000,4000,false,false,false);
+        JSONObject part=l.json(rows(a)).getJSONArray("steps").getJSONObject(0),value=Bilateral192.values(rows(a).getJSONObject(0),part,"clock");
+        assertEquals("skipped",value.getJSONObject("sideState192").getString("left"));assertFalse(value.getBoolean("done"));
+    }
     @Test public void ledgerRestoresWithoutCountingTheUnobservedGapTwice()throws Exception{
         IntervalTimeline.Step a=row("a","right",3,4,2,0,1);IntervalTimeline t=new IntervalTimeline(Collections.singletonList(a),true);IntervalTimeLedger original=new IntervalTimeLedger(1,0);
         original.sample(t,2000,2000,true,false,false);JSONObject saved=original.json(rows(a));IntervalTimeLedger restored=new IntervalTimeLedger(1,90000);restored.restore192(saved,rows(a),90000);

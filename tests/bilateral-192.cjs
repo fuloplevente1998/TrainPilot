@@ -25,5 +25,6 @@ for(const first of ['left','right']){
  const partial=time.sample(paused,firstWork+10000+secondWork/2,firstWork+6000+secondWork/2,false,true);
  assert.equal(partial.pausedMs,4000);assert.equal(partial.restMs,2000);assert.equal(partial.steps[0].sideRestMs,2000);assert.equal(bi.values(row,partial.steps[0],paused.key).done,false);
 }
+const skipped=bi.values({bilateral192:{schema:1,first:'left',leftSeconds:2,rightSeconds:3,sideRestSeconds:0},rounds:1,baseLeftSeconds:0,baseRightSeconds:0},{leftWorkMs:0,rightWorkMs:3000,skippedWork192:true,skippedLeft192:true},'skip');assert.equal(skipped.sideState192.left,'skipped');assert.equal(skipped.done,false);
 for(const value of [{schema:2,first:'left',leftSeconds:30,rightSeconds:30,sideRestSeconds:0},{schema:1,first:'other',leftSeconds:30,rightSeconds:30,sideRestSeconds:0},{schema:1,first:'left',leftSeconds:0,rightSeconds:30,sideRestSeconds:0},{schema:1,first:'left',leftSeconds:30,rightSeconds:30,sideRestSeconds:0.5}])assert.equal(bi.config(value),null);
 console.log('PASS #192: both side orders, unequal work, exact boundaries, pair/round rest, final and zero rest, partial work, pause, actual skipped rest and versioned idempotent logs');

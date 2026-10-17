@@ -10,12 +10,13 @@ import java.util.HashSet;
 final class IntervalTimeLedger {
     private final long[] work, rest, paused;
     private final long[] left,right,sideRest,setRest;
+    private final int[] skippedSides;
     private final LinkedHashMap<String,JSONObject> segments=new LinkedHashMap<>();
     private final HashSet<Integer> skipped=new HashSet<>(),compacted=new HashSet<>();
     private long position, sampledAt;
     private boolean wasPaused;
     IntervalTimeLedger(int count, long now) {
-        work=new long[count];rest=new long[count];paused=new long[count];left=new long[count];right=new long[count];sideRest=new long[count];setRest=new long[count];sampledAt=now;
+        work=new long[count];rest=new long[count];paused=new long[count];left=new long[count];right=new long[count];sideRest=new long[count];setRest=new long[count];skippedSides=new int[count];sampledAt=now;
     }
     void restore192(JSONObject ledger,JSONArray plan,long now)throws JSONException {
         if(ledger.getInt("schema")!=2||ledger.getJSONArray("steps").length()!=work.length)throw new IllegalArgumentException("Invalid restored side ledger");
@@ -27,6 +28,7 @@ final class IntervalTimeLedger {
             if(owner.has("bilateral192")){
                 left[i]=counter192(row,"leftWorkMs");right[i]=counter192(row,"rightWorkMs");sideRest[i]=counter192(row,"sideRestMs");setRest[i]=counter192(row,"setRestMs");
                 if(left[i]+right[i]!=work[i]||sideRest[i]+setRest[i]!=rest[i])throw new IllegalArgumentException("Invalid restored side totals");
+                skippedSides[i]=(row.optBoolean("skippedLeft192")?1:0)|(row.optBoolean("skippedRight192")?2:0);
                 if(row.optBoolean("skippedWork192"))skipped.add(i);if(row.optBoolean("segmentsCompacted192"))compacted.add(i);
                 JSONArray parts=row.optJSONArray("segments192");if(parts!=null)for(int j=0;j<parts.length();j++){JSONObject part=new JSONObject(parts.getJSONObject(j).toString());if(part.getInt("step")!=i)throw new IllegalArgumentException("Invalid restored segment");segments.put(part.getString("id"),part);}
             }
@@ -53,7 +55,7 @@ final class IntervalTimeLedger {
         sampledAt=now;wasPaused=!running&&!stopped&&!interrupted&&!"complete".equals(timeline.at(position).phase);
     }
     void skipTo(long progress){if(progress<position)throw new IllegalArgumentException("Invalid skip");position=progress;}
-    void skipWork(IntervalTimeline.Phase p){if(!p.side192.isEmpty()&&"work".equals(p.phase)){skipped.add(p.step);segment(p,0,0);try{segments.get(p.token).put("skipped",true);}catch(JSONException e){throw new IllegalStateException(e);}}}
+    void skipWork(IntervalTimeline.Phase p){if(!p.side192.isEmpty()&&"work".equals(p.phase)){skipped.add(p.step);skippedSides[p.step]|=p.side192.equals("left")?1:2;segment(p,0,0);try{segments.get(p.token).put("skipped",true);}catch(JSONException e){throw new IllegalStateException(e);}}}
     private void segment(IntervalTimeline.Phase p,long duration,long pause){
         if(p.side192.isEmpty())return;
         try{
@@ -77,7 +79,7 @@ final class IntervalTimeLedger {
             if(owner.has("bilateral192")){
                 detailed=true;JSONArray parts=new JSONArray();for(JSONObject s:segments.values())if(s.optInt("step")==i)parts.put(new JSONObject(s.toString()));
                 row.put("leftWorkMs",left[i]).put("rightWorkMs",right[i]).put("sideRestMs",sideRest[i]).put("setRestMs",setRest[i])
-                    .put("segments192",parts).put("segmentsCompacted192",compacted.contains(i)).put("skippedWork192",skipped.contains(i));
+                    .put("segments192",parts).put("segmentsCompacted192",compacted.contains(i)).put("skippedWork192",skipped.contains(i)).put("skippedLeft192",(skippedSides[i]&1)!=0).put("skippedRight192",(skippedSides[i]&2)!=0);
             }
             rows.put(row);
             workTotal+=work[i];restTotal+=rest[i];pauseTotal+=paused[i];

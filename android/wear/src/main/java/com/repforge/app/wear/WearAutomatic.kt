@@ -70,7 +70,7 @@ object WearAutomaticEngine {
     }.orEmpty()
     fun next(workout: WearWorkout, from: Int = workout.currentExercise): Pair<Int,Int>? {
         for(e in from.coerceAtLeast(0)..workout.exercises.lastIndex) {
-            val s=workout.exercises[e].sets.indexOfFirst { !it.done }
+            val s=workout.exercises[e].sets.indexOfFirst { !it.done&&!WearBilateral192.skipped(it) }
             if(s>=0)return e to s
         }
         return null
@@ -109,7 +109,7 @@ object WearAutomaticEngine {
             targetExercise=target?.first ?: workout.currentExercise,targetSet=target?.second ?: 0,
             targetId=target?.let { targetId(workout,it.first,it.second) }.orEmpty(),anchorMs=now,boot=boot,
             phase=if(target==null)"complete" else "ready")
-        return workout.copy(restEndAt=0,automation=a)
+        return workout.copy(restEndAt=0,automation=a,bilateralProtocol192=if(workout.exercises.any { WearBilateral192.isSide(it) })1 else workout.bilateralProtocol192)
     }
     fun afterRecord(workout: WearWorkout, now: Long, boot: Int): WearWorkout {
         val original=workout.automation ?: return workout
