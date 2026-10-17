@@ -1029,14 +1029,20 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         try {
             compose.setContent { Watch { Fixture("touch-workout",externalWorkout=work,automaticCommands=commands) } }
             for(lang in listOf("hu","en","de","ro")){
-                compose.runOnIdle { java.util.Locale.setDefault(java.util.Locale(lang));work.value=work.value!!.copy(revision=work.value!!.revision+1) }
+                compose.runOnIdle { java.util.Locale.setDefault(java.util.Locale(lang));work.value=initial.copy(revision=work.value!!.revision+1) }
                 val copy=WearSideCopy192.language(lang)
                 val node=compose.onNodeWithTag("wear-side-phase192").assertIsDisplayed()
                 val text=node.fetchSemanticsNode().config[SemanticsProperties.Text].single().text
                 assertTrue(text.contains(copy.left));assertTrue(text.contains(copy.right))
                 val layouts=mutableListOf<TextLayoutResult>();node.performSemanticsAction(SemanticsActions.GetTextLayoutResult){it(layouts)}
                 assertFalse("Side and next-side labels fit $lang",layouts.single().hasVisualOverflow)
+                assertAutomaticSideBodyVisible192("work/$lang")
                 screenshot("bilateral192-$lang")
+                compose.runOnIdle { work.value=work.value!!.copy(automation=work.value!!.automation!!.copy(phase="rest",restKind192="side",side192="right",remainingMs=10000,phaseSeconds192=10)) }
+                assertAutomaticSideBodyVisible192("rest/$lang")
+                val restText=compose.onNodeWithTag("wear-side-phase192").fetchSemanticsNode().config[SemanticsProperties.Text].single().text
+                assertTrue(restText.contains(copy.swap));assertTrue(restText.contains(copy.right))
+                screenshot("bilateral192-rest-$lang")
             }
             compose.onNodeWithTag("wear-automatic-clock").performClick();assertEquals("pause",commands.last())
         }finally{java.util.Locale.setDefault(previous)}
@@ -1060,6 +1066,20 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         val rest=compose.onNodeWithContentDescription("Pihenő növelése 5 másodperccel")
         centerBilateralControl192(rest);rest.assertIsEnabled().performClick();assertEquals(listOf("leftPlus192","restPlus192"),commands)
         screenshot("bilateral192-settings")
+    }
+
+    private fun assertAutomaticSideBodyVisible192(phase: String) {
+        val body=compose.onNodeWithTag("wear-fixed-body").fetchSemanticsNode().boundsInRoot
+        val footer=compose.onNodeWithTag("wear-fixed-actions").fetchSemanticsNode().boundsInRoot
+        for(tag in listOf("wear-automatic-clock","wear-side-phase192")) {
+            val node=compose.onNodeWithTag(tag).assertIsDisplayed()
+            val layouts=mutableListOf<TextLayoutResult>();node.performSemanticsAction(SemanticsActions.GetTextLayoutResult){it(layouts)}
+            val layout=layouts.single();val bounds=node.fetchSemanticsNode().boundsInRoot
+            assertFalse("Full text fits $phase/$tag",layout.hasVisualOverflow)
+            assertTrue("Text is fully visible without scrolling $phase/$tag",bounds.height>=layout.size.height-1f)
+            assertTrue("Text stays above actions $phase/$tag",bounds.bottom<=footer.top+1f)
+            assertTrue("Text stays inside fixed body $phase/$tag",bounds.top>=body.top-1f&&bounds.bottom<=body.bottom+1f)
+        }
     }
 
     private fun centerBilateralControl192(node: SemanticsNodeInteraction) {

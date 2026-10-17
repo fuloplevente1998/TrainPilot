@@ -1785,7 +1785,16 @@ private fun AutomaticTimedSetScreen(workout: WearWorkout,restRemaining: Int,heal
             onRecord={},onPrevious=onPrevious,onNext=onNext,onSkipRest=onSkipRest,onFinish=onFinish,layout=layout)}) {
             // On the smallest circle, measurements share the heading instead of pushing
             // the actionable countdown below the fixed body. Full metrics remain on page 3.
-            SetHeading(workout,restRemaining,detail=if(tiny)rows.firstOrNull() else null,compact=tiny)
+            if(side&&tiny) {
+                var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+                LaunchedEffect(Unit) { while(true){now=System.currentTimeMillis();delay(60000L-now%60000L)} }
+                val touchCopy=WearTouchCopy189.language(java.util.Locale.getDefault().language)
+                val status=if(a.interrupted)touchCopy.paused+" !" else if(a.paused)touchCopy.paused else if(a.phase=="rest")if(a.restKind192=="side")copy.swap else copy.rest else copy.work
+                val clock=Instant.ofEpochMilli(now).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm"))
+                Text("${workout.currentSetIndex+1}/${workout.exercise?.sets?.size ?: 0}"+(if(a.rounds>1)" · ${a.round}/${a.rounds}" else "")+" · $status · $clock",
+                    color=Gold,fontSize=(7.5f*scale).sp,lineHeight=(10*scale).sp,maxLines=1,overflow=TextOverflow.Ellipsis,
+                    modifier=Modifier.fillMaxWidth().testTag("wear-workout-clock"),textAlign=TextAlign.Center)
+            }else SetHeading(workout,restRemaining,detail=if(tiny)rows.firstOrNull() else null,compact=tiny)
             if(!tiny)rows.take(if(bodyHeight>=96f&&fontScale<1.5f)2 else 1).forEach {
                 Text(it,color=Gold,fontSize=(9*scale).sp,lineHeight=(11*scale).sp,maxLines=1,overflow=TextOverflow.Ellipsis)
             }
@@ -1799,13 +1808,19 @@ private fun AutomaticTimedSetScreen(workout: WearWorkout,restRemaining: Int,heal
             val nextLabel=if(nextSide.isBlank())WearTouchCopy189.language(java.util.Locale.getDefault().language).saved else copy.side(nextSide)
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(4.dp)) {
                 Text("${if(a.paused||waiting)"▶" else "Ⅱ"} ${formatSeconds(remaining)}",color=White,
-                    fontSize=((if(tiny)18 else 24)*scale).sp,lineHeight=((if(tiny)20 else 28)*scale).sp,
+                    fontSize=((if(side&&tiny)16 else if(tiny)18 else 24)*scale).sp,lineHeight=((if(side&&tiny)18 else if(tiny)20 else 28)*scale).sp,
                     fontWeight=FontWeight.SemiBold,maxLines=1,modifier=Modifier.weight(1f).testTag("wear-automatic-clock")
                         .clickable(enabled=command!=null&&a.phase!="complete",role=Role.Button){command?.invoke(if(waiting)"start" else if(a.paused)"resume" else "pause")}
                         .semantics { contentDescription=if(waiting)"Automata munkaszakasz indítása" else if(a.paused)"Automata folytatása" else "Automata szüneteltetése" })
-                Text(if(side)label+"\n→ "+nextLabel+if(a.rounds>1)" · ${if(waiting)1 else a.round}/${a.rounds}" else "" else label+if(a.rounds>1)" · ${if(waiting)1 else a.round}/${a.rounds}. kör" else "",color=Muted,
+                Text(if(side)(if(tiny&&a.phase!="rest")copy.side(currentSide) else label)+"\n→ "+nextLabel+if(a.rounds>1&&!tiny)" · ${if(waiting)1 else a.round}/${a.rounds}" else "" else label+if(a.rounds>1)" · ${if(waiting)1 else a.round}/${a.rounds}. kör" else "",color=Muted,
                     fontSize=((if(tiny)8 else 9)*scale).sp,lineHeight=((if(tiny)9 else 10)*scale).sp,maxLines=2,
                     textAlign=TextAlign.Center,modifier=Modifier.weight(1f).testTag("wear-side-phase192"))
+                if(side&&tiny)LocalTouchLock189.current?.let { lock ->
+                    Box(Modifier.size(24.dp).clickable(role=Role.Button,onClick=lock).testTag("wear-touch-lock")
+                        .semantics { contentDescription=WearTouchCopy189.language(java.util.Locale.getDefault().language).lock },contentAlignment=Alignment.Center) {
+                        WearLockIcon189(Muted,Modifier.size(14.dp))
+                    }
+                }
             }
         }
     }
