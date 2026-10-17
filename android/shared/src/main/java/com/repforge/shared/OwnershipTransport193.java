@@ -37,10 +37,11 @@ public final class OwnershipTransport193 {
     public static boolean receive(Context context,DataItem item,Receiver callback) {
         if(item==null||item.getUri()==null||item.getUri().getPath()==null||!item.getUri().getPath().startsWith(WorkoutOwnership193.PATH))return false;
         try {
+            final android.net.Uri itemUri=item.getUri(); // DataEvent/GetDataItems buffers are released before async node lookup completes.
             String raw=DataMapItem.fromDataItem(item).getDataMap().getString("ownership");
             if(raw==null||raw.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>96000)return true;
-            JSONObject message=new JSONObject(raw);String origin=item.getUri().getHost();
-            if(!(WorkoutOwnership193.PATH+origin+"/"+message.optString("id")).equals(item.getUri().getPath()))return true;
+            JSONObject message=new JSONObject(raw);String origin=itemUri.getHost();
+            if(!(WorkoutOwnership193.PATH+origin+"/"+message.optString("id")).equals(itemUri.getPath()))return true;
             Wearable.getNodeClient(context).getLocalNode().addOnSuccessListener(local -> {
                 if(local.getId().equals(origin))return;
                 new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
@@ -48,7 +49,7 @@ public final class OwnershipTransport193 {
                         callback.receive(message,origin,local.getId());
                         if("installed".equals(message.optString("kind"))) {
                             // The source durably settled before returning. Remove only this acknowledged transfer pair.
-                            Wearable.getDataClient(context).deleteDataItems(item.getUri());
+                            Wearable.getDataClient(context).deleteDataItems(itemUri);
                             android.net.Uri own=new android.net.Uri.Builder().scheme("wear").authority(local.getId())
                                     .path(WorkoutOwnership193.PATH+local.getId()+"/"+message.getString("id")).build();
                             Wearable.getDataClient(context).deleteDataItems(own);

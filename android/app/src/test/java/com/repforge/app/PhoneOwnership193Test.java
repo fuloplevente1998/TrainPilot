@@ -56,7 +56,7 @@ public class PhoneOwnership193Test {
         assertFalse(PhoneOwnership193.commandAllowed(context,command(1)));
     }
     @Test public void unreadableJournalIsRetryableAndNotAcknowledgedAsStale()throws Exception {
-        File file=new File(context.getNoBackupFilesDir(),"ownership193.json");Files.writeString(file.toPath(),"{");
+        File file=new File(context.getNoBackupFilesDir(),"ownership193.json");Files.write(file.toPath(),"{".getBytes(java.nio.charset.StandardCharsets.UTF_8));
         assertFalse(PhoneOwnership193.phoneAllowed(context,"w193"));
         try {PhoneOwnership193.commandAllowed(context,command(0));fail("Corrupt storage was treated as a stale command");}
         catch(org.json.JSONException expected) {}

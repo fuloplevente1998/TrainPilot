@@ -70,12 +70,15 @@ public class OwnershipJournal193Test {
     @Test public void lostAcceptAndCommitReplayPreservesBothDevicesLaterValues()throws Exception {
         JSONObject accepted=accept();source.receive(accepted,"watch-a","phone-a",now);JSONObject committed=outgoing(source);
         target.receive(committed,"phone-a","watch-a",now);
-        watch.value.put("workoutPaused",false).put("currentExercise",3);
-        phone.value.put("currentExercise",3);
+        watch.value.put("workoutPaused",false);
+        watch.value.getJSONArray("exercises").getJSONObject(0).getJSONArray("sets").getJSONObject(0).put("reps","25");
+        phone.value.getJSONArray("exercises").getJSONObject(0).getJSONArray("sets").getJSONObject(0).put("reps","25");
         source.receive(accepted,"watch-a","phone-a",now+1000);
-        assertEquals(3,phone.value.getInt("currentExercise"));assertEquals(committed.toString(),outgoing(source).toString());
+        assertEquals("25",phone.value.getJSONArray("exercises").getJSONObject(0).getJSONArray("sets").getJSONObject(0).getString("reps"));
+        assertEquals(committed.toString(),outgoing(source).toString());
         target.receive(outgoing(source),"phone-a","watch-a",now+1000);
-        assertEquals(3,watch.value.getInt("currentExercise"));assertFalse(watch.value.getBoolean("workoutPaused"));
+        assertEquals("25",watch.value.getJSONArray("exercises").getJSONObject(0).getJSONArray("sets").getJSONObject(0).getString("reps"));
+        assertFalse(watch.value.getBoolean("workoutPaused"));
     }
     @Test public void durableConsentRecoversAMissingSnapshotButClosedJournalNeverDoes()throws Exception {
         offer();target.receive(outgoing(source),"phone-a","watch-a",now);
