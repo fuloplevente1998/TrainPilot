@@ -1051,10 +1051,28 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         assertEquals(1f,wearRestProgress(work,10),.001f)
         compose.onNodeWithContentDescription("Edzésmenü",substring=true).performClick()
         lazyList().performScrollToNode(hasTestTag("wear-side192-left-plus"))
-        compose.onNodeWithTag("wear-side192-left-plus").assertIsDisplayed().performClick();assertEquals("leftPlus192",commands.last())
+        val left=compose.onNodeWithTag("wear-side192-left-plus")
+        centerBilateralControl192(left);left.assertIsEnabled().assertIsDisplayed().performClick();assertEquals(listOf("leftPlus192"),commands)
+        val layouts=mutableListOf<TextLayoutResult>();compose.onNodeWithTag("wear-side192-left-value").performSemanticsAction(SemanticsActions.GetTextLayoutResult){it(layouts)}
+        assertFalse("Side-setting caption fits with large text",layouts.single().hasVisualOverflow)
+        screenshot("bilateral192-side-setting")
         lazyList().performScrollToNode(hasContentDescription("Pihenő növelése 5 másodperccel"))
-        compose.onNodeWithContentDescription("Pihenő növelése 5 másodperccel").performClick();assertEquals("restPlus192",commands.last())
+        val rest=compose.onNodeWithContentDescription("Pihenő növelése 5 másodperccel")
+        centerBilateralControl192(rest);rest.assertIsEnabled().performClick();assertEquals(listOf("leftPlus192","restPlus192"),commands)
         screenshot("bilateral192-settings")
+    }
+
+    private fun centerBilateralControl192(node: SemanticsNodeInteraction) {
+        val root=compose.onRoot().fetchSemanticsNode().boundsInRoot
+        val target=node.fetchSemanticsNode().boundsInRoot
+        // Scroll as a user would; keep a real touch click rather than invoking OnClick directly.
+        lazyList().performSemanticsAction(SemanticsActions.ScrollBy){it(0f,target.center.y-root.center.y)}
+        compose.waitForIdle()
+        val bounds=node.fetchSemanticsNode().boundsInRoot
+        val dx=bounds.center.x-root.center.x;val dy=bounds.center.y-root.center.y
+        val radius=minOf(root.width,root.height)/2f
+        assertTrue("Touch center stays within the round screen",dx*dx+dy*dy<radius*radius)
+        assertTrue("A side-setting button has a 44dp touch target",bounds.height>=44f*root.width/diameter-1f)
     }
 
     private fun touchWorkout189(): WearWorkout {

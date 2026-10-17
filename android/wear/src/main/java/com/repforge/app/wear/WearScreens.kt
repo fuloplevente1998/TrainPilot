@@ -2277,6 +2277,17 @@ private fun TimedSetToolsScreen(
     }
 }
 
+/** Keep side-setting touch targets away from the clipped edge of a round display. */
+@Composable
+private fun BilateralAdjustButton192(text: String,description: String,tag: String,enabled: Boolean=true,onClick: ()->Unit) {
+    val scale=LocalDensity.current.fontScale
+    Box(Modifier.size(44.dp).background(if(enabled)Secondary else Card,CircleShape)
+        .clickable(enabled=enabled,role=Role.Button,onClick=onClick).testTag(tag)
+        .semantics { contentDescription=description },contentAlignment=Alignment.Center) {
+        Text(text,color=if(enabled)White else Muted,fontSize=((if(text.length==1)22f else 11f)/scale).sp,lineHeight=((if(text.length==1)26f else 14f)/scale).sp,maxLines=1)
+    }
+}
+
 @Composable
 private fun WorkoutMenu(
     workout: WearWorkout,
@@ -2318,17 +2329,25 @@ private fun WorkoutMenu(
             for((name,seconds,field) in fields)centerItem {
                 val editable=if(side)a.owner=="watch"&&(!a.counting||a.paused&&field!="rounds") else !a.counting
                 val suffix=if(side&&field!="rounds")"192" else ""
-                Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween) {
-                    Text("−",color=White,modifier=Modifier.size(30.dp).clickable(enabled=editable,role=Role.Button){automaticCommand(field+"Minus"+suffix)}.testTag("wear-side192-$field-minus").semantics { contentDescription=if(side)"$name −" else "$name csökkentése" })
+                if(side) {
+                    Text("$name $seconds"+(if(field=="rounds")"" else " s"),color=Muted,
+                        fontSize=(10*LocalDensity.current.fontScale.coerceAtMost(1.2f)/LocalDensity.current.fontScale).sp,
+                        lineHeight=(12*LocalDensity.current.fontScale.coerceAtMost(1.2f)/LocalDensity.current.fontScale).sp,modifier=Modifier.fillMaxWidth(.8f).testTag("wear-side192-$field-value"),textAlign=TextAlign.Center,maxLines=2)
+                    Row(Modifier.width(112.dp),horizontalArrangement=Arrangement.SpaceEvenly) {
+                        BilateralAdjustButton192("−","$name −","wear-side192-$field-minus",editable){automaticCommand(field+"Minus"+suffix)}
+                        BilateralAdjustButton192("+","$name +","wear-side192-$field-plus",editable){automaticCommand(field+"Plus"+suffix)}
+                    }
+                } else Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween) {
+                    Text("−",color=White,modifier=Modifier.size(30.dp).clickable(enabled=editable,role=Role.Button){automaticCommand(field+"Minus"+suffix)}.testTag("wear-side192-$field-minus").semantics { contentDescription="$name csökkentése" })
                     Text("$name $seconds"+(if(field=="rounds")"" else " s"),color=Muted,fontSize=(10*LocalDensity.current.fontScale.coerceAtMost(1.2f)/LocalDensity.current.fontScale).sp,modifier=Modifier.weight(1f),textAlign=TextAlign.Center,maxLines=2)
-                    Text("+",color=White,modifier=Modifier.size(30.dp).clickable(enabled=editable,role=Role.Button){automaticCommand(field+"Plus"+suffix)}.testTag("wear-side192-$field-plus").semantics { contentDescription=if(side)"$name +" else "$name növelése" })
+                    Text("+",color=White,modifier=Modifier.size(30.dp).clickable(enabled=editable,role=Role.Button){automaticCommand(field+"Plus"+suffix)}.testTag("wear-side192-$field-plus").semantics { contentDescription="$name növelése" })
                 }
             }
             if(side&&a.owner=="phone")centerItem { Label(when(java.util.Locale.getDefault().language){"en"->"Configure on the phone";"de"->"Am Telefon einstellen";"ro"->"Configurează pe telefon";else->"Beállítás a telefonon"}) }
             if(side&&a.phase=="rest")centerItem {
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceEvenly){
-                    Text("−5 s",color=White,modifier=Modifier.heightIn(min=36.dp).clickable(role=Role.Button){automaticCommand("restMinus192")}.semantics { contentDescription="Pihenő rövidítése 5 másodperccel" })
-                    Text("+5 s",color=White,modifier=Modifier.heightIn(min=36.dp).clickable(role=Role.Button){automaticCommand("restPlus192")}.semantics { contentDescription="Pihenő növelése 5 másodperccel" })
+                Row(Modifier.width(112.dp),horizontalArrangement=Arrangement.SpaceEvenly){
+                    BilateralAdjustButton192("−5 s","Pihenő rövidítése 5 másodperccel","wear-side192-active-rest-minus"){automaticCommand("restMinus192")}
+                    BilateralAdjustButton192("+5 s","Pihenő növelése 5 másodperccel","wear-side192-active-rest-plus"){automaticCommand("restPlus192")}
                 }
             }
             if(side&&a.phase=="work")centerItem { Pill(when(java.util.Locale.getDefault().language){"en"->"Skip this side";"de"->"Seite überspringen";"ro"->"Sari peste parte";else->"Oldal kihagyása"},tone=Secondary){automaticCommand("skipSide192")} }
