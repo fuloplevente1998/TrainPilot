@@ -1,5 +1,12 @@
 # Telefonos és Wear OS automata mód, Wear UI-fejlesztési terv
 
+## P2 #188 lezárva → #189 egyszerű érintészár — 2026. október 17.
+
+A `0694413` telefonos + Wear tesztpárt a felhasználó elfogadta (**„Zárhatjuk, jók vagyunk :) Folytathatod”**). #209 mainre került `a06485c`, #188 lezárva; 143/143 regresszió, 6/6 telefonos UI-futás, natív/Wear kapuk, 119/119 kerek UI/háttér/szinkron sikeres. A régebbi következő szakaszok történeti állapotok.
+
+A dokumentált következő feladat **#189**, `feat/189-wear-touch-lock` ágon, 1.3.51 /2732 verzióemelés nélkül. Az érintészár kizárólag helyi felületi védelem: külön tartós edzésazonosítóhoz kötött jelző, a kanonikus edzés/időnapló/outbox változtatása nélkül. Zár alatt a normál pager, szerkesztők és mentési/törlési megerősítők helyett olvasható edzésállapot és egyetlen feloldó vezérlő van. A háttér és telefonos vezérlés változatlanul halad. Felhasználói pontosítás: feloldás egyetlen folyamatos 3 mp-es nyomva tartással a lakaton, automatikusan a tartás közben; külön koppintás és elengedési lépés nincs. Mozgatás/több ujj/háttér/rövid nyomás megszakítja. A felengedés nem csúszhat át edzésműveletre. Képernyőébresztés és újraindítás után megmarad, más/lezárt edzésre nem kerül át. Új készülékes elfogadásig draft PR, teljes teszt és aláírt build Actionsön. Utána #192 → #193.
+
+
 ### #188 telefonos indítás javítása — 2026. október 16.
 
 Készülékes hiba: telefonról indított kézi edzésnél hiányzott az órás Visszavonás, mert a telefon automatika nélkül nem osztott stabil sorozatazonosítókat. A #209 draft publikálás előtti tartós azonosítással javul (új és régi draft), meglévő azonosítók és mérési adatok megőrzésével. Célzott telefonos indítás/szinkron/kvóta és órás telefonvezérelt kézi UI-regresszió bővült. Teljes ellenőrzés és aláírt tesztcsomag GitHub Actionsben; fizikai elfogadás továbbra is hátravan. A telefonon rögzített kézi sorozat tartós visszavonási jelöltje is átkerül az órának, a telefonos készrejelölés → órás inverz út regresszióval fedett. A pontosított igény szerint a telefon alsó edzésvezérlő sora is kap külön **Visszavonás** gombot. Telefonos kézi/natív automata és óravezérelt edzésnél ugyanaz a védett inverz működik; óravezérlésnél tulajdonosi visszaigazolásig vár. Gyors/tervezett telefonos Chromium-próba nyolc méret/nyelv kombinációban, natív tranzakciós dupla kattintás és valódi órás távoli parancs/újraküldés regresszió védi. Az új funkcióhoz azonos forrású telefonos + Wear tesztcsomag kell. Verzió/main/release változatlan.

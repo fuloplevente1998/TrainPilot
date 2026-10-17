@@ -94,14 +94,17 @@ class WearAutomaticServiceTest {
                 java.time.Instant.now().toString(),"background-auto-test",0,3,0,
                 listOf(WearExercise("plank","Plank","bodyweight","mp","time",listOf(
                     WearSet(1,"","0",false,0,0,0.0,"one"),WearSet(2,"","0",false,0,0,0.0,"two")))),
-                timerOwner="watch",automation=WearAutomatic(workSeconds=2,restSeconds=3,vibration=false)))
+                timerOwner="watch",automation=WearAutomatic(workSeconds=2,restSeconds=5,vibration=false)))
         }
         val scenario=ActivityScenario.launch(MainActivity::class.java)
         try {
             scenario.onActivity {
                 WearAutomaticController.toggle(it,true)
                 WearAutomaticController.command(it,"start","background-auto-test")
+                assertTrue(WearTouchLock189.set(it,WorkoutSnapshotStore.load(it)!!,true))
             }
+            scenario.recreate()
+            scenario.onActivity { assertTrue(WearTouchLock189.locked(it,WorkoutSnapshotStore.load(it))) }
             scenario.moveToState(Lifecycle.State.CREATED)
             val rest=await { it.completedSets==1&&it.automation?.phase=="rest" }
             assertEquals("2",rest.exercises[0].sets[0].reps)
@@ -111,8 +114,10 @@ class WearAutomaticServiceTest {
             Thread.sleep(1200)
             assertEquals(paused.automation.remainingMs,WorkoutSnapshotStore.load(context)!!.automation!!.remainingMs)
             assertEquals(1,WorkoutSnapshotStore.load(context)!!.completedSets)
+            assertTrue(WearTouchLock189.locked(context,WorkoutSnapshotStore.load(context)))
             main { WearAutomaticController.command(context,"resume","background-auto-test") }
             val complete=await { it.completedSets==2&&it.automation?.phase=="complete" }
+            assertTrue(WearTouchLock189.locked(context,complete))
             assertEquals(listOf("2","2"),complete.exercises[0].sets.map { it.reps })
             assertEquals(0,complete.automation!!.remainingMs)
             Thread.sleep(400)
@@ -122,6 +127,7 @@ class WearAutomaticServiceTest {
             main { WearAutomaticService.stop(context) }
             scenario.close()
             main { WorkoutSnapshotStore.clear(context) }
+            WearTouchLock189.retain(context,null)
         }
     }
 }
