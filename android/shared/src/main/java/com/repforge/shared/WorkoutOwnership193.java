@@ -23,7 +23,8 @@ public final class WorkoutOwnership193 {
     private static void require(boolean value) { if (!value) throw new IllegalStateException("Ownership changed; retry the same transfer."); }
     private static boolean id(String value) { return value != null && value.matches("[A-Za-z0-9._:-]{1,128}"); }
     private static boolean same(JSONObject a, JSONObject b) {
-        return a != null && b != null && a.optLong("epoch") == b.optLong("epoch")
+        return a != null && b != null && a.optInt("protocol")==PROTOCOL && b.optInt("protocol")==PROTOCOL
+                && a.optLong("epoch") == b.optLong("epoch")
                 && a.optString("id").equals(b.optString("id")) && a.optString("source").equals(b.optString("source"))
                 && a.optString("target").equals(b.optString("target")) && a.optString("sourceNode").equals(b.optString("sourceNode"))
                 && a.optString("targetNode").equals(b.optString("targetNode"));
@@ -33,7 +34,9 @@ public final class WorkoutOwnership193 {
         require(("phone".equals(source)||"watch".equals(source)) && owns(current,source)
                 && !current.optString("workoutId").isEmpty() && current.optString("workoutId").length()<=512
                 && epoch(current)==expectedEpoch && expectedEpoch>=0 && id(sourceNode) && id(targetNode)
-                && !sourceNode.equals(targetNode) && id(transferId) && now>0 && expectedEpoch<Long.MAX_VALUE);
+                && !sourceNode.equals(targetNode) && id(transferId) && now>0 && expectedEpoch<Long.MAX_VALUE
+                && current.optLong("pauseRevision")>=0 && current.optLong("pauseRevision")<Long.MAX_VALUE
+                && (transfer(current)==null || !transferId.equals(transfer(current).optString("id"))));
         String target = "phone".equals(source) ? "watch" : "phone";
         JSONObject result=copy(current);
         result.put("ownershipProtocol193",PROTOCOL).put("ownerEpoch193",expectedEpoch)
@@ -63,7 +66,8 @@ public final class WorkoutOwnership193 {
         JSONObject h=transfer(offer);
         require(h!=null && h.optInt("protocol")==PROTOCOL && "offered".equals(h.optString("state"))
                 && localNode.equals(h.optString("targetNode")) && peerNode.equals(h.optString("sourceNode"))
-                && id(h.optString("id")) && offer.optBoolean("workoutPaused") && !offer.optString("workoutId").isEmpty()
+                && id(h.optString("id")) && offer.optBoolean("active",true) && offer.optBoolean("workoutPaused")
+                && !offer.optString("workoutId").isEmpty() && offer.optString("workoutId").length()<=512
                 && epoch(offer)>=0 && h.optLong("epoch")>0 && h.optLong("epoch")==epoch(offer)+1
                 && ("phone".equals(h.optString("source"))||"watch".equals(h.optString("source")))
                 && h.optString("source").equals(offer.optString("timerOwner"))
@@ -108,7 +112,8 @@ public final class WorkoutOwnership193 {
                 && "committed".equals(c.optString("state")) && localNode.equals(c.optString("targetNode"))
                 && peerNode.equals(c.optString("sourceNode")) && epoch(committed)==c.optLong("epoch")
                 && epoch(accepted)==c.optLong("epoch")-("accepted".equals(h.optString("state"))?1:0)
-                && c.optString("target").equals(committed.optString("timerOwner")) && committed.optBoolean("workoutPaused"));
+                && c.optString("target").equals(committed.optString("timerOwner"))
+                && committed.optBoolean("active",true) && committed.optBoolean("workoutPaused"));
         // A duplicate commit must never erase the target's subsequent offline edits.
         if("committed".equals(h.optString("state")))return copy(accepted);
         return copy(committed);

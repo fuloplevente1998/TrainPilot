@@ -80,4 +80,14 @@ class WorkoutOwnership193Test {
         val corrupt=offer().put("ownerEpoch193",5)
         rejected { Ownership.commit(corrupt,accepted(),"phone-a","watch-a") }
     }
+    @Test fun unsupportedProtocolTombstoneAndCounterOverflowFailClosed() {
+        val invalid=accepted();invalid.getJSONObject("handoff193").put("protocol",2)
+        rejected { Ownership.commit(offer(),invalid,"phone-a","watch-a") }
+        val invalidCommit=committed();invalidCommit.getJSONObject("handoff193").put("protocol",2)
+        rejected { Ownership.finish(accepted(),invalidCommit,"watch-a","phone-a") }
+        rejected { Ownership.accept(current(),offer().put("active",false),"watch-a","phone-a") }
+        rejected { Ownership.finish(accepted(),committed().put("active",false),"watch-a","phone-a") }
+        rejected { Ownership.offer(current().put("pauseRevision",Long.MAX_VALUE),"phone","phone-a","watch-a","handoff:1",0,10000) }
+        rejected { Ownership.offer(committed(),"watch","watch-a","phone-a","handoff:1",1,20000) }
+    }
 }

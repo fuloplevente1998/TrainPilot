@@ -13,8 +13,8 @@ Samsung Coach**. A #212 átveszi #190 korona/lünetta követelményeit; #190
 duplikátumként lezárva. #206 a #207 követelményeit is követi; #207 lezárva.
 A #208-cal már mainre került GPS STOP-teljesítést nem implementáljuk újra.
 A #206 nyitott marad a külön aktivitásnézet és maradék UI-pontok egyeztetésére.
-A régi #186 és #121 draft PR-ok külön felülvizsgálandók, nem olvasztandók
-automatikusan mainre.
+A régi #186 draft beolvasztás nélkül lezárva: a #195 mainen levő, elfogadott
+megvalósítása kiváltotta. A #121 karbantartás/Play-publikálás külön marad.
 
 ## Közös működés
 
@@ -43,6 +43,8 @@ automatikusan mainre.
    mentés/visszaállítás és törlés ugyanazt a rendszert használja.
 
 ## Megvalósítás és ellenőrzés
+
+Fejlesztés: [#213 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/213).
 
 Első fejlesztési rész: a mindkét Android-modul által fordított közös
 `WorkoutOwnership193` állapotgép és JVM-regressziói. Ez az alap még nincs
