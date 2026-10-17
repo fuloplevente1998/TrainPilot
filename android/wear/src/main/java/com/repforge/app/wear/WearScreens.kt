@@ -1812,7 +1812,7 @@ private fun AutomaticTimedSetScreen(workout: WearWorkout,restRemaining: Int,heal
                     fontWeight=FontWeight.SemiBold,maxLines=1,modifier=Modifier.weight(1f).testTag("wear-automatic-clock")
                         .clickable(enabled=command!=null&&a.phase!="complete",role=Role.Button){command?.invoke(if(waiting)"start" else if(a.paused)"resume" else "pause")}
                         .semantics { contentDescription=if(waiting)"Automata munkaszakasz indítása" else if(a.paused)"Automata folytatása" else "Automata szüneteltetése" })
-                Text(if(side)(if(tiny&&a.phase!="rest")copy.side(currentSide) else label)+"\n→ "+nextLabel+if(a.rounds>1&&!tiny)" · ${if(waiting)1 else a.round}/${a.rounds}" else "" else label+if(a.rounds>1)" · ${if(waiting)1 else a.round}/${a.rounds}. kör" else "",color=Muted,
+                Text(if(side&&tiny&&a.phase=="rest")"→ "+nextLabel else if(side)(if(tiny)copy.side(currentSide) else label)+"\n→ "+nextLabel+if(a.rounds>1&&!tiny)" · ${if(waiting)1 else a.round}/${a.rounds}" else "" else label+if(a.rounds>1)" · ${if(waiting)1 else a.round}/${a.rounds}. kör" else "",color=Muted,
                     fontSize=((if(tiny)8 else 9)*scale).sp,lineHeight=((if(tiny)9 else 10)*scale).sp,maxLines=2,
                     textAlign=TextAlign.Center,modifier=Modifier.weight(1f).testTag("wear-side-phase192"))
                 if(side&&tiny)LocalTouchLock189.current?.let { lock ->

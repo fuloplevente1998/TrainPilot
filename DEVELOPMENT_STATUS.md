@@ -10,6 +10,8 @@ A `6928484` jelöltön a Quick 144/144, telefonos Chromium 98/98 (6/6 csoport), 
 
 Az `1acbe3e` forrás mind az öt GitHub-kapuja sikeres (152/152 kerek eset), de a kötelező képernyőkép-ellenőrzés a 160dp nagybetűs oldalas lapon függőleges levágást mutatott. Az új kompakt oldalas fejléc a sorozatot/szakaszt/időt egy sorban tartja, a teljes számláló és következő oldal a gombsor fölé fér; a lakat vezérlője elérhető marad. A kijelzési regresszió most a szöveg teljes látható magasságát és a gombsorhoz viszonyított helyzetét is ellenőrzi, mind a négy nyelven, munka és oldalcsere-pihenő alatt. Friss kapuk/APK-pár kell az új forrásra; az `1acbe3e` jelölt nem kerül végleges átadásra.
 
+A `8803197` szigorított kerek futás 150/152: a német hosszú oldalcsere-pihenő felirat két 160dp-változaton nem fért a szűk számlálómellé. A javítás a kis kijelzőn a pihenő típusát a meglévő kompakt fejlécben, a céloldalt a számláló mellett mutatja; a hosszú felirat nem ismétlődik. A regresszió a fejléc teljes láthatóságát is ellenőrzi. A munka és a többi nyelv levágásellenőrzése, a 44dp gombok és a másik négy kiadási kapu sikeres volt; az új forrás teljes ellenőrzése szükséges.
+
 A célzott helyi JS-idővonal/telefonos UI és valós JSON backup/restore ellenőrzés sikeres. Az aktuális kód teljes Quick/Performance, telefonos UI/natív/aláírt build és Wear Kotlin/UI/aláírt build kapui GitHub Actionsben ellenőrzendők. **Verzió változatlan 1.3.51 /2732**, új telefon+Wear tesztpár, készülékes elfogadás és main még hátravan. Következő dokumentált feladat utána #193. Az alábbi bejegyzések történetiek.
 
 

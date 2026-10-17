@@ -1041,7 +1041,8 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                 compose.runOnIdle { work.value=work.value!!.copy(automation=work.value!!.automation!!.copy(phase="rest",restKind192="side",side192="right",remainingMs=10000,phaseSeconds192=10)) }
                 assertAutomaticSideBodyVisible192("rest/$lang")
                 val restText=compose.onNodeWithTag("wear-side-phase192").fetchSemanticsNode().config[SemanticsProperties.Text].single().text
-                assertTrue(restText.contains(copy.swap));assertTrue(restText.contains(copy.right))
+                val heading=compose.onNodeWithTag("wear-workout-clock").fetchSemanticsNode().config[SemanticsProperties.Text].single().text
+                assertTrue("Rest kind stays visible in the heading or body",restText.contains(copy.swap)||heading.contains(copy.swap));assertTrue(restText.contains(copy.right))
                 screenshot("bilateral192-rest-$lang")
             }
             compose.onNodeWithTag("wear-automatic-clock").performClick();assertEquals("pause",commands.last())
@@ -1071,7 +1072,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     private fun assertAutomaticSideBodyVisible192(phase: String) {
         val body=compose.onNodeWithTag("wear-fixed-body").fetchSemanticsNode().boundsInRoot
         val footer=compose.onNodeWithTag("wear-fixed-actions").fetchSemanticsNode().boundsInRoot
-        for(tag in listOf("wear-automatic-clock","wear-side-phase192")) {
+        for(tag in listOf("wear-workout-clock","wear-automatic-clock","wear-side-phase192")) {
             val node=compose.onNodeWithTag(tag).assertIsDisplayed()
             val layouts=mutableListOf<TextLayoutResult>();node.performSemanticsAction(SemanticsActions.GetTextLayoutResult){it(layouts)}
             val layout=layouts.single();val bounds=node.fetchSemanticsNode().boundsInRoot
