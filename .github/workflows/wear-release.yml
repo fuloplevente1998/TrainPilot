@@ -11,6 +11,7 @@ on:
       - 'wear-v*'
     paths:
       - 'android/wear/**'
+      - 'android/shared/**'
       - 'android/build.gradle'
       - 'android/settings.gradle'
       - '.github/workflows/wear-release.yml'

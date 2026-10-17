@@ -1,3 +1,9 @@
+## Aktuális folytatás — 2026-10-17, összevont P2-csomagok
+
+A felhasználó jóváhagyta a közös csomagokat és a folytatást. **Következő: #193 + #202 önálló órás edzés**, közös issue #193, ág `feat/193-202-watch-offline-gps`, main alap `9188932`. #202 duplikátumként lezárva, teljes követelményei #193-ban megőrizve. Utána **#212 + #190 UI-csomag → #197 edzésmódok → #184 Samsung Coach**; #190 duplikátumként #212-be átvezetve. #207 duplikátumként #206-ba átvezetve; a #208-cal már mainre került GPS STOP-teljesítés nem új fejlesztés, a maradék aktivitásnézet/UI ellenőrzése #206-ban marad.
+
+#188 Visszavonás és #189 három másodperces érintészár elfogadva és mainen. **#192 és #211 a felhasználó kérésére sztornózott, beolvasztás nélkül lezárva.** A #192 APK-k történetiek, nincs készülékes elfogadás vagy merge. A régi #186/#121 draft PR külön felülvizsgálandó. Verzió változatlan **1.3.51 /2732**. Teljes teszt/build Actionsön; a #193 új funkció main/kiadásához később külön készülékes elfogadás és jóváhagyás szükséges. [Közös részletes terv](P2_193_ONALLO_ORAS_EDZES.md). Az alábbi korábbi állapotok történetiek.
+
 # Telefonos és Wear OS automata mód, Wear UI-fejlesztési terv
 
 ## P2 #188 lezárva → #189 egyszerű érintészár — 2026. október 17.

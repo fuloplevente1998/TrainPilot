@@ -30,6 +30,7 @@ if (playBuild) {
 def javaLiteral = { value -> groovy.json.JsonOutput.toJson(value) }
 
 android {
+    sourceSets.main.java.srcDir '../shared/src/main/java'
     namespace "com.repforge.app"
     compileSdk rootProject.ext.compileSdkVersion
     buildFeatures { buildConfig true }
