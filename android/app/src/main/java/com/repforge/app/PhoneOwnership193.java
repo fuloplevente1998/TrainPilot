@@ -33,6 +33,7 @@ final class PhoneOwnership193 {
         if(request==null||!requestId.equals(request.optString("id"))||!localNode.equals(request.optString("target"))
                 ||!"phone".equals(frozen.optString("timerOwner","phone"))||!frozen.optBoolean("workoutPaused"))
             throw new IllegalStateException("The workout transfer changed");
+        if(frozen.optInt("ownershipProtocol193")!=1)throw new IllegalStateException("Update both apps before transferring a workout");
         JSONObject gps=DistanceTrackingService.snapshot(context);
         if(gps.optBoolean("active"))throw new IllegalStateException("Finish recording GPS values before transfer");
         PhoneWorkoutExecution.store(context).suspendCommands(true);
@@ -67,6 +68,7 @@ final class PhoneOwnership193 {
             JSONObject current=ActiveWorkoutStore.current(context);
             if(current==null||!current.optString("workoutId").equals(command.optString("workoutId")))return true;
             if(java.util.Arrays.asList("healthSummary","saveWorkoutFeedback","requestHome").contains(command.optString("action")))return true;
+            if(!current.optBoolean("active",true))return false;
             JSONObject saved=journal(context).read().optJSONObject("snapshot");
             if(saved==null||!current.optString("workoutId").equals(saved.optString("workoutId")))return command.optLong("ownerEpoch193")==0;
             return !WorkoutOwnership193.pending(saved)&&command.optLong("ownerEpoch193")==WorkoutOwnership193.epoch(saved);

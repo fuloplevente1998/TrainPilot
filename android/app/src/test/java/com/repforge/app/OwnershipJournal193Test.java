@@ -77,6 +77,12 @@ public class OwnershipJournal193Test {
         target.receive(outgoing(source),"phone-a","watch-a",now+1000);
         assertEquals(3,watch.value.getInt("currentExercise"));assertFalse(watch.value.getBoolean("workoutPaused"));
     }
+    @Test public void durableConsentRecoversAMissingSnapshotButClosedJournalNeverDoes()throws Exception {
+        offer();target.receive(outgoing(source),"phone-a","watch-a",now);
+        watch.value=null;target=new OwnershipJournal193(watchContext,watch);target.recover();
+        assertNotNull(watch.value);assertTrue(WorkoutOwnership193.pending(watch.value));
+        target.close("workout:193");watch.value=null;target.recover();assertNull(watch.value);
+    }
     @Test public void mismatchedNodesStaleRequestsAndUnrequestedOffersCannotChangeState()throws Exception {
         target.request("watch-a","phone-a",now);JSONObject request=outgoing(target);
         reject(()->source.receive(request,"different-node","phone-a",now));

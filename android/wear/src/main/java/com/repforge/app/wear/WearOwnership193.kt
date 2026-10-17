@@ -19,6 +19,7 @@ internal object WearOwnership193 {
             cached=OwnershipJournal193(app,object: OwnershipJournal193.Host {
                 override fun current(): JSONObject?=WorkoutSnapshotStore.load(app)?.let(WorkoutSnapshotStore::encode)
                 override fun install(value: JSONObject) {
+                    if(WearClosureStore.isClosed(app,value.optString("workoutId")))error("Workout was closed")
                     var next=WorkoutSnapshotStore.parse(value.toString()) ?: error("Invalid transferred workout")
                     val current=WorkoutSnapshotStore.load(app)
                     if(next.timerOwner=="watch"&&WorkoutOwnership193.transfer(value)?.optString("state")=="committed"
@@ -62,7 +63,12 @@ internal object WearOwnership193 {
         if(android.os.Looper.myLooper()!=android.os.Looper.getMainLooper()) {
             android.os.Handler(android.os.Looper.getMainLooper()).post { recover(context.applicationContext) };return
         }
-        try { val store=journal(context);store.recover();OwnershipTransport193.send(context,store) }catch(_:Exception){/* Never start from an unreadable journal. */}
+        try {
+            val store=journal(context);val state=store.read()
+            val id=state.optJSONObject("snapshot")?.optString("workoutId") ?: state.optJSONObject("request")?.optString("workoutId")
+            if(id!=null&&WearClosureStore.isClosed(context,id))store.close(id)
+            store.recover();OwnershipTransport193.send(context,store)
+        }catch(_:Exception){/* Never start from an unreadable journal. */}
     }
     fun receive(context: Context,message: JSONObject,origin: String,localNode: String) {
         synchronized(WearAutomaticController) { synchronized(WorkoutSnapshotStore) {
@@ -70,7 +76,7 @@ internal object WearOwnership193 {
             store.recover();val state=store.receive(message,origin,localNode,System.currentTimeMillis())
             if(state.optString("stage")=="incoming") {
                 var current=WorkoutSnapshotStore.load(context) ?: return
-                if(current.timerOwner!="watch")return
+                if(current.timerOwner!="watch"||current.ownershipProtocol193!=1)return
                 val beforeAuto=current.automation
                 val resume=current.resumeAutomaticOnContinue||!current.workoutPaused&&beforeAuto?.enabled==true&&!beforeAuto.paused
                 if(!current.workoutPaused&&current.automation?.enabled==true)

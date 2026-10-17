@@ -94,10 +94,12 @@ object WorkoutSnapshotStore {
         val current = load(context)
         if (raw.isNullOrBlank()) return current
         val root = try { JSONObject(raw) } catch (_: Exception) { return current }
+        if(current==null&&root.optLong("ownerEpoch193")>0)return null // Recovery must use this watch's durable consent journal.
         if(current!=null&&root.optLong("ownerEpoch193")>current.ownerEpoch193)return current // Only the acknowledged transfer installs a new epoch.
         if(current!=null&&current.ownerEpoch193>0&&!root.optBoolean("active",true)&&
             (root.optString("workoutId")!=current.workoutId||root.optLong("ownerEpoch193")<current.ownerEpoch193))return current
-        if(current!=null&&root.optBoolean("active",true)&&com.repforge.shared.WorkoutOwnership193.stale(encode(current),root))return current
+        val fenced193=current?.let { it.ownershipProtocol193==1||it.ownerEpoch193>0||it.handoff193!=null }==true||root.optInt("ownershipProtocol193")==1
+        if(current!=null&&fenced193&&root.optBoolean("active",true)&&com.repforge.shared.WorkoutOwnership193.stale(encode(current),root))return current
         val revision = root.optLong("revision", 0L)
         if (revision < (current?.revision ?: 0L)) return current
         if (!root.optBoolean("active", true)) {
@@ -128,13 +130,17 @@ object WorkoutSnapshotStore {
 
     @Synchronized
     fun clear(context: Context) {
+        load(context)?.takeIf { it.ownershipProtocol193==1||it.ownerEpoch193>0||it.handoff193!=null }?.let {
+            WearClosureStore.rememberClosed193(context,it.workoutId)
+        }
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(SNAPSHOT).apply()
     }
 
     @Synchronized
     fun saveWorkout(context: Context, workout: WearWorkout): WearWorkout {
         val current=load(context)
-        if(current!=null&&com.repforge.shared.WorkoutOwnership193.stale(encode(current),encode(workout)))return current
+        val fenced193=current?.let { it.ownershipProtocol193==1||it.ownerEpoch193>0||it.handoff193!=null }==true||workout.ownershipProtocol193==1
+        if(current!=null&&fenced193&&com.repforge.shared.WorkoutOwnership193.stale(encode(current),encode(workout)))return current
         val safe=if(current?.workoutId==workout.workoutId&&(workout.pauseRevision<current.pauseRevision||workout.pauseRevision==current.pauseRevision&&current.workoutPaused))preserveWorkoutPause(workout,current)else workout
         val saved=if(current?.workoutId==safe.workoutId)safe.copy(localSequence=maxOf(current.localSequence,safe.localSequence),revision=maxOf(current.revision,safe.revision))else safe
         val committed=context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(SNAPSHOT, encode(saved).toString()).commit()

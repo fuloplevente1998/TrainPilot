@@ -34,6 +34,7 @@ public class WearSyncPlugin extends Plugin {
                 execution(call,()->{
                     JSONObject current=ActiveWorkoutStore.current(getContext());
                     if(current==null||!"watch".equals(current.optString("timerOwner")))throw new IllegalStateException("Workout owner changed");
+                    if(current.optInt("ownershipProtocol193")!=1)throw new IllegalStateException("Update both apps before transferring a workout");
                     PhoneOwnership193.journal(getContext()).request(local.getId(),peers.get(0).getId(),System.currentTimeMillis());
                     return PhoneOwnership193.status(getContext());
                 });

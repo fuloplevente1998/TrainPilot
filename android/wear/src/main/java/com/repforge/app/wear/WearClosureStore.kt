@@ -57,6 +57,13 @@ object WearClosureStore {
         val closed = JSONArray(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("closed", "[]"))
         return (0 until closed.length()).any { closed.optString(it) == workoutId }
     }
+    @Synchronized fun rememberClosed193(context: Context,workoutId: String) {
+        val prefs=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE)
+        val closed=JSONArray(prefs.getString("closed","[]"))
+        if((0 until closed.length()).none { closed.optString(it)==workoutId })closed.put(workoutId)
+        while(closed.length()>128)closed.remove(0)
+        if(!prefs.edit().putString("closed",closed.toString()).commit())error("Workout closure could not be saved")
+    }
 
     @Synchronized
     fun acceptResult(context: Context, result: JSONObject?) {

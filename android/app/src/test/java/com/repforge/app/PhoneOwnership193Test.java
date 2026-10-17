@@ -53,6 +53,7 @@ public class PhoneOwnership193Test {
         assertEquals("watch",current.getString("timerOwner"));assertTrue(PhoneOwnership193.publicationAllowed(context,current));
         JSONObject closed=ActiveWorkoutStore.clear(context);assertEquals(1,closed.getLong("ownerEpoch193"));
         assertEquals("w193",closed.getString("workoutId"));assertFalse(PhoneOwnership193.publicationAllowed(context,current));
+        assertFalse(PhoneOwnership193.commandAllowed(context,command(1)));
     }
     @Test public void unreadableJournalIsRetryableAndNotAcknowledgedAsStale()throws Exception {
         File file=new File(context.getNoBackupFilesDir(),"ownership193.json");Files.writeString(file.toPath(),"{");

@@ -93,6 +93,15 @@ jobs:
           chmod +x gradlew
           ./gradlew --no-daemon :wear:testReleaseUnitTest :wear:assembleRelease
 
+      - name: Upload Wear native JVM results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: TrainPilot-wear-native-tests-${{ github.run_id }}-${{ github.sha }}
+          path: android/wear/build/test-results/testReleaseUnitTest/*.xml
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Verify Wear APK
         shell: bash
         run: |

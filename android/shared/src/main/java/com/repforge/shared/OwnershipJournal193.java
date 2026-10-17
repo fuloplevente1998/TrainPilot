@@ -131,7 +131,9 @@ public final class OwnershipJournal193 {
     /** Recover the crash window after journal commit and before the host's snapshot write. */
     public synchronized void recover() throws Exception {
         JSONObject saved=read().optJSONObject("snapshot"),current=host.current();
-        if(saved==null||current==null||!saved.optString("workoutId").equals(current.optString("workoutId")))return;
+        if(saved==null||!saved.optBoolean("active",true))return;
+        if(current==null){host.install(saved);return;}
+        if(!saved.optString("workoutId").equals(current.optString("workoutId")))return;
         if(WorkoutOwnership193.epoch(current)>WorkoutOwnership193.epoch(saved))return;
         JSONObject sh=WorkoutOwnership193.transfer(saved),ch=WorkoutOwnership193.transfer(current);
         if(WorkoutOwnership193.epoch(current)<WorkoutOwnership193.epoch(saved)

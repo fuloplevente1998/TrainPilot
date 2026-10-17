@@ -44,7 +44,16 @@ public final class OwnershipTransport193 {
             Wearable.getNodeClient(context).getLocalNode().addOnSuccessListener(local -> {
                 if(local.getId().equals(origin))return;
                 new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
-                    try { callback.receive(message,origin,local.getId()); }catch(Exception ignored){/* Invalid/stale messages keep the existing owner. */}
+                    try {
+                        callback.receive(message,origin,local.getId());
+                        if("installed".equals(message.optString("kind"))) {
+                            // The source durably settled before returning. Remove only this acknowledged transfer pair.
+                            Wearable.getDataClient(context).deleteDataItems(item.getUri());
+                            android.net.Uri own=new android.net.Uri.Builder().scheme("wear").authority(local.getId())
+                                    .path(WorkoutOwnership193.PATH+local.getId()+"/"+message.getString("id")).build();
+                            Wearable.getDataClient(context).deleteDataItems(own);
+                        }
+                    }catch(Exception ignored){/* Invalid/stale messages keep the existing owner. */}
                 });
             });
         }catch(Exception ignored){/* A bad item cannot change ownership. */}
