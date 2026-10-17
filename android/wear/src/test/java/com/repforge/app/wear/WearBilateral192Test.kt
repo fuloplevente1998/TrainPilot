@@ -4,11 +4,7 @@ import org.json.JSONObject
 import org.json.JSONArray
 import org.junit.Assert.*
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 
-@RunWith(RobolectricTestRunner::class) @Config(sdk=[33],manifest=Config.NONE)
 class WearBilateral192Test {
     private fun workout(first: String="left",left: Int=30,right: Int=40,swap: Int=10,rest: Int=60,sets: Int=2,rounds: Int=1): WearWorkout {
         val exercise=WearExercise("side-plank","Oldalsó plank","bodyweight","mp/oldal","time",(1..sets).map { WearSet(it,"0","0",false,0,0,0.0,"set$it") },bilateral192=WearBilateralConfig192(first,left,right,swap,rest))

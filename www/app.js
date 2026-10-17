@@ -18745,14 +18745,12 @@ window.addEventListener?.('DOMContentLoaded',function(){
 
 
 
-// @section ready.js
-if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
-// @endsection ready.js
+
 
 // @section bilateral-ui-192.js
 (function(){
  'use strict';
- window.addEventListener('DOMContentLoaded',()=>{
+ window.addEventListener?.('DOMContentLoaded',()=>{
   const core=window.TrainPilotBilateral192Core;
   const COPY={
    hu:{title:'Oldalankénti automatika',first:'Kezdő oldal',left:'Bal',right:'Jobb',different:'Eltérő bal/jobb munkaidő',leftTime:'Bal munka (mp)',rightTime:'Jobb munka (mp)',swap:'Oldalcsere-pihenő (mp)',rest:'Sorozatpihenő',switchRest:'Oldalcsere-pihenő',work:'Munka',next:'Következő',done:'Kész',pause:'A módosításhoz szüneteltesd az időzítőt.',order:'A kezdő oldalt indítás előtt válaszd ki.',saved:'Oldalas menetrend mentve.',resume:'Folytatás',failed:'Az oldalas menetrend nem menthető. Ellenőrizd a beállításokat.',update:'Az oldalankénti automatikához frissítsd a telefonos és az órás TrainPilotot is.',skip:'Oldal kihagyása',log:'Oldalas időbontás',manualPause:'Kézi szünet',sideRest:'Oldalcsere-pihenő',setRest:'Sorozat-/körpihenő',seconds:'mp'},
@@ -18832,6 +18830,8 @@ if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRe
     if(active&&!run.running){form.elements.work.disabled=false;form.elements.rest.disabled=false;for(const button of form.querySelectorAll('button'))if(button.getAttribute('onclick')?.includes('saveInterval'))button.disabled=false;}
    }
    const panel=document.getElementById('tp107Indoor');if(!panel)return;
+   const manual=document.getElementById('rf110Stopwatch');if(manual&&manual.nextElementSibling!==panel)manual.after(panel);
+   for(const node of panel.querySelectorAll(':scope > strong,:scope > .tp107-save-row:not([data-tp192-controls]),:scope > [data-tp107-clock-status]'))node.style.display=active?'':'none';
    let buttons=panel.querySelector('[data-tp192-controls]');
    if(!buttons){buttons=document.createElement('div');buttons.dataset.tp192Controls='';buttons.className='tp107-save-row';buttons.innerHTML='<button type="button" class="btn" data-tp192-resume onclick="TrainPilotBilateral192.command(\'resume\')">'+esc(t('resume'))+'</button><button type="button" class="btn secondary" data-tp192-minus onclick="TrainPilotBilateral192.command(\'restMinus192\')">−5 '+esc(t('seconds'))+'</button><button type="button" class="btn secondary" data-tp192-plus onclick="TrainPilotBilateral192.command(\'restPlus192\')">+5 '+esc(t('seconds'))+'</button><button type="button" class="btn secondary" data-tp192-skip onclick="TrainPilotBilateral192.command(\'skipSide192\')">'+esc(t('skip'))+'</button>';panel.append(buttons);}
    buttons.hidden=!p?.side192||p.phase==='complete';buttons.querySelector('[data-tp192-resume]').hidden=!run?.interrupted;buttons.querySelectorAll('button:not([data-tp192-resume])').forEach(n=>n.disabled=!!run?.interrupted);buttons.querySelector('[data-tp192-skip]').hidden=p?.phase!=='work';buttons.querySelector('[data-tp192-minus]').hidden=p?.phase!=='rest';buttons.querySelector('[data-tp192-plus]').hidden=p?.phase!=='rest';
@@ -18857,3 +18857,7 @@ if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRe
  });
 })();
 // @endsection bilateral-ui-192.js
+
+// @section ready.js
+if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
+// @endsection ready.js
