@@ -336,6 +336,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     override fun onResume() {
         super.onResume()
         activityResumed=true
+        WearOwnership193.recover(this)
         refreshHomeIndicators(true)
         WearUndo188.recover(this)
         workout.value = WearAutomaticController.restore(this)
@@ -415,6 +416,9 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                     var newestHome: WatchHomeSnapshot? = null
                     for (item in items) {
                         try {
+                            if(com.repforge.shared.OwnershipTransport193.receive(this,item) { message,origin,local ->
+                                WearOwnership193.receive(this,message,origin,local)
+                            })continue
                             if(item.uri.path?.startsWith(WearCommandOutbox.RECEIPT_PREFIX)==true) {
                                 if(WearCommandOutbox.acceptReceipt(this,item.uri.path,DataMapItem.fromDataItem(item).dataMap.getString("receipt")))
                                     Wearable.getDataClient(this).deleteDataItems(item.uri)

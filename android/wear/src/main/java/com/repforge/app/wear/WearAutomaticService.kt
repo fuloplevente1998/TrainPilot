@@ -196,6 +196,7 @@ object WearAutomaticController {
     @Synchronized fun remote(context: Context,input: JSONObject) {
         synchronized(WorkoutSnapshotStore) {
         val current=restore(context) ?: return
+        if(input.optLong("ownerEpoch193")!=current.ownerEpoch193)return
         val id=input.optString("commandId");val action=input.optString("action")
         if(current.workoutPaused||WearUndo188.blocked(current))return
         if(System.currentTimeMillis()-input.optLong("createdAt") !in 0..15000)return

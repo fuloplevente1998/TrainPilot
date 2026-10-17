@@ -10,7 +10,7 @@ on:
         default: ''
   push:
     branches: [main, 'fix/**', 'feat/**']
-    paths: ['android/wear/**', '.github/workflows/wear-layout-ui.yml']
+    paths: ['android/wear/**', 'android/shared/**', '.github/workflows/wear-layout-ui.yml']
 
 permissions:
   contents: read

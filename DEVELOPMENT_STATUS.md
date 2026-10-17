@@ -1,3 +1,9 @@
+## Aktuális folytatás — 2026-10-17, összevont P2-csomagok
+
+A felhasználó jóváhagyta a közös csomagokat és a folytatást. **Következő: #193 + #202 önálló órás edzés**, közös issue #193, ág `feat/193-202-watch-offline-gps`, main alap `9188932`. #202 duplikátumként lezárva, teljes követelményei #193-ban megőrizve. Utána **#212 + #190 UI-csomag → #197 edzésmódok → #184 Samsung Coach**; #190 duplikátumként #212-be átvezetve. #207 duplikátumként #206-ba átvezetve; a #208-cal már mainre került GPS STOP-teljesítés nem új fejlesztés, a maradék aktivitásnézet/UI ellenőrzése #206-ban marad.
+
+#188 Visszavonás és #189 három másodperces érintészár elfogadva és mainen. **#192 és #211 a felhasználó kérésére sztornózott, beolvasztás nélkül lezárva.** A #192 APK-k történetiek, nincs készülékes elfogadás vagy merge. A régi #186 draft beolvasztás nélkül lezárva: a készülékesen elfogadott #195 már kiváltotta. #121 karbantartás/Play-publikálás külön marad. A közös #193 fejlesztés a #213 draft PR-ban elindult; közös tulajdonosi állapotgép, tartós átadási napló és natív/Data Layer adapterek elkészültek. A felhasználói képesség még kikapcsolt; a friss JS-piszkozat egyeztetése, időzítő-folytatás, GPS és UI bekötése hátravan. Verzió változatlan **1.3.51 /2732**. Teljes teszt/build Actionsön; a #193 új funkció main/kiadásához később külön készülékes elfogadás és jóváhagyás szükséges. [Közös részletes terv](docs/wear/P2_193_ONALLO_ORAS_EDZES.md). Az alábbi korábbi állapotok történetiek.
+
 # TrainPilot — fejlesztési állapot
 
 ## P2 #188 elfogadva; #189 egyszerű feloldás — 2026. október 17.

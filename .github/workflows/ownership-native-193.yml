@@ -1,0 +1,56 @@
+name: Ownership protocol native checks
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/193-202-watch-offline-gps']
+  pull_request:
+    paths:
+      - 'android/shared/**'
+      - 'android/app/src/**/java/com/repforge/app/*193*'
+      - 'android/app/src/main/java/com/repforge/app/ActiveWorkoutStore.java'
+      - 'android/wear/src/**/java/com/repforge/app/wear/*193*'
+      - 'android/wear/src/main/java/com/repforge/app/wear/WorkoutSnapshotStore.kt'
+      - '.github/workflows/ownership-native-193.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ownership-native-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  protocol-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - name: Prepare Android projects
+        run: |
+          npm ci
+          npm run sync
+      - name: Test durable transfer and ownership on both platforms
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :app:testDebugUnitTest --tests com.repforge.app.OwnershipJournal193Test --tests com.repforge.app.PhoneOwnership193Test :wear:testDebugUnitTest --tests com.repforge.app.wear.WorkoutOwnership193Test
+      - name: Upload native protocol results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: TrainPilot-ownership-native-${{ github.run_id }}-${{ github.sha }}
+          path: |
+            android/app/build/test-results/testDebugUnitTest/*.xml
+            android/wear/build/test-results/testDebugUnitTest/*.xml
+          if-no-files-found: warn
+          retention-days: 14

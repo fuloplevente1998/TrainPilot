@@ -15,6 +15,7 @@ if (releaseTaskRequested && !releaseSigningComplete) {
 }
 
 android {
+    sourceSets.main.java.srcDir '../shared/src/main/java'
     namespace "com.repforge.app.wear"
     compileSdk rootProject.ext.compileSdkVersion
 

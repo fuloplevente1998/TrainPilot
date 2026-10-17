@@ -17,6 +17,11 @@ object WearCommandOutbox {
     private fun read(context: Context,key: String)=JSONArray(prefs(context).getString(key,"[]"))
 
     fun enqueue(context: Context, command: JSONObject): Long {
+        if(!command.has("ownerEpoch193")) {
+            val current=WorkoutSnapshotStore.load(context)
+            command.put("ownerEpoch193",command.optJSONObject("finalSnapshot")?.optLong("ownerEpoch193")
+                ?: current?.takeIf { it.workoutId==command.optString("workoutId") }?.ownerEpoch193 ?: 0L)
+        }
         // Persist the draft before taking the outbox lock: workout editing takes
         // SnapshotStore -> outbox locks, so the reverse order would deadlock.
         val localReady=try {
