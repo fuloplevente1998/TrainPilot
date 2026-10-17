@@ -8,6 +8,7 @@ import com.google.android.gms.wearable.MessageEvent
 
 class WearDataListenerService : WearableListenerService() {
     override fun onPeerConnected(peer: com.google.android.gms.wearable.Node) {
+        WearOwnership193.recover(this)
         WearUndo188.recover(this)
         WearCommandOutbox.flush(this,true)
     }
@@ -19,6 +20,9 @@ class WearDataListenerService : WearableListenerService() {
         for (event in dataEvents) {
             if (event.type != DataEvent.TYPE_CHANGED) continue
             val item = event.dataItem
+            if(com.repforge.shared.OwnershipTransport193.receive(this,item) { message,origin,local ->
+                WearOwnership193.receive(this,message,origin,local)
+            })continue
             if(item.uri.path?.startsWith(WearCommandOutbox.RECEIPT_PREFIX)==true) {
                 if(WearCommandOutbox.acceptReceipt(this,item.uri.path,DataMapItem.fromDataItem(item).dataMap.getString("receipt")))
                     com.google.android.gms.wearable.Wearable.getDataClient(this).deleteDataItems(item.uri)

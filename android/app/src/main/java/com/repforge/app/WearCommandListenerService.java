@@ -55,6 +55,8 @@ public class WearCommandListenerService extends WearableListenerService {
             if (event.getType() != DataEvent.TYPE_CHANGED) continue;
             if (event.getDataItem() == null || event.getDataItem().getUri() == null) continue;
             String path = event.getDataItem().getUri().getPath();
+            if(com.repforge.shared.OwnershipTransport193.receive(this,event.getDataItem(),
+                    (message,origin,local)->PhoneOwnership193.receive(this,message,origin,local)))continue;
             if (WearLiveHealthStore.PATH.equals(path)) {
                 try { WearLiveHealthStore.save(this, DataMapItem.fromDataItem(event.getDataItem()).getDataMap().getString("health")); }
                 catch (Exception ignored) {}
@@ -65,6 +67,9 @@ public class WearCommandListenerService extends WearableListenerService {
                 String raw = DataMapItem.fromDataItem(event.getDataItem()).getDataMap().getString("command");
                 if (raw == null || raw.isEmpty()) continue;
                 JSONObject command=new JSONObject(raw);
+                if(!PhoneOwnership193.commandAllowed(this,command)) {
+                    WearCommandReceipts.complete(this,command,"superseded",event.getDataItem().getUri());continue;
+                }
                 if(WearCommandQueueStore.seen(this,command.optString("commandId"))){WearCommandReceipts.replay(this,command,event.getDataItem().getUri());new android.os.Handler(android.os.Looper.getMainLooper()).post(this::drainNativeUndo188);continue;}
                 if(PhoneWorkoutExecution.compatible(command)){
                     android.net.Uri uri=event.getDataItem().getUri();

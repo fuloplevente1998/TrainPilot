@@ -51,7 +51,10 @@ data class WearWorkout(
     val resumeAutomaticOnContinue: Boolean = false,
     val pausedRestMillis: Long = 0L,
     val lastRecord188: String? = null,
-    val undo188: String? = null
+    val undo188: String? = null,
+    val ownershipProtocol193: Int = 0,
+    val ownerEpoch193: Long = 0L,
+    val handoff193: String? = null
 ) {
     fun elapsedSeconds(now: Long = System.currentTimeMillis()): Int = try {
         val duration=activeIntervals?.sumOf { (if(it.end>0)it.end else now).minus(it.start).coerceAtLeast(0) }
@@ -91,6 +94,10 @@ object WorkoutSnapshotStore {
         val current = load(context)
         if (raw.isNullOrBlank()) return current
         val root = try { JSONObject(raw) } catch (_: Exception) { return current }
+        if(current!=null&&root.optLong("ownerEpoch193")>current.ownerEpoch193)return current // Only the acknowledged transfer installs a new epoch.
+        if(current!=null&&current.ownerEpoch193>0&&!root.optBoolean("active",true)&&
+            (root.optString("workoutId")!=current.workoutId||root.optLong("ownerEpoch193")<current.ownerEpoch193))return current
+        if(current!=null&&root.optBoolean("active",true)&&com.repforge.shared.WorkoutOwnership193.stale(encode(current),root))return current
         val revision = root.optLong("revision", 0L)
         if (revision < (current?.revision ?: 0L)) return current
         if (!root.optBoolean("active", true)) {
@@ -127,6 +134,7 @@ object WorkoutSnapshotStore {
     @Synchronized
     fun saveWorkout(context: Context, workout: WearWorkout): WearWorkout {
         val current=load(context)
+        if(current!=null&&com.repforge.shared.WorkoutOwnership193.stale(encode(current),encode(workout)))return current
         val safe=if(current?.workoutId==workout.workoutId&&(workout.pauseRevision<current.pauseRevision||workout.pauseRevision==current.pauseRevision&&current.workoutPaused))preserveWorkoutPause(workout,current)else workout
         val saved=if(current?.workoutId==safe.workoutId)safe.copy(localSequence=maxOf(current.localSequence,safe.localSequence),revision=maxOf(current.revision,safe.revision))else safe
         val committed=context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(SNAPSHOT, encode(saved).toString()).commit()
@@ -231,7 +239,10 @@ object WorkoutSnapshotStore {
                 resumeAutomaticOnContinue = root.optBoolean("resumeAutomaticOnContinue"),
                 pausedRestMillis = root.optLong("pausedRestMillis"),
                 lastRecord188 = root.optJSONObject("lastRecord188")?.toString(),
-                undo188 = root.optJSONObject("undo188")?.toString()
+                undo188 = root.optJSONObject("undo188")?.toString(),
+                ownershipProtocol193 = root.optInt("ownershipProtocol193"),
+                ownerEpoch193 = root.optLong("ownerEpoch193"),
+                handoff193 = root.optJSONObject("handoff193")?.toString()
             )
         } catch (_: Exception) { null }
     }
@@ -256,6 +267,7 @@ object WorkoutSnapshotStore {
             .put("nativeExecutionProtocol",workout.nativeExecutionProtocol)
             .put("generation",workout.generation)
             .put("executionRevision",workout.executionRevision)
+            .put("ownershipProtocol193",workout.ownershipProtocol193).put("ownerEpoch193",workout.ownerEpoch193)
             .put("workoutPaused",workout.workoutPaused).put("pauseRevision",workout.pauseRevision)
             .put("resumeAutomaticOnContinue",workout.resumeAutomaticOnContinue).put("pausedRestMillis",workout.pausedRestMillis)
         workout.activeIntervals?.let { rows -> root.put("activeIntervals",JSONArray().also { json -> rows.forEach {
@@ -265,6 +277,7 @@ object WorkoutSnapshotStore {
         workout.automation?.let { root.put("automation",it.json()) }
         workout.lastRecord188?.let { root.put("lastRecord188",JSONObject(it)) }
         workout.undo188?.let { root.put("undo188",JSONObject(it)) }
+        workout.handoff193?.let { root.put("handoff193",JSONObject(it)) }
         val exercises = JSONArray()
         workout.exercises.forEach { exercise ->
             val sets = JSONArray()

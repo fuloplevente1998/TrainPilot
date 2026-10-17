@@ -43,6 +43,7 @@ public class IntervalTimerService extends Service {
         if(STOP.equals(intent.getAction())){if(key.equals(intent.getStringExtra("key"))){armedWorkoutId="";stopRun();}return START_NOT_STICKY;}
         if(ARM.equals(intent.getAction())){
             String requested=intent.getStringExtra("workoutId");
+            if(!PhoneOwnership193.phoneAllowed(this,requested==null?"":requested))return START_NOT_STICKY;
             if(requested==null||requested.isEmpty()||intent.getLongExtra("generation",0)<=0)return START_NOT_STICKY;
             if(timeline!=null&&!stopped&&!"complete".equals(timeline.at(now()).phase)&&!requested.equals(workoutId))return START_NOT_STICKY;
             if(!requested.equals(armedWorkoutId)){handler.removeCallbacks(expire);handler.postDelayed(expire,IntervalTimeline.MAX_MS);}
@@ -74,6 +75,7 @@ public class IntervalTimerService extends Service {
     static boolean startPrepared(JSONObject plan)throws Exception{
         IntervalTimerService s=instance;
         if(s==null||!armed(plan.getString("workoutId"),plan.getLong("generation")))return false;
+        if(!PhoneOwnership193.phoneAllowed(s,plan.getString("workoutId")))return false;
         if(plan.optString("key").equals(s.key))return true; // Retried outbox delivery must not reset elapsed time.
         if(s.timeline!=null&&!s.stopped&&!"complete".equals(s.timeline.at(s.now()).phase))return false;
         s.handler.removeCallbacks(s.tick);s.parse(plan);s.stopped=false;s.elapsed=0;s.began=SystemClock.elapsedRealtime();s.running=true;
@@ -83,9 +85,14 @@ public class IntervalTimerService extends Service {
         IntervalTimerService s=instance;if(s==null||!armed(workoutId,generation))return;
         s.armedWorkoutId="";if(s.timeline==null){s.stopForeground(true);s.stopSelf();}else if(workoutId.equals(s.workoutId))s.stopRun();
     }
+    static void stopForOwnership(Context context,String workoutId){
+        IntervalTimerService s=instance;
+        if(s!=null&&workoutId.equals(s.workoutId)){s.armedWorkoutId="";s.stopRun();}
+    }
     static void disarm(){IntervalTimerService s=instance;if(s==null)return;s.armedWorkoutId="";if(s.timeline==null){s.stopForeground(true);s.stopSelf();}else if(!s.running&&"complete".equals(s.timeline.at(s.now()).phase)){s.stopForeground(true);s.stopSelf();}}
     private void parse(JSONObject plan)throws Exception{
         JSONObject current=ActiveWorkoutStore.current(this);
+        if(current!=null&&!PhoneOwnership193.phoneAllowed(this,current.optString("workoutId")))throw new IllegalStateException("Workout ownership changed");
         workoutId=plan.optString("workoutId",current==null?"":current.optString("workoutId"));
         JSONObject execution=PhoneWorkoutExecution.store(this).snapshot();
         executionGeneration=plan.optLong("generation",execution!=null&&execution.optString("workoutId").equals(workoutId)?execution.optLong("generation"):0);
@@ -186,6 +193,7 @@ public class IntervalTimerService extends Service {
     }
     static JSONObject command(Context context,String key,String action)throws Exception{
         IntervalTimerService s=instance;if(s==null||!key.equals(s.key))throw new IllegalStateException("Interval owner is no longer active");
+        if(("resume".equals(action)||"skipRest".equals(action))&&!PhoneOwnership193.phoneAllowed(context,s.workoutId))throw new IllegalStateException("Workout ownership changed");
         if(("resume".equals(action)||"skipRest".equals(action))&&s.executionGeneration>0){
             JSONObject frame=PhoneWorkoutExecution.store(context).snapshot();
             if(frame!=null&&s.workoutId.equals(frame.optString("workoutId"))&&frame.optBoolean("workoutPaused"))throw new IllegalStateException("Workout is suspended");

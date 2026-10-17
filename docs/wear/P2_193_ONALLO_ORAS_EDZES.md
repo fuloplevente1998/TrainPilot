@@ -52,6 +52,20 @@ rákötve a natív tárolókra, a Data Layerre vagy a felhasználói műveletekr
 önmagában nem teszi elérhetővé az edzésátadást vagy az órás útvonalrögzítést.
 A teljes integráció és készülékes elfogadás követelményei az alábbiak.
 
+Második rész: atomi fájlba írt átadási napló és pontos újraküldési boríték,
+eszközhöz kötött Data Layer fogadóút, telefonos és órás natív adapterek,
+epoch-ellenőrzés a parancsoknál és pillanatképeknél. A napló írása és a
+pillanatkép telepítése közti megszakadás külön helyreállítható. A régi epoch
+nem indíthatja újra a telefon időzítőjét; a késői commit/accept nem törölhet
+újabb órás vagy telefonra már visszaérkezett adatot. A törlés leállítja az
+átadási újraküldést. Tárolási hiba nem számít nyugtázható, elavult parancsnak.
+
+**A képességet a normál telefonos pillanatképek még nem hirdetik, és a felület
+még nem kínál átvételi gombot.** A friss kanonikus telefonos piszkozat
+szüneteltetése, JS-egyeztetés, időzítő-folytatás, felhasználói vezérlők és a
+GPS-rész bekötése következő integrációs lépés. A második rész sem készülékes
+funkciótesztre szánt kiadás; új main/kiadás nincs.
+
 - [ ] Tartós tulajdonosi állapotgép és stale/dupla/ACK-vesztés regressziók.
 - [ ] Natív telefon–Wear átadás és visszaadás; régi alkalmazás képességvizsgálata.
 - [ ] Aktív/szüneteltetett kézi és automata edzés átvitele, munka/pihenő idő megőrzése.
