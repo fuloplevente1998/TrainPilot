@@ -1019,6 +1019,44 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         }
     }
 
+    @Test
+    fun bilateral192PhaseAndNextSideFitEveryLanguageAndRoundScreen() {
+        val previous=java.util.Locale.getDefault()
+        val side=touchWorkout189().exercises[0].copy(repUnit="mp/oldal",bilateral192=WearBilateralConfig192("left",2,3,1,4))
+        val initial=touchWorkout189().copy(exercises=listOf(side),automation=WearAutomatic(enabled=true,owner="watch",phase="work",side192="left",phaseSeconds192=2,remainingMs=2000,anchorMs=android.os.SystemClock.elapsedRealtime(),targetId=side.sets[0].setId),timerOwner="watch")
+        val work=mutableStateOf<WearWorkout?>(initial)
+        val commands=mutableListOf<String>()
+        try {
+            compose.setContent { Watch { Fixture("touch-workout",externalWorkout=work,automaticCommands=commands) } }
+            for(lang in listOf("hu","en","de","ro")){
+                compose.runOnIdle { java.util.Locale.setDefault(java.util.Locale(lang));work.value=work.value!!.copy(revision=work.value!!.revision+1) }
+                val copy=WearSideCopy192.language(lang)
+                val node=compose.onNodeWithTag("wear-side-phase192").assertIsDisplayed()
+                val text=node.fetchSemanticsNode().config[SemanticsProperties.Text].single().text
+                assertTrue(text.contains(copy.left));assertTrue(text.contains(copy.right))
+                val layouts=mutableListOf<TextLayoutResult>();node.performSemanticsAction(SemanticsActions.GetTextLayoutResult){it(layouts)}
+                assertFalse("Side and next-side labels fit $lang",layouts.single().hasVisualOverflow)
+                screenshot("bilateral192-$lang")
+            }
+            compose.onNodeWithTag("wear-automatic-clock").performClick();assertEquals("pause",commands.last())
+        }finally{java.util.Locale.setDefault(previous)}
+    }
+
+    @Test
+    fun bilateral192SettingsStayReachableAndRestRingUsesSideDuration() {
+        val side=touchWorkout189().exercises[0].copy(repUnit="mp/oldal",bilateral192=WearBilateralConfig192("right",2,3,10,60))
+        val work=touchWorkout189().copy(exercises=listOf(side),automation=WearAutomatic(enabled=true,owner="watch",phase="rest",side192="left",restKind192="side",phaseSeconds192=10,remainingMs=10000,anchorMs=android.os.SystemClock.elapsedRealtime(),targetId=side.sets[0].setId,paused=true),timerOwner="watch")
+        val commands=mutableListOf<String>()
+        compose.setContent { Watch { Fixture("touch-workout",externalWorkout=mutableStateOf(work),automaticCommands=commands) } }
+        assertEquals(1f,wearRestProgress(work,10),.001f)
+        compose.onNodeWithContentDescription("Edzésmenü",substring=true).performClick()
+        lazyList().performScrollToNode(hasTestTag("wear-side192-left-plus"))
+        compose.onNodeWithTag("wear-side192-left-plus").assertIsDisplayed().performClick();assertEquals("leftPlus192",commands.last())
+        lazyList().performScrollToNode(hasContentDescription("Pihenő növelése 5 másodperccel"))
+        compose.onNodeWithContentDescription("Pihenő növelése 5 másodperccel").performClick();assertEquals("restPlus192",commands.last())
+        screenshot("bilateral192-settings")
+    }
+
     private fun touchWorkout189(): WearWorkout {
         val exercise=WearExercise("press","Földön fekve nyomás","weight","ism.","strength",listOf(WearSet(1,"5","5.5",false,0,0,0.0,"touch-set")))
         return WearWorkout(1,"p","Program","a","", "2026-10-16T10:00:00Z","layout-test",0,60,0,

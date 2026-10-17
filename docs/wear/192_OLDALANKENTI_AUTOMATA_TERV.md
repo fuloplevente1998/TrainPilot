@@ -1,10 +1,10 @@
-# #192 — oldalankénti automata időzítés: egyeztetendő működés
+# #192 — oldalankénti automata időzítés: jóváhagyott működés
 
-Állapot: **konkrét javaslat, alkalmazáskód még nem készült**. Dátum: 2026. október 17.
+Állapot: **felhasználó által jóváhagyva: „Lets go”; megvalósítás és regresszió folyamatban**. Dátum: 2026. október 17.
 
 Alap: `91889326056ac257975360644ead39ded1b5a4d6` main, a készülékesen elfogadott #189 / #210 után. Az érintészár egyetlen folyamatos 3 másodperces tartásra felold. A #189 lezárva. Új ág: `feat/192-bilateral-automatic`.
 
-A [#192 issue](https://github.com/fuloplevente1998/TrainPilot/issues/192) az átmeneti szabályok és a naplókompatibilitás jóváhagyását kéri kódolás előtt. A következő javaslat ezt a két döntést teszi konkréttá. Verzió marad 1.3.51 /2732.
+A [#192 issue](https://github.com/fuloplevente1998/TrainPilot/issues/192) az átmeneti szabályok és a naplókompatibilitás jóváhagyását kéri kódolás előtt. A felhasználó a konkrét magyarázat után 2026. október 17-én jóváhagyta ezt a két döntést: **„Lets go”**. A #211 mostantól a megvalósítást is tartalmazó draft PR. Verzió marad 1.3.51 /2732.
 
 ## 1. Beállítás és menetrend
 
@@ -85,7 +85,7 @@ Az 1-es naplóséma és a korábbi `reps` értékek változatlanul olvashatók. 
 
 ## 6. Megvalósítás és ellenőrzés
 
-1. A fenti menetrend és új naplóbontás felhasználói egyeztetése. Ez a dokumentum még javaslat.
+1. A fenti menetrend és új naplóbontás felhasználói egyeztetése **megtörtént: „Lets go”**.
 2. Közös példaadatok és azonos szakaszhatárok tesztje JS/Java/Kotlin alatt; új protokoll és régi adatok kompatibilitása.
 3. Natív telefonos és Wear időzítés, tartós részleges oldalállapot, kihagyás/szünet/visszavonás, egyetlen tulajdonos és pontosan egyszeri rögzítés.
 4. Telefonos és kerek Wear-beállítás/kijelzés, magyar/angol/német/román szövegek, témák és nagy betűméret.
@@ -93,3 +93,11 @@ Az 1-es naplóséma és a korábbi `reps` értékek változatlanul olvashatók. 
 6. Ellenőrzött, azonos forrású telefon+Wear teszt-APK-pár, változatlan verzióval. Külön készülékes elfogadás után main és #192 lezárása.
 
 Kötelező regresszió: mindkét oldalsorrend, azonos/eltérő munkaidő, több sorozat/kör, nulla/eltérő pihenő, utolsó oldal, szünet mind a négy időtípusban, pihenő kihagyása/módosítása, kézi léptetés, részleges oldal, késői/dupla parancs, offline/újracsatlakozás, restart, mentés/backup/import, hagyományos időzítés és #188/#189.
+
+## Megvalósítási feljegyzés
+
+A telefonos és Wear natív időzítő a meglévő tulajdonosi/naplózási utat bővíti. A szüneteltetett időzítőn változtatott konfiguráció a már megkezdett munka hosszát megőrzi, a még nem indult szakaszokra érvényes. A kezdő oldal és a körszám indítás előtt állítható. Futó pihenő külön ±5 mp-es módosítást kap, a terv pihenőértékének átírása nélkül. A részleges/kimaradt oldal nem lesz kész sorozat.
+
+A 2-es naplóséma minden tényleges oldalas munka-, oldalcsere-pihenő-, sorozatpihenő- és kézi szünetidőt megőriz. A gyakran tükrözött pillanatképekben a korábbi szakaszok részletes listája korlátosan tömörül; az összesített idők, stabil sorozat-/oldalazonosítók és teljesítési állapotok megmaradnak. A Visszavonás a szerkeszthető sorozatállapotot állítja vissza, az időnaplót nem építi újra a visszaállított sorozatból.
+
+Telefonon új alkalmazásképesség-ellenőrzés jelzi, ha a csatlakoztatott óra nem ismeri a funkciót. Wearen a telefonos képesség a már meglévő kezdőlap-/edzésszinkronnal érkezik. Az új funkcióhoz azonos forrású telefonos és Wear app szükséges; a kézi oldalas mérés elérhető marad. Készülékes elfogadás és mainre emelés külön, a friss kapuk és teszt-APK-pár átadása után.

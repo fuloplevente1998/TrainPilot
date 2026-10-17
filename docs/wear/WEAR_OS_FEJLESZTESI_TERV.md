@@ -1,5 +1,14 @@
 # Telefonos és Wear OS automata mód, Wear UI-fejlesztési terv
 
+## P2 #189 lezárva; #192 megvalósítás — 2026. október 17.
+
+A felhasználó az egyszerű, egyetlen 3 mp-es érintészár-feloldást elfogadta: **„Rendben, zárhatjuk, mehet mainre”**. #210 mainen: `91889326056ac257975360644ead39ded1b5a4d6`, #189 lezárva. Az elfogadott `1fb8f80` forrás és a main fájlfája azonos; a main összes GitHub-kapuja sikeres, 141/141 kerek Wear-teszt.
+
+Következő P2 **#192**, `feat/192-bilateral-automatic` / [#211 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/211). A felhasználó a konkrét menetrendet és naplóbontást jóváhagyta: **„Lets go”**. [Jóváhagyott részletes működés](192_OLDALANKENTI_AUTOMATA_TERV.md): választható bal/jobb sorrend és munkaidők, külön oldalcsere- és sorozat-/körpihenő, utolsó záró pihenő nélkül, egyetlen natív időzítőtulajdonossal. A tényleges munka/pihenő/kézi szünet verziózott bontásban marad meg; régi naplók és hagyományos időzítés változatlanok. Szüneteltetett beállításváltás nem írja át a megkezdett munkát. Kihagyott oldal részleges marad, a visszavonás megőrzi a mért időnaplót.
+
+A célzott helyi JS-idővonal/telefonos UI és valós JSON backup/restore ellenőrzés sikeres. Az aktuális kód teljes Quick/Performance, telefonos UI/natív/aláírt build és Wear Kotlin/UI/aláírt build kapui GitHub Actionsben ellenőrzendők. **Verzió változatlan 1.3.51 /2732**, új telefon+Wear tesztpár, készülékes elfogadás és main még hátravan. Következő dokumentált feladat utána #193. Az alábbi bejegyzések történetiek.
+
+
 ## P2 #188 lezárva → #189 egyszerű érintészár — 2026. október 17.
 
 A `0694413` telefonos + Wear tesztpárt a felhasználó elfogadta (**„Zárhatjuk, jók vagyunk :) Folytathatod”**). #209 mainre került `a06485c`, #188 lezárva; 143/143 regresszió, 6/6 telefonos UI-futás, natív/Wear kapuk, 119/119 kerek UI/háttér/szinkron sikeres. A régebbi következő szakaszok történeti állapotok.

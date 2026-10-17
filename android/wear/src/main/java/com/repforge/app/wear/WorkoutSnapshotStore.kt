@@ -12,7 +12,8 @@ data class WearSet(
     val leftSeconds: Int,
     val rightSeconds: Int,
     val distanceMeters: Double,
-    val setId: String = ""
+    val setId: String = "",
+    val sideState192: String? = null
 )
 
 data class WearExercise(
@@ -22,7 +23,8 @@ data class WearExercise(
     val repUnit: String,
     val measurementType: String,
     val sets: List<WearSet>,
-    val targetReps: String = ""
+    val targetReps: String = "",
+    val bilateral192: WearBilateralConfig192? = null
 )
 
 data class WearWorkout(
@@ -51,7 +53,8 @@ data class WearWorkout(
     val resumeAutomaticOnContinue: Boolean = false,
     val pausedRestMillis: Long = 0L,
     val lastRecord188: String? = null,
-    val undo188: String? = null
+    val undo188: String? = null,
+    val bilateralProtocol192: Int = 0
 ) {
     fun elapsedSeconds(now: Long = System.currentTimeMillis()): Int = try {
         val duration=activeIntervals?.sumOf { (if(it.end>0)it.end else now).minus(it.start).coerceAtLeast(0) }
@@ -67,7 +70,7 @@ data class WearWorkout(
     val currentSetIndex: Int
         get() {
             val sets = exercise?.sets.orEmpty()
-            val firstOpen = sets.indexOfFirst { !it.done }
+            val firstOpen = sets.indexOfFirst { !it.done&&!WearBilateral192.skipped(it) }
             return if (firstOpen >= 0) firstOpen else (sets.size - 1).coerceAtLeast(0)
         }
 
@@ -180,7 +183,7 @@ object WorkoutSnapshotStore {
                                     leftSeconds = set.optInt("leftSeconds", 0),
                                     rightSeconds = set.optInt("rightSeconds", 0),
                                     distanceMeters = set.optDouble("distanceMeters", 0.0),
-                                    setId = set.optString("setId")
+                                    setId = set.optString("setId"),sideState192=set.optJSONObject("sideState192")?.toString()
                                 )
                             )
                         }
@@ -193,7 +196,7 @@ object WorkoutSnapshotStore {
                             repUnit = exercise.optString("repUnit"),
                             measurementType = exercise.optString("measurementType"),
                             sets = sets,
-                            targetReps = exercise.optString("targetReps")
+                            targetReps = exercise.optString("targetReps"),bilateral192=WearBilateralConfig192.parse(exercise.optJSONObject("bilateral192"))
                         )
                     )
                 }
@@ -231,13 +234,14 @@ object WorkoutSnapshotStore {
                 resumeAutomaticOnContinue = root.optBoolean("resumeAutomaticOnContinue"),
                 pausedRestMillis = root.optLong("pausedRestMillis"),
                 lastRecord188 = root.optJSONObject("lastRecord188")?.toString(),
-                undo188 = root.optJSONObject("undo188")?.toString()
+                undo188 = root.optJSONObject("undo188")?.toString(),bilateralProtocol192=root.optInt("bilateralProtocol192")
             )
         } catch (_: Exception) { null }
     }
 
     fun encode(workout: WearWorkout): JSONObject {
         val root = JSONObject()
+            .put("bilateralProtocol192",1)
             .put("active", true)
             .put("revision", workout.revision)
             .put("programId", workout.programId)
@@ -279,6 +283,7 @@ object WorkoutSnapshotStore {
                         .put("rightSeconds", set.rightSeconds)
                         .put("distanceMeters", set.distanceMeters)
                         .put("setId",set.setId)
+                        .also { if(set.sideState192!=null)it.put("sideState192",JSONObject(set.sideState192)) }
                 )
             }
             exercises.put(
@@ -288,6 +293,7 @@ object WorkoutSnapshotStore {
                     .put("loadType", exercise.loadType)
                     .put("repUnit", exercise.repUnit)
                     .put("measurementType", exercise.measurementType)
+                    .also { if(exercise.bilateral192!=null)it.put("bilateral192",exercise.bilateral192.json()) }
                     .put("targetReps", exercise.targetReps)
                     .put("sets", sets)
             )

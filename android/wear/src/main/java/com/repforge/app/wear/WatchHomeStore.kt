@@ -15,7 +15,8 @@ data class WatchHomeExercise(
     val repUnit: String,
     val measurementType: String,
     val targetReps: String,
-    val sets: List<WatchHomeSet>
+    val sets: List<WatchHomeSet>,
+    val bilateral192: WearBilateralConfig192? = null
 )
 
 data class WatchHomeDay(
@@ -55,7 +56,8 @@ data class WatchHomeSnapshot(
     val publishedAt: Long = 0L,
     val theme: WearHomeTheme = WearHomeTheme.DEFAULT,
     val automaticProtocol: Int = 0,
-    val pendingFeedback: WatchWorkoutFeedback? = null
+    val pendingFeedback: WatchWorkoutFeedback? = null,
+    val bilateralProtocol192: Int = 0
 ) {
     fun toWearExercise(exercise: WatchHomeExercise): WearExercise = WearExercise(
         id = exercise.id,
@@ -63,7 +65,7 @@ data class WatchHomeSnapshot(
         loadType = exercise.loadType,
         repUnit = exercise.repUnit,
         measurementType = exercise.measurementType,
-        targetReps = exercise.targetReps,
+        targetReps = exercise.targetReps,bilateral192=exercise.bilateral192,
         sets = exercise.sets.map { set ->
             WearSet(number = set.number, reps = "", weight = set.weight, done = false,
                 leftSeconds = 0, rightSeconds = 0, distanceMeters = 0.0,setId=java.util.UUID.randomUUID().toString())
@@ -182,7 +184,7 @@ object WatchHomeStore {
                 journalAvailable = root.optInt("journalSchema", 0) == 1 && root.optJSONArray("recentWorkouts") != null,
                 publishedAt = root.optLong("publishedAt", 0L),
                 theme = WearHomeTheme.parse(root.optJSONObject("theme")),
-                automaticProtocol = root.optInt("automaticProtocol",0),
+                automaticProtocol = root.optInt("automaticProtocol",0),bilateralProtocol192=root.optInt("bilateralProtocol192"),
                 pendingFeedback = WatchWorkoutFeedback.parse(root.optJSONObject("pendingFeedback"))
             )
         } catch (_: Exception) { null }
@@ -209,7 +211,7 @@ object WatchHomeStore {
                         repUnit = exercise.optString("repUnit"),
                         measurementType = exercise.optString("measurementType"),
                         targetReps = exercise.optString("targetReps"),
-                        sets = sets
+                        sets = sets,bilateral192=WearBilateralConfig192.parse(exercise.optJSONObject("bilateral192"))
                     )
                 )
             }

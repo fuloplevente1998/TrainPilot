@@ -118,7 +118,7 @@ internal fun WearTouchLockedScreen189(workout: WearWorkout,restRemaining: Int,he
             }
         }) {
             val scale=fontScale.coerceAtMost(if(it)1f else 1.2f)/fontScale
-            Text(copy.locked+" · "+status,color=color,fontSize=(8*scale).sp,lineHeight=(10*scale).sp,maxLines=1,overflow=TextOverflow.Ellipsis)
+            Text(copy.locked+" · "+(if(automatic?.side192?.isNotBlank()==true)WearSideCopy192.language(java.util.Locale.getDefault().language).side(automatic.side192)+" · "+status else status),color=color,fontSize=(8*scale).sp,lineHeight=(10*scale).sp,maxLines=1,overflow=TextOverflow.Ellipsis)
             Text(counter,color=Color(0xFFF6F8FB),fontSize=(18*scale).sp,lineHeight=(20*scale).sp,fontWeight=FontWeight.SemiBold,
                 modifier=Modifier.testTag("wear-locked-clock"),maxLines=1)
             Text(rows.firstOrNull() ?: "—",color=color,fontSize=(8*scale).sp,lineHeight=(10*scale).sp,maxLines=1,overflow=TextOverflow.Ellipsis)

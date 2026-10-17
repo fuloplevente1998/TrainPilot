@@ -33,7 +33,7 @@ final class WorkoutUndo188 {
     static JSONObject values(JSONObject set)throws JSONException {
         JSONObject out=new JSONObject().put("done",set.getBoolean("done"));
         for(String key:new String[]{"reps","weight","leftSeconds","rightSeconds","distanceMeters"})out.put(key,set.opt(key)==null? ("reps".equals(key)?"":0):set.opt(key));
-        return out;
+        out.put("sideState192",set.optJSONObject("sideState192")==null?JSONObject.NULL:set.getJSONObject("sideState192"));return out;
     }
     static JSONObject capture(JSONObject before,JSONObject after,JSONObject target,String recordId)throws JSONException {
         return new JSONObject().put("recordId",recordId).put("workoutId",before.getString("workoutId"))
@@ -56,6 +56,7 @@ final class WorkoutUndo188 {
             ||!same(last.getJSONArray("expected"),guard(frame))||!same(command.optJSONArray("expected"),guard(frame)))throw new IllegalArgumentException("undoConflict");
         JSONObject next=new JSONObject(frame.toString()),set=find(next,last),before=last.getJSONObject("before");
         for(String key:new String[]{"done","reps","weight","leftSeconds","rightSeconds","distanceMeters"})set.put(key,before.get(key));
+        if(before.optJSONObject("sideState192")!=null)set.put("sideState192",before.getJSONObject("sideState192"));else set.remove("sideState192");
         JSONArray exercises=next.getJSONArray("exercises");for(int e=0;e<exercises.length();e++)if(exercises.getJSONObject(e).getString("id").equals(last.getString("exerciseId")))next.put("currentExercise",e);
         next.put("restEndAt",0).put("executionRevision",PhoneWorkoutRecording.advance(frame.getLong("executionRevision")));
         next.remove("lastRecord188");next.remove("manualAnchor162");

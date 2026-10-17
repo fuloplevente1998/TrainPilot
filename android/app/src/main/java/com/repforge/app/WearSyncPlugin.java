@@ -178,6 +178,15 @@ public class WearSyncPlugin extends Plugin {
                 .addOnFailureListener(error -> call.reject("Unable to reach the watch.", error));
     }
 
+    @PluginMethod public void bilateralCapability192(PluginCall call) {
+        Wearable.getNodeClient(getContext()).getConnectedNodes().addOnSuccessListener(nodes->{
+            if(nodes.isEmpty()){JSObject result=new JSObject();result.put("supported",true);result.put("connectedWatches",0);call.resolve(result);return;}
+            Wearable.getCapabilityClient(getContext()).getCapability("trainpilot_bilateral192",com.google.android.gms.wearable.CapabilityClient.FILTER_REACHABLE)
+                .addOnSuccessListener(capability->{boolean supported=true;for(com.google.android.gms.wearable.Node node:nodes){boolean found=false;for(com.google.android.gms.wearable.Node peer:capability.getNodes())if(peer.getId().equals(node.getId()))found=true;supported&=found;}
+                    JSObject result=new JSObject();result.put("supported",supported);result.put("connectedWatches",nodes.size());call.resolve(result);})
+                .addOnFailureListener(error->call.reject("Unable to check watch support"));
+        }).addOnFailureListener(error->call.reject("Unable to check watch connection"));
+    }
     @PluginMethod
     public void status(PluginCall call) {
         JSObject result = new JSObject();

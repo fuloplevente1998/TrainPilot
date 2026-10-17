@@ -10,7 +10,7 @@ import java.util.UUID
 object WearUndo188 {
     const val QUICK_MILLIS = 8000L
     fun values(set: WearSet) = JSONObject().put("done",set.done).put("reps",set.reps).put("weight",set.weight)
-        .put("leftSeconds",set.leftSeconds).put("rightSeconds",set.rightSeconds).put("distanceMeters",set.distanceMeters)
+        .put("leftSeconds",set.leftSeconds).put("rightSeconds",set.rightSeconds).put("sideState192",set.sideState192?.let { JSONObject(it) } ?: JSONObject.NULL).put("distanceMeters",set.distanceMeters)
     fun guard(workout: WearWorkout): JSONArray = JSONArray().also { rows ->
         workout.exercises.forEach { e -> e.sets.forEach { s -> rows.put(JSONArray().put(e.id).put(s.setId)
             .put(s.done).put(number(s.reps)).put(number(s.weight)).put(s.leftSeconds.toDouble())
@@ -57,7 +57,7 @@ object WearUndo188 {
         if(!same(r.getJSONArray("expected"),guard(timed)))return null
         val old=timed.exercises[e].sets[s]
         val restored=old.copy(done=false,reps=before.optString("reps"),weight=before.optString("weight"),
-            leftSeconds=before.optInt("leftSeconds"),rightSeconds=before.optInt("rightSeconds"),distanceMeters=before.optDouble("distanceMeters",0.0))
+            leftSeconds=before.optInt("leftSeconds"),rightSeconds=before.optInt("rightSeconds"),distanceMeters=before.optDouble("distanceMeters",0.0),sideState192=before.optJSONObject("sideState192")?.toString())
         val next=timed.copy(currentExercise=e,restEndAt=0,lastRecord188=null,
             exercises=timed.exercises.mapIndexed { i,ex -> if(i!=e)ex else ex.copy(sets=ex.sets.mapIndexed { j,set -> if(j==s)restored else set }) },
             automation=timed.automation?.let { a -> a.copy(phase="ready",paused=true,interrupted=false,remainingMs=0,

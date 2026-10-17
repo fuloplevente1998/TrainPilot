@@ -1772,6 +1772,9 @@ private fun AutomaticTimedSetScreen(workout: WearWorkout,restRemaining: Int,heal
     onPrevious: ()->Unit,onNext: ()->Unit,onSkipRest: ()->Unit,onFinish: ()->Unit,onMenu: ()->Unit) {
     val a=workout.automation ?: return
     val command=LocalAutomaticCommand.current
+    val side=WearBilateral192.isSide(workout.exercise)
+    val copy=WearSideCopy192.language(java.util.Locale.getDefault().language)
+    val cfg=WearBilateral192.config(workout.exercise,a)
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val bodyHeight=wearFixedPageLayout(maxWidth.value,maxHeight.value,true).bodyHeight
         val tiny=bodyHeight<55f
@@ -1786,18 +1789,23 @@ private fun AutomaticTimedSetScreen(workout: WearWorkout,restRemaining: Int,heal
             if(!tiny)rows.take(if(bodyHeight>=96f&&fontScale<1.5f)2 else 1).forEach {
                 Text(it,color=Gold,fontSize=(9*scale).sp,lineHeight=(11*scale).sp,maxLines=1,overflow=TextOverflow.Ellipsis)
             }
-            val waiting=a.phase=="ready"
-            val remaining=if(waiting)a.workSeconds else ((a.remaining(android.os.SystemClock.elapsedRealtime())+999)/1000).toInt()
-            val label=if(a.phase=="rest")"Pihenő" else if(a.phase=="complete")"Rögzítve" else "Munka"
+            val waiting=a.phase=="ready"&&!a.interrupted
+            val remaining=if(waiting&&side)cfg.work(cfg.first) else if(waiting)a.workSeconds else ((a.remaining(android.os.SystemClock.elapsedRealtime())+999)/1000).toInt()
+            val currentSide=a.side192.ifBlank { cfg.first }
+            val label=if(side)if(a.phase=="rest")if(a.restKind192=="side")copy.swap else copy.rest else copy.side(currentSide)+" · "+copy.work
+                else if(a.phase=="rest")"Pihenő" else if(a.phase=="complete")"Rögzítve" else "Munka"
+            val another=workout.exercises.withIndex().any { (e,ex)->ex.sets.withIndex().any { (s,set)->!set.done&&!WearBilateral192.skipped(set)&&(e>a.targetExercise||e==a.targetExercise&&s>a.targetSet) } }
+            val nextSide=if(a.phase=="rest"||waiting)currentSide else if(currentSide==cfg.first)cfg.second() else if(a.round<a.rounds||another)cfg.first else ""
+            val nextLabel=if(nextSide.isBlank())WearTouchCopy189.language(java.util.Locale.getDefault().language).saved else copy.side(nextSide)
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(4.dp)) {
                 Text("${if(a.paused||waiting)"▶" else "Ⅱ"} ${formatSeconds(remaining)}",color=White,
                     fontSize=((if(tiny)18 else 24)*scale).sp,lineHeight=((if(tiny)20 else 28)*scale).sp,
                     fontWeight=FontWeight.SemiBold,maxLines=1,modifier=Modifier.weight(1f).testTag("wear-automatic-clock")
                         .clickable(enabled=command!=null&&a.phase!="complete",role=Role.Button){command?.invoke(if(waiting)"start" else if(a.paused)"resume" else "pause")}
                         .semantics { contentDescription=if(waiting)"Automata munkaszakasz indítása" else if(a.paused)"Automata folytatása" else "Automata szüneteltetése" })
-                Text(label+if(a.rounds>1)" · ${if(waiting)1 else a.round}/${a.rounds}. kör" else "",color=Muted,
+                Text(if(side)label+"\n→ "+nextLabel+if(a.rounds>1)" · ${if(waiting)1 else a.round}/${a.rounds}" else "" else label+if(a.rounds>1)" · ${if(waiting)1 else a.round}/${a.rounds}. kör" else "",color=Muted,
                     fontSize=((if(tiny)8 else 9)*scale).sp,lineHeight=((if(tiny)9 else 10)*scale).sp,maxLines=2,
-                    textAlign=TextAlign.Center,modifier=Modifier.weight(1f))
+                    textAlign=TextAlign.Center,modifier=Modifier.weight(1f).testTag("wear-side-phase192"))
             }
         }
     }
@@ -2300,14 +2308,31 @@ private fun WorkoutMenu(
                     .padding(6.dp).semantics { contentDescription="Automata mód kapcsoló" },textAlign=TextAlign.Center)
         }
         if(workout.automation?.enabled==true&&automaticCommand!=null) {
-            for((name,seconds,field) in listOf(Triple("Munka",workout.automation.workSeconds,"work"),Triple("Pihenő",workout.automation.restSeconds,"rest"),Triple("Kör",workout.automation.rounds,"rounds"))) centerItem {
+            val a=workout.automation
+            val side=WearBilateral192.isSide(workout.exercise)
+            val copy=WearSideCopy192.language(java.util.Locale.getDefault().language)
+            val c=WearBilateral192.config(workout.exercise,a)
+            val fields=if(side)listOf(Triple(copy.left,c.leftSeconds,"left"),Triple(copy.right,c.rightSeconds,"right"),Triple(copy.swap,c.sideRestSeconds,"sideRest"),Triple(copy.rest,c.setRestSeconds,"setRest"),Triple(copy.rounds,a.rounds,"rounds"))
+                else listOf(Triple("Munka",a.workSeconds,"work"),Triple("Pihenő",a.restSeconds,"rest"),Triple("Kör",a.rounds,"rounds"))
+            if(side)centerItem { Pill(copy.order+": "+copy.side(c.first),tone=Secondary,enabled=a.owner=="watch"&&!a.counting) { automaticCommand("sideFirst192") } }
+            for((name,seconds,field) in fields)centerItem {
+                val editable=if(side)a.owner=="watch"&&(!a.counting||a.paused&&field!="rounds") else !a.counting
+                val suffix=if(side&&field!="rounds")"192" else ""
                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween) {
-                    Text("−",color=White,modifier=Modifier.size(30.dp).clickable(enabled=!workout.automation.counting,role=Role.Button){automaticCommand(field+"Minus")}.semantics { contentDescription="$name csökkentése" })
-                    Text("$name $seconds mp",color=Muted,fontSize=10.sp)
-                    Text("+",color=White,modifier=Modifier.size(30.dp).clickable(enabled=!workout.automation.counting,role=Role.Button){automaticCommand(field+"Plus")}.semantics { contentDescription="$name növelése" })
+                    Text("−",color=White,modifier=Modifier.size(30.dp).clickable(enabled=editable,role=Role.Button){automaticCommand(field+"Minus"+suffix)}.testTag("wear-side192-$field-minus").semantics { contentDescription=if(side)"$name −" else "$name csökkentése" })
+                    Text("$name $seconds"+(if(field=="rounds")"" else " s"),color=Muted,fontSize=(10*LocalDensity.current.fontScale.coerceAtMost(1.2f)/LocalDensity.current.fontScale).sp,modifier=Modifier.weight(1f),textAlign=TextAlign.Center,maxLines=2)
+                    Text("+",color=White,modifier=Modifier.size(30.dp).clickable(enabled=editable,role=Role.Button){automaticCommand(field+"Plus"+suffix)}.testTag("wear-side192-$field-plus").semantics { contentDescription=if(side)"$name +" else "$name növelése" })
                 }
             }
-            centerItem { Text("Rezgés: ${if(workout.automation.vibration)"Be" else "Ki"}",color=Muted,fontSize=10.sp,
+            if(side&&a.owner=="phone")centerItem { Label(when(java.util.Locale.getDefault().language){"en"->"Configure on the phone";"de"->"Am Telefon einstellen";"ro"->"Configurează pe telefon";else->"Beállítás a telefonon"}) }
+            if(side&&a.phase=="rest")centerItem {
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceEvenly){
+                    Text("−5 s",color=White,modifier=Modifier.heightIn(min=36.dp).clickable(role=Role.Button){automaticCommand("restMinus192")}.semantics { contentDescription="Pihenő rövidítése 5 másodperccel" })
+                    Text("+5 s",color=White,modifier=Modifier.heightIn(min=36.dp).clickable(role=Role.Button){automaticCommand("restPlus192")}.semantics { contentDescription="Pihenő növelése 5 másodperccel" })
+                }
+            }
+            if(side&&a.phase=="work")centerItem { Pill(when(java.util.Locale.getDefault().language){"en"->"Skip this side";"de"->"Seite überspringen";"ro"->"Sari peste parte";else->"Oldal kihagyása"},tone=Secondary){automaticCommand("skipSide192")} }
+            centerItem { Text("Rezgés: ${if(a.vibration)"Be" else "Ki"}",color=Muted,fontSize=10.sp,
                 modifier=Modifier.fillMaxWidth().heightIn(min=30.dp).clickable(role=Role.Button){automaticCommand("vibration")}.padding(6.dp)) }
         }
         if (workout.exercise?.loadType != "bodyweight") {

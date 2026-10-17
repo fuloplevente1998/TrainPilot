@@ -73,6 +73,34 @@ class WearAutomaticServiceTest {
             WorkoutSnapshotStore.clear(context);delivery.edit().clear().commit()
         }
     }
+    @Test fun bilateral192RunsBehindTouchLockWithNoPhoneAndNoHealthPermission() {
+        val instrumentation=InstrumentationRegistry.getInstrumentation();val context=instrumentation.targetContext
+        fun main(action: ()->Unit)=instrumentation.runOnMainSync(action)
+        main {
+            WearAutomaticService.stop(context);WorkoutSnapshotStore.clear(context);WearHealthStore.enable(context,false)
+            WatchHomeStore.save(context,JSONObject().put("automaticProtocol",1).put("bilateralProtocol192",1).put("publishedAt",System.currentTimeMillis()).toString())
+            context.getSharedPreferences("trainpilot_wear_outbox",android.content.Context.MODE_PRIVATE).edit().clear().commit()
+            val side=WearExercise("side-plank","Oldalsó plank","bodyweight","mp/oldal","time",listOf(WearSet(1,"0","0",false,0,0,0.0,"side-background192")),bilateral192=WearBilateralConfig192("right",2,2,2,60))
+            WorkoutSnapshotStore.saveWorkout(context,WearWorkout(1,"p","Program","a","",java.time.Instant.now().toString(),"background-side192",0,60,0,listOf(side),timerOwner="watch"))
+        }
+        val scenario=ActivityScenario.launch(MainActivity::class.java)
+        try {
+            scenario.onActivity {
+                WearAutomaticController.toggle(it,true);WearAutomaticController.command(it,"start","background-side192")
+                assertTrue(WearTouchLock189.set(it,WorkoutSnapshotStore.load(it)!!,true))
+            }
+            scenario.recreate();scenario.moveToState(Lifecycle.State.CREATED)
+            val deadline=android.os.SystemClock.elapsedRealtime()+12000
+            while(android.os.SystemClock.elapsedRealtime()<deadline&&WorkoutSnapshotStore.load(context)?.automation?.phase!="complete")Thread.sleep(100)
+            val done=WorkoutSnapshotStore.load(context)!!
+            assertEquals("complete",done.automation!!.phase);assertEquals(1,done.completedSets);assertEquals(2,done.currentSet!!.leftSeconds);assertEquals(2,done.currentSet!!.rightSeconds)
+            assertEquals(4000L,done.automation!!.workMs);assertEquals(2000L,done.automation!!.restMs);assertTrue(WearTouchLock189.locked(context,done));assertFalse(WearHealthStore.enabled(context))
+            val pending=org.json.JSONArray(context.getSharedPreferences("trainpilot_wear_outbox",android.content.Context.MODE_PRIVATE).getString("pending","[]"))
+            assertEquals(1,(0 until pending.length()).count { pending.getJSONObject(it).optString("action")=="completeSet"&&pending.getJSONObject(it).optString("workoutId")=="background-side192" })
+        }finally{
+            main { WearAutomaticService.stop(context) };scenario.close();main { WorkoutSnapshotStore.clear(context) };WearTouchLock189.retain(context,null)
+        }
+    }
     @Test fun backgroundWorkAndRestPauseResumeRecordEachSetOnce() {
         val instrumentation=InstrumentationRegistry.getInstrumentation()
         val context=instrumentation.targetContext

@@ -120,7 +120,7 @@ final class PhoneWorkoutExecution {
                         .put("phase", interrupted ? "ready" : plan.optBoolean("restOnly") && "complete".equals(timer.optString("phase")) ? "ready" : timer.optString("phase"))
                         .put("paused", interrupted || !running && !"complete".equals(timer.optString("phase"))).put("remainingMs", remaining).put("deadlineAt", running ? System.currentTimeMillis() + remaining : 0)
                         .put("workSeconds", phaseStep.getInt("work")).put("restSeconds", "rest".equals(timer.optString("phase")) && plan.optInt("initialRest") > 0 && timer.optLong("elapsedMs") < plan.optLong("initialRest") * 1000 ? plan.getInt("initialRest") : phaseStep.getInt("rest"))
-                        .put("phaseNumber", timer.optLong("phaseNumber")).put("targetExercise", transition.getInt("currentExercise"))
+                        .put("side192",timer.optString("side192")).put("restKind192",timer.optString("restKind192")).put("phaseSeconds192",timer.optLong("phaseDurationMs")/1000).put("phaseNumber", timer.optLong("phaseNumber")).put("targetExercise", transition.getInt("currentExercise"))
                         .put("vibration", false).put("interrupted", interrupted));
             }
         } else if (transition != null) value.put("automation", new JSONObject().put("enabled", true).put("owner", "phone")

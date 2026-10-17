@@ -29,7 +29,11 @@ data class WearAutomatic(
     val awaitingPhone: Boolean = false,
     val workMs: Long = 0,
     val restMs: Long = 0,
-    val pausedMs: Long = 0
+    val pausedMs: Long = 0,
+    val side192: String = "",
+    val restKind192: String = "",
+    val phaseSeconds192: Int = 0,
+    val sideLog192: String? = null
 ) {
     val counting get() = enabled && phase in listOf("work", "rest")
     fun remaining(now: Long): Long = if(owner=="phone"&&counting&&!paused&&deadlineAt>0)(deadlineAt-System.currentTimeMillis()).coerceAtLeast(0)
@@ -39,8 +43,8 @@ data class WearAutomatic(
         .put("vibration",vibration).put("key",key).put("targetExercise",targetExercise)
         .put("targetSet",targetSet).put("targetId",targetId).put("remainingMs",remainingMs)
         .put("anchorMs",anchorMs).put("boot",boot).put("phaseNumber",phaseNumber)
-        .put("baseSeconds",baseSeconds).put("interrupted",interrupted).put("deadlineAt",deadlineAt).put("rounds",rounds).put("round",round).put("handledCommands",JSONArray(handledCommands)).put("awaitingPhone",awaitingPhone).put("timeLog",JSONObject().put("schema",1).put("owner",owner).put("key",key)
-            .put("positionMs",workMs+restMs+pausedMs).put("workMs",workMs).put("restMs",restMs).put("pausedMs",pausedMs))
+        .put("baseSeconds",baseSeconds).put("interrupted",interrupted).put("deadlineAt",deadlineAt).put("rounds",rounds).put("round",round).put("handledCommands",JSONArray(handledCommands)).put("awaitingPhone",awaitingPhone).put("side192",side192).put("restKind192",restKind192).put("phaseSeconds192",phaseSeconds192).put("timeLog",JSONObject().put("schema",if(sideLog192==null)1 else 2).put("owner",owner).put("key",key)
+            .put("positionMs",workMs+restMs+pausedMs).put("workMs",workMs).put("restMs",restMs).put("pausedMs",pausedMs).also { if(sideLog192!=null)it.put("steps",JSONArray(sideLog192)) })
     companion object {
         fun parse(root: JSONObject?): WearAutomatic? {
             root ?: return null
@@ -52,7 +56,7 @@ data class WearAutomatic(
                 root.optInt("targetExercise"),root.optInt("targetSet"),root.optString("targetId"),
                 root.optLong("remainingMs").coerceIn(0,3600000),root.optLong("anchorMs"),root.optInt("boot",-1),
                 root.optLong("phaseNumber").coerceAtLeast(0),root.optInt("baseSeconds").coerceAtLeast(0),root.optBoolean("interrupted"),root.optLong("deadlineAt"),root.optInt("rounds",1).coerceIn(1,100),root.optInt("round",1).coerceIn(1,100),
-                root.optJSONArray("handledCommands")?.let { array -> (maxOf(0,array.length()-128) until array.length()).map { array.optString(it) } } ?: emptyList(),root.optBoolean("awaitingPhone"),root.optJSONObject("timeLog")?.optLong("workMs") ?: 0,root.optJSONObject("timeLog")?.optLong("restMs") ?: 0,root.optJSONObject("timeLog")?.optLong("pausedMs") ?: 0)
+                root.optJSONArray("handledCommands")?.let { array -> (maxOf(0,array.length()-128) until array.length()).map { array.optString(it) } } ?: emptyList(),root.optBoolean("awaitingPhone"),root.optJSONObject("timeLog")?.optLong("workMs") ?: 0,root.optJSONObject("timeLog")?.optLong("restMs") ?: 0,root.optJSONObject("timeLog")?.optLong("pausedMs") ?: 0,root.optString("side192"),root.optString("restKind192"),root.optInt("phaseSeconds192",(root.optLong("phaseDurationMs")/1000).toInt()),root.optJSONObject("timeLog")?.optJSONArray("steps")?.toString())
         }
     }
 }
@@ -60,7 +64,7 @@ data class WearAutomatic(
 data class WearAutomaticTransition(val workout: WearWorkout, val completedExercise: Int? = null, val completedSet: Int? = null)
 
 object WearAutomaticEngine {
-    fun timed(exercise: WearExercise?) = exercise?.repUnit?.trim()?.lowercase() == "mp"
+    fun timed(exercise: WearExercise?) = exercise?.repUnit?.trim()?.lowercase() in listOf("mp","mp/oldal")
     fun targetId(workout: WearWorkout, exercise: Int, set: Int): String = workout.exercises.getOrNull(exercise)?.sets?.getOrNull(set)?.let {
         it.setId.ifBlank { "${workout.workoutId}:$exercise:${it.number}" }
     }.orEmpty()
@@ -81,18 +85,21 @@ object WearAutomaticEngine {
         return workout.copy(restEndAt=0,automation=a.copy(phase=phase,paused=false,interrupted=false,
             targetExercise=target.first,targetSet=target.second,targetId=targetId(workout,target.first,target.second),
             remainingMs=seconds*1000L,anchorMs=now,boot=boot,phaseNumber=a.phaseNumber+1,
+            side192=if(WearBilateral192.isSide(workout.exercises[target.first]))a.side192 else "",restKind192=if(WearBilateral192.isSide(workout.exercises[target.first]))a.restKind192 else "",
+            phaseSeconds192=if(WearBilateral192.isSide(workout.exercises[target.first]))seconds else 0,
             baseSeconds=if(phase=="work")current.reps.toIntOrNull()?.coerceAtLeast(0) ?: 0 else 0))
     }
     fun ready(workout: WearWorkout, now: Long, boot: Int): WearWorkout {
         val a=workout.automation ?: return workout
         val target=next(workout) ?: return workout.copy(restEndAt=0,automation=a.copy(phase="complete",remainingMs=0,paused=false,phaseNumber=a.phaseNumber+1))
         val selected=workout.copy(currentExercise=target.first)
-        return if(timed(selected.exercise))phase(selected,a,target,"work",a.workSeconds,now,boot)
+        return if(WearBilateral192.isSide(selected.exercise)){val c=WearBilateral192.config(selected.exercise,a);val prepared=if(a.phase=="ready")set(selected,target.first,target.second,selected.exercises[target.first].sets[target.second].copy(sideState192=null))else selected;phase(prepared,a.copy(side192=c.first,restKind192=""),target,"work",c.work(c.first),now,boot)}
+        else if(timed(selected.exercise))phase(selected,a,target,"work",a.workSeconds,now,boot)
         else phase(selected,a,target,"ready",0,now,boot)
     }
     fun durationAllowed(workout: WearWorkout,work: Int,rest: Int,rounds: Int=1): Boolean =
         workout.exercises.sumOf { ex -> ex.sets.count { !it.done }.toLong() *
-            (if(timed(ex))rounds.toLong()*(work+rest) else rest.toLong()) } <= 86400
+            (if(WearBilateral192.isSide(ex)){val c=ex.bilateral192 ?: WearBilateralConfig192(leftSeconds=work,rightSeconds=work,setRestSeconds=rest);rounds.toLong()*(c.leftSeconds+c.rightSeconds+c.sideRestSeconds+c.setRestSeconds)}else if(timed(ex))rounds.toLong()*(work+rest) else rest.toLong()) } <= 86400
     fun enable(workout: WearWorkout, key: String, work: Int, rest: Int, vibration: Boolean, now: Long, boot: Int): WearWorkout {
         require(key.isNotBlank() && work in 1..3600 && rest in 0..3600)
         require(durationAllowed(workout,work,rest))
@@ -112,8 +119,10 @@ object WearAutomaticEngine {
         val accounted=workout.copy(automation=a)
         if(!a.enabled||a.owner!="watch")return workout
         val target=next(workout) ?: return workout.copy(restEndAt=0,automation=a.copy(phase="complete",remainingMs=0,paused=false,phaseNumber=a.phaseNumber+1))
-        if(a.restSeconds==0)return ready(accounted.copy(automation=a.copy(round=1)),now,boot)
-        return phase(accounted,a.copy(round=1),target,"rest",a.restSeconds,now,boot)
+        val rest=if(WearBilateral192.isSide(workout.exercises.getOrNull(a.targetExercise)))WearBilateral192.config(workout.exercises[a.targetExercise],a).setRestSeconds else a.restSeconds
+        if(rest==0)return ready(accounted.copy(automation=a.copy(round=1)),now,boot)
+        val first=if(WearBilateral192.isSide(workout.exercises[target.first]))WearBilateral192.config(workout.exercises[target.first],a).first else ""
+        return phase(accounted,a.copy(round=1,side192=first,restKind192="set"),target,"rest",rest,now,boot)
     }
     fun interrupt(workout: WearWorkout, now: Long): WearWorkout {
         val a=workout.automation ?: return workout
@@ -128,21 +137,44 @@ object WearAutomaticEngine {
         if(!manual&&!a.counting&&!a.paused)return WearAutomaticTransition(workout)
         val delta=(now-a.anchorMs).coerceAtLeast(0)
         val credited=if(a.paused)0L else if(manual)delta else if(a.counting)minOf(delta,a.remainingMs)else 0L
-        val totals=a.copy(workMs=a.workMs+if(a.phase=="work"||manual)credited else 0,
+        var totals=a.copy(workMs=a.workMs+if(a.phase=="work"||manual)credited else 0,
             restMs=a.restMs+if(a.phase=="rest")credited else 0,
             pausedMs=a.pausedMs+if(a.paused&&!a.interrupted)delta else 0)
-        if(a.paused||!a.counting)return WearAutomaticTransition(workout.copy(automation=totals.copy(anchorMs=now)))
-        val counted=workout.copy(automation=totals)
+        var counted=workout.copy(automation=totals)
+        if(WearBilateral192.isSide(workout.exercises.getOrNull(a.targetExercise))&&a.side192.isNotBlank()){
+            counted=WearBilateral192.account(counted,totals,if(a.phase=="work")credited else 0,if(a.phase=="rest")credited else 0,if(a.paused&&!a.interrupted)delta else 0)
+            totals=counted.automation!!
+        }
+        if(a.paused||!a.counting)return WearAutomaticTransition(counted.copy(automation=totals.copy(anchorMs=now)))
         val remaining=a.remaining(now)
         var current=counted
-        if(a.phase=="work") {
+        if(a.phase=="work"&&!WearBilateral192.isSide(workout.exercises.getOrNull(a.targetExercise))) {
             val seconds=a.baseSeconds+((a.workSeconds*1000L-remaining).coerceIn(0,a.workSeconds*1000L)/1000).toInt()
             val previous=current.exercises[a.targetExercise].sets[a.targetSet]
             current=set(current,a.targetExercise,a.targetSet,previous.copy(reps=seconds.toString()))
         }
         if(remaining>0)return WearAutomaticTransition(current.copy(automation=totals.copy(remainingMs=remaining,anchorMs=now)))
         // Advance once, rather than inventing multiple sets after a delayed/restarted callback.
-        if(a.phase=="rest")return WearAutomaticTransition(ready(current,now,boot))
+        if(a.phase=="rest"){
+            if(WearBilateral192.isSide(current.exercises[a.targetExercise])){val c=WearBilateral192.config(current.exercises[a.targetExercise],a)
+                return WearAutomaticTransition(phase(current,totals.copy(restKind192=""),a.targetExercise to a.targetSet,"work",c.work(a.side192),now,boot))}
+            return WearAutomaticTransition(ready(current,now,boot))
+        }
+        if(WearBilateral192.isSide(current.exercises[a.targetExercise])){
+            val c=WearBilateral192.config(current.exercises[a.targetExercise],a)
+            if(a.side192==c.first){
+                val next=totals.copy(side192=c.second(),restKind192=if(c.sideRestSeconds>0)"side" else "")
+                return WearAutomaticTransition(phase(current,next,a.targetExercise to a.targetSet,if(c.sideRestSeconds>0)"rest" else "work",if(c.sideRestSeconds>0)c.sideRestSeconds else c.work(c.second()),now,boot))
+            }
+            if(a.round<a.rounds){
+                val next=totals.copy(round=a.round+1,side192=c.first,restKind192=if(c.setRestSeconds>0)"set" else "")
+                return WearAutomaticTransition(phase(current,next,a.targetExercise to a.targetSet,if(c.setRestSeconds>0)"rest" else "work",if(c.setRestSeconds>0)c.setRestSeconds else c.work(c.first),now,boot))
+            }
+            val previous=current.exercises[a.targetExercise].sets[a.targetSet]
+            val completed=!WearBilateral192.skipped(previous)
+            current=set(current,a.targetExercise,a.targetSet,previous.copy(done=completed,sideState192=previous.sideState192?.let { val p=JSONObject(it);JSONObject().put("schema",1).put("key",a.key).put("timeLogKey",a.key).put("left",p.optString("left")).put("right",p.optString("right")).put("skipped",p.optBoolean("skipped")).put("segmentsCompacted192",true).toString() }))
+            return WearAutomaticTransition(afterRecord(current,now,boot),if(completed)a.targetExercise else null,if(completed)a.targetSet else null)
+        }
         if(a.round<a.rounds){
             val next=totals.copy(round=a.round+1)
             return WearAutomaticTransition(if(a.restSeconds==0)phase(current,next,a.targetExercise to a.targetSet,"work",a.workSeconds,now,boot)
@@ -165,7 +197,24 @@ object WearAutomaticEngine {
     fun skipRest(workout: WearWorkout, now: Long, boot: Int): WearWorkout {
         if(workout.automation?.phase!="rest"||workout.automation.owner!="watch")return workout
         val current=tick(workout,now,boot).workout
-        return if(current.automation?.phase=="rest")ready(current,now,boot)else current
+        return if(current.automation?.phase=="rest"){
+            val a=current.automation!!
+            if(WearBilateral192.isSide(current.exercises[a.targetExercise])){val c=WearBilateral192.config(current.exercises[a.targetExercise],a)
+                phase(current,a.copy(restKind192=""),a.targetExercise to a.targetSet,"work",c.work(a.side192),now,boot)}else ready(current,now,boot)
+        }else current
+    }
+    fun adjustRest192(workout: WearWorkout,delta: Int,now: Long,boot: Int): WearWorkout {
+        val current=tick(workout,now,boot).workout;val a=current.automation ?: return current
+        if(a.owner!="watch"||a.phase!="rest"||a.side192.isEmpty())return current
+        val remaining=(a.remainingMs+delta*1000L).coerceIn(0,3600000)
+        val actual=remaining-a.remainingMs
+        return current.copy(automation=a.copy(remainingMs=remaining,phaseSeconds192=((a.phaseSeconds192*1000L+actual)/1000).toInt(),anchorMs=now))
+    }
+    fun skipSide192(workout: WearWorkout,now: Long,boot: Int): WearWorkout {
+        val current=tick(workout,now,boot).workout;val a=current.automation ?: return current
+        if(a.owner!="watch"||a.phase!="work"||a.side192.isEmpty())return current
+        val skipped=WearBilateral192.account(current,a,0,0,0,true)
+        return tick(skipped.copy(automation=skipped.automation!!.copy(remainingMs=0,anchorMs=now)),now,boot).workout
     }
     fun disable(workout: WearWorkout, now: Long, boot: Int): WearWorkout {
         val current=tick(workout,now,boot).workout

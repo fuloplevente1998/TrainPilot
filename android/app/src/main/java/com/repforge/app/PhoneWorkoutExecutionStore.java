@@ -72,6 +72,18 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
                 if (pending(db, old.getString("workoutId"), old.getLong("generation")))
                     throw new IllegalStateException("pendingRecordingEvents");
                 PhoneWorkoutRecording.retainCompleted(old, incoming);
+                JSONObject liveTimer=old.optJSONObject("latestTimer162");
+                if(liveTimer!=null&&!liveTimer.optBoolean("stopped")&&!"complete".equals(liveTimer.optString("phase"))){
+                    JSONArray prior=old.getJSONArray("exercises");
+                    for(int e=0;e<prior.length();e++){JSONObject ex=prior.getJSONObject(e);JSONArray sets=ex.getJSONArray("sets");for(int i=0;i<sets.length();i++){
+                        JSONObject set=sets.getJSONObject(i),progress=set.optJSONObject("sideState192");
+                        if(set.optBoolean("done")||progress==null||!progress.optString("key").equals(liveTimer.optString("key")))continue;
+                        JSONObject target=findSet(incoming,new JSONObject().put("exerciseId",ex.getString("id")).put("setId",set.getString("setId")));
+                        if(target==null)throw new IllegalArgumentException("timerTargetRemoved");
+                        for(String field:new String[]{"reps","leftSeconds","rightSeconds","sideState192"})if(set.has(field))target.put(field,set.get(field));
+                    }}
+                }
+
                 if(old.has("undo188"))incoming.put("undo188",old.get("undo188"));
                 JSONObject last=old.optJSONObject("lastRecord188");
                 if(last!=null&&WorkoutUndo188.same(last.optJSONArray("expected"),WorkoutUndo188.guard(incoming)))incoming.put("lastRecord188",last);
@@ -190,10 +202,29 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
             JSONObject log=new JSONObject(ledger.toString()).put("key",key).put("phase",timer.optString("phase"))
                     .put("interrupted",timer.optBoolean("interrupted")).put("stopped",timer.optBoolean("stopped"));
             logs.put(key,log);frame.put("timeLogs162",logs).put("latestTimer162",timer);
+            JSONObject transition=frame.optJSONObject("transition");
+            if(transition!=null&&transition.optJSONObject("plan")!=null&&key.equals(transition.getJSONObject("plan").optString("key"))){
+                transition.getJSONObject("plan").put("steps",timer.getJSONArray("steps"));
+                if(timer.has("durationOverrides192"))transition.getJSONObject("plan").put("durationOverrides192",timer.getJSONObject("durationOverrides192"));
+            }
             JSONObject beforeUndo188=new JSONObject(frame.toString());
             JSONArray changes=new JSONArray(),rows=timer.getJSONArray("steps"),parts=ledger.getJSONArray("steps");
+            if(timer.optBoolean("autoAdvance")&&!timer.optBoolean("restOnly"))for(int i=0;i<rows.length();i++){
+                JSONObject row=rows.getJSONObject(i);if(!row.has("bilateral192")||i>timer.optInt("stepIndex"))continue;
+                JSONObject set=findSet(frame,row);if(set==null)throw new IllegalArgumentException("timerTargetRemoved");
+                JSONObject progress=Bilateral192.values(row,parts.getJSONObject(i),key);
+                JSONArray exerciseRows=frame.getJSONArray("exercises");for(int e=0;e<exerciseRows.length();e++)if(exerciseRows.getJSONObject(e).optString("id").equals(row.optString("exerciseId")))exerciseRows.getJSONObject(e).put("bilateral192",row.getJSONObject("bilateral192"));
+
+                if(!set.optBoolean("done")){
+                    JSONObject before=new JSONObject();for(String field:new String[]{"reps","leftSeconds","rightSeconds","done","sideState192"})if(set.has(field))before.put(field,set.get(field));
+                    for(java.util.Iterator<String> it=progress.keys();it.hasNext();){String field=it.next();set.put(field,progress.get(field));}
+                    if(progress.getBoolean("done"))changes.put(new JSONObject().put("exerciseId",row.getString("exerciseId")).put("setId",row.getString("setId"))
+                        .put("values",progress).put("before",before));
+                }
+            }
             if(timer.optBoolean("autoAdvance")&&!timer.optBoolean("restOnly"))for(int i=0;i<timer.optInt("completed");i++){
                 JSONObject row=rows.getJSONObject(i),part=parts.getJSONObject(i),set=findSet(frame,row);
+                if(row.has("bilateral192"))continue;
                 if(set==null)throw new IllegalArgumentException("timerTargetRemoved");
                 if(!set.getBoolean("done")){
                     JSONObject before=new JSONObject().put("reps",set.opt("reps"));
@@ -353,6 +384,7 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
                     JSONObject a=next.optJSONObject("automation");if(a!=null)a.put("paused",false);
                     anchorManual(next,android.os.SystemClock.elapsedRealtime());
                 }else{
+                if("mp/oldal".equals(next.getJSONArray("exercises").getJSONObject(next.getInt("currentExercise")).optString("repUnit"))&&command.optInt("bilateralProtocol192")!=1)throw new IllegalArgumentException("unsupportedBilateralProtocol");
                 JSONObject transition=PhoneWorkoutPlans.startTimed(next),first=transition.getJSONObject("plan").getJSONArray("steps").getJSONObject(0);
                 if (!first.getString("exerciseId").equals(PhoneWorkoutRecording.id(command,"exerciseId"))
                         || !first.getString("setId").equals(PhoneWorkoutRecording.id(command,"setId")))

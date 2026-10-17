@@ -90,7 +90,7 @@ public class WearCommandListenerService extends WearableListenerService {
                     String action=command.optString("value");
                     if(active!=null&&command.optJSONObject("automation")!=null&&active.optString("workoutId").equals(command.optString("workoutId"))&&
                         timer.optString("key").equals(command.optJSONObject("automation")==null?"":command.optJSONObject("automation").optString("key"))&&
-                        java.util.Arrays.asList("pause","resume","skipRest").contains(action)){
+                        java.util.Arrays.asList("pause","resume","skipRest","restPlus192","restMinus192","skipSide192").contains(action)){
                         try {
                             long expectedPhase=command.optJSONObject("automation").optLong("phaseNumber");
                             IntervalTimerService.command(this,timer.optString("key"),expectedPhase==timer.optLong("phaseNumber")?action:"status");

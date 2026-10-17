@@ -325,7 +325,8 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                 onAutomaticCommand = { action ->
                     val current=WorkoutSnapshotStore.load(this)
                     if(current!=null){
-                        if(current.timerOwner=="phone")sendCommand("automaticControl",value=if(action=="resume"&&current.automation?.key?.startsWith("undo188:")==true)"resumeUndo" else action)
+                        if(current.timerOwner=="phone"&&WearBilateral192.isSide(current.exercise)&&current.bilateralProtocol192!=1)android.widget.Toast.makeText(this,"Frissítsd a telefonos TrainPilotot is",android.widget.Toast.LENGTH_LONG).show()
+                        else if(current.timerOwner=="phone")sendCommand("automaticControl",value=if(action=="resume"&&current.automation?.key?.startsWith("undo188:")==true)"resumeUndo" else action)
                         else {workout.value=WearAutomaticController.command(this,action,current.workoutId);restoreRestFromSnapshot(workout.value)}
                     }
                 }
@@ -503,7 +504,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private fun sendStartCommand(day: WatchHomeDay, scheduleId: String, started: String) {
         val commandId=UUID.randomUUID().toString()
         val command = JSONObject()
-            .put("schema", 1)
+            .put("schema", 1).put("bilateralProtocol192",1)
             .put("commandId", commandId)
             .put("workoutId", started)
             .put("action", "startWorkout")

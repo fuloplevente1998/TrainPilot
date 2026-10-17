@@ -55,6 +55,7 @@ public class IntervalTimerService extends Service {
         if(!START.equals(intent.getAction())||running)return START_NOT_STICKY;
         try{
             JSONObject plan=new JSONObject(intent.getStringExtra("plan"));parse(plan);stopped=false;elapsed=plan.optLong("elapsedMs",0);began=SystemClock.elapsedRealtime();running=true;
+            if(plan.optBoolean("restoreBilateral192")){phaseNumber=plan.optLong("phaseNumber")+1;lastToken=timeline.at(elapsed).token;haptics.next(timeline.at(elapsed),true);PhoneWorkoutExecution.store(this).markTransition(key,"started");}
             channel();
             startForeground(NOTIFICATION,notification());acquire();handler.post(tick);save();
         }catch(Exception e){running=false;release();stopForeground(true);stopSelf();}
@@ -64,9 +65,32 @@ public class IntervalTimerService extends Service {
         String key=plan.optString("key");if(!key.matches("[A-Za-z0-9:._|+\\-]{1,200}"))throw new IllegalArgumentException("Invalid interval key");
         if(plan.has("initialRest")&&plan.getDouble("initialRest")!=plan.getInt("initialRest"))throw new IllegalArgumentException("Invalid initial rest");
         JSONArray rows=plan.getJSONArray("steps");ArrayList<IntervalTimeline.Step> parsed=new ArrayList<>();Set<String> owners=new HashSet<>();
-        for(int i=0;i<rows.length();i++){JSONObject row=rows.getJSONObject(i);String set=row.getString("setId");if(!owners.add(set))throw new IllegalArgumentException("Duplicate interval owner");String gps=row.optString("gpsKey","");if(!gps.isEmpty()&&!gps.matches("[A-Za-z0-9:._|+\\-]{1,200}"))throw new IllegalArgumentException("Invalid GPS key");parsed.add(new IntervalTimeline.Step(row.getString("exerciseId"),set,row.optString("name","TrainPilot"),row.getInt("work"),row.getInt("rest"),row.getInt("rounds"),gps));}
+        for(int i=0;i<rows.length();i++){JSONObject row=rows.getJSONObject(i);String set=row.getString("setId");if(!owners.add(set))throw new IllegalArgumentException("Duplicate interval owner");String gps=row.optString("gpsKey","");if(!gps.isEmpty()&&!gps.matches("[A-Za-z0-9:._|+\\-]{1,200}"))throw new IllegalArgumentException("Invalid GPS key");parsed.add(step(row));}
         if(!plan.optBoolean("autoAdvance")&&parsed.size()!=1)throw new IllegalArgumentException("Manual interval has one owner");
-        return new IntervalTimeline(parsed,plan.optBoolean("autoAdvance"),plan.optInt("initialRest",0),plan.optBoolean("restOnly"));
+        return new IntervalTimeline(parsed,plan.optBoolean("autoAdvance"),plan.optInt("initialRest",0),plan.optBoolean("restOnly"),overrides192(plan));
+    }
+    private static IntervalTimeline.Step step(JSONObject row)throws Exception{return new IntervalTimeline.Step(row.getString("exerciseId"),row.getString("setId"),row.optString("name","TrainPilot"),row.getInt("work"),row.getInt("rest"),row.getInt("rounds"),row.optString("gpsKey",""),Bilateral192.parse(row.optJSONObject("bilateral192")));}
+    private static Map<String,Long> overrides192(JSONObject plan)throws Exception {
+        Map<String,Long> values=new LinkedHashMap<>();JSONObject source=plan.optJSONObject("durationOverrides192");if(source==null)return values;
+        if(source.length()>40200)throw new IllegalArgumentException("Invalid phase edits");
+        for(Iterator<String> i=source.keys();i.hasNext();){String key=i.next();if(key.length()>128)throw new IllegalArgumentException("Invalid phase identity");long value=PhoneWorkoutRecording.version(source,key);if(value>3600000)throw new IllegalArgumentException("Invalid phase duration");values.put(key,value);}return values;
+    }
+    private void targets192()throws Exception{for(int i=0;i<planSteps.length();i++)if(planSteps.getJSONObject(i).has("bilateral192"))planSteps.getJSONObject(i)
+        .put("targetLeftMs192",timeline.targetWork192(i,"left")).put("targetRightMs192",timeline.targetWork192(i,"right"));}
+    static JSONObject configureBilateral192(Context context,String key,String exerciseId,JSONObject value)throws Exception {
+        IntervalTimerService s=instance;if(s==null||!key.equals(s.key)||s.running||s.stopped)throw new IllegalStateException("Pause the current timer first");
+        IntervalTimeline.Phase p=s.timeline.at(s.elapsed);if(p.phase.equals("complete"))throw new IllegalStateException("Completed timer");
+        Bilateral192.Config c=Bilateral192.parse(value);if(c==null)throw new IllegalArgumentException("Missing bilateral configuration");
+        if(!s.steps.get(p.step).exerciseId.equals(exerciseId)||s.steps.get(p.step).bilateral==null)throw new IllegalArgumentException("Bilateral target changed");
+        if(!s.steps.get(p.step).bilateral.first.equals(c.first))throw new IllegalArgumentException("Change the first side before starting the set");
+        Map<String,Long> frozen=s.timeline.freezeThrough192(p);JSONArray rows=new JSONArray(s.planSteps.toString());ArrayList<IntervalTimeline.Step> revised=new ArrayList<>();
+        for(int i=0;i<rows.length();i++){JSONObject row=rows.getJSONObject(i);if(i>=p.step&&exerciseId.equals(row.optString("exerciseId"))&&row.has("bilateral192")){
+            row.put("bilateral192",c.json());if(c.setRest>=0)row.put("rest",c.setRest);}
+            revised.add(step(row));}
+        IntervalTimeline candidate=new IntervalTimeline(revised,s.advance,s.initialRest,s.restOnly,frozen);
+        if(rows.toString().length()+new JSONObject(frozen).toString().length()>65000)throw new IllegalArgumentException("Bilateral plan is too large");
+        s.timeLedger.sample(s.timeline,p.elapsedMs,SystemClock.elapsedRealtime(),false,false,s.interrupted);
+        s.timeline=candidate;s.steps.clear();s.steps.addAll(revised);s.planSteps=rows;s.phaseNumber++;s.targets192();s.save();s.notifyStatus();s.publishWatchClock();return s.current();
     }
     private void channel(){if(Build.VERSION.SDK_INT>=26)((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).createNotificationChannel(new NotificationChannel(CHANNEL,"TrainPilot intervals",NotificationManager.IMPORTANCE_LOW));}
     static boolean armed(String workoutId,long generation){return instance!=null&&workoutId.equals(instance.armedWorkoutId)&&generation==instance.armedGeneration;}
@@ -90,8 +114,12 @@ public class IntervalTimerService extends Service {
         JSONObject execution=PhoneWorkoutExecution.store(this).snapshot();
         executionGeneration=plan.optLong("generation",execution!=null&&execution.optString("workoutId").equals(workoutId)?execution.optLong("generation"):0);
         planSteps=new JSONArray(plan.getJSONArray("steps").toString());phaseNumber=0;
-        timeline=validate(plan);timeLedger=new IntervalTimeLedger(plan.getJSONArray("steps").length(),SystemClock.elapsedRealtime());interrupted=false;lastSavedSecond=-1;steps.clear();JSONArray rows=plan.getJSONArray("steps");for(int i=0;i<rows.length();i++){JSONObject row=rows.getJSONObject(i);steps.add(new IntervalTimeline.Step(row.getString("exerciseId"),row.getString("setId"),row.optString("name","TrainPilot"),row.getInt("work"),row.getInt("rest"),row.getInt("rounds"),row.optString("gpsKey","")));}
-        initialRest=plan.optInt("initialRest",0);restOnly=plan.optBoolean("restOnly");timeline=new IntervalTimeline(steps,plan.optBoolean("autoAdvance"),initialRest,restOnly);key=plan.getString("key");language=plan.optString("language","en");advance=plan.optBoolean("autoAdvance");sound=plan.optBoolean("sound",true);vibration=plan.optBoolean("vibration",true);while(segments.length()>0)segments.remove(0);gpsStep=0;lastToken="";haptics=new IntervalHapticCues();
+        timeline=validate(plan);timeLedger=new IntervalTimeLedger(plan.getJSONArray("steps").length(),SystemClock.elapsedRealtime());interrupted=false;lastSavedSecond=-1;steps.clear();JSONArray rows=plan.getJSONArray("steps");for(int i=0;i<rows.length();i++){JSONObject row=rows.getJSONObject(i);steps.add(step(row));}
+        if(plan.optBoolean("restoreBilateral192")){
+            if(plan.getLong("elapsedMs")!=plan.getJSONObject("ledger").getLong("positionMs"))throw new IllegalArgumentException("Invalid restored position");
+            timeLedger.restore192(plan.getJSONObject("ledger"),planSteps,SystemClock.elapsedRealtime());
+        }
+        initialRest=plan.optInt("initialRest",0);restOnly=plan.optBoolean("restOnly");timeline=new IntervalTimeline(steps,plan.optBoolean("autoAdvance"),initialRest,restOnly,overrides192(plan));targets192();key=plan.getString("key");language=plan.optString("language","en");advance=plan.optBoolean("autoAdvance");sound=plan.optBoolean("sound",true);vibration=plan.optBoolean("vibration",true);while(segments.length()>0)segments.remove(0);gpsStep=0;lastToken="";haptics=new IntervalHapticCues();
     }
     private long now(){return elapsed+(running?Math.max(0,SystemClock.elapsedRealtime()-began):0);}
     private void update(){
@@ -132,9 +160,9 @@ public class IntervalTimerService extends Service {
             JSONObject value=new JSONObject().put("workoutId",workoutId).put("key",key).put("owner","phone")
                 .put("enabled",!stopped).put("phase",stopped?"ready":p.phase).put("paused",!running && !"complete".equals(p.phase))
                 .put("remainingMs",p.remainingMs).put("deadlineAt",running?System.currentTimeMillis()+p.remainingMs:0)
-                .put("workSeconds",steps.get(p.step).work).put("restSeconds","rest".equals(p.phase)?timeline.phaseDurationMs(p)/1000:steps.get(p.step).rest).put("rounds",steps.get(p.step).rounds).put("round",p.round).put("vibration",false)
+                .put("bilateralProtocol192",1).put("side192",p.side192).put("restKind192",p.restKind192).put("phaseDurationMs",timeline.phaseDurationMs(p)).put("workSeconds",steps.get(p.step).bilateral==null?steps.get(p.step).work:steps.get(p.step).bilateral.work(p.side192)).put("restSeconds","rest".equals(p.phase)?timeline.phaseDurationMs(p)/1000:steps.get(p.step).rest).put("rounds",steps.get(p.step).rounds).put("round",p.round).put("vibration",false)
                 .put("autoAdvance",advance).put("restOnly",restOnly).put("stopped",stopped).put("completed",p.completed)
-                .put("ledger",timeLedger.json(planSteps)).put("stepIndex",p.step).put("stepElapsedMs",p.stepElapsedMs).put("steps",planSteps).put("phaseNumber",phaseNumber);
+                .put("durationOverrides192",new JSONObject(timeline.overrides192())).put("timeLog",timeLedger.json(planSteps).put("key",key)).put("ledger",timeLedger.json(planSteps)).put("stepIndex",p.step).put("stepElapsedMs",p.stepElapsedMs).put("steps",planSteps).put("phaseNumber",phaseNumber);
             PutDataMapRequest map=PutDataMapRequest.create("/trainpilot/phone-automatic");
             map.getDataMap().putString("automatic",value.toString());map.getDataMap().putLong("publishedAt",System.currentTimeMillis());
             Wearable.getDataClient(this).putDataItem(map.asPutDataRequest().setUrgent());
@@ -142,7 +170,7 @@ public class IntervalTimerService extends Service {
     }
     private JSONObject current(){
         JSONObject out=new JSONObject();if(timeline==null)return out;IntervalTimeline.Phase p=timeline.at(now());try{
-            out.put("key",key).put("workoutId",workoutId).put("generation",executionGeneration).put("ledger",timeLedger.json(planSteps)).put("interrupted",interrupted).put("phaseNumber",phaseNumber).put("running",running).put("stopped",stopped).put("restOnly",restOnly).put("initialRest",initialRest).put("autoAdvance",advance).put("sound",sound).put("vibration",vibration).put("language",language).put("elapsedMs",p.elapsedMs).put("stepElapsedMs",p.stepElapsedMs).put("stepIndex",p.step).put("completed",p.completed).put("phase",p.phase).put("round",p.round).put("remainingMs",p.remainingMs).put("totalMs",p.totalMs);
+            out.put("key",key).put("workoutId",workoutId).put("generation",executionGeneration).put("ledger",timeLedger.json(planSteps)).put("interrupted",interrupted).put("phaseNumber",phaseNumber).put("running",running).put("stopped",stopped).put("restOnly",restOnly).put("initialRest",initialRest).put("autoAdvance",advance).put("sound",sound).put("vibration",vibration).put("language",language).put("elapsedMs",p.elapsedMs).put("stepElapsedMs",p.stepElapsedMs).put("stepIndex",p.step).put("completed",p.completed).put("phase",p.phase).put("round",p.round).put("remainingMs",p.remainingMs).put("totalMs",p.totalMs).put("durationOverrides192",new JSONObject(timeline.overrides192())).put("bilateralProtocol192",1).put("side192",p.side192).put("restKind192",p.restKind192).put("phaseDurationMs",timeline.phaseDurationMs(p));
             JSONArray rows=new JSONArray();for(int i=0;i<steps.size();i++){IntervalTimeline.Step s=steps.get(i);rows.put(new JSONObject(planSteps.getJSONObject(i).toString()).put("exerciseId",s.exerciseId).put("setId",s.setId).put("name",s.name).put("work",s.work).put("rest",s.rest).put("rounds",s.rounds).put("gpsKey",s.gpsKey));}out.put("steps",rows).put("gpsSegments",segments);JSONObject gps=DistanceTrackingService.snapshot(this);if(steps.get(p.step).gpsKey.equals(gps.optString("key"))&&!steps.get(p.step).gpsKey.isEmpty())out.put("gps",gps);
         }catch(Exception ignored){}return out;
     }
@@ -164,6 +192,7 @@ public class IntervalTimerService extends Service {
                 .setContentIntent(open).setOngoing(true).setOnlyAlertOnce(true).addAction(0,DistanceTrackingService.text(language,"Leállítás","Stop","Stoppen","Oprește"),stop).build();
         }
         IntervalTimeline.Phase p=timeline.at(now());String label=DistanceTrackingService.text(language,"Munka","Work","Belastung","Efort");if("rest".equals(p.phase))label=DistanceTrackingService.text(language,"Pihenő","Rest","Pause","Odihnă");
+        if(!p.side192.isEmpty())label=Bilateral192.label(language,p);
         String body=(running?label+" · "+p.round+"/"+steps.get(p.step).rounds+" · "+(p.remainingMs+999)/1000+" s":pause)+" · "+steps.get(p.step).name;
         PendingIntent open=PendingIntent.getActivity(this,162,new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP),PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
         PendingIntent stop=PendingIntent.getService(this,162,new Intent(this,IntervalTimerService.class).setAction(STOP).putExtra("key",key),PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
@@ -182,7 +211,16 @@ public class IntervalTimerService extends Service {
     }
     static JSONObject snapshot(Context context){
         IntervalTimerService service=instance;if(service!=null&&service.timeline!=null){service.update();return service.current();}
-        try{JSONObject out=new JSONObject(context.getSharedPreferences(PREFS,MODE_PRIVATE).getString("state","{}"));if(out.optBoolean("running")){out.put("running",false).put("interrupted",true);context.getSharedPreferences(PREFS,MODE_PRIVATE).edit().putString("state",out.toString()).apply();}return out;}catch(Exception ignored){return new JSONObject();}
+        try{JSONObject out=new JSONObject(context.getSharedPreferences(PREFS,MODE_PRIVATE).getString("state","{}"));boolean side=false;JSONArray rows=out.optJSONArray("steps");if(rows!=null)for(int i=0;i<rows.length();i++)side|=rows.getJSONObject(i).has("bilateral192");if(out.optBoolean("running")||side&&!out.optBoolean("stopped")&&!"complete".equals(out.optString("phase"))){out.put("running",false).put("interrupted",true);context.getSharedPreferences(PREFS,MODE_PRIVATE).edit().putString("state",out.toString()).apply();}return out;}catch(Exception ignored){return new JSONObject();}
+    }
+    static JSONObject restorableBilateral192(Context context,String key)throws Exception {
+        if(instance!=null&&instance.timeline!=null)return null;
+        JSONObject saved=snapshot(context),frame=PhoneWorkoutExecution.store(context).snapshot();
+        if(frame==null||!frame.optBoolean("active")||frame.optBoolean("workoutPaused")||(PhoneWorkoutExecution.store(context).restoreBlocked()||PhoneWorkoutExecution.store(context).commandsSuspended())
+            ||!key.equals(saved.optString("key"))||saved.optBoolean("stopped")||!saved.optBoolean("interrupted")||"complete".equals(saved.optString("phase"))
+            ||!frame.optString("workoutId").equals(saved.optString("workoutId"))||frame.optLong("generation")!=saved.optLong("generation"))return null;
+        JSONArray rows=saved.optJSONArray("steps");boolean side=false;if(rows!=null)for(int i=0;i<rows.length();i++)side|=rows.getJSONObject(i).has("bilateral192");
+        return side?saved.put("restoreBilateral192",true):null;
     }
     static JSONObject command(Context context,String key,String action)throws Exception{
         IntervalTimerService s=instance;if(s==null||!key.equals(s.key))throw new IllegalStateException("Interval owner is no longer active");
@@ -191,6 +229,15 @@ public class IntervalTimerService extends Service {
             if(frame!=null&&s.workoutId.equals(frame.optString("workoutId"))&&frame.optBoolean("workoutPaused"))throw new IllegalStateException("Workout is suspended");
         }
         if("pause".equals(action))s.pauseRun();else if("stop".equals(action))s.stopRun();else if("resume".equals(action)&&!s.running&&!s.stopped&&!"complete".equals(s.timeline.at(s.elapsed).phase)){s.timeLedger.sample(s.timeline,s.elapsed,SystemClock.elapsedRealtime(),false,false,false);s.began=SystemClock.elapsedRealtime();s.running=true;s.acquire();DistanceTrackingService.pauseOwned(context,s.steps.get(s.gpsStep).gpsKey,!"work".equals(s.timeline.at(s.elapsed).phase));s.handler.post(s.tick);s.save();}
+        else if(("restPlus192".equals(action)||"restMinus192".equals(action))&&!s.stopped){
+            IntervalTimeline.Phase p=s.timeline.at(s.now());s.timeLedger.sample(s.timeline,p.elapsedMs,SystemClock.elapsedRealtime(),s.running,s.stopped,s.interrupted);
+            s.timeline.adjustRest192(p,action.equals("restPlus192")?5000:-5000);s.elapsed=p.elapsedMs;s.began=SystemClock.elapsedRealtime();s.update();s.save();s.publishWatchClock();
+        }
+        else if("skipSide192".equals(action)&&!s.stopped){
+            IntervalTimeline.Phase p=s.timeline.at(s.now());if(!p.phase.equals("work")||p.side192.isEmpty())throw new IllegalStateException("Not bilateral work");
+            s.handler.removeCallbacks(s.tick);s.timeLedger.sample(s.timeline,p.elapsedMs,SystemClock.elapsedRealtime(),s.running,s.stopped,s.interrupted);s.timeLedger.skipWork(p);
+            s.elapsed=p.elapsedMs+p.remainingMs;s.timeLedger.skipTo(s.elapsed);s.began=SystemClock.elapsedRealtime();s.running=true;s.acquire();s.update();s.save();if(s.running)s.handler.post(s.tick);
+        }
         else if("skipRest".equals(action)&&!s.stopped){IntervalTimeline.Phase p=s.timeline.at(s.now());if(!"rest".equals(p.phase))throw new IllegalStateException("Not resting");s.handler.removeCallbacks(s.tick);s.timeLedger.sample(s.timeline,p.elapsedMs,SystemClock.elapsedRealtime(),s.running,s.stopped,s.interrupted);s.elapsed=p.elapsedMs+p.remainingMs;s.timeLedger.skipTo(s.elapsed);s.began=SystemClock.elapsedRealtime();s.running=true;s.acquire();s.update();if(s.running)s.handler.post(s.tick);}
         s.publishWatchClock();return s.current();
     }

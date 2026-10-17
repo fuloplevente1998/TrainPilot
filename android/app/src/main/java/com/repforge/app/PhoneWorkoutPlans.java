@@ -14,6 +14,8 @@ final class PhoneWorkoutPlans {
         JSONObject c = frame.getJSONObject("timerConfig");
         integer(c, "work", 1, 3600); integer(c, "rest", 0, 3600); integer(c, "rounds", 1, 100);
         integer(frame, "restSeconds", 0, 3600);
+        JSONArray exercises=frame.getJSONArray("exercises");
+        for(int i=0;i<exercises.length();i++)Bilateral192.config(exercises.getJSONObject(i),c.getInt("work"));
     }
     private static int integer(JSONObject object, String field, int min, int max) throws JSONException {
         long value = PhoneWorkoutRecording.version(object, field);
@@ -36,7 +38,7 @@ final class PhoneWorkoutPlans {
         int index = from; JSONObject target = null, exercise = null;
         for (; index < exercises.length(); index++) {
             exercise = exercises.getJSONObject(index); JSONArray sets = exercise.getJSONArray("sets");
-            for (int j = 0; j < sets.length(); j++) if (!sets.getJSONObject(j).getBoolean("done")) { target = sets.getJSONObject(j); break; }
+            for (int j = 0; j < sets.length(); j++) if (!sets.getJSONObject(j).getBoolean("done")&&!(sets.getJSONObject(j).optJSONObject("sideState192")!=null&&sets.getJSONObject(j).getJSONObject("sideState192").optBoolean("skipped"))) { target = sets.getJSONObject(j); break; }
             if (target != null) break;
         }
         JSONObject transition = new JSONObject().put("state", "pending").put("currentExercise", index < exercises.length() ? index : from);
@@ -44,7 +46,7 @@ final class PhoneWorkoutPlans {
             if (timedOnly) throw new IllegalArgumentException("noTimedTarget");
             return transition.put("phase", "complete");
         }
-        boolean timed = "mp".equals(exercise.optString("repUnit"));
+        boolean timed = Bilateral192.timed(exercise);
         if (timedOnly && !timed) throw new IllegalArgumentException("noTimedTarget");
         if ("distance".equals(exercise.optString("measurementType"))) throw new IllegalArgumentException("backgroundGpsNotPrepared");
         JSONObject config = frame.getJSONObject("timerConfig");
@@ -53,15 +55,18 @@ final class PhoneWorkoutPlans {
         if (timed) {
             for (int i = index; i < exercises.length(); i++) {
                 JSONObject e = exercises.getJSONObject(i);
-                if (!"mp".equals(e.optString("repUnit"))) break;
+                if (!Bilateral192.timed(e)) break;
                 if ("distance".equals(e.optString("measurementType"))) throw new IllegalArgumentException("backgroundGpsNotPrepared");
                 JSONArray sets = e.getJSONArray("sets");
                 for (int j = 0; j < sets.length(); j++) {
-                    JSONObject set = sets.getJSONObject(j); if (set.getBoolean("done")) continue;
+                    JSONObject set = sets.getJSONObject(j); if (set.getBoolean("done")||set.optJSONObject("sideState192")!=null&&set.getJSONObject("sideState192").optBoolean("skipped")) continue;
                     JSONObject row = row(e, set, config.getInt("work"), config.getInt("rest"), config.getInt("rounds"));
                     double base = set.optString("reps").isEmpty() ? 0 : Double.parseDouble(set.getString("reps"));
                     if (!Double.isFinite(base) || base < 0) throw new IllegalArgumentException("invalidTimedBaseline");
-                    rows.put(row.put("baseSeconds", base)); steps.add(step(row));
+                    rows.put(row.put("baseSeconds", base));
+                    Bilateral192.Config bilateral=Bilateral192.config(e,config.getInt("work"));
+                    if(bilateral!=null){if(bilateral.setRest>=0)row.put("rest",bilateral.setRest);row.put("bilateral192",bilateral.json()).put("baseLeftSeconds",set.optInt("leftSeconds")).put("baseRightSeconds",set.optInt("rightSeconds"));}
+                    steps.add(step(row));
                 }
             }
         } else {
@@ -85,6 +90,6 @@ final class PhoneWorkoutPlans {
     }
     private static IntervalTimeline.Step step(JSONObject row) throws JSONException {
         return new IntervalTimeline.Step(row.getString("exerciseId"), row.getString("setId"), row.getString("name"),
-                row.getInt("work"), row.getInt("rest"), row.getInt("rounds"), "");
+                row.getInt("work"), row.getInt("rest"), row.getInt("rounds"), "",Bilateral192.parse(row.optJSONObject("bilateral192")));
     }
 }

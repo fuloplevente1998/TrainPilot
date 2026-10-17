@@ -68,7 +68,12 @@ class WearAutomaticService : Service() {
     }
     private fun notification(workout: WearWorkout): Notification {
         val a=workout.automation!!
-        val phase=when { a.interrupted->"Megszakadt";a.paused->"Szünetel";a.phase=="rest"->"Pihenő";a.phase=="work"->"Munka";a.phase=="complete"->"Kész";else->"Sorozatra vár" }
+        var phase=when { a.interrupted->"Megszakadt";a.paused->"Szünetel";a.phase=="rest"->"Pihenő";a.phase=="work"->"Munka";a.phase=="complete"->"Kész";else->"Sorozatra vár" }
+        if(a.side192.isNotEmpty()){
+            val c=WearSideCopy192.language(java.util.Locale.getDefault().language)
+            phase=(if(a.paused)WearTouchCopy189.language(java.util.Locale.getDefault().language).paused+" · " else "")+
+                (if(a.phase=="rest")if(a.restKind192=="side")c.swap+" → "+c.side(a.side192) else c.rest+" → "+c.side(a.side192) else c.side(a.side192)+" · "+c.work)
+        }
         val open=PendingIntent.getActivity(this,162,Intent(this,MainActivity::class.java).putExtra("destination","workout"),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         fun action(value: String)=PendingIntent.getService(this,value.hashCode(),Intent(this,WearAutomaticService::class.java).putExtra("workoutId",workout.workoutId).putExtra("action",value),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         return Notification.Builder(this,"workout-automatic").setSmallIcon(R.drawable.ic_workout_recording)
@@ -119,6 +124,9 @@ object WearAutomaticController {
         if(enabled&&WatchHomeStore.automaticProtocol(context)!=1){android.widget.Toast.makeText(context,"Frissítsd a telefonos appot, majd frissítsd az órás adatokat.",android.widget.Toast.LENGTH_LONG).show();return current}
         if(current.timerOwner!="watch")return current
         if(current.automation?.owner=="phone" && current.automation.enabled)return current
+        if(enabled&&current.exercises.any { WearBilateral192.isSide(it) }&&WatchHomeStore.load(context)?.let { it.bilateralProtocol192<1 }==true){
+            android.widget.Toast.makeText(context,when(java.util.Locale.getDefault().language){"en"->"Update TrainPilot on the phone";"de"->"TrainPilot am Telefon aktualisieren";"ro"->"Actualizează TrainPilot pe telefon";else->"Frissítsd a telefonos TrainPilotot is"},android.widget.Toast.LENGTH_LONG).show();return current
+        }
         if(enabled&&!WearAutomaticEngine.durationAllowed(current,current.automation?.workSeconds ?: 30,
             current.automation?.restSeconds ?: current.restSeconds,current.automation?.rounds ?: 1)){
             android.widget.Toast.makeText(context,"Az automata menetrend legfeljebb 24 órás lehet.",android.widget.Toast.LENGTH_LONG).show();return current
@@ -128,6 +136,8 @@ object WearAutomaticController {
             current.automation?.vibration ?: true,clock(),WearAutomaticService.boot(context))
         else WearAutomaticEngine.disable(current,clock(),WearAutomaticService.boot(context))
         if(enabled)next=next.copy(automation=next.automation!!.copy(rounds=current.automation?.rounds ?: 1))
+        if(enabled){val a=next.automation!!;next=next.copy(exercises=next.exercises.map { e->if(WearBilateral192.isSide(e))e.copy(bilateral192=WearBilateralSettings192.load(context,e.id) ?: e.bilateral192 ?: WearBilateral192.config(e,a))else e })}
+        if(enabled&&!WearAutomaticEngine.durationAllowed(next,next.automation!!.workSeconds,next.automation!!.restSeconds,next.automation!!.rounds))return current
         WearStopwatchStore.clear(context)
         WorkoutSnapshotStore.saveWorkout(context,next);publish(context,next)
         if(enabled)WearAutomaticService.ensure(context,next)else WearAutomaticService.stop(context)
@@ -144,9 +154,24 @@ object WearAutomaticController {
         val transition=WearAutomaticEngine.tick(current,now,boot)
         val updated=transition.workout
         transition.completedExercise?.let { publishCompleted(context,updated,it,transition.completedSet!!,current) }
-        val next=when(action){"start"->if(updated.automation!!.phase=="ready")WearAutomaticEngine.ready(updated,now,boot)else updated;"pause"->WearAutomaticEngine.pause(updated,now,boot)
+        val next=if(action in listOf("skipRest","skipSide192","restPlus192","restMinus192")&&updated.automation!!.phaseNumber!=current.automation.phaseNumber)updated else when(action){"start"->if(updated.automation!!.phase=="ready")WearAutomaticEngine.ready(updated,now,boot)else updated;"pause"->WearAutomaticEngine.pause(updated,now,boot)
             "resume"->WearAutomaticEngine.resume(updated,now,boot);"skipRest"->WearAutomaticEngine.skipRest(updated,now,boot)
             "disable"->WearAutomaticEngine.disable(updated,now,boot)
+            "restPlus192","restMinus192"->WearAutomaticEngine.adjustRest192(updated,if(action=="restPlus192")5 else -5,now,boot)
+            "skipSide192"->WearAutomaticEngine.skipSide192(updated,now,boot)
+            "leftPlus192","leftMinus192","rightPlus192","rightMinus192","bothPlus192","bothMinus192","sideRestPlus192","sideRestMinus192","setRestPlus192","setRestMinus192","sideFirst192"->{
+                val a=updated.automation!!;val ex=updated.exercise
+                if(!WearBilateral192.isSide(ex)||a.counting&&!a.paused||action=="sideFirst192"&&a.counting)updated else {
+                    val c=WearBilateral192.config(ex,a);val delta=if(action.contains("Minus"))-5 else 5
+                    val next=when {action=="sideFirst192"->c.copy(first=c.second());action.startsWith("left")->c.copy(leftSeconds=(c.leftSeconds+delta).coerceIn(1,3600))
+                        action.startsWith("right")->c.copy(rightSeconds=(c.rightSeconds+delta).coerceIn(1,3600))
+                        action.startsWith("both")->c.copy(leftSeconds=(c.leftSeconds+delta).coerceIn(1,3600),rightSeconds=(c.leftSeconds+delta).coerceIn(1,3600))
+                        action.startsWith("sideRest")->c.copy(sideRestSeconds=(c.sideRestSeconds+delta).coerceIn(0,3600))
+                        else->c.copy(setRestSeconds=(c.setRestSeconds+delta).coerceIn(0,3600))}
+                    updated.copy(exercises=updated.exercises.mapIndexed { i,e->if(i!=updated.currentExercise)e else e.copy(bilateral192=next) })
+                }
+            }
+
             "workPlus","workMinus","restPlus","restMinus","roundsPlus","roundsMinus"->if(updated.automation!!.counting)updated else {
                 val a=updated.automation!!
                 updated.copy(automation=if(action.startsWith("work"))a.copy(workSeconds=(a.workSeconds+if(action.endsWith("Plus"))5 else -5).coerceIn(1,3600))
@@ -157,6 +182,8 @@ object WearAutomaticController {
             else->return current}
         val configured=next.automation!!
         if(!WearAutomaticEngine.durationAllowed(next,configured.workSeconds,configured.restSeconds,configured.rounds))return current
+        val sideConfig=next.exercise?.bilateral192
+        if(sideConfig!=null&&sideConfig!=current.exercise?.bilateral192&&!WearBilateralSettings192.save(context,next.exercise!!.id,sideConfig))return current
         WorkoutSnapshotStore.saveWorkout(context,next.copy(lastRecord188=WorkoutSnapshotStore.load(context)?.lastRecord188));publish(context,WorkoutSnapshotStore.load(context) ?: next)
         if(next.automation?.paused==true||!next.automation!!.enabled)context.getSystemService(Vibrator::class.java)?.cancel()
         if(!next.automation.enabled)WearAutomaticService.stop(context)else WearAutomaticService.nudge()
@@ -265,6 +292,7 @@ object WearAutomaticController {
             .put("action","completeSet").put("workoutId",workout.workoutId).put("createdAt",System.currentTimeMillis())
             .put("watchSequence",workout.localSequence).put("exerciseIndex",e).put("exerciseId",workout.exercises[e].id)
             .put("setIndex",s).put("setNumber",set.number).put("setId",set.setId).put("reps",set.reps).put("weight",set.weight)
+            .put("leftSeconds",set.leftSeconds).put("rightSeconds",set.rightSeconds).also { if(set.sideState192!=null)it.put("sideState192",JSONObject(set.sideState192)) }
             .put("automation",workout.automation?.json())
         WearUndo188.marker(workout)?.let { command.put("undoDependency188",it.optString("commandId")) }
         val sequence=WearCommandOutbox.enqueue(context,command)

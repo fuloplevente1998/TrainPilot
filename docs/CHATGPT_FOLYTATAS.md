@@ -1,3 +1,11 @@
+## P2 #189 lezárva; #192 megvalósítás — 2026. október 17.
+
+A felhasználó az egyszerű, egyetlen 3 mp-es érintészár-feloldást elfogadta: **„Rendben, zárhatjuk, mehet mainre”**. #210 mainen: `91889326056ac257975360644ead39ded1b5a4d6`, #189 lezárva. Az elfogadott `1fb8f80` forrás és a main fájlfája azonos; a main összes GitHub-kapuja sikeres, 141/141 kerek Wear-teszt.
+
+Következő P2 **#192**, `feat/192-bilateral-automatic` / [#211 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/211). A felhasználó a konkrét menetrendet és naplóbontást jóváhagyta: **„Lets go”**. [Jóváhagyott részletes működés](wear/192_OLDALANKENTI_AUTOMATA_TERV.md): választható bal/jobb sorrend és munkaidők, külön oldalcsere- és sorozat-/körpihenő, utolsó záró pihenő nélkül, egyetlen natív időzítőtulajdonossal. A tényleges munka/pihenő/kézi szünet verziózott bontásban marad meg; régi naplók és hagyományos időzítés változatlanok. Szüneteltetett beállításváltás nem írja át a megkezdett munkát. Kihagyott oldal részleges marad, a visszavonás megőrzi a mért időnaplót.
+
+A célzott helyi JS-idővonal/telefonos UI és valós JSON backup/restore ellenőrzés sikeres. Az aktuális kód teljes Quick/Performance, telefonos UI/natív/aláírt build és Wear Kotlin/UI/aláírt build kapui GitHub Actionsben ellenőrzendők. **Verzió változatlan 1.3.51 /2732**, új telefon+Wear tesztpár, készülékes elfogadás és main még hátravan. Következő dokumentált feladat utána #193. Az alábbi bejegyzések történetiek.
+
 ## Aktuális folytatás — 2026. október 17., P2 #189
 
 #188 telefonos és órás Visszavonás elfogadva: **„Zárhatjuk, jók vagyunk :) Folytathatod”**. #209 beolvasztva a `a06485c` mainbe; #188 lezárva. Elfogadott APK-forrás `0694413`, mindkettő 1.3.51 /2732. A következő dokumentált P2 **#189 érintészár**, külön `feat/189-wear-touch-lock` ágon a friss mainből. Teljes teszt/build GitHub Actionsben, helyben célzott feltárás és gyors ellenőrzés. A #189 új funkcióhoz még külön készülékes elfogadás kell; nincs automatikus verzióemelés vagy új mainre emelés. A felhasználó egyszerűsítést kért: egyetlen folyamatos 3 mp-es nyomás oldjon fel automatikusan, előzetes koppintás és elengedési lépés nélkül; a feltételes „ha ez oké lesz, zárhatjuk” még nem az új APK készülékes elfogadása. Aktuális részletek: DEVELOPMENT_STATUS és közös Wear-terv. Az alábbi korábbi folytatások történetiek.

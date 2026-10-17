@@ -25,6 +25,10 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{
    window.alert=message=>probe.alerts.push(String(message));
    await TrainPilotHealthJournal.ready();
    const row={id:'morning-backup',workout:day.id,dayId:day.id,programId:p.id,started:'2026-10-08T08:00:00.000Z',finished:'2026-10-08T08:30:00.000Z',exercises:[{id:'db-squat',hu:'Guggolás',loadType:'per_hand',repUnit:'ism.',sets:[{set:1,weight:8,reps:'8',done:true}]}]};
+   const sideConfig={schema:1,first:'right',leftSeconds:12,rightSeconds:15,sideRestSeconds:2,setRestSeconds:5};
+   row.exercises.push({id:'side-plank',hu:'Oldalsó plank',loadType:'bodyweight',repUnit:'mp/oldal',bilateral192:sideConfig,sets:[{set:1,setId:'side192',weight:0,reps:'12',leftSeconds:12,rightSeconds:15,done:true,sideState192:{schema:1,key:'clock192',left:'complete',right:'complete',skipped:false}}]});
+   const sideLog={schema:2,owner:'phone',key:'clock192',positionMs:34000,workMs:27000,restMs:7000,pausedMs:4000,steps:[{exerciseId:'side-plank',setId:'side192',workMs:27000,restMs:7000,pausedMs:4000,leftWorkMs:12000,rightWorkMs:15000,sideRestMs:2000,setRestMs:5000,segments192:[]}]};
+   row.automaticTime162={schema:1,logs:{clock192:sideLog},workMs:27000,restMs:7000,pausedMs:4000};db.set('settings',{...settings(),bilateral192ByExercise:{'side-plank':sideConfig}});
    db.set('history',[row]);const data=makeBackup();data.appVersion='1.2.7';data.healthIncluded=true;data.healthLedger={days:{'2026-10-08':{steps:1200}}};data.recoveryHistory=[{day:'2026-10-08',hrvRmssdMs:40}];delete data.healthJournal;
    probe.backup=JSON.stringify(data);db.set('history',[{...row,id:'current-data'}]);
    probe.command={commandId:'pending-watch-start',action:'startWorkout',workoutId:'2026-10-08T09:00:00.000Z',started:'2026-10-08T09:00:00.000Z',programId:p.id,dayId:day.id};
@@ -40,6 +44,7 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{
   await page.locator('[data-tp2628-confirm]').click();await page.evaluate(()=>restoreProbe.promise);
   const restored=await page.evaluate(()=>({id:history()[0].id,busy:TrainPilotBackupBusy,owner:tp105RestoreOwner,legacy:restoreProbe.prepared[0].days,alerts:restoreProbe.alerts}));
   assert.equal(restored.id,'morning-backup');assert.equal(restored.busy,false);assert.equal(restored.owner,null);assert.equal(restored.legacy[0].channel,'legacy');assert.equal(restored.legacy[0].data.steps,1200);assert.equal(restored.legacy[0].data.hrvRmssdMs,40);assert.ok(restored.alerts.some(m=>m.includes('Visszatöltés kész')));
+  assert.deepEqual(await page.evaluate(()=>({left:history()[0].exercises[1].sets[0].leftSeconds,right:history()[0].exercises[1].sets[0].rightSeconds,work:history()[0].automaticTime162.logs.clock192.workMs,sideRest:history()[0].automaticTime162.logs.clock192.steps[0].sideRestMs,setRest:history()[0].automaticTime162.logs.clock192.steps[0].setRestMs,first:settings().bilateral192ByExercise['side-plank'].first})),{left:12,right:15,work:27000,sideRest:2000,setRest:5000,first:'right'},'Versioned side timing and configuration survive the real JSON restore');
   const snapshot=()=>page.evaluate(()=>JSON.stringify(Object.fromEntries(Object.keys(localStorage).filter(k=>k.startsWith('repforge:')).sort().map(k=>[k,localStorage.getItem(k)]))));
   for(const mode of ['picker-cancel','invalid-json','confirm-cancel','install-failure']){
    const before=await snapshot();

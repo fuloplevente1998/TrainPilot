@@ -42,14 +42,22 @@ public class IntervalTimerPlugin extends Plugin {
         });
     }
     @PermissionCallback private void notificationResult(PluginCall c){begin(c);}
-    private void begin(PluginCall c){getActivity().runOnUiThread(()->{try{
-        ContextCompat.startForegroundService(getContext(),new Intent(getContext(),IntervalTimerService.class).setAction(IntervalTimerService.START).putExtra("plan",c.getData().toString()));
+    private void begin(PluginCall c){beginPlan192(c,c.getData());}
+    private void beginPlan192(PluginCall c,JSONObject plan){getActivity().runOnUiThread(()->{try{
+        ContextCompat.startForegroundService(getContext(),new Intent(getContext(),IntervalTimerService.class).setAction(IntervalTimerService.START).putExtra("plan",plan.toString()));
         Handler h=new Handler(Looper.getMainLooper());h.postDelayed(new Runnable(){int count;public void run(){JSONObject s=IntervalTimerService.snapshot(getContext());if(c.getString("key").equals(s.optString("key"))&&s.optBoolean("running")){starting=false;try{c.resolve(new JSObject(s.toString()));}catch(Exception e){c.reject(e.getMessage());}}else if(++count<30)h.postDelayed(this,100);else{starting=false;c.reject("Interval did not start. Retry with the app open.");}}},100);
     }catch(Exception e){starting=false;c.reject(e.getMessage());}});}
     private void command(PluginCall c,String action){getActivity().runOnUiThread(()->{try{c.resolve(new JSObject(IntervalTimerService.command(getContext(),c.getString("key",""),action).toString()));}catch(Exception e){c.reject(e.getMessage());}});}
     @PluginMethod public void pause(PluginCall c){command(c,"pause");}
-    @PluginMethod public void resume(PluginCall c){command(c,"resume");}
+    @PluginMethod public void resume(PluginCall c){getActivity().runOnUiThread(()->{try{
+        JSONObject plan=IntervalTimerService.restorableBilateral192(getContext(),c.getString("key",""));
+        if(plan!=null){if(starting||!getActivity().hasWindowFocus())throw new IllegalStateException("Open the phone workout to resume");starting=true;beginPlan192(c,plan);}else command(c,"resume");
+    }catch(Exception e){c.reject(e.getMessage());}});}
     @PluginMethod public void stop(PluginCall c){command(c,"stop");}
     @PluginMethod public void skipRest(PluginCall c){command(c,"skipRest");}
+    @PluginMethod public void restPlus192(PluginCall c){command(c,"restPlus192");}
+    @PluginMethod public void restMinus192(PluginCall c){command(c,"restMinus192");}
+    @PluginMethod public void skipSide192(PluginCall c){command(c,"skipSide192");}
+    @PluginMethod public void configureBilateral192(PluginCall c){getActivity().runOnUiThread(()->{try{c.resolve(new JSObject(IntervalTimerService.configureBilateral192(getContext(),c.getString("key",""),c.getString("exerciseId",""),c.getObject("configuration")).toString()));}catch(Exception e){c.reject(e.getMessage());}});}
     @PluginMethod public void attachGPS(PluginCall c){getActivity().runOnUiThread(()->{try{c.resolve(new JSObject(IntervalTimerService.attachGPS(getContext(),c.getString("key",""),c.getInt("index",-1),c.getString("trackingKey","")).toString()));}catch(Exception e){c.reject(e.getMessage());}});}
 }

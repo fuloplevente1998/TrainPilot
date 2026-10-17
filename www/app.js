@@ -16707,11 +16707,83 @@ window.addEventListener?.('DOMContentLoaded',function(){
 });
 // @endsection navigation-motion-137.js
 
+// @section bilateral-192.js
+(function(){
+ 'use strict';
+ const integer=(n,min=0,max=3600)=>Number.isInteger(n)&&n>=min&&n<=max;
+ function config(value,work=30){
+  const v=value??{schema:1,first:'left',leftSeconds:work,rightSeconds:work,sideRestSeconds:0};
+  if(v.schema!==1||!['left','right'].includes(v.first)||!integer(v.leftSeconds,1)||!integer(v.rightSeconds,1)||!integer(v.sideRestSeconds)||v.setRestSeconds!==undefined&&!integer(v.setRestSeconds))return null;
+  return {schema:1,first:v.first,leftSeconds:v.leftSeconds,rightSeconds:v.rightSeconds,sideRestSeconds:v.sideRestSeconds,...(v.setRestSeconds!==undefined?{setRestSeconds:v.setRestSeconds}:{})};
+ }
+ const isSide=e=>String(e?.repUnit||'').replace(/\s/g,'').toLowerCase()==='mp/oldal';
+ const timed=e=>e&&['mp','mp/oldal'].includes(String(e.repUnit||'').replace(/\s/g,'').toLowerCase());
+ const second=c=>c.first==='left'?'right':'left';
+ function stages(s,tail,i=0){
+  const result=[],c=s.bilateral192;
+  for(let round=1;round<=s.rounds;round++){
+   const parts=c?[['work',c.first,c[c.first+'Seconds'],''],['rest',second(c),c.sideRestSeconds,'side'],['work',second(c),c[second(c)+'Seconds'],''],['rest',c.first,round<s.rounds||tail?s.rest:0,'set']]:[['work','',s.work,''],['rest','',round<s.rounds||tail?s.rest:0,'']];
+   for(const [phase,side192,seconds,restKind192] of parts)result.push({round,phase,side192,restKind192,phaseDurationMs:seconds*1000,token:i+':'+round+':'+phase+(side192?':'+side192+':'+restKind192:'')});
+  }return result;
+ }
+ function duration(s,tail,overrides={},i=0){return stages(s,tail,i).reduce((n,p)=>n+(overrides[p.token]??p.phaseDurationMs),0);}
+ function phase(steps,advance,milliseconds,initialRest=0,restOnly=false,overrides={}){
+  if(!Array.isArray(steps)||!steps.length||steps.length>100||!integer(initialRest)||!Number.isFinite(milliseconds)||restOnly)return null;
+  if(steps.some(s=>!integer(s.work,1)||!integer(s.rest)||!integer(s.rounds,1,100)||s.bilateral192&&!config(s.bilateral192))||Object.entries(overrides).some(([k,v])=>k.length>128||!integer(v,0,3600000)))return null;
+  const c=steps[0].bilateral192,initialToken=c?'0:1:rest:'+c.first+':initial':'initial:rest',leading=overrides[initialToken]??initialRest*1000;
+  const totalMs=leading+steps.reduce((n,s,i)=>n+duration(s,advance&&i<steps.length-1,overrides,i),0);if(totalMs>86400000)return null;
+  const elapsedMs=Math.max(0,Math.min(totalMs,milliseconds));let offset=elapsedMs;
+  if(elapsedMs===totalMs){const i=steps.length-1;return {stepIndex:i,round:steps[i].rounds,completed:steps.length,elapsedMs,stepElapsedMs:duration(steps[i],advance&&i<steps.length-1,overrides,i),remainingMs:0,totalMs,phase:'complete',token:i+':'+steps[i].rounds+':complete'};}
+  if(offset<leading)return {stepIndex:0,round:1,completed:0,elapsedMs,stepElapsedMs:0,remainingMs:leading-offset,totalMs,phase:'rest',side192:c?.first||'',restKind192:c?'initial':'',phaseDurationMs:leading,token:initialToken};
+  offset-=leading;
+  for(let i=0;i<steps.length;i++){
+   const length=duration(steps[i],advance&&i<steps.length-1,overrides,i);if(offset>=length){offset-=length;continue;}
+   let left=offset;for(const stage of stages(steps[i],advance&&i<steps.length-1,i)){const ms=overrides[stage.token]??stage.phaseDurationMs;if(left<ms)return {...stage,phaseDurationMs:ms,stepIndex:i,completed:i,elapsedMs,stepElapsedMs:offset,totalMs,remainingMs:ms-left};left-=ms;}
+  }return null;
+ }
+ function freeze(run,p){
+  const next={...run.durationOverrides192},first=run.steps[0].bilateral192,token=first?'0:1:rest:'+first.first+':initial':'initial:rest';next[token]=next[token]??(run.initialRest||0)*1000;if(p.token===token)return next;
+  let at=0;for(const stage of stages(run.steps[p.stepIndex],run.autoAdvance&&p.stepIndex<run.steps.length-1,p.stepIndex)){if(at>p.stepElapsedMs)break;const ms=next[stage.token]??stage.phaseDurationMs;next[stage.token]=ms;at+=ms;}return next;
+ }
+ function configureRun(run,exerciseId,value){
+  const p=phase(run.steps,run.autoAdvance,run.elapsedMs,run.initialRest||0,false,run.durationOverrides192),c=config(value);
+  if(run.running||!p||!c||run.steps[p.stepIndex].exerciseId!==exerciseId||run.steps[p.stepIndex].bilateral192?.first!==c.first)throw Error('Pause the timer; change the first side before starting');
+  const overrides=freeze(run,p),steps=run.steps.map((s,i)=>i>=p.stepIndex&&s.exerciseId===exerciseId&&s.bilateral192?{...s,bilateral192:c,rest:c.setRestSeconds??s.rest}:s);
+  for(let i=0;i<steps.length;i++)if(steps[i].bilateral192){const parts=stages(steps[i],run.autoAdvance&&i<steps.length-1,i);for(const side of ['left','right'])steps[i]['target'+(side==='left'?'Left':'Right')+'Ms192']=parts.filter(p=>p.phase==='work'&&p.side192===side).reduce((n,s)=>n+(overrides[s.token]??s.phaseDurationMs),0);}
+  if(!phase(steps,run.autoAdvance,run.elapsedMs,run.initialRest||0,false,overrides))throw Error('Invalid bilateral plan');
+  run.steps=steps;run.durationOverrides192=overrides;
+ }
+ function adjustRest(run,p,delta){if(p.phase!=='rest'||!p.side192)throw Error('Not a side rest');const next={...run.durationOverrides192,[p.token]:p.phaseDurationMs+Math.max(-p.remainingMs,Math.min(3600000-p.phaseDurationMs,delta))};if(!phase(run.steps,run.autoAdvance,p.elapsedMs,run.initialRest||0,false,next))throw Error('Invalid rest duration');run.durationOverrides192=next;}
+ function row(e,set,c){if(!isSide(e))return {};const v=config(e.bilateral192,c.work);if(!v)throw Error('invalidBilateralConfig');return {...(v.setRestSeconds!==undefined?{rest:v.setRestSeconds}:{}),bilateral192:v,baseLeftSeconds:Number(set.leftSeconds)||0,baseRightSeconds:Number(set.rightSeconds)||0};}
+ function values(row,part,key){
+  const c=config(row.bilateral192);if(!c||!part)return null;
+  const leftMs=part.leftWorkMs,rightMs=part.rightWorkMs,skipped=part.skippedWork192===true;
+  const left=row.baseLeftSeconds+Math.floor(leftMs/1000),right=row.baseRightSeconds+Math.floor(rightMs/1000);
+  return {leftSeconds:left,rightSeconds:right,reps:String(Math.min(left,right)),done:!skipped&&leftMs>=(row.targetLeftMs192??c.leftSeconds*1000*row.rounds)&&rightMs>=(row.targetRightMs192??c.rightSeconds*1000*row.rounds),
+   sideState192:{schema:1,key,skipped,left:leftMs>=(row.targetLeftMs192??c.leftSeconds*1000*row.rounds)?'complete':leftMs>0?'partial':'pending',right:rightMs>=(row.targetRightMs192??c.rightSeconds*1000*row.rounds)?'complete':rightMs>0?'partial':'pending',timeLogKey:key}};
+ }
+ function validLog(log){
+  const safe=n=>integer(n,0,604800000);
+  if(!Array.isArray(log.steps))return false;
+  return log.steps.every(row=>typeof row.exerciseId==='string'&&row.exerciseId&&typeof row.setId==='string'&&row.setId&&['workMs','restMs','pausedMs'].every(k=>safe(row[k]))&&
+   (!('leftWorkMs' in row)||(['leftWorkMs','rightWorkMs','sideRestMs','setRestMs'].every(k=>safe(row[k]))&&row.workMs===row.leftWorkMs+row.rightWorkMs&&row.restMs===row.sideRestMs+row.setRestMs&&Array.isArray(row.segments192)&&row.segments192.every(s=>typeof s.id==='string'&&['left','right'].includes(s.side)&&['work','sideRest','setRest'].includes(s.kind)&&safe(s.durationMs)&&safe(s.pausedMs)))));
+ }
+ function account(row,p,ms,pause=0){
+  if(!p.side192)return;
+  const key=p.phase==='work'?(p.side192==='left'?'leftWorkMs':'rightWorkMs'):p.restKind192==='side'?'sideRestMs':'setRestMs';
+  for(const field of ['leftWorkMs','rightWorkMs','sideRestMs','setRestMs'])row[field]??=0;
+  row[key]+=ms;row.segments192??=[];let s=row.segments192.find(s=>s.id===p.token);
+  if(!s){s={id:p.token,round:p.round,side:p.side192,kind:p.phase==='work'?'work':p.restKind192==='side'?'sideRest':'setRest',durationMs:0,pausedMs:0,targetMs:p.phaseDurationMs};row.segments192.push(s);}s.durationMs+=ms;s.pausedMs+=pause;s.targetMs=p.phaseDurationMs;if(row.segments192.length>4){row.segments192.splice(0,row.segments192.length-4);row.segmentsCompacted192=true;}
+ }
+ window.TrainPilotBilateral192Core={config,isSide,timed,duration,phase,row,values,validLog,account,configureRun,adjustRest};
+})();
+// @endsection bilateral-192.js
+
 // @section automatic-time-162.js
 (function(){
  'use strict';
  const max=604800000,fields=['workMs','restMs','pausedMs'];
- function valid(log){return log?.schema===1&&['phone','watch','browser'].includes(log.owner)&&typeof log.key==='string'&&log.key.length>0&&log.key.length<=200&&fields.every(k=>Number.isSafeInteger(log[k])&&log[k]>=0&&log[k]<=max)&&Number.isSafeInteger(log.positionMs)&&log.positionMs>=0&&log.positionMs<=max;}
+ function valid(log){return (log?.schema===1||log?.schema===2&&window.TrainPilotBilateral192Core.validLog(log))&&['phone','watch','browser'].includes(log.owner)&&typeof log.key==='string'&&log.key.length>0&&log.key.length<=200&&fields.every(k=>Number.isSafeInteger(log[k])&&log[k]>=0&&log[k]<=max)&&Number.isSafeInteger(log.positionMs)&&log.positionMs>=0&&log.positionMs<=max;}
  function merge(session,logs){
   if(!logs||typeof logs!=='object')return false;
   const current=session.automaticTime162?.logs||{},next={...current};let changed=false;
@@ -16736,12 +16808,13 @@ window.addEventListener?.('DOMContentLoaded',function(){
  function sample(run,elapsed,now,running,stopped=false,skip=false){
   const core=window.TrainPilotInterval162Core,rows=run.steps,m=run.timeLedger162||{positionMs:0,at:now,paused:false,steps:rows.map(s=>({exerciseId:s.exerciseId,setId:s.setId,workMs:0,restMs:0,pausedMs:0}))};
   if(now<m.at){m.at=now;m.paused=false;}
-  const phase=x=>core.phase(rows,run.autoAdvance,x,run.initialRest||0,!!run.restOnly);
-  if(m.paused)m.steps[phase(m.positionMs).stepIndex].pausedMs+=Math.max(0,now-m.at);
+  const phase=x=>core.phase(rows,run.autoAdvance,x,run.initialRest||0,!!run.restOnly,run.durationOverrides192||{});
+  if(m.paused){const p=phase(m.positionMs),ms=Math.max(0,now-m.at);m.steps[p.stepIndex].pausedMs+=ms;window.TrainPilotBilateral192Core?.account(m.steps[p.stepIndex],p,0,ms);}
   if(skip)m.positionMs=elapsed;
-  while(m.positionMs<elapsed){const p=phase(m.positionMs);if(!p||p.phase==='complete')break;const ms=Math.min(p.remainingMs,elapsed-m.positionMs);m.steps[p.stepIndex][p.phase==='work'?'workMs':'restMs']+=ms;m.positionMs+=ms;}
+  while(m.positionMs<elapsed){const p=phase(m.positionMs);if(!p||p.phase==='complete')break;const ms=Math.min(p.remainingMs,elapsed-m.positionMs);m.steps[p.stepIndex][p.phase==='work'?'workMs':'restMs']+=ms;window.TrainPilotBilateral192Core?.account(m.steps[p.stepIndex],p,ms);m.positionMs+=ms;}
   m.at=now;m.paused=!running&&!stopped&&!run.interrupted&&phase(elapsed)?.phase!=='complete';run.timeLedger162=m;
-  const log={schema:1,owner:'browser',key:run.key,positionMs:m.positionMs,steps:m.steps,workMs:0,restMs:0,pausedMs:0};for(const row of m.steps)for(const k of fields)log[k]+=row[k];return log;
+  for(let i=0;i<rows.length;i++)if(rows[i].bilateral192){const part=m.steps[i];for(const k of ['leftWorkMs','rightWorkMs','sideRestMs','setRestMs'])part[k]??=0;part.segments192??=[];}
+  const log={schema:rows.some(s=>s.bilateral192)?2:1,owner:'browser',key:run.key,positionMs:m.positionMs,steps:m.steps,workMs:0,restMs:0,pausedMs:0};for(const row of m.steps)for(const k of fields)log[k]+=row[k];return log;
  }
  window.TrainPilotTime162Core={valid,merge,sample};
 })();
@@ -16809,6 +16882,14 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const record=frame.lastRecord188;
    const candidate=record&&record.workoutId===identity(session)&&window.TrainPilotUndo188.same(record.expected,window.TrainPilotUndo188.guard(session.exercises))?clone(record):null;
    if(JSON.stringify(session.lastRecord188||null)!==JSON.stringify(candidate)){session.lastRecord188=candidate;changed=true;}
+  }
+  for(const e of frame.exercises||[])for(const source of e.sets||[]){
+   if(!source.sideState192||source.done)continue;
+   const own=session.exercises.find(v=>v.id===e.id)?.sets.find(v=>v.setId===source.setId);
+   if(own&&!own.done&&!session.phoneEdit162?.targets?.includes(source.setId)){
+    const value={leftSeconds:source.leftSeconds,rightSeconds:source.rightSeconds,reps:source.reps,sideState192:source.sideState192};
+    if(JSON.stringify(value)!==JSON.stringify({leftSeconds:own.leftSeconds,rightSeconds:own.rightSeconds,reps:own.reps,sideState192:own.sideState192})){Object.assign(own,value);changed=true;}
+   }
   }
   const timeChanged=window.TrainPilotTime162Core.merge(session,frame.timeLogs162||{});
   session.phoneExecution162={...meta,revision:frame.executionRevision,sequence:cursor,timeSignature,completedBase:completedBase(frame)};
@@ -17042,7 +17123,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  const number=v=>v==null||v===''?0:Number(String(v).replace(',','.'));
  function guard(exercises){return (exercises||[]).flatMap(e=>(e.sets||[]).map(s=>[String(e.id),String(s.setId),s.done===true,...fields.map(k=>number(s[k]))]));}
  function same(a,b){return Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.every((row,i)=>Array.isArray(row)&&row.length===8&&b[i]?.length===8&&row.every((v,j)=>j<3?v===b[i][j]:Number.isFinite(v)&&v===b[i][j]));}
- function values(set){return {done:set.done===true,...Object.fromEntries(fields.map(k=>[k,set[k]??(k==='reps'?'':0)]))};}
+ function values(set){return {done:set.done===true,...Object.fromEntries(fields.map(k=>[k,set[k]??(k==='reps'?'':0)])),...(set.sideState192?{sideState192:JSON.parse(JSON.stringify(set.sideState192))}:{})};}
  function capture(session,command,before){session.lastRecord188={recordId:command.commandId,workoutId:command.workoutId,exerciseId:command.exerciseId,setId:command.setId,before,expected:guard(session.exercises),recordedAt:Date.now()};}
  function available(session){
   const r=session?.lastRecord188;
@@ -17147,6 +17228,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     loadType,
     repUnit,
     measurementType,
+    ...(settings().bilateral192ByExercise?.[id]?{bilateral192:settings().bilateral192ByExercise[id]}:{}),
     targetReps:String(rx.reps||source.reps||''),
     sets:Array.from({length:setCount},(_,index)=>{
      let weight=baseWeight;
@@ -17178,6 +17260,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     loadType:String(e.loadType||''),
     repUnit:String(e.repUnit||''),
     measurementType:String(e.measurementType||''),
+    ...(settings().bilateral192ByExercise?.[e.id]?{bilateral192:settings().bilateral192ByExercise[e.id]}:{}),
     targetReps:String(e.reps||''),
     sets:Array.from({length:Math.max(1,Math.min(10,Number(e.sets)||3))},(_,i)=>({
      set:i+1,weight:e.loadType==='bodyweight'?0:(Number(e.weight)||0)
@@ -17301,6 +17384,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     schema:1,
     phoneVersion:typeof TRAINPILOT_VERSION==='string'?TRAINPILOT_VERSION:'',
     automaticProtocol:1,
+    bilateralProtocol192:1,
     journalSchema:1,
     theme:watchTheme(),
     ...watchCalendar(active,lang),
@@ -17334,6 +17418,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const current=state.session?(Number.isInteger(state.current)?state.current:0):(Number(draft?.current)||0);
    return {
     schema:1,
+    bilateralProtocol192:1,
     ...(session.phoneExecution162&&session.automatic162?.enabled===true&&(session.timerOwner||'phone')==='phone'&&!session.exercises.some(e=>e.measurementType==='distance')?{nativeExecutionProtocol:2,generation:session.phoneExecution162.generation,executionRevision:session.phoneExecution162.revision}:{}),
     workoutId:sessionKey(session),
     watchSequence:Number(session.wearSequence)||0,
@@ -17361,6 +17446,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
      loadType:String(exercise?.loadType||''),
      repUnit:String(exercise?.repUnit||''),
      measurementType:String(exercise?.measurementType||''),
+     ...(exercise.bilateral192?{bilateral192:exercise.bilateral192}:{}),
      targetReps:String(exercise?.targetReps||exercise?.reps||(typeof byId==='function'?byId(exercise?.id)?.reps:'')||''),
      sets:(Array.isArray(exercise?.sets)?exercise.sets:[]).map((set,index)=>({
       set:Number(set?.set||index+1),
@@ -17370,7 +17456,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
       done:!!set?.done,
       leftSeconds:set?.leftSeconds??'',
       rightSeconds:set?.rightSeconds??'',
-      distanceMeters:set?.distanceMeters??''
+      distanceMeters:set?.distanceMeters??'',
+      ...(set.sideState192?{sideState192:set.sideState192}:{})
      }))
     }))
    };
@@ -17493,6 +17580,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const n=Math.max(0,Math.round(Number(command.reps)||0));
    set.reps=n?String(n):'';
   }
+  if(command?.sideState192)set.sideState192=JSON.parse(JSON.stringify(command.sideState192));
   if(command?.leftSeconds!==undefined)set.leftSeconds=Math.max(0,Math.round(Number(command.leftSeconds)||0));
   if(command?.rightSeconds!==undefined)set.rightSeconds=Math.max(0,Math.round(Number(command.rightSeconds)||0));
   if((command?.leftSeconds!==undefined||command?.rightSeconds!==undefined)&&Number(set.leftSeconds)>0&&Number(set.rightSeconds)>0){
@@ -18119,8 +18207,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
  'use strict';
  const MAX=86400000;
  function config(v){if(!v)return null;const work=Number(v.work),rest=Number(v.rest),rounds=Number(v.rounds);if(!Number.isInteger(work)||work<1||work>3600||!Number.isInteger(rest)||rest<0||rest>3600||!Number.isInteger(rounds)||rounds<1||rounds>100||(work*rounds+rest*(rounds-1))*1000>MAX)return null;return {work,rest,rounds,sound:v.sound!==false,vibration:v.vibration!==false,autoAdvance:v.autoAdvance===true};}
- function duration(steps,advance,i){const s=steps[i];return (s.work*s.rounds+s.rest*(s.rounds-1)+(advance&&i<steps.length-1?s.rest:0))*1000;}
- function phase(steps,advance,milliseconds,initialRest=0,restOnly=false){
+ function duration(steps,advance,i){const s=steps[i];if(s.bilateral192)return window.TrainPilotBilateral192Core.duration(s,advance&&i<steps.length-1);return (s.work*s.rounds+s.rest*(s.rounds-1)+(advance&&i<steps.length-1?s.rest:0))*1000;}
+ function phase(steps,advance,milliseconds,initialRest=0,restOnly=false,overrides={}){
+  if(steps?.some(s=>s.bilateral192))return window.TrainPilotBilateral192Core.phase(steps,advance,milliseconds,initialRest,restOnly,overrides);
   if(!Number.isInteger(initialRest)||initialRest<0||initialRest>3600||restOnly&&(steps?.length!==1||advance||initialRest!==0))return null;
   if(!Array.isArray(steps)||!steps.length||steps.length>100||steps.some(s=>!config(s)))return null;
   const totalMs=restOnly?steps[0].rest*1000:initialRest*1000+steps.reduce((n,s,i)=>n+duration(steps,advance,i),0);if(totalMs>MAX||!Number.isFinite(milliseconds))return null;
@@ -18150,7 +18239,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   };
   const t=k=>(COPY[rf212Lang()]||COPY.hu)[k];
   const native=()=>{const c=window.Capacitor;if(!isNative()||!c?.Plugins?.IntervalTimer&&!c?.isPluginAvailable?.('IntervalTimer'))return null;return c.Plugins?.IntervalTimer||c.registerPlugin('IntervalTimer');};
-  const timed=e=>e&&(e.repUnit==='mp'||byId(e.id)?.repUnit==='mp');
+  const timed=e=>window.TrainPilotBilateral192Core.timed(e)||window.TrainPilotBilateral192Core.timed(typeof byId==='function'?byId(e?.id):null);
   let busy=false,polling=false,webBegan=0,webKey='',lastWebToken='',webHaptics={},timer=null,knownNativeKey='';
   const owner=()=>{const draft=state.session?null:db.get('draft',null),session=state.session||draft?.session,run=session?.interval162;return owned(session,run)?{session,run,draft}:null;};
   const persist=o=>{if(o.draft){o.draft.savedAt=new Date().toISOString();db.set('draft',o.draft);}else persistDraft();};
@@ -18159,23 +18248,24 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const oldHtml=TrainPilot110.intervalHtml,oldSave=TrainPilot110.saveInterval,oldStart=TrainPilot110.startInterval,oldPaint=TrainPilot110.paintInterval;
   TrainPilot110.intervalHtml=function(){let html=oldHtml(),c=settings().intervalPreset110||{};html=html.replace('</div><p class="small muted">','</div><label class="tp162-auto"><input type="checkbox" name="autoAdvance" '+(c.autoAdvance?'checked':'')+'>'+esc(t('auto'))+'</label><p class="small muted">'+esc(t('note'))+'</p><p class="small muted">');return html.replace(esc(TrainPilot110.t('intervalNote')),esc(t(native()?'native':'web')));};
   TrainPilot110.saveInterval=function(form){const saved=oldSave(form);if(saved!==false&&form?.reportValidity()){try{const c=config({...Object.fromEntries(['work','rest','rounds'].map(k=>[k,form.elements[k].value])),sound:form.elements.sound.checked,vibration:form.elements.vibration.checked,autoAdvance:form.elements.autoAdvance?.checked});if(c){db.set('settings',{...settings(),intervalPreset110:c});cloudChanged?.();}}catch(e){status(form,TrainPilot110.t('storageError'),true);return false;}}return saved;};
-  function queue(session,index,c,key){const steps=[];let reached=false;for(let ei=index;ei<session.exercises.length;ei++){const e=session.exercises[ei];if(!timed(e))break;for(const set of e.sets||[]){if(set.done)continue;set.setId=set.setId||crypto.randomUUID();steps.push({...c,exerciseId:e.id,setId:set.setId,name:tp149ExerciseName(byId(e.id)||e),baseSeconds:Number(set.reps)||0,baseMeters:Number(set.distanceMeters)||0,gpsKey:tp106IsDistance(e)?key+'|gps|'+steps.length:''});if(!c.autoAdvance){reached=true;break;}}if(reached)break;}return steps;}
+  function queue(session,index,c,key){const steps=[];let reached=false;for(let ei=index;ei<session.exercises.length;ei++){const e=session.exercises[ei];if(!timed(e))break;for(const set of e.sets||[]){if(set.done||set.sideState192?.skipped)continue;set.setId=set.setId||crypto.randomUUID();steps.push({...c,...window.TrainPilotBilateral192Core.row(e,set,c),exerciseId:e.id,setId:set.setId,name:tp149ExerciseName(byId(e.id)||e),baseSeconds:Number(set.reps)||0,baseMeters:Number(set.distanceMeters)||0,gpsKey:tp106IsDistance(e)?key+'|gps|'+steps.length:''});if(!c.autoAdvance){reached=true;break;}}if(reached)break;}return steps;}
   function gpsApply(o,snapshot,step){if(!snapshot||!step?.gpsKey||snapshot.key!==step.gpsKey)return false;const located=locate(o.session,step),meters=Number(snapshot.distanceMeters);if(!located||!tp106IsDistance(located.e)||!Number.isFinite(meters)||meters<0||meters>2000000)return false;located.set.distanceMeters=Math.min(2000000,Math.round((step.baseMeters+meters)*10)/10);located.set.distanceSource='gps';return true;}
   function gpsTrip(o,step,snapshot){const l=locate(o.session,step);if(!l||!snapshot?.active)return;db.set('gpsTrip106',{key:snapshot.key,started:o.session.started,exerciseIndex:l.index,exerciseId:l.e.id,setIndex:l.e.sets.indexOf(l.set),setId:l.set.setId,baseMeters:step.baseMeters,baseSeconds:step.baseSeconds});}
-  function apply(o,s){o=currentOwner(o);if(!o||s?.key!==o.run.key)return false;const r=o.run,p=phase(r.steps,r.autoAdvance,Number(s.elapsedMs),r.initialRest||0);if(!p)return false;
+  function apply(o,s){o=currentOwner(o);if(!o||s?.key!==o.run.key)return false;const r=o.run;if(s.durationOverrides192)r.durationOverrides192=s.durationOverrides192;let p=phase(r.steps,r.autoAdvance,Number(s.elapsedMs),r.initialRest||0,false,r.durationOverrides192||{});if(!p)return false;
    // Never accept a response for a different plan, even if a key was reused incorrectly.
    if(s.steps&&(s.steps.length!==r.steps.length||s.steps.some((v,i)=>v.setId!==r.steps[i].setId||v.exerciseId!==r.steps[i].exerciseId)))return false;
+   if(s.steps?.some(v=>v.bilateral192)){r.steps=JSON.parse(JSON.stringify(s.steps));p=phase(r.steps,r.autoAdvance,Number(s.elapsedMs),r.initialRest||0,false,r.durationOverrides192||{});if(!p)return false;}
    for(const v of s.steps||[])if(v.gpsKey)r.steps.find(x=>x.setId===v.setId).gpsKey=v.gpsKey;
    for(const segment of s.gpsSegments||[]){const step=r.steps.find(x=>x.setId===segment.setId&&x.exerciseId===segment.exerciseId);gpsApply(o,segment,step);}
    const step=r.steps[p.stepIndex];if(s.gps){gpsApply(o,s.gps,step);tp106GpsState=s.gps;gpsTrip(o,step,s.gps);if(!s.gps.active&&db.get('gpsTrip106',null)?.key===s.gps.key)localStorage.removeItem('repforge:gpsTrip106');}
-   for(let i=0;i<=p.stepIndex;i++){const l=locate(o.session,r.steps[i]);const credited=s.ledger?.steps?.[i];l.set.reps=String(Math.floor(r.steps[i].baseSeconds+(credited?credited.workMs+credited.restMs:i<p.completed?duration(r.steps,r.autoAdvance,i):p.stepElapsedMs)/1000));if(r.autoAdvance&&i<p.completed)l.set.done=true;}
+   for(let i=0;i<=p.stepIndex;i++){const l=locate(o.session,r.steps[i]);const credited=s.ledger?.steps?.[i];if(r.steps[i].bilateral192){const value=window.TrainPilotBilateral192Core.values(r.steps[i],credited,r.key);if(value)Object.assign(l.set,{...value,done:r.autoAdvance&&value.done});continue;}l.set.reps=String(Math.floor(r.steps[i].baseSeconds+(credited?credited.workMs+credited.restMs:i<p.completed?duration(r.steps,r.autoAdvance,i):p.stepElapsedMs)/1000));if(r.autoAdvance&&i<p.completed)l.set.done=true;}
    if(s.ledger)window.TrainPilotTime162Core.merge(o.session,{[r.key]:{...s.ledger,key:r.key}});
    r.elapsedMs=p.elapsedMs;r.phaseNumber=Number(s.phaseNumber)||0;r.running=s.running===true&&p.phase!=='complete';r.stopped=s.stopped===true;r.interrupted=s.interrupted===true;r.phase=p;r.completed=p.completed;r.syncedComplete=p.phase==='complete';
    let changed=false;if(state.session===o.session&&r.autoAdvance){let target=locate(o.session,step).index;if(p.phase==='complete'){const last=target;if(o.session.exercises[last].sets.every(x=>x.done)&&last+1<o.session.exercises.length)target=last+1;}if(state.current!==target){state.current=target;changed=true;}}
    if(r.stopped){delete o.session.interval162;persist(o);if(state.session===o.session&&state.tab==='plan')renderWorkout();return true;}persist(o);if(changed&&state.tab==='plan')renderWorkout();paint();return true;
   }
   async function sync(){if(polling||busy)return;const o=owner();if(!o){if(timer){clearInterval(timer);timer=null;}if(knownNativeKey){const key=knownNativeKey;knownNativeKey='';try{await native()?.stop({key});}catch(_){}}return;}if(o.run.syncedComplete&&o.run.phase?.phase==='complete')return;polling=true;try{if(o.run.native){knownNativeKey=o.run.key;const s=await native()?.status();if(s?.key===o.run.key)apply(o,s);else if(currentOwner(o)){o.run.running=false;o.run.interrupted=true;persist(o);paint();}}else{
-    if(o.run.running&&webKey!==o.run.key){o.run.running=false;o.run.interrupted=true;persist(o);}const elapsed=o.run.elapsedMs+(o.run.running?Math.max(0,performance.now()-webBegan):0),p=phase(o.run.steps,o.run.autoAdvance,elapsed,o.run.initialRest||0);if(!p)return;
+    if(o.run.running&&webKey!==o.run.key){o.run.running=false;o.run.interrupted=true;persist(o);}const elapsed=o.run.elapsedMs+(o.run.running?Math.max(0,performance.now()-webBegan):0),p=phase(o.run.steps,o.run.autoAdvance,elapsed,o.run.initialRest||0,false,o.run.durationOverrides192||{});if(!p)return;
     const vibrationMs=hapticCue(webHaptics,p,o.run.running);if(vibrationMs&&o.run.vibration&&!document.hidden)navigator.vibrate?.(vibrationMs);
     if(o.run.running&&p.token!==lastWebToken){lastWebToken=p.token;if(!document.hidden){if(o.run.sound)try{const a=window.AudioContext||window.webkitAudioContext,ctx=window.__tp162Audio||(window.__tp162Audio=new a()),osc=ctx.createOscillator(),gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.frequency.value=p.phase==='complete'?880:660;gain.gain.value=.12;osc.start();osc.stop(ctx.currentTime+.18);}catch(_){}}}
     const running=o.run.running&&p.phase!=='complete';apply(o,{...p,key:o.run.key,ledger:window.TrainPilotTime162Core.sample(o.run,p.elapsedMs,performance.now(),running,o.run.stopped),running,stopped:o.run.stopped,interrupted:o.run.interrupted});if(running)webBegan=performance.now();
@@ -18204,11 +18294,13 @@ window.addEventListener?.('DOMContentLoaded',function(){
    }catch(error){if(state.session===session&&session.interval162?.key===key){delete session.interval162;persistDraft();}status(form,error?.message||t('failed'),true);return false;}finally{busy=false;}
   };
   async function command(action){if(busy)return false;const o=owner();if(!o)return true;busy=true;try{
-   let s;if(o.run.native)s=await native()[action]({key:o.run.key});else{let elapsed=o.run.elapsedMs+(o.run.running?Math.max(0,performance.now()-webBegan):0);let p=phase(o.run.steps,o.run.autoAdvance,elapsed,o.run.initialRest||0);window.TrainPilotTime162Core.sample(o.run,p.elapsedMs,performance.now(),o.run.running,o.run.stopped);if(action==='skipRest'){if(p.phase!=='rest')return false;elapsed+=p.remainingMs;p=phase(o.run.steps,o.run.autoAdvance,elapsed,o.run.initialRest||0);}s={...p,key:o.run.key,ledger:window.TrainPilotTime162Core.sample(o.run,p.elapsedMs,performance.now(),action==='resume'||action==='skipRest',action==='stop',action==='skipRest'),running:action==='resume'||action==='skipRest',stopped:action==='stop'};webBegan=performance.now();webKey=o.run.key;}
+   let s;if(o.run.native)s=await native()[action]({key:o.run.key});else{let elapsed=o.run.elapsedMs+(o.run.running?Math.max(0,performance.now()-webBegan):0);let p=phase(o.run.steps,o.run.autoAdvance,elapsed,o.run.initialRest||0,false,o.run.durationOverrides192||{});window.TrainPilotTime162Core.sample(o.run,p.elapsedMs,performance.now(),o.run.running,o.run.stopped);if(action==='restPlus192'||action==='restMinus192'){window.TrainPilotBilateral192Core.adjustRest(o.run,p,action==='restPlus192'?5000:-5000);p=phase(o.run.steps,o.run.autoAdvance,elapsed,o.run.initialRest||0,false,o.run.durationOverrides192);}
+   if(action==='skipSide192'){if(p.phase!=='work'||!p.side192)return false;const part=o.run.timeLedger162.steps[p.stepIndex];part.skippedWork192=true;window.TrainPilotBilateral192Core.account(part,p,0);part.segments192.find(s=>s.id===p.token).skipped=true;}
+   if(action==='skipRest'||action==='skipSide192'){if(action==='skipRest'&&p.phase!=='rest')return false;elapsed+=p.remainingMs;p=phase(o.run.steps,o.run.autoAdvance,elapsed,o.run.initialRest||0,false,o.run.durationOverrides192||{});}s={...p,key:o.run.key,ledger:window.TrainPilotTime162Core.sample(o.run,p.elapsedMs,performance.now(),action==='resume'||action==='skipRest'||action==='skipSide192'||(action==='restPlus192'||action==='restMinus192')&&o.run.running,action==='stop',action==='skipRest'||action==='skipSide192'),running:action==='resume'||action==='skipRest'||action==='skipSide192'||(action==='restPlus192'||action==='restMinus192')&&o.run.running,stopped:action==='stop'};webBegan=performance.now();webKey=o.run.key;}
    if(!o.run.native&&o.run.vibration&&(action==='pause'||action==='stop'))navigator.vibrate?.(0);
    apply(o,s);if(action==='stop'&&currentOwner(o)){o.run.stopped=true;o.run.running=false;persist(o);}paint();return true;
   }catch(e){if(action==='stop'&&currentOwner(o)&&!o.run.running){const live=currentOwner(o);delete live.session.interval162;persist(live);if(state.session===live.session&&state.tab==='plan')renderWorkout();paint();return true;}alert(e?.message||t('failed'));return false;}finally{busy=false;}}
-  function paint(){const o=owner();if(!o)return;const r=o.run,p=r.phase||phase(r.steps,r.autoAdvance,r.elapsedMs,r.initialRest||0),panel=document.getElementById('tp107Indoor');if(!panel||!p)return;const l=locate(o.session,r.steps[p.stepIndex]);if(l?.e!==state.session?.exercises?.[state.current])return;
+  function paint(){const o=owner();if(!o)return;const r=o.run,p=r.phase||phase(r.steps,r.autoAdvance,r.elapsedMs,r.initialRest||0,false,r.durationOverrides192||{}),panel=document.getElementById('tp107Indoor');if(!panel||!p)return;const l=locate(o.session,r.steps[p.stepIndex]);if(l?.e!==state.session?.exercises?.[state.current])return;
    panel.querySelector('[data-tp107-clock]').textContent=rf110FormatStopwatch(Number(l.set.reps)||0);const toggle=panel.querySelector('[data-tp107-clock-toggle]');toggle.textContent=tp107T(r.running?'pause':'resume');toggle.disabled=busy||r.stopped||r.interrupted||p.phase==='complete';panel.querySelector('[data-tp107-clock-status]').textContent=t(r.interrupted?'interrupted':p.phase==='complete'?'done':r.running?'running':'paused');
    const phaseNode=panel.querySelector('[data-tp110-phase]');if(phaseNode)phaseNode.textContent=p.phase==='complete'?t('done'):TrainPilot110.t(p.phase==='work'?'workPhase':'restPhase')+' · '+p.round+'/'+r.rounds+(r.autoAdvance?' · '+(p.stepIndex+1)+'/'+r.steps.length:'');const remaining=panel.querySelector('[data-tp110-remaining]');if(remaining)remaining.textContent=p.phase==='complete'?'':rf110FormatStopwatch(Math.ceil(p.remainingMs/1000));
    panel.querySelectorAll('.tp110-interval input,.tp110-interval button').forEach(n=>n.disabled=busy||!r.stopped&&p.phase!=='complete');panel.querySelector('[data-tp162-stop]')?.toggleAttribute('disabled',busy||r.stopped||p.phase==='complete');
@@ -18221,7 +18313,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const oldReset=tp107ResetIndoor;tp107ResetIndoor=async function(){const o=owner();if(!o)return oldReset.apply(this,arguments);if(await tp2628Confirm(t('reset'),{title:TrainPilot110.t('interval'),confirmText:t('stop'),danger:true})&&currentOwner(o))await command('stop');};
   const oldGPSApply=tp106ApplyGPS;tp106ApplyGPS=function(s){const o=owner(),step=o?.run.steps.find(v=>v.gpsKey===s?.key);if(step){tp106GpsState=s;if(gpsApply(o,s,step)){gpsTrip(o,step,s);persist(o);if(!s.active&&db.get('gpsTrip106',null)?.key===s.key)localStorage.removeItem('repforge:gpsTrip106');return true;}}return oldGPSApply.apply(this,arguments);};
   const oldGPSSync=tp106SyncGPS;tp106SyncGPS=async function(){const o=owner();if(!o?.run.native||o.run.stopped)return oldGPSSync.apply(this,arguments);if(tp106GpsBusy||tp106GpsPolling)return;tp106GpsPolling=true;try{await sync();if(!currentOwner(o))return;const s=await tp106DistanceBridge()?.status();if(!currentOwner(o))return;if(s&&o.run.steps.some(v=>v.gpsKey===s.key))tp106ApplyGPS(s);tp106PaintGPS();paint();}finally{tp106GpsPolling=false;}};
-  const oldGPSStart=tp106StartGPS;tp106StartGPS=async function(){const before=owner(),wasRunning=before?.run.running;if(wasRunning&&!before.run.native){alert(t('web'));return;}if(wasRunning&&!await command('pause'))return;try{const result=await oldGPSStart.apply(this,arguments),o=owner(),trip=db.get('gpsTrip106',null);if(o?.run.native&&!o.run.stopped&&o.run.phase?.phase!=='complete'&&trip&&tp106GpsOwner(trip)?.session===o.session){const p=o.run.phase||phase(o.run.steps,o.run.autoAdvance,o.run.elapsedMs,o.run.initialRest||0),s=o.run.steps[p.stepIndex];if(s.setId!==trip.setId){await tp106StopGPS();return;}try{s.baseMeters=trip.baseMeters;const snapshot=await native().attachGPS({key:o.run.key,index:p.stepIndex,trackingKey:trip.key});apply(o,snapshot);}catch(e){await tp106StopGPS();alert(e?.message||t('failed'));}}return result;}finally{if(wasRunning&&currentOwner(before)&&!owner().run.stopped)await command('resume');}};
+  const oldGPSStart=tp106StartGPS;tp106StartGPS=async function(){const before=owner(),wasRunning=before?.run.running;if(wasRunning&&!before.run.native){alert(t('web'));return;}if(wasRunning&&!await command('pause'))return;try{const result=await oldGPSStart.apply(this,arguments),o=owner(),trip=db.get('gpsTrip106',null);if(o?.run.native&&!o.run.stopped&&o.run.phase?.phase!=='complete'&&trip&&tp106GpsOwner(trip)?.session===o.session){const p=o.run.phase||phase(o.run.steps,o.run.autoAdvance,o.run.elapsedMs,o.run.initialRest||0,false,o.run.durationOverrides192||{}),s=o.run.steps[p.stepIndex];if(s.setId!==trip.setId){await tp106StopGPS();return;}try{s.baseMeters=trip.baseMeters;const snapshot=await native().attachGPS({key:o.run.key,index:p.stepIndex,trackingKey:trip.key});apply(o,snapshot);}catch(e){await tp106StopGPS();alert(e?.message||t('failed'));}}return result;}finally{if(wasRunning&&currentOwner(before)&&!owner().run.stopped)await command('resume');}};
   const oldWorkout=renderWorkout;renderWorkout=function(){const result=oldWorkout.apply(this,arguments),e=state.session?.exercises?.[state.current],main=document.querySelector('main.tp153-workout');if(!timed(e)||!main)return result;let panel=document.getElementById('tp107Indoor');if(!panel){panel=document.createElement('section');panel.id='tp107Indoor';panel.className='card tp107-indoor';panel.innerHTML='<strong>'+esc(TrainPilot110.t('interval'))+'</strong><strong class="tp107-clock" data-tp107-clock>00:00</strong><div class="tp107-save-row"><button type="button" class="btn" data-tp107-clock-toggle onclick="tp107ToggleIndoor()" disabled>'+esc(tp107T('start'))+'</button><button type="button" class="btn secondary" onclick="tp107ResetIndoor()">'+esc(tp107T('reset'))+'</button></div><p class="small muted" data-tp107-clock-status role="status"></p>'+TrainPilot110.intervalHtml();main.querySelector('.tp153-sets-title')?.before(panel);}if(!panel.querySelector('[data-tp162-stop]'))panel.insertAdjacentHTML('beforeend','<button type="button" class="btn secondary block tp162-stop" data-tp162-stop onclick="TrainPilotIntervals162.stop()">'+esc(t('stop'))+'</button>');panel.querySelector('[data-tp162-stop]').hidden=!owner();paint();ensure();return result;};
   function wrapAction(name){const base=window[name];window[name]=function(){const o=owner(),session=state.session,args=arguments,ctx=this;if(!o||o.run.stopped||o.run.phase?.phase==='complete')return base.apply(ctx,args);return command('stop').then(ok=>{if(ok&&state.session===session)return base.apply(ctx,args);});};}
   for(const name of ['nextExercise','prevExercise','finishWorkout','toggleSet'])wrapAction(name);
@@ -18237,7 +18329,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  'use strict';
  function next(session,index){
   for(let ei=index;ei<(session?.exercises?.length||0);ei++){
-   const e=session.exercises[ei],si=e.sets?.findIndex(s=>!s.done);
+   const e=session.exercises[ei],si=e.sets?.findIndex(s=>!s.done&&!s.sideState192?.skipped);
    if(si>=0)return {exerciseIndex:ei,setIndex:si,e,set:e.sets[si]};
   }return null;
  }
@@ -18252,7 +18344,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   };
   const t=k=>(words[rf212Lang()]||words.hu)[k];
   const bridge=()=>{const c=window.Capacitor;return isNative()&&(c?.Plugins?.IntervalTimer||c?.isPluginAvailable?.('IntervalTimer')&&c.registerPlugin('IntervalTimer'))||null;};
-  const timed=e=>e&&(e.repUnit==='mp'||byId(e.id)?.repUnit==='mp');
+  const timed=e=>window.TrainPilotBilateral192Core.timed(e)||window.TrainPilotBilateral192Core.timed(typeof byId==='function'?byId(e?.id):null);
   const identity=s=>String(s?.syncId||s?.started||'');
   let poll=null,reading=false,changing=false,webKey='',webBegan=0,webHaptics={},knownRestKey='';
   const owner=()=>{const draft=state.session?null:db.get('draft',null),session=state.session||draft?.session,meta=session?.automatic162;return meta?{session,meta,draft}:null;};
@@ -18387,6 +18479,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const step=r?.steps?.[0]||iv?.steps?.[p?.stepIndex||0];
    const restSeconds=r?Number(step?.rest):p?.token==='initial:rest'?Number(iv.initialRest):Number(step?.rest??iv?.rest??settings().rest??90);
    return {enabled:m?.enabled===true,owner:'phone',phase,paused,remainingMs,deadlineAt:remainingMs&&!paused?Date.now()+remainingMs:0,
+    side192:p?.side192||'',restKind192:p?.restKind192||'',phaseSeconds192:Math.ceil((p?.phaseDurationMs||0)/1000),bilateralProtocol192:1,
     key:r?.key||iv?.key||m?.undoKey188||'',phaseNumber:r?.phaseNumber||iv?.phaseNumber||0,targetExercise:state.current,workSeconds:Number(step?.work??iv?.work??30),restSeconds,vibration:false,interrupted:r?.interrupted||iv?.interrupted||false};
   };
   const nativeFinish=window.finishWorkout;
@@ -18406,6 +18499,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(!Number.isInteger(a.workSeconds)||a.workSeconds<1||a.workSeconds>3600||!Number.isInteger(a.restSeconds)||a.restSeconds<0||a.restSeconds>3600)return false;
   if(!Number.isFinite(a.remainingMs)||a.remainingMs<0||a.remainingMs>3600000||!Number.isSafeInteger(command.sequence)||command.sequence<1)return false;
   if(!Array.isArray(root.exercises)||root.exercises.length!==session.exercises?.length||!Number.isInteger(root.currentExercise)||root.currentExercise<0||root.currentExercise>=root.exercises.length)return false;
+  const side=root.exercises.some(e=>e.repUnit==='mp/oldal')&&!!(a.side192||a.timeLog?.schema===2||root.exercises.some(e=>e.bilateral192));
+  if(side&&a.enabled&&(root.bilateralProtocol192!==1||a.side192&&!['left','right'].includes(a.side192)))return false;
+  if(a.timeLog?.schema===2&&(!window.TrainPilotTime162Core?.valid(a.timeLog)||a.timeLog.owner!=='watch'||a.timeLog.key!==a.key))return false;
+  if(side&&root.exercises.some(e=>e.repUnit==='mp/oldal'&&(e.bilateral192&&!window.TrainPilotBilateral192Core.config(e.bilateral192)||e.sets.some(set=>!Number.isInteger(set.leftSeconds)||set.leftSeconds<0||!Number.isInteger(set.rightSeconds)||set.rightSeconds<0))))return false;
   return root.exercises.every((e,i)=>e.id===session.exercises[i].id&&Array.isArray(e.sets)&&e.sets.length===session.exercises[i].sets.length&&e.sets.every((s,j)=>{
    const own=session.exercises[i].sets[j];return typeof s.setId==='string'&&s.setId===own.setId&&typeof s.done==='boolean'&&Number.isFinite(Number(s.reps||0))&&Number(s.reps||0)>=0&&Number(s.reps||0)<=86400&&Number.isFinite(Number(s.weight||0));
   }));
@@ -18423,8 +18520,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(root.undo188?.commandId&&s.undo188?.commandId!==root.undo188.commandId)return false;
    let changed=state.current!==root.currentExercise;
    const before=s.watchAutomation162;
+   root.exercises.forEach((e,i)=>{if(e.bilateral192){s.exercises[i].bilateral192=JSON.parse(JSON.stringify(e.bilateral192));const prefs=settings();if(JSON.stringify(prefs.bilateral192ByExercise?.[e.id])!==JSON.stringify(e.bilateral192))db.set('settings',{...prefs,bilateral192ByExercise:{...prefs.bilateral192ByExercise,[e.id]:e.bilateral192}});}});
    root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{
     const own=s.exercises[i].sets[j],previous=before?.snapshot?.exercises?.[i]?.sets?.[j];
+    if(v.sideState192)own.sideState192=JSON.parse(JSON.stringify(v.sideState192));
     // A mirror cannot revert a newer phone edit while the watch still reports its old value.
     if(!previous||own.done===previous.done||v.done!==previous.done){
      if(own.done!==v.done)changed=true;
@@ -18481,7 +18580,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    });
    if(m.pending)document.querySelector('[data-tp162-automatic]')?.querySelectorAll('input,button').forEach(n=>n.disabled=true);
   }
-  const WearTimed=e=>e?.repUnit==='mp'||byId(e?.id)?.repUnit==='mp';
+  const WearTimed=e=>window.TrainPilotBilateral192Core.timed(e)||window.TrainPilotBilateral192Core.timed(byId(e?.id));
   const auto=TrainPilotAutomatic162,baseToggle=auto.toggle,baseStart=auto.startTimed,baseDock=auto.dockCommand;
   auto.toggle=function(enabled){return external()?remote('toggle',{enabled:!!enabled}):baseToggle.apply(this,arguments);};
   auto.startTimed=function(){return external()?remote('start'):baseStart.apply(this,arguments);};
@@ -18649,3 +18748,112 @@ window.addEventListener?.('DOMContentLoaded',function(){
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
 // @endsection ready.js
+
+// @section bilateral-ui-192.js
+(function(){
+ 'use strict';
+ window.addEventListener('DOMContentLoaded',()=>{
+  const core=window.TrainPilotBilateral192Core;
+  const COPY={
+   hu:{title:'Oldalankénti automatika',first:'Kezdő oldal',left:'Bal',right:'Jobb',different:'Eltérő bal/jobb munkaidő',leftTime:'Bal munka (mp)',rightTime:'Jobb munka (mp)',swap:'Oldalcsere-pihenő (mp)',rest:'Sorozatpihenő',switchRest:'Oldalcsere-pihenő',work:'Munka',next:'Következő',done:'Kész',pause:'A módosításhoz szüneteltesd az időzítőt.',order:'A kezdő oldalt indítás előtt válaszd ki.',saved:'Oldalas menetrend mentve.',resume:'Folytatás',failed:'Az oldalas menetrend nem menthető. Ellenőrizd a beállításokat.',update:'Az oldalankénti automatikához frissítsd a telefonos és az órás TrainPilotot is.',skip:'Oldal kihagyása',log:'Oldalas időbontás',manualPause:'Kézi szünet',sideRest:'Oldalcsere-pihenő',setRest:'Sorozat-/körpihenő',seconds:'mp'},
+   en:{title:'Automatic left/right timing',first:'First side',left:'Left',right:'Right',different:'Different left/right work times',leftTime:'Left work (s)',rightTime:'Right work (s)',swap:'Side-switch rest (s)',rest:'Set rest',switchRest:'Side-switch rest',work:'Work',next:'Next',done:'Done',pause:'Pause the timer before changing settings.',order:'Choose the first side before starting.',saved:'Side sequence saved.',resume:'Resume',failed:'Could not save the side sequence. Check the settings.',update:'Update both the phone and watch TrainPilot apps for automatic side timing.',skip:'Skip this side',log:'Left/right time breakdown',manualPause:'Manual pause',sideRest:'Side-switch rest',setRest:'Set/round rest',seconds:'s'},
+   de:{title:'Automatische Seitenzeiten',first:'Erste Seite',left:'Links',right:'Rechts',different:'Unterschiedliche Arbeitszeiten',leftTime:'Links arbeiten (s)',rightTime:'Rechts arbeiten (s)',swap:'Seitenwechselpause (s)',rest:'Satzpause',switchRest:'Wechselpause',work:'Arbeit',next:'Danach',done:'Fertig',pause:'Timer vor dem Ändern pausieren.',order:'Erste Seite vor dem Start wählen.',saved:'Seitenablauf gespeichert.',resume:'Fortsetzen',failed:'Seitenablauf konnte nicht gespeichert werden. Einstellungen prüfen.',update:'Für automatische Seitenzeiten beide TrainPilot-Apps aktualisieren.',skip:'Seite überspringen',log:'Zeitaufteilung je Seite',manualPause:'Manuelle Pause',sideRest:'Wechselpause',setRest:'Satz-/Rundenpause',seconds:'s'},
+   ro:{title:'Cronometrare automată pe părți',first:'Prima parte',left:'Stânga',right:'Dreapta',different:'Timpi diferiți stânga/dreapta',leftTime:'Efort stânga (s)',rightTime:'Efort dreapta (s)',swap:'Pauză schimbare (s)',rest:'Pauză serie',switchRest:'Pauză schimbare',work:'Efort',next:'Urmează',done:'Gata',pause:'Pune cronometrul pe pauză înainte de modificare.',order:'Alege prima parte înainte de pornire.',saved:'Secvența pe părți a fost salvată.',resume:'Continuă',failed:'Secvența nu poate fi salvată. Verifică setările.',update:'Actualizează ambele aplicații TrainPilot pentru cronometrarea automată pe părți.',skip:'Sari peste această parte',log:'Timp pe părți',manualPause:'Pauză manuală',sideRest:'Pauză schimbare',setRest:'Pauză serie/rundă',seconds:'s'}
+  };
+  const t=k=>(COPY[rf212Lang()]||COPY.hu)[k],exercise=()=>state.session?.exercises?.[state.current],side=s=>t(s==='right'?'right':'left');
+  const defaults=(e,c=settings().intervalPreset110||{})=>core.config(e?.bilateral192||settings().bilateral192ByExercise?.[e?.id],Number(c.work)||60)||{schema:1,first:'left',leftSeconds:Number(c.work)||60,rightSeconds:Number(c.work)||60,sideRestSeconds:0,setRestSeconds:Number(c.rest)||0};
+  function fields(form){
+   if(!form||!form.reportValidity())return null;
+   const c={schema:1,first:form.elements.sideFirst192.value,leftSeconds:Number(form.elements.work.value),rightSeconds:Number(form.elements.work.value),sideRestSeconds:Number(form.elements.sideRest192.value),setRestSeconds:Number(form.elements.rest.value)};
+   if(form.elements.different192.checked){c.leftSeconds=Number(form.elements.leftWork192.value);c.rightSeconds=Number(form.elements.rightWork192.value);}
+   return core.config(c);
+  }
+  function persist(e,c){
+   e.bilateral192=c;const prefs=settings();db.set('settings',{...prefs,bilateral192ByExercise:{...prefs.bilateral192ByExercise,[e.id]:c}});persistDraft();
+  }
+  function different(form){const value=form.elements.different192.checked;form.querySelector('[data-tp192-separate]').hidden=!value;}
+  const oldHtml=TrainPilot110.intervalHtml;
+  TrainPilot110.intervalHtml=function(){
+   let html=oldHtml.apply(this,arguments);const e=exercise();if(!core.isSide(e))return html;
+   const c=defaults(e),separate=c.leftSeconds!==c.rightSeconds;
+   const box='<fieldset data-tp192-settings style="border:0;padding:0;min-width:0"><legend><strong>'+esc(t('title'))+'</strong></legend><label>'+esc(t('first'))+'<select name="sideFirst192"><option value="left" '+(c.first==='left'?'selected':'')+'>'+esc(t('left'))+'</option><option value="right" '+(c.first==='right'?'selected':'')+'>'+esc(t('right'))+'</option></select></label><label class="tp162-auto"><input type="checkbox" name="different192" '+(separate?'checked':'')+' onchange="TrainPilotBilateral192.different(this.form)">'+esc(t('different'))+'</label><div class="grid2" data-tp192-separate '+(!separate?'hidden':'')+'><label>'+esc(t('leftTime'))+'<input name="leftWork192" type="number" inputmode="numeric" min="1" max="3600" step="1" value="'+c.leftSeconds+'" required></label><label>'+esc(t('rightTime'))+'<input name="rightWork192" type="number" inputmode="numeric" min="1" max="3600" step="1" value="'+c.rightSeconds+'" required></label></div><label>'+esc(t('swap'))+'<input name="sideRest192" type="number" inputmode="numeric" min="0" max="3600" step="1" value="'+c.sideRestSeconds+'" required></label><p class="small muted" data-tp192-message role="status"></p></fieldset>';
+   return html.replace('</form>',box+'</form>');
+  };
+  const message=(form,text)=>{const n=form?.querySelector('[data-tp192-message]');if(n)n.textContent=text;};
+  async function save(form){
+   const session=state.session,e=exercise(),c=fields(form);if(!core.isSide(e)||!c)return false;
+   const own=TrainPilotIntervals162.owner(),run=own?.session===session?own.run:null;
+   if(run&&!run.stopped&&run.phase?.phase!=='complete'){
+    if(run.running){message(form,t('pause'));return false;}
+    if(run.steps[run.phase.stepIndex]?.bilateral192?.first!==c.first){message(form,t('order'));return false;}
+    try{
+     if(run.native){const api=window.Capacitor?.Plugins?.IntervalTimer||window.Capacitor?.registerPlugin?.('IntervalTimer');await api.configureBilateral192({key:run.key,exerciseId:e.id,configuration:c});await TrainPilotIntervals162.sync();}
+     else{core.configureRun(run,e.id,c);run.phase=core.phase(run.steps,run.autoAdvance,run.elapsedMs,run.initialRest||0,false,run.durationOverrides192);}
+    }catch(_){message(form,t('failed'));return false;}
+   }
+   if(state.session!==session||exercise()!==e)return false;try{persist(e,c);}catch(_){message(form,t('failed'));return false;}message(form,t('saved'));paint();return true;
+  }
+  const oldSave=TrainPilot110.saveInterval;
+  TrainPilot110.saveInterval=function(form){if(!core.isSide(exercise()))return oldSave.apply(this,arguments);return save(form).then(ok=>ok?oldSave.call(this,form):false);};
+  async function supported(){
+   if(!isNative())return true;
+   const c=window.Capacitor,api=c?.Plugins?.WearSync||c?.registerPlugin?.('WearSync');
+   if(!api?.bilateralCapability192){alert(t('update'));return false;}
+   try{const value=await api.bilateralCapability192();if(value.supported===true)return true;}catch(_){}
+   alert(t('update'));return false;
+  }
+  function seed(c){if(typeof tp1481HaltSide==='function')tp1481HaltSide(true);const prefs=settings().bilateral192ByExercise||{};for(const e of state.session?.exercises||[])if(core.isSide(e)&&!e.bilateral192)e.bilateral192=core.config(prefs[e.id],c.work)||{schema:1,first:'left',leftSeconds:c.work,rightSeconds:c.work,sideRestSeconds:0,setRestSeconds:c.rest};persistDraft();}
+  const oldConfigured=TrainPilotIntervals162.startConfigured;
+  TrainPilotIntervals162.startConfigured=async function(c,initialRest=0,form=null){
+   if(core.isSide(exercise())){
+    form??=document.querySelector('main.tp153-workout .tp110-interval form');
+    if(form){if(!await save(form))return false;c={...c,work:Number(form.elements.work.value),rest:Number(form.elements.rest.value),rounds:Number(form.elements.rounds.value)};}
+    if(!await supported())return false;seed(c);
+   }
+   return oldConfigured.call(this,c,initialRest,form);
+  };
+  const oldStart=TrainPilot110.startInterval;
+  TrainPilot110.startInterval=async function(form){if(core.isSide(exercise())){if(!await save(form)||!await supported())return false;seed({work:Number(form.elements.work.value),rest:Number(form.elements.rest.value)});}return oldStart.apply(this,arguments);};
+  function label(p,a){
+   if(!p)return '';const current=p.side192||a?.side192;if(!current)return '';
+   const phase=p.phase||a?.phase,kind=p.restKind192||a?.restKind192;
+   return phase==='rest'?(kind==='side'?t('switchRest'):t('rest'))+' → '+side(current):side(current)+' · '+t('work');
+  }
+  function paint(){
+   const e=exercise();if(!core.isSide(e))return;
+   const own=TrainPilotIntervals162.owner(),run=own?.session===state.session?own.run:null,external=state.session?.watchAutomation162;
+   const p=run?.phase||external,active=run&&!run.stopped&&p?.phase!=='complete';
+   const dock=document.querySelector('[data-tp162-dock-label]');if(dock&&p?.side192)dock.textContent=label(p,external);
+   const status=document.querySelector('[data-tp162-auto-status]');if(status&&p?.side192)status.textContent=label(p,external)+(run&&!run.running?' · '+t('pause').split('.')[0]:'');
+   const form=document.querySelector('main.tp153-workout .tp110-interval form');
+   if(form?.elements.sideFirst192){
+    form.querySelectorAll('[data-tp192-settings] input,[data-tp192-settings] select').forEach(n=>n.disabled=!!(active&&run.running));
+    form.elements.sideFirst192.disabled=!!active;
+    if(active&&!run.running){form.elements.work.disabled=false;form.elements.rest.disabled=false;for(const button of form.querySelectorAll('button'))if(button.getAttribute('onclick')?.includes('saveInterval'))button.disabled=false;}
+   }
+   const panel=document.getElementById('tp107Indoor');if(!panel)return;
+   let buttons=panel.querySelector('[data-tp192-controls]');
+   if(!buttons){buttons=document.createElement('div');buttons.dataset.tp192Controls='';buttons.className='tp107-save-row';buttons.innerHTML='<button type="button" class="btn" data-tp192-resume onclick="TrainPilotBilateral192.command(\'resume\')">'+esc(t('resume'))+'</button><button type="button" class="btn secondary" data-tp192-minus onclick="TrainPilotBilateral192.command(\'restMinus192\')">−5 '+esc(t('seconds'))+'</button><button type="button" class="btn secondary" data-tp192-plus onclick="TrainPilotBilateral192.command(\'restPlus192\')">+5 '+esc(t('seconds'))+'</button><button type="button" class="btn secondary" data-tp192-skip onclick="TrainPilotBilateral192.command(\'skipSide192\')">'+esc(t('skip'))+'</button>';panel.append(buttons);}
+   buttons.hidden=!p?.side192||p.phase==='complete';buttons.querySelector('[data-tp192-resume]').hidden=!run?.interrupted;buttons.querySelectorAll('button:not([data-tp192-resume])').forEach(n=>n.disabled=!!run?.interrupted);buttons.querySelector('[data-tp192-skip]').hidden=p?.phase!=='work';buttons.querySelector('[data-tp192-minus]').hidden=p?.phase!=='rest';buttons.querySelector('[data-tp192-plus]').hidden=p?.phase!=='rest';
+   const activeSide=!!(active||external?.enabled&&['work','rest'].includes(external.phase));
+   document.querySelectorAll('#rf110Stopwatch button,#rf110Stopwatch input,.tp153-set-row input[oninput*="leftSeconds"],.tp153-set-row input[oninput*="rightSeconds"]').forEach(n=>{
+    if(activeSide){if(n.dataset.tp192Guarded===undefined)n.dataset.tp192Guarded=String(n.disabled);n.disabled=true;}
+    else if(n.dataset.tp192Guarded!==undefined){n.disabled=n.dataset.tp192Guarded==='true';delete n.dataset.tp192Guarded;}
+   });
+   if(activeSide){const set=e.sets.find(s=>!s.done&&!s.sideState192?.skipped)||e.sets.at(-1);for(const name of ['left','right']){const n=document.getElementById('tp1481SideTime-'+name);if(n)n.textContent=rf110FormatStopwatch(Number(set?.[name+'Seconds'])||0);}}
+
+  }
+  async function command(action){if(state.session?.timerOwner==='watch')return window.TrainPilotWearAutomatic162?.remote?.(action);return TrainPilotIntervals162.command(action);}
+  const oldPaint=TrainPilotAutomatic162.paint;TrainPilotAutomatic162.paint=function(){const result=oldPaint.apply(this,arguments);paint();return result;};
+  const oldIntervalPaint=TrainPilotIntervals162.paint;TrainPilotIntervals162.paint=function(){const result=oldIntervalPaint.apply(this,arguments);paint();return result;};
+  const oldRender=renderWorkout;renderWorkout=function(){const result=oldRender.apply(this,arguments);const e=exercise(),form=document.querySelector('main.tp153-workout .tp110-interval form');if(core.isSide(e)&&form?.elements.sideFirst192){const c=defaults(e);form.elements.work.value=c.leftSeconds;if(c.setRestSeconds!==undefined)form.elements.rest.value=c.setRestSeconds;}paint();return result;};
+  window.TrainPilotBilateral192={save,different,paint,command,supported};
+  if(typeof rfHistoryHealthHtml==='function'){
+   const oldHistory=rfHistoryHealthHtml;rfHistoryHealthHtml=function(h){const html=oldHistory.apply(this,arguments),parts=Object.values(h?.automaticTime162?.logs||{}).filter(log=>log.schema===2).flatMap(log=>log.steps||[]).filter(row=>'leftWorkMs' in row);if(!parts.length)return html;
+    const fields=[['left',parts.reduce((n,p)=>n+p.leftWorkMs,0)],['right',parts.reduce((n,p)=>n+p.rightWorkMs,0)],['sideRest',parts.reduce((n,p)=>n+p.sideRestMs,0)],['setRest',parts.reduce((n,p)=>n+p.setRestMs,0)],['manualPause',parts.reduce((n,p)=>n+p.pausedMs,0)]];
+    return html+'<details data-tp192-log><summary>'+esc(t('log'))+'</summary><dl>'+fields.map(([key,ms])=>'<dt>'+esc(t(key))+'</dt><dd>'+rf110FormatStopwatch(Math.floor(ms/1000))+'</dd>').join('')+'</dl></details>';
+   };
+  }
+ });
+})();
+// @endsection bilateral-ui-192.js
