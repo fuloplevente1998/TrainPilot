@@ -20,6 +20,8 @@ public final class OwnershipJournal193 {
     }
     public synchronized JSONObject read() throws Exception {
         if(!file.getBaseFile().exists()&&!new File(file.getBaseFile()+".bak").exists())return new JSONObject();
+        if(file.getBaseFile().length()>512000||new File(file.getBaseFile()+".bak").length()>512000)
+            throw new IllegalStateException("Ownership journal exceeds storage budget");
         byte[] bytes=file.readFully();
         if(bytes.length>512000)throw new IllegalStateException("Ownership journal exceeds storage budget");
         return new JSONObject(new String(bytes,StandardCharsets.UTF_8));

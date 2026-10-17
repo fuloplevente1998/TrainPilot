@@ -59,6 +59,9 @@ internal object WearOwnership193 {
         }
     }
     fun recover(context: Context) {
+        if(android.os.Looper.myLooper()!=android.os.Looper.getMainLooper()) {
+            android.os.Handler(android.os.Looper.getMainLooper()).post { recover(context.applicationContext) };return
+        }
         try { val store=journal(context);store.recover();OwnershipTransport193.send(context,store) }catch(_:Exception){/* Never start from an unreadable journal. */}
     }
     fun receive(context: Context,message: JSONObject,origin: String,localNode: String) {

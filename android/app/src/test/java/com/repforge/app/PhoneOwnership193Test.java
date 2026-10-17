@@ -60,4 +60,19 @@ public class PhoneOwnership193Test {
         try {PhoneOwnership193.commandAllowed(context,command(0));fail("Corrupt storage was treated as a stale command");}
         catch(org.json.JSONException expected) {}
     }
+    @Test public void pluginWorkerClosureWaitingForJournalDoesNotLockOutSnapshotReaders()throws Exception {
+        java.util.concurrent.ExecutorService probe=java.util.concurrent.Executors.newSingleThreadExecutor();
+        java.util.concurrent.atomic.AtomicReference<Throwable> error=new java.util.concurrent.atomic.AtomicReference<>();
+        Thread worker=new Thread(()->{try{ActiveWorkoutStore.clear(context);}catch(Throwable failure){error.set(failure);}});
+        worker.setDaemon(true);
+        try {
+            synchronized(journal) {
+                worker.start();long deadline=System.nanoTime()+java.util.concurrent.TimeUnit.SECONDS.toNanos(2);
+                while(worker.getState()!=Thread.State.BLOCKED&&System.nanoTime()<deadline)Thread.yield();
+                assertEquals(Thread.State.BLOCKED,worker.getState());
+                assertNotNull(probe.submit(()->ActiveWorkoutStore.current(context)).get(2,java.util.concurrent.TimeUnit.SECONDS));
+            }
+        } finally {worker.join(2000);probe.shutdownNow();}
+        assertFalse(worker.isAlive());assertNull(error.get());
+    }
 }
