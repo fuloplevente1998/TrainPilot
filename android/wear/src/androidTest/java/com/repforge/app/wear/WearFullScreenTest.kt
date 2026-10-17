@@ -928,7 +928,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     }
 
     @Test
-    fun touchLockBlocksAccidentalActionsAndRequiresTheArmedThreeSecondRelease() {
+    fun touchLockBlocksAccidentalActionsAndUnlocksWithOneThreeSecondHold() {
         val actions=mutableListOf<String>()
         compose.setContent { Watch { Fixture("touch-workout",touchActions=actions) } }
         compose.onNodeWithTag("wear-touch-lock").assertIsDisplayed().performClick()
@@ -938,17 +938,21 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             compose.onNodeWithContentDescription(label).assertDoesNotExist()
         compose.onRoot().performTouchInput { click(center);swipeLeft();swipeUp();doubleClick(center) }
         val unlock=compose.onNodeWithTag("wear-touch-unlock").assertIsDisplayed()
-        unlock.performTouchInput { down(center);advanceEventTime(3500);up() }
+        unlock.performTouchInput { down(center);advanceEventTime(800);up();advanceEventTime(100);down(center);advanceEventTime(800);up() }
         compose.onNodeWithTag("wear-touch-locked").assertIsDisplayed()
-        unlock.performTouchInput { click(center);advanceEventTime(100);down(center);advanceEventTime(800);up() }
+        unlock.performTouchInput { down(center);moveTo(center+androidx.compose.ui.geometry.Offset(35f,0f));advanceEventTime(3200);up() }
         compose.onNodeWithTag("wear-touch-locked").assertIsDisplayed()
-        unlock.performTouchInput { click(center);advanceEventTime(100);down(center);moveTo(center+androidx.compose.ui.geometry.Offset(35f,0f));advanceEventTime(3200);up() }
-        compose.onNodeWithTag("wear-touch-locked").assertIsDisplayed()
-        unlock.performTouchInput { click(center);advanceEventTime(100);down(0,center);down(1,center);advanceEventTime(3200);up(1);up(0) }
+        unlock.performTouchInput { down(0,center);down(1,center);advanceEventTime(3200);up(1);up(0) }
         compose.onNodeWithTag("wear-touch-locked").assertIsDisplayed()
         assertTrue(actions.isEmpty());screenshot("touch189-locked")
-        unlock.performTouchInput { click(center);advanceEventTime(100);down(center);advanceEventTime(3100);up() }
+        unlock.performTouchInput { down(center) }
+        compose.mainClock.advanceTimeBy(2700)
+        compose.onNodeWithTag("wear-touch-locked").assertIsDisplayed()
+        compose.mainClock.advanceTimeBy(500)
+        // No UP has been sent: the hold alone must already have restored the workout.
         compose.onNodeWithTag("wear-touch-locked").assertDoesNotExist()
+        compose.onRoot().performTouchInput { up() }
+        assertTrue("Release cannot click through to the restored workout",actions.isEmpty())
         compose.onNodeWithContentDescription("Sorozat rögzítése").assertIsDisplayed().performClick()
         assertEquals(listOf("record"),actions)
     }

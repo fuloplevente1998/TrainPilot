@@ -1,6 +1,6 @@
-## Aktuális folytatás — 2026. október 16., P2 #189
+## Aktuális folytatás — 2026. október 17., P2 #189
 
-#188 telefonos és órás Visszavonás elfogadva: **„Zárhatjuk, jók vagyunk :) Folytathatod”**. #209 beolvasztva a `a06485c` mainbe; #188 lezárva. Elfogadott APK-forrás `0694413`, mindkettő 1.3.51 /2732. A következő dokumentált P2 **#189 érintészár**, külön `feat/189-wear-touch-lock` ágon a friss mainből. Teljes teszt/build GitHub Actionsben, helyben célzott feltárás és gyors ellenőrzés. A #189 új funkcióhoz még külön készülékes elfogadás kell; nincs automatikus verzióemelés vagy új mainre emelés. Aktuális részletek: DEVELOPMENT_STATUS és közös Wear-terv. Az alábbi korábbi folytatások történetiek.
+#188 telefonos és órás Visszavonás elfogadva: **„Zárhatjuk, jók vagyunk :) Folytathatod”**. #209 beolvasztva a `a06485c` mainbe; #188 lezárva. Elfogadott APK-forrás `0694413`, mindkettő 1.3.51 /2732. A következő dokumentált P2 **#189 érintészár**, külön `feat/189-wear-touch-lock` ágon a friss mainből. Teljes teszt/build GitHub Actionsben, helyben célzott feltárás és gyors ellenőrzés. A #189 új funkcióhoz még külön készülékes elfogadás kell; nincs automatikus verzióemelés vagy új mainre emelés. A felhasználó egyszerűsítést kért: egyetlen folyamatos 3 mp-es nyomás oldjon fel automatikusan, előzetes koppintás és elengedési lépés nélkül; a feltételes „ha ez oké lesz, zárhatjuk” még nem az új APK készülékes elfogadása. Aktuális részletek: DEVELOPMENT_STATUS és közös Wear-terv. Az alábbi korábbi folytatások történetiek.
 
 ## Legfrissebb Wear-visszajelzés — kikapcsolt központi helyszolgáltatás
 

@@ -61,10 +61,14 @@ internal fun WearTouchLockedScreen189(workout: WearWorkout,restRemaining: Int,he
         onDispose { gesture.cancel();owner?.lifecycle?.removeObserver(observer) }
     }
     LaunchedEffect(foreground,gesture) {
-        if(foreground)while(true){now=clock();delay(if(gesture.phase(now)>=2)32 else 250)}
+        if(foreground)while(true){
+            now=clock()
+            if(gesture.tryUnlock(now))unlock()
+            delay(if(gesture.holding)32 else 250)
+        }
     }
-    val phase=gesture.phase(now);val progress=gesture.progress(now)
-    val hint=when(phase){1,2->copy.hold;3->copy.release;else->copy.tap}
+    val progress=gesture.progress(now)
+    val hint=copy.hold
     val color=LocalWearHomeTheme.current.accentColor
     val slop=LocalViewConfiguration.current.touchSlop
     val fontScale=LocalDensity.current.fontScale
@@ -86,11 +90,11 @@ internal fun WearTouchLockedScreen189(workout: WearWorkout,restRemaining: Int,he
     Box(Modifier.fillMaxSize().testTag("wear-touch-locked")) {
         FixedRoundPanel(workout.exercise?.name.orEmpty(),count=1,footer={
             Box(Modifier.size(48.dp).background(Color(0xFF232933),CircleShape).testTag("wear-touch-unlock")
-                .semantics { role=Role.Button;contentDescription=copy.locked+". "+copy.tap+". "+copy.hold+". "+copy.release;stateDescription=hint
+                .semantics { role=Role.Button;contentDescription=copy.locked+". "+copy.hold;stateDescription=hint
                     progressBarRangeInfo=ProgressBarRangeInfo(progress,0f..1f) }
                 .pointerInput(gesture) {
                     awaitEachGesture {
-                        // Input, progress, expiry and release share one monotonic clock.
+                        // Input, progress and automatic completion share one monotonic clock.
                         // Pointer timestamps may use a different epoch in injected/platform events.
                         val first=awaitFirstDown(requireUnconsumed=false);first.consume();gesture.down(clock());now=clock()
                         var released=false;var cancelled=false

@@ -1,10 +1,10 @@
 # Telefonos és Wear OS automata mód, Wear UI-fejlesztési terv
 
-## P2 #188 lezárva → #189 érintészár — 2026. október 16.
+## P2 #188 lezárva → #189 egyszerű érintészár — 2026. október 17.
 
 A `0694413` telefonos + Wear tesztpárt a felhasználó elfogadta (**„Zárhatjuk, jók vagyunk :) Folytathatod”**). #209 mainre került `a06485c`, #188 lezárva; 143/143 regresszió, 6/6 telefonos UI-futás, natív/Wear kapuk, 119/119 kerek UI/háttér/szinkron sikeres. A régebbi következő szakaszok történeti állapotok.
 
-A dokumentált következő feladat **#189**, `feat/189-wear-touch-lock` ágon, 1.3.51 /2732 verzióemelés nélkül. Az érintészár kizárólag helyi felületi védelem: külön tartós edzésazonosítóhoz kötött jelző, a kanonikus edzés/időnapló/outbox változtatása nélkül. Zár alatt a normál pager, szerkesztők és mentési/törlési megerősítők helyett olvasható edzésállapot és egyetlen feloldó vezérlő van. A háttér és telefonos vezérlés változatlanul halad. Feloldás: rövid koppintás, majd 3 mp tartás és elengedés; mozgatás/több ujj/háttér/lejáró előkészítés megszakítja. Képernyőébresztés és újraindítás után megmarad, más/lezárt edzésre nem kerül át. Új készülékes elfogadásig draft PR, teljes teszt és aláírt build Actionsön. Utána #192 → #193.
+A dokumentált következő feladat **#189**, `feat/189-wear-touch-lock` ágon, 1.3.51 /2732 verzióemelés nélkül. Az érintészár kizárólag helyi felületi védelem: külön tartós edzésazonosítóhoz kötött jelző, a kanonikus edzés/időnapló/outbox változtatása nélkül. Zár alatt a normál pager, szerkesztők és mentési/törlési megerősítők helyett olvasható edzésállapot és egyetlen feloldó vezérlő van. A háttér és telefonos vezérlés változatlanul halad. Felhasználói pontosítás: feloldás egyetlen folyamatos 3 mp-es nyomva tartással a lakaton, automatikusan a tartás közben; külön koppintás és elengedési lépés nincs. Mozgatás/több ujj/háttér/rövid nyomás megszakítja. A felengedés nem csúszhat át edzésműveletre. Képernyőébresztés és újraindítás után megmarad, más/lezárt edzésre nem kerül át. Új készülékes elfogadásig draft PR, teljes teszt és aláírt build Actionsön. Utána #192 → #193.
 
 
 ### #188 telefonos indítás javítása — 2026. október 16.
