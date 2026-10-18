@@ -17675,13 +17675,23 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(state.session.ownershipProtocol193===1&&state.session.timerOwner==='watch'){
    if(!window.TrainPilotOwnership193?.acceptWatchFinal(command))return false;
   }else mergeFinalSets(command);
-  attachMeasuredHealth(command);persistDraft();
+  attachMeasuredHealth(command);
   if(!state.session.exercises.some(e=>e.sets?.some(s=>s.done)))return recordResult(command,'error','Legalább egy rögzített sorozat szükséges.');
-  const result=finishWorkout({wearConfirmed:true,wearFinishedAt:String(command.finishedAt||''),wearFeedback:command.feedback});
-  if(result&&typeof result.then==='function')await result;
-  if(history().some(x=>matchesWorkout(x,expected)&&x.finished))return recordResult(command,'saved');
-  // A temporarily busy GPS/phone save is retried without acknowledging the command.
-  return false;
+  const h=history();
+  const requestedEnd=Date.parse(command.finishedAt||''),startedAt=Date.parse(state.session.started||'');
+  state.session.finished=Number.isFinite(requestedEnd)&&requestedEnd>=startedAt&&requestedEnd<=Date.now()+30000?new Date(requestedEnd).toISOString():new Date().toISOString();
+  closeWorkoutInterval(state.session,state.session.finished);
+  h.unshift(state.session);
+  db.set('history',h);
+  db.set('draft',null);
+  stopTimer();
+  const finishedSession=state.session;
+  state.session=null;
+  state.workout=null;
+  if(state.tab==='plan'){state.tab='home';render();}else render();
+  if(window.TrainPilotWorkoutFeedback?.valid(command.feedback))window.TrainPilotWorkoutFeedback.accept(expected,command.feedback);
+  recordResult(command,'saved');
+  return true;
  }
  async function applyCommand(command){
   if(!command||typeof state==='undefined')return false;
@@ -17868,7 +17878,13 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(window.TrainPilotWearMeasurement165?.valid(live) && live.summary)attachMeasuredHealth({workoutId:live.workoutId,healthSummary:live.summary});
    window.TrainPilotWearMeasurement165?.receive(live);
    window.TrainPilotWearMeasurement165?.paint();
-   const commands=(Array.isArray(result?.commands)?result.commands:[]).slice().sort((a,b)=>(Number(a.createdAt)||0)-(Number(b.createdAt)||0)||(Number(a.sequence)||0)-(Number(b.sequence)||0));
+   const rawCommands=Array.isArray(result?.commands)?result.commands:[];
+   const isTerminal=c=>c?.action==='finishWorkout'||c?.action==='discardWorkout';
+   const commands=rawCommands.slice().sort((a,b)=>{
+    const termA=isTerminal(a)?0:1,termB=isTerminal(b)?0:1;
+    if(termA!==termB)return termA-termB;
+    return (Number(a.createdAt)||0)-(Number(b.createdAt)||0)||(Number(a.sequence)||0)-(Number(b.sequence)||0);
+   });
    let changed=false;
    for(const command of commands){
     if(window.TrainPilotBackupBusy)break;
