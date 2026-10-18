@@ -16862,6 +16862,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
  async function syncLocked({prepare=true}={}){
   const api=bridge();if(!api?.executionStatus)return true;if(blocked())return false;let stage='reconcile';
   try{
+   const owned=draft()?.session;
+   if(owned?.ownershipProtocol193===1&&(owned.timerOwner==='watch'||window.TrainPilotOwnership193Core?.pending(owned)))return true;
    if(!await reconcile(api))return false;
    let current=draft(),session=current?.session;
    stage='status';let remote=await api.executionStatus();if(blocked())return false;if(remote.controllerArmed===false)lastArmed='';
@@ -17335,6 +17337,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
    return {
     schema:1,
     ...(session.phoneExecution162&&session.automatic162?.enabled===true&&(session.timerOwner||'phone')==='phone'&&!session.exercises.some(e=>e.measurementType==='distance')?{nativeExecutionProtocol:2,generation:session.phoneExecution162.generation,executionRevision:session.phoneExecution162.revision}:{}),
+    ...(session.ownershipProtocol193===1?{ownershipProtocol193:1,ownerEpoch193:Number(session.ownerEpoch193)||0,
+     ...(session.handoff193?{handoff193:session.handoff193}:{}),...(session.timerCheckpoint193?{timerCheckpoint193:session.timerCheckpoint193}:{}),
+     pausedRestMillis:Number(session.pausedRestMillis201)||0,resumeAutomaticOnContinue:!!session.pauseTimer201}:{}),
     workoutId:sessionKey(session),
     watchSequence:Number(session.wearSequence)||0,
     ...(session.undo188?{undo188:session.undo188}:{}),
@@ -17424,6 +17429,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  async function syncNow(){
   if(busy||window.TrainPilotBackupBusy)return;
+  if(window.TrainPilotOwnership193&&!await window.TrainPilotOwnership193.sync())return;
   // Manual workouts need the same durable identities as native automatic
   // execution. Repair older drafts before publishing any watch controls.
   try{
@@ -17812,6 +17818,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const bridge=api();if(!bridge?.pendingCommands||!bridge?.ackCommand)return;
   commandBusy=true;
   try{
+   if(window.TrainPilotOwnership193&&!await window.TrainPilotOwnership193.sync())return;
    if(bridge.executionStatus&&window.TrainPilotPhoneExecution162&&!await window.TrainPilotPhoneExecution162.sync({prepare:false}))return;
    if(window.TrainPilotBackupBusy)return;
    const result=await bridge.pendingCommands();
@@ -18447,7 +18454,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
   async function remote(action,values={}){
    const s=state.session;if(!s||!(external()||action==='undo'&&s.timerOwner==='watch'))return false;
-   const command={schema:1,commandId:crypto.randomUUID(),workoutId:s.syncId||s.started,key:s.watchAutomation162?.key||'',phaseNumber:s.watchAutomation162?.phaseNumber||0,action,createdAt:Date.now(),...values};
+   const command={schema:1,commandId:crypto.randomUUID(),workoutId:s.syncId||s.started,ownerEpoch193:Number(s.ownerEpoch193)||0,key:s.watchAutomation162?.key||'',phaseNumber:s.watchAutomation162?.phaseNumber||0,action,createdAt:Date.now(),...values};
    const c=window.Capacitor,api=c?.Plugins?.WearSync||c?.registerPlugin?.('WearSync');
    try{
     if(!api?.automaticCommand)throw Error('No watch bridge');
@@ -18539,6 +18546,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  async function resume(session){
   if(!session?.workoutPaused||state.session!==session)return true;
+  if(session.ownershipProtocol193===1&&(session.timerOwner==='watch'||window.TrainPilotOwnership193Core?.pending(session)))return false;
   const previous=session.pauseRevision;
   session.workoutPaused=false;revision(session);save(session);
   try{
@@ -18556,6 +18564,94 @@ window.addEventListener?.('DOMContentLoaded',function(){
  });
 })();
 // @endsection workout-pause-201.js
+
+// @section workout-ownership-193.js
+/* Adopt only native journal transitions. Normal DataItems cannot grant ownership. */
+(function(){
+ 'use strict';
+ const clone=v=>JSON.parse(JSON.stringify(v)),id=s=>String(s?.syncId||s?.started||'');
+ const rank={offered:1,accepted:2,committed:3},fields=['done','reps','weight','leftSeconds','rightSeconds','distanceMeters'];
+ function pending(session){return !!session?.handoff193&&session.handoff193.state!=='committed';}
+ function merge(draft,root){
+  const own=draft?.session,h=root?.handoff193;
+  if(!own||!h||root.workoutId!==id(own))return null;
+  const epoch=Number(root.ownerEpoch193),local=Number(own.ownerEpoch193)||0;
+  if(root.ownershipProtocol193!==1||h.protocol!==1||!rank[h.state]||!Number.isSafeInteger(epoch)||epoch<0||
+     !Number.isSafeInteger(h.epoch)||h.epoch<1||h.epoch!==epoch+(h.state==='committed'?0:1)||
+     !/^[A-Za-z0-9._:-]{1,128}$/.test(h.id)||!['phone','watch'].includes(h.source)||
+     h.target!==(h.source==='phone'?'watch':'phone')||root.timerOwner!==(h.state==='committed'?h.target:h.source)||root.workoutPaused!==true)
+   throw Error('Invalid ownership checkpoint');
+  if(epoch<local||h.epoch<(own.handoff193?.epoch||0))return null;
+  if(h.epoch===own.handoff193?.epoch&&h.id!==own.handoff193.id)throw Error('Conflicting ownership checkpoint');
+  const applied=own.ownershipApplied193;
+  if(applied?.id===h.id&&applied.epoch===epoch&&rank[applied.state]>=rank[h.state])return null;
+  if(!Array.isArray(root.exercises)||root.exercises.length!==own.exercises.length||!Number.isInteger(root.currentExercise)||
+     root.currentExercise<0||root.currentExercise>=root.exercises.length)throw Error('Transferred workout changed');
+  const seen=new Set();
+  root.exercises.forEach((e,i)=>{
+   if(e.id!==own.exercises[i].id||!Array.isArray(e.sets)||e.sets.length!==own.exercises[i].sets.length)throw Error('Transferred workout changed');
+   e.sets.forEach((s,j)=>{
+    if(!s.setId||s.setId!==own.exercises[i].sets[j].setId||seen.has(s.setId)||typeof s.done!=='boolean')throw Error('Transferred set changed');
+    seen.add(s.setId);
+    for(const key of fields.slice(1))if(s[key]!=null&&s[key]!==''&&(!Number.isFinite(Number(s[key]))||Number(s[key])<0))throw Error('Invalid transferred value');
+   });
+  });
+  const next=clone(draft),s=next.session;
+  root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{for(const k of fields)if(k in v)s.exercises[i].sets[j][k]=v[k];}));
+  Object.assign(s,{ownershipProtocol193:1,ownerEpoch193:epoch,handoff193:clone(h),timerOwner:root.timerOwner,
+   workoutPaused:true,pauseRevision:Math.max(Number(s.pauseRevision)||0,Number(root.pauseRevision)||0),
+   ownershipApplied193:{id:h.id,state:h.state,epoch},pausedRestMillis201:Number(root.pausedRestMillis)||0});
+  if(Array.isArray(root.activeIntervals))s.activeIntervals=clone(root.activeIntervals);
+  if(root.timerCheckpoint193)s.timerCheckpoint193=clone(root.timerCheckpoint193);else delete s.timerCheckpoint193;
+  if(root.timerOwner==='watch'){
+   s.watchAutomation162=root.automation?{...clone(root.automation),snapshot:clone(root)}:null;
+   s.automatic162={...s.automatic162,enabled:root.automation?.enabled===true,owner:'watch',watch:s.watchAutomation162,run:null,pending:false};
+   delete s.interval162;
+  }
+  next.current=root.currentExercise;next.restEndAt=null;next.savedAt=new Date().toISOString();return next;
+ }
+ let busy=false;
+ const blocked=()=>window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||window.TrainPilotBoot?.loading;
+ const draft=()=>state.session?{session:state.session,workout:state.workout,current:state.current,restEndAt:state.restEndAt||null}:db.get('draft',null);
+ function commit(value){
+  db.set('draft',value); // Commit before exposing the new owner to controls or publishing it.
+  if(id(state.session)===id(value.session)){
+   const session=state.session,exercises=session.exercises;
+   value.session.exercises.forEach((e,i)=>e.sets.forEach((s,j)=>Object.assign(exercises[i].sets[j],s)));
+   Object.assign(session,value.session,{exercises});
+   for(const key of ['interval162','timerCheckpoint193'])if(!(key in value.session))delete session[key];
+   state.current=value.current;state.restEndAt=null;stopTimer();
+  }
+ }
+ async function sync(){
+  const c=window.Capacitor,api=c?.isNativePlatform?.()===true?(c.Plugins?.WearSync||c.registerPlugin?.('WearSync')):null;
+  if(!api?.ownershipStatus193)return true;
+  if(busy||blocked())return false;busy=true;
+  try{
+   let remote=await api.ownershipStatus193();if(blocked())return false;
+   const request=remote?.state?.request,s=sessionOrNull();
+   if(remote?.state?.stage==='incoming'&&s?.ownershipProtocol193===1&&request?.workoutId===id(s)&&
+      (s.timerOwner||'phone')==='phone'&&Number(request.epoch)===(Number(s.ownerEpoch193)||0)){
+    // A background WebView or an open editor cannot silently freeze/replace unsaved input.
+    if(state.session!==s||document.hidden||document.activeElement?.matches?.('input,textarea,select')||document.querySelector('dialog[open],[role="dialog"]'))return false;
+    if(window.TrainPilotPhoneExecution162&&!await window.TrainPilotPhoneExecution162.sync())return false;
+    if(!await window.TrainPilotWorkoutPause201.pause(s)||state.session!==s||blocked())return false;
+    if(window.TrainPilotPhoneExecution162&&!await window.TrainPilotPhoneExecution162.sync({prepare:false}))return false;
+    if(state.session!==s||blocked()||id(s)!==request.workoutId)return false;
+    remote=await api.prepareOwnership193({requestId:request.id,snapshot:window.TrainPilotWearSync.makeSnapshot()});
+    if(blocked()||state.session!==s)return false;
+   }
+   const root=remote?.state?.snapshot;
+   if(root?.active===false)return true;
+   const value=merge(draft(),root);if(value)commit(value);
+   return !pending(sessionOrNull());
+  }catch(_){return false;}finally{busy=false;}
+ }
+ function sessionOrNull(){return state.session||db.get('draft',null)?.session||null;}
+ window.TrainPilotOwnership193Core={merge,pending};
+ window.TrainPilotOwnership193={sync,pending:()=>pending(sessionOrNull()),isReconciling:()=>busy};
+})();
+// @endsection workout-ownership-193.js
 
 // @section phone-recording-162.js
 (function(){

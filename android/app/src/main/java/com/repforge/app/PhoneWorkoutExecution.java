@@ -137,6 +137,7 @@ final class PhoneWorkoutExecution {
     static void setWorkoutPause(Context context,JSONObject input) throws Exception {
 
         if(input==null||input.optString("workoutId").isEmpty())throw new IllegalArgumentException("missingWorkoutPause");
+        if(!PhoneOwnership193.phoneAllowed(context,input.optString("workoutId")))throw new IllegalStateException("Workout ownership changed");
         JSONObject active=ActiveWorkoutStore.current(context);
         PhoneWorkoutExecutionStore db=PhoneWorkoutExecution.store(context);JSONObject before=db.snapshot();
         boolean nativeOwner=before!=null&&before.optBoolean("active")&&input.optString("workoutId").equals(before.optString("workoutId"));

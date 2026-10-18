@@ -43,7 +43,7 @@ jobs:
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon :app:testDebugUnitTest --tests com.repforge.app.OwnershipJournal193Test --tests com.repforge.app.PhoneOwnership193Test :wear:testDebugUnitTest --tests com.repforge.app.wear.WorkoutOwnership193Test
+          ./gradlew --no-daemon :app:testDebugUnitTest --tests com.repforge.app.OwnershipJournal193Test --tests com.repforge.app.PhoneOwnership193Test --tests com.repforge.app.PhoneTimerCheckpoint193Test :wear:testDebugUnitTest --tests com.repforge.app.wear.WorkoutOwnership193Test
       - name: Upload native protocol results
         if: always()
         uses: actions/upload-artifact@v7

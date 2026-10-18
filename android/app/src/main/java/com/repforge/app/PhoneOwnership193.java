@@ -31,14 +31,28 @@ final class PhoneOwnership193 {
     static void prepare(Context context,JSONObject frozen,String requestId,String localNode) throws Exception {
         OwnershipJournal193 store=journal(context);JSONObject request=store.read().optJSONObject("request");
         if(request==null||!requestId.equals(request.optString("id"))||!localNode.equals(request.optString("target"))
+                ||!request.optString("workoutId").equals(frozen.optString("workoutId"))||request.optLong("epoch")!=frozen.optLong("ownerEpoch193")
                 ||!"phone".equals(frozen.optString("timerOwner","phone"))||!frozen.optBoolean("workoutPaused"))
+            throw new IllegalStateException("The workout transfer changed");
+        JSONObject active=ActiveWorkoutStore.current(context);
+        long now=System.currentTimeMillis();
+        if(active==null||!active.optBoolean("active",true)||!frozen.optString("workoutId").equals(active.optString("workoutId"))
+                ||WorkoutOwnership193.pending(active)||!"phone".equals(active.optString("timerOwner","phone"))
+                ||active.optLong("ownerEpoch193")!=request.optLong("epoch")
+                ||now-request.optLong("createdAt")>30000||now<request.optLong("createdAt")-5000)
             throw new IllegalStateException("The workout transfer changed");
         if(frozen.optInt("ownershipProtocol193")!=1)throw new IllegalStateException("Update both apps before transferring a workout");
         JSONObject gps=DistanceTrackingService.snapshot(context);
         if(gps.optBoolean("active"))throw new IllegalStateException("Finish recording GPS values before transfer");
+        JSONObject status=PhoneWorkoutExecution.status(context);
+        PhoneTimerCheckpoint193.verifyCanonical(frozen,status);
+        JSONObject prepared=new JSONObject(frozen.toString());
+        prepared.remove("timerCheckpoint193");
+        JSONObject checkpoint=PhoneTimerCheckpoint193.create(prepared,status.optJSONObject("timer"));
+        if(checkpoint!=null)prepared.put("timerCheckpoint193",checkpoint);
         PhoneWorkoutExecution.store(context).suspendCommands(true);
         IntervalTimerService.stopForOwnership(context,frozen.getString("workoutId"));
-        store.prepare(frozen,localNode,System.currentTimeMillis());
+        store.prepare(prepared,localNode,System.currentTimeMillis());
         OwnershipTransport193.send(context,store);
     }
     static JSONObject status(Context context) throws Exception {

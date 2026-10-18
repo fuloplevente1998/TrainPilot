@@ -66,6 +66,22 @@ szüneteltetése, JS-egyeztetés, időzítő-folytatás, felhasználói vezérl�
 GPS-rész bekötése következő integrációs lépés. A második rész sem készülékes
 funkciótesztre szánt kiadás; új main/kiadás nincs.
 
+Harmadik rész (2026-10-18): a telefonos JS-piszkozat natív átadási naplóval
+egyeztetése bekerült a közzététel és parancsfeldolgozás elé. Az import egy
+tartós piszkozatmentéssel őrzi a sorozatazonosítókat és a helyi megjegyzéseket;
+ismételt commit nem írhatja vissza a befagyasztott értékeket az újabb adatokra.
+A forrás előbb egyeztet, szüneteltet, majd a szünet hatásait is egyezteti.
+Szerkesztő vagy háttérben levő WebView nem indít átadást. A telefonos régi
+natív végrehajtás nem egyeztethet vissza a már átadott JS-edzésbe.
+
+A telefon natív időzítőjének teljes, ellenőrzött checkpointja megőrzi a tervet,
+körszámot, kezdő pihenőt, pozíciót, baseline-t és mért munka/pihenő/szünet
+számlálókat. A kihagyott pihenő nem válik mért idővé. Függő rögzítési esemény,
+eltérő sorozatérték, futó/megszakadt óra és hibás számláló blokkolja az ajánlatot.
+Az órás típusos tároló is megőrzi ezt a checkpointot, de annak végrehajtója és
+a visszaadott telefonos végrehajtás újraindítása még nincs bekötve.
+**A képesség továbbra sincs meghirdetve, új felhasználói gomb/GPS-funkció nincs.**
+
 - [ ] Tartós tulajdonosi állapotgép és stale/dupla/ACK-vesztés regressziók.
 - [ ] Natív telefon–Wear átadás és visszaadás; régi alkalmazás képességvizsgálata.
 - [ ] Aktív/szüneteltetett kézi és automata edzés átvitele, munka/pihenő idő megőrzése.

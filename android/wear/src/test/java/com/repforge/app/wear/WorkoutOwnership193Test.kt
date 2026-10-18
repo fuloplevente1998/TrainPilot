@@ -6,6 +6,18 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class WorkoutOwnership193Test {
+    @Test fun frozenTimerCheckpointSurvivesTypedSnapshotAndConsentRoundTrip() {
+        val checkpoint=JSONObject("""{"schema":1,"source":"phone","sourceEpoch":0,"resumeRequested":false,"timer":{"key":"native|4|9","elapsedMs":96000,"remainingMs":14000,"round":2,"phase":"rest","steps":[{"exerciseId":"plank","setId":"set:1","baseSeconds":7}],"ledger":{"workMs":60000,"restMs":36000,"pausedMs":24000}}}""")
+        val source=current().put("timerCheckpoint193",checkpoint)
+        val offered=Ownership.offer(source,"phone","phone-a","watch-a","timer193",0,10000)
+        val consent=Ownership.accept(source,offered,"watch-a","phone-a")
+        val committed=Ownership.commit(offered,consent,"phone-a","watch-a")
+        val workout=WorkoutSnapshotStore.parse(committed.toString())!!
+        val saved=WorkoutSnapshotStore.encode(workout).getJSONObject("timerCheckpoint193")
+        assertEquals(checkpoint.toString(),saved.toString())
+        assertEquals(14000,saved.getJSONObject("timer").getInt("remainingMs"))
+        assertTrue(workout.workoutPaused)
+    }
     private fun current()=JSONObject("""{"active":true,"workoutId":"workout:193","timerOwner":"phone","ownershipProtocol193":1,"ownerEpoch193":0,"pauseRevision":4,"restEndAt":12000,"exercises":[{"id":"plank","sets":[{"setId":"set:1","reps":"12","done":true}]}],"activeIntervals":[{"start":"1970-01-01T00:00:01Z","end":null}],"automation":{"owner":"phone","phase":"work","remainingMs":9000,"deadlineAt":18000,"paused":false}}""")
     private fun offer()=Ownership.offer(current(),"phone","phone-a","watch-a","handoff:1",0,10000)
     private fun accepted()=Ownership.accept(current(),offer(),"watch-a","phone-a")
