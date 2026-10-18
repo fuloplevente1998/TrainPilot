@@ -32,6 +32,8 @@ internal object WearOwnership193 {
                                 targetSet=target.coerceAtLeast(0),targetId=next.exercises.getOrNull(a.targetExercise)?.sets?.getOrNull(target)?.setId.orEmpty(),
                                 anchorMs=SystemClock.elapsedRealtime(),boot=WearAutomaticService.boot(app),paused=true,deadlineAt=0))
                         }
+                        if(next.timerCheckpoint193!=null)next=WearTransferredTimer193.install(next,SystemClock.elapsedRealtime(),WearAutomaticService.boot(app),
+                            "ownership193:${WorkoutOwnership193.transfer(value)!!.optString("id")}")
                     }
                     if(current!=null&&current.ownerEpoch193>next.ownerEpoch193)error("Stale transferred workout")
                     WorkoutSnapshotStore.saveWorkout(app,next)

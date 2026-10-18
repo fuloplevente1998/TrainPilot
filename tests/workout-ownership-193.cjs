@@ -23,6 +23,10 @@ assert.equal(core.merge(offered,root()).session.ownerEpoch193,1,'offered -> comm
 const reverse=root('committed',2);reverse.handoff193={...reverse.handoff193,id:'reverse193',source:'watch',target:'phone'};reverse.timerOwner='phone';
 assert.equal(core.merge(adopted,reverse).session.timerOwner,'phone');
 assert.equal(core.merge(initial,{...root(),workoutId:'other'}),null);
+assert.equal(core.commandAllowed(adopted.session,{workoutId:'w193',action:'completeSet',ownerEpoch193:0}),false,'queued commands are rechecked after native delivery');
+assert.equal(core.commandAllowed(adopted.session,{workoutId:'w193',action:'completeSet',ownerEpoch193:1}),true);
+assert.equal(core.commandAllowed(offered.session,{workoutId:'w193',action:'completeSet',ownerEpoch193:0}),false);
+assert.equal(core.commandAllowed(offered.session,{workoutId:'w193',action:'healthSummary',ownerEpoch193:0}),true);
 function fixture(status){
  const f=runtime();let current=copy(status);const calls=[];
  f.context.window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{ownershipStatus193:async()=>copy(current)}}};

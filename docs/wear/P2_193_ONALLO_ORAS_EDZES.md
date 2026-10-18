@@ -79,8 +79,17 @@ körszámot, kezdő pihenőt, pozíciót, baseline-t és mért munka/pihenő/sz�
 számlálókat. A kihagyott pihenő nem válik mért idővé. Függő rögzítési esemény,
 eltérő sorozatérték, futó/megszakadt óra és hibás számláló blokkolja az ajánlatot.
 Az órás típusos tároló is megőrzi ezt a checkpointot, de annak végrehajtója és
-a visszaadott telefonos végrehajtás újraindítása még nincs bekötve.
+a visszaadott telefonos végrehajtás újraindítása külön integrációs lépés.
 **A képesség továbbra sincs meghirdetve, új felhasználói gomb/GPS-funkció nincs.**
+
+Az órás checkpoint-végrehajtó ezt követően bekerült a meglévő órás időzítőbe.
+A telefon és az óra egyetlen közös `IntervalTimeline193` fázisszámítást használ;
+a telefon korábbi osztályneve kompatibilitási wrapper. Az átvevő saját monoton
+órával, kifejezett folytatás után számol. A forrás munka/pihenő/szünet naplója
+megmarad, az új tulajdonos külön naplókulcsra gyűjt. A baseline, körök, vezető
+pihenő, kihagyott pihenő és tört másodperc megmarad. Boot-váltás vagy hibás
+terv megszakított szünetet eredményez. A telefonos visszafolytatás és az összes
+vezérlő bekötése továbbra is szükséges az elérhetőség bekapcsolása előtt.
 
 - [ ] Tartós tulajdonosi állapotgép és stale/dupla/ACK-vesztés regressziók.
 - [ ] Natív telefon–Wear átadás és visszaadás; régi alkalmazás képességvizsgálata.

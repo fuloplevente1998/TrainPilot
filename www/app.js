@@ -17429,7 +17429,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  async function syncNow(){
   if(busy||window.TrainPilotBackupBusy)return;
-  if(window.TrainPilotOwnership193&&!await window.TrainPilotOwnership193.sync())return;
+  busy=true;let requestedId=pendingWatchStart?.id;
+  try{
+  if(api()?.ownershipStatus193&&window.TrainPilotOwnership193&&!await window.TrainPilotOwnership193.sync())return;
   // Manual workouts need the same durable identities as native automatic
   // execution. Repair older drafts before publishing any watch controls.
   try{
@@ -17443,10 +17445,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const expired=pendingWatchStart.id===value?.workoutId&&!document.hidden;
    pendingWatchStart=null;if(expired)watchStartFailed();
   }
-  const requestedId=pendingWatchStart?.id;
+  requestedId=pendingWatchStart?.id;
   if(payload===lastPayload&&(value||cleared)&&!requestedId)return;
-  busy=true;
-  try{
    if(value){
     await bridge.publish({snapshot:value});
     lastPayload=payload;cleared=false;
@@ -17651,6 +17651,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  async function applyCommand(command){
   if(!command||typeof state==='undefined')return false;
   const action=String(command.action||''),expectedId=String(command.workoutId||'');
+  if(window.TrainPilotOwnership193&&!window.TrainPilotOwnership193.commandAllowed(command))return true;
   if(command.nativeExecutionProtocol===2&&expectedId&&isClosed(expectedId))return true;
   const savedPause=state.session||db.get('draft',null)?.session;
   if(savedPause?.workoutPaused===true&&matchesWorkout(savedPause,expectedId)&&!['requestHome','healthSummary','saveWorkoutFeedback','finishWorkout','discardWorkout','watchAutomationState','resumeWorkout'].includes(action))
@@ -17818,7 +17819,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const bridge=api();if(!bridge?.pendingCommands||!bridge?.ackCommand)return;
   commandBusy=true;
   try{
-   if(window.TrainPilotOwnership193&&!await window.TrainPilotOwnership193.sync())return;
+   if(bridge.ownershipStatus193&&window.TrainPilotOwnership193&&!await window.TrainPilotOwnership193.sync())return;
    if(bridge.executionStatus&&window.TrainPilotPhoneExecution162&&!await window.TrainPilotPhoneExecution162.sync({prepare:false}))return;
    if(window.TrainPilotBackupBusy)return;
    const result=await bridge.pendingCommands();
@@ -17842,6 +17843,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     const outcome=db.get('wearWorkoutResult',null);
     let status=outcome?.commandId===id&&['saved','discarded','error'].includes(outcome.status)?outcome.status:
      command.workoutId&&isClosed(command.workoutId)&&!['finishWorkout','discardWorkout','saveWorkoutFeedback','healthSummary'].includes(command.action)?'superseded':'applied';
+    if(window.TrainPilotOwnership193&&!window.TrainPilotOwnership193.commandAllowed(command))status='superseded';
     if(command.action==='healthSummary'){
      const row=history().find(h=>matchesWorkout(h,command.workoutId))||state.session;
      const measured=row?.healthWear129,expected=measuredHealth(command);
@@ -18572,6 +18574,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
  const clone=v=>JSON.parse(JSON.stringify(v)),id=s=>String(s?.syncId||s?.started||'');
  const rank={offered:1,accepted:2,committed:3},fields=['done','reps','weight','leftSeconds','rightSeconds','distanceMeters'];
  function pending(session){return !!session?.handoff193&&session.handoff193.state!=='committed';}
+ function commandAllowed(session,command){
+  if(!session||session.ownershipProtocol193!==1||command?.workoutId!==id(session)||['healthSummary','requestHome','saveWorkoutFeedback'].includes(command.action))return true;
+  return !pending(session)&&Number(command.ownerEpoch193||0)===(Number(session.ownerEpoch193)||0);
+ }
  function merge(draft,root){
   const own=draft?.session,h=root?.handoff193;
   if(!own||!h||root.workoutId!==id(own))return null;
@@ -18603,6 +18609,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    ownershipApplied193:{id:h.id,state:h.state,epoch},pausedRestMillis201:Number(root.pausedRestMillis)||0});
   if(Array.isArray(root.activeIntervals))s.activeIntervals=clone(root.activeIntervals);
   if(root.timerCheckpoint193)s.timerCheckpoint193=clone(root.timerCheckpoint193);else delete s.timerCheckpoint193;
+  if(root.timerCheckpoint193?.timeLogs193)window.TrainPilotTime162Core.merge(s,root.timerCheckpoint193.timeLogs193);
   if(root.timerOwner==='watch'){
    s.watchAutomation162=root.automation?{...clone(root.automation),snapshot:clone(root)}:null;
    s.automatic162={...s.automatic162,enabled:root.automation?.enabled===true,owner:'watch',watch:s.watchAutomation162,run:null,pending:false};
@@ -18648,8 +18655,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }catch(_){return false;}finally{busy=false;}
  }
  function sessionOrNull(){return state.session||db.get('draft',null)?.session||null;}
- window.TrainPilotOwnership193Core={merge,pending};
- window.TrainPilotOwnership193={sync,pending:()=>pending(sessionOrNull()),isReconciling:()=>busy};
+ window.TrainPilotOwnership193Core={merge,pending,commandAllowed};
+ window.TrainPilotOwnership193={sync,pending:()=>pending(sessionOrNull()),commandAllowed:command=>commandAllowed(sessionOrNull(),command),isReconciling:()=>busy};
 })();
 // @endsection workout-ownership-193.js
 
