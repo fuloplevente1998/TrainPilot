@@ -8,6 +8,7 @@ import com.google.android.gms.wearable.MessageEvent
 
 class WearDataListenerService : WearableListenerService() {
     override fun onPeerConnected(peer: com.google.android.gms.wearable.Node) {
+        WearGps193.recover(this)
         WearOwnership193.recover(this)
         WearUndo188.recover(this)
         WearCommandOutbox.flush(this,true)
@@ -24,7 +25,7 @@ class WearDataListenerService : WearableListenerService() {
                 WearOwnership193.receive(this,message,origin,local)
             })continue
             if(item.uri.path?.startsWith(WearCommandOutbox.RECEIPT_PREFIX)==true) {
-                if(WearCommandOutbox.acceptReceipt(this,item.uri.path,DataMapItem.fromDataItem(item).dataMap.getString("receipt")))
+                if(WearCommandOutbox.acceptReceipt(this,item.uri.path,DataMapItem.fromDataItem(item).dataMap.getString("receipt"),item.uri.host))
                     com.google.android.gms.wearable.Wearable.getDataClient(this).deleteDataItems(item.uri)
                 continue
             }

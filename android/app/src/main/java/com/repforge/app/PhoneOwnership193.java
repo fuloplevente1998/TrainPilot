@@ -18,7 +18,7 @@ final class PhoneOwnership193 {
             journalContext=app;
             journal=new OwnershipJournal193(app,new OwnershipJournal193.Host() {
                 public JSONObject current() { return ActiveWorkoutStore.current(app); }
-                public void install(JSONObject snapshot) throws Exception { ActiveWorkoutStore.saveOwned(app,snapshot); }
+                public void install(JSONObject snapshot) throws Exception { ActiveWorkoutStore.saveOwned(app,snapshot);PhoneGpsRoute193.authorizeOwned(app,snapshot); }
             });
         }
         return journal;

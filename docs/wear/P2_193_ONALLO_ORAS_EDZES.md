@@ -151,6 +151,28 @@ lekérhető, koordinátamentes referenciákat, explicit útvonalolvasást és ta
 törlést már biztosít. A `bdc4f6c` natív kapujának XML-bizonyítéka: 53/53 sikeres,
 ebből 11 GPS-eset; 0 hiba/kihagyás (artifact `12137858280`).**
 
+Nyolcadik rész: órás privát spool és a meglévő outbox összekötése. A normál
+parancssor csak csomagazonosítót, eszközpárt és hash-t tárol; a koordináták a
+privát fájlból kizárólag a Data Layer vezetékes példányába kerülnek. Telefonon
+az útvonalparancs a szkenner és a listener előtt külön natív fogadóba kerül,
+soha nem a normál parancsprefbe vagy a WebView parancslistájába.
+
+Az órán indított epoch 0 edzés forráscsomópontját a telefon a tényleges natív
+DataItem URI-ból őrzi meg, nem WebView-adatból. A helyi, koordinátamentes
+forrásbizonyíték akkor is tartós, ha a NodeClient még nem elérhető. Átadott
+edzésnél a hiteles tulajdonosi napló adja az eszközpár/epoch jogosultságot.
+Csak tartós telefonos csomagmentés után készül nyugta; a nyugta visszaérkezéskor
+csomag-hash-t és tényleges küldőcsomópontot ellenőrzünk. Visszaigazolt törlés
+az órán is tartós tiltást és a függő GPS-csomagok eltávolítását eredményezi.
+
+A spool hét célzott natív esete a `93456c5` kapuban sikeres. Az új fogadási/
+nyugta tesztek és két valódi Android outbox/adatvédelmi eset a friss kapukban
+ellenőrizendők. **Location-szolgáltatás, külön opt-in és felületi bekötés még
+nincs; a teljes GPS-funkció továbbra sem aktív.** Még szükséges a teljes
+edzéstörlés/sztornó tombstone-ja (akkor is, ha GPS-csomag még nem érkezett),
+a telefonos hivatkozások késői kötése, az explicit órás indítás/újraindítás és
+az aktív/szüneteltetett tulajdonosváltások GPS-szakaszhatárainak bekötése.
+
 - [ ] Tartós tulajdonosi állapotgép és stale/dupla/ACK-vesztés regressziók.
 - [ ] Natív telefon–Wear átadás és visszaadás; régi alkalmazás képességvizsgálata.
 - [ ] Aktív/szüneteltetett kézi és automata edzés átvitele, munka/pihenő idő megőrzése.

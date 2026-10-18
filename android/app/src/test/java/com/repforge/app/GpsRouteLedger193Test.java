@@ -127,4 +127,10 @@ public class GpsRouteLedger193Test {
         assertFalse(bindings.toString().contains("latitude"));assertFalse(bindings.toString().contains("points"));assertEquals(0,store.bindings("otherWorkout").length());
         store.delete(p.getString("routeKey"));assertEquals(0,store.bindings("workout193").length());assertEquals(0,store.view(p.getString("routeKey")).getInt("pointCount"));
     }
+    @Test public void rememberedNativeStartProofNeedsTheSameWatchAndCannotReviveADeletedRoute() throws Exception {
+        JSONObject pending=grant(0);pending.remove("targetNode");store.rememberSource(pending);JSONObject p=packet(1).put("ownerEpoch193",0);
+        rejects(()->store.accept(p,"otherWatch","phone193"));assertEquals(0,store.packets(p.getString("routeKey")).length());
+        assertEquals("stored",store.accept(p,"watch193","phone193").getString("status"));assertTrue(store.rememberSource(pending));
+        store.delete(p.getString("routeKey"));assertFalse(store.rememberSource(pending));assertEquals("deleted",store.accept(p,"watch193","phone193").getString("status"));
+    }
 }

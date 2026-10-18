@@ -21,6 +21,8 @@ public final class GpsRouteSpool193 {
     private AtomicFile activeFile() { return new AtomicFile(new File(directory,"active.json")); }
     private AtomicFile usageFile() { return new AtomicFile(new File(directory,"usage.json")); }
     private AtomicFile packetFile(String id) { require(id!=null&&id.matches("[a-f0-9]{64}"));return new AtomicFile(new File(directory,id+".packet")); }
+    private AtomicFile revokedFile(String key) throws Exception { require(key.matches("wear193:[a-f0-9]{64}"));return new AtomicFile(new File(directory,GpsRoutePacket193.digest(key)+".revoked")); }
+    public boolean revoked(String key) throws Exception { AtomicFile file=revokedFile(key);return file.getBaseFile().exists()||new File(file.getBaseFile()+".bak").exists(); }
     private JSONObject read(AtomicFile file,int budget) throws Exception {
         if(!file.getBaseFile().exists()&&!new File(file.getBaseFile()+".bak").exists())return new JSONObject();
         require(file.getBaseFile().length()<=budget&&new File(file.getBaseFile()+".bak").length()<=budget);
@@ -43,7 +45,7 @@ public final class GpsRouteSpool193 {
             .put("closed",closed).put("partial",partial).put("points",new JSONArray(active.getJSONArray("points").toString()));
         return GpsRoutePacket193.validate(packet,active.getJSONObject("meta"),packet.getString("sourceNode"),packet.getString("targetNode"));
     }
-    private static JSONObject pointer(JSONObject packet) throws Exception {
+    public static JSONObject pointer(JSONObject packet) throws Exception {
         return new JSONObject().put("schema",1).put("action","gpsRouteChunk193").put("commandId",commandId(packet))
             .put("workoutId",packet.getString("workoutId")).put("ownerEpoch193",packet.getLong("ownerEpoch193"))
             .put("createdAt",packet.getJSONArray("points").length()>0?packet.getJSONArray("points").getJSONObject(0).getLong("epochMillis"):System.currentTimeMillis())
@@ -55,7 +57,7 @@ public final class GpsRouteSpool193 {
     public synchronized void begin(JSONObject metadata,Queue queue) throws Exception {
         if(active().has("meta"))close(true,queue);
         JSONObject usage=usage();String key=metadata.getString("routeKey");JSONObject route=usage.optJSONObject(key);
-        require(route==null||!route.optBoolean("deleted"));if(route==null)require(usage.length()<GpsRouteLedger193.MAX_ROUTES);
+        require(!revoked(key)&&(route==null||!route.optBoolean("deleted")));if(route==null)require(usage.length()<GpsRouteLedger193.MAX_ROUTES);
         int points=0,segments=0;JSONObject streams=route==null?new JSONObject():route.optJSONObject("streams");
         if(streams==null)streams=new JSONObject();require(streams.length()<GpsRoutePacket193.MAX_SEGMENTS);
         for(java.util.Iterator<String> keys=streams.keys();keys.hasNext();) { JSONObject prior=streams.getJSONObject(keys.next());points+=prior.getInt("points");segments+=prior.getInt("segments"); }
@@ -102,19 +104,31 @@ public final class GpsRouteSpool193 {
     }
     public synchronized JSONObject payload(String commandId) throws Exception { return read(packetFile(commandId),GpsRoutePacket193.MAX_PACKET_BYTES+2048).optJSONObject("packet"); }
     /** Immutable file, read after commit; no spool lock under the command-outbox lock. */
-    public JSONObject wirePayload(String commandId) throws Exception { return read(packetFile(commandId),GpsRoutePacket193.MAX_PACKET_BYTES+2048).optJSONObject("packet"); }
+    public JSONObject wirePayload(String commandId) throws Exception { JSONObject packet=read(packetFile(commandId),GpsRoutePacket193.MAX_PACKET_BYTES+2048).optJSONObject("packet");return packet!=null&&!revoked(packet.getString("routeKey"))?packet:null; }
     public synchronized boolean ready(JSONObject pointer) throws Exception {
         JSONObject packet=payload(pointer.optString("commandId"));return packet!=null&&GpsRouteLedger193.fingerprint(packet).equals(pointer.getJSONObject("route193").getString("hash"));
     }
-    public synchronized void recover(Queue queue) throws Exception {
+    public void recover(Queue queue) throws Exception { recover(queue,true); }
+    public synchronized void recover(Queue queue,boolean sealActive) throws Exception {
         File[] files=directory.listFiles((dir,name)->name.endsWith(".packet")||name.endsWith(".packet.bak"));
         if(files!=null)for(File file:files) {
             String id=file.getName().substring(0,64);JSONObject stored=read(packetFile(id),GpsRoutePacket193.MAX_PACKET_BYTES+2048);
+            if(revoked(stored.getJSONObject("packet").getString("routeKey"))) { acknowledged(id);continue; }
             require(queue.enqueue(stored.getJSONObject("pointer")));
         }
-        close(true,queue); // No old monotonic anchor is resumed after process death.
+        JSONObject active=active();if(active.has("meta")&&revoked(active.getJSONObject("meta").getString("routeKey")))write(activeFile(),new JSONObject(),GpsRoutePacket193.MAX_PACKET_BYTES+2048);
+        if(sealActive)close(true,queue); // No old monotonic anchor is resumed after process death.
     }
     public synchronized void acknowledged(String id) throws Exception {
         AtomicFile file=packetFile(id);file.delete();require(!file.getBaseFile().exists()&&!new File(file.getBaseFile()+".bak").exists());
+    }
+    /** Phone deletion is durable before local erasure and also fences concurrent outbox sends. */
+    public synchronized void revoke(String key) throws Exception {
+        write(revokedFile(key),new JSONObject().put("deleted",true),128);
+        JSONObject current=active();if(current.has("meta")&&key.equals(current.getJSONObject("meta").getString("routeKey")))write(activeFile(),new JSONObject(),GpsRoutePacket193.MAX_PACKET_BYTES+2048);
+        File[] files=directory.listFiles((dir,name)->name.endsWith(".packet")||name.endsWith(".packet.bak"));
+        if(files!=null)for(File file:files) { String id=file.getName().substring(0,64);JSONObject packet=payload(id);if(packet!=null&&key.equals(packet.getString("routeKey")))acknowledged(id); }
+        JSONObject usage=usage(),entry=usage.optJSONObject(key);if(entry==null) { require(usage.length()<GpsRouteLedger193.MAX_ROUTES);entry=new JSONObject().put("streams",new JSONObject());usage.put(key,entry); }
+        entry.put("deleted",true);write(usageFile(),usage,USAGE_BYTES);
     }
 }

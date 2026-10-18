@@ -234,7 +234,9 @@ public class WearSyncPlugin extends Plugin {
                             try {
                                 String raw = DataMapItem.fromDataItem(item).getDataMap().getString("command");
                                 if (raw == null || raw.isEmpty()) continue;
-                                WearCommandQueueStore.enqueue(getContext(), new JSONObject(raw), item.getUri().toString());
+                                JSONObject command=new JSONObject(raw);
+                                if(PhoneGpsRoute193.receive(getContext(),command,item.getUri()))continue;
+                                WearCommandQueueStore.enqueue(getContext(), command, item.getUri().toString());
                             } catch (Exception ignored) {
                                 // One malformed/stale DataItem must not block the rest.
                             }

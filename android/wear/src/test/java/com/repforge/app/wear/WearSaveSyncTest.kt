@@ -72,4 +72,23 @@ class WearSaveSyncTest {
             assertNotEquals(wearSaveLabel(WearSavePhase.WAITING,language),wearSaveLabel(WearSavePhase.SYNCED,language))
         }
     }
+    @Test fun gpsReceiptRequiresThePrivateChunkFingerprintAndDoesNotSettleAnUnrelatedChunk() {
+        val pointer=JSONObject("""{"routeKey":"wear193:route","streamId":"stream193","sequence":1,"sourceNode":"watch193","targetNode":"phone193","hash":"hash193"}""")
+        val c=command("gps193").put("action","gpsRouteChunk193").put("route193",pointer)
+        val pending=JSONArray().put(c);assertNull(WearSaveSyncModel.accept(pending,JSONArray(),receipt(c)))
+        val valid=receipt(c).put("route193",JSONObject(pointer.toString()))
+        assertNotNull(WearSaveSyncModel.accept(pending,JSONArray(),valid))
+        for(key in listOf("routeKey","streamId","sequence","sourceNode","targetNode","hash")) {
+            val bad=JSONObject(valid.toString());bad.getJSONObject("route193").put(key,"other")
+            assertNull(key,WearSaveSyncModel.accept(pending,JSONArray(),bad));assertFalse(WearSaveSyncModel.sameReceipt(valid,bad))
+        }
+        assertNull(WearSaveSyncModel.accept(pending,JSONArray(),JSONObject(valid.toString()).put("status","processed")))
+    }
+    @Test fun gpsDeletionReceiptIsAnExplicitConfirmedOutcomeAndRemainsDistinctInTheCache() {
+        val pointer=JSONObject("""{"routeKey":"wear193:route","streamId":"stream193","sequence":1,"sourceNode":"watch193","targetNode":"phone193","hash":"hash193"}""")
+        val c=command("gps193").put("action","gpsRouteChunk193").put("route193",pointer)
+        val normal=receipt(c).put("route193",pointer);val deleted=JSONObject(normal.toString()).put("routeDeleted193",true)
+        assertFalse(WearSaveSyncModel.sameReceipt(normal,deleted));val accepted=WearSaveSyncModel.accept(JSONArray().put(c),JSONArray(),deleted)!!
+        assertEquals(0,accepted.first.length());assertTrue(accepted.second.getJSONObject(0).getBoolean("routeDeleted193"))
+    }
 }

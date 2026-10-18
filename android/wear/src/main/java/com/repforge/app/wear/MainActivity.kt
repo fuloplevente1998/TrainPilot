@@ -378,7 +378,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             if (event.type != DataEvent.TYPE_CHANGED) continue
             val item = event.dataItem
             if(item.uri.path?.startsWith(WearCommandOutbox.RECEIPT_PREFIX)==true) {
-                if(WearCommandOutbox.acceptReceipt(this,item.uri.path,DataMapItem.fromDataItem(item).dataMap.getString("receipt")))
+                if(WearCommandOutbox.acceptReceipt(this,item.uri.path,DataMapItem.fromDataItem(item).dataMap.getString("receipt"),item.uri.host))
                     Wearable.getDataClient(this).deleteDataItems(item.uri)
                 runOnUiThread { refreshSaveSync() }
                 continue
@@ -428,7 +428,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                                 WearOwnership193.receive(this,message,origin,local)
                             })continue
                             if(item.uri.path?.startsWith(WearCommandOutbox.RECEIPT_PREFIX)==true) {
-                                if(WearCommandOutbox.acceptReceipt(this,item.uri.path,DataMapItem.fromDataItem(item).dataMap.getString("receipt")))
+                                if(WearCommandOutbox.acceptReceipt(this,item.uri.path,DataMapItem.fromDataItem(item).dataMap.getString("receipt"),item.uri.host))
                                     Wearable.getDataClient(this).deleteDataItems(item.uri)
                                 continue
                             }

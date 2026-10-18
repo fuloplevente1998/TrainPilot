@@ -26,6 +26,7 @@ final class ActiveWorkoutStore {
     static synchronized JSONObject saveOwned(Context context, JSONObject input) throws Exception {
         long revision = prefs(context).getLong(REVISION, 0L) + 1L;
         JSONObject snapshot = new JSONObject(input.toString());
+        PhoneGpsRoute193.captureOrigin(context,snapshot);
         snapshot.put("schema", snapshot.optInt("schema", 1));
         snapshot.put("revision", revision);
         snapshot.put("active", true);
@@ -35,6 +36,7 @@ final class ActiveWorkoutStore {
                 .putString(SNAPSHOT, snapshot.toString())
                 .commit();
         if(!saved)throw new IllegalStateException("Workout snapshot could not be saved");
+        if(snapshot.optLong("ownerEpoch193")==0&&!snapshot.has("handoff193"))PhoneGpsRoute193.authorizeOwned(context,snapshot);
         return snapshot;
     }
 

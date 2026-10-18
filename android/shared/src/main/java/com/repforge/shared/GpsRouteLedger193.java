@@ -40,6 +40,21 @@ public final class GpsRouteLedger193 {
     private JSONObject routes(JSONObject index) throws Exception {
         if(!index.has("routes"))index.put("routes",new JSONObject());return index.getJSONObject("routes");
     }
+    /** Native watch-start proof can precede local NodeClient availability. No remote packet calls this. */
+    public synchronized boolean rememberSource(JSONObject proof) throws Exception {
+        String key=proof.getString("routeKey");
+        require(key.equals(GpsRoutePacket193.key(proof.getString("workoutId"),proof.getString("setId")))
+            &&GpsRoutePacket193.id(proof.getString("sourceNode"))&&proof.getLong("ownerEpoch193")==0
+            &&!proof.getString("exerciseId").isEmpty()&&proof.getString("exerciseId").length()<=200);
+        JSONObject index=read(index(),INDEX_BYTES),routes=routes(index),entry=routes.optJSONObject(key);
+        if(entry!=null&&entry.optBoolean("deleted"))return false;
+        if(entry==null) { require(routes.length()<MAX_ROUTES);entry=new JSONObject().put("grants",new JSONArray());routes.put(key,entry); }
+        JSONArray grants=entry.getJSONArray("grants");JSONObject old=entry.optJSONObject("pendingSource");
+        for(int i=0;i<grants.length();i++)if(grants.getJSONObject(i).getLong("ownerEpoch193")==0)old=grants.getJSONObject(i);
+        String[] fields={"routeKey","workoutId","exerciseId","setId","sourceNode","ownerEpoch193"};
+        if(old!=null) { for(String field:fields)require(String.valueOf(old.get(field)).equals(String.valueOf(proof.get(field))));return true; }
+        JSONObject clean=new JSONObject();for(String field:fields)clean.put(field,proof.get(field));entry.put("pendingSource",clean);write(index(),index,INDEX_BYTES);return true;
+    }
     /** Only the native ownership adapter may add grants; transport input cannot authorize itself. */
     public synchronized boolean authorize(JSONObject grant) throws Exception {
         String key=grant.getString("routeKey"),workout=grant.getString("workoutId"),set=grant.getString("setId");
@@ -75,6 +90,12 @@ public final class GpsRouteLedger193 {
         JSONObject index=read(index(),INDEX_BYTES),entry=routes(index).optJSONObject(input.optString("routeKey"));if(entry==null)return null;
         JSONObject grant=null;JSONArray grants=entry.optJSONArray("grants");
         if(grants!=null)for(int i=0;i<grants.length();i++)if(grants.getJSONObject(i).optLong("ownerEpoch193",-1)==input.optLong("ownerEpoch193",-2))grant=grants.getJSONObject(i);
+        JSONObject pending=entry.optJSONObject("pendingSource");
+        if(grant==null&&pending!=null&&input.optLong("ownerEpoch193",-1)==0) {
+            grant=new JSONObject(pending.toString()).put("targetNode",localNode);
+            GpsRoutePacket193.validate(input,grant,origin,localNode);
+            if(!entry.optBoolean("deleted")) { grants.put(grant);entry.remove("pendingSource");write(index(),index,INDEX_BYTES); }
+        }
         if(grant==null)return null;
         JSONObject packet=GpsRoutePacket193.validate(input,grant,origin,localNode);
         String hash=fingerprint(packet),id=packet.getString("streamId")+":"+packet.getLong("sequence");

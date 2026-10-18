@@ -67,6 +67,7 @@ public class WearCommandListenerService extends WearableListenerService {
                 String raw = DataMapItem.fromDataItem(event.getDataItem()).getDataMap().getString("command");
                 if (raw == null || raw.isEmpty()) continue;
                 JSONObject command=new JSONObject(raw);
+                if(PhoneGpsRoute193.receive(this,command,event.getDataItem().getUri()))continue;
                 if(!PhoneOwnership193.commandAllowed(this,command)) {
                     WearCommandReceipts.complete(this,command,"superseded",event.getDataItem().getUri());continue;
                 }
