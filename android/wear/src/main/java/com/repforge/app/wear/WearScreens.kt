@@ -69,6 +69,7 @@ private val LocalOpenSaveSync = compositionLocalOf<(() -> Unit)?> { null }
 private val LocalUndo = compositionLocalOf<((String)->Unit)?> { null }
 private val LocalTouchLock189 = compositionLocalOf<(() -> Unit)?> { null }
 private val LocalEditorSave = compositionLocalOf<((String,Double,String)->Boolean)?> { null }
+private val LocalOwnership193 = compositionLocalOf<WearWorkout?> { null }
 
 @Composable
 internal fun TrainPilotWearApp(
@@ -109,6 +110,8 @@ internal fun TrainPilotWearApp(
     saveSync: State<WearSaveSyncState?>? = null,
     onRetrySync: ((String) -> Unit)? = null,
     onUndo: ((String) -> Unit)? = null,
+    onRequestOwnership193: (() -> Unit)? = null,
+    onRetryOwnership193: (() -> Unit)? = null,
     touchClock189: ()->Long = { android.os.SystemClock.uptimeMillis() },
 ) {
     var route by rememberSaveable { mutableStateOf("home") }
@@ -190,6 +193,7 @@ internal fun TrainPilotWearApp(
         LocalUndo provides onUndo,
         LocalTouchLock189 provides if(workout.value!=null)({lockTouches()})else null,
         LocalSaveSync provides saveSync?.value,
+        LocalOwnership193 provides workout.value?.takeIf { it.ownershipProtocol193==1 },
         LocalOpenSaveSync provides { syncBackRoute=route;route="save-sync" }
     ) {
         MaterialTheme {
@@ -238,6 +242,9 @@ internal fun TrainPilotWearApp(
                     route == "save-sync" -> SaveSyncScreen(saveSync?.value,
                         onRetry = { saveSync?.value?.let { onRetrySync?.invoke(it.workoutId) } },
                         onBack = { route=syncBackRoute })
+                    route == "ownership193" && active?.ownershipProtocol193==1 ->
+                        OwnershipScreen193(active,phoneConnected?.value,onRequestOwnership193,onRetryOwnership193,
+                            onResumeWorkout,onOpenPhone,onBack={route="menu"})
                     route == "menu" ->
                         MainMenuScreen(active != null, active?.quickWorkout == true, onOpenPhone) {
                             if (it == "journal") openJournal("menu")
@@ -337,12 +344,17 @@ internal fun TrainPilotWearApp(
                             if (workout.value != null) route = "workout"
                         }
                     route in listOf("workout","editor","timer") && active?.workoutPaused==true ->
-                        RoundList("Edzés szünetel") {
+                        RoundList(if(active.ownershipProtocol193==1)WearOwnershipText193.text("pausedTitle")else "Edzés szünetel") {
                             centerItem { Text(active.exercise?.name.orEmpty(),color=White,fontSize=14.sp,
                                 textAlign=TextAlign.Center,modifier=Modifier.fillMaxWidth()) }
-                            centerItem { Text("A mérés és az időzítő szünetel.",color=Muted,fontSize=11.sp,textAlign=TextAlign.Center) }
-                            centerItem { Pill("Folytatás telefonon",tone=Gold) { onOpenPhone() } }
-                            centerItem { Pill("Kezdőlap",tone=Secondary) { route="home" } }
+                            centerItem { Text(if(active.ownershipProtocol193==1)WearOwnershipText193.text("pausedDetail")else "A mérés és az időzítő szünetel.",color=Muted,fontSize=11.sp,textAlign=TextAlign.Center) }
+                            if(active.ownershipProtocol193==1&&WearOwnership193.pending(active)) {
+                                centerItem { Text(WearOwnershipText193.text("pending"),color=Muted,fontSize=11.sp,textAlign=TextAlign.Center) }
+                                centerItem { Pill(WearOwnershipText193.text("retry"),tone=Secondary) { onRetryOwnership193?.invoke() } }
+                            }else if(active.ownershipProtocol193==1&&active.timerOwner=="watch") {
+                                centerItem { Pill(WearOwnershipText193.text("resume"),tone=Gold) { onResumeWorkout() } }
+                            }else centerItem { Pill("Folytatás telefonon",tone=Gold) { onOpenPhone() } }
+                            centerItem { Pill(if(active.ownershipProtocol193==1)WearOwnershipText193.text("home")else "Kezdőlap",tone=Secondary) { route="home" } }
                         }
                     route == "workout" && active != null ->
                         WorkoutPager(
@@ -388,7 +400,7 @@ internal fun TrainPilotWearApp(
                                 if (workout.value != null) route = "workout"
                             },
                             onResume = {
-                                if(active?.workoutPaused==true)onOpenPhone()else onResumeWorkout()
+                                if(active?.workoutPaused==true&&!(active.ownershipProtocol193==1&&active.timerOwner=="watch"))onOpenPhone()else onResumeWorkout()
                                 route = "workout"
                             },
                             onDays = { route = "days" },
@@ -611,6 +623,7 @@ internal fun MainMenuScreen(
     onRoute: (String) -> Unit,
 ) {
     val status=LocalSaveSync.current
+    val ownership=LocalOwnership193.current
     RoundList("Főmenü") {
         if(status!=null)saveSyncItem()
         for ((label, destination) in
@@ -633,9 +646,31 @@ internal fun MainMenuScreen(
         }
         if (hasWorkout) {
             centerItem { Pill("Edzés folytatása") { onRoute("workout") } }
+            if(ownership!=null)centerItem { Pill(WearOwnershipText193.text("title"),tone=Card) { onRoute("ownership193") } }
             centerItem { Pill("Edzés törlése", tone = Danger) { onRoute("discard") } }
         }
         centerItem { Pill("Megnyitás telefonon", tone = Card, onClick = onOpenPhone) }
+    }
+}
+
+@Composable
+internal fun OwnershipScreen193(
+    workout: WearWorkout,connected: Boolean?,onRequest: (() -> Unit)?,onRetry: (() -> Unit)?,
+    onResume: () -> Unit,onOpenPhone: () -> Unit,onBack: () -> Unit,
+) {
+    val pending=WearOwnership193.pending(workout)
+    val watch=workout.timerOwner=="watch"
+    RoundList(WearOwnershipText193.text("title")) {
+        centerItem { Text(WearOwnershipText193.text(if(watch)"watch" else "phone"),color=White,fontSize=14.sp,textAlign=TextAlign.Center) }
+        centerItem { Text(WearOwnershipText193.text(when {pending->"pending";watch&&workout.workoutPaused->"ready";watch->"return";else->"connected"}),
+            color=Muted,fontSize=12.sp,textAlign=TextAlign.Center) }
+        when {
+            pending->centerItem { Pill(WearOwnershipText193.text("retry"),enabled=onRetry!=null) { onRetry?.invoke() } }
+            !watch->centerItem { Pill(WearOwnershipText193.text("request"),enabled=connected!=false&&onRequest!=null) { onRequest?.invoke() } }
+            workout.workoutPaused->centerItem { Pill(WearOwnershipText193.text("resume")) { onResume() } }
+        }
+        centerItem { Pill(WearOwnershipText193.text("openPhone"),tone=Secondary) { onOpenPhone() } }
+        centerItem { Pill(WearOwnershipText193.text("back"),tone=Secondary) { onBack() } }
     }
 }
 

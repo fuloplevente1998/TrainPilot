@@ -49,17 +49,17 @@ internal object WearOwnership193 {
         val current=WorkoutSnapshotStore.load(context) ?: return
         if(current.timerOwner!="phone"||current.ownershipProtocol193!=1)return
         if((WearCommandOutbox.state(context,current.workoutId)?.pending ?: 0)>0) {
-            Toast.makeText(context,"Várd meg az adatok telefonos visszaigazolását, majd próbáld újra.",Toast.LENGTH_LONG).show();return
+            Toast.makeText(context,WearOwnershipText193.text("pendingCommands"),Toast.LENGTH_LONG).show();return
         }
         Wearable.getNodeClient(context).localNode.addOnSuccessListener { local ->
             Wearable.getNodeClient(context).connectedNodes.addOnSuccessListener peersReady@{ peers ->
-                if(peers.size!=1){Toast.makeText(context,"Az átvételhez csatlakoztasd a telefont.",Toast.LENGTH_LONG).show();return@peersReady}
+                if(peers.size!=1){Toast.makeText(context,WearOwnershipText193.text("connected"),Toast.LENGTH_LONG).show();return@peersReady}
                 try {
                     journal(context).request(local.id,peers.single().id,System.currentTimeMillis());recover(context)
-                    Toast.makeText(context,"Átvétel kérése elküldve. Tartsd megnyitva a telefonos edzést.",Toast.LENGTH_LONG).show()
-                }catch(_:Exception){Toast.makeText(context,"Az átvétel nem menthető. Próbáld újra.",Toast.LENGTH_LONG).show()}
-            }
-        }
+                    Toast.makeText(context,WearOwnershipText193.text("requestSent"),Toast.LENGTH_LONG).show()
+                }catch(_:Exception){Toast.makeText(context,WearOwnershipText193.text("failed"),Toast.LENGTH_LONG).show()}
+            }.addOnFailureListener { Toast.makeText(context,WearOwnershipText193.text("connected"),Toast.LENGTH_LONG).show() }
+        }.addOnFailureListener { Toast.makeText(context,WearOwnershipText193.text("connected"),Toast.LENGTH_LONG).show() }
     }
     fun recover(context: Context) {
         if(android.os.Looper.myLooper()!=android.os.Looper.getMainLooper()) {
@@ -69,7 +69,7 @@ internal object WearOwnership193 {
             val store=journal(context);val state=store.read()
             val id=state.optJSONObject("snapshot")?.optString("workoutId") ?: state.optJSONObject("request")?.optString("workoutId")
             if(id!=null&&WearClosureStore.isClosed(context,id))store.close(id)
-            store.recover();OwnershipTransport193.send(context,store)
+            store.recover();OwnershipTransport193.send(context,store);retryResume(context)
         }catch(_:Exception){/* Never start from an unreadable journal. */}
     }
     fun receive(context: Context,message: JSONObject,origin: String,localNode: String) {
@@ -97,21 +97,32 @@ internal object WearOwnership193 {
     fun resume(context: Context): WearWorkout? {
         synchronized(WearAutomaticController) { synchronized(WorkoutSnapshotStore) {
             var current=WorkoutSnapshotStore.load(context) ?: return null
-            if(current.timerOwner!="watch"||pending(current)||!current.workoutPaused)return current
+            if(current.timerOwner!="watch"||pending(current))return current
+            if(!current.workoutPaused){retryResume(context);return WorkoutSnapshotStore.load(context)}
             val now=System.currentTimeMillis()
             current=current.copy(workoutPaused=false,pauseRevision=maxOf(now,current.pauseRevision+1),
                 activeIntervals=(current.activeIntervals ?: emptyList())+WearActiveInterval(now),
                 restEndAt=if(current.pausedRestMillis>0)now+current.pausedRestMillis else 0,pausedRestMillis=0)
             if(current.resumeAutomaticOnContinue&&current.automation?.enabled==true)
                 current=WearAutomaticEngine.resume(current,SystemClock.elapsedRealtime(),WearAutomaticService.boot(context))
-            current=WorkoutSnapshotStore.saveWorkout(context,current.copy(resumeAutomaticOnContinue=false))
             val command=JSONObject().put("schema",1).put("commandId",java.util.UUID.randomUUID().toString())
                 .put("action","resumeWorkout").put("ownerEpoch193",current.ownerEpoch193).put("workoutId",current.workoutId)
-                .put("pauseRevision",current.pauseRevision).put("createdAt",now).put("finalSnapshot",WorkoutSnapshotStore.encode(current))
-            val sequence=WearCommandOutbox.enqueue(context,command)
-            current=WorkoutSnapshotStore.saveWorkout(context,current.copy(localSequence=maxOf(sequence,current.localSequence)))
+                .put("pauseRevision",current.pauseRevision).put("createdAt",now)
+            current=WorkoutSnapshotStore.saveWorkout(context,current.copy(resumeAutomaticOnContinue=false,resumeIntent193=command.toString()))
+            retryResume(context);current=WorkoutSnapshotStore.load(context) ?: current
             if(current.automation?.enabled==true)WearAutomaticService.ensure(context,current)
             WearHealthService.syncPause(context);WearSurfaces.refresh(context,true);return current
+        }}
+    }
+    private fun retryResume(context: Context) {
+        synchronized(WearAutomaticController) { synchronized(WorkoutSnapshotStore) {
+            val current=WorkoutSnapshotStore.load(context) ?: return
+            val command=current.resumeIntent193?.let(::JSONObject) ?: return
+            if(current.ownershipProtocol193!=1||current.timerOwner!="watch"||pending(current)||current.workoutPaused
+                ||command.optLong("ownerEpoch193")!=current.ownerEpoch193||command.optLong("pauseRevision")!=current.pauseRevision)return
+            command.put("finalSnapshot",WorkoutSnapshotStore.encode(current.copy(resumeIntent193=null)))
+            val sequence=WearCommandOutbox.enqueue(context,command)
+            if(sequence>0)WorkoutSnapshotStore.saveWorkout(context,current.copy(localSequence=maxOf(sequence,current.localSequence),resumeIntent193=null))
         }}
     }
 }

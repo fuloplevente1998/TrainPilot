@@ -386,5 +386,9 @@
   {
     "file": "tests/browser/distance-auto-complete-206.cjs",
     "estimatedSeconds": 9
+  },
+  {
+    "file": "tests/browser/workout-ownership-193.cjs",
+    "estimatedSeconds": 10
   }
 ]

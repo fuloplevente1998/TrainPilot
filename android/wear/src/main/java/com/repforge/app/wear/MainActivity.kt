@@ -303,7 +303,15 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                 onDiscard = { closeWorkout("discardWorkout") },
                 onRetry = ::retryClosure,
                 onDismissClosure = { if (closure.value?.status in listOf("saved", "discarded")) { WearClosureStore.dismiss(this); closure.value = null } },
-                onResumeWorkout = { sendCommand("resumeWorkout") },
+                onResumeWorkout = {
+                    val current=WorkoutSnapshotStore.load(this)
+                    if(current?.ownershipProtocol193==1&&current.timerOwner=="watch") {
+                        try {workout.value=WearOwnership193.resume(this);restoreRestFromSnapshot(workout.value)}
+                        catch(_:Exception){workout.value=WorkoutSnapshotStore.load(this);android.widget.Toast.makeText(this,WearOwnershipText193.text("failed"),android.widget.Toast.LENGTH_LONG).show()}
+                    }else if(current?.workoutPaused==true)sendCommand("resumeWorkout")
+                },
+                onRequestOwnership193 = { WearOwnership193.request(this) },
+                onRetryOwnership193 = { WearOwnership193.recover(this);workout.value=WorkoutSnapshotStore.load(this) },
                 onSelectExercise = ::selectExercise,
                 onStart = ::startWorkoutFromWatch,
                 onStartQuick = ::startQuickWorkoutFromWatch,

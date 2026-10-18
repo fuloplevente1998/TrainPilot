@@ -5,6 +5,8 @@ function draft(){return {session:{syncId:'w193',started:'2026-10-18T10:00:00Z',n
 function root(state='committed',epoch=1){return {active:true,ownershipProtocol193:1,workoutId:'w193',ownerEpoch193:state==='committed'?epoch:epoch-1,timerOwner:state==='committed'?'watch':'phone',workoutPaused:true,pauseRevision:5,currentExercise:0,pausedRestMillis:2500,activeIntervals:[{start:'2026-10-18T10:00:00Z',end:'2026-10-18T10:00:12Z'}],handoff193:{protocol:1,id:'transfer193',epoch,source:'phone',target:'watch',state},exercises:[{id:'plank',sets:[{setId:'set193',reps:'18',weight:0,done:false}]}]};}
 const app=runtime(),core=app.context.window.TrainPilotOwnership193Core;
 const initial=draft(),text=JSON.stringify(initial),adopted=core.merge(initial,root());
+const indoor=draft();indoor.session.indoorTimer107={exerciseId:'plank',setId:'set193',elapsedMs:12000,running:false};
+assert.equal(core.merge(indoor,root()).session.indoorTimer107,undefined,'a retired phone indoor clock cannot overwrite later watch measurements');
 assert.equal(JSON.stringify(initial),text,'merge is pure before durable storage');
 assert.equal(adopted.session.exercises[0].sets[0].reps,'18');
 assert.equal(adopted.session.exercises[0].prescription.rest,90);

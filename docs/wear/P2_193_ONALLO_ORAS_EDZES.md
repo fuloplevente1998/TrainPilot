@@ -107,6 +107,23 @@ Nyolc új telefonos natív visszaadási és célzott JS-regresszió ellenőrzi e
 a friss teljes kapuk eredményeit továbbra is külön kell ellenőrizni.
 **Felületi átvételi/visszaadási vezérlők és GPS nélkül a képesség még kikapcsolt.**
 
+Ötödik rész: képességvizsgálattal védett telefonos/órás vezérlők, HU/EN/DE/RO
+szövegekkel. Órán a Főmenü → Edzés vezérlése alatt kérhető átvétel és ismétlés;
+csak végleges órás tulajdonos folytathat offline. Telefonon visszavételi kérés,
+majd külön folytatás van. Az órás folytatási parancs csak a telefonos tükröt
+frissíti, nem indít telefonos órát; korábban érkező automata állapotot nem
+nyugtázunk el a folytatás előtt.
+
+Az órás tulajdonos telefonos nézete csak olvasható. A tükör megnyitása/kilépése
+nem nyit/zár órás aktív időszakot és nem állítja meg az önálló órás edzést.
+Forrásként a telefon a sima és oldalankénti kézi stoppert is megállítja és a
+tényleges részidőt menti. A nézetben új telefonos stopper nem indulhat.
+Új Chromium-eset ellenőrzi az egész átvétel/visszaadás felületi sorrendjét és
+a négy nyelvet; a kerek emulátoros suite új méret/betűméret esetekkel ellenőrzi
+a függő átadás, hálózat nélküli folytatás és letiltott offline átvétel különbségét.
+**A normál edzések még nem hirdetik az új képességet; a GPS-integráció és a
+végső készülékes elfogadás továbbra is hátravan.**
+
 - [ ] Tartós tulajdonosi állapotgép és stale/dupla/ACK-vesztés regressziók.
 - [ ] Natív telefon–Wear átadás és visszaadás; régi alkalmazás képességvizsgálata.
 - [ ] Aktív/szüneteltetett kézi és automata edzés átvitele, munka/pihenő idő megőrzése.

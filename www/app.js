@@ -9411,7 +9411,7 @@ go=function(route){
  };
  if(state.session){
   const leaving=state.session;
-  tp2628Confirm(tp149T('dialog.leaveWorkout.message'),{title:tp149T('dialog.leaveWorkout.title'),confirmText:tp149T('dialog.leaveWorkout.action'),danger:true}).then(async function(ok){if(ok&&state.session===leaving&&await window.TrainPilotWorkoutPause201.pause(leaving))navigate();});return;
+  tp2628Confirm(window.TrainPilotOwnership193?.leaveMessage?.(leaving)||tp149T('dialog.leaveWorkout.message'),{title:tp149T('dialog.leaveWorkout.title'),confirmText:tp149T('dialog.leaveWorkout.action'),danger:true}).then(async function(ok){if(ok&&state.session===leaving&&await window.TrainPilotWorkoutPause201.pause(leaving))navigate();});return;
  }
  return navigate();
 };
@@ -17684,6 +17684,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(!state.session)await resumeDraft();else await window.TrainPilotWorkoutPause201.resume(state.session);
    return state.session?.workoutPaused===false;
   }
+  if(action==='resumeWorkout'&&savedPause?.workoutPaused!==true&&matchesWorkout(savedPause,expectedId))return true;
 
   if(command.nativeExecutionProtocol===2&&['completeSet','undoSet','automaticControl'].includes(action)&&(action==='completeSet'||action==='undoSet'||command.value==='start'||command.value==='resumeUndo')){
    const result=await api()?.executeCommand?.({command});
@@ -18549,12 +18550,15 @@ window.addEventListener?.('DOMContentLoaded',function(){
  async function pause(session){
   if(changing||state.session!==session)return false;changing=true;
   try{
+   if(session.ownershipProtocol193===1&&(session.timerOwner==='watch'||window.TrainPilotOwnership193Core?.pending(session))){save(session);return true;}
    if(!session.workoutPaused){
     const rest=window.TrainPilotAutomatic162?.owner?.()?.meta.run,interval=window.TrainPilotIntervals162?.owner?.()?.run;
     session.pauseTimer201=rest?.running?'rest':interval?.running?'interval':null;
     session.pausedRestMillis201=Math.max(0,Number(state.restEndAt||0)-Date.now());
     closeWorkoutInterval(session);session.workoutPaused=true;revision(session);save(session);
    }
+   if(typeof rf110StopwatchHalt==='function')rf110StopwatchHalt(false);
+   if(typeof tp1481HaltSide==='function')tp1481HaltSide(false);
    if(typeof tp107StopIndoor==='function')tp107StopIndoor();
    // Manual GPS totals are recorded before leaving; a new GPS segment is explicitly started after return.
    if(typeof tp106StopGPS==='function'&&!await tp106StopGPS())return false;
@@ -18571,7 +18575,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
  async function resume(session){
   if(!session?.workoutPaused||state.session!==session)return true;
   if(session.ownershipProtocol193===1&&(session.timerOwner==='watch'||window.TrainPilotOwnership193Core?.pending(session)))return false;
-  if(session.ownershipAwaitingResume193&&!await window.TrainPilotOwnership193?.prepareResume(session))return false;
+  if(session.ownershipAwaitingResume193){
+   const rows=workoutIntervals(session);if(rows.at(-1)&&!rows.at(-1).end){rows.pop();save(session);}
+   if(!await window.TrainPilotOwnership193?.prepareResume(session))return false;
+  }
+  if(!workoutIntervals(session).at(-1)||workoutIntervals(session).at(-1).end)workoutIntervals(session).push({start:new Date().toISOString(),end:null});
   session.workoutPaused=false;revision(session);save(session);
   try{
    if(api())await api().setWorkoutPause({snapshot:window.TrainPilotWearSync.makeSnapshot()});
@@ -18588,8 +18596,15 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
  }
  window.TrainPilotWorkoutPause201={pause,resume};
- window.addEventListener?.('DOMContentLoaded',()=>{
-  const base=resumeDraft;resumeDraft=async function(){const result=await base.apply(this,arguments);const s=state.session;if(s?.workoutPaused)await resume(s);return result;};
+ window.addEventListener?.('DOMContentLoaded',function protectOwnedDraft201(){
+  const base=resumeDraft;resumeDraft=async function(){
+   const saved=db.get('draft',null)?.session,protect=saved?.ownershipProtocol193===1&&(saved.timerOwner==='watch'||saved.ownershipAwaitingResume193||window.TrainPilotOwnership193Core?.pending(saved));
+   const before=protect?JSON.parse(JSON.stringify(saved)):null,result=await base.apply(this,arguments),s=state.session;
+   if(before&&id(s)===id(before)&&s.timerOwner===before.timerOwner&&s.ownerEpoch193===before.ownerEpoch193&&s.pauseRevision===before.pauseRevision&&s.wearSequence===before.wearSequence){
+    s.activeIntervals=before.activeIntervals;save(s);
+   }
+   if(s?.workoutPaused)await resume(s);return result;
+  };
  });
 })();
 // @endsection workout-pause-201.js
@@ -18660,6 +18675,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   Object.assign(s,{ownershipProtocol193:1,ownerEpoch193:epoch,handoff193:clone(h),timerOwner:root.timerOwner,
    workoutPaused:true,pauseRevision:Math.max(Number(s.pauseRevision)||0,Number(root.pauseRevision)||0),
    ownershipApplied193:{id:h.id,state:h.state,epoch},pausedRestMillis201:Number(root.pausedRestMillis)||0});
+  delete s.indoorTimer107;
   if(Array.isArray(root.activeIntervals))s.activeIntervals=clone(root.activeIntervals);
   if(root.timerCheckpoint193)s.timerCheckpoint193=clone(root.timerCheckpoint193);else delete s.timerCheckpoint193;
   s.pauseTimer201=root.resumeAutomaticOnContinue?(root.timerCheckpoint193?.timer?.restOnly?'rest':'interval'):null;
@@ -18686,8 +18702,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const session=state.session,exercises=session.exercises;
    value.session.exercises.forEach((e,i)=>e.sets.forEach((s,j)=>Object.assign(exercises[i].sets[j],s)));
    Object.assign(session,value.session,{exercises});
-   for(const key of ['interval162','timerCheckpoint193','phoneExecution162','phoneEdit162'])if(!(key in value.session))delete session[key];
+   for(const key of ['interval162','timerCheckpoint193','phoneExecution162','phoneEdit162','indoorTimer107'])if(!(key in value.session))delete session[key];
    state.current=value.current;state.restEndAt=null;stopTimer();
+   if(session.timerOwner==='watch'||pending(session))window.TrainPilotOwnership193.releaseManualClocks?.();
   }
  }
  async function sync(){
@@ -18712,7 +18729,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(root?.active===false)return true;
    const value=merge(draft(),root);if(value)commit(value);
    return !pending(sessionOrNull());
-  }catch(_){return false;}finally{busy=false;}
+  }catch(_){return false;}finally{busy=false;window.TrainPilotOwnership193?.paint?.();}
  }
  function sameValues(session,frame){
   return Array.isArray(frame?.exercises)&&frame.exercises.length===session.exercises.length&&frame.exercises.every((e,i)=>
@@ -18768,6 +18785,117 @@ window.addEventListener?.('DOMContentLoaded',function(){
  window.TrainPilotOwnership193={sync,prepareResume,acceptWatchResume,pending:()=>pending(sessionOrNull()),commandAllowed:command=>commandAllowed(sessionOrNull(),command),isReconciling:()=>busy};
 })();
 // @endsection workout-ownership-193.js
+
+// @section workout-ownership-ui-193.js
+(function(){
+ 'use strict';
+ const ownership=window.TrainPilotOwnership193;
+ const words={
+  hu:{title:'Edzés vezérlése',phone:'A telefon vezérli az edzést',watch:'Az óra vezérli az edzést',pending:'Az átadás folyamatban. Az edzés szünetel a visszaigazolásig.',
+   take:'Edzés visszavétele',retry:'Újrapróbálás',resume:'Folytatás telefonon',hint:'Az órán az Edzés vezérlése menüben kérheted az átvételt.',
+   mirror:'A vezérlés az órán érhető el. A telefonos szerkesztéshez vedd vissza az edzést.',paused:'Az edzés szünetel.',saved:'A visszavételi kérés mentve. Az átvétel után külön indíthatod a folytatást.',
+   failed:'A művelet nem fejeződött be. Ellenőrizd az eszközök kapcsolatát, majd próbáld újra.',busy:'Folyamatban…',
+   leaveWatch:'Kilépsz a telefonos nézetből? Az edzés az órán tovább fut.',leavePaused:'Kilépsz a telefonos nézetből? Az edzés az órán szünetben marad.',leavePending:'Kilépsz a nézetből? A mentett átadás folytatódik; az edzés a visszaigazolásig szünetben marad.'},
+  en:{title:'Workout control',phone:'Phone controls the workout',watch:'Watch controls the workout',pending:'Transfer in progress. The workout stays paused until confirmation.',
+   take:'Take back workout',retry:'Retry',resume:'Continue on phone',hint:'Request takeover in Workout control on your watch.',
+   mirror:'Use the controls on your watch. Take back the workout to edit it on your phone.',paused:'The workout is paused.',saved:'Return request saved. Continue explicitly after control returns.',
+   failed:'The operation did not finish. Check the device connection and retry.',busy:'Working…',
+   leaveWatch:'Leave the phone view? The workout will keep running on your watch.',leavePaused:'Leave the phone view? The workout will remain paused on your watch.',leavePending:'Leave this view? The saved transfer will continue; the workout stays paused until confirmation.'},
+  de:{title:'Trainingssteuerung',phone:'Das Telefon steuert das Training',watch:'Die Uhr steuert das Training',pending:'Übertragung läuft. Das Training bleibt bis zur Bestätigung pausiert.',
+   take:'Training zurücknehmen',retry:'Erneut versuchen',resume:'Auf Telefon fortsetzen',hint:'Fordere die Übernahme unter Trainingssteuerung auf der Uhr an.',
+   mirror:'Die Steuerung erfolgt auf der Uhr. Zum Bearbeiten am Telefon das Training zurücknehmen.',paused:'Das Training pausiert.',saved:'Rückgabe angefordert. Nach der Bestätigung ausdrücklich fortsetzen.',
+   failed:'Die Aktion wurde nicht abgeschlossen. Geräteverbindung prüfen und erneut versuchen.',busy:'In Bearbeitung…',
+   leaveWatch:'Telefonansicht verlassen? Das Training läuft auf der Uhr weiter.',leavePaused:'Telefonansicht verlassen? Das Training bleibt auf der Uhr pausiert.',leavePending:'Ansicht verlassen? Die gespeicherte Übertragung läuft weiter; das Training bleibt bis zur Bestätigung pausiert.'},
+  ro:{title:'Control antrenament',phone:'Telefonul controlează antrenamentul',watch:'Ceasul controlează antrenamentul',pending:'Transfer în curs. Antrenamentul rămâne în pauză până la confirmare.',
+   take:'Preia înapoi antrenamentul',retry:'Reîncearcă',resume:'Continuă pe telefon',hint:'Cere preluarea din Control antrenament pe ceas.',
+   mirror:'Folosește comenzile de pe ceas. Preia antrenamentul pentru a-l edita pe telefon.',paused:'Antrenamentul este în pauză.',saved:'Cererea de revenire a fost salvată. Continuă explicit după confirmare.',
+   failed:'Operația nu s-a încheiat. Verifică legătura dintre dispozitive și reîncearcă.',busy:'În curs…',
+   leaveWatch:'Părăsești ecranul telefonului? Antrenamentul continuă pe ceas.',leavePaused:'Părăsești ecranul telefonului? Antrenamentul rămâne în pauză pe ceas.',leavePending:'Părăsești ecranul? Transferul salvat continuă; antrenamentul rămâne în pauză până la confirmare.'}
+ };
+ const text=key=>(words[typeof rf212Lang==='function'?rf212Lang():'en']||words.en)[key];
+ const pending=s=>window.TrainPilotOwnership193Core.pending(s),identity=s=>String(s?.syncId||s?.started||'');
+ const locked=s=>s?.ownershipProtocol193===1&&(s.timerOwner==='watch'||s.workoutPaused||s.ownershipAwaitingResume193||pending(s));
+ const bridge=()=>window.Capacitor?.Plugins?.WearSync||window.Capacitor?.registerPlugin?.('WearSync');
+ let acting=false,error='',requested=false,view='',wasLocked=null,painting=false;
+ const disabled=new WeakMap();
+ function safeControl(node){
+  return !!node.closest('[data-tp193-panel],[onclick*="TrainPilotGpsMap163"]')||
+   (state.session?.timerOwner==='phone'&&!pending(state.session)&&!!node.closest('[onclick*="finishWorkout"]'));
+ }
+ function releaseManualClocks(){
+  if(typeof rf110Stopwatch!=='undefined'){
+   if(rf110Stopwatch.timer)clearInterval(rf110Stopwatch.timer);
+   Object.assign(rf110Stopwatch,{key:'',setIndex:-1,elapsedMs:0,startedAt:0,running:false,timer:null,lastSecond:-1});
+  }
+  if(typeof tp1481SideStopwatch!=='undefined'){
+   if(tp1481SideStopwatch.timer)clearInterval(tp1481SideStopwatch.timer);
+   tp1481SideStopwatch={exerciseIndex:-1,setIndex:-1,side:null,elapsedMs:0,startedAt:0,running:false,timer:null,lastSecond:-1};
+  }
+ }
+ function paint(){
+  const s=state.session,main=document.querySelector('main.tp153-workout');
+  if(!main||s?.ownershipProtocol193!==1){document.querySelector('[data-tp193-panel]')?.remove();wasLocked=null;return;}
+  const key=identity(s)+':'+Number(s.ownerEpoch193||0)+':'+(s.handoff193?.id||'')+':'+(s.handoff193?.state||'');
+  const changed=key!==view;
+  if(changed){view=key;error='';requested=false;}
+  const readonly=locked(s);
+  if(changed&&main.querySelector('[data-tp193-panel]')&&!painting){wasLocked=readonly;painting=true;try{renderWorkout();}finally{painting=false;}return;}
+  if(wasLocked===true&&!readonly&&!painting){wasLocked=false;painting=true;try{renderWorkout();}finally{painting=false;}return;}
+  wasLocked=readonly;
+  let panel=main.querySelector('[data-tp193-panel]');
+  if(!panel){panel=document.createElement('section');panel.className='card tp193-ownership';panel.dataset.tp193Panel='';main.prepend(panel);}
+  const stateText=pending(s)?text('pending'):requested?text('saved'):s.timerOwner==='watch'?text('mirror'):s.workoutPaused?text('paused'):text('hint');
+  const action=pending(s)?'retry':s.timerOwner==='watch'?'take':s.workoutPaused?'resume':null;
+  panel.innerHTML='<strong>'+esc(text(s.timerOwner==='watch'?'watch':'phone'))+'</strong><div class="small muted" role="status" aria-live="polite">'+esc(error||stateText)+'</div>'+
+   (action?'<button type="button" class="btn secondary" data-tp193-action="'+action+'" '+(acting?'disabled':'')+' onclick="TrainPilotOwnership193.'+(action==='take'?'takeBack':action==='resume'?'continueOnPhone':'retryTransfer')+'()">'+esc(acting?text('busy'):text(action))+'</button>':'');
+  if(!main.dataset.tp193Guard){
+   main.dataset.tp193Guard='1';
+   main.addEventListener('click',event=>{
+    if(locked(state.session)&&!safeControl(event.target)){event.preventDefault();event.stopImmediatePropagation();}
+   },true);
+   main.addEventListener('keydown',event=>{
+    if(['Enter',' '].includes(event.key)&&locked(state.session)&&event.target.closest('button,input,select,textarea,[onclick],[role="button"]')&&!safeControl(event.target)){event.preventDefault();event.stopImmediatePropagation();}
+   },true);
+  }
+  main.querySelectorAll('button,input,select,textarea').forEach(node=>{
+   if(safeControl(node)){if(disabled.has(node)){node.disabled=disabled.get(node);disabled.delete(node);}return;}
+   if(readonly){if(!disabled.has(node))disabled.set(node,node.disabled);node.disabled=true;}
+   else if(disabled.has(node)){node.disabled=disabled.get(node);disabled.delete(node);}
+  });
+ }
+ async function act(kind){
+  const s=state.session;if(acting||s?.ownershipProtocol193!==1||window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending)return false;
+  acting=true;error='';paint();
+  try{
+   if(kind==='take'){
+    if(s.timerOwner!=='watch'||pending(s))return false;
+    await window.TrainPilotWearSync.drainCommands();if(state.session!==s)return false;
+    if(!bridge()?.requestOwnership193)throw Error('Bridge unavailable');
+    await bridge().requestOwnership193();requested=true;await ownership.sync();
+   }else if(kind==='resume'){
+    if(s.timerOwner!=='phone'||pending(s)||!s.workoutPaused)return false;
+    if(!await window.TrainPilotWorkoutPause201.resume(s))throw Error('Continuation failed');
+    if(state.session===s)renderWorkout();
+   }else await ownership.sync();
+   return true;
+  }catch(_){error=text('failed');return false;}finally{acting=false;paint();}
+ }
+ Object.assign(ownership,{paint,releaseManualClocks,takeBack:()=>act('take'),continueOnPhone:()=>act('resume'),retryTransfer:()=>act('retry'),
+  leaveMessage:s=>s?.ownershipProtocol193!==1?null:pending(s)?text('leavePending'):s.timerOwner==='watch'?text(s.workoutPaused?'leavePaused':'leaveWatch'):null});
+ window.addEventListener?.('DOMContentLoaded',function ownershipUi193(){
+  if(!document.getElementById('tp193-ownership-style')){
+   const style=document.createElement('style');style.id='tp193-ownership-style';style.textContent='.tp193-ownership{display:grid;gap:8px;padding:12px!important}.tp193-ownership strong{font-size:14px}.tp193-ownership .btn{min-height:42px;padding:8px 12px}';document.head.appendChild(style);
+  }
+  const renderBase=renderWorkout;renderWorkout=function(){const result=renderBase.apply(this,arguments);paint();return result;};
+  for(const name of ['rf110DecorateTimedWorkout','tp1481DecoratePerSide']){
+   const base=name==='rf110DecorateTimedWorkout'?rf110DecorateTimedWorkout:tp1481DecoratePerSide;
+   const decorate=function(){if(locked(state.session)){releaseManualClocks();document.getElementById('rf110Stopwatch')?.remove();return;}return base.apply(this,arguments);};
+   if(name==='rf110DecorateTimedWorkout')rf110DecorateTimedWorkout=decorate;else tp1481DecoratePerSide=decorate;
+  }
+  paint();
+ });
+})();
+// @endsection workout-ownership-ui-193.js
 
 // @section phone-recording-162.js
 (function(){

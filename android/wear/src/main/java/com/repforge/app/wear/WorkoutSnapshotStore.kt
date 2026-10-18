@@ -55,7 +55,8 @@ data class WearWorkout(
     val ownershipProtocol193: Int = 0,
     val ownerEpoch193: Long = 0L,
     val handoff193: String? = null,
-    val timerCheckpoint193: String? = null
+    val timerCheckpoint193: String? = null,
+    val resumeIntent193: String? = null
 ) {
     fun elapsedSeconds(now: Long = System.currentTimeMillis()): Int = try {
         val duration=activeIntervals?.sumOf { (if(it.end>0)it.end else now).minus(it.start).coerceAtLeast(0) }
@@ -250,7 +251,8 @@ object WorkoutSnapshotStore {
                 ownershipProtocol193 = root.optInt("ownershipProtocol193"),
                 ownerEpoch193 = root.optLong("ownerEpoch193"),
                 handoff193 = root.optJSONObject("handoff193")?.toString(),
-                timerCheckpoint193 = root.optJSONObject("timerCheckpoint193")?.toString()
+                timerCheckpoint193 = root.optJSONObject("timerCheckpoint193")?.toString(),
+                resumeIntent193 = root.optJSONObject("resumeIntent193")?.toString()
             )
         } catch (_: Exception) { null }
     }
@@ -287,6 +289,7 @@ object WorkoutSnapshotStore {
         workout.undo188?.let { root.put("undo188",JSONObject(it)) }
         workout.handoff193?.let { root.put("handoff193",JSONObject(it)) }
         workout.timerCheckpoint193?.let { root.put("timerCheckpoint193",JSONObject(it)) }
+        workout.resumeIntent193?.let { root.put("resumeIntent193",JSONObject(it)) }
         val exercises = JSONArray()
         workout.exercises.forEach { exercise ->
             val sets = JSONArray()
