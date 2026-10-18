@@ -13,9 +13,18 @@ internal object WearGps193 {
     const val ACTION="gpsRouteChunk193"
     private fun prefs(context: Context)=context.getSharedPreferences("trainpilot_wear_route193",0)
     fun distance(exercise: WearExercise?)=exercise!=null&&(exercise.measurementType=="distance"||exercise.repUnit.trim().lowercase() in listOf("km","m"))
+    fun owns(workout: WearWorkout?): Boolean {
+        if(workout==null||workout.ownershipProtocol193!=1||workout.timerOwner!="watch"||workout.workoutPaused||WearOwnership193.pending(workout))return false
+        if(workout.ownerEpoch193==0L)return workout.handoff193==null
+        return try { val h=JSONObject(workout.handoff193 ?: return false)
+            h.optInt("protocol")==1&&h.optLong("epoch")==workout.ownerEpoch193&&h.optString("state")=="committed"&&h.optString("source")=="phone"&&h.optString("target")=="watch"&&
+                com.repforge.shared.GpsRoutePacket193.id(h.optString("sourceNode"))&&com.repforge.shared.GpsRoutePacket193.id(h.optString("targetNode"))&&h.optString("sourceNode")!=h.optString("targetNode")
+        }catch(_:Exception){false}
+    }
     fun scope(context: Context)=try{JSONObject(prefs(context).getString("scope","{}")!!)}catch(_:Exception){JSONObject()}
     fun armed(context: Context,id: String)=scope(context).let { it.optString("workoutId")==id&&it.optBoolean("enabled") }
     fun arm(context: Context,id: String,enabled: Boolean,sourceNode: String?=null,targetNode: String?=null) {
+        check(id.isNotBlank())
         val p=prefs(context);val old=p.getString("scope","{}");val next=if(scope(context).optString("workoutId")==id)scope(context)else JSONObject()
         next.put("workoutId",id).put("enabled",enabled)
         if(sourceNode!=null)next.put("sourceNode",sourceNode);if(targetNode!=null)next.put("targetNode",targetNode)
@@ -23,7 +32,7 @@ internal object WearGps193 {
     }
     fun status(context: Context,id: String): JSONObject {
         val result=try{JSONObject(prefs(context).getString("status","{}")!!)}catch(_:Exception){JSONObject()}
-        return (if(result.optString("workoutId")==id)result else JSONObject().put("workoutId",id).put("state","idle").put("points",0)).put("armed",armed(context,id))
+        return (if(result.optString("workoutId")==id)result else JSONObject().put("workoutId",id).put("state","idle").put("points",0)).put("armed",armed(context,id)).put("running",WearGpsRouteService193.active(id))
     }
     fun update(context: Context,id: String,state: String,points: Int=0,accuracy: Double?=null) {
         try{val value=JSONObject().put("workoutId",id).put("state",state).put("points",points)

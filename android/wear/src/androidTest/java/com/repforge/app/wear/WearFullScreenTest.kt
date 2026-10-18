@@ -53,6 +53,24 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     }
 
     @get:Rule val compose = createComposeRule()
+    @Test fun gpsConsentRetryStopAndPausedOwnerAreReadableInFourLanguages() {
+        val owner=WorkoutSnapshotStore.parse("""{"workoutId":"gps-ui193","ownershipProtocol193":1,"timerOwner":"watch","exercises":[{"id":"running","measurementType":"distance","repUnit":"km","sets":[{"setId":"gps-one","done":false}]}]}""")!!
+        val workout=mutableStateOf(owner);val status=mutableStateOf(JSONObject().put("state","permission"));val language=mutableStateOf("hu");val actions=mutableListOf<String>()
+        compose.setContent { Watch { GpsRouteScreen193(workout.value,status.value,{actions.add("start")},{actions.add("stop")},{},language.value) } }
+        for(lang in listOf("hu","en","de","ro")) {
+            compose.runOnIdle { language.value=lang;workout.value=owner;status.value=JSONObject().put("state","permission") }
+            val start=WearGpsText193.text("start",lang);val stop=WearGpsText193.text("stop",lang)
+            lazyList().performScrollToNode(hasContentDescription(start));compose.onNodeWithContentDescription(start).assertIsEnabled().performClick()
+            compose.runOnIdle { status.value=JSONObject().put("state","recording").put("armed",true).put("running",true).put("points",12) }
+            lazyList().performScrollToNode(hasContentDescription(stop));compose.onNodeWithContentDescription(stop).assertIsEnabled().performClick()
+            compose.onNodeWithContentDescription(start).assertDoesNotExist()
+            compose.runOnIdle { workout.value=owner.copy(workoutPaused=true);status.value=JSONObject().put("state","paused") }
+            lazyList().performScrollToNode(hasContentDescription(start));compose.onNodeWithContentDescription(start).assertIsNotEnabled()
+        }
+        assertEquals(listOf("start","stop","start","stop","start","stop","start","stop"),actions)
+        lazyList().performScrollToNode(hasContentDescription(WearGpsText193.text("back","ro")))
+        compose.onNodeWithContentDescription(WearGpsText193.text("back","ro")).assertIsDisplayed();screenshot("gps-route193-consent-paused")
+    }
     @Test fun ownershipRequestPendingAndOfflineResumeAreDistinctActionsOnRoundScreens() {
         val phone=WorkoutSnapshotStore.parse("""{"workoutId":"ui193","ownershipProtocol193":1,"timerOwner":"phone","exercises":[{"id":"plank","sets":[{"setId":"one","done":false}]}]}""")!!
         val state=mutableStateOf(phone);val actions=mutableListOf<String>()

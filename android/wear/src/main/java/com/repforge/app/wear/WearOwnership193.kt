@@ -101,7 +101,7 @@ internal object WearOwnership193 {
                 pauseRevision=if(current.workoutPaused)current.pauseRevision else maxOf(current.pauseRevision+1,now),
                 pausedRestMillis=maxOf(current.pausedRestMillis,(current.restEndAt-now).coerceAtLeast(0)),restEndAt=0,
                 activeIntervals=current.activeIntervals?.map { if(it.end==0L)it.copy(end=maxOf(it.start,now))else it }))
-            WearAutomaticService.stop(context);WearHealthService.syncPause(context)
+            WearAutomaticService.stop(context);WearHealthService.syncPause(context);WearGpsRouteService193.freeze(context)
             return current
         }}
     }

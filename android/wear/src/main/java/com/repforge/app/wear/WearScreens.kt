@@ -112,6 +112,9 @@ internal fun TrainPilotWearApp(
     onUndo: ((String) -> Unit)? = null,
     onRequestOwnership193: (() -> Unit)? = null,
     onRetryOwnership193: (() -> Unit)? = null,
+    gpsRoute193: State<JSONObject?>? = null,
+    onStartGpsRoute193: (() -> Unit)? = null,
+    onStopGpsRoute193: (() -> Unit)? = null,
     touchClock189: ()->Long = { android.os.SystemClock.uptimeMillis() },
 ) {
     var route by rememberSaveable { mutableStateOf("home") }
@@ -244,7 +247,9 @@ internal fun TrainPilotWearApp(
                         onBack = { route=syncBackRoute })
                     route == "ownership193" && active?.ownershipProtocol193==1 ->
                         OwnershipScreen193(active,phoneConnected?.value,onRequestOwnership193,onRetryOwnership193,
-                            onResumeWorkout,onOpenPhone,onBack={route="menu"})
+                            onResumeWorkout,onOpenPhone,onBack={route="menu"},onGps={route="gpsRoute193"})
+                    route == "gpsRoute193" && active?.ownershipProtocol193==1 ->
+                        GpsRouteScreen193(active,gpsRoute193?.value,onStartGpsRoute193,onStopGpsRoute193,onBack={route="ownership193"})
                     route == "menu" ->
                         MainMenuScreen(active != null, active?.quickWorkout == true, onOpenPhone) {
                             if (it == "journal") openJournal("menu")
@@ -657,6 +662,7 @@ internal fun MainMenuScreen(
 internal fun OwnershipScreen193(
     workout: WearWorkout,connected: Boolean?,onRequest: (() -> Unit)?,onRetry: (() -> Unit)?,
     onResume: () -> Unit,onOpenPhone: () -> Unit,onBack: () -> Unit,
+    onGps: (() -> Unit)? = null,
 ) {
     val pending=WearOwnership193.pending(workout)
     val watch=workout.timerOwner=="watch"
@@ -669,8 +675,29 @@ internal fun OwnershipScreen193(
             !watch->centerItem { Pill(WearOwnershipText193.text("request"),enabled=connected!=false&&onRequest!=null) { onRequest?.invoke() } }
             workout.workoutPaused->centerItem { Pill(WearOwnershipText193.text("resume")) { onResume() } }
         }
+        if(onGps!=null)centerItem { Pill(WearGpsText193.text("title"),tone=Secondary) { onGps() } }
         centerItem { Pill(WearOwnershipText193.text("openPhone"),tone=Secondary) { onOpenPhone() } }
         centerItem { Pill(WearOwnershipText193.text("back"),tone=Secondary) { onBack() } }
+    }
+}
+
+@Composable
+internal fun GpsRouteScreen193(
+    workout: WearWorkout,status: JSONObject?,onStart: (() -> Unit)?,onStop: (() -> Unit)?,onBack: () -> Unit,
+    language: String=java.util.Locale.getDefault().language,
+) {
+    fun text(key: String)=WearGpsText193.text(key,language)
+    val code=status?.optString("state")?.takeIf { it in listOf("idle","acquiring","recording","paused","stopped","permission","locationOff","storage","unavailable","interrupted","deleted") } ?: "idle"
+    val allowed=WearGps193.owns(workout)&&WearGps193.distance(workout.exercise)&&workout.currentSet?.let { !it.done&&it.setId.isNotBlank() }==true
+    RoundList(text("title")) {
+        centerItem { Text(text("consent"),color=Muted,fontSize=11.sp,textAlign=TextAlign.Center) }
+        centerItem { Text(text(code),color=White,fontSize=13.sp,textAlign=TextAlign.Center) }
+        val count=status?.optInt("points") ?: 0
+        if(count>0)centerItem { Text(text("points").replace("{count}",count.toString()),color=Muted,fontSize=12.sp,textAlign=TextAlign.Center) }
+        if(!allowed)centerItem { Text(text("distanceOnly"),color=Muted,fontSize=12.sp,textAlign=TextAlign.Center) }
+        if(status?.optBoolean("running")!=true)centerItem { Pill(text("start"),enabled=allowed&&onStart!=null) { onStart?.invoke() } }
+        if(status?.optBoolean("armed")==true)centerItem { Pill(text("stop"),enabled=onStop!=null,tone=Secondary) { onStop?.invoke() } }
+        centerItem { Pill(text("back"),tone=Secondary) { onBack() } }
     }
 }
 

@@ -52,7 +52,7 @@ class WearGpsRouteService193 : Service(),LocationListener {
         }catch(_:SecurityException){finish(true,"permission")}catch(_:Exception){finish(true,"storage")}
         return START_NOT_STICKY
     }
-    private fun owned(w: WearWorkout)=w.ownershipProtocol193==1&&w.timerOwner=="watch"&&!w.workoutPaused&&!WearOwnership193.pending(w)
+    private fun owned(w: WearWorkout)=WearGps193.owns(w)
     private fun locationAvailable()=manager?.isLocationEnabled==true&&manager?.isProviderEnabled(LocationManager.GPS_PROVIDER)==true
     private fun eligible(w: WearWorkout): Boolean {
         if(!WearGps193.distance(w.exercise)||w.currentSet==null||w.currentSet!!.done)return false

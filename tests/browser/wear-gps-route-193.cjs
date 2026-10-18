@@ -29,7 +29,9 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const url=ne
  });
  await p.locator('.tp163-route-button').waitFor({state:'visible'});assert.equal(await p.evaluate(()=>__route193.reads.length),0,'Journal hydration retrieves references, never coordinates');
  assert.equal(await p.evaluate(()=>JSON.stringify(db.get('history')).includes('latitude')),false);
- await p.locator('.tp163-route-button').click();await p.locator('.tp163-route-line').first().waitFor();
+ await p.locator('.tp163-route-button').click();await p.locator('.tp163-route-line').first().waitFor({state:'attached'});
+ await p.locator('.tp163-route-svg').waitFor();
+ assert.ok(await p.locator('.tp163-route-line').first().evaluate(el=>el.getTotalLength()>0&&getComputedStyle(el).stroke!=='none'),'A vertical GPS segment has a visible stroke even with a zero-width path bounding box');
  assert.equal(await p.locator('.tp163-route-line').count(),2,'Interrupted sections must never join');
  assert.deepEqual(await p.evaluate(()=>__route193.reads),['wear193:'+'a'.repeat(64)]);
  assert.match(await p.locator('.tp193-route-source').innerText(),/Órás GPS/);assert.match(await p.locator('.tp163-route-metrics').innerText(),/0[,.]6 km/);

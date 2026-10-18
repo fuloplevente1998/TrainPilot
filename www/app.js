@@ -19073,7 +19073,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
  window.TrainPilotWearRoutes193Core={merge};window.TrainPilotWearRoutes193={sync,refresh,erase};
  window.addEventListener?.('DOMContentLoaded',()=>setTimeout(()=>{
   const base=window.tp3EnsureHistoryBody;if(typeof base!=='function')return;
-  window.tp3EnsureHistoryBody=function(el,index,workoutKey){const result=base.apply(this,arguments),row=history().find(h=>rf142WorkoutKey(h)===workoutKey);
+  window.tp3EnsureHistoryBody=function(el,index,workoutKey){const result=base.apply(this,arguments);if(!api()?.routeBindings193)return result;
+   const row=history().find(h=>rf142WorkoutKey(h)===workoutKey);
    if(row?.ownershipProtocol193===1)void sync(id(row)).then(ok=>{if(ok)paintHistory(el,workoutKey);});return result;
   };
  },0));
