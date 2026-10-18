@@ -62,6 +62,22 @@ function fixture(status){
  return {...f,calls,setStatus:v=>current=copy(v),sync:f.context.window.TrainPilotOwnership193.sync};
 }
 (async()=>{
+ const supported=fixture({ownershipProtocol193:1,state:{}});
+ supported.run('state.restEndAt=Date.now()+60000;state.session.interval162={key:"keep-clock"};stopTimer=function(){throw Error("Capability detection cannot stop the running phone clock");}');
+ assert.equal(await supported.sync(),true);
+ assert.equal(supported.run('state.session.ownershipProtocol193'),1);
+ assert.equal(supported.run('state.session.timerOwner'),'phone');
+ assert.equal(supported.run('state.session.interval162.key'),'keep-clock');
+ assert.equal(JSON.parse(supported.values.get('repforge:draft')).session.ownerEpoch193,0);
+ assert.equal(supported.context.window.TrainPilotOwnership193.available,true);
+ assert.equal(supported.context.window.TrainPilotWearSync.makeHomeSnapshot().ownershipProtocol193,1);
+ const oldWatch=fixture({ownershipProtocol193:1,state:{}});oldWatch.run('state.session.timerOwner="watch"');await oldWatch.sync();
+ assert.equal(oldWatch.run('state.session.ownershipProtocol193'),undefined,'legacy watch sessions cannot be upgraded by the phone');
+ const unsupported=fixture({state:{}});await unsupported.sync();
+ assert.equal(unsupported.run('state.session.ownershipProtocol193'),undefined);
+ assert.equal(unsupported.context.window.TrainPilotWearSync.makeHomeSnapshot().ownershipProtocol193,0);
+ const failedEnable=fixture({ownershipProtocol193:1,state:{}});failedEnable.context.localStorage.setItem=()=>{throw Error('quota');};
+ assert.equal(await failedEnable.sync(),false);assert.equal(failedEnable.run('state.session.ownershipProtocol193'),undefined);
  const f=fixture({state:{snapshot:root()}});assert.equal(await f.sync(),true);
  assert.equal(f.run('state.session.timerOwner'),'watch');assert.equal(f.run('savedSet193===state.session.exercises[0].sets[0]'),true);
  assert.equal(JSON.parse(f.values.get('repforge:draft')).session.ownerEpoch193,1);

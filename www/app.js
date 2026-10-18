@@ -17323,6 +17323,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     schema:1,
     phoneVersion:typeof TRAINPILOT_VERSION==='string'?TRAINPILOT_VERSION:'',
     automaticProtocol:1,
+    ownershipProtocol193:window.TrainPilotOwnership193?.available===true?1:0,
     journalSchema:1,
     theme:watchTheme(),
     ...watchCalendar(active,lang),
@@ -17530,6 +17531,15 @@ window.addEventListener?.('DOMContentLoaded',function(){
   // An added exercise shares stable set IDs without transferring the timer.
   if(!preserveMode){const owner=root?.timerOwner==='phone'?'phone':'watch';s.timerOwner=owner;s.automatic162={enabled:false,owner,phase:'work'};}
   if(!root)return;
+  if(!preserveMode&&root.ownershipProtocol193===1){
+   if(root.timerOwner!=='watch'||root.ownerEpoch193!==0||root.handoff193||!Array.isArray(root.activeIntervals)||!root.activeIntervals.length||root.activeIntervals.length>4096||
+      root.activeIntervals.some((row,i)=>!Number.isFinite(Date.parse(row.start))||Date.parse(row.start)<Date.parse(s.started)||
+       row.end!=null&&(!Number.isFinite(Date.parse(row.end))||Date.parse(row.end)<Date.parse(row.start))||
+       i>0&&(root.activeIntervals[i-1].end==null||Date.parse(row.start)<Date.parse(root.activeIntervals[i-1].end))||
+       i<root.activeIntervals.length-1&&row.end==null))throw Error('Invalid initial watch ownership');
+   Object.assign(s,{ownershipProtocol193:1,ownerEpoch193:0,timerOwner:'watch',workoutPaused:root.workoutPaused===true,
+    pauseRevision:Number.isSafeInteger(root.pauseRevision)?root.pauseRevision:0,activeIntervals:JSON.parse(JSON.stringify(root.activeIntervals))});
+  }
   for(let e=0;e<(root.exercises||[]).length;e++)for(let i=0;i<(root.exercises[e].sets||[]).length;i++){
    const remote=root.exercises[e].sets[i],local=s.exercises[e]?.sets?.[i];
    if(local&&s.exercises[e].id===root.exercises[e].id&&typeof remote.setId==='string'&&remote.setId.length<=128&&remote.setId)local.setId=remote.setId;
@@ -18742,6 +18752,16 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(busy||blocked())return false;busy=true;
   try{
    let remote=await api.ownershipStatus193();if(blocked())return false;
+   if(remote?.ownershipProtocol193===1){
+    window.TrainPilotOwnership193.available=true;
+    const own=sessionOrNull();
+    // Only this phone's epoch-zero owner can be upgraded. Existing watch sessions keep their original protocol.
+    if(own&&own.ownershipProtocol193!==1&&(own.timerOwner||'phone')==='phone'&&!own.handoff193&&!own.ownerEpoch193){
+     const value=clone(draft());value.session.ownershipProtocol193=1;value.session.ownerEpoch193=0;value.session.timerOwner='phone';
+     db.set('draft',value);
+     if(state.session===own)Object.assign(own,{ownershipProtocol193:1,ownerEpoch193:0,timerOwner:'phone'});
+    }
+   }
    const request=remote?.state?.request,s=sessionOrNull();
    if(remote?.state?.stage==='incoming'&&s?.ownershipProtocol193===1&&request?.workoutId===id(s)&&
       (s.timerOwner||'phone')==='phone'&&Number(request.epoch)===(Number(s.ownerEpoch193)||0)){
@@ -18814,7 +18834,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   try{commit(finalWatch(draft(),command));return true;}catch(_){return false;}
  }
  window.TrainPilotOwnership193Core={merge,resumeWatch,finalWatch,pending,commandAllowed};
- window.TrainPilotOwnership193={sync,prepareResume,acceptWatchResume,acceptWatchFinal,pending:()=>pending(sessionOrNull()),commandAllowed:command=>commandAllowed(sessionOrNull(),command),isReconciling:()=>busy};
+ window.TrainPilotOwnership193={available:false,sync,prepareResume,acceptWatchResume,acceptWatchFinal,pending:()=>pending(sessionOrNull()),commandAllowed:command=>commandAllowed(sessionOrNull(),command),isReconciling:()=>busy};
 })();
 // @endsection workout-ownership-193.js
 

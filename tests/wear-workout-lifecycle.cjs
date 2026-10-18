@@ -16,11 +16,21 @@ function harness({normalize=false,ackFailures=0}={}){
   finishWorkout(options){savedCalls++;assert.equal(options.wearConfirmed,true);const saved={...structuredClone(state.session),finished:options.wearFinishedAt||new Date().toISOString()};db.set('history',[saved,...db.get('history',[])]);db.set('draft',null);state.session=null}
  });
  const undoSource=fs.existsSync('www/workout-undo-188.js')?fs.readFileSync('www/workout-undo-188.js','utf8'):app.match(/\/\/ @section workout-undo-188\.js\n([\s\S]*?)\/\/ @endsection workout-undo-188\.js/)[1];
- vm.runInContext(undoSource,ctx);vm.runInContext(source,ctx);
+ const ownership=app.match(/\/\/ @section workout-ownership-193\.js\n([\s\S]*?)\/\/ @endsection workout-ownership-193\.js/)[1];
+ vm.runInContext(undoSource,ctx);vm.runInContext(ownership,ctx);vm.runInContext(source,ctx);
  return {state,db,pending,acks,ackResults,undo:window.TrainPilotUndo188,sync:window.TrainPilotWearSync,session,savedCalls:()=>savedCalls};
 }
 const finish=(id='finish')=>({commandId:id,workoutId:'2026-10-07T08:00:00.000Z',action:'finishWorkout',confirmed:true,createdAt:30,sequence:3,finishedAt:'2026-10-07T08:42:16.000Z'});
 (async()=>{
+ {const h=harness();h.state.session=null;const final=h.session();
+  Object.assign(final,{workoutId:final.started,ownershipProtocol193:1,ownerEpoch193:0,timerOwner:'watch',workoutPaused:true,pauseRevision:1,currentExercise:0,
+   activeIntervals:[{start:final.started,end:'2026-10-07T08:01:00.000Z'}]});
+  final.exercises[0].sets.forEach((s,i)=>{s.setId='cap193-'+i;});final.exercises[0].sets[0].reps='17';final.exercises[0].sets[0].done=true;
+  h.pending.push({...finish('cap193-offline-final'),ownerEpoch193:0,finalSnapshot:final});await h.sync.drainCommands();
+  const saved=h.db.get('history',[])[0];assert.ok(saved,'new watch offline completion can arrive before its start');
+  assert.equal(saved.ownershipProtocol193,1);assert.equal(saved.timerOwner,'watch');assert.equal(saved.exercises[0].sets[0].reps,'17');
+  assert.deepEqual(saved.activeIntervals,final.activeIntervals);assert.equal(h.ackResults[0].status,'saved');
+ }
  {const h=harness(),id=finish().workoutId;h.state.session.timerOwner='watch';h.state.session.healthWear129={heartRate:93,totalCalories:7};
   h.state.session.exercises[0].sets.forEach((s,i)=>s.setId='s'+i);
   const completed=structuredClone(h.state.session.exercises);completed[0].sets[0].done=true;completed[0].sets[0].reps='12';

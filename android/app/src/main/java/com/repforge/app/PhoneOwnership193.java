@@ -71,7 +71,7 @@ final class PhoneOwnership193 {
                 finally { items.release(); }
             });
         }
-        return new JSONObject().put("state",store.read()).put("snapshot",ActiveWorkoutStore.current(context));
+        return new JSONObject().put("ownershipProtocol193",1).put("state",store.read()).put("snapshot",ActiveWorkoutStore.current(context));
     }
     private static JSONObject returned(Context context,OwnershipJournal193 store)throws Exception {
         JSONObject proof=store.read().optJSONObject("snapshot"),current=ActiveWorkoutStore.current(context);

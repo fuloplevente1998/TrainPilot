@@ -16,6 +16,26 @@ A #206 nyitott marad a külön aktivitásnézet és maradék UI-pontok egyeztet�
 A régi #186 draft beolvasztás nélkül lezárva: a #195 mainen levő, elfogadott
 megvalósítása kiváltotta. A #121 karbantartás/Play-publikálás külön marad.
 
+## Aktuális állapot – 2026-10-18
+
+A draft #213-ban az átvételi/visszaadási felület és az önálló, külön indítandó
+órás GPS-rögzítő is be van kötve. Az órán az Edzés vezérlése → GPS-útvonal
+alatt kérhető helyengedély, rendszer-helyszolgáltatás és kézi indítás/leállítás.
+Az edzés időzítőjét a GPS hibája nem állítja le. A pontok privát natív tárban,
+nyugtáig megőrzött csomagokban maradnak; a telefonos napló későn érkező
+útvonalhivatkozást is átvesz. Koordinátát csak a térkép megnyitása kér le.
+
+Az új képességet a telefon sikeres natív képességvizsgálat után hirdeti.
+Telefonos, epoch=0 edzésnél tartósan engedélyezi, a futó időzítő megállítása
+nélkül. Régi óráról indított edzést nem alakít át. Az új home snapshot alapján
+indított órás gyors/tervezett edzés kezdettől megtartja a saját aktív időszakát.
+Az offline lezárás a start előtt is megérkezhet; ugyanabba az edzésbe mentjük.
+
+Ez implementációs állapot, nem készülékes elfogadás. A végső forrásra még
+szükséges az összes GitHub-kapu és a két aláírt APK ellenőrzése. A valódi kültéri
+GPS-vételt és a két készülék közötti offline átvételt a felhasználó teszteli.
+Main változatlan; PR draft, issue nyitott. Az alábbi részek történeti lépések.
+
 ## Közös működés
 
 1. Az órán indított edzés meglévő önálló működése megmarad. Telefonon indított

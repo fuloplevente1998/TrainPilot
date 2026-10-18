@@ -55,7 +55,8 @@ data class WatchHomeSnapshot(
     val publishedAt: Long = 0L,
     val theme: WearHomeTheme = WearHomeTheme.DEFAULT,
     val automaticProtocol: Int = 0,
-    val pendingFeedback: WatchWorkoutFeedback? = null
+    val pendingFeedback: WatchWorkoutFeedback? = null,
+    val ownershipProtocol193: Int = 0
 ) {
     fun toWearExercise(exercise: WatchHomeExercise): WearExercise = WearExercise(
         id = exercise.id,
@@ -83,7 +84,8 @@ data class WatchHomeSnapshot(
         restEndAt = 0L,
         dayName = "Gyors edzés",
         quickWorkout = true,
-        exercises = listOf(toWearExercise(exercise)),timerOwner="watch"
+        exercises = listOf(toWearExercise(exercise)),timerOwner="watch",
+        ownershipProtocol193=ownershipProtocol193,activeIntervals=initialIntervals193(started)
     )
 
     fun createWorkout(day: WatchHomeDay, scheduleId: String, started: String): WearWorkout =
@@ -99,9 +101,12 @@ data class WatchHomeSnapshot(
             restSeconds = restSeconds,
             restEndAt = 0L,
             dayName = day.name,
-            exercises = day.exercises.map(::toWearExercise),timerOwner="watch"
+            exercises = day.exercises.map(::toWearExercise),timerOwner="watch",
+            ownershipProtocol193=ownershipProtocol193,activeIntervals=initialIntervals193(started)
         )
 
+    private fun initialIntervals193(started: String): List<WearActiveInterval>? =
+        if(ownershipProtocol193==1)listOf(WearActiveInterval(java.time.Instant.parse(started).toEpochMilli()))else null
 }
 
 object WatchHomeStore {
@@ -185,6 +190,7 @@ object WatchHomeStore {
                 publishedAt = root.optLong("publishedAt", 0L),
                 theme = WearHomeTheme.parse(root.optJSONObject("theme")),
                 automaticProtocol = root.optInt("automaticProtocol",0),
+                ownershipProtocol193 = if(root.optInt("ownershipProtocol193")==1)1 else 0,
                 pendingFeedback = WatchWorkoutFeedback.parse(root.optJSONObject("pendingFeedback"))
             )
         } catch (_: Exception) { null }

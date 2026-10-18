@@ -22,6 +22,20 @@ class WearQuickWorkoutTest {
             .toString())!!
     }
 
+    @Test fun ownershipCapabilityStartsOnlyAdvertisedWatchWorkoutsWithTheirOriginalActiveInterval() {
+        val legacy=home();val enabled=legacy.copy(ownershipProtocol193=1);val started="2026-10-18T10:00:00Z"
+        val day=WatchHomeDay("A","A","program","Program",listOf(enabled.quickExercises.first()))
+        for(w in listOf(enabled.createQuickWorkout(enabled.quickExercises.first(),started),enabled.createWorkout(day,"",started))) {
+            assertEquals(1,w.ownershipProtocol193);assertEquals(0L,w.ownerEpoch193);assertEquals("watch",w.timerOwner)
+            assertEquals(listOf(WearActiveInterval(java.time.Instant.parse(started).toEpochMilli())),w.activeIntervals)
+            assertNull(w.handoff193);assertEquals(w,WorkoutSnapshotStore.parse(WorkoutSnapshotStore.encode(w).toString()))
+        }
+        assertEquals(0,legacy.createQuickWorkout(legacy.quickExercises.first(),started).ownershipProtocol193)
+        assertNull(legacy.createWorkout(day,"",started).activeIntervals)
+        assertEquals(1,WatchHomeStore.parse("{\"ownershipProtocol193\":1}")!!.ownershipProtocol193)
+        assertEquals(0,WatchHomeStore.parse("{\"ownershipProtocol193\":2}")!!.ownershipProtocol193)
+    }
+
     @Test fun quickCatalogIsParsedWithoutAProgram() {
         val home = home()
         assertEquals(2, home.quickExercises.size)
