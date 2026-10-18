@@ -88,6 +88,13 @@ final class WearCommandQueueStore {
         if("discardWorkout".equals(command.optString("action"))&&"discarded".equals(status)&&command.optJSONObject("finalSnapshot")!=null&&command.optJSONObject("finalSnapshot").optInt("ownershipProtocol193")==1)try {
             com.repforge.shared.GpsRouteLedger193.open(context.getNoBackupFilesDir()).deleteWorkout(command.optString("workoutId"));
         }catch(Exception error){return false;}
+        // An offline final command can precede the start and be saved without ever
+        // publishing an active native snapshot. Preserve its native source grant
+        // before removing that last durable proof from the command queue.
+        if("finishWorkout".equals(command.optString("action"))&&"saved".equals(status))try {
+            String origin=PhoneGpsRoute193.startOrigin(command);
+            if(!origin.isEmpty())PhoneGpsRoute193.authorize(context,new JSONObject(command.getJSONObject("finalSnapshot").toString()).put("watchSourceNode193",origin));
+        }catch(Exception error){return false;}
         JSONArray pending=read(context,PENDING),next=new JSONArray(),seen=read(context,SEEN);
         for(int i=0;i<pending.length();i++) {
             JSONObject row=pending.optJSONObject(i);

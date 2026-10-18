@@ -16,7 +16,7 @@ function harness({normalize=false,ackFailures=0}={}){
   finishWorkout(options){savedCalls++;assert.equal(options.wearConfirmed,true);const saved={...structuredClone(state.session),finished:options.wearFinishedAt||new Date().toISOString()};db.set('history',[saved,...db.get('history',[])]);db.set('draft',null);state.session=null}
  });
  const undoSource=fs.existsSync('www/workout-undo-188.js')?fs.readFileSync('www/workout-undo-188.js','utf8'):app.match(/\/\/ @section workout-undo-188\.js\n([\s\S]*?)\/\/ @endsection workout-undo-188\.js/)[1];
- const ownership=app.match(/\/\/ @section workout-ownership-193\.js\n([\s\S]*?)\/\/ @endsection workout-ownership-193\.js/)[1];
+ const ownership=fs.existsSync('www/workout-ownership-193.js')?fs.readFileSync('www/workout-ownership-193.js','utf8'):app.match(/\/\/ @section workout-ownership-193\.js\n([\s\S]*?)\/\/ @endsection workout-ownership-193\.js/)[1];
  vm.runInContext(undoSource,ctx);vm.runInContext(ownership,ctx);vm.runInContext(source,ctx);
  return {state,db,pending,acks,ackResults,undo:window.TrainPilotUndo188,sync:window.TrainPilotWearSync,session,savedCalls:()=>savedCalls};
 }

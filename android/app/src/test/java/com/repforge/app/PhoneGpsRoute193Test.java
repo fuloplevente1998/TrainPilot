@@ -65,6 +65,18 @@ public class PhoneGpsRoute193Test {
         assertNotNull(PhoneGpsRoute193.accept(context,command(),"watch193","phone193"));assertNull(ActiveWorkoutStore.current(context));
         assertEquals(1,GpsRouteLedger193.open(directory).bindings("workout193").length());
     }
+    @Test public void offlineCompletionBeforeStartKeepsItsNativeGpsGrantAfterTheFinalCommandIsAcknowledged() throws Exception {
+        JSONObject terminal=start().put("action","finishWorkout");
+        WearCommandQueueStore.enqueue(context,terminal,"wear://watch193/trainpilot/workout-command/start193");
+        assertTrue(WearCommandQueueStore.ack(context,WearCommandQueueStore.pending(context).getJSONObject(0),"saved"));
+        assertEquals(0,WearCommandQueueStore.pending(context).length());assertNull(ActiveWorkoutStore.current(context));
+        assertNotNull(PhoneGpsRoute193.accept(context,command(),"watch193","phone193"));
+        assertEquals(1,GpsRouteLedger193.open(directory).bindings("workout193").length());
+    }
+    @Test public void aSavedTerminalCommandWithoutNativeOriginCannotAuthorizeItsOwnCoordinates() throws Exception {
+        assertTrue(WearCommandQueueStore.ack(context,start().put("action","finishWorkout"),"saved"));
+        assertNull(PhoneGpsRoute193.accept(context,command(),"watch193","phone193"));
+    }
     @Test public void nativeOwnershipProofAuthorizesOnlyTheMatchingWatchEpochAndKeepsOldRoutesReadable() throws Exception {
         JSONObject owned=snapshot().put("ownerEpoch193",2).put("handoff193",new JSONObject("{\"protocol\":1,\"id\":\"transfer193\",\"epoch\":2,\"state\":\"committed\",\"source\":\"phone\",\"target\":\"watch\",\"sourceNode\":\"phone193\",\"targetNode\":\"watch193\"}"));
         PhoneGpsRoute193.authorize(context,owned);assertNull(PhoneGpsRoute193.accept(context,command(),"watch193","phone193"));
