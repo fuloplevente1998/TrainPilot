@@ -66,6 +66,16 @@ function fixture(nativeResult=result()){
  return {...app,calls,api,native:app.context.window.TrainPilotPhoneExecution162,failAck:v=>failedAck=v,failPrepare:v=>failPrepare=v,setResult:v=>state=copy(v)};
 }
 (async()=>{
+ const transferred193=fixture();
+ transferred193.run('state.session.ownershipProtocol193=1;state.session.ownerEpoch193=1;state.session.timerOwner="watch";state.session.handoff193={id:"transfer193",state:"committed"};');
+ assert.equal(await transferred193.native.sync(),true);
+ assert.equal(transferred193.calls.length,0,'old native phone frame cannot merge back into a transferred canonical workout');
+ assert.equal(transferred193.run('state.session.exercises[0].sets[1].reps'),'9');
+ assert.equal(await transferred193.native.recordPhoneSet(0,1),false);
+ let finished193=false;await transferred193.native.finishFence(()=>{finished193=true;return true;});assert.equal(finished193,true);
+ assert.equal(transferred193.calls.length,0,'watch-owned finish cannot reconcile the retired phone timer');
+ transferred193.run('state.session.handoff193.state="offered";state.session.timerOwner="phone";');
+ finished193=false;assert.equal(await transferred193.native.finishFence(()=>{finished193=true;}),false);assert.equal(finished193,false);
  const app=fixture();app.run("savedSetRef=state.session.exercises[0].sets[1]");assert.equal(await app.native.sync({prepare:false}),true);assert.deepEqual(app.calls,[['ack',1]]);
  assert.equal(app.run('state.session.exercises[0].sets[1].done'),true,'actual active session adopts durable recording');
  assert.equal(app.run('state.session.notes'),'Keep notes');assert.equal(app.run('savedSetRef===state.session.exercises[0].sets[1]&&savedSetRef.done'),true,'open editors keep their set reference');

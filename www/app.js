@@ -16954,6 +16954,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
   try{return await syncLocked(options);}finally{busy=false;}
  }
  async function finishFence(work){
+  const owned=state.session;
+  if(owned?.ownershipProtocol193===1){if(window.TrainPilotOwnership193Core?.pending(owned))return false;if(owned.timerOwner==='watch')return work();}
   const api=bridge(),session=state.session;if(!api?.executionStatus||!session?.phoneExecution162)return work();
   if(busy||discarding||blocked())return false;busy=true;
   try{
@@ -17004,6 +17006,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  });
  async function recordPhoneSet(ei,si){
   const api=bridge(),session=state.session,target=session?.exercises?.[ei]?.sets?.[si];
+  if(session?.ownershipProtocol193===1&&(session.timerOwner==='watch'||window.TrainPilotOwnership193Core?.pending(session)))return false;
   if(!api?.executeCommand||!target||target.done||busy||discarding||blocked())return false;
   // The recording owns the lock through durable reconciliation and acknowledgement.
   // Polling cannot consume its result between executeCommand and the owning UI call.
@@ -17022,6 +17025,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  async function undoPhoneSet(recordId){
   const api=bridge(),session=state.session;
+  if(session?.ownershipProtocol193===1&&(session.timerOwner==='watch'||window.TrainPilotOwnership193Core?.pending(session)))return false;
   if(!api?.executeCommand||busy||discarding||blocked())return false;
   busy=true;
   try{
