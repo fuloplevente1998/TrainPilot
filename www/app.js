@@ -17674,9 +17674,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(window.TrainPilotOwnership193&&!window.TrainPilotOwnership193.commandAllowed(command))return true;
   if(command.nativeExecutionProtocol===2&&expectedId&&isClosed(expectedId))return true;
   const savedPause=state.session||db.get('draft',null)?.session;
+  if(action==='resumeWorkout'&&savedPause?.ownershipProtocol193===1&&savedPause.timerOwner==='watch'&&matchesWorkout(savedPause,expectedId))
+   return window.TrainPilotOwnership193.acceptWatchResume(command);
   if(savedPause?.workoutPaused===true&&matchesWorkout(savedPause,expectedId)&&!['requestHome','healthSummary','saveWorkoutFeedback','finishWorkout','discardWorkout','watchAutomationState','resumeWorkout'].includes(action))
    return recordResult(command,'error','Az edzés szünetel. Folytasd a telefonon.');
-  if(action==='watchAutomationState'&&savedPause?.workoutPaused===true&&matchesWorkout(savedPause,expectedId))return true;
+  if(action==='watchAutomationState'&&savedPause?.workoutPaused===true&&matchesWorkout(savedPause,expectedId))return !(savedPause.ownershipProtocol193===1&&savedPause.timerOwner==='watch');
   if(action==='resumeWorkout'&&savedPause?.workoutPaused===true&&matchesWorkout(savedPause,expectedId)){
    if(Number(command.pauseRevision)!==Number(savedPause.pauseRevision))return recordResult(command,'error','Elavult folytatás. Frissítsd az órás adatokat.');
    if(!state.session)await resumeDraft();else await window.TrainPilotWorkoutPause201.resume(state.session);
@@ -18603,6 +18605,42 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(!session||session.ownershipProtocol193!==1||command?.workoutId!==id(session)||['healthSummary','requestHome','saveWorkoutFeedback'].includes(command.action))return true;
   return !pending(session)&&Number(command.ownerEpoch193||0)===(Number(session.ownerEpoch193)||0);
  }
+ function validateSets(own,root){
+  if(!Array.isArray(root.exercises)||root.exercises.length!==own.exercises.length||!Number.isInteger(root.currentExercise)||
+     root.currentExercise<0||root.currentExercise>=root.exercises.length)throw Error('Transferred workout changed');
+  const seen=new Set();
+  root.exercises.forEach((e,i)=>{
+   if(e.id!==own.exercises[i].id||!Array.isArray(e.sets)||e.sets.length!==own.exercises[i].sets.length)throw Error('Transferred workout changed');
+   e.sets.forEach((s,j)=>{
+    if(!s.setId||s.setId!==own.exercises[i].sets[j].setId||seen.has(s.setId)||typeof s.done!=='boolean')throw Error('Transferred set changed');
+    seen.add(s.setId);
+    for(const key of fields.slice(1))if(s[key]!=null&&s[key]!==''&&(!Number.isFinite(Number(s[key]))||Number(s[key])<0))throw Error('Invalid transferred value');
+   });
+  });
+ }
+ function resumeWatch(draft,command){
+  const own=draft?.session,root=command?.finalSnapshot,h=own?.handoff193;
+  if(!own||own.ownershipProtocol193!==1||own.timerOwner!=='watch'||pending(own)||command.workoutId!==id(own)||
+     command.ownerEpoch193!==own.ownerEpoch193||root?.workoutId!==id(own)||root.ownershipProtocol193!==1||root.timerOwner!=='watch'||root.ownerEpoch193!==own.ownerEpoch193||
+     (h?root.handoff193?.id!==h.id||root.handoff193?.state!=='committed':!!root.handoff193)||root.workoutPaused!==false||
+     !Number.isSafeInteger(command.pauseRevision)||root.pauseRevision!==command.pauseRevision||!Number.isSafeInteger(command.sequence)||command.sequence<1)
+   throw Error('Invalid watch continuation');
+  if(command.pauseRevision<Number(own.pauseRevision||0))return null;
+  if(command.pauseRevision===Number(own.pauseRevision||0)){if(!own.workoutPaused)return null;throw Error('Conflicting watch continuation');}
+  validateSets(own,root);
+  if(!Array.isArray(root.activeIntervals)||!root.activeIntervals.length||root.activeIntervals.some((row,i)=>
+   !Number.isFinite(Date.parse(row.start))||row.end!=null&&(!Number.isFinite(Date.parse(row.end))||Date.parse(row.end)<Date.parse(row.start))||
+   i<root.activeIntervals.length-1&&row.end==null)||root.activeIntervals.at(-1).end!=null)throw Error('Invalid watch active interval');
+  const next=clone(draft),s=next.session;
+  root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{for(const k of fields)if(k in v)s.exercises[i].sets[j][k]=v[k];}));
+  s.workoutPaused=false;s.pauseRevision=command.pauseRevision;s.activeIntervals=clone(root.activeIntervals);s.pauseTimer201=null;
+  s.wearSequence=Math.max(Number(s.wearSequence)||0,command.sequence);
+  s.watchAutomation162=root.automation?{...clone(root.automation),snapshot:clone(root)}:null;
+  s.automatic162={...s.automatic162,enabled:root.automation?.enabled===true,owner:'watch',watch:s.watchAutomation162,run:null,pending:false};
+  if(root.timerCheckpoint193?.timeLogs193)window.TrainPilotTime162Core.merge(s,root.timerCheckpoint193.timeLogs193);
+  if(root.automation?.timeLog)window.TrainPilotTime162Core.merge(s,{[root.automation.timeLog.key]:root.automation.timeLog});
+  next.current=root.currentExercise;next.restEndAt=null;next.savedAt=new Date().toISOString();return next;
+ }
  function merge(draft,root){
   const own=draft?.session,h=root?.handoff193;
   if(!own||!h||root.workoutId!==id(own))return null;
@@ -18616,17 +18654,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(h.epoch===own.handoff193?.epoch&&h.id!==own.handoff193.id)throw Error('Conflicting ownership checkpoint');
   const applied=own.ownershipApplied193;
   if(applied?.id===h.id&&applied.epoch===epoch&&rank[applied.state]>=rank[h.state])return null;
-  if(!Array.isArray(root.exercises)||root.exercises.length!==own.exercises.length||!Number.isInteger(root.currentExercise)||
-     root.currentExercise<0||root.currentExercise>=root.exercises.length)throw Error('Transferred workout changed');
-  const seen=new Set();
-  root.exercises.forEach((e,i)=>{
-   if(e.id!==own.exercises[i].id||!Array.isArray(e.sets)||e.sets.length!==own.exercises[i].sets.length)throw Error('Transferred workout changed');
-   e.sets.forEach((s,j)=>{
-    if(!s.setId||s.setId!==own.exercises[i].sets[j].setId||seen.has(s.setId)||typeof s.done!=='boolean')throw Error('Transferred set changed');
-    seen.add(s.setId);
-    for(const key of fields.slice(1))if(s[key]!=null&&s[key]!==''&&(!Number.isFinite(Number(s[key]))||Number(s[key])<0))throw Error('Invalid transferred value');
-   });
-  });
+  validateSets(own,root);
   const next=clone(draft),s=next.session;
   root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{for(const k of fields)if(k in v)s.exercises[i].sets[j][k]=v[k];}));
   Object.assign(s,{ownershipProtocol193:1,ownerEpoch193:epoch,handoff193:clone(h),timerOwner:root.timerOwner,
@@ -18727,8 +18755,17 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }catch(_){return false;}finally{busy=false;}
  }
  function sessionOrNull(){return state.session||db.get('draft',null)?.session||null;}
- window.TrainPilotOwnership193Core={merge,pending,commandAllowed};
- window.TrainPilotOwnership193={sync,prepareResume,pending:()=>pending(sessionOrNull()),commandAllowed:command=>commandAllowed(sessionOrNull(),command),isReconciling:()=>busy};
+ function acceptWatchResume(command){
+  try{
+   const value=resumeWatch(draft(),command);if(value){
+    commit(value);
+    if(state.session&&state.tab==='plan'&&!document.activeElement?.matches?.('input,textarea,select')&&!document.querySelector('dialog[open],[role="dialog"]'))renderWorkout();
+   }
+   return true;
+  }catch(_){return false;}
+ }
+ window.TrainPilotOwnership193Core={merge,resumeWatch,pending,commandAllowed};
+ window.TrainPilotOwnership193={sync,prepareResume,acceptWatchResume,pending:()=>pending(sessionOrNull()),commandAllowed:command=>commandAllowed(sessionOrNull(),command),isReconciling:()=>busy};
 })();
 // @endsection workout-ownership-193.js
 

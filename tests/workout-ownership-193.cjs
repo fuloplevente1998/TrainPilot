@@ -28,6 +28,18 @@ assert.equal(core.commandAllowed(adopted.session,{workoutId:'w193',action:'compl
 assert.equal(core.commandAllowed(adopted.session,{workoutId:'w193',action:'completeSet',ownerEpoch193:1}),true);
 assert.equal(core.commandAllowed(offered.session,{workoutId:'w193',action:'completeSet',ownerEpoch193:0}),false);
 assert.equal(core.commandAllowed(offered.session,{workoutId:'w193',action:'healthSummary',ownerEpoch193:0}),true);
+function watchResume193(){
+ const frame=root();frame.workoutPaused=false;frame.pauseRevision=6;
+ frame.activeIntervals.push({start:'2026-10-18T10:01:00Z',end:null});
+ return {commandId:'watch-resume193',action:'resumeWorkout',workoutId:'w193',ownerEpoch193:1,pauseRevision:6,sequence:1,createdAt:100,finalSnapshot:frame};
+}
+const pausedWatch=core.merge(initial,root()),watchCommand=watchResume193(),resumedWatch=core.resumeWatch(pausedWatch,watchCommand);
+assert.equal(resumedWatch.session.workoutPaused,false);assert.equal(resumedWatch.session.pauseRevision,6);
+assert.equal(pausedWatch.session.workoutPaused,true,'watch resume remains pure until durable commit');
+resumedWatch.session.exercises[0].sets[0].reps='29';
+assert.equal(core.resumeWatch(resumedWatch,watchCommand),null,'duplicate watch continuation cannot erase newer measurements');
+assert.throws(()=>core.resumeWatch(pausedWatch,{...watchCommand,ownerEpoch193:0}),/Invalid watch/);
+const closedInterval=copy(watchCommand);closedInterval.finalSnapshot.activeIntervals.pop();assert.throws(()=>core.resumeWatch(pausedWatch,closedInterval),/active interval/);
 function fixture(status){
  const f=runtime();let current=copy(status);const calls=[];
  f.context.window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{ownershipStatus193:async()=>copy(current)}}};
@@ -56,6 +68,18 @@ function fixture(status){
   fresh.calls.push('prepare');assert.equal(requestId,'request193');assert.equal(snapshot.workoutPaused,true);return {state:{snapshot:root('offered')}};
  };
  assert.equal(await fresh.sync(),false);assert.deepEqual(fresh.calls,['reconcile','pause','reconcile','prepare'],'pause effects must be durably reconciled before offering');
+ const watchMirror=fixture({state:{snapshot:root()}});await watchMirror.sync();
+ const watchApi=watchMirror.context.window.Capacitor.Plugins.WearSync,acks=[];let queued=[{...watchResume193(),commandId:'state-before-resume193',action:'watchAutomationState'}];
+ watchApi.pendingCommands=async()=>({commands:copy(queued)});watchApi.ackCommand=async receipt=>acks.push(receipt);
+ watchMirror.context.window.TrainPilotWorkoutPause201.resume=async()=>{throw Error('Watch continuation must not resume the phone clock');};
+ await watchMirror.context.window.TrainPilotWearSync.drainCommands();assert.equal(acks.length,0,'early automation state is retained until the explicit watch continuation arrives');
+ queued=[watchResume193()];await watchMirror.context.window.TrainPilotWearSync.drainCommands();
+ assert.equal(watchMirror.run('state.session.workoutPaused'),false);assert.equal(acks[0]?.status,'applied');
+ const backgroundMirror=fixture({state:{snapshot:root()}});await backgroundMirror.sync();
+ backgroundMirror.run('state.session=null');
+ assert.equal(backgroundMirror.context.window.TrainPilotOwnership193.acceptWatchResume(watchResume193()),true);
+ assert.equal(backgroundMirror.run('state.session'),null,'watch continuation does not navigate or open a phone workout');
+ assert.equal(backgroundMirror.run('db.get("draft").session.workoutPaused'),false);
  function returnFixture193(timed=true){
   const r=copy(reverse);r.resumeAutomaticOnContinue=timed;
   const f=fixture({state:{snapshot:r}}),calls=[];
