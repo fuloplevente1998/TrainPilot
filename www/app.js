@@ -16863,7 +16863,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const api=bridge();if(!api?.executionStatus)return true;if(blocked())return false;let stage='reconcile';
   try{
    const owned=draft()?.session;
-   if(owned?.ownershipProtocol193===1&&(owned.timerOwner==='watch'||window.TrainPilotOwnership193Core?.pending(owned)))return true;
+   if(owned?.ownershipProtocol193===1&&(owned.timerOwner==='watch'||owned.ownershipAwaitingResume193||window.TrainPilotOwnership193Core?.pending(owned)))return true;
    if(!await reconcile(api))return false;
    let current=draft(),session=current?.session;
    stage='status';let remote=await api.executionStatus();if(blocked())return false;if(remote.controllerArmed===false)lastArmed='';
@@ -18552,7 +18552,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  async function resume(session){
   if(!session?.workoutPaused||state.session!==session)return true;
-  if(session.ownershipProtocol193===1&&(session.timerOwner==='watch'||window.TrainPilotOwnership193Core?.pending(session)))return false;
+  if(session.ownershipProtocol193===1&&(session.timerOwner==='watch'||session.ownershipAwaitingResume193||window.TrainPilotOwnership193Core?.pending(session)))return false;
   const previous=session.pauseRevision;
   session.workoutPaused=false;revision(session);save(session);
   try{
@@ -18615,9 +18615,15 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(root.timerCheckpoint193)s.timerCheckpoint193=clone(root.timerCheckpoint193);else delete s.timerCheckpoint193;
   if(root.timerCheckpoint193?.timeLogs193)window.TrainPilotTime162Core.merge(s,root.timerCheckpoint193.timeLogs193);
   if(root.timerOwner==='watch'){
+   s.ownershipAwaitingResume193=false;
    s.watchAutomation162=root.automation?{...clone(root.automation),snapshot:clone(root)}:null;
    s.automatic162={...s.automatic162,enabled:root.automation?.enabled===true,owner:'watch',watch:s.watchAutomation162,run:null,pending:false};
    delete s.interval162;
+  }else if(h.state==='committed'){
+   // A reverse handoff must import a fresh phone execution generation before any resume.
+   s.ownershipAwaitingResume193=true;s.watchAutomation162=null;
+   s.automatic162={...s.automatic162,owner:'phone',run:null,pending:false,phase:'paused'};
+   delete s.interval162;delete s.phoneExecution162;
   }
   next.current=root.currentExercise;next.restEndAt=null;next.savedAt=new Date().toISOString();return next;
  }
@@ -18630,7 +18636,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const session=state.session,exercises=session.exercises;
    value.session.exercises.forEach((e,i)=>e.sets.forEach((s,j)=>Object.assign(exercises[i].sets[j],s)));
    Object.assign(session,value.session,{exercises});
-   for(const key of ['interval162','timerCheckpoint193'])if(!(key in value.session))delete session[key];
+   for(const key of ['interval162','timerCheckpoint193','phoneExecution162'])if(!(key in value.session))delete session[key];
    state.current=value.current;state.restEndAt=null;stopTimer();
   }
  }

@@ -22,6 +22,7 @@ const offered=core.merge(initial,root('offered'));assert.equal(core.pending(offe
 assert.equal(core.merge(offered,root()).session.ownerEpoch193,1,'offered -> committed is a distinct durable transition');
 const reverse=root('committed',2);reverse.handoff193={...reverse.handoff193,id:'reverse193',source:'watch',target:'phone'};reverse.timerOwner='phone';
 assert.equal(core.merge(adopted,reverse).session.timerOwner,'phone');
+assert.equal(core.merge(adopted,reverse).session.ownershipAwaitingResume193,true,'returning to the phone cannot revive its retired execution generation');
 assert.equal(core.merge(initial,{...root(),workoutId:'other'}),null);
 assert.equal(core.commandAllowed(adopted.session,{workoutId:'w193',action:'completeSet',ownerEpoch193:0}),false,'queued commands are rechecked after native delivery');
 assert.equal(core.commandAllowed(adopted.session,{workoutId:'w193',action:'completeSet',ownerEpoch193:1}),true);
