@@ -79,19 +79,29 @@ internal object WearOwnership193 {
             if(state.optString("stage")=="incoming") {
                 var current=WorkoutSnapshotStore.load(context) ?: return
                 if(current.timerOwner!="watch"||current.ownershipProtocol193!=1)return
-                val beforeAuto=current.automation
-                val resume=current.resumeAutomaticOnContinue||!current.workoutPaused&&beforeAuto?.enabled==true&&!beforeAuto.paused
-                if(!current.workoutPaused&&current.automation?.enabled==true)
-                    current=WearAutomaticController.command(context,"pause",current.workoutId) ?: current
-                current=WearStopwatchStore.freezeIntoWorkout193(context,current)
-                current=WorkoutSnapshotStore.saveWorkout(context,current.copy(workoutPaused=true,resumeAutomaticOnContinue=resume,
-                    pauseRevision=maxOf(current.pauseRevision+1,System.currentTimeMillis()),
-                    pausedRestMillis=maxOf(current.pausedRestMillis,current.restEndAt-System.currentTimeMillis()),restEndAt=0,
-                    activeIntervals=current.activeIntervals?.map { if(it.end==0L)it.copy(end=System.currentTimeMillis())else it }))
-                WearAutomaticService.stop(context);WearHealthService.syncPause(context)
+                current=freeze(context,current.workoutId) ?: return
                 store.prepare(WorkoutSnapshotStore.encode(current),localNode,System.currentTimeMillis())
             }
             OwnershipTransport193.send(context,store);WearSurfaces.refresh(context,true)
+        }}
+    }
+    /** Freeze the durable source, including the last partial seconds, before handing off or closing. */
+    fun freeze(context: Context,expectedId: String): WearWorkout? {
+        synchronized(WearAutomaticController) { synchronized(WorkoutSnapshotStore) {
+            var current=WorkoutSnapshotStore.load(context) ?: return null
+            if(current.workoutId!=expectedId||current.ownershipProtocol193!=1||current.timerOwner!="watch"||pending(current)||WearUndo188.blocked(current))return null
+            val beforeAuto=current.automation
+            val resume=current.resumeAutomaticOnContinue||!current.workoutPaused&&beforeAuto?.enabled==true&&!beforeAuto.paused
+            if(!current.workoutPaused&&beforeAuto?.enabled==true)
+                current=WearAutomaticController.command(context,"pause",current.workoutId) ?: return null
+            current=WearStopwatchStore.freezeIntoWorkout193(context,current)
+            val now=System.currentTimeMillis()
+            current=WorkoutSnapshotStore.saveWorkout(context,current.copy(workoutPaused=true,resumeAutomaticOnContinue=resume,
+                pauseRevision=if(current.workoutPaused)current.pauseRevision else maxOf(current.pauseRevision+1,now),
+                pausedRestMillis=maxOf(current.pausedRestMillis,(current.restEndAt-now).coerceAtLeast(0)),restEndAt=0,
+                activeIntervals=current.activeIntervals?.map { if(it.end==0L)it.copy(end=maxOf(it.start,now))else it }))
+            WearAutomaticService.stop(context);WearHealthService.syncPause(context)
+            return current
         }}
     }
     fun resume(context: Context): WearWorkout? {

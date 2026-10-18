@@ -124,6 +124,15 @@ a függő átadás, hálózat nélküli folytatás és letiltott offline átvét
 **A normál edzések még nem hirdetik az új képességet; a GPS-integráció és a
 végső készülékes elfogadás továbbra is hátravan.**
 
+Hatodik rész: az órás lezárás az aktuális privát snapshotból dolgozik, nem a
+Compose korábban betöltött példányából. Ugyanaz a forrásfagyasztó állítja meg az
+automata/kézi időzítőt és zárja az aktív időszakokat átadás és befejezés előtt.
+A telefon a végső órás snapshot stabil sorozatait, epochját, lezárt időszakait
+és időnaplóit tartósan importálja. Ez akkor is működik, ha a korábbi órás
+folytatási üzenet még nem érkezett meg. Az offline kézbesítés késése nem válik
+aktív edzésidővé. Hibás/nyitott/átfedő időszak, régi epoch vagy tárhelyhiba
+nem nyugtázza el és nem menti el hibásan az edzést.
+
 - [ ] Tartós tulajdonosi állapotgép és stale/dupla/ACK-vesztés regressziók.
 - [ ] Natív telefon–Wear átadás és visszaadás; régi alkalmazás képességvizsgálata.
 - [ ] Aktív/szüneteltetett kézi és automata edzés átvitele, munka/pihenő idő megőrzése.

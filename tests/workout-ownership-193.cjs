@@ -42,6 +42,19 @@ resumedWatch.session.exercises[0].sets[0].reps='29';
 assert.equal(core.resumeWatch(resumedWatch,watchCommand),null,'duplicate watch continuation cannot erase newer measurements');
 assert.throws(()=>core.resumeWatch(pausedWatch,{...watchCommand,ownerEpoch193:0}),/Invalid watch/);
 const closedInterval=copy(watchCommand);closedInterval.finalSnapshot.activeIntervals.pop();assert.throws(()=>core.resumeWatch(pausedWatch,closedInterval),/active interval/);
+function watchFinal193(){
+ const frame=root();frame.pauseRevision=8;frame.exercises[0].sets[0].reps='31';frame.exercises[0].sets[0].done=true;
+ frame.activeIntervals.push({start:'2026-10-18T10:01:00Z',end:'2026-10-18T10:01:19Z'});
+ return {commandId:'watch-finish193',action:'finishWorkout',confirmed:true,workoutId:'w193',ownerEpoch193:1,sequence:5,finishedAt:'2026-10-18T10:01:20Z',finalSnapshot:frame};
+}
+const terminal=watchFinal193(),finishedWatch=core.finalWatch(pausedWatch,terminal);
+assert.equal(finishedWatch.session.exercises[0].sets[0].reps,'31','offline finish imports source values even if explicit resume never arrived');
+assert.equal(finishedWatch.session.exercises[0].sets[0].done,true);
+assert.equal(finishedWatch.session.activeIntervals.reduce((sum,i)=>sum+Date.parse(i.end)-Date.parse(i.start),0),31000,'offline transit is excluded from active duration');
+assert.equal(pausedWatch.session.exercises[0].sets[0].done,false,'terminal import remains pure before durable commit');
+for(const change of [v=>v.ownerEpoch193=0,v=>v.finalSnapshot.exercises[0].sets[0].setId='wrong',v=>v.finalSnapshot.activeIntervals[1].end=null,v=>v.finalSnapshot.activeIntervals[1].end='2026-10-18T10:01:21Z',v=>v.finalSnapshot.activeIntervals[1].start='2026-10-18T10:00:05Z']){
+ const bad=copy(terminal);change(bad);assert.throws(()=>core.finalWatch(pausedWatch,bad));
+}
 function fixture(status){
  const f=runtime();let current=copy(status);const calls=[];
  f.context.window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{ownershipStatus193:async()=>copy(current)}}};
@@ -82,6 +95,20 @@ function fixture(status){
  assert.equal(backgroundMirror.context.window.TrainPilotOwnership193.acceptWatchResume(watchResume193()),true);
  assert.equal(backgroundMirror.run('state.session'),null,'watch continuation does not navigate or open a phone workout');
  assert.equal(backgroundMirror.run('db.get("draft").session.workoutPaused'),false);
+ const offlineFinish=fixture({state:{snapshot:root()}});await offlineFinish.sync();
+ const offlineApi=offlineFinish.context.window.Capacitor.Plugins.WearSync;let finishQueue=[watchFinal193()];const finishReceipts=[];
+ offlineApi.pendingCommands=async()=>({commands:copy(finishQueue)});offlineApi.ackCommand=async receipt=>{finishReceipts.push(receipt);finishQueue=[];};
+ offlineFinish.run('finishWorkout=function(options){const s=JSON.parse(JSON.stringify(state.session));s.finished=options.wearFinishedAt;db.set("history",[s]);db.set("draft",null);state.session=null;};');
+ await offlineFinish.context.window.TrainPilotWearSync.drainCommands();
+ assert.equal(offlineFinish.run('db.get("history")[0].exercises[0].sets[0].reps'),'31');
+ assert.equal(offlineFinish.run('db.get("history")[0].activeIntervals[1].end'),'2026-10-18T10:01:19Z');
+ assert.equal(finishReceipts[0]?.status,'saved','offline terminal command is accepted without a preceding resume message');
+ finishQueue=[watchFinal193()];await offlineFinish.context.window.TrainPilotWearSync.drainCommands();
+ assert.equal(offlineFinish.run('db.get("history").length'),1,'replayed terminal command cannot create another workout');
+ const failedFinal=fixture({state:{snapshot:root()}});await failedFinal.sync();
+ const beforeFinal=failedFinal.run('state.session.exercises[0].sets[0].reps');failedFinal.context.localStorage.setItem=()=>{throw Error('quota');};
+ assert.equal(failedFinal.context.window.TrainPilotOwnership193.acceptWatchFinal(watchFinal193()),false);
+ assert.equal(failedFinal.run('state.session.exercises[0].sets[0].reps'),beforeFinal,'terminal values stay unexposed after a failed draft write');
  function returnFixture193(timed=true){
   const r=copy(reverse);r.resumeAutomaticOnContinue=timed;
   const f=fixture({state:{snapshot:r}}),calls=[];

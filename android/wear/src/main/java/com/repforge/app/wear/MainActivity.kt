@@ -762,8 +762,14 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     }
 
     private fun closeWorkout(action: String) {
-        val current = workout.value ?: return
-        if(WearUndo188.blocked(current))return
+        synchronized(WearAutomaticController) { synchronized(WorkoutSnapshotStore) {
+        val visible=workout.value ?: return
+        var current=WorkoutSnapshotStore.load(this)?.takeIf { it.workoutId==visible.workoutId } ?: return
+        if(WearUndo188.blocked(current)||WearOwnership193.pending(current))return
+        if(current.ownershipProtocol193==1&&current.timerOwner=="watch") {
+            current=WearOwnership193.freeze(this,current.workoutId) ?: return
+            workout.value=current
+        }
         if (action == "finishWorkout" && current.completedSets == 0) return
         val command = JSONObject()
             .put("schema", 1).put("commandId", UUID.randomUUID().toString())
@@ -787,6 +793,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         restTimer?.cancel()
         restRemaining.intValue = 0
         WearSurfaces.refresh(this,true)
+        }}
     }
 
     private fun retryClosure() {

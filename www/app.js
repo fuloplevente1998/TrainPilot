@@ -17660,7 +17660,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(action==='discardWorkout'){
    return discardDraft(state.session,command);
   }
-  mergeFinalSets(command);attachMeasuredHealth(command);persistDraft();
+  if(state.session.ownershipProtocol193===1&&state.session.timerOwner==='watch'){
+   if(!window.TrainPilotOwnership193?.acceptWatchFinal(command))return false;
+  }else mergeFinalSets(command);
+  attachMeasuredHealth(command);persistDraft();
   if(!state.session.exercises.some(e=>e.sets?.some(s=>s.done)))return recordResult(command,'error','Legalább egy rögzített sorozat szükséges.');
   const result=finishWorkout({wearConfirmed:true,wearFinishedAt:String(command.finishedAt||''),wearFeedback:command.feedback});
   if(result&&typeof result.then==='function')await result;
@@ -18656,6 +18659,30 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(root.automation?.timeLog)window.TrainPilotTime162Core.merge(s,{[root.automation.timeLog.key]:root.automation.timeLog});
   next.current=root.currentExercise;next.restEndAt=null;next.savedAt=new Date().toISOString();return next;
  }
+ function finalWatch(draft,command){
+  const own=draft?.session,root=command?.finalSnapshot,h=own?.handoff193,finished=Date.parse(command?.finishedAt),started=Date.parse(own?.started);
+  if(!own||own.ownershipProtocol193!==1||own.timerOwner!=='watch'||pending(own)||command?.action!=='finishWorkout'||command.confirmed!==true||
+     command.workoutId!==id(own)||command.ownerEpoch193!==own.ownerEpoch193||root?.workoutId!==id(own)||root.ownershipProtocol193!==1||
+     root.timerOwner!=='watch'||root.ownerEpoch193!==own.ownerEpoch193||(h?root.handoff193?.id!==h.id||root.handoff193?.state!=='committed':!!root.handoff193)||
+     root.workoutPaused!==true||!Number.isSafeInteger(root.pauseRevision)||root.pauseRevision<Number(own.pauseRevision||0)||
+     !Number.isSafeInteger(command.sequence)||command.sequence<1||command.sequence<Number(own.wearSequence||0)||
+     !Number.isFinite(finished)||!Number.isFinite(started)||finished<started||finished>Date.now()+30000)
+   throw Error('Invalid watch completion');
+  validateSets(own,root);
+  if(!Array.isArray(root.activeIntervals)||!root.activeIntervals.length||root.activeIntervals.length>4096||root.activeIntervals.some((row,i)=>{
+   const from=Date.parse(row.start),to=Date.parse(row.end),previous=i?Date.parse(root.activeIntervals[i-1].end):started;
+   return !Number.isFinite(from)||!Number.isFinite(to)||from<previous||to<from||to>finished;
+  }))throw Error('Invalid completed watch intervals');
+  const next=clone(draft),s=next.session;
+  root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{for(const k of fields)if(k in v)s.exercises[i].sets[j][k]=v[k];}));
+  s.workoutPaused=true;s.pauseRevision=root.pauseRevision;s.activeIntervals=clone(root.activeIntervals);s.pauseTimer201=null;
+  s.wearSequence=Math.max(Number(s.wearSequence)||0,command.sequence);delete s.indoorTimer107;delete s.interval162;
+  s.watchAutomation162=root.automation?{...clone(root.automation),snapshot:clone(root)}:null;
+  s.automatic162={...s.automatic162,enabled:root.automation?.enabled===true,owner:'watch',watch:s.watchAutomation162,run:null,pending:false};
+  if(root.timerCheckpoint193?.timeLogs193)window.TrainPilotTime162Core.merge(s,root.timerCheckpoint193.timeLogs193);
+  if(root.automation?.timeLog)window.TrainPilotTime162Core.merge(s,{[root.automation.timeLog.key]:root.automation.timeLog});
+  next.current=root.currentExercise;next.restEndAt=null;next.savedAt=new Date().toISOString();return next;
+ }
  function merge(draft,root){
   const own=draft?.session,h=root?.handoff193;
   if(!own||!h||root.workoutId!==id(own))return null;
@@ -18781,8 +18808,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
    return true;
   }catch(_){return false;}
  }
- window.TrainPilotOwnership193Core={merge,resumeWatch,pending,commandAllowed};
- window.TrainPilotOwnership193={sync,prepareResume,acceptWatchResume,pending:()=>pending(sessionOrNull()),commandAllowed:command=>commandAllowed(sessionOrNull(),command),isReconciling:()=>busy};
+ function acceptWatchFinal(command){
+  try{commit(finalWatch(draft(),command));return true;}catch(_){return false;}
+ }
+ window.TrainPilotOwnership193Core={merge,resumeWatch,finalWatch,pending,commandAllowed};
+ window.TrainPilotOwnership193={sync,prepareResume,acceptWatchResume,acceptWatchFinal,pending:()=>pending(sessionOrNull()),commandAllowed:command=>commandAllowed(sessionOrNull(),command),isReconciling:()=>busy};
 })();
 // @endsection workout-ownership-193.js
 

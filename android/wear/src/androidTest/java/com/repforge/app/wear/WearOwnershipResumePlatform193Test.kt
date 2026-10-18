@@ -11,6 +11,27 @@ import org.junit.Test
 
 /** Resume intent is durable even when the command queue cannot commit at the first attempt. */
 class WearOwnershipResumePlatform193Test {
+    @Test fun sourceFreezeUsesTheDurableValuesAndStopsManualTimeBeforeClosureOrTransfer() {
+        val instrumentation=InstrumentationRegistry.getInstrumentation();val context=instrumentation.targetContext
+        val now=System.currentTimeMillis();val id="freeze193-"+java.util.UUID.randomUUID().toString()
+        val old=WorkoutSnapshotStore.parse("""{"workoutId":"$id","started":"${java.time.Instant.ofEpochMilli(now-20000)}","ownershipProtocol193":1,"ownerEpoch193":1,"timerOwner":"watch","workoutPaused":false,"pauseRevision":4,"activeIntervals":[{"start":"${java.time.Instant.ofEpochMilli(now-20000)}","end":null}],"exercises":[{"id":"plank","repUnit":"mp","sets":[{"set":1,"setId":"done-$id","reps":"14","done":true},{"set":2,"setId":"current-$id","reps":"4","done":false}]}]}""")!!
+        try {
+            instrumentation.runOnMainSync {
+                WearAutomaticService.stop(context);WearHealthStore.enable(context,false);WorkoutSnapshotStore.clear(context);WearStopwatchStore.clear(context)
+                WorkoutSnapshotStore.saveWorkout(context,old.copy(exercises=listOf(old.exercises[0].copy(sets=listOf(old.exercises[0].sets[0],old.exercises[0].sets[1].copy(reps="7"))))))
+                WearStopwatchStore.save(context,WearStopwatch("$id:plank:2:reps",7300,now-2000))
+                val frozen=WearOwnership193.freeze(context,id)!!
+                assertTrue(frozen.workoutPaused);assertEquals(1,frozen.completedSets);assertEquals("14",frozen.exercises[0].sets[0].reps)
+                assertTrue(frozen.exercises[0].sets[1].reps.toInt()>=9);assertEquals("4",old.exercises[0].sets[1].reps)
+                assertEquals(0L,WearStopwatchStore.load(context,"$id:plank:2:reps").startedAt)
+                assertTrue(frozen.activeIntervals!!.all { it.end>0 });assertTrue(frozen.pauseRevision>old.pauseRevision)
+                assertEquals(frozen.elapsedSeconds(),frozen.elapsedSeconds(now+600000))
+                val repeated=WearOwnership193.freeze(context,id)!!
+                assertEquals(frozen.pauseRevision,repeated.pauseRevision);assertEquals(frozen.activeIntervals,repeated.activeIntervals)
+                assertNull(WearOwnership193.freeze(context,"another-workout"))
+            }
+        } finally { instrumentation.runOnMainSync { WorkoutSnapshotStore.clear(context);WearStopwatchStore.clear(context) } }
+    }
     @Test fun failedOutboxWriteRetainsOneDurableResumeIntentAndRecoveryReusesItsIdentity() {
         val instrumentation=InstrumentationRegistry.getInstrumentation();val context=instrumentation.targetContext
         val id="resume193-"+java.util.UUID.randomUUID().toString()
