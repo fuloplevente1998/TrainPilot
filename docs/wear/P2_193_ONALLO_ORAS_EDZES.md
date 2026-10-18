@@ -133,6 +133,21 @@ folytatási üzenet még nem érkezett meg. Az offline kézbesítés késése ne
 aktív edzésidővé. Hibás/nyitott/átfedő időszak, régi epoch vagy tárhelyhiba
 nem nyugtázza el és nem menti el hibásan az edzést.
 
+Hetedik rész (bekötés előtti GPS-adatmag): közös valódi-fix szűrő, változtathatatlan
+legfeljebb 32 pontos csomagok és privát atomi útvonaltároló. Stabil workout/set,
+eszközpár és owner epoch szerinti helyi engedély szükséges; távoli csomag nem
+adhat magának jogosultságot. Sorrenden kívüli csomagok tárolhatók, azonos
+csomag nem duplázódik, eltérő tartalmú újraküldés elutasított. A nyugta nem
+hordoz koordinátát és csak ellenőrzött tartós írás után készülhet.
+
+A törlés előbb tartós tombstone-t ír, majd eltávolítja a koordinátákat; régi
+csomag és későbbi grant sem éleszti fel az útvonalat. Korlátok: útvonalanként
+12000 pont / 256 szakasz / 2 MiB, összesen 512 útvonal-bejegyzés, automatikus
+törlés nélkül. Kilenc natív eset ellenőrzi a forrásvédelmet, ismétlést,
+sorrendet, hibás fixet, határértéket, törlést és tárhelyhibát a GitHub-kapuban.
+**Ez még adatmag: Location-szolgáltatás, outbox-kézbesítés, natív grant-bekötés,
+telefonos #163-olvasás és GPS-felület nélkül nem aktív rögzítés.**
+
 - [ ] Tartós tulajdonosi állapotgép és stale/dupla/ACK-vesztés regressziók.
 - [ ] Natív telefon–Wear átadás és visszaadás; régi alkalmazás képességvizsgálata.
 - [ ] Aktív/szüneteltetett kézi és automata edzés átvitele, munka/pihenő idő megőrzése.

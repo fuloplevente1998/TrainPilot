@@ -94,7 +94,8 @@ internal object WearOwnership193 {
             val resume=current.resumeAutomaticOnContinue||!current.workoutPaused&&beforeAuto?.enabled==true&&!beforeAuto.paused
             if(!current.workoutPaused&&beforeAuto?.enabled==true)
                 current=WearAutomaticController.command(context,"pause",current.workoutId) ?: return null
-            current=WearStopwatchStore.freezeIntoWorkout193(context,current)
+            if(beforeAuto?.enabled==true)WearStopwatchStore.pause(context)
+            else current=WearStopwatchStore.freezeIntoWorkout193(context,current)
             val now=System.currentTimeMillis()
             current=WorkoutSnapshotStore.saveWorkout(context,current.copy(workoutPaused=true,resumeAutomaticOnContinue=resume,
                 pauseRevision=if(current.workoutPaused)current.pauseRevision else maxOf(current.pauseRevision+1,now),

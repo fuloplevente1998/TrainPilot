@@ -32,6 +32,21 @@ class WearOwnershipResumePlatform193Test {
             }
         } finally { instrumentation.runOnMainSync { WorkoutSnapshotStore.clear(context);WearStopwatchStore.clear(context) } }
     }
+    @Test fun freezingAutomaticSourceDoesNotOverwriteItsMeasurementWithARetiredManualStopwatch() {
+        val instrumentation=InstrumentationRegistry.getInstrumentation();val context=instrumentation.targetContext
+        val id="auto-freeze193-"+java.util.UUID.randomUUID().toString();val now=System.currentTimeMillis()
+        try { instrumentation.runOnMainSync {
+            WearAutomaticService.stop(context);WearHealthStore.enable(context,false);WorkoutSnapshotStore.clear(context);WearStopwatchStore.clear(context)
+            val raw=JSONObject("""{"workoutId":"$id","started":"${java.time.Instant.ofEpochMilli(now-20000)}","ownershipProtocol193":1,"ownerEpoch193":1,"timerOwner":"watch","activeIntervals":[{"start":"${java.time.Instant.ofEpochMilli(now-20000)}","end":null}],"exercises":[{"id":"plank","repUnit":"mp","sets":[{"set":1,"setId":"set-$id","reps":"7","done":false}]}]}""")
+            val before=WorkoutSnapshotStore.parse(raw.toString())!!.copy(automation=WearAutomatic(enabled=true,key="clock-$id",phase="work",workSeconds=30,remainingMs=30000,
+                anchorMs=android.os.SystemClock.elapsedRealtime()-2300,boot=WearAutomaticService.boot(context),baseSeconds=7,targetId="set-$id"))
+            WorkoutSnapshotStore.saveWorkout(context,before);WearStopwatchStore.save(context,WearStopwatch("$id:plank:1:reps",60000,now-2000))
+            val frozen=WearOwnership193.freeze(context,id)!!
+            assertTrue(frozen.workoutPaused);assertTrue(frozen.automation!!.paused)
+            assertTrue(frozen.automation.workMs>=2300);assertTrue(frozen.exercises[0].sets[0].reps.toInt() in 9..15)
+            assertEquals(0L,WearStopwatchStore.load(context,"$id:plank:1:reps").startedAt)
+        }} finally { instrumentation.runOnMainSync { WorkoutSnapshotStore.clear(context);WearStopwatchStore.clear(context) } }
+    }
     @Test fun failedOutboxWriteRetainsOneDurableResumeIntentAndRecoveryReusesItsIdentity() {
         val instrumentation=InstrumentationRegistry.getInstrumentation();val context=instrumentation.targetContext
         val id="resume193-"+java.util.UUID.randomUUID().toString()
