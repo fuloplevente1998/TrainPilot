@@ -1,3 +1,5 @@
+> **Aktuális átadás (2026-10-19):** [WORK_HANDOFF.md](../WORK_HANDOFF.md). Először a gyökér `AGENTS.md`-t olvasd. A #193/#202 `e4f4fa8` forrás mind a hat kapuja zöld, aláírt tesztpár kész; fizikai elfogadás még nincs. A lentebbi állapotok történetiek. Új külső UI/funkcióötletek csak rögzítve, megvalósítás nem indult.
+
 ## Aktuális folytatás — 2026-10-17, összevont P2-csomagok
 
 A felhasználó jóváhagyta a közös csomagokat és a folytatást. **Következő: #193 + #202 önálló órás edzés**, közös issue #193, ág `feat/193-202-watch-offline-gps`, main alap `9188932`. #202 duplikátumként lezárva, teljes követelményei #193-ban megőrizve. Utána **#212 + #190 UI-csomag → #197 edzésmódok → #184 Samsung Coach**; #190 duplikátumként #212-be átvezetve. #207 duplikátumként #206-ba átvezetve; a #208-cal már mainre került GPS STOP-teljesítés nem új fejlesztés, a maradék aktivitásnézet/UI ellenőrzése #206-ban marad.

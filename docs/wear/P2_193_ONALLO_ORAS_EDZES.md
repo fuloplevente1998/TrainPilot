@@ -31,8 +31,10 @@ nélkül. Régi óráról indított edzést nem alakít át. Az új home snapsho
 indított órás gyors/tervezett edzés kezdettől megtartja a saját aktív időszakát.
 Az offline lezárás a start előtt is megérkezhet; ugyanabba az edzésbe mentjük.
 
-Ez implementációs állapot, nem készülékes elfogadás. A végső forrásra még
-szükséges az összes GitHub-kapu és a két aláírt APK ellenőrzése. A valódi kültéri
+Az `e4f4fa8` végső alkalmazásforrás összes GitHub-kapuja sikeres: célzott natív
+81/81, telefonos natív 243/243, Chromium 6/6, Wear JVM 148/148 és kerek
+Android/UI 163/163; Quick/Performance is zöld. Mindkét aláírt APK ellenőrizve.
+Részletek: [aktuális átadás](../WORK_HANDOFF.md). Ez még nem készülékes elfogadás. A valódi kültéri
 GPS-vételt és a két készülék közötti offline átvételt a felhasználó teszteli.
 Main változatlan; PR draft, issue nyitott. Az alábbi részek történeti lépések.
 

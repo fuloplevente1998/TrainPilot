@@ -1,0 +1,2 @@
+# Preserve the external transcript byte-for-byte; avoid enormous inline log diffs.
+2026-10-19-ui-prototype-transcript.txt -text -diff
