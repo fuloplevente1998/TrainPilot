@@ -76,6 +76,7 @@ function fixture(status){
  assert.equal(returning.run('state.session.ownershipAwaitingResume193'),false);
  assert.equal(returning.run('state.session.phoneExecution162.generation'),1000);
  assert.equal(returning.run('state.session.interval162.phase.remainingMs'),14000);
+ assert.equal(returning.run('window.TrainPilotInterval162Core.owned(state.session,state.session.interval162)'),true,'restored timer retains the canonical session identity for foreground controls');
  assert.equal(JSON.parse(returning.values.get('repforge:draft')).session.phoneExecution162.generation,1000);
  returning.api.setWorkoutPause=async({snapshot})=>{returning.calls.push('resume');assert.equal(snapshot.workoutPaused,false);assert.equal(returning.run('db.get("draft").session.phoneExecution162.generation'),1000);};
  assert.equal(await returning.context.window.TrainPilotWorkoutPause201.resume(returning.run('state.session')),true);

@@ -26,7 +26,7 @@ public class PhoneOwnershipResume193Test {
         frame.getJSONArray("exercises").getJSONObject(0).getJSONArray("sets").getJSONObject(0).put("reps","12");return frame;
     }
     private JSONObject timed()throws Exception {
-        JSONObject value=returned();value.getJSONArray("exercises").getJSONObject(0).put("repUnit","mp");
+        JSONObject value=returned().put("started","2026-10-18T10:00:00Z");value.getJSONArray("exercises").getJSONObject(0).put("repUnit","mp");
         value.put("automation",new JSONObject().put("enabled",true).put("owner","phone").put("phase","work").put("workSeconds",10).put("restSeconds",5).put("rounds",2));
         JSONArray rows=new JSONArray().put(new JSONObject("{\"exerciseId\":\"press\",\"setId\":\"one\",\"work\":10,\"rest\":5,\"rounds\":2,\"baseSeconds\":7}"));
         JSONObject ledger=new JSONObject("{\"schema\":1,\"owner\":\"timeline193\",\"positionMs\":18000,\"workMs\":10000,\"restMs\":8000,\"pausedMs\":9000,\"steps\":[{\"exerciseId\":\"press\",\"setId\":\"one\",\"workMs\":10000,\"restMs\":8000,\"pausedMs\":9000}]}");
@@ -64,6 +64,7 @@ public class PhoneOwnershipResume193Test {
     @Test public void restoredTimelineKeepsRoundBaselineAndSourceLogsWithoutCountingTheTransferWait()throws Exception {
         JSONObject frame=store.importOwnership193(timed(),1000),plan=frame.getJSONObject("transition").getJSONObject("plan");
         assertEquals(18000,plan.getLong("elapsedMs"));assertEquals(2,plan.getInt("round"));assertEquals(10000,plan.getLong("remainingMs"));
+        assertEquals("2026-10-18T10:00:00Z",plan.getString("started"));
         assertEquals(7,plan.getJSONArray("steps").getJSONObject(0).getInt("baseSeconds"));
         assertTrue(frame.getBoolean("resumeTimerOnContinue201"));assertTrue(frame.getJSONObject("timeLogs162").has("watch-old"));
         IntervalTimeLedger restored=IntervalTimeLedger.restore(plan.getJSONArray("steps"),plan.getJSONObject("ledger"),50000);

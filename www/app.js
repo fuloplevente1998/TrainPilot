@@ -16743,7 +16743,23 @@ window.addEventListener?.('DOMContentLoaded',function(){
   m.at=now;m.paused=!running&&!stopped&&!run.interrupted&&phase(elapsed)?.phase!=='complete';run.timeLedger162=m;
   const log={schema:1,owner:'browser',key:run.key,positionMs:m.positionMs,steps:m.steps,workMs:0,restMs:0,pausedMs:0};for(const row of m.steps)for(const k of fields)log[k]+=row[k];return log;
  }
- window.TrainPilotTime162Core={valid,merge,sample};
+ function nativeLog(snapshot){
+  const log=JSON.parse(JSON.stringify(snapshot.ledger)),base=snapshot.ownershipBaseLedger193;
+  log.key=snapshot.key;if(!base)return log;
+  let position=0;
+  const subtract=(to,from,key)=>{
+   if(!Number.isSafeInteger(to[key])||!Number.isSafeInteger(from[key])||from[key]<0||to[key]<from[key])throw Error('Invalid inherited time counter');
+   to[key]-=from[key];
+  };
+  for(const key of fields){subtract(log,base,key);position+=log[key];}
+  if(!Array.isArray(log.steps)||!Array.isArray(base.steps)||log.steps.length!==base.steps.length)throw Error('Inherited time targets changed');
+  log.steps.forEach((row,i)=>{
+   if(row.exerciseId!==base.steps[i].exerciseId||row.setId!==base.steps[i].setId)throw Error('Inherited time targets changed');
+   for(const key of fields)subtract(row,base.steps[i],key);
+  });
+  return {...log,owner:'phone',positionMs:position};
+ }
+ window.TrainPilotTime162Core={valid,merge,sample,nativeLog};
 })();
 // @endsection automatic-time-162.js
 
@@ -18182,7 +18198,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    for(const segment of s.gpsSegments||[]){const step=r.steps.find(x=>x.setId===segment.setId&&x.exerciseId===segment.exerciseId);gpsApply(o,segment,step);}
    const step=r.steps[p.stepIndex];if(s.gps){gpsApply(o,s.gps,step);tp106GpsState=s.gps;gpsTrip(o,step,s.gps);if(!s.gps.active&&db.get('gpsTrip106',null)?.key===s.gps.key)localStorage.removeItem('repforge:gpsTrip106');}
    for(let i=0;i<=p.stepIndex;i++){const l=locate(o.session,r.steps[i]);const credited=s.ledger?.steps?.[i];l.set.reps=String(Math.floor(r.steps[i].baseSeconds+(credited?credited.workMs+credited.restMs:i<p.completed?duration(r.steps,r.autoAdvance,i):p.stepElapsedMs)/1000));if(r.autoAdvance&&i<p.completed)l.set.done=true;}
-   if(s.ledger)window.TrainPilotTime162Core.merge(o.session,{[r.key]:{...s.ledger,key:r.key}});
+   if(s.ledger)window.TrainPilotTime162Core.merge(o.session,{[r.key]:window.TrainPilotTime162Core.nativeLog(s)});
    r.elapsedMs=p.elapsedMs;r.phaseNumber=Number(s.phaseNumber)||0;r.running=s.running===true&&p.phase!=='complete';r.stopped=s.stopped===true;r.interrupted=s.interrupted===true;r.phase=p;r.completed=p.completed;r.syncedComplete=p.phase==='complete';
    let changed=false;if(state.session===o.session&&r.autoAdvance){let target=locate(o.session,step).index;if(p.phase==='complete'){const last=target;if(o.session.exercises[last].sets.every(x=>x.done)&&last+1<o.session.exercises.length)target=last+1;}if(state.current!==target){state.current=target;changed=true;}}
    if(r.stopped){delete o.session.interval162;persist(o);if(state.session===o.session&&state.tab==='plan')renderWorkout();return true;}persist(o);if(changed&&state.tab==='plan')renderWorkout();paint();return true;
@@ -18286,7 +18302,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   function apply(o,s){
    o=live(o);if(!o||!o.meta.run||s?.key!==o.meta.run.key||s.steps?.[0]?.setId!==o.meta.run.target.setId)return false;
    const r=o.meta.run,p=phase(r,Number(s.elapsedMs));if(!p)return false;
-   if(s.ledger)window.TrainPilotTime162Core.merge(o.session,{[r.key]:{...s.ledger,key:r.key}});
+   if(s.ledger)window.TrainPilotTime162Core.merge(o.session,{[r.key]:window.TrainPilotTime162Core.nativeLog(s)});
    r.elapsedMs=p.elapsedMs;r.phaseNumber=Number(s.phaseNumber)||0;r.running=s.running===true&&p.phase!=='complete';r.interrupted=!!s.interrupted;
    if(s.stopped){if(knownRestKey===r.key)knownRestKey='';o.meta.enabled=false;o.meta.run=null;o.meta.phase='work';save(o);paint();return true;}
    if(r.interrupted){o.meta.phase='interrupted';save(o);paint();return true;}
@@ -18700,8 +18716,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
    s.automatic162={...s.automatic162,owner:'phone',run:null,pending:false,phase:'work'};
    if(plan){
     const timer=result.timer;if(!timer||timer.key!==plan.key||timer.running||timer.stopped||timer.interrupted)return false;
-    const run={...clone(plan),native:true,elapsedMs:timer.elapsedMs,running:false,stopped:false,interrupted:false,phaseNumber:timer.phaseNumber||0};
+    const run={...clone(plan),started:session.started,native:true,elapsedMs:timer.elapsedMs,running:false,stopped:false,interrupted:false,phaseNumber:timer.phaseNumber||0};
     run.phase=window.TrainPilotInterval162Core.phase(run.steps,run.autoAdvance,run.elapsedMs,run.initialRest||0,!!run.restOnly);
+    if(!run.phase)return false;run.remainingMs=run.phase.remainingMs;
     if(plan.restOnly){s.automatic162.run=run;s.automatic162.phase='paused';delete s.interval162;}
     else s.interval162=run;
     s.pausedRestMillis201=0;

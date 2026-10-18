@@ -41,7 +41,7 @@ final class PhoneOwnershipResume193 {
             JSONObject checked=new JSONObject(timer.toString());checked.getJSONObject("ledger").put("owner","phone");
             require(PhoneTimerCheckpoint193.create(consent,checked)!=null);
             String key="ownership193:phone:"+h.getLong("epoch")+":"+h.getString("id");
-            timer.put("key",key).put("generation",generation).put("running",false).put("stopped",false).put("interrupted",false)
+            timer.put("key",key).put("started",frame.optString("started")).put("generation",generation).put("running",false).put("stopped",false).put("interrupted",false)
                     .put("ownershipBaseLedger193",new JSONObject(timer.getJSONObject("ledger").toString()));
             JSONObject target=timer.getJSONArray("steps").getJSONObject(timer.getInt("stepIndex"));
             timer.put("target",new JSONObject().put("exerciseId",target.getString("exerciseId")).put("setId",target.getString("setId")));
