@@ -28,6 +28,16 @@ function fixture(){
  const failure=fixture();failure.context.window.Capacitor.Plugins.WearSync.setWorkoutPause=async()=>{throw Error('storage');};
  assert.equal(await failure.pause.pause(failure.run('state.session')),false);
  assert.equal(failure.run('db.get("draft").session.workoutPaused'),true,'failed bridge retains the saved pause for retry');
+ const lost=fixture();await lost.pause.pause(lost.run('state.session'));
+ let nativePause={paused:true,revision:lost.run('state.session.pauseRevision')},resumedAt=0;
+ lost.context.window.Capacitor.Plugins.WearSync.setWorkoutPause=async({snapshot})=>{
+  assert.ok(snapshot.pauseRevision>nativePause.revision,'inverse pause must use a newer revision than the native resume');
+  nativePause={paused:snapshot.workoutPaused,revision:snapshot.pauseRevision};
+  if(!snapshot.workoutPaused){resumedAt=snapshot.pauseRevision;throw Error('response lost after successful native resume');}
+ };
+ assert.equal(await lost.pause.resume(lost.run('state.session')),false);
+ assert.equal(nativePause.paused,true,'lost resume acknowledgement is followed by an explicit durable native pause');
+ assert.ok(nativePause.revision>resumedAt);assert.equal(lost.run('state.session.workoutPaused'),true);
  const cancelled=fixture();cancelled.run('tp2628Confirm=async()=>false;go("home")');await new Promise(setImmediate);
  assert.ok(cancelled.run('state.session'));assert.notEqual(cancelled.run('state.session.workoutPaused'),true,'cancelled leave does not pause');
  console.log('PASS #201 explicit leave, durable pause before native control, deadline preservation, continuation, background distinction, bridge failure and cancelled leave');

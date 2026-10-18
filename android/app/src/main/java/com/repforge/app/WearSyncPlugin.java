@@ -20,6 +20,8 @@ import org.json.JSONObject;
 
 @CapacitorPlugin(name = "WearSync")
 public class WearSyncPlugin extends Plugin {
+    @PluginMethod public void preparePhoneResume193(PluginCall call) { execution(call,()->PhoneOwnership193.prepareResume(getContext())); }
+    @PluginMethod public void installPhoneResume193(PluginCall call) { execution(call,()->PhoneOwnership193.installResume(getContext(),call.getString("requestId",""),call.getData().optLong("ownerEpoch193"))); }
     @PluginMethod public void ownershipStatus193(PluginCall call) { execution(call,()->PhoneOwnership193.status(getContext())); }
     @PluginMethod public void prepareOwnership193(PluginCall call) {
         Wearable.getNodeClient(getContext()).getLocalNode().addOnSuccessListener(local -> execution(call,()->{

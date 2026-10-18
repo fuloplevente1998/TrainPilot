@@ -43,7 +43,7 @@ jobs:
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon :app:testDebugUnitTest --tests com.repforge.app.OwnershipJournal193Test --tests com.repforge.app.PhoneOwnership193Test --tests com.repforge.app.PhoneTimerCheckpoint193Test :wear:testDebugUnitTest --tests com.repforge.app.wear.WorkoutOwnership193Test --tests com.repforge.app.wear.WearTransferredTimer193Test
+          ./gradlew --no-daemon :app:testDebugUnitTest --tests com.repforge.app.OwnershipJournal193Test --tests com.repforge.app.PhoneOwnership193Test --tests com.repforge.app.PhoneTimerCheckpoint193Test --tests com.repforge.app.PhoneOwnershipResume193Test :wear:testDebugUnitTest --tests com.repforge.app.wear.WorkoutOwnership193Test --tests com.repforge.app.wear.WearTransferredTimer193Test
       - name: Test canonical phone transfer reconciliation
         run: |
           node tests/workout-ownership-193.cjs

@@ -49,7 +49,13 @@ final class PhoneOwnership193 {
         JSONObject prepared=new JSONObject(frozen.toString());
         prepared.remove("timerCheckpoint193");
         JSONObject checkpoint=PhoneTimerCheckpoint193.create(prepared,status.optJSONObject("timer"));
-        if(checkpoint!=null)prepared.put("timerCheckpoint193",checkpoint);
+        if(checkpoint!=null) {
+            JSONObject frame=status.optJSONObject("snapshot"),logs=frame==null?null:frame.optJSONObject("timeLogs162");
+            logs=logs==null?new JSONObject():new JSONObject(logs.toString());
+            JSONObject timer=status.getJSONObject("timer"),log=PhoneOwnershipResume193.localLog(timer,timer.getJSONObject("ledger"));
+            logs.put(timer.getString("key"),log.put("key",timer.getString("key")));
+            checkpoint.put("timeLogs193",logs);prepared.put("timerCheckpoint193",checkpoint);
+        }
         PhoneWorkoutExecution.store(context).suspendCommands(true);
         IntervalTimerService.stopForOwnership(context,frozen.getString("workoutId"));
         store.prepare(prepared,localNode,System.currentTimeMillis());
@@ -66,6 +72,43 @@ final class PhoneOwnership193 {
             });
         }
         return new JSONObject().put("state",store.read()).put("snapshot",ActiveWorkoutStore.current(context));
+    }
+    private static JSONObject returned(Context context,OwnershipJournal193 store)throws Exception {
+        JSONObject proof=store.read().optJSONObject("snapshot"),current=ActiveWorkoutStore.current(context);
+        JSONObject h=WorkoutOwnership193.transfer(proof),live=WorkoutOwnership193.transfer(current);
+        if(!WorkoutOwnership193.owns(proof,"phone")||h==null||!"watch".equals(h.optString("source"))||!"phone".equals(h.optString("target"))
+                ||!WorkoutOwnership193.owns(current,"phone")||!proof.optString("workoutId").equals(current.optString("workoutId"))
+                ||WorkoutOwnership193.epoch(proof)!=WorkoutOwnership193.epoch(current)||live==null||!h.optString("id").equals(live.optString("id")))
+            throw new IllegalStateException("The returned workout changed");
+        return current;
+    }
+    static JSONObject prepareResume(Context context)throws Exception {
+        OwnershipJournal193 journal=journal(context);
+        synchronized(journal) {
+            journal.recover();JSONObject current=returned(context,journal);
+            JSONObject frame=PhoneWorkoutExecution.store(context).importOwnership193(current,System.currentTimeMillis());
+            return new JSONObject().put("snapshot",frame);
+        }
+    }
+    static JSONObject installResume(Context context,String requestId,long epoch)throws Exception {
+        OwnershipJournal193 journal=journal(context);
+        synchronized(journal) {
+            JSONObject current=returned(context,journal),h=WorkoutOwnership193.transfer(current);
+            if(!requestId.equals(h.optString("id"))||epoch!=h.optLong("epoch"))throw new IllegalStateException("The returned workout changed");
+            PhoneWorkoutExecutionStore db=PhoneWorkoutExecution.store(context);JSONObject frame=db.snapshot();
+            JSONObject marker=frame==null?null:frame.optJSONObject("ownershipImport193");
+            if(marker==null||!requestId.equals(marker.optString("id"))||epoch!=marker.optLong("epoch")||!frame.optBoolean("workoutPaused"))
+                throw new IllegalStateException("Prepare the returned workout before continuing");
+            JSONObject transition=frame.optJSONObject("transition"),plan=transition==null?null:transition.optJSONObject("plan"),timer=null;
+            if(plan!=null) {
+                JSONObject latest=frame.optJSONObject("latestTimer162");
+                if(latest!=null&&latest.optString("key").equals(plan.optString("key"))&&latest.optLong("generation")==frame.optLong("generation"))plan=latest;
+                timer=IntervalTimerService.installOwnership193(plan);
+                db.markTransition(plan.getString("key"),"started");
+            }
+            frame=db.ownershipReady193(requestId,epoch);
+            return new JSONObject().put("snapshot",frame).put("timer",timer==null?JSONObject.NULL:timer);
+        }
     }
     static boolean publicationAllowed(Context context,JSONObject incoming) throws Exception {
         JSONObject saved=journal(context).read().optJSONObject("snapshot");

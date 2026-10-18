@@ -18552,8 +18552,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  async function resume(session){
   if(!session?.workoutPaused||state.session!==session)return true;
-  if(session.ownershipProtocol193===1&&(session.timerOwner==='watch'||session.ownershipAwaitingResume193||window.TrainPilotOwnership193Core?.pending(session)))return false;
-  const previous=session.pauseRevision;
+  if(session.ownershipProtocol193===1&&(session.timerOwner==='watch'||window.TrainPilotOwnership193Core?.pending(session)))return false;
+  if(session.ownershipAwaitingResume193&&!await window.TrainPilotOwnership193?.prepareResume(session))return false;
   session.workoutPaused=false;revision(session);save(session);
   try{
    if(api())await api().setWorkoutPause({snapshot:window.TrainPilotWearSync.makeSnapshot()});
@@ -18562,7 +18562,12 @@ window.addEventListener?.('DOMContentLoaded',function(){
    else if(session.pausedRestMillis201>0){state.restEndAt=Date.now()+session.pausedRestMillis201;state.timer=Math.ceil(session.pausedRestMillis201/1000);state.timerId=setInterval(tickRest,250);}
    delete session.pauseTimer201;delete session.pausedRestMillis201;save(session);
    void window.TrainPilotWearSync?.syncNow?.();return true;
-  }catch(_){session.workoutPaused=true;session.pauseRevision=Math.max(session.pauseRevision,previous+1);closeWorkoutInterval(session);save(session);void window.TrainPilotWearSync?.syncNow?.();return false;}
+  }catch(_){
+   session.workoutPaused=true;revision(session);closeWorkoutInterval(session);save(session);
+   // A rejected/lost bridge response may follow a successful native resume. Fence it with a newer pause.
+   try{if(api())await api().setWorkoutPause({snapshot:window.TrainPilotWearSync.makeSnapshot()});}catch(_){}
+   void window.TrainPilotWearSync?.syncNow?.();return false;
+  }
  }
  window.TrainPilotWorkoutPause201={pause,resume};
  window.addEventListener?.('DOMContentLoaded',()=>{
@@ -18613,6 +18618,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    ownershipApplied193:{id:h.id,state:h.state,epoch},pausedRestMillis201:Number(root.pausedRestMillis)||0});
   if(Array.isArray(root.activeIntervals))s.activeIntervals=clone(root.activeIntervals);
   if(root.timerCheckpoint193)s.timerCheckpoint193=clone(root.timerCheckpoint193);else delete s.timerCheckpoint193;
+  s.pauseTimer201=root.resumeAutomaticOnContinue?(root.timerCheckpoint193?.timer?.restOnly?'rest':'interval'):null;
   if(root.timerCheckpoint193?.timeLogs193)window.TrainPilotTime162Core.merge(s,root.timerCheckpoint193.timeLogs193);
   if(root.timerOwner==='watch'){
    s.ownershipAwaitingResume193=false;
@@ -18636,7 +18642,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const session=state.session,exercises=session.exercises;
    value.session.exercises.forEach((e,i)=>e.sets.forEach((s,j)=>Object.assign(exercises[i].sets[j],s)));
    Object.assign(session,value.session,{exercises});
-   for(const key of ['interval162','timerCheckpoint193','phoneExecution162'])if(!(key in value.session))delete session[key];
+   for(const key of ['interval162','timerCheckpoint193','phoneExecution162','phoneEdit162'])if(!(key in value.session))delete session[key];
    state.current=value.current;state.restEndAt=null;stopTimer();
   }
  }
@@ -18664,9 +18670,48 @@ window.addEventListener?.('DOMContentLoaded',function(){
    return !pending(sessionOrNull());
   }catch(_){return false;}finally{busy=false;}
  }
+ function sameValues(session,frame){
+  return Array.isArray(frame?.exercises)&&frame.exercises.length===session.exercises.length&&frame.exercises.every((e,i)=>
+   e.id===session.exercises[i].id&&Array.isArray(e.sets)&&e.sets.length===session.exercises[i].sets.length&&e.sets.every((set,j)=>{
+    const own=session.exercises[i].sets[j];return set.setId===own.setId&&set.done===own.done&&fields.slice(1).every(k=>String(set[k]??'')===String(own[k]??''));
+   }));
+ }
+ async function prepareResume(session){
+  if(!session?.ownershipAwaitingResume193)return true;
+  const c=window.Capacitor,api=c?.Plugins?.WearSync||c?.registerPlugin?.('WearSync'),clock=c?.Plugins?.IntervalTimer||c?.registerPlugin?.('IntervalTimer');
+  if(busy||blocked()||state.session!==session||document.hidden||pending(session)||session.timerOwner!=='phone'||!api?.preparePhoneResume193||!api?.installPhoneResume193)return false;
+  await window.TrainPilotWearSync.syncNow(); // Publish the same still-paused canonical draft before importing its execution.
+  if(busy||blocked()||state.session!==session)return false;busy=true;
+  try{
+   const prepared=await api.preparePhoneResume193(),frame=prepared?.snapshot,h=session.handoff193;
+   if(blocked()||state.session!==session||frame?.workoutId!==id(session)||frame.ownerEpoch193!==session.ownerEpoch193||!frame.workoutPaused||
+      frame.ownershipImport193?.id!==h?.id||frame.ownershipImport193?.epoch!==session.ownerEpoch193||!Number.isSafeInteger(frame.generation)||frame.generation<1||!sameValues(session,frame))return false;
+   const plan=frame.transition?.plan;
+   if(plan){
+    if(!clock?.armWorkout)return false;
+    await clock.armWorkout({workoutId:frame.workoutId,generation:frame.generation,language:frame.language||rf212Lang()});
+    if(blocked()||state.session!==session)return false;
+   }
+   const result=await api.installPhoneResume193({requestId:h.id,ownerEpoch193:session.ownerEpoch193});
+   if(blocked()||state.session!==session||result?.snapshot?.generation!==frame.generation||!result.snapshot.workoutPaused||!sameValues(session,result.snapshot))return false;
+   const value=clone(draft()),s=value.session;
+   s.phoneExecution162={generation:frame.generation,revision:result.snapshot.executionRevision,sequence:0};
+   delete s.phoneEdit162;s.ownershipAwaitingResume193=false;s.pauseTimer201=null;
+   s.automatic162={...s.automatic162,owner:'phone',run:null,pending:false,phase:'work'};
+   if(plan){
+    const timer=result.timer;if(!timer||timer.key!==plan.key||timer.running||timer.stopped||timer.interrupted)return false;
+    const run={...clone(plan),native:true,elapsedMs:timer.elapsedMs,running:false,stopped:false,interrupted:false,phaseNumber:timer.phaseNumber||0};
+    run.phase=window.TrainPilotInterval162Core.phase(run.steps,run.autoAdvance,run.elapsedMs,run.initialRest||0,!!run.restOnly);
+    if(plan.restOnly){s.automatic162.run=run;s.automatic162.phase='paused';delete s.interval162;}
+    else s.interval162=run;
+    s.pausedRestMillis201=0;
+   }
+   commit(value);return true;
+  }catch(_){return false;}finally{busy=false;}
+ }
  function sessionOrNull(){return state.session||db.get('draft',null)?.session||null;}
  window.TrainPilotOwnership193Core={merge,pending,commandAllowed};
- window.TrainPilotOwnership193={sync,pending:()=>pending(sessionOrNull()),commandAllowed:command=>commandAllowed(sessionOrNull(),command),isReconciling:()=>busy};
+ window.TrainPilotOwnership193={sync,prepareResume,pending:()=>pending(sessionOrNull()),commandAllowed:command=>commandAllowed(sessionOrNull(),command),isReconciling:()=>busy};
 })();
 // @endsection workout-ownership-193.js
 

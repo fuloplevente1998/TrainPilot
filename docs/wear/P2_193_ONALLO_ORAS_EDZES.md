@@ -91,6 +91,22 @@ pihenő, kihagyott pihenő és tört másodperc megmarad. Boot-váltás vagy hib
 terv megszakított szünetet eredményez. A telefonos visszafolytatás és az összes
 vezérlő bekötése továbbra is szükséges az elérhetőség bekapcsolása előtt.
 
+Negyedik rész: visszaadási import az új telefonos végrehajtási generációba,
+függő régi rögzítés/lezárt vagy idegen edzés/restore elleni védelemmel. Az import
+és az új órás/telefonos adatok nem törölhetők egy elveszett bridge-válasz miatti
+ismétléssel. A visszaadott időzítő szünetben települ, a helyi ledger friss
+monoton anchorral töltődik be; a forrás számlálói a pontos baseline/sorozatérték
+folytatásához megmaradnak, az új telefonos időnapló csak a saját epochjának
+különbségét tartalmazza. Az átadási idő nem válik új mért munkává.
+
+A JS-rész tartósan elmenti az új generációt, és csak ezután hívhat kifejezett
+folytatást. Sikertelen piszkozatmentés szünetben, azonos generációval
+újrapróbálható. Elveszett natív folytatási válasznál újabb pauseRevisionnel
+visszaszüneteltetünk; az azonos revision ellentétes állapota nem írható felül.
+Nyolc új telefonos natív visszaadási és célzott JS-regresszió ellenőrzi ezt;
+a friss teljes kapuk eredményeit továbbra is külön kell ellenőrizni.
+**Felületi átvételi/visszaadási vezérlők és GPS nélkül a képesség még kikapcsolt.**
+
 - [ ] Tartós tulajdonosi állapotgép és stale/dupla/ACK-vesztés regressziók.
 - [ ] Natív telefon–Wear átadás és visszaadás; régi alkalmazás képességvizsgálata.
 - [ ] Aktív/szüneteltetett kézi és automata edzés átvitele, munka/pihenő idő megőrzése.

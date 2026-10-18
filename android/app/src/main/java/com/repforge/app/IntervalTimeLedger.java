@@ -12,6 +12,23 @@ final class IntervalTimeLedger {
     IntervalTimeLedger(int count, long now) {
         work=new long[count];rest=new long[count];paused=new long[count];sampledAt=now;
     }
+    static IntervalTimeLedger restore(JSONArray plan,JSONObject saved,long now)throws JSONException {
+        JSONArray rows=saved.getJSONArray("steps");
+        if(rows.length()!=plan.length())throw new IllegalArgumentException("Transferred ledger targets changed");
+        IntervalTimeLedger value=new IntervalTimeLedger(plan.length(),now);
+        long w=0,r=0,p=0;
+        for(int i=0;i<plan.length();i++) {
+            JSONObject owner=plan.getJSONObject(i),row=rows.getJSONObject(i);
+            if(!owner.getString("exerciseId").equals(row.getString("exerciseId"))||!owner.getString("setId").equals(row.getString("setId")))
+                throw new IllegalArgumentException("Transferred ledger targets changed");
+            value.work[i]=PhoneWorkoutRecording.version(row,"workMs");value.rest[i]=PhoneWorkoutRecording.version(row,"restMs");value.paused[i]=PhoneWorkoutRecording.version(row,"pausedMs");
+            w+=value.work[i];r+=value.rest[i];p+=value.paused[i];
+        }
+        value.position=PhoneWorkoutRecording.version(saved,"positionMs");
+        if(value.position>IntervalTimeline.MAX_MS||w+r>value.position||w!=saved.getLong("workMs")||r!=saved.getLong("restMs")||p!=saved.getLong("pausedMs")||p>604800000)
+            throw new IllegalArgumentException("Transferred ledger counters changed");
+        return value; // Time spent waiting for explicit Resume belongs to no new clock anchor.
+    }
     void sample(IntervalTimeline timeline, long progress, long now, boolean running, boolean stopped, boolean interrupted) {
         if(now<sampledAt||progress<position)throw new IllegalArgumentException("Clock moved backwards");
         if(wasPaused)paused[timeline.at(position).step]+=now-sampledAt;
