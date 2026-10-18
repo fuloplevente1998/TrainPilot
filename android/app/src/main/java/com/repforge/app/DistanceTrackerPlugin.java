@@ -87,6 +87,15 @@ public class DistanceTrackerPlugin extends Plugin {
    }catch(Exception e){call.reject("Route references unavailable",e);}
   });
  }
+ @PluginMethod public void deleteWorkoutRoutes193(PluginCall call){
+  String workoutId=call.getString("workoutId","");
+  if(workoutId.isEmpty()||workoutId.length()>512){call.reject("Invalid workout identity");return;}
+  getBridge().execute(()->{
+   try{com.repforge.shared.GpsRouteLedger193.open(getContext().getNoBackupFilesDir()).deleteWorkout(workoutId);
+    JSObject result=new JSObject();result.put("deleted",true);call.resolve(result);
+   }catch(Exception e){call.reject("Workout routes could not be erased",e);}
+  });
+ }
 
  /** Separate explicit erasure for a deleted workout; never delete routes on ordinary STOP. */
  @PluginMethod public void deleteRoute(PluginCall call){

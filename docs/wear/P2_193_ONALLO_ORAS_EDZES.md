@@ -168,9 +168,11 @@ az órán is tartós tiltást és a függő GPS-csomagok eltávolítását eredm
 A spool hét célzott natív esete a `93456c5` kapuban sikeres. Az új fogadási/
 nyugta tesztek és két valódi Android outbox/adatvédelmi eset a friss kapukban
 ellenőrizendők. **Location-szolgáltatás, külön opt-in és felületi bekötés még
-nincs; a teljes GPS-funkció továbbra sem aktív.** Még szükséges a teljes
-edzéstörlés/sztornó tombstone-ja (akkor is, ha GPS-csomag még nem érkezett),
-a telefonos hivatkozások késői kötése, az explicit órás indítás/újraindítás és
+nincs; a teljes GPS-funkció továbbra sem aktív.** Natív teljes-edzés tombstone már a még ismeretlen késői útvonalat is tiltja;
+a képességet hordozó órás sztornó nyugtája csak ezután készülhet. A régi
+protokollú edzések normál nyugtáját ez nem módosítja. Még szükséges a telefonos
+naplótörlés/visszaállítás felületi bekötése, a hivatkozások késői kötése, az
+explicit órás indítás/újraindítás és
 az aktív/szüneteltetett tulajdonosváltások GPS-szakaszhatárainak bekötése.
 
 - [ ] Tartós tulajdonosi állapotgép és stale/dupla/ACK-vesztés regressziók.

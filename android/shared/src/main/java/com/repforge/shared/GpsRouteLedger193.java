@@ -40,6 +40,9 @@ public final class GpsRouteLedger193 {
     private JSONObject routes(JSONObject index) throws Exception {
         if(!index.has("routes"))index.put("routes",new JSONObject());return index.getJSONObject("routes");
     }
+    private boolean workoutDeleted(JSONObject index,String id) throws Exception {
+        return index.optJSONObject("deletedWorkouts")!=null&&index.getJSONObject("deletedWorkouts").optBoolean(GpsRoutePacket193.digest(id));
+    }
     /** Native watch-start proof can precede local NodeClient availability. No remote packet calls this. */
     public synchronized boolean rememberSource(JSONObject proof) throws Exception {
         String key=proof.getString("routeKey");
@@ -47,6 +50,7 @@ public final class GpsRouteLedger193 {
             &&GpsRoutePacket193.id(proof.getString("sourceNode"))&&proof.getLong("ownerEpoch193")==0
             &&!proof.getString("exerciseId").isEmpty()&&proof.getString("exerciseId").length()<=200);
         JSONObject index=read(index(),INDEX_BYTES),routes=routes(index),entry=routes.optJSONObject(key);
+        if(workoutDeleted(index,proof.getString("workoutId")))return false;
         if(entry!=null&&entry.optBoolean("deleted"))return false;
         if(entry==null) { require(routes.length()<MAX_ROUTES);entry=new JSONObject().put("grants",new JSONArray());routes.put(key,entry); }
         JSONArray grants=entry.getJSONArray("grants");JSONObject old=entry.optJSONObject("pendingSource");
@@ -62,6 +66,7 @@ public final class GpsRouteLedger193 {
             &&GpsRoutePacket193.id(grant.getString("targetNode"))&&!grant.getString("sourceNode").equals(grant.getString("targetNode"))
             &&grant.getString("exerciseId").length()>0&&grant.getString("exerciseId").length()<=200&&grant.getLong("ownerEpoch193")>=0);
         JSONObject index=read(index(),INDEX_BYTES),routes=routes(index),entry=routes.optJSONObject(key);
+        if(workoutDeleted(index,workout))return false;
         if(entry!=null&&entry.optBoolean("deleted"))return false;
         if(entry==null) { require(routes.length()<MAX_ROUTES);entry=new JSONObject().put("grants",new JSONArray());routes.put(key,entry); }
         JSONArray grants=entry.getJSONArray("grants");
@@ -87,7 +92,12 @@ public final class GpsRouteLedger193 {
     }
     /** Returns null without consent. A receipt is produced only after durable storage (or a tombstone). */
     public synchronized JSONObject accept(JSONObject input,String origin,String localNode) throws Exception {
-        JSONObject index=read(index(),INDEX_BYTES),entry=routes(index).optJSONObject(input.optString("routeKey"));if(entry==null)return null;
+        JSONObject index=read(index(),INDEX_BYTES),entry=routes(index).optJSONObject(input.optString("routeKey"));
+        if(entry==null) {
+            if(!workoutDeleted(index,input.optString("workoutId")))return null;
+            JSONObject own=new JSONObject();for(String field:new String[]{"routeKey","workoutId","exerciseId","setId","sourceNode","targetNode","ownerEpoch193"})own.put(field,input.get(field));
+            JSONObject packet=GpsRoutePacket193.validate(input,own,origin,localNode);return receipt(packet,origin,localNode,"deleted");
+        }
         JSONObject grant=null;JSONArray grants=entry.optJSONArray("grants");
         if(grants!=null)for(int i=0;i<grants.length();i++)if(grants.getJSONObject(i).optLong("ownerEpoch193",-1)==input.optLong("ownerEpoch193",-2))grant=grants.getJSONObject(i);
         JSONObject pending=entry.optJSONObject("pendingSource");
@@ -133,9 +143,12 @@ public final class GpsRouteLedger193 {
             int count=0;for(Iterator<String> keys=chunks.keys();keys.hasNext();)count+=chunks.getJSONObject(keys.next()).getJSONObject("packet").getJSONArray("points").length();
             if(entry.optInt("pointCount",-1)!=count) { entry.put("pointCount",count);write(index(),index,INDEX_BYTES); }
         }
+        return receipt(packet,origin,localNode,status);
+    }
+    private JSONObject receipt(JSONObject packet,String origin,String localNode,String status) throws Exception {
         return new JSONObject().put("schema",1).put("routeKey",packet.getString("routeKey")).put("streamId",packet.getString("streamId"))
             .put("sequence",packet.getLong("sequence")).put("ownerEpoch193",packet.getLong("ownerEpoch193"))
-            .put("sourceNode",localNode).put("targetNode",origin).put("hash",hash).put("status",status);
+            .put("sourceNode",localNode).put("targetNode",origin).put("hash",fingerprint(packet)).put("status",status);
     }
     /** Coordinate-bearing data is read only by the explicit map bridge or private route transport. */
     public synchronized JSONArray packets(String key) throws Exception {
@@ -204,5 +217,22 @@ public final class GpsRouteLedger193 {
         if(entry==null) { require(routes.length()<MAX_ROUTES);entry=new JSONObject().put("grants",new JSONArray());routes.put(key,entry); }
         entry.put("deleted",true);write(index(),index,INDEX_BYTES);AtomicFile file=route(key);file.delete();
         require(!file.getBaseFile().exists()&&!new File(file.getBaseFile()+".bak").exists());
+    }
+    /** Also fences routes which have not reached the phone yet. No grant can resurrect this workout. */
+    public synchronized void deleteWorkout(String workoutId) throws Exception {
+        require(workoutId!=null&&!workoutId.isEmpty()&&workoutId.length()<=512);
+        JSONObject index=read(index(),INDEX_BYTES),routes=routes(index);
+        if(!index.has("deletedWorkouts"))index.put("deletedWorkouts",new JSONObject());JSONObject deleted=index.getJSONObject("deletedWorkouts");
+        String digest=GpsRoutePacket193.digest(workoutId);require(deleted.has(digest)||deleted.length()<MAX_ROUTES);deleted.put(digest,true);
+        java.util.List<String> keys=new java.util.ArrayList<>();
+        for(Iterator<String> names=routes.keys();names.hasNext();) {
+            String key=names.next();JSONObject entry=routes.getJSONObject(key),pending=entry.optJSONObject("pendingSource");JSONArray grants=entry.optJSONArray("grants");
+            boolean matches=pending!=null&&workoutId.equals(pending.optString("workoutId"));
+            if(grants!=null)for(int i=0;i<grants.length();i++)if(workoutId.equals(grants.getJSONObject(i).optString("workoutId")))matches=true;
+            if(matches) { entry.put("deleted",true);keys.add(key); }
+        }
+        write(index(),index,INDEX_BYTES);Exception failure=null;
+        for(String key:keys)try { AtomicFile file=route(key);file.delete();require(!file.getBaseFile().exists()&&!new File(file.getBaseFile()+".bak").exists()); }catch(Exception error){failure=error;}
+        if(failure!=null)throw failure;
     }
 }

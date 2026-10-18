@@ -111,7 +111,7 @@ object WearCommandOutbox {
         return accepted
     }
     @Synchronized fun dropGpsRoute193(context: Context,key: String): Boolean {
-        val rows=read(context,"pending"),next=JSONArray()
+        val rows=read(context,"pending");val next=JSONArray()
         for(i in 0 until rows.length())rows.optJSONObject(i)?.let {
             if(it.optString("action")!=WearGps193.ACTION||it.optJSONObject("route193")?.optString("routeKey")!=key)next.put(it)
         }

@@ -85,6 +85,9 @@ final class WearCommandQueueStore {
     static synchronized boolean ack(Context context, JSONObject command, String status) {
         String id=command.optString("commandId");
         if(id.isEmpty())return false;
+        if("discardWorkout".equals(command.optString("action"))&&"discarded".equals(status)&&command.optJSONObject("finalSnapshot")!=null&&command.optJSONObject("finalSnapshot").optInt("ownershipProtocol193")==1)try {
+            com.repforge.shared.GpsRouteLedger193.open(context.getNoBackupFilesDir()).deleteWorkout(command.optString("workoutId"));
+        }catch(Exception error){return false;}
         JSONArray pending=read(context,PENDING),next=new JSONArray(),seen=read(context,SEEN);
         for(int i=0;i<pending.length();i++) {
             JSONObject row=pending.optJSONObject(i);

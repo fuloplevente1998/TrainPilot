@@ -133,4 +133,16 @@ public class GpsRouteLedger193Test {
         assertEquals("stored",store.accept(p,"watch193","phone193").getString("status"));assertTrue(store.rememberSource(pending));
         store.delete(p.getString("routeKey"));assertFalse(store.rememberSource(pending));assertEquals("deleted",store.accept(p,"watch193","phone193").getString("status"));
     }
+    @Test public void discardedWorkoutRejectsTheFirstLateChunkEvenWhenNoRouteWasKnownAtDeletion() throws Exception {
+        store.deleteWorkout("workout193");assertFalse(store.authorize(grant(1)));assertFalse(store.rememberSource(grant(0)));
+        JSONObject p=packet(1);assertEquals("deleted",store.accept(p,"watch193","phone193").getString("status"));assertEquals(0,store.packets(p.getString("routeKey")).length());
+        rejects(()->store.accept(p,"otherWatch","phone193"));
+    }
+    @Test public void deletingAWorkoutErasesItsKnownRoutesAndPreservesAnotherWorkout() throws Exception {
+        store.authorize(grant(1));JSONObject p=packet(1);store.accept(p,"watch193","phone193");
+        JSONObject other=grant(1).put("workoutId","other").put("routeKey",GpsRoutePacket193.key("other","set193"));store.authorize(other);
+        JSONObject q=packet(1).put("workoutId","other").put("routeKey",other.getString("routeKey"));store.accept(q,"watch193","phone193");
+        store.deleteWorkout("workout193");assertEquals(0,store.bindings("workout193").length());assertEquals(1,store.view(q.getString("routeKey")).getInt("pointCount"));
+        assertEquals("deleted",store.accept(p,"watch193","phone193").getString("status"));
+    }
 }

@@ -72,4 +72,9 @@ public class PhoneGpsRoute193Test {
         assertNotNull(PhoneGpsRoute193.accept(context,message,"watch193","phone193"));
         GpsRouteLedger193.open(directory).delete(packet.getString("routeKey"));JSONObject deleted=PhoneGpsRoute193.accept(context,message,"watch193","phone193");assertTrue(deleted.getBoolean("routeDeleted193"));
     }
+    @Test public void confirmedDiscardFencesFutureGpsEvenBeforeTheFirstCoordinateArrives() throws Exception {
+        JSONObject discard=start().put("action","discardWorkout");assertTrue(WearCommandQueueStore.ack(context,discard,"discarded"));
+        JSONObject dropped=PhoneGpsRoute193.accept(context,command(),"watch193","phone193");assertTrue(dropped.getBoolean("routeDeleted193"));
+        assertEquals(0,GpsRouteLedger193.open(directory).bindings("workout193").length());
+    }
 }

@@ -5,6 +5,8 @@ import com.repforge.shared.GpsRouteLedger193
 import com.repforge.shared.GpsRouteSpool193
 import org.json.JSONArray
 import org.json.JSONObject
+import com.google.android.gms.wearable.DataMapItem
+import com.google.android.gms.wearable.Wearable
 
 /** The ordinary durable outbox carries references; only its Data Layer wire copy gets coordinates. */
 internal object WearGps193 {
@@ -37,6 +39,7 @@ internal object WearGps193 {
         if(receipt.optBoolean("routeDeleted193")) {
             val key=receipt.getJSONObject("route193").getString("routeKey")
             spool(context).revoke(key);check(WearCommandOutbox.dropGpsRoute193(context,key))
+            cleanupPublished(context)
         }else spool(context).acknowledged(receipt.getString("commandId"))
     }
     fun recover(context: Context,sealActive: Boolean=false) {
@@ -44,6 +47,21 @@ internal object WearGps193 {
             spool(context).recover(queue(context),sealActive)
             val rows=JSONArray(context.getSharedPreferences("trainpilot_wear_outbox",0).getString("results191","[]"))
             for(i in 0 until rows.length())rows.optJSONObject(i)?.let { receipt(context,it) }
+            cleanupPublished(context)
         }catch(_:Exception){/* Real unacknowledged fixes remain private and retryable. */}
+    }
+    private fun cleanupPublished(context: Context) {
+        Wearable.getDataClient(context).dataItems.addOnSuccessListener { items ->
+            try { for(item in items) {
+                if(item.uri.path?.startsWith(WearDataListenerService.COMMAND_PATH_PREFIX)!=true)continue
+                try {
+                    val raw=DataMapItem.fromDataItem(item).dataMap.getString("command") ?: continue
+                    if(raw.length>16000)continue
+                    val command=JSONObject(raw);if(command.optString("action")!=ACTION)continue
+                    val key=command.optJSONObject("route193")?.optString("routeKey") ?: continue
+                    if(spool(context).revoked(key))Wearable.getDataClient(context).deleteDataItems(item.uri)
+                }catch(_:Exception){/* Only locally retired GPS routes may be erased. */}
+            }}finally{items.release()}
+        }
     }
 }
