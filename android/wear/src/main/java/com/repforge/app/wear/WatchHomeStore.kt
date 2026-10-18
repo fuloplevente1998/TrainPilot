@@ -108,7 +108,7 @@ object WatchHomeStore {
     private const val PREFS = "trainpilot_wear_home"
     private const val SNAPSHOT = "snapshot"
 
-    fun save(context: Context, raw: String?, publishedAt: Long = 0L): WatchHomeSnapshot? {
+    fun save(context: Context, raw: String?, publishedAt: Long = 0L,origin: String? = null): WatchHomeSnapshot? {
         if (raw.isNullOrBlank()) return null
         val parsed = parse(raw)?.let { it.copy(publishedAt = maxOf(it.publishedAt, publishedAt)) } ?: return null
         val cached = load(context)
@@ -118,6 +118,7 @@ object WatchHomeStore {
             .edit()
             .putString(SNAPSHOT, JSONObject(raw).put("publishedAt", parsed.publishedAt).toString())
             .putInt("automaticProtocol",parsed.automaticProtocol)
+            .apply { if(com.repforge.shared.GpsRoutePacket193.id(origin))putString("phoneNode193",origin) }
             .apply()
         return parsed
     }
@@ -125,6 +126,7 @@ object WatchHomeStore {
     fun newest(current: WatchHomeSnapshot?, incoming: WatchHomeSnapshot): WatchHomeSnapshot =
         if (current != null && current.publishedAt > incoming.publishedAt) current else incoming
     fun automaticProtocol(context: Context)=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).getInt("automaticProtocol",0)
+    fun phoneNode193(context: Context)=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).getString("phoneNode193","").orEmpty()
 
     fun load(context: Context): WatchHomeSnapshot? {
         val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(SNAPSHOT, null)

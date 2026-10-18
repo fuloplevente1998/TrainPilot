@@ -11,6 +11,41 @@ import com.google.android.gms.wearable.Wearable
 /** The ordinary durable outbox carries references; only its Data Layer wire copy gets coordinates. */
 internal object WearGps193 {
     const val ACTION="gpsRouteChunk193"
+    private fun prefs(context: Context)=context.getSharedPreferences("trainpilot_wear_route193",0)
+    fun distance(exercise: WearExercise?)=exercise!=null&&(exercise.measurementType=="distance"||exercise.repUnit.trim().lowercase() in listOf("km","m"))
+    fun scope(context: Context)=try{JSONObject(prefs(context).getString("scope","{}")!!)}catch(_:Exception){JSONObject()}
+    fun armed(context: Context,id: String)=scope(context).let { it.optString("workoutId")==id&&it.optBoolean("enabled") }
+    fun arm(context: Context,id: String,enabled: Boolean,sourceNode: String?=null,targetNode: String?=null) {
+        val p=prefs(context);val old=p.getString("scope","{}");val next=if(scope(context).optString("workoutId")==id)scope(context)else JSONObject()
+        next.put("workoutId",id).put("enabled",enabled)
+        if(sourceNode!=null)next.put("sourceNode",sourceNode);if(targetNode!=null)next.put("targetNode",targetNode)
+        if(!p.edit().putString("scope",next.toString()).commit()){p.edit().putString("scope",old).commit();error("GPS intent could not be saved")}
+    }
+    fun status(context: Context,id: String): JSONObject {
+        val result=try{JSONObject(prefs(context).getString("status","{}")!!)}catch(_:Exception){JSONObject()}
+        return (if(result.optString("workoutId")==id)result else JSONObject().put("workoutId",id).put("state","idle").put("points",0)).put("armed",armed(context,id))
+    }
+    fun update(context: Context,id: String,state: String,points: Int=0,accuracy: Double?=null) {
+        try{val value=JSONObject().put("workoutId",id).put("state",state).put("points",points)
+            if(accuracy!=null)value.put("accuracyMeters",accuracy);val p=prefs(context);if(p.getString("status",null)!=value.toString())p.edit().putString("status",value.toString()).apply()
+        }catch(_:Exception){/* Status is not the authoritative route store. */}
+    }
+    fun resumeIfArmed(context: Context,workout: WearWorkout) {
+        if(!armed(context,workout.workoutId))return
+        try {
+            val h=workout.handoff193?.let(::JSONObject);val saved=scope(context)
+            val source=h?.takeIf { it.optString("target")=="watch"&&it.optString("state")=="committed" }?.optString("targetNode") ?: saved.optString("sourceNode")
+            val target=h?.takeIf { it.optString("target")=="watch"&&it.optString("state")=="committed" }?.optString("sourceNode") ?: saved.optString("targetNode")
+            WearGpsRouteService193.start(context,workout,source,target)
+        }catch(_:SecurityException){update(context,workout.workoutId,"permission")}catch(_:Exception){update(context,workout.workoutId,"unavailable")}
+    }
+    fun discard(context: Context,workout: WearWorkout) {
+        WearGpsRouteService193.freeze(context);arm(context,workout.workoutId,false)
+        for(exercise in workout.exercises.filter(::distance))for(set in exercise.sets)if(set.setId.isNotBlank()) {
+            val key=com.repforge.shared.GpsRoutePacket193.key(workout.workoutId,set.setId);spool(context).revoke(key);check(WearCommandOutbox.dropGpsRoute193(context,key))
+        }
+        cleanupPublished(context)
+    }
     fun spool(context: Context)=GpsRouteSpool193.open(context.noBackupFilesDir)
     fun queue(context: Context)=GpsRouteSpool193.Queue { pointer -> WearCommandOutbox.enqueue(context,pointer)>0 }
     fun ready(context: Context,command: JSONObject)=spool(context).ready(command)
@@ -44,7 +79,10 @@ internal object WearGps193 {
     }
     fun recover(context: Context,sealActive: Boolean=false) {
         try {
+            val old=if(sealActive)spool(context).active()else null
             spool(context).recover(queue(context),sealActive)
+            val id=old?.optJSONObject("meta")?.optString("workoutId")
+            if(id!=null&&armed(context,id))update(context,id,"interrupted",status(context,id).optInt("points"))
             val rows=JSONArray(context.getSharedPreferences("trainpilot_wear_outbox",0).getString("results191","[]"))
             for(i in 0 until rows.length())rows.optJSONObject(i)?.let { receipt(context,it) }
             cleanupPublished(context)

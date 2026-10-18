@@ -8,7 +8,7 @@ import com.google.android.gms.wearable.MessageEvent
 
 class WearDataListenerService : WearableListenerService() {
     override fun onPeerConnected(peer: com.google.android.gms.wearable.Node) {
-        WearGps193.recover(this)
+        WearGps193.recover(this,!WearGpsRouteService193.active(WearGps193.scope(this).optString("workoutId")))
         WearOwnership193.recover(this)
         WearUndo188.recover(this)
         WearCommandOutbox.flush(this,true)
@@ -39,7 +39,7 @@ class WearDataListenerService : WearableListenerService() {
             when (item.uri.path) {
                 ACTIVE_WORKOUT_PATH -> WorkoutSnapshotStore.save(this, raw)
                 WearPhoneAutomatic.PATH -> WearPhoneAutomatic.receive(this,DataMapItem.fromDataItem(item).dataMap.getString("automatic"))
-                WATCH_HOME_PATH -> WatchHomeStore.save(this, raw, DataMapItem.fromDataItem(item).dataMap.getLong("publishedAt"))
+                WATCH_HOME_PATH -> WatchHomeStore.save(this, raw, DataMapItem.fromDataItem(item).dataMap.getLong("publishedAt"),item.uri.host)
             }
             WearCommandOutbox.flush(this)
             WearPhoneAutomatic.applyCached(this)

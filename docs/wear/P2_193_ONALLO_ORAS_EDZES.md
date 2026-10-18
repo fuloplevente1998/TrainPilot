@@ -175,6 +175,27 @@ naplótörlés/visszaállítás felületi bekötése, a hivatkozások késői k�
 explicit órás indítás/újraindítás és
 az aktív/szüneteltetett tulajdonosváltások GPS-szakaszhatárainak bekötése.
 
+Kilencedik rész: a telefonos futó/piszkozat/napló rekord koordinátamentes
+hivatkozásai stabil sorozatazonosítóval bővülnek. Az órás `gpsRouteKey193`
+megmarad a meglévő telefonos `gpsRouteKey163` mellett; ugyanannak a sorozatnak
+a távolságát a térkép nem adja össze kétszer. A későn érkező pontok a már
+mentett naplóhoz is köthetők, edzés vagy időzítő újranyitása nélkül. A lusta
+naplónyitás csak hivatkozást kér le, koordinátát kizárólag a térképgomb.
+
+Naplótörlés és a visszaállításból kihagyott edzés natív teljes-edzés tombstone-t
+kap. Sztornónál ez megelőzi a piszkozat eltávolítását; hibás natív törlés nem
+jelent sikeres befejezést. A még futó aszinkron hivatkozásimport nem állíthat
+vissza törölt rekordot. Új célzott JS- és Chromium-eset ellenőrzi a késői
+hivatkozást, tárhelyhibát, meglévő telefonos referenciát és a hézagos térképet.
+
+Elkészült a külön `location` foreground service is: valós GNSS-callbackből
+ír a privát spoolba, stabil edzés/epoch/gyakorlat/sorozat szerint, 4 mp/3 m
+kéréssel. Pontatlan, elavult vagy mock fixet nem rajzol; szünet/forrásváltás/
+jelkimaradás új szakasz. Nem módosít egészségmérést vagy sorozat-teljesítést.
+**Az explicit indítás/engedélyezés felülete és életciklus-hívások még nincsenek
+bekötve; a normál képességhirdetés továbbra is kikapcsolt.** A friss szolgáltatás
+és böngészős eset fordítását/futását a következő Actions-kapuk igazolják.
+
 - [ ] Tartós tulajdonosi állapotgép és stale/dupla/ACK-vesztés regressziók.
 - [ ] Natív telefon–Wear átadás és visszaadás; régi alkalmazás képességvizsgálata.
 - [ ] Aktív/szüneteltetett kézi és automata edzés átvitele, munka/pihenő idő megőrzése.

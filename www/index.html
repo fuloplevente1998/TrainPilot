@@ -2026,14 +2026,15 @@
   labels.en.onlineReady='Online map · OpenStreetMap';labels.en.onlineFailed='The map background could not load. Your saved route is still visible.';
   labels.de.onlineReady='Onlinekarte · OpenStreetMap';labels.de.onlineFailed='Die Hintergrundkarte konnte nicht geladen werden. Deine gespeicherte Route bleibt sichtbar.';
   labels.ro.onlineReady='Hartă online · OpenStreetMap';labels.ro.onlineFailed='Harta de fundal nu s-a încărcat. Traseul salvat rămâne vizibil.';
+  labels.hu.watchRoute='Órás GPS-útvonal';labels.en.watchRoute='Watch GPS route';labels.de.watchRoute='GPS-Route der Uhr';labels.ro.watchRoute='Traseu GPS de pe ceas';
+  labels.hu.bothRoutes='Telefonos és órás GPS-szakaszok';labels.en.bothRoutes='Phone and watch GPS segments';labels.de.bothRoutes='GPS-Abschnitte von Telefon und Uhr';labels.ro.bothRoutes='Segmente GPS de pe telefon și ceas';
   var t=function(k){var language=typeof rf212Lang==='function'?rf212Lang():'hu';return (labels[language]||labels.hu)[k]||labels.hu[k]||k;};
   function bridge(){return window.Capacitor?.Plugins?.DistanceTracker||window.Capacitor?.registerPlugin?.('DistanceTracker');}
   function references(workout){
     var rows=[],seen=new Set();
     for(var exercise of workout?.exercises||[])for(var set of exercise?.sets||[]){
-      var key=set?.gpsRouteKey163;
-      if(typeof key==='string'&&KEY.test(key)&&!seen.has(key)){
-        rows.push({key:key,exercise:exercise.id||'',setId:set.setId||''});seen.add(key);
+      for(var key of [set?.gpsRouteKey163,set?.gpsRouteKey193])if(typeof key==='string'&&KEY.test(key)&&!seen.has(key)){
+        rows.push({key:key,exercise:exercise.id||'',setId:set.setId||'',source:key.startsWith('wear193:')?'watch':'phone'});seen.add(key);
       }
     }
     return rows.slice(0,32);
@@ -2322,6 +2323,7 @@
     append('h2',head,null,t('title'));
     var close=append('button',head,'tp163-close','×');close.type='button';close.onclick=closeRoute;
     close.setAttribute('aria-label',t('close'));close.title=t('close');
+    if(refs.some(function(r){return r.source==='watch';}))append('p',modal,'small muted tp193-route-source',t(refs.some(function(r){return r.source==='phone';})?'bothRoutes':'watchRoute'));
     var metrics=append('div',modal,'tp163-route-metrics');
     var hint=append('p',modal,'tp163-route-hint',t('loading'));
     var mapHost=append('div',modal,'tp163-map-area');
@@ -2345,7 +2347,7 @@
       hint.textContent=partial?t('partial'):t('offline');
       var meters=(workout.exercises||[]).reduce(function(sum,e){
         return sum+(e.sets||[]).reduce(function(acc,set){
-          return acc+(set.gpsRouteKey163&&Number.isFinite(Number(set.distanceMeters))?Number(set.distanceMeters):0);
+          return acc+((set.gpsRouteKey163||set.gpsRouteKey193)&&Number.isFinite(Number(set.distanceMeters))?Number(set.distanceMeters):0);
         },0);
       },0);
       textMetric(metrics,t('km'),(meters/1000).toLocaleString('hu-HU',{maximumFractionDigits:2})+' km');
@@ -2377,10 +2379,8 @@
   function allRouteKeys(workouts){
     var unique=new Set();
     for(var workout of workouts||[])for(var exercise of workout?.exercises||[])
-      for(var set of exercise?.sets||[]) {
-        var key=set?.gpsRouteKey163;
+      for(var set of exercise?.sets||[])for(var key of [set?.gpsRouteKey163,set?.gpsRouteKey193])
         if(typeof key==='string'&&KEY.test(key))unique.add(key);
-      }
     return Array.from(unique);
   }
   async function eraseKeys(keys){
@@ -2398,11 +2398,21 @@
         :'Some local GPS routes could not be deleted. Check the device storage and saved routes.');
     }
   }
-  async function eraseRoutesForWorkout(workout){
-    return eraseKeys(allRouteKeys([workout]));
+  async function eraseWatchWorkout193(workout){
+    if(workout?.ownershipProtocol193!==1)return true;
+    var id=String(workout.syncId||workout.started||''),plugin=bridge();if(!id)return true;
+    try{var erased=window.TrainPilotWearRoutes193?.erase?await window.TrainPilotWearRoutes193.erase(id):(await plugin?.deleteWorkoutRoutes193?.({workoutId:id}))?.deleted===true;if(!erased)throw Error('erase');return true;}
+    catch(_){
+      var language=typeof rf212Lang==='function'?rf212Lang():'hu';
+      alert(({hu:'Az órás útvonal törlése nem sikerült. Ellenőrizd a telefon tárhelyét, majd próbáld újra.',en:'The watch route could not be erased. Check phone storage and retry.',de:'Die Uhrenroute konnte nicht gelöscht werden. Telefonspeicher prüfen und erneut versuchen.',ro:'Traseul ceasului nu a putut fi șters. Verifică spațiul telefonului și reîncearcă.'})[language]||'The watch route could not be erased.');return false;
+    }
   }
-  function pruneRoutesAfterRestore(previous,restored){
-    var keep=new Set(allRouteKeys(restored));
+  async function eraseRoutesForWorkout(workout){
+    await eraseWatchWorkout193(workout);return eraseKeys(allRouteKeys([workout]));
+  }
+  async function pruneRoutesAfterRestore(previous,restored){
+    var keep=new Set(allRouteKeys(restored)),ids=new Set((restored||[]).map(function(w){return String(w.syncId||w.started||'');}));
+    for(var workout of previous||[])if(!ids.has(String(workout.syncId||workout.started||'')))await eraseWatchWorkout193(workout);
     return eraseKeys(allRouteKeys(previous).filter(function(key){return !keep.has(key);}));
   }
   function install(){

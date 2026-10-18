@@ -47,6 +47,7 @@ jobs:
       - name: Test canonical phone transfer reconciliation
         run: |
           node tests/workout-ownership-193.cjs
+          node tests/wear-gps-bindings-193.cjs
           node tests/wear-phone-measurement-start.cjs
       - name: Upload native protocol results
         if: always()

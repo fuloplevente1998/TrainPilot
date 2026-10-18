@@ -390,5 +390,9 @@
   {
     "file": "tests/browser/workout-ownership-193.cjs",
     "estimatedSeconds": 10
+  },
+  {
+    "file": "tests/browser/wear-gps-route-193.cjs",
+    "estimatedSeconds": 5
   }
 ]

@@ -396,7 +396,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                     }
                 }
                 WearDataListenerService.WATCH_HOME_PATH -> {
-                    val parsed = WatchHomeStore.save(this, raw, DataMapItem.fromDataItem(item).dataMap.getLong("publishedAt"))
+                    val parsed = WatchHomeStore.save(this, raw, DataMapItem.fromDataItem(item).dataMap.getLong("publishedAt"),item.uri.host)
                     runOnUiThread { home.value = parsed; closure.value = WearClosureStore.load(this) }
                 }
             }
@@ -439,7 +439,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                                     if (revision >= newestRevision) { newestRevision = revision; newestRaw = raw }
                                 }
                                 WearDataListenerService.WATCH_HOME_PATH -> newestHome = WatchHomeStore.save(this, raw,
-                                    DataMapItem.fromDataItem(item).dataMap.getLong("publishedAt")) ?: newestHome
+                                    DataMapItem.fromDataItem(item).dataMap.getLong("publishedAt"),item.uri.host) ?: newestHome
                             }
                         } catch (_: Exception) { /* Keep the cache when a DataItem is malformed. */ }
                     }

@@ -17558,6 +17558,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(!matches())return false;
    if(typeof tp107StopIndoor==='function')tp107StopIndoor(false);
    if(typeof tp106StopGPS==='function'&&(tp106GpsState?.active||db.get('gpsTrip106',null))&&!await tp106StopGPS())return false;
+   if(session.ownershipProtocol193===1&&!await window.TrainPilotWearRoutes193?.erase?.(id))return false;
    return matches();
   };
   const work=()=>{
@@ -17660,6 +17661,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(action==='discardWorkout'){
    return discardDraft(state.session,command);
   }
+  if(state.session.ownershipProtocol193===1)void window.TrainPilotWearRoutes193?.sync?.(expected);
   if(state.session.ownershipProtocol193===1&&state.session.timerOwner==='watch'){
    if(!window.TrainPilotOwnership193?.acceptWatchFinal(command))return false;
   }else mergeFinalSets(command);
@@ -18756,7 +18758,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(root?.active===false)return true;
    const value=merge(draft(),root);if(value)commit(value);
    return !pending(sessionOrNull());
-  }catch(_){return false;}finally{busy=false;window.TrainPilotOwnership193?.paint?.();}
+  }catch(_){return false;}finally{busy=false;window.TrainPilotOwnership193?.paint?.();window.TrainPilotWearRoutes193?.refresh?.();}
  }
  function sameValues(session,frame){
   return Array.isArray(frame?.exercises)&&frame.exercises.length===session.exercises.length&&frame.exercises.every((e,i)=>
@@ -19015,6 +19017,68 @@ window.addEventListener?.('DOMContentLoaded',function(){
 // @endsection phone-undo-188.js
 
 
+
+// @section wear-gps-route-193.js
+/* Route references are metadata; coordinates cross the bridge only when the map is opened. */
+(function(){
+ 'use strict';
+ const id=s=>String(s?.syncId||s?.started||''),key=/^wear193:[a-f0-9]{64}$/,clone=s=>({...s,exercises:s.exercises.map(e=>({...e,sets:e.sets.map(v=>({...v}))}))});
+ function merge(workout,bindings){
+  if(workout?.ownershipProtocol193!==1||!Array.isArray(workout.exercises)||!Array.isArray(bindings))return null;
+  const next=clone(workout);let changed=false;
+  for(const binding of bindings){
+   if(binding?.workoutId!==id(workout)||!key.test(binding.routeKey||'')||!Number.isInteger(binding.pointCount)||binding.pointCount<1||binding.pointCount>12000)continue;
+   const set=next.exercises.find(e=>e.id===binding.exerciseId)?.sets.find(v=>v.setId===binding.setId);if(!set)continue;
+   if(set.gpsRouteKey193!==binding.routeKey){set.gpsRouteKey193=binding.routeKey;changed=true;}
+  }
+  return changed?next:null;
+ }
+ const flights=new Map(),erasing=new Set(),deleted=new Set(),last=new Map();
+ const blocked=()=>window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||window.TrainPilotBoot?.loading;
+ const api=()=>window.Capacitor?.isNativePlatform?.()===true?(window.Capacitor.Plugins?.DistanceTracker||window.Capacitor.registerPlugin?.('DistanceTracker')):null;
+ function existing(wanted){return id(state.session)===wanted?state.session:id(db.get('draft',null)?.session)===wanted?db.get('draft').session:(db.get('history',[])||[]).find(h=>id(h)===wanted);}
+ function commit(wanted,bindings){
+  if(blocked()||erasing.has(wanted)||deleted.has(wanted))return false;
+  if(id(state.session)===wanted){
+   const own=state.session,next=merge(own,bindings);if(!next)return true;
+   db.set('draft',{...(db.get('draft',null)||{}),session:next,workout:state.workout,current:state.current,restEndAt:state.restEndAt||null,savedAt:new Date().toISOString()});
+   for(const [ei,e] of next.exercises.entries())for(const [si,set] of e.sets.entries())if(set.gpsRouteKey193)own.exercises[ei].sets[si].gpsRouteKey193=set.gpsRouteKey193;
+   return true;
+  }
+  const draft=db.get('draft',null);
+  if(id(draft?.session)===wanted){const next=merge(draft.session,bindings);if(next)db.set('draft',{...draft,session:next,savedAt:new Date().toISOString()});return true;}
+  const rows=db.get('history',[])||[],index=rows.findIndex(h=>id(h)===wanted);if(index<0)return false;
+  const next=merge(rows[index],bindings);if(next){rows[index]=next;db.set('history',rows);}return true;
+ }
+ async function sync(wanted){
+  wanted=String(wanted||'');if(!wanted||blocked()||erasing.has(wanted)||deleted.has(wanted)||existing(wanted)?.ownershipProtocol193!==1)return false;
+  const bridge=api();if(!bridge?.routeBindings193)return false;if(flights.has(wanted))return flights.get(wanted);
+  const flight=(async()=>{try{const result=await bridge.routeBindings193({workoutId:wanted});return result?.workoutId===wanted&&commit(wanted,result.bindings);}catch(_){return false;}finally{flights.delete(wanted);}})();
+  flights.set(wanted,flight);return flight;
+ }
+ function refresh(){const workout=state.session||db.get('draft',null)?.session,wanted=id(workout),now=Date.now();
+  if(workout?.ownershipProtocol193!==1||now-(last.get(wanted)||0)<10000)return;last.set(wanted,now);void sync(wanted);
+ }
+ async function erase(wanted){
+  wanted=String(wanted||'');if(!wanted)return false;erasing.add(wanted);
+  try{const bridge=api();if(window.Capacitor?.isNativePlatform?.()===true&&(await bridge?.deleteWorkoutRoutes193?.({workoutId:wanted}))?.deleted!==true)return false;deleted.add(wanted);return true;}
+  catch(_){return false;}finally{erasing.delete(wanted);}
+ }
+ function paintHistory(el,workoutKey){
+  if(!el?.isConnected)return;const row=history().find(h=>rf142WorkoutKey(h)===workoutKey),map=window.TrainPilotGpsMap163;
+  const body=el.querySelector(':scope > .tp3-combined-history-body');if(!row||!body||body.querySelector('.tp163-route-entry')||!map?.references(row).length)return;
+  const entry=document.createElement('div'),button=document.createElement('button');entry.className='tp163-route-entry';button.className='btn secondary block tp163-route-button';button.type='button';button.textContent='↗ '+map.text('open');
+  button.addEventListener('click',event=>{event.stopPropagation();map.openRoute(workoutKey);});entry.append(button);body.prepend(entry);
+ }
+ window.TrainPilotWearRoutes193Core={merge};window.TrainPilotWearRoutes193={sync,refresh,erase};
+ window.addEventListener?.('DOMContentLoaded',()=>setTimeout(()=>{
+  const base=window.tp3EnsureHistoryBody;if(typeof base!=='function')return;
+  window.tp3EnsureHistoryBody=function(el,index,workoutKey){const result=base.apply(this,arguments),row=history().find(h=>rf142WorkoutKey(h)===workoutKey);
+   if(row?.ownershipProtocol193===1)void sync(id(row)).then(ok=>{if(ok)paintHistory(el,workoutKey);});return result;
+  };
+ },0));
+})();
+// @endsection wear-gps-route-193.js
 
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
