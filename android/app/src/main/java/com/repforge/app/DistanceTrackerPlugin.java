@@ -51,6 +51,9 @@ public class DistanceTrackerPlugin extends Plugin {
   if(!GpsRouteStore.validKey(key)){call.reject("Invalid route owner key");return;}
   getBridge().execute(()->{
    try{
+    if(key.matches("wear193:[a-f0-9]{64}")){
+     call.resolve(new JSObject(com.repforge.shared.GpsRouteLedger193.open(getContext().getNoBackupFilesDir()).view(key).toString()));return;
+    }
     GpsRouteStore.Route track=new GpsRouteStore(getContext().getNoBackupFilesDir()).read(key);
     JSObject result=new JSObject();
     result.put("key",key);result.put("pointCount",track.pointCount);result.put("partial",track.partial);
@@ -73,6 +76,18 @@ public class DistanceTrackerPlugin extends Plugin {
   });
  }
 
+ /** References only; native coordinates stay private until route() is explicitly requested. */
+ @PluginMethod public void routeBindings193(PluginCall call){
+  String workoutId=call.getString("workoutId","");
+  if(workoutId.isEmpty()||workoutId.length()>512){call.reject("Invalid workout identity");return;}
+  getBridge().execute(()->{
+   try{
+    JSObject result=new JSObject();result.put("workoutId",workoutId);
+    result.put("bindings",com.repforge.shared.GpsRouteLedger193.open(getContext().getNoBackupFilesDir()).bindings(workoutId));call.resolve(result);
+   }catch(Exception e){call.reject("Route references unavailable",e);}
+  });
+ }
+
  /** Separate explicit erasure for a deleted workout; never delete routes on ordinary STOP. */
  @PluginMethod public void deleteRoute(PluginCall call){
   String key=call.getString("key","");
@@ -82,6 +97,10 @@ public class DistanceTrackerPlugin extends Plugin {
     // Never remove an actively recorded owner's route.
     org.json.JSONObject status=DistanceTrackingService.snapshot(getContext());
     if(status.optBoolean("active")&&key.equals(status.optString("key"))){call.reject("Recording still active");return;}
+    if(key.matches("wear193:[a-f0-9]{64}")){
+     com.repforge.shared.GpsRouteLedger193.open(getContext().getNoBackupFilesDir()).delete(key);
+     JSObject result=new JSObject();result.put("deleted",true);call.resolve(result);return;
+    }
     boolean deleted=new GpsRouteStore(getContext().getNoBackupFilesDir()).delete(key);
     if(!deleted){call.reject("Route could not be erased");return;}
     JSObject result=new JSObject();result.put("deleted",true);call.resolve(result);

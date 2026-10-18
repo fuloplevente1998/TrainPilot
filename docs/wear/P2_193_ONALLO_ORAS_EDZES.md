@@ -146,7 +146,10 @@ csomag és későbbi grant sem éleszti fel az útvonalat. Korlátok: útvonalan
 törlés nélkül. Tizenegy natív eset ellenőrzi a forrásvédelmet, ismétlést,
 sorrendet, hibás fixet, határértéket, törlést és tárhelyhibát a GitHub-kapuban.
 **Ez még adatmag: Location-szolgáltatás, outbox-kézbesítés, natív grant-bekötés,
-a #163 natív bridge bekötése és GPS-felület nélkül nem aktív rögzítés.**
+a GPS-felület bekötése nélkül nem aktív rögzítés. A #163 natív bridge külön
+lekérhető, koordinátamentes referenciákat, explicit útvonalolvasást és tartós
+törlést már biztosít. A `bdc4f6c` natív kapujának XML-bizonyítéka: 53/53 sikeres,
+ebből 11 GPS-eset; 0 hiba/kihagyás (artifact `12137858280`).**
 
 - [ ] Tartós tulajdonosi állapotgép és stale/dupla/ACK-vesztés regressziók.
 - [ ] Natív telefon–Wear átadás és visszaadás; régi alkalmazás képességvizsgálata.
