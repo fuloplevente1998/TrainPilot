@@ -143,10 +143,10 @@ hordoz koordinátát és csak ellenőrzött tartós írás után készülhet.
 A törlés előbb tartós tombstone-t ír, majd eltávolítja a koordinátákat; régi
 csomag és későbbi grant sem éleszti fel az útvonalat. Korlátok: útvonalanként
 12000 pont / 256 szakasz / 2 MiB, összesen 512 útvonal-bejegyzés, automatikus
-törlés nélkül. Kilenc natív eset ellenőrzi a forrásvédelmet, ismétlést,
+törlés nélkül. Tizenegy natív eset ellenőrzi a forrásvédelmet, ismétlést,
 sorrendet, hibás fixet, határértéket, törlést és tárhelyhibát a GitHub-kapuban.
 **Ez még adatmag: Location-szolgáltatás, outbox-kézbesítés, natív grant-bekötés,
-telefonos #163-olvasás és GPS-felület nélkül nem aktív rögzítés.**
+a #163 natív bridge bekötése és GPS-felület nélkül nem aktív rögzítés.**
 
 - [ ] Tartós tulajdonosi állapotgép és stale/dupla/ACK-vesztés regressziók.
 - [ ] Natív telefon–Wear átadás és visszaadás; régi alkalmazás képességvizsgálata.

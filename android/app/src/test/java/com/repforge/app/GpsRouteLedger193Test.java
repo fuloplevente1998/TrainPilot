@@ -15,7 +15,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import static org.junit.Assert.*;
 
-@RunWith(RobolectricTestRunner.class) @Config(sdk=34)
+@RunWith(RobolectricTestRunner.class) @Config(sdk=33,manifest=Config.NONE)
 public class GpsRouteLedger193Test {
     private File directory;
     private GpsRouteLedger193 store;
@@ -86,7 +86,7 @@ public class GpsRouteLedger193Test {
     @Test public void failedDurableStorageDoesNotProduceAReceiptOrForgetConsent() throws Exception {
         JSONObject p=packet(1);store.authorize(grant(1));
         File route=new File(directory,"wear_routes193/"+GpsRoutePacket193.digest(p.getString("routeKey"))+".json");assertTrue(route.mkdir());
-        Files.writeString(new File(route,"blocker").toPath(),"occupied");
+        Files.write(new File(route,"blocker").toPath(),"occupied".getBytes(java.nio.charset.StandardCharsets.UTF_8));
         try { store.accept(p,"watch193","phone193");fail("No receipt without durable chunk"); }catch(java.io.IOException expected){}
         Files.delete(new File(route,"blocker").toPath());Files.delete(route.toPath());
         assertEquals("stored",store.accept(p,"watch193","phone193").getString("status"));
@@ -107,5 +107,24 @@ public class GpsRouteLedger193Test {
         GpsRouteSampler193 sampler=new GpsRouteSampler193(p->{});
         for(int i=1;i<=256;i++){sampler.breakSegment();assertTrue(sampler.add(47,19,5,i*4000L,1800000000000L+i*4000L,2));}
         sampler.breakSegment();assertFalse(sampler.add(47,19,5,257*4000L,1800000000000L+257*4000L,2));assertTrue(sampler.partial());assertEquals(256,sampler.pointCount());
+    }
+    @Test public void mapViewOrdersChunksAndNeverConnectsMissingDataOrDifferentEpochs() throws Exception {
+        store.authorize(grant(1));String key=packet(1).getString("routeKey");
+        store.accept(packet(3),"watch193","phone193");store.accept(packet(1),"watch193","phone193");
+        JSONObject broken=store.view(key);assertTrue(broken.getBoolean("partial"));assertEquals(2,broken.getJSONArray("segments").length());assertEquals(0,broken.getDouble("distanceMeters"),0);
+        store.accept(packet(2),"watch193","phone193");store.accept(packet(4).put("closed",true).put("points",new JSONArray()),"watch193","phone193");
+        JSONObject joined=store.view(key);assertFalse(joined.getBoolean("partial"));assertEquals(1,joined.getJSONArray("segments").length());assertEquals(3,joined.getInt("pointCount"));
+        assertTrue(joined.getDouble("distanceMeters")>10);assertTrue(joined.getDouble("distanceMeters")<12);
+        store.authorize(grant(3));JSONObject another=packet(1).put("ownerEpoch193",3).put("streamId","newStream193").put("closed",true);
+        another.getJSONArray("points").getJSONObject(0).put("latitude",48).put("epochMillis",1800000200000L);
+        store.accept(another,"watch193","phone193");JSONObject combined=store.view(key);
+        assertEquals(2,combined.getJSONArray("segments").length());assertEquals(joined.getDouble("distanceMeters"),combined.getDouble("distanceMeters"),0);
+        assertEquals(3,combined.getJSONArray("segments").getJSONObject(1).getInt("ownerEpoch193"));
+    }
+    @Test public void coordinateFreeBindingsAreScopedToOneWorkoutAndDisappearOnDeletion() throws Exception {
+        JSONObject p=packet(1);store.authorize(grant(1));assertEquals(0,store.bindings("workout193").length());store.accept(p,"watch193","phone193");
+        JSONArray bindings=store.bindings("workout193");assertEquals(1,bindings.length());assertEquals("set193",bindings.getJSONObject(0).getString("setId"));
+        assertFalse(bindings.toString().contains("latitude"));assertFalse(bindings.toString().contains("points"));assertEquals(0,store.bindings("otherWorkout").length());
+        store.delete(p.getString("routeKey"));assertEquals(0,store.bindings("workout193").length());assertEquals(0,store.view(p.getString("routeKey")).getInt("pointCount"));
     }
 }

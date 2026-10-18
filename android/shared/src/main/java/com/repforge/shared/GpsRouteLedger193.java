@@ -72,7 +72,7 @@ public final class GpsRouteLedger193 {
     }
     /** Returns null without consent. A receipt is produced only after durable storage (or a tombstone). */
     public synchronized JSONObject accept(JSONObject input,String origin,String localNode) throws Exception {
-        JSONObject entry=routes(read(index(),INDEX_BYTES)).optJSONObject(input.optString("routeKey"));if(entry==null)return null;
+        JSONObject index=read(index(),INDEX_BYTES),entry=routes(index).optJSONObject(input.optString("routeKey"));if(entry==null)return null;
         JSONObject grant=null;JSONArray grants=entry.optJSONArray("grants");
         if(grants!=null)for(int i=0;i<grants.length();i++)if(grants.getJSONObject(i).optLong("ownerEpoch193",-1)==input.optLong("ownerEpoch193",-2))grant=grants.getJSONObject(i);
         if(grant==null)return null;
@@ -109,6 +109,8 @@ public final class GpsRouteLedger193 {
                 streams.add(packet.getString("streamId"));require(streams.size()<=GpsRoutePacket193.MAX_SEGMENTS&&segments.size()<=GpsRoutePacket193.MAX_SEGMENTS&&points<=GpsRoutePacket193.MAX_POINTS);
                 chunks.put(id,new JSONObject().put("hash",hash).put("packet",packet));write(file,track,ROUTE_BYTES);
             }
+            int count=0;for(Iterator<String> keys=chunks.keys();keys.hasNext();)count+=chunks.getJSONObject(keys.next()).getJSONObject("packet").getJSONArray("points").length();
+            if(entry.optInt("pointCount",-1)!=count) { entry.put("pointCount",count);write(index(),index,INDEX_BYTES); }
         }
         return new JSONObject().put("schema",1).put("routeKey",packet.getString("routeKey")).put("streamId",packet.getString("streamId"))
             .put("sequence",packet.getLong("sequence")).put("ownerEpoch193",packet.getLong("ownerEpoch193"))
@@ -120,6 +122,59 @@ public final class GpsRouteLedger193 {
         if(entry==null||entry.optBoolean("deleted"))return new JSONArray();
         JSONObject chunks=read(route(key),ROUTE_BYTES).optJSONObject("chunks");JSONArray result=new JSONArray();
         if(chunks!=null)for(Iterator<String> keys=chunks.keys();keys.hasNext();)result.put(chunks.getJSONObject(keys.next()).getJSONObject("packet"));return result;
+    }
+    /** Coordinate-free references for one canonical workout; no full-history scan or location event. */
+    public synchronized JSONArray bindings(String workoutId) throws Exception {
+        JSONObject routes=routes(read(index(),INDEX_BYTES));JSONArray result=new JSONArray();
+        for(Iterator<String> keys=routes.keys();keys.hasNext();) {
+            String key=keys.next();JSONObject entry=routes.getJSONObject(key);JSONArray grants=entry.optJSONArray("grants");
+            if(entry.optBoolean("deleted")||entry.optInt("pointCount")<1||grants==null||grants.length()==0)continue;
+            JSONObject grant=grants.getJSONObject(0);if(!workoutId.equals(grant.getString("workoutId")))continue;
+            result.put(new JSONObject().put("routeKey",key).put("workoutId",workoutId).put("exerciseId",grant.getString("exerciseId"))
+                .put("setId",grant.getString("setId")).put("pointCount",entry.getInt("pointCount")));
+        }
+        return result;
+    }
+    /** #163 route shape, exposed only on an explicit map request. Missing chunks stay visible gaps. */
+    public synchronized JSONObject view(String key) throws Exception {
+        JSONArray raw=packets(key);java.util.List<JSONObject> rows=new java.util.ArrayList<>();java.util.Map<String,Long> firstAt=new java.util.HashMap<>();
+        for(int i=0;i<raw.length();i++) {
+            JSONObject packet=raw.getJSONObject(i);rows.add(packet);JSONArray points=packet.getJSONArray("points");String stream=packet.getString("streamId");
+            if(points.length()>0)firstAt.merge(stream,points.getJSONObject(0).getLong("epochMillis"),Math::min);
+        }
+        rows.sort((a,b)->{
+            int epoch=Long.compare(a.optLong("ownerEpoch193"),b.optLong("ownerEpoch193"));if(epoch!=0)return epoch;
+            String x=a.optString("streamId"),y=b.optString("streamId");
+            int time=Long.compare(firstAt.getOrDefault(x,Long.MAX_VALUE),firstAt.getOrDefault(y,Long.MAX_VALUE));if(time!=0)return time;
+            int stream=x.compareTo(y);return stream!=0?stream:Long.compare(a.optLong("sequence"),b.optLong("sequence"));
+        });
+        JSONArray sections=new JSONArray(),points=null;JSONObject last=null;String stream="";long sequence=0,segment=0;
+        int count=0;boolean partial=false,closed=true;double meters=0;
+        for(JSONObject packet:rows) {
+            String nextStream=packet.getString("streamId");long nextSequence=packet.getLong("sequence");
+            boolean newStream=!nextStream.equals(stream),missing=nextSequence!=(newStream?1:sequence+1);
+            if(newStream) { if(!closed)partial=true;closed=false;last=null;segment=0; }
+            if(missing) { partial=true;last=null; }
+            if(packet.getBoolean("partial"))partial=true;
+            JSONArray fixes=packet.getJSONArray("points");
+            for(int i=0;i<fixes.length();i++) {
+                JSONObject fix=fixes.getJSONObject(i);long nextSegment=fix.getLong("segment");
+                if(last!=null) {
+                    long gap=fix.getLong("elapsedMillis")-last.getLong("elapsedMillis");
+                    if(nextSegment!=segment||gap<=0||gap>30000||fix.getLong("epochMillis")<=last.getLong("epochMillis")
+                        ||GpsRoutePacket193.distance(last.getDouble("latitude"),last.getDouble("longitude"),fix.getDouble("latitude"),fix.getDouble("longitude"))/(gap/1000d)>20)last=null;
+                }
+                if(last==null) {
+                    if(sections.length()>=GpsRoutePacket193.MAX_SEGMENTS) { partial=true;break; }
+                    points=new JSONArray();sections.put(new JSONObject().put("ordinal",sections.length()+1).put("source","watch_gps")
+                        .put("ownerEpoch193",packet.getLong("ownerEpoch193")).put("streamId",nextStream).put("points",points));
+                }else meters+=GpsRoutePacket193.distance(last.getDouble("latitude"),last.getDouble("longitude"),fix.getDouble("latitude"),fix.getDouble("longitude"));
+                JSONObject clean=new JSONObject();for(String field:new String[]{"latitude","longitude","accuracyMeters","elapsedMillis","epochMillis"})clean.put(field,fix.get(field));
+                points.put(clean);count++;last=fix;segment=nextSegment;
+            }
+            stream=nextStream;sequence=nextSequence;if(packet.getBoolean("closed"))closed=true;
+        }
+        return new JSONObject().put("key",key).put("source","watch_gps").put("pointCount",count).put("partial",partial||!closed).put("distanceMeters",meters).put("segments",sections);
     }
     /** Tombstone is durable before erasure. Late or repeated packets cannot recreate the track. */
     public synchronized void delete(String key) throws Exception {
