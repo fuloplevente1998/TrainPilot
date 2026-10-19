@@ -19154,6 +19154,98 @@ window.addEventListener?.('DOMContentLoaded',function(){
 })();
 // @endsection wear-gps-route-193.js
 
+
+// @section distance-activity-flow-220.js
+/* #206/#220: distance workouts are measurements, not weight-training sets.
+ * Keep one internal set for existing GPS owner, sync, diary and history contracts.
+ * The already shipped explicit GPS STOP -> done transition remains the only
+ * automatic GPS completion path.
+ */
+(function(){
+ 'use strict';
+ const words={
+  hu:{quick:'Nem kell sorozatot, ismétlést vagy célidőt megadni. Indítsd el a mérést az edzésnél.',distance:'Távolság',duration:'Idő',pace:'Tempó',ready:'Mérésre kész',tracking:'GPS-mérés folyamatban',saved:'Mérés rögzítve – folytathatod az edzést',notSaved:'A mérés még nincs teljesítve',manual:'Kézi adatbevitel (GPS nélkül)',segments:'Szakaszok'},
+  en:{quick:'No sets, repetitions or target duration needed. Start measuring in the workout.',distance:'Distance',duration:'Time',pace:'Pace',ready:'Ready to measure',tracking:'GPS tracking in progress',saved:'Measurement saved – you can continue',notSaved:'Measurement not yet completed',manual:'Manual entry (without GPS)',segments:'Segments'},
+  de:{quick:'Keine Sätze, Wiederholungen oder Zielzeit nötig. Starte die Messung im Training.',distance:'Strecke',duration:'Zeit',pace:'Tempo',ready:'Bereit zur Messung',tracking:'GPS-Messung läuft',saved:'Messung gespeichert – Training fortsetzen',notSaved:'Messung noch nicht abgeschlossen',manual:'Manuelle Eingabe (ohne GPS)',segments:'Abschnitte'},
+  ro:{quick:'Nu sunt necesare serii, repetări sau o durată prestabilită. Pornește măsurarea în antrenament.',distance:'Distanță',duration:'Timp',pace:'Ritm',ready:'Gata de măsurare',tracking:'Măsurare GPS în curs',saved:'Măsurare salvată – poți continua',notSaved:'Măsurarea nu este finalizată',manual:'Introducere manuală (fără GPS)',segments:'Segmente'}
+ };
+ const tr=k=>(words[rf212Lang()]||words.en)[k];
+ const originalQuick=tp150QuickExercise;
+ tp150QuickExercise=function(id){
+  const item=originalQuick.apply(this,arguments),definition=byId(id);
+  if(item&&tp106IsDistance(definition||item)&&item.sets?.length){
+   // Preserve exactly one internal measurement record. Never require the
+   // user to configure a weight-training series for a quick distance workout.
+   item.sets=item.sets.slice(0,1);item.sets[0].set=1;
+  }
+  return item;
+ };
+ const originalFields=tp152QuickFields;
+ tp152QuickFields=function(e){
+  if(!tp106IsDistance(e))return originalFields.apply(this,arguments);
+  return '<p class="small muted tp220-quick-info">'+esc(tr('quick'))+'</p>';
+ };
+ function paint(){
+  const panel=document.getElementById('tp220-distance-readout'),e=state.session?.exercises?.[state.current];
+  if(!panel||!tp106IsDistance(e))return;
+  const sets=Array.isArray(e.sets)?e.sets:[],meters=sets.reduce((sum,s)=>sum+(Number.isFinite(Number(s.distanceMeters))&&Number(s.distanceMeters)>0?Number(s.distanceMeters):0),0);
+  const seconds=sets.reduce((sum,s)=>sum+(Number.isFinite(Number(s.reps))&&Number(s.reps)>0?Number(s.reps):0),0);
+  const done=sets.some(s=>s.done),trip=db.get('gpsTrip106',null),owner=tp106GpsOwner(trip),tracking=tp106GpsState.active&&owner?.e===e;
+  const pace=meters>0&&seconds>0?Math.round(seconds*1000/meters):0;
+  const paceText=pace>0?Math.floor(pace/60)+':'+String(pace%60).padStart(2,'0')+' /km':'—';
+  panel.querySelector('[data-tp220-distance]').textContent=tp106Km(meters)+' km';
+  panel.querySelector('[data-tp220-time]').textContent=rf110FormatStopwatch(Math.round(seconds));
+  panel.querySelector('[data-tp220-pace]').textContent=paceText;
+  panel.querySelector('[data-tp220-status]').textContent=tracking?tr('tracking'):done?tr('saved'):meters>0||seconds>0?tr('notSaved'):tr('ready');
+  panel.classList.toggle('tp220-recorded',!!done);
+ }
+ const originalRender=renderWorkout;
+ renderWorkout=function(){
+  const result=originalRender.apply(this,arguments),main=document.querySelector('main.tp153-workout'),e=state.session?.exercises?.[state.current];
+  if(!main||!tp106IsDistance(e))return result;
+  main.classList.add('tp220-distance-workout');
+  main.querySelector('.tp153-workout-prescription')?.remove();
+  const title=main.querySelector('.tp153-sets-title');
+  if(!title)return result;
+  const metrics=document.createElement('section');
+  metrics.className='card tp220-distance-readout';
+  metrics.id='tp220-distance-readout';
+  metrics.innerHTML='<div class="tp220-measurements">'+
+   '<div><small>'+esc(tr('distance'))+'</small><strong data-tp220-distance>0 km</strong></div>'+
+   '<div><small>'+esc(tr('duration'))+'</small><strong data-tp220-time>00:00</strong></div>'+
+   '<div><small>'+esc(tr('pace'))+'</small><strong data-tp220-pace>—</strong></div>'+
+   '</div><p class="small tp220-measurement-status" data-tp220-status role="status"></p>';
+  const manual=document.createElement('details');
+  manual.className='tp220-manual';
+  manual.innerHTML='<summary>'+esc(tr('manual'))+'</summary>';
+  title.before(metrics,manual);
+  title.textContent=tr('segments');
+  manual.appendChild(title);
+  main.querySelectorAll('.tp153-set-row').forEach(row=>manual.appendChild(row));
+  paint();
+  return result;
+ };
+ const originalGpsPaint=tp106PaintGPS;
+ tp106PaintGPS=function(){const result=originalGpsPaint.apply(this,arguments);paint();return result;};
+ const originalIndoorPaint=tp107PaintIndoor;
+ tp107PaintIndoor=function(){const result=originalIndoorPaint.apply(this,arguments);paint();return result;};
+ const css=document.createElement('style');css.id='tp220DistanceStyle';
+ css.textContent=
+  '.tp220-quick-info{margin:0 0 10px;padding:8px 0}'+
+  '.tp220-distance-workout .tp220-distance-readout{padding:12px 14px!important;margin:8px 0 10px!important}'+
+  '.tp220-measurements{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}'+
+  '.tp220-measurements>div{min-width:0;display:flex;flex-direction:column;gap:5px}'+
+  '.tp220-measurements small{color:var(--muted);font-size:12px}'+
+  '.tp220-measurements strong{font-size:clamp(16px,4.5vw,23px);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}'+
+  '.tp220-measurement-status{margin:9px 0 0;color:var(--muted)}'+
+  '.tp220-recorded .tp220-measurement-status{color:var(--accent2);font-weight:750}'+
+  '.tp220-manual{margin:5px 0 12px}.tp220-manual>summary{cursor:pointer;min-height:44px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;color:var(--muted);font-size:13px}'+
+  '.tp220-manual[open]>.tp153-sets-title{margin-top:10px}';
+ document.head.appendChild(css);
+ window.TrainPilotDistance220={paint};
+})();
+// @endsection distance-activity-flow-220.js
+
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
 // @endsection ready.js
