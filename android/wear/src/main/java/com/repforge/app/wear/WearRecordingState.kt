@@ -158,9 +158,13 @@ internal fun wearLiveWorkoutRows(data: JSONObject?, workoutId: String, now: Long
     val primary = listOfNotNull(value("heartRate", "bpm", 20.0), value("totalCalories", "kcal"))
     val movement = listOfNotNull(value("steps", "lépés"), value("distanceMeters", "m"))
     if (primary.isEmpty() && movement.isEmpty()) return emptyList()
+    val isDelayed = (now - data.optLong("updatedAt") > 20000L) ||
+        (data.has("heartRate") && data.optLong("lastSampleAt") > 0L && now - data.optLong("lastSampleAt") > 20000L) ||
+        data.optString("heartRateAvailability") in listOf("acquiring", "unavailable")
     val status = when (data.optString("state")) {
         "paused" -> "Mérés szünetel"
-        "active" -> if (now - data.optLong("updatedAt") > 20000L) "Legutóbbi adat" else null
+        "reconnecting" -> "Újrakapcsolódás…"
+        "active" -> if (isDelayed) "Legutóbbi adat" else null
         "starting" -> "Mérés indul"
         "ending" -> "Mérés lezárása"
         "error" -> "Mérés megszakadt"
@@ -210,10 +214,11 @@ internal fun trimWearNumber(number: Double): String =
     else String.format(java.util.Locale.forLanguageTag("hu"), "%.1f", number)
 
 internal fun wearRecordingNeedsRetry(data: JSONObject?, enabled: Boolean, hasWorkout: Boolean): Boolean =
-    enabled && hasWorkout && data?.optString("state") !in listOf("starting","active","paused","ending")
+    enabled && hasWorkout && data?.optString("state") !in listOf("starting","active","paused","ending","reconnecting")
 
 internal fun wearRecordingStatus(data: JSONObject?, enabled: Boolean, hasWorkout: Boolean=false): String = when (data?.optString("state")) {
     "starting" -> "Mérés indítása…"
+    "reconnecting" -> "Újrakapcsolódás a méréshez…"
     "active" -> "Mérés folyamatban · háttérben is"
     "paused" -> "Az órás mérés szünetel"
     "ending" -> "Mérés lezárása…"

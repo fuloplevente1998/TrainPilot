@@ -31,6 +31,16 @@ internal object WearHealthFutures {
     fun isMissingLocationError(message: String): Boolean =
         message.contains("ACCESS_FINE_LOCATION") && message.contains("permission",ignoreCase=true)
 
+    fun isRecoverableHealthError(message: String): Boolean =
+        isLegacyNullCompletionError(message) ||
+            message.contains("DeadObjectException", ignoreCase = true) ||
+            message.contains("ServiceDisconnected", ignoreCase = true) ||
+            message.contains("RemoteException", ignoreCase = true) ||
+            message.contains("HealthServicesException", ignoreCase = true) ||
+            message.contains("timeout", ignoreCase = true) ||
+            message.contains("megszakadt", ignoreCase = true) ||
+            message.contains("nem indult", ignoreCase = true)
+
     private fun listen(future: ListenableFuture<*>, executor: Executor,
                        isActive: () -> Boolean, onFailure: (Exception) -> Unit,
                        success: () -> Unit) {

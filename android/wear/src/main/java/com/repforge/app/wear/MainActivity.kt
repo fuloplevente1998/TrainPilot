@@ -78,6 +78,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             Toast.makeText(this,message,Toast.LENGTH_LONG).show()
         }
     }
+    private var lastHealthRetryAt=0L
     private val healthTick=object : Runnable {
         override fun run() {
             refreshHealth();refreshHomeIndicators()
@@ -92,7 +93,19 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                 } else remoteMeasurementStart?.let { WearWorkoutHandoff.request(this@MainActivity,it) }
                 refreshFromDataLayer()
             }
-            if(WearHealthStore.active(this@MainActivity).isBlank() && workout.value?.workoutId?.let { WearHealthStore.load(this@MainActivity,it)==null }==true)startHealthIfEnabled()
+            val currentWorkout=workout.value
+            if(currentWorkout!=null && !currentWorkout.workoutPaused && WearHealthStore.enabled(this@MainActivity) && healthAllowed()) {
+                val activeId=WearHealthStore.active(this@MainActivity)
+                if(activeId.isBlank()) {
+                    val prev=WearHealthStore.load(this@MainActivity,currentWorkout.workoutId)
+                    val now=android.os.SystemClock.elapsedRealtime()
+                    if(prev==null || (prev.optString("state")=="error" && now-lastHealthRetryAt>=10000L)) {
+                        lastHealthRetryAt=now
+                        if(prev?.optString("state")=="error")WearHealthStore.retry(this@MainActivity,currentWorkout.workoutId)
+                        startHealthIfEnabled()
+                    }
+                }
+            }
             uiHandler.postDelayed(this,1000)
         }
     }
@@ -267,10 +280,15 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             }
         }
         if(!WearHealthStore.enabled(this) || !healthAllowed() || locationRequired)return
-        if(previous?.optString("state")=="error" && (wearHasLocationFailure(previous) || WearHealthFutures.isLegacyNullCompletionError(previous.optString("message")))) {
-            // Retry known startup failures with the corrected config; keep measured totals.
-            WearHealthStore.retry(this,current.workoutId)
-            previous=WearHealthStore.load(this,current.workoutId)
+        if(previous?.optString("state")=="error") {
+            val hasLocation = wearHasLocationFailure(previous)
+            val canRecover = !hasLocation || access.locationAvailable
+            val cooldown = android.os.SystemClock.elapsedRealtime() - lastHealthRetryAt >= 5000L
+            if (canRecover && (cooldown || hasLocation || WearHealthFutures.isRecoverableHealthError(previous.optString("message")))) {
+                // Retry known startup or recoverable sensor failures with the corrected config; keep measured totals.
+                WearHealthStore.retry(this,current.workoutId)
+                previous=WearHealthStore.load(this,current.workoutId)
+            }
         }
         if(previous?.optString("state") in listOf("ended","error")) {
             if(remoteMeasurementRequested && !remoteStartFinished) {
