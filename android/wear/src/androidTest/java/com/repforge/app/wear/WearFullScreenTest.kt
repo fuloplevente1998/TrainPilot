@@ -638,8 +638,8 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         compose.onNodeWithTag("wear-round-list").performTouchInput { swipeDown() }
         compose.onNodeWithContentDescription("Edzés indítása").assertIsDisplayed()
         compose.onNodeWithTag("wear-round-list").performTouchInput { swipeUp() }
-        // The active-workout menu now opens with Resume; Journal is farther down.
-        compose.onNodeWithContentDescription(WearMenu216.text("resume")).assertIsDisplayed()
+        // Fixture("home") clears the workout: Quick workout is the first menu action.
+        compose.onNodeWithContentDescription(WearMenu216.text("quick")).assertIsDisplayed()
     }
 
     @Test
