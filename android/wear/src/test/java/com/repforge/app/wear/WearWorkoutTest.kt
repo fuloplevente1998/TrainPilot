@@ -67,8 +67,8 @@ class WearWorkoutTest {
         val original=base.copy(exercises=listOf(ex,ex.copy(id="other")))
         for(paused in listOf(false,true)) {
             val rest=original.copy(automation=WearAutomatic(enabled=true,owner="watch",phase="rest",paused=paused,
-                remainingMs=5000,anchorMs=1000,boot=1,targetExercise=0,targetSet=0,
-                targetId=WearAutomaticEngine.targetId(original,0,0)))
+                remainingMs=5000,anchorMs=1000,boot=1,targetExercise=0,targetSet=original.currentSetIndex,
+                targetId=WearAutomaticEngine.targetId(original,0,original.currentSetIndex)))
             val selected=rest.selectExercise(1)
             assertEquals(rest.automation,selected.automation)
             val tick=WearAutomaticEngine.tick(selected,2000,1)
