@@ -1,0 +1,30 @@
+{
+  "applicationSource": "60b0b5f46da3aac3f8acf995ddf862baf17bc981",
+  "version": "1.3.51",
+  "versionCode": 2732,
+  "phoneRun": 39184503336,
+  "phoneArtifact": 12157438731,
+  "phoneApkSha256": "a2abe6a51f8f7d4dc548c766dd9ce36425c78e15a67ff6e98e85a107f3d163cc",
+  "phoneNativeXml": {
+    "tests": 243,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "chromiumShards": "6/6 successful",
+  "quickRun": 39184507351,
+  "performanceRun": 39184507859,
+  "ownershipRun": 39184507353,
+  "signerCertSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+  "canonicalApkAssetsVerified": [
+    "assets/public/app.js",
+    "assets/public/index.html"
+  ],
+  "wearSource": "13823ca99acd60e823822970f2b4637b2d06d1c6",
+  "wearSourceUnchanged": true,
+  "physicalAcceptance": {
+    "phoneGpsExplicitStop": "accepted by user with positive measured distance",
+    "watchRouteJournal": "failed on previous pair; retest required, GPS route recording confirmed running; point count unknown"
+  },
+  "mainMerged": false
+}

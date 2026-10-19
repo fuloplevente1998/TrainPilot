@@ -13,15 +13,30 @@ aktivitásnézet/UI miatt az issue nyitott. A próba közben feltárt másik, k�
 „Edzés befejezése” útvonal nincs ebben a javításban, nem bővítjük a mostani kört.
 
 **3. pont sikertelen:** óráról indított edzés után a telefon Naplójában sincs
-GPS-térképgomb. Még tisztázandó, hogy az órán a külön „GPS-útvonal” rögzítés
-elindult-e (az aggregált Health-táv önmagában nem jelent koordinátákat).
+GPS-térképgomb. A felhasználó megerősítette: a külön „GPS-útvonal” rögzítés is futott.
+A rövid próba kb. 8–10 mp / 10 m volt; a tényleges GPS-pontszám nem ismert.
+A telefonon látott 0 km helye sem ismert: a sorozat távolsága és a
+`healthWear129.distanceMeters` órás össztáv külön adat, utóbbit a napló
+„Órán mért edzésadatok” kártyája méterben mutatja.
 Talált és célzottan javított UI-hiba: a már nyitott naplóbejegyzés nem kapott
 új térképgombot, ha a natív útvonalhivatkozások később érkeztek. A frissítés most
 az aktív draft nélkül is ellenőrzi a nyitott naplók metaadatait, és tartós mentés
 után hozzáadja a gombot. Koordináták továbbra is csak a térképgomb megnyomására
 olvashatók; nincs GPS automatikus indítása. A böngészős regresszió nem nyitja újra
 kézzel a kártyát, a késői hivatkozást automatikus frissítésből várja.
-Az új javítás GitHub-kapui még külön ellenőrizendők; a korábbi APK nem tartalmazza.
+A javítás bevizsgált alkalmazásforrása **`60b0b5f46da3aac3f8acf995ddf862baf17bc981`**.
+Quick (39184507351), Performance (39184507859), natív tulajdonos/GPS (39184507353)
+és telefonos teljes gate (39184503336) zöld: UI **6/6**, telefonos JVM XML
+**243/243, 0 failure/error/skipped**. Az új késői naplótérkép-teszt a 2. shardon
+sikeres. Wear/közös Android forrás `13823ca..60b0b5f` között byteazonos.
+
+Javított telefonos APK [artifact 12157438731](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39184503336/artifacts/12157438731),
+SHA-256 `a2abe6a51f8f7d4dc548c766dd9ce36425c78e15a67ff6e98e85a107f3d163cc`.
+1.3.51 /2732, eredeti aláíró; a csomagolt app.js/index.html egyezik a forrással.
+Wear maradhat a már átadott `13823ca` APK. A korábbi telefonos APK nem tartalmazza
+ezt a javítást. **A konkrét készülékes hiba megoldása még újrapróbálandó:**
+hosszabb kültéri GPS-mérés, növekvő órás GPS-pontszám, offline befejezés,
+telefonos újracsatlakozás és napló megnyitása; az órás össztáv külön ellenőrizendő.
 Nincs main-merge vagy verzióemelés, #193/#213 nyitott.
 
 ## Aktuális nyilvántartás és tesztpár – 2026-10-19
