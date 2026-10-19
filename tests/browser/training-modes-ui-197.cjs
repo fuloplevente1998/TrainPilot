@@ -19,6 +19,7 @@ const server=http.createServer((req,res)=>{
   await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&typeof tp197UiSet==='function');
   await page.evaluate(()=>{state.tab='settings';render();});
   const saved=await page.evaluate(()=>JSON.stringify([settings(),programs(),history(),db.get('draft',null)]));
+  assert.equal(await page.locator('#tp197-mode-global').count(),1,'Global mode should be available in Settings');
   await page.locator('#tp197-mode-global').evaluate(el=>el.open=true);
   await page.locator('#tp197-mode-global-style').selectOption('hit');
   await page.locator('#tp197-mode-global-progress').selectOption('rir');
@@ -31,7 +32,11 @@ const server=http.createServer((req,res)=>{
   }
   await page.evaluate(()=>{state.tab='plan';render();});
   assert.equal(await page.locator('#tp197-mode-program').count(),1);
+  assert.equal(await page.locator('.tp1511-training-body #tp197-mode-program').count(),1,'Program modes should live inside Workout settings');
+  assert.equal(await page.locator('main > #tp197-mode-program').count(),0,'No detached duplicate mode card');
+  await page.locator('.tp1511-training').evaluate(el=>el.open=true);
   await page.locator('#tp197-mode-program').evaluate(el=>el.open=true);
+  assert.equal(await page.locator('#tp197-mode-program .tp197-preview-reason').count(),1,'Explain the concrete hold or increase reason');
   assert.equal(await page.locator('#tp197-mode-program-style').inputValue(),'normal');
   await page.locator('#tp197-mode-program-style').selectOption('hit');
   assert.equal(await page.locator('#tp197-mode-program-style').inputValue(),'hit');
