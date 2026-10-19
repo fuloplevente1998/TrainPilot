@@ -2,6 +2,17 @@
 
 ## Aktuális folytatás — 2026-10-17, összevont P2-csomagok
 
+## Aktuális #212 korona/lünetta – 2026-10-19
+
+Telefonos kompakt Intervallumok: #215 mainen. A felhasználó most a hátralévő
+órás forgatható szerkesztőt kérte, `feat/212-wear-rotary-editor` ágon készül.
+A megnyitott mező a meglévő lépésközzel állítható; forgatás nem ment, Mentés/Mégse
+és érintéses plusz–mínusz megmarad. A szerkesztő célja workout/gyakorlat/sorozat
+szinten rögzített, háttérben és elavult cél esetén nincs rotary-módosítás.
+JVM és kerek kijelzős, valódi rotary-eseményes UI regressziók GitHubon futtatandók.
+Issue lezárása és készülékes elfogadás még nincs; verzió változatlan.
+
+
 A felhasználó jóváhagyta a közös csomagokat és a folytatást. **Következő: #193 + #202 önálló órás edzés**, közös issue #193, ág `feat/193-202-watch-offline-gps`, main alap `9188932`. #202 duplikátumként lezárva, teljes követelményei #193-ban megőrizve. Utána **#212 + #190 UI-csomag → #197 edzésmódok → #184 Samsung Coach**; #190 duplikátumként #212-be átvezetve. #207 duplikátumként #206-ba átvezetve; a #208-cal már mainre került GPS STOP-teljesítés nem új fejlesztés, a maradék aktivitásnézet/UI ellenőrzése #206-ban marad.
 
 #188 Visszavonás és #189 három másodperces érintészár elfogadva és mainen. **#192 és #211 a felhasználó kérésére sztornózott, beolvasztás nélkül lezárva.** A #192 APK-k történetiek, nincs készülékes elfogadás vagy merge. A régi #186 draft beolvasztás nélkül lezárva: a készülékesen elfogadott #195 már kiváltotta. #121 karbantartás/Play-publikálás külön marad. A közös #193 fejlesztés a #213 draft PR-ban elindult; közös tulajdonosi állapotgép, tartós átadási napló és natív/Data Layer adapterek elkészültek. 2026-10-18: a friss JS-piszkozat tartós átadási egyeztetése, natív időzítő-checkpoint és közös idővonallal működő órás folytató bekerült. A régi telefonos végrehajtás nem egyeztethet vissza az átvett edzésbe; a visszaadás új telefonos végrehajtásig szünetben marad. A telefonos visszaadási import, kifejezett folytatás, csak olvasható telefonos tükör és képességhez kötött HU/EN/DE/RO vezérlők is bekötve. Az órás végső állapot lezárásakor a friss natív forrás és tényleges aktív idő kerül a telefonra; elveszett korábbi folytatási üzenet nem okoz adatvesztést. Az órás GPS adatmag és #163-formátumú natív olvasás/törlés elkészült: korlátos privát csomagok, eszköz/epoch szerinti helyi engedély, deduplikálás, szakaszhatárok és tartós törlési védelem. A `bdc4f6c` célzott natív kapuja 53/53 sikeres, ebből 11 GPS-eset; XML ellenőrizve. A privát GPS-tár, koordinátamentes outbox és natív fogadás, késői naplóbekötés/törlés, külön Location-foreground és HU/EN/DE/RO indító/leállító felület bekötve. A sikeres natív képességvizsgálat engedélyezi az új telefonos epoch=0 edzést, a home snapshot az új órás indításokat; régi órás edzés nem kap néma protokollváltást. Az offline végső parancs a start előtt is menthető, és natív forrásigazolása a késői útvonal fogadásához megmarad. A friss teljes GitHub-kapuk, azonos forrású APK-pár és fizikai elfogadás hátravan. Az aktuális új kapuk Actionsben futnak; korábbi commit eredménye nem a teljes funkció igazolása. Verzió változatlan **1.3.51 /2732**. Teljes teszt/build Actionsön; a #193 új funkció main/kiadásához később külön készülékes elfogadás és jóváhagyás szükséges. [Közös részletes terv](P2_193_ONALLO_ORAS_EDZES.md). Az alábbi korábbi állapotok történetiek.

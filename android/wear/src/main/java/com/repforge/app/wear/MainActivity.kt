@@ -705,7 +705,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         synchronized(WearAutomaticController){synchronized(WorkoutSnapshotStore){
             val current=WorkoutSnapshotStore.load(this) ?: return false
         if(current.workoutPaused||WearUndo188.blocked(current))return false
-            if(!value.isFinite()||current.currentSet?.done!=false||WearAutomaticEngine.targetId(current,current.currentExercise,current.currentSetIndex)!=expected||
+            if(!value.isFinite()||current.currentSet?.done!=false||WearRotaryEditor212.target(current)!=expected||
                 current.automation?.let { it.enabled&&it.phase=="work"&&field=="reps" }==true||
                 current.automation?.let { it.counting&&!it.paused }==true){Toast.makeText(this,"A sorozat közben változott. Nyisd meg újra.",Toast.LENGTH_SHORT).show();return false}
             val set=current.currentSet ?: return false

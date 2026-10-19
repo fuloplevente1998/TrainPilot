@@ -4,6 +4,38 @@ Frissítve: **2026-10-19, Europe/Budapest**. Először a gyökérben található
 [AGENTS.md](../AGENTS.md) olvasandó; utána ez a rövid aktuális átadás.
 Az alábbi állapotot induláskor GitHubon ellenőrizd. A hosszú régi naplók történetiek.
 
+## #212 órás korona/lünetta elkészült – fizikai elfogadásra vár
+
+A felhasználó kérte a hátralévő fejlesztést, majd a csomag lezárását. **Draft PR
+[#217](https://github.com/fuloplevente1998/TrainPilot/pull/217)**, ág
+`feat/212-wear-rotary-editor`, main alap `aafc3d0`. Alkalmazásforrás **`e46bd05`**;
+**`2f62282`** csak a rotary teszt-API opt-in jelölését adja hozzá, app byteazonos.
+A megnyitott egymezős szerkesztőben súly 0,5 kg / ismétlés 1 / idő 5 mp lépésköz;
+a mezők között a meglévő edzésképernyőből külön megnyitással váltunk. Nincs új
+edzésmotor vagy automatikus mentés. Mentés/Mégse és plusz–mínusz megmarad.
+A workout/kezdés/gyakorlat/sorozat célazonosítót a natív mentés is ellenőrzi;
+sorozatváltás vagy háttér/fókuszvesztés nem írhatja át az új cél adatait.
+
+Minden alkalmazható GitHub kapu zöld, XML-ben is ellenőrizve:
+- Quick **39201796167**, Performance **39201796154** (`2f62282`).
+- Telefon **39201511382**: Chromium **6/6**, JVM **243/243**, 0 failure/error/skipped (`e46bd05`).
+- Wear release **39201791909**: JVM **155/155**, 0 failure/error/skipped (`2f62282`).
+- Kerek UI/platform **39201791792**: **168/168**, 0 failure/error/skipped (`2f62282`).
+  A valódi rotary-eseményes új próba mind az öt 160–225dp / 1–2x font változatban zöld.
+
+Átadott, eredeti aláíróval ellenőrzött **1.3.51 /2732 Wear APK** (`e46bd05`):
+[artifact 12164440395](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39201511355/artifacts/12164440395),
+SHA-256 `19d0a3ce0e1471debecb88c3a358b68145cd37a4bc7ea348e8bb3ae3e0faddbc`.
+Helyi átadott fájl: `/workspace/artifacts/rotary212/TrainPilot-Wear-1.3.51-e46bd05.apk`.
+A telefonos alkalmazásforrás változatlan, telefonfrissítés nem szükséges.
+[Bizonylat](builds/2026-10-19-wear-rotary-212.json).
+
+**Fizikai visszajelzés még nincs.** Az új APK-ra feltett aszinkron kérdés függőben:
+súly/ismétlés forgatása és Mentés/Mégse helyes-e? A #212 és #217 nyitott/draft,
+mainen nincs még rotary. A felhasználó lezárási szándéka megvan; a pozitív fizikai
+elfogadás és az aktuális head/kapuk ellenőrzése után befejezhető a merge és lezárás,
+nem kell új általános fejlesztési engedélyt kérni. #216 nincs elkezdve.
+
 ## #215 lezárva – kompakt Intervallumok mainen
 
 Felhasználói jóváhagyás: „Akkor a felüleletet vigyük mainre, ezt meg zárjuk”.
