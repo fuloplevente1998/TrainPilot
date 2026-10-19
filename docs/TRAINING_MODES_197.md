@@ -1,6 +1,6 @@
 # #197 – Edzésstílusok és progressziós módok: kiinduló audit és adatmodell-terv
 
-Állapot: **3/7 – konzervatív, csak javaslatot adó progressziós motor implementálva (2026-10-19)**. A GitHub Actions teljes ellenőrzésének eredménye ettől külön követendő. Ez a dokumentum a `feat/197-training-styles-progression` fejlesztési ághoz tartozik; nem jelent kész, bekapcsolt funkciót vagy kiadási jóváhagyást.
+Állapot: **4/7 – a többnyelvű módválasztó és kizárólag olvasható előnézet implementálva (2026-10-19)**. A GitHub Actions teljes ellenőrzésének eredménye ettől külön követendő. Ez a dokumentum a `feat/197-training-styles-progression` fejlesztési ághoz tartozik; nem jelent kész, bekapcsolt funkciót vagy kiadási jóváhagyást.
 
 Kiinduló main: `1393982d48691489978a44652c61ff2b32514e8d` (#220). A meglévő #128 edzéstervezés/progresszió, a #206 GPS-tevékenységek és a Wear/napló megőrzése kötelező.
 
@@ -78,3 +78,12 @@ Konzervatív és tesztelhető **dupla, lineáris, RIR** javaslatok elkülönít�
 - Új Node teszt: `tests/training-progression-197.cjs` (tiszta döntések, HIT, RIR-adathiány, negatív esetek és adapter tulajdonosság).
 - Következő 4/7: a beállításválasztó és HU/EN/DE/RO szövegek, 5/7: előnézet/jóváhagyás és biztonságos mentés. `main` és verzió változatlan.
 
+
+## 4/7 – Többnyelvű előnézeti módválasztó
+
+- Új `training-modes-ui-197.js` kanonikus szekció a `www/app.js` fájlban; a **Beállítások** oldalon globális, az **Edzés** oldalon aktív programhoz tartozó választó.
+- Két külön vezérlő: `normal/hit` edzésstílus és `double/linear/rir` progressziós szabály. HU/EN/DE/RO magyarázatok, 44 px-es mobil érintési célok és összehasonlító előnézeti sorozat/súlyértékek.
+- A 3/7 számítómotor `tp197ExercisePreview(id,programId,previewModes)` paramétere csak ideiglenes UI-választás **olvasására** szolgál. Saját programhoz kötött napló és readiness marad a forrás.
+- Az aktuális UI-választás **csak memóriában** (`tp197UiPending`) él; nem kerül a `settings`, `programs`, `history`, `draft`, backup, Wear vagy Drive adatmodellbe. Visszaállítás lehetséges. Nincs alkalmazás vagy jóváhagyás; azt az 5/7 lépés implementálja.
+- Új tesztek: `tests/training-mode-ui-197.cjs` (öröklés, többnyelvű feliratok, tilos mentés, program-scope izoláció), `tests/browser/training-modes-ui-197.cjs` (mobil és a működő alkalmazásban való ellenőrzés).
+- Ebből a változatból a #184-es Samsung pontszámot sem olvassuk közvetlenül, az integráció később külön PR-ben lesz.
