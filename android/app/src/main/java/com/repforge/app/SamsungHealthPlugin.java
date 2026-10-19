@@ -276,8 +276,9 @@ public class SamsungHealthPlugin extends Plugin {
             for (HealthDataPoint p : points) {
                 T candidate = p.getValue(field);
                 if (candidate == null || !Double.isFinite(candidate.doubleValue()) || candidate.doubleValue() < 0) continue;
-                Instant pTime = p.getStartTime() != null ? p.getStartTime() : p.getUpdateTime() != null ? p.getUpdateTime() : Instant.now();
-                Instant newestTime = newest == null ? null : (newest.getStartTime() != null ? newest.getStartTime() : newest.getUpdateTime() != null ? newest.getUpdateTime() : Instant.now());
+                Instant pTime = p.getStartTime() != null ? p.getStartTime() : p.getUpdateTime();
+                if (pTime == null) continue; // Never fabricate a fresh sample timestamp
+                Instant newestTime = newest == null ? null : (newest.getStartTime() != null ? newest.getStartTime() : newest.getUpdateTime());
                 if (newest == null || pTime.isAfter(newestTime)) { newest = p; value = candidate; }
                 record(p, recordType, ":" + key, new JSONObject().put("value", candidate).put("unit", unit), pTime, end(p));
             }
