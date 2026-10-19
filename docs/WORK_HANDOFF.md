@@ -4,6 +4,17 @@ Frissítve: **2026-10-19, Europe/Budapest**. Először a gyökérben található
 [AGENTS.md](../AGENTS.md) olvasandó; utána ez a rövid aktuális átadás.
 Az alábbi állapotot induláskor GitHubon ellenőrizd. A hosszú régi naplók történetiek.
 
+## Legújabb felhasználói döntés – közös main csomag
+
+A felhasználó most a `test/ui-automation`, `feat/212-language-audit`,
+`feat/197-wear-sensor-stability` ágak és #193/#202 közös áttekintését, majd
+mainre emelését kérte, **még a fizikai próba előtt**. Ez erre a csomagra
+felülírja a korábbi merge-sorrendet. A teljes, összeillesztett forrás GitHub-kapui
+után egyetlen main telefonos–órás párt fog tesztelni. Részletes áttekintés:
+[2026-10-19-combined-integration.md](reviews/2026-10-19-combined-integration.md).
+A külső öt funkcióötlet megvalósítása továbbra sem része ennek a csomagnak.
+#212/#190 és #197 eredeti követelményeit a nyelvi/szenzorág nem teljesíti egészben.
+
 ## Legutóbbi kérés és megállási pont – 2026-10-19 javítás
 
 A felhasználó a `01e0fa1` utáni mentési regresszió javítását kérte, és a korábban

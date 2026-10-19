@@ -314,4 +314,17 @@ class WearRecordingStateTest {
         val reconnectingRows = wearLiveWorkoutRows(reconnecting, "w1", now)
         assertEquals(listOf("145 bpm · 80 kcal", "Újrakapcsolódás…"), reconnectingRows)
     }
+    @Test fun automaticRecoveryRequiresTransientFailureAndCooldown() {
+        val transient=JSONObject().put("state","error").put("message","RemoteException")
+        assertTrue(wearShouldAutoRetryRecording(transient,20000,10000))
+        assertFalse(wearShouldAutoRetryRecording(transient,19999,10000))
+        assertFalse(wearShouldAutoRetryRecording(transient,1000,10000))
+        for(message in listOf("permission denied","A mérési kapcsolat nem indult: permission denied","Másik alkalmazás már edzést mér.","Unknown failure")) {
+            assertFalse(message,wearShouldAutoRetryRecording(JSONObject(transient.toString()).put("message",message),20000,0))
+        }
+        assertFalse(wearShouldAutoRetryRecording(JSONObject(transient.toString()).put("locationServicesRequired",true),20000,0))
+        for(state in listOf("active","paused","ended","reconnecting"))assertFalse(wearShouldAutoRetryRecording(JSONObject(transient.toString()).put("state",state),20000,0))
+        assertTrue(wearShouldAutoRetryRecording(null,20000,0))
+    }
+
 }

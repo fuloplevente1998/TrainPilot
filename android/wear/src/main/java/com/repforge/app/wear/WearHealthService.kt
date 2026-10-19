@@ -29,6 +29,15 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
     }
     private var pauseInFlight=false
     private var appliedPause=false
+    private var pauseRetries=0
+    private fun pauseFailed(error: Exception) {
+        pauseInFlight=false
+        val message=error.cause?.message ?: error.message.orEmpty()
+        if(WearHealthFutures.isRecoverableHealthError(message)&&pauseRetries<3) {
+            pauseRetries++
+            handler.postDelayed({ if(!destroyed&&lifecycle?.finished!=true)syncWorkoutPause() },2000L)
+        }else futureFailed(error)
+    }
     private fun syncWorkoutPause() {
         val data=summary ?: return
         val session=lifecycle ?: return
@@ -44,31 +53,16 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
                 if(desired)client.pauseExerciseAsync() else client.resumeExerciseAsync(),
                 executor,
                 { !destroyed && lifecycle?.finished!=true },
-                onFailure = { error ->
-                    pauseInFlight=false
-                    val msg=error.cause?.message ?: error.message ?: ""
-                    if(WearHealthFutures.isRecoverableHealthError(msg)) {
-                        handler.postDelayed({ if(!destroyed)syncWorkoutPause() }, 2000L)
-                    } else {
-                        futureFailed(error)
-                    }
-                },
+                onFailure = ::pauseFailed,
                 onSuccess = {
-                    pauseInFlight=false;appliedPause=desired
+                    pauseInFlight=false;pauseRetries=0;appliedPause=desired
                     data.put("workoutPauseApplied201",desired).put("state",if(desired)"paused" else "active");persist()
                     syncWorkoutPause() // A newer explicit continuation may have arrived during the future.
                 }
             )
-        }catch(error:Exception){
-            pauseInFlight=false
-            val msg=error.cause?.message ?: error.message ?: ""
-            if(WearHealthFutures.isRecoverableHealthError(msg)) {
-                handler.postDelayed({ if(!destroyed)syncWorkoutPause() }, 2000L)
-            } else {
-                futureFailed(error)
-            }
-        }
+        }catch(error:Exception){pauseFailed(error)}
     }
+
     private var destroyed=false
     private var watchdog: Runnable?=null
     private var sensorWatchdog: Runnable?=null
@@ -102,6 +96,7 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
                 { !destroyed && lifecycle?.finished!=true },
                 onFailure = { /* Transient check failure - keep current active state */ },
                 onSuccess = { info ->
+                    if(lifecycle!==session || summary!==data || session.finished || session.stopRequested || destroyed)return@awaitValue
                     if(info.exerciseTrackedStatus!=ExerciseTrackedStatus.OWNED_EXERCISE_IN_PROGRESS) {
                         fail("A mérés megszakadt a háttérben.")
                     } else {
@@ -152,6 +147,7 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
                         ExerciseTrackedStatus.OTHER_APP_IN_PROGRESS -> fail("Másik alkalmazás már edzést mér. A TrainPilot nem szakította meg.")
                         ExerciseTrackedStatus.OWNED_EXERCISE_IN_PROGRESS -> {
                             session.confirmOwnership()
+                            lastUpdateReceivedAt=SystemClock.elapsedRealtime()
                             summary?.put("state",if(session.stopRequested)"ending" else if(appliedPause)"paused" else "active");persist()
                             scheduleSensorWatchdog()
                             if(session.stopRequested)end() else syncWorkoutPause()
@@ -228,7 +224,7 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
                 DataTypeAvailability.AVAILABLE -> "available"
                 DataTypeAvailability.ACQUIRING -> "acquiring"
                 DataTypeAvailability.UNAVAILABLE -> "unavailable"
-                else -> "unknown"
+                else -> "unavailable"
             }
             summary?.let { data ->
                 data.put("heartRateAvailability",status)

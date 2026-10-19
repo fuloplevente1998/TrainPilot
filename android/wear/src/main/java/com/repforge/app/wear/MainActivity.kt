@@ -99,7 +99,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                 if(activeId.isBlank()) {
                     val prev=WearHealthStore.load(this@MainActivity,currentWorkout.workoutId)
                     val now=android.os.SystemClock.elapsedRealtime()
-                    if(prev==null || (prev.optString("state")=="error" && now-lastHealthRetryAt>=10000L)) {
+                    if(wearShouldAutoRetryRecording(prev,now,lastHealthRetryAt)) {
                         lastHealthRetryAt=now
                         if(prev?.optString("state")=="error")WearHealthStore.retry(this@MainActivity,currentWorkout.workoutId)
                         startHealthIfEnabled()
@@ -284,7 +284,8 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             val hasLocation = wearHasLocationFailure(previous)
             val canRecover = !hasLocation || access.locationAvailable
             val cooldown = android.os.SystemClock.elapsedRealtime() - lastHealthRetryAt >= 5000L
-            if (canRecover && (cooldown || hasLocation || WearHealthFutures.isRecoverableHealthError(previous.optString("message")))) {
+            if (canRecover && cooldown && (hasLocation || WearHealthFutures.isRecoverableHealthError(previous.optString("message")))) {
+                lastHealthRetryAt=android.os.SystemClock.elapsedRealtime()
                 // Retry known startup or recoverable sensor failures with the corrected config; keep measured totals.
                 WearHealthStore.retry(this,current.workoutId)
                 previous=WearHealthStore.load(this,current.workoutId)

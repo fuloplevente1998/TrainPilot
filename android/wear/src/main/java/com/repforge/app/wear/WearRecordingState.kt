@@ -27,6 +27,11 @@ internal fun wearHasLocationFailure(data: JSONObject): Boolean =
     data.optBoolean("locationPermissionRequired") || data.optBoolean("locationServicesRequired") ||
         WearHealthFutures.isMissingLocationError(data.optString("message"))
 
+/** Foreground recovery may retry transport failures, never permission/foreign-owner failures. */
+internal fun wearShouldAutoRetryRecording(data: JSONObject?,now: Long,lastAttempt: Long): Boolean =
+    data==null || data.optString("state")=="error" && !wearHasLocationFailure(data) &&
+        WearHealthFutures.isRecoverableHealthError(data.optString("message")) && now>=lastAttempt && now-lastAttempt>=10000L
+
 /** A provider's Missing permissions error can also mean the watch-wide switch is off. */
 internal fun wearApplyLocationFailure(data: JSONObject, access: WearRecordingAccess, providerMessage: String) {
     data.put("state","error").put("partial",true)

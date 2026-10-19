@@ -125,7 +125,7 @@ async function bootPage(page, base) {
       await page.waitForFunction(() => !!state.session);
       assert.ok(await page.evaluate(() => state.session !== null), `[${vp.name}] Workout session must be active`);
       assert.ok(await page.locator('.tp153-workout-head, .tp16-workout-head, .hero').count() > 0, `[${vp.name}] Active workout head must be present`);
-      assert.ok(await page.locator('.row .check').count() > 0, `[${vp.name}] Set check buttons must be rendered`);
+      assert.ok(await page.locator('.tp153-set-row .check').count() > 0, `[${vp.name}] Set check buttons must be rendered`);
 
       // Verify draft persistence
       const draftAfterStart = await page.evaluate(() => db.get('draft', null));
@@ -134,12 +134,12 @@ async function bootPage(page, base) {
       // =========================================================================
       // 2. SOROZAT KÉSZRE JELÖLÉSE (SET MARK COMPLETED)
       // =========================================================================
-      const firstCheck = page.locator('.row .check').first();
+      const firstCheck = page.locator('.tp153-set-row .check').first();
       assert.equal(await firstCheck.innerText(), 'OK', `[${vp.name}] Uncompleted set button text must be OK`);
       assert.equal(await firstCheck.evaluate(e => e.classList.contains('done')), false, `[${vp.name}] Initial set must not have .done class`);
 
       // Fill custom weight and reps
-      const firstRow = page.locator('.row').first();
+      const firstRow = page.locator('.tp153-set-row').first();
       const weightField = firstRow.locator('input[aria-label*="kg"], input[inputmode="decimal"]').first();
       const repsField = firstRow.locator('input[inputmode="numeric"]').first();
       if (await weightField.count() > 0) {
