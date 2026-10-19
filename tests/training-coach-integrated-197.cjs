@@ -1,6 +1,11 @@
 const assert=require('node:assert/strict');
 const runtime=require('./helpers/app-runtime.cjs')();
 const {run}=runtime;
+// Compatibility mode runs each canonical section as a separate script; load the new section explicitly if needed.
+if(run('typeof tp197CoachInfo')==='undefined'){
+ const fs=require('node:fs');
+ run(fs.readFileSync('www/training-coach-197.js','utf8'));
+}
 assert.equal(run("tp197CoachInfo('goblet-squat','home-basic')"),null);
 run("tp197TrainingModes=()=>({schemaVersion:1,programId:'home-basic',explicitChoice:true,source:'program',trainingStyle:'normal',progressionMode:'linear'})");
 run("tp197ExercisePreview=()=>({handled:true,action:'increase',reasonCode:'linear-stable-performance',historyCount:2,baseline:{weight:10,sets:3},proposed:{weight:12,sets:3}})");
