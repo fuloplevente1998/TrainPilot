@@ -1,6 +1,6 @@
 # #197 – Edzésstílusok és progressziós módok: kiinduló audit és adatmodell-terv
 
-Állapot: **1/7 – jelenlegi működés feltérképezve (2026-10-19)**. Ez a dokumentum a `feat/197-training-styles-progression` fejlesztési ághoz tartozik; nem jelent kész, bekapcsolt funkciót vagy kiadási jóváhagyást.
+Állapot: **2/7 – feloldó és célzott Node-regresszió implementálva (2026-10-19)**. A GitHub Actions teljes ellenőrzésének eredménye ettől külön követendő. Ez a dokumentum a `feat/197-training-styles-progression` fejlesztési ághoz tartozik; nem jelent kész, bekapcsolt funkciót vagy kiadási jóváhagyást.
 
 Kiinduló main: `1393982d48691489978a44652c61ff2b32514e8d` (#220). A meglévő #128 edzéstervezés/progresszió, a #206 GPS-tevékenységek és a Wear/napló megőrzése kötelező.
 
@@ -48,8 +48,19 @@ trainingModes197: {
 - Az erőfeszítés, fájdalom és regeneráció **minden** módban felülírhatja a javasolt emelést konzervatív irányba. A hiányzó RIR nem jelent 0 RIR-t.
 - HU/EN/DE/RO: érthető elkülönített stílus/mód választó és magyarázat; ne tegyünk edzésstílust a GPS-mérés képernyőjére.
 
-## Következő mikro-lépés (2/7)
+## Megvalósított 2/7 – validáló, csak olvasó feloldó
 
-Implementálni a **tiszta, csak olvasó, validáló** `tp197TrainingModes(programId)` feloldót, még UI és progressziós side effect nélkül. Bemenetek: hiányzó mentés, érvénytelen enum, globális alap, programfelülírás, tárolásból visszaolvasott értékek. Egységtesztek: legacy fallback, globális/program precedence, tiszta getter, nem változik a `programs/history/draft`. Csak ezek után kapcsoljuk hozzá a számítómotorhoz és a jóváhagyó előnézethez.
+- `www/app.js` → `// @section training-modes-197.js` – `tp197TrainingModes(programId=null)`. A függvény csak a `settings().trainingModes197` beállításokat olvassa, a visszatérési érték új, leválasztott objektum, és **nem változtat meg** tárolt beállításokat, programot, naplót, draftot vagy aktív edzést.
+- Visszatérő mezők: `schemaVersion`, `programId`, `trainingStyle`, `progressionMode`, `explicitChoice` és `source: 'legacy' | 'global' | 'program'`.
+- Öröklés: aktív session programja, ennek hiányában aktív program; explicit programválasztás megelőzi az explicit globális választást; `explicitChoice:false` programérték visszaenged a globálisra.
+- Legacy fallback: `{ trainingStyle:'normal', progressionMode:'double', explicitChoice:false, source:'legacy' }`. A verzió nélküli, hiányos, érvénytelen vagy nem jóváhagyott beállítás **nem** aktivál új algoritmust.
+- Sérült programfelülírás (ismeretlen mód / hiányzó jóváhagyás / `null`) esetén legacy fallback, **nem** csendes globális mód. A `byProgram` csak saját kulcs alapján olvasható.
+- `tests/training-modes-197.cjs`: részletes Node/VM-teszt a tényleges `app.js` részletből, a fő tesztcsomagban automatikusan fut (`scripts/test.cjs` a sectionöket bontja). Legacy, globális/program, session ownership, hibás adat, backup JSON oda-vissza, és változatlan settings/program/history/draft.
 
-**Nem történt:** app UI-átállítás, súlyemelés-módosítás, verzióemelés, APK-build, `main` merge.
+**Nincs** még beállítási UI, módváltási előnézet, önálló HIT/lineáris/RIR számítás, illetve automatikus terhelésmódosítás. A `main` nem változott, nincs verzióemelés.
+
+## Következő mikro-lépés (3/7)
+
+Konzervatív és tesztelhető **dupla, lineáris, RIR** javaslatok elkülönítése: tiszta javaslat-adat, továbbra is `autoApply:false` amíg a felhasználó nem fogadja el az előnézetet. A régi `source:'legacy'` út érintetlen marad; fájdalom, alacsony readiness, hiányzó RIR és idegen programhoz tartozó előzmény blokkolja az emelést.
+
+**A 2/7 lépés végén még nincs:** új Coach/UI algoritmus, súlyváltoztatás, verzióemelés, APK, `main` merge.
