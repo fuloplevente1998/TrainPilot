@@ -4,6 +4,29 @@ Frissítve: **2026-10-19, Europe/Budapest**. Először a gyökérben található
 [AGENTS.md](../AGENTS.md) olvasandó; utána ez a rövid aktuális átadás.
 Az alábbi állapotot induláskor GitHubon ellenőrizd. A hosszú régi naplók történetiek.
 
+## Legújabb készülékes eredmény – GPS-rész elfogadva
+
+A felhasználó: **„most volt gps adat, terkep is megjelent”**, a GPS-részt
+lezárhatónak tartja. Ezt készülékes pozitív elfogadásként rögzítettük a #193 és
+#213 tetején; a régebbi „nincs térkép / igazolatlan” állapotok történetiek.
+A felhasználó külön megerősítette: **az átadás és visszavétel is jó**.
+Ezzel a teljes #193 készülékes elfogadása megvan; lezárás és a korábban
+engedélyezett #213 main-integráció következik. A pontos GitHub-állapotot ellenőrizd.
+
+**Új, jóváhagyott UI-feladat: [#216](https://github.com/fuloplevente1998/TrainPilot/issues/216).**
+Kültéri futás/séta indításánál látható GPS-útvonal választás, első tudatos
+engedélyezés után megjegyzett preferencia és automatikus indítás a következő
+megfelelő edzésnél; futó képernyőn GPS-állapot és közvetlen kezelés. Beltéri/
+súlyzós kivétel, engedély és rendszerhely kezelése, tulajdonosi/adatvédelmi
+szabályok megőrzése. Gyors edzés a menü elején, aktív edzés folytatása releváns
+esetben elsődleges; további órás menüpontok következetes rendezése.
+Ez külön megvalósítandó funkció, nem kész UI és nem GPS-adatút újrafejlesztése.
+
+A #215 külön telefonos Intervallumok-ág; a felhasználó kifejezetten pontosította,
+hogy **nem annak APK-jával tesztelte a GPS-t**. A számlálók hiányát nem szabad
+ellenőrzés nélkül a #215 telepítésére fogni. A #212 korona/lünetta része külön
+hátralévő feladat. Main-merge és 1.3.6 emelés ebben a rögzítési körben nem történt.
+
 ## Legfrissebb átadás – GPS-diagnosztikai APK-pár, minden kapu zöld
 
 **A készülékes térképhiba oka még nincs bizonyítva vagy készre javítva.** Most

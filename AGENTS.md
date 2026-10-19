@@ -72,8 +72,11 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
   visszatérése nem indíthat néma tulajdonosváltást vagy párhuzamos időzítőt.
 - Explicit telefonos félbehagyás szüneteltet; háttérbe kerülés/kijelzőlezárás
   önmagában nem félbehagyás. Órás tulajdonos telefonos tükre csak olvasható.
-- GPS külön tudatos indítás. App pontos helyengedélye és rendszerhely két külön
-  feltétel. GPS-hiba mellett az edzés/stopper működjön tovább; ne találj ki pontot.
+- GPS-útvonal első engedélyezése tudatos döntés. A #216-ban jóváhagyott következő
+  működés: indításnál látható, megjegyzett GPS-választás; a következő megfelelő
+  kültéri edzés kifejezett indítása után automatikus rögzítés. Ez még külön
+  megvalósítandó, nem már kész képesség. App pontos helyengedélye és rendszerhely
+  két külön feltétel. GPS-hiba mellett az edzés/stopper működjön tovább; ne találj ki pontot.
 - Koordináták privát natív tárban, felhőmentésből kizárva. Nyugtáig tartós outbox,
   deduplikálás, szakaszhatárok; törlés után késői szinkron nem támaszthat fel adatot.
 - A már elfogadott piros X bezárást ne cseréld automatikusan semleges körgombra.
