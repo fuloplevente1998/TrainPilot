@@ -836,7 +836,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         WearStopwatchStore.pause(this)
         // Navigation is preparation, not an explicit rest-skip command. Keep the
         // original deadline/automatic rest phase and its owner unchanged.
-        val latest = workout.value ?: return
+        val latest = WorkoutSnapshotStore.load(this) ?: return
         workout.value = WorkoutSnapshotStore.saveWorkout(this, latest.selectExercise(index))
         restoreRestFromSnapshot(workout.value)
         sendCommand("selectExercise", exerciseIndex = index)
