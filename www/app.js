@@ -19246,6 +19246,42 @@ window.addEventListener?.('DOMContentLoaded',function(){
 })();
 // @endsection distance-activity-flow-220.js
 
+// @section training-modes-197.js
+/* #197: read-only mode resolver. Explicitly chosen modes are not yet wired to
+ * Coach or workout prescriptions; an absent/invalid selection is legacy. */
+var tp197TrainingModes=function tp197TrainingModes(programId=null){
+ const has=(obj,key)=>Object.prototype.hasOwnProperty.call(obj,key);
+ const object=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
+ const defaults={trainingStyle:'normal',progressionMode:'double'};
+ const valid=choice=>object(choice)&&
+  (choice.trainingStyle==='normal'||choice.trainingStyle==='hit')&&
+  (choice.progressionMode==='double'||choice.progressionMode==='linear'||choice.progressionMode==='rir');
+ const pid=typeof programId==='string'&&programId.trim()?programId:
+  (state.session?.programId||(typeof activeProgramId==='function'?activeProgramId():null)||null);
+ const result=(choice,source)=>({
+  schemaVersion:1,programId:pid,trainingStyle:choice.trainingStyle,
+  progressionMode:choice.progressionMode,explicitChoice:source!=='legacy',
+  source
+ });
+ const legacy=()=>result(defaults,'legacy');
+ const saved=settings()?.trainingModes197;
+ if(!object(saved)||saved.schemaVersion!==1||typeof saved.explicitChoice!=='boolean'||!valid(saved.defaults))return legacy();
+ // A program's explicit choice wins. A malformed override never silently
+ // enables the global policy in its place.
+ const by=object(saved.byProgram)?saved.byProgram:null;
+ const override=by&&typeof pid==='string'&&has(by,pid)?by[pid]:null;
+ if(override!==null){
+  if(!object(override)||typeof override.explicitChoice!=='boolean')return legacy();
+  if(override.explicitChoice){
+   if(!valid(override))return legacy();
+   return result(override,'program');
+  }
+ }
+ if(saved.explicitChoice)return result(saved.defaults,'global');
+ return legacy();
+};
+// @endsection training-modes-197.js
+
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
 // @endsection ready.js
