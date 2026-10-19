@@ -65,10 +65,10 @@ const server=http.createServer((req,res)=>{
   assert.equal(await plankPanel.locator('input[name="rounds"]').count(),1,'rounds input present');
   assert.equal(await plankPanel.locator('input[name="autoAdvance"]').count(),1,'autoAdvance checkbox present');
   const minTarget=await page.evaluate(()=>{
-   const inputs=[...document.querySelectorAll('#tp107Indoor input, #tp107Indoor button')].filter(x=>x.offsetParent);
+   const inputs=[...document.querySelectorAll('#tp107Indoor input:not([type=checkbox]), #tp107Indoor button')].filter(x=>x.offsetParent);
    return Math.min(...inputs.map(x=>Math.round(x.getBoundingClientRect().height)));
   });
-  assert.ok(minTarget>=12,'form inputs rendered properly');
+  assert.ok(minTarget>=44,`form fields and buttons retain 44px targets (got ${minTarget})`);
 
   // Collapse back
   await plankPanel.locator('.tp110-interval>summary').click();
@@ -116,15 +116,36 @@ const server=http.createServer((req,res)=>{
   });
   assert.ok(largeMetrics.overflowX<=3,'no horizontal overflow under large text mode');
 
-  // Verify bilateral timer functionality survives
-  await page.locator('#tp1481SideToggle-left').click();
-  await page.waitForTimeout(500);
-  await page.locator('#tp1481SideToggle-left').click();
-  const leftStored=await page.evaluate(()=>{
-   const e=state.session.exercises[state.current],s=e.sets.find(x=>!x.done);
-   return Number(s.leftSeconds||0);
+  // A compact presentation must not enable the single-clock native engine
+  // for bilateral sets: it cannot validate both left and right recordings.
+  const nativeProbe=await page.evaluate(async()=>{
+   let calls=0;
+   const previous=window.Capacitor;
+   window.Capacitor={isNativePlatform:()=>true,Plugins:{IntervalTimer:{start:async()=>{calls++;throw Error('bilateral native timer must not start');}}}};
+   try{
+    const started=await window.TrainPilotIntervals162.startConfigured({work:1,rest:0,rounds:1,sound:false,vibration:false,autoAdvance:true});
+    const set=state.session.exercises[state.current].sets.find(x=>!x.done);
+    return {started,calls,done:set.done,left:Number(set.leftSeconds||0),right:Number(set.rightSeconds||0)};
+   }finally{window.Capacitor=previous;}
   });
-  assert.ok(leftStored>=0,'bilateral timer persists seconds correctly');
+  assert.equal(nativeProbe.started,false,'single-clock intervals reject bilateral sets');
+  assert.equal(nativeProbe.calls,0,'no native single-clock start for bilateral sets');
+  assert.equal(nativeProbe.done,false,'unmeasured bilateral set remains incomplete');
+  assert.equal(nativeProbe.left,0);assert.equal(nativeProbe.right,0);
+
+  // Both manual side clocks must persist positive seconds independently.
+  for(const side of ['left','right']){
+   await page.locator('#tp1481SideToggle-'+side).click();
+   await page.waitForFunction(side=>{
+    const set=state.session.exercises[state.current].sets.find(x=>!x.done);
+    return Number(set?.[side+'Seconds']||0)>=1;
+   },side);
+   await page.locator('#tp1481SideToggle-'+side).click();
+   const stored=await page.evaluate(()=>state.session.exercises[state.current].sets.find(x=>!x.done));
+   assert.ok(Number(stored[side+'Seconds'])>=1,side+' timer persists positive seconds');
+   assert.equal(stored.done,false,'recording a side does not bypass explicit set completion');
+   if(side==='left')assert.equal(Number(stored.rightSeconds||0),0,'left clock leaves right side unrecorded');
+  }
 
   console.log('PASS #212: compact intervals UI on plain and side plank; touch targets and stopwatches verified');
  }finally{

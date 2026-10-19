@@ -4,6 +4,18 @@ Frissítve: **2026-10-19, Europe/Budapest**. Először a gyökérben található
 [AGENTS.md](../AGENTS.md) olvasandó; utána ez a rövid aktuális átadás.
 Az alábbi állapotot induláskor GitHubon ellenőrizd. A hosszú régi naplók történetiek.
 
+## Aktuális #215 – telefonos kompakt Intervallumok integráció
+
+A felhasználó 2026-10-19-én kifejezetten kérte a felület mainre vitelét és a
+#215 lezárását. Friss main beemelve. Az átvizsgáláskor talált P1 javítva: az
+oldalankénti gyakorlat csak megjelenítésben kap kompakt panelt, a generikus
+natív egyórás intervallummotor továbbra sem fogadja el; nem jelölhet készre
+0/0 másodperces kétoldali sorozatot. A böngészős regresszió valódi pozitív
+másodperceket vár mindkét oldalon és legalább 44px mező/gomb magasságot mér.
+Célzott Node reprodukció zöld; teljes kapuk GitHub Actionsön, eredményüket
+merge előtt ellenőrizni kell. GPS/Wear/verzió nem módosult a mainhez képest.
+#212 nyitva marad: korona/lünetta szerkesztés még hátra van. #216 külön feladat.
+
 ## Legújabb készülékes eredmény – GPS-rész elfogadva
 
 A felhasználó: **„most volt gps adat, terkep is megjelent”**, a GPS-részt
