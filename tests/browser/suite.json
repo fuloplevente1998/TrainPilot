@@ -398,5 +398,9 @@
   {
     "file": "tests/browser/ui-core-flows-automation.cjs",
     "estimatedSeconds": 6
+  },
+  {
+    "file": "tests/browser/compact-intervals-212.cjs",
+    "estimatedSeconds": 5
   }
 ]

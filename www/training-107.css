@@ -226,4 +226,27 @@ html body #app .tp-cardio-daily{margin-top:18px!important;padding:12px!important
 #tp106Steps .small:empty{display:none}
 #tp106Steps .btn{min-height:48px;padding:7px 8px;font-size:13px;line-height:1.25;white-space:normal;overflow-wrap:anywhere}
 #tp106Steps [hidden]{display:none!important}
+
+/* #212 compact intervals UI: tighten collapsed Intervals card for plain plank
+   and per-side bilateral plank, eliminating excessive empty vertical space
+   while maintaining button touch targets (>=44px) and full form accessibility. */
+#tp107Indoor:not(.tp206-activity){padding:10px 12px!important;margin:10px 0!important}
+#tp107Indoor:not(.tp206-activity)>strong:first-child{display:none!important}
+#tp107Indoor:not(.tp206-activity) .tp107-clock{font-size:26px!important;line-height:1.15!important;margin:2px 0 6px!important}
+#tp107Indoor:not(.tp206-activity) .tp107-save-row{margin:6px 0!important;gap:8px!important}
+#tp107Indoor:not(.tp206-activity) .tp107-save-row .btn{min-height:44px!important;padding:8px 10px!important;font-size:14px!important}
+#tp107Indoor p[data-tp107-clock-status]:empty{display:none!important}
+#tp107Indoor p[data-tp107-clock-status]{margin:3px 0!important;font-size:11px!important}
+#tp107Indoor:not(.tp206-activity) .tp110-interval{margin-top:6px!important;border-top:1px solid color-mix(in srgb,var(--line) 80%,transparent)!important;padding-top:2px!important}
+#tp107Indoor:not(.tp206-activity) .tp110-form input:not([type=checkbox]){min-height:44px}
+#tp107Indoor:not(.tp206-activity) .tp110-interval>summary{padding:8px 0!important;min-height:44px!important}
+#tp107Indoor>.tp110-interval-phase:not(:has([data-tp110-phase]:not(:empty),[data-tp110-remaining]:not(:empty))){display:none!important}
+#tp107Indoor>.tp110-interval-phase{margin:4px 0!important;line-height:1.3!important}
+
+#tp107Indoor.tp212-bilateral{padding:0 12px!important;margin:8px 0!important}
+#tp107Indoor.tp212-bilateral:not(:has([data-tp162-stop]:not([hidden]))) .tp107-clock,
+#tp107Indoor.tp212-bilateral:not(:has([data-tp162-stop]:not([hidden]))) .tp107-save-row{display:none!important}
+#tp107Indoor.tp212-bilateral .tp110-interval{margin-top:0!important;border-top:none!important;padding-top:0!important}
+#tp107Indoor.tp212-bilateral .tp110-interval>summary{padding:10px 0!important;min-height:44px!important}
+
 @media(max-width:340px){#tp107Indoor.tp206-activity{padding:8px!important}#tp107Indoor.tp206-activity .tp206-actions{gap:6px}#tp107Indoor.tp206-activity .tp206-actions .btn{min-height:48px;font-size:12px;padding:7px 4px!important}}
