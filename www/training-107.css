@@ -238,6 +238,7 @@ html body #app .tp-cardio-daily{margin-top:18px!important;padding:12px!important
 #tp107Indoor p[data-tp107-clock-status]:empty{display:none!important}
 #tp107Indoor p[data-tp107-clock-status]{margin:3px 0!important;font-size:11px!important}
 #tp107Indoor:not(.tp206-activity) .tp110-interval{margin-top:6px!important;border-top:1px solid color-mix(in srgb,var(--line) 80%,transparent)!important;padding-top:2px!important}
+#tp107Indoor:not(.tp206-activity) .tp110-form input:not([type=checkbox]){min-height:44px}
 #tp107Indoor:not(.tp206-activity) .tp110-interval>summary{padding:8px 0!important;min-height:44px!important}
 #tp107Indoor>.tp110-interval-phase:not(:has([data-tp110-phase]:not(:empty),[data-tp110-remaining]:not(:empty))){display:none!important}
 #tp107Indoor>.tp110-interval-phase{margin:4px 0!important;line-height:1.3!important}
