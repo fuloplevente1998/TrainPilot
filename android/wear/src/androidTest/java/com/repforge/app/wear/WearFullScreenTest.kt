@@ -638,7 +638,8 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         compose.onNodeWithTag("wear-round-list").performTouchInput { swipeDown() }
         compose.onNodeWithContentDescription("Edzés indítása").assertIsDisplayed()
         compose.onNodeWithTag("wear-round-list").performTouchInput { swipeUp() }
-        compose.onNodeWithContentDescription("Mini napló").assertIsDisplayed()
+        // The active-workout menu now opens with Resume; Journal is farther down.
+        compose.onNodeWithContentDescription(WearMenu216.text("resume")).assertIsDisplayed()
     }
 
     @Test
