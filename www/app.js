@@ -19537,6 +19537,8 @@ document.head.appendChild(tp197Css);
 /* #197 step 5/7: two-stage approval, safe persistence and one-step undo.
  * Separate from the canonical app.js section to avoid changing legacy runtime logic.
  * The Coach continues to use preview-only #197 recommendations until step 6/7. */
+// These handlers are assigned in strict mode; declare the globals before binding them.
+var tp197UiCancel,tp197UiRequestSave,tp197UiApprove,tp197UiUndo;
 (function(){
  'use strict';
  if(typeof tp197UiPanel!=='function'||typeof tp197UiChoice!=='function')return;
