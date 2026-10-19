@@ -1,6 +1,9 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
-const code=fs.readFileSync(path.resolve(__dirname,'../www/training-mode-confirm-197.js'),'utf8');
+const isolated=path.resolve(__dirname,'../www/training-mode-confirm-197.js'),app=path.resolve(__dirname,'../www/app.js');
+const full=fs.readFileSync(fs.existsSync(isolated)?isolated:app,'utf8');
+const code=fs.existsSync(isolated)?full:full.match(/^\/\/ @section training-mode-confirm-197\.js\n([\s\S]*?)^\/\/ @endsection training-mode-confirm-197\.js$/m)?.[1];
+assert.ok(code,'Canonical #197 confirmation section missing');
 const originals={
  programs:[{id:'p-1',prescriptions:{pushup:{sets:3,reps:10,weight:20}}}],
  history:[{id:'logged',done:true,weight:20}],
