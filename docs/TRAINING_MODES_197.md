@@ -1,6 +1,6 @@
 # #197 – Edzésstílusok és progressziós módok: kiinduló audit és adatmodell-terv
 
-Állapot: **4/7 – a többnyelvű módválasztó és kizárólag olvasható előnézet implementálva (2026-10-19)**. A GitHub Actions teljes ellenőrzésének eredménye ettől külön követendő. Ez a dokumentum a `feat/197-training-styles-progression` fejlesztési ághoz tartozik; nem jelent kész, bekapcsolt funkciót vagy kiadási jóváhagyást.
+Állapot: **5/7 – előnézet, külön jóváhagyás, atomikus módmentés és visszavonás implementálva (2026-10-19)**. A GitHub Actions teljes ellenőrzésének eredménye ettől külön követendő. Ez a dokumentum a `feat/197-training-styles-progression` fejlesztési ághoz tartozik; nem jelent kész, bekapcsolt funkciót vagy kiadási jóváhagyást.
 
 Kiinduló main: `1393982d48691489978a44652c61ff2b32514e8d` (#220). A meglévő #128 edzéstervezés/progresszió, a #206 GPS-tevékenységek és a Wear/napló megőrzése kötelező.
 
@@ -87,3 +87,15 @@ Konzervatív és tesztelhető **dupla, lineáris, RIR** javaslatok elkülönít�
 - Az aktuális UI-választás **csak memóriában** (`tp197UiPending`) él; nem kerül a `settings`, `programs`, `history`, `draft`, backup, Wear vagy Drive adatmodellbe. Visszaállítás lehetséges. Nincs alkalmazás vagy jóváhagyás; azt az 5/7 lépés implementálja.
 - Új tesztek: `tests/training-mode-ui-197.cjs` (öröklés, többnyelvű feliratok, tilos mentés, program-scope izoláció), `tests/browser/training-modes-ui-197.cjs` (mobil és a működő alkalmazásban való ellenőrzés).
 - Ebből a változatból a #184-es Samsung pontszámot sem olvassuk közvetlenül, az integráció később külön PR-ben lesz.
+
+## 5/7 – Megerősített, visszavonható módváltás
+
+- Kanonikus forrás: `www/app.js` → `training-mode-confirm-197.js` szekció; egyetlen app.js runtime-script, nincs külön JS-behúzás vagy indítási regresszió.
+- A globális/programbeállítási előnézet továbbra is csak a `tp197UiPending` memóriában él. **Mentés** külön jóváhagyó felületet nyit; csak a **Jóváhagyom a módváltást** gomb után van egyetlen `db.set('settings',...)`. **Mégse** az adott scope előnézetét eldobja; választás-változtatás vagy közben megváltozott beállítás érvényteleníti a régi jóváhagyást.
+- A `settings.trainingModes197` v1 sémában a globális `defaults` és a `byProgram[programId]` elkülönül. `explicitChoice:true` nélkül a legacy út aktív; a mentés csak a felhasználó választott scope-ját módosítja, `updatedAt` és `revision` metaadattal.
+- A legutóbbi mentett változás egyetlen szinten **visszavonható**; a mentés előtti módbeállítás a `undo.previous` részben van, az előzmény nem halmozódik rekurzívan. Korábbi legacy állapot esetén a visszavonás teljesen eltávolítja az új módbeállítást.
+- Aktív (szünetelő is) edzés közben módmentés vagy visszavonás **tiltva**; program scope esetén a programazonosító és aktív program egyezése kötelező. A programrecept, korábbi napló, teljesített sorozatok, draft, GPS/Wear és Samsung-adatok nem változnak.
+- HU/EN/DE/RO gombok és visszajelzések; célzott Node és 103 elemű Chromium tesztsuite: `tests/training-mode-confirm-197.cjs`, `tests/browser/training-mode-confirm-197.cjs`.
+- **Határ**: a módbeállítás mentése nem kapcsolja át a meglévő Coach automatikus terhelésalkalmazását; ezt a következő **6/7** lépés fogja explicit jóváhagyáshoz kötni. Nincs verzióemelés, nincs main-merge, nincs #184-es Samsung SDK-kapcsolat.
+
+A CI-eredményt commitonként kell ellenőrizni, és csak azonos HEAD-en sikeres kapuk után zárható le a 5/7.
