@@ -17686,6 +17686,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
   db.set('draft',null);
   stopTimer();
   const finishedSession=state.session;
+  if(finishedSession?.scheduleId&&typeof scheduled==='function'){
+   const items=scheduled(),i=items.findIndex(x=>x.id===finishedSession.scheduleId);
+   if(i>=0){items[i]={...items[i],status:'completed',updatedAt:Date.now()};db.set('scheduled',items);}
+  }
   state.session=null;
   state.workout=null;
   if(state.tab==='plan'){state.tab='home';render();}else render();
