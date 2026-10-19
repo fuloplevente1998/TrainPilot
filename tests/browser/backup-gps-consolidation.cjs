@@ -50,7 +50,7 @@ const server=http.createServer((req,res)=>{
    await page.locator('#tp106GpsButton').click();await page.waitForFunction(()=>tp106GpsState.active&&!tp106GpsBusy);
    await page.locator('.tp163-live-dialog .tp163-close').click(); // New modal is UI-only; keep the legacy set-management test interactive.
    await page.evaluate(async()=>{window.__gps.distanceMeters=100;window.__gps.elapsedSeconds=30;await tp106SyncGPS();});
-   await page.locator('.tp-active-set-remove').first().click();
+   await page.locator('.tp220-manual > summary').click();await page.locator('.tp-active-set-remove').first().click();
    await page.waitForFunction(()=>state.session.exercises[0].sets.length===1&&!tp106GpsBusy);
    const removed=await page.evaluate(async()=>{
     window.__gps.distanceMeters=200;window.__gps.elapsedSeconds=60;await tp106SyncGPS();
