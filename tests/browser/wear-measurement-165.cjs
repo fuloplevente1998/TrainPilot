@@ -51,7 +51,7 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const pathna
   });
   assert.equal(await page.evaluate(()=>history()[0].healthWear129.totalCalories),7,'phone save keeps the live Wear measurement');
   await page.evaluate(async()=>{
-   wear165Payload={...wear165Payload,revision:++wear165Revision,state:'ended',updatedAt:Date.now(),summary:{...wear165Payload.summary,revision:wear165Revision,state:'ended',averageHeartRate:109,minHeartRate:80,heartRateSamples:12,steps:123,distanceMeters:150,maxSpeedMps:3,totalCalories:9}};
+   wear165Payload={...wear165Payload,revision:++wear165Revision,state:'ended',updatedAt:Date.now(),summary:{...wear165Payload.summary,revision:wear165Revision,state:'ended',averageHeartRate:109,minHeartRate:80,heartRateSamples:12,steps:123,distanceMeters:150,maxSpeedMps:3,totalCalories:9,gpsRoute193:{schema:1,state:'stopped',receivedFixes:5,savedPoints:0,lastRejection:'filtered'}}};
    await TrainPilotWearSync.drainCommands();
   });
   assert.equal(await page.evaluate(()=>history()[0].healthWear129.totalCalories),9,'late live final updates the saved Journal');
@@ -60,6 +60,9 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const pathna
   assert.match(await page.evaluate(()=>rfHistoryHealthHtml(0)),/9 kcal/);
   assert.match(await page.evaluate(()=>rfHistoryHealthHtml(0)),/150 m/);
   assert.match(await page.evaluate(()=>rfHistoryHealthHtml(0)),/10,8 km\/h/);
+  assert.equal(await page.evaluate(()=>history()[0].healthWear129.gpsRoute193.savedPoints),0,'GPS zero is separate from the 150 m Health Services total');
+  const gpsHtml=await page.evaluate(()=>rfHistoryHealthHtml(0));
+  assert.match(gpsHtml,/tp193-gps-counts/);assert.match(gpsHtml,/<strong>5<\/strong>/);assert.match(gpsHtml,/<strong>0<\/strong>/);
   assert.deepEqual(errors,[]);console.log('PASS Wear measurement UI: 8 language/width combinations, real live pulse/energy, paused/error state, escaped errors, manual handoff retry and unchanged sets');
  } finally {await browser?.close();server.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;server.close()});

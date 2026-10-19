@@ -59,6 +59,7 @@ object WearHealthStore {
     }
     @Synchronized fun save(context: Context, value: JSONObject) {
         val id=value.optString("workoutId"); if(id.isBlank())return
+        WearGps193.summary(context,id)?.let { value.put("gpsRoute193",it) }
         value.put("revision",value.optLong("revision")+1).put("updatedAt",System.currentTimeMillis())
         val prefs=context.getSharedPreferences(PREFS,0)
         val ids=prefs.getStringSet("ids",emptySet())!!.toMutableSet();ids.add(id)

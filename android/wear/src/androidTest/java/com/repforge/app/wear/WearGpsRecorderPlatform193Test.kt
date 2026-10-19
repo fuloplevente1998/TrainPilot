@@ -61,12 +61,25 @@ class WearGpsRecorderPlatform193Test {
                     elapsedRealtimeNanos=(elapsed-8000+i*4000)*1000000;time=wall-8000+i*4000
                 })
                 assertEquals(3,WearGps193.spool(context).active().getJSONArray("points").length())
+                assertEquals(3,WearGps193.status(context,id).getInt("receivedFixes"))
+                assertEquals(3,WearGps193.summary(context,id)!!.getInt("savedPoints"))
+                service.onLocationChanged(Location("gps").apply {
+                    latitude=47.0002;longitude=19.0;accuracy=5f
+                    elapsedRealtimeNanos=(SystemClock.elapsedRealtime()-20000)*1000000;time=System.currentTimeMillis()-20000
+                })
+                assertEquals(4,WearGps193.status(context,id).getInt("receivedFixes"))
+                assertEquals("stale",WearGps193.status(context,id).getString("lastRejection"))
+                val health=WearHealthStore.begin(context,id);WearHealthStore.save(context,health)
+                val report=WearHealthAccumulator(health).snapshot().getJSONObject("gpsRoute193")
+                assertEquals(4,report.getInt("receivedFixes"));assertEquals(3,report.getInt("savedPoints"))
+                assertFalse(report.toString().contains("latitude"))
                 assertFalse(context.getSharedPreferences("trainpilot_wear_route193",Context.MODE_PRIVATE).all.toString().contains("latitude"))
                 val saved=WorkoutSnapshotStore.load(context)!!
                 assertFalse(saved.currentSet!!.done);assertEquals("17",saved.currentSet!!.reps);assertEquals(200.0,saved.currentSet!!.distanceMeters,0.0)
                 WorkoutSnapshotStore.saveWorkout(context,saved.copy(workoutPaused=true))
                 service.onLocationChanged(Location("gps").apply { latitude=48.0;longitude=20.0;accuracy=5f;elapsedRealtimeNanos=SystemClock.elapsedRealtimeNanos();time=System.currentTimeMillis() })
                 assertFalse(WearGpsRouteService193.active(id));assertFalse(WearGps193.spool(context).active().has("meta"))
+                assertEquals(4,WearGps193.status(context,id).getInt("receivedFixes"))
                 val rows=JSONArray(context.getSharedPreferences("trainpilot_wear_outbox",0).getString("pending","[]"))
                 val pointers=(0 until rows.length()).map { rows.getJSONObject(it) }.filter { it.optString("workoutId")==id }
                 assertEquals(1,pointers.size);assertFalse(pointers[0].toString().contains("latitude"))

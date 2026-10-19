@@ -4,6 +4,83 @@ Frissítve: **2026-10-19, Europe/Budapest**. Először a gyökérben található
 [AGENTS.md](../AGENTS.md) olvasandó; utána ez a rövid aktuális átadás.
 Az alábbi állapotot induláskor GitHubon ellenőrizd. A hosszú régi naplók történetiek.
 
+## Legújabb készülékes eredmény – GPS-rész elfogadva
+
+A felhasználó: **„most volt gps adat, terkep is megjelent”**, a GPS-részt
+lezárhatónak tartja. Ezt készülékes pozitív elfogadásként rögzítettük a #193 és
+#213 tetején; a régebbi „nincs térkép / igazolatlan” állapotok történetiek.
+A felhasználó külön megerősítette: **az átadás és visszavétel is jó**.
+Ezzel a teljes #193 készülékes elfogadása megvan. **#213 mainre beolvasztva:
+`311f507e6e57246fddacfb845bd8e123584aa9c7`; #193 completed állapotban lezárva.**
+A főági új kapuk elindultak; Quick már zöld, a többi eredményét külön ellenőrizd.
+A main integráció ebben a körben nem emelt verziót.
+
+**Új, jóváhagyott UI-feladat: [#216](https://github.com/fuloplevente1998/TrainPilot/issues/216).**
+Kültéri futás/séta indításánál látható GPS-útvonal választás, első tudatos
+engedélyezés után megjegyzett preferencia és automatikus indítás a következő
+megfelelő edzésnél; futó képernyőn GPS-állapot és közvetlen kezelés. Beltéri/
+súlyzós kivétel, engedély és rendszerhely kezelése, tulajdonosi/adatvédelmi
+szabályok megőrzése. Gyors edzés a menü elején, aktív edzés folytatása releváns
+esetben elsődleges; további órás menüpontok következetes rendezése.
+Ez külön megvalósítandó funkció, nem kész UI és nem GPS-adatút újrafejlesztése.
+
+A #215 külön telefonos Intervallumok-ág; a felhasználó kifejezetten pontosította,
+hogy **nem annak APK-jával tesztelte a GPS-t**. A számlálók hiányát nem szabad
+ellenőrzés nélkül a #215 telepítésére fogni. A #212 korona/lünetta része külön
+hátralévő feladat. Main-merge megtörtént a fenti SHA-n, 1.3.6 emelés még nem történt.
+
+## Legfrissebb átadás – GPS-diagnosztikai APK-pár, minden kapu zöld
+
+**A készülékes térképhiba oka még nincs bizonyítva vagy készre javítva.** Most
+az órás GPS-rögzítés két számlálóját átadó diagnosztikai pár készült, 1.3.51 /2732:
+
+- Telefon `9b23da4`: [artifact 12158910613](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39186429768/artifacts/12158910613),
+  SHA-256 `608bb180f1ffefc43f6a4add286cac70acbfe1b73fa90566dd830a2dee6fa9fb`.
+- Wear `fca1554`: [artifact 12158282699](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39186518523/artifacts/12158282699),
+  SHA-256 `47e875b4d4f61eca90acfe07e1e49b9498678032ab0b1639eb1ee0136a3d3f2a`.
+- A két commit között a telefon www/Android/shared/build/verzió forrása változatlan;
+  a második csak a Wear-riportot korlátozza tényleges GPS-indítási kísérlethez.
+- Quick 39186522763, Performance 39186522768, Ownership 39186522947: sikeres.
+- Telefon 39186429768: Chromium **6/6**, JVM **243/243**; Wear 39186518523:
+  JVM **152/152**; ownership **81/81**; kerek UI/platform 39186518543 **163/163**.
+  Minden XML: 0 failure/error/skipped. A kibővített GPS-recorder tesztek sikeresek.
+- Mindkét APK eredeti aláírója ellenőrizve; telefonos app.js/index.html byteazonos
+  a bevizsgált forrással. [Bizonylat](builds/2026-10-19-watch-gps-diagnostic.json).
+
+**Mindkét app frissítendő, majd új órás GPS-mérés indítandó.** Az órán a
+GPS-útvonal képernyő már nullánál is mutatja a fogadott mintákat és mentett pontokat;
+a telefonon az új mérés Napló → Health adatok → TrainPilot óra kártyájában
+„GPS-minták az órán” és „Mentett GPS-pontok az órán” jelenik meg. Régi naplóhoz
+nem találunk ki utólag diagnosztikai adatot. Először e két érték szükséges,
+**újabb hosszú sétát nem kérünk találomra**. A GPS-szűrők nincsenek fellazítva,
+Health-távból nem rajzolunk koordinátát. #193/#213 nyitott, nincs main vagy
+verzióemelés; a telefonos GPS külön OK nélküli teljesítése továbbra is elfogadott.
+
+## Folyamatban – bizonyítható órás GPS-rögzítés vizsgálata
+
+A felhasználó újabb, azonos útvonalon végzett kb. egyperces próbáján sincs órás
+naplótérkép. A telefonos térkép működik, az óra Google Térképe is talál helyet.
+A képen **Napló → Health adatok → TrainPilot óra**: 69 m / 66,3 s / 82 lépés
+megérkezett. „Órán mért edzésadatok” nem külön menüpont, ezt korábban pontatlanul
+neveztük meg. A hardver/GPS-vételi hibát nem állítjuk, és újabb sétát nem kérünk
+konkrét diagnózis nélkül. A 60b0b5f csak késői UI-frissítést javít, a konkrét
+adatút hibáját nem bizonyítottan oldotta meg.
+
+Most célzott diagnosztikai tesztbuild készül, nem igazolt GPS-gyökérokjavítás:
+- Valódi Location-callbackek és tartósan mentett GPS-pontok külön számlálója;
+  a nulla is látható az óra GPS-útvonal képernyőjén.
+- A koordinátamentes számlálók/állapot az aktuális és végső Health-összesítésben
+  átjutnak a telefon **Health adatok → TrainPilot óra** kártyájába.
+- Szigorú telefonos mezőszűrés; koordináta nem kerül a diagnosztikai riportba.
+- Platformteszt: 3 mentett pont, egy elutasított régi minta külön látszik;
+  szünet utáni callback nem számolható bele. Node/böngészős regresszió:
+  pozitív Health-táv mellett nulla mentett GPS-pont látható, nem összemosva.
+Teljes ellenőrzés/új APK-pár GitHub Actions; verzió változatlan, nincs main-merge.
+
+A felhasználó közben másik agentnek átadhatja #212 **csak telefonos** kompakt
+Intervallumok részét: külön feat/212-compact-intervals ág a #213 ágából, draft PR,
+GPS/Wear/verzió módosítás és main-merge nélkül. Itt párhuzamos agent nem indult.
+
 ## Friss készülékes visszajelzés – a teszt még nem teljes elfogadás
 
 A felhasználó a kiadott 1.3.51 tesztpáron a **4. pontot elfogadta**: valóban

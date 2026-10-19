@@ -693,7 +693,8 @@ internal fun GpsRouteScreen193(
         centerItem { Text(text("consent"),color=Muted,fontSize=11.sp,textAlign=TextAlign.Center) }
         centerItem { Text(text(code),color=White,fontSize=13.sp,textAlign=TextAlign.Center) }
         val count=status?.optInt("points") ?: 0
-        if(count>0)centerItem { Text(text("points").replace("{count}",count.toString()),color=Muted,fontSize=12.sp,textAlign=TextAlign.Center) }
+        centerItem { Text(text("points").replace("{count}",count.toString()),color=Muted,fontSize=12.sp,textAlign=TextAlign.Center) }
+        centerItem { Text(text("received").replace("{count}",(status?.optInt("receivedFixes") ?: 0).toString()),color=Muted,fontSize=12.sp,textAlign=TextAlign.Center) }
         if(!allowed)centerItem { Text(text("distanceOnly"),color=Muted,fontSize=12.sp,textAlign=TextAlign.Center) }
         if(status?.optBoolean("running")!=true)centerItem { Pill(text("start"),enabled=allowed&&onStart!=null) { onStart?.invoke() } }
         if(status?.optBoolean("armed")==true)centerItem { Pill(text("stop"),enabled=onStop!=null,tone=Secondary) { onStop?.invoke() } }

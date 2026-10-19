@@ -89,7 +89,9 @@ class WearGpsRouteService193 : Service(),LocationListener {
             if(current.workoutId!=workoutId||!owned(current)||!eligible(current)||selected!=binding) { reconcile();return }
             val mock=if(Build.VERSION.SDK_INT>=31)location.isMock else location.isFromMockProvider
             val elapsed=location.elapsedRealtimeNanos/1000000L;val age=SystemClock.elapsedRealtime()-elapsed
-            if(mock||location.provider!=LocationManager.GPS_PROVIDER||!location.hasAccuracy()||age !in 0..15000) { sampler?.breakSegment();return }
+            val rejection=when {mock->"mock";location.provider!=LocationManager.GPS_PROVIDER->"provider";!location.hasAccuracy()->"accuracy";age !in 0..15000->"stale";else->""}
+            if(rejection.isNotEmpty()) { WearGps193.received(this,workoutId,rejection);sampler?.breakSegment();return }
+            WearGps193.received(this,workoutId,"filtered")
             val accepted=sampler?.add(location.latitude,location.longitude,location.accuracy.toDouble(),elapsed,location.time,if(location.hasSpeed())location.speed.toDouble()else Double.NaN)==true
             if(accepted) { totalPoints++;WearGps193.update(this,workoutId,"recording",totalPoints,location.accuracy.toDouble()) }
             else if(sampler?.partial()==true)finish(true,"storage")

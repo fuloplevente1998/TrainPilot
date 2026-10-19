@@ -17639,6 +17639,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const out={schema:1,workoutId:id,watchId:value.watchId,revision:value.revision,source:'wear_health_services',state:String(value.state||''),partial:value.partial===true,syncedAt:new Date().toISOString()};
   const limits={heartRate:[20,250],averageHeartRate:[20,250],minHeartRate:[20,250],maxHeartRate:[20,250],heartRateSamples:[0,10000000],totalCalories:[0,10000000],steps:[0,10000000],activeDurationSeconds:[0,604800],distanceMeters:[0,10000000],speedMps:[0,100],maxSpeedMps:[0,100]};
   for(const [key,[min,max]] of Object.entries(limits))if(value[key]!==undefined&&value[key]!==null){if(typeof value[key]!=='number'||!Number.isFinite(value[key])||value[key]<min||value[key]>max)return null;out[key]=value[key];}
+  const gps=value.gpsRoute193,states=['idle','acquiring','recording','paused','stopped','permission','locationOff','storage','unavailable','interrupted','deleted'];
+  if(gps?.schema===1&&states.includes(gps.state)&&['receivedFixes','savedPoints'].every(k=>Number.isSafeInteger(gps[k])&&gps[k]>=0&&gps[k]<=10000000)&&['','mock','provider','accuracy','stale','filtered'].includes(gps.lastRejection))
+   out.gpsRoute193={schema:1,state:gps.state,receivedFixes:gps.receivedFixes,savedPoints:gps.savedPoints,lastRejection:gps.lastRejection};
   return out;
  }
  function attachMeasuredHealth(command){
@@ -18093,9 +18096,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
    card(t('distance'),textMetric(wear.distanceMeters)?.concat(' m')??null),
    card(t('speed'),textMetric(wear.maxSpeedMps,1,0,100)===null?null:textMetric(wear.maxSpeedMps*3.6,1)?.concat(' km/h'))
   ].join('');
+  const gps=wear.gpsRoute193,words={hu:['GPS-minták az órán','Mentett GPS-pontok az órán'],en:['GPS fixes received on watch','GPS points saved on watch'],de:['GPS-Messungen auf der Uhr','Gespeicherte GPS-Punkte auf der Uhr'],ro:['Măsurători GPS primite pe ceas','Puncte GPS salvate pe ceas']}[lang()]||['GPS fixes received on watch','GPS points saved on watch'];
+  const gpsStats=gps?'<div class="rf-history-health-grid tp193-gps-counts">'+card(words[0],textMetric(gps.receivedFixes))+card(words[1],textMetric(gps.savedPoints))+'</div>':'';
   return tab+'<div class="rf-history-health-result tp160-wear-history">'+
    '<p class="small muted">'+esc(t('wearSource'))+'</p>'+
-   (stats?'<div class="rf-history-health-grid">'+stats+'</div>':'<p class="small muted">'+esc(t('empty'))+'</p>')+
+   (stats?'<div class="rf-history-health-grid">'+stats+'</div>':'<p class="small muted">'+esc(t('empty'))+'</p>')+gpsStats+
    (wear.partial?'<p class="small muted">'+esc(t('partial'))+'</p>':'')+
    '<p class="small muted">'+esc(t('energy'))+'</p></div>';
  }
