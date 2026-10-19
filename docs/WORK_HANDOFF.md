@@ -4,17 +4,30 @@ Frissítve: **2026-10-19, Europe/Budapest**. Először a gyökérben található
 [AGENTS.md](../AGENTS.md) olvasandó; utána ez a rövid aktuális átadás.
 Az alábbi állapotot induláskor GitHubon ellenőrizd. A hosszú régi naplók történetiek.
 
-## Aktuális #215 – telefonos kompakt Intervallumok integráció
+## #215 lezárva – kompakt Intervallumok mainen
 
-A felhasználó 2026-10-19-én kifejezetten kérte a felület mainre vitelét és a
-#215 lezárását. Friss main beemelve. Az átvizsgáláskor talált P1 javítva: az
-oldalankénti gyakorlat csak megjelenítésben kap kompakt panelt, a generikus
-natív egyórás intervallummotor továbbra sem fogadja el; nem jelölhet készre
-0/0 másodperces kétoldali sorozatot. A böngészős regresszió valódi pozitív
-másodperceket vár mindkét oldalon és legalább 44px mező/gomb magasságot mér.
-Célzott Node reprodukció zöld; teljes kapuk GitHub Actionsön, eredményüket
-merge előtt ellenőrizni kell. GPS/Wear/verzió nem módosult a mainhez képest.
-#212 nyitva marad: korona/lünetta szerkesztés még hátra van. #216 külön feladat.
+Felhasználói jóváhagyás: „Akkor a felüleletet vigyük mainre, ezt meg zárjuk”.
+**#215 merged: `c67006bb53f372a2db023c8b978e4d7e9c8ead06`**, bevizsgált PR-forrás
+`1f6938cf0d29eee1606210b076a6fdcc5326579d`; a merge alkalmazásforrása byteazonos.
+A sima/oldalsó plank Intervallumok része kompakt, a lenyitott számmezők legalább
+44px magasak. Az átvizsgáláskor talált P1 javítva: a kétoldali megjelenítés nem
+engedélyezi a generikus egyórás natív intervallummotort, 0/0 másodperces kétoldali
+sorozat nem válhat készre. A regresszió mindkét stopper pozitív időtárolását méri.
+
+Ellenőrzött GitHub kapuk:
+- Quick **39200372190**, Performance **39200372258**: sikeres.
+- Telefon **39200367153**: Chromium **6/6**, JVM XML **243/243**, 0 failure/error/skipped;
+  aláírt APK [artifact 12162689839](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39200367153/artifacts/12162689839).
+- Ownership **39200047859**: XML **81/81**; Wear release **39200017010**: XML **152/152**,
+  0 failure/error/skipped. A `0d18eba` után csak webes CSS változott, Android byteazonos.
+- Main kerek Wear UI/platform **39199260092**: XML **163/163**, 0 failure/error/skipped;
+  Wear/shared/build forrása a PR-hoz képest változatlan. A külön **39200017006**
+  újrafuttatás az integrációkor még futott; későbbi eredményét induláskor ellenőrizd.
+
+GPS/Wear/verzió nem módosult a korábbi mainhez képest: **1.3.51 /2732** maradt.
+**#212 nyitva marad**, a korona/lünetta szerkesztés még hátravan. A telefonos UI-rész
+mainen; új funkcióra nincs általános merge-engedély. Következő egyeztetett, külön
+feladat **#216**, az órás menük és látható GPS-választás; még nincs implementálva.
 
 ## Legújabb készülékes eredmény – GPS-rész elfogadva
 
