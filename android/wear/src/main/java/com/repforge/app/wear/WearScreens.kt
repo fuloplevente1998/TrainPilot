@@ -81,7 +81,7 @@ private val LocalUndo = compositionLocalOf<((String)->Unit)?> { null }
 private val LocalTouchLock189 = compositionLocalOf<(() -> Unit)?> { null }
 private val LocalEditorSave = compositionLocalOf<((String,Double,String)->Boolean)?> { null }
 private data class GpsLaunch216(val activityId: String, val start: () -> Unit)
-internal data class GpsShortcut216(val state: String, val open: () -> Unit)
+internal data class GpsShortcut216(val state: String, val restSeconds: Int = 0, val open: () -> Unit)
 internal val LocalGpsShortcut216 = compositionLocalOf<GpsShortcut216?> { null }
 private val LocalOwnership193 = compositionLocalOf<WearWorkout?> { null }
 
@@ -214,7 +214,7 @@ internal fun TrainPilotWearApp(
             }
     }
     CompositionLocalProvider(
-        LocalGpsShortcut216 provides GpsShortcut216(gpsRoute193?.value?.optString("state","idle") ?: "idle") { route="gpsRoute193" },
+        LocalGpsShortcut216 provides GpsShortcut216(gpsRoute193?.value?.optString("state","idle") ?: "idle",restRemaining.value) { route="gpsRoute193" },
         LocalWearHomeTheme provides (home.value?.theme ?: WearHomeTheme.DEFAULT),
         LocalAutomaticToggle provides onToggleAutomatic,
         LocalAutomaticCommand provides onAutomaticCommand,
@@ -1765,7 +1765,7 @@ private fun WorkoutPanel(
         ) {
             if(workout.ownershipProtocol193==1&&WearGps193.distance(workout.exercise))LocalGpsShortcut216.current?.let { shortcut ->
                 val code=shortcut.state.takeIf {it in listOf("idle","acquiring","recording","paused","stopped","permission","locationOff","storage","unavailable","interrupted","deleted")} ?: "idle"
-                Text("GPS: "+WearGpsText193.text(code),color=Gold,fontSize=10.sp,textAlign=TextAlign.Center,
+                Text((if(shortcut.restSeconds>0)WearMenu216.text("rest")+" "+formatSeconds(shortcut.restSeconds)+"\n" else "")+"GPS: "+WearGpsText193.text(code),color=Gold,fontSize=10.sp,textAlign=TextAlign.Center,
                     modifier=Modifier.fillMaxWidth().heightIn(min=40.dp).clickable(role=Role.Button,onClick=shortcut.open)
                         .testTag("wear-gps-shortcut216").padding(4.dp))
             }

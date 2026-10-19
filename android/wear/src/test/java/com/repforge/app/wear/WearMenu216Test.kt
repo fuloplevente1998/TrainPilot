@@ -17,6 +17,6 @@ class WearMenu216Test {
         assertFalse(WearMenu216.eligible("running",false))
     }
     @Test fun everyNewMenuAndConsentLabelExistsInAllSupportedLanguages() {
-        for(lang in listOf("hu","en","de","ro"))for(key in listOf("menu","resume","quick","add","planned","journal","metrics","settings","home","calendar","days","phone","discard","start","cancel","gps","on","off","remember","aggregate","next","back","consent"))assertTrue(WearMenu216.text(key,lang).isNotBlank())
+        for(lang in listOf("hu","en","de","ro"))for(key in listOf("menu","resume","quick","add","planned","journal","metrics","settings","home","calendar","days","phone","discard","start","cancel","gps","on","off","remember","aggregate","next","back","consent","rest"))assertTrue(WearMenu216.text(key,lang).isNotBlank())
     }
 }
