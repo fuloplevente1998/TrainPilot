@@ -25,7 +25,7 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{const url=ne
  assert.equal(await p.evaluate(()=>__route193.reads.length),0);
  await p.evaluate(async()=>{
   __route193.bindings=[{workoutId:__route193.id,exerciseId:'running',setId:'route-set193',routeKey:__route193.watch,pointCount:4}];
-  await TrainPilotWearRoutes193.sync(__route193.id);const el=document.querySelector('details[data-tp152-history-key]');tp3EnsureHistoryBody(el,0,el.dataset.tp152HistoryKey);
+  TrainPilotWearRoutes193.refresh();
  });
  await p.locator('.tp163-route-button').waitFor({state:'visible'});assert.equal(await p.evaluate(()=>__route193.reads.length),0,'Journal hydration retrieves references, never coordinates');
  assert.equal(await p.evaluate(()=>JSON.stringify(db.get('history')).includes('latitude')),false);

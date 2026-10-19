@@ -19106,11 +19106,24 @@ window.addEventListener?.('DOMContentLoaded',function(){
  async function sync(wanted){
   wanted=String(wanted||'');if(!wanted||blocked()||erasing.has(wanted)||deleted.has(wanted)||existing(wanted)?.ownershipProtocol193!==1)return false;
   const bridge=api();if(!bridge?.routeBindings193)return false;if(flights.has(wanted))return flights.get(wanted);
-  const flight=(async()=>{try{const result=await bridge.routeBindings193({workoutId:wanted});return result?.workoutId===wanted&&commit(wanted,result.bindings);}catch(_){return false;}finally{flights.delete(wanted);}})();
+  const flight=(async()=>{try{
+   const result=await bridge.routeBindings193({workoutId:wanted}),ok=result?.workoutId===wanted&&commit(wanted,result.bindings);
+   if(ok)for(const el of document.querySelectorAll('details[data-tp152-history-key][open]'))paintHistory(el,el.dataset.tp152HistoryKey);
+   return ok;
+  }catch(_){return false;}finally{flights.delete(wanted);}})();
   flights.set(wanted,flight);return flight;
  }
- function refresh(){const workout=state.session||db.get('draft',null)?.session,wanted=id(workout),now=Date.now();
-  if(workout?.ownershipProtocol193!==1||now-(last.get(wanted)||0)<10000)return;last.set(wanted,now);void sync(wanted);
+ function refresh(){
+  if(document.hidden||blocked()||!api()?.routeBindings193)return;
+  const now=Date.now(),workouts=[state.session||db.get('draft',null)?.session];
+  // A workout can be saved before its offline GPS packets arrive. Keep expanded
+  // journal entries eligible for metadata hydration after the live draft is gone.
+  const cards=Array.from(document.querySelectorAll('details[data-tp152-history-key][open]')).slice(0,5);
+  if(cards.length){const rows=history();for(const el of cards)workouts.push(rows.find(h=>rf142WorkoutKey(h)===el.dataset.tp152HistoryKey));}
+  for(const workout of workouts){const wanted=id(workout);
+   if(workout?.ownershipProtocol193!==1||now-(last.get(wanted)||0)<10000)continue;
+   last.set(wanted,now);void sync(wanted);
+  }
  }
  async function erase(wanted){
   wanted=String(wanted||'');if(!wanted)return false;erasing.add(wanted);
@@ -19125,6 +19138,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  window.TrainPilotWearRoutes193Core={merge};window.TrainPilotWearRoutes193={sync,refresh,erase};
  window.addEventListener?.('DOMContentLoaded',()=>setTimeout(()=>{
+  setInterval(refresh,10000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
   const base=window.tp3EnsureHistoryBody;if(typeof base!=='function')return;
   window.tp3EnsureHistoryBody=function(el,index,workoutKey){const result=base.apply(this,arguments);if(!api()?.routeBindings193)return result;
    const row=history().find(h=>rf142WorkoutKey(h)===workoutKey);

@@ -4,6 +4,26 @@ Frissítve: **2026-10-19, Europe/Budapest**. Először a gyökérben található
 [AGENTS.md](../AGENTS.md) olvasandó; utána ez a rövid aktuális átadás.
 Az alábbi állapotot induláskor GitHubon ellenőrizd. A hosszú régi naplók történetiek.
 
+## Friss készülékes visszajelzés – a teszt még nem teljes elfogadás
+
+A felhasználó a kiadott 1.3.51 tesztpáron a **4. pontot elfogadta**: valóban
+mért pozitív távolság/idő mellett a „Mérés befejezése” külön sorozat-OK nélkül
+működik. #206 automatikus GPS-teljesítésének nincs új regressziója; a maradék
+aktivitásnézet/UI miatt az issue nyitott. A próba közben feltárt másik, közvetlen
+„Edzés befejezése” útvonal nincs ebben a javításban, nem bővítjük a mostani kört.
+
+**3. pont sikertelen:** óráról indított edzés után a telefon Naplójában sincs
+GPS-térképgomb. Még tisztázandó, hogy az órán a külön „GPS-útvonal” rögzítés
+elindult-e (az aggregált Health-táv önmagában nem jelent koordinátákat).
+Talált és célzottan javított UI-hiba: a már nyitott naplóbejegyzés nem kapott
+új térképgombot, ha a natív útvonalhivatkozások később érkeztek. A frissítés most
+az aktív draft nélkül is ellenőrzi a nyitott naplók metaadatait, és tartós mentés
+után hozzáadja a gombot. Koordináták továbbra is csak a térképgomb megnyomására
+olvashatók; nincs GPS automatikus indítása. A böngészős regresszió nem nyitja újra
+kézzel a kártyát, a késői hivatkozást automatikus frissítésből várja.
+Az új javítás GitHub-kapui még külön ellenőrizendők; a korábbi APK nem tartalmazza.
+Nincs main-merge vagy verzióemelés, #193/#213 nyitott.
+
 ## Aktuális nyilvántartás és tesztpár – 2026-10-19
 
 A felhasználó kérte a nyitott issue/PR lista rendezését. A #121 régi draft PR
