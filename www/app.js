@@ -19472,6 +19472,36 @@ var tp197UiSample=function(scope,pid,choice){
  });
  return {id,name:byId(id)?.hu||byId(id)?.en||id,result};
 };
+var TP197_UI_REASONS={
+ hu:{
+  pain:'A gyakorlat legutóbbi három figyelembe vett edzéselőzményében fájdalomjelzés szerepel. Ilyenkor egyik progressziós mód sem növel terhelést.',
+  'low-readiness':'A regenerációs becslés 55/100 alatti. Előbb regeneráció szükséges, nem terhelésnövelés.',
+  incomplete:'A legutóbbi gyakorlat sorozatai nem teljesültek hiánytalanul.',
+  'high-effort':'A legutóbbi gyakorlat túl nagy erőfeszítéssel teljesült.',
+  'below-target':'A legutóbbi teljesítés nem érte el az előírt minimális ismétlésszámot.',
+  'insufficient-history':'Még nincs megfelelő korábbi teljesítés, ezért nincs megalapozott súlyajánlás.',
+  'double-await-stability':'Dupla mód: három egymást követő, szabályos felső ismétléscél szükséges az emeléshez.',
+  'linear-await-stability':'Lineáris mód: két egymást követő, megfelelő edzés szükséges az emeléshez.',
+  'rir-feedback-missing':'RIR mód: nincs naplózott tényleges ismétléstartalék (RIR). A megadott cél-RIR nem mérés.',
+  'rir-target-missing':'RIR mód: hiányzik az érvényes cél-RIR tartomány.',
+  'rir-overexertion':'RIR mód: a tényleges ismétléstartalék alacsonyabb a célnál.',
+  'rir-await-stability':'RIR mód: két egymást követő, megfelelő tartalékú teljesítés szükséges.',
+  'rir-on-target':'RIR mód: a tényleges tartalék a célértéken van, súlyemelés nem indokolt.',
+  'missing-load-step':'Nincs megfelelő, biztonságos súlylépcső beállítva.',
+  'missing-repetitions':'Hiányoznak a ténylegesen naplózott ismétlések.',
+  'uncertain-effort':'Nincs egyértelmű, biztonságos erőfeszítés-visszajelzés.',
+  'invalid-target':'Az előírt sorozat- vagy ismétléscél hibás vagy hiányzik.',
+  'non-strength-activity':'Távolság- vagy időalapú gyakorlat: súlyprogresszió nem alkalmazható.'
+ },
+ en:{pain:'Pain was recorded in the last three relevant exercise histories; load increases are blocked in every mode.','low-readiness':'Recovery readiness is below 55/100; do not increase load.','insufficient-history':'Not enough eligible completed workouts yet.','double-await-stability':'Double progression requires three stable top-range completions.','linear-await-stability':'Linear progression requires two stable successful workouts.','rir-feedback-missing':'RIR mode requires actual logged reserve; prescribed RIR is not a measurement.'},
+ de:{pain:'In den letzten drei relevanten Übungsverläufen wurden Schmerzen gemeldet; keine Gewichtserhöhung.','low-readiness':'Regeneration unter 55/100; keine Gewichtserhöhung.','insufficient-history':'Noch zu wenig passende abgeschlossene Einheiten.','double-await-stability':'Doppelte Progression: drei stabile obere Zielerfüllungen nötig.','linear-await-stability':'Lineare Progression: zwei stabile Einheiten nötig.','rir-feedback-missing':'RIR: Es fehlen tatsächlich erfasste RIR-Werte.'},
+ ro:{pain:'A fost raportată durere în ultimele trei antrenamente relevante; fără creștere a greutății.','low-readiness':'Recuperare sub 55/100; nu mări greutatea.','insufficient-history':'Nu sunt încă suficiente antrenamente compatibile.','double-await-stability':'Progresia dublă necesită trei performanțe stabile la limita superioară.','linear-await-stability':'Progresia liniară necesită două antrenamente stabile.','rir-feedback-missing':'RIR: lipsește rezerva reală de repetări înregistrată.'}
+};
+var tp197UiReason=function(reason){
+ const lang=typeof rf212Lang==='function'?rf212Lang():'hu';
+ const dictionary=TP197_UI_REASONS[lang]||TP197_UI_REASONS.hu;
+ return dictionary[reason]||TP197_UI_REASONS.hu[reason]||String(reason||'—');
+};
 var tp197UiPreview=function(scope,pid,choice){
  const t=tp197UiText(),styleInfo=t[choice.trainingStyle+"Info"],modeInfo=t[choice.progressionMode+"Info"];
  const sample=tp197UiSample(scope,pid,choice);
@@ -19479,13 +19509,15 @@ var tp197UiPreview=function(scope,pid,choice){
  const words={hold:t.hold,increase:t.increase,reps:t.reps,variation:t.variation};
  let comparison='<p class="small muted">'+esc(t.noExercise)+'</p>';
  if(sample){
-  const r=sample.result,b=r.baseline||{},a=r.proposed||{},reasons=new Set(["pain","low-readiness","high-effort","rir-overexertion"]);
-  const action=reasons.has(r.reasonCode)?t.pain:r.reasonCode==="insufficient-history"?t.noHistory:(words[r.action]||t.insufficient);
+  const r=sample.result,b=r.baseline||{},a=r.proposed||{};
+  const action=words[r.action]||t.insufficient;
+  const reason=tp197UiReason(r.reasonCode);
   comparison='<p class="small"><strong>'+esc(t.example)+': '+esc(sample.name)+'</strong></p>'+
    '<div class="tp197-ui-comparison"><span>'+esc(t.current)+'</span><span>'+esc(t.proposed)+'</span>'+
    '<small>'+esc(t.sets)+': '+esc(fmt(b.sets))+'</small><small>'+esc(t.sets)+': '+esc(fmt(a.sets))+'</small>'+
    '<small>'+esc(t.load)+': '+esc(fmt(b.weight))+'</small><small>'+esc(t.load)+': '+esc(fmt(a.weight))+'</small></div>'+
-   '<p class="small">'+esc(t.action)+': '+esc(action)+'</p>';
+   '<p class="small">'+esc(t.action)+': '+esc(action)+'</p>'+
+   '<p class="small tp197-preview-reason"><strong>'+esc(({hu:'Miért?',en:'Why?',de:'Warum?',ro:'De ce?'})[typeof rf212Lang==='function'?rf212Lang():'hu']||'Miért?')+'</strong> '+esc(reason)+'</p>';
  }
  return '<div class="tp197-ui-preview" role="status"><strong>'+esc(t.preview)+'</strong>'+
   '<p class="small muted">'+esc(styleInfo)+' '+esc(modeInfo)+'</p>'+comparison+'</div>';
@@ -19524,12 +19556,20 @@ var tp197UiRefresh=function(scope,pid){
 };
 var tp197UiReset=function(scope,pid){delete tp197UiPending[tp197UiKey(scope,pid)];tp197UiRefresh(scope,pid);};
 const tp197BaseSettings=settingsScreen;
-settingsScreen=function(){const html=String(tp197BaseSettings.apply(this,arguments));return html.replace('</main>',tp197UiPanel("global",null)+'</main>');};
-const tp197BasePlan=planScreen;
-planScreen=function(){const html=String(tp197BasePlan.apply(this,arguments)),pid=activeProgram()?.id;if(!pid)return html;
- return html.replace(/(<main\b[^>]*>)/,'$1'+tp197UiPanel("program",pid));};
+settingsScreen=function(){
+ const html=String(tp197BaseSettings.apply(this,arguments)),anchor='<div class="setting tp1511-card">';
+ // Default selection stays in Settings, but is discoverable near the top instead of below the backup/profile cards.
+ return html.includes(anchor)?html.replace(anchor,tp197UiPanel("global",null)+anchor):html.replace('</main>',tp197UiPanel("global",null)+'</main>');
+};
+const tp197BaseTrainingPanel=tp1511TrainingPanel;
+tp1511TrainingPanel=function(){
+ const html=String(tp197BaseTrainingPanel.apply(this,arguments)),pid=activeProgram()?.id;
+ if(!pid||!html.includes('<div class="tp1511-training-body">'))return html;
+ // Place the program-specific controls within Workout settings, not as a separate card above Quick workout.
+ return html.replace('<div class="tp1511-training-body">','<div class="tp1511-training-body">'+tp197UiPanel("program",pid,true));
+};
 const tp197Css=document.createElement("style");tp197Css.id="tp197ModeUiStyle";
-tp197Css.textContent='.tp197-mode-panel{box-sizing:border-box;max-width:100%;min-width:0;margin:10px 0;padding:12px!important}.tp197-mode-panel>summary{cursor:pointer;display:flex;align-items:flex-start;flex-wrap:wrap;gap:4px 12px;min-height:40px}.tp197-mode-panel>summary strong{flex:1 1 180px}.tp197-ui-body{display:grid;gap:8px;min-width:0;padding-top:12px}.tp197-ui-body label{font-size:13px;font-weight:700}.tp197-ui-body select{box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:44px}.tp197-ui-preview{min-width:0;padding:11px;border-radius:12px;border:1px solid var(--line);background:var(--card2)}.tp197-ui-preview p{margin:6px 0;overflow-wrap:anywhere}.tp197-ui-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px}.tp197-ui-comparison>*{min-width:0;overflow-wrap:anywhere}.tp197-ui-comparison>span{font-weight:700;font-size:12px}.tp197-ui-reset{min-height:44px;width:100%}.tp197-ui-notice{line-height:1.45}';
+tp197Css.textContent='.tp197-preview-reason{padding-top:4px;border-top:1px solid var(--line)}.tp1511-training-body>.tp197-mode-panel{margin:0 0 12px;padding:10px!important}.tp197-mode-panel{box-sizing:border-box;max-width:100%;min-width:0;margin:10px 0;padding:12px!important}.tp197-mode-panel>summary{cursor:pointer;display:flex;align-items:flex-start;flex-wrap:wrap;gap:4px 12px;min-height:40px}.tp197-mode-panel>summary strong{flex:1 1 180px}.tp197-ui-body{display:grid;gap:8px;min-width:0;padding-top:12px}.tp197-ui-body label{font-size:13px;font-weight:700}.tp197-ui-body select{box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:44px}.tp197-ui-preview{min-width:0;padding:11px;border-radius:12px;border:1px solid var(--line);background:var(--card2)}.tp197-ui-preview p{margin:6px 0;overflow-wrap:anywhere}.tp197-ui-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px}.tp197-ui-comparison>*{min-width:0;overflow-wrap:anywhere}.tp197-ui-comparison>span{font-weight:700;font-size:12px}.tp197-ui-reset{min-height:44px;width:100%}.tp197-ui-notice{line-height:1.45}';
 document.head.appendChild(tp197Css);
 // @endsection training-modes-ui-197.js
 
