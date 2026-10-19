@@ -33,6 +33,31 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
     }
     synchronized JSONObject snapshot() throws JSONException { return current(getReadableDatabase()); }
 
+    /** Only the ownership adapter supplies a locally acknowledged, committed reverse handoff. */
+    synchronized JSONObject importOwnership193(JSONObject consent,long now)throws Exception {
+        SQLiteDatabase db=getWritableDatabase();db.beginTransaction();
+        try {
+            if(blocked(db))throw new IllegalStateException("restoreInProgress");
+            JSONObject old=current(db);
+            if(old!=null&&pending(db,old.getString("workoutId"),old.getLong("generation")))throw new IllegalStateException("pendingRecordingEvents");
+            JSONObject next=PhoneOwnershipResume193.prepare(consent,old,now);
+            if(old==null||next.getLong("generation")!=old.getLong("generation")) {
+                save(db,next);db.execSQL("INSERT OR REPLACE INTO flags(name,value) VALUES('suspended',1)");
+            }
+            db.setTransactionSuccessful();return next;
+        }finally{db.endTransaction();}
+    }
+    synchronized JSONObject ownershipReady193(String id,long epoch)throws JSONException {
+        SQLiteDatabase db=getWritableDatabase();db.beginTransaction();
+        try {
+            JSONObject frame=current(db),marker=frame==null?null:frame.optJSONObject("ownershipImport193");
+            if(frame==null||!frame.optBoolean("active")||!frame.optBoolean("workoutPaused")||marker==null
+                    ||!id.equals(marker.optString("id"))||epoch!=marker.optLong("epoch"))throw new IllegalStateException("The returned workout changed");
+            marker.put("state","installed");save(db,frame);
+            db.execSQL("INSERT OR REPLACE INTO flags(name,value) VALUES('suspended',0)");db.setTransactionSuccessful();return frame;
+        }finally{db.endTransaction();}
+    }
+
     private static void save(SQLiteDatabase db, JSONObject frame) {
         db.execSQL("INSERT OR REPLACE INTO execution(slot,snapshot) VALUES(1,?)", new Object[]{frame.toString()});
     }
@@ -185,9 +210,10 @@ final class PhoneWorkoutExecutionStore extends SQLiteOpenHelper {
             if(retired!=null)for(int r=0;r<retired.length();r++)if(retired.getString(r).equals(timer.optString("key")))return false;
             JSONObject ledger=timer.getJSONObject("ledger"),logs=frame.optJSONObject("timeLogs162");if(logs==null)logs=new JSONObject();
             String key=PhoneWorkoutRecording.id(timer,"key");JSONObject previous=logs.optJSONObject(key);
-            if(previous!=null&&(ledger.getLong("positionMs")<previous.getLong("positionMs")||ledger.getLong("workMs")<previous.getLong("workMs")
-                    ||ledger.getLong("restMs")<previous.getLong("restMs")||ledger.getLong("pausedMs")<previous.getLong("pausedMs")))return false;
-            JSONObject log=new JSONObject(ledger.toString()).put("key",key).put("phase",timer.optString("phase"))
+            JSONObject local=PhoneOwnershipResume193.localLog(timer,ledger);
+            if(previous!=null&&(local.getLong("positionMs")<previous.getLong("positionMs")||local.getLong("workMs")<previous.getLong("workMs")
+                    ||local.getLong("restMs")<previous.getLong("restMs")||local.getLong("pausedMs")<previous.getLong("pausedMs")))return false;
+            JSONObject log=new JSONObject(local.toString()).put("key",key).put("phase",timer.optString("phase"))
                     .put("interrupted",timer.optBoolean("interrupted")).put("stopped",timer.optBoolean("stopped"));
             logs.put(key,log);frame.put("timeLogs162",logs).put("latestTimer162",timer);
             JSONObject beforeUndo188=new JSONObject(frame.toString());

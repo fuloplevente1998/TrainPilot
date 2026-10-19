@@ -17,9 +17,15 @@ object WearCommandOutbox {
     private fun read(context: Context,key: String)=JSONArray(prefs(context).getString(key,"[]"))
 
     fun enqueue(context: Context, command: JSONObject): Long {
+        if(!command.has("ownerEpoch193")) {
+            val current=WorkoutSnapshotStore.load(context)
+            command.put("ownerEpoch193",command.optJSONObject("finalSnapshot")?.optLong("ownerEpoch193")
+                ?: current?.takeIf { it.workoutId==command.optString("workoutId") }?.ownerEpoch193 ?: 0L)
+        }
         // Persist the draft before taking the outbox lock: workout editing takes
         // SnapshotStore -> outbox locks, so the reverse order would deadlock.
         val localReady=try {
+            if(command.optString("action")==WearGps193.ACTION)WearGps193.ready(context,command) else
             !WearSaveSyncModel.tracked(command) || command.optString("action") in setOf("healthSummary","saveWorkoutFeedback") ||
                 WorkoutSnapshotStore.persist(context,command.optString("workoutId")) ||
                 WearClosureStore.persist(context,command.optString("workoutId"))
@@ -96,10 +102,21 @@ object WearCommandOutbox {
         }
     }
 
-    fun acceptReceipt(context: Context,path: String?,raw: String?): Boolean {
+    fun acceptReceipt(context: Context,path: String?,raw: String?,origin: String?=null): Boolean {
+        if(raw==null||raw.length>100000)return false
+        val receipt=try { raw?.let(::JSONObject) }catch(_:Exception){null}
+        if(receipt!=null&&!WearGps193.receiptOrigin(context,receipt,origin))return false
         val accepted=acceptReceiptLocked(context,path,raw)
-        if(accepted&&raw!=null)WearUndo188.receipt(context,JSONObject(raw))
+        if(accepted&&receipt!=null)try { WearUndo188.receipt(context,receipt);WearGps193.receipt(context,receipt) }catch(_:Exception){return false}
         return accepted
+    }
+    @Synchronized fun dropGpsRoute193(context: Context,key: String): Boolean {
+        val rows=read(context,"pending");val next=JSONArray()
+        for(i in 0 until rows.length())rows.optJSONObject(i)?.let {
+            if(it.optString("action")!=WearGps193.ACTION||it.optJSONObject("route193")?.optString("routeKey")!=key)next.put(it)
+        }
+        if(!prefs(context).edit().putString("pending",next.toString()).commit()) { prefs(context).edit().putString("pending",rows.toString()).commit();return false }
+        failedWrites.entries.removeAll { it.value.optString("action")==WearGps193.ACTION&&it.value.optJSONObject("route193")?.optString("routeKey")==key };return true
     }
     @Synchronized private fun acceptReceiptLocked(context: Context,path: String?,raw: String?): Boolean {
         if(raw==null||raw.length>100000||path==null||!path.startsWith(RECEIPT_PREFIX))return false
@@ -120,6 +137,7 @@ object WearCommandOutbox {
 
     @Synchronized fun flush(context: Context,force: Boolean=false,workoutId: String?=null) {
         val pending=try { read(context,"pending") } catch(_:Exception) { return };val now=System.currentTimeMillis()
+        // Keep earlier set/start commands ahead of closure, including legacy peers.
         for(i in 0 until pending.length()) {
             val command=pending.optJSONObject(i) ?: continue;val id=command.optString("commandId")
             val attempt=android.os.SystemClock.elapsedRealtime()
@@ -128,9 +146,10 @@ object WearCommandOutbox {
             if(!force&&command.optLong("_attempt191",command.optLong("_sent191"))>0&&now-command.optLong("_attempt191",command.optLong("_sent191"))<60000)continue
             val path=if(command.optString("action")=="watchAutomationState")"/trainpilot/watch-automatic" else "${WearDataListenerService.COMMAND_PATH_PREFIX}$id"
             val payload=JSONObject(command.toString());payload.remove("_sent191");payload.remove("_error191");payload.remove("_attempt191")
+            sending[id]=attempt
+            try { WearGps193.attach(context,payload) }catch(_:Exception){finishSend(context,id,false,attempt);continue}
             val map=PutDataMapRequest.create(path);map.dataMap.putString("command",payload.toString());map.dataMap.putLong("createdAt",command.optLong("createdAt"))
             map.dataMap.putLong("deliveryAttempt191",now)
-            sending[id]=attempt
             try { Wearable.getDataClient(context).putDataItem(map.asPutDataRequest().setUrgent())
                 .addOnSuccessListener { finishSend(context,id,true,attempt) }
                 .addOnFailureListener { finishSend(context,id,false,attempt) }

@@ -509,7 +509,7 @@ var upd = function upd(ei,si,k,v){state.session.exercises[ei].sets[si][k]=k==="w
 var toggleSet = function toggleSet(ei,si){const s=state.session.exercises[ei].sets[si];if(!s.done && (!/^\d+$/.test(String(s.reps)) || Number(s.reps)<1)){alert("Írd be a tényleges ismétlésszámot vagy másodpercet.");return;}s.done=!s.done;if(s.done)startRest();renderWorkout()};
 var prevExercise = function prevExercise(){if(state.current>0){state.current--;renderWorkout();window.scrollTo(0,0)}};
 var nextExercise = function nextExercise(){if(state.current<state.session.exercises.length-1){state.current++;renderWorkout();window.scrollTo(0,0)}else finishWorkout()};
-var finishWorkout = function finishWorkout(options={}){if(!state.session.exercises.some(e=>e.sets.some(s=>s.done))){alert("Előbb jelölj legalább egy sorozatot teljesítettnek.");return;}if(state.session.exercises.some(e=>e.sets.some(s=>!s.done))&&!confirm("Vannak be nem fejezett sorozatok. Elmented a részleges edzést?"))return;const h=history();const requestedEnd=Date.parse(options.wearFinishedAt||''),startedAt=Date.parse(state.session.started||'');state.session.finished=Number.isFinite(requestedEnd)&&requestedEnd>=startedAt&&requestedEnd<=Date.now()+30000?new Date(requestedEnd).toISOString():new Date().toISOString();closeWorkoutInterval(state.session,state.session.finished);h.unshift(state.session);db.set("history",h);db.set("draft",null);const w=state.workout;stopTimer();state.session=null;state.workout=null;state.tab="home";render(shell(`<main><div class="hero"><h1>Kész ✓</h1><div class="muted">Full Body ${w} elmentve.</div><br><button class="btn block" onclick="go('home')">Kezdőlap</button></div></main>`))};
+var finishWorkout = function finishWorkout(options={}){if(!state.session.exercises.some(e=>e.sets.some(s=>s.done))){alert("Előbb jelölj legalább egy sorozatot teljesítettnek.");return;}if(state.session.exercises.some(e=>e.sets.some(s=>!s.done))&&!confirm("Vannak be nem fejezett sorozatok. Elmented a részleges edzést?"))return;const h=history();const requestedEnd=Date.parse(options.wearFinishedAt||''),startedAt=Date.parse(state.session.started||'');state.session.finished=Number.isFinite(requestedEnd)&&requestedEnd>=startedAt&&requestedEnd<=Date.now()+30000?new Date(requestedEnd).toISOString():new Date().toISOString();closeWorkoutInterval(state.session,state.session.finished);h.unshift(state.session);db.set("history",h);db.set("draft",null);const w=state.workout;stopTimer();state.session=null;state.workout=null;if(options.silent===true||options.wearConfirmed===true){if(state.tab==='plan'){state.tab='home';render();}else render();}else{state.tab="home";render(shell(`<main><div class="hero"><h1>Kész ✓</h1><div class="muted">Full Body ${w} elmentve.</div><br><button class="btn block" onclick="go('home')">Kezdőlap</button></div></main>`));}};
 var formatSet = function formatSet(e,s){
  // Historical weights are deliberately not reinterpreted: old entries lacked metadata.
  if(!e.loadType)return `${s.weight||0} kg × ${s.reps||'—'} (régi súlyjelölés)`;
@@ -941,7 +941,7 @@ saveSettings=function(){db.set('settings',{...settings(),rest:Math.max(30,Math.m
 const rf13Start=startWorkout;startWorkout=function(dayId,scheduleId=null,programId=null){const before=state.session;state.prescriptionProgramId=programId||activeProgramId();try{rf13Start(dayId,scheduleId,programId);}finally{state.prescriptionProgramId=null;}if(!state.session||state.session===before)return;const p=programById(state.session.programId);if(p?.prescriptions){state.session.exercises=state.session.exercises.map(e=>{const rx=p.prescriptions[e.id];if(!rx)return e;const previous=history().filter(h=>h.programId===p.id).flatMap(h=>h.exercises).find(x=>x.id===e.id);return {...e,prescription:{...rx},sets:Array.from({length:rx.sets},(_,i)=>({set:i+1,weight:previous?.sets[i]?.weight??(e.loadType==='bodyweight'?0:rx.trial&&Number(rx.weight)===0?'':(rx.weight??'')),reps:'',done:false}))};});renderWorkout();}};
 const rf13Rest=startRest;startRest=function(){rf13Rest();const rx=state.session?.exercises[state.current]?.prescription;if(rx){state.timer=rx.rest;state.restEndAt=Date.now()+state.timer*1000;}};
 // Finish only marks the calendar after the history write really succeeded.
-finishWorkout=function(){if(!state.session)return;const s=state.session;rf12FinishWorkout.apply(this,arguments);if(state.session)return;if(s.scheduleId){const items=scheduled(),i=items.findIndex(x=>x.id===s.scheduleId);if(i>=0){items[i]={...items[i],status:'completed',updatedAt:Date.now()};db.set('scheduled',items);}}if(window.TrainPilotWorkoutFeedback)TrainPilotWorkoutFeedback.afterFinish(s,arguments[0]);else feedbackScreen(s.started);};
+finishWorkout=function(){if(!state.session)return;const s=state.session;rf12FinishWorkout.apply(this,arguments);if(state.session)return;if(s.scheduleId){const items=scheduled(),i=items.findIndex(x=>x.id===s.scheduleId);if(i>=0){items[i]={...items[i],status:'completed',updatedAt:Date.now()};db.set('scheduled',items);}}if(window.TrainPilotWorkoutFeedback)TrainPilotWorkoutFeedback.afterFinish(s,arguments[0]);else if(arguments[0]?.wearSilent!==true&&arguments[0]?.silent!==true&&arguments[0]?.wearConfirmed!==true)feedbackScreen(s.started);};
 
 
 // Imported Health Connect records live only in memory and are excluded from backup/Drive.
@@ -3346,7 +3346,7 @@ rf220BindHome=rf233BindHome;
 
 // @section v234.js
 var rf234Lang = function rf234Lang(){return typeof rf212Lang==='function'?rf212Lang():'hu'};
-var rf234Text = function rf234Text(){const hu={title:'Kiegészítő Health Connect adatok',refresh:'Adatok frissítése',steps:'Mai lépésszám',weight:'Testsúly',fat:'Testzsír',oxygen:'SpO₂',vo2:'VO₂max',none:'Még nincs beolvasott kiegészítő adat.',saved:'Kiegészítő Health Connect adatok frissítve.',note:'A lépésszám aktivitási kontextus. A testsúly, testzsír, SpO₂ és VO₂max ebben a verzióban tájékoztató adat, és nem módosítja automatikusan a Coach readiness pontszámát.'};const en={title:'Additional Health Connect data',refresh:'Refresh data',steps:'Steps today',weight:'Weight',fat:'Body fat',oxygen:'SpO₂',vo2:'VO₂max',none:'No additional data has been read yet.',saved:'Additional Health Connect data refreshed.',note:'Steps are activity context. Weight, body fat, SpO₂ and VO₂max are informational in this version and do not automatically change Coach readiness.'};return rf234Lang()==='hu'?hu:en};
+var rf234Text = function rf234Text(){const hu={title:'Kiegészítő Health Connect adatok',refresh:'Adatok frissítése',steps:'Mai lépésszám',weight:'Testsúly',fat:'Testzsír',oxygen:'SpO₂',vo2:'VO₂max',none:'Még nincs beolvasott kiegészítő adat.',saved:'Kiegészítő Health Connect adatok frissítve.',note:'A lépésszám aktivitási kontextus. A testsúly, testzsír, SpO₂ és VO₂max ebben a verzióban tájékoztató adat, és nem módosítja automatikusan a Coach readiness pontszámát.'};const en={title:'Additional Health Connect data',refresh:'Refresh data',steps:'Steps today',weight:'Weight',fat:'Body fat',oxygen:'SpO₂',vo2:'VO₂max',none:'No additional data has been read yet.',saved:'Additional Health Connect data refreshed.',note:'Steps are activity context. Weight, body fat, SpO₂ and VO₂max are informational in this version and do not automatically change Coach readiness.'};const de={title:'Zusätzliche Health Connect-Daten',refresh:'Daten aktualisieren',steps:'Schritte heute',weight:'Gewicht',fat:'Körperfett',oxygen:'SpO₂',vo2:'VO₂max',none:'Bisher keine zusätzlichen Daten eingelesen.',saved:'Zusätzliche Health Connect-Daten aktualisiert.',note:'Schritte dienen als Aktivitätskontext. Gewicht, Körperfett, SpO₂ und VO₂max sind Richtwerte und verändern den Coach-Wert nicht automatisch.'};const ro={title:'Date suplimentare Health Connect',refresh:'Actualizează datele',steps:'Pași azi',weight:'Greutate',fat:'Grăsime corporală',oxygen:'SpO₂',vo2:'VO₂max',none:'Încă nu au fost citite date suplimentare.',saved:'Date suplimentare Health Connect actualizate.',note:'Pașii reprezintă context de activitate. Greutatea, grăsimea corporală, SpO₂ și VO₂max sunt informative și nu modifică automat scorul Coach.'};const l=rf234Lang();return l==='hu'?hu:l==='de'?de:l==='ro'?ro:en;};
 var rf234Num = function rf234Num(v){return v==null||v===''?null:Number.isFinite(Number(v))?Number(v):null};
 var rf234Load = function rf234Load(){if(!state.health)state.health={};if(!state.health.wellness){const x=db.get('wellnessLatest',null);if(x&&typeof x==='object')state.health.wellness=x}return state.health.wellness||null};
 var rf234Range = function rf234Range(){const end=new Date(),start=new Date(end.getTime()-14*86400000),stepsStart=new Date();stepsStart.setHours(0,0,0,0);return {start:start.toISOString(),stepsStart:stepsStart.toISOString(),end:end.toISOString()}};
@@ -3620,10 +3620,10 @@ var rf242SaveMatchedWorkoutHealth = function rf242SaveMatchedWorkoutHealth(key,h
 };
 var rf242MatchText = function rf242MatchText(d){
   if(!d)return '';
-  const hu=(typeof rf212Lang==='function'?rf212Lang():'hu')==='hu';
-  if(d.matchMode==='exercise-session')return hu?'Health edzéshez illesztve':'Matched to Health workout';
-  if(d.matchMode==='tolerance')return hu?'Időablak-tűréssel illesztve (±3 perc)':'Matched with time tolerance (±3 min)';
-  if(d.matchMode==='exact')return hu?'Pontos időablak':'Exact time window';
+  const l=typeof rf212Lang==='function'?rf212Lang():'hu';
+  if(d.matchMode==='exercise-session')return l==='hu'?'Health edzéshez illesztve':l==='de'?'An Health-Training angepasst':l==='ro'?'Potrivit cu antrenamentul Health':'Matched to Health workout';
+  if(d.matchMode==='tolerance')return l==='hu'?'Időablak-tűréssel illesztve (±3 perc)':l==='de'?'Mit Zeitfenstertoleranz angepasst (±3 Min.)':l==='ro'?'Potrivit cu toleranță de timp (±3 min)':'Matched with time tolerance (±3 min)';
+  if(d.matchMode==='exact')return l==='hu'?'Pontos időablak':l==='de'?'Exaktes Zeitfenster':l==='ro'?'Fereastră exactă de timp':'Exact time window';
   return '';
 };
 /* TrainPilot 2.4.2: tolerant Health Connect workout-session matching. */
@@ -9411,7 +9411,7 @@ go=function(route){
  };
  if(state.session){
   const leaving=state.session;
-  tp2628Confirm(tp149T('dialog.leaveWorkout.message'),{title:tp149T('dialog.leaveWorkout.title'),confirmText:tp149T('dialog.leaveWorkout.action'),danger:true}).then(async function(ok){if(ok&&state.session===leaving&&await window.TrainPilotWorkoutPause201.pause(leaving))navigate();});return;
+  tp2628Confirm(window.TrainPilotOwnership193?.leaveMessage?.(leaving)||tp149T('dialog.leaveWorkout.message'),{title:tp149T('dialog.leaveWorkout.title'),confirmText:tp149T('dialog.leaveWorkout.action'),danger:true}).then(async function(ok){if(ok&&state.session===leaving&&await window.TrainPilotWorkoutPause201.pause(leaving))navigate();});return;
  }
  return navigate();
 };
@@ -13763,11 +13763,37 @@ window.addEventListener?.('DOMContentLoaded',function(){
    suggestionStable:'Workout count and volume together provide context for consistency.',
    coachOpen:'View in Coach',weight:'Weight',reps:'Reps',time:'Time',left:'Left side',right:'Right side'},
   de:{log:'Trainingstagebuch',stats:'Statistiken',progress:'Fortschritt',volume:'Gesamtvolumen',trend:'Volumentrend',
-   day1:'1 Tag',days7:'7 Tage',days30:'30 Tage',months3:'3 Mon.',vs:'zum vorigen Zeitraum',pr:'Persönliche Rekorde',workouts:'Trainingseinheiten',
-   average:'Ø Volumen',averageSmall:'pro Krafttraining',duration:'Ø Dauer',durationDetail:'Ø Trainingsdauer',sets:'Sätze',muscles:'Muskelgruppenbelastung',coach:'Fortschrittsempfehlung'},
+   day1:'1 Tag',days7:'7 Tage',days30:'30 Tage',months3:'3 Mon.',vs:'zum vorigen Zeitraum',pr:'Persönliche Rekorde',
+   workouts:'Trainingseinheiten',average:'Ø Volumen',averageSmall:'pro Krafttraining',
+   duration:'Ø Dauer',durationDetail:'Ø Trainingsdauer',durationNote:'Berechnet aus Trainings mit erfasster Dauer',durationMissing:'Keine erfasste Trainingsdauer in diesem Zeitraum.',sets:'Sätze',muscles:'Muskelgruppenbelastung',groupNote:'Farben und Prozentwerte beziehen sich auf die am stärksten trainierte Gruppe, keine Ermüdungsmessung.',
+   low:'Niedriger',medium:'Mittel',high:'Höher',anatomyZoom:'Muskelbelastungsdiagramm vergrößern',
+   coach:'Fortschrittsempfehlung',more:'Details',noData:'Nicht genügend erfasste Daten für diesen Zeitraum.',
+   noWeight:'Kein messbares Krafttrainingsvolumen in diesem Zeitraum.',openLog:'Im Trainingstagebuch öffnen',
+   close:'Schließen',back:'Zurück',previous:'Vorher',current:'Neu',sessions:'Trainings',completed:'Abgeschlossene Trainings',setCount:'Sätze',
+   daily:'Tagesansicht',weekly:'Wochenansicht',exercises:'Übungen',groupWork:'Protokollierte Übungen',
+   hint:'Tippe auf einen Balken für Details.',groupDetails:'Muskelgruppendetails',
+   allStats:'In Statistiken öffnen',noChange:'Keine vergleichbaren früheren Daten',
+   suggestionEmpty:'Erfasse weitere Trainings für personalisierte Fortschrittsberichte.',
+   suggestionGood:'Dein erfasstes Krafttrainingsvolumen ist im Vergleich zum vorherigen Zeitraum gestiegen.',
+   suggestionFocus:'Die meiste Satzbelastung entfiel auf diese Muskelgruppe: ',
+   suggestionStable:'Trainingsanzahl und Volumen spiegeln gemeinsam deine Beständigkeit wider.',
+   coachOpen:'Im Coach anzeigen',weight:'Gewicht',reps:'Wiederholungen',time:'Zeit',left:'Linke Seite',right:'Rechte Seite'},
   ro:{log:'Jurnal de antrenament',stats:'Statistici',progress:'Progres',volume:'Volum total',trend:'Tendință volum',
    day1:'1 zi',days7:'7 zile',days30:'30 zile',months3:'3 luni',vs:'față de perioada anterioară',pr:'Recorduri personale',
-   workouts:'Antrenamente',average:'Volum mediu',averageSmall:'per antrenament cu greutăți',duration:'Durată medie',durationDetail:'Durată medie antrenament',sets:'Serii',muscles:'Grupe musculare',coach:'Sugestie de progres'},
+   workouts:'Antrenamente',average:'Volum mediu',averageSmall:'per antrenament cu greutăți',
+   duration:'Durată medie',durationDetail:'Durată medie antrenament',durationNote:'Calculat din antrenamente cu durată înregistrată',durationMissing:'Nicio durată de antrenament înregistrată în această perioadă.',sets:'Serii',muscles:'Grupe musculare',groupNote:'Culorile și procentele sunt relative la cea mai antrenată grupă, nu reprezintă o măsurare a oboselii.',
+   low:'Redus',medium:'Mediu',high:'Ridicată',anatomyZoom:'Mărește diagrama de încărcare musculară',
+   coach:'Sugestie de progres',more:'Detalii',noData:'Nu există suficiente date înregistrate pentru această perioadă.',
+   noWeight:'Niciun volum măsurabil cu greutăți în această perioadă.',openLog:'Deschide în jurnalul de antrenament',
+   close:'Închide',back:'Înapoi',previous:'Anterior',current:'Nou',sessions:'Antrenamente',completed:'Antrenamente finalizate',setCount:'serii',
+   daily:'Distribuție zilnică',weekly:'Distribuție săptămânală',exercises:'Exerciții',groupWork:'Exerciții înregistrate',
+   hint:'Atinge o bară pentru detalii.',groupDetails:'Detalii grupă musculară',
+   allStats:'Deschide în Statistici',noChange:'Nu există date anterioare comparabile',
+   suggestionEmpty:'Înregistrează mai multe antrenamente pentru o analiză personalizată a progresului.',
+   suggestionGood:'Volumul înregistrat cu greutăți a crescut față de perioada anterioară de aceeași durată.',
+   suggestionFocus:'Cea mai mare încărcare de serii a revenit grupei musculare: ',
+   suggestionStable:'Numărul de antrenamente și volumul reflectă împreună consecvența.',
+   coachOpen:'Vezi în Coach',weight:'Greutate',reps:'Repetări',time:'Timp',left:'Partea stângă',right:'Partea dreaptă'},
   sk:{log:'Tréningový denník',stats:'Štatistiky',progress:'Pokrok',volume:'Celkový objem',trend:'Trend objemu',
    day1:'1 deň',days7:'7 dní',days30:'30 dní',months3:'3 mes.',vs:'oproti predošlému obdobiu',pr:'Osobné rekordy',
    workouts:'Tréningy',average:'Priemerný objem',averageSmall:'na silový tréning',duration:'Ø čas',durationDetail:'Priemerný čas tréningu',sets:'Série',muscles:'Zaťaženie svalov',coach:'Odporúčanie'},
@@ -14123,11 +14149,11 @@ rf263HealthHub=function(){
 (function(){
  'use strict';
  const labels={
-  hu:{open:'Fejlődés megnyitása',all:'Teljes rekordlista',fullStats:'Részletes statisztikák',backToProgress:'Vissza a Fejlődéshez',weight:'Súly',reps:'Ismétlés',time:'Idő',left:'Bal oldal',right:'Jobb oldal',previous:'Korábbi',current:'Új'},
-  en:{open:'Open Progress',all:'All-time records',fullStats:'Detailed statistics',backToProgress:'Back to Progress',weight:'Weight',reps:'Reps',time:'Time',left:'Left side',right:'Right side',previous:'Previous',current:'New'},
-  de:{open:'Fortschritt öffnen',all:'Alle Rekorde',fullStats:'Detaillierte Statistiken',backToProgress:'Zurück zum Fortschritt',weight:'Gewicht',reps:'Wiederholungen',time:'Zeit',left:'Links',right:'Rechts',previous:'Vorher',current:'Neu'},
-  ro:{open:'Deschide Progresul',all:'Toate recordurile',fullStats:'Statistici detaliate',backToProgress:'Înapoi la Progres',weight:'Greutate',reps:'Repetări',time:'Timp',left:'Stânga',right:'Dreapta',previous:'Anterior',current:'Nou'},
-  sk:{open:'Otvoriť pokrok',all:'Všetky rekordy',fullStats:'Podrobné štatistiky',backToProgress:'Späť na Pokrok'},pl:{open:'Otwórz postępy',all:'Wszystkie rekordy',fullStats:'Szczegółowe statystyki',backToProgress:'Wróć do Postępów'}
+  hu:{open:'Fejlődés megnyitása',all:'Teljes rekordlista',fullStats:'Részletes statisztikák',backToProgress:'Vissza a Fejlődéshez',weight:'Súly',reps:'Ismétlés',time:'Idő',left:'Bal oldal',right:'Jobb oldal',previous:'Korábbi',current:'Új',noRecords:'Még nincs személyes rekord.'},
+  en:{open:'Open Progress',all:'All-time records',fullStats:'Detailed statistics',backToProgress:'Back to Progress',weight:'Weight',reps:'Reps',time:'Time',left:'Left side',right:'Right side',previous:'Previous',current:'New',noRecords:'No personal records yet.'},
+  de:{open:'Fortschritt öffnen',all:'Alle Rekorde',fullStats:'Detaillierte Statistiken',backToProgress:'Zurück zum Fortschritt',weight:'Gewicht',reps:'Wiederholungen',time:'Zeit',left:'Links',right:'Rechts',previous:'Vorher',current:'Neu',noRecords:'Noch keine persönlichen Rekorde.'},
+  ro:{open:'Deschide Progresul',all:'Toate recordurile',fullStats:'Statistici detaliate',backToProgress:'Înapoi la Progres',weight:'Greutate',reps:'Repetări',time:'Timp',left:'Stânga',right:'Dreapta',previous:'Anterior',current:'Nou',noRecords:'Încă nu există recorduri personale.'},
+  sk:{open:'Otvoriť pokrok',all:'Všetky rekordy',fullStats:'Podrobné štatistiky',backToProgress:'Späť na Pokrok',noRecords:'Zatiaľ žiadne osobné rekordy.'},pl:{open:'Otwórz postępy',all:'Wszystkie rekordy',fullStats:'Szczegółowe statystyki',backToProgress:'Wróć do Postępów',noRecords:'Brak rekordów osobistych.'}
  };
  const lang=()=>typeof rf212Lang==='function'?rf212Lang():'hu';
  const copy=()=>Object.assign({},labels.hu,labels[lang()]||{});
@@ -14142,7 +14168,7 @@ rf263HealthHub=function(){
   panel.replaceChildren();
   const heading=document.createElement('h2');heading.textContent=header;panel.appendChild(heading);
   const note=document.createElement('p');note.className='tp177-small';note.textContent=t.all+' · '+all.length;panel.appendChild(note);
-  if(!all.length){const none=document.createElement('p');none.className='tp177-small';none.textContent=lang()==='hu'?'Még nincs személyes rekord.':'No personal records yet.';panel.appendChild(none);return}
+  if(!all.length){const none=document.createElement('p');none.className='tp177-small';none.textContent=t.noRecords||(lang()==='hu'?'Még nincs személyes rekord.':'No personal records yet.');panel.appendChild(none);return}
   const list=document.createElement('div');list.className='tp177-inline-list';
   const fmt=value=>Number(value||0).toLocaleString(l,{maximumFractionDigits:1});
   for(const rec of all){
@@ -16490,8 +16516,8 @@ var TrainPilotWorkoutFeedback=window.TrainPilotWorkoutFeedback=(function(){
   return true;
  }
  function afterFinish(h,options={}){
-  if(valid(options?.wearFeedback)&&accept(id(h),options.wearFeedback)){go('home');return;}
-  db.set(key,{workoutId:id(h),started:h.started});feedbackScreen(h.started);
+  if(valid(options?.wearFeedback)&&accept(id(h),options.wearFeedback)){if(options.wearSilent!==true&&options.silent!==true&&options.wearConfirmed!==true)go('home');return;}
+  db.set(key,{workoutId:id(h),started:h.started});if(options.wearSilent!==true&&options.silent!==true&&options.wearConfirmed!==true)feedbackScreen(h.started);
  }
  function skip(){
   // Leaving a Journal review is not an instruction to delete its saved answer.
@@ -16743,7 +16769,23 @@ window.addEventListener?.('DOMContentLoaded',function(){
   m.at=now;m.paused=!running&&!stopped&&!run.interrupted&&phase(elapsed)?.phase!=='complete';run.timeLedger162=m;
   const log={schema:1,owner:'browser',key:run.key,positionMs:m.positionMs,steps:m.steps,workMs:0,restMs:0,pausedMs:0};for(const row of m.steps)for(const k of fields)log[k]+=row[k];return log;
  }
- window.TrainPilotTime162Core={valid,merge,sample};
+ function nativeLog(snapshot){
+  const log=JSON.parse(JSON.stringify(snapshot.ledger)),base=snapshot.ownershipBaseLedger193;
+  log.key=snapshot.key;if(!base)return log;
+  let position=0;
+  const subtract=(to,from,key)=>{
+   if(!Number.isSafeInteger(to[key])||!Number.isSafeInteger(from[key])||from[key]<0||to[key]<from[key])throw Error('Invalid inherited time counter');
+   to[key]-=from[key];
+  };
+  for(const key of fields){subtract(log,base,key);position+=log[key];}
+  if(!Array.isArray(log.steps)||!Array.isArray(base.steps)||log.steps.length!==base.steps.length)throw Error('Inherited time targets changed');
+  log.steps.forEach((row,i)=>{
+   if(row.exerciseId!==base.steps[i].exerciseId||row.setId!==base.steps[i].setId)throw Error('Inherited time targets changed');
+   for(const key of fields)subtract(row,base.steps[i],key);
+  });
+  return {...log,owner:'phone',positionMs:position};
+ }
+ window.TrainPilotTime162Core={valid,merge,sample,nativeLog};
 })();
 // @endsection automatic-time-162.js
 
@@ -16862,6 +16904,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
  async function syncLocked({prepare=true}={}){
   const api=bridge();if(!api?.executionStatus)return true;if(blocked())return false;let stage='reconcile';
   try{
+   const owned=draft()?.session;
+   if(owned?.ownershipProtocol193===1&&(owned.timerOwner==='watch'||owned.ownershipAwaitingResume193||window.TrainPilotOwnership193Core?.pending(owned)))return true;
    if(!await reconcile(api))return false;
    let current=draft(),session=current?.session;
    stage='status';let remote=await api.executionStatus();if(blocked())return false;if(remote.controllerArmed===false)lastArmed='';
@@ -16952,6 +16996,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
   try{return await syncLocked(options);}finally{busy=false;}
  }
  async function finishFence(work){
+  const owned=state.session;
+  if(owned?.ownershipProtocol193===1){if(window.TrainPilotOwnership193Core?.pending(owned))return false;if(owned.timerOwner==='watch')return work();}
   const api=bridge(),session=state.session;if(!api?.executionStatus||!session?.phoneExecution162)return work();
   if(busy||discarding||blocked())return false;busy=true;
   try{
@@ -17002,6 +17048,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  });
  async function recordPhoneSet(ei,si){
   const api=bridge(),session=state.session,target=session?.exercises?.[ei]?.sets?.[si];
+  if(session?.ownershipProtocol193===1&&(session.timerOwner==='watch'||window.TrainPilotOwnership193Core?.pending(session)))return false;
   if(!api?.executeCommand||!target||target.done||busy||discarding||blocked())return false;
   // The recording owns the lock through durable reconciliation and acknowledgement.
   // Polling cannot consume its result between executeCommand and the owning UI call.
@@ -17020,6 +17067,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  async function undoPhoneSet(recordId){
   const api=bridge(),session=state.session;
+  if(session?.ownershipProtocol193===1&&(session.timerOwner==='watch'||window.TrainPilotOwnership193Core?.pending(session)))return false;
   if(!api?.executeCommand||busy||discarding||blocked())return false;
   busy=true;
   try{
@@ -17301,6 +17349,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     schema:1,
     phoneVersion:typeof TRAINPILOT_VERSION==='string'?TRAINPILOT_VERSION:'',
     automaticProtocol:1,
+    ownershipProtocol193:window.TrainPilotOwnership193?.available===true?1:0,
     journalSchema:1,
     theme:watchTheme(),
     ...watchCalendar(active,lang),
@@ -17335,6 +17384,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
    return {
     schema:1,
     ...(session.phoneExecution162&&session.automatic162?.enabled===true&&(session.timerOwner||'phone')==='phone'&&!session.exercises.some(e=>e.measurementType==='distance')?{nativeExecutionProtocol:2,generation:session.phoneExecution162.generation,executionRevision:session.phoneExecution162.revision}:{}),
+    ...(session.ownershipProtocol193===1?{ownershipProtocol193:1,ownerEpoch193:Number(session.ownerEpoch193)||0,
+     ...(session.handoff193?{handoff193:session.handoff193}:{}),...(session.timerCheckpoint193?{timerCheckpoint193:session.timerCheckpoint193}:{}),
+     pausedRestMillis:Number(session.pausedRestMillis201)||0,resumeAutomaticOnContinue:!!session.pauseTimer201}:{}),
     workoutId:sessionKey(session),
     watchSequence:Number(session.wearSequence)||0,
     ...(session.undo188?{undo188:session.undo188}:{}),
@@ -17424,6 +17476,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  async function syncNow(){
   if(busy||window.TrainPilotBackupBusy)return;
+  busy=true;let requestedId=pendingWatchStart?.id;
+  try{
+  if(api()?.ownershipStatus193&&window.TrainPilotOwnership193&&!await window.TrainPilotOwnership193.sync())return;
   // Manual workouts need the same durable identities as native automatic
   // execution. Repair older drafts before publishing any watch controls.
   try{
@@ -17437,10 +17492,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const expired=pendingWatchStart.id===value?.workoutId&&!document.hidden;
    pendingWatchStart=null;if(expired)watchStartFailed();
   }
-  const requestedId=pendingWatchStart?.id;
+  requestedId=pendingWatchStart?.id;
   if(payload===lastPayload&&(value||cleared)&&!requestedId)return;
-  busy=true;
-  try{
    if(value){
     await bridge.publish({snapshot:value});
     lastPayload=payload;cleared=false;
@@ -17504,6 +17557,15 @@ window.addEventListener?.('DOMContentLoaded',function(){
   // An added exercise shares stable set IDs without transferring the timer.
   if(!preserveMode){const owner=root?.timerOwner==='phone'?'phone':'watch';s.timerOwner=owner;s.automatic162={enabled:false,owner,phase:'work'};}
   if(!root)return;
+  if(!preserveMode&&root.ownershipProtocol193===1){
+   if(root.timerOwner!=='watch'||root.ownerEpoch193!==0||root.handoff193||!Array.isArray(root.activeIntervals)||!root.activeIntervals.length||root.activeIntervals.length>4096||
+      root.activeIntervals.some((row,i)=>!Number.isFinite(Date.parse(row.start))||Date.parse(row.start)<Date.parse(s.started)||
+       row.end!=null&&(!Number.isFinite(Date.parse(row.end))||Date.parse(row.end)<Date.parse(row.start))||
+       i>0&&(root.activeIntervals[i-1].end==null||Date.parse(row.start)<Date.parse(root.activeIntervals[i-1].end))||
+       i<root.activeIntervals.length-1&&row.end==null))throw Error('Invalid initial watch ownership');
+   Object.assign(s,{ownershipProtocol193:1,ownerEpoch193:0,timerOwner:'watch',workoutPaused:root.workoutPaused===true,
+    pauseRevision:Number.isSafeInteger(root.pauseRevision)?root.pauseRevision:0,activeIntervals:JSON.parse(JSON.stringify(root.activeIntervals))});
+  }
   for(let e=0;e<(root.exercises||[]).length;e++)for(let i=0;i<(root.exercises[e].sets||[]).length;i++){
    const remote=root.exercises[e].sets[i],local=s.exercises[e]?.sets?.[i];
    if(local&&s.exercises[e].id===root.exercises[e].id&&typeof remote.setId==='string'&&remote.setId.length<=128&&remote.setId)local.setId=remote.setId;
@@ -17532,6 +17594,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(!matches())return false;
    if(typeof tp107StopIndoor==='function')tp107StopIndoor(false);
    if(typeof tp106StopGPS==='function'&&(tp106GpsState?.active||db.get('gpsTrip106',null))&&!await tp106StopGPS())return false;
+   if(session.ownershipProtocol193===1&&!await window.TrainPilotWearRoutes193?.erase?.(id))return false;
    return matches();
   };
   const work=()=>{
@@ -17576,6 +17639,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const out={schema:1,workoutId:id,watchId:value.watchId,revision:value.revision,source:'wear_health_services',state:String(value.state||''),partial:value.partial===true,syncedAt:new Date().toISOString()};
   const limits={heartRate:[20,250],averageHeartRate:[20,250],minHeartRate:[20,250],maxHeartRate:[20,250],heartRateSamples:[0,10000000],totalCalories:[0,10000000],steps:[0,10000000],activeDurationSeconds:[0,604800],distanceMeters:[0,10000000],speedMps:[0,100],maxSpeedMps:[0,100]};
   for(const [key,[min,max]] of Object.entries(limits))if(value[key]!==undefined&&value[key]!==null){if(typeof value[key]!=='number'||!Number.isFinite(value[key])||value[key]<min||value[key]>max)return null;out[key]=value[key];}
+  const gps=value.gpsRoute193,states=['idle','acquiring','recording','paused','stopped','permission','locationOff','storage','unavailable','interrupted','deleted'];
+  if(gps?.schema===1&&states.includes(gps.state)&&['receivedFixes','savedPoints'].every(k=>Number.isSafeInteger(gps[k])&&gps[k]>=0&&gps[k]<=10000000)&&['','mock','provider','accuracy','stale','filtered'].includes(gps.lastRejection))
+   out.gpsRoute193={schema:1,state:gps.state,receivedFixes:gps.receivedFixes,savedPoints:gps.savedPoints,lastRejection:gps.lastRejection};
   return out;
  }
  function attachMeasuredHealth(command){
@@ -17634,9 +17700,16 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(action==='discardWorkout'){
    return discardDraft(state.session,command);
   }
-  mergeFinalSets(command);attachMeasuredHealth(command);persistDraft();
-  if(!state.session.exercises.some(e=>e.sets?.some(s=>s.done)))return recordResult(command,'error','Legalább egy rögzített sorozat szükséges.');
-  const result=finishWorkout({wearConfirmed:true,wearFinishedAt:String(command.finishedAt||''),wearFeedback:command.feedback});
+  if(state.session.ownershipProtocol193===1)void window.TrainPilotWearRoutes193?.sync?.(expected);
+  if(state.session.ownershipProtocol193===1&&state.session.timerOwner==='watch'){
+   if(!window.TrainPilotOwnership193?.acceptWatchFinal(command))return false;
+  }else mergeFinalSets(command);
+  attachMeasuredHealth(command);persistDraft();
+  // Native completion can arrive after the drain's initial reconcile. Let the
+  // finish fence collect it before the shared save validates completed sets.
+  const pendingNative=state.session.phoneExecution162&&typeof api()?.executionStatus==='function'&&(state.session.timerOwner||'phone')==='phone';
+  if(!state.session.exercises.some(e=>e.sets?.some(s=>s.done))&&!pendingNative)return recordResult(command,'error','Legalább egy rögzített sorozat szükséges.');
+  const result=finishWorkout({wearConfirmed:true,silent:true,wearSilent:true,wearFinishedAt:String(command.finishedAt||''),wearFeedback:command.feedback});
   if(result&&typeof result.then==='function')await result;
   if(history().some(x=>matchesWorkout(x,expected)&&x.finished))return recordResult(command,'saved');
   // A temporarily busy GPS/phone save is retried without acknowledging the command.
@@ -17645,22 +17718,27 @@ window.addEventListener?.('DOMContentLoaded',function(){
  async function applyCommand(command){
   if(!command||typeof state==='undefined')return false;
   const action=String(command.action||''),expectedId=String(command.workoutId||'');
+  if(window.TrainPilotOwnership193&&!window.TrainPilotOwnership193.commandAllowed(command))return true;
   if(command.nativeExecutionProtocol===2&&expectedId&&isClosed(expectedId))return true;
   const savedPause=state.session||db.get('draft',null)?.session;
+  if(action==='resumeWorkout'&&savedPause?.ownershipProtocol193===1&&savedPause.timerOwner==='watch'&&matchesWorkout(savedPause,expectedId))
+   return window.TrainPilotOwnership193.acceptWatchResume(command);
   if(savedPause?.workoutPaused===true&&matchesWorkout(savedPause,expectedId)&&!['requestHome','healthSummary','saveWorkoutFeedback','finishWorkout','discardWorkout','watchAutomationState','resumeWorkout'].includes(action))
    return recordResult(command,'error','Az edzés szünetel. Folytasd a telefonon.');
-  if(action==='watchAutomationState'&&savedPause?.workoutPaused===true&&matchesWorkout(savedPause,expectedId))return true;
+  if(action==='watchAutomationState'&&savedPause?.workoutPaused===true&&matchesWorkout(savedPause,expectedId))return !(savedPause.ownershipProtocol193===1&&savedPause.timerOwner==='watch');
   if(action==='resumeWorkout'&&savedPause?.workoutPaused===true&&matchesWorkout(savedPause,expectedId)){
    if(Number(command.pauseRevision)!==Number(savedPause.pauseRevision))return recordResult(command,'error','Elavult folytatás. Frissítsd az órás adatokat.');
    if(!state.session)await resumeDraft();else await window.TrainPilotWorkoutPause201.resume(state.session);
    return state.session?.workoutPaused===false;
   }
+  if(action==='resumeWorkout'&&savedPause?.workoutPaused!==true&&matchesWorkout(savedPause,expectedId))return true;
 
   if(command.nativeExecutionProtocol===2&&['completeSet','undoSet','automaticControl'].includes(action)&&(action==='completeSet'||action==='undoSet'||command.value==='start'||command.value==='resumeUndo')){
    const result=await api()?.executeCommand?.({command});
    if(['applied','duplicate'].includes(result?.status))return window.TrainPilotPhoneExecution162.sync({prepare:false});
    if(result?.status==='deferred')return false;
-   return recordResult(command,'error',rf212Lang()==='hu'?'Az órás parancs elavult vagy az időzítő nem áll készen. Ellenőrizd az edzést.':'The watch command is stale or the timer is not ready. Check the workout.');
+   const staleMsg=rf212Lang()==='hu'?'Az órás parancs elavult vagy az időzítő nem áll készen. Ellenőrizd az edzést.':rf212Lang()==='de'?'Der Uhrenbefehl ist veraltet oder der Timer ist nicht bereit. Überprüfe das Training.':rf212Lang()==='ro'?'Comanda ceasului este învechită sau temporizatorul nu este gata. Verifică antrenamentul.':'The watch command is stale or the timer is not ready. Check the workout.';
+   return recordResult(command,'error',staleMsg);
   }
   if(action==='requestHome')return syncHomeNow({force:true});
   if(action==='saveWorkoutFeedback'){
@@ -17670,7 +17748,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
   if(action==='healthSummary')return attachMeasuredHealth(command);
   if(command.undoDependency188&&action!=='watchAutomationState'&&savedPause?.undo188?.commandId!==command.undoDependency188){
-   if(savedPause?.undoRejected188===command.undoDependency188)return recordResult(command,'error','A visszavonás ütközött. Ellenőrizd az edzést.');
+   if(savedPause?.undoRejected188===command.undoDependency188){
+    const undoConflictMsg=rf212Lang()==='hu'?'A visszavonás ütközött. Ellenőrizd az edzést.':rf212Lang()==='de'?'Rückgängig-Konflikt. Überprüfe das Training.':rf212Lang()==='ro'?'Conflict la anulare. Verifică antrenamentul.':'Undo conflict. Check the workout.';
+    return recordResult(command,'error',undoConflictMsg);
+   }
    return false;
   }
   if(action==='watchAutomationState'){
@@ -17812,6 +17893,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const bridge=api();if(!bridge?.pendingCommands||!bridge?.ackCommand)return;
   commandBusy=true;
   try{
+   if(bridge.ownershipStatus193&&window.TrainPilotOwnership193&&!await window.TrainPilotOwnership193.sync())return;
    if(bridge.executionStatus&&window.TrainPilotPhoneExecution162&&!await window.TrainPilotPhoneExecution162.sync({prepare:false}))return;
    if(window.TrainPilotBackupBusy)return;
    const result=await bridge.pendingCommands();
@@ -17835,6 +17917,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     const outcome=db.get('wearWorkoutResult',null);
     let status=outcome?.commandId===id&&['saved','discarded','error'].includes(outcome.status)?outcome.status:
      command.workoutId&&isClosed(command.workoutId)&&!['finishWorkout','discardWorkout','saveWorkoutFeedback','healthSummary'].includes(command.action)?'superseded':'applied';
+    if(window.TrainPilotOwnership193&&!window.TrainPilotOwnership193.commandAllowed(command))status='superseded';
     if(command.action==='healthSummary'){
      const row=history().find(h=>matchesWorkout(h,command.workoutId))||state.session;
      const measured=row?.healthWear129,expected=measuredHealth(command);
@@ -18013,9 +18096,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
    card(t('distance'),textMetric(wear.distanceMeters)?.concat(' m')??null),
    card(t('speed'),textMetric(wear.maxSpeedMps,1,0,100)===null?null:textMetric(wear.maxSpeedMps*3.6,1)?.concat(' km/h'))
   ].join('');
+  const gps=wear.gpsRoute193,words={hu:['GPS-minták az órán','Mentett GPS-pontok az órán'],en:['GPS fixes received on watch','GPS points saved on watch'],de:['GPS-Messungen auf der Uhr','Gespeicherte GPS-Punkte auf der Uhr'],ro:['Măsurători GPS primite pe ceas','Puncte GPS salvate pe ceas']}[lang()]||['GPS fixes received on watch','GPS points saved on watch'];
+  const gpsStats=gps?'<div class="rf-history-health-grid tp193-gps-counts">'+card(words[0],textMetric(gps.receivedFixes))+card(words[1],textMetric(gps.savedPoints))+'</div>':'';
   return tab+'<div class="rf-history-health-result tp160-wear-history">'+
    '<p class="small muted">'+esc(t('wearSource'))+'</p>'+
-   (stats?'<div class="rf-history-health-grid">'+stats+'</div>':'<p class="small muted">'+esc(t('empty'))+'</p>')+
+   (stats?'<div class="rf-history-health-grid">'+stats+'</div>':'<p class="small muted">'+esc(t('empty'))+'</p>')+gpsStats+
    (wear.partial?'<p class="small muted">'+esc(t('partial'))+'</p>':'')+
    '<p class="small muted">'+esc(t('energy'))+'</p></div>';
  }
@@ -18068,10 +18153,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
 (function(){
  'use strict';
  const labels={
-  hu:{title:'Órás mérés',waitingWorkout:'Edzés átadása az órának…',starting:'Mérés indítása…',active:'Mérés folyamatban',paused:'A mérés szünetel',ending:'Mérés lezárása…',ended:'Mérés befejezve',disabled:'Kapcsold be az órán az Órás méréseket.',permissionRequired:'Az órán szenzorengedély szükséges.',error:'Az órás mérés nem indult vagy megszakadt.',startTimeout:'Nincs mérési visszajelzés. Ellenőrizd az órát és a kapcsolatot.',stale:'Utolsó visszajelzés',retry:'Óra megnyitása'},
-  en:{title:'Watch measurement',waitingWorkout:'Sending workout to watch…',starting:'Starting measurement…',active:'Measurement running',paused:'Measurement paused',ending:'Finishing measurement…',ended:'Measurement finished',disabled:'Enable measurements on your watch.',permissionRequired:'Sensor permission is needed on your watch.',error:'Watch measurement failed or stopped.',startTimeout:'No measurement acknowledgement. Check your watch and connection.',stale:'Last acknowledgement',retry:'Open watch'},
-  de:{title:'Uhrenmessung',waitingWorkout:'Training wird an die Uhr gesendet…',starting:'Messung startet…',active:'Messung läuft',paused:'Messung pausiert',ending:'Messung wird beendet…',ended:'Messung beendet',disabled:'Aktiviere Messungen auf der Uhr.',permissionRequired:'Sensorberechtigung auf der Uhr erforderlich.',error:'Uhrenmessung fehlgeschlagen oder unterbrochen.',startTimeout:'Keine Messbestätigung. Prüfe Uhr und Verbindung.',stale:'Letzte Bestätigung',retry:'Uhr öffnen'},
-  ro:{title:'Măsurare pe ceas',waitingWorkout:'Se trimite antrenamentul pe ceas…',starting:'Se pornește măsurarea…',active:'Măsurare în curs',paused:'Măsurare în pauză',ending:'Se încheie măsurarea…',ended:'Măsurare încheiată',disabled:'Activează măsurările pe ceas.',permissionRequired:'Este necesară permisiunea pentru senzori pe ceas.',error:'Măsurarea a eșuat sau s-a oprit.',startTimeout:'Fără confirmare de măsurare. Verifică ceasul și conexiunea.',stale:'Ultima confirmare',retry:'Deschide ceasul'}
+  hu:{title:'Órás mérés',waitingWorkout:'Edzés átadása az órának…',starting:'Mérés indítása…',reconnecting:'Újrakapcsolódás a méréshez…',active:'Mérés folyamatban',paused:'A mérés szünetel',ending:'Mérés lezárása…',ended:'Mérés befejezve',disabled:'Kapcsold be az órán az Órás méréseket.',permissionRequired:'Az órán szenzorengedély szükséges.',error:'Az órás mérés nem indult vagy megszakadt.',startTimeout:'Nincs mérési visszajelzés. Ellenőrizd az órát és a kapcsolatot.',stale:'Utolsó visszajelzés',retry:'Óra megnyitása'},
+  en:{title:'Watch measurement',waitingWorkout:'Sending workout to watch…',starting:'Starting measurement…',reconnecting:'Reconnecting to measurement…',active:'Measurement running',paused:'Measurement paused',ending:'Finishing measurement…',ended:'Measurement finished',disabled:'Enable measurements on your watch.',permissionRequired:'Sensor permission is needed on your watch.',error:'Watch measurement failed or stopped.',startTimeout:'No measurement acknowledgement. Check your watch and connection.',stale:'Last acknowledgement',retry:'Open watch'},
+  de:{title:'Uhrenmessung',waitingWorkout:'Training wird an die Uhr gesendet…',starting:'Messung startet…',reconnecting:'Messung wird neu verbunden…',active:'Messung läuft',paused:'Messung pausiert',ending:'Messung wird beendet…',ended:'Messung beendet',disabled:'Aktiviere Messungen auf der Uhr.',permissionRequired:'Sensorberechtigung auf der Uhr erforderlich.',error:'Uhrenmessung fehlgeschlagen oder unterbrochen.',startTimeout:'Keine Messbestätigung. Prüfe Uhr und Verbindung.',stale:'Letzte Bestätigung',retry:'Uhr öffnen'},
+  ro:{title:'Măsurare pe ceas',waitingWorkout:'Se trimite antrenamentul pe ceas…',starting:'Se pornește măsurarea…',reconnecting:'Se reconectează măsurarea…',active:'Măsurare în curs',paused:'Măsurare în pauză',ending:'Se încheie măsurarea…',ended:'Măsurare încheiată',disabled:'Activează măsurările pe ceas.',permissionRequired:'Este necesară permisiunea pentru senzori pe ceas.',error:'Măsurarea a eșuat sau s-a oprit.',startTimeout:'Fără confirmare de măsurare. Verifică ceasul și conexiunea.',stale:'Ultima confirmare',retry:'Deschide ceasul'}
  };
  const key=s=>String(s?.syncId||s?.started||'');
  const t=k=>(labels[typeof rf212Lang==='function'?rf212Lang():'hu']||labels.en)[k]||k;
@@ -18169,7 +18254,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    for(const segment of s.gpsSegments||[]){const step=r.steps.find(x=>x.setId===segment.setId&&x.exerciseId===segment.exerciseId);gpsApply(o,segment,step);}
    const step=r.steps[p.stepIndex];if(s.gps){gpsApply(o,s.gps,step);tp106GpsState=s.gps;gpsTrip(o,step,s.gps);if(!s.gps.active&&db.get('gpsTrip106',null)?.key===s.gps.key)localStorage.removeItem('repforge:gpsTrip106');}
    for(let i=0;i<=p.stepIndex;i++){const l=locate(o.session,r.steps[i]);const credited=s.ledger?.steps?.[i];l.set.reps=String(Math.floor(r.steps[i].baseSeconds+(credited?credited.workMs+credited.restMs:i<p.completed?duration(r.steps,r.autoAdvance,i):p.stepElapsedMs)/1000));if(r.autoAdvance&&i<p.completed)l.set.done=true;}
-   if(s.ledger)window.TrainPilotTime162Core.merge(o.session,{[r.key]:{...s.ledger,key:r.key}});
+   if(s.ledger)window.TrainPilotTime162Core.merge(o.session,{[r.key]:window.TrainPilotTime162Core.nativeLog(s)});
    r.elapsedMs=p.elapsedMs;r.phaseNumber=Number(s.phaseNumber)||0;r.running=s.running===true&&p.phase!=='complete';r.stopped=s.stopped===true;r.interrupted=s.interrupted===true;r.phase=p;r.completed=p.completed;r.syncedComplete=p.phase==='complete';
    let changed=false;if(state.session===o.session&&r.autoAdvance){let target=locate(o.session,step).index;if(p.phase==='complete'){const last=target;if(o.session.exercises[last].sets.every(x=>x.done)&&last+1<o.session.exercises.length)target=last+1;}if(state.current!==target){state.current=target;changed=true;}}
    if(r.stopped){delete o.session.interval162;persist(o);if(state.session===o.session&&state.tab==='plan')renderWorkout();return true;}persist(o);if(changed&&state.tab==='plan')renderWorkout();paint();return true;
@@ -18273,7 +18358,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   function apply(o,s){
    o=live(o);if(!o||!o.meta.run||s?.key!==o.meta.run.key||s.steps?.[0]?.setId!==o.meta.run.target.setId)return false;
    const r=o.meta.run,p=phase(r,Number(s.elapsedMs));if(!p)return false;
-   if(s.ledger)window.TrainPilotTime162Core.merge(o.session,{[r.key]:{...s.ledger,key:r.key}});
+   if(s.ledger)window.TrainPilotTime162Core.merge(o.session,{[r.key]:window.TrainPilotTime162Core.nativeLog(s)});
    r.elapsedMs=p.elapsedMs;r.phaseNumber=Number(s.phaseNumber)||0;r.running=s.running===true&&p.phase!=='complete';r.interrupted=!!s.interrupted;
    if(s.stopped){if(knownRestKey===r.key)knownRestKey='';o.meta.enabled=false;o.meta.run=null;o.meta.phase='work';save(o);paint();return true;}
    if(r.interrupted){o.meta.phase='interrupted';save(o);paint();return true;}
@@ -18447,7 +18532,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
   async function remote(action,values={}){
    const s=state.session;if(!s||!(external()||action==='undo'&&s.timerOwner==='watch'))return false;
-   const command={schema:1,commandId:crypto.randomUUID(),workoutId:s.syncId||s.started,key:s.watchAutomation162?.key||'',phaseNumber:s.watchAutomation162?.phaseNumber||0,action,createdAt:Date.now(),...values};
+   const command={schema:1,commandId:crypto.randomUUID(),workoutId:s.syncId||s.started,ownerEpoch193:Number(s.ownerEpoch193)||0,key:s.watchAutomation162?.key||'',phaseNumber:s.watchAutomation162?.phaseNumber||0,action,createdAt:Date.now(),...values};
    const c=window.Capacitor,api=c?.Plugins?.WearSync||c?.registerPlugin?.('WearSync');
    try{
     if(!api?.automaticCommand)throw Error('No watch bridge');
@@ -18518,12 +18603,15 @@ window.addEventListener?.('DOMContentLoaded',function(){
  async function pause(session){
   if(changing||state.session!==session)return false;changing=true;
   try{
+   if(session.ownershipProtocol193===1&&(session.timerOwner==='watch'||window.TrainPilotOwnership193Core?.pending(session))){save(session);return true;}
    if(!session.workoutPaused){
     const rest=window.TrainPilotAutomatic162?.owner?.()?.meta.run,interval=window.TrainPilotIntervals162?.owner?.()?.run;
     session.pauseTimer201=rest?.running?'rest':interval?.running?'interval':null;
     session.pausedRestMillis201=Math.max(0,Number(state.restEndAt||0)-Date.now());
     closeWorkoutInterval(session);session.workoutPaused=true;revision(session);save(session);
    }
+   if(typeof rf110StopwatchHalt==='function')rf110StopwatchHalt(false);
+   if(typeof tp1481HaltSide==='function')tp1481HaltSide(false);
    if(typeof tp107StopIndoor==='function')tp107StopIndoor();
    // Manual GPS totals are recorded before leaving; a new GPS segment is explicitly started after return.
    if(typeof tp106StopGPS==='function'&&!await tp106StopGPS())return false;
@@ -18539,7 +18627,12 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  async function resume(session){
   if(!session?.workoutPaused||state.session!==session)return true;
-  const previous=session.pauseRevision;
+  if(session.ownershipProtocol193===1&&(session.timerOwner==='watch'||window.TrainPilotOwnership193Core?.pending(session)))return false;
+  if(session.ownershipAwaitingResume193){
+   const rows=workoutIntervals(session);if(rows.at(-1)&&!rows.at(-1).end){rows.pop();save(session);}
+   if(!await window.TrainPilotOwnership193?.prepareResume(session))return false;
+  }
+  if(!workoutIntervals(session).at(-1)||workoutIntervals(session).at(-1).end)workoutIntervals(session).push({start:new Date().toISOString(),end:null});
   session.workoutPaused=false;revision(session);save(session);
   try{
    if(api())await api().setWorkoutPause({snapshot:window.TrainPilotWearSync.makeSnapshot()});
@@ -18548,14 +18641,351 @@ window.addEventListener?.('DOMContentLoaded',function(){
    else if(session.pausedRestMillis201>0){state.restEndAt=Date.now()+session.pausedRestMillis201;state.timer=Math.ceil(session.pausedRestMillis201/1000);state.timerId=setInterval(tickRest,250);}
    delete session.pauseTimer201;delete session.pausedRestMillis201;save(session);
    void window.TrainPilotWearSync?.syncNow?.();return true;
-  }catch(_){session.workoutPaused=true;session.pauseRevision=Math.max(session.pauseRevision,previous+1);closeWorkoutInterval(session);save(session);void window.TrainPilotWearSync?.syncNow?.();return false;}
+  }catch(_){
+   session.workoutPaused=true;revision(session);closeWorkoutInterval(session);save(session);
+   // A rejected/lost bridge response may follow a successful native resume. Fence it with a newer pause.
+   try{if(api())await api().setWorkoutPause({snapshot:window.TrainPilotWearSync.makeSnapshot()});}catch(_){}
+   void window.TrainPilotWearSync?.syncNow?.();return false;
+  }
  }
  window.TrainPilotWorkoutPause201={pause,resume};
- window.addEventListener?.('DOMContentLoaded',()=>{
-  const base=resumeDraft;resumeDraft=async function(){const result=await base.apply(this,arguments);const s=state.session;if(s?.workoutPaused)await resume(s);return result;};
+ window.addEventListener?.('DOMContentLoaded',function protectOwnedDraft201(){
+  const base=resumeDraft;resumeDraft=async function(){
+   const saved=db.get('draft',null)?.session,protect=saved?.ownershipProtocol193===1&&(saved.timerOwner==='watch'||saved.ownershipAwaitingResume193||window.TrainPilotOwnership193Core?.pending(saved));
+   const before=protect?JSON.parse(JSON.stringify(saved)):null,result=await base.apply(this,arguments),s=state.session;
+   if(before&&id(s)===id(before)&&s.timerOwner===before.timerOwner&&s.ownerEpoch193===before.ownerEpoch193&&s.pauseRevision===before.pauseRevision&&s.wearSequence===before.wearSequence){
+    s.activeIntervals=before.activeIntervals;save(s);
+   }
+   if(s?.workoutPaused)await resume(s);return result;
+  };
  });
 })();
 // @endsection workout-pause-201.js
+
+// @section workout-ownership-193.js
+/* Adopt only native journal transitions. Normal DataItems cannot grant ownership. */
+(function(){
+ 'use strict';
+ const clone=v=>JSON.parse(JSON.stringify(v)),id=s=>String(s?.syncId||s?.started||'');
+ const rank={offered:1,accepted:2,committed:3},fields=['done','reps','weight','leftSeconds','rightSeconds','distanceMeters'];
+ function pending(session){return !!session?.handoff193&&session.handoff193.state!=='committed';}
+ function commandAllowed(session,command){
+  if(!session||session.ownershipProtocol193!==1||command?.workoutId!==id(session)||['healthSummary','requestHome','saveWorkoutFeedback'].includes(command.action))return true;
+  return !pending(session)&&Number(command.ownerEpoch193||0)===(Number(session.ownerEpoch193)||0);
+ }
+ function validateSets(own,root){
+  if(!Array.isArray(root.exercises)||root.exercises.length!==own.exercises.length||!Number.isInteger(root.currentExercise)||
+     root.currentExercise<0||root.currentExercise>=root.exercises.length)throw Error('Transferred workout changed');
+  const seen=new Set();
+  root.exercises.forEach((e,i)=>{
+   if(e.id!==own.exercises[i].id||!Array.isArray(e.sets)||e.sets.length!==own.exercises[i].sets.length)throw Error('Transferred workout changed');
+   e.sets.forEach((s,j)=>{
+    if(!s.setId||s.setId!==own.exercises[i].sets[j].setId||seen.has(s.setId)||typeof s.done!=='boolean')throw Error('Transferred set changed');
+    seen.add(s.setId);
+    for(const key of fields.slice(1))if(s[key]!=null&&s[key]!==''&&(!Number.isFinite(Number(s[key]))||Number(s[key])<0))throw Error('Invalid transferred value');
+   });
+  });
+ }
+ function resumeWatch(draft,command){
+  const own=draft?.session,root=command?.finalSnapshot,h=own?.handoff193;
+  if(!own||own.ownershipProtocol193!==1||own.timerOwner!=='watch'||pending(own)||command.workoutId!==id(own)||
+     command.ownerEpoch193!==own.ownerEpoch193||root?.workoutId!==id(own)||root.ownershipProtocol193!==1||root.timerOwner!=='watch'||root.ownerEpoch193!==own.ownerEpoch193||
+     (h?root.handoff193?.id!==h.id||root.handoff193?.state!=='committed':!!root.handoff193)||root.workoutPaused!==false||
+     !Number.isSafeInteger(command.pauseRevision)||root.pauseRevision!==command.pauseRevision||!Number.isSafeInteger(command.sequence)||command.sequence<1)
+   throw Error('Invalid watch continuation');
+  if(command.pauseRevision<Number(own.pauseRevision||0))return null;
+  if(command.pauseRevision===Number(own.pauseRevision||0)){if(!own.workoutPaused)return null;throw Error('Conflicting watch continuation');}
+  validateSets(own,root);
+  if(!Array.isArray(root.activeIntervals)||!root.activeIntervals.length||root.activeIntervals.some((row,i)=>
+   !Number.isFinite(Date.parse(row.start))||row.end!=null&&(!Number.isFinite(Date.parse(row.end))||Date.parse(row.end)<Date.parse(row.start))||
+   i<root.activeIntervals.length-1&&row.end==null)||root.activeIntervals.at(-1).end!=null)throw Error('Invalid watch active interval');
+  const next=clone(draft),s=next.session;
+  root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{for(const k of fields)if(k in v)s.exercises[i].sets[j][k]=v[k];}));
+  s.workoutPaused=false;s.pauseRevision=command.pauseRevision;s.activeIntervals=clone(root.activeIntervals);s.pauseTimer201=null;
+  s.wearSequence=Math.max(Number(s.wearSequence)||0,command.sequence);
+  s.watchAutomation162=root.automation?{...clone(root.automation),snapshot:clone(root)}:null;
+  s.automatic162={...s.automatic162,enabled:root.automation?.enabled===true,owner:'watch',watch:s.watchAutomation162,run:null,pending:false};
+  if(root.timerCheckpoint193?.timeLogs193)window.TrainPilotTime162Core.merge(s,root.timerCheckpoint193.timeLogs193);
+  if(root.automation?.timeLog)window.TrainPilotTime162Core.merge(s,{[root.automation.timeLog.key]:root.automation.timeLog});
+  next.current=root.currentExercise;next.restEndAt=null;next.savedAt=new Date().toISOString();return next;
+ }
+ function finalWatch(draft,command){
+  const own=draft?.session,root=command?.finalSnapshot,h=own?.handoff193,finished=Date.parse(command?.finishedAt),started=Date.parse(own?.started);
+  if(!own||own.ownershipProtocol193!==1||own.timerOwner!=='watch'||pending(own)||command?.action!=='finishWorkout'||command.confirmed!==true||
+     command.workoutId!==id(own)||command.ownerEpoch193!==own.ownerEpoch193||root?.workoutId!==id(own)||root.ownershipProtocol193!==1||
+     root.timerOwner!=='watch'||root.ownerEpoch193!==own.ownerEpoch193||(h?root.handoff193?.id!==h.id||root.handoff193?.state!=='committed':!!root.handoff193)||
+     root.workoutPaused!==true||!Number.isSafeInteger(root.pauseRevision)||root.pauseRevision<Number(own.pauseRevision||0)||
+     !Number.isSafeInteger(command.sequence)||command.sequence<1||command.sequence<Number(own.wearSequence||0)||
+     !Number.isFinite(finished)||!Number.isFinite(started)||finished<started||finished>Date.now()+30000)
+   throw Error('Invalid watch completion');
+  validateSets(own,root);
+  if(!Array.isArray(root.activeIntervals)||!root.activeIntervals.length||root.activeIntervals.length>4096||root.activeIntervals.some((row,i)=>{
+   const from=Date.parse(row.start),to=Date.parse(row.end),previous=i?Date.parse(root.activeIntervals[i-1].end):started;
+   return !Number.isFinite(from)||!Number.isFinite(to)||from<previous||to<from||to>finished;
+  }))throw Error('Invalid completed watch intervals');
+  const next=clone(draft),s=next.session;
+  root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{for(const k of fields)if(k in v)s.exercises[i].sets[j][k]=v[k];}));
+  s.workoutPaused=true;s.pauseRevision=root.pauseRevision;s.activeIntervals=clone(root.activeIntervals);s.pauseTimer201=null;
+  s.wearSequence=Math.max(Number(s.wearSequence)||0,command.sequence);delete s.indoorTimer107;delete s.interval162;
+  s.watchAutomation162=root.automation?{...clone(root.automation),snapshot:clone(root)}:null;
+  s.automatic162={...s.automatic162,enabled:root.automation?.enabled===true,owner:'watch',watch:s.watchAutomation162,run:null,pending:false};
+  if(root.timerCheckpoint193?.timeLogs193)window.TrainPilotTime162Core.merge(s,root.timerCheckpoint193.timeLogs193);
+  if(root.automation?.timeLog)window.TrainPilotTime162Core.merge(s,{[root.automation.timeLog.key]:root.automation.timeLog});
+  next.current=root.currentExercise;next.restEndAt=null;next.savedAt=new Date().toISOString();return next;
+ }
+ function merge(draft,root){
+  const own=draft?.session,h=root?.handoff193;
+  if(!own||!h||root.workoutId!==id(own))return null;
+  const epoch=Number(root.ownerEpoch193),local=Number(own.ownerEpoch193)||0;
+  if(root.ownershipProtocol193!==1||h.protocol!==1||!rank[h.state]||!Number.isSafeInteger(epoch)||epoch<0||
+     !Number.isSafeInteger(h.epoch)||h.epoch<1||h.epoch!==epoch+(h.state==='committed'?0:1)||
+     !/^[A-Za-z0-9._:-]{1,128}$/.test(h.id)||!['phone','watch'].includes(h.source)||
+     h.target!==(h.source==='phone'?'watch':'phone')||root.timerOwner!==(h.state==='committed'?h.target:h.source)||root.workoutPaused!==true)
+   throw Error('Invalid ownership checkpoint');
+  if(epoch<local||h.epoch<(own.handoff193?.epoch||0))return null;
+  if(h.epoch===own.handoff193?.epoch&&h.id!==own.handoff193.id)throw Error('Conflicting ownership checkpoint');
+  const applied=own.ownershipApplied193;
+  if(applied?.id===h.id&&applied.epoch===epoch&&rank[applied.state]>=rank[h.state])return null;
+  validateSets(own,root);
+  const next=clone(draft),s=next.session;
+  root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{for(const k of fields)if(k in v)s.exercises[i].sets[j][k]=v[k];}));
+  Object.assign(s,{ownershipProtocol193:1,ownerEpoch193:epoch,handoff193:clone(h),timerOwner:root.timerOwner,
+   workoutPaused:true,pauseRevision:Math.max(Number(s.pauseRevision)||0,Number(root.pauseRevision)||0),
+   ownershipApplied193:{id:h.id,state:h.state,epoch},pausedRestMillis201:Number(root.pausedRestMillis)||0});
+  delete s.indoorTimer107;
+  if(Array.isArray(root.activeIntervals))s.activeIntervals=clone(root.activeIntervals);
+  if(root.timerCheckpoint193)s.timerCheckpoint193=clone(root.timerCheckpoint193);else delete s.timerCheckpoint193;
+  s.pauseTimer201=root.resumeAutomaticOnContinue?(root.timerCheckpoint193?.timer?.restOnly?'rest':'interval'):null;
+  if(root.timerCheckpoint193?.timeLogs193)window.TrainPilotTime162Core.merge(s,root.timerCheckpoint193.timeLogs193);
+  if(root.timerOwner==='watch'){
+   s.ownershipAwaitingResume193=false;
+   s.watchAutomation162=root.automation?{...clone(root.automation),snapshot:clone(root)}:null;
+   s.automatic162={...s.automatic162,enabled:root.automation?.enabled===true,owner:'watch',watch:s.watchAutomation162,run:null,pending:false};
+   delete s.interval162;
+  }else if(h.state==='committed'){
+   // A reverse handoff must import a fresh phone execution generation before any resume.
+   s.ownershipAwaitingResume193=true;s.watchAutomation162=null;
+   s.automatic162={...s.automatic162,owner:'phone',run:null,pending:false,phase:'paused'};
+   delete s.interval162;delete s.phoneExecution162;
+  }
+  next.current=root.currentExercise;next.restEndAt=null;next.savedAt=new Date().toISOString();return next;
+ }
+ let busy=false;
+ const blocked=()=>window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||window.TrainPilotBoot?.loading;
+ const draft=()=>state.session?{session:state.session,workout:state.workout,current:state.current,restEndAt:state.restEndAt||null}:db.get('draft',null);
+ function commit(value){
+  db.set('draft',value); // Commit before exposing the new owner to controls or publishing it.
+  if(id(state.session)===id(value.session)){
+   const session=state.session,exercises=session.exercises;
+   value.session.exercises.forEach((e,i)=>e.sets.forEach((s,j)=>Object.assign(exercises[i].sets[j],s)));
+   Object.assign(session,value.session,{exercises});
+   for(const key of ['interval162','timerCheckpoint193','phoneExecution162','phoneEdit162','indoorTimer107'])if(!(key in value.session))delete session[key];
+   state.current=value.current;state.restEndAt=null;stopTimer();
+   if(session.timerOwner==='watch'||pending(session))window.TrainPilotOwnership193.releaseManualClocks?.();
+  }
+ }
+ async function sync(){
+  const c=window.Capacitor,api=c?.isNativePlatform?.()===true?(c.Plugins?.WearSync||c.registerPlugin?.('WearSync')):null;
+  if(!api?.ownershipStatus193)return true;
+  if(busy||blocked())return false;busy=true;
+  try{
+   let remote=await api.ownershipStatus193();if(blocked())return false;
+   if(remote?.ownershipProtocol193===1){
+    window.TrainPilotOwnership193.available=true;
+    const own=sessionOrNull();
+    // Only this phone's epoch-zero owner can be upgraded. Existing watch sessions keep their original protocol.
+    if(own&&own.ownershipProtocol193!==1&&(own.timerOwner||'phone')==='phone'&&!own.handoff193&&!own.ownerEpoch193){
+     const value=clone(draft());value.session.ownershipProtocol193=1;value.session.ownerEpoch193=0;value.session.timerOwner='phone';
+     db.set('draft',value);
+     if(state.session===own)Object.assign(own,{ownershipProtocol193:1,ownerEpoch193:0,timerOwner:'phone'});
+    }
+   }
+   const request=remote?.state?.request,s=sessionOrNull();
+   if(remote?.state?.stage==='incoming'&&s?.ownershipProtocol193===1&&request?.workoutId===id(s)&&
+      (s.timerOwner||'phone')==='phone'&&Number(request.epoch)===(Number(s.ownerEpoch193)||0)){
+    // A background WebView or an open editor cannot silently freeze/replace unsaved input.
+    if(state.session!==s||document.hidden||document.activeElement?.matches?.('input,textarea,select')||document.querySelector('dialog[open],[role="dialog"]'))return false;
+    if(window.TrainPilotPhoneExecution162&&!await window.TrainPilotPhoneExecution162.sync())return false;
+    if(!await window.TrainPilotWorkoutPause201.pause(s)||state.session!==s||blocked())return false;
+    if(window.TrainPilotPhoneExecution162&&!await window.TrainPilotPhoneExecution162.sync({prepare:false}))return false;
+    if(state.session!==s||blocked()||id(s)!==request.workoutId)return false;
+    remote=await api.prepareOwnership193({requestId:request.id,snapshot:window.TrainPilotWearSync.makeSnapshot()});
+    if(blocked()||state.session!==s)return false;
+   }
+   const root=remote?.state?.snapshot;
+   if(root?.active===false)return true;
+   const value=merge(draft(),root);if(value)commit(value);
+   return !pending(sessionOrNull());
+  }catch(_){return false;}finally{busy=false;window.TrainPilotOwnership193?.paint?.();window.TrainPilotWearRoutes193?.refresh?.();}
+ }
+ function sameValues(session,frame){
+  return Array.isArray(frame?.exercises)&&frame.exercises.length===session.exercises.length&&frame.exercises.every((e,i)=>
+   e.id===session.exercises[i].id&&Array.isArray(e.sets)&&e.sets.length===session.exercises[i].sets.length&&e.sets.every((set,j)=>{
+    const own=session.exercises[i].sets[j];return set.setId===own.setId&&set.done===own.done&&fields.slice(1).every(k=>String(set[k]??'')===String(own[k]??''));
+   }));
+ }
+ async function prepareResume(session){
+  if(!session?.ownershipAwaitingResume193)return true;
+  const c=window.Capacitor,api=c?.Plugins?.WearSync||c?.registerPlugin?.('WearSync'),clock=c?.Plugins?.IntervalTimer||c?.registerPlugin?.('IntervalTimer');
+  if(busy||blocked()||state.session!==session||document.hidden||pending(session)||session.timerOwner!=='phone'||!api?.preparePhoneResume193||!api?.installPhoneResume193)return false;
+  await window.TrainPilotWearSync.syncNow(); // Publish the same still-paused canonical draft before importing its execution.
+  if(busy||blocked()||state.session!==session)return false;busy=true;
+  try{
+   const prepared=await api.preparePhoneResume193(),frame=prepared?.snapshot,h=session.handoff193;
+   if(blocked()||state.session!==session||frame?.workoutId!==id(session)||frame.ownerEpoch193!==session.ownerEpoch193||!frame.workoutPaused||
+      frame.ownershipImport193?.id!==h?.id||frame.ownershipImport193?.epoch!==session.ownerEpoch193||!Number.isSafeInteger(frame.generation)||frame.generation<1||!sameValues(session,frame))return false;
+   const plan=frame.transition?.plan;
+   if(plan){
+    if(!clock?.armWorkout)return false;
+    await clock.armWorkout({workoutId:frame.workoutId,generation:frame.generation,language:frame.language||rf212Lang()});
+    if(blocked()||state.session!==session)return false;
+   }
+   const result=await api.installPhoneResume193({requestId:h.id,ownerEpoch193:session.ownerEpoch193});
+   if(blocked()||state.session!==session||result?.snapshot?.generation!==frame.generation||!result.snapshot.workoutPaused||!sameValues(session,result.snapshot))return false;
+   const value=clone(draft()),s=value.session;
+   s.phoneExecution162={generation:frame.generation,revision:result.snapshot.executionRevision,sequence:0};
+   delete s.phoneEdit162;s.ownershipAwaitingResume193=false;s.pauseTimer201=null;
+   s.automatic162={...s.automatic162,owner:'phone',run:null,pending:false,phase:'work'};
+   if(plan){
+    const timer=result.timer;if(!timer||timer.key!==plan.key||timer.running||timer.stopped||timer.interrupted)return false;
+    const run={...clone(plan),started:session.started,native:true,elapsedMs:timer.elapsedMs,running:false,stopped:false,interrupted:false,phaseNumber:timer.phaseNumber||0};
+    run.phase=window.TrainPilotInterval162Core.phase(run.steps,run.autoAdvance,run.elapsedMs,run.initialRest||0,!!run.restOnly);
+    if(!run.phase)return false;run.remainingMs=run.phase.remainingMs;
+    if(plan.restOnly){s.automatic162.run=run;s.automatic162.phase='paused';delete s.interval162;}
+    else s.interval162=run;
+    s.pausedRestMillis201=0;
+   }
+   commit(value);return true;
+  }catch(_){return false;}finally{busy=false;}
+ }
+ function sessionOrNull(){return state.session||db.get('draft',null)?.session||null;}
+ function acceptWatchResume(command){
+  try{
+   const value=resumeWatch(draft(),command);if(value){
+    commit(value);
+    if(state.session&&state.tab==='plan'&&!document.activeElement?.matches?.('input,textarea,select')&&!document.querySelector('dialog[open],[role="dialog"]'))renderWorkout();
+   }
+   return true;
+  }catch(_){return false;}
+ }
+ function acceptWatchFinal(command){
+  try{commit(finalWatch(draft(),command));return true;}catch(_){return false;}
+ }
+ window.TrainPilotOwnership193Core={merge,resumeWatch,finalWatch,pending,commandAllowed};
+ window.TrainPilotOwnership193={available:false,sync,prepareResume,acceptWatchResume,acceptWatchFinal,pending:()=>pending(sessionOrNull()),commandAllowed:command=>commandAllowed(sessionOrNull(),command),isReconciling:()=>busy};
+})();
+// @endsection workout-ownership-193.js
+
+// @section workout-ownership-ui-193.js
+(function(){
+ 'use strict';
+ const ownership=window.TrainPilotOwnership193;
+ const words={
+  hu:{title:'Edzés vezérlése',phone:'A telefon vezérli az edzést',watch:'Az óra vezérli az edzést',pending:'Az átadás folyamatban. Az edzés szünetel a visszaigazolásig.',
+   take:'Edzés visszavétele',retry:'Újrapróbálás',resume:'Folytatás telefonon',hint:'Az órán az Edzés vezérlése menüben kérheted az átvételt.',
+   mirror:'A vezérlés az órán érhető el. A telefonos szerkesztéshez vedd vissza az edzést.',paused:'Az edzés szünetel.',saved:'A visszavételi kérés mentve. Az átvétel után külön indíthatod a folytatást.',
+   failed:'A művelet nem fejeződött be. Ellenőrizd az eszközök kapcsolatát, majd próbáld újra.',busy:'Folyamatban…',
+   leaveWatch:'Kilépsz a telefonos nézetből? Az edzés az órán tovább fut.',leavePaused:'Kilépsz a telefonos nézetből? Az edzés az órán szünetben marad.',leavePending:'Kilépsz a nézetből? A mentett átadás folytatódik; az edzés a visszaigazolásig szünetben marad.'},
+  en:{title:'Workout control',phone:'Phone controls the workout',watch:'Watch controls the workout',pending:'Transfer in progress. The workout stays paused until confirmation.',
+   take:'Take back workout',retry:'Retry',resume:'Continue on phone',hint:'Request takeover in Workout control on your watch.',
+   mirror:'Use the controls on your watch. Take back the workout to edit it on your phone.',paused:'The workout is paused.',saved:'Return request saved. Continue explicitly after control returns.',
+   failed:'The operation did not finish. Check the device connection and retry.',busy:'Working…',
+   leaveWatch:'Leave the phone view? The workout will keep running on your watch.',leavePaused:'Leave the phone view? The workout will remain paused on your watch.',leavePending:'Leave this view? The saved transfer will continue; the workout stays paused until confirmation.'},
+  de:{title:'Trainingssteuerung',phone:'Das Telefon steuert das Training',watch:'Die Uhr steuert das Training',pending:'Übertragung läuft. Das Training bleibt bis zur Bestätigung pausiert.',
+   take:'Training zurücknehmen',retry:'Erneut versuchen',resume:'Auf Telefon fortsetzen',hint:'Fordere die Übernahme unter Trainingssteuerung auf der Uhr an.',
+   mirror:'Die Steuerung erfolgt auf der Uhr. Zum Bearbeiten am Telefon das Training zurücknehmen.',paused:'Das Training pausiert.',saved:'Rückgabe angefordert. Nach der Bestätigung ausdrücklich fortsetzen.',
+   failed:'Die Aktion wurde nicht abgeschlossen. Geräteverbindung prüfen und erneut versuchen.',busy:'In Bearbeitung…',
+   leaveWatch:'Telefonansicht verlassen? Das Training läuft auf der Uhr weiter.',leavePaused:'Telefonansicht verlassen? Das Training bleibt auf der Uhr pausiert.',leavePending:'Ansicht verlassen? Die gespeicherte Übertragung läuft weiter; das Training bleibt bis zur Bestätigung pausiert.'},
+  ro:{title:'Control antrenament',phone:'Telefonul controlează antrenamentul',watch:'Ceasul controlează antrenamentul',pending:'Transfer în curs. Antrenamentul rămâne în pauză până la confirmare.',
+   take:'Preia înapoi antrenamentul',retry:'Reîncearcă',resume:'Continuă pe telefon',hint:'Cere preluarea din Control antrenament pe ceas.',
+   mirror:'Folosește comenzile de pe ceas. Preia antrenamentul pentru a-l edita pe telefon.',paused:'Antrenamentul este în pauză.',saved:'Cererea de revenire a fost salvată. Continuă explicit după confirmare.',
+   failed:'Operația nu s-a încheiat. Verifică legătura dintre dispozitive și reîncearcă.',busy:'În curs…',
+   leaveWatch:'Părăsești ecranul telefonului? Antrenamentul continuă pe ceas.',leavePaused:'Părăsești ecranul telefonului? Antrenamentul rămâne în pauză pe ceas.',leavePending:'Părăsești ecranul? Transferul salvat continuă; antrenamentul rămâne în pauză până la confirmare.'}
+ };
+ const text=key=>(words[typeof rf212Lang==='function'?rf212Lang():'en']||words.en)[key];
+ const pending=s=>window.TrainPilotOwnership193Core.pending(s),identity=s=>String(s?.syncId||s?.started||'');
+ const locked=s=>s?.ownershipProtocol193===1&&(s.timerOwner==='watch'||s.workoutPaused||s.ownershipAwaitingResume193||pending(s));
+ const bridge=()=>window.Capacitor?.Plugins?.WearSync||window.Capacitor?.registerPlugin?.('WearSync');
+ let acting=false,error='',requested=false,view='',wasLocked=null,painting=false;
+ const disabled=new WeakMap();
+ function safeControl(node){
+  return !!node.closest('[data-tp193-panel],[onclick*="TrainPilotGpsMap163"]')||
+   (state.session?.timerOwner==='phone'&&!pending(state.session)&&!!node.closest('[onclick*="finishWorkout"]'));
+ }
+ function releaseManualClocks(){
+  if(typeof rf110Stopwatch!=='undefined'){
+   if(rf110Stopwatch.timer)clearInterval(rf110Stopwatch.timer);
+   Object.assign(rf110Stopwatch,{key:'',setIndex:-1,elapsedMs:0,startedAt:0,running:false,timer:null,lastSecond:-1});
+  }
+  if(typeof tp1481SideStopwatch!=='undefined'){
+   if(tp1481SideStopwatch.timer)clearInterval(tp1481SideStopwatch.timer);
+   tp1481SideStopwatch={exerciseIndex:-1,setIndex:-1,side:null,elapsedMs:0,startedAt:0,running:false,timer:null,lastSecond:-1};
+  }
+ }
+ function paint(){
+  const s=state.session,main=document.querySelector('main.tp153-workout');
+  if(!main||s?.ownershipProtocol193!==1){document.querySelector('[data-tp193-panel]')?.remove();wasLocked=null;return;}
+  const key=identity(s)+':'+Number(s.ownerEpoch193||0)+':'+(s.handoff193?.id||'')+':'+(s.handoff193?.state||'');
+  const changed=key!==view;
+  if(changed){view=key;error='';requested=false;}
+  const readonly=locked(s);
+  if(changed&&main.querySelector('[data-tp193-panel]')&&!painting){wasLocked=readonly;painting=true;try{renderWorkout();}finally{painting=false;}return;}
+  if(wasLocked===true&&!readonly&&!painting){wasLocked=false;painting=true;try{renderWorkout();}finally{painting=false;}return;}
+  wasLocked=readonly;
+  let panel=main.querySelector('[data-tp193-panel]');
+  if(!panel){panel=document.createElement('section');panel.className='card tp193-ownership';panel.dataset.tp193Panel='';main.prepend(panel);}
+  const stateText=pending(s)?text('pending'):requested?text('saved'):s.timerOwner==='watch'?text('mirror'):s.workoutPaused?text('paused'):text('hint');
+  const action=pending(s)?'retry':s.timerOwner==='watch'?'take':s.workoutPaused?'resume':null;
+  panel.innerHTML='<strong>'+esc(text(s.timerOwner==='watch'?'watch':'phone'))+'</strong><div class="small muted" role="status" aria-live="polite">'+esc(error||stateText)+'</div>'+
+   (action?'<button type="button" class="btn secondary" data-tp193-action="'+action+'" '+(acting?'disabled':'')+' onclick="TrainPilotOwnership193.'+(action==='take'?'takeBack':action==='resume'?'continueOnPhone':'retryTransfer')+'()">'+esc(acting?text('busy'):text(action))+'</button>':'');
+  if(!main.dataset.tp193Guard){
+   main.dataset.tp193Guard='1';
+   main.addEventListener('click',event=>{
+    if(locked(state.session)&&!safeControl(event.target)){event.preventDefault();event.stopImmediatePropagation();}
+   },true);
+   main.addEventListener('keydown',event=>{
+    if(['Enter',' '].includes(event.key)&&locked(state.session)&&event.target.closest('button,input,select,textarea,[onclick],[role="button"]')&&!safeControl(event.target)){event.preventDefault();event.stopImmediatePropagation();}
+   },true);
+  }
+  main.querySelectorAll('button,input,select,textarea').forEach(node=>{
+   if(safeControl(node)){if(disabled.has(node)){node.disabled=disabled.get(node);disabled.delete(node);}return;}
+   if(readonly){if(!disabled.has(node))disabled.set(node,node.disabled);node.disabled=true;}
+   else if(disabled.has(node)){node.disabled=disabled.get(node);disabled.delete(node);}
+  });
+ }
+ async function act(kind){
+  const s=state.session;if(acting||s?.ownershipProtocol193!==1||window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending)return false;
+  acting=true;error='';paint();
+  try{
+   if(kind==='take'){
+    if(s.timerOwner!=='watch'||pending(s))return false;
+    await window.TrainPilotWearSync.drainCommands();if(state.session!==s)return false;
+    if(!bridge()?.requestOwnership193)throw Error('Bridge unavailable');
+    await bridge().requestOwnership193();requested=true;await ownership.sync();
+   }else if(kind==='resume'){
+    if(s.timerOwner!=='phone'||pending(s)||!s.workoutPaused)return false;
+    if(!await window.TrainPilotWorkoutPause201.resume(s))throw Error('Continuation failed');
+    if(state.session===s)renderWorkout();
+   }else await ownership.sync();
+   return true;
+  }catch(_){error=text('failed');return false;}finally{acting=false;paint();}
+ }
+ Object.assign(ownership,{paint,releaseManualClocks,takeBack:()=>act('take'),continueOnPhone:()=>act('resume'),retryTransfer:()=>act('retry'),
+  leaveMessage:s=>s?.ownershipProtocol193!==1?null:pending(s)?text('leavePending'):s.timerOwner==='watch'?text(s.workoutPaused?'leavePaused':'leaveWatch'):null});
+ window.addEventListener?.('DOMContentLoaded',function ownershipUi193(){
+  if(!document.getElementById('tp193-ownership-style')){
+   const style=document.createElement('style');style.id='tp193-ownership-style';style.textContent='.tp193-ownership{display:grid;gap:8px;padding:12px!important}.tp193-ownership strong{font-size:14px}.tp193-ownership .btn{min-height:42px;padding:8px 12px}';document.head.appendChild(style);
+  }
+  const renderBase=renderWorkout;renderWorkout=function(){const result=renderBase.apply(this,arguments);paint();return result;};
+  for(const name of ['rf110DecorateTimedWorkout','tp1481DecoratePerSide']){
+   const base=name==='rf110DecorateTimedWorkout'?rf110DecorateTimedWorkout:tp1481DecoratePerSide;
+   const decorate=function(){if(locked(state.session)){releaseManualClocks();document.getElementById('rf110Stopwatch')?.remove();return;}return base.apply(this,arguments);};
+   if(name==='rf110DecorateTimedWorkout')rf110DecorateTimedWorkout=decorate;else tp1481DecoratePerSide=decorate;
+  }
+  paint();
+ });
+})();
+// @endsection workout-ownership-ui-193.js
 
 // @section phone-recording-162.js
 (function(){
@@ -18645,6 +19075,83 @@ window.addEventListener?.('DOMContentLoaded',function(){
 // @endsection phone-undo-188.js
 
 
+
+// @section wear-gps-route-193.js
+/* Route references are metadata; coordinates cross the bridge only when the map is opened. */
+(function(){
+ 'use strict';
+ const id=s=>String(s?.syncId||s?.started||''),key=/^wear193:[a-f0-9]{64}$/,clone=s=>({...s,exercises:s.exercises.map(e=>({...e,sets:e.sets.map(v=>({...v}))}))});
+ function merge(workout,bindings){
+  if(workout?.ownershipProtocol193!==1||!Array.isArray(workout.exercises)||!Array.isArray(bindings))return null;
+  const next=clone(workout);let changed=false;
+  for(const binding of bindings){
+   if(binding?.workoutId!==id(workout)||!key.test(binding.routeKey||'')||!Number.isInteger(binding.pointCount)||binding.pointCount<1||binding.pointCount>12000)continue;
+   const set=next.exercises.find(e=>e.id===binding.exerciseId)?.sets.find(v=>v.setId===binding.setId);if(!set)continue;
+   if(set.gpsRouteKey193!==binding.routeKey){set.gpsRouteKey193=binding.routeKey;changed=true;}
+  }
+  return changed?next:null;
+ }
+ const flights=new Map(),erasing=new Set(),deleted=new Set(),last=new Map();
+ const blocked=()=>window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||window.TrainPilotBoot?.loading;
+ const api=()=>window.Capacitor?.isNativePlatform?.()===true?(window.Capacitor.Plugins?.DistanceTracker||window.Capacitor.registerPlugin?.('DistanceTracker')):null;
+ function existing(wanted){return id(state.session)===wanted?state.session:id(db.get('draft',null)?.session)===wanted?db.get('draft').session:(db.get('history',[])||[]).find(h=>id(h)===wanted);}
+ function commit(wanted,bindings){
+  if(blocked()||erasing.has(wanted)||deleted.has(wanted))return false;
+  if(id(state.session)===wanted){
+   const own=state.session,next=merge(own,bindings);if(!next)return true;
+   db.set('draft',{...(db.get('draft',null)||{}),session:next,workout:state.workout,current:state.current,restEndAt:state.restEndAt||null,savedAt:new Date().toISOString()});
+   for(const [ei,e] of next.exercises.entries())for(const [si,set] of e.sets.entries())if(set.gpsRouteKey193)own.exercises[ei].sets[si].gpsRouteKey193=set.gpsRouteKey193;
+   return true;
+  }
+  const draft=db.get('draft',null);
+  if(id(draft?.session)===wanted){const next=merge(draft.session,bindings);if(next)db.set('draft',{...draft,session:next,savedAt:new Date().toISOString()});return true;}
+  const rows=db.get('history',[])||[],index=rows.findIndex(h=>id(h)===wanted);if(index<0)return false;
+  const next=merge(rows[index],bindings);if(next){rows[index]=next;db.set('history',rows);}return true;
+ }
+ async function sync(wanted){
+  wanted=String(wanted||'');if(!wanted||blocked()||erasing.has(wanted)||deleted.has(wanted)||existing(wanted)?.ownershipProtocol193!==1)return false;
+  const bridge=api();if(!bridge?.routeBindings193)return false;if(flights.has(wanted))return flights.get(wanted);
+  const flight=(async()=>{try{
+   const result=await bridge.routeBindings193({workoutId:wanted}),ok=result?.workoutId===wanted&&commit(wanted,result.bindings);
+   if(ok)for(const el of document.querySelectorAll('details[data-tp152-history-key][open]'))paintHistory(el,el.dataset.tp152HistoryKey);
+   return ok;
+  }catch(_){return false;}finally{flights.delete(wanted);}})();
+  flights.set(wanted,flight);return flight;
+ }
+ function refresh(){
+  if(document.hidden||blocked()||!api()?.routeBindings193)return;
+  const now=Date.now(),workouts=[state.session||db.get('draft',null)?.session];
+  // A workout can be saved before its offline GPS packets arrive. Keep expanded
+  // journal entries eligible for metadata hydration after the live draft is gone.
+  const cards=Array.from(document.querySelectorAll('details[data-tp152-history-key][open]')).slice(0,5);
+  if(cards.length){const rows=history();for(const el of cards)workouts.push(rows.find(h=>rf142WorkoutKey(h)===el.dataset.tp152HistoryKey));}
+  for(const workout of workouts){const wanted=id(workout);
+   if(workout?.ownershipProtocol193!==1||now-(last.get(wanted)||0)<10000)continue;
+   last.set(wanted,now);void sync(wanted);
+  }
+ }
+ async function erase(wanted){
+  wanted=String(wanted||'');if(!wanted)return false;erasing.add(wanted);
+  try{const bridge=api();if(window.Capacitor?.isNativePlatform?.()===true&&(await bridge?.deleteWorkoutRoutes193?.({workoutId:wanted}))?.deleted!==true)return false;deleted.add(wanted);return true;}
+  catch(_){return false;}finally{erasing.delete(wanted);}
+ }
+ function paintHistory(el,workoutKey){
+  if(!el?.isConnected)return;const row=history().find(h=>rf142WorkoutKey(h)===workoutKey),map=window.TrainPilotGpsMap163;
+  const body=el.querySelector(':scope > .tp3-combined-history-body');if(!row||!body||body.querySelector('.tp163-route-entry')||!map?.references(row).length)return;
+  const entry=document.createElement('div'),button=document.createElement('button');entry.className='tp163-route-entry';button.className='btn secondary block tp163-route-button';button.type='button';button.textContent='↗ '+map.text('open');
+  button.addEventListener('click',event=>{event.stopPropagation();map.openRoute(workoutKey);});entry.append(button);body.prepend(entry);
+ }
+ window.TrainPilotWearRoutes193Core={merge};window.TrainPilotWearRoutes193={sync,refresh,erase};
+ window.addEventListener?.('DOMContentLoaded',()=>setTimeout(()=>{
+  setInterval(refresh,10000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
+  const base=window.tp3EnsureHistoryBody;if(typeof base!=='function')return;
+  window.tp3EnsureHistoryBody=function(el,index,workoutKey){const result=base.apply(this,arguments);if(!api()?.routeBindings193)return result;
+   const row=history().find(h=>rf142WorkoutKey(h)===workoutKey);
+   if(row?.ownershipProtocol193===1)void sync(id(row)).then(ok=>{if(ok)paintHistory(el,workoutKey);});return result;
+  };
+ },0));
+})();
+// @endsection wear-gps-route-193.js
 
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();

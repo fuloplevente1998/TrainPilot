@@ -21,6 +21,7 @@ public class IntervalTimerService extends Service {
     private final JSONArray segments=new JSONArray();
     private IntervalTimeline timeline;
     private IntervalTimeLedger timeLedger;
+    private JSONObject ownershipBaseLedger193;
     private long executionGeneration;
     private String key="",language="en",lastToken="";
     private String workoutId="", armedWorkoutId="";
@@ -43,6 +44,7 @@ public class IntervalTimerService extends Service {
         if(STOP.equals(intent.getAction())){if(key.equals(intent.getStringExtra("key"))){armedWorkoutId="";stopRun();}return START_NOT_STICKY;}
         if(ARM.equals(intent.getAction())){
             String requested=intent.getStringExtra("workoutId");
+            if(!PhoneOwnership193.phoneAllowed(this,requested==null?"":requested))return START_NOT_STICKY;
             if(requested==null||requested.isEmpty()||intent.getLongExtra("generation",0)<=0)return START_NOT_STICKY;
             if(timeline!=null&&!stopped&&!"complete".equals(timeline.at(now()).phase)&&!requested.equals(workoutId))return START_NOT_STICKY;
             if(!requested.equals(armedWorkoutId)){handler.removeCallbacks(expire);handler.postDelayed(expire,IntervalTimeline.MAX_MS);}
@@ -74,6 +76,7 @@ public class IntervalTimerService extends Service {
     static boolean startPrepared(JSONObject plan)throws Exception{
         IntervalTimerService s=instance;
         if(s==null||!armed(plan.getString("workoutId"),plan.getLong("generation")))return false;
+        if(!PhoneOwnership193.phoneAllowed(s,plan.getString("workoutId")))return false;
         if(plan.optString("key").equals(s.key))return true; // Retried outbox delivery must not reset elapsed time.
         if(s.timeline!=null&&!s.stopped&&!"complete".equals(s.timeline.at(s.now()).phase))return false;
         s.handler.removeCallbacks(s.tick);s.parse(plan);s.stopped=false;s.elapsed=0;s.began=SystemClock.elapsedRealtime();s.running=true;
@@ -83,13 +86,32 @@ public class IntervalTimerService extends Service {
         IntervalTimerService s=instance;if(s==null||!armed(workoutId,generation))return;
         s.armedWorkoutId="";if(s.timeline==null){s.stopForeground(true);s.stopSelf();}else if(workoutId.equals(s.workoutId))s.stopRun();
     }
+    static void stopForOwnership(Context context,String workoutId){
+        IntervalTimerService s=instance;
+        if(s!=null&&workoutId.equals(s.workoutId)){s.armedWorkoutId="";s.stopRun();}
+    }
+    static JSONObject installOwnership193(JSONObject plan)throws Exception {
+        IntervalTimerService s=instance;
+        if(s==null||!armed(plan.getString("workoutId"),plan.getLong("generation")))throw new IllegalStateException("Arm the returned workout before continuing");
+        if(plan.optString("key").equals(s.key)&&s.executionGeneration==plan.getLong("generation"))return s.current();
+        JSONObject frame=PhoneWorkoutExecution.store(s).snapshot(),t=frame==null?null:frame.optJSONObject("transition");
+        if(frame==null||!frame.optBoolean("workoutPaused")||!PhoneOwnership193.phoneAllowed(s,plan.getString("workoutId"))
+                ||t==null||t.optJSONObject("plan")==null||!t.getJSONObject("plan").getString("key").equals(plan.getString("key")))
+            throw new IllegalStateException("The returned workout changed");
+        s.handler.removeCallbacks(s.tick);s.release();s.cancelVibration();s.parse(plan);
+        s.elapsed=plan.getLong("elapsedMs");s.began=0;s.running=false;s.stopped=false;
+        s.timeLedger=IntervalTimeLedger.restore(plan.getJSONArray("steps"),plan.getJSONObject("ledger"),SystemClock.elapsedRealtime());
+        s.save();s.notifyStatus();s.publishWatchClock();return s.current();
+    }
     static void disarm(){IntervalTimerService s=instance;if(s==null)return;s.armedWorkoutId="";if(s.timeline==null){s.stopForeground(true);s.stopSelf();}else if(!s.running&&"complete".equals(s.timeline.at(s.now()).phase)){s.stopForeground(true);s.stopSelf();}}
     private void parse(JSONObject plan)throws Exception{
         JSONObject current=ActiveWorkoutStore.current(this);
+        if(current!=null&&!PhoneOwnership193.phoneAllowed(this,current.optString("workoutId")))throw new IllegalStateException("Workout ownership changed");
         workoutId=plan.optString("workoutId",current==null?"":current.optString("workoutId"));
         JSONObject execution=PhoneWorkoutExecution.store(this).snapshot();
         executionGeneration=plan.optLong("generation",execution!=null&&execution.optString("workoutId").equals(workoutId)?execution.optLong("generation"):0);
         planSteps=new JSONArray(plan.getJSONArray("steps").toString());phaseNumber=0;
+        ownershipBaseLedger193=plan.optJSONObject("ownershipBaseLedger193");
         timeline=validate(plan);timeLedger=new IntervalTimeLedger(plan.getJSONArray("steps").length(),SystemClock.elapsedRealtime());interrupted=false;lastSavedSecond=-1;steps.clear();JSONArray rows=plan.getJSONArray("steps");for(int i=0;i<rows.length();i++){JSONObject row=rows.getJSONObject(i);steps.add(new IntervalTimeline.Step(row.getString("exerciseId"),row.getString("setId"),row.optString("name","TrainPilot"),row.getInt("work"),row.getInt("rest"),row.getInt("rounds"),row.optString("gpsKey","")));}
         initialRest=plan.optInt("initialRest",0);restOnly=plan.optBoolean("restOnly");timeline=new IntervalTimeline(steps,plan.optBoolean("autoAdvance"),initialRest,restOnly);key=plan.getString("key");language=plan.optString("language","en");advance=plan.optBoolean("autoAdvance");sound=plan.optBoolean("sound",true);vibration=plan.optBoolean("vibration",true);while(segments.length()>0)segments.remove(0);gpsStep=0;lastToken="";haptics=new IntervalHapticCues();
     }
@@ -143,6 +165,7 @@ public class IntervalTimerService extends Service {
     private JSONObject current(){
         JSONObject out=new JSONObject();if(timeline==null)return out;IntervalTimeline.Phase p=timeline.at(now());try{
             out.put("key",key).put("workoutId",workoutId).put("generation",executionGeneration).put("ledger",timeLedger.json(planSteps)).put("interrupted",interrupted).put("phaseNumber",phaseNumber).put("running",running).put("stopped",stopped).put("restOnly",restOnly).put("initialRest",initialRest).put("autoAdvance",advance).put("sound",sound).put("vibration",vibration).put("language",language).put("elapsedMs",p.elapsedMs).put("stepElapsedMs",p.stepElapsedMs).put("stepIndex",p.step).put("completed",p.completed).put("phase",p.phase).put("round",p.round).put("remainingMs",p.remainingMs).put("totalMs",p.totalMs);
+            if(ownershipBaseLedger193!=null)out.put("ownershipBaseLedger193",new JSONObject(ownershipBaseLedger193.toString()));
             JSONArray rows=new JSONArray();for(int i=0;i<steps.size();i++){IntervalTimeline.Step s=steps.get(i);rows.put(new JSONObject(planSteps.getJSONObject(i).toString()).put("exerciseId",s.exerciseId).put("setId",s.setId).put("name",s.name).put("work",s.work).put("rest",s.rest).put("rounds",s.rounds).put("gpsKey",s.gpsKey));}out.put("steps",rows).put("gpsSegments",segments);JSONObject gps=DistanceTrackingService.snapshot(this);if(steps.get(p.step).gpsKey.equals(gps.optString("key"))&&!steps.get(p.step).gpsKey.isEmpty())out.put("gps",gps);
         }catch(Exception ignored){}return out;
     }
@@ -186,6 +209,7 @@ public class IntervalTimerService extends Service {
     }
     static JSONObject command(Context context,String key,String action)throws Exception{
         IntervalTimerService s=instance;if(s==null||!key.equals(s.key))throw new IllegalStateException("Interval owner is no longer active");
+        if(("resume".equals(action)||"skipRest".equals(action))&&!PhoneOwnership193.phoneAllowed(context,s.workoutId))throw new IllegalStateException("Workout ownership changed");
         if(("resume".equals(action)||"skipRest".equals(action))&&s.executionGeneration>0){
             JSONObject frame=PhoneWorkoutExecution.store(context).snapshot();
             if(frame!=null&&s.workoutId.equals(frame.optString("workoutId"))&&frame.optBoolean("workoutPaused"))throw new IllegalStateException("Workout is suspended");

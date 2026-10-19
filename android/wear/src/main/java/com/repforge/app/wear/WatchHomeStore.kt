@@ -55,7 +55,8 @@ data class WatchHomeSnapshot(
     val publishedAt: Long = 0L,
     val theme: WearHomeTheme = WearHomeTheme.DEFAULT,
     val automaticProtocol: Int = 0,
-    val pendingFeedback: WatchWorkoutFeedback? = null
+    val pendingFeedback: WatchWorkoutFeedback? = null,
+    val ownershipProtocol193: Int = 0
 ) {
     fun toWearExercise(exercise: WatchHomeExercise): WearExercise = WearExercise(
         id = exercise.id,
@@ -83,7 +84,8 @@ data class WatchHomeSnapshot(
         restEndAt = 0L,
         dayName = "Gyors edzés",
         quickWorkout = true,
-        exercises = listOf(toWearExercise(exercise)),timerOwner="watch"
+        exercises = listOf(toWearExercise(exercise)),timerOwner="watch",
+        ownershipProtocol193=ownershipProtocol193,activeIntervals=initialIntervals193(started)
     )
 
     fun createWorkout(day: WatchHomeDay, scheduleId: String, started: String): WearWorkout =
@@ -99,16 +101,19 @@ data class WatchHomeSnapshot(
             restSeconds = restSeconds,
             restEndAt = 0L,
             dayName = day.name,
-            exercises = day.exercises.map(::toWearExercise),timerOwner="watch"
+            exercises = day.exercises.map(::toWearExercise),timerOwner="watch",
+            ownershipProtocol193=ownershipProtocol193,activeIntervals=initialIntervals193(started)
         )
 
+    private fun initialIntervals193(started: String): List<WearActiveInterval>? =
+        if(ownershipProtocol193==1)listOf(WearActiveInterval(java.time.Instant.parse(started).toEpochMilli()))else null
 }
 
 object WatchHomeStore {
     private const val PREFS = "trainpilot_wear_home"
     private const val SNAPSHOT = "snapshot"
 
-    fun save(context: Context, raw: String?, publishedAt: Long = 0L): WatchHomeSnapshot? {
+    fun save(context: Context, raw: String?, publishedAt: Long = 0L,origin: String? = null): WatchHomeSnapshot? {
         if (raw.isNullOrBlank()) return null
         val parsed = parse(raw)?.let { it.copy(publishedAt = maxOf(it.publishedAt, publishedAt)) } ?: return null
         val cached = load(context)
@@ -118,6 +123,7 @@ object WatchHomeStore {
             .edit()
             .putString(SNAPSHOT, JSONObject(raw).put("publishedAt", parsed.publishedAt).toString())
             .putInt("automaticProtocol",parsed.automaticProtocol)
+            .apply { if(com.repforge.shared.GpsRoutePacket193.id(origin))putString("phoneNode193",origin) }
             .apply()
         return parsed
     }
@@ -125,6 +131,7 @@ object WatchHomeStore {
     fun newest(current: WatchHomeSnapshot?, incoming: WatchHomeSnapshot): WatchHomeSnapshot =
         if (current != null && current.publishedAt > incoming.publishedAt) current else incoming
     fun automaticProtocol(context: Context)=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).getInt("automaticProtocol",0)
+    fun phoneNode193(context: Context)=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).getString("phoneNode193","").orEmpty()
 
     fun load(context: Context): WatchHomeSnapshot? {
         val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(SNAPSHOT, null)
@@ -183,6 +190,7 @@ object WatchHomeStore {
                 publishedAt = root.optLong("publishedAt", 0L),
                 theme = WearHomeTheme.parse(root.optJSONObject("theme")),
                 automaticProtocol = root.optInt("automaticProtocol",0),
+                ownershipProtocol193 = if(root.optInt("ownershipProtocol193")==1)1 else 0,
                 pendingFeedback = WatchWorkoutFeedback.parse(root.optJSONObject("pendingFeedback"))
             )
         } catch (_: Exception) { null }

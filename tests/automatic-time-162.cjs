@@ -21,3 +21,16 @@ assert.throws(()=>core.merge(session,{[log.key]:{...log,pausedMs:NaN}}),/Invalid
 const watch={schema:1,owner:'watch',key:'watch-clock',positionMs:3000,workMs:2000,restMs:1000,pausedMs:0};
 core.merge(session,{[watch.key]:watch});assert.equal(session.automaticTime162.workMs,12000);
 console.log('PASS unified automatic time: actual work/rest/pause, skipped rest, idempotent contributions, retained newer checkpoint and rejected incomparable/owner changes');
+{
+ const inherited={schema:1,owner:'phone',positionMs:18000,workMs:10000,restMs:8000,pausedMs:9000,steps:[{exerciseId:'plank',setId:'s193',workMs:10000,restMs:8000,pausedMs:9000}]};
+ const measured=JSON.parse(JSON.stringify(inherited));measured.positionMs=19234;measured.workMs+=1234;measured.pausedMs+=500;measured.steps[0].workMs+=1234;measured.steps[0].pausedMs+=500;
+ const snapshot={key:'phone-return193',ledger:measured,ownershipBaseLedger193:inherited},before=JSON.stringify(snapshot),local=core.nativeLog(snapshot);
+ assert.equal(local.positionMs,1734);assert.equal(local.workMs,1234);assert.equal(local.restMs,0);assert.equal(local.pausedMs,500);assert.equal(local.steps[0].workMs,1234);
+ assert.equal(JSON.stringify(snapshot),before,'UI must retain the aggregate source ledger for exact timed set recording');
+ const returned={};core.merge(returned,{'phone-source193':{...inherited,key:'phone-source193'}});core.merge(returned,{[local.key]:local});
+ assert.equal(returned.automaticTime162.workMs,11234);assert.equal(returned.automaticTime162.restMs,8000);assert.equal(returned.automaticTime162.pausedMs,9500);
+ assert.equal(core.merge(returned,{[local.key]:JSON.parse(JSON.stringify(local))}),false,'native execution reconciliation and foreground interval polling share the same delta');
+ const broken=JSON.parse(JSON.stringify(snapshot));broken.ledger.steps[0].setId='other';assert.throws(()=>core.nativeLog(broken),/targets changed/);
+ const backwards=JSON.parse(JSON.stringify(snapshot));backwards.ledger.workMs=9999;assert.throws(()=>core.nativeLog(backwards),/counter/);
+ console.log('PASS #193 imported native timer logs count only the new phone epoch and preserve the aggregate baseline');
+}

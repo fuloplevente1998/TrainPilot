@@ -123,6 +123,7 @@ object WearAutomaticEngine {
         val a=workout.automation ?: return WearAutomaticTransition(workout)
         if(workout.workoutPaused)return WearAutomaticTransition(workout)
         if(!a.enabled||a.owner!="watch"||a.phase=="complete")return WearAutomaticTransition(workout)
+        if(workout.timerCheckpoint193!=null)return WearTransferredTimer193.tick(workout,now,boot)
         if(a.boot!=boot||now<a.anchorMs||!validTarget(workout,a))return WearAutomaticTransition(interrupt(workout,a.anchorMs))
         val manual=a.phase=="ready"&&!timed(workout.exercises.getOrNull(a.targetExercise))
         if(!manual&&!a.counting&&!a.paused)return WearAutomaticTransition(workout)
@@ -164,12 +165,13 @@ object WearAutomaticEngine {
     }
     fun skipRest(workout: WearWorkout, now: Long, boot: Int): WearWorkout {
         if(workout.automation?.phase!="rest"||workout.automation.owner!="watch")return workout
+        if(workout.timerCheckpoint193!=null)return WearTransferredTimer193.skipRest(workout,now,boot)
         val current=tick(workout,now,boot).workout
         return if(current.automation?.phase=="rest")ready(current,now,boot)else current
     }
     fun disable(workout: WearWorkout, now: Long, boot: Int): WearWorkout {
         val current=tick(workout,now,boot).workout
-        return current.copy(restEndAt=0,automation=current.automation?.copy(enabled=false,paused=false,phase="ready",remainingMs=0,phaseNumber=(current.automation?.phaseNumber ?: 0)+1))
+        return current.copy(restEndAt=0,timerCheckpoint193=null,automation=current.automation?.copy(enabled=false,paused=false,phase="ready",remainingMs=0,phaseNumber=(current.automation?.phaseNumber ?: 0)+1))
     }
 }
 

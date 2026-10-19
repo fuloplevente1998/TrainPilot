@@ -69,6 +69,7 @@ private val LocalOpenSaveSync = compositionLocalOf<(() -> Unit)?> { null }
 private val LocalUndo = compositionLocalOf<((String)->Unit)?> { null }
 private val LocalTouchLock189 = compositionLocalOf<(() -> Unit)?> { null }
 private val LocalEditorSave = compositionLocalOf<((String,Double,String)->Boolean)?> { null }
+private val LocalOwnership193 = compositionLocalOf<WearWorkout?> { null }
 
 @Composable
 internal fun TrainPilotWearApp(
@@ -109,6 +110,11 @@ internal fun TrainPilotWearApp(
     saveSync: State<WearSaveSyncState?>? = null,
     onRetrySync: ((String) -> Unit)? = null,
     onUndo: ((String) -> Unit)? = null,
+    onRequestOwnership193: (() -> Unit)? = null,
+    onRetryOwnership193: (() -> Unit)? = null,
+    gpsRoute193: State<JSONObject?>? = null,
+    onStartGpsRoute193: (() -> Unit)? = null,
+    onStopGpsRoute193: (() -> Unit)? = null,
     touchClock189: ()->Long = { android.os.SystemClock.uptimeMillis() },
 ) {
     var route by rememberSaveable { mutableStateOf("home") }
@@ -190,6 +196,7 @@ internal fun TrainPilotWearApp(
         LocalUndo provides onUndo,
         LocalTouchLock189 provides if(workout.value!=null)({lockTouches()})else null,
         LocalSaveSync provides saveSync?.value,
+        LocalOwnership193 provides workout.value?.takeIf { it.ownershipProtocol193==1 },
         LocalOpenSaveSync provides { syncBackRoute=route;route="save-sync" }
     ) {
         MaterialTheme {
@@ -238,6 +245,11 @@ internal fun TrainPilotWearApp(
                     route == "save-sync" -> SaveSyncScreen(saveSync?.value,
                         onRetry = { saveSync?.value?.let { onRetrySync?.invoke(it.workoutId) } },
                         onBack = { route=syncBackRoute })
+                    route == "ownership193" && active?.ownershipProtocol193==1 ->
+                        OwnershipScreen193(active,phoneConnected?.value,onRequestOwnership193,onRetryOwnership193,
+                            onResumeWorkout,onOpenPhone,onBack={route="menu"},onGps={route="gpsRoute193"})
+                    route == "gpsRoute193" && active?.ownershipProtocol193==1 ->
+                        GpsRouteScreen193(active,gpsRoute193?.value,onStartGpsRoute193,onStopGpsRoute193,onBack={route="ownership193"})
                     route == "menu" ->
                         MainMenuScreen(active != null, active?.quickWorkout == true, onOpenPhone) {
                             if (it == "journal") openJournal("menu")
@@ -337,12 +349,17 @@ internal fun TrainPilotWearApp(
                             if (workout.value != null) route = "workout"
                         }
                     route in listOf("workout","editor","timer") && active?.workoutPaused==true ->
-                        RoundList("Edzés szünetel") {
+                        RoundList(if(active.ownershipProtocol193==1)WearOwnershipText193.text("pausedTitle")else "Edzés szünetel") {
                             centerItem { Text(active.exercise?.name.orEmpty(),color=White,fontSize=14.sp,
                                 textAlign=TextAlign.Center,modifier=Modifier.fillMaxWidth()) }
-                            centerItem { Text("A mérés és az időzítő szünetel.",color=Muted,fontSize=11.sp,textAlign=TextAlign.Center) }
-                            centerItem { Pill("Folytatás telefonon",tone=Gold) { onOpenPhone() } }
-                            centerItem { Pill("Kezdőlap",tone=Secondary) { route="home" } }
+                            centerItem { Text(if(active.ownershipProtocol193==1)WearOwnershipText193.text("pausedDetail")else "A mérés és az időzítő szünetel.",color=Muted,fontSize=11.sp,textAlign=TextAlign.Center) }
+                            if(active.ownershipProtocol193==1&&WearOwnership193.pending(active)) {
+                                centerItem { Text(WearOwnershipText193.text("pending"),color=Muted,fontSize=11.sp,textAlign=TextAlign.Center) }
+                                centerItem { Pill(WearOwnershipText193.text("retry"),tone=Secondary) { onRetryOwnership193?.invoke() } }
+                            }else if(active.ownershipProtocol193==1&&active.timerOwner=="watch") {
+                                centerItem { Pill(WearOwnershipText193.text("resume"),tone=Gold) { onResumeWorkout() } }
+                            }else centerItem { Pill("Folytatás telefonon",tone=Gold) { onOpenPhone() } }
+                            centerItem { Pill(if(active.ownershipProtocol193==1)WearOwnershipText193.text("home")else "Kezdőlap",tone=Secondary) { route="home" } }
                         }
                     route == "workout" && active != null ->
                         WorkoutPager(
@@ -388,7 +405,7 @@ internal fun TrainPilotWearApp(
                                 if (workout.value != null) route = "workout"
                             },
                             onResume = {
-                                if(active?.workoutPaused==true)onOpenPhone()else onResumeWorkout()
+                                if(active?.workoutPaused==true&&!(active.ownershipProtocol193==1&&active.timerOwner=="watch"))onOpenPhone()else onResumeWorkout()
                                 route = "workout"
                             },
                             onDays = { route = "days" },
@@ -611,6 +628,7 @@ internal fun MainMenuScreen(
     onRoute: (String) -> Unit,
 ) {
     val status=LocalSaveSync.current
+    val ownership=LocalOwnership193.current
     RoundList("Főmenü") {
         if(status!=null)saveSyncItem()
         for ((label, destination) in
@@ -633,9 +651,54 @@ internal fun MainMenuScreen(
         }
         if (hasWorkout) {
             centerItem { Pill("Edzés folytatása") { onRoute("workout") } }
+            if(ownership!=null)centerItem { Pill(WearOwnershipText193.text("title"),tone=Card) { onRoute("ownership193") } }
             centerItem { Pill("Edzés törlése", tone = Danger) { onRoute("discard") } }
         }
         centerItem { Pill("Megnyitás telefonon", tone = Card, onClick = onOpenPhone) }
+    }
+}
+
+@Composable
+internal fun OwnershipScreen193(
+    workout: WearWorkout,connected: Boolean?,onRequest: (() -> Unit)?,onRetry: (() -> Unit)?,
+    onResume: () -> Unit,onOpenPhone: () -> Unit,onBack: () -> Unit,
+    onGps: (() -> Unit)? = null,
+) {
+    val pending=WearOwnership193.pending(workout)
+    val watch=workout.timerOwner=="watch"
+    RoundList(WearOwnershipText193.text("title")) {
+        centerItem { Text(WearOwnershipText193.text(if(watch)"watch" else "phone"),color=White,fontSize=14.sp,textAlign=TextAlign.Center) }
+        centerItem { Text(WearOwnershipText193.text(when {pending->"pending";watch&&workout.workoutPaused->"ready";watch->"return";else->"connected"}),
+            color=Muted,fontSize=12.sp,textAlign=TextAlign.Center) }
+        when {
+            pending->centerItem { Pill(WearOwnershipText193.text("retry"),enabled=onRetry!=null) { onRetry?.invoke() } }
+            !watch->centerItem { Pill(WearOwnershipText193.text("request"),enabled=connected!=false&&onRequest!=null) { onRequest?.invoke() } }
+            workout.workoutPaused->centerItem { Pill(WearOwnershipText193.text("resume")) { onResume() } }
+        }
+        if(onGps!=null)centerItem { Pill(WearGpsText193.text("title"),tone=Secondary) { onGps() } }
+        centerItem { Pill(WearOwnershipText193.text("openPhone"),tone=Secondary) { onOpenPhone() } }
+        centerItem { Pill(WearOwnershipText193.text("back"),tone=Secondary) { onBack() } }
+    }
+}
+
+@Composable
+internal fun GpsRouteScreen193(
+    workout: WearWorkout,status: JSONObject?,onStart: (() -> Unit)?,onStop: (() -> Unit)?,onBack: () -> Unit,
+    language: String=java.util.Locale.getDefault().language,
+) {
+    fun text(key: String)=WearGpsText193.text(key,language)
+    val code=status?.optString("state")?.takeIf { it in listOf("idle","acquiring","recording","paused","stopped","permission","locationOff","storage","unavailable","interrupted","deleted") } ?: "idle"
+    val allowed=WearGps193.owns(workout)&&WearGps193.distance(workout.exercise)&&workout.currentSet?.let { !it.done&&it.setId.isNotBlank() }==true
+    RoundList(text("title")) {
+        centerItem { Text(text("consent"),color=Muted,fontSize=11.sp,textAlign=TextAlign.Center) }
+        centerItem { Text(text(code),color=White,fontSize=13.sp,textAlign=TextAlign.Center) }
+        val count=status?.optInt("points") ?: 0
+        centerItem { Text(text("points").replace("{count}",count.toString()),color=Muted,fontSize=12.sp,textAlign=TextAlign.Center) }
+        centerItem { Text(text("received").replace("{count}",(status?.optInt("receivedFixes") ?: 0).toString()),color=Muted,fontSize=12.sp,textAlign=TextAlign.Center) }
+        if(!allowed)centerItem { Text(text("distanceOnly"),color=Muted,fontSize=12.sp,textAlign=TextAlign.Center) }
+        if(status?.optBoolean("running")!=true)centerItem { Pill(text("start"),enabled=allowed&&onStart!=null) { onStart?.invoke() } }
+        if(status?.optBoolean("armed")==true)centerItem { Pill(text("stop"),enabled=onStop!=null,tone=Secondary) { onStop?.invoke() } }
+        centerItem { Pill(text("back"),tone=Secondary) { onBack() } }
     }
 }
 
@@ -1317,6 +1380,7 @@ private fun HealthScreen(
 
         val fresh =
             data?.optString("state") == "active" &&
+                data.optString("heartRateAvailability") !in listOf("acquiring", "unavailable") &&
                 System.currentTimeMillis() -
                     (data.optLong("lastSampleAt", data.optLong("updatedAt"))) < 15000
         centerItem { Label(if (fresh) "Élő pulzus" else "Pulzus · utolsó mérés", size = 10) }
@@ -1783,7 +1847,8 @@ private fun AutomaticTimedSetScreen(workout: WearWorkout,restRemaining: Int,heal
             // On the smallest circle, measurements share the heading instead of pushing
             // the actionable countdown below the fixed body. Full metrics remain on page 3.
             SetHeading(workout,restRemaining,detail=if(tiny)rows.firstOrNull() else null,compact=tiny)
-            if(!tiny)rows.take(if(bodyHeight>=96f&&fontScale<1.5f)2 else 1).forEach {
+            val displayed = if (rows.size <= 2) rows else listOf(rows[0], "${rows[1]} · ${rows[2]}")
+            if(!tiny)displayed.take(if(bodyHeight>=96f&&fontScale<1.5f)2 else 1).forEach {
                 Text(it,color=Gold,fontSize=(9*scale).sp,lineHeight=(11*scale).sp,maxLines=1,overflow=TextOverflow.Ellipsis)
             }
             val waiting=a.phase=="ready"
@@ -1805,8 +1870,11 @@ private fun AutomaticTimedSetScreen(workout: WearWorkout,restRemaining: Int,heal
 
 @Composable
 private fun LiveWorkoutHealth(workout: WearWorkout, health: JSONObject?) {
-    wearLiveWorkoutRows(health, workout.workoutId, System.currentTimeMillis()).forEach {
-        Text(it, color = Gold, fontSize = 10.sp, lineHeight = 12.sp, textAlign = TextAlign.Center)
+    val rows = wearLiveWorkoutRows(health, workout.workoutId, System.currentTimeMillis())
+    if (rows.isEmpty()) return
+    val displayed = if (rows.size <= 2) rows else listOf(rows[0], "${rows[1]} · ${rows[2]}")
+    displayed.take(2).forEach {
+        Text(it, color = Gold, fontSize = 10.sp, lineHeight = 12.sp, textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 

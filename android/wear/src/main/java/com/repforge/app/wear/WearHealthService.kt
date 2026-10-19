@@ -29,6 +29,15 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
     }
     private var pauseInFlight=false
     private var appliedPause=false
+    private var pauseRetries=0
+    private fun pauseFailed(error: Exception) {
+        pauseInFlight=false
+        val message=error.cause?.message ?: error.message.orEmpty()
+        if(WearHealthFutures.isRecoverableHealthError(message)&&pauseRetries<3) {
+            pauseRetries++
+            handler.postDelayed({ if(!destroyed&&lifecycle?.finished!=true)syncWorkoutPause() },2000L)
+        }else futureFailed(error)
+    }
     private fun syncWorkoutPause() {
         val data=summary ?: return
         val session=lifecycle ?: return
@@ -40,18 +49,66 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
         if(desired==appliedPause)return
         pauseInFlight=true
         try {
-            awaitCompletion(if(desired)client.pauseExerciseAsync() else client.resumeExerciseAsync()) {
-                pauseInFlight=false;appliedPause=desired
-                data.put("workoutPauseApplied201",desired).put("state",if(desired)"paused" else "active");persist()
-                syncWorkoutPause() // A newer explicit continuation may have arrived during the future.
-            }
-        }catch(error:Exception){pauseInFlight=false;futureFailed(error)}
+            WearHealthFutures.awaitCompletion(
+                if(desired)client.pauseExerciseAsync() else client.resumeExerciseAsync(),
+                executor,
+                { !destroyed && lifecycle?.finished!=true },
+                onFailure = ::pauseFailed,
+                onSuccess = {
+                    pauseInFlight=false;pauseRetries=0;appliedPause=desired
+                    data.put("workoutPauseApplied201",desired).put("state",if(desired)"paused" else "active");persist()
+                    syncWorkoutPause() // A newer explicit continuation may have arrived during the future.
+                }
+            )
+        }catch(error:Exception){pauseFailed(error)}
     }
+
     private var destroyed=false
     private var watchdog: Runnable?=null
+    private var sensorWatchdog: Runnable?=null
+    private var reconnectAttempts=0
+    private val reconnectRunnable=Runnable {
+        if(!destroyed && lifecycle?.finished!=true) {
+            try { client.setUpdateCallback(executor,this) } catch(error:Exception) { onRegistrationFailed(error) }
+        }
+    }
     private val handler=Handler(Looper.getMainLooper())
     private var lastLiveAt=0L
     private var lastLiveState=""
+    private var lastUpdateReceivedAt=0L
+    private fun scheduleSensorWatchdog() {
+        if(destroyed || lifecycle?.finished==true)return
+        sensorWatchdog?.let { handler.removeCallbacks(it) }
+        sensorWatchdog=Runnable {
+            checkSensorHealth()
+            scheduleSensorWatchdog()
+        }.also { handler.postDelayed(it, 15000L) }
+    }
+    private fun checkSensorHealth() {
+        val data=summary ?: return
+        val session=lifecycle ?: return
+        if(destroyed || session.finished || !session.owned || session.stopRequested)return
+        val now=SystemClock.elapsedRealtime()
+        if(data.optString("state")=="active" && lastUpdateReceivedAt>0L && (now-lastUpdateReceivedAt>30000L)) {
+            WearHealthFutures.awaitValue(
+                client.getCurrentExerciseInfoAsync(),
+                executor,
+                { !destroyed && lifecycle?.finished!=true },
+                onFailure = { /* Transient check failure - keep current active state */ },
+                onSuccess = { info ->
+                    if(lifecycle!==session || summary!==data || session.finished || session.stopRequested || destroyed)return@awaitValue
+                    if(info.exerciseTrackedStatus!=ExerciseTrackedStatus.OWNED_EXERCISE_IN_PROGRESS) {
+                        fail("A mérés megszakadt a háttérben.")
+                    } else {
+                        if(data.optString("heartRateAvailability")!="acquiring") {
+                            data.put("heartRateAvailability","acquiring")
+                            persist()
+                        }
+                    }
+                }
+            )
+        }
+    }
     override fun onBind(intent: Intent?) = null
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if(intent?.action==STOP) { end();return START_NOT_STICKY }
@@ -84,14 +141,15 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
             if(Build.VERSION.SDK_INT>=34) startForeground(129,notification,ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH or if(location)ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0)
             else startForeground(129,notification,if(location)ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0)
             WearHealthStore.save(this,summary!!)
-            // Register before resuming/starting, so the final update cannot be missed.
             afterRegistration = {
                 await(client.getCurrentExerciseInfoAsync()) { info ->
                     when(info.exerciseTrackedStatus) {
                         ExerciseTrackedStatus.OTHER_APP_IN_PROGRESS -> fail("Másik alkalmazás már edzést mér. A TrainPilot nem szakította meg.")
                         ExerciseTrackedStatus.OWNED_EXERCISE_IN_PROGRESS -> {
                             session.confirmOwnership()
+                            lastUpdateReceivedAt=SystemClock.elapsedRealtime()
                             summary?.put("state",if(session.stopRequested)"ending" else if(appliedPause)"paused" else "active");persist()
+                            scheduleSensorWatchdog()
                             if(session.stopRequested)end() else syncWorkoutPause()
                         }
                         else -> if(session.stopRequested){finishWithoutExercise()}else capabilities(request.exerciseType,access.gpsEnabled)
@@ -123,6 +181,8 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
                 lifecycle?.confirmOwnership();appliedPause=false
                 summary?.put("workoutPauseApplied201",false)
                 summary?.put("state",if(lifecycle?.stopRequested==true)"ending" else "active");persist()
+                lastUpdateReceivedAt=SystemClock.elapsedRealtime()
+                scheduleSensorWatchdog()
                 if(lifecycle?.stopRequested==true)end() else syncWorkoutPause()
             }
         }
@@ -136,15 +196,47 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
     private fun futureFailed(error: Exception) { fail("Mérési hiba: ${error.cause?.message ?: error.message}") }
     override fun onRegistered() {
         registered=true
+        reconnectAttempts=0
+        summary?.let {
+            if(it.optString("state")=="reconnecting") {
+                it.put("state",if(lifecycle?.owned!=true)"starting" else if(appliedPause)"paused" else "active")
+                persist()
+            }
+        }
         val action=afterRegistration;afterRegistration=null
         if(!destroyed && lifecycle?.finished!=true)try { action?.invoke() }catch(error:Exception) { futureFailed(error) }
     }
-    override fun onRegistrationFailed(throwable: Throwable) { fail("A mérési kapcsolat nem indult: ${throwable.message}") }
-    override fun onAvailabilityChanged(dataType: DataType<*,*>, availability: Availability) { /* Missing measurements stay absent. */ }
+    override fun onRegistrationFailed(throwable: Throwable) {
+        if(destroyed || lifecycle?.finished==true)return
+        if(reconnectAttempts<3 && lifecycle?.stopRequested!=true) {
+            reconnectAttempts++
+            summary?.put("state","reconnecting")?.put("heartRateAvailability","acquiring")
+            persist()
+            handler.removeCallbacks(reconnectRunnable)
+            handler.postDelayed(reconnectRunnable,reconnectAttempts*2000L)
+        } else {
+            fail("A mérési kapcsolat nem indult: ${throwable.message}")
+        }
+    }
+    override fun onAvailabilityChanged(dataType: DataType<*,*>, availability: Availability) {
+        if(dataType==DataType.HEART_RATE_BPM) {
+            val status=when(availability) {
+                DataTypeAvailability.AVAILABLE -> "available"
+                DataTypeAvailability.ACQUIRING -> "acquiring"
+                DataTypeAvailability.UNAVAILABLE -> "unavailable"
+                else -> "unavailable"
+            }
+            summary?.let { data ->
+                data.put("heartRateAvailability",status)
+                persist()
+            }
+        }
+    }
     override fun onLapSummaryReceived(lapSummary: ExerciseLapSummary) {}
     override fun onExerciseUpdateReceived(update: ExerciseUpdate) {
         val data=summary ?: return
         if(lifecycle?.finished==true || destroyed || data.optString("state")=="error")return
+        lastUpdateReceivedAt=SystemClock.elapsedRealtime()
         val accumulator=WearHealthAccumulator(data)
         val currentOrigin=System.currentTimeMillis()-SystemClock.elapsedRealtime()
         val oldOrigin=data.optLong("bootOrigin",currentOrigin)
@@ -183,6 +275,8 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
     private fun finish() {
         if(lifecycle?.finish()!=true)return
         watchdog?.let { handler.removeCallbacks(it) };watchdog=null
+        sensorWatchdog?.let { handler.removeCallbacks(it) };sensorWatchdog=null
+        handler.removeCallbacks(reconnectRunnable)
         persist();summary?.let { WearHealthStore.publish(this,it) };stopSelf()
     }
     private fun fail(message: String, blockedAccess: WearRecordingAccess?=null) {
@@ -217,6 +311,8 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
     }
     override fun onDestroy() {
         destroyed=true;afterRegistration=null;try { unregisterReceiver(stopReceiver) }catch(_:Exception){};watchdog?.let { handler.removeCallbacks(it) }
+        sensorWatchdog?.let { handler.removeCallbacks(it) };sensorWatchdog=null
+        handler.removeCallbacks(reconnectRunnable)
         if(registered)try { client.clearUpdateCallbackAsync(this) }catch(_:Exception){}
         super.onDestroy()
     }

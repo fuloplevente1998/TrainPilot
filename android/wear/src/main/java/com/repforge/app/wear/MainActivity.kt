@@ -44,6 +44,13 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private val routeRequest=mutableStateOf<String?>(null)
     private val measuring=mutableStateOf(false)
     private val gpsEnabled=mutableStateOf(false)
+    private val gpsRoute193=mutableStateOf<JSONObject?>(null)
+    private data class GpsRequest193(val id: String,val epoch: Long,val setId: String,val at: Long)
+    private var gpsRequest193: GpsRequest193?=null
+    private var gpsPermission193=false
+    private var gpsSettings193=false
+    private var gpsResolving193=false
+    private val gpsTimeout193=Runnable { if(gpsResolving193)gpsFailed193("unavailable") }
     private val phoneConnected=mutableStateOf<Boolean?>(null)
     private val batteryLevel=mutableStateOf<Int?>(null)
     private var lastIndicatorRefreshAt=0L
@@ -71,6 +78,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             Toast.makeText(this,message,Toast.LENGTH_LONG).show()
         }
     }
+    private var lastHealthRetryAt=0L
     private val healthTick=object : Runnable {
         override fun run() {
             refreshHealth();refreshHomeIndicators()
@@ -85,7 +93,19 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                 } else remoteMeasurementStart?.let { WearWorkoutHandoff.request(this@MainActivity,it) }
                 refreshFromDataLayer()
             }
-            if(WearHealthStore.active(this@MainActivity).isBlank() && workout.value?.workoutId?.let { WearHealthStore.load(this@MainActivity,it)==null }==true)startHealthIfEnabled()
+            val currentWorkout=workout.value
+            if(currentWorkout!=null && !currentWorkout.workoutPaused && WearHealthStore.enabled(this@MainActivity) && healthAllowed()) {
+                val activeId=WearHealthStore.active(this@MainActivity)
+                if(activeId.isBlank()) {
+                    val prev=WearHealthStore.load(this@MainActivity,currentWorkout.workoutId)
+                    val now=android.os.SystemClock.elapsedRealtime()
+                    if(wearShouldAutoRetryRecording(prev,now,lastHealthRetryAt)) {
+                        lastHealthRetryAt=now
+                        if(prev?.optString("state")=="error")WearHealthStore.retry(this@MainActivity,currentWorkout.workoutId)
+                        startHealthIfEnabled()
+                    }
+                }
+            }
             uiHandler.postDelayed(this,1000)
         }
     }
@@ -105,6 +125,66 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             if(gpsDenied)Toast.makeText(this,"Pontos helyengedély nélkül az órás GPS kikapcsolva marad. Az engedélyezett szenzorok mérése folytatódhat.",Toast.LENGTH_LONG).show()
         } else Toast.makeText(this,"Órás méréshez engedély szükséges.",Toast.LENGTH_LONG).show()
     }
+    private val routePermission193=registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        gpsPermission193=false;gpsRequest193=gpsRequest193?.copy(at=android.os.SystemClock.elapsedRealtime())
+        if(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED)uiHandler.post { continueGps193() }
+        else gpsFailed193("permission")
+    }
+    private val routeSettings193=registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        gpsSettings193=false;gpsRequest193=gpsRequest193?.copy(at=android.os.SystemClock.elapsedRealtime())
+        val manager=getSystemService(android.location.LocationManager::class.java)
+        if(manager?.isLocationEnabled==true&&manager.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER))uiHandler.post { continueGps193() }
+        else gpsFailed193("locationOff")
+    }
+    private fun gpsAllowed193(current: WearWorkout?)=current!=null&&WearGps193.owns(current)&&
+        WearGps193.distance(current.exercise)&&current.currentSet?.let { !it.done&&it.setId.isNotBlank() }==true
+    private fun gpsFailed193(state: String) {
+        val pending=gpsRequest193;gpsRequest193=null;gpsResolving193=false;gpsPermission193=false;gpsSettings193=false;uiHandler.removeCallbacks(gpsTimeout193)
+        if(pending!=null)WearGps193.update(this,pending.id,state,WearGps193.status(this,pending.id).optInt("points"))
+        if(activityResumed&&pending?.id==WorkoutSnapshotStore.load(this)?.workoutId)Toast.makeText(this,WearGpsText193.text(state),Toast.LENGTH_LONG).show()
+        refreshHealth()
+    }
+    private fun requestGps193() {
+        val current=WorkoutSnapshotStore.load(this)
+        if(!activityResumed||gpsRequest193!=null)return
+        if(!gpsAllowed193(current)){Toast.makeText(this,WearGpsText193.text("distanceOnly"),Toast.LENGTH_LONG).show();return}
+        gpsRequest193=GpsRequest193(current!!.workoutId,current.ownerEpoch193,current.currentSet!!.setId,android.os.SystemClock.elapsedRealtime())
+        val missing=mutableListOf<String>()
+        if(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED)missing.addAll(listOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION))
+        if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)missing.add(Manifest.permission.POST_NOTIFICATIONS)
+        if(missing.isNotEmpty()){gpsPermission193=true;routePermission193.launch(missing.toTypedArray())}else continueGps193()
+    }
+    private fun continueGps193() {
+        if(!activityResumed||gpsPermission193||gpsSettings193||gpsResolving193)return
+        val request=gpsRequest193 ?: return
+        fun current(): WearWorkout?=WorkoutSnapshotStore.load(this)?.takeIf { gpsAllowed193(it)&&it.workoutId==request.id&&it.ownerEpoch193==request.epoch&&it.currentSet?.setId==request.setId&&android.os.SystemClock.elapsedRealtime()-request.at<=15000 }
+        if(current()==null){gpsFailed193("unavailable");return}
+        if(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED){gpsFailed193("permission");return}
+        val manager=getSystemService(android.location.LocationManager::class.java)
+        if(manager?.allProviders?.contains(android.location.LocationManager.GPS_PROVIDER)!=true){gpsFailed193("unavailable");return}
+        if(!manager.isLocationEnabled||!manager.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER)){
+            gpsSettings193=true;try{routeSettings193.launch(wearLocationSettingsIntent())}catch(_:Exception){gpsFailed193("locationOff")};return
+        }
+        gpsResolving193=true;uiHandler.postDelayed(gpsTimeout193,15000)
+        Wearable.getNodeClient(this).localNode.addOnSuccessListener { local ->
+            if(gpsRequest193!==request)return@addOnSuccessListener
+            val latest=current();if(!activityResumed||latest==null){gpsFailed193("unavailable");return@addOnSuccessListener}
+            val h=latest.handoff193?.let(::JSONObject)
+            val target=if(h!=null)h.optString("sourceNode")else WatchHomeStore.phoneNode193(this)
+            if(!com.repforge.shared.GpsRoutePacket193.id(target)||h!=null&&(h.optString("target")!="watch"||h.optString("targetNode")!=local.id)) { gpsFailed193("unavailable");return@addOnSuccessListener }
+            try {
+                WearGps193.arm(this,latest.workoutId,true,local.id,target);gpsRequest193=null;gpsResolving193=false;uiHandler.removeCallbacks(gpsTimeout193)
+                WearGps193.update(this,latest.workoutId,"acquiring",WearGps193.status(this,latest.workoutId).optInt("points"));WearGpsRouteService193.start(this,latest,local.id,target);refreshHealth()
+            }catch(_:SecurityException){WearGps193.update(this,latest.workoutId,"permission");refreshHealth()}
+             catch(_:Exception){WearGps193.update(this,latest.workoutId,"storage");refreshHealth()}
+        }.addOnFailureListener { if(gpsRequest193===request)gpsFailed193("unavailable") }
+    }
+    private fun stopGps193() {
+        gpsRequest193=null;gpsResolving193=false;uiHandler.removeCallbacks(gpsTimeout193)
+        val current=WorkoutSnapshotStore.load(this) ?: return
+        try { WearGps193.arm(this,current.workoutId,false);WearGpsRouteService193.freeze(this);WearGps193.update(this,current.workoutId,"stopped",WearGps193.status(this,current.workoutId).optInt("points")) }
+        catch(_:Exception){WearGps193.update(this,current.workoutId,"storage")};refreshHealth()
+    }
     private fun healthAllowed(): Boolean = checkSelfPermission(if(Build.VERSION.SDK_INT>=36) "android.permission.health.READ_HEART_RATE" else Manifest.permission.BODY_SENSORS)==PackageManager.PERMISSION_GRANTED || checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION)==PackageManager.PERMISSION_GRANTED
     private fun recordingAccess(): WearRecordingAccess = wearRecordingAccess(this,WearHealthStore.gps(this),
         WearHealthStore.providerRequiresLocation(this))
@@ -122,6 +202,8 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             ?: latest?.optString("workoutId") ?: ""
         health.value=wearHealthDisplaySummary(id,WearHealthStore.load(this,id),published)
         measuring.value=WearHealthStore.enabled(this);gpsEnabled.value=WearHealthStore.gps(this)
+        val route=current?.takeIf { it.ownershipProtocol193==1 }?.let { WearGps193.status(this,it.workoutId) }
+        if(gpsRoute193.value?.toString()!=route?.toString())gpsRoute193.value=route
         if(remoteMeasurementRequested && !remoteStartFinished && remoteMeasurementStart?.matches(workout.value?.workoutId,workout.value?.revision ?: 0L)==true && health.value?.optString("state") in listOf("active","paused","ended","error"))releaseRemoteStart()
     }
     private fun refreshHomeIndicators(force: Boolean=false) {
@@ -198,10 +280,16 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             }
         }
         if(!WearHealthStore.enabled(this) || !healthAllowed() || locationRequired)return
-        if(previous?.optString("state")=="error" && (wearHasLocationFailure(previous) || WearHealthFutures.isLegacyNullCompletionError(previous.optString("message")))) {
-            // Retry known startup failures with the corrected config; keep measured totals.
-            WearHealthStore.retry(this,current.workoutId)
-            previous=WearHealthStore.load(this,current.workoutId)
+        if(previous?.optString("state")=="error") {
+            val hasLocation = wearHasLocationFailure(previous)
+            val canRecover = !hasLocation || access.locationAvailable
+            val cooldown = android.os.SystemClock.elapsedRealtime() - lastHealthRetryAt >= 5000L
+            if (canRecover && cooldown && (hasLocation || WearHealthFutures.isRecoverableHealthError(previous.optString("message")))) {
+                lastHealthRetryAt=android.os.SystemClock.elapsedRealtime()
+                // Retry known startup or recoverable sensor failures with the corrected config; keep measured totals.
+                WearHealthStore.retry(this,current.workoutId)
+                previous=WearHealthStore.load(this,current.workoutId)
+            }
         }
         if(previous?.optString("state") in listOf("ended","error")) {
             if(remoteMeasurementRequested && !remoteStartFinished) {
@@ -255,7 +343,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             WearLiveHealth.publish(this,remoteMeasurementStart!!.workoutId,"waitingWorkout")
             WearWorkoutHandoff.request(this,remoteMeasurementStart!!)
         }
-        routeRequest.value=if(remoteMeasurementRequested)"workout" else intent.getStringExtra("destination")?.takeIf { it in listOf("home","workout","summary","menu","calendar") }
+        routeRequest.value=if(remoteMeasurementRequested)"workout" else intent.getStringExtra("destination")?.takeIf { it in listOf("home","workout","summary","menu","calendar","gpsRoute193") }
         if(remoteMeasurementRequested && remoteMeasurementStart==null)Toast.makeText(this,"Érvénytelen edzésindítás. Nyisd meg az aktuális edzést.",Toast.LENGTH_LONG).show()
     }
     private fun openOnPhone() {
@@ -273,6 +361,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         super.onCreate(savedInstanceState)
         WearUndo188.recover(this)
         workout.value = WearAutomaticController.restore(this)
+        WearGps193.recover(this,!WearGpsRouteService193.active(workout.value?.workoutId.orEmpty()))
         home.value = WatchHomeStore.load(this)
         closure.value = WearClosureStore.load(this)
         restoreRestFromSnapshot(workout.value)
@@ -289,6 +378,9 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                 health = health,
                 measuring = measuring,
                 gpsEnabled = gpsEnabled,
+                gpsRoute193 = gpsRoute193,
+                onStartGpsRoute193 = ::requestGps193,
+                onStopGpsRoute193 = ::stopGps193,
                 phoneConnected = phoneConnected,
                 batteryLevel = batteryLevel,
                 requestedRoute = routeRequest,
@@ -303,7 +395,15 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                 onDiscard = { closeWorkout("discardWorkout") },
                 onRetry = ::retryClosure,
                 onDismissClosure = { if (closure.value?.status in listOf("saved", "discarded")) { WearClosureStore.dismiss(this); closure.value = null } },
-                onResumeWorkout = { sendCommand("resumeWorkout") },
+                onResumeWorkout = {
+                    val current=WorkoutSnapshotStore.load(this)
+                    if(current?.ownershipProtocol193==1&&current.timerOwner=="watch") {
+                        try {workout.value=WearOwnership193.resume(this);workout.value?.let { WearGps193.resumeIfArmed(this,it) };restoreRestFromSnapshot(workout.value)}
+                        catch(_:Exception){workout.value=WorkoutSnapshotStore.load(this);android.widget.Toast.makeText(this,WearOwnershipText193.text("failed"),android.widget.Toast.LENGTH_LONG).show()}
+                    }else if(current?.workoutPaused==true)sendCommand("resumeWorkout")
+                },
+                onRequestOwnership193 = { WearOwnership193.request(this) },
+                onRetryOwnership193 = { WearOwnership193.recover(this);workout.value=WorkoutSnapshotStore.load(this) },
                 onSelectExercise = ::selectExercise,
                 onStart = ::startWorkoutFromWatch,
                 onStartQuick = ::startQuickWorkoutFromWatch,
@@ -336,6 +436,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     override fun onResume() {
         super.onResume()
         activityResumed=true
+        WearOwnership193.recover(this)
         refreshHomeIndicators(true)
         WearUndo188.recover(this)
         workout.value = WearAutomaticController.restore(this)
@@ -349,6 +450,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         uiHandler.removeCallbacks(healthTick);uiHandler.post(healthTick)
         if(workout.value==null && WearHealthStore.active(this).isNotBlank())WearHealthService.stop(this)
         startHealthIfEnabled()
+        continueGps193()
     }
 
     override fun onPause() {
@@ -359,6 +461,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     }
 
     override fun onDestroy() {
+        gpsRequest193=null;uiHandler.removeCallbacks(gpsTimeout193)
         uiHandler.removeCallbacks(remoteStartTimeout)
         restTimer?.cancel()
         super.onDestroy()
@@ -369,7 +472,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             if (event.type != DataEvent.TYPE_CHANGED) continue
             val item = event.dataItem
             if(item.uri.path?.startsWith(WearCommandOutbox.RECEIPT_PREFIX)==true) {
-                if(WearCommandOutbox.acceptReceipt(this,item.uri.path,DataMapItem.fromDataItem(item).dataMap.getString("receipt")))
+                if(WearCommandOutbox.acceptReceipt(this,item.uri.path,DataMapItem.fromDataItem(item).dataMap.getString("receipt"),item.uri.host))
                     Wearable.getDataClient(this).deleteDataItems(item.uri)
                 runOnUiThread { refreshSaveSync() }
                 continue
@@ -387,7 +490,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                     }
                 }
                 WearDataListenerService.WATCH_HOME_PATH -> {
-                    val parsed = WatchHomeStore.save(this, raw, DataMapItem.fromDataItem(item).dataMap.getLong("publishedAt"))
+                    val parsed = WatchHomeStore.save(this, raw, DataMapItem.fromDataItem(item).dataMap.getLong("publishedAt"),item.uri.host)
                     runOnUiThread { home.value = parsed; closure.value = WearClosureStore.load(this) }
                 }
             }
@@ -415,8 +518,11 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                     var newestHome: WatchHomeSnapshot? = null
                     for (item in items) {
                         try {
+                            if(com.repforge.shared.OwnershipTransport193.receive(this,item) { message,origin,local ->
+                                WearOwnership193.receive(this,message,origin,local)
+                            })continue
                             if(item.uri.path?.startsWith(WearCommandOutbox.RECEIPT_PREFIX)==true) {
-                                if(WearCommandOutbox.acceptReceipt(this,item.uri.path,DataMapItem.fromDataItem(item).dataMap.getString("receipt")))
+                                if(WearCommandOutbox.acceptReceipt(this,item.uri.path,DataMapItem.fromDataItem(item).dataMap.getString("receipt"),item.uri.host))
                                     Wearable.getDataClient(this).deleteDataItems(item.uri)
                                 continue
                             }
@@ -427,7 +533,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                                     if (revision >= newestRevision) { newestRevision = revision; newestRaw = raw }
                                 }
                                 WearDataListenerService.WATCH_HOME_PATH -> newestHome = WatchHomeStore.save(this, raw,
-                                    DataMapItem.fromDataItem(item).dataMap.getLong("publishedAt")) ?: newestHome
+                                    DataMapItem.fromDataItem(item).dataMap.getLong("publishedAt"),item.uri.host) ?: newestHome
                             }
                         } catch (_: Exception) { /* Keep the cache when a DataItem is malformed. */ }
                     }
@@ -750,9 +856,19 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     }
 
     private fun closeWorkout(action: String) {
-        val current = workout.value ?: return
-        if(WearUndo188.blocked(current))return
+        synchronized(WearAutomaticController) { synchronized(WorkoutSnapshotStore) {
+        val visible=workout.value ?: return
+        var current=WorkoutSnapshotStore.load(this)?.takeIf { it.workoutId==visible.workoutId } ?: return
+        if(WearUndo188.blocked(current)||WearOwnership193.pending(current))return
+        if(current.ownershipProtocol193==1&&current.timerOwner=="watch") {
+            current=WearOwnership193.freeze(this,current.workoutId) ?: return
+            workout.value=current
+        }
         if (action == "finishWorkout" && current.completedSets == 0) return
+        if(current.ownershipProtocol193==1)try {
+            if(action=="discardWorkout")WearGps193.discard(this,current)
+            else { WearGps193.arm(this,current.workoutId,false);WearGpsRouteService193.freeze(this) }
+        }catch(_:Exception){Toast.makeText(this,WearGpsText193.text("storage"),Toast.LENGTH_LONG).show();return}
         val command = JSONObject()
             .put("schema", 1).put("commandId", UUID.randomUUID().toString())
             .put("workoutId", current.workoutId).put("baseRevision", current.revision)
@@ -761,7 +877,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             .put("finishedAt", Instant.now().toString()).put("createdAt", System.currentTimeMillis())
             .put("finalSnapshot", WorkoutSnapshotStore.encode(current))
         WearUndo188.marker(current)?.let { command.put("undoDependency188",it.optString("commandId")) }
-        WearHealthStore.load(this,current.workoutId)?.let { command.put("healthSummary",WearHealthAccumulator(it).snapshot()) }
+        WearHealthStore.load(this,current.workoutId)?.let { WearHealthStore.save(this,it);command.put("healthSummary",WearHealthAccumulator(it).snapshot()) }
         WearHealthService.stop(this)
         WearAutomaticService.stop(this)
         closure.value = WearClosureStore.close(this, current, command)
@@ -775,6 +891,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         restTimer?.cancel()
         restRemaining.intValue = 0
         WearSurfaces.refresh(this,true)
+        }}
     }
 
     private fun retryClosure() {

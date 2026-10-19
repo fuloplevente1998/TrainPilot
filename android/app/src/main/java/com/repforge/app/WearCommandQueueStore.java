@@ -35,6 +35,7 @@ final class WearCommandQueueStore {
     }
 
     static synchronized void enqueue(Context context, JSONObject input, String uri) throws Exception {
+        if(PhoneGpsRoute193.ACTION.equals(input.optString("action"))||input.has("gpsRoutePacket193"))return;
         String id = input.optString("commandId", "");
         if (id.isEmpty()) return;
         JSONArray pending = read(context, PENDING), seen = read(context, SEEN);
@@ -48,7 +49,7 @@ final class WearCommandQueueStore {
         }
         JSONObject command = new JSONObject(input.toString());
         command.put("receivedAt", System.currentTimeMillis());
-        if (uri != null) command.put("_uri", uri);
+        if (uri != null) command.put("_uri", uri);else command.remove("_uri");
         // Never evict an unacknowledged recording/finish command when the phone
         // WebView is sleeping. Its Wear DataItem remains until acknowledged and
         // can be re-scanned when capacity becomes available.
@@ -64,6 +65,14 @@ final class WearCommandQueueStore {
     }
     static synchronized boolean seen(Context context,String id){return containsId(read(context,SEEN),id);}
 
+    static synchronized String sourceOrigin193(Context context,String workoutId) {
+        java.util.Set<String> nodes=new java.util.HashSet<>();JSONArray pending=read(context,PENDING),seen=read(context,SEEN);
+        for(int i=0;i<pending.length();i++) { JSONObject command=pending.optJSONObject(i);if(command==null||!workoutId.equals(command.optString("workoutId")))continue;
+            String origin=PhoneGpsRoute193.startOrigin(command);if(!origin.isEmpty())nodes.add(origin); }
+        for(int i=0;i<seen.length();i++) { JSONObject receipt=seen.optJSONObject(i);if(receipt!=null&&workoutId.equals(receipt.optString("workoutId"))&&com.repforge.shared.GpsRoutePacket193.id(receipt.optString("sourceNode193")))nodes.add(receipt.optString("sourceNode193")); }
+        return nodes.size()==1?nodes.iterator().next():"";
+    }
+
     static synchronized JSONObject receipt(Context context, String id) {
         JSONArray seen=read(context,SEEN);
         for(int i=0;i<seen.length();i++) {
@@ -76,16 +85,31 @@ final class WearCommandQueueStore {
     static synchronized boolean ack(Context context, JSONObject command, String status) {
         String id=command.optString("commandId");
         if(id.isEmpty())return false;
+        if("discardWorkout".equals(command.optString("action"))&&"discarded".equals(status)&&command.optJSONObject("finalSnapshot")!=null&&command.optJSONObject("finalSnapshot").optInt("ownershipProtocol193")==1)try {
+            com.repforge.shared.GpsRouteLedger193.open(context.getNoBackupFilesDir()).deleteWorkout(command.optString("workoutId"));
+        }catch(Exception error){return false;}
+        // An offline final command can precede the start and be saved without ever
+        // publishing an active native snapshot. Preserve its native source grant
+        // before removing that last durable proof from the command queue.
+        if("finishWorkout".equals(command.optString("action"))&&"saved".equals(status))try {
+            String origin=PhoneGpsRoute193.startOrigin(command);
+            if(!origin.isEmpty())PhoneGpsRoute193.authorize(context,new JSONObject(command.getJSONObject("finalSnapshot").toString()).put("watchSourceNode193",origin));
+        }catch(Exception error){return false;}
         JSONArray pending=read(context,PENDING),next=new JSONArray(),seen=read(context,SEEN);
         for(int i=0;i<pending.length();i++) {
             JSONObject row=pending.optJSONObject(i);
             if(row!=null&&!id.equals(row.optString("commandId")))next.put(row);
         }
         if(!containsId(seen,id))try {
-            seen.put(new JSONObject().put("schema",1).put("commandId",id)
+            JSONObject receipt=new JSONObject().put("schema",1).put("commandId",id)
                 .put("workoutId",command.optString("workoutId")).put("action",command.optString("action"))
                 .put("sequence",command.optLong("sequence")).put("status",status)
-                .put("receivedAt",System.currentTimeMillis()));
+                .put("receivedAt",System.currentTimeMillis());
+            String origin=PhoneGpsRoute193.startOrigin(command);if(!origin.isEmpty())receipt.put("sourceNode193",origin);
+            if(PhoneGpsRoute193.ACTION.equals(command.optString("action"))) {
+                receipt.put("route193",command.getJSONObject("route193"));if(command.optBoolean("routeDeleted193"))receipt.put("routeDeleted193",true);
+            }
+            seen.put(receipt);
         } catch(Exception error) {return false;}
         while(seen.length()>MAX_SEEN)seen.remove(0);
         SharedPreferences p=prefs(context);

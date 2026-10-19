@@ -20,6 +20,29 @@ import org.json.JSONObject;
 
 @CapacitorPlugin(name = "WearSync")
 public class WearSyncPlugin extends Plugin {
+    @PluginMethod public void preparePhoneResume193(PluginCall call) { execution(call,()->PhoneOwnership193.prepareResume(getContext())); }
+    @PluginMethod public void installPhoneResume193(PluginCall call) { execution(call,()->PhoneOwnership193.installResume(getContext(),call.getString("requestId",""),call.getData().optLong("ownerEpoch193"))); }
+    @PluginMethod public void ownershipStatus193(PluginCall call) { execution(call,()->PhoneOwnership193.status(getContext())); }
+    @PluginMethod public void prepareOwnership193(PluginCall call) {
+        Wearable.getNodeClient(getContext()).getLocalNode().addOnSuccessListener(local -> execution(call,()->{
+            PhoneOwnership193.prepare(getContext(),call.getObject("snapshot"),call.getString("requestId",""),local.getId());
+            return PhoneOwnership193.status(getContext());
+        })).addOnFailureListener(error->call.reject("Watch connection unavailable",error));
+    }
+    @PluginMethod public void requestOwnership193(PluginCall call) {
+        Wearable.getNodeClient(getContext()).getLocalNode().addOnSuccessListener(local ->
+            Wearable.getNodeClient(getContext()).getConnectedNodes().addOnSuccessListener(peers -> {
+                if(peers.size()!=1){call.reject("Connect one watch to transfer the workout");return;}
+                execution(call,()->{
+                    JSONObject current=ActiveWorkoutStore.current(getContext());
+                    if(current==null||!"watch".equals(current.optString("timerOwner")))throw new IllegalStateException("Workout owner changed");
+                    if(current.optInt("ownershipProtocol193")!=1)throw new IllegalStateException("Update both apps before transferring a workout");
+                    PhoneOwnership193.journal(getContext()).request(local.getId(),peers.get(0).getId(),System.currentTimeMillis());
+                    return PhoneOwnership193.status(getContext());
+                });
+            }).addOnFailureListener(error->call.reject("Watch connection unavailable",error))
+        ).addOnFailureListener(error->call.reject("Watch connection unavailable",error));
+    }
     static final String ACTIVE_WORKOUT_PATH = "/trainpilot/active-workout";
     static final String WATCH_HOME_PATH = "/trainpilot/watch-home";
     static final String AUTOMATIC_COMMAND_PREFIX = "/trainpilot/automatic-command/";
@@ -32,12 +55,14 @@ public class WearSyncPlugin extends Plugin {
     }
     @PluginMethod public void executionStatus(PluginCall call) { execution(call,()->PhoneWorkoutExecution.status(getContext())); }
     @PluginMethod public void prepareExecution(PluginCall call) { execution(call,()->{
+        if(!PhoneOwnership193.phoneAllowed(getContext(),call.getObject("snapshot").optString("workoutId")))throw new IllegalStateException("Workout is controlled by the watch");
         PhoneWorkoutExecutionStore db=PhoneWorkoutExecution.store(getContext());
         db.suspendCommands(true); // An unsuccessful CAS cannot leave stale prepared controls available.
         JSONObject frame=db.prepare(call.getObject("snapshot"),call.getData().getLong("expectedRevision"));
         db.suspendCommands(false);return new JSONObject().put("snapshot",frame);
     }); }
     @PluginMethod public void amendExecution(PluginCall call){execution(call,()->{
+        if(!PhoneOwnership193.phoneAllowed(getContext(),call.getObject("snapshot").optString("workoutId")))throw new IllegalStateException("Workout is controlled by the watch");
         PhoneWorkoutExecutionStore db=PhoneWorkoutExecution.store(getContext());
         JSONObject frame=db.amend(call.getObject("snapshot"),call.getData().getLong("expectedRevision"),call.getObject("bases"));
         db.suspendCommands(false);db.beginManualWork(frame.getString("workoutId"),frame.getLong("generation"),android.os.SystemClock.elapsedRealtime());return new JSONObject().put("snapshot",frame);
@@ -76,6 +101,7 @@ public class WearSyncPlugin extends Plugin {
         if(input==null||input.optString("commandId").isEmpty()||input.optString("workoutId").isEmpty()){call.reject("Missing automatic command identity.");return;}
         JSONObject current=ActiveWorkoutStore.current(getContext());
         if(current==null||!current.optString("workoutId").equals(input.optString("workoutId"))){call.reject("Workout changed.");return;}
+        if(current.optLong("ownerEpoch193")!=input.optLong("ownerEpoch193")){call.reject("Workout ownership changed.");return;}
         PutDataMapRequest map=PutDataMapRequest.create(AUTOMATIC_COMMAND_PREFIX+input.optString("commandId"));
         map.getDataMap().putString("command",input.toString());
         map.getDataMap().putLong("createdAt",System.currentTimeMillis());
@@ -196,6 +222,8 @@ public class WearSyncPlugin extends Plugin {
                     try {
                         for (DataItem item : items) {
                             if (item == null || item.getUri() == null) continue;
+                            if(com.repforge.shared.OwnershipTransport193.receive(getContext(),item,
+                                    (message,origin,local)->PhoneOwnership193.receive(getContext(),message,origin,local)))continue;
                             String path = item.getUri().getPath();
                             if (WearLiveHealthStore.PATH.equals(path)) {
                                 try { WearLiveHealthStore.save(getContext(), DataMapItem.fromDataItem(item).getDataMap().getString("health")); }
@@ -206,7 +234,9 @@ public class WearSyncPlugin extends Plugin {
                             try {
                                 String raw = DataMapItem.fromDataItem(item).getDataMap().getString("command");
                                 if (raw == null || raw.isEmpty()) continue;
-                                WearCommandQueueStore.enqueue(getContext(), new JSONObject(raw), item.getUri().toString());
+                                JSONObject command=new JSONObject(raw);
+                                if(PhoneGpsRoute193.receive(getContext(),command,item.getUri()))continue;
+                                WearCommandQueueStore.enqueue(getContext(), command, item.getUri().toString());
                             } catch (Exception ignored) {
                                 // One malformed/stale DataItem must not block the rest.
                             }

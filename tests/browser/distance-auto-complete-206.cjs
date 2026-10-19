@@ -117,6 +117,17 @@ const server=http.createServer((req,res)=>{
     return {motion:!!document.querySelector('.tp206-activity'),gps:!!document.getElementById('tp106GPS')};
   });
   assert.deepEqual(strength,{motion:false,gps:false});
+  const finishedGps=await page.evaluate(async()=>{
+   const session=state.session;session.exercises=[{...byId('running'),measurementType:'distance',sets:[{set:1,setId:'gps-finish-206',done:false,reps:'0',weight:0}]}];
+   session.automatic162={enabled:false};state.current=0;tp106GpsState={active:false};db.set('gpsTrip106',null);
+   __p206.wrongKey=false;__p206.meters=630;__p206.seconds=40;renderWorkout();
+   await tp106StartGPS();await tp106ToggleGPS();
+   const accepted=session.exercises[0].sets[0].done;
+   await finishWorkout();
+   const saved=history().find(h=>h.started===session.started);
+   return {accepted,saved:!!saved,done:saved?.exercises[0].sets[0].done,meters:saved?.exercises[0].sets[0].distanceMeters};
+  });
+  assert.deepEqual(finishedGps,{accepted:true,saved:true,done:true,meters:630},'A successful GPS Finish is accepted and saved without a separate set OK');
   assert.deepEqual(errors,[]);
   console.log('PASS #206: 2-column compact distance controls, owned GPS stop auto-done, negative stop, indoor and strength isolation');
  }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}

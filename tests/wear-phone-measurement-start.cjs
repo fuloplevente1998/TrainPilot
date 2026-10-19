@@ -120,6 +120,14 @@ function fixture(nativeAutomatic=false){
  assert.equal(queued.length,1,'an explicit start while a previous send is busy must be retained');
  await queued[0]();assert.deepEqual(busy.events.at(-1),['open',newId]);
 
+ const ownership=fixture();let releaseOwnership;
+ ownership.context.window.Capacitor.Plugins.WearSync.ownershipStatus193=async()=>{await new Promise(r=>releaseOwnership=r);return {state:{}};};
+ ownership.start();await flush();await ownership.sync.syncNow();
+ assert.equal(ownership.events.length,0,'an ownership read reserves publishing before its first await');
+ releaseOwnership();await flush();
+ assert.equal(ownership.events.filter(e=>e[0]==='publish').length,1,'overlapping polls cannot publish twice during ownership reconciliation');
+ assert.equal(ownership.events.filter(e=>e[0]==='open').length,1);
+
  const closed=fixture();let resolveClosed;closed.hold(new Promise(r=>resolveClosed=r));closed.start();
  await flush();
  closed.run('state.session=null;state.workout=null;db.set("draft",null)');closed.hold(null);resolveClosed();await flush();await closed.sync.syncNow();

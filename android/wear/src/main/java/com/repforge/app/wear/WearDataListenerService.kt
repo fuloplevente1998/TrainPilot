@@ -8,6 +8,8 @@ import com.google.android.gms.wearable.MessageEvent
 
 class WearDataListenerService : WearableListenerService() {
     override fun onPeerConnected(peer: com.google.android.gms.wearable.Node) {
+        WearGps193.recover(this,!WearGpsRouteService193.active(WearGps193.scope(this).optString("workoutId")))
+        WearOwnership193.recover(this)
         WearUndo188.recover(this)
         WearCommandOutbox.flush(this,true)
     }
@@ -19,8 +21,11 @@ class WearDataListenerService : WearableListenerService() {
         for (event in dataEvents) {
             if (event.type != DataEvent.TYPE_CHANGED) continue
             val item = event.dataItem
+            if(com.repforge.shared.OwnershipTransport193.receive(this,item) { message,origin,local ->
+                WearOwnership193.receive(this,message,origin,local)
+            })continue
             if(item.uri.path?.startsWith(WearCommandOutbox.RECEIPT_PREFIX)==true) {
-                if(WearCommandOutbox.acceptReceipt(this,item.uri.path,DataMapItem.fromDataItem(item).dataMap.getString("receipt")))
+                if(WearCommandOutbox.acceptReceipt(this,item.uri.path,DataMapItem.fromDataItem(item).dataMap.getString("receipt"),item.uri.host))
                     com.google.android.gms.wearable.Wearable.getDataClient(this).deleteDataItems(item.uri)
                 continue
             }
@@ -34,7 +39,7 @@ class WearDataListenerService : WearableListenerService() {
             when (item.uri.path) {
                 ACTIVE_WORKOUT_PATH -> WorkoutSnapshotStore.save(this, raw)
                 WearPhoneAutomatic.PATH -> WearPhoneAutomatic.receive(this,DataMapItem.fromDataItem(item).dataMap.getString("automatic"))
-                WATCH_HOME_PATH -> WatchHomeStore.save(this, raw, DataMapItem.fromDataItem(item).dataMap.getLong("publishedAt"))
+                WATCH_HOME_PATH -> WatchHomeStore.save(this, raw, DataMapItem.fromDataItem(item).dataMap.getLong("publishedAt"),item.uri.host)
             }
             WearCommandOutbox.flush(this)
             WearPhoneAutomatic.applyCached(this)

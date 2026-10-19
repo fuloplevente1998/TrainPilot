@@ -53,6 +53,56 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     }
 
     @get:Rule val compose = createComposeRule()
+    @Test fun gpsConsentRetryStopAndPausedOwnerAreReadableInFourLanguages() {
+        val owner=WorkoutSnapshotStore.parse("""{"workoutId":"gps-ui193","ownershipProtocol193":1,"timerOwner":"watch","exercises":[{"id":"running","measurementType":"distance","repUnit":"km","sets":[{"setId":"gps-one","done":false}]}]}""")!!
+        val workout=mutableStateOf(owner);val status=mutableStateOf(JSONObject().put("state","permission"));val language=mutableStateOf("hu");val actions=mutableListOf<String>()
+        compose.setContent { Watch { GpsRouteScreen193(workout.value,status.value,{actions.add("start")},{actions.add("stop")},{},language.value) } }
+        for(lang in listOf("hu","en","de","ro")) {
+            compose.runOnIdle { language.value=lang;workout.value=owner;status.value=JSONObject().put("state","permission") }
+            val start=WearGpsText193.text("start",lang);val stop=WearGpsText193.text("stop",lang)
+            lazyList().performScrollToNode(hasContentDescription(start));compose.onNodeWithContentDescription(start).assertIsEnabled().performClick()
+            compose.runOnIdle { status.value=JSONObject().put("state","recording").put("armed",true).put("running",true).put("points",12) }
+            lazyList().performScrollToNode(hasContentDescription(stop));compose.onNodeWithContentDescription(stop).assertIsEnabled().performClick()
+            compose.onNodeWithContentDescription(start).assertDoesNotExist()
+            compose.runOnIdle { workout.value=owner.copy(workoutPaused=true);status.value=JSONObject().put("state","paused") }
+            lazyList().performScrollToNode(hasContentDescription(start));compose.onNodeWithContentDescription(start).assertIsNotEnabled()
+        }
+        assertEquals(listOf("start","stop","start","stop","start","stop","start","stop"),actions)
+        lazyList().performScrollToNode(hasContentDescription(WearGpsText193.text("back","ro")))
+        compose.onNodeWithContentDescription(WearGpsText193.text("back","ro")).assertIsDisplayed();screenshot("gps-route193-consent-paused")
+    }
+    @Test fun ownershipRequestPendingAndOfflineResumeAreDistinctActionsOnRoundScreens() {
+        val phone=WorkoutSnapshotStore.parse("""{"workoutId":"ui193","ownershipProtocol193":1,"timerOwner":"phone","exercises":[{"id":"plank","sets":[{"setId":"one","done":false}]}]}""")!!
+        val state=mutableStateOf(phone);val actions=mutableListOf<String>()
+        compose.setContent { Watch { OwnershipScreen193(state.value,true,{actions.add("request")},{actions.add("retry")},{actions.add("resume")},{actions.add("phone")},{actions.add("back")}) } }
+        assertFullViewport()
+        lazyList().performScrollToNode(hasContentDescription(WearOwnershipText193.text("request")))
+        compose.onNodeWithContentDescription(WearOwnershipText193.text("request")).assertIsDisplayed().performClick()
+        assertEquals(listOf("request"),actions)
+        compose.runOnIdle { state.value=phone.copy(workoutPaused=true,handoff193="""{"id":"ui193-transfer","state":"offered"}""") }
+        lazyList().performScrollToNode(hasContentDescription(WearOwnershipText193.text("retry")))
+        compose.onNodeWithContentDescription(WearOwnershipText193.text("retry")).assertIsDisplayed().performClick()
+        compose.onNodeWithContentDescription(WearOwnershipText193.text("resume")).assertDoesNotExist()
+        assertEquals(listOf("request","retry"),actions)
+        compose.runOnIdle { state.value=phone.copy(timerOwner="watch",ownerEpoch193=1,workoutPaused=true,handoff193="""{"id":"ui193-transfer","state":"committed"}""") }
+        lazyList().performScrollToNode(hasContentDescription(WearOwnershipText193.text("resume")))
+        compose.onNodeWithContentDescription(WearOwnershipText193.text("resume")).assertIsDisplayed().performClick()
+        assertEquals(listOf("request","retry","resume"),actions)
+        lazyList().performScrollToNode(hasContentDescription(WearOwnershipText193.text("back")))
+        compose.onNodeWithContentDescription(WearOwnershipText193.text("back")).assertIsDisplayed()
+        screenshot("ownership193-paused-target")
+    }
+    @Test fun disconnectedPhoneCannotOfferTakeoverButConfirmedWatchCanResumeOffline() {
+        val phone=WorkoutSnapshotStore.parse("""{"workoutId":"offline193","ownershipProtocol193":1,"timerOwner":"phone","exercises":[{"id":"plank","sets":[{"setId":"one","done":false}]}]}""")!!
+        val state=mutableStateOf(phone);var resumed=false
+        compose.setContent { Watch { OwnershipScreen193(state.value,false,{fail("Disconnected takeover")},{},{resumed=true},{},{}) } }
+        lazyList().performScrollToNode(hasContentDescription(WearOwnershipText193.text("request")))
+        compose.onNodeWithContentDescription(WearOwnershipText193.text("request")).assertIsNotEnabled()
+        compose.runOnIdle { state.value=phone.copy(timerOwner="watch",ownerEpoch193=1,workoutPaused=true,handoff193="""{"id":"offline193-transfer","state":"committed"}""") }
+        lazyList().performScrollToNode(hasContentDescription(WearOwnershipText193.text("resume")))
+        compose.onNodeWithContentDescription(WearOwnershipText193.text("resume")).assertIsEnabled().performClick()
+        assertTrue(resumed)
+    }
     @org.junit.Before fun clearTouchLock189() { InstrumentationRegistry.getInstrumentation().targetContext.getSharedPreferences("trainpilot_wear_touch_lock189",android.content.Context.MODE_PRIVATE).edit().clear().commit() }
     @org.junit.After fun cleanupTouchLock189() { clearTouchLock189() }
 

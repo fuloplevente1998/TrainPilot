@@ -272,7 +272,59 @@ class WearRecordingStateTest {
         assertEquals("Mérés a következő edzésnél",wearRecordingStatus(null,true))
         assertEquals("Mérés kikapcsolva",wearRecordingStatus(null,false))
         assertEquals("Mérés folyamatban · háttérben is",wearRecordingStatus(JSONObject().put("state","active"),true))
+        assertEquals("Újrakapcsolódás a méréshez…",wearRecordingStatus(JSONObject().put("state","reconnecting"),true))
         assertEquals("Mérés lezárása…",wearRecordingStatus(JSONObject().put("state","ending"),true))
         assertEquals("Mérés befejezve",wearRecordingStatus(JSONObject().put("state","ended"),true))
     }
+
+    @Test fun reconnectingStateDoesNotTriggerAutomaticRetryWhileActive() {
+        val reconnecting = JSONObject().put("state", "reconnecting")
+        assertFalse(wearRecordingNeedsRetry(reconnecting, enabled = true, hasWorkout = true))
+        val error = JSONObject().put("state", "error")
+        assertTrue(wearRecordingNeedsRetry(error, enabled = true, hasWorkout = true))
+    }
+
+    @Test fun liveWorkoutRowsIndicateDelayedOrAcquiringHeartRateWithoutBreakingRowStructure() {
+        val now = 100000L
+        val base = JSONObject()
+            .put("workoutId", "w1")
+            .put("source", "wear_health_services")
+            .put("state", "active")
+            .put("heartRate", 145.0)
+            .put("lastSampleAt", now - 5000L)
+            .put("updatedAt", now - 5000L)
+            .put("totalCalories", 80.0)
+
+        // Fresh sample: no warning
+        val freshRows = wearLiveWorkoutRows(base, "w1", now)
+        assertEquals(listOf("145 bpm · 80 kcal"), freshRows)
+
+        // Delayed sample (>20s): marks "Legutóbbi adat"
+        val delayed = JSONObject(base.toString()).put("lastSampleAt", now - 25000L)
+        val delayedRows = wearLiveWorkoutRows(delayed, "w1", now)
+        assertEquals(listOf("145 bpm · 80 kcal", "Legutóbbi adat"), delayedRows)
+
+        // Sensor acquiring availability: marks "Legutóbbi adat"
+        val acquiring = JSONObject(base.toString()).put("heartRateAvailability", "acquiring")
+        val acquiringRows = wearLiveWorkoutRows(acquiring, "w1", now)
+        assertEquals(listOf("145 bpm · 80 kcal", "Legutóbbi adat"), acquiringRows)
+
+        // Reconnecting state: marks "Újrakapcsolódás…"
+        val reconnecting = JSONObject(base.toString()).put("state", "reconnecting")
+        val reconnectingRows = wearLiveWorkoutRows(reconnecting, "w1", now)
+        assertEquals(listOf("145 bpm · 80 kcal", "Újrakapcsolódás…"), reconnectingRows)
+    }
+    @Test fun automaticRecoveryRequiresTransientFailureAndCooldown() {
+        val transient=JSONObject().put("state","error").put("message","RemoteException")
+        assertTrue(wearShouldAutoRetryRecording(transient,20000,10000))
+        assertFalse(wearShouldAutoRetryRecording(transient,19999,10000))
+        assertFalse(wearShouldAutoRetryRecording(transient,1000,10000))
+        for(message in listOf("permission denied","A mérési kapcsolat nem indult: permission denied","Másik alkalmazás már edzést mér.","Unknown failure")) {
+            assertFalse(message,wearShouldAutoRetryRecording(JSONObject(transient.toString()).put("message",message),20000,0))
+        }
+        assertFalse(wearShouldAutoRetryRecording(JSONObject(transient.toString()).put("locationServicesRequired",true),20000,0))
+        for(state in listOf("active","paused","ended","reconnecting"))assertFalse(wearShouldAutoRetryRecording(JSONObject(transient.toString()).put("state",state),20000,0))
+        assertTrue(wearShouldAutoRetryRecording(null,20000,0))
+    }
+
 }

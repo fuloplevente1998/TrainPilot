@@ -22,6 +22,7 @@ final class PhoneWorkoutExecution {
                     "automaticControl".equals(command.optString("action")) && ("start".equals(command.optString("value"))||"resumeUndo".equals(command.optString("value"))));
     }
     static JSONObject execute(Context context, JSONObject command) throws Exception {
+        if(!PhoneOwnership193.commandAllowed(context,command))return new JSONObject().put("status","rejected").put("reason","ownershipChanged");
         if (!compatible(command)) return new JSONObject().put("status", "legacy");
         PhoneWorkoutExecutionStore db = store(context); JSONObject frame = db.snapshot();
         // Receipts are consulted before dispatch; a replay never creates a second clock.
@@ -73,6 +74,7 @@ final class PhoneWorkoutExecution {
     }
     static void deliver(Context context) throws Exception {
         PhoneWorkoutExecutionStore db = store(context); JSONObject frame = db.snapshot();
+        if(frame!=null&&!PhoneOwnership193.phoneAllowed(context,frame.optString("workoutId")))return;
         if (frame == null || !frame.optBoolean("active") || frame.optBoolean("workoutPaused")) return;
         JSONObject transition = frame.optJSONObject("transition"), plan = transition == null ? null : transition.optJSONObject("plan");
         if (plan == null || !"pending".equals(transition.optString("state"))) return;
@@ -135,6 +137,7 @@ final class PhoneWorkoutExecution {
     static void setWorkoutPause(Context context,JSONObject input) throws Exception {
 
         if(input==null||input.optString("workoutId").isEmpty())throw new IllegalArgumentException("missingWorkoutPause");
+        if(!PhoneOwnership193.phoneAllowed(context,input.optString("workoutId")))throw new IllegalStateException("Workout ownership changed");
         JSONObject active=ActiveWorkoutStore.current(context);
         PhoneWorkoutExecutionStore db=PhoneWorkoutExecution.store(context);JSONObject before=db.snapshot();
         boolean nativeOwner=before!=null&&before.optBoolean("active")&&input.optString("workoutId").equals(before.optString("workoutId"));

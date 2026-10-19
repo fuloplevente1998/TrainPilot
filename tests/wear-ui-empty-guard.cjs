@@ -9,6 +9,7 @@ try {
   if(tests!==null){const reports=path.join(android,'wear/build/outputs/androidTest-results/connected/debug');fs.mkdirSync(reports,{recursive:true});fs.writeFileSync(path.join(reports,'TEST-example.xml'),'<testsuite tests="'+tests+'" failures="0" errors="0"/>');}
   const filter='com.repforge.app.wear.WearFullScreenTest#example[160dp-font1]';
   const run=spawnSync('bash',[script],{cwd:root,env:{...process.env,PATH:bin+path.delimiter+process.env.PATH,TRAINPILOT_WEAR_UI_FILTER:filter},encoding:'utf8'});
+  if(process.platform==='win32'&&run.error?.code==='ENOENT'){console.log('SKIP: bash not available on Windows');return;}
   assert.equal(run.status,expected,name+': '+run.stdout+run.stderr);
   assert.ok(fs.readFileSync(path.join(android,'invocation.txt'),'utf8').split('\n').includes('-Pandroid.testInstrumentationRunnerArguments.class='+filter),'JUnit filter stays one literal argument');
  }

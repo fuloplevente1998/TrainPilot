@@ -12,6 +12,20 @@ data class WearStopwatch(val key: String, val elapsedMillis: Long = 0L, val star
 }
 
 object WearStopwatchStore {
+    fun freezeIntoWorkout193(context: Context,workout: WearWorkout): WearWorkout {
+        pause(context)
+        val raw=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).getString("timer",null) ?: return workout
+        val timer=JSONObject(raw);val key=timer.optString("key");val seconds=(timer.optLong("elapsed")/1000).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+        if(seconds<=0)return workout
+        return workout.copy(exercises=workout.exercises.map { ex -> ex.copy(sets=ex.sets.map { set ->
+            if(set.done)set else when(key) {
+                "${workout.workoutId}:${ex.id}:${set.number}:reps" -> set.copy(reps=seconds.toString())
+                "${workout.workoutId}:${ex.id}:${set.number}:leftSeconds" -> set.copy(leftSeconds=seconds,reps=if(set.rightSeconds>0)minOf(seconds,set.rightSeconds).toString()else set.reps)
+                "${workout.workoutId}:${ex.id}:${set.number}:rightSeconds" -> set.copy(rightSeconds=seconds,reps=if(set.leftSeconds>0)minOf(seconds,set.leftSeconds).toString()else set.reps)
+                else -> set
+            }
+        }) })
+    }
     private const val PREFS = "trainpilot_wear_stopwatch"
     fun currentField(context: Context, prefix: String): String? {
         val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("timer", null) ?: return null
