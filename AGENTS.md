@@ -75,6 +75,9 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 - A már elfogadott piros X bezárást ne cseréld automatikusan semleges körgombra.
   Kompaktabb UI mellett az érinthetőség, nagy betűk, fordítások és hozzáférhetőség
   maradjon használható; a külső prototípus számai nem kötelező követelmények.
+- Telefonos GPS-es távolsági sorozatnál a sikeres, kifejezett „Mérés befejezése”
+  készre jelöl és menthetővé tesz külön sorozat-OK nélkül (#206/#208). Térképbezárás,
+  hibás vagy implicit GPS-stop önmagában nem teljesítés; ezt regresszióval védd.
 - #188 Visszavonás és #189 egyetlen folyamatos 3 mp-es feloldás elfogadva/mainen.
   #192 és #211 sztornózott, kódjukat ne éleszd újra. #208-cal bekerült GPS STOP
   viselkedést ne fejleszd újra. A pontos nyitott sorrend a handoffban található.

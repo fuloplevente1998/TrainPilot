@@ -52,5 +52,38 @@ const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://local
  assert.equal(replay.session,false);assert.equal(replay.history,1);assert.deepEqual(replay.acks,['deleted-start','deleted-auto']);assert.equal(replay.receipt,'discarded');
  await page.evaluate(()=>TrainPilotQuickWorkout.start('goblet-squat'));
  assert.notEqual(await page.evaluate(()=>state.session.syncId),deleted,'a fresh workout still starts normally');
+ const fenced=await page.evaluate(async()=>{
+  const session=state.session,id=session.syncId||session.started,base=session.exercises[0];
+  session.exercises=[{...base,sets:[{set:1,setId:'finish-before',reps:'12',weight:5,done:true},{set:2,setId:'finish-during',reps:'',weight:0,done:false}]}];
+  session.timerOwner='phone';session.automatic162={enabled:false};session.phoneExecution162={generation:991,revision:1,sequence:0};
+  session.scheduleId='native-finish-schedule';db.set('scheduled',[{id:session.scheduleId,status:'planned'}]);persistDraft();
+  Object.assign(rf110Stopwatch,{key:'finish-test-clock',elapsedMs:3000,startedAt:Date.now()-1000,running:true,timer:null});
+  state.tab='history';render();
+  const native={active:true,events:[],calls:[]},bridge=Capacitor.Plugins.WearSync;
+  bridge.executionStatus=async()=>({snapshot:{active:native.active,workoutId:id,generation:991,executionRevision:native.events.length?2:1},events:JSON.parse(JSON.stringify(native.events)),timer:{}});
+  bridge.suspendExecution=async()=>{};
+  bridge.blockExecution=async({blocked})=>{
+   native.calls.push(blocked?'block':'unblock');
+   if(blocked)native.events=[{sequence:1,workoutId:id,generation:991,executionRevision:2,exerciseId:base.id,setId:'finish-during',values:{done:true,reps:'8',weight:5}}];
+  };
+  bridge.acknowledgeExecution=async()=>{
+   if(db.get('draft').session.exercises[0].sets[1].done!==true)throw Error('Native event acknowledged before durable draft');
+   native.calls.push('event-ack');native.events=[];
+  };
+  bridge.closeExecution=async()=>{native.calls.push('close');native.active=false;};
+  let queue=[{commandId:'native-finish',workoutId:id,action:'finishWorkout',confirmed:true,createdAt:Date.now(),sequence:1,finishedAt:new Date().toISOString()}];
+  const receipts=[];bridge.pendingCommands=async()=>({commands:queue});bridge.ackCommand=async receipt=>{receipts.push({...receipt,nativeActive:native.active});queue=[];};
+  await TrainPilotWearSync.drainCommands();
+  const saved=history().find(h=>(h.syncId||h.started)===id);
+  return {done:saved?.exercises[0].sets.map(s=>s.done),reps:saved?.exercises[0].sets[1].reps,
+   schedule:scheduled()[0].status,stopwatch:rf110Stopwatch.running,nativeActive:native.active,tab:state.tab,
+   feedback:!!document.querySelector('.tp122-feedback'),dialog:!!document.querySelector('#tp2628Dialog'),receipts,calls:native.calls};
+ });
+ assert.deepEqual(fenced.done,[true,true],'A native set arriving during finish must reach the saved journal');
+ assert.equal(fenced.reps,'8');assert.equal(fenced.schedule,'completed');assert.equal(fenced.stopwatch,false);assert.equal(fenced.nativeActive,false);
+ assert.equal(fenced.tab,'history','A remote finish keeps the phone page instead of replaying the finish UI');
+ assert.equal(fenced.feedback,false);assert.equal(fenced.dialog,false);
+ assert.deepEqual(fenced.receipts,[{commandId:'native-finish',status:'saved',nativeActive:false}]);
+ assert.ok(fenced.calls.indexOf('event-ack')<fenced.calls.indexOf('close'));
  console.log('PASS Wear handoff/lifecycle and real phone draft discard: confirmation/cancel, durable closed identity, late start/automation replay, preserved history and fresh start.');
 }finally{await browser?.close();server.close()}})().catch(e=>{console.error(e);process.exitCode=1});

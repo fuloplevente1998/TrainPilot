@@ -4,18 +4,25 @@ Frissítve: **2026-10-19, Europe/Budapest**. Először a gyökérben található
 [AGENTS.md](../AGENTS.md) olvasandó; utána ez a rövid aktuális átadás.
 Az alábbi állapotot induláskor GitHubon ellenőrizd. A hosszú régi naplók történetiek.
 
-## Legutóbbi kérés és megállási pont
+## Legutóbbi kérés és megállási pont – 2026-10-19 javítás
 
-A felhasználó a munkát következő Workben folytatja. Kérte az AGENTS.md-t,
-a teljes releváns átadást és a külső szöveg ötleteinek **csak rögzítését**.
-Az új ötletek megvalósítása most kifejezetten nincs engedélyezve.
-Az AGENTS.md és ez az átadás dokumentációs folytatás: az alkalmazáskód
-utolsó bevizsgált forrása továbbra is `e4f4fa8`.
+A felhasználó a `01e0fa1` utáni mentési regresszió javítását kérte, és a korábban
+elfogadott, külön sorozat-OK nélküli GPS-teljesítés megőrzését. Main `9188932`
+már tartalmazza a #208-at; a feature ág ebből származik. Nem régi mainből történt
+újrakezdés: a `01e0fa1` közvetlen naplóírása kerülte meg a közös lezárási láncot.
+A következő `55b52c0` csak az ütemezést foltozta, Quick/telefonos gate még piros.
 
-**Következő konkrét lépés:** a kész #193/#202 tesztpár készülékes kipróbálása,
-a felhasználói eredmény kezelése. Nem kell újrakezdeni a GPS/handoff fejlesztést.
-Nincs még fizikai elfogadás, main merge vagy issue-lezárás. A külső ötletekre
-nem szabad automatikusan átváltani; azok külön, későbbi tesztágas feladatok.
+Aktuális javítás: a közös finishWorkout lánc visszakötése `wearSilent` móddal:
+telefonos natív események befogadása/lezárása, GPS/beltéri/kézi órák leállítása,
+naptár teljesítése, Health/feedback és tartós mentés megtartva, új befejező/
+értékelő UI megnyitása nélkül. Korábbi sorozatparancsok nem sorolhatók a végső
+parancs mögé. Célzott Node-regressziók zöldek; az új forrás GitHub-kapuit külön
+kell ellenőrizni. Új Chromium-eset védi a lezárás közben érkező natív sorozatot,
+stopper/naptár/nyugta sorrendet és a GPS-stop utáni külön OK nélküli mentést.
+
+**Az alábbi e4f4fa8 kapuk/APK-k történeti, igazolt előzmények, nem az új javítás
+bizonyítékai.** Fizikai elfogadás/main-merge nincs. A külső UI/funkcióötletek
+változatlanul csak backlog, megvalósításuk nem indult.
 
 ## Repo, ág, forrás, jogosultság
 

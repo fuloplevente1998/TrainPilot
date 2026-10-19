@@ -941,7 +941,7 @@ saveSettings=function(){db.set('settings',{...settings(),rest:Math.max(30,Math.m
 const rf13Start=startWorkout;startWorkout=function(dayId,scheduleId=null,programId=null){const before=state.session;state.prescriptionProgramId=programId||activeProgramId();try{rf13Start(dayId,scheduleId,programId);}finally{state.prescriptionProgramId=null;}if(!state.session||state.session===before)return;const p=programById(state.session.programId);if(p?.prescriptions){state.session.exercises=state.session.exercises.map(e=>{const rx=p.prescriptions[e.id];if(!rx)return e;const previous=history().filter(h=>h.programId===p.id).flatMap(h=>h.exercises).find(x=>x.id===e.id);return {...e,prescription:{...rx},sets:Array.from({length:rx.sets},(_,i)=>({set:i+1,weight:previous?.sets[i]?.weight??(e.loadType==='bodyweight'?0:rx.trial&&Number(rx.weight)===0?'':(rx.weight??'')),reps:'',done:false}))};});renderWorkout();}};
 const rf13Rest=startRest;startRest=function(){rf13Rest();const rx=state.session?.exercises[state.current]?.prescription;if(rx){state.timer=rx.rest;state.restEndAt=Date.now()+state.timer*1000;}};
 // Finish only marks the calendar after the history write really succeeded.
-finishWorkout=function(){if(!state.session)return;const s=state.session;rf12FinishWorkout.apply(this,arguments);if(state.session)return;if(s.scheduleId){const items=scheduled(),i=items.findIndex(x=>x.id===s.scheduleId);if(i>=0){items[i]={...items[i],status:'completed',updatedAt:Date.now()};db.set('scheduled',items);}}if(window.TrainPilotWorkoutFeedback)TrainPilotWorkoutFeedback.afterFinish(s,arguments[0]);else feedbackScreen(s.started);};
+finishWorkout=function(){if(!state.session)return;const s=state.session;rf12FinishWorkout.apply(this,arguments);if(state.session)return;if(s.scheduleId){const items=scheduled(),i=items.findIndex(x=>x.id===s.scheduleId);if(i>=0){items[i]={...items[i],status:'completed',updatedAt:Date.now()};db.set('scheduled',items);}}if(window.TrainPilotWorkoutFeedback)TrainPilotWorkoutFeedback.afterFinish(s,arguments[0]);else if(arguments[0]?.wearSilent!==true&&arguments[0]?.silent!==true&&arguments[0]?.wearConfirmed!==true)feedbackScreen(s.started);};
 
 
 // Imported Health Connect records live only in memory and are excluded from backup/Drive.
@@ -16490,8 +16490,8 @@ var TrainPilotWorkoutFeedback=window.TrainPilotWorkoutFeedback=(function(){
   return true;
  }
  function afterFinish(h,options={}){
-  if(valid(options?.wearFeedback)&&accept(id(h),options.wearFeedback)){go('home');return;}
-  db.set(key,{workoutId:id(h),started:h.started});feedbackScreen(h.started);
+  if(valid(options?.wearFeedback)&&accept(id(h),options.wearFeedback)){if(options.wearSilent!==true&&options.silent!==true&&options.wearConfirmed!==true)go('home');return;}
+  db.set(key,{workoutId:id(h),started:h.started});if(options.wearSilent!==true&&options.silent!==true&&options.wearConfirmed!==true)feedbackScreen(h.started);
  }
  function skip(){
   // Leaving a Journal review is not an instruction to delete its saved answer.
@@ -17675,13 +17675,13 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(state.session.ownershipProtocol193===1&&state.session.timerOwner==='watch'){
    if(!window.TrainPilotOwnership193?.acceptWatchFinal(command))return false;
   }else mergeFinalSets(command);
-  attachMeasuredHealth(command);
+  attachMeasuredHealth(command);persistDraft();
   if(!state.session.exercises.some(e=>e.sets?.some(s=>s.done)))return recordResult(command,'error','Legalább egy rögzített sorozat szükséges.');
-  const result=finishWorkout({wearConfirmed:true,wearFinishedAt:String(command.finishedAt||''),wearFeedback:command.feedback,silent:true});
+  const result=finishWorkout({wearConfirmed:true,silent:true,wearSilent:true,wearFinishedAt:String(command.finishedAt||''),wearFeedback:command.feedback});
   if(result&&typeof result.then==='function')await result;
-  if(window.TrainPilotWorkoutFeedback?.valid(command.feedback))window.TrainPilotWorkoutFeedback.accept(expected,command.feedback);
-  recordResult(command,'saved');
-  return true;
+  if(history().some(x=>matchesWorkout(x,expected)&&x.finished))return recordResult(command,'saved');
+  // A temporarily busy GPS/phone save is retried without acknowledging the command.
+  return false;
  }
  async function applyCommand(command){
   if(!command||typeof state==='undefined')return false;
@@ -17868,13 +17868,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(window.TrainPilotWearMeasurement165?.valid(live) && live.summary)attachMeasuredHealth({workoutId:live.workoutId,healthSummary:live.summary});
    window.TrainPilotWearMeasurement165?.receive(live);
    window.TrainPilotWearMeasurement165?.paint();
-   const rawCommands=Array.isArray(result?.commands)?result.commands:[];
-   const isTerminal=c=>c?.action==='finishWorkout'||c?.action==='discardWorkout';
-   const commands=rawCommands.slice().sort((a,b)=>{
-    const termA=isTerminal(a)?0:1,termB=isTerminal(b)?0:1;
-    if(termA!==termB)return termA-termB;
-    return (Number(a.createdAt)||0)-(Number(b.createdAt)||0)||(Number(a.sequence)||0)-(Number(b.sequence)||0);
-   });
+   const commands=(Array.isArray(result?.commands)?result.commands:[]).slice().sort((a,b)=>(Number(a.createdAt)||0)-(Number(b.createdAt)||0)||(Number(a.sequence)||0)-(Number(b.sequence)||0));
    let changed=false;
    for(const command of commands){
     if(window.TrainPilotBackupBusy)break;

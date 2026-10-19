@@ -137,13 +137,9 @@ object WearCommandOutbox {
 
     @Synchronized fun flush(context: Context,force: Boolean=false,workoutId: String?=null) {
         val pending=try { read(context,"pending") } catch(_:Exception) { return };val now=System.currentTimeMillis()
-        val indices=(0 until pending.length()).mapNotNull { i -> pending.optJSONObject(i)?.let { i to it } }
-            .sortedWith(compareBy<Pair<Int,JSONObject>> { (_, c) ->
-                val action=c.optString("action")
-                if(action=="finishWorkout"||action=="discardWorkout") 0 else 1
-            }.thenBy { (i, _) -> i })
-        for((_, command) in indices) {
-            val id=command.optString("commandId")
+        // Keep earlier set/start commands ahead of closure, including legacy peers.
+        for(i in 0 until pending.length()) {
+            val command=pending.optJSONObject(i) ?: continue;val id=command.optString("commandId")
             val attempt=android.os.SystemClock.elapsedRealtime()
             if(id.isBlank()||failedWrites.containsKey(id)||workoutId!=null&&command.optString("workoutId")!=workoutId)continue
             if(sending[id]?.let { attempt-it<30000 }==true)continue
