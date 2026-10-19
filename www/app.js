@@ -509,7 +509,7 @@ var upd = function upd(ei,si,k,v){state.session.exercises[ei].sets[si][k]=k==="w
 var toggleSet = function toggleSet(ei,si){const s=state.session.exercises[ei].sets[si];if(!s.done && (!/^\d+$/.test(String(s.reps)) || Number(s.reps)<1)){alert("Írd be a tényleges ismétlésszámot vagy másodpercet.");return;}s.done=!s.done;if(s.done)startRest();renderWorkout()};
 var prevExercise = function prevExercise(){if(state.current>0){state.current--;renderWorkout();window.scrollTo(0,0)}};
 var nextExercise = function nextExercise(){if(state.current<state.session.exercises.length-1){state.current++;renderWorkout();window.scrollTo(0,0)}else finishWorkout()};
-var finishWorkout = function finishWorkout(options={}){if(!state.session.exercises.some(e=>e.sets.some(s=>s.done))){alert("Előbb jelölj legalább egy sorozatot teljesítettnek.");return;}if(state.session.exercises.some(e=>e.sets.some(s=>!s.done))&&!confirm("Vannak be nem fejezett sorozatok. Elmented a részleges edzést?"))return;const h=history();const requestedEnd=Date.parse(options.wearFinishedAt||''),startedAt=Date.parse(state.session.started||'');state.session.finished=Number.isFinite(requestedEnd)&&requestedEnd>=startedAt&&requestedEnd<=Date.now()+30000?new Date(requestedEnd).toISOString():new Date().toISOString();closeWorkoutInterval(state.session,state.session.finished);h.unshift(state.session);db.set("history",h);db.set("draft",null);const w=state.workout;stopTimer();state.session=null;state.workout=null;state.tab="home";render(shell(`<main><div class="hero"><h1>Kész ✓</h1><div class="muted">Full Body ${w} elmentve.</div><br><button class="btn block" onclick="go('home')">Kezdőlap</button></div></main>`))};
+var finishWorkout = function finishWorkout(options={}){if(!state.session.exercises.some(e=>e.sets.some(s=>s.done))){alert("Előbb jelölj legalább egy sorozatot teljesítettnek.");return;}if(state.session.exercises.some(e=>e.sets.some(s=>!s.done))&&!confirm("Vannak be nem fejezett sorozatok. Elmented a részleges edzést?"))return;const h=history();const requestedEnd=Date.parse(options.wearFinishedAt||''),startedAt=Date.parse(state.session.started||'');state.session.finished=Number.isFinite(requestedEnd)&&requestedEnd>=startedAt&&requestedEnd<=Date.now()+30000?new Date(requestedEnd).toISOString():new Date().toISOString();closeWorkoutInterval(state.session,state.session.finished);h.unshift(state.session);db.set("history",h);db.set("draft",null);const w=state.workout;stopTimer();state.session=null;state.workout=null;if(options.silent===true||options.wearConfirmed===true){if(state.tab==='plan'){state.tab='home';render();}else render();}else{state.tab="home";render(shell(`<main><div class="hero"><h1>Kész ✓</h1><div class="muted">Full Body ${w} elmentve.</div><br><button class="btn block" onclick="go('home')">Kezdőlap</button></div></main>`));}};
 var formatSet = function formatSet(e,s){
  // Historical weights are deliberately not reinterpreted: old entries lacked metadata.
  if(!e.loadType)return `${s.weight||0} kg × ${s.reps||'—'} (régi súlyjelölés)`;
@@ -17677,22 +17677,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }else mergeFinalSets(command);
   attachMeasuredHealth(command);
   if(!state.session.exercises.some(e=>e.sets?.some(s=>s.done)))return recordResult(command,'error','Legalább egy rögzített sorozat szükséges.');
-  const h=history();
-  const requestedEnd=Date.parse(command.finishedAt||''),startedAt=Date.parse(state.session.started||'');
-  state.session.finished=Number.isFinite(requestedEnd)&&requestedEnd>=startedAt&&requestedEnd<=Date.now()+30000?new Date(requestedEnd).toISOString():new Date().toISOString();
-  closeWorkoutInterval(state.session,state.session.finished);
-  h.unshift(state.session);
-  db.set('history',h);
-  db.set('draft',null);
-  stopTimer();
-  const finishedSession=state.session;
-  if(finishedSession?.scheduleId&&typeof scheduled==='function'){
-   const items=scheduled(),i=items.findIndex(x=>x.id===finishedSession.scheduleId);
-   if(i>=0){items[i]={...items[i],status:'completed',updatedAt:Date.now()};db.set('scheduled',items);}
-  }
-  state.session=null;
-  state.workout=null;
-  if(state.tab==='plan'){state.tab='home';render();}else render();
+  const result=finishWorkout({wearConfirmed:true,wearFinishedAt:String(command.finishedAt||''),wearFeedback:command.feedback,silent:true});
+  if(result&&typeof result.then==='function')await result;
   if(window.TrainPilotWorkoutFeedback?.valid(command.feedback))window.TrainPilotWorkoutFeedback.accept(expected,command.feedback);
   recordResult(command,'saved');
   return true;
