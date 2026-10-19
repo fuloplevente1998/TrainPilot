@@ -386,6 +386,36 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         }
     }
 
+    @Test fun gpsStartChoiceIsVisibleRememberedAndCancelNeverEnablesItInFourLanguages() {
+        val context=InstrumentationRegistry.getInstrumentation().targetContext
+        val language=mutableStateOf("hu");val revision=mutableStateOf(0)
+        var starts=0;var cancels=0
+        WearMenu216.choose(context,"running",false);WearMenu216.choose(context,"walking",false)
+        compose.setContent { Watch { key(language.value,revision.value) {
+            GpsStartScreen216("running",{starts++},{cancels++},language.value)
+        } } }
+        for(lang in listOf("hu","en","de","ro")) {
+            compose.runOnIdle {language.value=lang;revision.value++}
+            val off=WearMenu216.text("gps",lang)+": "+WearMenu216.text("off",lang)
+            val on=WearMenu216.text("gps",lang)+": "+WearMenu216.text("on",lang)
+            compose.onNodeWithContentDescription(off).assertIsDisplayed().performClick()
+            compose.runOnIdle {assertFalse(WearMenu216.enabled(context,"running"));assertEquals(0,starts)}
+            lazyList().performScrollToNode(hasContentDescription(WearMenu216.text("cancel",lang)))
+            compose.onNodeWithContentDescription(WearMenu216.text("cancel",lang)).performClick()
+            compose.runOnIdle {assertFalse(WearMenu216.enabled(context,"running"));revision.value++}
+            compose.onNodeWithContentDescription(off).performClick()
+            lazyList().performScrollToNode(hasContentDescription(WearMenu216.text("start",lang)))
+            compose.onNodeWithContentDescription(WearMenu216.text("start",lang)).performClick()
+            compose.runOnIdle {assertTrue(WearMenu216.enabled(context,"running"));assertFalse(WearMenu216.enabled(context,"walking"));revision.value++}
+            compose.onNodeWithContentDescription(on).assertIsDisplayed().performClick()
+            lazyList().performScrollToNode(hasContentDescription(WearMenu216.text("start",lang)))
+            compose.onNodeWithContentDescription(WearMenu216.text("start",lang)).performClick()
+            compose.runOnIdle {assertFalse(WearMenu216.enabled(context,"running"));starts=0}
+        }
+        compose.runOnIdle {assertEquals(4,cancels)}
+        screenshot("gps-start-choice216")
+    }
+
     @Test
     fun menuUsesFullViewportAndFirstLastButtonsAreReachableAndClickable() {
         val clicks = mutableListOf<String>()
@@ -396,26 +426,26 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         assertFullViewport()
         val root = compose.onRoot().fetchSemanticsNode().boundsInRoot
         val middle =
-            compose.onNodeWithContentDescription("Kezdőlap").fetchSemanticsNode().boundsInRoot
+            compose.onNodeWithContentDescription("Gyors edzés").fetchSemanticsNode().boundsInRoot
         assertTrue(
             "Centered menu button uses at least 80% of the diameter",
             middle.width >= root.width * .8f,
         )
         val first =
-            compose.onNodeWithContentDescription("Kezdőlap").fetchSemanticsNode().boundsInRoot
+            compose.onNodeWithContentDescription("Gyors edzés").fetchSemanticsNode().boundsInRoot
         assertTrue(
             "The first button must start below the curved title",
             first.top >= root.height * 32f / diameter,
         )
         screenshot("menu-initial")
         scrollToStart()
-        compose.onNodeWithContentDescription("Kezdőlap").assertIsDisplayed().performClick()
+        compose.onNodeWithContentDescription("Gyors edzés").assertIsDisplayed().performClick()
         scrollToEnd()
         compose
             .onNodeWithContentDescription("Megnyitás telefonon")
             .assertIsDisplayed()
             .performClick()
-        assertEquals(listOf("home", "phone"), clicks)
+        assertEquals(listOf("quick", "phone"), clicks)
         screenshot("menu-last-control")
     }
 

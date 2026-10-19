@@ -84,7 +84,7 @@ data class WearWorkout(
 
     /** Explicit navigation preserves all measurements and completion flags. */
     fun selectExercise(index: Int): WearWorkout = if (index !in exercises.indices || index == currentExercise) this
-        else copy(currentExercise = index, restEndAt = 0L)
+        else copy(currentExercise = index)
 }
 
 object WorkoutSnapshotStore {
