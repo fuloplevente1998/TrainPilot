@@ -128,6 +128,48 @@ const server=http.createServer((req,res)=>{
    return {accepted,saved:!!saved,done:saved?.exercises[0].sets[0].done,meters:saved?.exercises[0].sets[0].distanceMeters};
   });
   assert.deepEqual(finishedGps,{accepted:true,saved:true,done:true,meters:630},'A successful GPS Finish is accepted and saved without a separate set OK');
+
+  // #220: ALL six built-in GPS activities, plus custom distance activities,
+  // use the same compact measurement UI in both quick and planned workouts.
+  const activityCoverage=await page.evaluate(()=>{
+   const activities=['running','jogging','inline-skating','cycling','walking','hiking'];
+   const custom={id:'custom-distance-220',hu:'Egyéni túra',en:'Custom distance',custom:true,
+    loadType:'bodyweight',repUnit:'mp',measurementType:'distance',
+    reps:'300',sets:3,weight:0,notes:''};
+   db.set('exercises',[...exercises().filter(e=>e.id!==custom.id),custom]);
+   return [...activities,custom.id].flatMap(id=>['quick','planned'].map(mode=>{
+    const definition=byId(id),quick=tp150QuickExercise(id);
+    const fields=tp152QuickFields(definition);
+    state.workout=mode==='quick'?'quick':'A';
+    state.session={type:mode,quickWorkout:mode==='quick',started:new Date().toISOString(),
+      workout:state.workout,exercises:[{...definition,sets:mode==='quick'?quick.sets:
+       [{set:1,done:false,reps:'',weight:0}]}]};
+    state.current=0;renderWorkout();
+    const main=document.querySelector('main.tp153-workout');
+    const manual=main?.querySelector('.tp220-manual');
+    return {id,mode,distance:tp106IsDistance(definition),
+     noQuickFields:!fields.includes('data-tp152-qsets')&&!fields.includes('data-tp152-qtarget'),
+     oneQuickInternalRecord:quick?.sets?.length===1,
+     activityView:!!main?.classList.contains('tp220-distance-workout'),
+     measurementCard:!!main?.querySelector('#tp220-distance-readout'),
+     noRequiredPrescription:!main?.querySelector('.tp153-workout-prescription'),
+     genericRowsCollapsed:!!manual&&!manual.open,
+     controls:main?.querySelectorAll('#tp107Indoor .tp206-actions button').length===2};
+   }));
+  });
+  for(const v of activityCoverage){
+   assert.deepEqual({
+    distance:v.distance,noQuickFields:v.noQuickFields,
+    oneQuickInternalRecord:v.oneQuickInternalRecord,
+    activityView:v.activityView,measurementCard:v.measurementCard,
+    noRequiredPrescription:v.noRequiredPrescription,
+    genericRowsCollapsed:v.genericRowsCollapsed,controls:v.controls
+   },{
+    distance:true,noQuickFields:true,oneQuickInternalRecord:true,
+    activityView:true,measurementCard:true,noRequiredPrescription:true,
+    genericRowsCollapsed:true,controls:true
+   },'Distance view must apply to '+v.id+' in '+v.mode);
+  }
   assert.deepEqual(errors,[]);
   console.log('PASS #206: 2-column compact distance controls, owned GPS stop auto-done, negative stop, indoor and strength isolation');
  }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}
