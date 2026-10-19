@@ -4,6 +4,18 @@ Frissítve: **2026-10-19, Europe/Budapest**. Először a gyökérben található
 [AGENTS.md](../AGENTS.md) olvasandó; utána ez a rövid aktuális átadás.
 Az alábbi állapotot induláskor GitHubon ellenőrizd. A hosszú régi naplók történetiek.
 
+## #216 jóváhagyott menüterv és pihenő-kiegészítés
+
+A felhasználó elfogadta a javasolt sorrendet: először órás menürend, utána látható,
+megjegyzett GPS-választás és futó állapotsor. Kiegészítése: telefonon helyes, hogy
+a pihenő a következő gyakorlatra lépés után tovább számol a felkészülés alatt is.
+Órán is maradjon látható és fusson tovább az eredeti határidővel; kézi váltás ne
+jelentsen pihenő-átugrást vagy újraindítást. Gyors/tervezett edzés, előző/következő/
+listás kiválasztás, lejárat/explicit átugrás, háttér és szinkron tesztelendő.
+Az automata fázis és a tulajdonosi védelem nem sérülhet. A követelmény #216-ban
+rögzítve. Feltárt kódút: `MainActivity.selectExercise()` jelenleg `skipRest()`-et
+hív. Ebben a tervezési kiegészítésben nincs alkalmazáskód-módosítás.
+
 ## #212 korona/lünetta elfogadva, mainen és lezárva
 
 A felhasználó kérte a hátralévő fejlesztést, majd a csomag lezárását. **Beolvasztott PR
