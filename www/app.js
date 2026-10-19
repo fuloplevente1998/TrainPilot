@@ -14893,7 +14893,7 @@ renderWorkout=function(){
   const load=row.querySelector('.tp153-bodyweight');if(!load)return;const set=e.sets[si];
   load.outerHTML='<label class="small tp106-distance-label">'+esc(tp106T('km'))+'<input class="field" data-tp106-distance="'+si+'" aria-label="'+esc(tp106T('km'))+'" inputmode="decimal" placeholder="0,00" value="'+esc(Object.hasOwn(set,'distanceMeters')?String(set.distanceMeters/1000):'')+'" oninput="tp106WorkoutDistance('+state.current+','+si+',this.value,this)"></label>';
  });
- const panel=document.createElement('section');panel.id='tp106GPS';panel.className='card tp106-gps-card';panel.innerHTML='<strong>'+esc(tp106T('gps'))+'</strong><p class="small muted">'+esc(tp106T('privacy'))+'</p><p class="small" id="tp106GpsStatus" aria-live="polite"></p><button type="button" id="tp106GpsButton" class="btn secondary block" onclick="tp106ToggleGPS()">'+esc(tp106T('start'))+'</button>';
+ const panel=document.createElement('div');panel.id='tp106GPS';panel.className='tp206-source-anchor';panel.innerHTML='<p class="small tp206-gps-status" id="tp106GpsStatus" aria-live="polite"></p><button type="button" id="tp106GpsButton" class="btn secondary block" onclick="tp106ToggleGPS()">'+esc(tp106T('start'))+'</button>';
  main.querySelector('.tp153-sets-title')?.before(panel);tp106PaintGPS();return result;
 };
 var tp106DistanceInputsValid=function(){const bad=document.querySelector('[data-tp106-distance]:invalid');if(bad){bad.reportValidity?.();return false;}return true;};
@@ -15155,7 +15155,7 @@ nextExercise=function(){tp107StopIndoor(true);return tp107NextExerciseBase.apply
 prevExercise=function(){tp107StopIndoor(true);return tp107PrevExerciseBase.apply(this,arguments);};
 const tp107WorkoutBase=renderWorkout;
 renderWorkout=function(){
- const result=tp107WorkoutBase.apply(this,arguments),gps=document.getElementById('tp106GPS');if(!gps)return result;
+ const result=tp107WorkoutBase.apply(this,arguments),gps=document.getElementById('tp106GPS');if(!gps||document.getElementById('tp107Indoor'))return result;
  const panel=document.createElement('section');panel.id='tp107Indoor';panel.className='card tp107-indoor';panel.classList.add('tp206-activity');
  panel.innerHTML='<div class="tp206-actions"><div class="tp206-gps-slot"></div><button type="button" class="btn secondary tp206-indoor-start" data-tp107-clock-toggle onclick="tp107ToggleIndoor()">'+esc(tp107T('indoor'))+'</button></div><div class="tp206-readout"><strong class="tp107-clock" data-tp107-clock>00:00</strong><span class="small muted" data-tp107-clock-status role="status"></span><button type="button" class="btn secondary tp206-indoor-reset" onclick="tp107ResetIndoor()" aria-label="'+esc(tp107T('reset'))+'" title="'+esc(tp107T('reset'))+'">↺</button></div><p class="small tp206-gps-status" aria-live="polite"></p>';
 
