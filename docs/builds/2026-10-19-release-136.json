@@ -1,0 +1,74 @@
+{
+  "date": "2026-10-19",
+  "repository": "fuloplevente1998/TrainPilot",
+  "featureIssue": 216,
+  "featurePr": 218,
+  "releasePr": 219,
+  "releaseVersion": "1.3.6",
+  "versionCode": 2733,
+  "featureHead": "bf79363ca9144963260f82485803816ec08b4066",
+  "releaseHead": "e9ad56d1ed4f37274a6497404c987c8de1c6a76e",
+  "releaseTree": "bb9645d17fcdb3754b3b3dc7d706c67c58444c5f",
+  "userApproval": "Rendben, akkor mehet, zarhatjuk ezt a teljes részt es akkor 1.3.6.lesz",
+  "approvalScope": "Feature closure/main integration and 1.3.6 release; no invented detailed physical test report",
+  "checks": {
+    "quick": {
+      "run": 39229585790,
+      "result": "success"
+    },
+    "performance": {
+      "run": 39229585782,
+      "result": "success"
+    },
+    "phone": {
+      "run": 39229121428,
+      "source": "081d0164f53f8bfb867d4ea5c28c58a48139445d",
+      "uiShardsPassed": 6,
+      "nativeTests": 243,
+      "regressionTests": 145,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "artifact": 12175403743,
+      "sha256": "ec02c7e990177a7dbc7541f43e5e42f4cbc6f3be8876f24a52d105e5b5b3e536",
+      "signerContinuity": "apksigner verified; same certificate as public v1.0.0"
+    },
+    "wear": {
+      "run": 39229579381,
+      "source": "e9ad56d1ed4f37274a6497404c987c8de1c6a76e",
+      "nativeTests": 159,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "artifact": 12175288925,
+      "sha256": "7a7c2ee61db91101d7987129da91e033be9dad87f19fe67e9c914d1361576dd1",
+      "signerContinuity": "apksigner verified; same certificate as public v1.0.0"
+    },
+    "ownership": {
+      "run": 39229585778,
+      "mergeSource": "34a7197ab2e296891f7f5c0ff0ade836a68f7505",
+      "mergeTree": "bb9645d17fcdb3754b3b3dc7d706c67c58444c5f",
+      "tests": 81,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "roundUi": {
+      "run": 39229579427,
+      "result": "pending"
+    }
+  },
+  "sourceEquivalence": "081d0164..e9ad56d1 changes only WearFullScreenTest.kt; phone and Wear production sources unchanged. Ownership merge tree equals release head tree. Documentation commits may follow without new application code.",
+  "testCorrections": [
+    "JVM fixture targets the open set rather than an already completed set",
+    "Menu selectors follow system locale",
+    "Home upward swipe expects active Resume first, not the Journal button farther down"
+  ],
+  "scopeExcluded": [
+    206,
+    197,
+    184,
+    214
+  ],
+  "releaseAssets": "Pending main build; artifacts listed above are premerge validation artifacts."
+}
