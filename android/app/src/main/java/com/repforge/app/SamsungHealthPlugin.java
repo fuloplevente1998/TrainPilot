@@ -54,6 +54,7 @@ public class SamsungHealthPlugin extends Plugin {
         types.put("READ_WEIGHT", DataTypes.BODY_COMPOSITION);
         types.put("READ_BODY_FAT", DataTypes.BODY_COMPOSITION);
         types.put("READ_OXYGEN_SATURATION", DataTypes.BLOOD_OXYGEN);
+        types.put("READ_ENERGY_SCORE", DataTypes.ENERGY_SCORE);
         return types;
     }
     private static Set<Permission> requested() {
@@ -224,7 +225,12 @@ public class SamsungHealthPlugin extends Plugin {
         private static void number(JSONObject out, String key, Number value) throws Exception {
             out.put(key, value != null && Double.isFinite(value.doubleValue()) && value.doubleValue() >= 0 ? value : JSONObject.NULL);
         }
-        private static Instant end(HealthDataPoint p) { return p.getEndTime() == null ? p.getStartTime() : p.getEndTime(); }
+        private static Instant end(HealthDataPoint p) {
+            if (p.getEndTime() != null) return p.getEndTime();
+            if (p.getStartTime() != null) return p.getStartTime();
+            if (p.getUpdateTime() != null) return p.getUpdateTime();
+            return Instant.now();
+        }
         private void record(HealthDataPoint p, String type, String suffix, JSONObject data, Instant a, Instant b) throws Exception {
             journal.put(new JSONObject().put("channel", HealthJournalStore.SAMSUNG).put("source", source(p))
                 .put("type", type).put("recordId", p.getUid() + suffix)
@@ -270,11 +276,41 @@ public class SamsungHealthPlugin extends Plugin {
             for (HealthDataPoint p : points) {
                 T candidate = p.getValue(field);
                 if (candidate == null || !Double.isFinite(candidate.doubleValue()) || candidate.doubleValue() < 0) continue;
-                if (newest == null || p.getStartTime().isAfter(newest.getStartTime())) { newest = p; value = candidate; }
-                record(p, recordType, ":" + key, new JSONObject().put("value", candidate).put("unit", unit), p.getStartTime(), end(p));
+                Instant pTime = p.getStartTime() != null ? p.getStartTime() : p.getUpdateTime() != null ? p.getUpdateTime() : Instant.now();
+                Instant newestTime = newest == null ? null : (newest.getStartTime() != null ? newest.getStartTime() : newest.getUpdateTime() != null ? newest.getUpdateTime() : Instant.now());
+                if (newest == null || pTime.isAfter(newestTime)) { newest = p; value = candidate; }
+                record(p, recordType, ":" + key, new JSONObject().put("value", candidate).put("unit", unit), pTime, end(p));
             }
             number(out, key, value);
-            if (newest != null) { out.put(prefix + "Time", newest.getStartTime().toString()); out.put(prefix + "Source", source(newest)); }
+            if (newest != null) {
+                Instant time = newest.getStartTime() != null ? newest.getStartTime() : newest.getUpdateTime();
+                out.put(prefix + "Time", time != null ? time.toString() : Instant.now().toString());
+                out.put(prefix + "Source", source(newest));
+            }
+        }
+
+        private void energyScore(JSObject out, Instant start, Instant end) throws Exception {
+            safe(DataTypes.ENERGY_SCORE, () -> {
+                ZoneId zone = ZoneId.systemDefault();
+                LocalDate startDate = start.atZone(zone).toLocalDate();
+                LocalDate endDate = end.atZone(zone).toLocalDate();
+                Map<String, HealthDataPoint> unique = new LinkedHashMap<>();
+                String token = null;
+                Set<String> tokens = new HashSet<>();
+                for (int page = 0; page < 30; page++) {
+                    requireForeground.run();
+                    ReadDataRequest.LocalDateBuilder<HealthDataPoint> builder = DataTypes.ENERGY_SCORE.getReadDataRequestBuilder()
+                        .setPageSize(500)
+                        .setLocalDateFilter(LocalDateFilter.of(startDate, endDate, true, true));
+                    if (token != null) builder.setPageToken(token);
+                    DataResponse<HealthDataPoint> response = store.readDataAsync(builder.build()).get(30, TimeUnit.SECONDS);
+                    for (HealthDataPoint point : response.getDataList()) unique.put(point.getUid(), point);
+                    token = response.getPageToken();
+                    if (token == null || token.isEmpty()) break;
+                    if (!tokens.add(token)) throw new IllegalStateException("Repeated Samsung Health page token.");
+                }
+                latest(out, new ArrayList<>(unique.values()), DataType.EnergyScoreType.ENERGY_SCORE, "energyScore", "energyScore", "", "EnergyScoreRecord");
+            }, "energyScore");
         }
         JSObject wellness(Instant start, Instant end) throws Exception {
             JSObject out = base(start, end);
@@ -331,7 +367,7 @@ public class SamsungHealthPlugin extends Plugin {
             return out;
         }
         JSObject daily(Instant start, Instant end) throws Exception {
-            JSObject out = wellness(start, end); activity(out, start, end); heart(out, start, end); sleep(out, start, end);
+            JSObject out = wellness(start, end); activity(out, start, end); heart(out, start, end); sleep(out, start, end); energyScore(out, start, end);
             // No HRV/RMSSD field exists in Samsung's 1.1.0 Data SDK. Never derive one from HR or Energy Score.
             out.put("hrvRmssdMs", JSONObject.NULL);
             return out;

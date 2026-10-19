@@ -35,6 +35,16 @@ public class SamsungHealthReaderTest {
             (proxy,method,args)->{if(method.getName().equals("readDataAsync"))return future;throw new AssertionError("Unexpected SDK call "+method.getName());});
         return new SamsungHealthPlugin.Reader(store,allowed==null?Collections.emptySet():Collections.singleton(Permission.of(allowed,AccessType.READ)),()->{});
     }
+    @Test public void energyScoreIsReadWhenAllowed() throws Exception {
+        HealthDataPoint point = new HealthDataPoint.Builder()
+            .setStartTime(start, ZoneOffset.UTC)
+            .addFieldData(DataType.EnergyScoreType.ENERGY_SCORE, 83f)
+            .build();
+        JSObject out = reader(DataTypes.ENERGY_SCORE, Collections.singletonList(point), null).daily(start, end);
+        assertEquals(83.0, out.getDouble("energyScore"), 0.001);
+        assertEquals("com.sec.android.app.shealth", out.getString("energyScoreSource"));
+    }
+
     @Test public void bodyFatIsPercentAndMuscleAndWaterUseTheirActualSdkUnits() throws Exception {
         HealthDataPoint point=new HealthDataPoint.Builder().setStartTime(start,ZoneOffset.UTC)
             .addFieldData(DataType.BodyCompositionType.WEIGHT,66f)
