@@ -386,5 +386,9 @@
   {
     "file": "tests/browser/distance-auto-complete-206.cjs",
     "estimatedSeconds": 9
+  },
+  {
+    "file": "tests/browser/ui-core-flows-automation.cjs",
+    "estimatedSeconds": 6
   }
 ]
