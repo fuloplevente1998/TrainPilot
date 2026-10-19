@@ -1,6 +1,6 @@
 # #197 – Edzésstílusok és progressziós módok: kiinduló audit és adatmodell-terv
 
-Állapot: **5/7 – előnézet, külön jóváhagyás, atomikus módmentés és visszavonás implementálva (2026-10-19)**. A GitHub Actions teljes ellenőrzésének eredménye ettől külön követendő. Ez a dokumentum a `feat/197-training-styles-progression` fejlesztési ághoz tartozik; nem jelent kész, bekapcsolt funkciót vagy kiadási jóváhagyást.
+Állapot: **6/7 – közös Coach-integráció megvalósítva; teljes regresszió és készülékes ellenőrzés folyamatban (2026-10-20)**. A GitHub Actions teljes ellenőrzésének eredménye ettől külön követendő. Ez a dokumentum a `feat/197-training-styles-progression` fejlesztési ághoz tartozik; nem jelent kész, bekapcsolt funkciót vagy kiadási jóváhagyást.
 
 Kiinduló main: `1393982d48691489978a44652c61ff2b32514e8d` (#220). A meglévő #128 edzéstervezés/progresszió, a #206 GPS-tevékenységek és a Wear/napló megőrzése kötelező.
 
@@ -99,3 +99,14 @@ Konzervatív és tesztelhető **dupla, lineáris, RIR** javaslatok elkülönít�
 - **Határ**: a módbeállítás mentése nem kapcsolja át a meglévő Coach automatikus terhelésalkalmazását; ezt a következő **6/7** lépés fogja explicit jóváhagyáshoz kötni. Nincs verzióemelés, nincs main-merge, nincs #184-es Samsung SDK-kapcsolat.
 
 A CI-eredményt commitonként kell ellenőrizni, és csak azonos HEAD-en sikeres kapuk után zárható le a 5/7.
+
+## 6/7 – Közös Samsung + Coach-integráció (PR #222)
+
+- Külön ág: feat/184-197-coach-integration; Draft PR #222. Az eredeti #184 és #197 változások összevezetése megtörtént.
+- Csak aznapi, hitelesített forrású Samsung Energy Score használható, időszerűség ellenőrzésével. Hiányzáskor megmarad a TrainPilot fallback, és a két becslés külön látszik.
+- A fájdalom és túlterhelés konzervatív korlát. Nincs kétszeres alvás/HRV/aktivitás pontozás.
+- A választott HIT / normál stílus és dupla / lineáris / RIR mód Coach-javaslatként jelenik meg. Nincs automatikus súly/sorozat/ismétlés-átírás.
+- Az új ajánlott súlyhoz kétlépcsős jóváhagyás kell; megkezdett sorozat, szüneteltetett edzés, Wear-tulajdonlás és módosult állapot esetén blokkol.
+- Az 5/7-es módváltó korábbi böngészős indítási hibáját (szigorú mód, undeclared handlers) javítottuk.
+- Célzott Node-teszt: tests/training-coach-integrated-197.cjs; böngészős teszt: tests/browser/training-coach-integrated-197.cjs.
+- A 7/7 továbbra is az utolsó commit Quick Validation + Chromium 6/6 + natív Release Gate, majd telefonos/Samsung Health/Wear készülékes APK-teszt, felhasználói jóváhagyás. Csak ezt követően merge és Issue/PR lezárás. Külső verziókód változatlan.

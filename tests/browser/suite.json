@@ -410,5 +410,9 @@
   {
     "file": "tests/browser/training-mode-confirm-197.cjs",
     "estimatedSeconds": 14
+  },
+  {
+    "file": "tests/browser/training-coach-integrated-197.cjs",
+    "estimatedSeconds": 14
   }
 ]
