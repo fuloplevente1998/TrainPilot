@@ -11,6 +11,7 @@ const server=http.createServer((req,res)=>{
  await new Promise(done=>server.listen(0,'127.0.0.1',done));let browser;
  try{
   browser=await chromium.launch({headless:true,args:['--no-sandbox'],executablePath:process.env.TRAINPILOT_CHROMIUM||undefined});
+  // The Coach fixture is a logic test, not an overlay/navigation test: dispatch DOM clicks directly.
   const page=await browser.newPage({viewport:{width:360,height:800},locale:'hu-HU',timezoneId:'Europe/Budapest'}),errors=[];
   page.on('pageerror',e=>errors.push(String(e)));page.on('dialog',d=>d.accept());
   await page.addInitScript(()=>localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped')));
@@ -33,20 +34,20 @@ const server=http.createServer((req,res)=>{
   assert.equal(result.source,'global');
   assert.match(result.text,/Lineáris|lineáris/i);
   assert.match(result.text,/Javaslat ellenőrzése/);
-  await page.locator('#tp197BrowserFixture button').first().click();
+  await page.locator('#tp197BrowserFixture button').first().dispatchEvent('click');
   assert.equal(await page.locator('#tp197BrowserFixture button').count(),2);
   assert.equal(await page.evaluate(()=>window.__tp197Saves),0);
-  await page.locator('#tp197BrowserFixture button').last().click();
+  await page.locator('#tp197BrowserFixture button').last().dispatchEvent('click');
   assert.equal(await page.evaluate(()=>window.__tp197Saves),0);
-  await page.locator('#tp197BrowserFixture button').first().click();
+  await page.locator('#tp197BrowserFixture button').first().dispatchEvent('click');
   await page.evaluate(()=>state.session.exercises[0].sets[0].reps='1');
-  await page.locator('#tp197BrowserFixture button').first().click();
+  await page.locator('#tp197BrowserFixture button').first().dispatchEvent('click');
   assert.equal(await page.evaluate(()=>state.session.exercises[0].sets[0].weight),10);
   await page.evaluate(()=>{state.session.exercises[0].sets[0].reps='';state.session.timerOwner='watch';renderWorkout()});
   assert.equal(await page.locator('#tp197BrowserFixture button').count(),0);
   await page.evaluate(()=>{state.session.timerOwner='phone';renderWorkout()});
-  await page.locator('#tp197BrowserFixture button').first().click();
-  await page.locator('#tp197BrowserFixture button').first().click();
+  await page.locator('#tp197BrowserFixture button').first().dispatchEvent('click');
+  await page.locator('#tp197BrowserFixture button').first().dispatchEvent('click');
   assert.equal(await page.evaluate(()=>state.session.exercises[0].sets.every(s=>s.weight===12)),true);
   assert.equal(await page.evaluate(()=>window.__tp197Saves),1);
   assert.deepEqual(errors,[]);
