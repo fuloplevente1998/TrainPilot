@@ -19268,9 +19268,11 @@ var tp197TrainingModes=function tp197TrainingModes(programId=null){
  if(!object(saved)||saved.schemaVersion!==1||typeof saved.explicitChoice!=='boolean'||!valid(saved.defaults))return legacy();
  // A program's explicit choice wins. A malformed override never silently
  // enables the global policy in its place.
+ if(has(saved,'byProgram')&&!object(saved.byProgram))return legacy();
  const by=object(saved.byProgram)?saved.byProgram:null;
- const override=by&&typeof pid==='string'&&has(by,pid)?by[pid]:null;
- if(override!==null){
+ const hasOverride=!!by&&typeof pid==='string'&&has(by,pid);
+ if(hasOverride){
+  const override=by[pid];
   if(!object(override)||typeof override.explicitChoice!=='boolean')return legacy();
   if(override.explicitChoice){
    if(!valid(override))return legacy();
