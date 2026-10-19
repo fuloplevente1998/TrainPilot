@@ -10,8 +10,10 @@ A felhasználó: **„most volt gps adat, terkep is megjelent”**, a GPS-részt
 lezárhatónak tartja. Ezt készülékes pozitív elfogadásként rögzítettük a #193 és
 #213 tetején; a régebbi „nincs térkép / igazolatlan” állapotok történetiek.
 A felhasználó külön megerősítette: **az átadás és visszavétel is jó**.
-Ezzel a teljes #193 készülékes elfogadása megvan; lezárás és a korábban
-engedélyezett #213 main-integráció következik. A pontos GitHub-állapotot ellenőrizd.
+Ezzel a teljes #193 készülékes elfogadása megvan. **#213 mainre beolvasztva:
+`311f507e6e57246fddacfb845bd8e123584aa9c7`; #193 completed állapotban lezárva.**
+A főági új kapuk elindultak; Quick már zöld, a többi eredményét külön ellenőrizd.
+A main integráció ebben a körben nem emelt verziót.
 
 **Új, jóváhagyott UI-feladat: [#216](https://github.com/fuloplevente1998/TrainPilot/issues/216).**
 Kültéri futás/séta indításánál látható GPS-útvonal választás, első tudatos
@@ -25,7 +27,7 @@ Ez külön megvalósítandó funkció, nem kész UI és nem GPS-adatút újrafej
 A #215 külön telefonos Intervallumok-ág; a felhasználó kifejezetten pontosította,
 hogy **nem annak APK-jával tesztelte a GPS-t**. A számlálók hiányát nem szabad
 ellenőrzés nélkül a #215 telepítésére fogni. A #212 korona/lünetta része külön
-hátralévő feladat. Main-merge és 1.3.6 emelés ebben a rögzítési körben nem történt.
+hátralévő feladat. Main-merge megtörtént a fenti SHA-n, 1.3.6 emelés még nem történt.
 
 ## Legfrissebb átadás – GPS-diagnosztikai APK-pár, minden kapu zöld
 
