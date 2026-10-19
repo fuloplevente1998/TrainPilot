@@ -17,11 +17,15 @@ ui.waiting('new');assert.equal(ui.receive(live(2)),false,'a manual retry must no
 assert.equal(app.run('state.session.wearMeasurement165.state'),'waitingWorkout');
 assert.equal(app.run('state.session.exercises[0].sets[0].done'),false,'a measurement status never completes a set');
 let payload=live(3),acks=0;
+payload.summary.gpsRoute193={schema:1,state:'recording',receivedFixes:12,savedPoints:8,lastRejection:'',latitude:47.1};
 app.context.window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{pendingCommands:async()=>({commands:[],liveHealth:payload}),ackCommand:async()=>acks++,publish:async()=>{},clear:async()=>{},publishHome:async()=>{},startWatchMeasurement:async()=>({opened:true})}}};
 (async()=>{
  await app.context.window.TrainPilotWearSync.drainCommands();
  assert.equal(app.run('state.session.healthWear129.heartRate'),105);
  assert.equal(app.run('state.session.healthWear129.totalCalories'),3);
+ assert.deepEqual(JSON.parse(app.run('JSON.stringify(state.session.healthWear129.gpsRoute193)')),
+  {schema:1,state:'recording',receivedFixes:12,savedPoints:8,lastRejection:''});
+ assert.equal(app.run('state.session.healthWear129.gpsRoute193.latitude'),undefined,'GPS diagnostic summary never copies coordinates');
  assert.equal(acks,0,'replaceable live status is not a durable workout command');
  payload=live(2);await app.context.window.TrainPilotWearSync.drainCommands();
  assert.equal(app.run('state.session.healthWear129.revision'),3,'late live summaries cannot roll measurements back');
@@ -41,11 +45,16 @@ app.context.window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{pendi
  assert.equal(app.run('history()[0].healthWear129.totalCalories'),4,'late live final must attach to the saved phone workout');
  assert.equal(app.run('history()[0].healthWear129.state'),'ended');
  assert.match(app.run('rfHistoryHealthHtml(0)'),/4 kcal/);
+ payload=measured(12,4,'ended');payload.summary.gpsRoute193={schema:1,state:'stopped',receivedFixes:0,savedPoints:0,lastRejection:''};
+ await app.context.window.TrainPilotWearSync.drainCommands();
+ assert.match(app.run('rfHistoryHealthHtml(0)'),/GPS-minták az órán/);
+ assert.match(app.run('rfHistoryHealthHtml(0)'),/Mentett GPS-pontok az órán/);
+ assert.equal(app.run('history()[0].healthWear129.gpsRoute193.savedPoints'),0,'Zero captured points remains visible, distinct from missing support');
  assert.equal(app.run('state.session'),null);
  assert.equal(app.run('history().length'),1);
  payload=measured(9,99);await app.context.window.TrainPilotWearSync.drainCommands();
  assert.equal(app.run('history()[0].healthWear129.totalCalories'),4,'stale live summary cannot overwrite final totals');
- payload={...measured(12,99),state:'toString'};await app.context.window.TrainPilotWearSync.drainCommands();
+ payload={...measured(13,99),state:'toString'};await app.context.window.TrainPilotWearSync.drainCommands();
  assert.equal(app.run('history()[0].healthWear129.totalCalories'),4,'invalid live phase cannot persist a summary');
  app.run('db.set("draft",null);startWorkout(activeProgram().days[0].id);');
  payload=measured(13,5,'ended');await app.context.window.TrainPilotWearSync.drainCommands();

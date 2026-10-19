@@ -4,6 +4,31 @@ Frissítve: **2026-10-19, Europe/Budapest**. Először a gyökérben található
 [AGENTS.md](../AGENTS.md) olvasandó; utána ez a rövid aktuális átadás.
 Az alábbi állapotot induláskor GitHubon ellenőrizd. A hosszú régi naplók történetiek.
 
+## Folyamatban – bizonyítható órás GPS-rögzítés vizsgálata
+
+A felhasználó újabb, azonos útvonalon végzett kb. egyperces próbáján sincs órás
+naplótérkép. A telefonos térkép működik, az óra Google Térképe is talál helyet.
+A képen **Napló → Health adatok → TrainPilot óra**: 69 m / 66,3 s / 82 lépés
+megérkezett. „Órán mért edzésadatok” nem külön menüpont, ezt korábban pontatlanul
+neveztük meg. A hardver/GPS-vételi hibát nem állítjuk, és újabb sétát nem kérünk
+konkrét diagnózis nélkül. A 60b0b5f csak késői UI-frissítést javít, a konkrét
+adatút hibáját nem bizonyítottan oldotta meg.
+
+Most célzott diagnosztikai tesztbuild készül, nem igazolt GPS-gyökérokjavítás:
+- Valódi Location-callbackek és tartósan mentett GPS-pontok külön számlálója;
+  a nulla is látható az óra GPS-útvonal képernyőjén.
+- A koordinátamentes számlálók/állapot az aktuális és végső Health-összesítésben
+  átjutnak a telefon **Health adatok → TrainPilot óra** kártyájába.
+- Szigorú telefonos mezőszűrés; koordináta nem kerül a diagnosztikai riportba.
+- Platformteszt: 3 mentett pont, egy elutasított régi minta külön látszik;
+  szünet utáni callback nem számolható bele. Node/böngészős regresszió:
+  pozitív Health-táv mellett nulla mentett GPS-pont látható, nem összemosva.
+Teljes ellenőrzés/új APK-pár GitHub Actions; verzió változatlan, nincs main-merge.
+
+A felhasználó közben másik agentnek átadhatja #212 **csak telefonos** kompakt
+Intervallumok részét: külön feat/212-compact-intervals ág a #213 ágából, draft PR,
+GPS/Wear/verzió módosítás és main-merge nélkül. Itt párhuzamos agent nem indult.
+
 ## Friss készülékes visszajelzés – a teszt még nem teljes elfogadás
 
 A felhasználó a kiadott 1.3.51 tesztpáron a **4. pontot elfogadta**: valóban

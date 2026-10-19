@@ -877,7 +877,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             .put("finishedAt", Instant.now().toString()).put("createdAt", System.currentTimeMillis())
             .put("finalSnapshot", WorkoutSnapshotStore.encode(current))
         WearUndo188.marker(current)?.let { command.put("undoDependency188",it.optString("commandId")) }
-        WearHealthStore.load(this,current.workoutId)?.let { command.put("healthSummary",WearHealthAccumulator(it).snapshot()) }
+        WearHealthStore.load(this,current.workoutId)?.let { WearHealthStore.save(this,it);command.put("healthSummary",WearHealthAccumulator(it).snapshot()) }
         WearHealthService.stop(this)
         WearAutomaticService.stop(this)
         closure.value = WearClosureStore.close(this, current, command)

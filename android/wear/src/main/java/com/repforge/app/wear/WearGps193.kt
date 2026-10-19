@@ -35,9 +35,23 @@ internal object WearGps193 {
         return (if(result.optString("workoutId")==id)result else JSONObject().put("workoutId",id).put("state","idle").put("points",0)).put("armed",armed(context,id)).put("running",WearGpsRouteService193.active(id))
     }
     fun update(context: Context,id: String,state: String,points: Int=0,accuracy: Double?=null) {
-        try{val value=JSONObject().put("workoutId",id).put("state",state).put("points",points)
+        try{val previous=status(context,id);val value=JSONObject().put("workoutId",id).put("state",state).put("points",points)
+                .put("receivedFixes",previous.optInt("receivedFixes")).put("lastRejection",if(state=="recording")"" else previous.optString("lastRejection"))
             if(accuracy!=null)value.put("accuracyMeters",accuracy);val p=prefs(context);if(p.getString("status",null)!=value.toString())p.edit().putString("status",value.toString()).apply()
         }catch(_:Exception){/* Status is not the authoritative route store. */}
+    }
+    fun received(context: Context,id: String,rejection: String="") {
+        val value=status(context,id)
+        value.remove("armed");value.remove("running")
+        value.put("receivedFixes",(value.optInt("receivedFixes")+1).coerceAtMost(10000000)).put("lastRejection",rejection)
+        prefs(context).edit().putString("status",value.toString()).apply()
+    }
+    /** Counts and state only; coordinates never enter Health summaries or generic commands. */
+    fun summary(context: Context,id: String): JSONObject {
+        val value=status(context,id)
+        return JSONObject().put("schema",1).put("state",value.optString("state","idle"))
+            .put("receivedFixes",value.optInt("receivedFixes")).put("savedPoints",value.optInt("points"))
+            .put("lastRejection",value.optString("lastRejection"))
     }
     fun resumeIfArmed(context: Context,workout: WearWorkout) {
         if(!armed(context,workout.workoutId))return
