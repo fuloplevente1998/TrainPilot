@@ -19284,6 +19284,103 @@ var tp197TrainingModes=function tp197TrainingModes(programId=null){
 };
 // @endsection training-modes-197.js
 
+// @section progression-modes-197.js
+/* #197, phase 3: read-only progression proposals. Not wired to workout/session writes. */
+var tp197ComputePreview=function tp197ComputePreview(input={}) {
+ const mode=input?.modes||{}, target=input?.target||{}, exercise=input?.exercise||{}, history=Array.isArray(input?.recent)?input.recent.slice(0,4):[];
+ const chosen=mode.explicitChoice===true&&['global','program'].includes(mode.source)&&
+  ['normal','hit'].includes(mode.trainingStyle)&&['double','linear','rir'].includes(mode.progressionMode);
+ const empty={schemaVersion:1,handled:false,previewOnly:true,autoApply:false,action:'legacy',reasonCode:'legacy',trainingStyle:'normal',progressionMode:'double',historyCount:0,baseline:null,proposed:null};
+ if(!chosen)return empty;
+ const clamp=(x,lo,hi)=>Number.isFinite(x)?Math.min(hi,Math.max(lo,x)):null;
+ const sets=clamp(Number(target.sets),1,12),min=clamp(Number(target.min),1,200),max=clamp(Number(target.max),1,200);
+ const recent=history.filter(x=>x&&typeof x==='object');
+ const latest=recent[0]||null,base=latest&&Number.isFinite(Number(latest.weight))&&Number(latest.weight)>0?Number(latest.weight):null;
+ const step=Number(input.step),isBody=exercise.loadType==='bodyweight';
+ const effectiveSets=mode.trainingStyle==='hit'&&sets!==null?Math.min(sets,input.isolation===true?1:2):sets;
+ const normalReps=Array.isArray(latest?.reps)?latest.reps.filter(x=>Number.isFinite(Number(x))&&Number(x)>0).map(Number):[];
+ const old={sets,repsMin:min,repsMax:max,rest:Number.isFinite(Number(target.rest))&&Number(target.rest)>0?Number(target.rest):null,weight:isBody?0:base,rirMin:target.rirMin??null,rirMax:target.rirMax??null};
+ const proposal={...old,sets:effectiveSets,repTargets:null};
+ const result={schemaVersion:1,handled:true,previewOnly:true,autoApply:false,action:'hold',reasonCode:'insufficient-history',trainingStyle:mode.trainingStyle,progressionMode:mode.progressionMode,historyCount:recent.length,baseline:old,proposed:proposal};
+ const set=(action,reason)=>({...result,action,reasonCode:reason});
+ if(exercise.measurementType==='distance'||exercise.repUnit==='mp'||exercise.repUnit==='sec'||target.kind!=='reps')return set('hold','non-strength-activity');
+ if(sets===null||min===null||max===null||min>max)return set('hold','invalid-target');
+ if(!latest)return set('hold','insufficient-history');
+ const pain=recent.slice(0,3).some(x=>x.pain===true||x.effort==='pain'||x.feedbackRating==='pain');
+ if(pain)return set('hold','pain');
+ const recovery=input.readiness;
+ if(recovery&&Number(recovery.parts)>0&&Number.isFinite(Number(recovery.score))&&Number(recovery.score)<55)return set('hold','low-readiness');
+ if(!latest.allDone)return set('hold','incomplete');
+ if(['hard','challenging'].includes(latest.effort)||latest.feedbackRating==='hard')return set('hold','high-effort');
+ if(latest.belowMin===true||Number.isFinite(Number(latest.minRep))&&Number(latest.minRep)<min)return set('hold','below-target');
+ const safe=x=>x?.allDone===true&&x?.pain!==true&&x?.feedbackRating!=='pain'&&
+  ['good','light','easy'].includes(x?.effort)&&x?.belowMin!==true&&!['hard','pain'].includes(x?.feedbackRating);
+ const same=x=>isBody||base!==null&&Number.isFinite(Number(x?.weight))&&Math.abs(Number(x.weight)-base)<.01;
+ const streak=(n,additional)=>recent.length>=n&&recent.slice(0,n).every(x=>safe(x)&&same(x)&&(!additional||additional(x)));
+ const canIncrease=isBody||(base!==null&&base>0&&Number.isFinite(step)&&step>=.25&&step<=10);
+ const increase=(reason)=> {
+  if(!canIncrease)return set('hold','missing-load-step');
+  if(isBody)return set('variation',reason);
+  proposal.weight=Math.round((base+step)*4)/4;
+  return set('increase',reason);
+ };
+ const atTop=x=>x?.hitTop===true&&Number.isFinite(Number(x?.minRep))&&Number(x.minRep)>=max;
+ if(mode.progressionMode==='double'){
+  if(streak(3,atTop))return increase('double-stable-top');
+  if(atTop(latest))return set('hold','double-await-stability');
+  if(!safe(latest))return set('hold','uncertain-effort');
+  if(!normalReps.length)return set('hold','missing-repetitions');
+  const out=normalReps.map(x=>Math.min(max,Math.max(min,x))),lowest=Math.min(...out);
+  if(lowest>=max)return set('hold','double-await-stability');
+  for(let i=0;i<out.length;i++)if(out[i]===lowest){out[i]=Math.min(max,out[i]+1);break;}
+  proposal.repTargets=out;
+  return set('reps','double-next-repetition');
+ }
+ if(mode.progressionMode==='linear'){
+  if(streak(2,x=>Number.isFinite(Number(x.minRep))&&Number(x.minRep)>=min))return increase('linear-stable-performance');
+  return set('hold','linear-await-stability');
+ }
+ // RIR feedback is *actual* recorded reserve, never prescription.rir.
+ const validRir=x=>x?.actualRir!==null&&x?.actualRir!==undefined&&
+  x?.actualRir!==''&&Number.isFinite(Number(x.actualRir))&&Number(x.actualRir)>=0&&Number(x.actualRir)<=10;
+ const lo=target.rirMin,hi=target.rirMax;
+ if(!Number.isFinite(lo)||!Number.isFinite(hi)||lo<0||hi>10||lo>hi)return set('hold','rir-target-missing');
+ if(!validRir(latest))return set('hold','rir-feedback-missing');
+ const actual=Number(latest.actualRir);
+ if(actual<lo)return set('hold','rir-overexertion');
+ if(streak(2,x=>validRir(x)&&Number(x.actualRir)>hi+1&&Number.isFinite(Number(x.minRep))&&Number(x.minRep)>=min))return increase('rir-stable-reserve');
+ return set('hold',actual>hi?'rir-await-stability':'rir-on-target');
+};
+var tp197ExercisePreview=function tp197ExercisePreview(id,programId=null) {
+ const pid=typeof programId==='string'&&programId.trim()?programId:
+  (state.session?.programId||(typeof activeProgramId==='function'?activeProgramId():null));
+ const modes=tp197TrainingModes(pid);
+ if(!modes.explicitChoice)return tp197ComputePreview({modes});
+ const e=byId(id);
+ if(!e)return tp197ComputePreview({modes,exercise:{},target:{},recent:[]});
+ const se=state.session?.programId===pid?state.session.exercises?.find(x=>x.id===id):null;
+ const target=tp140Prescription(id,se,pid);
+ const rows=typeof tp128Rows==='function'?tp128Rows(id,pid,4):[];
+ const recent=rows.map(row=>{
+  const item=tp140Occurrence(row,target);
+  const effort=item.effort||null,feedbackRating=row.workout?.feedback?.rating||null;
+  // The prescribed RIR is NOT a measurement. Only an explicit recorded RIR is considered.
+  const reported=row.exercise?.actualRir??row.exercise?.feedback?.rir??null;
+  return {
+   allDone:item.allDone===true,weight:item.weight,minRep:item.minRep,reps:item.reps,
+   hitTop:item.hitTop===true,belowMin:item.belowMin===true,effort,feedbackRating,
+   pain:effort==='pain'||feedbackRating==='pain',actualRir:reported
+  };
+ });
+ let readiness=null;
+ try{if(typeof rf220Readiness==='function')readiness=rf220Readiness();}catch(_){}
+ const p=programById(pid),rx=p?.prescriptions?.[id]||{},lib={...e,...rx};
+ return tp197ComputePreview({modes,exercise:lib,target,recent,readiness,
+  isolation:typeof TP140_ISOLATION!=='undefined'&&TP140_ISOLATION.has(id),
+  step:typeof tp140Step==='function'?tp140Step(lib,Number(recent[0]?.weight)||0):null});
+};
+// @endsection progression-modes-197.js
+
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
 // @endsection ready.js

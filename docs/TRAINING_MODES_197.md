@@ -1,6 +1,6 @@
 # #197 – Edzésstílusok és progressziós módok: kiinduló audit és adatmodell-terv
 
-Állapot: **2/7 – feloldó és célzott Node-regresszió implementálva (2026-10-19)**. A GitHub Actions teljes ellenőrzésének eredménye ettől külön követendő. Ez a dokumentum a `feat/197-training-styles-progression` fejlesztési ághoz tartozik; nem jelent kész, bekapcsolt funkciót vagy kiadási jóváhagyást.
+Állapot: **3/7 – konzervatív, csak javaslatot adó progressziós motor implementálva (2026-10-19)**. A GitHub Actions teljes ellenőrzésének eredménye ettől külön követendő. Ez a dokumentum a `feat/197-training-styles-progression` fejlesztési ághoz tartozik; nem jelent kész, bekapcsolt funkciót vagy kiadási jóváhagyást.
 
 Kiinduló main: `1393982d48691489978a44652c61ff2b32514e8d` (#220). A meglévő #128 edzéstervezés/progresszió, a #206 GPS-tevékenységek és a Wear/napló megőrzése kötelező.
 
@@ -64,3 +64,17 @@ trainingModes197: {
 Konzervatív és tesztelhető **dupla, lineáris, RIR** javaslatok elkülönítése: tiszta javaslat-adat, továbbra is `autoApply:false` amíg a felhasználó nem fogadja el az előnézetet. A régi `source:'legacy'` út érintetlen marad; fájdalom, alacsony readiness, hiányzó RIR és idegen programhoz tartozó előzmény blokkolja az emelést.
 
 **A 2/7 lépés végén még nincs:** új Coach/UI algoritmus, súlyváltoztatás, verzióemelés, APK, `main` merge.
+
+## 3/7 – Implementált előnézeti progressziós motor
+
+- `www/app.js` → `progression-modes-197.js`: tiszta `tp197ComputePreview(input)`, csak olvasó `tp197ExercisePreview(id,programId)` adapter.
+- Legacy / explicitChoice nélküli tárolás → `handled:false`, a meglévő #128/#140 logika és az automatikus alkalmazás **változatlan**.
+- Dupla: +1 szabályos ismétlés az egyik legkisebb sorozatnál, majd **3 egymást követő**, azonos súlyú, biztonságos felső-cél teljesítés után kis súlylépcső **csak javaslatként**.
+- Lineáris: **2 egymást követő** azonos súlyú, teljes, alsó-célt elérő, jó erőfeszítésű alkalom után súlylépcső-javaslat.
+- RIR: csak ténylegesen naplózott `actualRir` vagy exercise feedback RIR használható, **nem** a célrecept `rir` mezője. Hiány esetén nincs emelés. 2 stabil, célnál lényegesen magasabb visszajelzés javasolhat emelést.
+- HIT: csak előnézeti javaslatban kevesebb munkasorozat (1 izoláció / legfeljebb 2 más), **semmilyen automatikus sorozatcsökkentés vagy bukásig edzés**.
+- Fájdalom, alacsony readiness, hiányos sorozat, rossz/nehéz erőfeszítés, cél alatti ismétlés, hibás súlylépcső és nem erősítő mérés blokkol.
+- A javaslat mindig `autoApply:false`, `previewOnly:true`; jelenleg **nem** kötöttük be a Coach renderbe, programmentésbe vagy az aktív edzésbe.
+- Új Node teszt: `tests/training-progression-197.cjs` (tiszta döntések, HIT, RIR-adathiány, negatív esetek és adapter tulajdonosság).
+- Következő 4/7: a beállításválasztó és HU/EN/DE/RO szövegek, 5/7: előnézet/jóváhagyás és biztonságos mentés. `main` és verzió változatlan.
+
