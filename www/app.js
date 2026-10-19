@@ -3905,7 +3905,7 @@ healthAction=function(fn,pending='Health adatok szinkronizálása…'){
 // The ledger is the only writer of derived recovery. Display renders never rewrite it.
 
 rf229ApplyLatestRecovery=function(){
- const rows=rf229RecoveryHistory(),latest=rows.find(x=>x.sleepMinutes!=null||x.hrvRmssdMs!=null);
+ const rows=rf229RecoveryHistory(),latest=rows.find(x=>x.sleepMinutes!=null||x.hrvRmssdMs!=null||x.energyScore!=null);
  state.health=state.health||{};
  if(!latest){state.health.recovery={};return null}
  const end=Date.parse(latest.day+'T12:00:00'),samples=rows.filter(x=>x.day<latest.day&&end-Date.parse(x.day+'T12:00:00')<=7*86400000&&x.hrvSource===latest.hrvSource).map(x=>rf240Num(x.hrvRmssdMs)).filter(x=>x!=null&&x>0);
@@ -3959,7 +3959,25 @@ rf220PainRecent=()=>rf245RecentHistory().some(h=>(h.exercises||[]).some(e=>e.eff
 rf220EffortLoad=function(){let score=100,n=0;for(const h of rf245RecentHistory())for(const e of h.exercises||[]){if(!e.effort)continue;n++;if(e.effort==='hard'||e.effort==='challenging')score-=8;if(e.effort==='pain')score-=20;if(e.effort==='easy')score+=2}return {score:Math.max(20,Math.min(100,score)),n}};
 
 rf220Readiness=function(){
- const rec=state.health?.recovery||{},sleep=rf245Fresh(rec.sleepEnd,rec.day)?rf240Num(rec.sleepMinutes):null,hrv=rf245Fresh(rec.hrvTime,rec.day)?rf240Num(rec.hrvRmssdMs):null,base=rf240Num(rec.hrvBaselineMs),load=rf220EffortLoad();
+ const rec=state.health?.recovery||{},daily=state.health?.daily||{};
+ const sleep=rf245Fresh(rec.sleepEnd,rec.day)?rf240Num(rec.sleepMinutes):null,hrv=rf245Fresh(rec.hrvTime,rec.day)?rf240Num(rec.hrvRmssdMs):null,base=rf240Num(rec.hrvBaselineMs),load=rf220EffortLoad();
+ const energyScore=(daily.energyScore!=null&&(daily.metricProviders?.energyScore==='samsung_health'||daily.energyScoreSource))?rf240Num(daily.energyScore):(rec.energyScore!=null?rf240Num(rec.energyScore):null);
+
+ if(energyScore!=null&&energyScore>0){
+  let score=energyScore,parts=1;
+  if(load.n){parts++;score+=(load.score-70)*0.2}
+  if(rf220PainRecent())score-=12;
+  score=Math.round(Math.max(25,Math.min(100,score)));
+  return {
+   score,
+   level:score>=75?'good':score>=55?'medium':'low',
+   sleep,hrv,base,load:load.n?load.score:null,
+   energyScore,
+   parts,
+   confidence:'Samsung Energiapontszám ('+energyScore+'/100)'
+  };
+ }
+
  let score=70,parts=0;
  if(sleep!=null){parts++;score+=sleep>=450?12:sleep>=420?8:sleep>=360?1:-14}
  if(hrv!=null&&hrv>0&&base>0){parts++;const d=(hrv-base)/base;score+=d>=.15?10:d<=-.2?-14:d<=-.1?-6:3}
@@ -4152,7 +4170,7 @@ rf245Recovery=function(ledger){
   const selected=sessions.filter(s=>s.source===source),stageBased=selected.some(s=>(s.stages||[]).some(x=>x?.isAsleep===true));
   const merged=rf250MergeSpans(selected.flatMap(rf250SleepSpans));
   const sleepMinutes=merged.length?merged.reduce((sum,[a,b])=>sum+(b-a)/60000,0):null;
-  existing.push({day,sleepMinutes,sleepStart:merged.length?new Date(merged[0][0]).toISOString():null,sleepEnd:merged.length?new Date(merged.at(-1)[1]).toISOString():null,sleepSource:source||null,sleepStageBased:stageBased,sleepStageCount:selected.reduce((n,s)=>n+(s.stages?.length||0),0),hrvRmssdMs:rf240Num(d.hrvRmssdMs),hrvTime:d.hrvTime||null,hrvSource:d.hrvSource||null,readAt:d.readAt||null});
+  existing.push({day,sleepMinutes,sleepStart:merged.length?new Date(merged[0][0]).toISOString():null,sleepEnd:merged.length?new Date(merged.at(-1)[1]).toISOString():null,sleepSource:source||null,sleepStageBased:stageBased,sleepStageCount:selected.reduce((n,s)=>n+(s.stages?.length||0),0),hrvRmssdMs:rf240Num(d.hrvRmssdMs),hrvTime:d.hrvTime||null,hrvSource:d.hrvSource||null,energyScore:rf240Num(d.energyScore),energyScoreTime:d.energyScoreTime||null,energyScoreSource:d.energyScoreSource||null,readAt:d.readAt||null});
  }
  existing.sort((a,b)=>b.day.localeCompare(a.day));db.set('recoveryHistory',existing);rf229ApplyLatestRecovery();
 };
@@ -5112,7 +5130,7 @@ var rf263OpenDate = function rf263OpenDate(key){
 const RF263_VERSION='2.6.3-dev2';
 const RF263_RECOVERY_DAYS=14;
 const RF263_PERMISSION_NAMES=typeof RF251_PERMISSION_NAMES==='object'?RF251_PERMISSION_NAMES:{
- READ_HEART_RATE:'Pulzus',READ_RESTING_HEART_RATE:'Nyugalmi pulzus',READ_ACTIVE_CALORIES_BURNED:'Aktív energia',READ_TOTAL_CALORIES_BURNED:'Teljes energia',READ_EXERCISE:'Edzések',READ_SLEEP:'Alvás',READ_HEART_RATE_VARIABILITY:'HRV',READ_STEPS:'Lépések',READ_WEIGHT:'Testsúly',READ_BODY_FAT:'Testzsír',READ_OXYGEN_SATURATION:'SpO₂',READ_VO2_MAX:'VO₂max',READ_DISTANCE:'Távolság',READ_SPEED:'Sebesség',READ_BLOOD_PRESSURE:'Vérnyomás',READ_BLOOD_GLUCOSE:'Vércukor',READ_RESPIRATORY_RATE:'Légzésszám'
+ READ_HEART_RATE:'Pulzus',READ_RESTING_HEART_RATE:'Nyugalmi pulzus',READ_ACTIVE_CALORIES_BURNED:'Aktív energia',READ_TOTAL_CALORIES_BURNED:'Teljes energia',READ_EXERCISE:'Edzések',READ_SLEEP:'Alvás',READ_HEART_RATE_VARIABILITY:'HRV',READ_STEPS:'Lépések',READ_WEIGHT:'Testsúly',READ_BODY_FAT:'Testzsír',READ_OXYGEN_SATURATION:'SpO₂',READ_VO2_MAX:'VO₂max',READ_DISTANCE:'Távolság',READ_SPEED:'Sebesség',READ_BLOOD_PRESSURE:'Vérnyomás',READ_BLOOD_GLUCOSE:'Vércukor',READ_RESPIRATORY_RATE:'Légzésszám',READ_ENERGY_SCORE:'Samsung Energiapontszám'
 };
 
 (function rf263Css(){
@@ -10462,20 +10480,28 @@ var tp1511TimeChange=function(k,v){const p=rf260TemporalPicker;if(!p)return;p[k]
 rf260TemporalPaintTime=function(){const p=rf260TemporalPicker;if(!p)return;const t=rf260TemporalText(),hours=Array.from({length:24},function(_,i){return '<option value="'+i+'" '+(i===p.hour?'selected':'')+'>'+String(i).padStart(2,'0')+'</option>';}).join(''),mins=Array.from({length:60},function(_,i){return '<option value="'+i+'" '+(i===p.minute?'selected':'')+'>'+String(i).padStart(2,'0')+'</option>';}).join('');p.modal.innerHTML='<div class="tp-modal-card tp-temporal-card tp1511-time" onclick="event.stopPropagation()"><div class="tp-modal-head"><h2 id="tpTemporalTitle">'+esc(p.type==='datetime-local'?t.datetime:t.time)+'</h2><button class="btn secondary tp-modal-close" onclick="rf260TemporalClose()">×</button></div>'+(p.type==='datetime-local'?'<button class="btn secondary block" onclick="rf260TemporalPicker.stage=\'date\';rf260TemporalPaintDate()">← '+esc(t.back)+'</button>':'')+'<div class="tp1511-time-pair"><label>'+esc(t.hour)+'<select class="field" onchange="tp1511TimeChange(\'hour\',this.value)">'+hours+'</select></label><b>:</b><label>'+esc(t.minute)+'<select class="field" onchange="tp1511TimeChange(\'minute\',this.value)">'+mins+'</select></label></div><div class="tp-temporal-actions"><button class="btn secondary" onclick="rf260TemporalCommit(\'\')">'+esc(t.clear)+'</button><button id="tp1511TimeSave" class="btn" onclick="tp152SaveTimeFields(this)">'+esc(t.save)+' • '+String(p.hour).padStart(2,'0')+':'+String(p.minute).padStart(2,'0')+'</button></div></div>';};
 
 const TP1511_HEALTH_I18N={
- hu:{confMany:'Több adatforrás',confLimited:'Korlátozott adatok',confFresh:'Kevés friss adat',coachHold:'Kevés friss regenerációs adat: a Coach most nem javasol automatikus emelést.',diagTitle:'Kapcsolat és támogatott adatok',sources:'Források',allowedTypes:'Engedélyezett adattípusok',lastSync:'Utolsó sikeres szinkron',recoveryChecked:'Regeneráció ellenőrizve',neverSync:'Még nem volt sikeres szinkron',noSource:'Még nincs azonosított adatforrás',granted:'Engedélyezve',denied:'Nincs engedély',unchecked:'Nincs ellenőrizve',diagError:'Néhány Health-adat frissítése nem sikerült.'},
- en:{confMany:'Multiple data sources',confLimited:'Limited data',confFresh:'Little recent data',coachHold:'There is little recent recovery data, so Coach is not recommending an automatic increase right now.',diagTitle:'Connection and supported data',sources:'Sources',allowedTypes:'Allowed data types',lastSync:'Last successful sync',recoveryChecked:'Recovery checked',neverSync:'No successful sync yet',noSource:'No identified data source yet',granted:'Allowed',denied:'Not allowed',unchecked:'Not checked',diagError:'Some Health data could not be refreshed.'},
- de:{confMany:'Mehrere Datenquellen',confLimited:'Begrenzte Daten',confFresh:'Wenig aktuelle Daten',coachHold:'Es liegen nur wenige aktuelle Regenerationsdaten vor; Coach empfiehlt daher derzeit keine automatische Steigerung.',diagTitle:'Verbindung und unterstützte Daten',sources:'Quellen',allowedTypes:'Freigegebene Datentypen',lastSync:'Letzte erfolgreiche Synchronisierung',recoveryChecked:'Regeneration geprüft',neverSync:'Noch keine erfolgreiche Synchronisierung',noSource:'Noch keine Datenquelle erkannt',granted:'Erlaubt',denied:'Nicht erlaubt',unchecked:'Nicht geprüft',diagError:'Einige Health-Daten konnten nicht aktualisiert werden.'},
- ro:{confMany:'Mai multe surse de date',confLimited:'Date limitate',confFresh:'Puține date recente',coachHold:'Există puține date recente despre recuperare, așa că Coach nu recomandă momentan o creștere automată.',diagTitle:'Conexiune și date acceptate',sources:'Surse',allowedTypes:'Tipuri de date permise',lastSync:'Ultima sincronizare reușită',recoveryChecked:'Recuperare verificată',neverSync:'Nu există încă o sincronizare reușită',noSource:'Nu există încă o sursă de date identificată',granted:'Permis',denied:'Nepermis',unchecked:'Neverificat',diagError:'Unele date Health nu au putut fi actualizate.'}
+ hu:{samsungEnergyScore:'Samsung Energiapontszám',confMany:'Több adatforrás',confLimited:'Korlátozott adatok',confFresh:'Kevés friss adat',coachHold:'Kevés friss regenerációs adat: a Coach most nem javasol automatikus emelést.',diagTitle:'Kapcsolat és támogatott adatok',sources:'Források',allowedTypes:'Engedélyezett adattípusok',lastSync:'Utolsó sikeres szinkron',recoveryChecked:'Regeneráció ellenőrizve',neverSync:'Még nem volt sikeres szinkron',noSource:'Még nincs azonosított adatforrás',granted:'Engedélyezve',denied:'Nincs engedély',unchecked:'Nincs ellenőrizve',diagError:'Néhány Health-adat frissítése nem sikerült.'},
+ en:{samsungEnergyScore:'Samsung Energy Score',confMany:'Multiple data sources',confLimited:'Limited data',confFresh:'Little recent data',coachHold:'There is little recent recovery data, so Coach is not recommending an automatic increase right now.',diagTitle:'Connection and supported data',sources:'Sources',allowedTypes:'Allowed data types',lastSync:'Last successful sync',recoveryChecked:'Recovery checked',neverSync:'No successful sync yet',noSource:'No identified data source yet',granted:'Allowed',denied:'Not allowed',unchecked:'Not checked',diagError:'Some Health data could not be refreshed.'},
+ de:{samsungEnergyScore:'Samsung Energiepunktezahl',confMany:'Mehrere Datenquellen',confLimited:'Begrenzte Daten',confFresh:'Wenig aktuelle Daten',coachHold:'Es liegen nur wenige aktuelle Regenerationsdaten vor; Coach empfiehlt daher derzeit keine automatische Steigerung.',diagTitle:'Verbindung und unterstützte Daten',sources:'Quellen',allowedTypes:'Freigegebene Datentypen',lastSync:'Letzte erfolgreiche Synchronisierung',recoveryChecked:'Regeneration geprüft',neverSync:'Noch keine erfolgreiche Synchronisierung',noSource:'Noch keine Datenquelle erkannt',granted:'Erlaubt',denied:'Nicht erlaubt',unchecked:'Nicht geprüft',diagError:'Einige Health-Daten konnten nicht aktualisiert werden.'},
+ ro:{samsungEnergyScore:'Scor de energie Samsung',confMany:'Mai multe surse de date',confLimited:'Date limitate',confFresh:'Puține date recente',coachHold:'Există puține date recente despre recuperare, așa că Coach nu recomandă momentan o creștere automată.',diagTitle:'Conexiune și date acceptate',sources:'Surse',allowedTypes:'Tipuri de date permise',lastSync:'Ultima sincronizare reușită',recoveryChecked:'Recuperare verificată',neverSync:'Nu există încă o sincronizare reușită',noSource:'Nu există încă o sursă de date identificată',granted:'Permis',denied:'Nepermis',unchecked:'Neverificat',diagError:'Unele date Health nu au putut fi actualizate.'}
 };
 const TP1511_PERMISSION_I18N={
- en:{READ_HEART_RATE:'Heart rate',READ_RESTING_HEART_RATE:'Resting heart rate',READ_ACTIVE_CALORIES_BURNED:'Active calories',READ_TOTAL_CALORIES_BURNED:'Total calories',READ_EXERCISE:'Workouts',READ_SLEEP:'Sleep',READ_HEART_RATE_VARIABILITY:'HRV',READ_STEPS:'Steps',READ_WEIGHT:'Weight',READ_BODY_FAT:'Body fat',READ_OXYGEN_SATURATION:'SpO₂',READ_VO2_MAX:'VO₂max',READ_DISTANCE:'Distance',READ_SPEED:'Speed',READ_BLOOD_PRESSURE:'Blood pressure',READ_BLOOD_GLUCOSE:'Blood glucose',READ_RESPIRATORY_RATE:'Respiratory rate'},
- de:{READ_HEART_RATE:'Puls',READ_RESTING_HEART_RATE:'Ruhepuls',READ_ACTIVE_CALORIES_BURNED:'Aktive Kalorien',READ_TOTAL_CALORIES_BURNED:'Gesamtkalorien',READ_EXERCISE:'Trainings',READ_SLEEP:'Schlaf',READ_HEART_RATE_VARIABILITY:'HRV',READ_STEPS:'Schritte',READ_WEIGHT:'Gewicht',READ_BODY_FAT:'Körperfett',READ_OXYGEN_SATURATION:'SpO₂',READ_VO2_MAX:'VO₂max',READ_DISTANCE:'Distanz',READ_SPEED:'Geschwindigkeit',READ_BLOOD_PRESSURE:'Blutdruck',READ_BLOOD_GLUCOSE:'Blutzucker',READ_RESPIRATORY_RATE:'Atemfrequenz'},
- ro:{READ_HEART_RATE:'Ritm cardiac',READ_RESTING_HEART_RATE:'Puls de repaus',READ_ACTIVE_CALORIES_BURNED:'Calorii active',READ_TOTAL_CALORIES_BURNED:'Calorii totale',READ_EXERCISE:'Antrenamente',READ_SLEEP:'Somn',READ_HEART_RATE_VARIABILITY:'HRV',READ_STEPS:'Pași',READ_WEIGHT:'Greutate',READ_BODY_FAT:'Grăsime corporală',READ_OXYGEN_SATURATION:'SpO₂',READ_VO2_MAX:'VO₂max',READ_DISTANCE:'Distanță',READ_SPEED:'Viteză',READ_BLOOD_PRESSURE:'Tensiune arterială',READ_BLOOD_GLUCOSE:'Glicemie',READ_RESPIRATORY_RATE:'Frecvență respiratorie'}
+ en:{READ_HEART_RATE:'Heart rate',READ_RESTING_HEART_RATE:'Resting heart rate',READ_ACTIVE_CALORIES_BURNED:'Active calories',READ_TOTAL_CALORIES_BURNED:'Total calories',READ_EXERCISE:'Workouts',READ_SLEEP:'Sleep',READ_HEART_RATE_VARIABILITY:'HRV',READ_STEPS:'Steps',READ_WEIGHT:'Weight',READ_BODY_FAT:'Body fat',READ_OXYGEN_SATURATION:'SpO₂',READ_VO2_MAX:'VO₂max',READ_DISTANCE:'Distance',READ_SPEED:'Speed',READ_BLOOD_PRESSURE:'Blood pressure',READ_BLOOD_GLUCOSE:'Blood glucose',READ_RESPIRATORY_RATE:'Respiratory rate',READ_ENERGY_SCORE:'Samsung Energy Score'},
+ de:{READ_HEART_RATE:'Puls',READ_RESTING_HEART_RATE:'Ruhepuls',READ_ACTIVE_CALORIES_BURNED:'Aktive Kalorien',READ_TOTAL_CALORIES_BURNED:'Gesamtkalorien',READ_EXERCISE:'Trainings',READ_SLEEP:'Schlaf',READ_HEART_RATE_VARIABILITY:'HRV',READ_STEPS:'Schritte',READ_WEIGHT:'Gewicht',READ_BODY_FAT:'Körperfett',READ_OXYGEN_SATURATION:'SpO₂',READ_VO2_MAX:'VO₂max',READ_DISTANCE:'Distanz',READ_SPEED:'Geschwindigkeit',READ_BLOOD_PRESSURE:'Blutdruck',READ_BLOOD_GLUCOSE:'Blutzucker',READ_RESPIRATORY_RATE:'Atemfrequenz',READ_ENERGY_SCORE:'Samsung Energiepunktezahl'},
+ ro:{READ_HEART_RATE:'Ritm cardiac',READ_RESTING_HEART_RATE:'Puls de repaus',READ_ACTIVE_CALORIES_BURNED:'Calorii active',READ_TOTAL_CALORIES_BURNED:'Calorii totale',READ_EXERCISE:'Antrenamente',READ_SLEEP:'Somn',READ_HEART_RATE_VARIABILITY:'HRV',READ_STEPS:'Pași',READ_WEIGHT:'Greutate',READ_BODY_FAT:'Grăsime corporală',READ_OXYGEN_SATURATION:'SpO₂',READ_VO2_MAX:'VO₂max',READ_DISTANCE:'Distanță',READ_SPEED:'Viteză',READ_BLOOD_PRESSURE:'Tensiune arterială',READ_BLOOD_GLUCOSE:'Glicemie',READ_RESPIRATORY_RATE:'Frecvență respiratorie',READ_ENERGY_SCORE:'Scor de energie Samsung'}
 };
 var tp1511HealthT=function(){const l=rf212Lang();return TP1511_HEALTH_I18N[l]||TP1511_HEALTH_I18N.hu;};
 var tp1511PermissionName=function(k){const l=rf212Lang();return TP1511_PERMISSION_I18N[l]?.[k]||RF263_PERMISSION_NAMES?.[k]||k;};
 const tp1511ReadinessBase=rf220Readiness;
-rf220Readiness=function(){const r=tp1511ReadinessBase.apply(this,arguments),t=tp1511HealthT();r.confidence=r.parts>=3?t.confMany:r.parts?t.confLimited:t.confFresh;return r;};
+rf220Readiness=function(){
+ const r=tp1511ReadinessBase.apply(this,arguments),t=tp1511HealthT();
+ if(r.energyScore!=null){
+  r.confidence=(t.samsungEnergyScore||'Samsung Energiapontszám')+' ('+r.energyScore+'/100)';
+ }else{
+  r.confidence=r.parts>=3?t.confMany:r.parts?t.confLimited:t.confFresh;
+ }
+ return r;
+};
 const tp1511DecisionBase=rf233Decision;
 rf233Decision=function(r){if(r?.score==null)return {mode:'unknown',pain:rf220PainRecent(),title:tp149T('home.coachLowFresh'),text:tp149T('home.coachNoFresh')};return tp1511DecisionBase(r);};
 const tp1511AdviceBase=rf233ExerciseAdvice;
@@ -15434,13 +15460,16 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const effect=points=>t('scoreEffect')+': '+(points>0?'+':'')+number(points);
   const row=(label,value,note)=>'<div class="rf233-signal tp110-signal"><strong>'+esc(label)+'</strong><span>'+esc(value)+'</span><small>'+esc(note)+'</small></div>';
   const last=time=>Number.isFinite(Date.parse(time))?' '+t('last')+': '+tp149FormatDateTime(time):'';
+  if(r.energyScore!=null){
+   rows.push(row(t('samsungEnergyScore')||'Samsung Energiapontszám',number(r.energyScore)+'/100',t('samsungEnergyNote')||'Samsung Health · napi regeneráció'));
+  }
   rows.push(row(t('sleep'),r.sleep==null?t('freshMissing'):number(r.sleep/60)+' h',r.sleep==null?last(rec.sleepEnd||rec.day):effect(r.sleep>=450?12:r.sleep>=420?8:r.sleep>=360?1:-14)+last(rec.sleepEnd||rec.day)));
   const valid=r.hrv>0&&r.base>0,delta=valid?(r.hrv-r.base)/r.base:0;
   rows.push(row(t('hrv'),r.hrv==null?t('freshMissing'):number(r.hrv)+' ms'+(valid?' / '+number(r.base)+' ms ('+(delta>0?'+':'')+number(delta*100)+'%)':''),valid?effect(delta>=.15?10:delta<=-.2?-14:delta<=-.1?-6:3)+last(rec.hrvTime||rec.day):(r.hrv==null?'':t('baselineMissing'))+last(rec.hrvTime||rec.day)));
-  rows.push(row(t('load'),r.load==null?t('noEffort'):number(r.load)+'/100',t('recentEffort')+(r.load==null?'':' '+effect((r.load-70)*.35))));
+  rows.push(row(t('load'),r.load==null?t('noEffort'):number(r.load)+'/100',t('recentEffort')+(r.load==null?'':' '+effect((r.load-70)*(r.energyScore!=null?0.2:0.35)))));
   const painful=recent.flatMap(h=>(h.exercises||[]).filter(e=>e.effort==='pain').map(e=>tp149ExerciseName(e)+' · '+tp149FormatDate(h.finished||h.started)));
   rows.push(row(t('pain'),painful.length?painful.join('; '):t('noPain'),painful.length?t('painNote')+' '+effect(-12):''));
-  return rows.join('')+'<p class="small muted tp110-score-note">'+esc(t('scoreNote'))+'</p>';
+  return rows.join('')+'<p class="small muted tp110-score-note">'+esc(r.energyScore!=null?(t('samsungScoreNote')||'A készenlét a Samsung Energiapontszámból indul ki, az edzésterhelés és fájdalom-visszajelzés figyelembevételével.'):t('scoreNote'))+'</p>';
  }
  let reasonsHost=null,reasonsTrigger=null,reasonsBackground=[];
  function closeCoachReasons(restoreFocus=true){
