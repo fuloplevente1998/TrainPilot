@@ -16,7 +16,7 @@ try{
  const index=fs.readFileSync('www/index.html','utf8').replace(/<script defer src="app.js"><\/script>/,scripts);
  fs.writeFileSync(path.join(temp,'www/index.html'),index);
  fs.writeFileSync(path.join(temp,'www/runtime-manifest.txt'),sections.map(x=>x[1]).join('\n')+'\n');
- for(const name of ['android','.github','package.json','SOURCE_VERSION.json','capacitor.config.json'])fs.symlinkSync(path.join(root,name),path.join(temp,name));
+ for(const name of ['android','.github','package.json','SOURCE_VERSION.json','capacitor.config.json']){try{fs.symlinkSync(path.join(root,name),path.join(temp,name))}catch{fs.cpSync(path.join(root,name),path.join(temp,name),{recursive:true})}}
  fs.cpSync('tests',path.join(temp,'tests'),{recursive:true});
  for(const file of fs.readdirSync('tests').filter(x=>x.endsWith('.cjs')&&!obsolete.has(x)).sort()){
   const r=spawnSync(process.execPath,[path.join(temp,'tests',file)],{cwd:temp,encoding:'utf8'});count++;

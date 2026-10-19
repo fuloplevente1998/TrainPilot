@@ -814,9 +814,9 @@
  const lang=()=>typeof rf212Lang==='function'?rf212Lang():'hu';
  const words={
   hu:{photos:'Edzésfotók',photoCount:n=>n+' fotó',left:'Bal oldal – mp',right:'Jobb oldal – mp',sets:'Sorozatok',addSet:'Sorozat hozzáadása',remove:'Törlés',statsHint:'Koppints a részletekhez.',summary:'Edzés összegzés',trained:'Mit edzettél?',edit:'Szerkesztés',cancel:'Mégse',exercise:'gyakorlat',reps:'összes ismétlés',volume:'össz volumen',focus:'Fő fókusz',noFocus:'Teljes test',save:'Mentés',addExercise:'Gyakorlat hozzáadása',deleteExercise:'Gyakorlat törlése',deleteWorkout:'Edzés törlése'},
-  en:{photos:'Workout photos',photoCount:n=>n+' photos',left:'Left side – sec',right:'Right side – sec',sets:'Sets',addSet:'Add set',remove:'Delete',statsHint:'Tap for details.',summary:'Workout summary',trained:'What did you train?',edit:'Edit',cancel:'Cancel',exercise:'exercises',reps:'total reps',volume:'total volume',focus:'Main focus',noFocus:'Full body',save:'Save'},
-  de:{photos:'Trainingsfotos',photoCount:n=>n+' Fotos',left:'Linke Seite – Sek.',right:'Rechte Seite – Sek.',sets:'Sätze',addSet:'Satz hinzufügen',remove:'Löschen',statsHint:'Für Details tippen.',summary:'Trainingsübersicht',trained:'Was hast du trainiert?',edit:'Bearbeiten',cancel:'Abbrechen',exercise:'Übungen',reps:'Wiederholungen gesamt',volume:'Gesamtvolumen',focus:'Hauptfokus',noFocus:'Ganzkörper',save:'Speichern'},
-  ro:{photos:'Fotografii antrenament',photoCount:n=>n+' fotografii',left:'Partea stângă – sec',right:'Partea dreaptă – sec',sets:'Serii',addSet:'Adaugă serie',remove:'Șterge',statsHint:'Atinge pentru detalii.',summary:'Rezumat antrenament',trained:'Ce ai antrenat?',edit:'Editează',cancel:'Anulează',exercise:'exerciții',reps:'repetări totale',volume:'volum total',focus:'Focus principal',noFocus:'Tot corpul',save:'Salvează'}
+  en:{photos:'Workout photos',photoCount:n=>n+' photos',left:'Left side – sec',right:'Right side – sec',sets:'Sets',addSet:'Add set',remove:'Delete',statsHint:'Tap for details.',summary:'Workout summary',trained:'What did you train?',edit:'Edit',cancel:'Cancel',exercise:'exercises',reps:'total reps',volume:'total volume',focus:'Main focus',noFocus:'Full body',save:'Save',addExercise:'Add exercise',deleteExercise:'Delete exercise',deleteWorkout:'Delete workout'},
+  de:{photos:'Trainingsfotos',photoCount:n=>n+' Fotos',left:'Linke Seite – Sek.',right:'Rechte Seite – Sek.',sets:'Sätze',addSet:'Satz hinzufügen',remove:'Löschen',statsHint:'Für Details tippen.',summary:'Trainingsübersicht',trained:'Was hast du trainiert?',edit:'Bearbeiten',cancel:'Abbrechen',exercise:'Übungen',reps:'Wiederholungen gesamt',volume:'Gesamtvolumen',focus:'Hauptfokus',noFocus:'Ganzkörper',save:'Speichern',addExercise:'Übung hinzufügen',deleteExercise:'Übung löschen',deleteWorkout:'Training löschen'},
+  ro:{photos:'Fotografii antrenament',photoCount:n=>n+' fotografii',left:'Partea stângă – sec',right:'Partea dreaptă – sec',sets:'Serii',addSet:'Adaugă serie',remove:'Șterge',statsHint:'Atinge pentru detalii.',summary:'Rezumat antrenament',trained:'Ce ai antrenat?',edit:'Editează',cancel:'Anulează',exercise:'exerciții',reps:'repetări totale',volume:'volum total',focus:'Focus principal',noFocus:'Tot corpul',save:'Salvează',addExercise:'Adaugă exercițiu',deleteExercise:'Șterge exercițiul',deleteWorkout:'Șterge antrenamentul'}
  };
  const tx=()=>words[lang()]||words.hu;
  const isBilateral=e=>String(e?.repUnit||'').toLowerCase()==='mp/oldal'||e?.id==='side-plank';
@@ -826,14 +826,15 @@
   if(isBilateral(e)){
    const left=sideValue(s,'leftSeconds'),right=sideValue(s,'rightSeconds'),parts=[];
    if(Number(s?.weight)>0&&e.loadType!=='bodyweight')parts.push((Number(s.weight)||0)+' '+tp149LoadLabel(e.loadType));
-   parts.push((lang()==='hu'?'Bal ':lang()==='de'?'Links ':lang()==='ro'?'Stg. ':'Left ')+(left||'—')+' mp');
-   parts.push((lang()==='hu'?'Jobb ':lang()==='de'?'Rechts ':lang()==='ro'?'Dr. ':'Right ')+(right||'—')+' mp');
+   const secUnit=lang()==='hu'?' mp':lang()==='de'?' Sek.':' s';
+   parts.push((lang()==='hu'?'Bal ':lang()==='de'?'Links ':lang()==='ro'?'Stg. ':'Left ')+(left||'—')+secUnit);
+   parts.push((lang()==='hu'?'Jobb ':lang()==='de'?'Rechts ':lang()==='ro'?'Dr. ':'Right ')+(right||'—')+secUnit);
    return parts.join(' · ');
   }
   try{return formatSet(e,s)}catch(_){return String(s?.reps||'—')+' '+String(e?.repUnit||'')}
  };
  const exerciseSummaryText=e=>{
-  const sets=(e?.sets||[]).filter(s=>s&&s.done!==false);if(!sets.length)return (lang()==='hu'?'Nincs kész sorozat':'No completed set');
+  const sets=(e?.sets||[]).filter(s=>s&&s.done!==false);if(!sets.length)return (lang()==='hu'?'Nincs kész sorozat':lang()==='de'?'Keine abgeschlossenen Sätze':lang()==='ro'?'Nicio serie finalizată':'No completed set');
   const groups=[];
   for(const s of sets){const value=setSummaryText(e,s),last=groups.at(-1);if(last&&last.value===value)last.count++;else groups.push({value,count:1})}
   return groups.map(g=>(g.count>1?g.count+'× ':'')+g.value).join(' · ');
