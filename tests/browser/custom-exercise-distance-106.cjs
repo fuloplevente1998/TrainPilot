@@ -65,7 +65,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
   await page.evaluate(()=>{state.session=null;db.set('draft',null);go('plan')});await page.locator('.tp150-quick-entry button').click();
   const name=await page.evaluate(id=>byId(id).hu,id);await page.locator('#tp155QuickQuery, #tp150QuickQuery').first().fill(name);
   const row=page.locator('#tp150QuickResults [data-exercise-id="'+id+'"]');await row.locator('summary').click();await row.locator('.tp150-quick-start').click();
-  await page.waitForSelector('[data-tp106-distance]');assert.equal(await page.evaluate(()=>state.session.exercises[0].id),id);
+  await page.waitForSelector('#tp220-distance-readout');assert.equal(await page.evaluate(()=>state.session.exercises[0].id),id);
   assert.equal(await page.evaluate(()=>state.session.exercises[0].measurementType),'distance');assert.equal(await page.locator('#tp106GpsButton').count(),1);
   assert.match(await page.locator('.tp155-workout-coach').innerText(),/Idő és távolság/);
  }
@@ -81,8 +81,8 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  await page.evaluate(()=>go('plan'));await page.locator('.tp150-quick-entry button').click();
  await page.locator('#tp155QuickQuery, #tp150QuickQuery').first().fill('Futás / kocogás / görkori');
  const quick=page.locator('#tp150QuickResults [data-exercise-id="'+exercise.id+'"]');await quick.locator('summary').click();await quick.locator('.tp150-quick-start').click();
- await page.waitForSelector('[data-tp106-distance]');assert.equal(await page.evaluate(()=>state.session.exercises[0].measurementType),'distance');
- await page.locator('[data-tp106-distance]').fill('5,25');await page.locator('.tp153-set-row input[inputmode="numeric"]').first().fill('1800');
+ await page.waitForSelector('#tp220-distance-readout');assert.equal(await page.evaluate(()=>state.session.exercises[0].measurementType),'distance');
+ await page.locator('.tp220-manual > summary').click();await page.locator('[data-tp106-distance]').fill('5,25');await page.locator('.tp153-set-row input[inputmode="numeric"]').first().fill('1800');
  assert.equal(await page.evaluate(()=>state.session.exercises[0].sets[0].distanceMeters),5250);
  await page.locator('[data-tp106-distance]').fill('wrong');await page.locator('.tp153-set-row .check').first().click();
  assert.equal(await page.evaluate(()=>state.session.exercises[0].sets[0].done),false,'invalid input cannot mark an old distance as completed');
@@ -128,7 +128,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  assert.match(await page.locator('[data-tp106-steps-status]').innerText(),/Engedélyezd/);assert.equal(await page.locator('[data-tp106-steps-count]').innerText(),'102');assert.equal(await page.locator('[data-tp106-steps-grant]').isVisible(),true,'missing READ_STEPS exposes a dedicated permission button');
  await page.setViewportSize({width:393,height:873});await page.screenshot({path:'ui-evidence/workout-health-steps-106.png',animations:'disabled'});
  // Indoors, record duration with an unknown distance instead of inventing kilometres.
- await page.locator('[data-tp106-distance]').fill('');await page.locator('.tp153-set-row input[inputmode="numeric"]').first().fill('180');
+ await page.locator('.tp220-manual > summary').click();await page.locator('[data-tp106-distance]').fill('');await page.locator('.tp153-set-row input[inputmode="numeric"]').first().fill('180');
  await page.locator('.tp153-set-row .check').first().click();assert.equal(await page.evaluate(()=>state.session.exercises[0].sets[0].done),true);
  await page.locator('[data-tp-workout-next]').click();await page.waitForFunction(()=>!state.session);
  assert.equal(await page.evaluate(()=>history()[0].exercises[0].sets[0].distanceMeters),undefined);assert.equal(await page.evaluate(()=>history()[0].exercises[0].sets[0].reps),'180');
