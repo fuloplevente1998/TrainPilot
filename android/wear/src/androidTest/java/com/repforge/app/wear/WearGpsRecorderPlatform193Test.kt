@@ -62,7 +62,7 @@ class WearGpsRecorderPlatform193Test {
                 })
                 assertEquals(3,WearGps193.spool(context).active().getJSONArray("points").length())
                 assertEquals(3,WearGps193.status(context,id).getInt("receivedFixes"))
-                assertEquals(3,WearGps193.summary(context,id).getInt("savedPoints"))
+                assertEquals(3,WearGps193.summary(context,id)!!.getInt("savedPoints"))
                 service.onLocationChanged(Location("gps").apply {
                     latitude=47.0002;longitude=19.0;accuracy=5f
                     elapsedRealtimeNanos=(SystemClock.elapsedRealtime()-20000)*1000000;time=System.currentTimeMillis()-20000

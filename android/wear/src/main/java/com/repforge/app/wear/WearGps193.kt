@@ -47,7 +47,9 @@ internal object WearGps193 {
         prefs(context).edit().putString("status",value.toString()).apply()
     }
     /** Counts and state only; coordinates never enter Health summaries or generic commands. */
-    fun summary(context: Context,id: String): JSONObject {
+    fun summary(context: Context,id: String): JSONObject? {
+        val raw=try{JSONObject(prefs(context).getString("status","{}")!!)}catch(_:Exception){return null}
+        if(raw.optString("workoutId")!=id)return null
         val value=status(context,id)
         return JSONObject().put("schema",1).put("state",value.optString("state","idle"))
             .put("receivedFixes",value.optInt("receivedFixes")).put("savedPoints",value.optInt("points"))
