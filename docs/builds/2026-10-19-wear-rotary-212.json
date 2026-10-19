@@ -53,6 +53,10 @@
       "rotaryChangesOnlyTheOpenedFieldAndNeverSavesOrRetargetsImplicitly[225dp-font2]"
     ]
   },
-  "physicalAcceptance": "pending",
-  "merged": false
+  "physicalAcceptance": {
+    "userMessage": "Szuper z\u00e1rhatjuk",
+    "accepted": true
+  },
+  "merged": true,
+  "mergeCommit": "102eb366b3fed3735851ed60dfa9e02e8f04c3d9"
 }

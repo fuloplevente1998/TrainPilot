@@ -2,15 +2,17 @@
 
 ## Aktuális folytatás — 2026-10-17, összevont P2-csomagok
 
-## Aktuális #212 korona/lünetta – 2026-10-19
+## #212 lezárva – 2026-10-19
 
-Telefonos kompakt Intervallumok: #215 mainen. A felhasználó most a hátralévő
-órás forgatható szerkesztőt kérte, `feat/212-wear-rotary-editor` ágon készül.
-A megnyitott mező a meglévő lépésközzel állítható; forgatás nem ment, Mentés/Mégse
-és érintéses plusz–mínusz megmarad. A szerkesztő célja workout/gyakorlat/sorozat
-szinten rögzített, háttérben és elavult cél esetén nincs rotary-módosítás.
-JVM és kerek kijelzős, valódi rotary-eseményes UI regressziók GitHubon futtatandók.
-Issue lezárása és készülékes elfogadás még nincs; verzió változatlan.
+Telefonos kompakt Intervallumok: #215 mainen. Wear korona/lünetta: #217 mainen,
+merge `102eb366b3fed3735851ed60dfa9e02e8f04c3d9`. Felhasználói készülékes elfogadás:
+„Szuper zárhatjuk”. #212 completed. A kijelölt súly/ismétlés/idő a meglévő
+lépésközzel forgatható; rögzítés csak Mentésre, Mégse és plusz–mínusz megmarad.
+Quick/Performance zöld, telefonos Chromium 6/6, JVM 243/243; Wear JVM 155/155,
+kerek UI/platform 168/168, minden XML-ben 0 failure/error/skipped.
+Részletes forrás/APK bizonyíték: `docs/builds/2026-10-19-wear-rotary-212.json`.
+Verzió változatlan: 1.3.51 /2732. Következő külön feladat #216; még nincs implementálva.
+
 
 
 A felhasználó jóváhagyta a közös csomagokat és a folytatást. **Következő: #193 + #202 önálló órás edzés**, közös issue #193, ág `feat/193-202-watch-offline-gps`, main alap `9188932`. #202 duplikátumként lezárva, teljes követelményei #193-ban megőrizve. Utána **#212 + #190 UI-csomag → #197 edzésmódok → #184 Samsung Coach**; #190 duplikátumként #212-be átvezetve. #207 duplikátumként #206-ba átvezetve; a #208-cal már mainre került GPS STOP-teljesítés nem új fejlesztés, a maradék aktivitásnézet/UI ellenőrzése #206-ban marad.

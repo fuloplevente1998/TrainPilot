@@ -4,9 +4,9 @@ Frissítve: **2026-10-19, Europe/Budapest**. Először a gyökérben található
 [AGENTS.md](../AGENTS.md) olvasandó; utána ez a rövid aktuális átadás.
 Az alábbi állapotot induláskor GitHubon ellenőrizd. A hosszú régi naplók történetiek.
 
-## #212 órás korona/lünetta elkészült – fizikai elfogadásra vár
+## #212 korona/lünetta elfogadva, mainen és lezárva
 
-A felhasználó kérte a hátralévő fejlesztést, majd a csomag lezárását. **Draft PR
+A felhasználó kérte a hátralévő fejlesztést, majd a csomag lezárását. **Beolvasztott PR
 [#217](https://github.com/fuloplevente1998/TrainPilot/pull/217)**, ág
 `feat/212-wear-rotary-editor`, main alap `aafc3d0`. Alkalmazásforrás **`e46bd05`**;
 **`2f62282`** csak a rotary teszt-API opt-in jelölését adja hozzá, app byteazonos.
@@ -30,11 +30,13 @@ Helyi átadott fájl: `/workspace/artifacts/rotary212/TrainPilot-Wear-1.3.51-e46
 A telefonos alkalmazásforrás változatlan, telefonfrissítés nem szükséges.
 [Bizonylat](builds/2026-10-19-wear-rotary-212.json).
 
-**Fizikai visszajelzés még nincs.** Az új APK-ra feltett aszinkron kérdés függőben:
-súly/ismétlés forgatása és Mentés/Mégse helyes-e? A #212 és #217 nyitott/draft,
-mainen nincs még rotary. A felhasználó lezárási szándéka megvan; a pozitív fizikai
-elfogadás és az aktuális head/kapuk ellenőrzése után befejezhető a merge és lezárás,
-nem kell új általános fejlesztési engedélyt kérni. #216 nincs elkezdve.
+**Készülékes elfogadás és lezárási jóváhagyás:** a felhasználó az átadott APK-ra:
+„Szuper zárhatjuk”. **#217 merged: `102eb366b3fed3735851ed60dfa9e02e8f04c3d9`; #212 completed.**
+A merge alkalmazásforrása byteazonos a bevizsgálttal. A friss dokumentációs
+PR-head Quick **39202979500** és Performance **39202979649** kapuja is zöld.
+Verzió nem emelkedett; a mainre kerülés utáni automatikus új kapuk külön futások,
+a fent felsoroltak a merge előtti bizonyítékok. #216 még nincs implementálva;
+következő külön feladat az órás menük és látható GPS-választás rendezése.
 
 ## #215 lezárva – kompakt Intervallumok mainen
 
