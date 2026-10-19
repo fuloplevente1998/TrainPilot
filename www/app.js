@@ -19440,7 +19440,7 @@ var tp197UiPanel=function(scope,pid,expanded=false){
  if(scope==="program"&&(!pid||!programById(pid)))return "";
  const t=tp197UiText(),choice=tp197UiChoice(scope,pid),key=tp197UiKey(scope,pid),id=scope==="program"?"tp197-mode-program":"tp197-mode-global";
  const options=(values,selected)=>values.map(([value,label])=>'<option value="'+value+'"'+(selected===value?' selected':'')+'>'+esc(label)+'</option>').join("");
- const scopeArg=scope==="program"?"'program',"+JSON.stringify(String(pid)):"'global',null";
+ const scopeArg=scope==="program"?"'program',"+esc(JSON.stringify(String(pid))):"'global',null";
  return '<details class="card tp197-mode-panel" id="'+id+'" data-tp197-scope="'+scope+'" '+(expanded?'open':'')+'>'+
   '<summary><strong>'+esc(t.title)+'</strong><span class="small muted">'+esc(scope==="program"?t.program:t.global)+'</span></summary>'+
   '<div class="tp197-ui-body"><label for="'+id+'-style">'+esc(t.style)+'</label>'+

@@ -27,6 +27,7 @@ assert.match(context.settingsScreen(),/id="tp197-mode-global"/);
 assert.match(context.planScreen(),/id="tp197-mode-program"/);
 assert.match(context.settingsScreen(),/Előnézet \(nem alkalmazott\)/);
 assert.match(context.planScreen(),/Fekvőtámasz/);
+assert.match(context.planScreen(),/tp197UiSet\('program',&quot;home-basic&quot;/,'program ID must be escaped in the HTML event attribute');
 assert.match(context.settingsScreen(),/option value="normal" selected/);
 assert.match(context.settingsScreen(),/option value="double" selected/);
 assert.equal(context.tp197UiSet('global',null,'trainingStyle','hit'),true);
