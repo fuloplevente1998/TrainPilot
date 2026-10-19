@@ -4,6 +4,23 @@ Frissítve: **2026-10-19, Europe/Budapest**. Először a gyökérben található
 [AGENTS.md](../AGENTS.md) olvasandó; utána ez a rövid aktuális átadás.
 Az alábbi állapotot induláskor GitHubon ellenőrizd. A hosszú régi naplók történetiek.
 
+## #216 aktív fejlesztés – menü, pihenő és GPS-választás
+
+Felhasználói indítás: „Legyen igy, kezdd el.” Ág `feat/216-wear-menu-rest-gps`,
+main alap `d1da634`. Wear-fókusz: telefonos forrás és verzió változatlan, külön
+telefonos buildet nem indítunk változatlan forrásra. A meglévő telefonos
+`selectExercise` nem állítja le a pihenőt; a hibát az óra két helyen okozta:
+explicit `skipRest()` és `selectExercise` határidő-nullázás. Mindkettő eltávolítva;
+automata pihenőben a fázis/tulajdonos/cél is megmarad.
+Menü: aktív edzés/gyors vagy +gyakorlat elöl, tervezett edzések csoport, napló,
+mérések, beállítások; hibajavító pontok megmaradnak. Kültéri új gyors/tervezett
+indítás előtt látható GPS-választás, aktivitásonként megjegyezve; automatikus
+indítás csak a két explicit natív új-edzés belépésből. Nincs reconnect/render trigger.
+Közvetlen GPS-állapot a futó edzésen, onnan meglévő GPS-kezelés. Beltéri/ismertlen
+aktivitásból nem következtetünk helyrögzítésre. HU/EN/DE/RO új szövegek.
+JVM/UI regressziók és GitHub Wear gate következik; készülékes elfogadás még nincs,
+main/1.3.6 emelés nincs. #206/#197/#184/#214 külön későbbi backlog.
+
 ## #216 jóváhagyott menüterv és pihenő-kiegészítés
 
 A felhasználó elfogadta a javasolt sorrendet: először órás menürend, utána látható,

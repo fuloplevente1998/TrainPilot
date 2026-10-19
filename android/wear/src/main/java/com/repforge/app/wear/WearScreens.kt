@@ -80,6 +80,9 @@ private val LocalOpenSaveSync = compositionLocalOf<(() -> Unit)?> { null }
 private val LocalUndo = compositionLocalOf<((String)->Unit)?> { null }
 private val LocalTouchLock189 = compositionLocalOf<(() -> Unit)?> { null }
 private val LocalEditorSave = compositionLocalOf<((String,Double,String)->Boolean)?> { null }
+private data class GpsLaunch216(val activityId: String, val start: () -> Unit)
+internal data class GpsShortcut216(val state: String, val restSeconds: Int = 0, val open: () -> Unit)
+internal val LocalGpsShortcut216 = compositionLocalOf<GpsShortcut216?> { null }
 private val LocalOwnership193 = compositionLocalOf<WearWorkout?> { null }
 
 @Composable
@@ -130,6 +133,14 @@ internal fun TrainPilotWearApp(
 ) {
     var route by rememberSaveable { mutableStateOf("home") }
     val context = LocalContext.current
+    var pendingGps216 by remember { mutableStateOf<GpsLaunch216?>(null) }
+    var gpsBack216 by rememberSaveable { mutableStateOf("menu") }
+    var daysBack216 by rememberSaveable { mutableStateOf("home") }
+    fun startWithGps216(exercise: WatchHomeExercise?, start: () -> Unit) {
+        if (WearMenu216.eligible(exercise)) {
+            pendingGps216=GpsLaunch216(exercise!!.id,start);gpsBack216=route;route="gpsStart216"
+        } else { start();if(workout.value!=null)route="workout" }
+    }
     var answeredWorkout by rememberSaveable { mutableStateOf("") }
     val localFeedback = closure.value?.takeIf { it.needsFeedback && it.status != "error" }?.let {
         WatchWorkoutFeedback.parse(JSONObject().put("workoutId", it.workoutId).put("started", it.started))
@@ -190,6 +201,11 @@ internal fun TrainPilotWearApp(
                     pendingFeedback?.let { onWorkoutFeedback?.invoke(it, null) }
                     "home"
                 }
+                "gpsStart216" -> { pendingGps216=null;gpsBack216 }
+                "gpsRoute193" -> "workout"
+                "planned216", "quick", "ownership193" -> "menu"
+                "calendar" -> "planned216"
+                "days" -> daysBack216
                 "save-sync" -> syncBackRoute
                 "journal-detail" -> miniJournalBackRoute
                 "journal" -> journalBackRoute
@@ -200,6 +216,7 @@ internal fun TrainPilotWearApp(
             }
     }
     CompositionLocalProvider(
+        LocalGpsShortcut216 provides GpsShortcut216(gpsRoute193?.value?.optString("state","idle") ?: "idle",restRemaining.value) { route="gpsRoute193" },
         LocalWearHomeTheme provides (home.value?.theme ?: WearHomeTheme.DEFAULT),
         LocalAutomaticToggle provides onToggleAutomatic,
         LocalAutomaticCommand provides onAutomaticCommand,
@@ -260,7 +277,15 @@ internal fun TrainPilotWearApp(
                         OwnershipScreen193(active,phoneConnected?.value,onRequestOwnership193,onRetryOwnership193,
                             onResumeWorkout,onOpenPhone,onBack={route="menu"},onGps={route="gpsRoute193"})
                     route == "gpsRoute193" && active?.ownershipProtocol193==1 ->
-                        GpsRouteScreen193(active,gpsRoute193?.value,onStartGpsRoute193,onStopGpsRoute193,onBack={route="ownership193"})
+                        GpsRouteScreen193(active,gpsRoute193?.value,onStartGpsRoute193,onStopGpsRoute193,onBack={route="workout"})
+                    route == "gpsStart216" && pendingGps216!=null -> GpsStartScreen216(pendingGps216!!.activityId,
+                        onStart={ val request=pendingGps216;pendingGps216=null;request?.start?.invoke();route=if(workout.value!=null)"workout" else gpsBack216 },
+                        onCancel={pendingGps216=null;route=gpsBack216})
+                    route == "planned216" -> RoundList(WearMenu216.text("planned")) {
+                        centerItem { Pill(WearMenu216.text("calendar")) {route="calendar"} }
+                        centerItem { Pill(WearMenu216.text("days"),tone=Card) {daysBack216="planned216";route="days"} }
+                        centerItem { Pill(WearMenu216.text("back"),tone=Secondary) {route="menu"} }
+                    }
                     route == "menu" ->
                         MainMenuScreen(active != null, active?.quickWorkout == true, onOpenPhone) {
                             if (it == "journal") openJournal("menu")
@@ -306,7 +331,7 @@ internal fun TrainPilotWearApp(
                             onBack = { route = "menu" },
                         ) { exercise ->
                             if (active?.quickWorkout == true) onAddQuick(exercise)
-                            else if (active == null) onStartQuick(exercise)
+                            else if (active == null) startWithGps216(exercise) {onStartQuick(exercise)}
                             if (workout.value?.quickWorkout == true) route = "workout"
                         }
                     route == "calendar" ->
@@ -315,10 +340,10 @@ internal fun TrainPilotWearApp(
                             active == null &&
                                 home.value?.hasDraft == false &&
                                 closure.value?.status !in listOf("pending", "error"),
-                            onBack = { route = "menu" },
+                            onBack = { route = "planned216" },
                         ) { entry ->
                             entry.day?.let {
-                                onStart(it, entry.scheduleId)
+                                startWithGps216(it.exercises.firstOrNull()) {onStart(it, entry.scheduleId)}
                                 if (workout.value != null) route = "workout"
                             }
                         }
@@ -355,8 +380,8 @@ internal fun TrainPilotWearApp(
                             onBack = { route = "workout" },
                         )
                     route == "days" && home.value != null ->
-                        ProgramDays(home.value!!, onBack = { route = "home" }) { day ->
-                            onStart(day, "")
+                        ProgramDays(home.value!!, onBack = { route = daysBack216 }) { day ->
+                            startWithGps216(day.exercises.firstOrNull()) {onStart(day, "")}
                             if (workout.value != null) route = "workout"
                         }
                     route in listOf("workout","editor","timer") && active?.workoutPaused==true ->
@@ -412,14 +437,14 @@ internal fun TrainPilotWearApp(
                             phoneConnected?.value,
                             batteryLevel?.value,
                             onStart = { day, scheduleId ->
-                                onStart(day, scheduleId)
+                                startWithGps216(day.exercises.firstOrNull()) {onStart(day, scheduleId)}
                                 if (workout.value != null) route = "workout"
                             },
                             onResume = {
                                 if(active?.workoutPaused==true&&!(active.ownershipProtocol193==1&&active.timerOwner=="watch"))onOpenPhone()else onResumeWorkout()
                                 route = "workout"
                             },
-                            onDays = { route = "days" },
+                            onDays = { daysBack216="home";route = "days" },
                             onResult = { route = "summary" },
                             onJournal = { openJournal("home") },
                             onDiscard = { route = "discard" },
@@ -640,32 +665,20 @@ internal fun MainMenuScreen(
 ) {
     val status=LocalSaveSync.current
     val ownership=LocalOwnership193.current
-    RoundList("Főmenü") {
-        if(status!=null)saveSyncItem()
-        for ((label, destination) in
-            listOf(
-                "Kezdőlap" to "home",
-                "Mini napló" to "journal",
-                "Naptár" to "calendar",
-                "Programnapok" to "days",
-                "Órás mérések" to "metrics",
-                "Beállítások" to "settings",
-            )) {
-            centerItem { Pill(label, tone = Card) { onRoute(destination) } }
+    RoundList(WearMenu216.text("menu")) {
+        if(status!=null&&status.phase==WearSavePhase.ERROR)saveSyncItem()
+        if(ownership!=null&&WearOwnership193.pending(ownership))centerItem {
+            Pill(WearOwnershipText193.text("title"),tone=Card) {onRoute("ownership193")}
         }
-        if (!hasWorkout || quickWorkout) {
-            centerItem {
-                Pill(if (quickWorkout) "+ Gyakorlat" else "Gyors edzés", tone = Gold) {
-                    onRoute("quick")
-                }
-            }
+        for((key,destination) in WearMenu216.entries(hasWorkout,quickWorkout)) centerItem {
+            Pill(WearMenu216.text(key),tone=if(key in listOf("resume","quick","add"))Gold else Card) {onRoute(destination)}
         }
-        if (hasWorkout) {
-            centerItem { Pill("Edzés folytatása") { onRoute("workout") } }
-            if(ownership!=null)centerItem { Pill(WearOwnershipText193.text("title"),tone=Card) { onRoute("ownership193") } }
-            centerItem { Pill("Edzés törlése", tone = Danger) { onRoute("discard") } }
+        if(status!=null&&status.phase!=WearSavePhase.ERROR)saveSyncItem()
+        if(hasWorkout&&ownership!=null&&!WearOwnership193.pending(ownership))centerItem {
+            Pill(WearOwnershipText193.text("title"),tone=Card) {onRoute("ownership193")}
         }
-        centerItem { Pill("Megnyitás telefonon", tone = Card, onClick = onOpenPhone) }
+        centerItem { Pill(WearMenu216.text("phone"),tone=Card,onClick=onOpenPhone) }
+        if(hasWorkout)centerItem { Pill(WearMenu216.text("discard"),tone=Danger) {onRoute("discard")} }
     }
 }
 
@@ -693,6 +706,24 @@ internal fun OwnershipScreen193(
 }
 
 @Composable
+internal fun GpsStartScreen216(activityId: String,onStart: ()->Unit,onCancel: ()->Unit,
+    language: String=java.util.Locale.getDefault().language) {
+    val context=LocalContext.current
+    var selected by remember(activityId) {mutableStateOf(WearMenu216.enabled(context,activityId))}
+    var failed by remember {mutableStateOf(false)}
+    RoundList(WearMenu216.text("gps",language)) {
+        centerItem { Pill(WearMenu216.text("gps",language)+": "+WearMenu216.text(if(selected)"on" else "off",language),tone=Gold) {selected=!selected} }
+        centerItem { Text(WearMenu216.text("remember",language),color=Muted,fontSize=11.sp,textAlign=TextAlign.Center) }
+        centerItem { Text(WearMenu216.text("consent",language),color=Muted,fontSize=11.sp,textAlign=TextAlign.Center) }
+        if(failed)centerItem {Text(WearGpsText193.text("storage",language),color=DangerText,fontSize=11.sp)}
+        centerItem { Pill(WearMenu216.text("start",language)) {
+            if(WearMenu216.choose(context,activityId,selected))onStart() else failed=true
+        } }
+        centerItem { Pill(WearMenu216.text("cancel",language),tone=Secondary,onClick=onCancel) }
+    }
+}
+
+@Composable
 internal fun GpsRouteScreen193(
     workout: WearWorkout,status: JSONObject?,onStart: (() -> Unit)?,onStop: (() -> Unit)?,onBack: () -> Unit,
     language: String=java.util.Locale.getDefault().language,
@@ -700,15 +731,26 @@ internal fun GpsRouteScreen193(
     fun text(key: String)=WearGpsText193.text(key,language)
     val code=status?.optString("state")?.takeIf { it in listOf("idle","acquiring","recording","paused","stopped","permission","locationOff","storage","unavailable","interrupted","deleted") } ?: "idle"
     val allowed=WearGps193.owns(workout)&&WearGps193.distance(workout.exercise)&&workout.currentSet?.let { !it.done&&it.setId.isNotBlank() }==true
+    val context=LocalContext.current
+    var preferred by remember(workout.exercise?.id) {mutableStateOf(WearMenu216.enabled(context,workout.exercise?.id.orEmpty()))}
     RoundList(text("title")) {
-        centerItem { Text(text("consent"),color=Muted,fontSize=11.sp,textAlign=TextAlign.Center) }
         centerItem { Text(text(code),color=White,fontSize=13.sp,textAlign=TextAlign.Center) }
+        if(!allowed)centerItem { Text(text("distanceOnly"),color=Muted,fontSize=12.sp,textAlign=TextAlign.Center) }
+        if(status?.optBoolean("armed")==true)centerItem { Pill(text("stop"),enabled=onStop!=null,tone=Secondary) { onStop?.invoke() } }
+        if(status?.optBoolean("running")!=true) {
+            centerItem {Text(WearMenu216.text("consent",language),color=Muted,fontSize=11.sp,textAlign=TextAlign.Center)}
+            centerItem { Pill(text("start"),enabled=allowed&&onStart!=null) { onStart?.invoke() } }
+        }
+        if(WearMenu216.eligible(workout.exercise))centerItem {
+            Pill(WearMenu216.text("next",language)+": "+WearMenu216.text(if(preferred)"on" else "off",language),tone=Secondary) {
+                if(WearMenu216.choose(context,workout.exercise!!.id,!preferred))preferred=!preferred
+            }
+        }
         val count=status?.optInt("points") ?: 0
         centerItem { Text(text("points").replace("{count}",count.toString()),color=Muted,fontSize=12.sp,textAlign=TextAlign.Center) }
         centerItem { Text(text("received").replace("{count}",(status?.optInt("receivedFixes") ?: 0).toString()),color=Muted,fontSize=12.sp,textAlign=TextAlign.Center) }
-        if(!allowed)centerItem { Text(text("distanceOnly"),color=Muted,fontSize=12.sp,textAlign=TextAlign.Center) }
-        if(status?.optBoolean("running")!=true)centerItem { Pill(text("start"),enabled=allowed&&onStart!=null) { onStart?.invoke() } }
-        if(status?.optBoolean("armed")==true)centerItem { Pill(text("stop"),enabled=onStop!=null,tone=Secondary) { onStop?.invoke() } }
+        centerItem { Text(WearMenu216.text("aggregate",language),color=Muted,fontSize=11.sp,textAlign=TextAlign.Center) }
+        centerItem { Text(text("consent"),color=Muted,fontSize=11.sp,textAlign=TextAlign.Center) }
         centerItem { Pill(text("back"),tone=Secondary) { onBack() } }
     }
 }
@@ -1727,6 +1769,12 @@ private fun WorkoutPanel(
                 Box(Modifier.width(layout.width.dp).height(layout.height.dp)) { actions(layout) }
             },
         ) {
+            if(workout.ownershipProtocol193==1&&WearGps193.distance(workout.exercise))LocalGpsShortcut216.current?.let { shortcut ->
+                val code=shortcut.state.takeIf {it in listOf("idle","acquiring","recording","paused","stopped","permission","locationOff","storage","unavailable","interrupted","deleted")} ?: "idle"
+                Text((if(shortcut.restSeconds>0)WearMenu216.text("rest")+" "+formatSeconds(shortcut.restSeconds)+"\n" else "")+"GPS: "+WearGpsText193.text(code),color=Gold,fontSize=10.sp,textAlign=TextAlign.Center,
+                    modifier=Modifier.fillMaxWidth().heightIn(min=40.dp).clickable(role=Role.Button,onClick=shortcut.open)
+                        .testTag("wear-gps-shortcut216").padding(4.dp))
+            }
             content()
         }
         Box(

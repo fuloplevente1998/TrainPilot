@@ -552,6 +552,11 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             }
     }
 
+    private fun startPreferredGps216() {
+        val current=WorkoutSnapshotStore.load(this) ?: return
+        if(WearMenu216.eligible(current.exercise) && WearMenu216.enabled(this,current.exercise!!.id) && gpsAllowed193(current)) requestGps193()
+    }
+
     private fun startWorkoutFromWatch(day: WatchHomeDay, scheduleId: String) {
         val source = home.value ?: return
         if (workout.value != null || source.hasDraft || closure.value?.status in listOf("pending", "error") || day.exercises.isEmpty()) return
@@ -560,7 +565,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         val localWorkout = source.createWorkout(day, scheduleId, started)
         workout.value = WorkoutSnapshotStore.saveWorkout(this, localWorkout)
         sendStartCommand(day, scheduleId, started)
-        startHealthIfEnabled();WearSurfaces.refresh(this,true)
+        startHealthIfEnabled();WearSurfaces.refresh(this,true);startPreferredGps216()
     }
 
     private fun startQuickWorkoutFromWatch(exercise: WatchHomeExercise) {
@@ -585,6 +590,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         workout.value?.let { workout.value = WorkoutSnapshotStore.saveWorkout(this, it.copy(localSequence = maxOf(it.localSequence,sequence))) }
         startHealthIfEnabled()
         WearSurfaces.refresh(this, true)
+        startPreferredGps216()
     }
 
     private fun addQuickExerciseFromWatch(exercise: WatchHomeExercise) {
@@ -826,13 +832,13 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         synchronized(WearAutomaticController) { synchronized(WorkoutSnapshotStore) {
         val current = WorkoutSnapshotStore.load(this) ?: return
         if (current.selectExercise(index) === current) return
-        if(current.automation?.enabled==true&&current.automation.owner=="watch")workout.value=WearAutomaticController.command(this,"disable",current.workoutId)
+        if(current.automation?.enabled==true&&current.automation.owner=="watch"&&current.automation.phase!="rest")workout.value=WearAutomaticController.command(this,"disable",current.workoutId)
         WearStopwatchStore.pause(this)
-        // Order the durable commands: end the old rest first, then select an
-        // absolute exercise so a different phone screen cannot offset the move.
-        if (restRemaining.intValue > 0 || current.restEndAt > System.currentTimeMillis()) skipRest()
-        val latest = workout.value ?: return
+        // Navigation is preparation, not an explicit rest-skip command. Keep the
+        // original deadline/automatic rest phase and its owner unchanged.
+        val latest = WorkoutSnapshotStore.load(this) ?: return
         workout.value = WorkoutSnapshotStore.saveWorkout(this, latest.selectExercise(index))
+        restoreRestFromSnapshot(workout.value)
         sendCommand("selectExercise", exerciseIndex = index)
 
         }}

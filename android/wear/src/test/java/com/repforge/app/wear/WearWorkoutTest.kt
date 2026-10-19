@@ -47,18 +47,37 @@ class WearWorkoutTest {
         }
     }
 
-    @Test fun explicitExerciseSelectionEndsRestAndPreservesMeasurements() {
+    @Test fun explicitExerciseSelectionPreservesRestAndMeasurements() {
         val value = sample()
         val exercise = value.exercises.first()
         val resting = value.copy(restEndAt = 999999L, exercises = listOf(exercise, exercise.copy(id = "other")))
         val next = resting.selectExercise(1)
         assertEquals(1, next.currentExercise)
-        assertEquals(0L, next.restEndAt)
+        assertEquals(resting.restEndAt, next.restEndAt)
         assertEquals(resting.exercises, next.exercises)
         assertEquals(resting.completedSets, next.completedSets)
         assertEquals(resting.localSequence, next.localSequence)
         val previous = next.selectExercise(0)
         assertEquals(resting.currentSet, previous.currentSet)
+        assertEquals(resting.restEndAt, previous.restEndAt)
+    }
+
+    @Test fun selectingAnotherExerciseKeepsAutomaticRestOwnerPhaseAndTarget() {
+        val base=sample();val ex=base.exercises.first()
+        val original=base.copy(exercises=listOf(ex,ex.copy(id="other")))
+        for(paused in listOf(false,true)) {
+            val rest=original.copy(automation=WearAutomatic(enabled=true,owner="watch",phase="rest",paused=paused,
+                remainingMs=5000,anchorMs=1000,boot=1,targetExercise=0,targetSet=original.currentSetIndex,
+                targetId=WearAutomaticEngine.targetId(original,0,original.currentSetIndex)))
+            val selected=rest.selectExercise(1)
+            assertEquals(rest.automation,selected.automation)
+            val tick=WearAutomaticEngine.tick(selected,2000,1)
+            assertNull(tick.completedSet);assertEquals(rest.exercises,tick.workout.exercises)
+            assertEquals("rest",tick.workout.automation!!.phase)
+            assertEquals(paused,tick.workout.automation!!.paused)
+            assertEquals(if(paused)5000L else 4000L,tick.workout.automation!!.remainingMs)
+            assertEquals(1,tick.workout.currentExercise)
+        }
     }
 
     @Test fun unavailableNavigationDoesNotSkipRest() {

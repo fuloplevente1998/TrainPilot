@@ -386,6 +386,63 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         }
     }
 
+    @Test fun restRemainsVisibleAfterNextAndPreviousUntilExplicitSkip() {
+        val initial=WorkoutSnapshotStore.parse("""{"workoutId":"rest216","restEndAt":9999999999999,"exercises":[{"id":"pushup","name":"Fekvőtámasz","loadType":"bodyweight","repUnit":"ism.","sets":[{"setId":"one","reps":"5","done":false}]},{"id":"squat","name":"Guggolás","loadType":"bodyweight","repUnit":"ism.","sets":[{"setId":"two","reps":"5","done":false}]}]}""")!!
+        val workout=mutableStateOf<WearWorkout?>(initial);val rest=mutableStateOf(30)
+        compose.setContent { Watch { Fixture("workout",externalWorkout=workout,rest216=rest) } }
+        compose.onNodeWithTag("wear-rest-ring").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Következő gyakorlat").performClick()
+        compose.runOnIdle {assertEquals(1,workout.value!!.currentExercise);assertEquals(initial.restEndAt,workout.value!!.restEndAt);rest.value=19}
+        compose.onNode(hasText("Pihenő",substring=true)).assertIsDisplayed()
+        compose.onNodeWithTag("wear-rest-ring").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Előző gyakorlat").performClick()
+        compose.runOnIdle {assertEquals(0,workout.value!!.currentExercise);assertEquals(initial.restEndAt,workout.value!!.restEndAt);assertEquals(19,rest.value)}
+        compose.onNodeWithContentDescription("Pihenő kihagyása").performClick()
+        compose.runOnIdle {assertEquals(0L,workout.value!!.restEndAt);assertEquals(0,rest.value)}
+        compose.onNodeWithTag("wear-rest-ring").assertDoesNotExist()
+    }
+
+    @Test fun distanceWorkoutExposesDirectGpsStatusAndManagement() {
+        val workout=mutableStateOf<WearWorkout?>(WorkoutSnapshotStore.parse("""{"workoutId":"gps-shortcut216","ownershipProtocol193":1,"timerOwner":"watch","exercises":[{"id":"running","name":"Futás","measurementType":"distance","repUnit":"km","loadType":"bodyweight","sets":[{"setId":"run-one","done":false}]}]}""")!!)
+        compose.setContent { Watch { Fixture("workout",externalWorkout=workout) } }
+        compose.onNodeWithTag("wear-gps-shortcut216").assertIsDisplayed().performClick()
+        lazyList().performScrollToNode(hasText(WearGpsText193.text("idle")))
+        compose.onNodeWithText(WearGpsText193.text("idle")).assertIsDisplayed()
+        lazyList().performScrollToNode(hasContentDescription(WearGpsText193.text("back")))
+        compose.onNodeWithContentDescription(WearGpsText193.text("back")).performClick()
+        compose.onNodeWithTag("wear-gps-shortcut216").assertIsDisplayed()
+    }
+
+    @Test fun gpsStartChoiceIsVisibleRememberedAndCancelNeverEnablesItInFourLanguages() {
+        val context=InstrumentationRegistry.getInstrumentation().targetContext
+        val language=mutableStateOf("hu");val revision=mutableStateOf(0)
+        var starts=0;var cancels=0
+        WearMenu216.choose(context,"running",false);WearMenu216.choose(context,"walking",false)
+        compose.setContent { Watch { key(language.value,revision.value) {
+            GpsStartScreen216("running",{starts++},{cancels++},language.value)
+        } } }
+        for(lang in listOf("hu","en","de","ro")) {
+            compose.runOnIdle {language.value=lang;revision.value++}
+            val off=WearMenu216.text("gps",lang)+": "+WearMenu216.text("off",lang)
+            val on=WearMenu216.text("gps",lang)+": "+WearMenu216.text("on",lang)
+            compose.onNodeWithContentDescription(off).assertIsDisplayed().performClick()
+            compose.runOnIdle {assertFalse(WearMenu216.enabled(context,"running"));assertEquals(0,starts)}
+            lazyList().performScrollToNode(hasContentDescription(WearMenu216.text("cancel",lang)))
+            compose.onNodeWithContentDescription(WearMenu216.text("cancel",lang)).performClick()
+            compose.runOnIdle {assertFalse(WearMenu216.enabled(context,"running"));revision.value++}
+            compose.onNodeWithContentDescription(off).performClick()
+            lazyList().performScrollToNode(hasContentDescription(WearMenu216.text("start",lang)))
+            compose.onNodeWithContentDescription(WearMenu216.text("start",lang)).performClick()
+            compose.runOnIdle {assertTrue(WearMenu216.enabled(context,"running"));assertFalse(WearMenu216.enabled(context,"walking"));revision.value++}
+            compose.onNodeWithContentDescription(on).assertIsDisplayed().performClick()
+            lazyList().performScrollToNode(hasContentDescription(WearMenu216.text("start",lang)))
+            compose.onNodeWithContentDescription(WearMenu216.text("start",lang)).performClick()
+            compose.runOnIdle {assertFalse(WearMenu216.enabled(context,"running"));starts=0}
+        }
+        compose.runOnIdle {assertEquals(4,cancels)}
+        screenshot("gps-start-choice216")
+    }
+
     @Test
     fun menuUsesFullViewportAndFirstLastButtonsAreReachableAndClickable() {
         val clicks = mutableListOf<String>()
@@ -396,26 +453,26 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         assertFullViewport()
         val root = compose.onRoot().fetchSemanticsNode().boundsInRoot
         val middle =
-            compose.onNodeWithContentDescription("Kezdőlap").fetchSemanticsNode().boundsInRoot
+            compose.onNodeWithContentDescription(WearMenu216.text("quick")).fetchSemanticsNode().boundsInRoot
         assertTrue(
             "Centered menu button uses at least 80% of the diameter",
             middle.width >= root.width * .8f,
         )
         val first =
-            compose.onNodeWithContentDescription("Kezdőlap").fetchSemanticsNode().boundsInRoot
+            compose.onNodeWithContentDescription(WearMenu216.text("quick")).fetchSemanticsNode().boundsInRoot
         assertTrue(
             "The first button must start below the curved title",
             first.top >= root.height * 32f / diameter,
         )
         screenshot("menu-initial")
         scrollToStart()
-        compose.onNodeWithContentDescription("Kezdőlap").assertIsDisplayed().performClick()
+        compose.onNodeWithContentDescription(WearMenu216.text("quick")).assertIsDisplayed().performClick()
         scrollToEnd()
         compose
-            .onNodeWithContentDescription("Megnyitás telefonon")
+            .onNodeWithContentDescription(WearMenu216.text("phone"))
             .assertIsDisplayed()
             .performClick()
-        assertEquals(listOf("home", "phone"), clicks)
+        assertEquals(listOf("quick", "phone"), clicks)
         screenshot("menu-last-control")
     }
 
@@ -426,7 +483,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         val routes =
             listOf(
                 "home" to "Főmenü",
-                "menu" to "Megnyitás telefonon",
+                "menu" to WearMenu216.text("discard"),
                 "journal" to "‹ Főmenü",
                 "journal-detail" to "‹ Napló",
                 "quick" to "‹ Vissza",
@@ -581,7 +638,8 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         compose.onNodeWithTag("wear-round-list").performTouchInput { swipeDown() }
         compose.onNodeWithContentDescription("Edzés indítása").assertIsDisplayed()
         compose.onNodeWithTag("wear-round-list").performTouchInput { swipeUp() }
-        compose.onNodeWithContentDescription("Mini napló").assertIsDisplayed()
+        // Fixture("home") clears the workout: Quick workout is the first menu action.
+        compose.onNodeWithContentDescription(WearMenu216.text("quick")).assertIsDisplayed()
     }
 
     @Test
@@ -1146,7 +1204,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     }
 
     @Composable
-    private fun Fixture(route: String, liveHealth: State<JSONObject?>? = null, automaticCommands: MutableList<String>? = null, feedbackAnswers: MutableList<String?>? = null, measurementActions: MutableList<String>? = null, touchActions: MutableList<String>? = null, externalWorkout: androidx.compose.runtime.MutableState<WearWorkout?>? = null) {
+    private fun Fixture(route: String, liveHealth: State<JSONObject?>? = null, automaticCommands: MutableList<String>? = null, feedbackAnswers: MutableList<String?>? = null, measurementActions: MutableList<String>? = null, touchActions: MutableList<String>? = null, externalWorkout: androidx.compose.runtime.MutableState<WearWorkout?>? = null, rest216: androidx.compose.runtime.MutableState<Int>? = null) {
         val set = WearSet(1, "5", "5.5", feedbackAnswers != null, 30, 0, 0.0,if(route.startsWith("undo-"))"s188" else "")
         val exercise =
             WearExercise(
@@ -1269,7 +1327,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             workout = workout,
             home = home,
             closure = closure,
-            restRemaining = mutableStateOf(if(route=="automatic-rest")115 else 0),
+            restRemaining = rest216 ?: mutableStateOf(if(route=="automatic-rest")115 else 0),
             onStart = { _, _ -> },
             onStartQuick = {},
             onAddQuick = {},
@@ -1279,10 +1337,10 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                 workout.value=WearUndo188.inverse(workout.value!!,"ui-undo",android.os.SystemClock.elapsedRealtime(),-1)
             }),
             onComplete = { touchActions?.add("record");if(route=="phone-rest-finished")automaticCommands?.add("record") },
-            onPrevious = {},
-            onNext = {},
+            onPrevious = {if(rest216!=null)workout.value=workout.value?.selectExercise((workout.value?.currentExercise ?: 0)-1)},
+            onNext = {if(rest216!=null)workout.value=workout.value?.selectExercise((workout.value?.currentExercise ?: 0)+1)},
             onSelectExercise = {},
-            onSkipRest = {},
+            onSkipRest = {if(rest216!=null){rest216.value=0;workout.value=workout.value?.endRest()}},
             onFinish = {
                 if (feedbackAnswers != null) {
                     closure.value = closure.value?.copy(status = "pending", started = workout.value!!.started, needsFeedback = true)
