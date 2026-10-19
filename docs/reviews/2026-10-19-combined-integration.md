@@ -47,6 +47,11 @@ A korábban feltöltött öt új funkcióötlet továbbra is csak backlog.
 6. Az új UI-teszt sorozatgomb/input szelektorait konkrét sorozatsorra szűkítettük,
    ne egy fejléc vagy más `.row` beviteli mezőjét kezeljék.
 
+7. Az új `reconnecting` állapothoz a telefon is kapott HU/EN/DE/RO feliratot és
+   protokollellenőrzést: az új órás állapot nem eshet ki a telefonos validátorból.
+   Callback-regisztráció sikere önmagában még nem aktív mérés: a szolgáltató
+   tulajdonosi visszaigazolásáig `starting` marad.
+
 ## Megőrzendő és ellenőrizendő
 
 - A main `9188932` már tartalmazza #208-at; nem régi mainből kezdődött újra a

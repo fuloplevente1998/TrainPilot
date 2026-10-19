@@ -3,6 +3,7 @@ const assert=require('node:assert/strict'),runtime=require('./helpers/app-runtim
 const app=runtime(),ui=app.context.window.TrainPilotWearMeasurement165;
 app.run('state.session={syncId:"new",started:"2026-10-11T09:00:00Z",exercises:[{id:"e",sets:[{set:1,reps:"10",done:false}]}]};');
 const live=(revision,state='active')=>({schema:1,watchId:'watch',workoutId:'new',revision,state,updatedAt:Date.now(),summary:{schema:1,source:'wear_health_services',workoutId:'new',watchId:'sensor-watch',revision,state,heartRate:105,totalCalories:3}});
+assert.equal(ui.valid(live(1,'reconnecting')),true,'The phone accepts the new watch recovery state instead of silently dropping it');
 ui.waiting('new');assert.equal(app.run('state.session.wearMeasurement165.state'),'waitingWorkout');
 assert.equal(ui.receive(live(1)),true);
 assert.equal(ui.receive(live(1,'starting')),false,'duplicate cannot replace active state');

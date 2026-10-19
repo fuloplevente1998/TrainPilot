@@ -199,7 +199,7 @@ class WearHealthService : Service(), ExerciseUpdateCallback {
         reconnectAttempts=0
         summary?.let {
             if(it.optString("state")=="reconnecting") {
-                it.put("state",if(appliedPause)"paused" else "active")
+                it.put("state",if(lifecycle?.owned!=true)"starting" else if(appliedPause)"paused" else "active")
                 persist()
             }
         }
