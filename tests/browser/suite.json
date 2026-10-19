@@ -406,5 +406,9 @@
   {
     "file": "tests/browser/training-modes-ui-197.cjs",
     "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/training-mode-confirm-197.cjs",
+    "estimatedSeconds": 14
   }
 ]
