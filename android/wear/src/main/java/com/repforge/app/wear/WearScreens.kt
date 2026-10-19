@@ -1317,6 +1317,7 @@ private fun HealthScreen(
 
         val fresh =
             data?.optString("state") == "active" &&
+                data.optString("heartRateAvailability") !in listOf("acquiring", "unavailable") &&
                 System.currentTimeMillis() -
                     (data.optLong("lastSampleAt", data.optLong("updatedAt"))) < 15000
         centerItem { Label(if (fresh) "Élő pulzus" else "Pulzus · utolsó mérés", size = 10) }
@@ -1783,7 +1784,8 @@ private fun AutomaticTimedSetScreen(workout: WearWorkout,restRemaining: Int,heal
             // On the smallest circle, measurements share the heading instead of pushing
             // the actionable countdown below the fixed body. Full metrics remain on page 3.
             SetHeading(workout,restRemaining,detail=if(tiny)rows.firstOrNull() else null,compact=tiny)
-            if(!tiny)rows.take(if(bodyHeight>=96f&&fontScale<1.5f)2 else 1).forEach {
+            val displayed = if (rows.size <= 2) rows else listOf(rows[0], "${rows[1]} · ${rows[2]}")
+            if(!tiny)displayed.take(if(bodyHeight>=96f&&fontScale<1.5f)2 else 1).forEach {
                 Text(it,color=Gold,fontSize=(9*scale).sp,lineHeight=(11*scale).sp,maxLines=1,overflow=TextOverflow.Ellipsis)
             }
             val waiting=a.phase=="ready"
@@ -1805,8 +1807,11 @@ private fun AutomaticTimedSetScreen(workout: WearWorkout,restRemaining: Int,heal
 
 @Composable
 private fun LiveWorkoutHealth(workout: WearWorkout, health: JSONObject?) {
-    wearLiveWorkoutRows(health, workout.workoutId, System.currentTimeMillis()).forEach {
-        Text(it, color = Gold, fontSize = 10.sp, lineHeight = 12.sp, textAlign = TextAlign.Center)
+    val rows = wearLiveWorkoutRows(health, workout.workoutId, System.currentTimeMillis())
+    if (rows.isEmpty()) return
+    val displayed = if (rows.size <= 2) rows else listOf(rows[0], "${rows[1]} · ${rows[2]}")
+    displayed.take(2).forEach {
+        Text(it, color = Gold, fontSize = 10.sp, lineHeight = 12.sp, textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 

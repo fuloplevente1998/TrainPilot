@@ -103,4 +103,26 @@ class WearHealthFuturesTest {
             assertFalse(message, WearHealthFutures.isLegacyNullCompletionError(message))
         }
     }
+
+    @Test fun recoverableHealthErrorsAreIdentifiedForAutoReconnection() {
+        for (message in listOf(
+            "DeadObjectException: Service died",
+            "ServiceDisconnectedException",
+            "android.os.RemoteException: transaction failed",
+            "androidx.health.services.client.HealthServicesException",
+            "Connection timeout waiting for Health Services",
+            "A mérés megszakadt a háttérben.",
+            "A mérési kapcsolat nem indult: binder error"
+        )) {
+            assertTrue("Expected recoverable: $message", WearHealthFutures.isRecoverableHealthError(message))
+        }
+        for (message in listOf(
+            "",
+            "permission denied",
+            "Másik alkalmazás már edzést mér.",
+            "A méréshez helyhozzáférés szükséges."
+        )) {
+            assertFalse("Expected non-recoverable: $message", WearHealthFutures.isRecoverableHealthError(message))
+        }
+    }
 }

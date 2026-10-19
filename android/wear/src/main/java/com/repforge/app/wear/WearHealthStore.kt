@@ -13,6 +13,7 @@ class WearHealthAccumulator(val value: JSONObject) {
         value.put("lastSampleAt",time).put("heartRate",bpm).put("heartRateSamples",count).put("heartRateSum",sum)
             .put("averageHeartRate",sum/count).put("maxHeartRate",maxOf(value.optDouble("maxHeartRate",bpm),bpm))
             .put("minHeartRate",minOf(value.optDouble("minHeartRate",bpm),bpm))
+            .put("heartRateAvailability","available")
     }
     fun total(key: String, number: Double?) {
         if (number == null || !number.isFinite() || number < 0) return
@@ -61,7 +62,7 @@ object WearHealthStore {
         value.put("revision",value.optLong("revision")+1).put("updatedAt",System.currentTimeMillis())
         val prefs=context.getSharedPreferences(PREFS,0)
         val ids=prefs.getStringSet("ids",emptySet())!!.toMutableSet();ids.add(id)
-        val editor=prefs.edit().putString("summary:$id",value.toString()).putString("active",if(value.optString("state") in listOf("starting","active","paused","ending"))id else "")
+        val editor=prefs.edit().putString("summary:$id",value.toString()).putString("active",if(value.optString("state") in listOf("starting","active","paused","ending","reconnecting"))id else "")
         while(ids.size>16) { val oldest=ids.minByOrNull { load(context,it)?.optLong("updatedAt") ?: 0L } ?: break;ids.remove(oldest);editor.remove("summary:$oldest") }
         editor.putStringSet("ids",ids).commit()
     }
