@@ -27,8 +27,9 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 - A végén konkrét eredményt adj: mi változott, milyen forráson mit ellenőriztél,
   mi van még hátra; APK-nál telefon/Wear pár, commit, verzió, hash és letöltés.
   A PWA/böngészős előnézet nem helyettesíti a natív készülékes próbát.
-- Verziót ne emelj automatikusan. Jelenlegi elfogadott kiindulás: 1.3.51 /2732;
-  változtatás előtt ellenőrizd az aktuális metaadatokat.
+- Verziót ne emelj automatikusan. Változtatás előtt ellenőrizd a package.json,
+  SOURCE_VERSION.json és a két Android Gradle-fájl aktuális metaadatait; a legutóbbi
+  jóváhagyott forrás/kiadás a handoffban található.
 - Új funkció draft PR-on/fejlesztési ágon készül. Main merge, release és issue/PR
   lezárás csak az adott feladatra vonatkozó készülékes elfogadás/jóváhagyás után.
   Korábbi másik funkcióra adott „mehet mainre” nem általános merge-engedély.
@@ -62,6 +63,8 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 - `gh run download` átirányítása ebben a környezetben 403-at adhat: használd a
   GitHub connector artifact-letöltését. File Service azonosító nem Sediment ID.
   Teljes aláírt URL-t, credentialt, binárist vagy hosszú logot ne írj a kontextusba.
+  APK-átadáshoz GitHub artifact permalinket (ZIP, benne APK) vagy közzétett release
+  letöltést adj; belső /workspace fájlút a felhasználónál nem működött.
 - Ha új/lejárt környezetben dolgozol, a hitelesítést és a platformutasításokat
   újra ellenőrizd; régi workspace-path vagy eszköz elérhetőségét ne feltételezd.
 
@@ -72,10 +75,9 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
   visszatérése nem indíthat néma tulajdonosváltást vagy párhuzamos időzítőt.
 - Explicit telefonos félbehagyás szüneteltet; háttérbe kerülés/kijelzőlezárás
   önmagában nem félbehagyás. Órás tulajdonos telefonos tükre csak olvasható.
-- GPS-útvonal első engedélyezése tudatos döntés. A #216-ban jóváhagyott következő
+- GPS-útvonal első engedélyezése tudatos döntés. A #216-ban elfogadott
   működés: indításnál látható, megjegyzett GPS-választás; a következő megfelelő
-  kültéri edzés kifejezett indítása után automatikus rögzítés. Ez még külön
-  megvalósítandó, nem már kész képesség. App pontos helyengedélye és rendszerhely
+  kültéri edzés kifejezett indítása után automatikus rögzítés. App pontos helyengedélye és rendszerhely
   két külön feltétel. GPS-hiba mellett az edzés/stopper működjön tovább; ne találj ki pontot.
 - Koordináták privát natív tárban, felhőmentésből kizárva. Nyugtáig tartós outbox,
   deduplikálás, szakaszhatárok; törlés után késői szinkron nem támaszthat fel adatot.
