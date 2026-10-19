@@ -453,23 +453,23 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         assertFullViewport()
         val root = compose.onRoot().fetchSemanticsNode().boundsInRoot
         val middle =
-            compose.onNodeWithContentDescription("Gyors edzés").fetchSemanticsNode().boundsInRoot
+            compose.onNodeWithContentDescription(WearMenu216.text("quick")).fetchSemanticsNode().boundsInRoot
         assertTrue(
             "Centered menu button uses at least 80% of the diameter",
             middle.width >= root.width * .8f,
         )
         val first =
-            compose.onNodeWithContentDescription("Gyors edzés").fetchSemanticsNode().boundsInRoot
+            compose.onNodeWithContentDescription(WearMenu216.text("quick")).fetchSemanticsNode().boundsInRoot
         assertTrue(
             "The first button must start below the curved title",
             first.top >= root.height * 32f / diameter,
         )
         screenshot("menu-initial")
         scrollToStart()
-        compose.onNodeWithContentDescription("Gyors edzés").assertIsDisplayed().performClick()
+        compose.onNodeWithContentDescription(WearMenu216.text("quick")).assertIsDisplayed().performClick()
         scrollToEnd()
         compose
-            .onNodeWithContentDescription("Megnyitás telefonon")
+            .onNodeWithContentDescription(WearMenu216.text("phone"))
             .assertIsDisplayed()
             .performClick()
         assertEquals(listOf("quick", "phone"), clicks)
@@ -483,7 +483,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         val routes =
             listOf(
                 "home" to "Főmenü",
-                "menu" to "Megnyitás telefonon",
+                "menu" to WearMenu216.text("discard"),
                 "journal" to "‹ Főmenü",
                 "journal-detail" to "‹ Napló",
                 "quick" to "‹ Vissza",
