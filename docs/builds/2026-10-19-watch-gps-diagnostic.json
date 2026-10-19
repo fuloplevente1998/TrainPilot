@@ -1,0 +1,55 @@
+{
+  "purpose": "Diagnostic build; watch route root cause not yet proven or fixed on device",
+  "version": "1.3.51",
+  "versionCode": 2732,
+  "phoneSource": "9b23da4264c0ecbff66a4a8a6cbd6b5ec556e185",
+  "wearSource": "fca155414c60fd4ed31ca18360812011eea7a122",
+  "phoneApplicationSourceUnchangedBetweenCommits": true,
+  "phoneRun": 39186429768,
+  "phoneArtifact": 12158910613,
+  "phoneApkSha256": "608bb180f1ffefc43f6a4add286cac70acbfe1b73fa90566dd830a2dee6fa9fb",
+  "wearRun": 39186518523,
+  "wearArtifact": 12158282699,
+  "wearApkSha256": "47e875b4d4f61eca90acfe07e1e49b9498678032ab0b1639eb1ee0136a3d3f2a",
+  "signerCertSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+  "canonicalPhoneAssetsVerified": [
+    "app.js",
+    "index.html"
+  ],
+  "quickRun": 39186522763,
+  "performanceRun": 39186522768,
+  "ownershipRun": 39186522947,
+  "ownershipTestCommit": "ea75fb73846899d68a4e53edc2d0f1a9c4f09042",
+  "ownershipTreeMatchesWearSource": true,
+  "chromiumShards": "6/6 successful",
+  "phoneNative": {
+    "tests": 243,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "wearNative": {
+    "tests": 152,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "ownershipNative": {
+    "tests": 81,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "roundRun": 39186518543,
+  "roundStatus": "success",
+  "physicalAcceptance": "Pending; next measurement must report receivedFixes and savedPoints",
+  "mainMerged": false,
+  "roundArtifact": 12158911514,
+  "roundXml": {
+    "tests": 163,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "gpsRecorderPlatformTests": "Both passed, including received/saved counters and rejection of stale or post-pause callbacks"
+}

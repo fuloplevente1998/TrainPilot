@@ -4,6 +4,33 @@ Frissítve: **2026-10-19, Europe/Budapest**. Először a gyökérben található
 [AGENTS.md](../AGENTS.md) olvasandó; utána ez a rövid aktuális átadás.
 Az alábbi állapotot induláskor GitHubon ellenőrizd. A hosszú régi naplók történetiek.
 
+## Legfrissebb átadás – GPS-diagnosztikai APK-pár, minden kapu zöld
+
+**A készülékes térképhiba oka még nincs bizonyítva vagy készre javítva.** Most
+az órás GPS-rögzítés két számlálóját átadó diagnosztikai pár készült, 1.3.51 /2732:
+
+- Telefon `9b23da4`: [artifact 12158910613](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39186429768/artifacts/12158910613),
+  SHA-256 `608bb180f1ffefc43f6a4add286cac70acbfe1b73fa90566dd830a2dee6fa9fb`.
+- Wear `fca1554`: [artifact 12158282699](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39186518523/artifacts/12158282699),
+  SHA-256 `47e875b4d4f61eca90acfe07e1e49b9498678032ab0b1639eb1ee0136a3d3f2a`.
+- A két commit között a telefon www/Android/shared/build/verzió forrása változatlan;
+  a második csak a Wear-riportot korlátozza tényleges GPS-indítási kísérlethez.
+- Quick 39186522763, Performance 39186522768, Ownership 39186522947: sikeres.
+- Telefon 39186429768: Chromium **6/6**, JVM **243/243**; Wear 39186518523:
+  JVM **152/152**; ownership **81/81**; kerek UI/platform 39186518543 **163/163**.
+  Minden XML: 0 failure/error/skipped. A kibővített GPS-recorder tesztek sikeresek.
+- Mindkét APK eredeti aláírója ellenőrizve; telefonos app.js/index.html byteazonos
+  a bevizsgált forrással. [Bizonylat](builds/2026-10-19-watch-gps-diagnostic.json).
+
+**Mindkét app frissítendő, majd új órás GPS-mérés indítandó.** Az órán a
+GPS-útvonal képernyő már nullánál is mutatja a fogadott mintákat és mentett pontokat;
+a telefonon az új mérés Napló → Health adatok → TrainPilot óra kártyájában
+„GPS-minták az órán” és „Mentett GPS-pontok az órán” jelenik meg. Régi naplóhoz
+nem találunk ki utólag diagnosztikai adatot. Először e két érték szükséges,
+**újabb hosszú sétát nem kérünk találomra**. A GPS-szűrők nincsenek fellazítva,
+Health-távból nem rajzolunk koordinátát. #193/#213 nyitott, nincs main vagy
+verzióemelés; a telefonos GPS külön OK nélküli teljesítése továbbra is elfogadott.
+
 ## Folyamatban – bizonyítható órás GPS-rögzítés vizsgálata
 
 A felhasználó újabb, azonos útvonalon végzett kb. egyperces próbáján sincs órás
