@@ -3346,7 +3346,7 @@ rf220BindHome=rf233BindHome;
 
 // @section v234.js
 var rf234Lang = function rf234Lang(){return typeof rf212Lang==='function'?rf212Lang():'hu'};
-var rf234Text = function rf234Text(){const hu={title:'Kiegészítő Health Connect adatok',refresh:'Adatok frissítése',steps:'Mai lépésszám',weight:'Testsúly',fat:'Testzsír',oxygen:'SpO₂',vo2:'VO₂max',none:'Még nincs beolvasott kiegészítő adat.',saved:'Kiegészítő Health Connect adatok frissítve.',note:'A lépésszám aktivitási kontextus. A testsúly, testzsír, SpO₂ és VO₂max ebben a verzióban tájékoztató adat, és nem módosítja automatikusan a Coach readiness pontszámát.'};const en={title:'Additional Health Connect data',refresh:'Refresh data',steps:'Steps today',weight:'Weight',fat:'Body fat',oxygen:'SpO₂',vo2:'VO₂max',none:'No additional data has been read yet.',saved:'Additional Health Connect data refreshed.',note:'Steps are activity context. Weight, body fat, SpO₂ and VO₂max are informational in this version and do not automatically change Coach readiness.'};return rf234Lang()==='hu'?hu:en};
+var rf234Text = function rf234Text(){const hu={title:'Kiegészítő Health Connect adatok',refresh:'Adatok frissítése',steps:'Mai lépésszám',weight:'Testsúly',fat:'Testzsír',oxygen:'SpO₂',vo2:'VO₂max',none:'Még nincs beolvasott kiegészítő adat.',saved:'Kiegészítő Health Connect adatok frissítve.',note:'A lépésszám aktivitási kontextus. A testsúly, testzsír, SpO₂ és VO₂max ebben a verzióban tájékoztató adat, és nem módosítja automatikusan a Coach readiness pontszámát.'};const en={title:'Additional Health Connect data',refresh:'Refresh data',steps:'Steps today',weight:'Weight',fat:'Body fat',oxygen:'SpO₂',vo2:'VO₂max',none:'No additional data has been read yet.',saved:'Additional Health Connect data refreshed.',note:'Steps are activity context. Weight, body fat, SpO₂ and VO₂max are informational in this version and do not automatically change Coach readiness.'};const de={title:'Zusätzliche Health Connect-Daten',refresh:'Daten aktualisieren',steps:'Schritte heute',weight:'Gewicht',fat:'Körperfett',oxygen:'SpO₂',vo2:'VO₂max',none:'Bisher keine zusätzlichen Daten eingelesen.',saved:'Zusätzliche Health Connect-Daten aktualisiert.',note:'Schritte dienen als Aktivitätskontext. Gewicht, Körperfett, SpO₂ und VO₂max sind Richtwerte und verändern den Coach-Wert nicht automatisch.'};const ro={title:'Date suplimentare Health Connect',refresh:'Actualizează datele',steps:'Pași azi',weight:'Greutate',fat:'Grăsime corporală',oxygen:'SpO₂',vo2:'VO₂max',none:'Încă nu au fost citite date suplimentare.',saved:'Date suplimentare Health Connect actualizate.',note:'Pașii reprezintă context de activitate. Greutatea, grăsimea corporală, SpO₂ și VO₂max sunt informative și nu modifică automat scorul Coach.'};const l=rf234Lang();return l==='hu'?hu:l==='de'?de:l==='ro'?ro:en;};
 var rf234Num = function rf234Num(v){return v==null||v===''?null:Number.isFinite(Number(v))?Number(v):null};
 var rf234Load = function rf234Load(){if(!state.health)state.health={};if(!state.health.wellness){const x=db.get('wellnessLatest',null);if(x&&typeof x==='object')state.health.wellness=x}return state.health.wellness||null};
 var rf234Range = function rf234Range(){const end=new Date(),start=new Date(end.getTime()-14*86400000),stepsStart=new Date();stepsStart.setHours(0,0,0,0);return {start:start.toISOString(),stepsStart:stepsStart.toISOString(),end:end.toISOString()}};
@@ -3620,10 +3620,10 @@ var rf242SaveMatchedWorkoutHealth = function rf242SaveMatchedWorkoutHealth(key,h
 };
 var rf242MatchText = function rf242MatchText(d){
   if(!d)return '';
-  const hu=(typeof rf212Lang==='function'?rf212Lang():'hu')==='hu';
-  if(d.matchMode==='exercise-session')return hu?'Health edzéshez illesztve':'Matched to Health workout';
-  if(d.matchMode==='tolerance')return hu?'Időablak-tűréssel illesztve (±3 perc)':'Matched with time tolerance (±3 min)';
-  if(d.matchMode==='exact')return hu?'Pontos időablak':'Exact time window';
+  const l=typeof rf212Lang==='function'?rf212Lang():'hu';
+  if(d.matchMode==='exercise-session')return l==='hu'?'Health edzéshez illesztve':l==='de'?'An Health-Training angepasst':l==='ro'?'Potrivit cu antrenamentul Health':'Matched to Health workout';
+  if(d.matchMode==='tolerance')return l==='hu'?'Időablak-tűréssel illesztve (±3 perc)':l==='de'?'Mit Zeitfenstertoleranz angepasst (±3 Min.)':l==='ro'?'Potrivit cu toleranță de timp (±3 min)':'Matched with time tolerance (±3 min)';
+  if(d.matchMode==='exact')return l==='hu'?'Pontos időablak':l==='de'?'Exaktes Zeitfenster':l==='ro'?'Fereastră exactă de timp':'Exact time window';
   return '';
 };
 /* TrainPilot 2.4.2: tolerant Health Connect workout-session matching. */
@@ -13763,11 +13763,37 @@ window.addEventListener?.('DOMContentLoaded',function(){
    suggestionStable:'Workout count and volume together provide context for consistency.',
    coachOpen:'View in Coach',weight:'Weight',reps:'Reps',time:'Time',left:'Left side',right:'Right side'},
   de:{log:'Trainingstagebuch',stats:'Statistiken',progress:'Fortschritt',volume:'Gesamtvolumen',trend:'Volumentrend',
-   day1:'1 Tag',days7:'7 Tage',days30:'30 Tage',months3:'3 Mon.',vs:'zum vorigen Zeitraum',pr:'Persönliche Rekorde',workouts:'Trainingseinheiten',
-   average:'Ø Volumen',averageSmall:'pro Krafttraining',duration:'Ø Dauer',durationDetail:'Ø Trainingsdauer',sets:'Sätze',muscles:'Muskelgruppenbelastung',coach:'Fortschrittsempfehlung'},
+   day1:'1 Tag',days7:'7 Tage',days30:'30 Tage',months3:'3 Mon.',vs:'zum vorigen Zeitraum',pr:'Persönliche Rekorde',
+   workouts:'Trainingseinheiten',average:'Ø Volumen',averageSmall:'pro Krafttraining',
+   duration:'Ø Dauer',durationDetail:'Ø Trainingsdauer',durationNote:'Berechnet aus Trainings mit erfasster Dauer',durationMissing:'Keine erfasste Trainingsdauer in diesem Zeitraum.',sets:'Sätze',muscles:'Muskelgruppenbelastung',groupNote:'Farben und Prozentwerte beziehen sich auf die am stärksten trainierte Gruppe, keine Ermüdungsmessung.',
+   low:'Niedriger',medium:'Mittel',high:'Höher',anatomyZoom:'Muskelbelastungsdiagramm vergrößern',
+   coach:'Fortschrittsempfehlung',more:'Details',noData:'Nicht genügend erfasste Daten für diesen Zeitraum.',
+   noWeight:'Kein messbares Krafttrainingsvolumen in diesem Zeitraum.',openLog:'Im Trainingstagebuch öffnen',
+   close:'Schließen',back:'Zurück',previous:'Vorher',current:'Neu',sessions:'Trainings',completed:'Abgeschlossene Trainings',setCount:'Sätze',
+   daily:'Tagesansicht',weekly:'Wochenansicht',exercises:'Übungen',groupWork:'Protokollierte Übungen',
+   hint:'Tippe auf einen Balken für Details.',groupDetails:'Muskelgruppendetails',
+   allStats:'In Statistiken öffnen',noChange:'Keine vergleichbaren früheren Daten',
+   suggestionEmpty:'Erfasse weitere Trainings für personalisierte Fortschrittsberichte.',
+   suggestionGood:'Dein erfasstes Krafttrainingsvolumen ist im Vergleich zum vorherigen Zeitraum gestiegen.',
+   suggestionFocus:'Die meiste Satzbelastung entfiel auf diese Muskelgruppe: ',
+   suggestionStable:'Trainingsanzahl und Volumen spiegeln gemeinsam deine Beständigkeit wider.',
+   coachOpen:'Im Coach anzeigen',weight:'Gewicht',reps:'Wiederholungen',time:'Zeit',left:'Linke Seite',right:'Rechte Seite'},
   ro:{log:'Jurnal de antrenament',stats:'Statistici',progress:'Progres',volume:'Volum total',trend:'Tendință volum',
    day1:'1 zi',days7:'7 zile',days30:'30 zile',months3:'3 luni',vs:'față de perioada anterioară',pr:'Recorduri personale',
-   workouts:'Antrenamente',average:'Volum mediu',averageSmall:'per antrenament cu greutăți',duration:'Durată medie',durationDetail:'Durată medie antrenament',sets:'Serii',muscles:'Grupe musculare',coach:'Sugestie de progres'},
+   workouts:'Antrenamente',average:'Volum mediu',averageSmall:'per antrenament cu greutăți',
+   duration:'Durată medie',durationDetail:'Durată medie antrenament',durationNote:'Calculat din antrenamente cu durată înregistrată',durationMissing:'Nicio durată de antrenament înregistrată în această perioadă.',sets:'Serii',muscles:'Grupe musculare',groupNote:'Culorile și procentele sunt relative la cea mai antrenată grupă, nu reprezintă o măsurare a oboselii.',
+   low:'Redus',medium:'Mediu',high:'Ridicată',anatomyZoom:'Mărește diagrama de încărcare musculară',
+   coach:'Sugestie de progres',more:'Detalii',noData:'Nu există suficiente date înregistrate pentru această perioadă.',
+   noWeight:'Niciun volum măsurabil cu greutăți în această perioadă.',openLog:'Deschide în jurnalul de antrenament',
+   close:'Închide',back:'Înapoi',previous:'Anterior',current:'Nou',sessions:'Antrenamente',completed:'Antrenamente finalizate',setCount:'serii',
+   daily:'Distribuție zilnică',weekly:'Distribuție săptămânală',exercises:'Exerciții',groupWork:'Exerciții înregistrate',
+   hint:'Atinge o bară pentru detalii.',groupDetails:'Detalii grupă musculară',
+   allStats:'Deschide în Statistici',noChange:'Nu există date anterioare comparabile',
+   suggestionEmpty:'Înregistrează mai multe antrenamente pentru o analiză personalizată a progresului.',
+   suggestionGood:'Volumul înregistrat cu greutăți a crescut față de perioada anterioară de aceeași durată.',
+   suggestionFocus:'Cea mai mare încărcare de serii a revenit grupei musculare: ',
+   suggestionStable:'Numărul de antrenamente și volumul reflectă împreună consecvența.',
+   coachOpen:'Vezi în Coach',weight:'Greutate',reps:'Repetări',time:'Timp',left:'Partea stângă',right:'Partea dreaptă'},
   sk:{log:'Tréningový denník',stats:'Štatistiky',progress:'Pokrok',volume:'Celkový objem',trend:'Trend objemu',
    day1:'1 deň',days7:'7 dní',days30:'30 dní',months3:'3 mes.',vs:'oproti predošlému obdobiu',pr:'Osobné rekordy',
    workouts:'Tréningy',average:'Priemerný objem',averageSmall:'na silový tréning',duration:'Ø čas',durationDetail:'Priemerný čas tréningu',sets:'Série',muscles:'Zaťaženie svalov',coach:'Odporúčanie'},
@@ -14123,11 +14149,11 @@ rf263HealthHub=function(){
 (function(){
  'use strict';
  const labels={
-  hu:{open:'Fejlődés megnyitása',all:'Teljes rekordlista',fullStats:'Részletes statisztikák',backToProgress:'Vissza a Fejlődéshez',weight:'Súly',reps:'Ismétlés',time:'Idő',left:'Bal oldal',right:'Jobb oldal',previous:'Korábbi',current:'Új'},
-  en:{open:'Open Progress',all:'All-time records',fullStats:'Detailed statistics',backToProgress:'Back to Progress',weight:'Weight',reps:'Reps',time:'Time',left:'Left side',right:'Right side',previous:'Previous',current:'New'},
-  de:{open:'Fortschritt öffnen',all:'Alle Rekorde',fullStats:'Detaillierte Statistiken',backToProgress:'Zurück zum Fortschritt',weight:'Gewicht',reps:'Wiederholungen',time:'Zeit',left:'Links',right:'Rechts',previous:'Vorher',current:'Neu'},
-  ro:{open:'Deschide Progresul',all:'Toate recordurile',fullStats:'Statistici detaliate',backToProgress:'Înapoi la Progres',weight:'Greutate',reps:'Repetări',time:'Timp',left:'Stânga',right:'Dreapta',previous:'Anterior',current:'Nou'},
-  sk:{open:'Otvoriť pokrok',all:'Všetky rekordy',fullStats:'Podrobné štatistiky',backToProgress:'Späť na Pokrok'},pl:{open:'Otwórz postępy',all:'Wszystkie rekordy',fullStats:'Szczegółowe statystyki',backToProgress:'Wróć do Postępów'}
+  hu:{open:'Fejlődés megnyitása',all:'Teljes rekordlista',fullStats:'Részletes statisztikák',backToProgress:'Vissza a Fejlődéshez',weight:'Súly',reps:'Ismétlés',time:'Idő',left:'Bal oldal',right:'Jobb oldal',previous:'Korábbi',current:'Új',noRecords:'Még nincs személyes rekord.'},
+  en:{open:'Open Progress',all:'All-time records',fullStats:'Detailed statistics',backToProgress:'Back to Progress',weight:'Weight',reps:'Reps',time:'Time',left:'Left side',right:'Right side',previous:'Previous',current:'New',noRecords:'No personal records yet.'},
+  de:{open:'Fortschritt öffnen',all:'Alle Rekorde',fullStats:'Detaillierte Statistiken',backToProgress:'Zurück zum Fortschritt',weight:'Gewicht',reps:'Wiederholungen',time:'Zeit',left:'Links',right:'Rechts',previous:'Vorher',current:'Neu',noRecords:'Noch keine persönlichen Rekorde.'},
+  ro:{open:'Deschide Progresul',all:'Toate recordurile',fullStats:'Statistici detaliate',backToProgress:'Înapoi la Progres',weight:'Greutate',reps:'Repetări',time:'Timp',left:'Stânga',right:'Dreapta',previous:'Anterior',current:'Nou',noRecords:'Încă nu există recorduri personale.'},
+  sk:{open:'Otvoriť pokrok',all:'Všetky rekordy',fullStats:'Podrobné štatistiky',backToProgress:'Späť na Pokrok',noRecords:'Zatiaľ žiadne osobné rekordy.'},pl:{open:'Otwórz postępy',all:'Wszystkie rekordy',fullStats:'Szczegółowe statystyki',backToProgress:'Wróć do Postępów',noRecords:'Brak rekordów osobistych.'}
  };
  const lang=()=>typeof rf212Lang==='function'?rf212Lang():'hu';
  const copy=()=>Object.assign({},labels.hu,labels[lang()]||{});
@@ -14142,7 +14168,7 @@ rf263HealthHub=function(){
   panel.replaceChildren();
   const heading=document.createElement('h2');heading.textContent=header;panel.appendChild(heading);
   const note=document.createElement('p');note.className='tp177-small';note.textContent=t.all+' · '+all.length;panel.appendChild(note);
-  if(!all.length){const none=document.createElement('p');none.className='tp177-small';none.textContent=lang()==='hu'?'Még nincs személyes rekord.':'No personal records yet.';panel.appendChild(none);return}
+  if(!all.length){const none=document.createElement('p');none.className='tp177-small';none.textContent=t.noRecords||(lang()==='hu'?'Még nincs személyes rekord.':'No personal records yet.');panel.appendChild(none);return}
   const list=document.createElement('div');list.className='tp177-inline-list';
   const fmt=value=>Number(value||0).toLocaleString(l,{maximumFractionDigits:1});
   for(const rec of all){
@@ -17708,7 +17734,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const result=await api()?.executeCommand?.({command});
    if(['applied','duplicate'].includes(result?.status))return window.TrainPilotPhoneExecution162.sync({prepare:false});
    if(result?.status==='deferred')return false;
-   return recordResult(command,'error',rf212Lang()==='hu'?'Az órás parancs elavult vagy az időzítő nem áll készen. Ellenőrizd az edzést.':'The watch command is stale or the timer is not ready. Check the workout.');
+   const staleMsg=rf212Lang()==='hu'?'Az órás parancs elavult vagy az időzítő nem áll készen. Ellenőrizd az edzést.':rf212Lang()==='de'?'Der Uhrenbefehl ist veraltet oder der Timer ist nicht bereit. Überprüfe das Training.':rf212Lang()==='ro'?'Comanda ceasului este învechită sau temporizatorul nu este gata. Verifică antrenamentul.':'The watch command is stale or the timer is not ready. Check the workout.';
+   return recordResult(command,'error',staleMsg);
   }
   if(action==='requestHome')return syncHomeNow({force:true});
   if(action==='saveWorkoutFeedback'){
@@ -17718,7 +17745,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
   if(action==='healthSummary')return attachMeasuredHealth(command);
   if(command.undoDependency188&&action!=='watchAutomationState'&&savedPause?.undo188?.commandId!==command.undoDependency188){
-   if(savedPause?.undoRejected188===command.undoDependency188)return recordResult(command,'error','A visszavonás ütközött. Ellenőrizd az edzést.');
+   if(savedPause?.undoRejected188===command.undoDependency188){
+    const undoConflictMsg=rf212Lang()==='hu'?'A visszavonás ütközött. Ellenőrizd az edzést.':rf212Lang()==='de'?'Rückgängig-Konflikt. Überprüfe das Training.':rf212Lang()==='ro'?'Conflict la anulare. Verifică antrenamentul.':'Undo conflict. Check the workout.';
+    return recordResult(command,'error',undoConflictMsg);
+   }
    return false;
   }
   if(action==='watchAutomationState'){
