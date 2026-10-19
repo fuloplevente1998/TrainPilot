@@ -19352,10 +19352,10 @@ var tp197ComputePreview=function tp197ComputePreview(input={}) {
  if(streak(2,x=>validRir(x)&&Number(x.actualRir)>hi+1&&Number.isFinite(Number(x.minRep))&&Number(x.minRep)>=min))return increase('rir-stable-reserve');
  return set('hold',actual>hi?'rir-await-stability':'rir-on-target');
 };
-var tp197ExercisePreview=function tp197ExercisePreview(id,programId=null) {
+var tp197ExercisePreview=function tp197ExercisePreview(id,programId=null,previewModes=null) {
  const pid=typeof programId==='string'&&programId.trim()?programId:
   (state.session?.programId||(typeof activeProgramId==='function'?activeProgramId():null));
- const modes=tp197TrainingModes(pid);
+ const modes=previewModes?.explicitChoice===true?previewModes:tp197TrainingModes(pid);
  if(!modes.explicitChoice)return tp197ComputePreview({modes});
  const e=byId(id);
  if(!e)return tp197ComputePreview({modes,exercise:{},target:{},recent:[]});
@@ -19381,6 +19381,103 @@ var tp197ExercisePreview=function tp197ExercisePreview(id,programId=null) {
   step:typeof tp140Step==='function'?tp140Step(lib,Number(recent[0]?.weight)||0):null});
 };
 // @endsection progression-modes-197.js
+
+// @section training-modes-ui-197.js
+/* #197 step 4: ephemeral, read-only mode selection and explained preview.
+ * Actual program/settings changes require a separate confirmed step (#197 5/7). */
+var TP197_UI_LABELS={
+ hu:{title:"Edzésstílus és progresszió",global:"Alapértelmezett edzésmód",program:"Program edzésmódja",style:"Edzésstílus",progress:"Progressziós szabály",normal:"Normál hipertrófia",hit:"HIT-inspirált (kis volumen)",double:"Dupla progresszió",linear:"Lineáris progresszió",rir:"RIR / Coach",normalInfo:"2–3 munkasorozat, szabályos ismétlések; a bukás nem kötelező.",hitInfo:"Kevesebb, kontrollált munkasorozat bemelegítés után; nincs kötelező bukás.",doubleInfo:"Előbb több jó ismétlés, majd stabil felső cél után kis súlylépés.",linearInfo:"Két megfelelő edzés után óvatos súlylépés, rossz teljesítésnél tartás.",rirInfo:"Csak naplózott tényleges RIR esetén igazít; hiányzó adatnál tartás.",preview:"Előnézet (nem alkalmazott)",current:"Jelenlegi",proposed:"Javasolt",sets:"Munkasorozat",load:"Súly",example:"Példa",action:"Ajánlás",restore:"Előnézet visszaállítása",notice:"Kísérleti választó: itt semmit nem mentünk, és a Coach/edzés sem változik. A jóváhagyás a következő fejlesztési lépés.",noHistory:"Nincs megfelelő edzéselőzmény; még nincs terhelésajánlás.",hold:"Terhelés tartása",increase:"Kis súlyemelés javasolt",reps:"Ismétlések növelése",variation:"Nehezebb változat mérlegelése",pain:"Fájdalom vagy kedvezőtlen jel: nincs emelés",insufficient:"Nincs elég megbízható adat",noExercise:"Nincs megfelelő erősítő gyakorlat a programban",unknown:"—"},
+ en:{title:"Training style and progression",global:"Default training mode",program:"Program training mode",style:"Training style",progress:"Progression method",normal:"Normal hypertrophy",hit:"HIT-inspired (low volume)",double:"Double progression",linear:"Linear progression",rir:"RIR / Coach",normalInfo:"2–3 working sets with clean reps; failure is not required.",hitInfo:"Fewer controlled working sets after warm-up; no forced failure.",doubleInfo:"Build good repetitions first, then increase load after a stable upper target.",linearInfo:"Small load increases after two strong workouts; hold on difficult days.",rirInfo:"Uses recorded actual RIR only; holds when data are missing.",preview:"Preview (not applied)",current:"Current",proposed:"Proposed",sets:"Working sets",load:"Weight",example:"Example",action:"Suggestion",restore:"Reset preview",notice:"Experimental selector: nothing is saved and Coach/workouts are unchanged. Confirmation comes in the next development step.",noHistory:"No compatible workout history yet; no load recommendation.",hold:"Hold load",increase:"Suggest a small load increase",reps:"Increase repetitions",variation:"Consider a harder variation",pain:"Pain or adverse signal: no increase",insufficient:"Insufficient reliable data",noExercise:"No eligible strength exercise in this program",unknown:"—"},
+ de:{title:"Trainingsstil und Progression",global:"Standard-Trainingsmodus",program:"Trainingsmodus für dieses Programm",style:"Trainingsstil",progress:"Progressionsmethode",normal:"Normale Hypertrophie",hit:"HIT-inspiriert (geringes Volumen)",double:"Doppelte Progression",linear:"Lineare Progression",rir:"RIR / Coach",normalInfo:"2–3 Arbeitssätze mit sauberer Technik; Muskelversagen ist nicht Pflicht.",hitInfo:"Weniger kontrollierte Arbeitssätze nach dem Aufwärmen; kein erzwungenes Versagen.",doubleInfo:"Erst saubere Wiederholungen steigern, dann bei stabilem oberem Ziel das Gewicht.",linearInfo:"Kleine Gewichtsschritte nach zwei guten Einheiten; bei Schwierigkeiten halten.",rirInfo:"Nur tatsächlich protokollierte RIR; bei fehlenden Daten halten.",preview:"Vorschau (nicht angewendet)",current:"Aktuell",proposed:"Vorschlag",sets:"Arbeitssätze",load:"Gewicht",example:"Beispiel",action:"Empfehlung",restore:"Vorschau zurücksetzen",notice:"Test-Auswahl: Es wird nichts gespeichert und Coach/Training bleiben unverändert. Die Bestätigung folgt im nächsten Entwicklungsschritt.",noHistory:"Noch kein geeigneter Trainingsverlauf; keine Lastempfehlung.",hold:"Last halten",increase:"Kleine Gewichtserhöhung vorschlagen",reps:"Wiederholungen steigern",variation:"Schwerere Variante erwägen",pain:"Schmerz oder Warnsignal: keine Steigerung",insufficient:"Zu wenig verlässliche Daten",noExercise:"Keine geeignete Kraftübung im Programm",unknown:"—"},
+ ro:{title:"Stil de antrenament și progresie",global:"Mod implicit de antrenament",program:"Mod pentru acest program",style:"Stil de antrenament",progress:"Metodă de progresie",normal:"Hipertrofie normală",hit:"Inspirat de HIT (volum redus)",double:"Progresie dublă",linear:"Progresie liniară",rir:"RIR / Coach",normalInfo:"2–3 serii de lucru cu execuție corectă; eșecul muscular nu este obligatoriu.",hitInfo:"Mai puține serii controlate după încălzire; fără eșec forțat.",doubleInfo:"Mai întâi crești repetările bune, apoi greutatea după atingerea stabilă a limitei.",linearInfo:"Creșteri mici după două antrenamente bune; menții greutatea când e greu.",rirInfo:"Folosește doar RIR real înregistrat; menține greutatea dacă lipsesc date.",preview:"Previzualizare (neaplicată)",current:"Actual",proposed:"Propus",sets:"Serii de lucru",load:"Greutate",example:"Exemplu",action:"Recomandare",restore:"Resetează previzualizarea",notice:"Selector experimental: nimic nu se salvează, iar Coach/antrenamentele rămân neschimbate. Confirmarea urmează în pasul următor.",noHistory:"Nu există încă istoric compatibil; fără recomandare de sarcină.",hold:"Menține greutatea",increase:"Propune o creștere mică a greutății",reps:"Crește repetările",variation:"Ia în calcul o variantă mai dificilă",pain:"Durere sau semnal nefavorabil: fără creștere",insufficient:"Date fiabile insuficiente",noExercise:"Nu există exercițiu de forță potrivit în program",unknown:"—"}
+};
+var tp197UiText=function(){const lang=typeof rf212Lang==="function"?rf212Lang():"hu";return TP197_UI_LABELS[lang]||TP197_UI_LABELS.en;};
+var tp197UiPending=Object.create(null);
+var tp197UiKey=function(scope,pid){return scope==="program"?"program:"+String(pid):"global";};
+var tp197UiChoice=function(scope,pid){
+ const key=tp197UiKey(scope,pid);
+ if(tp197UiPending[key])return {...tp197UiPending[key]};
+ const inherited=tp197TrainingModes(pid),raw=settings()?.trainingModes197;
+ const valid=x=>x&&["normal","hit"].includes(x.trainingStyle)&&["double","linear","rir"].includes(x.progressionMode);
+ const global=raw?.schemaVersion===1&&raw.explicitChoice===true&&valid(raw.defaults)?raw.defaults:null;
+ const personal=scope==="program"&&raw?.schemaVersion===1&&raw.byProgram&&
+  Object.prototype.hasOwnProperty.call(raw.byProgram,pid)&&raw.byProgram[pid]?.explicitChoice===true&&valid(raw.byProgram[pid])?raw.byProgram[pid]:null;
+ const original=personal||global||inherited;
+ return {trainingStyle:original.trainingStyle,progressionMode:original.progressionMode};
+};
+var tp197UiSample=function(scope,pid,choice){
+ const p=(pid&&typeof programById==="function"?programById(pid):null)||activeProgram();
+ const id=p?.days?.flatMap(d=>d.exercises||[]).find(id=>{
+  const e=byId(id);
+  return !!e&&!(typeof tp106IsDistance==="function"&&tp106IsDistance(e))&&!/mp|sec|second/i.test(String(e.repUnit||""));
+ });
+ if(!id)return null;
+ const result=tp197ExercisePreview(id,p.id,{
+  schemaVersion:1,programId:p.id,explicitChoice:true,source:scope,
+  trainingStyle:choice.trainingStyle,progressionMode:choice.progressionMode
+ });
+ return {id,name:byId(id)?.hu||byId(id)?.en||id,result};
+};
+var tp197UiPreview=function(scope,pid,choice){
+ const t=tp197UiText(),styleInfo=t[choice.trainingStyle+"Info"],modeInfo=t[choice.progressionMode+"Info"];
+ const sample=tp197UiSample(scope,pid,choice);
+ const fmt=v=>v===null||v===undefined||!Number.isFinite(Number(v))?t.unknown:String(v);
+ const words={hold:t.hold,increase:t.increase,reps:t.reps,variation:t.variation};
+ let comparison='<p class="small muted">'+esc(t.noExercise)+'</p>';
+ if(sample){
+  const r=sample.result,b=r.baseline||{},a=r.proposed||{},reasons=new Set(["pain","low-readiness","high-effort","rir-overexertion"]);
+  const action=reasons.has(r.reasonCode)?t.pain:r.reasonCode==="insufficient-history"?t.noHistory:(words[r.action]||t.insufficient);
+  comparison='<p class="small"><strong>'+esc(t.example)+': '+esc(sample.name)+'</strong></p>'+
+   '<div class="tp197-ui-comparison"><span>'+esc(t.current)+'</span><span>'+esc(t.proposed)+'</span>'+
+   '<small>'+esc(t.sets)+': '+esc(fmt(b.sets))+'</small><small>'+esc(t.sets)+': '+esc(fmt(a.sets))+'</small>'+
+   '<small>'+esc(t.load)+': '+esc(fmt(b.weight))+'</small><small>'+esc(t.load)+': '+esc(fmt(a.weight))+'</small></div>'+
+   '<p class="small">'+esc(t.action)+': '+esc(action)+'</p>';
+ }
+ return '<div class="tp197-ui-preview" role="status"><strong>'+esc(t.preview)+'</strong>'+
+  '<p class="small muted">'+esc(styleInfo)+' '+esc(modeInfo)+'</p>'+comparison+'</div>';
+};
+var tp197UiPanel=function(scope,pid,expanded=false){
+ if(scope==="program"&&(!pid||!programById(pid)))return "";
+ const t=tp197UiText(),choice=tp197UiChoice(scope,pid),key=tp197UiKey(scope,pid),id=scope==="program"?"tp197-mode-program":"tp197-mode-global";
+ const options=(values,selected)=>values.map(([value,label])=>'<option value="'+value+'"'+(selected===value?' selected':'')+'>'+esc(label)+'</option>').join("");
+ const scopeArg=scope==="program"?"'program',"+JSON.stringify(String(pid)):"'global',null";
+ return '<details class="card tp197-mode-panel" id="'+id+'" data-tp197-scope="'+scope+'" '+(expanded?'open':'')+'>'+
+  '<summary><strong>'+esc(t.title)+'</strong><span class="small muted">'+esc(scope==="program"?t.program:t.global)+'</span></summary>'+
+  '<div class="tp197-ui-body"><label for="'+id+'-style">'+esc(t.style)+'</label>'+
+  '<select class="field" id="'+id+'-style" onchange="tp197UiSet('+scopeArg+',\'trainingStyle\',this.value)">'+
+  options([["normal",t.normal],["hit",t.hit]],choice.trainingStyle)+'</select>'+
+  '<label for="'+id+'-progress">'+esc(t.progress)+'</label>'+
+  '<select class="field" id="'+id+'-progress" onchange="tp197UiSet('+scopeArg+',\'progressionMode\',this.value)">'+
+  options([["double",t.double],["linear",t.linear],["rir",t.rir]],choice.progressionMode)+'</select>'+
+  tp197UiPreview(scope,pid,choice)+
+  '<p class="small muted tp197-ui-notice">'+esc(t.notice)+'</p>'+
+  '<button type="button" class="btn secondary tp197-ui-reset" onclick="tp197UiReset('+scopeArg+')">'+esc(t.restore)+'</button></div></details>';
+};
+var tp197UiSet=function(scope,pid,field,value){
+ if(!["global","program"].includes(scope)||field!=="trainingStyle"&&field!=="progressionMode")return false;
+ if(scope==="program"&&(!pid||!programById(pid)))return false;
+ if(field==="trainingStyle"&&!["normal","hit"].includes(value))return false;
+ if(field==="progressionMode"&&!["double","linear","rir"].includes(value))return false;
+ const key=tp197UiKey(scope,pid),draft=tp197UiChoice(scope,pid);
+ tp197UiPending[key]={...draft,[field]:value};
+ tp197UiRefresh(scope,pid);
+ return true;
+};
+var tp197UiRefresh=function(scope,pid){
+ const id=scope==="program"?"tp197-mode-program":"tp197-mode-global",panel=document.getElementById(id);
+ if(!panel)return;
+ const open=panel.open;panel.outerHTML=tp197UiPanel(scope,pid,open);
+};
+var tp197UiReset=function(scope,pid){delete tp197UiPending[tp197UiKey(scope,pid)];tp197UiRefresh(scope,pid);};
+const tp197BaseSettings=settingsScreen;
+settingsScreen=function(){const html=String(tp197BaseSettings.apply(this,arguments));return html.replace('</main>',tp197UiPanel("global",null)+'</main>');};
+const tp197BasePlan=planScreen;
+planScreen=function(){const html=String(tp197BasePlan.apply(this,arguments)),pid=activeProgram()?.id;if(!pid)return html;
+ return html.replace(/(<main\b[^>]*>)/,'$1'+tp197UiPanel("program",pid));};
+const tp197Css=document.createElement("style");tp197Css.id="tp197ModeUiStyle";
+tp197Css.textContent='.tp197-mode-panel{box-sizing:border-box;max-width:100%;min-width:0;margin:10px 0;padding:12px!important}.tp197-mode-panel>summary{cursor:pointer;display:flex;align-items:flex-start;flex-wrap:wrap;gap:4px 12px;min-height:40px}.tp197-mode-panel>summary strong{flex:1 1 180px}.tp197-ui-body{display:grid;gap:8px;min-width:0;padding-top:12px}.tp197-ui-body label{font-size:13px;font-weight:700}.tp197-ui-body select{box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:44px}.tp197-ui-preview{min-width:0;padding:11px;border-radius:12px;border:1px solid var(--line);background:var(--card2)}.tp197-ui-preview p{margin:6px 0;overflow-wrap:anywhere}.tp197-ui-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px}.tp197-ui-comparison>*{min-width:0;overflow-wrap:anywhere}.tp197-ui-comparison>span{font-weight:700;font-size:12px}.tp197-ui-reset{min-height:44px;width:100%}.tp197-ui-notice{line-height:1.45}';
+document.head.appendChild(tp197Css);
+// @endsection training-modes-ui-197.js
 
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
