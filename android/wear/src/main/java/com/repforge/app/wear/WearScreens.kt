@@ -1,6 +1,17 @@
 package com.repforge.app.wear
 
 import androidx.activity.compose.BackHandler
+import android.view.ViewConfiguration
+import androidx.compose.foundation.focusable
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.rotary.onPreRotaryScrollEvent
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -1978,27 +1989,32 @@ internal fun ValueEditor(
 ) {
     val context = LocalContext.current
     val set = workout.currentSet ?: return
-    val expected=rememberSaveable(workout.workoutId,field){WearAutomaticEngine.targetId(workout,workout.currentExercise,workout.currentSetIndex)}
-    val editable=expected==WearAutomaticEngine.targetId(workout,workout.currentExercise,workout.currentSetIndex)&&!set.done&&
-        (workout.automation?.counting!=true||workout.automation.paused)
-    val save=LocalEditorSave.current
-    val original =
-        remember(workout.workoutId, expected, field) {
-            fieldValue(set, field)
+    // Capture once for this opened editor; neither sync nor automatic set changes
+    // may silently retarget its unsaved draft.
+    val target = rememberSaveable(field) { WearRotaryEditor212.target(workout) }
+    val editable = WearRotaryEditor212.editable(workout, target)
+    val save = LocalEditorSave.current
+    var edited by rememberSaveable(target, field) { mutableDoubleStateOf(fieldValue(set, field)) }
+    val step = WearRotaryEditor212.step(field, workout.exercise?.repUnit.orEmpty())
+    val rotary = remember(target, field) { WearRotaryEditor212() }
+    val focus = remember { FocusRequester() }
+    var focused by remember { mutableStateOf(false) }
+    val owner = LocalView.current.findViewTreeLifecycleOwner()
+    var foreground by remember(owner) { mutableStateOf(owner?.lifecycle?.currentState?.isAtLeast(Lifecycle.State.RESUMED) != false) }
+    val windowFocused = LocalWindowInfo.current.isWindowFocused
+    val pixelsPerDetent = remember(context) { ViewConfiguration.get(context).scaledVerticalScrollFactor }
+    DisposableEffect(owner, rotary) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) { foreground = false; rotary.reset() }
+            if (event == Lifecycle.Event.ON_RESUME) { foreground = true; rotary.reset() }
         }
-    var edited by
-        rememberSaveable(workout.workoutId, expected, field) {
-            mutableDoubleStateOf(original)
-        }
-    val step =
-        if (field == "weight") .5
-        else if (
-            field.endsWith("Seconds") ||
-                (field == "reps" &&
-                    normalizeUnit(workout.exercise?.repUnit.orEmpty()).startsWith("mp"))
-        )
-            5.0
-        else 1.0
+        owner?.lifecycle?.addObserver(observer)
+        onDispose { rotary.reset(); owner?.lifecycle?.removeObserver(observer) }
+    }
+    LaunchedEffect(editable, foreground, windowFocused) {
+        rotary.reset()
+        if (editable && foreground && windowFocused) focus.requestFocus()
+    }
     val title =
         when (field) {
             "weight" -> "Súly"
@@ -2006,14 +2022,24 @@ internal fun ValueEditor(
             "rightSeconds" -> "Jobb oldal"
             else -> if (step == 5.0) "Idő" else "Ismétlés"
         }
+    Box(Modifier.fillMaxSize().testTag("wear-value-editor")
+        .focusRequester(focus)
+        .onFocusChanged { focused = it.hasFocus; if (!it.hasFocus) rotary.reset() }
+        .onPreRotaryScrollEvent { event ->
+            if (!editable || !foreground || !windowFocused || !focused) { rotary.reset(); false }
+            else {
+                edited = WearRotaryEditor212.adjust(edited, step, rotary.steps(event.verticalScrollPixels, pixelsPerDetent))
+                true
+            }
+        }.focusable()) {
     ActionPanel(
         title,
         actions = { layout ->
             CompositionLocalProvider(LocalActionSize provides layout.buttonSize) {
                 Row(horizontalArrangement = Arrangement.spacedBy(layout.gap.dp)) {
                     RoundControl("×", caption = "Mégse", description = "Mégse", onClick = onBack)
-                    RoundControl("✓", Gold, enabled=editable,caption = "Mentés", description = "✓ Mentés") {
-                        if(save!=null&&!save(field,edited,expected))return@RoundControl
+                    RoundControl("✓", Gold, enabled=editable && foreground,caption = "Mentés", description = "✓ Mentés") {
+                        if(save!=null&&!save(field,edited,target))return@RoundControl
                         if (
                             field.endsWith("Seconds") ||
                                 (field == "reps" &&
@@ -2047,7 +2073,7 @@ internal fun ValueEditor(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             RoundControl("−", enabled=editable,description = "$title csökkentése") {
-                edited = (edited - step).coerceAtLeast(0.0)
+                rotary.reset(); edited = WearRotaryEditor212.adjust(edited, step, -1)
             }
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -2068,10 +2094,11 @@ internal fun ValueEditor(
                     lineHeight = (11f / fontScale).sp, textAlign = TextAlign.Center)
                 else Label(unit, size = 9)
             }
-            RoundControl("+", enabled=editable,description = "$title növelése") { edited += step }
+            RoundControl("+", enabled=editable,description = "$title növelése") { rotary.reset(); edited = WearRotaryEditor212.adjust(edited, step, 1) }
         }
         if (!compact) Label("Lépésköz: ${numberText(step)}", size = 9)
     }
+}
 }
 
 @Composable

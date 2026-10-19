@@ -4,6 +4,18 @@ Frissítve: **2026-10-19, Europe/Budapest**. Először a gyökérben található
 [AGENTS.md](../AGENTS.md) olvasandó; utána ez a rövid aktuális átadás.
 Az alábbi állapotot induláskor GitHubon ellenőrizd. A hosszú régi naplók történetiek.
 
+## Folyamatban: #212 órás korona/lünetta szerkesztés
+
+A felhasználó a #215 után kifejezetten kérte a hátralévő forgatható szerkesztő
+elkészítését, majd a csomag lezárását. Ág: `feat/212-wear-rotary-editor`, main alap
+`aafc3d0`. A meglévő egymezős szerkesztőben a kiválasztott súly/ismétlés/idő
+forgatható, külön mező megnyitásával váltunk célt. Nincs új edzésmotor és nincs
+automatikus mentés; rögzítés csak Mentésre, Mégse eldobja a változtatást.
+A cél összetett azonosítóval rögzített; sorozat/gyakorlat/edzés váltása, háttér,
+fókuszvesztés blokkolja a rotary-módosítást. A plusz–mínusz változatlanul elérhető.
+GitHub JVM/UI/release kapuk és fizikai próbára Wear APK átadása következik.
+#212 még nyitott, mainre nem került; #216 nincs elkezdve, most #212 az aktív feladat.
+
 ## #215 lezárva – kompakt Intervallumok mainen
 
 Felhasználói jóváhagyás: „Akkor a felüleletet vigyük mainre, ezt meg zárjuk”.

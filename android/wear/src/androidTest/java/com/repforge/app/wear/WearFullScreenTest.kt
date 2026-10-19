@@ -854,6 +854,44 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
     }
 
     @Test
+    fun rotaryChangesOnlyTheOpenedFieldAndNeverSavesOrRetargetsImplicitly() {
+        val initial=WorkoutSnapshotStore.parse("""{"workoutId":"rotary-ui212","exercises":[{"id":"press","repUnit":"ism.","loadType":"weight","sets":[{"setId":"one","reps":"5","weight":"5.5","done":false},{"setId":"two","reps":"8","done":false}]}]}""")!!
+        val workout=mutableStateOf(initial)
+        val field=mutableStateOf("weight")
+        val revision=mutableStateOf(0)
+        val changes=mutableListOf<Pair<String,Double>>()
+        var backs=0
+        compose.setContent { Watch { key(field.value,revision.value) {
+            ValueEditor(workout.value,field.value,{name,delta->changes.add(name to delta)},{backs++})
+        } } }
+        val detent=android.view.ViewConfiguration.get(InstrumentationRegistry.getInstrumentation().targetContext).scaledVerticalScrollFactor
+        fun rotate(pixels: Float) { compose.onNodeWithTag("wear-value-editor").performRotaryScrollInput { rotateToScrollVertically(pixels) } }
+        rotate(detent)
+        compose.onNodeWithTag("wear-edited-value").assertTextEquals("6")
+        compose.runOnIdle { assertTrue(changes.isEmpty()) }
+        rotate(-detent)
+        compose.onNodeWithTag("wear-edited-value").assertTextEquals("5,5")
+        compose.onNodeWithContentDescription("Súly növelése").performClick()
+        compose.onNodeWithContentDescription("✓ Mentés").performClick()
+        compose.runOnIdle { assertEquals(listOf("weight" to .5),changes) }
+        compose.runOnIdle { field.value="reps" }
+        rotate(detent)
+        compose.onNodeWithTag("wear-edited-value").assertTextEquals("6")
+        compose.onNodeWithContentDescription("Mégse").performClick()
+        compose.runOnIdle { assertEquals(1,changes.size);assertEquals(2,backs);revision.value++ }
+        compose.onNodeWithTag("wear-edited-value").assertTextEquals("5")
+        rotate(-detent*20)
+        compose.onNodeWithTag("wear-edited-value").assertTextEquals("0")
+        // A later automatic/manual set change cannot redirect the open editor.
+        compose.runOnIdle { workout.value=initial.copy(exercises=initial.exercises.map{it.copy(sets=it.sets.mapIndexed{i,v->v.copy(done=i==0)})}) }
+        compose.onNodeWithContentDescription("✓ Mentés").assertIsNotEnabled()
+        rotate(detent)
+        compose.onNodeWithTag("wear-edited-value").assertTextEquals("0")
+        compose.runOnIdle { assertEquals(1,changes.size) }
+        screenshot("rotary-editor-stale212")
+    }
+
+    @Test
     fun editorsKeepMinusAndPlusBesideTheValueAndSaveCancelVisible() {
         val field = mutableStateOf("weight")
         val revision = mutableStateOf(0)
