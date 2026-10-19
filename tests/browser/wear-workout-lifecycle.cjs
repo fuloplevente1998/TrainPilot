@@ -54,7 +54,7 @@ const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://local
  assert.notEqual(await page.evaluate(()=>state.session.syncId),deleted,'a fresh workout still starts normally');
  const fenced=await page.evaluate(async()=>{
   const session=state.session,id=session.syncId||session.started,base=session.exercises[0];
-  session.exercises=[{...base,sets:[{set:1,setId:'finish-before',reps:'12',weight:5,done:true},{set:2,setId:'finish-during',reps:'',weight:0,done:false}]}];
+  session.exercises=[{...base,sets:[{set:1,setId:'finish-before',reps:'',weight:5,done:false},{set:2,setId:'finish-during',reps:'',weight:0,done:false}]}];
   session.timerOwner='phone';session.automatic162={enabled:false};session.phoneExecution162={generation:991,revision:1,sequence:0};
   session.scheduleId='native-finish-schedule';db.set('scheduled',[{id:session.scheduleId,status:'planned'}]);persistDraft();
   Object.assign(rf110Stopwatch,{key:'finish-test-clock',elapsedMs:3000,startedAt:Date.now()-1000,running:true,timer:null});
@@ -79,7 +79,7 @@ const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://local
    schedule:scheduled()[0].status,stopwatch:rf110Stopwatch.running,nativeActive:native.active,tab:state.tab,
    feedback:!!document.querySelector('.tp122-feedback'),dialog:!!document.querySelector('#tp2628Dialog'),receipts,calls:native.calls};
  });
- assert.deepEqual(fenced.done,[true,true],'A native set arriving during finish must reach the saved journal');
+ assert.deepEqual(fenced.done,[false,true],'A native set arriving during finish must reach the saved journal');
  assert.equal(fenced.reps,'8');assert.equal(fenced.schedule,'completed');assert.equal(fenced.stopwatch,false);assert.equal(fenced.nativeActive,false);
  assert.equal(fenced.tab,'history','A remote finish keeps the phone page instead of replaying the finish UI');
  assert.equal(fenced.feedback,false);assert.equal(fenced.dialog,false);

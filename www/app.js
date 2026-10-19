@@ -17676,7 +17676,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
    if(!window.TrainPilotOwnership193?.acceptWatchFinal(command))return false;
   }else mergeFinalSets(command);
   attachMeasuredHealth(command);persistDraft();
-  if(!state.session.exercises.some(e=>e.sets?.some(s=>s.done)))return recordResult(command,'error','Legalább egy rögzített sorozat szükséges.');
+  // Native completion can arrive after the drain's initial reconcile. Let the
+  // finish fence collect it before the shared save validates completed sets.
+  const pendingNative=state.session.phoneExecution162&&typeof api()?.executionStatus==='function'&&(state.session.timerOwner||'phone')==='phone';
+  if(!state.session.exercises.some(e=>e.sets?.some(s=>s.done))&&!pendingNative)return recordResult(command,'error','Legalább egy rögzített sorozat szükséges.');
   const result=finishWorkout({wearConfirmed:true,silent:true,wearSilent:true,wearFinishedAt:String(command.finishedAt||''),wearFeedback:command.feedback});
   if(result&&typeof result.then==='function')await result;
   if(history().some(x=>matchesWorkout(x,expected)&&x.finished))return recordResult(command,'saved');
