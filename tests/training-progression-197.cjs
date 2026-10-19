@@ -3,13 +3,14 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const root=path.resolve(__dirname,'..'),isolated=path.join(root,'www','progression-modes-197.js');
 const text=fs.readFileSync(fs.existsSync(isolated)?isolated:path.join(root,'www','app.js'),'utf8');
 const section=text.match(/^\/\/ @section progression-modes-197\.js\n([\s\S]*?)^\/\/ @endsection progression-modes-197\.js$/m);
-assert.ok(section,'Canonical progression section must exist');
+const code=fs.existsSync(isolated)?text:section?.[1];
+assert.ok(code,'Canonical progression section must exist');
 const saved={modes:{source:'program',trainingStyle:'normal',progressionMode:'double',explicitChoice:true},
  target:{kind:'reps',sets:3,min:8,max:12,rest:90,rirMin:1,rirMax:3},
  exercise:{loadType:'per_hand',repUnit:'ism'},step:1,
  recent:[{weight:10,allDone:true,minRep:10,reps:[10,10,11],hitTop:false,belowMin:false,effort:'good'}]};
 const baseline=JSON.stringify(saved),context={};
-vm.createContext(context);vm.runInContext(section[1],context,{timeout:1000});
+vm.createContext(context);vm.runInContext(code,context,{timeout:1000});
 const preview=input=>JSON.parse(JSON.stringify(context.tp197ComputePreview(input)));
 const check=(x,action,reason)=>{assert.equal(x.action,action);assert.equal(x.reasonCode,reason);assert.equal(x.autoApply,false);assert.equal(x.previewOnly,true)};
 check(preview({...saved,modes:{source:'legacy',explicitChoice:false}}),'legacy','legacy');
@@ -54,7 +55,7 @@ let reads=0;const local={
  programById:()=>({prescriptions:{}}),TP140_ISOLATION:new Set(),tp140Step:()=>1
 };
 const serial=JSON.stringify(local.state);
-vm.createContext(local);vm.runInContext(section[1],local,{timeout:1000});
+vm.createContext(local);vm.runInContext(code,local,{timeout:1000});
 const out=local.tp197ExercisePreview('db-floor-press');
 assert.equal(out.action,'reps');assert.equal(out.autoApply,false);
 assert.equal(reads,1);assert.equal(JSON.stringify(local.state),serial);
