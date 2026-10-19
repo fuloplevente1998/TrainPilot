@@ -5755,8 +5755,14 @@ rf152ApplySuggestions=function rf152ApplySuggestions(){
  if(!state.session)return;
  for(const e of state.session.exercises||[]){
   const target=tp140Prescription(e.id,e,state.session.programId);e.progressionPrescription={sets:target.sets,reps:target.reps,kind:target.kind,rirMin:target.rirMin,rirMax:target.rirMax,source:target.source};
-  const r=rf152Recommendation(e.id,e);e.rf152Recommendation=r;
-  if(r.action==='increase'&&r.autoApply===true&&Number.isFinite(r.weight))for(const s of e.sets||[])s.weight=r.weight;
+  const r=rf152Recommendation(e.id,e);
+  if(typeof tp197TrainingModes==='function'&&tp197TrainingModes(state.session.programId).explicitChoice){
+   // #197: explicit modes supersede the legacy auto-apply path, even at workout start.
+   e.rf152Recommendation={...r,action:'hold',autoApply:false,text:'A kiválasztott progressziós mód külön Coach-jóváhagyást kér.'};
+  }else{
+   e.rf152Recommendation=r;
+   if(r.action==='increase'&&r.autoApply===true&&Number.isFinite(r.weight))for(const s of e.sets||[])s.weight=r.weight;
+  }
  }
  persistDraft();
 };
@@ -19635,6 +19641,116 @@ document.head.appendChild(tp197Css);
  document.head.appendChild(css);
 })();
 // @endsection training-mode-confirm-197.js
+
+// @section training-coach-197.js
+/* #197 step 6: explanatory Coach recommendations. Never modify a session from
+ * a suggestion; load changes require a second, explicit approval action. */
+var TP197_COACH_I18N={
+ hu:{title:'Coach • progresszió',preview:'Javaslat, nincs alkalmazva',hold:'Súly tartása',increase:'Kis súlyemelés',reps:'Célismétlés növelése',variation:'Nehezebb gyakorlatváltozat',mode:'Választott módszer',history:'Korábbi alkalmak',reason:'Indok',current:'Korábbi súly',proposed:'Javasolt súly',sets:'Javasolt munkasorozat',reptarget:'Javasolt ismétlések',action:'Javaslat ellenőrzése',approve:'Jóváhagyom a súly módosítását',cancel:'Mégse',done:'A javasolt súly már be van állítva.',blocked:'Edzés közben megváltozott az állapot, vagy az óra vezérli. Nincs módosítás.',notice:'A sorozatok, ismétlések és a HIT volumenjavaslat csak előnézet; a teljesített ismétléseket nem írjuk előre.',reasonMap:{'pain':'Fájdalomjelzés: nincs emelés','low-readiness':'Gyenge regeneráció: nincs emelés','high-effort':'Túl nehéz előző edzés','incomplete':'Hiányosan teljesített előzmény','rir-feedback-missing':'Nincs rögzített tényleges RIR','insufficient-history':'Még kevés megfelelő edzéselőzmény','double-stable-top':'Három stabil felső cél teljesítve','linear-stable-performance':'Két stabil szabályos edzés','rir-stable-reserve':'Tartósan nagyobb tényleges RIR','double-next-repetition':'Ismétlések fokozatos emelése','non-strength-activity':'Távolsági/időalapú gyakorlatnál nincs súlyjavaslat'}},
+ en:{title:'Coach • progression',preview:'Suggestion, not applied',hold:'Hold load',increase:'Small load increase',reps:'Increase repetition target',variation:'Harder exercise variation',mode:'Selected method',history:'Recent workouts',reason:'Why',current:'Previous load',proposed:'Suggested load',sets:'Suggested working sets',reptarget:'Suggested repetitions',action:'Review suggestion',approve:'Confirm load change',cancel:'Cancel',done:'The proposed load is already set.',blocked:'Workout state changed or the watch is in control. Nothing was modified.',notice:'Sets, repetitions and HIT volume remain advisory; completed repetitions are never prefilled.',reasonMap:{'pain':'Pain feedback: do not increase','low-readiness':'Poor recovery: do not increase','high-effort':'Previous effort too high','incomplete':'Incomplete prior workout','rir-feedback-missing':'Actual RIR not recorded','insufficient-history':'Not enough suitable history','double-stable-top':'Three stable top-range completions','linear-stable-performance':'Two stable successful workouts','rir-stable-reserve':'Consistently larger actual RIR','double-next-repetition':'Increase repetitions gradually','non-strength-activity':'No weight change for distance or timed activities'}},
+ de:{title:'Coach • Progression',preview:'Vorschlag, nicht übernommen',hold:'Gewicht halten',increase:'Kleine Gewichtserhöhung',reps:'Wiederholungsziel erhöhen',variation:'Schwerere Übungsvariante',mode:'Gewählte Methode',history:'Frühere Einheiten',reason:'Begründung',current:'Bisheriges Gewicht',proposed:'Vorgeschlagenes Gewicht',sets:'Empfohlene Arbeitssätze',reptarget:'Empfohlene Wiederholungen',action:'Vorschlag prüfen',approve:'Gewichtsänderung bestätigen',cancel:'Abbrechen',done:'Das vorgeschlagene Gewicht ist bereits gesetzt.',blocked:'Trainingszustand geändert oder Uhr steuert. Nichts geändert.',notice:'Sätze, Wiederholungen und HIT-Volumen sind nur Empfehlungen; absolvierte Wiederholungen werden nicht vorbefüllt.',reasonMap:{'pain':'Schmerzen: nicht erhöhen','low-readiness':'Schwache Regeneration','high-effort':'Zu hohe letzte Belastung','incomplete':'Unvollständige Vorleistung','rir-feedback-missing':'Tatsächlicher RIR fehlt','insufficient-history':'Noch zu wenig Verlauf','double-stable-top':'Drei stabile obere Ziele','linear-stable-performance':'Zwei stabile Einheiten','rir-stable-reserve':'Stabil größere RIR-Reserve','double-next-repetition':'Wiederholungen langsam steigern','non-strength-activity':'Kein Gewicht für Distanz- und Zeitaktivität'}},
+ ro:{title:'Coach • progresie',preview:'Propunere neaplicată',hold:'Menține greutatea',increase:'Creștere mică a greutății',reps:'Crește ținta de repetări',variation:'Variantă mai dificilă',mode:'Metoda aleasă',history:'Antrenamente recente',reason:'Motiv',current:'Greutate anterioară',proposed:'Greutate propusă',sets:'Serii de lucru propuse',reptarget:'Repetări propuse',action:'Verifică propunerea',approve:'Confirmă modificarea greutății',cancel:'Anulează',done:'Greutatea propusă este deja setată.',blocked:'Starea s-a schimbat sau ceasul controlează. Nimic modificat.',notice:'Seriile, repetările și volumul HIT sunt sugestii; repetările efectuate nu sunt precompletate.',reasonMap:{'pain':'Durere: fără creștere','low-readiness':'Recuperare slabă','high-effort':'Efort precedent prea mare','incomplete':'Antrenament incomplet','rir-feedback-missing':'RIR real lipsă','insufficient-history':'Istoric insuficient','double-stable-top':'Trei performanțe stabile la țintă','linear-stable-performance':'Două antrenamente stabile','rir-stable-reserve':'Rezervă RIR constant mai mare','double-next-repetition':'Crește repetările treptat','non-strength-activity':'Fără greutate pentru exerciții pe distanță/timp'}}
+};
+var tp197CoachT=function(){return TP197_COACH_I18N[typeof rf212Lang==='function'?rf212Lang():'hu']||TP197_COACH_I18N.hu};
+var tp197CoachInfo=function(id,pid){
+ const modes=tp197TrainingModes(pid);
+ if(!modes.explicitChoice)return null;
+ const preview=tp197ExercisePreview(id,pid);
+ if(!preview?.handled)return null;
+ const t=tp197CoachT(),action=t[preview.action]||t.hold,why=t.reasonMap[preview.reasonCode]||preview.reasonCode;
+ const labels=typeof tp197UiText==='function'?tp197UiText():{};
+ const method=(labels[modes.trainingStyle]||modes.trainingStyle)+' / '+(labels[modes.progressionMode]||modes.progressionMode);
+ const proposal=preview.proposed||{},base=preview.baseline||{};
+ const format=v=>Number.isFinite(Number(v))?String(v):'—';
+ const detail=(base.weight!=null?t.current+': '+format(base.weight)+' → '+t.proposed+': '+format(proposal.weight):'')+
+  (proposal.sets!=null?' · '+t.sets+': '+format(proposal.sets):'')+
+  (Array.isArray(proposal.repTargets)?' · '+t.reptarget+': '+proposal.repTargets.join(', '):'');
+ return {modes,preview,title:action,reason:why,method,detail,summary:action+'. '+why+'. '+detail,
+  action:preview.action,proposedWeight:proposal.weight,historyCount:preview.historyCount};
+};
+var tp197CoachAllowed=function(session,se,info){
+ if(!session||!se||!info||info.action!=='increase'||!info.modes?.explicitChoice)return false;
+ if(session.workoutPaused||session.ownershipAwaitingResume193||session.automatic162?.pending||
+  session.timerOwner==='watch'||session.ownershipProtocol193===1&&session.timerOwner!=='phone'||
+  window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||window.TrainPilotWearSync?.isApplyingCommand?.())return false;
+ if(!session.programId||session.programId!==info.modes.programId||!Array.isArray(se.sets)||!se.sets.length)return false;
+ if(se.sets.some(s=>s.done||s.reps!==''&&s.reps!==null&&s.reps!==undefined||s.completedAt||s.gpsRouteKey193))return false;
+ const w=Number(info.proposedWeight),b=Number(info.preview?.baseline?.weight);
+ return Number.isFinite(w)&&Number.isFinite(b)&&w>b&&w-b<=10&&w>0;
+};
+var tp197CoachPending=null;
+var tp197CoachFingerprint=function(session,se,info){
+ return JSON.stringify({started:session?.started,programId:session?.programId,id:se?.id,
+  mode:info?.modes,proposed:info?.proposedWeight,reason:info?.preview?.reasonCode,
+  sets:se?.sets?.map(s=>[s.set,s.weight,s.reps,s.done,s.completedAt||null])});
+};
+var tp197CoachCancel=function(){tp197CoachPending=null;renderWorkout()};
+var tp197CoachRequest=function(){
+ const s=state.session,e=s?.exercises?.[state.current],info=e?tp197CoachInfo(e.id,s.programId):null;
+ if(!tp197CoachAllowed(s,e,info))return false;
+ tp197CoachPending={session:s,exercise:e,fingerprint:tp197CoachFingerprint(s,e,info)};
+ renderWorkout();return true;
+};
+var tp197CoachApply=function(){
+ const s=state.session,e=s?.exercises?.[state.current],info=e?tp197CoachInfo(e.id,s.programId):null,pending=tp197CoachPending;
+ tp197CoachPending=null;
+ if(!tp197CoachAllowed(s,e,info)||!pending||pending.session!==s||pending.exercise!==e||
+  pending.fingerprint!==tp197CoachFingerprint(s,e,info)){
+  alert(tp197CoachT().blocked);renderWorkout();return false;
+ }
+ const previous=e.sets.map(v=>v.weight);
+ try{
+  for(const set of e.sets)set.weight=Number(info.proposedWeight);
+  persistDraft();
+ }catch(error){e.sets.forEach((set,i)=>{set.weight=previous[i]});return false}
+ renderWorkout();
+ void window.TrainPilotWearSync?.syncNow?.();
+ return true;
+};
+var tp197CoachPanel=function(){
+ const s=state.session,e=s?.exercises?.[state.current],info=e?tp197CoachInfo(e.id,s.programId):null;
+ if(!info)return '';
+ const t=tp197CoachT(),can=tp197CoachAllowed(s,e,info),already=can&&e.sets.every(v=>Number(v.weight)===Number(info.proposedWeight));
+ const pending=tp197CoachPending&&tp197CoachPending.session===s&&tp197CoachPending.exercise===e&&
+  tp197CoachPending.fingerprint===tp197CoachFingerprint(s,e,info);
+ const controls=can&&!already?(pending?
+  '<div class="tp197-coach-buttons"><button type="button" class="btn" onclick="tp197CoachApply()">'+esc(t.approve)+'</button><button type="button" class="btn secondary" onclick="tp197CoachCancel()">'+esc(t.cancel)+'</button></div>':
+  '<button type="button" class="btn secondary" onclick="tp197CoachRequest()">'+esc(t.action)+'</button>'):
+  already?'<p class="small muted">'+esc(t.done)+'</p>':'';
+ return '<section class="card tp197-coach-advice" id="tp197CoachAdvice"><strong>'+esc(t.title)+'</strong>'+
+  '<p class="small muted">'+esc(t.mode)+': '+esc(info.method)+'</p>'+
+  '<p class="small"><b>'+esc(info.title)+'</b> · '+esc(info.reason)+'</p>'+
+  '<p class="small muted">'+esc(info.detail)+'</p>'+
+  '<p class="small muted">'+esc(t.history)+': '+String(info.historyCount)+'</p>'+controls+
+  '<p class="small muted">'+esc(t.notice)+'</p></section>';
+};
+(function(){
+ const originalAdvice=rf233ExerciseAdvice;
+ rf233ExerciseAdvice=function(id,decision){
+  const result=originalAdvice.apply(this,arguments),s=state.session,pid=s?.programId||(typeof activeProgramId==='function'?activeProgramId():null);
+  const info=tp197CoachInfo(id,pid);
+  if(!info||result?.action==='pain'||decision?.pain)return result;
+  return {...result,action:'hold',label:info.title,text:info.summary,proposal197:info.preview};
+ };
+ const oldShort=window.tp155CoachShortAdvice;
+ if(typeof oldShort==='function'){
+  window.tp155CoachShortAdvice=function(id,decision,existing){
+   const pid=state.session?.programId||(typeof activeProgramId==='function'?activeProgramId():null),info=tp197CoachInfo(id,pid);
+   if(info)return {action:'hold',label:info.title,text:info.summary};
+   return oldShort.apply(this,arguments);
+  };
+ }
+ const oldRender=renderWorkout;
+ renderWorkout=function(){
+  const result=oldRender.apply(this,arguments),head=document.querySelector('main.tp153-workout .tp153-workout-head');
+  if(head&&!head.querySelector('#tp197CoachAdvice'))head.insertAdjacentHTML('beforeend',tp197CoachPanel());
+  return result;
+ };
+ const style=document.createElement('style');style.id='tp197CoachStyle';
+ style.textContent='.tp197-coach-advice{margin:10px 0 4px;padding:12px}.tp197-coach-advice p{margin:6px 0;line-height:1.45;overflow-wrap:anywhere}.tp197-coach-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tp197-coach-buttons button{min-height:44px;white-space:normal;overflow-wrap:anywhere}';
+ document.head.appendChild(style);
+})();
+// @endsection training-coach-197.js
 
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
