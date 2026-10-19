@@ -853,6 +853,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         }
     }
 
+    @OptIn(ExperimentalTestApi::class)
     @Test
     fun rotaryChangesOnlyTheOpenedFieldAndNeverSavesOrRetargetsImplicitly() {
         val initial=WorkoutSnapshotStore.parse("""{"workoutId":"rotary-ui212","exercises":[{"id":"press","repUnit":"ism.","loadType":"weight","sets":[{"setId":"one","reps":"5","weight":"5.5","done":false},{"setId":"two","reps":"8","done":false}]}]}""")!!
