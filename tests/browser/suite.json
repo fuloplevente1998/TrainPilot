@@ -394,5 +394,9 @@
   {
     "file": "tests/browser/wear-gps-route-193.cjs",
     "estimatedSeconds": 5
+  },
+  {
+    "file": "tests/browser/ui-core-flows-automation.cjs",
+    "estimatedSeconds": 6
   }
 ]
