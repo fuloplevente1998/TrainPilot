@@ -1,6 +1,5 @@
 
 :root{
-  color-scheme: dark;
   --bg:#0e1015; --card:#1a1e25; --card2:#232933; --line:#2c3440;
   --text:#f6f8fb; --muted:#9aa5b6; --accent:#f2bd45; --accent2:#ffd975;
   --ok:#62d08a; --bad:#ff6c72;
@@ -9,7 +8,6 @@
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
 button,input,select,textarea{font:inherit}
 button{cursor:pointer}
-select option{background:var(--card);color:var(--text)}
 #app{max-width:780px;margin:auto;min-height:100vh}
 .top{position:sticky;top:0;z-index:10;background:rgba(14,16,21,.95);backdrop-filter:blur(12px);padding:16px;border-bottom:1px solid var(--line)}
 .brand{font-size:24px;font-weight:950;letter-spacing:.4px}
@@ -462,3 +460,7 @@ html body input.field[type="search"]::-webkit-search-cancel-button{
 html body #rf130PhotoModal .rf130-photo-view .tp-modal-head{align-items:center}
 html body #rf130PhotoModal .rf130-photo-view .tp-modal-head h2{min-width:0;overflow-wrap:anywhere}
 html body #rf130PhotoModal .tp126-photo-close{flex:0 0 44px;width:44px;height:44px;min-width:44px;min-height:44px;font-size:24px;line-height:1}
+
+/* Native dark form controls: preserve the accepted base stylesheet above. */
+:root{color-scheme:dark}
+select option{background:var(--card);color:var(--text)}

@@ -52,6 +52,10 @@ A korábban feltöltött öt új funkcióötlet továbbra is csak backlog.
    Callback-regisztráció sikere önmagában még nem aktív mérés: a szolgáltató
    tulajdonosi visszaigazolásáig `starting` marad.
 
+8. A nyelvi ág a védett CSS-baseline elejét módosította. A natív sötét
+   formvezérlő szabályok a kiegészítő blokk végére kerültek, az elfogadott
+   alapstílus bájtpontosan megmarad; a paritástesztet nem gyengítettük.
+
 ## Megőrzendő és ellenőrizendő
 
 - A main `9188932` már tartalmazza #208-at; nem régi mainből kezdődött újra a
