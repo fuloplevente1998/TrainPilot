@@ -23,6 +23,8 @@ const server=http.createServer((req,res)=>{
    db.set('settings',{...settings(),trainingModes197:{schemaVersion:1,defaults:{trainingStyle:'normal',progressionMode:'linear'},explicitChoice:true,byProgram:{}}});
    tp197ExercisePreview=()=>({handled:true,action:'increase',reasonCode:'linear-stable-performance',historyCount:2,baseline:{weight:10,sets:2},proposed:{weight:12,sets:2}});
    persistDraft=()=>{window.__tp197Saves++};
+   // This test renders a sandboxed Coach fixture; close any app startup dialog that would intercept synthetic interaction.
+   document.querySelector('#tp2628Dialog')?.remove();
    const fixture=document.createElement('div');fixture.id='tp197BrowserFixture';document.body.appendChild(fixture);
    renderWorkout=()=>{fixture.innerHTML=tp197CoachPanel()};
    renderWorkout();
