@@ -8,7 +8,7 @@ if(path==='www/app.js'){
 }
 let saves=0,paints=0;
 const ctx={state:{session:null,current:0},window:{TrainPilotWearSync:{}},
- document:{createElement:()=>({}),head:{appendChild(){}}},
+ document:{createElement:()=>({}),querySelector:()=>null,head:{appendChild(){}}},
  rf212Lang:()=>'hu',tp197UiText:()=>({normal:'Normál',linear:'Lineáris'}),
  rf233ExerciseAdvice:()=>({action:'hold',label:'legacy'}),renderWorkout:()=>{paints++},
  persistDraft:()=>{saves++},alert:()=>{},esc:x=>String(x),activeProgramId:()=>null,
