@@ -49,7 +49,7 @@ let reads=0;const local={
  byId:()=>({id:'db-floor-press',loadType:'per_hand',repUnit:'ism'}),
  tp140Prescription:()=>saved.target,
  tp128Rows:()=>{reads++;return [{workout:{feedback:{rating:'good'}},exercise:{effort:'good'}},{workout:{feedback:{rating:'good'}},exercise:{effort:'good'}}];},
- tp140Occurrence:()=>({...top,reps:[12,12,12]}),
+ tp140Occurrence:()=>({...top,reps:[10,10,11],minRep:10,hitTop:false}),
  rf220Readiness:()=>({parts:2,score:80}),
  programById:()=>({prescriptions:{}}),TP140_ISOLATION:new Set(),tp140Step:()=>1
 };

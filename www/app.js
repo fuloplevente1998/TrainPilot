@@ -19293,7 +19293,8 @@ var tp197ComputePreview=function tp197ComputePreview(input={}) {
  const empty={schemaVersion:1,handled:false,previewOnly:true,autoApply:false,action:'legacy',reasonCode:'legacy',trainingStyle:'normal',progressionMode:'double',historyCount:0,baseline:null,proposed:null};
  if(!chosen)return empty;
  const clamp=(x,lo,hi)=>Number.isFinite(x)?Math.min(hi,Math.max(lo,x)):null;
- const sets=clamp(Number(target.sets),1,12),min=clamp(Number(target.min),1,200),max=clamp(Number(target.max),1,200);
+ const bounded=(value,lo,hi)=>value===null||value===undefined||value===''?null:clamp(Number(value),lo,hi);
+ const sets=bounded(target.sets,1,12),min=bounded(target.min,1,200),max=bounded(target.max,1,200);
  const recent=history.filter(x=>x&&typeof x==='object');
  const latest=recent[0]||null,base=latest&&Number.isFinite(Number(latest.weight))&&Number(latest.weight)>0?Number(latest.weight):null;
  const step=Number(input.step),isBody=exercise.loadType==='bodyweight';
