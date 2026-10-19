@@ -37,6 +37,10 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 
 ## Forrás és ellenőrzés
 
+- Issue megvalósítása előtt olvasd el a GitHub-jegy tényleges követelményeit.
+  Az ág neve és a zöld teszt önmagában nem igazolja a feladat teljesítését.
+  Átadáskor az elfogadási feltételekhez mérd a kódot; eltérő fejlesztést ne
+  jelents az eredeti issue megoldásának, és ne zárd le miatta a jegyet.
 - Repo: `fuloplevente1998/TrainPilot`. Webes kanonikus forrás: `www/app.js`,
   `www/index.html`, célzott CSS; telefon: `android/app`, óra: `android/wear`,
   közös natív logika: `android/shared`. Ne portolj át külső előnézeti projektet

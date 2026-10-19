@@ -4,6 +4,35 @@ Frissítve: **2026-10-19, Europe/Budapest**. Először a gyökérben található
 [AGENTS.md](../AGENTS.md) olvasandó; utána ez a rövid aktuális átadás.
 Az alábbi állapotot induláskor GitHubon ellenőrizd. A hosszú régi naplók történetiek.
 
+## Aktuális nyilvántartás és tesztpár – 2026-10-19
+
+A felhasználó kérte a nyitott issue/PR lista rendezését. A #121 régi draft PR
+**lezárva beolvasztás nélkül**; a be nem olvasztott karbantartás/Play-feladatok
+#214 backlogban megőrizve, az ág nem törölt. Egyetlen nyitott PR: **#213 draft**.
+
+Nyitott valódi teendők: #193 készülékes elfogadás/integráció; #206 külön
+aktivitásnézet és maradék GPS-UI; #212 kompakt Intervallumok + korona/lünetta;
+#197 edzésstílus/progresszió; #184 Samsung Energy Score; #214 karbantartás/Play.
+#206 GPS explicit STOP utáni automatikus készre jelölése mainen van #208 óta;
+a jegy címe/leírása most a hiányzó részre pontosítva. Nincs lezárt kész funkciónak
+feltüntetve sem a #212, sem a #197. Issue #193 és PR #213 leírása aktualizálva.
+
+A közös tesztpár átadva, **1.3.51 /2732**:
+- Telefon `3115b78`: [artifact 12156114281](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39181312956/artifacts/12156114281),
+  SHA-256 `0a08c101a8f9cdc317936f595ff1662a06c30bb4cb6e70764eb23564e8ab9774`.
+- Wear `13823ca`: [artifact 12156466194](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39180866399/artifacts/12156466194),
+  SHA-256 `a63221ea2af504ce95e72adcb595a48c3d1363976efcd411e09c3474f757d2d2`.
+- A Wear/közös Android forrás a két commit között változatlan. Mindkét APK eredeti
+  aláírója `4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688`.
+- Telefonos teljes gate/UI 6/6 (39181312956), Quick/Performance/tulajdonosi gate
+  a `3115b78` forráson zöld; Wear release (39180866399) és kerek UI/platform
+  (39180866373) a változatlan Wear-forráson zöld. Fizikai elfogadás még nincs.
+- Main még `9188932`; a kiadott tesztpár nem main build. Következő lépés a próba
+  eredményének feldolgozása és a #213 integráció lezárása. A korábbi main-engedély
+  fennáll, a készülékes elfogadást ettől még nem szabad késznek állítani.
+
+Az alábbi régi átadások történetiek; nem írják felül ezt az állapotot.
+
 ## Legújabb felhasználói döntés – közös main csomag
 
 A felhasználó most a `test/ui-automation`, `feat/212-language-audit`,
@@ -13,7 +42,14 @@ felülírja a korábbi merge-sorrendet. A teljes, összeillesztett forrás GitHu
 után egyetlen main telefonos–órás párt fog tesztelni. Részletes áttekintés:
 [2026-10-19-combined-integration.md](reviews/2026-10-19-combined-integration.md).
 A külső öt funkcióötlet megvalósítása továbbra sem része ennek a csomagnak.
-#212/#190 és #197 eredeti követelményeit a nyelvi/szenzorág nem teljesíti egészben.
+#212/#190 és #197 eredeti funkciói **nincsenek megvalósítva**: a nyelvi és
+szenzorág más feladatokat old meg. A zöld CI ezeket nem igazolja késznek.
+A tényleges következő csomag #212 (kompakt Intervallumok + korona/lünetta),
+utána #197 (választható stílusok és progresszió), az eredeti elfogadási feltételekkel.
+#190 duplikátumként zárt, nem kész funkcióként; #212 és #197 nyitott.
+
+Verziódöntés: a közös main telefon/Wear pár sikeres készülékes próbája után
+**1.3.6** a cél új verziókóddal. Az 1.6.0 elírás volt; addig 1.3.51 /2732 marad.
 
 ## Legutóbbi kérés és megállási pont – 2026-10-19 javítás
 
