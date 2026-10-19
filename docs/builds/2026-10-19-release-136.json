@@ -6,63 +6,68 @@
   "releasePr": 219,
   "releaseVersion": "1.3.6",
   "versionCode": 2733,
-  "featureHead": "bf79363ca9144963260f82485803816ec08b4066",
-  "releaseHead": "e9ad56d1ed4f37274a6497404c987c8de1c6a76e",
-  "releaseTree": "bb9645d17fcdb3754b3b3dc7d706c67c58444c5f",
+  "featureHead": "e66754eb24990d4d69c863cbb3e401b2de97845e",
+  "releaseHead": "76fa539d77b0ac71ad08a02993394e2d8bb31a96",
+  "releaseTree": "d0f5487aa3338369c879126b7d2ca15cbbd4e3b3",
   "userApproval": "Rendben, akkor mehet, zarhatjuk ezt a teljes részt es akkor 1.3.6.lesz",
   "approvalScope": "Feature closure/main integration and 1.3.6 release; no invented detailed physical test report",
   "checks": {
     "quick": {
-      "run": 39229585790,
+      "run": 39231417696,
       "result": "success"
     },
     "performance": {
-      "run": 39229585782,
+      "run": 39231417699,
       "result": "success"
     },
     "phone": {
-      "run": 39229121428,
-      "source": "081d0164f53f8bfb867d4ea5c28c58a48139445d",
+      "run": 39231412495,
+      "source": "76fa539d77b0ac71ad08a02993394e2d8bb31a96",
       "uiShardsPassed": 6,
       "nativeTests": 243,
       "regressionTests": 145,
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "artifact": 12175403743,
-      "sha256": "ec02c7e990177a7dbc7541f43e5e42f4cbc6f3be8876f24a52d105e5b5b3e536",
+      "artifact": 12178325777,
+      "sha256": "91ee8f0911955fa125a251b385b5a51c8c569e810f6e5323283da503762912f5",
       "signerContinuity": "apksigner verified; same certificate as public v1.0.0"
     },
     "wear": {
-      "run": 39229579381,
-      "source": "e9ad56d1ed4f37274a6497404c987c8de1c6a76e",
+      "run": 39231317332,
+      "source": "7b600e4ed0ce65549c53596de6a02390e8e326b2",
       "nativeTests": 159,
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "artifact": 12175288925,
-      "sha256": "7a7c2ee61db91101d7987129da91e033be9dad87f19fe67e9c914d1361576dd1",
+      "artifact": 12178325243,
+      "sha256": "cd6b0fae73bf0c7d3ce3156fca4464de64224a7a9625f454259ee30e0b262f7e",
       "signerContinuity": "apksigner verified; same certificate as public v1.0.0"
     },
     "ownership": {
-      "run": 39229585778,
-      "mergeSource": "34a7197ab2e296891f7f5c0ff0ade836a68f7505",
-      "mergeTree": "bb9645d17fcdb3754b3b3dc7d706c67c58444c5f",
+      "run": 39231417723,
+      "mergeSource": "bd9404e5cad439dbf1a31387762f819525a8e580",
       "tests": 81,
       "failures": 0,
       "errors": 0,
       "skipped": 0
     },
     "roundUi": {
-      "run": 39229579427,
-      "result": "pending"
+      "run": 39231317394,
+      "source": "7b600e4ed0ce65549c53596de6a02390e8e326b2",
+      "artifact": 12178156988,
+      "result": "success",
+      "tests": 183,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
     }
   },
-  "sourceEquivalence": "081d0164..e9ad56d1 changes only WearFullScreenTest.kt; phone and Wear production sources unchanged. Ownership merge tree equals release head tree. Documentation commits may follow without new application code.",
+  "sourceEquivalence": "081d0164..7b600e4 changes only WearFullScreenTest.kt. 7b600e4..76fa539 changes only AGENTS/handoff/proof documentation. Main merge 98be6622 has the exact same full Git tree as verified head 76fa539.",
   "testCorrections": [
     "JVM fixture targets the open set rather than an already completed set",
     "Menu selectors follow system locale",
-    "Home upward swipe expects active Resume first, not the Journal button farther down"
+    "Home fixture explicitly clears the workout; upward swipe must display localized Quick workout first. No extra scrolling or weakened geometry checks."
   ],
   "scopeExcluded": [
     206,
@@ -70,5 +75,66 @@
     184,
     214
   ],
-  "releaseAssets": "Pending main build; artifacts listed above are premerge validation artifacts."
+  "releaseAssets": "Published and independently hashed from main workflow artifacts; hashes match GitHub release asset digests.",
+  "featureMerge": "2059770c0eadf9c9e66929635865861667404d41",
+  "releaseMerge": "98be66221430202715aafa9a71583bbbd22d4fd3",
+  "mainMergeTreeEqualsVerifiedHead": true,
+  "featureRoundUi": {
+    "run": 39231315228,
+    "artifact": 12177332092,
+    "tests": 183,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "mainWorkflows": {
+    "phone": 39233098299,
+    "wear": 39233098238,
+    "roundUi": 39233098292,
+    "quick": 39233098560,
+    "performance": 39233098199
+  },
+  "publishedRelease": {
+    "sourceCommit": "98be66221430202715aafa9a71583bbbd22d4fd3",
+    "version": "1.3.6",
+    "versionCode": 2733,
+    "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+    "phone": {
+      "tag": "v1.3.6",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.6/TrainPilot-1.3.6.apk",
+      "sha256": "4b3b2fd90b38912a7a51157ed18c337f361f5e3f5521df69d10a64697c4cc987",
+      "run": 39233098299,
+      "artifact": 12177889083,
+      "nativeTests": 243,
+      "uiShardsPassed": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "apkHashMatchesReleaseAssetDigest": true,
+      "sourceArchiveCommitVerified": true
+    },
+    "wear": {
+      "tag": "wear-v1.3.6",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.6/TrainPilot-1.3.6-wear.apk",
+      "sha256": "ac9d16066df7f63290bca20656bf883391e41bbd1399cde397b9292176233958",
+      "run": 39233098238,
+      "artifact": 12177508868,
+      "nativeTests": 159,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "apkHashMatchesReleaseAssetDigest": true,
+      "sourceMetadataCommitVerified": true
+    },
+    "roundUiEvidence": {
+      "verifiedIdenticalTreeRun": 39231317394,
+      "tests": 183,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "additionalAutomaticMainRun": 39233098292
+    },
+    "quick": 39233098560,
+    "performance": 39233098199
+  }
 }

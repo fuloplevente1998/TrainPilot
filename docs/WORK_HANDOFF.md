@@ -1,84 +1,76 @@
 # TrainPilot – aktuális átadás
 
 Frissítve: **2026-10-19**. Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
-A GitHub állapotát induláskor ellenőrizd; az alábbi eredmények pontos forráshoz tartoznak.
+GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
-## Aktív lezárás és 1.3.6 kiadás
+## #216 lezárva, 1.3.6 mainen
 
-A felhasználó: **„Rendben, akkor mehet, zarhatjuk ezt a teljes részt es akkor 1.3.6.lesz”**.
-Ez a #216 csomag lezárására/mainre emelésére és az **1.3.6 /2733** verzióra adott
-jóváhagyás. Nem állítunk ennél részletesebb fizikai tesztbeszámolót.
+Felhasználói engedély: **„Rendben, akkor mehet, zarhatjuk ezt a teljes részt es akkor 1.3.6.lesz”**.
+Ez lezárási/main/kiadási jóváhagyás; részletes fizikai tesztbeszámolót nem találunk ki.
 
-- #216 Wear menü, megjegyzett GPS-választás és gyakorlatváltást túlélő pihenő:
-  [PR #218](https://github.com/fuloplevente1998/TrainPilot/pull/218), fejlesztési head
-  `e66754eb24990d4d69c863cbb3e401b2de97845e`, main alap `d1da634`.
-- Végső alkalmazáskód `c04851f`; `509c5a3` és `885b6df` csak tesztjavítások.
-  Native rest tesztben valóban nyitott sorozatot célozunk; UI teszt a rendszer
-  nyelvéhez illeszkedő menüfeliratot és az utolsó, megerősítéses eldobást ellenőrzi.
-- Az eredeti pihenőhatáridő, automata rest fázis/cél/tulajdonos megmarad; navigáció
-  nem küld skipRest parancsot és nem indít másik sorozatmérést.
-- GPS-választás új kültéri gyors/tervezett edzés explicit indítása előtt,
-  aktivitásonként megjegyezve; reconnect/render nem indít rögzítést.
-  Futó edzésről közvetlen GPS-kezelés; új szövegek HU/EN/DE/RO.
-- #218 alatt a telefonos alkalmazásforrás változatlan, külön telefonos APK nem készült.
-  A **verzióváltáshoz már mindkét APK újraépül** a #219-ben.
-- [PR #219](https://github.com/fuloplevente1998/TrainPilot/pull/219),
-  `fix/release-1.3.6`, forrás `7b600e4ed0ce65549c53596de6a02390e8e326b2` (csak UI-teszt javult az eredeti `081d0164` kiadási forrás óta).
-  Metaadatok, mindkét Gradle-verzió, appfelirat, SW cache és régi verzióelvárások
-  1.3.6 /2733-ra frissítve. Funkciótesztek tartalma megmaradt.
-  Telefon/Wear kiadási jegyzet a megfelelő releases könyvtárban.
+- **#218 merged `2059770c0eadf9c9e66929635865861667404d41`; #216 completed.**
+  Órás menü: aktív edzés/Gyors edzés elöl; Naptár/Programnapok közös csoportban.
+  Új kültéri gyors/tervezett edzés előtt látható, aktivitásonként megjegyzett GPS-választás,
+  futó edzésről közvetlen állapot/kezelés. Reconnect/render nem indít rögzítést.
+  Kézi gyakorlatváltás megőrzi a pihenő eredeti határidejét és automata fázis/cél/tulajdonosát.
+  Telefonos működés és GPS-adatút megmaradt. HU/EN/DE/RO.
+- **#219 merged `98be66221430202715aafa9a71583bbbd22d4fd3`; 1.3.6 /2733.**
+  Mindkét app metaadatai és appfelirat, SW cache, verzióelvárások és kiadási jegyzetek frissítve.
+  Main teljes fája byteazonos a bevizsgált `76fa539` PR-head fájával:
+  `d0f5487aa3338369c879126b7d2ca15cbbd4e3b3`.
+- #216 alkalmazáskód `c04851f`; utána csak tesztjavítások. A home fixture törli az aktív edzést,
+  ezért a felfelé gesztus után **Gyors edzés** az első látható menügomb, nem Napló/Folytatás.
+  Az eredeti azonnali láthatósági, gesztus- és geometriai feltételek megmaradtak.
 
-## Ellenőrzések / APK
+## Ellenőrzött kiadási forrás
 
-- #218: Quick **39227738581**, Performance **39227738296**, Ownership **39227738309**,
-  Wear release **39227730964** sikeres. Kerek UI **39227730992** és **39229575006** piros egy régi menüelváráson;
-  a home fixture törli az aktív edzést, ezért az új sorrend első gombja Gyors edzés,
-  nem Mini napló és nem Folytatás. A végső javítás `e66754e` / `7b600e4`; teljes kör újrafut.
-- Korábbi azonos alkalmazásforrású XML: Wear **159/159**, Ownership **81/81**,
-  0 failure/error/skipped. Source `509c5a3`, PR merge `e504ad9` tree azonos:
-  `549ef2c42c95600661d22e0e98af44de13821e9d`.
-- Átadott Wear teszt APK **1.3.51 /2732**, `509c5a3`:
-  [GitHub artifact 12174690469](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39226908385/artifacts/12174690469).
-  SHA-256 `37d098c18b59e6aee442d2714ad2c8075674c9e485a22638f60759399281474c`.
-- Eredeti signer SHA-256: `4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688`.
-- **Belső /workspace APK-linket a felhasználó nem tudott letölteni.** GitHub artifact
-  permalinket adj (ZIP, benne APK), vagy a tényleges közzétett release APK linkjét.
-- #219 kapuk: telefon **39229121428**, Wear **39229120836**, kerek UI **39229121232**,
-  Quick **39229125646**, Performance **39229125667**, Ownership **39229125649**.
-  Quick/Performance már zöld; többi eredményt ellenőrizni kell. Helyben csak
-  metadata/backup-export/szintaxis/diff célzott ellenőrzés, mind sikeres.
+- Quick **39231417696**, Performance **39231417699**: sikeres (`76fa539`).
+- Telefon **39231412495**: Chromium **6/6**, JVM **243/243** (`76fa539`).
+- Wear **39231317332**: JVM **159/159** (`7b600e4`).
+- Ownership **39231417723**: **81/81**; kerek UI/platform **39231317394: 183/183**.
+- Minden vizsgált XML: **0 failure/error/skipped**. Külön #216 kerek UI
+  **39231315228: 183/183**; új GPS/pihenő/menü tesztek mind az öt kijelző/betűméreten.
+- `7b600e4..76fa539` csak AGENTS/átadás/bizonylat; alkalmazás- és tesztkód byteazonos.
+- Aláírás folytonos a nyilvános v1.0.0-val; signer SHA-256:
+  `4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688`.
+- [Bizonylat, APK-hashek és források](builds/2026-10-19-release-136.json).
 
-## Következő lépések
+## Végleges, publikált 1.3.6 APK-pár
 
-1. #218 kerek UI XML, majd jóváhagyott merge és #216 completed.
-2. #219 összes kapu, XML és aláírt APK ellenőrzése, majd jóváhagyott main merge.
-3. Main workflow kiadása: `v1.3.6` és `wear-v1.3.6`; forrás/signer/hash és
-   tényleges letöltések ellenőrzése, rövid eredmény a felhasználónak.
+Mindkét kiadás/tag forrása **`98be66221430202715aafa9a71583bbbd22d4fd3`**, 1.3.6 /2733:
+- [Telefon APK](https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.6/TrainPilot-1.3.6.apk),
+  SHA-256 `4b3b2fd90b38912a7a51157ed18c337f361f5e3f5521df69d10a64697c4cc987`.
+- [Wear APK](https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.6/TrainPilot-1.3.6-wear.apk),
+  SHA-256 `ac9d16066df7f63290bca20656bf883391e41bbd1399cde397b9292176233958`.
 
-## Lezárt előzmények és hátralévő backlog
+Main telefon **39233098299**: 6/6 UI, JVM XML 243/243; Wear **39233098238**: JVM XML 159/159;
+0 failure/error/skipped. Mindkét apksigner és eredeti signer-folytonosság sikeres.
+A letöltött main artifact APK-hashek egyeznek a nyilvános release asset digestjeivel,
+a telefonos forrásarchívum és Wear SOURCE_VERSION egyaránt `98be6622`-t igazol.
+Main Quick **39233098560**, Performance **39233098199** sikeres.
+Kerek UI **39233098292** további automatikus main futás; az azonos teljes forrásfa
+183/183 kapuja a fenti **39231317394** futáson XML-ben igazolt. Élő státuszát GitHubon ellenőrizd.
+A későbbi dokumentációs HEAD nem új alkalmazásbuild; a két APK tényleges forrása a fenti commit.
 
-- #193/#202: önálló órás GPS, offline átadás/visszavétel és telefonos naplótérkép
-  felhasználó által elfogadva; #213 main `311f507`, #193 completed.
-- #215 kompakt Intervallumok main `c67006b`, elfogadva. A kétoldali UI nem
-  engedélyez egyórás generikus motort, két pozitív idő kell a kész állapothoz.
-- #212 korona/lünetta: #217 main `102eb366`, készülékes elfogadás „Szuper zárhatjuk”.
-  Súly 0,5 kg / ismétlés 1 / idő 5 mp; stabil cél, Mentés/Mégse; nincs automentés.
-- #188 visszavonás és #189 folyamatos 3 mp feloldás elfogadva/mainen.
-- Telefonos GPS explicit sikeres „Mérés befejezése” külön sorozat-OK nélkül működik,
-  elfogadva; térképbezárás/hibás/implicit stop nem teljesítés.
-- Nyitott külön feladatok: **#206** maradék aktivitásnézet/UI; **#197** választható
-  edzésstílusok/progresszió; **#184** Samsung Energy Score; **#214** karbantartás/Play.
-  Ezeket az 1.3.6 nem zárja le. #192/#211 sztornózott, ne éleszd újra.
-- [Külső UI/funkció backlog](plans/UI_TEST_BRANCH_BACKLOG.md): csak rögzítésre
-  engedélyezve, megvalósítás még nem; később külön tesztág.
-- Részletes #193 terv: [P2_193_ONALLO_ORAS_EDZES.md](wear/P2_193_ONALLO_ORAS_EDZES.md).
-  Régi teljes átadás a Git-történetben `885b6df:docs/WORK_HANDOFF.md`;
-  történeti státuszai nem írják felül a jelen dokumentumot.
+## Külön maradó backlog / lezárt előzmények
 
-## Környezeti megjegyzés
+- **#206**: maradék aktivitásnézet/UI. Az explicit sikeres telefonos GPS „Mérés befejezése”
+  külön sorozat-OK nélkül már elfogadott; térképbezárás/hibás/implicit stop nem teljesítés.
+- **#197**: választható edzésstílusok/progresszió; **#184**: Samsung Energy Score;
+  **#214**: karbantartás/Play. Az 1.3.6 ezeket nem zárja le.
+- #193/#202 önálló órás GPS és telefonos naplótérkép + offline átadás/visszavétel elfogadva;
+  #213 main `311f507`, #193 completed. Az órán nincs térképrajzoló: az óra rögzít, a telefon rajzol.
+- #215 kompakt Intervallumok elfogadva/main `c67006b`; kétoldali UI nem engedélyez egyórás motort,
+  két pozitív idő kell a kész állapothoz. #212 korona/lünetta #217 main `102eb366`, elfogadva.
+- #188 visszavonás és #189 folyamatos 3 mp feloldás elfogadva/mainen. #192/#211 sztornózott.
+- [Külső UI/funkció backlog](plans/UI_TEST_BRANCH_BACKLOG.md): csak rögzítésre engedélyezve,
+  későbbi megvalósítás külön tesztágon. [Részletes #193 terv](wear/P2_193_ONALLO_ORAS_EDZES.md).
+- Régi hosszú átadás: `885b6df:docs/WORK_HANDOFF.md` a Git-történetben; történeti státuszai elavultak.
 
-CLI GitHub-auth lejárt (gh 401, git push/fetch credential nélkül), a GitHub connector
-működik. Ne kérj új login-t, ne írj ki credentialt. Tartalom API + Git tree/commit és
-expected_sha CAS használható. Helyi és távoli commitazonosítók eltérnek; helyi `ff68e68` = távoli `7b600e4` alkalmazás-/teszttartalom. Aktuális helyi ág
-`local-release-136`; a helyi feature ág is tartalmazza a release commitot, **ne pushold**
-a távoli #218-ra. Nincs force push/reset. A távoli PR-head a kanonikus.
+## Környezet
+
+CLI auth lejárt (gh 401, git fetch/push credential nélkül), GitHub connector működik.
+Ne írj ki credentialt, ne force-pusholj. Contents/Git tree/commit + expected_sha CAS használható.
+Helyi `local-release-136` más commitazonosítókat tartalmaz, alkalmazásforrás azonos; **ne pushold
+vakon a helyi feature ágat**. A távoli main/PR-head a kanonikus. APK-hoz GitHub artifact permalink
+(ZIP, benne APK) vagy valódi release letöltés kell, belső /workspace link nem használható.
