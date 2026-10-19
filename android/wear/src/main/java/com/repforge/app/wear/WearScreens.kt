@@ -203,7 +203,9 @@ internal fun TrainPilotWearApp(
                 }
                 "gpsStart216" -> { pendingGps216=null;gpsBack216 }
                 "gpsRoute193" -> "workout"
-                "planned216" -> "menu"
+                "planned216", "quick", "ownership193" -> "menu"
+                "calendar" -> "planned216"
+                "days" -> daysBack216
                 "save-sync" -> syncBackRoute
                 "journal-detail" -> miniJournalBackRoute
                 "journal" -> journalBackRoute
@@ -338,7 +340,7 @@ internal fun TrainPilotWearApp(
                             active == null &&
                                 home.value?.hasDraft == false &&
                                 closure.value?.status !in listOf("pending", "error"),
-                            onBack = { route = "menu" },
+                            onBack = { route = "planned216" },
                         ) { entry ->
                             entry.day?.let {
                                 startWithGps216(it.exercises.firstOrNull()) {onStart(it, entry.scheduleId)}
