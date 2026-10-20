@@ -61,7 +61,11 @@ const server=http.createServer((req,res)=>{
   for(const width of [320,393])for(const lang of ['hu','en','de','ro']){
    await page.setViewportSize({width,height:800});
    await page.evaluate(lang=>{db.set('language',lang);go('history');},lang);
-   assert.equal(await badge.count(),1);assert.ok((await badge.boundingBox()).height>=44);
+   assert.equal(await badge.count(),1);
+   assert.equal(await card.evaluate(x=>x.open),false,'Localized workout starts collapsed');
+   await card.locator(':scope > summary .history-title').click();
+   assert.equal(await detail.isVisible(),false,'Opening workout alone keeps PR details hidden');
+   assert.ok((await badge.boundingBox()).height>=44);
    await badge.click();assert.equal(await detail.count(),1);
    const large=await page.addStyleTag({content:'.tp226-pr-badge,.tp226-pr-details{font-size:150%!important}'});
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'Localized large text stays within '+width);
