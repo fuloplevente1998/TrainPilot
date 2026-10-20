@@ -25,7 +25,12 @@ test('unchanged metadata is allowed; partial bumps and rollback are rejected', (
   assert.throws(() => transition({version: '1.3.7', code: 2734}, {version: '1.3.6', code: 2735}));
 });
 test('phone, Wear and candidate tags have explicit identities', () => {
-  const current = {version: '1.3.7', code: 2734};
-  for (const tag of ['v1.3.7', 'wear-v1.3.7', 'candidate-1.3.7-2734']) checkTag(tag, current);
-  for (const tag of ['v1.3.6', 'wear-v1.3.6', 'candidate-1.3.7-2733']) assert.throws(() => checkTag(tag, current));
+  const current = {version: '1.3.71', code: 2735};
+  for (const tag of ['v1.3.71', 'wear-v1.3.71', 'candidate-1.3.71-2735']) checkTag(tag, current);
+  for (const tag of ['v1.3.6', 'wear-v1.3.6', 'candidate-1.3.71-2733']) assert.throws(() => checkTag(tag, current));
+});
+
+test('approved 1.3.71 release increases both version and Android code', () => {
+  transition({version: '1.3.7', code: 2734}, {version: '1.3.71', code: 2735});
+  assert.throws(() => transition({version: '1.3.7', code: 2734}, {version: '1.3.71', code: 2734}));
 });

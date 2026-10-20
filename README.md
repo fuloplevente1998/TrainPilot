@@ -6,6 +6,8 @@ Workout planning and logging for Android and Wear OS, with optional health data,
 
 ## Downloads and source status
 
+Approved release candidate: **1.3.71 /2735**, #234. Phone/Wear release gates must pass before main merge and publication. [Release notes](docs/releases/v1.3.71.md).
+
 | Stable release, verified 20 October 2026 | Version | Source |
 | --- | --- | --- |
 | Published APKs: [phone](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.7) and [Wear OS](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.7) | **1.3.7 /2734** | Merged #230, main `8a58f3a`. Both signed independent release gates passed. |

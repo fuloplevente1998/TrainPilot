@@ -3,7 +3,7 @@ const app=fs.readFileSync('www/app.js','utf8'),index=fs.readFileSync('www/index.
 const pkg=require('../package.json'),meta=require('../SOURCE_VERSION.json');
 const gradle=fs.readFileSync('android/app/build.gradle','utf8'),sw=fs.readFileSync('www/sw.js','utf8');
 assert.equal(meta.version,pkg.version);assert.equal(meta.displayVersion,pkg.version);assert.ok(Number.isSafeInteger(meta.versionCode)&&meta.versionCode>0);
-assert.match(gradle,new RegExp('versionCode\\s+'+meta.versionCode+'\\b'));assert.ok(gradle.includes('versionName "'+pkg.version+'"'));assert.match(sw,/trainpilot-v136/);
+assert.match(gradle,new RegExp('versionCode\\s+'+meta.versionCode+'\\b'));assert.ok(gradle.includes('versionName "'+pkg.version+'"'));assert.match(sw,/trainpilot-v1371/);
 assert.deepEqual([...index.matchAll(/<script[^>]*src="([^"]+)"/g)].map(m=>m[1]),['app.js']);
 assert.equal(fs.readFileSync('www/runtime-manifest.txt','utf8').trim(),'app.js');
 assert.ok(app.includes("const TP120_VERSION='1.2.0'"),'1.2 clean runtime marker missing');
