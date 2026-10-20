@@ -28,8 +28,10 @@ const server=http.createServer((req,res)=>{
   await globalPicker.locator('button').last().click();
   assert.equal(await page.locator('#tp197-mode-global-style').inputValue(),'hit');
   assert.equal(await globalPicker.evaluate(el=>el.open),false,'Choice closes inline dropdown');
-  await page.locator('#tp197-mode-global-style').selectOption('hit');
-  await page.locator('#tp197-mode-global-progress').selectOption('rir');
+  // Actual user selection already happened via the inline menu above.
+  const globalProgress=page.locator('#tp197-mode-global .tp197-choice[data-field="progressionMode"]');
+  await globalProgress.locator('summary').click();
+  await globalProgress.locator('button[data-value="rir"]').click();
   assert.equal(await page.locator('#tp197-mode-global-style').inputValue(),'hit');
   assert.equal(await page.locator('#tp197-mode-global-progress').inputValue(),'rir');
   assert.equal(await page.locator('#tp197-mode-global .tp197-ui-preview').count(),1);
@@ -55,7 +57,7 @@ const server=http.createServer((req,res)=>{
   await programPicker.locator('button').last().click();
   assert.equal(await page.locator('.tp1511-training').evaluate(el=>el.open),true,'Workout panel stays open');
   assert.equal(await page.locator('#tp197-mode-program').evaluate(el=>el.open),true,'Mode panel stays open');
-  await page.locator('#tp197-mode-program-style').selectOption('hit');
+  // The custom menu already selected HIT without invoking any native picker.
   assert.equal(await page.locator('#tp197-mode-program-style').inputValue(),'hit');
   const after=await page.evaluate(()=>JSON.stringify([settings(),programs(),history(),db.get('draft',null)]));
   assert.equal(after,saved,'UI preview changed persisted settings/program/history/draft');
