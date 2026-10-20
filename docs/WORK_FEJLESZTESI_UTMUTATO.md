@@ -1,3 +1,5 @@
+> **TÖRTÉNETI ÁTADÁS – NEM AKTUÁLIS ÁLLAPOT (2026-10-20).** Ez a dokumentum az 1.3.4-es fejlesztési pillanatképet őrzi. Aktuális main: **1.3.7 /2734**, [friss munkaátadás](WORK_HANDOFF.md), [repo-takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md). Ne indíts új fejlesztést a lentebb említett régi commitról vagy ágról.
+
 # TrainPilot — fejlesztés folytatása Workban
 
 ## Aktuális állapot — #158 elfogadva, #159 megvalósítva

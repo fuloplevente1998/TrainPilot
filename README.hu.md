@@ -6,12 +6,12 @@ Edzéstervezés és naplózás Androidon és Wear OS-en, opcionális egészséga
 
 ## Letöltés és aktuális forrás
 
-| Állapot, ellenőrizve: 2026. október 20. | Verzió | Forrás |
+| Stabil kiadás, ellenőrizve: 2026. október 20. | Verzió | Forrás |
 | --- | --- | --- |
-| Legutóbb közzétett GitHub APK: [telefon](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.6) és [Wear OS](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.6) | 1.3.6 /2733 | `98be662`, október 19. [Kiadási bizonylat](docs/builds/2026-10-19-release-136.json). |
-| Elfogadott main a #222 után: Samsung energiapontszám és RIR/Coach | 1.3.6 /2733 | Alkalmazásforrás: `c14e707`. [Elfogadási bizonylat](docs/builds/2026-10-20-222-accepted.json). |
+| Közzétett APK: [telefon](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.7) és [Wear OS](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.7) | **1.3.7 /2734** | #230 main-egyesítés `8a58f3a`, mindkét független aláírt Release Gate sikeres. |
+| Korábbi közzétett verzió | 1.3.6 /2733 | [Történeti kiadási jegyzetek](docs/releases/v1.3.6.md). |
 
-**Az október 19-i publikált APK-k nem tartalmazzák a későbbi #222 javításait.** Az elfogadott [telefonos teszt-APK](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39440372153/artifacts/12273816379) külön Actions artifact, amely lejárhat. A Wear változatlan. A #222 merge nem emelt verziót és nem hozott létre új publikus release-t.
+Az 1.3.7 tartalmazza a korábban elfogadott Samsung/Coach-javításokat, a Napló-alapú automatikus súly- és ismétlés-előtöltést (tervezett és gyors edzés), a PR-jelvényt, a sorozathaptikát és a tényleges sorozatonkénti RIR-t. Részletek: [kiadási jegyzet](docs/releases/v1.3.7.md) · [repository-takarítás szabályzata](docs/REPOSITORY_CLEANUP_POLICY.md).
 
 A telefonos APK a telefonra, a Wear APK az órára való. Frissítéskor őrizd meg az alkalmazás adatait. A forrás, ellenőrzőösszeg és buildadat mindig az adott kiadáshoz tartozik; régi verzió választása előtt nézd meg a [jegyzéket](docs/releases/INDEX.md). A Play-megjelenés előkészítése a [#214](https://github.com/fuloplevente1998/TrainPilot/issues/214) része.
 

@@ -1,0 +1,117 @@
+name: Repository cleanup audit and controlled pruning
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/repository-cleanup.yml'
+      - 'scripts/repository_cleanup.py'
+      - 'tests/repository_cleanup_test.py'
+      - 'docs/REPOSITORY_CLEANUP_POLICY.md'
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Delete audited expired items (false = read-only report)'
+        required: true
+        default: false
+        type: boolean
+      confirmation:
+        description: 'For deletion, type DELETE_OBSOLETE_TRAINPILOT_DATA'
+        required: false
+        type: string
+        default: ''
+      runs_days:
+        description: 'Retain workflow runs at least this many days (min 7)'
+        default: '14'
+        required: true
+        type: string
+      caches_days:
+        description: 'Retain cache entries last used this many days (min 3)'
+        default: '7'
+        required: true
+        type: string
+      branches_days:
+        description: 'Retain merged branches this many days after merge (min 7)'
+        default: '7'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trainpilot-repository-cleanup
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    if: github.repository == 'fuloplevente1998/TrainPilot'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate pruning safeguards
+        run: python3 -m unittest discover -s tests -p 'repository_cleanup_test.py'
+      - name: Read-only inventory and deletion proposal
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUNS_DAYS: ${{ inputs.runs_days || '14' }}
+          CACHES_DAYS: ${{ inputs.caches_days || '7' }}
+          BRANCHES_DAYS: ${{ inputs.branches_days || '7' }}
+        run: |
+          python3 scripts/repository_cleanup.py --runs-days "$RUNS_DAYS" \
+            --caches-days "$CACHES_DAYS" --branches-days "$BRANCHES_DAYS" \
+            --output ui-results/repository-cleanup-audit.json
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          r=json.load(open('ui-results/repository-cleanup-audit.json'))
+          print('## TrainPilot repository cleanup – dry run')
+          print('Inventory:',r['inventory'])
+          print('Eligible:',{k:len(v) for k,v in r['candidates'].items()})
+          print('Unmerged or diverged branches retained:',len(r['manual_review_branches']))
+          print('Nothing deleted. Releases, release tags, open PRs and main are preserved.')
+          PY
+      - uses: actions/upload-artifact@v7
+        with:
+          name: TrainPilot-cleanup-audit-${{ github.run_id }}
+          path: ui-results/repository-cleanup-audit.json
+          if-no-files-found: error
+          retention-days: 14
+
+  apply:
+    needs: audit
+    if: >
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      inputs.apply == true &&
+      inputs.confirmation == 'DELETE_OBSOLETE_TRAINPILOT_DATA'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Re-audit and apply bounded cleanup (max 300 deletions per dispatch)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CONFIRM: ${{ inputs.confirmation }}
+          RUNS_DAYS: ${{ inputs.runs_days }}
+          CACHES_DAYS: ${{ inputs.caches_days }}
+          BRANCHES_DAYS: ${{ inputs.branches_days }}
+        run: |
+          python3 scripts/repository_cleanup.py --apply --confirmation "$CONFIRM" \
+            --runs-days "$RUNS_DAYS" --caches-days "$CACHES_DAYS" \
+            --branches-days "$BRANCHES_DAYS" --max-deletes 300 \
+            --output ui-results/repository-cleanup-applied.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: TrainPilot-cleanup-applied-${{ github.run_id }}
+          path: ui-results/repository-cleanup-applied.json
+          if-no-files-found: warn
+          retention-days: 30
