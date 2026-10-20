@@ -1,5 +1,7 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const app=fs.readFileSync('www/app.js','utf8');
+const prefill=(fs.existsSync('www/v12.js')?fs.readFileSync('www/v12.js','utf8'):app).split('// @prefill228-start\n')[1].split('// @prefill228-end')[0];
+
 const source=fs.existsSync('www/wear-sync.js')?fs.readFileSync('www/wear-sync.js','utf8'):
  app.match(/\/\/ @section wear-sync\.js\n([\s\S]*?)\/\/ @endsection wear-sync\.js/)[1];
 const id='2026-10-09T19:10:00.000Z';
@@ -53,7 +55,7 @@ function harness({draft=false}={}){
    db.set('draft',null);state.session=null;state.workout=null;
   }
  });
- vm.runInContext(source,context);
+ vm.runInContext(prefill+'\n'+source,context);
  return {state,db,pending,acks,sync:window.TrainPilotWearSync,stats:()=>({saved,starts,added})};
 }
 const command=(action,commandId,rest={})=>({schema:1,commandId,action,workoutId:id,createdAt:Date.now(),...rest});

@@ -418,5 +418,9 @@
   {
     "file": "tests/browser/training-actual-rir-197.cjs",
     "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/workout-features-227-229.cjs",
+    "estimatedSeconds": 28
   }
 ]

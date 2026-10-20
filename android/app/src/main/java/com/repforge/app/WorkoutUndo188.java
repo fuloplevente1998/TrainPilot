@@ -56,6 +56,7 @@ final class WorkoutUndo188 {
             ||!same(last.getJSONArray("expected"),guard(frame))||!same(command.optJSONArray("expected"),guard(frame)))throw new IllegalArgumentException("undoConflict");
         JSONObject next=new JSONObject(frame.toString()),set=find(next,last),before=last.getJSONObject("before");
         for(String key:new String[]{"done","reps","weight","leftSeconds","rightSeconds","distanceMeters"})set.put(key,before.get(key));
+        set.remove("actualRir");
         JSONArray exercises=next.getJSONArray("exercises");for(int e=0;e<exercises.length();e++)if(exercises.getJSONObject(e).getString("id").equals(last.getString("exerciseId")))next.put("currentExercise",e);
         next.put("restEndAt",0).put("executionRevision",PhoneWorkoutRecording.advance(frame.getLong("executionRevision")));
         next.remove("lastRecord188");next.remove("manualAnchor162");

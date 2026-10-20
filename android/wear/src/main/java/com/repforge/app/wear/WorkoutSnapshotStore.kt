@@ -12,7 +12,8 @@ data class WearSet(
     val leftSeconds: Int,
     val rightSeconds: Int,
     val distanceMeters: Double,
-    val setId: String = ""
+    val setId: String = "",
+    val actualRir: Int? = null
 )
 
 data class WearExercise(
@@ -22,7 +23,9 @@ data class WearExercise(
     val repUnit: String,
     val measurementType: String,
     val sets: List<WearSet>,
-    val targetReps: String = ""
+    val targetReps: String = "",
+    val actualRir: Int? = null,
+    val setRir229: Boolean = false
 )
 
 data class WearWorkout(
@@ -85,6 +88,13 @@ data class WearWorkout(
     /** Explicit navigation preserves all measurements and completion flags. */
     fun selectExercise(index: Int): WearWorkout = if (index !in exercises.indices || index == currentExercise) this
         else copy(currentExercise = index)
+}
+
+/** Missing is distinct from zero; targets are never observations. */
+private fun actualRir229(data: JSONObject): Int? {
+    val value = data.opt("actualRir") as? Number ?: return null
+    val number = value.toDouble()
+    return if (number.isFinite() && number in 0.0..10.0 && number == number.toInt().toDouble()) number.toInt() else null
 }
 
 object WorkoutSnapshotStore {
@@ -196,7 +206,8 @@ object WorkoutSnapshotStore {
                                     leftSeconds = set.optInt("leftSeconds", 0),
                                     rightSeconds = set.optInt("rightSeconds", 0),
                                     distanceMeters = set.optDouble("distanceMeters", 0.0),
-                                    setId = set.optString("setId")
+                                    setId = set.optString("setId"),
+                                    actualRir = actualRir229(set)
                                 )
                             )
                         }
@@ -209,7 +220,9 @@ object WorkoutSnapshotStore {
                             repUnit = exercise.optString("repUnit"),
                             measurementType = exercise.optString("measurementType"),
                             sets = sets,
-                            targetReps = exercise.optString("targetReps")
+                            targetReps = exercise.optString("targetReps"),
+                            actualRir = actualRir229(exercise),
+                            setRir229 = exercise.optBoolean("setRir229", false)
                         )
                     )
                 }
@@ -304,6 +317,7 @@ object WorkoutSnapshotStore {
                         .put("rightSeconds", set.rightSeconds)
                         .put("distanceMeters", set.distanceMeters)
                         .put("setId",set.setId)
+                        .apply { set.actualRir?.takeIf { it in 0..10 }?.let { put("actualRir",it) } }
                 )
             }
             exercises.put(
@@ -315,6 +329,8 @@ object WorkoutSnapshotStore {
                     .put("measurementType", exercise.measurementType)
                     .put("targetReps", exercise.targetReps)
                     .put("sets", sets)
+                    .put("setRir229",exercise.setRir229)
+                    .apply { exercise.actualRir?.takeIf { it in 0..10 }?.let { put("actualRir",it) } }
             )
         }
         return root.put("exercises", exercises)

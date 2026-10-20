@@ -7,6 +7,6 @@ assert.ok(app.includes("'Stop és rögzítés'"));
 assert.ok(app.includes("hero.insertAdjacentElement('afterend',card)"));
 assert.ok(app.includes("replaceAll('Progresszív terhelés 2.0','Progresszív edzés')"));
 assert.ok((java.match(/getBridge\(\)\.executeOnMainThread/g)||[]).length>=2);
-assert.equal(pkg.version,'1.3.6');assert.equal(src.version,'1.3.6');assert.equal(src.versionCode,2733);
-assert.match(gradle,/versionCode\s+2733/);assert.match(gradle,/versionName\s+"1\.3\.6"/);
+assert.equal(pkg.version,src.version);assert.equal(src.version,pkg.version);assert.ok(Number.isSafeInteger(src.versionCode)&&src.versionCode>0);
+assert.match(gradle,new RegExp('versionCode\\s+'+src.versionCode+'\\b'));assert.ok(gradle.includes('versionName "'+pkg.version+'"'));
 console.log('PASS TrainPilot 1.4.2 photo launch, stopwatch GUI and wording guards');

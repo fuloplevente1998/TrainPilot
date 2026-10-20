@@ -56,7 +56,7 @@ object WearUndo188 {
             WearAutomaticEngine.tick(current,now,boot).workout else current
         if(!same(r.getJSONArray("expected"),guard(timed)))return null
         val old=timed.exercises[e].sets[s]
-        val restored=old.copy(done=false,reps=before.optString("reps"),weight=before.optString("weight"),
+        val restored=old.copy(done=false,actualRir=null,reps=before.optString("reps"),weight=before.optString("weight"),
             leftSeconds=before.optInt("leftSeconds"),rightSeconds=before.optInt("rightSeconds"),distanceMeters=before.optDouble("distanceMeters",0.0))
         val next=timed.copy(currentExercise=e,restEndAt=0,lastRecord188=null,
             exercises=timed.exercises.mapIndexed { i,ex -> if(i!=e)ex else ex.copy(sets=ex.sets.mapIndexed { j,set -> if(j==s)restored else set }) },

@@ -44,3 +44,14 @@ assert.equal(se.sets[1].weight,12);
 assert.equal(saves,1,'Exactly one draft persistence');
 assert.ok(paints>=2);
 console.log('PASS #197 legacy isolation, explainable proposal and explicit owner-safe load approval');
+
+const canonical=fs.readFileSync('www/app.js','utf8');
+const prefillSource=(fs.existsSync('www/v12.js')?fs.readFileSync('www/v12.js','utf8'):canonical).split('// @prefill228-start\n')[1].split('// @prefill228-end')[0];
+vm.runInContext(prefillSource,ctx);
+se.sets.forEach(s=>{s.weight=10;s.reps='10';s.previousValues228={weight:10,reps:'10'};});
+assert.equal(ctx.tp197CoachAllowed(ctx.state.session,se,info),true,'Untouched historical defaults allow explicit Coach approval');
+se.sets[0].reps='9';
+assert.equal(ctx.tp197CoachAllowed(ctx.state.session,se,info),false,'Manual rep edit remains protected');
+se.sets[0].reps='10';se.sets[0].weight=11;
+assert.equal(ctx.tp197CoachAllowed(ctx.state.session,se,info),false,'Manual load edit remains protected');
+console.log('PASS #228 Coach distinguishes editable history defaults from manual edits');

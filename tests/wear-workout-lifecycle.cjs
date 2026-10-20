@@ -1,5 +1,7 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const app=fs.readFileSync('www/app.js','utf8');
+const prefill=(fs.existsSync('www/v12.js')?fs.readFileSync('www/v12.js','utf8'):app).split('// @prefill228-start\n')[1].split('// @prefill228-end')[0];
+
 const source=fs.existsSync('www/wear-sync.js')?fs.readFileSync('www/wear-sync.js','utf8'):app.match(/\/\/ @section wear-sync\.js\n([\s\S]*?)\/\/ @endsection wear-sync\.js/)[1];
 function harness({normalize=false,ackFailures=0}={}){
  const storage=new Map(),acks=[],ackResults=[],pending=[];let savedCalls=0;
@@ -17,7 +19,7 @@ function harness({normalize=false,ackFailures=0}={}){
  });
  const undoSource=fs.existsSync('www/workout-undo-188.js')?fs.readFileSync('www/workout-undo-188.js','utf8'):app.match(/\/\/ @section workout-undo-188\.js\n([\s\S]*?)\/\/ @endsection workout-undo-188\.js/)[1];
  const ownership=fs.existsSync('www/workout-ownership-193.js')?fs.readFileSync('www/workout-ownership-193.js','utf8'):app.match(/\/\/ @section workout-ownership-193\.js\n([\s\S]*?)\/\/ @endsection workout-ownership-193\.js/)[1];
- vm.runInContext(undoSource,ctx);vm.runInContext(ownership,ctx);vm.runInContext(source,ctx);
+ vm.runInContext(undoSource,ctx);vm.runInContext(ownership,ctx);vm.runInContext(prefill+'\n'+source,ctx);
  return {state,db,pending,acks,ackResults,undo:window.TrainPilotUndo188,sync:window.TrainPilotWearSync,session,savedCalls:()=>savedCalls};
 }
 const finish=(id='finish')=>({commandId:id,workoutId:'2026-10-07T08:00:00.000Z',action:'finishWorkout',confirmed:true,createdAt:30,sequence:3,finishedAt:'2026-10-07T08:42:16.000Z'});

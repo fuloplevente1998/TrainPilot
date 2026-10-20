@@ -5,7 +5,8 @@ import org.json.JSONObject
 
 data class WatchHomeSet(
     val number: Int,
-    val weight: String
+    val weight: String,
+    val reps: String = ""
 )
 
 data class WatchHomeExercise(
@@ -66,7 +67,8 @@ data class WatchHomeSnapshot(
         measurementType = exercise.measurementType,
         targetReps = exercise.targetReps,
         sets = exercise.sets.map { set ->
-            WearSet(number = set.number, reps = "", weight = set.weight, done = false,
+            WearSet(number = set.number, reps = if (exercise.measurementType !in listOf("distance", "time", "gps") &&
+                exercise.repUnit in listOf("", "ism.", "reps", "/kar", "/láb")) set.reps else "", weight = set.weight, done = false,
                 leftSeconds = 0, rightSeconds = 0, distanceMeters = 0.0,setId=java.util.UUID.randomUUID().toString())
         }
     )
@@ -206,7 +208,10 @@ object WatchHomeStore {
                 val sets = buildList {
                     if (setArray != null) for (j in 0 until setArray.length()) {
                         val set = setArray.optJSONObject(j) ?: continue
-                        add(WatchHomeSet(set.optInt("set", j + 1), set.opt("weight")?.toString().orEmpty()))
+                        val reps = set.optString("reps").takeIf { value ->
+                            value.matches(Regex("[0-9]+")) && (value.toIntOrNull() ?: 0) in 1..10000
+                        }.orEmpty()
+                        add(WatchHomeSet(set.optInt("set", j + 1), set.opt("weight")?.toString().orEmpty(), reps))
                     }
                 }
                 add(

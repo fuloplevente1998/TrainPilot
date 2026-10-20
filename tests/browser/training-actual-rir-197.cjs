@@ -45,15 +45,15 @@ const server=http.createServer((req,res)=>{
    await page.locator('details.history').first().evaluate(node=>node.open=true);
   }
   await begin();await completeSet();
-  await choose('0');assert.equal(await page.evaluate(()=>db.get('draft',null).session.exercises[0].actualRir),0);
-  await choose('');assert.equal(await page.evaluate(()=>Object.hasOwn(db.get('draft',null).session.exercises[0],'actualRir')),false);
+  await choose('0');assert.equal(await page.evaluate(()=>db.get('draft',null).session.exercises[0].sets[0].actualRir),0);
+  await choose('');assert.equal(await page.evaluate(()=>Object.hasOwn(db.get('draft',null).session.exercises[0].sets[0],'actualRir')),false);
   await choose('6');
   await page.reload();await boot();
   await page.evaluate(()=>{if(!state.session)resumeDraft();else renderWorkout();});
   await page.waitForSelector('#tp197ActualRir',{state:'attached'});
   assert.equal(await page.locator('#tp197ActualRir').inputValue(),'6','Draft restored after a real page reload');
   await finish();
-  assert.equal(await page.evaluate(()=>history()[0].exercises[0].actualRir),6,'Actual RIR survives workout finalization');
+  assert.equal(await page.evaluate(()=>history()[0].exercises[0].sets[0].actualRir),6,'Actual RIR survives workout finalization');
   assert.match(await page.locator('details.history .tp197-rir-history').first().innerText(),/Tényleges RIR.*6/);
   await page.reload();await boot();
   const first=await page.evaluate(()=>tp197ExercisePreview('goblet-squat','rir-e2e'));

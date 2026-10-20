@@ -48,6 +48,11 @@ final class PhoneWorkoutRecording {
                 JSONObject set = sets.getJSONObject(j);
                 if (!ids.add(id(set, "setId"))) throw new IllegalArgumentException("duplicateSetIdentity");
                 if (!(set.opt("done") instanceof Boolean)) throw new IllegalArgumentException("invalidSetState");
+                Object rir = set.opt("actualRir");
+                if (rir != null && rir != JSONObject.NULL && (!(rir instanceof Number)
+                        || !Double.isFinite(((Number) rir).doubleValue()) || ((Number) rir).doubleValue() < 0
+                        || ((Number) rir).doubleValue() > 10 || ((Number) rir).doubleValue() != ((Number) rir).intValue()))
+                    throw new IllegalArgumentException("invalidActualRir");
             }
         }
     }

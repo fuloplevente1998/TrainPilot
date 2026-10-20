@@ -21,9 +21,11 @@ test('unchanged metadata is allowed; partial bumps and rollback are rejected', (
   assert.throws(() => transition(old, {version: '1.3.7', code: 2733}));
   assert.throws(() => transition(old, {version: '1.3.6', code: 2734}));
   assert.throws(() => transition(old, {version: '1.3.5', code: 2734}));
+  transition({version: '1.3.7', code: 2734}, {version: '1.3.7', code: 2734});
+  assert.throws(() => transition({version: '1.3.7', code: 2734}, {version: '1.3.6', code: 2735}));
 });
 test('phone, Wear and candidate tags have explicit identities', () => {
-  const current = {version: '1.3.6', code: 2733};
-  for (const tag of ['v1.3.6', 'wear-v1.3.6', 'candidate-1.3.6-2733']) checkTag(tag, current);
-  for (const tag of ['v1.3.5', 'wear-v1.3.7', 'candidate-1.3.6-2732']) assert.throws(() => checkTag(tag, current));
+  const current = {version: '1.3.7', code: 2734};
+  for (const tag of ['v1.3.7', 'wear-v1.3.7', 'candidate-1.3.7-2734']) checkTag(tag, current);
+  for (const tag of ['v1.3.6', 'wear-v1.3.6', 'candidate-1.3.7-2733']) assert.throws(() => checkTag(tag, current));
 });

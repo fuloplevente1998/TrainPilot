@@ -281,4 +281,30 @@ public class PhoneWorkoutExecutionStoreTest {
         set(edit,1,0).put("reps","2");store.prepare(edit,edit.getLong("executionRevision"));
         assertEquals("undoConflict",store.undo(fresh).getString("reason"));assertTrue(set(store.snapshot(),0,1).getBoolean("done"));
     }
+
+    @Test public void perSetRir229SurvivesPrepareReopenAndUndoClearsOnlyUndoneObservation() throws Exception {
+        JSONObject result=store.record(command("rir-record","a"));
+        assertTrue(store.acknowledgeEvents("workout",1,result.getLong("sequence")));
+        JSONObject incoming=store.snapshot();
+        set(incoming,0,0).put("actualRir",0);
+        incoming.getJSONArray("exercises").getJSONObject(0).put("actualRir",8).put("setRir229",true);
+        store.prepare(incoming,incoming.getLong("executionRevision"));
+        store.close();store=new PhoneWorkoutExecutionStore(context);
+        assertEquals(0,set(store.snapshot(),0,0).getInt("actualRir"));
+        assertFalse(set(store.snapshot(),0,1).has("actualRir"));
+        assertEquals("applied",store.undo(undo188("rir-undo")).getString("status"));
+        assertFalse(set(store.snapshot(),0,0).getBoolean("done"));
+        assertFalse(set(store.snapshot(),0,0).has("actualRir"));
+        assertEquals(8,store.snapshot().getJSONArray("exercises").getJSONObject(0).getInt("actualRir"));
+        assertTrue(store.snapshot().getJSONArray("exercises").getJSONObject(0).getBoolean("setRir229"));
+    }
+
+    @Test public void perSetRir229RejectsInvalidValuesWithoutChangingSnapshot() throws Exception {
+        for(Object value:new Object[]{-1,11,2.5,"0","bad"}) {
+            JSONObject incoming=store.snapshot();set(incoming,0,0).put("actualRir",value);
+            String before=store.snapshot().toString();
+            assertThrows(IllegalArgumentException.class,()->store.prepare(incoming,incoming.getLong("executionRevision")));
+            assertEquals(before,store.snapshot().toString());
+        }
+    }
 }
