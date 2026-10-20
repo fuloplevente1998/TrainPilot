@@ -7,11 +7,11 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
 - Ág: `feat/workout-records-feedback-rir`; verzió **1.3.6 /2733**. [Terv](plans/WORKOUT_FEEDBACK_AND_RECORDS.md).
 - #226 PR-jelvény, #227 kézi sorozat-haptika és #229 sorozatonkénti tényleges RIR implementálva. A korábbi `bd5c0dc` forrás kapui sikeresek; készülékes elfogadás nincs.
-- **Új #228 követelmény:** a következő A nap a legutóbbi azonos program A nap súly-/ismétlésadataival induljon automatikusan; külön másolásgomb nélkül. Kód és modell/UI/Wear teszt frissítve, az aktuális commit Actions-eredményét ellenőrizni kell.
+- **#228 végleges kiterjesztés:** *minden* erősítő gyakorlat azonosító alapján, programnaptól és edzésmódtól függetlenül a Napló legutóbbi érvényes súly-/ismétlésadataival induljon; tervezett, gyors és Wear edzésekhez egyaránt. Nincs külön másolásgomb. A módosított forrás friss Actions + készülékes elfogadása még hátravan.
 - Aktuális terv sorozatszáma, friss azonosítók, üres teljesítettség/RIR; draft és kézi szerkesztés nem írható felül. Órás programnapsablon is átadja az ismétléseket.
 - Automatizálási UI-elv rögzítve: ismétlődő engedélyezett műveletek automatikusak. A Health meglévő appnyitási/előtéri szinkronja feltárva; teljes Health-UI átdolgozás nem része ennek a commitnak.
 - Helyben nincs shell: V8 szintaxis és célzott tiszta modell/Coach-guard sikeres. Teljes böngészős, natív és APK-kapuk Actionsben. Az új forrásra a régi zöld CI nem bizonyíték.
-- Következő: friss kapuk → azonos forrású APK-pár → A nap mentése/új A nap előtöltése + telefon/óra próba. **Main csak az új build felhasználói validálása után**; nincs verzióemelés/merge/release/issue-lezárás.
+- Következő: friss kapuk → azonos forrású APK-pár → Napló→másik programnap / gyors edzés / óra súly- és ismétlés-előtöltési próba. **Main csak az új build felhasználói validálása után**; nincs verzióemelés/merge/release/issue-lezárás.
 
 ## Aktuális – #223 mainen, #214 külső előkészítése nyitott
 

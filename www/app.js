@@ -653,38 +653,55 @@ if(!window.TrainPilotBoot?.loading)initCloud();
 
 // @section v12.js
 // @prefill228-start
-/* #228: repeat the latest saved occurrence of this program day, before first persistence.
- * Values are editable suggestions; no completion, RIR or measurement is inherited. */
+/* #228: Edit-friendly values from the latest valid *journal exercise*, even when the
+ * exercise was last performed on another day, in another program or as a quick workout.
+ * Never transfer completion, RIR, timer, GPS or owner/protocol metadata. */
 var tp228Strength=function(exercise){
  const unit=String(exercise?.repUnit||'');
  return !!exercise&&!['distance','time','gps'].includes(String(exercise.measurementType||'').toLowerCase())&&
   ['', 'ism.','reps','/kar','/láb'].includes(unit);
 };
-var tp228Latest=function(rows,context,isDeleted){
- if(!context?.programId||!context?.dayId)return null;
+var tp228SetValue=function(old){
+ if(!old||old.done!==true||Number(old.leftSeconds)>0||Number(old.rightSeconds)>0||
+  Number(old.distanceMeters)>0)return null;
+ const weight=String(old.weight??'').replace(',','.'),reps=String(old.reps??'');
+ if(!/^(?:\d+(?:\.\d+)?|\.\d+)$/.test(weight)||!Number.isFinite(Number(weight))||
+  Number(weight)>100000||!/^[0-9]+$/.test(reps)||Number(reps)<1||Number(reps)>10000)return null;
+ return {weight:Number(weight),reps};
+};
+var tp228Candidates=function(rows,exercise,isDeleted){
+ if(!tp228Strength(exercise)||!exercise.id)return [];
  return (Array.isArray(rows)?rows:[]).filter(row=>{
-  if(!row||row.programId!==context.programId||(row.dayId||row.workout)!==context.dayId||
-   row.deletedAt||row.deleted===true||row.cancelled===true||row.status==='cancelled'||isDeleted?.(row))return false;
+  if(!row||row.deletedAt||row.deleted===true||row.cancelled===true||
+   row.status==='cancelled'||isDeleted?.(row))return false;
   const start=Date.parse(row.started),end=Date.parse(row.finished);
   return Number.isFinite(start)&&Number.isFinite(end)&&end>start&&end<=Date.now()&&Array.isArray(row.exercises);
- }).sort((a,b)=>Date.parse(b.started)-Date.parse(a.started)||Date.parse(b.finished)-Date.parse(a.finished))[0]||null;
+ }).sort((a,b)=>Date.parse(b.finished)-Date.parse(a.finished)||Date.parse(b.started)-Date.parse(a.started))
+ .flatMap(row=>{
+  // Multiple copies of one ID within a session cannot be mapped unambiguously.
+  const found=row.exercises.filter(e=>e?.id===exercise.id);
+  if(found.length!==1)return [];
+  const previous=found[0];
+  if(!tp228Strength(previous)||previous.loadType!==exercise.loadType||
+   String(previous.repUnit||'')!==String(exercise.repUnit||''))return [];
+  return [{workout:row,exercise:previous}];
+ });
+};
+var tp228Latest=function(rows,exercise,isDeleted){
+ return tp228Candidates(rows,exercise,isDeleted).find(entry=>
+  entry.exercise.sets?.some(set=>tp228SetValue(set)))?.workout||null;
 };
 var tp228BuildSets=function(context,exercise,count,baseWeight,rows,options={}){
- const strength=tp228Strength(exercise),latest=strength?tp228Latest(rows,context,options.isDeleted):null;
- // Repeated exercise IDs are ambiguous; never guess which occurrence supplied a set.
- const matches=latest?.exercises.filter(e=>e.id===exercise.id)||[];
- const previous=matches.length===1?matches[0]:null;
- const compatible=previous&&tp228Strength(previous)&&previous.loadType===exercise.loadType&&
-  String(previous.repUnit||'')===String(exercise.repUnit||'');
+ const strength=tp228Strength(exercise);
+ const candidates=strength?tp228Candidates(rows,exercise,options.isDeleted):[];
  return Array.from({length:Math.max(1,Math.min(10,Number(count)||1))},(_,index)=>{
   const set={set:index+1,weight:baseWeight,reps:'',done:false};
   if(strength&&!options.template)set.setId=crypto.randomUUID();
-  const old=compatible?previous.sets?.[index]:null;
-  if(!old||old.done!==true||Number(old.leftSeconds)>0||Number(old.rightSeconds)>0||Number(old.distanceMeters)>0)return set;
-  const weight=String(old.weight??'').replace(',','.'),reps=String(old.reps??'');
-  if(!/^(?:\d+(?:\.\d+)?|\.\d+)$/.test(weight)||!Number.isFinite(Number(weight))||Number(weight)>100000||
-   !/^\d+$/.test(reps)||Number(reps)<1||Number(reps)>10000)return set;
-  set.weight=exercise.loadType==='bodyweight'?0:Number(weight);set.reps=reps;
+  // A partial latest workout may not have a valid matching set. Use the most
+  // recent *completed valid* performance for each set position, never draft data.
+  const saved=candidates.map(entry=>tp228SetValue(entry.exercise.sets?.[index])).find(Boolean);
+  if(!saved)return set;
+  set.weight=exercise.loadType==='bodyweight'?0:saved.weight;set.reps=saved.reps;
   if(!options.template)set.previousValues228={weight:set.weight,reps:set.reps};
   return set;
  });
@@ -10081,11 +10098,13 @@ var tp150qwT=function tp150qwT(key,vars){let s=String(TP150QW_TEXT[tp150qwLang()
 var tp150IsQuick=function tp150IsQuick(s=state.session){return !!s&&(s.type==='quick'||s.quickWorkout===true)};
 var tp150QuickExercise=function tp150QuickExercise(id){
  const e=byId(id);if(!e)return null;
- const prev=findLastExercise(id),count=Math.max(1,Math.min(10,Number(e.sets)||3));
- const out={id:e.id,hu:e.hu,en:e.en,loadType:e.loadType,repUnit:e.repUnit,sets:Array.from({length:count},(_,i)=>({set:i+1,weight:prev?.loadType===e.loadType?(prev?.sets?.[i]?.weight??e.weight??0):(e.weight??0),reps:'',done:false}))};
+ const count=Math.max(1,Math.min(10,Number(e.sets)||3));
+ const out={id:e.id,hu:e.hu,en:e.en,loadType:e.loadType,repUnit:e.repUnit,
+  sets:tp228PrefillSets(null,e,count,e.weight??0)};
  if(typeof rf152Recommendation==='function'){
   const r=rf152Recommendation(id);out.rf152Recommendation=r;
-  if(r?.action==='increase'&&Number.isFinite(r.weight))for(const s of out.sets)s.weight=r.weight;
+  if(r?.action==='increase'&&Number.isFinite(r.weight)&&!out.sets.some(set=>set.previousValues228))
+   for(const set of out.sets)set.weight=r.weight;
  }
  return out;
 };
@@ -17358,9 +17377,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
     repUnit:String(e.repUnit||''),
     measurementType:String(e.measurementType||''),
     targetReps:String(e.reps||''),
-    sets:Array.from({length:Math.max(1,Math.min(10,Number(e.sets)||3))},(_,i)=>({
-     set:i+1,weight:e.loadType==='bodyweight'?0:(Number(e.weight)||0)
-    }))
+    sets:tp228PrefillSets(null,e,Math.max(1,Math.min(10,Number(e.sets)||3)),
+     e.loadType==='bodyweight'?0:(Number(e.weight)||0),{template:true})
+     .map(set=>({set:set.set,weight:set.weight,reps:set.reps}))
    }));
   }catch(_){return []}
  }

@@ -40,4 +40,21 @@ class WorkoutPrefill228Test {
             assertEquals("", home.createWorkout(home.days.single(), "", "2020-01-01T10:00:00Z").exercises.single().sets.single().reps)
         }
     }
+
+    @Test fun watchQuickWorkoutRetainsJournalValuesWithoutCompletion() {
+        val set = JSONObject().put("set", 1).put("weight", 17.5).put("reps", "8")
+        val exercise = JSONObject().put("id", "press").put("loadType", "total")
+            .put("repUnit", "ism.").put("sets", org.json.JSONArray().put(set))
+        val home = WatchHomeStore.parse(JSONObject().put("quickExercises",
+            org.json.JSONArray().put(exercise)).toString())!!
+        val first = home.createQuickWorkout(home.quickExercises.single(), "2020-01-01T10:00:00Z")
+            .exercises.single().sets.single()
+        val next = home.createQuickWorkout(home.quickExercises.single(), "2020-01-02T10:00:00Z")
+            .exercises.single().sets.single()
+        assertEquals("17.5", first.weight)
+        assertEquals("8", first.reps)
+        assertFalse(first.done)
+        assertNull(first.actualRir)
+        assertNotEquals(first.setId, next.setId)
+    }
 }

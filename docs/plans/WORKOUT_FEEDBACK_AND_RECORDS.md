@@ -10,7 +10,7 @@ Az [újfunkció-audit #225](https://github.com/fuloplevente1998/TrainPilot/pull/
 | --- | --- | --- | --- |
 | 1 | [#226](https://github.com/fuloplevente1998/TrainPilot/issues/226) | Mentett eredmény és Napló PR-jelvénye a meglévő rekordmodellre építve | Kód és célzott modell/UI teszt elkészült; CI még követendő |
 | 2 | [#227](https://github.com/fuloplevente1998/TrainPilot/issues/227) | Kapcsolható rövid haptika sikeres kézi sorozat-OK után | Kód és nyugta/owner/deduplikáció regresszió elkészült; CI követendő |
-| 3 | [#228](https://github.com/fuloplevente1998/TrainPilot/issues/228) | Azonos programnap automatikus súly-/ismétlés-előtöltése, külön gomb nélkül | Pontosított követelmény implementálva; új modell/UI/Wear regressziók, új CI szükséges |
+| 3 | [#228](https://github.com/fuloplevente1998/TrainPilot/issues/228) | Minden erősítő gyakorlat automatikus Napló-alapú súly-/ismétlés-előtöltése, külön gomb nélkül | Pontosított követelmény implementálva; új modell/UI/Wear regressziók, új CI szükséges |
 | 4 | [#229](https://github.com/fuloplevente1998/TrainPilot/issues/229) | Sorozatonkénti tényleges RIR, kompatibilis napló/Coach/protokoll | Telefonos bevitel, konzervatív Coach, napló és natív/Wear értékmegőrzés kódja elkészült; integrált kapuk következnek |
 
 ## Megőrzendő működés
@@ -36,16 +36,14 @@ A telefonos és Wear snapshot külön nullable sorozat-RIR-t, régi gyakorlat-RI
 
 A haptika alapból bekapcsolt, az Edzés beállításai panelen mentett kapcsolóval. Sikeres, tartós kézi nyugta egyszer jelez 40 ms-ot; automatikus módban a meglévő időzítőjelzések maradnak. A #228 kézi másolásgombját a felhasználó pontosítása alapján az alábbi automatikus előtöltés váltja ki.
 
-## #228 pontosítás – automatikus folytatás ugyanazon programnapból (2026-10-20)
+## #228 végleges pontosítás – minden erősítő gyakorlat automatikusan a Naplóból (2026-10-20)
+A korábbi csak A/B-azonos programnapból töltő algoritmust a felhasználó kiterjesztette: minden súlyzós/erősítő gyakorlat következő indításakor a Napló (`history()`) legutóbbi érvényes, teljesített **azonos gyakorlat** sorozat-súlyait és ismétlésszámait kell előtölteni. A gyakorlat azonosítója a kulcs, **nem a programnap**. A másik programban, B napon vagy gyors edzésként mentett korábbi érték is forrás. Nincs másolásgomb, jóváhagyáskérés vagy külön kapcsoló.
 
-A felhasználó a külön másolásgomb helyett azt kéri, hogy például a négy nappal későbbi A nap a legutóbbi A nap tényleges súly-/ismétlésértékeivel induljon. Nincs külön gomb, felugró kérdés vagy bekapcsolandó opció.
-
-- Egyező programazonosító + napazonosító; a legutóbbi mentett, befejezett alkalom időrendben, nem a tömb sorrendjéből. Másik nap/program, draft, törölt és jövőbeli bejegyzés kizárt.
-- Csak az azonos gyakorlat azonos sorszámú, teljesített, érvényes erősítő sorozatának súlya és ismétlése kerül át. Eltérő terhelési/ismétlési egység, hiányzó vagy nem teljesített sor esetén az aktuális terv alapértékei maradnak. A jelenlegi terv sorozatszáma az irányadó.
-- Minden új sorozat done:false, új azonosító; nincs örökölt tényleges RIR, idő, GPS vagy teljesítési metaadat. Előtöltés csak új edzés létrehozásakor; a draft újranyitását és kézi módosításait nem írja felül.
-- Telefonos indítás és órára küldött programnapsablon közös kiválasztási logikát használ. Az óra a sablon ismétléseit is beolvassa, de saját új azonosítót generál; régi sablon ismétlés nélkül továbbra is működik.
-- A korábbi adat nem automatikus progresszió. Előtöltött értéket a legacy emelés nem ír felül. Az explicit Coach-jóváhagyás érintetlen előtöltés mellett is elérhető, kézi szerkesztés és teljesítés után továbbra is védett.
-- A sorozatmásolás gombja és CSS-e eltávolítva. Célzott modell-, integrált böngészős és Wear JSON/indítási tesztek frissítve.
+- Minden sorozatpozícióhoz időrendben a legutóbbi teljesített, számszerűen érvényes bejegyzést választjuk ki a befejezett, nem törölt Napló-edzésekből. Eltérő terhelési mód/ismétlési egység, idő-/táv-/GPS-gyakorlat, duplikált gyakorlat-előfordulás és hibás adat nem használható. A legfrissebb részleges sorozat esetén korábbi érvényes mentés használható.
+- A jelenlegi terv sorozatszáma és a nem talált pozíciók alapértéke marad. Minden új sorozat új ID-val, done:false állapotban indul; actualRir, idő-/GPS-/szinkron-/teljesítési metaadat nem öröklődik.
+- A Naplót nem írjuk át. A felhasználó által kézzel szerkesztett vagy újranyitott draft értékeit nem módosítjuk; a Coach terhelésnövelése nem írhatja felül csendben az előtöltést.
+- Azonos telefonos logika szolgálja a tervezett programnapot, a gyors edzés indítását és gyakorlat-hozzáadását, valamint az órára küldött programnapi és **gyors edzéses** sablonokat. A Wear OS ezeket új, teljesítetlen sorozatokként indítja; régi sablon továbbra is kompatibilis.
+- Új forrásazonos modell-, böngészős és Wear-indítási regressziók, majd telefon/Wear APK-pár és készülékes próba szükséges. Nincs main merge vagy release a felhasználói jóváhagyásig.
 
 ### Automatizálási UI-elv / Health
 A már engedélyezett, ismétlődő adatfrissítések automatikusan történjenek, állapotjelzéssel. Kézi művelet az első kapcsolódáshoz/engedélyhez, felhasználói döntéshez és hibajavításhoz szükséges. A jelenlegi Health-kód már tartalmaz appnyitási/előtéri frissítést, deduplikált olvasást és külön háttérengedélyt; ezt a #228 módosítás nem helyettesíti új szinkronfolyamattal. Teljes Health-UI egyszerűsítést vagy új háttérszinkront ez a commit nem állít elkészültnek.
