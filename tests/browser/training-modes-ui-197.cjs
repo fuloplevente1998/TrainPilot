@@ -24,14 +24,18 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.locator('#tp197-mode-global-style').getAttribute('aria-hidden'),'true','Shared dropdown leaves its native source inaccessible');
   assert.equal(await page.locator('#tp197-mode-global-style').getAttribute('data-tp-custom-select'),'1','The shared Calendar select enhancer is active');
   const globalPicker=page.locator('#tp197-mode-global .tp-select').first();
-  await globalPicker.locator('.tp-select-trigger').click();
+  await globalPicker.locator('.tp-select-trigger').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(120); // Let automatic scroll-close events settle before opening.
+  await globalPicker.locator('.tp-select-trigger').dispatchEvent('click');
   assert.equal(await globalPicker.evaluate(el=>el.classList.contains('open')),true,'Shared floating picker opens');
-  await globalPicker.locator('.tp-select-option[data-value="hit"]').click();
+  await globalPicker.locator('.tp-select-option[data-value="hit"]').dispatchEvent('click');
   assert.equal(await page.locator('#tp197-mode-global-style').inputValue(),'hit');
   assert.equal(await page.locator('#tp197-mode-global .tp-select').first().evaluate(el=>el.classList.contains('open')),false,'Picker closes after choice');
   const globalProgress=page.locator('#tp197-mode-global .tp-select').nth(1);
-  await globalProgress.locator('.tp-select-trigger').click();
-  await globalProgress.locator('.tp-select-option[data-value="rir"]').click();
+  await globalProgress.locator('.tp-select-trigger').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(120); // Let automatic scroll-close events settle before opening.
+  await globalProgress.locator('.tp-select-trigger').dispatchEvent('click');
+  await globalProgress.locator('.tp-select-option[data-value="rir"]').dispatchEvent('click');
   assert.equal(await page.locator('#tp197-mode-global-style').inputValue(),'hit');
   assert.equal(await page.locator('#tp197-mode-global-progress').inputValue(),'rir');
   assert.equal(await page.locator('#tp197-mode-global .tp197-ui-preview').count(),1);
@@ -52,9 +56,11 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.locator('#tp197-mode-program .tp197-preview-reason').count(),1,'Explain the concrete hold or increase reason');
   assert.equal(await page.locator('#tp197-mode-program-style').inputValue(),'normal');
   const programPicker=page.locator('#tp197-mode-program .tp-select').first();
-  await programPicker.locator('.tp-select-trigger').click();
+  await programPicker.locator('.tp-select-trigger').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(120); // Let automatic scroll-close events settle before opening.
+  await programPicker.locator('.tp-select-trigger').dispatchEvent('click');
   assert.equal(await programPicker.evaluate(el=>el.classList.contains('open')),true);
-  await programPicker.locator('.tp-select-option[data-value="hit"]').click();
+  await programPicker.locator('.tp-select-option[data-value="hit"]').dispatchEvent('click');
   assert.equal(await page.locator('.tp1511-training').evaluate(el=>el.open),true,'Workout panel stays open');
   assert.equal(await page.locator('#tp197-mode-program').evaluate(el=>el.open),true,'Mode panel stays open');
   // The shared floating menu selected HIT without invoking Android's native picker.

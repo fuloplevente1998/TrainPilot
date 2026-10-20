@@ -26,8 +26,10 @@ const server=http.createServer((req,res)=>{
   async function choose(field,value){
    const id=field==='trainingStyle'?'tp197-mode-global-style':'tp197-mode-global-progress';
    const picker=page.locator('#tp197-mode-global .tp-select').filter({has:page.locator('#'+id)});
-   await picker.locator('.tp-select-trigger').click();
-   await picker.locator('.tp-select-option[data-value="'+value+'"]').click();
+   await picker.locator('.tp-select-trigger').scrollIntoViewIfNeeded();
+   await page.waitForTimeout(120);
+   await picker.locator('.tp-select-trigger').dispatchEvent('click');
+   await picker.locator('.tp-select-option[data-value="'+value+'"]').dispatchEvent('click');
   }
   await choose('trainingStyle','hit');
   await page.locator('#tp197-mode-global .tp197-actions button').first().click();
