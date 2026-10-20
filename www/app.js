@@ -10494,7 +10494,29 @@ var tp1511Prog=function(){return Object.assign({isolation:.5,per_hand:1,single_d
 var tp1511Rest=function(){const p=activeProgram?.(),s=settings(),n=Number(s.programRest?.[p?.id]);return Number.isFinite(n)?n:(Number(s.rest)||90);};
 var tp1511TrainingPanel=function(){const p=activeProgram?.();if(!p)return '';const x=tp1511Prog();return '<details class="card tp1511-training"><summary><span><strong>⚙ '+esc(tp1511T('training'))+'</strong><small class="muted">'+esc(tp149ProgramMeta(p,'name'))+'</small></span><i>⌄</i></summary><div class="tp1511-training-body"><p class="small muted">'+esc(tp1511T('trainingHelp'))+'</p><label>'+esc(tp1511T('rest'))+'<input id="tp1511Rest" class="field" type="number" min="30" max="300" step="5" value="'+esc(tp1511Rest())+'"></label><p class="small muted">'+esc(tp1511T('restHelp'))+'</p><div class="section tp1511-section">'+esc(tp149T('settings.progression'))+'</div><div class="grid2 tp1511-prog"><label>'+esc(tp149T('settings.stepIsolation'))+'<input id="tp1511Iso" class="field" type="number" min=".25" max="10" step=".25" value="'+esc(x.isolation)+'"></label><label>'+esc(tp149T('settings.stepPerHand'))+'<input id="tp1511Per" class="field" type="number" min=".25" max="10" step=".25" value="'+esc(x.per_hand)+'"></label><label>'+esc(tp149T('settings.stepSingle'))+'<input id="tp1511Single" class="field" type="number" min=".25" max="10" step=".25" value="'+esc(x.single_dumbbell)+'"></label><label>'+esc(tp149T('settings.stepTotal'))+'<input id="tp1511Total" class="field" type="number" min=".25" max="10" step=".25" value="'+esc(x.total)+'"></label></div><button class="btn secondary block" onclick="tp1511SaveTraining()">'+esc(tp1511T('save'))+'</button></div></details>';};
 var tp1511Step=function(id,d){const n=Number(document.getElementById(id)?.value);return Number.isFinite(n)?Math.max(.25,Math.min(10,Math.round(n*4)/4)):d;};
-var tp1511SaveTraining=function(){const s=settings(),p=activeProgram?.(),x=tp1511Prog(),r=Math.max(30,Math.min(300,Number(document.getElementById('tp1511Rest')?.value)||tp1511Rest())),pr=Object.assign({},s.programRest||{});if(p?.id)pr[p.id]=r;db.set('settings',Object.assign({},s,{programRest:pr,progressionSteps:{isolation:tp1511Step('tp1511Iso',x.isolation),per_hand:tp1511Step('tp1511Per',x.per_hand),single_dumbbell:tp1511Step('tp1511Single',x.single_dumbbell),total:tp1511Step('tp1511Total',x.total)}}));if(typeof cloudChanged==='function')cloudChanged();render();window.TrainPilotFeedback?.saved();};
+var tp1511SaveTraining=function(){
+ const s=settings(),p=activeProgram?.(),x=tp1511Prog(),oldRest=tp1511Rest(),
+  r=Math.max(30,Math.min(300,Number(document.getElementById('tp1511Rest')?.value)||oldRest)),
+  pr=Object.assign({},s.programRest||{});
+ if(p?.id)pr[p.id]=r;
+ const next=Object.assign({},s,{programRest:pr,progressionSteps:{
+  isolation:tp1511Step('tp1511Iso',x.isolation),per_hand:tp1511Step('tp1511Per',x.per_hand),
+  single_dumbbell:tp1511Step('tp1511Single',x.single_dumbbell),total:tp1511Step('tp1511Total',x.total)
+ }});
+ // Inherited exercise rest must follow the saved program default; an explicitly edited rest is protected.
+ const ps=programs(),live=ps.find(row=>row.id===p?.id);
+ if(live){
+  for(const rx of Object.values(live.prescriptions||{})){
+   if(!rx||typeof rx!=='object'||rx.restCustomized===true)continue;
+   const was=Number(rx.rest);
+   if(rx.rest==null||was===oldRest||(s.programRest?.[p.id]==null&&was===Number(s.rest||90)))rx.rest=r;
+  }
+ }
+ db.set('settings',next);
+ if(live)db.set('programs',ps);
+ if(typeof cloudChanged==='function')cloudChanged();
+ render();window.TrainPilotFeedback?.saved();
+};
 startRest=function(){const s=settings(),rx=state.session?.exercises?.[state.current]?.prescription,pid=state.session?.programId||activeProgramId?.(),pv=Number(s.programRest?.[pid]),rv=Number(rx?.rest),sec=Math.max(30,Math.min(300,Number.isFinite(rv)&&rv>0?rv:(Number.isFinite(pv)?pv:(Number(s.rest)||90))));stopTimer();state.timer=sec;state.restEndAt=Date.now()+sec*1000;state.timerId=setInterval(tickRest,250);};
 const tp1511Plan=planScreen;planScreen=function(){const h=tp1511Plan.apply(this,arguments),p=tp1511TrainingPanel();return p&&!String(h).includes('tp1511-training')?String(h).replace(/(<main\b[^>]*>)/,'$1'+p):h;};
 
@@ -10582,7 +10604,7 @@ var tp152SaveRx=function(dayId,id,key,value){
  const st=rf155DayState(dayId),p=st.program,e=byId(id);if(!p||!e)return;
  p.prescriptions=p.prescriptions||{};const rx=tp152Rx(p,id,e);
  if(key==='sets')rx.sets=Math.max(1,Math.min(10,Number(value)||1));
- else if(key==='rest')rx.rest=Math.max(30,Math.min(300,Number(value)||90));
+ else if(key==='rest'){rx.rest=Math.max(30,Math.min(300,Number(value)||90));rx.restCustomized=true;}
  else if(key==='weight')rx.weight=Math.max(0,Number(String(value).replace(',','.'))||0);
  else if(key==='reps')rx.reps=String(value||'').trim().slice(0,40);
  p.prescriptions[id]=rx;db.set('programs',st.ps);if(typeof cloudChanged==='function')cloudChanged();
@@ -19528,12 +19550,9 @@ var tp197UiPanel=function(scope,pid,expanded=false){
  const options=(values,selected)=>values.map(([value,label])=>'<option value="'+value+'"'+(selected===value?' selected':'')+'>'+esc(label)+'</option>').join("");
  const scopeArg=scope==="program"?"'program',"+esc(JSON.stringify(String(pid))):"'global',null";
  const picker=(field,short,values,selected)=>{
-  const pickerId=id+'-'+short,selectedLabel=values.find(v=>v[0]===selected)?.[1]||selected;
-  // The hidden native control preserves existing test/backup compatibility.
-  // Users only interact with the inline menu; Android WebView cannot open its platform picker.
-  const native='<select hidden aria-hidden="true" tabindex="-1" id="'+pickerId+'" onchange="tp197UiSet('+scopeArg+',\''+field+'\',this.value)">'+options(values,selected)+'</select>';
-  const buttons=values.map(([v,label])=>'<button type="button" class="tp197-choice-option'+(v===selected?' is-selected':'')+'" aria-pressed="'+String(v===selected)+'" data-value="'+v+'" onclick="tp197UiChoose('+scopeArg+',\''+field+'\',this.dataset.value)">'+esc(label)+(v===selected?'<span aria-hidden="true">✓</span>':'')+'</button>').join('');
-  return native+'<details class="tp197-choice" data-field="'+field+'"><summary aria-label="'+esc(field==='trainingStyle'?t.style:t.progress)+': '+selectedLabel+'"><span class="tp197-choice-label">'+esc(selectedLabel)+'</span><span class="tp197-choice-chevron" aria-hidden="true">⌄</span></summary><div class="tp197-choice-options">'+buttons+'</div></details>';
+  const pickerId=id+'-'+short,fieldLabel=field==='trainingStyle'?t.style:t.progress;
+  // Shared floating dropdown from Calendar. Do not use the Android native or a separate inline menu.
+  return '<select class="field tp197-mode-select" id="'+pickerId+'" aria-label="'+esc(fieldLabel)+'" onchange="tp197UiSet('+scopeArg+',\''+field+'\',this.value)">'+options(values,selected)+'</select>';
  };
  return '<details class="card tp197-mode-panel" id="'+id+'" data-tp197-scope="'+scope+'" '+(expanded?'open':'')+'>'+
   '<summary><strong>'+esc(t.title)+'</strong><span class="small muted">'+esc(scope==="program"?t.program:t.global)+'</span><span class="tp197-panel-chevron" aria-hidden="true">⌄</span></summary>'+
@@ -19564,6 +19583,8 @@ var tp197UiRefresh=function(scope,pid){
  const next=container.firstElementChild,body=panel.querySelector('.tp197-ui-body'),updated=next?.querySelector('.tp197-ui-body');
  if(body&&updated)body.innerHTML=updated.innerHTML;
  else if(next)panel.replaceWith(next);
+ // Newly inserted selects must get Calendar's shared floating picker.
+ if(typeof rf260EnhanceSelects==='function')rf260EnhanceSelects();
 };
 var tp197UiChoose=function(scope,pid,field,value){
  return tp197UiSet(scope,pid,field,value);
@@ -19583,7 +19604,7 @@ tp1511TrainingPanel=function(){
  return html.replace('<div class="tp1511-training-body">','<div class="tp1511-training-body">'+tp197UiPanel("program",pid,true));
 };
 const tp197Css=document.createElement("style");tp197Css.id="tp197ModeUiStyle";
-tp197Css.textContent='.tp197-preview-reason{padding-top:4px;border-top:1px solid var(--line)}.tp1511-training-body>.tp197-mode-panel{margin:0 0 12px;padding:10px!important}.tp197-mode-panel{box-sizing:border-box;max-width:100%;min-width:0;margin:10px 0;padding:12px!important}.tp197-mode-panel>summary{cursor:pointer;display:flex;align-items:center;gap:6px;min-height:40px;list-style:none}.tp197-mode-panel>summary::-webkit-details-marker,.tp197-choice>summary::-webkit-details-marker{display:none}.tp197-mode-panel>summary strong{flex:1;min-width:0;overflow-wrap:anywhere}.tp197-mode-panel>summary .small{font-size:12px;flex:0 1 auto;text-align:right}.tp197-panel-chevron,.tp197-choice-chevron{font-size:22px;color:var(--accent);display:inline-block;transition:transform .15s;line-height:1}.tp197-mode-panel[open]>summary .tp197-panel-chevron,.tp197-choice[open]>summary .tp197-choice-chevron{transform:rotate(180deg)}.tp197-ui-body{display:grid;gap:8px;min-width:0;padding-top:12px}.tp197-ui-body label{font-size:13px;font-weight:700}.tp197-choice{border:1px solid var(--line);border-radius:12px;background:#10141c;min-width:0}.tp197-choice>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px;min-height:46px;font-weight:650}.tp197-choice>summary:focus-visible,.tp197-choice-option:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.tp197-choice-label{min-width:0;overflow-wrap:anywhere}.tp197-choice-options{display:grid;gap:4px;padding:4px 6px 7px;border-top:1px solid var(--line)}.tp197-choice-option{background:transparent;color:var(--text);border:0;border-radius:9px;text-align:left;padding:11px 9px;min-height:44px;font:inherit;display:flex;justify-content:space-between;align-items:center;gap:7px}.tp197-choice-option.is-selected{background:var(--card2);color:var(--accent)}.tp197-ui-preview{min-width:0;padding:11px;border-radius:12px;border:1px solid var(--line);background:var(--card2)}.tp197-ui-preview p{margin:6px 0;overflow-wrap:anywhere}.tp197-ui-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px}.tp197-ui-comparison>*{min-width:0;overflow-wrap:anywhere}.tp197-ui-comparison>span{font-weight:700;font-size:12px}.tp197-ui-reset{min-height:44px;width:100%}.tp197-ui-notice{line-height:1.45}.tp1511-training-body .tp1511-prog{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}.tp1511-training-body .tp1511-prog>label{display:block;min-width:0;padding:8px;border-radius:11px;border:1px solid var(--line);background:var(--card2);font-size:12px;line-height:1.3;overflow-wrap:anywhere}.tp1511-training-body .tp1511-prog input{box-sizing:border-box;width:100%;min-width:0;margin-top:6px;padding:8px;font-size:16px;min-height:42px}';
+tp197Css.textContent='.tp197-preview-reason{padding-top:4px;border-top:1px solid var(--line)}.tp1511-training-body>.tp197-mode-panel{margin:0 0 12px;padding:10px!important}.tp197-mode-panel{box-sizing:border-box;max-width:100%;min-width:0;margin:10px 0;padding:12px!important}.tp197-mode-panel>summary{cursor:pointer;display:flex;align-items:center;gap:6px;min-height:40px;list-style:none}.tp197-mode-panel>summary::-webkit-details-marker,.tp197-choice>summary::-webkit-details-marker{display:none}.tp197-mode-panel>summary strong{flex:1;min-width:0;overflow-wrap:anywhere}.tp197-mode-panel>summary .small{font-size:12px;flex:0 1 auto;text-align:right}.tp197-panel-chevron,.tp197-choice-chevron{font-size:22px;color:var(--accent);display:inline-block;transition:transform .15s;line-height:1}.tp197-mode-panel[open]>summary .tp197-panel-chevron,.tp197-choice[open]>summary .tp197-choice-chevron{transform:rotate(180deg)}.tp197-ui-body{display:grid;gap:8px;min-width:0;padding-top:12px}.tp197-ui-body label{font-size:13px;font-weight:700}.tp197-ui-body>.tp-select{min-width:0;width:100%}.tp197-choice{border:1px solid var(--line);border-radius:12px;background:#10141c;min-width:0}.tp197-choice>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px;min-height:46px;font-weight:650}.tp197-choice>summary:focus-visible,.tp197-choice-option:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.tp197-choice-label{min-width:0;overflow-wrap:anywhere}.tp197-choice-options{display:grid;gap:4px;padding:4px 6px 7px;border-top:1px solid var(--line)}.tp197-choice-option{background:transparent;color:var(--text);border:0;border-radius:9px;text-align:left;padding:11px 9px;min-height:44px;font:inherit;display:flex;justify-content:space-between;align-items:center;gap:7px}.tp197-choice-option.is-selected{background:var(--card2);color:var(--accent)}.tp197-ui-preview{min-width:0;padding:11px;border-radius:12px;border:1px solid var(--line);background:var(--card2)}.tp197-ui-preview p{margin:6px 0;overflow-wrap:anywhere}.tp197-ui-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px}.tp197-ui-comparison>*{min-width:0;overflow-wrap:anywhere}.tp197-ui-comparison>span{font-weight:700;font-size:12px}.tp197-ui-reset{min-height:44px;width:100%}.tp197-ui-notice{line-height:1.45}.tp1511-training-body .tp1511-prog{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}.tp1511-training-body .tp1511-prog>label{display:block;min-width:0;padding:8px;border-radius:11px;border:1px solid var(--line);background:var(--card2);font-size:12px;line-height:1.3;overflow-wrap:anywhere}.tp1511-training-body .tp1511-prog input{box-sizing:border-box;width:100%;min-width:0;margin-top:6px;padding:8px;font-size:16px;min-height:42px}';
 document.head.appendChild(tp197Css);
 // @endsection training-modes-ui-197.js
 

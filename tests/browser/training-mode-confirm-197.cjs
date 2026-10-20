@@ -24,9 +24,10 @@ const server=http.createServer((req,res)=>{
   }));
   await page.locator('#tp197-mode-global').evaluate(el=>el.open=true);
   async function choose(field,value){
-   const picker=page.locator('#tp197-mode-global .tp197-choice[data-field="'+field+'"]');
-   await picker.locator('summary').click();
-   await picker.locator('button[data-value="'+value+'"]').click();
+   const id=field==='trainingStyle'?'tp197-mode-global-style':'tp197-mode-global-progress';
+   const picker=page.locator('#tp197-mode-global .tp-select').filter({has:page.locator('#'+id)});
+   await picker.locator('.tp-select-trigger').click();
+   await picker.locator('.tp-select-option[data-value="'+value+'"]').click();
   }
   await choose('trainingStyle','hit');
   await page.locator('#tp197-mode-global .tp197-actions button').first().click();

@@ -21,17 +21,16 @@ const server=http.createServer((req,res)=>{
   const saved=await page.evaluate(()=>JSON.stringify([settings(),programs(),history(),db.get('draft',null)]));
   assert.equal(await page.locator('#tp197-mode-global').count(),1,'Global mode should be available in Settings');
   await page.locator('#tp197-mode-global').evaluate(el=>el.open=true);
-  assert.equal(await page.locator('#tp197-mode-global-style').isHidden(),true,'Native Android picker should not be visible');
-  const globalPicker=page.locator('#tp197-mode-global .tp197-choice[data-field="trainingStyle"]');
-  await globalPicker.locator('summary').click();
-  assert.equal(await globalPicker.evaluate(el=>el.open),true,'Inline picker opens on page');
-  await globalPicker.locator('button').last().click();
+  assert.equal(await page.locator('#tp197-mode-global-style').isHidden(),true,'App dropdown hides the native control');
+  const globalPicker=page.locator('#tp197-mode-global .tp-select').first();
+  await globalPicker.locator('.tp-select-trigger').click();
+  assert.equal(await globalPicker.evaluate(el=>el.classList.contains('open')),true,'Shared floating picker opens');
+  await globalPicker.locator('.tp-select-option[data-value="hit"]').click();
   assert.equal(await page.locator('#tp197-mode-global-style').inputValue(),'hit');
-  assert.equal(await globalPicker.evaluate(el=>el.open),false,'Choice closes inline dropdown');
-  // Actual user selection already happened via the inline menu above.
-  const globalProgress=page.locator('#tp197-mode-global .tp197-choice[data-field="progressionMode"]');
-  await globalProgress.locator('summary').click();
-  await globalProgress.locator('button[data-value="rir"]').click();
+  assert.equal(await page.locator('#tp197-mode-global .tp-select').first().evaluate(el=>el.classList.contains('open')),false,'Picker closes after choice');
+  const globalProgress=page.locator('#tp197-mode-global .tp-select').nth(1);
+  await globalProgress.locator('.tp-select-trigger').click();
+  await globalProgress.locator('.tp-select-option[data-value="rir"]').click();
   assert.equal(await page.locator('#tp197-mode-global-style').inputValue(),'hit');
   assert.equal(await page.locator('#tp197-mode-global-progress').inputValue(),'rir');
   assert.equal(await page.locator('#tp197-mode-global .tp197-ui-preview').count(),1);
@@ -51,13 +50,13 @@ const server=http.createServer((req,res)=>{
   await page.locator('#tp197-mode-program').evaluate(el=>el.open=true);
   assert.equal(await page.locator('#tp197-mode-program .tp197-preview-reason').count(),1,'Explain the concrete hold or increase reason');
   assert.equal(await page.locator('#tp197-mode-program-style').inputValue(),'normal');
-  const programPicker=page.locator('#tp197-mode-program .tp197-choice[data-field="trainingStyle"]');
-  await programPicker.locator('summary').click();
-  assert.equal(await programPicker.evaluate(el=>el.open),true);
-  await programPicker.locator('button').last().click();
+  const programPicker=page.locator('#tp197-mode-program .tp-select').first();
+  await programPicker.locator('.tp-select-trigger').click();
+  assert.equal(await programPicker.evaluate(el=>el.classList.contains('open')),true);
+  await programPicker.locator('.tp-select-option[data-value="hit"]').click();
   assert.equal(await page.locator('.tp1511-training').evaluate(el=>el.open),true,'Workout panel stays open');
   assert.equal(await page.locator('#tp197-mode-program').evaluate(el=>el.open),true,'Mode panel stays open');
-  // The custom menu already selected HIT without invoking any native picker.
+  // The shared floating menu selected HIT without invoking Android's native picker.
   assert.equal(await page.locator('#tp197-mode-program-style').inputValue(),'hit');
   const after=await page.evaluate(()=>JSON.stringify([settings(),programs(),history(),db.get('draft',null)]));
   assert.equal(after,saved,'UI preview changed persisted settings/program/history/draft');
