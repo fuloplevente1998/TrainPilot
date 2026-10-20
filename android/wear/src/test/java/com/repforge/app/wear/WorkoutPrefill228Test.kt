@@ -62,6 +62,22 @@ class WorkoutPrefill228Test {
         assertNotEquals("old", first.setId)
     }
 
+    @Test fun watchQuickInvalidRepetitionsStayEmptyWithoutGuessing() {
+        for (value in listOf<Any?>(null, "", "bad", -1, 0, 2.5, 10001)) {
+            val template = JSONObject().put("id", "press").put("loadType", "total")
+                .put("repUnit", "ism.")
+                .put("sets", org.json.JSONArray().put(JSONObject().put("set", 1)
+                    .put("weight", 12.5).put("reps", value)))
+            val snapshot = WatchHomeStore.parse(JSONObject().put("quickExercises",
+                org.json.JSONArray().put(template)).toString())!!
+            val set = snapshot.createQuickWorkout(snapshot.quickExercises.single(),
+                "2020-01-01T10:00:00Z").exercises.single().sets.single()
+            assertEquals("", set.reps)
+            assertFalse(set.done)
+            assertNull(set.actualRir)
+        }
+    }
+
     @Test fun watchQuickTimedAndDistanceTemplatesDoNotInventRepetitions() {
         for ((unit, measurement) in listOf("mp" to "", "ism." to "time", "ism." to "distance", "ism." to "gps")) {
             val template = JSONObject().put("id", "test").put("loadType", "bodyweight")
