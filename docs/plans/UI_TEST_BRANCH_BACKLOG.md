@@ -73,3 +73,7 @@ kérés ettől függetlenül **csak rögzítés**, megvalósítás később tesz
 - Új folytatási kérés után: friss elfogadott alap, átfedések felmérése, kis
   változtatások, megfelelő Actions-ellenőrzés, aláírt teszt-APK és fizikai próba.
   Nincs automatikus main merge vagy teljes CSS/projektcsere.
+
+## 2026-10-20 – forrásalapú átfedésaudit
+
+Az öt ötlet aktuális bontása: [újfunkció- és átfedésaudit](../FEATURE_GAP_AUDIT_2026_10.md), main `f309137c461c6cb3b39497ab46a0e764a7e7b077` alapján. A PR-felismerés/lista, az 1RM, a pihenőjelzés, a súly-előtöltés és az öt fokozatú értékelés már létezik. Új jelölt a mentett edzés PR-jelvénye, a kézi sorozat-OK haptikája, a kifejezett sorozatmásolás és a sorozatonkénti RIR. A RIR ma gyakorlatonkénti. A dupla jelzés és a háromválaszos felület meglévő funkció finomítása. Ez továbbra is felmérés/rögzítés, nem az új képességek implementációs indítása.

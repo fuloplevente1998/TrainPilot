@@ -3,6 +3,16 @@
 Frissítve: **2026-10-20**. Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Új audit ágon – ténylegesen hiányzó bővítések
+
+- Felhasználó 2026-10-20: új audit kérése a még hiányzó új funkciókról (PR-jelvény stb.), majd „Folytasd”.
+- Ág: `docs/feature-gap-audit-2026-10-20`, alap main `f309137c461c6cb3b39497ab46a0e764a7e7b077`.
+- [Újfunkció- és átfedésaudit](FEATURE_GAP_AUDIT_2026_10.md): NF-001 mentett eredmény PR-jelvénye; NF-002 sikeres kézi sorozat-OK haptikája; NF-003 kifejezett sorozatmásolás; NF-004 sorozatonkénti RIR.
+- A PR-felismerés/lista és az 1RM, pihenőjelzések, súly-előtöltés, öt fokozatú értékelés már megvan. A mai tényleges RIR **gyakorlatonkénti**, a README-k korábbi sorozatonkénti megfogalmazása ebben a csomagban pontosítva.
+- Csak dokumentáció; alkalmazás-/natív kód és verzió 1.3.6 /2733 változatlan. Nincs új funkcióimplementáció, main merge vagy új kiadás ebben a körben.
+- Forrásleltár készült; új készülékes/böngészős futtatás nem történt. A dokumentációs Draft PR CI-je külön követendő. #224 eredeti auditja és #214 külső Play/Samsung feladatai külön maradnak.
+- Következő: az új jelöltek közül kis implementációs scope kiválasztása/elfogadása; a rangsor az auditban javaslat.
+
 ## Aktuális – #223 mainen, #214 külső előkészítése nyitott
 
 - Felhasználói merge-jóváhagyás 2026-10-20 18:21 (Europe/Budapest): „Minden mehet mainre”.

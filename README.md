@@ -18,7 +18,7 @@ Install the phone APK on the phone and the Wear APK on the watch. Preserve the e
 ## Features in accepted main
 
 - Personal programs, quick workouts, an exercise library, sets, repetitions, weights, timers, training history and progress.
-- Normal or HIT-inspired training styles; double, linear or RIR/Coach progression with preview, approval and undo. Actual RIR can be logged per set.
+- Normal or HIT-inspired training styles; double, linear or RIR/Coach progression with preview, approval and undo. Actual RIR can be logged per exercise in RIR/Coach mode.
 - Recovery guidance with dated data and explicit sources. A valid current-day Samsung Energy Score takes precedence; unavailable data falls back to TrainPilot's estimate. Pain and workload limits remain active.
 - Health Connect or direct Samsung Health import, a persistent local health journal and separately identified TrainPilot Wear workout measurements.
 - Phone/watch workout control, automatic work/rest phases, acknowledged handoff, offline watch workouts, Mini diary, Tile and complication.
