@@ -56,5 +56,24 @@ class WorkoutPrefill228Test {
         assertFalse(first.done)
         assertNull(first.actualRir)
         assertNotEquals(first.setId, next.setId)
+        assertEquals(0, first.leftSeconds)
+        assertEquals(0, first.rightSeconds)
+        assertEquals(0.0, first.distanceMeters, 0.0)
+        assertNotEquals("old", first.setId)
+    }
+
+    @Test fun watchQuickTimedAndDistanceTemplatesDoNotInventRepetitions() {
+        for ((unit, measurement) in listOf("mp" to "", "ism." to "time", "ism." to "distance", "ism." to "gps")) {
+            val template = JSONObject().put("id", "test").put("loadType", "bodyweight")
+                .put("repUnit", unit).put("measurementType", measurement)
+                .put("sets", org.json.JSONArray().put(JSONObject().put("set", 1)
+                    .put("weight", 0).put("reps", "12")))
+            val home = WatchHomeStore.parse(JSONObject().put("quickExercises",
+                org.json.JSONArray().put(template)).toString())!!
+            val result = home.createQuickWorkout(home.quickExercises.single(),
+                "2020-01-01T10:00:00Z").exercises.single().sets.single()
+            assertEquals("", result.reps)
+            assertFalse(result.done)
+        }
     }
 }
