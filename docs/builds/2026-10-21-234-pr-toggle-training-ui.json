@@ -1,0 +1,44 @@
+{
+  "sourceCommit": "924664ef7882aa59cbedfbcebe6c95605511d9b1",
+  "applicationChangeCommit": "89b23972b0ea1d7456cc0a97c31ad5fc1ac49e10",
+  "version": "1.3.7",
+  "versionCode": 2734,
+  "checks": {
+    "quick": {
+      "run": 39515150779,
+      "result": "success",
+      "passed": 159
+    },
+    "performance": {
+      "run": 39515150672,
+      "result": "success"
+    },
+    "phone": {
+      "run": 39515146159,
+      "result": "success",
+      "chromiumShards": 6,
+      "chromiumTests": 107,
+      "nativeTests": 251,
+      "nativeFailures": 0,
+      "nativeErrors": 0,
+      "nativeSkipped": 0
+    }
+  },
+  "apk": {
+    "artifact": 12307393803,
+    "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39515146159/artifacts/12307393803",
+    "sha256": "2d2ba088f61cf1c34a9da0252a66d0e8caee41449bf817860aacfc2aaedaaa3a",
+    "bytes": 5921495,
+    "verifiedBlobSha": {
+      "www/app.js": "aab0727b40904303aa339f10afa96d79cda8115c",
+      "www/workout-feedback-features.css": "311d646ec7bbfabe50bfe113b3494169af61feb1"
+    },
+    "sourceStamp": "924664ef7882aa59cbedfbcebe6c95605511d9b1",
+    "signatureGate": "passed",
+    "signerContinuityGate": "passed"
+  },
+  "wear": "unchanged",
+  "deviceAcceptance": "pending",
+  "mainMerge": false,
+  "releasePublished": false
+}

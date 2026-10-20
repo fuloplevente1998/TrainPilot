@@ -15,7 +15,9 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 - A belső módpanel 46px-es kompakt fejléccel, dupla függőleges padding nélkül jelenik meg. A Mégse eldobja a függőben lévő választást, visszaállítja a mentett mezőket és becsukja a belső panelt, a külső Edzés beállításai nyitva marad.
 - A haptika ugyanazt a `tp155-sync-check` témázott 22px-es négyzet/pipa vezérlőt használja, mint a többi szinkronbeállítás. A mentett kapcsoló működése változatlan.
 - A módválasztó/mentés tesztek és a haptika integrált UI-tesztje kibővítve; a Mégse modellteszt helyben sikeres. A PR-részletező célzott tesztje bekerült a kötelező Chromium suite-ba.
-- Helyi JS-szintaxis ellenőrizve; friss Quick/Performance/telefonos Chromium és release gate eredménye, majd új APK készülékes elfogadása szükséges. Wear/native forrás változatlan.
+- Végső teszt/APK-forrás: `924664ef7882aa59cbedfbcebe6c95605511d9b1`. Quick **159/159**, Performance **SUCCESS**, telefonos Release Gate **39515146159 SUCCESS**, Chromium **6/6, 107/107**, natív XML **251/251, 0 failure/error/skipped**.
+- Aláírt, kicsomagolt telefonos APK átadva; verzió **1.3.7 /2734**. SHA-256 `2d2ba088f61cf1c34a9da0252a66d0e8caee41449bf817860aacfc2aaedaaa3a`. A csomagolt app.js/CSS blobazonos a forrással, a source stamp a fenti commit. Aláírás és signer-folytonosság kapu sikeres.
+- [CI/APK bizonylat](builds/2026-10-21-234-pr-toggle-training-ui.json). Wear/native forrás változatlan. Következő: új APK készülékes próbája – PR kétszeri koppintása, lapos módpanel, Mégse, témázott haptika pipa.
 - #234 Draft marad. Nincs main merge, release vagy verzióemelés.
 
 ## Elfogadva – #230 / 1.3.7 közzétéve
