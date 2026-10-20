@@ -21,6 +21,13 @@ const server=http.createServer((req,res)=>{
   const saved=await page.evaluate(()=>JSON.stringify([settings(),programs(),history(),db.get('draft',null)]));
   assert.equal(await page.locator('#tp197-mode-global').count(),1,'Global mode should be available in Settings');
   await page.locator('#tp197-mode-global').evaluate(el=>el.open=true);
+  assert.equal(await page.locator('#tp197-mode-global-style').isHidden(),true,'Native Android picker should not be visible');
+  const globalPicker=page.locator('#tp197-mode-global .tp197-choice[data-field="trainingStyle"]');
+  await globalPicker.locator('summary').click();
+  assert.equal(await globalPicker.evaluate(el=>el.open),true,'Inline picker opens on page');
+  await globalPicker.locator('button').last().click();
+  assert.equal(await page.locator('#tp197-mode-global-style').inputValue(),'hit');
+  assert.equal(await globalPicker.evaluate(el=>el.open),false,'Choice closes inline dropdown');
   await page.locator('#tp197-mode-global-style').selectOption('hit');
   await page.locator('#tp197-mode-global-progress').selectOption('rir');
   assert.equal(await page.locator('#tp197-mode-global-style').inputValue(),'hit');
@@ -35,9 +42,19 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.locator('.tp1511-training-body #tp197-mode-program').count(),1,'Program modes should live inside Workout settings');
   assert.equal(await page.locator('main > #tp197-mode-program').count(),0,'No detached duplicate mode card');
   await page.locator('.tp1511-training').evaluate(el=>el.open=true);
+  const progGrid=page.locator('.tp1511-prog');
+  assert.equal(await progGrid.locator('input').count(),4,'Original weight step controls remain');
+  assert.equal(await progGrid.evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length),2,'Two columns for load steps');
+  assert.equal(await page.locator('#tp197-mode-program .tp197-panel-chevron').count(),1,'Program disclosure chevron exists');
   await page.locator('#tp197-mode-program').evaluate(el=>el.open=true);
   assert.equal(await page.locator('#tp197-mode-program .tp197-preview-reason').count(),1,'Explain the concrete hold or increase reason');
   assert.equal(await page.locator('#tp197-mode-program-style').inputValue(),'normal');
+  const programPicker=page.locator('#tp197-mode-program .tp197-choice[data-field="trainingStyle"]');
+  await programPicker.locator('summary').click();
+  assert.equal(await programPicker.evaluate(el=>el.open),true);
+  await programPicker.locator('button').last().click();
+  assert.equal(await page.locator('.tp1511-training').evaluate(el=>el.open),true,'Workout panel stays open');
+  assert.equal(await page.locator('#tp197-mode-program').evaluate(el=>el.open),true,'Mode panel stays open');
   await page.locator('#tp197-mode-program-style').selectOption('hit');
   assert.equal(await page.locator('#tp197-mode-program-style').inputValue(),'hit');
   const after=await page.evaluate(()=>JSON.stringify([settings(),programs(),history(),db.get('draft',null)]));
@@ -50,6 +67,8 @@ const server=http.createServer((req,res)=>{
     viewport:document.documentElement.scrollWidth-document.documentElement.clientWidth
    }));
    assert.ok(result.panel<=2,'panel overflow '+width+': '+JSON.stringify(result));
+   const columns=await page.locator('.tp1511-prog').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length);
+   assert.equal(columns,2,'Compact weight step grid at '+width+'px');
    assert.ok(result.controls.every(x=>x<=2),'selector overflow '+width+': '+JSON.stringify(result));
   }
   assert.deepEqual(errors,[]);
