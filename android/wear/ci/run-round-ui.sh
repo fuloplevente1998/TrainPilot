@@ -4,9 +4,23 @@ adb shell settings put system accelerometer_rotation 0
 adb shell settings put system user_rotation 0
 result=0
 test_args=(--no-daemon :wear:connectedDebugAndroidTest)
-if [[ -n "${TRAINPILOT_WEAR_UI_FILTER:-}" ]]; then
-  test_args+=("-Pandroid.testInstrumentationRunnerArguments.class=$TRAINPILOT_WEAR_UI_FILTER")
+count="${TRAINPILOT_WEAR_UI_SHARD_COUNT:-1}"
+index="${TRAINPILOT_WEAR_UI_SHARD_INDEX:-0}"
+if [[ ! "$count" =~ ^[1-9][0-9]*$ || ! "$index" =~ ^(0|[1-9][0-9]*)$ ]] || (( index >= count )); then
+  echo "Invalid round UI shard index/count: $index/$count" >&2
+  exit 2
 fi
+if [[ -n "${TRAINPILOT_WEAR_UI_FILTER:-}" ]]; then
+  # AndroidJUnitRunner requires the full parameterized method name to filter it.
+  if (( count != 1 )); then echo 'Class/method filter cannot be combined with sharding' >&2; exit 2; fi
+  test_args+=("-Pandroid.testInstrumentationRunnerArguments.class=$TRAINPILOT_WEAR_UI_FILTER")
+elif (( count > 1 )); then
+  # AndroidX Test Runner shards by test case, including parameterized cases.
+  # Each shard uses its own emulator and writes a separate JUnit XML report.
+  test_args+=("-Pandroid.testInstrumentationRunnerArguments.numShards=$count"
+              "-Pandroid.testInstrumentationRunnerArguments.shardIndex=$index")
+fi
+echo "Round UI shard: $index/$count, filter: ${TRAINPILOT_WEAR_UI_FILTER:-<full-suite>}"
 (cd android && ./gradlew "${test_args[@]}") || result=$?
 # AndroidJUnit may return success when a parameterized method filter selects nothing.
 # Treat an empty run as a failure; a green job must prove that tests actually ran.
