@@ -23,12 +23,21 @@ const server=http.createServer((req,res)=>{
   });
   const badge=page.locator('.tp226-pr-badge');assert.equal(await badge.count(),1);
   const card=page.locator('details[data-tp152-history-key]').filter({has:page.locator('.tp226-pr-badge')});
-  assert.equal(await card.evaluate(x=>x.open),false,'Record explanation starts collapsed');
+  assert.equal(await card.evaluate(x=>x.open),false,'Workout starts collapsed');
+  await card.locator(':scope > summary .history-title').click();
+  assert.equal(await card.evaluate(x=>x.open),true,'Workout opens independently of its PR badge');
+  const detail=card.locator(':scope > .tp3-combined-history-body > .tp226-pr-details');
+  assert.equal(await detail.count(),1,'Record data exists in the hydrated workout');
+  assert.equal(await detail.evaluate(x=>x.open),false,'Record disclosure defaults to closed');
+  assert.equal(await detail.isVisible(),false,'No Record details title or box before tapping PR');
   await badge.click();
-  assert.equal(await card.evaluate(x=>x.open),true,'Tapping the PR opens its workout');
-  const detail=card.locator('.tp226-pr-details');assert.equal(await detail.count(),1);
-  assert.equal(await detail.evaluate(x=>x.open),true,'Tapping the PR reveals record details');
+  assert.equal(await detail.evaluate(x=>x.open),true,'Tapping PR expands the record');
+  assert.equal(await detail.isVisible(),true,'PR tap makes record details visible');
   assert.match(await detail.innerText(),/10 kg.*12 kg/);
+  await detail.locator(':scope > summary').click();
+  assert.equal(await detail.isVisible(),false,'Closing record details removes the panel completely');
+  await badge.click();
+  assert.equal(await detail.isVisible(),true,'PR tap can reveal the panel again');
   assert.equal(await detail.locator('.tp226-pr-record').count(),1,'PR count matches displayed explanation');
   const chipBounds=await card.locator(':scope > summary .history-badges > *').evaluateAll(nodes=>nodes.map(node=>{
    const {x,y,width,height}=node.getBoundingClientRect();return {x,y,width,height};
