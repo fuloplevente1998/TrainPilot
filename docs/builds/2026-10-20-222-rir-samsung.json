@@ -1,0 +1,67 @@
+{
+  "verifiedAt": "2026-10-20T08:16:13.143261+00:00",
+  "pullRequest": 222,
+  "applicationCommit": "a8bec13630136d89128f259bd065f6c2f57b2cea",
+  "applicationTree": "889b18da87d94f3dc38cbb37b9629ecab2927e71",
+  "prMergeTreeMatches": true,
+  "mainUnchanged": "1393982d48691489978a44652c61ff2b32514e8d",
+  "version": "1.3.6",
+  "versionCode": 2733,
+  "quick": {
+    "runId": 39391181566,
+    "conclusion": "success",
+    "passed": 154,
+    "failed": 0
+  },
+  "performance": {
+    "runId": 39391181636,
+    "conclusion": "success"
+  },
+  "phoneGate": {
+    "runId": 39391176400,
+    "conclusion": "success"
+  },
+  "chromium": {
+    "shards": 6,
+    "tests": 105,
+    "passed": 105,
+    "source": "a8bec13630136d89128f259bd065f6c2f57b2cea",
+    "duplicate_tests": 0
+  },
+  "native": {
+    "tests": 246,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "samsungSdkReaderCases": [
+    "energyScoreIsReadWhenAllowed",
+    "repeatedPaginationTokenIsPartialRatherThanAFakeZeroOrAnInfiniteRead",
+    "stepsWindowUsesOnlyStepsAndDistinguishesMissingFromZero",
+    "directExerciseCaloriesAreClippedWithoutBorrowingBasalOrDailyEnergy",
+    "bodyFatIsPercentAndMuscleAndWaterUseTheirActualSdkUnits",
+    "independentEnergyReadDoesNotInventDataWithoutItsOwnPermission",
+    "independentEnergyReadExcludesTheNextMidnightAndDoesNotReadOtherMetrics",
+    "deniedTypesAreNotReadAndMissingWorkoutEnergyStaysMissing"
+  ],
+  "apk": {
+    "name": "TrainPilot-1.3.6.apk",
+    "sha256": "0352cbfc68b6f46dc402f82a267878bc1f0aaec2035e3514e782606c2bf7fb80",
+    "bytes": 5912998,
+    "artifactId": 12249603397,
+    "artifactUrl": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39391176400/artifacts/12249603397",
+    "packagedAppAndIndexMatch": true,
+    "sourceStampMatches": true,
+    "signerMatchesV100": true,
+    "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688"
+  },
+  "wearChanged": false,
+  "deviceAcceptance": {
+    "samsungEnergyScoreMatchesToday": null,
+    "apkUpgradeAndDriveRestPersistence": null,
+    "rirPhoneWorkflow": null
+  },
+  "merged": false,
+  "issuesClosed": false,
+  "releasePublished": false
+}
