@@ -3,7 +3,34 @@
 Frissítve: **2026-10-20**. Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
-## #222 – Samsung-pontszám olvasható, Regeneráció-csempe egységesítése
+## Aktuális – #222 mainen, funkcionális kör lezárva
+
+- Felhasználói elfogadás/lezárás 2026-10-20 17:12 (Europe/Budapest):
+  „Zarhato ez is, igy akkor kb minden mar nem ?”
+  Ez a legutolsó Samsung/Regeneráció-javítás elfogadása és a korábban feltételesen
+  jóváhagyott RIR utáni #222 integráció lezárási pontja; nem kitalált részletes mérési napló.
+- **#222 merged mainre: `f413a3a475cf31a4e596429fe1c8dcf3e1e135df`. #184 és #197 completed.**
+  Main merge fa `791db4a8608a27bdcbfc31490a8cbf427b3fd307`, byteazonos a PR-head fájával.
+  A korábbi dokumentációs eltérésen túl a bevizsgált alkalmazásforrás változatlan:
+  `c14e70778fdb81d42a49fe4b2ef8aa58b3a5292b`.
+- Quick **39440379202: 154/154**, Performance **39440379183: SUCCESS**,
+  Phone Gate **39440372153: SUCCESS**, Chromium **6/6, 105/105**, natív XML
+  **249/249, 0 failure/error/skipped**. A végső dokumentációs HEAD Quick
+  **39441673066** és Performance **39441673033** is sikeres.
+  A merge után automatikusan induló main futások külön futások; eredményüket nem találjuk ki.
+- Verzió **1.3.6 /2733**, Wear változatlan. Nem történt verzióemelés vagy új release.
+  A már telepített, elfogadott [telefonos APK](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39440372153/artifacts/12273816379)
+  alkalmazásforrása azonos a mainre került kóddal.
+  [CI/APK bizonylat](builds/2026-10-20-222-recovery-tiles.json);
+  [lezárási bizonylat](builds/2026-10-20-222-accepted.json).
+- **Egyetlen nyitott issue: #214**, karbantartás és Google Play-előkészítés.
+  A Samsung nyilvános/production partner-hozzáférés ellenőrzése is ott marad;
+  saját készülékes siker nem partnerregisztrációs igazolás. Nyitott PR nincs.
+- A jelenlegi funkcionális fejlesztési sor lezárult. A dizájnmódosítások lehetnek
+  a következő külön feladat; még nem kezdődtek el. Rögzített ötletek:
+  [UI/funkció backlog](plans/UI_TEST_BRANCH_BACKLOG.md), külön későbbi tesztágra.
+
+## Történeti #222 – Samsung-pontszám olvasható, Regeneráció-csempe egységesítése
 
 - Felhasználó 16:24-es képe **sikeres készülékes Samsung-olvasást igazol** az e97fe1e APK-n.
   Ez nem teljes PR/main elfogadás és nem külön egyezésigazolás a Samsung Health kijelzésével.

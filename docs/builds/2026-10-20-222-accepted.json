@@ -1,0 +1,38 @@
+{
+  "recordedAt": "2026-10-20T15:16:54.012Z",
+  "pullRequest": 222,
+  "merged": true,
+  "mergeCommit": "f413a3a475cf31a4e596429fe1c8dcf3e1e135df",
+  "mergeTree": "791db4a8608a27bdcbfc31490a8cbf427b3fd307",
+  "featureHead": "6cd59316310f4f9cfa3a1772f64d81661abea887",
+  "mergeTreeMatchesFeatureHead": true,
+  "applicationCommit": "c14e70778fdb81d42a49fe4b2ef8aa58b3a5292b",
+  "applicationVerification": "2026-10-20-222-recovery-tiles.json",
+  "userAcceptance": {
+    "at": "2026-10-20T17:12:28+02:00",
+    "message": "Zarhato ez is, igy akkor kb minden mar nem ?",
+    "scope": "Latest Samsung/recovery fix accepted; prior RIR-conditioned #222 main integration and functional closure finalized.",
+    "separateDetailedDeviceMeasurementLog": false
+  },
+  "issuesClosed": [
+    184,
+    197
+  ],
+  "remainingOpenIssues": [
+    214
+  ],
+  "openPullRequests": 0,
+  "deferredTo214": [
+    "Samsung Health production partner registration/package/signature/ENERGY_SCORE scope verification for public distribution"
+  ],
+  "version": "1.3.6",
+  "versionCode": 2733,
+  "versionChanged": false,
+  "wearChanged": false,
+  "releasePublished": false,
+  "apk": {
+    "artifactUrl": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39440372153/artifacts/12273816379",
+    "sha256": "3798a8e679f9a5a16b013be774f918e62eca24e0070b36084a7d2e1349cf5e28",
+    "applicationSourceMatchesMergedMain": true
+  }
+}
