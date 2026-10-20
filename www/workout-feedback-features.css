@@ -15,6 +15,6 @@ details.history .history-badges:has(.tp226-pr-badge){flex-wrap:wrap}
 .tp226-pr-feedback{font-size:13px}
 @media(prefers-reduced-motion:reduce){.tp226-pr-badge,.tp226-pr-details{animation:none!important;transition:none!important}}
 
-.tp227-haptic-setting{display:flex;gap:12px;align-items:center;min-height:44px;padding:10px 0}.tp227-haptic-setting input{width:24px;height:24px;flex-shrink:0}.tp227-haptic-setting span{min-width:0}.tp227-haptic-setting strong,.tp227-haptic-setting small{display:block;line-height:1.4;overflow-wrap:anywhere}.tp227-haptic-setting small{color:var(--muted);margin-top:4px}
+.tp1511-training-body>label.tp227-haptic-setting{display:flex;gap:12px;align-items:center;min-height:44px;padding:10px 0}.tp227-haptic-setting input{width:24px;height:24px;flex-shrink:0}.tp227-haptic-setting span{min-width:0}.tp227-haptic-setting strong,.tp227-haptic-setting small{display:block;line-height:1.4;overflow-wrap:anywhere}.tp227-haptic-setting small{color:var(--muted);margin-top:4px}
 
 .tp228-copy-controls{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 10px;align-items:center}.tp228-copy-controls .tp228-copy{min-height:44px;max-width:100%;white-space:normal;overflow-wrap:anywhere;padding:8px 12px}.tp228-copy-controls .small{overflow-wrap:anywhere}

@@ -8764,7 +8764,7 @@ renderWorkout=function(){
 toggleSet=function(ei,si){
  const s=state.session?.exercises?.[ei]?.sets?.[si];if(!s)return;
  if(!s.done&&(!/^\d+$/.test(String(s.reps))||Number(s.reps)<1)){alert(tp149T('workout.invalidReps'));return;}
- s.done=!s.done;if(s.done)startRest();renderWorkout();
+ s.done=!s.done;if(!s.done)delete s.actualRir;if(s.done)startRest();renderWorkout();
 };
 
 window.TrainPilotI18n.workoutAudit=function(){
@@ -16912,7 +16912,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
      const normal=v=>v==null||v===''?0:Number(String(v).replace(',','.'));
      if(normal(set[field])!==normal(event.before?.[field])&&normal(set[field])!==normal(event.values[field]))throw Error('Recorded set has conflicting edits');
     }
-    Object.assign(set,event.values);delete session.interval162;
+    Object.assign(set,event.values);delete set.actualRir;delete session.interval162;
     session.automatic162={...session.automatic162,undoKey188:'undo188:'+event.commandId};next.current=session.exercises.indexOf(e);changed=true;
    }else if(event.kind!=='startTimeline'){
     const e=session.exercises.find(e=>e.id===event.exerciseId&&e.sets?.some(s=>s.setId===event.setId)),set=e?.sets.find(s=>s.setId===event.setId);
@@ -16975,7 +16975,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(state.session&&identity(state.session)===identity(value.session)){
    const own=state.session,exercises=own.exercises;
    // Keep live editor/set references valid after the atomic storage commit.
-   value.session.exercises.forEach((e,i)=>e.sets.forEach(s=>{const target=exercises[i]?.sets.find(v=>v.setId===s.setId);if(target)Object.assign(target,s);}));
+   value.session.exercises.forEach((e,i)=>e.sets.forEach(s=>{const target=exercises[i]?.sets.find(v=>v.setId===s.setId);if(target){Object.assign(target,s);if(!s.done)delete target.actualRir;}}));
    Object.assign(own,value.session,{exercises});state.current=value.current;state.restEndAt=value.restEndAt;
   }
  }
@@ -17202,7 +17202,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    session.phoneEdit162=edit||{revision:meta.revision,generation:meta.generation,bases:JSON.parse(JSON.stringify(meta.completedBase||{})),targets:[]};
    if(!session.phoneEdit162.targets.includes(last.setId))session.phoneEdit162.targets.push(last.setId);
   }
-  Object.assign(set,last.before,{done:false});
+  Object.assign(set,last.before,{done:false});delete set.actualRir;
   session.undo188={commandId:command.commandId,recordId:command.recordId,status:'applied',fingerprint:JSON.stringify([command.recordId,command.expected])};
   session.undoneRecords188=[...(session.undoneRecords188||[]),command.recordId].slice(-128);
   delete session.lastRecord188;delete session.interval162;
@@ -17508,6 +17508,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
      repUnit:String(exercise?.repUnit||''),
      measurementType:String(exercise?.measurementType||''),
      targetReps:String(exercise?.targetReps||exercise?.reps||(typeof byId==='function'?byId(exercise?.id)?.reps:'')||''),
+     actualRir:/^(?:10|[0-9])$/.test(String(exercise?.actualRir))?Number(exercise.actualRir):null,
+     setRir229:exercise?.setRir229===true,
      sets:(Array.isArray(exercise?.sets)?exercise.sets:[]).map((set,index)=>({
       set:Number(set?.set||index+1),
       setId:String(set?.setId||''),
@@ -17516,7 +17518,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
       done:!!set?.done,
       leftSeconds:set?.leftSeconds??'',
       rightSeconds:set?.rightSeconds??'',
-      distanceMeters:set?.distanceMeters??''
+      distanceMeters:set?.distanceMeters??'',
+      actualRir:/^(?:10|[0-9])$/.test(String(set?.actualRir))?Number(set.actualRir):null
      }))
     }))
    };
@@ -17721,6 +17724,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     const target=locateSet(located.exercise,{setIndex:si,setNumber:value.set});if(!target)continue;
     if(!value.done)continue;
     applySetValues(target.set,value);
+    if(/^(?:10|[0-9])$/.test(String(value.actualRir)))target.set.actualRir=Number(value.actualRir);
     const unit=String(located.exercise.repUnit||'').replace(/\s+/g,'').toLowerCase();
     const valid=unit==='mp/oldal'?Number(target.set.leftSeconds)>0&&Number(target.set.rightSeconds)>0:Number(target.set.reps)>0;
     if(valid)target.set.done=true;
@@ -18610,6 +18614,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
      if(own.done!==v.done)changed=true;
      own.done=v.done;
     }
+    if(!own.done)delete own.actualRir;
+    else if(v.actualRir!=null&&/^(?:10|[0-9])$/.test(String(v.actualRir)))own.actualRir=Number(v.actualRir);
     // Keep a phone edit until the watch actually changes the same value.
     for(const field of ['reps','weight','leftSeconds','rightSeconds','distanceMeters']){
      if(field==='distanceMeters'&&(v[field]==null||v[field]===''||Number(v[field])===0&&!tp106IsDistance(s.exercises[i])))continue;
@@ -18762,7 +18768,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
 (function(){
  'use strict';
  const clone=v=>JSON.parse(JSON.stringify(v)),id=s=>String(s?.syncId||s?.started||'');
- const rank={offered:1,accepted:2,committed:3},fields=['done','reps','weight','leftSeconds','rightSeconds','distanceMeters'];
+ const rank={offered:1,accepted:2,committed:3},fields=['done','reps','weight','leftSeconds','rightSeconds','distanceMeters','actualRir'];
  function pending(session){return !!session?.handoff193&&session.handoff193.state!=='committed';}
  function commandAllowed(session,command){
   if(!session||session.ownershipProtocol193!==1||command?.workoutId!==id(session)||['healthSummary','requestHome','saveWorkoutFeedback'].includes(command.action))return true;
@@ -18777,6 +18783,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    e.sets.forEach((s,j)=>{
     if(!s.setId||s.setId!==own.exercises[i].sets[j].setId||seen.has(s.setId)||typeof s.done!=='boolean')throw Error('Transferred set changed');
     seen.add(s.setId);
+    if(s.actualRir!=null&&s.actualRir!==''&&!/^(?:10|[0-9])$/.test(String(s.actualRir)))throw Error('Invalid transferred RIR');
     for(const key of fields.slice(1))if(s[key]!=null&&s[key]!==''&&(!Number.isFinite(Number(s[key]))||Number(s[key])<0))throw Error('Invalid transferred value');
    });
   });
@@ -18795,7 +18802,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    !Number.isFinite(Date.parse(row.start))||row.end!=null&&(!Number.isFinite(Date.parse(row.end))||Date.parse(row.end)<Date.parse(row.start))||
    i<root.activeIntervals.length-1&&row.end==null)||root.activeIntervals.at(-1).end!=null)throw Error('Invalid watch active interval');
   const next=clone(draft),s=next.session;
-  root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{for(const k of fields)if(k in v)s.exercises[i].sets[j][k]=v[k];}));
+  root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{for(const k of fields)if(k in v)s.exercises[i].sets[j][k]=v[k];if(v.done===false)delete s.exercises[i].sets[j].actualRir;}));
   s.workoutPaused=false;s.pauseRevision=command.pauseRevision;s.activeIntervals=clone(root.activeIntervals);s.pauseTimer201=null;
   s.wearSequence=Math.max(Number(s.wearSequence)||0,command.sequence);
   s.watchAutomation162=root.automation?{...clone(root.automation),snapshot:clone(root)}:null;
@@ -18819,7 +18826,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    return !Number.isFinite(from)||!Number.isFinite(to)||from<previous||to<from||to>finished;
   }))throw Error('Invalid completed watch intervals');
   const next=clone(draft),s=next.session;
-  root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{for(const k of fields)if(k in v)s.exercises[i].sets[j][k]=v[k];}));
+  root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{for(const k of fields)if(k in v)s.exercises[i].sets[j][k]=v[k];if(v.done===false)delete s.exercises[i].sets[j].actualRir;}));
   s.workoutPaused=true;s.pauseRevision=root.pauseRevision;s.activeIntervals=clone(root.activeIntervals);s.pauseTimer201=null;
   s.wearSequence=Math.max(Number(s.wearSequence)||0,command.sequence);delete s.indoorTimer107;delete s.interval162;
   s.watchAutomation162=root.automation?{...clone(root.automation),snapshot:clone(root)}:null;
@@ -18843,7 +18850,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(applied?.id===h.id&&applied.epoch===epoch&&rank[applied.state]>=rank[h.state])return null;
   validateSets(own,root);
   const next=clone(draft),s=next.session;
-  root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{for(const k of fields)if(k in v)s.exercises[i].sets[j][k]=v[k];}));
+  root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{for(const k of fields)if(k in v)s.exercises[i].sets[j][k]=v[k];if(v.done===false)delete s.exercises[i].sets[j].actualRir;}));
   Object.assign(s,{ownershipProtocol193:1,ownerEpoch193:epoch,handoff193:clone(h),timerOwner:root.timerOwner,
    workoutPaused:true,pauseRevision:Math.max(Number(s.pauseRevision)||0,Number(root.pauseRevision)||0),
    ownershipApplied193:{id:h.id,state:h.state,epoch},pausedRestMillis201:Number(root.pausedRestMillis)||0});
@@ -18872,7 +18879,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   db.set('draft',value); // Commit before exposing the new owner to controls or publishing it.
   if(id(state.session)===id(value.session)){
    const session=state.session,exercises=session.exercises;
-   value.session.exercises.forEach((e,i)=>e.sets.forEach((s,j)=>Object.assign(exercises[i].sets[j],s)));
+   value.session.exercises.forEach((e,i)=>e.sets.forEach((s,j)=>{Object.assign(exercises[i].sets[j],s);if(!s.done)delete exercises[i].sets[j].actualRir;}));
    Object.assign(session,value.session,{exercises});
    for(const key of ['interval162','timerCheckpoint193','phoneExecution162','phoneEdit162','indoorTimer107'])if(!(key in value.session))delete session[key];
    state.current=value.current;state.restEndAt=null;stopTimer();
@@ -19461,7 +19468,7 @@ var tp197ExercisePreview=function tp197ExercisePreview(id,programId=null,preview
   const item=tp140Occurrence(row,target);
   const effort=item.effort||null,feedbackRating=row.workout?.feedback?.rating||null;
   // The prescribed RIR is NOT a measurement. Only an explicit recorded RIR is considered.
-  const reported=row.exercise?.actualRir??row.exercise?.feedback?.rir??null;
+  const reported=typeof tp229RirObservation==='function'?tp229RirObservation(row.exercise):row.exercise?.actualRir??row.exercise?.feedback?.rir??null;
   return {
    allDone:item.allDone===true,weight:item.weight,minRep:item.minRep,reps:item.reps,
    hitTop:item.hitTop===true,belowMin:item.belowMin===true,effort,feedbackRating,
@@ -19849,8 +19856,7 @@ var tp197CoachPanel=function(){
 // @endsection training-coach-197.js
 
 // @section training-actual-rir-197.js
-/* #197: optional actual repetitions-in-reserve, entered by the user after a
- * completed strength set. The prescribed RIR must never be used as a reading. */
+/* #229: optional per-set observations. Legacy exercise RIR is read, never expanded. */
 var TP197_RIR_WORDS={
  hu:{title:'Tényleges RIR (ismétléstartalék)',note:'Hány szabályos ismétlés ment volna még? 0 = egy sem. Csak a saját becslésedet rögzítsd; nem kötelező.',missing:'Nincs megadva',unit:'ismétlés'},
  en:{title:'Actual RIR (reps in reserve)',note:'How many more good reps could you have done? 0 = none. Optional self-report; not the target RIR.',missing:'Not recorded',unit:'reps'},
@@ -19858,6 +19864,15 @@ var TP197_RIR_WORDS={
  ro:{title:'RIR real (repetări în rezervă)',note:'Câte repetări corecte mai puteai face? 0 = niciuna. Estimare personală opțională, nu RIR țintă.',missing:'Neînregistrat',unit:'repetări'}
 };
 var tp197RirWords=function(){return TP197_RIR_WORDS[typeof rf212Lang==='function'?rf212Lang():'hu']||TP197_RIR_WORDS.hu};
+
+var tp229RirValid=function(value){return value!==null&&value!==undefined&&value!==''&&/^(?:10|[0-9])$/.test(String(value))};
+var tp229RirObservation=function(exercise){
+ const sets=Array.isArray(exercise?.sets)?exercise.sets:[],values=sets.filter(s=>s.done===true&&tp229RirValid(s.actualRir)).map(s=>Number(s.actualRir));
+ if(values.length)return Math.min(...values);
+ if(exercise?.setRir229===true||sets.some(s=>s.actualRir!==null&&s.actualRir!==undefined&&s.actualRir!==''))return null;
+ const legacy=exercise?.actualRir??exercise?.feedback?.rir;
+ return tp229RirValid(legacy)?Number(legacy):null;
+};
 var tp197RirEligible=function(session,exercise){
  if(!session||!exercise||!Array.isArray(exercise.sets)||!exercise.sets.some(x=>x.done===true))return false;
  if(session.timerOwner==='watch'||session.ownershipAwaitingResume193||
@@ -19872,50 +19887,62 @@ var tp197RirEligible=function(session,exercise){
  if(['distance','time','gps'].includes(String(exercise.measurementType||lib.measurementType||'').toLowerCase()))return false;
  return true;
 };
-var tp197RirSave=function(value,repaint=true){
+
+var tp197RirSave=function(value,repaint=true,setId=null){
  const session=state.session,exercise=session?.exercises?.[state.current];
- if(!tp197RirEligible(session,exercise))return false;
- const raw=String(value);
- if(raw!==''&&!/^(?:10|[0-9])$/.test(raw))return false;
- const before=exercise.actualRir;
+ if(!tp197RirEligible(session,exercise)||session.workoutPaused)return false;
+ const set=setId?exercise.sets.find(s=>s.setId===setId):exercise.sets.filter(s=>s.done===true).at(-1);
+ if(!set||set.done!==true)return false;
+ const raw=String(value);if(raw!==''&&!tp229RirValid(raw))return false;
+ const before=set.actualRir,marker=exercise.setRir229;
  try{
-  if(raw==='')delete exercise.actualRir;
-  else exercise.actualRir=Number(raw);
-  persistDraft();
+  if(raw==='')delete set.actualRir;else set.actualRir=Number(raw);
+  exercise.setRir229=true;persistDraft();
  }catch(_){
-  if(before===undefined)delete exercise.actualRir;
-  else exercise.actualRir=before;
+  if(before===undefined)delete set.actualRir;else set.actualRir=before;
+  if(marker===undefined)delete exercise.setRir229;else exercise.setRir229=marker;
   return false;
  }
+ void window.TrainPilotWearSync?.syncNow?.();
  if(repaint)renderWorkout();return true;
 };
 var tp197RirHistory=function(exercise){
+ const t=tp197RirWords(),sets=Array.isArray(exercise?.sets)?exercise.sets:[],
+  rows=sets.flatMap((set,index)=>set.done===true&&tp229RirValid(set.actualRir)?[(index+1)+'.: <strong>'+Number(set.actualRir)+'</strong>']:[]);
  const value=exercise?.actualRir;
- if(value===null||value===undefined||value===''||!Number.isInteger(Number(value))||Number(value)<0||Number(value)>10)return '';
- const t=tp197RirWords();
- return '<p class="small muted tp197-rir-history">'+esc(t.title)+': <strong>'+Number(value)+'</strong> '+esc(t.unit)+'</p>';
+ const legacy=tp229RirValid(value)?'<p class="small muted tp197-rir-history">'+esc(t.title)+' (legacy): <strong>'+Number(value)+'</strong> '+esc(t.unit)+'</p>':'';
+ return (rows.length?'<p class="small muted tp197-rir-history">'+esc(t.title)+': '+rows.join(' · ')+' '+esc(t.unit)+'</p>':'')+legacy;
 };
 var tp197RirInput=function(input){
- const value=String(input.value),valid=value===''||/^(?:10|[0-9])$/.test(value);
- // An invalid edit is not a new observation and must not leave an older
- // actual RIR silently attached to the workout. Keep the numeric field stable.
- const saved=tp197RirSave(valid?value:'',false);
- input.setAttribute?.('aria-invalid',valid&&saved?'false':'true');
- return valid&&saved;
+ const value=String(input.value),valid=value===''||tp229RirValid(value);
+ const saved=tp197RirSave(valid?value:'',false,input.dataset?.setId||null);
+ input.setAttribute?.('aria-invalid',valid&&saved?'false':'true');return valid&&saved;
 };
 var tp197RirField=function(session,exercise){
  if(!tp197RirEligible(session,exercise))return '';
- const t=tp197RirWords(),saved=exercise.actualRir;
- const selected=saved!==null&&saved!==undefined&&saved!==''&&Number.isInteger(Number(saved))&&Number(saved)>=0&&Number(saved)<=10?String(saved):'';
- return '<div class="tp197-rir-field"><label for="tp197ActualRir">'+esc(t.title)+'</label>'+
-  '<input id="tp197ActualRir" class="field" type="number" inputmode="numeric" min="0" max="10" step="1" value="'+esc(selected)+'" placeholder="'+esc(t.missing)+'" aria-describedby="tp197RirNote" oninput="tp197RirInput(this)">'+
-  '<p id="tp197RirNote" class="small muted">'+esc(t.note)+'</p></div>';
+ const t=tp197RirWords(),rows=exercise.sets.map((set,index)=>({set,index})).filter(row=>row.set.done===true);
+ const last=rows.at(-1)?.set;
+ const labels={
+ hu:{set:'sorozat',summary:'A Coach a megadott kész sorozatok legkisebb RIR-jével számol. Hiányzó értéket nem találunk ki.',legacy:'Korábbi gyakorlat-RIR'},
+ en:{set:'set',summary:'Coach uses the lowest reported RIR among completed sets. Missing values are never inferred.',legacy:'Legacy exercise RIR'},
+ de:{set:'Satz',summary:'Coach verwendet den kleinsten gemeldeten RIR abgeschlossener Sätze. Fehlende Werte werden nicht geschätzt.',legacy:'Früherer Übungs-RIR'},
+ ro:{set:'serie',summary:'Coach folosește cel mai mic RIR raportat dintre seriile finalizate. Valorile lipsă nu sunt deduse.',legacy:'RIR anterior al exercițiului'}
+ };
+ const l=labels[typeof rf212Lang==='function'?rf212Lang():'hu']||labels.en;
+ return '<div class="tp197-rir-field tp229-rir"><strong>'+esc(t.title)+'</strong>'+
+ rows.map(({set,index})=>{
+  const id=set===last?'tp197ActualRir':'tp229ActualRir-'+index;
+  return '<label for="'+id+'">'+(index+1)+'. '+esc(l.set)+'</label>'+
+   '<input id="'+id+'" class="field" data-set-id="'+esc(set.setId||'')+'" type="number" inputmode="numeric" min="0" max="10" step="1" value="'+(tp229RirValid(set.actualRir)?Number(set.actualRir):'')+'" placeholder="'+esc(t.missing)+'" aria-describedby="tp197RirNote tp229RirSummary" oninput="tp197RirInput(this)">';
+ }).join('')+
+ '<p id="tp197RirNote" class="small muted">'+esc(t.note)+'</p><p id="tp229RirSummary" class="small muted">'+esc(l.summary)+'</p>'+
+ (tp229RirValid(exercise.actualRir)?'<p class="small muted">'+esc(l.legacy)+': '+Number(exercise.actualRir)+'</p>':'')+'</div>';
 };
+window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation};
 (function(){
  const previous=rf152FeedbackHtml;
  rf152FeedbackHtml=function(exercise){
-  const html=String(previous.apply(this,arguments));
-  const session=state.session,active=session?.exercises?.[state.current];
+  const html=String(previous.apply(this,arguments)),session=state.session,active=session?.exercises?.[state.current];
   if(active!==exercise)return html;
   const additional=tp197RirField(session,exercise);
   return additional?html.replace(/<\/div>\s*$/,additional+'</div>'):html;
@@ -20210,7 +20237,7 @@ var tp197RirField=function(session,exercise){
   const lib=typeof byId==='function'?byId(exercise.id)||{}:{};
   return !['distance','time','gps'].includes(String(exercise.measurementType||lib.measurementType||'').toLowerCase())&&
    ['', 'ism.','reps','/kar','/láb'].includes(exercise.repUnit||lib.repUnit||'')&&
-   !exercise.sets.some(s=>'leftSeconds' in s||'rightSeconds' in s||'distanceMeters' in s);
+   !exercise.sets.some(s=>Number(s.leftSeconds)>0||Number(s.rightSeconds)>0||Number(s.distanceMeters)>0);
  }
  function fresh(source,number,id){
   if(!source||!/^\d+$/.test(String(source.reps))||Number(source.reps)<1||Number(source.reps)>10000)return null;

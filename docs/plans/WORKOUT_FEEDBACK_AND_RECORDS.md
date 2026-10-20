@@ -11,7 +11,7 @@ Az [újfunkció-audit #225](https://github.com/fuloplevente1998/TrainPilot/pull/
 | 1 | [#226](https://github.com/fuloplevente1998/TrainPilot/issues/226) | Mentett eredmény és Napló PR-jelvénye a meglévő rekordmodellre építve | Kód és célzott modell/UI teszt elkészült; CI még követendő |
 | 2 | [#227](https://github.com/fuloplevente1998/TrainPilot/issues/227) | Kapcsolható rövid haptika sikeres kézi sorozat-OK után | Kód és nyugta/owner/deduplikáció regresszió elkészült; CI követendő |
 | 3 | [#228](https://github.com/fuloplevente1998/TrainPilot/issues/228) | Kifejezett sorozatmásolás új azonosítóval, done:false | Kód és célzott érték/azonosító/owner/rollback regresszió elkészült; CI követendő |
-| 4 | [#229](https://github.com/fuloplevente1998/TrainPilot/issues/229) | Sorozatonkénti tényleges RIR, kompatibilis napló/Coach/protokoll | Tervezett |
+| 4 | [#229](https://github.com/fuloplevente1998/TrainPilot/issues/229) | Sorozatonkénti tényleges RIR, kompatibilis napló/Coach/protokoll | Telefonos bevitel, konzervatív Coach, napló és natív/Wear értékmegőrzés kódja elkészült; integrált kapuk következnek |
 
 ## Megőrzendő működés
 
@@ -27,3 +27,11 @@ Az [újfunkció-audit #225](https://github.com/fuloplevente1998/TrainPilot/pull/
 Kis feature-commitok, célzott modell/UI/native regressziók. Teljes regresszió, Chromium, natív build és aláírt APK kizárólag Actionsben. A négy képesség integrált forrásán kell végső Quick/Performance/6 Chromium/phone és az érintett Wear kapu, majd készülékes próba.
 
 A jelenlegi környezetben nincs használható shell; a forrásmódosítás GitHub Git-adat API-n, pontos szülőcommitokkal, diff-/tree-ellenőrzéssel és CAS ref-frissítéssel történik. Helyben csak tiszta JS szintaxis és célzott modell ellenőrzés fut a rendelkezésre álló V8 futtatóban; ez nem helyettesít alkalmazás- vagy készüléktesztet.
+
+## RIR adatmodell (#229)
+
+A `sets[].actualRir` opcionális egész 0–10. A Coach a kész sorozatok megadott értékeinek minimumát használja; az üres érték nem nulla. Az `exercise.setRir229` jelzi a sorozatos bevitel tudatos használatát, ezért minden új megfigyelés törlése nem kapcsolja vissza csendben a régi gyakorlat-RIR-t. Az eredeti `exercise.actualRir` változatlanul olvasható és külön régi értékként látható. A cél-RIR nem kerül a megfigyelésekbe.
+
+A telefonos és Wear snapshot külön nullable sorozat-RIR-t, régi gyakorlat-RIR-t és a jelzőt visz át. A meglévő nyolcmezős Undo guard változatlan protokoll; a visszavont teljesítés RIR-je törlődik JS-ben, natív telefonon és órán. Másolás soha nem viszi át. A natív előkészítés csak érvényes egész 0–10 vagy hiányzó RIR-t fogad.
+
+A haptika alapból bekapcsolt, az Edzés beállításai panelen mentett kapcsolóval. Sikeres, tartós kézi nyugta egyszer jelez 40 ms-ot; automatikus módban a meglévő időzítőjelzések maradnak. A másolás kézi, telefonos tulajdonban érhető el, legfeljebb 10 sorozatig; aktív automatikus mód alatt tiltott.
