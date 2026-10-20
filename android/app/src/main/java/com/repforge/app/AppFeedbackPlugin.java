@@ -28,7 +28,12 @@ public class AppFeedbackPlugin extends Plugin {
         call.resolve(result);
     }
 
-    @PluginMethod public void signal(PluginCall call) {
+    @PluginMethod public void signal(PluginCall call) { vibrate(call, 90); }
+
+    /** A single accepted manual set; independent of interval transition cues. */
+    @PluginMethod public void setRecorded(PluginCall call) { vibrate(call, 40); }
+
+    private void vibrate(PluginCall call, long durationMillis) {
         try {
             Vibrator vibrator;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -39,9 +44,9 @@ public class AppFeedbackPlugin extends Plugin {
             }
             if (vibrator != null && vibrator.hasVibrator()) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator.vibrate(VibrationEffect.createOneShot(90, VibrationEffect.DEFAULT_AMPLITUDE));
+                    vibrator.vibrate(VibrationEffect.createOneShot(durationMillis, VibrationEffect.DEFAULT_AMPLITUDE));
                 } else {
-                    vibrator.vibrate(90);
+                    vibrator.vibrate(durationMillis);
                 }
             }
             call.resolve();

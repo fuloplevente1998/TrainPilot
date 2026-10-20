@@ -9,7 +9,7 @@ Az [újfunkció-audit #225](https://github.com/fuloplevente1998/TrainPilot/pull/
 | Sorrend | Issue | Scope | Állapot |
 | --- | --- | --- | --- |
 | 1 | [#226](https://github.com/fuloplevente1998/TrainPilot/issues/226) | Mentett eredmény és Napló PR-jelvénye a meglévő rekordmodellre építve | Kód és célzott modell/UI teszt elkészült; CI még követendő |
-| 2 | [#227](https://github.com/fuloplevente1998/TrainPilot/issues/227) | Kapcsolható rövid haptika sikeres kézi sorozat-OK után | Következő implementáció |
+| 2 | [#227](https://github.com/fuloplevente1998/TrainPilot/issues/227) | Kapcsolható rövid haptika sikeres kézi sorozat-OK után | Kód és nyugta/owner/deduplikáció regresszió elkészült; CI követendő |
 | 3 | [#228](https://github.com/fuloplevente1998/TrainPilot/issues/228) | Kifejezett sorozatmásolás új azonosítóval, done:false | Tervezett |
 | 4 | [#229](https://github.com/fuloplevente1998/TrainPilot/issues/229) | Sorozatonkénti tényleges RIR, kompatibilis napló/Coach/protokoll | Tervezett |
 

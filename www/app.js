@@ -19104,6 +19104,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
      try{persistDraft();}catch(error){if(previous===undefined)delete session.lastRecord188;else session.lastRecord188=previous;throw error;}
      void window.TrainPilotWearSync?.syncNow?.();
      window.TrainPilotPhoneUndo188?.paint?.();
+     window.TrainPilotSetHaptic227?.success?.(session,set);
     }
     return result;
    };
@@ -20137,6 +20138,61 @@ var tp197RirField=function(session,exercise){
 })();
 // @endsection workout-records-226.js
 
+
+// @section set-haptic-227.js
+/* Explicit manual recording feedback; never an interval or sync event. */
+(function(){
+ 'use strict';
+ const words={
+ hu:['Rezgés sorozat rögzítésekor','Rövid visszajelzés sikeres kézi OK után. A pihenő jelzéseit külön kezeli az app.'],
+ en:['Vibrate when recording a set','Short feedback after a successful manual OK. Rest cues remain separate.'],
+ de:['Vibration beim Speichern eines Satzes','Kurzes Feedback nach erfolgreichem manuellem OK. Pausensignale bleiben separat.'],
+ ro:['Vibrație la înregistrarea seriei','Feedback scurt după un OK manual reușit. Semnalele de pauză rămân separate.']
+ };
+ const seen=new Set();
+ function permitted(session,set,receipt,enabled){
+  return enabled!==false&&!!receipt?.recordId&&receipt.setId===set?.setId&&set?.done===true&&
+   receipt.workoutId===String(session?.syncId||session?.started||'')&&
+   (session?.timerOwner||'phone')==='phone'&&!session?.ownershipAwaitingResume193&&
+   !(session?.ownershipProtocol193===1&&session.timerOwner!=='phone')&&
+   !session?.automatic162?.enabled;
+ }
+ function success(session,set){
+  if(typeof state==='undefined'||state.session!==session||window.TrainPilotBackupBusy||
+   window.TrainPilotRestore105Pending||window.TrainPilotWearSync?.isApplyingCommand?.())return false;
+  const receipt=session.lastRecord188;
+  if(!permitted(session,set,receipt,settings().setHaptic227))return false;
+  const token=receipt.workoutId+'|'+receipt.recordId;if(seen.has(token))return false;
+  seen.add(token);if(seen.size>100)seen.delete(seen.values().next().value);
+  try{
+   if(window.Capacitor?.isNativePlatform?.()){
+    const plugin=window.Capacitor.Plugins?.AppFeedback||window.Capacitor.registerPlugin?.('AppFeedback');
+    Promise.resolve(plugin?.setRecorded?.()).catch(()=>{});
+   }else if(typeof navigator!=='undefined'&&typeof navigator.vibrate==='function')navigator.vibrate(40);
+  }catch(_){}
+  return true;
+ }
+ function paint(){
+  const host=document.querySelector('.tp1511-training-body');if(!host||host.querySelector('.tp227-haptic-setting'))return;
+  const text=words[typeof rf212Lang==='function'?rf212Lang():'hu']||words.en;
+  const label=document.createElement('label');label.className='tp227-haptic-setting';
+  const input=document.createElement('input');input.type='checkbox';input.checked=settings().setHaptic227!==false;
+  const body=document.createElement('span'),title=document.createElement('strong'),note=document.createElement('small');
+  title.textContent=text[0];note.textContent=text[1];body.append(title,note);label.append(input,body);
+  input.addEventListener('change',()=>{
+   const before=settings();
+   try{db.set('settings',{...before,setHaptic227:input.checked});if(typeof cloudChanged==='function')cloudChanged();}
+   catch(_){input.checked=before.setHaptic227!==false;input.setAttribute('aria-invalid','true');}
+  });
+  host.appendChild(label);
+ }
+ window.TrainPilotSetHaptic227={permitted,success,paint};
+ if(typeof document!=='undefined')window.addEventListener?.('DOMContentLoaded',()=>{
+  const base=window.render;if(typeof base==='function')window.render=function(){const result=base.apply(this,arguments);paint();return result;};
+  paint();
+ });
+})();
+// @endsection set-haptic-227.js
 
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
