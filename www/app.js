@@ -3958,6 +3958,11 @@ rf220WorkoutTime=function(h){for(const k of ['finished','started','endedAt','fin
 rf220PainRecent=()=>rf245RecentHistory().some(h=>(h.exercises||[]).some(e=>e.effort==='pain'));
 rf220EffortLoad=function(){let score=100,n=0;for(const h of rf245RecentHistory())for(const e of h.exercises||[]){if(!e.effort)continue;n++;if(e.effort==='hard'||e.effort==='challenging')score-=8;if(e.effort==='pain')score-=20;if(e.effort==='easy')score+=2}return {score:Math.max(20,Math.min(100,score)),n}};
 
+// Display precision is shared by the Samsung card, recovery tiles and Coach reasons.
+// Keep the original SDK value untouched for calculations and provenance.
+var tp184FormatScore=function(value){
+ const n=rf240Num(value);return n==null||n<0||n>100?'—':tp149FormatNumber(Math.round(n))+'/100';
+};
 // A Samsung daily score is usable only with verifiable provenance and a timestamp for today.
 var tp184EnergyToday=function tp184EnergyToday(){
  const health=state.health||{},daily=health.daily||{},rec=health.recovery||{};
@@ -4001,7 +4006,7 @@ rf220Readiness=function(){
    sleep,hrv,base,load:load.n?load.score:null,energyScore:samsung.value,
    energyScoreTime:samsung.time,energyScoreSource:samsung.source,
    trainpilotScore,trainpilotParts:ownParts,readinessSource:'samsung',
-   parts:1+(load.n?1:0),confidence:'Samsung Energiapontszám ('+samsung.value+'/100)'};
+   parts:1+(load.n?1:0),confidence:'Samsung Energiapontszám ('+tp184FormatScore(samsung.value)+')'};
  }
  return {score:trainpilotScore,
   level:trainpilotScore==null?'unknown':trainpilotScore>=75?'good':trainpilotScore>=55?'medium':'low',
@@ -10547,7 +10552,7 @@ const tp1511ReadinessBase=rf220Readiness;
 rf220Readiness=function(){
  const r=tp1511ReadinessBase.apply(this,arguments),t=tp1511HealthT();
  if(r.energyScore!=null){
-  r.confidence=(t.samsungEnergyScore||'Samsung Energiapontszám')+' ('+r.energyScore+'/100)';
+  r.confidence=(t.samsungEnergyScore||'Samsung Energiapontszám')+' ('+tp184FormatScore(r.energyScore)+')';
  }else{
   r.confidence=r.parts>=3?t.confMany:r.parts?t.confLimited:t.confFresh;
  }
@@ -15517,7 +15522,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const row=(label,value,note)=>'<div class="rf233-signal tp110-signal"><strong>'+esc(label)+'</strong><span>'+esc(value)+'</span><small>'+esc(note)+'</small></div>';
   const last=time=>Number.isFinite(Date.parse(time))?' '+t('last')+': '+tp149FormatDateTime(time):'';
   if(r.energyScore!=null){
-   rows.push(row(t('samsungEnergyScore'),number(r.energyScore)+'/100',t('samsungEnergyNote')+last(r.energyScoreTime)));
+   rows.push(row(t('samsungEnergyScore'),tp184FormatScore(r.energyScore),t('samsungEnergyNote')+last(r.energyScoreTime)));
    rows.push(row(t('trainpilotEstimate'),r.trainpilotScore==null?t('freshMissing'):number(r.trainpilotScore)+'/100',t('trainpilotNote')));
   }else{
    rows.push(row(t('samsungEnergyScore'),t('freshMissing'),window.TrainPilotEnergy184?.summary?.()||t('freshMissing')));
@@ -19949,7 +19954,7 @@ var tp197RirField=function(session,exercise){
  function summary(){return ['access','update','open'].includes(status)?hint(status)+' '+t('error'):t(status==='ready'&&!tp184EnergyToday()?'empty':status);}
  function html(){
   const score=tp184EnergyToday();
-  return '<section class="card tp184-energy-card"><h3>'+esc(t('title'))+'</h3><p class="tp184-energy-value"><strong>'+(score?esc(score.value)+'/100':'—')+'</strong></p><p class="small muted" role="status">'+esc(summary())+'</p>'+(failure?'<p class="small muted tp184-energy-error">'+esc(hint('detail')+': '+failure)+'</p>':'')+'<button type="button" class="btn secondary block" onclick="TrainPilotEnergy184.refresh({manual:true})" '+(flight?'disabled':'')+'>'+esc(t('refresh'))+'</button></section>';
+  return '<section class="card tp184-energy-card"><h3>'+esc(t('title'))+'</h3><p class="tp184-energy-value"><strong>'+esc(tp184FormatScore(score?.value))+'</strong></p><p class="small muted" role="status">'+esc(summary())+'</p>'+(failure?'<p class="small muted tp184-energy-error">'+esc(hint('detail')+': '+failure)+'</p>':'')+'<button type="button" class="btn secondary block" onclick="TrainPilotEnergy184.refresh({manual:true})" '+(flight?'disabled':'')+'>'+esc(t('refresh'))+'</button></section>';
  }
  function decorate(){
   const main=document.querySelector('#app main.tp168-health');if(!main)return;

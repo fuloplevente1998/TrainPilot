@@ -3,7 +3,22 @@
 Frissítve: **2026-10-20**. Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
-## #222 – konkrét 1001-es készülékhiba, napi lekérdezés javítása
+## #222 – Samsung-pontszám olvasható, Regeneráció-csempe egységesítése
+
+- Felhasználó 16:24-es képe **sikeres készülékes Samsung-olvasást igazol** az e97fe1e APK-n.
+  Ez nem teljes PR/main elfogadás és nem külön egyezésigazolás a Samsung Health kijelzésével.
+- Kérés: a Regeneráció csempe is ugyanazt a mai külső pontszámot mutassa.
+  A csempe eddig friss saját alvás/HRV rekordhoz kötötten, Coach-korláttal számolt.
+  Most a hiteles mai Samsung-pontszámot mutatja Home/Egészség oldalon akkor is,
+  ha külön alvás/HRV-rekord nincs. Külső adat hiányában a korábbi saját becslés marad.
+- Közös egész számú kijelzés: a képen látott SDK-tizedes érték 55/100-ként jelenik meg.
+  A nyers SDK-pontszám és a Coach fájdalom/terhelés védelmei változatlanok.
+  Kártya/csempe/Coach forrássor azonos formázást használ. Natív és Wear kód érintetlen.
+- Célzott JS/szintaxis/diff ellenőrzés és friss teljes Actions/APK még szükséges.
+  Új böngészős védelem: tizedes pontszám, külön alvásrekord hiánya, Home/Egészség
+  csempe/kártya egyezése, hiány/hiba fallback. #222 Draft, main/verzió változatlan.
+
+## Korábbi #222 – 1001-es napi lekérdezés javítása
 
 - Felhasználó 16:07-kor az új APK képernyőképét küldte: **SAMSUNG_HEALTH_1001**.
   Samsung dokumentáció: ERR_INVALID_INPUT (érvénytelen bemenet); nem igazolt partnerhiba.
