@@ -20018,10 +20018,6 @@ var tp197RirField=function(session,exercise){
 // @endsection samsung-energy-access-184.js
 
 
-// @section ready.js
-if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
-// @endsection ready.js
-
 // @section workout-records-226.js
 /* #226: saved-workout PR badges reuse the canonical Progress model. No writes or celebrations. */
 (function(){
@@ -20136,7 +20132,12 @@ if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRe
  const api=window.TrainPilotRecords226={index,aliases,recordsFor,paint,installed:false};
  if(typeof document!=='undefined'){
   if(document.readyState==='complete')install();
-  else window.addEventListener('DOMContentLoaded',install,{once:true});
+  else window.addEventListener?.('DOMContentLoaded',install,{once:true});
  }
 })();
 // @endsection workout-records-226.js
+
+
+// @section ready.js
+if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
+// @endsection ready.js
