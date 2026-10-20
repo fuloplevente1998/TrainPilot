@@ -91,7 +91,9 @@ public class SamsungHealthPlugin extends Plugin {
                 if (epoch != HealthJournalStore.get(getContext()).generation()
                         || !HealthJournalStore.get(getContext()).pendingRestore().isEmpty())
                     throw new IllegalStateException("Health data changed; retry after restore/reopen.");
-                if (value.has("day")) HealthJournalStore.get(getContext()).samsungDay(
+                // An independent Energy Score read must not replace a complete
+                // Samsung day (steps, sleep, body metrics) with a partial result.
+                if (value.has("day") && !value.optBoolean("energyScoreOnly")) HealthJournalStore.get(getContext()).samsungDay(
                     value.getString("day"), value, reader.journal, epoch);
                 call.resolve(value);
             } catch (Exception e) { reject(call, e); }
@@ -104,6 +106,26 @@ public class SamsungHealthPlugin extends Plugin {
         call.reject("Samsung Health: " + (cause.getMessage() == null ? cause.getClass().getSimpleName() : cause.getMessage()), "SAMSUNG_HEALTH_" + code);
     }
     @PluginMethod public void getStatus(PluginCall call) { run(call, reader -> status(reader.granted)); }
+    @PluginMethod public void requestEnergyScoreRead(PluginCall call) {
+        getActivity().runOnUiThread(() -> {
+            try {
+                foreground();
+                Set<Permission> permission = Collections.singleton(Permission.of(DataTypes.ENERGY_SCORE, AccessType.READ));
+                sdk().requestPermissionsAsync(permission, getActivity()).setCallback(Looper.getMainLooper(),
+                    granted -> call.resolve(status(granted)), error -> reject(call, error));
+            } catch (Exception e) { reject(call, e); }
+        });
+    }
+    @PluginMethod public void readEnergyScoreDay(PluginCall call) {
+        run(call, reader -> {
+            Instant[] range = range(call, 26 * 60L);
+            String day = call.getString("day", "");
+            if (!HealthJournalStore.validDay(day)
+                    || !range[0].atZone(ZoneId.systemDefault()).toLocalDate().toString().equals(day))
+                throw new IllegalArgumentException("Invalid Samsung Energy Score day.");
+            return reader.energyDay(range[0], range[1]).put("day", day).put("energyScoreOnly", true);
+        });
+    }
     @PluginMethod public void requestRead(PluginCall call) {
         getActivity().runOnUiThread(() -> {
             try {
@@ -291,10 +313,13 @@ public class SamsungHealthPlugin extends Plugin {
         }
 
         private void energyScore(JSObject out, Instant start, Instant end) throws Exception {
+            out.put("energyScore", JSONObject.NULL);
             safe(DataTypes.ENERGY_SCORE, () -> {
                 ZoneId zone = ZoneId.systemDefault();
                 LocalDate startDate = start.atZone(zone).toLocalDate();
-                LocalDate endDate = end.atZone(zone).toLocalDate();
+                // The incoming day window has an exclusive end. Including the
+                // next midnight can otherwise label tomorrow's score as today.
+                LocalDate endDate = end.minusNanos(1).atZone(zone).toLocalDate();
                 Map<String, HealthDataPoint> unique = new LinkedHashMap<>();
                 String token = null;
                 Set<String> tokens = new HashSet<>();
@@ -305,13 +330,25 @@ public class SamsungHealthPlugin extends Plugin {
                         .setLocalDateFilter(LocalDateFilter.of(startDate, endDate, true, true));
                     if (token != null) builder.setPageToken(token);
                     DataResponse<HealthDataPoint> response = store.readDataAsync(builder.build()).get(30, TimeUnit.SECONDS);
-                    for (HealthDataPoint point : response.getDataList()) unique.put(point.getUid(), point);
+                    for (HealthDataPoint point : response.getDataList()) {
+                        Number value = point.getValue(DataType.EnergyScoreType.ENERGY_SCORE);
+                        Instant time = point.getStartTime();
+                        if (value == null || !Double.isFinite(value.doubleValue()) || value.doubleValue() <= 0 || value.doubleValue() > 100 || time == null) continue;
+                        LocalDate day = time.atZone(zone).toLocalDate();
+                        if (day.isBefore(startDate) || day.isAfter(endDate)) continue;
+                        unique.put(point.getUid(), point);
+                    }
                     token = response.getPageToken();
                     if (token == null || token.isEmpty()) break;
                     if (!tokens.add(token)) throw new IllegalStateException("Repeated Samsung Health page token.");
                 }
                 latest(out, new ArrayList<>(unique.values()), DataType.EnergyScoreType.ENERGY_SCORE, "energyScore", "energyScore", "", "EnergyScoreRecord");
             }, "energyScore");
+        }
+        JSObject energyDay(Instant start, Instant end) throws Exception {
+            JSObject out = base(start, end);
+            energyScore(out, start, end);
+            return out;
         }
         JSObject wellness(Instant start, Instant end) throws Exception {
             JSObject out = base(start, end);

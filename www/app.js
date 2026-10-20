@@ -3971,7 +3971,12 @@ var tp184EnergyToday=function tp184EnergyToday(){
   if(day&&day!==today)return null;
   return {value:number,time,source:origin};
  };
- return valid(daily.energyScore,daily.energyScoreTime,daily.energyScoreSource||daily.metricProviders?.energyScore,today)
+ const external=window.TrainPilotEnergy184;
+ if(external?.hasResult()){
+  const data=external.reading()||{};
+  return valid(data.energyScore,data.energyScoreTime,data.energyScoreSource||data.metricProviders?.energyScore,data.day);
+ }
+ return valid(daily.energyScore,daily.energyScoreTime,daily.energyScoreSource||daily.metricProviders?.energyScore,daily.day||today)
   ||valid(rec.energyScore,rec.energyScoreTime,rec.energyScoreSource,rec.day);
 };
 rf220Readiness=function(){
@@ -5646,7 +5651,7 @@ const TP140_BODY_PROGRESSIONS={
 var tp140ParseTarget=function tp140ParseTarget(text,rirValue=null){
  const raw=String(text??'').trim(),t=raw.toLowerCase().replaceAll('−','-').replaceAll('–','-'),explicitRir=/\brir\b/i.test(t);
  const rir=t.match(/(\d+(?:[.,]\d+)?)\s*-\s*(\d+(?:[.,]\d+)?)\s*rir\b/i)||t.match(/(\d+(?:[.,]\d+)?)\s*rir\b/i);
- const rirA=rir?Number(String(rir[1]).replace(',','.')):(Number.isFinite(Number(rirValue))?Number(rirValue):null),rirB=rir?.[2]!=null?Number(String(rir[2]).replace(',','.')):rirA;
+ const rirA=rir?Number(String(rir[1]).replace(',','.')):(rirValue!==null&&rirValue!==undefined&&rirValue!==''&&Number.isFinite(Number(rirValue))?Number(rirValue):null),rirB=rir?.[2]!=null?Number(String(rir[2]).replace(',','.')):rirA;
  // A pure "2–3 RIR" target has no repetition ceiling. Program prescriptions may also
  // carry a separate numeric RIR alongside a normal rep range; keep both in that case.
  if(explicitRir&&/^\s*\d+(?:[.,]\d+)?(?:\s*-\s*\d+(?:[.,]\d+)?)?\s*rir\s*$/i.test(t))return {kind:'rir',min:null,max:null,rirMin:Math.min(rirA,rirB),rirMax:Math.max(rirA,rirB),raw};
@@ -8305,7 +8310,7 @@ var tp149HistoryTitle=function tp149HistoryTitle(x){
 rf263HistoryItem=function(x,originalIndex,visibleIndex){
  const c=completedSets(x),title=tp149HistoryTitle(x),key=rf142WorkoutKey(x),photoCount=rf130VisiblePhotos(x).length;
  const count=tp149T('journal.exerciseCount',{count:x.exercises.length})+(photoCount?' • '+tp149T('journal.photoCount',{count:photoCount}):'');
- return '<details class="history rf263-history rf103-history" ontoggle="if(this.open){rf130LoadHistoryPhotos(this);rfHistoryHealthEnsure('+originalIndex+')}"><summary><div class="history-head"><div class="history-title-row"><div><div class="history-title">'+esc(title)+'</div><div class="history-date">'+esc(tp149FormatDateTime(x.started))+'</div></div><div class="rf103-history-side"><span class="badge">'+esc(count)+'</span><span class="rf103-history-chevron" aria-hidden="true">⌄</span></div></div><div class="history-badges"><span class="history-badge">⏱ '+esc(sessionDuration(x))+'</span><span class="history-badge">✓ '+esc(tp149T('journal.setCount',{done:c.done,total:c.total}))+'</span></div></div></summary><div class="history-body"><div class="grid2"><button class="btn secondary" onclick="editHistoryWorkout(\''+esc(key)+'\')">'+esc(tp149T('journal.editWorkout'))+'</button><button class="btn secondary" onclick="calendarIntent('+originalIndex+')">'+esc(tp149T('journal.addCalendar'))+'</button></div><div class="rf-history-health-panel" data-rf-history-health-panel="'+originalIndex+'"><button type="button" class="rf-history-health-toggle" aria-expanded="true" onclick="event.stopPropagation();rfHistoryHealthToggle('+originalIndex+')"><strong>'+esc(tp149T('journal.healthData'))+'</strong><span class="small muted">'+esc(rfHistoryHealthWindow(x))+'</span><span class="rf-history-health-chevron" aria-hidden="true">⌄</span></button><div class="rf-history-health-body"><div class="rf-history-health" data-rf-history-health="'+originalIndex+'">'+rfHistoryHealthHtml(originalIndex)+'</div><button type="button" class="btn secondary block rf-history-health-refresh" onclick="event.stopPropagation();healthFromHistory('+originalIndex+')">'+esc(tp149T('common.refresh'))+'</button></div></div>'+rf130PhotoSection(x,key)+(x.exercises||[]).map(function(e){return '<div class="history-ex"><div class="history-ex-name">'+esc(tp149HistoryExerciseName(e))+'</div><div class="history-setchips">'+(e.sets||[]).map(function(s){return '<span class="setchip">'+esc(formatSet(e,s))+(s.done?' ✓':' • '+esc(tp149T('journal.notDone')))+'</span>';}).join('')+'</div></div>';}).join('')+'</div></details>';
+ return '<details class="history rf263-history rf103-history" ontoggle="if(this.open){rf130LoadHistoryPhotos(this);rfHistoryHealthEnsure('+originalIndex+')}"><summary><div class="history-head"><div class="history-title-row"><div><div class="history-title">'+esc(title)+'</div><div class="history-date">'+esc(tp149FormatDateTime(x.started))+'</div></div><div class="rf103-history-side"><span class="badge">'+esc(count)+'</span><span class="rf103-history-chevron" aria-hidden="true">⌄</span></div></div><div class="history-badges"><span class="history-badge">⏱ '+esc(sessionDuration(x))+'</span><span class="history-badge">✓ '+esc(tp149T('journal.setCount',{done:c.done,total:c.total}))+'</span></div></div></summary><div class="history-body"><div class="grid2"><button class="btn secondary" onclick="editHistoryWorkout(\''+esc(key)+'\')">'+esc(tp149T('journal.editWorkout'))+'</button><button class="btn secondary" onclick="calendarIntent('+originalIndex+')">'+esc(tp149T('journal.addCalendar'))+'</button></div><div class="rf-history-health-panel" data-rf-history-health-panel="'+originalIndex+'"><button type="button" class="rf-history-health-toggle" aria-expanded="true" onclick="event.stopPropagation();rfHistoryHealthToggle('+originalIndex+')"><strong>'+esc(tp149T('journal.healthData'))+'</strong><span class="small muted">'+esc(rfHistoryHealthWindow(x))+'</span><span class="rf-history-health-chevron" aria-hidden="true">⌄</span></button><div class="rf-history-health-body"><div class="rf-history-health" data-rf-history-health="'+originalIndex+'">'+rfHistoryHealthHtml(originalIndex)+'</div><button type="button" class="btn secondary block rf-history-health-refresh" onclick="event.stopPropagation();healthFromHistory('+originalIndex+')">'+esc(tp149T('common.refresh'))+'</button></div></div>'+rf130PhotoSection(x,key)+(x.exercises||[]).map(function(e){return '<div class="history-ex"><div class="history-ex-name">'+esc(tp149HistoryExerciseName(e))+'</div><div class="history-setchips">'+(e.sets||[]).map(function(s){return '<span class="setchip">'+esc(formatSet(e,s))+(s.done?' ✓':' • '+esc(tp149T('journal.notDone')))+'</span>';}).join('')+'</div>'+(typeof tp197RirHistory==='function'?tp197RirHistory(e):'')+'</div>';}).join('')+'</div></details>';
 };
 
 historyScreen=function(){
@@ -15514,6 +15519,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(r.energyScore!=null){
    rows.push(row(t('samsungEnergyScore'),number(r.energyScore)+'/100',t('samsungEnergyNote')+last(r.energyScoreTime)));
    rows.push(row(t('trainpilotEstimate'),r.trainpilotScore==null?t('freshMissing'):number(r.trainpilotScore)+'/100',t('trainpilotNote')));
+  }else{
+   rows.push(row(t('samsungEnergyScore'),t('freshMissing'),window.TrainPilotEnergy184?.summary?.()||t('freshMissing')));
   }
   rows.push(row(t('sleep'),r.sleep==null?t('freshMissing'):number(r.sleep/60)+' h',r.sleep==null?last(rec.sleepEnd||rec.day):(r.energyScore!=null?'':effect(r.sleep>=450?12:r.sleep>=420?8:r.sleep>=360?1:-14))+last(rec.sleepEnd||rec.day)));
   const valid=r.hrv>0&&r.base>0,delta=valid?(r.hrv-r.base)/r.base:0;
@@ -15780,7 +15787,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
  async function refresh(){const p=await ready();if(p)accept(await p.getProjection());return cache;}
  function legacySnapshot(data){const days=JSON.parse(JSON.stringify(data.healthLedger?.days||{}));for(const row of data.recoveryHistory||[]){if(!/^\d{4}-\d{2}-\d{2}$/.test(row.day))continue;const entry=days[row.day]||(days[row.day]={});entry.legacyRecovery={...row};if(entry.hrvRmssdMs==null&&row.hrvRmssdMs!=null)entry.hrvRmssdMs=row.hrvRmssdMs;}return {schemaVersion:1,records:[],days:Object.entries(days).map(([day,data])=>({day,channel:'legacy',source:'unknown',data})),deletions:[]};}
  async function backup(){const data=makeBackup(),p=await ready();if(p&&tp105HealthConsent())data.healthJournal=await p.exportSnapshot();return tp105Project(data,tp105HealthConsent());}
- const typeLabels={SkeletalMuscleMass:'muscle',BodyFatMass:'fatMass',TotalBodyWater:'water',FatFreeMass:'lean',BasalMetabolicRate:'basal',StepsRecord:'steps',StepsSnapshot:'steps',SleepSessionRecord:'sleep',HeartRateRecord:'pulse',RestingHeartRateRecord:'resting',ActiveCaloriesBurnedRecord:'active',TotalCaloriesBurnedRecord:'total',DistanceRecord:'distance',SpeedRecord:'speed',WeightRecord:'weight',BodyFatRecord:'fat',BloodPressureRecord:'pressure',BloodGlucoseRecord:'glucose',RespiratoryRateRecord:'respiratory',HeartRateVariabilityRmssdRecord:'HRV',OxygenSaturationRecord:'SpO₂',Vo2MaxRecord:'VO₂max',ExerciseSessionRecord:'exercise'};
+ for(const [lang,label] of Object.entries({hu:'Samsung energiapontszám',en:'Samsung Energy Score',de:'Samsung Energiepunkte',ro:'Scor de energie Samsung'}))texts[lang].energyScore=label;
+ const typeLabels={EnergyScoreRecord:'energyScore',SkeletalMuscleMass:'muscle',BodyFatMass:'fatMass',TotalBodyWater:'water',FatFreeMass:'lean',BasalMetabolicRate:'basal',StepsRecord:'steps',StepsSnapshot:'steps',SleepSessionRecord:'sleep',HeartRateRecord:'pulse',RestingHeartRateRecord:'resting',ActiveCaloriesBurnedRecord:'active',TotalCaloriesBurnedRecord:'total',DistanceRecord:'distance',SpeedRecord:'speed',WeightRecord:'weight',BodyFatRecord:'fat',BloodPressureRecord:'pressure',BloodGlucoseRecord:'glucose',RespiratoryRateRecord:'respiratory',HeartRateVariabilityRmssdRecord:'HRV',OxygenSaturationRecord:'SpO₂',Vo2MaxRecord:'VO₂max',ExerciseSessionRecord:'exercise'};
  const format=(value,unit='')=>typeof value==='number'&&Number.isFinite(value)?tp149FormatNumber(value,{maximumFractionDigits:1})+(unit?' '+unit:''):'—';
  function origin(channel,source,data={}){if(channel==='samsung_health')return window.TrainPilotSamsungHealth?.t('direct')||'Samsung Health';if(channel==='health_connect')return source==='@aggregate'?t('aggregate'):'Health Connect · '+({'com.sec.android.app.shealth':'Samsung Health','com.google.android.apps.fitness':'Google Fit'}[source]||(source.startsWith('com.android.healthconnect.phone.')?t('phone'):t('hc')));if(channel==='ble_watch')return t('watch')+(data.deviceName?' · '+data.deviceName:'');return t('legacy')+' · '+t('unknown');}
  function recordHtml(row){
@@ -15790,7 +15798,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   return '<article class="tp120-record"><div><strong>'+esc(t(typeLabels[row.type]||row.type))+'</strong><b>'+esc(reading)+'</b></div><small>'+esc(tp149FormatDateTime(new Date(row.type==='SleepSessionRecord'?row.endMs:row.startMs)))+'</small><small class="muted">'+esc(row.channel==='samsung_health'?origin(row.channel,row.source,data):t('hc'))+'</small>'+(['health_connect','samsung_health'].includes(row.channel)?'<details class="tp120-origin-details"><summary>'+esc(t('source'))+'</summary><small>'+esc(origin(row.channel,row.source,data))+'</small><small class="muted">'+esc(row.source)+'</small></details>':'')+(samples.length?'<small>'+samples.length+' '+esc(t('samples'))+'</small>':'')+(data.dateBasis==='phone_observation'?'<small>'+esc(t('observed'))+'</small>':'')+(data.durationKind==='session'?'<small>'+esc(t('session'))+'</small>':'')+'</article>';
  }
  function dayHtml(day){
-  const metrics=[['steps',day.steps,''],['active',day.activeCalories,'kcal'],['total',day.totalCalories,'kcal'],['pulse',day.averageHeartRate,'bpm'],['resting',day.restingHeartRate,'bpm'],['distance',day.distanceMeters,'m'],['weight',day.weightKg,'kg'],['fat',day.bodyFatPercent,'%'],['muscle',day.skeletalMuscleMassKg,'kg'],['fatMass',day.bodyFatMassKg,'kg'],['water',day.totalBodyWaterLiters,'L'],['HRV',day.hrvRmssdMs,'ms'],['SpO₂',day.oxygenSaturationPercent,'%']].filter(([,value])=>value!=null);
+  const metrics=[['energyScore',day.energyScore,'/100'],['steps',day.steps,''],['active',day.activeCalories,'kcal'],['total',day.totalCalories,'kcal'],['pulse',day.averageHeartRate,'bpm'],['resting',day.restingHeartRate,'bpm'],['distance',day.distanceMeters,'m'],['weight',day.weightKg,'kg'],['fat',day.bodyFatPercent,'%'],['muscle',day.skeletalMuscleMassKg,'kg'],['fatMass',day.bodyFatMassKg,'kg'],['water',day.totalBodyWaterLiters,'L'],['HRV',day.hrvRmssdMs,'ms'],['SpO₂',day.oxygenSaturationPercent,'%']].filter(([,value])=>value!=null);
   const sessions=(day.sleepSessions||[]).filter(s=>rf240DayKey(s.end)===day.day),source=sessions.some(s=>s.source==='com.sec.android.app.shealth')?'com.sec.android.app.shealth':sessions.slice().sort((a,b)=>Date.parse(b.end)-Date.parse(a.end))[0]?.source;const spans=rf250MergeSpans(sessions.filter(s=>s.source===source).flatMap(rf250SleepSpans));if(spans.length)metrics.push(['sleep',spans.reduce((n,[a,b])=>n+(b-a)/60000,0),'min']);else if(day.legacyRecovery?.sleepMinutes!=null)metrics.push(['sleep',day.legacyRecovery.sleepMinutes,'min']);
   const stale=day.partial||!day.readAt||Date.now()-Date.parse(day.readAt)>36*3600000;
   return '<article class="tp120-day"><strong>'+esc(tp149FormatDate(new Date(day.day+'T12:00:00')))+'</strong><small>'+esc(origin(day.channel,day.source,day))+'</small><div class="tp120-metrics">'+metrics.map(([key,value,unit])=>'<div><small>'+esc(t(key))+'</small><b>'+esc(format(value,unit))+'</b>'+(day.channel==='samsung_health'&&day.metricProviders?.[key==='HRV'?'hrvRmssdMs':key]==='health_connect'?'<small>Health Connect</small>':'')+'</div>').join('')+'</div><small class="muted">'+esc(day.readAt?tp149FormatDateTime(day.readAt):'—')+(stale?' · '+esc(t(day.partial?'partial':'stale')):'')+'</small>'+(day.source==='@aggregate'&&day.activityOrigin?'<details class="tp120-origin-details"><summary>'+esc(t('source'))+'</summary><small>'+esc(origin('health_connect',day.activityOrigin))+'</small><small class="muted">'+esc(day.activityOrigin)+'</small></details>':'')+'</article>';
@@ -15914,7 +15922,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   try{
    if(journal()?.isSyncing?.()||state.health?.busy||window.TrainPilotBackupBusy)throw Error(t('busy'));
    const bridge=await journal().ready();if(!bridge)throw Error(t('missing'));
-   if(value===SH){let granted=await samsung().getStatus();if(!hasRead(granted))granted=await samsung().requestRead();if(!hasRead(granted))throw Error(t('denied'));}
+   if(value===SH){let granted=await samsung().getStatus();if(!hasRead(granted)||granted.permissions?.READ_ENERGY_SCORE===false)granted=await samsung().requestRead();if(!hasRead(granted))throw Error(t('denied'));}
    await bridge.setPreferences({preferences:{provider:value}});await journal().refresh();
    rfHistoryHealthCache?.clear();
    const rows=history();for(const row of rows)if(row.health240)row.health240.syncedAt=null;db.set('history',rows);
@@ -15929,7 +15937,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   await journal().ready();
    if(selected()!==SH)return pipeline(p,options);
   const native=samsung(),report={provider:SH,startedAt:new Date().toISOString(),stages:[],days:0,workouts:0,exported:0,skipped:0,errors:[]};
-  let status=await native.getStatus();if(options.manual&&!hasRead(status)){await native.requestRead();status=await native.getStatus();}
+  let status=await native.getStatus();if(options.manual&&(!hasRead(status)||status.permissions?.READ_ENERGY_SCORE===false)){await native.requestRead();status=await native.getStatus();}
   if(!hasRead(status))throw Error(t('denied'));
   state.health.permissions=status.permissions;
   const count=options.full||!db.get('samsungHealthLastFull',null)?30:2,days=rf240RecentDays(count).sort();
@@ -19875,14 +19883,20 @@ var tp197RirSave=function(value){
  }
  renderWorkout();return true;
 };
+var tp197RirHistory=function(exercise){
+ const value=exercise?.actualRir;
+ if(value===null||value===undefined||value===''||!Number.isInteger(Number(value))||Number(value)<0||Number(value)>10)return '';
+ const t=tp197RirWords();
+ return '<p class="small muted tp197-rir-history">'+esc(t.title)+': <strong>'+Number(value)+'</strong> '+esc(t.unit)+'</p>';
+};
 var tp197RirField=function(session,exercise){
  if(!tp197RirEligible(session,exercise))return '';
  const t=tp197RirWords(),saved=exercise.actualRir;
  const selected=saved!==null&&saved!==undefined&&Number.isInteger(Number(saved))&&Number(saved)>=0&&Number(saved)<=10?String(saved):'';
  const options=['<option value=""'+(selected===''?' selected':'')+'>'+esc(t.missing)+'</option>'];
  for(let i=0;i<=10;i++)options.push('<option value="'+i+'"'+(selected===String(i)?' selected':'')+'>'+i+' '+esc(t.unit)+'</option>');
- return '<div class="tp197-rir-field"><label for="tp197ActualRir">'+esc(t.title)+'</label>'+
-  '<select id="tp197ActualRir" class="field" aria-label="'+esc(t.title)+'" onchange="tp197RirSave(this.value)">'+options.join('')+'</select>'+
+ return '<div class="tp197-rir-field"><label for="tp197ActualRir">'+esc(t.title)+
+  '<select id="tp197ActualRir" class="field" aria-label="'+esc(t.title)+'" onchange="tp197RirSave(this.value)">'+options.join('')+'</select></label>'+
   '<p class="small muted">'+esc(t.note)+'</p></div>';
 };
 (function(){
@@ -19899,6 +19913,71 @@ var tp197RirField=function(session,exercise){
  document.head.appendChild(css);
 })();
 // @endsection training-actual-rir-197.js
+
+// @section samsung-energy-access-184.js
+/* Samsung's daily score is an optional independent input, not a switch for
+ * the user's steps/calories provider. Automatic reads never open a consent UI. */
+(function(){
+ 'use strict';
+ const words={
+  hu:{title:'Samsung energiapontszám',idle:'Az elérhető mai Samsung-pontszámot automatikusan használjuk. Ha nincs ilyen adat, marad a TrainPilot saját becslése.',permission:'Az energiapontszámhoz külön Samsung Health olvasási engedély szükséges.',empty:'Ma még nincs elérhető Samsung-pontszám. A TrainPilot saját becslése marad.',error:'A Samsung-pontszám olvasása nem sikerült. A TrainPilot saját becslése marad.',ready:'Mai Samsung Health adat. Ezt használjuk az ajánláshoz; fájdalom vagy nagy terhelés továbbra is korlátozhat.',loading:'Samsung-pontszám olvasása…',refresh:'Samsung-pontszám frissítése / engedélyezése',unavailable:'Ehhez a közvetlen Samsung-kapcsolatot támogató Android app szükséges.'},
+  en:{title:'Samsung Energy Score',idle:'Today’s available Samsung score is used automatically. Otherwise TrainPilot keeps its own estimate.',permission:'A separate Samsung Health read permission is required for Energy Score.',empty:'No Samsung score is available for today. TrainPilot keeps its own estimate.',error:'Samsung Energy Score could not be read. TrainPilot keeps its own estimate.',ready:'Today’s Samsung Health data is used for advice; pain or high load can still limit it.',loading:'Reading Samsung Energy Score…',refresh:'Refresh / allow Samsung Energy Score',unavailable:'This requires the Android app with direct Samsung support.'},
+  de:{title:'Samsung Energiepunkte',idle:'Der verfügbare heutige Samsung-Wert wird automatisch verwendet. Sonst bleibt die TrainPilot-Schätzung.',permission:'Für Energiepunkte ist eine separate Samsung Health Leseberechtigung erforderlich.',empty:'Heute ist kein Samsung-Wert verfügbar. Die TrainPilot-Schätzung bleibt.',error:'Samsung Energiepunkte konnten nicht gelesen werden. Die TrainPilot-Schätzung bleibt.',ready:'Heutiger Samsung Health Wert; Schmerz oder hohe Belastung können Empfehlungen weiter begrenzen.',loading:'Samsung Energiepunkte werden gelesen…',refresh:'Samsung Energiepunkte aktualisieren / erlauben',unavailable:'Hierfür wird die Android-App mit direkter Samsung-Unterstützung benötigt.'},
+  ro:{title:'Scor de energie Samsung',idle:'Scorul Samsung disponibil pentru azi este utilizat automat. Altfel rămâne estimarea TrainPilot.',permission:'Scorul de energie necesită o permisiune separată de citire Samsung Health.',empty:'Nu este disponibil un scor Samsung pentru azi. Rămâne estimarea TrainPilot.',error:'Scorul Samsung nu a putut fi citit. Rămâne estimarea TrainPilot.',ready:'Datele Samsung Health de azi sunt utilizate; durerea sau efortul ridicat pot limita recomandările.',loading:'Se citește scorul Samsung…',refresh:'Actualizează / permite scorul Samsung',unavailable:'Este necesară aplicația Android cu suport Samsung direct.'}
+ };
+ const t=key=>(words[typeof rf212Lang==='function'?rf212Lang():'hu']||words.hu)[key]||key;
+ let current=null,status='idle',attempted=false,flight=null,lastAttempt=0,lastDay='';
+ const today=()=>rf240DayKey(new Date());
+ function summary(){return t(status==='ready'&&!tp184EnergyToday()?'empty':status);}
+ function html(){
+  const score=tp184EnergyToday();
+  return '<section class="card tp184-energy-card"><h3>'+esc(t('title'))+'</h3><p class="tp184-energy-value"><strong>'+(score?esc(score.value)+'/100':'—')+'</strong></p><p class="small muted" role="status">'+esc(summary())+'</p><button type="button" class="btn secondary block" onclick="TrainPilotEnergy184.refresh({manual:true})" '+(flight?'disabled':'')+'>'+esc(t('refresh'))+'</button></section>';
+ }
+ function decorate(){
+  const main=document.querySelector('#app main.tp168-health');if(!main)return;
+  const previous=main.querySelector('.tp184-energy-card');
+  if(previous)previous.outerHTML=html();else main.querySelector('.tp168-today-card')?.insertAdjacentHTML('afterend',html());
+ }
+ function paint(){decorate();window.TrainPilotUIRefresh?.refresh?.();}
+ async function refresh(options={}){
+  const manual=options.manual===true;
+  if(document.hidden||window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||state.session)return;
+  if(flight)return manual?flight.then(()=>refresh({manual:true,force:true})):flight;
+  const day=today();if(!manual&&!options.force&&lastDay===day&&Date.now()-lastAttempt<10*60000)return;
+  lastAttempt=Date.now();lastDay=day;
+  flight=Promise.resolve().then(async()=>{
+   try{
+    if(!isNative()){status='unavailable';return;}
+    const p=window.Capacitor?.Plugins?.SamsungHealth||window.Capacitor?.registerPlugin?.('SamsungHealth');
+    if(!p){status='unavailable';return;}
+    status='loading';decorate();
+    let granted=await p.getStatus();
+    if(granted.permissions?.READ_ENERGY_SCORE!==true&&manual){
+     if(typeof p.requestEnergyScoreRead==='function')await p.requestEnergyScoreRead();else await p.requestRead();
+     granted=await p.getStatus();
+    }
+    attempted=true;current=null;
+    if(granted.permissions?.READ_ENERGY_SCORE!==true){status='permission';return;}
+    const result=await p.readEnergyScoreDay({...rf240DayBounds(day),day});
+    if(window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending)return;
+    if(day!==today()||result.day!==day){status='empty';return;}
+    if(result.failedFields?.includes('energyScore')){status='error';return;}
+    current=result;status=tp184EnergyToday()?'ready':'empty';
+   }catch(_){attempted=true;current=null;status='error';}
+   finally{flight=null;paint();}
+  });
+  return flight;
+ }
+ window.TrainPilotEnergy184={refresh,decorate,html,summary,reading:()=>current,hasResult:()=>attempted};
+ window.addEventListener?.('DOMContentLoaded',()=>{
+  const base=render;render=function(){const result=base.apply(this,arguments);decorate();return result;};window.render=render;
+  const syncBase=rf250Pipeline;rf250Pipeline=async function(){const result=await syncBase.apply(this,arguments);await refresh({force:true});return result;};
+  decorate();void refresh();
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refresh();});
+ });
+})();
+// @endsection samsung-energy-access-184.js
+
 
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();

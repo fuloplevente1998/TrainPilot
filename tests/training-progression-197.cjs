@@ -11,6 +11,10 @@ const saved={modes:{source:'program',trainingStyle:'normal',progressionMode:'dou
  recent:[{weight:10,allDone:true,minRep:10,reps:[10,10,11],hitTop:false,belowMin:false,effort:'good'}]};
 const baseline=JSON.stringify(saved),context={};
 vm.createContext(context);vm.runInContext(code,context,{timeout:1000});
+const parserText=fs.readFileSync(fs.existsSync(path.join(root,'www','trainpilot-140-progression-2.js'))?path.join(root,'www','trainpilot-140-progression-2.js'):path.join(root,'www','app.js'),'utf8');
+vm.runInContext(parserText.match(/var tp140ParseTarget=[\s\S]*?\n};/)[0],context);
+for(const absent of [null,undefined,''])assert.equal(context.tp140ParseTarget('8–12',absent).rirMin,null,'Missing target RIR must not become zero');
+assert.equal(context.tp140ParseTarget('8–12',0).rirMin,0,'Explicit target zero remains valid');
 const preview=input=>JSON.parse(JSON.stringify(context.tp197ComputePreview(input)));
 const check=(x,action,reason)=>{assert.equal(x.action,action);assert.equal(x.reasonCode,reason);assert.equal(x.autoApply,false);assert.equal(x.previewOnly,true)};
 check(preview({...saved,modes:{source:'legacy',explicitChoice:false}}),'legacy','legacy');

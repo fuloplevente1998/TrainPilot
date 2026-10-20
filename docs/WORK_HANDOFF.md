@@ -1,7 +1,47 @@
 # TrainPilot – aktuális átadás
 
-Frissítve: **2026-10-19**. Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
+Frissítve: **2026-10-20**. Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
+
+## Aktuális #222 – RIR befejezése, merge feltételesen engedélyezve
+
+- Távoli kiinduló HEAD: `d5e71d184d19c783ba59296c8551a1082bee96f7`,
+  `feat/184-197-coach-integration`; #222 nyitott/Draft. `main`: `1393982d`.
+- Felhasználó 2026-10-20: „Folytasd, elvileg ha a RIR javitas be kerül mehet mainre.”
+  Ez a konkrét integráció feltételes main-engedélye, nem készülékes tesztbeszámoló.
+  Dizájnmódosítások később, a funkcionális issue-k lezárása után jönnek.
+- Kiinduló Quick **39384389890**, Performance **39384389888** sikeres.
+  Telefon **39384385035** sikertelen: Chromium 5/6; 6. shardban a
+  `global-uiux-177.cjs` színátmenet közbeni oklab értéket hasonlított fix RGB-hez.
+  Natív gate kimaradt, ezen a forráson új APK nincs.
+- RIR kiegészítés: a valódi 0–10 érték látható a Napló gyakorlatánál;
+  nincs cél-RIR-ből képzett mérés. Hiányzó cél-RIR többé nem lesz implicit 0.
+  Célzott teszt: nulla/törlés/tárolási hiba, hiányzó cél; új Chromium E2E:
+  bevitel → draft újranyitás → mentett Napló → következő konzervatív Coach-javaslat.
+- A színteszt tényleges véges animációk végét várja; a szín- és geometriai
+  elvárások változatlanok. Helyi szintaxis/diff és két célzott Node-teszt sikeres;
+  teljes friss CI még nincs igazolva, Actionsben ellenőrizendő.
+- Felhasználói készülékes hiba: Samsung Healthben van energiapontszám, a
+  TrainPilotban nem található. Elvárt működés: elérhető mai külső pontszám az
+  elsődleges; hiányakor a jelenlegi saját becslés marad. Ez nem sikeres teszt.
+- #184 helyi javítás: külön, csak ENERGY_SCORE-t olvasó natív metódus és külön
+  engedélykérés; az automata olvasás nem nyit engedélyablakot, nem váltja át
+  a lépés-/kalóriaforrást. A részleges olvasás nem írja felül a teljes natív napot.
+  A napi kizáró végpont után érkező pont nem használható a megelőző napra.
+- Az Egészség oldalon mindig látható Samsung-pontszám kártya: mai érték vagy
+  engedély-/hiány-/olvasási állapot, célzott frissítés. Coachnál adat hiányában
+  is látszik a Samsung-sor. Nincs kettős pontozás, fájdalomnál marad a korlát.
+- Négy célzott Node-fájl, JS-szintaxis és diff sikeres. Új/bővített Chromium és
+  natív tesztek elkészültek, de NEM futottak le. A Samsung telefonos hiba
+  megoldása csak új APK és készülékes visszaellenőrzés után igazolható.
+- A helyi RIR-commit `a6a5d68`; a távoli ág még `d5e71d18`. Az automatikus
+  jóváhagyás-ellenőrzés elutasította a git push-t: a publikálást nem találta
+  kifejezetten engedélyezettnek. Nem váltottunk más feltöltési útra.
+  A felhasználó 09:48-kor kifejezetten engedélyezte: „Igen, töltsd fel a #222 ágára”.
+  A CLI hitelesítés hiányzik, ezért a kapcsolt GitHub API-n töltjük fel a változást.
+  Következő: GitHub Actions, APK és készülékes Samsung-ellenőrzés. Main merge még nem történt.
+- Verzió: telefon/Wear **1.3.6 /2733**, Wear-forrás érintetlen. Nincs release.
+
 
 ## #216 lezárva, 1.3.6 mainen
 

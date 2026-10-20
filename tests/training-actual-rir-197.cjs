@@ -40,5 +40,12 @@ ctx.tp197TrainingModes=()=>({explicitChoice:false,progressionMode:'rir'});assert
 ctx.tp197TrainingModes=()=>({explicitChoice:true,progressionMode:'double'});assert.equal(ctx.tp197RirSave('2'),false);
 ctx.tp197TrainingModes=()=>({explicitChoice:true,progressionMode:'rir'});
 assert.equal(ctx.tp197RirSave('3'),true);assert.equal(exercise.actualRir,3);
+assert.match(ctx.tp197RirHistory({actualRir:0}),/>0<\/strong>/,'Journal displays actual zero');
+for(const actualRir of [null,undefined,'',-1,11,2.5])assert.equal(ctx.tp197RirHistory({actualRir}),'');
+assert.equal(ctx.tp197RirHistory({prescription:{rir:2}}),'','Target RIR is not a journal measurement');
+const oldDraft=JSON.stringify(saved),originalPersist=ctx.persistDraft;
+ctx.persistDraft=()=>{throw Error('storage full')};
+assert.equal(ctx.tp197RirSave('8'),false);assert.equal(exercise.actualRir,3);assert.equal(JSON.stringify(saved),oldDraft);
+ctx.persistDraft=originalPersist;
 assert.ok(paints>=5);
 console.log('PASS #197 actual RIR: 0..10 optional self-report, draft persistence, clear, active strength/phone ownership guard');

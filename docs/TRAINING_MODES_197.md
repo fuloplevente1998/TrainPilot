@@ -110,3 +110,44 @@ A CI-eredményt commitonként kell ellenőrizni, és csak azonos HEAD-en sikeres
 - Az 5/7-es módváltó korábbi böngészős indítási hibáját (szigorú mód, undeclared handlers) javítottuk.
 - Célzott Node-teszt: tests/training-coach-integrated-197.cjs; böngészős teszt: tests/browser/training-coach-integrated-197.cjs.
 - A 7/7 továbbra is az utolsó commit Quick Validation + Chromium 6/6 + natív Release Gate, majd telefonos/Samsung Health/Wear készülékes APK-teszt, felhasználói jóváhagyás. Csak ezt követően merge és Issue/PR lezárás. Külső verziókód változatlan.
+
+
+## 2026-10-20 – tényleges RIR adatút és regresszió
+
+A `training-actual-rir-197.js` szekció opcionális 0–10 tényleges RIR-t ment az
+aktív erősítő gyakorlat `actualRir` mezőjébe. Csak explicit RIR-módban, legalább
+egy teljesített sorozat után és telefonos tulajdonlás mellett írható. Üres választás
+törli az értéket; GPS/időmérés, Wear-tulajdonlás és mentési/restore zárolás kizárt.
+A meglévő draft/history út marad, a Napló a tényleges értéket is megmutatja.
+Hiányzó cél-RIR nem válik 0-vá; hiányzó tényleges RIR nem helyettesíthető céllal.
+
+Új böngészős teszt: `tests/browser/training-actual-rir-197.cjs`, a teljes suite része.
+Valódi alkalmazásban választás/törlés, 0, draft reload, edzéslezárás, Napló és
+következő Coach-javaslat; nincs automatikus programterhelés-átírás. A Node-tesztek
+a tárolási hibánál visszaállítást és hiányzó célértéket is vizsgálják.
+Az új teljes CI és készülékes eredmény csak tényleges ellenőrzés után állítható.
+A felhasználó feltételesen engedélyezte a mainre kerülést a RIR javítása után;
+a Samsung Health készülékes/production bizonyíték ettől még nem keletkezett.
+
+
+## #184 kapcsolódó javítás – 2026-10-20, helyi állapot
+
+Felhasználói hiba: a Samsung Healthben van energiapontszám, a TrainPilotban nem
+látható. Külön natív `readEnergyScoreDay` csak ezt a napi értéket olvassa, a
+`requestEnergyScoreRead` csak ennek a hozzáférését kéri. Engedély birtokában
+appnyitáskor/visszatéréskor és egészségszinkron után automatikusan olvasunk,
+a fő egészségadat-szolgáltatót nem módosítjuk. Automatikusan nincs új engedélykérés.
+Az önálló olvasás nem cserélheti le a teljes tartós Samsung-napi rekordot.
+
+A felület érték nélkül is mutatja az energiapontszám belépőjét és állapotát.
+Érvényes mai Samsung-adat elsődleges; hiány, engedélymegvonás, olvasási hiba vagy
+rossz nap esetén a korábbi TrainPilot-becslés marad. A két érték nem adódik össze,
+a fájdalom/terhelés korlát megmarad. Az SDK-napablak kizáró éjfél-végpontját
+szűrjük; következő napi pont nem kerülhet előző napi címke alá.
+
+Célzott Node-tesztek sikeresek. Bővített Samsung-böngészős fixture és SDK-buildert
+használó JVM-tesztek elkészültek, de a teljes Chromium/natív CI még nem futott.
+A korábbi feltöltést az automatikus jóváhagyás-ellenőrzés blokkolta; a felhasználó
+09:48-kor kifejezetten engedélyezte a #222 ág feltöltését. A friss GitHub Actions
+és teszt-APK eredménye még ellenőrzendő. A telefonos
+hiba javulását készüléken még vissza kell igazolni. Nincs main merge/verzióemelés.

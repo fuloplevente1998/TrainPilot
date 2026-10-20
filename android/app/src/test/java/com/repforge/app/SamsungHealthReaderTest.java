@@ -44,6 +44,28 @@ public class SamsungHealthReaderTest {
         assertEquals(83.0, out.getDouble("energyScore"), 0.001);
         assertEquals("com.sec.android.app.shealth", out.getString("energyScoreSource"));
     }
+    @Test public void independentEnergyReadExcludesTheNextMidnightAndDoesNotReadOtherMetrics() throws Exception {
+        TimeZone previous = TimeZone.getDefault();
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("Europe/Budapest"));
+            Instant midnight = Instant.parse("2026-10-07T22:00:00Z");
+            Instant next = midnight.plusSeconds(86400);
+            HealthDataPoint today = new HealthDataPoint.Builder().setStartTime(midnight, ZoneOffset.ofHours(2))
+                .addFieldData(DataType.EnergyScoreType.ENERGY_SCORE, 83f).build();
+            HealthDataPoint tomorrow = new HealthDataPoint.Builder().setStartTime(next, ZoneOffset.ofHours(2))
+                .addFieldData(DataType.EnergyScoreType.ENERGY_SCORE, 99f).build();
+            JSObject out = reader(DataTypes.ENERGY_SCORE, Arrays.asList(today, tomorrow), null).energyDay(midnight, next);
+            assertEquals(83.0, out.getDouble("energyScore"), 0.001);
+            assertEquals(midnight.toString(), out.getString("energyScoreTime"));
+            assertFalse(out.has("steps")); assertFalse(out.has("sleepSessions"));
+        } finally { TimeZone.setDefault(previous); }
+    }
+    @Test public void independentEnergyReadDoesNotInventDataWithoutItsOwnPermission() throws Exception {
+        JSObject out = reader(DataTypes.BODY_COMPOSITION, Collections.emptyList(), null).energyDay(start, end);
+        assertTrue(out.isNull("energyScore"));
+        assertFalse(out.getJSONObject("permissions").getBoolean("READ_ENERGY_SCORE"));
+        assertFalse(out.has("weightKg"));
+    }
 
     @Test public void bodyFatIsPercentAndMuscleAndWaterUseTheirActualSdkUnits() throws Exception {
         HealthDataPoint point=new HealthDataPoint.Builder().setStartTime(start,ZoneOffset.UTC)
