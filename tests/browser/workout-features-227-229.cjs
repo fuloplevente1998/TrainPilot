@@ -120,10 +120,11 @@ const server=http.createServer((req,res)=>{
   await page.evaluate(()=>{db.set('draft',null);state.session=null;state.workout=null;tp151QuickConfig('goblet-squat');});
   await page.locator('#tp151QuickSets').selectOption('4');
   await page.locator('#tp151QuickTarget').fill('12');
+  const fallbackQuickWeight=await page.evaluate(()=>byId('goblet-squat')?.weight??0);
   assert.deepEqual(await page.evaluate(()=>({
    sets:tp151BuildQuick('goblet-squat').sets.map(x=>[x.weight,x.reps,x.done]),
    target:tp151BuildQuick('goblet-squat').targetReps
-  })),{sets:[[11,'7',false],[12,'8',false],[13,'9',false],[byId('goblet-squat')?.weight??0,'',false]],target:'12'},
+  })),{sets:[[11,'7',false],[12,'8',false],[13,'9',false],[fallbackQuickWeight,'',false]],target:'12'},
    'Legacy quick configuration also preserves prior Journal reps and distinct loads');
   assert.deepEqual(errors,[]);console.log('PASS #227–#229 integrated phone flow: setting reload, Journal-wide exercise prefill (planned + quick + Wear), identity/draft preservation, one haptic per manual receipt, per-set RIR/snapshot, 4 languages/large text, reload and Journal');
  }finally{await browser?.close();await new Promise(done=>server.close(done));}
