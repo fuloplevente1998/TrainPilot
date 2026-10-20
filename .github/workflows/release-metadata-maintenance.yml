@@ -1,0 +1,64 @@
+name: Release Metadata Maintenance
+
+on:
+  push:
+    branches: [maintenance/214-repository-hygiene]
+    paths:
+      - '.github/workflows/release-metadata-maintenance.yml'
+      - 'scripts/release-metadata*'
+      - 'docs/releases/github-release-index.json'
+      - 'docs/releases/INDEX.md'
+  pull_request:
+    paths:
+      - '.github/workflows/release-metadata-maintenance.yml'
+      - 'scripts/release-metadata*'
+      - 'docs/releases/github-release-index.json'
+      - 'docs/releases/INDEX.md'
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Apply the catalog headers to existing release descriptions only'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trainpilot-release-metadata
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - run: node --test scripts/release-metadata.test.cjs
+      - run: node scripts/release-metadata.cjs --check
+  apply:
+    needs: validate
+    if: github.repository == 'fuloplevente1998/TrainPilot' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.apply))
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Update existing release descriptions; preserve tags and assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TP_APPLY_RELEASE_METADATA: '1'
+        run: node scripts/release-metadata.cjs --apply
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-metadata-report-${{ github.sha }}
+          path: ui-results/release-metadata-report.json
+          if-no-files-found: error
+          retention-days: 30

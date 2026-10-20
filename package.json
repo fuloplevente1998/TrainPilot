@@ -16,5 +16,7 @@
     "@capacitor/cli": "7.6.9",
     "leaflet": "1.9.4",
     "playwright": "^1.63.0"
-  }
+  },
+  "description": "Android and Wear OS workout planning, logging and recovery guidance",
+  "license": "UNLICENSED"
 }
