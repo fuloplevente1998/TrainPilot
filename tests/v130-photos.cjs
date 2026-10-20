@@ -20,7 +20,9 @@ assert.ok((java.match(/getBridge\(\)\.executeOnMainThread/g)||[]).length>=2,'pho
 assert.ok(java.includes('Intent.CATEGORY_OPENABLE')&&java.includes('image/*'),'local picker must be restricted to openable images');
 assert.ok(java.includes('ExifInterface')&&java.includes('Bitmap.CompressFormat.JPEG'),'photo normalization must strip original metadata by re-encoding');
 assert.ok(vars.includes('compileSdkVersion = 36')&&vars.includes('targetSdkVersion = 36'),'Play 2026 target API 36 required');
-assert.ok(gradle.includes('versionCode 2733')&&gradle.includes('versionName "1.3.6"'));
+const pkg=require('../package.json'),src=require('../SOURCE_VERSION.json');
+assert.equal(src.version,pkg.version);assert.ok(Number.isSafeInteger(src.versionCode)&&src.versionCode>0);
+assert.ok(gradle.includes('versionCode '+src.versionCode)&&gradle.includes('versionName "'+pkg.version+'"'));
 assert.ok(rootGradle.includes("com.android.tools.build:gradle:8.10.1"),'API 36 needs compatible AGP');
 assert.ok(app.includes("state.tab='plan';state.workout=d.id"),'every workout start must enter the Workout tab before first render');
 assert.ok(app.includes('startWorkout=function(w,scheduleId=null,programId=null){rf152StartWorkout(w,scheduleId,programId);if(!state.session)return;'),'workout wrapper must preserve programId for calendar/direct parity');
