@@ -1,0 +1,55 @@
+{
+  "native": {
+    "tests": 249,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "apkSha256": "3798a8e679f9a5a16b013be774f918e62eca24e0070b36084a7d2e1349cf5e28",
+  "apkBytes": 5914646,
+  "packagedAppAndIndexMatch": true,
+  "sourceStampMatches": true,
+  "packageHashesMatch": true,
+  "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+  "verifiedAt": "2026-10-20T14:42:13.186074+00:00",
+  "pullRequest": 222,
+  "applicationCommit": "c14e70778fdb81d42a49fe4b2ef8aa58b3a5292b",
+  "applicationTree": "8332fd6ffa21d0281af7bc5f702f928ecdcef6e7",
+  "prMergeTreeMatches": true,
+  "quick": {
+    "runId": 39440379202,
+    "conclusion": "success",
+    "passed": 154,
+    "failed": 0
+  },
+  "performance": {
+    "runId": 39440379183,
+    "conclusion": "success"
+  },
+  "phoneGate": {
+    "runId": 39440372153,
+    "conclusion": "success"
+  },
+  "chromium": {
+    "source": "c14e70778fdb81d42a49fe4b2ef8aa58b3a5292b",
+    "shards": 6,
+    "tests": 105,
+    "passed": 105,
+    "duplicates": 0,
+    "samsungTileCardHomeAndOpenPanelPassed": true
+  },
+  "deviceAcceptance": {
+    "previousApkSamsungReadSucceeded": true,
+    "newTileDisplayOnDevice": null,
+    "fullPullRequestAccepted": false
+  },
+  "artifactId": 12273816379,
+  "artifactUrl": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39440372153/artifacts/12273816379",
+  "version": "1.3.6",
+  "versionCode": 2733,
+  "mainUnchanged": "1393982d48691489978a44652c61ff2b32514e8d",
+  "wearChanged": false,
+  "merged": false,
+  "issuesClosed": false,
+  "releasePublished": false
+}

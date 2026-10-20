@@ -402,5 +402,21 @@
   {
     "file": "tests/browser/compact-intervals-212.cjs",
     "estimatedSeconds": 5
+  },
+  {
+    "file": "tests/browser/training-modes-ui-197.cjs",
+    "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/training-mode-confirm-197.cjs",
+    "estimatedSeconds": 14
+  },
+  {
+    "file": "tests/browser/training-coach-integrated-197.cjs",
+    "estimatedSeconds": 14
+  },
+  {
+    "file": "tests/browser/training-actual-rir-197.cjs",
+    "estimatedSeconds": 12
   }
 ]

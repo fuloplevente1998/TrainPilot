@@ -28,7 +28,7 @@ for(const marker of [
  'position:sticky!important;top:8px!important',
  '[data-panel="coach"] .tp151-coach-recommendation{margin-top:10px!important}',
  "host?.dataset?.panel==='quick'",
- 'Workout landing card keeps a single Quick Workout title',
+ 'Workout landing card: the start action is the single prominent label.',
  'body.tp-home-view main.rf221-home{min-height:0!important;height:auto!important;max-height:none!important',
  "document.querySelectorAll('.tp-brand-strip').forEach(function(el){el.remove()})",
  "main.rf263-health",

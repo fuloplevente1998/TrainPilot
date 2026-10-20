@@ -58,7 +58,14 @@ const server=http.createServer((req,res)=>{
       };
       // The existing app animates some background/outline changes. Compare
       // the fully settled styles instead of intermediate oklab colors.
-      const settled=()=>new Promise(r=>setTimeout(()=>requestAnimationFrame(()=>requestAnimationFrame(r)),300));
+      const settled=async()=>{
+       await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+       // getAnimations flushes pending style changes. A fixed wall-clock wait
+       // can end before the stylesheet transition even starts on a busy runner.
+       const finite=document.getAnimations().filter(a=>a.effect?.getTiming().iterations!==Infinity);
+       await Promise.all(finite.map(a=>a.finished.catch(()=>{})));
+       await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+      };
       link.disabled=true;await settled();const before=snap();
       link.disabled=false;await settled();const after=snap();
       return {before,after};

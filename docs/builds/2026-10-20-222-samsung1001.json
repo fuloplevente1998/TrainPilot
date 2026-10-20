@@ -1,0 +1,53 @@
+{
+  "native": {
+    "tests": 249,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "sdkDailyFilterTestPassed": true,
+  "apkSha256": "52eecad1878da78d20d773cb35193ed27482c6464cb14215de75e8c499b98fc8",
+  "apkBytes": 5914206,
+  "packagedAppAndIndexMatch": true,
+  "nativeSourceMatches": true,
+  "sourceStampMatches": true,
+  "packageHashesMatch": true,
+  "verifiedAt": "2026-10-20T14:19:04.552910+00:00",
+  "pullRequest": 222,
+  "applicationCommit": "e97fe1e31a824640ea78c1cf39b45c1c572456db",
+  "applicationTree": "d5f7d46679560ee44fcf7615d66c393b9ad25a0c",
+  "prMergeTreeMatches": true,
+  "quick": {
+    "runId": 39436835835,
+    "conclusion": "success",
+    "passed": 154,
+    "failed": 0
+  },
+  "performance": {
+    "runId": 39436835798,
+    "conclusion": "success"
+  },
+  "phoneGate": {
+    "runId": 39436826354,
+    "conclusion": "success"
+  },
+  "chromium": {
+    "source": "e97fe1e31a824640ea78c1cf39b45c1c572456db",
+    "shards": 6,
+    "tests": 105,
+    "passed": 105,
+    "duplicates": 0
+  },
+  "reportedDeviceError": "SAMSUNG_HEALTH_1001",
+  "newApkDeviceAcceptance": null,
+  "artifactId": 12271587790,
+  "artifactUrl": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39436826354/artifacts/12271587790",
+  "version": "1.3.6",
+  "versionCode": 2733,
+  "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+  "mainUnchanged": "1393982d48691489978a44652c61ff2b32514e8d",
+  "wearChanged": false,
+  "merged": false,
+  "issuesClosed": false,
+  "releasePublished": false
+}

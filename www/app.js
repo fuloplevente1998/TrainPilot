@@ -3905,7 +3905,7 @@ healthAction=function(fn,pending='Health adatok szinkronizálása…'){
 // The ledger is the only writer of derived recovery. Display renders never rewrite it.
 
 rf229ApplyLatestRecovery=function(){
- const rows=rf229RecoveryHistory(),latest=rows.find(x=>x.sleepMinutes!=null||x.hrvRmssdMs!=null);
+ const rows=rf229RecoveryHistory(),latest=rows.find(x=>x.sleepMinutes!=null||x.hrvRmssdMs!=null||x.energyScore!=null);
  state.health=state.health||{};
  if(!latest){state.health.recovery={};return null}
  const end=Date.parse(latest.day+'T12:00:00'),samples=rows.filter(x=>x.day<latest.day&&end-Date.parse(x.day+'T12:00:00')<=7*86400000&&x.hrvSource===latest.hrvSource).map(x=>rf240Num(x.hrvRmssdMs)).filter(x=>x!=null&&x>0);
@@ -3958,20 +3958,66 @@ rf220WorkoutTime=function(h){for(const k of ['finished','started','endedAt','fin
 rf220PainRecent=()=>rf245RecentHistory().some(h=>(h.exercises||[]).some(e=>e.effort==='pain'));
 rf220EffortLoad=function(){let score=100,n=0;for(const h of rf245RecentHistory())for(const e of h.exercises||[]){if(!e.effort)continue;n++;if(e.effort==='hard'||e.effort==='challenging')score-=8;if(e.effort==='pain')score-=20;if(e.effort==='easy')score+=2}return {score:Math.max(20,Math.min(100,score)),n}};
 
+// Display precision is shared by the Samsung card, recovery tiles and Coach reasons.
+// Keep the original SDK value untouched for calculations and provenance.
+var tp184FormatScore=function(value){
+ const n=rf240Num(value);return n==null||n<0||n>100?'—':tp149FormatNumber(Math.round(n))+'/100';
+};
+// A Samsung daily score is usable only with verifiable provenance and a timestamp for today.
+var tp184EnergyToday=function tp184EnergyToday(){
+ const health=state.health||{},daily=health.daily||{},rec=health.recovery||{};
+ const now=Date.now(),today=rf240DayKey(new Date(now));
+ const valid=(value,time,source,day)=>{
+  const number=rf240Num(value),stamp=Date.parse(time||''),age=now-stamp;
+  const origin=String(source||'');
+  if(number==null||number<=0||number>100)return null;
+  if(origin!=='samsung_health'&&origin!=='com.sec.android.app.shealth')return null;
+  if(!Number.isFinite(stamp)||age<0||age>36*3600000||rf240DayKey(new Date(stamp))!==today)return null;
+  if(day&&day!==today)return null;
+  return {value:number,time,source:origin};
+ };
+ const external=window.TrainPilotEnergy184;
+ if(external?.hasResult()){
+  const data=external.reading()||{};
+  return valid(data.energyScore,data.energyScoreTime,data.energyScoreSource||data.metricProviders?.energyScore,data.day);
+ }
+ return valid(daily.energyScore,daily.energyScoreTime,daily.energyScoreSource||daily.metricProviders?.energyScore,daily.day||today)
+  ||valid(rec.energyScore,rec.energyScoreTime,rec.energyScoreSource,rec.day);
+};
 rf220Readiness=function(){
- const rec=state.health?.recovery||{},sleep=rf245Fresh(rec.sleepEnd,rec.day)?rf240Num(rec.sleepMinutes):null,hrv=rf245Fresh(rec.hrvTime,rec.day)?rf240Num(rec.hrvRmssdMs):null,base=rf240Num(rec.hrvBaselineMs),load=rf220EffortLoad();
- let score=70,parts=0;
- if(sleep!=null){parts++;score+=sleep>=450?12:sleep>=420?8:sleep>=360?1:-14}
- if(hrv!=null&&hrv>0&&base>0){parts++;const d=(hrv-base)/base;score+=d>=.15?10:d<=-.2?-14:d<=-.1?-6:3}
- if(load.n){parts++;score+=(load.score-70)*.35}
- if(rf220PainRecent())score-=12;
- score=parts?Math.round(Math.max(25,Math.min(100,score))):null;
- return {score,level:score==null?'unknown':score>=75?'good':score>=55?'medium':'low',sleep,hrv,base,load:load.n?load.score:null,parts,confidence:parts>=3?'Több adatforrás':parts?'Korlátozott adatok':'Kevés friss adat'};
+ const rec=state.health?.recovery||{},sleep=rf245Fresh(rec.sleepEnd,rec.day)?rf240Num(rec.sleepMinutes):null;
+ const hrv=rf245Fresh(rec.hrvTime,rec.day)?rf240Num(rec.hrvRmssdMs):null,base=rf240Num(rec.hrvBaselineMs),load=rf220EffortLoad();
+ const pain=rf220PainRecent();
+ // TrainPilot's original estimate is calculated independently, never mixed into the Samsung score.
+ let own=70,ownParts=0;
+ if(sleep!=null){ownParts++;own+=sleep>=450?12:sleep>=420?8:sleep>=360?1:-14}
+ if(hrv!=null&&hrv>0&&base>0){ownParts++;const d=(hrv-base)/base;own+=d>=.15?10:d<=-.2?-14:d<=-.1?-6:3}
+ if(load.n){ownParts++;own+=(load.score-70)*.35}
+ if(pain)own-=12;
+ const trainpilotScore=ownParts?Math.round(Math.max(25,Math.min(100,own))):null;
+ const samsung=tp184EnergyToday();
+ if(samsung){
+  // Samsung already considers recovery/activity. Never add sleep, HRV or positive load bonuses.
+  // Pain or severe recent effort can only reduce readiness; high Samsung scores cannot override them.
+  let score=samsung.value;
+  if(pain||load.n&&load.score<55)score=Math.min(score,54);
+  else if(load.n&&load.score<70)score=Math.min(score,74);
+  return {score,level:score>=75?'good':score>=55?'medium':'low',
+   sleep,hrv,base,load:load.n?load.score:null,energyScore:samsung.value,
+   energyScoreTime:samsung.time,energyScoreSource:samsung.source,
+   trainpilotScore,trainpilotParts:ownParts,readinessSource:'samsung',
+   parts:1+(load.n?1:0),confidence:'Samsung Energiapontszám ('+tp184FormatScore(samsung.value)+')'};
+ }
+ return {score:trainpilotScore,
+  level:trainpilotScore==null?'unknown':trainpilotScore>=75?'good':trainpilotScore>=55?'medium':'low',
+  sleep,hrv,base,load:load.n?load.score:null,parts:ownParts,
+  energyScore:null,trainpilotScore,trainpilotParts:ownParts,readinessSource:'trainpilot',
+  confidence:ownParts>=3?'Több adatforrás':ownParts?'Korlátozott adatok':'Kevés friss adat'};
 };
 const rf245Decision=rf233Decision;
 rf233Decision=function(r){if(r.score!=null)return rf245Decision(r);return {mode:'unknown',pain:rf220PainRecent(),title:'Kevés friss adat',text:'Nincs elég friss adat a napi terhelhetőség becsléséhez. A korábbi teljesítményt és a mai közérzetedet vedd alapul.'}};
 const rf245Advice=rf233ExerciseAdvice;
-rf233ExerciseAdvice=function(id,decision){const result=rf245Advice(id,decision),r=rf220Readiness();if((decision.mode==='unknown'||r.sleep==null&&!(r.hrv>0&&r.base>0))&&['increase','reps'].includes(result.action))return {action:'hold',label:rf233L().hold,text:'Kevés friss regenerációs adat: a Coach most nem javasol automatikus emelést.'};return result};
+rf233ExerciseAdvice=function(id,decision){const result=rf245Advice(id,decision),r=rf220Readiness();if((decision.mode==='unknown'||(r.energyScore==null&&r.sleep==null&&!(r.hrv>0&&r.base>0)))&&['increase','reps'].includes(result.action))return {action:'hold',label:rf233L().hold,text:'Kevés friss regenerációs adat: a Coach most nem javasol automatikus emelést.'};return result};
 const rf245CoachScreen=rf233CoachScreen;
 rf233CoachScreen=function(){rf245CoachVisible=true;return rf245CoachScreen()};
 rf220CoachScreen=rf233CoachScreen;
@@ -4152,7 +4198,7 @@ rf245Recovery=function(ledger){
   const selected=sessions.filter(s=>s.source===source),stageBased=selected.some(s=>(s.stages||[]).some(x=>x?.isAsleep===true));
   const merged=rf250MergeSpans(selected.flatMap(rf250SleepSpans));
   const sleepMinutes=merged.length?merged.reduce((sum,[a,b])=>sum+(b-a)/60000,0):null;
-  existing.push({day,sleepMinutes,sleepStart:merged.length?new Date(merged[0][0]).toISOString():null,sleepEnd:merged.length?new Date(merged.at(-1)[1]).toISOString():null,sleepSource:source||null,sleepStageBased:stageBased,sleepStageCount:selected.reduce((n,s)=>n+(s.stages?.length||0),0),hrvRmssdMs:rf240Num(d.hrvRmssdMs),hrvTime:d.hrvTime||null,hrvSource:d.hrvSource||null,readAt:d.readAt||null});
+  existing.push({day,sleepMinutes,sleepStart:merged.length?new Date(merged[0][0]).toISOString():null,sleepEnd:merged.length?new Date(merged.at(-1)[1]).toISOString():null,sleepSource:source||null,sleepStageBased:stageBased,sleepStageCount:selected.reduce((n,s)=>n+(s.stages?.length||0),0),hrvRmssdMs:rf240Num(d.hrvRmssdMs),hrvTime:d.hrvTime||null,hrvSource:d.hrvSource||null,energyScore:rf240Num(d.energyScore),energyScoreTime:d.energyScoreTime||null,energyScoreSource:d.energyScoreSource||null,readAt:d.readAt||null});
  }
  existing.sort((a,b)=>b.day.localeCompare(a.day));db.set('recoveryHistory',existing);rf229ApplyLatestRecovery();
 };
@@ -5112,7 +5158,7 @@ var rf263OpenDate = function rf263OpenDate(key){
 const RF263_VERSION='2.6.3-dev2';
 const RF263_RECOVERY_DAYS=14;
 const RF263_PERMISSION_NAMES=typeof RF251_PERMISSION_NAMES==='object'?RF251_PERMISSION_NAMES:{
- READ_HEART_RATE:'Pulzus',READ_RESTING_HEART_RATE:'Nyugalmi pulzus',READ_ACTIVE_CALORIES_BURNED:'Aktív energia',READ_TOTAL_CALORIES_BURNED:'Teljes energia',READ_EXERCISE:'Edzések',READ_SLEEP:'Alvás',READ_HEART_RATE_VARIABILITY:'HRV',READ_STEPS:'Lépések',READ_WEIGHT:'Testsúly',READ_BODY_FAT:'Testzsír',READ_OXYGEN_SATURATION:'SpO₂',READ_VO2_MAX:'VO₂max',READ_DISTANCE:'Távolság',READ_SPEED:'Sebesség',READ_BLOOD_PRESSURE:'Vérnyomás',READ_BLOOD_GLUCOSE:'Vércukor',READ_RESPIRATORY_RATE:'Légzésszám'
+ READ_HEART_RATE:'Pulzus',READ_RESTING_HEART_RATE:'Nyugalmi pulzus',READ_ACTIVE_CALORIES_BURNED:'Aktív energia',READ_TOTAL_CALORIES_BURNED:'Teljes energia',READ_EXERCISE:'Edzések',READ_SLEEP:'Alvás',READ_HEART_RATE_VARIABILITY:'HRV',READ_STEPS:'Lépések',READ_WEIGHT:'Testsúly',READ_BODY_FAT:'Testzsír',READ_OXYGEN_SATURATION:'SpO₂',READ_VO2_MAX:'VO₂max',READ_DISTANCE:'Távolság',READ_SPEED:'Sebesség',READ_BLOOD_PRESSURE:'Vérnyomás',READ_BLOOD_GLUCOSE:'Vércukor',READ_RESPIRATORY_RATE:'Légzésszám',READ_ENERGY_SCORE:'Samsung Energiapontszám'
 };
 
 (function rf263Css(){
@@ -5610,7 +5656,7 @@ const TP140_BODY_PROGRESSIONS={
 var tp140ParseTarget=function tp140ParseTarget(text,rirValue=null){
  const raw=String(text??'').trim(),t=raw.toLowerCase().replaceAll('−','-').replaceAll('–','-'),explicitRir=/\brir\b/i.test(t);
  const rir=t.match(/(\d+(?:[.,]\d+)?)\s*-\s*(\d+(?:[.,]\d+)?)\s*rir\b/i)||t.match(/(\d+(?:[.,]\d+)?)\s*rir\b/i);
- const rirA=rir?Number(String(rir[1]).replace(',','.')):(Number.isFinite(Number(rirValue))?Number(rirValue):null),rirB=rir?.[2]!=null?Number(String(rir[2]).replace(',','.')):rirA;
+ const rirA=rir?Number(String(rir[1]).replace(',','.')):(rirValue!==null&&rirValue!==undefined&&rirValue!==''&&Number.isFinite(Number(rirValue))?Number(rirValue):null),rirB=rir?.[2]!=null?Number(String(rir[2]).replace(',','.')):rirA;
  // A pure "2–3 RIR" target has no repetition ceiling. Program prescriptions may also
  // carry a separate numeric RIR alongside a normal rep range; keep both in that case.
  if(explicitRir&&/^\s*\d+(?:[.,]\d+)?(?:\s*-\s*\d+(?:[.,]\d+)?)?\s*rir\s*$/i.test(t))return {kind:'rir',min:null,max:null,rirMin:Math.min(rirA,rirB),rirMax:Math.max(rirA,rirB),raw};
@@ -5719,8 +5765,14 @@ rf152ApplySuggestions=function rf152ApplySuggestions(){
  if(!state.session)return;
  for(const e of state.session.exercises||[]){
   const target=tp140Prescription(e.id,e,state.session.programId);e.progressionPrescription={sets:target.sets,reps:target.reps,kind:target.kind,rirMin:target.rirMin,rirMax:target.rirMax,source:target.source};
-  const r=rf152Recommendation(e.id,e);e.rf152Recommendation=r;
-  if(r.action==='increase'&&r.autoApply===true&&Number.isFinite(r.weight))for(const s of e.sets||[])s.weight=r.weight;
+  const r=rf152Recommendation(e.id,e);
+  if(typeof tp197TrainingModes==='function'&&tp197TrainingModes(state.session.programId).explicitChoice){
+   // #197: explicit modes supersede the legacy auto-apply path, even at workout start.
+   e.rf152Recommendation={...r,action:'hold',autoApply:false,text:'A kiválasztott progressziós mód külön Coach-jóváhagyást kér.'};
+  }else{
+   e.rf152Recommendation=r;
+   if(r.action==='increase'&&r.autoApply===true&&Number.isFinite(r.weight))for(const s of e.sets||[])s.weight=r.weight;
+  }
  }
  persistDraft();
 };
@@ -8263,7 +8315,7 @@ var tp149HistoryTitle=function tp149HistoryTitle(x){
 rf263HistoryItem=function(x,originalIndex,visibleIndex){
  const c=completedSets(x),title=tp149HistoryTitle(x),key=rf142WorkoutKey(x),photoCount=rf130VisiblePhotos(x).length;
  const count=tp149T('journal.exerciseCount',{count:x.exercises.length})+(photoCount?' • '+tp149T('journal.photoCount',{count:photoCount}):'');
- return '<details class="history rf263-history rf103-history" ontoggle="if(this.open){rf130LoadHistoryPhotos(this);rfHistoryHealthEnsure('+originalIndex+')}"><summary><div class="history-head"><div class="history-title-row"><div><div class="history-title">'+esc(title)+'</div><div class="history-date">'+esc(tp149FormatDateTime(x.started))+'</div></div><div class="rf103-history-side"><span class="badge">'+esc(count)+'</span><span class="rf103-history-chevron" aria-hidden="true">⌄</span></div></div><div class="history-badges"><span class="history-badge">⏱ '+esc(sessionDuration(x))+'</span><span class="history-badge">✓ '+esc(tp149T('journal.setCount',{done:c.done,total:c.total}))+'</span></div></div></summary><div class="history-body"><div class="grid2"><button class="btn secondary" onclick="editHistoryWorkout(\''+esc(key)+'\')">'+esc(tp149T('journal.editWorkout'))+'</button><button class="btn secondary" onclick="calendarIntent('+originalIndex+')">'+esc(tp149T('journal.addCalendar'))+'</button></div><div class="rf-history-health-panel" data-rf-history-health-panel="'+originalIndex+'"><button type="button" class="rf-history-health-toggle" aria-expanded="true" onclick="event.stopPropagation();rfHistoryHealthToggle('+originalIndex+')"><strong>'+esc(tp149T('journal.healthData'))+'</strong><span class="small muted">'+esc(rfHistoryHealthWindow(x))+'</span><span class="rf-history-health-chevron" aria-hidden="true">⌄</span></button><div class="rf-history-health-body"><div class="rf-history-health" data-rf-history-health="'+originalIndex+'">'+rfHistoryHealthHtml(originalIndex)+'</div><button type="button" class="btn secondary block rf-history-health-refresh" onclick="event.stopPropagation();healthFromHistory('+originalIndex+')">'+esc(tp149T('common.refresh'))+'</button></div></div>'+rf130PhotoSection(x,key)+(x.exercises||[]).map(function(e){return '<div class="history-ex"><div class="history-ex-name">'+esc(tp149HistoryExerciseName(e))+'</div><div class="history-setchips">'+(e.sets||[]).map(function(s){return '<span class="setchip">'+esc(formatSet(e,s))+(s.done?' ✓':' • '+esc(tp149T('journal.notDone')))+'</span>';}).join('')+'</div></div>';}).join('')+'</div></details>';
+ return '<details class="history rf263-history rf103-history" ontoggle="if(this.open){rf130LoadHistoryPhotos(this);rfHistoryHealthEnsure('+originalIndex+')}"><summary><div class="history-head"><div class="history-title-row"><div><div class="history-title">'+esc(title)+'</div><div class="history-date">'+esc(tp149FormatDateTime(x.started))+'</div></div><div class="rf103-history-side"><span class="badge">'+esc(count)+'</span><span class="rf103-history-chevron" aria-hidden="true">⌄</span></div></div><div class="history-badges"><span class="history-badge">⏱ '+esc(sessionDuration(x))+'</span><span class="history-badge">✓ '+esc(tp149T('journal.setCount',{done:c.done,total:c.total}))+'</span></div></div></summary><div class="history-body"><div class="grid2"><button class="btn secondary" onclick="editHistoryWorkout(\''+esc(key)+'\')">'+esc(tp149T('journal.editWorkout'))+'</button><button class="btn secondary" onclick="calendarIntent('+originalIndex+')">'+esc(tp149T('journal.addCalendar'))+'</button></div><div class="rf-history-health-panel" data-rf-history-health-panel="'+originalIndex+'"><button type="button" class="rf-history-health-toggle" aria-expanded="true" onclick="event.stopPropagation();rfHistoryHealthToggle('+originalIndex+')"><strong>'+esc(tp149T('journal.healthData'))+'</strong><span class="small muted">'+esc(rfHistoryHealthWindow(x))+'</span><span class="rf-history-health-chevron" aria-hidden="true">⌄</span></button><div class="rf-history-health-body"><div class="rf-history-health" data-rf-history-health="'+originalIndex+'">'+rfHistoryHealthHtml(originalIndex)+'</div><button type="button" class="btn secondary block rf-history-health-refresh" onclick="event.stopPropagation();healthFromHistory('+originalIndex+')">'+esc(tp149T('common.refresh'))+'</button></div></div>'+rf130PhotoSection(x,key)+(x.exercises||[]).map(function(e){return '<div class="history-ex"><div class="history-ex-name">'+esc(tp149HistoryExerciseName(e))+'</div><div class="history-setchips">'+(e.sets||[]).map(function(s){return '<span class="setchip">'+esc(formatSet(e,s))+(s.done?' ✓':' • '+esc(tp149T('journal.notDone')))+'</span>';}).join('')+'</div>'+(typeof tp197RirHistory==='function'?tp197RirHistory(e):'')+'</div>';}).join('')+'</div></details>';
 };
 
 historyScreen=function(){
@@ -10452,7 +10504,29 @@ var tp1511Prog=function(){return Object.assign({isolation:.5,per_hand:1,single_d
 var tp1511Rest=function(){const p=activeProgram?.(),s=settings(),n=Number(s.programRest?.[p?.id]);return Number.isFinite(n)?n:(Number(s.rest)||90);};
 var tp1511TrainingPanel=function(){const p=activeProgram?.();if(!p)return '';const x=tp1511Prog();return '<details class="card tp1511-training"><summary><span><strong>⚙ '+esc(tp1511T('training'))+'</strong><small class="muted">'+esc(tp149ProgramMeta(p,'name'))+'</small></span><i>⌄</i></summary><div class="tp1511-training-body"><p class="small muted">'+esc(tp1511T('trainingHelp'))+'</p><label>'+esc(tp1511T('rest'))+'<input id="tp1511Rest" class="field" type="number" min="30" max="300" step="5" value="'+esc(tp1511Rest())+'"></label><p class="small muted">'+esc(tp1511T('restHelp'))+'</p><div class="section tp1511-section">'+esc(tp149T('settings.progression'))+'</div><div class="grid2 tp1511-prog"><label>'+esc(tp149T('settings.stepIsolation'))+'<input id="tp1511Iso" class="field" type="number" min=".25" max="10" step=".25" value="'+esc(x.isolation)+'"></label><label>'+esc(tp149T('settings.stepPerHand'))+'<input id="tp1511Per" class="field" type="number" min=".25" max="10" step=".25" value="'+esc(x.per_hand)+'"></label><label>'+esc(tp149T('settings.stepSingle'))+'<input id="tp1511Single" class="field" type="number" min=".25" max="10" step=".25" value="'+esc(x.single_dumbbell)+'"></label><label>'+esc(tp149T('settings.stepTotal'))+'<input id="tp1511Total" class="field" type="number" min=".25" max="10" step=".25" value="'+esc(x.total)+'"></label></div><button class="btn secondary block" onclick="tp1511SaveTraining()">'+esc(tp1511T('save'))+'</button></div></details>';};
 var tp1511Step=function(id,d){const n=Number(document.getElementById(id)?.value);return Number.isFinite(n)?Math.max(.25,Math.min(10,Math.round(n*4)/4)):d;};
-var tp1511SaveTraining=function(){const s=settings(),p=activeProgram?.(),x=tp1511Prog(),r=Math.max(30,Math.min(300,Number(document.getElementById('tp1511Rest')?.value)||tp1511Rest())),pr=Object.assign({},s.programRest||{});if(p?.id)pr[p.id]=r;db.set('settings',Object.assign({},s,{programRest:pr,progressionSteps:{isolation:tp1511Step('tp1511Iso',x.isolation),per_hand:tp1511Step('tp1511Per',x.per_hand),single_dumbbell:tp1511Step('tp1511Single',x.single_dumbbell),total:tp1511Step('tp1511Total',x.total)}}));if(typeof cloudChanged==='function')cloudChanged();render();window.TrainPilotFeedback?.saved();};
+var tp1511SaveTraining=function(){
+ const s=settings(),p=activeProgram?.(),x=tp1511Prog(),oldRest=tp1511Rest(),
+  r=Math.max(30,Math.min(300,Number(document.getElementById('tp1511Rest')?.value)||oldRest)),
+  pr=Object.assign({},s.programRest||{});
+ if(p?.id)pr[p.id]=r;
+ const next=Object.assign({},s,{programRest:pr,progressionSteps:{
+  isolation:tp1511Step('tp1511Iso',x.isolation),per_hand:tp1511Step('tp1511Per',x.per_hand),
+  single_dumbbell:tp1511Step('tp1511Single',x.single_dumbbell),total:tp1511Step('tp1511Total',x.total)
+ }});
+ // Inherited exercise rest must follow the saved program default; an explicitly edited rest is protected.
+ const ps=programs(),live=ps.find(row=>row.id===p?.id);
+ if(live){
+  for(const rx of Object.values(live.prescriptions||{})){
+   if(!rx||typeof rx!=='object'||rx.restCustomized===true)continue;
+   const was=Number(rx.rest);
+   if(rx.rest==null||was===oldRest||(s.programRest?.[p.id]==null&&was===Number(s.rest||90)))rx.rest=r;
+  }
+ }
+ db.set('settings',next);
+ if(live)db.set('programs',ps);
+ if(typeof cloudChanged==='function')cloudChanged();
+ render();window.TrainPilotFeedback?.saved();
+};
 startRest=function(){const s=settings(),rx=state.session?.exercises?.[state.current]?.prescription,pid=state.session?.programId||activeProgramId?.(),pv=Number(s.programRest?.[pid]),rv=Number(rx?.rest),sec=Math.max(30,Math.min(300,Number.isFinite(rv)&&rv>0?rv:(Number.isFinite(pv)?pv:(Number(s.rest)||90))));stopTimer();state.timer=sec;state.restEndAt=Date.now()+sec*1000;state.timerId=setInterval(tickRest,250);};
 const tp1511Plan=planScreen;planScreen=function(){const h=tp1511Plan.apply(this,arguments),p=tp1511TrainingPanel();return p&&!String(h).includes('tp1511-training')?String(h).replace(/(<main\b[^>]*>)/,'$1'+p):h;};
 
@@ -10462,20 +10536,28 @@ var tp1511TimeChange=function(k,v){const p=rf260TemporalPicker;if(!p)return;p[k]
 rf260TemporalPaintTime=function(){const p=rf260TemporalPicker;if(!p)return;const t=rf260TemporalText(),hours=Array.from({length:24},function(_,i){return '<option value="'+i+'" '+(i===p.hour?'selected':'')+'>'+String(i).padStart(2,'0')+'</option>';}).join(''),mins=Array.from({length:60},function(_,i){return '<option value="'+i+'" '+(i===p.minute?'selected':'')+'>'+String(i).padStart(2,'0')+'</option>';}).join('');p.modal.innerHTML='<div class="tp-modal-card tp-temporal-card tp1511-time" onclick="event.stopPropagation()"><div class="tp-modal-head"><h2 id="tpTemporalTitle">'+esc(p.type==='datetime-local'?t.datetime:t.time)+'</h2><button class="btn secondary tp-modal-close" onclick="rf260TemporalClose()">×</button></div>'+(p.type==='datetime-local'?'<button class="btn secondary block" onclick="rf260TemporalPicker.stage=\'date\';rf260TemporalPaintDate()">← '+esc(t.back)+'</button>':'')+'<div class="tp1511-time-pair"><label>'+esc(t.hour)+'<select class="field" onchange="tp1511TimeChange(\'hour\',this.value)">'+hours+'</select></label><b>:</b><label>'+esc(t.minute)+'<select class="field" onchange="tp1511TimeChange(\'minute\',this.value)">'+mins+'</select></label></div><div class="tp-temporal-actions"><button class="btn secondary" onclick="rf260TemporalCommit(\'\')">'+esc(t.clear)+'</button><button id="tp1511TimeSave" class="btn" onclick="tp152SaveTimeFields(this)">'+esc(t.save)+' • '+String(p.hour).padStart(2,'0')+':'+String(p.minute).padStart(2,'0')+'</button></div></div>';};
 
 const TP1511_HEALTH_I18N={
- hu:{confMany:'Több adatforrás',confLimited:'Korlátozott adatok',confFresh:'Kevés friss adat',coachHold:'Kevés friss regenerációs adat: a Coach most nem javasol automatikus emelést.',diagTitle:'Kapcsolat és támogatott adatok',sources:'Források',allowedTypes:'Engedélyezett adattípusok',lastSync:'Utolsó sikeres szinkron',recoveryChecked:'Regeneráció ellenőrizve',neverSync:'Még nem volt sikeres szinkron',noSource:'Még nincs azonosított adatforrás',granted:'Engedélyezve',denied:'Nincs engedély',unchecked:'Nincs ellenőrizve',diagError:'Néhány Health-adat frissítése nem sikerült.'},
- en:{confMany:'Multiple data sources',confLimited:'Limited data',confFresh:'Little recent data',coachHold:'There is little recent recovery data, so Coach is not recommending an automatic increase right now.',diagTitle:'Connection and supported data',sources:'Sources',allowedTypes:'Allowed data types',lastSync:'Last successful sync',recoveryChecked:'Recovery checked',neverSync:'No successful sync yet',noSource:'No identified data source yet',granted:'Allowed',denied:'Not allowed',unchecked:'Not checked',diagError:'Some Health data could not be refreshed.'},
- de:{confMany:'Mehrere Datenquellen',confLimited:'Begrenzte Daten',confFresh:'Wenig aktuelle Daten',coachHold:'Es liegen nur wenige aktuelle Regenerationsdaten vor; Coach empfiehlt daher derzeit keine automatische Steigerung.',diagTitle:'Verbindung und unterstützte Daten',sources:'Quellen',allowedTypes:'Freigegebene Datentypen',lastSync:'Letzte erfolgreiche Synchronisierung',recoveryChecked:'Regeneration geprüft',neverSync:'Noch keine erfolgreiche Synchronisierung',noSource:'Noch keine Datenquelle erkannt',granted:'Erlaubt',denied:'Nicht erlaubt',unchecked:'Nicht geprüft',diagError:'Einige Health-Daten konnten nicht aktualisiert werden.'},
- ro:{confMany:'Mai multe surse de date',confLimited:'Date limitate',confFresh:'Puține date recente',coachHold:'Există puține date recente despre recuperare, așa că Coach nu recomandă momentan o creștere automată.',diagTitle:'Conexiune și date acceptate',sources:'Surse',allowedTypes:'Tipuri de date permise',lastSync:'Ultima sincronizare reușită',recoveryChecked:'Recuperare verificată',neverSync:'Nu există încă o sincronizare reușită',noSource:'Nu există încă o sursă de date identificată',granted:'Permis',denied:'Nepermis',unchecked:'Neverificat',diagError:'Unele date Health nu au putut fi actualizate.'}
+ hu:{samsungEnergyScore:'Samsung Energiapontszám',confMany:'Több adatforrás',confLimited:'Korlátozott adatok',confFresh:'Kevés friss adat',coachHold:'Kevés friss regenerációs adat: a Coach most nem javasol automatikus emelést.',diagTitle:'Kapcsolat és támogatott adatok',sources:'Források',allowedTypes:'Engedélyezett adattípusok',lastSync:'Utolsó sikeres szinkron',recoveryChecked:'Regeneráció ellenőrizve',neverSync:'Még nem volt sikeres szinkron',noSource:'Még nincs azonosított adatforrás',granted:'Engedélyezve',denied:'Nincs engedély',unchecked:'Nincs ellenőrizve',diagError:'Néhány Health-adat frissítése nem sikerült.'},
+ en:{samsungEnergyScore:'Samsung Energy Score',confMany:'Multiple data sources',confLimited:'Limited data',confFresh:'Little recent data',coachHold:'There is little recent recovery data, so Coach is not recommending an automatic increase right now.',diagTitle:'Connection and supported data',sources:'Sources',allowedTypes:'Allowed data types',lastSync:'Last successful sync',recoveryChecked:'Recovery checked',neverSync:'No successful sync yet',noSource:'No identified data source yet',granted:'Allowed',denied:'Not allowed',unchecked:'Not checked',diagError:'Some Health data could not be refreshed.'},
+ de:{samsungEnergyScore:'Samsung Energiepunktezahl',confMany:'Mehrere Datenquellen',confLimited:'Begrenzte Daten',confFresh:'Wenig aktuelle Daten',coachHold:'Es liegen nur wenige aktuelle Regenerationsdaten vor; Coach empfiehlt daher derzeit keine automatische Steigerung.',diagTitle:'Verbindung und unterstützte Daten',sources:'Quellen',allowedTypes:'Freigegebene Datentypen',lastSync:'Letzte erfolgreiche Synchronisierung',recoveryChecked:'Regeneration geprüft',neverSync:'Noch keine erfolgreiche Synchronisierung',noSource:'Noch keine Datenquelle erkannt',granted:'Erlaubt',denied:'Nicht erlaubt',unchecked:'Nicht geprüft',diagError:'Einige Health-Daten konnten nicht aktualisiert werden.'},
+ ro:{samsungEnergyScore:'Scor de energie Samsung',confMany:'Mai multe surse de date',confLimited:'Date limitate',confFresh:'Puține date recente',coachHold:'Există puține date recente despre recuperare, așa că Coach nu recomandă momentan o creștere automată.',diagTitle:'Conexiune și date acceptate',sources:'Surse',allowedTypes:'Tipuri de date permise',lastSync:'Ultima sincronizare reușită',recoveryChecked:'Recuperare verificată',neverSync:'Nu există încă o sincronizare reușită',noSource:'Nu există încă o sursă de date identificată',granted:'Permis',denied:'Nepermis',unchecked:'Neverificat',diagError:'Unele date Health nu au putut fi actualizate.'}
 };
 const TP1511_PERMISSION_I18N={
- en:{READ_HEART_RATE:'Heart rate',READ_RESTING_HEART_RATE:'Resting heart rate',READ_ACTIVE_CALORIES_BURNED:'Active calories',READ_TOTAL_CALORIES_BURNED:'Total calories',READ_EXERCISE:'Workouts',READ_SLEEP:'Sleep',READ_HEART_RATE_VARIABILITY:'HRV',READ_STEPS:'Steps',READ_WEIGHT:'Weight',READ_BODY_FAT:'Body fat',READ_OXYGEN_SATURATION:'SpO₂',READ_VO2_MAX:'VO₂max',READ_DISTANCE:'Distance',READ_SPEED:'Speed',READ_BLOOD_PRESSURE:'Blood pressure',READ_BLOOD_GLUCOSE:'Blood glucose',READ_RESPIRATORY_RATE:'Respiratory rate'},
- de:{READ_HEART_RATE:'Puls',READ_RESTING_HEART_RATE:'Ruhepuls',READ_ACTIVE_CALORIES_BURNED:'Aktive Kalorien',READ_TOTAL_CALORIES_BURNED:'Gesamtkalorien',READ_EXERCISE:'Trainings',READ_SLEEP:'Schlaf',READ_HEART_RATE_VARIABILITY:'HRV',READ_STEPS:'Schritte',READ_WEIGHT:'Gewicht',READ_BODY_FAT:'Körperfett',READ_OXYGEN_SATURATION:'SpO₂',READ_VO2_MAX:'VO₂max',READ_DISTANCE:'Distanz',READ_SPEED:'Geschwindigkeit',READ_BLOOD_PRESSURE:'Blutdruck',READ_BLOOD_GLUCOSE:'Blutzucker',READ_RESPIRATORY_RATE:'Atemfrequenz'},
- ro:{READ_HEART_RATE:'Ritm cardiac',READ_RESTING_HEART_RATE:'Puls de repaus',READ_ACTIVE_CALORIES_BURNED:'Calorii active',READ_TOTAL_CALORIES_BURNED:'Calorii totale',READ_EXERCISE:'Antrenamente',READ_SLEEP:'Somn',READ_HEART_RATE_VARIABILITY:'HRV',READ_STEPS:'Pași',READ_WEIGHT:'Greutate',READ_BODY_FAT:'Grăsime corporală',READ_OXYGEN_SATURATION:'SpO₂',READ_VO2_MAX:'VO₂max',READ_DISTANCE:'Distanță',READ_SPEED:'Viteză',READ_BLOOD_PRESSURE:'Tensiune arterială',READ_BLOOD_GLUCOSE:'Glicemie',READ_RESPIRATORY_RATE:'Frecvență respiratorie'}
+ en:{READ_HEART_RATE:'Heart rate',READ_RESTING_HEART_RATE:'Resting heart rate',READ_ACTIVE_CALORIES_BURNED:'Active calories',READ_TOTAL_CALORIES_BURNED:'Total calories',READ_EXERCISE:'Workouts',READ_SLEEP:'Sleep',READ_HEART_RATE_VARIABILITY:'HRV',READ_STEPS:'Steps',READ_WEIGHT:'Weight',READ_BODY_FAT:'Body fat',READ_OXYGEN_SATURATION:'SpO₂',READ_VO2_MAX:'VO₂max',READ_DISTANCE:'Distance',READ_SPEED:'Speed',READ_BLOOD_PRESSURE:'Blood pressure',READ_BLOOD_GLUCOSE:'Blood glucose',READ_RESPIRATORY_RATE:'Respiratory rate',READ_ENERGY_SCORE:'Samsung Energy Score'},
+ de:{READ_HEART_RATE:'Puls',READ_RESTING_HEART_RATE:'Ruhepuls',READ_ACTIVE_CALORIES_BURNED:'Aktive Kalorien',READ_TOTAL_CALORIES_BURNED:'Gesamtkalorien',READ_EXERCISE:'Trainings',READ_SLEEP:'Schlaf',READ_HEART_RATE_VARIABILITY:'HRV',READ_STEPS:'Schritte',READ_WEIGHT:'Gewicht',READ_BODY_FAT:'Körperfett',READ_OXYGEN_SATURATION:'SpO₂',READ_VO2_MAX:'VO₂max',READ_DISTANCE:'Distanz',READ_SPEED:'Geschwindigkeit',READ_BLOOD_PRESSURE:'Blutdruck',READ_BLOOD_GLUCOSE:'Blutzucker',READ_RESPIRATORY_RATE:'Atemfrequenz',READ_ENERGY_SCORE:'Samsung Energiepunktezahl'},
+ ro:{READ_HEART_RATE:'Ritm cardiac',READ_RESTING_HEART_RATE:'Puls de repaus',READ_ACTIVE_CALORIES_BURNED:'Calorii active',READ_TOTAL_CALORIES_BURNED:'Calorii totale',READ_EXERCISE:'Antrenamente',READ_SLEEP:'Somn',READ_HEART_RATE_VARIABILITY:'HRV',READ_STEPS:'Pași',READ_WEIGHT:'Greutate',READ_BODY_FAT:'Grăsime corporală',READ_OXYGEN_SATURATION:'SpO₂',READ_VO2_MAX:'VO₂max',READ_DISTANCE:'Distanță',READ_SPEED:'Viteză',READ_BLOOD_PRESSURE:'Tensiune arterială',READ_BLOOD_GLUCOSE:'Glicemie',READ_RESPIRATORY_RATE:'Frecvență respiratorie',READ_ENERGY_SCORE:'Scor de energie Samsung'}
 };
 var tp1511HealthT=function(){const l=rf212Lang();return TP1511_HEALTH_I18N[l]||TP1511_HEALTH_I18N.hu;};
 var tp1511PermissionName=function(k){const l=rf212Lang();return TP1511_PERMISSION_I18N[l]?.[k]||RF263_PERMISSION_NAMES?.[k]||k;};
 const tp1511ReadinessBase=rf220Readiness;
-rf220Readiness=function(){const r=tp1511ReadinessBase.apply(this,arguments),t=tp1511HealthT();r.confidence=r.parts>=3?t.confMany:r.parts?t.confLimited:t.confFresh;return r;};
+rf220Readiness=function(){
+ const r=tp1511ReadinessBase.apply(this,arguments),t=tp1511HealthT();
+ if(r.energyScore!=null){
+  r.confidence=(t.samsungEnergyScore||'Samsung Energiapontszám')+' ('+tp184FormatScore(r.energyScore)+')';
+ }else{
+  r.confidence=r.parts>=3?t.confMany:r.parts?t.confLimited:t.confFresh;
+ }
+ return r;
+};
 const tp1511DecisionBase=rf233Decision;
 rf233Decision=function(r){if(r?.score==null)return {mode:'unknown',pain:rf220PainRecent(),title:tp149T('home.coachLowFresh'),text:tp149T('home.coachNoFresh')};return tp1511DecisionBase(r);};
 const tp1511AdviceBase=rf233ExerciseAdvice;
@@ -10532,7 +10614,7 @@ var tp152SaveRx=function(dayId,id,key,value){
  const st=rf155DayState(dayId),p=st.program,e=byId(id);if(!p||!e)return;
  p.prescriptions=p.prescriptions||{};const rx=tp152Rx(p,id,e);
  if(key==='sets')rx.sets=Math.max(1,Math.min(10,Number(value)||1));
- else if(key==='rest')rx.rest=Math.max(30,Math.min(300,Number(value)||90));
+ else if(key==='rest'){rx.rest=Math.max(30,Math.min(300,Number(value)||90));rx.restCustomized=true;}
  else if(key==='weight')rx.weight=Math.max(0,Number(String(value).replace(',','.'))||0);
  else if(key==='reps')rx.reps=String(value||'').trim().slice(0,40);
  p.prescriptions[id]=rx;db.set('programs',st.ps);if(typeof cloudChanged==='function')cloudChanged();
@@ -13007,12 +13089,17 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   };
  }
 
- // Workout landing card keeps a single Quick Workout title (no duplicate badge/title pair).
+ // Workout landing card: the start action is the single prominent label.
+ // Keep the existing short help directly below it; do not duplicate the Quick Workout title.
  if(typeof tp150CompactQuickCard==='function'){
   tp150CompactQuickCard=function(){
-   return '<div class="card tp150-quick-entry tp150-quick-entry-compact"><div class="tp150-quick-copy"><h2>'+esc(tp150qwT('cardTitle'))+'</h2><p class="small muted">'+esc(tp150qwT('cardHelp'))+'</p></div><button class="btn block" onclick="tp155R4TogglePanel(\'quick\',this)">'+esc(tp150qwT('start'))+'</button></div>';
+   return '<div class="card tp150-quick-entry tp150-quick-entry-compact tp150-quick-entry-minimal"><button type="button" class="btn block" onclick="tp155R4TogglePanel(\'quick\',this)">'+esc(tp150qwT('start'))+'</button><p class="small muted tp150-quick-entry-help">'+esc(tp150qwT('cardHelp'))+'</p></div>';
   };
  }
+ const quickEntryMinimalCss=document.createElement('style');
+ quickEntryMinimalCss.id='tp150QuickEntryMinimalStyle';
+ quickEntryMinimalCss.textContent='.tp150-quick-entry-minimal{display:flex!important;flex-direction:column;align-items:stretch;gap:8px;padding:12px 14px!important}.tp150-quick-entry-minimal>.btn{width:100%!important;min-width:0!important}.tp150-quick-entry-minimal .tp150-quick-entry-help{margin:0!important;text-align:center;line-height:1.35}';
+ document.head.appendChild(quickEntryMinimalCss);
 
  // Quick Workout keeps only the compact context title; legacy explanatory hero/page headers stay out.
  if(typeof window.tp155QuickPanelHtml==='function'){
@@ -15337,10 +15424,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
  window.TrainPilot110Core={goals,goalProgress,replan,planWeeks,intervalConfig,intervalPhase};
 
  const text={
-  hu:{goals:'Célok',week:'Heti edzéscél',month:'Havi kilométercél',goalNote:'A mentett edzések számítanak. A hét hétfőn indul; a kilométercél az összes kardiómozgásra vonatkozik. A 0 kikapcsolja a célt.',noGoals:'Még nincs beállított cél.',setGoals:'Célok beállítása',weekShort:'Heti edzések',monthShort:'Havi kilométer',units:'edzés',reached:'Cél teljesítve',save:'Mentés',saved:'Mentve',saveFailed:'A mentés nem sikerült. A korábbi adatok megmaradtak.',dirty:'Módosítva – még nincs mentve',replan:'Újratervezés',autoDay:'Automatikus',newWorkout:'Új alkalom',programDay:'A programnak nincs választható edzésnapja.',time:'Adj meg érvényes időpontot és időtartamot.',replanTitle:'Edzések újratervezése',replanNote:'Bármelyik edzésnappal újratervezhetsz. Programváltáskor a hátralévő tervet az új program váltja fel. A naplózott és aktív edzések megmaradnak.',begin:'Új kezdőnap',program:'Program',apply:'Terv frissítése',noMissed:'Nincs újratervezendő edzés.',changed:'Az adatok változtak; nézd át a friss előnézetet.',replanned:'A terv frissítve.',date:'Válassz érvényes dátumot.',weekdays:'Válassz heti edzésnapokat a naptár beállításaiban.',slots:'Nem található megfelelő szabad nap.',interval:'Intervallumok',work:'Munka (mp)',rest:'Pihenő (mp)',rounds:'Körök száma',sound:'Hangjelzés',vibration:'Rezgés',intervalStart:'Intervallum indítása',preset:'Beállítás mentése',intervalNote:'Munka és pihenő együtt kerül a sorozat idejébe; a szünet nem számít. A jelzésekhez tartsd megnyitva az appot. Háttérből visszatérve az idő helyreáll.',invalidInterval:'Adj meg érvényes szakaszokat; legfeljebb 24 óra összidőt.',replaceTime:'Új intervallum indításához nullázod a sorozat eddigi idejét?',workPhase:'Munka',restPhase:'Pihenő',complete:'Intervallum teljesítve',emptyLog:'Még nincs mentett edzés',emptyLogNote:'Az első befejezett edzés után itt lesz a naplód és a fejlődésed.',startWorkout:'Edzés indítása',emptyRange:'Ebben az időszakban nincs adat',emptyRangeNote:'Válassz másik időszakot, vagy töröld a szűrőt.',clearFilter:'Szűrő törlése',emptyCardio:'Még nincs kardióadat',emptyCardioNote:'Rögzíts futást, sétát vagy más kardiómozgást. A kilométert kézzel is megadhatod.',cardioAction:'Kardióedzés választása',emptyQuick:'Nincs találat',emptyQuickNote:'Próbálj másik kifejezést, vagy töröld a szűrőket.',sleep:'Alvás',hrv:'HRV',load:'Edzésterhelés',pain:'Fájdalom-visszajelzés',freshMissing:'Nincs friss adat (36 órán belüli mérés).',baselineMissing:'Az összehasonlításhoz saját HRV-átlag is szükséges.',last:'Utolsó adat',scoreEffect:'Hatás a készenléti pontszámra',recentEffort:'Az elmúlt 14 nap legutóbbi három edzésének terhelési visszajelzései.',noEffort:'Nincs friss terhelési visszajelzés.',painNote:'Friss fájdalom-visszajelzés miatt óvatosabb terhelést javasol.',noPain:'Nincs friss fájdalom-visszajelzés.',scoreNote:'A becslés 70 pontból indul, a fenti tényezőkkel 25–100 közé kerül. Friss adat nélkül nincs pontszám.'},
-  en:{goals:'Goals',week:'Weekly workout goal',month:'Monthly kilometre goal',goalNote:'Saved workouts count. Weeks start on Monday; kilometres cover all cardio activities. Set 0 to disable a goal.',noGoals:'No goals set yet.',setGoals:'Set goals',weekShort:'Weekly workouts',monthShort:'Monthly kilometres',units:'workouts',reached:'Goal reached',save:'Save',saved:'Saved',saveFailed:'Saving failed. Previous data is preserved.',dirty:'Changed – not saved yet',replan:'Replan',autoDay:'Automatic',newWorkout:'New session',programDay:'The program has no available workout day.',time:'Choose a valid time and duration.',replanTitle:'Replan workouts',replanNote:'Replan from any workout day. Switching programs replaces the remaining plan with the selected program. Logged and active workouts are kept.',begin:'New start date',program:'Program',apply:'Update plan',noMissed:'No workouts need replanning.',changed:'Data changed; review the updated preview.',replanned:'Plan updated.',date:'Choose a valid date.',weekdays:'Select weekdays in calendar settings.',slots:'No suitable free date found.',interval:'Intervals',work:'Work (sec)',rest:'Rest (sec)',rounds:'Rounds',sound:'Sound',vibration:'Vibration',intervalStart:'Start intervals',preset:'Save settings',intervalNote:'Work and rest both count toward set duration; pauses do not. Keep the app open for cues. Elapsed time recovers after returning from the background.',invalidInterval:'Enter valid phases; total duration is limited to 24 hours.',replaceTime:'Reset this set’s recorded time to start new intervals?',workPhase:'Work',restPhase:'Rest',complete:'Intervals complete',emptyLog:'No saved workouts yet',emptyLogNote:'Your first finished workout will appear here with your progress.',startWorkout:'Start a workout',emptyRange:'No data in this period',emptyRangeNote:'Choose another period or clear the filter.',clearFilter:'Clear filter',emptyCardio:'No cardio data yet',emptyCardioNote:'Record running, walking or another cardio activity. Distance can also be entered manually.',cardioAction:'Choose cardio workout',emptyQuick:'No matches',emptyQuickNote:'Try another search or clear the filters.',sleep:'Sleep',hrv:'HRV',load:'Workout load',pain:'Pain feedback',freshMissing:'No fresh data (measurement within 36 hours).',baselineMissing:'Your own HRV baseline is also needed for comparison.',last:'Last measurement',scoreEffect:'Effect on readiness score',recentEffort:'Effort feedback from the last three workouts within 14 days.',noEffort:'No recent effort feedback.',painNote:'Recent pain feedback calls for more cautious loading.',noPain:'No recent pain feedback.',scoreNote:'The estimate starts at 70 and is limited to 25–100 after these factors. No score is shown without recent data.'},
-  de:{goals:'Ziele',week:'Trainingsziel pro Woche',month:'Kilometerziel pro Monat',goalNote:'Gespeicherte Trainings zählen. Wochen beginnen montags; Kilometer umfassen alle Kardioaktivitäten. 0 deaktiviert ein Ziel.',noGoals:'Noch keine Ziele eingestellt.',setGoals:'Ziele einstellen',weekShort:'Trainings pro Woche',monthShort:'Kilometer pro Monat',units:'Trainings',reached:'Ziel erreicht',save:'Speichern',saved:'Gespeichert',saveFailed:'Speichern fehlgeschlagen. Bisherige Daten bleiben erhalten.',dirty:'Geändert – noch nicht gespeichert',replan:'Neu planen',autoDay:'Automatisch',newWorkout:'Neuer Termin',programDay:'Das Programm hat keinen verfügbaren Trainingstag.',time:'Wähle eine gültige Uhrzeit und Dauer.',replanTitle:'Trainings neu planen',replanNote:'Ab jedem Trainingstag neu planen. Ein Programmwechsel ersetzt den verbleibenden Plan durch das gewählte Programm. Protokollierte und aktive Trainings bleiben erhalten.',begin:'Neuer Starttag',program:'Programm',apply:'Plan aktualisieren',noMissed:'Keine Trainings neu zu planen.',changed:'Daten geändert; prüfe die neue Vorschau.',replanned:'Plan aktualisiert.',date:'Wähle ein gültiges Datum.',weekdays:'Wähle Wochentage in den Kalendereinstellungen.',slots:'Kein geeigneter freier Tag gefunden.',interval:'Intervalle',work:'Belastung (s)',rest:'Erholung (s)',rounds:'Runden',sound:'Tonsignal',vibration:'Vibration',intervalStart:'Intervalle starten',preset:'Einstellungen speichern',intervalNote:'Belastung und Erholung zählen zur Satzzeit; Pausen nicht. Für Signale die App geöffnet lassen. Nach Rückkehr aus dem Hintergrund wird die Zeit wiederhergestellt.',invalidInterval:'Gültige Phasen eingeben; Gesamtdauer höchstens 24 Stunden.',replaceTime:'Bisherige Satzzeit für neue Intervalle zurücksetzen?',workPhase:'Belastung',restPhase:'Erholung',complete:'Intervalle beendet',emptyLog:'Noch keine gespeicherten Trainings',emptyLogNote:'Nach deinem ersten abgeschlossenen Training siehst du hier Verlauf und Fortschritt.',startWorkout:'Training starten',emptyRange:'Keine Daten in diesem Zeitraum',emptyRangeNote:'Wähle einen anderen Zeitraum oder lösche den Filter.',clearFilter:'Filter löschen',emptyCardio:'Noch keine Kardiodaten',emptyCardioNote:'Laufen, Gehen oder andere Kardioaktivität erfassen. Strecke kann manuell eingegeben werden.',cardioAction:'Kardiotraining wählen',emptyQuick:'Keine Treffer',emptyQuickNote:'Andere Suche versuchen oder Filter löschen.',sleep:'Schlaf',hrv:'HRV',load:'Trainingsbelastung',pain:'Schmerzrückmeldung',freshMissing:'Keine aktuellen Daten (Messung innerhalb von 36 Stunden).',baselineMissing:'Zum Vergleich wird auch dein HRV-Basiswert benötigt.',last:'Letzte Messung',scoreEffect:'Einfluss auf den Bereitschaftswert',recentEffort:'Belastungsrückmeldungen der letzten drei Trainings innerhalb von 14 Tagen.',noEffort:'Keine aktuelle Belastungsrückmeldung.',painNote:'Aktuelle Schmerzrückmeldungen sprechen für vorsichtigere Belastung.',noPain:'Keine aktuelle Schmerzrückmeldung.',scoreNote:'Die Schätzung beginnt bei 70 und wird mit diesen Faktoren auf 25–100 begrenzt. Ohne aktuelle Daten wird kein Wert gezeigt.'},
-  ro:{goals:'Obiective',week:'Obiectiv săptămânal de antrenamente',month:'Obiectiv lunar de kilometri',goalNote:'Contează antrenamentele salvate. Săptămâna începe luni; kilometrii includ toate activitățile cardio. 0 dezactivează obiectivul.',noGoals:'Nu există obiective setate.',setGoals:'Setează obiective',weekShort:'Antrenamente săptămânale',monthShort:'Kilometri lunar',units:'antrenamente',reached:'Obiectiv atins',save:'Salvează',saved:'Salvat',saveFailed:'Salvarea a eșuat. Datele anterioare sunt păstrate.',dirty:'Modificat – nesalvat',replan:'Replanifică',autoDay:'Automat',newWorkout:'Sesiune nouă',programDay:'Programul nu are o zi de antrenament disponibilă.',time:'Alege o oră și o durată valide.',replanTitle:'Replanifică antrenamente',replanNote:'Replanifică de la orice zi de antrenament. Schimbarea programului înlocuiește planul rămas cu programul selectat. Antrenamentele înregistrate și active sunt păstrate.',begin:'Noua dată de început',program:'Program',apply:'Actualizează planul',noMissed:'Nu există antrenamente de replanificat.',changed:'Datele s-au schimbat; verifică previzualizarea nouă.',replanned:'Plan actualizat.',date:'Alege o dată validă.',weekdays:'Selectează zilele săptămânii în setările calendarului.',slots:'Nu există o dată liberă potrivită.',interval:'Intervale',work:'Efort (sec)',rest:'Recuperare (sec)',rounds:'Runde',sound:'Sunet',vibration:'Vibrație',intervalStart:'Pornește intervalele',preset:'Salvează setările',intervalNote:'Efortul și recuperarea intră în durata seriei; pauzele nu. Ține aplicația deschisă pentru semnale. Timpul se recuperează la revenirea din fundal.',invalidInterval:'Introdu faze valide; durata totală este limitată la 24 de ore.',replaceTime:'Resetezi timpul seriei pentru a porni intervale noi?',workPhase:'Efort',restPhase:'Recuperare',complete:'Intervale finalizate',emptyLog:'Nu există antrenamente salvate',emptyLogNote:'Primul antrenament finalizat va apărea aici, împreună cu progresul.',startWorkout:'Pornește un antrenament',emptyRange:'Nu există date în această perioadă',emptyRangeNote:'Alege altă perioadă sau șterge filtrul.',clearFilter:'Șterge filtrul',emptyCardio:'Nu există date cardio',emptyCardioNote:'Înregistrează alergare, mers sau altă activitate cardio. Distanța poate fi introdusă manual.',cardioAction:'Alege antrenament cardio',emptyQuick:'Niciun rezultat',emptyQuickNote:'Încearcă altă căutare sau șterge filtrele.',sleep:'Somn',hrv:'HRV',load:'Încărcare de antrenament',pain:'Feedback privind durerea',freshMissing:'Nu există date recente (măsurare în 36 de ore).',baselineMissing:'Comparația necesită și media HRV personală.',last:'Ultima măsurare',scoreEffect:'Efect asupra scorului de pregătire',recentEffort:'Feedback din ultimele trei antrenamente în cel mult 14 zile.',noEffort:'Nu există feedback recent despre efort.',painNote:'Feedbackul recent privind durerea cere o încărcare mai prudentă.',noPain:'Nu există feedback recent privind durerea.',scoreNote:'Estimarea începe la 70 și este limitată la 25–100 după acești factori. Fără date recente nu apare un scor.'}
+  hu:{samsungEnergyScore:"Samsung Energiapontszám",samsungEnergyNote:"Samsung Health · friss napi adat",samsungScoreNote:"A Samsung napi pontszáma és a TrainPilot becslése külön számítás. Fájdalom vagy túlzott terhelés korlátozhatja az ajánlást.",trainpilotEstimate:"TrainPilot becslés",trainpilotNote:"Alvás, HRV és edzésvisszajelzés alapján; nem adódik hozzá a Samsung-pontszámhoz.",samsungGuardNote:"A magas terhelés korlátozhatja a javaslatot.",samsungPainGuard:"A fájdalom visszafogja a terhelést.",goals:'Célok',week:'Heti edzéscél',month:'Havi kilométercél',goalNote:'A mentett edzések számítanak. A hét hétfőn indul; a kilométercél az összes kardiómozgásra vonatkozik. A 0 kikapcsolja a célt.',noGoals:'Még nincs beállított cél.',setGoals:'Célok beállítása',weekShort:'Heti edzések',monthShort:'Havi kilométer',units:'edzés',reached:'Cél teljesítve',save:'Mentés',saved:'Mentve',saveFailed:'A mentés nem sikerült. A korábbi adatok megmaradtak.',dirty:'Módosítva – még nincs mentve',replan:'Újratervezés',autoDay:'Automatikus',newWorkout:'Új alkalom',programDay:'A programnak nincs választható edzésnapja.',time:'Adj meg érvényes időpontot és időtartamot.',replanTitle:'Edzések újratervezése',replanNote:'Bármelyik edzésnappal újratervezhetsz. Programváltáskor a hátralévő tervet az új program váltja fel. A naplózott és aktív edzések megmaradnak.',begin:'Új kezdőnap',program:'Program',apply:'Terv frissítése',noMissed:'Nincs újratervezendő edzés.',changed:'Az adatok változtak; nézd át a friss előnézetet.',replanned:'A terv frissítve.',date:'Válassz érvényes dátumot.',weekdays:'Válassz heti edzésnapokat a naptár beállításaiban.',slots:'Nem található megfelelő szabad nap.',interval:'Intervallumok',work:'Munka (mp)',rest:'Pihenő (mp)',rounds:'Körök száma',sound:'Hangjelzés',vibration:'Rezgés',intervalStart:'Intervallum indítása',preset:'Beállítás mentése',intervalNote:'Munka és pihenő együtt kerül a sorozat idejébe; a szünet nem számít. A jelzésekhez tartsd megnyitva az appot. Háttérből visszatérve az idő helyreáll.',invalidInterval:'Adj meg érvényes szakaszokat; legfeljebb 24 óra összidőt.',replaceTime:'Új intervallum indításához nullázod a sorozat eddigi idejét?',workPhase:'Munka',restPhase:'Pihenő',complete:'Intervallum teljesítve',emptyLog:'Még nincs mentett edzés',emptyLogNote:'Az első befejezett edzés után itt lesz a naplód és a fejlődésed.',startWorkout:'Edzés indítása',emptyRange:'Ebben az időszakban nincs adat',emptyRangeNote:'Válassz másik időszakot, vagy töröld a szűrőt.',clearFilter:'Szűrő törlése',emptyCardio:'Még nincs kardióadat',emptyCardioNote:'Rögzíts futást, sétát vagy más kardiómozgást. A kilométert kézzel is megadhatod.',cardioAction:'Kardióedzés választása',emptyQuick:'Nincs találat',emptyQuickNote:'Próbálj másik kifejezést, vagy töröld a szűrőket.',sleep:'Alvás',hrv:'HRV',load:'Edzésterhelés',pain:'Fájdalom-visszajelzés',freshMissing:'Nincs friss adat (36 órán belüli mérés).',baselineMissing:'Az összehasonlításhoz saját HRV-átlag is szükséges.',last:'Utolsó adat',scoreEffect:'Hatás a készenléti pontszámra',recentEffort:'Az elmúlt 14 nap legutóbbi három edzésének terhelési visszajelzései.',noEffort:'Nincs friss terhelési visszajelzés.',painNote:'Friss fájdalom-visszajelzés miatt óvatosabb terhelést javasol.',noPain:'Nincs friss fájdalom-visszajelzés.',scoreNote:'A becslés 70 pontból indul, a fenti tényezőkkel 25–100 közé kerül. Friss adat nélkül nincs pontszám.'},
+  en:{samsungEnergyScore:"Samsung Energy Score",samsungEnergyNote:"Samsung Health · current daily score",samsungScoreNote:"Samsung's daily score and TrainPilot's estimate are calculated separately. Pain or excessive load can limit advice.",trainpilotEstimate:"TrainPilot estimate",trainpilotNote:"Based on sleep, HRV and training feedback; not added to the Samsung score.",samsungGuardNote:"Excessive load may limit advice.",samsungPainGuard:"Pain limits training intensity.",goals:'Goals',week:'Weekly workout goal',month:'Monthly kilometre goal',goalNote:'Saved workouts count. Weeks start on Monday; kilometres cover all cardio activities. Set 0 to disable a goal.',noGoals:'No goals set yet.',setGoals:'Set goals',weekShort:'Weekly workouts',monthShort:'Monthly kilometres',units:'workouts',reached:'Goal reached',save:'Save',saved:'Saved',saveFailed:'Saving failed. Previous data is preserved.',dirty:'Changed – not saved yet',replan:'Replan',autoDay:'Automatic',newWorkout:'New session',programDay:'The program has no available workout day.',time:'Choose a valid time and duration.',replanTitle:'Replan workouts',replanNote:'Replan from any workout day. Switching programs replaces the remaining plan with the selected program. Logged and active workouts are kept.',begin:'New start date',program:'Program',apply:'Update plan',noMissed:'No workouts need replanning.',changed:'Data changed; review the updated preview.',replanned:'Plan updated.',date:'Choose a valid date.',weekdays:'Select weekdays in calendar settings.',slots:'No suitable free date found.',interval:'Intervals',work:'Work (sec)',rest:'Rest (sec)',rounds:'Rounds',sound:'Sound',vibration:'Vibration',intervalStart:'Start intervals',preset:'Save settings',intervalNote:'Work and rest both count toward set duration; pauses do not. Keep the app open for cues. Elapsed time recovers after returning from the background.',invalidInterval:'Enter valid phases; total duration is limited to 24 hours.',replaceTime:'Reset this set’s recorded time to start new intervals?',workPhase:'Work',restPhase:'Rest',complete:'Intervals complete',emptyLog:'No saved workouts yet',emptyLogNote:'Your first finished workout will appear here with your progress.',startWorkout:'Start a workout',emptyRange:'No data in this period',emptyRangeNote:'Choose another period or clear the filter.',clearFilter:'Clear filter',emptyCardio:'No cardio data yet',emptyCardioNote:'Record running, walking or another cardio activity. Distance can also be entered manually.',cardioAction:'Choose cardio workout',emptyQuick:'No matches',emptyQuickNote:'Try another search or clear the filters.',sleep:'Sleep',hrv:'HRV',load:'Workout load',pain:'Pain feedback',freshMissing:'No fresh data (measurement within 36 hours).',baselineMissing:'Your own HRV baseline is also needed for comparison.',last:'Last measurement',scoreEffect:'Effect on readiness score',recentEffort:'Effort feedback from the last three workouts within 14 days.',noEffort:'No recent effort feedback.',painNote:'Recent pain feedback calls for more cautious loading.',noPain:'No recent pain feedback.',scoreNote:'The estimate starts at 70 and is limited to 25–100 after these factors. No score is shown without recent data.'},
+  de:{samsungEnergyScore:"Samsung Energiepunkte",samsungEnergyNote:"Samsung Health · aktueller Tageswert",samsungScoreNote:"Samsung-Tageswert und TrainPilot-Schätzung werden separat berechnet. Schmerz oder Überlastung können Empfehlungen begrenzen.",trainpilotEstimate:"TrainPilot-Schätzung",trainpilotNote:"Basierend auf Schlaf, HRV und Trainingsfeedback; wird nicht zum Samsung-Wert addiert.",samsungGuardNote:"Hohe Belastung kann die Empfehlung begrenzen.",samsungPainGuard:"Schmerzen begrenzen die Belastung.",goals:'Ziele',week:'Trainingsziel pro Woche',month:'Kilometerziel pro Monat',goalNote:'Gespeicherte Trainings zählen. Wochen beginnen montags; Kilometer umfassen alle Kardioaktivitäten. 0 deaktiviert ein Ziel.',noGoals:'Noch keine Ziele eingestellt.',setGoals:'Ziele einstellen',weekShort:'Trainings pro Woche',monthShort:'Kilometer pro Monat',units:'Trainings',reached:'Ziel erreicht',save:'Speichern',saved:'Gespeichert',saveFailed:'Speichern fehlgeschlagen. Bisherige Daten bleiben erhalten.',dirty:'Geändert – noch nicht gespeichert',replan:'Neu planen',autoDay:'Automatisch',newWorkout:'Neuer Termin',programDay:'Das Programm hat keinen verfügbaren Trainingstag.',time:'Wähle eine gültige Uhrzeit und Dauer.',replanTitle:'Trainings neu planen',replanNote:'Ab jedem Trainingstag neu planen. Ein Programmwechsel ersetzt den verbleibenden Plan durch das gewählte Programm. Protokollierte und aktive Trainings bleiben erhalten.',begin:'Neuer Starttag',program:'Programm',apply:'Plan aktualisieren',noMissed:'Keine Trainings neu zu planen.',changed:'Daten geändert; prüfe die neue Vorschau.',replanned:'Plan aktualisiert.',date:'Wähle ein gültiges Datum.',weekdays:'Wähle Wochentage in den Kalendereinstellungen.',slots:'Kein geeigneter freier Tag gefunden.',interval:'Intervalle',work:'Belastung (s)',rest:'Erholung (s)',rounds:'Runden',sound:'Tonsignal',vibration:'Vibration',intervalStart:'Intervalle starten',preset:'Einstellungen speichern',intervalNote:'Belastung und Erholung zählen zur Satzzeit; Pausen nicht. Für Signale die App geöffnet lassen. Nach Rückkehr aus dem Hintergrund wird die Zeit wiederhergestellt.',invalidInterval:'Gültige Phasen eingeben; Gesamtdauer höchstens 24 Stunden.',replaceTime:'Bisherige Satzzeit für neue Intervalle zurücksetzen?',workPhase:'Belastung',restPhase:'Erholung',complete:'Intervalle beendet',emptyLog:'Noch keine gespeicherten Trainings',emptyLogNote:'Nach deinem ersten abgeschlossenen Training siehst du hier Verlauf und Fortschritt.',startWorkout:'Training starten',emptyRange:'Keine Daten in diesem Zeitraum',emptyRangeNote:'Wähle einen anderen Zeitraum oder lösche den Filter.',clearFilter:'Filter löschen',emptyCardio:'Noch keine Kardiodaten',emptyCardioNote:'Laufen, Gehen oder andere Kardioaktivität erfassen. Strecke kann manuell eingegeben werden.',cardioAction:'Kardiotraining wählen',emptyQuick:'Keine Treffer',emptyQuickNote:'Andere Suche versuchen oder Filter löschen.',sleep:'Schlaf',hrv:'HRV',load:'Trainingsbelastung',pain:'Schmerzrückmeldung',freshMissing:'Keine aktuellen Daten (Messung innerhalb von 36 Stunden).',baselineMissing:'Zum Vergleich wird auch dein HRV-Basiswert benötigt.',last:'Letzte Messung',scoreEffect:'Einfluss auf den Bereitschaftswert',recentEffort:'Belastungsrückmeldungen der letzten drei Trainings innerhalb von 14 Tagen.',noEffort:'Keine aktuelle Belastungsrückmeldung.',painNote:'Aktuelle Schmerzrückmeldungen sprechen für vorsichtigere Belastung.',noPain:'Keine aktuelle Schmerzrückmeldung.',scoreNote:'Die Schätzung beginnt bei 70 und wird mit diesen Faktoren auf 25–100 begrenzt. Ohne aktuelle Daten wird kein Wert gezeigt.'},
+  ro:{samsungEnergyScore:"Scor de energie Samsung",samsungEnergyNote:"Samsung Health · scor zilnic actual",samsungScoreNote:"Scorul zilnic Samsung și estimarea TrainPilot se calculează separat. Durerea și suprasolicitarea pot limita recomandările.",trainpilotEstimate:"Estimare TrainPilot",trainpilotNote:"Bazată pe somn, HRV și efort; nu se adaugă la scorul Samsung.",samsungGuardNote:"Suprasolicitarea poate limita recomandările.",samsungPainGuard:"Durerea limitează intensitatea.",goals:'Obiective',week:'Obiectiv săptămânal de antrenamente',month:'Obiectiv lunar de kilometri',goalNote:'Contează antrenamentele salvate. Săptămâna începe luni; kilometrii includ toate activitățile cardio. 0 dezactivează obiectivul.',noGoals:'Nu există obiective setate.',setGoals:'Setează obiective',weekShort:'Antrenamente săptămânale',monthShort:'Kilometri lunar',units:'antrenamente',reached:'Obiectiv atins',save:'Salvează',saved:'Salvat',saveFailed:'Salvarea a eșuat. Datele anterioare sunt păstrate.',dirty:'Modificat – nesalvat',replan:'Replanifică',autoDay:'Automat',newWorkout:'Sesiune nouă',programDay:'Programul nu are o zi de antrenament disponibilă.',time:'Alege o oră și o durată valide.',replanTitle:'Replanifică antrenamente',replanNote:'Replanifică de la orice zi de antrenament. Schimbarea programului înlocuiește planul rămas cu programul selectat. Antrenamentele înregistrate și active sunt păstrate.',begin:'Noua dată de început',program:'Program',apply:'Actualizează planul',noMissed:'Nu există antrenamente de replanificat.',changed:'Datele s-au schimbat; verifică previzualizarea nouă.',replanned:'Plan actualizat.',date:'Alege o dată validă.',weekdays:'Selectează zilele săptămânii în setările calendarului.',slots:'Nu există o dată liberă potrivită.',interval:'Intervale',work:'Efort (sec)',rest:'Recuperare (sec)',rounds:'Runde',sound:'Sunet',vibration:'Vibrație',intervalStart:'Pornește intervalele',preset:'Salvează setările',intervalNote:'Efortul și recuperarea intră în durata seriei; pauzele nu. Ține aplicația deschisă pentru semnale. Timpul se recuperează la revenirea din fundal.',invalidInterval:'Introdu faze valide; durata totală este limitată la 24 de ore.',replaceTime:'Resetezi timpul seriei pentru a porni intervale noi?',workPhase:'Efort',restPhase:'Recuperare',complete:'Intervale finalizate',emptyLog:'Nu există antrenamente salvate',emptyLogNote:'Primul antrenament finalizat va apărea aici, împreună cu progresul.',startWorkout:'Pornește un antrenament',emptyRange:'Nu există date în această perioadă',emptyRangeNote:'Alege altă perioadă sau șterge filtrul.',clearFilter:'Șterge filtrul',emptyCardio:'Nu există date cardio',emptyCardioNote:'Înregistrează alergare, mers sau altă activitate cardio. Distanța poate fi introdusă manual.',cardioAction:'Alege antrenament cardio',emptyQuick:'Niciun rezultat',emptyQuickNote:'Încearcă altă căutare sau șterge filtrele.',sleep:'Somn',hrv:'HRV',load:'Încărcare de antrenament',pain:'Feedback privind durerea',freshMissing:'Nu există date recente (măsurare în 36 de ore).',baselineMissing:'Comparația necesită și media HRV personală.',last:'Ultima măsurare',scoreEffect:'Efect asupra scorului de pregătire',recentEffort:'Feedback din ultimele trei antrenamente în cel mult 14 zile.',noEffort:'Nu există feedback recent despre efort.',painNote:'Feedbackul recent privind durerea cere o încărcare mai prudentă.',noPain:'Nu există feedback recent privind durerea.',scoreNote:'Estimarea începe la 70 și este limitată la 25–100 după acești factori. Fără date recente nu apare un scor.'}
  };
  const t=key=>(text[typeof rf212Lang==='function'?rf212Lang():'hu']||text.hu)[key]||text.hu[key]||key;
  const number=(n,d=1)=>tp149FormatNumber(n,{maximumFractionDigits:d});
@@ -15434,13 +15521,19 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const effect=points=>t('scoreEffect')+': '+(points>0?'+':'')+number(points);
   const row=(label,value,note)=>'<div class="rf233-signal tp110-signal"><strong>'+esc(label)+'</strong><span>'+esc(value)+'</span><small>'+esc(note)+'</small></div>';
   const last=time=>Number.isFinite(Date.parse(time))?' '+t('last')+': '+tp149FormatDateTime(time):'';
-  rows.push(row(t('sleep'),r.sleep==null?t('freshMissing'):number(r.sleep/60)+' h',r.sleep==null?last(rec.sleepEnd||rec.day):effect(r.sleep>=450?12:r.sleep>=420?8:r.sleep>=360?1:-14)+last(rec.sleepEnd||rec.day)));
+  if(r.energyScore!=null){
+   rows.push(row(t('samsungEnergyScore'),tp184FormatScore(r.energyScore),t('samsungEnergyNote')+last(r.energyScoreTime)));
+   rows.push(row(t('trainpilotEstimate'),r.trainpilotScore==null?t('freshMissing'):number(r.trainpilotScore)+'/100',t('trainpilotNote')));
+  }else{
+   rows.push(row(t('samsungEnergyScore'),t('freshMissing'),window.TrainPilotEnergy184?.summary?.()||t('freshMissing')));
+  }
+  rows.push(row(t('sleep'),r.sleep==null?t('freshMissing'):number(r.sleep/60)+' h',r.sleep==null?last(rec.sleepEnd||rec.day):(r.energyScore!=null?'':effect(r.sleep>=450?12:r.sleep>=420?8:r.sleep>=360?1:-14))+last(rec.sleepEnd||rec.day)));
   const valid=r.hrv>0&&r.base>0,delta=valid?(r.hrv-r.base)/r.base:0;
-  rows.push(row(t('hrv'),r.hrv==null?t('freshMissing'):number(r.hrv)+' ms'+(valid?' / '+number(r.base)+' ms ('+(delta>0?'+':'')+number(delta*100)+'%)':''),valid?effect(delta>=.15?10:delta<=-.2?-14:delta<=-.1?-6:3)+last(rec.hrvTime||rec.day):(r.hrv==null?'':t('baselineMissing'))+last(rec.hrvTime||rec.day)));
-  rows.push(row(t('load'),r.load==null?t('noEffort'):number(r.load)+'/100',t('recentEffort')+(r.load==null?'':' '+effect((r.load-70)*.35))));
+  rows.push(row(t('hrv'),r.hrv==null?t('freshMissing'):number(r.hrv)+' ms'+(valid?' / '+number(r.base)+' ms ('+(delta>0?'+':'')+number(delta*100)+'%)':''),valid?(r.energyScore!=null?'':effect(delta>=.15?10:delta<=-.2?-14:delta<=-.1?-6:3))+last(rec.hrvTime||rec.day):(r.hrv==null?'':t('baselineMissing'))+last(rec.hrvTime||rec.day)));
+  rows.push(row(t('load'),r.load==null?t('noEffort'):number(r.load)+'/100',t('recentEffort')+(r.load==null?'':r.energyScore!=null?' · '+t('samsungGuardNote'):' '+effect((r.load-70)*0.35))));
   const painful=recent.flatMap(h=>(h.exercises||[]).filter(e=>e.effort==='pain').map(e=>tp149ExerciseName(e)+' · '+tp149FormatDate(h.finished||h.started)));
-  rows.push(row(t('pain'),painful.length?painful.join('; '):t('noPain'),painful.length?t('painNote')+' '+effect(-12):''));
-  return rows.join('')+'<p class="small muted tp110-score-note">'+esc(t('scoreNote'))+'</p>';
+  rows.push(row(t('pain'),painful.length?painful.join('; '):t('noPain'),painful.length?t('painNote')+(r.energyScore!=null?' '+t('samsungPainGuard'):' '+effect(-12)):''));
+  return rows.join('')+'<p class="small muted tp110-score-note">'+esc(r.energyScore!=null?t('samsungScoreNote'):t('scoreNote'))+'</p>';
  }
  let reasonsHost=null,reasonsTrigger=null,reasonsBackground=[];
  function closeCoachReasons(restoreFocus=true){
@@ -15699,7 +15792,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
  async function refresh(){const p=await ready();if(p)accept(await p.getProjection());return cache;}
  function legacySnapshot(data){const days=JSON.parse(JSON.stringify(data.healthLedger?.days||{}));for(const row of data.recoveryHistory||[]){if(!/^\d{4}-\d{2}-\d{2}$/.test(row.day))continue;const entry=days[row.day]||(days[row.day]={});entry.legacyRecovery={...row};if(entry.hrvRmssdMs==null&&row.hrvRmssdMs!=null)entry.hrvRmssdMs=row.hrvRmssdMs;}return {schemaVersion:1,records:[],days:Object.entries(days).map(([day,data])=>({day,channel:'legacy',source:'unknown',data})),deletions:[]};}
  async function backup(){const data=makeBackup(),p=await ready();if(p&&tp105HealthConsent())data.healthJournal=await p.exportSnapshot();return tp105Project(data,tp105HealthConsent());}
- const typeLabels={SkeletalMuscleMass:'muscle',BodyFatMass:'fatMass',TotalBodyWater:'water',FatFreeMass:'lean',BasalMetabolicRate:'basal',StepsRecord:'steps',StepsSnapshot:'steps',SleepSessionRecord:'sleep',HeartRateRecord:'pulse',RestingHeartRateRecord:'resting',ActiveCaloriesBurnedRecord:'active',TotalCaloriesBurnedRecord:'total',DistanceRecord:'distance',SpeedRecord:'speed',WeightRecord:'weight',BodyFatRecord:'fat',BloodPressureRecord:'pressure',BloodGlucoseRecord:'glucose',RespiratoryRateRecord:'respiratory',HeartRateVariabilityRmssdRecord:'HRV',OxygenSaturationRecord:'SpO₂',Vo2MaxRecord:'VO₂max',ExerciseSessionRecord:'exercise'};
+ for(const [lang,label] of Object.entries({hu:'Samsung energiapontszám',en:'Samsung Energy Score',de:'Samsung Energiepunkte',ro:'Scor de energie Samsung'}))texts[lang].energyScore=label;
+ const typeLabels={EnergyScoreRecord:'energyScore',SkeletalMuscleMass:'muscle',BodyFatMass:'fatMass',TotalBodyWater:'water',FatFreeMass:'lean',BasalMetabolicRate:'basal',StepsRecord:'steps',StepsSnapshot:'steps',SleepSessionRecord:'sleep',HeartRateRecord:'pulse',RestingHeartRateRecord:'resting',ActiveCaloriesBurnedRecord:'active',TotalCaloriesBurnedRecord:'total',DistanceRecord:'distance',SpeedRecord:'speed',WeightRecord:'weight',BodyFatRecord:'fat',BloodPressureRecord:'pressure',BloodGlucoseRecord:'glucose',RespiratoryRateRecord:'respiratory',HeartRateVariabilityRmssdRecord:'HRV',OxygenSaturationRecord:'SpO₂',Vo2MaxRecord:'VO₂max',ExerciseSessionRecord:'exercise'};
  const format=(value,unit='')=>typeof value==='number'&&Number.isFinite(value)?tp149FormatNumber(value,{maximumFractionDigits:1})+(unit?' '+unit:''):'—';
  function origin(channel,source,data={}){if(channel==='samsung_health')return window.TrainPilotSamsungHealth?.t('direct')||'Samsung Health';if(channel==='health_connect')return source==='@aggregate'?t('aggregate'):'Health Connect · '+({'com.sec.android.app.shealth':'Samsung Health','com.google.android.apps.fitness':'Google Fit'}[source]||(source.startsWith('com.android.healthconnect.phone.')?t('phone'):t('hc')));if(channel==='ble_watch')return t('watch')+(data.deviceName?' · '+data.deviceName:'');return t('legacy')+' · '+t('unknown');}
  function recordHtml(row){
@@ -15709,7 +15803,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   return '<article class="tp120-record"><div><strong>'+esc(t(typeLabels[row.type]||row.type))+'</strong><b>'+esc(reading)+'</b></div><small>'+esc(tp149FormatDateTime(new Date(row.type==='SleepSessionRecord'?row.endMs:row.startMs)))+'</small><small class="muted">'+esc(row.channel==='samsung_health'?origin(row.channel,row.source,data):t('hc'))+'</small>'+(['health_connect','samsung_health'].includes(row.channel)?'<details class="tp120-origin-details"><summary>'+esc(t('source'))+'</summary><small>'+esc(origin(row.channel,row.source,data))+'</small><small class="muted">'+esc(row.source)+'</small></details>':'')+(samples.length?'<small>'+samples.length+' '+esc(t('samples'))+'</small>':'')+(data.dateBasis==='phone_observation'?'<small>'+esc(t('observed'))+'</small>':'')+(data.durationKind==='session'?'<small>'+esc(t('session'))+'</small>':'')+'</article>';
  }
  function dayHtml(day){
-  const metrics=[['steps',day.steps,''],['active',day.activeCalories,'kcal'],['total',day.totalCalories,'kcal'],['pulse',day.averageHeartRate,'bpm'],['resting',day.restingHeartRate,'bpm'],['distance',day.distanceMeters,'m'],['weight',day.weightKg,'kg'],['fat',day.bodyFatPercent,'%'],['muscle',day.skeletalMuscleMassKg,'kg'],['fatMass',day.bodyFatMassKg,'kg'],['water',day.totalBodyWaterLiters,'L'],['HRV',day.hrvRmssdMs,'ms'],['SpO₂',day.oxygenSaturationPercent,'%']].filter(([,value])=>value!=null);
+  const metrics=[['energyScore',day.energyScore,'/100'],['steps',day.steps,''],['active',day.activeCalories,'kcal'],['total',day.totalCalories,'kcal'],['pulse',day.averageHeartRate,'bpm'],['resting',day.restingHeartRate,'bpm'],['distance',day.distanceMeters,'m'],['weight',day.weightKg,'kg'],['fat',day.bodyFatPercent,'%'],['muscle',day.skeletalMuscleMassKg,'kg'],['fatMass',day.bodyFatMassKg,'kg'],['water',day.totalBodyWaterLiters,'L'],['HRV',day.hrvRmssdMs,'ms'],['SpO₂',day.oxygenSaturationPercent,'%']].filter(([,value])=>value!=null);
   const sessions=(day.sleepSessions||[]).filter(s=>rf240DayKey(s.end)===day.day),source=sessions.some(s=>s.source==='com.sec.android.app.shealth')?'com.sec.android.app.shealth':sessions.slice().sort((a,b)=>Date.parse(b.end)-Date.parse(a.end))[0]?.source;const spans=rf250MergeSpans(sessions.filter(s=>s.source===source).flatMap(rf250SleepSpans));if(spans.length)metrics.push(['sleep',spans.reduce((n,[a,b])=>n+(b-a)/60000,0),'min']);else if(day.legacyRecovery?.sleepMinutes!=null)metrics.push(['sleep',day.legacyRecovery.sleepMinutes,'min']);
   const stale=day.partial||!day.readAt||Date.now()-Date.parse(day.readAt)>36*3600000;
   return '<article class="tp120-day"><strong>'+esc(tp149FormatDate(new Date(day.day+'T12:00:00')))+'</strong><small>'+esc(origin(day.channel,day.source,day))+'</small><div class="tp120-metrics">'+metrics.map(([key,value,unit])=>'<div><small>'+esc(t(key))+'</small><b>'+esc(format(value,unit))+'</b>'+(day.channel==='samsung_health'&&day.metricProviders?.[key==='HRV'?'hrvRmssdMs':key]==='health_connect'?'<small>Health Connect</small>':'')+'</div>').join('')+'</div><small class="muted">'+esc(day.readAt?tp149FormatDateTime(day.readAt):'—')+(stale?' · '+esc(t(day.partial?'partial':'stale')):'')+'</small>'+(day.source==='@aggregate'&&day.activityOrigin?'<details class="tp120-origin-details"><summary>'+esc(t('source'))+'</summary><small>'+esc(origin('health_connect',day.activityOrigin))+'</small><small class="muted">'+esc(day.activityOrigin)+'</small></details>':'')+'</article>';
@@ -15833,7 +15927,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   try{
    if(journal()?.isSyncing?.()||state.health?.busy||window.TrainPilotBackupBusy)throw Error(t('busy'));
    const bridge=await journal().ready();if(!bridge)throw Error(t('missing'));
-   if(value===SH){let granted=await samsung().getStatus();if(!hasRead(granted))granted=await samsung().requestRead();if(!hasRead(granted))throw Error(t('denied'));}
+   if(value===SH){let granted=await samsung().getStatus();if(!hasRead(granted)||granted.permissions?.READ_ENERGY_SCORE===false)granted=await samsung().requestRead();if(!hasRead(granted))throw Error(t('denied'));}
    await bridge.setPreferences({preferences:{provider:value}});await journal().refresh();
    rfHistoryHealthCache?.clear();
    const rows=history();for(const row of rows)if(row.health240)row.health240.syncedAt=null;db.set('history',rows);
@@ -15848,7 +15942,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   await journal().ready();
    if(selected()!==SH)return pipeline(p,options);
   const native=samsung(),report={provider:SH,startedAt:new Date().toISOString(),stages:[],days:0,workouts:0,exported:0,skipped:0,errors:[]};
-  let status=await native.getStatus();if(options.manual&&!hasRead(status)){await native.requestRead();status=await native.getStatus();}
+  let status=await native.getStatus();if(options.manual&&(!hasRead(status)||status.permissions?.READ_ENERGY_SCORE===false)){await native.requestRead();status=await native.getStatus();}
   if(!hasRead(status))throw Error(t('denied'));
   state.health.permissions=status.permissions;
   const count=options.full||!db.get('samsungHealthLastFull',null)?30:2,days=rf240RecentDays(count).sort();
@@ -19245,6 +19339,684 @@ window.addEventListener?.('DOMContentLoaded',function(){
  window.TrainPilotDistance220={paint};
 })();
 // @endsection distance-activity-flow-220.js
+
+// @section training-modes-197.js
+/* #197: read-only mode resolver. Explicitly chosen modes are not yet wired to
+ * Coach or workout prescriptions; an absent/invalid selection is legacy. */
+var tp197TrainingModes=function tp197TrainingModes(programId=null){
+ const has=(obj,key)=>Object.prototype.hasOwnProperty.call(obj,key);
+ const object=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
+ const defaults={trainingStyle:'normal',progressionMode:'double'};
+ const valid=choice=>object(choice)&&
+  (choice.trainingStyle==='normal'||choice.trainingStyle==='hit')&&
+  (choice.progressionMode==='double'||choice.progressionMode==='linear'||choice.progressionMode==='rir');
+ const pid=typeof programId==='string'&&programId.trim()?programId:
+  (state.session?.programId||(typeof activeProgramId==='function'?activeProgramId():null)||null);
+ const result=(choice,source)=>({
+  schemaVersion:1,programId:pid,trainingStyle:choice.trainingStyle,
+  progressionMode:choice.progressionMode,explicitChoice:source!=='legacy',
+  source
+ });
+ const legacy=()=>result(defaults,'legacy');
+ const saved=settings()?.trainingModes197;
+ if(!object(saved)||saved.schemaVersion!==1||typeof saved.explicitChoice!=='boolean'||!valid(saved.defaults))return legacy();
+ // A program's explicit choice wins. A malformed override never silently
+ // enables the global policy in its place.
+ if(has(saved,'byProgram')&&!object(saved.byProgram))return legacy();
+ const by=object(saved.byProgram)?saved.byProgram:null;
+ const hasOverride=!!by&&typeof pid==='string'&&has(by,pid);
+ if(hasOverride){
+  const override=by[pid];
+  if(!object(override)||typeof override.explicitChoice!=='boolean')return legacy();
+  if(override.explicitChoice){
+   if(!valid(override))return legacy();
+   return result(override,'program');
+  }
+ }
+ if(saved.explicitChoice)return result(saved.defaults,'global');
+ return legacy();
+};
+// @endsection training-modes-197.js
+
+// @section progression-modes-197.js
+/* #197, phase 3: read-only progression proposals. Not wired to workout/session writes. */
+var tp197ComputePreview=function tp197ComputePreview(input={}) {
+ const mode=input?.modes||{}, target=input?.target||{}, exercise=input?.exercise||{}, history=Array.isArray(input?.recent)?input.recent.slice(0,4):[];
+ const chosen=mode.explicitChoice===true&&['global','program'].includes(mode.source)&&
+  ['normal','hit'].includes(mode.trainingStyle)&&['double','linear','rir'].includes(mode.progressionMode);
+ const empty={schemaVersion:1,handled:false,previewOnly:true,autoApply:false,action:'legacy',reasonCode:'legacy',trainingStyle:'normal',progressionMode:'double',historyCount:0,baseline:null,proposed:null};
+ if(!chosen)return empty;
+ const clamp=(x,lo,hi)=>Number.isFinite(x)?Math.min(hi,Math.max(lo,x)):null;
+ const bounded=(value,lo,hi)=>value===null||value===undefined||value===''?null:clamp(Number(value),lo,hi);
+ const sets=bounded(target.sets,1,12),min=bounded(target.min,1,200),max=bounded(target.max,1,200);
+ const recent=history.filter(x=>x&&typeof x==='object');
+ const latest=recent[0]||null,base=latest&&Number.isFinite(Number(latest.weight))&&Number(latest.weight)>0?Number(latest.weight):null;
+ const step=Number(input.step),isBody=exercise.loadType==='bodyweight';
+ const effectiveSets=mode.trainingStyle==='hit'&&sets!==null?Math.min(sets,input.isolation===true?1:2):sets;
+ const normalReps=Array.isArray(latest?.reps)?latest.reps.filter(x=>Number.isFinite(Number(x))&&Number(x)>0).map(Number):[];
+ const old={sets,repsMin:min,repsMax:max,rest:Number.isFinite(Number(target.rest))&&Number(target.rest)>0?Number(target.rest):null,weight:isBody?0:base,rirMin:target.rirMin??null,rirMax:target.rirMax??null};
+ const proposal={...old,sets:effectiveSets,repTargets:null};
+ const result={schemaVersion:1,handled:true,previewOnly:true,autoApply:false,action:'hold',reasonCode:'insufficient-history',trainingStyle:mode.trainingStyle,progressionMode:mode.progressionMode,historyCount:recent.length,baseline:old,proposed:proposal};
+ const set=(action,reason)=>({...result,action,reasonCode:reason});
+ if(exercise.measurementType==='distance'||exercise.repUnit==='mp'||exercise.repUnit==='sec'||target.kind!=='reps')return set('hold','non-strength-activity');
+ if(sets===null||min===null||max===null||min>max)return set('hold','invalid-target');
+ if(!latest)return set('hold','insufficient-history');
+ const pain=recent.slice(0,3).some(x=>x.pain===true||x.effort==='pain'||x.feedbackRating==='pain');
+ if(pain)return set('hold','pain');
+ const recovery=input.readiness;
+ if(recovery&&Number(recovery.parts)>0&&Number.isFinite(Number(recovery.score))&&Number(recovery.score)<55)return set('hold','low-readiness');
+ if(!latest.allDone)return set('hold','incomplete');
+ if(['hard','challenging'].includes(latest.effort)||latest.feedbackRating==='hard')return set('hold','high-effort');
+ if(latest.belowMin===true||Number.isFinite(Number(latest.minRep))&&Number(latest.minRep)<min)return set('hold','below-target');
+ const safe=x=>x?.allDone===true&&x?.pain!==true&&x?.feedbackRating!=='pain'&&
+  ['good','light','easy'].includes(x?.effort)&&x?.belowMin!==true&&!['hard','pain'].includes(x?.feedbackRating);
+ const same=x=>isBody||base!==null&&Number.isFinite(Number(x?.weight))&&Math.abs(Number(x.weight)-base)<.01;
+ const streak=(n,additional)=>recent.length>=n&&recent.slice(0,n).every(x=>safe(x)&&same(x)&&(!additional||additional(x)));
+ const canIncrease=isBody||(base!==null&&base>0&&Number.isFinite(step)&&step>=.25&&step<=10);
+ const increase=(reason)=> {
+  if(!canIncrease)return set('hold','missing-load-step');
+  if(isBody)return set('variation',reason);
+  proposal.weight=Math.round((base+step)*4)/4;
+  return set('increase',reason);
+ };
+ const atTop=x=>x?.hitTop===true&&Number.isFinite(Number(x?.minRep))&&Number(x.minRep)>=max;
+ if(mode.progressionMode==='double'){
+  if(streak(3,atTop))return increase('double-stable-top');
+  if(atTop(latest))return set('hold','double-await-stability');
+  if(!safe(latest))return set('hold','uncertain-effort');
+  if(!normalReps.length)return set('hold','missing-repetitions');
+  const out=normalReps.map(x=>Math.min(max,Math.max(min,x))),lowest=Math.min(...out);
+  if(lowest>=max)return set('hold','double-await-stability');
+  for(let i=0;i<out.length;i++)if(out[i]===lowest){out[i]=Math.min(max,out[i]+1);break;}
+  proposal.repTargets=out;
+  return set('reps','double-next-repetition');
+ }
+ if(mode.progressionMode==='linear'){
+  if(streak(2,x=>Number.isFinite(Number(x.minRep))&&Number(x.minRep)>=min))return increase('linear-stable-performance');
+  return set('hold','linear-await-stability');
+ }
+ // RIR feedback is *actual* recorded reserve, never prescription.rir.
+ const validRir=x=>x?.actualRir!==null&&x?.actualRir!==undefined&&
+  x?.actualRir!==''&&Number.isFinite(Number(x.actualRir))&&Number(x.actualRir)>=0&&Number(x.actualRir)<=10;
+ const lo=target.rirMin,hi=target.rirMax;
+ if(!Number.isFinite(lo)||!Number.isFinite(hi)||lo<0||hi>10||lo>hi)return set('hold','rir-target-missing');
+ if(!validRir(latest))return set('hold','rir-feedback-missing');
+ const actual=Number(latest.actualRir);
+ if(actual<lo)return set('hold','rir-overexertion');
+ if(streak(2,x=>validRir(x)&&Number(x.actualRir)>hi+1&&Number.isFinite(Number(x.minRep))&&Number(x.minRep)>=min))return increase('rir-stable-reserve');
+ return set('hold',actual>hi?'rir-await-stability':'rir-on-target');
+};
+var tp197ExercisePreview=function tp197ExercisePreview(id,programId=null,previewModes=null) {
+ const pid=typeof programId==='string'&&programId.trim()?programId:
+  (state.session?.programId||(typeof activeProgramId==='function'?activeProgramId():null));
+ const modes=previewModes?.explicitChoice===true?previewModes:tp197TrainingModes(pid);
+ if(!modes.explicitChoice)return tp197ComputePreview({modes});
+ const e=byId(id);
+ if(!e)return tp197ComputePreview({modes,exercise:{},target:{},recent:[]});
+ const se=state.session?.programId===pid?state.session.exercises?.find(x=>x.id===id):null;
+ const target=tp140Prescription(id,se,pid);
+ const rows=typeof tp128Rows==='function'?tp128Rows(id,pid,4):[];
+ const recent=rows.map(row=>{
+  const item=tp140Occurrence(row,target);
+  const effort=item.effort||null,feedbackRating=row.workout?.feedback?.rating||null;
+  // The prescribed RIR is NOT a measurement. Only an explicit recorded RIR is considered.
+  const reported=row.exercise?.actualRir??row.exercise?.feedback?.rir??null;
+  return {
+   allDone:item.allDone===true,weight:item.weight,minRep:item.minRep,reps:item.reps,
+   hitTop:item.hitTop===true,belowMin:item.belowMin===true,effort,feedbackRating,
+   pain:effort==='pain'||feedbackRating==='pain',actualRir:reported
+  };
+ });
+ let readiness=null;
+ try{if(typeof rf220Readiness==='function')readiness=rf220Readiness();}catch(_){}
+ const p=programById(pid),rx=p?.prescriptions?.[id]||{},lib={...e,...rx};
+ return tp197ComputePreview({modes,exercise:lib,target,recent,readiness,
+  isolation:typeof TP140_ISOLATION!=='undefined'&&TP140_ISOLATION.has(id),
+  step:typeof tp140Step==='function'?tp140Step(lib,Number(recent[0]?.weight)||0):null});
+};
+// @endsection progression-modes-197.js
+
+// @section training-modes-ui-197.js
+/* #197 step 4: ephemeral, read-only mode selection and explained preview.
+ * Actual program/settings changes require a separate confirmed step (#197 5/7). */
+var TP197_UI_LABELS={
+ hu:{title:"Edzésstílus és progresszió",global:"Alapértelmezett edzésmód",program:"Program edzésmódja",style:"Edzésstílus",progress:"Progressziós szabály",normal:"Normál hipertrófia",hit:"HIT-inspirált (kis volumen)",double:"Dupla progresszió",linear:"Lineáris progresszió",rir:"RIR / Coach",normalInfo:"2–3 munkasorozat, szabályos ismétlések; a bukás nem kötelező.",hitInfo:"Kevesebb, kontrollált munkasorozat bemelegítés után; nincs kötelező bukás.",doubleInfo:"Előbb több jó ismétlés, majd stabil felső cél után kis súlylépés.",linearInfo:"Két megfelelő edzés után óvatos súlylépés, rossz teljesítésnél tartás.",rirInfo:"Csak naplózott tényleges RIR esetén igazít; hiányzó adatnál tartás.",preview:"Előnézet (nem alkalmazott)",current:"Jelenlegi",proposed:"Javasolt",sets:"Munkasorozat",load:"Súly",example:"Példa",action:"Ajánlás",restore:"Előnézet visszaállítása",notice:"Kísérleti választó: itt semmit nem mentünk, és a Coach/edzés sem változik. A jóváhagyás a következő fejlesztési lépés.",noHistory:"Nincs megfelelő edzéselőzmény; még nincs terhelésajánlás.",hold:"Terhelés tartása",increase:"Kis súlyemelés javasolt",reps:"Ismétlések növelése",variation:"Nehezebb változat mérlegelése",pain:"Fájdalom vagy kedvezőtlen jel: nincs emelés",insufficient:"Nincs elég megbízható adat",noExercise:"Nincs megfelelő erősítő gyakorlat a programban",unknown:"—"},
+ en:{title:"Training style and progression",global:"Default training mode",program:"Program training mode",style:"Training style",progress:"Progression method",normal:"Normal hypertrophy",hit:"HIT-inspired (low volume)",double:"Double progression",linear:"Linear progression",rir:"RIR / Coach",normalInfo:"2–3 working sets with clean reps; failure is not required.",hitInfo:"Fewer controlled working sets after warm-up; no forced failure.",doubleInfo:"Build good repetitions first, then increase load after a stable upper target.",linearInfo:"Small load increases after two strong workouts; hold on difficult days.",rirInfo:"Uses recorded actual RIR only; holds when data are missing.",preview:"Preview (not applied)",current:"Current",proposed:"Proposed",sets:"Working sets",load:"Weight",example:"Example",action:"Suggestion",restore:"Reset preview",notice:"Experimental selector: nothing is saved and Coach/workouts are unchanged. Confirmation comes in the next development step.",noHistory:"No compatible workout history yet; no load recommendation.",hold:"Hold load",increase:"Suggest a small load increase",reps:"Increase repetitions",variation:"Consider a harder variation",pain:"Pain or adverse signal: no increase",insufficient:"Insufficient reliable data",noExercise:"No eligible strength exercise in this program",unknown:"—"},
+ de:{title:"Trainingsstil und Progression",global:"Standard-Trainingsmodus",program:"Trainingsmodus für dieses Programm",style:"Trainingsstil",progress:"Progressionsmethode",normal:"Normale Hypertrophie",hit:"HIT-inspiriert (geringes Volumen)",double:"Doppelte Progression",linear:"Lineare Progression",rir:"RIR / Coach",normalInfo:"2–3 Arbeitssätze mit sauberer Technik; Muskelversagen ist nicht Pflicht.",hitInfo:"Weniger kontrollierte Arbeitssätze nach dem Aufwärmen; kein erzwungenes Versagen.",doubleInfo:"Erst saubere Wiederholungen steigern, dann bei stabilem oberem Ziel das Gewicht.",linearInfo:"Kleine Gewichtsschritte nach zwei guten Einheiten; bei Schwierigkeiten halten.",rirInfo:"Nur tatsächlich protokollierte RIR; bei fehlenden Daten halten.",preview:"Vorschau (nicht angewendet)",current:"Aktuell",proposed:"Vorschlag",sets:"Arbeitssätze",load:"Gewicht",example:"Beispiel",action:"Empfehlung",restore:"Vorschau zurücksetzen",notice:"Test-Auswahl: Es wird nichts gespeichert und Coach/Training bleiben unverändert. Die Bestätigung folgt im nächsten Entwicklungsschritt.",noHistory:"Noch kein geeigneter Trainingsverlauf; keine Lastempfehlung.",hold:"Last halten",increase:"Kleine Gewichtserhöhung vorschlagen",reps:"Wiederholungen steigern",variation:"Schwerere Variante erwägen",pain:"Schmerz oder Warnsignal: keine Steigerung",insufficient:"Zu wenig verlässliche Daten",noExercise:"Keine geeignete Kraftübung im Programm",unknown:"—"},
+ ro:{title:"Stil de antrenament și progresie",global:"Mod implicit de antrenament",program:"Mod pentru acest program",style:"Stil de antrenament",progress:"Metodă de progresie",normal:"Hipertrofie normală",hit:"Inspirat de HIT (volum redus)",double:"Progresie dublă",linear:"Progresie liniară",rir:"RIR / Coach",normalInfo:"2–3 serii de lucru cu execuție corectă; eșecul muscular nu este obligatoriu.",hitInfo:"Mai puține serii controlate după încălzire; fără eșec forțat.",doubleInfo:"Mai întâi crești repetările bune, apoi greutatea după atingerea stabilă a limitei.",linearInfo:"Creșteri mici după două antrenamente bune; menții greutatea când e greu.",rirInfo:"Folosește doar RIR real înregistrat; menține greutatea dacă lipsesc date.",preview:"Previzualizare (neaplicată)",current:"Actual",proposed:"Propus",sets:"Serii de lucru",load:"Greutate",example:"Exemplu",action:"Recomandare",restore:"Resetează previzualizarea",notice:"Selector experimental: nimic nu se salvează, iar Coach/antrenamentele rămân neschimbate. Confirmarea urmează în pasul următor.",noHistory:"Nu există încă istoric compatibil; fără recomandare de sarcină.",hold:"Menține greutatea",increase:"Propune o creștere mică a greutății",reps:"Crește repetările",variation:"Ia în calcul o variantă mai dificilă",pain:"Durere sau semnal nefavorabil: fără creștere",insufficient:"Date fiabile insuficiente",noExercise:"Nu există exercițiu de forță potrivit în program",unknown:"—"}
+};
+var tp197UiText=function(){const lang=typeof rf212Lang==="function"?rf212Lang():"hu";return TP197_UI_LABELS[lang]||TP197_UI_LABELS.en;};
+var tp197UiPending=Object.create(null);
+var tp197UiKey=function(scope,pid){return scope==="program"?"program:"+String(pid):"global";};
+var tp197UiChoice=function(scope,pid){
+ const key=tp197UiKey(scope,pid);
+ if(tp197UiPending[key])return {...tp197UiPending[key]};
+ const inherited=tp197TrainingModes(pid),raw=settings()?.trainingModes197;
+ const valid=x=>x&&["normal","hit"].includes(x.trainingStyle)&&["double","linear","rir"].includes(x.progressionMode);
+ const global=raw?.schemaVersion===1&&raw.explicitChoice===true&&valid(raw.defaults)?raw.defaults:null;
+ const personal=scope==="program"&&raw?.schemaVersion===1&&raw.byProgram&&
+  Object.prototype.hasOwnProperty.call(raw.byProgram,pid)&&raw.byProgram[pid]?.explicitChoice===true&&valid(raw.byProgram[pid])?raw.byProgram[pid]:null;
+ const original=personal||global||inherited;
+ return {trainingStyle:original.trainingStyle,progressionMode:original.progressionMode};
+};
+var tp197UiSample=function(scope,pid,choice){
+ const p=(pid&&typeof programById==="function"?programById(pid):null)||activeProgram();
+ const id=p?.days?.flatMap(d=>d.exercises||[]).find(id=>{
+  const e=byId(id);
+  return !!e&&!(typeof tp106IsDistance==="function"&&tp106IsDistance(e))&&!/mp|sec|second/i.test(String(e.repUnit||""));
+ });
+ if(!id)return null;
+ const result=tp197ExercisePreview(id,p.id,{
+  schemaVersion:1,programId:p.id,explicitChoice:true,source:scope,
+  trainingStyle:choice.trainingStyle,progressionMode:choice.progressionMode
+ });
+ return {id,name:byId(id)?.hu||byId(id)?.en||id,result};
+};
+var TP197_UI_REASONS={
+ hu:{
+  pain:'A gyakorlat legutóbbi három figyelembe vett edzéselőzményében fájdalomjelzés szerepel. Ilyenkor egyik progressziós mód sem növel terhelést.',
+  'low-readiness':'A regenerációs becslés 55/100 alatti. Előbb regeneráció szükséges, nem terhelésnövelés.',
+  incomplete:'A legutóbbi gyakorlat sorozatai nem teljesültek hiánytalanul.',
+  'high-effort':'A legutóbbi gyakorlat túl nagy erőfeszítéssel teljesült.',
+  'below-target':'A legutóbbi teljesítés nem érte el az előírt minimális ismétlésszámot.',
+  'insufficient-history':'Még nincs megfelelő korábbi teljesítés, ezért nincs megalapozott súlyajánlás.',
+  'double-await-stability':'Dupla mód: három egymást követő, szabályos felső ismétléscél szükséges az emeléshez.',
+  'linear-await-stability':'Lineáris mód: két egymást követő, megfelelő edzés szükséges az emeléshez.',
+  'rir-feedback-missing':'RIR mód: nincs naplózott tényleges ismétléstartalék (RIR). A megadott cél-RIR nem mérés.',
+  'rir-target-missing':'RIR mód: hiányzik az érvényes cél-RIR tartomány.',
+  'rir-overexertion':'RIR mód: a tényleges ismétléstartalék alacsonyabb a célnál.',
+  'rir-await-stability':'RIR mód: két egymást követő, megfelelő tartalékú teljesítés szükséges.',
+  'rir-on-target':'RIR mód: a tényleges tartalék a célértéken van, súlyemelés nem indokolt.',
+  'missing-load-step':'Nincs megfelelő, biztonságos súlylépcső beállítva.',
+  'missing-repetitions':'Hiányoznak a ténylegesen naplózott ismétlések.',
+  'uncertain-effort':'Nincs egyértelmű, biztonságos erőfeszítés-visszajelzés.',
+  'invalid-target':'Az előírt sorozat- vagy ismétléscél hibás vagy hiányzik.',
+  'non-strength-activity':'Távolság- vagy időalapú gyakorlat: súlyprogresszió nem alkalmazható.'
+ },
+ en:{pain:'Pain was recorded in the last three relevant exercise histories; load increases are blocked in every mode.','low-readiness':'Recovery readiness is below 55/100; do not increase load.','insufficient-history':'Not enough eligible completed workouts yet.','double-await-stability':'Double progression requires three stable top-range completions.','linear-await-stability':'Linear progression requires two stable successful workouts.','rir-feedback-missing':'RIR mode requires actual logged reserve; prescribed RIR is not a measurement.'},
+ de:{pain:'In den letzten drei relevanten Übungsverläufen wurden Schmerzen gemeldet; keine Gewichtserhöhung.','low-readiness':'Regeneration unter 55/100; keine Gewichtserhöhung.','insufficient-history':'Noch zu wenig passende abgeschlossene Einheiten.','double-await-stability':'Doppelte Progression: drei stabile obere Zielerfüllungen nötig.','linear-await-stability':'Lineare Progression: zwei stabile Einheiten nötig.','rir-feedback-missing':'RIR: Es fehlen tatsächlich erfasste RIR-Werte.'},
+ ro:{pain:'A fost raportată durere în ultimele trei antrenamente relevante; fără creștere a greutății.','low-readiness':'Recuperare sub 55/100; nu mări greutatea.','insufficient-history':'Nu sunt încă suficiente antrenamente compatibile.','double-await-stability':'Progresia dublă necesită trei performanțe stabile la limita superioară.','linear-await-stability':'Progresia liniară necesită două antrenamente stabile.','rir-feedback-missing':'RIR: lipsește rezerva reală de repetări înregistrată.'}
+};
+var tp197UiReason=function(reason){
+ const lang=typeof rf212Lang==='function'?rf212Lang():'hu';
+ const dictionary=TP197_UI_REASONS[lang]||TP197_UI_REASONS.hu;
+ return dictionary[reason]||TP197_UI_REASONS.hu[reason]||String(reason||'—');
+};
+var tp197UiPreview=function(scope,pid,choice){
+ const t=tp197UiText(),styleInfo=t[choice.trainingStyle+"Info"],modeInfo=t[choice.progressionMode+"Info"];
+ const sample=tp197UiSample(scope,pid,choice);
+ const fmt=v=>v===null||v===undefined||!Number.isFinite(Number(v))?t.unknown:String(v);
+ const words={hold:t.hold,increase:t.increase,reps:t.reps,variation:t.variation};
+ let comparison='<p class="small muted">'+esc(t.noExercise)+'</p>';
+ if(sample){
+  const r=sample.result,b=r.baseline||{},a=r.proposed||{};
+  const action=words[r.action]||t.insufficient;
+  const reason=tp197UiReason(r.reasonCode);
+  comparison='<p class="small"><strong>'+esc(t.example)+': '+esc(sample.name)+'</strong></p>'+
+   '<div class="tp197-ui-comparison"><span>'+esc(t.current)+'</span><span>'+esc(t.proposed)+'</span>'+
+   '<small>'+esc(t.sets)+': '+esc(fmt(b.sets))+'</small><small>'+esc(t.sets)+': '+esc(fmt(a.sets))+'</small>'+
+   '<small>'+esc(t.load)+': '+esc(fmt(b.weight))+'</small><small>'+esc(t.load)+': '+esc(fmt(a.weight))+'</small></div>'+
+   '<p class="small">'+esc(t.action)+': '+esc(action)+'</p>'+
+   '<p class="small tp197-preview-reason"><strong>'+esc(({hu:'Miért?',en:'Why?',de:'Warum?',ro:'De ce?'})[typeof rf212Lang==='function'?rf212Lang():'hu']||'Miért?')+'</strong> '+esc(reason)+'</p>';
+ }
+ return '<div class="tp197-ui-preview" role="status"><strong>'+esc(t.preview)+'</strong>'+
+  '<p class="small muted">'+esc(styleInfo)+' '+esc(modeInfo)+'</p>'+comparison+'</div>';
+};
+var tp197UiPanel=function(scope,pid,expanded=false){
+ if(scope==="program"&&(!pid||!programById(pid)))return "";
+ const t=tp197UiText(),choice=tp197UiChoice(scope,pid),key=tp197UiKey(scope,pid),id=scope==="program"?"tp197-mode-program":"tp197-mode-global";
+ const options=(values,selected)=>values.map(([value,label])=>'<option value="'+value+'"'+(selected===value?' selected':'')+'>'+esc(label)+'</option>').join("");
+ const scopeArg=scope==="program"?"'program',"+esc(JSON.stringify(String(pid))):"'global',null";
+ const picker=(field,short,values,selected)=>{
+  const pickerId=id+'-'+short,fieldLabel=field==='trainingStyle'?t.style:t.progress;
+  // Shared floating dropdown from Calendar. Do not use the Android native or a separate inline menu.
+  return '<select class="field tp197-mode-select" id="'+pickerId+'" aria-label="'+esc(fieldLabel)+'" onchange="tp197UiSet('+scopeArg+',\''+field+'\',this.value)">'+options(values,selected)+'</select>';
+ };
+ return '<details class="card tp197-mode-panel" id="'+id+'" data-tp197-scope="'+scope+'" '+(expanded?'open':'')+'>'+
+  '<summary><strong>'+esc(t.title)+'</strong><span class="small muted">'+esc(scope==="program"?t.program:t.global)+'</span><span class="tp197-panel-chevron" aria-hidden="true">⌄</span></summary>'+
+  '<div class="tp197-ui-body"><label>'+esc(t.style)+'</label>'+
+  picker('trainingStyle','style',[["normal",t.normal],["hit",t.hit]],choice.trainingStyle)+
+  '<label>'+esc(t.progress)+'</label>'+
+  picker('progressionMode','progress',[["double",t.double],["linear",t.linear],["rir",t.rir]],choice.progressionMode)+
+  tp197UiPreview(scope,pid,choice)+
+  '<p class="small muted tp197-ui-notice">'+esc(t.notice)+'</p>'+
+  '<button type="button" class="btn secondary tp197-ui-reset" onclick="tp197UiReset('+scopeArg+')">'+esc(t.restore)+'</button></div></details>';
+};
+var tp197UiSet=function(scope,pid,field,value){
+ if(!["global","program"].includes(scope)||field!=="trainingStyle"&&field!=="progressionMode")return false;
+ if(scope==="program"&&(!pid||!programById(pid)))return false;
+ if(field==="trainingStyle"&&!["normal","hit"].includes(value))return false;
+ if(field==="progressionMode"&&!["double","linear","rir"].includes(value))return false;
+ const key=tp197UiKey(scope,pid),draft=tp197UiChoice(scope,pid);
+ tp197UiPending[key]={...draft,[field]:value};
+ tp197UiRefresh(scope,pid);
+ return true;
+};
+// Mode changes update only the panel body, not the outer workout/settings view.
+var tp197UiRefresh=function(scope,pid){
+ const id=scope==="program"?"tp197-mode-program":"tp197-mode-global",panel=document.getElementById(id);
+ if(!panel)return;
+ const container=document.createElement('div');
+ container.innerHTML=tp197UiPanel(scope,pid,panel.open);
+ const next=container.firstElementChild,body=panel.querySelector('.tp197-ui-body'),updated=next?.querySelector('.tp197-ui-body');
+ if(body&&updated)body.innerHTML=updated.innerHTML;
+ else if(next)panel.replaceWith(next);
+ // Newly inserted selects must get Calendar's shared floating picker.
+ if(typeof rf260EnhanceSelects==='function')rf260EnhanceSelects();
+};
+var tp197UiChoose=function(scope,pid,field,value){
+ return tp197UiSet(scope,pid,field,value);
+};
+var tp197UiReset=function(scope,pid){delete tp197UiPending[tp197UiKey(scope,pid)];tp197UiRefresh(scope,pid);};
+const tp197BaseSettings=settingsScreen;
+settingsScreen=function(){
+ const html=String(tp197BaseSettings.apply(this,arguments)),anchor='<div class="setting tp1511-card">';
+ // Default selection stays in Settings, but is discoverable near the top instead of below the backup/profile cards.
+ return html.includes(anchor)?html.replace(anchor,tp197UiPanel("global",null)+anchor):html.replace('</main>',tp197UiPanel("global",null)+'</main>');
+};
+const tp197BaseTrainingPanel=tp1511TrainingPanel;
+tp1511TrainingPanel=function(){
+ const html=String(tp197BaseTrainingPanel.apply(this,arguments)),pid=activeProgram()?.id;
+ if(!pid||!html.includes('<div class="tp1511-training-body">'))return html;
+ // Place the program-specific controls within Workout settings, not as a separate card above Quick workout.
+ return html.replace('<div class="tp1511-training-body">','<div class="tp1511-training-body">'+tp197UiPanel("program",pid,true));
+};
+const tp197Css=document.createElement("style");tp197Css.id="tp197ModeUiStyle";
+tp197Css.textContent='.tp197-preview-reason{padding-top:4px;border-top:1px solid var(--line)}.tp1511-training-body>.tp197-mode-panel{margin:0 0 12px;padding:10px!important}.tp197-mode-panel{box-sizing:border-box;max-width:100%;min-width:0;margin:10px 0;padding:12px!important}.tp197-mode-panel>summary{cursor:pointer;display:flex;align-items:center;gap:6px;min-height:40px;list-style:none}.tp197-mode-panel>summary::-webkit-details-marker,.tp197-choice>summary::-webkit-details-marker{display:none}.tp197-mode-panel>summary strong{flex:1;min-width:0;overflow-wrap:anywhere}.tp197-mode-panel>summary .small{font-size:12px;flex:0 1 auto;text-align:right}.tp197-panel-chevron,.tp197-choice-chevron{font-size:22px;color:var(--accent);display:inline-block;transition:transform .15s;line-height:1}.tp197-mode-panel[open]>summary .tp197-panel-chevron,.tp197-choice[open]>summary .tp197-choice-chevron{transform:rotate(180deg)}.tp197-ui-body{display:grid;gap:8px;min-width:0;padding-top:12px}.tp197-ui-body label{font-size:13px;font-weight:700}.tp197-ui-body>.tp-select{min-width:0;width:100%}.tp197-choice{border:1px solid var(--line);border-radius:12px;background:#10141c;min-width:0}.tp197-choice>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px;min-height:46px;font-weight:650}.tp197-choice>summary:focus-visible,.tp197-choice-option:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.tp197-choice-label{min-width:0;overflow-wrap:anywhere}.tp197-choice-options{display:grid;gap:4px;padding:4px 6px 7px;border-top:1px solid var(--line)}.tp197-choice-option{background:transparent;color:var(--text);border:0;border-radius:9px;text-align:left;padding:11px 9px;min-height:44px;font:inherit;display:flex;justify-content:space-between;align-items:center;gap:7px}.tp197-choice-option.is-selected{background:var(--card2);color:var(--accent)}.tp197-ui-preview{min-width:0;padding:11px;border-radius:12px;border:1px solid var(--line);background:var(--card2)}.tp197-ui-preview p{margin:6px 0;overflow-wrap:anywhere}.tp197-ui-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px}.tp197-ui-comparison>*{min-width:0;overflow-wrap:anywhere}.tp197-ui-comparison>span{font-weight:700;font-size:12px}.tp197-ui-reset{min-height:44px;width:100%}.tp197-ui-notice{line-height:1.45}.tp1511-training-body .tp1511-prog{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}.tp1511-training-body .tp1511-prog>label{display:block;min-width:0;padding:8px;border-radius:11px;border:1px solid var(--line);background:var(--card2);font-size:12px;line-height:1.3;overflow-wrap:anywhere}.tp1511-training-body .tp1511-prog input{box-sizing:border-box;width:100%;min-width:0;margin-top:6px;padding:8px;font-size:16px;min-height:42px}';
+document.head.appendChild(tp197Css);
+// @endsection training-modes-ui-197.js
+
+// @section training-mode-confirm-197.js
+/* #197 step 5/7: two-stage approval, safe persistence and one-step undo.
+ * Separate from the canonical app.js section to avoid changing legacy runtime logic.
+ * The Coach continues to use preview-only #197 recommendations until step 6/7. */
+// These handlers are assigned in strict mode; declare the globals before binding them.
+var tp197UiCancel,tp197UiRequestSave,tp197UiApprove,tp197UiUndo;
+(function(){
+ 'use strict';
+ if(typeof tp197UiPanel!=='function'||typeof tp197UiChoice!=='function')return;
+ const words={
+  hu:{save:'Mentés',cancel:'Mégse',approve:'Jóváhagyom a módváltást',undo:'Utolsó módváltás visszavonása',question:'Biztosan mented ezt az edzésmódot? A régi napló és az aktív edzés változatlan marad.',notice:'A választás csak külön jóváhagyás után mentődik. A Coach nem módosít automatikusan súlyt vagy sorozatot.',active:'Aktív edzés közben nem válthatsz módot. Fejezd be az edzést, majd próbáld újra.',stale:'A beállítás időközben megváltozott. Ellenőrizd újra az előnézetet.',error:'A módváltás nem menthető. Az eddigi adatok változatlanok.',saved:'Mód elmentve; a napló és az aktív edzés nem változott.',reverted:'Az előző mód visszaállítva.',noUndo:'Nincs visszavonható mentés.'},
+  en:{save:'Save',cancel:'Cancel',approve:'Confirm mode change',undo:'Undo last mode change',question:'Save this training mode? Workout history and active sessions stay unchanged.',notice:'Selection is saved only after explicit confirmation. Coach never adjusts load or sets automatically.',active:'Cannot change modes during an active workout. Finish the workout and try again.',stale:'Settings changed in the meantime. Review the preview again.',error:'Could not save the mode change. Existing data are unchanged.',saved:'Mode saved; history and active workout unchanged.',reverted:'Previous mode restored.',noUndo:'No saved change to undo.'},
+  de:{save:'Speichern',cancel:'Abbrechen',approve:'Moduswechsel bestätigen',undo:'Letzten Moduswechsel rückgängig machen',question:'Trainingsmodus speichern? Verlauf und aktives Training bleiben unverändert.',notice:'Die Auswahl wird erst nach ausdrücklicher Bestätigung gespeichert. Coach ändert keine Last oder Sätze automatisch.',active:'Während eines aktiven Trainings ist kein Moduswechsel möglich.',stale:'Die Einstellungen wurden geändert. Vorschau erneut prüfen.',error:'Moduswechsel konnte nicht gespeichert werden. Bestehende Daten bleiben unverändert.',saved:'Modus gespeichert; Trainingsverlauf unverändert.',reverted:'Vorheriger Modus wiederhergestellt.',noUndo:'Keine Änderung zum Rückgängigmachen.'},
+  ro:{save:'Salvează',cancel:'Anulează',approve:'Confirmă schimbarea modului',undo:'Anulează ultima schimbare',question:'Salvezi acest mod? Istoricul și antrenamentul activ rămân neschimbate.',notice:'Opțiunea se salvează doar după confirmarea explicită. Coach nu modifică automat greutăți sau serii.',active:'Nu poți schimba modul în timpul unui antrenament activ.',stale:'Setările s-au schimbat între timp. Verifică din nou previzualizarea.',error:'Schimbarea nu a putut fi salvată. Datele existente nu s-au modificat.',saved:'Mod salvat; istoricul nu s-a modificat.',reverted:'Modul anterior a fost restabilit.',noUndo:'Nu există schimbări de anulat.'}
+ };
+ const approvals=Object.create(null),messages=Object.create(null);
+ const textFor=()=>words[typeof rf212Lang==='function'?rf212Lang():'hu']||words.en;
+ const valid=x=>!!x&&['normal','hit'].includes(x.trainingStyle)&&['double','linear','rir'].includes(x.progressionMode);
+ const clone=x=>x===undefined?null:JSON.parse(JSON.stringify(x));
+ const modeState=()=>settings()?.trainingModes197||null;
+ const snapshot=()=>JSON.stringify(modeState());
+ const isActive=()=>typeof state!=='undefined'&&!!state?.session;
+ const scopeOk=(scope,pid)=>scope==='global'||scope==='program'&&typeof pid==='string'&&pid.length>0&&pid.length<256&&typeof programById==='function'&&!!programById(pid)&&typeof activeProgram==='function'&&activeProgram()?.id===pid;
+ const k=(scope,pid)=>tp197UiKey(scope,pid);
+ const invalidate=(scope,pid)=>{delete approvals[k(scope,pid)];delete messages[k(scope,pid)];};
+ const alertFor=(scope,pid,name)=>{messages[k(scope,pid)]=name;tp197UiRefresh(scope,pid);return false;};
+ const originalSet=tp197UiSet;
+ tp197UiSet=function(scope,pid,field,value){invalidate(scope,pid);return originalSet(scope,pid,field,value);};
+ tp197UiCancel=function(scope,pid){
+  if(!scopeOk(scope,pid))return false;
+  invalidate(scope,pid);delete tp197UiPending[k(scope,pid)];tp197UiRefresh(scope,pid);return true;
+ };
+ tp197UiRequestSave=function(scope,pid){
+  if(!scopeOk(scope,pid))return false;
+  if(isActive())return alertFor(scope,pid,'active');
+  const choice=tp197UiChoice(scope,pid);
+  if(!valid(choice))return alertFor(scope,pid,'error');
+  approvals[k(scope,pid)]={snapshot:snapshot(),choice:clone(choice)};
+  delete messages[k(scope,pid)];
+  tp197UiRefresh(scope,pid);return true;
+ };
+ tp197UiApprove=function(scope,pid){
+  if(!scopeOk(scope,pid))return false;
+  if(isActive())return alertFor(scope,pid,'active');
+  const key=k(scope,pid),approved=approvals[key],choice=tp197UiChoice(scope,pid);
+  if(!approved||snapshot()!==approved.snapshot||!valid(choice)||
+     JSON.stringify(choice)!==JSON.stringify(approved.choice)){
+   delete approvals[key];return alertFor(scope,pid,'stale');
+  }
+  try{
+   const old=clone(modeState()),previous=old&&typeof old==='object'?clone(old):null;
+   if(previous)delete previous.undo; // bounded single-step undo, no recursive snapshots
+   const base=old&&typeof old==='object'&&old.schemaVersion===1?old:{};
+   const defaults=valid(base.defaults)?clone(base.defaults):{trainingStyle:'normal',progressionMode:'double'};
+   const byProgram=Object.assign(Object.create(null),base.byProgram&&typeof base.byProgram==='object'?base.byProgram:{});
+   const updatedAt=new Date().toISOString();
+   const next={
+    ...base,schemaVersion:1,
+    defaults:scope==='global'?{trainingStyle:choice.trainingStyle,progressionMode:choice.progressionMode}:defaults,
+    explicitChoice:scope==='global'?true:base.explicitChoice===true,
+    byProgram,
+    revision:Math.max(0,Number.isSafeInteger(base.revision)?base.revision:0)+1,
+    updatedAt,
+    undo:{scope:key,previous}
+   };
+   if(scope==='program')byProgram[pid]={trainingStyle:choice.trainingStyle,progressionMode:choice.progressionMode,explicitChoice:true,updatedAt};
+   // Single settings write; never touch program recipes, history, session/draft or Wear.
+   if(snapshot()!==approved.snapshot||isActive())return alertFor(scope,pid,'stale');
+   db.set('settings',{...settings(),trainingModes197:next});
+   delete approvals[key];delete tp197UiPending[key];
+   messages[key]='saved';tp197UiRefresh(scope,pid);return true;
+  }catch(_){return alertFor(scope,pid,'error');}
+ };
+ tp197UiUndo=function(scope,pid){
+  if(!scopeOk(scope,pid))return false;
+  if(isActive())return alertFor(scope,pid,'active');
+  const current=modeState(),key=k(scope,pid);
+  if(!current||current.undo?.scope!==key||!Object.prototype.hasOwnProperty.call(current.undo,'previous'))return alertFor(scope,pid,'noUndo');
+  try{
+   const next={...settings()},previous=clone(current.undo.previous);
+   if(previous===null)delete next.trainingModes197;
+   else{delete previous.undo;next.trainingModes197=previous;}
+   if(isActive()||snapshot()!==JSON.stringify(current))return alertFor(scope,pid,'stale');
+   db.set('settings',next);
+   invalidate(scope,pid);delete tp197UiPending[key];messages[key]='reverted';
+   tp197UiRefresh(scope,pid);return true;
+  }catch(_){return alertFor(scope,pid,'error');}
+ };
+ const oldPanel=tp197UiPanel;
+ tp197UiPanel=function(scope,pid,expanded){
+  let html=oldPanel(scope,pid,expanded);
+  if(!html)return html;
+  const t=textFor(),key=k(scope,pid),arg=scope==='program'?"'program',"+esc(JSON.stringify(String(pid))):"'global',null";
+  const button=(label,fn,extra='')=>'<button type="button" class="btn '+extra+'" onclick="'+fn+'('+arg+')">'+esc(label)+'</button>';
+  const approved=approvals[key],undo=modeState()?.undo?.scope===key;
+  const controls=approved
+   ?'<div class="tp197-confirm" role="group" aria-label="'+esc(t.question)+'"><p class="small">'+esc(t.question)+'</p>'+button(t.approve,'tp197UiApprove')+button(t.cancel,'tp197UiCancel','secondary')+'</div>'
+   :'<div class="tp197-actions">'+button(t.save,'tp197UiRequestSave')+button(t.cancel,'tp197UiCancel','secondary')+(undo?button(t.undo,'tp197UiUndo','secondary'):'')+'</div>';
+  const message=messages[key]?'<p class="small tp197-status" role="status">'+esc(t[messages[key]]||t.error)+'</p>':'';
+  html=html.replace(/<p class="small muted tp197-ui-notice">[\s\S]*?<\/p>/,
+      '<p class="small muted tp197-ui-notice">'+esc(t.notice)+'</p>');
+  return html.replace(/<button type="button" class="btn secondary tp197-ui-reset"[^>]*>[\s\S]*?<\/button>/,
+      controls+message);
+ };
+ const css=document.createElement('style');
+ css.id='tp197ConfirmStyle';
+ css.textContent='.tp197-actions,.tp197-confirm{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;min-width:0}.tp197-actions button,.tp197-confirm button{min-width:0;min-height:44px;white-space:normal;overflow-wrap:anywhere}.tp197-actions button:last-child:nth-child(3){grid-column:span 2}.tp197-confirm p{grid-column:span 2;margin:2px 0 8px}.tp197-confirm{padding:12px;border:1px solid var(--line);border-radius:12px}.tp197-status{overflow-wrap:anywhere}';
+ document.head.appendChild(css);
+})();
+// @endsection training-mode-confirm-197.js
+
+// @section training-coach-197.js
+/* #197 step 6: explanatory Coach recommendations. Never modify a session from
+ * a suggestion; load changes require a second, explicit approval action. */
+var TP197_COACH_I18N={
+ hu:{title:'Coach • progresszió',preview:'Javaslat, nincs alkalmazva',hold:'Súly tartása',increase:'Kis súlyemelés',reps:'Célismétlés növelése',variation:'Nehezebb gyakorlatváltozat',mode:'Választott módszer',history:'Korábbi alkalmak',reason:'Indok',current:'Korábbi súly',proposed:'Javasolt súly',sets:'Javasolt munkasorozat',reptarget:'Javasolt ismétlések',action:'Javaslat ellenőrzése',approve:'Jóváhagyom a súly módosítását',cancel:'Mégse',done:'A javasolt súly már be van állítva.',blocked:'Edzés közben megváltozott az állapot, vagy az óra vezérli. Nincs módosítás.',notice:'A sorozatok, ismétlések és a HIT volumenjavaslat csak előnézet; a teljesített ismétléseket nem írjuk előre.',reasonMap:{'pain':'Fájdalomjelzés: nincs emelés','low-readiness':'Gyenge regeneráció: nincs emelés','high-effort':'Túl nehéz előző edzés','incomplete':'Hiányosan teljesített előzmény','rir-feedback-missing':'Nincs rögzített tényleges RIR','insufficient-history':'Még kevés megfelelő edzéselőzmény','double-stable-top':'Három stabil felső cél teljesítve','linear-stable-performance':'Két stabil szabályos edzés','rir-stable-reserve':'Tartósan nagyobb tényleges RIR','double-next-repetition':'Ismétlések fokozatos emelése','non-strength-activity':'Távolsági/időalapú gyakorlatnál nincs súlyjavaslat'}},
+ en:{title:'Coach • progression',preview:'Suggestion, not applied',hold:'Hold load',increase:'Small load increase',reps:'Increase repetition target',variation:'Harder exercise variation',mode:'Selected method',history:'Recent workouts',reason:'Why',current:'Previous load',proposed:'Suggested load',sets:'Suggested working sets',reptarget:'Suggested repetitions',action:'Review suggestion',approve:'Confirm load change',cancel:'Cancel',done:'The proposed load is already set.',blocked:'Workout state changed or the watch is in control. Nothing was modified.',notice:'Sets, repetitions and HIT volume remain advisory; completed repetitions are never prefilled.',reasonMap:{'pain':'Pain feedback: do not increase','low-readiness':'Poor recovery: do not increase','high-effort':'Previous effort too high','incomplete':'Incomplete prior workout','rir-feedback-missing':'Actual RIR not recorded','insufficient-history':'Not enough suitable history','double-stable-top':'Three stable top-range completions','linear-stable-performance':'Two stable successful workouts','rir-stable-reserve':'Consistently larger actual RIR','double-next-repetition':'Increase repetitions gradually','non-strength-activity':'No weight change for distance or timed activities'}},
+ de:{title:'Coach • Progression',preview:'Vorschlag, nicht übernommen',hold:'Gewicht halten',increase:'Kleine Gewichtserhöhung',reps:'Wiederholungsziel erhöhen',variation:'Schwerere Übungsvariante',mode:'Gewählte Methode',history:'Frühere Einheiten',reason:'Begründung',current:'Bisheriges Gewicht',proposed:'Vorgeschlagenes Gewicht',sets:'Empfohlene Arbeitssätze',reptarget:'Empfohlene Wiederholungen',action:'Vorschlag prüfen',approve:'Gewichtsänderung bestätigen',cancel:'Abbrechen',done:'Das vorgeschlagene Gewicht ist bereits gesetzt.',blocked:'Trainingszustand geändert oder Uhr steuert. Nichts geändert.',notice:'Sätze, Wiederholungen und HIT-Volumen sind nur Empfehlungen; absolvierte Wiederholungen werden nicht vorbefüllt.',reasonMap:{'pain':'Schmerzen: nicht erhöhen','low-readiness':'Schwache Regeneration','high-effort':'Zu hohe letzte Belastung','incomplete':'Unvollständige Vorleistung','rir-feedback-missing':'Tatsächlicher RIR fehlt','insufficient-history':'Noch zu wenig Verlauf','double-stable-top':'Drei stabile obere Ziele','linear-stable-performance':'Zwei stabile Einheiten','rir-stable-reserve':'Stabil größere RIR-Reserve','double-next-repetition':'Wiederholungen langsam steigern','non-strength-activity':'Kein Gewicht für Distanz- und Zeitaktivität'}},
+ ro:{title:'Coach • progresie',preview:'Propunere neaplicată',hold:'Menține greutatea',increase:'Creștere mică a greutății',reps:'Crește ținta de repetări',variation:'Variantă mai dificilă',mode:'Metoda aleasă',history:'Antrenamente recente',reason:'Motiv',current:'Greutate anterioară',proposed:'Greutate propusă',sets:'Serii de lucru propuse',reptarget:'Repetări propuse',action:'Verifică propunerea',approve:'Confirmă modificarea greutății',cancel:'Anulează',done:'Greutatea propusă este deja setată.',blocked:'Starea s-a schimbat sau ceasul controlează. Nimic modificat.',notice:'Seriile, repetările și volumul HIT sunt sugestii; repetările efectuate nu sunt precompletate.',reasonMap:{'pain':'Durere: fără creștere','low-readiness':'Recuperare slabă','high-effort':'Efort precedent prea mare','incomplete':'Antrenament incomplet','rir-feedback-missing':'RIR real lipsă','insufficient-history':'Istoric insuficient','double-stable-top':'Trei performanțe stabile la țintă','linear-stable-performance':'Două antrenamente stabile','rir-stable-reserve':'Rezervă RIR constant mai mare','double-next-repetition':'Crește repetările treptat','non-strength-activity':'Fără greutate pentru exerciții pe distanță/timp'}}
+};
+var tp197CoachT=function(){return TP197_COACH_I18N[typeof rf212Lang==='function'?rf212Lang():'hu']||TP197_COACH_I18N.hu};
+var tp197CoachInfo=function(id,pid){
+ const modes=tp197TrainingModes(pid);
+ if(!modes.explicitChoice)return null;
+ const preview=tp197ExercisePreview(id,pid);
+ if(!preview?.handled)return null;
+ const t=tp197CoachT(),action=t[preview.action]||t.hold,why=t.reasonMap[preview.reasonCode]||preview.reasonCode;
+ const labels=typeof tp197UiText==='function'?tp197UiText():{};
+ const method=(labels[modes.trainingStyle]||modes.trainingStyle)+' / '+(labels[modes.progressionMode]||modes.progressionMode);
+ const proposal=preview.proposed||{},base=preview.baseline||{};
+ const format=v=>Number.isFinite(Number(v))?String(v):'—';
+ const detail=(base.weight!=null?t.current+': '+format(base.weight)+' → '+t.proposed+': '+format(proposal.weight):'')+
+  (proposal.sets!=null?' · '+t.sets+': '+format(proposal.sets):'')+
+  (Array.isArray(proposal.repTargets)?' · '+t.reptarget+': '+proposal.repTargets.join(', '):'');
+ return {modes,preview,title:action,reason:why,method,detail,summary:action+'. '+why+'. '+detail,
+  action:preview.action,proposedWeight:proposal.weight,historyCount:preview.historyCount};
+};
+var tp197CoachAllowed=function(session,se,info){
+ if(!session||!se||!info||info.action!=='increase'||!info.modes?.explicitChoice)return false;
+ if(session.workoutPaused||session.ownershipAwaitingResume193||session.automatic162?.pending||
+  session.timerOwner==='watch'||session.ownershipProtocol193===1&&session.timerOwner!=='phone'||
+  window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||window.TrainPilotWearSync?.isApplyingCommand?.())return false;
+ if(!session.programId||session.programId!==info.modes.programId||!Array.isArray(se.sets)||!se.sets.length)return false;
+ if(se.sets.some(s=>s.done||s.reps!==''&&s.reps!==null&&s.reps!==undefined||s.completedAt||s.gpsRouteKey193))return false;
+ const w=Number(info.proposedWeight),b=Number(info.preview?.baseline?.weight);
+ return Number.isFinite(w)&&Number.isFinite(b)&&w>b&&w-b<=10&&w>0;
+};
+var tp197CoachPending=null;
+var tp197CoachFingerprint=function(session,se,info){
+ return JSON.stringify({started:session?.started,programId:session?.programId,id:se?.id,
+  mode:info?.modes,proposed:info?.proposedWeight,reason:info?.preview?.reasonCode,
+  sets:se?.sets?.map(s=>[s.set,s.weight,s.reps,s.done,s.completedAt||null])});
+};
+var tp197CoachCancel=function(){tp197CoachPending=null;renderWorkout()};
+var tp197CoachRequest=function(){
+ const s=state.session,e=s?.exercises?.[state.current],info=e?tp197CoachInfo(e.id,s.programId):null;
+ if(!tp197CoachAllowed(s,e,info))return false;
+ tp197CoachPending={session:s,exercise:e,fingerprint:tp197CoachFingerprint(s,e,info)};
+ renderWorkout();return true;
+};
+var tp197CoachApply=function(){
+ const s=state.session,e=s?.exercises?.[state.current],info=e?tp197CoachInfo(e.id,s.programId):null,pending=tp197CoachPending;
+ tp197CoachPending=null;
+ if(!tp197CoachAllowed(s,e,info)||!pending||pending.session!==s||pending.exercise!==e||
+  pending.fingerprint!==tp197CoachFingerprint(s,e,info)){
+  alert(tp197CoachT().blocked);renderWorkout();return false;
+ }
+ const previous=e.sets.map(v=>v.weight);
+ try{
+  for(const set of e.sets)set.weight=Number(info.proposedWeight);
+  persistDraft();
+ }catch(error){e.sets.forEach((set,i)=>{set.weight=previous[i]});return false}
+ renderWorkout();
+ void window.TrainPilotWearSync?.syncNow?.();
+ return true;
+};
+var tp197CoachPanel=function(){
+ const s=state.session,e=s?.exercises?.[state.current],info=e?tp197CoachInfo(e.id,s.programId):null;
+ if(!info)return '';
+ const t=tp197CoachT(),can=tp197CoachAllowed(s,e,info),already=can&&e.sets.every(v=>Number(v.weight)===Number(info.proposedWeight));
+ const pending=tp197CoachPending&&tp197CoachPending.session===s&&tp197CoachPending.exercise===e&&
+  tp197CoachPending.fingerprint===tp197CoachFingerprint(s,e,info);
+ const controls=can&&!already?(pending?
+  '<div class="tp197-coach-buttons"><button type="button" class="btn" onclick="tp197CoachApply()">'+esc(t.approve)+'</button><button type="button" class="btn secondary" onclick="tp197CoachCancel()">'+esc(t.cancel)+'</button></div>':
+  '<button type="button" class="btn secondary" onclick="tp197CoachRequest()">'+esc(t.action)+'</button>'):
+  already?'<p class="small muted">'+esc(t.done)+'</p>':'';
+ return '<section class="card tp197-coach-advice" id="tp197CoachAdvice"><strong>'+esc(t.title)+'</strong>'+
+  '<p class="small muted">'+esc(t.mode)+': '+esc(info.method)+'</p>'+
+  '<p class="small"><b>'+esc(info.title)+'</b> · '+esc(info.reason)+'</p>'+
+  '<p class="small muted">'+esc(info.detail)+'</p>'+
+  '<p class="small muted">'+esc(t.history)+': '+String(info.historyCount)+'</p>'+controls+
+  '<p class="small muted">'+esc(t.notice)+'</p></section>';
+};
+(function(){
+ const originalAdvice=rf233ExerciseAdvice;
+ rf233ExerciseAdvice=function(id,decision){
+  const result=originalAdvice.apply(this,arguments),s=state.session,pid=s?.programId||(typeof activeProgramId==='function'?activeProgramId():null);
+  const info=tp197CoachInfo(id,pid);
+  if(!info||result?.action==='pain'||decision?.pain)return result;
+  return {...result,action:'hold',label:info.title,text:info.summary,proposal197:info.preview};
+ };
+ const oldShort=window.tp155CoachShortAdvice;
+ if(typeof oldShort==='function'){
+  window.tp155CoachShortAdvice=function(id,decision,existing){
+   const pid=state.session?.programId||(typeof activeProgramId==='function'?activeProgramId():null),info=tp197CoachInfo(id,pid);
+   if(info)return {action:'hold',label:info.title,text:info.summary};
+   return oldShort.apply(this,arguments);
+  };
+ }
+ const oldRender=renderWorkout;
+ renderWorkout=function(){
+  const result=oldRender.apply(this,arguments),head=document.querySelector('main.tp153-workout .tp153-workout-head');
+  if(head&&!head.querySelector('#tp197CoachAdvice'))head.insertAdjacentHTML('beforeend',tp197CoachPanel());
+  return result;
+ };
+ const style=document.createElement('style');style.id='tp197CoachStyle';
+ style.textContent='.tp197-coach-advice{margin:10px 0 4px;padding:12px}.tp197-coach-advice p{margin:6px 0;line-height:1.45;overflow-wrap:anywhere}.tp197-coach-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tp197-coach-buttons button{min-height:44px;white-space:normal;overflow-wrap:anywhere}';
+ document.head.appendChild(style);
+})();
+// @endsection training-coach-197.js
+
+// @section training-actual-rir-197.js
+/* #197: optional actual repetitions-in-reserve, entered by the user after a
+ * completed strength set. The prescribed RIR must never be used as a reading. */
+var TP197_RIR_WORDS={
+ hu:{title:'Tényleges RIR (ismétléstartalék)',note:'Hány szabályos ismétlés ment volna még? 0 = egy sem. Csak a saját becslésedet rögzítsd; nem kötelező.',missing:'Nincs megadva',unit:'ismétlés'},
+ en:{title:'Actual RIR (reps in reserve)',note:'How many more good reps could you have done? 0 = none. Optional self-report; not the target RIR.',missing:'Not recorded',unit:'reps'},
+ de:{title:'Tatsächlicher RIR (Wiederholungen in Reserve)',note:'Wie viele saubere Wiederholungen wären noch möglich? 0 = keine. Freiwillige Selbsteinschätzung, nicht der Soll-RIR.',missing:'Nicht erfasst',unit:'Wiederholungen'},
+ ro:{title:'RIR real (repetări în rezervă)',note:'Câte repetări corecte mai puteai face? 0 = niciuna. Estimare personală opțională, nu RIR țintă.',missing:'Neînregistrat',unit:'repetări'}
+};
+var tp197RirWords=function(){return TP197_RIR_WORDS[typeof rf212Lang==='function'?rf212Lang():'hu']||TP197_RIR_WORDS.hu};
+var tp197RirEligible=function(session,exercise){
+ if(!session||!exercise||!Array.isArray(exercise.sets)||!exercise.sets.some(x=>x.done===true))return false;
+ if(session.timerOwner==='watch'||session.ownershipAwaitingResume193||
+  session.ownershipProtocol193===1&&session.timerOwner!=='phone'||
+  window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||
+  window.TrainPilotWearSync?.isApplyingCommand?.())return false;
+ const modes=typeof tp197TrainingModes==='function'?tp197TrainingModes(session.programId):null;
+ if(!modes?.explicitChoice||modes.progressionMode!=='rir')return false;
+ const lib=typeof byId==='function'?byId(exercise.id)||{}:{};
+ if(typeof tp106IsDistance==='function'&&tp106IsDistance(exercise))return false;
+ if(['mp','sec','second','s'].includes(String(exercise.repUnit||lib.repUnit||'').toLowerCase()))return false;
+ if(['distance','time','gps'].includes(String(exercise.measurementType||lib.measurementType||'').toLowerCase()))return false;
+ return true;
+};
+var tp197RirSave=function(value,repaint=true){
+ const session=state.session,exercise=session?.exercises?.[state.current];
+ if(!tp197RirEligible(session,exercise))return false;
+ const raw=String(value);
+ if(raw!==''&&!/^(?:10|[0-9])$/.test(raw))return false;
+ const before=exercise.actualRir;
+ try{
+  if(raw==='')delete exercise.actualRir;
+  else exercise.actualRir=Number(raw);
+  persistDraft();
+ }catch(_){
+  if(before===undefined)delete exercise.actualRir;
+  else exercise.actualRir=before;
+  return false;
+ }
+ if(repaint)renderWorkout();return true;
+};
+var tp197RirHistory=function(exercise){
+ const value=exercise?.actualRir;
+ if(value===null||value===undefined||value===''||!Number.isInteger(Number(value))||Number(value)<0||Number(value)>10)return '';
+ const t=tp197RirWords();
+ return '<p class="small muted tp197-rir-history">'+esc(t.title)+': <strong>'+Number(value)+'</strong> '+esc(t.unit)+'</p>';
+};
+var tp197RirInput=function(input){
+ const value=String(input.value),valid=value===''||/^(?:10|[0-9])$/.test(value);
+ // An invalid edit is not a new observation and must not leave an older
+ // actual RIR silently attached to the workout. Keep the numeric field stable.
+ const saved=tp197RirSave(valid?value:'',false);
+ input.setAttribute?.('aria-invalid',valid&&saved?'false':'true');
+ return valid&&saved;
+};
+var tp197RirField=function(session,exercise){
+ if(!tp197RirEligible(session,exercise))return '';
+ const t=tp197RirWords(),saved=exercise.actualRir;
+ const selected=saved!==null&&saved!==undefined&&saved!==''&&Number.isInteger(Number(saved))&&Number(saved)>=0&&Number(saved)<=10?String(saved):'';
+ return '<div class="tp197-rir-field"><label for="tp197ActualRir">'+esc(t.title)+'</label>'+
+  '<input id="tp197ActualRir" class="field" type="number" inputmode="numeric" min="0" max="10" step="1" value="'+esc(selected)+'" placeholder="'+esc(t.missing)+'" aria-describedby="tp197RirNote" oninput="tp197RirInput(this)">'+
+  '<p id="tp197RirNote" class="small muted">'+esc(t.note)+'</p></div>';
+};
+(function(){
+ const previous=rf152FeedbackHtml;
+ rf152FeedbackHtml=function(exercise){
+  const html=String(previous.apply(this,arguments));
+  const session=state.session,active=session?.exercises?.[state.current];
+  if(active!==exercise)return html;
+  const additional=tp197RirField(session,exercise);
+  return additional?html.replace(/<\/div>\s*$/,additional+'</div>'):html;
+ };
+ const css=document.createElement('style');css.id='tp197RirStyle';
+ css.textContent='.tp197-rir-field{display:grid;gap:7px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}.tp197-rir-field label{font-size:13px;font-weight:700}.tp197-rir-field input{box-sizing:border-box;width:100%;min-height:44px}.tp197-rir-field input[aria-invalid="true"]{border-color:var(--danger,#ff6b6b)}.tp197-rir-field p{margin:0;line-height:1.4}';
+ document.head.appendChild(css);
+})();
+// @endsection training-actual-rir-197.js
+
+// @section samsung-energy-access-184.js
+/* Samsung's daily score is an optional independent input, not a switch for
+ * the user's steps/calories provider. Automatic reads never open a consent UI. */
+(function(){
+ 'use strict';
+ const words={
+  hu:{title:'Samsung energiapontszám',idle:'Az elérhető mai Samsung-pontszámot automatikusan használjuk. Ha nincs ilyen adat, marad a TrainPilot saját becslése.',permission:'Az energiapontszámhoz külön Samsung Health olvasási engedély szükséges.',empty:'Ma még nincs elérhető Samsung-pontszám. A TrainPilot saját becslése marad.',error:'A Samsung-pontszám olvasása nem sikerült. A TrainPilot saját becslése marad.',ready:'Mai Samsung Health adat. Ezt használjuk az ajánláshoz; fájdalom vagy nagy terhelés továbbra is korlátozhat.',loading:'Samsung-pontszám olvasása…',refresh:'Samsung-pontszám frissítése / engedélyezése',unavailable:'Ehhez a közvetlen Samsung-kapcsolatot támogató Android app szükséges.'},
+  en:{title:'Samsung Energy Score',idle:'Today’s available Samsung score is used automatically. Otherwise TrainPilot keeps its own estimate.',permission:'A separate Samsung Health read permission is required for Energy Score.',empty:'No Samsung score is available for today. TrainPilot keeps its own estimate.',error:'Samsung Energy Score could not be read. TrainPilot keeps its own estimate.',ready:'Today’s Samsung Health data is used for advice; pain or high load can still limit it.',loading:'Reading Samsung Energy Score…',refresh:'Refresh / allow Samsung Energy Score',unavailable:'This requires the Android app with direct Samsung support.'},
+  de:{title:'Samsung Energiepunkte',idle:'Der verfügbare heutige Samsung-Wert wird automatisch verwendet. Sonst bleibt die TrainPilot-Schätzung.',permission:'Für Energiepunkte ist eine separate Samsung Health Leseberechtigung erforderlich.',empty:'Heute ist kein Samsung-Wert verfügbar. Die TrainPilot-Schätzung bleibt.',error:'Samsung Energiepunkte konnten nicht gelesen werden. Die TrainPilot-Schätzung bleibt.',ready:'Heutiger Samsung Health Wert; Schmerz oder hohe Belastung können Empfehlungen weiter begrenzen.',loading:'Samsung Energiepunkte werden gelesen…',refresh:'Samsung Energiepunkte aktualisieren / erlauben',unavailable:'Hierfür wird die Android-App mit direkter Samsung-Unterstützung benötigt.'},
+  ro:{title:'Scor de energie Samsung',idle:'Scorul Samsung disponibil pentru azi este utilizat automat. Altfel rămâne estimarea TrainPilot.',permission:'Scorul de energie necesită o permisiune separată de citire Samsung Health.',empty:'Nu este disponibil un scor Samsung pentru azi. Rămâne estimarea TrainPilot.',error:'Scorul Samsung nu a putut fi citit. Rămâne estimarea TrainPilot.',ready:'Datele Samsung Health de azi sunt utilizate; durerea sau efortul ridicat pot limita recomandările.',loading:'Se citește scorul Samsung…',refresh:'Actualizează / permite scorul Samsung',unavailable:'Este necesară aplicația Android cu suport Samsung direct.'}
+ };
+ const t=key=>(words[typeof rf212Lang==='function'?rf212Lang():'hu']||words.hu)[key]||key;
+ let current=null,status='idle',attempted=false,flight=null,lastAttempt=0,lastDay='',failure='',recoveryOpen=false;
+ const today=()=>rf240DayKey(new Date());
+ const hints={
+  hu:{access:'A Samsung Health nem enged hozzáférést a TrainPilotnak ehhez az adathoz. Ez alkalmazásszintű hozzáférési korlát.',update:'Frissítsd a Samsung Health alkalmazást, majd próbáld újra.',open:'Nyisd meg a Samsung Health alkalmazást, és fejezd be a beállítását.',retry:'Nyisd meg a Samsung Health alkalmazást, majd próbáld újra.',detail:'Kapcsolati hibakód'},
+  en:{access:'Samsung Health does not allow TrainPilot to access this data. This is an app access restriction.',update:'Update Samsung Health, then try again.',open:'Open Samsung Health and complete its setup.',retry:'Open Samsung Health, then try again.',detail:'Connection error code'},
+  de:{access:'Samsung Health erlaubt TrainPilot keinen Zugriff auf diese Daten. Der App-Zugriff ist eingeschränkt.',update:'Samsung Health aktualisieren und erneut versuchen.',open:'Samsung Health öffnen und die Einrichtung abschließen.',retry:'Samsung Health öffnen und erneut versuchen.',detail:'Verbindungsfehlercode'},
+  ro:{access:'Samsung Health nu permite TrainPilot să acceseze aceste date. Accesul aplicației este restricționat.',update:'Actualizează Samsung Health și încearcă din nou.',open:'Deschide Samsung Health și finalizează configurarea.',retry:'Deschide Samsung Health și încearcă din nou.',detail:'Cod de eroare al conexiunii'}
+ };
+ const hint=key=>(hints[typeof rf212Lang==='function'?rf212Lang():'hu']||hints.hu)[key];
+ function fail(error){
+  const code=String(error?.code||error||'');
+  failure=/^SAMSUNG_HEALTH_(?:[0-9]{4}|UNAVAILABLE)$/.test(code)?code:'SAMSUNG_HEALTH_UNAVAILABLE';
+  status=failure==='SAMSUNG_HEALTH_2000'?'permission':failure==='SAMSUNG_HEALTH_2003'?'access':failure==='SAMSUNG_HEALTH_3001'?'update':/^SAMSUNG_HEALTH_300[023]$/.test(failure)?'open':'error';
+ }
+ function summary(){return ['access','update','open'].includes(status)?hint(status)+' '+t('error'):t(status==='ready'&&!tp184EnergyToday()?'empty':status);}
+ function html(){
+  const score=tp184EnergyToday();
+  return '<section class="card tp184-energy-card"><h3>'+esc(t('title'))+'</h3><p class="tp184-energy-value"><strong>'+esc(tp184FormatScore(score?.value))+'</strong></p><p class="small muted" role="status">'+esc(summary())+'</p>'+(failure?'<p class="small muted tp184-energy-error">'+esc(hint('detail')+': '+failure)+'</p>':'')+'<button type="button" class="btn secondary block" onclick="TrainPilotEnergy184.refresh({manual:true})" '+(flight?'disabled':'')+'>'+esc(t('refresh'))+'</button></section>';
+ }
+ function decorate(){
+  // Whole-page background refresh intentionally stops behind open disclosures.
+  // Update this read-only value in place, preserving panels, drafts and scroll.
+  const tiles=document.querySelectorAll('#app .tp5-today-recovery .tp5-today-value');
+  if(tiles.length&&typeof window.tp5UnifiedTodayModel==='function'){
+   const model=window.tp5UnifiedTodayModel();
+   tiles.forEach(node=>{node.textContent=model.values.recovery;});
+  }
+  const main=document.querySelector('#app main.tp168-health');if(!main)return;
+  const recovery=main.querySelector('.tp168-recovery-history');if(!recovery)return;
+  main.querySelectorAll('.tp184-energy-card').forEach(node=>node.remove());
+  recovery.querySelector(':scope > summary')?.insertAdjacentHTML('afterend',html());
+  if(recoveryOpen){recovery.open=true;main.querySelector('.tp169-pulse-journal')?.classList.add('tp169-open');main.querySelector('.tp169-pulse-summary')?.setAttribute('aria-expanded','true');}
+ }
+ function paint(){const panel=document.querySelector('.tp168-recovery-history');if(panel)recoveryOpen=panel.open;window.TrainPilotUIRefresh?.refresh?.();decorate();}
+ async function refresh(options={}){
+  const manual=options.manual===true;
+  if(document.hidden||window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||state.session||state.tp128Onboarding)return;
+  // A web-only page has no SDK. Do not redraw Home/onboarding just to
+  // announce an unavailable native provider.
+  if(!isNative()){status='unavailable';if(manual)decorate();return;}
+  if(flight)return manual?flight.then(()=>refresh({manual:true,force:true})):flight;
+  const day=today();if(!manual&&!options.force&&lastDay===day&&Date.now()-lastAttempt<10*60000)return;
+  lastAttempt=Date.now();lastDay=day;
+  flight=Promise.resolve().then(async()=>{
+   try{
+    if(!isNative()){status='unavailable';return;}
+    const p=window.Capacitor?.Plugins?.SamsungHealth||window.Capacitor?.registerPlugin?.('SamsungHealth');
+    if(!p){status='unavailable';return;}
+    failure='';status='loading';decorate();
+    const getStatus=()=>typeof p.getEnergyScoreStatus==='function'?p.getEnergyScoreStatus():p.getStatus();
+    let granted=await getStatus();
+    if(granted.permissions?.READ_ENERGY_SCORE!==true&&manual){
+     if(typeof p.requestEnergyScoreRead==='function')await p.requestEnergyScoreRead();else await p.requestRead();
+     granted=await getStatus();
+    }
+    attempted=true;current=null;
+    if(granted.permissions?.READ_ENERGY_SCORE!==true){status='permission';return;}
+    const result=await p.readEnergyScoreDay({...rf240DayBounds(day),day});
+    if(window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending)return;
+    if(day!==today()||result.day!==day){status='empty';return;}
+    if(result.failedFields?.includes('energyScore')){fail(result.errors?.energyScore);return;}
+    current=result;status=tp184EnergyToday()?'ready':'empty';
+   }catch(error){attempted=true;current=null;fail(error);}
+   finally{flight=null;paint();}
+  });
+  return flight;
+ }
+ window.TrainPilotEnergy184={refresh,decorate,html,summary,reading:()=>current,hasResult:()=>attempted};
+ window.addEventListener?.('DOMContentLoaded',()=>{
+  const base=render;render=function(){const result=base.apply(this,arguments);decorate();return result;};window.render=render;
+  const syncBase=rf250Pipeline;rf250Pipeline=async function(){const result=await syncBase.apply(this,arguments);await refresh({force:true});return result;};
+  const recoveryBase=window.tp153OpenRecovery;
+  window.tp153OpenRecovery=function(){recoveryOpen=true;const result=recoveryBase?.apply(this,arguments);decorate();return result;};
+  if(window.TrainPilot168Health){const base=window.TrainPilot168Health.decorate;window.TrainPilot168Health.decorate=function(){const result=base.apply(this,arguments);decorate();return result;};}
+  decorate();void refresh();
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refresh();});
+ });
+})();
+// @endsection samsung-energy-access-184.js
+
 
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();

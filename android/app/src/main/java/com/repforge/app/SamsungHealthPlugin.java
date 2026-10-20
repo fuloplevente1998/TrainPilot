@@ -54,6 +54,7 @@ public class SamsungHealthPlugin extends Plugin {
         types.put("READ_WEIGHT", DataTypes.BODY_COMPOSITION);
         types.put("READ_BODY_FAT", DataTypes.BODY_COMPOSITION);
         types.put("READ_OXYGEN_SATURATION", DataTypes.BLOOD_OXYGEN);
+        types.put("READ_ENERGY_SCORE", DataTypes.ENERGY_SCORE);
         return types;
     }
     private static Set<Permission> requested() {
@@ -76,13 +77,17 @@ public class SamsungHealthPlugin extends Plugin {
         return out;
     }
     private interface Action { JSObject run(Reader reader) throws Exception; }
-    private void run(PluginCall call, Action action) {
+    static Set<Permission> energyPermission() {
+        return Collections.singleton(Permission.of(DataTypes.ENERGY_SCORE, AccessType.READ));
+    }
+    private void run(PluginCall call, Action action) { run(call, requested(), action); }
+    private void run(PluginCall call, Set<Permission> permissions, Action action) {
         final long epoch = HealthJournalStore.get(getContext()).generation();
         getBridge().execute(() -> {
             try {
                 foreground();
                 HealthDataStore store = sdk();
-                Set<Permission> granted = store.getGrantedPermissionsAsync(requested()).get(30, TimeUnit.SECONDS);
+                Set<Permission> granted = store.getGrantedPermissionsAsync(permissions).get(30, TimeUnit.SECONDS);
                 Reader reader = new Reader(store, granted, this::foreground);
                 JSObject value = action.run(reader);
                 foreground();
@@ -90,19 +95,49 @@ public class SamsungHealthPlugin extends Plugin {
                 if (epoch != HealthJournalStore.get(getContext()).generation()
                         || !HealthJournalStore.get(getContext()).pendingRestore().isEmpty())
                     throw new IllegalStateException("Health data changed; retry after restore/reopen.");
-                if (value.has("day")) HealthJournalStore.get(getContext()).samsungDay(
+                // An independent Energy Score read must not replace a complete
+                // Samsung day (steps, sleep, body metrics) with a partial result.
+                if (value.has("day") && !value.optBoolean("energyScoreOnly")) HealthJournalStore.get(getContext()).samsungDay(
                     value.getString("day"), value, reader.journal, epoch);
                 call.resolve(value);
             } catch (Exception e) { reject(call, e); }
         });
     }
+    // Preserve the SDK exception even if it wraps an underlying platform cause.
+    static String errorCode(Throwable error) {
+        Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Throwable cause = error; cause != null && seen.add(cause); cause = cause.getCause())
+            if (cause instanceof HealthDataException)
+                return "SAMSUNG_HEALTH_" + ((HealthDataException) cause).getErrorCode();
+        return "SAMSUNG_HEALTH_UNAVAILABLE";
+    }
     private static void reject(PluginCall call, Throwable error) {
-        Throwable cause = error;
-        while (cause.getCause() != null) cause = cause.getCause();
-        String code = cause instanceof HealthDataException ? String.valueOf(((HealthDataException) cause).getErrorCode()) : "UNAVAILABLE";
-        call.reject("Samsung Health: " + (cause.getMessage() == null ? cause.getClass().getSimpleName() : cause.getMessage()), "SAMSUNG_HEALTH_" + code);
+        call.reject("Samsung Health access failed", errorCode(error));
+    }
+    @PluginMethod public void getEnergyScoreStatus(PluginCall call) {
+        run(call, energyPermission(), reader -> status(reader.granted));
     }
     @PluginMethod public void getStatus(PluginCall call) { run(call, reader -> status(reader.granted)); }
+    @PluginMethod public void requestEnergyScoreRead(PluginCall call) {
+        getActivity().runOnUiThread(() -> {
+            try {
+                foreground();
+                Set<Permission> permission = energyPermission();
+                sdk().requestPermissionsAsync(permission, getActivity()).setCallback(Looper.getMainLooper(),
+                    granted -> call.resolve(status(granted)), error -> reject(call, error));
+            } catch (Exception e) { reject(call, e); }
+        });
+    }
+    @PluginMethod public void readEnergyScoreDay(PluginCall call) {
+        run(call, energyPermission(), reader -> {
+            Instant[] range = range(call, 26 * 60L);
+            String day = call.getString("day", "");
+            if (!HealthJournalStore.validDay(day)
+                    || !range[0].atZone(ZoneId.systemDefault()).toLocalDate().toString().equals(day))
+                throw new IllegalArgumentException("Invalid Samsung Energy Score day.");
+            return reader.energyDay(range[0], range[1]).put("day", day).put("energyScoreOnly", true);
+        });
+    }
     @PluginMethod public void requestRead(PluginCall call) {
         getActivity().runOnUiThread(() -> {
             try {
@@ -164,6 +199,7 @@ public class SamsungHealthPlugin extends Plugin {
         final Set<Permission> granted;
         final Runnable requireForeground;
         final JSONArray warnings = new JSONArray(), failed = new JSONArray(), journal = new JSONArray();
+        final JSObject errors = new JSObject();
         Reader(HealthDataStore store, Set<Permission> granted, Runnable requireForeground) {
             this.store = store; this.granted = granted; this.requireForeground = requireForeground;
         }
@@ -175,7 +211,7 @@ public class SamsungHealthPlugin extends Plugin {
             try { action.run(); }
             catch (Exception error) {
                 warnings.put(type.getName() + ": " + (error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage()));
-                for (String field : fields) failed.put(field);
+                for (String field : fields) { failed.put(field); errors.put(field, errorCode(error)); }
             }
             requireForeground.run();
         }
@@ -215,7 +251,7 @@ public class SamsungHealthPlugin extends Plugin {
             out.put("sourceLabels", new JSONObject().put(SOURCE, "Samsung Health · direct"));
             out.put("start", start.toString()); out.put("end", end.toString());
             out.put("readAt", Instant.now().toString());
-            out.put("warnings", warnings); out.put("failedFields", failed);
+            out.put("warnings", warnings); out.put("failedFields", failed); out.put("errors", errors);
             return out;
         }
         private static String source(HealthDataPoint p) {
@@ -224,7 +260,12 @@ public class SamsungHealthPlugin extends Plugin {
         private static void number(JSONObject out, String key, Number value) throws Exception {
             out.put(key, value != null && Double.isFinite(value.doubleValue()) && value.doubleValue() >= 0 ? value : JSONObject.NULL);
         }
-        private static Instant end(HealthDataPoint p) { return p.getEndTime() == null ? p.getStartTime() : p.getEndTime(); }
+        private static Instant end(HealthDataPoint p) {
+            if (p.getEndTime() != null) return p.getEndTime();
+            if (p.getStartTime() != null) return p.getStartTime();
+            if (p.getUpdateTime() != null) return p.getUpdateTime();
+            return Instant.now();
+        }
         private void record(HealthDataPoint p, String type, String suffix, JSONObject data, Instant a, Instant b) throws Exception {
             journal.put(new JSONObject().put("channel", HealthJournalStore.SAMSUNG).put("source", source(p))
                 .put("type", type).put("recordId", p.getUid() + suffix)
@@ -270,11 +311,59 @@ public class SamsungHealthPlugin extends Plugin {
             for (HealthDataPoint p : points) {
                 T candidate = p.getValue(field);
                 if (candidate == null || !Double.isFinite(candidate.doubleValue()) || candidate.doubleValue() < 0) continue;
-                if (newest == null || p.getStartTime().isAfter(newest.getStartTime())) { newest = p; value = candidate; }
-                record(p, recordType, ":" + key, new JSONObject().put("value", candidate).put("unit", unit), p.getStartTime(), end(p));
+                Instant pTime = p.getStartTime() != null ? p.getStartTime() : p.getUpdateTime();
+                if (pTime == null) continue; // Never fabricate a fresh sample timestamp
+                Instant newestTime = newest == null ? null : (newest.getStartTime() != null ? newest.getStartTime() : newest.getUpdateTime());
+                if (newest == null || pTime.isAfter(newestTime)) { newest = p; value = candidate; }
+                record(p, recordType, ":" + key, new JSONObject().put("value", candidate).put("unit", unit), pTime, end(p));
             }
             number(out, key, value);
-            if (newest != null) { out.put(prefix + "Time", newest.getStartTime().toString()); out.put(prefix + "Source", source(newest)); }
+            if (newest != null) {
+                Instant time = newest.getStartTime() != null ? newest.getStartTime() : newest.getUpdateTime();
+                out.put(prefix + "Time", time != null ? time.toString() : Instant.now().toString());
+                out.put(prefix + "Source", source(newest));
+            }
+        }
+
+        private void energyScore(JSObject out, Instant start, Instant end) throws Exception {
+            out.put("energyScore", JSONObject.NULL);
+            safe(DataTypes.ENERGY_SCORE, () -> {
+                ZoneId zone = ZoneId.systemDefault();
+                LocalDate startDate = start.atZone(zone).toLocalDate();
+                // LocalDateFilter becomes a midnight-based LocalTimeFilter in
+                // the SDK. Equal dates produce a zero-length query (1001).
+                // Use a positive [first day, day after last) interval, including
+                // on 23/25-hour DST days; never include tomorrow's midnight.
+                LocalDate endDateExclusive = end.minusNanos(1).atZone(zone).toLocalDate().plusDays(1);
+                Map<String, HealthDataPoint> unique = new LinkedHashMap<>();
+                String token = null;
+                Set<String> tokens = new HashSet<>();
+                for (int page = 0; page < 30; page++) {
+                    requireForeground.run();
+                    ReadDataRequest.LocalDateBuilder<HealthDataPoint> builder = DataTypes.ENERGY_SCORE.getReadDataRequestBuilder()
+                        .setPageSize(500)
+                        .setLocalDateFilter(LocalDateFilter.of(startDate, endDateExclusive, true, false));
+                    if (token != null) builder.setPageToken(token);
+                    DataResponse<HealthDataPoint> response = store.readDataAsync(builder.build()).get(30, TimeUnit.SECONDS);
+                    for (HealthDataPoint point : response.getDataList()) {
+                        Number value = point.getValue(DataType.EnergyScoreType.ENERGY_SCORE);
+                        Instant time = point.getStartTime();
+                        if (value == null || !Double.isFinite(value.doubleValue()) || value.doubleValue() <= 0 || value.doubleValue() > 100 || time == null) continue;
+                        LocalDate day = time.atZone(zone).toLocalDate();
+                        if (day.isBefore(startDate) || !day.isBefore(endDateExclusive)) continue;
+                        unique.put(point.getUid(), point);
+                    }
+                    token = response.getPageToken();
+                    if (token == null || token.isEmpty()) break;
+                    if (!tokens.add(token)) throw new IllegalStateException("Repeated Samsung Health page token.");
+                }
+                latest(out, new ArrayList<>(unique.values()), DataType.EnergyScoreType.ENERGY_SCORE, "energyScore", "energyScore", "", "EnergyScoreRecord");
+            }, "energyScore");
+        }
+        JSObject energyDay(Instant start, Instant end) throws Exception {
+            JSObject out = base(start, end);
+            energyScore(out, start, end);
+            return out;
         }
         JSObject wellness(Instant start, Instant end) throws Exception {
             JSObject out = base(start, end);
@@ -331,7 +420,7 @@ public class SamsungHealthPlugin extends Plugin {
             return out;
         }
         JSObject daily(Instant start, Instant end) throws Exception {
-            JSObject out = wellness(start, end); activity(out, start, end); heart(out, start, end); sleep(out, start, end);
+            JSObject out = wellness(start, end); activity(out, start, end); heart(out, start, end); sleep(out, start, end); energyScore(out, start, end);
             // No HRV/RMSSD field exists in Samsung's 1.1.0 Data SDK. Never derive one from HR or Energy Score.
             out.put("hrvRmssdMs", JSONObject.NULL);
             return out;
