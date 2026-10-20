@@ -21,8 +21,20 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
   https://developer.samsung.com/health/data/process.html
   https://developer.samsung.com/health/data/api-reference/-shd/com.samsung.android.sdk.health.data.error/-error-code/index.html
   A konkrét készülékhibát kód nélkül **nem** minősítjük biztos partnerhibának.
-- Célzott JS-tesztek/szintaxis/diff sikeres. Friss teljes CI és új APK még szükséges;
-  a lenti eredmények a korábbi a8bec136 forrásra vonatkoznak. #222 Draft, main/verzió változatlan.
+- **Bevizsgált alkalmazásforrás:** `ae82d481b31d8d01394ce41d08ef003c8847d0c1`.
+  PR-merge fája is `4056ab3898c1386ea61969c330c06287b612380f`, azonos alkalmazásforrás.
+  Quick **39423620810: 154/154**, Performance **39423620964: SUCCESS**.
+  Phone Gate **39423616111: SUCCESS**, Chromium **6/6, 105/105**, natív XML
+  **248/248, 0 failure/error/skipped**. Új engedélyhatár- és kivételláncteszt sikeres;
+  Samsung Chromium: Regeneráción belüli kártya, nyitva maradó panel és hibakód rendben.
+- **Új telefonos teszt-APK:** [ZIP, benne APK és forrás](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39423616111/artifacts/12264688934),
+  1.3.6 /2733, SHA-256 `49426605ba22046bdba3051004528e70814c0b62de9714c372c488ef67ff752d`.
+  APK app.js/index.html byteazonos, forrásjelölés és SHA256SUMS helyes, signer
+  az eredeti v1.0.0-val egyezik. Wear változatlan. [Bizonylat](builds/2026-10-20-222-recovery.json).
+- **Következő készülékes próba:** Egészség → Regeneráció → Samsung energiapontszám,
+  egyszeri frissítés/engedélyezés; ha hiba marad, a konkrét hibakód szükséges.
+  Ez a build az adatolvasás és hibaazonosítás javítása, nem igazolt készülékes megoldás.
+  #222 Draft, main/verzió változatlan, issue-k nyitva.
 
 ## Korábbi #222 – teljes CI sikeres, teszt-APK kész
 
