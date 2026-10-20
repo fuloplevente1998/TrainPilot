@@ -51,5 +51,32 @@ const wearSource=fs.existsSync('www/wear-sync.js')?
  fs.readFileSync('www/wear-sync.js','utf8'):app;
 assert.match(quickSource,/function tp150QuickExercise\(id\)\{[\s\S]{0,400}sets:tp228PrefillSets\(null,e,/);
 assert.match(wearSource,/function watchQuickExercises\(lang\)\{[\s\S]{0,1000}sets:tp228PrefillSets\(null,e,/);
+// Both phone Quick Workout configuration paths must preserve the journal
+// model, and the optional user weight edit must not clear historical reps.
+const unified=fs.existsSync('www/trainpilot-151-unified-design.js')?
+ fs.readFileSync('www/trainpilot-151-unified-design.js','utf8'):app;
+const inline=fs.existsSync('www/trainpilot-152-ux-hierarchy.js')?
+ fs.readFileSync('www/trainpilot-152-ux-hierarchy.js','utf8'):app;
+const helperSource=unified.split('var tp151QuickConfiguredSets=')[1]?.split('var tp151QuickConfig=')[0];
+assert.ok(helperSource,'Quick Workout config helper must exist in v151 section');
+const configured=new Function('tp228PrefillSets',
+ 'var tp151QuickConfiguredSets='+helperSource+'; return tp151QuickConfiguredSets;')(
+ (_context,e,n)=>api.build(null,e,n,e.weight??0,rows)
+);
+const strengthExercise={...exercise,weight:5};
+const originalQuick={sets:api.build(null,strengthExercise,3,5,rows)};
+const prepared=configured(strengthExercise,originalQuick,4,'90');
+assert.deepEqual(prepared.map(s=>[s.weight,s.reps,s.done]),[[90,'10',false],[14,'8',false],[5,'',false],[5,'',false]],
+ 'Unchanged single weight control keeps per-set journal weights/reps when adding a set');
+const override=configured(strengthExercise,originalQuick,4,'22.5');
+assert.deepEqual(override.map(s=>[s.weight,s.reps,s.done]),[[22.5,'10',false],[22.5,'8',false],[22.5,'',false],[22.5,'',false]],
+ 'Explicit weight change overrides only loads, never erases repetitions');
+assert.equal(override.every(s=>s.done===false),true);
+assert.equal(override.every(s=>!s.actualRir&&!s.completedAt),true);
+const unchanged=configured(strengthExercise,originalQuick,2,null);
+assert.deepEqual(unchanged.map(s=>[s.weight,s.reps]),[[90,'10'],[14,'8']],
+ 'Changing only set count and/or target may not clear journal values');
+assert.ok(unified.includes('b.sets=tp151QuickConfiguredSets(e,b,n,raw)'),'Legacy quick form must preserve journal records');
+assert.ok(inline.includes('base.sets=tp151QuickConfiguredSets(e,base,n,raw)'),'Inline quick form must preserve journal records');
 assert.equal(app.includes('tp228-copy'),false,'No manual copy button');
 console.log('PASS #228 Napló-based exercise-wide prefill: latest completed matching exercise, cross-day/program/quick, safe fallback and immutable journal, clean new sets, Wear/quick coverage');

@@ -84,6 +84,47 @@ const server=http.createServer((req,res)=>{
   await rows().nth(0).locator('input[oninput*="reps"]').fill('7');
   await page.reload();await boot();await page.evaluate(()=>{if(!state.session)resumeDraft();else renderWorkout();});
   assert.equal(await rows().nth(0).locator('input[oninput*="reps"]').inputValue(),'7','Draft reload never reapplies history');
+  // Real Quick Workout flow: the inline "target reps" input is a goal and must
+  // not clear previous completed reps from the same exercise in the Journal.
+  await page.evaluate(()=>{
+   const source=JSON.parse(JSON.stringify(history()[0]));
+   source.id='quick-journal-228';source.started='2025-01-01T10:00:00Z';source.finished='2025-01-01T11:00:00Z';
+   source.exercises[0].sets.forEach((set,i)=>{set.set=i+1;set.weight=11+i;set.reps=String(7+i);set.done=true;});
+   db.set('history',[source]);db.set('draft',null);state.session=null;state.workout=null;state.tab='plan';render();
+  });
+  const pickQuick=async()=>{
+   await page.locator('.tp150-quick-entry button').click();
+   const card=page.locator('#tp150QuickResults [data-exercise-id="goblet-squat"]');
+   await card.locator('summary').click();
+   return card;
+  };
+  let card=await pickQuick();
+  assert.equal(await card.locator('[data-tp152-qweight]').inputValue(),'11','Quick form starts from previous Journal weight');
+  await card.locator('.tp150-quick-start').click();
+  await page.waitForFunction(()=>state.session?.quickWorkout===true);
+  assert.deepEqual(await page.evaluate(()=>state.session.exercises[0].sets.map(x=>[x.weight,x.reps,x.done,x.actualRir??null])),
+   [[11,'7',false,null],[12,'8',false,null],[13,'9',false,null]],
+   'Starting quick workout with unchanged target does not erase previous per-set values');
+  await page.evaluate(()=>{db.set('draft',null);state.session=null;state.workout=null;state.tab='plan';render();});
+  card=await pickQuick();
+  await card.locator('[data-tp152-qsets]').selectOption('4');
+  await card.locator('[data-tp152-qtarget]').fill('15');
+  await card.locator('[data-tp152-qweight]').fill('22');
+  await card.locator('.tp150-quick-start').click();
+  await page.waitForFunction(()=>state.session?.quickWorkout===true&&state.session.exercises[0].sets.length===4);
+  assert.deepEqual(await page.evaluate(()=>({
+   sets:state.session.exercises[0].sets.map(x=>[x.weight,x.reps,x.done]),
+   target:state.session.exercises[0].targetReps
+  })),{sets:[[22,'7',false],[22,'8',false],[22,'9',false],[22,'',false]],target:'15'},
+   'Explicit weight, set count and target edits keep Journal reps for matching sets');
+  await page.evaluate(()=>{db.set('draft',null);state.session=null;state.workout=null;tp151QuickConfig('goblet-squat');});
+  await page.locator('#tp151QuickSets').selectOption('4');
+  await page.locator('#tp151QuickTarget').fill('12');
+  assert.deepEqual(await page.evaluate(()=>({
+   sets:tp151BuildQuick('goblet-squat').sets.map(x=>[x.weight,x.reps,x.done]),
+   target:tp151BuildQuick('goblet-squat').targetReps
+  })),{sets:[[11,'7',false],[12,'8',false],[13,'9',false],[byId('goblet-squat')?.weight??0,'',false]],target:'12'},
+   'Legacy quick configuration also preserves prior Journal reps and distinct loads');
   assert.deepEqual(errors,[]);console.log('PASS #227–#229 integrated phone flow: setting reload, Journal-wide exercise prefill (planned + quick + Wear), identity/draft preservation, one haptic per manual receipt, per-set RIR/snapshot, 4 languages/large text, reload and Journal');
  }finally{await browser?.close();await new Promise(done=>server.close(done));}
 })().catch(error=>{console.error(error);process.exitCode=1;});

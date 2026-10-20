@@ -10461,12 +10461,26 @@ shell=function(content){
 };
 
 var tp151QuickDefaults=function(id){const e=byId(id),item=tp150QuickExercise(id);if(!e||!item)return null;return {sets:item.sets.length,target:String(e.reps||''),weight:Number(item.sets?.[0]?.weight??e.weight??0),body:e.loadType==='bodyweight',unit:typeof tp149LoadLabel==='function'?tp149LoadLabel(e.loadType):loadLabel(e.loadType)}};
+// #228: Quick Workout target is only a goal; don't discard completed Journal
+// repetitions or collapse per-set historical weights while applying the form.
+var tp151QuickConfiguredSets=function(exercise,item,count,rawWeight){
+ const prior=Array.isArray(item?.sets)?item.sets:[];
+ const full=tp228PrefillSets(null,exercise,count,exercise.weight??0);
+ const original=Number(prior[0]?.weight??exercise.weight??0);
+ const selected=Number(String(rawWeight??original).replace(',','.'));
+ const changed=exercise.loadType!=='bodyweight'&&rawWeight!=null&&String(rawWeight).trim()!==''&&
+  Number.isFinite(selected)&&selected>=0&&selected!==original;
+ return Array.from({length:count},(_,i)=>{
+  const set=prior[i]||full[i]||{set:i+1,weight:exercise.weight??0,reps:'',done:false};
+  return {...set,set:i+1,...(changed?{weight:selected}:{})};
+ });
+};
 var tp151QuickConfig=function(id){
  const e=byId(id),d=tp151QuickDefaults(id);if(!e||!d)return;state.tab='plan';const adding=typeof tp150IsQuick==='function'&&tp150IsQuick(),name=e.custom?String(e.hu||e.en||e.id):tp149ExerciseName(e);
  const weight=d.body?'':'<label>'+esc(tp151T('weight'))+' <span class="small muted">('+esc(d.unit)+')</span><input id="tp151QuickWeight" class="field" inputmode="decimal" type="number" min="0" step="0.5" value="'+esc(d.weight)+'"></label>';
  render(shell('<main class="tp151-quick-config"><button class="btn secondary" onclick="'+(adding?'renderWorkout()':'tp150QuickPicker()')+'">← '+esc(tp149T('common.back'))+'</button><div class="card tp151-quick-config-card"><span class="badge">'+esc(tp150qwT('quickBadge'))+'</span><h1>'+esc(name)+'</h1><p class="small muted">'+esc(tp151T('previous'))+'</p><div class="tp151-form-grid"><label>'+esc(tp151T('sets'))+'<select id="tp151QuickSets" class="field">'+Array.from({length:10},(_,i)=>i+1).map(n=>'<option value="'+n+'" '+(n===d.sets?'selected':'')+'>'+n+'</option>').join('')+'</select></label><label>'+esc(tp151T('target'))+'<input id="tp151QuickTarget" class="field" value="'+esc(d.target)+'"></label>'+weight+'</div><button class="btn block" onclick="tp151SaveQuick(\''+esc(id)+'\')">'+esc(adding?tp151T('quickAdd'):tp151T('quickStart'))+'</button></div></main>'));
 };
-var tp151BuildQuick=function(id){const e=byId(id),b=tp150QuickExercise(id);if(!e||!b)return null;const n=Math.max(1,Math.min(10,Number(document.getElementById('tp151QuickSets')?.value)||b.sets.length||3)),target=String(document.getElementById('tp151QuickTarget')?.value||e.reps||'').trim().slice(0,40),raw=document.getElementById('tp151QuickWeight')?.value,w=e.loadType==='bodyweight'?0:Math.max(0,Number(String(raw??b.sets?.[0]?.weight??0).replace(',','.'))||0);b.targetReps=target;b.plannedWeight=w;b.sets=Array.from({length:n},(_,i)=>({set:i+1,weight:w,reps:'',done:false}));return b};
+var tp151BuildQuick=function(id){const e=byId(id),b=tp150QuickExercise(id);if(!e||!b)return null;const n=Math.max(1,Math.min(10,Number(document.getElementById('tp151QuickSets')?.value)||b.sets.length||3)),target=String(document.getElementById('tp151QuickTarget')?.value||e.reps||'').trim().slice(0,40),raw=document.getElementById('tp151QuickWeight')?.value,w=e.loadType==='bodyweight'?0:Math.max(0,Number(String(raw??b.sets?.[0]?.weight??0).replace(',','.'))||0);b.targetReps=target;b.plannedWeight=w;b.sets=tp151QuickConfiguredSets(e,b,n,raw);return b};
 var tp151SaveQuick=async function(id){
  const fromWatch=window.TrainPilotWearSync?.isStartingFromWatch?.()===true;
  const item=tp151BuildQuick(id);if(!item)return;
@@ -10734,7 +10748,7 @@ var tp152StartQuickInline=async function(id){
  const n=Math.max(1,Math.min(10,Number(root?.querySelector('[data-tp152-qsets]')?.value)||base.sets.length||3));
  const target=String(root?.querySelector('[data-tp152-qtarget]')?.value||e.reps||'').trim().slice(0,40);
  const raw=root?.querySelector('[data-tp152-qweight]')?.value,w=e.loadType==='bodyweight'?0:Math.max(0,Number(String(raw??base.sets?.[0]?.weight??0).replace(',','.'))||0);
- base.targetReps=target;base.plannedWeight=w;base.sets=Array.from({length:n},function(_,i){return {set:i+1,weight:w,reps:'',done:false}});
+ base.targetReps=target;base.plannedWeight=w;base.sets=tp151QuickConfiguredSets(e,base,n,raw);
  if(tp150IsQuick()){const existing=state.session.exercises.findIndex(function(x){return x.id===id});if(existing>=0)state.session.exercises[existing]=base;else state.session.exercises.push(base);state.current=existing>=0?existing:state.session.exercises.length-1;persistDraft();renderWorkout();window.scrollTo?.(0,0);return}
  if(!(await tp150QuickConfirmReplace()))return;db.set('draft',null);stopTimer();state.tab='plan';state.workout='quick';state.current=0;state.session={type:'quick',quickWorkout:true,programId:null,programName:tp150qwT('title'),dayId:null,workout:'quick',started:new Date().toISOString(),exercises:[base]};persistDraft();renderWorkout();window.scrollTo?.(0,0);
  window.TrainPilotWearSync?.phoneWorkoutStarted?.(state.session,{fromWatch});

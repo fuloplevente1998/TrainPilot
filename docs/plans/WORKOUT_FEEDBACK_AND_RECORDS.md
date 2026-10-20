@@ -13,6 +13,11 @@ Az [újfunkció-audit #225](https://github.com/fuloplevente1998/TrainPilot/pull/
 | 3 | [#228](https://github.com/fuloplevente1998/TrainPilot/issues/228) | Minden erősítő gyakorlat automatikus Napló-alapú súly-/ismétlés-előtöltése, külön gomb nélkül | Pontosított követelmény implementálva; új modell/UI/Wear regressziók, új CI szükséges |
 | 4 | [#229](https://github.com/fuloplevente1998/TrainPilot/issues/229) | Sorozatonkénti tényleges RIR, kompatibilis napló/Coach/protokoll | Telefonos bevitel, konzervatív Coach, napló és natív/Wear értékmegőrzés kódja elkészült; integrált kapuk következnek |
 
+### Készülékes hibajelzés és javítás – #228 gyors edzés
+A felhasználó az aláírt `fd72074` APK-n igazolta: tervezett edzésben működik a Napló-előtöltés, gyors edzésnél viszont az ismétlések üresek. Gyökérok: a `tp151BuildQuick` és `tp152StartQuickInline` a `tp150QuickExercise` helyes Napló-adatait új `reps:''` sorozatokkal cserélte le. A megjelenő „Célismétlés” külön tervérték; nem azonos az új edzés előtöltött tényleges sorozatismétlésével.
+
+Javítás: közös helper megőrzi a Naplóból átvett sorozatonkénti súlyt, ismétlést, friss azonosítót és a teljesítetlen állapotot. A cél szerkesztése nem töröl ismétlést; szándékos súlymódosítás átírhatja a súlyokat, de nem az ismétlést; a sorozatszám változásakor az új pozíciókhoz is a Napló keresése érvényes. Mindkét gyorsedzés-beállítási út és a tényleges indítás bekerül a regression suite-ba. Main/release csak új készülékes elfogadás után.
+
 ## Megőrzendő működés
 
 - Egy kanonikus edzés és időzítőtulajdonos. Órás/távoli vezérlés és bizonytalan átadás alatt nincs telefonos szerkesztés vagy duplikált jelzés.
