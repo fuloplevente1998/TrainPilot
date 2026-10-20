@@ -23,14 +23,19 @@ const server=http.createServer((req,res)=>{
    program:JSON.stringify(programs()),history:JSON.stringify(history()),draft:JSON.stringify(db.get('draft',null))
   }));
   await page.locator('#tp197-mode-global').evaluate(el=>el.open=true);
-  await page.locator('#tp197-mode-global-style').selectOption('hit');
+  async function choose(field,value){
+   const picker=page.locator('#tp197-mode-global .tp197-choice[data-field="'+field+'"]');
+   await picker.locator('summary').click();
+   await picker.locator('button[data-value="'+value+'"]').click();
+  }
+  await choose('trainingStyle','hit');
   await page.locator('#tp197-mode-global .tp197-actions button').first().click();
   assert.equal(await page.evaluate(()=>settings().trainingModes197||null),baseline.modes,'first click cannot save');
   await page.locator('#tp197-mode-global .tp197-confirm button').last().click(); // Cancel
   assert.equal(await page.locator('#tp197-mode-global-style').inputValue(),'normal');
   assert.equal(await page.evaluate(()=>settings().trainingModes197||null),baseline.modes);
-  await page.locator('#tp197-mode-global-style').selectOption('hit');
-  await page.locator('#tp197-mode-global-progress').selectOption('rir');
+  await choose('trainingStyle','hit');
+  await choose('progressionMode','rir');
   await page.locator('#tp197-mode-global .tp197-actions button').first().click();
   await page.locator('#tp197-mode-global .tp197-confirm button').first().click(); // Explicit approval
   const saved=await page.evaluate(()=>({
@@ -46,7 +51,7 @@ const server=http.createServer((req,res)=>{
   await page.locator('#tp197-mode-global .tp197-actions button').last().click(); // undo
   assert.deepEqual(await page.evaluate(()=>settings().trainingModes197||null),baseline.modes,'Undo must restore legacy state');
   await page.evaluate(()=>{state.session={id:'simulated-active',status:'paused'};});
-  await page.locator('#tp197-mode-global-style').selectOption('hit');
+  await choose('trainingStyle','hit');
   await page.locator('#tp197-mode-global .tp197-actions button').first().click();
   assert.equal(await page.evaluate(()=>settings().trainingModes197||null),baseline.modes,'active workout must block save');
   await page.evaluate(()=>{state.session=null;});
