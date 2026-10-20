@@ -9,7 +9,7 @@ on:
         type: string
         default: ''
   push:
-    branches: [main, 'fix/**', 'feat/**']
+    branches: [main, 'fix/**', 'feat/**', 'perf/**']
     paths: ['android/wear/**', 'android/shared/**', '.github/workflows/wear-layout-ui.yml']
 
 permissions:
@@ -21,8 +21,18 @@ concurrency:
 
 jobs:
   round-display:
+    name: Round UI (shard ${{ matrix.shard }})
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        # A manual class/method filter runs once; regular pushes retain ALL tests
+        # but divide the AndroidJUnitRunner workload across three emulators.
+        shard: ${{ fromJSON((github.event_name == 'workflow_dispatch' && inputs.test_filter != '') && '[0]' || '[0,1,2]') }}
+    env:
+      TRAINPILOT_WEAR_UI_SHARD_COUNT: ${{ (github.event_name == 'workflow_dispatch' && inputs.test_filter != '') && '1' || '3' }}
+      TRAINPILOT_WEAR_UI_SHARD_INDEX: ${{ matrix.shard }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -61,10 +71,31 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: Wear-round-display-${{ github.run_id }}-${{ github.sha }}
+          name: Wear-round-display-${{ github.run_id }}-${{ github.sha }}-shard-${{ matrix.shard }}
           path: |
             wear-ui-evidence/
             android/wear/build/reports/androidTests/
             android/wear/build/outputs/androidTest-results/
           if-no-files-found: error
           retention-days: 14
+
+  round-display-complete:
+    name: Check complete round UI coverage
+    needs: round-display
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all emulator shards successful
+        env:
+          SHARD_RESULT: ${{ needs.round-display.result }}
+        run: test "$SHARD_RESULT" = "success"
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: Wear-round-display-${{ github.run_id }}-${{ github.sha }}-shard-*
+          path: wear-round-shards
+      - name: Verify all shards, unique test cases and full coverage
+        env:
+          TRAINPILOT_WEAR_UI_SHARD_COUNT: ${{ (github.event_name == 'workflow_dispatch' && inputs.test_filter != '') && '1' || '3' }}
+          TRAINPILOT_WEAR_UI_MIN_TOTAL: ${{ (github.event_name == 'workflow_dispatch' && inputs.test_filter != '') && '1' || '183' }}
+        run: python3 android/wear/ci/check-round-ui-shards.py wear-round-shards
