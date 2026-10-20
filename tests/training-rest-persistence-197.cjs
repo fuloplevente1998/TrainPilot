@@ -1,6 +1,8 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),vm=require('node:vm');
-const source=fs.readFileSync('www/app.js','utf8');
+const source=fs.existsSync('www/app.js')
+ ? fs.readFileSync('www/app.js','utf8')
+ : fs.readFileSync('www/trainpilot-1511-ui-polish.js','utf8')+'\n'+fs.readFileSync('www/trainpilot-152-ux-hierarchy.js','utf8');
 function piece(start,end){
  const a=source.indexOf(start),b=source.indexOf(end,a);
  assert.ok(a>=0&&b>a,'Canonical source range: '+start);
