@@ -14,12 +14,20 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 - Közös egész számú kijelzés: a képen látott SDK-tizedes érték 55/100-ként jelenik meg.
   A nyers SDK-pontszám és a Coach fájdalom/terhelés védelmei változatlanok.
   Kártya/csempe/Coach forrássor azonos formázást használ. Natív és Wear kód érintetlen.
-- Az első teljes körben Quick/Performance sikeres, Chromium 5/6. Az új Samsung-teszt
-  elkapta, hogy nyitott panelnél az általános háttérfrissítés nem rajzolja újra a csempét.
-  Javítás: csak a read-only pontszám közvetlen DOM-frissítése, panel/draft/scroll megőrzéssel.
-  A teszt eredeti 55/100 csempe/kártya elvárása változatlan. Friss teljes CI/APK szükséges.
-  Új böngészős védelem: tizedes pontszám, külön alvásrekord hiánya, Home/Egészség
-  csempe/kártya egyezése, hiány/hiba fallback. #222 Draft, main/verzió változatlan.
+- Az új teszt elkapta a nyitott panel mögött elmaradó csempefrissítést; javítva csak
+  a read-only pontszám közvetlen DOM-frissítésével, panel/draft/scroll megőrzése mellett.
+- **Végső alkalmazásforrás:** `c14e70778fdb81d42a49fe4b2ef8aa58b3a5292b`;
+  PR-merge fája is `8332fd6ffa21d0281af7bc5f702f928ecdcef6e7`.
+  Quick **39440379202: 154/154**, Performance **39440379183: SUCCESS**,
+  Phone Gate **39440372153: SUCCESS**. Chromium **6/6, 105/105**, natív XML
+  **249/249, 0 failure/error/skipped**. A Samsung-teszt egész számú kártya/Health/Home
+  csempe-egyezést igazol frissítéskor, nyitott panel és külön alvásrekord hiánya mellett.
+- **Telefon teszt-APK:** [ZIP, benne APK és forrás](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39440372153/artifacts/12273816379),
+  1.3.6 /2733, SHA-256 `3798a8e679f9a5a16b013be774f918e62eca24e0070b36084a7d2e1349cf5e28`.
+  app.js/index.html byteazonos, forrásjelölés/SHA256SUMS/aláírás és signer-folytonosság helyes.
+  [Bizonylat](builds/2026-10-20-222-recovery-tiles.json). Wear APK változatlan.
+- **Következő:** új APK-n csempe/kártya egyezésének készülékes visszajelzése.
+  #222 Draft, main/verzió változatlan, nincs merge/kiadás/issue-lezárás.
 
 ## Korábbi #222 – 1001-es napi lekérdezés javítása
 
