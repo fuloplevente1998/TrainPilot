@@ -3,17 +3,14 @@
 Frissítve: **2026-10-20**. Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
-## Folyamatban – #230, négy új feature (#226–#229)
+## Elfogadva – #230 / 1.3.7 kiadás előkészítése
 
-- Ág: `feat/workout-records-feedback-rir`; verzió **1.3.6 /2733**. [Terv](plans/WORKOUT_FEEDBACK_AND_RECORDS.md).
-- #226 PR-jelvény, #227 kézi sorozat-haptika és #229 sorozatonkénti tényleges RIR implementálva. A korábbi `bd5c0dc` forrás kapui sikeresek; készülékes elfogadás nincs.
-- **#228 végleges kiterjesztés:** *minden* erősítő gyakorlat azonosító alapján, programnaptól és edzésmódtól függetlenül a Napló legutóbbi érvényes súly-/ismétlésadataival induljon; tervezett, gyors és Wear edzésekhez egyaránt. Nincs külön másolásgomb. A módosított forrás friss Actions + készülékes elfogadása még hátravan.
-- **Készüléken talált #228 gyorsedzés-hiba:** a tervezett edzés megfelelő, de a v151/v152 gyorsedzés-beállító felület az indításkor `reps:''` értékkel törölte a Naplóból előtöltött sorozatismétléseket, és a különböző sorozatsúlyokat egyetlen súllyal írta felül. Mindkét beállítási út közös, naplóőrző javítást kap; a célismétlés mező megmarad külön, szerkeszthető tervnek. A korábban nem futtatott #227–#229 teljes böngészős integrációs teszt bekerül a Chromium suite-ba. Új Actions/APK készülékes ellenőrzése szükséges.
-- Aktuális terv sorozatszáma, friss azonosítók, üres teljesítettség/RIR; draft és kézi szerkesztés nem írható felül. Órás programnapsablon is átadja az ismétléseket.
-- **#230 teljes Release Gate:** `6129c44` forráson a Chromium 4/6 shard profil-előzmény tesztje az előző 5→5,5 kg automatikus emelést várta, miközben a #228 Napló-előtöltés a tényleges 5 kg-ot tartja meg; a Coach továbbra is ajánlhat. Új profil-regresszió és Wear gyorsedzés-metadata védelem kerül közös forrás-commitba az új telefon/Wear kapukhoz.
-- Automatizálási UI-elv rögzítve: ismétlődő engedélyezett műveletek automatikusak. A Health meglévő appnyitási/előtéri szinkronja feltárva; teljes Health-UI átdolgozás nem része ennek a commitnak.
-- Helyben nincs shell: V8 szintaxis és célzott tiszta modell/Coach-guard sikeres. Teljes böngészős, natív és APK-kapuk Actionsben. Az új forrásra a régi zöld CI nem bizonyíték.
-- Következő: friss kapuk → azonos forrású APK-pár → Napló→másik programnap / gyors edzés / óra súly- és ismétlés-előtöltési próba. **Main csak az új build felhasználói validálása után**; nincs verzióemelés/merge/release/issue-lezárás.
+- **Felhasználói jóváhagyás (2026-10-20):** „Rendben, zárható :) mehet mainre 1.3.7 verzioszamon, a release gatenel, teszteknel ezt vegyü figyelembe.”
+- #226 mentett PR-jelvény, #227 kézi sorozat haptika, #228 Napló-alapú gyakorlatonkénti súly- és ismétlés-előtöltés és #229 tényleges sorozat-RIR: felhasználó által elfogadott #230 csomag.
+- #228 korábbi készülékes hibajelzés: a tervezett edzés rendben volt, a gyors edzésnél a célismétlés felülírta a Napló alapján előtöltött tényleges ismétléseket. Javítva mindkét gyorsedzés-indítási úton; a hat Chromium shard integrált tesztet futtat.
+- **1.3.7 /2734** összehangolt telefon/Wear verzió: `package.json`, `package-lock.json`, két SOURCE_VERSION, két Gradle, `www/app.js`. A verziópolitikai tesztek az 1.3.7 címkéket és a 2734 kódot várják.
+- **Merge előtti kötelező kapuk:** forrásazonos Quick/Performance, 6/6 Chromium, telefonos és Wear aláírt release gate, óra kerek kijelző teszt. Az előző `49784cb` 1.3.6 /2733 sikeres kapui a funkciót igazolták, de nem bizonyítják az 1.3.7-es buildet.
+- **Main merge és kiadás kizárólag sikeres 1.3.7 kapuk után.** A mainre kerülő azonosított forrásból az önálló telefon/Wear workflow-k külön `v1.3.7` / `wear-v1.3.7` kiadást állítanak elő. Verifikáció és #226–#229 lezárás a tényleges merge/kiadás után.
 
 ## Aktuális – #223 mainen, #214 külső előkészítése nyitott
 
