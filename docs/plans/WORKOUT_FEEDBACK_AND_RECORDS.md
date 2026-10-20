@@ -10,7 +10,7 @@ Az [újfunkció-audit #225](https://github.com/fuloplevente1998/TrainPilot/pull/
 | --- | --- | --- | --- |
 | 1 | [#226](https://github.com/fuloplevente1998/TrainPilot/issues/226) | Mentett eredmény és Napló PR-jelvénye a meglévő rekordmodellre építve | Kód és célzott modell/UI teszt elkészült; CI még követendő |
 | 2 | [#227](https://github.com/fuloplevente1998/TrainPilot/issues/227) | Kapcsolható rövid haptika sikeres kézi sorozat-OK után | Kód és nyugta/owner/deduplikáció regresszió elkészült; CI követendő |
-| 3 | [#228](https://github.com/fuloplevente1998/TrainPilot/issues/228) | Kifejezett sorozatmásolás új azonosítóval, done:false | Kód és célzott érték/azonosító/owner/rollback regresszió elkészült; CI követendő |
+| 3 | [#228](https://github.com/fuloplevente1998/TrainPilot/issues/228) | Azonos programnap automatikus súly-/ismétlés-előtöltése, külön gomb nélkül | Pontosított követelmény implementálva; új modell/UI/Wear regressziók, új CI szükséges |
 | 4 | [#229](https://github.com/fuloplevente1998/TrainPilot/issues/229) | Sorozatonkénti tényleges RIR, kompatibilis napló/Coach/protokoll | Telefonos bevitel, konzervatív Coach, napló és natív/Wear értékmegőrzés kódja elkészült; integrált kapuk következnek |
 
 ## Megőrzendő működés
@@ -34,4 +34,20 @@ A `sets[].actualRir` opcionális egész 0–10. A Coach a kész sorozatok megado
 
 A telefonos és Wear snapshot külön nullable sorozat-RIR-t, régi gyakorlat-RIR-t és a jelzőt visz át. A meglévő nyolcmezős Undo guard változatlan protokoll; a visszavont teljesítés RIR-je törlődik JS-ben, natív telefonon és órán. Másolás soha nem viszi át. A natív előkészítés csak érvényes egész 0–10 vagy hiányzó RIR-t fogad.
 
-A haptika alapból bekapcsolt, az Edzés beállításai panelen mentett kapcsolóval. Sikeres, tartós kézi nyugta egyszer jelez 40 ms-ot; automatikus módban a meglévő időzítőjelzések maradnak. A másolás kézi, telefonos tulajdonban érhető el, legfeljebb 10 sorozatig; aktív automatikus mód alatt tiltott.
+A haptika alapból bekapcsolt, az Edzés beállításai panelen mentett kapcsolóval. Sikeres, tartós kézi nyugta egyszer jelez 40 ms-ot; automatikus módban a meglévő időzítőjelzések maradnak. A #228 kézi másolásgombját a felhasználó pontosítása alapján az alábbi automatikus előtöltés váltja ki.
+
+## #228 pontosítás – automatikus folytatás ugyanazon programnapból (2026-10-20)
+
+A felhasználó a külön másolásgomb helyett azt kéri, hogy például a négy nappal későbbi A nap a legutóbbi A nap tényleges súly-/ismétlésértékeivel induljon. Nincs külön gomb, felugró kérdés vagy bekapcsolandó opció.
+
+- Egyező programazonosító + napazonosító; a legutóbbi mentett, befejezett alkalom időrendben, nem a tömb sorrendjéből. Másik nap/program, draft, törölt és jövőbeli bejegyzés kizárt.
+- Csak az azonos gyakorlat azonos sorszámú, teljesített, érvényes erősítő sorozatának súlya és ismétlése kerül át. Eltérő terhelési/ismétlési egység, hiányzó vagy nem teljesített sor esetén az aktuális terv alapértékei maradnak. A jelenlegi terv sorozatszáma az irányadó.
+- Minden új sorozat done:false, új azonosító; nincs örökölt tényleges RIR, idő, GPS vagy teljesítési metaadat. Előtöltés csak új edzés létrehozásakor; a draft újranyitását és kézi módosításait nem írja felül.
+- Telefonos indítás és órára küldött programnapsablon közös kiválasztási logikát használ. Az óra a sablon ismétléseit is beolvassa, de saját új azonosítót generál; régi sablon ismétlés nélkül továbbra is működik.
+- A korábbi adat nem automatikus progresszió. Előtöltött értéket a legacy emelés nem ír felül. Az explicit Coach-jóváhagyás érintetlen előtöltés mellett is elérhető, kézi szerkesztés és teljesítés után továbbra is védett.
+- A sorozatmásolás gombja és CSS-e eltávolítva. Célzott modell-, integrált böngészős és Wear JSON/indítási tesztek frissítve.
+
+### Automatizálási UI-elv / Health
+A már engedélyezett, ismétlődő adatfrissítések automatikusan történjenek, állapotjelzéssel. Kézi művelet az első kapcsolódáshoz/engedélyhez, felhasználói döntéshez és hibajavításhoz szükséges. A jelenlegi Health-kód már tartalmaz appnyitási/előtéri frissítést, deduplikált olvasást és külön háttérengedélyt; ezt a #228 módosítás nem helyettesíti új szinkronfolyamattal. Teljes Health-UI egyszerűsítést vagy új háttérszinkront ez a commit nem állít elkészültnek.
+
+A korábban átadott `bd5c0dc` APK a régi másolásgombot tartalmazza; az új követelményhez új Actions-build és készülékes teszt kell. A felhasználó main-jóváhagyása továbbra is a készülékes validálástól függ.

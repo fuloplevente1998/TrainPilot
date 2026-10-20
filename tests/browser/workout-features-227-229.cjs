@@ -20,7 +20,7 @@ const server=http.createServer((req,res)=>{
   await page.goto('http://127.0.0.1:'+server.address().port+'/');await boot();
   await page.evaluate(()=>{
    const p={id:'features-e2e',name:'Feature E2E',location:'home',level:'all',builtin:false,days:[{id:'A',name:'A',exercises:['goblet-squat']}],
-    prescriptions:{'goblet-squat':{sets:2,reps:'8–12',rir:2,rest:30,weight:10,loadType:byId('goblet-squat').loadType}}};
+    prescriptions:{'goblet-squat':{sets:3,reps:'8–12',rir:2,rest:30,weight:10,loadType:byId('goblet-squat').loadType}}};
    db.set('programs',[...programs().filter(x=>x.id!==p.id),p]);db.set('activeProgramId',p.id);db.set('history',[]);db.set('draft',null);
    db.set('settings',{...settings(),trainingModes197:{schemaVersion:1,defaults:{trainingStyle:'normal',progressionMode:'rir'},explicitChoice:true,byProgram:{}}});go('plan');
   });
@@ -34,18 +34,10 @@ const server=http.createServer((req,res)=>{
   await rows().nth(0).locator('input[oninput*="weight"]').fill('12.5');await rows().nth(0).locator('input[oninput*="reps"]').fill('10');
   await rows().nth(0).locator('.check').click();
   assert.deepEqual(await page.evaluate(()=>testHaptics),[40],'Accepted manual set has one short cue');
-  await page.locator('.tp228-copy').first().click();
+  assert.equal(await page.locator('.tp228-copy').count(),0,'No manual copy button');
   assert.equal(await rows().count(),3);
-  const cloned=await page.evaluate(()=>state.session.exercises[0].sets.map(s=>({...s})));
-  assert.equal(cloned[2].weight,12.5);assert.equal(cloned[2].reps,'10');assert.equal(cloned[2].done,false);
-  assert.notEqual(cloned[2].setId,cloned[0].setId);assert.equal(Object.hasOwn(cloned[2],'actualRir'),false);
-  const failure=await page.evaluate(()=>{
-   const e=state.session.exercises[0],before=JSON.stringify(e.sets),base=persistDraft;
-   persistDraft=()=>{throw Error('injected storage failure');};
-   try{return {result:TrainPilotSetCopy228.copy(state.session,e,e.sets[0]),same:JSON.stringify(e.sets)===before};}finally{persistDraft=base;}
-  });assert.deepEqual(failure,{result:false,same:true});
   await rows().nth(1).locator('input[oninput*="reps"]').fill('10');await rows().nth(1).locator('.check').click();
-  await rows().nth(2).locator('.check').click();
+  await rows().nth(2).locator('input[oninput*="reps"]').fill('10');await rows().nth(2).locator('.check').click();
   await page.locator('#rf152Feedback button[onclick*="good"]').click();
   const inputs=page.locator('.tp229-rir input');assert.equal(await inputs.count(),3);
   assert.deepEqual(await inputs.evaluateAll(xs=>xs.map(x=>x.value)),['','',''],'No target or copied RIR observations');
@@ -56,9 +48,9 @@ const server=http.createServer((req,res)=>{
   for(const width of [320,412])for(const lang of ['hu','en','de','ro']){
    await page.setViewportSize({width,height:800});
    await page.evaluate(lang=>{db.set('language',lang);renderWorkout();},lang);
-   const large=await page.addStyleTag({content:'.tp229-rir,.tp228-copy{font-size:150%!important}'});
+   const large=await page.addStyleTag({content:'.tp229-rir{font-size:150%!important}'});
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'Feature fields fit localized large text '+width);
-   assert.ok((await page.locator('.tp228-copy').first().boundingBox()).height>=44);await large.evaluate(el=>el.remove());
+   assert.equal(await page.locator('.tp228-copy').count(),0);await large.evaluate(el=>el.remove());
   }
   await page.evaluate(()=>{db.set('language','hu');renderWorkout();});
   const identities=await page.evaluate(()=>state.session.exercises[0].sets.map(s=>s.setId));
@@ -72,6 +64,20 @@ const server=http.createServer((req,res)=>{
   assert.deepEqual(await page.evaluate(()=>history()[0].exercises[0].sets.map(s=>s.actualRir)),[0,4,2]);
   await page.locator('details.history').first().evaluate(x=>x.open=true);
   assert.match(await page.locator('.tp197-rir-history').first().innerText(),/1\.: 0.*2\.: 4.*3\.: 2/);
-  assert.deepEqual(errors,[]);console.log('PASS #227–#229 integrated phone flow: setting reload, explicit copy rollback/identity, one haptic per manual receipt, per-set RIR/snapshot, 4 languages/large text, reload and Journal');
+  await page.evaluate(()=>{
+   const saved=history()[0],other=JSON.parse(JSON.stringify(saved));other.id='other-day';other.dayId='B';
+   other.exercises[0].sets.forEach(s=>{s.weight=99;s.reps='99';});db.set('history',[other,saved]);
+   go('plan');startWorkout('A',null,'features-e2e');
+  });
+  assert.deepEqual(await page.evaluate(()=>state.session.exercises[0].sets.map(s=>[s.weight,s.reps,s.done,s.actualRir??null])),
+   [[12.5,'10',false,null],[10,'10',false,null],[10,'10',false,null]],'Repeated A uses saved A, not B, without completion or RIR');
+  assert.equal(await page.evaluate(old=>state.session.exercises[0].sets.every(s=>!old.includes(s.setId)),identities),true);
+  assert.equal(await page.locator('.tp228-copy').count(),0);
+  assert.deepEqual(await page.evaluate(()=>TrainPilotWearSync.makeHomeSnapshot().days.find(d=>d.id==='A').exercises[0].sets.map(s=>[s.weight,s.reps,s.done])),
+   [[12.5,'10',false],[10,'10',false],[10,'10',false]],'Watch day template uses the same history defaults');
+  await rows().nth(0).locator('input[oninput*="reps"]').fill('7');
+  await page.reload();await boot();await page.evaluate(()=>{if(!state.session)resumeDraft();else renderWorkout();});
+  assert.equal(await rows().nth(0).locator('input[oninput*="reps"]').inputValue(),'7','Draft reload never reapplies history');
+  assert.deepEqual(errors,[]);console.log('PASS #227–#229 integrated phone flow: setting reload, automatic same-day prefill/identity/draft preservation, one haptic per manual receipt, per-set RIR/snapshot, 4 languages/large text, reload and Journal');
  }finally{await browser?.close();await new Promise(done=>server.close(done));}
 })().catch(error=>{console.error(error);process.exitCode=1;});

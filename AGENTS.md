@@ -70,6 +70,12 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 
 ## Megőrzendő termékdöntések
 
+- Automatizálási UI-elv (2026-10-20): ugyanazon programnap új edzésének súlya és
+  ismétlése a legutóbbi megfelelő mentett alkalomból töltődjön, külön másolásgomb
+  nélkül. Teljesítettség/RIR/mérési adat nem öröklődik; draft és kézi módosítás védett.
+  Engedélyezett ismétlődő szinkronhoz ne legyen kötelező gombnyomás. Kapcsolódás,
+  rendszerengedély, tényleges teljesítés és terhelési döntés továbbra is tudatos.
+
 - Egy kanonikus edzés, stabil workout/set azonosítók, egy időzítő-tulajdonos.
   Átadás visszaigazolt és tartós; bizonytalan állapot szünetben marad. Kapcsolat
   visszatérése nem indíthat néma tulajdonosváltást vagy párhuzamos időzítőt.

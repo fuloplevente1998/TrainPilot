@@ -3,6 +3,8 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const app=fs.readFileSync('www/app.js','utf8');
+const prefill=(fs.existsSync('www/v12.js')?fs.readFileSync('www/v12.js','utf8'):app).split('// @prefill228-start\n')[1].split('// @prefill228-end')[0];
+
 const source=fs.existsSync('www/wear-sync.js')?fs.readFileSync('www/wear-sync.js','utf8'):
  app.match(/\/\/ @section wear-sync\.js\n([\s\S]*?)\/\/ @endsection wear-sync\.js/)[1];
 const start='2026-10-09T20:00:00Z',finish='2026-10-09T20:45:00Z';
@@ -27,7 +29,7 @@ const ctx=vm.createContext({crypto:require("node:crypto").webcrypto,window:win,d
  programDay:(p,id)=>p?.days?.find(d=>d.id===id),programById:()=>program,
  byId:id=>id==='pushup'?exercise:null,scheduled:()=>[],nextPlanned:()=>null,nextWorkout:()=> 'A',
  settings:()=>({rest:90})});
-vm.runInContext(source,ctx);
+vm.runInContext(prefill+'\n'+source,ctx);
 const snapshot=()=>JSON.parse(JSON.stringify(win.TrainPilotWearSync.makeHomeSnapshot()));
 {
  const home=snapshot();

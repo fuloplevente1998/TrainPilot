@@ -3,13 +3,15 @@
 Frissítve: **2026-10-20**. Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
-## Folyamatban – négy jóváhagyott új feature (#226–#229)
+## Folyamatban – #230, négy új feature (#226–#229)
 
-- Felhasználó 2026-10-20: „Ezt a 4 uj kepesseget epitsuk be :) Rogzitsuk fejlesztesnek, vagy featnek.” A korábbi „csak rögzítés” korlát erre a négy képességre feloldva; nincs általános dizájn- vagy main/release-engedély.
-- [Megvalósítási terv](plans/WORKOUT_FEEDBACK_AND_RECORDS.md), ág `feat/workout-records-feedback-rir`, alap `f309137c461c6cb3b39497ab46a0e764a7e7b077`.
-- #226 mentett eredmény PR-jelvénye: kanonikus modellre épített kijelzés, lokalizált UI és új modell/UI regressziók elkészültek; Actions még követendő.
-- #227 kapcsolható kézi sorozat-haptika következik; #228 kifejezett sorozatmásolás és #229 sorozatonkénti RIR ezután, külön kis lépésekben.
-- A korábbi PR-felismerés/lista, pihenőjelzések, súly-előtöltés és gyakorlat-RIR megőrzendő. Verzió **1.3.6 /2733**. Main/kiadott APK-k változatlanok; a négy feature még nincs lezárva vagy készüléken elfogadva.
+- Ág: `feat/workout-records-feedback-rir`; verzió **1.3.6 /2733**. [Terv](plans/WORKOUT_FEEDBACK_AND_RECORDS.md).
+- #226 PR-jelvény, #227 kézi sorozat-haptika és #229 sorozatonkénti tényleges RIR implementálva. A korábbi `bd5c0dc` forrás kapui sikeresek; készülékes elfogadás nincs.
+- **Új #228 követelmény:** a következő A nap a legutóbbi azonos program A nap súly-/ismétlésadataival induljon automatikusan; külön másolásgomb nélkül. Kód és modell/UI/Wear teszt frissítve, az aktuális commit Actions-eredményét ellenőrizni kell.
+- Aktuális terv sorozatszáma, friss azonosítók, üres teljesítettség/RIR; draft és kézi szerkesztés nem írható felül. Órás programnapsablon is átadja az ismétléseket.
+- Automatizálási UI-elv rögzítve: ismétlődő engedélyezett műveletek automatikusak. A Health meglévő appnyitási/előtéri szinkronja feltárva; teljes Health-UI átdolgozás nem része ennek a commitnak.
+- Helyben nincs shell: V8 szintaxis és célzott tiszta modell/Coach-guard sikeres. Teljes böngészős, natív és APK-kapuk Actionsben. Az új forrásra a régi zöld CI nem bizonyíték.
+- Következő: friss kapuk → azonos forrású APK-pár → A nap mentése/új A nap előtöltése + telefon/óra próba. **Main csak az új build felhasználói validálása után**; nincs verzióemelés/merge/release/issue-lezárás.
 
 ## Aktuális – #223 mainen, #214 külső előkészítése nyitott
 

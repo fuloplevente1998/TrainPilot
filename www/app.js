@@ -652,6 +652,52 @@ if(!window.TrainPilotBoot?.loading)initCloud();
 // @endsection app.js
 
 // @section v12.js
+// @prefill228-start
+/* #228: repeat the latest saved occurrence of this program day, before first persistence.
+ * Values are editable suggestions; no completion, RIR or measurement is inherited. */
+var tp228Strength=function(exercise){
+ const unit=String(exercise?.repUnit||'');
+ return !!exercise&&!['distance','time','gps'].includes(String(exercise.measurementType||'').toLowerCase())&&
+  ['', 'ism.','reps','/kar','/láb'].includes(unit);
+};
+var tp228Latest=function(rows,context,isDeleted){
+ if(!context?.programId||!context?.dayId)return null;
+ return (Array.isArray(rows)?rows:[]).filter(row=>{
+  if(!row||row.programId!==context.programId||(row.dayId||row.workout)!==context.dayId||
+   row.deletedAt||row.deleted===true||row.cancelled===true||row.status==='cancelled'||isDeleted?.(row))return false;
+  const start=Date.parse(row.started),end=Date.parse(row.finished);
+  return Number.isFinite(start)&&Number.isFinite(end)&&end>start&&end<=Date.now()&&Array.isArray(row.exercises);
+ }).sort((a,b)=>Date.parse(b.started)-Date.parse(a.started)||Date.parse(b.finished)-Date.parse(a.finished))[0]||null;
+};
+var tp228BuildSets=function(context,exercise,count,baseWeight,rows,options={}){
+ const strength=tp228Strength(exercise),latest=strength?tp228Latest(rows,context,options.isDeleted):null;
+ // Repeated exercise IDs are ambiguous; never guess which occurrence supplied a set.
+ const matches=latest?.exercises.filter(e=>e.id===exercise.id)||[];
+ const previous=matches.length===1?matches[0]:null;
+ const compatible=previous&&tp228Strength(previous)&&previous.loadType===exercise.loadType&&
+  String(previous.repUnit||'')===String(exercise.repUnit||'');
+ return Array.from({length:Math.max(1,Math.min(10,Number(count)||1))},(_,index)=>{
+  const set={set:index+1,weight:baseWeight,reps:'',done:false};
+  if(strength&&!options.template)set.setId=crypto.randomUUID();
+  const old=compatible?previous.sets?.[index]:null;
+  if(!old||old.done!==true||Number(old.leftSeconds)>0||Number(old.rightSeconds)>0||Number(old.distanceMeters)>0)return set;
+  const weight=String(old.weight??'').replace(',','.'),reps=String(old.reps??'');
+  if(!/^(?:\d+(?:\.\d+)?|\.\d+)$/.test(weight)||!Number.isFinite(Number(weight))||Number(weight)>100000||
+   !/^\d+$/.test(reps)||Number(reps)<1||Number(reps)>10000)return set;
+  set.weight=exercise.loadType==='bodyweight'?0:Number(weight);set.reps=reps;
+  if(!options.template)set.previousValues228={weight:set.weight,reps:set.reps};
+  return set;
+ });
+};
+var tp228PrefillSets=function(context,exercise,count,baseWeight,options={}){
+ return tp228BuildSets(context,exercise,count,baseWeight,typeof history==='function'?history():[],
+  {...options,isDeleted:typeof window.tp3HistoryIsDeleted==='function'?window.tp3HistoryIsDeleted:undefined});
+};
+var tp228Untouched=function(set){
+ return !!set?.previousValues228&&!set.done&&set.weight===set.previousValues228.weight&&set.reps===set.previousValues228.reps;
+};
+window.TrainPilotPrefill228={strength:tp228Strength,latest:tp228Latest,build:tp228BuildSets,untouched:tp228Untouched};
+// @prefill228-end
 var rf12BuiltinPrograms = function rf12BuiltinPrograms(){return [
 {id:'home-basic',name:'Otthoni A/B – Alap',location:'Otthon',level:'Kezdő',builtin:true,days:[{id:'A',name:'A',exercises:[...DEFAULT_PLAN.A]},{id:'B',name:'B',exercises:[...DEFAULT_PLAN.B]}]},
 {id:'home-level2',name:'Otthoni A/B – 2. szint',location:'Otthon',level:'Középhaladó',builtin:true,days:[{id:'A',name:'A',exercises:['goblet-squat','db-floor-press','one-arm-row','rdl','hammer-curl','plank']},{id:'B',name:'B',exercises:['bulgarian-split-squat','db-ohp','db-pullover','close-pushup','lateral-raise','crunch']}]},
@@ -756,7 +802,7 @@ planScreen=function(){const p=activeProgram();return shell(`<main><div class="he
 showWorkout=function(dayId){const p=activeProgram(),d=programDay(p,dayId);state.workout=dayId;state.tab='plan';render(shell(`<main><div class="hero"><h1>${esc(p.name)} • ${esc(d.name)}</h1><div class="muted">${d.exercises.length} gyakorlat</div></div>${d.exercises.map((id,i)=>exCard(byId(id),i,d.id)).join('')}<button class="btn block" onclick="startWorkout('${d.id}')">Edzés indítása</button></main>`));};
 showExercise=function(dayId,i){const p=activeProgram(),d=programDay(p,dayId),e=byId(d.exercises[i]);state.tab='plan';render(shell(`<main><button class="btn secondary" onclick="showWorkout('${dayId}')">← Vissza</button><br><br><div class="card detail"><h2>${esc(e.hu)}</h2><div class="en">${esc(e.en)}</div><div class="meta">${e.sets} × ${esc(e.reps)} • ${e.weight?e.weight+' '+esc(e.unit):esc(e.unit)}</div><br><span class="badge">${esc(e.target)}</span><span class="badge">${esc(e.equipment)}</span>${motionDemo(e.id)}<p class="note">${esc(e.notes)}</p></div></main>`));};
 
-startWorkout=function(dayId,scheduleId=null,programId=null){if(db.get('draft',null)&&!confirm('Új edzést indítasz? A félbehagyott edzés helyére ez kerül.'))return;const p=programById(programId)||activeProgram(),d=programDay(p,dayId);if(!d){alert('Nincs ilyen programnap.');return;}state.tab='plan';state.workout=d.id;state.current=0;state.session={programId:p.id,programName:p.name,dayId:d.id,workout:d.id,...(scheduleId?{scheduleId}:{}),started:new Date().toISOString(),exercises:d.exercises.map(id=>{const e=byId(id),prev=findLastExercise(id);return {id,hu:e.hu,en:e.en,loadType:e.loadType,repUnit:e.repUnit,sets:Array.from({length:e.sets},(_,i)=>({set:i+1,weight:prev?.loadType===e.loadType?(prev?.sets?.[i]?.weight??e.weight):e.weight,reps:'',done:false}))};})};renderWorkout();const startedSession=state.session,fromWatch=window.TrainPilotWearSync?.isStartingFromWatch?.()===true;Promise.resolve().then(()=>window.TrainPilotWearSync?.phoneWorkoutStarted?.(startedSession,{fromWatch}));};
+startWorkout=function(dayId,scheduleId=null,programId=null){if(db.get('draft',null)&&!confirm('Új edzést indítasz? A félbehagyott edzés helyére ez kerül.'))return;const p=programById(programId)||activeProgram(),d=programDay(p,dayId);if(!d){alert('Nincs ilyen programnap.');return;}state.tab='plan';state.workout=d.id;state.current=0;state.session={programId:p.id,programName:p.name,dayId:d.id,workout:d.id,...(scheduleId?{scheduleId}:{}),started:new Date().toISOString(),exercises:d.exercises.map(id=>{const e=byId(id);return {id,hu:e.hu,en:e.en,loadType:e.loadType,repUnit:e.repUnit,sets:tp228PrefillSets({programId:p.id,dayId:d.id},e,e.sets,e.weight)};})};renderWorkout();const startedSession=state.session,fromWatch=window.TrainPilotWearSync?.isStartingFromWatch?.()===true;Promise.resolve().then(()=>window.TrainPilotWearSync?.phoneWorkoutStarted?.(startedSession,{fromWatch}));};
 
 const rf12FinishWorkout=finishWorkout;finishWorkout=function(){if(!state.session)return;const scheduleId=state.session.scheduleId;rf12FinishWorkout.apply(this,arguments);if(scheduleId){const s=scheduled(),i=s.findIndex(x=>x.id===scheduleId);if(i>=0){s[i]={...s[i],status:'completed',updatedAt:Date.now()};db.set('scheduled',s);}}};
 renderWorkout=function(){persistDraft();const i=state.current,p=state.session.exercises.map(x=>x.id),e=byId(p[i]),se=state.session.exercises[i],pct=Math.round((i/p.length)*100);render(shell(`<main><div class="hero"><span class="badge">${esc(state.session.programName||'Edzés')} • ${esc(state.session.dayId||state.workout)}</span><h1>${i+1}/${p.length}</h1><div class="muted">${esc(e.hu)}</div><div class="progress"><div style="width:${pct}%"></div></div></div><div class="card detail"><h2>${esc(e.hu)}</h2><div class="en">${esc(e.en)}</div><div class="meta">Cél: ${e.sets} × ${esc(e.reps)}</div>${motionDemo(e.id)}<p class="note">${esc(e.notes)}</p></div><div class="section">Sorozatok</div>${se.sets.map((s,si)=>`<div class="row"><div class="num">${si+1}</div>${e.loadType==='bodyweight'?'<span class="small muted">Testsúly</span>':`<label class="small">${loadLabel(e.loadType)}<input class="field" inputmode="decimal" value="${s.weight}" oninput="upd(${i},${si},'weight',this.value)"></label>`}<label class="small">${e.repUnit}<input class="field" inputmode="numeric" placeholder="${esc(e.reps)}" value="${esc(s.reps)}" oninput="upd(${i},${si},'reps',this.value)"></label><button class="check ${s.done?'done':''}" onclick="toggleSet(${i},${si})">${s.done?'✓':'OK'}</button></div>`).join('')}<br><button class="btn block" onclick="nextExercise()">${i===p.length-1?'Edzés befejezése':'Következő gyakorlat'}</button><br><br><button class="btn secondary block" onclick="prevExercise()" ${i===0?'disabled':''}>Előző</button></main>`));};
@@ -938,7 +984,7 @@ const rf13Programs=programsScreen;programsScreen=function(){return rf13Programs(
 const rf13Settings=settingsScreen;settingsScreen=function(){return rf13Settings().replace('<main>','<main><div class="grid2"><button class="btn" onclick="profileScreen()">Személyes profil</button><button class="btn secondary" onclick="healthScreen()">Óra és egészségadatok</button></div>');};
 saveSettings=function(){db.set('settings',{...settings(),rest:Math.max(30,Math.min(300,Number($('#rest').value)||90))});alert('Mentve.');};
 // Keep prescriptions in the program/session, never overwrite another program's exercise defaults.
-const rf13Start=startWorkout;startWorkout=function(dayId,scheduleId=null,programId=null){const before=state.session;state.prescriptionProgramId=programId||activeProgramId();try{rf13Start(dayId,scheduleId,programId);}finally{state.prescriptionProgramId=null;}if(!state.session||state.session===before)return;const p=programById(state.session.programId);if(p?.prescriptions){state.session.exercises=state.session.exercises.map(e=>{const rx=p.prescriptions[e.id];if(!rx)return e;const previous=history().filter(h=>h.programId===p.id).flatMap(h=>h.exercises).find(x=>x.id===e.id);return {...e,prescription:{...rx},sets:Array.from({length:rx.sets},(_,i)=>({set:i+1,weight:previous?.sets[i]?.weight??(e.loadType==='bodyweight'?0:rx.trial&&Number(rx.weight)===0?'':(rx.weight??'')),reps:'',done:false}))};});renderWorkout();}};
+const rf13Start=startWorkout;startWorkout=function(dayId,scheduleId=null,programId=null){const before=state.session;state.prescriptionProgramId=programId||activeProgramId();try{rf13Start(dayId,scheduleId,programId);}finally{state.prescriptionProgramId=null;}if(!state.session||state.session===before)return;const p=programById(state.session.programId);if(p?.prescriptions){state.session.exercises=state.session.exercises.map(e=>{const rx=p.prescriptions[e.id];if(!rx)return e;return {...e,prescription:{...rx},sets:tp228PrefillSets(state.session,{...byId(e.id),...e},rx.sets,e.loadType==='bodyweight'?0:rx.trial&&Number(rx.weight)===0?'':(rx.weight??''))};});renderWorkout();}};
 const rf13Rest=startRest;startRest=function(){rf13Rest();const rx=state.session?.exercises[state.current]?.prescription;if(rx){state.timer=rx.rest;state.restEndAt=Date.now()+state.timer*1000;}};
 // Finish only marks the calendar after the history write really succeeded.
 finishWorkout=function(){if(!state.session)return;const s=state.session;rf12FinishWorkout.apply(this,arguments);if(state.session)return;if(s.scheduleId){const items=scheduled(),i=items.findIndex(x=>x.id===s.scheduleId);if(i>=0){items[i]={...items[i],status:'completed',updatedAt:Date.now()};db.set('scheduled',items);}}if(window.TrainPilotWorkoutFeedback)TrainPilotWorkoutFeedback.afterFinish(s,arguments[0]);else if(arguments[0]?.wearSilent!==true&&arguments[0]?.silent!==true&&arguments[0]?.wearConfirmed!==true)feedbackScreen(s.started);};
@@ -5771,7 +5817,7 @@ rf152ApplySuggestions=function rf152ApplySuggestions(){
    e.rf152Recommendation={...r,action:'hold',autoApply:false,text:'A kiválasztott progressziós mód külön Coach-jóváhagyást kér.'};
   }else{
    e.rf152Recommendation=r;
-   if(r.action==='increase'&&r.autoApply===true&&Number.isFinite(r.weight))for(const s of e.sets||[])s.weight=r.weight;
+   if(r.action==='increase'&&r.autoApply===true&&Number.isFinite(r.weight)&&!e.sets?.some(s=>s.previousValues228))for(const s of e.sets||[])s.weight=r.weight;
   }
  }
  persistDraft();
@@ -17280,9 +17326,6 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const measurementType=String(rx.measurementType||source.measurementType||'');
    const setCount=Math.max(1,Math.min(10,Number(rx.sets||source.sets)||1));
    const baseWeight=Number.isFinite(Number(rx.weight))?Number(rx.weight):(Number(source.weight)||0);
-   let previous=null,recommendation=null;
-   try{if(typeof findLastExercise==='function')previous=findLastExercise(id)}catch(_){}
-   try{if(typeof rf152Recommendation==='function')recommendation=rf152Recommendation(id)}catch(_){}
    return {
     id:String(id),
     name:exerciseName(source,lang),
@@ -17290,15 +17333,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
     repUnit,
     measurementType,
     targetReps:String(rx.reps||source.reps||''),
-    sets:Array.from({length:setCount},(_,index)=>{
-     let weight=baseWeight;
-     if(previous?.loadType===loadType){
-      const old=previous?.sets?.[index]?.weight??previous?.sets?.[0]?.weight;
-      if(old!==undefined&&old!==null&&old!=='')weight=Number(old)||0;
-     }
-     if(recommendation?.action==='increase'&&Number.isFinite(Number(recommendation.weight)))weight=Number(recommendation.weight);
-     return {set:index+1,reps:'',weight:loadType==='bodyweight'?0:weight,done:false,leftSeconds:0,rightSeconds:0,distanceMeters:0};
-    })
+    sets:tp228PrefillSets({programId:program.id,dayId:day.id},
+     {id,loadType,repUnit,measurementType},setCount,loadType==='bodyweight'?0:baseWeight,{template:true})
+     .map(set=>({...set,leftSeconds:0,rightSeconds:0,distanceMeters:0}))
    };
   }).filter(Boolean);
   return {
@@ -19749,10 +19786,10 @@ var tp197UiCancel,tp197UiRequestSave,tp197UiApprove,tp197UiUndo;
 /* #197 step 6: explanatory Coach recommendations. Never modify a session from
  * a suggestion; load changes require a second, explicit approval action. */
 var TP197_COACH_I18N={
- hu:{title:'Coach • progresszió',preview:'Javaslat, nincs alkalmazva',hold:'Súly tartása',increase:'Kis súlyemelés',reps:'Célismétlés növelése',variation:'Nehezebb gyakorlatváltozat',mode:'Választott módszer',history:'Korábbi alkalmak',reason:'Indok',current:'Korábbi súly',proposed:'Javasolt súly',sets:'Javasolt munkasorozat',reptarget:'Javasolt ismétlések',action:'Javaslat ellenőrzése',approve:'Jóváhagyom a súly módosítását',cancel:'Mégse',done:'A javasolt súly már be van állítva.',blocked:'Edzés közben megváltozott az állapot, vagy az óra vezérli. Nincs módosítás.',notice:'A sorozatok, ismétlések és a HIT volumenjavaslat csak előnézet; a teljesített ismétléseket nem írjuk előre.',reasonMap:{'pain':'Fájdalomjelzés: nincs emelés','low-readiness':'Gyenge regeneráció: nincs emelés','high-effort':'Túl nehéz előző edzés','incomplete':'Hiányosan teljesített előzmény','rir-feedback-missing':'Nincs rögzített tényleges RIR','insufficient-history':'Még kevés megfelelő edzéselőzmény','double-stable-top':'Három stabil felső cél teljesítve','linear-stable-performance':'Két stabil szabályos edzés','rir-stable-reserve':'Tartósan nagyobb tényleges RIR','double-next-repetition':'Ismétlések fokozatos emelése','non-strength-activity':'Távolsági/időalapú gyakorlatnál nincs súlyjavaslat'}},
- en:{title:'Coach • progression',preview:'Suggestion, not applied',hold:'Hold load',increase:'Small load increase',reps:'Increase repetition target',variation:'Harder exercise variation',mode:'Selected method',history:'Recent workouts',reason:'Why',current:'Previous load',proposed:'Suggested load',sets:'Suggested working sets',reptarget:'Suggested repetitions',action:'Review suggestion',approve:'Confirm load change',cancel:'Cancel',done:'The proposed load is already set.',blocked:'Workout state changed or the watch is in control. Nothing was modified.',notice:'Sets, repetitions and HIT volume remain advisory; completed repetitions are never prefilled.',reasonMap:{'pain':'Pain feedback: do not increase','low-readiness':'Poor recovery: do not increase','high-effort':'Previous effort too high','incomplete':'Incomplete prior workout','rir-feedback-missing':'Actual RIR not recorded','insufficient-history':'Not enough suitable history','double-stable-top':'Three stable top-range completions','linear-stable-performance':'Two stable successful workouts','rir-stable-reserve':'Consistently larger actual RIR','double-next-repetition':'Increase repetitions gradually','non-strength-activity':'No weight change for distance or timed activities'}},
- de:{title:'Coach • Progression',preview:'Vorschlag, nicht übernommen',hold:'Gewicht halten',increase:'Kleine Gewichtserhöhung',reps:'Wiederholungsziel erhöhen',variation:'Schwerere Übungsvariante',mode:'Gewählte Methode',history:'Frühere Einheiten',reason:'Begründung',current:'Bisheriges Gewicht',proposed:'Vorgeschlagenes Gewicht',sets:'Empfohlene Arbeitssätze',reptarget:'Empfohlene Wiederholungen',action:'Vorschlag prüfen',approve:'Gewichtsänderung bestätigen',cancel:'Abbrechen',done:'Das vorgeschlagene Gewicht ist bereits gesetzt.',blocked:'Trainingszustand geändert oder Uhr steuert. Nichts geändert.',notice:'Sätze, Wiederholungen und HIT-Volumen sind nur Empfehlungen; absolvierte Wiederholungen werden nicht vorbefüllt.',reasonMap:{'pain':'Schmerzen: nicht erhöhen','low-readiness':'Schwache Regeneration','high-effort':'Zu hohe letzte Belastung','incomplete':'Unvollständige Vorleistung','rir-feedback-missing':'Tatsächlicher RIR fehlt','insufficient-history':'Noch zu wenig Verlauf','double-stable-top':'Drei stabile obere Ziele','linear-stable-performance':'Zwei stabile Einheiten','rir-stable-reserve':'Stabil größere RIR-Reserve','double-next-repetition':'Wiederholungen langsam steigern','non-strength-activity':'Kein Gewicht für Distanz- und Zeitaktivität'}},
- ro:{title:'Coach • progresie',preview:'Propunere neaplicată',hold:'Menține greutatea',increase:'Creștere mică a greutății',reps:'Crește ținta de repetări',variation:'Variantă mai dificilă',mode:'Metoda aleasă',history:'Antrenamente recente',reason:'Motiv',current:'Greutate anterioară',proposed:'Greutate propusă',sets:'Serii de lucru propuse',reptarget:'Repetări propuse',action:'Verifică propunerea',approve:'Confirmă modificarea greutății',cancel:'Anulează',done:'Greutatea propusă este deja setată.',blocked:'Starea s-a schimbat sau ceasul controlează. Nimic modificat.',notice:'Seriile, repetările și volumul HIT sunt sugestii; repetările efectuate nu sunt precompletate.',reasonMap:{'pain':'Durere: fără creștere','low-readiness':'Recuperare slabă','high-effort':'Efort precedent prea mare','incomplete':'Antrenament incomplet','rir-feedback-missing':'RIR real lipsă','insufficient-history':'Istoric insuficient','double-stable-top':'Trei performanțe stabile la țintă','linear-stable-performance':'Două antrenamente stabile','rir-stable-reserve':'Rezervă RIR constant mai mare','double-next-repetition':'Crește repetările treptat','non-strength-activity':'Fără greutate pentru exerciții pe distanță/timp'}}
+ hu:{title:'Coach • progresszió',preview:'Javaslat, nincs alkalmazva',hold:'Súly tartása',increase:'Kis súlyemelés',reps:'Célismétlés növelése',variation:'Nehezebb gyakorlatváltozat',mode:'Választott módszer',history:'Korábbi alkalmak',reason:'Indok',current:'Korábbi súly',proposed:'Javasolt súly',sets:'Javasolt munkasorozat',reptarget:'Javasolt ismétlések',action:'Javaslat ellenőrzése',approve:'Jóváhagyom a súly módosítását',cancel:'Mégse',done:'A javasolt súly már be van állítva.',blocked:'Edzés közben megváltozott az állapot, vagy az óra vezérli. Nincs módosítás.',notice:'Az előző azonos programnap súlya és ismétlése szerkeszthető alapérték. A teljesítést és a RIR-t most rögzítsd; a Coach-javaslat külön jóváhagyható.',reasonMap:{'pain':'Fájdalomjelzés: nincs emelés','low-readiness':'Gyenge regeneráció: nincs emelés','high-effort':'Túl nehéz előző edzés','incomplete':'Hiányosan teljesített előzmény','rir-feedback-missing':'Nincs rögzített tényleges RIR','insufficient-history':'Még kevés megfelelő edzéselőzmény','double-stable-top':'Három stabil felső cél teljesítve','linear-stable-performance':'Két stabil szabályos edzés','rir-stable-reserve':'Tartósan nagyobb tényleges RIR','double-next-repetition':'Ismétlések fokozatos emelése','non-strength-activity':'Távolsági/időalapú gyakorlatnál nincs súlyjavaslat'}},
+ en:{title:'Coach • progression',preview:'Suggestion, not applied',hold:'Hold load',increase:'Small load increase',reps:'Increase repetition target',variation:'Harder exercise variation',mode:'Selected method',history:'Recent workouts',reason:'Why',current:'Previous load',proposed:'Suggested load',sets:'Suggested working sets',reptarget:'Suggested repetitions',action:'Review suggestion',approve:'Confirm load change',cancel:'Cancel',done:'The proposed load is already set.',blocked:'Workout state changed or the watch is in control. Nothing was modified.',notice:'The last matching program day provides editable weight and rep defaults. Record completion and RIR for today; Coach suggestions require approval.',reasonMap:{'pain':'Pain feedback: do not increase','low-readiness':'Poor recovery: do not increase','high-effort':'Previous effort too high','incomplete':'Incomplete prior workout','rir-feedback-missing':'Actual RIR not recorded','insufficient-history':'Not enough suitable history','double-stable-top':'Three stable top-range completions','linear-stable-performance':'Two stable successful workouts','rir-stable-reserve':'Consistently larger actual RIR','double-next-repetition':'Increase repetitions gradually','non-strength-activity':'No weight change for distance or timed activities'}},
+ de:{title:'Coach • Progression',preview:'Vorschlag, nicht übernommen',hold:'Gewicht halten',increase:'Kleine Gewichtserhöhung',reps:'Wiederholungsziel erhöhen',variation:'Schwerere Übungsvariante',mode:'Gewählte Methode',history:'Frühere Einheiten',reason:'Begründung',current:'Bisheriges Gewicht',proposed:'Vorgeschlagenes Gewicht',sets:'Empfohlene Arbeitssätze',reptarget:'Empfohlene Wiederholungen',action:'Vorschlag prüfen',approve:'Gewichtsänderung bestätigen',cancel:'Abbrechen',done:'Das vorgeschlagene Gewicht ist bereits gesetzt.',blocked:'Trainingszustand geändert oder Uhr steuert. Nichts geändert.',notice:'Gewicht und Wiederholungen des letzten gleichen Programmtags sind bearbeitbare Vorgaben. Abschluss und RIR werden neu erfasst; Coach-Vorschläge benötigen Bestätigung.',reasonMap:{'pain':'Schmerzen: nicht erhöhen','low-readiness':'Schwache Regeneration','high-effort':'Zu hohe letzte Belastung','incomplete':'Unvollständige Vorleistung','rir-feedback-missing':'Tatsächlicher RIR fehlt','insufficient-history':'Noch zu wenig Verlauf','double-stable-top':'Drei stabile obere Ziele','linear-stable-performance':'Zwei stabile Einheiten','rir-stable-reserve':'Stabil größere RIR-Reserve','double-next-repetition':'Wiederholungen langsam steigern','non-strength-activity':'Kein Gewicht für Distanz- und Zeitaktivität'}},
+ ro:{title:'Coach • progresie',preview:'Propunere neaplicată',hold:'Menține greutatea',increase:'Creștere mică a greutății',reps:'Crește ținta de repetări',variation:'Variantă mai dificilă',mode:'Metoda aleasă',history:'Antrenamente recente',reason:'Motiv',current:'Greutate anterioară',proposed:'Greutate propusă',sets:'Serii de lucru propuse',reptarget:'Repetări propuse',action:'Verifică propunerea',approve:'Confirmă modificarea greutății',cancel:'Anulează',done:'Greutatea propusă este deja setată.',blocked:'Starea s-a schimbat sau ceasul controlează. Nimic modificat.',notice:'Greutatea și repetările ultimei zile identice din program sunt valori editabile. Finalizarea și RIR se înregistrează azi; propunerile Coach necesită confirmare.',reasonMap:{'pain':'Durere: fără creștere','low-readiness':'Recuperare slabă','high-effort':'Efort precedent prea mare','incomplete':'Antrenament incomplet','rir-feedback-missing':'RIR real lipsă','insufficient-history':'Istoric insuficient','double-stable-top':'Trei performanțe stabile la țintă','linear-stable-performance':'Două antrenamente stabile','rir-stable-reserve':'Rezervă RIR constant mai mare','double-next-repetition':'Crește repetările treptat','non-strength-activity':'Fără greutate pentru exerciții pe distanță/timp'}}
 };
 var tp197CoachT=function(){return TP197_COACH_I18N[typeof rf212Lang==='function'?rf212Lang():'hu']||TP197_COACH_I18N.hu};
 var tp197CoachInfo=function(id,pid){
@@ -19777,7 +19814,7 @@ var tp197CoachAllowed=function(session,se,info){
   session.timerOwner==='watch'||session.ownershipProtocol193===1&&session.timerOwner!=='phone'||
   window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||window.TrainPilotWearSync?.isApplyingCommand?.())return false;
  if(!session.programId||session.programId!==info.modes.programId||!Array.isArray(se.sets)||!se.sets.length)return false;
- if(se.sets.some(s=>s.done||s.reps!==''&&s.reps!==null&&s.reps!==undefined||s.completedAt||s.gpsRouteKey193))return false;
+ if(se.sets.some(s=>s.done||s.reps!==''&&s.reps!==null&&s.reps!==undefined&&!(typeof tp228Untouched==='function'&&tp228Untouched(s))||s.completedAt||s.gpsRouteKey193))return false;
  const w=Number(info.proposedWeight),b=Number(info.preview?.baseline?.weight);
  return Number.isFinite(w)&&Number.isFinite(b)&&w>b&&w-b<=10&&w>0;
 };
@@ -20221,75 +20258,6 @@ window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation}
 })();
 // @endsection set-haptic-227.js
 
-// @section set-copy-228.js
-/* An explicit copy adds values, never a completion, observation or timer. */
-(function(){
- 'use strict';
- const words={
- hu:{copy:'Másolás új sorozatba',note:'Súly és ismétlés másolása; az új sorozat még nincs teljesítve.',manual:'Másoláshoz válts kézi módra.',fail:'A sorozatot nem sikerült menteni.',limit:'Legfeljebb 10 sorozat lehet.'},
- en:{copy:'Copy to new set',note:'Copy weight and reps; the new set is not completed.',manual:'Switch to manual mode to copy.',fail:'The set could not be saved.',limit:'At most 10 sets are allowed.'},
- de:{copy:'In neuen Satz kopieren',note:'Gewicht und Wiederholungen kopieren; der neue Satz ist nicht abgeschlossen.',manual:'Zum Kopieren in den manuellen Modus wechseln.',fail:'Der Satz konnte nicht gespeichert werden.',limit:'Höchstens 10 Sätze sind erlaubt.'},
- ro:{copy:'Copiază într-o serie nouă',note:'Copiază greutatea și repetările; seria nouă nu este finalizată.',manual:'Treci în modul manual pentru copiere.',fail:'Seria nu a putut fi salvată.',limit:'Sunt permise maximum 10 serii.'}
- };
- const t=()=>words[typeof rf212Lang==='function'?rf212Lang():'hu']||words.en;
- function strength(exercise){
-  if(!exercise||!Array.isArray(exercise.sets))return false;
-  const lib=typeof byId==='function'?byId(exercise.id)||{}:{};
-  return !['distance','time','gps'].includes(String(exercise.measurementType||lib.measurementType||'').toLowerCase())&&
-   ['', 'ism.','reps','/kar','/láb'].includes(exercise.repUnit||lib.repUnit||'')&&
-   !exercise.sets.some(s=>Number(s.leftSeconds)>0||Number(s.rightSeconds)>0||Number(s.distanceMeters)>0);
- }
- function fresh(source,number,id){
-  if(!source||!/^\d+$/.test(String(source.reps))||Number(source.reps)<1||Number(source.reps)>10000)return null;
-  const raw=String(source.weight??'0').replace(',','.');
-  if(!/^(?:\d+(?:\.\d+)?|\.\d+)$/.test(raw)||!Number.isFinite(Number(raw))||Number(raw)>100000)return null;
-  return {set:number,setId:id,weight:Number(raw),reps:String(source.reps),done:false};
- }
- function writable(session){
-  return !!session&&(session.timerOwner||'phone')==='phone'&&!session.ownershipAwaitingResume193&&
-   !(session.ownershipProtocol193===1&&session.timerOwner!=='phone')&&!session.workoutPaused&&
-   !session.automatic162?.enabled&&!session.interval162?.running&&
-   !window.TrainPilotBackupBusy&&!window.TrainPilotRestore105Pending&&
-   !window.TrainPilotWearSync?.isApplyingCommand?.()&&!window.TrainPilotPhoneExecution162?.isReconciling?.();
- }
- function copy(session,exercise,source){
-  if(typeof state==='undefined'||state.session!==session||!session.exercises?.includes(exercise)||
-   !strength(exercise)||!writable(session)||!exercise.sets.includes(source)||exercise.sets.length>=10)return false;
-  const next=fresh(source,exercise.sets.length+1,crypto.randomUUID());if(!next)return false;
-  exercise.sets.push(next);
-  try{persistDraft();}catch(_){exercise.sets.pop();return false;}
-  void window.TrainPilotWearSync?.syncNow?.();return true;
- }
- function paint(){
-  const session=typeof state!=='undefined'?state.session:null,exercise=session?.exercises?.[state.current];
-  const main=document.querySelector('main.tp153-workout');if(!main||!strength(exercise))return;
-  main.querySelectorAll('.tp228-copy-controls').forEach(node=>node.remove());
-  if((session.timerOwner||'phone')!=='phone'||session.ownershipAwaitingResume193)return;
-  const rows=[...main.querySelectorAll('.tp153-set-row')];
-  rows.forEach((row,index)=>{
-   const source=exercise.sets[index];if(!source||!fresh(source,1,'preview'))return;
-   const wrap=document.createElement('div');wrap.className='tp228-copy-controls';
-   const button=document.createElement('button');button.type='button';button.className='btn secondary tp228-copy';
-   button.textContent=t().copy;button.setAttribute('aria-label',(index+1)+'. '+t().copy);
-   button.disabled=!writable(session)||exercise.sets.length>=10;
-   button.title=exercise.sets.length>=10?t().limit:session.automatic162?.enabled?t().manual:t().note;
-   const status=document.createElement('span');status.className='small muted';status.setAttribute('role','status');
-   button.addEventListener('click',()=>{
-    if(copy(session,exercise,source)){
-     renderWorkout();document.querySelectorAll('.tp153-set-row').item(exercise.sets.length-1)?.querySelector('input')?.focus({preventScroll:true});
-    }else status.textContent=t().fail;
-   });
-   wrap.append(button,status);row.insertAdjacentElement('afterend',wrap);
-  });
- }
- window.TrainPilotSetCopy228={strength,fresh,writable,copy,paint};
- if(typeof document!=='undefined')window.addEventListener?.('DOMContentLoaded',()=>{
-  const base=window.renderWorkout;if(typeof base==='function')window.renderWorkout=function(){const result=base.apply(this,arguments);paint();return result;};
-  document.addEventListener('change',event=>{if(event.target?.closest?.('.tp153-set-row'))paint();});
-  paint();
- });
-})();
-// @endsection set-copy-228.js
 
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
