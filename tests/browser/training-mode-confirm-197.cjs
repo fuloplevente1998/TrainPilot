@@ -24,6 +24,7 @@ const server=http.createServer((req,res)=>{
   }));
   await page.locator('#tp197-mode-global').evaluate(el=>el.open=true);
   async function choose(field,value){
+   const panel=page.locator('#tp197-mode-global');if(!await panel.evaluate(el=>el.open))await panel.locator(':scope > summary').click();
    const id=field==='trainingStyle'?'tp197-mode-global-style':'tp197-mode-global-progress';
    const picker=page.locator('#tp197-mode-global .tp-select').filter({has:page.locator('#'+id)});
    await picker.locator('.tp-select-trigger').scrollIntoViewIfNeeded();
@@ -36,6 +37,7 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.evaluate(()=>settings().trainingModes197||null),baseline.modes,'first click cannot save');
   await page.locator('#tp197-mode-global .tp197-confirm button').last().click(); // Cancel
   assert.equal(await page.locator('#tp197-mode-global-style').inputValue(),'normal');
+  assert.equal(await page.locator('#tp197-mode-global').evaluate(el=>el.open),false,'Cancel visibly closes the editor');
   assert.equal(await page.evaluate(()=>settings().trainingModes197||null),baseline.modes);
   await choose('trainingStyle','hit');
   await choose('progressionMode','rir');

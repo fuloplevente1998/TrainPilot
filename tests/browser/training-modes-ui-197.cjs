@@ -65,10 +65,22 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.locator('#tp197-mode-program').evaluate(el=>el.open),true,'Mode panel stays open');
   // The shared floating menu selected HIT without invoking Android's native picker.
   assert.equal(await page.locator('#tp197-mode-program-style').inputValue(),'hit');
+  await page.locator('#tp197-mode-program .tp197-actions button[onclick*="tp197UiCancel"]').click();
+  assert.equal(await page.locator('#tp197-mode-program').evaluate(el=>el.open),false,'Cancel closes the program editor');
+  assert.equal(await page.locator('#tp197-mode-program-style').inputValue(),'normal','Cancel restores saved selection');
+  assert.equal(await page.locator('.tp1511-training').evaluate(el=>el.open),true,'Outer workout settings stay open');
+  const closedBounds=await page.locator('#tp197-mode-program').boundingBox();
+  assert.ok(closedBounds.height>=44&&closedBounds.height<=52,'Collapsed mode row uses compact disclosure height');
+  await page.locator('#tp197-mode-program > summary').click();
+  assert.equal(await page.locator('#tp197-mode-program-style').inputValue(),'normal','Reopening does not restore cancelled edits');
   const after=await page.evaluate(()=>JSON.stringify([settings(),programs(),history(),db.get('draft',null)]));
   assert.equal(after,saved,'UI preview changed persisted settings/program/history/draft');
   for(const width of [320,360,393]){
    await page.setViewportSize({width,height:844});
+   await page.locator('#tp197-mode-program').evaluate(el=>el.open=false);
+   const compact=await page.locator('#tp197-mode-program').boundingBox();
+   assert.ok(compact.height>=44&&compact.height<=60,'Compact disclosure at '+width+'px');
+   await page.locator('#tp197-mode-program > summary').click();
    const result=await page.locator('#tp197-mode-program').evaluate(el=>({
     panel:el.scrollWidth-el.clientWidth,
     controls:[...el.querySelectorAll('select')].map(x=>x.scrollWidth-x.clientWidth),
