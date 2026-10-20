@@ -19527,14 +19527,20 @@ var tp197UiPanel=function(scope,pid,expanded=false){
  const t=tp197UiText(),choice=tp197UiChoice(scope,pid),key=tp197UiKey(scope,pid),id=scope==="program"?"tp197-mode-program":"tp197-mode-global";
  const options=(values,selected)=>values.map(([value,label])=>'<option value="'+value+'"'+(selected===value?' selected':'')+'>'+esc(label)+'</option>').join("");
  const scopeArg=scope==="program"?"'program',"+esc(JSON.stringify(String(pid))):"'global',null";
+ const picker=(field,short,values,selected)=>{
+  const pickerId=id+'-'+short,selectedLabel=values.find(v=>v[0]===selected)?.[1]||selected;
+  // The hidden native control preserves existing test/backup compatibility.
+  // Users only interact with the inline menu; Android WebView cannot open its platform picker.
+  const native='<select hidden aria-hidden="true" tabindex="-1" id="'+pickerId+'" onchange="tp197UiSet('+scopeArg+',\''+field+'\',this.value)">'+options(values,selected)+'</select>';
+  const buttons=values.map(([v,label])=>'<button type="button" class="tp197-choice-option'+(v===selected?' is-selected':'')+'" aria-pressed="'+String(v===selected)+'" onclick="tp197UiChoose('+scopeArg+',\''+field+'\',\''+v+'\')">'+esc(label)+(v===selected?'<span aria-hidden="true">✓</span>':'')+'</button>').join('');
+  return native+'<details class="tp197-choice" data-field="'+field+'"><summary aria-label="'+esc(field==='trainingStyle'?t.style:t.progress)+': '+selectedLabel+'"><span class="tp197-choice-label">'+esc(selectedLabel)+'</span><span class="tp197-choice-chevron" aria-hidden="true">⌄</span></summary><div class="tp197-choice-options">'+buttons+'</div></details>';
+ };
  return '<details class="card tp197-mode-panel" id="'+id+'" data-tp197-scope="'+scope+'" '+(expanded?'open':'')+'>'+
-  '<summary><strong>'+esc(t.title)+'</strong><span class="small muted">'+esc(scope==="program"?t.program:t.global)+'</span></summary>'+
-  '<div class="tp197-ui-body"><label for="'+id+'-style">'+esc(t.style)+'</label>'+
-  '<select class="field" id="'+id+'-style" onchange="tp197UiSet('+scopeArg+',\'trainingStyle\',this.value)">'+
-  options([["normal",t.normal],["hit",t.hit]],choice.trainingStyle)+'</select>'+
-  '<label for="'+id+'-progress">'+esc(t.progress)+'</label>'+
-  '<select class="field" id="'+id+'-progress" onchange="tp197UiSet('+scopeArg+',\'progressionMode\',this.value)">'+
-  options([["double",t.double],["linear",t.linear],["rir",t.rir]],choice.progressionMode)+'</select>'+
+  '<summary><strong>'+esc(t.title)+'</strong><span class="small muted">'+esc(scope==="program"?t.program:t.global)+'</span><span class="tp197-panel-chevron" aria-hidden="true">⌄</span></summary>'+
+  '<div class="tp197-ui-body"><label>'+esc(t.style)+'</label>'+
+  picker('trainingStyle','style',[["normal",t.normal],["hit",t.hit]],choice.trainingStyle)+
+  '<label>'+esc(t.progress)+'</label>'+
+  picker('progressionMode','progress',[["double",t.double],["linear",t.linear],["rir",t.rir]],choice.progressionMode)+
   tp197UiPreview(scope,pid,choice)+
   '<p class="small muted tp197-ui-notice">'+esc(t.notice)+'</p>'+
   '<button type="button" class="btn secondary tp197-ui-reset" onclick="tp197UiReset('+scopeArg+')">'+esc(t.restore)+'</button></div></details>';
@@ -19549,10 +19555,18 @@ var tp197UiSet=function(scope,pid,field,value){
  tp197UiRefresh(scope,pid);
  return true;
 };
+// Mode changes update only the panel body, not the outer workout/settings view.
 var tp197UiRefresh=function(scope,pid){
  const id=scope==="program"?"tp197-mode-program":"tp197-mode-global",panel=document.getElementById(id);
  if(!panel)return;
- const open=panel.open;panel.outerHTML=tp197UiPanel(scope,pid,open);
+ const container=document.createElement('div');
+ container.innerHTML=tp197UiPanel(scope,pid,panel.open);
+ const next=container.firstElementChild,body=panel.querySelector('.tp197-ui-body'),updated=next?.querySelector('.tp197-ui-body');
+ if(body&&updated)body.innerHTML=updated.innerHTML;
+ else if(next)panel.replaceWith(next);
+};
+var tp197UiChoose=function(scope,pid,field,value){
+ return tp197UiSet(scope,pid,field,value);
 };
 var tp197UiReset=function(scope,pid){delete tp197UiPending[tp197UiKey(scope,pid)];tp197UiRefresh(scope,pid);};
 const tp197BaseSettings=settingsScreen;
@@ -19569,7 +19583,7 @@ tp1511TrainingPanel=function(){
  return html.replace('<div class="tp1511-training-body">','<div class="tp1511-training-body">'+tp197UiPanel("program",pid,true));
 };
 const tp197Css=document.createElement("style");tp197Css.id="tp197ModeUiStyle";
-tp197Css.textContent='.tp197-preview-reason{padding-top:4px;border-top:1px solid var(--line)}.tp1511-training-body>.tp197-mode-panel{margin:0 0 12px;padding:10px!important}.tp197-mode-panel{box-sizing:border-box;max-width:100%;min-width:0;margin:10px 0;padding:12px!important}.tp197-mode-panel>summary{cursor:pointer;display:flex;align-items:flex-start;flex-wrap:wrap;gap:4px 12px;min-height:40px}.tp197-mode-panel>summary strong{flex:1 1 180px}.tp197-ui-body{display:grid;gap:8px;min-width:0;padding-top:12px}.tp197-ui-body label{font-size:13px;font-weight:700}.tp197-ui-body select{box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:44px}.tp197-ui-preview{min-width:0;padding:11px;border-radius:12px;border:1px solid var(--line);background:var(--card2)}.tp197-ui-preview p{margin:6px 0;overflow-wrap:anywhere}.tp197-ui-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px}.tp197-ui-comparison>*{min-width:0;overflow-wrap:anywhere}.tp197-ui-comparison>span{font-weight:700;font-size:12px}.tp197-ui-reset{min-height:44px;width:100%}.tp197-ui-notice{line-height:1.45}';
+tp197Css.textContent='.tp197-preview-reason{padding-top:4px;border-top:1px solid var(--line)}.tp1511-training-body>.tp197-mode-panel{margin:0 0 12px;padding:10px!important}.tp197-mode-panel{box-sizing:border-box;max-width:100%;min-width:0;margin:10px 0;padding:12px!important}.tp197-mode-panel>summary{cursor:pointer;display:flex;align-items:center;gap:6px;min-height:40px;list-style:none}.tp197-mode-panel>summary::-webkit-details-marker,.tp197-choice>summary::-webkit-details-marker{display:none}.tp197-mode-panel>summary strong{flex:1;min-width:0;overflow-wrap:anywhere}.tp197-mode-panel>summary .small{font-size:12px;flex:0 1 auto;text-align:right}.tp197-panel-chevron,.tp197-choice-chevron{font-size:22px;color:var(--accent);display:inline-block;transition:transform .15s;line-height:1}.tp197-mode-panel[open]>summary .tp197-panel-chevron,.tp197-choice[open]>summary .tp197-choice-chevron{transform:rotate(180deg)}.tp197-ui-body{display:grid;gap:8px;min-width:0;padding-top:12px}.tp197-ui-body label{font-size:13px;font-weight:700}.tp197-choice{border:1px solid var(--line);border-radius:12px;background:#10141c;min-width:0}.tp197-choice>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px;min-height:46px;font-weight:650}.tp197-choice>summary:focus-visible,.tp197-choice-option:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.tp197-choice-label{min-width:0;overflow-wrap:anywhere}.tp197-choice-options{display:grid;gap:4px;padding:4px 6px 7px;border-top:1px solid var(--line)}.tp197-choice-option{background:transparent;color:var(--text);border:0;border-radius:9px;text-align:left;padding:11px 9px;min-height:44px;font:inherit;display:flex;justify-content:space-between;align-items:center;gap:7px}.tp197-choice-option.is-selected{background:var(--card2);color:var(--accent)}.tp197-ui-preview{min-width:0;padding:11px;border-radius:12px;border:1px solid var(--line);background:var(--card2)}.tp197-ui-preview p{margin:6px 0;overflow-wrap:anywhere}.tp197-ui-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px}.tp197-ui-comparison>*{min-width:0;overflow-wrap:anywhere}.tp197-ui-comparison>span{font-weight:700;font-size:12px}.tp197-ui-reset{min-height:44px;width:100%}.tp197-ui-notice{line-height:1.45}.tp1511-training-body .tp1511-prog{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}.tp1511-training-body .tp1511-prog>label{display:block;min-width:0;padding:8px;border-radius:11px;border:1px solid var(--line);background:var(--card2);font-size:12px;line-height:1.3;overflow-wrap:anywhere}.tp1511-training-body .tp1511-prog input{box-sizing:border-box;width:100%;min-width:0;margin-top:6px;padding:8px;font-size:16px;min-height:42px}';
 document.head.appendChild(tp197Css);
 // @endsection training-modes-ui-197.js
 
