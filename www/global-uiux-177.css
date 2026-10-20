@@ -218,25 +218,6 @@ html body #app main.tp153-workout .tp153-set-row {
   outline-offset:2px!important;
   border-radius:12px; /* Visual outline only; not a new container/padding. */
 }
-
-/* AUDIT-001 & AUDIT-003: Touch target hit area and modal backdrop containment */
-.tp-active-set-remove, .tp3-mini-delete {
-  position: relative;
-}
-.tp-active-set-remove::before, .tp3-mini-delete::before {
-  content: '';
-  position: absolute;
-  top: -5px;
-  bottom: -5px;
-  left: -5px;
-  right: -5px;
-  min-width: 44px;
-  min-height: 44px;
-  z-index: 1;
-}
-.tp2628-dialog-backdrop, .tp3-planner-host, .tp163-route-veil {
-  overscroll-behavior: contain;
-}
 html body #tp155R4PanelHost[data-panel="coach"] .tp153-coach-metric:not(:focus-visible),
 html body #tp155R4PanelHost[data-panel="coach"] .tp151-coach-target > span {
   outline:1px solid var(--tp-ui-border)!important;
