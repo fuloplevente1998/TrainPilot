@@ -34,10 +34,9 @@ const server=http.createServer((req,res)=>{
    assert.equal(await page.locator('#tp197ActualRir').inputValue(),'','Target RIR must not prefill actual RIR');
   }
   async function choose(value){
-   const trigger=page.locator('.tp197-rir-field .tp-select-trigger');
-   await trigger.scrollIntoViewIfNeeded();await page.waitForTimeout(120);await trigger.click();
-   await page.locator('.tp197-rir-field .tp-select-option[data-value="'+value+'"]').click();
+   await page.locator('#tp197ActualRir').fill(value);
    assert.equal(await page.locator('#tp197ActualRir').inputValue(),value);
+   assert.equal(await page.locator('#tp197ActualRir').getAttribute('aria-invalid'),'false');
   }
   async function finish(){
    await page.locator('[data-tp-workout-next]').click();
@@ -69,6 +68,6 @@ const server=http.createServer((req,res)=>{
   await begin();await completeSet();await finish();
   assert.equal(await page.evaluate(()=>tp197ExercisePreview('goblet-squat','rir-e2e').reasonCode),'rir-feedback-missing','Optional skipped feedback is never inferred from the target');
   assert.deepEqual(errors,[]);
-  console.log('PASS #197 actual RIR E2E: real selector, zero/clear, draft reload, finish, visible Journal, persisted history and conservative next Coach recommendation without auto-apply');
+  console.log('PASS #197 actual RIR E2E: real numeric input, zero/clear, draft reload, finish, visible Journal, persisted history and conservative next Coach recommendation without auto-apply');
  }finally{await browser?.close();await new Promise(done=>server.close(done));}
 })().catch(err=>{console.error(err);process.exitCode=1});

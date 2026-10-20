@@ -57,6 +57,19 @@ ellenőrzi a Samsung-sort. A RIR E2E a mentett értéket is ellenőrzi a kijelz�
 Új azonos HEAD teljes CI szükséges. Main/verzió és Issue-státusz nem változott.
 
 
+### Következő RIR-javítás – 436f5271 után
+
+Quick **39390207301**: **154/154**, Performance **39390207296**: sikeres.
+Telefon **39390202535**: Chromium **5/6**; onboarding, Samsung és színteszt rendben.
+A RIR E2E igazolta a reloadot, Naplót és két valódi mentés utáni Coach-ajánlást,
+de a harmadik edzésnél a lebegő lista egyik opcióját a kártya elfedte.
+RIR UI: közvetlen, opcionális 0–10 számmező; input közben azonnali draftmentés,
+nincs mező-újrarajzolás/billentyűzetvesztés. Hibás szerkesztés törli a korábbi
+actualRir-t, így abból nem marad hamis mérés; aria-invalid jelzés. A beállítási
+edzésmód/progresszió közös dropdownja változatlan. Célzott Node/szintaxis/diff zöld;
+a teljes új CI még szükséges. Nincs main/verzióemelés vagy készülékes elfogadás.
+
+
 ## #216 lezárva, 1.3.6 mainen
 
 Felhasználói engedély: **„Rendben, akkor mehet, zarhatjuk ezt a teljes részt es akkor 1.3.6.lesz”**.

@@ -19866,7 +19866,7 @@ var tp197RirEligible=function(session,exercise){
  if(['distance','time','gps'].includes(String(exercise.measurementType||lib.measurementType||'').toLowerCase()))return false;
  return true;
 };
-var tp197RirSave=function(value){
+var tp197RirSave=function(value,repaint=true){
  const session=state.session,exercise=session?.exercises?.[state.current];
  if(!tp197RirEligible(session,exercise))return false;
  const raw=String(value);
@@ -19881,7 +19881,7 @@ var tp197RirSave=function(value){
   else exercise.actualRir=before;
   return false;
  }
- renderWorkout();return true;
+ if(repaint)renderWorkout();return true;
 };
 var tp197RirHistory=function(exercise){
  const value=exercise?.actualRir;
@@ -19889,15 +19889,21 @@ var tp197RirHistory=function(exercise){
  const t=tp197RirWords();
  return '<p class="small muted tp197-rir-history">'+esc(t.title)+': <strong>'+Number(value)+'</strong> '+esc(t.unit)+'</p>';
 };
+var tp197RirInput=function(input){
+ const value=String(input.value),valid=value===''||/^(?:10|[0-9])$/.test(value);
+ // An invalid edit is not a new observation and must not leave an older
+ // actual RIR silently attached to the workout. Keep the numeric field stable.
+ const saved=tp197RirSave(valid?value:'',false);
+ input.setAttribute?.('aria-invalid',valid&&saved?'false':'true');
+ return valid&&saved;
+};
 var tp197RirField=function(session,exercise){
  if(!tp197RirEligible(session,exercise))return '';
  const t=tp197RirWords(),saved=exercise.actualRir;
- const selected=saved!==null&&saved!==undefined&&Number.isInteger(Number(saved))&&Number(saved)>=0&&Number(saved)<=10?String(saved):'';
- const options=['<option value=""'+(selected===''?' selected':'')+'>'+esc(t.missing)+'</option>'];
- for(let i=0;i<=10;i++)options.push('<option value="'+i+'"'+(selected===String(i)?' selected':'')+'>'+i+' '+esc(t.unit)+'</option>');
- return '<div class="tp197-rir-field"><label for="tp197ActualRir">'+esc(t.title)+
-  '<select id="tp197ActualRir" class="field" aria-label="'+esc(t.title)+'" onchange="tp197RirSave(this.value)">'+options.join('')+'</select></label>'+
-  '<p class="small muted">'+esc(t.note)+'</p></div>';
+ const selected=saved!==null&&saved!==undefined&&saved!==''&&Number.isInteger(Number(saved))&&Number(saved)>=0&&Number(saved)<=10?String(saved):'';
+ return '<div class="tp197-rir-field"><label for="tp197ActualRir">'+esc(t.title)+'</label>'+
+  '<input id="tp197ActualRir" class="field" type="number" inputmode="numeric" min="0" max="10" step="1" value="'+esc(selected)+'" placeholder="'+esc(t.missing)+'" aria-describedby="tp197RirNote" oninput="tp197RirInput(this)">'+
+  '<p id="tp197RirNote" class="small muted">'+esc(t.note)+'</p></div>';
 };
 (function(){
  const previous=rf152FeedbackHtml;
@@ -19909,7 +19915,7 @@ var tp197RirField=function(session,exercise){
   return additional?html.replace(/<\/div>\s*$/,additional+'</div>'):html;
  };
  const css=document.createElement('style');css.id='tp197RirStyle';
- css.textContent='.tp197-rir-field{display:grid;gap:7px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}.tp197-rir-field label{font-size:13px;font-weight:700}.tp197-rir-field select{box-sizing:border-box;width:100%;min-height:44px}.tp197-rir-field p{margin:0;line-height:1.4}';
+ css.textContent='.tp197-rir-field{display:grid;gap:7px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}.tp197-rir-field label{font-size:13px;font-weight:700}.tp197-rir-field input{box-sizing:border-box;width:100%;min-height:44px}.tp197-rir-field input[aria-invalid="true"]{border-color:var(--danger,#ff6b6b)}.tp197-rir-field p{margin:0;line-height:1.4}';
  document.head.appendChild(css);
 })();
 // @endsection training-actual-rir-197.js
