@@ -20163,6 +20163,11 @@ window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation}
  function details(records,existing){
   const node=existing||document.createElement('details'),t=copy(),open=!!existing?.open;
   node.className='tp226-pr-details';
+  if(!existing)node.addEventListener('toggle',()=>{
+   const badge=node.closest('details[data-tp152-history-key]')?.querySelector(':scope > summary .tp226-pr-badge');
+   badge?.setAttribute('aria-expanded',String(node.open));
+   if(!node.open&&node.contains(document.activeElement))badge?.focus({preventScroll:true});
+  });
   const mark=JSON.stringify([language(),records]);
   if(node.dataset.records===mark)return node;
   node.dataset.records=mark;node.replaceChildren();
@@ -20189,11 +20194,16 @@ window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation}
    badge.addEventListener('click',event=>{
     event.preventDefault();event.stopPropagation();
     const current=cachedRows.find(x=>aliases(x).includes(key));if(!current)return;
+    const expand=!(card.open&&card.querySelector('.tp226-pr-details')?.open);
     card.open=true;
     const position=cachedRows.indexOf(current);
     window.tp3EnsureHistoryBody?.(card,position,key);
     paint();
-    const panel=card.querySelector('.tp226-pr-details');if(panel){panel.open=true;panel.querySelector('summary')?.focus({preventScroll:true});}
+    const panel=card.querySelector('.tp226-pr-details');
+    if(panel){
+     panel.open=expand;badge.setAttribute('aria-expanded',String(expand));
+     (expand?panel.querySelector('summary'):badge)?.focus({preventScroll:true});
+    }
    });
    host.appendChild(badge);
   }
@@ -20203,6 +20213,7 @@ window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation}
    const old=body.querySelector(':scope > .tp226-pr-details'),panel=details(records,old);
    if(!old)body.prepend(panel);
   }
+  badge.setAttribute('aria-expanded',String(!!card.querySelector('.tp226-pr-details')?.open));
  }
  function paint(){
   if(typeof document==='undefined')return;

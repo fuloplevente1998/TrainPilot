@@ -4,6 +4,16 @@ Frissítve: **2026-10-20**. A #230 main-egyesítés: `8a58f3a`, a `v1.3.7` telef
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Folyamatban – #234 Napló PR-részletező (2026-10-21)
+
+- Ág: `feat/234-journal-pr-chips`; 1.3.7 /2734 változatlan.
+- Készülékes visszajelzés a `cbff3509` APK-ról: a rejtett rekordrészletező megnyílik, de az Új PR jelvénnyel nem zárható.
+- A click handler most a korábbi nyitott állapotot váltja; második koppintás teljesen elrejti a panelt és nyitva hagyja az edzéskártyát. A részletek címével is összecsukható.
+- A jelvény `aria-expanded` állapota és nyila követi a panelt; bezáráskor a fókusz visszatér a látható jelvényre.
+- A meglévő Chromium PR-teszt bővítve nyitás–zárás–újranyitásra, külön cím általi zárásra és HU/EN/DE/RO kis kijelzős, nagy betűs változatokra.
+- Helyi JS-szintaxis ellenőrizve; friss Quick/Performance/telefonos Chromium és release gate eredménye, majd új APK készülékes elfogadása szükséges. Wear/native forrás változatlan.
+- #234 Draft marad. Nincs main merge, release vagy verzióemelés.
+
 ## Elfogadva – #230 / 1.3.7 közzétéve
 
 - **Felhasználói jóváhagyás (2026-10-20):** „Rendben, zárható :) mehet mainre 1.3.7 verzioszamon, a release gatenel, teszteknel ezt vegyü figyelembe.”

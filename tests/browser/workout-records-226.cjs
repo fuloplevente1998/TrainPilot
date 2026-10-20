@@ -30,12 +30,22 @@ const server=http.createServer((req,res)=>{
   assert.equal(await detail.count(),1,'Record data exists in the hydrated workout');
   assert.equal(await detail.evaluate(x=>x.open),false,'Record disclosure defaults to closed');
   assert.equal(await detail.isVisible(),false,'No Record details title or box before tapping PR');
+  assert.equal(await badge.getAttribute('aria-expanded'),'false');
   await badge.click();
+  assert.equal(await badge.getAttribute('aria-expanded'),'true');
   assert.equal(await detail.evaluate(x=>x.open),true,'Tapping PR expands the record');
   assert.equal(await detail.isVisible(),true,'PR tap makes record details visible');
   assert.match(await detail.innerText(),/10 kg.*12 kg/);
+  await badge.click();
+  assert.equal(await detail.evaluate(x=>x.open),false,'Second PR tap collapses the record');
+  assert.equal(await detail.isVisible(),false,'Second PR tap completely hides the panel');
+  assert.equal(await card.evaluate(x=>x.open),true,'Closing PR leaves the workout open');
+  assert.equal(await badge.getAttribute('aria-expanded'),'false');
+  await badge.click();
+  assert.equal(await detail.isVisible(),true,'Third PR tap opens it again');
   await detail.locator(':scope > summary').click();
   assert.equal(await detail.isVisible(),false,'Closing record details removes the panel completely');
+  await page.waitForFunction(()=>document.querySelector('.tp226-pr-badge')?.getAttribute('aria-expanded')==='false');
   await badge.click();
   assert.equal(await detail.isVisible(),true,'PR tap can reveal the panel again');
   assert.equal(await detail.locator('.tp226-pr-record').count(),1,'PR count matches displayed explanation');
@@ -55,6 +65,10 @@ const server=http.createServer((req,res)=>{
    await badge.click();assert.equal(await detail.count(),1);
    const large=await page.addStyleTag({content:'.tp226-pr-badge,.tp226-pr-details{font-size:150%!important}'});
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'Localized large text stays within '+width);
+   await badge.click();
+   assert.equal(await detail.isVisible(),false,'PR closes with localized large text');
+   assert.equal(await badge.getAttribute('aria-expanded'),'false');
+   await badge.click();assert.equal(await detail.isVisible(),true,'PR opens again with localized large text');
    await large.evaluate(el=>el.remove());
   }
   fs.mkdirSync('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/pr-badge-226.png'});
