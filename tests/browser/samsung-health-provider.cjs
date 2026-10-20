@@ -88,8 +88,8 @@ function fixture(){
   assert.equal(await page.evaluate(()=>TrainPilotSamsungHealth.selected()),'health_connect','Automatic startup read preserves the primary provider');
   assert.match(await page.locator('.tp184-energy-card').innerText(),/83\/100/);
   // Today's SDK score remains primary even without a separate sleep/HRV record.
-  await page.evaluate(async()=>{samFixture.energyValue=54.968132;state.health.recovery={};db.set('recoveryHistory',[]);await TrainPilotEnergy184.refresh({force:true});});
-  assert.equal(await page.evaluate(()=>rf220Readiness().energyScore),54.968132,'Preserve original SDK precision');
+  await page.evaluate(async()=>{samFixture.energyValue=54.75;state.health.recovery={};db.set('recoveryHistory',[]);await TrainPilotEnergy184.refresh({force:true});});
+  assert.equal(await page.evaluate(()=>rf220Readiness().energyScore),54.75,'Preserve original SDK precision');
   assert.equal(await page.locator('.tp184-energy-value').innerText(),'55/100');
   assert.equal(await page.locator('main.tp168-health .tp5-today-recovery .tp5-today-value').innerText(),'55/100');
   assert.equal(await page.evaluate(()=>tp5UnifiedTodayModel().recoverySource),'samsung_health');

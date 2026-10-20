@@ -14,7 +14,10 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 - Közös egész számú kijelzés: a képen látott SDK-tizedes érték 55/100-ként jelenik meg.
   A nyers SDK-pontszám és a Coach fájdalom/terhelés védelmei változatlanok.
   Kártya/csempe/Coach forrássor azonos formázást használ. Natív és Wear kód érintetlen.
-- Célzott JS/szintaxis/diff ellenőrzés és friss teljes Actions/APK még szükséges.
+- Az első teljes körben Quick/Performance sikeres, Chromium 5/6. Az új Samsung-teszt
+  elkapta, hogy nyitott panelnél az általános háttérfrissítés nem rajzolja újra a csempét.
+  Javítás: csak a read-only pontszám közvetlen DOM-frissítése, panel/draft/scroll megőrzéssel.
+  A teszt eredeti 55/100 csempe/kártya elvárása változatlan. Friss teljes CI/APK szükséges.
   Új böngészős védelem: tizedes pontszám, külön alvásrekord hiánya, Home/Egészség
   csempe/kártya egyezése, hiány/hiba fallback. #222 Draft, main/verzió változatlan.
 

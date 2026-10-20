@@ -19957,6 +19957,13 @@ var tp197RirField=function(session,exercise){
   return '<section class="card tp184-energy-card"><h3>'+esc(t('title'))+'</h3><p class="tp184-energy-value"><strong>'+esc(tp184FormatScore(score?.value))+'</strong></p><p class="small muted" role="status">'+esc(summary())+'</p>'+(failure?'<p class="small muted tp184-energy-error">'+esc(hint('detail')+': '+failure)+'</p>':'')+'<button type="button" class="btn secondary block" onclick="TrainPilotEnergy184.refresh({manual:true})" '+(flight?'disabled':'')+'>'+esc(t('refresh'))+'</button></section>';
  }
  function decorate(){
+  // Whole-page background refresh intentionally stops behind open disclosures.
+  // Update this read-only value in place, preserving panels, drafts and scroll.
+  const tiles=document.querySelectorAll('#app .tp5-today-recovery .tp5-today-value');
+  if(tiles.length&&typeof window.tp5UnifiedTodayModel==='function'){
+   const model=window.tp5UnifiedTodayModel();
+   tiles.forEach(node=>{node.textContent=model.values.recovery;});
+  }
   const main=document.querySelector('#app main.tp168-health');if(!main)return;
   const recovery=main.querySelector('.tp168-recovery-history');if(!recovery)return;
   main.querySelectorAll('.tp184-energy-card').forEach(node=>node.remove());
