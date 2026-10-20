@@ -22,11 +22,20 @@ const server=http.createServer((req,res)=>{
    db.set('phase3HistoryTombstones',[]);state.session=null;go('history');
   });
   const badge=page.locator('.tp226-pr-badge');assert.equal(await badge.count(),1);
-  await badge.click();
   const card=page.locator('details[data-tp152-history-key]').filter({has:page.locator('.tp226-pr-badge')});
-  assert.equal(await card.evaluate(x=>x.open),true);
-  const detail=card.locator('.tp226-pr-details');assert.equal(await detail.count(),1);assert.equal(await detail.evaluate(x=>x.open),true);
+  assert.equal(await card.evaluate(x=>x.open),false,'Record explanation starts collapsed');
+  await badge.click();
+  assert.equal(await card.evaluate(x=>x.open),true,'Tapping the PR opens its workout');
+  const detail=card.locator('.tp226-pr-details');assert.equal(await detail.count(),1);
+  assert.equal(await detail.evaluate(x=>x.open),true,'Tapping the PR reveals record details');
   assert.match(await detail.innerText(),/10 kg.*12 kg/);
+  assert.equal(await detail.locator('.tp226-pr-record').count(),1,'PR count matches displayed explanation');
+  const chipBounds=await card.locator(':scope > summary .history-badges > *').evaluateAll(nodes=>nodes.map(node=>{
+   const {x,y,width,height}=node.getBoundingClientRect();return {x,y,width,height};
+  }));
+  assert.equal(chipBounds.length,3,'Time, completed sets and PR share one compact metric row');
+  assert.ok(chipBounds.every(b=>Math.abs(b.y-chipBounds[0].y)<1&&Math.abs(b.height-chipBounds[0].height)<1),'Chips align to the same height');
+  assert.ok(chipBounds.every(b=>Math.abs(b.width-chipBounds[0].width)<1),'Chips use equal widths');
   await page.reload();await boot();await page.evaluate(()=>go('history'));assert.equal(await badge.count(),1,'Reload does not duplicate badge');
   await page.evaluate(()=>feedbackScreen(history().find(x=>x.id==='pr-new').started));
   assert.equal(await page.locator('main.tp122-feedback .tp226-pr-feedback').count(),1,'Saved result summary shows its own records');
