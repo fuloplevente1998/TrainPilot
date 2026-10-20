@@ -2,6 +2,10 @@
 const assert=require('node:assert/strict');
 const {run}=require('./helpers/app-runtime.cjs')();
 (async()=>{
+ const web=require('./helpers/app-runtime.cjs')();
+ web.run('window.__energyPaints=0;window.TrainPilotUIRefresh={refresh(){window.__energyPaints++}}');
+ await web.run('window.TrainPilotEnergy184.refresh({force:true})');
+ assert.equal(web.run('window.__energyPaints'),0,'No native score read may redraw web onboarding');
  run(`
   state.session=null;state.health={daily:{energyScore:98,energyScoreTime:new Date().toISOString(),energyScoreSource:'com.sec.android.app.shealth'},recovery:{sleepMinutes:480,sleepEnd:new Date().toISOString(),day:rf240DayKey(new Date())}};
   window.__energyTest={granted:false,requests:0,reads:0,mode:'ready'};

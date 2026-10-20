@@ -43,6 +43,20 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 - Verzió: telefon/Wear **1.3.6 /2733**, Wear-forrás érintetlen. Nincs release.
 
 
+### Friss #222 CI – 1a06ab9d utáni javítókör
+
+A feltöltés sikeres volt, távoli forrás `1a06ab9d92b28d6eb9c511d892d5fecdd2491fed`.
+Performance **39389349241** sikeres. Quick **39389349249** 153/154: az új teljes
+runtime-fixture a modulokra bontott régi tesztútba került; áthelyezve a meglévő
+teljes appot vizsgáló direkt tesztlistába, a teszt nem marad ki.
+Telefon **39389344380**: Chromium 4/6; a korábbi színellenőrzés már sikeres.
+Javítva: webes/onboarding felületet ne rajzoljon újra a natív SDK hiányjelzése;
+a tényleges index.html lazy Napló-gyakorlatnézet is megkapja a tényleges RIR-t;
+a Coach-teszt az új Samsung-hiányjelző sorral együtt öt jelet vár és külön
+ellenőrzi a Samsung-sort. A RIR E2E a mentett értéket is ellenőrzi a kijelzés előtt.
+Új azonos HEAD teljes CI szükséges. Main/verzió és Issue-státusz nem változott.
+
+
 ## #216 lezárva, 1.3.6 mainen
 
 Felhasználói engedély: **„Rendben, akkor mehet, zarhatjuk ezt a teljes részt es akkor 1.3.6.lesz”**.

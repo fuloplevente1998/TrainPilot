@@ -19941,7 +19941,10 @@ var tp197RirField=function(session,exercise){
  function paint(){decorate();window.TrainPilotUIRefresh?.refresh?.();}
  async function refresh(options={}){
   const manual=options.manual===true;
-  if(document.hidden||window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||state.session)return;
+  if(document.hidden||window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||state.session||state.tp128Onboarding)return;
+  // A web-only page has no SDK. Do not redraw Home/onboarding just to
+  // announce an unavailable native provider.
+  if(!isNative()){status='unavailable';if(manual)decorate();return;}
   if(flight)return manual?flight.then(()=>refresh({manual:true,force:true})):flight;
   const day=today();if(!manual&&!options.force&&lastDay===day&&Date.now()-lastAttempt<10*60000)return;
   lastAttempt=Date.now();lastDay=day;

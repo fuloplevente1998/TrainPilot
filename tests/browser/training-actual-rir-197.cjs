@@ -54,8 +54,8 @@ const server=http.createServer((req,res)=>{
   await page.waitForSelector('#tp197ActualRir',{state:'attached'});
   assert.equal(await page.locator('#tp197ActualRir').inputValue(),'6','Draft restored after a real page reload');
   await finish();
+  assert.equal(await page.evaluate(()=>history()[0].exercises[0].actualRir),6,'Actual RIR survives workout finalization');
   assert.match(await page.locator('details.history .tp197-rir-history').first().innerText(),/Tényleges RIR.*6/);
-  assert.equal(await page.evaluate(()=>history()[0].exercises[0].actualRir),6);
   await page.reload();await boot();
   const first=await page.evaluate(()=>tp197ExercisePreview('goblet-squat','rir-e2e'));
   assert.equal(first.reasonCode,'rir-await-stability');assert.equal(first.historyCount,1);

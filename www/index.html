@@ -986,7 +986,7 @@
  const tp3ExerciseListHtml=(x,key)=>{
   const w=tx(),st=tp3ExerciseState(),rows=(x.exercises||[]).map((raw,ei)=>{
    const active=st&&st.key===key&&!st.isNew&&st.index===ei,e=active?st.draft:raw;
-   return '<details class="tp3-history-ex-item" data-tp3-ex-index="'+ei+'" '+(active?'open ':'')+'ontoggle="tp3ExerciseToggle(this,\''+esc(key)+'\','+ei+')"><summary><div class="tp3-history-ex-title"><strong>'+esc(tp149ExerciseName(rf151SetMeta(e)))+'</strong><span class="small muted">'+esc(tp3ExerciseSummary(e))+'</span></div><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary>'+(active?tp3ExerciseEditorHtml(key,e,ei,false):'')+'</details>';
+   return '<details class="tp3-history-ex-item" data-tp3-ex-index="'+ei+'" '+(active?'open ':'')+'ontoggle="tp3ExerciseToggle(this,\''+esc(key)+'\','+ei+')"><summary><div class="tp3-history-ex-title"><strong>'+esc(tp149ExerciseName(rf151SetMeta(e)))+'</strong><span class="small muted">'+esc(tp3ExerciseSummary(e))+'</span>'+(typeof tp197RirHistory==='function'?tp197RirHistory(e):'')+'</div><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary>'+(active?tp3ExerciseEditorHtml(key,e,ei,false):'')+'</details>';
   }).join('');
   const pending=st&&st.key===key&&st.isNew?'<details class="tp3-history-ex-item tp3-history-ex-new" open><summary><div class="tp3-history-ex-title"><strong>'+esc(tp149ExerciseName(rf151SetMeta(st.draft)))+'</strong><span class="small muted">'+esc(tp3ExerciseSummary(st.draft))+'</span></div><span class="tp3-unified-chevron" aria-hidden="true">›</span></summary>'+tp3ExerciseEditorHtml(key,st.draft,st.index,true)+'</details>':'';
   const opts=exercises().filter(e=>!(x.exercises||[]).some(v=>v.id===e.id));
