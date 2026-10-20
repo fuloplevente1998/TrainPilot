@@ -19834,6 +19834,72 @@ var tp197CoachPanel=function(){
 })();
 // @endsection training-coach-197.js
 
+// @section training-actual-rir-197.js
+/* #197: optional actual repetitions-in-reserve, entered by the user after a
+ * completed strength set. The prescribed RIR must never be used as a reading. */
+var TP197_RIR_WORDS={
+ hu:{title:'Tényleges RIR (ismétléstartalék)',note:'Hány szabályos ismétlés ment volna még? 0 = egy sem. Csak a saját becslésedet rögzítsd; nem kötelező.',missing:'Nincs megadva',unit:'ismétlés'},
+ en:{title:'Actual RIR (reps in reserve)',note:'How many more good reps could you have done? 0 = none. Optional self-report; not the target RIR.',missing:'Not recorded',unit:'reps'},
+ de:{title:'Tatsächlicher RIR (Wiederholungen in Reserve)',note:'Wie viele saubere Wiederholungen wären noch möglich? 0 = keine. Freiwillige Selbsteinschätzung, nicht der Soll-RIR.',missing:'Nicht erfasst',unit:'Wiederholungen'},
+ ro:{title:'RIR real (repetări în rezervă)',note:'Câte repetări corecte mai puteai face? 0 = niciuna. Estimare personală opțională, nu RIR țintă.',missing:'Neînregistrat',unit:'repetări'}
+};
+var tp197RirWords=function(){return TP197_RIR_WORDS[typeof rf212Lang==='function'?rf212Lang():'hu']||TP197_RIR_WORDS.hu};
+var tp197RirEligible=function(session,exercise){
+ if(!session||!exercise||!Array.isArray(exercise.sets)||!exercise.sets.some(x=>x.done===true))return false;
+ if(session.timerOwner==='watch'||session.ownershipAwaitingResume193||
+  session.ownershipProtocol193===1&&session.timerOwner!=='phone'||
+  window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||
+  window.TrainPilotWearSync?.isApplyingCommand?.())return false;
+ const modes=typeof tp197TrainingModes==='function'?tp197TrainingModes(session.programId):null;
+ if(!modes?.explicitChoice||modes.progressionMode!=='rir')return false;
+ const lib=typeof byId==='function'?byId(exercise.id)||{}:{};
+ if(typeof tp106IsDistance==='function'&&tp106IsDistance(exercise))return false;
+ if(['mp','sec','second','s'].includes(String(exercise.repUnit||lib.repUnit||'').toLowerCase()))return false;
+ if(['distance','time','gps'].includes(String(exercise.measurementType||lib.measurementType||'').toLowerCase()))return false;
+ return true;
+};
+var tp197RirSave=function(value){
+ const session=state.session,exercise=session?.exercises?.[state.current];
+ if(!tp197RirEligible(session,exercise))return false;
+ const raw=String(value);
+ if(raw!==''&&!/^(?:10|[0-9])$/.test(raw))return false;
+ const before=exercise.actualRir;
+ try{
+  if(raw==='')delete exercise.actualRir;
+  else exercise.actualRir=Number(raw);
+  persistDraft();
+ }catch(_){
+  if(before===undefined)delete exercise.actualRir;
+  else exercise.actualRir=before;
+  return false;
+ }
+ renderWorkout();return true;
+};
+var tp197RirField=function(session,exercise){
+ if(!tp197RirEligible(session,exercise))return '';
+ const t=tp197RirWords(),saved=exercise.actualRir;
+ const selected=saved!==null&&saved!==undefined&&Number.isInteger(Number(saved))&&Number(saved)>=0&&Number(saved)<=10?String(saved):'';
+ const options=['<option value=""'+(selected===''?' selected':'')+'>'+esc(t.missing)+'</option>'];
+ for(let i=0;i<=10;i++)options.push('<option value="'+i+'"'+(selected===String(i)?' selected':'')+'>'+i+' '+esc(t.unit)+'</option>');
+ return '<div class="tp197-rir-field"><label for="tp197ActualRir">'+esc(t.title)+'</label>'+
+  '<select id="tp197ActualRir" class="field" aria-label="'+esc(t.title)+'" onchange="tp197RirSave(this.value)">'+options.join('')+'</select>'+
+  '<p class="small muted">'+esc(t.note)+'</p></div>';
+};
+(function(){
+ const previous=rf152FeedbackHtml;
+ rf152FeedbackHtml=function(exercise){
+  const html=String(previous.apply(this,arguments));
+  const session=state.session,active=session?.exercises?.[state.current];
+  if(active!==exercise)return html;
+  const additional=tp197RirField(session,exercise);
+  return additional?html.replace(/<\/div>\s*$/,additional+'</div>'):html;
+ };
+ const css=document.createElement('style');css.id='tp197RirStyle';
+ css.textContent='.tp197-rir-field{display:grid;gap:7px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}.tp197-rir-field label{font-size:13px;font-weight:700}.tp197-rir-field select{box-sizing:border-box;width:100%;min-height:44px}.tp197-rir-field p{margin:0;line-height:1.4}';
+ document.head.appendChild(css);
+})();
+// @endsection training-actual-rir-197.js
+
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
 // @endsection ready.js
