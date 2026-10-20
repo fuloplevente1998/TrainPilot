@@ -16,7 +16,7 @@ REPO = "fuloplevente1998/TrainPilot"
 CONFIRM = "DELETE_OBSOLETE_TRAINPILOT_DATA"
 RELEASE_GATES = {"Phone Release Gate + TrainPilot APK", "Wear Release Gate"}
 KEEP_PREFIXES = ("archive/", "backup/")
-KEEP_BRANCHES = {"main", "perf/wear-round-ui-shards"}  # also dynamically preserve open PRs
+KEEP_BRANCHES = {"main"}  # open PR heads are protected dynamically until merge
 
 
 def parse_date(value):
