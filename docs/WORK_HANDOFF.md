@@ -14,8 +14,21 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 - Natív teszt a tényleges buildelt SDK-kérés LocalTimeFilterét vizsgálja; 1001-et okozó
   nulla hosszúságot minden energiaolvasó teszt elutasít. Új regresszió 23/24/25 órás
   budapesti napokra és a holnapi éjféli pont kizárására. Korábban a mock ezt nem nézte.
+- **Alkalmazásforrás:** `e97fe1e31a824640ea78c1cf39b45c1c572456db`;
+  Quick/Performance PR-merge fa is `d5f7d46679560ee44fcf7615d66c393b9ad25a0c`.
+  Quick **39436835835: 154/154**, Performance **39436835798: SUCCESS**,
+  Phone Gate **39436826354: SUCCESS**. Chromium **6/6, 105/105**, letöltött JSON-ok
+  forrása/duplikációmentessége ellenőrizve. Natív XML **249/249, 0 failure/error/skipped**;
+  valódi SDK-szűrő/DST regresszió és a régi nulla hosszúságot igazoló teszt sikeres.
+- **Új telefon teszt-APK:** [ZIP, benne APK és forrás](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39436826354/artifacts/12271587790),
+  1.3.6 /2733, SHA-256 `52eecad1878da78d20d773cb35193ed27482c6464cb14215de75e8c499b98fc8`.
+  app.js/index.html és a forrásarchívum natív kódja byteazonos, forrásjelölés és SHA256SUMS
+  helyes; apksigner és eredeti signer-folytonosság sikeres.
+  [Bizonylat](builds/2026-10-20-222-samsung1001.json).
 - Forrásváltozás csak telefonos Samsung-olvasó és natív teszt; felület/Wear/verzió azonos.
-  Friss teljes Actions/teszt-APK még szükséges. Készülékes siker nem igazolt; main érintetlen.
+  **Következő:** új APK telepítése, Regeneráció → Samsung-pontszám frissítése;
+  a mai Samsung-érték egyezésének készülékes visszajelzése. Készülékes siker még nem
+  igazolt; #222 Draft, main `1393982d`, nincs merge/verzióemelés/issue-lezárás.
 
 ## Korábbi #222 – Regeneráció alá rendezés
 
