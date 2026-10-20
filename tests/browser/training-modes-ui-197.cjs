@@ -21,7 +21,8 @@ const server=http.createServer((req,res)=>{
   const saved=await page.evaluate(()=>JSON.stringify([settings(),programs(),history(),db.get('draft',null)]));
   assert.equal(await page.locator('#tp197-mode-global').count(),1,'Global mode should be available in Settings');
   await page.locator('#tp197-mode-global').evaluate(el=>el.open=true);
-  assert.equal(await page.locator('#tp197-mode-global-style').isHidden(),true,'App dropdown hides the native control');
+  assert.equal(await page.locator('#tp197-mode-global-style').getAttribute('aria-hidden'),'true','Shared dropdown leaves its native source inaccessible');
+  assert.equal(await page.locator('#tp197-mode-global-style').getAttribute('data-tp-custom-select'),'1','The shared Calendar select enhancer is active');
   const globalPicker=page.locator('#tp197-mode-global .tp-select').first();
   await globalPicker.locator('.tp-select-trigger').click();
   assert.equal(await globalPicker.evaluate(el=>el.classList.contains('open')),true,'Shared floating picker opens');
