@@ -3,7 +3,18 @@
 Frissítve: **2026-10-20**. Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
-## Aktuális – #222 mainen, funkcionális kör lezárva
+## Folyamatban – #214 repository-karbantartás
+
+- Felhasználó 2026-10-20: GitHub-verziók, leírások és karbantartás engedélyezve.
+- Ág: `maintenance/214-repository-hygiene`, alap main `a3a4ddce2250c32ef5b55e9ed8733b6a3aa85bda`.
+- Angol + magyar README, 37 release dátum/platform szerinti jegyzéke, friss családos változáslista és Play-checklist, proprietary csomagjelölés.
+- Új verzióegyezési ellenőrzés és célzott tesztek; csak leírásfejlécet módosító release-karbantartás, védett eredeti szöveg/tag/melléklet-metaadatokkal.
+- Helyi célzott teszt: 8/8; verzió 1.3.6 /2733, eredeti kiadási feljegyzések és alkalmazás-/natív forrás változatlan.
+- CI és a GitHub-leírások tényleges frissítésének eredményét a karbantartási Draft PR követi. Nincs új APK, verzióemelés vagy Play-publikálás; main merge még nem történt ehhez a karbantartáshoz.
+- #214 nyitva marad a [rögzített külső Play/Samsung/aláírás/licenc feladatokkal](MAINTENANCE_214.md).
+- A felhasználó #184/#197 main engedélyét 2026-10-20-án újra megerősítette; GitHub szerint mindkettő már completed, #222 merged `f413a3a`.
+
+## Elfogadott alkalmazás – #222 mainen, funkcionális kör lezárva
 
 - Felhasználói elfogadás/lezárás 2026-10-20 17:12 (Europe/Budapest):
   „Zarhato ez is, igy akkor kb minden mar nem ?”

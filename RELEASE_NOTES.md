@@ -49,68 +49,35 @@ Egészségnapló, személyre szabás, telefonos felület és Wear OS alapok:
 
 ## 1.3
 
-**Aktuális telefonos és Wear OS kiadáscsalád, legutóbb 1.3.4.** A [#156](https://github.com/fuloplevente1998/TrainPilot/pull/156) felhasználói jóváhagyással mainre került. [Telefonos kiadás](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.4) · [Órás kiadás](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.4).
+**Legutóbb közzétett APK: telefon + Wear 1.3.6 /2733, 2026. október 19.**
+[Telefon](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.6) · [Wear OS](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.6) · [Dátum/platform szerinti kiadásjegyzék](docs/releases/INDEX.md).
 
-A közös fejlesztési sorozat összevont tartalma:
+A main ezen túl már tartalmazza a **#222-ben elfogadott #184 Samsung- és #197 RIR/Coach-javításokat**, változatlan 1.3.6 /2733 metaadatokkal. Ezek nem kerültek bele visszamenőleg a fenti APK-kba. Az [elfogadott telefonos teszt-APK](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39440372153/artifacts/12273816379) külön Actions artifact; a Wear változatlan. [Forrás és elfogadás](docs/builds/2026-10-20-222-accepted.json).
 
-- Valódi gyors edzés az órán, a telefonról kapott saját/beépített gyakorlatokkal és edzés közbeni gyakorlat-hozzáadással. A telefon és az óra ugyanazt az edzésazonosítót és mentett bejegyzést használja.
-- **Mini napló:** legfeljebb nyolc mentett telefonos edzés, gyakorlat- és sorozatrészletekkel, offline cache-sel. A függő órás parancs és félkész edzés nem válik külön naplózott alkalommá.
-- Telefon előtérbe kerülésekor újraküldött pillanatkép; Mini napló megnyitásakor és kézi frissítéskor új adatkérés. Régi pillanatkép nem írhatja felül az újabbat.
-- Méretkorlátos, Unicode-helyes adatcsomag; aktív program nélkül is továbbítható mentett napló.
-- **Órás mérések előzménye:** a három legutóbbi mentett, TrainPilot Wear-méréssel rendelkező edzés neve, dátuma, időtartama, gyakorlatinformációja és elérhető kalória/pulzus adata.
-- Az előzményből a Mini napló meglévő részlete nyílik meg. A Vissza az eredeti mérési nézetre visz, az edzés mérési oldaláról indított megnyitásnál is.
-- A megfelelő edzéshez tartozó TrainPilot Wear-mérés a telefon Naplójában alapértelmezett kiemelt forrás. A Health Connect/Samsung Health időszakos adatai külön maradnak, külön aktív, összes és edzéshez kötött energiajelöléssel.
-- A későn érkező mérés a már mentett edzéshez kapcsolódik. Mért nulla megmarad; hiányzó érték nem lesz nulla vagy becslés; a részleges mérés jelölést kap.
+### Az október 19-i kiadásig elkészült
 
-### Telefonról kezdeményezett órás appindítás
+- Közös telefon–óra gyors edzés, Mini napló, mérési előzmények, megőrzött azonosítók és későn érkező mérési adatok kapcsolása.
+- Telefonos indításkor az órás app egyszeri megnyitása; védett piszkozatok és nyitott szerkesztők.
+- Automata munka/pihenő/léptetés, rezgésjelzések, egyetlen időzítőtulajdonos és tartós szünet.
+- Önálló órás edzés, visszaigazolt átadás, offline folytatás, órás GPS-útvonal és telefonos térkép.
+- Sikeres, kifejezett telefonos GPS-befejezés elfogadja a mért időt/távolságot külön sorozat-OK nélkül.
+- Megjegyzett GPS-választás, órás korona/lünetta szerkesztés, átrendezett menü, pontos pihenőhatáridő.
+- Visszavonás, folyamatos 3 másodperces feloldás, nyelvi, szenzor- és kompakt felületi javítások.
+- Kompakt, ellenőrzött JSON/ZIP-mentés, fotóhiba esetén hiányos mentés helyett jelzett hiba, legfrissebb Drive-mentések és külön helyreállítás.
 
-A telefonos órás appindítás és mérés javításai a mainen és az elfogadott **1.3.4** kiadásban szerepelnek.
+### Később elfogadott main – #222, október 20.
 
-Új programos vagy gyors edzés telefonos indítása előbb közzéteszi az aktív edzést, majd megnyitja a csatlakoztatott órán a TrainPilotot. Az óra röviden felébreszti a kijelzőt, ellenőrzi az edzésazonosítót és a friss pillanatképet, majd az engedélyezett mérést az előtérszolgáltatásra bízza. A kijelző ezután kikapcsolhat.
+- Normál/HIT-inspirált stílus; dupla, lineáris vagy RIR/Coach progresszió, globális és programonkénti beállítással.
+- Előnézet, jóváhagyás és visszavonás; nincs automatikus súlyátírás.
+- Tényleges 0–10 RIR bevitele, draft, Napló és későbbi ajánlás tartós adatútja.
+- Mai, hiteles Samsung energiapontszám automatikus elsőbbsége; hiánynál a TrainPilot saját becslése marad.
+- Samsung-kártya a Regeneráció alatt; egységes egész számú Home/Egészség kijelzés, nyitott panel melletti frissítéssel.
+- Fájdalom/terhelés miatti Coach-korlátok megmaradnak; alvás/HRV/aktivitás nem számít kétszer.
 
-- **Felhasználói visszajelzés, 2026. október 10.:** programos edzés telefonos indításakor az app megnyílik az órán, és a háttérmérést is rögzíti.
-- A gyors edzés aktuális, soron belül beállítható gyakorlatválasztójának indításakor ugyanaz az egyszeri órás megnyitás indul az aktív edzés közzététele után. Új gyakorlat hozzáadása nem indít új mérést; megszakított piszkozatcsere és óráról indított edzés nem nyitja vissza az órás appot.
-- A későn beérkező egészségadat-inicializálás és háttérfrissítés nem zárja be a gyorsedzés- vagy gyakorlatválasztót, és nem építi újra a megnyitott panelek szerkesztési mezőit. A már beírt sorozatszám, súly és saját gyakorlat-/programnév megmarad.
-- Aktív edzésnél a navigáció lemondása megőrzi a nyitott választót; csak a jóváhagyott kilépés zárja be, a mentett piszkozat megőrzésével.
-- Hiányzó natív integrációnál a hívást kiegészítő wrapper nem hoz létre érvénytelen Proxy objektumot; a híd elérhetőségi ellenőrzése megmarad.
-- A fő képernyők és panelek további ellenőrzését az [alkalmazásaudit](docs/APP_AUDIT_1.3.md) foglalja össze. A látható verzió és telepítési kód változatlan.
-- A felhasználó a legutóbbi telefonos/órás tesztbuildet 2026. október 12-én mainre és 1.3.4 kiadásra elfogadta.
-- Megmarad a mérési kapcsoló, a szenzorengedélyek és más alkalmazás futó mérésének védelme.
-- Normál frissítés, telefonos visszatérés vagy visszaállított piszkozat nem nyitogatja az órás appot. Sikertelen megnyitáskor a telefonos edzés megmarad, kézi órás megnyitással folytatható.
-
-### Egészségadatok és nyitott ellenőrzések
-
-A 20 guggolásos próba során a mért órás érték helyesen érkezett át. A korábbi **óra: 4 kcal / telefon: 1 aktív, 2 összes kcal** eltérés összehasonlítása továbbra is nyitott: ellenőrizni kell a forrást, a pontos időablakot, az energia jelentését és a szinkron időpontját.
-
-TrainPilot Wear-mérés nélkül a telefon a kiválasztott Samsung Health/Health Connect szolgáltatóból olvas. Ha óra nincs a kézen, vagy a TrainPilot nem indított saját mérést, abból nem állítható elő utólag közvetlen Wear-edzésösszegzés. Más alkalmazás ugyanazon órán mért és megosztott adata külön adatút.
-
-Az 1.3.4 megtartja a késői mérési adatok kapcsolását és a Mini naplót; javítja a körkijelzős listákat és vezérlőket, a nyitott telefonos nézetek védelmét, a lenyílók teljesítményét és a témaszín szinkronját. [Részletes 1.3.4 feljegyzés](docs/releases/v1.3.4.md).
-
-### Drive-szinkron és ütközésfeloldás
-
-Az **1.3.4** kiadásban a normál szinkron csak az eszközönkénti legfrissebb mentést olvassa; a régi mentések olvasása külön, alapból csukott helyreállítási művelet. Normál szinkronkor nincs archív olvasás vagy automatikus archív takarítás.
-
-A Telefon/Felhő ütközésválasztás a kiválasztott adatváltozatot menti; a logikai gombválasz nem kerül adatmező vagy naplóbejegyzés helyére. Az egyedi edzések és testsúlyadatok megmaradnak, a szigorú mentésellenőrzés változatlan. A témaszín megőrzésének javítása is a felhasználó által elfogadott 1.3.4 telefonos build része.
-
-### Main folytatás — 2026. október 13.
-
-A [#179](https://github.com/fuloplevente1998/TrainPilot/pull/179) mainre jóváhagyott integráció az eredeti 1.3.4 kiadáson túl tartalmazza:
-
-- A megújult Wear-kezdőlapot a telefonos ikonokkal/témával, külön Beállításokkal, közvetlen törléssel és felfelé húzható menüvel; a tördelt Mini naplót és kis gyakorlatoldali pontos időt.
-- A telefonos natív lapzoom tiltását, a rendszerbetűméret megőrzésével.
-- Telefonos és órás automata tesztváltozatot: kézi súlyzós rögzítés utáni automatikus pihenő/léptetés, időzített munka/pihenő/körök, kompakt kapcsoló és alsó telefonos számláló.
-- Megmaradó telefonos Munka/Pihenő feliratot és az órán a teljes automata pihenőidőhöz arányos kört, 1 percnél hosszabb szakasznál is.
-- 3–2–1 rövid, 80 ms-os előjelzést és lejáratkor 1 másodperces rezgést; egyetlen időzítőtulajdonost, fázishoz kötött távoli vezérlést és megszakításkor mentett szünetet.
-
-A legutóbbi tesztpár 1.3.4 / 2730 marad, külön forráscommitokkal. A publikált 1.3.4 APK-k az eredeti kiadást őrzik. Az új automata mód fizikai elfogadása, a telefonos tulajdon teljes háttérrögzítése és az egységes időnapló még feladat; ezután következik a #163 térkép. [Aktuális állapot](DEVELOPMENT_STATUS.md) · [Közös terv](docs/wear/WEAR_OS_FEJLESZTESI_TERV.md) · [ChatGPT-folytatás](docs/CHATGPT_FOLYTATAS.md).
+A funkcionális sor lezárult. **#214** marad a repository-karbantartás és Play-előkészítés követésére; a Samsung production partneri hozzáférése külön ellenőrzés. A dizájnötletek [külön backlogban](docs/plans/UI_TEST_BRANCH_BACKLOG.md) maradnak.
 
 ## Történeti részletek
 
-A korábbi, különálló javítási feljegyzéseket a [Git-történet](https://github.com/fuloplevente1998/TrainPilot/blob/2fdcf4fde7021fb234bd85fff0a59b698d36c808/RELEASE_NOTES.md) és a meglévő release-ek őrzik. A régi belső számozás nem az aktuális nyilvános verziócsaládok folytatása. A jelenlegi állapotot a [fejlesztési áttekintés](DEVELOPMENT_STATUS.md) tartalmazza.
+Az egyedi [telefonos](docs/releases/README.md) és [órás](android/wear/releases/README.md) feljegyzések az adott build akkori állapotát őrzik. A régi 1.3.51 számozást nem írjuk át. A teljes [kiadásjegyzék](docs/releases/INDEX.md) dátum, platform és tag alapján különbözteti meg őket.
 
-### Main — mentésjavítás #180 (1.3.4 /2730)
-
-- A JSON fájlmentés kompakt formátumot használ, változatlan adattartalommal; a behúzások nem okozhatnak fölösleges mérettúllépést.
-- A teljes ZIP mentés előzetesen ellenőrzi a fotókat, és a Drive-on elérhető hiányzó fájlokat megpróbálja letölteni.
-- Hiányzó, üres és túl nagy fotó külön, lokalizált hibát kap. Hiba esetén nem készül hiányos „teljes” mentés; az eredeti fotók változatlanok.
-- Az eredeti publikált 1.3.4 APK-k változatlanok; az új main tesztbuildet fizikai telefonon ellenőrizni kell.
+Aktuális munkaátadás: [docs/WORK_HANDOFF.md](docs/WORK_HANDOFF.md). A DEVELOPMENT_STATUS.md és a régebbi tervek történeti források.

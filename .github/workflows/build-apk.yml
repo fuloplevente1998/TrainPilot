@@ -270,16 +270,10 @@ jobs:
           if [[ "$VERSION" == *-* ]]; then
             RELEASE_FLAGS=(--prerelease --latest=false)
           fi
-          # Main publishes each new version once. If the release already exists,
-          # refresh its documented notes while keeping verified binary assets unchanged.
+          # Main publishes each new version once. Existing release notes describe
+          # the tagged binary, not later main changes with the same version.
           if [ "$GITHUB_REF" = "refs/heads/main" ] && gh release view "$TAG" >/dev/null 2>&1; then
-            NOTES_FILE="docs/releases/$TAG.md"
-            if [ -f "$NOTES_FILE" ]; then
-              gh release edit "$TAG" --notes-file "$NOTES_FILE" --title "TrainPilot $VERSION"
-              echo "Release $TAG notes refreshed; existing assets kept unchanged."
-            else
-              echo "Release $TAG already exists; keeping its assets unchanged."
-            fi
+            echo "Release $TAG already exists; keeping tagged notes and assets unchanged."
             exit 0
           fi
           FILES=(

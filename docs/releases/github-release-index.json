@@ -1,0 +1,1603 @@
+{
+  "schemaVersion": 1,
+  "repository": "fuloplevente1998/TrainPilot",
+  "capturedOn": "2026-10-20",
+  "releases": [
+    {
+      "id": 417138307,
+      "tag_name": "v1.3.6",
+      "name": "TrainPilot 1.3.6",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-19T09:57:44Z",
+      "target_commitish": "98be66221430202715aafa9a71583bbbd22d4fd3",
+      "platform": "Phone",
+      "tagCommit": "98be66221430202715aafa9a71583bbbd22d4fd3",
+      "originalBodySha256": "c358d8f948154ad4bc00bb0a00d217a50d502961c3d746229250752a3fc6b918",
+      "assets": [
+        {
+          "id": 655886176,
+          "name": "phone-apk-badging.txt",
+          "size": 7203,
+          "digest": "sha256:5d830c8c0ab2985c55676a6f2594a55a01d119fb470354afd93aaad6de18c860",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.6/phone-apk-badging.txt"
+        },
+        {
+          "id": 655886174,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:ec073fc114f1ce2ea751f7d199610c120dfcd35e85db7df0c31df114b60e5b89",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.6/SHA256SUMS.txt"
+        },
+        {
+          "id": 655886172,
+          "name": "TrainPilot-1.3.6-source.zip",
+          "size": 5232192,
+          "digest": "sha256:1d8a90329309bbb913145b42e8c065fa171bfad1e9e350603be73b24f6af0f51",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.6/TrainPilot-1.3.6-source.zip"
+        },
+        {
+          "id": 655886177,
+          "name": "TrainPilot-1.3.6.apk",
+          "size": 5887418,
+          "digest": "sha256:4b3b2fd90b38912a7a51157ed18c337f361f5e3f5521df69d10a64697c4cc987",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.6/TrainPilot-1.3.6.apk"
+        }
+      ]
+    },
+    {
+      "id": 417136721,
+      "tag_name": "wear-v1.3.6",
+      "name": "TrainPilot Wear OS 1.3.6",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-19T09:55:49Z",
+      "target_commitish": "98be66221430202715aafa9a71583bbbd22d4fd3",
+      "platform": "Wear OS",
+      "tagCommit": "98be66221430202715aafa9a71583bbbd22d4fd3",
+      "originalBodySha256": "25f894e0a90b8299e85078f9755ccd201267fe0aaedb171ba4087e02d84b26b3",
+      "assets": [
+        {
+          "id": 655882112,
+          "name": "TrainPilot-1.3.6-wear.apk",
+          "size": 4226959,
+          "digest": "sha256:ac9d16066df7f63290bca20656bf883391e41bbd1399cde397b9292176233958",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.6/TrainPilot-1.3.6-wear.apk"
+        },
+        {
+          "id": 655882111,
+          "name": "wear-apk-badging.txt",
+          "size": 5660,
+          "digest": "sha256:5764fbd539b09814f343f99e731cc54f4f53ba6ffa0cb9f859e4ee6c60bac669",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.6/wear-apk-badging.txt"
+        },
+        {
+          "id": 655882110,
+          "name": "WEAR-SHA256SUMS.txt",
+          "size": 183,
+          "digest": "sha256:32e0d114d4aa2380d96bfc712b2ce4f0b4689b2aebf71b0df33dfda31a04359f",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.6/WEAR-SHA256SUMS.txt"
+        },
+        {
+          "id": 655882109,
+          "name": "WEAR-SOURCE_VERSION.json",
+          "size": 167,
+          "digest": "sha256:34e3d502aa15f077d562328adf0ee5a3f4ef9ae1929b5a50928ae7d62b825a74",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.6/WEAR-SOURCE_VERSION.json"
+        }
+      ]
+    },
+    {
+      "id": 413958191,
+      "tag_name": "v1.3.51",
+      "name": "TrainPilot 1.3.51",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-15T15:14:02Z",
+      "target_commitish": "66dbc020c9665952e515a3950d127ec002b3927c",
+      "platform": "Phone",
+      "tagCommit": "66dbc020c9665952e515a3950d127ec002b3927c",
+      "originalBodySha256": "a642319160aae137a0a34a7bdee1dd4324a719d7e67e1a642971b08c68b21d53",
+      "assets": [
+        {
+          "id": 644254703,
+          "name": "phone-apk-badging.txt",
+          "size": 7204,
+          "digest": "sha256:7a81b8c5e95b3ec962b584cb2913fd80c606ad040b0cf259a9ed2dba85ebf8ef",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.51/phone-apk-badging.txt"
+        },
+        {
+          "id": 644254705,
+          "name": "SHA256SUMS.txt",
+          "size": 183,
+          "digest": "sha256:0cf6a8c17c699bdf796726b8be08e1219b37476eeed4eb3efba4cfbde4992ffc",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.51/SHA256SUMS.txt"
+        },
+        {
+          "id": 644254708,
+          "name": "TrainPilot-1.3.51-source.zip",
+          "size": 4991233,
+          "digest": "sha256:9f2aa553d4b8a8a2562fe451984e679ba8609b0a4b499feb3d24da9b05165691",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.51/TrainPilot-1.3.51-source.zip"
+        },
+        {
+          "id": 644254702,
+          "name": "TrainPilot-1.3.51.apk",
+          "size": 5837710,
+          "digest": "sha256:bf630ef26b824399c634dcdc71ac1946e9d34492b5ed366be02106fa73354128",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.51/TrainPilot-1.3.51.apk"
+        }
+      ]
+    },
+    {
+      "id": 413773220,
+      "tag_name": "v1.3.5",
+      "name": "TrainPilot 1.3.5",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-15T12:16:37Z",
+      "target_commitish": "f64ad094a835772082865c41b7282e7d4d93f8e8",
+      "platform": "Phone",
+      "tagCommit": "f64ad094a835772082865c41b7282e7d4d93f8e8",
+      "originalBodySha256": "ee3c8453ab96d56981d292ff1b3c641b24ef03fd4278339395d6a626fb877327",
+      "assets": [
+        {
+          "id": 643770619,
+          "name": "phone-apk-badging.txt",
+          "size": 7203,
+          "digest": "sha256:c0a10260c29b669dac0a5490cd168bb2e8786cf19be2529f27d7551015638af8",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.5/phone-apk-badging.txt"
+        },
+        {
+          "id": 643770608,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:2639ab1016b18e3088fe48309c8dade761699eb1ace63e5b97559dbffa27f189",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.5/SHA256SUMS.txt"
+        },
+        {
+          "id": 643770611,
+          "name": "TrainPilot-1.3.5-source.zip",
+          "size": 4985370,
+          "digest": "sha256:c65c328af673f168238d50a58aebde743a79c462616308018634842d79d8c8bb",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.5/TrainPilot-1.3.5-source.zip"
+        },
+        {
+          "id": 643770613,
+          "name": "TrainPilot-1.3.5.apk",
+          "size": 5836574,
+          "digest": "sha256:085fdb59d020cc35a57dbc58f7759966cd0ca1f1ea6e43896aa1ae6aa7418aed",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.5/TrainPilot-1.3.5.apk"
+        }
+      ]
+    },
+    {
+      "id": 413955675,
+      "tag_name": "wear-v1.3.51",
+      "name": "TrainPilot Wear OS 1.3.51",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-15T15:11:30Z",
+      "target_commitish": "66dbc020c9665952e515a3950d127ec002b3927c",
+      "platform": "Wear OS",
+      "tagCommit": "66dbc020c9665952e515a3950d127ec002b3927c",
+      "originalBodySha256": "0d09aa31d62a1e113f25fca9835a68a1c891ba0b2463e27c7d24c326e60d25fa",
+      "assets": [
+        {
+          "id": 644247428,
+          "name": "TrainPilot-1.3.51-wear.apk",
+          "size": 4112187,
+          "digest": "sha256:c61a5726d2b5c4e3210b03cdde71cc67fb48c031096b6cae1861492883aa29df",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.51/TrainPilot-1.3.51-wear.apk"
+        },
+        {
+          "id": 644247427,
+          "name": "wear-apk-badging.txt",
+          "size": 5661,
+          "digest": "sha256:b1fca86a985a2861afda0fd3d123bfa3b79807adfe21dfb31880ab6e7970ff4e",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.51/wear-apk-badging.txt"
+        },
+        {
+          "id": 644247432,
+          "name": "WEAR-SHA256SUMS.txt",
+          "size": 184,
+          "digest": "sha256:b4bb48fc5640273eaff4c65bb39417435b113643124d1a4e9bea43b3570d1d5a",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.51/WEAR-SHA256SUMS.txt"
+        },
+        {
+          "id": 644247430,
+          "name": "WEAR-SOURCE_VERSION.json",
+          "size": 169,
+          "digest": "sha256:578bc550577b4c866926ac9b7bf807d118907a39a36dcd551edf4f91789866c9",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.51/WEAR-SOURCE_VERSION.json"
+        }
+      ]
+    },
+    {
+      "id": 413770238,
+      "tag_name": "wear-v1.3.5",
+      "name": "TrainPilot Wear OS 1.3.5",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-15T12:13:26Z",
+      "target_commitish": "f64ad094a835772082865c41b7282e7d4d93f8e8",
+      "platform": "Wear OS",
+      "tagCommit": "f64ad094a835772082865c41b7282e7d4d93f8e8",
+      "originalBodySha256": "b65926a4f95dd024d35e9eaae962ff6fa3be2292dffa57f7dd988bcbf29dde1c",
+      "assets": [
+        {
+          "id": 643762569,
+          "name": "TrainPilot-1.3.5-wear.apk",
+          "size": 4112183,
+          "digest": "sha256:6873d650636b2a7ab189d6c1e326f0720cff76ffceac27c58eba430decdbb9d4",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.5/TrainPilot-1.3.5-wear.apk"
+        },
+        {
+          "id": 643762565,
+          "name": "wear-apk-badging.txt",
+          "size": 5660,
+          "digest": "sha256:6cbe2b1d5b276e1f63d45947cff18ade23821158d402f1acd9d851e3fcdaa7a9",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.5/wear-apk-badging.txt"
+        },
+        {
+          "id": 643762567,
+          "name": "WEAR-SHA256SUMS.txt",
+          "size": 183,
+          "digest": "sha256:45fc2393798f32d69c9a3cb599057c2584d9c91eec774d64cd8ea04edac977bf",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.5/WEAR-SHA256SUMS.txt"
+        },
+        {
+          "id": 643762570,
+          "name": "WEAR-SOURCE_VERSION.json",
+          "size": 167,
+          "digest": "sha256:23fa8433bfeee71d3f0648419cdc64270cef7773eea711bf6db40dc99d2bc651",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.5/WEAR-SOURCE_VERSION.json"
+        }
+      ]
+    },
+    {
+      "id": 410178831,
+      "tag_name": "v1.3.4",
+      "name": "TrainPilot 1.3.4",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-12T04:52:16Z",
+      "target_commitish": "df81558be3ef5f8a6aed6af3e06bdabefbe48839",
+      "platform": "Phone",
+      "tagCommit": "df81558be3ef5f8a6aed6af3e06bdabefbe48839",
+      "originalBodySha256": "dcd1e6a04703767e5397ef812d49277ecf8c8a0bbb2248267b70ecd7763b8521",
+      "assets": [
+        {
+          "id": 632699550,
+          "name": "phone-apk-badging.txt",
+          "size": 7076,
+          "digest": "sha256:9d1a848f7b4c16037a96572413e11b53bfced3ff5390b230cfef0e13ee84e828",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.4/phone-apk-badging.txt"
+        },
+        {
+          "id": 632699551,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:dc796f051531984cd40b4fdeb856766039c17cf9342f0866db6ff5b4d3268f16",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.4/SHA256SUMS.txt"
+        },
+        {
+          "id": 632699548,
+          "name": "TrainPilot-1.3.4-source.zip",
+          "size": 3203441,
+          "digest": "sha256:50bb631f88b98fa7d851d72040922ecf2f5a02c126ed309a547a5aa1a43d8a34",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.4/TrainPilot-1.3.4-source.zip"
+        },
+        {
+          "id": 632699547,
+          "name": "TrainPilot-1.3.4.apk",
+          "size": 5758549,
+          "digest": "sha256:58ceae4a43a1faee4a34d3d3720df7b753e46a4104e8197db11333987051af40",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.4/TrainPilot-1.3.4.apk"
+        }
+      ]
+    },
+    {
+      "id": 410176445,
+      "tag_name": "wear-v1.3.4",
+      "name": "TrainPilot Wear OS 1.3.4",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-12T04:49:33Z",
+      "target_commitish": "df81558be3ef5f8a6aed6af3e06bdabefbe48839",
+      "platform": "Wear OS",
+      "tagCommit": "df81558be3ef5f8a6aed6af3e06bdabefbe48839",
+      "originalBodySha256": "f55b7c74b0d410e6c6bd342c0c19ed54568c53939d39534a8511288e6bb8d72d",
+      "assets": [
+        {
+          "id": 632694986,
+          "name": "TrainPilot-1.3.4-wear.apk",
+          "size": 3866951,
+          "digest": "sha256:4e5cd2b73ebf824e310c5eda17c5171a8fa07a1b06b36b14f16544fb004e39e1",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.4/TrainPilot-1.3.4-wear.apk"
+        },
+        {
+          "id": 632694985,
+          "name": "wear-apk-badging.txt",
+          "size": 5533,
+          "digest": "sha256:6565eff24de0ea1347482e38202c30708638e1f0ada2dc244c0a35c87569e0e3",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.4/wear-apk-badging.txt"
+        },
+        {
+          "id": 632694989,
+          "name": "WEAR-SHA256SUMS.txt",
+          "size": 183,
+          "digest": "sha256:c590abe826fc78e6a29dafa9930ebcca5a336f37e51cef287abf1ec851e732ff",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.4/WEAR-SHA256SUMS.txt"
+        },
+        {
+          "id": 632694988,
+          "name": "WEAR-SOURCE_VERSION.json",
+          "size": 167,
+          "digest": "sha256:96d8f56d8d955fc46e5479708cdc5880e3d26f0581f3d5e885879e1c686462db",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.4/WEAR-SOURCE_VERSION.json"
+        }
+      ]
+    },
+    {
+      "id": 409495772,
+      "tag_name": "v1.3.3",
+      "name": "TrainPilot 1.3.3",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-11T07:12:46Z",
+      "target_commitish": "a7e6b2bde6a4ac7cdfc7b58cc077b5d4a8355a6d",
+      "platform": "Phone",
+      "tagCommit": "a7e6b2bde6a4ac7cdfc7b58cc077b5d4a8355a6d",
+      "originalBodySha256": "cfffcf822bb653e40db47de085dc4786fb9f855a94833121960e480d3b02aa17",
+      "assets": [
+        {
+          "id": 630674824,
+          "name": "phone-apk-badging.txt",
+          "size": 7076,
+          "digest": "sha256:515e8550a950a7e9a25f26143d2a5b47e3e2c9339f1c36d46fe687d01f7bdaa8",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.3/phone-apk-badging.txt"
+        },
+        {
+          "id": 630674819,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:333074a2ae8c6b493ddf0897ee1a7238818f118d9ea8203817512f6b22acf184",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.3/SHA256SUMS.txt"
+        },
+        {
+          "id": 630674823,
+          "name": "TrainPilot-1.3.3-source.zip",
+          "size": 3173587,
+          "digest": "sha256:729e3979ceaa6d8528a4c7818bfdffb4b587aa2ff91b8d2232ee4b00b8bb13ea",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.3/TrainPilot-1.3.3-source.zip"
+        },
+        {
+          "id": 630674820,
+          "name": "TrainPilot-1.3.3.apk",
+          "size": 5756689,
+          "digest": "sha256:974bdac1401938a40cd86492fd0d429532e64938273dc2684c44a0df1bcd89a6",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.3/TrainPilot-1.3.3.apk"
+        }
+      ]
+    },
+    {
+      "id": 409494290,
+      "tag_name": "wear-v1.3.3",
+      "name": "TrainPilot Wear OS 1.3.3",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-11T07:09:45Z",
+      "target_commitish": "a7e6b2bde6a4ac7cdfc7b58cc077b5d4a8355a6d",
+      "platform": "Wear OS",
+      "tagCommit": "a7e6b2bde6a4ac7cdfc7b58cc077b5d4a8355a6d",
+      "originalBodySha256": "1f12576402d9abf36493c481034938af1afd8bcc3b3bc10a204154f720ea133e",
+      "assets": [
+        {
+          "id": 630674867,
+          "name": "TrainPilot-1.3.3-wear.apk",
+          "size": 3834183,
+          "digest": "sha256:11a9ff2be26795c8bacdb6ca64a245653ad9af27adcb6ecb194fcefe7f311a2e",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.3/TrainPilot-1.3.3-wear.apk"
+        },
+        {
+          "id": 630674872,
+          "name": "wear-apk-badging.txt",
+          "size": 5533,
+          "digest": "sha256:9f160733c00b582b8e9e0a71cb253da7580270814de39f807e111a0737fe3012",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.3/wear-apk-badging.txt"
+        },
+        {
+          "id": 630674869,
+          "name": "WEAR-SHA256SUMS.txt",
+          "size": 183,
+          "digest": "sha256:00acd4597f0ed0ca6f286a0f81cca5c80c0690cc968f953880dee5fccaec79a4",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.3/WEAR-SHA256SUMS.txt"
+        },
+        {
+          "id": 630674870,
+          "name": "WEAR-SOURCE_VERSION.json",
+          "size": 167,
+          "digest": "sha256:75304b41d7e233049961b4b35cb14dfb171fe223818792e5d072ef2158521c23",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.3/WEAR-SOURCE_VERSION.json"
+        }
+      ]
+    },
+    {
+      "id": 408927441,
+      "tag_name": "v1.3.0",
+      "name": "TrainPilot 1.3.0",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-10T12:11:15Z",
+      "target_commitish": "2fdcf4fde7021fb234bd85fff0a59b698d36c808",
+      "platform": "Phone",
+      "tagCommit": "2fdcf4fde7021fb234bd85fff0a59b698d36c808",
+      "originalBodySha256": "87c4444b4761c3c699b2e3020bb7212b8ac311d0ec4697e3b589a406d02f21fe",
+      "assets": [
+        {
+          "id": 627884485,
+          "name": "phone-apk-badging.txt",
+          "size": 7039,
+          "digest": "sha256:7aa2c98dd3a8a1591bd6ae87b6e6f27f36e6c65a840bcf327bc044d9b9f18c06",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.0/phone-apk-badging.txt"
+        },
+        {
+          "id": 627884484,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:12db529332a161ca8755d82d7073d83df4715be14e87ddf2c16c41b5cab90a49",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.0/SHA256SUMS.txt"
+        },
+        {
+          "id": 627884483,
+          "name": "TrainPilot-1.3.0-source.zip",
+          "size": 3138316,
+          "digest": "sha256:b3fb63cf470e59fe00a4a986db7197d8a453646d662d2c303c799a37da26c0ed",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.0/TrainPilot-1.3.0-source.zip"
+        },
+        {
+          "id": 627884486,
+          "name": "TrainPilot-1.3.0.apk",
+          "size": 5734828,
+          "digest": "sha256:4f6cfe6501fa64ed2744fcd7743e6eb63acedfa5ea95f5444c3b17461191f508",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.3.0/TrainPilot-1.3.0.apk"
+        }
+      ]
+    },
+    {
+      "id": 408925858,
+      "tag_name": "wear-v1.3.0",
+      "name": "TrainPilot Wear OS 1.3.0",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-10T12:07:59Z",
+      "target_commitish": "2fdcf4fde7021fb234bd85fff0a59b698d36c808",
+      "platform": "Wear OS",
+      "tagCommit": "2fdcf4fde7021fb234bd85fff0a59b698d36c808",
+      "originalBodySha256": "9398d700181dc3cd7c7f3951b6d1a5723ebd9e151474f92a2a8a3d929b632ffb",
+      "assets": [
+        {
+          "id": 627878018,
+          "name": "TrainPilot-1.3.0-wear.apk",
+          "size": 3833911,
+          "digest": "sha256:009313a7f4c50dd990df729ed26ba72b52075c4fb4969a304feb6ad92ec8e9a0",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.0/TrainPilot-1.3.0-wear.apk"
+        },
+        {
+          "id": 627878015,
+          "name": "wear-apk-badging.txt",
+          "size": 5533,
+          "digest": "sha256:dd26863d4d94a3f37edc8c4dbec00703d9e0c8337ad202697d97c0c39b1e5210",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.0/wear-apk-badging.txt"
+        },
+        {
+          "id": 627878022,
+          "name": "WEAR-SHA256SUMS.txt",
+          "size": 183,
+          "digest": "sha256:fa50ff8d6677c25d8b5021139c809ec93bc4e3b0967c05f0e611c4053717c4bb",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.0/WEAR-SHA256SUMS.txt"
+        },
+        {
+          "id": 627878017,
+          "name": "WEAR-SOURCE_VERSION.json",
+          "size": 167,
+          "digest": "sha256:69fdd50706a8f603d1e1bc644f93be7a1f1d1f4ec23877cadb6290b3115db292",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.0/WEAR-SOURCE_VERSION.json"
+        }
+      ]
+    },
+    {
+      "id": 408246034,
+      "tag_name": "v1.2.13",
+      "name": "TrainPilot 1.2.13",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-09T19:02:48Z",
+      "target_commitish": "8148c94271446a748ab57579142f755eb784cebe",
+      "platform": "Phone",
+      "tagCommit": "8148c94271446a748ab57579142f755eb784cebe",
+      "originalBodySha256": "a4451cd06099673edec3732ec8b5c12a0286d85fcb899b0ad98bd342cbb5f99b",
+      "assets": [
+        {
+          "id": 625891857,
+          "name": "phone-apk-badging.txt",
+          "size": 7040,
+          "digest": "sha256:240ead2c59b2b56689ff9e3aa9088960c7a15635bc760a2e79d1bcb419d7f6fb",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.13/phone-apk-badging.txt"
+        },
+        {
+          "id": 625891859,
+          "name": "SHA256SUMS.txt",
+          "size": 183,
+          "digest": "sha256:c535aa63ce6d4117c6e1998fd4765686c2a68de5bac7caccebf8e47b95fe2cf7",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.13/SHA256SUMS.txt"
+        },
+        {
+          "id": 625891856,
+          "name": "TrainPilot-1.2.13-source.zip",
+          "size": 3107536,
+          "digest": "sha256:247c166e9b830b280f021d1ce6141b34d751e29f4219644ba550e90271000e00",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.13/TrainPilot-1.2.13-source.zip"
+        },
+        {
+          "id": 625891858,
+          "name": "TrainPilot-1.2.13.apk",
+          "size": 5730808,
+          "digest": "sha256:e2473a645f1431a662b076552442d069ce85a7d96dec8de3bcbeff294569cad7",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.13/TrainPilot-1.2.13.apk"
+        }
+      ]
+    },
+    {
+      "id": 408113391,
+      "tag_name": "v1.2.12",
+      "name": "TrainPilot 1.2.12",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-09T16:31:27Z",
+      "target_commitish": "dfa3f049ed3f5eb507dec6697f045a3186fffa68",
+      "platform": "Phone",
+      "tagCommit": "dfa3f049ed3f5eb507dec6697f045a3186fffa68",
+      "originalBodySha256": "134cec58bc82f0f56cffd744974ea1222191d6679c9bd0784ad341eec5a6f7da",
+      "assets": [
+        {
+          "id": 625527262,
+          "name": "phone-apk-badging.txt",
+          "size": 7040,
+          "digest": "sha256:927fa553876c83f22ae5c18bd40bfd891db828d80d2c47e2a2f1e2ee351ffa08",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.12/phone-apk-badging.txt"
+        },
+        {
+          "id": 625527252,
+          "name": "SHA256SUMS.txt",
+          "size": 183,
+          "digest": "sha256:a3286303e82280707bddf0f7aaa8bcbb176efb1079640e0bc38eb7e7f3833bf0",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.12/SHA256SUMS.txt"
+        },
+        {
+          "id": 625527256,
+          "name": "TrainPilot-1.2.12-source.zip",
+          "size": 3098862,
+          "digest": "sha256:b1d8dc0060eae26cc5eb54aa8fd6e2324b3ea6a6b6317b23717e7b7699cacd3f",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.12/TrainPilot-1.2.12-source.zip"
+        },
+        {
+          "id": 625527261,
+          "name": "TrainPilot-1.2.12.apk",
+          "size": 5730604,
+          "digest": "sha256:9ac99497e1014c9c087c8b4db8b8684ca0a2739306f88506b86b9abab2b287e7",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.12/TrainPilot-1.2.12.apk"
+        }
+      ]
+    },
+    {
+      "id": 408038972,
+      "tag_name": "wear-v1.2.15",
+      "name": "TrainPilot Wear OS 1.2.15",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-09T15:16:39Z",
+      "target_commitish": "7fce8bf22103bd3544a8cb07829cb504a3aff187",
+      "platform": "Wear OS",
+      "tagCommit": "7fce8bf22103bd3544a8cb07829cb504a3aff187",
+      "originalBodySha256": "ea22c57e1136d8ef721a68952dd419ecdd14a3ea4a380df26301803384f57915",
+      "assets": [
+        {
+          "id": 625332829,
+          "name": "TrainPilot-1.2.15-wear.apk",
+          "size": 3534947,
+          "digest": "sha256:3c67e3f115c229eccbc348370f5dd08ce7c8f95922d822652171ab7444f6fe60",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.2.15/TrainPilot-1.2.15-wear.apk"
+        },
+        {
+          "id": 625332823,
+          "name": "wear-apk-badging.txt",
+          "size": 5534,
+          "digest": "sha256:f02564e94c5e7380c3699c3978d7d1ab171ebf1d9befa3868d67c605a4e42ba5",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.2.15/wear-apk-badging.txt"
+        },
+        {
+          "id": 625332828,
+          "name": "WEAR-SHA256SUMS.txt",
+          "size": 184,
+          "digest": "sha256:8ceb16076496625571c38e82f01f233a7beee9d501e10946f8402a218d89acb4",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.2.15/WEAR-SHA256SUMS.txt"
+        },
+        {
+          "id": 625332830,
+          "name": "WEAR-SOURCE_VERSION.json",
+          "size": 169,
+          "digest": "sha256:037386b4eebd8672cf2761ab85566ec811a34ca8a76eea4c8aaa6d93b9c76ac2",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.2.15/WEAR-SOURCE_VERSION.json"
+        }
+      ]
+    },
+    {
+      "id": 407933288,
+      "tag_name": "wear-v1.2.14",
+      "name": "TrainPilot Wear OS 1.2.14",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-09T13:16:43Z",
+      "target_commitish": "c34bd338272cc2feb9696915e72c75e067a497ec",
+      "platform": "Wear OS",
+      "tagCommit": "c34bd338272cc2feb9696915e72c75e067a497ec",
+      "originalBodySha256": "7b51a5ee804a7c277e06df5134e56f578d60de4433f26c2677d8362ee76428ef",
+      "assets": [
+        {
+          "id": 625026059,
+          "name": "TrainPilot-1.2.14-wear.apk",
+          "size": 29998682,
+          "digest": "sha256:932fde97a79ebb72e10a96104fbbc09d197067dac122539aed865a09bbce2d3b",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.2.14/TrainPilot-1.2.14-wear.apk"
+        },
+        {
+          "id": 625026054,
+          "name": "wear-apk-badging.txt",
+          "size": 5534,
+          "digest": "sha256:613e06148679b19ede04d53f7b02c62579d3680f7f4a2667a59c1ff90d6090b1",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.2.14/wear-apk-badging.txt"
+        },
+        {
+          "id": 625026055,
+          "name": "WEAR-SHA256SUMS.txt",
+          "size": 184,
+          "digest": "sha256:91832a2e000b3b8798181bab45cb00055a40ab78a51fefeef1c00c1e4f92d17f",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.2.14/WEAR-SHA256SUMS.txt"
+        },
+        {
+          "id": 625026060,
+          "name": "WEAR-SOURCE_VERSION.json",
+          "size": 169,
+          "digest": "sha256:5b3efe99161c4dc7a08b1dde02ad8300536c59212f9d77662b8d9ba7e1fab5db",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.2.14/WEAR-SOURCE_VERSION.json"
+        }
+      ]
+    },
+    {
+      "id": 407153856,
+      "tag_name": "v1.2.10",
+      "name": "TrainPilot 1.2.10",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-08T18:43:17Z",
+      "target_commitish": "daa2acfc0b30ce91b7b10e3ff88751f8e1e7fa96",
+      "platform": "Phone",
+      "tagCommit": "daa2acfc0b30ce91b7b10e3ff88751f8e1e7fa96",
+      "originalBodySha256": "4d19a501ea93e9d2d501f90499e857f1222fa11c710213acff760256cdbd8322",
+      "assets": [
+        {
+          "id": 622685449,
+          "name": "phone-apk-badging.txt",
+          "size": 7040,
+          "digest": "sha256:a2f083bfb025a70c96025b9f7d22a43553a56a23c1b756f2eb4f5b15d1487c41",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.10/phone-apk-badging.txt"
+        },
+        {
+          "id": 622685452,
+          "name": "SHA256SUMS.txt",
+          "size": 276,
+          "digest": "sha256:9609240e23c986b9562b119cacaff66187cd19f264052f77899e113dea157b43",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.10/SHA256SUMS.txt"
+        },
+        {
+          "id": 622685451,
+          "name": "TrainPilot-1.2.10-source.zip",
+          "size": 3050868,
+          "digest": "sha256:1dbe3ac93513ffb1eb94727b0645b4468b7e50eeb0a7de82145e5f47d7af4dde",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.10/TrainPilot-1.2.10-source.zip"
+        },
+        {
+          "id": 622685458,
+          "name": "TrainPilot-1.2.10-wear.apk",
+          "size": 29946442,
+          "digest": "sha256:98cdf377241346c7cfef4923490062c2ea29f54447c389a5322094d4d91dcb13",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.10/TrainPilot-1.2.10-wear.apk"
+        },
+        {
+          "id": 622685446,
+          "name": "TrainPilot-1.2.10.apk",
+          "size": 5727556,
+          "digest": "sha256:c64c31742f2450a298c6ba34f598d0725070b09eea39222324c053dfcb458148",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.10/TrainPilot-1.2.10.apk"
+        },
+        {
+          "id": 622685495,
+          "name": "wear-apk-badging.txt",
+          "size": 5310,
+          "digest": "sha256:c470c02c2372f51ec27b7bacddd51de7191cddedef86548c31f50d3155f410d8",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.10/wear-apk-badging.txt"
+        }
+      ]
+    },
+    {
+      "id": 407067144,
+      "tag_name": "v1.2.9",
+      "name": "TrainPilot 1.2.9",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-08T16:56:27Z",
+      "target_commitish": "db9ec14652b0081370d2cd750087105fd1eb1eb4",
+      "platform": "Phone",
+      "tagCommit": "db9ec14652b0081370d2cd750087105fd1eb1eb4",
+      "originalBodySha256": "b4bab493b4bb4b5b2702a685c28bae883067386e974933b2ed88ef65cd5fee4a",
+      "assets": [
+        {
+          "id": 622434231,
+          "name": "phone-apk-badging.txt",
+          "size": 7039,
+          "digest": "sha256:1b0a371707dfe28814bd3ca1b4bd9625303b857929269ee074cd8a05551b2657",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.9/phone-apk-badging.txt"
+        },
+        {
+          "id": 622434238,
+          "name": "SHA256SUMS.txt",
+          "size": 273,
+          "digest": "sha256:73c0b635a40242d5eb9859048e34d9153c7e72c18ab6c293be865c1d81593e89",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.9/SHA256SUMS.txt"
+        },
+        {
+          "id": 622434236,
+          "name": "TrainPilot-1.2.9-source.zip",
+          "size": 3047581,
+          "digest": "sha256:1f9b92c2d00f127c2b4093d46a83579b7a4021e33be264ae252d88fc623388dc",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.9/TrainPilot-1.2.9-source.zip"
+        },
+        {
+          "id": 622434235,
+          "name": "TrainPilot-1.2.9-wear.apk",
+          "size": 29946442,
+          "digest": "sha256:9990f503d2299c67324bfe74f44ddb7e163d1407ff342cbff695eb5fc8bef308",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.9/TrainPilot-1.2.9-wear.apk"
+        },
+        {
+          "id": 622434232,
+          "name": "TrainPilot-1.2.9.apk",
+          "size": 5723040,
+          "digest": "sha256:9941d7a160778d6701076ba00f4ff2efa842c0e0b5e5826fdd47308e871a734d",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.9/TrainPilot-1.2.9.apk"
+        },
+        {
+          "id": 622434270,
+          "name": "wear-apk-badging.txt",
+          "size": 5309,
+          "digest": "sha256:3eb378e90b5981aeb028d3f91d42813e58fdf52fe9560b2e8ff970d0078d918a",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.9/wear-apk-badging.txt"
+        }
+      ]
+    },
+    {
+      "id": 405448853,
+      "tag_name": "v1.2.8",
+      "name": "TrainPilot 1.2.8",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-07T06:30:31Z",
+      "target_commitish": "a7af1a429a0516192360588578de3e879d25f431",
+      "platform": "Phone",
+      "tagCommit": "a7af1a429a0516192360588578de3e879d25f431",
+      "originalBodySha256": "2aa5e8f3f96c7e68271a75c5b4e31ee4adb4736b30fba7700594a012698da19d",
+      "assets": [
+        {
+          "id": 617810565,
+          "name": "apk-badging.txt",
+          "size": 7039,
+          "digest": "sha256:2b0474b6b465ffa33f941f5fcc20222a554eae424f2d53e362902045c31d74f4",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.8/apk-badging.txt"
+        },
+        {
+          "id": 617810566,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:793549a321b7b29259c92570b21576a95eb321b79d958376b2577527b8314c44",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.8/SHA256SUMS.txt"
+        },
+        {
+          "id": 617810564,
+          "name": "TrainPilot-1.2.8-source.zip",
+          "size": 2388775,
+          "digest": "sha256:6cf19c55c5c0386ff4a95ce3331eda8ead134a3facb44202eb3aed3837a4f536",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.8/TrainPilot-1.2.8-source.zip"
+        },
+        {
+          "id": 617810567,
+          "name": "TrainPilot-1.2.8.apk",
+          "size": 5294218,
+          "digest": "sha256:eaf48ab4bd39941e30c57f1e57d5463236d73b485ad8b30295af3dbd5b877ab4",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.8/TrainPilot-1.2.8.apk"
+        }
+      ]
+    },
+    {
+      "id": 406091831,
+      "tag_name": "v1.2.8-rc1",
+      "name": "TrainPilot 1.2.8-rc1",
+      "draft": false,
+      "prerelease": true,
+      "published_at": "2026-10-07T19:28:00Z",
+      "target_commitish": "bf7ecaf476ac3cbcfaf508664bcfadde03bd6ee9",
+      "platform": "Phone",
+      "tagCommit": "bf7ecaf476ac3cbcfaf508664bcfadde03bd6ee9",
+      "originalBodySha256": "549dc6643fe450bb6102ff9fc65e407274401770c48a75de7975cb74fa47b90f",
+      "assets": [
+        {
+          "id": 619593758,
+          "name": "phone-apk-badging.txt",
+          "size": 7043,
+          "digest": "sha256:a8dfab7b405ff6b1fa351e74ba4b203c679100162ac9a26cb91c3ebd19aee7ef",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.8-rc1/phone-apk-badging.txt"
+        },
+        {
+          "id": 619593763,
+          "name": "SHA256SUMS.txt",
+          "size": 285,
+          "digest": "sha256:0e7bbe36a0df06de07c633fb6734b9fe25a4a55ac2b62186f0faf2deb9d9918f",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.8-rc1/SHA256SUMS.txt"
+        },
+        {
+          "id": 619593759,
+          "name": "TrainPilot-1.2.8-rc1-source.zip",
+          "size": 2443288,
+          "digest": "sha256:94216f985ef691277de91b74160b986fb6422da0dfc8b77d5140e21838291a86",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.8-rc1/TrainPilot-1.2.8-rc1-source.zip"
+        },
+        {
+          "id": 619593760,
+          "name": "TrainPilot-1.2.8-rc1-wear.apk",
+          "size": 20530142,
+          "digest": "sha256:9cb1ec285c06cb27b754b3bf179edf996054cb8f7abed3767ab7dc2d02a5741a",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.8-rc1/TrainPilot-1.2.8-rc1-wear.apk"
+        },
+        {
+          "id": 619593757,
+          "name": "TrainPilot-1.2.8-rc1.apk",
+          "size": 5466853,
+          "digest": "sha256:3a39ffd43fab2c16bf5cac046515e5af04fe879bf43ad25a514d4819a04bba54",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.8-rc1/TrainPilot-1.2.8-rc1.apk"
+        },
+        {
+          "id": 619593767,
+          "name": "wear-apk-badging.txt",
+          "size": 4408,
+          "digest": "sha256:fc34a3b2480893681e6ee63ab04de62968e2d7bfae30802bae32a185e4367fef",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.8-rc1/wear-apk-badging.txt"
+        }
+      ]
+    },
+    {
+      "id": 404574373,
+      "tag_name": "v1.2.7",
+      "name": "TrainPilot 1.2.7",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-06T10:19:30Z",
+      "target_commitish": "bbdd243e1eb0236f1b2f7ceaab504022349d0283",
+      "platform": "Phone",
+      "tagCommit": "bbdd243e1eb0236f1b2f7ceaab504022349d0283",
+      "originalBodySha256": "7f491e0b565f48f7087719c3307b433a8d487661d9b3bbb44d72b05e37876434",
+      "assets": [
+        {
+          "id": 615170413,
+          "name": "apk-badging.txt",
+          "size": 7039,
+          "digest": "sha256:62a1cc355c32b3591119cd47dee0c3d92a05132a913ff2c5ed47781e9048461c",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.7/apk-badging.txt"
+        },
+        {
+          "id": 615170423,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:df350cbe259fa4b3144da57cb611711471fcf923359bea65c414188c67018495",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.7/SHA256SUMS.txt"
+        },
+        {
+          "id": 615170419,
+          "name": "TrainPilot-1.2.7-source.zip",
+          "size": 1991880,
+          "digest": "sha256:cd3ed7f4220684aff974926bdaace390fb26ae976cec0a85faf4794ec0f132ee",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.7/TrainPilot-1.2.7-source.zip"
+        },
+        {
+          "id": 615170411,
+          "name": "TrainPilot-1.2.7.apk",
+          "size": 4929629,
+          "digest": "sha256:39160da8d6382732cb96b1a2772d6cb00c2b53b78eeb9c05980597d122195898",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.7/TrainPilot-1.2.7.apk"
+        }
+      ]
+    },
+    {
+      "id": 403197237,
+      "tag_name": "v1.2.6",
+      "name": "TrainPilot 1.2.6",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-04T20:33:20Z",
+      "target_commitish": "0afc38119cb360effe49349e2ef92edbb2c8a6b1",
+      "platform": "Phone",
+      "tagCommit": "0afc38119cb360effe49349e2ef92edbb2c8a6b1",
+      "originalBodySha256": "4fde60581e165f7744db005f918c79a6b1acdaeb5400fc1766bb6e0757409c57",
+      "assets": [
+        {
+          "id": 610608903,
+          "name": "apk-badging.txt",
+          "size": 7039,
+          "digest": "sha256:3c1d11ff095fc84fcef593a0986ba7fae9ff6538f1bc66d556c7062e739e6d9e",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.6/apk-badging.txt"
+        },
+        {
+          "id": 610608904,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:0f7112d63201bdeba2eae59e99f95a45a6326247d52deb27b49dadfb1615f03a",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.6/SHA256SUMS.txt"
+        },
+        {
+          "id": 610608905,
+          "name": "TrainPilot-1.2.6-source.zip",
+          "size": 1942032,
+          "digest": "sha256:1dd86ce4fa78acaa2b6c88f0736deba5703b12fb42eac7eab3d9928c81e1a2d7",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.6/TrainPilot-1.2.6-source.zip"
+        },
+        {
+          "id": 610608907,
+          "name": "TrainPilot-1.2.6.apk",
+          "size": 4901646,
+          "digest": "sha256:d06018f7f8b5ae732dcf82f8691d554c2313ce64aa48d0faf06eaecac6a4c4b2",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.6/TrainPilot-1.2.6.apk"
+        }
+      ]
+    },
+    {
+      "id": 402805021,
+      "tag_name": "v1.2.0",
+      "name": "TrainPilot 1.2.0",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-04T03:19:05Z",
+      "target_commitish": "9f569ff232e33c712799fc3f6181e5ba5c4f1aa8",
+      "platform": "Phone",
+      "tagCommit": "9f569ff232e33c712799fc3f6181e5ba5c4f1aa8",
+      "originalBodySha256": "a8fa5a2e2f814518b46883daa4e5f1b64c7d33aba9871d33adb7d8c307543970",
+      "assets": [
+        {
+          "id": 609033129,
+          "name": "apk-badging.txt",
+          "size": 6879,
+          "digest": "sha256:8e81e81e56ff1383c4b175a4345d76ad1d7d0f2d0ccf537d63782d1e3279649b",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.0/apk-badging.txt"
+        },
+        {
+          "id": 609033131,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:e329c5d36b578354d5167714c7c0eafdc406d548a4db31ff840b5042cb7c6c38",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.0/SHA256SUMS.txt"
+        },
+        {
+          "id": 609033128,
+          "name": "TrainPilot-1.2.0-source.zip",
+          "size": 1903793,
+          "digest": "sha256:7ef4ae1d47bc247fb870a1ae295aa12150688536c70b4c509405a3eb5b419d7b",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.0/TrainPilot-1.2.0-source.zip"
+        },
+        {
+          "id": 609033133,
+          "name": "TrainPilot-1.2.0.apk",
+          "size": 4886274,
+          "digest": "sha256:d8acd5ed233a7559ec7aef71399d1e2030fe05f86de4f9f145aa83b9ccff6b21",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.2.0/TrainPilot-1.2.0.apk"
+        }
+      ]
+    },
+    {
+      "id": 402501929,
+      "tag_name": "v1.0.9",
+      "name": "TrainPilot 1.0.9",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-03T12:22:03Z",
+      "target_commitish": "81032d9b3ec697680e7fdb1210e89f94e584b299",
+      "platform": "Phone",
+      "tagCommit": "81032d9b3ec697680e7fdb1210e89f94e584b299",
+      "originalBodySha256": "25c92deff9c4dcf9db26f0b18d69365e6e3fb842103527322f2bdfac8a7ad125",
+      "assets": [
+        {
+          "id": 607770183,
+          "name": "apk-badging.txt",
+          "size": 6243,
+          "digest": "sha256:272479ea5bc99ca5a7b0f2c8c540a9e4ed91ffc606eb4e7640b35f2159a1bfbf",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.9/apk-badging.txt"
+        },
+        {
+          "id": 607770181,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:32bab510ddeeb8e4ba46dd9dc0d144fa041d558bfdb464ce6b63e55a45fee243",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.9/SHA256SUMS.txt"
+        },
+        {
+          "id": 607770180,
+          "name": "TrainPilot-1.0.9-source.zip",
+          "size": 1780485,
+          "digest": "sha256:86ed3c7a55159df5abe49eca5054ec53d519a4f624bf4ae7cefb84cb9b95ffc2",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.9/TrainPilot-1.0.9-source.zip"
+        },
+        {
+          "id": 607770182,
+          "name": "TrainPilot-1.0.9.apk",
+          "size": 4811911,
+          "digest": "sha256:050edb74541858ac76fc5ad59dc14aa82a609c56de7372112461be1bb54b64b7",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.9/TrainPilot-1.0.9.apk"
+        }
+      ]
+    },
+    {
+      "id": 402461841,
+      "tag_name": "v1.0.8",
+      "name": "TrainPilot 1.0.8",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-03T10:39:50Z",
+      "target_commitish": "a47a5000ec6eaf44eda46bea5ae0598b8b88a11f",
+      "platform": "Phone",
+      "tagCommit": "a47a5000ec6eaf44eda46bea5ae0598b8b88a11f",
+      "originalBodySha256": "41d89e08e649ac0f923d38908e961da78db48a9c026a356aacb0f36108722e0c",
+      "assets": [
+        {
+          "id": 607631896,
+          "name": "apk-badging.txt",
+          "size": 6243,
+          "digest": "sha256:8767b17663d11f8fbf040a4d0d7694cfee2474585e3f709e3f8fe55f215eb6a1",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.8/apk-badging.txt"
+        },
+        {
+          "id": 607631900,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:6f2d7b5ce7aea3c6a715d365f1ddc951aaaff85f0a20769068035b3f028c065c",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.8/SHA256SUMS.txt"
+        },
+        {
+          "id": 607631898,
+          "name": "TrainPilot-1.0.8-source.zip",
+          "size": 1774336,
+          "digest": "sha256:c25beeba8cf4cc3e262bb3de9fc636065b9a791c63448cf7465abe9aa223e92f",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.8/TrainPilot-1.0.8-source.zip"
+        },
+        {
+          "id": 607631897,
+          "name": "TrainPilot-1.0.8.apk",
+          "size": 4810473,
+          "digest": "sha256:9c947097c214e390f7e26591467d4fc73f2995bc58851d255e19155d1609d621",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.8/TrainPilot-1.0.8.apk"
+        }
+      ]
+    },
+    {
+      "id": 402447555,
+      "tag_name": "v1.0.7",
+      "name": "TrainPilot 1.0.7",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-03T10:01:37Z",
+      "target_commitish": "5b83b1c6f1c6b1d90d011c910093b78a99e2135e",
+      "platform": "Phone",
+      "tagCommit": "5b83b1c6f1c6b1d90d011c910093b78a99e2135e",
+      "originalBodySha256": "f4d8fbaa86b913a8db8b38d0eea09417b2f50165cf72382a64a454ffee27d036",
+      "assets": [
+        {
+          "id": 607578685,
+          "name": "apk-badging.txt",
+          "size": 6243,
+          "digest": "sha256:00fcaf6d496e49291179b069af7184f3c4e832c9f2064fae4f74086980fbf54f",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.7/apk-badging.txt"
+        },
+        {
+          "id": 607578687,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:26b6d5e40b5d0094ec932636c74d0d7ebcc6b6a42d81723a3fab77ca72125f57",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.7/SHA256SUMS.txt"
+        },
+        {
+          "id": 607578684,
+          "name": "TrainPilot-1.0.7-source.zip",
+          "size": 1769963,
+          "digest": "sha256:21ac30d9baa8fc426a960c5f5402f53d01eadc6d388d08f08a127c55336ac16e",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.7/TrainPilot-1.0.7-source.zip"
+        },
+        {
+          "id": 607578686,
+          "name": "TrainPilot-1.0.7.apk",
+          "size": 4810397,
+          "digest": "sha256:f8a472b58c80f53207f24b5be9f62ca8e21bdb01a890200687de09be750be726",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.7/TrainPilot-1.0.7.apk"
+        }
+      ]
+    },
+    {
+      "id": 402728110,
+      "tag_name": "candidate-1.1.3-2701",
+      "name": "TrainPilot 1.1.3 /2701 — RDFit adatpróba",
+      "draft": false,
+      "prerelease": true,
+      "published_at": "2026-10-03T23:17:36Z",
+      "target_commitish": "3f801286b0e1afc7098c8cd5c5d95538131a60e1",
+      "platform": "Phone",
+      "tagCommit": "3f801286b0e1afc7098c8cd5c5d95538131a60e1",
+      "originalBodySha256": "233739fcda176a3bec59963c50ff233c7bcd7160a2141d68b44e8cc23b9f895a",
+      "assets": [
+        {
+          "id": 608707816,
+          "name": "apk-badging.txt",
+          "size": 6879,
+          "digest": "sha256:8bc41a9b1a8968bebef47e67cccab683006ca0fbadf26ac5e46c61a332e4e8ee",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/candidate-1.1.3-2701/apk-badging.txt"
+        },
+        {
+          "id": 608707786,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:4cde7d6d2f94cff1dc0e9aca34d4dafbdc60777946254cf45550cddd7ea75e17",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/candidate-1.1.3-2701/SHA256SUMS.txt"
+        },
+        {
+          "id": 608707746,
+          "name": "TrainPilot-1.1.3-source.zip",
+          "size": 1850276,
+          "digest": "sha256:20a004215ce6624cfdf468066e021c9b8d70f964b4ecfcc98a9146e93277e3fd",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/candidate-1.1.3-2701/TrainPilot-1.1.3-source.zip"
+        },
+        {
+          "id": 608707707,
+          "name": "TrainPilot-1.1.3.apk",
+          "size": 4846652,
+          "digest": "sha256:07151802070169ac57eaeab50b58e0d84c418fbc07200cb7516a902b6cc6a078",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/candidate-1.1.3-2701/TrainPilot-1.1.3.apk"
+        }
+      ]
+    },
+    {
+      "id": 402715629,
+      "tag_name": "candidate-1.1.2-2700",
+      "name": "TrainPilot 1.1.2 / 2700 — Bluetooth MAC-azonosítás",
+      "draft": false,
+      "prerelease": true,
+      "published_at": "2026-10-03T22:32:32Z",
+      "target_commitish": "dcfc6836b646a3ce7a821b370eccfbb176b8be61",
+      "platform": "Phone",
+      "tagCommit": "dcfc6836b646a3ce7a821b370eccfbb176b8be61",
+      "originalBodySha256": "edd2b4a59b3dafd0b4d80d9bacb1fa6c9923e59932e63b61a2705f462753c776",
+      "assets": [
+        {
+          "id": 608648732,
+          "name": "apk-badging.txt",
+          "size": 6879,
+          "digest": "sha256:f38fd50017e2340e6a7f1871af35c6135fec18606d28dd6c3bb8f429a8523e75",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/candidate-1.1.2-2700/apk-badging.txt"
+        },
+        {
+          "id": 608648714,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:25c08e1e1f210fc6e80cf69210e1f64353e20b0f758835b25269cba973d764b7",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/candidate-1.1.2-2700/SHA256SUMS.txt"
+        },
+        {
+          "id": 608648696,
+          "name": "TrainPilot-1.1.2-source.zip",
+          "size": 1839906,
+          "digest": "sha256:4960384be21cdd5307af01718eff0df1d9537bb07987f39db5f2c512f52c4061",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/candidate-1.1.2-2700/TrainPilot-1.1.2-source.zip"
+        },
+        {
+          "id": 608648633,
+          "name": "TrainPilot-1.1.2.apk",
+          "size": 4841000,
+          "digest": "sha256:ea16e199079c4d30906c3ed7be4a5380ad639528c8c68a67f2b0a66c0bf82471",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/candidate-1.1.2-2700/TrainPilot-1.1.2.apk"
+        }
+      ]
+    },
+    {
+      "id": 402698944,
+      "tag_name": "candidate-1.1.1-2699",
+      "name": "TrainPilot 1.1.1 / 2699 — Bluetooth GT4Pro+ próba",
+      "draft": false,
+      "prerelease": true,
+      "published_at": "2026-10-03T21:39:10Z",
+      "target_commitish": "565c90a4f1744289d995032f445db4f249dfc97c",
+      "platform": "Phone",
+      "tagCommit": "565c90a4f1744289d995032f445db4f249dfc97c",
+      "originalBodySha256": "418c7b68a4cb05a958a68275656cd086975626e2d17d945dc2547b476aa2afe6",
+      "assets": [
+        {
+          "id": 608581529,
+          "name": "apk-badging.txt",
+          "size": 6879,
+          "digest": "sha256:4c2c9a8533aac96a508f02fa7344563eff3a1977fd4e0f263e01a02300af2dab",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/candidate-1.1.1-2699/apk-badging.txt"
+        },
+        {
+          "id": 608581495,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:40fc01b91e405137c28527d40340ef1998abf2492f26c1de6a44d267b14904de",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/candidate-1.1.1-2699/SHA256SUMS.txt"
+        },
+        {
+          "id": 608581470,
+          "name": "TrainPilot-1.1.1-source.zip",
+          "size": 1829699,
+          "digest": "sha256:062c425dd6ff3a03c60d6b4ba23b0e5069122a5635b2fb510ec3a721085e0062",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/candidate-1.1.1-2699/TrainPilot-1.1.1-source.zip"
+        },
+        {
+          "id": 608581450,
+          "name": "TrainPilot-1.1.1.apk",
+          "size": 4839432,
+          "digest": "sha256:066a68ecaaec04287bd2582117048d3d8ec9aa1b038d2bdcba5ae6b86d97a73a",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/candidate-1.1.1-2699/TrainPilot-1.1.1.apk"
+        }
+      ]
+    },
+    {
+      "id": 402666767,
+      "tag_name": "candidate-1.1.0-2698",
+      "name": "TrainPilot 1.1.0 (2698) – tesztverzió",
+      "draft": false,
+      "prerelease": true,
+      "published_at": "2026-10-03T19:58:14Z",
+      "target_commitish": "b2af3f95321932302e69bd966631a1f276581967",
+      "platform": "Phone",
+      "tagCommit": "b2af3f95321932302e69bd966631a1f276581967",
+      "originalBodySha256": "caa2ba65087ec221beb140f11626ebf21f93bd0be4f27ea6009f1e4ede411ce0",
+      "assets": [
+        {
+          "id": 608437748,
+          "name": "apk-badging.txt",
+          "size": 6294,
+          "digest": "sha256:8b353c88439c71b55db2c08c28fe35f4745c40a270c0e661844038b4eb657174",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/candidate-1.1.0-2698/apk-badging.txt"
+        },
+        {
+          "id": 608437727,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:aa5ab7719646cc712ddd5b79261001084b3d70dd000bb72d02a970643cb5ce45",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/candidate-1.1.0-2698/SHA256SUMS.txt"
+        },
+        {
+          "id": 608437690,
+          "name": "TrainPilot-1.1.0-source.zip",
+          "size": 1806723,
+          "digest": "sha256:692714545e3b48d26b94083cab4582c6bf3180366504748bf623b6fc7333b28c",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/candidate-1.1.0-2698/TrainPilot-1.1.0-source.zip"
+        },
+        {
+          "id": 608437653,
+          "name": "TrainPilot-1.1.0.apk",
+          "size": 4825375,
+          "digest": "sha256:550ef952af90443e44e0637131780f3f10ec32ddecf8c6dcd3010da840578747",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/candidate-1.1.0-2698/TrainPilot-1.1.0.apk"
+        }
+      ]
+    },
+    {
+      "id": 401517352,
+      "tag_name": "v1.0.6",
+      "name": "TrainPilot 1.0.6",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-02T03:21:56Z",
+      "target_commitish": "efb72b5d69102818dfbfdd80073b63298dc346e7",
+      "platform": "Phone",
+      "tagCommit": "efb72b5d69102818dfbfdd80073b63298dc346e7",
+      "originalBodySha256": "a5138a98f5b4b47faa09582de7d5877ad4d4f9b3a778002d44c219d262866f87",
+      "assets": [
+        {
+          "id": 604708687,
+          "name": "apk-badging.txt",
+          "size": 6243,
+          "digest": "sha256:d5523b132f2ee259248932946d30b5d27a7688f630791352877ae860bbe8f79d",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.6/apk-badging.txt"
+        },
+        {
+          "id": 604708682,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:225c66a87b23c2f1f97135b9d759ecbcb8507039d5e1b1f8c3df9b68800ff0d5",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.6/SHA256SUMS.txt"
+        },
+        {
+          "id": 604708679,
+          "name": "TrainPilot-1.0.6-source.zip",
+          "size": 1727275,
+          "digest": "sha256:9686506657723f84be4f7e1eb90a4f14074589b134980791d59d29ea76f5e9bd",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.6/TrainPilot-1.0.6-source.zip"
+        },
+        {
+          "id": 604708686,
+          "name": "TrainPilot-1.0.6.apk",
+          "size": 4800345,
+          "digest": "sha256:5621dc9e19a8c8204334a45b4f9503b5cf7da2a8c7444c42121d2ebc2fa72af3",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.6/TrainPilot-1.0.6.apk"
+        }
+      ]
+    },
+    {
+      "id": 401435554,
+      "tag_name": "v1.0.5",
+      "name": "TrainPilot 1.0.5",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-01T23:41:44Z",
+      "target_commitish": "f4a556ab158c0770dfebb42a0580b0bf3089cc2a",
+      "platform": "Phone",
+      "tagCommit": "f4a556ab158c0770dfebb42a0580b0bf3089cc2a",
+      "originalBodySha256": "1bea13aed48a41d06ceffaa7e8d18bd3008efbb660125abbc271967c60e735d0",
+      "assets": [
+        {
+          "id": 604367316,
+          "name": "apk-badging.txt",
+          "size": 5720,
+          "digest": "sha256:520ec5366332062aab1dd6e3400258e1467c3294badbf48193891e4f36ec2a82",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.5/apk-badging.txt"
+        },
+        {
+          "id": 604367317,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:6c9eaf6a3cfc93d9011f63c478511cdc672fc5dd505c0e4f65db85483e05237f",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.5/SHA256SUMS.txt"
+        },
+        {
+          "id": 604367312,
+          "name": "TrainPilot-1.0.5-source.zip",
+          "size": 1692007,
+          "digest": "sha256:70405a310da47298db9ae77d165643d04e069abfba0ee58e681f5d5857e39795",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.5/TrainPilot-1.0.5-source.zip"
+        },
+        {
+          "id": 604367315,
+          "name": "TrainPilot-1.0.5.apk",
+          "size": 4779641,
+          "digest": "sha256:0270c866b2550d6e02b59bd5ce78adaca5fc62fba39c411c77bf5336152cc9e1",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.5/TrainPilot-1.0.5.apk"
+        }
+      ]
+    },
+    {
+      "id": 400795596,
+      "tag_name": "v1.0.4",
+      "name": "TrainPilot 1.0.4",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-10-01T08:59:52Z",
+      "target_commitish": "1d84c54dbcb46f3c6aaf7a94435dafd85586a91a",
+      "platform": "Phone",
+      "tagCommit": "1d84c54dbcb46f3c6aaf7a94435dafd85586a91a",
+      "originalBodySha256": "af1d5c1c94b1c5530c93ea349fe4cf2af9a1c5806d86eb51a14e663b2baa23b7",
+      "assets": [
+        {
+          "id": 602842859,
+          "name": "apk-badging.txt",
+          "size": 5720,
+          "digest": "sha256:177a4f18b7ceec09caab7452412364fabd69921d86dbf30f0b4b0447eda6790c",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.4/apk-badging.txt"
+        },
+        {
+          "id": 602842867,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:2c1f5005a2ef0471c6750567cc2898cf1f2f3d350256537fae5bb77203db12bd",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.4/SHA256SUMS.txt"
+        },
+        {
+          "id": 602842857,
+          "name": "TrainPilot-1.0.4-source.zip",
+          "size": 1638401,
+          "digest": "sha256:c2836a097e2f78701d1a5b656c257885aa9ab9f122a42764e7a7ca4d60003a83",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.4/TrainPilot-1.0.4-source.zip"
+        },
+        {
+          "id": 602842864,
+          "name": "TrainPilot-1.0.4.apk",
+          "size": 4749001,
+          "digest": "sha256:88ffffd07281b6d4e316e93606f5a230ce10345944194f6853ac59e93baeb78e",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.4/TrainPilot-1.0.4.apk"
+        }
+      ]
+    },
+    {
+      "id": 399892534,
+      "tag_name": "v1.0.3",
+      "name": "TrainPilot 1.0.3",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-09-30T09:27:34Z",
+      "target_commitish": "329ee3d411176cb85cc416b557b2bcaccb1b23df",
+      "platform": "Phone",
+      "tagCommit": "329ee3d411176cb85cc416b557b2bcaccb1b23df",
+      "originalBodySha256": "eca9031bcf960b88af8d1b9d9c9dcc8ca4b80b47b28687d45585dd7783954bfb",
+      "assets": [
+        {
+          "id": 600526227,
+          "name": "apk-badging.txt",
+          "size": 5720,
+          "digest": "sha256:6e49c2f9f5bc9663c51dd5870601cc7c727d6033cca264c7b780515b285c1e5b",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.3/apk-badging.txt"
+        },
+        {
+          "id": 600526225,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:b18ca45f355eaf6752df72b07e7b9f77224e4b9d54dbbfe0f4f8d6d2354184ac",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.3/SHA256SUMS.txt"
+        },
+        {
+          "id": 600526230,
+          "name": "TrainPilot-1.0.3-source.zip",
+          "size": 1631773,
+          "digest": "sha256:d1ea0aab8c3cfe945fbcd6b1ba6554c3b8f631b415912df813eebee484d50742",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.3/TrainPilot-1.0.3-source.zip"
+        },
+        {
+          "id": 600526228,
+          "name": "TrainPilot-1.0.3.apk",
+          "size": 4745169,
+          "digest": "sha256:93ebeda42b14dad9900d000cd3d0b02831ebcd0cb9da734c505544f96e39c84f",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.3/TrainPilot-1.0.3.apk"
+        }
+      ]
+    },
+    {
+      "id": 398496108,
+      "tag_name": "v1.0.2",
+      "name": "TrainPilot 1.0.2",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-09-28T18:03:40Z",
+      "target_commitish": "main",
+      "platform": "Phone",
+      "tagCommit": "3118de04a241004676b6a75c2c447cbb49ff8b4b",
+      "originalBodySha256": "b43f4f48c7afcce1bf8b462545d7e3296fbf346e82c0e299873fdf9952893e63",
+      "assets": [
+        {
+          "id": 596052976,
+          "name": "apk-badging.txt",
+          "size": 5720,
+          "digest": "sha256:9751b00fb4060b01e5e3bcdc6875b0f521fd4c04f2e0bed97ad4fc6ec8e433a8",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.2/apk-badging.txt"
+        },
+        {
+          "id": 596052981,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:b112a2fe1f03baf5919ecd4a605236d8145bf7ab8602545c3b6678b12cde2767",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.2/SHA256SUMS.txt"
+        },
+        {
+          "id": 596052979,
+          "name": "TrainPilot-1.0.2-source.zip",
+          "size": 1618055,
+          "digest": "sha256:53c7e82a403209efbfe0f2929164d5b3d08f486d72ce7ff1eb99f512eb223d8d",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.2/TrainPilot-1.0.2-source.zip"
+        },
+        {
+          "id": 596052978,
+          "name": "TrainPilot-1.0.2.apk",
+          "size": 4739365,
+          "digest": "sha256:818086bd5ad4946c787e583c645c279c8007951293104daf43bed5f0bb2e45e2",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.2/TrainPilot-1.0.2.apk"
+        }
+      ]
+    },
+    {
+      "id": 397598562,
+      "tag_name": "v1.0.1",
+      "name": "TrainPilot 1.0.1",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-09-27T10:11:54Z",
+      "target_commitish": "main",
+      "platform": "Phone",
+      "tagCommit": "b8ac729520f46a2ac1e6a6a537a9286bd2f4b31d",
+      "originalBodySha256": "ed2fb353b836587b9a980368325fbe058913e9b526ff41d63da0d86cc0ddbe40",
+      "assets": [
+        {
+          "id": 592657644,
+          "name": "apk-badging.txt",
+          "size": 5718,
+          "digest": "sha256:b199942ec95be6ccc6d3d4d893f0010f40e85a9191bd11f158b0caa9dee19d6c",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.1/apk-badging.txt"
+        },
+        {
+          "id": 592657639,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:9288ba8dea3a5560801a0bf6b2506fae1815e3ffc95ce5682a8917aeef5a0284",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.1/SHA256SUMS.txt"
+        },
+        {
+          "id": 592657642,
+          "name": "TrainPilot-1.0.1-source.zip",
+          "size": 1613176,
+          "digest": "sha256:f118357a6b3b290c1af0b3a0af9fbb48e2b12ee93d55d4e13eb1c0ca96b442ab",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.1/TrainPilot-1.0.1-source.zip"
+        },
+        {
+          "id": 592657641,
+          "name": "TrainPilot-1.0.1.apk",
+          "size": 4736949,
+          "digest": "sha256:21465348569437f4559a9aa91279b347e712c5a5e3d92264673d8e8085116da1",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.1/TrainPilot-1.0.1.apk"
+        }
+      ]
+    },
+    {
+      "id": 397494654,
+      "tag_name": "v1.0.0",
+      "name": "TrainPilot 1.0.0",
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-09-27T03:27:03Z",
+      "target_commitish": "main",
+      "platform": "Phone",
+      "tagCommit": "76f79dfd18baf2e23941ec3e3a230aba4374595a",
+      "originalBodySha256": "201441ee8e51eb2ea49d3b8b3ba912912a70c438ef1e3389a54da14252407c81",
+      "assets": [
+        {
+          "id": 592040776,
+          "name": "apk-badging.txt",
+          "size": 5720,
+          "digest": "sha256:a4581a7c0c7869f385b95774dfff0e0f3c17bd92006529b1bb18f877594c2a94",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.0/apk-badging.txt"
+        },
+        {
+          "id": 592040775,
+          "name": "SHA256SUMS.txt",
+          "size": 181,
+          "digest": "sha256:095e647c68931a45eb709d6ca956d4b825f723e6dc087fb191902fb119ae347a",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.0/SHA256SUMS.txt"
+        },
+        {
+          "id": 592040777,
+          "name": "TrainPilot-1.0.0-source.zip",
+          "size": 1611437,
+          "digest": "sha256:ca03ad8c29212573ea9c3f09434fcefbf37c6f3c4ac4c2e8b743ed9966600d13",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.0/TrainPilot-1.0.0-source.zip"
+        },
+        {
+          "id": 592040778,
+          "name": "TrainPilot-1.0.0.apk",
+          "size": 4736025,
+          "digest": "sha256:485817d3c33b0623b030ad919fb5e07af27d5e5890a3f67fb8e4dbe4b729f22a",
+          "browser_download_url": "https://github.com/fuloplevente1998/TrainPilot/releases/download/v1.0.0/TrainPilot-1.0.0.apk"
+        }
+      ]
+    }
+  ]
+}
