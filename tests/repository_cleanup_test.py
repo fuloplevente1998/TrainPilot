@@ -53,7 +53,7 @@ class CleanupSafetyTests(unittest.TestCase):
                     br("fix/old-merged"), br("fix/recent"),
                     br("fix/diverged", "diverged"), br("feat/unmerged"),
                     br("fix/protected", protected=True), br("archive/old")]
-        open_prs = [pull("feat/active")]
+        open_prs = [pull("feat/active"), pull("perf/wear-round-ui-shards")]
         closed_prs = [pull("fix/old-merged", OLD), pull("fix/recent", NEW),
                       pull("fix/diverged", OLD), pull("fix/protected", OLD),
                       pull("archive/old", OLD)]
@@ -67,6 +67,23 @@ class CleanupSafetyTests(unittest.TestCase):
         self.assertEqual([x["name"] for x in found], ["fix/old-merged"])
         self.assertEqual(seen, ["merged", "diverged"])
         self.assertTrue(any(x["branch"] == "feat/unmerged" for x in review))
+
+    def test_merged_wear_branch_only_becomes_candidate_after_seven_days(self):
+        name = "perf/wear-round-ui-shards"
+        branches = [{"name": name, "commit": {"sha": "merged"}, "protected": False}]
+        def pr(merge_date=None):
+            return {"head": {"ref": name, "repo": {"full_name": cleanup.REPO}},
+                    "merged_at": merge_date}
+        def compare(sha):
+            self.assertEqual(sha, "merged")
+            return {"status": "ahead", "behind_by": 0}
+        cutoff = NOW - timedelta(days=7)
+        recent, _ = cleanup.choose_branches(branches, [], [pr(NEW)], cutoff, compare)
+        self.assertEqual(recent, [])
+        active, _ = cleanup.choose_branches(branches, [pr()], [pr(OLD)], cutoff, compare)
+        self.assertEqual(active, [])
+        expired, _ = cleanup.choose_branches(branches, [], [pr(OLD)], cutoff, compare)
+        self.assertEqual([row["name"] for row in expired], [name])
 
     def test_apply_rejects_missing_confirmation_before_github_access(self):
         for argv in [["--apply"], ["--apply", "--confirmation", cleanup.CONFIRM]]:
