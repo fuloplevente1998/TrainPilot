@@ -44,7 +44,12 @@ assert.equal(api.build(null,exercise,1,5,rows)[0].weight,90,'Quick workout with 
 const watch=build(rows,exercise,{template:true});
 assert.deepEqual(watch.map(s=>[s.weight,s.reps]),[[90,'10'],[14,'8'],[5,''],[5,'']]);
 assert.equal(watch.every(s=>!s.setId&&!s.previousValues228),true,'Wear templates retain only suggestions');
-assert.match(app,/function tp150QuickExercise\(id\)\{[\s\S]{0,400}sets:tp228PrefillSets\(null,e,/);
-assert.match(app,/function watchQuickExercises\(lang\)\{[\s\S]{0,1000}sets:tp228PrefillSets\(null,e,/);
+// The compatibility runner splits app.js into independent section files.
+const quickSource=fs.existsSync('www/trainpilot-150-quick-workout.js')?
+ fs.readFileSync('www/trainpilot-150-quick-workout.js','utf8'):app;
+const wearSource=fs.existsSync('www/wear-sync.js')?
+ fs.readFileSync('www/wear-sync.js','utf8'):app;
+assert.match(quickSource,/function tp150QuickExercise\(id\)\{[\s\S]{0,400}sets:tp228PrefillSets\(null,e,/);
+assert.match(wearSource,/function watchQuickExercises\(lang\)\{[\s\S]{0,1000}sets:tp228PrefillSets\(null,e,/);
 assert.equal(app.includes('tp228-copy'),false,'No manual copy button');
 console.log('PASS #228 Napló-based exercise-wide prefill: latest completed matching exercise, cross-day/program/quick, safe fallback and immutable journal, clean new sets, Wear/quick coverage');
