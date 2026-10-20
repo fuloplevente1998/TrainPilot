@@ -13079,12 +13079,17 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   };
  }
 
- // Workout landing card keeps a single Quick Workout title (no duplicate badge/title pair).
+ // Workout landing card: the start action is the single prominent label.
+ // Keep the existing short help directly below it; do not duplicate the Quick Workout title.
  if(typeof tp150CompactQuickCard==='function'){
   tp150CompactQuickCard=function(){
-   return '<div class="card tp150-quick-entry tp150-quick-entry-compact"><div class="tp150-quick-copy"><h2>'+esc(tp150qwT('cardTitle'))+'</h2><p class="small muted">'+esc(tp150qwT('cardHelp'))+'</p></div><button class="btn block" onclick="tp155R4TogglePanel(\'quick\',this)">'+esc(tp150qwT('start'))+'</button></div>';
+   return '<div class="card tp150-quick-entry tp150-quick-entry-compact tp150-quick-entry-minimal"><button type="button" class="btn block" onclick="tp155R4TogglePanel(\'quick\',this)">'+esc(tp150qwT('start'))+'</button><p class="small muted tp150-quick-entry-help">'+esc(tp150qwT('cardHelp'))+'</p></div>';
   };
  }
+ const quickEntryMinimalCss=document.createElement('style');
+ quickEntryMinimalCss.id='tp150QuickEntryMinimalStyle';
+ quickEntryMinimalCss.textContent='.tp150-quick-entry-minimal{display:flex!important;flex-direction:column;align-items:stretch;gap:8px;padding:12px 14px!important}.tp150-quick-entry-minimal>.btn{width:100%!important;min-width:0!important}.tp150-quick-entry-minimal .tp150-quick-entry-help{margin:0!important;text-align:center;line-height:1.35}';
+ document.head.appendChild(quickEntryMinimalCss);
 
  // Quick Workout keeps only the compact context title; legacy explanatory hero/page headers stay out.
  if(typeof window.tp155QuickPanelHtml==='function'){
