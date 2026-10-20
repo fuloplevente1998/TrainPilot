@@ -20194,6 +20194,76 @@ var tp197RirField=function(session,exercise){
 })();
 // @endsection set-haptic-227.js
 
+// @section set-copy-228.js
+/* An explicit copy adds values, never a completion, observation or timer. */
+(function(){
+ 'use strict';
+ const words={
+ hu:{copy:'Másolás új sorozatba',note:'Súly és ismétlés másolása; az új sorozat még nincs teljesítve.',manual:'Másoláshoz válts kézi módra.',fail:'A sorozatot nem sikerült menteni.',limit:'Legfeljebb 10 sorozat lehet.'},
+ en:{copy:'Copy to new set',note:'Copy weight and reps; the new set is not completed.',manual:'Switch to manual mode to copy.',fail:'The set could not be saved.',limit:'At most 10 sets are allowed.'},
+ de:{copy:'In neuen Satz kopieren',note:'Gewicht und Wiederholungen kopieren; der neue Satz ist nicht abgeschlossen.',manual:'Zum Kopieren in den manuellen Modus wechseln.',fail:'Der Satz konnte nicht gespeichert werden.',limit:'Höchstens 10 Sätze sind erlaubt.'},
+ ro:{copy:'Copiază într-o serie nouă',note:'Copiază greutatea și repetările; seria nouă nu este finalizată.',manual:'Treci în modul manual pentru copiere.',fail:'Seria nu a putut fi salvată.',limit:'Sunt permise maximum 10 serii.'}
+ };
+ const t=()=>words[typeof rf212Lang==='function'?rf212Lang():'hu']||words.en;
+ function strength(exercise){
+  if(!exercise||!Array.isArray(exercise.sets))return false;
+  const lib=typeof byId==='function'?byId(exercise.id)||{}:{};
+  return !['distance','time','gps'].includes(String(exercise.measurementType||lib.measurementType||'').toLowerCase())&&
+   ['', 'ism.','reps','/kar','/láb'].includes(exercise.repUnit||lib.repUnit||'')&&
+   !exercise.sets.some(s=>'leftSeconds' in s||'rightSeconds' in s||'distanceMeters' in s);
+ }
+ function fresh(source,number,id){
+  if(!source||!/^\d+$/.test(String(source.reps))||Number(source.reps)<1||Number(source.reps)>10000)return null;
+  const raw=String(source.weight??'0').replace(',','.');
+  if(!/^(?:\d+(?:\.\d+)?|\.\d+)$/.test(raw)||!Number.isFinite(Number(raw))||Number(raw)>100000)return null;
+  return {set:number,setId:id,weight:Number(raw),reps:String(source.reps),done:false};
+ }
+ function writable(session){
+  return !!session&&(session.timerOwner||'phone')==='phone'&&!session.ownershipAwaitingResume193&&
+   !(session.ownershipProtocol193===1&&session.timerOwner!=='phone')&&!session.workoutPaused&&
+   !session.automatic162?.enabled&&!session.interval162?.running&&
+   !window.TrainPilotBackupBusy&&!window.TrainPilotRestore105Pending&&
+   !window.TrainPilotWearSync?.isApplyingCommand?.()&&!window.TrainPilotPhoneExecution162?.isReconciling?.();
+ }
+ function copy(session,exercise,source){
+  if(typeof state==='undefined'||state.session!==session||!session.exercises?.includes(exercise)||
+   !strength(exercise)||!writable(session)||!exercise.sets.includes(source)||exercise.sets.length>=10)return false;
+  const next=fresh(source,exercise.sets.length+1,crypto.randomUUID());if(!next)return false;
+  exercise.sets.push(next);
+  try{persistDraft();}catch(_){exercise.sets.pop();return false;}
+  void window.TrainPilotWearSync?.syncNow?.();return true;
+ }
+ function paint(){
+  const session=typeof state!=='undefined'?state.session:null,exercise=session?.exercises?.[state.current];
+  const main=document.querySelector('main.tp153-workout');if(!main||!strength(exercise))return;
+  main.querySelectorAll('.tp228-copy-controls').forEach(node=>node.remove());
+  if((session.timerOwner||'phone')!=='phone'||session.ownershipAwaitingResume193)return;
+  const rows=[...main.querySelectorAll('.tp153-set-row')];
+  rows.forEach((row,index)=>{
+   const source=exercise.sets[index];if(!source||!fresh(source,1,'preview'))return;
+   const wrap=document.createElement('div');wrap.className='tp228-copy-controls';
+   const button=document.createElement('button');button.type='button';button.className='btn secondary tp228-copy';
+   button.textContent=t().copy;button.setAttribute('aria-label',(index+1)+'. '+t().copy);
+   button.disabled=!writable(session)||exercise.sets.length>=10;
+   button.title=exercise.sets.length>=10?t().limit:session.automatic162?.enabled?t().manual:t().note;
+   const status=document.createElement('span');status.className='small muted';status.setAttribute('role','status');
+   button.addEventListener('click',()=>{
+    if(copy(session,exercise,source)){
+     renderWorkout();document.querySelectorAll('.tp153-set-row').item(exercise.sets.length-1)?.querySelector('input')?.focus({preventScroll:true});
+    }else status.textContent=t().fail;
+   });
+   wrap.append(button,status);row.insertAdjacentElement('afterend',wrap);
+  });
+ }
+ window.TrainPilotSetCopy228={strength,fresh,writable,copy,paint};
+ if(typeof document!=='undefined')window.addEventListener?.('DOMContentLoaded',()=>{
+  const base=window.renderWorkout;if(typeof base==='function')window.renderWorkout=function(){const result=base.apply(this,arguments);paint();return result;};
+  document.addEventListener('change',event=>{if(event.target?.closest?.('.tp153-set-row'))paint();});
+  paint();
+ });
+})();
+// @endsection set-copy-228.js
+
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
 // @endsection ready.js
