@@ -3,6 +3,14 @@
 Frissítve: **2026-10-20**. Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Folyamatban – négy jóváhagyott új feature (#226–#229)
+
+- Felhasználó 2026-10-20: „Ezt a 4 uj kepesseget epitsuk be :) Rogzitsuk fejlesztesnek, vagy featnek.” A korábbi „csak rögzítés” korlát erre a négy képességre feloldva; nincs általános dizájn- vagy main/release-engedély.
+- [Megvalósítási terv](plans/WORKOUT_FEEDBACK_AND_RECORDS.md), ág `feat/workout-records-feedback-rir`, alap `f309137c461c6cb3b39497ab46a0e764a7e7b077`.
+- #226 mentett eredmény PR-jelvénye: kanonikus modellre épített kijelzés, lokalizált UI és új modell/UI regressziók elkészültek; Actions még követendő.
+- #227 kapcsolható kézi sorozat-haptika következik; #228 kifejezett sorozatmásolás és #229 sorozatonkénti RIR ezután, külön kis lépésekben.
+- A korábbi PR-felismerés/lista, pihenőjelzések, súly-előtöltés és gyakorlat-RIR megőrzendő. Verzió **1.3.6 /2733**. Main/kiadott APK-k változatlanok; a négy feature még nincs lezárva vagy készüléken elfogadva.
+
 ## Aktuális – #223 mainen, #214 külső előkészítése nyitott
 
 - Felhasználói merge-jóváhagyás 2026-10-20 18:21 (Europe/Budapest): „Minden mehet mainre”.

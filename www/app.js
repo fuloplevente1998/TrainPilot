@@ -20021,3 +20021,122 @@ var tp197RirField=function(session,exercise){
 // @section ready.js
 if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
 // @endsection ready.js
+
+// @section workout-records-226.js
+/* #226: saved-workout PR badges reuse the canonical Progress model. No writes or celebrations. */
+(function(){
+ 'use strict';
+ const words={
+  hu:{badge:'Új PR',details:'Rekordrészletek',previous:'Korábbi',current:'Új',weight:'Súly',reps:'Ismétlés',time:'Idő',left:'Bal oldal',right:'Jobb oldal',repsUnit:'ism.',seconds:'mp'},
+  en:{badge:'New PR',details:'Record details',previous:'Previous',current:'New',weight:'Weight',reps:'Reps',time:'Time',left:'Left side',right:'Right side',repsUnit:'reps',seconds:'s'},
+  de:{badge:'Neuer PR',details:'Rekorddetails',previous:'Vorher',current:'Neu',weight:'Gewicht',reps:'Wiederholungen',time:'Zeit',left:'Links',right:'Rechts',repsUnit:'Wdh.',seconds:'s'},
+  ro:{badge:'PR nou',details:'Detalii record',previous:'Anterior',current:'Nou',weight:'Greutate',reps:'Repetări',time:'Timp',left:'Stânga',right:'Dreapta',repsUnit:'rep.',seconds:'s'}
+ };
+ const language=()=>typeof rf212Lang==='function'?rf212Lang():'hu';
+ const copy=()=>words[language()]||words.en;
+ function aliases(row,key){
+  const out=[key,row?.id,row?.syncId,row?.workoutId,row?.started];
+  try{if(typeof rf142WorkoutKey==='function')out.push(rf142WorkoutKey(row));}catch(_){}
+  return [...new Set(out.filter(x=>x!==null&&x!==undefined&&String(x)!=='').map(String))];
+ }
+ function index(rows,model=window.TrainPilot177Model,isDeleted){
+  const result=new Map();
+  if(typeof model?.prepare!=='function')return result;
+  for(const workout of model.prepare(rows,{isDeleted})){
+   const records=(workout.pr||[]).filter(r=>Number.isFinite(r.previous)&&Number.isFinite(r.value)&&r.value>r.previous);
+   for(const key of aliases(workout.source,workout.key)){
+    if(!result.has(key)||records.length)result.set(key,records);
+   }
+  }
+  return result;
+ }
+ let signature=null,cached=new Map(),cachedRows=[];
+ function data(){
+  let next=null;
+  try{next=[localStorage.getItem('repforge:history'),localStorage.getItem('repforge:phase3HistoryTombstones')].join('\n');}catch(_){}
+  if(next===null||next!==signature){
+   cachedRows=typeof history==='function'?history():[];
+   cached=index(cachedRows,window.TrainPilot177Model,typeof window.tp3HistoryIsDeleted==='function'?window.tp3HistoryIsDeleted:undefined);
+   signature=next;
+  }
+  return cached;
+ }
+ function recordsFor(row,map=data()){
+  for(const key of aliases(row)){const records=map.get(key);if(records)return records;}
+  return [];
+ }
+ const fmt=value=>Number(value).toLocaleString(({hu:'hu-HU',en:'en-US',de:'de-DE',ro:'ro-RO'})[language()]||'en-US',{maximumFractionDigits:2});
+ function details(records,existing){
+  const node=existing||document.createElement('details'),t=copy(),open=!!existing?.open;
+  node.className='tp226-pr-details';
+  const mark=JSON.stringify([language(),records]);
+  if(node.dataset.records===mark)return node;
+  node.dataset.records=mark;node.replaceChildren();
+  const summary=document.createElement('summary');summary.textContent=t.details+' · '+records.length;node.appendChild(summary);
+  const list=document.createElement('div');list.className='tp226-pr-list';
+  for(const record of records){
+   const item=document.createElement('div');item.className='tp226-pr-record';item.dataset.kind=record.kind;
+   const title=document.createElement('strong');title.textContent=typeof rf220ExerciseName==='function'?rf220ExerciseName(record.id):record.id;
+   const unit=record.kind==='reps'?t.repsUnit:record.unit==='mp'?t.seconds:record.unit;
+   const value=document.createElement('span');
+   value.textContent=(t[record.kind]||record.kind)+' · '+t.previous+': '+fmt(record.previous)+' '+unit+' → '+t.current+': '+fmt(record.value)+' '+unit;
+   if(record.kind==='reps'&&record.weight>0)value.textContent+=' ('+fmt(record.weight)+' kg)';
+   item.append(title,value);list.appendChild(item);
+  }
+  node.appendChild(list);node.open=open;return node;
+ }
+ function paintCard(card,map){
+  const key=String(card.dataset.tp152HistoryKey||''),row=cachedRows.find(x=>aliases(x).includes(key)),records=row?recordsFor(row,map):[];
+  if(!records.length){card.querySelectorAll('.tp226-pr-badge,.tp226-pr-details').forEach(x=>x.remove());return;}
+  const host=card.querySelector(':scope > summary .history-badges');if(!host)return;
+  let badge=host.querySelector('.tp226-pr-badge');
+  if(!badge){
+   badge=document.createElement('button');badge.type='button';badge.className='tp226-pr-badge';badge.dataset.workoutKey=key;
+   badge.addEventListener('click',event=>{
+    event.preventDefault();event.stopPropagation();
+    const current=cachedRows.find(x=>aliases(x).includes(key));if(!current)return;
+    card.open=true;
+    const position=cachedRows.indexOf(current);
+    window.tp3EnsureHistoryBody?.(card,position,key);
+    paint();
+    const panel=card.querySelector('.tp226-pr-details');if(panel){panel.open=true;panel.querySelector('summary')?.focus({preventScroll:true});}
+   });
+   host.appendChild(badge);
+  }
+  badge.textContent='★ '+copy().badge+' · '+records.length;badge.setAttribute('aria-label',copy().badge+' · '+records.length+' · '+copy().details);
+  const body=card.querySelector(':scope > .tp3-combined-history-body');
+  if(body?.dataset.tp3Hydrated==='true'){
+   const old=body.querySelector(':scope > .tp226-pr-details'),panel=details(records,old);
+   if(!old)body.prepend(panel);
+  }
+ }
+ function paint(){
+  if(typeof document==='undefined')return;
+  const cards=typeof state!=='undefined'&&state.tab==='history'?[...document.querySelectorAll('details[data-tp152-history-key]')]:[];
+  const feedback=document.querySelector('main.tp122-feedback');
+  if(!cards.length&&!feedback)return;
+  const map=data();
+  for(const card of cards)paintCard(card,map);
+  if(feedback){
+   const row=cachedRows.find(x=>x.started===state.feedbackStarted),records=row?recordsFor(row,map):[];
+   const old=feedback.querySelector('.tp226-pr-feedback');
+   if(!records.length){old?.remove();return;}
+   const panel=details(records,old);panel.classList.add('tp226-pr-feedback');
+   if(!old)(feedback.querySelector('.hero')||feedback).appendChild(panel);
+  }
+ }
+ function install(){
+  if(api.installed)return;api.installed=true;
+  const renderBase=window.render;
+  if(typeof renderBase==='function')window.render=function(){const value=renderBase.apply(this,arguments);paint();return value;};
+  const ensure=window.tp3EnsureHistoryBody;
+  if(typeof ensure==='function')window.tp3EnsureHistoryBody=function(){const value=ensure.apply(this,arguments);paint();return value;};
+  paint();
+ }
+ const api=window.TrainPilotRecords226={index,aliases,recordsFor,paint,installed:false};
+ if(typeof document!=='undefined'){
+  if(document.readyState==='complete')install();
+  else window.addEventListener('DOMContentLoaded',install,{once:true});
+ }
+})();
+// @endsection workout-records-226.js
