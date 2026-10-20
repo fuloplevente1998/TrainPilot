@@ -9,7 +9,7 @@ assert.match(workflow,/fail-fast: false/);
 assert.match(workflow,/round-display-complete:/);
 assert.match(workflow,/actions\/download-artifact@v7/);
 assert.match(workflow,/TRAINPILOT_WEAR_UI_MIN_TOTAL:/);
-assert.match(workflow,/\|'183' \}\}/);
+assert.match(workflow,/TRAINPILOT_WEAR_UI_MIN_TOTAL:\s*\$\{\{[^\n]*\|\|\s*'183'\s*\}\}/);
 assert.match(runner,/testInstrumentationRunnerArguments\.numShards/);
 assert.match(runner,/testInstrumentationRunnerArguments\.shardIndex/);
 const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'round-ui-shard-'));
