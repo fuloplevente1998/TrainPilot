@@ -21,6 +21,7 @@ import static org.junit.Assert.*;
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk=34)
 public class SamsungHealthReaderTest {
+    private final List<ReadDataRequest> energyRequests = new ArrayList<>();
     private final Instant start=Instant.parse("2026-10-07T22:00:00Z"),end=start.plusSeconds(3600);
     private DataResponse<HealthDataPoint> response(String token,List<HealthDataPoint> rows) throws Exception {
         Constructor<DataResponse> constructor=DataResponse.class.getDeclaredConstructor(String.class,ArrayList.class);
@@ -32,7 +33,20 @@ public class SamsungHealthReaderTest {
         AsyncSingleFuture future=(AsyncSingleFuture)Proxy.newProxyInstance(getClass().getClassLoader(),new Class[]{AsyncSingleFuture.class},
             (proxy,method,args)->method.getName().equals("get")?data:method.getName().equals("isDone")?true:null);
         HealthDataStore store=(HealthDataStore)Proxy.newProxyInstance(getClass().getClassLoader(),new Class[]{HealthDataStore.class},
-            (proxy,method,args)->{if(method.getName().equals("readDataAsync"))return future;throw new AssertionError("Unexpected SDK call "+method.getName());});
+            (proxy,method,args)->{
+                if(method.getName().equals("readDataAsync")) {
+                    ReadDataRequest request = (ReadDataRequest) args[0];
+                    if (DataTypes.ENERGY_SCORE.equals(request.getDataType())) {
+                        LocalTimeFilter filter = request.getLocalTimeFilter();
+                        assertNotNull("Validate the final SDK query, not just the source builder", filter);
+                        assertTrue("Samsung rejects zero-length daily queries with 1001", filter.getStartTime().isBefore(filter.getEndTime()));
+                        assertTrue(filter.isInclusiveStart()); assertFalse(filter.isInclusiveEnd());
+                        energyRequests.add(request);
+                    }
+                    return future;
+                }
+                throw new AssertionError("Unexpected SDK call "+method.getName());
+            });
         return new SamsungHealthPlugin.Reader(store,allowed==null?Collections.emptySet():Collections.singleton(Permission.of(allowed,AccessType.READ)),()->{});
     }
     @Test public void energyPermissionScopeDoesNotDependOnOtherHealthTypes() {
@@ -67,6 +81,32 @@ public class SamsungHealthReaderTest {
             assertEquals(83.0, out.getDouble("energyScore"), 0.001);
             assertEquals(midnight.toString(), out.getString("energyScoreTime"));
             assertFalse(out.has("steps")); assertFalse(out.has("sleepSessions"));
+        } finally { TimeZone.setDefault(previous); }
+    }
+    @Test public void dailySdkFilterUsesFollowingMidnightAcrossBothDstTransitions() throws Exception {
+        TimeZone previous = TimeZone.getDefault();
+        ZoneId zone = ZoneId.of("Europe/Budapest");
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone(zone));
+            for (String date : Arrays.asList("2026-10-20", "2026-03-29", "2026-10-25")) {
+                LocalDate day = LocalDate.parse(date);
+                ZonedDateTime from = day.atStartOfDay(zone), to = day.plusDays(1).atStartOfDay(zone);
+                HealthDataPoint today = new HealthDataPoint.Builder().setStartTime(from.toInstant(), from.getOffset())
+                    .addFieldData(DataType.EnergyScoreType.ENERGY_SCORE, 83f).build();
+                HealthDataPoint tomorrow = new HealthDataPoint.Builder().setStartTime(to.toInstant(), to.getOffset())
+                    .addFieldData(DataType.EnergyScoreType.ENERGY_SCORE, 99f).build();
+                JSObject out = reader(DataTypes.ENERGY_SCORE, Arrays.asList(today, tomorrow), null).energyDay(from.toInstant(), to.toInstant());
+                LocalTimeFilter filter = energyRequests.get(energyRequests.size()-1).getLocalTimeFilter();
+                assertEquals(day.atStartOfDay(), filter.getStartTime());
+                assertEquals(day.plusDays(1).atStartOfDay(), filter.getEndTime());
+                assertEquals(83.0, out.getDouble("energyScore"), 0.001);
+                assertEquals(0, out.getJSONArray("failedFields").length());
+            }
+            // The former same-date inclusive filter becomes equal midnights.
+            LocalDate day = LocalDate.parse("2026-10-20");
+            LocalTimeFilter oldFilter = DataTypes.ENERGY_SCORE.getReadDataRequestBuilder()
+                .setLocalDateFilter(LocalDateFilter.of(day, day, true, true)).build().getLocalTimeFilter();
+            assertEquals(oldFilter.getStartTime(), oldFilter.getEndTime());
         } finally { TimeZone.setDefault(previous); }
     }
     @Test public void independentEnergyReadDoesNotInventDataWithoutItsOwnPermission() throws Exception {

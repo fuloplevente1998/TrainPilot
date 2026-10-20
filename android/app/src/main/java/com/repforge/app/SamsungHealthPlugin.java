@@ -330,9 +330,11 @@ public class SamsungHealthPlugin extends Plugin {
             safe(DataTypes.ENERGY_SCORE, () -> {
                 ZoneId zone = ZoneId.systemDefault();
                 LocalDate startDate = start.atZone(zone).toLocalDate();
-                // The incoming day window has an exclusive end. Including the
-                // next midnight can otherwise label tomorrow's score as today.
-                LocalDate endDate = end.minusNanos(1).atZone(zone).toLocalDate();
+                // LocalDateFilter becomes a midnight-based LocalTimeFilter in
+                // the SDK. Equal dates produce a zero-length query (1001).
+                // Use a positive [first day, day after last) interval, including
+                // on 23/25-hour DST days; never include tomorrow's midnight.
+                LocalDate endDateExclusive = end.minusNanos(1).atZone(zone).toLocalDate().plusDays(1);
                 Map<String, HealthDataPoint> unique = new LinkedHashMap<>();
                 String token = null;
                 Set<String> tokens = new HashSet<>();
@@ -340,7 +342,7 @@ public class SamsungHealthPlugin extends Plugin {
                     requireForeground.run();
                     ReadDataRequest.LocalDateBuilder<HealthDataPoint> builder = DataTypes.ENERGY_SCORE.getReadDataRequestBuilder()
                         .setPageSize(500)
-                        .setLocalDateFilter(LocalDateFilter.of(startDate, endDate, true, true));
+                        .setLocalDateFilter(LocalDateFilter.of(startDate, endDateExclusive, true, false));
                     if (token != null) builder.setPageToken(token);
                     DataResponse<HealthDataPoint> response = store.readDataAsync(builder.build()).get(30, TimeUnit.SECONDS);
                     for (HealthDataPoint point : response.getDataList()) {
@@ -348,7 +350,7 @@ public class SamsungHealthPlugin extends Plugin {
                         Instant time = point.getStartTime();
                         if (value == null || !Double.isFinite(value.doubleValue()) || value.doubleValue() <= 0 || value.doubleValue() > 100 || time == null) continue;
                         LocalDate day = time.atZone(zone).toLocalDate();
-                        if (day.isBefore(startDate) || day.isAfter(endDate)) continue;
+                        if (day.isBefore(startDate) || !day.isBefore(endDateExclusive)) continue;
                         unique.put(point.getUid(), point);
                     }
                     token = response.getPageToken();

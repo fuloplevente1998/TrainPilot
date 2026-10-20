@@ -3,7 +3,21 @@
 Frissítve: **2026-10-20**. Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
-## #222 – új készülékes Samsung-hiba, Regeneráció alá rendezés
+## #222 – konkrét 1001-es készülékhiba, napi lekérdezés javítása
+
+- Felhasználó 16:07-kor az új APK képernyőképét küldte: **SAMSUNG_HEALTH_1001**.
+  Samsung dokumentáció: ERR_INVALID_INPUT (érvénytelen bemenet); nem igazolt partnerhiba.
+- Konkrét kódhiba: a napi startDate és endDate azonos dátum volt, mindkettő inclusive.
+  A valódi Samsung SDK ezt azonos éjféli kezdő/végű LocalTimeFilterré alakítja.
+  Javítás: pozitív [mai éjfél, következő éjfél) helyi dátumintervallum; a holnapi pont
+  továbbra is kizárt. Nincs másnapi vagy saját becslés Samsung-pontként felcímkézve.
+- Natív teszt a tényleges buildelt SDK-kérés LocalTimeFilterét vizsgálja; 1001-et okozó
+  nulla hosszúságot minden energiaolvasó teszt elutasít. Új regresszió 23/24/25 órás
+  budapesti napokra és a holnapi éjféli pont kizárására. Korábban a mock ezt nem nézte.
+- Forrásváltozás csak telefonos Samsung-olvasó és natív teszt; felület/Wear/verzió azonos.
+  Friss teljes Actions/teszt-APK még szükséges. Készülékes siker nem igazolt; main érintetlen.
+
+## Korábbi #222 – Regeneráció alá rendezés
 
 - Felhasználó az új APK-ról képet küldött: Samsung Healthen telefonon/órán van mai
   pontszám, TrainPilot az általános „olvasás nem sikerült” állapotot mutatja.
