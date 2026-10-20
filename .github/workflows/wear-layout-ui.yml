@@ -9,7 +9,7 @@ on:
         type: string
         default: ''
   push:
-    branches: [main, 'fix/**', 'feat/**']
+    branches: [main, 'fix/**', 'feat/**', 'perf/**']
     paths: ['android/wear/**', 'android/shared/**', '.github/workflows/wear-layout-ui.yml']
 
 permissions:
