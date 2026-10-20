@@ -77,13 +77,17 @@ public class SamsungHealthPlugin extends Plugin {
         return out;
     }
     private interface Action { JSObject run(Reader reader) throws Exception; }
-    private void run(PluginCall call, Action action) {
+    static Set<Permission> energyPermission() {
+        return Collections.singleton(Permission.of(DataTypes.ENERGY_SCORE, AccessType.READ));
+    }
+    private void run(PluginCall call, Action action) { run(call, requested(), action); }
+    private void run(PluginCall call, Set<Permission> permissions, Action action) {
         final long epoch = HealthJournalStore.get(getContext()).generation();
         getBridge().execute(() -> {
             try {
                 foreground();
                 HealthDataStore store = sdk();
-                Set<Permission> granted = store.getGrantedPermissionsAsync(requested()).get(30, TimeUnit.SECONDS);
+                Set<Permission> granted = store.getGrantedPermissionsAsync(permissions).get(30, TimeUnit.SECONDS);
                 Reader reader = new Reader(store, granted, this::foreground);
                 JSObject value = action.run(reader);
                 foreground();
@@ -99,25 +103,33 @@ public class SamsungHealthPlugin extends Plugin {
             } catch (Exception e) { reject(call, e); }
         });
     }
+    // Preserve the SDK exception even if it wraps an underlying platform cause.
+    static String errorCode(Throwable error) {
+        Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Throwable cause = error; cause != null && seen.add(cause); cause = cause.getCause())
+            if (cause instanceof HealthDataException)
+                return "SAMSUNG_HEALTH_" + ((HealthDataException) cause).getErrorCode();
+        return "SAMSUNG_HEALTH_UNAVAILABLE";
+    }
     private static void reject(PluginCall call, Throwable error) {
-        Throwable cause = error;
-        while (cause.getCause() != null) cause = cause.getCause();
-        String code = cause instanceof HealthDataException ? String.valueOf(((HealthDataException) cause).getErrorCode()) : "UNAVAILABLE";
-        call.reject("Samsung Health: " + (cause.getMessage() == null ? cause.getClass().getSimpleName() : cause.getMessage()), "SAMSUNG_HEALTH_" + code);
+        call.reject("Samsung Health access failed", errorCode(error));
+    }
+    @PluginMethod public void getEnergyScoreStatus(PluginCall call) {
+        run(call, energyPermission(), reader -> status(reader.granted));
     }
     @PluginMethod public void getStatus(PluginCall call) { run(call, reader -> status(reader.granted)); }
     @PluginMethod public void requestEnergyScoreRead(PluginCall call) {
         getActivity().runOnUiThread(() -> {
             try {
                 foreground();
-                Set<Permission> permission = Collections.singleton(Permission.of(DataTypes.ENERGY_SCORE, AccessType.READ));
+                Set<Permission> permission = energyPermission();
                 sdk().requestPermissionsAsync(permission, getActivity()).setCallback(Looper.getMainLooper(),
                     granted -> call.resolve(status(granted)), error -> reject(call, error));
             } catch (Exception e) { reject(call, e); }
         });
     }
     @PluginMethod public void readEnergyScoreDay(PluginCall call) {
-        run(call, reader -> {
+        run(call, energyPermission(), reader -> {
             Instant[] range = range(call, 26 * 60L);
             String day = call.getString("day", "");
             if (!HealthJournalStore.validDay(day)
@@ -187,6 +199,7 @@ public class SamsungHealthPlugin extends Plugin {
         final Set<Permission> granted;
         final Runnable requireForeground;
         final JSONArray warnings = new JSONArray(), failed = new JSONArray(), journal = new JSONArray();
+        final JSObject errors = new JSObject();
         Reader(HealthDataStore store, Set<Permission> granted, Runnable requireForeground) {
             this.store = store; this.granted = granted; this.requireForeground = requireForeground;
         }
@@ -198,7 +211,7 @@ public class SamsungHealthPlugin extends Plugin {
             try { action.run(); }
             catch (Exception error) {
                 warnings.put(type.getName() + ": " + (error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage()));
-                for (String field : fields) failed.put(field);
+                for (String field : fields) { failed.put(field); errors.put(field, errorCode(error)); }
             }
             requireForeground.run();
         }
@@ -238,7 +251,7 @@ public class SamsungHealthPlugin extends Plugin {
             out.put("sourceLabels", new JSONObject().put(SOURCE, "Samsung Health · direct"));
             out.put("start", start.toString()); out.put("end", end.toString());
             out.put("readAt", Instant.now().toString());
-            out.put("warnings", warnings); out.put("failedFields", failed);
+            out.put("warnings", warnings); out.put("failedFields", failed); out.put("errors", errors);
             return out;
         }
         private static String source(HealthDataPoint p) {

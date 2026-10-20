@@ -35,6 +35,15 @@ public class SamsungHealthReaderTest {
             (proxy,method,args)->{if(method.getName().equals("readDataAsync"))return future;throw new AssertionError("Unexpected SDK call "+method.getName());});
         return new SamsungHealthPlugin.Reader(store,allowed==null?Collections.emptySet():Collections.singleton(Permission.of(allowed,AccessType.READ)),()->{});
     }
+    @Test public void energyPermissionScopeDoesNotDependOnOtherHealthTypes() {
+        assertEquals(Collections.singleton(Permission.of(DataTypes.ENERGY_SCORE, AccessType.READ)), SamsungHealthPlugin.energyPermission());
+    }
+    @Test public void sdkAccessErrorSurvivesAsyncAndPlatformCauseWrapping() {
+        Throwable sdkError = new com.samsung.android.sdk.health.data.error.HealthDataException(
+            2003, "blocked", new IllegalStateException("platform cause")) {};
+        assertEquals("SAMSUNG_HEALTH_2003", SamsungHealthPlugin.errorCode(new java.util.concurrent.ExecutionException(sdkError)));
+        assertEquals("SAMSUNG_HEALTH_UNAVAILABLE", SamsungHealthPlugin.errorCode(new IllegalStateException("unavailable")));
+    }
     @Test public void energyScoreIsReadWhenAllowed() throws Exception {
         HealthDataPoint point = new HealthDataPoint.Builder()
             .setStartTime(start, ZoneOffset.UTC)

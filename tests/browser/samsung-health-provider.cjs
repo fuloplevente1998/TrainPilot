@@ -72,7 +72,10 @@ function fixture(){
   // Upgraded installation: other Samsung permissions already granted, but
   // Energy Score has its own permission and must work with HC still primary.
   await page.evaluate(async()=>{const bridge=await TrainPilotHealthJournal.ready();await bridge.setPreferences({preferences:{provider:'health_connect'}});await TrainPilotHealthJournal.refresh();samFixture.granted=true;samFixture.energyGranted=false;go('health');await TrainPilotEnergy184.refresh({force:true});});
-  assert.equal(await page.locator('.tp184-energy-card').count(),1,'Score entry remains visible without data');
+  assert.equal(await page.locator('main > .tp184-energy-card').count(),0,'No standalone Samsung card on Health');
+  assert.equal(await page.locator('.tp168-recovery-history .tp184-energy-card').count(),1,'Samsung score belongs inside Recovery');
+  await page.locator('.tp5-today-recovery').click();
+  await page.locator('.tp184-energy-card button').waitFor({state:'visible'});
   assert.match(await page.locator('.tp184-energy-card').innerText(),/külön Samsung Health olvasási engedély/);
   assert.equal(await page.evaluate(()=>samFixture.energyRequests),0,'Automatic read never requests new consent');
   await page.locator('.tp184-energy-card button').click();
@@ -81,9 +84,14 @@ function fixture(){
   assert.equal(await page.evaluate(()=>samFixture.energyRequests),1,'Only the Energy Score permission is requested');
   assert.match(await page.locator('.tp184-energy-card').innerText(),/83\/100/);
   await page.reload();await page.waitForFunction(()=>TrainPilotBoot.finished&&rf220Readiness().energyScore===83);
-  await page.evaluate(()=>go('health'));
+  await page.evaluate(()=>{go('health');tp153OpenRecovery();});
   assert.equal(await page.evaluate(()=>TrainPilotSamsungHealth.selected()),'health_connect','Automatic startup read preserves the primary provider');
   assert.match(await page.locator('.tp184-energy-card').innerText(),/83\/100/);
+  await page.evaluate(async()=>{samFixture.energyMode='error';samFixture.originalEnergyRead=Capacitor.Plugins.SamsungHealth.readEnergyScoreDay;Capacitor.Plugins.SamsungHealth.readEnergyScoreDay=async()=>{throw {code:'SAMSUNG_HEALTH_2003',message:'private detail'};};await TrainPilotEnergy184.refresh({force:true});});
+  assert.match(await page.locator('.tp184-energy-card').innerText(),/alkalmazásszintű.*SAMSUNG_HEALTH_2003/s);
+  assert.doesNotMatch(await page.locator('.tp184-energy-card').innerText(),/private detail/);
+  assert.equal(await page.locator('.tp184-energy-card button').isVisible(),true,'Recovery stays open after refresh');
+  await page.evaluate(()=>{Capacitor.Plugins.SamsungHealth.readEnergyScoreDay=samFixture.originalEnergyRead;});
   for(const mode of ['empty','error']){
    await page.evaluate(async mode=>{samFixture.energyMode=mode;await TrainPilotEnergy184.refresh({force:true});},mode);
    assert.equal(await page.evaluate(()=>rf220Readiness().energyScore),null,mode+': no invented external score');

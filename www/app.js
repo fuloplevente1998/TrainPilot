@@ -19932,19 +19932,33 @@ var tp197RirField=function(session,exercise){
   ro:{title:'Scor de energie Samsung',idle:'Scorul Samsung disponibil pentru azi este utilizat automat. Altfel rămâne estimarea TrainPilot.',permission:'Scorul de energie necesită o permisiune separată de citire Samsung Health.',empty:'Nu este disponibil un scor Samsung pentru azi. Rămâne estimarea TrainPilot.',error:'Scorul Samsung nu a putut fi citit. Rămâne estimarea TrainPilot.',ready:'Datele Samsung Health de azi sunt utilizate; durerea sau efortul ridicat pot limita recomandările.',loading:'Se citește scorul Samsung…',refresh:'Actualizează / permite scorul Samsung',unavailable:'Este necesară aplicația Android cu suport Samsung direct.'}
  };
  const t=key=>(words[typeof rf212Lang==='function'?rf212Lang():'hu']||words.hu)[key]||key;
- let current=null,status='idle',attempted=false,flight=null,lastAttempt=0,lastDay='';
+ let current=null,status='idle',attempted=false,flight=null,lastAttempt=0,lastDay='',failure='',recoveryOpen=false;
  const today=()=>rf240DayKey(new Date());
- function summary(){return t(status==='ready'&&!tp184EnergyToday()?'empty':status);}
+ const hints={
+  hu:{access:'A Samsung Health nem enged hozzáférést a TrainPilotnak ehhez az adathoz. Ez alkalmazásszintű hozzáférési korlát.',update:'Frissítsd a Samsung Health alkalmazást, majd próbáld újra.',open:'Nyisd meg a Samsung Health alkalmazást, és fejezd be a beállítását.',retry:'Nyisd meg a Samsung Health alkalmazást, majd próbáld újra.',detail:'Kapcsolati hibakód'},
+  en:{access:'Samsung Health does not allow TrainPilot to access this data. This is an app access restriction.',update:'Update Samsung Health, then try again.',open:'Open Samsung Health and complete its setup.',retry:'Open Samsung Health, then try again.',detail:'Connection error code'},
+  de:{access:'Samsung Health erlaubt TrainPilot keinen Zugriff auf diese Daten. Der App-Zugriff ist eingeschränkt.',update:'Samsung Health aktualisieren und erneut versuchen.',open:'Samsung Health öffnen und die Einrichtung abschließen.',retry:'Samsung Health öffnen und erneut versuchen.',detail:'Verbindungsfehlercode'},
+  ro:{access:'Samsung Health nu permite TrainPilot să acceseze aceste date. Accesul aplicației este restricționat.',update:'Actualizează Samsung Health și încearcă din nou.',open:'Deschide Samsung Health și finalizează configurarea.',retry:'Deschide Samsung Health și încearcă din nou.',detail:'Cod de eroare al conexiunii'}
+ };
+ const hint=key=>(hints[typeof rf212Lang==='function'?rf212Lang():'hu']||hints.hu)[key];
+ function fail(error){
+  const code=String(error?.code||error||'');
+  failure=/^SAMSUNG_HEALTH_(?:[0-9]{4}|UNAVAILABLE)$/.test(code)?code:'SAMSUNG_HEALTH_UNAVAILABLE';
+  status=failure==='SAMSUNG_HEALTH_2000'?'permission':failure==='SAMSUNG_HEALTH_2003'?'access':failure==='SAMSUNG_HEALTH_3001'?'update':/^SAMSUNG_HEALTH_300[023]$/.test(failure)?'open':'error';
+ }
+ function summary(){return ['access','update','open'].includes(status)?hint(status)+' '+t('error'):t(status==='ready'&&!tp184EnergyToday()?'empty':status);}
  function html(){
   const score=tp184EnergyToday();
-  return '<section class="card tp184-energy-card"><h3>'+esc(t('title'))+'</h3><p class="tp184-energy-value"><strong>'+(score?esc(score.value)+'/100':'—')+'</strong></p><p class="small muted" role="status">'+esc(summary())+'</p><button type="button" class="btn secondary block" onclick="TrainPilotEnergy184.refresh({manual:true})" '+(flight?'disabled':'')+'>'+esc(t('refresh'))+'</button></section>';
+  return '<section class="card tp184-energy-card"><h3>'+esc(t('title'))+'</h3><p class="tp184-energy-value"><strong>'+(score?esc(score.value)+'/100':'—')+'</strong></p><p class="small muted" role="status">'+esc(summary())+'</p>'+(failure?'<p class="small muted tp184-energy-error">'+esc(hint('detail')+': '+failure)+'</p>':'')+'<button type="button" class="btn secondary block" onclick="TrainPilotEnergy184.refresh({manual:true})" '+(flight?'disabled':'')+'>'+esc(t('refresh'))+'</button></section>';
  }
  function decorate(){
   const main=document.querySelector('#app main.tp168-health');if(!main)return;
-  const previous=main.querySelector('.tp184-energy-card');
-  if(previous)previous.outerHTML=html();else main.querySelector('.tp168-today-card')?.insertAdjacentHTML('afterend',html());
+  const recovery=main.querySelector('.tp168-recovery-history');if(!recovery)return;
+  main.querySelectorAll('.tp184-energy-card').forEach(node=>node.remove());
+  recovery.querySelector(':scope > summary')?.insertAdjacentHTML('afterend',html());
+  if(recoveryOpen){recovery.open=true;main.querySelector('.tp169-pulse-journal')?.classList.add('tp169-open');main.querySelector('.tp169-pulse-summary')?.setAttribute('aria-expanded','true');}
  }
- function paint(){decorate();window.TrainPilotUIRefresh?.refresh?.();}
+ function paint(){const panel=document.querySelector('.tp168-recovery-history');if(panel)recoveryOpen=panel.open;window.TrainPilotUIRefresh?.refresh?.();decorate();}
  async function refresh(options={}){
   const manual=options.manual===true;
   if(document.hidden||window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||state.session||state.tp128Onboarding)return;
@@ -19959,20 +19973,21 @@ var tp197RirField=function(session,exercise){
     if(!isNative()){status='unavailable';return;}
     const p=window.Capacitor?.Plugins?.SamsungHealth||window.Capacitor?.registerPlugin?.('SamsungHealth');
     if(!p){status='unavailable';return;}
-    status='loading';decorate();
-    let granted=await p.getStatus();
+    failure='';status='loading';decorate();
+    const getStatus=()=>typeof p.getEnergyScoreStatus==='function'?p.getEnergyScoreStatus():p.getStatus();
+    let granted=await getStatus();
     if(granted.permissions?.READ_ENERGY_SCORE!==true&&manual){
      if(typeof p.requestEnergyScoreRead==='function')await p.requestEnergyScoreRead();else await p.requestRead();
-     granted=await p.getStatus();
+     granted=await getStatus();
     }
     attempted=true;current=null;
     if(granted.permissions?.READ_ENERGY_SCORE!==true){status='permission';return;}
     const result=await p.readEnergyScoreDay({...rf240DayBounds(day),day});
     if(window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending)return;
     if(day!==today()||result.day!==day){status='empty';return;}
-    if(result.failedFields?.includes('energyScore')){status='error';return;}
+    if(result.failedFields?.includes('energyScore')){fail(result.errors?.energyScore);return;}
     current=result;status=tp184EnergyToday()?'ready':'empty';
-   }catch(_){attempted=true;current=null;status='error';}
+   }catch(error){attempted=true;current=null;fail(error);}
    finally{flight=null;paint();}
   });
   return flight;
@@ -19981,6 +19996,9 @@ var tp197RirField=function(session,exercise){
  window.addEventListener?.('DOMContentLoaded',()=>{
   const base=render;render=function(){const result=base.apply(this,arguments);decorate();return result;};window.render=render;
   const syncBase=rf250Pipeline;rf250Pipeline=async function(){const result=await syncBase.apply(this,arguments);await refresh({force:true});return result;};
+  const recoveryBase=window.tp153OpenRecovery;
+  window.tp153OpenRecovery=function(){recoveryOpen=true;const result=recoveryBase?.apply(this,arguments);decorate();return result;};
+  if(window.TrainPilot168Health){const base=window.TrainPilot168Health.decorate;window.TrainPilot168Health.decorate=function(){const result=base.apply(this,arguments);decorate();return result;};}
   decorate();void refresh();
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refresh();});
  });

@@ -10,9 +10,12 @@ const {run}=require('./helpers/app-runtime.cjs')();
   state.session=null;state.health={daily:{energyScore:98,energyScoreTime:new Date().toISOString(),energyScoreSource:'com.sec.android.app.shealth'},recovery:{sleepMinutes:480,sleepEnd:new Date().toISOString(),day:rf240DayKey(new Date())}};
   window.__energyTest={granted:false,requests:0,reads:0,mode:'ready'};
   window.Capacitor={isNativePlatform:()=>true,Plugins:{SamsungHealth:{
-   getStatus:async()=>({permissions:{READ_WEIGHT:true,READ_ENERGY_SCORE:__energyTest.granted}}),
+   getStatus:async()=>{throw Error('Broad permission check must not be used');},
+   getEnergyScoreStatus:async()=>({permissions:{READ_WEIGHT:true,READ_ENERGY_SCORE:__energyTest.granted}}),
    requestEnergyScoreRead:async()=>{__energyTest.requests++;__energyTest.granted=true;},
    readEnergyScoreDay:async args=>{__energyTest.reads++;if(__energyTest.mode==='error')throw Error('SDK unavailable');
+    if(__energyTest.mode==='access')throw {code:'SAMSUNG_HEALTH_2003',message:'private native detail'};
+    if(__energyTest.mode==='partial')return {day:args.day,failedFields:['energyScore'],errors:{energyScore:'SAMSUNG_HEALTH_3001'}};
     return {day:__energyTest.mode==='wrong-day'?'2000-01-01':args.day,energyScore:__energyTest.mode==='empty'?null:83,energyScoreTime:new Date().toISOString(),energyScoreSource:'com.sec.android.app.shealth'};}
   }}};
   var __energyTest=window.__energyTest;
@@ -33,11 +36,13 @@ const {run}=require('./helpers/app-runtime.cjs')();
  assert.match(run('window.TrainPilotEnergy184.html()'),/83\/100/);
  await run('window.TrainPilotEnergy184.refresh()');
  assert.equal(run('__energyTest.reads'),1,'Automatic refreshes are bounded');
- for(const mode of ['empty','wrong-day','error']){
+ for(const mode of ['empty','wrong-day','error','access','partial']){
   run(`__energyTest.mode=${JSON.stringify(mode)}`);
   await run('window.TrainPilotEnergy184.refresh({force:true})');
   assert.equal(run('rf220Readiness().energyScore'),null,mode);
   assert.equal(run('rf220Readiness().score'),82,mode+': keep the independent fallback');
+  if(mode==='access'){assert.match(run('window.TrainPilotEnergy184.html()'),/alkalmazásszintű.*SAMSUNG_HEALTH_2003/);assert.doesNotMatch(run('window.TrainPilotEnergy184.html()'),/private native detail/);}
+  if(mode==='partial')assert.match(run('window.TrainPilotEnergy184.html()'),/Frissítsd.*SAMSUNG_HEALTH_3001/);
  }
  run(`__energyTest.mode='ready';db.set('history',[{started:new Date(Date.now()-3600000).toISOString(),finished:new Date().toISOString(),exercises:[{id:'goblet-squat',effort:'pain'}]}]);`);
  await run('window.TrainPilotEnergy184.refresh({force:true})');

@@ -3,7 +3,28 @@
 Frissítve: **2026-10-20**. Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
-## Aktuális #222 – teljes CI sikeres, teszt-APK kész
+## #222 – új készülékes Samsung-hiba, Regeneráció alá rendezés
+
+- Felhasználó az új APK-ról képet küldött: Samsung Healthen telefonon/órán van mai
+  pontszám, TrainPilot az általános „olvasás nem sikerült” állapotot mutatja.
+  **Ez sikertelen készülékes teszt**, a korábbi zöld CI nem igazolja a Samsung-hozzáférést.
+- Kérés szerint a Samsung-kártya a Regeneráció megnyitható részébe került;
+  külön felső szintű kártya nincs. Frissítés után a panel nyitva marad.
+- Az önálló olvasás állapotellenőrzése is kizárólag ENERGY_SCORE engedélyre kérdez;
+  más adattípus nem akadályozhatja. Natív SDK-hibakód megőrizve aszinkron és belső
+  platform-kivételen át; részleges olvasásnál is strukturált mezőhiba jut a felületre.
+- A felület külön jelzi a 2000 engedélyhiányt, 2003 app-hozzáférési korlátot,
+  3001 frissítési igényt és 3000/3002/3003 Samsung-beállítási akadályt. Nyers
+  kivétel/adat nem kerül ki; diagnózishoz hibakód látszik. Hiánynál marad a TP-becslés.
+- Samsung hivatalos API-feltétel: csomagnév + release aláírás + engedélyezett
+  adattípusok partnerregisztrációja kell normál felhasználói hozzáféréshez.
+  https://developer.samsung.com/health/data/process.html
+  https://developer.samsung.com/health/data/api-reference/-shd/com.samsung.android.sdk.health.data.error/-error-code/index.html
+  A konkrét készülékhibát kód nélkül **nem** minősítjük biztos partnerhibának.
+- Célzott JS-tesztek/szintaxis/diff sikeres. Friss teljes CI és új APK még szükséges;
+  a lenti eredmények a korábbi a8bec136 forrásra vonatkoznak. #222 Draft, main/verzió változatlan.
+
+## Korábbi #222 – teljes CI sikeres, teszt-APK kész
 
 - Integráció: `feat/184-197-coach-integration`, **#222 nyitott / Draft**.
   **Bevizsgált alkalmazásforrás:** `a8bec13630136d89128f259bd065f6c2f57b2cea`.
