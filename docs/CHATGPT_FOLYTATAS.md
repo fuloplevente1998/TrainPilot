@@ -1,3 +1,5 @@
+> **TÖRTÉNETI NAPLÓ (2026-10-20).** Az alábbi dátumozott munkamenetek már nem a jelenlegi státuszt mutatják. Aktuális kiadás: **1.3.7 /2734**, [WORK_HANDOFF.md](WORK_HANDOFF.md); a nyitott #225 és #231 PR-t külön kezeld. Régi brancheket és kiadásokat csak a [karbantartási szabály](REPOSITORY_CLEANUP_POLICY.md) alapján takaríts.
+
 > **Aktuális átadás (2026-10-19):** [WORK_HANDOFF.md](WORK_HANDOFF.md). Először a gyökér `AGENTS.md`-t olvasd. A #193/#202 `e4f4fa8` forrás mind a hat kapuja zöld, aláírt tesztpár kész; fizikai elfogadás még nincs. A lentebbi állapotok történetiek. Új külső UI/funkcióötletek csak rögzítve, megvalósítás nem indult.
 
 ## Aktuális folytatás — 2026-10-17, összevont P2-csomagok

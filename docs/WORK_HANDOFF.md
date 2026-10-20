@@ -1,9 +1,10 @@
 # TrainPilot – aktuális átadás
 
-Frissítve: **2026-10-20**. Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
+Frissítve: **2026-10-20**. A #230 main-egyesítés: `8a58f3a`, a `v1.3.7` telefonos és `wear-v1.3.7` Wear OS release publikálva. Aktív #225/#231 PR; repository-takarítás: [szabályzat](REPOSITORY_CLEANUP_POLICY.md).
+Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
-## Elfogadva – #230 / 1.3.7 kiadás előkészítése
+## Elfogadva – #230 / 1.3.7 közzétéve
 
 - **Felhasználói jóváhagyás (2026-10-20):** „Rendben, zárható :) mehet mainre 1.3.7 verzioszamon, a release gatenel, teszteknel ezt vegyü figyelembe.”
 - #226 mentett PR-jelvény, #227 kézi sorozat haptika, #228 Napló-alapú gyakorlatonkénti súly- és ismétlés-előtöltés és #229 tényleges sorozat-RIR: felhasználó által elfogadott #230 csomag.

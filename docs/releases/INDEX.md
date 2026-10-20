@@ -1,15 +1,16 @@
 # GitHub-kiadások jegyzéke
 
-Ellenőrzött pillanatkép: **2026-10-20**, 37 release. A négy család a felhasználói áttekintést szolgálja; az eredeti tagek, címek, APK-k, források és ellenőrzőösszegek megmaradnak.
+Aktuális stabil kiadás: **1.3.7 /2734**, a 2026-10-20-i `main`-egyesítésből. A lenti régi release-sorok dátumozott történeti pillanatképet őriznek; a kiadási tagek és fájlok megmaradnak.
 
 ## Kiadott APK és elfogadott main
 
 | Állapot | Forrás és tartalom |
 | --- | --- |
-| Legutóbb közzétett telefon + Wear: **1.3.6 /2733**, október 19. | Tagforrás: `98be66221430202715aafa9a71583bbbd22d4fd3`. [Kiadási bizonylat](../builds/2026-10-19-release-136.json). |
-| Később elfogadott main: **1.3.6 /2733**, október 20. | #222 / #184 / #197, Samsung energiapontszám és RIR/Coach. Alkalmazásforrás: `c14e70778fdb81d42a49fe4b2ef8aa58b3a5292b`. [Elfogadási bizonylat](../builds/2026-10-20-222-accepted.json). |
+| **Legfrissebb stabil: [telefon 1.3.7](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.7) + [Wear OS 1.3.7](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.7)** | **1.3.7 /2734**, `main` merge `8a58f3a`, 2026-10-20. Mindkét aláírt kiadási kapu sikeres. [Release-jegyzet](v1.3.7.md). |
+| Előző stabil kiadás | **1.3.6 /2733**; [történeti release-jegyzet](v1.3.6.md) és [kiadási bizonylat](../builds/2026-10-19-release-136.json). |
+| Régebbi #222 elfogadási checkpoint | Az 1.3.7 kiadás már tartalmazza a Samsung Energy/RIR/Coach javításokat; [korábbi bizonyíték](../builds/2026-10-20-222-accepted.json). |
 
-**A közzétett október 19-i APK nem tartalmazza a későbbi #222 javításait.** Az elfogadott [telefonos teszt-APK](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39440372153/artifacts/12273816379) külön Actions artifact; az artifact lejárhat. A Wear APK változatlan. Új kiadáshoz külön forrás, verzió- és kiadási döntés szükséges.
+A takarítás során a [repository-takarítási szabály](../REPOSITORY_CLEANUP_POLICY.md) érvényes: a régi kiadások tageit, APK-fájljait, aláírásait és a kiadás történetét nem töröljük.
 
 A régi **1.3.51** jelölést megőrizzük. A SemVer szerinti 51-es patch nagyobb 6-nál, ezért a történeti listát dátum és platform szerint olvasd; telepítésnél az Android `versionCode` és az aláírás számít. Nincs tagátnevezés vagy visszamenőleges újraszámozás.
 
