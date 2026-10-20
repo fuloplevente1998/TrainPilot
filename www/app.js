@@ -19532,7 +19532,7 @@ var tp197UiPanel=function(scope,pid,expanded=false){
   // The hidden native control preserves existing test/backup compatibility.
   // Users only interact with the inline menu; Android WebView cannot open its platform picker.
   const native='<select hidden aria-hidden="true" tabindex="-1" id="'+pickerId+'" onchange="tp197UiSet('+scopeArg+',\''+field+'\',this.value)">'+options(values,selected)+'</select>';
-  const buttons=values.map(([v,label])=>'<button type="button" class="tp197-choice-option'+(v===selected?' is-selected':'')+'" aria-pressed="'+String(v===selected)+'" onclick="tp197UiChoose('+scopeArg+',\''+field+'\',\''+v+'\')">'+esc(label)+(v===selected?'<span aria-hidden="true">✓</span>':'')+'</button>').join('');
+  const buttons=values.map(([v,label])=>'<button type="button" class="tp197-choice-option'+(v===selected?' is-selected':'')+'" aria-pressed="'+String(v===selected)+'" data-value="'+v+'" onclick="tp197UiChoose('+scopeArg+',\''+field+'\',this.dataset.value)">'+esc(label)+(v===selected?'<span aria-hidden="true">✓</span>':'')+'</button>').join('');
   return native+'<details class="tp197-choice" data-field="'+field+'"><summary aria-label="'+esc(field==='trainingStyle'?t.style:t.progress)+': '+selectedLabel+'"><span class="tp197-choice-label">'+esc(selectedLabel)+'</span><span class="tp197-choice-chevron" aria-hidden="true">⌄</span></summary><div class="tp197-choice-options">'+buttons+'</div></details>';
  };
  return '<details class="card tp197-mode-panel" id="'+id+'" data-tp197-scope="'+scope+'" '+(expanded?'open':'')+'>'+
