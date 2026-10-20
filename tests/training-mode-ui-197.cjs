@@ -39,7 +39,12 @@ mockReason='rir-feedback-missing';assert.match(context.planScreen(),/naplózott 
 mockReason='insufficient-history';
 assert.match(context.planScreen(),/tp197UiSet\('program',&quot;home-basic&quot;/,'program ID must be escaped in the HTML event attribute');
 assert.match(context.settingsScreen(),/option value="normal" selected/);
+assert.match(context.settingsScreen(),/<select hidden aria-hidden="true" tabindex="-1" id="tp197-mode-global-style"/,'Native select should remain hidden');
+assert.match(context.settingsScreen(),/class="tp197-choice"/,'Inline mode picker should replace platform picker');
+assert.match(context.settingsScreen(),/tp197-choice-chevron/,'Mode picker has visible arrow');
+assert.match(context.planScreen(),/tp197-panel-chevron/,'Workout modes disclosure has an arrow');
 assert.match(context.settingsScreen(),/option value="double" selected/);
+assert.equal(context.tp197UiChoose('global',null,'trainingStyle','hit'),true,'Inline picker uses the original guarded mode setter');
 assert.equal(context.tp197UiSet('global',null,'trainingStyle','hit'),true);
 assert.equal(context.tp197UiSet('global',null,'progressionMode','linear'),true);
 assert.match(context.settingsScreen(),/option value="hit" selected/);
