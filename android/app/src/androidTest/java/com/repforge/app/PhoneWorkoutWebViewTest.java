@@ -63,8 +63,8 @@ public class PhoneWorkoutWebViewTest {
                 waitFor(view,"document.hasFocus()");
                 evaluate(view,"""
                     window.__coldNav={rows:[],longTasks:[],pending:null,depth:0,events:[]};
-                    for(const type of ['pointerdown','pointerup','click'])document.addEventListener(type,event=>{
-                     __coldNav.events.push({type,target:event.target.id||event.target.className,x:event.clientX,y:event.clientY});
+                    for(const type of ['pointerdown','pointerup','click','contextmenu'])document.addEventListener(type,event=>{
+                     __coldNav.events.push({type,target:event.target.id||event.target.className,x:event.clientX,y:event.clientY,at:event.timeStamp});
                      if(__coldNav.events.length>8)__coldNav.events.shift();
                     },true);
                     try{new PerformanceObserver(list=>{for(const e of list.getEntries())__coldNav.longTasks.push({at:e.startTime,ms:e.duration});}).observe({type:'longtask',buffered:true});}catch(_){}
@@ -94,17 +94,14 @@ public class PhoneWorkoutWebViewTest {
                         assertTrue("Navigation touch outside WebView: "+position,x>=0&&x<view.getWidth()&&y>=0&&y<view.getHeight());
                         touch[0]=x;touch[1]=y;
                     });
-                    long time=android.os.SystemClock.uptimeMillis();
                     instrumentation.runOnMainSync(()->{
-                        android.view.MotionEvent event=android.view.MotionEvent.obtain(time,time,android.view.MotionEvent.ACTION_DOWN,touch[0],touch[1],0);
-                        event.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);
-                        try{view.dispatchTouchEvent(event);}finally{event.recycle();}
-                    });
-                    android.os.SystemClock.sleep(30);
-                    instrumentation.runOnMainSync(()->{
-                        android.view.MotionEvent event=android.view.MotionEvent.obtain(time,android.os.SystemClock.uptimeMillis(),android.view.MotionEvent.ACTION_UP,touch[0],touch[1],0);
-                        event.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);
-                        try{view.dispatchTouchEvent(event);}finally{event.recycle();}
+                        // One short gesture: queueing two separate UI-thread tasks can
+                        // accidentally turn a tap into a long press on a loaded emulator.
+                        long time=android.os.SystemClock.uptimeMillis();
+                        android.view.MotionEvent down=android.view.MotionEvent.obtain(time,time,android.view.MotionEvent.ACTION_DOWN,touch[0],touch[1],0);
+                        android.view.MotionEvent up=android.view.MotionEvent.obtain(time,time,android.view.MotionEvent.ACTION_UP,touch[0],touch[1],0);
+                        down.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);up.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);
+                        try{view.dispatchTouchEvent(down);view.dispatchTouchEvent(up);}finally{down.recycle();up.recycle();}
                     });
                     waitFor(view,"window.__coldNav.pending===null");
                     String result=evaluate(view,"JSON.stringify(__coldNav.rows.at(-1))");JSONObject row=new JSONObject(new org.json.JSONArray("["+result+"]").getString(0));
@@ -139,7 +136,7 @@ public class PhoneWorkoutWebViewTest {
             instrumentation.waitForIdleSync();
         }
         JSONObject report=new JSONObject().put("fixtureWorkouts",200).put("launches",launches)
-            .put("limits","Debug emulator timings; Android MotionEvents dispatched to WebView, without system input routing. Activity/WebView relaunches, not process-force-stop. Two-RAF proxy, no device-FPS claim.");
+            .put("limits","Debug emulator timings; Atomic synthetic Android tap pairs dispatched to WebView, without system input routing or hardware-to-app latency measurement. Activity/WebView relaunches, not process-force-stop. Two-RAF proxy, no device-FPS claim.");
         java.io.File output=new java.io.File(instrumentation.getTargetContext().getExternalFilesDir(null),"cold-navigation.json");
         try(java.io.FileWriter writer=new java.io.FileWriter(output)){writer.write(report.toString(2));}
         // Logcat truncates individual entries at ~4 KB. Export small records too:
