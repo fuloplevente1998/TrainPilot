@@ -1,6 +1,6 @@
 # TrainPilot – aktuális átadás
 
-Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.3.71 a GitHub Latest.** Aktív #225/#231 külön marad; [takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
+Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.3.71 a GitHub Latest.** A #225 audit PR beolvasztás nélkül lezárva, #230/#234 által felváltva; #231 külön marad; [takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
@@ -28,7 +28,7 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
   - [Wear 1.3.71](https://github.com/fuloplevente1998/TrainPilot/releases/download/wear-v1.3.71/TrainPilot-1.3.71-wear.apk), SHA-256 `ea963e7393bb29748fdd3325d3e83e6a715261e5a93bdd8ed38ab5876773e97a`.
 - `v1.3.71` explicit Latest, `wear-v1.3.71` latest=false; mindkét tag a main merge-re mutat. Telefon app.js/CSS blobazonos; mindkét APK forrásjelölése ellenőrizve. [Kiadási bizonylat](builds/2026-10-21-release-1371.json).
 - Main kerek UI **39519510953 SUCCESS**, mindhárom shard és teljes **183/183** lefedettség sikeres. A mentett snapshot hiánya miatti cold boot figyelmeztetés nem teszthiba.
-- Következő: nincs további #234 fejlesztés vagy készülékes jóváhagyásra váró pont. #225/#231 külön marad; Play-előkészítés #214 változatlan.
+- Következő: nincs további #234 fejlesztés vagy készülékes jóváhagyásra váró pont. #225 lezárva (történeti audit, #230/#234 által felváltva); #231 külön marad; Play-előkészítés #214 változatlan.
 
 ## Elfogadva – #230 / 1.3.7 közzétéve
 
