@@ -79,6 +79,9 @@ try{
   tp155R4OpenPanel('settings',document.activeElement);const previous=window.Capacitor;let publishes=0;
   window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{publishHome:async()=>{publishes++;}}}};
   try{
+   // Earlier probes already published this catalog. Queue an actual change so
+   // this checks deferred delivery rather than the unchanged-input fast path.
+   db.set('settings',{...settings(),rest:Number(settings().rest||90)+1});
    document.querySelector('.tp155-r4-panel').dispatchEvent(new Event('scroll'));
    const pending=TrainPilotWearSync.syncHomeNow();await new Promise(r=>setTimeout(r,50));const during=publishes;
    await pending;return {during,after:publishes};
