@@ -17,10 +17,6 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  assert.equal(await page.locator('details.rf263-history').count(),120,'all original rows remain available after paging');
  assert.equal(await page.locator('[data-tp152-history-key="p7-lazy-119"]').count(),1,'oldest workout must be reachable');
  assert.equal(await page.locator('#tp236HistoryMore').count(),0,'button must disappear at final page');
- const oldest=page.locator('[data-tp152-history-key="p7-lazy-119"]');
- await oldest.locator(':scope > summary').click();
- await page.waitForSelector('[data-tp152-history-key="p7-lazy-119"][open] .tp3-workout-summary');
- await oldest.locator(':scope > summary').click();
  assert.ok(initialNodeCount<await page.evaluate(()=>document.querySelectorAll('*').length),'first DOM must be smaller than fully expanded listing');
  assert.equal(await page.locator('.tp3-combined-history-body[data-tp3-hydrated="true"]').count(),0,'collapsed Journal rows must not eagerly hydrate detail bodies');
  assert.equal(await page.locator('.tp3-workout-summary').count(),0,'collapsed Journal rows must not build workout summaries');
@@ -34,6 +30,11 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  await first.locator('details.tp3-history-ex-item>summary').first().click();
  await page.waitForSelector('details.tp3-history-ex-item[open] .tp3-exercise-inline-editor');
  assert.equal(await first.getAttribute('data-tp3-no-render-probe'),'kept','exercise disclosure must remain local and avoid whole Journal re-render');
+ const oldest=page.locator('[data-tp152-history-key="p7-lazy-119"]');
+ await oldest.locator(':scope > summary').click();
+ await page.waitForSelector('[data-tp152-history-key="p7-lazy-119"][open] .tp3-workout-summary');
+ assert.equal(await oldest.locator('.tp3-photo-section').count(),1,'oldest paged workout retains photo controls');
+ await oldest.locator(':scope > summary').click();
  await page.evaluate(()=>{const now=new Date(),h={id:'p7-empty',workout:'A',dayId:'A',programId:'home-basic',programName:'Phase 7 empty',started:now.toISOString(),finished:new Date(now.getTime()+1800000).toISOString(),exercises:[],photos:[]};db.set('history',[h]);state.tp3HistoryOpenKey=null;go('history')});
  const empty=page.locator('[data-tp152-history-key="p7-empty"]');await empty.locator(':scope > summary').click();
  assert.equal(await empty.locator('.tp155-history-delete').count(),1,'opening a lazy Journal row must synchronously expose the accepted delete-workout action');
