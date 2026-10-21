@@ -442,5 +442,9 @@
   {
     "file": "tests/browser/settings-immediate-navigation-236.cjs",
     "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/startup-fit-once-236.cjs",
+    "estimatedSeconds": 9
   }
 ]

@@ -15510,7 +15510,7 @@ renderWorkout=function(){
  if(window.TrainPilot110)panel.insertAdjacentHTML('beforeend',window.TrainPilot110.intervalHtml());const owner=tp107IndoorOwner();if(owner?.timer.running&&!tp107IndoorInterval)tp107IndoorInterval=setInterval(tp107PaintIndoor,250);tp107PaintIndoor();return result;
 };
 
-var tp107FitFrame=0,tp107FitNav=null,tp107ObservedNav=null,tp107FitNavObserver=null;
+var tp107FitFrame=0,tp107FitNav=null,tp107ObservedNav=null,tp107FitNavObserver=null,tp107NavBox=null;
 var tp107ScheduleFit=function(){
  if(tp107FitFrame)return;
  tp107FitFrame=requestAnimationFrame(()=>{tp107FitFrame=0;tp107FitViews()});
@@ -15531,7 +15531,8 @@ var tp107FitViews=function(){
  const nav=document.querySelector('.top');
  if(nav&&nav!==tp107FitNav){
   tp107FitNav=nav;
-  const height=Math.ceil(nav.getBoundingClientRect().bottom)+'px';
+  const navRect=nav.getBoundingClientRect();tp107NavBox={width:navRect.width,height:navRect.height};
+  const height=Math.ceil(navRect.bottom)+'px';
   if(document.documentElement.style.getPropertyValue('--tp107-nav-height')!==height)document.documentElement.style.setProperty('--tp107-nav-height',height);
   if(nav!==tp107ObservedNav){
    tp107ObservedNav=nav;tp107FitNavObserver?.disconnect();tp107FitNavObserver?.observe(nav);
@@ -15541,15 +15542,22 @@ var tp107FitViews=function(){
  if(panelHost&&panelHost.classList.contains('tp107-fit-calendar')!==calendar)panelHost.classList.toggle('tp107-fit-calendar',calendar);
 };
 window.addEventListener?.('DOMContentLoaded',function(){
- if(typeof ResizeObserver==='function')tp107FitNavObserver=new ResizeObserver(()=>{tp107FitNav=null;tp107ScheduleFit()});
- const renderBase=render;render=function(){const result=renderBase.apply(this,arguments);tp107FitViews();return result;};
- const refreshBase=window.tp155R4RefreshPanel;window.tp155R4RefreshPanel=function(){const result=refreshBase.apply(this,arguments);tp107FitViews();return result;};
+ if(typeof ResizeObserver==='function')tp107FitNavObserver=new ResizeObserver(entries=>{
+  // The first observation is not a resize. Don't run a second startup fit
+  // for the same nav box; genuine later size changes still get measured.
+  const entry=entries.find(e=>e.target===tp107ObservedNav),box=entry?.borderBoxSize?.[0];
+  if(box&&tp107NavBox&&Math.abs(box.inlineSize-tp107NavBox.width)<.5&&Math.abs(box.blockSize-tp107NavBox.height)<.5)return;
+  tp107FitNav=null;tp107ScheduleFit();
+ });
+ const fit=()=>window.TrainPilotBoot&&!window.TrainPilotBoot.finished?tp107ScheduleFit():tp107FitViews();
+ const renderBase=render;render=function(){const result=renderBase.apply(this,arguments);fit();return result;};
+ const refreshBase=window.tp155R4RefreshPanel;window.tp155R4RefreshPanel=function(){const result=refreshBase.apply(this,arguments);fit();return result;};
  // Only the Health overview changes between a fitted page and a scrolling
  // disclosure. Program/Journal toggles do not change navigation geometry.
  const fitHealth=function(event){if(event.target?.closest?.('#app main.tp168-health'))tp107ScheduleFit()};
  document.addEventListener('toggle',fitHealth,true);
  document.addEventListener('click',fitHealth);
- window.addEventListener('resize',()=>{tp107FitNav=null;tp107FitViews()});document.addEventListener('visibilitychange',function(){if(!document.hidden)tp107PaintIndoor();});tp107FitViews();
+ window.addEventListener('resize',()=>{tp107FitNav=null;tp107ScheduleFit()});document.addEventListener('visibilitychange',function(){if(!document.hidden)tp107PaintIndoor();});tp107ScheduleFit();
 });
 // @endsection training-107.js
 
