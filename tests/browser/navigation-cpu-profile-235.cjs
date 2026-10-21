@@ -32,7 +32,14 @@ function rank(profile){
    page.on('pageerror',e=>errors.push(e.message));
    const cdp=await page.context().newCDPSession(page);await cdp.send('Emulation.setCPUThrottlingRate',{rate:4});
    await cdp.send('Profiler.enable');await cdp.send('Profiler.setSamplingInterval',{interval:500});await cdp.send('Performance.enable');
-   await page.addInitScript(()=>{localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped'));});
+   await page.addInitScript(()=>{
+    localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped'));
+    window.__startupProbe={reads:{},rootWrites:0,beforeDCL:null};
+    const get=Storage.prototype.getItem,html=Object.getOwnPropertyDescriptor(Element.prototype,'innerHTML');
+    Storage.prototype.getItem=function(key){__startupProbe.reads[key]=(__startupProbe.reads[key]||0)+1;return get.call(this,key);};
+    Object.defineProperty(Element.prototype,'innerHTML',{...html,set(value){if(this.id==='app')__startupProbe.rootWrites++;return html.set.call(this,value);}});
+    document.addEventListener('DOMContentLoaded',()=>{__startupProbe.beforeDCL={reads:{...__startupProbe.reads},rootWrites:__startupProbe.rootWrites};},{once:true});
+   });
    const url='http://127.0.0.1:'+server.address().port+'/';await page.goto(url);await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
    await page.evaluate(count=>{
     const ids=['db-floor-press','db-squat','one-arm-row','rdl','db-curl','plank'];
@@ -43,7 +50,7 @@ function rank(profile){
    },count);
    await cdp.send('Profiler.start');await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
    const startup=(await cdp.send('Profiler.stop')).profile;fs.writeFileSync(path.join(output,'startup-'+count+'.cpuprofile'),JSON.stringify(startup));
-   const fixture={count,bootMs:await page.evaluate(()=>TrainPilotBoot.durationMs),startupRank:rank(startup),routes:[]};
+   const fixture={count,bootMs:await page.evaluate(()=>TrainPilotBoot.durationMs),startupReads:await page.evaluate(()=>__startupProbe),startupRank:rank(startup),routes:[]};
    await page.locator('#tpBoot').waitFor({state:'hidden'});
    await page.evaluate(()=>{
     window.__navProbe={pending:null,rows:[]};
@@ -51,13 +58,13 @@ function rank(profile){
     document.addEventListener('click',event=>{
      const row=__navProbe.pending;if(!row||!event.target.closest('.top'))return;
      row.clickAt=performance.now();row.inputDelayMs=row.clickAt-event.timeStamp;
-     queueMicrotask(()=>{row.handlerTaskMs=performance.now()-row.clickAt;});
      requestAnimationFrame(()=>requestAnimationFrame(()=>{
       row.paintMs=performance.now()-row.clickAt;row.tapToPaintMs=performance.now()-(row.down||row.clickAt);
       row.nodes=document.querySelectorAll('*').length;row.tab=state.tab;row.panel=document.getElementById('tp155R4PanelHost')?.dataset.panel||'';
       row.animations=document.getAnimations().map(a=>a.animationName).filter(Boolean);__navProbe.rows.push(row);__navProbe.pending=null;
      }));
     },true);
+    document.addEventListener('click',()=>{const row=__navProbe.pending;if(row?.clickAt!=null)row.handlerTaskMs=performance.now()-row.clickAt;});
    });
    for(let cycle=1;cycle<=2;cycle++)for(const route of ['plan','health','programs','history','calendar','coach','settings','home']){
     const selector=route==='coach'?'.top .tp154-coach-action':route==='settings'?'.top .tp154-settings-action':'.top [onclick="go(\''+route+'\')"]';
@@ -69,7 +76,7 @@ function rank(profile){
     assert.equal(row.panel,['calendar','coach','settings'].includes(route)?route:'');
     if(!row.panel)assert.equal(row.tab,route);
     row.metrics=Object.fromEntries(['LayoutDuration','RecalcStyleDuration','ScriptDuration','TaskDuration','LayoutCount','RecalcStyleCount'].map(name=>{
-     const a=after.find(m=>m.name===name)?.value||0,b=before.find(m=>m.name===name)?.value||0;return [name,Math.round((a-b)*10000)/10];
+     const a=after.find(m=>m.name===name)?.value||0,b=before.find(m=>m.name===name)?.value||0;return [name,name.endsWith('Count')?a-b:Math.round((a-b)*10000)/10];
     }));row.rank=rank(profile);fixture.routes.push(row);
     fs.writeFileSync(path.join(output,[count,cycle,route].join('-')+'.cpuprofile'),JSON.stringify(profile));
    }

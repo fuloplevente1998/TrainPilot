@@ -6,6 +6,12 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
+      navigation_profile:
+        description: 'Collect cold/warm navigation CPU and layout profiles against the last device-tested #235 source'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -52,6 +58,7 @@ jobs:
       - name: Profile cold Coach open
         run: node tests/browser/phase7-coach-cold-19.cjs
       - name: Profile navigation against the latest device-tested source
+        if: github.event_name == 'workflow_dispatch' && inputs.navigation_profile
         shell: bash
         run: |
           set -euo pipefail

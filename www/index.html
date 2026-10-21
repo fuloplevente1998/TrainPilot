@@ -794,7 +794,19 @@
 /* Home Coach startup consistency: legacy compact repaint must not replace the accepted card after boot. */
 (function(){
  'use strict';
- const decorate=()=>{try{if(state?.tab==='home')window.tp166DecorateHomeCoach?.()}catch(_){}};
+ const decorate=()=>{
+  try{
+   if(state?.tab!=='home')return;
+   const card=document.querySelector('#rf220CoachCard');if(!card)return;
+   // The final renderer already produced the accepted card. Only repair an
+   // actual legacy repaint; the old timer/RAF callbacks rebuilt Coach several
+   // more times during cold startup, outside the render's shared read scope.
+   if(card.classList.contains('tp166-home-coach')&&card.querySelector('.tp166-home-coach-copy')&&
+      !card.querySelector('.rf221-coach-head,.rf221-coach-line'))return;
+   const repair=()=>window.tp166DecorateHomeCoach?.();
+   if(typeof window.tp7WithHistorySnapshot==='function')window.tp7WithHistorySnapshot(repair);else repair();
+  }catch(_){}
+ };
  if(typeof rf221CompactHome==='function'&&!rf221CompactHome.tpHomeCoachStable){
   const base=rf221CompactHome;
   const wrapped=function(){

@@ -39,6 +39,7 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
  const now=()=>typeof performance!=='undefined'?performance.now():Date.now();
  boot.startedAt=now();
  boot.durationMs=null;
+ boot.waitingForModules=document.readyState==='loading'||document.readyState==='interactive';
  const releaseNative=function(failed){
   try{
    if(window.Capacitor?.isNativePlatform?.()!==true)return false;
@@ -63,11 +64,15 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
  };
  window.addEventListener?.('error',()=>{if(boot.loading)boot.fail();},true);
  boot.finish=function(){
-  if(boot.finished||boot.failed)return;
+  if(boot.finished||boot.failed||boot.waitingForModules)return;
   boot.loading=false;
   try{
-   render();
-   if(!document.querySelector('#app')?.innerHTML)throw Error('Empty initial screen');
+   const firstRender=()=>{
+    render();
+    if(!document.querySelector('#app')?.innerHTML)throw Error('Empty initial screen');
+   };
+   if(typeof window.tp7WithHistorySnapshot==='function')window.tp7WithHistorySnapshot(firstRender);
+   else firstRender();
   }catch(e){boot.fail();throw e;}
   // 1.2 clean runtime renders the final DOM synchronously; reveal on the next frame.
   const reveal=()=>{
@@ -20495,5 +20500,14 @@ window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation}
 
 
 // @section ready.js
-if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
+(function(){
+ // Inline/DCL modules install the final renderer and its read scope. Rendering
+ // before those listeners ran repeatedly parsed the whole journal on cold boot.
+ const ready=()=>{
+  window.TrainPilotBoot.waitingForModules=false;
+  if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
+ };
+ if(window.TrainPilotBoot.waitingForModules)window.addEventListener('DOMContentLoaded',ready,{once:true});
+ else ready();
+})();
 // @endsection ready.js
