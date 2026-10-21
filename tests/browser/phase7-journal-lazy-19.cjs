@@ -64,7 +64,7 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  await page.waitForSelector('[data-tp152-history-key="tp236-1499"][open] .tp3-workout-summary');
  assert.equal(await far.locator('.tp3-photo-section').count(),1);
  await page.evaluate(()=>{
-  const h=history();h[1499]={...h[1499],programName:'Updated oldest 236'};db.set('history',h);go('history');
+  const h=history();h[1499]={...h[1499],programId:'missing-236',programName:'Updated oldest 236'};db.set('history',h);go('history');
  });
  assert.match(await page.locator('[data-tp152-history-key="tp236-1499"] .history-title').textContent(),/Updated oldest 236/,'same-size edit must update the Journal');
  await page.evaluate(()=>{rf263HistoryFilter={from:'',to:''};go('history')});
