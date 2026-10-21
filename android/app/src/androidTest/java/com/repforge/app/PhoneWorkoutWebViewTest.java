@@ -131,7 +131,17 @@ public class PhoneWorkoutWebViewTest {
             .put("limits","Debug emulator timings; Android MotionEvents dispatched to WebView, without system input routing. Activity/WebView relaunches, not process-force-stop. Two-RAF proxy, no device-FPS claim.");
         java.io.File output=new java.io.File(instrumentation.getTargetContext().getExternalFilesDir(null),"cold-navigation.json");
         try(java.io.FileWriter writer=new java.io.FileWriter(output)){writer.write(report.toString(2));}
-        System.out.println("COLD_NAVIGATION "+report);
+        // Logcat truncates individual entries at ~4 KB. Export small records too:
+        // Gradle may remove the target package before a post-test adb pull.
+        System.out.println("COLD_NAVIGATION_META "+new JSONObject().put("fixtureWorkouts",200).put("limits",report.getString("limits")));
+        for(int i=0;i<launches.length();i++) {
+            JSONObject result=launches.getJSONObject(i);
+            System.out.println("COLD_NAVIGATION_LAUNCH "+new JSONObject().put("launch",i+1).put("bootMs",result.getDouble("bootMs")).put("catalog",result.getJSONArray("catalog")));
+            for(int j=0;j<result.getJSONArray("rows").length();j++)
+                System.out.println("COLD_NAVIGATION_ROW "+new JSONObject().put("launch",i+1).put("row",result.getJSONArray("rows").getJSONObject(j)));
+            for(int j=0;j<result.getJSONArray("longTasks").length();j++)
+                System.out.println("COLD_NAVIGATION_TASK "+new JSONObject().put("launch",i+1).put("task",result.getJSONArray("longTasks").getJSONObject(j)));
+        }
     }
 
     @Test public void phoneRecordingUsesRealNativeBackgroundController() throws Exception {
