@@ -54,6 +54,12 @@ function rank(profile){
    await page.locator('#tpBoot').waitFor({state:'hidden'});
    await page.evaluate(()=>{
     window.__navProbe={pending:null,rows:[]};
+    // Measurement only: count page-driven geometry/style queries per navigation.
+    window.__navGeometry={boundingRects:0,clientRects:0,computedStyles:0};
+    const bound=Element.prototype.getBoundingClientRect,clients=Element.prototype.getClientRects,style=window.getComputedStyle;
+    Element.prototype.getBoundingClientRect=function(...args){__navGeometry.boundingRects++;return bound.apply(this,args);};
+    Element.prototype.getClientRects=function(...args){__navGeometry.clientRects++;return clients.apply(this,args);};
+    window.getComputedStyle=function(...args){__navGeometry.computedStyles++;return style.apply(this,args);};
     document.addEventListener('pointerdown',event=>{if(__navProbe.pending&&event.target.closest('.top'))__navProbe.pending.down=event.timeStamp;},true);
     document.addEventListener('click',event=>{
      const row=__navProbe.pending;if(!row||!event.target.closest('.top'))return;
@@ -68,20 +74,40 @@ function rank(profile){
    });
    for(let cycle=1;cycle<=2;cycle++)for(const route of ['plan','health','programs','history','calendar','coach','settings','home']){
     const selector=route==='coach'?'.top .tp154-coach-action':route==='settings'?'.top .tp154-settings-action':'.top [onclick="go(\''+route+'\')"]';
-    await page.evaluate(({route,cycle})=>{__navProbe.pending={route,cycle};},{route,cycle});
+    await page.evaluate(({route,cycle})=>{__navProbe.pending={route,cycle};__navGeometry.boundingRects=0;__navGeometry.clientRects=0;__navGeometry.computedStyles=0;},{route,cycle});
     const before=(await cdp.send('Performance.getMetrics')).metrics;await cdp.send('Profiler.start');
     await page.locator(selector).tap();await page.waitForFunction(()=>__navProbe.pending===null);
     const profile=(await cdp.send('Profiler.stop')).profile,after=(await cdp.send('Performance.getMetrics')).metrics;
     const row=await page.evaluate(()=>__navProbe.rows.at(-1));
     assert.equal(row.panel,['calendar','coach','settings'].includes(route)?route:'');
     if(!row.panel)assert.equal(row.tab,route);
+    // Sample DOM after the timed profile: diagnostics must not inflate paint/layout metrics.
+    row.geometry=await page.evaluate(()=>({...window.__navGeometry}));
+    row.dom=await page.evaluate(()=>{
+     const subtree=el=>el?el.getElementsByTagName('*').length+1:0;
+     const app=document.getElementById('app'),panel=document.getElementById('tp155R4PanelHost');
+     const largestAppBranches=[...(app?.children||[])].map((el,index)=>({
+      index,tag:el.tagName.toLowerCase(),id:el.id||'',
+      className:typeof el.className==='string'?el.className.slice(0,100):'',nodes:subtree(el)
+     })).sort((a,b)=>b.nodes-a.nodes).slice(0,8);
+     return {
+      totalNodes:document.getElementsByTagName('*').length,
+      appNodes:subtree(app),panelNodes:subtree(panel),
+      journalCards:document.querySelectorAll('details.rf263-history').length,
+      journalExpanded:document.querySelectorAll('details.rf263-history[open]').length,
+      journalHydrated:document.querySelectorAll('.tp3-combined-history-body[data-tp3-hydrated="true"]').length,
+      journalExerciseRows:document.querySelectorAll('details.tp3-history-ex-item').length,
+      journalSummaries:document.querySelectorAll('details.rf263-history>summary').length,
+      largestAppBranches
+     };
+    });
     row.metrics=Object.fromEntries(['LayoutDuration','RecalcStyleDuration','ScriptDuration','TaskDuration','LayoutCount','RecalcStyleCount'].map(name=>{
      const a=after.find(m=>m.name===name)?.value||0,b=before.find(m=>m.name===name)?.value||0;return [name,name.endsWith('Count')?a-b:Math.round((a-b)*10000)/10];
     }));row.rank=rank(profile);fixture.routes.push(row);
     fs.writeFileSync(path.join(output,[count,cycle,route].join('-')+'.cpuprofile'),JSON.stringify(profile));
    }
    assert.deepEqual(errors,[]);evidence.fixtures.push(fixture);await page.close();
-   console.log('NAVIGATION_CPU '+JSON.stringify({count,bootMs:fixture.bootMs,routes:fixture.routes.map(({route,cycle,inputDelayMs,handlerTaskMs,paintMs,nodes,metrics,rank})=>({route,cycle,inputDelayMs,handlerTaskMs,paintMs,nodes,metrics,rank:rank.slice(0,8)}))}));
+   console.log('NAVIGATION_CPU '+JSON.stringify({count,bootMs:fixture.bootMs,routes:fixture.routes.map(({route,cycle,inputDelayMs,handlerTaskMs,paintMs,nodes,metrics,geometry,dom,rank})=>({route,cycle,inputDelayMs,handlerTaskMs,paintMs,nodes,metrics,geometry,dom,rank:rank.slice(0,8)}))}));
   }
   fs.writeFileSync(path.join(output,'summary.json'),JSON.stringify(evidence,null,2));
  }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}
