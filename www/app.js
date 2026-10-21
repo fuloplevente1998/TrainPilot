@@ -6894,11 +6894,12 @@ var tp1481PersistSide=function tp1481PersistSide(sec){
  tp1481SyncPerSideReps(set);persistDraft();
 };
 var tp1481SidePaint=function tp1481SidePaint(){
- const sec=tp1481SideSeconds(),active=tp1481SideStopwatch.side;
- if(active&&sec!==tp1481SideStopwatch.lastSecond){tp1481SideStopwatch.lastSecond=sec;tp1481PersistSide(sec)}
+ const ex=state.session?.exercises?.[state.current],setIndex=ex?.sets?.findIndex(s=>!s.done),set=ex?.sets?.[setIndex];
+ const owns=tp1481SideStopwatch.exerciseIndex===state.current&&tp1481SideStopwatch.setIndex===setIndex;
+ const sec=tp1481SideSeconds(),active=owns?tp1481SideStopwatch.side:null;
+ if(active&&tp1481SideStopwatch.running&&sec!==tp1481SideStopwatch.lastSecond){tp1481SideStopwatch.lastSecond=sec;tp1481PersistSide(sec)}
  for(const side of ['left','right']){
-  const ex=state.session?.exercises?.[tp1481SideStopwatch.exerciseIndex],set=ex?.sets?.[tp1481SideStopwatch.setIndex];
-  const stored=side===active?sec:tp1481StoredSide(set,side);
+  const stored=side===active&&tp1481SideStopwatch.running?sec:tp1481StoredSide(set,side);
   const display=document.querySelector('#tp1481SideTime-'+side),input=document.querySelector('#tp1481SideInput-'+side),button=document.querySelector('#tp1481SideToggle-'+side);
   if(display)display.textContent=rf110FormatStopwatch(stored);
   if(input&&document.activeElement!==input)input.value=stored||'';
@@ -10076,11 +10077,12 @@ formatSet=function formatSet(e,set){
 };
 
 tp1481SidePaint=function tp1481SidePaint(){
- const sec=tp1481SideSeconds(),active=tp1481SideStopwatch.side;
- if(active&&sec!==tp1481SideStopwatch.lastSecond){tp1481SideStopwatch.lastSecond=sec;tp1481PersistSide(sec);}
+ const ex=state.session?.exercises?.[state.current],setIndex=ex?.sets?.findIndex(s=>!s.done),set=ex?.sets?.[setIndex];
+ const owns=tp1481SideStopwatch.exerciseIndex===state.current&&tp1481SideStopwatch.setIndex===setIndex;
+ const sec=tp1481SideSeconds(),active=owns?tp1481SideStopwatch.side:null;
+ if(active&&tp1481SideStopwatch.running&&sec!==tp1481SideStopwatch.lastSecond){tp1481SideStopwatch.lastSecond=sec;tp1481PersistSide(sec);}
  for(const side of ['left','right']){
-  const ex=state.session?.exercises?.[tp1481SideStopwatch.exerciseIndex],set=ex?.sets?.[tp1481SideStopwatch.setIndex];
-  const stored=side===active?sec:tp1481StoredSide(set,side);
+  const stored=side===active&&tp1481SideStopwatch.running?sec:tp1481StoredSide(set,side);
   const display=document.querySelector('#tp1481SideTime-'+side),input=document.querySelector('#tp1481SideInput-'+side),button=document.querySelector('#tp1481SideToggle-'+side);
   if(display)display.textContent=rf110FormatStopwatch(stored);
   if(input&&document.activeElement!==input)input.value=stored||'';

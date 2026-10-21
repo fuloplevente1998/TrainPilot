@@ -25,6 +25,10 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 - Panelgörgetés/touchmove alatt csak a közönséges home/katalógus küldés vár
   180 ms nyugalomra. Kifejezett force és az aktív edzés parancs-/állapotszinkronja
   nem vár; az eredeti frissítés automatikusan folytatódik.
+- Visszavonás utáni oldalsó stopper: az aktuális sorozat mentett bal/jobb idejét
+  mutatja akkor is, ha nincs futó helyi óratulajdonos. A megállított óracache nem
+  írhatja felül a kézi szerkesztést. Automatikus stop → visszavonás → nullázás/
+  szerkesztés → újrarajzolás és fordított oldalsorrend célzott próbája PASS.
 - Mai készenlét képe: Samsung 87, effort-load 45 → meglévő <55 korlát miatt 54;
   külön TP-becslés `70 + (45−70)×0,35`, kerekítve 61. Nem összeadás/átlag.
   Az alacsony load-pont nagyobb jelentett megterhelést jelent. A képlet változatlan,
