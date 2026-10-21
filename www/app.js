@@ -11918,7 +11918,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
 
  // #236: fixed first DOM page, full-range filter and incremental card mounting.
  const TP236_PAGE_SIZE=32;
- let tp236Shown=TP236_PAGE_SIZE,tp236Range='';
+ let tp236Shown=TP236_PAGE_SIZE,tp236Range='',tp236LastCount=-1;
  const tp236MoreCopy={hu:'További edzések',en:'More workouts',de:'Weitere Trainings',ro:'Mai multe antrenamente',sk:'Ďalšie tréningy',pl:'Więcej treningów'};
  const tp236MoreText=()=>tp236MoreCopy[typeof rf212Lang==='function'?rf212Lang():'hu']||tp236MoreCopy.hu;
  const tp236MoreButton=total=>tp236Shown<total?'<button id="tp236HistoryMore" type="button" class="btn secondary block" onclick="tp236HistoryMore()" aria-controls="tp236HistoryRows">'+esc(tp236MoreText())+' ('+tp236Shown+' / '+total+')</button>':'';
@@ -11938,7 +11938,8 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  historyScreen=function(){
   const all=history(),filtered=rf263FilteredHistory(),a=committed(),start=pending(),c=copy(),from=start||a.from||'',to=start?'':a.to||'';
   const range=JSON.stringify([a.from,a.to,start]);
-  if(range!==tp236Range){tp236Range=range;tp236Shown=TP236_PAGE_SIZE;}
+  if(range!==tp236Range||all.length!==tp236LastCount||!document.getElementById('tp236HistoryRows')){tp236Range=range;tp236Shown=TP236_PAGE_SIZE;}
+  tp236LastCount=all.length;
   const status=(from||to)?'<span class="small muted tp155-journal-range-summary">'+esc(c.from)+': '+esc(fmt(from))+' • '+esc(c.to)+': '+esc(fmt(to))+'</span>':'';
   const filter='<details class="card tp155-journal-filter '+((a.from&&a.to)?'tp155-range-active':'')+'" '+(state.tp155JournalFilterOpen?'open':'')+' ontoggle="state.tp155JournalFilterOpen=!!this.open"><summary><div><strong>'+esc(c.filter)+'</strong>'+status+'</div><span class="tp160-journal-disclosure" aria-hidden="true"></span></summary>'+calendarHtml()+'</details><p class="small muted rf263-history-count">'+esc(tp149T('journal.count',{shown:filtered.length,total:all.length}))+'</p>';
   const rows=filtered.length?'<div id="tp236HistoryRows">'+filtered.slice(0,tp236Shown).map(function(row,i){return rf263HistoryItem(row.x,row.index,i)}).join('')+'</div>'+tp236MoreButton(filtered.length):(window.TrainPilot110?window.TrainPilot110.empty('log',!!all.length):(all.length?'<div class="card muted">'+esc(tp149T('journal.noneRange'))+'</div>':'<div class="muted">'+esc(tp149T('journal.none'))+'</div>'));
