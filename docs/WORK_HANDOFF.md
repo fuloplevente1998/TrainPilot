@@ -4,6 +4,17 @@ Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## #236 – P1.1 panel-reflow első célzott javítása (2026-10-22)
+
+- **Alkalmazáskód és APK forrása:** `eae37c62bbc596f5cd98efb4320395a6a7b77c9c`, ág `perf/236-journal-dom`, Draft #237; ezen a ponton verzió **1.3.71/2735**. A korábbi `60fe647` a 2026-10-21-én közzétett eredeti 1.3.71, telefon és Wear kiadási tagja erre mutat.
+- Közvetlen `tp155R4RefreshPanel` javítás: `positionPanel()` nav-geometriaolvasása a panel tartalmi DOM-csere elé került; a `scrollTop=y` böngésző-általi korlátozás kiváltja a csere utáni `panel.scrollHeight/clientHeight` kényszerített méréseket. Nincs új globális render/go/refresh wrapper. Célzott `tests/browser/panel-reflow-236.cjs` + UI suite regisztráció; 320/393 px naptár/Coach/beállítás/scroll/bezárás regresszió.
+- Pontos forrású **sikeres** CI: [Quick](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39693537448), [Phase 7/CPU](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39693530788), [Phone Release Gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39693530807) (6/6 UI + natív kapu/aláírásfolytonosság), [valódi natív WebView](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39693530858). Aláírt telefonos [APK+forrás ZIP artifact](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39693530807/artifacts/12388909425), APK SHA-256 `0c87aae0ecc172b0cd6366797e2993533d59ca596ad67caf4e857b989f828cd8`. Wear-kód és Wear APK nincs megváltoztatva.
+- CI 4× CPU 1500 fixture egyszeri első két-RAF proxy: `96a31a7` naptár 253, Coach 222, beállítások 225 ms; `eae37c6` naptár 253, Coach 194, beállítások 190 ms. **Nem 5 futás mediánja**, futtatási ingadozás miatt nincs P1.1 50%-os elfogadás vagy fizikai készülékes gyorsulás állítva.
+- A `60fe647` eredeti kiadás [Phase7](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39519510934) és `96a31a7` [Phase7](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39689250994) külön CI-futásában üres adatnál a boot 208.2→242 ms, Home render 13.3→18.2 ms, Health render 35.1→50.6 ms; Napló 65.8→31.2 ms. Ez nem fizikai telefon mérés.
+- **Natív hidegindítási diagnosztika zajos:** `96a31a7` Android emulátor process force-stop után `activityToJsReadyMs` 8008 ms, `speed` fordítással 4891 ms; `eae37c6` kontrollfutásban 4860 ms, `speed` fordítással 6272 ms. A két egymás utáni eltérő futásból nem vonható le következetes R8/profilelőny; P1.5 előtt 5+ azonos körülményű, reprodukálható minta szükséges.
+- **Felhasználói fizikai visszajelzés:** az óráról a telefonos app megnyílik és minden adat frissül; a megmaradt probléma **indulási/oldalváltási lassúság**. Új APK fizikai elfogadása és P1.1 50%-os célja nyitott. A következő irány: szétválasztani a natív process cold start, WebView JS ready és valós első nav latency értékeit, és csak igazoltan gyorsabb P1.2–P1.5 változásokat bevezetni. Nincs main-merge/release/verzióemelés.
+
+
 ## Új jóváhagyott P1–P4 javítási sorrend (2026-10-22)
 
 - Az átadott `TrainPilot-javitasi-prompt.md` alapján a **[részletes P1–P4 javítási terv](plans/TRAINPILOT_JAVITASI_TERV_2026-10-22.md)** az irányadó. A dokumentációs tervrögzítés nem új alkalmazás- vagy APK-build.
