@@ -30,7 +30,7 @@ const server=http.createServer((q,r)=>{
    assert.ok(initial.calls>=1,'at least one actual fit: '+JSON.stringify(initial));
    assert.ok(initial.nav.endsWith('px'),'nav height measured: '+JSON.stringify(initial));
    await page.setViewportSize({width:360,height:740});
-   await page.waitForFunction(initial=>window.__tp107FitCalls>initial,{timeout:3000},initial.calls);
+   await page.waitForFunction(initial=>window.__tp107FitCalls>initial,initial.calls,{timeout:3000});
    assert.deepEqual(errors,[]);await page.close();
   }
   console.log('PASS #236 P1.2: one startup fit, no initial ResizeObserver refit, resize still handled, empty/200 history');
