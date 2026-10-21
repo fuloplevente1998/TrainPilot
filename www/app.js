@@ -11916,11 +11916,32 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
    '<div class="tp155-journal-actions"><button type="button" class="btn secondary" onclick="event.preventDefault();event.stopPropagation();tp155R4JournalClear()" '+(active?'':'disabled')+'>'+esc(c.clear)+'</button><button type="button" class="btn secondary" onclick="event.preventDefault();event.stopPropagation();tp155R4JournalToday()">'+esc(c.today)+'</button></div></div>';
  };
 
+ // #236: fixed first DOM page, full-range filter and incremental card mounting.
+ const TP236_PAGE_SIZE=32;
+ let tp236Shown=TP236_PAGE_SIZE,tp236Range='';
+ const tp236MoreCopy={hu:'További edzések',en:'More workouts',de:'Weitere Trainings',ro:'Mai multe antrenamente',sk:'Ďalšie tréningy',pl:'Więcej treningów'};
+ const tp236MoreText=()=>tp236MoreCopy[typeof rf212Lang==='function'?rf212Lang():'hu']||tp236MoreCopy.hu;
+ const tp236MoreButton=total=>tp236Shown<total?'<button id="tp236HistoryMore" type="button" class="btn secondary block" onclick="tp236HistoryMore()" aria-controls="tp236HistoryRows">'+esc(tp236MoreText())+' ('+tp236Shown+' / '+total+')</button>':'';
+ window.tp236HistoryMore=function(){
+  const host=document.getElementById('tp236HistoryRows'),button=document.getElementById('tp236HistoryMore');
+  if(!host||!button||state.tab!=='history'||state.tp177JournalView==='stats'||state.tp177JournalView==='progress')return false;
+  const filtered=rf263FilteredHistory(),start=tp236Shown,end=Math.min(filtered.length,start+TP236_PAGE_SIZE);
+  if(end<=start){button.remove();return false;}
+  host.insertAdjacentHTML('beforeend',filtered.slice(start,end).map((row,i)=>rf263HistoryItem(row.x,row.index,start+i)).join(''));
+  tp236Shown=end;
+  window.TrainPilotRecords226?.paint?.();
+  if(end===filtered.length)button.remove();else button.textContent=tp236MoreText()+' ('+end+' / '+filtered.length+')';
+  const first=host.querySelectorAll(':scope > details.rf263-history')[start]?.querySelector(':scope > summary');
+  if(first){first.setAttribute('tabindex','-1');first.focus({preventScroll:true});first.scrollIntoView({block:'start'});}
+  return true;
+ };
  historyScreen=function(){
   const all=history(),filtered=rf263FilteredHistory(),a=committed(),start=pending(),c=copy(),from=start||a.from||'',to=start?'':a.to||'';
+  const range=JSON.stringify([a.from,a.to,start]);
+  if(range!==tp236Range){tp236Range=range;tp236Shown=TP236_PAGE_SIZE;}
   const status=(from||to)?'<span class="small muted tp155-journal-range-summary">'+esc(c.from)+': '+esc(fmt(from))+' • '+esc(c.to)+': '+esc(fmt(to))+'</span>':'';
   const filter='<details class="card tp155-journal-filter '+((a.from&&a.to)?'tp155-range-active':'')+'" '+(state.tp155JournalFilterOpen?'open':'')+' ontoggle="state.tp155JournalFilterOpen=!!this.open"><summary><div><strong>'+esc(c.filter)+'</strong>'+status+'</div><span class="tp160-journal-disclosure" aria-hidden="true"></span></summary>'+calendarHtml()+'</details><p class="small muted rf263-history-count">'+esc(tp149T('journal.count',{shown:filtered.length,total:all.length}))+'</p>';
-  const rows=filtered.length?filtered.map(function(row,i){return rf263HistoryItem(row.x,row.index,i)}).join(''):(window.TrainPilot110?window.TrainPilot110.empty('log',!!all.length):(all.length?'<div class="card muted">'+esc(tp149T('journal.noneRange'))+'</div>':'<div class="muted">'+esc(tp149T('journal.none'))+'</div>'));
+  const rows=filtered.length?'<div id="tp236HistoryRows">'+filtered.slice(0,tp236Shown).map(function(row,i){return rf263HistoryItem(row.x,row.index,i)}).join('')+'</div>'+tp236MoreButton(filtered.length):(window.TrainPilot110?window.TrainPilot110.empty('log',!!all.length):(all.length?'<div class="card muted">'+esc(tp149T('journal.noneRange'))+'</div>':'<div class="muted">'+esc(tp149T('journal.none'))+'</div>'));
   return shell('<main class="tp150-journal-compact">'+filter+rows+'</main>');
  };
 
@@ -20341,12 +20362,14 @@ window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation}
   }
   return result;
  }
- let signature=null,cached=new Map(),cachedRows=[];
+ let signature=null,cached=new Map(),cachedRows=[],cachedRowByAlias=new Map();
  function data(){
   let next=null;
   try{next=[localStorage.getItem('repforge:history'),localStorage.getItem('repforge:phase3HistoryTombstones')].join('\n');}catch(_){}
   if(next===null||next!==signature){
    cachedRows=typeof history==='function'?history():[];
+   cachedRowByAlias=new Map();
+   cachedRows.forEach((row,position)=>{for(const alias of aliases(row)){if(!cachedRowByAlias.has(alias))cachedRowByAlias.set(alias,{row,position});}});
    cached=index(cachedRows,window.TrainPilot177Model,typeof window.tp3HistoryIsDeleted==='function'?window.tp3HistoryIsDeleted:undefined);
    signature=next;
   }
@@ -20382,7 +20405,7 @@ window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation}
   node.appendChild(list);node.open=open;return node;
  }
  function paintCard(card,map){
-  const key=String(card.dataset.tp152HistoryKey||''),row=cachedRows.find(x=>aliases(x).includes(key)),records=row?recordsFor(row,map):[];
+  const key=String(card.dataset.tp152HistoryKey||''),entry=cachedRowByAlias.get(key),row=entry?.row,records=row?recordsFor(row,map):[];
   if(!records.length){card.querySelectorAll('.tp226-pr-badge,.tp226-pr-details').forEach(x=>x.remove());return;}
   const host=card.querySelector(':scope > summary .history-badges');if(!host)return;
   let badge=host.querySelector('.tp226-pr-badge');
@@ -20390,10 +20413,10 @@ window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation}
    badge=document.createElement('button');badge.type='button';badge.className='tp226-pr-badge';badge.dataset.workoutKey=key;
    badge.addEventListener('click',event=>{
     event.preventDefault();event.stopPropagation();
-    const current=cachedRows.find(x=>aliases(x).includes(key));if(!current)return;
+    const current=cachedRowByAlias.get(key);if(!current)return;
     const expand=!(card.open&&card.querySelector('.tp226-pr-details')?.open);
     card.open=true;
-    const position=cachedRows.indexOf(current);
+    const position=current.position;
     window.tp3EnsureHistoryBody?.(card,position,key);
     paint();
     const panel=card.querySelector('.tp226-pr-details');
