@@ -12264,8 +12264,6 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   const panel=panelHost.querySelector('.tp155-r4-panel'),content=panelHost.querySelector('.tp155-r4-panel-content');
   if(!panel||!content)return;
   const y=panel.scrollTop;
-  // Position from the existing navigation geometry before replacing the panel DOM.
-  positionPanel();
   const builder=['custom-exercise','custom-program','goals','replan','ble','health-journal'].includes(currentPanel);
   let header=panel.querySelector('.tp106-builder-header');
   if(builder&&!header){header=document.createElement('div');header.className='tp106-builder-header';header.innerHTML='<strong id="tp106BuilderTitle"></strong>';header.appendChild(panel.querySelector('.tp155-r4-panel-close'));panel.prepend(header);}
@@ -12276,10 +12274,8 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   try{if(typeof rf260EnhanceTemporalFields==='function')rf260EnhanceTemporalFields()}catch(_){}
   try{if(typeof tp149TranslateFreshDom==='function')tp149TranslateFreshDom(content)}catch(_){}
   try{if(typeof window.tp155R4ApplyHighlightSurfaces==='function')window.tp155R4ApplyHighlightSurfaces(content)}catch(_){}
-  // The browser clamps scrollTop to the actual scroll range without forcing a
-  // separate scrollHeight/clientHeight layout after the content was replaced.
-  panel.scrollTop=y;
-  window.tp155R4DecorateNavigation();markCalendarDays();refreshDay();
+  panel.scrollTop=Math.min(y,Math.max(0,panel.scrollHeight-panel.clientHeight));
+  positionPanel();window.tp155R4DecorateNavigation();markCalendarDays();refreshDay();
   if(currentPanel==='replan')window.TrainPilot110?.previewReplan();
  };
 
@@ -12451,6 +12447,8 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   '#app main.tp160-page-reveal{animation:tp160PageReveal 110ms ease-out both}',
   '.tp155-r4-panel-host{animation:tp160BackdropIn 100ms ease-out both}',
   '.tp155-r4-panel{animation:tp160PanelReveal 110ms ease-out both}',
+  // Settings is a top-level destination, not a dialog reveal: present it on tap.
+  '#tp155R4PanelHost[data-panel="settings"],#tp155R4PanelHost[data-panel="settings"] .tp155-r4-panel{animation:none!important;transform:none!important;transition:none!important}'
   '@media(prefers-reduced-motion:reduce){#app main.tp160-page-reveal,.tp155-r4-panel-host,.tp155-r4-panel{animation:none!important;transform:none!important;transition:none!important}}'
  ].join('');
  document.head.appendChild(style);
@@ -12529,10 +12527,15 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
    const out=openBase.apply(this,arguments);
    const panel=document.querySelector?.('#tp155R4PanelHost .tp155-r4-panel');
    if(panel){
-    panel.classList.remove('tp155-r4-panel-settled');
-    panel.addEventListener?.('animationend',()=>settlePanel(panel),{once:true});
-    clearTimeout(settleTimer);
-    settleTimer=setTimeout(()=>settlePanel(panel),230);
+    if(panel.closest('#tp155R4PanelHost[data-panel="settings"]')){
+     // No 230 ms wait for an animation that Settings no longer runs.
+     settlePanel(panel);
+    }else{
+     panel.classList.remove('tp155-r4-panel-settled');
+     panel.addEventListener?.('animationend',()=>settlePanel(panel),{once:true});
+     clearTimeout(settleTimer);
+     settleTimer=setTimeout(()=>settlePanel(panel),230);
+    }
    }
    return out;
   };
@@ -17040,7 +17043,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
    marker.getAnimations().forEach(a=>a.cancel());
    Object.assign(marker.style,appearanceCache.get(row.cacheKey),{left:target.x+'px',top:target.y+'px',width:target.width+'px',height:target.height+'px'});
    active.classList.add('tp137-selected');row.marker=marker;
-   if(animate&&!reduced.matches&&previous&&(changed||previous.remaining>0)&&target.width>0&&target.height>0){
+   // Main pages/Settings must reflect the touched button immediately; only
+   // local Journal/statistics/period tabs retain sliding selection motion.
+   if(animate&&name!=='navigation'&&!reduced.matches&&previous&&(changed||previous.remaining>0)&&target.width>0&&target.height>0){
     row.from=previous.rect;
     row.animation=marker.animate([{transform:'translate('+(row.from.x-target.x)+'px,'+(row.from.y-target.y)+'px) scale('+(row.from.width/target.width)+','+(row.from.height/target.height)+')'},{transform:'translate(0,0) scale(1,1)'}],{duration:changed?duration:previous.remaining,easing});
     if(changed)changedGroup=name;

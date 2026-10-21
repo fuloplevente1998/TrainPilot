@@ -438,5 +438,9 @@
   {
     "file": "tests/browser/panel-reflow-236.cjs",
     "estimatedSeconds": 16
+  },
+  {
+    "file": "tests/browser/settings-immediate-navigation-236.cjs",
+    "estimatedSeconds": 12
   }
 ]
