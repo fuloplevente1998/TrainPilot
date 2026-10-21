@@ -40,8 +40,13 @@ merge nincs automatikusan engedélyezve.
   profilozás megtörtént; elrendezés-összevonási kísérlet nem hozott következetes
   gyorsulást, ezért nem került alkalmazáskód a PR-ba. Felhasználó megerősítette: minden
   bezárás után visszatér. Az órás katalógus teljes építése is az olvasási hatókörbe
-  került, egy-egy könyvtárolvasással. A valódi Android WebView natív érintéses
-  profilozása és a friss kapuk ellenőrzése folyamatban.
+  került, egy-egy könyvtárolvasással. `3199528` alkalmazásforráson
+  Quick 161, UI 109, telefon natív 251, Wear 167 és kerek UI 183 sikeres.
+  Az új telefonos APK átadva. WebView 2/2, 32 navigáció és 8 katalógusminta teljes
+  JSON exporttal sikeres; natív debug katalogus 4133 → 213 olvasás, azonos kimenet.
+  A teljes készülékes hideg navigáció javulása még nincs visszaigazolva. A profil
+  Activity/WebView újranyitás és szintetikus MotionEvent, nem teljes process-kill/FPS.
+  Appkód a tesztjavításokban nem változott; részletes bizonylat a handoffban.
 - Ez nem oldja meg az összes render-/napló-/tárolási auditpontot.
 
 ## 2. Napló és PR teljesítmény – következő kör

@@ -1,0 +1,588 @@
+{
+  "applicationSourceCommit": "3199528a830651d9f459cecf40de1e7b6ec1294f",
+  "baseMain": "bc43d4e700337f7cb9a6df63f74ac56513637450",
+  "pullRequest": "https://github.com/fuloplevente1998/TrainPilot/pull/235",
+  "version": "1.3.71",
+  "versionCode": 2735,
+  "ci": [
+    {
+      "conclusion": "success",
+      "databaseId": 39601996215,
+      "headSha": "3199528a830651d9f459cecf40de1e7b6ec1294f",
+      "name": "Quick TrainPilot Validation",
+      "status": "completed",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39601996215"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 39601996296,
+      "headSha": "3199528a830651d9f459cecf40de1e7b6ec1294f",
+      "name": "Phase 7 Performance Baseline",
+      "status": "completed",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39601996296"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 39602051798,
+      "headSha": "3199528a830651d9f459cecf40de1e7b6ec1294f",
+      "name": "Phone Release Gate + TrainPilot APK",
+      "status": "completed",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39602051798"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 39602061552,
+      "headSha": "3199528a830651d9f459cecf40de1e7b6ec1294f",
+      "name": "Wear Release Gate",
+      "status": "completed",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39602061552"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 39602066211,
+      "headSha": "3199528a830651d9f459cecf40de1e7b6ec1294f",
+      "name": "Wear round display UI",
+      "status": "completed",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39602066211"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 39606934806,
+      "headSha": "0ae22b8ee1264bfb63bdc755f77f25d5f177d6d7",
+      "name": "P0 Phone WebView Background Regression",
+      "status": "completed",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39606934806"
+    }
+  ],
+  "results": {
+    "quick": 161,
+    "quickFailures": 0,
+    "phoneChromium": 109,
+    "phoneChromiumShards": 6,
+    "phone": {
+      "tests": 251,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "wear": {
+      "tests": 167,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "round": {
+      "tests": 183,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "webview": {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "apks": [
+    {
+      "name": "TrainPilot-1.3.71.apk",
+      "sha256": "4f8496d6b9c0cbce307b3bb3e2c437e55eaee7c5d886b60a07732f4a114be0d0",
+      "bytes": 5924559,
+      "artifactId": 12346632971,
+      "run": 39602051798,
+      "webAssetsMatchSource": true,
+      "sourceArchiveStampMatches": true,
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39602051798/artifacts/12346632971"
+    },
+    {
+      "name": "TrainPilot-1.3.71-wear.apk",
+      "sha256": "49d7f5cff5dc518cd8395a284621678025e484ba4b7185da355e5acdc47cc243",
+      "bytes": 4226963,
+      "artifactId": 12346686323,
+      "run": 39602061552,
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39602061552/artifacts/12346686323"
+    }
+  ],
+  "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+  "signerContinuity": "Both release gates checked against v1.0.0; local cert and archive checksums rechecked.",
+  "scope": [
+    "Full Wear home catalog builder reuses the existing synchronous read scope, including exercise and program libraries; no persistent cache or new global override.",
+    "Previously accepted finalization, lower stopwatch and scroll behavior preserved."
+  ],
+  "componentProbe": {
+    "environment": "Chromium, 4x CPU, 200 synthetic full-metadata workouts; component only",
+    "before": {
+      "storageReads": 3318,
+      "historyReads": 2,
+      "ms": 222.5
+    },
+    "after": {
+      "storageReads": 346,
+      "historyReads": 1,
+      "ms": 163.7
+    },
+    "regression": "200 and 1500 workouts: at most one history/exercise/program library read, equal-length edits/deletions remain fresh."
+  },
+  "limits": [
+    "Physical first-navigation delay after every full app close remains open pending user test; component improvement does not prove the full symptom fixed.",
+    "No full Journal pagination or general storage recovery in this slice.",
+    "Route order: plan, health, programs, history, calendar, coach, settings, home; panels can inherit the fully rendered History DOM. Native timings are not independent cold starts per route."
+  ],
+  "mainMerge": false,
+  "releasePublished": false,
+  "diagnosticInfrastructure": {
+    "sourceCommit": "0ae22b8ee1264bfb63bdc755f77f25d5f177d6d7",
+    "scope": "Only workflow/helper and androidTest changes after application source 3199528; application code unchanged.",
+    "supersededRuns": [
+      {
+        "run": 39602171618,
+        "reason": "DPR-based test coordinates hit system taskbar."
+      },
+      {
+        "run": 39603676365,
+        "reason": "2/2 passed, but one long logcat record truncated; JSON export missing."
+      },
+      {
+        "run": 39604687431,
+        "reason": "New diagnostic touch timed out; existing background test passed."
+      },
+      {
+        "run": 39605817862,
+        "reason": "Down/up reached History but no click; existing background test passed."
+      }
+    ],
+    "corrections": [
+      "Viewport-scaled WebView coordinates; native splash completion/focus and DOM hit-target checked.",
+      "Atomic synthetic touchscreen tap pairs avoid extending short gestures through separate UI-thread scheduling; no hardware input-latency claim.",
+      "Bounded-size logcat records recovered to JSON after Gradle; missing/incomplete report fails the gate."
+    ]
+  },
+  "nativeProfile": {
+    "artifactUrl": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39606934806/artifacts/12348866597",
+    "fixtureWorkouts": 200,
+    "routeSamples": 32,
+    "catalogSamples": 8,
+    "limits": "Debug emulator timings; Atomic synthetic Android tap pairs dispatched to WebView, without system input routing or hardware-to-app latency measurement. Activity/WebView relaunches, not process-force-stop. Two-RAF proxy, no device-FPS claim.",
+    "launches": [
+      {
+        "launch": 1,
+        "bootMs": 446.3999999999942,
+        "rows": [
+          {
+            "route": "plan",
+            "cycle": 1,
+            "at": 1612.8999999999942,
+            "inputDelayMs": 15.5,
+            "syncMs": 205.6999999999971,
+            "paintMs": 213,
+            "nodes": 1078,
+            "tab": "plan",
+            "panel": ""
+          },
+          {
+            "route": "health",
+            "cycle": 1,
+            "at": 2312.2999999999884,
+            "inputDelayMs": 21.89999999999418,
+            "syncMs": 112.29999999998836,
+            "paintMs": 123.70000000001164,
+            "nodes": 483,
+            "tab": "health",
+            "panel": ""
+          },
+          {
+            "route": "programs",
+            "cycle": 1,
+            "at": 2518.5999999999913,
+            "inputDelayMs": 10.19999999999709,
+            "syncMs": 167.3000000000029,
+            "paintMs": 210.1999999999971,
+            "nodes": 349,
+            "tab": "programs",
+            "panel": ""
+          },
+          {
+            "route": "history",
+            "cycle": 1,
+            "at": 2769.2999999999884,
+            "inputDelayMs": 30.89999999999418,
+            "syncMs": 522.3999999999942,
+            "paintMs": 543.7000000000116,
+            "nodes": 3068,
+            "tab": "history",
+            "panel": ""
+          },
+          {
+            "route": "calendar",
+            "cycle": 1,
+            "at": 4474.899999999994,
+            "inputDelayMs": 17.5,
+            "syncMs": 110,
+            "paintMs": 145.6999999999971,
+            "nodes": 3244,
+            "tab": "history",
+            "panel": "calendar"
+          },
+          {
+            "route": "coach",
+            "cycle": 1,
+            "at": 4705.099999999991,
+            "inputDelayMs": 62.69999999999709,
+            "syncMs": 228.39999999999418,
+            "paintMs": 241.60000000000582,
+            "nodes": 3127,
+            "tab": "history",
+            "panel": "coach"
+          },
+          {
+            "route": "settings",
+            "cycle": 1,
+            "at": 4966.299999999988,
+            "inputDelayMs": 12.89999999999418,
+            "syncMs": 278.8000000000029,
+            "paintMs": 311.6000000000058,
+            "nodes": 3314,
+            "tab": "history",
+            "panel": "settings"
+          },
+          {
+            "route": "home",
+            "cycle": 1,
+            "at": 6328.899999999994,
+            "inputDelayMs": 24.5,
+            "syncMs": 127,
+            "paintMs": 133.89999999999418,
+            "nodes": 253,
+            "tab": "home",
+            "panel": ""
+          },
+          {
+            "route": "plan",
+            "cycle": 2,
+            "at": 6509.899999999994,
+            "inputDelayMs": 26.5,
+            "syncMs": 144.8000000000029,
+            "paintMs": 171,
+            "nodes": 1078,
+            "tab": "plan",
+            "panel": ""
+          },
+          {
+            "route": "health",
+            "cycle": 2,
+            "at": 6922.199999999997,
+            "inputDelayMs": 8.80000000000291,
+            "syncMs": 187.5,
+            "paintMs": 203.6999999999971,
+            "nodes": 483,
+            "tab": "health",
+            "panel": ""
+          },
+          {
+            "route": "programs",
+            "cycle": 2,
+            "at": 7374.599999999991,
+            "inputDelayMs": 158.1999999999971,
+            "syncMs": 149.3000000000029,
+            "paintMs": 156.10000000000582,
+            "nodes": 349,
+            "tab": "programs",
+            "panel": ""
+          },
+          {
+            "route": "history",
+            "cycle": 2,
+            "at": 7671.699999999997,
+            "inputDelayMs": 62.30000000000291,
+            "syncMs": 737.3000000000029,
+            "paintMs": 826.3999999999942,
+            "nodes": 3068,
+            "tab": "history",
+            "panel": ""
+          },
+          {
+            "route": "calendar",
+            "cycle": 2,
+            "at": 8589.299999999988,
+            "inputDelayMs": 40.89999999999418,
+            "syncMs": 207.89999999999418,
+            "paintMs": 240.3000000000029,
+            "nodes": 3244,
+            "tab": "history",
+            "panel": "calendar"
+          },
+          {
+            "route": "coach",
+            "cycle": 2,
+            "at": 8921.599999999991,
+            "inputDelayMs": 29.19999999999709,
+            "syncMs": 509.8000000000029,
+            "paintMs": 533.3000000000029,
+            "nodes": 3127,
+            "tab": "history",
+            "panel": "coach"
+          },
+          {
+            "route": "settings",
+            "cycle": 2,
+            "at": 9486.399999999994,
+            "inputDelayMs": 12,
+            "syncMs": 261.6999999999971,
+            "paintMs": 273.6999999999971,
+            "nodes": 3314,
+            "tab": "history",
+            "panel": "settings"
+          },
+          {
+            "route": "home",
+            "cycle": 2,
+            "at": 9918.799999999988,
+            "inputDelayMs": 51.39999999999418,
+            "syncMs": 431.8999999999942,
+            "paintMs": 447.90000000000873,
+            "nodes": 253,
+            "tab": "home",
+            "panel": ""
+          }
+        ],
+        "catalog": [
+          {
+            "scoped": false,
+            "ms": 267.29999999998836,
+            "reads": 4133,
+            "exercises": 106
+          },
+          {
+            "scoped": true,
+            "ms": 52.5,
+            "reads": 213,
+            "exercises": 106
+          },
+          {
+            "scoped": true,
+            "ms": 19.30000000000291,
+            "reads": 213,
+            "exercises": 106
+          },
+          {
+            "scoped": false,
+            "ms": 104.69999999999709,
+            "reads": 4133,
+            "exercises": 106
+          }
+        ]
+      },
+      {
+        "launch": 2,
+        "bootMs": 393.1999999999971,
+        "rows": [
+          {
+            "route": "plan",
+            "cycle": 1,
+            "at": 2047.199999999997,
+            "inputDelayMs": 24.69999999999709,
+            "syncMs": 103.60000000000582,
+            "paintMs": 108.5,
+            "nodes": 1078,
+            "tab": "plan",
+            "panel": ""
+          },
+          {
+            "route": "health",
+            "cycle": 1,
+            "at": 2481,
+            "inputDelayMs": 59.5,
+            "syncMs": 334.3999999999942,
+            "paintMs": 353.1999999999971,
+            "nodes": 483,
+            "tab": "health",
+            "panel": ""
+          },
+          {
+            "route": "programs",
+            "cycle": 1,
+            "at": 2923.300000000003,
+            "inputDelayMs": 27.80000000000291,
+            "syncMs": 125.89999999999418,
+            "paintMs": 134.3000000000029,
+            "nodes": 349,
+            "tab": "programs",
+            "panel": ""
+          },
+          {
+            "route": "history",
+            "cycle": 1,
+            "at": 3277.100000000006,
+            "inputDelayMs": 13.60000000000582,
+            "syncMs": 370.8000000000029,
+            "paintMs": 385.29999999998836,
+            "nodes": 3068,
+            "tab": "history",
+            "panel": ""
+          },
+          {
+            "route": "calendar",
+            "cycle": 1,
+            "at": 3684.800000000003,
+            "inputDelayMs": 6.30000000000291,
+            "syncMs": 131.1999999999971,
+            "paintMs": 213.3000000000029,
+            "nodes": 3244,
+            "tab": "history",
+            "panel": "calendar"
+          },
+          {
+            "route": "coach",
+            "cycle": 1,
+            "at": 4027.600000000006,
+            "inputDelayMs": 58.10000000000582,
+            "syncMs": 270.59999999999127,
+            "paintMs": 300.29999999998836,
+            "nodes": 3127,
+            "tab": "history",
+            "panel": "coach"
+          },
+          {
+            "route": "settings",
+            "cycle": 1,
+            "at": 4614.199999999997,
+            "inputDelayMs": 25.69999999999709,
+            "syncMs": 177.6999999999971,
+            "paintMs": 190.5,
+            "nodes": 3314,
+            "tab": "history",
+            "panel": "settings"
+          },
+          {
+            "route": "home",
+            "cycle": 1,
+            "at": 4885.100000000006,
+            "inputDelayMs": 23.60000000000582,
+            "syncMs": 224,
+            "paintMs": 230.1999999999971,
+            "nodes": 253,
+            "tab": "home",
+            "panel": ""
+          },
+          {
+            "route": "plan",
+            "cycle": 2,
+            "at": 5135.600000000006,
+            "inputDelayMs": 10.10000000000582,
+            "syncMs": 65.59999999999127,
+            "paintMs": 69.5,
+            "nodes": 1078,
+            "tab": "plan",
+            "panel": ""
+          },
+          {
+            "route": "health",
+            "cycle": 2,
+            "at": 5459.100000000006,
+            "inputDelayMs": 11.60000000000582,
+            "syncMs": 115.80000000000291,
+            "paintMs": 121.19999999999709,
+            "nodes": 483,
+            "tab": "health",
+            "panel": ""
+          },
+          {
+            "route": "programs",
+            "cycle": 2,
+            "at": 5607.399999999994,
+            "inputDelayMs": 9.89999999999418,
+            "syncMs": 54.60000000000582,
+            "paintMs": 64,
+            "nodes": 349,
+            "tab": "programs",
+            "panel": ""
+          },
+          {
+            "route": "history",
+            "cycle": 2,
+            "at": 5763.800000000003,
+            "inputDelayMs": 9.30000000000291,
+            "syncMs": 356.59999999999127,
+            "paintMs": 387.5,
+            "nodes": 3068,
+            "tab": "history",
+            "panel": ""
+          },
+          {
+            "route": "calendar",
+            "cycle": 2,
+            "at": 6185.899999999994,
+            "inputDelayMs": 20.39999999999418,
+            "syncMs": 100.19999999999709,
+            "paintMs": 130.8000000000029,
+            "nodes": 3244,
+            "tab": "history",
+            "panel": "calendar"
+          },
+          {
+            "route": "coach",
+            "cycle": 2,
+            "at": 6333.199999999997,
+            "inputDelayMs": 12.69999999999709,
+            "syncMs": 377.1000000000058,
+            "paintMs": 399.40000000000873,
+            "nodes": 3127,
+            "tab": "history",
+            "panel": "coach"
+          },
+          {
+            "route": "settings",
+            "cycle": 2,
+            "at": 6784.199999999997,
+            "inputDelayMs": 36.69999999999709,
+            "syncMs": 381.8000000000029,
+            "paintMs": 396.3000000000029,
+            "nodes": 3314,
+            "tab": "history",
+            "panel": "settings"
+          },
+          {
+            "route": "home",
+            "cycle": 2,
+            "at": 7375.5,
+            "inputDelayMs": 87,
+            "syncMs": 115.30000000000291,
+            "paintMs": 121.60000000000582,
+            "nodes": 253,
+            "tab": "home",
+            "panel": ""
+          }
+        ],
+        "catalog": [
+          {
+            "scoped": false,
+            "ms": 201.90000000000873,
+            "reads": 4133,
+            "exercises": 106
+          },
+          {
+            "scoped": true,
+            "ms": 44,
+            "reads": 213,
+            "exercises": 106
+          },
+          {
+            "scoped": true,
+            "ms": 35.5,
+            "reads": 213,
+            "exercises": 106
+          },
+          {
+            "scoped": false,
+            "ms": 113.5,
+            "reads": 4133,
+            "exercises": 106
+          }
+        ]
+      }
+    ],
+    "interpretation": "Catalog reads 4133 -> 213 with identical output. Scoped samples 19.3-52.5 ms, unscoped 104.7-267.3 ms. Navigation times vary; no consistent first-cycle penalty established on emulator; physical recurrent startup delay remains pending."
+  },
+  "gitTreeAtTestedApplicationSource": "a7b5a4e53201b1328f64de417507ae6c0b35bf59"
+}

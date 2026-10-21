@@ -28,12 +28,31 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 - Célzott regresszió 200/1500 edzéssel: history/gyakorlat-/programkönyvtár egy-egy
   olvasás; azonos elemszámú szerkesztés/törlés frissesség és meglévő stopperes
   feltételek PASS. Wear lifecycle, Quick Workout és journal-resync PASS.
-- A meglévő Android WebView workflow új natív érintéses diagnosztikát futtat:
-  200 szintetikus edzés, két Activity/WebView újranyitás, oldalanként első/második
-  kör; input-késés, szinkron handler, két képkockáig eltelt idő, long-task lista.
-  A katalógusépítés azonos kimenete olvasási hatókörrel és anélkül is ellenőrzött.
-  Ez debug emulátoros Activity-újranyitás, nem process-force-stop vagy készülék-FPS.
-  A mérési JSON a tesztartifactba kerül; új kapuk/APK még nincsenek bevizsgálva.
+- **Új alkalmazásforrás: `3199528a830651d9f459cecf40de1e7b6ec1294f`.** Az utána
+  következő `1c93ed1`–`0ae22b8` csak CI/helper/Android teszt; appkód byteazonos.
+  Quick **39601996215: 161/161**, Performance **39601996296 SUCCESS**;
+  telefon **39602051798 SUCCESS**, Chromium **6/6, 109/109**, natív **251/251**;
+  Wear **39602061552: 167/167**, kerek UI **39602066211: 183/183**.
+  Letöltött XML/JSON: 0 failure/error/skipped, 109 külön UI-modul.
+- Új Android WebView kapu **39606934806: 2/2**, forrás `0ae22b8` (csak teszteszköz
+  különbség): 200 edzés, két Activity/WebView újranyitás, 32 navigáció, 8 katalógusminta;
+  teljes JSON export bevizsgálva. Azonos katalóguskimenet: **4133 → 213 olvasás**;
+  scoped 19,3–52,5 ms, unscoped 104,7–267,3 ms a debug emulátoron.
+  A navigáció ingadozó, következetes első köri lassulás itt nem igazolt.
+  Szintetikus Android érintéspárok közvetlenül a WebView-ba; két-RAF proxy;
+  nem process-force-stop, hardveres input-késés vagy készülék-FPS mérés.
+  A korábbi hibás érintés/export futásokat és a javításukat a bizonylat külön rögzíti.
+- [Új telefon APK](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39602051798/artifacts/12346632971),
+  SHA-256 `4f8496d6b9c0cbce307b3bb3e2c437e55eaee7c5d886b60a07732f4a114be0d0`;
+  [azonos forrású Wear APK](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39602061552/artifacts/12346686323),
+  SHA-256 `49d7f5cff5dc518cd8395a284621678025e484ba4b7185da355e5acdc47cc243`.
+  **1.3.71 /2735**; app asset/source ZIP és Wear sidecar commit, SHA256SUMS,
+  aláírás/signer-folytonosság ellenőrzött. Wear alkalmazáskód nem változott.
+- [Hideg navigációs bizonylat](builds/2026-10-21-235-cold-navigation.json).
+  **Következő készülékes próba:** új telefon-APK, teljes bezárás/újranyitás után
+  első Naptár/Coach/Beállítások váltás; külön újranyitáskor 15 s várakozás után is.
+  Az APK átadva; erre a próbára még nincs visszajelzés.
+  A katalógus javulása nem a teljes készülékes hiba megoldásának bizonyítéka.
 - Az első kör `655183c` APK-járól felhasználói visszajelzés: nincs dupla edzés,
   törlés után nem tér vissza a bejegyzés; a többi kért ellenőrzés működik.
   Ez készülékes mentési elfogadás, **nem main merge-engedély**.
@@ -67,7 +86,7 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
   kombináció, explicit/implicit/0 stop és 200/1500 edzéses publikálás PASS;
   kompakt egy-/kétoldali UI PASS; korábbi mentési integritás 14/14 PASS;
   egyetlen finish-belépő strukturális ellenőrzése PASS.
-- **Bevizsgált alkalmazásforrás: `1b5e488b35ca39dfe79ab17e6347b38daf0401a8`.**
+- **Előző, készüléken elfogadott alkalmazásforrás: `1b5e488b35ca39dfe79ab17e6347b38daf0401a8`.**
   PR-merge és head fa azonos: `1577cb0e9fbc7d2534e3e2bbc4f25bc7f95a4471`.
   Utána csak dokumentációs átadás, nem új alkalmazásbuild.
 - Friss, forrásazonos GitHub-kapuk: Quick **39552869084: 161/161**, Performance
