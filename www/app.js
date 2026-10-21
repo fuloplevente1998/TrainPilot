@@ -509,7 +509,132 @@ var upd = function upd(ei,si,k,v){state.session.exercises[ei].sets[si][k]=k==="w
 var toggleSet = function toggleSet(ei,si){const s=state.session.exercises[ei].sets[si];if(!s.done && (!/^\d+$/.test(String(s.reps)) || Number(s.reps)<1)){alert("Írd be a tényleges ismétlésszámot vagy másodpercet.");return;}s.done=!s.done;if(s.done)startRest();renderWorkout()};
 var prevExercise = function prevExercise(){if(state.current>0){state.current--;renderWorkout();window.scrollTo(0,0)}};
 var nextExercise = function nextExercise(){if(state.current<state.session.exercises.length-1){state.current++;renderWorkout();window.scrollTo(0,0)}else finishWorkout()};
-var finishWorkout = function finishWorkout(options={}){if(!state.session.exercises.some(e=>e.sets.some(s=>s.done))){alert("Előbb jelölj legalább egy sorozatot teljesítettnek.");return;}if(state.session.exercises.some(e=>e.sets.some(s=>!s.done))&&!confirm("Vannak be nem fejezett sorozatok. Elmented a részleges edzést?"))return;const h=history();const requestedEnd=Date.parse(options.wearFinishedAt||''),startedAt=Date.parse(state.session.started||'');state.session.finished=Number.isFinite(requestedEnd)&&requestedEnd>=startedAt&&requestedEnd<=Date.now()+30000?new Date(requestedEnd).toISOString():new Date().toISOString();closeWorkoutInterval(state.session,state.session.finished);h.unshift(state.session);db.set("history",h);db.set("draft",null);const w=state.workout;stopTimer();state.session=null;state.workout=null;if(options.silent===true||options.wearConfirmed===true){if(state.tab==='plan'){state.tab='home';render();}else render();}else{state.tab="home";render(shell(`<main><div class="hero"><h1>Kész ✓</h1><div class="muted">Full Body ${w} elmentve.</div><br><button class="btn block" onclick="go('home')">Kezdőlap</button></div></main>`));}};
+// One finish entry point. Preparation, durable save and presentation stay separate;
+// later features call this coordinator instead of replacing finishWorkout.
+var TrainPilotWorkoutFinalization=(function(){
+ let active=null,lastFailure=null;
+ const key=s=>String(s?.syncId||s?.id||s?.started||'');
+ const same=(a,b)=>key(a)===key(b)||(!a?.syncId&&!a?.id&&!b?.syncId&&!b?.id&&
+  Number.isFinite(Date.parse(a?.started))&&Date.parse(a.started)===Date.parse(b?.started));
+ const then=(value,next)=>value&&typeof value.then==='function'?value.then(next):next(value);
+ function message(kind){
+  const lang=typeof rf212Lang==='function'?rf212Lang():'hu';
+  const words={
+   hu:{save:'Az edzés lezárása nem sikerült. Az edzés megmaradt; próbáld újra a befejezést. Ha a tárhely megtelt, előbb szabadíts fel helyet.',corrupt:'A napló vagy a naptár tárolt adata sérült. Nem írtuk felül. A befejezés előtt az adatokat helyre kell állítani.',feedback:'Az edzés mentve, de az értékelő felület nem nyitható meg. A Naplóban megtalálod az edzést.'},
+   en:{save:'Could not finish saving the workout. Your workout is kept; retry finishing it. If storage is full, free some space first.',corrupt:'Stored workout history or calendar data is damaged. It was not overwritten. Recover the data before finishing.',feedback:'Workout saved, but the feedback screen could not open. Find the workout in the Log.'},
+   de:{save:'Das Training konnte nicht vollständig gespeichert werden. Es bleibt erhalten; Abschluss erneut versuchen. Bei vollem Speicher zuerst Platz schaffen.',corrupt:'Gespeicherte Verlaufs- oder Kalenderdaten sind beschädigt und wurden nicht überschrieben. Vor dem Abschluss wiederherstellen.',feedback:'Training gespeichert, aber die Bewertung konnte nicht geöffnet werden. Das Training steht im Protokoll.'},
+   ro:{save:'Antrenamentul nu a putut fi salvat complet. Este păstrat; încearcă din nou finalizarea. Dacă spațiul este plin, eliberează spațiu.',corrupt:'Istoricul sau calendarul stocat este deteriorat. Datele nu au fost suprascrise. Recuperează-le înainte de finalizare.',feedback:'Antrenament salvat, dar evaluarea nu s-a putut deschide. Îl găsești în Jurnal.'}
+  };
+  return (words[lang]||words.en)[kind];
+ }
+ function failure(error,phase='save'){
+  lastFailure={phase,name:String(error?.name||'Error'),message:String(error?.message||error)};
+  alert(message(phase==='feedback'?'feedback':error?.finalizationCorrupt?'corrupt':'save'));
+  return false;
+ }
+ function rawList(name){
+  const raw=localStorage.getItem('repforge:'+name);
+  try{if(raw==null)return {raw,rows:[]};const rows=JSON.parse(raw);if(!Array.isArray(rows))throw Error('Expected an array');return {raw,rows};}
+  catch(error){error.finalizationCorrupt=true;throw error;}
+ }
+ function stopAutomatic(){
+  const api=window.TrainPilotAutomatic162;
+  return api?.owner?.()?.meta?.run?api.command('stop'):true;
+ }
+ function stopIntervals(){
+  const api=window.TrainPilotIntervals162,o=api?.owner?.();
+  return o&&!o.run.stopped&&o.run.phase?.phase!=='complete'?api.stop():true;
+ }
+ function stopLocalClocks(){
+  if(typeof tp107StopIndoor==='function')tp107StopIndoor(true);
+  if(typeof rf110StopwatchHalt==='function')rf110StopwatchHalt(true);
+  if(typeof tp1481HaltSide==='function')tp1481HaltSide(true);
+  return true;
+ }
+ function stopGPS(){
+  if(typeof tp106DistanceInputsValid==='function'&&!tp106DistanceInputsValid())return false;
+  if(typeof tp106GpsBusy!=='undefined'&&tp106GpsBusy){alert(tp106T('busy'));return false;}
+  return typeof tp106StopGPS==='function'&&(tp106GpsState.active||db.get('gpsTrip106',null))?tp106StopGPS():true;
+ }
+ function confirmCompletion(session,options){
+  const sets=session.exercises.flatMap(e=>e.sets||[]);
+  if(!sets.some(s=>s.done)){alert('Előbb jelölj legalább egy sorozatot teljesítettnek.');return false;}
+  if(options.wearConfirmed===true||sets.every(s=>s.done))return true;
+  if(typeof tp2628Confirm==='function')return tp2628Confirm(tp149T('dialog.partial.message'),{
+   title:tp149T('dialog.partial.title'),confirmText:tp149T('common.save')});
+  return confirm('Vannak be nem fejezett sorozatok. Elmented a részleges edzést?');
+ }
+ function save(session,options){
+  // Refuse corrupt raw data before history() can disguise it as an empty array.
+  const oldHistory=rawList('history'),oldSchedule=rawList('scheduled');
+  const rows=history(),previous=rows.find(row=>same(row,session));
+  const snapshot=JSON.parse(JSON.stringify(session));delete snapshot.finalizationPending;
+  for(const e of snapshot.exercises)for(const set of e.sets||[])delete set.previousValues228;
+  const requested=Date.parse(options.wearFinishedAt||''),started=Date.parse(session.started||'');
+  snapshot.finished=previous?.finished||(Number.isFinite(requested)&&requested>=started&&requested<=Date.now()+30000?new Date(requested).toISOString():new Date().toISOString());
+  closeWorkoutInterval(snapshot,snapshot.finished);
+  // The durable draft identifies a partially completed save across retries/reload.
+  session.finalizationPending=true;persistDraft();
+  const schedule=oldSchedule.rows.map(row=>row.id===session.scheduleId?{...row,status:'completed',updatedAt:Date.now()}:row);
+  const writes=[['history',[snapshot,...rows.filter(row=>!same(row,session))],oldHistory.raw]];
+  if(session.scheduleId&&oldSchedule.rows.some(row=>row.id===session.scheduleId))writes.push(['scheduled',schedule,oldSchedule.raw]);
+  const attempted=[];
+  try{for(const [name,value,raw] of writes){attempted.push([name,raw]);db.set(name,value);}}
+  catch(error){
+   // Best-effort rollback; the durable draft and idempotent upsert also protect
+   // recovery if rollback itself fails or the process dies between the writes.
+   for(const [name,raw] of attempted.reverse())try{if(raw==null)localStorage.removeItem('repforge:'+name);else localStorage.setItem('repforge:'+name,raw);}catch(_){}
+   throw error;
+  }
+  active.saved=snapshot;
+  return true;
+ }
+ function prepare(session,options){
+  const steps=[stopAutomatic,stopIntervals,stopLocalClocks,stopGPS,()=>confirmCompletion(session,options),()=>save(session,options)];
+  function run(index){
+   if(state.session!==session)return false;
+   for(let i=index;i<steps.length;i++){
+    const value=steps[i]();
+    if(value&&typeof value.then==='function')return value.then(ok=>ok===false?false:run(i+1));
+    if(value===false||state.session!==session)return false;
+   }
+   return true;
+  }
+  return run(0);
+ }
+ function complete(session,options){
+  const snapshot=active.saved;
+  // Keep the recoverable draft until native close has succeeded as well.
+  db.set('draft',null);
+  session.finished=snapshot.finished;session.activeIntervals=snapshot.activeIntervals;
+  const workout=state.workout;stopTimer();
+  state.session=null;state.workout=null;lastFailure=null;
+  try{
+   if(options.silent===true||options.wearConfirmed===true){if(state.tab==='plan')state.tab='home';render();}
+   else{state.tab='home';render(shell(`<main><div class="hero"><h1>Kész ✓</h1><div class="muted">Full Body ${esc(workout)} elmentve.</div><br><button class="btn block" onclick="go('home')">Kezdőlap</button></div></main>`));}
+   if(window.TrainPilotWorkoutFeedback)window.TrainPilotWorkoutFeedback.afterFinish(snapshot,options);
+   else if(options.wearSilent!==true&&options.silent!==true&&options.wearConfirmed!==true&&typeof feedbackScreen==='function')feedbackScreen(snapshot.started);
+   if(typeof rf241QueueWorkoutSync==='function')rf241QueueWorkoutSync(rf240WorkoutKey(snapshot));
+  }catch(error){failure(error,'feedback');}
+  return true;
+ }
+ function finish(options={}){
+  if(active)return active.promise||false;
+  const session=state.session;if(!session)return false;
+  active={session,saved:null,promise:null};
+  try{
+   const fence=window.TrainPilotPhoneExecution162?.finishFence;
+   const result=then(fence?fence(()=>prepare(session,options)):prepare(session,options),ok=>
+    ok===true&&state.session===session?complete(session,options):false);
+   if(result&&typeof result.then==='function'){
+    const promise=result.catch(error=>failure(error)).finally(()=>{active=null;});active.promise=promise;return promise;
+   }
+   active=null;return result;
+  }catch(error){active=null;return failure(error);}
+ }
+ return {finish,failure:()=>lastFailure?{...lastFailure}:null,isFinishing:()=>!!active};
+})();
+var finishWorkout=function finishWorkout(options={}){return TrainPilotWorkoutFinalization.finish(options);};
 var formatSet = function formatSet(e,s){
  // Historical weights are deliberately not reinterpreted: old entries lacked metadata.
  if(!e.loadType)return `${s.weight||0} kg × ${s.reps||'—'} (régi súlyjelölés)`;
@@ -821,7 +946,6 @@ showExercise=function(dayId,i){const p=activeProgram(),d=programDay(p,dayId),e=b
 
 startWorkout=function(dayId,scheduleId=null,programId=null){if(db.get('draft',null)&&!confirm('Új edzést indítasz? A félbehagyott edzés helyére ez kerül.'))return;const p=programById(programId)||activeProgram(),d=programDay(p,dayId);if(!d){alert('Nincs ilyen programnap.');return;}state.tab='plan';state.workout=d.id;state.current=0;state.session={programId:p.id,programName:p.name,dayId:d.id,workout:d.id,...(scheduleId?{scheduleId}:{}),started:new Date().toISOString(),exercises:d.exercises.map(id=>{const e=byId(id);return {id,hu:e.hu,en:e.en,loadType:e.loadType,repUnit:e.repUnit,sets:tp228PrefillSets({programId:p.id,dayId:d.id},e,e.sets,e.weight)};})};renderWorkout();const startedSession=state.session,fromWatch=window.TrainPilotWearSync?.isStartingFromWatch?.()===true;Promise.resolve().then(()=>window.TrainPilotWearSync?.phoneWorkoutStarted?.(startedSession,{fromWatch}));};
 
-const rf12FinishWorkout=finishWorkout;finishWorkout=function(){if(!state.session)return;const scheduleId=state.session.scheduleId;rf12FinishWorkout.apply(this,arguments);if(scheduleId){const s=scheduled(),i=s.findIndex(x=>x.id===scheduleId);if(i>=0){s[i]={...s[i],status:'completed',updatedAt:Date.now()};db.set('scheduled',s);}}};
 renderWorkout=function(){persistDraft();const i=state.current,p=state.session.exercises.map(x=>x.id),e=byId(p[i]),se=state.session.exercises[i],pct=Math.round((i/p.length)*100);render(shell(`<main><div class="hero"><span class="badge">${esc(state.session.programName||'Edzés')} • ${esc(state.session.dayId||state.workout)}</span><h1>${i+1}/${p.length}</h1><div class="muted">${esc(e.hu)}</div><div class="progress"><div style="width:${pct}%"></div></div></div><div class="card detail"><h2>${esc(e.hu)}</h2><div class="en">${esc(e.en)}</div><div class="meta">Cél: ${e.sets} × ${esc(e.reps)}</div>${motionDemo(e.id)}<p class="note">${esc(e.notes)}</p></div><div class="section">Sorozatok</div>${se.sets.map((s,si)=>`<div class="row"><div class="num">${si+1}</div>${e.loadType==='bodyweight'?'<span class="small muted">Testsúly</span>':`<label class="small">${loadLabel(e.loadType)}<input class="field" inputmode="decimal" value="${s.weight}" oninput="upd(${i},${si},'weight',this.value)"></label>`}<label class="small">${e.repUnit}<input class="field" inputmode="numeric" placeholder="${esc(e.reps)}" value="${esc(s.reps)}" oninput="upd(${i},${si},'reps',this.value)"></label><button class="check ${s.done?'done':''}" onclick="toggleSet(${i},${si})">${s.done?'✓':'OK'}</button></div>`).join('')}<br><button class="btn block" onclick="nextExercise()">${i===p.length-1?'Edzés befejezése':'Következő gyakorlat'}</button><br><br><button class="btn secondary block" onclick="prevExercise()" ${i===0?'disabled':''}>Előző</button></main>`));};
 
 // ----- Calendar planner -----
@@ -1004,7 +1128,6 @@ saveSettings=function(){db.set('settings',{...settings(),rest:Math.max(30,Math.m
 const rf13Start=startWorkout;startWorkout=function(dayId,scheduleId=null,programId=null){const before=state.session;state.prescriptionProgramId=programId||activeProgramId();try{rf13Start(dayId,scheduleId,programId);}finally{state.prescriptionProgramId=null;}if(!state.session||state.session===before)return;const p=programById(state.session.programId);if(p?.prescriptions){state.session.exercises=state.session.exercises.map(e=>{const rx=p.prescriptions[e.id];if(!rx)return e;return {...e,prescription:{...rx},sets:tp228PrefillSets(state.session,{...byId(e.id),...e},rx.sets,e.loadType==='bodyweight'?0:rx.trial&&Number(rx.weight)===0?'':(rx.weight??''))};});renderWorkout();}};
 const rf13Rest=startRest;startRest=function(){rf13Rest();const rx=state.session?.exercises[state.current]?.prescription;if(rx){state.timer=rx.rest;state.restEndAt=Date.now()+state.timer*1000;}};
 // Finish only marks the calendar after the history write really succeeded.
-finishWorkout=function(){if(!state.session)return;const s=state.session;rf12FinishWorkout.apply(this,arguments);if(state.session)return;if(s.scheduleId){const items=scheduled(),i=items.findIndex(x=>x.id===s.scheduleId);if(i>=0){items[i]={...items[i],status:'completed',updatedAt:Date.now()};db.set('scheduled',items);}}if(window.TrainPilotWorkoutFeedback)TrainPilotWorkoutFeedback.afterFinish(s,arguments[0]);else if(arguments[0]?.wearSilent!==true&&arguments[0]?.silent!==true&&arguments[0]?.wearConfirmed!==true)feedbackScreen(s.started);};
 
 
 // Imported Health Connect records live only in memory and are excluded from backup/Drive.
@@ -3567,7 +3690,6 @@ if(typeof rf206HealthHub==='function'){const rf240HubBase=rf206HealthHub;rf206He
 if(typeof healthScreen==='function'){const rf240HealthDetailsBase=healthScreen;healthScreen=function(){const r=rf240HealthDetailsBase();const key=state.health?.workout,h=history().find(x=>x.started===key);if(h){const main=document.querySelector('main');if(main&&!main.querySelector('#rf240WorkoutHealth')){const c=document.createElement('div');c.id='rf240WorkoutHealth';c.className='card';c.innerHTML=`<h2>${esc(rf240L().workout)}</h2>${rf240WorkoutHealthHtml(h)}<button class="btn secondary block" onclick="rf240RefreshSelectedWorkout()">Szinkronizálás ehhez az edzéshez</button>`;const hero=main.querySelector('.hero');if(hero)hero.insertAdjacentElement('afterend',c);else main.prepend(c)}}return r}}
 
 if(typeof rf142ReadHealthForWorkout==='function'){rf142ReadHealthForWorkout=async function(h){if(!h){alert('Az edzés nem található.');return}state.health=state.health||{};state.health.workout=h.started;await healthAction(async p=>{await rf240SyncWorkout(p,h,true);const row=history().find(x=>rf240WorkoutKey(x)===rf240WorkoutKey(h));state.health.summary=row?.health240||null;return row?.health240?'Az edzés időablakához tartozó Health-adatok rögzítve.':'Ehhez az időablakhoz még nincs megosztott adat.'},'Edzés Health-adatainak frissítése…');healthScreen()}}
-if(typeof finishWorkout==='function'){const rf240FinishBase=finishWorkout;finishWorkout=function(){const before=new Set(history().map(rf240WorkoutKey));const r=rf240FinishBase.apply(this,arguments);setTimeout(async()=>{try{const p=rf240Native();if(!p)return;const h=history().find(x=>!before.has(rf240WorkoutKey(x)));if(h&&rf240ValidWorkout(h))await rf240SyncWorkout(p,h,true)}catch(_){}},1200);return r}}
 (function rf240Css(){if(document.querySelector('#rf240Css'))return;const s=document.createElement('style');s.id='rf240Css';s.textContent='.rf240-meta,.rf240-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.rf240-meta{margin:8px 0}.rf240-meta span,.rf240-grid>div{display:flex;flex-direction:column;gap:3px;padding:8px;border:1px solid rgba(127,127,127,.18);border-radius:10px}.rf240-meta span{font-size:.72rem}.rf240-grid small{font-size:.72rem}@media(max-width:360px){.rf240-meta,.rf240-grid{grid-template-columns:1fr}}';document.head.appendChild(s)})();
 rf240ApplyLedger();rf240BackgroundSync();
 
@@ -3639,11 +3761,6 @@ const RF241_I18N={
  ro:{health:'Health Connect',pending:'Așteaptă sincronizarea',stale:'Este necesară resincronizarea',empty:'Sincronizat, dar nu sunt încă disponibile date partajate pentru antrenament.',details:'Detalii date Health',refresh:'Actualizează datele Health',refreshing:'Se actualizează datele Health ale antrenamentului…',updated:'Datele Health ale antrenamentului au fost actualizate.',avg:'Puls mediu',min:'Puls minim',max:'Puls maxim',samples:'Mostre puls',active:'Energie activă',total:'Energie totală',healthTime:'Timp antrenament Health',distance:'Distanță',avgSpeed:'Viteză medie',maxSpeed:'Viteză maximă',sessions:'Sesiuni Health',sources:'Surse',window:'Interval antrenament',synced:'Sincronizat',waiting:'Samsung Health sau ceasul poate sincroniza mai târziu. TrainPilot va verifica din nou acest antrenament.',noNative:'Actualizarea este disponibilă pe Android cu Health Connect.'}
 };
 
-
-const rf241FinishWorkout=finishWorkout;
-finishWorkout=function(){
- const before=new Set(history().map(rf240WorkoutKey)),result=rf241FinishWorkout.apply(this,arguments),fresh=history().find(h=>!before.has(rf240WorkoutKey(h)));if(fresh)rf241QueueWorkoutSync(rf240WorkoutKey(fresh));return result
-};
 
 // Editing a workout and choosing Health refresh now updates the persisted history attachment,
 // not only the temporary Health screen state.
@@ -5443,8 +5560,6 @@ var rf110DecorateTimedWorkout=function rf110DecorateTimedWorkout(){
 
 const rf110RenderWorkoutBase=renderWorkout;
 renderWorkout=function(){const r=rf110RenderWorkoutBase();rf110DecorateTimedWorkout();return r};
-const rf110FinishWorkoutBase=finishWorkout;
-finishWorkout=function(){const r=rf110FinishWorkoutBase.apply(this,arguments);if(!state.session)rf110StopwatchHalt(true);return r};
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&rf110Stopwatch.running)rf110StopwatchPaint()});
 
 rf110InitAutoHealth();
@@ -6063,20 +6178,6 @@ if(typeof startWorkout==='function'){
  startWorkout=function(dayId,scheduleId=null,programId=null){
   if(!db.get('draft',null))return tp2629StartWorkoutBase(dayId,scheduleId,programId);
   void tp2628Confirm('Új edzést indítasz? A félbehagyott edzés helyére ez kerül.',{title:'Új edzés indítása',confirmText:'Indítás',danger:true}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629StartWorkoutBase(dayId,scheduleId,programId),true)});
- };
-}
-
-// Preserve the complete finish-workout wrapper chain; only pre-resolve its legacy
-// partial-workout confirm and then let the existing synchronous logic run unchanged.
-if(typeof finishWorkout==='function'){
- const tp2629FinishWorkoutBase=finishWorkout;
- finishWorkout=function(){
-  const ses=state.session;if(!ses)return tp2629FinishWorkoutBase.apply(this,arguments);
-  if(arguments[0]?.wearConfirmed===true)return tp2629ConfirmBypass(()=>tp2629FinishWorkoutBase.apply(this,arguments),true);
-  const anyDone=(ses.exercises||[]).some(e=>(e.sets||[]).some(x=>x.done));
-  const anyUndone=(ses.exercises||[]).some(e=>(e.sets||[]).some(x=>!x.done));
-  if(!(anyDone&&anyUndone))return tp2629FinishWorkoutBase.apply(this,arguments);
-  const args=arguments,ctx=this;void tp2628Confirm('Vannak be nem fejezett sorozatok. Elmented a részleges edzést?',{title:'Részleges edzés mentése',confirmText:'Mentés'}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629FinishWorkoutBase.apply(ctx,args),true)});
  };
 }
 
@@ -9147,7 +9248,6 @@ window.TrainPilotI18n.cloudAudit=function(){
 
 const TP149_DIALOG_BASES={
  startWorkout:typeof startWorkout==='function'?startWorkout:null,
- finishWorkout:typeof finishWorkout==='function'?finishWorkout:null,
  resetPlan:typeof resetPlan==='function'?resetPlan:null,
  resetStarter:typeof resetStarter==='function'?resetStarter:null,
  activateProgram:typeof activateProgram==='function'?activateProgram:null,
@@ -9234,15 +9334,6 @@ startWorkout=function(dayId,scheduleId=null,programId=null){
  void tp2628Confirm(tp149T('dialog.newWorkout.message'),{title:tp149T('dialog.newWorkout.title'),confirmText:tp149T('calendar.action.start'),danger:true}).then(function(ok){
   if(ok)tp2629ConfirmBypass(function(){return TP149_DIALOG_BASES.startWorkout(dayId,scheduleId,programId);},true);
  });
-};
-finishWorkout=function(){
- const ses=state.session;if(!ses)return TP149_DIALOG_BASES.finishWorkout.apply(this,arguments);
- if(arguments[0]?.wearConfirmed===true)return tp2629ConfirmBypass(()=>TP149_DIALOG_BASES.finishWorkout.apply(this,arguments),true);
- const anyDone=(ses.exercises||[]).some(function(e){return (e.sets||[]).some(function(x){return x.done;});});
- const anyUndone=(ses.exercises||[]).some(function(e){return (e.sets||[]).some(function(x){return !x.done;});});
- if(!(anyDone&&anyUndone))return tp2629ConfirmBypass(()=>TP149_DIALOG_BASES.finishWorkout.apply(this,arguments),true);
- const args=arguments,ctx=this;
- void tp2628Confirm(tp149T('dialog.partial.message'),{title:tp149T('dialog.partial.title'),confirmText:tp149T('common.save')}).then(function(ok){if(ok)tp2629ConfirmBypass(function(){return TP149_DIALOG_BASES.finishWorkout.apply(ctx,args);},true);});
 };
 
 resetPlan=function(){void tp2628Confirm(tp149T('dialog.restoreDefaults.message'),{title:tp149T('dialog.restoreDefaults.title'),confirmText:tp149T('dialog.restoreAction'),danger:true}).then(function(ok){if(ok)tp2629ConfirmBypass(function(){return TP149_DIALOG_BASES.resetPlan();},true);});};
@@ -15065,8 +15156,6 @@ renderWorkout=function(){
 var tp106DistanceInputsValid=function(){const bad=document.querySelector('[data-tp106-distance]:invalid');if(bad){bad.reportValidity?.();return false;}return true;};
 const tp106ToggleSetBase=toggleSet;
 toggleSet=function(ei,si){if(!tp106DistanceInputsValid())return;const e=state.session?.exercises?.[ei],set=e?.sets?.[si];if(tp106IsDistance(e)&&!set?.done){if(!(Number(set.distanceMeters)>0)&&!(Number(set.reps)>0)){alert(tp106T('needDistance'));return;}if(tp106GpsBusy){alert(tp106T('busy'));return;}if(tp106GpsState.active)return tp106StopGPS().then(function(ok){if(ok)tp106ToggleSetBase(ei,si);});}return tp106ToggleSetBase.apply(this,arguments);};
-const tp106FinishWorkoutBase=finishWorkout;
-finishWorkout=function(){if(!tp106DistanceInputsValid())return;if(tp106GpsBusy){alert(tp106T('busy'));return;}if(tp106GpsState.active||db.get('gpsTrip106',null)){const ctx=this,args=arguments,session=state.session;return tp106StopGPS().then(function(ok){if(ok&&state.session===session)return tp106FinishWorkoutBase.apply(ctx,args);});}return tp106FinishWorkoutBase.apply(this,arguments);};
 const tp106NextBase=nextExercise;
 nextExercise=function(){if(!tp106DistanceInputsValid())return;if(tp106GpsBusy){alert(tp106T('busy'));return;}if(tp106GpsState.active||db.get('gpsTrip106',null))return tp106StopGPS().then(function(ok){if(ok)return tp106NextBase();});return tp106NextBase.apply(this,arguments);};
 const tp106PrevBase=prevExercise;
@@ -15314,8 +15403,6 @@ const tp107RemoveSetBase=tp106BeforeSetRemoval;
 tp106BeforeSetRemoval=async function(session,e,set){if(tp107IndoorOwner()?.set===set)tp107StopIndoor(true);return tp107RemoveSetBase.apply(this,arguments);};
 const tp107ToggleSetBase=toggleSet;
 toggleSet=function(ei,si){if(tp107IndoorOwner()?.set===state.session?.exercises?.[ei]?.sets?.[si])tp107StopIndoor(true);return tp107ToggleSetBase.apply(this,arguments);};
-const tp107FinishBase=finishWorkout;
-finishWorkout=function(){tp107StopIndoor(true);return tp107FinishBase.apply(this,arguments);};
 const tp107NextExerciseBase=nextExercise,tp107PrevExerciseBase=prevExercise;
 nextExercise=function(){tp107StopIndoor(true);return tp107NextExerciseBase.apply(this,arguments);};
 prevExercise=function(){tp107StopIndoor(true);return tp107PrevExerciseBase.apply(this,arguments);};
@@ -17165,7 +17252,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
  }
  async function sync(options={}){
-  if(busy||discarding||blocked())return false;busy=true;
+  if(state.session?.finalizationPending||draft()?.session?.finalizationPending||busy||discarding||blocked())return false;busy=true;
   try{return await syncLocked(options);}finally{busy=false;}
  }
  async function finishFence(work){
@@ -17177,7 +17264,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    await api.blockExecution({blocked:true});
    if(!await reconcile(api))return false;
    const result=await work();
-   if(state.session!==session){
+   if(result===true||state.session!==session){
     const native=await api.executionStatus(),frame=native.snapshot;
     if(frame?.active&&frame.workoutId===identity(session))await api.closeExecution({workoutId:frame.workoutId,generation:frame.generation,executionRevision:frame.executionRevision});
    }
@@ -17739,7 +17826,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
  }
  function closedWorkouts(){return db.get('wearClosedWorkouts',[])||[]}
- function isClosed(id){return closedWorkouts().some(x=>sameId(x.workoutId,id))||history().some(x=>matchesWorkout(x,id)&&x.finished)}
+ function isClosed(id){
+  if(closedWorkouts().some(x=>sameId(x.workoutId,id)))return true;
+  const pending=[state.session,db.get('draft',null)?.session].some(s=>s?.finalizationPending&&matchesWorkout(s,id));
+  return !pending&&history().some(x=>matchesWorkout(x,id)&&x.finished);
+ }
  function recordResult(command,status,message=''){
   const result={commandId:String(command.commandId),workoutId:String(command.workoutId),action:String(command.action),status,message,finishedAt:String(command.finishedAt||''),receivedAt:Date.now()};
   db.set('wearWorkoutResult',result);
@@ -17879,7 +17970,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(!state.session.exercises.some(e=>e.sets?.some(s=>s.done))&&!pendingNative)return recordResult(command,'error','Legalább egy rögzített sorozat szükséges.');
   const result=finishWorkout({wearConfirmed:true,silent:true,wearSilent:true,wearFinishedAt:String(command.finishedAt||''),wearFeedback:command.feedback});
   if(result&&typeof result.then==='function')await result;
-  if(history().some(x=>matchesWorkout(x,expected)&&x.finished))return recordResult(command,'saved');
+  if(!matchesWorkout(state.session,expected)&&!matchesWorkout(db.get('draft',null)?.session,expected)&&history().some(x=>matchesWorkout(x,expected)&&x.finished))return recordResult(command,'saved');
   // A temporarily busy GPS/phone save is retried without acknowledging the command.
   return false;
  }
@@ -18478,7 +18569,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const oldGPSStart=tp106StartGPS;tp106StartGPS=async function(){const before=owner(),wasRunning=before?.run.running;if(wasRunning&&!before.run.native){alert(t('web'));return;}if(wasRunning&&!await command('pause'))return;try{const result=await oldGPSStart.apply(this,arguments),o=owner(),trip=db.get('gpsTrip106',null);if(o?.run.native&&!o.run.stopped&&o.run.phase?.phase!=='complete'&&trip&&tp106GpsOwner(trip)?.session===o.session){const p=o.run.phase||phase(o.run.steps,o.run.autoAdvance,o.run.elapsedMs,o.run.initialRest||0),s=o.run.steps[p.stepIndex];if(s.setId!==trip.setId){await tp106StopGPS();return;}try{s.baseMeters=trip.baseMeters;const snapshot=await native().attachGPS({key:o.run.key,index:p.stepIndex,trackingKey:trip.key});apply(o,snapshot);}catch(e){await tp106StopGPS();alert(e?.message||t('failed'));}}return result;}finally{if(wasRunning&&currentOwner(before)&&!owner().run.stopped)await command('resume');}};
    const oldWorkout=renderWorkout;renderWorkout=function(){const result=oldWorkout.apply(this,arguments),e=state.session?.exercises?.[state.current],main=document.querySelector('main.tp153-workout');if((!timed(e)&&!isSideUnit(e))||!main)return result;let panel=document.getElementById('tp107Indoor');if(!panel){panel=document.createElement('section');panel.id='tp107Indoor';panel.className='card tp107-indoor';panel.innerHTML='<strong>'+esc(TrainPilot110.t('interval'))+'</strong><strong class="tp107-clock" data-tp107-clock>00:00</strong><div class="tp107-save-row"><button type="button" class="btn" data-tp107-clock-toggle onclick="tp107ToggleIndoor()" disabled>'+esc(tp107T('start'))+'</button><button type="button" class="btn secondary" onclick="tp107ResetIndoor()">'+esc(tp107T('reset'))+'</button></div><p class="small muted" data-tp107-clock-status role="status"></p>'+TrainPilot110.intervalHtml();main.querySelector('.tp153-sets-title')?.before(panel);}panel.classList.toggle('tp212-bilateral',!!isSideUnit(e));if(!panel.querySelector('[data-tp162-stop]'))panel.insertAdjacentHTML('beforeend','<button type="button" class="btn secondary block tp162-stop" data-tp162-stop onclick="TrainPilotIntervals162.stop()">'+esc(t('stop'))+'</button>');panel.querySelector('[data-tp162-stop]').hidden=!owner();paint();ensure();return result;};
   function wrapAction(name){const base=window[name];window[name]=function(){const o=owner(),session=state.session,args=arguments,ctx=this;if(!o||o.run.stopped||o.run.phase?.phase==='complete')return base.apply(ctx,args);return command('stop').then(ok=>{if(ok&&state.session===session)return base.apply(ctx,args);});};}
-  for(const name of ['nextExercise','prevExercise','finishWorkout','toggleSet'])wrapAction(name);
+  for(const name of ['nextExercise','prevExercise','toggleSet'])wrapAction(name);
   const oldRemove=tp106BeforeSetRemoval;tp106BeforeSetRemoval=async function(session,e,set){const o=owner();if(o?.session===session&&o.run.steps.some(s=>s.setId===set.setId)&&!await command('stop'))return false;return oldRemove.apply(this,arguments);};
   window.TrainPilotIntervals162={stop:()=>command('stop'),command,sync,owner,paint,startConfigured,adoptNative(){ensure();void sync();}};
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)void sync();});ensure();void sync();
@@ -18626,7 +18717,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
    panel.innerHTML='<label class="tp162-auto" title="'+esc(t('help')+(!bridge()?' '+t('web'):''))+'"><input type="checkbox" data-tp162-enabled onchange="TrainPilotAutomatic162.toggle(this.checked)"><span>'+esc(t('title'))+'</span></label><span class="small muted" data-tp162-auto-status role="status"></span><button type="button" class="btn secondary tp162-small" data-tp162-auto-start aria-label="'+esc(t('start'))+'" title="'+esc(t('start'))+'" onclick="TrainPilotAutomatic162.startTimed()">▶</button>';
    main.querySelector('.tp153-workout-actions')?.prepend(panel);paint();window.TrainPilotIssue16?.decorateWorkout?.();ensure();return result;
   };
-  for(const name of ['toggleSet','nextExercise','prevExercise','finishWorkout']){
+  for(const name of ['toggleSet','nextExercise','prevExercise']){
    const base=window[name];window[name]=async function(){const s=state.session,args=arguments,enabled=s?.automatic162?.enabled;if(owner()?.meta.run&&!await command('stop'))return false;if(state.session!==s)return false;if(name==='toggleSet'&&s?.automatic162)s.automatic162.enabled=enabled;const result=await base.apply(this,args);return result;};
   }
   const baseRemoval=tp106BeforeSetRemoval;tp106BeforeSetRemoval=async function(){if(owner()?.meta.run&&!await command('stop'))return false;return baseRemoval.apply(this,arguments);};
@@ -18643,8 +18734,6 @@ window.addEventListener?.('DOMContentLoaded',function(){
    return {enabled:m?.enabled===true,owner:'phone',phase,paused,remainingMs,deadlineAt:remainingMs&&!paused?Date.now()+remainingMs:0,
     key:r?.key||iv?.key||m?.undoKey188||'',phaseNumber:r?.phaseNumber||iv?.phaseNumber||0,targetExercise:state.current,workSeconds:Number(step?.work??iv?.work??30),restSeconds,vibration:false,interrupted:r?.interrupted||iv?.interrupted||false};
   };
-  const nativeFinish=window.finishWorkout;
-  window.finishWorkout=function(){const args=arguments,ctx=this;return window.TrainPilotPhoneExecution162?.finishFence?window.TrainPilotPhoneExecution162.finishFence(()=>nativeFinish.apply(ctx,args)):nativeFinish.apply(ctx,args);};
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)void sync();});ensure();void sync();
  });
 })();

@@ -1,8 +1,28 @@
 # TrainPilot – aktuális átadás
 
-Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.3.71 a GitHub Latest.** A #225 audit PR beolvasztás nélkül lezárva, #230/#234 által felváltva; Nyitott PR nincs; #214 karbantartási issue marad; [takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
+Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.3.71 a GitHub Latest.** A #225 audit PR beolvasztás nélkül lezárva, #230/#234 által felváltva; Az új refaktor PR állapotát élőben ellenőrizd; #214 karbantartási issue marad;  [takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
+
+## Folyamatban – alkalmazás rendbetétele, 1. kör
+
+- Felhasználói kérés: „Kezdjük el az app rendbetételét”. Ág:
+  `refactor/workout-finalization`, alap main `bc43d4e` (1.3.71 /2735).
+- Terv: [APP_REFACTOR](plans/APP_REFACTOR.md). Első kör a mentési integritás és
+  központi lezárás, utána Napló/PR indexelés és fokozatos megjelenítés.
+- A finish belépési pont egyetlen koordinátorra váltott, új wrapper hozzáadása
+  nélkül. Natív reconcile/close, sorozat, időzítők, GPS, naptár és visszajelzés
+  a közös folyamat része. Sikertelen cleanup/close nem ad „mentve” órás nyugtát.
+- Idempotens history-upsert, rollback és tartós draft-jelző; sérült history/naptár
+  lezáráskor nem írható felül. A végleges naplóból az előtöltési UI-segédmező kimarad.
+- Új célzott Chromium-integritási teszt a kötelező suite része; a korábbi két
+  statikus wrapper-elvárás a központi belépési pontra és Health-frissítésre módosult.
+- Helyi célzott ellenőrzés: **14 integritási eset**, 5 kompatibilitási modul,
+  meglévő órás lezárás/értékelés és GPS #206 sikeres. A valódi befejezőgomb
+  tárolóhiba-jelzése és a futó oldalsó stopper mentése is ellenőrizve.
+  Architektúraőr és verziópolitika sikeres; a teljes GitHubos kapuk még hátra vannak.
+- Main merge/release/verzióemelés nem történt. A friss
+  kapuk és teszt-APK készülékes elfogadása még hátra van.
 
 ## #214 – GitHub-bemutató frissítve (2026-10-21)
 

@@ -68,6 +68,19 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 - Ha új/lejárt környezetben dolgozol, a hitelesítést és a platformutasításokat
   újra ellenőrizd; régi workspace-path vagy eszköz elérhetőségét ne feltételezd.
 
+## Szerkezeti rendbetétel – kötelező irány
+
+- Központi műveletet ne bővíts újabb globális függvény-felülírással. Az edzés
+  lezárásának egyetlen belépési pontja a `finishWorkout`, folyamata a
+  `TrainPilotWorkoutFinalization`. Az érintett modulban közvetlen, név szerinti
+  lépést módosíts; ne telepíts új finish wrappert.
+- A tartós napló, futó session és helyreállítható draft külön felelősség. Mentési
+  újrapróbálás stabil edzésazonosítóval legfeljebb egy naplósort eredményezhet.
+  Natív lezárási vagy drafttakarítási hiba mellett nem küldhető „mentve” nyugta.
+- Teljesítmény-cache érvénytelenítéséhez a tényleges adatváltozást kövesd.
+  Naplóhossz vagy elemszám önmagában nem elég. A fokozatos terv:
+  `docs/plans/APP_REFACTOR.md`; kész részt és következő lépést a handoff rögzíti.
+
 ## Megőrzendő termékdöntések
 
 - Automatizálási UI-elv (2026-10-20): ugyanazon programnap új edzésének súlya és

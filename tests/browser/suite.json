@@ -426,5 +426,9 @@
   {
     "file": "tests/browser/workout-records-226.cjs",
     "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/workout-finalization-integrity.cjs",
+    "estimatedSeconds": 15
   }
 ]
