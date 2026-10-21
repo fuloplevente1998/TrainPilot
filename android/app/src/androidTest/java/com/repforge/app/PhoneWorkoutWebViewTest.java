@@ -97,11 +97,13 @@ public class PhoneWorkoutWebViewTest {
                     long time=android.os.SystemClock.uptimeMillis();
                     instrumentation.runOnMainSync(()->{
                         android.view.MotionEvent event=android.view.MotionEvent.obtain(time,time,android.view.MotionEvent.ACTION_DOWN,touch[0],touch[1],0);
+                        event.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);
                         try{view.dispatchTouchEvent(event);}finally{event.recycle();}
                     });
                     android.os.SystemClock.sleep(30);
                     instrumentation.runOnMainSync(()->{
                         android.view.MotionEvent event=android.view.MotionEvent.obtain(time,android.os.SystemClock.uptimeMillis(),android.view.MotionEvent.ACTION_UP,touch[0],touch[1],0);
+                        event.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);
                         try{view.dispatchTouchEvent(event);}finally{event.recycle();}
                     });
                     waitFor(view,"window.__coldNav.pending===null");
