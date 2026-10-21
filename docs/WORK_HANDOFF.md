@@ -1,10 +1,10 @@
 # TrainPilot – aktuális átadás
 
-Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.3.71 a GitHub Latest.** A #225 audit PR beolvasztás nélkül lezárva, #230/#234 által felváltva; #235 draft, mentési kör készüléken elfogadva; új UI/teljesítményjavítás ellenőrzés alatt; #214 karbantartási issue marad;  [takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
+Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.3.71 a GitHub Latest.** A #225 audit PR beolvasztás nélkül lezárva, #230/#234 által felváltva; #235 draft, mentési kör készüléken elfogadva; új UI/teljesítményjavítás teljes CI-je zöld, készülékes próbára vár; #214 karbantartási issue marad;  [takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
-## Folyamatban – #235, új készülékes hibák javítása
+## Folyamatban – #235, UI/görgetés/stopper javítás készülékes próbára kész
 
 - Az első kör `655183c` APK-járól felhasználói visszajelzés: nincs dupla edzés,
   törlés után nem tér vissza a bejegyzés; a többi kért ellenőrzés működik.
@@ -39,10 +39,31 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
   kombináció, explicit/implicit/0 stop és 200/1500 edzéses publikálás PASS;
   kompakt egy-/kétoldali UI PASS; korábbi mentési integritás 14/14 PASS;
   egyetlen finish-belépő strukturális ellenőrzése PASS.
-- **Új forrás még nincs CI-n bevizsgálva / APK átadva.** Következő: commit/push,
-  azonos alkalmazásforrású GitHub-kapuk, új telefonos teszt-APK, fizikai görgetés és
-  stopper-próba. Verzió változatlan 1.3.71 /2735, #235 draft, main változatlan.
-  A teljes Napló/PR lapozás és általános tárolási helyreállítás későbbi kör marad.
+- **Bevizsgált alkalmazásforrás: `1b5e488b35ca39dfe79ab17e6347b38daf0401a8`.**
+  PR-merge és head fa azonos: `1577cb0e9fbc7d2534e3e2bbc4f25bc7f95a4471`.
+  Utána csak dokumentációs átadás, nem új alkalmazásbuild.
+- Friss, forrásazonos GitHub-kapuk: Quick **39552869084: 161/161**, Performance
+  **39552869065 SUCCESS**; telefon **39552881285 SUCCESS**, Chromium **6/6, 109/109**,
+  natív XML **251/251**; valódi WebView/háttér **39552884885: 1/1**;
+  Wear **39552887694: 167/167**; kerek UI **39552891381: 183/183** (68+59+56).
+  Letöltött shard-JSON és XML: **0 failure/error/skipped**, minden UI-modul egyszer.
+  A régi, külön OK-ra építő stoppertesztek az új szerződést és valódi visszavonást
+  ellenőrzik; a Napló UI-teszt tíz kijelzőméreten is sikeres.
+- [Új telefonos teszt-APK](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39552881285/artifacts/12324696670),
+  SHA-256 `f9a87c24621131a3b743ba5273f426d29cdc091c9159a51afe8889d542052ad8`.
+  APK app.js/index.html/training-107.css byteazonos, forrás-ZIP stampje a fenti commit.
+- [Azonos forrású Wear teszt-APK](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39552887694/artifacts/12324303353),
+  SHA-256 `922e8b936da0b58b5824a3cc34601b5ea31d923d4cccf2baa90f432a33da8936`.
+  Wear alkalmazáskód nem változott. Mindkettő **1.3.71 /2735**, SHA256SUMS,
+  aláírás és signer-folytonosság ellenőrzött. Nincs APK-ba ágyazott JSON source stamp;
+  telefonos forrásarchívum és Wear sidecar igazolja a commitot.
+- [Új bizonylat](builds/2026-10-21-235-ui-scroll-stopwatch.json).
+  Következő készülékes próba: Naptár/Coach/Beállítások tartós görgetése; plank explicit
+  Stop → kész pipa külön OK nélkül → Visszavonás; oldalanként két pozitív idő;
+  visszavonás utáni szerkesztés/újranyitás. A Samsung 87 → 54 magyarázat legyen látható.
+  **Friss kör készülékes elfogadása még nincs.** #235 draft, main `bc43d4e` változatlan,
+  nincs merge, release vagy verzióemelés. A teljes Napló/PR lapozás és általános
+  tárolási helyreállítás későbbi kör marad.
 
 ## Előző bevizsgált #235 alkalmazásforrás – mentési kör
 

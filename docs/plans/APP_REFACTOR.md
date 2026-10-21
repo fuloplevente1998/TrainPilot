@@ -22,7 +22,7 @@ merge nincs automatikusan engedélyezve.
   hiba, nyugta visszatartása, megerősítés megszakítása/dupla kattintás, régi
   sorozat/stopper/naptár/órás lezárás, GPS külön OK nélküli teljesítése.
 
-## Köztes készülékes hibajavítás – #235
+## Köztes készülékes hibajavítás – #235, CI zöld / új készülékes próba előtt
 
 - Dupla plankóra: felső intervallumos óra eltávolítása, alsó eredeti óra és
   összecsukott intervallumválasztás. Explicit pozitív stop készre jelöl; a nullát,
@@ -34,6 +34,8 @@ merge nincs automatikusan engedélyezve.
   egyenlő elemszámú szerkesztés/tombstone frissesség külön ellenőrzött.
 - Készenlét képlete változatlan; a Samsung-pontszám terhelés/fájdalom miatti
   konkrét korlátozásának magyarázata megjelenik a részletezőben.
+- `1b5e488`: Quick 161/161, UI 109/109, telefon natív 251/251, Wear 167/167,
+  kerek UI 183/183, valódi WebView 1/1; minden kapu zöld. APK/bizonylat a handoffban.
 - Ez nem oldja meg az összes render-/napló-/tárolási auditpontot.
 
 ## 2. Napló és PR teljesítmény – következő kör
