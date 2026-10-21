@@ -4,6 +4,14 @@ Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Aktuális #236 – első DOM-feltárási lépés (2026-10-21)
+
+- Új elkülönített ág: `perf/236-journal-dom`, [Draft PR #237](https://github.com/fuloplevente1998/TrainPilot/pull/237), base `refactor/workout-finalization` (#235), nem a még régebbi `main`.
+- `1422cbec4388c2738ace893ae21460641945bd32`: csak `tests/browser/navigation-cpu-profile-235.cjs` módosult. A 0/200/1500 edzéses, első/ismételt navigációs profil most a teljes DOM, app/panel részfák, legnagyobb app-ágak, Napló kártya/nyitott/hidratált részletek és a JS geometria/stílus-lekérdezések számát is összegyűjti.
+- A részletes DOM-felmérés az időzített CPU/paint minta **után** történik. A diagnosztikai fájl szintaxisa sikeresen parse-olható; Chromium/CI vagy készülékes futás még **nem** történt ezen a commiton, alkalmazáskód és verzió érintetlen.
+- Következő: a bővített mérést azonos runneren/fixture-rel futtatni a #235 alkalmazáskódján, a Napló legnagyobb DOM-szegmensét célzottan korlátozni és két körben összevetni; a teljes napló elérhetősége, PR/részletek/fotók/szűrés/visszalépés megőrzendő. Folyamat közben nincs main merge, release vagy #236-zárás.
+
+
 ## Új követési issue – #236, Napló és oldalváltások
 
 - Felhasználói kérésre megnyitva: [#236 – Napló és oldalváltások gyorsítása nagy edzéselőzménynél](https://github.com/fuloplevente1998/TrainPilot/issues/236).
