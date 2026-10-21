@@ -12448,7 +12448,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   '.tp155-r4-panel-host{animation:tp160BackdropIn 100ms ease-out both}',
   '.tp155-r4-panel{animation:tp160PanelReveal 110ms ease-out both}',
   // Settings is a top-level destination, not a dialog reveal: present it on tap.
-  '#tp155R4PanelHost[data-panel="settings"],#tp155R4PanelHost[data-panel="settings"] .tp155-r4-panel{animation:none!important;transform:none!important;transition:none!important}'
+  '#tp155R4PanelHost[data-panel="settings"],#tp155R4PanelHost[data-panel="settings"] .tp155-r4-panel{animation:none!important;transform:none!important;transition:none!important}',
   '@media(prefers-reduced-motion:reduce){#app main.tp160-page-reveal,.tp155-r4-panel-host,.tp155-r4-panel{animation:none!important;transform:none!important;transition:none!important}}'
  ].join('');
  document.head.appendChild(style);
