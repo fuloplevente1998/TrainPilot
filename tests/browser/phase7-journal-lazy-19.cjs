@@ -38,5 +38,37 @@ const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local')
  const empty=page.locator('[data-tp152-history-key="p7-empty"]');await empty.locator(':scope > summary').click();
  assert.equal(await empty.locator('.tp155-history-delete').count(),1,'opening a lazy Journal row must synchronously expose the accepted delete-workout action');
  assert.equal(await empty.locator('.tp3-combined-history-body').getAttribute('data-tp3-hydrated'),'true','empty legacy-compatible workout must hydrate on opening click');
+ // #236 large stored dataset: only the first page should exist in the DOM.
+ const seed=await page.evaluate(()=>{
+  const rows=Array.from({length:1500},(_,i)=>({
+   id:'tp236-'+i,workout:'A',dayId:'A',programId:'home-basic',programName:'DOM test '+i,
+   started:new Date(Date.UTC(2026,9,20)-i*86400000).toISOString(),
+   finished:new Date(Date.UTC(2026,9,20)-i*86400000+3600000).toISOString(),
+   exercises:[{id:'db-squat',loadType:'per_hand',repUnit:'ism.',sets:[{set:1,weight:10,reps:'10',done:true}]}],photos:[]
+  }));
+  db.set('history',rows);state.tp177JournalView='log';go('history');
+  return {count:rows.length,oldestDay:rf263HistoryDay(rows[1499].started)};
+ });
+ assert.equal(seed.count,1500);
+ assert.equal(await page.locator('details.rf263-history').count(),32,'initial 1500-workout DOM must remain bounded');
+ const initialNodes=await page.evaluate(()=>document.querySelectorAll('*').length);
+ assert.ok(initialNodes<5000,'initial DOM must avoid the legacy 21k-element list: '+initialNodes);
+ await page.locator('#tp236HistoryMore').click();
+ assert.equal(await page.locator('details.rf263-history').count(),64);
+ await page.evaluate(day=>{rf263HistoryFilter={from:day,to:day};delete state.tp155JournalRangeStart;go('history')},seed.oldestDay);
+ assert.equal(await page.locator('[data-tp152-history-key="tp236-1499"]').count(),1,'filter must search all saved workouts');
+ assert.equal(await page.locator('details.rf263-history').count(),1);
+ const far=page.locator('[data-tp152-history-key="tp236-1499"]');
+ await far.locator(':scope > summary').click();
+ await page.waitForSelector('[data-tp152-history-key="tp236-1499"][open] .tp3-workout-summary');
+ assert.equal(await far.locator('.tp3-photo-section').count(),1);
+ await page.evaluate(()=>{
+  const h=history();h[1499]={...h[1499],programName:'Updated oldest 236'};db.set('history',h);go('history');
+ });
+ assert.match(await page.locator('[data-tp152-history-key="tp236-1499"] .history-title').textContent(),/Updated oldest 236/,'same-size edit must update the Journal');
+ await page.evaluate(()=>{rf263HistoryFilter={from:'',to:''};go('history')});
+ assert.equal(await page.locator('details.rf263-history').count(),32,'clearing filter must reset the DOM page');
+ assert.equal(await page.locator('[data-tp152-history-key="tp236-1499"]').count(),0);
+ console.log('JOURNAL_236 '+JSON.stringify({saved:seed.count,initialNodes,firstPage:32}));
  console.log('PASS Phase 7 Journal lazy hydration and accepted local editor behavior');
 }finally{await browser?.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exit(1)});
