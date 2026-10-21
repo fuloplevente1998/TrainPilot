@@ -3,7 +3,7 @@ name: P0 Phone WebView Background Regression
 on:
   workflow_dispatch:
   push:
-    branches: ['fix/p0-162-157-safe-wear-sync']
+    branches: ['fix/p0-162-157-safe-wear-sync', 'perf/**']
     paths: ['www/app.js', 'android/app/**', '.github/workflows/phone-execution-ui.yml']
 
 permissions:
