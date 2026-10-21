@@ -1,28 +1,44 @@
 # TrainPilot – aktuális átadás
 
-Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.3.71 a GitHub Latest.** A #225 audit PR beolvasztás nélkül lezárva, #230/#234 által felváltva; Az új refaktor PR állapotát élőben ellenőrizd; #214 karbantartási issue marad;  [takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
+Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.3.71 a GitHub Latest.** A #225 audit PR beolvasztás nélkül lezárva, #230/#234 által felváltva; #235 draft, készülékes elfogadásra vár; #214 karbantartási issue marad;  [takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
-## Folyamatban – alkalmazás rendbetétele, 1. kör
+## Folyamatban – #235 alkalmazás-rendbetétel, 1. kör készülékes próbára kész
 
-- Felhasználói kérés: „Kezdjük el az app rendbetételét”. Ág:
-  `refactor/workout-finalization`, alap main `bc43d4e` (1.3.71 /2735).
-- Terv: [APP_REFACTOR](plans/APP_REFACTOR.md). Első kör a mentési integritás és
-  központi lezárás, utána Napló/PR indexelés és fokozatos megjelenítés.
-- A finish belépési pont egyetlen koordinátorra váltott, új wrapper hozzáadása
-  nélkül. Natív reconcile/close, sorozat, időzítők, GPS, naptár és visszajelzés
-  a közös folyamat része. Sikertelen cleanup/close nem ad „mentve” órás nyugtát.
-- Idempotens history-upsert, rollback és tartós draft-jelző; sérült history/naptár
-  lezáráskor nem írható felül. A végleges naplóból az előtöltési UI-segédmező kimarad.
-- Új célzott Chromium-integritási teszt a kötelező suite része; a korábbi két
-  statikus wrapper-elvárás a központi belépési pontra és Health-frissítésre módosult.
-- Helyi célzott ellenőrzés: **14 integritási eset**, 5 kompatibilitási modul,
-  meglévő órás lezárás/értékelés és GPS #206 sikeres. A valódi befejezőgomb
-  tárolóhiba-jelzése és a futó oldalsó stopper mentése is ellenőrizve.
-  Architektúraőr és verziópolitika sikeres; a teljes GitHubos kapuk még hátra vannak.
-- Main merge/release/verzióemelés nem történt. A friss
-  kapuk és teszt-APK készülékes elfogadása még hátra van.
+- [#235 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/235), ág
+  `refactor/workout-finalization`. Alap main `bc43d4e`; változatlan verzió **1.3.71 /2735**.
+- Tesztelt alkalmazásforrás **`655183c93ba9d63b30d59dd4bea89117ae7b94cb`**;
+  PR teszt-merge fa és head fa azonos: `33eb07a5ec273d2d3fd44fa15c32f7f754859edf`.
+  Az ezt követő átadási commit kizárólag dokumentáció, nem új alkalmazásbuild.
+- A finish korábbi 11 definíciós/hozzárendelési helye és dinamikus wrapperei
+  helyett egy koordinátor. Natív reconcile/close, sorozat, stopperek, GPS, naptár,
+  részleges megerősítés és értékelés a közös folyamat része.
+- Idempotens history-upsert, rollback, tartós draft-jelző; sikertelen natív close
+  vagy drafttakarítás nem küldhet „mentve” nyugtát. A teljes lezárás előtt érkező
+  natív sorozat bekerül. Sérült history/scheduled JSON lezáráskor nem írható felül;
+  általános db.get-helyreállítás nincs még kész. A végleges naplóból az előtöltési
+  UI-segédmező kimarad, a draftból nem töröljük idő előtt.
+- Friss alkalmazásazonos GitHub-kapuk: Quick **39545876527: 160/160**, Performance
+  **39545876543 SUCCESS**; telefon **39545881760 SUCCESS**, Chromium **6/6, 108/108**,
+  natív XML **251/251**; tényleges WebView/háttér **39545884307: 1/1**;
+  Wear **39545887200: 167/167**; kerek UI **39545889547: 183/183** (68+59+56).
+  Minden XML-ben **0 failure/error/skipped**. A 14 új integritási eset GitHubon is PASS.
+- [Telefon teszt-APK](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39545881760/artifacts/12321955384),
+  SHA-256 `45a642464cd5dc15c308dc38e55b1aecfb36fdcdd55c86be623f6d5b8e36ccf3`.
+  A csomagolt app.js byte-azonos; a forrás-ZIP stampje a fenti commit.
+- [Wear teszt-APK](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39545887200/artifacts/12320794234),
+  SHA-256 `9247c5fd2b09103efe7cc531af3bcb7c0e3a826307a12d3c624a83a14c660e87`.
+  Wear alkalmazáskód nem változott; az új build ugyanahhoz a commitpárhoz tartozik.
+  Mindkét APK **1.3.71 /2735**, aláírás és signer-folytonosság sikeres.
+- [CI/APK bizonylat](builds/2026-10-21-235-workout-finalization.json).
+  Main merge/release/verzióemelés nem történt, készülékes elfogadás még nincs.
+- Készülékes smoke: telefonos és órás befejezés egyszeri naplóbejegyzéssel;
+  részleges mentés Mégse/Mentés; oldalsó stopper; GPS sikeres Mérés befejezése
+  külön sorozat-OK nélkül; tervezett edzés naptárban teljesült.
+- Következő kör: [APP_REFACTOR](plans/APP_REFACTOR.md) szerint **Napló/PR indexelés
+  és fokozatos megjelenítés**, 200/1500 edzéses méréssel. Ez az 1. kör még nem
+  oldja meg a nagy napló megnyitásának teljesítményét vagy az összes auditpontot.
 
 ## #214 – GitHub-bemutató frissítve (2026-10-21)
 

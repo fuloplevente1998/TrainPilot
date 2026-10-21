@@ -4,7 +4,7 @@ Felhasználói indítás: 2026-10-21. Kiinduló main `bc43d4e`, 1.3.71 /2735.
 Az audit és Claude elemzése alapján fokozatos egyszerűsítés; verzióemelés és main
 merge nincs automatikusan engedélyezve.
 
-## 1. Mentési integritás és központi lezárás – folyamatban
+## 1. Mentési integritás és központi lezárás – #235, készülékes próba előtt
 
 - A `finishWorkout` korábbi 11 definíciós/hozzárendelési helye és a dinamikus
   finish-wrapperek helyett egy belépési pont és név szerint hívott lépések.
