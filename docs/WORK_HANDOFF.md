@@ -4,7 +4,7 @@ Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
-## Folyamatban – #235, első oldalváltások lassúsága
+## Folyamatban – #235, lassú indulás és tartós navigációs késés
 
 - **Új készülékes visszajelzés (2026-10-21):** a `3199528` teszt-APK-val az indulás
   továbbra is nagyon lassú; 15 s várakozás csak részben segít, az oldalváltások
@@ -19,9 +19,8 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
   valódi Activity pause/resume és a UI-szál visszatér a zár felengedése előtt.
   SQLite-teszt méri, hogy a második `retireWatchUi` 0 adatváltozást végez.
   Ezek a konkrét blokkolási okot ellenőrzik; a készülék teljes késésének
-  megszűnését még nem igazolják. A `ccfb5b9` köztes forrás WebView-kapuja
-  **39612267618 SUCCESS**; Quick **39612261981: 161/161**, Performance
-  **39612261984 SUCCESS**. Ezek még nem az alábbi bővített javítás kapui.
+  megszűnését még nem igazolják. A végső alkalmazásforrás WebView XML-je
+  **39613275281: 3/3, 0 failure/error/skipped**.
 - Folyamatos terhelés javítása: a 900 ms-os Wear-poll Task-visszahívása (JSON,
   tartós parancssor) a Capacitor háttérvégrehajtóján fut; a tulajdonosváltás
   meglévő explicit main-looper átadása megmarad. A 3 s-os home-poll a katalógus
@@ -35,7 +34,34 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
   nyelv/pihenő/draft/tombstone, force, újrapróbálás és éjfél PASS. Meglévő teljes
   runtime journal-resync és Wear lifecycle PASS. Chromium 200/1500 edzéses
   teszt kiegészítve valós tombstone + szerkesztési frissességre és 0 új indexre
-  5 változatlan poll alatt. Végső CI és teszt-APK még készül.
+  5 változatlan poll alatt. Mindkét adathosszon 0 új index, friss szerkesztés/törlés;
+  az öt üres poll együtt 0–0,2 ms ezen a Chromium runneren. Nem készülékes időmérés.
+- **Végső alkalmazásforrás: `6d28ade8a39577995eeedb8b04a6a7fbe2bc6d6e`.**
+  Telefonos build-/tesztforrás **`3e373a8e1f67d678beb5c121f37dfa2f09c219bd`**;
+  közte csak kanonikus tesztregisztráció és a halasztott küldés tesztfixture-ja
+  változott. HEAD és PR teszt-merge fa azonos: `d74ae93c70da46300af6117c10573225d92953b8`.
+- Forrásazonos kapuk: Quick **39614621725: 162/162**, Performance **39614621671 SUCCESS**;
+  telefon **39614613499 SUCCESS**, Chromium **6/6, 109/109 külön modul**, natív XML
+  **251/251**. Wear **39613284803: 167/167**, kerek UI **39613289878: 183/183**
+  (68+59+56); utóbbi két forrás `6d28ade`, alkalmazáskód azonos. Minden letöltött
+  XML/JSON-ban 0 failure/error/skipped. A köztes tesztfuttatókör-/fixture-hibák
+  és javításuk a bizonylatban, nem alkalmazásbeli sikerként szerepelnek.
+- **Új teszt-APK-pár, 1.3.71 /2735:**
+  [Telefon](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39614613499/artifacts/12351489638),
+  SHA-256 `4255a214e1955493fd28666d3a35c5a57681621bcb9936b9b37ebc8bb80fccd8`;
+  [Wear](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39613284803/artifacts/12352131837),
+  SHA-256 `7a04e1ab9c4a376786eff11e09944bc02dc56c3ac79bca7d7e7059c987781797`.
+  A telefon 31 webes assetje byteazonos, a source ZIP 803 fájlja Git-azonos,
+  a source stamp/WEAR sidecar és SHA256SUMS helyes. CI apksigner/badging és
+  eredeti signer-folytonosság sikeres; letöltött APK-k v2 tanúsítványhash-e ellenőrzött.
+  Wear alkalmazáskód nem változott. [Részletes bizonylat](builds/2026-10-21-235-startup-background.json).
+- **Következő:** az új telefon-APK készülékes próbája teljes bezárás után azonnal,
+  majd külön újranyitáskor 15 s várakozással, több percnyi oldalváltás közben is.
+  Készülékes elfogadás még nincs. #235 draft, main `bc43d4e` és a kiadás változatlan;
+  nincs merge, release, verzióemelés vagy issue-lezárás.
+
+### Korábbi #235 körök és előzmények
+
 - Új visszajelzés a `1b5e488` teszt-APK-ról: „Rendben, jo lett.” A stopper- és
   görgetési javítás elfogadott. Maradék: appindítás után az első oldalváltások
   kifejezetten lassúak, később gyorsak. Ennek külön célzott profilozása folyamatban;
@@ -79,9 +105,9 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
   **1.3.71 /2735**; app asset/source ZIP és Wear sidecar commit, SHA256SUMS,
   aláírás/signer-folytonosság ellenőrzött. Wear alkalmazáskód nem változott.
 - [Hideg navigációs bizonylat](builds/2026-10-21-235-cold-navigation.json).
-  **Következő készülékes próba:** új telefon-APK, teljes bezárás/újranyitás után
-  első Naptár/Coach/Beállítások váltás; külön újranyitáskor 15 s várakozás után is.
-  Az APK átadva; erre a próbára még nincs visszajelzés.
+  **A korábbi készülékes próba eredménye:** teljes bezárás/újranyitás után lassú,
+  15 s várakozás után kisebb, de végig megmaradó oldalváltási késés. A fenti
+  új javítás erre a negatív visszajelzésre készült; készülékes elfogadása még nincs.
   A katalógus javulása nem a teljes készülékes hiba megoldásának bizonyítéka.
 - Az első kör `655183c` APK-járól felhasználói visszajelzés: nincs dupla edzés,
   törlés után nem tér vissza a bejegyzés; a többi kért ellenőrzés működik.
