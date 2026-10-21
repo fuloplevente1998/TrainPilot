@@ -56,9 +56,17 @@ public class PhoneWorkoutWebViewTest {
         for(int attempt=0;attempt<2;attempt++) {
             MainActivity activity=(MainActivity)instrumentation.startActivitySync(launch);
             try {
-                WebView view=activity.getBridge().getWebView();waitFor(view,"window.TrainPilotBoot?.finished");waitForWindowFocus(activity);
+                WebView view=activity.getBridge().getWebView();waitFor(view,"window.TrainPilotBoot?.finished");
+                evaluate(view,"window.__nativeExitReady=false;Promise.resolve(TrainPilotBoot.nativeExitFinished).then(()=>window.__nativeExitReady=true);true");
+                waitFor(view,"window.__nativeExitReady");waitForWindowFocus(activity);
+                instrumentation.runOnMainSync(view::requestFocus);
+                waitFor(view,"document.hasFocus()");
                 evaluate(view,"""
-                    window.__coldNav={rows:[],longTasks:[],pending:null,depth:0};
+                    window.__coldNav={rows:[],longTasks:[],pending:null,depth:0,events:[]};
+                    for(const type of ['pointerdown','pointerup','click'])document.addEventListener(type,event=>{
+                     __coldNav.events.push({type,target:event.target.id||event.target.className,x:event.clientX,y:event.clientY});
+                     if(__coldNav.events.length>8)__coldNav.events.shift();
+                    },true);
                     try{new PerformanceObserver(list=>{for(const e of list.getEntries())__coldNav.longTasks.push({at:e.startTime,ms:e.duration});}).observe({type:'longtask',buffered:true});}catch(_){}
                     for(const name of ['go','tp155R4OpenPanel','tp155R4ClosePanel']){
                      const base=window[name];window[name]=function(){const p=__coldNav.pending,outer=__coldNav.depth++===0,start=performance.now();
@@ -75,7 +83,7 @@ public class PhoneWorkoutWebViewTest {
                 for(int cycle=1;cycle<=2;cycle++)for(String route:routes){
                     String selector=route.equals("coach")?".top .tp154-coach-action":route.equals("settings")?".top .tp154-settings-action":
                         ".top [onclick=\"go('"+route+"')\"]";
-                    String encoded=evaluate(view,"JSON.stringify((()=>{const e=document.querySelector("+JSONObject.quote(selector)+");if(!e)throw Error('Missing navigation '+"+JSONObject.quote(route)+");const r=e.getBoundingClientRect();__coldNav.pending={route:"+JSONObject.quote(route)+",cycle:"+cycle+"};return {x:r.x+r.width/2,y:r.y+r.height/2,viewportWidth:innerWidth,viewportHeight:innerHeight,dpr:devicePixelRatio};})())");
+                    String encoded=evaluate(view,"JSON.stringify((()=>{const e=document.querySelector("+JSONObject.quote(selector)+");if(!e)throw Error('Missing navigation '+"+JSONObject.quote(route)+");const r=e.getBoundingClientRect();if(!e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)))throw Error('Navigation touch covered: '+document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.outerHTML);__coldNav.pending={route:"+JSONObject.quote(route)+",cycle:"+cycle+"};return {x:r.x+r.width/2,y:r.y+r.height/2,viewportWidth:innerWidth,viewportHeight:innerHeight,dpr:devicePixelRatio};})())");
                     JSONObject position=new JSONObject(new org.json.JSONArray("["+encoded+"]").getString(0));
                     float[] touch=new float[2];
                     instrumentation.runOnMainSync(()->{
@@ -119,7 +127,8 @@ public class PhoneWorkoutWebViewTest {
                 assertEquals(16,result.getJSONArray("rows").length());assertEquals(4,result.getJSONArray("catalog").length());
             } catch(Exception|AssertionError failure) {
                 try {
-                    String diagnostic=evaluate(activity.getBridge().getWebView(),"JSON.stringify({url:location.href,viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio},diagnostic:window.__coldNav})");
+                    String diagnostic=evaluate(activity.getBridge().getWebView(),"JSON.stringify({url:location.href,viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio},pending:window.__coldNav?.pending,events:window.__coldNav?.events,rows:window.__coldNav?.rows?.length,focus:document.hasFocus()})");
+                    System.out.println("COLD_NAVIGATION_FAILURE "+new org.json.JSONArray("["+diagnostic+"]").getString(0));
                     java.io.File output=new java.io.File(instrumentation.getTargetContext().getExternalFilesDir(null),"cold-navigation.json");
                     try(java.io.FileWriter writer=new java.io.FileWriter(output)){writer.write(new JSONObject().put("failedLaunch",attempt+1).put("error",failure.toString()).put("state",new org.json.JSONArray("["+diagnostic+"]").getString(0)).toString(2));}
                 }catch(Exception diagnosticFailure){failure.addSuppressed(diagnosticFailure);}
