@@ -1,0 +1,79 @@
+{
+  "sourceCommit": "60fe647a98ccdcc7f102d647a6a1cc8db40bbbfa",
+  "version": "1.3.71",
+  "versionCode": 2735,
+  "synthetic": true,
+  "transformed": false,
+  "images": [
+    {
+      "file": "home.png",
+      "artifact": 12310891925,
+      "entry": "ui-evidence/app-audit-home.png",
+      "sha256": "276a811c52a630f89954b177e713a46490c44aef9ddfb9a5bbc03087ffe98402",
+      "size": 64124
+    },
+    {
+      "file": "program-day.png",
+      "artifact": 12310027916,
+      "entry": "ui-evidence/program-days-124.png",
+      "sha256": "934534cb506b3d99676849e9bb859dfe83a44668534c96cd0f02c613d370d19e",
+      "size": 91087
+    },
+    {
+      "file": "active-workout.png",
+      "artifact": 12310262799,
+      "entry": "ui-evidence/automatic-workout-162.png",
+      "sha256": "ba69bdd1311f91b4c47698f13a0be5c4005e479d9cef1e0dbe437343f30303f1",
+      "size": 94869
+    },
+    {
+      "file": "personal-record.png",
+      "artifact": 12310027916,
+      "entry": "ui-evidence/pr-badge-226.png",
+      "sha256": "36503ec4a26a42e30a60233636f91e7994f0b7a5233b023db0bd3a63166812b4",
+      "size": 54437
+    },
+    {
+      "file": "progress.png",
+      "artifact": 12310751804,
+      "entry": "ui-evidence/progress-compact-2695.png",
+      "sha256": "e81c18075bab5a85d1bfd5cdfacad8bee75c85512a707dcb273183c00ac46e4f",
+      "size": 100552
+    },
+    {
+      "file": "health.png",
+      "artifact": 12310891925,
+      "entry": "ui-evidence/health-stable-width-107.png",
+      "sha256": "3d2bdc89e1aa69d5e79a61072d6cc825917e49d32860f47ec6ab648a56c0db69",
+      "size": 79504
+    },
+    {
+      "file": "calendar.png",
+      "artifact": 12310891925,
+      "entry": "ui-evidence/app-audit-calendar.png",
+      "sha256": "62405ad336bf79ac862029d52cd4ba7ac2231e33af46129f5abf74e666d27d31",
+      "size": 67562
+    },
+    {
+      "file": "coach.png",
+      "artifact": 12310891925,
+      "entry": "ui-evidence/app-audit-coach.png",
+      "sha256": "53aab69d4c205619f533281b9c83e4cf455f0bfd615d9d35762e23c6bb9dbb37",
+      "size": 68700
+    },
+    {
+      "file": "wear-home.png",
+      "artifact": 12310363124,
+      "entry": "wear-ui-evidence/TrainPilot-Wear-layout/home-192dp-font1.0.png",
+      "sha256": "f672262114a152b46bd02a45dd1d151fcf254f5b74b259ef2e02a5dacda86d5b",
+      "size": 42814
+    },
+    {
+      "file": "wear-workout.png",
+      "artifact": 12310363124,
+      "entry": "wear-ui-evidence/TrainPilot-Wear-layout/workout-192dp-font1.0.png",
+      "sha256": "1c9c9f29db167dc47aa6ef540bba7280475417f5d7f3df79d84656c0456e1b38",
+      "size": 40376
+    }
+  ]
+}

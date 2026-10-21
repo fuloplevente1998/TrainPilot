@@ -15,26 +15,47 @@ Version 1.3.71 fixes opening and closing PR details, makes the collapsed trainin
 
 Install the phone APK on the phone and the Wear APK on the watch. Preserve the existing application data when updating. APKs, source archives, checksums and build metadata belong to their specific release; check the [catalog](docs/releases/INDEX.md) before choosing an older build. Google Play publication is still being prepared in [#214](https://github.com/fuloplevente1998/TrainPilot/issues/214).
 
-## Features in accepted main
+## App features
 
-- Personal programs, quick workouts, an exercise library, sets, repetitions, weights, timers, training history and progress.
-- Normal or HIT-inspired training styles; double, linear or RIR/Coach progression with preview, approval and undo. Actual RIR can be logged per set.
-- Recovery guidance with dated data and explicit sources. A valid current-day Samsung Energy Score takes precedence; unavailable data falls back to TrainPilot's estimate. Pain and workload limits remain active.
-- Health Connect or direct Samsung Health import, a persistent local health journal and separately identified TrainPilot Wear workout measurements.
-- Phone/watch workout control, automatic work/rest phases, acknowledged handoff, offline watch workouts, Mini diary, Tile and complication.
-- Optional GPS distance and private workout routes; indoor intervals work without GPS.
-- Local JSON/ZIP backup, private workout photos, optional Google Drive `appDataFolder` sync and Google Calendar integration.
-- Multiple interface languages, themes and system text-size support.
+| Area | Included features |
+| --- | --- |
+| Planning | Personal and profile-assisted programs, editable program days, exercise library, quick workouts, calendar scheduling, goals and replanning missed sessions. |
+| Strength training | Sets, repetitions and weights; automatic prefill from the latest matching completed exercise; normal/HIT styles; double, linear and RIR/Coach progression. |
+| During a workout | Work/rest timers, automatic phases, optional sound/haptics, set undo and actual 0–10 RIR per set. |
+| History and progress | Workout diary, personal-record badges with expandable details, volume and cardio statistics, estimated 1RM, muscle-group workload and private workout photos. |
+| Health and recovery | Health Connect or Samsung Health import, local health journal, source-labelled measurements and recovery/Coach guidance; current Samsung Energy Score when available. |
+| Distance and intervals | Phone or watch GPS recording, private routes displayed on the phone, indoor timing without GPS and explicit measurement completion without an extra set confirmation. |
+| Wear OS | Planned/quick and offline workouts, phone/watch control and acknowledged handoff, supported Health Services measurements, Mini diary, Tile, complication, crown/bezel editing and touch lock. |
+| Backup and sync | Local JSON/ZIP backups, optional Google Drive app-data sync and Google Calendar integration. |
+| Personalisation | HU/EN/DE/RO interface, themes, larger system text and configurable training/rest feedback. |
+
+[Detailed feature guide in Hungarian](docs/FEATURES.hu.md).
 
 Availability depends on the device, provider, permissions and data actually shared. Successful Samsung reading on the accepted device does not establish production partner access for every installation. See the [Play preparation checklist](docs/PLAY_STORE_CHECKLIST_2026.md).
 
-## Interface examples
+## Screenshots
 
-| Calendar and planning | Coach with larger system text |
+| Home | Program day |
 | --- | --- |
-| ![Calendar with workout planning](docs/screenshots/calendar-planner.png) | ![Coach with larger text](docs/screenshots/coach-large-text.png) |
+| ![Home](docs/screenshots/home.png) | ![Program day](docs/screenshots/program-day.png) |
 
-These are synthetic Chromium fixtures from the accepted source, not personal health records or native device-test evidence. [Screenshot provenance](docs/screenshots/README.md).
+| Active workout and automatic rest | Personal-record details (Romanian interface) |
+| --- | --- |
+| ![Active workout and automatic rest](docs/screenshots/active-workout.png) | ![Personal-record details (Romanian interface)](docs/screenshots/personal-record.png) |
+
+| Progress and muscle-group workload | Health overview |
+| --- | --- |
+| ![Progress and muscle-group workload](docs/screenshots/progress.png) | ![Health overview](docs/screenshots/health.png) |
+
+| Calendar and planning | Coach guidance |
+| --- | --- |
+| ![Calendar and planning](docs/screenshots/calendar.png) | ![Coach guidance](docs/screenshots/coach.png) |
+
+| Wear OS home | Wear OS active workout |
+| --- | --- |
+| ![Wear OS home](docs/screenshots/wear-home.png) | ![Wear OS active workout](docs/screenshots/wear-workout.png) |
+
+Unmodified captures from the 1.3.71 source: shared phone UI in Chromium and native Wear UI on a round emulator. They use synthetic fixtures and demonstrate several themes/languages. They are not personal health records or approved Play listing device photos. [Provenance and full-size images](docs/screenshots/README.md).
 
 ## Documentation
 

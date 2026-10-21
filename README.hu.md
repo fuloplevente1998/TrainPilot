@@ -15,26 +15,47 @@ Az 1.3.71 javítja a PR-részletek visszazárását, laposabbá teszi az Edzéss
 
 A telefonos APK a telefonra, a Wear APK az órára való. Frissítéskor őrizd meg az alkalmazás adatait. A forrás, ellenőrzőösszeg és buildadat mindig az adott kiadáshoz tartozik; régi verzió választása előtt nézd meg a [jegyzéket](docs/releases/INDEX.md). A Play-megjelenés előkészítése a [#214](https://github.com/fuloplevente1998/TrainPilot/issues/214) része.
 
-## Az elfogadott main fő funkciói
+## Az alkalmazás funkciói
 
-- Saját programok, gyors edzés, gyakorlatkönyvtár, sorozat-/ismétlés-/súlyrögzítés, időzítők, Napló és fejlődés.
-- Normál/HIT-inspirált stílus, dupla/lineáris/RIR progresszió, előnézet, jóváhagyás és visszavonás; tényleges sorozatonkénti RIR-bevitel.
-- Dátumozott, forrással jelölt regeneráció: mai hiteles Samsung-pontszám esetén automatikusan az az alap, hiánynál a TrainPilot saját becslése. A fájdalom/terhelés korlátai megmaradnak.
-- Health Connect vagy közvetlen Samsung Health import, tartós helyi egészségnapló, külön TrainPilot Wear-mérési forrás.
-- Telefon–óra vezérlés, automata munka/pihenő, visszaigazolt átadás, önálló/offline órás edzés, Mini napló, Tile és számlapi kiegészítő.
-- Opcionális GPS-távolság és privát útvonal; GPS nélküli beltéri intervallumok.
-- Helyi JSON/ZIP-mentés, privát edzésfotók, opcionális Drive `appDataFolder` és Google Naptár.
-- Több nyelv, témák és rendszerbetűméret-támogatás.
+| Terület | Elérhető funkciók |
+| --- | --- |
+| Tervezés | Saját és profil alapján ajánlott programok, szerkeszthető programnapok, gyakorlatkönyvtár, gyors edzés, naptár, célok és kihagyott alkalmak újratervezése. |
+| Erősítés | Sorozatok, ismétlések és súlyok; automatikus előtöltés a legutóbbi megfelelő teljesített gyakorlatból; normál/HIT stílus, dupla, lineáris és RIR/Coach progresszió. |
+| Edzés közben | Munka/pihenő időzítők, automata fázisok, hang/rezgés, sorozat-visszavonás és sorozatonkénti tényleges 0–10 RIR. |
+| Napló és fejlődés | Edzésnapló, megnyitható PR-jelvények, volumen- és kardióstatisztika, becsült 1RM, izomcsoport-terhelés és privát edzésfotók. |
+| Egészség és regeneráció | Health Connect vagy Samsung Health import, helyi egészségnapló, forrással jelölt mérések, regeneráció/Coach és elérhető mai Samsung Energy Score. |
+| Távolság és intervallum | Telefonos vagy órás GPS, privát útvonal telefonos térképpel, GPS nélküli beltéri időmérés; a sikeres mérésbefejezéshez nincs külön sorozat-OK. |
+| Wear OS | Tervezett/gyors és offline edzés, telefon–óra vezérlés és visszaigazolt átadás, támogatott Health Services-mérések, Mini napló, Tile, komplikáció, korona/lünetta és érintészár. |
+| Mentés és szinkron | Helyi JSON/ZIP-mentés, opcionális Google Drive appadat-szinkron és Google Naptár-integráció. |
+| Testreszabás | HU/EN/DE/RO felület, témák, nagyobb rendszerbetű és állítható edzés-/pihenőjelzések. |
+
+[Részletes funkcióáttekintés](docs/FEATURES.hu.md).
 
 A szolgáltatói adat elérhetősége a készüléktől, engedélyektől és tényleges megosztástól függ. A saját készülékes Samsung-siker nem bizonyítja a nyilvános production partner-hozzáférést. [Play-előkészítés](docs/PLAY_STORE_CHECKLIST_2026.md).
 
-## Felületi példák
+## Képernyőképek
 
-| Naptár és tervezés | Coach nagyobb rendszerbetűvel |
+| Kezdőlap | Programnap |
 | --- | --- |
-| ![Naptár és edzéstervezés](docs/screenshots/calendar-planner.png) | ![Coach nagyobb betűkkel](docs/screenshots/coach-large-text.png) |
+| ![Kezdőlap](docs/screenshots/home.png) | ![Programnap](docs/screenshots/program-day.png) |
 
-Szintetikus Chromium-tesztadatok az elfogadott forrásból; nem személyes egészségadat vagy natív készülékes bizonyíték. [Eredet](docs/screenshots/README.md).
+| Aktív edzés és automata pihenő | Személyes rekord részletei (román felület) |
+| --- | --- |
+| ![Aktív edzés és automata pihenő](docs/screenshots/active-workout.png) | ![Személyes rekord részletei (román felület)](docs/screenshots/personal-record.png) |
+
+| Fejlődés és izomcsoport-terhelés | Egészségáttekintés |
+| --- | --- |
+| ![Fejlődés és izomcsoport-terhelés](docs/screenshots/progress.png) | ![Egészségáttekintés](docs/screenshots/health.png) |
+
+| Naptár és tervezés | Coach-ajánlások |
+| --- | --- |
+| ![Naptár és tervezés](docs/screenshots/calendar.png) | ![Coach-ajánlások](docs/screenshots/coach.png) |
+
+| Wear OS kezdőlap | Wear OS aktív edzés |
+| --- | --- |
+| ![Wear OS kezdőlap](docs/screenshots/wear-home.png) | ![Wear OS aktív edzés](docs/screenshots/wear-workout.png) |
+
+Az 1.3.71 forrásából készült, változtatás nélkül átvett képek: a telefonos közös felület Chromiumban, a Wear natív kerek emulátoron. Szintetikus tesztadatokat és több témát/nyelvet mutatnak. Nem személyes egészségadatok és nem Play-listingre jóváhagyott készülékfotók. [Képek eredete és teljes felbontás](docs/screenshots/README.md).
 
 ## Dokumentáció és fejlesztés
 
