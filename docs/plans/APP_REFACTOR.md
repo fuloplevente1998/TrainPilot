@@ -4,7 +4,7 @@ Felhasználói indítás: 2026-10-21. Kiinduló main `bc43d4e`, 1.3.71 /2735.
 Az audit és Claude elemzése alapján fokozatos egyszerűsítés; verzióemelés és main
 merge nincs automatikusan engedélyezve.
 
-## 1. Mentési integritás és központi lezárás – #235, készülékes próba előtt
+## 1. Mentési integritás és központi lezárás – #235, első kör készüléken elfogadva
 
 - A `finishWorkout` korábbi 11 definíciós/hozzárendelési helye és a dinamikus
   finish-wrapperek helyett egy belépési pont és név szerint hívott lépések.
@@ -21,6 +21,20 @@ merge nincs automatikusan engedélyezve.
 - Célzott regresszió: írási határok/rollback/újrapróbálás/reload, natív lezárási
   hiba, nyugta visszatartása, megerősítés megszakítása/dupla kattintás, régi
   sorozat/stopper/naptár/órás lezárás, GPS külön OK nélküli teljesítése.
+
+## Köztes készülékes hibajavítás – #235
+
+- Dupla plankóra: felső intervallumos óra eltávolítása, alsó eredeti óra és
+  összecsukott intervallumválasztás. Explicit pozitív stop készre jelöl; a nullát,
+  implicit leállítást és a kétoldali feltételt célzott teszt védi.
+- Naptár/Coach/Beállítások görgetési akadás: az órás háttérkatalógus egy közös
+  history-snapshotot/indexet használ 130 helyett 2 olvasással; üres törlési lista
+  nem hash-eli a teljes edzést. Aktív panelgesztus alatt a közönséges katalógus
+  frissítése vár, a workout-protokoll és force nem. 200/1500 edzéses célzott mérés;
+  egyenlő elemszámú szerkesztés/tombstone frissesség külön ellenőrzött.
+- Készenlét képlete változatlan; a Samsung-pontszám terhelés/fájdalom miatti
+  konkrét korlátozásának magyarázata megjelenik a részletezőben.
+- Ez nem oldja meg az összes render-/napló-/tárolási auditpontot.
 
 ## 2. Napló és PR teljesítmény – következő kör
 

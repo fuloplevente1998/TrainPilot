@@ -106,6 +106,11 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 - Telefonos GPS-es távolsági sorozatnál a sikeres, kifejezett „Mérés befejezése”
   készre jelöl és menthetővé tesz külön sorozat-OK nélkül (#206/#208). Térképbezárás,
   hibás vagy implicit GPS-stop önmagában nem teljesítés; ezt regresszióval védd.
+- Telefonos időmérésnél az eredeti alsó sorozatstopper marad; külön felső
+  intervallumos stopper ne jelenjen meg. Az intervallum beállítása opcionális,
+  összecsukott rész. Explicit pozitív stopper-stop külön OK nélkül készre jelöl;
+  implicit pause/navigáció/nullázás/0 másodperc nem. Kétoldali sorozathoz mindkét
+  pozitív oldal szükséges. Az eredeti visszavonás/natív rögzítés megőrzendő.
 - #188 Visszavonás és #189 egyetlen folyamatos 3 mp-es feloldás elfogadva/mainen.
   #192 és #211 sztornózott, kódjukat ne éleszd újra. #208-cal bekerült GPS STOP
   viselkedést ne fejleszd újra. A pontos nyitott sorrend a handoffban található.

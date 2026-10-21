@@ -46,13 +46,15 @@ const server=http.createServer((req,res)=>{
   for(const width of [393,320]){
    await page.setViewportSize({width,height:873});
    const m=await page.evaluate(()=>{
-    const panel=document.getElementById('tp107Indoor'),b=panel?.getBoundingClientRect();
+    const panel=document.getElementById('tp107Indoor'),b=panel?.querySelector('.tp110-interval')?.getBoundingClientRect();
     const strong=panel?.querySelector('strong:first-child'),cs=strong?getComputedStyle(strong):null;
     const phase=panel?.querySelector('.tp110-interval-phase'),ps=phase?getComputedStyle(phase):null;
     return {h:Math.round(b?.height||0),strongVisible:cs?.display!=='none',phaseVisible:ps?.display!=='none',overflowX:document.documentElement.scrollWidth-innerWidth};
    });
-   assert.ok(m.h<=185,`plank collapsed height must be compact (<=185px, got ${m.h}px on ${width}px)`);
-   assert.equal(m.strongVisible,false,'duplicate top strong must be hidden on plank');
+   assert.ok(m.h<=65,`optional interval row must be compact (<=65px, got ${m.h}px on ${width}px)`);
+   assert.equal(await page.locator('#rf110Stopwatch').count(),1,'the lower stopwatch is preserved');
+   assert.equal(await plankPanel.locator('.tp107-clock').count(),0,'the upper interval stopwatch is removed');
+   assert.equal(m.strongVisible,true,'the lower stopwatch title remains visible');
    assert.equal(m.phaseVisible,false,'empty interval phase must be hidden when idle');
    assert.ok(m.overflowX<=2,`no horizontal overflow on ${width}px`);
   }
@@ -92,10 +94,10 @@ const server=http.createServer((req,res)=>{
   for(const width of [393,320]){
    await page.setViewportSize({width,height:873});
    const sm=await page.evaluate(()=>{
-    const panel=document.getElementById('tp107Indoor'),b=panel?.getBoundingClientRect();
+    const panel=document.getElementById('tp107Indoor'),b=panel?.querySelector('.tp110-interval')?.getBoundingClientRect();
     const clock=panel?.querySelector('.tp107-clock'),cs=clock?getComputedStyle(clock):null;
-    const saveRow=panel?.querySelector('.tp107-save-row'),rs=saveRow?getComputedStyle(saveRow):null;
-    return {h:Math.round(b?.height||0),clockVisible:cs?.display!=='none',saveVisible:rs?.display!=='none',overflowX:document.documentElement.scrollWidth-innerWidth};
+    const saveRow=panel?.querySelector(':scope > .tp107-save-row'),rs=saveRow?getComputedStyle(saveRow):null;
+    return {h:Math.round(b?.height||0),clockVisible:!!clock&&cs.display!=='none',saveVisible:!!saveRow&&rs.display!=='none',overflowX:document.documentElement.scrollWidth-innerWidth};
    });
    assert.ok(sm.h<=65,`side-plank collapsed height must be compact (<=65px, got ${sm.h}px on ${width}px)`);
    assert.equal(sm.clockVisible,false,'redundant single clock hidden on bilateral idle');
@@ -111,7 +113,7 @@ const server=http.createServer((req,res)=>{
   });
   await page.waitForTimeout(200);
   const largeMetrics=await page.evaluate(()=>{
-   const panel=document.getElementById('tp107Indoor'),b=panel?.getBoundingClientRect();
+   const panel=document.getElementById('tp107Indoor'),b=panel?.querySelector('.tp110-interval')?.getBoundingClientRect();
    return {h:Math.round(b?.height||0),overflowX:document.documentElement.scrollWidth-innerWidth};
   });
   assert.ok(largeMetrics.overflowX<=3,'no horizontal overflow under large text mode');
@@ -134,6 +136,7 @@ const server=http.createServer((req,res)=>{
   assert.equal(nativeProbe.left,0);assert.equal(nativeProbe.right,0);
 
   // Both manual side clocks must persist positive seconds independently.
+  const sideSetId=await page.evaluate(()=>state.session.exercises[state.current].sets.find(x=>!x.done).setId);
   for(const side of ['left','right']){
    await page.locator('#tp1481SideToggle-'+side).click();
    await page.waitForFunction(side=>{
@@ -141,9 +144,9 @@ const server=http.createServer((req,res)=>{
     return Number(set?.[side+'Seconds']||0)>=1;
    },side);
    await page.locator('#tp1481SideToggle-'+side).click();
-   const stored=await page.evaluate(()=>state.session.exercises[state.current].sets.find(x=>!x.done));
+   const stored=await page.evaluate(id=>state.session.exercises[state.current].sets.find(x=>x.setId===id),sideSetId);
    assert.ok(Number(stored[side+'Seconds'])>=1,side+' timer persists positive seconds');
-   assert.equal(stored.done,false,'recording a side does not bypass explicit set completion');
+   assert.equal(stored.done,side==='right','the second explicit side stop completes the set; a single side is insufficient');
    if(side==='left')assert.equal(Number(stored.rightSeconds||0),0,'left clock leaves right side unrecorded');
   }
 

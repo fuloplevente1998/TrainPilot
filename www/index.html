@@ -1109,9 +1109,10 @@
   return Array.isArray(rows)?rows.filter(x=>x&&typeof x==='object'):[];
  };
  window.tp3HistoryIsDeleted=function(x){
+  const tombstones=tp3HistoryTombstones();if(!tombstones.length)return false;
   const id=tp3HistoryIdentity(x);
   if(!id.ids.length&&!id.key)return false;
-  return tp3HistoryTombstones().some(t=>{
+  return tombstones.some(t=>{
    const ids=Array.isArray(t.ids)?t.ids:[];
    return (id.key&&t.key&&id.key===t.key)||id.ids.some(v=>ids.includes(v));
   });

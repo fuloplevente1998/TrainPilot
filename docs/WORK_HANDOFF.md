@@ -1,10 +1,44 @@
 # TrainPilot – aktuális átadás
 
-Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.3.71 a GitHub Latest.** A #225 audit PR beolvasztás nélkül lezárva, #230/#234 által felváltva; #235 draft, készülékes elfogadásra vár; #214 karbantartási issue marad;  [takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
+Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.3.71 a GitHub Latest.** A #225 audit PR beolvasztás nélkül lezárva, #230/#234 által felváltva; #235 draft, mentési kör készüléken elfogadva; új UI/teljesítményjavítás ellenőrzés alatt; #214 karbantartási issue marad;  [takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
-## Folyamatban – #235 alkalmazás-rendbetétel, 1. kör készülékes próbára kész
+## Folyamatban – #235, új készülékes hibák javítása
+
+- Az első kör `655183c` APK-járól felhasználói visszajelzés: nincs dupla edzés,
+  törlés után nem tér vissza a bejegyzés; a többi kért ellenőrzés működik.
+  Ez készülékes mentési elfogadás, **nem main merge-engedély**.
+- Új hibák: Naptár/Coach/Beállítások görgetése 1–1,5 s-ra akad; planknél dupla
+  stopper; stopper leállítása után felesleges sorozat-OK; készenléti pont nem érthető.
+- Döntés: **a felső intervallumos stopper kerül ki, az eredeti alsó marad**.
+  Az intervallumbeállítás az alsó kártyában összecsukott, választható rész;
+  nem készül új stopper vagy új globális render-/finish-wrapper.
+- Explicit pozitív stopper-stop az eredeti `toggleSet` folyamaton jelöl készre,
+  megőrizve visszavonást/haptikát/natív rögzítést. Nulla, implicit pause/halt,
+  navigáció és nullázás nem teljesítés. Oldalsó planknél két pozitív oldal kell.
+- A Wear háttérkatalógus publikálásakor 130 history-olvasás helyett 2: közös
+  publikációs pillanatkép és előtöltési index; törlési ellenőrzés egyszer soronként,
+  üres tombstone-listán nincs teljes legacy hash. Nincs tartós, elemszám alapú cache:
+  azonos hosszúságú szerkesztés/törlés a következő publikációban megjelenik.
+  A már törölt sor a friss órás előzménylistából is kimarad.
+- Panelgörgetés/touchmove alatt csak a közönséges home/katalógus küldés vár
+  180 ms nyugalomra. Kifejezett force és az aktív edzés parancs-/állapotszinkronja
+  nem vár; az eredeti frissítés automatikusan folytatódik.
+- Mai készenlét képe: Samsung 87, effort-load 45 → meglévő <55 korlát miatt 54;
+  külön TP-becslés `70 + (45−70)×0,35`, kerekítve 61. Nem összeadás/átlag.
+  Az alacsony load-pont nagyobb jelentett megterhelést jelent. A képlet változatlan,
+  a részletezőben HU/EN/DE/RO magyarázat jelenik meg a konkrét 87 → 54 korlátra.
+- Helyi célzott eredmény: előtöltési index kompatibilitás PASS; időzítő 8 nyelv/méret
+  kombináció, explicit/implicit/0 stop és 200/1500 edzéses publikálás PASS;
+  kompakt egy-/kétoldali UI PASS; korábbi mentési integritás 14/14 PASS;
+  egyetlen finish-belépő strukturális ellenőrzése PASS.
+- **Új forrás még nincs CI-n bevizsgálva / APK átadva.** Következő: commit/push,
+  azonos alkalmazásforrású GitHub-kapuk, új telefonos teszt-APK, fizikai görgetés és
+  stopper-próba. Verzió változatlan 1.3.71 /2735, #235 draft, main változatlan.
+  A teljes Napló/PR lapozás és általános tárolási helyreállítás későbbi kör marad.
+
+## Előző bevizsgált #235 alkalmazásforrás – mentési kör
 
 - [#235 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/235), ág
   `refactor/workout-finalization`. Alap main `bc43d4e`; változatlan verzió **1.3.71 /2735**.
@@ -32,7 +66,7 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
   Wear alkalmazáskód nem változott; az új build ugyanahhoz a commitpárhoz tartozik.
   Mindkét APK **1.3.71 /2735**, aláírás és signer-folytonosság sikeres.
 - [CI/APK bizonylat](builds/2026-10-21-235-workout-finalization.json).
-  Main merge/release/verzióemelés nem történt, készülékes elfogadás még nincs.
+  Main merge/release/verzióemelés nem történt; a mentési kör készülékes elfogadása a fenti új szakaszban szerepel.
 - Készülékes smoke: telefonos és órás befejezés egyszeri naplóbejegyzéssel;
   részleges mentés Mégse/Mentés; oldalsó stopper; GPS sikeres Mérés befejezése
   külön sorozat-OK nélkül; tervezett edzés naptárban teljesült.
@@ -312,9 +346,9 @@ A későbbi dokumentációs HEAD nem új alkalmazásbuild; a két APK tényleges
   későbbi megvalósítás külön tesztágon. [Részletes #193 terv](wear/P2_193_ONALLO_ORAS_EDZES.md).
 - Régi hosszú átadás: `885b6df:docs/WORK_HANDOFF.md` a Git-történetben; történeti státuszai elavultak.
 
-## Környezet
+## Történeti környezeti megjegyzés (új munkamenetben ellenőrizendő)
 
-CLI auth lejárt (gh 401, git fetch/push credential nélkül), GitHub connector működik.
+Korábban: CLI auth lejárt (gh 401, git fetch/push credential nélkül), GitHub connector működik.
 Ne írj ki credentialt, ne force-pusholj. Contents/Git tree/commit + expected_sha CAS használható.
 Helyi `local-release-136` más commitazonosítókat tartalmaz, alkalmazásforrás azonos; **ne pushold
 vakon a helyi feature ágat**. A távoli main/PR-head a kanonikus. APK-hoz GitHub artifact permalink

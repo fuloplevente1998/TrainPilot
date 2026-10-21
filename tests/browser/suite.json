@@ -430,5 +430,9 @@
   {
     "file": "tests/browser/workout-finalization-integrity.cjs",
     "estimatedSeconds": 15
+  },
+  {
+    "file": "tests/browser/timed-stop-panel-performance.cjs",
+    "estimatedSeconds": 15
   }
 ]

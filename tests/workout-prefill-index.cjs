@@ -1,0 +1,20 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const app=fs.readFileSync('www/app.js','utf8'),start=app.indexOf('// @prefill228-start'),end=app.indexOf('// @prefill228-end',start);
+const context=vm.createContext({Map,Date,crypto:require('node:crypto').webcrypto,window:{}});
+vm.runInContext(app.slice(start,end),context);
+const result=vm.runInContext(`(()=>{
+ const exercise={id:'press',loadType:'per_hand',repUnit:'ism.'},row=(id,days,sets)=>({id,started:new Date(Date.now()-days*86400000).toISOString(),finished:new Date(Date.now()-days*86400000+3600000).toISOString(),exercises:[{...exercise,sets}]});
+ const valid=(weight,reps,done=true)=>({weight,reps,done});
+ const rows=[row('latest',1,[valid(9,'12'),valid(10,'',false)]),row('older',2,[valid(8,'10'),valid(8,'11')]),row('deleted',.5,[valid(50,'20')]),row('future',-2,[valid(99,'10')])];
+ rows.push({...row('duplicate',.8,[valid(44,'10')]),exercises:[{...exercise,sets:[valid(44,'10')]},{...exercise,sets:[valid(55,'10')]}]});
+ rows.push({...row('cancelled',.4,[valid(100,'20')]),cancelled:true});
+ const deleted=x=>x.id==='deleted',index=tp228Index(rows,deleted);
+ const plain=tp228BuildSets(null,exercise,3,5,rows,{template:true,isDeleted:deleted});
+ const indexed=tp228BuildSets(null,exercise,3,5,rows,{template:true,index});
+ const unknown=tp228BuildSets(null,{...exercise,id:'other'},1,6,rows,{template:true,index});
+ const timed=tp228BuildSets(null,{...exercise,repUnit:'mp'},1,0,rows,{template:true,index});
+ const mismatch=tp228BuildSets(null,{...exercise,loadType:'total'},1,7,rows,{template:true,index});
+ return JSON.stringify({plain,indexed,unknown,timed,mismatch});
+})()`,context);
+const x=JSON.parse(result);assert.deepEqual(x.indexed,x.plain);assert.deepEqual(x.indexed.map(s=>[s.weight,s.reps,s.done]),[[9,'12',false],[8,'11',false],[5,'',false]]);assert.equal(x.unknown[0].weight,6);assert.equal(x.timed[0].reps,'');assert.equal(x.mismatch[0].weight,7);
+console.log('PASS per-publication prefill index: legacy equivalence, partial sets, deleted/future/cancelled/duplicate rows and unit/load isolation.');
