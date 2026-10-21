@@ -1,10 +1,51 @@
 # TrainPilot – aktuális átadás
 
-Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.3.71 a GitHub Latest.** A #225 audit PR beolvasztás nélkül lezárva, #230/#234 által felváltva; #235 draft, mentési kör készüléken elfogadva; UI/stopper és görgetési kör készüléken elfogadva; első oldalváltások lassúsága még vizsgálat alatt; #214 karbantartási issue marad;  [takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
+Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.3.71 a GitHub Latest.** A #225 audit PR beolvasztás nélkül lezárva, #230/#234 által felváltva; #235 draft, mentési kör készüléken elfogadva; UI/stopper és görgetési kör készüléken elfogadva; új hidegindítási teszt-APK kész, készülékes próba függőben; #214 karbantartási issue marad;  [takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
-## Folyamatban – #235, lassú indulás és tartós navigációs késés
+## Folyamatban – #235, hidegindítás és első oldalváltások
+
+- Új készülékes visszajelzés: a korábbi javítással gyorsabb, de még nem megfelelő;
+  a maradék főleg **indításkor és az első néhány váltáskor** érezhető.
+- A hideg első render a DCL-modulok előtt futott, a közös naplóolvasás nélkül.
+  Most a végső modulok telepítése után, a meglévő olvasási scope-ban indul.
+  Korai natív finish nem előzheti meg ezt; a restore-barrier megmarad. A helyes
+  Mai javaslat kártya ismételt startup-javítása 0 újraszámítás; valódi régi
+  kártya javítása megmarad. A profilmodul a tényleges restore utáni adatokból
+  választ welcome/Home képernyőt az első renderben, külön korai render nélkül.
+- **Végső alkalmazás-/APK-/tesztforrás: `1f1f98d03873282d27e20dc9c9d2c25ae14d2e20`.**
+  PR teszt-merge és HEAD fa azonos: `5c5575b1770a79dd50128e27623563a180d32621`.
+  Az ezt követő dokumentációs commit nem új alkalmazásbuild.
+- Összehasonlító profil: 4× lassított Chromium, ugyanazon runneren `8a49c04`
+  ellen. 0/200/1500 edzés indulása **331→144 / 1213→299 / 4975→555 ms**;
+  teljes startup history-olvasás **56/74/74→6/6/6**. Egy app-root írás, DCL előtt
+  0; első renderben legfeljebb egy journal-olvasás. Nem fizikai telefonmérés.
+  A későbbi navigáció idejében nincs igazolt következetes gyorsulás.
+- Forrásazonos kapuk: Quick **39658073740: 162/162**; Performance **39658088051**;
+  telefon **39658078365: 6/6 Chromium, 109/109 külön modul, 251/251 natív**;
+  natív WebView **39658083652: 3/3**; Wear **39658092578: 167/167**;
+  kerek UI **39658096720: 183/183** (68+59+56). Minden letöltött XML/JSON-ban
+  0 failure/error/skipped. A WebView 200 edzéses Activity-újranyitásai 127/87 ms;
+  ez nem folyamat-force-stop vagy fizikai érintési késés/FPS mérése.
+- **Új teszt-APK-pár, 1.3.71 /2735:**
+  [Telefon](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39658078365/artifacts/12372449697),
+  SHA-256 `bc45410b3d4de1135490004ab196c73157da234155a31342837fdc06ca5a140c`;
+  [Wear](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39658092578/artifacts/12371179081),
+  SHA-256 `50ebcda68e52aae5590caa6b2c19380307e1652121e65008fc000119b9e90f91`.
+  Telefon: 31 byteazonos webasset, 805 Git-azonos forrásfájl és pontos fájllista,
+  helyes source stamp/verzió/SHA256SUMS. Mindkét APK eredeti v2 signerhash-e
+  ellenőrzött; CI apksigner és signer-folytonosság PASS. Wear-kód nem változott.
+- Köztes hibák: `c4e6583` friss welcome-regresszióját javítottuk; korábbi natív
+  fókuszhiba pontos oka nem igazolt, az elvárás változatlan, végső 3/3 PASS.
+  A telefon release első kísérlete Maven-letöltésen állt meg; kizárólag a hibás
+  release job újrafuttatása sikeres, forrás változatlan. [Bizonylat](builds/2026-10-21-235-cold-startup.json).
+- **Következő:** az új telefon-APK teljes bezárás/újranyitás utáni azonnali
+  készülékes próbája, első néhány oldalváltással. Elfogadás még nincs; #235 draft,
+  main `bc43d4e`, verzió és kiadás változatlan. Nincs merge vagy issue-lezárás.
+
+### Előző kör – háttérterhelés javítása
+
 
 - **Új készülékes visszajelzés (2026-10-21):** a `3199528` teszt-APK-val az indulás
   továbbra is nagyon lassú; 15 s várakozás csak részben segít, az oldalváltások
