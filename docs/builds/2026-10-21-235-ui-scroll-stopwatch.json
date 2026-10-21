@@ -105,7 +105,7 @@
   "deviceAcceptance": {
     "previousFinalizationSource": "655183c93ba9d63b30d59dd4bea89117ae7b94cb",
     "previousSaveDeleteSmoke": "user confirmed no duplicate workouts and no resurrection after deletion",
-    "currentUiScrollStopwatch": "pending"
+    "currentUiScrollStopwatch": "user accepted: Rendben, jo lett; first navigation after app startup remains slow and is being investigated separately"
   },
   "scope": [
     "one canonical finalization coordinator with safe retry and native close",

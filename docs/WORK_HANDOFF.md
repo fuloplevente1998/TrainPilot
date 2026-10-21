@@ -1,11 +1,24 @@
 # TrainPilot – aktuális átadás
 
-Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.3.71 a GitHub Latest.** A #225 audit PR beolvasztás nélkül lezárva, #230/#234 által felváltva; #235 draft, mentési kör készüléken elfogadva; új UI/teljesítményjavítás teljes CI-je zöld, készülékes próbára vár; #214 karbantartási issue marad;  [takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
+Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.3.71 a GitHub Latest.** A #225 audit PR beolvasztás nélkül lezárva, #230/#234 által felváltva; #235 draft, mentési kör készüléken elfogadva; UI/stopper és görgetési kör készüléken elfogadva; első oldalváltások lassúsága még vizsgálat alatt; #214 karbantartási issue marad;  [takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
-## Folyamatban – #235, UI/görgetés/stopper javítás készülékes próbára kész
+## Folyamatban – #235, első oldalváltások lassúsága
 
+- Új visszajelzés a `1b5e488` teszt-APK-ról: „Rendben, jo lett.” A stopper- és
+  görgetési javítás elfogadott. Maradék: appindítás után az első oldalváltások
+  kifejezetten lassúak, később gyorsak. Ennek külön célzott profilozása folyamatban;
+  main merge/release/verzióemelés nincs engedélyezve.
+- Célzott első/második oldalnyitási profil: Chromium 4× CPU, 0/200/1500 szintetikus
+  edzés. A készülék konkrét hidegindítási késését nem reprodukáltuk pontosan.
+  Layout/stílus költség és nagy háttér-Napló DOM kimutatható, de a geometriai
+  műveletek összevonása nem adott következetes teljes javulást. A kísérlet app/index
+  módosítása visszaállítva, nincs belőle új alkalmazáskód vagy APK.
+- Függő célzott kérdés: minden teljes appbezárás/újraindítás után visszatér-e,
+  vagy csak APK-telepítés utáni első indításnál volt. Ez választja szét a rendszer
+  egyszeri bemelegedését a visszatérő hidegindítási útvonaltól. Ne tekintsd ezt
+  megoldottnak a korábbi zöld CI vagy a stopper elfogadása miatt.
 - Az első kör `655183c` APK-járól felhasználói visszajelzés: nincs dupla edzés,
   törlés után nem tér vissza a bejegyzés; a többi kért ellenőrzés működik.
   Ez készülékes mentési elfogadás, **nem main merge-engedély**.
@@ -61,7 +74,7 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
   Következő készülékes próba: Naptár/Coach/Beállítások tartós görgetése; plank explicit
   Stop → kész pipa külön OK nélkül → Visszavonás; oldalanként két pozitív idő;
   visszavonás utáni szerkesztés/újranyitás. A Samsung 87 → 54 magyarázat legyen látható.
-  **Friss kör készülékes elfogadása még nincs.** #235 draft, main `bc43d4e` változatlan,
+  **Stopper/görgetési kör készüléken elfogadva; első navigáció lassúsága külön marad.** #235 draft, main `bc43d4e` változatlan,
   nincs merge, release vagy verzióemelés. A teljes Napló/PR lapozás és általános
   tárolási helyreállítás későbbi kör marad.
 

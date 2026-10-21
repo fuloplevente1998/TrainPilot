@@ -22,7 +22,7 @@ merge nincs automatikusan engedélyezve.
   hiba, nyugta visszatartása, megerősítés megszakítása/dupla kattintás, régi
   sorozat/stopper/naptár/órás lezárás, GPS külön OK nélküli teljesítése.
 
-## Köztes készülékes hibajavítás – #235, CI zöld / új készülékes próba előtt
+## Köztes készülékes hibajavítás – #235, CI zöld / készüléken elfogadva, első navigáció vizsgálata
 
 - Dupla plankóra: felső intervallumos óra eltávolítása, alsó eredeti óra és
   összecsukott intervallumválasztás. Explicit pozitív stop készre jelöl; a nullát,
@@ -36,6 +36,10 @@ merge nincs automatikusan engedélyezve.
   konkrét korlátozásának magyarázata megjelenik a részletezőben.
 - `1b5e488`: Quick 161/161, UI 109/109, telefon natív 251/251, Wear 167/167,
   kerek UI 183/183, valódi WebView 1/1; minden kapu zöld. APK/bizonylat a handoffban.
+- Készülékes új jelzés: az első oldalváltások lassúak, később gyorsak. Célzott
+  profilozás megtörtént; elrendezés-összevonási kísérlet nem hozott következetes
+  gyorsulást, ezért nem került alkalmazáskód a PR-ba. Telepítés utáni egyszeri
+  indulás vagy minden hideg újraindítás: felhasználói pontosításra vár.
 - Ez nem oldja meg az összes render-/napló-/tárolási auditpontot.
 
 ## 2. Napló és PR teljesítmény – következő kör
