@@ -4,6 +4,15 @@ Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Új jóváhagyott P1–P4 javítási sorrend (2026-10-22)
+
+- Az átadott `TrainPilot-javitasi-prompt.md` alapján a **[részletes P1–P4 javítási terv](plans/TRAINPILOT_JAVITASI_TERV_2026-10-22.md)** az irányadó. A dokumentációs tervrögzítés nem új alkalmazás- vagy APK-build.
+- Első következő implementáció: P1.1 – a panel-frissítés és az elrendezésolvasások mérése, majd direkt javítása új `render`/`go` wrapper nélkül. 0/200/1500 workout, 4× CPU és **legalább 5 futás medián**, előtte/utána összehasonlítás szükséges.
+- P1.4 csak részben készült el: a PR-kártyákhoz az aliasindex van, de a `workout-records-226` `data()` minden paint során még megvizsgálja a teljes history/tombstone raw sztringeket. Azonos elemszámú módosítások frissessége maradjon garantált.
+- 2026-10-21-i aktuális `96a31a7` [profilfutás](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39689250994) egyetlen 1500-as ciklusában a Naptár ~253, Coach ~222, Beállítások ~225 ms két-RAF proxy; ezek **nem** az ötismétléses végleges baseline-ok. A prompt régebbi 490 ms állítása újramérendő.
+- Main merge/release/issue-zárás nincs engedélyezve; a #237 továbbra is Draft. Az `AGENTS.md` és `APP_REFACTOR.md` biztonsági/tesztelési szabályai érvényesek.
+
+
 ## #236 – Napló DOM, PR-alias és navigációs gyorsítás (Draft PR #237, 2026-10-21)
 
 - Ág: `perf/236-journal-dom`; base `refactor/workout-finalization` (#235), [Draft PR #237](https://github.com/fuloplevente1998/TrainPilot/pull/237), [issue #236](https://github.com/fuloplevente1998/TrainPilot/issues/236). Az alkalmazáskód végső teszt-/APK-commitja: `7a12846301553b65a24fd5f1762e4498f85c4f99`. Ezután kizárólag átadási dokumentáció frissül; az APK forrását ne keverd össze a dokumentációs HEAD-del.
