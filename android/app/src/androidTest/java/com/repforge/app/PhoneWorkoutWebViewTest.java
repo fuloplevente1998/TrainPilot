@@ -75,16 +75,27 @@ public class PhoneWorkoutWebViewTest {
                 for(int cycle=1;cycle<=2;cycle++)for(String route:routes){
                     String selector=route.equals("coach")?".top .tp154-coach-action":route.equals("settings")?".top .tp154-settings-action":
                         ".top [onclick=\"go('"+route+"')\"]";
-                    String encoded=evaluate(view,"JSON.stringify((()=>{const e=document.querySelector("+JSONObject.quote(selector)+");if(!e)throw Error('Missing navigation '+"+JSONObject.quote(route)+");const r=e.getBoundingClientRect();__coldNav.pending={route:"+JSONObject.quote(route)+",cycle:"+cycle+"};return {x:r.x+r.width/2,y:r.y+r.height/2,dpr:devicePixelRatio};})())");
+                    String encoded=evaluate(view,"JSON.stringify((()=>{const e=document.querySelector("+JSONObject.quote(selector)+");if(!e)throw Error('Missing navigation '+"+JSONObject.quote(route)+");const r=e.getBoundingClientRect();__coldNav.pending={route:"+JSONObject.quote(route)+",cycle:"+cycle+"};return {x:r.x+r.width/2,y:r.y+r.height/2,viewportWidth:innerWidth,viewportHeight:innerHeight,dpr:devicePixelRatio};})())");
                     JSONObject position=new JSONObject(new org.json.JSONArray("["+encoded+"]").getString(0));
-                    int[] location=new int[2];instrumentation.runOnMainSync(()->view.getLocationOnScreen(location));
-                    float x=location[0]+(float)(position.getDouble("x")*position.getDouble("dpr")),y=location[1]+(float)(position.getDouble("y")*position.getDouble("dpr"));
+                    float[] touch=new float[2];
+                    instrumentation.runOnMainSync(()->{
+                        // CSS viewport pixels need the actual view/viewport scale. DPR alone
+                        // is wrong when WebView scales a layout viewport to the screen.
+                        float scale=(float)(view.getWidth()/position.optDouble("viewportWidth"));
+                        float x=(float)position.optDouble("x")*scale,y=(float)position.optDouble("y")*scale;
+                        assertTrue("Navigation touch outside WebView: "+position,x>=0&&x<view.getWidth()&&y>=0&&y<view.getHeight());
+                        touch[0]=x;touch[1]=y;
+                    });
                     long time=android.os.SystemClock.uptimeMillis();
-                    android.view.MotionEvent down=android.view.MotionEvent.obtain(time,time,android.view.MotionEvent.ACTION_DOWN,x,y,0);
-                    try{instrumentation.sendPointerSync(down);}finally{down.recycle();}
+                    instrumentation.runOnMainSync(()->{
+                        android.view.MotionEvent event=android.view.MotionEvent.obtain(time,time,android.view.MotionEvent.ACTION_DOWN,touch[0],touch[1],0);
+                        try{view.dispatchTouchEvent(event);}finally{event.recycle();}
+                    });
                     android.os.SystemClock.sleep(30);
-                    android.view.MotionEvent up=android.view.MotionEvent.obtain(time,android.os.SystemClock.uptimeMillis(),android.view.MotionEvent.ACTION_UP,x,y,0);
-                    try{instrumentation.sendPointerSync(up);}finally{up.recycle();}
+                    instrumentation.runOnMainSync(()->{
+                        android.view.MotionEvent event=android.view.MotionEvent.obtain(time,android.os.SystemClock.uptimeMillis(),android.view.MotionEvent.ACTION_UP,touch[0],touch[1],0);
+                        try{view.dispatchTouchEvent(event);}finally{event.recycle();}
+                    });
                     waitFor(view,"window.__coldNav.pending===null");
                     String result=evaluate(view,"JSON.stringify(__coldNav.rows.at(-1))");JSONObject row=new JSONObject(new org.json.JSONArray("["+result+"]").getString(0));
                     assertEquals(route,row.getString("route"));assertTrue(row.toString(),row.getDouble("paintMs")>=0);
@@ -106,11 +117,18 @@ public class PhoneWorkoutWebViewTest {
                 String encoded=evaluate(view,"JSON.stringify({bootMs:TrainPilotBoot.durationMs,rows:__coldNav.rows,longTasks:__coldNav.longTasks,catalog:__coldNav.catalog})");
                 JSONObject result=new JSONObject(new org.json.JSONArray("["+encoded+"]").getString(0));result.put("launch",attempt+1);launches.put(result);
                 assertEquals(16,result.getJSONArray("rows").length());assertEquals(4,result.getJSONArray("catalog").length());
+            } catch(Exception|AssertionError failure) {
+                try {
+                    String diagnostic=evaluate(activity.getBridge().getWebView(),"JSON.stringify({url:location.href,viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio},diagnostic:window.__coldNav})");
+                    java.io.File output=new java.io.File(instrumentation.getTargetContext().getExternalFilesDir(null),"cold-navigation.json");
+                    try(java.io.FileWriter writer=new java.io.FileWriter(output)){writer.write(new JSONObject().put("failedLaunch",attempt+1).put("error",failure.toString()).put("state",new org.json.JSONArray("["+diagnostic+"]").getString(0)).toString(2));}
+                }catch(Exception diagnosticFailure){failure.addSuppressed(diagnosticFailure);}
+                throw failure;
             } finally {instrumentation.runOnMainSync(activity::finish);}
             instrumentation.waitForIdleSync();
         }
         JSONObject report=new JSONObject().put("fixtureWorkouts",200).put("launches",launches)
-            .put("limits","Debug emulator timings; activity/WebView relaunches, not process-force-stop. No device-FPS claim.");
+            .put("limits","Debug emulator timings; Android MotionEvents dispatched to WebView, without system input routing. Activity/WebView relaunches, not process-force-stop. Two-RAF proxy, no device-FPS claim.");
         java.io.File output=new java.io.File(instrumentation.getTargetContext().getExternalFilesDir(null),"cold-navigation.json");
         try(java.io.FileWriter writer=new java.io.FileWriter(output)){writer.write(report.toString(2));}
         System.out.println("COLD_NAVIGATION "+report);
