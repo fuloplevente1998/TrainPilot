@@ -56,7 +56,21 @@ public class PhoneWorkoutWebViewTest {
             if(focused.get())return;
             Thread.sleep(100);
         }while(System.currentTimeMillis()<end);
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(()->{
+            ViewFocusDiagnostic(activity);
+        });
+        try(var descriptor=InstrumentationRegistry.getInstrumentation().getUiAutomation().executeShellCommand("dumpsys window");
+            var reader=new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream(descriptor.getFileDescriptor())))){
+            String line;while((line=reader.readLine())!=null)if(line.matches(".*(mCurrentFocus|mFocusedApp|Window #|mViewVisibility|mAttrs|mHasSurface|mObscured|mInputFocus).*"))
+                android.util.Log.e("TrainPilotFocus",line);
+        }
         fail("The foreground phone Activity did not receive window focus");
+    }
+    private void ViewFocusDiagnostic(MainActivity activity) {
+        WebView view=activity.getBridge().getWebView();android.view.View decor=activity.getWindow().getDecorView();
+        android.util.Log.e("TrainPilotFocus","activity="+activity.hasWindowFocus()+", decor="+decor.hasWindowFocus()
+            +", webView="+view.hasWindowFocus()+", visibility="+decor.getWindowVisibility()+", attached="+decor.isAttachedToWindow()
+            +", finishing="+activity.isFinishing()+", destroyed="+activity.isDestroyed()+", flags="+activity.getWindow().getAttributes().flags);
     }
     @Test public void coldNavigationProfilesRealTouchesAcrossRelaunches() throws Exception {
         var instrumentation=InstrumentationRegistry.getInstrumentation();

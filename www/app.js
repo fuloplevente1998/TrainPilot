@@ -68,7 +68,8 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
   boot.loading=false;
   try{
    const firstRender=()=>{
-    render();
+    if(typeof boot.renderInitialScreen==='function')boot.renderInitialScreen();
+    else render();
     if(!document.querySelector('#app')?.innerHTML)throw Error('Empty initial screen');
    };
    if(typeof window.tp7WithHistorySnapshot==='function')window.tp7WithHistorySnapshot(firstRender);
