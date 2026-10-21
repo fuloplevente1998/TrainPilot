@@ -17420,6 +17420,22 @@ window.addEventListener?.('DOMContentLoaded',function(){
  'use strict';
  let lastPayload=null,lastHomePayload=null,cleared=false,busy=false,homeBusy=false,commandBusy=false;
  let homeRefreshPending=false,homeGestureUntil=0,homeDeferred=null;
+ let lastHomeInputs=null;
+ // Compare actual stored values before constructing the catalog, not merely
+ // history length or the already-built payload. Direct restore/storage writes
+ // and equal-sized edits must invalidate this check too. No recommendation
+ // result survives a changed input; force/foreground/requestHome always rebuild.
+ const homeInputKeys=['history','phase3HistoryTombstones','programs','activeProgramId',
+  'exercises','scheduled','language','themeAccent','settings','draft',
+  'wearWorkoutResult','workoutFeedbackPending'];
+ function homeInputs(){
+  try{
+   const now=new Date();
+   return [now.toDateString(),now.getTimezoneOffset(),typeof rf212Lang==='function'?rf212Lang():language(),
+    window.TrainPilotOwnership193?.available===true,
+    ...homeInputKeys.map(key=>localStorage.getItem('repforge:'+key))];
+  }catch(_){return null;}
+ }
  // Catalog publication is not a workout command. Let panel scrolling settle
  // before doing its bounded batch; explicit watch refreshes remain immediate.
  const panelGesture=event=>{
@@ -17744,10 +17760,13 @@ window.addEventListener?.('DOMContentLoaded',function(){
   }
   if(homeBusy){if(force)homeRefreshPending=true;return false;}
   const bridge=api();if(!bridge?.publishHome)return false;
+  const inputs=homeInputs();
+  if(!force&&lastHomePayload!==null&&inputs&&lastHomeInputs&&
+     inputs.every((value,index)=>value===lastHomeInputs[index]))return true;
   const value=homeSnapshot();if(!value)return false;
-  const payload=JSON.stringify(value);if(!force&&payload===lastHomePayload)return true;
+  const payload=JSON.stringify(value);if(!force&&payload===lastHomePayload){lastHomeInputs=inputs;return true;}
   homeBusy=true;
-  try{await bridge.publishHome({snapshot:value});lastHomePayload=payload;return true}catch(_){return false;}
+  try{await bridge.publishHome({snapshot:value});lastHomePayload=payload;lastHomeInputs=inputs;return true}catch(_){return false;}
   finally{
    homeBusy=false;
    if(homeRefreshPending){homeRefreshPending=false;setTimeout(()=>syncHomeNow({force:true}),0);}

@@ -217,8 +217,11 @@ public class WearSyncPlugin extends Plugin {
 
     @PluginMethod
     public void pendingCommands(PluginCall call) {
+        // This poll runs every 900 ms. Task listeners otherwise default to the
+        // main looper, including JSON parsing and durable command-queue writes.
+        // Ownership delivery keeps its own explicit main-looper hand-off.
         Wearable.getDataClient(getContext()).getDataItems()
-                .addOnSuccessListener(items -> {
+                .addOnSuccessListener(getBridge()::execute, items -> {
                     try {
                         for (DataItem item : items) {
                             if (item == null || item.getUri() == null) continue;
@@ -246,7 +249,7 @@ public class WearSyncPlugin extends Plugin {
                         items.release();
                     }
                 })
-                .addOnFailureListener(error -> resolvePendingCommands(call, error == null ? "scan failed" : error.getMessage()));
+                .addOnFailureListener(getBridge()::execute, error -> resolvePendingCommands(call, error == null ? "scan failed" : error.getMessage()));
     }
 
     @PluginMethod

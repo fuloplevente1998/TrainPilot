@@ -38,6 +38,26 @@ try{
    try{const start=performance.now(),snapshot=TrainPilotWearSync.makeHomeSnapshot();return {ms:performance.now()-start,reads,checks,totalReads,libraryReads,programReads,catalog:snapshot.quickExercises.length};}finally{Storage.prototype.getItem=get;window.tp3HistoryIsDeleted=deleted;}
   });
   assert.ok(probe.reads<=1,'one shared history batch, not a read for every exercise');assert.ok(probe.libraryReads<=1,'startup catalog reads the exercise library once');assert.ok(probe.programReads<=1,'startup catalog reads the program library once');assert.ok(probe.checks<=count*5,'deletion checks are bounded by history size, not catalog × history');assert.ok(probe.catalog>50);performance.push({count,...probe});
+  const routine=await page.evaluate(async()=>{
+   const previous=window.Capacitor,index=tp228Index,originalHistory=localStorage.getItem('repforge:history'),originalTombstones=localStorage.getItem('repforge:phase3HistoryTombstones');let builds=0,published;
+   window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{publishHome:async({snapshot})=>{published=snapshot;}}}};
+   tp228Index=function(){builds++;return index.apply(this,arguments);};
+   try{
+    await TrainPilotWearSync.syncHomeNow({force:true});builds=0;
+    const start=performance.now();for(let i=0;i<5;i++)await TrainPilotWearSync.syncHomeNow();
+    const ms=performance.now()-start,unchangedBuilds=builds;
+    const rows=history();rows[0].exercises[0].sets[0].weight=31;db.set('history',rows);await TrainPilotWearSync.syncHomeNow();
+    const edited=published.quickExercises.find(e=>e.id===rows[0].exercises[0].id).sets[0].weight;
+    db.set('phase3HistoryTombstones',[{ids:[rows[0].id]}]);await TrainPilotWearSync.syncHomeNow();
+    return {ms,unchangedBuilds,edited,deleted:!published.recentWorkouts.some(h=>h.workoutId===rows[0].id)};
+   }finally{
+    tp228Index=index;window.Capacitor=previous;
+    for(const [key,value] of [['history',originalHistory],['phase3HistoryTombstones',originalTombstones]]){
+     if(value===null)localStorage.removeItem('repforge:'+key);else localStorage.setItem('repforge:'+key,value);
+    }
+   }
+  });
+  assert.equal(routine.unchangedBuilds,0,'unchanged periodic checks never rebuild the history index');assert.equal(routine.edited,31);assert.equal(routine.deleted,true,'real tombstones invalidate the publication input guard');performance.at(-1).routine=routine;
   for(const panel of ['calendar','coach','settings']){
    await page.evaluate(panel=>{tp155R4ClosePanel(false);tp155R4OpenPanel(panel,document.activeElement);},panel);
    await page.locator('.tp155-r4-panel').evaluate(el=>{el.scrollTop=200;});

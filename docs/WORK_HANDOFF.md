@@ -8,7 +8,8 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
 - **Új készülékes visszajelzés (2026-10-21):** a `3199528` teszt-APK-val az indulás
   továbbra is nagyon lassú; 15 s várakozás csak részben segít, az oldalváltások
-  között még késleltetés érezhető. A katalógus-optimalizálás nem oldotta meg a hibát.
+  között még késleltetés érezhető. Pontosítás: **végig megmarad, csak kisebb**.
+  A katalógus-optimalizálás nem oldotta meg a hibát.
 - Új célzott natív javítás: `MainActivity.onResume` eddig a főszálon várt a
   `HealthJournalStore` közös zárára, SQLite-ot olvasott/írt és háttérfeladatot
   ütemezett. Az egészségnapló-karbantartás most soros háttérszálon fut, csak az
@@ -18,7 +19,23 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
   valódi Activity pause/resume és a UI-szál visszatér a zár felengedése előtt.
   SQLite-teszt méri, hogy a második `retireWatchUi` 0 adatváltozást végez.
   Ezek a konkrét blokkolási okot ellenőrzik; a készülék teljes késésének
-  megszűnését még nem igazolják. CI és új teszt-APK készítése folyamatban.
+  megszűnését még nem igazolják. A `ccfb5b9` köztes forrás WebView-kapuja
+  **39612267618 SUCCESS**; Quick **39612261981: 161/161**, Performance
+  **39612261984 SUCCESS**. Ezek még nem az alábbi bővített javítás kapui.
+- Folyamatos terhelés javítása: a 900 ms-os Wear-poll Task-visszahívása (JSON,
+  tartós parancssor) a Capacitor háttérvégrehajtóján fut; a tulajdonosváltás
+  meglévő explicit main-looper átadása megmarad. A 3 s-os home-poll a katalógus
+  építése előtt a tényleges tárolt bemeneteket, helyi napot/időzónát és nyelvet
+  hasonlítja össze. Változatlan bemenetnél nincs history-parszolás/indexépítés.
+  Nem elemszám-alapú: közvetlen storage-visszaállítás, azonos hosszúságú módosítás,
+  tombstone, program/gyakorlat, draft, beállítás és éjfél érvényteleníti.
+  Force/foreground/requestHome újraépít; sikertelen küldés nem lépteti a bemenetet.
+- Új célzott Node-regresszió: függőséglefedés a tényleges storage-olvasásokból,
+  5 változatlan pollnál 0 history-hívás, direkt azonos hosszúságú szerkesztés,
+  nyelv/pihenő/draft/tombstone, force, újrapróbálás és éjfél PASS. Meglévő teljes
+  runtime journal-resync és Wear lifecycle PASS. Chromium 200/1500 edzéses
+  teszt kiegészítve valós tombstone + szerkesztési frissességre és 0 új indexre
+  5 változatlan poll alatt. Végső CI és teszt-APK még készül.
 - Új visszajelzés a `1b5e488` teszt-APK-ról: „Rendben, jo lett.” A stopper- és
   görgetési javítás elfogadott. Maradék: appindítás után az első oldalváltások
   kifejezetten lassúak, később gyorsak. Ennek külön célzott profilozása folyamatban;
