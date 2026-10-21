@@ -8,8 +8,14 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.getcapacitor.BridgeActivity;
+import android.content.Context;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MainActivity extends BridgeActivity {
+    // Health sync holds the journal lock while committing/projection work runs.
+    // Never wait for that lock (or SQLite disk I/O) on the input/render thread.
+    private static final ExecutorService healthMaintenance = Executors.newSingleThreadExecutor();
     private StartupScreen startupScreen;
     @Override public void onCreate(Bundle savedInstanceState) {
         startupScreen = StartupScreen.install(this);
@@ -58,8 +64,11 @@ public class MainActivity extends BridgeActivity {
         super.onResume();
         applyWebViewDisplaySettings();
         HealthBackgroundService.stop(this);
-        try { HealthJournalStore.get(this).retireWatchUi(); } catch (Exception ignored) {}
-        try { HealthBackgroundJob.schedule(this); } catch (Exception ignored) {}
+        Context app = getApplicationContext();
+        healthMaintenance.execute(() -> {
+            try { HealthJournalStore.get(app).retireWatchUi(); } catch (Exception ignored) {}
+            try { HealthBackgroundJob.schedule(app); } catch (Exception ignored) {}
+        });
     }
 
     private void applyWebViewDisplaySettings() {

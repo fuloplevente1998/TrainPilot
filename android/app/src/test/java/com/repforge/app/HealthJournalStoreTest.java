@@ -28,7 +28,11 @@ public class HealthJournalStoreTest {
         store.setPreferences(new JSONObject().put("logWatchSteps",true).put("bleBackground",true).put("hcBackground",true).put("hcDailySource","com.sec.android.app.shealth").put("primary",HealthJournalStore.BLE));
         store.watchSteps("watch-id","GT4Pro+",20,now,now+20,store.generation());
         store.importRecords(new JSONArray().put(record("hc",now,12)),store.generation());
-        int records=store.exportSnapshot().getJSONArray("records").length();store.retireWatchUi();long epoch=store.generation();store.retireWatchUi();
+        int records=store.exportSnapshot().getJSONArray("records").length();store.retireWatchUi();long epoch=store.generation();
+        long writes=android.database.DatabaseUtils.longForQuery(store.getReadableDatabase(),"SELECT total_changes()",null);
+        store.retireWatchUi();
+        assertEquals("Already retired settings must not be rewritten on every resume/initialize",writes,
+            android.database.DatabaseUtils.longForQuery(store.getReadableDatabase(),"SELECT total_changes()",null));
         assertEquals(epoch,store.generation());assertFalse(store.preferences().getBoolean("logWatchSteps"));assertFalse(store.preferences().getBoolean("bleBackground"));assertTrue(store.preferences().getBoolean("hcBackground"));assertEquals("auto",store.preferences().getString("hcDailySource"));
         assertEquals(records,store.exportSnapshot().getJSONArray("records").length());assertEquals(2281,store.projection().getJSONObject("days").getJSONObject(day).getLong("steps"));
         JSONObject visible=store.page("2020-01-01","2030-01-01","journal","",0,0,30);assertEquals(1,visible.getJSONArray("days").length());assertEquals(1,visible.getJSONArray("records").length());assertEquals(HealthJournalStore.HC,visible.getJSONArray("days").getJSONObject(0).getString("channel"));

@@ -6,6 +6,19 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
 ## Folyamatban – #235, első oldalváltások lassúsága
 
+- **Új készülékes visszajelzés (2026-10-21):** a `3199528` teszt-APK-val az indulás
+  továbbra is nagyon lassú; 15 s várakozás csak részben segít, az oldalváltások
+  között még késleltetés érezhető. A katalógus-optimalizálás nem oldotta meg a hibát.
+- Új célzott natív javítás: `MainActivity.onResume` eddig a főszálon várt a
+  `HealthJournalStore` közös zárára, SQLite-ot olvasott/írt és háttérfeladatot
+  ütemezett. Az egészségnapló-karbantartás most soros háttérszálon fut, csak az
+  application contextet tartja meg. A már kikapcsolt régi órás beállításokat
+  `retireWatchUi` nem írja újra minden megnyitáskor/inicializáláskor.
+- Új natív WebView-regresszió: szándékosan foglalt egészségnapló-zár mellett a
+  valódi Activity pause/resume és a UI-szál visszatér a zár felengedése előtt.
+  SQLite-teszt méri, hogy a második `retireWatchUi` 0 adatváltozást végez.
+  Ezek a konkrét blokkolási okot ellenőrzik; a készülék teljes késésének
+  megszűnését még nem igazolják. CI és új teszt-APK készítése folyamatban.
 - Új visszajelzés a `1b5e488` teszt-APK-ról: „Rendben, jo lett.” A stopper- és
   görgetési javítás elfogadott. Maradék: appindítás után az első oldalváltások
   kifejezetten lassúak, később gyorsak. Ennek külön célzott profilozása folyamatban;

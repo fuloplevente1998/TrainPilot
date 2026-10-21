@@ -16,6 +16,29 @@ import static org.junit.Assert.*;
 /** Exercises the packaged WebView, Capacitor dispatcher, SQLite and foreground service together. */
 @RunWith(AndroidJUnit4.class)
 public class PhoneWorkoutWebViewTest {
+    @Test public void resumeKeepsInputThreadFreeWhileHealthJournalIsBusy() throws Exception {
+        var instrumentation=InstrumentationRegistry.getInstrumentation();
+        MainActivity activity=(MainActivity)instrumentation.startActivitySync(
+            new Intent(instrumentation.getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        CountDownLatch locked=new CountDownLatch(1),release=new CountDownLatch(1),resumed=new CountDownLatch(1);
+        java.lang.reflect.Field field=HealthJournalStore.class.getDeclaredField("LOCK");field.setAccessible(true);
+        Object lock=field.get(null);
+        Thread writer=new Thread(()->{
+            synchronized(lock){locked.countDown();try{release.await(10,TimeUnit.SECONDS);}catch(InterruptedException e){Thread.currentThread().interrupt();}}
+        });
+        try {
+            waitFor(activity.getBridge().getWebView(),"window.TrainPilotBoot?.finished");
+            instrumentation.runOnMainSync(()->instrumentation.callActivityOnPause(activity));
+            writer.start();assertTrue("Health lock not held",locked.await(5,TimeUnit.SECONDS));
+            new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
+                instrumentation.callActivityOnResume(activity);resumed.countDown();
+            });
+            assertTrue("Activity resume/input thread waited for the health database lock",resumed.await(2,TimeUnit.SECONDS));
+            assertEquals("Journal must still be busy when the UI resumes",1,release.getCount());
+        } finally {
+            release.countDown();writer.join(5000);instrumentation.runOnMainSync(activity::finish);
+        }
+    }
     private String evaluate(WebView view,String script) throws Exception {
         CountDownLatch done=new CountDownLatch(1);AtomicReference<String> result=new AtomicReference<>();
         InstrumentationRegistry.getInstrumentation().runOnMainSync(()->view.evaluateJavascript(script,value->{result.set(value);done.countDown();}));
