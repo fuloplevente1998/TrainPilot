@@ -24,7 +24,9 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
   A már törölt sor a friss órás előzménylistából is kimarad.
 - Panelgörgetés/touchmove alatt csak a közönséges home/katalógus küldés vár
   180 ms nyugalomra. Kifejezett force és az aktív edzés parancs-/állapotszinkronja
-  nem vár; az eredeti frissítés automatikusan folytatódik.
+  nem vár; parancsfeldolgozás közben sincs katalógus miatti halasztás. Folyamatos
+  görgetés + nyugtázott parancs célzott próbája PASS; az eredeti frissítés
+  automatikusan folytatódik.
 - Visszavonás utáni oldalsó stopper: az aktuális sorozat mentett bal/jobb idejét
   mutatja akkor is, ha nincs futó helyi óratulajdonos. A megállított óracache nem
   írhatja felül a kézi szerkesztést. Automatikus stop → visszavonás → nullázás/

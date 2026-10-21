@@ -64,6 +64,17 @@ try{
    await pending;return {during,after:publishes};
   }finally{window.Capacitor=previous;tp155R4ClosePanel(false);}
  });assert.equal(deferred.during,0,'ordinary home sync yields during panel scrolling');assert.equal(deferred.after,1,'publication resumes after the gesture without a button press');
+ const commandsDuringScroll=await page.evaluate(async()=>{
+  tp155R4OpenPanel('settings',document.activeElement);const previous=window.Capacitor;let pending=true,acked=[],draining;
+  const panel=document.querySelector('.tp155-r4-panel'),gesture=()=>panel.dispatchEvent(new Event('scroll'));
+  window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{publishHome:async()=>{},publish:async()=>{},clear:async()=>{},pendingCommands:async()=>({commands:pending?[{commandId:'scroll-command',action:'saveWorkoutFeedback',feedback:{}}]:[]}),ackCommand:async({commandId})=>{acked.push(commandId);pending=false;}}}};
+  gesture();const timer=setInterval(gesture,20);
+  try{
+   draining=TrainPilotWearSync.drainCommands();
+   const completed=await Promise.race([draining.then(()=>true),new Promise(r=>setTimeout(()=>r(false),500))]);
+   return {completed,acked,busy:TrainPilotWearSync.isApplyingCommand()};
+  }finally{clearInterval(timer);await draining;window.Capacitor=previous;tp155R4ClosePanel(false);}
+ });assert.equal(commandsDuringScroll.completed,true,'continuous scrolling cannot hold the command drain behind a catalog refresh');assert.deepEqual(commandsDuringScroll.acked,['scroll-command']);assert.equal(commandsDuringScroll.busy,false);
  const readiness=await page.evaluate(()=>{
   const now=new Date(),day=rf240DayKey(now);state.health={recovery:{}};
   window.TrainPilotEnergy184={hasResult:()=>true,reading:()=>({energyScore:87,energyScoreTime:now.toISOString(),energyScoreSource:'samsung_health',day})};

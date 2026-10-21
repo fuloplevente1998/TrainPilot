@@ -17724,7 +17724,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  async function syncHomeNow(options={}){
   const force=options?.force===true;
-  if(!force&&Date.now()<homeGestureUntil){
+  if(!force&&!commandBusy&&Date.now()<homeGestureUntil){
    if(!homeDeferred)homeDeferred=new Promise(resolve=>{
     const flush=()=>{
      const remaining=homeGestureUntil-Date.now();
