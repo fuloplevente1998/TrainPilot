@@ -4,6 +4,18 @@ Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Új követési issue – #236, Napló és oldalváltások
+
+- Felhasználói kérésre megnyitva: [#236 – Napló és oldalváltások gyorsítása nagy edzéselőzménynél](https://github.com/fuloplevente1998/TrainPilot/issues/236).
+- Tartalma: a küldött képen jelzett okok, a már elkészült #235 indulási javítás,
+  az `1f1f98d` forráshoz kötött saját mérés és a fennmaradó ~21 268 elemes Napló.
+  A külső kép számai nem jelenlegi APK-mérésként szerepelnek.
+- Következő javítási sorrend: korlátozott kezdeti Napló-lista és teljes adatokon
+  működő szűrés; igazolt naplóindexelési, panel-/dekorációs és layout-költségek
+  csökkentése; adatfrissesség, előtte/utána mérés és készülékes elfogadás.
+- A jegy nyitva, implementáció ebben az issue-rögzítési körben nem készült.
+  A #235 teszt-APK, main, verzió és kiadás változatlan.
+
 ## Folyamatban – #235, hidegindítás és első oldalváltások
 
 - Új készülékes visszajelzés: a korábbi javítással gyorsabb, de még nem megfelelő;

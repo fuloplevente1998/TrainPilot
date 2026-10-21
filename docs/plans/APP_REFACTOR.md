@@ -49,7 +49,7 @@ merge nincs automatikusan engedélyezve.
   Appkód a tesztjavításokban nem változott; részletes bizonylat a handoffban.
 - Ez nem oldja meg az összes render-/napló-/tárolási auditpontot.
 
-## 2. Napló és PR teljesítmény – következő kör
+## 2. Napló és PR teljesítmény – #236, következő kör
 
 - Kulcs/alias → sor index; kártyánkénti teljes naplókeresés kiváltása.
 - Cache a tényleges history/tombstone-változáshoz; azonos elemszámú szerkesztés,
