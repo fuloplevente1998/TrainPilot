@@ -34,11 +34,11 @@ function rank(profile){
    await cdp.send('Profiler.enable');await cdp.send('Profiler.setSamplingInterval',{interval:500});await cdp.send('Performance.enable');
    await page.addInitScript(()=>{
     localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped'));
-    window.__startupProbe={reads:{},rootWrites:0,beforeDCL:null};
+    window.__startupProbe={startedAt:performance.now(),reads:{},rootWrites:0,beforeDCL:null,domContentLoadedAt:null};
     const get=Storage.prototype.getItem,html=Object.getOwnPropertyDescriptor(Element.prototype,'innerHTML');
     Storage.prototype.getItem=function(key){__startupProbe.reads[key]=(__startupProbe.reads[key]||0)+1;return get.call(this,key);};
     Object.defineProperty(Element.prototype,'innerHTML',{...html,set(value){if(this.id==='app')__startupProbe.rootWrites++;return html.set.call(this,value);}});
-    document.addEventListener('DOMContentLoaded',()=>{__startupProbe.beforeDCL={reads:{...__startupProbe.reads},rootWrites:__startupProbe.rootWrites};},{once:true});
+    document.addEventListener('DOMContentLoaded',()=>{__startupProbe.domContentLoadedAt=performance.now();__startupProbe.beforeDCL={reads:{...__startupProbe.reads},rootWrites:__startupProbe.rootWrites};},{once:true});
    });
    const url='http://127.0.0.1:'+server.address().port+'/';await page.goto(url);await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
    await page.evaluate(count=>{
@@ -50,7 +50,8 @@ function rank(profile){
    },count);
    await cdp.send('Profiler.start');await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
    const startup=(await cdp.send('Profiler.stop')).profile;fs.writeFileSync(path.join(output,'startup-'+count+'.cpuprofile'),JSON.stringify(startup));
-   const fixture={count,bootMs:await page.evaluate(()=>TrainPilotBoot.durationMs),startupReads:await page.evaluate(()=>__startupProbe),startupRank:rank(startup),routes:[]};
+   const fixture={count,...await page.evaluate(()=>({bootMs:TrainPilotBoot.durationMs,documentBootMs:performance.now()-__startupProbe.startedAt,
+    domContentLoadedMs:__startupProbe.domContentLoadedAt-__startupProbe.startedAt})),startupReads:await page.evaluate(()=>__startupProbe),startupRank:rank(startup),routes:[]};
    await page.locator('#tpBoot').waitFor({state:'hidden'});
    await page.evaluate(()=>{
     window.__navProbe={pending:null,rows:[]};
@@ -107,7 +108,7 @@ function rank(profile){
     fs.writeFileSync(path.join(output,[count,cycle,route].join('-')+'.cpuprofile'),JSON.stringify(profile));
    }
    assert.deepEqual(errors,[]);evidence.fixtures.push(fixture);await page.close();
-   console.log('NAVIGATION_CPU '+JSON.stringify({count,bootMs:fixture.bootMs,routes:fixture.routes.map(({route,cycle,inputDelayMs,handlerTaskMs,paintMs,nodes,metrics,geometry,dom,rank})=>({route,cycle,inputDelayMs,handlerTaskMs,paintMs,nodes,metrics,geometry,dom,rank:rank.slice(0,8)}))}));
+   console.log('NAVIGATION_CPU '+JSON.stringify({count,bootMs:fixture.bootMs,documentBootMs:fixture.documentBootMs,domContentLoadedMs:fixture.domContentLoadedMs,routes:fixture.routes.map(({route,cycle,inputDelayMs,handlerTaskMs,paintMs,nodes,metrics,geometry,dom,rank})=>({route,cycle,inputDelayMs,handlerTaskMs,paintMs,nodes,metrics,geometry,dom,rank:rank.slice(0,8)}))}));
   }
   fs.writeFileSync(path.join(output,'summary.json'),JSON.stringify(evidence,null,2));
  }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}

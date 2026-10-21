@@ -54,6 +54,7 @@ jobs:
             adb shell pm grant com.repforge.app android.permission.POST_NOTIFICATIONS
             adb shell input keyevent KEYCODE_WAKEUP
             adb shell wm dismiss-keyguard
+            bash scripts/measure-phone-cold-startup.sh
             bash scripts/run-phone-webview-ui.sh
       - uses: actions/upload-artifact@v7
         if: always()

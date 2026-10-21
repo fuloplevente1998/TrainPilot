@@ -3,7 +3,7 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
 (function(){
  const photo=JSON.parse(localStorage.getItem('repforge:archiveRestore105')||'null');
  const health=JSON.parse(localStorage.getItem('repforge:healthRestore120')||'null');
- const revert=marker=>{for(const [k,v] of marker.old){if(v===null)localStorage.removeItem('repforge:'+k);else localStorage.setItem('repforge:'+k,v);}};
+ const revert=marker=>{for(const [k,v] of marker.old){if(v===null)localStorage.removeItem('repforge:'+k);else localStorage.setItem('repforge:'+k,v);}window.TrainPilotInvalidateStartupReads?.();};
  if(photo&&!health)revert(photo);
  window.TrainPilotRestore105Pending=photo?.token||health?.token||'';
  window.addEventListener('DOMContentLoaded',function(){
@@ -81,6 +81,8 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
    document.documentElement.classList.remove('tp-booting');
    document.documentElement.classList.add('tp-ready');
    boot.finished=true;boot.readyAt=now();boot.durationMs=Math.max(0,boot.readyAt-boot.startedAt);clearTimeout(watchdog);
+   boot.documentDurationMs=Math.max(0,boot.readyAt-(Number(window.TrainPilotDocumentStartedAt)||boot.startedAt));
+   window.TrainPilotReleaseStartupReads?.();
    const overlay=document.getElementById('tpBoot');
    const native=releaseNative(false);
    const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
@@ -758,9 +760,33 @@ const STARTER_EXERCISES = [
 const DEFAULT_PLAN = {A:["db-squat","db-floor-press","one-arm-row","rdl","db-curl","plank"],B:["reverse-lunge","db-ohp","barbell-row","pushup","oh-triceps","crunch"]};
 const state={tab:"home",session:null,workout:null,current:0,timer:0,timerId:null};
 
+// The first DCL pass installs every final UI module before the first frame. Share
+// parsed storage values only for that bounded startup window; writes replace the
+// matching entry and restore recovery can invalidate the whole snapshot.
+const tpStartupReads=new Map();
+const tpStartupReadsActive=()=>!!window.TrainPilotBoot&&!window.TrainPilotBoot.finished&&!window.TrainPilotBoot.failed;
+window.TrainPilotInvalidateStartupReads=()=>tpStartupReads.clear();
+window.TrainPilotReleaseStartupReads=()=>tpStartupReads.clear();
 const db={
- get(k,f){try{return JSON.parse(localStorage.getItem("repforge:"+k))??f}catch{return f}},
- set(k,v){localStorage.setItem("repforge:"+k,JSON.stringify(v));if(["history","weights","settings","plan","exercises","scheduled"].includes(k)&&typeof cloudChanged==="function")cloudChanged()}
+ get(k,f){
+  const active=tpStartupReadsActive();
+  if(active&&tpStartupReads.has(k)){
+   const entry=tpStartupReads.get(k);return entry.valid&&entry.value!=null?entry.value:f;
+  }
+  try{
+   const value=JSON.parse(localStorage.getItem("repforge:"+k));
+   if(active)tpStartupReads.set(k,{valid:true,value});
+   return value??f;
+  }catch{
+   if(active)tpStartupReads.set(k,{valid:false,value:null});
+   return f;
+  }
+ },
+ set(k,v){
+  localStorage.setItem("repforge:"+k,JSON.stringify(v));
+  if(tpStartupReadsActive())tpStartupReads.set(k,{valid:true,value:v});
+  if(["history","weights","settings","plan","exercises","scheduled"].includes(k)&&typeof cloudChanged==="function")cloudChanged();
+ }
 };
 // Apply the user's corrected equipment to the saved plan once; history/drafts stay intact.
 
@@ -16003,7 +16029,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  function accept(value){cache=compact(value);preferences={...preferences,...value.preferences};saveBase(cache);rf245Recovery(cache);const recovered=rf229RecoveryHistory().filter(r=>Object.hasOwn(cache.days,r.day)).slice(0,30);for(const row of recovered){const legacy=cache.days[row.day]?.legacyRecovery;if(legacy)Object.assign(row,legacy);}db.set('recoveryHistory',recovered);rf229ApplyLatestRecovery();rf240ApplyLedger();return value;}
  async function recover(p){
   const pending=await p.pendingRestore();let marker;try{marker=JSON.parse(localStorage.getItem('repforge:healthRestore120')||'null');}catch(_){throw Error(t('failed'));}
-  if(pending?.token){await p.finishRestore({token:pending.token,commit:false});if(marker?.token===pending.token)for(const [k,v] of marker.old){if(v===null)localStorage.removeItem('repforge:'+k);else localStorage.setItem('repforge:'+k,v);}}
+  if(pending?.token){await p.finishRestore({token:pending.token,commit:false});if(marker?.token===pending.token)for(const [k,v] of marker.old){if(v===null)localStorage.removeItem('repforge:'+k);else localStorage.setItem('repforge:'+k,v);}window.TrainPilotInvalidateStartupReads?.();}
   localStorage.removeItem('repforge:healthRestore120');
  }
  async function ready(){

@@ -25,6 +25,7 @@ const snap=page=>page.evaluate(()=>{const c=document.querySelector('#rf220CoachC
   assert.equal(reads.writes,1,'cold startup renders the app root once');
   assert.equal(reads.first.scope,'operation-scoped','first root write already uses the shared read scope');
   assert.ok(reads.first.history-reads.beforeDCL.history<=1,'first render reads the journal at most once: '+JSON.stringify(reads));
+  assert.ok(reads.history-reads.beforeDCL.history<=1,'all startup modules share one parsed journal snapshot: '+JSON.stringify(reads));
   const before=await p.evaluate(()=>localStorage.getItem('repforge:history'));
   const repair=await p.evaluate(()=>{
    const card=document.querySelector('#rf220CoachCard'),html=card.innerHTML,reads=__bootReads.history;

@@ -9,6 +9,8 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.getcapacitor.BridgeActivity;
 import android.content.Context;
+import android.os.SystemClock;
+import android.util.Log;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -17,7 +19,10 @@ public class MainActivity extends BridgeActivity {
     // Never wait for that lock (or SQLite disk I/O) on the input/render thread.
     private static final ExecutorService healthMaintenance = Executors.newSingleThreadExecutor();
     private StartupScreen startupScreen;
+    private long startupStartedAt;
+    private boolean startupLogged;
     @Override public void onCreate(Bundle savedInstanceState) {
+        startupStartedAt = SystemClock.elapsedRealtime();
         startupScreen = StartupScreen.install(this);
         registerPlugin(NativeFilesPlugin.class);
         registerPlugin(BackupArchivePlugin.class);
@@ -83,6 +88,12 @@ public class MainActivity extends BridgeActivity {
     }
 
     void finishStartup(boolean failed, Runnable complete) {
+        if (!startupLogged) {
+            startupLogged = true;
+            Log.i("TrainPilotStartup", "activityToJsReadyMs="
+                    + Math.max(0, SystemClock.elapsedRealtime() - startupStartedAt)
+                    + " failed=" + failed);
+        }
         if (startupScreen == null) { complete.run(); return; }
         startupScreen.ready(getBridge() == null ? null : getBridge().getWebView(), failed, complete);
     }
