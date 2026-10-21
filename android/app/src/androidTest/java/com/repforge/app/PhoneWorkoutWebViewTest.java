@@ -35,6 +35,87 @@ public class PhoneWorkoutWebViewTest {
         }while(System.currentTimeMillis()<end);
         fail("The foreground phone Activity did not receive window focus");
     }
+    @Test public void coldNavigationProfilesRealTouchesAcrossRelaunches() throws Exception {
+        var instrumentation=InstrumentationRegistry.getInstrumentation();
+        Intent launch=new Intent(instrumentation.getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        MainActivity seed=(MainActivity)instrumentation.startActivitySync(launch);
+        try {
+            WebView view=seed.getBridge().getWebView();waitFor(view,"window.TrainPilotBoot?.finished");
+            evaluate(view,"""
+                db.set('language','hu');db.set('onboarding128','skipped');
+                db.set('history',Array.from({length:200},(_,i)=>({id:'cold-nav-'+i,syncId:'cold-nav-'+i,
+                 programId:'home-level2',dayId:'A',workout:'A',started:new Date(Date.now()-(i+1)*86400000).toISOString(),
+                 finished:new Date(Date.now()-(i+1)*86400000+1800000).toISOString(),
+                 exercises:['db-floor-press','db-squat','one-arm-row','rdl','db-curl','plank'].map(id=>({id,
+                  loadType:'per_hand',repUnit:'ism.',sets:[{set:1,weight:8,reps:'10',done:true}]}))})));
+                true
+                """);
+        } finally {instrumentation.runOnMainSync(seed::finish);}
+        instrumentation.waitForIdleSync();
+        org.json.JSONArray launches=new org.json.JSONArray();
+        for(int attempt=0;attempt<2;attempt++) {
+            MainActivity activity=(MainActivity)instrumentation.startActivitySync(launch);
+            try {
+                WebView view=activity.getBridge().getWebView();waitFor(view,"window.TrainPilotBoot?.finished");waitForWindowFocus(activity);
+                evaluate(view,"""
+                    window.__coldNav={rows:[],longTasks:[],pending:null,depth:0};
+                    try{new PerformanceObserver(list=>{for(const e of list.getEntries())__coldNav.longTasks.push({at:e.startTime,ms:e.duration});}).observe({type:'longtask',buffered:true});}catch(_){}
+                    for(const name of ['go','tp155R4OpenPanel','tp155R4ClosePanel']){
+                     const base=window[name];window[name]=function(){const p=__coldNav.pending,outer=__coldNav.depth++===0,start=performance.now();
+                      try{return base.apply(this,arguments);}finally{__coldNav.depth--;if(p&&outer)p.syncMs=performance.now()-start;}};
+                    }
+                    document.addEventListener('click',event=>{
+                     const row=__coldNav.pending;if(!row||!event.target.closest('.top'))return;
+                     const at=performance.now();row.at=at;row.inputDelayMs=Math.max(0,at-event.timeStamp);
+                     requestAnimationFrame(()=>requestAnimationFrame(()=>{row.paintMs=performance.now()-at;row.nodes=document.querySelectorAll('*').length;
+                      row.tab=state.tab;row.panel=document.getElementById('tp155R4PanelHost')?.dataset.panel||'';__coldNav.rows.push(row);__coldNav.pending=null;}));
+                    },true);true
+                    """);
+                String[] routes={"plan","health","programs","history","calendar","coach","settings","home"};
+                for(int cycle=1;cycle<=2;cycle++)for(String route:routes){
+                    String selector=route.equals("coach")?".top .tp154-coach-action":route.equals("settings")?".top .tp154-settings-action":
+                        ".top [onclick=\"go('"+route+"')\"]";
+                    String encoded=evaluate(view,"JSON.stringify((()=>{const e=document.querySelector("+JSONObject.quote(selector)+");if(!e)throw Error('Missing navigation '+"+JSONObject.quote(route)+");const r=e.getBoundingClientRect();__coldNav.pending={route:"+JSONObject.quote(route)+",cycle:"+cycle+"};return {x:r.x+r.width/2,y:r.y+r.height/2,dpr:devicePixelRatio};})())");
+                    JSONObject position=new JSONObject(new org.json.JSONArray("["+encoded+"]").getString(0));
+                    int[] location=new int[2];instrumentation.runOnMainSync(()->view.getLocationOnScreen(location));
+                    float x=location[0]+(float)(position.getDouble("x")*position.getDouble("dpr")),y=location[1]+(float)(position.getDouble("y")*position.getDouble("dpr"));
+                    long time=android.os.SystemClock.uptimeMillis();
+                    android.view.MotionEvent down=android.view.MotionEvent.obtain(time,time,android.view.MotionEvent.ACTION_DOWN,x,y,0);
+                    try{instrumentation.sendPointerSync(down);}finally{down.recycle();}
+                    android.os.SystemClock.sleep(30);
+                    android.view.MotionEvent up=android.view.MotionEvent.obtain(time,android.os.SystemClock.uptimeMillis(),android.view.MotionEvent.ACTION_UP,x,y,0);
+                    try{instrumentation.sendPointerSync(up);}finally{up.recycle();}
+                    waitFor(view,"window.__coldNav.pending===null");
+                    String result=evaluate(view,"JSON.stringify(__coldNav.rows.at(-1))");JSONObject row=new JSONObject(new org.json.JSONArray("["+result+"]").getString(0));
+                    assertEquals(route,row.getString("route"));assertTrue(row.toString(),row.getDouble("paintMs")>=0);
+                    assertEquals(row.toString(),route.equals("calendar")||route.equals("coach")||route.equals("settings")?route:"",row.getString("panel"));
+                    if(!route.equals("calendar")&&!route.equals("coach")&&!route.equals("settings"))assertEquals(row.toString(),route,row.getString("tab"));
+                }
+                evaluate(view,"""
+                    __coldNav.catalog=[];let reference=null;
+                    for(const scoped of [false,true,true,false]){
+                     const scope=window.tp7WithHistorySnapshot,get=Storage.prototype.getItem;let reads=0;
+                     if(!scoped)window.tp7WithHistorySnapshot=fn=>fn();
+                     Storage.prototype.getItem=function(key){reads++;return get.call(this,key);};
+                     try{const start=performance.now(),snapshot=TrainPilotWearSync.makeHomeSnapshot(),payload=JSON.stringify(snapshot);
+                      if(reference!==null&&reference!==payload)throw Error('Catalog scope changed output');reference=payload;
+                      __coldNav.catalog.push({scoped,ms:performance.now()-start,reads,exercises:snapshot.quickExercises.length});
+                     }finally{window.tp7WithHistorySnapshot=scope;Storage.prototype.getItem=get;}
+                    }true
+                    """);
+                String encoded=evaluate(view,"JSON.stringify({bootMs:TrainPilotBoot.durationMs,rows:__coldNav.rows,longTasks:__coldNav.longTasks,catalog:__coldNav.catalog})");
+                JSONObject result=new JSONObject(new org.json.JSONArray("["+encoded+"]").getString(0));result.put("launch",attempt+1);launches.put(result);
+                assertEquals(16,result.getJSONArray("rows").length());assertEquals(4,result.getJSONArray("catalog").length());
+            } finally {instrumentation.runOnMainSync(activity::finish);}
+            instrumentation.waitForIdleSync();
+        }
+        JSONObject report=new JSONObject().put("fixtureWorkouts",200).put("launches",launches)
+            .put("limits","Debug emulator timings; activity/WebView relaunches, not process-force-stop. No device-FPS claim.");
+        java.io.File output=new java.io.File(instrumentation.getTargetContext().getExternalFilesDir(null),"cold-navigation.json");
+        try(java.io.FileWriter writer=new java.io.FileWriter(output)){writer.write(report.toString(2));}
+        System.out.println("COLD_NAVIGATION "+report);
+    }
+
     @Test public void phoneRecordingUsesRealNativeBackgroundController() throws Exception {
         Intent launch=new Intent(InstrumentationRegistry.getInstrumentation().getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         MainActivity activity=(MainActivity)InstrumentationRegistry.getInstrumentation().startActivitySync(launch);

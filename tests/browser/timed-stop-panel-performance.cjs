@@ -33,11 +33,11 @@ try{
    db.set('phase3HistoryTombstones',[]);db.set('history',Array.from({length:count},(_,i)=>({id:'perf-'+i,syncId:'perf-'+i,started:new Date(Date.now()-(i+1)*86400000).toISOString(),finished:new Date(Date.now()-(i+1)*86400000+3600000).toISOString(),exercises:ids.map(id=>{const e=byId(id);return {id,loadType:e.loadType,repUnit:e.repUnit,sets:Array.from({length:4},(_,j)=>({set:j+1,weight:8,reps:'10',done:true}))};})})));
   },count);
   const probe=await page.evaluate(()=>{
-   const get=Storage.prototype.getItem,deleted=window.tp3HistoryIsDeleted;let reads=0,checks=0;
-   Storage.prototype.getItem=function(k){if(k==='repforge:history')reads++;return get.call(this,k);};window.tp3HistoryIsDeleted=function(row){checks++;return deleted(row);};
-   try{const start=performance.now(),snapshot=TrainPilotWearSync.makeHomeSnapshot();return {ms:performance.now()-start,reads,checks,catalog:snapshot.quickExercises.length};}finally{Storage.prototype.getItem=get;window.tp3HistoryIsDeleted=deleted;}
+   const get=Storage.prototype.getItem,deleted=window.tp3HistoryIsDeleted;let reads=0,checks=0,libraryReads=0,programReads=0,totalReads=0;
+   Storage.prototype.getItem=function(k){totalReads++;if(k==='repforge:history')reads++;if(k==='repforge:exercises')libraryReads++;if(k==='repforge:programs')programReads++;return get.call(this,k);};window.tp3HistoryIsDeleted=function(row){checks++;return deleted(row);};
+   try{const start=performance.now(),snapshot=TrainPilotWearSync.makeHomeSnapshot();return {ms:performance.now()-start,reads,checks,totalReads,libraryReads,programReads,catalog:snapshot.quickExercises.length};}finally{Storage.prototype.getItem=get;window.tp3HistoryIsDeleted=deleted;}
   });
-  assert.ok(probe.reads<=4,'one shared history batch, not a read for every exercise');assert.ok(probe.checks<=count*5,'deletion checks are bounded by history size, not catalog × history');assert.ok(probe.catalog>50);performance.push({count,...probe});
+  assert.ok(probe.reads<=1,'one shared history batch, not a read for every exercise');assert.ok(probe.libraryReads<=1,'startup catalog reads the exercise library once');assert.ok(probe.programReads<=1,'startup catalog reads the program library once');assert.ok(probe.checks<=count*5,'deletion checks are bounded by history size, not catalog × history');assert.ok(probe.catalog>50);performance.push({count,...probe});
   for(const panel of ['calendar','coach','settings']){
    await page.evaluate(panel=>{tp155R4ClosePanel(false);tp155R4OpenPanel(panel,document.activeElement);},panel);
    await page.locator('.tp155-r4-panel').evaluate(el=>{el.scrollTop=200;});

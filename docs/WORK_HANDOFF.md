@@ -15,10 +15,25 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
   Layout/stílus költség és nagy háttér-Napló DOM kimutatható, de a geometriai
   műveletek összevonása nem adott következetes teljes javulást. A kísérlet app/index
   módosítása visszaállítva, nincs belőle új alkalmazáskód vagy APK.
-- Függő célzott kérdés: minden teljes appbezárás/újraindítás után visszatér-e,
-  vagy csak APK-telepítés utáni első indításnál volt. Ez választja szét a rendszer
-  egyszeri bemelegedését a visszatérő hidegindítási útvonaltól. Ne tekintsd ezt
-  megoldottnak a korábbi zöld CI vagy a stopper elfogadása miatt.
+- Felhasználói pontosítás: **minden bezárás után visszatér**; nem csak telepítés után.
+  Ez visszatérő indulási hiba. Ne tekintsd megoldottnak a korábbi zöld CI vagy a
+  stopper elfogadása miatt.
+- Új, célzott javítás: a renderen kívül induló órás katalógusépítés is a meglévő
+  szinkron `tp7WithHistorySnapshot` olvasási hatókörében fut. A teljes gyakorlat-
+  és programkönyvtár egyszer olvasódik, a cache a publikáció végén megszűnik;
+  nincs új globális felülíró lánc vagy tartós ajánlás-cache.
+  200 teljes metaadatú edzéses 4× CPU-probában 3318 → 346 storage-olvasás,
+  history 2 → 1; mért komponensidő 222,5 → 163,7 ms. Ezek Chromium-mérések,
+  nem a telefon teljes késésének igazolt megoldása.
+- Célzott regresszió 200/1500 edzéssel: history/gyakorlat-/programkönyvtár egy-egy
+  olvasás; azonos elemszámú szerkesztés/törlés frissesség és meglévő stopperes
+  feltételek PASS. Wear lifecycle, Quick Workout és journal-resync PASS.
+- A meglévő Android WebView workflow új natív érintéses diagnosztikát futtat:
+  200 szintetikus edzés, két Activity/WebView újranyitás, oldalanként első/második
+  kör; input-késés, szinkron handler, két képkockáig eltelt idő, long-task lista.
+  A katalógusépítés azonos kimenete olvasási hatókörrel és anélkül is ellenőrzött.
+  Ez debug emulátoros Activity-újranyitás, nem process-force-stop vagy készülék-FPS.
+  A mérési JSON a tesztartifactba kerül; új kapuk/APK még nincsenek bevizsgálva.
 - Az első kör `655183c` APK-járól felhasználói visszajelzés: nincs dupla edzés,
   törlés után nem tér vissza a bejegyzés; a többi kért ellenőrzés működik.
   Ez készülékes mentési elfogadás, **nem main merge-engedély**.

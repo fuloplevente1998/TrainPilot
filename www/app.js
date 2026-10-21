@@ -17612,7 +17612,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   const h=history().find(h=>matchesWorkout(h,result.workoutId)&&h.finished);
   return {...result,feedbackAnswered:!!(h?.feedback?.rating||h?.feedback?.skipped)};
  }
- function homeSnapshot(){
+ function buildHomeSnapshot(){
   try{
    if(typeof activeProgram!=='function'||typeof programDay!=='function')return null;
    const active=activeProgram()||{id:'',name:'',days:[]};
@@ -17665,6 +17665,13 @@ window.addEventListener?.('DOMContentLoaded',function(){
    while(jsonBytes(home)>90000&&home.recentWorkouts.length)home.recentWorkouts.pop();
    return home;
   }catch(_){return null}
+ }
+ function homeSnapshot(){
+  // Startup publishes the full catalog outside render(). Reuse the existing
+  // synchronous read scope so every byId/program lookup shares one library,
+  // without keeping suggestions cached across edits or a later publication.
+  return typeof window.tp7WithHistorySnapshot==='function'?
+   window.tp7WithHistorySnapshot(buildHomeSnapshot):buildHomeSnapshot();
  }
  function snapshot(){
   try{

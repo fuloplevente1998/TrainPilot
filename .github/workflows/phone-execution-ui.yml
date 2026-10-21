@@ -54,7 +54,12 @@ jobs:
             adb shell pm grant com.repforge.app android.permission.POST_NOTIFICATIONS
             adb shell input keyevent KEYCODE_WAKEUP
             adb shell wm dismiss-keyguard
-            cd android && ./gradlew --no-daemon :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.repforge.app.PhoneWorkoutWebViewTest
+            set +e
+            (cd android && ./gradlew --no-daemon :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.repforge.app.PhoneWorkoutWebViewTest)
+            result=$?
+            mkdir -p android/app/build/outputs/androidTest-results/cold-navigation
+            adb pull /sdcard/Android/data/com.repforge.app/files/cold-navigation.json android/app/build/outputs/androidTest-results/cold-navigation/ 2>/dev/null || true
+            exit "$result"
       - uses: actions/upload-artifact@v7
         if: always()
         with:

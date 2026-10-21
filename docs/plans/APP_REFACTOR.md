@@ -38,8 +38,10 @@ merge nincs automatikusan engedélyezve.
   kerek UI 183/183, valódi WebView 1/1; minden kapu zöld. APK/bizonylat a handoffban.
 - Készülékes új jelzés: az első oldalváltások lassúak, később gyorsak. Célzott
   profilozás megtörtént; elrendezés-összevonási kísérlet nem hozott következetes
-  gyorsulást, ezért nem került alkalmazáskód a PR-ba. Telepítés utáni egyszeri
-  indulás vagy minden hideg újraindítás: felhasználói pontosításra vár.
+  gyorsulást, ezért nem került alkalmazáskód a PR-ba. Felhasználó megerősítette: minden
+  bezárás után visszatér. Az órás katalógus teljes építése is az olvasási hatókörbe
+  került, egy-egy könyvtárolvasással. A valódi Android WebView natív érintéses
+  profilozása és a friss kapuk ellenőrzése folyamatban.
 - Ez nem oldja meg az összes render-/napló-/tárolási auditpontot.
 
 ## 2. Napló és PR teljesítmény – következő kör
