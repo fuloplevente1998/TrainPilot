@@ -26,6 +26,8 @@ const server=http.createServer((req,res)=>{
   });
   const toggle=page.locator('.tp227-haptic-setting input');assert.equal(await toggle.count(),1);
   await page.locator('.tp1511-training').evaluate(x=>x.open=true);
+  const checkbox=await toggle.evaluate(el=>{const css=getComputedStyle(el);return {appearance:css.appearance,width:css.width,height:css.height,radius:css.borderRadius};});
+  assert.deepEqual(checkbox,{appearance:'none',width:'22px',height:'22px',radius:'7px'},'Haptic uses the shared themed square/check style');
   await toggle.uncheck();assert.equal(await page.evaluate(()=>settings().setHaptic227),false);
   await page.reload();await boot();await page.evaluate(()=>go('plan'));await page.locator('.tp1511-training').evaluate(x=>x.open=true);
   assert.equal(await toggle.isChecked(),false,'Haptic preference survives reload');await toggle.check();

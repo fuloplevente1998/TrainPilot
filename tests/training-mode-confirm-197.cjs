@@ -12,6 +12,8 @@ const originals={
 };
 let stored={rest:90,profile:{goal:'muscle'}},writes=0,rendered='',lang='hu';
 const pending=Object.create(null);
+let cancelFocused=false;
+const cancelPanel={open:true,querySelector:()=>({focus:()=>{cancelFocused=true;}})};
 const context={
  settings:()=>stored,
  db:{set:(key,value)=>{assert.equal(key,'settings');writes++;stored=value;}},
@@ -30,7 +32,7 @@ const context={
  tp197UiPanel:()=>'<details><p class="small muted tp197-ui-notice">Old notice</p><button type="button" class="btn secondary tp197-ui-reset" onclick="tp197UiReset()">Reset</button></details>',
  tp197UiSet:(scope,pid,field,value)=>{pending[scope==='program'?'program:'+pid:'global']={...context.tp197UiChoice(scope,pid),[field]:value};return true;},
  tp197UiRefresh:()=>{rendered=context.tp197UiPanel('global',null,true);},
- document:{createElement:()=>({id:'',textContent:''}),head:{appendChild:()=>{}}}
+ document:{getElementById:()=>cancelPanel,createElement:()=>({id:'',textContent:''}),head:{appendChild:()=>{}}}
 };
 vm.createContext(context);
 vm.runInContext(code,context,{timeout:1500});
@@ -46,6 +48,8 @@ assert.match(rendered,/Jóváhagyom a módváltást/);
 assert.equal(writes,0,'request is preview only');
 assert.equal(context.tp197UiCancel('global',null),true);
 assert.equal(writes,0,'cancel must never persist');
+assert.equal(cancelPanel.open,false,'Cancel collapses the mode editor');
+assert.equal(cancelFocused,true,'Cancel returns focus to its visible summary');
 assert.equal(snapshot(),before,'cancel must not alter settings, history, draft or program');
 
 context.tp197UiSet('global',null,'trainingStyle','hit');

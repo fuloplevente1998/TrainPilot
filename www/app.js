@@ -116,7 +116,7 @@ var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft
 // @endsection startup.js
 
 // @section backup.js
-const TRAINPILOT_VERSION='1.3.7';
+const TRAINPILOT_VERSION='1.3.71';
 var isNative = function isNative(){return !!window.Capacitor?.isNativePlatform?.();};
 var nativeFiles = function nativeFiles(){if(!filesPlugin)filesPlugin=window.Capacitor?.registerPlugin?.('NativeFiles')||window.Capacitor?.Plugins?.NativeFiles;if(!filesPlugin)throw Error('A natív fájlkezelő nem érhető el.');return filesPlugin;};
 var backupStatus = function backupStatus(){const x=db.get('lastExport',null);return x?`Utolsó ellenőrzött mentés: ${x.name} • ${fmtDate(x.date)}`:'Még nincs ellenőrzött fájlmentés.';};
@@ -19700,7 +19700,7 @@ tp1511TrainingPanel=function(){
  return html.replace('<div class="tp1511-training-body">','<div class="tp1511-training-body">'+tp197UiPanel("program",pid,true));
 };
 const tp197Css=document.createElement("style");tp197Css.id="tp197ModeUiStyle";
-tp197Css.textContent='.tp197-preview-reason{padding-top:4px;border-top:1px solid var(--line)}.tp1511-training-body>.tp197-mode-panel{margin:0 0 12px;padding:10px!important}.tp197-mode-panel{box-sizing:border-box;max-width:100%;min-width:0;margin:10px 0;padding:12px!important}.tp197-mode-panel>summary{cursor:pointer;display:flex;align-items:center;gap:6px;min-height:40px;list-style:none}.tp197-mode-panel>summary::-webkit-details-marker,.tp197-choice>summary::-webkit-details-marker{display:none}.tp197-mode-panel>summary strong{flex:1;min-width:0;overflow-wrap:anywhere}.tp197-mode-panel>summary .small{font-size:12px;flex:0 1 auto;text-align:right}.tp197-panel-chevron,.tp197-choice-chevron{font-size:22px;color:var(--accent);display:inline-block;transition:transform .15s;line-height:1}.tp197-mode-panel[open]>summary .tp197-panel-chevron,.tp197-choice[open]>summary .tp197-choice-chevron{transform:rotate(180deg)}.tp197-ui-body{display:grid;gap:8px;min-width:0;padding-top:12px}.tp197-ui-body label{font-size:13px;font-weight:700}.tp197-ui-body>.tp-select{min-width:0;width:100%}.tp197-choice{border:1px solid var(--line);border-radius:12px;background:#10141c;min-width:0}.tp197-choice>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px;min-height:46px;font-weight:650}.tp197-choice>summary:focus-visible,.tp197-choice-option:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.tp197-choice-label{min-width:0;overflow-wrap:anywhere}.tp197-choice-options{display:grid;gap:4px;padding:4px 6px 7px;border-top:1px solid var(--line)}.tp197-choice-option{background:transparent;color:var(--text);border:0;border-radius:9px;text-align:left;padding:11px 9px;min-height:44px;font:inherit;display:flex;justify-content:space-between;align-items:center;gap:7px}.tp197-choice-option.is-selected{background:var(--card2);color:var(--accent)}.tp197-ui-preview{min-width:0;padding:11px;border-radius:12px;border:1px solid var(--line);background:var(--card2)}.tp197-ui-preview p{margin:6px 0;overflow-wrap:anywhere}.tp197-ui-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px}.tp197-ui-comparison>*{min-width:0;overflow-wrap:anywhere}.tp197-ui-comparison>span{font-weight:700;font-size:12px}.tp197-ui-reset{min-height:44px;width:100%}.tp197-ui-notice{line-height:1.45}.tp1511-training-body .tp1511-prog{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}.tp1511-training-body .tp1511-prog>label{display:block;min-width:0;padding:8px;border-radius:11px;border:1px solid var(--line);background:var(--card2);font-size:12px;line-height:1.3;overflow-wrap:anywhere}.tp1511-training-body .tp1511-prog input{box-sizing:border-box;width:100%;min-width:0;margin-top:6px;padding:8px;font-size:16px;min-height:42px}';
+tp197Css.textContent='.tp197-preview-reason{padding-top:4px;border-top:1px solid var(--line)}.tp1511-training-body>.tp197-mode-panel{margin:0 0 10px;padding:0!important}.tp197-mode-panel{box-sizing:border-box;max-width:100%;min-width:0;margin:10px 0;padding:0!important}.tp197-mode-panel>summary{box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:6px;min-height:46px;padding:7px 10px;list-style:none;font-size:13px;line-height:1.25}.tp197-mode-panel:not([open])>summary>.small{display:none}.tp197-mode-panel>summary>.tp197-panel-chevron{flex-shrink:0}.tp197-mode-panel>summary::-webkit-details-marker,.tp197-choice>summary::-webkit-details-marker{display:none}.tp197-mode-panel>summary strong{flex:1;min-width:0;overflow-wrap:anywhere}.tp197-mode-panel>summary .small{font-size:12px;flex:0 1 auto;text-align:right}.tp197-panel-chevron,.tp197-choice-chevron{font-size:22px;color:var(--accent);display:inline-block;transition:transform .15s;line-height:1}.tp197-mode-panel[open]>summary .tp197-panel-chevron,.tp197-choice[open]>summary .tp197-choice-chevron{transform:rotate(180deg)}.tp197-ui-body{display:grid;gap:8px;min-width:0;padding:8px 10px 10px}.tp197-ui-body label{font-size:13px;font-weight:700}.tp197-ui-body>.tp-select{min-width:0;width:100%}.tp197-choice{border:1px solid var(--line);border-radius:12px;background:#10141c;min-width:0}.tp197-choice>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px;min-height:46px;font-weight:650}.tp197-choice>summary:focus-visible,.tp197-choice-option:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.tp197-choice-label{min-width:0;overflow-wrap:anywhere}.tp197-choice-options{display:grid;gap:4px;padding:4px 6px 7px;border-top:1px solid var(--line)}.tp197-choice-option{background:transparent;color:var(--text);border:0;border-radius:9px;text-align:left;padding:11px 9px;min-height:44px;font:inherit;display:flex;justify-content:space-between;align-items:center;gap:7px}.tp197-choice-option.is-selected{background:var(--card2);color:var(--accent)}.tp197-ui-preview{min-width:0;padding:11px;border-radius:12px;border:1px solid var(--line);background:var(--card2)}.tp197-ui-preview p{margin:6px 0;overflow-wrap:anywhere}.tp197-ui-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px}.tp197-ui-comparison>*{min-width:0;overflow-wrap:anywhere}.tp197-ui-comparison>span{font-weight:700;font-size:12px}.tp197-ui-reset{min-height:44px;width:100%}.tp197-ui-notice{line-height:1.45}.tp1511-training-body .tp1511-prog{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}.tp1511-training-body .tp1511-prog>label{display:block;min-width:0;padding:8px;border-radius:11px;border:1px solid var(--line);background:var(--card2);font-size:12px;line-height:1.3;overflow-wrap:anywhere}.tp1511-training-body .tp1511-prog input{box-sizing:border-box;width:100%;min-width:0;margin-top:6px;padding:8px;font-size:16px;min-height:42px}';
 document.head.appendChild(tp197Css);
 // @endsection training-modes-ui-197.js
 
@@ -19734,7 +19734,10 @@ var tp197UiCancel,tp197UiRequestSave,tp197UiApprove,tp197UiUndo;
  tp197UiSet=function(scope,pid,field,value){invalidate(scope,pid);return originalSet(scope,pid,field,value);};
  tp197UiCancel=function(scope,pid){
   if(!scopeOk(scope,pid))return false;
-  invalidate(scope,pid);delete tp197UiPending[k(scope,pid)];tp197UiRefresh(scope,pid);return true;
+  invalidate(scope,pid);delete tp197UiPending[k(scope,pid)];tp197UiRefresh(scope,pid);
+  const panel=document.getElementById?.(scope==='program'?'tp197-mode-program':'tp197-mode-global');
+  if(panel){panel.open=false;panel.querySelector('summary')?.focus({preventScroll:true});}
+  return true;
  };
  tp197UiRequestSave=function(scope,pid){
   if(!scopeOk(scope,pid))return false;
@@ -20163,6 +20166,11 @@ window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation}
  function details(records,existing){
   const node=existing||document.createElement('details'),t=copy(),open=!!existing?.open;
   node.className='tp226-pr-details';
+  if(!existing)node.addEventListener('toggle',()=>{
+   const badge=node.closest('details[data-tp152-history-key]')?.querySelector(':scope > summary .tp226-pr-badge');
+   badge?.setAttribute('aria-expanded',String(node.open));
+   if(!node.open&&node.contains(document.activeElement))badge?.focus({preventScroll:true});
+  });
   const mark=JSON.stringify([language(),records]);
   if(node.dataset.records===mark)return node;
   node.dataset.records=mark;node.replaceChildren();
@@ -20189,11 +20197,16 @@ window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation}
    badge.addEventListener('click',event=>{
     event.preventDefault();event.stopPropagation();
     const current=cachedRows.find(x=>aliases(x).includes(key));if(!current)return;
+    const expand=!(card.open&&card.querySelector('.tp226-pr-details')?.open);
     card.open=true;
     const position=cachedRows.indexOf(current);
     window.tp3EnsureHistoryBody?.(card,position,key);
     paint();
-    const panel=card.querySelector('.tp226-pr-details');if(panel){panel.open=true;panel.querySelector('summary')?.focus({preventScroll:true});}
+    const panel=card.querySelector('.tp226-pr-details');
+    if(panel){
+     panel.open=expand;badge.setAttribute('aria-expanded',String(expand));
+     (expand?panel.querySelector('summary'):badge)?.focus({preventScroll:true});
+    }
    });
    host.appendChild(badge);
   }
@@ -20203,6 +20216,7 @@ window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation}
    const old=body.querySelector(':scope > .tp226-pr-details'),panel=details(records,old);
    if(!old)body.prepend(panel);
   }
+  badge.setAttribute('aria-expanded',String(!!card.querySelector('.tp226-pr-details')?.open));
  }
  function paint(){
   if(typeof document==='undefined')return;
@@ -20272,7 +20286,7 @@ window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation}
  function paint(){
   const host=document.querySelector('.tp1511-training-body');if(!host||host.querySelector('.tp227-haptic-setting'))return;
   const text=words[typeof rf212Lang==='function'?rf212Lang():'hu']||words.en;
-  const label=document.createElement('label');label.className='tp227-haptic-setting';
+  const label=document.createElement('label');label.className='tp227-haptic-setting tp155-sync-check';
   const input=document.createElement('input');input.type='checkbox';input.checked=settings().setHaptic227!==false;
   const body=document.createElement('span'),title=document.createElement('strong'),note=document.createElement('small');
   title.textContent=text[0];note.textContent=text[1];body.append(title,note);label.append(input,body);

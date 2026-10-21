@@ -1,8 +1,26 @@
 # TrainPilot – aktuális átadás
 
-Frissítve: **2026-10-20**. A #230 main-egyesítés: `8a58f3a`, a `v1.3.7` telefonos és `wear-v1.3.7` Wear OS release publikálva. Aktív #225/#231 PR; repository-takarítás: [szabályzat](REPOSITORY_CLEANUP_POLICY.md).
+Frissítve: **2026-10-21**. A #230 main-egyesítés: `8a58f3a`, a `v1.3.7` telefonos és `wear-v1.3.7` Wear OS release publikálva. Aktív #225/#231 PR; repository-takarítás: [szabályzat](REPOSITORY_CLEANUP_POLICY.md).
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
+
+## Elfogadva – #234 Napló PR-részletező (2026-10-21)
+
+- Ág: `feat/234-journal-pr-chips`; 1.3.7 /2734 változatlan.
+- Készülékes visszajelzés a `cbff3509` APK-ról: a rejtett rekordrészletező megnyílik, de az Új PR jelvénnyel nem zárható.
+- A click handler most a korábbi nyitott állapotot váltja; második koppintás teljesen elrejti a panelt és nyitva hagyja az edzéskártyát. A részletek címével is összecsukható.
+- A jelvény `aria-expanded` állapota és nyila követi a panelt; bezáráskor a fókusz visszatér a látható jelvényre.
+- A meglévő Chromium PR-teszt bővítve nyitás–zárás–újranyitásra, külön cím általi zárásra és HU/EN/DE/RO kis kijelzős, nagy betűs változatokra.
+- További készülékes kérés: az Edzésstílus/progresszió zárt panel legyen laposabb; a Mégse láthatóan dobja el a szerkesztést; a sorozat-haptika pipája egyezzen az appéval.
+- A belső módpanel 46px-es kompakt fejléccel, dupla függőleges padding nélkül jelenik meg. A Mégse eldobja a függőben lévő választást, visszaállítja a mentett mezőket és becsukja a belső panelt, a külső Edzés beállításai nyitva marad.
+- A haptika ugyanazt a `tp155-sync-check` témázott 22px-es négyzet/pipa vezérlőt használja, mint a többi szinkronbeállítás. A mentett kapcsoló működése változatlan.
+- A módválasztó/mentés tesztek és a haptika integrált UI-tesztje kibővítve; a Mégse modellteszt helyben sikeres. A PR-részletező célzott tesztje bekerült a kötelező Chromium suite-ba.
+- Végső teszt/APK-forrás: `924664ef7882aa59cbedfbcebe6c95605511d9b1`. Quick **159/159**, Performance **SUCCESS**, telefonos Release Gate **39515146159 SUCCESS**, Chromium **6/6, 107/107**, natív XML **251/251, 0 failure/error/skipped**.
+- Aláírt, kicsomagolt telefonos APK átadva; verzió **1.3.7 /2734**. SHA-256 `2d2ba088f61cf1c34a9da0252a66d0e8caee41449bf817860aacfc2aaedaaa3a`. A csomagolt app.js/CSS blobazonos a forrással, a source stamp a fenti commit. Aláírás és signer-folytonosság kapu sikeres.
+- [CI/APK bizonylat](builds/2026-10-21-234-pr-toggle-training-ui.json). Wear/native forrás változatlan. Következő: új APK készülékes próbája – PR kétszeri koppintása, lapos módpanel, Mégse, témázott haptika pipa.
+- Felhasználói elfogadás: „Zárható, mehet mainre 1.3.71, ez lesz a legfrissebb verzió, release gate stb. leírásban is frissítsük.”
+- Jóváhagyott kiadásjelölt: **1.3.71 /2735** telefon és Wear; metaadatok, cache, verziótesztek és kiadási jegyzetek frissítve. Helyi verzió/kiadási tesztek **11/11**, app.js szintaxis sikeres.
+- Következő: az új verzió forrásazonos Quick/Performance, 6/6 Chromium, telefon/Wear natív és kerek UI kapui; siker után #234 main merge és automatikus v1.3.71 / wear-v1.3.71 kiadás. A telefonos stabil release explicit latest; Wear latest=false.
 
 ## Elfogadva – #230 / 1.3.7 közzétéve
 

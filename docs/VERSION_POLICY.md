@@ -1,6 +1,6 @@
 # Verzió- és kiadási szabály
 
-Aktuális metaadat: **1.3.6 /2733** mindkét Android-modulban. Verzióemelés külön felhasználói döntés; dokumentációs karbantartás önmagában nem emel verziót.
+Aktuális metaadat: **1.3.71 /2735** mindkét Android-modulban. Verzióemelés külön felhasználói döntés; dokumentációs karbantartás önmagában nem emel verziót.
 
 ## Együtt módosítandó források
 

@@ -49,6 +49,8 @@ Egészségnapló, személyre szabás, telefonos felület és Wear OS alapok:
 
 ## 1.3
 
+**1.3.71 /2735 — #234:** visszazárható PR-részletek, laposabb edzésstílus/progresszió fejléc, működő Mégse és egységes haptika négyzet/pipa. Összehangolt telefon/Wear verzió, külön aláírt release gate-ek; [kiadási jegyzet](docs/releases/v1.3.71.md).
+
 **Legutóbb közzétett APK: telefon + Wear 1.3.6 /2733, 2026. október 19.**
 [Telefon](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.6) · [Wear OS](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.6) · [Dátum/platform szerinti kiadásjegyzék](docs/releases/INDEX.md).
 

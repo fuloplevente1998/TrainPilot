@@ -422,5 +422,9 @@
   {
     "file": "tests/browser/workout-features-227-229.cjs",
     "estimatedSeconds": 28
+  },
+  {
+    "file": "tests/browser/workout-records-226.cjs",
+    "estimatedSeconds": 12
   }
 ]

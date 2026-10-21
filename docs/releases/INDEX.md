@@ -1,5 +1,7 @@
 # GitHub-kiadások jegyzéke
 
+Jóváhagyott kiadásjelölt: **1.3.71 /2735**, #234; main és kiadás a teljes telefonos/órás kapuk után. [Kiadási jegyzet](v1.3.71.md).
+
 Aktuális stabil kiadás: **1.3.7 /2734**, a 2026-10-20-i `main`-egyesítésből. A lenti régi release-sorok dátumozott történeti pillanatképet őriznek; a kiadási tagek és fájlok megmaradnak.
 
 ## Kiadott APK és elfogadott main
