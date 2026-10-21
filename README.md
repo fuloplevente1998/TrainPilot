@@ -6,14 +6,12 @@ Workout planning and logging for Android and Wear OS, with optional health data,
 
 ## Downloads and source status
 
-Approved release candidate: **1.3.71 /2735**, #234. Phone/Wear release gates must pass before main merge and publication. [Release notes](docs/releases/v1.3.71.md).
-
-| Stable release, verified 20 October 2026 | Version | Source |
+| Latest stable release | Version | Source |
 | --- | --- | --- |
-| Published APKs: [phone](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.7) and [Wear OS](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.7) | **1.3.7 /2734** | Merged #230, main `8a58f3a`. Both signed independent release gates passed. |
-| Previous published release | 1.3.6 /2733 | [Historical phone/Wear notes](docs/releases/v1.3.6.md). |
+| [Phone](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.71) and [Wear OS](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.71) | **1.3.71 /2735** | Accepted #234, main `60fe647a98ccdcc7f102d647a6a1cc8db40bbbfa`. Independent signed release gates passed. |
+| Previous published release | 1.3.7 /2734 | [Historical release notes](docs/releases/v1.3.7.md). |
 
-The 1.3.7 release includes the previously accepted Samsung/Coach improvements as well as journal-based automatic set weights and repetitions (planned and quick workouts), PR badges, manual set haptics and actual per-set RIR. See [release notes](docs/releases/v1.3.7.md) and [repository cleanup policy](docs/REPOSITORY_CLEANUP_POLICY.md).
+Version 1.3.71 fixes opening and closing PR details, makes the collapsed training style/progression panel flatter, restores Cancel behavior and uses the common themed haptics checkbox. Automatic set prefilling, actual RIR and Samsung/Coach features are retained. See [release notes](docs/releases/v1.3.71.md).
 
 Install the phone APK on the phone and the Wear APK on the watch. Preserve the existing application data when updating. APKs, source archives, checksums and build metadata belong to their specific release; check the [catalog](docs/releases/INDEX.md) before choosing an older build. Google Play publication is still being prepared in [#214](https://github.com/fuloplevente1998/TrainPilot/issues/214).
 

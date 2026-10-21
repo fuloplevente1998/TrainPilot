@@ -1,4 +1,4 @@
-> **Aktuális átadás (2026-10-19):** [WORK_HANDOFF.md](docs/WORK_HANDOFF.md). Először a gyökér `AGENTS.md`-t olvasd. A #193/#202 `e4f4fa8` forrás mind a hat kapuja zöld, aláírt tesztpár kész; fizikai elfogadás még nincs. A lentebbi állapotok történetiek. Új külső UI/funkcióötletek csak rögzítve, megvalósítás nem indult.
+> **Aktuális átadás (2026-10-21):** #234 felhasználó által elfogadva és mainre egyesítve; **1.3.71 /2735** a legfrissebb stabil telefon/Wear kiadás. Részletes kapuk és APK-forrás: [WORK_HANDOFF.md](docs/WORK_HANDOFF.md), [kiadásjegyzék](docs/releases/INDEX.md). A lentebbi állapotok történetiek.
 
 ## Aktuális folytatás — 2026-10-17, összevont P2-csomagok
 

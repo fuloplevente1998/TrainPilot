@@ -6,14 +6,12 @@ Edzéstervezés és naplózás Androidon és Wear OS-en, opcionális egészséga
 
 ## Letöltés és aktuális forrás
 
-Jóváhagyott kiadásjelölt: **1.3.71 /2735**, #234. Main-egyesítés és publikálás a telefonos/órás kapuk sikeres lefutása után. [Kiadási jegyzet](docs/releases/v1.3.71.md).
-
-| Stabil kiadás, ellenőrizve: 2026. október 20. | Verzió | Forrás |
+| Legfrissebb stabil kiadás | Verzió | Forrás |
 | --- | --- | --- |
-| Közzétett APK: [telefon](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.7) és [Wear OS](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.7) | **1.3.7 /2734** | #230 main-egyesítés `8a58f3a`, mindkét független aláírt Release Gate sikeres. |
-| Korábbi közzétett verzió | 1.3.6 /2733 | [Történeti kiadási jegyzetek](docs/releases/v1.3.6.md). |
+| [Telefon](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.71) és [Wear OS](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.71) | **1.3.71 /2735** | Elfogadott #234, main `60fe647a98ccdcc7f102d647a6a1cc8db40bbbfa`. Mindkét független aláírt Release Gate sikeres. |
+| Korábbi közzétett verzió | 1.3.7 /2734 | [Történeti kiadási jegyzet](docs/releases/v1.3.7.md). |
 
-Az 1.3.7 tartalmazza a korábban elfogadott Samsung/Coach-javításokat, a Napló-alapú automatikus súly- és ismétlés-előtöltést (tervezett és gyors edzés), a PR-jelvényt, a sorozathaptikát és a tényleges sorozatonkénti RIR-t. Részletek: [kiadási jegyzet](docs/releases/v1.3.7.md) · [repository-takarítás szabályzata](docs/REPOSITORY_CLEANUP_POLICY.md).
+Az 1.3.71 javítja a PR-részletek visszazárását, laposabbá teszi az Edzésstílus/progresszió zárt fejlécét, helyreállítja a Mégse működését és egységesíti a haptika négyzet/pipa vezérlőjét. Az automatikus sorozat-előtöltés, a tényleges RIR és a Samsung/Coach funkciók megmaradnak. [Kiadási jegyzet](docs/releases/v1.3.71.md).
 
 A telefonos APK a telefonra, a Wear APK az órára való. Frissítéskor őrizd meg az alkalmazás adatait. A forrás, ellenőrzőösszeg és buildadat mindig az adott kiadáshoz tartozik; régi verzió választása előtt nézd meg a [jegyzéket](docs/releases/INDEX.md). A Play-megjelenés előkészítése a [#214](https://github.com/fuloplevente1998/TrainPilot/issues/214) része.
 

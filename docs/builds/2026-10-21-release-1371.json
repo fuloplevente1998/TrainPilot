@@ -1,0 +1,107 @@
+{
+  "version": "1.3.71",
+  "versionCode": 2735,
+  "pr": 234,
+  "userAccepted": true,
+  "head": "be76bf3753e821cab0d97390fa84fcb5c53b1108",
+  "merge": "60fe647a98ccdcc7f102d647a6a1cc8db40bbbfa",
+  "verifiedTree": "4943c34a3aa135e78ed823d54b4206bde25c8c22",
+  "premerge": {
+    "quick": {
+      "run": 39518365505,
+      "passed": 159
+    },
+    "performance": {
+      "run": 39518365457,
+      "conclusion": "success"
+    },
+    "metadata": {
+      "run": 39518365472,
+      "conclusion": "success"
+    },
+    "phone": {
+      "run": 39518361442,
+      "chromiumShards": 6,
+      "chromiumTests": 107,
+      "native": {
+        "tests": 251,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "apkSha256": "74531e5ee9ba9ca4c939ab90533d4a1107988608c04496756a4ff5e411dd0f46",
+      "appBlob": "b7170ef3d66f4a9eeba43d440d54db10cd49ed86",
+      "cssBlob": "311d646ec7bbfabe50bfe113b3494169af61feb1",
+      "signerContinuity": true
+    },
+    "wear": {
+      "run": 39518361372,
+      "native": {
+        "tests": 167,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "signerContinuity": true
+    },
+    "round": {
+      "run": 39518361440,
+      "shardTests": [
+        68,
+        59,
+        56
+      ],
+      "tests": 183,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "main": {
+    "phoneRun": 39519510921,
+    "wearRun": 39519510922,
+    "quickRun": 39519510907,
+    "performanceRun": 39519510934,
+    "roundRun": 39519510953,
+    "phone": {
+      "run": 39519510921,
+      "native": {
+        "tests": 251,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "chromiumShards": 6,
+      "apkSha256": "f3fc054d9e2142fc7919b0e7beee8c2db35527de2fcb85406c23ab23141e5e68",
+      "releaseAsset": 660866976,
+      "releaseDigestMatches": true,
+      "sourceStampVerified": true,
+      "packagedAppCssVerified": true
+    },
+    "wear": {
+      "run": 39519510922,
+      "native": {
+        "tests": 167,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "apkSha256": "ea963e7393bb29748fdd3325d3e83e6a715261e5a93bdd8ed38ab5876773e97a",
+      "releaseAsset": 660862186,
+      "releaseDigestMatches": true,
+      "sourceStampVerified": true
+    },
+    "round": {
+      "run": 39519510953,
+      "tests": 183,
+      "conclusion": "success",
+      "coverageVerifiedInCI": true
+    }
+  },
+  "releases": {
+    "phone": "v1.3.71",
+    "wear": "wear-v1.3.71",
+    "latest": "v1.3.71",
+    "tagCommit": "60fe647a98ccdcc7f102d647a6a1cc8db40bbbfa"
+  }
+}

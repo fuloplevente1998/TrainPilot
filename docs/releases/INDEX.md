@@ -1,16 +1,14 @@
 # GitHub-kiadások jegyzéke
 
-Jóváhagyott kiadásjelölt: **1.3.71 /2735**, #234; main és kiadás a teljes telefonos/órás kapuk után. [Kiadási jegyzet](v1.3.71.md).
-
-Aktuális stabil kiadás: **1.3.7 /2734**, a 2026-10-20-i `main`-egyesítésből. A lenti régi release-sorok dátumozott történeti pillanatképet őriznek; a kiadási tagek és fájlok megmaradnak.
+Aktuális és legfrissebb stabil kiadás: **1.3.71 /2735**, a #234 felhasználói elfogadása és sikeres kiadási kapui után. A régi release-sorok dátumozott történeti pillanatképet őriznek; a tagek és fájlok megmaradnak.
 
 ## Kiadott APK és elfogadott main
 
 | Állapot | Forrás és tartalom |
 | --- | --- |
-| **Legfrissebb stabil: [telefon 1.3.7](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.7) + [Wear OS 1.3.7](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.7)** | **1.3.7 /2734**, `main` merge `8a58f3a`, 2026-10-20. Mindkét aláírt kiadási kapu sikeres. [Release-jegyzet](v1.3.7.md). |
-| Előző stabil kiadás | **1.3.6 /2733**; [történeti release-jegyzet](v1.3.6.md) és [kiadási bizonylat](../builds/2026-10-19-release-136.json). |
-| Régebbi #222 elfogadási checkpoint | Az 1.3.7 kiadás már tartalmazza a Samsung Energy/RIR/Coach javításokat; [korábbi bizonyíték](../builds/2026-10-20-222-accepted.json). |
+| **Legfrissebb stabil: [telefon 1.3.71](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.71) + [Wear OS 1.3.71](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.71)** | **1.3.71 /2735**, main `60fe647a98ccdcc7f102d647a6a1cc8db40bbbfa`. Külön aláírt telefon/Wear kapuk sikeresek; a telefonos release explicit latest. [Kiadási jegyzet](v1.3.71.md). |
+| Előző stabil kiadás | **1.3.7 /2734**; [történeti kiadási jegyzet](v1.3.7.md). |
+| Régebbi kiadás | **1.3.6 /2733**; [jegyzet](v1.3.6.md) és [bizonylat](../builds/2026-10-19-release-136.json). |
 
 A takarítás során a [repository-takarítási szabály](../REPOSITORY_CLEANUP_POLICY.md) érvényes: a régi kiadások tageit, APK-fájljait, aláírásait és a kiadás történetét nem töröljük.
 
