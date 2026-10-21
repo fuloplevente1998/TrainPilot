@@ -434,5 +434,9 @@
   {
     "file": "tests/browser/timed-stop-panel-performance.cjs",
     "estimatedSeconds": 15
+  },
+  {
+    "file": "tests/browser/panel-reflow-236.cjs",
+    "estimatedSeconds": 16
   }
 ]
