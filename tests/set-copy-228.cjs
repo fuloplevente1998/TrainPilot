@@ -50,7 +50,7 @@ const quickSource=fs.existsSync('www/trainpilot-150-quick-workout.js')?
 const wearSource=fs.existsSync('www/wear-sync.js')?
  fs.readFileSync('www/wear-sync.js','utf8'):app;
 assert.match(quickSource,/function tp150QuickExercise\(id\)\{[\s\S]{0,400}sets:tp228PrefillSets\(null,e,/);
-assert.match(wearSource,/function watchQuickExercises\(lang\)\{[\s\S]{0,1000}sets:tp228PrefillSets\(null,e,/);
+assert.match(wearSource,/function watchQuickExercises\(lang,prefill=\{\}\)\{[\s\S]{0,1000}sets:tp228PrefillSets\(null,e,/);
 // Both phone Quick Workout configuration paths must preserve the journal
 // model, and the optional user weight edit must not clear historical reps.
 const unified=fs.existsSync('www/trainpilot-151-unified-design.js')?

@@ -1,5 +1,5 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const app=fs.readFileSync('www/app.js','utf8'),start=app.indexOf('// @prefill228-start'),end=app.indexOf('// @prefill228-end',start);
+const app=fs.readFileSync(fs.existsSync('www/v12.js')?'www/v12.js':'www/app.js','utf8'),start=app.indexOf('// @prefill228-start'),end=app.indexOf('// @prefill228-end',start);
 const context=vm.createContext({Map,Date,crypto:require('node:crypto').webcrypto,window:{}});
 vm.runInContext(app.slice(start,end),context);
 const result=vm.runInContext(`(()=>{
