@@ -4,6 +4,15 @@ Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Folyamatban – natív Android forrás-visszaállítás
+
+- Aktív ág: `feat/native-android-migration`; kiinduló upstream commit `038b4bd`. A visszaállítás Slice-onkénti commitjai: Slice 1 `bebc1df`, Slice 2 `b2030a6`, Slice 3 `b177eb2`, Slice 4 `4e641a3`, Slice 5 `fc23d18`, Slice 6 `bebca8a`, Slice 7 `08a1317`, Slice 8 `ad0afa3`; az integráció, kinyerő, jelentés és forrás-manifeszt `2b0f4af`.
+- A gyökérben lévő `TrainPilot_Full_Conversation_Export.json` 115 üzenetéből 70 teljes, fájlhoz rendelt forrásfájl állt vissza a [NATIVE_IMPORT_MANIFEST.md](../NATIVE_IMPORT_MANIFEST.md) és az újrafuttatható [kinyerő](../migration-source/extract_native_sources.py) alapján. Két fájlút nélküli Kotlin-blokk külön ellenőrzési fájlban maradt a `migration-source/review/` alatt.
+- A Slice 6 navigáció helyőrző útvonalai a visszaállított Slice 7/8 képernyőkre mutatnak. A forrásellenőrzés nem talált duplikált Kotlin/Java FQ deklarációt, hibás Kotlin package/path egyezést vagy hiányzó explicit projektimportot.
+- **Fordítás és tesztek nincsenek igazolva.** A Gradle 8.11.1 Java 25-tel nem futott (class-file major 69); JDK 21-gyel az Android SDK hiánya állította meg a Gradle-t még a Kotlin-fordítás előtt. A GitHub CLI hitelesítés nélkül volt, ezért Actions-állapot sem ellenőrzött.
+- Az ág 9 commit-tal az `origin/feat/native-android-migration` előtt van; nincs main merge vagy push. A lokális `.gradle` állapot és a Gradle-problémajelentés nem része a commitoknak; az eredeti munkafa mentésére készített stash megmaradt.
+- Következő lépés: Android SDK-val vagy hitelesített Actions-környezettel futtasd a `:shared`, `:app` és `:wear` fordítást/teszteket, javítsd a tényleges buildhibákat, majd vizsgáld át a két attribúció nélküli blokkot. Merge, release és készülékes elfogadás nem történt.
+
 ## #214 – GitHub-bemutató frissítve (2026-10-21)
 
 - Kifejezett felhasználói kérésre a GitHub About rövid angol leírása és 11 Topics címkéje ténylegesen elmentve, böngészőben visszaellenőrizve.
