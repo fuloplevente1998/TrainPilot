@@ -4,6 +4,14 @@ Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## #236 – navigáció lenyomási színe és oldalváltás (2026-10-22)
+
+- Fizikai visszajelzés a `40edb0a` APK-ról: „Sokkal jobb”, de a gomb színváltása még gyorsabb az oldal megjelenésénél. Ez részleges javulás, nem végleges teljesítményelfogadás.
+- Új alkalmazásforrás `715dc5d4353ed86116b4596f0cc13916efbe4888`: a meglévő navigációs stílusban a fő nav `:hover/:active` filter/opacity hatása semleges. Az általános gomb-press effekt korábban már lenyomáskor világosított, míg a route a click/felengedéskor indult. A fő nav kijelölése így a megjelenő oldallal együtt változik; nincs új router/wrapper vagy pointer-down navigáció.
+- A meglévő `settings-immediate-navigation-236.cjs` valós CDP touchStart/hold/touchCancel/touchEnd próbákkal bővült, basic/vivid témán és 4× CPU-val. A korábbi szinkron Settings/nav, második tap és 320/393 px ellenőrzés megmaradt.
+- A pontos `715dc5d` forráson sikeres: Quick `39830962591`, Performance `39830952866`, Phone Release Gate `39830952727` (6/6 shard, 112/112 UI-modul, 251/251 natív release), WebView `39830952962` (3/3). Letöltött UI JSON és natív XML szerint nincs hiba/kihagyás; a 4× CPU érintés/hold/cancel/release regresszió sikeres.
+- Új [telefonos APK+forrás ZIP](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39830952727/artifacts/12448513131), **1.3.71/2735**, `com.repforge.app`, SHA256 `dd475589160e3073bc91e0294ee995627ec358a1efc149b9f77bc6fccaa830cd`. Source stamp `715dc5d`, csomagolt app.js byteazonos, baseline.prof/profm jelen, v2 signer az eredeti `4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688`. Fizikai együttváltás és az általános lassulás elfogadása nyitott. Verzió/Wear változatlan; Wear APK az előző szakaszban hivatkozott változat.
+
 ## #236 – átvétel a 2026-10-22-i beszélgetésexportból
 
 - Átvett alkalmazásforrás: `4037e3b`; az export utáni P1.2-javítások is bekerültek. P1.2 egy indulási fitet céloz, valódi útvonalváltáskor szinkron fitet és csak resize esetén RAF-összevonást. A Beállítások panel és a fő navigáció kijelölője azonnal vált; P1.5 konzervatív telefonos R8/shrink és kézi baseline-profil készült.
