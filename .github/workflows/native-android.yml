@@ -47,7 +47,7 @@ jobs:
           test -f gradle/wrapper/gradle-wrapper.jar
           chmod +x gradlew
       - name: Build native phone and watch debug APKs
-        run: ./gradlew --no-daemon --stacktrace :app:assembleDebug :wear:assembleDebug
+        run: ./gradlew --continue --no-daemon --stacktrace :app:assembleDebug :wear:assembleDebug
 
       - name: Prepare existing release keystore
         shell: bash
