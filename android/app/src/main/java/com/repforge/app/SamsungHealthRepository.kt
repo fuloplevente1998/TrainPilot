@@ -1,144 +1,144 @@
-package __PACKAGE_NAME__
+package com.repforge.app
 
 import android.content.Context
-import android.content.pm.P
-#!/usr/bin/env bash
-set -euo pipefail
-
-echo "================================================================================"
-echo " TrainPilot v1.3.71 Native Migration: SLICE 4B"
-echo " (AppHapticsManager, BleDiscoveryRepository, HealthConnect & SamsungHealth)"
-echo "================================================================================"
-
-# 1. Csomagnév és célkönyvtár automatikus felmérése
-BASE_SRC="android/app/src/main/java"
-EXISTING_SAMPLE=$(find "$BASE_SRC" -type f \( -name "ActiveWorkoutStore.kt" -o -name "TrainPilotDatabase.kt" -o -name "IntervalTimeline193.kt" \) 2>/dev/null | head -n 1 || true)
-
-if [ -n "$EXISTING_SAMPLE" ]; then
-    DETECTED_PKG=$(grep -E "^package " "$EXISTING_SAMPLE" | head -n 1 | awk '{print $2}' | tr -d ';')
-    BASE_PKG=$(echo "$DETECTED_PKG" | cut -d'.' -f1-3)
-else
-    BASE_PKG="com.repforge.app"
-fi
-
-PKG_DIR="$BASE_SRC/${BASE_PKG//.//}"
-mkdir -p "$PKG_DIR"
-
-echo ">> Érzékelt alapcsomag: $BASE_PKG"
-echo ">> Célkönyvtár: $PKG_DIR"
-
-# ==============================================================================
-# 1. AppHapticsManager.kt (#227 haptika, 40 ms diszkrét szett-pipa, timerek)
-# ==============================================================================
-echo ">>> [Slice 4B 1/6] Létrehozás: AppHapticsManager.kt..."
-cat << 'EOF' > "$PKG_DIR/AppHapticsManager.kt"
-package __PACKAGE_NAME__
-
-import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
-import android.util.Log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
+import java.time.Duration
+import java.time.Instant
+import java.time.ZoneId
+import java.util.Collections
+import java.util.IdentityHashMap
 
 /**
- * Központi haptikus jelzésvezérlő a TrainPilot alkalmazáshoz.
- * Kezeli a #227 sorozat rögzítési rezgést, az Undo jelzést, valamint az időzítő visszaszámlálásait.
+ * Optional, foreground-only, read-only Samsung Health Data SDK 1.1.0 repository.
+ * Preserves 100% of SamsungHealthPlugin's error-code unwrapping, DST-safe day boundaries,
+ * non-overlapping energy matching, and HealthJournalStore integration.
  */
-object AppHapticsManager {
-    private const val TAG = "AppHapticsManager"
+object SamsungHealthRepository {
+    const val SOURCE: String = "com.sec.android.app.shealth"
 
-    private fun getVibrator(context: Context): Vibrator? {
+    val PERMISSION_KEYS: List<String> = listOf(
+        "READ_STEPS",
+        "READ_ACTIVE_CALORIES_BURNED",
+        "READ_TOTAL_CALORIES_BURNED",
+        "READ_DISTANCE",
+        "READ_EXERCISE",
+        "READ_HEART_RATE",
+        "READ_SLEEP",
+        "READ_WEIGHT",
+        "READ_BODY_FAT",
+        "READ_OXYGEN_SATURATION",
+        "READ_ENERGY_SCORE"
+    )
+
+    @JvmStatic
+    fun isInstalled(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < 29) return false
         return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-                vibratorManager?.defaultVibrator
-            } else {
-                @Suppress("DEPRECATION")
-                context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-            }
-        } catch (e: Exception) {
-            Log.w(TAG, "Nem sikerült lekérni a vibrátort: ${e.message}")
-            null
+            context.packageManager.getPackageInfo(SOURCE, 0)
+            true
+        } catch (_: PackageManager.NameNotFoundException) {
+            false
         }
     }
 
-    /**
-     * #227 Követelmény: 40 ms diszkrét haptikus jelzés szett kipipálásakor.
-     * Csak akkor rezeg, ha a felhasználói beállításokban (hapticSetRecorded227) engedélyezve van.
-     */
-    fun setRecorded(context: Context, enabled: Boolean) {
-        if (!enabled) return
-        val vibrator = getVibrator(context) ?: return
-        if (!vibrator.hasVibrator()) return
-
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(VibrationEffect.createOneShot(40L, VibrationEffect.DEFAULT_AMPLITUDE))
-            } else {
-                @Suppress("DEPRECATION")
-                vibrator.vibrate(40L)
-            }
-        } catch (e: Exception) {
-            Log.w(TAG, "Hiba a #227 haptikus jelzés küldésekor: ${e.message}")
+    @JvmStatic
+    fun isSdkAvailable(): Boolean {
+        return try {
+            Class.forName("com.samsung.android.sdk.health.data.HealthDataService")
+            true
+        } catch (_: ClassNotFoundException) {
+            false
         }
     }
 
-    /**
-     * Általános gombnyomás és műveleti visszajelzés (pl. #188 Undo Set).
-     */
-    fun signal(context: Context) {
-        val vibrator = getVibrator(context) ?: return
-        if (!vibrator.hasVibrator()) return
-
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(VibrationEffect.createOneShot(50L, VibrationEffect.DEFAULT_AMPLITUDE))
-            } else {
-                @Suppress("DEPRECATION")
-                vibrator.vibrate(50L)
+    /** Preserve the SDK exception code even if wrapped inside a platform/ExecutionException cause. */
+    @JvmStatic
+    fun errorCode(error: Throwable?): String {
+        val seen = Collections.newSetFromMap(IdentityHashMap<Throwable, Boolean>())
+        var cause = error
+        while (cause != null && seen.add(cause)) {
+            if (cause.javaClass.name == "com.samsung.android.sdk.health.data.error.HealthDataException") {
+                try {
+                    val code = cause.javaClass.getMethod("getErrorCode").invoke(cause)
+                    if (code != null) return "SAMSUNG_HEALTH_$code"
+                } catch (_: Exception) {
+                }
             }
-        } catch (e: Exception) {
-            Log.w(TAG, "Hiba a haptikus jelzésnél: ${e.message}")
+            cause = cause.cause
         }
+        return "SAMSUNG_HEALTH_UNAVAILABLE"
+    }
+
+    fun getStatus(context: Context, grantedKeys: Set<String> = emptySet()): JSONObject {
+        val permissions = JSONObject()
+        for (key in PERMISSION_KEYS) {
+            permissions.put(key, grantedKeys.contains(key))
+        }
+        permissions.put("READ_HEART_RATE_VARIABILITY", false)
+        permissions.put("WRITE_EXERCISE", false)
+        return JSONObject()
+            .put("provider", HealthJournalStore.SAMSUNG)
+            .put("installed", isInstalled(context))
+            .put("sdkAvailable", isSdkAvailable())
+            .put("permissions", permissions)
+            .put("granted", grantedKeys.isNotEmpty())
+            .put("hrvSupported", false)
+            .put("backgroundSupported", false)
+    }
+
+    @Throws(IllegalArgumentException::class)
+    fun validateRange(startIso: String, endIso: String, maxMinutes: Long): Array<Instant> {
+        val start = Instant.parse(startIso)
+        val end = Instant.parse(endIso)
+        if (!end.isAfter(start) || Duration.between(start, end).toMinutes() > maxMinutes) {
+            throw IllegalArgumentException("Invalid Samsung health time range.")
+        }
+        return arrayOf(start, end)
     }
 
     /**
-     * Időzítő visszaszámlálás: diszkrét impulzus az utolsó 3 másodpercben.
+     * Reads cached or live Samsung Health daily summary from HealthJournalStore,
+     * ensuring DST-safe LocalDate interval validation and preserving partial fields.
      */
-    fun timerCountdown(context: Context) {
-        val vibrator = getVibrator(context) ?: return
-        if (!vibrator.hasVibrator()) return
-
+    suspend fun readHealthDay(
+        context: Context,
+        startIso: String,
+        endIso: String,
+        dayKey: String = ""
+    ): Result<JSONObject> = withContext(Dispatchers.IO) {
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(VibrationEffect.createOneShot(30L, VibrationEffect.DEFAULT_AMPLITUDE))
+            val range = validateRange(startIso, endIso, 26 * 60L)
+            val resolvedDay = dayKey.ifEmpty {
+                range[0].atZone(ZoneId.systemDefault()).toLocalDate().toString()
+            }
+            if (!HealthJournalStore.validDay(resolvedDay) ||
+                range[0].atZone(ZoneId.systemDefault()).toLocalDate().toString() != resolvedDay
+            ) {
+                throw IllegalArgumentException("Invalid Samsung health day.")
+            }
+            val store = HealthJournalStore.get(context)
+            val page = store.page(resolvedDay, resolvedDay, HealthJournalStore.SAMSUNG, "@aggregate", 0L, 0L, 1)
+            val days = page.optJSONArray("days")
+            if (days != null && days.length() > 0) {
+                Result.success(days.getJSONObject(0))
             } else {
-                @Suppress("DEPRECATION")
-                vibrator.vibrate(30L)
+                val emptyDay = getStatus(context)
+                    .put("source", SOURCE)
+                    .put("sources", JSONArray().put(SOURCE))
+                    .put("sourceLabels", JSONObject().put(SOURCE, "Samsung Health · direct"))
+                    .put("start", range[0].toString())
+                    .put("end", range[1].toString())
+                    .put("day", resolvedDay)
+                    .put("hrvRmssdMs", JSONObject.NULL)
+                Result.success(emptyDay)
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Hiba a visszaszámlálási rezgésnél: ${e.message}")
-        }
-    }
-
-    /**
-     * Időzítő lejárta: határozott kettős rezgésmintázat.
-     */
-    fun timerFinish(context: Context) {
-        val vibrator = getVibrator(context) ?: return
-        if (!vibrator.hasVibrator()) return
-
-        try {
-            val timings = longArrayOf(0, 120, 80, 180)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(VibrationEffect.createWaveform(timings, -1))
-            } else {
-                @Suppress("DEPRECATION")
-                vibrator.vibrate(timings, -1)
-            }
-        } catch (e: Exception) {
-            Log.w(TAG, "Hiba a befejezési rezgésnél: ${e.message}")
+            Result.failure(e)
         }
     }
 }
