@@ -1,71 +1,118 @@
-package __PACKAGE_NAME__
+package com.repforge.app
 
-import java.io.*
+import java.io.BufferedInputStream
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
+import java.security.MessageDigest
+import java.util.Locale
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
-import java.util.zip.ZipOutputStream
 
-/**
- * Biztonságos ZIP fájlkezelő modul.
- * Zip Slip elleni védelemmel és pufferelt I/O műveletekkel.
- */
-object ArchiveIO {
-    private const val BUFFER_SIZE = 8192
+/** Bounded, allow-listed ZIP extraction shared by BackupRestoreManager and JVM regressions. */
+internal object ArchiveIO {
+    private val ALLOWED_ENTRY_REGEX = Regex("backup\\.json|manifest\\.json|photos/[a-f0-9-]{36}\\.jpg")
 
+    @JvmStatic
     @Throws(IOException::class)
-    fun zipDirectory(sourceDir: File, zipFile: File) {
-        val files = mutableListOf<Pair<String, File>>()
-        collectFiles(sourceDir, "", files)
-
-        ZipOutputStream(BufferedOutputStream(FileOutputStream(zipFile))).use { zos ->
-            for ((relativePath, file) in files) {
-                val entry = ZipEntry(relativePath)
-                entry.time = file.lastModified()
-                zos.putNextEntry(entry)
-                FileInputStream(file).use { fis ->
-                    fis.copyTo(zos, BUFFER_SIZE)
-                }
-                zos.closeEntry()
-            }
+    fun copy(input: InputStream, out: OutputStream, limit: Long): Long {
+        var total = 0L
+        val buffer = ByteArray(8192)
+        while (true) {
+            val count = input.read(buffer)
+            if (count == -1) break
+            total += count
+            if (total > limit) throw IOException("Backup exceeds size limit.")
+            out.write(buffer, 0, count)
         }
+        return total
     }
 
-    private fun collectFiles(dir: File, currentPrefix: String, result: MutableList<Pair<String, File>>) {
-        val list = dir.listFiles() ?: return
-        for (f in list) {
-            val entryPath = if (currentPrefix.isEmpty()) f.name else "$currentPrefix/${f.name}"
-            if (f.isDirectory) {
-                collectFiles(f, entryPath, result)
-            } else {
-                result.add(entryPath to f)
-            }
-        }
-    }
-
+    @JvmStatic
     @Throws(IOException::class)
-    fun unzip(zipFile: File, targetDir: File) {
-        if (!targetDir.exists()) targetDir.mkdirs()
-        val canonicalDestDirPath = targetDir.canonicalPath
-
-        ZipInputStream(BufferedInputStream(FileInputStream(zipFile))).use { zis ->
-            var entry: ZipEntry? = zis.nextEntry
+    fun extract(
+        input: InputStream,
+        directory: File,
+        jsonLimit: Int,
+        photoLimit: Int,
+        totalLimit: Long,
+        entryLimit: Int
+    ): Set<String> {
+        val names = HashSet<String>()
+        var total = 0L
+        ZipInputStream(BufferedInputStream(input)).use { zip ->
+            var entry: ZipEntry? = zip.nextEntry
             while (entry != null) {
-                val newFile = File(targetDir, entry.name)
-                val canonicalDestPath = newFile.canonicalPath
-                if (!canonicalDestPath.startsWith(canonicalDestDirPath + File.separator) && canonicalDestPath != canonicalDestDirPath) {
-                    throw SecurityException("Illegális zip útvonal (Zip Slip kísérlet észlelve): ${entry.name}")
+                val name = entry.name
+                if (!names.add(name) ||
+                    names.size > entryLimit ||
+                    entry.isDirectory ||
+                    !ALLOWED_ENTRY_REGEX.matches(name)
+                ) {
+                    throw IOException("Invalid or duplicate ZIP entry.")
                 }
+                val file = File(directory, name)
+                val parent = file.parentFile
+                if (parent == null || (!parent.isDirectory && !parent.mkdirs())) {
+                    throw IOException("Cannot create archive directory.")
+                }
+                val bytes: Long
+                FileOutputStream(file).use { out ->
+                    bytes = copy(
+                        zip,
+                        out,
+                        (if (name.startsWith("photos/")) photoLimit else jsonLimit).toLong()
+                    )
+                    out.fd.sync()
+                }
+                total += bytes
+                if (bytes == 0L || total > totalLimit) {
+                    throw IOException("Empty or oversized archive.")
+                }
+                zip.closeEntry()
+                entry = zip.nextEntry
+            }
+        }
+        return names
+    }
 
-                if (entry.isDirectory) {
-                    newFile.mkdirs()
-                } else {
-                    newFile.parentFile?.mkdirs()
-                    FileOutputStream(newFile).use { fos ->
-                        zis.copyTo(fos, BUFFER_SIZE)
-                    }
+    @JvmStatic
+    @Throws(Exception::class)
+    fun hash(input: InputStream): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val buffer = ByteArray(8192)
+        while (true) {
+            val count = input.read(buffer)
+            if (count == -1) break
+            digest.update(buffer, 0, count)
+        }
+        val hex = StringBuilder()
+        for (value in digest.digest()) {
+            hex.append(String.format(Locale.US, "%02x", value.toInt() and 255))
+        }
+        return hex.toString()
+    }
+
+    @JvmStatic
+    @Throws(Exception::class)
+    fun verify(
+        directory: File,
+        names: Set<String>,
+        expected: Set<String>,
+        checksums: Map<String, String>
+    ) {
+        if (names != expected || checksums.size != names.size - 1) {
+            throw IOException("Incomplete photo archive.")
+        }
+        for (name in names) {
+            if ("manifest.json" == name) continue
+            FileInputStream(File(directory, name)).use { input ->
+                if (hash(input) != checksums[name]) {
+                    throw IOException("Archive checksum mismatch.")
                 }
-                zis.closeEntry()
-                entry = zis.nextEntry
             }
         }
     }
