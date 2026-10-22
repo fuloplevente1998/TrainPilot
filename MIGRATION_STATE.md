@@ -4,7 +4,7 @@
 A teljes AI Studio beszélgetés-exportból a Slice 1–8 fájlba címzett natív forrásblokkjai vissza lettek állítva. Ez a forrás-visszaállítás önmagában nem igazolja a fordíthatóságot vagy a készülékes működést.
 
 - Az export 115 üzenetét feldolgozó kinyerő 70 teljes, egyértelműen fájlhoz rendelt forrásfájlt talált és állított vissza; az eredet és a SHA-256 a [NATIVE_IMPORT_MANIFEST.md](NATIVE_IMPORT_MANIFEST.md) fájlban szerepel.
-- Két fájlút nélküli Kotlin-blokk elkülönítve vár kézi attribúcióra a `migration-source/review/` alatt; ezek tartalma nem lett találgatással beépítve.
+- Két fájlút nélküli Kotlin-blokk elkülönítve vár kézi attribúcióra: [chunk-004.json](migration-source/review/chunk-004.json) és [chunk-016.json](migration-source/review/chunk-016.json); ezek tartalma nem lett találgatással beépítve.
 - Az importált képernyők bekötötték a Slice 6 navigáció korábbi helyőrző útvonalait.
 - Statikus ellenőrzés: nincs duplikált teljesen minősített Kotlin/Java osztálydeklaráció, hibás Kotlin package/path egyezés vagy fel nem oldott explicit projektimport.
 - **Gradle/Kotlin-fordítás nem futott le:** a JDK 21-es próbát az Android SDK hiánya állította meg. A fordítás, tesztek és készülékes próba továbbra is nyitott.

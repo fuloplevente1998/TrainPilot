@@ -1,6 +1,6 @@
 # TrainPilot – aktuális átadás
 
-Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.3.71 a GitHub Latest.** A #225 audit PR beolvasztás nélkül lezárva, #230/#234 által felváltva; Nyitott PR nincs; #214 karbantartási issue marad; [takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
+Frissítve: **2026-10-22**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.3.71 a GitHub Latest.** A #225 audit PR beolvasztás nélkül lezárva, #230/#234 által felváltva; Nyitott PR nincs; #214 karbantartási issue marad; [takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
@@ -10,7 +10,7 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 - A gyökérben lévő `TrainPilot_Full_Conversation_Export.json` 115 üzenetéből 70 teljes, fájlhoz rendelt forrásfájl állt vissza a [NATIVE_IMPORT_MANIFEST.md](../NATIVE_IMPORT_MANIFEST.md) és az újrafuttatható [kinyerő](../migration-source/extract_native_sources.py) alapján. Két fájlút nélküli Kotlin-blokk külön ellenőrzési fájlban maradt: [chunk-004.json](../migration-source/review/chunk-004.json), [chunk-016.json](../migration-source/review/chunk-016.json).
 - A Slice 6 navigáció helyőrző útvonalai a visszaállított Slice 7/8 képernyőkre mutatnak. A forrásellenőrzés nem talált duplikált Kotlin/Java FQ deklarációt, hibás Kotlin package/path egyezést vagy hiányzó explicit projektimportot.
 - **Fordítás és tesztek nincsenek igazolva.** A Gradle 8.11.1 Java 25-tel nem futott (class-file major 69); JDK 21-gyel az Android SDK hiánya állította meg a Gradle-t még a Kotlin-fordítás előtt. A GitHub CLI hitelesítés nélkül volt, ezért Actions-állapot sem ellenőrzött.
-- Az ág a dokumentációs commit után 10 commit-tal lesz az `origin/feat/native-android-migration` előtt; nincs main merge vagy push. A lokális `.gradle` állapot és a Gradle-problémajelentés nem része a commitoknak; az eredeti munkafa mentésére készített stash megmaradt.
+- Az ág a Slice-onkénti 8 commitot, az integrációs commitot és az átadási dokumentáció commitjait tartalmazza; nincs main merge vagy push. A lokális `.gradle` állapot és a Gradle-problémajelentés nem része a commitoknak; az eredeti munkafa mentésére készített stash megmaradt.
 - Következő lépés: Android SDK-val vagy hitelesített Actions-környezettel futtasd a `:shared`, `:app` és `:wear` fordítást/teszteket, javítsd a tényleges buildhibákat, majd vizsgáld át a két attribúció nélküli blokkot. Merge, release és készülékes elfogadás nem történt.
 
 ## #214 – GitHub-bemutató frissítve (2026-10-21)
