@@ -53,11 +53,11 @@
     "android/app/src/main/java/com/repforge/app/ui/programs/TrainingProgramsViewModel.kt": "unchanged",
     "android/app/src/main/java/com/repforge/app/ui/progress/ProgressScreen.kt": "unchanged",
     "android/app/src/main/java/com/repforge/app/ui/progress/ProgressViewModel.kt": "unchanged",
-    "android/app/src/main/java/com/repforge/app/ui/settings/SettingsScreen.kt": "unchanged",
+    "android/app/src/main/java/com/repforge/app/ui/settings/SettingsScreen.kt": "written",
     "android/app/src/main/java/com/repforge/app/ui/settings/SettingsViewModel.kt": "unchanged",
     "android/app/src/main/java/com/repforge/app/ui/theme/TrainPilotTheme.kt": "unchanged",
     "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt": "unchanged",
-    "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutViewModel.kt": "unchanged",
+    "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutViewModel.kt": "written",
     "android/app/src/main/res/xml/file_paths.xml": "unchanged",
     "android/build.gradle": "unchanged",
     "android/settings.gradle": "unchanged",
@@ -148,6 +148,18 @@
       "replacement": "Slice 7 and Slice 8 screen composables",
       "action": "Connected Slice 6 placeholder routes to the imported workout, journal, progress, health, and settings screens",
       "status": "applied"
+    },
+    {
+      "path": "android/app/src/main/java/com/repforge/app/ui/settings/SettingsScreen.kt",
+      "replacement": "android/app/src/main/java/com/repforge/app/ui/settings/SettingsScreen.kt",
+      "action": "Normalized generated-source trailing whitespace without changing code",
+      "status": "normalized"
+    },
+    {
+      "path": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutViewModel.kt",
+      "replacement": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutViewModel.kt",
+      "action": "Normalized generated-source trailing whitespace without changing code",
+      "status": "normalized"
     }
   ],
   "candidates": [

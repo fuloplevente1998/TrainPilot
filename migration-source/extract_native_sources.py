@@ -374,8 +374,8 @@ def render_manifest(
         f"Extracted code-file candidates: {len(all_candidates)}; selected files: {len(selected)}; "
         f"unassigned code blocks for review: {len(review_blocks)}.",
         "",
-        "| Source file | Slice | Conversation source | Import status | Versions | SHA-256 |",
-        "|---|---|---|---|---:|---|",
+        "| Source file | Slice | Conversation source | Import status | Versions | Source SHA-256 | Workspace SHA-256 |",
+        "|---|---|---|---|---:|---|---|",
     ]
     for path in sorted(selected):
         candidate = selected[path]
@@ -388,16 +388,29 @@ def render_manifest(
                     if path in imported_paths and cleanup["status"] in {"removed", "already removed"}
                     else "Pending import with verified duplicate removal"
                 )
-            else:
+            elif cleanup["action"].startswith("Connected"):
                 status = (
                     "Imported with verified screen wiring"
                     if path in imported_paths and cleanup["status"] in {"applied", "already applied"}
                     else "Pending import with verified screen wiring"
                 )
+            else:
+                status = (
+                    "Imported with verified formatting cleanup"
+                    if path in imported_paths and cleanup["status"] in {"normalized", "already clean"}
+                    else "Pending import with verified formatting cleanup"
+                )
         versions = versions_by_path[path]
+        workspace_path = ROOT / PurePosixPath(path)
+        workspace_sha256 = (
+            hashlib.sha256(workspace_path.read_bytes()).hexdigest()
+            if workspace_path.is_file()
+            else "not present"
+        )
         lines.append(
             f"| `{path}` | {candidate.slice_label} | chunk {candidate.chunk_index} "
-            f"({candidate.timestamp}) | {status} | {len(versions)} | `{candidate.sha256}` |"
+            f"({candidate.timestamp}) | {status} | {len(versions)} | `{candidate.sha256}` "
+            f"| `{workspace_sha256}` |"
         )
     lines.extend(
         [
@@ -409,6 +422,7 @@ def render_manifest(
             "it is evidence of continuation, not a claim of formal approval.",
             "- Existing source was replaced only from a file-addressed, complete code block in the export.",
             "- Unassigned/ambiguous blocks and files without an unambiguous path are kept out of the Android tree.",
+            "- Source SHA-256 identifies the selected export block; Workspace SHA-256 identifies the resulting file bytes.",
             "",
             "## Verified collision cleanup",
             "",
@@ -555,6 +569,34 @@ def wire_imported_screens(apply: bool) -> dict[str, str]:
     }
 
 
+def normalize_imported_whitespace(apply: bool) -> list[dict[str, str]]:
+    cleanups: list[dict[str, str]] = []
+    for relative_path in (
+        "android/app/src/main/java/com/repforge/app/ui/settings/SettingsScreen.kt",
+        "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutViewModel.kt",
+    ):
+        path = ROOT / relative_path
+        if not path.is_file():
+            continue
+        original = path.read_text(encoding="utf-8")
+        normalized = re.sub(r"[ \t]+(?=\r?$)", "", original, flags=re.M)
+        if normalized == original:
+            status = "already clean"
+        else:
+            status = "planned" if not apply else "normalized"
+            if apply:
+                path.write_text(normalized, encoding="utf-8")
+        cleanups.append(
+            {
+                "path": relative_path,
+                "replacement": relative_path,
+                "action": "Normalized generated-source trailing whitespace without changing code",
+                "status": status,
+            }
+        )
+    return cleanups
+
+
 def apply_project_fixes(apply: bool) -> list[dict[str, str]]:
     cleanups: list[dict[str, str]] = []
     shared_root = ROOT / "android/shared/src/main/java/com/repforge/shared"
@@ -687,6 +729,7 @@ def apply_project_fixes(apply: bool) -> list[dict[str, str]]:
     navigation_fix = wire_imported_screens(apply)
     if navigation_fix:
         cleanups.append(navigation_fix)
+    cleanups.extend(normalize_imported_whitespace(apply))
     return cleanups
 
 
