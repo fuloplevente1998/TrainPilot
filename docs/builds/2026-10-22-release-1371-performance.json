@@ -1,0 +1,33 @@
+{
+  "version": "1.3.71",
+  "versionCode": 2735,
+  "sourceCommit": "5d27aa9c5ebf68d1c206c88a74dea89e660a4937",
+  "deviceAcceptedApplicationCommit": "715dc5d4353ed86116b4596f0cc13916efbe4888",
+  "phone": {
+    "tag": "v1.3.71-perf-20261022",
+    "releaseId": 421076378,
+    "latest": true,
+    "size": 3294865,
+    "sha256": "850b5e1e597e574dbf5cf55cf82721a3f77879447db9852fa056d2b889d50570",
+    "gateRun": 39833146419,
+    "uiModulesPassed": 112,
+    "nativeTestsPassed": 251
+  },
+  "wear": {
+    "tag": "wear-v1.3.71-perf-20261022",
+    "releaseId": 421076391,
+    "size": 4226963,
+    "sha256": "c145afd729f4a9bf91d7cef48f2e9c82ddb265b73dc2b5bb8a15b12a9839e2ea",
+    "gateRun": 39833146349,
+    "nativeTestsPassed": 167,
+    "roundUiRun": 39833146411,
+    "roundUiTestsPassed": 183
+  },
+  "quickRun": 39833146328,
+  "performanceRun": 39833146319,
+  "publisherRun": 39834820959,
+  "failuresErrorsSkipped": 0,
+  "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+  "original1371TagsPreservedAt": "60fe647a98ccdcc7f102d647a6a1cc8db40bbbfa",
+  "notes": "Same Android version, separate dated release labels; original releases and binaries retained. Source metadata, APK app.js, baseline assets, signatures, checksums and GitHub asset digests verified. No Google Play publication. Five-sample performance medians and isolated R8 causal gains are not claimed."
+}

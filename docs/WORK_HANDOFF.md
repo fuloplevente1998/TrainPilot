@@ -1,8 +1,16 @@
 # TrainPilot – aktuális átadás
 
-Frissítve: **2026-10-22**. **#235/#237 mainen, készüléken elfogadva, változatlan 1.3.71 /2735.** Felhasználó által kért új teljesítménykiadás: `v1.3.71-perf-20261022` / `wear-v1.3.71-perf-20261022`, az eredeti 1.3.71 kiadás megőrzésével. #214 karbantartási issue marad. [Takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
+Frissítve: **2026-10-22**. **#235/#237 mainen, készüléken elfogadva, változatlan 1.3.71 /2735.** Új teljesítménykiadás közzétéve: `v1.3.71-perf-20261022` (Latest) / `wear-v1.3.71-perf-20261022`, az eredeti 1.3.71 kiadás megőrzésével. #214 karbantartási issue marad. [Takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
+
+## Közzétett gyorsított kiadás – 2026-10-22
+
+- [Telefon](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.71-perf-20261022) **Latest**, [Wear](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.71-perf-20261022) külön stabil kiadás; mindkettő publikált, nem prerelease. Közös tag-/APK-forrás **`5d27aa9c5ebf68d1c206c88a74dea89e660a4937`**, alkalmazáskód az elfogadott `715dc5d` builddel azonos. Verzió változatlan **1.3.71 /2735**, appid `com.repforge.app`, eredeti v2 signer.
+- Telefon SHA256 **`850b5e1e597e574dbf5cf55cf82721a3f77879447db9852fa056d2b889d50570`**, méret 3 294 865 byte. Wear SHA256 **`c145afd729f4a9bf91d7cef48f2e9c82ddb265b73dc2b5bb8a15b12a9839e2ea`**, 4 226 963 byte. GitHub asset-digestek egyeznek a letöltött/ellenőrzött CI-csomagokkal. Telefonos forrás ZIP, checksum, mindkét platform buildadatai mellékelve.
+- A pontos main-forráson: Quick `39833146328` és Performance `39833146319` sikeres; Phone `39833146419` **112/112 UI, 251/251 natív release**, Wear `39833146349` **167/167**, kerek UI `39833146411` **183/183**. Letöltött XML/JSON szerint 0 failure/error/skipped. Előzetes WebView `39830952962` **3/3**, alkalmazáskód-azonos forráson. [Rövid kiadási bizonylat](builds/2026-10-22-release-1371-performance.json).
+- Feltöltés a meglévő `refresh-release-assets.yml` új, opcionális dátumozott címkepár-bemeneteivel, újrafordítás nélkül: sikeres `39834820959`. A helyi uploads API 401-e után a GitHub saját tokenjét használja. Az első publisher-futás draft tag-keresése 404-et adott; `082f51b` javította. A forrás/verzió/checksum/signer/tag ellenőrzések megmaradtak.
+- README HU/EN, kiadásjegyzék, változáslista, aktuális fejlesztési fejlécek, tervállapotok és #235 leírása frissítve. A korábbi `v1.3.71` / `wear-v1.3.71` tag **`60fe647`** maradt, eredeti asset ID/méret változatlan; leírásuk az új kiadásra mutat. Nincs visszamenőleges bináris-/tagcsere vagy Play-publikálás.
 
 ## Készülékes elfogadás és main merge – 2026-10-22
 
