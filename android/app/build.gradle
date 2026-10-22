@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'org.jetbrains.kotlin.android'
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
-apply plugin: 'com.google.devtools.ksp'
+apply plugin: 'org.jetbrains.kotlin.kapt'
 
 android {
     namespace "com.repforge.app"
@@ -78,7 +78,7 @@ dependencies {
     // Room Database
     implementation "androidx.room:room-runtime:${rootProject.ext.androidxRoomVersion}"
     implementation "androidx.room:room-ktx:${rootProject.ext.androidxRoomVersion}"
-    ksp "androidx.room:room-compiler:${rootProject.ext.androidxRoomVersion}"
+    kapt "androidx.room:room-compiler:${rootProject.ext.androidxRoomVersion}"
 
     // DataStore
     implementation "androidx.datastore:datastore-preferences:${rootProject.ext.androidxDataStoreVersion}"
