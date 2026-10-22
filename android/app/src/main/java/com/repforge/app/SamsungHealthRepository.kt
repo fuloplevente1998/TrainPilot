@@ -1,6 +1,13 @@
 package com.repforge.app
 
+import android.app.Activity
 import android.content.Context
+import android.os.Looper
+import com.samsung.android.sdk.health.data.HealthDataService
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.CancellationException
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import android.content.pm.PackageManager
 import android.os.Build
 import kotlinx.coroutines.Dispatchers
@@ -101,44 +108,44 @@ object SamsungHealthRepository {
         return arrayOf(start, end)
     }
 
-    /**
-     * Reads cached or live Samsung Health daily summary from HealthJournalStore,
-     * ensuring DST-safe LocalDate interval validation and preserving partial fields.
-     */
+    /** Explicit permission UI, initiated by selecting Samsung Health. */
+    suspend fun requestReadPermissions(activity: Activity): Result<Unit> = withContext(Dispatchers.Main) {
+        runCatching {
+            check(isInstalled(activity) && isSdkAvailable()) { "Samsung Health nem érhető el." }
+            suspendCancellableCoroutine<Unit> { continuation ->
+                try {
+                    HealthDataService.getStore(activity).requestPermissionsAsync(SamsungSdkReader.permissions(), activity)
+                        .setCallback(Looper.getMainLooper(), {
+                            if (continuation.isActive) continuation.resume(Unit)
+                        }, { error -> if (continuation.isActive) continuation.resumeWithException(error) })
+                } catch (error: Exception) { if (continuation.isActive) continuation.resumeWithException(error) }
+            }
+        }
+    }
+
+    /** Real SDK read. Never substitute an empty/fresh day for unavailable data. */
     suspend fun readHealthDay(
         context: Context,
         startIso: String,
         endIso: String,
-        dayKey: String = ""
+        dayKey: String = "",
+        requireForegroundGuard: () -> Unit
     ): Result<JSONObject> = withContext(Dispatchers.IO) {
         try {
+            requireForegroundGuard()
+            check(isInstalled(context) && isSdkAvailable()) { "Samsung Health nem érhető el." }
             val range = validateRange(startIso, endIso, 26 * 60L)
-            val resolvedDay = dayKey.ifEmpty {
-                range[0].atZone(ZoneId.systemDefault()).toLocalDate().toString()
-            }
-            if (!HealthJournalStore.validDay(resolvedDay) ||
-                range[0].atZone(ZoneId.systemDefault()).toLocalDate().toString() != resolvedDay
-            ) {
-                throw IllegalArgumentException("Invalid Samsung health day.")
-            }
-            val store = HealthJournalStore.get(context)
-            val page = store.page(resolvedDay, resolvedDay, HealthJournalStore.SAMSUNG, "@aggregate", 0L, 0L, 1)
-            val days = page.optJSONArray("days")
-            if (days != null && days.length() > 0) {
-                Result.success(days.getJSONObject(0))
-            } else {
-                val emptyDay = getStatus(context)
-                    .put("source", SOURCE)
-                    .put("sources", JSONArray().put(SOURCE))
-                    .put("sourceLabels", JSONObject().put(SOURCE, "Samsung Health · direct"))
-                    .put("start", range[0].toString())
-                    .put("end", range[1].toString())
-                    .put("day", resolvedDay)
-                    .put("hrvRmssdMs", JSONObject.NULL)
-                Result.success(emptyDay)
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+            val day = dayKey.ifEmpty { range[0].atZone(ZoneId.systemDefault()).toLocalDate().toString() }
+            require(HealthJournalStore.validDay(day) && range[0].atZone(ZoneId.systemDefault()).toLocalDate().toString() == day)
+            val journal = HealthJournalStore.get(context)
+            val generation = journal.generation()
+            val reader = SamsungSdkReader.open(context) { requireForegroundGuard() }
+            check(reader.granted.isNotEmpty()) { "Samsung Health olvasási engedély szükséges." }
+            val result = reader.daily(range[0], range[1]).put("day", day)
+            requireForegroundGuard()
+            journal.samsungDay(day, result, reader.records, generation)
+            Result.success(result)
+        } catch (cancelled: CancellationException) { throw cancelled }
+        catch (failure: Exception) { Result.failure(failure) }
     }
 }

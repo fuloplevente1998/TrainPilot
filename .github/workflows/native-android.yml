@@ -44,7 +44,7 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
       - name: Install Android SDK platform
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - name: Validate Gradle wrapper
         run: |
           test -f gradlew
@@ -78,7 +78,9 @@ jobs:
           ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: ./gradlew --no-daemon --stacktrace -PnativeUpgradeTests :app:assembleRelease :wear:assembleRelease :app:assembleReleaseAndroidTest :wear:assembleDebugAndroidTest
+        run: |
+          ./gradlew --no-daemon --stacktrace -PnativeUpgradeTests :app:assembleRelease :wear:assembleRelease :app:assembleReleaseAndroidTest :wear:assembleDebugAndroidTest
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks "$ANDROID_KEYSTORE_PATH" --ks-pass env:ANDROID_STORE_PASSWORD --key-pass env:ANDROID_KEY_PASSWORD --ks-key-alias "$ANDROID_KEY_ALIAS" app/build/outputs/apk/androidTest/release/app-release-androidTest.apk
       - name: Verify update package version and signer continuity
         shell: bash
         env:
@@ -97,6 +99,8 @@ jobs:
           grep -q "package: name='com.repforge.app'" wear-native-badging.txt
           grep -q "versionCode='2736'" phone-native-badging.txt
           grep -q "versionCode='2736'" wear-native-badging.txt
+          grep -q "versionName='1.3.71-native-test'" phone-native-badging.txt
+          grep -q "versionName='1.3.71-native-test'" wear-native-badging.txt
           "$SIGNER" verify --verbose "$PHONE"
           "$SIGNER" verify --verbose "$WEAR"
           mkdir -p "$RUNNER_TEMP/native-signer-baseline"

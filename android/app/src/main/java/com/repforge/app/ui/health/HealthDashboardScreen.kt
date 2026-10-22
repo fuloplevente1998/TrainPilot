@@ -1,4 +1,12 @@
 package com.repforge.app.ui.health
+import android.app.Activity
+import android.os.Build
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import com.repforge.app.HealthConnectRepository
 import androidx.compose.material3.TextButton
 
 import androidx.compose.animation.AnimatedVisibility
@@ -63,8 +71,14 @@ fun HealthDashboardScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = LocalTrainPilotColors.current
+    val context = LocalContext.current
+    val activity = context as? Activity
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        viewModel.refresh(activity)
+    }
 
     Column(modifier = Modifier.fillMaxSize().background(colors.bg)) {
+        state.statusMessage?.let { Text(it, color = colors.muted, modifier = Modifier.padding(12.dp)) }
         // Két fül: Egészségnapló vs #111 BLE Eszközkereső
         TabRow(
             selectedTabIndex = if (state.activeTab == "journal") 0 else 1,
@@ -92,9 +106,15 @@ fun HealthDashboardScreen(
         if (state.activeTab == "journal") {
             HealthJournalTabContent(
                 state = state,
-                onSelectProvider = { viewModel.setProvider(it) },
+                onSelectProvider = { viewModel.setProvider(it, activity) },
                 onToggleHcBackground = { viewModel.toggleHcBackground(it) },
-                onRefresh = { viewModel.loadHealthDashboard() }
+                onRefresh = {
+                    val permissions = HealthConnectRepository.READ_PERMS.map { "android.permission.health.$it" }.toTypedArray()
+                    if (state.provider == "health_connect" && Build.VERSION.SDK_INT >= 34 &&
+                        permissions.none { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }) {
+                        permissionLauncher.launch(permissions)
+                    } else viewModel.refresh(activity)
+                }
             )
         } else {
             BleDiscoveryTabContent(

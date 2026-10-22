@@ -133,6 +133,11 @@ dependencies {
 
     implementation "androidx.work:work-runtime-ktx:2.10.1"
 
+    // Restore the same licensed SDK and runtime dependencies used by 1.3.71.
+    implementation files('libs/samsung-health-data-api-1.1.0.aar')
+    implementation 'com.google.code.gson:gson:2.11.0'
+    implementation 'org.jetbrains.kotlin:kotlin-parcelize-runtime:2.2.21'
+
     // Unit & Robolectric Tests
     testImplementation "junit:junit:${rootProject.ext.junitVersion}"
     testImplementation "org.json:json:20240303"
