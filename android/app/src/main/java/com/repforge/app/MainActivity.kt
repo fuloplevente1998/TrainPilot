@@ -19,7 +19,6 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.withContext
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.migration.LegacyWebViewMigrator
@@ -39,10 +38,9 @@ class MainActivity : ComponentActivity() {
     private var migrationJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
-        val splashScreen = installSplashScreen()
         startupScreen = StartupScreen.install(this)
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
 
         settingsStore = TrainPilotSettingsStore(this)
         database = TrainPilotDatabase.getInstance(this)

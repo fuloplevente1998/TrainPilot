@@ -119,10 +119,12 @@ dependencies {
     implementation "com.google.guava:guava:33.4.8-android"
 
     // Google Auth Identity (Drive & Calendar OAuth2)
-    implementation "com.google.android.gms:play-services-auth:21.3.0"
+    implementation "com.google.android.gms:play-services-auth:22.0.0"
 
     // ExifInterface for WorkoutPhotos
     implementation "androidx.exifinterface:exifinterface:1.4.0"
+
+    implementation "androidx.work:work-runtime-ktx:2.10.1"
 
     // Unit & Robolectric Tests
     testImplementation "junit:junit:${rootProject.ext.junitVersion}"

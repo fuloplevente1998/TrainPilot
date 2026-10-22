@@ -288,8 +288,8 @@ object HealthConnectRepository {
                     HealthJournalStore.get(p.getContext()).reconcileRecords(
                         HealthConnectJournal.serialize(result, p.getContext().packageName),
                         type.simpleName,
-                        time.startTime.toEpochMilli(),
-                        time.endTime.toEpochMilli(),
+                        requireNotNull(time.startTime) { "Journal requires a start boundary" }.toEpochMilli(),
+                        requireNotNull(time.endTime) { "Journal requires an end boundary" }.toEpochMilli(),
                         readAt,
                         p.epoch
                     )
@@ -1041,7 +1041,7 @@ object HealthConnectRepository {
                 .build()
             val f = CompletableFuture<InsertRecordsResponse>()
             p.getContext().getSystemService(HealthConnectManager::class.java)
-                .insertRecords(Collections.singletonList(r), DIRECT, receiver(f))
+                .insertRecords(Collections.singletonList<android.health.connect.datatypes.Record>(r), DIRECT, receiver(f))
             f.get(30, TimeUnit.SECONDS)
         }
     }

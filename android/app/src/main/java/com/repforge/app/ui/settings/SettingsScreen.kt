@@ -346,7 +346,7 @@ fun SettingsScreen(
             text = { Text("Biztosan törölsz minden edzést, programot, testsúlyt, fotót és egészségügyi adatot erről a készülékről? A felhőben vagy exportált fájlokban lévő adatok megmaradnak.", color = colors.muted) },
             confirmButton = {
                 Button(
-                    onClick = { viewModel.confirmDeleteLocalData() },
+                    onClick = { viewModel.confirmEraseLocalData() },
                     colors = ButtonDefaults.buttonColors(containerColor = colors.danger)
                 ) {
                     Text("Minden adat törlése", color = colors.dangerText, fontWeight = FontWeight.Bold)

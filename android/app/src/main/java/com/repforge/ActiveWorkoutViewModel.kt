@@ -1,4 +1,5 @@
 package com.repforge
+import android.os.Build
 
 import android.content.Context
 import android.content.Intent
@@ -41,14 +42,13 @@ class ActiveWorkoutViewModel(
         // Állapotgép és időzítők figyelése
         viewModelScope.launch {
             combine(
-                execution.currentWorkout,
-                execution.currentState,
-                execution.elapsedSeconds,
-                execution.restSecondsRemaining,
-                execution.isRestActive,
-                ownershipGps.ownershipRole,
-                ownershipGps.gpsState
-            ) { workout, state, elapsed, restSec, isRest, role, gps ->
+                combine(execution.currentWorkout, execution.currentState, execution.elapsedSeconds,
+                    execution.restSecondsRemaining, execution.isRestActive) { workout, state, elapsed, restSec, isRest ->
+                    Triple(workout, state, Triple(elapsed, restSec, isRest))
+                }, ownershipGps.ownershipRole, ownershipGps.gpsState
+            ) { executionState, role, gps ->
+                val (workout, state, timing) = executionState
+                val (elapsed, restSec, isRest) = timing
                 _uiState.update { current ->
                     current.copy(
                         currentWorkout = workout,

@@ -11,7 +11,7 @@ import org.json.JSONException
 import org.json.JSONObject
 
 /** Phone compatibility alias; both devices use the same finite timeline calculation from :shared. */
-internal class IntervalTimeline @JvmOverloads constructor(
+class IntervalTimeline @JvmOverloads constructor(
     steps: List<Step>?,
     advance: Boolean,
     initialRestSeconds: Int = 0,
@@ -181,6 +181,7 @@ internal class GpsRouteCapture {
 
 /** Ordered stable identities and all editable set values; uses shared guard logic from :shared. */
 internal object WorkoutUndo188 {
+    const val QUICK_MILLIS: Long = WorkoutUndo188Shared.QUICK_MILLIS
     @JvmStatic
     fun number(set: JSONObject, key: String): Double = WorkoutUndo188Shared.number(set, key)
 

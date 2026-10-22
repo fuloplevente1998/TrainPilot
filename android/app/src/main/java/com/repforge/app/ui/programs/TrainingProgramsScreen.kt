@@ -1,4 +1,5 @@
 package com.repforge.app.ui.programs
+import androidx.compose.foundation.layout.size
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background

@@ -1,4 +1,5 @@
 package com.repforge.app
+import com.repforge.shared.IntervalTimeline193
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -57,7 +58,7 @@ class IntervalTimerService : Service() {
                 throw IllegalArgumentException("Invalid initial rest")
             }
             val rows = plan.getJSONArray("steps")
-            val parsed = ArrayList<IntervalTimeline.Step>()
+            val parsed = ArrayList<IntervalTimeline193.Step>()
             val owners = HashSet<String>()
             for (i in 0 until rows.length()) {
                 val row = rows.getJSONObject(i)
@@ -68,7 +69,7 @@ class IntervalTimerService : Service() {
                     throw IllegalArgumentException("Invalid GPS key")
                 }
                 parsed.add(
-                    IntervalTimeline.Step(
+                    IntervalTimeline193.Step(
                         row.getString("exerciseId"),
                         set,
                         row.optString("name", "TrainPilot"),
@@ -300,7 +301,7 @@ class IntervalTimerService : Service() {
     }
 
     private val handler = Handler(Looper.getMainLooper())
-    private val steps = ArrayList<IntervalTimeline.Step>()
+    private val steps = ArrayList<IntervalTimeline193.Step>()
     private val segments = JSONArray()
     private var timeline: IntervalTimeline? = null
     private var timeLedger: IntervalTimeLedger? = null
@@ -450,7 +451,7 @@ class IntervalTimerService : Service() {
         for (i in 0 until rows.length()) {
             val row = rows.getJSONObject(i)
             steps.add(
-                IntervalTimeline.Step(
+                IntervalTimeline193.Step(
                     row.getString("exerciseId"),
                     row.getString("setId"),
                     row.optString("name", "TrainPilot"),
@@ -525,7 +526,7 @@ class IntervalTimerService : Service() {
         }
     }
 
-    private fun handoff(p: IntervalTimeline.Phase) {
+    private fun handoff(p: IntervalTimeline193.Phase) {
         val old = steps[gpsStep]
         val tracking = old.gpsKey ?: ""
         if (tracking.isNotEmpty()) {

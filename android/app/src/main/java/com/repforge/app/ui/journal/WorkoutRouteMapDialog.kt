@@ -1,4 +1,7 @@
 package com.repforge.app.ui.journal
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background

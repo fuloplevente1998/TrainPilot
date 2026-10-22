@@ -1,4 +1,5 @@
 package com.repforge.app
+import com.repforge.shared.IntervalTimeline193
 
 import android.content.Context
 import android.os.Looper
@@ -311,7 +312,7 @@ internal object PhoneWorkoutPlans {
         }
         val config = frame.getJSONObject("timerConfig")
         val rows = JSONArray()
-        val steps = ArrayList<IntervalTimeline.Step>()
+        val steps = ArrayList<IntervalTimeline193.Step>()
         val key = "native|${frame.getLong("generation")}|${frame.getLong("executionRevision")}"
         if (timed) {
             for (i in index until exercises.length()) {
@@ -380,8 +381,8 @@ internal object PhoneWorkoutPlans {
     }
 
     @Throws(JSONException::class)
-    private fun step(row: JSONObject): IntervalTimeline.Step {
-        return IntervalTimeline.Step(
+    private fun step(row: JSONObject): IntervalTimeline193.Step {
+        return IntervalTimeline193.Step(
             row.getString("exerciseId"),
             row.getString("setId"),
             row.getString("name"),

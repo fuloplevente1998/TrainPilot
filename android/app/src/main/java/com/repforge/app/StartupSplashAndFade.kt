@@ -1,4 +1,5 @@
 package com.repforge.app
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
@@ -401,7 +402,7 @@ internal class StartupScreen private constructor(
     companion object {
         @JvmStatic
         fun install(activity: Activity): StartupScreen {
-            return StartupScreen(activity, SplashScreen.installSplashScreen(activity))
+            return StartupScreen(activity, activity.installSplashScreen())
         }
 
         @JvmStatic
