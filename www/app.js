@@ -16126,7 +16126,10 @@ window.addEventListener?.('DOMContentLoaded',function(){
    const result=renderBase.apply(this,arguments);decorate();const replacement=document.querySelector('#app .tp120-health-journal');
    if(retained&&replacement&&retained.dataset.language===replacement.dataset.language&&retained.dataset.provider===replacement.dataset.provider){replacement.replaceWith(retained);}
    else if(retained&&replacement&&retained.open)replacement.open=true;
-   tp107FitViews();if(retained?.open&&replacement)window.scrollTo(0,scroll);return result;
+   // Common render fits once. Late Health decoration needs a follow-up only
+   // on Health routes, not another synchronous fit on the startup Home page.
+   if(document.querySelector('#app main.tp168-health'))tp107ScheduleFit();
+   if(retained?.open&&replacement)window.scrollTo(0,scroll);return result;
   };window.render=render;
   const openBase=window.tp155R4OpenPanel;window.tp155R4OpenPanel=function(type){return type==='health-journal'?open():openBase.apply(this,arguments);};
   const refreshBase=window.tp155R4RefreshPanel;window.tp155R4RefreshPanel=function(){const result=refreshBase.apply(this,arguments);if(root())void load();return result;};
