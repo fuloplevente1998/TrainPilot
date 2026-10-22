@@ -7,9 +7,9 @@ const snap=page=>page.evaluate(()=>{const c=document.querySelector('#rf220CoachC
  await p.addInitScript(()=>{
   localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped'));
   localStorage.setItem('repforge:history',JSON.stringify(Array.from({length:200},(_,i)=>({id:'boot-'+i,programId:'home-basic',dayId:i%2?'A':'B',started:new Date(Date.now()-(i+1)*86400000).toISOString(),finished:new Date(Date.now()-(i+1)*86400000+3600000).toISOString(),exercises:[{id:'db-squat',loadType:'per_hand',repUnit:'ism.',sets:[{set:1,reps:'10',weight:8,done:true}]}]}))));
-  window.__bootReads={history:0,writes:0,beforeDCL:null,first:null};
+  window.__bootReads={history:0,writes:0,beforeDCL:null,first:null,historyStacks:[]};
   const get=Storage.prototype.getItem,html=Object.getOwnPropertyDescriptor(Element.prototype,'innerHTML');
-  Storage.prototype.getItem=function(key){if(key==='repforge:history')__bootReads.history++;return get.call(this,key);};
+  Storage.prototype.getItem=function(key){if(key==='repforge:history'){__bootReads.history++;__bootReads.historyStacks.push(new Error().stack);}return get.call(this,key);};
   Object.defineProperty(Element.prototype,'innerHTML',{...html,set(value){
    if(this.id==='app'){
     __bootReads.writes++;
@@ -25,7 +25,7 @@ const snap=page=>page.evaluate(()=>{const c=document.querySelector('#rf220CoachC
   assert.equal(reads.writes,1,'cold startup renders the app root once');
   assert.equal(reads.first.scope,'operation-scoped','first root write already uses the shared read scope');
   assert.ok(reads.first.history-reads.beforeDCL.history<=1,'first render reads the journal at most once: '+JSON.stringify(reads));
-  assert.ok(reads.history-reads.beforeDCL.history<=1,'all startup modules share one parsed journal snapshot: '+JSON.stringify(reads));
+  assert.ok(reads.history-reads.beforeDCL.history<=1,'all startup modules share one parsed journal snapshot: '+JSON.stringify({...reads,historyStacks:undefined})+'\n'+reads.historyStacks.slice(reads.beforeDCL.history).join('\n---\n'));
   const before=await p.evaluate(()=>localStorage.getItem('repforge:history'));
   const repair=await p.evaluate(()=>{
    const card=document.querySelector('#rf220CoachCard'),html=card.innerHTML,reads=__bootReads.history;
