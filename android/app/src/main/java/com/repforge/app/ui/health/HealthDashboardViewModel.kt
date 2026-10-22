@@ -1,4 +1,4 @@
-package __PACKAGE_NAME__.ui.health
+package com.repforge.app.ui.health
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
