@@ -1,4 +1,4 @@
-package __PACKAGE_NAME__
+package com.repforge.app
 
 import android.annotation.SuppressLint
 import android.bluetooth.*
