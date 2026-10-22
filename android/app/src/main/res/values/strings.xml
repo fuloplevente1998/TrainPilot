@@ -1,7 +1,31 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">TrainPilot</string>
-    <string name="title_activity_main">TrainPilot</string>
-    <string name="package_name">com.repforge.app</string>
-    <string name="custom_url_scheme">com.repforge.app</string>
+    <string name="nav_home">Főoldal</string>
+    <string name="nav_workout">Edzés</string>
+    <string name="nav_history">Napló</string>
+    <string name="nav_settings">Beállítások</string>
+
+    <string name="active_workout_title">Aktív Edzés</string>
+    <string name="start_workout">Edzés Indítása</string>
+    <string name="quick_start">Gyors Edzés Indítása</string>
+    <string name="finish_workout">Befejezés</string>
+    <string name="cancel_workout">Megszakítás</string>
+    <string name="cancel_confirm_title">Edzés Megszakítása?</string>
+    <string name="cancel_confirm_message">Biztosan meg akarod szakítani az aktív edzést? A nem mentett adatok elvesznek.</string>
+    <string name="keep_training">Edzés Folytatása</string>
+
+    <string name="rest_time">Pihenőidő</string>
+    <string name="skip_rest">Kihagyás</string>
+
+    <string name="pr_details_title">Rekord Részletei</string>
+    <string name="pr_new_record">Új Egyéni Rekord!</string>
+    <string name="close">Bezárás</string>
+
+    <string name="haptics_setting">Haptikus Visszajelzés</string>
+    <string name="haptics_desc">Rezgés gombok és sorozatok teljesítésekor</string>
+
+    <string name="gps_indoor_mode">Beltéri Mód (GPS inaktív)</string>
+    <string name="gps_outdoor_mode">Kültéri Követés</string>
+    <string name="finish_cardio">Kardió/Intervallum Mérés Lezárása</string>
 </resources>

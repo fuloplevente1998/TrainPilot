@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TrainPilot</string>
+    <string name="nav_home">Start</string>
+    <string name="nav_workout">Training</string>
+    <string name="nav_history">Verlauf</string>
+    <string name="nav_settings">Optionen</string>
+
+    <string name="active_workout_title">Aktives Training</string>
+    <string name="start_workout">Training Starten</string>
+    <string name="quick_start">Schnellstart</string>
+    <string name="finish_workout">Beenden</string>
+    <string name="cancel_workout">Abbrechen</string>
+    <string name="cancel_confirm_title">Training Abbrechen?</string>
+    <string name="cancel_confirm_message">Möchten Sie das aktive Training wirklich abbrechen? Nicht gespeicherte Daten gehen verloren.</string>
+    <string name="keep_training">Weiter Trainieren</string>
+
+    <string name="rest_time">Pause</string>
+    <string name="skip_rest">Überspringen</string>
+
+    <string name="pr_details_title">Rekord-Details</string>
+    <string name="pr_new_record">Neuer persönlicher Rekord!</string>
+    <string name="close">Schließen</string>
+
+    <string name="haptics_setting">Haptisches Feedback</string>
+    <string name="haptics_desc">Vibration bei Tastendruck und beendeten Sätzen</string>
+
+    <string name="gps_indoor_mode">Indoor-Modus (GPS deaktiviert)</string>
+    <string name="gps_outdoor_mode">Outdoor-Tracking</string>
+    <string name="finish_cardio">Kardio-Messung Beenden</string>
+</resources>
