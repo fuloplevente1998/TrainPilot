@@ -1,0 +1,8 @@
+{
+  "chunk_index": 4,
+  "timestamp": "2026-10-22T00:22:42.040Z",
+  "language": "kotlin",
+  "reason": "no supported project filepath in the code block heading",
+  "closed": true,
+  "content": "@Serializable sealed interface TrainPilotDestination {\n    // Bottom Navigation Tabok\n    @Serializable data object DashboardTab : TrainPilotDestination          // Főoldal / Gyorsindítás / Aktuális heti összegzés\n    @Serializable data object TemplatesTab : TrainPilotDestination          // Edzéssablonok és Gyakorlat-katalógus\n    @Serializable data object HistoryTab : TrainPilotDestination            // Edzésnapló (Naptár + Lista)\n    @Serializable data object AnalyticsAndSettingsTab : TrainPilotDestination // Statisztikák, PR-ok, Óra szinkron & Beállítások\n\n    // Teljes képernyős folyamatok (Full-screen Routes)\n    @Serializable data class ActiveWorkoutRoute(val workoutId: String) : TrainPilotDestination\n    @Serializable data class WorkoutDetailRoute(val workoutId: String) : TrainPilotDestination\n    @Serializable data class WorkoutGpsMapFullRoute(val workoutId: String) : TrainPilotDestination\n    @Serializable data class TemplateEditorRoute(val templateId: String? = null) : TrainPilotDestination\n    @Serializable data class ExerciseDetailHistoryRoute(val exerciseId: String) : TrainPilotDestination\n    @Serializable data object WearSyncDiagnosticsRoute : TrainPilotDestination // Outbox / #193 / #202 szinkron állapot monitor\n}\n"
+}
