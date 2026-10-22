@@ -10,6 +10,9 @@ Branch: `feat/native-android-migration`
 - Android Gradle Plugin: **8.13.0**.
 - Gradle wrapper: **8.13**.
 - Kotlin Gradle plugin, serialization and Compose compiler plugin: **2.4.21**, aligned.
+- Phone Kotlin language/API level: **2.2** for Room 2.7 KAPT metadata compatibility.
+  CI `224cc31` rejected metadata 2.4 (reader maximum 2.2); this preserves the
+  compiler pins and Room dependency while limiting emitted phone metadata.
 - Android compile SDK: **35** (unchanged pending API/permissions audit).
 - Phone target SDK: **35**, Wear target SDK: **34** (unchanged pending platform behavior tests).
 - Existing AndroidX, Compose BOM, Room, Wear and Health Connect dependencies remain pinned until individually verified.
