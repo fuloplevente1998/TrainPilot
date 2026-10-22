@@ -17001,6 +17001,8 @@ window.addEventListener?.('DOMContentLoaded',function(){
   html body #app .tp137-motion-group button.tp137-selected{background:transparent!important;border-color:transparent!important;box-shadow:none!important}
   html body .tp137-motion-group button{position:relative;z-index:2!important;transform:none!important;transition:none!important}
   html body .top.tp137-motion-group .tp154-nav-cell{z-index:2!important;transform:none!important;transition:none!important}
+  /* Commit the navigation color with its page, never with pointer-down. */
+  html body .top.tp137-motion-group .tp154-nav-cell:is(:hover,:active){filter:none!important;opacity:1!important}
   .tp137-motion-group .tp137-selected::before,.tp137-motion-group .tp137-selected::after{box-shadow:none!important;background:transparent!important}
   html body #app main.tp160-page-reveal{animation:none!important}
  `;
