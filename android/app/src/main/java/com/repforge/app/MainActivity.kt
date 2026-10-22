@@ -7,11 +7,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import __PACKAGE_NAME__.data.db.TrainPilotDatabase
-import __PACKAGE_NAME__.data.migration.LegacyWebViewMigrator
-import __PACKAGE_NAME__.data.store.TrainPilotSettingsStore
-import __PACKAGE_NAME__.ui.navigation.TrainPilotAppScaffold
-import __PACKAGE_NAME__.ui.theme.TrainPilotTheme
+import com.repforge.app.data.db.TrainPilotDatabase
+import com.repforge.app.data.migration.LegacyWebViewMigrator
+import com.repforge.app.data.store.TrainPilotSettingsStore
+import com.repforge.app.ui.navigation.TrainPilotAppScaffold
+import com.repforge.app.ui.theme.TrainPilotTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val settings by settingsStore.settingsFlow.collectAsStateWithLifecycle(
-                initialValue = __PACKAGE_NAME__.data.store.TrainPilotUserSettings()
+                initialValue = com.repforge.app.data.store.TrainPilotUserSettings()
             )
             TrainPilotTheme(settings = settings) {
                 TrainPilotAppScaffold(

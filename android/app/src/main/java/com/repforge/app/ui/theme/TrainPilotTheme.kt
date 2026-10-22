@@ -1,4 +1,4 @@
-package __PACKAGE_NAME__.ui.theme
+package com.repforge.app.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -12,7 +12,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import __PACKAGE_NAME__.data.store.TrainPilotUserSettings
+import com.repforge.app.data.store.TrainPilotUserSettings
 
 val BgColor = Color(0xFF0E1015)
 val SurfaceColor = Color(0xFF161920)
