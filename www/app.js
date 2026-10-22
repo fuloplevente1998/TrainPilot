@@ -15557,7 +15557,12 @@ window.addEventListener?.('DOMContentLoaded',function(){
  });
  // The first real startup render must fit while the shared read scope is
  // still active. There is no pre-render DCL fit; later renders are coalesced.
- const fit=()=>window.TrainPilotBoot&&!window.TrainPilotBoot.finished?tp107FitViews():tp107ScheduleFit();
+ const fit=()=>{
+  // A route must be layout-complete when go() returns: do not change its DOM
+  // on the next animation frame. Coalescing remains for resize observers only.
+  if(tp107FitFrame){cancelAnimationFrame(tp107FitFrame);tp107FitFrame=0;}
+  tp107FitViews();
+ };
  const renderBase=render;render=function(){const result=renderBase.apply(this,arguments);fit();return result;};
  const refreshBase=window.tp155R4RefreshPanel;window.tp155R4RefreshPanel=function(){const result=refreshBase.apply(this,arguments);fit();return result;};
  // Only the Health overview changes between a fitted page and a scrolling
