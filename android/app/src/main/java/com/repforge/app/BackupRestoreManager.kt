@@ -160,7 +160,7 @@ class BackupRestoreManager(context: Context) {
         }
     }
 
-    /** Exports a full ZIP archive (backup.json + photos/*.jpg + manifest.json) and verifies SHA-256. */
+    /** Exports a full ZIP archive (backup.json + photos/(image).jpg + manifest.json) and verifies SHA-256. */
     suspend fun exportZipArchiveToUri(uri: Uri): Result<Pair<String, Long>> = withContext(Dispatchers.IO) {
         var tmp: File? = null
         try {

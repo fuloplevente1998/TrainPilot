@@ -98,7 +98,7 @@ class LegacyWebViewMigrator(
 
     /**
      * Reads keys from both Capacitor SharedPreferences files and Chromium WebView's
-     * app_webview/Default/Local Storage/leveldb/*.ldb and *.log files.
+     * app_webview/Default/Local Storage/leveldb directory (.ldb and .log files).
      */
     private fun extractAllLegacyKeys(): Map<String, String> {
         val result = LinkedHashMap<String, String>()
