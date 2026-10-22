@@ -1,4 +1,4 @@
-package __PACKAGE_NAME__.ui.journal
+package com.repforge.app.ui.journal
 
 import android.app.Application
 import android.content.Context
