@@ -2,8 +2,11 @@ package com.repforge.shared
 
 import org.json.JSONObject
 import java.util.Collections
-import kotlin.math.*
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 
+/** GNSS fixes only. Rejected signal/ownership gaps never contribute distance or a connecting line. */
 class GpsRouteSampler193(private val writer: Writer) {
     fun interface Writer {
         @Throws(Exception::class)
@@ -99,6 +102,7 @@ class GpsRouteSampler193(private val writer: Writer) {
     }
 }
 
+/** GNSS distance accumulator shared by phone and watch. */
 class DistanceAccumulator193 {
     private var lat: Double = 0.0
     private var lon: Double = 0.0
@@ -162,6 +166,7 @@ class DistanceAccumulator193 {
     }
 }
 
+/** #163: bounded, in-memory polyline segments. */
 class GpsRouteTrace193 {
     companion object {
         const val MAX_POINTS: Int = GpsRoutePacket193.MAX_POINTS

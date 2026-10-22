@@ -12,13 +12,16 @@ buildscript {
         classpath 'com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:2.1.21-2.0.1'
     }
 }
+
 apply from: "variables.gradle"
+
 allprojects {
     repositories {
         google()
         mavenCentral()
     }
 }
+
 tasks.register('clean', Delete) {
     delete rootProject.layout.buildDirectory
 }

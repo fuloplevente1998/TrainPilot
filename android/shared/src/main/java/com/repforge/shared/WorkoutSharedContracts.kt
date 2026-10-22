@@ -3,10 +3,12 @@ package com.repforge.shared
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
+/** Canonical Data Layer paths shared between Phone (:app) and Watch (:wear). */
 object WearDataLayerPaths {
     const val ACTIVE_WORKOUT_PATH = "/trainpilot/active-workout"
     const val WATCH_HOME_PATH = "/trainpilot/watch-home"
@@ -21,6 +23,7 @@ object WearDataLayerPaths {
     const val OWNERSHIP_PATH_PREFIX = WorkoutOwnership193.PATH
 }
 
+/** Shared #188 Undo Set guard and inverse logic used by both Phone and Watch. */
 object WorkoutUndo188Shared {
     const val QUICK_MILLIS: Long = 8000L
 
@@ -115,6 +118,7 @@ object WorkoutUndo188Shared {
     }
 }
 
+/** Shared #212 Rotary/Touch Editor increments and #229 per-set RIR validation rules. */
 object SetEditorRules212 {
     @JvmStatic
     fun normalizeUnit(unit: String?): String {
@@ -139,6 +143,7 @@ object SetEditorRules212 {
         }
     }
 
+    /** #229: Missing RIR is distinct from zero; only finite integers in 0..10 are valid. */
     @JvmStatic
     fun parseActualRir229(data: JSONObject?): Int? {
         if (data == null) return null
@@ -160,6 +165,7 @@ object SetEditorRules212 {
     }
 }
 
+/** Shared Phase 4 Exercise Statistics & Epley 1RM Calculator. */
 object WorkoutStatsCalculator {
     data class SetObservation(
         val weightKg: Double,
@@ -178,6 +184,7 @@ object WorkoutStatsCalculator {
                 else -> 0
             }
 
+        /** Epley 1RM formula from Phase 4: w * (1 + r / 30.0) */
         val estimatedOneRepMax: Double
             get() = if (!isTimed && weightKg > 0.0 && reps > 0) weightKg * (1.0 + reps / 30.0) else 0.0
 
@@ -186,7 +193,7 @@ object WorkoutStatsCalculator {
     }
 
     data class ExerciseSummaryStats(
-        val kind: String,
+        val kind: String, // "distance" | "bilateral" | "timed" | "weighted" | "reps"
         val maxWeightKg: Double,
         val estimated1RmKg: Double,
         val bestSetWeightKg: Double,

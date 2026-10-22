@@ -5,8 +5,14 @@ import org.json.JSONObject
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.util.Locale
-import kotlin.math.*
+import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.max
+import kotlin.math.sin
+import kotlin.math.sqrt
 
+/** Immutable, bounded route chunks. Coordinates never belong in a workout/Health snapshot. */
 object GpsRoutePacket193 {
     const val MAX_POINTS: Int = 12000
     const val MAX_SEGMENTS: Int = 256
@@ -66,6 +72,7 @@ object GpsRoutePacket193 {
         return result
     }
 
+    /** A grant is local durable consent, never a field supplied by a remote packet. */
     @JvmStatic
     @Throws(Exception::class)
     fun validate(input: JSONObject?, grant: JSONObject?, origin: String?, localNode: String?): JSONObject {
@@ -138,6 +145,7 @@ object GpsRoutePacket193 {
             lon = nextLon
         }
 
+        // Whitelist prevents arbitrary remote fields from becoming persistent or entering a receipt.
         val clean = JSONObject()
         for (field in arrayOf(
             "schema", "routeKey", "workoutId", "exerciseId", "setId",
@@ -161,8 +169,8 @@ object GpsRoutePacket193 {
     fun distance(lat: Double, lon: Double, otherLat: Double, otherLon: Double): Double {
         val a = Math.toRadians(otherLat - lat)
         val b = Math.toRadians(otherLon - lon)
-        val x = sin(a / 2.0).pow(2) +
-            cos(Math.toRadians(lat)) * cos(Math.toRadians(otherLat)) * sin(b / 2.0).pow(2)
+        val x = sin(a / 2.0) * sin(a / 2.0) +
+            cos(Math.toRadians(lat)) * cos(Math.toRadians(otherLat)) * sin(b / 2.0) * sin(b / 2.0)
         return 6_371_000.0 * 2.0 * atan2(sqrt(x), sqrt(max(0.0, 1.0 - x)))
     }
 }

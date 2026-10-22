@@ -6,6 +6,7 @@ import org.json.JSONObject
 import kotlin.math.max
 import kotlin.math.min
 
+/** Finite monotonic workout timeline; no wall clock or Android dependency. */
 open class IntervalTimeline193 @JvmOverloads constructor(
     steps: List<Step>?,
     private val advance: Boolean,
@@ -171,6 +172,7 @@ open class IntervalTimeline193 @JvmOverloads constructor(
     }
 }
 
+/** Actual phase time, separate from the virtual timeline position changed by Skip Rest. */
 class IntervalTimeLedger193(count: Int, now: Long) {
     private val work = LongArray(count)
     private val rest = LongArray(count)
@@ -286,6 +288,7 @@ class IntervalTimeLedger193(count: Int, now: Long) {
     }
 }
 
+/** One cue per countdown second; delayed callbacks never replay missed cues. */
 class IntervalHapticCues193 {
     private var token: String = ""
     private var second: Long = -1L
