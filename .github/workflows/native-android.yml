@@ -16,6 +16,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: native-android-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   native-debug:
     name: Build phone and Wear OS debug APKs
@@ -48,6 +52,9 @@ jobs:
           chmod +x gradlew
       - name: Build native phone and watch debug APKs
         run: ./gradlew --continue --no-daemon --stacktrace :app:assembleDebug :wear:assembleDebug
+
+      - name: Run native unit tests
+        run: ./gradlew --continue --no-daemon --stacktrace :app:testDebugUnitTest :wear:testDebugUnitTest :shared:testDebugUnitTest
 
       - name: Prepare existing release keystore
         shell: bash
@@ -125,6 +132,15 @@ jobs:
             android/*-native-badging.txt
             android/native-apk-sha256.txt
           if-no-files-found: error
+      - name: Upload native test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrainPilot-Native-Tests-${{ github.sha }}
+          path: |
+            android/**/build/test-results/
+            android/**/build/reports/tests/
+          if-no-files-found: ignore
       - name: Upload phone debug APK
         if: always()
         uses: actions/upload-artifact@v4

@@ -54,7 +54,7 @@ android {
     kotlinOptions {
         jvmTarget = "17"
         // Room 2.7's shaded metadata reader accepts Kotlin metadata through 2.2.
-        // Keep the pinned 2.4.21 compiler/Compose plugins, emitting that format.
+        // Keep the compiler, Compose and serialization plugins on the compatible 2.2.21 line.
         languageVersion = "2.2"
         apiVersion = "2.2"
     }
