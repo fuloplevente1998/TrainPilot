@@ -161,7 +161,10 @@ class LegacyWebViewMigrator(
 
         data.optString("language").takeIf { it in listOf("hu", "en", "de", "ro") }?.let { settingsStore.setLanguage(it) }
         // Preserve all original documents, even fields not yet projected by native screens.
-        for (key in data.keys()) database.keyValueDocumentDao().putDocument(
+        // The immutable file archive holds the whole source; avoid duplicating full
+        // normalized history/catalog collections again in the key-value table.
+        val projected = setOf("history", "exercises", "programs", "weights", "scheduled", "legacyStorageRaw")
+        for (key in data.keys()) if (key !in projected) database.keyValueDocumentDao().putDocument(
             KeyValueDocumentEntity(key = "legacy:$key", json = JSONObject().put("value", data.get(key)).toString(), updatedAt = System.currentTimeMillis())
         )
         // 1. Settings & Theme

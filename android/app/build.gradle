@@ -59,6 +59,13 @@ android {
         apiVersion = "2.2"
     }
 
+    // The upgrade test is a separate lane; old hybrid instrumentation stays in source.
+    // Its getBridge()/WebView UI API is not the Compose application's instrumentation API.
+    if (project.hasProperty('nativeUpgradeTests')) {
+        testBuildType 'release'
+        sourceSets.androidTest.java.setSrcDirs(['src/nativeAndroidTest/java'])
+    }
+
     testOptions {
         unitTests {
             includeAndroidResources = true

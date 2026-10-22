@@ -78,7 +78,7 @@ jobs:
           ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: ./gradlew --no-daemon --stacktrace :app:assembleRelease :wear:assembleRelease
+        run: ./gradlew --no-daemon --stacktrace -PnativeUpgradeTests :app:assembleRelease :wear:assembleRelease :app:assembleReleaseAndroidTest :wear:assembleDebugAndroidTest
       - name: Verify update package version and signer continuity
         shell: bash
         env:
@@ -107,8 +107,23 @@ jobs:
           test -n "$ORIGINAL"
           test "$ORIGINAL" = "$(python3 ../scripts/apk_signer_cert.py "$PHONE")"
           test "$ORIGINAL" = "$(python3 ../scripts/apk_signer_cert.py "$WEAR")"
+          TEST_APK="app/build/outputs/apk/androidTest/release/app-release-androidTest.apk"
+          "$SIGNER" verify --verbose "$TEST_APK"
+          test "$ORIGINAL" = "$(python3 ../scripts/apk_signer_cert.py "$TEST_APK")"
           echo "Original release signing identity verified."
           sha256sum "$PHONE" "$WEAR" > native-apk-sha256.txt
+      - name: Upload signed upgrade test APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrainPilot-Native-Upgrade-Test
+          path: android/app/build/outputs/apk/androidTest/release/*.apk
+          if-no-files-found: error
+      - name: Upload Wear UI test APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrainPilot-Native-Wear-UI-Test
+          path: android/wear/build/outputs/apk/androidTest/debug/*.apk
+          if-no-files-found: error
       - name: Remove temporary signing keystore
         if: always()
         run: rm -f "$RUNNER_TEMP/trainpilot-native-release.jks"
@@ -155,3 +170,90 @@ jobs:
           name: TrainPilot-Native-Wear-Debug
           path: android/wear/build/outputs/apk/debug/*.apk
           if-no-files-found: ignore
+
+  signed-upgrade:
+    name: Original signed 1.3.71 to native data upgrade
+    needs: native-debug
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: android-actions/setup-android@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: TrainPilot-Native-Phone-Signed-Update
+          path: upgrade/phone
+      - uses: actions/download-artifact@v4
+        with:
+          name: TrainPilot-Native-Upgrade-Test
+          path: upgrade/test
+      - name: Download verified original release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download v1.3.71 --repo "$GITHUB_REPOSITORY" --pattern 'TrainPilot-1.3.71.apk' --dir upgrade/original
+          echo 'f3fc054d9e2142fc7919b0e7beee8c2db35527de2fcb85406c23ab23141e5e68  upgrade/original/TrainPilot-1.3.71.apk' | sha256sum --check --
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install original, seed, and update without uninstalling
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
+          script: bash scripts/run-native-signed-upgrade.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: TrainPilot-Native-Signed-Upgrade-Results-${{ github.sha }}
+          path: upgrade/results/
+          if-no-files-found: error
+
+  wear-ui:
+    name: Preserved native Wear round UI
+    needs: native-debug
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: android-actions/setup-android@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: TrainPilot-Native-Wear-Debug
+          path: wear-ui/app
+      - uses: actions/download-artifact@v4
+        with:
+          name: TrainPilot-Native-Wear-UI-Test
+          path: wear-ui/test
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        env:
+          WEAR_SHARD: ${{ matrix.shard }}
+        with:
+          api-level: 30
+          target: android-wear
+          arch: x86_64
+          profile: wearos_small_round
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
+          script: bash scripts/run-native-wear-ui.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: TrainPilot-Native-Wear-UI-Results-${{ github.sha }}-${{ matrix.shard }}
+          path: wear-ui/results/
+          if-no-files-found: error

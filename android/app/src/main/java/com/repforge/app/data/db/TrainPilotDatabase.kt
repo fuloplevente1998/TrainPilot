@@ -46,7 +46,6 @@ abstract class TrainPilotDatabase : RoomDatabase() {
                     TrainPilotDatabase::class.java,
                     DATABASE_NAME
                 )
-                    .fallbackToDestructiveMigrationOnDowngrade(true)
                     .build()
                     .also { INSTANCE = it }
             }
