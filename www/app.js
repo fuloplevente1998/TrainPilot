@@ -15552,7 +15552,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(box&&tp107NavBox&&Math.abs(box.inlineSize-tp107NavBox.width)<.5&&Math.abs(box.blockSize-tp107NavBox.height)<.5)return;
   tp107FitNav=null;tp107ScheduleFit();
  });
- const fit=()=>window.TrainPilotBoot&&!window.TrainPilotBoot.finished?tp107ScheduleFit():tp107FitViews();
+ // The first real startup render must fit while the shared read scope is
+ // still active. There is no pre-render DCL fit; later renders are coalesced.
+ const fit=()=>window.TrainPilotBoot&&!window.TrainPilotBoot.finished?tp107FitViews():tp107ScheduleFit();
  const renderBase=render;render=function(){const result=renderBase.apply(this,arguments);fit();return result;};
  const refreshBase=window.tp155R4RefreshPanel;window.tp155R4RefreshPanel=function(){const result=refreshBase.apply(this,arguments);fit();return result;};
  // Only the Health overview changes between a fitted page and a scrolling
@@ -15560,7 +15562,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
  const fitHealth=function(event){if(event.target?.closest?.('#app main.tp168-health'))tp107ScheduleFit()};
  document.addEventListener('toggle',fitHealth,true);
  document.addEventListener('click',fitHealth);
- window.addEventListener('resize',()=>{tp107FitNav=null;tp107ScheduleFit()});document.addEventListener('visibilitychange',function(){if(!document.hidden)tp107PaintIndoor();});tp107ScheduleFit();
+ window.addEventListener('resize',()=>{tp107FitNav=null;tp107ScheduleFit()});document.addEventListener('visibilitychange',function(){if(!document.hidden)tp107PaintIndoor();});if(window.TrainPilotBoot?.finished)tp107ScheduleFit();
 });
 // @endsection training-107.js
 
