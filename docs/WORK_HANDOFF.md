@@ -1,8 +1,15 @@
 # TrainPilot – aktuális átadás
 
-Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.3.71 a GitHub Latest.** A #225 audit PR beolvasztás nélkül lezárva, #230/#234 által felváltva; #235 draft, mentési kör készüléken elfogadva; UI/stopper és görgetési kör készüléken elfogadva; új hidegindítási teszt-APK kész, készülékes próba függőben; #214 karbantartási issue marad;  [takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
+Frissítve: **2026-10-22**. **#235/#237 mainen, készüléken elfogadva, változatlan 1.3.71 /2735.** A korábbi v1.3.71 telefon/Wear release és tag változatlan; #214 karbantartási issue marad. [Takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
+
+## Készülékes elfogadás és main merge – 2026-10-22
+
+- Felhasználó a `715dc5d` teszt-APK után: „Elfogadjuk, akkor ez az lehet az új main valtozatlan 1.3.71 / 2735”. A navigációs szín/oldal együttváltási javítás és az azt megelőző, együttes tesztbuild készüléken elfogadva; main merge kifejezetten engedélyezve.
+- #237 közvetlenül mainre célozva, hogy az elfogadott #235 előzményt és a #236 teljesítményjavításokat egyszerre vezesse át. Merge commit **`5d27aa9c5ebf68d1c206c88a74dea89e660a4937`**, merge-fa és a bevizsgált ág dokumentációs HEAD-je (`b63cc79`) byteazonos. GitHub #235 és #237 állapota MERGED. Az alkalmazás-/teszt-APK forrása továbbra is **`715dc5d4353ed86116b4596f0cc13916efbe4888`**, a különbség csak handoff-dokumentáció és merge-metaadat.
+- Telefon + Wear **1.3.71 /2735**, version-policy ellenőrzés sikeres. Meglévő kiadási tag/asset nincs felülírva, új hivatalos release nincs létrehozva. A main push szokásos CI-kapui külön futnak; a készüléken elfogadott, pontos APK és zöld előzetes kapuk alább.
+- A korábbi szakaszok Draft/elfogadás-függő megjegyzései történeti pillanatképek. A fizikai felhasználói elfogadás nem helyettesíti a még el nem végzett ötismétléses medián/R8-okozati mérést; a P1–P4 további tervpontjai külön folytathatók.
 
 ## #236 – navigáció lenyomási színe és oldalváltás (2026-10-22)
 
