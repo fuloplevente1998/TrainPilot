@@ -6,65 +6,247 @@ import java.util.TreeSet
 import kotlin.math.max
 import kotlin.math.min
 
+/** A daily activity source is selected, never summed with another overlapping source. */
 internal object HealthDailySource {
     const val SAMSUNG: String = "com.sec.android.app.shealth"
-    @JvmStatic fun choose(requested: String, preference: String, available: Set<String>): String =
-        if (requested.isNotEmpty()) requested else if ("auto" == preference || "priority" == preference) "" else preference
-    @JvmStatic fun mostComplete(totals: Map<String?, Long?>): String {
-        var best = ""; var maxVal = -1L
+
+    @JvmStatic
+    fun choose(requested: String, preference: String, available: Set<String>): String {
+        if (requested.isNotEmpty()) return requested
+        if ("auto" == preference || "priority" == preference) return ""
+        return preference
+    }
+
+    @JvmStatic
+    fun mostComplete(totals: Map<String?, Long?>): String {
+        var best = ""
+        var bestValue = -1L
         val sorted = TreeMap<String, Long>()
-        for ((k, v) in totals) if (!k.isNullOrEmpty() && v != null && v >= 0L) sorted[k] = v
-        for ((k, v) in sorted) if (v > maxVal) { best = k; maxVal = v }
+        for ((k, v) in totals) {
+            if (!k.isNullOrEmpty() && v != null && v >= 0L) {
+                sorted[k] = v
+            }
+        }
+        for ((k, v) in sorted) {
+            if (v > bestValue) {
+                best = k
+                bestValue = v
+            }
+        }
         return best
     }
 }
 
+/** Select values by provider, never sum two copies of the same health data. */
 internal object HealthProviderProjection {
     const val SAMSUNG: String = "samsung_health"
-    @JvmField val METRICS = arrayOf("steps", "activeCalories", "totalCalories", "distanceMeters", "averageHeartRate", "minHeartRate", "maxHeartRate", "heartRateSamples", "restingHeartRate", "weightKg", "bodyFatPercent", "bodyFatMassKg", "skeletalMuscleMassKg", "fatFreeMassKg", "totalBodyWaterLiters", "basalMetabolicRateKcal", "bodyMassIndex", "oxygenSaturationPercent", "hrvRmssdMs", "vo2Max", "bloodPressureSystolic", "bloodPressureDiastolic", "bloodGlucoseMmolL", "respiratoryRate", "energyScore", "sleepScore")
-    @JvmStatic @Throws(Exception::class) fun day(hc: JSONObject?, samsung: JSONObject?, legacy: JSONObject?, preferred: String?): JSONObject {
-        val fallback = hc ?: legacy; val direct = SAMSUNG == preferred && samsung != null
-        val base = if (direct) samsung else fallback; val out = if (base == null) JSONObject() else JSONObject(base.toString())
-        val channel = if (direct) SAMSUNG else if (hc != null) HealthJournalStore.HC else HealthJournalStore.LEGACY
+
+    @JvmField
+    val METRICS: Array<String> = arrayOf(
+        "steps", "activeCalories", "totalCalories", "distanceMeters",
+        "averageHeartRate", "minHeartRate", "maxHeartRate", "heartRateSamples", "restingHeartRate",
+        "weightKg", "bodyFatPercent", "bodyFatMassKg", "skeletalMuscleMassKg", "fatFreeMassKg",
+        "totalBodyWaterLiters", "basalMetabolicRateKcal", "bodyMassIndex", "oxygenSaturationPercent",
+        "hrvRmssdMs", "vo2Max", "bloodPressureSystolic", "bloodPressureDiastolic",
+        "bloodGlucoseMmolL", "respiratoryRate", "energyScore", "sleepScore"
+    )
+
+    @JvmStatic
+    @Throws(Exception::class)
+    fun day(
+        hc: JSONObject?,
+        samsung: JSONObject?,
+        legacy: JSONObject?,
+        preferred: String?
+    ): JSONObject {
+        val fallback = hc ?: legacy
+        val direct = SAMSUNG == preferred && samsung != null
+        val base = if (direct) samsung else fallback
+        val out = if (base == null) JSONObject() else JSONObject(base.toString())
+        val channel = when {
+            direct -> SAMSUNG
+            hc != null -> HealthJournalStore.HC
+            else -> HealthJournalStore.LEGACY
+        }
         val sources = JSONObject()
-        for (k in METRICS) {
-            if (!out.isNull(k)) sources.put(k, channel)
-            else if (direct && fallback != null && !fallback.isNull(k)) {
-                out.put(k, fallback.get(k)); sources.put(k, if (hc != null) HealthJournalStore.HC else HealthJournalStore.LEGACY)
-                val p = when (k) { "weightKg" -> "weight"; "bodyFatPercent" -> "bodyFat"; "oxygenSaturationPercent" -> "oxygenSaturation"; "hrvRmssdMs" -> "hrv"; else -> k }
-                for (s in arrayOf("Time", "Source")) if (fallback.has(p + s)) out.put(p + s, fallback.get(p + s))
+        for (key in METRICS) {
+            if (!out.isNull(key)) {
+                sources.put(key, channel)
+            } else if (direct && fallback != null && !fallback.isNull(key)) {
+                out.put(key, fallback.get(key))
+                sources.put(key, if (hc != null) HealthJournalStore.HC else HealthJournalStore.LEGACY)
+                val prefix = when (key) {
+                    "weightKg" -> "weight"
+                    "bodyFatPercent" -> "bodyFat"
+                    "oxygenSaturationPercent" -> "oxygenSaturation"
+                    "hrvRmssdMs" -> "hrv"
+                    else -> key
+                }
+                for (suffix in arrayOf("Time", "Source")) {
+                    if (fallback.has(prefix + suffix)) {
+                        out.put(prefix + suffix, fallback.get(prefix + suffix))
+                    }
+                }
             }
         }
-        val outS = out.optJSONArray("sleepSessions"); val fallS = fallback?.optJSONArray("sleepSessions")
-        if (direct && (outS == null || outS.length() == 0) && fallS != null) { out.put("sleepSessions", fallS); sources.put("sleepSessions", if (hc != null) HealthJournalStore.HC else HealthJournalStore.LEGACY) }
-        else if (outS != null && outS.length() > 0) sources.put("sleepSessions", channel)
-        out.put("channel", channel).put("metricProviders", sources)
-        if (!out.isNull("steps")) { val prov = sources.optString("steps", channel); out.put("stepsSource", prov); val sd = if (prov == SAMSUNG) samsung else fallback; out.put("stepsOrigin", sd?.optString("activityOrigin", "").orEmpty()) }
+        val outSleep = out.optJSONArray("sleepSessions")
+        val fallbackSleep = fallback?.optJSONArray("sleepSessions")
+        if (direct && (outSleep == null || outSleep.length() == 0) && fallbackSleep != null) {
+            out.put("sleepSessions", fallbackSleep)
+            sources.put("sleepSessions", if (hc != null) HealthJournalStore.HC else HealthJournalStore.LEGACY)
+        } else if (outSleep != null && outSleep.length() > 0) {
+            sources.put("sleepSessions", channel)
+        }
+        out.put("channel", channel)
+        out.put("metricProviders", sources)
+        if (!out.isNull("steps")) {
+            val stepsProvider = sources.optString("steps", channel)
+            out.put("stepsSource", stepsProvider)
+            val stepDay = if (stepsProvider == SAMSUNG) samsung else fallback
+            out.put("stepsOrigin", stepDay?.optString("activityOrigin", "").orEmpty())
+        }
         return out
     }
 }
 
+/** Raw energy tied to external exercise sessions, never the daily/BMR aggregate. */
 internal object HealthWorkoutEnergy {
-    const val SAMSUNG: String = "com.sec.android.app.shealth"; const val EDGE_TOLERANCE_MS: Long = 180_000L
-    class Session(@JvmField val source: String, @JvmField val start: Long, @JvmField val end: Long)
-    class EnergyRow(@JvmField val id: String, @JvmField val source: String?, @JvmField val start: Long, @JvmField val end: Long, @JvmField val kcal: Double, @JvmField val total: Boolean, @JvmField val modified: Long)
-    class Result { @JvmField var calories: Double? = null; @JvmField var coverageMs: Long = 0L; @JvmField var prorated: Boolean = false; @JvmField val sources: MutableSet<String> = TreeSet(); @JvmField val types: MutableSet<String> = TreeSet(); @JvmField val recordIds: MutableSet<String> = TreeSet() }
-    @JvmStatic fun match(sessions: List<Session>, rows: List<EnergyRow>, start: Long, end: Long, ownPkg: String): Result {
-        val res = Result(); if (end <= start) return res
-        val cands = ArrayList<EnergyRow>(); val uniq = HashMap<String, EnergyRow>()
-        for (r in rows) { if (r.source.isNullOrEmpty() || r.source == ownPkg || r.end <= r.start || r.end <= start || r.start >= end || !r.kcal.isFinite() || r.kcal < 0) continue; val k = "${r.source}|${r.total}|${r.id}"; val prev = uniq[k]; if (prev == null || prev.modified < r.modified) uniq[k] = r }
-        for (r in uniq.values) for (s in sessions) { val ov = max(0L, min(r.end, s.end) - max(r.start, s.start)); if (r.source == s.source && s.end > s.start && r.start >= s.start - EDGE_TOLERANCE_MS && r.end <= s.end + EDGE_TOLERANCE_MS && ov >= (r.end - r.start) * 0.9) { cands.add(r); break } }
-        val bounds = TreeSet<Long>().apply { add(start); add(end); cands.forEach { add(max(start, it.start)); add(min(end, it.end)) }; sessions.forEach { if (it.start < end && it.end > start) { add(max(start, it.start)); add(min(end, it.end)) } } }
-        val edges = ArrayList(bounds); val used = HashMap<EnergyRow, Long>()
-        val prio = Comparator<EnergyRow> { a, b -> if ((a.source != SAMSUNG) != (b.source != SAMSUNG)) (a.source != SAMSUNG).compareTo(b.source != SAMSUNG) else if (a.source != b.source) (a.source ?: "").compareTo(b.source ?: "") else if (!a.total != !b.total) (!a.total).compareTo(!b.total) else if ((a.end - a.start) != (b.end - b.start)) (a.end - a.start).compareTo(b.end - b.start) else if (a.modified != b.modified) b.modified.compareTo(a.modified) else a.id.compareTo(b.id) }
-        var cal = 0.0
-        for (i in 1 until edges.size) {
-            val a = edges[i - 1]; val b = edges[i]; var best: EnergyRow? = null
-            for (r in cands) { if (r.start > a || r.end < b) continue; if (sessions.any { r.source == it.source && it.start <= a && it.end >= b } && (best == null || prio.compare(r, best) < 0)) best = r }
-            if (best != null) { cal += best.kcal * ((b - a).toDouble() / (best.end - best.start)); res.coverageMs += b - a; res.sources.add(best.source!!); res.types.add(if (best.total) "total" else "active"); res.recordIds.add("${best.source}|${best.id}"); used[best] = (used[best] ?: 0L) + (b - a) }
+    const val SAMSUNG: String = "com.sec.android.app.shealth"
+    const val EDGE_TOLERANCE_MS: Long = 180_000L
+
+    class Session(
+        @JvmField val source: String,
+        @JvmField val start: Long,
+        @JvmField val end: Long
+    )
+
+    class EnergyRow(
+        @JvmField val id: String,
+        @JvmField val source: String?,
+        @JvmField val start: Long,
+        @JvmField val end: Long,
+        @JvmField val kcal: Double,
+        @JvmField val total: Boolean,
+        @JvmField val modified: Long
+    )
+
+    class Result {
+        @JvmField var calories: Double? = null
+        @JvmField var coverageMs: Long = 0L
+        @JvmField var prorated: Boolean = false
+        @JvmField val sources: MutableSet<String> = TreeSet()
+        @JvmField val types: MutableSet<String> = TreeSet()
+        @JvmField val recordIds: MutableSet<String> = TreeSet()
+    }
+
+    @JvmStatic
+    fun match(
+        sessions: List<Session>,
+        rows: List<EnergyRow>,
+        start: Long,
+        end: Long,
+        ownPackage: String
+    ): Result {
+        val result = Result()
+        if (end <= start) return result
+        val candidates = ArrayList<EnergyRow>()
+        val unique = HashMap<String, EnergyRow>()
+        for (row in rows) {
+            if (row.source.isNullOrEmpty() ||
+                row.source == ownPackage ||
+                row.end <= row.start ||
+                row.end <= start ||
+                row.start >= end ||
+                !row.kcal.isFinite() ||
+                row.kcal < 0.0
+            ) {
+                continue
+            }
+            val key = "${row.source}|${row.total}|${row.id}"
+            val previous = unique[key]
+            if (previous == null || previous.modified < row.modified) {
+                unique[key] = row
+            }
         }
-        if (used.isNotEmpty()) res.calories = cal
-        for ((r, u) in used) if (u < r.end - r.start) res.prorated = true
-        return res
+        for (row in unique.values) {
+            for (session in sessions) {
+                val overlap = max(0L, min(row.end, session.end) - max(row.start, session.start))
+                if (row.source == session.source &&
+                    session.end > session.start &&
+                    row.start >= session.start - EDGE_TOLERANCE_MS &&
+                    row.end <= session.end + EDGE_TOLERANCE_MS &&
+                    overlap >= (row.end - row.start) * 0.9
+                ) {
+                    candidates.add(row)
+                    break
+                }
+            }
+        }
+        val boundaries = TreeSet<Long>()
+        boundaries.add(start)
+        boundaries.add(end)
+        for (row in candidates) {
+            boundaries.add(max(start, row.start))
+            boundaries.add(min(end, row.end))
+        }
+        for (session in sessions) {
+            if (session.start < end && session.end > start) {
+                boundaries.add(max(start, session.start))
+                boundaries.add(min(end, session.end))
+            }
+        }
+        val edges = ArrayList(boundaries)
+        val used = HashMap<EnergyRow, Long>()
+        val priority = Comparator<EnergyRow> { r1, r2 ->
+            val s1 = r1.source != SAMSUNG
+            val s2 = r2.source != SAMSUNG
+            if (s1 != s2) return@Comparator s1.compareTo(s2)
+            val srcCmp = (r1.source ?: "").compareTo(r2.source ?: "")
+            if (srcCmp != 0) return@Comparator srcCmp
+            val t1 = !r1.total
+            val t2 = !r2.total
+            if (t1 != t2) return@Comparator t1.compareTo(t2)
+            val durCmp = (r1.end - r1.start).compareTo(r2.end - r2.start)
+            if (durCmp != 0) return@Comparator durCmp
+            val modCmp = r2.modified.compareTo(r1.modified)
+            if (modCmp != 0) return@Comparator modCmp
+            r1.id.compareTo(r2.id)
+        }
+
+        var calories = 0.0
+        for (i in 1 until edges.size) {
+            val a = edges[i - 1]
+            val b = edges[i]
+            var best: EnergyRow? = null
+            for (row in candidates) {
+                if (row.start > a || row.end < b) continue
+                var inSession = false
+                for (session in sessions) {
+                    if (row.source == session.source && session.start <= a && session.end >= b) {
+                        inSession = true
+                        break
+                    }
+                }
+                if (inSession && (best == null || priority.compare(row, best) < 0)) {
+                    best = row
+                }
+            }
+            if (best == null) continue
+            calories += best.kcal * ((b - a).toDouble() / (best.end - best.start).toDouble())
+            result.coverageMs += b - a
+            result.sources.add(best.source!!)
+            result.types.add(if (best.total) "total" else "active")
+            result.recordIds.add("${best.source}|${best.id}")
+            used[best] = (used[best] ?: 0L) + (b - a)
+        }
+        if (used.isNotEmpty()) {
+            result.calories = calories
+        }
+        for ((row, usedMs) in used) {
+            if (usedMs < row.end - row.start) {
+                result.prorated = true
+            }
+        }
+        return result
     }
 }

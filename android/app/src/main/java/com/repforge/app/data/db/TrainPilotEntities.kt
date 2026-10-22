@@ -1,8 +1,17 @@
 package com.repforge.app.data.db
 
-import androidx.room.*
+import androidx.room.ColumnInfo
+import androidx.room.Embedded
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
+import androidx.room.PrimaryKey
+import androidx.room.Relation
 
-@Entity(tableName = "programs", indices = [Index(value = ["sortOrder"])])
+@Entity(
+    tableName = "programs",
+    indices = [Index(value = ["sortOrder"])]
+)
 data class ProgramEntity(
     @PrimaryKey val id: String,
     val nameHu: String,
@@ -26,7 +35,12 @@ data class ProgramEntity(
 @Entity(
     tableName = "program_days",
     foreignKeys = [
-        ForeignKey(entity = ProgramEntity::class, parentColumns = ["id"], childColumns = ["programId"], onDelete = ForeignKey.CASCADE)
+        ForeignKey(
+            entity = ProgramEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["programId"],
+            onDelete = ForeignKey.CASCADE
+        )
     ],
     indices = [
         Index(value = ["programId", "dayId"], unique = true),
@@ -34,7 +48,7 @@ data class ProgramEntity(
     ]
 )
 data class ProgramDayEntity(
-    @PrimaryKey val compositeId: String,
+    @PrimaryKey val compositeId: String, // "$programId:$dayId"
     val programId: String,
     val dayId: String,
     val nameHu: String,
@@ -42,25 +56,31 @@ data class ProgramDayEntity(
     val nameDe: String,
     val nameRo: String,
     val sortOrder: Int,
-    val exercisesJson: String
+    val exercisesJson: String // JSONArray of exercise prescriptions / IDs
 )
 
-@Entity(tableName = "exercise_library", indices = [Index(value = ["primaryMuscle"]), Index(value = ["custom"])])
+@Entity(
+    tableName = "exercise_library",
+    indices = [
+        Index(value = ["primaryMuscle"]),
+        Index(value = ["custom"])
+    ]
+)
 data class ExerciseLibraryEntity(
     @PrimaryKey val id: String,
     val nameHu: String,
     val nameEn: String,
     val nameDe: String,
     val nameRo: String,
-    val loadType: String,
-    val repUnit: String,
-    val measurementType: String,
+    val loadType: String, // "weight", "dumbbell", "barbell", "bodyweight", "total", "machine", "cable"
+    val repUnit: String, // "ism.", "mp", "mp/oldal", "km", "m", "lépés"
+    val measurementType: String, // "reps", "time", "distance", "steps", "strength"
     val defaultSets: Int,
     val defaultReps: String,
     val defaultWeight: Double,
     val defaultRestSeconds: Int,
-    val primaryMuscle: String,
-    val muscleGroupsJson: String,
+    val primaryMuscle: String, // "chest", "back", "shoulders", "arms", "core", "legs", "cardio"
+    val muscleGroupsJson: String, // JSONArray of muscle group keys
     val notesHu: String,
     val notesEn: String,
     val notesDe: String,
@@ -82,24 +102,24 @@ data class ExerciseLibraryEntity(
     ]
 )
 data class WorkoutHistoryEntity(
-    @PrimaryKey val id: String,
-    val workoutKey: String,
+    @PrimaryKey val id: String, // Canonical ID or tp18-h-...
+    val workoutKey: String, // rf142WorkoutKey equivalent
     val syncId: String,
-    val started: String,
-    val finished: String,
+    val started: String, // ISO-8601
+    val finished: String, // ISO-8601
     val startedEpochMs: Long,
     val finishedEpochMs: Long,
     val durationSeconds: Int,
     val programId: String,
     val programName: String,
-    val dayId: String,
+    val dayId: String, // also mapped from legacy "workout" field
     val dayName: String,
     val scheduleId: String,
     val quickWorkout: Boolean,
-    val originDevice: String,
+    val originDevice: String, // "phone" | "watch"
     val ownershipProtocol193: Int,
     val ownerEpoch193: Long,
-    val effortFeedback: String?,
+    val effortFeedback: String?, // "easy", "light", "good", "challenging", "hard", "pain", or null
     val feedbackSkipped: Boolean,
     val feedbackUpdatedAt: Long,
     val totalVolumeKg: Double,
@@ -107,19 +127,24 @@ data class WorkoutHistoryEntity(
     val totalSetsCount: Int,
     val totalRepsCount: Int,
     val hasPr226: Boolean,
-    val prRecordsJson226: String,
-    val wearMetricsJson: String?,
-    val health240Json: String?,
-    val timeLogs162Json: String?,
-    val activeIntervalsJson: String?,
+    val prRecordsJson226: String, // JSONArray of #226 PR badges
+    val wearMetricsJson: String?, // Health Services summary
+    val health240Json: String?, // Health Connect / Samsung Health matched workout summary
+    val timeLogs162Json: String?, // IntervalTimeLedger per-set workMs/restMs/pausedMs
+    val activeIntervalsJson: String?, // JSONArray of {start, end}
     val editedAt: String?,
-    val rawJson: String
+    val rawJson: String // Full original JSON object for 100% lossless round-trip backup/sync
 )
 
 @Entity(
     tableName = "workout_history_exercises",
     foreignKeys = [
-        ForeignKey(entity = WorkoutHistoryEntity::class, parentColumns = ["id"], childColumns = ["workoutHistoryId"], onDelete = ForeignKey.CASCADE)
+        ForeignKey(
+            entity = WorkoutHistoryEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["workoutHistoryId"],
+            onDelete = ForeignKey.CASCADE
+        )
     ],
     indices = [
         Index(value = ["workoutHistoryId", "orderIndex"]),
@@ -143,8 +168,18 @@ data class WorkoutHistoryExerciseEntity(
 @Entity(
     tableName = "workout_history_sets",
     foreignKeys = [
-        ForeignKey(entity = WorkoutHistoryExerciseEntity::class, parentColumns = ["rowId"], childColumns = ["historyExerciseRowId"], onDelete = ForeignKey.CASCADE),
-        ForeignKey(entity = WorkoutHistoryEntity::class, parentColumns = ["id"], childColumns = ["workoutHistoryId"], onDelete = ForeignKey.CASCADE)
+        ForeignKey(
+            entity = WorkoutHistoryExerciseEntity::class,
+            parentColumns = ["rowId"],
+            childColumns = ["historyExerciseRowId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = WorkoutHistoryEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["workoutHistoryId"],
+            onDelete = ForeignKey.CASCADE
+        )
     ],
     indices = [
         Index(value = ["historyExerciseRowId", "setNumber"]),
@@ -173,7 +208,12 @@ data class WorkoutHistorySetEntity(
 @Entity(
     tableName = "workout_photos",
     foreignKeys = [
-        ForeignKey(entity = WorkoutHistoryEntity::class, parentColumns = ["id"], childColumns = ["workoutHistoryId"], onDelete = ForeignKey.CASCADE)
+        ForeignKey(
+            entity = WorkoutHistoryEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["workoutHistoryId"],
+            onDelete = ForeignKey.CASCADE
+        )
     ],
     indices = [
         Index(value = ["workoutHistoryId"]),
@@ -181,7 +221,7 @@ data class WorkoutHistorySetEntity(
     ]
 )
 data class WorkoutPhotoEntity(
-    @PrimaryKey val id: String,
+    @PrimaryKey val id: String, // UUID [a-f0-9-]{36}
     val workoutHistoryId: String,
     val label: String,
     val createdAt: String,
@@ -193,33 +233,49 @@ data class WorkoutPhotoEntity(
     val deletedAt: String?
 )
 
-@Entity(tableName = "body_weights", indices = [Index(value = ["date"]), Index(value = ["dayKey"])])
+@Entity(
+    tableName = "body_weights",
+    indices = [
+        Index(value = ["date"]),
+        Index(value = ["dayKey"])
+    ]
+)
 data class BodyWeightEntryEntity(
-    @PrimaryKey val id: String,
-    val date: String,
-    val dayKey: String,
+    @PrimaryKey val id: String, // Canonical ID or tp18-w-...
+    val date: String, // ISO-8601 or YYYY-MM-DD
+    val dayKey: String, // YYYY-MM-DD
     val kg: Double,
     val updatedAt: Long,
     val rawJson: String
 )
 
-@Entity(tableName = "calendar_entries", indices = [Index(value = ["date"]), Index(value = ["startIso"]), Index(value = ["status"])])
+@Entity(
+    tableName = "calendar_entries",
+    indices = [
+        Index(value = ["date"]),
+        Index(value = ["startIso"]),
+        Index(value = ["status"])
+    ]
+)
 data class CalendarScheduleEntity(
-    @PrimaryKey val id: String,
-    val googleEventId: String,
-    val date: String,
+    @PrimaryKey val id: String, // scheduleId
+    val googleEventId: String, // rf[0-9a-f]{64}
+    val date: String, // YYYY-MM-DD
     val startIso: String,
     val endIso: String,
     val programId: String,
     val programName: String,
     val dayId: String,
     val dayName: String,
-    val status: String,
+    val status: String, // "planned", "completed", "skipped", "rest"
     val updatedAt: Long,
     val rawJson: String
 )
 
-@Entity(tableName = "history_tombstones", indices = [Index(value = ["workoutKey"])])
+@Entity(
+    tableName = "history_tombstones",
+    indices = [Index(value = ["workoutKey"])]
+)
 data class HistoryTombstoneEntity(
     @PrimaryKey val primaryId: String,
     val workoutKey: String,
@@ -236,20 +292,33 @@ data class KeyValueDocumentEntity(
 
 data class WorkoutHistoryExerciseWithSets(
     @Embedded val exercise: WorkoutHistoryExerciseEntity,
-    @Relation(parentColumn = "rowId", entityColumn = "historyExerciseRowId")
+    @Relation(
+        parentColumn = "rowId",
+        entityColumn = "historyExerciseRowId"
+    )
     val sets: List<WorkoutHistorySetEntity>
 )
 
 data class WorkoutHistoryWithDetails(
     @Embedded val workout: WorkoutHistoryEntity,
-    @Relation(entity = WorkoutHistoryExerciseEntity::class, parentColumn = "id", entityColumn = "workoutHistoryId")
+    @Relation(
+        entity = WorkoutHistoryExerciseEntity::class,
+        parentColumn = "id",
+        entityColumn = "workoutHistoryId"
+    )
     val exercises: List<WorkoutHistoryExerciseWithSets>,
-    @Relation(parentColumn = "id", entityColumn = "workoutHistoryId")
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "workoutHistoryId"
+    )
     val photos: List<WorkoutPhotoEntity>
 )
 
 data class ProgramWithDays(
     @Embedded val program: ProgramEntity,
-    @Relation(parentColumn = "id", entityColumn = "programId")
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "programId"
+    )
     val days: List<ProgramDayEntity>
 )

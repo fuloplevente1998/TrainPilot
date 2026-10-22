@@ -8,47 +8,97 @@ import kotlinx.coroutines.flow.asStateFlow
 import org.json.JSONObject
 
 internal object ActiveWorkoutStore {
-    private const val PREFS = "trainpilot_wear_sync"; private const val SNAPSHOT = "snapshot"; private const val REVISION = "revision"
+    private const val PREFS = "trainpilot_wear_sync"
+    private const val SNAPSHOT = "snapshot"
+    private const val REVISION = "revision"
+
     private val _snapshotFlow = MutableStateFlow<JSONObject?>(null)
     val snapshotFlow: StateFlow<JSONObject?> = _snapshotFlow.asStateFlow()
-    private fun prefs(c: Context): SharedPreferences = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    @JvmStatic @Throws(Exception::class) fun save(context: Context, input: JSONObject): JSONObject {
+    private fun prefs(context: Context): SharedPreferences {
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    }
+
+    @JvmStatic
+    @Throws(Exception::class)
+    fun save(context: Context, input: JSONObject): JSONObject {
+        // All ownership-aware writes take journal -> snapshot locks, including clear().
         synchronized(PhoneOwnership193.journal(context)) {
-            if (!PhoneOwnership193.publicationAllowed(context, input)) throw IllegalStateException("Reconcile workout ownership before publishing")
+            if (!PhoneOwnership193.publicationAllowed(context, input)) {
+                throw IllegalStateException("Reconcile workout ownership before publishing")
+            }
             return saveOwned(context, input)
         }
     }
 
-    @JvmStatic @Synchronized @Throws(Exception::class) fun saveOwned(context: Context, input: JSONObject): JSONObject {
-        val rev = prefs(context).getLong(REVISION, 0L) + 1L; val snap = JSONObject(input.toString())
-        PhoneGpsRoute193.captureOrigin(context, snap)
-        snap.put("schema", snap.optInt("schema", 1)).put("revision", rev).put("active", true).put("syncedAt", System.currentTimeMillis())
-        val ok = prefs(context).edit().putLong(REVISION, rev).putString(SNAPSHOT, snap.toString()).commit()
-        if (!ok) throw IllegalStateException("Workout snapshot could not be saved")
-        if (snap.optLong("ownerEpoch193") == 0L && !snap.has("handoff193")) PhoneGpsRoute193.authorizeOwned(context, snap)
-        _snapshotFlow.value = JSONObject(snap.toString())
-        return snap
+    @JvmStatic
+    @Synchronized
+    @Throws(Exception::class)
+    fun saveOwned(context: Context, input: JSONObject): JSONObject {
+        val revision = prefs(context).getLong(REVISION, 0L) + 1L
+        val snapshot = JSONObject(input.toString())
+        PhoneGpsRoute193.captureOrigin(context, snapshot)
+        snapshot.put("schema", snapshot.optInt("schema", 1))
+        snapshot.put("revision", revision)
+        snapshot.put("active", true)
+        snapshot.put("syncedAt", System.currentTimeMillis())
+        val saved = prefs(context).edit()
+            .putLong(REVISION, revision)
+            .putString(SNAPSHOT, snapshot.toString())
+            .commit()
+        if (!saved) {
+            throw IllegalStateException("Workout snapshot could not be saved")
+        }
+        if (snapshot.optLong("ownerEpoch193") == 0L && !snapshot.has("handoff193")) {
+            PhoneGpsRoute193.authorizeOwned(context, snapshot)
+        }
+        _snapshotFlow.value = JSONObject(snapshot.toString())
+        return snapshot
     }
 
-    @JvmStatic @Throws(Exception::class) fun clear(context: Context): JSONObject {
-        synchronized(PhoneOwnership193.journal(context)) { return clearOwned(context) }
+    @JvmStatic
+    @Throws(Exception::class)
+    fun clear(context: Context): JSONObject {
+        synchronized(PhoneOwnership193.journal(context)) {
+            return clearOwned(context)
+        }
     }
 
-    @Synchronized @Throws(Exception::class) private fun clearOwned(context: Context): JSONObject {
-        val prev = current(context)
-        if (prev != null) PhoneOwnership193.journal(context).close(prev.optString("workoutId"))
-        val rev = prefs(context).getLong(REVISION, 0L) + 1L
-        val snap = JSONObject().put("schema", 1).put("revision", rev).put("active", false).put("workoutId", prev?.optString("workoutId").orEmpty()).put("ownerEpoch193", prev?.optLong("ownerEpoch193") ?: 0L).put("syncedAt", System.currentTimeMillis())
-        val ok = prefs(context).edit().putLong(REVISION, rev).putString(SNAPSHOT, snap.toString()).commit()
-        if (!ok) throw IllegalStateException("Workout closure could not be saved")
-        _snapshotFlow.value = JSONObject(snap.toString())
-        return snap
+    @Synchronized
+    @Throws(Exception::class)
+    private fun clearOwned(context: Context): JSONObject {
+        val previous = current(context)
+        if (previous != null) {
+            PhoneOwnership193.journal(context).close(previous.optString("workoutId"))
+        }
+        val revision = prefs(context).getLong(REVISION, 0L) + 1L
+        val snapshot = JSONObject()
+            .put("schema", 1)
+            .put("revision", revision)
+            .put("active", false)
+            .put("workoutId", previous?.optString("workoutId").orEmpty())
+            .put("ownerEpoch193", previous?.optLong("ownerEpoch193") ?: 0L)
+            .put("syncedAt", System.currentTimeMillis())
+        val saved = prefs(context).edit()
+            .putLong(REVISION, revision)
+            .putString(SNAPSHOT, snapshot.toString())
+            .commit()
+        if (!saved) {
+            throw IllegalStateException("Workout closure could not be saved")
+        }
+        _snapshotFlow.value = JSONObject(snapshot.toString())
+        return snapshot
     }
 
-    @JvmStatic @Synchronized fun current(context: Context): JSONObject? {
+    @JvmStatic
+    @Synchronized
+    fun current(context: Context): JSONObject? {
         val raw = prefs(context).getString(SNAPSHOT, "")
         if (raw.isNullOrEmpty()) return null
-        return try { JSONObject(raw).also { _snapshotFlow.value = it } } catch (_: Exception) { null }
+        return try {
+            JSONObject(raw).also { _snapshotFlow.value = it }
+        } catch (_: Exception) {
+            null
+        }
     }
 }

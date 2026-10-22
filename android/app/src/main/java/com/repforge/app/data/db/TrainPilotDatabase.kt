@@ -1,7 +1,9 @@
 package com.repforge.app.data.db
 
 import android.content.Context
-import androidx.room.*
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -65,11 +67,23 @@ abstract class TrainPilotDatabase : RoomDatabase() {
 
         fun defaultExercises(): List<ExerciseLibraryEntity> {
             data class Seed(
-                val id: String, val hu: String, val en: String, val de: String, val ro: String,
-                val loadType: String, val repUnit: String, val measurementType: String,
-                val sets: Int, val reps: String, val weight: Double, val rest: Int,
-                val primary: String, val muscles: List<String>, val video: String? = null
+                val id: String,
+                val hu: String,
+                val en: String,
+                val de: String,
+                val ro: String,
+                val loadType: String,
+                val repUnit: String,
+                val measurementType: String,
+                val sets: Int,
+                val reps: String,
+                val weight: Double,
+                val rest: Int,
+                val primary: String,
+                val muscles: List<String>,
+                val video: String? = null
             )
+
             val seeds = listOf(
                 Seed("goblet-squat", "Goblet guggolás", "Goblet Squat", "Goblet Kniebeuge", "Genuflexiuni Goblet", "dumbbell", "ism.", "reps", 3, "10", 12.0, 90, "legs", listOf("legs", "core")),
                 Seed("db-floor-press", "Fekvenyomás talajon kézisúlyzóval", "Dumbbell Floor Press", "Kurzhantel-Bodenpressen", "Împins de pe podea cu gantere", "dumbbell", "ism.", "reps", 3, "10", 10.0, 90, "chest", listOf("chest", "arms", "shoulders")),
@@ -88,22 +102,121 @@ abstract class TrainPilotDatabase : RoomDatabase() {
                 Seed("cycling", "Kerékpározás", "Cycling", "Radfahren", "Ciclism", "bodyweight", "km", "distance", 1, "10", 0.0, 60, "cardio", listOf("legs")),
                 Seed("hiking", "Túrázás", "Hiking", "Wandern", "Drumeție", "bodyweight", "km", "distance", 1, "5", 0.0, 60, "cardio", listOf("legs", "core"))
             )
+
             return seeds.map { s ->
-                val raw = JSONObject().put("id", s.id).put("hu", s.hu).put("en", s.en).put("de", s.de).put("ro", s.ro).put("loadType", s.loadType).put("repUnit", s.repUnit).put("measurementType", s.measurementType).put("sets", s.sets).put("reps", s.reps).put("weight", s.weight).put("restSeconds", s.rest).put("primaryMuscle", s.primary).put("muscles", JSONArray(s.muscles)).put("custom", false)
-                ExerciseLibraryEntity(s.id, s.hu, s.en, s.de, s.ro, s.loadType, s.repUnit, s.measurementType, s.sets, s.reps, s.weight, s.rest, s.primary, JSONArray(s.muscles).toString(), "", "", "", "", s.video, null, false, false, raw.toString())
+                val raw = JSONObject()
+                    .put("id", s.id)
+                    .put("hu", s.hu)
+                    .put("en", s.en)
+                    .put("de", s.de)
+                    .put("ro", s.ro)
+                    .put("loadType", s.loadType)
+                    .put("repUnit", s.repUnit)
+                    .put("measurementType", s.measurementType)
+                    .put("sets", s.sets)
+                    .put("reps", s.reps)
+                    .put("weight", s.weight)
+                    .put("restSeconds", s.rest)
+                    .put("primaryMuscle", s.primary)
+                    .put("muscles", JSONArray(s.muscles))
+                    .put("custom", false)
+                ExerciseLibraryEntity(
+                    id = s.id,
+                    nameHu = s.hu,
+                    nameEn = s.en,
+                    nameDe = s.de,
+                    nameRo = s.ro,
+                    loadType = s.loadType,
+                    repUnit = s.repUnit,
+                    measurementType = s.measurementType,
+                    defaultSets = s.sets,
+                    defaultReps = s.reps,
+                    defaultWeight = s.weight,
+                    defaultRestSeconds = s.rest,
+                    primaryMuscle = s.primary,
+                    muscleGroupsJson = JSONArray(s.muscles).toString(),
+                    notesHu = "",
+                    notesEn = "",
+                    notesDe = "",
+                    notesRo = "",
+                    videoUrl = s.video,
+                    videoProvider = null,
+                    custom = false,
+                    setRir229 = false,
+                    rawJson = raw.toString()
+                )
             }
         }
 
         fun defaultPrograms(): Pair<List<ProgramEntity>, List<ProgramDayEntity>> {
-            val dayA = JSONArray().put("goblet-squat").put("db-floor-press").put("one-arm-db-row").put("plank")
-            val dayB = JSONArray().put("db-romanian-deadlift").put("db-shoulder-press").put("split-squat").put("side-plank")
-            val raw = JSONObject().put("id", "home-basic").put("name", "Otthoni Alap Program").put("builtin", true).put("templateVersion", 2).put("days", JSONArray().put(JSONObject().put("id", "A").put("name", "Alap A").put("exercises", dayA)).put(JSONObject().put("id", "B").put("name", "Alap B").put("exercises", dayB)))
-            val prog = ProgramEntity("home-basic", "Otthoni Alap Program", "Home Basic Program", "Heim-Basisprogramm", "Program de bază acasă", "Otthon", "Kezdő / Középhaladó", "Teljes testes otthoni edzésterv A/B napokkal.", true, false, "template", "home-basic", 2, "#4d8fbe", 0, System.currentTimeMillis(), raw.toString())
-            val days = listOf(
-                ProgramDayEntity("home-basic:A", "home-basic", "A", "Alap A", "Basic A", "Basis A", "Bază A", 0, dayA.toString()),
-                ProgramDayEntity("home-basic:B", "home-basic", "B", "Alap B", "Basic B", "Basis B", "Bază B", 1, dayB.toString())
+            val dayAExercises = JSONArray()
+                .put("goblet-squat")
+                .put("db-floor-press")
+                .put("one-arm-db-row")
+                .put("plank")
+            val dayBExercises = JSONArray()
+                .put("db-romanian-deadlift")
+                .put("db-shoulder-press")
+                .put("split-squat")
+                .put("side-plank")
+
+            val homeBasicRaw = JSONObject()
+                .put("id", "home-basic")
+                .put("name", "Otthoni Alap Program")
+                .put("builtin", true)
+                .put("templateVersion", 2)
+                .put(
+                    "days",
+                    JSONArray()
+                        .put(JSONObject().put("id", "A").put("name", "Alap A").put("exercises", dayAExercises))
+                        .put(JSONObject().put("id", "B").put("name", "Alap B").put("exercises", dayBExercises))
+                )
+
+            val program = ProgramEntity(
+                id = "home-basic",
+                nameHu = "Otthoni Alap Program",
+                nameEn = "Home Basic Program",
+                nameDe = "Heim-Basisprogramm",
+                nameRo = "Program de bază acasă",
+                location = "Otthon",
+                level = "Kezdő / Középhaladó",
+                description = "Teljes testes otthoni edzésterv A/B napokkal.",
+                builtin = true,
+                generated = false,
+                sourceType = "template",
+                sourceTemplateId = "home-basic",
+                templateVersion = 2,
+                accentHex = "#4d8fbe",
+                sortOrder = 0,
+                updatedAt = System.currentTimeMillis(),
+                rawJson = homeBasicRaw.toString()
             )
-            return listOf(prog) to days
+
+            val days = listOf(
+                ProgramDayEntity(
+                    compositeId = "home-basic:A",
+                    programId = "home-basic",
+                    dayId = "A",
+                    nameHu = "Alap A",
+                    nameEn = "Basic A",
+                    nameDe = "Basis A",
+                    nameRo = "Bază A",
+                    sortOrder = 0,
+                    exercisesJson = dayAExercises.toString()
+                ),
+                ProgramDayEntity(
+                    compositeId = "home-basic:B",
+                    programId = "home-basic",
+                    dayId = "B",
+                    nameHu = "Alap B",
+                    nameEn = "Basic B",
+                    nameDe = "Basis B",
+                    nameRo = "Bază B",
+                    sortOrder = 1,
+                    exercisesJson = dayBExercises.toString()
+                )
+            )
+            return listOf(program) to days
         }
     }
 }
