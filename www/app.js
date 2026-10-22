@@ -12264,6 +12264,8 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   const panel=panelHost.querySelector('.tp155-r4-panel'),content=panelHost.querySelector('.tp155-r4-panel-content');
   if(!panel||!content)return;
   const y=panel.scrollTop;
+  // Position from the existing navigation geometry before replacing panel DOM.
+  positionPanel();
   const builder=['custom-exercise','custom-program','goals','replan','ble','health-journal'].includes(currentPanel);
   let header=panel.querySelector('.tp106-builder-header');
   if(builder&&!header){header=document.createElement('div');header.className='tp106-builder-header';header.innerHTML='<strong id="tp106BuilderTitle"></strong>';header.appendChild(panel.querySelector('.tp155-r4-panel-close'));panel.prepend(header);}
@@ -12274,8 +12276,9 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   try{if(typeof rf260EnhanceTemporalFields==='function')rf260EnhanceTemporalFields()}catch(_){}
   try{if(typeof tp149TranslateFreshDom==='function')tp149TranslateFreshDom(content)}catch(_){}
   try{if(typeof window.tp155R4ApplyHighlightSurfaces==='function')window.tp155R4ApplyHighlightSurfaces(content)}catch(_){}
-  panel.scrollTop=Math.min(y,Math.max(0,panel.scrollHeight-panel.clientHeight));
-  positionPanel();window.tp155R4DecorateNavigation();markCalendarDays();refreshDay();
+  // Native scrolling clamps the preserved offset without two forced geometry reads.
+  panel.scrollTop=y;
+  window.tp155R4DecorateNavigation();markCalendarDays();refreshDay();
   if(currentPanel==='replan')window.TrainPilot110?.previewReplan();
  };
 
