@@ -22,14 +22,15 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
-import java.nio.charset.StandardCharsets
+import android.util.AtomicFile
+import androidx.room.withTransaction
 import java.time.Instant
 import java.util.UUID
 import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
- * Lossless one-time migrator from TrainPilot v1.3.71 hybrid storage
+ * One-time migrator from TrainPilot v1.3.71 hybrid storage
  * (CapacitorStorage SharedPreferences + Chromium WebView LevelDB localStorage)
  * into Room + DataStore, plus canonical JSON backup/restore mapper.
  */
@@ -39,6 +40,25 @@ class LegacyWebViewMigrator(
     private val settingsStore: TrainPilotSettingsStore
 ) {
     companion object {
+        internal fun decodeSnapshot(values: Map<String, String>): JSONObject {
+            val root = JSONObject()
+            val arrays = setOf("history", "weights", "scheduled", "exercises", "programs", "phase3HistoryTombstones")
+            for ((key, rawValue) in values) {
+                val value = try { org.json.JSONTokener(rawValue).nextValue() }
+                catch (failure: Exception) { throw IllegalStateException("Invalid legacy value for $key", failure) }
+                check(key !in arrays || value is JSONArray) { "Invalid legacy array: $key" }
+                check(key != "settings" || value is JSONObject) { "Invalid legacy settings" }
+                root.put(key, value)
+            }
+            root.optJSONArray("history")?.let { history ->
+                for (i in 0 until history.length()) {
+                    val row = history.getJSONObject(i)
+                    check(row.optString("started").isNotBlank()) { "Legacy workout has no start identity" }
+                }
+            }
+            return root
+        }
+
         val KNOWN_DB_KEYS = setOf(
             "history",
             "weights",
@@ -72,23 +92,21 @@ class LegacyWebViewMigrator(
         }
 
         val extractedKeys = extractAllLegacyKeys()
+        // Preserve every captured key, including fields not yet projected into Room.
+        // Never include this private archive in cloud/Android backup (GPS/privacy).
+        val archiveDir = File(context.noBackupFilesDir, "native-migration-v1371")
+        check(archiveDir.isDirectory || archiveDir.mkdirs()) { "Cannot create migration recovery archive" }
+        val archive = AtomicFile(File(archiveDir, "legacy-localstorage.json"))
+        val snapshot = JSONObject().apply {
+            put("origin", "https://localhost")
+            put("values", JSONObject(extractedKeys as Map<*, *>))
+        }.toString().toByteArray(Charsets.UTF_8)
+        val stream = archive.startWrite()
+        try { stream.write(snapshot); archive.finishWrite(stream) }
+        catch (failure: Exception) { archive.failWrite(stream); throw failure }
         if (extractedKeys.isNotEmpty()) {
-            val compositeRoot = JSONObject()
-            for ((k, rawVal) in extractedKeys) {
-                try {
-                    val trimmed = rawVal.trim()
-                    when {
-                        trimmed.startsWith("{") -> compositeRoot.put(k, JSONObject(trimmed))
-                        trimmed.startsWith("[") -> compositeRoot.put(k, JSONArray(trimmed))
-                        trimmed.startsWith("\"") && trimmed.endsWith("\"") && trimmed.length >= 2 ->
-                            compositeRoot.put(k, trimmed.substring(1, trimmed.length - 1))
-                        else -> compositeRoot.put(k, trimmed)
-                    }
-                } catch (_: Exception) {
-                    compositeRoot.put(k, rawVal)
-                }
-            }
-            importBackupJson(compositeRoot, replaceAll = false)
+            val compositeRoot = decodeSnapshot(extractedKeys)
+            database.withTransaction { importBackupJson(compositeRoot, replaceAll = false) }
         }
 
         TrainPilotDatabase.ensureBuiltinCatalogSeeded(database)
@@ -100,7 +118,7 @@ class LegacyWebViewMigrator(
      * Reads keys from both Capacitor SharedPreferences files and Chromium WebView's
      * app_webview/Default/Local Storage/leveldb directory (.ldb and .log files).
      */
-    private fun extractAllLegacyKeys(): Map<String, String> {
+    private suspend fun extractAllLegacyKeys(): Map<String, String> {
         val result = LinkedHashMap<String, String>()
 
         // 1. Check Capacitor & RepForge SharedPreferences files
@@ -114,107 +132,20 @@ class LegacyWebViewMigrator(
                         result[cleanKey] = value
                     }
                 }
-            } catch (_: Exception) {
+            } catch (failure: Exception) {
+                throw IllegalStateException("Cannot read legacy preferences", failure)
             }
         }
 
-        // 2. Scan Chromium WebView Local Storage LevelDB files (.ldb and .log)
-        val dataDir = context.applicationInfo.dataDir?.let(::File) ?: context.filesDir.parentFile
-        val levelDbDirs = listOfNotNull(
-            dataDir?.let { File(it, "app_webview/Default/Local Storage/leveldb") },
-            dataDir?.let { File(it, "app_webview/Local Storage/leveldb") }
-        ).filter { it.isDirectory }
-
-        for (dir in levelDbDirs) {
-            val files = dir.listFiles { _, name -> name.endsWith(".ldb") || name.endsWith(".log") }
-                ?.sortedBy { it.lastModified() }
-                .orEmpty()
-            for (file in files) {
-                if (file.length() <= 0L || file.length() > 32L * 1024L * 1024L) continue
-                try {
-                    val bytes = file.readBytes()
-                    extractLevelDbLocalStorageRecords(bytes, result)
-                } catch (_: Exception) {
-                }
-            }
-        }
-
+        // The original UI used https://localhost. Reading LevelDB bytes cannot
+        // distinguish deleted/obsolete/compressed records and is not a migration.
+        // Opening Chromium also works for a clean install (an empty namespace).
+        val webValues = LegacyLocalStorageReader(context).read()
+        result["legacyStorageRaw"] = JSONObject(webValues as Map<*, *>).toString()
+        for ((key, value) in webValues.filterKeys { it.startsWith("trainpilot:") }) result[key.removePrefix("trainpilot:")] = value
+        // repforge: is the canonical v1.3.71 namespace; preserve alternate keys in the archive.
+        for ((key, value) in webValues.filterKeys { it.startsWith("repforge:") }) result[key.removePrefix("repforge:")] = value
         return result
-    }
-
-    /**
-     * Chromium LevelDB stores localStorage entries with key marker `_<origin>\u0000\u0001<key>`
-     * followed by a `\u0001` (UTF-8/Latin1) or `\u0000` (UTF-16LE) value payload.
-     */
-    private fun extractLevelDbLocalStorageRecords(bytes: ByteArray, out: MutableMap<String, String>) {
-        val text = String(bytes, StandardCharsets.ISO_8859_1)
-        val targetKeys = KNOWN_DB_KEYS + listOf("cloudBase:", "cloudHeads:", "cloudScan105:", "cloudArchiveScan161:")
-        for (candidate in targetKeys) {
-            var searchIndex = 0
-            while (searchIndex < text.length) {
-                val foundIdx = text.indexOf(candidate, searchIndex)
-                if (foundIdx < 0) break
-                searchIndex = foundIdx + candidate.length
-
-                // Extract full key name (important for prefix keys like cloudBase:<subId>)
-                var keyEnd = foundIdx
-                while (keyEnd < text.length && text[keyEnd].code in 32..126 && text[keyEnd] != '"' && text[keyEnd] != '\'') {
-                    keyEnd++
-                }
-                val fullKey = text.substring(foundIdx, keyEnd)
-                if (fullKey !in KNOWN_DB_KEYS && !fullKey.startsWith("cloud")) continue
-
-                // Look ahead for JSON object/array or string value within bounded window
-                val windowEnd = (keyEnd + 4 * 1024 * 1024).coerceAtMost(bytes.size)
-                val extractedJson = extractBalancedJsonOrString(bytes, keyEnd, windowEnd)
-                if (!extractedJson.isNullOrBlank()) {
-                    out[fullKey] = extractedJson
-                }
-            }
-        }
-    }
-
-    private fun extractBalancedJsonOrString(bytes: ByteArray, startOffset: Int, maxOffset: Int): String? {
-        var i = startOffset
-        val limit = (startOffset + 64).coerceAtMost(maxOffset)
-        while (i < limit) {
-            val b = bytes[i].toInt() and 0xFF
-            if (b == '{'.code || b == '['.code) {
-                val openChar = b.toChar()
-                val closeChar = if (openChar == '{') '}' else ']'
-                var depth = 0
-                var inQuotes = false
-                var escaped = false
-                var j = i
-                while (j < maxOffset) {
-                    val c = (bytes[j].toInt() and 0xFF).toChar()
-                    if (escaped) {
-                        escaped = false
-                    } else if (c == '\\') {
-                        escaped = true
-                    } else if (c == '"') {
-                        inQuotes = !inQuotes
-                    } else if (!inQuotes) {
-                        if (c == openChar) depth++
-                        else if (c == closeChar) {
-                            depth--
-                            if (depth == 0) {
-                                val candidate = String(bytes, i, j - i + 1, StandardCharsets.UTF_8)
-                                try {
-                                    if (openChar == '{') JSONObject(candidate) else JSONArray(candidate)
-                                    return candidate
-                                } catch (_: Exception) {
-                                    break
-                                }
-                            }
-                        }
-                    }
-                    j++
-                }
-            }
-            i++
-        }
-        return null
     }
 
     /**
@@ -228,6 +159,11 @@ class LegacyWebViewMigrator(
             rootInput
         }
 
+        data.optString("language").takeIf { it in listOf("hu", "en", "de", "ro") }?.let { settingsStore.setLanguage(it) }
+        // Preserve all original documents, even fields not yet projected by native screens.
+        for (key in data.keys()) database.keyValueDocumentDao().putDocument(
+            KeyValueDocumentEntity(key = "legacy:$key", json = JSONObject().put("value", data.get(key)).toString(), updatedAt = System.currentTimeMillis())
+        )
         // 1. Settings & Theme
         val settingsObj = data.optJSONObject("settings")
         if (settingsObj != null) {
@@ -425,7 +361,9 @@ class LegacyWebViewMigrator(
                 val startIso = s.optString("start", s.optString("plannedStart", "")).trim()
                 val date = s.optString("date", if (startIso.length >= 10) startIso.substring(0, 10) else "").trim()
                 if (date.isEmpty()) continue
-                val id = s.optString("id", s.optString("scheduleId", "")).ifBlank { UUID.randomUUID().toString() }
+                val id = s.optString("id", s.optString("scheduleId", "")).ifBlank {
+                    "legacy-schedule-" + UUID.nameUUIDFromBytes(s.toString().toByteArray(Charsets.UTF_8))
+                }
                 val programId = s.optString("programId", "")
                 val dayId = s.optString("dayId", s.optString("workout", ""))
                 val googleId = s.optString("googleEventId").takeIf { it.matches(Regex("rf[0-9a-f]{64}")) }
@@ -473,6 +411,12 @@ class LegacyWebViewMigrator(
         if (started.isEmpty()) return
         val finished = h.optString("finished", started).trim()
         val id = h.optString("id").takeIf { it.isNotBlank() } ?: LegacySyncIdentity18.legacyHistoryId(h)
+        val identities = setOf(id, h.optString("syncId"), h.optString("workoutId"), LegacySyncIdentity18.legacyHistoryId(h)) - ""
+        for (tombstone in database.workoutHistoryDao().getTombstones()) {
+            val ids = JSONArray(tombstone.idsJson)
+            if ((0 until ids.length()).any { ids.optString(it) in identities } ||
+                (tombstone.workoutKey.isNotBlank() && tombstone.workoutKey == h.optString("key"))) return
+        }
         val syncId = h.optString("syncId", h.optString("workoutId", id)).ifBlank { id }
         val workoutKey = h.optString("key", syncId).ifBlank { started }
         val startedMs = runCatching { Instant.parse(started).toEpochMilli() }.getOrDefault(0L)
