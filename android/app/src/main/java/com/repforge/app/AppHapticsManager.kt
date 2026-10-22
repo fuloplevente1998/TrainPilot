@@ -1,4 +1,4 @@
-package __PACKAGE_NAME__
+package com.repforge.app
 
 import android.content.Context
 import android.os.Build
