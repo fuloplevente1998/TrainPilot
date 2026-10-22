@@ -1,4 +1,4 @@
-package __PACKAGE_NAME__
+package com.repforge.app
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
