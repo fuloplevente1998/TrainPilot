@@ -15513,7 +15513,7 @@ renderWorkout=function(){
  if(window.TrainPilot110)panel.insertAdjacentHTML('beforeend',window.TrainPilot110.intervalHtml());const owner=tp107IndoorOwner();if(owner?.timer.running&&!tp107IndoorInterval)tp107IndoorInterval=setInterval(tp107PaintIndoor,250);tp107PaintIndoor();return result;
 };
 
-var tp107FitFrame=0,tp107FitNav=null,tp107ObservedNav=null,tp107FitNavObserver=null,tp107NavBox=null;
+var tp107FitFrame=0,tp107FitNav=null,tp107ObservedNav=null,tp107FitNavObserver=null,tp107NavBox=null,tp107IgnoreInitialNavResize=false;
 var tp107ScheduleFit=function(){
  if(tp107FitFrame)return;
  tp107FitFrame=requestAnimationFrame(()=>{tp107FitFrame=0;tp107FitViews()});
@@ -15538,7 +15538,9 @@ var tp107FitViews=function(){
   const height=Math.ceil(navRect.bottom)+'px';
   if(document.documentElement.style.getPropertyValue('--tp107-nav-height')!==height)document.documentElement.style.setProperty('--tp107-nav-height',height);
   if(nav!==tp107ObservedNav){
-   tp107ObservedNav=nav;tp107FitNavObserver?.disconnect();tp107FitNavObserver?.observe(nav);
+   // ResizeObserver always sends an initial size, even without a resize.
+   tp107ObservedNav=nav;tp107IgnoreInitialNavResize=true;
+   tp107FitNavObserver?.disconnect();tp107FitNavObserver?.observe(nav);
   }
  }
  const panelHost=document.getElementById('tp155R4PanelHost'),calendar=panelHost?.dataset.panel==='calendar';
@@ -15549,6 +15551,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
   // The first observation is not a resize. Don't run a second startup fit
   // for the same nav box; genuine later size changes still get measured.
   const entry=entries.find(e=>e.target===tp107ObservedNav),box=entry?.borderBoxSize?.[0];
+  if(entry&&tp107IgnoreInitialNavResize){tp107IgnoreInitialNavResize=false;return;}
   if(box&&tp107NavBox&&Math.abs(box.inlineSize-tp107NavBox.width)<.5&&Math.abs(box.blockSize-tp107NavBox.height)<.5)return;
   tp107FitNav=null;tp107ScheduleFit();
  });

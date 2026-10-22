@@ -4,7 +4,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http'),{chromium}=require('playwright');
 const root=path.resolve('www'),source=fs.readFileSync(path.join(root,'app.js'),'utf8');
 assert.ok(source.includes('tp107ScheduleFit();\n});\n// @endsection training-107.js'));
-const instrumented=source.replace('var tp107FitViews=function(){','var tp107FitViews=function(){window.__tp107FitCalls=(window.__tp107FitCalls||0)+1;');
+const instrumented=source.replace('var tp107FitViews=function(){','var tp107FitViews=function(){window.__tp107FitCalls=(window.__tp107FitCalls||0)+1;(window.__tp107FitStacks||(window.__tp107FitStacks=[])).push((new Error()).stack);');
 assert.notEqual(instrumented,source);
 const server=http.createServer((q,r)=>{
  const file=path.resolve(root,'.'+new URL(q.url,'http://local').pathname.replace(/\/$/,'/index.html'));
@@ -26,7 +26,7 @@ const server=http.createServer((q,r)=>{
    await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))));
    const initial=await page.evaluate(()=>({calls:window.__tp107FitCalls||0,home:!!document.querySelector('#app main.rf221-home'),nav:document.documentElement.style.getPropertyValue('--tp107-nav-height')}));
-   assert.ok(initial.calls<=1,'at most one initial layout fit: '+JSON.stringify(initial));
+   assert.ok(initial.calls<=1,'at most one initial layout fit: '+JSON.stringify(initial)+'\n'+(await page.evaluate(()=>window.__tp107FitStacks||[])).join('\n---\n'));
    assert.ok(initial.calls>=1,'at least one actual fit: '+JSON.stringify(initial));
    assert.ok(initial.nav.endsWith('px'),'nav height measured: '+JSON.stringify(initial));
    await page.setViewportSize({width:360,height:740});
