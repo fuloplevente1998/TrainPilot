@@ -121,8 +121,8 @@ jobs:
           for tag in [phone_tag, wear_tag]:
               lookup = subprocess.run(['gh', 'api', f'repos/{repo}/git/ref/tags/{tag}'], capture_output=True, text=True)
               if lookup.returncode and custom and '404' in lookup.stderr:
-                  release = json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/releases/tags/{tag}']))
-                  if not release['draft'] or release['target_commitish'] != commit:
+                  release = json.loads(subprocess.check_output(['gh', 'release', 'view', tag, '--repo', repo, '--json', 'isDraft,targetCommitish']))
+                  if not release['isDraft'] or release['targetCommitish'] != commit:
                       raise SystemExit('New tags require a prepared draft for the verified source')
                   ref = json.loads(subprocess.check_output(['gh', 'api', '--method', 'POST', f'repos/{repo}/git/refs', '-f', f'ref=refs/tags/{tag}', '-f', f'sha={commit}']))
               else:
