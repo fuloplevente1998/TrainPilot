@@ -101,9 +101,13 @@ const {chromium}=require('playwright');
    const timedValue=Number(await page.locator('main .row input.field').last().inputValue());
    assert.ok(timedValue>=1,'stopwatch must write elapsed seconds into the timed set');
    await page.locator('#rf110StopwatchToggle').click();
+   await page.waitForFunction(()=>state.session.exercises[0].sets[0].done);
+   assert.equal(await page.evaluate(()=>state.session.exercises[0].sets[0].done),true,'explicit positive stop completes the timed set without another OK');
+   await page.locator('[data-tp188-undo]').click();
+   await page.waitForFunction(()=>!state.session.exercises[0].sets[0].done);
    assert.equal(await page.locator('#rf110StopwatchToggle').innerText(),'Folytatás');
    assert.match(await page.locator('#rf142StopwatchStatus').innerText(),/rögzítve/i,'stopwatch must visibly confirm the recorded set duration');
-   await page.locator('#rf110Stopwatch .btn.secondary').click();
+   await page.locator('#rf110Stopwatch .rf110-stopwatch-actions .btn.secondary').click();
    assert.equal(await page.locator('main .row input.field').last().inputValue(),'','reset must clear the timed set value');
    await page.evaluate(()=>{rf110StopwatchHalt(true);state.session=null;state.workout=null;go('home')});
 

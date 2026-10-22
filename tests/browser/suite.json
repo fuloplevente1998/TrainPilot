@@ -426,5 +426,25 @@
   {
     "file": "tests/browser/workout-records-226.cjs",
     "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/workout-finalization-integrity.cjs",
+    "estimatedSeconds": 15
+  },
+  {
+    "file": "tests/browser/timed-stop-panel-performance.cjs",
+    "estimatedSeconds": 15
+  },
+  {
+    "file": "tests/browser/panel-reflow-236.cjs",
+    "estimatedSeconds": 16
+  },
+  {
+    "file": "tests/browser/settings-immediate-navigation-236.cjs",
+    "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/startup-fit-once-236.cjs",
+    "estimatedSeconds": 9
   }
 ]

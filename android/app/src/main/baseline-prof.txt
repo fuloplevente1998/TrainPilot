@@ -1,0 +1,23 @@
+# TrainPilot P1.5: initial manually curated startup/navigation entry points.
+# These are NOT yet measured device-generated Macrobenchmark traces. Recollect
+# a representative baseline with profile-generation instrumentation later.
+Lcom/repforge/app/MainActivity;
+HSPLcom/repforge/app/MainActivity;->onCreate(Landroid/os/Bundle;)V
+HSPLcom/repforge/app/MainActivity;->onResume()V
+HSPLcom/repforge/app/MainActivity;->finishStartup(ZLjava/lang/Runnable;)V
+Lcom/repforge/app/StartupScreen;
+HSPLcom/repforge/app/StartupScreen;->install(Landroid/app/Activity;)Lcom/repforge/app/StartupScreen;
+HSPLcom/repforge/app/StartupScreen;->attach()V
+Lcom/repforge/app/StartupPaint;
+Lcom/repforge/app/StartupFade;
+Lcom/repforge/app/WearSyncPlugin;
+Lcom/repforge/app/HealthBridgePlugin;
+Lcom/repforge/app/HealthJournalPlugin;
+Lcom/repforge/app/HealthBackgroundPlugin;
+Lcom/repforge/app/GoogleSyncPlugin;
+Lcom/repforge/app/WorkoutPhotosPlugin;
+Lcom/repforge/app/DistanceTrackerPlugin;
+Lcom/repforge/app/IntervalTimerPlugin;
+Lcom/getcapacitor/BridgeActivity;
+Lcom/getcapacitor/Bridge;
+Landroidx/profileinstaller/ProfileInstaller;

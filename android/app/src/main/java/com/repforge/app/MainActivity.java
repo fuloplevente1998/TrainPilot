@@ -8,10 +8,21 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.getcapacitor.BridgeActivity;
+import android.content.Context;
+import android.os.SystemClock;
+import android.util.Log;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MainActivity extends BridgeActivity {
+    // Health sync holds the journal lock while committing/projection work runs.
+    // Never wait for that lock (or SQLite disk I/O) on the input/render thread.
+    private static final ExecutorService healthMaintenance = Executors.newSingleThreadExecutor();
     private StartupScreen startupScreen;
+    private long startupStartedAt;
+    private boolean startupLogged;
     @Override public void onCreate(Bundle savedInstanceState) {
+        startupStartedAt = SystemClock.elapsedRealtime();
         startupScreen = StartupScreen.install(this);
         registerPlugin(NativeFilesPlugin.class);
         registerPlugin(BackupArchivePlugin.class);
@@ -58,8 +69,11 @@ public class MainActivity extends BridgeActivity {
         super.onResume();
         applyWebViewDisplaySettings();
         HealthBackgroundService.stop(this);
-        try { HealthJournalStore.get(this).retireWatchUi(); } catch (Exception ignored) {}
-        try { HealthBackgroundJob.schedule(this); } catch (Exception ignored) {}
+        Context app = getApplicationContext();
+        healthMaintenance.execute(() -> {
+            try { HealthJournalStore.get(app).retireWatchUi(); } catch (Exception ignored) {}
+            try { HealthBackgroundJob.schedule(app); } catch (Exception ignored) {}
+        });
     }
 
     private void applyWebViewDisplaySettings() {
@@ -74,6 +88,12 @@ public class MainActivity extends BridgeActivity {
     }
 
     void finishStartup(boolean failed, Runnable complete) {
+        if (!startupLogged) {
+            startupLogged = true;
+            Log.i("TrainPilotStartup", "activityToJsReadyMs="
+                    + Math.max(0, SystemClock.elapsedRealtime() - startupStartedAt)
+                    + " failed=" + failed);
+        }
         if (startupScreen == null) { complete.run(); return; }
         startupScreen.ready(getBridge() == null ? null : getBridge().getWebView(), failed, complete);
     }

@@ -1,0 +1,124 @@
+{
+  "applicationSourceCommit": "1b5e488b35ca39dfe79ab17e6347b38daf0401a8",
+  "baseMain": "bc43d4e700337f7cb9a6df63f74ac56513637450",
+  "pullRequest": "https://github.com/fuloplevente1998/TrainPilot/pull/235",
+  "version": "1.3.71",
+  "versionCode": 2735,
+  "gitTreeAtTestedSource": "1577cb0e9fbc7d2534e3e2bbc4f25bc7f95a4471",
+  "ci": [
+    {
+      "conclusion": "success",
+      "databaseId": 39552869084,
+      "headSha": "1b5e488b35ca39dfe79ab17e6347b38daf0401a8",
+      "status": "completed",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39552869084"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 39552869065,
+      "headSha": "1b5e488b35ca39dfe79ab17e6347b38daf0401a8",
+      "status": "completed",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39552869065"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 39552881285,
+      "headSha": "1b5e488b35ca39dfe79ab17e6347b38daf0401a8",
+      "status": "completed",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39552881285"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 39552884885,
+      "headSha": "1b5e488b35ca39dfe79ab17e6347b38daf0401a8",
+      "status": "completed",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39552884885"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 39552887694,
+      "headSha": "1b5e488b35ca39dfe79ab17e6347b38daf0401a8",
+      "status": "completed",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39552887694"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 39552891381,
+      "headSha": "1b5e488b35ca39dfe79ab17e6347b38daf0401a8",
+      "status": "completed",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39552891381"
+    }
+  ],
+  "results": {
+    "quick": 161,
+    "quickFailures": 0,
+    "phoneChromium": 109,
+    "phoneChromiumShards": 6,
+    "phone": {
+      "tests": 251,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "webview": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "wear": {
+      "tests": 167,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "round": {
+      "tests": 183,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "newIntegrityCases": 14
+  },
+  "apks": [
+    {
+      "name": "TrainPilot-1.3.71.apk",
+      "sha256": "f9a87c24621131a3b743ba5273f426d29cdc091c9159a51afe8889d542052ad8",
+      "bytes": 5924423,
+      "artifactId": 12324696670,
+      "run": 39552881285,
+      "webAssetsMatchSource": true,
+      "sourceArchiveStampMatches": true,
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39552881285/artifacts/12324696670"
+    },
+    {
+      "name": "TrainPilot-1.3.71-wear.apk",
+      "sha256": "922e8b936da0b58b5824a3cc34601b5ea31d923d4cccf2baa90f432a33da8936",
+      "bytes": 4226963,
+      "artifactId": 12324303353,
+      "run": 39552887694,
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39552887694/artifacts/12324303353"
+    }
+  ],
+  "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+  "signerContinuity": "both release gates verified against v1.0.0; local certificate and SHA256SUMS rechecked",
+  "deviceAcceptance": {
+    "previousFinalizationSource": "655183c93ba9d63b30d59dd4bea89117ae7b94cb",
+    "previousSaveDeleteSmoke": "user confirmed no duplicate workouts and no resurrection after deletion",
+    "currentUiScrollStopwatch": "user accepted: Rendben, jo lett; first navigation after app startup remains slow and is being investigated separately"
+  },
+  "scope": [
+    "one canonical finalization coordinator with safe retry and native close",
+    "upper duplicate interval stopwatch removed; original lower stopwatch retained",
+    "explicit positive set stop completes without extra OK; zero/implicit stop does not",
+    "bilateral second positive side completes, undo/edit/rerender retains measurements",
+    "shared per-publication history/prefill index; ordinary catalog yields during panel gestures; command drain and force bypass",
+    "visible explanation of existing Samsung readiness cap; calculation unchanged"
+  ],
+  "limits": [
+    "Physical scrolling improvement still requires device acceptance",
+    "Full Journal/PR pagination and general storage recovery are later refactor slices"
+  ],
+  "mainMerge": false,
+  "releasePublished": false
+}

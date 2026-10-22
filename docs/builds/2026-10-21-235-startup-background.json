@@ -1,0 +1,182 @@
+{
+  "date": "2026-10-21",
+  "repository": "fuloplevente1998/TrainPilot",
+  "pullRequest": 235,
+  "applicationSourceCommit": "6d28ade8a39577995eeedb8b04a6a7fbe2bc6d6e",
+  "phoneBuildCommit": "3e373a8e1f67d678beb5c121f37dfa2f09c219bd",
+  "phoneBuildTree": "d74ae93c70da46300af6117c10573225d92953b8",
+  "applicationEquivalentCommits": [
+    "ae520e619d1ff258b6a4cee045e05e82ea57a848",
+    "3e373a8e1f67d678beb5c121f37dfa2f09c219bd"
+  ],
+  "laterDifferences": [
+    "scripts/test.cjs canonical-runtime test registration",
+    "tests/browser/timed-stop-panel-performance.cjs deferred delivery fixture"
+  ],
+  "version": "1.3.71",
+  "versionCode": 2735,
+  "mainUnchanged": "bc43d4e700337f7cb9a6df63f74ac56513637450",
+  "draft": true,
+  "deviceFeedback": {
+    "previousApplicationSource": "3199528a830651d9f459cecf40de1e7b6ec1294f",
+    "result": "Startup still very slow; after 15 seconds navigation delay is smaller but persists throughout use.",
+    "newBuildAccepted": false
+  },
+  "changes": [
+    "Health maintenance and scheduling leave the Activity input thread; already-retired settings perform no SQLite writes.",
+    "900ms Wear scan listeners process JSON and durable queues on Capacitor's background executor; ownership keeps its explicit main-looper handoff.",
+    "3s Wear home polls compare exact stored inputs, resolved language and local date/timezone before catalog building; force/foreground/requestHome and changed inputs rebuild; failed sends do not advance the input stamp."
+  ],
+  "checks": {
+    "quick": {
+      "run": 39614621725,
+      "sourceCommit": "3e373a8e1f67d678beb5c121f37dfa2f09c219bd",
+      "status": "success",
+      "passed": 162,
+      "failed": 0
+    },
+    "performance": {
+      "run": 39614621671,
+      "sourceCommit": "3e373a8e1f67d678beb5c121f37dfa2f09c219bd",
+      "status": "success"
+    },
+    "phone": {
+      "artifactId": 12351489638,
+      "run": 39614613499,
+      "sourceCommit": "3e373a8e1f67d678beb5c121f37dfa2f09c219bd",
+      "apkSha256": "4255a214e1955493fd28666d3a35c5a57681621bcb9936b9b37ebc8bb80fccd8",
+      "sourceZipSha256": "cbf4d8a605004c30d5481d33666f9dfbc0271c6c945bc3203f5bf270764d8ba8",
+      "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+      "native": {
+        "tests": 251,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "webAssetsVerified": 31,
+      "sourceFilesVerified": 803,
+      "status": "success",
+      "ui": {
+        "shards": 6,
+        "modules": 109,
+        "uniqueModules": 109,
+        "passed": 109,
+        "failed": 0,
+        "artifacts": [
+          12352466187,
+          12352341543,
+          12351953425,
+          12351793863,
+          12351643865,
+          12351513906
+        ]
+      },
+      "download": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39614613499/artifacts/12351489638"
+    },
+    "wear": {
+      "run": 39613284803,
+      "sourceCommit": "6d28ade8a39577995eeedb8b04a6a7fbe2bc6d6e",
+      "status": "success",
+      "native": {
+        "tests": 167,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "artifactId": 12352131837,
+      "apkSha256": "7a04e1ab9c4a376786eff11e09944bc02dc56c3ac79bca7d7e7059c987781797",
+      "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+      "applicationCodeChanged": false,
+      "download": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39613284803/artifacts/12352131837"
+    },
+    "webview": {
+      "run": 39613275281,
+      "sourceCommit": "6d28ade8a39577995eeedb8b04a6a7fbe2bc6d6e",
+      "status": "success",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "artifactId": 12351512792,
+      "includes": "Actual Activity pause/resume returns before a deliberately held HealthJournalStore lock is released."
+    },
+    "roundUi": {
+      "run": 39613289878,
+      "sourceCommit": "6d28ade8a39577995eeedb8b04a6a7fbe2bc6d6e",
+      "status": "success",
+      "tests": 183,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "shards": [
+        68,
+        59,
+        56
+      ],
+      "artifacts": [
+        12351268076,
+        12352162654,
+        12351802789
+      ]
+    },
+    "browserCatalog": {
+      "run": 39614613499,
+      "job": 119272393240,
+      "test": "tests/browser/timed-stop-panel-performance.cjs",
+      "samples": [
+        {
+          "count": 200,
+          "ms": 16.199999999982538,
+          "reads": 1,
+          "checks": 200,
+          "totalReads": 213,
+          "libraryReads": 1,
+          "programReads": 1,
+          "catalog": 106,
+          "routine": {
+            "ms": 0.20000000001164153,
+            "unchangedBuilds": 0,
+            "edited": 31,
+            "deleted": true
+          }
+        },
+        {
+          "count": 1500,
+          "ms": 46,
+          "reads": 1,
+          "checks": 1500,
+          "totalReads": 1513,
+          "libraryReads": 1,
+          "programReads": 1,
+          "catalog": 106,
+          "routine": {
+            "ms": 0,
+            "unchangedBuilds": 0,
+            "edited": 31,
+            "deleted": true
+          }
+        }
+      ],
+      "limits": "Chromium component probe; routine.ms covers five unchanged polls; no physical-device latency/FPS claim."
+    }
+  },
+  "supersededTestRuns": [
+    {
+      "run": 39613254231,
+      "sourceCommit": "6d28ade8a39577995eeedb8b04a6a7fbe2bc6d6e",
+      "result": "Quick 161 pass / 1 fail",
+      "cause": "New canonical-runtime test was initially registered in the compatibility section runner; fixed by ae520e6 without removing assertions."
+    },
+    {
+      "run": 39613675367,
+      "sourceCommit": "ae520e619d1ff258b6a4cee045e05e82ea57a848",
+      "result": "Chromium 108/109; release skipped",
+      "cause": "Earlier new probe had already published the unchanged catalog, but deferred-delivery fixture still expected a new transfer; 3e373a8 supplies an actual settings change, preserving the deferred-delivery assertions."
+    }
+  ],
+  "limitations": [
+    "New APK has not been accepted on the physical phone.",
+    "Android navigation diagnostics use synthetic touches and Activity/WebView relaunches, not process-force-stop or physical input/FPS measurements.",
+    "No main merge, release, version bump or issue closure."
+  ]
+}

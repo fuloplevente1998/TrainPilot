@@ -233,6 +233,8 @@ final class HealthJournalStore extends SQLiteOpenHelper {
     void retireWatchUi() throws Exception {
         if(!pendingRestore().isEmpty())return;
         JSONObject prefs=preferences();String daily=prefs.optString("hcDailySource","auto");
+        if(HC.equals(prefs.optString("primary"))&&!prefs.optBoolean("logWatchSteps")
+                &&!prefs.optBoolean("bleBackground")&&(daily.equals("auto")||daily.equals("priority")))return;
         setPreferences(new JSONObject().put("primary",HC).put("logWatchSteps",false).put("bleBackground",false)
             .put("hcDailySource",daily.equals("priority")?"priority":"auto"));
     }

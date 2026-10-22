@@ -1,21 +1,25 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# TrainPilot phone R8 release: keep application entry points and native JS
+# bridges stable across reflective Capacitor, JSON and wearable callbacks.
+# Conservative initial scope: reduce library code/resources first; narrow these
+# keep rules only after a release-APK-on-device compatibility matrix passes.
+-keepattributes Signature,InnerClasses,EnclosingMethod,*Annotation*
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# All app-owned native plugins, Parcelable/JSON models, manifest services and
+# background callbacks. Plugin annotation methods are looked up by JS names.
+-keep class com.repforge.app.** { *; }
+-keep class com.repforge.shared.** { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Capacitor bridge/plugins use reflection and annotated method discovery.
+-keep class com.getcapacitor.** { *; }
+-keep class * extends com.getcapacitor.Plugin { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Samsung Health data library models are resolved by SDK-specific adapters.
+-keep class com.samsung.android.sdk.health.data.** { *; }
+
+# Watch Data Layer message/data transport, including Play Services consumers.
+-keep class com.google.android.gms.wearable.** { *; }
+
+# Preserve application-owned Gson JSON contracts and fields with SerializedName.
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}

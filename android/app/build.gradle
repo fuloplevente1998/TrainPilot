@@ -60,8 +60,9 @@ android {
         release {
             signingConfig signingConfigs.release
             debuggable false
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }
@@ -72,6 +73,7 @@ dependencies {
     // Samsung's read-only Data SDK; the phone implementation remains Java.
     implementation files('libs/samsung-health-data-api-1.1.0.aar')
     implementation 'com.google.code.gson:gson:2.11.0'
+    implementation 'androidx.profileinstaller:profileinstaller:1.4.1'
     implementation 'org.jetbrains.kotlin:kotlin-stdlib:2.1.21'
     implementation 'org.jetbrains.kotlin:kotlin-parcelize-runtime:2.1.21'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2'

@@ -1,0 +1,88 @@
+{
+  "applicationSourceCommit": "655183c93ba9d63b30d59dd4bea89117ae7b94cb",
+  "baseMain": "bc43d4e700337f7cb9a6df63f74ac56513637450",
+  "pullRequest": "https://github.com/fuloplevente1998/TrainPilot/pull/235",
+  "version": "1.3.71",
+  "versionCode": 2735,
+  "gitTreeAtTestedSource": "33eb07a5ec273d2d3fd44fa15c32f7f754859edf",
+  "ci": [
+    {
+      "conclusion": "success",
+      "headSha": "655183c93ba9d63b30d59dd4bea89117ae7b94cb",
+      "status": "completed",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39545876527",
+      "id": 39545876527
+    },
+    {
+      "conclusion": "success",
+      "headSha": "655183c93ba9d63b30d59dd4bea89117ae7b94cb",
+      "status": "completed",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39545876543",
+      "id": 39545876543
+    },
+    {
+      "conclusion": "success",
+      "headSha": "655183c93ba9d63b30d59dd4bea89117ae7b94cb",
+      "status": "completed",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39545881760",
+      "id": 39545881760
+    },
+    {
+      "conclusion": "success",
+      "headSha": "655183c93ba9d63b30d59dd4bea89117ae7b94cb",
+      "status": "completed",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39545884307",
+      "id": 39545884307
+    },
+    {
+      "conclusion": "success",
+      "headSha": "655183c93ba9d63b30d59dd4bea89117ae7b94cb",
+      "status": "completed",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39545887200",
+      "id": 39545887200
+    },
+    {
+      "conclusion": "success",
+      "headSha": "655183c93ba9d63b30d59dd4bea89117ae7b94cb",
+      "status": "completed",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39545889547",
+      "id": 39545889547
+    }
+  ],
+  "results": {
+    "quick": 160,
+    "quickFailures": 0,
+    "phoneChromium": 108,
+    "phoneNative": 251,
+    "wearNative": 167,
+    "wearRound": 183,
+    "phoneWebView": 1,
+    "nativeFailures": 0,
+    "nativeErrors": 0,
+    "nativeSkipped": 0,
+    "newIntegrityCases": 14
+  },
+  "apks": [
+    {
+      "name": "TrainPilot-1.3.71-wear.apk",
+      "artifactId": 12320794234,
+      "sha256": "9247c5fd2b09103efe7cc531af3bcb7c0e3a826307a12d3c624a83a14c660e87",
+      "bytes": 4226963,
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39545887200/artifacts/12320794234"
+    },
+    {
+      "name": "TrainPilot-1.3.71.apk",
+      "artifactId": 12321955384,
+      "sha256": "45a642464cd5dc15c308dc38e55b1aecfb36fdcdd55c86be623f6d5b8e36ccf3",
+      "bytes": 5923099,
+      "appJsMatchesSource": true,
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/39545881760/artifacts/12321955384"
+    }
+  ],
+  "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+  "signerContinuity": "verified by both release gates against v1.0.0",
+  "deviceAcceptance": "pending",
+  "mainMerge": false,
+  "releasePublished": false,
+  "next": "Device smoke test, then Log/PR indexing and progressive rendering in the next refactor slice."
+}

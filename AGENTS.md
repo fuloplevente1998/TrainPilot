@@ -68,6 +68,19 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 - Ha új/lejárt környezetben dolgozol, a hitelesítést és a platformutasításokat
   újra ellenőrizd; régi workspace-path vagy eszköz elérhetőségét ne feltételezd.
 
+## Szerkezeti rendbetétel – kötelező irány
+
+- Központi műveletet ne bővíts újabb globális függvény-felülírással. Az edzés
+  lezárásának egyetlen belépési pontja a `finishWorkout`, folyamata a
+  `TrainPilotWorkoutFinalization`. Az érintett modulban közvetlen, név szerinti
+  lépést módosíts; ne telepíts új finish wrappert.
+- A tartós napló, futó session és helyreállítható draft külön felelősség. Mentési
+  újrapróbálás stabil edzésazonosítóval legfeljebb egy naplósort eredményezhet.
+  Natív lezárási vagy drafttakarítási hiba mellett nem küldhető „mentve” nyugta.
+- Teljesítmény-cache érvénytelenítéséhez a tényleges adatváltozást kövesd.
+  Naplóhossz vagy elemszám önmagában nem elég. A fokozatos terv:
+  `docs/plans/APP_REFACTOR.md`; kész részt és következő lépést a handoff rögzíti.
+
 ## Megőrzendő termékdöntések
 
 - Automatizálási UI-elv (2026-10-20): ugyanazon programnap új edzésének súlya és
@@ -93,6 +106,11 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 - Telefonos GPS-es távolsági sorozatnál a sikeres, kifejezett „Mérés befejezése”
   készre jelöl és menthetővé tesz külön sorozat-OK nélkül (#206/#208). Térképbezárás,
   hibás vagy implicit GPS-stop önmagában nem teljesítés; ezt regresszióval védd.
+- Telefonos időmérésnél az eredeti alsó sorozatstopper marad; külön felső
+  intervallumos stopper ne jelenjen meg. Az intervallum beállítása opcionális,
+  összecsukott rész. Explicit pozitív stopper-stop külön OK nélkül készre jelöl;
+  implicit pause/navigáció/nullázás/0 másodperc nem. Kétoldali sorozathoz mindkét
+  pozitív oldal szükséges. Az eredeti visszavonás/natív rögzítés megőrzendő.
 - #188 Visszavonás és #189 egyetlen folyamatos 3 mp-es feloldás elfogadva/mainen.
   #192 és #211 sztornózott, kódjukat ne éleszd újra. #208-cal bekerült GPS STOP
   viselkedést ne fejleszd újra. A pontos nyitott sorrend a handoffban található.

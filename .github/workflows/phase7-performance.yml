@@ -4,8 +4,14 @@ on:
   pull_request:
     branches: [ main ]
   push:
-    branches: [ main ]
+    branches: [ main, 'perf/**' ]
   workflow_dispatch:
+    inputs:
+      navigation_profile:
+        description: 'Collect cold/warm navigation CPU and layout profiles against the last device-tested #235 source'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -17,7 +23,7 @@ concurrency:
 jobs:
   benchmark:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Checkout source
         uses: actions/checkout@v7
@@ -51,6 +57,15 @@ jobs:
         run: node tests/browser/phase7-history-callers-19.cjs
       - name: Profile cold Coach open
         run: node tests/browser/phase7-coach-cold-19.cjs
+      - name: Profile navigation against the latest device-tested source
+        if: (github.event_name == 'workflow_dispatch' && inputs.navigation_profile) || (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/perf/236-'))
+        shell: bash
+        run: |
+          set -euo pipefail
+          NAV_BASE_DIR="$RUNNER_TEMP/trainpilot-nav-before"
+          git worktree add --detach "$NAV_BASE_DIR" 1f1f98d03873282d27e20dc9c9d2c25ae14d2e20
+          TRAINPILOT_NAV_ROOT="$NAV_BASE_DIR/www" TRAINPILOT_NAV_OUT=navigation-profile/before node tests/browser/navigation-cpu-profile-235.cjs > navigation-before.log
+          TRAINPILOT_NAV_OUT=navigation-profile/after node tests/browser/navigation-cpu-profile-235.cjs > navigation-after.log
       - name: Archive performance evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -59,5 +74,8 @@ jobs:
           path: |
             phase7-before.log
             phase7-metrics.log
+            navigation-before.log
+            navigation-after.log
+            navigation-profile/
           if-no-files-found: ignore
           retention-days: 30

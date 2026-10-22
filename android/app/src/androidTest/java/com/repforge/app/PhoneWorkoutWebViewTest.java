@@ -16,6 +16,29 @@ import static org.junit.Assert.*;
 /** Exercises the packaged WebView, Capacitor dispatcher, SQLite and foreground service together. */
 @RunWith(AndroidJUnit4.class)
 public class PhoneWorkoutWebViewTest {
+    @Test public void resumeKeepsInputThreadFreeWhileHealthJournalIsBusy() throws Exception {
+        var instrumentation=InstrumentationRegistry.getInstrumentation();
+        MainActivity activity=(MainActivity)instrumentation.startActivitySync(
+            new Intent(instrumentation.getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        CountDownLatch locked=new CountDownLatch(1),release=new CountDownLatch(1),resumed=new CountDownLatch(1);
+        java.lang.reflect.Field field=HealthJournalStore.class.getDeclaredField("LOCK");field.setAccessible(true);
+        Object lock=field.get(null);
+        Thread writer=new Thread(()->{
+            synchronized(lock){locked.countDown();try{release.await(10,TimeUnit.SECONDS);}catch(InterruptedException e){Thread.currentThread().interrupt();}}
+        });
+        try {
+            waitFor(activity.getBridge().getWebView(),"window.TrainPilotBoot?.finished");
+            instrumentation.runOnMainSync(()->instrumentation.callActivityOnPause(activity));
+            writer.start();assertTrue("Health lock not held",locked.await(5,TimeUnit.SECONDS));
+            new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
+                instrumentation.callActivityOnResume(activity);resumed.countDown();
+            });
+            assertTrue("Activity resume/input thread waited for the health database lock",resumed.await(2,TimeUnit.SECONDS));
+            assertEquals("Journal must still be busy when the UI resumes",1,release.getCount());
+        } finally {
+            release.countDown();writer.join(5000);instrumentation.runOnMainSync(activity::finish);
+        }
+    }
     private String evaluate(WebView view,String script) throws Exception {
         CountDownLatch done=new CountDownLatch(1);AtomicReference<String> result=new AtomicReference<>();
         InstrumentationRegistry.getInstrumentation().runOnMainSync(()->view.evaluateJavascript(script,value->{result.set(value);done.countDown();}));
@@ -33,8 +56,139 @@ public class PhoneWorkoutWebViewTest {
             if(focused.get())return;
             Thread.sleep(100);
         }while(System.currentTimeMillis()<end);
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(()->{
+            ViewFocusDiagnostic(activity);
+        });
+        try(var descriptor=InstrumentationRegistry.getInstrumentation().getUiAutomation().executeShellCommand("dumpsys window");
+            var reader=new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream(descriptor.getFileDescriptor())))){
+            String line;while((line=reader.readLine())!=null)if(line.matches(".*(mCurrentFocus|mFocusedApp|Window #|mViewVisibility|mAttrs|mHasSurface|mObscured|mInputFocus).*"))
+                android.util.Log.e("TrainPilotFocus",line);
+        }
         fail("The foreground phone Activity did not receive window focus");
     }
+    private void ViewFocusDiagnostic(MainActivity activity) {
+        WebView view=activity.getBridge().getWebView();android.view.View decor=activity.getWindow().getDecorView();
+        android.util.Log.e("TrainPilotFocus","activity="+activity.hasWindowFocus()+", decor="+decor.hasWindowFocus()
+            +", webView="+view.hasWindowFocus()+", visibility="+decor.getWindowVisibility()+", attached="+decor.isAttachedToWindow()
+            +", finishing="+activity.isFinishing()+", destroyed="+activity.isDestroyed()+", flags="+activity.getWindow().getAttributes().flags);
+    }
+    @Test public void coldNavigationProfilesRealTouchesAcrossRelaunches() throws Exception {
+        var instrumentation=InstrumentationRegistry.getInstrumentation();
+        Intent launch=new Intent(instrumentation.getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        MainActivity seed=(MainActivity)instrumentation.startActivitySync(launch);
+        try {
+            WebView view=seed.getBridge().getWebView();waitFor(view,"window.TrainPilotBoot?.finished");
+            evaluate(view,"""
+                db.set('language','hu');db.set('onboarding128','skipped');
+                db.set('history',Array.from({length:200},(_,i)=>({id:'cold-nav-'+i,syncId:'cold-nav-'+i,
+                 programId:'home-level2',dayId:'A',workout:'A',started:new Date(Date.now()-(i+1)*86400000).toISOString(),
+                 finished:new Date(Date.now()-(i+1)*86400000+1800000).toISOString(),
+                 exercises:['db-floor-press','db-squat','one-arm-row','rdl','db-curl','plank'].map(id=>({id,
+                  loadType:'per_hand',repUnit:'ism.',sets:[{set:1,weight:8,reps:'10',done:true}]}))})));
+                true
+                """);
+        } finally {instrumentation.runOnMainSync(seed::finish);}
+        instrumentation.waitForIdleSync();
+        org.json.JSONArray launches=new org.json.JSONArray();
+        for(int attempt=0;attempt<2;attempt++) {
+            MainActivity activity=(MainActivity)instrumentation.startActivitySync(launch);
+            try {
+                WebView view=activity.getBridge().getWebView();waitFor(view,"window.TrainPilotBoot?.finished");
+                evaluate(view,"window.__nativeExitReady=false;Promise.resolve(TrainPilotBoot.nativeExitFinished).then(()=>window.__nativeExitReady=true);true");
+                waitFor(view,"window.__nativeExitReady");waitForWindowFocus(activity);
+                instrumentation.runOnMainSync(view::requestFocus);
+                waitFor(view,"document.hasFocus()");
+                evaluate(view,"""
+                    window.__coldNav={rows:[],longTasks:[],pending:null,depth:0,events:[]};
+                    for(const type of ['pointerdown','pointerup','click','contextmenu'])document.addEventListener(type,event=>{
+                     __coldNav.events.push({type,target:event.target.id||event.target.className,x:event.clientX,y:event.clientY,at:event.timeStamp});
+                     if(__coldNav.events.length>8)__coldNav.events.shift();
+                    },true);
+                    try{new PerformanceObserver(list=>{for(const e of list.getEntries())__coldNav.longTasks.push({at:e.startTime,ms:e.duration});}).observe({type:'longtask',buffered:true});}catch(_){}
+                    for(const name of ['go','tp155R4OpenPanel','tp155R4ClosePanel']){
+                     const base=window[name];window[name]=function(){const p=__coldNav.pending,outer=__coldNav.depth++===0,start=performance.now();
+                      try{return base.apply(this,arguments);}finally{__coldNav.depth--;if(p&&outer)p.syncMs=performance.now()-start;}};
+                    }
+                    document.addEventListener('click',event=>{
+                     const row=__coldNav.pending;if(!row||!event.target.closest('.top'))return;
+                     const at=performance.now();row.at=at;row.inputDelayMs=Math.max(0,at-event.timeStamp);
+                     requestAnimationFrame(()=>requestAnimationFrame(()=>{row.paintMs=performance.now()-at;row.nodes=document.querySelectorAll('*').length;
+                      row.tab=state.tab;row.panel=document.getElementById('tp155R4PanelHost')?.dataset.panel||'';__coldNav.rows.push(row);__coldNav.pending=null;}));
+                    },true);true
+                    """);
+                String[] routes={"plan","health","programs","history","calendar","coach","settings","home"};
+                for(int cycle=1;cycle<=2;cycle++)for(String route:routes){
+                    String selector=route.equals("coach")?".top .tp154-coach-action":route.equals("settings")?".top .tp154-settings-action":
+                        ".top [onclick=\"go('"+route+"')\"]";
+                    String encoded=evaluate(view,"JSON.stringify((()=>{const e=document.querySelector("+JSONObject.quote(selector)+");if(!e)throw Error('Missing navigation '+"+JSONObject.quote(route)+");const r=e.getBoundingClientRect();if(!e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)))throw Error('Navigation touch covered: '+document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.outerHTML);__coldNav.pending={route:"+JSONObject.quote(route)+",cycle:"+cycle+"};return {x:r.x+r.width/2,y:r.y+r.height/2,viewportWidth:innerWidth,viewportHeight:innerHeight,dpr:devicePixelRatio};})())");
+                    JSONObject position=new JSONObject(new org.json.JSONArray("["+encoded+"]").getString(0));
+                    float[] touch=new float[2];
+                    instrumentation.runOnMainSync(()->{
+                        // CSS viewport pixels need the actual view/viewport scale. DPR alone
+                        // is wrong when WebView scales a layout viewport to the screen.
+                        float scale=(float)(view.getWidth()/position.optDouble("viewportWidth"));
+                        float x=(float)position.optDouble("x")*scale,y=(float)position.optDouble("y")*scale;
+                        assertTrue("Navigation touch outside WebView: "+position,x>=0&&x<view.getWidth()&&y>=0&&y<view.getHeight());
+                        touch[0]=x;touch[1]=y;
+                    });
+                    instrumentation.runOnMainSync(()->{
+                        // One short gesture: queueing two separate UI-thread tasks can
+                        // accidentally turn a tap into a long press on a loaded emulator.
+                        long time=android.os.SystemClock.uptimeMillis();
+                        android.view.MotionEvent down=android.view.MotionEvent.obtain(time,time,android.view.MotionEvent.ACTION_DOWN,touch[0],touch[1],0);
+                        android.view.MotionEvent up=android.view.MotionEvent.obtain(time,time,android.view.MotionEvent.ACTION_UP,touch[0],touch[1],0);
+                        down.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);up.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);
+                        try{view.dispatchTouchEvent(down);view.dispatchTouchEvent(up);}finally{down.recycle();up.recycle();}
+                    });
+                    waitFor(view,"window.__coldNav.pending===null");
+                    String result=evaluate(view,"JSON.stringify(__coldNav.rows.at(-1))");JSONObject row=new JSONObject(new org.json.JSONArray("["+result+"]").getString(0));
+                    assertEquals(route,row.getString("route"));assertTrue(row.toString(),row.getDouble("paintMs")>=0);
+                    assertEquals(row.toString(),route.equals("calendar")||route.equals("coach")||route.equals("settings")?route:"",row.getString("panel"));
+                    if(!route.equals("calendar")&&!route.equals("coach")&&!route.equals("settings"))assertEquals(row.toString(),route,row.getString("tab"));
+                }
+                evaluate(view,"""
+                    __coldNav.catalog=[];let reference=null;
+                    for(const scoped of [false,true,true,false]){
+                     const scope=window.tp7WithHistorySnapshot,get=Storage.prototype.getItem;let reads=0;
+                     if(!scoped)window.tp7WithHistorySnapshot=fn=>fn();
+                     Storage.prototype.getItem=function(key){reads++;return get.call(this,key);};
+                     try{const start=performance.now(),snapshot=TrainPilotWearSync.makeHomeSnapshot(),payload=JSON.stringify(snapshot);
+                      if(reference!==null&&reference!==payload)throw Error('Catalog scope changed output');reference=payload;
+                      __coldNav.catalog.push({scoped,ms:performance.now()-start,reads,exercises:snapshot.quickExercises.length});
+                     }finally{window.tp7WithHistorySnapshot=scope;Storage.prototype.getItem=get;}
+                    }true
+                    """);
+                String encoded=evaluate(view,"JSON.stringify({bootMs:TrainPilotBoot.durationMs,rows:__coldNav.rows,longTasks:__coldNav.longTasks,catalog:__coldNav.catalog})");
+                JSONObject result=new JSONObject(new org.json.JSONArray("["+encoded+"]").getString(0));result.put("launch",attempt+1);launches.put(result);
+                assertEquals(16,result.getJSONArray("rows").length());assertEquals(4,result.getJSONArray("catalog").length());
+            } catch(Exception|AssertionError failure) {
+                try {
+                    String diagnostic=evaluate(activity.getBridge().getWebView(),"JSON.stringify({url:location.href,viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio},pending:window.__coldNav?.pending,events:window.__coldNav?.events,rows:window.__coldNav?.rows?.length,focus:document.hasFocus()})");
+                    System.out.println("COLD_NAVIGATION_FAILURE "+new org.json.JSONArray("["+diagnostic+"]").getString(0));
+                    java.io.File output=new java.io.File(instrumentation.getTargetContext().getExternalFilesDir(null),"cold-navigation.json");
+                    try(java.io.FileWriter writer=new java.io.FileWriter(output)){writer.write(new JSONObject().put("failedLaunch",attempt+1).put("error",failure.toString()).put("state",new org.json.JSONArray("["+diagnostic+"]").getString(0)).toString(2));}
+                }catch(Exception diagnosticFailure){failure.addSuppressed(diagnosticFailure);}
+                throw failure;
+            } finally {instrumentation.runOnMainSync(activity::finish);}
+            instrumentation.waitForIdleSync();
+        }
+        JSONObject report=new JSONObject().put("fixtureWorkouts",200).put("launches",launches)
+            .put("limits","Debug emulator timings; Atomic synthetic Android tap pairs dispatched to WebView, without system input routing or hardware-to-app latency measurement. Activity/WebView relaunches, not process-force-stop. Two-RAF proxy, no device-FPS claim.");
+        java.io.File output=new java.io.File(instrumentation.getTargetContext().getExternalFilesDir(null),"cold-navigation.json");
+        try(java.io.FileWriter writer=new java.io.FileWriter(output)){writer.write(report.toString(2));}
+        // Logcat truncates individual entries at ~4 KB. Export small records too:
+        // Gradle may remove the target package before a post-test adb pull.
+        System.out.println("COLD_NAVIGATION_META "+new JSONObject().put("fixtureWorkouts",200).put("limits",report.getString("limits")));
+        for(int i=0;i<launches.length();i++) {
+            JSONObject result=launches.getJSONObject(i);
+            System.out.println("COLD_NAVIGATION_LAUNCH "+new JSONObject().put("launch",i+1).put("bootMs",result.getDouble("bootMs")).put("catalog",result.getJSONArray("catalog")));
+            for(int j=0;j<result.getJSONArray("rows").length();j++)
+                System.out.println("COLD_NAVIGATION_ROW "+new JSONObject().put("launch",i+1).put("row",result.getJSONArray("rows").getJSONObject(j)));
+            for(int j=0;j<result.getJSONArray("longTasks").length();j++)
+                System.out.println("COLD_NAVIGATION_TASK "+new JSONObject().put("launch",i+1).put("task",result.getJSONArray("longTasks").getJSONObject(j)));
+        }
+    }
+
     @Test public void phoneRecordingUsesRealNativeBackgroundController() throws Exception {
         Intent launch=new Intent(InstrumentationRegistry.getInstrumentation().getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         MainActivity activity=(MainActivity)InstrumentationRegistry.getInstrumentation().startActivitySync(launch);

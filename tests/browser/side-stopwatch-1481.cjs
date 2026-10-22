@@ -68,6 +68,11 @@ const base=()=>'http://127.0.0.1:'+server.address().port+'/';
   await page.locator('#tp1481SideToggle-right').click();
   await page.waitForTimeout(1150);
   await page.locator('#tp1481SideToggle-right').click();
+  await page.waitForFunction(()=>state.session.exercises[state.current].sets[0].done);
+  assert.equal(await page.evaluate(()=>state.session.exercises[state.current].sets[0].done),true,'stopping the second positive side completes without another OK');
+  await page.locator('[data-tp188-undo]').click();
+  await page.waitForFunction(()=>!state.session.exercises[state.current].sets[0].done);
+  // Undo reopens the measured pair, retaining the reset/edit regression below.
   const beforeDone=await page.evaluate(()=>{
    const e=state.session.exercises[state.current],s=e.sets.find(x=>!x.done);
    return {left:Number(s.leftSeconds||0),right:Number(s.rightSeconds||0),reps:s.reps,done:s.done};
@@ -118,7 +123,7 @@ const base=()=>'http://127.0.0.1:'+server.address().port+'/';
   assert.equal(await page.locator('main .tp153-set-row').nth(1).locator('.tp164-side-set-input[data-side="left"]').inputValue(),'');
   await page.locator('#tp1481SideToggle-left').click();await page.waitForTimeout(1050);await page.locator('#tp1481SideToggle-left').click();
   const secondPair=await page.evaluate(()=>{const s=state.session.exercises[state.current].sets[1];return {left:Number(s.leftSeconds||0),right:Number(s.rightSeconds||0)}});assert.ok(secondPair.left>=1&&secondPair.right>=1);
-  assert.equal(await page.locator('main .tp153-set-row').nth(1).locator('button.check').isDisabled(),false,'reverse timing order must also unlock OK only after both sides');
+  assert.equal(await page.evaluate(()=>state.session.exercises[state.current].sets[1].done),true,'reverse timing order also completes automatically only after both positive sides');
 
   await page.evaluate(()=>{persistDraft();state.session=null;state.workout=null;state.tab='home';render();});
   await page.getByRole('button',{name:/Edzés folytatása/}).click();await page.waitForTimeout(80);

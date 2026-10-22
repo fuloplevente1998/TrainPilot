@@ -1,8 +1,309 @@
 # TrainPilot – aktuális átadás
 
-Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.3.71 a GitHub Latest.** A #225 audit PR beolvasztás nélkül lezárva, #230/#234 által felváltva; Nyitott PR nincs; #214 karbantartási issue marad; [takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
+Frissítve: **2026-10-21**. **#234 mainen, 1.3.71 /2735 telefon/Wear kiadva; v1.3.71 a GitHub Latest.** A #225 audit PR beolvasztás nélkül lezárva, #230/#234 által felváltva; #235 draft, mentési kör készüléken elfogadva; UI/stopper és görgetési kör készüléken elfogadva; új hidegindítási teszt-APK kész, készülékes próba függőben; #214 karbantartási issue marad;  [takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
+
+## #236 – navigáció lenyomási színe és oldalváltás (2026-10-22)
+
+- Fizikai visszajelzés a `40edb0a` APK-ról: „Sokkal jobb”, de a gomb színváltása még gyorsabb az oldal megjelenésénél. Ez részleges javulás, nem végleges teljesítményelfogadás.
+- Új alkalmazásforrás `715dc5d4353ed86116b4596f0cc13916efbe4888`: a meglévő navigációs stílusban a fő nav `:hover/:active` filter/opacity hatása semleges. Az általános gomb-press effekt korábban már lenyomáskor világosított, míg a route a click/felengedéskor indult. A fő nav kijelölése így a megjelenő oldallal együtt változik; nincs új router/wrapper vagy pointer-down navigáció.
+- A meglévő `settings-immediate-navigation-236.cjs` valós CDP touchStart/hold/touchCancel/touchEnd próbákkal bővült, basic/vivid témán és 4× CPU-val. A korábbi szinkron Settings/nav, második tap és 320/393 px ellenőrzés megmaradt.
+- A pontos `715dc5d` forráson sikeres: Quick `39830962591`, Performance `39830952866`, Phone Release Gate `39830952727` (6/6 shard, 112/112 UI-modul, 251/251 natív release), WebView `39830952962` (3/3). Letöltött UI JSON és natív XML szerint nincs hiba/kihagyás; a 4× CPU érintés/hold/cancel/release regresszió sikeres.
+- Új [telefonos APK+forrás ZIP](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39830952727/artifacts/12448513131), **1.3.71/2735**, `com.repforge.app`, SHA256 `dd475589160e3073bc91e0294ee995627ec358a1efc149b9f77bc6fccaa830cd`. Source stamp `715dc5d`, csomagolt app.js byteazonos, baseline.prof/profm jelen, v2 signer az eredeti `4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688`. Fizikai együttváltás és az általános lassulás elfogadása nyitott. Verzió/Wear változatlan; Wear APK az előző szakaszban hivatkozott változat.
+
+## #236 – átvétel a 2026-10-22-i beszélgetésexportból
+
+- Átvett alkalmazásforrás: `4037e3b`; az export utáni P1.2-javítások is bekerültek. P1.2 egy indulási fitet céloz, valódi útvonalváltáskor szinkron fitet és csak resize esetén RAF-összevonást. A Beállítások panel és a fő navigáció kijelölője azonnal vált; P1.5 konzervatív telefonos R8/shrink és kézi baseline-profil készült.
+- A `4037e3b` Performance és natív WebView kapuja sikeres, a telefonos release kapu nem jutott el APK-ig. A 2/6 UI-shardban a `home-coach-startup-consistency` valódi redundáns naplóolvasást jelzett; az 1/6 shard megszakadt. Ezek nem sikeres végső kapuk.
+- Új alkalmazáscommit: `40edb0aca9e1439cc19a9943ec5729276834b337`. A régi időzített `rf221CompactHome` nem írja felül a már elkészült `tp166-home-coach` kártyát. Ezzel elmarad a késői readiness/pain naplóolvasás és a visszajavító render. A szigorú meglévő startup-teszt változatlan; nincs új wrapper vagy meghosszabbított cache.
+- Helyi célzott ellenőrzés: JS-szintaxis, diff, `runtime-120.cjs`, `release-optimization-236.cjs` sikeres. A pontos `40edb0a` forráson mind sikeres: Quick `39829034572` **163/163**, Performance `39829026605`, Phone Release Gate `39829026707` **6/6 shard, 112/112 UI-modul, 251/251 natív release**, natív WebView `39829026592` **3/3**. A letöltött UI JSON és natív XML jelentésekben 0 failure/error/skipped; a startup, egy-fit és azonnali Settings regressziók is lefutottak.
+- Aláírt telefonos [APK+forrás ZIP](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39829026707/artifacts/12448441574), **1.3.71/2735**, `com.repforge.app`, **3 294 809 byte**. APK SHA256 `cf40f60c54a4a0118611062075440115b074f03991c846d0b8a7073e82d8cce2`; v2 signer `4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688`, CI szerint v1.0.0-folytonosság sikeres. A source stamp `40edb0a`, a csomagolt `app.js` byteazonos; baseline.prof (1533 byte) és baseline.profm (244 byte) jelen van, összes DEX 2 394 608 byte. Ez csomagolási bizonyíték, nem készülékes profiltelepítési/gyorsulási mérés.
+- [Nyers profil](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39829026605/artifacts/12447809029): mindhárom 0/200/1500 fixture **1 startup history-olvasás**. Egyszeri 4× Chromium boot 159/269/467 ms; első Settings két-RAF proxy 100/134/206 ms. Nem ötismétléses medián és nem fizikai telefonmérés. Wear alkalmazáskód változatlan; a korábbi [Wear APK](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39683190611/artifacts/12384958699) marad, SHA256 `883ee593d510ff8afcadb0a276c5b6c1ef66df25b3a329779cb9e0e329ccbd7f`.
+- A régi workspace 3 nem commitolt startup-statisztikai módosítása megőrizve Git stashben (`preserve earlier uncommitted startup statistics before continuing remote 4037e3b`); nem került vissza az újabb forrásra.
+- Következő: fizikai telefonon a friss APK rátelepítése törlés nélkül, teljes bezárás/újranyitás, azonnali Settings és második érintéses bezárás, Naptár/Coach/Programok/Napló váltások, valamint natív plugin/Health/Wear működés ellenőrzése. Az R8 gyorsulása, P1.1 50%-os cél és az ötismétléses mediánok továbbra sem igazoltak. Nincs main merge/verzióemelés/release.
+
+## #236 – P1.1 panel-reflow első célzott javítása (2026-10-22)
+
+- **Alkalmazáskód és APK forrása:** `eae37c62bbc596f5cd98efb4320395a6a7b77c9c`, ág `perf/236-journal-dom`, Draft #237; ezen a ponton verzió **1.3.71/2735**. A korábbi `60fe647` a 2026-10-21-én közzétett eredeti 1.3.71, telefon és Wear kiadási tagja erre mutat.
+- Közvetlen `tp155R4RefreshPanel` javítás: `positionPanel()` nav-geometriaolvasása a panel tartalmi DOM-csere elé került; a `scrollTop=y` böngésző-általi korlátozás kiváltja a csere utáni `panel.scrollHeight/clientHeight` kényszerített méréseket. Nincs új globális render/go/refresh wrapper. Célzott `tests/browser/panel-reflow-236.cjs` + UI suite regisztráció; 320/393 px naptár/Coach/beállítás/scroll/bezárás regresszió.
+- Pontos forrású **sikeres** CI: [Quick](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39693537448), [Phase 7/CPU](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39693530788), [Phone Release Gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39693530807) (6/6 UI + natív kapu/aláírásfolytonosság), [valódi natív WebView](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39693530858). Aláírt telefonos [APK+forrás ZIP artifact](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39693530807/artifacts/12388909425), APK SHA-256 `0c87aae0ecc172b0cd6366797e2993533d59ca596ad67caf4e857b989f828cd8`. Wear-kód és Wear APK nincs megváltoztatva.
+- CI 4× CPU 1500 fixture egyszeri első két-RAF proxy: `96a31a7` naptár 253, Coach 222, beállítások 225 ms; `eae37c6` naptár 253, Coach 194, beállítások 190 ms. **Nem 5 futás mediánja**, futtatási ingadozás miatt nincs P1.1 50%-os elfogadás vagy fizikai készülékes gyorsulás állítva.
+- A `60fe647` eredeti kiadás [Phase7](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39519510934) és `96a31a7` [Phase7](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39689250994) külön CI-futásában üres adatnál a boot 208.2→242 ms, Home render 13.3→18.2 ms, Health render 35.1→50.6 ms; Napló 65.8→31.2 ms. Ez nem fizikai telefon mérés.
+- **Natív hidegindítási diagnosztika zajos:** `96a31a7` Android emulátor process force-stop után `activityToJsReadyMs` 8008 ms, `speed` fordítással 4891 ms; `eae37c6` kontrollfutásban 4860 ms, `speed` fordítással 6272 ms. A két egymás utáni eltérő futásból nem vonható le következetes R8/profilelőny; P1.5 előtt 5+ azonos körülményű, reprodukálható minta szükséges.
+- **Felhasználói fizikai visszajelzés:** az óráról a telefonos app megnyílik és minden adat frissül; a megmaradt probléma **indulási/oldalváltási lassúság**. Új APK fizikai elfogadása és P1.1 50%-os célja nyitott. A következő irány: szétválasztani a natív process cold start, WebView JS ready és valós első nav latency értékeit, és csak igazoltan gyorsabb P1.2–P1.5 változásokat bevezetni. Nincs main-merge/release/verzióemelés.
+
+
+## Új jóváhagyott P1–P4 javítási sorrend (2026-10-22)
+
+- Az átadott `TrainPilot-javitasi-prompt.md` alapján a **[részletes P1–P4 javítási terv](plans/TRAINPILOT_JAVITASI_TERV_2026-10-22.md)** az irányadó. A dokumentációs tervrögzítés nem új alkalmazás- vagy APK-build.
+- Első következő implementáció: P1.1 – a panel-frissítés és az elrendezésolvasások mérése, majd direkt javítása új `render`/`go` wrapper nélkül. 0/200/1500 workout, 4× CPU és **legalább 5 futás medián**, előtte/utána összehasonlítás szükséges.
+- P1.4 csak részben készült el: a PR-kártyákhoz az aliasindex van, de a `workout-records-226` `data()` minden paint során még megvizsgálja a teljes history/tombstone raw sztringeket. Azonos elemszámú módosítások frissessége maradjon garantált.
+- 2026-10-21-i aktuális `96a31a7` [profilfutás](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39689250994) egyetlen 1500-as ciklusában a Naptár ~253, Coach ~222, Beállítások ~225 ms két-RAF proxy; ezek **nem** az ötismétléses végleges baseline-ok. A prompt régebbi 490 ms állítása újramérendő.
+- Main merge/release/issue-zárás nincs engedélyezve; a #237 továbbra is Draft. Az `AGENTS.md` és `APP_REFACTOR.md` biztonsági/tesztelési szabályai érvényesek.
+
+
+## #236 – Napló DOM, PR-alias és navigációs gyorsítás (Draft PR #237, 2026-10-21)
+
+- Ág: `perf/236-journal-dom`; base `refactor/workout-finalization` (#235), [Draft PR #237](https://github.com/fuloplevente1998/TrainPilot/pull/237), [issue #236](https://github.com/fuloplevente1998/TrainPilot/issues/236). Az alkalmazáskód végső teszt-/APK-commitja: `7a12846301553b65a24fd5f1762e4498f85c4f99`. Ezután kizárólag átadási dokumentáció frissül; az APK forrását ne keverd össze a dokumentációs HEAD-del.
+- Valódi javítás: 32 kártya első Napló-renderkor, további 32-es inkrementális DOM-hozzáfűzés a teljes adathalmaz dátumszűrésével; régi bejegyzés, részletek, fotók, PR-jelvény és fókusz megőrizve. Dátumszűrő, eltérő history-elemszám és más útvonalról visszatérés a kezdeti keretet visszaállítja. PR kártyák és jelvény-kattintások `cachedRows.find`/alias-újrakeresés helyett változásérzékeny közös indexet használnak. Nincs új `render`/`go` globális felülíró lánc.
+- Rögzített Chromium mérés, 4× CPU, azonos runner és 1500 edzés, **#235 `1f1f98d` → #236 `7a128463`**: DOM **21 268 → 718**, Napló első két-RAF paint-proxy **3759 → 594 ms**, második **3311 → 434 ms**. Script első megnyitás **2031,8 → 512,5 ms**, layout **665,6 → 25,0 ms**. Ezek szintetikus értékek, nem fizikai telefonos input- vagy FPS-mérések. [Profil, CPU-nyersadatok](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39684298983/artifacts/12384089792).
+- Végső forráson: [Quick sikeres](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39684305244), [Performance sikeres](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39684298983), [telefonos Release Gate sikeres](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39684298953) (Chromium 6/6 + natív tesztek, v2 aláírás és v1.0.0 signer-folytonosság), [Wear kerek UI sikeres](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39684298935) (3/3 shard). A [valódi natív telefonos WebView regresszió](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39684113040) is sikeres a **változatlan végső alkalmazáskódot** tartalmazó `d677339b` commiton; az első hibát sérült emulátorkép-letöltés okozta.
+- Teszt-telefon APK 1.3.71 /2735, [ZIP / GitHub artifact](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39684298953/artifacts/12386141046), SHA256 `12917d37b5b934bd25f84fc163676a1ba4c9485a3f5caf2f48016a7ac81bc2d6`. Wear-kód változatlan, [aláírt Wear artifact](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39683190611/artifacts/12384958699) `fa5e18c` CI-forráson, SHA256 `883ee593d510ff8afcadb0a276c5b6c1ef66df25b3a329779cb9e0e329ccbd7f`; végső kerek UI ugyanazon webalkalmazásforráson zöld.
+- **Nyitott:** fizikai telefonos hideg első és ismételt Napló/Naptár/Coach/Beállítások navigáció, régi bejegyzések/fotók/PR és telefon/Wear készülékes elfogadás. #235 és #236 továbbra is Draft/nyitott; nincs main merge, verzióemelés vagy új release. A telepített teszt-APK után, explicit jóváhagyással mérlegelhető lezárás/összevezetés.
+
+## Új követési issue – #236, Napló és oldalváltások
+
+- Felhasználói kérésre megnyitva: [#236 – Napló és oldalváltások gyorsítása nagy edzéselőzménynél](https://github.com/fuloplevente1998/TrainPilot/issues/236).
+- Tartalma: a küldött képen jelzett okok, a már elkészült #235 indulási javítás,
+  az `1f1f98d` forráshoz kötött saját mérés és a fennmaradó ~21 268 elemes Napló.
+  A külső kép számai nem jelenlegi APK-mérésként szerepelnek.
+- Következő javítási sorrend: korlátozott kezdeti Napló-lista és teljes adatokon
+  működő szűrés; igazolt naplóindexelési, panel-/dekorációs és layout-költségek
+  csökkentése; adatfrissesség, előtte/utána mérés és készülékes elfogadás.
+- A jegy nyitva, implementáció ebben az issue-rögzítési körben nem készült.
+  A #235 teszt-APK, main, verzió és kiadás változatlan.
+
+## Folyamatban – #235, hidegindítás és első oldalváltások
+
+- Új készülékes visszajelzés: a korábbi javítással gyorsabb, de még nem megfelelő;
+  a maradék főleg **indításkor és az első néhány váltáskor** érezhető.
+- A hideg első render a DCL-modulok előtt futott, a közös naplóolvasás nélkül.
+  Most a végső modulok telepítése után, a meglévő olvasási scope-ban indul.
+  Korai natív finish nem előzheti meg ezt; a restore-barrier megmarad. A helyes
+  Mai javaslat kártya ismételt startup-javítása 0 újraszámítás; valódi régi
+  kártya javítása megmarad. A profilmodul a tényleges restore utáni adatokból
+  választ welcome/Home képernyőt az első renderben, külön korai render nélkül.
+- **Végső alkalmazás-/APK-/tesztforrás: `1f1f98d03873282d27e20dc9c9d2c25ae14d2e20`.**
+  PR teszt-merge és HEAD fa azonos: `5c5575b1770a79dd50128e27623563a180d32621`.
+  Az ezt követő dokumentációs commit nem új alkalmazásbuild.
+- Összehasonlító profil: 4× lassított Chromium, ugyanazon runneren `8a49c04`
+  ellen. 0/200/1500 edzés indulása **331→144 / 1213→299 / 4975→555 ms**;
+  teljes startup history-olvasás **56/74/74→6/6/6**. Egy app-root írás, DCL előtt
+  0; első renderben legfeljebb egy journal-olvasás. Nem fizikai telefonmérés.
+  A későbbi navigáció idejében nincs igazolt következetes gyorsulás.
+- Forrásazonos kapuk: Quick **39658073740: 162/162**; Performance **39658088051**;
+  telefon **39658078365: 6/6 Chromium, 109/109 külön modul, 251/251 natív**;
+  natív WebView **39658083652: 3/3**; Wear **39658092578: 167/167**;
+  kerek UI **39658096720: 183/183** (68+59+56). Minden letöltött XML/JSON-ban
+  0 failure/error/skipped. A WebView 200 edzéses Activity-újranyitásai 127/87 ms;
+  ez nem folyamat-force-stop vagy fizikai érintési késés/FPS mérése.
+- **Új teszt-APK-pár, 1.3.71 /2735:**
+  [Telefon](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39658078365/artifacts/12372449697),
+  SHA-256 `bc45410b3d4de1135490004ab196c73157da234155a31342837fdc06ca5a140c`;
+  [Wear](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39658092578/artifacts/12371179081),
+  SHA-256 `50ebcda68e52aae5590caa6b2c19380307e1652121e65008fc000119b9e90f91`.
+  Telefon: 31 byteazonos webasset, 805 Git-azonos forrásfájl és pontos fájllista,
+  helyes source stamp/verzió/SHA256SUMS. Mindkét APK eredeti v2 signerhash-e
+  ellenőrzött; CI apksigner és signer-folytonosság PASS. Wear-kód nem változott.
+- Köztes hibák: `c4e6583` friss welcome-regresszióját javítottuk; korábbi natív
+  fókuszhiba pontos oka nem igazolt, az elvárás változatlan, végső 3/3 PASS.
+  A telefon release első kísérlete Maven-letöltésen állt meg; kizárólag a hibás
+  release job újrafuttatása sikeres, forrás változatlan. [Bizonylat](builds/2026-10-21-235-cold-startup.json).
+- **Következő:** az új telefon-APK teljes bezárás/újranyitás utáni azonnali
+  készülékes próbája, első néhány oldalváltással. Elfogadás még nincs; #235 draft,
+  main `bc43d4e`, verzió és kiadás változatlan. Nincs merge vagy issue-lezárás.
+
+### Előző kör – háttérterhelés javítása
+
+
+- **Új készülékes visszajelzés (2026-10-21):** a `3199528` teszt-APK-val az indulás
+  továbbra is nagyon lassú; 15 s várakozás csak részben segít, az oldalváltások
+  között még késleltetés érezhető. Pontosítás: **végig megmarad, csak kisebb**.
+  A katalógus-optimalizálás nem oldotta meg a hibát.
+- Új célzott natív javítás: `MainActivity.onResume` eddig a főszálon várt a
+  `HealthJournalStore` közös zárára, SQLite-ot olvasott/írt és háttérfeladatot
+  ütemezett. Az egészségnapló-karbantartás most soros háttérszálon fut, csak az
+  application contextet tartja meg. A már kikapcsolt régi órás beállításokat
+  `retireWatchUi` nem írja újra minden megnyitáskor/inicializáláskor.
+- Új natív WebView-regresszió: szándékosan foglalt egészségnapló-zár mellett a
+  valódi Activity pause/resume és a UI-szál visszatér a zár felengedése előtt.
+  SQLite-teszt méri, hogy a második `retireWatchUi` 0 adatváltozást végez.
+  Ezek a konkrét blokkolási okot ellenőrzik; a készülék teljes késésének
+  megszűnését még nem igazolják. A végső alkalmazásforrás WebView XML-je
+  **39613275281: 3/3, 0 failure/error/skipped**.
+- Folyamatos terhelés javítása: a 900 ms-os Wear-poll Task-visszahívása (JSON,
+  tartós parancssor) a Capacitor háttérvégrehajtóján fut; a tulajdonosváltás
+  meglévő explicit main-looper átadása megmarad. A 3 s-os home-poll a katalógus
+  építése előtt a tényleges tárolt bemeneteket, helyi napot/időzónát és nyelvet
+  hasonlítja össze. Változatlan bemenetnél nincs history-parszolás/indexépítés.
+  Nem elemszám-alapú: közvetlen storage-visszaállítás, azonos hosszúságú módosítás,
+  tombstone, program/gyakorlat, draft, beállítás és éjfél érvényteleníti.
+  Force/foreground/requestHome újraépít; sikertelen küldés nem lépteti a bemenetet.
+- Új célzott Node-regresszió: függőséglefedés a tényleges storage-olvasásokból,
+  5 változatlan pollnál 0 history-hívás, direkt azonos hosszúságú szerkesztés,
+  nyelv/pihenő/draft/tombstone, force, újrapróbálás és éjfél PASS. Meglévő teljes
+  runtime journal-resync és Wear lifecycle PASS. Chromium 200/1500 edzéses
+  teszt kiegészítve valós tombstone + szerkesztési frissességre és 0 új indexre
+  5 változatlan poll alatt. Mindkét adathosszon 0 új index, friss szerkesztés/törlés;
+  az öt üres poll együtt 0–0,2 ms ezen a Chromium runneren. Nem készülékes időmérés.
+- **Végső alkalmazásforrás: `6d28ade8a39577995eeedb8b04a6a7fbe2bc6d6e`.**
+  Telefonos build-/tesztforrás **`3e373a8e1f67d678beb5c121f37dfa2f09c219bd`**;
+  közte csak kanonikus tesztregisztráció és a halasztott küldés tesztfixture-ja
+  változott. HEAD és PR teszt-merge fa azonos: `d74ae93c70da46300af6117c10573225d92953b8`.
+- Forrásazonos kapuk: Quick **39614621725: 162/162**, Performance **39614621671 SUCCESS**;
+  telefon **39614613499 SUCCESS**, Chromium **6/6, 109/109 külön modul**, natív XML
+  **251/251**. Wear **39613284803: 167/167**, kerek UI **39613289878: 183/183**
+  (68+59+56); utóbbi két forrás `6d28ade`, alkalmazáskód azonos. Minden letöltött
+  XML/JSON-ban 0 failure/error/skipped. A köztes tesztfuttatókör-/fixture-hibák
+  és javításuk a bizonylatban, nem alkalmazásbeli sikerként szerepelnek.
+- **Új teszt-APK-pár, 1.3.71 /2735:**
+  [Telefon](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39614613499/artifacts/12351489638),
+  SHA-256 `4255a214e1955493fd28666d3a35c5a57681621bcb9936b9b37ebc8bb80fccd8`;
+  [Wear](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39613284803/artifacts/12352131837),
+  SHA-256 `7a04e1ab9c4a376786eff11e09944bc02dc56c3ac79bca7d7e7059c987781797`.
+  A telefon 31 webes assetje byteazonos, a source ZIP 803 fájlja Git-azonos,
+  a source stamp/WEAR sidecar és SHA256SUMS helyes. CI apksigner/badging és
+  eredeti signer-folytonosság sikeres; letöltött APK-k v2 tanúsítványhash-e ellenőrzött.
+  Wear alkalmazáskód nem változott. [Részletes bizonylat](builds/2026-10-21-235-startup-background.json).
+- **Következő:** az új telefon-APK készülékes próbája teljes bezárás után azonnal,
+  majd külön újranyitáskor 15 s várakozással, több percnyi oldalváltás közben is.
+  Készülékes elfogadás még nincs. #235 draft, main `bc43d4e` és a kiadás változatlan;
+  nincs merge, release, verzióemelés vagy issue-lezárás.
+
+### Korábbi #235 körök és előzmények
+
+- Új visszajelzés a `1b5e488` teszt-APK-ról: „Rendben, jo lett.” A stopper- és
+  görgetési javítás elfogadott. Maradék: appindítás után az első oldalváltások
+  kifejezetten lassúak, később gyorsak. Ennek külön célzott profilozása folyamatban;
+  main merge/release/verzióemelés nincs engedélyezve.
+- Célzott első/második oldalnyitási profil: Chromium 4× CPU, 0/200/1500 szintetikus
+  edzés. A készülék konkrét hidegindítási késését nem reprodukáltuk pontosan.
+  Layout/stílus költség és nagy háttér-Napló DOM kimutatható, de a geometriai
+  műveletek összevonása nem adott következetes teljes javulást. A kísérlet app/index
+  módosítása visszaállítva, nincs belőle új alkalmazáskód vagy APK.
+- Felhasználói pontosítás: **minden bezárás után visszatér**; nem csak telepítés után.
+  Ez visszatérő indulási hiba. Ne tekintsd megoldottnak a korábbi zöld CI vagy a
+  stopper elfogadása miatt.
+- Új, célzott javítás: a renderen kívül induló órás katalógusépítés is a meglévő
+  szinkron `tp7WithHistorySnapshot` olvasási hatókörében fut. A teljes gyakorlat-
+  és programkönyvtár egyszer olvasódik, a cache a publikáció végén megszűnik;
+  nincs új globális felülíró lánc vagy tartós ajánlás-cache.
+  200 teljes metaadatú edzéses 4× CPU-probában 3318 → 346 storage-olvasás,
+  history 2 → 1; mért komponensidő 222,5 → 163,7 ms. Ezek Chromium-mérések,
+  nem a telefon teljes késésének igazolt megoldása.
+- Célzott regresszió 200/1500 edzéssel: history/gyakorlat-/programkönyvtár egy-egy
+  olvasás; azonos elemszámú szerkesztés/törlés frissesség és meglévő stopperes
+  feltételek PASS. Wear lifecycle, Quick Workout és journal-resync PASS.
+- **Új alkalmazásforrás: `3199528a830651d9f459cecf40de1e7b6ec1294f`.** Az utána
+  következő `1c93ed1`–`0ae22b8` csak CI/helper/Android teszt; appkód byteazonos.
+  Quick **39601996215: 161/161**, Performance **39601996296 SUCCESS**;
+  telefon **39602051798 SUCCESS**, Chromium **6/6, 109/109**, natív **251/251**;
+  Wear **39602061552: 167/167**, kerek UI **39602066211: 183/183**.
+  Letöltött XML/JSON: 0 failure/error/skipped, 109 külön UI-modul.
+- Új Android WebView kapu **39606934806: 2/2**, forrás `0ae22b8` (csak teszteszköz
+  különbség): 200 edzés, két Activity/WebView újranyitás, 32 navigáció, 8 katalógusminta;
+  teljes JSON export bevizsgálva. Azonos katalóguskimenet: **4133 → 213 olvasás**;
+  scoped 19,3–52,5 ms, unscoped 104,7–267,3 ms a debug emulátoron.
+  A navigáció ingadozó, következetes első köri lassulás itt nem igazolt.
+  Szintetikus Android érintéspárok közvetlenül a WebView-ba; két-RAF proxy;
+  nem process-force-stop, hardveres input-késés vagy készülék-FPS mérés.
+  A korábbi hibás érintés/export futásokat és a javításukat a bizonylat külön rögzíti.
+- [Új telefon APK](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39602051798/artifacts/12346632971),
+  SHA-256 `4f8496d6b9c0cbce307b3bb3e2c437e55eaee7c5d886b60a07732f4a114be0d0`;
+  [azonos forrású Wear APK](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39602061552/artifacts/12346686323),
+  SHA-256 `49d7f5cff5dc518cd8395a284621678025e484ba4b7185da355e5acdc47cc243`.
+  **1.3.71 /2735**; app asset/source ZIP és Wear sidecar commit, SHA256SUMS,
+  aláírás/signer-folytonosság ellenőrzött. Wear alkalmazáskód nem változott.
+- [Hideg navigációs bizonylat](builds/2026-10-21-235-cold-navigation.json).
+  **A korábbi készülékes próba eredménye:** teljes bezárás/újranyitás után lassú,
+  15 s várakozás után kisebb, de végig megmaradó oldalváltási késés. A fenti
+  új javítás erre a negatív visszajelzésre készült; készülékes elfogadása még nincs.
+  A katalógus javulása nem a teljes készülékes hiba megoldásának bizonyítéka.
+- Az első kör `655183c` APK-járól felhasználói visszajelzés: nincs dupla edzés,
+  törlés után nem tér vissza a bejegyzés; a többi kért ellenőrzés működik.
+  Ez készülékes mentési elfogadás, **nem main merge-engedély**.
+- Új hibák: Naptár/Coach/Beállítások görgetése 1–1,5 s-ra akad; planknél dupla
+  stopper; stopper leállítása után felesleges sorozat-OK; készenléti pont nem érthető.
+- Döntés: **a felső intervallumos stopper kerül ki, az eredeti alsó marad**.
+  Az intervallumbeállítás az alsó kártyában összecsukott, választható rész;
+  nem készül új stopper vagy új globális render-/finish-wrapper.
+- Explicit pozitív stopper-stop az eredeti `toggleSet` folyamaton jelöl készre,
+  megőrizve visszavonást/haptikát/natív rögzítést. Nulla, implicit pause/halt,
+  navigáció és nullázás nem teljesítés. Oldalsó planknél két pozitív oldal kell.
+- A Wear háttérkatalógus publikálásakor 130 history-olvasás helyett 2: közös
+  publikációs pillanatkép és előtöltési index; törlési ellenőrzés egyszer soronként,
+  üres tombstone-listán nincs teljes legacy hash. Nincs tartós, elemszám alapú cache:
+  azonos hosszúságú szerkesztés/törlés a következő publikációban megjelenik.
+  A már törölt sor a friss órás előzménylistából is kimarad.
+- Panelgörgetés/touchmove alatt csak a közönséges home/katalógus küldés vár
+  180 ms nyugalomra. Kifejezett force és az aktív edzés parancs-/állapotszinkronja
+  nem vár; parancsfeldolgozás közben sincs katalógus miatti halasztás. Folyamatos
+  görgetés + nyugtázott parancs célzott próbája PASS; az eredeti frissítés
+  automatikusan folytatódik.
+- Visszavonás utáni oldalsó stopper: az aktuális sorozat mentett bal/jobb idejét
+  mutatja akkor is, ha nincs futó helyi óratulajdonos. A megállított óracache nem
+  írhatja felül a kézi szerkesztést. Automatikus stop → visszavonás → nullázás/
+  szerkesztés → újrarajzolás és fordított oldalsorrend célzott próbája PASS.
+- Mai készenlét képe: Samsung 87, effort-load 45 → meglévő <55 korlát miatt 54;
+  külön TP-becslés `70 + (45−70)×0,35`, kerekítve 61. Nem összeadás/átlag.
+  Az alacsony load-pont nagyobb jelentett megterhelést jelent. A képlet változatlan,
+  a részletezőben HU/EN/DE/RO magyarázat jelenik meg a konkrét 87 → 54 korlátra.
+- Helyi célzott eredmény: előtöltési index kompatibilitás PASS; időzítő 8 nyelv/méret
+  kombináció, explicit/implicit/0 stop és 200/1500 edzéses publikálás PASS;
+  kompakt egy-/kétoldali UI PASS; korábbi mentési integritás 14/14 PASS;
+  egyetlen finish-belépő strukturális ellenőrzése PASS.
+- **Előző, készüléken elfogadott alkalmazásforrás: `1b5e488b35ca39dfe79ab17e6347b38daf0401a8`.**
+  PR-merge és head fa azonos: `1577cb0e9fbc7d2534e3e2bbc4f25bc7f95a4471`.
+  Utána csak dokumentációs átadás, nem új alkalmazásbuild.
+- Friss, forrásazonos GitHub-kapuk: Quick **39552869084: 161/161**, Performance
+  **39552869065 SUCCESS**; telefon **39552881285 SUCCESS**, Chromium **6/6, 109/109**,
+  natív XML **251/251**; valódi WebView/háttér **39552884885: 1/1**;
+  Wear **39552887694: 167/167**; kerek UI **39552891381: 183/183** (68+59+56).
+  Letöltött shard-JSON és XML: **0 failure/error/skipped**, minden UI-modul egyszer.
+  A régi, külön OK-ra építő stoppertesztek az új szerződést és valódi visszavonást
+  ellenőrzik; a Napló UI-teszt tíz kijelzőméreten is sikeres.
+- [Új telefonos teszt-APK](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39552881285/artifacts/12324696670),
+  SHA-256 `f9a87c24621131a3b743ba5273f426d29cdc091c9159a51afe8889d542052ad8`.
+  APK app.js/index.html/training-107.css byteazonos, forrás-ZIP stampje a fenti commit.
+- [Azonos forrású Wear teszt-APK](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39552887694/artifacts/12324303353),
+  SHA-256 `922e8b936da0b58b5824a3cc34601b5ea31d923d4cccf2baa90f432a33da8936`.
+  Wear alkalmazáskód nem változott. Mindkettő **1.3.71 /2735**, SHA256SUMS,
+  aláírás és signer-folytonosság ellenőrzött. Nincs APK-ba ágyazott JSON source stamp;
+  telefonos forrásarchívum és Wear sidecar igazolja a commitot.
+- [Új bizonylat](builds/2026-10-21-235-ui-scroll-stopwatch.json).
+  Következő készülékes próba: Naptár/Coach/Beállítások tartós görgetése; plank explicit
+  Stop → kész pipa külön OK nélkül → Visszavonás; oldalanként két pozitív idő;
+  visszavonás utáni szerkesztés/újranyitás. A Samsung 87 → 54 magyarázat legyen látható.
+  **Stopper/görgetési kör készüléken elfogadva; első navigáció lassúsága külön marad.** #235 draft, main `bc43d4e` változatlan,
+  nincs merge, release vagy verzióemelés. A teljes Napló/PR lapozás és általános
+  tárolási helyreállítás későbbi kör marad.
+
+## Előző bevizsgált #235 alkalmazásforrás – mentési kör
+
+- [#235 draft PR](https://github.com/fuloplevente1998/TrainPilot/pull/235), ág
+  `refactor/workout-finalization`. Alap main `bc43d4e`; változatlan verzió **1.3.71 /2735**.
+- Tesztelt alkalmazásforrás **`655183c93ba9d63b30d59dd4bea89117ae7b94cb`**;
+  PR teszt-merge fa és head fa azonos: `33eb07a5ec273d2d3fd44fa15c32f7f754859edf`.
+  Az ezt követő átadási commit kizárólag dokumentáció, nem új alkalmazásbuild.
+- A finish korábbi 11 definíciós/hozzárendelési helye és dinamikus wrapperei
+  helyett egy koordinátor. Natív reconcile/close, sorozat, stopperek, GPS, naptár,
+  részleges megerősítés és értékelés a közös folyamat része.
+- Idempotens history-upsert, rollback, tartós draft-jelző; sikertelen natív close
+  vagy drafttakarítás nem küldhet „mentve” nyugtát. A teljes lezárás előtt érkező
+  natív sorozat bekerül. Sérült history/scheduled JSON lezáráskor nem írható felül;
+  általános db.get-helyreállítás nincs még kész. A végleges naplóból az előtöltési
+  UI-segédmező kimarad, a draftból nem töröljük idő előtt.
+- Friss alkalmazásazonos GitHub-kapuk: Quick **39545876527: 160/160**, Performance
+  **39545876543 SUCCESS**; telefon **39545881760 SUCCESS**, Chromium **6/6, 108/108**,
+  natív XML **251/251**; tényleges WebView/háttér **39545884307: 1/1**;
+  Wear **39545887200: 167/167**; kerek UI **39545889547: 183/183** (68+59+56).
+  Minden XML-ben **0 failure/error/skipped**. A 14 új integritási eset GitHubon is PASS.
+- [Telefon teszt-APK](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39545881760/artifacts/12321955384),
+  SHA-256 `45a642464cd5dc15c308dc38e55b1aecfb36fdcdd55c86be623f6d5b8e36ccf3`.
+  A csomagolt app.js byte-azonos; a forrás-ZIP stampje a fenti commit.
+- [Wear teszt-APK](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39545887200/artifacts/12320794234),
+  SHA-256 `9247c5fd2b09103efe7cc531af3bcb7c0e3a826307a12d3c624a83a14c660e87`.
+  Wear alkalmazáskód nem változott; az új build ugyanahhoz a commitpárhoz tartozik.
+  Mindkét APK **1.3.71 /2735**, aláírás és signer-folytonosság sikeres.
+- [CI/APK bizonylat](builds/2026-10-21-235-workout-finalization.json).
+  Main merge/release/verzióemelés nem történt; a mentési kör készülékes elfogadása a fenti új szakaszban szerepel.
+- Készülékes smoke: telefonos és órás befejezés egyszeri naplóbejegyzéssel;
+  részleges mentés Mégse/Mentés; oldalsó stopper; GPS sikeres Mérés befejezése
+  külön sorozat-OK nélkül; tervezett edzés naptárban teljesült.
+- Következő kör: [APP_REFACTOR](plans/APP_REFACTOR.md) szerint **Napló/PR indexelés
+  és fokozatos megjelenítés**, 200/1500 edzéses méréssel. Ez az 1. kör még nem
+  oldja meg a nagy napló megnyitásának teljesítményét vagy az összes auditpontot.
 
 ## #214 – GitHub-bemutató frissítve (2026-10-21)
 
@@ -276,9 +577,9 @@ A későbbi dokumentációs HEAD nem új alkalmazásbuild; a két APK tényleges
   későbbi megvalósítás külön tesztágon. [Részletes #193 terv](wear/P2_193_ONALLO_ORAS_EDZES.md).
 - Régi hosszú átadás: `885b6df:docs/WORK_HANDOFF.md` a Git-történetben; történeti státuszai elavultak.
 
-## Környezet
+## Történeti környezeti megjegyzés (új munkamenetben ellenőrizendő)
 
-CLI auth lejárt (gh 401, git fetch/push credential nélkül), GitHub connector működik.
+Korábban: CLI auth lejárt (gh 401, git fetch/push credential nélkül), GitHub connector működik.
 Ne írj ki credentialt, ne force-pusholj. Contents/Git tree/commit + expected_sha CAS használható.
 Helyi `local-release-136` más commitazonosítókat tartalmaz, alkalmazásforrás azonos; **ne pushold
 vakon a helyi feature ágat**. A távoli main/PR-head a kanonikus. APK-hoz GitHub artifact permalink

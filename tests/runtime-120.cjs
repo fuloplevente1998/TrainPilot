@@ -39,3 +39,27 @@ assert.equal(run("shell('<main>probe</main>').includes('rf208-nav-style')"),fals
 assert.equal(run("shell('<main>probe</main>').includes('TrainPilot')"),true);
 assert.equal(run("typeof window.TrainPilotNavigate"),'function');
 console.log('PASS 1.2 clean runtime: direct shell, single-write routes, no legacy route mask, metadata consistent.');
+
+// Exercise the real startup/ready sections with an interactive document. A
+// native restore may ask to finish before the DCL modules have been installed.
+for(const pendingRestore of [false,true])for(const welcome of [false,true]){
+ const callbacks=[],frames=[],stored=new Map();let rootWrites=0,inScope=false,scopes=0;
+ if(pendingRestore)stored.set('repforge:healthRestore120','pending');
+ const slot={innerHTML:''},startupDoc={...doc,readyState:'interactive',querySelector:s=>s==='#app'?slot:null};
+ const startupWindow={Capacitor:{isNativePlatform:()=>false},addEventListener:(type,fn)=>{if(type==='DOMContentLoaded')callbacks.push(fn);}};
+ const startupContext=vm.createContext({window:startupWindow,document:startupDoc,localStorage:{getItem:k=>stored.get(k)??null},
+  render(){assert.equal(inScope,true,'first render must share reads across all final decorators');rootWrites++;slot.innerHTML='<main>final</main>';},
+  performance:{now:()=>1},requestAnimationFrame:fn=>{frames.push(fn);return 1;},setTimeout:()=>1,clearTimeout(){},console});
+ const section=name=>app.match(new RegExp('// @section '+name.replaceAll('.','\\.')+'\\n([\\s\\S]*?)// @endsection '+name.replaceAll('.','\\.')))[1];
+ vm.runInContext(section('startup.js'),startupContext);vm.runInContext(section('ready.js'),startupContext);
+ startupWindow.TrainPilotBoot.finish();assert.equal(rootWrites,0,'early native readiness cannot render before modules');
+ startupWindow.tp7WithHistorySnapshot=fn=>{scopes++;inScope=true;try{return fn();}finally{inScope=false;}};
+ if(welcome)startupWindow.TrainPilotBoot.renderInitialScreen=()=>{assert.equal(inScope,true);rootWrites++;slot.innerHTML='<main class="tp128-welcome">Welcome</main>';};
+ callbacks.forEach(fn=>fn());assert.equal(rootWrites,pendingRestore?0:1,'DCL preserves the pending restore barrier');
+ if(pendingRestore){stored.clear();startupWindow.TrainPilotBoot.finish();}
+ assert.equal(rootWrites,1);assert.equal(scopes,1);assert.equal(inScope,false,'the first-render read scope is released');
+ assert.equal(slot.innerHTML.includes('tp128-welcome'),welcome,'the selected first screen survives boot and restore');
+ frames.forEach(fn=>fn());assert.equal(startupWindow.TrainPilotBoot.finished,true);
+ startupWindow.TrainPilotBoot.finish();assert.equal(rootWrites,1,'repeated readiness never replays first render');
+}
+console.log('PASS cold startup module barrier: early native readiness, scoped final render, pending restore and idempotent reveal');

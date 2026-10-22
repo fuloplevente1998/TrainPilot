@@ -7,13 +7,13 @@ on:
       - main
       - 'feat/**'
       - 'fix/**'
+      - 'perf/**'
     tags:
       - 'v*'
     paths-ignore:
       - 'android/wear/**'
       - 'docs/**'
       # Workflow-only changes are checked without rebuilding phone application code.
-      - '.github/workflows/build-apk.yml'
       - '.github/workflows/wear-build.yml'
       - '.github/workflows/wear-release.yml'
       - '.github/workflows/validate-branch.yml'
