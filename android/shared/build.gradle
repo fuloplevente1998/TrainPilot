@@ -1,0 +1,37 @@
+apply plugin: 'com.android.library'
+apply plugin: 'org.jetbrains.kotlin.android'
+apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
+
+android {
+    namespace "com.repforge.shared"
+    compileSdk rootProject.ext.compileSdkVersion
+
+    defaultConfig {
+        minSdk rootProject.ext.minSdkVersion
+        targetSdk rootProject.ext.targetSdkVersion
+        consumerProguardFiles "consumer-rules.pro"
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+}
+
+dependencies {
+    implementation "androidx.core:core-ktx:${rootProject.ext.androidxCoreVersion}"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:${rootProject.ext.coroutinesVersion}"
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0"
+    implementation "com.google.android.gms:play-services-wearable:${rootProject.ext.playServicesWearableVersion}"
+
+    testImplementation "junit:junit:${rootProject.ext.junitVersion}"
+    testImplementation "org.json:json:20240303"
+}
