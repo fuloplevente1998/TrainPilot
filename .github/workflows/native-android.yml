@@ -48,6 +48,83 @@ jobs:
           chmod +x gradlew
       - name: Build native phone and watch debug APKs
         run: ./gradlew --no-daemon --stacktrace :app:assembleDebug :wear:assembleDebug
+
+      - name: Prepare existing release keystore
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          test -n "$ANDROID_STORE_PASSWORD"
+          test -n "$ANDROID_KEY_ALIAS"
+          test -n "$ANDROID_KEY_PASSWORD"
+          KEYSTORE="$RUNNER_TEMP/trainpilot-native-release.jks"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
+          chmod 600 "$KEYSTORE"
+          echo "ANDROID_KEYSTORE_PATH=$KEYSTORE" >> "$GITHUB_ENV"
+      - name: Build same-key signed native updates
+        env:
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon --stacktrace :app:assembleRelease :wear:assembleRelease
+      - name: Verify update package version and signer continuity
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          PHONE="app/build/outputs/apk/release/app-release.apk"
+          WEAR="wear/build/outputs/apk/release/wear-release.apk"
+          test -s "$PHONE"
+          test -s "$WEAR"
+          AAPT="$(ls "$ANDROID_HOME"/build-tools/*/aapt | sort -V | tail -1)"
+          SIGNER="$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)"
+          "$AAPT" dump badging "$PHONE" > phone-native-badging.txt
+          "$AAPT" dump badging "$WEAR" > wear-native-badging.txt
+          grep -q "package: name='com.repforge.app'" phone-native-badging.txt
+          grep -q "package: name='com.repforge.app'" wear-native-badging.txt
+          grep -q "versionCode='2736'" phone-native-badging.txt
+          grep -q "versionCode='2736'" wear-native-badging.txt
+          "$SIGNER" verify --verbose "$PHONE"
+          "$SIGNER" verify --verbose "$WEAR"
+          mkdir -p "$RUNNER_TEMP/native-signer-baseline"
+          gh release download v1.0.0 --repo "$GITHUB_REPOSITORY" --pattern 'TrainPilot-1.0.0.apk' --dir "$RUNNER_TEMP/native-signer-baseline"
+          OLD="$RUNNER_TEMP/native-signer-baseline/TrainPilot-1.0.0.apk"
+          echo "485817d3c33b0623b030ad919fb5e07af27d5e5890a3f67fb8e4dbe4b729f22a  $OLD" | sha256sum --check --
+          ORIGINAL="$(python3 ../scripts/apk_signer_cert.py "$OLD")"
+          test -n "$ORIGINAL"
+          test "$ORIGINAL" = "$(python3 ../scripts/apk_signer_cert.py "$PHONE")"
+          test "$ORIGINAL" = "$(python3 ../scripts/apk_signer_cert.py "$WEAR")"
+          echo "Original release signing identity verified."
+          sha256sum "$PHONE" "$WEAR" > native-apk-sha256.txt
+      - name: Remove temporary signing keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/trainpilot-native-release.jks"
+      - name: Upload signed phone update
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrainPilot-Native-Phone-Signed-Update
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+      - name: Upload signed Wear update
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrainPilot-Native-Wear-Signed-Update
+          path: android/wear/build/outputs/apk/release/wear-release.apk
+          if-no-files-found: error
+      - name: Upload APK verification metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrainPilot-Native-Update-Verification
+          path: |
+            android/*-native-badging.txt
+            android/native-apk-sha256.txt
+          if-no-files-found: error
       - name: Upload phone debug APK
         if: always()
         uses: actions/upload-artifact@v4

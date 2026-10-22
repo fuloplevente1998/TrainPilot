@@ -4,6 +4,15 @@ apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
 apply plugin: 'org.jetbrains.kotlin.kapt'
 
+def releaseKeystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+def releaseStorePassword = System.getenv("ANDROID_STORE_PASSWORD")
+def releaseKeyAlias = System.getenv("ANDROID_KEY_ALIAS")
+def releaseKeyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+def releaseSigningComplete = [releaseKeystorePath, releaseStorePassword, releaseKeyAlias, releaseKeyPassword].every { it != null && !it.trim().isEmpty() }
+if (gradle.startParameter.taskNames.any { it.toLowerCase().contains("release") } && !releaseSigningComplete) {
+    throw new GradleException("Original TrainPilot release signing credentials are required.")
+}
+
 android {
     namespace "com.repforge.app"
     compileSdk rootProject.ext.compileSdkVersion
@@ -12,13 +21,24 @@ android {
         applicationId "com.repforge.app"
         minSdk rootProject.ext.minSdkVersion
         targetSdk rootProject.ext.targetSdkVersion
-        versionCode 2735
-        versionName "1.3.71"
+        versionCode 2736
+        versionName "1.3.71-native-test"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField "String", "DEVELOPER_NAME", "\"\""
         buildConfigField "String", "SUPPORT_EMAIL", "\"\""
         buildConfigField "String", "PRIVACY_POLICY_URL", "\"https://github.com/fuloplevente1998/TrainPilot/issues\""
+    }
+
+    signingConfigs {
+        release {
+            if (releaseSigningComplete) {
+                storeFile file(releaseKeystorePath)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
     }
 
     buildFeatures {
@@ -47,6 +67,7 @@ android {
             versionNameSuffix "-dev"
         }
         release {
+            signingConfig signingConfigs.release
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
