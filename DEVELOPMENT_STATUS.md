@@ -1,4 +1,4 @@
-> **Aktuális átadás (2026-10-21):** #234 felhasználó által elfogadva és mainre egyesítve; **1.3.71 /2735** a legfrissebb stabil telefon/Wear kiadás. Részletes kapuk és APK-forrás: [WORK_HANDOFF.md](docs/WORK_HANDOFF.md), [kiadásjegyzék](docs/releases/INDEX.md). A lentebbi állapotok történetiek.
+> **Aktuális átadás (2026-10-22):** #235/#237 indulási és navigációs gyorsítása készüléken elfogadva és mainen (`5d27aa9`); új teljesítménykiadás változatlan **1.3.71 /2735** verzióval. A korábbi lassulás javítása elfogadott, nem nyitott kiadási hiba. Részletes kapuk és APK-forrás: [WORK_HANDOFF.md](docs/WORK_HANDOFF.md), [kiadásjegyzék](docs/releases/INDEX.md). A lentebbi állapotok történetiek.
 
 ## Aktuális folytatás — 2026-10-17, összevont P2-csomagok
 

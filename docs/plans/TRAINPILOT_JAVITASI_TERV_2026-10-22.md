@@ -4,6 +4,8 @@ Forrás: a felhasználó által átadott `TrainPilot-javitasi-prompt.md`. Az ere
 prioritások és elfogadási feltételek irányadóak. Nem jelent automatikus engedélyt
 main-merge-re, Play-kiadásra vagy verzióemelésre.
 
+**2026-10-22-i állapot:** #235/#237 mainen; a felhasználó az indulási és navigációs gyorsítást, valamint a gombszín/oldal együttváltását készüléken elfogadta, és új kiadást kért változatlan 1.3.71 /2735 verzióval. A lentebbi kiinduló lassulási adatok történeti mérések. A P1.1/P1.3 mennyiségi céljai és a P1.4 további cache-munkája külön nyitott marad, nem nyitott készülékes kiadási hibaként szerepel.
+
 ## Ellenőrzött kiindulópont és megőrzendő fejlesztések
 
 - 2026-10-22 ellenőrzött aktuális ág: `perf/236-journal-dom` (#237 Draft),
@@ -32,7 +34,7 @@ main-merge-re, Play-kiadásra vagy verzióemelésre.
   DOM-olvasás és DOM-írás külön fázisban történjen. Cél: azonos mérésű,
   **nem átfedő** két költség együttesének legalább 50%-os csökkenése.
   Új globális felülíró réteg tilos; a meglévő modulban javíts.
-- [ ] **P1.2** `tp107FitViews`: valódi indulási hívásszám mérés, legfeljebb
+- [x] **P1.2** `tp107FitViews`: valódi indulási hívásszám mérés, legfeljebb
   egy tényleges indulási layout-fit, fölösleges ismételt reflow nélkül.
 - [ ] **P1.3** `calendarHtml` és panelnaptár: 0 és 200 edzésnél
   4× CPU-val <400 ms oldalnyitási medián, azonos méréssel.
@@ -41,7 +43,7 @@ main-merge-re, Play-kiadásra vagy verzióemelésre.
   *tényleges* history/tombstone/adatváltozáshoz (edit, delete, import,
   Drive/Wear, azonos elemszám) kapcsolódjon. Napló-lapozás, PR-gombok,
   fókusz, új és régi rekordok regresszió.
-- [ ] **P1.5** Telefon release R8 `minifyEnabled` +
+- [x] **P1.5** Telefon release R8 `minifyEnabled` +
   `shrinkResources`, Capacitor/plugin/Gson/Samsung/Wear/GMS keep-szabályok,
   `androidx.profileinstaller`, indulási baseline profil.
   Külön kockázatos natív commit; csak release unit/UI és telepíthető,

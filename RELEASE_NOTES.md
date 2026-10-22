@@ -41,7 +41,7 @@ Egészségnapló, személyre szabás, telefonos felület és Wear OS alapok:
 - Naplóalapú terhelési ajánlás, fájdalom/readiness védelem, külön elfogadott testsúlyos variációváltás és menthető gyakorlatsorrend.
 - Naptári napablak, áthelyezés és újratervezés; megőrzött azonosítók, előnézet, védett napok és sikertelen mentéskor visszaállított korábbi terv.
 - Kompakt edzés utáni visszajelzés, közös mentési jelzés, egységes témák és helyi betűk, gyorsabb Kezdőlap/Coach/nézetváltás, javított Egészség-oldali frissítés.
-- Saját indítóanimáció és az óráról történő telefonos hidegindítás javítása. Az elfogadott animáción enyhe készülékes akadás továbbra is előfordulhat.
+- Saját indítóanimáció és az óráról történő telefonos hidegindítás javítása. A korábban jelzett indulási és navigációs lassulás célzott javítását 2026-10-22-én a felhasználó készüléken elfogadta; a részletek az [1.3.71 gyorsított kiadásában](docs/releases/v1.3.71-perf-20261022.md).
 - Natív Wear OS edzésvezérlés, körkijelzőhöz igazított kezdőlap, főmenü, heti mini naptár, telefonos megnyitás, Tile és számlapi kiegészítő.
 - Engedélyezett Health Services-edzésmérés, háttérben futó előtérszolgáltatás, támogatott pulzus-/energia-/lépés-/távolságadatok, opcionális GPS és végső mérési összegzés.
 - Stabil órás edzésazonosítók, offline parancsok és visszaigazolások, ismételt befejezés kezelése, törölt naplóbejegyzések visszaéledésének megakadályozása.

@@ -16,6 +16,7 @@ A `scripts/check-version-policy.cjs` és a Quick CI ellenőrzi az egyezést. Új
 A jövőbeli kiadás alapja `MAJOR.MINOR.PATCH`: nagyobb kompatibilitástörés, új funkció, illetve javítás szerint, külön egyeztetett számmal. A történeti 1.3.51 nem írható át; az azt követő 1.3.6 számsorrendi kivételét a [jegyzék](releases/INDEX.md) mutatja. Következő szám választásakor ezt és a Play/Android kódsorrendet külön ellenőrizni kell.
 
 - Telefon: `vX.Y.Z`; Wear: `wear-vX.Y.Z`; jelölt: `candidate-X.Y.Z-CODE`.
+- A 2026-10-22-i kifejezett felhasználói döntés szerinti újrakiadás változatlan **1.3.71 /2735**: külön `v1.3.71-perf-20261022` / `wear-v1.3.71-perf-20261022` kiadási címkével. Ezek buildazonosítók, nem az APK verziónevei. A korábbi címkék és mellékletek megmaradnak.
 - Új tag csak az elfogadott pontos forrásra kerülhet. Meglévő taget nem mozgatunk/átnevezünk, régi APK-t nem címkézünk új forrásúnak.
 - Quick, Performance, telefonos Chromium/natív kapu és ahol érintett Wear-kapu, majd a megfelelő készülékes elfogadás szükséges.
 - Kiadási melléklet: aláírt APK, forrás/metaadat, checksum és signer-folytonosság. A Play-előkészítés ettől külön feladat.

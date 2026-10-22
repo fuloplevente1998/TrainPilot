@@ -1,12 +1,13 @@
 # GitHub-kiadások jegyzéke
 
-Aktuális és legfrissebb stabil kiadás: **1.3.71 /2735**, a #234 felhasználói elfogadása és sikeres kiadási kapui után. A régi release-sorok dátumozott történeti pillanatképet őriznek; a tagek és fájlok megmaradnak.
+Aktuális stabil kiadás: **1.3.71 /2735, 2026-10-22-i gyorsított build**, a #235/#237 készülékes elfogadása után. Az app verziója változatlan, a kiadási címkék különböztetik meg a buildeket. A régi tagek és fájlok megmaradnak.
 
 ## Kiadott APK és elfogadott main
 
 | Állapot | Forrás és tartalom |
 | --- | --- |
-| **Legfrissebb stabil: [telefon 1.3.71](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.71) + [Wear OS 1.3.71](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.71)** | **1.3.71 /2735**, main `60fe647a98ccdcc7f102d647a6a1cc8db40bbbfa`. Külön aláírt telefon/Wear kapuk sikeresek; a telefonos release explicit latest. [Kiadási jegyzet](v1.3.71.md). |
+| **Legfrissebb stabil: [telefon 1.3.71 gyorsított](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.71-perf-20261022) + [Wear OS](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.71-perf-20261022)** | **1.3.71 /2735**, main `5d27aa9c5ebf68d1c206c88a74dea89e660a4937`, elfogadott #235/#237. [Kiadási jegyzet](v1.3.71-perf-20261022.md). |
+| Korábbi 1.3.71 build | [Telefon](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.71) + [Wear](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.71), `60fe647`, 2026-10-21-i #234 kiadás. Azonos alkalmazásverzió, korábbi binárisok. |
 | Előző stabil kiadás | **1.3.7 /2734**; [történeti kiadási jegyzet](v1.3.7.md). |
 | Régebbi kiadás | **1.3.6 /2733**; [jegyzet](v1.3.6.md) és [bizonylat](../builds/2026-10-19-release-136.json). |
 

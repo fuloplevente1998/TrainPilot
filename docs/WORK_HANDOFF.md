@@ -1,6 +1,6 @@
 # TrainPilot – aktuális átadás
 
-Frissítve: **2026-10-22**. **#235/#237 mainen, készüléken elfogadva, változatlan 1.3.71 /2735.** A korábbi v1.3.71 telefon/Wear release és tag változatlan; #214 karbantartási issue marad. [Takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
+Frissítve: **2026-10-22**. **#235/#237 mainen, készüléken elfogadva, változatlan 1.3.71 /2735.** Felhasználó által kért új teljesítménykiadás: `v1.3.71-perf-20261022` / `wear-v1.3.71-perf-20261022`, az eredeti 1.3.71 kiadás megőrzésével. #214 karbantartási issue marad. [Takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
@@ -17,7 +17,7 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 - Új alkalmazásforrás `715dc5d4353ed86116b4596f0cc13916efbe4888`: a meglévő navigációs stílusban a fő nav `:hover/:active` filter/opacity hatása semleges. Az általános gomb-press effekt korábban már lenyomáskor világosított, míg a route a click/felengedéskor indult. A fő nav kijelölése így a megjelenő oldallal együtt változik; nincs új router/wrapper vagy pointer-down navigáció.
 - A meglévő `settings-immediate-navigation-236.cjs` valós CDP touchStart/hold/touchCancel/touchEnd próbákkal bővült, basic/vivid témán és 4× CPU-val. A korábbi szinkron Settings/nav, második tap és 320/393 px ellenőrzés megmaradt.
 - A pontos `715dc5d` forráson sikeres: Quick `39830962591`, Performance `39830952866`, Phone Release Gate `39830952727` (6/6 shard, 112/112 UI-modul, 251/251 natív release), WebView `39830952962` (3/3). Letöltött UI JSON és natív XML szerint nincs hiba/kihagyás; a 4× CPU érintés/hold/cancel/release regresszió sikeres.
-- Új [telefonos APK+forrás ZIP](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39830952727/artifacts/12448513131), **1.3.71/2735**, `com.repforge.app`, SHA256 `dd475589160e3073bc91e0294ee995627ec358a1efc149b9f77bc6fccaa830cd`. Source stamp `715dc5d`, csomagolt app.js byteazonos, baseline.prof/profm jelen, v2 signer az eredeti `4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688`. Fizikai együttváltás és az általános lassulás elfogadása nyitott. Verzió/Wear változatlan; Wear APK az előző szakaszban hivatkozott változat.
+- Készüléken elfogadott [telefonos teszt-APK+forrás ZIP](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39830952727/artifacts/12448513131), **1.3.71/2735**, `com.repforge.app`, SHA256 `dd475589160e3073bc91e0294ee995627ec358a1efc149b9f77bc6fccaa830cd`. Source stamp `715dc5d`, csomagolt app.js byteazonos, baseline.prof/profm jelen, v2 signer az eredeti `4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688`. Fizikai együttváltás és az általános lassulás javítása elfogadva. Verzió/Wear változatlan.
 
 ## #236 – átvétel a 2026-10-22-i beszélgetésexportból
 

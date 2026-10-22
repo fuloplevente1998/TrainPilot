@@ -1,4 +1,4 @@
-> **TÖRTÉNETI NAPLÓ (2026-10-20).** Az alábbi dátumozott munkamenetek már nem a jelenlegi státuszt mutatják. Aktuális kiadás: **1.3.7 /2734**, [WORK_HANDOFF.md](WORK_HANDOFF.md); a nyitott #225 és #231 PR-t külön kezeld. Régi brancheket és kiadásokat csak a [karbantartási szabály](REPOSITORY_CLEANUP_POLICY.md) alapján takaríts.
+> **TÖRTÉNETI NAPLÓ.** Aktuális állapot (2026-10-22): a #235/#237 indulási és navigációs gyorsítás készüléken elfogadva, main `5d27aa9`, változatlan **1.3.71 /2735**. Az új teljesítménykiadás és APK-forrás az [átadásban](WORK_HANDOFF.md) és a [kiadásjegyzékben](releases/INDEX.md) található. Az alábbi régi nyitott hibák és PR-státuszok nem a jelenlegi állapotot mutatják.
 
 > **Aktuális átadás (2026-10-19):** [WORK_HANDOFF.md](WORK_HANDOFF.md). Először a gyökér `AGENTS.md`-t olvasd. A #193/#202 `e4f4fa8` forrás mind a hat kapuja zöld, aláírt tesztpár kész; fizikai elfogadás még nincs. A lentebbi állapotok történetiek. Új külső UI/funkcióötletek csak rögzítve, megvalósítás nem indult.
 

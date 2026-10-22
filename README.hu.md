@@ -8,10 +8,10 @@ Edzéstervezés és naplózás Androidon és Wear OS-en, opcionális egészséga
 
 | Legfrissebb stabil kiadás | Verzió | Forrás |
 | --- | --- | --- |
-| [Telefon](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.71) és [Wear OS](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.71) | **1.3.71 /2735** | Elfogadott #234, main `60fe647a98ccdcc7f102d647a6a1cc8db40bbbfa`. Mindkét független aláírt Release Gate sikeres. |
+| [Telefon](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.71-perf-20261022) és [Wear OS](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.71-perf-20261022) | **1.3.71 /2735**, 2026-10-22-i gyorsított build | Készüléken elfogadott #235/#237, main `5d27aa9c5ebf68d1c206c88a74dea89e660a4937`. Külön címke őrzi meg a korábbi 1.3.71-es csomagokat. |
 | Korábbi közzétett verzió | 1.3.7 /2734 | [Történeti kiadási jegyzet](docs/releases/v1.3.7.md). |
 
-Az 1.3.71 javítja a PR-részletek visszazárását, laposabbá teszi az Edzésstílus/progresszió zárt fejlécét, helyreállítja a Mégse működését és egységesíti a haptika négyzet/pipa vezérlőjét. Az automatikus sorozat-előtöltés, a tényleges RIR és a Samsung/Coach funkciók megmaradnak. [Kiadási jegyzet](docs/releases/v1.3.71.md).
+A frissített 1.3.71 gyorsítja az indulást, korlátozza a Napló kezdeti kártyaszámát, együtt váltja a navigációs gomb színét és az oldalt, és kisebb, optimalizált telefonos APK-t tartalmaz. A lassulás javítását a felhasználó készüléken elfogadta. A korábbi PR-, Mégse-, haptika-, automatikus előtöltés-, RIR- és Samsung/Coach funkciók megmaradnak. [Kiadási jegyzet](docs/releases/v1.3.71-perf-20261022.md).
 
 A telefonos APK a telefonra, a Wear APK az órára való. Frissítéskor őrizd meg az alkalmazás adatait. A forrás, ellenőrzőösszeg és buildadat mindig az adott kiadáshoz tartozik; régi verzió választása előtt nézd meg a [jegyzéket](docs/releases/INDEX.md). A Play-megjelenés előkészítése a [#214](https://github.com/fuloplevente1998/TrainPilot/issues/214) része.
 

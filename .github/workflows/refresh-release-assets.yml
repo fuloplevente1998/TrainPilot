@@ -15,6 +15,18 @@ on:
         description: Exact source commit shared by both successful builds and release tags
         required: true
         type: string
+      phone_tag:
+        description: Optional new performance release tag; empty keeps vVERSION
+        default: ''
+        type: string
+      wear_tag:
+        description: Optional matching Wear performance release tag
+        default: ''
+        type: string
+      publish:
+        description: Publish the prepared draft releases after verified upload
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -33,6 +45,9 @@ jobs:
       PHONE_RUN: ${{ inputs.phone_run }}
       WEAR_RUN: ${{ inputs.wear_run }}
       SOURCE_COMMIT: ${{ inputs.source_commit }}
+      PHONE_TAG: ${{ inputs.phone_tag }}
+      WEAR_TAG: ${{ inputs.wear_tag }}
+      PUBLISH_RELEASES: ${{ inputs.publish }}
     steps:
       - name: Validate successful independent release gates
         shell: bash
@@ -98,20 +113,44 @@ jobs:
               certificates.append(subprocess.check_output(['python3', 'scripts/apk_signer_cert.py', f'{folder}/{name}'], text=True).strip())
           if certificates != ['4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688'] * 2:
               raise SystemExit('Release signer mismatch')
-          for tag in [f'v{version}', f'wear-v{version}']:
-              ref = json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/git/ref/tags/{tag}']))
+          phone_tag = os.environ.get('PHONE_TAG') or f'v{version}'
+          wear_tag = os.environ.get('WEAR_TAG') or f'wear-v{version}'
+          custom = bool(os.environ.get('PHONE_TAG') or os.environ.get('WEAR_TAG'))
+          if custom and (not re.fullmatch(r'v' + re.escape(version) + r'-perf-\d{8}', phone_tag) or wear_tag != 'wear-' + phone_tag):
+              raise SystemExit('New release tags must be a matching dated performance pair')
+          for tag in [phone_tag, wear_tag]:
+              lookup = subprocess.run(['gh', 'api', f'repos/{repo}/git/ref/tags/{tag}'], capture_output=True, text=True)
+              if lookup.returncode and custom and '404' in lookup.stderr:
+                  release = json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/releases/tags/{tag}']))
+                  if not release['draft'] or release['target_commitish'] != commit:
+                      raise SystemExit('New tags require a prepared draft for the verified source')
+                  ref = json.loads(subprocess.check_output(['gh', 'api', '--method', 'POST', f'repos/{repo}/git/refs', '-f', f'ref=refs/tags/{tag}', '-f', f'sha={commit}']))
+              else:
+                  lookup.check_returncode()
+                  ref = json.loads(lookup.stdout)
               if ref['object']['type'] != 'commit' or ref['object']['sha'] != commit:
                   raise SystemExit('Existing release tag does not match the tested artifacts')
               subprocess.run(['gh', 'release', 'view', tag, '--repo', repo], check=True, stdout=subprocess.DEVNULL)
           with open(os.environ['GITHUB_ENV'], 'a') as env:
               env.write(f'RELEASE_VERSION={version}\n')
+              env.write(f'PHONE_RELEASE_TAG={phone_tag}\n')
+              env.write(f'WEAR_RELEASE_TAG={wear_tag}\n')
+              env.write(f'CUSTOM_RELEASE_PAIR={str(custom).lower()}\n')
           PY
 
       - name: Refresh the existing release files and notes
         shell: bash
         run: |
           set -euo pipefail
-          gh release upload "v$RELEASE_VERSION" "phone/TrainPilot-$RELEASE_VERSION.apk" "phone/TrainPilot-$RELEASE_VERSION-source.zip" phone/SHA256SUMS.txt phone/phone-apk-badging.txt --repo "$GITHUB_REPOSITORY" --clobber
-          gh release edit "v$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" --notes-file "docs/releases/v$RELEASE_VERSION.md" --target "$SOURCE_COMMIT"
-          gh release upload "wear-v$RELEASE_VERSION" "wear/TrainPilot-$RELEASE_VERSION-wear.apk" wear/WEAR-SHA256SUMS.txt wear/WEAR-SOURCE_VERSION.json wear/wear-apk-badging.txt --repo "$GITHUB_REPOSITORY" --clobber
-          gh release edit "wear-v$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" --notes-file "android/wear/releases/wear-v$RELEASE_VERSION.md" --target "$SOURCE_COMMIT"
+          gh release upload "$PHONE_RELEASE_TAG" "phone/TrainPilot-$RELEASE_VERSION.apk" "phone/TrainPilot-$RELEASE_VERSION-source.zip" phone/SHA256SUMS.txt phone/phone-apk-badging.txt --repo "$GITHUB_REPOSITORY" --clobber
+          gh release upload "$WEAR_RELEASE_TAG" "wear/TrainPilot-$RELEASE_VERSION-wear.apk" wear/WEAR-SHA256SUMS.txt wear/WEAR-SOURCE_VERSION.json wear/wear-apk-badging.txt --repo "$GITHUB_REPOSITORY" --clobber
+          # Dated releases already have reviewed draft notes; never substitute
+          # the older vVERSION notes from the immutable application source.
+          if [ "$CUSTOM_RELEASE_PAIR" != true ]; then
+            gh release edit "$PHONE_RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --notes-file "docs/releases/v$RELEASE_VERSION.md" --target "$SOURCE_COMMIT"
+            gh release edit "$WEAR_RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --notes-file "android/wear/releases/wear-v$RELEASE_VERSION.md" --target "$SOURCE_COMMIT"
+          fi
+          if [ "$PUBLISH_RELEASES" = true ]; then
+            gh release edit "$WEAR_RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease=false --latest=false
+            gh release edit "$PHONE_RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease=false --latest
+          fi

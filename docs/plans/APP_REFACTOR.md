@@ -4,6 +4,8 @@ Felhasználói indítás: 2026-10-21. Kiinduló main `bc43d4e`, 1.3.71 /2735.
 Az audit és Claude elemzése alapján fokozatos egyszerűsítés; verzióemelés és main
 merge nincs automatikusan engedélyezve.
 
+**Frissítés, 2026-10-22:** a felhasználó a #235/#237 együttes, indulási és navigációs teljesítményjavítását készüléken elfogadta. Main merge: `5d27aa9`, változatlan **1.3.71 /2735**; az új teljesítménykiadás közzétételét is kérte. Az alábbi korábbi lassulási visszajelzések a feltárás történetét őrzik, nem jelenlegi nyitott kiadási hibák. A mérési célok és további szerkezeti munkák ettől külön követendők.
+
 ## 1. Mentési integritás és központi lezárás – #235, első kör készüléken elfogadva
 
 - A `finishWorkout` korábbi 11 definíciós/hozzárendelési helye és a dinamikus
