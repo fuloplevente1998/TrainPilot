@@ -1,6 +1,6 @@
 # Natív migráció – funkcióegyezési ellenőrzés
 
-Állapot: 2026-10-23, `9492755` editor/motor és `cab522a` indítás/lezárás alapján. A korábbi teljes technikai zöld alap `134adcd`. Ez forrásellenőrzés, nem készülékes elfogadás.
+Állapot: 2026-10-23, `b6e8158` stabil UI-célzás/alsó stopper, `9492755` editor/motor és `cab522a` indítás/lezárás alapján. A korábbi teljes technikai zöld alap `134adcd`. Ez forrásellenőrzés, nem készülékes elfogadás.
 Összehasonlítási alap: a készüléken elfogadott gyorsított 1.3.71 /2735,
 `v1.3.71-perf-20261022`, forrás `5d27aa9` (appkód: `715dc5d`).
 A teljes natív kiváltás **még nincs kész**. A build, migráció és termékfunkciók
@@ -20,21 +20,20 @@ Külön azonosítójú párhuzamos tesztkiadás jelenleg nem áll rendelkezésre
 | Adatmigráció | Aktuális WebView localStorage olvasás, helyi archívum, Room-tranzakció, sérült forrásnál nincs kész nyugta. | Unicode/nagy napló, törlés, GPS, fotó, program/nap, testsúly, naptár, beállítás, draft, régi health DB, eredeti tár és idempotencia tényleges upgrade-próbája 2/2 sikeres. A draft archiválása még nem működő natív folytatás. |
 | Telefonos edzésindítás | `cab522a`: programnapi Home/Programok indítás tartós, stabil azonosítós natív sessiont készít; ismételt indítás/resume védett. Elfogadott main #228 súly/ismétlés-előtöltés portolva, lapozott adatforrással. | 10 új célzott teszt zöld. Gyors/outdoor gomb, importált draft tényleges natív folytatása és valós képernyőteszt még hátra van. |
 | Lezárás | `cab522a`: UI és Wear közös `TrainPilotWorkoutFinalization`; esemény+kurzor tartós a nyugta előtt; napló+naptár tranzakció, valódi close, timer/GPS stop, takarítás, navigáció csak siker után. Mentési kerítés és stabil retry. | 9 új teszt zöld, köztük valódi SQLite-hibainjektálás, újrapróbálás, késői watch finish, handoff/restore, régi törlés. Tényleges natív UI és két készülékes próbák még szükségesek; az elvetési út külön további vizsgálatot igényel. |
-| Telefonos editor–natív motor | `9492755`: a teljes natív frame a tartós szerkesztési forrás, atomi frame/kurzor projekció; UI-commit előtt nincs ack. Complete/undo valódi natív parancs, tulajdonosi epoch megőrizve; foreground controller csak resumed editorból armolódik. Régi protokollok nem optálnak be automatikusan az új fogyasztóba. | 8 új teszt zöld; az előző 451 unit-eset mind megmaradt. Még indexalapú UI callbackok, ismételt gyakorlatkártya-kulcs/új set-ID, tényleges skip/± pihenő, stopper/GPS és valós integrált UI-próba hátra van. |
-| Stopper / GPS teljesítés | Az aktív Compose képernyőn nincs bekötött eredeti alsó sorozatstopper. A GPS stop csak leállítja a szolgáltatást. | Pozitív explicit stop készre jelöl; implicit stop/pause/0 nem; kétoldali gyakorlat mindkét oldal; undo és GPS útvonalkötés megőrzése. |
+| Telefonos editor–natív motor | `9492755`: a teljes natív frame a tartós szerkesztési forrás, atomi frame/kurzor projekció; UI-commit előtt nincs ack. Complete/undo valódi natív parancs, tulajdonosi epoch megőrizve; foreground controller csak resumed editorból armolódik. Régi protokollok nem optálnak be automatikusan az új fogyasztóba. | 8 új teszt zöld; az előző 451 unit-eset mind megmaradt. `b6e8158`: a UI callback megjelenítéskori workout/generation/exercise/set célpontot őriz, új set UUID-t kap, ismételt gyakorlat listakulcsa és undo célzása javítva. Az új kapu teljesen zöld. Tényleges skip/± pihenő, GPS és valós integrált UI-próba még hátra van. |
+| Stopper / GPS teljesítés | `b6e8158`: az alsó sorozatstopper a natív frame-ben, explicit pozitív stop natív record/undo, kétoldali pozitív pár szükséges; nulla/reset/pause nem teljesítés. Nyugvó clock nem ír folyamatosan SQLite-t; ownership-retirement szüneteltet. A GPS stop még csak leállítja a szolgáltatást. | 19 új célzott teszt mind zöld, a korábbi 459 unit-eset megmaradt. Integrált telefonos UI, intervallum-beállítás, időösszesítés teljes paritása, GPS set/route kötés és explicit stop még hátra van. |
 | Naptár / Coach | A `NavHost` nem tartalmaz külön naptár/Coach útvonalat. A Coach gomb a training útvonalra visz. | Eredeti funkciók átültetése és valós UI-próbája; programképernyő nem helyettesíti őket. |
 | Napló teljesítmény | Compose LazyColumn van, de az adatréteg minden edzést részletekkel figyel. A Wear mini-napló az összes részlet betöltése után vesz csak nyolcat. | Korlátozott lekérdezés/lapozás, teljes adathalmazra működő szűrés; 0/200/1500 minta. Nem állítunk igazolt natív gyorsulást. |
 | Health | Valós Samsung SDK adapter és explicit foreground frissítés helyreállítva; az onResume munka IO-n fut. Az eredeti felesleges preferenciavisszaírás-gyorsítás átvéve. | Tesztek, Samsung/HC készülékes engedély- és háttérváltási próba; hiányzó adat nem friss siker. |
 | Wear | Az eredeti teljes natív launcher/szolgáltatások/protokoll visszakötve; az alternatív távirányítós prototípus nem launcher. A main gyorsított kiadása nem módosított Wear/shared appkódot. | Kerek UI 183/183 sikeres. Watch7, valódi telefon–óra szinkron és offline átadás/visszavétel még készülékes kapu. |
 | Nyelvek / UI | Számos Compose szöveg közvetlenül magyar; a térkép semleges Bezárás gombot használ. | HU/EN/DE/RO, nagy betű/kis kijelző, elfogadott piros X, használható érintési célok. |
 
-Friss teljes technikai kapu: **`39957648783` / `9492755` SUCCESS**.
-Letöltött XML: telefon **292/292**, Wear **167/167**; minden korábbi unit-eset
-megmaradt, nyers kerek UI **183/183** azonos esetazonosítóval, aláírt szintetikus
-upgrade **2/2**, nincs hiba/kihagyás. A védett komponens tiltása nincs a végső
-emulátorscriptben; a korábbi rendszerfelületi fókuszhibát a leválasztott töltés
-szimulációja megoldotta, változatlan teszt- és termékfókuszfeltételekkel.
-[Gépi bizonylat](builds/2026-10-23-native-editor-integration.json).
+Friss teljes technikai kapu: **`39965579401` / `b6e8158` SUCCESS**.
+Letöltött XML: telefon **311/311**, Wear **167/167**; mind a korábbi 459 unit-eset
+megmaradt, +19 új próba. Nyers kerek UI **183/183** azonos esetazonosítóval,
+aláírt szintetikus upgrade **2/2**, nincs hiba/kihagyás. Letöltött release APK-k
+hash/csomag/verzió/signer ellenőrizve; az új protokoll a telefonos R8 DEX-ben is jelen van.
+[Gépi bizonylat](builds/2026-10-23-native-set-stopwatch.json).
 
 ## Ellenőrzési sorrend
 

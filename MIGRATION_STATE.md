@@ -1,5 +1,23 @@
 # TrainPilot – Natív Android-migráció forrás-visszaállítási állapota
 
+## Legfrissebb kapu – stabil sorozatcélzás és alsó stopper (2026-10-23)
+
+**`b6e8158` / [39965579401](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39965579401) teljes SUCCESS**.
+Rendereléskori workout/generation/exercise/set célpontok, friss sorozat UUID-k,
+ismételt gyakorlatok listakulcsa/undo célzása javítva. Egyetlen alsó stopper a
+natív frame-ben; pozitív explicit stop a kanonikus record/outbox/receipt/undo
+tranzakción át teljesít. Kétoldali sorozat csak mindkét pozitív oldal után kész.
+Nulla/reset/pause/controller-leállás nem teljesít; nyugvó clock nem ír folyamatosan
+SQLite-t, tulajdonosátadás előtt tartós pause kell.
+Letöltött XML **telefon 311/311 + Wear 167/167**, az összes korábbi 459 eset
+megmaradt, +19 új próba. Kerek UI **183/183**, eredeti/gyorsított release-ről
+aláírt upgrade **2/2**, nulla hiba/kihagyás. Mindkét APK eredeti signerrel,
+**1.3.71-native-test /2736**; csomag/verzió/hash és az új telefonos DEX ellenőrizve.
+[Bizonylat és APK-k](docs/builds/2026-10-23-native-set-stopwatch.json).
+**Élő adatokra telepítés STOP; main változatlan `7473b30`.** GPS-kötés/teljesítés,
+valós pihenővezérlés, gyors/outdoor, draft, Naptár/Coach, további funkcióegyezés,
+telefonos UI, teljes backup/restore és fizikai Phone/Watch7 próba még szükséges.
+
 ## Legfrissebb editor/motor ellenőrzés – 2026-10-23
 
 **`9492755` / `39957648783` teljes SUCCESS**: natív frame-alapú editor,

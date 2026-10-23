@@ -1,0 +1,217 @@
+{
+  "applicationSource": "b6e815824ae0e4c0936959863afd81ff32ef80d8",
+  "androidSourceTree": "f8561c6f8a1501274e9016cb371054d98faf7ad2",
+  "workflowRun": 39965579401,
+  "branch": "feat/native-android-migration",
+  "unitXmlArtifact": 12506264213,
+  "unit": {
+    "phone": {
+      "tests": 311,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "wear": {
+      "tests": 167,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "previousVerifiedUnitCases": 459,
+  "previousCaseIdentitiesPreserved": true,
+  "newRegressionTests": [
+    {
+      "class": "com.repforge.app.NativeSetStopwatchTest",
+      "name": "undoReturnsToTheRecordedInstanceWhenExerciseOccursTwice"
+    },
+    {
+      "class": "com.repforge.app.NativeSetStopwatchTest",
+      "name": "recordingStorageFailureKeepsUnfinishedTargetAndClockAvailableForRetry"
+    },
+    {
+      "class": "com.repforge.app.NativeSetStopwatchTest",
+      "name": "explicitPositiveStopRecordsActualTimeWithoutOkAndCreatesNativeUndo"
+    },
+    {
+      "class": "com.repforge.app.NativeSetStopwatchTest",
+      "name": "stoppedClockAfterProcessRestartCanOnlyRecoverCheckpointInPause"
+    },
+    {
+      "class": "com.repforge.app.NativeSetStopwatchTest",
+      "name": "secondTargetCannotStealRunningStopwatchAndStaleControllerCannotPauseIt"
+    },
+    {
+      "class": "com.repforge.app.NativeSetStopwatchTest",
+      "name": "originalCompleteSetStillRejectsTimedMeasurement"
+    },
+    {
+      "class": "com.repforge.app.NativeSetStopwatchTest",
+      "name": "nativeMeasuredCommandReplayRetainsOriginalElapsedAndOneReceipt"
+    },
+    {
+      "class": "com.repforge.app.NativeSetStopwatchTest",
+      "name": "controllerDestructionPausesDurablyWithoutInventingCompletion"
+    },
+    {
+      "class": "com.repforge.app.NativeSetStopwatchTest",
+      "name": "zeroStopAndResetNeverCompleteOrCreateARecording"
+    },
+    {
+      "class": "com.repforge.app.NativeSetStopwatchTest",
+      "name": "ownershipRetirementPausesLowerStopwatchEvenWithoutIntervalTimeline"
+    },
+    {
+      "class": "com.repforge.app.NativeSetStopwatchTest",
+      "name": "checkpointAndBackgroundDoNotCompleteAndOrdinaryEditCannotReplaceClock"
+    },
+    {
+      "class": "com.repforge.app.NativeSetStopwatchTest",
+      "name": "bilateralFirstSideRemainsIncompleteAndSecondPositiveSideCompletes"
+    },
+    {
+      "class": "com.repforge.app.NativeSetStopwatchTest",
+      "name": "explicitWorkoutPausePreservesElapsedWithoutCompletionOrPauseTimeCredit"
+    },
+    {
+      "class": "com.repforge.app.NativeSetStopwatchTest",
+      "name": "startingAfterIdleControllerRearmsDurableCheckpointsAndStopsWritingWhenIdle"
+    },
+    {
+      "class": "com.repforge.app.NativeWorkoutTargetTest",
+      "name": "ambiguousOrReassignedSetIdentityIsRejected"
+    },
+    {
+      "class": "com.repforge.app.NativeWorkoutTargetTest",
+      "name": "repeatedExerciseUsesSetIdentityAfterExerciseAndSetReordering"
+    },
+    {
+      "class": "com.repforge.app.NativeWorkoutTargetTest",
+      "name": "deletedControlCannotRetargetReplacementAtSamePosition"
+    },
+    {
+      "class": "com.repforge.app.NativeWorkoutTargetTest",
+      "name": "removedAndReaddedSetAlwaysGetsFreshIdentityAndNoOldMeasurements"
+    },
+    {
+      "class": "com.repforge.app.NativeWorkoutTargetTest",
+      "name": "oldWorkoutOrGenerationCannotUseAReusedImportedSetId"
+    }
+  ],
+  "signedApks": {
+    "phone": {
+      "artifact": 12506433788,
+      "size": 3114357,
+      "sha256": "be2c4becd3fc18bd150cae026d18ed78ae5b327455b45a0b4de53fcc479b9e1c"
+    },
+    "wear": {
+      "artifact": 12506593127,
+      "size": 5109898,
+      "sha256": "cd933c9b29ede7808bf80927d0abe8c5c9b0c1a5b8d36c686e7b641cc75c6d88"
+    }
+  },
+  "signedUpgrade": {
+    "verified": true,
+    "baselines": [
+      {
+        "tag": "v1.3.71",
+        "artifact": 12506913789,
+        "seedStatus": "ok",
+        "verifyStatus": "ok",
+        "uninstallOrClear": false
+      },
+      {
+        "tag": "v1.3.71-perf-20261022",
+        "artifact": 12507481247,
+        "seedStatus": "ok",
+        "verifyStatus": "ok",
+        "uninstallOrClear": false
+      }
+    ],
+    "derivedXml": "docs/builds/native-b6e8158/signed-upgrade-derived.xml"
+  },
+  "verificationArtifact": 12507286465,
+  "package": "com.repforge.app",
+  "versionName": "1.3.71-native-test",
+  "versionCode": 2736,
+  "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+  "releaseDexContainsNewStopwatchProtocol": true,
+  "conclusion": "success",
+  "wearUi": {
+    "tests": 183,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "caseIdentitiesMatchPreviousGate": true,
+    "shards": [
+      {
+        "shard": 0,
+        "artifact": 12508030744,
+        "tests": 68,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "shard": 1,
+        "artifact": 12507214390,
+        "tests": 59,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "shard": 2,
+        "artifact": 12506972855,
+        "tests": 56,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ],
+    "derivedXml": "docs/builds/native-b6e8158/wear-round-derived.xml"
+  },
+  "previousFunctionalCheckpoint": "docs/builds/2026-10-23-native-editor-integration.json",
+  "liveInstallApproved": false,
+  "physicalPhoneWatch7Tested": false,
+  "fullFunctionalParityVerified": false,
+  "backupRestoreFullRoundTripVerified": false,
+  "mainMerge": false,
+  "changes": [
+    "rendered workout/generation/exercise/set identities captured for UI callbacks",
+    "deleted or ambiguous targets fail closed",
+    "fresh set UUID after delete/add and distinct repeated exercise card keys",
+    "native full-frame lower stopwatch; no second upper interval clock",
+    "positive explicit stop records timed set via canonical engine and atomic outbox/receipt/undo",
+    "bilateral completion requires both positive sides",
+    "zero/reset/pause/controller destruction never complete",
+    "process token recovery resumes only durable checkpoint in pause",
+    "controller checkpoints while running; idle stopwatch stops SQLite writes",
+    "native undo selects repeated exercise instance by set identity",
+    "ownership retirement pauses even an armed controller without interval timeline",
+    "old completeSet measurement restrictions and fingerprint format retained"
+  ],
+  "remaining": [
+    "GPS measurement set/route binding and positive explicit completion",
+    "real rest skip and adjustment; next/previous exercise parity",
+    "manual timed OK and interval configuration; complete measured-time summary parity",
+    "quick/outdoor start and imported draft continuation",
+    "remaining native UI, Calendar/Coach, catalog, locales, journal performance",
+    "real native phone UI and full backup/restore round trip",
+    "physical Phone/Watch7 and real two-device offline sync"
+  ],
+  "supersededRuns": [
+    {
+      "source": "bb28287acb564d306720240d09fd84affc61b3ae",
+      "run": 39964327569,
+      "conclusion": "cancelled",
+      "reason": "Later source pushed; debug/unit steps passed before cancellation."
+    },
+    {
+      "source": "4b8554d3a516e8cb04d18108e38707dfd63c302c",
+      "run": 39965215245,
+      "conclusion": "cancelled",
+      "reason": "Ownership retirement follow-up superseded this source."
+    }
+  ]
+}
