@@ -1,6 +1,18 @@
 # TrainPilot – Natív Android-migráció forrás-visszaállítási állapota
 
-## Aktuális ellenőrzés – 2026-10-23
+## Legutóbbi funkcionális lépés – 2026-10-23
+
+`cab522a`: tartós programnapi telefonos indítás, naplóalapú súly/ismétlés-előtöltés,
+közös telefon/óra lezárás, natív eseményegyeztetés, napló+naptár tranzakció és
+újrapróbálási/mentési/törlési védelem. Telefon **284/284**, Wear **167/167** unit;
+eredeti és gyorsított release-ről aláírt upgrade **2/2** sikeres. A kerek UI első
+és változatlan forrású második próbáján 1 fókusz-timeout volt. Az emulátor
+töltési felületének előtérbe kerülése külön CI-probléma; a korrigált
+`1a0cc94` / `39953886817` futása még folyamatban, az Android-termékforrás változatlan.
+A teljes natív app és a saját adatokkal történő készülékes frissítés továbbra sem kész.
+Részletek és következő lépés: [átadás](docs/WORK_HANDOFF.md).
+
+## Korábbi teljes technikai kapu – 2026-10-23
 
 **`134adcd` / [CI 39937602813](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39937602813): teljes SUCCESS.**
 Telefon/Wear debug és eredeti kulcsos R8 release lefordult, csomagnév/verzió/tanúsítvány
@@ -14,7 +26,7 @@ adatmegőrzési ellenőrzés sikeres (**2/2**).
 [funkcióhiányok](docs/NATIVE_PARITY_AUDIT.md).
 
 **A teljes natív funkcióegyezés és élő készülékes kiváltás nincs kész.** Telefonos
-indítás/lezárás, stopper/GPS teljesítés, Naptár/Coach és további paritás még hátra van;
+gyors/outdoor indítás, draft folytatás, stopper/GPS teljesítés, Naptár/Coach és további paritás még hátra van;
 a fizikai telefon/Watch7 és kétirányú szinkron külön kapu. Main merge nem történt.
 Összehasonlítási alap a **2026-10-22-i gyorsított 1.3.71 /2735** (`5d27aa9`).
 Az alábbi táblázat történeti forrás-visszaállítás, nem az aktuális tesztösszesítés.

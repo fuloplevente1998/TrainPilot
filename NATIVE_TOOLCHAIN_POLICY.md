@@ -39,4 +39,10 @@ Branch: `feat/native-android-migration`
 
 ## Status
 
-Configuration committed; successful GitHub Actions build and test verification **pending**. Do not mark this baseline as validated until CI passes.
+The pinned active toolchain is validated by `134adcd` / GitHub Actions
+`39937602813`: Phone/Wear debug and original-key R8 release, unit tests, both signed
+upgrade baselines and the complete round Wear UI gate passed. `cab522a` /
+`39944821598` additionally passes Phone 284/284 and Wear 167/167 unit tests and both
+signed upgrade baselines; its separate Wear focus-timeout retry is tracked in
+`docs/WORK_HANDOFF.md`. This build validation does not establish full native
+functional parity, real-device API36 behavior or permission to replace live data.
