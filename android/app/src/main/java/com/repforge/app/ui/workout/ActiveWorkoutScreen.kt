@@ -6,6 +6,8 @@ import androidx.compose.runtime.remember
 
 import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.BackHandler
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -89,6 +91,7 @@ fun ActiveWorkoutScreen(
     val context = LocalContext.current
     val activity = context as? Activity
     val photoRepo = remember { WorkoutPhotoRepository(context) }
+    BackHandler(enabled = state.isFinishing) { }
 
     // Kamera és Galéria indítók
     val cameraLauncher = rememberLauncherForActivityResult(
@@ -321,8 +324,7 @@ fun ActiveWorkoutScreen(
             onDismiss = { viewModel.closeFinishModal() },
             onConfirm = { effort ->
                 viewModel.closeFinishModal()
-                viewModel.finishWorkout(effort)
-                navController.popBackStack()
+                viewModel.finishWorkout(effort) { navController.popBackStack() }
             }
         )
     }
@@ -352,6 +354,17 @@ fun ActiveWorkoutScreen(
             },
             containerColor = colors.card
         )
+    }
+
+    if (state.isFinishing) {
+        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.6f)).clickable { }, contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = colors.accent)
+        }
+    }
+    state.statusMessage?.let { message ->
+        AlertDialog(onDismissRequest = { viewModel.clearStatusMessage() },
+            title = { Text("Edzés állapota") }, text = { Text(message) },
+            confirmButton = { TextButton(onClick = { viewModel.clearStatusMessage() }) { Text("Rendben") } })
     }
 }
 

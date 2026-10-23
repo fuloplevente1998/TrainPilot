@@ -101,6 +101,10 @@ object WearSyncRepository {
         syncScope.launch {
             try {
                 val action = command.optString("action")
+                val pending = ActiveWorkoutStore.current(appContext)?.optBoolean("finalizationPending") == true
+                check(!pending || action in setOf("finishWorkout", "discardWorkout", "saveWorkoutFeedback", "healthSummary")) {
+                    "Workout finalization is in progress"
+                }
                 val db = TrainPilotDatabase.getInstance(appContext)
                 val settingsStore = TrainPilotSettingsStore(appContext)
                 val migrator = LegacyWebViewMigrator(appContext, db, settingsStore)
@@ -208,45 +212,14 @@ object WearSyncRepository {
                             historyObj.put("wear", healthSummary)
                         }
 
-                        // Attach feedback if already included in retry
                         val feedback = command.optJSONObject("feedback")
-                        if (feedback != null) {
-                            historyObj.put("feedback", feedback.put("updatedAt", System.currentTimeMillis()))
-                            settingsStore.setPendingFeedback(null, null)
-                        } else {
-                            settingsStore.setPendingFeedback(workoutId, historyObj.optString("started", workoutId))
-                        }
-
-                        // Calculate #226 Personal Records against existing Room history
-                        val priorHistory = db.workoutHistoryDao().getAllWorkoutsWithDetails()
-                        PersonalRecordCalculator226.evaluateAndAttachPrs(historyObj, priorHistory)
-
-                        // Persist to Room
-                        migrator.saveWorkoutJsonToRoom(historyObj)
-
-                        // Mark scheduled entry completed if applicable
-                        val scheduleId = historyObj.optString("scheduleId")
-                        if (scheduleId.isNotBlank()) {
-                            val entries = db.calendarScheduleDao().getAllEntries()
-                            entries.firstOrNull { it.id == scheduleId }?.let { entry ->
-                                db.calendarScheduleDao().upsertEntry(
-                                    entry.copy(status = "completed", updatedAt = System.currentTimeMillis())
-                                )
-                            }
-                        }
-
+                        if (feedback != null) historyObj.put("feedback", JSONObject(feedback.toString()).put("updatedAt", System.currentTimeMillis()))
+                        val saved = TrainPilotWorkoutFinalization(appContext, db).finishWorkout(historyObj, fromWatch = true)
+                        if (feedback != null) settingsStore.setPendingFeedback(null, null)
+                        else settingsStore.setPendingFeedback(workoutId, saved.history.optString("started", workoutId))
                         withContext(Dispatchers.Main) {
-                            val closed = ActiveWorkoutStore.clear(appContext)
-                            publishActiveWorkoutSnapshot(appContext, closed)
-                            try {
-                                val execDb = PhoneWorkoutExecution.store(appContext)
-                                val frame = execDb.snapshot()
-                                if (frame != null && frame.optString("workoutId") == workoutId) {
-                                    execDb.discardExecution(workoutId, frame.optLong("generation"), frame.optLong("executionRevision"))
-                                    IntervalTimerService.closeWorkout(workoutId, frame.optLong("generation"))
-                                }
-                            } catch (_: Exception) {
-                            }
+                            saved.closedSnapshot?.let { publishActiveWorkoutSnapshot(appContext, it) }
+                            // A saved receipt is possible only after native close and draft cleanup.
                             WearCommandReceipts.complete(appContext, command, "saved", uri)
                         }
 

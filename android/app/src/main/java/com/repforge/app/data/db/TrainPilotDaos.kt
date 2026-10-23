@@ -186,6 +186,9 @@ interface BodyWeightDao {
 
 @Dao
 interface CalendarScheduleDao {
+    @Query("SELECT * FROM calendar_entries WHERE id = :scheduleId LIMIT 1")
+    suspend fun getEntry(scheduleId: String): CalendarScheduleEntity?
+
     @Query("SELECT * FROM calendar_entries ORDER BY startIso ASC")
     fun observeAllEntries(): Flow<List<CalendarScheduleEntity>>
 

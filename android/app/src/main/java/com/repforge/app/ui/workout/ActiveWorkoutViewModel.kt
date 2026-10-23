@@ -1,5 +1,6 @@
 package com.repforge.app.ui.workout
 import com.repforge.app.PhoneWorkoutPlans
+import com.repforge.app.TrainPilotWorkoutFinalization
 import androidx.core.content.ContextCompat
 
 import android.app.Activity
@@ -112,7 +113,8 @@ data class ActiveWorkoutUiState(
     val showDiscardModal: Boolean = false,
     val showExercisePicker: Boolean = false,
     val showOwnershipDialog: Boolean = false,
-    val statusMessage: String? = null
+    val statusMessage: String? = null,
+    val isFinishing: Boolean = false
 )
 
 class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(application) {
@@ -398,6 +400,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun undoLastSet() {
+        if (_uiState.value.isFinishing || ActiveWorkoutStore.current(context)?.optBoolean("finalizationPending") == true) return
         val recordId = _uiState.value.undoRecordId
         if (recordId.isEmpty()) return
         viewModelScope.launch(Dispatchers.Main) {
@@ -485,6 +488,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     // =========================================================================
 
     fun toggleWorkoutPause() {
+        if (_uiState.value.isFinishing || ActiveWorkoutStore.current(context)?.optBoolean("finalizationPending") == true) return
         val current = ActiveWorkoutStore.current(context) ?: return
         val willPause = !current.optBoolean("workoutPaused", false)
         val now = System.currentTimeMillis()
@@ -509,6 +513,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun skipRestTimer() {
+        if (_uiState.value.isFinishing || ActiveWorkoutStore.current(context)?.optBoolean("finalizationPending") == true) return
         val current = ActiveWorkoutStore.current(context) ?: return
         current.put("restEndAt", 0L)
         saveAndPublish(current)
@@ -518,6 +523,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun adjustRestTimer(deltaSeconds: Int) {
+        if (_uiState.value.isFinishing || ActiveWorkoutStore.current(context)?.optBoolean("finalizationPending") == true) return
         val current = ActiveWorkoutStore.current(context) ?: return
         val endAt = current.optLong("restEndAt", 0L)
         val now = System.currentTimeMillis()
@@ -527,6 +533,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun toggleGpsTracking(key: String) {
+        if (_uiState.value.isFinishing || ActiveWorkoutStore.current(context)?.optBoolean("finalizationPending") == true) return
         val isRunning = _uiState.value.isGpsActive
         if (!isRunning) {
             val intent = Intent(context, DistanceTrackingService::class.java).apply {
@@ -546,6 +553,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     // =========================================================================
 
     fun requestOwnershipBackFromWatch() {
+        if (_uiState.value.isFinishing || ActiveWorkoutStore.current(context)?.optBoolean("finalizationPending") == true) return
         viewModelScope.launch(Dispatchers.IO) {
             val current = ActiveWorkoutStore.current(context) ?: return@launch
             runCatching {
@@ -608,49 +616,20 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     // Befejezés & Elvetés
     // =========================================================================
 
-    fun finishWorkout(effort: String?) {
+    fun finishWorkout(effort: String?, onSaved: () -> Unit) {
+        if (_uiState.value.isFinishing) return
         val current = ActiveWorkoutStore.current(context) ?: return
-        viewModelScope.launch(Dispatchers.IO) {
-            val now = Instant.now().toString()
-            current.put("finished", now)
-            if (effort != null) {
-                current.put("feedback", JSONObject().put("effort", effort).put("updatedAt", System.currentTimeMillis()))
-            }
-            // Csatoljuk a fotókat a végleges mentéshez
-            val pArr = JSONArray()
-            for (p in _uiState.value.attachedPhotos) {
-                pArr.put(
-                    JSONObject()
-                        .put("id", p.id)
-                        .put("label", "")
-                        .put("createdAt", now)
-                        .put("width", p.width)
-                        .put("height", p.height)
-                        .put("bytes", p.bytes)
-                )
-            }
-            current.put("photos", pArr)
-
-            // #226 PR kalkuláció
-            val priorHistory = database.workoutHistoryDao().getAllWorkoutsWithDetails()
-            PersonalRecordCalculator226.evaluateAndAttachPrs(current, priorHistory)
-
-            // Mentés a Room adatbázisba
-            migrator.saveWorkoutJsonToRoom(current)
-
-            // Tisztítás
-            withContext(Dispatchers.Main) {
-                ActiveWorkoutStore.clear(context)
-                try {
-                    val execDb = PhoneWorkoutExecution.store(context)
-                    val frame = execDb.snapshot()
-                    if (frame != null && frame.optString("workoutId") == current.optString("workoutId")) {
-                        execDb.discardExecution(current.optString("workoutId"), frame.optLong("generation"), frame.optLong("executionRevision"))
-                        IntervalTimerService.closeWorkout(current.optString("workoutId"), frame.optLong("generation"))
-                    }
-                } catch (_: Exception) {}
-                DistanceTrackingService.stop(context)
-                WearSyncRepository.publishWatchHomeSnapshot(context)
+        if (effort != null) current.put("feedback", JSONObject().put("effort", effort).put("updatedAt", System.currentTimeMillis()))
+        _uiState.value = _uiState.value.copy(isFinishing = true)
+        viewModelScope.launch {
+            try {
+                val result = TrainPilotWorkoutFinalization(context, database).finishWorkout(current)
+                result.closedSnapshot?.let { runCatching { WearSyncRepository.publishActiveWorkoutSnapshot(context, it) } }
+                _uiState.value = _uiState.value.copy(isFinishing = false)
+                onSaved()
+            } catch (error: Exception) {
+                _uiState.value = _uiState.value.copy(isFinishing = false,
+                    statusMessage = "Az edzés lezárása nem sikerült. Az adatok megmaradtak; próbáld újra. ${error.message.orEmpty()}")
             }
         }
     }
@@ -695,6 +674,8 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     fun clearStatusMessage() { _uiState.value = _uiState.value.copy(statusMessage = null) }
 
     private fun saveAndPublish(snapshot: JSONObject) {
+        val current = ActiveWorkoutStore.current(context)
+        if (_uiState.value.isFinishing || current?.optBoolean("finalizationPending") == true || current?.optString("timerOwner") == "watch") return
         ActiveWorkoutStore.saveOwned(context, snapshot)
         WearSyncRepository.publishActiveWorkoutSnapshot(context, snapshot)
     }

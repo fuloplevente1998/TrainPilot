@@ -35,6 +35,12 @@ internal object ActiveWorkoutStore {
     @Synchronized
     @Throws(Exception::class)
     fun saveOwned(context: Context, input: JSONObject): JSONObject {
+        val previous = prefs(context).getString(SNAPSHOT, null)?.let { JSONObject(it) }
+        if (previous?.optBoolean("active") == true && previous.optBoolean("finalizationPending")) {
+            check(previous.optString("workoutId") == input.optString("workoutId") && input.optBoolean("finalizationPending")) {
+                "Workout finalization is in progress"
+            }
+        }
         val revision = prefs(context).getLong(REVISION, 0L) + 1L
         val snapshot = JSONObject(input.toString())
         PhoneGpsRoute193.captureOrigin(context, snapshot)
