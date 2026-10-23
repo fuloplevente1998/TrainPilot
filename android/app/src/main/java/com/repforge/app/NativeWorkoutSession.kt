@@ -2,6 +2,8 @@ package com.repforge.app
 
 import android.content.Context
 import com.repforge.app.data.db.TrainPilotDatabase
+import com.repforge.app.data.db.ExerciseLibraryEntity
+import com.repforge.app.data.store.TrainPilotUserSettings
 import com.repforge.app.data.store.TrainPilotSettingsStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -45,34 +47,7 @@ internal object NativeWorkoutSession {
                 val source = requireNotNull(library[id]) { "Hiányzó gyakorlat: $id" }
                 val rx = JSONObject(prescriptions.optJSONObject(id)?.toString() ?: "{}")
                 if (item is JSONObject) for (key in item.keys()) if (key != "id") rx.put(key, item.get(key))
-                val exercise = JSONObject(source.rawJson)
-                    .put("id", id).put("hu", source.nameHu).put("en", source.nameEn)
-                    .put("de", source.nameDe).put("ro", source.nameRo)
-                    .put("name", localized(settings.language, source.nameHu, source.nameEn, source.nameDe, source.nameRo))
-                    .put("loadType", rx.optString("loadType", source.loadType))
-                    .put("repUnit", rx.optString("repUnit", source.repUnit))
-                    .put("measurementType", rx.optString("measurementType", source.measurementType))
-                    .put("targetReps", rx.optString("reps", source.defaultReps))
-                    .put("setRir229", source.setRir229)
-                    .put("prescription", rx)
-                    .put("restSeconds162", rx.optInt("rest", settings.restSeconds).coerceIn(0, 3600))
-                val count = rx.optInt("sets", source.defaultSets).coerceIn(1, 10)
-                val weight = if (exercise.optString("loadType") == "bodyweight") 0.0
-                    else rx.optDouble("weight", source.defaultWeight).also { require(it.isFinite() && it >= 0) }
-                val sets = NativeWorkoutStartValues.blankSets(count, weight)
-                if (NativeWorkoutStartValues.strength(exercise)) {
-                    var offset = 0
-                    val now = System.currentTimeMillis()
-                    while (true) {
-                        val rows = db.workoutHistoryDao().getPrefillCandidates(id, exercise.getString("loadType"),
-                            exercise.getString("repUnit"), now, 32, offset)
-                        for (row in rows) NativeWorkoutStartValues.prefill(exercise, sets, JSONObject(row.rawJson), now)
-                        offset += rows.size
-                        if (rows.size < 32 || (0 until sets.length()).all { sets.getJSONObject(it).has("previousValues228") }) break
-                    }
-                }
-                exercise.remove("actualRir")
-                exercise.put("sets", sets)
+                val exercise = buildExercise(db, source, settings, rx)
                 exercises.put(exercise)
             }
             require(exercises.length() > 0) { "Az edzésnap üres." }
@@ -95,6 +70,86 @@ internal object NativeWorkoutSession {
         withContext(NonCancellable + Dispatchers.Main.immediate) {
             installPrepared(app, candidate)
         }
+    }
+
+    /** Only an explicit successful new start returns a GPS intent. Never persisted/replayed on recovery. */
+    data class Launch(val snapshot: JSONObject, val gpsTarget: NativeWorkoutTarget? = null)
+
+    suspend fun startQuickWorkout(
+        context: Context, exerciseId: String, recordRoute: Boolean,
+        database: TrainPilotDatabase = TrainPilotDatabase.getInstance(context)
+    ): Launch = startLock.withLock {
+        val app = context.applicationContext
+        withContext(Dispatchers.Main.immediate) { recoverActive(app) }?.let { return@withLock Launch(it) }
+        val settingsStore = TrainPilotSettingsStore(app)
+        val settings = settingsStore.current()
+        val candidate = withContext(Dispatchers.IO) {
+            check(database.keyValueDocumentDao().getDocument("draft") == null) {
+                "A korábbi félbehagyott edzés megmaradt. Előbb folytasd vagy rendezd azt."
+            }
+            val source = requireNotNull(database.exerciseLibraryDao().getAllExercises().singleOrNull { it.id == exerciseId }) {
+                "A választott gyakorlat már nem található."
+            }
+            require(!recordRoute || NativeOutdoorStart.eligible(source.id, source.measurementType, source.repUnit)) {
+                "Ehhez a gyakorlathoz nem indítható automatikus GPS-útvonal."
+            }
+            quickCandidate(buildExercise(database, source, settings), settings)
+        }
+        withContext(NonCancellable + Dispatchers.Main.immediate) {
+            val saved = installPrepared(app, candidate)
+            // A watch start may have won the race while the library was read.
+            if (saved.getString("workoutId") != candidate.getString("workoutId")) return@withContext Launch(saved)
+            val exercise = saved.getJSONArray("exercises").getJSONObject(0)
+            if (NativeOutdoorStart.eligible(exercise.optString("id"), exercise.optString("measurementType"), exercise.optString("repUnit"))) {
+                settingsStore.setGpsStartChoice(exerciseId, recordRoute)
+            }
+            Launch(saved, if (recordRoute) NativeOutdoorStart.target(saved, exerciseId) else null)
+        }
+    }
+
+    internal fun quickCandidate(exercise: JSONObject, settings: TrainPilotUserSettings): JSONObject {
+        val id = UUID.randomUUID().toString()
+        val now = Instant.now().toString()
+        val title = localized(settings.language, "Gyors edzés", "Quick workout", "Schnelltraining", "Antrenament rapid")
+        return JSONObject().put("schema", 1).put("active", true).put("workoutId", id).put("id", id).put("syncId", id)
+            .put("type", "quick").put("quickWorkout", true).put("programId", JSONObject.NULL).put("dayId", JSONObject.NULL)
+            .put("workout", "quick").put("programName", title).put("dayName", title).put("started", now)
+            .put("activeIntervals", JSONArray().put(JSONObject().put("start", now).put("end", JSONObject.NULL)))
+            .put("currentExercise", 0).put("timerOwner", "phone").put("originDevice", "phone").put("workoutPaused", false)
+            .put("restEndAt", 0).put("restSeconds", settings.restSeconds).put("language", settings.language)
+            .put("automaticEnabled", true).put("timerConfig", JSONObject().put("work", settings.workSeconds)
+                .put("rest", settings.restSeconds).put("rounds", settings.rounds)
+                .put("sound", settings.soundEnabled).put("vibration", settings.vibrationEnabled))
+            .put("exercises", JSONArray().put(JSONObject(exercise.toString())))
+    }
+
+    /** Same accepted main prefill policy for program and quick starts; measured data is always blank. */
+    internal suspend fun buildExercise(db: TrainPilotDatabase, source: ExerciseLibraryEntity,
+        settings: TrainPilotUserSettings, rx: JSONObject = JSONObject()): JSONObject {
+        val exercise = JSONObject(source.rawJson)
+            .put("id", source.id).put("hu", source.nameHu).put("en", source.nameEn).put("de", source.nameDe).put("ro", source.nameRo)
+            .put("name", localized(settings.language, source.nameHu, source.nameEn, source.nameDe, source.nameRo))
+            .put("loadType", rx.optString("loadType", source.loadType)).put("repUnit", rx.optString("repUnit", source.repUnit))
+            .put("measurementType", rx.optString("measurementType", source.measurementType))
+            .put("targetReps", rx.optString("reps", source.defaultReps)).put("setRir229", source.setRir229)
+            .put("prescription", JSONObject(rx.toString()))
+            .put("restSeconds162", rx.optInt("rest", settings.restSeconds).coerceIn(0, 3600))
+        val weight = if (exercise.optString("loadType") == "bodyweight") 0.0
+            else rx.optDouble("weight", source.defaultWeight).also { require(it.isFinite() && it >= 0) }
+        val sets = NativeWorkoutStartValues.blankSets(rx.optInt("sets", source.defaultSets), weight)
+        if (NativeWorkoutStartValues.strength(exercise)) {
+            var offset = 0
+            val now = System.currentTimeMillis()
+            while (true) {
+                val rows = db.workoutHistoryDao().getPrefillCandidates(source.id, exercise.getString("loadType"),
+                    exercise.getString("repUnit"), now, 32, offset)
+                for (row in rows) NativeWorkoutStartValues.prefill(exercise, sets, JSONObject(row.rawJson), now)
+                offset += rows.size
+                if (rows.size < 32 || (0 until sets.length()).all { sets.getJSONObject(it).has("previousValues228") }) break
+            }
+        }
+        exercise.remove("actualRir")
+        return exercise.put("sets", sets)
     }
 
     internal fun installPrepared(context: Context, candidate: JSONObject): JSONObject {

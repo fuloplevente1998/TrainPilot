@@ -53,7 +53,8 @@ data class TrainPilotUserSettings(
     val cloudDeviceId: String = "",
     val pendingFeedbackWorkoutId: String = "",
     val pendingFeedbackStarted: String = "",
-    val migrationV1371Complete: Boolean = false
+    val migrationV1371Complete: Boolean = false,
+    val gpsStartChoices216: Map<String, Boolean> = emptyMap()
 ) {
     fun themeJson(): JSONObject = JSONObject()
         .put("key", themeKey)
@@ -84,6 +85,7 @@ class TrainPilotSettingsStore(private val context: Context) {
         val KEY_PENDING_FEEDBACK_ID = stringPreferencesKey("pendingFeedbackWorkoutId")
         val KEY_PENDING_FEEDBACK_STARTED = stringPreferencesKey("pendingFeedbackStarted")
         val KEY_MIGRATION_V1371_COMPLETE = booleanPreferencesKey("migration_v1_3_71_complete")
+        val KEY_GPS_START_CHOICES_216 = stringPreferencesKey("gpsStartChoices216")
 
         val AVAILABLE_THEMES = listOf(
             ThemePaletteOption("classicBlue", "Klasszikus kék", "Classic Blue", "#4d8fbe", "#7cb4d6", "basic"),
@@ -117,7 +119,12 @@ class TrainPilotSettingsStore(private val context: Context) {
             cloudDeviceId = prefs[KEY_CLOUD_DEVICE_ID] ?: "",
             pendingFeedbackWorkoutId = prefs[KEY_PENDING_FEEDBACK_ID] ?: "",
             pendingFeedbackStarted = prefs[KEY_PENDING_FEEDBACK_STARTED] ?: "",
-            migrationV1371Complete = prefs[KEY_MIGRATION_V1371_COMPLETE] ?: false
+            migrationV1371Complete = prefs[KEY_MIGRATION_V1371_COMPLETE] ?: false,
+            gpsStartChoices216 = runCatching {
+                val json = JSONObject(prefs[KEY_GPS_START_CHOICES_216] ?: "{}")
+                json.keys().asSequence().filter { com.repforge.app.NativeOutdoorStart.eligible(it, "distance", "km") }
+                    .associateWith { json.opt(it) == true }
+            }.getOrDefault(emptyMap())
         )
     }
 
@@ -184,6 +191,14 @@ class TrainPilotSettingsStore(private val context: Context) {
 
     suspend fun markMigrationComplete() {
         context.trainPilotDataStore.edit { it[KEY_MIGRATION_V1371_COMPLETE] = true }
+    }
+
+    suspend fun setGpsStartChoice(activityId: String, enabled: Boolean) {
+        require(com.repforge.app.NativeOutdoorStart.eligible(activityId, "distance", "km"))
+        context.trainPilotDataStore.edit { prefs ->
+            val choices = runCatching { JSONObject(prefs[KEY_GPS_START_CHOICES_216] ?: "{}") }.getOrElse { JSONObject() }
+            prefs[KEY_GPS_START_CHOICES_216] = choices.put(activityId, enabled).toString()
+        }
     }
 
     suspend fun resetAllSettingsForEraseLocal() {
