@@ -4,6 +4,13 @@ Frissítve: **2026-10-23**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Folyamatban – natív gyors/kültéri indítás (2026-10-23)
+
+- Core `3eb8eb4`, UI/CI-forrás **`9da639d09653ce46cd1eed295b24664ca53bb3df`**; [natív CI 40017855126](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40017855126) fut, **még nincs új zöld kapu/APK-igazolás**. Helyben diff/forrásellenőrzés, teljes Gradle/emulátor GitHubon.
+- A Home gyors/outdoor gombja már valódi könyvtárválasztóba vezet, nem nemlétező programnaphoz. Programfüggetlen, stabil ID-s quick session; közös #228 előtöltési szabály program/quick/+gyakorlat esetén, mért érték üres. Gyorsedzésben a már hozzáadott gyakorlat újbóli választása nem készít másolatot.
+- Kültéri allowlist és indításkor látható, aktivitásonként megjegyzett GPS-választás, HU/EN/DE/RO választó. Csak új, kifejezett indítás ad memóriabeli GPS-szándékot; recovery, ismételt tap, órás mirror és háttér nem játssza újra. A meglévő GPS-parancs permission/rendszerhely/owner/set/generation ellenőrzése megmarad. Első engedélykérés a resumed editorban, a controller readiness után; sikertelenség nem törli az edzést. 15 új `NativeQuickWorkoutTest` próba **még CI-ellenőrzés alatt**.
+- Importált draftot az új indítás nem ír felül; tényleges natív folytatása a következő fő feladat. Általános programnapi induló GPS-választás és valós telefonos UI-próba külön paritási pont; meglévő manuális GPS tovább működik. Main/verzió/Wear termékkód változatlan, teljes natív app és saját adatokra telepítés **STOP**.
+
 ## Legfrissebb zöld kapu – kézi mért rögzítés és közös időnapló (2026-10-23)
 
 - **Bevizsgált CI-/APK-forrás `40384e76feefbefa9d12b57d314e8cb63b08b627`**, core `aca4ac3`, UI `a5f4cd8`; [natív CI 40011226981](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40011226981) **teljes SUCCESS**. Letöltött XML: telefon **358/358**, Wear **167/167**; mind az előző **505** unit-eset megmaradt, +**20** új próba (19 `NativeMeasuredEditingTest`, 1 GPS-időnapló). Kerek Wear **183/183**, azonos esetazonosítókkal; eredeti/gyorsított release-ről signed upgrade **2/2**, nulla hiba/kihagyás. Dokumentációs HEAD eltérhet a tesztelt APK forrásától.
