@@ -104,6 +104,7 @@ internal object NativeWorkoutSession {
         check(!execution.restoreBlocked() && !execution.commandsSuspended()) { "Az edzésvezérlés átmenetileg foglalt." }
         val generation = maxOf(System.currentTimeMillis(), (execution.snapshot()?.optLong("generation") ?: 0L) + 1L)
         val next = JSONObject(candidate.toString()).put("generation", generation).put("executionRevision", 0)
+            .put("nativeEditorProjection", 1)
         // The native frame is durable first. If snapshot publication fails, recoverActive
         // restores this same frame and IDs; it never creates a second workout.
         val prepared = execution.prepare(next, 0L)

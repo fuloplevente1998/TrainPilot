@@ -2,6 +2,7 @@ package com.repforge.app
 
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
 import android.content.SharedPreferences
 import org.json.JSONObject
 import org.junit.After
@@ -11,13 +12,17 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import org.robolectric.Robolectric
+import org.robolectric.android.controller.ServiceController
 import org.robolectric.annotation.Config
 import java.lang.reflect.Proxy
+import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
 class NativeWorkoutEditingTest {
     private lateinit var context: Context
+    private var controller: ServiceController<IntervalTimerService>? = null
     private val field = PhoneWorkoutExecution::class.java.getDeclaredField("store").apply { isAccessible = true }
 
     @Before fun open() {
@@ -37,6 +42,7 @@ class NativeWorkoutEditingTest {
     }
 
     @After fun close() {
+        controller?.destroy()
         (field.get(null) as? PhoneWorkoutExecutionStore)?.close()
         field.set(null, null)
         context.deleteDatabase(PhoneWorkoutExecutionStore.DATABASE)
@@ -53,6 +59,7 @@ class NativeWorkoutEditingTest {
     }
 
     @Test fun editingThenNativeRecordThenUndoUsesOneSetStateAndRetainsUserFields() {
+        armController()
         val edit = ActiveWorkoutStore.current(context)!!
         first(edit).put("weight", 12.5).put("reps", "9")
         NativeWorkoutEditing.commitEdit(context, edit)
@@ -130,6 +137,35 @@ class NativeWorkoutEditingTest {
         ActiveWorkoutStore.clear(context)
         assertThrows(IllegalStateException::class.java) { NativeWorkoutEditing.project(context) }
         assertFalse(ActiveWorkoutStore.current(context)!!.getBoolean("active"))
+    }
+
+    @Test fun recordingAndUndoCarryTheInstalledOwnershipEpoch() {
+        val store = PhoneWorkoutExecution.store(context)
+        val frame = store.snapshot()!!.put("ownershipProtocol193", 1).put("ownerEpoch193", 7)
+            .put("handoff193", JSONObject().put("id", "returned").put("state", "committed"))
+        val installed = store.prepare(frame, frame.getLong("executionRevision"))
+        ActiveWorkoutStore.saveOwned(context, installed)
+        // Fixture of a durably committed return; handshake transitions have separate platform tests.
+        File(context.noBackupFilesDir, "ownership193.json").writeText(JSONObject().put("snapshot", installed).toString())
+        armController()
+        NativeWorkoutEditing.completeStrengthSet(context, "press", "set-a")
+        val current = ActiveWorkoutStore.current(context)!!
+        assertEquals(7L, current.getLong("ownerEpoch193"))
+        assertTrue(first(current).getBoolean("done"))
+        NativeWorkoutEditing.undo(context, current.getJSONObject("lastRecord188").getString("recordId"))
+        assertFalse(first(ActiveWorkoutStore.current(context)!!).getBoolean("done"))
+    }
+
+    private fun armController() {
+        val frame = PhoneWorkoutExecution.store(context).snapshot()!!
+        controller = Robolectric.buildService(IntervalTimerService::class.java).create()
+        controller!!.get().onStartCommand(Intent(context, IntervalTimerService::class.java).apply {
+            action = IntervalTimerService.ARM
+            putExtra("workoutId", frame.getString("workoutId"))
+            putExtra("generation", frame.getLong("generation"))
+            putExtra("language", "hu")
+        }, 0, 1)
+        assertTrue(IntervalTimerService.armed(frame.getString("workoutId"), frame.getLong("generation")))
     }
 
     private fun failingSnapshotContext(): Context = object : ContextWrapper(context) {

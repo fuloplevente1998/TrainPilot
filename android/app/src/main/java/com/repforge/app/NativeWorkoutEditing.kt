@@ -89,6 +89,7 @@ internal object NativeWorkoutEditing {
             }.singleOrNull() ?: error("A sorozat célpontja megváltozott.")
         val command = JSONObject().put("nativeExecutionProtocol", 2).put("action", "completeSet")
             .put("commandId", UUID.randomUUID().toString()).put("workoutId", current.getString("workoutId"))
+            .put("ownerEpoch193", current.optLong("ownerEpoch193"))
             .put("generation", current.getLong("generation")).put("executionRevision", current.getLong("executionRevision"))
             .put("exerciseId", exerciseId).put("setId", setId).put("reps", target.getString("reps"))
         if (target.has("weight") && target.optString("weight").isNotBlank()) command.put("weight", target.get("weight"))
@@ -102,6 +103,7 @@ internal object NativeWorkoutEditing {
         val command = JSONObject(record.toString()).put("schema", 1).put("nativeExecutionProtocol", 2)
             .put("action", "undoSet").put("commandId", UUID.randomUUID().toString())
             .put("workoutId", current.getString("workoutId")).put("generation", current.getLong("generation"))
+            .put("ownerEpoch193", current.optLong("ownerEpoch193"))
             .put("executionRevision", current.getLong("executionRevision")).put("createdAt", System.currentTimeMillis())
         return requireApplied(PhoneWorkoutExecution.execute(context, command))
     }
@@ -114,6 +116,7 @@ internal object NativeWorkoutEditing {
     }
 
     private fun requireEditable(frame: JSONObject, current: JSONObject?) {
+        check(frame.optInt("nativeEditorProjection") == 1) { "A natív szerkesztő állapota még nincs előkészítve." }
         check(current == null || current.optBoolean("active") || current.optString("workoutId") != frame.optString("workoutId")) {
             "A lezárt edzés nem indítható újra."
         }

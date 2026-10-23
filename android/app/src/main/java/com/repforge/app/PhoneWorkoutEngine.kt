@@ -734,7 +734,11 @@ internal object PhoneWorkoutExecution {
     @Throws(Exception::class)
     fun publish(context: Context) {
         val value = display(context) ?: return
-        val saved = NativeWorkoutEditing.project(context, value)
+        // Original protocol frames keep their pending events until their explicit
+        // consumer commits them. Only a complete native-editor frame opts into
+        // the durable native projection; background transport alone is no consumer.
+        val saved = if (value.optInt("nativeEditorProjection") == 1) NativeWorkoutEditing.project(context, value)
+            else ActiveWorkoutStore.save(context, value)
         val map = PutDataMapRequest.create(WearDataLayerPaths.ACTIVE_WORKOUT_PATH)
         map.dataMap.putString("snapshot", saved.toString())
         map.dataMap.putBoolean("active", true)
