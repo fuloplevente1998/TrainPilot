@@ -1,0 +1,218 @@
+{
+  "applicationSource": "40384e76feefbefa9d12b57d314e8cb63b08b627",
+  "workflowRun": 40011226981,
+  "unit": {
+    "app": {
+      "tests": 358,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "wear": {
+      "tests": 167,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "previousVerifiedUnitCases": 505,
+  "previousCaseIdentitiesPreserved": true,
+  "newRegressionTests": [
+    {
+      "class": "com.repforge.app.NativeGpsMeasurementTest",
+      "name": "gpsObservedWorkIsCountedOnceAndSurvivesCaptureReplayAndUndo"
+    },
+    {
+      "class": "com.repforge.app.NativeMeasuredEditingTest",
+      "name": "activeIntervalProtectsItsMeasuredRowsButFutureConfigurationDoesNotResetItsPlan"
+    },
+    {
+      "class": "com.repforge.app.NativeMeasuredEditingTest",
+      "name": "anotherProcessCannotCreditTheUnobservedTimeAfterItsLastCheckpoint"
+    },
+    {
+      "class": "com.repforge.app.NativeMeasuredEditingTest",
+      "name": "bilateralAndDistanceExercisesKeepTheirOwnControlsInsteadOfAnAutomaticInterval"
+    },
+    {
+      "class": "com.repforge.app.NativeMeasuredEditingTest",
+      "name": "bilateralManualOkRequiresBothSidesAndKeepsThemAfterUndo"
+    },
+    {
+      "class": "com.repforge.app.NativeMeasuredEditingTest",
+      "name": "earlierWatchTimeRemainsSeparateFromThePhoneStopwatch"
+    },
+    {
+      "class": "com.repforge.app.NativeMeasuredEditingTest",
+      "name": "explicitIntervalStopPreservesPartialTimeWithoutCompletingAndRetiresLateTicks"
+    },
+    {
+      "class": "com.repforge.app.NativeMeasuredEditingTest",
+      "name": "intervalCompletionRecordsWorkOnlyAndItsUndoKeepsActualWorkAndRest"
+    },
+    {
+      "class": "com.repforge.app.NativeMeasuredEditingTest",
+      "name": "invalidConfigurationOrOldTargetCannotChangeTheRunningWorkout"
+    },
+    {
+      "class": "com.repforge.app.NativeMeasuredEditingTest",
+      "name": "invalidManualDurationsCannotProduceARecording"
+    },
+    {
+      "class": "com.repforge.app.NativeMeasuredEditingTest",
+      "name": "liveSummaryDoesNotWriteOrMutateItsDurableInputAndNextCheckpointDoesNotDoubleCredit"
+    },
+    {
+      "class": "com.repforge.app.NativeMeasuredEditingTest",
+      "name": "manualCommandReplayIsIdempotentButChangingItsValuesIsACollision"
+    },
+    {
+      "class": "com.repforge.app.NativeMeasuredEditingTest",
+      "name": "manualDistanceNeedsTimeAndDistanceAndItsUndoKeepsTheEnteredValues"
+    },
+    {
+      "class": "com.repforge.app.NativeMeasuredEditingTest",
+      "name": "manualRecordStorageFailureRemainsUnfinishedAndRetryRecordsOnce"
+    },
+    {
+      "class": "com.repforge.app.NativeMeasuredEditingTest",
+      "name": "manualTimeOkCreatesNativeUndoWithoutManufacturingObservedTime"
+    },
+    {
+      "class": "com.repforge.app.NativeMeasuredEditingTest",
+      "name": "resetRetainsObservedWorkButDoesNotCompleteOrManufactureAnUndo"
+    },
+    {
+      "class": "com.repforge.app.NativeMeasuredEditingTest",
+      "name": "runningStopwatchBlocksManualOkAndStaleMeasurementValuesAreRejected"
+    },
+    {
+      "class": "com.repforge.app.NativeMeasuredEditingTest",
+      "name": "staleTargetsPausedWorkoutAndLegacyFramesCannotManuallyComplete"
+    },
+    {
+      "class": "com.repforge.app.NativeMeasuredEditingTest",
+      "name": "stoppedOldIntervalCannotStopOrReconcileAReplacement"
+    },
+    {
+      "class": "com.repforge.app.NativeMeasuredEditingTest",
+      "name": "stopwatchResumeDoesNotDoubleCountEarlierWorkAndMeasuresOnlyObservedPause"
+    }
+  ],
+  "apks": {
+    "phone": {
+      "artifact": 12526692755,
+      "size": 3147125,
+      "sha256": "1389409ea3b3fab298d251a52ef58698ce53ac88d3aabbfbf8e3bc2c83df963a"
+    },
+    "wear": {
+      "artifact": 12526877324,
+      "size": 5109898,
+      "sha256": "0e559ff65e09a97f7546c427139566ba601a14282f9fcdaf3c639f9cc899dbd8"
+    }
+  },
+  "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+  "package": "com.repforge.app",
+  "versionName": "1.3.71-native-test",
+  "versionCode": 2736,
+  "releaseDexContainsMeasuredProtocols": true,
+  "unitXmlArtifact": 12526528251,
+  "verificationArtifact": 12526133665,
+  "productSource": "40384e76feefbefa9d12b57d314e8cb63b08b627",
+  "androidSourceTree": "8c4681b0dee7b1cffce5d2b2fb53372b976d95aa",
+  "branch": "feat/native-android-migration",
+  "conclusion": "success",
+  "workflowRunAttempt": 1,
+  "wearUi": {
+    "tests": 183,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "caseIdentitiesMatchPreviousGate": true,
+    "shards": [
+      {
+        "shard": 0,
+        "artifact": 12526847510,
+        "tests": 68,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "homeFocusedBeforeInstrumentation": true
+      },
+      {
+        "shard": 1,
+        "artifact": 12527410717,
+        "tests": 59,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "homeFocusedBeforeInstrumentation": true
+      },
+      {
+        "shard": 2,
+        "artifact": 12526169237,
+        "tests": 56,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "homeFocusedBeforeInstrumentation": true
+      }
+    ],
+    "derivedXml": "docs/builds/native-40384e7/wear-round-derived.xml"
+  },
+  "signedUpgrade": {
+    "verified": true,
+    "baselines": [
+      {
+        "tag": "v1.3.71",
+        "artifact": 12526578045,
+        "seedStatus": "ok",
+        "verifyStatus": "ok",
+        "uninstallOrClear": false
+      },
+      {
+        "tag": "v1.3.71-perf-20261022",
+        "artifact": 12526058962,
+        "seedStatus": "ok",
+        "verifyStatus": "ok",
+        "uninstallOrClear": false
+      }
+    ],
+    "derivedXml": "docs/builds/native-40384e7/signed-upgrade-derived.xml"
+  },
+  "previousFunctionalCheckpoint": "docs/builds/2026-10-23-native-gps-rest.json",
+  "liveInstallApproved": false,
+  "physicalPhoneWatch7Tested": false,
+  "fullFunctionalParityVerified": false,
+  "backupRestoreFullRoundTripVerified": false,
+  "integratedNativePhoneUiVerified": false,
+  "mainMerge": false,
+  "changes": [
+    "manual measured OK uses native command/transaction/receipt/undo with matching input values",
+    "bilateral manual OK requires both positive sides; distance requires positive seconds and distance",
+    "observed stopwatch work and implicit pauses share the native time ledger; manual typed seconds are not observed clock time",
+    "GPS elapsed capture is credited once per measurement ID; undo preserves observed physical time",
+    "live time summary uses memory only; no additional permanent idle-stopwatch SQLite writes",
+    "optional collapsed workout-specific interval settings and explicit automatic start for unilateral timed sets",
+    "only interval work credits set seconds; partial explicit stop retains time without marking done",
+    "late retired interval callbacks and stale UI timer targets rejected; original lower stopwatch retained",
+    "legacy completeSet restrictions/fingerprint and Wear product code unchanged"
+  ],
+  "remaining": [
+    "quick/outdoor start with remembered GPS choice and imported draft continuation",
+    "general manual/non-autoAdvance interval mode and global presets",
+    "combined watch/phone route segment UI after ownership transfer",
+    "remaining native Calendar/Coach/catalog/locales and bounded journal performance",
+    "integrated native phone UI and full backup/restore round trip",
+    "physical Phone/Watch7 and real two-device offline sync"
+  ],
+  "supersededRuns": [
+    {
+      "source": "a5f4cd827059436c105e79e20fb49ecfb9660407",
+      "run": 40010868723,
+      "conclusion": "failure",
+      "reason": "Missing SystemClock import in new interval stop; corrected by 40384e7 before tests."
+    }
+  ],
+  "releaseDexContainsObservedTimeLedger": true
+}

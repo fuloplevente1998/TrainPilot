@@ -1,6 +1,23 @@
 # TrainPilot – Natív Android-migráció forrás-visszaállítási állapota
 
-## Legfrissebb kapu – GPS és valódi pihenővezérlés (2026-10-23)
+## Legfrissebb kapu – kézi mért rögzítés és időnapló (2026-10-23)
+
+**`40384e7` / [40011226981](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40011226981) teljes SUCCESS**.
+Kézi idő/táv OK a közös natív record/receipt/undo tranzakcióban, kétoldali és távvalidálással.
+Megfigyelt stopper/GPS/interval idő közös naplóban; folytatás/undo/reset nem dupláz
+és nem töröl fizikai időt. Kézi megadott idő nem gyárt megfigyelt időt; kiesett
+folyamatidőt nem találunk ki. Opcionális összecsukott, edzésre érvényes intervallum/pihenő,
+külön automatikus intervallumindítás egyoldali időalapú sorozathoz; pihenő nem sorozatidő.
+Részleges stop megőriz, nem teljesít; késői visszavont timer elutasítva.
+**Telefon 358/358 + Wear 167/167**, az előző 505 unit-eset megmaradt, +20.
+Kerek UI **183/183**, eredeti/gyorsított release-ről signed upgrade **2/2**,
+nulla hiba/kihagyás. Eredeti signer/csomag/verzió/hash és új release DEX ellenőrizve.
+Verzió változatlan **1.3.71-native-test /2736**. [Bizonylat és APK-k](docs/builds/2026-10-23-native-measured-intervals.json).
+**Élő adatokra telepítés STOP; main `7473b30` változatlan.** További intervallummód/preset,
+gyors/outdoor, draft, Naptár/Coach, fordítás/nagy napló, integrált telefonos UI,
+teljes backup/restore és fizikai Phone/Watch7 még hátra van. A következő szakaszok korábbi pillanatképek.
+
+## Korábbi kapu – GPS és valódi pihenővezérlés (2026-10-23)
 
 **`922b6b7` / [40000812477](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40000812477) teljes SUCCESS**, termékkód `e164ef3`.
 GPS set/route kötés, tartós explicit pozitív stop natív record/undo útján, külön
