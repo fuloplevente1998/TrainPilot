@@ -1,11 +1,12 @@
 package com.repforge.app.ui.workout
-import com.repforge.app.PhoneWorkoutPlans
 import com.repforge.app.TrainPilotWorkoutFinalization
 import com.repforge.app.NativeGpsMeasurement
 import com.repforge.app.NativeTimerTarget
 import com.repforge.app.ui.journal.RouteCoordinatesUiModel
 import com.repforge.app.ui.journal.WorkoutRouteCoordinates
 import com.repforge.app.NativeSetStopwatch
+import com.repforge.app.NativeMeasuredTime
+import com.repforge.app.NativeMeasuredSet
 import com.repforge.app.NativeWorkoutTarget
 import com.repforge.app.NativeWorkoutEditing
 import com.repforge.app.NativeWorkoutStartValues
@@ -22,8 +23,6 @@ import com.repforge.app.ActiveWorkoutStore
 import com.repforge.app.AppHapticsManager
 import com.repforge.app.DistanceTrackingService
 import com.repforge.app.IntervalTimerService
-import com.repforge.app.PersonalRecordCalculator226
-import com.repforge.app.PhoneGpsRoute193
 import com.repforge.app.PhoneOwnership193
 import com.repforge.app.PhoneWorkoutExecution
 import com.repforge.app.StoredPhotoMetadata
@@ -111,6 +110,16 @@ data class ActiveWorkoutUiState(
     val timerWorkoutId: String = "",
     val timerGeneration: Long = 0L,
     val timerRestOnly: Boolean = false,
+    val timerStopped: Boolean = true,
+    val timerInterrupted: Boolean = false,
+    val intervalWork: Int = 30,
+    val intervalRest: Int = 90,
+    val intervalRounds: Int = 1,
+    val intervalSound: Boolean = true,
+    val intervalVibration: Boolean = true,
+    val measuredWorkSeconds: Long? = null,
+    val measuredRestSeconds: Long? = null,
+    val measuredPauseSeconds: Long? = null,
     val stopwatchSetId: String = "",
     val stopwatchSide: String = "",
     val stopwatchSeconds: Long = 0L,
@@ -156,6 +165,12 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     val uiState: StateFlow<ActiveWorkoutUiState> = _uiState.asStateFlow()
 
     private var lowerStopwatch: JSONObject? = null
+    private var timeFrame: JSONObject? = null
+    private var latestTimer: JSONObject? = null
+    private var timeTotals: NativeMeasuredTime.Totals? = null
+    private var timeClockMs = 0L
+    private var timeClockPauseMs = 0L
+    private var timeSummaryAt = 0L
 
     init {
         viewModelScope.launch {
@@ -185,6 +200,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
         viewModelScope.launch {
             IntervalTimerService.timerStateFlow.collect { timerObj ->
                 if (timerObj.length() > 0) {
+                    latestTimer = JSONObject(timerObj.toString())
                     val remainingMs = timerObj.optLong("remainingMs", 0L)
                     val totalMs = timerObj.optLong("totalMs", 0L)
                     _uiState.value = _uiState.value.copy(
@@ -192,6 +208,8 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
                         timerWorkoutId = timerObj.optString("workoutId"),
                         timerGeneration = timerObj.optLong("generation"),
                         timerRestOnly = timerObj.optBoolean("restOnly"),
+                        timerStopped = timerObj.optBoolean("stopped"),
+                        timerInterrupted = timerObj.optBoolean("interrupted"),
                         timerRunning = timerObj.optBoolean("running", false),
                         timerPaused = timerObj.optBoolean("stopped", false) || timerObj.optBoolean("interrupted", false),
                         timerPhase = timerObj.optString("phase", "ready"),
@@ -200,6 +218,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
                         timerRound = timerObj.optInt("round", 1),
                         timerRounds = timerObj.optInt("rounds", 1)
                     )
+                    if (SystemClock.elapsedRealtime() - timeSummaryAt >= 1000L || !timerObj.optBoolean("running")) refreshTimeSummary()
                 }
             }
         }
@@ -323,6 +342,10 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
         }
 
         lowerStopwatch = snapshot.optJSONObject(NativeSetStopwatch.FIELD)
+        timeFrame = JSONObject(snapshot.toString())
+        refreshTimeSummary()
+        val config = snapshot.optJSONObject("timerConfig") ?: JSONObject()
+        val selected = snapshot.optJSONArray("exercises")?.optJSONObject(currentExIdx)
         _uiState.value = _uiState.value.copy(
             workoutId = workoutId,
             generation = snapshot.optLong("generation"),
@@ -335,6 +358,11 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
             canTakeBack = timerOwner == "watch",
             canHandOver = timerOwner == "phone" && !isPaused,
             currentExerciseIndex = currentExIdx,
+            intervalWork = config.optInt("work", 30),
+            intervalRest = selected?.optInt("restSeconds162", config.optInt("rest", 90)) ?: config.optInt("rest", 90),
+            intervalRounds = config.optInt("rounds", 1),
+            intervalSound = config.optBoolean("sound", true),
+            intervalVibration = config.optBoolean("vibration", true),
             gpsMeasurementId = snapshot.optJSONObject(NativeGpsMeasurement.FIELD)?.optString("id").orEmpty(),
             gpsBoundSetId = snapshot.optJSONObject(NativeGpsMeasurement.FIELD)?.optString("setId").orEmpty(),
             gpsBindingState = snapshot.optJSONObject(NativeGpsMeasurement.FIELD)?.optString("state").orEmpty(),
@@ -350,11 +378,25 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
 
     private fun refreshStopwatchUi() {
         val clock = lowerStopwatch
+        val totals = timeTotals
+        val ownsClock = _uiState.value.timerOwner == "phone"
+        val delta = if (ownsClock && !_uiState.value.isPaused && clock != null && NativeSetStopwatch.running(clock)) (NativeSetStopwatch.elapsed(clock) - timeClockMs).coerceAtLeast(0L) else 0L
+        val pauseDelta = if (ownsClock) clock?.let { (NativeSetStopwatch.pausedElapsed(it) - timeClockPauseMs).coerceAtLeast(0L) } ?: 0L else 0L
         _uiState.value = _uiState.value.copy(stopwatchSetId = clock?.optString("setId").orEmpty(),
             stopwatchSide = clock?.optString("side").orEmpty(),
             stopwatchSeconds = clock?.let { NativeSetStopwatch.elapsed(it) / 1000L } ?: 0L,
             stopwatchRunning = clock?.let { NativeSetStopwatch.running(it) } == true &&
-                !_uiState.value.isPaused && _uiState.value.timerOwner == "phone")
+                !_uiState.value.isPaused && _uiState.value.timerOwner == "phone",
+            measuredWorkSeconds = totals?.let { (it.workMs + delta) / 1000L }, measuredRestSeconds = totals?.restMs?.div(1000L),
+            measuredPauseSeconds = totals?.let { (it.pausedMs + pauseDelta) / 1000L })
+    }
+
+    private fun refreshTimeSummary() {
+        val now = SystemClock.elapsedRealtime()
+        timeTotals = timeFrame?.let { runCatching { NativeMeasuredTime.summary(it, latestTimer, now) }.getOrNull() }
+        timeClockMs = lowerStopwatch?.let { NativeSetStopwatch.elapsed(it, now) } ?: 0L
+        timeClockPauseMs = lowerStopwatch?.let { NativeSetStopwatch.pausedElapsed(it, now) } ?: 0L
+        timeSummaryAt = now
     }
 
     fun toggleSetStopwatch(target: NativeWorkoutTarget, side: String) {
@@ -442,52 +484,41 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
             return
         }
 
-        if (!wasDone) {
-            val repUnit = ex.optString("repUnit", "ism.")
-            val isBilateral = WorkoutStatsCalculator.isBilateralUnit(repUnit, ex.optString("id"))
-            val left = set.optInt("leftSeconds", 0)
-            val right = set.optInt("rightSeconds", 0)
-            val reps = set.optString("reps", "0").toIntOrNull() ?: 0
-            val valid = if (NativeGpsMeasurement.distance(ex)) reps > 0 && set.optDouble("distanceMeters", 0.0) > 0.0
-                else if (isBilateral) left > 0 && right > 0 else reps > 0
-            if (!valid) return
-
-            val before = JSONObject(current.toString())
-            set.put("done", true)
-            current.put("currentExercise", resolved.exerciseIndex)
-            val recordId = UUID.randomUUID().toString()
-            val target = JSONObject().put("exerciseId", ex.getString("id")).put("setId", set.getString("setId"))
-            current.put("lastRecord188", WorkoutUndo188.capture(before, current, target, recordId))
-
-            // Haptikus megerősítés (#227)
-            viewModelScope.launch {
-                val settings = settingsStore.current()
-                AppHapticsManager.setRecorded(context, settings.hapticSetRecorded227)
-            }
-
-            // Pihenőidő indítása
-            val restSec = current.optInt("restSeconds", 90)
-            current.put("restEndAt", System.currentTimeMillis() + restSec * 1000L)
-            saveAndPublish(current)
-
-            // Indítsuk a telefonos intervallum időzítőt automatikusan
-            viewModelScope.launch {
-                runCatching {
-                    val planTransition = PhoneWorkoutExecution.store(context).snapshot()?.let {
-                        PhoneWorkoutPlans.afterRecord(it, resolved.exerciseIndex)
-                    }
-                    val plan = planTransition?.optJSONObject("plan")
-                    if (plan != null) {
-                        IntervalTimerService.startPrepared(plan)
-                    }
+        try {
+            if (!wasDone && NativeMeasuredSet.supported(ex)) {
+                NativeWorkoutEditing.completeMeasuredSet(context, target)
+                viewModelScope.launch { AppHapticsManager.setRecorded(context, settingsStore.current().hapticSetRecorded227) }
+            } else if (wasDone) {
+                val last = current.optJSONObject("lastRecord188")
+                if (last != null && last.optString("exerciseId") == target.exerciseId && last.optString("setId") == target.setId) {
+                    NativeWorkoutEditing.undo(context, last.getString("recordId"))
+                } else {
+                    set.put("done", false).remove("actualRir")
+                    saveAndPublish(current)
                 }
             }
-        } else {
-            // Kipipálás visszavonása sima érintéssel (ha nem az Undo gombbal történik)
-            set.put("done", false)
-            set.remove("actualRir")
-            saveAndPublish(current)
-        }
+        } catch (error: Exception) { showStatus(error.message ?: "A mért értékek nem rögzíthetők.") }
+    }
+
+    fun configureIntervals(target: NativeWorkoutTarget, work: String, rest: String, rounds: String, sound: Boolean, vibration: Boolean) {
+        if (editableSnapshot() == null) return
+        try {
+            val config = JSONObject().put("work", work.toInt()).put("rest", rest.toInt()).put("rounds", rounds.toInt())
+                .put("sound", sound).put("vibration", vibration)
+            NativeWorkoutEditing.configureIntervals(context, target, config)
+        } catch (error: Exception) { showStatus("Érvényes intervallumot adj meg: munka 1–3600 mp, pihenő 0–3600 mp, körök 1–100.") }
+    }
+
+    fun startIntervals(target: NativeWorkoutTarget) {
+        if (editableSnapshot() == null) return
+        try { NativeWorkoutEditing.startIntervals(context, target) }
+        catch (error: Exception) { showStatus(error.message ?: "Az intervallum nem indítható.") }
+    }
+
+    fun stopIntervals(target: NativeTimerTarget) {
+        if (editableSnapshot() == null) return
+        try { NativeWorkoutEditing.stopIntervals(context, target) }
+        catch (error: Exception) { showStatus(error.message ?: "Az intervallum nem állítható le.") }
     }
 
     fun setSetRir(target: NativeWorkoutTarget, rir: Int?) {

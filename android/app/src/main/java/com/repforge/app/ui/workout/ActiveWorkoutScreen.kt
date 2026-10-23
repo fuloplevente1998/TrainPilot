@@ -231,15 +231,25 @@ fun ActiveWorkoutScreen(
                         onRemoveSet = { sIdx -> target(sIdx)?.let { viewModel.removeSetFromExercise(it) } },
                         stopwatch = {
                             val nextIndex = ex.sets.indexOfFirst { !it.isCompleted }
+                            val intervalActive = state.timerWorkoutId == state.workoutId && state.timerGeneration == state.generation &&
+                                !state.timerRestOnly && state.timerKey.isNotEmpty() && !state.timerStopped && state.timerPhase != "complete"
                             val isDistance = ex.measurementType == "distance" || ex.repUnit.trim().lowercase() in setOf("m", "km")
                             if (isDistance) {
                                 DistanceMeasurementPanel(state, ex,
                                     onToggle = { measurementId -> if (nextIndex >= 0) target(nextIndex)?.let { requestGps(it, measurementId) } },
                                     onOpenRoute = viewModel::openRouteMap)
-                            } else if (ex.isTimed && nextIndex >= 0) {
+                            } else if (ex.isTimed && nextIndex >= 0 && !intervalActive) {
                                 LowerSetStopwatch(state, ex.sets[nextIndex], ex.isBilateral,
                                     onToggle = { side -> target(nextIndex)?.let { viewModel.toggleSetStopwatch(it, side) } },
                                     onReset = { target(nextIndex)?.let { viewModel.resetSetStopwatch(it) } })
+                            }
+                            target(if (nextIndex >= 0) nextIndex else 0)?.let { renderedTarget ->
+                                val renderedInterval = NativeTimerTarget(renderedTarget.workoutId, renderedTarget.generation, state.timerKey)
+                                IntervalOptions(state, ex, intervalActive,
+                                    onSave = { work, rest, rounds, sound, vibration -> viewModel.configureIntervals(renderedTarget, work, rest, rounds, sound, vibration) },
+                                    onStart = { viewModel.startIntervals(renderedTarget) },
+                                    onStop = { viewModel.stopIntervals(renderedInterval) },
+                                    onSkip = { viewModel.skipRestTimer(renderedInterval) })
                             }
                         }
                     )
@@ -298,7 +308,7 @@ fun ActiveWorkoutScreen(
                 .padding(horizontal = 16.dp, vertical = 10.dp)
         ) {
             // Ha pihenőidő fut, élő pihenősáv jelenik meg gombokkal
-            if (state.timerPhase == "rest" && state.timerRemainingSec > 0 && state.timerWorkoutId == state.workoutId &&
+            if (state.timerRestOnly && state.timerPhase == "rest" && state.timerRemainingSec > 0 && state.timerWorkoutId == state.workoutId &&
                 state.timerGeneration == state.generation && state.timerOwner == "phone") {
                 val renderedTimer = NativeTimerTarget(state.workoutId, state.generation, state.timerKey)
                 RestTimerFloatingBar(
@@ -481,6 +491,9 @@ fun ActiveWorkoutHeader(
                 }
             }
 
+            Text("Mért munka: ${measuredTime(state.measuredWorkSeconds)} · Pihenő: ${measuredTime(state.measuredRestSeconds)}",
+                color = colors.muted, fontSize = 11.sp)
+            if ((state.measuredPauseSeconds ?: 0L) > 0) Text("Mérési szünet: ${measuredTime(state.measuredPauseSeconds)}", color = colors.muted, fontSize = 11.sp)
             Spacer(Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -637,6 +650,69 @@ private fun DistanceMeasurementPanel(state: ActiveWorkoutUiState, exercise: Acti
         if (bound && state.gpsError.isNotEmpty()) Text(state.gpsError, color = colors.dangerText, fontSize = 12.sp)
         val route = exercise.sets.lastOrNull { it.gpsRouteKey.isNotBlank() }?.gpsRouteKey
         if (route != null) TextButton(onClick = { onOpenRoute(route) }) { Text("Térkép", color = colors.accent) }
+    }
+}
+
+private fun measuredTime(seconds: Long?): String = seconds?.let {
+    "${it / 60}:${(it % 60).toString().padStart(2, '0')}"
+} ?: "—"
+
+@Composable
+private fun IntervalOptions(
+    state: ActiveWorkoutUiState,
+    exercise: ActiveExerciseUiModel,
+    active: Boolean,
+    onSave: (String, String, String, Boolean, Boolean) -> Unit,
+    onStart: () -> Unit,
+    onStop: () -> Unit,
+    onSkip: () -> Unit
+) {
+    val colors = LocalTrainPilotColors.current
+    val identity = "${state.workoutId}:${state.generation}:${exercise.sets.firstOrNull()?.setId}"
+    var expanded by remember(identity) { mutableStateOf(false) }
+    var work by remember(identity, state.intervalWork) { mutableStateOf(state.intervalWork.toString()) }
+    var rest by remember(identity, state.intervalRest) { mutableStateOf(state.intervalRest.toString()) }
+    var rounds by remember(identity, state.intervalRounds) { mutableStateOf(state.intervalRounds.toString()) }
+    var sound by remember(identity, state.intervalSound) { mutableStateOf(state.intervalSound) }
+    var vibration by remember(identity, state.intervalVibration) { mutableStateOf(state.intervalVibration) }
+    val editable = state.timerOwner == "phone" && !state.isFinishing && !state.isTransferPending
+    val singleTimed = exercise.isTimed && !exercise.isBilateral && exercise.measurementType != "distance"
+    val saved = work == state.intervalWork.toString() && rest == state.intervalRest.toString() && rounds == state.intervalRounds.toString() &&
+        sound == state.intervalSound && vibration == state.intervalVibration
+    Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+        TextButton(onClick = { expanded = !expanded }, modifier = Modifier.fillMaxWidth()) {
+            Text(if (active) "Intervallum · ${if (state.timerInterrupted) "megszakadt" else if (state.timerPhase == "work") "Munka" else "Pihenő"} ${measuredTime(state.timerRemainingSec.toLong())} ${if (expanded) "▴" else "▾"}"
+                else "Intervallumok és pihenő ${if (expanded) "▴" else "▾"}", color = colors.accent)
+        }
+        if (expanded) {
+            Text("Ehhez az edzéshez. A módosítás a következő indításra érvényes.", color = colors.muted, fontSize = 12.sp)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (singleTimed) OutlinedTextField(value = work, onValueChange = { work = it }, label = { Text("Munka (mp)") },
+                    modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), enabled = editable)
+                OutlinedTextField(value = rest, onValueChange = { rest = it }, label = { Text("Pihenő (mp)") },
+                    modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), enabled = editable)
+                if (singleTimed) OutlinedTextField(value = rounds, onValueChange = { rounds = it }, label = { Text("Körök") },
+                    modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), enabled = editable)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = sound, onCheckedChange = { sound = it }, enabled = editable); Text("Hang", color = colors.text, modifier = Modifier.weight(1f))
+                }
+                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = vibration, onCheckedChange = { vibration = it }, enabled = editable); Text("Rezgés", color = colors.text, modifier = Modifier.weight(1f))
+                }
+            }
+            TextButton(onClick = { onSave(work, rest, rounds, sound, vibration) }, enabled = editable && !saved) { Text("Beállítás mentése", color = colors.accent) }
+            if (active) {
+                Text("${state.timerRound}. kör / ${state.timerRounds}. A fejléc szünetgombja a mérést is szünetelteti.", color = colors.muted, fontSize = 12.sp)
+                if (state.timerPhase == "rest") TextButton(onClick = onSkip, enabled = editable && state.timerRunning && !state.isPaused) { Text("Pihenő kihagyása", color = colors.accent) }
+                Button(onClick = onStop, enabled = editable, modifier = Modifier.fillMaxWidth().height(48.dp)) { Text("Intervallum leállítása") }
+            } else if (singleTimed && exercise.sets.any { !it.isCompleted }) {
+                Text("Opcionális automatikus mérés: a körök végén elkészíti a sorozatot, majd a következőt méri. Pihenőt nem számít sorozatidőnek.", color = colors.muted, fontSize = 12.sp)
+                Button(onClick = onStart, enabled = editable && saved && !state.isPaused && !state.stopwatchRunning && !state.isGpsActive,
+                    modifier = Modifier.fillMaxWidth().height(48.dp)) { Text("Automatikus intervallum indítása") }
+            }
+        }
     }
 }
 
