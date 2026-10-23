@@ -22,6 +22,30 @@ adb install -r wear-ui/app/wear-debug.apk
 adb install -r -t wear-ui/test/wear-debug-androidTest.apk
 adb shell input keyevent KEYCODE_WAKEUP
 adb shell wm dismiss-keyguard
+# Disabling the wizard can leave its already queued windows/remote animations
+# draining during the first tests. Bring the real home window to the front and
+# require stable focus before instrumentation, rather than racing those tasks.
+# This changes only this disposable emulator, never the product's focus guards.
+adb shell settings put system screen_off_timeout 1800000
+adb shell settings put secure screensaver_enabled 0
+adb shell am start -W -a android.intent.action.MAIN -c android.intent.category.HOME
+stable_focus=0
+home_ready=false
+for check in $(seq 1 30); do
+  current_focus="$(adb shell dumpsys window windows | tr -d '\r' | sed -n '/mCurrentFocus=/p')"
+  if [[ "$current_focus" == *com.google.android.wearable.sysui*SysUiActivity* ]]; then
+    stable_focus=$((stable_focus + 1))
+    if ((stable_focus >= 3)); then home_ready=true; break; fi
+  else
+    stable_focus=0
+  fi
+  sleep 1
+done
+adb shell dumpsys window windows > wear-ui/results/windows-before.txt
+if [[ "$home_ready" != true ]]; then
+  echo 'Wear emulator home never acquired stable focus before instrumentation.' >&2
+  exit 1
+fi
 adb shell dumpsys battery > wear-ui/results/battery-before.txt
 adb shell am instrument -w -r -e numShards 3 -e shardIndex "${WEAR_SHARD:?}" com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner | tee wear-ui/results/instrumentation.txt
 grep -E 'OK \([1-9][0-9]* tests?\)' wear-ui/results/instrumentation.txt

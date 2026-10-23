@@ -927,9 +927,22 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
         fun rotate(pixels: Float) {
             // Window/lifecycle focus can arrive after Compose's first idle frame.
             // The real editor deliberately ignores rotary input before that.
-            compose.waitUntil(5_000) {
-                compose.onAllNodes(hasTestTag("wear-value-editor") and isFocused())
-                    .fetchSemanticsNodes().size == 1
+            try {
+                compose.waitUntil(5_000) {
+                    compose.onAllNodes(hasTestTag("wear-value-editor") and isFocused())
+                        .fetchSemanticsNodes().size == 1
+                }
+            } catch (error: ComposeTimeoutException) {
+                // Capture the failing window, not only the last window after all
+                // remaining tests. Keep the actual focus requirement unchanged.
+                val windows = InstrumentationRegistry.getInstrumentation().uiAutomation
+                    .executeShellCommand("dumpsys window windows")
+                android.os.ParcelFileDescriptor.AutoCloseInputStream(windows).bufferedReader().use { reader ->
+                    reader.lineSequence().filter { it.contains("mCurrentFocus=") || it.contains("mFocusedApp=") }
+                        .forEach { println("ROTARY_FOCUS_TIMEOUT: $it") }
+                }
+                println(compose.onRoot(useUnmergedTree = true).printToString())
+                throw error
             }
             compose.onNodeWithTag("wear-value-editor").performRotaryScrollInput { rotateToScrollVertically(pixels) }
         }
