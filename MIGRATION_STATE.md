@@ -1,6 +1,21 @@
 # TrainPilot – Natív Android-migráció forrás-visszaállítási állapota
 
-## Legfrissebb kapu – kézi mért rögzítés és időnapló (2026-10-23)
+## Legfrissebb kapu – gyors/kültéri natív indítás (2026-10-23)
+
+**`9da639d` / [40017855126](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40017855126) teljes SUCCESS, 6/6 job**.
+Valódi könyvtárválasztó és programfüggetlen quick session; közös #228 előtöltés,
+üres mért értékek, stabil workout/set ID. Indításkor látható, aktivitásonként
+megjegyzett GPS-választás; csak új explicit indítás ad egyszeri memóriabeli GPS-szándékot.
+Aktív/watch/recovery/draft és hibás tárolás védett; régi draft nem törlődik.
+**Telefon 373/373 + Wear 167/167**, mind az előző 525 unit-eset megmaradt, +15.
+Kerek UI **183/183**, eredeti/gyorsított release-ről signed upgrade **2/2**, 0 hiba/kihagyás.
+Letöltött APK-k: eredeti signer/csomag/verzió/hash/ZIP-épség és új release DEX ellenőrizve.
+[Teljes bizonylat](docs/builds/2026-10-23-native-quick-outdoor.json).
+Wear/shared termékkód, main és verzió változatlan. **Teljes app/saját adatokra telepítés STOP.**
+Következő: importált draft natív folytatása; programnapi kezdeti GPS-választás,
+integrált telefonos UI és további paritás/backup/restore/készülékes kapuk külön hátra.
+
+## Korábbi kapu – kézi mért rögzítés és időnapló (2026-10-23)
 
 **`40384e7` / [40011226981](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40011226981) teljes SUCCESS**.
 Kézi idő/táv OK a közös natív record/receipt/undo tranzakcióban, kétoldali és távvalidálással.

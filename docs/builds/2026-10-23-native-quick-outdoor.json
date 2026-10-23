@@ -1,0 +1,196 @@
+{
+  "applicationSource": "9da639d09653ce46cd1eed295b24664ca53bb3df",
+  "workflowRun": 40017855126,
+  "unit": {
+    "app": {
+      "tests": 373,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "wear": {
+      "tests": 167,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "previousVerifiedUnitCases": 525,
+  "previousCaseIdentitiesPreserved": true,
+  "newRegressionTests": [
+    {
+      "class": "com.repforge.app.NativeQuickWorkoutTest",
+      "name": "executionStorageFailureDoesNotPublishAndRetryCreatesOneWorkout"
+    },
+    {
+      "class": "com.repforge.app.NativeQuickWorkoutTest",
+      "name": "explicitOptOutIsRememberedWithoutChangingAnotherActivity"
+    },
+    {
+      "class": "com.repforge.app.NativeQuickWorkoutTest",
+      "name": "importedDraftIsUnchangedAndBlocksNewQuickWorkout"
+    },
+    {
+      "class": "com.repforge.app.NativeQuickWorkoutTest",
+      "name": "launchTargetRejectsPauseOwnerFinalizationAndChangedSelection"
+    },
+    {
+      "class": "com.repforge.app.NativeQuickWorkoutTest",
+      "name": "missingExerciseCannotCreateAnEmptyWorkoutOrSaveConsent"
+    },
+    {
+      "class": "com.repforge.app.NativeQuickWorkoutTest",
+      "name": "optedInOutdoorStartReturnsOneEphemeralTargetAndRemembersTheActivity"
+    },
+    {
+      "class": "com.repforge.app.NativeQuickWorkoutTest",
+      "name": "outdoorAllowlistRejectsIndoorAndCustomDistanceActivities"
+    },
+    {
+      "class": "com.repforge.app.NativeQuickWorkoutTest",
+      "name": "preferenceIsPerActivityAndDoesNotOptInOtherOutdoorExercises"
+    },
+    {
+      "class": "com.repforge.app.NativeQuickWorkoutTest",
+      "name": "quickCandidateCopiesExerciseAndUsesUniqueSetAndWorkoutIds"
+    },
+    {
+      "class": "com.repforge.app.NativeQuickWorkoutTest",
+      "name": "quickStartNeedsNoProgramAndDurablySharesItsIdsWithTheEditor"
+    },
+    {
+      "class": "com.repforge.app.NativeQuickWorkoutTest",
+      "name": "recoveredNativeSessionNeverReplaysAnOldGpsStartIntent"
+    },
+    {
+      "class": "com.repforge.app.NativeQuickWorkoutTest",
+      "name": "repeatedStartResumesTheSameWorkoutWithoutGpsOrConsentChange"
+    },
+    {
+      "class": "com.repforge.app.NativeQuickWorkoutTest",
+      "name": "restoreFenceLeavesStartAndPreferenceUntouched"
+    },
+    {
+      "class": "com.repforge.app.NativeQuickWorkoutTest",
+      "name": "strengthQuickStartHasBlankActualValuesAndCannotOptIntoGps"
+    },
+    {
+      "class": "com.repforge.app.NativeQuickWorkoutTest",
+      "name": "watchOwnedMirrorWinsWithoutLocalExecutionOrGpsIntent"
+    }
+  ],
+  "apks": {
+    "phone": {
+      "artifact": 12529971616,
+      "size": 3163509,
+      "sha256": "a3872eb3d18329bb25b19efdd2c56d846da584140836f5f5ba60bfa211909616",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/40017855126/artifacts/12529971616"
+    },
+    "wear": {
+      "artifact": 12529681897,
+      "size": 5109898,
+      "sha256": "e6cbec996d8eb237ef184fcd825144e503468e62d3d18bbfe3e0df2264a04a6f",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/40017855126/artifacts/12529681897"
+    }
+  },
+  "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+  "package": "com.repforge.app",
+  "versionName": "1.3.71-native-test",
+  "versionCode": 2736,
+  "releaseDexContainsMeasuredProtocols": true,
+  "unitXmlArtifact": 12530251011,
+  "verificationArtifact": 12530251003,
+  "productSource": "9da639d09653ce46cd1eed295b24664ca53bb3df",
+  "androidSourceTree": "7bd8de9c7beaa2b934a0a5ee737c6f610a812de3",
+  "branch": "feat/native-android-migration",
+  "conclusion": "success",
+  "workflowRunAttempt": 1,
+  "wearUi": {
+    "tests": 183,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "caseIdentitiesMatchPreviousGate": true,
+    "shards": [
+      {
+        "shard": 0,
+        "artifact": 12529548396,
+        "tests": 68,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "homeFocusedBeforeInstrumentation": true
+      },
+      {
+        "shard": 1,
+        "artifact": 12529328413,
+        "tests": 59,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "homeFocusedBeforeInstrumentation": true
+      },
+      {
+        "shard": 2,
+        "artifact": 12530251742,
+        "tests": 56,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "homeFocusedBeforeInstrumentation": true
+      }
+    ],
+    "derivedXml": "docs/builds/native-9da639d/wear-round-derived.xml"
+  },
+  "signedUpgrade": {
+    "verified": true,
+    "baselines": [
+      {
+        "tag": "v1.3.71",
+        "artifact": 12529203562,
+        "seedStatus": "ok",
+        "verifyStatus": "ok",
+        "uninstallOrClear": false
+      },
+      {
+        "tag": "v1.3.71-perf-20261022",
+        "artifact": 12529831806,
+        "seedStatus": "ok",
+        "verifyStatus": "ok",
+        "uninstallOrClear": false
+      }
+    ],
+    "derivedXml": "docs/builds/native-9da639d/signed-upgrade-derived.xml"
+  },
+  "previousFunctionalCheckpoint": "docs/builds/2026-10-23-native-measured-intervals.json",
+  "liveInstallApproved": false,
+  "physicalPhoneWatch7Tested": false,
+  "fullFunctionalParityVerified": false,
+  "backupRestoreFullRoundTripVerified": false,
+  "changes": [
+    "Home quick/outdoor actions open the real exercise picker instead of nonexistent program days",
+    "program-independent quick sessions use durable stable workout/set identities and common accepted strength prefill",
+    "existing session/watch mirror/durable native recovery cannot create a second workout or replay launch GPS",
+    "visible per-activity opt-in/out remembered only on explicit successful start; first default disabled",
+    "GPS launch intent is memory-only, consumed before readiness/permission; no process/navigation replay",
+    "existing precise permission/system location and native measurement ownership guards retained",
+    "GPS failure does not delete the workout; no fabricated route, coordinates or measured values",
+    "imported draft blocks a replacement start and remains byte-identical",
+    "quick addition uses common blank actual values/prefill and selects an existing exercise instead of duplicating it",
+    "HU/EN/DE/RO exercise picker and GPS consent text; original Wear product source unchanged"
+  ],
+  "remaining": [
+    "complete imported-draft continuation and program-day initial GPS choice",
+    "general manual/non-autoAdvance interval mode and global presets",
+    "combined watch/phone route segment UI after ownership transfer",
+    "remaining native Calendar/Coach/catalog/locales and bounded journal performance",
+    "integrated native phone Compose UI and full backup/restore round trip",
+    "physical Phone/Watch7 and real two-device offline sync"
+  ],
+  "supersededRuns": [],
+  "coreCommit": "3eb8eb4",
+  "releaseDexContainsQuickGpsChoice": true,
+  "mainReference": "7473b30f387eda54186c1e31830304ca12bd104f",
+  "wearAndSharedProductSourceUnchangedFromPreviousCheckpoint": true,
+  "newPhoneComposeUiDeviceTested": false
+}
