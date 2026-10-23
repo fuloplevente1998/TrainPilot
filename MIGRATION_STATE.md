@@ -6,8 +6,7 @@ A `51fdd94` forráson a telefon/Wear debug **és eredeti kulcsos release** lefor
 a csomagnév/verzió/tanúsítvány ellenőrzése sikeres. Letöltött XML: telefon
 265/265, Wear 167/167, 0 failure/error/skipped. Az emulátoros kapuk a teszteszközök
 hibáin álltak meg; az adatmigráció és a kerek UI még nem igazolt.
-Javítás: `8b01fb2`, [CI 39932459892](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39932459892)
-a rögzítéskor fut. [Aktuális átadás](docs/WORK_HANDOFF.md),
+A `8b01fb2` ismét 265/265 + 167/167 unit sikert adott, a régi app előkészítése és az `adb install -r` sikeres. A natív tesztrunner `Trace` hiánya miatt a szemantikus migráció még nem igazolt; Wear UI 182/183. Javítás: `23db630`, [CI 39934990786](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39934990786) a rögzítéskor fut. [Aktuális átadás](docs/WORK_HANDOFF.md),
 [bizonylat és artifactok](docs/builds/2026-10-23-native-migration-checkpoint.json),
 [funkcióhiányok](docs/NATIVE_PARITY_AUDIT.md).
 

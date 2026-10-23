@@ -1,8 +1,8 @@
 {
   "branch": "feat/native-android-migration",
-  "applicationSource": "51fdd947a9664e5c25023e6a0f3430cf1570b3c1",
-  "workflowRun": 39920303114,
-  "workflowStatusAtCheckpoint": "failure_in_emulator_harness",
+  "applicationSource": "8b01fb2d4ea3b4fb3a6548f259d826f359d77511",
+  "workflowRun": 39932459892,
+  "workflowStatusAtCheckpoint": "failure_in_release_instrumentation_and_one_rotary_ui_case",
   "versionName": "1.3.71-native-test",
   "versionCode": 2736,
   "applicationId": "com.repforge.app",
@@ -18,9 +18,9 @@
     "downloadedBinaryHashesAndSignersVerified": true
   },
   "verifiedUnitEvidence": {
-    "source": "51fdd947a9664e5c25023e6a0f3430cf1570b3c1",
-    "run": 39920303114,
-    "xmlArtifact": 12486254809,
+    "source": "8b01fb2d4ea3b4fb3a6548f259d826f359d77511",
+    "run": 39932459892,
+    "xmlArtifact": 12492278648,
     "phone": {
       "tests": 265,
       "failures": 0,
@@ -41,12 +41,53 @@
   "parityAudit": "docs/NATIVE_PARITY_AUDIT.md",
   "mainMerge": false,
   "latestAttempt": {
-    "source": "8b01fb2d4ea3b4fb3a6548f259d826f359d77511",
-    "run": 39932459892,
+    "source": "23db6301dcc0a783af469adc6db15ebffda87bb9",
+    "run": 39934990786,
     "status": "in_progress",
-    "changes": "Independent platform seed instrumentation, canonical shared fixture, Wear emulator x86"
+    "changes": "Keep androidx.tracing.Trace for release instrumentation; wait for rotary editor focus; Gradle 3GB heap/two workers and rotating build cache"
   },
   "signedApks": {
+    "source": "8b01fb2d4ea3b4fb3a6548f259d826f359d77511",
+    "run": 39932459892,
+    "phone": {
+      "artifact": 12491844883,
+      "sha256": "aa312ede5829668efd45214ad45a8886ae5c42b6fa6dd150cc4958fdbc052b2b"
+    },
+    "wear": {
+      "artifact": 12491874805,
+      "sha256": "c8d7498a48145fef20b1693c3e7c5be0afe9554909d0edaa5e931c007657bb60"
+    },
+    "verificationArtifact": 12492857071,
+    "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+    "packageAndVersionVerified": true
+  },
+  "emulatorHarnessFailures": {
+    "source": "8b01fb2d4ea3b4fb3a6548f259d826f359d77511",
+    "oldReleaseSeed": "success_on_both_baselines",
+    "packageInstallUpdate": "adb install -r succeeded on both baseline APKs",
+    "nativeSemanticVerification": "AndroidJUnitRunner startup fails: androidx.tracing.Trace removed by R8; no semantic data assertions executed",
+    "phoneResultsArtifacts": [
+      12492752960,
+      12492538671
+    ],
+    "wearUi": {
+      "tests": 183,
+      "passed": 182,
+      "failures": 1,
+      "skipped": 0,
+      "failedCase": "rotaryChangesOnlyTheOpenedFieldAndNeverSavesOrRetargetsImplicitly[160dp-font1]",
+      "actual": "5,5",
+      "expected": "6",
+      "unchangedProductionWearSource": true,
+      "nextChange": "Synchronize test injection with actual editor focus; preserve all value/save/stale-target assertions"
+    },
+    "nextAttemptInitialFailure": {
+      "source": "b9bccb8f0b3b7d3acb2fde46b6bab8172eb1073d",
+      "run": 39934571106,
+      "reason": "D8 Java heap exhaustion at the inherited 1536 MB limit; no test result"
+    }
+  },
+  "previousSignedApks": {
     "source": "51fdd947a9664e5c25023e6a0f3430cf1570b3c1",
     "run": 39920303114,
     "phone": {
@@ -62,10 +103,5 @@
     "verificationArtifact": 12487835640,
     "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
     "packageAndVersionVerified": true
-  },
-  "emulatorHarnessFailures": {
-    "wear": "android-30/android-wear has x86, not x86_64; corrected in 8b01fb2",
-    "phone": "Old app seed crashed before test: native-mapped AndroidX test runner references g8.l, absent in old R8 mapping; independent platform runner replaces it in 8b01fb2",
-    "dataMigrationResult": "not_yet_executed"
   }
 }
