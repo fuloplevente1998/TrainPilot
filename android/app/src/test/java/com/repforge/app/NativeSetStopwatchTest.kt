@@ -245,4 +245,16 @@ class NativeSetStopwatchTest {
         assertEquals(stopped, clock().toString())
         assertFalse(store().checkpointStopwatch("timed", target().generation, SystemClock.elapsedRealtime()))
     }
+
+    @Test fun ownershipRetirementPausesLowerStopwatchEvenWithoutIntervalTimeline() {
+        NativeWorkoutEditing.startStopwatch(context, target(), "single")
+        advance(4)
+        IntervalTimerService.stopForOwnership(context, "timed")
+        assertFalse(IntervalTimerService.armed("timed", target().generation))
+        assertFalse(NativeSetStopwatch.running(clock()))
+        advance(100)
+        assertEquals(4000L, NativeSetStopwatch.elapsed(clock()))
+        assertFalse(set().getBoolean("done"))
+        assertFalse(frame().has("lastRecord188"))
+    }
 }

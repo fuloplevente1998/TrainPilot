@@ -144,9 +144,16 @@ class IntervalTimerService : Service() {
         @JvmStatic
         fun stopForOwnership(context: Context, workoutId: String) {
             val s = instance
-            if (s != null && workoutId == s.workoutId) {
+            if (s != null && (workoutId == s.workoutId || workoutId == s.armedWorkoutId)) {
+                PhoneWorkoutExecution.store(context).checkpointStopwatch(s.stopwatchOwnerId, s.stopwatchOwnerGeneration,
+                    SystemClock.elapsedRealtime(), pause = true)
                 s.armedWorkoutId = ""
-                s.stopRun()
+                if (workoutId == s.workoutId) s.stopRun()
+                else {
+                    // An armed lower stopwatch need not have an interval timeline.
+                    s.stopForeground(STOP_FOREGROUND_REMOVE)
+                    s.stopSelf()
+                }
             }
         }
 

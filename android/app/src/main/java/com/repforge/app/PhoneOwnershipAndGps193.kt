@@ -579,6 +579,10 @@ internal object PhoneOwnership193 {
             throw IllegalStateException("Finish recording GPS values before transfer")
         }
         val status = PhoneWorkoutExecution.status(context)
+        if (frozen.optJSONObject(NativeSetStopwatch.FIELD)?.optBoolean("running") == true ||
+            status.optJSONObject("snapshot")?.optJSONObject(NativeSetStopwatch.FIELD)?.optBoolean("running") == true) {
+            throw IllegalStateException("Pause the set stopwatch before transfer")
+        }
         PhoneTimerCheckpoint193.verifyCanonical(frozen, status)
         val prepared = JSONObject(frozen.toString())
         prepared.remove("timerCheckpoint193")
