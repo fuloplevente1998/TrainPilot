@@ -23,3 +23,7 @@
 -keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
 -keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
 -keepclassmembers class * extends kotlinx.coroutines.CoroutineScope { *; }
+
+# AndroidJUnitRunner shares this runtime dependency with the tested release.
+# Its direct calls must survive R8 even when the app's own calls are inlined.
+-keep class androidx.tracing.Trace { *; }

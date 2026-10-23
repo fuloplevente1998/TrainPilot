@@ -924,7 +924,15 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
             ValueEditor(workout.value,field.value,{name,delta->changes.add(name to delta)},{backs++})
         } } }
         val detent=android.view.ViewConfiguration.get(InstrumentationRegistry.getInstrumentation().targetContext).scaledVerticalScrollFactor
-        fun rotate(pixels: Float) { compose.onNodeWithTag("wear-value-editor").performRotaryScrollInput { rotateToScrollVertically(pixels) } }
+        fun rotate(pixels: Float) {
+            // Window/lifecycle focus can arrive after Compose's first idle frame.
+            // The real editor deliberately ignores rotary input before that.
+            compose.waitUntil(5_000) {
+                compose.onAllNodes(hasTestTag("wear-value-editor") and isFocused())
+                    .fetchSemanticsNodes().size == 1
+            }
+            compose.onNodeWithTag("wear-value-editor").performRotaryScrollInput { rotateToScrollVertically(pixels) }
+        }
         rotate(detent)
         compose.onNodeWithTag("wear-edited-value").assertTextEquals("6")
         compose.runOnIdle { assertTrue(changes.isEmpty()) }
