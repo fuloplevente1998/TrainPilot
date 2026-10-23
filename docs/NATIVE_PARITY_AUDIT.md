@@ -1,7 +1,6 @@
 # Natív migráció – funkcióegyezési ellenőrzés
 
-Állapot: 2026-10-23, az `eb1d21f` alkalmazásforrás és a tesztmanifesteket javító
-`7c73ebe` alapján. Ez forrásellenőrzés, nem készülékes elfogadás.
+Állapot: 2026-10-23, a `51fdd94` alkalmazásforrás és a `8b01fb2` tesztjavítás alapján. Ez forrásellenőrzés, nem készülékes elfogadás.
 Összehasonlítási alap: a készüléken elfogadott gyorsított 1.3.71 /2735,
 `v1.3.71-perf-20261022`, forrás `5d27aa9` (appkód: `715dc5d`).
 A teljes natív kiváltás **még nincs kész**. A build, migráció és termékfunkciók
@@ -9,8 +8,8 @@ külön kapuk; a források megléte vagy a debug-fordítás nem funkcióegyezés
 
 | Terület | Megfigyelés | Következő igazolás/javítás |
 | --- | --- | --- |
-| Build | `eb1d21f`: mindkét debug APK és a JVM tesztek forrása lefordult. Wear XML: 167/167, nincs hiba/kihagyás. Telefonos unit futást tesztmanifest állította meg. | `7c73ebe` CI; teljes telefonos unit, aláírt release és emulátor. |
-| Aláírt frissítés | Eredeti csomagnév, magasabb kód, eredeti kulcs és tanúsítványegyezés előírva a workflow-ban. | Sikeres kiadási build és tényleges `adb install -r` mindkét 1.3.71 alap-APK-ról. |
+| Build | `51fdd94`: debug/release mindkét modulon sikeres. Telefon XML 265/265, Wear 167/167, hiba/kihagyás nélkül. | `8b01fb2` CI: javított emulátor és független régi-app seed. A migráció még nem igazolt. |
+| Aláírt frissítés | Eredeti csomagnév, magasabb kód, eredeti kulcs és tanúsítványegyezés előírva a workflow-ban. | Kiadási build, tanúsítvány és bináris hash `51fdd94` forráson igazolva; tényleges `adb install -r` és adatmigráció mindkét alap-APK-ról még nyitott. |
 | Adatmigráció | Aktuális WebView localStorage olvasás, helyi archívum, Room-tranzakció, sérült forrásnál nincs kész nyugta. | Unicode/nagy napló, törlés, GPS, fotó, program, beállítás, draft, régi health DB tényleges upgrade-próbája. A draft archiválása még nem működő natív folytatás. |
 | Telefonos edzésindítás | `TrainPilotNavigation.kt`: az `onStartWorkout` és `onStartProgramDay` callback csak navigál. Nem készít sessiont; az aktív képernyő önmagában sem indít új edzést. | Kanonikus edzésindítás bekötése; meglévő session/draft védelme, stabil azonosítók, utolsó értékek átvétele. |
 | Lezárás | `ActiveWorkoutScreen.kt` rögtön visszanavigál az aszinkron finish után. `ActiveWorkoutViewModel.finishWorkout` nem teljesíti a naptárat, `discardExecution`-t hív és hibát nyel el. Nincs igazolt natív eseményegyeztetés. | Közös, újrapróbálható lezárás; események mentése a nyugta előtt; valódi close, naptár, timer/GPS, hibavisszajelzés; navigáció csak siker után. Kapcsolódó Wear finish ág is vizsgálandó. |

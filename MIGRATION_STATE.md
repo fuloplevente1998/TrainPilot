@@ -2,16 +2,20 @@
 
 ## Aktuális ellenőrzés – 2026-10-23
 
-A visszaállítás utáni javítások az `feat/native-android-migration` ágon készülnek.
-A `c89709f` forráson a telefon és Wear debug APK is lefordult; teljes unit,
-aláírt release és adatmigrációs siker még nincs igazolva. Aktuális alkalmazásforrás
-`eb1d21f`; [Actions 39917203006](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39917203006)
-az állapot rögzítésekor fut. Részletes aktuális belépési pont:
-[docs/WORK_HANDOFF.md](docs/WORK_HANDOFF.md).
+A `51fdd94` forráson a telefon/Wear debug **és eredeti kulcsos release** lefordult,
+a csomagnév/verzió/tanúsítvány ellenőrzése sikeres. Letöltött XML: telefon
+265/265, Wear 167/167, 0 failure/error/skipped. Az emulátoros kapuk a teszteszközök
+hibáin álltak meg; az adatmigráció és a kerek UI még nem igazolt.
+Javítás: `8b01fb2`, [CI 39932459892](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39932459892)
+a rögzítéskor fut. [Aktuális átadás](docs/WORK_HANDOFF.md),
+[bizonylat és artifactok](docs/builds/2026-10-23-native-migration-checkpoint.json),
+[funkcióhiányok](docs/NATIVE_PARITY_AUDIT.md).
 
-A következő táblázat a **történeti forrás-visszaállítás** állapota, nem az aktuális
-fordítás/teszt összesítése. A készülékes funkcióegyezés, kétirányú szinkron és élő
-adatok migrációja külön igazolást igényel; main merge nem történt.
+Az összehasonlítási alap a **2026-10-22-i gyorsított 1.3.71 /2735**,
+`v1.3.71-perf-20261022` (`5d27aa9`); a teszt az eredeti október 21-i APK-ról is indul.
+A teljes natív kiváltás, fizikai készülékes működés és élő adatok migrációja
+külön igazolást igényel. **Main merge nem történt.** Az alábbi táblázat a történeti
+forrás-visszaállítás állapota, nem az aktuális build összesítése.
 
 ## Eredeti forrás-visszaállítás összegzése
 A teljes AI Studio beszélgetés-exportból a Slice 1–8 fájlba címzett natív forrásblokkjai vissza lettek állítva. Ez a forrás-visszaállítás önmagában nem igazolja a fordíthatóságot vagy a készülékes működést.

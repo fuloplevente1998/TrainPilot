@@ -1,0 +1,71 @@
+{
+  "branch": "feat/native-android-migration",
+  "applicationSource": "51fdd947a9664e5c25023e6a0f3430cf1570b3c1",
+  "workflowRun": 39920303114,
+  "workflowStatusAtCheckpoint": "failure_in_emulator_harness",
+  "versionName": "1.3.71-native-test",
+  "versionCode": 2736,
+  "applicationId": "com.repforge.app",
+  "latestMainRelease": {
+    "source": "5d27aa9c5ebf68d1c206c88a74dea89e660a4937",
+    "phoneTag": "v1.3.71-perf-20261022",
+    "wearTag": "wear-v1.3.71-perf-20261022",
+    "versionName": "1.3.71",
+    "versionCode": 2735,
+    "phoneSha256": "850b5e1e597e574dbf5cf55cf82721a3f77879447db9852fa056d2b889d50570",
+    "wearSha256": "c145afd729f4a9bf91d7cef48f2e9c82ddb265b73dc2b5bb8a15b12a9839e2ea",
+    "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+    "downloadedBinaryHashesAndSignersVerified": true
+  },
+  "verifiedUnitEvidence": {
+    "source": "51fdd947a9664e5c25023e6a0f3430cf1570b3c1",
+    "run": 39920303114,
+    "xmlArtifact": 12486254809,
+    "phone": {
+      "tests": 265,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "wear": {
+      "tests": 167,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "signedApkPairVerified": true,
+  "signedUpgradeVerified": false,
+  "physicalPhoneWatch7Tested": false,
+  "fullFunctionalParityVerified": false,
+  "parityAudit": "docs/NATIVE_PARITY_AUDIT.md",
+  "mainMerge": false,
+  "latestAttempt": {
+    "source": "8b01fb2d4ea3b4fb3a6548f259d826f359d77511",
+    "run": 39932459892,
+    "status": "in_progress",
+    "changes": "Independent platform seed instrumentation, canonical shared fixture, Wear emulator x86"
+  },
+  "signedApks": {
+    "source": "51fdd947a9664e5c25023e6a0f3430cf1570b3c1",
+    "run": 39920303114,
+    "phone": {
+      "artifact": 12487830650,
+      "size": 3081589,
+      "sha256": "c234d4aa84fb9b54ff6434f08c36721270ef73b6da9ed0444f7c7b4b02b4c3f8"
+    },
+    "wear": {
+      "artifact": 12486679420,
+      "size": 5109898,
+      "sha256": "42e3b065f85f974804838302117dd6240146b88cb9e06ec7869750fed90c8917"
+    },
+    "verificationArtifact": 12487835640,
+    "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+    "packageAndVersionVerified": true
+  },
+  "emulatorHarnessFailures": {
+    "wear": "android-30/android-wear has x86, not x86_64; corrected in 8b01fb2",
+    "phone": "Old app seed crashed before test: native-mapped AndroidX test runner references g8.l, absent in old R8 mapping; independent platform runner replaces it in 8b01fb2",
+    "dataMigrationResult": "not_yet_executed"
+  }
+}
