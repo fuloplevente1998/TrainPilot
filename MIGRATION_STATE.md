@@ -1,5 +1,15 @@
 # TrainPilot – Natív Android-migráció forrás-visszaállítási állapota
 
+## Legfrissebb editor/motor ellenőrzés – 2026-10-23
+
+**`9492755` / `39957648783` teljes SUCCESS**: natív frame-alapú editor,
+tartós projekció/kurzor az ack előtt, natív record/undo és tulajdonosi epoch,
+foreground controller csak a látható/resumed editorból. Telefon **292/292**,
+Wear **167/167** unit; a korábbi 451 unit-eset mind megmaradt, +8 új próba.
+Kerek UI **183/183**, aláírt eredeti/gyorsított upgrade **2/2**, nincs hiba/kihagyás.
+[Bizonylat és APK-k](docs/builds/2026-10-23-native-editor-integration.json).
+A teljes natív funkcióegyezés és az élő alkalmazás kiváltása továbbra sem kész.
+
 ## Legutóbbi funkcionális lépés – 2026-10-23
 
 `cab522a` termékkód / **`1a0cc94` / `39953886817` teljes SUCCESS**:

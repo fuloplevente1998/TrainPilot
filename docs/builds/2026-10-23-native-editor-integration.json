@@ -1,0 +1,162 @@
+{
+  "branch": "feat/native-android-migration",
+  "applicationSource": "9492755797171fe728423050f0295f91a48244bb",
+  "androidSourceTree": "4feb8ff3a1d5ad9ee2ed791da4475f5597265426",
+  "workflowRun": 39957648783,
+  "conclusion": "success",
+  "unitXmlArtifact": 12503118233,
+  "unit": {
+    "wear": {
+      "tests": 167,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "phone": {
+      "tests": 292,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "previousVerifiedUnitCases": 451,
+  "previousCaseIdentitiesPreserved": true,
+  "newRegressionTests": [
+    {
+      "class": "com.repforge.app.NativeWorkoutEditingTest",
+      "name": "editingThenNativeRecordThenUndoUsesOneSetStateAndRetainsUserFields"
+    },
+    {
+      "class": "com.repforge.app.NativeWorkoutEditingTest",
+      "name": "alreadyClosedProjectionCannotResurrectAnUnretiredNativeFrame"
+    },
+    {
+      "class": "com.repforge.app.NativeWorkoutEditingTest",
+      "name": "failedProjectionWriteCannotAcknowledgeRecordingAndRetryRestoresFullState"
+    },
+    {
+      "class": "com.repforge.app.NativeWorkoutEditingTest",
+      "name": "oldProjectionCursorCannotAcknowledgeANewerRecording"
+    },
+    {
+      "class": "com.repforge.app.NativeWorkoutEditingTest",
+      "name": "nativeEditSurvivesFailedUiPublicationWithoutReapplyingOldUiValues"
+    },
+    {
+      "class": "com.repforge.app.NativeWorkoutEditingTest",
+      "name": "recordingAndUndoCarryTheInstalledOwnershipEpoch"
+    },
+    {
+      "class": "com.repforge.app.NativeWorkoutEditingTest",
+      "name": "staleUiEditCannotOverwritePendingNativeRecording"
+    },
+    {
+      "class": "com.repforge.app.NativeWorkoutEditingTest",
+      "name": "frozenOrWatchOwnedDraftRejectsEditorChanges"
+    }
+  ],
+  "wearUi": {
+    "tests": 183,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "caseIdentitiesMatchPreviousGate": true,
+    "shards": [
+      {
+        "shard": 0,
+        "artifact": 12504201282,
+        "tests": 68,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "shard": 1,
+        "artifact": 12503912414,
+        "tests": 59,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "shard": 2,
+        "artifact": 12504580179,
+        "tests": 56,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ],
+    "derivedXml": "docs/builds/native-9492755/wear-round-derived.xml"
+  },
+  "signedUpgrade": {
+    "verified": true,
+    "baselines": [
+      {
+        "tag": "v1.3.71",
+        "artifact": 12504185354,
+        "seedStatus": "ok",
+        "verifyStatus": "ok",
+        "uninstallOrClear": false
+      },
+      {
+        "tag": "v1.3.71-perf-20261022",
+        "artifact": 12504390082,
+        "seedStatus": "ok",
+        "verifyStatus": "ok",
+        "uninstallOrClear": false
+      }
+    ]
+  },
+  "signedApks": {
+    "phone": {
+      "artifact": 12503517077,
+      "size": 3114357,
+      "sha256": "1e11c8dbe7f1dc89994d7d61b09455022d751bec0fa4016e3ed4e507a57e2101"
+    },
+    "wear": {
+      "artifact": 12504275863,
+      "size": 5109898,
+      "sha256": "9bee471ed43ae3f3ae7c08c91ea853a41404af376b646eaaeb7fb4ef57412c35"
+    }
+  },
+  "verificationArtifact": 12503277793,
+  "package": "com.repforge.app",
+  "versionName": "1.3.71-native-test",
+  "versionCode": 2736,
+  "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+  "previousFunctionalCheckpoint": "docs/builds/2026-10-23-native-workout-start-finalization.json",
+  "failedFirstAttempt": {
+    "source": "bf219eb9915169bb17f2f8862e5650d60bf1acb9",
+    "run": 39956933123,
+    "phoneTests": 291,
+    "failures": 8,
+    "fix": "Only nativeEditorProjection=1 complete native frames opt into durable native projection; original background producer/consumer contract is preserved. Test setup arms the real controller; original assertions unchanged."
+  },
+  "changes": [
+    "consistent SQLite frame/cursor projection",
+    "editor changes persist to native execution before UI publication",
+    "failed projection cannot acknowledge events",
+    "native edits survive failed UI publication",
+    "stale UI cannot overwrite native recordings",
+    "complete and undo use native engine and installed ownership epoch",
+    "foreground controller arms only from resumed editor",
+    "old closed projection cannot resurrect native frame"
+  ],
+  "liveInstallApproved": false,
+  "physicalPhoneWatch7Tested": false,
+  "fullFunctionalParityVerified": false,
+  "backupRestoreFullRoundTripVerified": false,
+  "mainMerge": false,
+  "remaining": [
+    "stable set ID UI callbacks and duplicate exercise card keys",
+    "new set UUID after delete and add",
+    "lower set stopwatch and explicit positive measured completion",
+    "GPS measurement set binding and completion",
+    "real rest skip and adjustment",
+    "quick/outdoor start and imported draft continuation",
+    "remaining native UI, Calendar/Coach, catalog, locales, performance",
+    "real native phone UI and full backup/restore round trip",
+    "physical Phone/Watch7 and real sync"
+  ]
+}

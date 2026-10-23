@@ -1,6 +1,6 @@
 # Natív migráció – funkcióegyezési ellenőrzés
 
-Állapot: 2026-10-23, `cab522a` edzésindítás/lezárás és annak CI-eredménye alapján. A korábbi teljes technikai zöld alap `134adcd`. Ez forrásellenőrzés, nem készülékes elfogadás.
+Állapot: 2026-10-23, `9492755` editor/motor és `cab522a` indítás/lezárás alapján. A korábbi teljes technikai zöld alap `134adcd`. Ez forrásellenőrzés, nem készülékes elfogadás.
 Összehasonlítási alap: a készüléken elfogadott gyorsított 1.3.71 /2735,
 `v1.3.71-perf-20261022`, forrás `5d27aa9` (appkód: `715dc5d`).
 A teljes natív kiváltás **még nincs kész**. A build, migráció és termékfunkciók
@@ -20,7 +20,7 @@ Külön azonosítójú párhuzamos tesztkiadás jelenleg nem áll rendelkezésre
 | Adatmigráció | Aktuális WebView localStorage olvasás, helyi archívum, Room-tranzakció, sérült forrásnál nincs kész nyugta. | Unicode/nagy napló, törlés, GPS, fotó, program/nap, testsúly, naptár, beállítás, draft, régi health DB, eredeti tár és idempotencia tényleges upgrade-próbája 2/2 sikeres. A draft archiválása még nem működő natív folytatás. |
 | Telefonos edzésindítás | `cab522a`: programnapi Home/Programok indítás tartós, stabil azonosítós natív sessiont készít; ismételt indítás/resume védett. Elfogadott main #228 súly/ismétlés-előtöltés portolva, lapozott adatforrással. | 10 új célzott teszt zöld. Gyors/outdoor gomb, importált draft tényleges natív folytatása és valós képernyőteszt még hátra van. |
 | Lezárás | `cab522a`: UI és Wear közös `TrainPilotWorkoutFinalization`; esemény+kurzor tartós a nyugta előtt; napló+naptár tranzakció, valódi close, timer/GPS stop, takarítás, navigáció csak siker után. Mentési kerítés és stabil retry. | 9 új teszt zöld, köztük valódi SQLite-hibainjektálás, újrapróbálás, késői watch finish, handoff/restore, régi törlés. Tényleges natív UI és két készülékes próbák még szükségesek; az elvetési út külön további vizsgálatot igényel. |
-| Telefonos editor–natív motor | A programnapi start már előkészíti a natív frame-et, a finish egyezteti a pending eseményeket. A Compose editor közbeni szerkesztés/complete/undo még részben közvetlen snapshot-mutáció, az automatikus controller foreground arm nincs bekötve. | Folyamatos közös editor/motor egyeztetés, valódi complete/undo parancsok, foreground arm és pihenő; a kézi módosítás nem veszhet el natív publikálás vagy handoff közben. Valós integrált UI-próba kell. |
+| Telefonos editor–natív motor | `9492755`: a teljes natív frame a tartós szerkesztési forrás, atomi frame/kurzor projekció; UI-commit előtt nincs ack. Complete/undo valódi natív parancs, tulajdonosi epoch megőrizve; foreground controller csak resumed editorból armolódik. Régi protokollok nem optálnak be automatikusan az új fogyasztóba. | 8 új teszt zöld; az előző 451 unit-eset mind megmaradt. Még indexalapú UI callbackok, ismételt gyakorlatkártya-kulcs/új set-ID, tényleges skip/± pihenő, stopper/GPS és valós integrált UI-próba hátra van. |
 | Stopper / GPS teljesítés | Az aktív Compose képernyőn nincs bekötött eredeti alsó sorozatstopper. A GPS stop csak leállítja a szolgáltatást. | Pozitív explicit stop készre jelöl; implicit stop/pause/0 nem; kétoldali gyakorlat mindkét oldal; undo és GPS útvonalkötés megőrzése. |
 | Naptár / Coach | A `NavHost` nem tartalmaz külön naptár/Coach útvonalat. A Coach gomb a training útvonalra visz. | Eredeti funkciók átültetése és valós UI-próbája; programképernyő nem helyettesíti őket. |
 | Napló teljesítmény | Compose LazyColumn van, de az adatréteg minden edzést részletekkel figyel. A Wear mini-napló az összes részlet betöltése után vesz csak nyolcat. | Korlátozott lekérdezés/lapozás, teljes adathalmazra működő szűrés; 0/200/1500 minta. Nem állítunk igazolt natív gyorsulást. |
@@ -28,14 +28,13 @@ Külön azonosítójú párhuzamos tesztkiadás jelenleg nem áll rendelkezésre
 | Wear | Az eredeti teljes natív launcher/szolgáltatások/protokoll visszakötve; az alternatív távirányítós prototípus nem launcher. A main gyorsított kiadása nem módosított Wear/shared appkódot. | Kerek UI 183/183 sikeres. Watch7, valódi telefon–óra szinkron és offline átadás/visszavétel még készülékes kapu. |
 | Nyelvek / UI | Számos Compose szöveg közvetlenül magyar; a térkép semleges Bezárás gombot használ. | HU/EN/DE/RO, nagy betű/kis kijelző, elfogadott piros X, használható érintési célok. |
 
-Friss teljes technikai kapu: **`39953886817` / `1a0cc94` SUCCESS**,
-az Android-termékforrás a `cab522a` fájával azonos. Letöltött XML: telefon
-**284/284**, Wear **167/167**; nyers kerek UI **183/183** egyedi eset,
-aláírt szintetikus upgrade **2/2**, nincs hiba/kihagyás. A két korábbi fókuszhibát
-az emulátor késői rendszerfelülete okozta; a leválasztott töltés szimulációja
-helyreállította a környezetet. Védett komponens tiltása nincs a végső scriptben,
-a teszt és termék fókuszfeltételek változatlanok.
-[Gépi bizonylat](builds/2026-10-23-native-workout-start-finalization.json).
+Friss teljes technikai kapu: **`39957648783` / `9492755` SUCCESS**.
+Letöltött XML: telefon **292/292**, Wear **167/167**; minden korábbi unit-eset
+megmaradt, nyers kerek UI **183/183** azonos esetazonosítóval, aláírt szintetikus
+upgrade **2/2**, nincs hiba/kihagyás. A védett komponens tiltása nincs a végső
+emulátorscriptben; a korábbi rendszerfelületi fókuszhibát a leválasztott töltés
+szimulációja megoldotta, változatlan teszt- és termékfókuszfeltételekkel.
+[Gépi bizonylat](builds/2026-10-23-native-editor-integration.json).
 
 ## Ellenőrzési sorrend
 
