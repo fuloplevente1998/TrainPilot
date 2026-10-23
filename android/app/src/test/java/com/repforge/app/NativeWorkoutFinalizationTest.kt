@@ -155,6 +155,9 @@ class NativeWorkoutFinalizationTest {
         val current = ActiveWorkoutStore.saveOwned(context, draft().put("finalizationPending", true))
         assertThrows(IllegalStateException::class.java) { ActiveWorkoutStore.saveOwned(context, draft()) }
         assertThrows(IllegalStateException::class.java) { ActiveWorkoutStore.saveOwned(context, draft("new")) }
+        assertThrows(IllegalStateException::class.java) {
+            ActiveWorkoutStore.saveOwned(context, JSONObject(current.toString()).put("currentExercise", 99))
+        }
         assertEquals(current.toString(), ActiveWorkoutStore.current(context).toString())
     }
 

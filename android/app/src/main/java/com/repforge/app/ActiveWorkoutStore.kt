@@ -35,9 +35,20 @@ internal object ActiveWorkoutStore {
     @Synchronized
     @Throws(Exception::class)
     fun saveOwned(context: Context, input: JSONObject): JSONObject {
+        return saveSnapshot(context, input, finalizing = false)
+    }
+
+    /** Only the finalizer may advance a draft after the durable save fence is installed. */
+    @Synchronized
+    internal fun saveFinalizing(context: Context, input: JSONObject): JSONObject {
+        check(input.optBoolean("finalizationPending")) { "Missing workout finalization fence" }
+        return saveSnapshot(context, input, finalizing = true)
+    }
+
+    private fun saveSnapshot(context: Context, input: JSONObject, finalizing: Boolean): JSONObject {
         val previous = prefs(context).getString(SNAPSHOT, null)?.let { JSONObject(it) }
         if (previous?.optBoolean("active") == true && previous.optBoolean("finalizationPending")) {
-            check(previous.optString("workoutId") == input.optString("workoutId") && input.optBoolean("finalizationPending")) {
+            check(finalizing && previous.optString("workoutId") == input.optString("workoutId") && input.optBoolean("finalizationPending")) {
                 "Workout finalization is in progress"
             }
         }

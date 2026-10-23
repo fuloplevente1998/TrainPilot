@@ -100,7 +100,7 @@ internal class TrainPilotWorkoutFinalization(
             check(!execution.commandsSuspended() || current?.optBoolean("finalizationPending") == true) { "Az edzésvezérlés foglalt." }
             if (draft.has("generation")) check(draft.getLong("generation") == frame.getLong("generation")) { "Az edzés generációja megváltozott." }
         }
-        if (ownsDraft) ActiveWorkoutStore.saveOwned(context, draft)
+        if (ownsDraft) ActiveWorkoutStore.saveFinalizing(context, draft)
         if (frame != null) {
             execution.suspendCommands(true)
             if (frame.optBoolean("active")) {
@@ -116,7 +116,7 @@ internal class TrainPilotWorkoutFinalization(
                 draft = NativeWorkoutEventMerge.merge(draft, frame, events)
                 // The event cursor and values are committed together before acknowledgement.
                 // A detached, old watch finish may not replace a newer active workout.
-                if (ownsDraft) ActiveWorkoutStore.saveOwned(context, draft)
+                if (ownsDraft) ActiveWorkoutStore.saveFinalizing(context, draft)
                 else check(events.length() == 0) { "A függő natív edzéshez hiányzik a helyreállítható draft." }
                 if (events.length() == 0) break
                 check(execution.acknowledgeEvents(id, frame.getLong("generation"), events.getJSONObject(events.length() - 1).getLong("sequence"))) {
