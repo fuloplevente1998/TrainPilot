@@ -4,6 +4,14 @@ Frissítve: **2026-10-23**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Folyamatban – natív editor és motor egyeztetése (2026-10-23)
+
+- Legújabb **termékkód `9492755797171fe728423050f0295f91a48244bb`**, [CI 39957648783](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39957648783) még fut. **Legutóbbi teljes zöld/APK-forrás továbbra is `1a0cc94`**, lent részletes bizonyítékkal. Új APK nem átadott, élő telepítés továbbra is STOP.
+- `bf219eb` új `NativeWorkoutEditing`: teljes natív frame az editor tartós forrása; `PhoneWorkoutExecutionStore.projection()` egy SQLite-tranzakcióban ad frame+eseménykurzort. Snapshot commit előtt nincs nyugta, sikertelen UI-publikálás után a natív szerkesztés visszaállítható; stale UI nem írja felül a natív rögzítést. Complete/undo a natív parancsmotoron halad, foreground controller csak a látható/resumed editorból armolódik; háttérbe kerülés nem pause. `ownerEpoch193` átadva. Lezárt snapshot nem éleszthető újra.
+- Első `bf219eb` CI **39956933123**: fordítás zöld, telefon unit **291 összes /8 hiba**. Hét korábbi API-teszt jogosan függő eseményt várt a régi háttérprotokollnál; az új publisher túl korán ackolt. Egy új teszt nem armolta a rögzítéshez előírt controllert. **9492755 javítja:** csak az új, teljes `nativeEditorProjection=1` frame optál be a tartós natív fogyasztóba, a régi protokoll korábbi szemantikája változatlan. Új tesztek valódi Robolectric service ARM-mal, nincs gyengített régi elvárás. 8 új editorpróba várható; a teljes eredményt nem szabad előre zöldnek mondani.
+- Érintett források: `NativeWorkoutEditing.kt`, natív store `projection()`, `PhoneWorkoutExecution.publish`, `NativeWorkoutSession.installPrepared`, `ActiveWorkoutViewModel` és lifecycle-bekötés; teszt `NativeWorkoutEditingTest.kt`. A régi `com.repforge` prototípus nem lett launcher vagy második kanonikus motor.
+- Következő az aktuális CI hibáinak szükség szerinti javítása/ellenőrzése; utána alsó stopper/GPS explicit measured completion, gyakorlatváltás/undo, gyors/outdoor és importált draft. Native-editor jelző nélküli régi session/draft folytatása még külön egyeztetendő; ne dobjuk el, ne „javítsuk” törléssel. Main/kiadás változatlan, nincs verzióemelés vagy saját telefonos tesztfeladat.
+
 ## Natív edzésindítás és lezárás – legutóbbi fejlesztés (2026-10-23)
 
 - **Termékkód `cab522a1b9fabf7a31fec294c57eab98644b5c3d`; legutóbbi CI-forrás `1a0cc941e515f9ad68c10c8c5e50a41330f67198` (azonos `android` fa: `add906cc76607965c9c0f0106f801d3d7dc6f0d7`)**, kizárólag `feat/native-android-migration`; main továbbra is `7473b30`. Nincs verzióemelés, merge, release vagy élő adatokra telepítési kérés.
