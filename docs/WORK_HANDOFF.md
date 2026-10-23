@@ -4,6 +4,14 @@ Frissítve: **2026-10-23**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Folyamatban – kézi mért rögzítés, opcionális intervallum, időnapló (2026-10-23)
+
+- **CI-/APK-forrás `a5f4cd827059436c105e79e20fb49ecfb9660407`**, core `aca4ac3`; [natív CI 40010868723](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40010868723) fut, eredménye még nem igazolt. Előző teljes zöld kapu lent: `922b6b7` /40000812477. Main/verzió változatlan; saját adatokra telepítés STOP.
+- `completeMeasuredSet`: kézi idő/táv OK a közös natív record/outbox/receipt/undo tranzakcióban, nem UI-pipa/fiktív pihenő. Kétoldalihoz két pozitív érték, távolsághoz pozitív idő+táv. Cél/revision/érték-egyezés és aktív mérés védelme; a legacy `completeSet` és korábbi fingerprint-formátum változatlan. Kézi megadott másodperc nem keletkeztet megfigyelt mérési időt.
+- `NativeMeasuredTime`: alsó stopper és GPS megfigyelt ideje közös privát időnaplóban, stabil mérési szakaszkulcsokon; folytatás/undo nem dupláz vagy töröl fizikai időt. Stopper implicit szünete azonos folyamaton belül számolható; új folyamat csak tartós checkpointot ismer. UI élő időösszesítése csak memóriában, nincs másodpercenkénti extra adatbázisírás a szünetben álló stopper miatt.
+- Összecsukott, edzésre érvényes intervallum/pihenő-beállítás. Külön tudatos automatikus intervallumindítás egyoldali időalapú sorozatokhoz; ilyenkor csak az intervallum saját órája látszik. Kétoldali és GPS továbbra saját vezérlés. Sorozatidőbe csak munka kerül, pihenő külön; részleges leállítás nem teljesítés, késői callback visszavont kulccsal elutasítva. Általános kézi/non-autoAdvance intervallummód további paritási feladat, nem késznek jelölt.
+- **20 új célzott teszt** (19 `NativeMeasuredEditingTest`, 1 GPS-időnapló), plusz Room-időnapló állítás a meglévő GPS-lezárási próbákban. Minden Gradle/emulátor/aláírás/upgrade a meglévő GitHub workflow-ban. Következő: friss kaput igazolni/javítani, XML/APK ellenőrzés; majd további telefonos UI, gyors/outdoor, draft és teljes paritás. Fizikai Phone/Watch7 és teljes backup/restore továbbra hiányzik.
+
 ## Legfrissebb zöld kapu – GPS sorozatkötés és valódi pihenővezérlés (2026-10-23)
 
 - **Bevizsgált CI-/APK-forrás `922b6b75d5ac87c8a9bee77e896549dacd5b939b`**, termékkód `e164ef3`; [natív CI 40000812477](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40000812477) **teljes SUCCESS**. Letöltött XML: telefon **338/338**, Wear **167/167**, a korábbi **478** unit-eset mind megmaradt, +**27** új próba (17 GPS, 10 rest). Nyers kerek UI **183/183**, azonos esetazonosítókkal; aláírt eredeti/gyorsított upgrade **2/2**, nulla hiba/kihagyás. Dokumentációs HEAD később eltérhet az APK forrásától.
