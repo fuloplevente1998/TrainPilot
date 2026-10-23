@@ -1,6 +1,8 @@
 package com.repforge.app.ui.workout
 import com.repforge.app.PhoneWorkoutPlans
 import com.repforge.app.TrainPilotWorkoutFinalization
+import com.repforge.app.NativeWorkoutEditing
+import com.repforge.app.NativeWorkoutStartValues
 import androidx.core.content.ContextCompat
 
 import android.app.Activity
@@ -334,6 +336,18 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
         val set = sets.optJSONObject(setIndex) ?: return
         val wasDone = set.optBoolean("done", false)
 
+        if (!wasDone && NativeWorkoutStartValues.strength(ex)) {
+            try {
+                NativeWorkoutEditing.completeStrengthSet(context, ex.getString("id"), set.getString("setId"))
+                viewModelScope.launch {
+                    AppHapticsManager.setRecorded(context, settingsStore.current().hapticSetRecorded227)
+                }
+            } catch (error: Exception) {
+                _uiState.value = _uiState.value.copy(statusMessage = error.message ?: "A sorozat rögzítése nem sikerült.")
+            }
+            return
+        }
+
         if (!wasDone) {
             val repUnit = ex.optString("repUnit", "ism.")
             val isBilateral = WorkoutStatsCalculator.isBilateralUnit(repUnit, ex.optString("id"))
@@ -376,6 +390,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
         } else {
             // Kipipálás visszavonása sima érintéssel (ha nem az Undo gombbal történik)
             set.put("done", false)
+            set.remove("actualRir")
             saveAndPublish(current)
         }
     }
@@ -405,16 +420,10 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
         if (recordId.isEmpty()) return
         viewModelScope.launch(Dispatchers.Main) {
             try {
-                val command = JSONObject()
-                    .put("action", "undoSet")
-                    .put("commandId", UUID.randomUUID().toString())
-                    .put("recordId", recordId)
-                    .put("workoutId", _uiState.value.workoutId)
-                val result = PhoneWorkoutExecution.execute(context, command)
-                if (result.optString("status") == "applied") {
-                    AppHapticsManager.signal(context)
-                }
-            } catch (_: Exception) {
+                NativeWorkoutEditing.undo(context, recordId)
+                AppHapticsManager.signal(context)
+            } catch (error: Exception) {
+                _uiState.value = _uiState.value.copy(statusMessage = error.message ?: "A visszavonás nem sikerült.")
             }
         }
     }
@@ -470,7 +479,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
             sets.put(
                 JSONObject()
                     .put("set", s)
-                    .put("setId", "${current.optString("workoutId")}:${libraryExercise.id}:$s")
+                    .put("setId", UUID.randomUUID().toString())
                     .put("weight", if (libraryExercise.defaultWeight > 0.0) libraryExercise.defaultWeight.toString() else "0")
                     .put("reps", libraryExercise.defaultReps)
                     .put("done", false)
@@ -510,6 +519,24 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
         }
         frame.put("activeIntervals", intervals)
         PhoneWorkoutExecution.setWorkoutPause(context, frame)
+        if (!willPause) onEditorVisible()
+    }
+
+    /** Called from a resumed editor, never from background sync or ownership notifications. */
+    fun onEditorVisible() {
+        if (editableSnapshot() == null) return
+        try {
+            val saved = NativeWorkoutEditing.project(context, PhoneWorkoutExecution.display(context))
+            if (saved.optBoolean("workoutPaused") || IntervalTimerService.armed(saved.optString("workoutId"), saved.optLong("generation"))) return
+            ContextCompat.startForegroundService(context, Intent(context, IntervalTimerService::class.java).apply {
+                action = IntervalTimerService.ARM
+                putExtra("workoutId", saved.getString("workoutId"))
+                putExtra("generation", saved.getLong("generation"))
+                putExtra("language", saved.optString("language", "hu"))
+            })
+        } catch (error: Exception) {
+            _uiState.value = _uiState.value.copy(statusMessage = "A háttéridőzítő nem indult: ${error.message.orEmpty()}")
+        }
     }
 
     fun skipRestTimer() {
@@ -688,7 +715,11 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     private fun saveAndPublish(snapshot: JSONObject) {
         val current = ActiveWorkoutStore.current(context)
         if (_uiState.value.isFinishing || current?.optBoolean("finalizationPending") == true || current?.optString("timerOwner") == "watch") return
-        ActiveWorkoutStore.saveOwned(context, snapshot)
-        WearSyncRepository.publishActiveWorkoutSnapshot(context, snapshot)
+        try {
+            val saved = NativeWorkoutEditing.commitEdit(context, snapshot)
+            runCatching { WearSyncRepository.publishActiveWorkoutSnapshot(context, saved) }
+        } catch (error: Exception) {
+            _uiState.value = _uiState.value.copy(statusMessage = error.message ?: "A módosítás nem sikerült. Próbáld újra.")
+        }
     }
 }

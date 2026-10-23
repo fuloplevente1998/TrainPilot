@@ -63,6 +63,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,6 +77,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import com.repforge.app.WorkoutPhotoRepository
 import com.repforge.app.ui.theme.LocalTrainPilotColors
@@ -92,6 +96,13 @@ fun ActiveWorkoutScreen(
     val activity = context as? Activity
     val photoRepo = remember { WorkoutPhotoRepository(context) }
     BackHandler(enabled = state.isFinishing) { }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, viewModel) {
+        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_RESUME) viewModel.onEditorVisible() }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) viewModel.onEditorVisible()
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     // Kamera és Galéria indítók
     val cameraLauncher = rememberLauncherForActivityResult(

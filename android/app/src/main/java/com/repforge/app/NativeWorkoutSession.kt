@@ -121,6 +121,7 @@ internal object NativeWorkoutSession {
         val execution = PhoneWorkoutExecution.store(context)
         val frame = execution.snapshot()
         if (frame?.optBoolean("active") != true) return null
+        check(current == null || current.optString("workoutId") != frame.optString("workoutId")) { "Előbb egyeztesd a lezárt edzés natív állapotát." }
         check(!execution.restoreBlocked() && !execution.commandsSuspended()) { "Az edzésvezérlés átmenetileg foglalt." }
         check(frame.optString("timerOwner") == "phone") { "Előbb egyeztesd az órás edzés tulajdonosát." }
         return ActiveWorkoutStore.save(context, frame)

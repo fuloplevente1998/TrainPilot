@@ -179,6 +179,25 @@ internal class PhoneWorkoutExecutionStore(context: Context) :
     @Throws(JSONException::class)
     fun snapshot(): JSONObject? = current(readableDatabase)
 
+    /** One consistent frame/cursor pair; projection may acknowledge only this durable state. */
+    @Synchronized
+    fun projection(): JSONObject {
+        val db = readableDatabase
+        db.beginTransaction()
+        try {
+            val frame = current(db)
+            var sequence = 0L
+            if (frame != null) db.rawQuery(
+                "SELECT MAX(seq) FROM recordings WHERE workout_id=? AND generation=?",
+                arrayOf(frame.getString("workoutId"), frame.getLong("generation").toString())
+            ).use { c -> if (c.moveToFirst() && !c.isNull(0)) sequence = c.getLong(0) }
+            db.setTransactionSuccessful()
+            return JSONObject().put("snapshot", frame ?: JSONObject.NULL).put("sequence", sequence)
+        } finally {
+            db.endTransaction()
+        }
+    }
+
     /** Only the ownership adapter supplies a locally acknowledged, committed reverse handoff. */
     @Synchronized
     @Throws(Exception::class)

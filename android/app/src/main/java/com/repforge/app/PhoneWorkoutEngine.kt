@@ -734,11 +734,13 @@ internal object PhoneWorkoutExecution {
     @Throws(Exception::class)
     fun publish(context: Context) {
         val value = display(context) ?: return
-        val saved = ActiveWorkoutStore.save(context, value)
+        val saved = NativeWorkoutEditing.project(context, value)
         val map = PutDataMapRequest.create(WearDataLayerPaths.ACTIVE_WORKOUT_PATH)
         map.dataMap.putString("snapshot", saved.toString())
         map.dataMap.putBoolean("active", true)
         map.dataMap.putLong("revision", saved.getLong("revision"))
-        Wearable.getDataClient(context).putDataItem(map.asPutDataRequest().setUrgent())
+        // Local completion is durable even while Google Play Services / the watch
+        // is unavailable. The saved snapshot remains available for later sync.
+        runCatching { Wearable.getDataClient(context).putDataItem(map.asPutDataRequest().setUrgent()) }
     }
 }

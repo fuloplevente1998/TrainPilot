@@ -196,7 +196,7 @@ internal object NativeWorkoutEventMerge {
         return if (field != "reps") (text.replace(',', '.').toDoubleOrNull() ?: 0.0).toString() else text
     }
 
-    private fun mergeTime(session: JSONObject, native: JSONObject) {
+    internal fun mergeTime(session: JSONObject, native: JSONObject) {
         val fields = listOf("workMs", "restMs", "pausedMs", "positionMs")
         val automatic = session.optJSONObject("automaticTime162") ?: JSONObject().put("schema", 1)
         val logs = automatic.optJSONObject("logs") ?: JSONObject()
