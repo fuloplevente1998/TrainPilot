@@ -606,11 +606,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     }
 
     private fun changeWorkoutPause(willPause: Boolean): Boolean {
-        var current = editableSnapshot() ?: return false
-        if (!current.optBoolean("workoutPaused")) {
-            try { current = NativeWorkoutEditing.interruptGps(context) }
-            catch (error: Exception) { showStatus(error.message ?: "A GPS-mérés szüneteltetése nem sikerült."); return false }
-        }
+        val current = editableSnapshot() ?: return false
         val now = System.currentTimeMillis()
         val frame = JSONObject(current.toString())
             .put("workoutPaused", willPause)

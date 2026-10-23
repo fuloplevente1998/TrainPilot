@@ -737,6 +737,20 @@ internal object PhoneWorkoutExecution {
         if (!nativeOwner && active != null && active.optBoolean("active") && input.optString("workoutId") != active.optString("workoutId")) {
             throw IllegalStateException("Workout changed")
         }
+        if (nativeOwner && before!!.optInt("nativeEditorProjection") == 1) {
+            // All native pause callers (including remote control) must stop the bound GPS,
+            // not just the Compose button. Reject stale input before touching that service.
+            check(input.optLong("generation") == before.optLong("generation")) { "Workout generation changed" }
+            val revision = input.optLong("pauseRevision")
+            require(revision in 1L..9_007_199_254_740_991L) { "invalidWorkoutPause" }
+            check(revision >= before.optLong("pauseRevision") &&
+                (revision != before.optLong("pauseRevision") || input.optBoolean("workoutPaused") == before.optBoolean("workoutPaused"))) {
+                "staleWorkoutPause"
+            }
+            if (input.optBoolean("workoutPaused") && revision > before.optLong("pauseRevision") && NativeGpsMeasurement.busy(before)) {
+                NativeWorkoutEditing.interruptGps(context)
+            }
+        }
         val timer = IntervalTimerService.snapshot(context)
         val frame = db.setWorkoutPause(input, SystemClock.elapsedRealtime(), timer.optBoolean("running"))
         if (frame != null) {

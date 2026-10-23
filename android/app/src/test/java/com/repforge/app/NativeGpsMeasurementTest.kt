@@ -153,6 +153,31 @@ class NativeGpsMeasurementTest {
         assertFalse(set().getBoolean("done")); assertTrue(set().getDouble("distanceMeters") > 0)
     }
 
+    @Test fun nativePauseStopsGpsAndKeepsPartialValuesWithoutCompletingTheSet() {
+        start(); walk()
+        PhoneWorkoutExecution.setWorkoutPause(context, ActiveWorkoutStore.current(context)!!
+            .put("workoutPaused", true).put("pauseRevision", 1))
+        assertTrue(frame().getBoolean("workoutPaused"))
+        assertFalse(DistanceTrackingService.snapshot(context).getBoolean("active"))
+        assertFalse(set().getBoolean("done")); assertFalse(frame().has("lastRecord188"))
+        assertTrue(set().getDouble("distanceMeters") > 0)
+        assertNotNull(WorkoutRouteCoordinates.load(context, set().getString("gpsRouteKey163")))
+    }
+
+    @Test fun staleNativePauseCannotInterruptTheCurrentGpsMeasurement() {
+        start(); walk()
+        val current = ActiveWorkoutStore.current(context)!!
+        for (invalid in listOf(
+            JSONObject(current.toString()).put("generation", target().generation + 1).put("pauseRevision", 1),
+            JSONObject(current.toString()).put("pauseRevision", 0),
+            JSONObject(current.toString()).put("pauseRevision", 9_007_199_254_740_992L)
+        )) {
+            assertThrows(Exception::class.java) { PhoneWorkoutExecution.setWorkoutPause(context, invalid.put("workoutPaused", true)) }
+            assertTrue(DistanceTrackingService.snapshot(context).getBoolean("active"))
+            assertFalse(frame().getBoolean("workoutPaused")); assertFalse(set().getBoolean("done"))
+        }
+    }
+
     @Test fun sqlFailureAfterDurableStopSurvivesServiceLossAndRetriesOnce() {
         start(); walk()
         val id = binding().getString("id")
