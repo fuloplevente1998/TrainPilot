@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Only the optional Samsung provider needs API 29; its entry points are guarded. -->
+    <uses-sdk tools:overrideLibrary="com.samsung.android.sdk.health.data" />
+
     <!-- Hálózati jogosultságok (Google Drive felhőmentés, naptár és térképcsempék) -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />

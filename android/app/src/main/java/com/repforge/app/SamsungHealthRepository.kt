@@ -55,6 +55,7 @@ object SamsungHealthRepository {
 
     @JvmStatic
     fun isSdkAvailable(): Boolean {
+        if (Build.VERSION.SDK_INT < 29) return false
         return try {
             Class.forName("com.samsung.android.sdk.health.data.HealthDataService")
             true
