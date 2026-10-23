@@ -36,9 +36,15 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,6 +62,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.repforge.app.ActiveWorkoutStore
+import com.repforge.app.NativeWorkoutSession
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 import com.repforge.app.data.store.TrainPilotUserSettings
 import com.repforge.app.ui.home.HomeScreen
 import com.repforge.app.ui.workout.ActiveWorkoutScreen
@@ -90,6 +99,26 @@ fun TrainPilotAppScaffold(
     val navController = rememberNavController()
     val context = LocalContext.current
     val colors = LocalTrainPilotColors.current
+    val scope = rememberCoroutineScope()
+    val snackbar = remember { SnackbarHostState() }
+    var starting by remember { mutableStateOf(false) }
+    val startWorkout: (String?, String) -> Unit = { programId, dayId ->
+        if (!starting) {
+            starting = true
+            scope.launch {
+                try {
+                    NativeWorkoutSession.startWorkout(context, programId, dayId)
+                    navController.navigate("active_workout") { launchSingleTop = true }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    snackbar.showSnackbar(error.message ?: "Az edzést nem sikerült elindítani. Az adatok megmaradtak.")
+                } finally {
+                    starting = false
+                }
+            }
+        }
+    }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Home.route
 
@@ -107,6 +136,7 @@ fun TrainPilotAppScaffold(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = colors.bg,
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             if (currentRoute !in listOf("active_workout", "route_map")) {
                 TopNavigationBar(
@@ -135,7 +165,7 @@ fun TrainPilotAppScaffold(
                     HomeScreen(
                         navController = navController,
                         onStartWorkout = { dayId ->
-                            navController.navigate("active_workout")
+                            startWorkout(null, dayId)
                         }
                     )
                 }
@@ -143,7 +173,7 @@ fun TrainPilotAppScaffold(
                     TrainingProgramsScreen(
                         navController = navController,
                         onStartProgramDay = { programId, dayId ->
-                            navController.navigate("active_workout")
+                            startWorkout(programId, dayId)
                         }
                     )
                 }

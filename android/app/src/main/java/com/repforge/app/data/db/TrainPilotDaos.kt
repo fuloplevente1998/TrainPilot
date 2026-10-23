@@ -73,6 +73,17 @@ interface ExerciseLibraryDao {
 
 @Dao
 interface WorkoutHistoryDao {
+    @Query("""
+        SELECT DISTINCT w.* FROM workout_history w
+        INNER JOIN workout_history_exercises e ON e.workoutHistoryId = w.id
+        WHERE e.exerciseId = :exerciseId AND e.loadType = :loadType AND e.repUnit = :repUnit
+          AND w.finishedEpochMs > w.startedEpochMs AND w.finishedEpochMs <= :now
+        ORDER BY w.finishedEpochMs DESC, w.startedEpochMs DESC
+        LIMIT :limit OFFSET :offset
+    """)
+    suspend fun getPrefillCandidates(exerciseId: String, loadType: String, repUnit: String,
+        now: Long, limit: Int, offset: Int): List<WorkoutHistoryEntity>
+
     @Transaction
     @Query("SELECT * FROM workout_history ORDER BY started DESC")
     fun observeAllWorkoutsWithDetails(): Flow<List<WorkoutHistoryWithDetails>>
