@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="SignedUpgradePlatformDerived" tests="2" failures="0" errors="0" skipped="0">
+  <properties>
+    <property name="source" value="922b6b75d5ac87c8a9bee77e896549dacd5b939b" />
+    <property name="workflowRun" value="40000812477" />
+    <property name="reportKind" value="derived from raw seed/verify instrumentation result statuses, not runner JUnit XML" />
+  </properties>
+  <testcase classname="SignedReleaseUpgrade" name="v1.3.71 to native" />
+  <testcase classname="SignedReleaseUpgrade" name="v1.3.71-perf-20261022 to native" />
+</testsuite>

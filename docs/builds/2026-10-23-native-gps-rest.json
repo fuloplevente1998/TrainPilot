@@ -1,0 +1,280 @@
+{
+  "applicationSource": "922b6b75d5ac87c8a9bee77e896549dacd5b939b",
+  "workflowRun": 40000812477,
+  "unit": {
+    "app": {
+      "tests": 338,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "wear": {
+      "tests": 167,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "previousVerifiedUnitCases": 478,
+  "previousCaseIdentitiesPreserved": true,
+  "newRegressionTests": [
+    {
+      "class": "com.repforge.app.NativeGpsMeasurementTest",
+      "name": "cancelledQueuedStartCannotReappearAfterItsFinishButton"
+    },
+    {
+      "class": "com.repforge.app.NativeGpsMeasurementTest",
+      "name": "completedGpsReachesRoomAndTheJournalPrivateRouteReader"
+    },
+    {
+      "class": "com.repforge.app.NativeGpsMeasurementTest",
+      "name": "continuedSetKeepsRouteSegmentsAndTotalsButRejectsOldMeasurementCaptureAndFinish"
+    },
+    {
+      "class": "com.repforge.app.NativeGpsMeasurementTest",
+      "name": "controllerDestructionCannotMintAnExplicitStopReceipt"
+    },
+    {
+      "class": "com.repforge.app.NativeGpsMeasurementTest",
+      "name": "disabledSystemLocationDoesNotPrepareOrStartMeasurement"
+    },
+    {
+      "class": "com.repforge.app.NativeGpsMeasurementTest",
+      "name": "gpsTargetAndDurableCaptureAreProtectedFromStaleUiEdits"
+    },
+    {
+      "class": "com.repforge.app.NativeGpsMeasurementTest",
+      "name": "implicitStopPreservesMeasuredValuesAndRouteWithoutCompletion"
+    },
+    {
+      "class": "com.repforge.app.NativeGpsMeasurementTest",
+      "name": "invalidOrForeignCaptureCannotEnterTheBoundExecutionFrame"
+    },
+    {
+      "class": "com.repforge.app.NativeGpsMeasurementTest",
+      "name": "missingPrecisePermissionDoesNotPrepareOrStartMeasurement"
+    },
+    {
+      "class": "com.repforge.app.NativeGpsMeasurementTest",
+      "name": "nativePauseStopsGpsAndKeepsPartialValuesWithoutCompletingTheSet"
+    },
+    {
+      "class": "com.repforge.app.NativeGpsMeasurementTest",
+      "name": "noFixAndZeroDistanceNeverCompleteOrCreateAnUndoRecord"
+    },
+    {
+      "class": "com.repforge.app.NativeGpsMeasurementTest",
+      "name": "openingRouteWhileTrackingDoesNotStopOrCompleteMeasurement"
+    },
+    {
+      "class": "com.repforge.app.NativeGpsMeasurementTest",
+      "name": "positiveExplicitFinishRecordsWithoutOkKeepsPrivateRouteAndSupportsNativeUndo"
+    },
+    {
+      "class": "com.repforge.app.NativeGpsMeasurementTest",
+      "name": "sqlFailureAfterDurableStopSurvivesServiceLossAndRetriesOnce"
+    },
+    {
+      "class": "com.repforge.app.NativeGpsMeasurementTest",
+      "name": "staleNativePauseCannotInterruptTheCurrentGpsMeasurement"
+    },
+    {
+      "class": "com.repforge.app.NativeGpsMeasurementTest",
+      "name": "staleWorkoutOrGenerationCannotStopTheCurrentMeasurement"
+    },
+    {
+      "class": "com.repforge.app.NativeGpsMeasurementTest",
+      "name": "workoutFinishPreservesActiveGpsValuesWithoutPretendingMeasurementWasExplicitlyFinished"
+    },
+    {
+      "class": "com.repforge.app.NativeRestControlTest",
+      "name": "adjustedClockProducesAValidPausedOwnershipCheckpoint"
+    },
+    {
+      "class": "com.repforge.app.NativeRestControlTest",
+      "name": "changingExercisePausesLowerStopwatchWithoutCompletion"
+    },
+    {
+      "class": "com.repforge.app.NativeRestControlTest",
+      "name": "exerciseSelectionPreservesRestAndCannotJumpBackWhenRestFinishes"
+    },
+    {
+      "class": "com.repforge.app.NativeRestControlTest",
+      "name": "explicitWorkoutPauseRejectsAdjustAndSkipUntilResume"
+    },
+    {
+      "class": "com.repforge.app.NativeRestControlTest",
+      "name": "failedDurationCommitRestoresThePreviousClockAndCanRetry"
+    },
+    {
+      "class": "com.repforge.app.NativeRestControlTest",
+      "name": "oldKeyWorkoutAndGenerationCannotControlReplacementClock"
+    },
+    {
+      "class": "com.repforge.app.NativeRestControlTest",
+      "name": "plusAndMinusChangeRealRemainingTimeAndDurablePlanWithoutInventedCredit"
+    },
+    {
+      "class": "com.repforge.app.NativeRestControlTest",
+      "name": "skipControlsTheRealClockAndOnlyAccountsActualRest"
+    },
+    {
+      "class": "com.repforge.app.NativeRestControlTest",
+      "name": "subtractingBeyondRemainingRestSkipsWithoutCountingRemovedSeconds"
+    },
+    {
+      "class": "com.repforge.app.NativeRestControlTest",
+      "name": "watchMirrorAndFrozenDraftCannotControlPhoneRest"
+    }
+  ],
+  "apks": {
+    "phone": {
+      "artifact": 12522116570,
+      "size": 3130741,
+      "sha256": "382f1fedf95c697eefc279da4c5449b61bd2637634d8e36a23e3caf6d1436158"
+    },
+    "wear": {
+      "artifact": 12521673004,
+      "size": 5109898,
+      "sha256": "7f5e69b8373fb2aef30f1879333d51360ece5e14a2dd209fd52e39999487dabd"
+    }
+  },
+  "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+  "package": "com.repforge.app",
+  "versionName": "1.3.71-native-test",
+  "versionCode": 2736,
+  "releaseDexContainsMeasuredProtocols": true,
+  "unitXmlArtifact": 12522840348,
+  "verificationArtifact": 12522975097,
+  "productSource": "e164ef3302cccf3cbd28f4aa082066d47afb801a",
+  "androidSourceTree": "d35fe87161be6c88993a617835b51c97a9233f5b",
+  "branch": "feat/native-android-migration",
+  "conclusion": "success",
+  "workflowRunAttempt": 1,
+  "wearUi": {
+    "tests": 183,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "caseIdentitiesMatchPreviousGate": true,
+    "shards": [
+      {
+        "shard": 0,
+        "artifact": 12522267205,
+        "tests": 68,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "homeFocusedBeforeInstrumentation": true
+      },
+      {
+        "shard": 1,
+        "artifact": 12521718812,
+        "tests": 59,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "homeFocusedBeforeInstrumentation": true
+      },
+      {
+        "shard": 2,
+        "artifact": 12523066062,
+        "tests": 56,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "homeFocusedBeforeInstrumentation": true
+      }
+    ],
+    "derivedXml": "docs/builds/native-922b6b7/wear-round-derived.xml",
+    "previousAttempt": {
+      "source": "db542d65aaf0c5dfd4c1ad2548e8ec02a7f32e3d",
+      "run": 39997238574,
+      "attempts": [
+        1,
+        2
+      ],
+      "failedShard": 1,
+      "artifact": 12520523791,
+      "tests": 59,
+      "failures": 1,
+      "case": "rotaryChangesOnlyTheOpenedFieldAndNeverSavesOrRetargetsImplicitly[160dp-font1]",
+      "reason": "5000ms focused-node wait timed out; setupwizard EmulatorStatusActivity and SystemUI display events overlap focus wait in logcat. Same timeout on both attempts, artifacts 12520523791 /12521431987; 1657023 adds stable home-focus CI preparation and failure-window diagnostics without product or assertion change."
+    }
+  },
+  "signedUpgrade": {
+    "verified": true,
+    "baselines": [
+      {
+        "tag": "v1.3.71",
+        "artifact": 12521872699,
+        "seedStatus": "ok",
+        "verifyStatus": "ok",
+        "uninstallOrClear": false
+      },
+      {
+        "tag": "v1.3.71-perf-20261022",
+        "artifact": 12522516475,
+        "seedStatus": "ok",
+        "verifyStatus": "ok",
+        "uninstallOrClear": false
+      }
+    ],
+    "derivedXml": "docs/builds/native-922b6b7/signed-upgrade-derived.xml"
+  },
+  "previousFunctionalCheckpoint": "docs/builds/2026-10-23-native-set-stopwatch.json",
+  "liveInstallApproved": false,
+  "physicalPhoneWatch7Tested": false,
+  "fullFunctionalParityVerified": false,
+  "backupRestoreFullRoundTripVerified": false,
+  "integratedNativePhoneUiVerified": false,
+  "mainMerge": false,
+  "changes": [
+    "GPS capture bound to workout/generation/exercise/set and unique measurement ID",
+    "durable explicit positive GPS stop completes through native record/outbox/receipt/undo without set OK",
+    "implicit stop, pause, navigation, destruction and workout finish preserve partial values without completing",
+    "queued service starts can be cancelled; old measurement callbacks cannot affect a continued set",
+    "all native workout pause entries stop the bound GPS after generation/revision validation",
+    "private active/journal route reader and accessible red X; coordinates excluded from frame",
+    "real rest skip/plus/minus commands use rendered workout/generation/key",
+    "rest adjustment persists its plan and rolls back on SQL failure without inventing actual rest",
+    "exercise navigation retains rest and explicit selection survives rest expiry",
+    "legacy measured action restrictions, fingerprint and original Wear source retained"
+  ],
+  "remaining": [
+    "manual measured OK/native undo, optional collapsed interval settings and full measured-time summary parity",
+    "quick/outdoor start with remembered GPS choice and imported draft continuation",
+    "combined watch/phone route segment UI after ownership transfer",
+    "remaining native Calendar/Coach/catalog/locales and bounded journal performance",
+    "integrated native phone UI and full backup/restore round trip",
+    "physical Phone/Watch7 and real two-device offline sync"
+  ],
+  "supersededRuns": [
+    {
+      "source": "076b1e8d087e2f156c20e7ed70b22a9514762e56",
+      "run": 39995464555,
+      "conclusion": "cancelled",
+      "unitPhone": 336,
+      "unitWear": 167,
+      "reason": "Debug, unit and signing passed; common native pause gap fixed before final delivery."
+    },
+    {
+      "source": "e164ef3302cccf3cbd28f4aa082066d47afb801a",
+      "run": 39996517651,
+      "conclusion": "failure",
+      "unitPhoneTotal": 338,
+      "unitPhoneFailures": 1,
+      "unitWear": 167,
+      "reason": "One new test read optional unpaused JSON field with getBoolean; db542d6 only changes that to optBoolean. Product code unchanged."
+    },
+    {
+      "source": "1657023136522c7b1df58f3a8d6a6675ecaa7f92",
+      "run": 39999881977,
+      "conclusion": "cancelled",
+      "unitPhone": 338,
+      "unitWear": 167,
+      "reason": "Wear readiness checked partial dumpsys window windows output without global focus; instrumentation never ran. Full dump has the ready SysUiActivity focus. 922b6b7 corrects reader; product code and test expectations unchanged.",
+      "bootstrapFailureArtifact": 12522005927
+    }
+  ]
+}
