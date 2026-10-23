@@ -2,13 +2,14 @@
 
 ## Legutóbbi funkcionális lépés – 2026-10-23
 
-`cab522a`: tartós programnapi telefonos indítás, naplóalapú súly/ismétlés-előtöltés,
+`cab522a` termékkód / **`1a0cc94` / `39953886817` teljes SUCCESS**:
+tartós programnapi telefonos indítás, naplóalapú súly/ismétlés-előtöltés,
 közös telefon/óra lezárás, natív eseményegyeztetés, napló+naptár tranzakció és
-újrapróbálási/mentési/törlési védelem. Telefon **284/284**, Wear **167/167** unit;
-eredeti és gyorsított release-ről aláírt upgrade **2/2** sikeres. A kerek UI első
-és változatlan forrású második próbáján 1 fókusz-timeout volt. Az emulátor
-töltési felületének előtérbe kerülése külön CI-probléma; a korrigált
-`1a0cc94` / `39953886817` futása még folyamatban, az Android-termékforrás változatlan.
+újrapróbálási/mentési/törlési védelem. Letöltött unit XML telefon **284/284**,
+Wear **167/167**, nyers kerek UI **183/183**, eredeti és gyorsított release-ről
+aláírt upgrade **2/2**, nincs hiba/kihagyás. Az emulátor töltési rendszerfelületének
+fókuszhibája elkülönített tesztkörnyezeti beállítással megoldva; a termék Wear
+fókuszkezelése és a teszt elvárásai változatlanok.
 A teljes natív app és a saját adatokkal történő készülékes frissítés továbbra sem kész.
 Részletek és következő lépés: [átadás](docs/WORK_HANDOFF.md).
 

@@ -4,9 +4,9 @@
   "androidSourceTree": "add906cc76607965c9c0f0106f801d3d7dc6f0d7",
   "latestCiSource": "1a0cc941e515f9ad68c10c8c5e50a41330f67198",
   "latestRun": 39953886817,
-  "latestStatusAtCheckpoint": "in_progress",
-  "validatedProductRun": 39944821598,
-  "validatedXmlArtifact": 12497708722,
+  "latestStatusAtCheckpoint": "success",
+  "validatedProductRun": 39953886817,
+  "validatedXmlArtifact": 12502120696,
   "unit": {
     "wear": {
       "tests": 167,
@@ -115,11 +115,11 @@
   ],
   "signedUpgrade": {
     "verified": true,
-    "run": 39944821598,
+    "run": 39953886817,
     "baselines": [
       {
         "tag": "v1.3.71",
-        "artifact": 12497209513,
+        "artifact": 12501792599,
         "seedStatus": "ok",
         "verifyStatus": "ok",
         "installedCode": 2736,
@@ -127,7 +127,7 @@
       },
       {
         "tag": "v1.3.71-perf-20261022",
-        "artifact": 12498820459,
+        "artifact": 12502220681,
         "seedStatus": "ok",
         "verifyStatus": "ok",
         "installedCode": 2736,
@@ -136,8 +136,8 @@
     ]
   },
   "wearUi": {
-    "latestCompleteGreenRun": 39937602813,
-    "latestCompleteGreenSource": "134adcdb76480a9c26a22cc17df6ecc9a8561f0c",
+    "latestCompleteGreenRun": 39953886817,
+    "latestCompleteGreenSource": "1a0cc941e515f9ad68c10c8c5e50a41330f67198",
     "latestCompleteGreenTests": 183,
     "cab522aAttempts": [
       {
@@ -153,7 +153,37 @@
     ],
     "failure": "rotaryChangesOnlyTheOpenedFieldAndNeverSavesOrRetargetsImplicitly[160dp-font1]: focus timeout; emulator setup/charging UI in logcat",
     "3d92afcFailure": "emulator script cannot disable protected system components; UI tests did not run",
-    "1a0cc94Change": "simulate unplugged battery and keep display awake; no protected component command, product focus guards and test assertions unchanged"
+    "1a0cc94Change": "simulate unplugged battery and keep display awake; no protected component command, product focus guards and test assertions unchanged",
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "shards": [
+      {
+        "shard": 0,
+        "artifact": 12501697732,
+        "tests": 68,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "shard": 1,
+        "artifact": 12501529003,
+        "tests": 59,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "shard": 2,
+        "artifact": 12502215876,
+        "tests": 56,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ],
+    "derivedXml": "docs/builds/native-1a0cc94/wear-round-derived.xml"
   },
   "package": "com.repforge.app",
   "versionName": "1.3.71-native-test",
@@ -161,16 +191,16 @@
   "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
   "signedArtifacts": {
     "phone": {
-      "artifact": 12498555815,
+      "artifact": 12500999530,
       "size": 3097973,
-      "sha256": "90ef9754850304d79bdeeb25827dc5bf94b369b88456cdd4cbd49f506df5eb36",
-      "run": 39944821598
+      "sha256": "908e3f33df6115483d4549d6e52dd8ff6eddf5b132e383243bcb9f9310efc7da",
+      "run": 39953886817
     },
     "wear": {
-      "artifact": 12498027600,
+      "artifact": 12502025977,
       "size": 5109898,
-      "sha256": "bebc2c777afb8aef2e3448c46abeaa5890dc656772863e9e5262fe0c2174cd1b",
-      "run": 39944821598
+      "sha256": "3a9e6ac9f14fe143b4dea0fad9252f8cd866cfd7800db9e07640f23ad8e0323b",
+      "run": 39953886817
     }
   },
   "liveInstallApproved": false,
@@ -179,6 +209,7 @@
   "backupRestoreFullRoundTripVerified": false,
   "mainMerge": false,
   "remaining": [
+    "continuous native editor/engine reconciliation and foreground timer arm",
     "quick/outdoor phone start",
     "imported draft native continuation",
     "lower set stopwatch and explicit positive measured completion",
@@ -190,5 +221,6 @@
     "large history paging and performance",
     "real native phone UI and backup restore gates",
     "physical Phone/Watch7 and real two-device sync"
-  ]
+  ],
+  "applicationSource": "1a0cc941e515f9ad68c10c8c5e50a41330f67198"
 }

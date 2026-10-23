@@ -20,6 +20,7 @@ Külön azonosítójú párhuzamos tesztkiadás jelenleg nem áll rendelkezésre
 | Adatmigráció | Aktuális WebView localStorage olvasás, helyi archívum, Room-tranzakció, sérült forrásnál nincs kész nyugta. | Unicode/nagy napló, törlés, GPS, fotó, program/nap, testsúly, naptár, beállítás, draft, régi health DB, eredeti tár és idempotencia tényleges upgrade-próbája 2/2 sikeres. A draft archiválása még nem működő natív folytatás. |
 | Telefonos edzésindítás | `cab522a`: programnapi Home/Programok indítás tartós, stabil azonosítós natív sessiont készít; ismételt indítás/resume védett. Elfogadott main #228 súly/ismétlés-előtöltés portolva, lapozott adatforrással. | 10 új célzott teszt zöld. Gyors/outdoor gomb, importált draft tényleges natív folytatása és valós képernyőteszt még hátra van. |
 | Lezárás | `cab522a`: UI és Wear közös `TrainPilotWorkoutFinalization`; esemény+kurzor tartós a nyugta előtt; napló+naptár tranzakció, valódi close, timer/GPS stop, takarítás, navigáció csak siker után. Mentési kerítés és stabil retry. | 9 új teszt zöld, köztük valódi SQLite-hibainjektálás, újrapróbálás, késői watch finish, handoff/restore, régi törlés. Tényleges natív UI és két készülékes próbák még szükségesek; az elvetési út külön további vizsgálatot igényel. |
+| Telefonos editor–natív motor | A programnapi start már előkészíti a natív frame-et, a finish egyezteti a pending eseményeket. A Compose editor közbeni szerkesztés/complete/undo még részben közvetlen snapshot-mutáció, az automatikus controller foreground arm nincs bekötve. | Folyamatos közös editor/motor egyeztetés, valódi complete/undo parancsok, foreground arm és pihenő; a kézi módosítás nem veszhet el natív publikálás vagy handoff közben. Valós integrált UI-próba kell. |
 | Stopper / GPS teljesítés | Az aktív Compose képernyőn nincs bekötött eredeti alsó sorozatstopper. A GPS stop csak leállítja a szolgáltatást. | Pozitív explicit stop készre jelöl; implicit stop/pause/0 nem; kétoldali gyakorlat mindkét oldal; undo és GPS útvonalkötés megőrzése. |
 | Naptár / Coach | A `NavHost` nem tartalmaz külön naptár/Coach útvonalat. A Coach gomb a training útvonalra visz. | Eredeti funkciók átültetése és valós UI-próbája; programképernyő nem helyettesíti őket. |
 | Napló teljesítmény | Compose LazyColumn van, de az adatréteg minden edzést részletekkel figyel. A Wear mini-napló az összes részlet betöltése után vesz csak nyolcat. | Korlátozott lekérdezés/lapozás, teljes adathalmazra működő szűrés; 0/200/1500 minta. Nem állítunk igazolt natív gyorsulást. |
@@ -27,12 +28,14 @@ Külön azonosítójú párhuzamos tesztkiadás jelenleg nem áll rendelkezésre
 | Wear | Az eredeti teljes natív launcher/szolgáltatások/protokoll visszakötve; az alternatív távirányítós prototípus nem launcher. A main gyorsított kiadása nem módosított Wear/shared appkódot. | Kerek UI 183/183 sikeres. Watch7, valódi telefon–óra szinkron és offline átadás/visszavétel még készülékes kapu. |
 | Nyelvek / UI | Számos Compose szöveg közvetlenül magyar; a térkép semleges Bezárás gombot használ. | HU/EN/DE/RO, nagy betű/kis kijelző, elfogadott piros X, használható érintési célok. |
 
-Friss kapu: `39944821598`, `cab522a`: telefon **284/284**, Wear **167/167**,
-aláírt szintetikus upgrade **2/2** sikeres. Wear kerek UI első próbán **182/183**;
-egy fókusz-timeout (emulátor saját setupwizard/sysui/charging képernyője),
-változatlan forráson a második próba is ugyanott hibázott. A védett komponens
-tiltását elutasító `3d92afc` emulátorscript helyett `1a0cc94` töltőről leválasztott
-órát szimulál; `39953886817` még folyamatban. Nincs teljes zöld állítás.
+Friss teljes technikai kapu: **`39953886817` / `1a0cc94` SUCCESS**,
+az Android-termékforrás a `cab522a` fájával azonos. Letöltött XML: telefon
+**284/284**, Wear **167/167**; nyers kerek UI **183/183** egyedi eset,
+aláírt szintetikus upgrade **2/2**, nincs hiba/kihagyás. A két korábbi fókuszhibát
+az emulátor késői rendszerfelülete okozta; a leválasztott töltés szimulációja
+helyreállította a környezetet. Védett komponens tiltása nincs a végső scriptben,
+a teszt és termék fókuszfeltételek változatlanok.
+[Gépi bizonylat](builds/2026-10-23-native-workout-start-finalization.json).
 
 ## Ellenőrzési sorrend
 
