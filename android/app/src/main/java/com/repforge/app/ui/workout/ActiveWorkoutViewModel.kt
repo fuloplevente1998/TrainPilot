@@ -1,6 +1,8 @@
 package com.repforge.app.ui.workout
 import com.repforge.app.PhoneWorkoutPlans
 import com.repforge.app.TrainPilotWorkoutFinalization
+import com.repforge.app.NativeSetStopwatch
+import com.repforge.app.NativeWorkoutTarget
 import com.repforge.app.NativeWorkoutEditing
 import com.repforge.app.NativeWorkoutStartValues
 import androidx.core.content.ContextCompat
@@ -35,6 +37,8 @@ import com.repforge.app.data.store.TrainPilotSettingsStore
 import com.repforge.shared.GpsRouteLedger193
 import com.repforge.shared.SetEditorRules212
 import com.repforge.shared.WorkoutStatsCalculator
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -76,6 +80,7 @@ data class ActiveExerciseUiModel(
 
 data class ActiveWorkoutUiState(
     val workoutId: String = "",
+    val generation: Long = 0L,
     val title: String = "Edzés",
     val dayName: String = "",
     val startedIso: String = "",
@@ -96,6 +101,10 @@ data class ActiveWorkoutUiState(
     val timerTotalSec: Int = 0,
     val timerRound: Int = 1,
     val timerRounds: Int = 1,
+    val stopwatchSetId: String = "",
+    val stopwatchSide: String = "",
+    val stopwatchSeconds: Long = 0L,
+    val stopwatchRunning: Boolean = false,
     // GPS állapot (DistanceTrackingService)
     val isGpsActive: Boolean = false,
     val gpsDistanceMeters: Double = 0.0,
@@ -129,7 +138,15 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     private val _uiState = MutableStateFlow(ActiveWorkoutUiState())
     val uiState: StateFlow<ActiveWorkoutUiState> = _uiState.asStateFlow()
 
+    private var lowerStopwatch: JSONObject? = null
+
     init {
+        viewModelScope.launch {
+            while (isActive) {
+                refreshStopwatchUi()
+                delay(250L)
+            }
+        }
         observeActiveWorkout()
         observeIntervalTimer()
         observeGpsTracker()
@@ -278,8 +295,10 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
             }
         }
 
+        lowerStopwatch = snapshot.optJSONObject(NativeSetStopwatch.FIELD)
         _uiState.value = _uiState.value.copy(
             workoutId = workoutId,
+            generation = snapshot.optLong("generation"),
             title = title,
             dayName = dayName,
             startedIso = snapshot.optString("started"),
@@ -297,16 +316,51 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
         )
     }
 
+    private fun refreshStopwatchUi() {
+        val clock = lowerStopwatch
+        _uiState.value = _uiState.value.copy(stopwatchSetId = clock?.optString("setId").orEmpty(),
+            stopwatchSide = clock?.optString("side").orEmpty(),
+            stopwatchSeconds = clock?.let { NativeSetStopwatch.elapsed(it) / 1000L } ?: 0L,
+            stopwatchRunning = clock?.let { NativeSetStopwatch.running(it) } == true &&
+                !_uiState.value.isPaused && _uiState.value.timerOwner == "phone")
+    }
+
+    fun toggleSetStopwatch(target: NativeWorkoutTarget, side: String) {
+        if (editableSnapshot() == null) return
+        try {
+            val before = NativeWorkoutEditing.project(context)
+            val clock = before.optJSONObject(NativeSetStopwatch.FIELD)
+            val stopping = clock?.let { NativeSetStopwatch.running(it) && it.optString("setId") == target.setId && it.optString("side") == side } == true
+            val saved = if (stopping) NativeWorkoutEditing.stopStopwatch(context, target)
+                else NativeWorkoutEditing.startStopwatch(context, target, side)
+            parseSnapshotToUi(saved)
+            refreshStopwatchUi()
+            runCatching { WearSyncRepository.publishActiveWorkoutSnapshot(context, saved) }
+            if (stopping && target.resolve(saved).set.optBoolean("done")) viewModelScope.launch {
+                AppHapticsManager.setRecorded(context, settingsStore.current().hapticSetRecorded227)
+            }
+        } catch (error: Exception) { _uiState.value = _uiState.value.copy(statusMessage = error.message ?: "A stopper nem vezérelhető.") }
+    }
+
+    fun resetSetStopwatch(target: NativeWorkoutTarget) {
+        if (editableSnapshot() == null) return
+        try {
+            val saved = NativeWorkoutEditing.resetStopwatch(context, target)
+            parseSnapshotToUi(saved)
+            refreshStopwatchUi()
+            runCatching { WearSyncRepository.publishActiveWorkoutSnapshot(context, saved) }
+        } catch (error: Exception) { _uiState.value = _uiState.value.copy(statusMessage = error.message) }
+    }
+
     // =========================================================================
     // Szett és Gyakorlat szerkesztési műveletek
     // =========================================================================
 
-    fun editSet(exerciseIndex: Int, setIndex: Int, field: String, value: String) {
+    fun editSet(target: NativeWorkoutTarget, field: String, value: String) {
         val current = editableSnapshot() ?: return
-        val exercises = current.optJSONArray("exercises") ?: return
-        val ex = exercises.optJSONObject(exerciseIndex) ?: return
-        val sets = ex.optJSONArray("sets") ?: return
-        val set = sets.optJSONObject(setIndex) ?: return
+        val resolved = resolveTarget(current, target) ?: return
+        val ex = resolved.exercise
+        val set = resolved.set
         if (set.optBoolean("done")) return
 
         when (field) {
@@ -328,13 +382,16 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
         saveAndPublish(current)
     }
 
-    fun toggleSetCompleted(exerciseIndex: Int, setIndex: Int) {
+    fun toggleSetCompleted(target: NativeWorkoutTarget) {
         val current = editableSnapshot() ?: return
-        val exercises = current.optJSONArray("exercises") ?: return
-        val ex = exercises.optJSONObject(exerciseIndex) ?: return
-        val sets = ex.optJSONArray("sets") ?: return
-        val set = sets.optJSONObject(setIndex) ?: return
+        val resolved = resolveTarget(current, target) ?: return
+        val ex = resolved.exercise
+        val set = resolved.set
         val wasDone = set.optBoolean("done", false)
+        if (current.optJSONObject(NativeSetStopwatch.FIELD)?.let { NativeSetStopwatch.running(it) } == true) {
+            _uiState.value = _uiState.value.copy(statusMessage = "Előbb állítsd le a sorozat stopperét.")
+            return
+        }
 
         if (!wasDone && NativeWorkoutStartValues.strength(ex)) {
             try {
@@ -359,7 +416,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
 
             val before = JSONObject(current.toString())
             set.put("done", true)
-            current.put("currentExercise", exerciseIndex)
+            current.put("currentExercise", resolved.exerciseIndex)
             val recordId = UUID.randomUUID().toString()
             val target = JSONObject().put("exerciseId", ex.getString("id")).put("setId", set.getString("setId"))
             current.put("lastRecord188", WorkoutUndo188.capture(before, current, target, recordId))
@@ -379,7 +436,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
             viewModelScope.launch {
                 runCatching {
                     val planTransition = PhoneWorkoutExecution.store(context).snapshot()?.let {
-                        PhoneWorkoutPlans.afterRecord(it, exerciseIndex)
+                        PhoneWorkoutPlans.afterRecord(it, resolved.exerciseIndex)
                     }
                     val plan = planTransition?.optJSONObject("plan")
                     if (plan != null) {
@@ -395,10 +452,9 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    fun setSetRir(exerciseIndex: Int, setIndex: Int, rir: Int?) {
+    fun setSetRir(target: NativeWorkoutTarget, rir: Int?) {
         val current = editableSnapshot() ?: return
-        val ex = current.optJSONArray("exercises")?.optJSONObject(exerciseIndex) ?: return
-        val s = ex.optJSONArray("sets")?.optJSONObject(setIndex) ?: return
+        val s = resolveTarget(current, target)?.set ?: return
         if (rir != null && rir in 0..10) {
             s.put("actualRir", rir)
         } else {
@@ -407,9 +463,9 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
         saveAndPublish(current)
     }
 
-    fun toggleSetRirMode(exerciseIndex: Int, enabled: Boolean) {
+    fun toggleSetRirMode(target: NativeWorkoutTarget, enabled: Boolean) {
         val current = editableSnapshot() ?: return
-        val ex = current.optJSONArray("exercises")?.optJSONObject(exerciseIndex) ?: return
+        val ex = resolveTarget(current, target)?.exercise ?: return
         ex.put("setRir229", enabled)
         saveAndPublish(current)
     }
@@ -428,37 +484,36 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    fun addSetToExercise(exerciseIndex: Int) {
+    fun addSetToExercise(target: NativeWorkoutTarget) {
         val current = editableSnapshot() ?: return
-        val ex = current.optJSONArray("exercises")?.optJSONObject(exerciseIndex) ?: return
-        val sets = ex.optJSONArray("sets") ?: JSONArray()
-        if (sets.length() >= 10) return
-        val last = sets.optJSONObject(sets.length() - 1)
-        val newNum = sets.length() + 1
-        val newSet = JSONObject()
-            .put("set", newNum)
-            .put("setId", "${current.optString("workoutId")}:${ex.optString("id")}:$newNum")
-            .put("weight", last?.optString("weight", "0") ?: "0")
-            .put("reps", "")
-            .put("done", false)
-        if (last?.has("leftSeconds") == true) newSet.put("leftSeconds", "")
-        if (last?.has("rightSeconds") == true) newSet.put("rightSeconds", "")
-        sets.put(newSet)
-        ex.put("sets", sets)
+        try {
+            target.appendSet(current)
+            saveAndPublish(current)
+        } catch (error: Exception) {
+            _uiState.value = _uiState.value.copy(statusMessage = error.message)
+        }
+    }
+
+    fun removeSetFromExercise(target: NativeWorkoutTarget) {
+        val current = editableSnapshot() ?: return
+        val resolved = resolveTarget(current, target) ?: return
+        val sets = resolved.exercise.getJSONArray("sets")
+        if (sets.length() <= 1 || resolved.set.optBoolean("done")) return
+        if (current.optJSONObject(NativeSetStopwatch.FIELD)?.optString("setId") == target.setId) {
+            _uiState.value = _uiState.value.copy(statusMessage = "Előbb nullázd a sorozat stopperét.")
+            return
+        }
+        val index = (0 until sets.length()).single { sets.getJSONObject(it).getString("setId") == target.setId }
+        sets.remove(index)
+        for (i in 0 until sets.length()) sets.getJSONObject(i).put("set", i + 1)
         saveAndPublish(current)
     }
 
-    fun removeSetFromExercise(exerciseIndex: Int, setIndex: Int) {
-        val current = editableSnapshot() ?: return
-        val ex = current.optJSONArray("exercises")?.optJSONObject(exerciseIndex) ?: return
-        val sets = ex.optJSONArray("sets") ?: return
-        if (sets.length() <= 1) return
-        sets.remove(setIndex)
-        for (i in 0 until sets.length()) {
-            sets.getJSONObject(i).put("set", i + 1)
-        }
-        ex.put("sets", sets)
-        saveAndPublish(current)
+    private fun resolveTarget(frame: JSONObject, target: NativeWorkoutTarget) = try {
+        target.resolve(frame)
+    } catch (error: Exception) {
+        _uiState.value = _uiState.value.copy(statusMessage = error.message)
+        null
     }
 
     fun addExerciseToWorkout(libraryExercise: ExerciseLibraryEntity) {

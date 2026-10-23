@@ -3,6 +3,8 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import androidx.lifecycle.viewModelScope
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.key
+import com.repforge.app.NativeWorkoutTarget
 
 import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -175,15 +177,26 @@ fun ActiveWorkoutScreen(
             ) {
                 item { Spacer(Modifier.height(4.dp)) }
 
-                itemsIndexed(state.exercises, key = { _, it -> it.exerciseId }) { exIdx, ex ->
+                itemsIndexed(state.exercises, key = { index, ex -> "${state.workoutId}:${state.generation}:${ex.sets.firstOrNull()?.setId ?: "empty:$index"}" }) { _, ex ->
+                    fun target(index: Int) = ex.sets.getOrNull(index)?.let {
+                        NativeWorkoutTarget(state.workoutId, state.generation, ex.exerciseId, it.setId)
+                    }
                     ExerciseCardItem(
                         exercise = ex,
-                        onEditSet = { sIdx, field, v -> viewModel.editSet(exIdx, sIdx, field, v) },
-                        onToggleSetDone = { sIdx -> viewModel.toggleSetCompleted(exIdx, sIdx) },
-                        onSetRir = { sIdx, rir -> viewModel.setSetRir(exIdx, sIdx, rir) },
-                        onToggleRirMode = { en -> viewModel.toggleSetRirMode(exIdx, en) },
-                        onAddSet = { viewModel.addSetToExercise(exIdx) },
-                        onRemoveSet = { sIdx -> viewModel.removeSetFromExercise(exIdx, sIdx) }
+                        onEditSet = { sIdx, field, v -> target(sIdx)?.let { viewModel.editSet(it, field, v) } },
+                        onToggleSetDone = { sIdx -> target(sIdx)?.let { viewModel.toggleSetCompleted(it) } },
+                        onSetRir = { sIdx, rir -> target(sIdx)?.let { viewModel.setSetRir(it, rir) } },
+                        onToggleRirMode = { en -> target(0)?.let { viewModel.toggleSetRirMode(it, en) } },
+                        onAddSet = { target(0)?.let { viewModel.addSetToExercise(it) } },
+                        onRemoveSet = { sIdx -> target(sIdx)?.let { viewModel.removeSetFromExercise(it) } },
+                        stopwatch = {
+                            val nextIndex = ex.sets.indexOfFirst { !it.isCompleted }
+                            if (ex.isTimed && ex.measurementType != "distance" && nextIndex >= 0) {
+                                LowerSetStopwatch(state, ex.sets[nextIndex], ex.isBilateral,
+                                    onToggle = { side -> target(nextIndex)?.let { viewModel.toggleSetStopwatch(it, side) } },
+                                    onReset = { target(nextIndex)?.let { viewModel.resetSetStopwatch(it) } })
+                            }
+                        }
                     )
                 }
 
@@ -474,7 +487,8 @@ fun ExerciseCardItem(
     onSetRir: (Int, Int?) -> Unit,
     onToggleRirMode: (Boolean) -> Unit,
     onAddSet: () -> Unit,
-    onRemoveSet: (Int) -> Unit
+    onRemoveSet: (Int) -> Unit,
+    stopwatch: @Composable () -> Unit = {}
 ) {
     val colors = LocalTrainPilotColors.current
     Card(
@@ -494,6 +508,8 @@ fun ExerciseCardItem(
             }
             Spacer(Modifier.height(10.dp))
 
+            stopwatch()
+
             // Szett fejléc
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
                 Text("#", color = colors.muted, fontSize = 11.sp, modifier = Modifier.width(24.dp))
@@ -508,6 +524,7 @@ fun ExerciseCardItem(
 
             // Szettek sorai
             exercise.sets.forEachIndexed { sIdx, set ->
+                key(set.setId) {
                 SetRowItem(
                     set = set,
                     isBilateral = exercise.isBilateral,
@@ -520,6 +537,7 @@ fun ExerciseCardItem(
                     onRirChange = { onSetRir(sIdx, it) },
                     onDelete = { onRemoveSet(sIdx) }
                 )
+                }
             }
 
             Spacer(Modifier.height(10.dp))
@@ -536,6 +554,44 @@ fun ExerciseCardItem(
                 }
             }
         }
+    }
+}
+
+/** The original lower set stopwatch; there is no second upper interval clock. */
+@Composable
+private fun LowerSetStopwatch(
+    state: ActiveWorkoutUiState,
+    set: ActiveSetUiModel,
+    bilateral: Boolean,
+    onToggle: (String) -> Unit,
+    onReset: () -> Unit
+) {
+    val colors = LocalTrainPilotColors.current
+    val bound = state.stopwatchSetId == set.setId
+    val enabled = state.timerOwner == "phone" && !state.isPaused && !state.isFinishing && !state.isTransferPending
+    Column(Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+        Text("Stopper · ${set.setNumber}. sorozat", color = colors.text, fontWeight = FontWeight.SemiBold)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            (if (bilateral) listOf("left", "right") else listOf("single")).forEach { side ->
+                val matching = bound && state.stopwatchSide == side
+                val running = matching && state.stopwatchRunning
+                val seconds = if (matching) state.stopwatchSeconds else when (side) {
+                    "left" -> set.leftSeconds.toLong(); "right" -> set.rightSeconds.toLong(); else -> 0L
+                }
+                Column(Modifier.weight(1f)) {
+                    if (bilateral) Text(if (side == "left") "Bal oldal" else "Jobb oldal", color = colors.muted, fontSize = 12.sp)
+                    Text("${(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}",
+                        color = colors.accent, fontSize = 30.sp, fontWeight = FontWeight.Bold)
+                    Button(onClick = { onToggle(side) }, enabled = enabled && (!state.stopwatchRunning || running),
+                        modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = colors.accent)) {
+                        Text(if (running) "Leállítás" else "Indítás", color = Color(0xFF0E1015))
+                    }
+                }
+            }
+        }
+        if (bound) TextButton(onClick = onReset, enabled = enabled) { Text("Stopper nullázása", color = colors.muted) }
+        Text(if (bilateral) "Mindkét pozitív oldal után a sorozat automatikusan elkészül."
+            else "Leállításkor a pozitív mért idő automatikusan rögzül.", color = colors.muted, fontSize = 12.sp)
     }
 }
 

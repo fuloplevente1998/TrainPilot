@@ -313,6 +313,8 @@ class IntervalTimerService : Service() {
     private var workoutId: String = ""
     private var armedWorkoutId: String = ""
     private var armedGeneration: Long = 0L
+    private var stopwatchOwnerId: String = ""
+    private var stopwatchOwnerGeneration: Long = 0L
     private var planSteps = JSONArray()
     private var phaseNumber: Long = 0L
     private var running: Boolean = false
@@ -338,6 +340,20 @@ class IntervalTimerService : Service() {
         } else {
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
+        }
+    }
+
+    // The existing foreground controller owns the lower stopwatch too. It only
+    // checkpoints elapsed time: process death / task removal cannot mark a set done.
+    private val stopwatchTick = object : Runnable {
+        override fun run() {
+            if (armedWorkoutId.isEmpty()) return
+            runCatching {
+                val store = PhoneWorkoutExecution.store(this@IntervalTimerService)
+                store.checkpointStopwatch(stopwatchOwnerId, stopwatchOwnerGeneration, SystemClock.elapsedRealtime(),
+                    pause = store.commandsSuspended() || !PhoneOwnership193.phoneAllowed(this@IntervalTimerService, armedWorkoutId))
+            }
+            handler.postDelayed(this, 1000L)
         }
     }
 
@@ -381,6 +397,10 @@ class IntervalTimerService : Service() {
             }
             armedWorkoutId = requested
             armedGeneration = intent.getLongExtra("generation", 0L)
+            stopwatchOwnerId = requested
+            stopwatchOwnerGeneration = armedGeneration
+            handler.removeCallbacks(stopwatchTick)
+            handler.postDelayed(stopwatchTick, 1000L)
             language = intent.getStringExtra("language") ?: "en"
             channel()
             startForeground(NOTIFICATION, notification())
@@ -827,6 +847,7 @@ class IntervalTimerService : Service() {
     }
 
     private fun stopRun() {
+        runCatching { PhoneWorkoutExecution.store(this).checkpointStopwatch(stopwatchOwnerId, stopwatchOwnerGeneration, SystemClock.elapsedRealtime(), pause = true) }
         if (timeline == null) {
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
@@ -852,6 +873,8 @@ class IntervalTimerService : Service() {
     }
 
     override fun onDestroy() {
+        runCatching { PhoneWorkoutExecution.store(this).checkpointStopwatch(stopwatchOwnerId, stopwatchOwnerGeneration, SystemClock.elapsedRealtime(), pause = true) }
+        handler.removeCallbacks(stopwatchTick)
         if (running) {
             cancelVibration()
             elapsed = now()

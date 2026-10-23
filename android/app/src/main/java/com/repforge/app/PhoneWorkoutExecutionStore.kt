@@ -373,7 +373,8 @@ internal class PhoneWorkoutExecutionStore(context: Context) :
                 .put("setId", target.set.getString("setId"))
                 .put("recordedAt", System.currentTimeMillis())
                 .put("values", values)
-                .put("before", JSONObject().put("reps", target.set.opt("reps")).put("weight", target.set.opt("weight")))
+                .put("before", if (command.optString("action") == "completeTimedSet") recordedBase(target.set)
+                    else JSONObject().put("reps", target.set.opt("reps")).put("weight", target.set.opt("weight")))
             if (next.has("transition")) result.put("transition", next.getJSONObject("transition"))
             next.put("watchSequence", max(next.optLong("watchSequence"), command.optLong("sequence")))
             val row = ContentValues().apply {
@@ -599,6 +600,23 @@ internal class PhoneWorkoutExecutionStore(context: Context) :
         } finally {
             db.endTransaction()
         }
+    }
+
+    /** Controller checkpoints never complete a measured set or advance its command revision. */
+    @Synchronized
+    fun checkpointStopwatch(workoutId: String, generation: Long, monotonic: Long, pause: Boolean = false) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val frame = current(db) ?: return
+            if (blocked(db) || !frame.optBoolean("active") || frame.optString("timerOwner") != "phone" ||
+                workoutId != frame.optString("workoutId") || generation != frame.optLong("generation") ||
+                frame.optJSONObject(NativeSetStopwatch.FIELD) == null) return
+            if (pause || frame.optBoolean("workoutPaused")) NativeSetStopwatch.pause(frame, monotonic)
+            else NativeSetStopwatch.checkpoint(frame, monotonic)
+            save(db, frame)
+            db.setTransactionSuccessful()
+        } finally { db.endTransaction() }
     }
 
     /** Explicit phone edits use a CAS and a matching base; ordinary snapshots still cannot undo recordings. */
@@ -841,6 +859,7 @@ internal class PhoneWorkoutExecutionStore(context: Context) :
                     }
                     anchor.put("paused201", paused).put("began", monotonic)
                 }
+                if (paused) NativeSetStopwatch.pause(frame, monotonic)
                 frame.put("workoutPaused", paused).put("pauseRevision", revision)
                 if (input.optJSONArray("activeIntervals") != null) {
                     frame.put("activeIntervals", JSONArray(input.getJSONArray("activeIntervals").toString()))
