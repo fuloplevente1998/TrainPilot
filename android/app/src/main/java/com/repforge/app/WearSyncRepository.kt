@@ -43,6 +43,11 @@ object WearSyncRepository {
 
     private val syncScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    fun refreshWatchHomeAsync(context: Context) {
+        val app = context.applicationContext
+        syncScope.launch { runCatching { publishWatchHomeSnapshot(app) } }
+    }
+
     /**
      * Automatically prepares and offers ownership to the watch when the watch requests
      * takeover ("incoming" stage) and the phone workout is already paused or can be safely paused.
@@ -102,7 +107,7 @@ object WearSyncRepository {
             try {
                 val action = command.optString("action")
                 val pending = ActiveWorkoutStore.current(appContext)?.optBoolean("finalizationPending") == true
-                check(!pending || action in setOf("finishWorkout", "discardWorkout", "saveWorkoutFeedback", "healthSummary")) {
+                check(!pending || action in setOf("finishWorkout", "saveWorkoutFeedback", "healthSummary")) {
                     "Workout finalization is in progress"
                 }
                 val db = TrainPilotDatabase.getInstance(appContext)

@@ -73,11 +73,16 @@ interface ExerciseLibraryDao {
 
 @Dao
 interface WorkoutHistoryDao {
+    @Query("SELECT EXISTS(SELECT 1 FROM history_tombstones WHERE primaryId = :id OR workoutKey = :id OR instr(idsJson, :quotedId) > 0)")
+    suspend fun isTombstoned(id: String, quotedId: String): Boolean
+
     @Query("""
         SELECT DISTINCT w.* FROM workout_history w
         INNER JOIN workout_history_exercises e ON e.workoutHistoryId = w.id
         WHERE e.exerciseId = :exerciseId AND e.loadType = :loadType AND e.repUnit = :repUnit
           AND w.finishedEpochMs > w.startedEpochMs AND w.finishedEpochMs <= :now
+          AND NOT EXISTS (SELECT 1 FROM history_tombstones t
+              WHERE t.primaryId IN (w.id, w.syncId, w.workoutKey) OR t.workoutKey = w.workoutKey)
         ORDER BY w.finishedEpochMs DESC, w.startedEpochMs DESC
         LIMIT :limit OFFSET :offset
     """)

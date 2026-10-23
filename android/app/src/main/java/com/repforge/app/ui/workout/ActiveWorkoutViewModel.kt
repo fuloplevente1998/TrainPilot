@@ -300,7 +300,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     // =========================================================================
 
     fun editSet(exerciseIndex: Int, setIndex: Int, field: String, value: String) {
-        val current = ActiveWorkoutStore.current(context) ?: return
+        val current = editableSnapshot() ?: return
         val exercises = current.optJSONArray("exercises") ?: return
         val ex = exercises.optJSONObject(exerciseIndex) ?: return
         val sets = ex.optJSONArray("sets") ?: return
@@ -327,7 +327,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun toggleSetCompleted(exerciseIndex: Int, setIndex: Int) {
-        val current = ActiveWorkoutStore.current(context) ?: return
+        val current = editableSnapshot() ?: return
         val exercises = current.optJSONArray("exercises") ?: return
         val ex = exercises.optJSONObject(exerciseIndex) ?: return
         val sets = ex.optJSONArray("sets") ?: return
@@ -381,7 +381,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun setSetRir(exerciseIndex: Int, setIndex: Int, rir: Int?) {
-        val current = ActiveWorkoutStore.current(context) ?: return
+        val current = editableSnapshot() ?: return
         val ex = current.optJSONArray("exercises")?.optJSONObject(exerciseIndex) ?: return
         val s = ex.optJSONArray("sets")?.optJSONObject(setIndex) ?: return
         if (rir != null && rir in 0..10) {
@@ -393,14 +393,14 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun toggleSetRirMode(exerciseIndex: Int, enabled: Boolean) {
-        val current = ActiveWorkoutStore.current(context) ?: return
+        val current = editableSnapshot() ?: return
         val ex = current.optJSONArray("exercises")?.optJSONObject(exerciseIndex) ?: return
         ex.put("setRir229", enabled)
         saveAndPublish(current)
     }
 
     fun undoLastSet() {
-        if (_uiState.value.isFinishing || ActiveWorkoutStore.current(context)?.optBoolean("finalizationPending") == true) return
+        if (editableSnapshot() == null) return
         val recordId = _uiState.value.undoRecordId
         if (recordId.isEmpty()) return
         viewModelScope.launch(Dispatchers.Main) {
@@ -420,7 +420,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun addSetToExercise(exerciseIndex: Int) {
-        val current = ActiveWorkoutStore.current(context) ?: return
+        val current = editableSnapshot() ?: return
         val ex = current.optJSONArray("exercises")?.optJSONObject(exerciseIndex) ?: return
         val sets = ex.optJSONArray("sets") ?: JSONArray()
         if (sets.length() >= 10) return
@@ -440,7 +440,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun removeSetFromExercise(exerciseIndex: Int, setIndex: Int) {
-        val current = ActiveWorkoutStore.current(context) ?: return
+        val current = editableSnapshot() ?: return
         val ex = current.optJSONArray("exercises")?.optJSONObject(exerciseIndex) ?: return
         val sets = ex.optJSONArray("sets") ?: return
         if (sets.length() <= 1) return
@@ -453,7 +453,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun addExerciseToWorkout(libraryExercise: ExerciseLibraryEntity) {
-        val current = ActiveWorkoutStore.current(context) ?: return
+        val current = editableSnapshot() ?: return
         val exercises = current.optJSONArray("exercises") ?: JSONArray()
         val exObj = JSONObject()
             .put("id", libraryExercise.id)
@@ -488,8 +488,8 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     // =========================================================================
 
     fun toggleWorkoutPause() {
-        if (_uiState.value.isFinishing || ActiveWorkoutStore.current(context)?.optBoolean("finalizationPending") == true) return
-        val current = ActiveWorkoutStore.current(context) ?: return
+        if (editableSnapshot() == null) return
+        val current = editableSnapshot() ?: return
         val willPause = !current.optBoolean("workoutPaused", false)
         val now = System.currentTimeMillis()
         val frame = JSONObject(current.toString())
@@ -513,8 +513,8 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun skipRestTimer() {
-        if (_uiState.value.isFinishing || ActiveWorkoutStore.current(context)?.optBoolean("finalizationPending") == true) return
-        val current = ActiveWorkoutStore.current(context) ?: return
+        if (editableSnapshot() == null) return
+        val current = editableSnapshot() ?: return
         current.put("restEndAt", 0L)
         saveAndPublish(current)
         viewModelScope.launch(Dispatchers.Main) {
@@ -523,8 +523,8 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun adjustRestTimer(deltaSeconds: Int) {
-        if (_uiState.value.isFinishing || ActiveWorkoutStore.current(context)?.optBoolean("finalizationPending") == true) return
-        val current = ActiveWorkoutStore.current(context) ?: return
+        if (editableSnapshot() == null) return
+        val current = editableSnapshot() ?: return
         val endAt = current.optLong("restEndAt", 0L)
         val now = System.currentTimeMillis()
         val newEndAt = if (endAt > now) endAt + deltaSeconds * 1000L else now + deltaSeconds * 1000L
@@ -533,7 +533,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun toggleGpsTracking(key: String) {
-        if (_uiState.value.isFinishing || ActiveWorkoutStore.current(context)?.optBoolean("finalizationPending") == true) return
+        if (editableSnapshot() == null) return
         val isRunning = _uiState.value.isGpsActive
         if (!isRunning) {
             val intent = Intent(context, DistanceTrackingService::class.java).apply {
@@ -582,12 +582,14 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     // =========================================================================
 
     fun onPhotoCaptured(meta: StoredPhotoMetadata) {
+        if (editableSnapshot() == null) return
         val photos = _uiState.value.attachedPhotos + meta
         _uiState.value = _uiState.value.copy(attachedPhotos = photos)
         savePhotosToActiveSnapshot()
     }
 
     fun deletePhoto(id: String) {
+        if (editableSnapshot() == null) return
         photoRepository.delete(id)
         val photos = _uiState.value.attachedPhotos.filter { it.id != id }
         _uiState.value = _uiState.value.copy(attachedPhotos = photos)
@@ -625,6 +627,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
             try {
                 val result = TrainPilotWorkoutFinalization(context, database).finishWorkout(current)
                 result.closedSnapshot?.let { runCatching { WearSyncRepository.publishActiveWorkoutSnapshot(context, it) } }
+                WearSyncRepository.refreshWatchHomeAsync(context)
                 _uiState.value = _uiState.value.copy(isFinishing = false)
                 onSaved()
             } catch (error: Exception) {
@@ -669,9 +672,18 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     fun closeExercisePicker() { _uiState.value = _uiState.value.copy(showExercisePicker = false) }
     fun openFinishModal() { _uiState.value = _uiState.value.copy(showFinishModal = true) }
     fun closeFinishModal() { _uiState.value = _uiState.value.copy(showFinishModal = false) }
-    fun openDiscardModal() { _uiState.value = _uiState.value.copy(showDiscardModal = true) }
+    fun openDiscardModal() {
+        if (ActiveWorkoutStore.current(context)?.optBoolean("finalizationPending") == true) {
+            _uiState.value = _uiState.value.copy(statusMessage = "Az edzés lezárása függőben maradt. Próbáld újra a befejezést.")
+        } else _uiState.value = _uiState.value.copy(showDiscardModal = true)
+    }
     fun closeDiscardModal() { _uiState.value = _uiState.value.copy(showDiscardModal = false) }
     fun clearStatusMessage() { _uiState.value = _uiState.value.copy(statusMessage = null) }
+
+    private fun editableSnapshot(): JSONObject? = ActiveWorkoutStore.current(context)?.takeIf {
+        !_uiState.value.isFinishing && it.optBoolean("active") && !it.optBoolean("finalizationPending") &&
+            it.optString("timerOwner", "phone") == "phone"
+    }
 
     private fun saveAndPublish(snapshot: JSONObject) {
         val current = ActiveWorkoutStore.current(context)

@@ -6,6 +6,7 @@ import androidx.room.withTransaction
 import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.migration.LegacyWebViewMigrator
 import com.repforge.app.data.store.TrainPilotSettingsStore
+import com.repforge.shared.WorkoutOwnership193
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
@@ -33,6 +34,9 @@ internal class TrainPilotWorkoutFinalization(
                 // leaves the durable pending draft available, and emits no saved receipt.
                 withContext(Dispatchers.IO) {
                     database.withTransaction {
+                        check(!database.workoutHistoryDao().isTombstoned(id, JSONObject.quote(id))) {
+                            "A törölt edzés nem menthető újra."
+                        }
                         val existing = database.workoutHistoryDao().getWorkoutWithDetails(id)
                         if (existing != null) history.put("id", existing.workout.id).put("finished", existing.workout.finished)
                         val prior = database.workoutHistoryDao().getAllWorkoutsWithDetails()
@@ -70,6 +74,9 @@ internal class TrainPilotWorkoutFinalization(
         val id = input.getString("workoutId")
         val current = ActiveWorkoutStore.current(context)
         val ownsDraft = current?.optBoolean("active") == true && current.optString("workoutId") == id
+        check(!WorkoutOwnership193.pending(input) && (!ownsDraft || !WorkoutOwnership193.pending(current))) {
+            "Előbb fejezd be az edzés átadását vagy visszavételét."
+        }
         if (!fromWatch) {
             check(ownsDraft && current!!.optString("timerOwner", "phone") == "phone") { "A telefonos edzés tulajdonosa megváltozott." }
         } else if (ownsDraft) {
@@ -87,9 +94,9 @@ internal class TrainPilotWorkoutFinalization(
             if (it.isNull("end") || it.optString("end").isBlank()) it.put("end", finished)
         }
         val execution = PhoneWorkoutExecution.store(context)
+        check(!execution.restoreBlocked()) { "Adat-visszaállítás van folyamatban." }
         var frame = execution.snapshot()?.takeIf { it.optString("workoutId") == id }
         if (frame != null) {
-            check(!execution.restoreBlocked()) { "Adat-visszaállítás van folyamatban." }
             check(!execution.commandsSuspended() || current?.optBoolean("finalizationPending") == true) { "Az edzésvezérlés foglalt." }
             if (draft.has("generation")) check(draft.getLong("generation") == frame.getLong("generation")) { "Az edzés generációja megváltozott." }
         }
@@ -120,6 +127,7 @@ internal class TrainPilotWorkoutFinalization(
         if (ownsDraft) DistanceTrackingService.stop(context)
         val history = JSONObject(draft.toString())
         history.remove("finalizationPending")
+        history.put("active", false)
         return history
     }
 }

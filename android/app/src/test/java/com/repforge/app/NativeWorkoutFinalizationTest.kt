@@ -157,4 +157,36 @@ class NativeWorkoutFinalizationTest {
         assertThrows(IllegalStateException::class.java) { ActiveWorkoutStore.saveOwned(context, draft("new")) }
         assertEquals(current.toString(), ActiveWorkoutStore.current(context).toString())
     }
+
+    @Test fun pendingOwnershipTransferCannotBeFinished() = runTest(dispatcher) {
+        val input = prepare().put("handoff193", JSONObject().put("state", "prepared"))
+        ActiveWorkoutStore.saveOwned(context, input)
+        var failed = false
+        try { TrainPilotWorkoutFinalization(context, db).finishWorkout(input) } catch (_: IllegalStateException) { failed = true }
+        assertTrue(failed)
+        assertEquals(0, db.workoutHistoryDao().getWorkoutCount())
+        assertTrue(PhoneWorkoutExecution.store(context).snapshot()!!.getBoolean("active"))
+        assertFalse(ActiveWorkoutStore.current(context)!!.optBoolean("finalizationPending"))
+    }
+
+    @Test fun activeRestoreCannotSaveADetachedWatchWorkout() = runTest(dispatcher) {
+        PhoneWorkoutExecution.store(context).setRestoreBlocked(true)
+        var failed = false
+        try { TrainPilotWorkoutFinalization(context, db).finishWorkout(draft("watch"), fromWatch = true) } catch (_: IllegalStateException) { failed = true }
+        assertTrue(failed)
+        assertEquals(0, db.workoutHistoryDao().getWorkoutCount())
+    }
+
+    @Test fun deletionBeyondRecentTombstoneWindowStillBlocksLateWatchFinish() = runTest(dispatcher) {
+        // Alias is not the primary key; the deletion is older than the former 2000-row window.
+        db.workoutHistoryDao().upsertTombstone(HistoryTombstoneEntity("old-alias", "different-key", "[\"watch\"]", 1))
+        db.workoutHistoryDao().upsertTombstones((1..2001).map {
+            HistoryTombstoneEntity("newer-$it", "newer-$it", "[\"newer-$it\"]", it + 1L)
+        })
+        assertFalse(db.workoutHistoryDao().getTombstones().any { it.primaryId == "old-alias" })
+        var failed = false
+        try { TrainPilotWorkoutFinalization(context, db).finishWorkout(draft("watch"), fromWatch = true) } catch (_: IllegalStateException) { failed = true }
+        assertTrue(failed)
+        assertEquals(0, db.workoutHistoryDao().getWorkoutCount())
+    }
 }
