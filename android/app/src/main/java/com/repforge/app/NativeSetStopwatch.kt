@@ -22,15 +22,28 @@ internal object NativeSetStopwatch {
 
     fun running(clock: JSONObject) = clock.optBoolean("running") && clock.optString("process") == process
 
-    fun pause(frame: JSONObject, now: Long = SystemClock.elapsedRealtime()) {
+    fun pausedElapsed(clock: JSONObject, now: Long = SystemClock.elapsedRealtime()): Long =
+        if (clock.optString("process") == process && !clock.optBoolean("running") && clock.has("pauseBegan"))
+            (now - clock.getLong("pauseBegan")).coerceIn(0L, IntervalTimeline.MAX_MS) else 0L
+
+    fun sealPause(frame: JSONObject, now: Long = SystemClock.elapsedRealtime()) {
+        NativeMeasuredTime.stopwatch(frame, now)
+        frame.optJSONObject(FIELD)?.remove("pauseBegan")
+    }
+
+    fun pause(frame: JSONObject, now: Long = SystemClock.elapsedRealtime(), trackPause: Boolean = true) {
         val clock = frame.optJSONObject(FIELD) ?: return
+        if (running(clock) && trackPause) clock.put("pauseBegan", now)
+        if (!trackPause) clock.remove("pauseBegan")
         clock.put("elapsedMs", elapsed(clock, now)).put("began", now).put("running", false)
+        NativeMeasuredTime.stopwatch(frame, now)
     }
 
     fun checkpoint(frame: JSONObject, now: Long) {
         val clock = frame.optJSONObject(FIELD) ?: return
         val live = running(clock)
         clock.put("elapsedMs", elapsed(clock, now)).put("began", now).put("running", live)
+        NativeMeasuredTime.stopwatch(frame, now)
     }
 
     fun start(frame: JSONObject, target: NativeWorkoutTarget, side: String, now: Long = SystemClock.elapsedRealtime()) {
@@ -43,8 +56,10 @@ internal object NativeSetStopwatch {
         check(previous == null || !running(previous)) { "Már fut egy sorozatstopper."
         }
         val same = previous != null && previous.optString("setId") == target.setId && previous.optString("side") == side
+        NativeMeasuredTime.stopwatch(frame, now)
+        val baseline = if (same) elapsed(previous!!, now) else 0L
         frame.put(FIELD, JSONObject().put("id", UUID.randomUUID().toString()).put("exerciseId", target.exerciseId)
-            .put("setId", target.setId).put("side", side).put("elapsedMs", if (same) elapsed(previous!!, now) else 0L)
+            .put("setId", target.setId).put("side", side).put("elapsedMs", baseline).put("creditBaseMs", baseline)
             .put("process", process).put("began", now).put("running", true))
     }
 
@@ -59,7 +74,7 @@ internal object NativeSetStopwatch {
         // A process restart recovers the last durable checkpoint in pause. It cannot silently complete.
         check(running(clock)) { "A stopper megszakadt. Folytasd vagy nullázd a mérést." }
         val seconds = elapsed(clock, now) / 1000L
-        pause(next, now)
+        pause(next, now, trackPause = false)
         if (seconds <= 0L) return next
         if (bilateral(resolved.exercise)) {
             val field = when (clock.getString("side")) { "left" -> "leftSeconds"; "right" -> "rightSeconds"; else -> error("Érvénytelen oldal.") }

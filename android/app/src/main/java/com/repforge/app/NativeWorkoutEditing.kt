@@ -55,6 +55,7 @@ internal object NativeWorkoutEditing {
             "Az edzés időközben frissült. Próbáld újra a módosítást."
         }
         val incoming = JSONObject(edit.toString())
+        check(incoming.optInt("nativeEditorProjection") == 1) { "A natív edzés állapota megváltozott." }
         if (!clockEdit) {
             if (frame.has(NativeSetStopwatch.FIELD)) incoming.put(NativeSetStopwatch.FIELD, frame.get(NativeSetStopwatch.FIELD))
             else incoming.remove(NativeSetStopwatch.FIELD)
@@ -68,6 +69,17 @@ internal object NativeWorkoutEditing {
                     PhoneWorkoutExecutionStore.recordedBase(target.resolve(incoming).set).toString()) {
                     "Előbb fejezd be a sorozat GPS-mérését."
                 }
+            }
+        }
+        val activeTimer = frame.optJSONObject("latestTimer162")
+        if (activeTimer != null && !activeTimer.optBoolean("restOnly") && !activeTimer.optBoolean("stopped") &&
+            !activeTimer.optBoolean("interrupted") && activeTimer.optString("phase") != "complete") {
+            val rows = activeTimer.getJSONArray("steps")
+            for (i in 0 until rows.length()) {
+                val row = rows.getJSONObject(i)
+                val target = NativeWorkoutTarget(frame.getString("workoutId"), frame.getLong("generation"), row.getString("exerciseId"), row.getString("setId"))
+                check(PhoneWorkoutExecutionStore.recordedBase(target.resolve(frame).set).toString() ==
+                    PhoneWorkoutExecutionStore.recordedBase(target.resolve(incoming).set).toString()) { "Előbb állítsd le az intervallummérést." }
             }
         }
         val bases = JSONObject()
@@ -128,6 +140,18 @@ internal object NativeWorkoutEditing {
         finally { IntervalTimerService.trackSetStopwatch(target.workoutId, target.generation) }
     }
 
+    fun completeMeasuredSet(context: Context, target: NativeWorkoutTarget): JSONObject {
+        val frame = project(context)
+        val set = target.resolve(frame).set
+        val command = JSONObject().put("nativeExecutionProtocol", 2).put("action", "completeMeasuredSet")
+            .put("commandId", UUID.randomUUID().toString()).put("workoutId", target.workoutId).put("generation", target.generation)
+            .put("ownerEpoch193", frame.optLong("ownerEpoch193")).put("executionRevision", frame.getLong("executionRevision"))
+            .put("exerciseId", target.exerciseId).put("setId", target.setId)
+            .put("measuredValues", PhoneWorkoutExecutionStore.recordedBase(set).toString())
+        requireApplied(PhoneWorkoutExecution.execute(context, command))
+        return ActiveWorkoutStore.current(context)!!
+    }
+
     fun stopStopwatch(context: Context, target: NativeWorkoutTarget): JSONObject {
         val frame = project(context)
         target.resolve(frame)
@@ -153,6 +177,7 @@ internal object NativeWorkoutEditing {
         val clock = frame.optJSONObject(NativeSetStopwatch.FIELD)
         if (clock != null) {
             check(clock.optString("setId") == target.setId && clock.optString("exerciseId") == target.exerciseId) { "Másik sorozat mérése van előkészítve." }
+            NativeSetStopwatch.pause(frame)
             frame.remove(NativeSetStopwatch.FIELD)
         }
         return commitEdit(context, frame, clockEdit = true)
@@ -176,7 +201,9 @@ internal object NativeWorkoutEditing {
             "Kapcsold be a telefon helyszolgáltatását."
         }
         NativeGpsMeasurement.prepare(frame, target)
-        val saved = commitEdit(context, frame, gpsEdit = true)
+        NativeSetStopwatch.sealPause(frame)
+        frame.remove(NativeSetStopwatch.FIELD)
+        val saved = commitEdit(context, frame, gpsEdit = true, clockEdit = true)
         val binding = saved.getJSONObject(NativeGpsMeasurement.FIELD)
         ContextCompat.startForegroundService(context, Intent(context, DistanceTrackingService::class.java).apply {
             action = DistanceTrackingService.START
@@ -240,13 +267,60 @@ internal object NativeWorkoutEditing {
         return project(context, PhoneWorkoutExecution.display(context))
     }
 
+    fun configureIntervals(context: Context, target: NativeWorkoutTarget, configuration: JSONObject): JSONObject {
+        val frame = project(context)
+        val resolved = target.resolve(frame)
+        val config = JSONObject()
+        for (field in listOf("work", "rest", "rounds")) config.put(field, PhoneWorkoutRecording.version(configuration, field))
+        config.put("sound", configuration.optBoolean("sound", true)).put("vibration", configuration.optBoolean("vibration", true))
+        frame.put("timerConfig", config).put("restSeconds", config.getInt("rest"))
+        resolved.exercise.put("restSeconds162", config.getInt("rest"))
+        // Validate even if automatic rest is currently disabled.
+        PhoneWorkoutPlans.validateConfig(JSONObject(frame.toString()).put("automaticEnabled", true))
+        return commitEdit(context, frame)
+    }
+
+    fun startIntervals(context: Context, target: NativeWorkoutTarget): JSONObject {
+        var frame = project(context)
+        val resolved = target.resolve(frame)
+        check(!frame.optBoolean("workoutPaused") && !resolved.set.optBoolean("done") &&
+            resolved.exerciseIndex == frame.optInt("currentExercise") && NativeSetStopwatch.timed(resolved.exercise) &&
+            !NativeSetStopwatch.bilateral(resolved.exercise)) { "Az intervallummérés egyoldali időalapú sorozathoz indítható." }
+        check(!NativeGpsMeasurement.busy(frame) && frame.optJSONObject(NativeSetStopwatch.FIELD)?.let { NativeSetStopwatch.running(it) } != true) {
+            "Előbb állítsd le a másik mérést."
+        }
+        if (frame.has(NativeSetStopwatch.FIELD)) {
+            frame.remove(NativeSetStopwatch.FIELD)
+            frame = commitEdit(context, frame, clockEdit = true)
+        }
+        requireApplied(PhoneWorkoutExecution.execute(context, JSONObject().put("nativeExecutionProtocol", 2)
+            .put("action", "automaticControl").put("value", "start").put("commandId", UUID.randomUUID().toString())
+            .put("workoutId", target.workoutId).put("generation", target.generation).put("executionRevision", frame.getLong("executionRevision"))
+            .put("ownerEpoch193", frame.optLong("ownerEpoch193")).put("exerciseId", target.exerciseId).put("setId", target.setId)))
+        return project(context, PhoneWorkoutExecution.display(context))
+    }
+
+    fun stopIntervals(context: Context, target: NativeTimerTarget): JSONObject {
+        val frame = project(context)
+        check(target.workoutId == frame.optString("workoutId") && target.generation == frame.optLong("generation") && target.key.isNotEmpty()) { "Az időzítő megváltozott." }
+        var status = IntervalTimerService.snapshot(context)
+        check(status.optString("key") == target.key && status.optString("workoutId") == target.workoutId &&
+            status.optLong("generation") == target.generation && !status.optBoolean("restOnly")) { "Az intervallum már másik méréshez tartozik." }
+        if (!status.optBoolean("stopped") && !status.optBoolean("interrupted")) status = IntervalTimerService.command(context, target.key, "stop")
+        PhoneWorkoutExecution.store(context).checkpointTimer(status, SystemClock.elapsedRealtime())
+        PhoneWorkoutExecution.store(context).retireNativeInterval(target)
+        PhoneWorkoutExecution.publish(context)
+        return project(context)
+    }
+
     fun selectExercise(context: Context, target: NativeWorkoutTarget): JSONObject {
         var frame = project(context)
         target.resolve(frame)
         if (frame.optJSONObject(NativeGpsMeasurement.FIELD)?.let { it.optString("state") != "recorded" && !it.optBoolean("applied") } == true) {
             frame = interruptGps(context)
         }
-        NativeSetStopwatch.pause(frame)
+        NativeSetStopwatch.sealPause(frame)
+        NativeSetStopwatch.pause(frame, trackPause = false)
         frame.put("currentExercise", target.resolve(frame).exerciseIndex)
             .put("selectionRevision", frame.optLong("selectionRevision") + 1L)
         // The native rest plan and its ledger remain owned by the foreground controller.
@@ -267,7 +341,12 @@ internal object NativeWorkoutEditing {
 
     private fun requireApplied(result: JSONObject): JSONObject {
         check(result.optString("status") in setOf("applied", "duplicate")) {
-            "A natív művelet nem alkalmazható: ${result.optString("reason", result.optString("status"))}"
+            when (val reason = result.optString("reason", result.optString("status"))) {
+                "invalidMeasuredTime" -> "Pozitív egész másodpercet adj meg (legfeljebb 24 óra); kétoldali sorozatnál mindkét oldal szükséges."
+                "invalidDistance" -> "A távolsági sorozathoz pozitív idő és távolság is szükséges."
+                "measurementChanged" -> "A mért értékek időközben megváltoztak. Ellenőrizd és próbáld újra."
+                else -> "A natív művelet nem alkalmazható: $reason"
+            }
         }
         return result
     }

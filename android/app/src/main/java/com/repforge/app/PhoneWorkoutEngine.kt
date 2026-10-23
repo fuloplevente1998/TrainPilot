@@ -92,7 +92,7 @@ internal object PhoneWorkoutRecording {
     @Throws(JSONException::class)
     fun target(frame: JSONObject, command: JSONObject): Target {
         validateFrame(frame)
-        if (command.optString("action") !in setOf("completeSet", "completeTimedSet", "completeGpsSet")) {
+        if (command.optString("action") !in setOf("completeSet", "completeTimedSet", "completeGpsSet", "completeMeasuredSet")) {
             throw IllegalArgumentException("unsupportedAction")
         }
         if (id(frame, "workoutId") != id(command, "workoutId") ||
@@ -114,7 +114,11 @@ internal object PhoneWorkoutRecording {
                 if (setId != id(set, "setId")) continue
                 if (exerciseId != id(exercise, "id")) throw IllegalArgumentException("targetChanged")
                 if (set.getBoolean("done")) throw IllegalArgumentException("alreadyRecorded")
-                if (command.optString("action") == "completeGpsSet") {
+                if (command.optString("action") == "completeMeasuredSet") {
+                    if (frame.optInt("nativeEditorProjection") != 1 || !NativeMeasuredSet.supported(exercise)) {
+                        throw IllegalArgumentException("unsupportedMeasurement")
+                    }
+                } else if (command.optString("action") == "completeGpsSet") {
                     if (frame.optInt("nativeEditorProjection") != 1 || !NativeGpsMeasurement.distance(exercise)) {
                         throw IllegalArgumentException("unsupportedMeasurement")
                     }
@@ -138,6 +142,10 @@ internal object PhoneWorkoutRecording {
     @JvmStatic
     @Throws(JSONException::class)
     fun record(frame: JSONObject, command: JSONObject): JSONObject {
+        if (command.optString("action") == "completeMeasuredSet") {
+            target(frame, command)
+            return NativeMeasuredSet.record(frame, command)
+        }
         if (command.optString("action") == "completeGpsSet") {
             target(frame, command)
             return NativeGpsMeasurement.record(frame, command)
@@ -174,6 +182,7 @@ internal object PhoneWorkoutRecording {
             target.set.put("weight", weight)
         }
         target.set.put("done", true)
+        if (next.optInt("nativeEditorProjection") == 1) NativeSetStopwatch.sealPause(next)
         next.put("currentExercise", target.exerciseIndex)
         next.put("executionRevision", advance(version(frame, "executionRevision")))
         return next
@@ -192,10 +201,10 @@ internal object PhoneWorkoutRecording {
                 if (id(set, "setId") != id(command, "setId")) continue
                 val values = JSONObject().put("done", true).put("reps", set.getString("reps"))
                 if (command.has("weight")) values.put("weight", set.get("weight"))
-                if (command.optString("action") == "completeTimedSet") {
+                if (command.optString("action") in setOf("completeTimedSet", "completeMeasuredSet")) {
                     for (field in listOf("leftSeconds", "rightSeconds")) if (set.has(field)) values.put(field, set.get(field))
                 }
-                if (command.optString("action") == "completeGpsSet") {
+                if (command.optString("action") in setOf("completeGpsSet", "completeMeasuredSet")) {
                     for (field in listOf("distanceMeters", "distanceSource", "gpsRouteKey163")) if (set.has(field)) values.put(field, set.get(field))
                 }
                 return values
@@ -217,6 +226,7 @@ internal object PhoneWorkoutRecording {
         // Existing durable receipts keep their exact original fingerprint format.
         if (command.optString("action") == "completeTimedSet") values.put(JSONArray().put(command.has("clockId")).put(command.opt("clockId")))
         if (command.optString("action") == "completeGpsSet") values.put(JSONArray().put(command.has("measurementId")).put(command.opt("measurementId")))
+        if (command.optString("action") == "completeMeasuredSet") values.put(JSONArray().put(command.has("measuredValues")).put(command.opt("measuredValues")))
         return values.toString()
     }
 
@@ -336,7 +346,9 @@ internal object PhoneWorkoutPlans {
             return transition.put("phase", "complete")
         }
         val nonNullExercise = exercise!!
-        val timed = !manualMeasured && "mp" == nonNullExercise.optString("repUnit")
+        fun timedExercise(ex: JSONObject) = if (frame.optInt("nativeEditorProjection") == 1)
+            NativeSetStopwatch.timed(ex) && !NativeSetStopwatch.bilateral(ex) else "mp" == ex.optString("repUnit")
+        val timed = !manualMeasured && timedExercise(nonNullExercise)
         if (timedOnly && !timed) throw IllegalArgumentException("noTimedTarget")
         if (!manualMeasured && "distance" == nonNullExercise.optString("measurementType")) {
             throw IllegalArgumentException("backgroundGpsNotPrepared")
@@ -348,7 +360,7 @@ internal object PhoneWorkoutPlans {
         if (timed) {
             for (i in index until exercises.length()) {
                 val e = exercises.getJSONObject(i)
-                if ("mp" != e.optString("repUnit")) break
+                if (!timedExercise(e)) break
                 if ("distance" == e.optString("measurementType")) {
                     throw IllegalArgumentException("backgroundGpsNotPrepared")
                 }
@@ -356,7 +368,8 @@ internal object PhoneWorkoutPlans {
                 for (j in 0 until sets.length()) {
                     val set = sets.getJSONObject(j)
                     if (set.getBoolean("done")) continue
-                    val row = row(e, set, config.getInt("work"), config.getInt("rest"), config.getInt("rounds"))
+                    val rowRest = if (frame.optInt("nativeEditorProjection") == 1 && e.has("restSeconds162")) integer(e, "restSeconds162", 0, 3600) else config.getInt("rest")
+                    val row = row(e, set, config.getInt("work"), rowRest, config.getInt("rounds"))
                     val base = if (set.optString("reps").isEmpty()) 0.0 else set.getString("reps").toDouble()
                     if (!base.isFinite() || base < 0.0) throw IllegalArgumentException("invalidTimedBaseline")
                     rows.put(row.put("baseSeconds", base))
@@ -448,6 +461,7 @@ internal object PhoneWorkoutExecution {
                 "completeSet" == command.optString("action") ||
                     "completeTimedSet" == command.optString("action") ||
                     "completeGpsSet" == command.optString("action") ||
+                    "completeMeasuredSet" == command.optString("action") ||
                     "undoSet" == command.optString("action") ||
                     ("automaticControl" == command.optString("action") &&
                         ("start" == command.optString("value") || "resumeUndo" == command.optString("value")))
@@ -571,7 +585,7 @@ internal object PhoneWorkoutExecution {
                 }
             }
         }
-        val result = if (command.optString("action") in setOf("completeSet", "completeTimedSet", "completeGpsSet")) {
+        val result = if (command.optString("action") in setOf("completeSet", "completeTimedSet", "completeGpsSet", "completeMeasuredSet")) {
             db.record(command)
         } else {
             db.startTimeline(command)

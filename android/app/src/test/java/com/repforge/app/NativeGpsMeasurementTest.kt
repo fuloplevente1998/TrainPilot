@@ -135,6 +135,15 @@ class NativeGpsMeasurementTest {
         assertFalse(set().has("gpsRouteKey163"))
     }
 
+    @Test fun gpsObservedWorkIsCountedOnceAndSurvivesCaptureReplayAndUndo() {
+        start(); walk()
+        val saved = finish()
+        assertEquals(11_000L, NativeMeasuredTime.summary(frame()).workMs)
+        assertFalse(store().checkpointGps(DistanceTrackingService.snapshot(context)))
+        NativeWorkoutEditing.undo(context, saved.getJSONObject("lastRecord188").getString("recordId"))
+        assertEquals(11_000L, NativeMeasuredTime.summary(frame()).workMs)
+    }
+
     @Test fun implicitStopPreservesMeasuredValuesAndRouteWithoutCompletion() {
         start(); walk()
         DistanceTrackingService.stop(context)
@@ -283,6 +292,8 @@ class NativeGpsMeasurementTest {
         assertTrue(set.done); assertTrue(set.distanceMeters!! > 0); assertEquals("11", set.reps)
         assertNotNull(set.gpsRouteKey163)
         assertTrue(WorkoutRouteCoordinates.load(context, set.gpsRouteKey163!!)!!.pointCount >= 2)
+        assertEquals(11_000L, JSONObject(saved.workout.rawJson).getJSONObject("automaticTime162").getLong("workMs"))
+        assertNotNull(saved.workout.timeLogs162Json)
     }
 
     @Test fun workoutFinishPreservesActiveGpsValuesWithoutPretendingMeasurementWasExplicitlyFinished() = runTest(dispatcher) {
@@ -294,5 +305,6 @@ class NativeGpsMeasurementTest {
         assertTrue(set.distanceMeters!! > 0); assertEquals("11", set.reps)
         assertTrue(WorkoutRouteCoordinates.load(context, set.gpsRouteKey163!!)!!.pointCount >= 2)
         assertFalse(DistanceTrackingService.snapshot(context).getBoolean("active"))
+        assertEquals(11_000L, JSONObject(saved.workout.rawJson).getJSONObject("automaticTime162").getLong("workMs"))
     }
 }

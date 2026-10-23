@@ -292,9 +292,12 @@ internal class PhoneWorkoutExecutionStore(context: Context) :
                         if (old.has(key)) incoming.put(key, old.get(key))
                     }
                 }
+                if (old.optInt("nativeEditorProjection") == 1) NativeMeasuredTime.stopwatch(old, SystemClock.elapsedRealtime())
+                if (old.optInt("nativeEditorProjection") == 1 && !old.has("timeLogs162")) incoming.remove("timeLogs162")
                 for (key in arrayOf("timeLogs162", "latestTimer162", "retiredTimers188", "manualAnchor162", "resumeTimerOnContinue201")) {
                     if (old.has(key)) incoming.put(key, old.get(key))
                 }
+                if (incoming.optInt("nativeEditorProjection") == 1) NativeMeasuredTime.stopwatch(incoming, SystemClock.elapsedRealtime())
                 if (old.has("transition")) {
                     val transition = JSONObject(old.getJSONObject("transition").toString())
                     if (incoming.optInt("nativeEditorProjection") == 1 && transition.optJSONObject("plan")?.optBoolean("restOnly") == true &&
@@ -380,7 +383,7 @@ internal class PhoneWorkoutExecutionStore(context: Context) :
                 .put("setId", target.set.getString("setId"))
                 .put("recordedAt", System.currentTimeMillis())
                 .put("values", values)
-                .put("before", if (command.optString("action") in setOf("completeTimedSet", "completeGpsSet")) recordedBase(target.set)
+                .put("before", if (command.optString("action") in setOf("completeTimedSet", "completeGpsSet", "completeMeasuredSet")) recordedBase(target.set)
                     else JSONObject().put("reps", target.set.opt("reps")).put("weight", target.set.opt("weight")))
             if (next.has("transition")) result.put("transition", next.getJSONObject("transition"))
             next.put("watchSequence", max(next.optLong("watchSequence"), command.optLong("sequence")))
@@ -525,7 +528,7 @@ internal class PhoneWorkoutExecutionStore(context: Context) :
                         val before = JSONObject().put("reps", set.opt("reps"))
                         val reps = floor(
                             row.optDouble("baseSeconds", 0.0) +
-                                (part.getLong("workMs") + part.getLong("restMs")) / 1000.0
+                                (part.getLong("workMs") + if (frame.optInt("nativeEditorProjection") == 1) 0L else part.getLong("restMs")) / 1000.0
                         ).toLong().toString()
                         set.put("done", true).put("reps", reps)
                         changes.put(
@@ -560,6 +563,16 @@ internal class PhoneWorkoutExecutionStore(context: Context) :
                     "lastRecord188",
                     WorkoutUndo188.capture(beforeUndo188, frame, lastChange, "timer:$key:${timer.getInt("completed")}")
                 )
+            }
+            if (frame.optInt("nativeEditorProjection") == 1 && !timer.optBoolean("restOnly") &&
+                (timer.optBoolean("stopped") || timer.optBoolean("interrupted"))) {
+                for (i in timer.optInt("completed") until rows.length()) {
+                    val row = rows.getJSONObject(i); val part = parts.getJSONObject(i)
+                    val set = findSet(frame, row) ?: throw IllegalArgumentException("timerTargetRemoved")
+                    if (!set.optBoolean("done") && part.getLong("workMs") > 0L) {
+                        set.put("reps", floor(row.optDouble("baseSeconds", 0.0) + part.getLong("workMs") / 1000.0).toLong().toString())
+                    }
+                }
             }
             if (timer.optBoolean("autoAdvance")) {
                 val step = rows.getJSONObject(timer.optInt("stepIndex"))
@@ -913,6 +926,27 @@ internal class PhoneWorkoutExecutionStore(context: Context) :
             "INSERT OR REPLACE INTO flags(name,value) VALUES('suspended',?)",
             arrayOf<Any>(if (value) 1 else 0)
         )
+    }
+
+    /** Explicitly abandon a stopped native interval; retain measurements and reject late ticks. */
+    @Synchronized
+    fun retireNativeInterval(target: NativeTimerTarget) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            check(!blocked(db) && !commandsSuspended()) { "A vezérlés foglalt." }
+            val frame = current(db) ?: error("Nincs aktív edzés.")
+            val timer = frame.getJSONObject("latestTimer162")
+            check(frame.optInt("nativeEditorProjection") == 1 && frame.optBoolean("active") && frame.optString("timerOwner") == "phone" &&
+                frame.optString("workoutId") == target.workoutId && frame.optLong("generation") == target.generation &&
+                timer.optString("key") == target.key && !timer.optBoolean("restOnly") &&
+                (timer.optBoolean("stopped") || timer.optBoolean("interrupted"))) { "Az intervallum még aktív vagy megváltozott." }
+            val retired = frame.optJSONArray("retiredTimers188") ?: JSONArray()
+            if ((0 until retired.length()).none { retired.optString(it) == target.key }) retired.put(target.key)
+            frame.put("retiredTimers188", retired).put("transition", JSONObject().put("state", "ready").put("phase", "ready")
+                .put("currentExercise", frame.optInt("currentExercise")))
+            save(db, frame); db.setTransactionSuccessful()
+        } finally { db.endTransaction() }
     }
 
     @Synchronized

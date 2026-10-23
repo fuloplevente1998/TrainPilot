@@ -60,6 +60,7 @@ internal object NativeGpsMeasurement {
             "stopReason", "error", "routeSavedPoints", "routeSaveError", "routeTruncated")) if (status.has(key)) safe.put(key, status.get(key))
         binding.put("capture", safe).put("state", if (status.optBoolean("active")) "running"
             else if (status.optString("stopReason") == "explicit") "explicitStopped" else "interrupted")
+        NativeMeasuredTime.gps(frame, safe)
         return true
     }
 
