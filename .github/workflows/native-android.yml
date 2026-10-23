@@ -46,8 +46,11 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: native-gradle-v1-${{ runner.os }}-${{ hashFiles('android/**/*.gradle', 'android/**/*.gradle.kts', 'android/gradle/wrapper/gradle-wrapper.properties') }}
-          restore-keys: native-gradle-v1-${{ runner.os }}-
+          key: native-gradle-v2-${{ runner.os }}-${{ hashFiles('android/**/*.gradle', 'android/**/*.gradle.kts', 'android/gradle.properties', 'android/gradle/wrapper/gradle-wrapper.properties') }}-${{ github.run_id }}
+          restore-keys: |
+            native-gradle-v2-${{ runner.os }}-${{ hashFiles('android/**/*.gradle', 'android/**/*.gradle.kts', 'android/gradle.properties', 'android/gradle/wrapper/gradle-wrapper.properties') }}-
+            native-gradle-v2-${{ runner.os }}-
+            native-gradle-v1-${{ runner.os }}-
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
       - name: Install Android SDK platform
