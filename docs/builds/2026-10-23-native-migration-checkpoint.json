@@ -1,8 +1,8 @@
 {
   "branch": "feat/native-android-migration",
-  "applicationSource": "8b01fb2d4ea3b4fb3a6548f259d826f359d77511",
-  "workflowRun": 39932459892,
-  "workflowStatusAtCheckpoint": "failure_in_release_instrumentation_and_one_rotary_ui_case",
+  "applicationSource": "134adcdb76480a9c26a22cc17df6ecc9a8561f0c",
+  "workflowRun": 39937602813,
+  "workflowStatusAtCheckpoint": "success",
   "versionName": "1.3.71-native-test",
   "versionCode": 2736,
   "applicationId": "com.repforge.app",
@@ -18,9 +18,9 @@
     "downloadedBinaryHashesAndSignersVerified": true
   },
   "verifiedUnitEvidence": {
-    "source": "8b01fb2d4ea3b4fb3a6548f259d826f359d77511",
-    "run": 39932459892,
-    "xmlArtifact": 12492278648,
+    "source": "134adcdb76480a9c26a22cc17df6ecc9a8561f0c",
+    "run": 39937602813,
+    "xmlArtifact": 12495011001,
     "phone": {
       "tests": 265,
       "failures": 0,
@@ -35,33 +35,51 @@
     }
   },
   "signedApkPairVerified": true,
-  "signedUpgradeVerified": false,
+  "signedUpgradeVerified": true,
   "physicalPhoneWatch7Tested": false,
   "fullFunctionalParityVerified": false,
   "parityAudit": "docs/NATIVE_PARITY_AUDIT.md",
   "mainMerge": false,
   "latestAttempt": {
-    "source": "23db6301dcc0a783af469adc6db15ebffda87bb9",
-    "run": 39934990786,
-    "status": "in_progress",
-    "changes": "Keep androidx.tracing.Trace for release instrumentation; wait for rotary editor focus; Gradle 3GB heap/two workers and rotating build cache"
+    "source": "134adcdb76480a9c26a22cc17df6ecc9a8561f0c",
+    "run": 39937602813,
+    "status": "success"
   },
   "signedApks": {
-    "source": "8b01fb2d4ea3b4fb3a6548f259d826f359d77511",
-    "run": 39932459892,
+    "source": "134adcdb76480a9c26a22cc17df6ecc9a8561f0c",
+    "run": 39937602813,
     "phone": {
-      "artifact": 12491844883,
-      "sha256": "aa312ede5829668efd45214ad45a8886ae5c42b6fa6dd150cc4958fdbc052b2b"
+      "artifact": 12494139412,
+      "size": 3081589,
+      "sha256": "bdcaedac58a56aa20bd46cfc0870146d7d3f04cf97dc0ca45bae6bd63fa3bd82"
     },
     "wear": {
-      "artifact": 12491874805,
-      "sha256": "c8d7498a48145fef20b1693c3e7c5be0afe9554909d0edaa5e931c007657bb60"
+      "artifact": 12494159370,
+      "size": 5109898,
+      "sha256": "8ae386e71995ab92daba5a66dea0c8d4403d078b3c57e84375244cbfdbdd7e72"
     },
-    "verificationArtifact": 12492857071,
+    "verificationArtifact": 12494338673,
     "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
     "packageAndVersionVerified": true
   },
-  "emulatorHarnessFailures": {
+  "previousSignedApks": {
+    "source": "51fdd947a9664e5c25023e6a0f3430cf1570b3c1",
+    "run": 39920303114,
+    "phone": {
+      "artifact": 12487830650,
+      "size": 3081589,
+      "sha256": "c234d4aa84fb9b54ff6434f08c36721270ef73b6da9ed0444f7c7b4b02b4c3f8"
+    },
+    "wear": {
+      "artifact": 12486679420,
+      "size": 5109898,
+      "sha256": "42e3b065f85f974804838302117dd6240146b88cb9e06ec7869750fed90c8917"
+    },
+    "verificationArtifact": 12487835640,
+    "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+    "packageAndVersionVerified": true
+  },
+  "previousAttemptFailures": {
     "source": "8b01fb2d4ea3b4fb3a6548f259d826f359d77511",
     "oldReleaseSeed": "success_on_both_baselines",
     "packageInstallUpdate": "adb install -r succeeded on both baseline APKs",
@@ -87,21 +105,81 @@
       "reason": "D8 Java heap exhaustion at the inherited 1536 MB limit; no test result"
     }
   },
-  "previousSignedApks": {
-    "source": "51fdd947a9664e5c25023e6a0f3430cf1570b3c1",
-    "run": 39920303114,
-    "phone": {
-      "artifact": 12487830650,
-      "size": 3081589,
-      "sha256": "c234d4aa84fb9b54ff6434f08c36721270ef73b6da9ed0444f7c7b4b02b4c3f8"
-    },
-    "wear": {
-      "artifact": 12486679420,
-      "size": 5109898,
-      "sha256": "42e3b065f85f974804838302117dd6240146b88cb9e06ec7869750fed90c8917"
-    },
-    "verificationArtifact": 12487835640,
-    "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
-    "packageAndVersionVerified": true
-  }
+  "signedUpgradeEvidence": {
+    "source": "134adcdb76480a9c26a22cc17df6ecc9a8561f0c",
+    "run": 39937602813,
+    "baselines": [
+      {
+        "tag": "v1.3.71",
+        "originalApkSha256": "f3fc054d9e2142fc7919b0e7beee8c2db35527de2fcb85406c23ab23141e5e68",
+        "result": "success",
+        "artifact": 12494673294
+      },
+      {
+        "tag": "v1.3.71-perf-20261022",
+        "originalApkSha256": "850b5e1e597e574dbf5cf55cf82721a3f77879447db9852fa056d2b889d50570",
+        "result": "success",
+        "artifact": 12495046335
+      }
+    ],
+    "installCommand": "adb install -r (no uninstall/data clear)",
+    "fixture": "android/migration-fixtures/legacy-v1371.json",
+    "assertions": [
+      "large Unicode workout history",
+      "deleted workout excluded",
+      "program/day",
+      "weight",
+      "calendar",
+      "language/haptic settings",
+      "draft and unknown key",
+      "unchanged original localStorage",
+      "unchanged original fixture backup digest",
+      "GPS points",
+      "photo file/reference",
+      "old health database marker",
+      "idempotent migration"
+    ],
+    "probe": "NativeMigrationProbe (enabled only by -PnativeUpgradeTests; optimized with the actual APK; no AndroidJUnit cross-APK runtime ABI)",
+    "runner": "independent same-key platform instrumentation :migration-seed",
+    "syntheticDataOnly": true,
+    "derivedXml": "docs/builds/native-134adcd/signed-upgrade-derived.xml"
+  },
+  "wearRoundUiEvidence": {
+    "source": "134adcdb76480a9c26a22cc17df6ecc9a8561f0c",
+    "run": 39937602813,
+    "apiLevel": 30,
+    "target": "android-wear",
+    "arch": "x86",
+    "tests": 183,
+    "uniqueCases": 183,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "shards": [
+      {
+        "index": 0,
+        "tests": 68,
+        "artifact": 12493884506
+      },
+      {
+        "index": 1,
+        "tests": 59,
+        "artifact": 12494836708
+      },
+      {
+        "index": 2,
+        "tests": 56,
+        "artifact": 12494064086
+      }
+    ],
+    "derivedXml": "docs/builds/native-134adcd/wear-round-derived.xml",
+    "setupWizardDisabledOnEmulator": true
+  },
+  "limitations": [
+    "Full native phone functional parity remains incomplete: see NATIVE_PARITY_AUDIT.md",
+    "Physical phone/Galaxy Watch7 and real two-device synchronization have not been tested",
+    "Synthetic successful upgrade is not a guarantee for every live dataset",
+    "Signed native-test APK contains a CI-only migration probe; ordinary builds without the property exclude it",
+    "No production/live-device replacement approval or main merge"
+  ]
 }

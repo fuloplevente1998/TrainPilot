@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="Signed actual-release to native upgrade" tests="2" failures="0" errors="0" skipped="0">
+  <properties>
+    <property name="reportOrigin" value="Derived from platform instrumentation seedStatus/verifyStatus and installed package version; not AndroidJUnit output" />
+  </properties>
+  <testcase classname="NativeMigrationProbe" name="v1.3.71 -&gt; 1.3.71-native-test /2736" />
+  <testcase classname="NativeMigrationProbe" name="v1.3.71-perf-20261022 -&gt; 1.3.71-native-test /2736" />
+</testsuite>

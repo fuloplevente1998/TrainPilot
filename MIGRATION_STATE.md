@@ -2,19 +2,22 @@
 
 ## Aktuális ellenőrzés – 2026-10-23
 
-A `51fdd94` forráson a telefon/Wear debug **és eredeti kulcsos release** lefordult,
-a csomagnév/verzió/tanúsítvány ellenőrzése sikeres. Letöltött XML: telefon
-265/265, Wear 167/167, 0 failure/error/skipped. Az emulátoros kapuk a teszteszközök
-hibáin álltak meg; az adatmigráció és a kerek UI még nem igazolt.
-A `8b01fb2` ismét 265/265 + 167/167 unit sikert adott, a régi app előkészítése és az `adb install -r` sikeres. A natív tesztrunner `Trace` hiánya miatt a szemantikus migráció még nem igazolt; Wear UI 182/183. Javítás: `23db630`, [CI 39934990786](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39934990786) a rögzítéskor fut. [Aktuális átadás](docs/WORK_HANDOFF.md),
-[bizonylat és artifactok](docs/builds/2026-10-23-native-migration-checkpoint.json),
+**`134adcd` / [CI 39937602813](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39937602813): teljes SUCCESS.**
+Telefon/Wear debug és eredeti kulcsos R8 release lefordult, csomagnév/verzió/tanúsítvány
+ellenőrizve. Letöltött XML: telefon **265/265**, Wear **167/167**. Kerek Wear UI
+**183/183** egyedi eset, hiba/kihagyás nélkül. A tényleges eredeti és október 22-i
+gyorsított 1.3.71 APK-ról az aláírt `adb install -r` frissítés és minden szintetikus
+adatmegőrzési ellenőrzés sikeres (**2/2**).
+
+[Átadás és következő munka](docs/WORK_HANDOFF.md),
+[bizonylat/APK-k/hashek](docs/builds/2026-10-23-native-migration-checkpoint.json),
 [funkcióhiányok](docs/NATIVE_PARITY_AUDIT.md).
 
-Az összehasonlítási alap a **2026-10-22-i gyorsított 1.3.71 /2735**,
-`v1.3.71-perf-20261022` (`5d27aa9`); a teszt az eredeti október 21-i APK-ról is indul.
-A teljes natív kiváltás, fizikai készülékes működés és élő adatok migrációja
-külön igazolást igényel. **Main merge nem történt.** Az alábbi táblázat a történeti
-forrás-visszaállítás állapota, nem az aktuális build összesítése.
+**A teljes natív funkcióegyezés és élő készülékes kiváltás nincs kész.** Telefonos
+indítás/lezárás, stopper/GPS teljesítés, Naptár/Coach és további paritás még hátra van;
+a fizikai telefon/Watch7 és kétirányú szinkron külön kapu. Main merge nem történt.
+Összehasonlítási alap a **2026-10-22-i gyorsított 1.3.71 /2735** (`5d27aa9`).
+Az alábbi táblázat történeti forrás-visszaállítás, nem az aktuális tesztösszesítés.
 
 ## Eredeti forrás-visszaállítás összegzése
 A teljes AI Studio beszélgetés-exportból a Slice 1–8 fájlba címzett natív forrásblokkjai vissza lettek állítva. Ez a forrás-visszaállítás önmagában nem igazolja a fordíthatóságot vagy a készülékes működést.
