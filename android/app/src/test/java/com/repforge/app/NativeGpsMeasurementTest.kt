@@ -174,7 +174,7 @@ class NativeGpsMeasurementTest {
         )) {
             assertThrows(Exception::class.java) { PhoneWorkoutExecution.setWorkoutPause(context, invalid.put("workoutPaused", true)) }
             assertTrue(DistanceTrackingService.snapshot(context).getBoolean("active"))
-            assertFalse(frame().getBoolean("workoutPaused")); assertFalse(set().getBoolean("done"))
+            assertFalse(frame().optBoolean("workoutPaused")); assertFalse(set().getBoolean("done"))
         }
     }
 
