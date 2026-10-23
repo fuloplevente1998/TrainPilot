@@ -556,6 +556,8 @@ internal class HealthJournalStore(context: Context) :
         if (pendingRestore().isNotEmpty()) return
         val prefs = preferences()
         val daily = prefs.optString("hcDailySource", "auto")
+        if (HC == prefs.optString("primary") && !prefs.optBoolean("logWatchSteps") &&
+            !prefs.optBoolean("bleBackground") && (daily == "auto" || daily == "priority")) return
         setPreferences(
             JSONObject()
                 .put("primary", HC)

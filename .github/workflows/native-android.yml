@@ -176,10 +176,18 @@ jobs:
           if-no-files-found: ignore
 
   signed-upgrade:
-    name: Original signed 1.3.71 to native data upgrade
+    name: Signed ${{ matrix.baseline.tag }} to native data upgrade
     needs: native-debug
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        baseline:
+          - tag: v1.3.71
+            sha256: f3fc054d9e2142fc7919b0e7beee8c2db35527de2fcb85406c23ab23141e5e68
+          - tag: v1.3.71-perf-20261022
+            sha256: 850b5e1e597e574dbf5cf55cf82721a3f77879447db9852fa056d2b889d50570
     steps:
       - uses: actions/checkout@v4
       - uses: android-actions/setup-android@v4
@@ -194,9 +202,11 @@ jobs:
       - name: Download verified original release
         env:
           GH_TOKEN: ${{ github.token }}
+          BASELINE_TAG: ${{ matrix.baseline.tag }}
+          BASELINE_SHA256: ${{ matrix.baseline.sha256 }}
         run: |
-          gh release download v1.3.71 --repo "$GITHUB_REPOSITORY" --pattern 'TrainPilot-1.3.71.apk' --dir upgrade/original
-          echo 'f3fc054d9e2142fc7919b0e7beee8c2db35527de2fcb85406c23ab23141e5e68  upgrade/original/TrainPilot-1.3.71.apk' | sha256sum --check --
+          gh release download "$BASELINE_TAG" --repo "$GITHUB_REPOSITORY" --pattern 'TrainPilot-1.3.71.apk' --dir upgrade/original
+          echo "$BASELINE_SHA256  upgrade/original/TrainPilot-1.3.71.apk" | sha256sum --check --
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -215,7 +225,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: TrainPilot-Native-Signed-Upgrade-Results-${{ github.sha }}
+          name: TrainPilot-Native-Signed-Upgrade-Results-${{ matrix.baseline.tag }}-${{ github.sha }}
           path: upgrade/results/
           if-no-files-found: error
 

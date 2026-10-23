@@ -144,7 +144,7 @@ object SamsungHealthRepository {
             check(reader.granted.isNotEmpty()) { "Samsung Health olvasási engedély szükséges." }
             val result = reader.daily(range[0], range[1]).put("day", day)
             requireForegroundGuard()
-            journal.samsungDay(day, result, reader.records, generation)
+            journal.samsungDay(day, result, reader.journal, generation)
             Result.success(result)
         } catch (cancelled: CancellationException) { throw cancelled }
         catch (failure: Exception) { Result.failure(failure) }
