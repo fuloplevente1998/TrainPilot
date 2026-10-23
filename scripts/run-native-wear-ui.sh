@@ -1,13 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 mkdir -p wear-ui/results
-trap 'adb logcat -d > wear-ui/results/logcat.txt 2>/dev/null || true; adb pull /sdcard/Pictures/TrainPilot-Wear-layout wear-ui/results/ >/dev/null 2>&1 || true' EXIT
+trap 'adb logcat -d > wear-ui/results/logcat.txt 2>/dev/null || true; adb shell dumpsys window > wear-ui/results/windows.txt 2>/dev/null || true; adb pull /sdcard/Pictures/TrainPilot-Wear-layout wear-ui/results/ >/dev/null 2>&1 || true' EXIT
 # The prebuilt-APK lane starts tests immediately after boot. The Wear setup
 # wizard otherwise launches EmulatorStatusActivity late and steals window focus.
 adb shell settings put global device_provisioned 1
 adb shell settings put secure user_setup_complete 1
 adb shell pm disable-user --user 0 com.google.android.wearable.setupwizard
+adb shell pm disable --user 0 com.google.android.wearable.setupwizard/com.google.android.wearable.setupwizard.steps.status.EmulatorStatusActivity
 adb shell am force-stop com.google.android.wearable.setupwizard
+# The emulator boots as a plugged-in watch. SystemUI's delayed charging overlay
+# also steals focus from the first rotary editor, even after disabling setup.
+# This is an isolated test device; no product focus/lifecycle guard is bypassed.
+adb shell pm disable --user 0 com.google.android.wearable.sysui/com.google.android.clockwork.sysui.experiences.charging.ChargingActivity
+adb shell dumpsys battery unplug
+adb shell settings put global stay_on_while_plugged_in 7
+adb shell svc power stayon true
 adb shell settings put system accelerometer_rotation 0
 adb shell settings put system user_rotation 0
 adb install -r wear-ui/app/wear-debug.apk

@@ -8,10 +8,14 @@ on:
     paths:
       - 'android/**'
       - '.github/workflows/native-android.yml'
+      - 'scripts/run-native-wear-ui.sh'
+      - 'scripts/run-native-signed-upgrade.sh'
   pull_request:
     paths:
       - 'android/**'
       - '.github/workflows/native-android.yml'
+      - 'scripts/run-native-wear-ui.sh'
+      - 'scripts/run-native-signed-upgrade.sh'
 
 permissions:
   contents: read
