@@ -36,11 +36,18 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-          cache: gradle
-          cache-dependency-path: |
-            android/**/*.gradle
-            android/**/*.gradle.kts
-            android/gradle/wrapper/gradle-wrapper.properties
+      # Preserve resolved dependencies even when a later regression test fails.
+      # setup-java's post cache only saves a successful job, which made each fix
+      # download the same Kotlin/Android toolchain again.
+      - name: Restore native Gradle dependencies
+        id: gradle-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: native-gradle-v1-${{ runner.os }}-${{ hashFiles('android/**/*.gradle', 'android/**/*.gradle.kts', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: native-gradle-v1-${{ runner.os }}-
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
       - name: Install Android SDK platform
@@ -174,6 +181,14 @@ jobs:
           name: TrainPilot-Native-Wear-Debug
           path: android/wear/build/outputs/apk/debug/*.apk
           if-no-files-found: ignore
+      - name: Preserve native Gradle dependencies
+        if: always() && steps.gradle-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ steps.gradle-cache.outputs.cache-primary-key }}
 
   signed-upgrade:
     name: Signed ${{ matrix.baseline.tag }} to native data upgrade

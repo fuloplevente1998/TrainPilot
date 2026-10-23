@@ -5,8 +5,10 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = 34)
 public class WearWorkoutHandoffTest {
     private final long now=1_800_000_000_000L;
     private JSONObject current() throws Exception { return new JSONObject().put("active",true).put("workoutId","new").put("revision",42); }

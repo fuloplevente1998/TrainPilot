@@ -9,6 +9,7 @@ import com.repforge.shared.WorkoutUndo188Shared
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
+import java.util.Collections
 
 /** Phone compatibility alias; both devices use the same finite timeline calculation from :shared. */
 class IntervalTimeline @JvmOverloads constructor(
@@ -109,8 +110,10 @@ internal class GpsRouteTrace {
 
     class Segment(
         @JvmField val ordinal: Int,
-        @JvmField val points: List<Point>
-    )
+        points: List<Point>
+    ) {
+        @JvmField val points: List<Point> = Collections.unmodifiableList(ArrayList(points))
+    }
 
     private val delegate = GpsRouteTrace193()
 
@@ -138,14 +141,14 @@ internal class GpsRouteTrace {
     fun isTruncated(): Boolean = delegate.isTruncated()
 
     fun snapshot(): List<Segment> {
-        return delegate.snapshot().map { seg ->
+        return Collections.unmodifiableList(delegate.snapshot().map { seg ->
             Segment(
                 seg.ordinal,
                 seg.points.map { p ->
                     Point(p.latitude, p.longitude, p.accuracyMeters, p.elapsedMillis, p.epochMillis)
                 }
             )
-        }
+        })
     }
 }
 
