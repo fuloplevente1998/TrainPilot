@@ -7,12 +7,12 @@ trap 'adb logcat -d > wear-ui/results/logcat.txt 2>/dev/null || true; adb shell 
 adb shell settings put global device_provisioned 1
 adb shell settings put secure user_setup_complete 1
 adb shell pm disable-user --user 0 com.google.android.wearable.setupwizard
-adb shell pm disable --user 0 com.google.android.wearable.setupwizard/com.google.android.wearable.setupwizard.steps.status.EmulatorStatusActivity
 adb shell am force-stop com.google.android.wearable.setupwizard
 # The emulator boots as a plugged-in watch. SystemUI's delayed charging overlay
 # also steals focus from the first rotary editor, even after disabling setup.
 # This is an isolated test device; no product focus/lifecycle guard is bypassed.
-adb shell pm disable --user 0 com.google.android.wearable.sysui/com.google.android.clockwork.sysui.experiences.charging.ChargingActivity
+# Protected system components cannot be disabled by shell on this image. Model
+# an unplugged watch instead, so SystemUI does not open its charging experience.
 adb shell dumpsys battery unplug
 adb shell settings put global stay_on_while_plugged_in 7
 adb shell svc power stayon true
@@ -22,5 +22,6 @@ adb install -r wear-ui/app/wear-debug.apk
 adb install -r -t wear-ui/test/wear-debug-androidTest.apk
 adb shell input keyevent KEYCODE_WAKEUP
 adb shell wm dismiss-keyguard
+adb shell dumpsys battery > wear-ui/results/battery-before.txt
 adb shell am instrument -w -r -e numShards 3 -e shardIndex "${WEAR_SHARD:?}" com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner | tee wear-ui/results/instrumentation.txt
 grep -E 'OK \([1-9][0-9]* tests?\)' wear-ui/results/instrumentation.txt
