@@ -32,7 +32,7 @@ adb shell am start -W -a android.intent.action.MAIN -c android.intent.category.H
 stable_focus=0
 home_ready=false
 for check in $(seq 1 30); do
-  current_focus="$(adb shell dumpsys window windows | tr -d '\r' | sed -n '/mCurrentFocus=/p')"
+  current_focus="$(adb shell dumpsys window | tr -d '\r' | sed -n '/mCurrentFocus=/p')"
   if [[ "$current_focus" == *com.google.android.wearable.sysui*SysUiActivity* ]]; then
     stable_focus=$((stable_focus + 1))
     if ((stable_focus >= 3)); then home_ready=true; break; fi
@@ -41,7 +41,7 @@ for check in $(seq 1 30); do
   fi
   sleep 1
 done
-adb shell dumpsys window windows > wear-ui/results/windows-before.txt
+adb shell dumpsys window > wear-ui/results/windows-before.txt
 if [[ "$home_ready" != true ]]; then
   echo 'Wear emulator home never acquired stable focus before instrumentation.' >&2
   exit 1

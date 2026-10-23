@@ -936,7 +936,7 @@ class WearFullScreenTest(private val diameter: Float, private val fontScale: Flo
                 // Capture the failing window, not only the last window after all
                 // remaining tests. Keep the actual focus requirement unchanged.
                 val windows = InstrumentationRegistry.getInstrumentation().uiAutomation
-                    .executeShellCommand("dumpsys window windows")
+                    .executeShellCommand("dumpsys window")
                 android.os.ParcelFileDescriptor.AutoCloseInputStream(windows).bufferedReader().use { reader ->
                     reader.lineSequence().filter { it.contains("mCurrentFocus=") || it.contains("mFocusedApp=") }
                         .forEach { println("ROTARY_FOCUS_TIMEOUT: $it") }
