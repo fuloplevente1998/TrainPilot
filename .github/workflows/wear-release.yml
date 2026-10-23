@@ -7,6 +7,7 @@ on:
       - main
       - 'feat/**'
       - 'fix/**'
+      - '!feat/native-android-migration'
     tags:
       - 'wear-v*'
     paths:

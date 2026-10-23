@@ -7,6 +7,8 @@ on:
       - main
       - 'feat/**'
       - 'fix/**'
+      # The native branch has no Capacitor/www tree; native-android.yml owns its gates.
+      - '!feat/native-android-migration'
     tags:
       - 'v*'
     paths-ignore:
