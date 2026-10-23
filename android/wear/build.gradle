@@ -76,6 +76,9 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.json:json:20240303'
     implementation 'androidx.activity:activity-compose:1.10.1'
+    // A transitive pre-1.3 Fragment breaks Activity Result permission contracts;
+    // keep it on a compatible stable version instead of suppressing release lint.
+    implementation 'androidx.fragment:fragment:1.8.6'
     implementation 'androidx.health:health-services-client:1.1.0'
     implementation 'com.google.guava:guava:33.4.8-android'
     implementation 'androidx.wear.tiles:tiles:1.5.0'
