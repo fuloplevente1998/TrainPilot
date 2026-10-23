@@ -178,9 +178,9 @@ fun ActiveWorkoutScreen(
                 item { Spacer(Modifier.height(4.dp)) }
 
                 itemsIndexed(state.exercises, key = { index, ex -> "${state.workoutId}:${state.generation}:${ex.sets.firstOrNull()?.setId ?: "empty:$index"}" }) { _, ex ->
-                    fun target(index: Int) = ex.sets.getOrNull(index)?.let {
-                        NativeWorkoutTarget(state.workoutId, state.generation, ex.exerciseId, it.setId)
-                    }
+                    // Capture identity now. A retained callback must never read a later workout from the State delegate.
+                    val renderedTargets = ex.sets.map { NativeWorkoutTarget(state.workoutId, state.generation, ex.exerciseId, it.setId) }
+                    fun target(index: Int) = renderedTargets.getOrNull(index)
                     ExerciseCardItem(
                         exercise = ex,
                         onEditSet = { sIdx, field, v -> target(sIdx)?.let { viewModel.editSet(it, field, v) } },

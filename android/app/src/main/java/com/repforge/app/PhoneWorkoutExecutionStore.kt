@@ -604,18 +604,19 @@ internal class PhoneWorkoutExecutionStore(context: Context) :
 
     /** Controller checkpoints never complete a measured set or advance its command revision. */
     @Synchronized
-    fun checkpointStopwatch(workoutId: String, generation: Long, monotonic: Long, pause: Boolean = false) {
+    fun checkpointStopwatch(workoutId: String, generation: Long, monotonic: Long, pause: Boolean = false): Boolean {
         val db = writableDatabase
         db.beginTransaction()
         try {
-            val frame = current(db) ?: return
+            val frame = current(db) ?: return false
             if (blocked(db) || !frame.optBoolean("active") || frame.optString("timerOwner") != "phone" ||
                 workoutId != frame.optString("workoutId") || generation != frame.optLong("generation") ||
-                frame.optJSONObject(NativeSetStopwatch.FIELD) == null) return
+                frame.optJSONObject(NativeSetStopwatch.FIELD)?.optBoolean("running") != true) return false
             if (pause || frame.optBoolean("workoutPaused")) NativeSetStopwatch.pause(frame, monotonic)
             else NativeSetStopwatch.checkpoint(frame, monotonic)
             save(db, frame)
             db.setTransactionSuccessful()
+            return NativeSetStopwatch.running(frame.getJSONObject(NativeSetStopwatch.FIELD))
         } finally { db.endTransaction() }
     }
 

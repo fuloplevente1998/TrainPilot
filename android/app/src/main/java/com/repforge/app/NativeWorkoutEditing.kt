@@ -107,7 +107,8 @@ internal object NativeWorkoutEditing {
         check(!timer.optBoolean("running") && (timer.optBoolean("stopped") || timer.optBoolean("interrupted") ||
             timer.optString("key").isEmpty() || timer.optString("phase") == "complete")) { "Előbb fejezd be a futó pihenőt vagy intervallumot." }
         NativeSetStopwatch.start(frame, target, side)
-        return commitEdit(context, frame, clockEdit = true)
+        return try { commitEdit(context, frame, clockEdit = true) }
+        finally { IntervalTimerService.trackSetStopwatch(target.workoutId, target.generation) }
     }
 
     fun stopStopwatch(context: Context, target: NativeWorkoutTarget): JSONObject {

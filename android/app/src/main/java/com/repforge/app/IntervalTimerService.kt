@@ -121,6 +121,14 @@ class IntervalTimerService : Service() {
         }
 
         @JvmStatic
+        fun trackSetStopwatch(workoutId: String, generation: Long) {
+            val s = instance ?: return
+            if (!armed(workoutId, generation)) return
+            s.handler.removeCallbacks(s.stopwatchTick)
+            s.handler.postDelayed(s.stopwatchTick, 1000L)
+        }
+
+        @JvmStatic
         fun closeWorkout(workoutId: String, generation: Long) {
             val s = instance ?: return
             if (!armed(workoutId, generation)) return
@@ -348,12 +356,13 @@ class IntervalTimerService : Service() {
     private val stopwatchTick = object : Runnable {
         override fun run() {
             if (armedWorkoutId.isEmpty()) return
-            runCatching {
+            val stillRunning = runCatching {
                 val store = PhoneWorkoutExecution.store(this@IntervalTimerService)
                 store.checkpointStopwatch(stopwatchOwnerId, stopwatchOwnerGeneration, SystemClock.elapsedRealtime(),
                     pause = store.commandsSuspended() || !PhoneOwnership193.phoneAllowed(this@IntervalTimerService, armedWorkoutId))
-            }
-            handler.postDelayed(this, 1000L)
+            }.getOrDefault(true)
+            // No perpetual SQLite writes for an idle/completed stopwatch.
+            if (stillRunning) handler.postDelayed(this, 1000L)
         }
     }
 

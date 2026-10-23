@@ -3,6 +3,7 @@ package com.repforge.app
 import android.content.Context
 import android.content.Intent
 import android.os.SystemClock
+import android.os.Looper
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.*
@@ -12,6 +13,7 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ServiceController
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowSystemClock
@@ -211,5 +213,36 @@ class NativeSetStopwatchTest {
             assertTrue(it.moveToFirst()); assertEquals(1, it.getInt(0))
         }
         assertEquals(0, store().pendingEvents("timed", target().generation, 0).length())
+    }
+
+    @Test fun undoReturnsToTheRecordedInstanceWhenExerciseOccursTwice() {
+        val edit = ActiveWorkoutStore.current(context)!!
+        val exercises = edit.getJSONArray("exercises")
+        val secondInstance = JSONObject(exercises.getJSONObject(0).toString())
+        val sets = secondInstance.getJSONArray("sets")
+        sets.getJSONObject(0).put("setId", "repeated-first")
+        sets.getJSONObject(1).put("setId", "repeated-second")
+        exercises.put(secondInstance)
+        NativeWorkoutEditing.commitEdit(context, edit)
+        NativeWorkoutEditing.startStopwatch(context, target(), "single")
+        advance(5)
+        val saved = NativeWorkoutEditing.stopStopwatch(context, target())
+        NativeWorkoutEditing.undo(context, saved.getJSONObject("lastRecord188").getString("recordId"))
+        assertEquals(0, frame().getInt("currentExercise"))
+        assertFalse(set().getBoolean("done"))
+        assertFalse(frame().getJSONArray("exercises").getJSONObject(1).getJSONArray("sets").getJSONObject(0).getBoolean("done"))
+    }
+
+    @Test fun startingAfterIdleControllerRearmsDurableCheckpointsAndStopsWritingWhenIdle() {
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(2))
+        NativeWorkoutEditing.startStopwatch(context, target(), "single")
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
+        assertTrue(clock().getLong("elapsedMs") >= 3000L)
+        assertFalse(set().getBoolean("done"))
+        NativeWorkoutEditing.stopStopwatch(context, target())
+        val stopped = clock().toString()
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(2))
+        assertEquals(stopped, clock().toString())
+        assertFalse(store().checkpointStopwatch("timed", target().generation, SystemClock.elapsedRealtime()))
     }
 }

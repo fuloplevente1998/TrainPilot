@@ -235,8 +235,12 @@ internal object WorkoutUndo188 {
         set.remove("actualRir")
         val exercises = next.getJSONArray("exercises")
         for (e in 0 until exercises.length()) {
-            if (exercises.getJSONObject(e).getString("id") == last.getString("exerciseId")) {
+            val exercise = exercises.getJSONObject(e)
+            val sets = exercise.getJSONArray("sets")
+            if (exercise.getString("id") == last.getString("exerciseId") &&
+                (0 until sets.length()).any { sets.getJSONObject(it).getString("setId") == last.getString("setId") }) {
                 next.put("currentExercise", e)
+                break
             }
         }
         next.put("restEndAt", 0)
