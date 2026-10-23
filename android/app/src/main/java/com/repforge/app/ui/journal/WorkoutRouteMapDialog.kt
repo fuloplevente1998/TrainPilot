@@ -20,7 +20,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,8 +67,8 @@ fun WorkoutRouteMapDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("GPS-útvonal", color = colors.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                TextButton(onClick = onDismiss) {
-                    Text("Bezárás", color = colors.accent, fontWeight = FontWeight.Bold)
+                IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(colors.danger)) {
+                    Icon(Icons.Default.Close, contentDescription = "Bezárás", tint = colors.dangerText)
                 }
             }
             Spacer(Modifier.height(6.dp))

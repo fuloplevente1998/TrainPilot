@@ -80,56 +80,13 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
 
     fun openRouteMap(workout: WorkoutHistoryWithDetails, routeKey: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            val coordinates = loadRouteCoordinates(routeKey)
+            val coordinates = WorkoutRouteCoordinates.load(context, routeKey)
             _uiState.value = _uiState.value.copy(activeRoute = coordinates)
         }
     }
 
     fun closeRouteMap() {
         _uiState.value = _uiState.value.copy(activeRoute = null)
-    }
-
-    private fun loadRouteCoordinates(key: String): RouteCoordinatesUiModel? {
-        return try {
-            if (key.startsWith("wear193:")) {
-                val ledger = GpsRouteLedger193.open(context.noBackupFilesDir)
-                val viewObj = ledger.view(key)
-                val segmentsArr = viewObj.optJSONArray("segments") ?: JSONArray()
-                val segmentsList = ArrayList<List<Pair<Double, Double>>>()
-                for (i in 0 until segmentsArr.length()) {
-                    val seg = segmentsArr.getJSONObject(i)
-                    val ptsArr = seg.optJSONArray("points") ?: continue
-                    val ptsList = ArrayList<Pair<Double, Double>>()
-                    for (j in 0 until ptsArr.length()) {
-                        val p = ptsArr.getJSONObject(j)
-                        ptsList.add(p.getDouble("latitude") to p.getDouble("longitude"))
-                    }
-                    if (ptsList.isNotEmpty()) segmentsList.add(ptsList)
-                }
-                RouteCoordinatesUiModel(
-                    routeKey = key,
-                    segments = segmentsList,
-                    pointCount = viewObj.optInt("pointCount", 0),
-                    distanceMeters = viewObj.optDouble("distanceMeters", 0.0),
-                    accuracyMeters = null
-                )
-            } else {
-                val store = GpsRouteStore(context.noBackupFilesDir)
-                val track = store.read(key)
-                val segmentsList = track.segments.map {
-                    it.points.map { p -> p.latitude to p.longitude }
-                }
-                RouteCoordinatesUiModel(
-                    routeKey = key,
-                    segments = segmentsList,
-                    pointCount = track.pointCount,
-                    distanceMeters = 0.0,
-                    accuracyMeters = null
-                )
-            }
-        } catch (_: Exception) {
-            null
-        }
     }
 
     fun requestDeleteWorkout(workout: WorkoutHistoryWithDetails) {

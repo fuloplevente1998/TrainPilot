@@ -296,6 +296,47 @@ class IntervalTimerService : Service() {
             return s.current()
         }
 
+        /** Change this rest's duration without crediting skipped or added virtual seconds as actual rest. */
+        @JvmStatic
+        fun adjustRest(context: Context, target: NativeTimerTarget, deltaSeconds: Int): JSONObject {
+            require(deltaSeconds in setOf(-15, 15)) { "Invalid rest adjustment" }
+            val s = instance ?: error("A pihenő időzítője már nem aktív.")
+            val frame = PhoneWorkoutExecution.store(context).snapshot() ?: error("Nincs aktív natív edzés.")
+            check(target.key.isNotEmpty() && target.key == s.key && target.workoutId == s.workoutId &&
+                target.generation == s.executionGeneration && target.workoutId == frame.optString("workoutId") &&
+                target.generation == frame.optLong("generation") && !frame.optBoolean("workoutPaused") &&
+                frame.optBoolean("active") && frame.optString("timerOwner") == "phone" &&
+                !PhoneWorkoutExecution.store(context).restoreBlocked() && !PhoneWorkoutExecution.store(context).commandsSuspended() &&
+                PhoneOwnership193.phoneAllowed(context, target.workoutId) && s.restOnly && s.steps.size == 1 &&
+                s.running && !s.stopped && !s.interrupted) { "A pihenő tulajdonosa vagy állapota megváltozott." }
+            s.update() // Account elapsed real time on the old timeline first.
+            val phase = s.timeline!!.at(s.now())
+            check(phase.phase == "rest" && s.running) { "A pihenő már véget ért." }
+            if (phase.remainingMs + deltaSeconds * 1000L <= 0L) return command(context, target.key, "skipRest")
+            val old = s.steps.single()
+            val rest = (old.rest + deltaSeconds).coerceIn(0, 3600)
+            val step = IntervalTimeline193.Step(old.exerciseId, old.setId, old.name, old.work, rest, old.rounds, old.gpsKey)
+            val priorTimeline = s.timeline
+            val priorRow = JSONObject(s.planSteps.getJSONObject(0).toString())
+            s.steps[0] = step
+            s.planSteps.getJSONObject(0).put("rest", rest)
+            s.timeline = IntervalTimeline(s.steps, false, 0, true)
+            s.elapsed = phase.elapsedMs
+            s.began = SystemClock.elapsedRealtime()
+            try { s.save() } catch (failure: Exception) {
+                s.steps[0] = old
+                s.planSteps.put(0, priorRow)
+                s.timeline = priorTimeline
+                s.elapsed = phase.elapsedMs
+                s.began = SystemClock.elapsedRealtime()
+                _timerStateFlow.value = s.current()
+                throw failure
+            }
+            s.publishWatchClock()
+            s.notifyStatus()
+            return s.current()
+        }
+
         @JvmStatic
         @Throws(Exception::class)
         fun attachGPS(context: Context, key: String, index: Int, tracking: String): JSONObject {

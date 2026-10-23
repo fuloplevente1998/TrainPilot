@@ -1,6 +1,10 @@
 package com.repforge.app.ui.workout
 import com.repforge.app.PhoneWorkoutPlans
 import com.repforge.app.TrainPilotWorkoutFinalization
+import com.repforge.app.NativeGpsMeasurement
+import com.repforge.app.NativeTimerTarget
+import com.repforge.app.ui.journal.RouteCoordinatesUiModel
+import com.repforge.app.ui.journal.WorkoutRouteCoordinates
 import com.repforge.app.NativeSetStopwatch
 import com.repforge.app.NativeWorkoutTarget
 import com.repforge.app.NativeWorkoutEditing
@@ -61,7 +65,9 @@ data class ActiveSetUiModel(
     val leftSeconds: Int,
     val rightSeconds: Int,
     val isCompleted: Boolean,
-    val actualRir: Int?
+    val actualRir: Int?,
+    val distanceMeters: Double = 0.0,
+    val gpsRouteKey: String = ""
 )
 
 data class ActiveExerciseUiModel(
@@ -101,6 +107,10 @@ data class ActiveWorkoutUiState(
     val timerTotalSec: Int = 0,
     val timerRound: Int = 1,
     val timerRounds: Int = 1,
+    val timerKey: String = "",
+    val timerWorkoutId: String = "",
+    val timerGeneration: Long = 0L,
+    val timerRestOnly: Boolean = false,
     val stopwatchSetId: String = "",
     val stopwatchSide: String = "",
     val stopwatchSeconds: Long = 0L,
@@ -111,6 +121,13 @@ data class ActiveWorkoutUiState(
     val gpsElapsedSeconds: Long = 0L,
     val gpsHasFix: Boolean = false,
     val gpsAccuracyMeters: Float = 0f,
+    val gpsMeasurementId: String = "",
+    val gpsBoundSetId: String = "",
+    val gpsBindingState: String = "",
+    val gpsBaseMeters: Double = 0.0,
+    val gpsBaseSeconds: Long = 0L,
+    val gpsError: String = "",
+    val activeRoute: RouteCoordinatesUiModel? = null,
     // Szenzorok és visszajelzés
     val liveHeartRateBpm: Int? = null,
     val attachedPhotos: List<StoredPhotoMetadata> = emptyList(),
@@ -171,6 +188,10 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
                     val remainingMs = timerObj.optLong("remainingMs", 0L)
                     val totalMs = timerObj.optLong("totalMs", 0L)
                     _uiState.value = _uiState.value.copy(
+                        timerKey = timerObj.optString("key"),
+                        timerWorkoutId = timerObj.optString("workoutId"),
+                        timerGeneration = timerObj.optLong("generation"),
+                        timerRestOnly = timerObj.optBoolean("restOnly"),
                         timerRunning = timerObj.optBoolean("running", false),
                         timerPaused = timerObj.optBoolean("stopped", false) || timerObj.optBoolean("interrupted", false),
                         timerPhase = timerObj.optString("phase", "ready"),
@@ -187,15 +208,19 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     private fun observeGpsTracker() {
         viewModelScope.launch {
             DistanceTrackingService.gpsStateFlow.collect { gpsObj ->
-                if (gpsObj.length() > 0) {
-                    _uiState.value = _uiState.value.copy(
-                        isGpsActive = gpsObj.optBoolean("active", false),
-                        gpsDistanceMeters = gpsObj.optDouble("distanceMeters", 0.0),
-                        gpsElapsedSeconds = gpsObj.optLong("elapsedSeconds", 0L),
-                        gpsHasFix = gpsObj.optBoolean("hasFix", false),
-                        gpsAccuracyMeters = gpsObj.optDouble("accuracyMeters", 0.0).toFloat()
-                    )
-                }
+                val frame = PhoneWorkoutExecution.store(context).snapshot()
+                val binding = frame?.optJSONObject(NativeGpsMeasurement.FIELD)
+                val matching = frame != null && binding != null && binding.optString("id") == gpsObj.optString("measurementId") &&
+                    binding.optString("key") == gpsObj.optString("key") && frame.optString("workoutId") == gpsObj.optString("nativeWorkoutId") &&
+                    frame.optLong("generation") == gpsObj.optLong("nativeGeneration")
+                if (matching && editableSnapshot() != null) runCatching { NativeWorkoutEditing.project(context) }
+                _uiState.value = _uiState.value.copy(
+                    isGpsActive = matching && gpsObj.optBoolean("active"),
+                    gpsDistanceMeters = if (matching) gpsObj.optDouble("distanceMeters", 0.0) else 0.0,
+                    gpsElapsedSeconds = if (matching) gpsObj.optLong("elapsedSeconds") else 0L,
+                    gpsHasFix = matching && gpsObj.optBoolean("hasFix"),
+                    gpsAccuracyMeters = if (matching) gpsObj.optDouble("accuracyMeters", 0.0).toFloat() else 0f,
+                    gpsError = if (matching) gpsObj.optString("error") else "")
             }
         }
     }
@@ -253,7 +278,9 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
                         leftSeconds = sObj.optInt("leftSeconds", 0),
                         rightSeconds = sObj.optInt("rightSeconds", 0),
                         isCompleted = sObj.optBoolean("done", false),
-                        actualRir = SetEditorRules212.parseActualRir229(sObj)
+                        actualRir = SetEditorRules212.parseActualRir229(sObj),
+                        distanceMeters = sObj.optDouble("distanceMeters", 0.0),
+                        gpsRouteKey = sObj.optString("gpsRouteKey193").ifBlank { sObj.optString("gpsRouteKey163") }
                     )
                 )
             }
@@ -308,6 +335,11 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
             canTakeBack = timerOwner == "watch",
             canHandOver = timerOwner == "phone" && !isPaused,
             currentExerciseIndex = currentExIdx,
+            gpsMeasurementId = snapshot.optJSONObject(NativeGpsMeasurement.FIELD)?.optString("id").orEmpty(),
+            gpsBoundSetId = snapshot.optJSONObject(NativeGpsMeasurement.FIELD)?.optString("setId").orEmpty(),
+            gpsBindingState = snapshot.optJSONObject(NativeGpsMeasurement.FIELD)?.optString("state").orEmpty(),
+            gpsBaseMeters = snapshot.optJSONObject(NativeGpsMeasurement.FIELD)?.optDouble("baseMeters", 0.0) ?: 0.0,
+            gpsBaseSeconds = snapshot.optJSONObject(NativeGpsMeasurement.FIELD)?.optLong("baseSeconds") ?: 0L,
             exercises = exercisesList,
             undoAvailable = undoAvailable,
             undoRecordId = undoRecId,
@@ -366,6 +398,11 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
         when (field) {
             "weight" -> set.put("weight", value)
             "reps" -> set.put("reps", value)
+            "distanceKm" -> {
+                val km = value.replace(',', '.').toDoubleOrNull()
+                if (km == null || !km.isFinite() || km !in 0.0..2000.0) return
+                set.put("distanceMeters", kotlin.math.round(km * 10_000.0) / 10.0).put("distanceSource", "manual")
+            }
             "leftSeconds" -> {
                 val sec = value.toIntOrNull() ?: 0
                 set.put("leftSeconds", sec)
@@ -411,7 +448,8 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
             val left = set.optInt("leftSeconds", 0)
             val right = set.optInt("rightSeconds", 0)
             val reps = set.optString("reps", "0").toIntOrNull() ?: 0
-            val valid = if (isBilateral) left > 0 && right > 0 else reps > 0
+            val valid = if (NativeGpsMeasurement.distance(ex)) reps > 0 && set.optDouble("distanceMeters", 0.0) > 0.0
+                else if (isBilateral) left > 0 && right > 0 else reps > 0
             if (!valid) return
 
             val before = JSONObject(current.toString())
@@ -551,10 +589,28 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     // Időzítő, Szüneteltetés és GPS vezérlés
     // =========================================================================
 
-    fun toggleWorkoutPause() {
-        if (editableSnapshot() == null) return
+    fun toggleWorkoutPause(workoutId: String, generation: Long) {
         val current = editableSnapshot() ?: return
-        val willPause = !current.optBoolean("workoutPaused", false)
+        if (current.optString("workoutId") != workoutId || current.optLong("generation") != generation) {
+            showStatus("Az edzés időközben megváltozott."); return
+        }
+        changeWorkoutPause(!current.optBoolean("workoutPaused"))
+    }
+
+    fun leaveWorkout(workoutId: String, generation: Long, onLeft: () -> Unit) {
+        val current = ActiveWorkoutStore.current(context)
+        if (current?.optBoolean("active") != true) { onLeft(); return }
+        if (current.optString("workoutId") != workoutId || current.optLong("generation") != generation || _uiState.value.isFinishing) return
+        if (current.optString("timerOwner") == "phone" && !current.optBoolean("workoutPaused") && !changeWorkoutPause(true)) return
+        onLeft()
+    }
+
+    private fun changeWorkoutPause(willPause: Boolean): Boolean {
+        var current = editableSnapshot() ?: return false
+        if (!current.optBoolean("workoutPaused")) {
+            try { current = NativeWorkoutEditing.interruptGps(context) }
+            catch (error: Exception) { showStatus(error.message ?: "A GPS-mérés szüneteltetése nem sikerült."); return false }
+        }
         val now = System.currentTimeMillis()
         val frame = JSONObject(current.toString())
             .put("workoutPaused", willPause)
@@ -573,8 +629,11 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
             intervals.put(JSONObject().put("start", Instant.ofEpochMilli(now).toString()).put("end", JSONObject.NULL))
         }
         frame.put("activeIntervals", intervals)
-        PhoneWorkoutExecution.setWorkoutPause(context, frame)
-        if (!willPause) onEditorVisible()
+        return try {
+            PhoneWorkoutExecution.setWorkoutPause(context, frame)
+            if (!willPause) onEditorVisible()
+            true
+        } catch (error: Exception) { showStatus(error.message ?: "Az edzés szünete nem menthető."); false }
     }
 
     /** Called from a resumed editor, never from background sync or ownership notifications. */
@@ -594,41 +653,54 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    fun skipRestTimer() {
+    fun skipRestTimer(target: NativeTimerTarget) = controlRest(target, null)
+    fun adjustRestTimer(target: NativeTimerTarget, deltaSeconds: Int) = controlRest(target, deltaSeconds)
+
+    private fun controlRest(target: NativeTimerTarget, deltaSeconds: Int?) {
         if (editableSnapshot() == null) return
-        val current = editableSnapshot() ?: return
-        current.put("restEndAt", 0L)
-        saveAndPublish(current)
-        viewModelScope.launch(Dispatchers.Main) {
-            runCatching { IntervalTimerService.command(context, "", "skipRest") }
-        }
+        try { NativeWorkoutEditing.controlRest(context, target, deltaSeconds) }
+        catch (error: Exception) { showStatus(error.message ?: "A pihenő nem vezérelhető.") }
     }
 
-    fun adjustRestTimer(deltaSeconds: Int) {
+    fun selectExercise(target: NativeWorkoutTarget) {
         if (editableSnapshot() == null) return
-        val current = editableSnapshot() ?: return
-        val endAt = current.optLong("restEndAt", 0L)
-        val now = System.currentTimeMillis()
-        val newEndAt = if (endAt > now) endAt + deltaSeconds * 1000L else now + deltaSeconds * 1000L
-        current.put("restEndAt", max(now, newEndAt))
-        saveAndPublish(current)
+        try {
+            val saved = NativeWorkoutEditing.selectExercise(context, target)
+            parseSnapshotToUi(saved)
+            refreshStopwatchUi()
+            runCatching { WearSyncRepository.publishActiveWorkoutSnapshot(context, saved) }
+        } catch (error: Exception) { showStatus(error.message ?: "A gyakorlat nem váltható.") }
     }
 
-    fun toggleGpsTracking(key: String) {
+    fun toggleGpsTracking(target: NativeWorkoutTarget, expectedMeasurementId: String? = null) {
         if (editableSnapshot() == null) return
-        val isRunning = _uiState.value.isGpsActive
-        if (!isRunning) {
-            val intent = Intent(context, DistanceTrackingService::class.java).apply {
-                action = DistanceTrackingService.START
-                putExtra("key", key)
-                putExtra("name", _uiState.value.title)
-                putExtra("language", "hu")
+        try {
+            val current = NativeWorkoutEditing.project(context)
+            val binding = current.optJSONObject(NativeGpsMeasurement.FIELD)
+            val finishing = expectedMeasurementId != null
+            val saved = if (finishing) NativeWorkoutEditing.finishGps(context, target, expectedMeasurementId!!)
+                else NativeWorkoutEditing.startGps(context, target)
+            parseSnapshotToUi(saved)
+            runCatching { WearSyncRepository.publishActiveWorkoutSnapshot(context, saved) }
+            if (finishing && target.resolve(saved).set.optBoolean("done")) viewModelScope.launch {
+                AppHapticsManager.setRecorded(context, settingsStore.current().hapticSetRecorded227)
             }
-            ContextCompat.startForegroundService(context, intent)
-        } else {
-            DistanceTrackingService.stop(context)
+        } catch (error: Exception) { showStatus(error.message ?: "A GPS-mérés nem indítható vagy rögzíthető.") }
+    }
+
+    private var routeRequest = 0L
+    fun openRouteMap(key: String) {
+        val request = ++routeRequest
+        val workout = _uiState.value.workoutId
+        viewModelScope.launch(Dispatchers.IO) {
+            val route = WorkoutRouteCoordinates.load(context, key)
+            withContext(Dispatchers.Main) {
+                if (request == routeRequest && workout == _uiState.value.workoutId) _uiState.value = _uiState.value.copy(activeRoute = route)
+            }
         }
     }
+    fun closeRouteMap() { routeRequest++; _uiState.value = _uiState.value.copy(activeRoute = null) }
+    fun showStatus(message: String) { _uiState.value = _uiState.value.copy(statusMessage = message) }
 
     // =========================================================================
     // Ownership Transition (#193) & Órás Mérés Távindítás

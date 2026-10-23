@@ -1,6 +1,11 @@
 package com.repforge.app
 
 import android.content.Context
+import android.content.Intent
+import android.Manifest
+import android.content.pm.PackageManager
+import android.location.LocationManager
+import androidx.core.content.ContextCompat
 import com.repforge.shared.WorkoutOwnership193
 import org.json.JSONObject
 import java.util.UUID
@@ -39,7 +44,7 @@ internal object NativeWorkoutEditing {
         return saved
     }
 
-    fun commitEdit(context: Context, edit: JSONObject, clockEdit: Boolean = false): JSONObject {
+    fun commitEdit(context: Context, edit: JSONObject, clockEdit: Boolean = false, gpsEdit: Boolean = false): JSONObject {
         val store = PhoneWorkoutExecution.store(context)
         check(!store.restoreBlocked() && !store.commandsSuspended()) { "A natív edzésvezérlés átmenetileg foglalt." }
         val frame = store.snapshot() ?: error("Nincs előkészített natív edzés.")
@@ -53,6 +58,17 @@ internal object NativeWorkoutEditing {
         if (!clockEdit) {
             if (frame.has(NativeSetStopwatch.FIELD)) incoming.put(NativeSetStopwatch.FIELD, frame.get(NativeSetStopwatch.FIELD))
             else incoming.remove(NativeSetStopwatch.FIELD)
+        }
+        if (!gpsEdit) {
+            if (frame.has(NativeGpsMeasurement.FIELD)) incoming.put(NativeGpsMeasurement.FIELD, frame.get(NativeGpsMeasurement.FIELD))
+            else incoming.remove(NativeGpsMeasurement.FIELD)
+            if (NativeGpsMeasurement.busy(frame)) {
+                val target = NativeGpsMeasurement.target(frame)
+                check(PhoneWorkoutExecutionStore.recordedBase(target.resolve(frame).set).toString() ==
+                    PhoneWorkoutExecutionStore.recordedBase(target.resolve(incoming).set).toString()) {
+                    "Előbb fejezd be a sorozat GPS-mérését."
+                }
+            }
         }
         val bases = JSONObject()
         var completedChanged = false
@@ -106,6 +122,7 @@ internal object NativeWorkoutEditing {
         val timer = IntervalTimerService.snapshot(context)
         check(!timer.optBoolean("running") && (timer.optBoolean("stopped") || timer.optBoolean("interrupted") ||
             timer.optString("key").isEmpty() || timer.optString("phase") == "complete")) { "Előbb fejezd be a futó pihenőt vagy intervallumot." }
+        check(!NativeGpsMeasurement.busy(frame)) { "Előbb fejezd be a GPS-mérést." }
         NativeSetStopwatch.start(frame, target, side)
         return try { commitEdit(context, frame, clockEdit = true) }
         finally { IntervalTimerService.trackSetStopwatch(target.workoutId, target.generation) }
@@ -138,6 +155,101 @@ internal object NativeWorkoutEditing {
             check(clock.optString("setId") == target.setId && clock.optString("exerciseId") == target.exerciseId) { "Másik sorozat mérése van előkészítve." }
             frame.remove(NativeSetStopwatch.FIELD)
         }
+        return commitEdit(context, frame, clockEdit = true)
+    }
+
+    fun startGps(context: Context, target: NativeWorkoutTarget): JSONObject {
+        var frame = project(context)
+        target.resolve(frame)
+        if (frame.optJSONObject(NativeGpsMeasurement.FIELD)?.optString("state") == "interrupted") frame = interruptGps(context)
+        check(!NativeGpsMeasurement.busy(frame)) { "Már van befejezetlen GPS-mérés." }
+        check(IntervalTimerService.armed(target.workoutId, target.generation)) { "A háttéridőzítő még nem áll készen." }
+        val timer = IntervalTimerService.snapshot(context)
+        check(timer.optString("key").isEmpty() || timer.optBoolean("stopped") || timer.optBoolean("interrupted") ||
+            timer.optString("phase") == "complete") { "Előbb fejezd be a pihenőt vagy intervallumot." }
+        check(frame.optJSONObject(NativeSetStopwatch.FIELD)?.let { NativeSetStopwatch.running(it) } != true) { "Már fut egy sorozatstopper." }
+        check(!DistanceTrackingService.snapshot(context).optBoolean("active")) { "Már fut GPS-mérés." }
+        check(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            "A GPS-méréshez engedélyezd a pontos helyadatokat."
+        }
+        check(context.getSystemService(LocationManager::class.java)?.isProviderEnabled(LocationManager.GPS_PROVIDER) == true) {
+            "Kapcsold be a telefon helyszolgáltatását."
+        }
+        NativeGpsMeasurement.prepare(frame, target)
+        val saved = commitEdit(context, frame, gpsEdit = true)
+        val binding = saved.getJSONObject(NativeGpsMeasurement.FIELD)
+        ContextCompat.startForegroundService(context, Intent(context, DistanceTrackingService::class.java).apply {
+            action = DistanceTrackingService.START
+            putExtra("key", binding.getString("key")); putExtra("measurementId", binding.getString("id"))
+            putExtra("name", target.resolve(saved).exercise.optString("name", "TrainPilot")); putExtra("language", saved.optString("language", "hu"))
+        })
+        return saved
+    }
+
+    fun finishGps(context: Context, target: NativeWorkoutTarget, expectedMeasurementId: String): JSONObject {
+        var frame = project(context)
+        val resolved = target.resolve(frame)
+        val binding = frame.getJSONObject(NativeGpsMeasurement.FIELD)
+        check(binding.optString("id") == expectedMeasurementId && expectedMeasurementId.isNotEmpty() &&
+            binding.optString("setId") == target.setId && binding.optString("exerciseId") == target.exerciseId) { "Másik sorozat GPS-mérése van előkészítve." }
+        if (binding.optString("state") == "recorded" && resolved.set.optBoolean("done")) return frame
+        check(!frame.optBoolean("workoutPaused")) { "Az edzés szünetel." }
+        val live = DistanceTrackingService.snapshot(context)
+        if (binding.optString("state") == "prepared" && !(live.optBoolean("active") && live.optString("measurementId") == expectedMeasurementId)) {
+            return interruptGps(context) // Cancel a queued foreground-service start before it can run.
+        }
+        val status = DistanceTrackingService.finishOwned(context, binding.getString("key"), binding.getString("id"))
+        check(PhoneWorkoutExecution.store(context).checkpointGps(status)) { "A GPS-mérés állapota időközben megváltozott." }
+        frame = project(context)
+        if (status.optDouble("distanceMeters") <= 0.0 || status.optLong("elapsedSeconds") <= 0L || status.optString("error").isNotEmpty()) {
+            return commitEdit(context, NativeGpsMeasurement.apply(frame, complete = false), gpsEdit = true)
+        }
+        val command = JSONObject().put("action", "completeGpsSet").put("nativeExecutionProtocol", 2)
+            .put("commandId", "gps-finish:" + binding.getString("id")).put("measurementId", binding.getString("id"))
+            .put("workoutId", target.workoutId).put("generation", target.generation).put("ownerEpoch193", frame.optLong("ownerEpoch193"))
+            .put("executionRevision", frame.getLong("executionRevision")).put("exerciseId", target.exerciseId).put("setId", target.setId)
+        requireApplied(PhoneWorkoutExecution.execute(context, command))
+        return ActiveWorkoutStore.current(context)!!
+    }
+
+    /** Pause/navigation/finish preserve the measured values and private route reference, never completion. */
+    fun interruptGps(context: Context): JSONObject {
+        var frame = project(context)
+        val binding = frame.optJSONObject(NativeGpsMeasurement.FIELD) ?: return frame
+        if (binding.optString("state") == "recorded" || binding.optBoolean("applied")) return frame
+        val live = DistanceTrackingService.snapshot(context)
+        if (live.optString("key") == binding.optString("key") && live.optString("measurementId") == binding.optString("id")) {
+            val stopped = DistanceTrackingService.stopOwned(context, binding.getString("key"))
+            if (stopped != null) PhoneWorkoutExecution.store(context).checkpointGps(stopped)
+            frame = project(context)
+        }
+        return commitEdit(context, NativeGpsMeasurement.apply(frame, complete = false), gpsEdit = true)
+    }
+
+    fun controlRest(context: Context, target: NativeTimerTarget, deltaSeconds: Int? = null): JSONObject {
+        val frame = project(context)
+        check(target.key.isNotEmpty() && target.workoutId == frame.optString("workoutId") &&
+            target.generation == frame.optLong("generation") && !frame.optBoolean("workoutPaused")) { "A pihenő már másik edzéshez tartozik." }
+        val timer = IntervalTimerService.snapshot(context)
+        check(timer.optString("key") == target.key && timer.optString("workoutId") == target.workoutId &&
+            timer.optLong("generation") == target.generation && timer.optString("phase") == "rest" && timer.optBoolean("running") &&
+            !timer.optBoolean("stopped") && !timer.optBoolean("interrupted")) { "A pihenő időközben megváltozott." }
+        if (deltaSeconds == null) IntervalTimerService.command(context, target.key, "skipRest")
+        else IntervalTimerService.adjustRest(context, target, deltaSeconds)
+        PhoneWorkoutExecution.publish(context)
+        return project(context, PhoneWorkoutExecution.display(context))
+    }
+
+    fun selectExercise(context: Context, target: NativeWorkoutTarget): JSONObject {
+        var frame = project(context)
+        target.resolve(frame)
+        if (frame.optJSONObject(NativeGpsMeasurement.FIELD)?.let { it.optString("state") != "recorded" && !it.optBoolean("applied") } == true) {
+            frame = interruptGps(context)
+        }
+        NativeSetStopwatch.pause(frame)
+        frame.put("currentExercise", target.resolve(frame).exerciseIndex)
+            .put("selectionRevision", frame.optLong("selectionRevision") + 1L)
+        // The native rest plan and its ledger remain owned by the foreground controller.
         return commitEdit(context, frame, clockEdit = true)
     }
 

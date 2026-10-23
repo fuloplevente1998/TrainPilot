@@ -92,7 +92,7 @@ internal object PhoneWorkoutRecording {
     @Throws(JSONException::class)
     fun target(frame: JSONObject, command: JSONObject): Target {
         validateFrame(frame)
-        if (command.optString("action") !in setOf("completeSet", "completeTimedSet")) {
+        if (command.optString("action") !in setOf("completeSet", "completeTimedSet", "completeGpsSet")) {
             throw IllegalArgumentException("unsupportedAction")
         }
         if (id(frame, "workoutId") != id(command, "workoutId") ||
@@ -114,7 +114,11 @@ internal object PhoneWorkoutRecording {
                 if (setId != id(set, "setId")) continue
                 if (exerciseId != id(exercise, "id")) throw IllegalArgumentException("targetChanged")
                 if (set.getBoolean("done")) throw IllegalArgumentException("alreadyRecorded")
-                if (command.optString("action") == "completeTimedSet") {
+                if (command.optString("action") == "completeGpsSet") {
+                    if (frame.optInt("nativeEditorProjection") != 1 || !NativeGpsMeasurement.distance(exercise)) {
+                        throw IllegalArgumentException("unsupportedMeasurement")
+                    }
+                } else if (command.optString("action") == "completeTimedSet") {
                     if (frame.optInt("nativeEditorProjection") != 1 || !NativeSetStopwatch.timed(exercise)) {
                         throw IllegalArgumentException("unsupportedMeasurement")
                     }
@@ -134,6 +138,10 @@ internal object PhoneWorkoutRecording {
     @JvmStatic
     @Throws(JSONException::class)
     fun record(frame: JSONObject, command: JSONObject): JSONObject {
+        if (command.optString("action") == "completeGpsSet") {
+            target(frame, command)
+            return NativeGpsMeasurement.record(frame, command)
+        }
         if (command.optString("action") == "completeTimedSet") {
             target(frame, command) // Same identity, revision, owner, and unfinished-target fences as strength.
             val measured = NativeSetStopwatch.stopped(frame, command)
@@ -187,6 +195,9 @@ internal object PhoneWorkoutRecording {
                 if (command.optString("action") == "completeTimedSet") {
                     for (field in listOf("leftSeconds", "rightSeconds")) if (set.has(field)) values.put(field, set.get(field))
                 }
+                if (command.optString("action") == "completeGpsSet") {
+                    for (field in listOf("distanceMeters", "distanceSource", "gpsRouteKey163")) if (set.has(field)) values.put(field, set.get(field))
+                }
                 return values
             }
         }
@@ -205,6 +216,7 @@ internal object PhoneWorkoutRecording {
         }
         // Existing durable receipts keep their exact original fingerprint format.
         if (command.optString("action") == "completeTimedSet") values.put(JSONArray().put(command.has("clockId")).put(command.opt("clockId")))
+        if (command.optString("action") == "completeGpsSet") values.put(JSONArray().put(command.has("measurementId")).put(command.opt("measurementId")))
         return values.toString()
     }
 
@@ -435,6 +447,7 @@ internal object PhoneWorkoutExecution {
             (
                 "completeSet" == command.optString("action") ||
                     "completeTimedSet" == command.optString("action") ||
+                    "completeGpsSet" == command.optString("action") ||
                     "undoSet" == command.optString("action") ||
                     ("automaticControl" == command.optString("action") &&
                         ("start" == command.optString("value") || "resumeUndo" == command.optString("value")))
@@ -486,6 +499,9 @@ internal object PhoneWorkoutExecution {
             (frame.optJSONObject("undo188") == null || dependency != frame.getJSONObject("undo188").optString("commandId"))
         ) {
             return JSONObject().put("status", "rejected").put("reason", "undoConflict")
+        }
+        if (NativeGpsMeasurement.busy(frame) && command.optString("action") != "completeGpsSet") {
+            return JSONObject().put("status", "rejected").put("reason", "gpsMeasurementStillActive")
         }
         val setClock = frame.optJSONObject(NativeSetStopwatch.FIELD)
         if (setClock != null && NativeSetStopwatch.running(setClock) && command.optString("action") != "completeTimedSet") {
@@ -555,7 +571,7 @@ internal object PhoneWorkoutExecution {
                 }
             }
         }
-        val result = if (command.optString("action") in setOf("completeSet", "completeTimedSet")) {
+        val result = if (command.optString("action") in setOf("completeSet", "completeTimedSet", "completeGpsSet")) {
             db.record(command)
         } else {
             db.startTimeline(command)

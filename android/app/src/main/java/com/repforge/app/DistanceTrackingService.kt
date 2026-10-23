@@ -80,6 +80,25 @@ class DistanceTrackingService : Service(), LocationListener {
             return snapshot(context)
         }
 
+        /** Only this user-facing operation may mint a durable explicit-stop receipt. */
+        @JvmStatic
+        fun finishOwned(context: Context, expected: String, measurementId: String): JSONObject {
+            val service = instance
+            if (service != null && service.key == expected && service.measurementId == measurementId &&
+                (service.active || service.stopReason == "explicit")) {
+                if (service.active) service.stopMeasurement(explicit = true)
+                else service.save(durable = true) // Retry a failed durable stop before stopping the service.
+                service.stopSelf()
+                return service.current()
+            }
+            val previous = snapshot(context)
+            check(previous.optString("key") == expected && previous.optString("measurementId") == measurementId &&
+                previous.optString("stopReason") == "explicit" && previous.opt("active") == false) {
+                "A GPS-mérés megszakadt; nem történt sikeres mérésbefejezés."
+            }
+            return previous
+        }
+
         @JvmStatic
         fun stopOwned(context: Context, expected: String): JSONObject? {
             val s = instance
@@ -112,6 +131,7 @@ class DistanceTrackingService : Service(), LocationListener {
             if (s == null || !s.active || expected != s.key) {
                 return stopOwned(context, expected)
             }
+            if (s.measurementId.isNotEmpty()) return stopOwned(context, expected)
             val previous = s.current()
             s.key = next
             s.name = name
@@ -158,6 +178,10 @@ class DistanceTrackingService : Service(), LocationListener {
     private var paused: Boolean = false
     private var accumulated: Long = 0L
     private var key: String = ""
+    private var measurementId: String = ""
+    private var nativeWorkoutId: String = ""
+    private var nativeGeneration: Long = 0L
+    private var stopReason: String = ""
     private var name: String = ""
     private var language: String = "en"
     private var error: String = ""
@@ -215,6 +239,29 @@ class DistanceTrackingService : Service(), LocationListener {
             stopSelf()
             return START_NOT_STICKY
         }
+        val requestedMeasurement = intent.getStringExtra("measurementId").orEmpty()
+        if (requestedMeasurement.isNotEmpty()) {
+            val frame = PhoneWorkoutExecution.store(this).snapshot()
+            val binding = frame?.optJSONObject(NativeGpsMeasurement.FIELD)
+            val activeFrame = ActiveWorkoutStore.current(this)
+            val execution = PhoneWorkoutExecution.store(this)
+            if (frame == null || binding == null || binding.optString("id") != requestedMeasurement || binding.optString("key") != reqKey ||
+                binding.optString("state") != "prepared" || !frame.optBoolean("active") || frame.optString("timerOwner") != "phone" ||
+                frame.optBoolean("workoutPaused") || execution.restoreBlocked() || execution.commandsSuspended() ||
+                !PhoneOwnership193.phoneAllowed(this, frame.optString("workoutId")) || activeFrame?.optBoolean("finalizationPending") == true ||
+                activeFrame?.optString("workoutId") != frame.optString("workoutId")) {
+                stopSelf()
+                return START_NOT_STICKY
+            }
+            NativeGpsMeasurement.target(frame, binding).resolve(frame)
+            nativeWorkoutId = frame.getString("workoutId")
+            nativeGeneration = frame.getLong("generation")
+        } else {
+            nativeWorkoutId = ""
+            nativeGeneration = 0L
+        }
+        measurementId = requestedMeasurement
+        stopReason = ""
         key = reqKey
         name = intent.getStringExtra("name") ?: "TrainPilot"
         language = reqLang
@@ -233,6 +280,9 @@ class DistanceTrackingService : Service(), LocationListener {
             if (Build.VERSION.SDK_INT >= 26) {
                 val channel = NotificationChannel(CHANNEL, "TrainPilot GPS", NotificationManager.IMPORTANCE_LOW)
                 getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+            }
+            if (measurementId.isNotEmpty() && locations?.isProviderEnabled(LocationManager.GPS_PROVIDER) != true) {
+                throw IllegalStateException("locationDisabled")
             }
             active = true
             startForeground(NOTIFICATION, notification())
@@ -301,6 +351,8 @@ class DistanceTrackingService : Service(), LocationListener {
         val out = JSONObject()
         try {
             out.put("key", key)
+            if (measurementId.isNotEmpty()) out.put("measurementId", measurementId).put("nativeWorkoutId", nativeWorkoutId)
+                .put("nativeGeneration", nativeGeneration).put("stopReason", stopReason)
             out.put("active", active)
             out.put("paused", paused)
             out.put("distanceMeters", (capture.totalMeters() * 10.0).roundToLong() / 10.0)
@@ -321,11 +373,17 @@ class DistanceTrackingService : Service(), LocationListener {
         return out
     }
 
-    private fun save() {
+    private fun save(durable: Boolean = false) {
         if (key.isEmpty()) return
         val stateObj = current()
+        val editor = getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString("state", stateObj.toString())
+        if (durable) check(editor.commit()) { "A GPS-mérés leállítása nem menthető. Próbáld újra." }
+        else editor.apply()
+        if (measurementId.isNotEmpty()) {
+            if (durable) PhoneWorkoutExecution.store(this).checkpointGps(stateObj)
+            else runCatching { PhoneWorkoutExecution.store(this).checkpointGps(stateObj) }
+        }
         _gpsStateFlow.value = stateObj
-        getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString("state", stateObj.toString()).apply()
     }
 
     private fun notification(): Notification {
@@ -372,19 +430,21 @@ class DistanceTrackingService : Service(), LocationListener {
         getSystemService(NotificationManager::class.java).notify(NOTIFICATION, notification())
     }
 
-    private fun stopMeasurement() {
+    private fun stopMeasurement(explicit: Boolean = false) {
         if (active) {
             capture.breakSegment()
             if (!paused) accumulated += max(0L, SystemClock.elapsedRealtime() - began)
             active = false
             paused = false
+            stopReason = if (explicit) "explicit" else "implicit"
             try {
                 locations?.removeUpdates(this)
             } catch (_: Exception) {
             }
             handler.removeCallbacks(tick)
-            save()
+            save(durable = explicit)
         } else if (error.isNotEmpty()) {
+            stopReason = "error"
             save()
         }
         stopForeground(STOP_FOREGROUND_REMOVE)

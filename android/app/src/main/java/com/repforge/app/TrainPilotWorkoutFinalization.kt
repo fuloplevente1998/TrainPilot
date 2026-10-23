@@ -72,7 +72,7 @@ internal class TrainPilotWorkoutFinalization(
 
     private fun freezeAndReconcile(input: JSONObject, fromWatch: Boolean): JSONObject {
         val id = input.getString("workoutId")
-        val current = ActiveWorkoutStore.current(context)
+        var current = ActiveWorkoutStore.current(context)
         val ownsDraft = current?.optBoolean("active") == true && current.optString("workoutId") == id
         check(!WorkoutOwnership193.pending(input) && (!ownsDraft || !WorkoutOwnership193.pending(current))) {
             "Előbb fejezd be az edzés átadását vagy visszavételét."
@@ -81,6 +81,11 @@ internal class TrainPilotWorkoutFinalization(
             check(ownsDraft && current!!.optString("timerOwner", "phone") == "phone") { "A telefonos edzés tulajdonosa megváltozott." }
         } else if (ownsDraft) {
             check(current!!.optString("timerOwner") == "watch") { "Az órás edzés tulajdonosa megváltozott." }
+        }
+        if (ownsDraft && !fromWatch && current?.optBoolean("finalizationPending") != true &&
+            PhoneWorkoutExecution.store(context).snapshot()?.optInt("nativeEditorProjection") == 1) {
+            NativeWorkoutEditing.interruptGps(context)
+            current = ActiveWorkoutStore.current(context)
         }
         var draft = JSONObject(if (ownsDraft && !fromWatch) current.toString() else input.toString())
         if (!fromWatch && input.has("feedback")) draft.put("feedback", input.get("feedback"))
@@ -124,7 +129,7 @@ internal class TrainPilotWorkoutFinalization(
                 }
             }
         }
-        if (ownsDraft) DistanceTrackingService.stop(context)
+        if (ownsDraft && frame?.optInt("nativeEditorProjection") != 1) DistanceTrackingService.stop(context)
         val history = JSONObject(draft.toString())
         history.remove("finalizationPending")
         history.put("active", false)

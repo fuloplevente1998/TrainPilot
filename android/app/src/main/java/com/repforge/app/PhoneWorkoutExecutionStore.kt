@@ -296,10 +296,17 @@ internal class PhoneWorkoutExecutionStore(context: Context) :
                     if (old.has(key)) incoming.put(key, old.get(key))
                 }
                 if (old.has("transition")) {
-                    val transition = old.getJSONObject("transition")
+                    val transition = JSONObject(old.getJSONObject("transition").toString())
+                    if (incoming.optInt("nativeEditorProjection") == 1 && transition.optJSONObject("plan")?.optBoolean("restOnly") == true &&
+                        incoming.optLong("selectionRevision") > old.optLong("selectionRevision")) {
+                        transition.put("currentExercise", incoming.getInt("currentExercise"))
+                    }
                     val plan = transition.optJSONObject("plan")
                     val automation = incoming.optJSONObject("automation")
-                    if (plan != null && automation != null && plan.optString("key") == automation.optString("key")) {
+                    if (old.optInt("nativeEditorProjection") == 1 && incoming.optInt("nativeEditorProjection") == 1) {
+                        // Native editor changes cannot retire the controller's durable plan.
+                        incoming.put("transition", transition)
+                    } else if (plan != null && automation != null && plan.optString("key") == automation.optString("key")) {
                         incoming.put("transition", transition)
                     } else if ("paused" == transition.optString("state") &&
                         automation != null &&
@@ -373,7 +380,7 @@ internal class PhoneWorkoutExecutionStore(context: Context) :
                 .put("setId", target.set.getString("setId"))
                 .put("recordedAt", System.currentTimeMillis())
                 .put("values", values)
-                .put("before", if (command.optString("action") == "completeTimedSet") recordedBase(target.set)
+                .put("before", if (command.optString("action") in setOf("completeTimedSet", "completeGpsSet")) recordedBase(target.set)
                     else JSONObject().put("reps", target.set.opt("reps")).put("weight", target.set.opt("weight")))
             if (next.has("transition")) result.put("transition", next.getJSONObject("transition"))
             next.put("watchSequence", max(next.optLong("watchSequence"), command.optLong("sequence")))
@@ -494,6 +501,17 @@ internal class PhoneWorkoutExecutionStore(context: Context) :
                 .put("stopped", timer.optBoolean("stopped"))
             logs.put(key, log)
             frame.put("timeLogs162", logs).put("latestTimer162", timer)
+            val restPlan = frame.optJSONObject("transition")?.optJSONObject("plan")
+            if (frame.optInt("nativeEditorProjection") == 1 && timer.optBoolean("restOnly") &&
+                restPlan != null && restPlan.optString("key") == key && restPlan.optBoolean("restOnly")) {
+                val rows = timer.getJSONArray("steps")
+                val priorRows = restPlan.getJSONArray("steps")
+                check(rows.length() == 1 && priorRows.length() == 1 && rows.getJSONObject(0).optString("exerciseId") == priorRows.getJSONObject(0).optString("exerciseId") &&
+                    rows.getJSONObject(0).optString("setId") == priorRows.getJSONObject(0).optString("setId")) { "Rest target changed" }
+                val rest = rows.getJSONObject(0).getInt("rest")
+                check(rest in 0..3600)
+                restPlan.put("steps", JSONArray(rows.toString())).put("rest", rest)
+            }
             val beforeUndo188 = JSONObject(frame.toString())
             val changes = JSONArray()
             val rows = timer.getJSONArray("steps")
@@ -600,6 +618,21 @@ internal class PhoneWorkoutExecutionStore(context: Context) :
         } finally {
             db.endTransaction()
         }
+    }
+
+    /** Native GPS summaries are recoverable metadata; only an explicit command completes a set. */
+    @Synchronized
+    fun checkpointGps(status: JSONObject): Boolean {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val frame = current(db) ?: return false
+            if (blocked(db) || commandsSuspended() || !frame.optBoolean("active") || frame.optString("timerOwner") != "phone") return false
+            if (!NativeGpsMeasurement.capture(frame, status)) return false
+            save(db, frame)
+            db.setTransactionSuccessful()
+            return true
+        } finally { db.endTransaction() }
     }
 
     /** Controller checkpoints never complete a measured set or advance its command revision. */
