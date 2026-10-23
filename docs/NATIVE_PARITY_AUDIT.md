@@ -6,6 +6,13 @@
 A teljes natív kiváltás **még nincs kész**. A build, migráció és termékfunkciók
 külön kapuk; a források megléte vagy a debug-fordítás nem funkcióegyezés.
 
+**Telepítési korlát:** az aktuális natív teszt-APK-párt nem szabad a felhasználó
+napi, adatokat tartalmazó alkalmazásának frissítéseként ajánlani. Előbb külön
+emulátoron/teszteszközön kell lezárni a funkcióhiányokat, az adatmegőrzési és
+mentés-visszaállítási vizsgálatot. Azonos csomagnévvel az élő adatteret használja;
+a régi APK visszatelepítése nem állítja automatikusan vissza a korábbi adatállapotot.
+Külön azonosítójú párhuzamos tesztkiadás jelenleg nem áll rendelkezésre.
+
 | Terület | Megfigyelés | Következő igazolás/javítás |
 | --- | --- | --- |
 | Build | `134adcd`: debug/release sikeres, telefon unit 265/265, Wear unit 167/167, kerek UI 183/183; nincs hiba/kihagyás. | Készülékes és teljes funkcióegyezési kapuk. A technikai kapu zöld. |
