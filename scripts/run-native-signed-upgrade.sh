@@ -12,7 +12,6 @@ grep -F 'INSTRUMENTATION_RESULT: seedStatus=ok' upgrade/results/seed.txt
 adb shell am force-stop com.repforge.app
 # This command must succeed as an UPDATE, with the old data still present.
 adb install -r upgrade/phone/app-release.apk
-adb install -t upgrade/test/app-release-androidTest.apk
-adb shell am instrument -w -r -e class com.repforge.app.LegacyUpgradeVerificationTest com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner | tee upgrade/results/verify.txt
-grep -F 'OK (1 test)' upgrade/results/verify.txt
+adb shell am instrument -w -r -e mode verify com.repforge.app.migrationseed/com.repforge.migrationseed.LegacySeedInstrumentation | tee upgrade/results/verify.txt
+grep -F 'INSTRUMENTATION_RESULT: verifyStatus=ok' upgrade/results/verify.txt
 adb shell dumpsys package com.repforge.app | grep -E 'versionCode=|versionName=' > upgrade/results/installed-version.txt

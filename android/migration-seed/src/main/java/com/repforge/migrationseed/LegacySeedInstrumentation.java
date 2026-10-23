@@ -21,17 +21,22 @@ import java.util.concurrent.TimeUnit;
 
 /** CI-only seed for the actual, unchanged old release. No R8-mapped app API. */
 public final class LegacySeedInstrumentation extends Instrumentation {
-    @Override public void onCreate(Bundle arguments) { super.onCreate(arguments); start(); }
+    private boolean verifyMode;
+    @Override public void onCreate(Bundle arguments) {
+        super.onCreate(arguments);
+        verifyMode = arguments != null && "verify".equals(arguments.getString("mode"));
+        start();
+    }
 
     @Override public void onStart() {
         Bundle result = new Bundle();
         try {
-            seed();
-            result.putString("seedStatus", "ok");
+            if (verifyMode) verifyNative(); else seed();
+            result.putString(verifyMode ? "verifyStatus" : "seedStatus", "ok");
             finish(Activity.RESULT_OK, result);
         } catch (Throwable error) {
-            Log.e("TrainPilotMigrationSeed", "Fixture seed failed", error);
-            result.putString("seedStatus", "failed");
+            Log.e("TrainPilotMigrationTest", "Upgrade test failed", error);
+            result.putString(verifyMode ? "verifyStatus" : "seedStatus", "failed");
             result.putString("error", error.toString());
             finish(Activity.RESULT_CANCELED, result);
         }
@@ -76,15 +81,29 @@ public final class LegacySeedInstrumentation extends Instrumentation {
         Files.write(file.toPath(), value.getBytes(StandardCharsets.UTF_8));
     }
 
-    private void seed() throws Exception {
-        Context target = getTargetContext();
-        JSONObject fixture;
+    private JSONObject fixture() throws Exception {
         try (java.io.InputStream stream = getContext().getAssets().open("legacy-v1371.json")) {
             java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
             byte[] buffer = new byte[8192]; int count;
             while ((count = stream.read(buffer)) != -1) bytes.write(buffer, 0, count);
-            fixture = new JSONObject(bytes.toString("UTF-8"));
+            return new JSONObject(bytes.toString("UTF-8"));
         }
+    }
+
+    private void verifyNative() throws Exception {
+        Context target = getTargetContext();
+        Activity activity = startActivitySync(new Intent().setClassName("com.repforge.app", "com.repforge.app.MainActivity").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        try {
+            Class<?> probe = target.getClassLoader().loadClass("com.repforge.app.NativeMigrationProbe");
+            probe.getMethod("verify", Context.class, String.class).invoke(null, target, fixture().toString());
+        } catch (java.lang.reflect.InvocationTargetException wrapped) {
+            throw new IllegalStateException("Native data verification failed", wrapped.getCause());
+        } finally { runOnMainSync(activity::finish); }
+    }
+
+    private void seed() throws Exception {
+        Context target = getTargetContext();
+        JSONObject fixture = fixture();
         Activity activity = startActivitySync(new Intent().setClassName("com.repforge.app", "com.repforge.app.MainActivity").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
         try {
             WebView[] found = new WebView[1];

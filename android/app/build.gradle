@@ -59,12 +59,11 @@ android {
         apiVersion = "2.2"
     }
 
-    // The upgrade test is a separate lane; old hybrid instrumentation stays in source.
-    // Its getBridge()/WebView UI API is not the Compose application's instrumentation API.
+    // A CI-only probe is optimized with the app, avoiding cross-APK R8 runtime ABIs.
+    // Old hybrid AndroidJUnit sources stay untouched and are not this upgrade lane.
     if (project.hasProperty('nativeUpgradeTests')) {
-        testBuildType 'release'
-        sourceSets.androidTest.java.setSrcDirs(['src/nativeAndroidTest/java'])
-        sourceSets.androidTest.assets.srcDir('../migration-fixtures')
+        sourceSets.main.java.srcDir('src/nativeUpgrade/java')
+        buildTypes.release.proguardFiles('native-upgrade-proguard.pro')
     }
 
     testOptions {
