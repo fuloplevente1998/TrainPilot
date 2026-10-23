@@ -63,6 +63,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.repforge.app.ActiveWorkoutStore
 import com.repforge.app.NativeWorkoutSession
+import com.repforge.app.NativeWorkoutTarget
+import com.repforge.app.ui.home.QuickWorkoutScreen
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import com.repforge.app.data.store.TrainPilotUserSettings
@@ -102,6 +104,8 @@ fun TrainPilotAppScaffold(
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
     var starting by remember { mutableStateOf(false) }
+    // Memory-only user start intent. Process recreation/navigation cannot silently start GPS.
+    var launchGps by remember { mutableStateOf<NativeWorkoutTarget?>(null) }
     val startWorkout: (String?, String) -> Unit = { programId, dayId ->
         if (!starting) {
             starting = true
@@ -166,6 +170,10 @@ fun TrainPilotAppScaffold(
                         navController = navController,
                         onStartWorkout = { dayId ->
                             startWorkout(null, dayId)
+                        },
+                        onQuickWorkout = { outdoor ->
+                            if (hasActiveWorkout) navController.navigate("active_workout") { launchSingleTop = true }
+                            else navController.navigate(if (outdoor) "quick_outdoor" else "quick_workout") { launchSingleTop = true }
                         }
                     )
                 }
@@ -187,7 +195,30 @@ fun TrainPilotAppScaffold(
                     HealthDashboardScreen(navController = navController)
                 }
                 composable("active_workout") {
-                    ActiveWorkoutScreen(navController = navController)
+                    ActiveWorkoutScreen(navController = navController, launchGps = launchGps,
+                        onLaunchGpsConsumed = { launchGps = null })
+                }
+                for (outdoor in listOf(false, true)) {
+                    composable(if (outdoor) "quick_outdoor" else "quick_workout") {
+                        QuickWorkoutScreen(outdoorOnly = outdoor, starting = starting,
+                            onCancel = { navController.popBackStack() }, onStart = { exerciseId, gps ->
+                                if (!starting) {
+                                    starting = true
+                                    scope.launch {
+                                        try {
+                                            val launch = NativeWorkoutSession.startQuickWorkout(context, exerciseId, gps)
+                                            launchGps = launch.gpsTarget
+                                            navController.navigate("active_workout") {
+                                                popUpTo(if (outdoor) "quick_outdoor" else "quick_workout") { inclusive = true }
+                                                launchSingleTop = true
+                                            }
+                                        } catch (cancelled: CancellationException) { throw cancelled }
+                                        catch (error: Exception) { snackbar.showSnackbar(error.message ?: "Az edzés nem indítható. Az adatok megmaradtak.") }
+                                        finally { starting = false }
+                                    }
+                                }
+                            })
+                    }
                 }
                 composable("settings") {
                     SettingsScreen(navController = navController)

@@ -97,6 +97,8 @@ import com.repforge.app.ui.theme.LocalTrainPilotColors
 @Composable
 fun ActiveWorkoutScreen(
     navController: NavController,
+    launchGps: NativeWorkoutTarget? = null,
+    onLaunchGpsConsumed: () -> Unit = {},
     viewModel: ActiveWorkoutViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -150,6 +152,13 @@ fun ActiveWorkoutScreen(
             pendingGpsPermission = target // Preserve the rendered identity across the permission dialog.
             locationPermissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
         }
+    }
+
+    // Consume before waiting/permission: cancellation and recreation never replay an old start.
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        val target = launchGps
+        onLaunchGpsConsumed()
+        if (target != null && viewModel.awaitLaunchGps(target)) requestGps(target, null)
     }
 
     Box(modifier = Modifier.fillMaxSize().background(colors.bg)) {

@@ -586,34 +586,32 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun addExerciseToWorkout(libraryExercise: ExerciseLibraryEntity) {
-        val current = editableSnapshot() ?: return
-        val exercises = current.optJSONArray("exercises") ?: JSONArray()
-        val exObj = JSONObject()
-            .put("id", libraryExercise.id)
-            .put("name", libraryExercise.nameHu)
-            .put("hu", libraryExercise.nameHu)
-            .put("en", libraryExercise.nameEn)
-            .put("loadType", libraryExercise.loadType)
-            .put("repUnit", libraryExercise.repUnit)
-            .put("measurementType", libraryExercise.measurementType)
-            .put("targetReps", libraryExercise.defaultReps)
-            .put("setRir229", false)
-        val sets = JSONArray()
-        for (s in 1..libraryExercise.defaultSets.coerceAtLeast(1)) {
-            sets.put(
-                JSONObject()
-                    .put("set", s)
-                    .put("setId", UUID.randomUUID().toString())
-                    .put("weight", if (libraryExercise.defaultWeight > 0.0) libraryExercise.defaultWeight.toString() else "0")
-                    .put("reps", libraryExercise.defaultReps)
-                    .put("done", false)
-            )
+        val original = editableSnapshot() ?: return
+        val workoutId = original.getString("workoutId")
+        val generation = original.getLong("generation")
+        viewModelScope.launch {
+            try {
+                val exercise = withContext(Dispatchers.IO) {
+                    com.repforge.app.NativeWorkoutSession.buildExercise(database, libraryExercise, settingsStore.current())
+                }
+                val current = editableSnapshot() ?: return@launch
+                check(current.optString("workoutId") == workoutId && current.optLong("generation") == generation) {
+                    "Az edzés időközben megváltozott."
+                }
+                val exercises = current.getJSONArray("exercises")
+                val existing = (0 until exercises.length()).firstOrNull { exercises.getJSONObject(it).optString("id") == libraryExercise.id }
+                if (existing != null && current.optBoolean("quickWorkout")) {
+                    val ex = exercises.getJSONObject(existing)
+                    selectExercise(NativeWorkoutTarget(workoutId, generation, libraryExercise.id,
+                        ex.getJSONArray("sets").getJSONObject(0).getString("setId")))
+                } else {
+                    exercises.put(exercise)
+                    saveAndPublish(current)
+                }
+                _uiState.value = _uiState.value.copy(showExercisePicker = false)
+            } catch (error: kotlinx.coroutines.CancellationException) { throw error }
+            catch (error: Exception) { showStatus(error.message ?: "A gyakorlat nem adható hozzá.") }
         }
-        exObj.put("sets", sets)
-        exercises.put(exObj)
-        current.put("exercises", exercises)
-        saveAndPublish(current)
-        _uiState.value = _uiState.value.copy(showExercisePicker = false)
     }
 
     // =========================================================================
@@ -678,6 +676,22 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
         } catch (error: Exception) {
             _uiState.value = _uiState.value.copy(statusMessage = "A háttéridőzítő nem indult: ${error.message.orEmpty()}")
         }
+    }
+
+    /** Ephemeral explicit-start intent only; never called by background sync or draft recovery. */
+    suspend fun awaitLaunchGps(target: NativeWorkoutTarget): Boolean {
+        repeat(30) {
+            val frame = editableSnapshot() ?: return false
+            if (frame.optString("workoutId") != target.workoutId || frame.optLong("generation") != target.generation ||
+                frame.optBoolean("workoutPaused")) return false
+            try {
+                if (com.repforge.app.NativeOutdoorStart.target(frame, target.exerciseId) != target || NativeGpsMeasurement.busy(frame)) return false
+                if (IntervalTimerService.armed(target.workoutId, target.generation)) return true
+            } catch (_: Exception) { return false }
+            kotlinx.coroutines.delay(100)
+        }
+        showStatus("Az edzés elindult. A GPS-t a mérés gombjával indíthatod, ha a háttérvezérlő készen áll.")
+        return false
     }
 
     fun skipRestTimer(target: NativeTimerTarget) = controlRest(target, null)

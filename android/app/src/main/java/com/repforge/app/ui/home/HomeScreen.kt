@@ -47,7 +47,8 @@ import com.repforge.app.ui.theme.LocalTrainPilotColors
 fun HomeScreen(
     navController: NavController,
     viewModel: HomeViewModel = viewModel(),
-    onStartWorkout: (String) -> Unit
+    onStartWorkout: (String) -> Unit,
+    onQuickWorkout: (Boolean) -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = LocalTrainPilotColors.current
@@ -131,17 +132,17 @@ fun HomeScreen(
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             QuickActionButton(
                 title = "Edzőterem",
-                subtitle = "Üres edzés",
+                subtitle = "Gyakorlat választása",
                 icon = Icons.Default.FitnessCenter,
                 modifier = Modifier.weight(1f),
-                onClick = { onStartWorkout("quick") }
+                onClick = { onQuickWorkout(false) }
             )
             QuickActionButton(
                 title = "Szabadtéri GPS",
                 subtitle = "Futás / Séta",
                 icon = Icons.Default.DirectionsRun,
                 modifier = Modifier.weight(1f),
-                onClick = { onStartWorkout("outdoor-gps") }
+                onClick = { onQuickWorkout(true) }
             )
         }
 
