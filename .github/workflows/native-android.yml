@@ -87,7 +87,7 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           ./gradlew --no-daemon :wear:dependencyInsight --configuration releaseRuntimeClasspath --dependency androidx.fragment > wear-fragment-dependencies.txt
-          ./gradlew --no-daemon --stacktrace -PnativeUpgradeTests :app:assembleRelease :wear:assembleRelease :app:assembleReleaseAndroidTest :wear:assembleDebugAndroidTest
+          ./gradlew --no-daemon --stacktrace -PnativeUpgradeTests :app:assembleRelease :wear:assembleRelease :app:assembleReleaseAndroidTest :wear:assembleDebugAndroidTest :migration-seed:assembleRelease
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks "$ANDROID_KEYSTORE_PATH" --ks-pass env:ANDROID_STORE_PASSWORD --key-pass env:ANDROID_KEY_PASSWORD --ks-key-alias "$ANDROID_KEY_ALIAS" app/build/outputs/apk/androidTest/release/app-release-androidTest.apk
       - name: Verify update package version and signer continuity
         shell: bash
@@ -122,6 +122,9 @@ jobs:
           TEST_APK="app/build/outputs/apk/androidTest/release/app-release-androidTest.apk"
           "$SIGNER" verify --verbose "$TEST_APK"
           test "$ORIGINAL" = "$(python3 ../scripts/apk_signer_cert.py "$TEST_APK")"
+          SEED_APK="migration-seed/build/outputs/apk/release/migration-seed-release.apk"
+          "$SIGNER" verify --verbose "$SEED_APK"
+          test "$ORIGINAL" = "$(python3 ../scripts/apk_signer_cert.py "$SEED_APK")"
           echo "Original release signing identity verified."
           sha256sum "$PHONE" "$WEAR" > native-apk-sha256.txt
       - name: Upload signed upgrade test APK
@@ -129,6 +132,12 @@ jobs:
         with:
           name: TrainPilot-Native-Upgrade-Test
           path: android/app/build/outputs/apk/androidTest/release/*.apk
+          if-no-files-found: error
+      - name: Upload independent old-release seed runner
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrainPilot-Native-Migration-Seed
+          path: android/migration-seed/build/outputs/apk/release/*.apk
           if-no-files-found: error
       - name: Upload Wear UI test APK
         uses: actions/upload-artifact@v4
@@ -216,6 +225,10 @@ jobs:
         with:
           name: TrainPilot-Native-Upgrade-Test
           path: upgrade/test
+      - uses: actions/download-artifact@v4
+        with:
+          name: TrainPilot-Native-Migration-Seed
+          path: upgrade/seed
       - name: Download verified original release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -277,7 +290,7 @@ jobs:
         with:
           api-level: 30
           target: android-wear
-          arch: x86_64
+          arch: x86
           profile: wearos_small_round
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048

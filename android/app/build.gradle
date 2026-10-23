@@ -64,6 +64,7 @@ android {
     if (project.hasProperty('nativeUpgradeTests')) {
         testBuildType 'release'
         sourceSets.androidTest.java.setSrcDirs(['src/nativeAndroidTest/java'])
+        sourceSets.androidTest.assets.srcDir('../migration-fixtures')
     }
 
     testOptions {
