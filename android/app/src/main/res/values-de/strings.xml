@@ -74,4 +74,9 @@
     <string name="journal_effort_challenging">Anspruchsvoll</string>
     <string name="journal_effort_hard">Schwer</string>
     <string name="journal_effort_pain">Schmerz</string>
+    <string name="program_start_title">Training starten</string>
+    <string name="program_gps_record">GPS-Route aufzeichnen</string>
+    <string name="program_gps_help">Die Auswahl wird für diese Aktivität gespeichert. Standortberechtigung und Gerätestandort sind erforderlich.</string>
+    <string name="program_start_action">Starten</string>
+    <string name="program_start_cancel">Abbrechen</string>
 </resources>
