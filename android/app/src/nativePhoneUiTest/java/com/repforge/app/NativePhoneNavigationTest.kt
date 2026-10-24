@@ -122,6 +122,19 @@ class NativePhoneNavigationTest {
             compose.onNodeWithTag("navigation_back").performClick()
         }
     }
+    @Test fun progressSelectorCanReachExercisesBeyondOldEightItemLimit() {
+        launch(); tab("progress")
+        val target = com.repforge.app.data.db.NativeBuiltinCatalog.exercises.last()
+        compose.waitUntil(15000) {
+            compose.onAllNodesWithTag("progress_exercise_choices").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("progress_exercise_choices")
+            .performScrollToNode(hasTestTag("progress_exercise_${target.id}"))
+        compose.onNodeWithTag("progress_exercise_${target.id}").performClick()
+        compose.onNodeWithTag("progress_error").assertDoesNotExist()
+        screenshot("progress_last_builtin_exercise")
+    }
+
     @Test fun trainingProfilePersistsAfterSettingsReentryWithoutGuessingMeasurements() {
         launch()
         compose.onNodeWithTag("navigation_settings").performClick()
