@@ -450,6 +450,28 @@ class NativePhoneNavigationTest {
         compose.onNodeWithText("Nincs aktív BLE háttérkapcsolat.").assertExists()
     }
 
+    @Test fun exerciseFavoritesCanBeToggledFilteredAndRecoveredOnReentry() {
+        launch(); tab("training")
+        compose.onNodeWithText("Gyakorlat választása").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_search").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("exercise_search").performTextInput("Running")
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_favorite_running").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("exercise_favorite_running").performClick()
+        val db = TrainPilotDatabase.getInstance(context)
+        compose.waitUntil(15000) { runBlocking(Dispatchers.IO) {
+            com.repforge.app.NativeExerciseFavorites.load(db).contains("running")
+        } }
+        compose.onNodeWithTag("exercise_favorites_filter").performClick()
+        compose.onNodeWithTag("exercise_select_running").assertExists()
+        screenshot("quick_favorite_filter")
+        compose.onNodeWithTag("navigation_back").performClick()
+        compose.onNodeWithText("Gyakorlat választása").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_search").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("exercise_search").performTextInput("Running")
+        compose.onNodeWithTag("exercise_favorite_running").assertTextContains("★")
+        assertFalse(ActiveWorkoutStore.current(context)?.optBoolean("active") == true)
+    }
+
     @Test fun earlierHealthDayCanBeSelectedAndDisplaysItsStoredWeight() {
         val day = java.time.YearMonth.now().minusMonths(1).atDay(1).toString()
         val health = HealthJournalStore.get(context)
