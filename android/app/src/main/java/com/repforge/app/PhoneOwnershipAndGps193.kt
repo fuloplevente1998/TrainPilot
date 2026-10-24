@@ -530,17 +530,20 @@ internal object PhoneOwnership193 {
     @Throws(Exception::class)
     fun receive(context: Context, message: JSONObject, origin: String, localNode: String) {
         val store = journal(context)
-        store.recover()
-        val state = store.receive(message, origin, localNode, System.currentTimeMillis())
-        store.recover()
-        // Native auto-prepare when the watch requests takeover and the phone workout is ready/paused!
-        if ("incoming" == state.optString("stage")) {
-            try {
-                WearSyncRepository.autoPrepareIncomingOwnershipIfEligible(context, localNode)
-            } catch (_: Exception) {
+        synchronized(store) {
+            check(!NativeDataReplacement.blocked(context)) { "Adat-visszaállítás vagy törlés van folyamatban." }
+            store.recover()
+            val state = store.receive(message, origin, localNode, System.currentTimeMillis())
+            store.recover()
+            // Native auto-prepare when the watch requests takeover and the phone workout is ready/paused!
+            if ("incoming" == state.optString("stage")) {
+                try {
+                    WearSyncRepository.autoPrepareIncomingOwnershipIfEligible(context, localNode)
+                } catch (_: Exception) {
+                }
             }
+            OwnershipTransport193.send(context, store)
         }
-        OwnershipTransport193.send(context, store)
     }
 
     @JvmStatic

@@ -46,6 +46,7 @@ internal object ActiveWorkoutStore {
     }
 
     private fun saveSnapshot(context: Context, input: JSONObject, finalizing: Boolean): JSONObject {
+        check(!NativeDataReplacement.blocked(context)) { "Adat-visszaállítás vagy törlés van folyamatban." }
         val previous = prefs(context).getString(SNAPSHOT, null)?.let { JSONObject(it) }
         if (previous?.optBoolean("active") == true && previous.optBoolean("finalizationPending")) {
             check(finalizing && previous.optString("workoutId") == input.optString("workoutId") && input.optBoolean("finalizationPending")) {

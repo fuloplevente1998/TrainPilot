@@ -229,6 +229,7 @@ internal object NativeWorkoutSession {
     }
 
     internal fun installPrepared(context: Context, candidate: JSONObject): JSONObject {
+        check(!NativeDataReplacement.blocked(context)) { "Adat-visszaállítás vagy törlés van folyamatban." }
         // Recheck after database reads: a watch command may have started a workout meanwhile.
         recoverActive(context)?.let { return it }
         val execution = PhoneWorkoutExecution.store(context)
@@ -248,6 +249,7 @@ internal object NativeWorkoutSession {
     }
 
     private fun recoverActive(context: Context): JSONObject? {
+        check(!NativeDataReplacement.blocked(context)) { "Adat-visszaállítás vagy törlés van folyamatban." }
         val current = ActiveWorkoutStore.current(context)
         if (current?.optBoolean("active") == true) return current
         val execution = PhoneWorkoutExecution.store(context)

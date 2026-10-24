@@ -153,7 +153,7 @@ class BackupRestoreManager(context: Context) {
         try {
             val rawBytes = readUriBytes(uri, JSON_LIMIT)
             val data = JSONObject(String(rawBytes, StandardCharsets.UTF_8))
-            applyValidatedRestoreData(data)
+            NativeDataReplacement.exclusively(appContext) { applyValidatedRestoreData(data) }
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -272,20 +272,22 @@ class BackupRestoreManager(context: Context) {
             }
             ArchiveIO.verify(incoming, names, expected, hashes)
 
-            // Install photos with rollback journal
-            installPhotosTransactionally(dir, data)
-            try {
-                applyValidatedRestoreData(data)
-            } catch (restoreErr: Exception) {
-                rollbackDir(dir)
-                throw restoreErr
+            NativeDataReplacement.exclusively(appContext) {
+                // Hold the fence across both installation and rollback, not just the Room import.
+                installPhotosTransactionally(dir, data)
+                try {
+                    applyValidatedRestoreData(data)
+                } catch (restoreErr: Exception) {
+                    rollbackDir(dir)
+                    throw restoreErr
+                }
+                removeRecursive(dir)
             }
-            removeRecursive(dir)
             Result.success(Unit)
         } catch (e: Exception) {
-            try {
-                removeRecursive(dir)
-            } catch (_: Exception) {
+            // Keep originals/journal if rollback itself failed; never erase recovery evidence.
+            if (!File(dir, "journal.json").isFile) {
+                try { removeRecursive(dir) } catch (_: Exception) { }
             }
             Result.failure(e)
         }
@@ -444,39 +446,41 @@ class BackupRestoreManager(context: Context) {
     /** Erases all local workouts, programs, weights, photos, GPS routes, BLE watch, and HealthJournal. */
     suspend fun eraseAllLocalData(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            DistanceTrackingService.erase(appContext)
-            HealthBackgroundService.stop(appContext)
-            (appContext.getSystemService(Context.JOB_SCHEDULER_SERVICE) as? JobScheduler)?.cancel(HealthBackgroundJob.ID)
-            HealthJournalStore.get(appContext).erase()
-            if (!BleWatchPreference(appContext).clear()) {
-                throw IOException("Cannot clear selected watch.")
-            }
-            database.workoutHistoryDao().deleteAllWorkouts()
-            database.workoutHistoryDao().deleteAllTombstones()
-            database.bodyWeightDao().deleteAllWeights()
-            database.calendarScheduleDao().deleteAllEntries()
-            database.exerciseLibraryDao().deleteAllCustomExercises()
-            database.programDao().deleteAllPrograms()
-            database.keyValueDocumentDao().deleteAllDocuments()
-            TrainPilotDatabase.ensureBuiltinCatalogSeeded(database)
-            settingsStore.resetAllSettingsForEraseLocal()
+            NativeDataReplacement.exclusively(appContext) {
+                DistanceTrackingService.erase(appContext)
+                HealthBackgroundService.stop(appContext)
+                (appContext.getSystemService(Context.JOB_SCHEDULER_SERVICE) as? JobScheduler)?.cancel(HealthBackgroundJob.ID)
+                HealthJournalStore.get(appContext).erase()
+                if (!BleWatchPreference(appContext).clear()) {
+                    throw IOException("Cannot clear selected watch.")
+                }
+                database.workoutHistoryDao().deleteAllWorkouts()
+                database.workoutHistoryDao().deleteAllTombstones()
+                database.bodyWeightDao().deleteAllWeights()
+                database.calendarScheduleDao().deleteAllEntries()
+                database.exerciseLibraryDao().deleteAllCustomExercises()
+                database.programDao().deleteAllPrograms()
+                database.keyValueDocumentDao().deleteAllDocuments()
+                TrainPilotDatabase.ensureBuiltinCatalogSeeded(database)
+                settingsStore.resetAllSettingsForEraseLocal()
 
-            removeRecursive(photosDir())
-            removeRecursive(transactionsDir())
-            val gpsRoutesDir = File(appContext.noBackupFilesDir, "gps_routes")
-            if (gpsRoutesDir.exists()) removeRecursive(gpsRoutesDir)
-            val wearRoutesDir = File(appContext.noBackupFilesDir, "wear_routes193")
-            if (wearRoutesDir.exists()) removeRecursive(wearRoutesDir)
+                removeRecursive(photosDir())
+                removeRecursive(transactionsDir())
+                val gpsRoutesDir = File(appContext.noBackupFilesDir, "gps_routes")
+                if (gpsRoutesDir.exists()) removeRecursive(gpsRoutesDir)
+                val wearRoutesDir = File(appContext.noBackupFilesDir, "wear_routes193")
+                if (wearRoutesDir.exists()) removeRecursive(wearRoutesDir)
 
-            val backupCache = File(appContext.cacheDir, "backup_export")
-            if (backupCache.exists()) removeRecursive(backupCache)
-            appContext.cacheDir.listFiles()?.forEach { f ->
-                if (f.name.startsWith("trainpilot-")) removeRecursive(f)
+                val backupCache = File(appContext.cacheDir, "backup_export")
+                if (backupCache.exists()) removeRecursive(backupCache)
+                appContext.cacheDir.listFiles()?.forEach { f ->
+                    if (f.name.startsWith("trainpilot-")) removeRecursive(f)
+                }
+                withContext(Dispatchers.Main) {
+                    runCatching { ActiveWorkoutStore.clear(appContext) }
+                }
+                WearSyncRepository.publishWatchHomeSnapshot(appContext)
             }
-            withContext(Dispatchers.Main) {
-                runCatching { ActiveWorkoutStore.clear(appContext) }
-            }
-            WearSyncRepository.publishWatchHomeSnapshot(appContext)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

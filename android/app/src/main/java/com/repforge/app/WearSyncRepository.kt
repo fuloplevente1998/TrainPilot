@@ -105,6 +105,7 @@ object WearSyncRepository {
         val appContext = context.applicationContext
         syncScope.launch {
             try {
+                check(!NativeDataReplacement.blocked(appContext)) { "Adat-visszaállítás vagy törlés van folyamatban." }
                 val action = command.optString("action")
                 val pending = ActiveWorkoutStore.current(appContext)?.optBoolean("finalizationPending") == true
                 check(!pending || action in setOf("finishWorkout", "saveWorkoutFeedback", "healthSummary")) {
