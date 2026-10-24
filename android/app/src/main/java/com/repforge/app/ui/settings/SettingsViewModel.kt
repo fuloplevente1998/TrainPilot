@@ -11,6 +11,9 @@ import com.repforge.app.BackupRestoreManager
 import com.repforge.app.GoogleAuthOutcome
 import com.repforge.app.GoogleSyncRepository
 import com.repforge.app.GoogleSyncUiState
+import com.repforge.app.NativeDataReplacement
+import com.repforge.app.NativeTrainingProfile
+import org.json.JSONObject
 import com.repforge.app.data.store.ThemePaletteOption
 import com.repforge.app.data.store.TrainPilotSettingsStore
 import com.repforge.app.data.store.TrainPilotUserSettings
@@ -30,7 +33,10 @@ data class SettingsUiState(
     val replacementBusy: Boolean = false,
     val needsRecovery: Boolean = false,
     val recoveryError: Boolean = false,
-    val statusMessage: String? = null
+    val statusMessage: String? = null,
+    val profileSaving: Boolean = false,
+    val profileWriteFailed: Boolean = false,
+    val profileSavedSequence: Int = 0
 )
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
@@ -74,6 +80,33 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                         .getString(com.repforge.app.R.string.metadata_write_failed))
             }
         }
+    }
+
+    fun saveProfile(fields: Map<String, String>, openedJson: String) {
+        if (_uiState.value.profileSaving || _uiState.value.replacementBusy) return
+        _uiState.value = _uiState.value.copy(profileSaving = true, profileWriteFailed = false)
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    NativeDataReplacement.mutate(context) {
+                        check(settingsStore.current().profileJson == openedJson) {
+                            "Training profile changed while editing"
+                        }
+                        val revised = NativeTrainingProfile.edit(JSONObject(openedJson), fields)
+                        settingsStore.saveTrainingProfile(revised)
+                    }
+                }
+                _uiState.value = _uiState.value.copy(
+                    profileSavedSequence = _uiState.value.profileSavedSequence + 1)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (_: Exception) {
+                _uiState.value = _uiState.value.copy(profileWriteFailed = true)
+            } finally { _uiState.value = _uiState.value.copy(profileSaving = false) }
+        }
+    }
+
+    fun clearProfileError() {
+        _uiState.value = _uiState.value.copy(profileWriteFailed = false)
     }
 
     fun setTheme(theme: ThemePaletteOption) = writeSetting { settingsStore.setTheme(theme) }
