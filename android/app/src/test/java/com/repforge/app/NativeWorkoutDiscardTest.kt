@@ -65,10 +65,13 @@ class NativeWorkoutDiscardTest {
     }
     @Test fun explicitDiscardAbandonsPendingRecordingOnlyAfterDurableTombstoneAndNativeClose() = runTest(dispatcher) {
         val input = prepare()
-        store().record(JSONObject().put("commandId", "record").put("action", "completeSet")
-            .put("workoutId", "discard-me").put("generation", 1).put("executionRevision", 0)
+        val frame = store().snapshot()!!
+        val receipt = store().record(JSONObject().put("commandId", "record").put("action", "completeSet")
+            .put("workoutId", "discard-me").put("generation", frame.getLong("generation"))
+            .put("executionRevision", frame.getLong("executionRevision"))
             .put("exerciseId", "press").put("setId", "set-a").put("weight", 12).put("reps", "9"))
-        assertEquals(1, store().pendingEvents("discard-me", 1, 0).length())
+        assertEquals("applied", receipt.getString("status"))
+        assertEquals(1, store().pendingEvents("discard-me", frame.getLong("generation"), 0).length())
         val closed = finalizer().discardWorkout(input)
         assertFalse(closed.getBoolean("active"))
         assertFalse(store().snapshot()!!.getBoolean("active"))
