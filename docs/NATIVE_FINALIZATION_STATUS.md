@@ -1,8 +1,9 @@
 # Natív migráció – véglegesítési státusz
 
-Frissítve: **2026-10-24**. Munkaág: `feat/native-android-finalization`,
-legutóbbi app-/tesztkód-commit `a0e7393`; a `dee1199` Home- és
-`b7a82ef`/`a0e7393` Health-kód/próbakód még nem buildelt. A
+Frissítve: **2026-10-24**. Munkaág: `feat/native-android-finalization`.
+Az eddigi Home- és Health-batch (`dee1199`, `b7a82ef`, `a0e7393`) a
+`f761155` CI-forrásig még nem volt buildelve; az AAPT-escape javítás az új batch
+része, de még nem igazolt. A
 `main` (`8a36502`, alkalmazásbaseline `7473b30`) érintetlen; az
 egyirányú forráság frissített HEAD-je `1e4783b`.
 A `36462aa`, `c941413`, `04dba76` és `a026f03` újratervezett képtáblákat, teljes
@@ -49,6 +50,16 @@ A javítás `appContext`-re vált; az új UI- és palettabatch-szel együtt még
 CI-vel igazolva. A teszt-, aláírt/update- és UI-kapuk, illetve az APK-pár továbbra
 nyitottak.
 Fizikai telefonos/Watch7-próba sem történt.
+
+A következő [40122692736](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40122692736)
+futás a telefonos/Wear debug build `:app:mergeDebugResources` lépésén bukott el:
+az AAPT2 az angol `home_today_status` és `home_recommendation_error`
+erőforrásokban lévő nyers ASCII aposztrófok miatt hibás escape-szekvenciát
+jelzett a `values-en/strings.xml` 150. és 160. sorában. A hiba a Kotlin-fordítás
+előtt történt, ezért a telefonos unit/UI, signed-upgrade és APK-lépések nem
+futottak le. A két szöveg aposztrófja Android-erőforrás escape-ként javítva lett,
+de a javítás még nem kapott AAPT/CI-igazolást. Ez forráshiba, nem Windows
+tanúsítvány- vagy SDK-letöltési hiba; TLS-ellenőrzést nem lazítottunk.
 
 | Main-funkció / natív terület | Státusz | Meglévő bizonyíték és fennmaradó rés |
 | --- | --- | --- |
@@ -104,11 +115,11 @@ feltérképezve; a megőrzendő lista nem tekinthető kész lefedettségi méré
 
 ## Következő feladatok
 
-1. Statikus ellenőrzés után commit/push kizárólag a `feat/native-android-finalization`
-   ágra, majd a meglévő natív Actions-folyamat futtatása pontosan ezen a SHA-n;
-   a build-, JVM-, Compose UI- és signed-upgrade eredményt külön értékelni.
-2. A jelen batch CI-hibáit forrás-/környezet-/tesztelvárási ok szerint szétválasztani,
-   és csak igazolt hibát javítani; a szükséges kaput újrafuttatni.
+1. Az angol stringjavítás XML/diff ellenőrzése, commit/push kizárólag a
+   `feat/native-android-finalization` ágra, majd a natív Actions-kapu újrafuttatása
+   pontosan ezen a SHA-n; build-, JVM-, Compose UI- és signed-upgrade eredmény külön.
+2. A következő CI-hibákat forrás-/környezet-/tesztelvárási ok szerint szétválasztani,
+   és csak igazolt hibát javítani.
 3. Kritikus Compose telefonos indítás/folytatás/mentés/elvetés és az interval/
    preset, Health-refresh, Coach-order utak integrációs UI-próbái.
 4. Az A01–E20 mind a 81 funkciójára natív útvonal/adatforrás/teszt megfeleltetés:

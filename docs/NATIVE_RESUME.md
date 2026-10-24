@@ -37,17 +37,20 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   kiválasztott napra irányul. Mind a 26 provider metric kulcs megjeleníthető,
   lokalizált HU/EN/DE/RO címkékkel. BLE csatorna a kanonikus HealthJournalStore
   azonosítót használja. Kód/próbák még nem futottak Androidon.
-- A branch jelenlegi appkódja és új Home/Health tesztjei még nincsenek CI-vel
-  igazolva. Az utolsó ismert CI a `40119749853` (`8ead84a`) fordítási hiba;
-  a `BackupRestoreManager`-beli `appContext` javítás már a Home batch-ben van.
+- A `40122692736` Actions-futás a `:app:mergeDebugResources` lépésnél elbukott:
+  `values-en/strings.xml` két új Home-feliratában az AAPT2 az aposztrófokat
+  hibás escape-ként értelmezte. A `Today's` és `Couldn't` aposztrófja
+  `\'`-re javítva; ez még nincs AAPT/CI-vel igazolva, a Kotlin-fordítás és a
+  későbbi teszt-/signed-upgrade kapuk el sem indultak. A TLS-ellenőrzés érintetlen.
 - Teljes A01–E20 leltár (81 megőrzendő funkció) és a négy ellenőrzött tervlap:
   `docs/design/NATIVE_DESIGN_HANDOFF.md` és `docs/design/mockups/`. A leltár
   követelmény, nem teljesítési bizonyíték; pontos útvonal/adatforrás/teszt
   megfeleltetés, signed upgrade és fizikai készülékpróba még nyitott.
 
-- A korábbi `40119749853` továbbra is az utolsó ismert CI-futás: a Kotlin fordítás egy `context`
-  hivatkozás miatt elbukott. A munkafában az `appContext`-javítás megvan, de a
-  CI/egységteszt/aláírt upgrade/API-APK futás nincs elindítva az aktuális forráson.
+- A `git fetch origin --prune` után a migration upstream továbbra is `1e4783b`;
+  az előzőleg felülvizsgált upstream-készletben új commit nem jelent meg.
+- A következő lépés a két erőforrás-escape XML/diff ellenőrzése, kizárólag a
+  finalization ágra commit/push, majd a natív Actions-kapu újrafuttatása az új SHA-n.
 - `docs/design/NATIVE_DESIGN_HANDOFF.md` most a friss teljes funkcióleltárat és
   négy SHA-val ellenőrzött tervlapot tartalmazza. Ezek kifejezetten nem funkció-
   vagy tesztbizonyítékok; teljes ID-szintű lefedettség még nincs felmérve.

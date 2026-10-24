@@ -157,12 +157,12 @@
     <string name="home_watch_title">Wear OS watch</string>
     <string name="home_watch_last_update">Latest watch data: %1$s</string>
     <string name="home_watch_no_data">No watch data received yet.</string>
-    <string name="home_today_status">Today's status</string>
+    <string name="home_today_status">Today\'s status</string>
     <string name="home_recommended_workout">Recommended workout</string>
     <string name="home_start_recommended_workout">Start workout</string>
     <string name="home_no_recommendation">No recommended workout. Choose a program or day.</string>
     <string name="home_open_training">Open training</string>
-    <string name="home_recommendation_error">Couldn't load the recommended workout.</string>
+    <string name="home_recommendation_error">Couldn\'t load the recommended workout.</string>
     <string name="home_metrics_partial">Partial data</string>
     <string name="home_metrics_error">Health data could not be loaded right now.</string>
     <string name="home_retry">Retry</string>
