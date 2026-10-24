@@ -4,6 +4,24 @@ Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Egyedi Health Connect-eredet választása – natív kódbatch
+
+**031f0a60** `[skip ci]`, csak a `feat/native-android-migration` ágon.
+A Napi aktivitás Auto/Priority mellett a natív UI már a Health Connect naplóban
+**ténylegesen megtalált forrásazonosítókat** kínálja fel (max 100, deduplikálva,
+validálva; saját app/invalid/belső eredetek kizárva). A korábban kiválasztott,
+de az aktuális naplóban már nem található eredet kijelzése megmarad, de nem
+választható újra ellenőrzés nélkül. Nincs kitalált appadat, új SDK-kérés,
+implicit háttérfrissítés vagy új tároló. A meglévő HC-policy/persist/dirty
+jelzés érvényes: korábbi összesítés a tudatos Frissítésig részleges.
+
+2 új JVM unit +1 natív Phone Compose UI-tesztkód (originlista, mentés,
+stale aggregátum). **Batch: 221 új unit +17 telefonos UI-kód, egyik sem
+futott még**. Forráscsere/diff ellenőrizve; Android fordítás, UI-kapu és
+APK továbbra nincs. Utolsó teljes zöld forrás `dd4cc27` — **élő
+adatok fölé telepítés STOP**. Következő: HC/BLE háttér-/engedélyállapotok,
+maradó profil/program/kedvenc és teljes A–E lefedés, majd közös CI.
+
 ## Napi aktivitás forrásmód – kis lezárt kódolási lépés
 
 **b55df92**, [skip ci]: Egészség HC forráskártyán Automatikus / Health Connect
