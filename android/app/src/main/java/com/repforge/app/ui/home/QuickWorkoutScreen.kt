@@ -11,6 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.repforge.app.NativeOutdoorStart
 import com.repforge.app.NativeExerciseFavorites
@@ -103,7 +105,9 @@ internal fun QuickWorkoutScreen(outdoorOnly: Boolean, starting: Boolean,
                                 finally { favoriteSaving = false }
                             }
                         }, enabled = !starting && !favoriteSaving,
-                            modifier = Modifier.testTag("exercise_favorite_${ex.id}")) {
+                            modifier = Modifier.testTag("exercise_favorite_${ex.id}").semantics {
+                                contentDescription = if (ex.id in favorites) favText[2] else favText[1]
+                            }) {
                             Text(if (ex.id in favorites) "★" else "☆",
                                 color = if (ex.id in favorites) colors.accentText else colors.muted)
                         }
