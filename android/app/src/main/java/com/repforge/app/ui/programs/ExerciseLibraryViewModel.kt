@@ -51,13 +51,14 @@ internal class ExerciseLibraryViewModel(application: Application) : AndroidViewM
         }
     }
 
-    fun saveCustom(id: String?, draft: NativeCustomExerciseEditor.Draft, language: String) {
+    fun saveCustom(id: String?, draft: NativeCustomExerciseEditor.Draft, language: String,
+        expectedRawJson: String? = null) {
         if (_state.value.saving || _state.value.loading || _state.value.error) return
         _state.update { it.copy(saving = true, editError = null, savedId = null, deletedId = null) }
         viewModelScope.launch {
             try {
                 val saved = withContext(Dispatchers.IO) {
-                    NativeCustomExerciseEditor.save(context, db, id, draft, language)
+                    NativeCustomExerciseEditor.save(context, db, id, draft, language, expectedRawJson)
                 }
                 val data = withContext(Dispatchers.IO) {
                     NativeDataReplacement.mutate(context) {
@@ -71,12 +72,12 @@ internal class ExerciseLibraryViewModel(application: Application) : AndroidViewM
         }
     }
 
-    fun deleteCustom(id: String) {
+    fun deleteCustom(id: String, expectedRawJson: String? = null) {
         if (_state.value.saving || _state.value.loading || _state.value.error) return
         _state.update { it.copy(saving = true, editError = null, savedId = null, deletedId = null) }
         viewModelScope.launch {
             try {
-                withContext(Dispatchers.IO) { NativeCustomExerciseEditor.delete(context, db, id) }
+                withContext(Dispatchers.IO) { NativeCustomExerciseEditor.delete(context, db, id, expectedRawJson) }
                 val data = withContext(Dispatchers.IO) {
                     NativeDataReplacement.mutate(context) {
                         db.exerciseLibraryDao().getAllExercises() to NativeExerciseFavorites.load(db).toSet()
