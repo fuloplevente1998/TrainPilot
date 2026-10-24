@@ -137,7 +137,7 @@ fun SettingsScreen(
                                     Box(Modifier.size(16.dp).clip(CircleShape).background(cAccent2))
                                 }
                                 Spacer(Modifier.height(6.dp))
-                                Text(themeOpt.nameHu, color = if (isSel) colors.accent else colors.muted, fontSize = 10.sp, fontWeight = FontWeight.Medium)
+                                Text(themeOpt.displayName(state.settings.language), color = if (isSel) colors.accent else colors.muted, fontSize = 10.sp, fontWeight = FontWeight.Medium)
                             }
                         }
                     }

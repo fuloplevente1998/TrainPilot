@@ -187,10 +187,8 @@ class LegacyWebViewMigrator(
             if (settingsObj.has("healthBackupConsent")) {
                 settingsStore.setHealthBackupConsent(settingsObj.optBoolean("healthBackupConsent", false))
             }
-            val themeKey = settingsObj.optString("themeKey", data.optString("themeKey", ""))
-            val matchedTheme = TrainPilotSettingsStore.AVAILABLE_THEMES.firstOrNull { it.key == themeKey }
-            if (matchedTheme != null) settingsStore.setTheme(matchedTheme)
         }
+        TrainPilotSettingsStore.importedTheme(data)?.let { settingsStore.setTheme(it) }
         val activeProg = data.optString("activeProgramId", "")
         if (activeProg.isNotBlank()) settingsStore.setActiveProgramId(activeProg)
 
@@ -755,7 +753,7 @@ class LegacyWebViewMigrator(
 
             // Settings
             out.put("activeProgramId", settings.activeProgramId)
-            out.put("themeAccent", settings.themeAccent)
+            out.put("themeAccent", settings.themeKey)
             out.put(
                 "settings",
                 JSONObject()

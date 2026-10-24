@@ -24,8 +24,13 @@ data class ThemePaletteOption(
     val nameEn: String,
     val accent: String,
     val accent2: String,
-    val family: String // "basic" | "vivid"
+    val family: String, // "basic" | "vivid"
+    val nameDe: String = nameEn,
+    val nameRo: String = nameEn
 ) {
+    fun displayName(language: String): String = when (language) {
+        "en" -> nameEn; "de" -> nameDe; "ro" -> nameRo; else -> nameHu
+    }
     fun toJson(): JSONObject = JSONObject()
         .put("key", key)
         .put("accent", accent)
@@ -87,15 +92,50 @@ class TrainPilotSettingsStore(private val context: Context) {
         val KEY_MIGRATION_V1371_COMPLETE = booleanPreferencesKey("migration_v1_3_71_complete")
         val KEY_GPS_START_CHOICES_216 = stringPreferencesKey("gpsStartChoices216")
 
+        // Effective main 7473b30 palette: final Basic overrides + original Vivid keys.
         val AVAILABLE_THEMES = listOf(
-            ThemePaletteOption("classicBlue", "Klasszikus kék", "Classic Blue", "#4d8fbe", "#7cb4d6", "basic"),
-            ThemePaletteOption("amberGold", "Arany", "Amber Gold", "#f2bd45", "#ffd97d", "basic"),
-            ThemePaletteOption("emerald", "Smaragd", "Emerald", "#3ca87d", "#7fd4ba", "basic"),
-            ThemePaletteOption("slateCoral", "Korall", "Slate Coral", "#d46a6a", "#f09c9c", "basic"),
-            ThemePaletteOption("vividCyan", "Élénk cián", "Vivid Cyan", "#26b6d4", "#6ee7ff", "vivid"),
-            ThemePaletteOption("vividGold", "Élénk arany", "Vivid Gold", "#f3c545", "#fff1a0", "vivid"),
-            ThemePaletteOption("vividEmerald", "Élénk smaragd", "Vivid Emerald", "#2dd48f", "#7bf1b8", "vivid")
+            ThemePaletteOption("classicBlue", "Kék", "Blue", "#4d8fbe", "#7cb4d6", "basic", "Blau", "Albastru"),
+            ThemePaletteOption("classicGreen", "Zöld", "Green", "#4d946a", "#7ab18d", "basic", "Grün", "Verde"),
+            ThemePaletteOption("classicRed", "Piros", "Red", "#b95f63", "#d58a8d", "basic", "Rot", "Roșu"),
+            ThemePaletteOption("classicOrange", "Narancs", "Orange", "#c07d45", "#d9a06e", "basic", "Orange", "Portocaliu"),
+            ThemePaletteOption("classicPurple", "Lila", "Purple", "#8567b1", "#a58cc9", "basic", "Violett", "Mov"),
+            ThemePaletteOption("graphite", "Grafit", "Graphite", "#687989", "#96a4b1", "basic", "Graphit", "Grafit"),
+            ThemePaletteOption("classicTeal", "Türkiz", "Teal", "#3f918a", "#75b6b1", "basic", "Türkis", "Turcoaz"),
+            ThemePaletteOption("classicRose", "Rózsaszín", "Rose", "#b45f82", "#d38aa5", "basic", "Rosé", "Roz"),
+            ThemePaletteOption("classicAmber", "Arany", "Amber", "#ae843c", "#cca45f", "basic", "Bernstein", "Chihlimbar"),
+            ThemePaletteOption("classicCyan", "Cián", "Cyan", "#4c8fa5", "#77b0c0", "basic", "Cyan", "Cian"),
+            ThemePaletteOption("yellow", "Sárga", "Yellow", "#f2bd45", "#ffd975", "vivid", "Gelb", "Galben"),
+            ThemePaletteOption("blue", "Kék", "Blue", "#5ca8ff", "#8bc4ff", "vivid", "Blau", "Albastru"),
+            ThemePaletteOption("green", "Zöld", "Green", "#62d08a", "#92e6ad", "vivid", "Grün", "Verde"),
+            ThemePaletteOption("purple", "Lila", "Purple", "#a98cff", "#c6b5ff", "vivid", "Violett", "Mov"),
+            ThemePaletteOption("orange", "Narancs", "Orange", "#ff9b54", "#ffbd8d", "vivid", "Orange", "Portocaliu"),
+            ThemePaletteOption("cyan", "Cián", "Cyan", "#48c6ef", "#83dcf6", "vivid", "Cyan", "Cian"),
+            ThemePaletteOption("teal", "Türkiz", "Teal", "#45c6b2", "#7de0d1", "vivid", "Türkis", "Turcoaz"),
+            ThemePaletteOption("pink", "Rózsaszín", "Pink", "#ff78b9", "#ffa6d0", "vivid", "Rosa", "Roz"),
+            ThemePaletteOption("indigo", "Indigó", "Indigo", "#7f96ff", "#a8b8ff", "vivid", "Indigo", "Indigo"),
+            ThemePaletteOption("lime", "Lime", "Lime", "#a8d75f", "#c7ea8b", "vivid", "Limette", "Lime"),
+            ThemePaletteOption("red", "Piros", "Red", "#ff6b6b", "#ff9b9b", "vivid", "Rot", "Roșu"),
+            ThemePaletteOption("magenta", "Magenta", "Magenta", "#e66cff", "#f1a0ff", "vivid", "Magenta", "Magenta"),
+            ThemePaletteOption("lavender", "Levendula", "Lavender", "#9a86ff", "#c0b4ff", "vivid", "Lavendel", "Lavandă"),
+            ThemePaletteOption("sky", "Égkék", "Sky", "#66c7ff", "#9adfff", "vivid", "Himmelblau", "Azuriu"),
+            ThemePaletteOption("mint", "Menta", "Mint", "#63d9b1", "#96ead0", "vivid", "Minze", "Mentă"),
+            ThemePaletteOption("coral", "Korall", "Coral", "#ff7f72", "#ffaaa0", "vivid", "Koralle", "Coral"),
+            // Preserve the six extra keys already saved by native test versions.
+            ThemePaletteOption("amberGold", "Arany (natív)", "Amber Gold (native)", "#f2bd45", "#ffd97d", "basic", "Gold (nativ)", "Auriu (nativ)"),
+            ThemePaletteOption("emerald", "Smaragd (natív)", "Emerald (native)", "#3ca87d", "#7fd4ba", "basic", "Smaragd (nativ)", "Smarald (nativ)"),
+            ThemePaletteOption("slateCoral", "Korall (natív)", "Coral (native)", "#d46a6a", "#f09c9c", "basic", "Koralle (nativ)", "Coral (nativ)"),
+            ThemePaletteOption("vividCyan", "Élénk cián (natív)", "Vivid cyan (native)", "#26b6d4", "#6ee7ff", "vivid", "Leuchtendes Cyan (nativ)", "Cian intens (nativ)"),
+            ThemePaletteOption("vividGold", "Élénk arany (natív)", "Vivid gold (native)", "#f3c545", "#fff1a0", "vivid", "Leuchtendes Gold (nativ)", "Auriu intens (nativ)"),
+            ThemePaletteOption("vividEmerald", "Élénk smaragd (natív)", "Vivid emerald (native)", "#2dd48f", "#7bf1b8", "vivid", "Leuchtender Smaragd (nativ)", "Smarald intens (nativ)")
         )
+
+        /** Native backup keys take precedence; legacy WebView themeAccent is a KEY, not hex. */
+        fun importedTheme(data: JSONObject): ThemePaletteOption? {
+            val candidates = listOf(data.optJSONObject("settings")?.optString("themeKey").orEmpty(),
+                data.optString("themeKey"), data.optString("themeAccent"))
+            return candidates.firstNotNullOfOrNull { key -> AVAILABLE_THEMES.firstOrNull { it.key == key } }
+        }
+
     }
 
     val settingsFlow: Flow<TrainPilotUserSettings> = context.trainPilotDataStore.data.map { prefs ->
