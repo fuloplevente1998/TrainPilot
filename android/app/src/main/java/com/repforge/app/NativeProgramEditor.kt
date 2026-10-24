@@ -123,6 +123,42 @@ internal object NativeProgramEditor {
                 val item = rx.getJSONObject(key)
                 require(item.optInt("sets") in 2..3 && item.optInt("rir") == 2 &&
                     item.optInt("rest") in 60..180 && item.optString("loadType").isNotBlank())
+                val weight = item.opt("weight") as? Number
+                require(weight != null && weight.toDouble().isFinite() && weight.toDouble() >= 0)
+                if (item.optBoolean("trial")) require(weight.toDouble() == 0.0)
+            }
+            personalMetadata.optJSONObject("history128")?.let { historical ->
+                val asOf = historical.optLong("asOf")
+                require(asOf > 0 && asOf <= System.currentTimeMillis() &&
+                    asOf > System.currentTimeMillis() - 2L * 3600_000L)
+                val entries = historical.optJSONObject("entries") ?: throw IllegalArgumentException("Missing lineage")
+                require(entries.keys().asSequence().all { it in selected })
+                for (key in entries.keys()) {
+                    val evidence = entries.getJSONObject(key)
+                    require(evidence.optString("loadType") == rx.getJSONObject(key).optString("loadType") &&
+                        evidence.optString("variation") == rx.getJSONObject(key).optString("variation") &&
+                        evidence.optString("metric") in setOf("reps", "time"))
+                    val sources = evidence.getJSONArray("sources")
+                    require(sources.length() in 1..4)
+                    val unique = HashSet<Pair<String, String>>()
+                    for (ix in 0 until sources.length()) {
+                        val item = sources.getJSONObject(ix)
+                        val pid = item.getString("programId")
+                        val identity = item.getString("key")
+                        require(pid.isNotBlank() && identity.isNotBlank() && unique.add(pid to identity))
+                    }
+                }
+                // An edited/removed source workout invalidates the saved preview.
+                // Reevaluate the same bounded time horizon, rather than trusting UI JSON.
+                val selectedPreview = NativeProfileProgramPreview.Preview(
+                    opened!!, d, rx, expected, emptyList(), expected.optInt("minutes"), 0,
+                    current, historical)
+                val fresh = NativeProfileHistory128.apply(db, selectedPreview,
+                    java.time.Instant.ofEpochMilli(asOf))
+                require(fresh.history128.toString() == historical.toString() &&
+                    fresh.prescriptions.toString() == rx.toString()) {
+                    "History changed; reopen personal preview"
+                }
             }
         }
         db.withTransaction {
@@ -192,6 +228,9 @@ internal object NativeProgramEditor {
                 raw.put("sourceTemplateId", opened!!.program.id).put("templateVersion", 2)
                     .put("profileSnapshot", JSONObject(personalMetadata.getJSONObject("profileSnapshot").toString()))
                     .put("prescriptions", JSONObject(personalMetadata.getJSONObject("prescriptions").toString()))
+                personalMetadata.optJSONObject("history128")?.let { history ->
+                    raw.put("history128", JSONObject(history.toString()))
+                }
             }
             // Generated plan references are kept only on existing edits; new clones own their data.
             if (fork && personalMetadata == null) raw.remove("sourceTemplateId")
