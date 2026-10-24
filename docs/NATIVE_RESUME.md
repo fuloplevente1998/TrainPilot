@@ -20,6 +20,17 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   prototípus/fake Health-forrás tilos. Nyolcgombos menü helyett öt alsó fül elfogadva,
   jobb felső Settings; abból visszatérés nem pause, valódi editor-elhagyás igen.
 
+## Legfrissebb folytatás — HC egyedi eredet
+
+`031f0a60` `[skip ci]`: ténylegesen eltárolt HC-origin
+választása az Auto/Priority mellett, max100 rendezett/deduplikált,
+érvénytelen és saját eredetek nélkül, korábbi eltűnt választás megőrzésével.
+Nincs új SDK vagy automata újraolvasás; napi összesítés a kézi Frissítésig
+partial. 2 új unit +1 natív Phone UI-próbakód; **összesen 221 unit +17 UI
+kód, még nem futott**. Nincs friss APK/CI/készülékes bizonyíték.
+Következő: egészség háttér-/engedélyállapotok, aztán A–E funkcióleltár
+további profil/program/gyakorlat/kedvenc részei. PR #238 frissítendő.
+
 ## Legutóbbi konkrét munka
 
 - Legfrissebb appforrás **b55df92**: napi HC aktivitás Auto/Priority UI a meglévő
