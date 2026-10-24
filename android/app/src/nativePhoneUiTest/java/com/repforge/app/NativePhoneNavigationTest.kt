@@ -450,6 +450,46 @@ class NativePhoneNavigationTest {
         compose.onNodeWithText("Nincs aktív BLE háttérkapcsolat.").assertExists()
     }
 
+    @Test fun fullNativeLibraryShows106EntriesAndOpensItsOriginalVideoCard() {
+        launch(); tab("training")
+        compose.onNodeWithText("Gyakorlatkönyvtár").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_library_count").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("exercise_library_count").assertTextContains("106")
+        compose.onNodeWithTag("exercise_library_search").performTextInput(
+            com.repforge.app.data.db.NativeBuiltinCatalog.exercises.first { it.id == "db-squat" }.nameHu)
+        compose.onNodeWithTag("exercise_library_row_db-squat").performClick()
+        compose.onNodeWithTag("exercise_library_detail").assertExists()
+        compose.onNodeWithTag("exercise_library_video").assertExists()
+        compose.onNodeWithText("Videó forrása: Mike Hildebrandt").assertExists()
+        screenshot("library_original_video_details")
+        assertFalse(ActiveWorkoutStore.current(context)?.optBoolean("active") == true)
+    }
+
+    @Test fun outdoorExerciseOffersOnlyExplicitUnverifiedSearchNotAnInventedVideo() {
+        launch(); tab("training")
+        compose.onNodeWithText("Gyakorlatkönyvtár").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_library_search").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("exercise_library_search").performTextInput("Futás")
+        compose.onNodeWithTag("exercise_library_row_running").performClick()
+        compose.onNodeWithTag("exercise_library_unverified").assertExists()
+        compose.onNodeWithTag("exercise_library_search_video").assertExists()
+        compose.onNodeWithTag("exercise_library_video").assertDoesNotExist()
+        screenshot("library_outdoor_search_not_video")
+    }
+
+    @Test fun quickWorkoutShowsOriginalVideoWithoutStartingWorkout() {
+        launch(); tab("training")
+        compose.onNodeWithText("Gyakorlat választása").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_search").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("exercise_search").performTextInput("db-squat")
+        val squats = com.repforge.app.data.db.NativeBuiltinCatalog.exercises.first { it.id == "db-squat" }.nameHu
+        compose.onNodeWithTag("exercise_search").performTextClearance()
+        compose.onNodeWithTag("exercise_search").performTextInput(squats)
+        compose.onNodeWithTag("exercise_select_db-squat").performClick()
+        compose.onNodeWithTag("quick_exercise_video").assertExists()
+        assertFalse(ActiveWorkoutStore.current(context)?.optBoolean("active") == true)
+    }
+
     @Test fun exerciseFavoritesCanBeToggledFilteredAndRecoveredOnReentry() {
         launch(); tab("training")
         compose.onNodeWithText("Gyakorlat választása").performClick()
