@@ -214,6 +214,37 @@ class NativeProfileHistory128Test {
         assertFalse(onlyTwo.autoApply)
     }
 
+    @Test fun portableBackupRoundTripsFourSourceLineageWithoutRewritingHistory() = runBlocking {
+        for (i in 1..4) workout("reference-$i", i.toLong())
+        val p = preview()
+        store.saveTrainingProfile(profile())
+        val id = NativeProgramEditor.save(context, db, p.source, p.draft, "hu",
+            NativeProfileProgramPreview.metadata(p))
+        val backup = importer.exportBackupJson(false)
+        val saved = backup.getJSONArray("programs").let { rows ->
+            (0 until rows.length()).map(rows::getJSONObject).first { it.getString("id") == id }
+        }
+        NativeProfileHistory128.validatePortable(saved)
+        assertEquals(4, saved.getJSONObject("history128").getJSONObject("entries")
+            .getJSONObject(this.id).getJSONArray("sources").length())
+        assertEquals(4, db.workoutHistoryDao().getWorkoutCount())
+    }
+
+    @Test fun invalidDuplicateHistorySourcesRejectRestoreBeforeDeletingExistingProgram() = runBlocking {
+        val row = JSONObject().put("id", "imported")
+            .put("history128", JSONObject().put("entries",
+                JSONObject().put(id, JSONObject().put("metric", "reps")
+                    .put("sources", JSONArray()
+                        .put(JSONObject().put("programId", old).put("key", "same"))
+                        .put(JSONObject().put("programId", old).put("key", "same"))))))
+        val backup = JSONObject().put("programs", JSONArray().put(row))
+        val before = db.programDao().getProgramIds().toSet()
+        assertThrows(IllegalArgumentException::class.java) { runBlocking {
+            importer.importBackupJson(backup, true)
+        } }
+        assertEquals(before, db.programDao().getProgramIds().toSet())
+    }
+
     @Test fun changedHistoryInvalidatesPreviewWithoutPublishingNewProgram() = runBlocking {
         workout("approved", weight = 5.0)
         val p = preview()
