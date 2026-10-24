@@ -187,3 +187,12 @@ beállítások/draft/terv és teljes tombstone-export; strukturális koordináta
 Health pending token rendezése redo előtt és fázis-checkpointok. Új7 unit-eset,
 batch összesen95 új unit + 4 Phone instrumentációs próba, nem futtatva. Drive,
 folyamatban lévő Room-írások és teljes ZIP/fotó/Health roundtrip még szükséges.
+
+
+## Háttérírás-admission és ZIP replay
+
+`0f51320`: meglevő replacement mutex reentráns context-lease/epoch írási kapuval;
+Wear/finish/import/export/settings/calendar/journal bekötve. 5 kapu + 2 tényleges
+ZIP-fájl roundtrip/replay tesztkód; összesen105 új unit + 4 Phone UI próba megírva,
+nem futtatva. Maradék bodyweight/discard/Health-írók és UI hibakezelés ellenőrzendő.
+Teljes kaput csak a kódbatch végén; a teljes natív feladat továbbra nem kész.

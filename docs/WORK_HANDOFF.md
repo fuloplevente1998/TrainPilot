@@ -4,6 +4,32 @@ Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Legfrissebb forrás – háttérírások és ZIP-replay
+
+**`0f51320`**, `[skip ci]`: a meglévő replacement mutex írási admissiont kapott,
+nem külön adatmotort. A korábban belépett metaadatíró végigfuthat; replacement
+közben új, független író elutasított. Context-lease engedi az import/finalizer
+saját egymásba ágyazott callbackjeit; érvénytelenített lease és replacement-epoch
+védi a régi adatállapothoz tartozó várakozó munkát. Zársorrend: admission előbb,
+utána finalizer/Room; a belső callback örökölt érvényes admissiont használjon.
+
+Bekötve: teljes Wear háttérparancs, közös finish, migrátor import/export/egyedimentés,
+DataStore set/reset/mark műveletek, naptári VM-módosítás és naplótörlés. Nem minden
+szabadon hívható DAO vagy külön Health SQLite-írás globálisan zárolt. A bodyweight
+UI-írás és explicit discard teljes útjának auditja/bekötése még szükséges; UI-ban
+kezelni kell az elutasított régi callbackek hibaállapotát is.
+
+ZIP redo megőrzi a teljes touched-journalt, és már telepített új fotót nem másol
+át tévesen „eredetinek”, ha a művelet előtt az adott fájl nem is létezett.
+5 új gate/cancel/reentrancia tesztkód, 2 valódi ZIP fájl/checksum/Room/draft/settings
+roundtrip és megszakítás/replay próbakód. A fotófixture bináris adat, nem képrenderelési
+bizonyíték. **105 új unit + 4 Phone instrumentációs próba megírva/nem futtatva.**
+Csak diff/forrásellenőrzés; nincs új build/APK/kép, utolsó teljes zöld `dd4cc27`.
+
+Következő: a még különálló írók és UI hibakezelés; interval/preset és Coach
+per-gyakorlat funkciók a teljes tervből, majd teljes kritikus UI suite és a batch
+végén összevont CI. Main/verzió változatlan, saját adatos telepítés STOP.
+
 ## Aktuális folytatás – Drive import és kontextus
 
 Rövid, új chatben/tömörítés után olvasandó állapot: [NATIVE_RESUME.md](NATIVE_RESUME.md).

@@ -22,6 +22,12 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 
 ## Legutóbbi konkrét munka
 
+- Legfrissebb alkalmazásforrás **0f51320**: a replacement mutex író-admissionnel
+  védi a Wear parancsot, közös finisht, import/export/egyedi history save-et,
+  DataStore set/resetet, naptári VM-módosítást és naplótörlést. Context-lease a
+  beágyazott saját callbackhez, epoch a lecserélt állapothoz tartozó várakozóhoz.
+  Admission előbb, utána Room/finalizer lock; reentrancia csak érvényes lease-szel.
+  ZIP touched-journal és eredetifotó-replay javítva. 5 gate + 2 ZIP próbakód.
 - Alkalmazásforrás **369a4d0**: Drive merge után canonical tartalmi újraellenőrzés,
   helyi replacement lease és meglévő staged redo import. Hálózati szakasz alatt
   nem tartja az edzésindítás-zárat. Módosult helyi tartalomnál nincs stale import.
@@ -37,7 +43,7 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 - Phone UI kapu alapja **1d38edf**: külön native AndroidTest source set,
   meglévő native-android.yml phone-ui job, raw adb screencap checkpoint/ack és
   származtatottnak jelölt XML/manifest. Jelenleg4 instrumentációs próbakód.
-- **98 új unit + 4 instrumentációs tesztkód megírva, még nem futtatva.**
+- **105 új unit + 4 instrumentációs tesztkód megírva, még nem futtatva.**
   Nincs új zöld kapu/APK/screenshot. Utolsó teljes zöld forrás **dd4cc27**:
   unit Phone393/Wear167, Wear UI183, signed upgrade2. Bizonyíték: WORK_HANDOFF.md.
 - Main utóbbi 8a36502d változása csak AGENTS thinking-dokumentáció; main app baseline
@@ -45,9 +51,9 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 
 ## Következő feladatok – nem lezárt részek
 
-1. Drive import/check és már elindult háttérbeli Room-írások közötti verseny teljes
-   védelme; cloud photo staging/transaction és valódi helyi ZIP/fotó/Health/draft
-   roundtrip tesztek. A mostani optimistic check nem teljes globális írászár.
+1. A még szabadon futó bodyweight/discard/egyéb írók admission és UI hibakezelése;
+   cloud photo staging/transaction. A bekötött kapu nem minden szabad DAO és külön
+   Health SQLite írás globális zárja. A megírt ZIP/Health tesztek még nem futottak.
 2. Interval nem-autoAdvance mód/globális preset teljes paritás; Coach per-gyakorlat
    javaslat/progresszió és provider-frissítés; katalógus/nevek/lokalizáció.
 3. Mockup teljes vizuális kidolgozás (előtte Medium jelzés): többek közt mini-route
