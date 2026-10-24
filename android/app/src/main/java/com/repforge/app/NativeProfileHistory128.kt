@@ -67,6 +67,12 @@ internal object NativeProfileHistory128 {
         for (i in 0 until a.length()) {
             val exercise = a.optJSONObject(i) ?: continue
             if (exercise.optString("id") != exerciseId) continue
+            // Share the final native Coach's unit/variation/metric comparison,
+            // rather than treating a similarly named movement as transferable.
+            val expectedLib = JSONObject().put("id", exerciseId).put("loadType", loadType)
+                .put("repUnit", repUnit).put("custom", false)
+            val expectedRx = JSONObject().put("loadType", loadType).put("variation", variation)
+            if (!NativeCoachAdviceRepository.compatible(exercise, expectedLib, expectedRx)) return null
             val sets = exercise.optJSONArray("sets") ?: return null
             if (sets.length() == 0 || sets.length() > 20 ||
                 exercise.optString("effort") in setOf("pain", "hard", "challenging")) return null
