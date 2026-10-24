@@ -3,6 +3,12 @@ package com.repforge.app
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
 
@@ -10,6 +16,27 @@ import kotlinx.coroutines.withContext
 internal object NativeDataReplacement {
     private const val PREFS = "trainpilot_data_replacement"
     private val mutex = Mutex()
+    private val replacementEpoch = AtomicLong(0)
+    private class Access(val replacement: Boolean) : AbstractCoroutineContextElement(Key) {
+        val active = AtomicBoolean(true)
+        companion object Key : CoroutineContext.Key<Access>
+    }
+    /** Serialize admitted metadata writers with replacement, including callbacks already in progress. */
+    internal suspend fun <T> mutate(context: Context, operation: suspend () -> T): T {
+        val inherited = currentCoroutineContext()[Access]
+        if (inherited?.active?.get() == true) {
+            check(inherited.replacement || !blocked(context)) { "Adatcsere van folyamatban." }
+            return operation()
+        }
+        val ticket = replacementEpoch.get()
+        check(!blocked(context)) { "Adatcsere van folyamatban." }
+        return mutex.withLock {
+            check(ticket == replacementEpoch.get() && !blocked(context)) { "Az adatok közben lecserélődtek; a műveletet újra kell kezdeni." }
+            val access = Access(false)
+            try { withContext(access) { operation() } } finally { access.active.set(false) }
+        }
+    }
+
     fun blocked(context: Context): Boolean = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean("blocked", false)
     private fun setBlocked(context: Context, value: Boolean) {
         check(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean("blocked", value).commit()) {
@@ -22,6 +49,7 @@ internal object NativeDataReplacement {
         check(mutex.tryLock()) { "Már folyamatban van egy adat-visszaállítás vagy törlés." }
         val app = context.applicationContext
         var acquired = false
+        var versionChanged = false
         try {
             withContext(NonCancellable + Dispatchers.Main.immediate) {
                 // Same order as ownership publication: journal -> snapshot -> native execution.
@@ -38,13 +66,16 @@ internal object NativeDataReplacement {
                             "Az adatok cseréje előtt fejezd be vagy vesd el az aktív edzést."
                         }
                         // Persist publication fence first. A failure installing the native fence stays fail-closed.
+                        replacementEpoch.incrementAndGet()
+                        versionChanged = true
                         setBlocked(app, true)
                         execution.setRestoreBlocked(true)
                         acquired = true
                     }
                 }
             }
-            return operation()
+            val access = Access(true)
+            return try { withContext(access) { operation() } } finally { access.active.set(false) }
         } finally {
             try {
                 // Incomplete redo receipt keeps both fences installed, including after process death.
@@ -56,7 +87,10 @@ internal object NativeDataReplacement {
                         }
                     }
                 }
-            } finally { mutex.unlock() }
+            } finally {
+                if (versionChanged) replacementEpoch.incrementAndGet()
+                mutex.unlock()
+            }
         }
     }
 }

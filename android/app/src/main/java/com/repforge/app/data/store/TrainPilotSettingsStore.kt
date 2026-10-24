@@ -1,5 +1,6 @@
 package com.repforge.app.data.store
 
+import com.repforge.app.NativeDataReplacement
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -179,65 +180,87 @@ class TrainPilotSettingsStore(private val context: Context) {
     }
 
     suspend fun setLanguage(language: String) {
-        if (language !in listOf("hu", "en", "de", "ro")) return
+        NativeDataReplacement.mutate(context) {
+            if (language !in listOf("hu", "en", "de", "ro")) return@mutate
         context.trainPilotDataStore.edit { it[KEY_LANGUAGE] = language }
+        }
     }
 
     suspend fun setActiveProgramId(programId: String) {
-        context.trainPilotDataStore.edit { it[KEY_ACTIVE_PROGRAM_ID] = programId }
+        NativeDataReplacement.mutate(context) {
+            context.trainPilotDataStore.edit { it[KEY_ACTIVE_PROGRAM_ID] = programId }
+        }
     }
 
     suspend fun setTheme(option: ThemePaletteOption) {
-        context.trainPilotDataStore.edit { prefs ->
+        NativeDataReplacement.mutate(context) {
+            context.trainPilotDataStore.edit { prefs ->
             prefs[KEY_THEME_KEY] = option.key
             prefs[KEY_THEME_ACCENT] = option.accent
             prefs[KEY_THEME_ACCENT2] = option.accent2
             prefs[KEY_THEME_FAMILY] = option.family
         }
+        }
     }
 
     suspend fun setTimerDefaults(workSeconds: Int, restSeconds: Int, rounds: Int, sound: Boolean, vibration: Boolean) {
-        context.trainPilotDataStore.edit { prefs ->
+        NativeDataReplacement.mutate(context) {
+            context.trainPilotDataStore.edit { prefs ->
             prefs[KEY_WORK_SECONDS] = workSeconds.coerceIn(1, 3600)
             prefs[KEY_REST_SECONDS] = restSeconds.coerceIn(0, 3600)
             prefs[KEY_ROUNDS] = rounds.coerceIn(1, 100)
             prefs[KEY_SOUND_ENABLED] = sound
             prefs[KEY_VIBRATION_ENABLED] = vibration
         }
+        }
     }
 
     suspend fun setHapticSetRecorded227(enabled: Boolean) {
-        context.trainPilotDataStore.edit { it[KEY_HAPTIC_SET_RECORDED_227] = enabled }
+        NativeDataReplacement.mutate(context) {
+            context.trainPilotDataStore.edit { it[KEY_HAPTIC_SET_RECORDED_227] = enabled }
+        }
     }
 
     suspend fun setHealthBackupConsent(consented: Boolean) {
-        context.trainPilotDataStore.edit { it[KEY_HEALTH_BACKUP_CONSENT] = consented }
+        NativeDataReplacement.mutate(context) {
+            context.trainPilotDataStore.edit { it[KEY_HEALTH_BACKUP_CONSENT] = consented }
+        }
     }
 
     suspend fun setAutoWriteWorkoutToHealthConnect(enabled: Boolean) {
-        context.trainPilotDataStore.edit { it[KEY_AUTO_WRITE_HC] = enabled }
+        NativeDataReplacement.mutate(context) {
+            context.trainPilotDataStore.edit { it[KEY_AUTO_WRITE_HC] = enabled }
+        }
     }
 
     suspend fun setWeightRange(range: String) {
-        context.trainPilotDataStore.edit { it[KEY_WEIGHT_RANGE] = range }
+        NativeDataReplacement.mutate(context) {
+            context.trainPilotDataStore.edit { it[KEY_WEIGHT_RANGE] = range }
+        }
     }
 
     suspend fun setPendingFeedback(workoutId: String?, started: String?) {
-        context.trainPilotDataStore.edit { prefs ->
+        NativeDataReplacement.mutate(context) {
+            context.trainPilotDataStore.edit { prefs ->
             prefs[KEY_PENDING_FEEDBACK_ID] = workoutId.orEmpty()
             prefs[KEY_PENDING_FEEDBACK_STARTED] = started.orEmpty()
+        }
         }
     }
 
     suspend fun markMigrationComplete() {
-        context.trainPilotDataStore.edit { it[KEY_MIGRATION_V1371_COMPLETE] = true }
+        NativeDataReplacement.mutate(context) {
+            context.trainPilotDataStore.edit { it[KEY_MIGRATION_V1371_COMPLETE] = true }
+        }
     }
 
     suspend fun setGpsStartChoice(activityId: String, enabled: Boolean) {
-        require(com.repforge.app.NativeOutdoorStart.eligible(activityId, "distance", "km"))
+        NativeDataReplacement.mutate(context) {
+            require(com.repforge.app.NativeOutdoorStart.eligible(activityId, "distance", "km"))
         context.trainPilotDataStore.edit { prefs ->
             val choices = runCatching { JSONObject(prefs[KEY_GPS_START_CHOICES_216] ?: "{}") }.getOrElse { JSONObject() }
             prefs[KEY_GPS_START_CHOICES_216] = choices.put(activityId, enabled).toString()
+        }
         }
     }
 
@@ -276,9 +299,11 @@ class TrainPilotSettingsStore(private val context: Context) {
     }
 
     suspend fun resetAllSettingsForEraseLocal() {
-        context.trainPilotDataStore.edit { prefs ->
+        NativeDataReplacement.mutate(context) {
+            context.trainPilotDataStore.edit { prefs ->
             prefs.clear()
             prefs[KEY_MIGRATION_V1371_COMPLETE] = true
+        }
         }
     }
 }

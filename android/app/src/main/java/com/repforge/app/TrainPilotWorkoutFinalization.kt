@@ -27,6 +27,7 @@ internal class TrainPilotWorkoutFinalization(
 
     suspend fun finishWorkout(input: JSONObject, fromWatch: Boolean = false): Saved =
         withContext(NonCancellable) {
+            NativeDataReplacement.mutate(context) {
             mutex.withLock {
                 val id = input.getString("workoutId").also { require(it.isNotBlank()) }
                 val history = withContext(Dispatchers.Main.immediate) { freezeAndReconcile(input, fromWatch) }
@@ -72,6 +73,7 @@ internal class TrainPilotWorkoutFinalization(
                     result
                 }
                 Saved(history, closed)
+            }
             }
         }
 

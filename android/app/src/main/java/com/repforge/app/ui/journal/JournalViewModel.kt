@@ -128,6 +128,7 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
+                    com.repforge.app.NativeDataReplacement.mutate(context) {
                     database.withTransaction {
                         val current = database.workoutHistoryDao().getWorkoutWithDetails(target.workout.id) ?: return@withTransaction
                         val w = current.workout
@@ -139,6 +140,7 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
                     // Private route cleanup follows durable deletion; an SQL failure never removes a live route.
                     if (target.workout.ownershipProtocol193 == 1) runCatching {
                         GpsRouteLedger193.open(context.noBackupFilesDir).deleteWorkout(target.workout.id)
+                    }
                     }
                 }
                 _uiState.update { it.copy(deleting = false, workoutToDelete = null) }

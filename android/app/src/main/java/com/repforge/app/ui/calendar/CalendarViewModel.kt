@@ -86,7 +86,7 @@ internal class CalendarViewModel(application: Application) : AndroidViewModel(ap
         _state.update { it.copy(busy = true) }
         viewModelScope.launch {
             try {
-                withContext(Dispatchers.IO) { action(); runCatching { WearSyncRepository.publishWatchHomeSnapshot(app) } }
+                withContext(Dispatchers.IO) { com.repforge.app.NativeDataReplacement.mutate(app) { action() }; runCatching { WearSyncRepository.publishWatchHomeSnapshot(app) } }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) { _state.update { it.copy(error = true) } }
             finally { _state.update { it.copy(busy = false) } }

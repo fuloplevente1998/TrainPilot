@@ -352,13 +352,15 @@ class BackupRestoreManager(context: Context) {
     private fun installPhotosTransactionally(dir: File, data: JSONObject) {
         val original = File(dir, "originals")
         mkdir(original)
-        val touched = JSONArray()
+        val priorJournal = File(dir, "journal.json")
+        val touched = if (priorJournal.isFile) JSONArray(String(readLimited(priorJournal, JSON_LIMIT), StandardCharsets.UTF_8)) else JSONArray()
         try {
             for (id in photoIds(data)) {
                 val dest = File(photosDir(), "$id.jpg")
                 val src = File(dir, "incoming/photos/$id.jpg")
                 if (!src.isFile) throw IOException("Photo archive missing.")
-                if (dest.exists() && !File(original, "$id.jpg").exists()) {
+                val alreadyTouched = (0 until touched.length()).any { touched.optString(it) == id }
+                if (!alreadyTouched && dest.exists() && !File(original, "$id.jpg").exists()) {
                     FileInputStream(dest).use { input ->
                         FileOutputStream(File(original, "$id.jpg")).use { out ->
                             ArchiveIO.copy(input, out, PHOTO_LIMIT.toLong())
@@ -366,8 +368,10 @@ class BackupRestoreManager(context: Context) {
                         }
                     }
                 }
-                touched.put(id)
-                writeSynced(File(dir, "journal.json"), touched.toString().toByteArray(StandardCharsets.UTF_8))
+                if (!alreadyTouched) {
+                    touched.put(id)
+                    writeSynced(File(dir, "journal.json"), touched.toString().toByteArray(StandardCharsets.UTF_8))
+                }
                 val tmp = File(photosDir(), "$id.restore")
                 FileInputStream(src).use { input ->
                     FileOutputStream(tmp).use { out ->

@@ -1,5 +1,6 @@
 package com.repforge.app.data.migration
 
+import com.repforge.app.NativeDataReplacement
 import android.content.Context
 import androidx.datastore.preferences.core.edit
 import com.repforge.app.data.db.BodyWeightEntryEntity
@@ -153,6 +154,7 @@ class LegacyWebViewMigrator(
      * into the Room database and DataStore.
      */
     suspend fun importBackupJson(rootInput: JSONObject, replaceAll: Boolean) = withContext(Dispatchers.IO) {
+        NativeDataReplacement.mutate(context) {
         val data = if (rootInput.optString("app") == "RepForgeSync" && rootInput.optJSONObject("data") != null) {
             rootInput.getJSONObject("data")
         } else {
@@ -381,13 +383,16 @@ class LegacyWebViewMigrator(
             }
         }
         settingsStore.importPortableSettings(data)
+        }
     }
 
     /**
      * Parses a canonical workout history JSONObject and persists it with all exercises,
      * sets, RIRs (#229), GPS route keys (#163/#193), and photo references into Room.
      */
-    suspend fun saveWorkoutJsonToRoom(h: JSONObject) = saveWorkoutJsonToRoom(h, database.workoutHistoryDao().getAllTombstones())
+    suspend fun saveWorkoutJsonToRoom(h: JSONObject) = NativeDataReplacement.mutate(context) {
+        saveWorkoutJsonToRoom(h, database.workoutHistoryDao().getAllTombstones())
+    }
 
     private suspend fun saveWorkoutJsonToRoom(h: JSONObject, tombstones: List<HistoryTombstoneEntity>) {
         val started = h.optString("started", "").trim()
@@ -568,6 +573,7 @@ class LegacyWebViewMigrator(
      */
     suspend fun exportBackupJson(includeHealthJournal: Boolean, healthSnapshot: JSONObject? = null): JSONObject =
         withContext(Dispatchers.IO) {
+            NativeDataReplacement.mutate(context) {
             val settings = settingsStore.current()
             val out = JSONObject()
             // Explicit portable documents only: never export the private GPS trip/raw WebView archive.
@@ -765,5 +771,6 @@ class LegacyWebViewMigrator(
             }
 
             NativeBackupPrivacy.sanitize(out)
+            }
         }
 }
