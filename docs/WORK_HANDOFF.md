@@ -7,8 +7,9 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 ## Friss mérföldkő – teljes funkcióleltár és kezdőlap
 
 Munkaág `feat/native-android-finalization`; az AAPT-erőforráshibát javító angol
-string-módosítás a `f761155` utáni jelenlegi batch része, és még CI-vel
-ellenőrizendő. A frissített,
+string-módosítás a `f761155` utáni batch része, erőforrás-fordítását a
+`40123033007` CI-futás igazolta. Ugyanez a futás az új Compose UI-teszt importján
+akadt el; ez a javítás még újrafuttatásra vár. A frissített,
 csak olvasható `feat/native-android-migration` HEAD `1e4783b`. A
 `36462aa`/`c941413`/`04dba76`/`a026f03` dokumentációja a négy újratervezett
 tervlapot, teljes main-funkcióleltárt és összevont natív elhelyezést rögzíti.
@@ -43,19 +44,23 @@ A `40119749853` (`8ead84a`) futás **failure**: az API 36 SDK telepítése siker
 de a Kotlin-fordítás a `BackupRestoreManager.kt:542` katalógus-seedelési hívásánál
 egy nem létező `context` miatt elbukott. Ez forráskódhiba, nem Windows TLS/SDK
 hiba; az aktuális munkafa a függvény paraméterét `appContext`-re javítja.
-Ezen túl a `40122692736` futás **failure** a `:app:mergeDebugResources`
+Ezen túl a `40122692736` futás **failure** volt a `:app:mergeDebugResources`
 lépésben: az AAPT2 az angol `home_today_status` és
-`home_recommendation_error` erőforrások nyers aposztrófja miatt érvénytelen
-escape-szekvenciát jelzett (`values-en/strings.xml`, 150. és 160. sor). A
-telefonos Kotlin-fordítás és tesztek, az aláírt frissítés és APK-artifact ezért
-nem futottak le; ez forráshiba, nem SDK- vagy TLS-probléma. A két aposztróf
-Android-erőforrás escape-ként javítva lett, de még nincs helyi AAPT- vagy CI-
-igazolás. A Windows TLS-ellenőrzés változatlan.
+`home_recommendation_error` nyers aposztrófja miatt hibás escape-szekvenciát
+jelzett (`values-en/strings.xml`). A javítás után a
+[40123033007](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40123033007)
+futás mindkét angol erőforrást lefordította, és a telefonos, valamint Wear
+debug APK buildje is sikerült. Ezután a `:app:compileDebugAndroidTestKotlin`
+állt meg a `NativeHomeScreenTest.kt:3` nem feloldható
+`assertDoesNotExist` importján. Az importot eltávolítottuk; a meglévő
+`NativePhoneNavigationTest` ugyanazt az assertiont import nélkül használja.
+Ezen a javításon unit/UI teszt, signed upgrade vagy APK-artifact még nem
+futott le. A hiba forráskódhiba, nem SDK/TLS; a Windows TLS-ellenőrzés változatlan.
 
 A migration upstream újabb fetch után is `1e4783b`; a korábban felülvizsgált
 egyirányú upstream-változások között nem jelent meg új commit. Következő:
-statikus XML/diff-ellenőrzés, a célzott javítás commit/push kizárólag a
-finalization ágra, majd a meglévő natív Actions-kapu újrafuttatása a pontos
+statikus diff-ellenőrzés, a célzott tesztimport-javítás commit/push kizárólag
+a finalization ágra, majd a meglévő natív Actions-kapu újrafuttatása a pontos
 SHA-n. A teljes A01–E20 útvonal/adatforrás/teszt-lefedettség, signed upgrade és
 fizikai telefonos/Watch7-próba továbbra nyitott.
 

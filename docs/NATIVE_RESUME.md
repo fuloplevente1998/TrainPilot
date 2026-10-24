@@ -37,11 +37,13 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   kiválasztott napra irányul. Mind a 26 provider metric kulcs megjeleníthető,
   lokalizált HU/EN/DE/RO címkékkel. BLE csatorna a kanonikus HealthJournalStore
   azonosítót használja. Kód/próbák még nem futottak Androidon.
-- A `40122692736` Actions-futás a `:app:mergeDebugResources` lépésnél elbukott:
-  `values-en/strings.xml` két új Home-feliratában az AAPT2 az aposztrófokat
-  hibás escape-ként értelmezte. A `Today's` és `Couldn't` aposztrófja
-  `\'`-re javítva; ez még nincs AAPT/CI-vel igazolva, a Kotlin-fordítás és a
-  későbbi teszt-/signed-upgrade kapuk el sem indultak. A TLS-ellenőrzés érintetlen.
+- A `40122692736` futás AAPT resource-escape hibát jelzett az angol Home-stringekben.
+  A `\'`-javítás után a `40123033007` futás sikeresre vitte az angol
+  erőforrásfordítást és a telefonos/Wear debug APK-kat, majd
+  `NativeHomeScreenTest.kt:3` hibás `assertDoesNotExist` importján bukott el.
+  Ezt az importot eltávolítottuk; a meglévő `NativePhoneNavigationTest` ugyanezt
+  az assertiont import nélkül használja. Teszt- és signed-upgrade eredmény még nincs.
+  A TLS-ellenőrzés érintetlen.
 - Teljes A01–E20 leltár (81 megőrzendő funkció) és a négy ellenőrzött tervlap:
   `docs/design/NATIVE_DESIGN_HANDOFF.md` és `docs/design/mockups/`. A leltár
   követelmény, nem teljesítési bizonyíték; pontos útvonal/adatforrás/teszt
@@ -49,8 +51,8 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 
 - A `git fetch origin --prune` után a migration upstream továbbra is `1e4783b`;
   az előzőleg felülvizsgált upstream-készletben új commit nem jelent meg.
-- A következő lépés a két erőforrás-escape XML/diff ellenőrzése, kizárólag a
-  finalization ágra commit/push, majd a natív Actions-kapu újrafuttatása az új SHA-n.
+- A következő lépés az importjavítás ellenőrzése, kizárólag a finalization ágra
+  commit/push, majd a natív Actions-kapu újrafuttatása az új SHA-n.
 - `docs/design/NATIVE_DESIGN_HANDOFF.md` most a friss teljes funkcióleltárat és
   négy SHA-val ellenőrzött tervlapot tartalmazza. Ezek kifejezetten nem funkció-
   vagy tesztbizonyítékok; teljes ID-szintű lefedettség még nincs felmérve.
