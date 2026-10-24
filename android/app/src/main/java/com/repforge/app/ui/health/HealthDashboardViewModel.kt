@@ -46,7 +46,14 @@ data class HealthDashboardUiState(
     val hcGranted: Boolean = false,
     val samsungInstalled: Boolean = false,
     val samsungAvailable: Boolean = false,
-    val statusMessage: String? = null
+    val statusMessage: String? = null,
+    val language: String = "hu",
+    val historyMonth: String = java.time.YearMonth.now().toString(),
+    val selectedDay: String = LocalDate.now().toString(),
+    val availableDays: List<String> = emptyList(),
+    val historyChannel: String = "journal",
+    val historyLoading: Boolean = false,
+    val historyError: Boolean = false
 )
 
 class HealthDashboardViewModel(application: Application) : AndroidViewModel(application) {
@@ -56,6 +63,9 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
 
     private val _uiState = MutableStateFlow(HealthDashboardUiState())
     val uiState: StateFlow<HealthDashboardUiState> = _uiState.asStateFlow()
+
+    private var historyQuery = NativeHealthQuery()
+    private var historyJob: kotlinx.coroutines.Job? = null
 
     init {
         observeBleState()
@@ -75,82 +85,50 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
         if (tab == "ble") bleRepo.refreshStatus()
     }
 
-    fun loadHealthDashboard() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val prefs = healthStore.preferences()
-            val today = LocalDate.now().toString()
-            val page = healthStore.page(today, today, "journal", "", 0L, 0L, 1)
-            val summaries = page.optJSONArray("days")
-            val dayObj = if (summaries != null && summaries.length() > 0) summaries.getJSONObject(0) else JSONObject()
-
-            val provider = prefs.optString("provider", HealthJournalStore.HC)
-            val metricItems = parse26Metrics(dayObj)
-
-            val sleepArr = dayObj.optJSONArray("sleepSessions")
-            val sleepText = if (sleepArr != null && sleepArr.length() > 0) {
-                val dur = sleepArr.getJSONObject(0).optDouble("durationMinutes", 0.0)
-                "${(dur / 60.0 * 10.0).roundToInt() / 10.0} óra alvás (${sleepArr.length()} szakasz)"
-            } else "Nincs rögzített alvásadat"
-
-            _uiState.value = _uiState.value.copy(
-                provider = provider,
-                dailySourcePreference = prefs.optString("hcDailySource", "auto"),
-                logWatchSteps = prefs.optBoolean("logWatchSteps", false),
-                bleBackground = prefs.optBoolean("bleBackground", false),
-                hcBackground = prefs.optBoolean("hcBackground", false),
-                metrics = metricItems,
-                sleepSessionsSummaryText = sleepText,
-                lastSyncAt = page.optString("lastSyncAt").ifEmpty { "—" },
-                hcSupported = HealthConnectRepository.isSupported(context),
-                hcGranted = HealthConnectRepository.anyReadAllowed(context),
-                samsungInstalled = SamsungHealthRepository.isInstalled(context),
-                samsungAvailable = SamsungHealthRepository.isSdkAvailable()
-            )
-        }
+    fun shiftHistoryMonth(delta: Long) {
+        runCatching { historyQuery.shift(delta) }.onSuccess { historyQuery = it; loadHealthDashboard() }
     }
-
-    private fun parse26Metrics(day: JSONObject): List<HealthMetricItemUiModel> {
-        data class Def(val key: String, val label: String, val unit: String, val decimals: Int = 0)
-        val defs = listOf(
-            Def("steps", "Lépésszám", "lépés"),
-            Def("activeCalories", "Aktív kalória", "kcal"),
-            Def("totalCalories", "Összes elégetett kalória", "kcal"),
-            Def("distanceMeters", "Napi távolság", "m"),
-            Def("averageHeartRate", "Átlagpulzus", "bpm"),
-            Def("restingHeartRate", "Nyugalmi pulzus", "bpm"),
-            Def("minHeartRate", "Minimális pulzus", "bpm"),
-            Def("maxHeartRate", "Maximális pulzus", "bpm"),
-            Def("hrvRmssdMs", "Szívritmus variabilitás (HRV)", "ms"),
-            Def("weightKg", "Testsúly", "kg", 1),
-            Def("bodyFatPercent", "Testzsírszázalék", "%", 1),
-            Def("oxygenSaturationPercent", "Véroxigénszint (SpO₂)", "%", 1),
-            Def("vo2Max", "VO₂max állóképesség", "ml/kg/min", 1),
-            Def("energyScore", "Energy Score / Vitalitás", "/ 100"),
-            Def("bloodPressureSystolic", "Vérnyomás (szisztolés)", "mmHg"),
-            Def("bloodPressureDiastolic", "Vérnyomás (diasztolés)", "mmHg"),
-            Def("bloodGlucoseMmolL", "Vércukorszint", "mmol/L", 1),
-            Def("respiratoryRate", "Légzésszám", "/perc", 1),
-            Def("basalMetabolicRateKcal", "Alapanyagcsere (BMR)", "kcal"),
-            Def("bodyMassIndex", "Testtömegindex (BMI)", "", 1)
-        )
-
-        val providers = day.optJSONObject("metricProviders")
-        return defs.map { d ->
-            val has = day.has(d.key) && !day.isNull(d.key)
-            val num = day.optDouble(d.key, Double.NaN)
-            val valStr = if (has && num.isFinite()) {
-                if (d.decimals == 0) num.roundToInt().toString()
-                else ((num * 10.0).roundToInt() / 10.0).toString()
-            } else "—"
-            val prov = providers?.optString(d.key) ?: day.optString("channel", "Health Connect")
-            HealthMetricItemUiModel(
-                key = d.key,
-                label = d.label,
-                valueText = valStr,
-                unit = d.unit,
-                sourceText = if (has) prov else "Nincs adat",
-                isAvailable = has
-            )
+    fun selectHistoryDay(day: String) {
+        val parsed = runCatching { LocalDate.parse(day) }.getOrNull() ?: return
+        if (java.time.YearMonth.from(parsed) != historyQuery.month || parsed > LocalDate.now()) return
+        historyQuery = historyQuery.copy(day = parsed); loadHealthDashboard()
+    }
+    fun historyToday() { historyQuery = NativeHealthQuery(); loadHealthDashboard() }
+    fun selectHistoryChannel(channel: String) {
+        runCatching { historyQuery.copy(channel = channel) }.onSuccess { historyQuery = it; loadHealthDashboard() }
+    }
+    fun loadHealthDashboard() {
+        // init also calls this method; query initialization must precede init.
+        val query = historyQuery
+        historyJob?.cancel()
+        _uiState.value = _uiState.value.copy(historyLoading = true, historyError = false, metrics = emptyList(),
+            selectedDay = query.day.toString(), historyMonth = query.month.toString(), historyChannel = query.channel,
+            availableDays = emptyList(), sleepSessionsSummaryText = "—")
+        historyJob = viewModelScope.launch {
+            try {
+                val loaded = withContext(Dispatchers.IO) {
+                    com.repforge.app.NativeDataReplacement.mutate(context) {
+                        val language = com.repforge.app.data.store.TrainPilotSettingsStore(context).current().language
+                        val prefs = healthStore.preferences()
+                        val page = NativeHealthHistory(healthStore).load(query)
+                        Triple(language, prefs, page) to listOf(HealthConnectRepository.isSupported(context),
+                            HealthConnectRepository.anyReadAllowed(context), SamsungHealthRepository.isInstalled(context), SamsungHealthRepository.isSdkAvailable())
+                    }
+                }
+                val (language, prefs, page) = loaded.first
+                val access = loaded.second
+                val text = com.repforge.app.ui.text.nativeResources(context, language)
+                _uiState.value = _uiState.value.copy(language = language, historyLoading = false, historyError = false,
+                    availableDays = page.days, metrics = NativeHealthMetrics.parse(context, page.selected, language),
+                    provider = prefs.optString("provider", HealthJournalStore.HC),
+                    dailySourcePreference = prefs.optString("hcDailySource", "auto"),
+                    logWatchSteps = prefs.optBoolean("logWatchSteps"), bleBackground = prefs.optBoolean("bleBackground"),
+                    hcBackground = prefs.optBoolean("hcBackground"),
+                    sleepSessionsSummaryText = text.getString(com.repforge.app.R.string.health_history_sleep,
+                        page.selected.optJSONArray("sleepSessions")?.length() ?: 0),
+                    hcSupported = access[0], hcGranted = access[1], samsungInstalled = access[2], samsungAvailable = access[3])
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { _uiState.value = _uiState.value.copy(historyLoading = false, historyError = true, metrics = emptyList()) }
         }
     }
 
@@ -165,8 +143,9 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
 
     fun refresh(activity: Activity?, requestSamsungPermission: Boolean = false) {
         if (activity == null) return
+        val selected = historyQuery.day
         viewModelScope.launch {
-            val result = com.repforge.app.NativeHealthRefresh.readToday(context, activity, requestSamsungPermission)
+            val result = com.repforge.app.NativeHealthRefresh.readDay(context, activity, selected, requestSamsungPermission)
             val language = com.repforge.app.data.store.TrainPilotSettingsStore(context).current().language
             val text = com.repforge.app.ui.text.nativeResources(context, language)
             _uiState.value = _uiState.value.copy(statusMessage = text.getString(if (result.isSuccess)

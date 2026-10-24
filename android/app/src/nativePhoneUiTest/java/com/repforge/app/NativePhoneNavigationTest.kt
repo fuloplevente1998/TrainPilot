@@ -254,4 +254,19 @@ class NativePhoneNavigationTest {
         screenshot("programs_full_catalog", "en")
     }
 
+    @Test fun earlierHealthDayCanBeSelectedAndDisplaysItsStoredWeight() {
+        val day = java.time.YearMonth.now().minusMonths(1).atDay(1).toString()
+        val health = HealthJournalStore.get(context)
+        health.setPreferences(JSONObject().put("provider", HealthJournalStore.HC))
+        health.healthDay(day, JSONObject().put("source", "@aggregate").put("weightKg", 72.3), health.generation())
+        launch(); tab("health")
+        compose.onNodeWithTag("health_previous_month").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithText(day).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText(day).performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithText("Betöltés…").fetchSemanticsNodes().isEmpty() }
+        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_metric_weightKg"))
+        compose.onNodeWithText("72,3").assertIsDisplayed()
+        screenshot("health_historical_weight")
+    }
+
 }

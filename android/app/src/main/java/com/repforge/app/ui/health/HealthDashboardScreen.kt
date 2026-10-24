@@ -4,6 +4,7 @@ import android.os.Build
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import com.repforge.app.HealthConnectRepository
@@ -94,7 +95,7 @@ fun HealthDashboardScreen(
             Tab(
                 selected = state.activeTab == "journal",
                 onClick = { viewModel.setTab("journal") },
-                text = { Text("Egészségnapló (26 metrika)", fontWeight = FontWeight.Bold) }
+                text = { Text(com.repforge.app.ui.text.nativeResources(context, state.language).getString(com.repforge.app.R.string.health_history_title), fontWeight = FontWeight.Bold) }
             )
             Tab(
                 selected = state.activeTab == "ble",
@@ -108,6 +109,11 @@ fun HealthDashboardScreen(
                 state = state,
                 onSelectProvider = { viewModel.setProvider(it, activity) },
                 onToggleHcBackground = { viewModel.toggleHcBackground(it) },
+                onPreviousMonth = { viewModel.shiftHistoryMonth(-1) },
+                onNextMonth = { viewModel.shiftHistoryMonth(1) },
+                onDay = viewModel::selectHistoryDay,
+                onChannel = viewModel::selectHistoryChannel,
+                onToday = viewModel::historyToday,
                 onRefresh = {
                     val permissions = HealthConnectRepository.READ_PERMS.map { "android.permission.health.$it" }.toTypedArray()
                     if (state.provider == "health_connect" && Build.VERSION.SDK_INT >= 34 &&
@@ -131,13 +137,45 @@ fun HealthJournalTabContent(
     state: HealthDashboardUiState,
     onSelectProvider: (String) -> Unit,
     onToggleHcBackground: (Boolean) -> Unit,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit,
+    onDay: (String) -> Unit,
+    onChannel: (String) -> Unit,
+    onToday: () -> Unit
 ) {
     val colors = LocalTrainPilotColors.current
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+        modifier = Modifier.fillMaxSize().testTag("health_journal_list").padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
+        item {
+            val text = com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
+            Column(Modifier.fillMaxWidth().testTag("health_history")) {
+                Text(state.historyMonth, color = colors.text, fontWeight = FontWeight.Bold)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = onPreviousMonth, modifier = Modifier.testTag("health_previous_month")) { Text(text.getString(com.repforge.app.R.string.health_history_previous)) }
+                    TextButton(onClick = onNextMonth, enabled = state.historyMonth < java.time.YearMonth.now().toString()) { Text(text.getString(com.repforge.app.R.string.health_history_next)) }
+                }
+                TextButton(onClick = onToday) { Text(text.getString(com.repforge.app.R.string.health_history_today)) }
+                Text(text.getString(com.repforge.app.R.string.health_history_day, state.selectedDay), color = colors.text,
+                    modifier = Modifier.testTag("health_selected_day"))
+                androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items((state.availableDays + state.selectedDay).distinct().sortedDescending()) { day ->
+                        TextButton(onClick = { onDay(day) }) { Text(day) }
+                    }
+                }
+                androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items(listOf("journal", "health_connect", "samsung_health", "legacy", "ble")) { channel ->
+                        val label = when (channel) { "journal" -> text.getString(com.repforge.app.R.string.health_history_auto)
+                            "health_connect" -> "Health Connect"; "samsung_health" -> "Samsung Health"; "ble" -> "BLE"; else -> text.getString(com.repforge.app.R.string.health_history_legacy) }
+                        androidx.compose.material3.FilterChip(selected = state.historyChannel == channel, onClick = { onChannel(channel) }, label = { Text(label) })
+                    }
+                }
+                if (state.historyLoading) Text(text.getString(com.repforge.app.R.string.health_history_loading), color = colors.muted)
+                if (state.historyError) Text(text.getString(com.repforge.app.R.string.health_history_error), color = colors.dangerText)
+            }
+        }
         item { Spacer(Modifier.height(8.dp)) }
 
         // Szolgáltató választó kártya (Health Connect vs Samsung Health)
@@ -202,7 +240,7 @@ fun HealthJournalTabContent(
         // 26 egészségügyi metrika listája
         items(state.metrics, key = { it.key }) { m ->
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().testTag("health_metric_${m.key}"),
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = colors.card),
                 border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
