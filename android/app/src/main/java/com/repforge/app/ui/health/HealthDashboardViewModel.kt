@@ -36,6 +36,7 @@ data class HealthDashboardUiState(
     val activeTab: String = "journal", // "journal" | "ble"
     val provider: String = "health_connect", // "health_connect" | "samsung_health"
     val dailySourcePreference: String = "auto", // "auto" | "priority" | specific origin
+    val dailySourceOptions: List<String> = emptyList(),
     val logWatchSteps: Boolean = false,
     val bleBackground: Boolean = false,
     val hcBackground: Boolean = false,
@@ -127,18 +128,22 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                     historyPartial = page.selected.optBoolean("partial"),
                     provider = prefs.optString("provider", HealthJournalStore.HC),
                     dailySourcePreference = prefs.optString("hcDailySource", "auto"),
+                    dailySourceOptions = page.dailyOrigins,
                     logWatchSteps = prefs.optBoolean("logWatchSteps"), bleBackground = prefs.optBoolean("bleBackground"),
                     hcBackground = prefs.optBoolean("hcBackground"),
                     sleepSessionsSummaryText = text.getString(com.repforge.app.R.string.health_history_sleep,
                         page.selected.optJSONArray("sleepSessions")?.length() ?: 0),
                     hcSupported = access[0], hcGranted = access[1], samsungInstalled = access[2], samsungAvailable = access[3])
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (_: Exception) { _uiState.value = _uiState.value.copy(historyLoading = false, historyError = true, metrics = emptyList()) }
+            catch (_: Exception) { _uiState.value = _uiState.value.copy(historyLoading = false, historyError = true,
+                metrics = emptyList(), dailySourceOptions = emptyList()) }
         }
     }
 
     fun setDailySourcePreference(value: String) {
-        if (value !in setOf("auto", "priority") || _uiState.value.sourceSaving) return
+        val state = _uiState.value
+        if (state.sourceSaving || state.historyLoading || state.historyError ||
+            (value != "auto" && value != "priority" && value !in state.dailySourceOptions)) return
         _uiState.update { it.copy(sourceSaving = true, sourceSaveFailed = false) }
         viewModelScope.launch {
             try {
