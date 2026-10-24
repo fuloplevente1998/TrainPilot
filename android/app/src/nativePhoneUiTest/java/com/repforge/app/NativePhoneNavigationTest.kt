@@ -452,7 +452,7 @@ class NativePhoneNavigationTest {
 
     @Test fun programEditorCreatesCustomPlanAndRenamesDayWithoutStartingWorkout() {
         launch(); tab("training")
-        compose.onNodeWithText("Programok").performClick()
+        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("program_create"))
         compose.onNodeWithTag("program_create").performClick()
         compose.onNodeWithTag("program_editor_name").performTextInput("Saját időterv")
@@ -476,7 +476,7 @@ class NativePhoneNavigationTest {
         val before = runBlocking(Dispatchers.IO) {
             db.programDao().getProgramWithDaysById("home-basic")!! }
         launch(); tab("training")
-        compose.onNodeWithText("Programok").performClick()
+        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("program_home-basic"))
         compose.onNodeWithTag("program_edit_home-basic").performClick()
         compose.onNodeWithTag("program_editor_name").performTextClearance()
