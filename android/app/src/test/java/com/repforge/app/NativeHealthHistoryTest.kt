@@ -3,6 +3,7 @@ package com.repforge.app
 import android.content.Context
 import com.repforge.app.ui.health.*
 import kotlinx.coroutines.runBlocking
+import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.*
 import org.junit.Assert.*
@@ -67,6 +68,30 @@ class NativeHealthHistoryTest {
         put("2026-10-02", 73.4)
         val fresh = NativeHealthHistory(store).load(query).selected
         assertFalse(fresh.optBoolean("partial")); assertEquals(73.4, fresh.getDouble("weightKg"), .0001)
+    }
+    @Test fun dailyOriginChoicesOnlyIncludeRecordedHealthConnectPackages() {
+        val response = JSONObject().put("sources", JSONArray()
+            .put(JSONObject().put("channel", HealthJournalStore.HC).put("source", "com.tracker.z"))
+            .put(JSONObject().put("channel", HealthJournalStore.HC).put("source", "com.tracker.a"))
+            .put(JSONObject().put("channel", HealthJournalStore.HC).put("source", "com.tracker.a"))
+            .put(JSONObject().put("channel", HealthJournalStore.SAMSUNG).put("source", "com.samsung.only"))
+            .put(JSONObject().put("channel", HealthJournalStore.HC).put("source", "@aggregate"))
+            .put(JSONObject().put("channel", HealthJournalStore.HC).put("source", "auto"))
+            .put(JSONObject().put("channel", HealthJournalStore.HC).put("source", "com.repforge.app")))
+        val selected = JSONObject().put("channel", HealthJournalStore.HC)
+            .put("availableStepOrigins", JSONArray().put("com.tracker.steps").put("invalid origin"))
+        assertEquals(listOf("com.tracker.a", "com.tracker.steps", "com.tracker.z"),
+            NativeHealthDailyOrigins.choices(response, selected))
+        assertEquals(listOf("com.tracker.a", "com.tracker.z"),
+            NativeHealthDailyOrigins.choices(response, JSONObject().put("channel", HealthJournalStore.SAMSUNG)))
+    }
+    @Test fun explicitRecordedOriginMarksPreviousDailyValuePartialUntilRefresh() {
+        put("2026-10-02", 72.3)
+        store.setPreferences(JSONObject().put("hcDailySource", "com.tracker.steps"))
+        assertEquals("com.tracker.steps", store.preferences().getString("hcDailySource"))
+        val day = NativeHealthHistory(store).load(NativeHealthQuery(LocalDate.parse("2026-10-02"))).selected
+        assertTrue(day.optBoolean("partial"))
+        assertEquals(72.3, day.getDouble("weightKg"), .0001)
     }
     @Test fun selectingTheCurrentActivitySourceDoesNotInvalidateFreshValues() {
         put("2026-10-02", 72.3)
