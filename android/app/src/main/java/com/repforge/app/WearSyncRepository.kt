@@ -242,9 +242,8 @@ object WearSyncRepository {
                             val workoutId = command.optString("workoutId")
                             try {
                                 GpsRouteLedger193.open(appContext.noBackupFilesDir).deleteWorkout(workoutId)
+                            } catch (_: Exception) {
                             }
-            } catch (_: Exception) {
-                        }
                         db.workoutHistoryDao().upsertTombstone(
                             HistoryTombstoneEntity(
                                 primaryId = workoutId,
