@@ -15,17 +15,18 @@ class NativeMainMenuTest {
         assertEquals("active_workout", NativeMainMenu.destination("training", true))
         assertEquals("training", NativeMainMenu.destination("training", false))
         assertEquals("programs", NativeMainMenu.destination("programs", true))
+        assertEquals("exercise_library", NativeMainMenu.destination("exercise_library", true))
         assertEquals("settings", NativeMainMenu.destination("settings", true))
     }
     @Test fun secondaryViewsKeepTheirPrimaryParent() {
-        for (route in listOf("active_workout", "quick_workout", "quick_outdoor", "programs"))
+        for (route in listOf("active_workout", "quick_workout", "quick_outdoor", "programs", "exercise_library"))
             assertEquals("training", NativeMainMenu.selected(route))
         for (route in listOf("calendar", "coach")) assertEquals("home", NativeMainMenu.selected(route))
         assertEquals("progress", NativeMainMenu.selected("progress"))
         assertEquals("health", NativeMainMenu.selected("weight_journal"))
     }
     @Test fun settingsKeepsTheOriginTabIncludingActiveWorkoutAndNestedViews() {
-        for (origin in NativeMainMenu.routes + listOf("active_workout", "calendar", "coach", "programs"))
+        for (origin in NativeMainMenu.routes + listOf("active_workout", "calendar", "coach", "programs", "exercise_library"))
             assertEquals(NativeMainMenu.selected(origin), NativeMainMenu.selected("settings", origin))
         assertEquals("home", NativeMainMenu.selected("settings", "settings"))
     }
@@ -53,6 +54,7 @@ class NativeMainMenuTest {
         }
         assertEquals("Beállítások", NativeMainMenu.title("settings", "hu"))
         assertEquals("Settings", NativeMainMenu.title("settings", "en"))
+        assertEquals("Gyakorlatkönyvtár", NativeMainMenu.title("exercise_library", "hu"))
         assertEquals("Vissza", NativeMainMenu.backLabel("hu"))
     }
     @Test fun lateFinalizationCannotTrapSettingsInsteadOfAllowingEditorRetry() {
