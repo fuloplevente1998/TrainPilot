@@ -471,6 +471,29 @@ class NativePhoneNavigationTest {
         assertFalse(ActiveWorkoutStore.current(context)?.optBoolean("active") == true)
     }
 
+    @Test fun programEditorAddsRealCatalogExerciseToNewDay() {
+        launch(); tab("training")
+        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("program_create"))
+        compose.onNodeWithTag("program_create").performClick()
+        compose.onNodeWithTag("program_editor_name").performTextInput("Gyakorlatos terv")
+        compose.onNodeWithTag("program_editor_search").performScrollTo()
+        val name = com.repforge.app.data.db.NativeBuiltinCatalog.exercises.first { it.id == "goblet-squat" }.nameHu
+        compose.onNodeWithTag("program_editor_search").performTextInput(name)
+        compose.onNodeWithTag("program_editor_choices")
+            .performScrollToNode(hasTestTag("program_editor_add_exercise_goblet-squat"))
+        compose.onNodeWithTag("program_editor_add_exercise_goblet-squat").performClick()
+        compose.onNodeWithTag("program_editor_save").performClick()
+        val db = TrainPilotDatabase.getInstance(context)
+        compose.waitUntil(15000) { runBlocking(Dispatchers.IO) {
+            db.programDao().getProgramsWithDays().any {
+                it.program.nameHu == "Gyakorlatos terv" &&
+                    org.json.JSONArray(it.days.singleOrNull()?.exercisesJson ?: "[]").optString(0) == "goblet-squat"
+            }
+        } }
+        assertFalse(ActiveWorkoutStore.current(context)?.optBoolean("active") == true)
+    }
+
     @Test fun builtinProgramEditorCreatesCloneWithoutChangingTemplate() {
         val db = TrainPilotDatabase.getInstance(context)
         val before = runBlocking(Dispatchers.IO) {
