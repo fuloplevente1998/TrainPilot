@@ -803,6 +803,7 @@ class LegacyWebViewMigrator(
                     .put("hapticSetRecorded227", settings.hapticSetRecorded227)
                     .put("healthBackupConsent", settings.healthBackupConsent)
                     .put("onboarding128", settings.onboarding128)
+                    .put("profile", com.repforge.app.NativeTrainingProfile.verified(JSONObject(settings.profileJson)))
                     .put("autoWriteWorkoutToHealthConnect", settings.autoWriteWorkoutToHealthConnect)
                     .put("weightRange", settings.weightRange)
                     .put("gpsStartChoices216", JSONObject(settings.gpsStartChoices216 as Map<*, *>))
