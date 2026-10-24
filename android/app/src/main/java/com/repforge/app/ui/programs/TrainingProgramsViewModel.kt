@@ -142,7 +142,21 @@ class TrainingProgramsViewModel(application: Application) : AndroidViewModel(app
     }
 
     fun openPersonalPlanner() {
-        _uiState.value = _uiState.value.copy(isPersonalPlannerOpen = true)
+        if (_uiState.value.editorSaving || _uiState.value.isPersonalPlannerOpen) return
+        viewModelScope.launch {
+            try {
+                val fresh = withContext(Dispatchers.IO) {
+                    Triple(settingsStore.current().profileJson,
+                        database.programDao().getProgramsWithDays(),
+                        database.exerciseLibraryDao().getAllExercises())
+                }
+                _uiState.value = _uiState.value.copy(
+                    trainingProfileJson = fresh.first, programs = fresh.second,
+                    exerciseChoices = fresh.third,
+                    editorError = null, isPersonalPlannerOpen = true)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (_: Exception) { _uiState.value = _uiState.value.copy(writeFailed = true) }
+        }
     }
 
     fun closePersonalPlanner() {
