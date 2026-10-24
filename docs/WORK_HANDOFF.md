@@ -4,6 +4,71 @@ Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## 90 napos A/B edzéselőzmény és Coach-öröklés adatút
+
+**93e5882d** `[skip ci]` utolsó alkalmazás-/tesztforrás,
+kizárólag `feat/native-android-migration`. Az előző A/B
+előnézetből hiányzó `history128` most a kanonikus
+Room `workout_history` adatból készül; nem párhuzamos
+napló, nincs új migráció/séma.
+
+- `NativeProfileHistory128`: max 90 napos, 32-es
+  keyset Room-oldalakon olvas, legfeljebb 20 oldal/
+  gyakorlat; adott gyakorlatból legfeljebb **4**
+  kompatibilis, konkrét `{programId,key}` referencia.
+  Csak ugyanilyen A/B napra és legalább hét átfedő
+  mozgásra igazolt forrásprogram fogadható el; Coach
+  `compatible` loadType/repUnit/variáció egyezés.
+- Befejezetlen/hibás/fájdalmas, nem numerikus vagy
+  más mértékegységű sorozatból **nem öröklődik
+  munkasúly**. Az újabb ilyen alkalom a régi súly
+  fallbacket is blokkolja; jövőbeli, 90 napon túli,
+  tombstone-olt edzések nem jutnak át a lekérdezésen.
+  Validált teljes sorozatnál a legfrissebb súly
+  és 2–3 munkasorozat megőrizhető, a tényleges
+  felső ismétléstartomány tágítható; kg/kar nem
+  konvertálódik kg összesenné.
+- `history128.entries[id]` a Coach `Selection`
+  által ismert `loadType/variation/metric/sources`
+  sémát kapja; bizonyítékhash a nyers edzésrekordokból.
+  `NativeProgramEditor.save` mentés előtt ugyanazon
+  történeti időpontra újraszámol és eltérésnél
+  **megszakítja az egész Room-tranzakciót**.
+  Elfogadáskor `prescriptions`, `history128`
+  és profil ugyanabba a kanonikus új programpéldányba
+  kerül. Coach külön, **csak javaslat**, nem módosítja
+  a napló aktuális munkasúlyát.
+- A Planner a két sablonhoz aszinkron előtölti a
+  kanonikus történetet; külön betöltési állapot;
+  a meglévő UI-tesztek csak a befejezett előnézeten
+  ellenőriznek. Előnézet elvetése nem ír adatot.
+  JSON/ZIP/Drive importnál az örökölt hivatkozások
+  maximuma és egyedisége már a Room adatművelet
+  előtt validált, a régi `history128` nélküli
+  mentések továbbra elfogadhatók.
+- **12 új JVM unit-tesztkód** (valódi Room-import,
+  eltérő load type, variáció, hiányos/fájdalom/
+  késő/jövőbeli/törölt forrás, régi A/B azonosító,
+  4 lineage, Coach 3 stabil alkalom,
+  5→5,5 kg csupán javaslat, stale history
+  visszagörgetés, backup/duplicate import) és a
+  meglévő 3 Compose preview teszt
+  aszinkronra igazítva. Összesen **313 új unit
+  +34 Phone UI-tesztkód**, **még nem futtatva**.
+  18 statikus integrációs ellenőrzés PASS; nem
+  jelenti Kotlin/Room/Android/emulátor CI sikerét.
+
+**Nyitott:** három stabil, új programhoz tartozó alkalom
+utáni variációváltás külön előnézete és elfogadása,
+readiness/fájdalom alapján teljes programfrissítési
+döntések, újabb főágbeli #128 pontos idő- és
+fájdalomkapuk; teljes 24 nézet/téma és közös
+Phone/Wear/upgrade gate. A 20 oldal/gyakorlat
+biztonsági lekérési maximum miatt rendkívül nagy
+naplónál régebbi előzmények kimaradhatnak;
+a hiányból nem lesz automatikus emelés.
+Main, verzió, Wear release és APK STOP változatlan.
+
 ## Személyes A/B tervező – valódi előnézet és jóváhagyás (részparitás)
 
 **559fd43e** `[skip ci]` utolsó alkalmazás-/tesztforrás,
