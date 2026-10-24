@@ -207,7 +207,7 @@ internal class PhoneWorkoutExecutionStore(context: Context) :
         try {
             if (blocked(db)) throw IllegalStateException("restoreInProgress")
             val old = current(db)
-            if (old != null && pending(db, old.getString("workoutId"), old.getLong("generation"))) {
+            if (old?.optBoolean("active") == true && pending(db, old.getString("workoutId"), old.getLong("generation"))) {
                 throw IllegalStateException("pendingRecordingEvents")
             }
             val next = PhoneOwnershipResume193.prepare(consent, old, now)
@@ -576,6 +576,12 @@ internal class PhoneWorkoutExecutionStore(context: Context) :
                     }
                 }
             }
+            // A finished single-set timer has no automatic completion event to reconcile.
+            // Retire its plan so the user's manual OK/restart can use the existing command path.
+            if (frame.optInt("nativeEditorProjection") == 1 && !timer.optBoolean("restOnly") &&
+                !timer.optBoolean("autoAdvance") && timer.optString("phase") == "complete") {
+                retireIntervalPlan(frame, key)
+            }
             if (timer.optBoolean("autoAdvance")) {
                 val step = rows.getJSONObject(timer.optInt("stepIndex"))
                 val exercises = frame.getJSONArray("exercises")
@@ -930,6 +936,13 @@ internal class PhoneWorkoutExecutionStore(context: Context) :
         )
     }
 
+    private fun retireIntervalPlan(frame: JSONObject, key: String) {
+        val retired = frame.optJSONArray("retiredTimers188") ?: JSONArray()
+        if ((0 until retired.length()).none { retired.optString(it) == key }) retired.put(key)
+        frame.put("retiredTimers188", retired).put("transition", JSONObject().put("state", "ready").put("phase", "ready")
+            .put("currentExercise", frame.optInt("currentExercise")))
+    }
+
     /** Explicitly abandon a stopped native interval; retain measurements and reject late ticks. */
     @Synchronized
     fun retireNativeInterval(target: NativeTimerTarget) {
@@ -942,11 +955,10 @@ internal class PhoneWorkoutExecutionStore(context: Context) :
             check(frame.optInt("nativeEditorProjection") == 1 && frame.optBoolean("active") && frame.optString("timerOwner") == "phone" &&
                 frame.optString("workoutId") == target.workoutId && frame.optLong("generation") == target.generation &&
                 timer.optString("key") == target.key && !timer.optBoolean("restOnly") &&
-                (timer.optBoolean("stopped") || timer.optBoolean("interrupted"))) { "Az intervallum még aktív vagy megváltozott." }
-            val retired = frame.optJSONArray("retiredTimers188") ?: JSONArray()
-            if ((0 until retired.length()).none { retired.optString(it) == target.key }) retired.put(target.key)
-            frame.put("retiredTimers188", retired).put("transition", JSONObject().put("state", "ready").put("phase", "ready")
-                .put("currentExercise", frame.optInt("currentExercise")))
+                (timer.optBoolean("stopped") || timer.optBoolean("interrupted") || timer.optString("phase") == "complete")) {
+                "Az intervallum még aktív vagy megváltozott."
+            }
+            retireIntervalPlan(frame, target.key)
             save(db, frame); db.setTransactionSuccessful()
         } finally { db.endTransaction() }
     }

@@ -93,4 +93,28 @@ public class PhoneOwnershipResume193Test {
         JSONObject wrong=timed();wrong.getJSONObject("timerCheckpoint193").getJSONObject("timer").getJSONObject("ledger").put("restMs",1);
         rejected(()->PhoneOwnershipResume193.prepare(wrong,null,1000));
     }
+    private JSONObject discardWithUnimportedRecord() throws Exception {
+        store.prepare(original().put("automaticEnabled",true).put("timerConfig",new JSONObject().put("work",10).put("rest",5).put("rounds",1)),0);
+        JSONObject request=new JSONObject().put("commandId","explicitly-abandoned").put("action","completeSet")
+            .put("workoutId","w193").put("generation",4).put("executionRevision",1)
+            .put("exerciseId","press").put("setId","one").put("reps","12").put("weight",5);
+        store.record(request);
+        assertTrue(store.discardExecution("w193",4,store.snapshot().getLong("executionRevision")));
+        return request;
+    }
+    @Test public void discardedPriorWorkoutDoesNotBlockADifferentAcknowledgedWatchReturn() throws Exception {
+        JSONObject request=discardWithUnimportedRecord();
+        assertEquals(1,store.pendingEvents("w193",4,0).length());
+        JSONObject frame=store.importOwnership193(returned().put("workoutId","new-watch-workout"),1000);
+        assertEquals("new-watch-workout",frame.getString("workoutId"));
+        assertEquals(1,store.pendingEvents("w193",4,0).length());
+        assertNotNull(store.receipt(request));
+    }
+    @Test public void returnCannotResurrectTheSameExplicitlyDiscardedWorkout() throws Exception {
+        discardWithUnimportedRecord();
+        rejected(()->store.importOwnership193(returned(),1000));
+        assertFalse(store.snapshot().getBoolean("active"));
+        assertEquals("w193",store.snapshot().getString("workoutId"));
+    }
+
 }
