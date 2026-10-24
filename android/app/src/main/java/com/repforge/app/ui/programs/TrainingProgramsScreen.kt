@@ -89,7 +89,8 @@ fun TrainingProgramsScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { viewModel.openPersonalPlanner() },
+                    .clickable { viewModel.openPersonalPlanner() }
+                    .testTag("personal_planner_open"),
                 shape = RoundedCornerShape(18.dp),
                 colors = CardDefaults.cardColors(containerColor = colors.card2),
                 border = androidx.compose.foundation.BorderStroke(1.dp, colors.emphasisBorder)
@@ -166,6 +167,16 @@ fun TrainingProgramsScreen(
             )
         }
     }
+    if (state.isPersonalPlannerOpen) PersonalProgramPreviewDialog(
+        programs = state.programs,
+        catalog = state.exerciseChoices,
+        profileJson = state.trainingProfileJson,
+        language = language,
+        saving = state.editorSaving,
+        saveError = state.editorError,
+        onAccept = { preview -> viewModel.savePersonalProgram(preview, language) },
+        onCancel = viewModel::closePersonalPlanner
+    )
     if (editorOpen) ProgramEditorDialog(opened = editing, language = language,
         exercises = state.exerciseChoices, saving = state.editorSaving, error = state.editorError,
         onSave = { draft -> viewModel.saveProgram(editing, draft, language) },
