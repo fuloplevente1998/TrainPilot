@@ -40,6 +40,12 @@ data class HealthDashboardUiState(
     val logWatchSteps: Boolean = false,
     val bleBackground: Boolean = false,
     val hcBackground: Boolean = false,
+    val hcBackgroundBlock: BackgroundBlock = BackgroundBlock.UNSUPPORTED,
+    val bleBackgroundBlock: BackgroundBlock = BackgroundBlock.WATCH_NOT_READY,
+    val hcBackgroundScheduled: Boolean = false,
+    val bleBackgroundRunning: Boolean = false,
+    val backgroundSaving: Boolean = false,
+    val backgroundWriteFailed: Boolean = false,
     val metrics: List<HealthMetricItemUiModel> = emptyList(),
     val sleepSessionsSummaryText: String = "—",
     val lastSyncAt: String = "—",
@@ -88,6 +94,7 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
     fun setTab(tab: String) {
         _uiState.value = _uiState.value.copy(activeTab = tab)
         if (tab == "ble") bleRepo.refreshStatus()
+        refreshBackgroundStatus()
     }
 
     fun shiftHistoryMonth(delta: Long) {
@@ -116,12 +123,17 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                         val language = com.repforge.app.data.store.TrainPilotSettingsStore(context).current().language
                         val prefs = healthStore.preferences()
                         val page = NativeHealthHistory(healthStore).load(query)
-                        Triple(language, prefs, page) to listOf(HealthConnectRepository.isSupported(context),
-                            HealthConnectRepository.anyReadAllowed(context), SamsungHealthRepository.isInstalled(context), SamsungHealthRepository.isSdkAvailable())
+                        Triple(
+                            Triple(language, prefs, page),
+                            listOf(HealthConnectRepository.isSupported(context), HealthConnectRepository.anyReadAllowed(context),
+                                SamsungHealthRepository.isInstalled(context), SamsungHealthRepository.isSdkAvailable()),
+                            NativeHealthBackgroundPolicy.snapshot(context, healthStore)
+                        )
                     }
                 }
                 val (language, prefs, page) = loaded.first
                 val access = loaded.second
+                val background = loaded.third
                 val text = com.repforge.app.ui.text.nativeResources(context, language)
                 _uiState.value = _uiState.value.copy(language = language, historyLoading = false, historyError = false,
                     availableDays = page.days, metrics = NativeHealthMetrics.parse(context, page.selected, language),
@@ -131,12 +143,17 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                     dailySourceOptions = page.dailyOrigins,
                     logWatchSteps = prefs.optBoolean("logWatchSteps"), bleBackground = prefs.optBoolean("bleBackground"),
                     hcBackground = prefs.optBoolean("hcBackground"),
+                    hcBackgroundBlock = background.health, bleBackgroundBlock = background.ble,
+                    hcBackgroundScheduled = background.healthScheduled,
+                    bleBackgroundRunning = background.bleRunning,
                     sleepSessionsSummaryText = text.getString(com.repforge.app.R.string.health_history_sleep,
                         page.selected.optJSONArray("sleepSessions")?.length() ?: 0),
                     hcSupported = access[0], hcGranted = access[1], samsungInstalled = access[2], samsungAvailable = access[3])
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) { _uiState.value = _uiState.value.copy(historyLoading = false, historyError = true,
-                metrics = emptyList(), dailySourceOptions = emptyList()) }
+                metrics = emptyList(), dailySourceOptions = emptyList())
+                refreshBackgroundStatus()
+            }
         }
     }
 
@@ -181,20 +198,80 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
+    /** Refresh system permission/job status independently from the potentially large journal query. */
+    fun refreshBackgroundStatus() {
+        viewModelScope.launch {
+            try {
+                val snapshot = withContext(Dispatchers.IO) {
+                    NativeHealthBackgroundPolicy.snapshot(context, healthStore)
+                }
+                _uiState.update { it.copy(hcBackgroundBlock = snapshot.health,
+                    bleBackgroundBlock = snapshot.ble, hcBackgroundScheduled = snapshot.healthScheduled,
+                    bleBackgroundRunning = snapshot.bleRunning) }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { _uiState.update { it.copy(backgroundWriteFailed = true) } }
+        }
+    }
+
     fun toggleBleBackground(enable: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
-            healthStore.setPreferences(JSONObject().put("bleBackground", enable).put("logWatchSteps", enable))
-            if (enable) HealthBackgroundService.resume(context)
-            else HealthBackgroundService.stop(context)
-            loadHealthDashboard()
+        if (_uiState.value.backgroundSaving) return
+        _uiState.update { it.copy(backgroundSaving = true, backgroundWriteFailed = false) }
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    com.repforge.app.NativeDataReplacement.mutate(context) {
+                        if (enable && NativeHealthBackgroundPolicy.snapshot(context, healthStore).ble != BackgroundBlock.READY)
+                            throw IllegalStateException("BLE background prerequisites missing")
+                        val previous = healthStore.preferences()
+                        val oldBg = previous.optBoolean("bleBackground")
+                        val oldSteps = previous.optBoolean("logWatchSteps")
+                        healthStore.setPreferences(JSONObject().put("bleBackground", enable).put("logWatchSteps", enable))
+                        try {
+                            if (enable) {
+                                check(HealthBackgroundService.resume(context)) { "BLE service could not start" }
+                            } else HealthBackgroundService.stop(context)
+                        } catch (failure: Exception) {
+                            healthStore.setPreferences(JSONObject().put("bleBackground", oldBg).put("logWatchSteps", oldSteps))
+                            throw failure
+                        }
+                    }
+                }
+                loadHealthDashboard()
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { _uiState.update { it.copy(backgroundWriteFailed = true) } }
+            finally {
+                _uiState.update { it.copy(backgroundSaving = false) }
+                refreshBackgroundStatus()
+            }
         }
     }
 
     fun toggleHcBackground(enable: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
-            healthStore.setPreferences(JSONObject().put("hcBackground", enable))
-            try { HealthBackgroundJob.schedule(context) } catch (_: Exception) {}
-            loadHealthDashboard()
+        if (_uiState.value.backgroundSaving) return
+        _uiState.update { it.copy(backgroundSaving = true, backgroundWriteFailed = false) }
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    com.repforge.app.NativeDataReplacement.mutate(context) {
+                        if (enable && NativeHealthBackgroundPolicy.snapshot(context, healthStore).health != BackgroundBlock.READY)
+                            throw IllegalStateException("Health Connect background prerequisites missing")
+                        val previous = healthStore.preferences().optBoolean("hcBackground")
+                        healthStore.setPreferences(JSONObject().put("hcBackground", enable))
+                        try { HealthBackgroundJob.schedule(context) }
+                        catch (failure: Exception) {
+                            healthStore.setPreferences(JSONObject().put("hcBackground", previous))
+                            try { HealthBackgroundJob.schedule(context) } catch (_: Exception) {}
+                            throw failure
+                        }
+                    }
+                }
+                loadHealthDashboard()
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { _uiState.update { it.copy(backgroundWriteFailed = true) } }
+            finally {
+                _uiState.update { it.copy(backgroundSaving = false) }
+                refreshBackgroundStatus()
+            }
         }
     }
 }
