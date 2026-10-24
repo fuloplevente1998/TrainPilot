@@ -238,4 +238,18 @@
     <string name="health_daily_source_priority">Health Connect-Priorität</string>
     <string name="health_daily_source_hint">Beeinflusst die Quelle für Schritte, Entfernung und Kalorien. Lies nach einer Änderung über Aktualisieren neue Daten ein.</string>
     <string name="health_daily_source_partial">Unvollständige Tagesdaten: frühere Werte müssen neu eingelesen werden.</string>
+    <string name="health_background_scheduled">Hintergrundaktualisierung eingeplant.</string>
+    <string name="health_background_not_scheduled">Keine Hintergrundaktualisierung eingeplant.</string>
+    <string name="health_background_connected">BLE-Hintergrundverbindung läuft.</string>
+    <string name="health_background_not_connected">Keine aktive BLE-Hintergrundverbindung.</string>
+    <string name="health_background_error">Hintergrundabgleich konnte nicht eingerichtet werden. Die bisherige Einstellung bleibt erhalten.</string>
+    <string name="health_background_ready">Voraussetzungen erfüllt; das beweist noch keinen laufenden Auftrag.</string>
+    <string name="health_background_restore">Wiederherstellung läuft: Hintergrundabgleich kann nicht aktiviert werden.</string>
+    <string name="health_background_unsupported">Diese Hintergrundfunktion wird auf diesem Gerät nicht unterstützt.</string>
+    <string name="health_background_read_permission">Erlaube zuerst den Health-Connect-Lesezugriff über Aktualisieren.</string>
+    <string name="health_background_permission">Für Health Connect im Hintergrund ist eine separate Berechtigung erforderlich.</string>
+    <string name="health_background_watch">Speichere zuerst eine kompatible RDFit-Uhr.</string>
+    <string name="health_background_bluetooth_permission">Bluetooth-Verbindungsberechtigung erforderlich.</string>
+    <string name="health_background_notification_permission">Für den BLE-Vordergrunddienst ist die Benachrichtigungsberechtigung erforderlich.</string>
+    <string name="health_background_bluetooth_off">Aktiviere Bluetooth.</string>
 </resources>
