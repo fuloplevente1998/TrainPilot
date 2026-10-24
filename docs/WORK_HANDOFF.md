@@ -4,6 +4,55 @@ Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Edzésprofil megőrzés és célzott Progress lekérdezések
+
+**cfdc6d05** `[skip ci]` utolsó alkalmazás-/tesztforrás, kizárólag
+`feat/native-android-migration`. A main #128 edzésprofiljának
+`settings.profile` objektuma korábban elveszett a natív
+DataStore-import/export során. A `NativeTrainingProfile`
+most érvényesíti a megadott mezőket és teljes, ismeretlen
+kulcsokat/felszerelést/kizárásokat megőrző JSON-nal tárolja,
+profiladatot nem talál ki.
+
+- Natív Beállítások → **Edzésprofil** szerkesztő:
+  életkor, testmagasság, testsúly, tervezett percek, cél,
+  tapasztalat, aktivitás, helyszín, ritmus, felosztás, fókusz;
+  HU/EN/DE/RO, mentéskori adatcsere-fence és stale JSON-CAS,
+  hibás adat esetén régi profil marad. A nem szerkesztett
+  `gear/excluded/avoidAreas` tömbök és jövőbeli metadata
+  változatlanul tovább élnek. Ez **adatmegőrzés + alap
+  profil-UI**, NEM a main profilvezérelt A/B generátor
+  teljes algoritmikus paritása.
+- `TrainPilotSettingsStore` a korábbi `settings.profile`
+  mezőt DataStore-ba viszi; `LegacyWebViewMigrator`
+  minden JSON/ZIP/Drive snapshotban exportálja és importálja.
+  Malformed profilt még a Room adatcsere kezdete **előtt**
+  elutasítja; nincs részleges programtörlés.
+- A Progress oldalon korábban `getAllWorkoutsWithDetails()`
+  felolvasta az egész naplót sorozatokkal/fotókkal, és a
+  gyakorlatchip-lista csak az első **8** elemet mutatta.
+  Most a 30 napos izomterhelés SQLite aggregációval,
+  a kiválasztott 1RM-adatsor **256 soros keyset-lapokkal**,
+  csak a kiválasztott gyakorlatból töltődik.
+  A tombstone-ok és befejezetlen sorozatok kiszűrve,
+  minden 106+ gyakorlat elérhető a chip-sorban.
+  Izomcsoport felirat HU/EN/DE/RO és valós
+  adatlekérési hiba/újrapróbálás.
+- **15 új JVM unit +3 Phone Compose UI-tesztkód**,
+  köztük profil portable roundtrip, invalid-before-restore,
+  tombstone, 0/600/1500 adatsoros progress lapozás,
+  teljes katalógus-választás. Összesen **286 új unit
+  +31 natív Phone UI próbát írtunk**, **nem futtattuk**.
+  17 statikus forrás-/útvonalellenőrzés PASS, de Android
+  fordítás, JVM/Room teszt, emulátor, APK és
+  1500-as tényleges teljesítménymérés **még nem igazolt**.
+
+Következő: profilvezérelt generátor + Coach/progresszió
+főágbeli szabályparitása és a maradék 24 natív
+nézet/témakatalógus ellenőrzése, majd a közös
+Phone/Wear/upgrade gate. Main, verzió, Wear
+változatlan; élő adatos telepítés STOP.
+
 ## Natív program- és programnapszerkesztés
 
 **87f9ee10** `[skip ci]` legutóbbi alkalmazás-/tesztforrás, kizárólag
