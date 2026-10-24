@@ -65,7 +65,7 @@ jobs:
           test -f gradle/wrapper/gradle-wrapper.jar
           chmod +x gradlew
       - name: Build native phone and watch debug APKs
-        run: ./gradlew --continue --no-daemon --stacktrace :app:assembleDebug :wear:assembleDebug
+        run: ./gradlew --continue --no-daemon --stacktrace -PnativePhoneUiTests :app:assembleDebug :app:assembleDebugAndroidTest :wear:assembleDebug
 
       - name: Run native unit tests
         run: ./gradlew --continue --no-daemon --stacktrace :app:testDebugUnitTest :wear:testDebugUnitTest :shared:testDebugUnitTest
@@ -182,6 +182,12 @@ jobs:
           name: TrainPilot-Native-Phone-Debug
           path: android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: ignore
+      - name: Upload native phone UI test APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrainPilot-Native-Phone-UI-Test
+          path: android/app/build/outputs/apk/androidTest/debug/*.apk
+          if-no-files-found: error
       - name: Upload Wear OS debug APK
         if: always()
         uses: actions/upload-artifact@v4
@@ -293,4 +299,43 @@ jobs:
         with:
           name: TrainPilot-Native-Wear-UI-Results-${{ github.sha }}-${{ matrix.shard }}
           path: wear-ui/results/
+          if-no-files-found: error
+
+  phone-ui:
+    name: Native phone Compose UI and unmodified screenshots
+    needs: native-debug
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: android-actions/setup-android@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: TrainPilot-Native-Phone-Debug
+          path: phone-ui/app
+      - uses: actions/download-artifact@v4
+        with:
+          name: TrainPilot-Native-Phone-UI-Test
+          path: phone-ui/test
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          ram-size: 3072M
+          disk-size: 6000M
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: python3 scripts/native/phone-ui-gate.py --app phone-ui/app/app-debug.apk --tests phone-ui/test/app-debug-androidTest.apk --output phone-ui/results --commit "$GITHUB_SHA"
+      - name: Upload raw phone UI evidence and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrainPilot-Native-Phone-UI-Evidence
+          path: phone-ui/results/
           if-no-files-found: error

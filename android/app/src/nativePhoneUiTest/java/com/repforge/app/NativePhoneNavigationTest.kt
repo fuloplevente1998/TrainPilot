@@ -1,0 +1,134 @@
+package com.repforge.app
+
+import android.content.Context
+import android.content.Intent
+import androidx.compose.ui.test.*
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.test.core.app.ActivityScenario
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.UiDevice
+import com.repforge.app.data.db.TrainPilotDatabase
+import com.repforge.app.data.store.TrainPilotSettingsStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import org.junit.After
+import org.junit.Assert.*
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+/** Isolated emulator data only. The signed-upgrade jobs exercise actual legacy migration separately. */
+@RunWith(AndroidJUnit4::class)
+class NativePhoneNavigationTest {
+    @get:Rule val compose = createEmptyComposeRule()
+    @get:Rule val testIdentity = org.junit.rules.TestName()
+    private val instrumentation = InstrumentationRegistry.getInstrumentation()
+    private val context get() = instrumentation.targetContext
+    private val device get() = UiDevice.getInstance(instrumentation)
+    private var scenario: ActivityScenario<MainActivity>? = null
+    private lateinit var settings: TrainPilotSettingsStore
+    private var shot = 0
+
+    @Before fun seedIsolatedEmulator() {
+        assertTrue("This suite must use a debuggable isolated test build",
+            context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0)
+        context.stopService(Intent(context, IntervalTimerService::class.java))
+        context.stopService(Intent(context, DistanceTrackingService::class.java))
+        instrumentation.waitForIdleSync()
+        instrumentation.runOnMainSync {
+            val field = PhoneWorkoutExecution::class.java.getDeclaredField("store").apply { isAccessible = true }
+            (field.get(null) as? PhoneWorkoutExecutionStore)?.close(); field.set(null, null)
+            context.deleteDatabase(PhoneWorkoutExecutionStore.DATABASE)
+            ActiveWorkoutStore.clear(context)
+        }
+        settings = TrainPilotSettingsStore(context)
+        runBlocking(Dispatchers.IO) {
+            val db = TrainPilotDatabase.getInstance(context)
+            db.clearAllTables()
+            TrainPilotDatabase.ensureBuiltinCatalogSeeded(db)
+            settings.resetAllSettingsForEraseLocal()
+            settings.markMigrationComplete()
+        }
+    }
+    @After fun close() {
+        scenario?.close()
+        context.stopService(Intent(context, IntervalTimerService::class.java))
+        context.stopService(Intent(context, DistanceTrackingService::class.java))
+        instrumentation.waitForIdleSync()
+    }
+    private fun launch() {
+        scenario = ActivityScenario.launch(MainActivity::class.java)
+        compose.waitUntil(30000) { compose.onAllNodesWithTag("navigation_home").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForIdle()
+    }
+    private fun tab(route: String) { compose.onNodeWithTag("navigation_$route").performClick(); compose.waitForIdle() }
+    private fun snapshot(): JSONObject? {
+        var result: JSONObject? = null
+        instrumentation.runOnMainSync { result = ActiveWorkoutStore.current(context) }
+        return result
+    }
+    private fun screenshot(screen: String, language: String = "hu", theme: String = "classicBlue") {
+        compose.waitForIdle()
+        val name = "${javaClass.simpleName.lowercase()}_${testIdentity.methodName.hashCode().toUInt().toString(16)}_${screen}_${language}_${theme.lowercase()}_${++shot}"
+        require(Regex("[a-z0-9_]{1,120}").matches(name))
+        val request = JSONObject().put("name", name).put("language", language).put("theme", theme)
+            .put("screen", screen).put("data", "isolated-emulator-test-fixture").toString()
+        device.executeShellCommand("printf '%s' '$request' > /data/local/tmp/trainpilot-shot-request")
+        val deadline = System.nanoTime() + 15_000_000_000L
+        while (System.nanoTime() < deadline) {
+            if (device.executeShellCommand("cat /data/local/tmp/trainpilot-shot-ack 2>/dev/null").trim() == name) return
+            Thread.sleep(100)
+        }
+        fail("Host did not capture raw adb screenshot: $name")
+    }
+    @Test fun fiveTabsAndSecondaryPlanningEntriesUseActualNativeScreens() {
+        launch(); screenshot("home")
+        for (route in listOf("training", "journal", "progress", "health")) { tab(route); screenshot(route) }
+        tab("home")
+        for (route in listOf("programs", "calendar", "coach")) {
+            compose.onNodeWithTag("shortcut_$route").performClick()
+            compose.onNodeWithTag("navigation_settings").assertExists()
+            if (route == "coach") compose.waitUntil(15000) {
+                compose.onAllNodesWithTag("coach_ready").fetchSemanticsNodes().isNotEmpty()
+            }
+            screenshot(route)
+            compose.onNodeWithTag("navigation_back").performClick()
+        }
+    }
+    @Test fun settingsThemeAndLanguageChangesReturnToTheirOrigin() {
+        launch(); tab("journal")
+        compose.onNodeWithTag("navigation_settings").performClick()
+        for ((language, theme) in listOf("hu" to "classicBlue", "en" to "yellow", "de" to "classicRose", "ro" to "cyan")) {
+            runBlocking { settings.setLanguage(language) }
+            compose.onNodeWithTag("theme_$theme").performScrollTo().performClick()
+            compose.waitUntil(10000) { runBlocking { settings.current().themeKey == theme && settings.current().language == language } }
+            screenshot("settings", language, theme)
+        }
+        compose.onNodeWithTag("navigation_back").performClick()
+        compose.onNodeWithTag("journal_search").assertExists()
+        compose.onNodeWithText("Caută antrenamente sau exerciții").assertExists()
+    }
+    @Test fun openingSettingsKeepsTheCanonicalWorkoutAndStopwatchRunning() {
+        val quickLaunch = runBlocking { NativeWorkoutSession.startQuickWorkout(context, "plank", false) }
+        val originalId = quickLaunch.snapshot.getString("workoutId")
+        launch(); tab("training")
+        compose.onNodeWithText("Indítás", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitUntil(10000) { snapshot()?.optJSONObject(NativeSetStopwatch.FIELD)?.optBoolean("running") == true }
+        compose.onNodeWithTag("navigation_settings").performClick()
+        val visiting = requireNotNull(snapshot())
+        assertEquals(originalId, visiting.getString("workoutId"))
+        assertFalse(visiting.optBoolean("workoutPaused"))
+        assertTrue(visiting.getJSONObject(NativeSetStopwatch.FIELD).getBoolean("running"))
+        screenshot("settings_during_workout")
+        compose.onNodeWithTag("navigation_back").performClick()
+        assertEquals(originalId, snapshot()!!.getString("workoutId"))
+        assertFalse(snapshot()!!.optBoolean("workoutPaused"))
+        screenshot("active_timed")
+        tab("home")
+        assertTrue(snapshot()!!.optBoolean("workoutPaused"))
+    }
+}

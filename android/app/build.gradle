@@ -66,6 +66,12 @@ android {
         buildTypes.release.proguardFiles('native-upgrade-proguard.pro')
     }
 
+    // Separate native Compose instrumentation from the preserved hybrid WebView tests.
+    if (project.hasProperty('nativePhoneUiTests')) {
+        sourceSets.androidTest.java.setSrcDirs(['src/nativePhoneUiTest/java'])
+        sourceSets.androidTest.manifest.srcFile('src/nativePhoneUiTest/AndroidManifest.xml')
+    }
+
     testOptions {
         unitTests {
             includeAndroidResources = true
@@ -147,6 +153,11 @@ dependencies {
     testImplementation "org.robolectric:robolectric:4.14.1"
     testImplementation "androidx.test:core:1.6.1"
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:${rootProject.ext.coroutinesVersion}"
+    androidTestImplementation platform("androidx.compose:compose-bom:${rootProject.ext.composeBomVersion}")
+    androidTestImplementation "androidx.compose.ui:ui-test-junit4"
+    androidTestImplementation "androidx.test:core-ktx:1.6.1"
+    androidTestImplementation "androidx.test.uiautomator:uiautomator:2.3.0"
+    debugImplementation "androidx.compose.ui:ui-test-manifest"
     androidTestImplementation "androidx.test.ext:junit:${rootProject.ext.androidxJunitVersion}"
     androidTestImplementation "androidx.test.espresso:espresso-core:${rootProject.ext.androidxEspressoCoreVersion}"
 }
