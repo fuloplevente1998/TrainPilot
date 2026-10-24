@@ -481,9 +481,7 @@ class NativePhoneNavigationTest {
         launch(); tab("training")
         compose.onNodeWithText("Gyakorlat választása").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_search").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("exercise_search").performTextInput("db-squat")
         val squats = com.repforge.app.data.db.NativeBuiltinCatalog.exercises.first { it.id == "db-squat" }.nameHu
-        compose.onNodeWithTag("exercise_search").performTextClearance()
         compose.onNodeWithTag("exercise_search").performTextInput(squats)
         compose.onNodeWithTag("exercise_select_db-squat").performClick()
         compose.onNodeWithTag("quick_exercise_video").assertExists()
