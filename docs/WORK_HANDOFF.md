@@ -4,6 +4,36 @@ Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Health Connect/BLE háttérengedély és tényleges működési állapot
+
+**f90e7ef** `[skip ci]` alkalmazás-/tesztforrás, kizárólag
+`feat/native-android-migration` (több kis visszakövethető részcommit).
+
+A korábbi Health-kapcsolók akkor is beállíthatták a `hcBackground` /
+`bleBackground` opt-int, ha a rendszerengedély, támogatott háttér-HC,
+mentett RDFit óra vagy Bluetooth/értesítés hiányzott. Hiba esetén a
+`HealthBackgroundJob.schedule` kivételét elnyeltük; a kapcsoló a valós
+ütemezést/futást nem különítette el. Most a meglévő adapterekhez:
+- tiszta `NativeHealthBackgroundPolicy`: HC olvasás + külön U extension
+  háttérolvasás, BLE mentett RDFit + Connect + notification + Bluetooth,
+  valamint pendingRestore/replacement védelme;
+- a UI feltétel- és ütemezett/futó státuszt külön mutat. Hiányzó runtime
+  engedélyt kizárólag kifejezett felhasználói kapcsolás után kér.
+  Négy nyelven 14 új státusz-/hiba-string, BLE tesztelhető lazy lista;
+- háttér-preferencia írás `NativeDataReplacement.mutate` alatt, egyszerre
+  csak egy kapcsolás. Sikertelen HC jobütemezés / BLE FGS start után
+  visszaállítás és látható hiba, nincs hamis siker-nyugta.
+  A BLE `resume` most igazolja a startkérés eredményét, nem az órás
+  kapcsolat létrejöttét.
+
+**10 új unit +2 natív Phone Compose UI-tesztkód készült; összesen
+231 új unit és 19 Phone UI, még nem futtatva.** Statikus bekötés,
+fájl- és 4×14 resource-ellenőrzés rendben, de Kotlin/Gradle-fordítás,
+valódi engedélykérés, Android-emulátor, Samsung/Watch7 és CI **nem**
+igazolt. Továbbra sincs új telepíthető APK; utolsó teljes zöld
+`dd4cc27`, élő adat fölé telepítés STOP. Következő: maradó
+profil/program/egyedi gyakorlat/kedvenc és A–E lefedés, majd a közös kapu.
+
 ## Egyedi Health Connect-eredet választása – natív kódbatch
 
 **031f0a60** `[skip ci]`, csak a `feat/native-android-migration` ágon.
