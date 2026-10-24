@@ -53,6 +53,9 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -75,6 +78,7 @@ fun HealthDashboardScreen(
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val activity = context as? Activity
+    var detailType by rememberSaveable(state.selectedDay, state.historyChannel) { mutableStateOf<String?>(null) }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         viewModel.refresh(activity)
     }
@@ -119,6 +123,7 @@ fun HealthDashboardScreen(
                 onDay = viewModel::selectHistoryDay,
                 onChannel = viewModel::selectHistoryChannel,
                 onToday = viewModel::historyToday,
+                onOpenRecords = { detailType = it },
                 onRefresh = {
                     val permissions = HealthConnectRepository.READ_PERMS.map { "android.permission.health.$it" }.toTypedArray()
                     if (state.provider == "health_connect" && Build.VERSION.SDK_INT >= 34 &&
@@ -135,6 +140,10 @@ fun HealthDashboardScreen(
             )
         }
     }
+    detailType?.let { type ->
+        HealthRecordBrowser(state.selectedDay, state.historyChannel, type, state.language,
+            onClose = { detailType = null })
+    }
 }
 
 @Composable
@@ -147,7 +156,8 @@ fun HealthJournalTabContent(
     onNextMonth: () -> Unit,
     onDay: (String) -> Unit,
     onChannel: (String) -> Unit,
-    onToday: () -> Unit
+    onToday: () -> Unit,
+    onOpenRecords: (String) -> Unit
 ) {
     val colors = LocalTrainPilotColors.current
     LazyColumn(
@@ -179,6 +189,8 @@ fun HealthJournalTabContent(
                 }
                 if (state.historyLoading) Text(text.getString(com.repforge.app.R.string.health_history_loading), color = colors.muted)
                 if (state.historyError) Text(text.getString(com.repforge.app.R.string.health_history_error), color = colors.dangerText)
+                TextButton(onClick = { onOpenRecords("") }, enabled = !state.historyLoading,
+                    modifier = Modifier.testTag("health_open_records")) { Text(text.getString(com.repforge.app.R.string.health_records_title)) }
             }
         }
         item { Spacer(Modifier.height(8.dp)) }
@@ -235,9 +247,15 @@ fun HealthJournalTabContent(
                 colors = CardDefaults.cardColors(containerColor = colors.card2)
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    Text("Alvásfázisok & Szakaszok", color = colors.accent2, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text(com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
+                        .getString(com.repforge.app.R.string.health_record_sleep), color = colors.accent2, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(4.dp))
                     Text(state.sleepSessionsSummaryText, color = colors.text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    TextButton(onClick = { onOpenRecords("SleepSessionRecord") }, enabled = !state.historyLoading,
+                        modifier = Modifier.testTag("health_open_sleep")) {
+                        Text(com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
+                            .getString(com.repforge.app.R.string.health_sleep_details))
+                    }
                 }
             }
         }

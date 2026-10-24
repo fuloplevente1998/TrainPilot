@@ -54,6 +54,7 @@ class NativePhoneNavigationTest {
             TrainPilotDatabase.ensureBuiltinCatalogSeeded(db, context)
             settings.resetAllSettingsForEraseLocal()
             settings.markMigrationComplete()
+            HealthJournalStore.get(context).erase()
         }
     }
     @After fun close() {
@@ -304,6 +305,91 @@ class NativePhoneNavigationTest {
         assertEquals(74.5, runBlocking(Dispatchers.IO) {
             TrainPilotDatabase.getInstance(context).bodyWeightDao().getAllWeights().single().kg
         }, .0001)
+    }
+
+    private fun healthRecord(id: String, type: String, source: String, channel: String, start: Long, end: Long, data: JSONObject) =
+        JSONObject().put("recordId", id).put("type", type).put("source", source).put("channel", channel)
+            .put("startMs", start).put("endMs", end).put("lastModifiedMs", end + 1)
+            .put("day", HealthJournalStore.day(if (type == "SleepSessionRecord") end else start)).put("data", data)
+
+    @Test fun individualHealthRecordsPageAndFilterWithoutChangingTheDailySummary() {
+        val store = HealthJournalStore.get(context)
+        val day = java.time.LocalDate.now()
+        val time = day.atTime(8, 0).atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val rows = org.json.JSONArray((0 until 31).map { i -> healthRecord("weight-$i", "WeightRecord", "origin.alpha",
+            HealthJournalStore.HC, time, time + 1, JSONObject().put("value", 72.3).put("unit", "kg")) })
+        rows.put(healthRecord("beta-weight", "WeightRecord", "origin.beta", HealthJournalStore.HC, time - 1000, time,
+            JSONObject().put("value", 73.4).put("unit", "kg")))
+        store.importRecords(rows, store.generation())
+        launch(); tab("health")
+        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_open_records"))
+        compose.onNodeWithTag("health_open_records").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("health_record_weight-30").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("health_records_next").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithText("2. oldal").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("health_records_list").performScrollToNode(hasTestTag("health_record_weight-0"))
+        compose.onNodeWithTag("health_record_weight-30").assertDoesNotExist()
+        compose.onNodeWithTag("health_records_previous").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("health_record_weight-30").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("health_origin_origin.beta").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("health_record_beta-weight").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Forrás: Health Connect · origin.beta").assertExists()
+        compose.onNodeWithTag("health_records_next").assertIsNotEnabled()
+        screenshot("health_raw_origin")
+        compose.onNodeWithTag("health_records_reload").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("health_record_beta-weight").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("health_records_close").performClick()
+        compose.onNodeWithTag("health_selected_day").assertTextContains(day.toString())
+    }
+
+    @Test fun sleepDetailsRenderHealthConnectAndSamsungStagesWithActualProvenance() {
+        val day = java.time.LocalDate.now()
+        val wake = day.atTime(7, 0).atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val store = HealthJournalStore.get(context)
+        val hc = JSONObject().put("value", 45).put("unit", "min").put("durationKind", "asleep_stages")
+            .put("stages", org.json.JSONArray().put(JSONObject().put("startMs", wake - 3_600_000L)
+                .put("endMs", wake - 900_000L).put("type", 5).put("isAsleep", true)))
+        val samsung = JSONObject().put("durationMinutes", 60).put("stages", org.json.JSONArray().put(JSONObject()
+            .put("start", java.time.Instant.ofEpochMilli(wake).toString())
+            .put("end", java.time.Instant.ofEpochMilli(wake + 3_600_000L).toString()).put("stage", "LIGHT").put("isAsleep", true)))
+        store.importRecords(org.json.JSONArray()
+            .put(healthRecord("hc-sleep", "SleepSessionRecord", "hc.origin", HealthJournalStore.HC, wake - 32_400_000L, wake, hc))
+            .put(healthRecord("samsung-sleep", "SleepSessionRecord", "samsung.origin", HealthJournalStore.SAMSUNG, wake, wake + 3_600_000L, samsung)), store.generation())
+        launch(); tab("health")
+        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_open_sleep"))
+        compose.onNodeWithTag("health_open_sleep").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("health_record_samsung-sleep").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("health_records_list").performScrollToNode(hasTestTag("health_record_expand_samsung-sleep"))
+        compose.onNodeWithTag("health_record_expand_samsung-sleep").performClick()
+        compose.onNodeWithTag("health_records_list").performScrollToNode(hasText("Könnyű alvás"))
+        compose.onNodeWithText("Könnyű alvás").assertExists()
+        screenshot("health_sleep_samsung")
+        compose.onNodeWithTag("health_records_list").performScrollToNode(hasTestTag("health_record_expand_hc-sleep"))
+        compose.onNodeWithTag("health_record_expand_hc-sleep").performClick()
+        compose.onNodeWithTag("health_records_list").performScrollToNode(hasText("Mélyalvás"))
+        compose.onNodeWithText("Mélyalvás").assertExists()
+        screenshot("health_sleep_hc")
+    }
+
+    @Test fun replacingHealthDataDuringPagingRequiresExplicitReloadAndClearsOldRecords() {
+        val store = HealthJournalStore.get(context)
+        val day = java.time.LocalDate.now()
+        val time = day.atTime(8, 0).atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        store.importRecords(org.json.JSONArray((0 until 26).map { i -> healthRecord("old-$i", "WeightRecord", "old.origin",
+            HealthJournalStore.HC, time, time + 1, JSONObject().put("value", 72.3).put("unit", "kg")) }), store.generation())
+        launch(); tab("health")
+        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_open_records"))
+        compose.onNodeWithTag("health_open_records").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("health_record_old-25").fetchSemanticsNodes().isNotEmpty() }
+        runBlocking(Dispatchers.IO) { store.erase() }
+        compose.onNodeWithTag("health_records_next").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("health_records_error").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("health_record_old-25").assertDoesNotExist()
+        screenshot("health_raw_replaced")
+        compose.onNodeWithTag("health_records_reload").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("health_records_list").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Nincs tárolt egyedi mérés ehhez a naphoz és szűréshez.").assertExists()
+        compose.onNodeWithTag("health_records_error").assertDoesNotExist()
     }
 
     @Test fun earlierHealthDayCanBeSelectedAndDisplaysItsStoredWeight() {
