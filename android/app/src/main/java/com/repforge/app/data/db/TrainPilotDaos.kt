@@ -251,10 +251,10 @@ interface CalendarScheduleDao {
     @Query("SELECT * FROM calendar_entries WHERE date >= :fromDate AND date <= :toDate ORDER BY startIso, id")
     fun observeEntriesInRange(fromDate: String, toDate: String): Flow<List<CalendarScheduleEntity>>
 
-    @Query("SELECT * FROM calendar_entries WHERE date >= :today AND status = 'planned' AND NOT EXISTS(SELECT 1 FROM workout_history h WHERE h.scheduleId = calendar_entries.id) ORDER BY startIso, id LIMIT :limit OFFSET :offset")
-    suspend fun getCoachUpcoming(today: String, limit: Int, offset: Int): List<CalendarScheduleEntity>
+    @Query("SELECT * FROM calendar_entries WHERE julianday(startIso) >= julianday(:fromIso) AND status = 'planned' AND NOT EXISTS(SELECT 1 FROM workout_history h WHERE h.scheduleId = calendar_entries.id) ORDER BY julianday(startIso), id LIMIT :limit OFFSET :offset")
+    suspend fun getCoachUpcoming(fromIso: String, limit: Int, offset: Int): List<CalendarScheduleEntity>
 
-    @Query("SELECT * FROM calendar_entries WHERE programId = :programId ORDER BY startIso DESC, id LIMIT :limit OFFSET :offset")
+    @Query("SELECT * FROM calendar_entries WHERE programId = :programId AND julianday(startIso) IS NOT NULL ORDER BY julianday(startIso) DESC, id LIMIT :limit OFFSET :offset")
     suspend fun getCoachCyclePlans(programId: String, limit: Int, offset: Int): List<CalendarScheduleEntity>
 
     @Query("SELECT * FROM calendar_entries ORDER BY startIso ASC")

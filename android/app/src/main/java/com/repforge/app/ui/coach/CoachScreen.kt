@@ -20,6 +20,8 @@ import java.util.Locale
 internal fun CoachScreen(starting: Boolean, onStart: (String, String, String?) -> Unit,
     onCalendar: () -> Unit, onHealth: () -> Unit, onProgress: () -> Unit, model: CoachViewModel = viewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val text = remember(context, state.language) { com.repforge.app.ui.text.nativeResources(context, state.language) }
     val colors = LocalTrainPilotColors.current
     val words = coachWords(state.language)
     val number = remember(state.language) { NumberFormat.getNumberInstance(Locale.forLanguageTag(state.language)).apply { maximumFractionDigits = 1 } }
@@ -75,6 +77,16 @@ internal fun CoachScreen(starting: Boolean, onStart: (String, String, String?) -
                         }
                     }
                 }
+            }
+        }
+        item {
+            if (state.refreshFailed) Text(text.getString(com.repforge.app.R.string.coach_refresh_failed), color = colors.dangerText,
+                modifier = Modifier.testTag("coach_refresh_failed"))
+            OutlinedButton(onClick = { model.refreshHealth(context as? android.app.Activity) },
+                enabled = !state.loading && !state.refreshing,
+                modifier = Modifier.fillMaxWidth().testTag("coach_refresh_health")) {
+                if (state.refreshing) CircularProgressIndicator(Modifier.size(20.dp))
+                else Text(text.getString(com.repforge.app.R.string.coach_refresh_health))
             }
         }
         item { OutlinedButton(onClick = model::reload, enabled = !state.loading, modifier = Modifier.fillMaxWidth()) { Text(words[17]) } }

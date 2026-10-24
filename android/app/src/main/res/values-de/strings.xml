@@ -103,4 +103,7 @@
     <string name="interval_auto_note">Schließt den Satz nach seinen Runden ab und schaltet weiter. Pausen zählen nicht zur Arbeitszeit.</string>
     <string name="interval_manual_note">Misst nur den aktuellen Satz. Kein Weiterschalten oder Abschließen; danach die Zeit prüfen und bestätigen.</string>
     <string name="interval_save_error">Nicht alle Intervalleinstellungen wurden gespeichert. Prüfe: Arbeit 1–3600 s, Pause 0–3600 s, Runden 1–100, höchstens 24 Stunden.</string>
+    <string name="coach_refresh_health">Gesundheitsdaten aktualisieren</string>
+    <string name="coach_refresh_failed">Gesundheitsdaten konnten nicht aktualisiert werden. Gespeicherte Daten werden weiter auf Aktualität geprüft. Berechtigungen und Quelle unter Gesundheit prüfen.</string>
+    <string name="health_read_completed">Abfrage der Gesundheitsdaten abgeschlossen.</string>
 </resources>

@@ -178,12 +178,12 @@ class TrainPilotSettingsStore(private val context: Context) {
 
     suspend fun current(): TrainPilotUserSettings = settingsFlow.first()
 
-    suspend fun ensureCloudDeviceId(): String {
+    suspend fun ensureCloudDeviceId(): String = NativeDataReplacement.mutate(context) {
         val existing = current().cloudDeviceId
-        if (existing.matches(Regex("[a-f0-9-]{36}"))) return existing
+        if (existing.matches(Regex("[a-f0-9-]{36}"))) return@mutate existing
         val generated = UUID.randomUUID().toString().lowercase()
         context.trainPilotDataStore.edit { it[KEY_CLOUD_DEVICE_ID] = generated }
-        return generated
+        generated
     }
 
     suspend fun setLanguage(language: String) {

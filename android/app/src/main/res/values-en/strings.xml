@@ -103,4 +103,7 @@
     <string name="interval_auto_note">Completes the set after its rounds and advances. Rest is excluded from the recorded work time.</string>
     <string name="interval_manual_note">Measures only the current set. It does not advance or complete it; review and confirm the time afterwards.</string>
     <string name="interval_save_error">Some interval settings could not be saved. Check: work 1–3600 s, rest 0–3600 s, rounds 1–100, at most 24 hours.</string>
+    <string name="coach_refresh_health">Refresh health data</string>
+    <string name="coach_refresh_failed">Health data could not be refreshed. Stored data is still checked for freshness. Check permissions and the provider on the Health screen.</string>
+    <string name="health_read_completed">Health data read completed.</string>
 </resources>

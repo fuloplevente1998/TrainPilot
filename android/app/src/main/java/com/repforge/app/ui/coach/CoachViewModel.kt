@@ -7,7 +7,6 @@ import com.repforge.app.HealthJournalStore
 import com.repforge.app.data.db.CalendarScheduleEntity
 import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.store.TrainPilotSettingsStore
-import com.repforge.app.ui.calendar.NativeCalendarRepository
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,7 +16,8 @@ import java.time.*
 internal data class CoachTarget(val programId: String, val dayId: String, val title: String,
     val schedule: CalendarScheduleEntity? = null, val upcoming: Boolean = false)
 internal data class CoachUiState(val loading: Boolean = true, val error: Boolean = false, val language: String = "hu",
-    val readiness: NativeCoachReadiness.Result? = null, val target: CoachTarget? = null)
+    val readiness: NativeCoachReadiness.Result? = null, val target: CoachTarget? = null,
+    val refreshing: Boolean = false, val refreshFailed: Boolean = false)
 
 /** Reads canonical provider projections and a bounded history slice; never fabricates Health samples. */
 internal class CoachViewModel(application: Application) : AndroidViewModel(application) {
@@ -27,6 +27,20 @@ internal class CoachViewModel(application: Application) : AndroidViewModel(appli
     val state = _state.asStateFlow()
     private var loading: Job? = null
     init { reload() }
+    fun refreshHealth(activity: android.app.Activity?) {
+        if (activity == null || _state.value.refreshing || _state.value.loading) return
+        _state.value = _state.value.copy(refreshing = true, refreshFailed = false)
+        viewModelScope.launch {
+            try {
+                val result = com.repforge.app.NativeHealthRefresh.readToday(app, activity)
+                _state.value = _state.value.copy(refreshFailed = result.isFailure)
+                // Read the canonical stored projections even on permission/provider failure;
+                // stale or absent measurements remain subject to the same freshness rules.
+                loading?.join()
+                reload()
+            } finally { _state.value = _state.value.copy(refreshing = false) }
+        }
+    }
     fun reload() {
         if (loading?.isActive == true) return
         loading = viewModelScope.launch {
@@ -40,41 +54,10 @@ internal class CoachViewModel(application: Application) : AndroidViewModel(appli
                     val days = (0 until (array?.length() ?: 0)).mapNotNull { array?.optJSONObject(it) }
                     val signals = NativeCoachSignals.fromDays(days, today, zone)
                     val history = db.workoutHistoryDao().getCoachRecentHistory(now.minus(Duration.ofDays(14)).toEpochMilli(), now.toEpochMilli()).map { JSONObject(it) }
-                    val programs = db.programDao().getProgramsWithDays()
-                    var offset = 0
-                    var plan: CalendarScheduleEntity? = null
-                    while (plan == null) {
-                        val rows = db.calendarScheduleDao().getCoachUpcoming(today.toString(), 32, offset)
-                        plan = rows.firstOrNull { row -> !NativeCalendarRepository.cancelled(row) && programs.any { p ->
-                            p.program.id == row.programId && p.days.any { it.dayId == row.dayId } } }
-                        if (rows.size < 32) break
-                        offset += rows.size
-                    }
-                    fun title(hu: String, en: String, de: String, ro: String) = when(settings.language) {
-                        "en" -> en; "de" -> de; "ro" -> ro; else -> hu
-                    }.ifBlank { hu }
-                    val target = if (plan != null) {
-                        val row = plan!!; val p = programs.first { it.program.id == row.programId }
-                        val day = p.days.first { it.dayId == row.dayId }
-                        CoachTarget(p.program.id, day.dayId, title(day.nameHu, day.nameEn, day.nameDe, day.nameRo), row, row.date != today.toString())
-                    } else {
-                        val p = programs.firstOrNull { it.program.id == settings.activeProgramId }
-                        if (p == null || p.days.isEmpty()) null else {
-                            var last: CalendarScheduleEntity? = null; var cycleOffset = 0
-                            while (last == null) {
-                                val rows = db.calendarScheduleDao().getCoachCyclePlans(p.program.id, 32, cycleOffset)
-                                last = rows.firstOrNull { !NativeCalendarRepository.cancelled(it) }
-                                if (rows.size < 32) break
-                                cycleOffset += rows.size
-                            }
-                            val ordered = p.days.sortedBy { it.sortOrder }
-                            val index = last?.let { row -> ordered.indexOfFirst { it.dayId == row.dayId } } ?: -1
-                            val day = ordered[(index + 1).coerceAtLeast(0) % ordered.size]
-                            CoachTarget(p.program.id, day.dayId, title(day.nameHu, day.nameEn, day.nameDe, day.nameRo))
-                        }
-                    }
+                    val target = NativeCoachTargets(db).select(settings.activeProgramId, settings.language, now, zone)
                     CoachUiState(false, false, settings.language,
-                        NativeCoachReadiness.calculate(signals.recovery, signals.daily, history, now, zone), target)
+                        NativeCoachReadiness.calculate(signals.recovery, signals.daily, history, now, zone), target,
+                        refreshing = _state.value.refreshing, refreshFailed = _state.value.refreshFailed)
                 }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) { _state.value = _state.value.copy(loading = false, error = true) }

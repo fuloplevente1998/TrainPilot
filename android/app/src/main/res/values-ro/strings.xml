@@ -103,4 +103,7 @@
     <string name="interval_auto_note">Finalizează seria după rundele ei și avansează. Odihna nu intră în timpul de efort înregistrat.</string>
     <string name="interval_manual_note">Măsoară doar seria curentă. Nu avansează și nu o finalizează; verifică și confirmă apoi timpul.</string>
     <string name="interval_save_error">Unele setări de interval nu au fost salvate. Verifică: efort 1–3600 s, odihnă 0–3600 s, runde 1–100, maximum 24 de ore.</string>
+    <string name="coach_refresh_health">Actualizează datele de sănătate</string>
+    <string name="coach_refresh_failed">Datele de sănătate nu au putut fi actualizate. Datele salvate sunt verificate în continuare pentru actualitate. Verifică permisiunile și sursa în pagina Sănătate.</string>
+    <string name="health_read_completed">Citirea datelor de sănătate s-a încheiat.</string>
 </resources>

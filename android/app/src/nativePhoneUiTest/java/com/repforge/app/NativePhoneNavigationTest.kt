@@ -204,4 +204,23 @@ class NativePhoneNavigationTest {
         assertFalse(next.snapshot.getJSONObject("timerConfig").getBoolean("autoAdvance"))
     }
 
+    @Test fun blockedCoachRefreshKeepsStoredSignalsAndDisplaysAnHonestFailureState() {
+        launch()
+        compose.onNodeWithTag("shortcut_coach").performScrollTo().performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("coach_ready").fetchSemanticsNodes().isNotEmpty() }
+        val health = HealthJournalStore.get(context)
+        val generation = health.generation()
+        context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE).edit().putBoolean("blocked", true).commit()
+        try {
+            compose.onNodeWithTag("coach_refresh_health").performScrollTo().performClick()
+            compose.waitUntil(15000) { compose.onAllNodesWithTag("coach_refresh_failed").fetchSemanticsNodes().isNotEmpty() }
+            compose.waitUntil(15000) { compose.onAllNodesWithTag("coach_ready").fetchSemanticsNodes().isNotEmpty() }
+            assertEquals(generation, health.generation())
+            assertTrue(snapshot()?.optBoolean("active") != true)
+            screenshot("coach_refresh_failure")
+        } finally {
+            context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE).edit().clear().commit()
+        }
+    }
+
 }

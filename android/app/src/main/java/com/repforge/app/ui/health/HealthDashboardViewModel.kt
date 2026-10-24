@@ -2,16 +2,8 @@ package com.repforge.app.ui.health
 
 import android.app.Application
 import android.app.Activity
-import android.os.Build
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LifecycleEventObserver
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withContext
-import java.util.concurrent.atomic.AtomicBoolean
-import java.time.ZoneId
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.repforge.app.BleDiscoveryRepository
@@ -172,35 +164,14 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
     }
 
     fun refresh(activity: Activity?, requestSamsungPermission: Boolean = false) {
-        val owner = activity as? LifecycleOwner ?: return
+        if (activity == null) return
         viewModelScope.launch {
-            val foreground = AtomicBoolean(owner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
-            val observer = LifecycleEventObserver { _, _ -> foreground.set(owner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
-            owner.lifecycle.addObserver(observer)
-            val guard = { check(foreground.get()) { "A frissítéshez maradjon megnyitva az alkalmazás." }; Unit }
-            try {
-                if (_uiState.value.provider == HealthJournalStore.SAMSUNG && requestSamsungPermission) {
-                    SamsungHealthRepository.requestReadPermissions(requireNotNull(activity)).getOrThrow()
-                    withTimeout(10000) { while (!foreground.get()) delay(50) }
-                }
-                guard()
-                val today = LocalDate.now(); val zone = ZoneId.systemDefault()
-                val start = today.atStartOfDay(zone).toInstant().toString()
-                val end = today.plusDays(1).atStartOfDay(zone).toInstant().toString()
-                if (_uiState.value.provider == HealthJournalStore.SAMSUNG) {
-                    SamsungHealthRepository.readHealthDay(context, start, end, today.toString(), guard).getOrThrow()
-                } else {
-                    check(Build.VERSION.SDK_INT >= 34) { "A Health Connect frissítéshez Android 14 szükséges." }
-                    check(HealthConnectRepository.READ_PERMS.any {
-                        context.checkSelfPermission("android.permission.health.$it") == android.content.pm.PackageManager.PERMISSION_GRANTED
-                    }) { "Health Connect olvasási engedély szükséges." }
-                    HealthConnectRepository.readHealthDaySuspend(context, start, end, requireForegroundGuard = guard)
-                }
-                _uiState.value = _uiState.value.copy(statusMessage = "Frissítve")
-                loadHealthDashboard()
-            } catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: Exception) { _uiState.value = _uiState.value.copy(statusMessage = failure.message ?: "A frissítés nem sikerült.") }
-            finally { owner.lifecycle.removeObserver(observer) }
+            val result = com.repforge.app.NativeHealthRefresh.readToday(context, activity, requestSamsungPermission)
+            val language = com.repforge.app.data.store.TrainPilotSettingsStore(context).current().language
+            val text = com.repforge.app.ui.text.nativeResources(context, language)
+            _uiState.value = _uiState.value.copy(statusMessage = text.getString(if (result.isSuccess)
+                com.repforge.app.R.string.health_read_completed else com.repforge.app.R.string.coach_refresh_failed))
+            if (result.isSuccess) loadHealthDashboard()
         }
     }
 

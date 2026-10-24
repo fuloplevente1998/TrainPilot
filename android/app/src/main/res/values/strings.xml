@@ -103,4 +103,7 @@
     <string name="interval_auto_note">A körök végén elkészíti a sorozatot és továbblép. Pihenőt nem számít sorozatidőnek.</string>
     <string name="interval_manual_note">Csak az aktuális sorozatot méri. Nem léptet és nem jelöli készre; az időt utána ellenőrizheted és rögzítheted.</string>
     <string name="interval_save_error">Nem sikerült minden intervallumbeállítást menteni. Ellenőrizd: munka 1–3600 mp, pihenő 0–3600 mp, körök 1–100, legfeljebb 24 óra.</string>
+    <string name="coach_refresh_health">Egészségadatok frissítése</string>
+    <string name="coach_refresh_failed">Az egészségadatok frissítése nem sikerült. A tárolt adatok érvényességét továbbra is ellenőrizzük. Az Egészség oldalon ellenőrizheted az engedélyeket és a forrást.</string>
+    <string name="health_read_completed">Egészségadatok lekérdezése befejeződött.</string>
 </resources>
