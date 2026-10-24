@@ -1,7 +1,8 @@
 > **Natív migráció aktuális részállapota (2026-10-24):** ág `feat/native-android-migration`,
-> alkalmazásforrás `031f0a60` (`[skip ci]`).
-> Health Connect napi egyedi eredetválasztó bekötve; 221 új unit és 17 natív Phone UI-próba
-> megírva, még nem futott. **Nincs új teljes zöld kapu vagy élő adatra telepíthető APK.**
+> alkalmazás- és tesztforrás `f90e7ef` (`[skip ci]`).
+> HC/BLE háttérengedélyek, opt-in kontra valódi ütemezés/FGS, hibakezelés és
+> négy nyelvű állapotok bekötve. **231 új unit és 19 natív Phone UI-próba
+> megírva, még nem futott.** Nincs új teljes zöld kapu vagy élő adatra telepíthető APK.
 > Aktuális átadó: [WORK_HANDOFF.md](docs/WORK_HANDOFF.md), [PR #238](https://github.com/fuloplevente1998/TrainPilot/pull/238).
 > Main, verzió és Wear release változatlan. Alább történeti állapotok olvashatók.
 
