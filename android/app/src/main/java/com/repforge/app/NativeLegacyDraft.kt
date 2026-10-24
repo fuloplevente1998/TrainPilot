@@ -7,7 +7,7 @@ import org.json.JSONObject
 import java.time.Instant
 import java.util.UUID
 
-/** Pure preflight only. This never publishes, deletes or resumes a legacy draft. */
+/** Pure draft preparation plus exact-source transactional retirement after durable save/discard. */
 internal object NativeLegacyDraft {
     suspend fun retire(database: com.repforge.app.data.db.TrainPilotDatabase, expectedHash: String) {
         if (expectedHash.isEmpty()) return

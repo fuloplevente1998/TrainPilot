@@ -64,6 +64,7 @@ import androidx.navigation.compose.rememberNavController
 import com.repforge.app.ActiveWorkoutStore
 import com.repforge.app.NativeWorkoutSession
 import com.repforge.app.NativeWorkoutTarget
+import com.repforge.app.ui.calendar.CalendarScreen
 import com.repforge.app.ui.home.QuickWorkoutScreen
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -145,6 +146,7 @@ fun TrainPilotAppScaffold(
             if (currentRoute !in listOf("active_workout", "route_map")) {
                 TopNavigationBar(
                     onCoachClick = { navController.navigate("training") },
+                    onCalendarClick = { navController.navigate("calendar") { launchSingleTop = true } },
                     onSettingsClick = { navController.navigate("settings") }
                 )
             }
@@ -197,6 +199,22 @@ fun TrainPilotAppScaffold(
                             startWorkout(programId, dayId)
                         }
                     )
+                }
+                composable("calendar") {
+                    CalendarScreen(starting = starting, onJournal = { navController.navigate("journal") { launchSingleTop = true } },
+                        onStart = { row ->
+                            if (!starting) {
+                                starting = true
+                                scope.launch {
+                                    try {
+                                        NativeWorkoutSession.startWorkout(context, row.programId, row.dayId, scheduleId = row.id)
+                                        navController.navigate("active_workout") { launchSingleTop = true }
+                                    } catch (cancelled: CancellationException) { throw cancelled }
+                                    catch (error: Exception) { snackbar.showSnackbar(error.message ?: "A naptári edzés nem indítható.") }
+                                    finally { starting = false }
+                                }
+                            }
+                        })
                 }
                 composable(Screen.Journal.route) {
                     JournalScreen(navController = navController)
@@ -261,6 +279,7 @@ fun TrainPilotAppScaffold(
 @Composable
 fun TopNavigationBar(
     onCoachClick: () -> Unit,
+    onCalendarClick: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
     val colors = LocalTrainPilotColors.current
@@ -282,6 +301,9 @@ fun TopNavigationBar(
             letterSpacing = 1.sp
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onCalendarClick) {
+                Icon(Icons.Default.DateRange, contentDescription = "Naptár", tint = colors.accent2)
+            }
             IconButton(onClick = onCoachClick) {
                 Icon(
                     imageVector = Icons.Default.Star,
