@@ -1,10 +1,12 @@
 > **Natív migráció aktuális részállapota (2026-10-24):** ág `feat/native-android-migration`,
-> alkalmazás- és tesztforrás `f90e7ef` (`[skip ci]`).
-> HC/BLE háttérengedélyek, opt-in kontra valódi ütemezés/FGS, hibakezelés és
-> négy nyelvű állapotok bekötve. **231 új unit és 19 natív Phone UI-próba
-> megírva, még nem futott.** Nincs új teljes zöld kapu vagy élő adatra telepíthető APK.
+> alkalmazásforrás `4159a76` (`[skip ci]`).
+> V144 gyakorlatkedvencek: natív gyorsválasztó UI, Room-migráció,
+> JSON/ZIP/Drive megőrzés és felhőkonfliktus-kezelés kódja megírva.
+> **241 új unit és 20 natív Phone UI-próba megírva, még nem futott.**
+> Nincs új Android-fordítási, teljes zöld kapu vagy telepíthető APK.
 > Aktuális átadó: [WORK_HANDOFF.md](docs/WORK_HANDOFF.md), [PR #238](https://github.com/fuloplevente1998/TrainPilot/pull/238).
-> Main, verzió és Wear release változatlan. Alább történeti állapotok olvashatók.
+> Main, verzió és Wear release változatlan; élő adatok fölé telepítés STOP.
+> Alább korábbi történeti állapotok olvashatók.
 
 > **Aktuális átadás (2026-10-21):** #234 felhasználó által elfogadva és mainre egyesítve; **1.3.71 /2735** a legfrissebb stabil telefon/Wear kiadás. Részletes kapuk és APK-forrás: [WORK_HANDOFF.md](docs/WORK_HANDOFF.md), [kiadásjegyzék](docs/releases/INDEX.md). A lentebbi állapotok történetiek.
 
