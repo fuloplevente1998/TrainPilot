@@ -37,7 +37,7 @@ aláírt szintetikus upgrade **2/2**, nincs hiba/kihagyás. Letöltött release 
 hash/csomag/verzió/signer ellenőrizve; a measured protokoll és az időnaplómezők a telefonos R8 DEX-ben is jelen vannak.
 [Gépi bizonylat](builds/2026-10-23-native-measured-intervals.json).
 
-**Aktuális nem bevizsgált batch:** `ccc5c9a`, 174 új unit + 8 Phone
+**Aktuális nem bevizsgált batch:** `033386e`, 181 új unit + 9 Phone
 instrumentációs tesztkód megírva, még nem futtatva. Bounded/paging napló, fotó/több
 route, naptár sync/kezdeti GPS, témák, tartós replacement/redó és metadata guard,
 Phone discard/retry, lokális/globális interval preset és nem-auto mód, közös

@@ -22,7 +22,18 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 
 ## Legutóbbi konkrét munka
 
-- Legfrissebb alkalmazásforrás **ccc5c9a**: NativeCoachExerciseAdvice + bounded
+- Legfrissebb alkalmazásforrás **033386e**: pontos mainből kinyert106 gyakorlat,
+  13 beépített program, teljes név/leírás HU/EN/DE/RO. Adat-only Java resource,
+  natív appban nincs JS/WebView futtatás. Hiányzó elemek pótlása, IGNORE+Room tx+
+  metadata admission, meglévő egyedi/korábbi natív sorok és programnapok megőrzése.
+  Import hiányzó builtin mérési típus/fordítás pótlása; 7 új unit+1 UI próbakód,
+  még nem futtatva. Referenciakinyerés reprodukálva, nem Android-eredmény.
+- A felhasználó külön kérte a négy dizájntábla újratervezését. Új24-képernyős
+  review-csomag: docs/design/NATIVE_DESIGN_HANDOFF.md + mockups/ négyPNG ésmanifest.
+  Fogaskerék/pihenő/preset/téma/státusz pontosítások. Generált design, nem futóapp;
+  az új változat reviewra vár. Most vizuális fázis (Medium jelzés elhangzott).
+
+- Korábbi Coach-forrás **ccc5c9a**: NativeCoachExerciseAdvice + bounded
   NativeCoachAdviceRepository és Coach-kártyák a végső main tp128/rf233 szabályokból.
   90 nap / max4 kompatibilis előzmény, 32-es keyset oldalak, elfogadott history128
   forráshivatkozás, 128-as distinct súlylapok; hiány/részleges/fájdalom/RIR/romló
@@ -84,7 +95,7 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 - Phone UI kapu alapja **1d38edf**: külön native AndroidTest source set,
   meglévő native-android.yml phone-ui job, raw adb screencap checkpoint/ack és
   származtatottnak jelölt XML/manifest. Az akkori4 óta8 instrumentációs próbakódra bővült.
-- **174 új unit + 8 instrumentációs tesztkód megírva, még nem futtatva.**
+- **181 új unit + 9 instrumentációs tesztkód megírva, még nem futtatva.**
   Nincs új zöld kapu/APK/screenshot. Utolsó teljes zöld forrás **dd4cc27**:
   unit Phone393/Wear167, Wear UI183, signed upgrade2. Bizonyíték: WORK_HANDOFF.md.
 - Main utóbbi 8a36502d változása csak AGENTS thinking-dokumentáció; main app baseline

@@ -4,6 +4,25 @@ Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Legfrissebb forrás és frissített dizájnátadó
+
+Alkalmazásforrás **033386e**: main106 gyakorlat/13 program és négynyelvű
+nevek/leírások natív adatcsomagból; adat-only resource, nem JS-motor. Hiányzó sorok
+pótlása metadata admission+Room tranzakció+IGNORE mellett, meglévő egyedi értékek,
+régi natív ID-k és programnapok megőrzése. Legacy importban builtin fordítás/mérési
+klasszifikáció pótlása; explicit custom adatok megmaradnak. 7 új unit+1 UI tesztkód.
+**Batch181 új unit+9 instrumentációs próbakód, még nem futott.** A main pontos
+app/index blobjaiból106/13 kinyerés és reprodukálás, Node-szintaxis/diff/adatstruktúra
+ellenőrzés történt, nem Android-teszt. Utolsó zöld továbbra dd4cc27.
+
+A felhasználó külön kérte az eredeti négy mockup alapján mind a24 képernyő
+újratervezését. Az új képek és hosszú konkrét specifikáció egy helyen:
+[Native design handoff](design/NATIVE_DESIGN_HANDOFF.md), négyPNG a mockups/
+könyvtárban, hash-manifesttel. Új review-változatok, nem tényleges emulátorképek;
+a meglévő motorfeltételek elsőbbségét és a képfelirati eltéréseket az átadó rögzíti.
+A vizuális fázishoz Medium jelzés elhangzott. A teljes Compose vizuális kidolgozás,
+programszerkesztő, további adatút/lokalizáció/UI próbák, végső közös CI még hátra van.
+
 ## Legfrissebb alkalmazásforrás – gyakorlatonkénti Coach
 
 **`ccc5c9a`**, `[skip ci]`. A korábban hiányzó gyakorlatonkénti tanács a meglévő

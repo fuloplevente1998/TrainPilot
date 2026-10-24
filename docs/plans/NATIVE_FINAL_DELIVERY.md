@@ -33,6 +33,13 @@ a részletes batch és a dizájn hat működési feltétele vele együtt kötele
    törlés utáni visszatérés tiltása, valós engedély/háttérállapotok. Naptári
    Google-szinkron `takeLast(100)` megszüntetése adatvesztés nélkül.
 
+## Aktuális vizuális átadó
+
+A felhasználó 2026-10-24-én külön kérte a négy mockup újratervezését.
+Az aktuális képek és konkrét képernyőleírások:
+[Native design handoff](../design/NATIVE_DESIGN_HANDOFF.md). A további végső
+átadás továbbra valódi emulátoros képeket igényel; a mockup nem tesztbizonyíték.
+
 ## Teljes Compose felület – 24 nézet
 
 A négy chatben átadott képtábla az elfogadott vizuális referencia; átadáskor
@@ -59,7 +66,8 @@ Settings fogaskerék, aktív mérés szüneteltetése nélkül.
 ## Témarendszer megőrzése
 
 A main teljes Basic/Vivid katalógusa, stabil kulcsai és effektív színei az alapok,
-a végső felülírások figyelembevételével. A natív hétpalettás részhalmaz nem teljes.
+a végső felülírások figyelembevételével. Kódban már26 main és6 kompatibilitási
+natív paletta szerepel; ezek teljes UI-ellenőrzése még szükséges.
 A korábban natívban elmentett kulcsok se vesszenek el. Migráció/backup/restore
 őrizze meg a választott témát; arany mockup miatt nincs automatikus átszínezés.
 Minden komponens, grafikon, kijelölés és kontraszt tématokenből dolgozzon.
@@ -81,7 +89,8 @@ szétszórt fix akcentusszín. Szemantikus danger/success token és piros térk�
   újrafuttatás; végső bizonyíték egy rögzített alkalmazásforráshoz tartozzon.
 - Valódi, futó natív appot készíts elő az emulátoron; módosítatlan PNG-k
   `adb exec-out screencap -p`-vel, főoldalakról, edzéstípusokról, térképről,
-  Naptár/Coach/Settings nézetekről, több témával és nyelvvel. Nincs új generált mockup.
+  Naptár/Coach/Settings nézetekről, több témával és nyelvvel. Az újratervezett mockupok külön felhasználói kérésre készültek;
+  a végső screenshot-átadás valódi alkalmazásképeket jelent.
   A manifest rögzítse commit/APK-hash/eszköz/API/nyelv/téma/adatfixture azonosítóját.
 - Tesztfixture és injektált GPS megengedett, a jelentésben megjelölve; valódi
   képernyőkép nem igazolja a fizikai Galaxy Watch7 szenzorát vagy élő Samsung SDK-t.

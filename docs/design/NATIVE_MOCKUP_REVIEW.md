@@ -1,5 +1,12 @@
 # Natív UI – döntés és látványterv-áttekintés (2026-10-24)
 
+## Aktuális dizájncsomag
+
+A 2026-10-24-én külön kért újratervezés és mind a négy képtábla:
+[NATIVE_DESIGN_HANDOFF.md](NATIVE_DESIGN_HANDOFF.md). Ez rögzíti a 24 oldal
+aktuális vizuális átadóját és a képfeliratokat felülíró pontosításokat.
+Az új táblák review-változatok; a működési döntések alább továbbra kötelezőek.
+
 ## Felhasználói döntés
 
 A felhasználó a mockup megtekintése után **az öt alsó füles változatot
@@ -46,7 +53,8 @@ a 4/4 lapon nem létező e-mail/verzió mintafelirata eltávolítva. A javított
 az érvényes review-példányok. A ritka hibaállapotok, összes dialógus és minden
 nyelvi változat nem szerepel ezen a 24 nézeten.
 
-A képek a beszélgetésben letölthetők; nem kerültek binárisként a repositoryba.
+A korábbi képek a beszélgetésben letölthetők; az újratervezett táblák a
+`docs/design/mockups/` alatt is elérhetők a hordozható átadóval együtt.
 Másik modellnek történő átadáskor a képeket külön is csatolni kell, ha a vizuális
 terv alapján kell dolgoznia. Funkcionális referencia továbbra az elfogadott main;
 a választott vizuális/navigációs irány az öt alsó füles mockup.
@@ -55,8 +63,8 @@ a választott vizuális/navigációs irány az öt alsó füles mockup.
 ## Kötelező Compose-bekötési feltételek – felhasználói pontosítás (2026-10-24)
 
 Az alábbi hat pont explicit felhasználói követelmény. A mockup alapállapotot
-szemléltet; nem írhatja felül a motor működését. **Most csak rögzítés történt,
-sem új implementáció, sem tesztfuttatás.** A korábbi zöld motor-kapuk és a
+szemléltet; nem írhatja felül a motor működését. A pontokhoz azóta több motor/UI-bekötés és tesztkód elkészült; a teljes
+vizuális kidolgozás és az új batch futtatott ellenőrzése még hátra van. A korábbi zöld motor-kapuk és a
 jelenlegi, még nem futtatott UI-batch igazolása külön kezelendő.
 
 ### 1. Kezdőlap: félbehagyott vagy aktív edzés folytatása
