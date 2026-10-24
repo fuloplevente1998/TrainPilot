@@ -119,9 +119,22 @@ internal fun ExerciseLibraryScreen(language: String, model: ExerciseLibraryViewM
     var favoritesOnly by rememberSaveable { mutableStateOf(false) }
     var muscle by rememberSaveable { mutableStateOf("") }
     var openingError by remember { mutableStateOf(false) }
+    var editorOpen by remember { mutableStateOf(false) }
+    var editingExercise by remember { mutableStateOf<ExerciseLibraryEntity?>(null) }
+    androidx.compose.runtime.LaunchedEffect(state.savedId, state.deletedId) {
+        if (state.savedId != null || state.deletedId != null) {
+            selectedId = state.savedId
+            editorOpen = false
+            editingExercise = null
+            model.clearEditOutcome()
+        }
+    }
 
     val selected = state.rows.firstOrNull { it.id == selectedId }
-    BackHandler(enabled = selectedId != null) { selectedId = null; openingError = false }
+    BackHandler(enabled = selectedId != null || editorOpen) {
+        if (editorOpen && !state.saving) editorOpen = false
+        else if (!editorOpen) { selectedId = null; openingError = false }
+    }
     val visible = remember(state.rows, state.favorites, query, favoritesOnly, muscle, language) {
         val needle = key(query)
         state.rows.filter { ex ->
@@ -154,6 +167,13 @@ internal fun ExerciseLibraryScreen(language: String, model: ExerciseLibraryViewM
                 Text("${labels.muscle}: ${muscleName(selected.primaryMuscle, language)} • ${labels.sets}: ${selected.defaultSets} • ${labels.reps}: ${selected.defaultReps}",
                     color = colors.muted)
                 Text(description(selected, language), color = colors.text)
+                if (selected.custom) {
+                    OutlinedButton(onClick = { editingExercise = selected; editorOpen = true; model.clearEditOutcome() },
+                        modifier = Modifier.testTag("custom_exercise_edit")) {
+                        Text(when (language) { "en" -> "Edit exercise"; "de" -> "Übung bearbeiten"
+                            "ro" -> "Editează exercițiul"; else -> "Saját gyakorlat szerkesztése" })
+                    }
+                }
                 TextButton(onClick = { model.toggleFavorite(selected.id) }, enabled = !state.saving,
                     modifier = Modifier.testTag("exercise_library_detail_favorite")) {
                     Text(if (selected.id in state.favorites) "★ ${labels.removeFavorite}" else "☆ ${labels.addFavorite}")
@@ -181,6 +201,11 @@ internal fun ExerciseLibraryScreen(language: String, model: ExerciseLibraryViewM
             }
         } else {
             Text(labels.title, color = colors.text, fontWeight = FontWeight.Bold)
+            OutlinedButton(onClick = { editingExercise = null; editorOpen = true; model.clearEditOutcome() },
+                modifier = Modifier.fillMaxWidth().testTag("custom_exercise_create")) {
+                Text(when (language) { "en" -> "Create exercise"; "de" -> "Eigene Übung erstellen"
+                    "ro" -> "Creează exercițiu"; else -> "Saját gyakorlat létrehozása" })
+            }
             Text("${state.rows.size} ${labels.count}", color = colors.muted,
                 modifier = Modifier.testTag("exercise_library_count"))
             OutlinedTextField(value = query, onValueChange = { query = it }, singleLine = true,
@@ -220,5 +245,12 @@ internal fun ExerciseLibraryScreen(language: String, model: ExerciseLibraryViewM
                 item { Spacer(Modifier.height(80.dp)) }
             }
         }
+    }
+    if (editorOpen) {
+        CustomExerciseDialog(exercise = editingExercise, language = language,
+            saving = state.saving, error = state.editError,
+            onSave = { draft -> model.saveCustom(editingExercise?.id, draft, language) },
+            onDelete = { editingExercise?.id?.let(model::deleteCustom) },
+            onCancel = { if (!state.saving) { editorOpen = false; editingExercise = null; model.clearEditOutcome() } })
     }
 }
