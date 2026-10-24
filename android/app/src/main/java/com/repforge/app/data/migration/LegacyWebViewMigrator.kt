@@ -309,6 +309,12 @@ class LegacyWebViewMigrator(
                     }
                 }
                 database.programDao().upsertPrograms(progEntities)
+                // An incoming program with explicit days is an authoritative plan snapshot.
+                // Drop removed days first, otherwise a restore/Drive merge resurrects them.
+                for (program in progEntities) {
+                    val rawDays = runCatching { JSONObject(program.rawJson).optJSONArray("days") }.getOrNull()
+                    if (rawDays != null) database.programDao().deleteDaysForProgram(program.id)
+                }
                 database.programDao().upsertProgramDays(dayEntities)
             }
 
