@@ -42,7 +42,7 @@ internal fun PersonalProgramPreviewDialog(
     val profile = remember(profileJson) { runCatching { JSONObject(profileJson) }.getOrDefault(JSONObject()) }
     val recommended = if (profile.optString("experience") in setOf("intermediate", "advanced"))
         "home-level2" else "home-basic"
-    var choice by remember { mutableStateOf(recommended) }
+    var choice by remember(profileJson) { mutableStateOf(recommended) }
     val preview = previews[choice]
     val label = when (language) {
         "en" -> listOf("Personal A/B plan preview", "Basic", "Level 2", "Check your Training profile",
