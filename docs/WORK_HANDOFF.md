@@ -4,6 +4,51 @@ Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Natív program- és programnapszerkesztés
+
+**87f9ee10** `[skip ci]` legutóbbi alkalmazás-/tesztforrás, kizárólag
+`feat/native-android-migration`. A meglévő `programs` +
+`program_days` Room és `LegacyWebViewMigrator` JSON adatútjára épül,
+új séma és párhuzamos tároló nélkül.
+
+- `NativeProgramEditor`: saját program létrehozása/átnevezése/
+  leírása, beépített programból **saját másolat** (a 13 eredeti
+  programot soha nem írja át); stabil program/day ID,
+  edzésnap hozzáadás/név/sorrend/eltávolítás.
+  Gyakorlatok felvétele a valódi Room-katalógusból,
+  eltávolítás és sorrendcsere, az eredeti JSON prescription
+  objektumok / extra mezők megőrzésével. Új, ismeretlen
+  gyakorlat-azonosító nem írható, már importált változatlan
+  legacy-hivatkozás nem veszik el.
+- Program/nap módosítása egy `NativeDataReplacement.mutate`
+  + Room tranzakcióban. Elavult szerkesztői snapshot nem
+  menthet/törölhet. Aktív edzés alatt módosítás STOP.
+  Hivatkozott nap (naptár / napló) és aktív vagy hivatkozott
+  program törlését blokkolja; beépített nem törölhető.
+  **Üres nap edzése nem indítható**.
+- `TrainingProgramsScreen` → új `ProgramEditorDialog`
+  HU/EN/DE/RO szövegekkel, nap-/gyakorlatrendezéssel,
+  katalógus-keresővel, eltávolítási megerősítéssel.
+  `TrainingProgramsViewModel` valódi Room-olvasás/mentés,
+  mentési hiba esetén szerkesztő nyitva marad.
+- A JSON/ZIP/Drive export most a programnap `en/de/ro`
+  és ismeretlen legacy JSON mezőit megőrzi. Importkor az
+  explicit teljes naplistával érkező program snapshot
+  eltávolított napjai nem élednek újra.
+- **12 új JVM unit +3 Phone Compose UI-tesztkód** készült
+  create/copy/edit, day/order/assignment, CAS, reference
+  fences, restore, import/export és valós navigáció ellen.
+  Összes megírt új teszt: **271 unit +28 Phone UI**.
+  **Még nem futottak**; 15 statikus forrás/hívási
+  út/teszteset ellenőrzés PASS. Kotlin/Room/Compose fordítás,
+  Android-emulátor, signed upgrade és új APK nincs igazolva.
+
+Következő kódolási blokk: profil/saját beállítások
+és további progressziós adatút paritásvizsgálata, majd
+közös natív CI/testkapu a teljes forráson.
+Main/verzió/Wear release változatlan; saját adatok
+fölé telepítés STOP.
+
 ## Saját gyakorlatok natív létrehozása/szerkesztése/törlése
 
 **a46a8bcd** `[skip ci]` utolsó alkalmazáskód; csak a
