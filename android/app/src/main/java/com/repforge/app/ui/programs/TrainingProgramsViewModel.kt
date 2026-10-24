@@ -20,6 +20,8 @@ data class TrainingProgramsUiState(
     val activeProgramId: String = "home-basic",
     val programs: List<ProgramWithDays> = emptyList(),
     val isPersonalPlannerOpen: Boolean = false,
+    val personalPreviews: Map<String, com.repforge.app.NativeProfileProgramPreview.Preview> = emptyMap(),
+    val personalLoading: Boolean = false,
     val language: String = "hu",
     val trainingProfileJson: String = "{}",
     val writeFailed: Boolean = false,
@@ -143,23 +145,42 @@ class TrainingProgramsViewModel(application: Application) : AndroidViewModel(app
 
     fun openPersonalPlanner() {
         if (_uiState.value.editorSaving || _uiState.value.isPersonalPlannerOpen) return
+        _uiState.value = _uiState.value.copy(personalLoading = true,
+            personalPreviews = emptyMap(), isPersonalPlannerOpen = true, editorError = null)
         viewModelScope.launch {
             try {
                 val fresh = withContext(Dispatchers.IO) {
-                    Triple(settingsStore.current().profileJson,
-                        database.programDao().getProgramsWithDays(),
-                        database.exerciseLibraryDao().getAllExercises())
+                    com.repforge.app.NativeDataReplacement.mutate(context) {
+                        val profile = settingsStore.current().profileJson
+                        val programs = database.programDao().getProgramsWithDays()
+                        val exercises = database.exerciseLibraryDao().getAllExercises()
+                        val at = java.time.Instant.now()
+                        val previews = programs.filter { it.program.builtin &&
+                            it.program.id in setOf("home-basic", "home-level2") }
+                            .mapNotNull { source ->
+                                val base = runCatching {
+                                    com.repforge.app.NativeProfileProgramPreview.preview(
+                                        source, profile, exercises, _uiState.value.language)
+                                }.getOrNull() ?: return@mapNotNull null
+                                source.program.id to com.repforge.app.NativeProfileHistory128.apply(
+                                    database, base, at)
+                            }.toMap()
+                        Triple(profile, programs, exercises) to previews
+                    }
                 }
                 _uiState.value = _uiState.value.copy(
-                    trainingProfileJson = fresh.first, programs = fresh.second,
-                    exerciseChoices = fresh.third,
-                    editorError = null, isPersonalPlannerOpen = true)
+                    trainingProfileJson = fresh.first.first,
+                    programs = fresh.first.second, exerciseChoices = fresh.first.third,
+                    personalPreviews = fresh.second, editorError = null)
             } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
             catch (_: Exception) { _uiState.value = _uiState.value.copy(writeFailed = true) }
+            finally { _uiState.value = _uiState.value.copy(personalLoading = false) }
         }
     }
 
     fun closePersonalPlanner() {
-        _uiState.value = _uiState.value.copy(isPersonalPlannerOpen = false)
+        if (_uiState.value.editorSaving) return
+        _uiState.value = _uiState.value.copy(isPersonalPlannerOpen = false,
+            personalPreviews = emptyMap())
     }
 }
