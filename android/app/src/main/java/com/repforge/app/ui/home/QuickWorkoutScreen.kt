@@ -1,5 +1,7 @@
 package com.repforge.app.ui.home
 
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,6 +18,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.repforge.app.NativeOutdoorStart
 import com.repforge.app.NativeExerciseFavorites
+import com.repforge.app.NativeExerciseDemo
 import com.repforge.app.data.db.ExerciseLibraryEntity
 import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.store.TrainPilotSettingsStore
@@ -40,6 +43,7 @@ internal fun QuickWorkoutScreen(outdoorOnly: Boolean, starting: Boolean,
     var loaded by remember { mutableStateOf<Triple<List<ExerciseLibraryEntity>, TrainPilotUserSettings, List<String>>?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var selected by remember { mutableStateOf<ExerciseLibraryEntity?>(null) }
+    var demoOpenFailed by remember(selected?.id) { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
         try {
@@ -118,9 +122,24 @@ internal fun QuickWorkoutScreen(outdoorOnly: Boolean, starting: Boolean,
         TextButton(onClick = onCancel, enabled = !starting, modifier = Modifier.heightIn(min = 48.dp)) { Text(text[5]) }
     }
     selected?.let { ex ->
+        val demo = remember(ex) { NativeExerciseDemo.resolve(ex) }
+        val demoWords = quickDemoWords(settings.language)
         AlertDialog(onDismissRequest = { if (!starting) selected = null }, title = { Text(name(ex)) }, text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(text[6])
+                if (demo != null) {
+                    TextButton(onClick = {
+                        demoOpenFailed = false
+                        try {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(demo.url))
+                                .addCategory(Intent.CATEGORY_BROWSABLE).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                        } catch (_: Exception) { demoOpenFailed = true }
+                    }, enabled = !starting, modifier = Modifier.testTag("quick_exercise_video")) {
+                        Text(if (demo.kind == NativeExerciseDemo.Kind.VIDEO) demoWords[0] else demoWords[1])
+                    }
+                    if (demo.kind == NativeExerciseDemo.Kind.UNVERIFIED_SEARCH) Text(demoWords[2])
+                    if (demoOpenFailed) Text(demoWords[3], color = colors.danger)
+                }
                 if (NativeOutdoorStart.eligible(ex.id, ex.measurementType, ex.repUnit)) {
                     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(enabled = !starting) { recordRoute = !recordRoute },
                         verticalAlignment = Alignment.CenterVertically) {
@@ -155,4 +174,15 @@ private fun quickFavoriteWords(language: String) = when (language) {
     "de" -> listOf("Favoriten", "Als Favorit markieren", "Aus Favoriten entfernen", "Favorit konnte nicht gespeichert werden. Erneut versuchen.")
     "ro" -> listOf("Favorite", "Adaugă la favorite", "Elimină din favorite", "Favoritul nu a fost salvat. Încearcă din nou.")
     else -> listOf("Kedvencek", "Kedvencekhez", "Eltávolítás a kedvencekből", "A kedvenc mentése sikertelen. Próbáld újra.")
+}
+
+private fun quickDemoWords(language: String) = when (language) {
+    "en" -> listOf("Watch demonstration video", "Search YouTube (not a confirmed video)",
+        "This is a search, not an identified video.", "Unable to open the video.")
+    "de" -> listOf("Übungsvideo öffnen", "Auf YouTube suchen (kein bestätigtes Video)",
+        "Dies ist eine Suche, kein identifiziertes Video.", "Video konnte nicht geöffnet werden.")
+    "ro" -> listOf("Deschide videoclipul demonstrativ", "Caută pe YouTube (videoclip neconfirmat)",
+        "Aceasta este o căutare, nu un videoclip identificat.", "Videoclipul nu poate fi deschis.")
+    else -> listOf("Bemutatóvideó megnyitása", "YouTube-keresés (nem ellenőrzött videó)",
+        "Ez keresés, nem konkrét bemutatóvideó.", "A videó nem nyitható meg.")
 }
