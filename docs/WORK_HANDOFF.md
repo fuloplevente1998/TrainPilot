@@ -4,6 +4,36 @@ Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Legfrissebb alkalmazásforrás – öt fül és globális Beállítások (2026-10-24)
+
+- **`4f60bc0`** a migrációs ágon, `[skip ci]`. Öt alsó fül:
+  Kezdőlap / Edzés / Napló / Fejlődés / Egészség. Kompakt közös toolbar,
+  jobb felső 48dp Beállítások fogaskerék és másodlagos oldalakra visszanyíl.
+  HU/EN/DE/RO navigációs feliratok, UI-próbához szemantika/testTag.
+- A Beállítások az aktuális oldal fölé kerül, ugyanaz az aktív editor backstack
+  és ViewModel marad; nincs `leaveWorkout`, sessionindítás vagy implicit pause.
+  A tényleges fülváltás/edzéselhagyás megtartja a telefonos pause-t.
+  Befejezés alatti navigáció védett; sikertelen késői lezárásnál a meglévő
+  editorhoz visszatérés elérhető marad az újrapróbáláshoz. Órán közben lezárt
+  edzésből vissza nem vezetünk a régi editorba. Ez **kódban bekötött, még nem
+  futtatással igazolt viselkedés**.
+- Programok/Naptár/Coach mind a Kezdőlapon, mind az Edzés oldalon tördelődő
+  gyorsgombokkal elérhető. Az aktív jelzősáv a bottom scaffold része, helyet foglal,
+  nem lebeg rá a lista utolsó gombjára. A toolbar csak `isFinishing` változását
+  figyeli, nem iratkozik fel az editor összes 250ms stopper-frissítésére.
+- Beállítások UI/SAF callback védelme tiltja az aktív telefonos/órás/paused vagy
+  csak natív tárban élő edzés alatt a restore-t/törlést. **Ez UI-szintű előfeltétel,
+  nem a teljes restore konkurenciavédelmének igazolása**; a backend tranzakciós
+  restore/start/remote-start versenyteszt és védelem a 4–5. területben még hátra van.
+- `NativeMainMenuTest` 4→10, új `NativeSettingsProtectionTest` 5: a batchben
+  összesen **43 megírt, még nem futtatott próba**. Most forrás/hívási út és
+  `git diff --check`; nincs új Kotlin/Compose/Room fordítás, emulátor vagy APK.
+  Az utolsó teljes zöld alkalmazásforrás továbbra **`dd4cc27`**.
+- A választott dizájn navigációs váza készült el; a 24 mockupoldal teljes
+  vizuális megvalósítása, integrált telefonos UI-tesztkód és az öt terület
+  hátralévő részei folytatandók. Main/verzió/Wear termékforrás változatlan;
+  saját adatokra telepítés továbbra STOP.
+
 ## Legfrissebb felhasználói UI-döntés (2026-10-24)
 
 A mockup áttekintése után **az öt alsó füles változat elfogadva**:
@@ -12,10 +42,10 @@ felülírva. Beállítások: jobb felső fogaskerék minden főoldalon/aktív ed
 vissza ugyanoda, a megnyitás önmagában nem pause/félbehagyás vagy új session.
 Mentés/lezárás és védett műveletek zárolása megmarad.
 [Részletes vizuális döntés](design/NATIVE_MOCKUP_REVIEW.md).
-**Most csak dokumentálva; az alkalmazáskód továbbra `8fb3ff6`, nyolcgombos.**
-Következő UI-munka az elfogadott ötfüles navigáció és globális Beállítások
-bekötése a meglévő natív állapotkezelésbe, minden funkció elérésének megtartásával.
-Nincs új build/teszt/APK; utolsó teljes zöld forrás továbbra `dd4cc27`.
+A döntést `b16d092` rögzítette; az ötfüles navigáció és a globális Beállítások
+első bekötése azóta **`4f60bc0`** (részletek fent). A végső vizuális és
+működési ellenőrzés még hátra van. Nincs új build/teszt/APK;
+utolsó teljes zöld forrás továbbra `dd4cc27`.
 
 ## Előző kód és UI-döntés – az új döntés felülírja (2026-10-24, még nincs új tesztkapu)
 

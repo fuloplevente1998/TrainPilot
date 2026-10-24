@@ -16,9 +16,12 @@ művelet közben a meglévő zárolásokat meg kell tartani. Beágyazott dialóg
 nem szükséges új fogaskereket zsúfolni.
 
 A Programok, Naptár, Coach és minden korábbi funkció elérését meg kell tartani
-az új hierarchiában; ezek pontos belépési pontjait implementáláskor és UI-próbán
-ellenőrizni kell. A döntés rögzítve, **a jelenlegi forrás még a nyolcgombos
-első szerkezetet tartalmazza**. Ez a dokumentációs módosítás nem UI-implementáció.
+az új hierarchiában. `4f60bc0`: az ötfüles navigáció és a globális fogaskerék
+első bekötése elkészült. Programok/Naptár/Coach tördelődő gyorsgomb a Kezdőlapon
+és az Edzés oldalon; a jelzősáv helyet foglal a bottom scaffoldban. Aktív edzésnél
+ugyanaz az editor/backstack marad a Beállítások mögött. A gombfeliratok négy
+nyelven szerepelnek. **Még nem fordított/nem futtatott kód**, a teljes mockup
+vizuális megvalósítása és a valós navigációs/UI regresszió ellenőrzése hátra van.
 A natív technológia önmagában nem igazol stabilitást vagy gyorsulást.
 
 ## Elkészült vizuális áttekintés

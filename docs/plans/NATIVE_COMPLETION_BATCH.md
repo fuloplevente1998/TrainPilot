@@ -91,3 +91,17 @@ A Beállítások megnyitása ne szüneteltesse a mérést; védett lezárási m�
 zárolása megmarad. Részletek: `docs/design/NATIVE_MOCKUP_REVIEW.md`.
 Coach további per-gyakorlat tanács/progresszió és a választott dizájn megvalósítása,
 valamint az öt pont többi része továbbra nincs lezárva.
+
+
+## Ötfüles navigáció és Beállítások – első bekötés
+
+`4f60bc0` `[skip ci]`: a választott öt fül, jobb felső globális fogaskerék,
+ugyanazon editor fölé nyíló, mérést nem szüneteltető Beállítások; tényleges
+edzéselhagyásnál meglévő pause. Programok/Naptár/Coach belépési pontok a
+Kezdőlapon és az Edzés oldalon; mért helyű aktív jelzősáv. Késői save-pending
+mellett editor retry elérés megmarad; aktív edzés alatt UI restore/erase tiltás
+és SAF callback újraellenőrzés. Ez utóbbi nem helyettesíti a teljes backend
+restore-versenyvédelmet, amely a 4–5. pont része marad.
+10 menü/policy és 5 új settings-védelmi tesztkód; a batch összesen **43 megírt,
+még nem futtatott próba**. Nincs új build/UI/teszteredmény. A 24 mockup teljes
+vizuális megvalósítása, integrált Phone UI-kapu és az öt terület maradéka hátra van.
