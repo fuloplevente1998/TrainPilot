@@ -57,6 +57,7 @@ class NativeHealthHistoryTest {
     }
     @Test fun monthNavigationUsesCalendarBoundariesAndRejectsFutureAndUnknownChannels() {
         val q = NativeHealthQuery(LocalDate.parse("2026-03-31"))
+        assertEquals(HealthJournalStore.BLE, q.copy(channel = HealthJournalStore.BLE).channel)
         assertEquals(LocalDate.parse("2026-02-28"), q.shift(-1, LocalDate.parse("2026-03-31")).day)
         assertThrows(IllegalArgumentException::class.java) { q.shift(1, LocalDate.parse("2026-03-31")) }
         assertThrows(IllegalArgumentException::class.java) { q.copy(channel = "made-up") }

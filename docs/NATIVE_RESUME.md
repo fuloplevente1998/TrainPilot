@@ -22,7 +22,7 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 
 ## Legutóbbi konkrét munka
 
-- Legfrissebb alkalmazásforrás **edc8f52**: Egészségnapló hónap/nap/csatorna
+- Legfrissebb egészségblokk **edc8f52** + BLE-csatorna konstansjavítás: Egészségnapló hónap/nap/csatorna
   választás, max31 napos meglévő HealthJournalStore oldal, kiválasztott hiányzó nap
   nem helyettesül régebbi adattal. SDK-frissítés a kiválasztott napra; Coach továbbra
   mai napot kér. NativeHealthMetrics mind26 provider-kulcsot megjeleníti, négy nyelvű

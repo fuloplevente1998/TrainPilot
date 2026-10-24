@@ -9,7 +9,7 @@ internal data class NativeHealthQuery(val day: LocalDate = LocalDate.now(),
     val month: YearMonth = YearMonth.from(day), val channel: String = "journal") {
     init {
         require(YearMonth.from(day) == month)
-        require(channel in setOf("journal", "health_connect", "samsung_health", "legacy", "ble"))
+        require(channel in setOf("journal", HealthJournalStore.HC, HealthJournalStore.SAMSUNG, HealthJournalStore.LEGACY, HealthJournalStore.BLE))
     }
     fun shift(delta: Long, today: LocalDate = LocalDate.now()): NativeHealthQuery {
         val next = month.plusMonths(delta)
