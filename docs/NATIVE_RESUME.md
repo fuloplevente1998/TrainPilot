@@ -26,18 +26,24 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 
 ## Legutóbbi konkrét munka
 
-- A finalization ág friss upstream-ellenőrzésekor a migrációs remote `04dba76` volt.
-  A `36462aa`/`c941413`/`04dba76` dokumentációja a NATIVE_DESIGN_HANDOFF.md
-  fájlban rögzíti a 81 darabos A01–E20 main-funkcióleltárt és az új összevont
-  elhelyezéseket. Ez megőrzési követelmény, nem készre jelentés; útvonal/adatforrás/
-  teszt állapot külön igazolandó. Az upstream új commitjaiban nem volt 033 utáni
-  alkalmazáskód; a finalization Wear/tesztjavításait nem írtuk felül.
-- Munkaág HEAD `a32c5f0`, munkafa nem üres és Androidon még nem futtatott. A
-  kezdőlap már a `NativeCoachTargets` kanonikus programnapját és schedule ID-jét
-  indítható kártyán köti be, megtartja az aktív/importált draft elsőbbségét és
-  a Programok/Naptár/Coach gyorselérést. Négy valódi egészségcsempe és Watch-adat
-  frissesség jelenik meg. Új UI-próbakód lefedi a target indítását és az üres
-  ajánlás utáni Edzés navigációt; még nem futott.
+- A legutóbbi frissítéskor az egyirányú migration upstream `1e4783b` volt. A
+  `edc8f52` Health-blokkja és a `1e4783b` BLE-csatorna-konstans javítása ellenőrzött
+  cherry-pickként átkerült; a finalization saját Wear-/tesztjavításai megmaradtak.
+- Finalization Home batch: `dee1199`. A kanonikus `NativeCoachTargets` szerinti
+  ajánlott programnap indítható, az aktív/importált draft elsőbbséget élvez, és a
+  Programok/Naptár/Coach gyorselérések megmaradtak. Home UI-próbakód hozzáadva.
+- Health batch: `b7a82ef`, Egészségnapló hónap/nap/csatorna választással, kiválasztott
+  hiányzó nap adatát nem helyettesíti korábbi érték, és a napi adatfrissítés a
+  kiválasztott napra irányul. Mind a 26 provider metric kulcs megjeleníthető,
+  lokalizált HU/EN/DE/RO címkékkel. BLE csatorna a kanonikus HealthJournalStore
+  azonosítót használja. Kód/próbák még nem futottak Androidon.
+- A branch jelenlegi appkódja és új Home/Health tesztjei még nincsenek CI-vel
+  igazolva. Az utolsó ismert CI a `40119749853` (`8ead84a`) fordítási hiba;
+  a `BackupRestoreManager`-beli `appContext` javítás már a Home batch-ben van.
+- Teljes A01–E20 leltár (81 megőrzendő funkció) és a négy ellenőrzött tervlap:
+  `docs/design/NATIVE_DESIGN_HANDOFF.md` és `docs/design/mockups/`. A leltár
+  követelmény, nem teljesítési bizonyíték; pontos útvonal/adatforrás/teszt
+  megfeleltetés, signed upgrade és fizikai készülékpróba még nyitott.
 
 - A `40119749853` továbbra is az utolsó CI-futás: a Kotlin fordítás egy `context`
   hivatkozás miatt elbukott. A munkafában az `appContext`-javítás megvan, de a
