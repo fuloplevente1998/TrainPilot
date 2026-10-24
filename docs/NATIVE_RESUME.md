@@ -26,9 +26,10 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 
 ## Legutóbbi konkrét munka
 
-- A legutóbbi frissítéskor az egyirányú migration upstream `1e4783b` volt. A
-  `edc8f52` Health-blokkja és a `1e4783b` BLE-csatorna-konstans javítása ellenőrzött
-  cherry-pickként átkerült; a finalization saját Wear-/tesztjavításai megmaradtak.
+- Legutóbbi fetch: a csak olvasható `feat/native-android-migration` upstream
+  `f494383`, ezen túl nem érkezett új commit. A `606b8c0` Health-részletezőt
+  felülvizsgálat után konfliktus nélkül integráltuk `68d667a`-ként; korábbi
+  testsúlynapló-integráció `116a9ab` és finalization Wear-/tesztjavításai megmaradnak.
 - Finalization Home batch: `dee1199`. A kanonikus `NativeCoachTargets` szerinti
   ajánlott programnap indítható, az aktív/importált draft elsőbbséget élvez, és a
   Programok/Naptár/Coach gyorselérések megmaradtak. Home UI-próbakód hozzáadva.
@@ -40,26 +41,33 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 - Az új upstream `e3e79d3` kézi testsúlynaplója konfliktus nélkül került át
   `116a9ab`-ként: közös Egészség/Fejlődés útvonal, dátumos add, stale-védett
   edit, megerősített pontos törlés, 13 unit- és 2 UI-próbakód. Ezen az új SHA-n
-  még nincs CI-igazolás. Az upstream `7d6d8b8` dokumentációs checkpointját
-  áttekintettük; nincs további kódcommit.
+  még nincs CI-igazolás. Az upstream `f494383` dokumentációs checkpointját
+  áttekintettük; az ottani `606b8c0` kódot külön felülvizsgálat után integráltuk.
+- A `606b8c0` részletezőt `68d667a` integrálja: nap/csatorna/típus/eredet szerinti
+  szűrt, kurzoros egyedi Health-mérések, provider-forrással/idővel; alvásfázisok
+  és pulzus-/sebességminták külön lapozva. A napi összesítés nem válik mérési
+  rekorddá; a külön provideradatok nem adódnak össze; restore után explicit
+  újratöltés kell. 16 unit- és 3 Phone UI-próbakód érkezett, még nem futott.
 - A `40122692736` az angol Home-stringek AAPT escape-hibáján bukott el.
   A javítást a `40123033007` erőforrás-fordítása igazolta; az a futás ezután a
   hibás `assertDoesNotExist` importon állt meg. Az import eltávolítása után a
   `40123422503` debug buildje, unit suite-ja és signed update csomag-/aláírás-
-  ellenőrzése sikeres lett; az emulátoros UI és telepítési upgrade kapuk még futnak.
+  ellenőrzése sikeres lett; a Wear UI 3/3 és az adatmegőrzési upgrade 2/2 kapu is
+  zöld. A phone Compose UI infrahibával állt meg (`adb: device offline`), ezért
+  install/instrumentation és screenshot nem történt; ezt újra kell futtatni.
   A Windows TLS-ellenőrzés érintetlen.
 - Teljes A01–E20 leltár (81 megőrzendő funkció) és a négy ellenőrzött tervlap:
   `docs/design/NATIVE_DESIGN_HANDOFF.md` és `docs/design/mockups/`. A leltár
   követelmény, nem teljesítési bizonyíték; pontos útvonal/adatforrás/teszt
   megfeleltetés, signed upgrade és fizikai készülékpróba még nyitott.
 
-- A `40123422503` a `378e3cd` forráson sikeresen buildelte a telefonos/Wear debug
-  APK-kat, lefuttatta az unit suite-ot és a signed update csomag-/aláíráskaput.
-  A phone/Wear emulátoros UI és adatmegőrzési upgrade jobok még futnak; ez a SHA
-  nem tartalmazza az új `116a9ab` testsúlynaplót.
-- Következő: várd meg a `40123422503` lezárását; pushold a `116a9ab`-ot és a
-  dokumentált upstream-syncet kizárólag finalizationra, majd indíts teljes
-  natív Actions-kaput az új pontos SHA-n.
+- A `40123422503` `378e3cd`-n a build, unit, signed update és két upgrade kapu
+  sikeres; a három Wear UI-kapu is zöld. A phone Compose UI emulator
+  `adb: device offline` miatt nem indította el a tesztet. Ez a SHA nem tartalmazza
+  az új `116a9ab` testsúlynaplót.
+- Következő: a jelenlegi finalization SHA-n indíts teljes natív Actions-kaput,
+  benne a testsúly- és Health-részletező unit/UI-próbáival, és ismételd meg a
+  phone UI emulator tesztet.
 - `docs/design/NATIVE_DESIGN_HANDOFF.md` most a friss teljes funkcióleltárat és
   négy SHA-val ellenőrzött tervlapot tartalmazza. Ezek kifejezetten nem funkció-
   vagy tesztbizonyítékok; teljes ID-szintű lefedettség még nincs felmérve.
@@ -97,8 +105,8 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   aktivitás GPS-választása; teljes main palettakatalógus + kontraszt/picker.
 - Phone UI kapu alapja **1d38edf**: külön native AndroidTest source set,
   meglévő native-android.yml phone-ui job, raw adb screencap checkpoint/ack és
-  származtatottnak jelölt XML/manifest. Jelenleg4 instrumentációs próbakód.
-- **122 új unit + 6 instrumentációs tesztkód megírva, még nem futtatva.**
+  származtatottnak jelölt XML/manifest.
+- **217 új unit + 15 instrumentációs tesztkód megírva, még nem futtatva.**
   Nincs új zöld kapu/APK/screenshot. Utolsó teljes zöld forrás **dd4cc27**:
   unit Phone393/Wear167, Wear UI183, signed upgrade2. Bizonyíték: WORK_HANDOFF.md.
 - Main utóbbi 8a36502d változása csak AGENTS thinking-dokumentáció; main app baseline
@@ -112,7 +120,7 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 2. Intervallum/preset új kód futtatott igazolása még nincs; Coach per-gyakorlat
    javaslat/progresszió és provider-frissítés; katalógus/nevek/lokalizáció.
 3. Mockup teljes vizuális kidolgozás (előtte Medium jelzés): többek közt mini-route
-   listathumbnail, részletes Health forrásadatok, program/gyakorlat szerkesztés/paritás.
+   listathumbnail, Health-részletező vizuális integráció, program/gyakorlat szerkesztés/paritás.
 4. Kritikus Phone UI suite bővítése GPS/kétoldali/finish/discard/undo/retry/backup/
    0-200-1500 mintára és minden screenshotállapotra; végső azonos forrású CI és APK-pár.
 5. Valódi Phone/Watch7/Health és kétkészülékes offline próba külön; emulátor nem igazolja.

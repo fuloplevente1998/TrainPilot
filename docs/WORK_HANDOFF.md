@@ -10,7 +10,7 @@ Munkaág `feat/native-android-finalization`; az AAPT-erőforráshibát javító 
 string-módosítás a `f761155` utáni batch része, erőforrás-fordítását a
 `40123033007` CI-futás igazolta. Ugyanez a futás az új Compose UI-teszt importján
 akadt el; ez a javítás még újrafuttatásra vár. A frissített,
-csak olvasható `feat/native-android-migration` HEAD `7d6d8b8`. A
+csak olvasható `feat/native-android-migration` HEAD `f494383`. A
 `36462aa`/`c941413`/`04dba76`/`a026f03` dokumentációja a négy újratervezett
 tervlapot, teljes main-funkcióleltárt és összevont natív elhelyezést rögzíti.
 Az A01–E20, összesen 81 sor **megőrzési követelmény**, nem megvalósítási vagy
@@ -37,16 +37,28 @@ megnyitását ellenőrzi; **még egyik Android-próba sem futott**.
 A `b7a82ef`/`a0e7393` Egészségnapló-hónap/nap/csatorna útvonalat és 26 provider-
 metrika feliratát adja; a hiányzó nap nem kap korábbi adatot, a frissítés a
 kiválasztott napra irányul. A hozzá tartozó unit-/UI-próbakód még szintén nem
-futott. Nyers rekord-/alvásrészletek, mérési eredet/idő, testsúly szerkesztés és
+futott. A nyers rekord-/alvásrészletezőt a `68d667a` implementálja, de még nincs
+rajta CI-igazolás; testsúlynapló-szerkesztés, provider-engedély/háttérváltás és a
 teljes D01–D14 paritás továbbra nyitott.
 
 A friss upstream `e3e79d3` testsúlynapló-funkcióját áttekintettük, és ütközés
-nélkül vettük át `116a9ab`-ként; `7d6d8b8` csak upstream dokumentáció. Az
+nélkül vettük át `116a9ab`-ként; a jelenlegi upstream dokumentációs checkpoint
+`f494383`. Az
 Egészségből és Fejlődésből közös natív súlynapló nyílik: dátumos hozzáadás,
 azonosító/dátum megőrző szerkesztés, megerősített pontos-ID törlés, tartomány
 és grafikon. A Room `body_weights` az adatforrás; provider-mérés külön marad.
 13 unit- és 2 telefonos UI-próbakód érkezett, de a `116a9ab` forráson még nem
 futottak.
+
+A friss upstream `606b8c0` Health-részletezőt célzottan felülvizsgáltuk és
+konfliktus nélkül átvettük `68d667a`-ként. Az Egészségnapló meglévő
+HealthJournalStore-adataiból nap/csatorna/típus/eredet szerint szűrhető,
+25-ös lapozású, forrás- és időbélyeg-hű, csak olvasható egyedi mérésnézet nyílik;
+az alvásfázisok és időbélyeges minták külön, 20-as oldalakon jelennek meg.
+Aggregátumból nem gyártunk egyedi rekordot, az adatforrásokat nem adjuk össze,
+és restore után a régi kurzor nem használható. A kód 16 unit- és 3 telefonos
+UI-próbát hoz; **a `68d667a` SHA-n még nincs Android/CI-futtatás**. Az engedély-/
+háttérváltás, forráspreferencia és fizikai Health-próba nyitott.
 
 A `40119749853` (`8ead84a`) futás **failure**: az API 36 SDK telepítése sikerült,
 de a Kotlin-fordítás a `BackupRestoreManager.kt:542` katalógus-seedelési hívásánál
@@ -65,14 +77,17 @@ debug APK buildje is sikerült. Ezután a `:app:compileDebugAndroidTestKotlin`
 Ezen a javításon unit/UI teszt, signed upgrade vagy APK-artifact még nem
 futott le. A hiba forráskódhiba, nem SDK/TLS; a Windows TLS-ellenőrzés változatlan.
 
-A friss upstream `e3e79d3` funkcióját `116a9ab`-ként átvettük, a `7d6d8b8`
-dokumentációs checkpointját átnéztük. A célzott UI-teszt importjavítása
-`378e3cd`-ben van; a `40123422503` run ezen a SHA-n már sikeresen buildelte a
-telefonos és Wear debug APK-t, lefuttatta a natív unit suite-ot, elkészítette
-és ellenőrizte a meglévő kulcsos update-eket. Az emulátoros Compose/Wear UI és
-telepítés nélküli adatmegőrzési kapuk még futnak; ez a run a `116a9ab`
-testsúlyfunkciót nem tartalmazza. Következő a kapu befejezése, majd az új
-testsúlyfunkciót is tartalmazó pontos SHA teljes CI-je. A teljes A01–E20
+A friss upstream `e3e79d3` funkcióját `116a9ab`-ként átvettük; az upstream
+`f494383` dokumentációs checkpointját átnéztük. A célzott UI-teszt importjavítása
+`378e3cd`-ben van; a `40123422503` run ezen a SHA-n sikeresen buildelte a
+telefonos/Wear debug APK-kat, lefuttatta a natív unit suite-ot, elkészítette és
+ellenőrizte a meglévő kulcsos update-eket, sikeres lett a 3 Wear UI és a 2
+adatmegőrzési upgrade emulátorkapu. A phone Compose UI kapu viszont infrahibával
+állt meg: az emulator `adb: device offline` állapotban maradt, install/
+instrumentation nem indult el és nem készült UI-screenshot. Ez a run nem
+tartalmazza a `116a9ab` testsúlyfunkciót. Következő a teljes kapu indítása a
+jelenlegi testsúly- és Health-részletező kódot tartalmazó finalization SHA-n;
+a phone UI-t ott újra kell próbálni. A teljes A01–E20
 útvonal/adatforrás/teszt-lefedettség, signed upgrade és
 fizikai telefonos/Watch7-próba továbbra nyitott.
 

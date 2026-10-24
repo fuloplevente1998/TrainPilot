@@ -290,3 +290,15 @@ aktuális/változás megjelenítés; a providerből érkező testsúly külön a
 marad. A Repository/VM/Screen külön egység, 13 unit- és 2 telefonos UI-próbakód
 érkezett vele, de a `116a9ab` forráson ezek még nem futottak. Ez funkcionális
 bekötés, nem a végleges vizuális dizájn vagy teljes D06-elfogadás.
+
+### D03–D05 implementációs nyom – 2026-10-24
+
+`68d667a` (a `feat/native-android-migration` ág `606b8c0` commitjének
+felülvizsgált átvétele): az Egészségnapló kiválasztott napjának/csatornájának
+egyedi rekordjai SQL-típus- és eredetszűréssel, 25-ös kurzoros oldalakon;
+forrás, kezdés/befejezés és forrásbeli módosítási idő jelenik meg. Health Connect
+és Samsung alvásfázisok, illetve pulzus-/sebességminták külön részletoldalakon
+láthatók. Napi aggregátumból nem készül egyedi mérés, források nem adódnak össze,
+az adatcsere utáni régi kurzor nem használható. 16 unit- és 3 telefonos UI-
+próbakód érkezett, de a `68d667a` forráson még nem futottak; a végleges dizájn,
+Health-integráció és készülékes elfogadás nincs igazolva.
