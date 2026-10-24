@@ -238,4 +238,18 @@
     <string name="health_daily_source_priority">Prioritate Health Connect</string>
     <string name="health_daily_source_hint">Influențează sursa pașilor, distanței și caloriilor. Folosește Actualizare după schimbare pentru a citi date noi.</string>
     <string name="health_daily_source_partial">Date zilnice parțiale: valorile anterioare așteaptă o citire nouă.</string>
+    <string name="health_background_scheduled">Actualizarea în fundal este programată.</string>
+    <string name="health_background_not_scheduled">Nu există actualizare în fundal programată.</string>
+    <string name="health_background_connected">Conexiunea BLE în fundal rulează.</string>
+    <string name="health_background_not_connected">Nu există conexiune BLE activă în fundal.</string>
+    <string name="health_background_error">Sincronizarea în fundal nu a putut fi configurată. Setarea anterioară a fost păstrată.</string>
+    <string name="health_background_ready">Condițiile sunt îndeplinite; aceasta nu confirmă executarea.</string>
+    <string name="health_background_restore">Restaurarea datelor este în curs: sincronizarea în fundal nu poate fi activată.</string>
+    <string name="health_background_unsupported">Această funcție în fundal nu este acceptată pe dispozitiv.</string>
+    <string name="health_background_read_permission">Permite mai întâi citirea Health Connect folosind Actualizare.</string>
+    <string name="health_background_permission">Citirea Health Connect în fundal necesită o permisiune separată.</string>
+    <string name="health_background_watch">Memorează mai întâi un ceas RDFit compatibil.</string>
+    <string name="health_background_bluetooth_permission">Este necesară permisiunea de conectare Bluetooth.</string>
+    <string name="health_background_notification_permission">Este necesară permisiunea pentru notificări a serviciului BLE.</string>
+    <string name="health_background_bluetooth_off">Activează Bluetooth.</string>
 </resources>
