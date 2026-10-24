@@ -33,11 +33,9 @@ import com.repforge.app.WearSyncRepository
 import com.repforge.app.WorkoutPhotoRepository
 import com.repforge.app.WorkoutUndo188
 import com.repforge.app.data.db.ExerciseLibraryEntity
-import com.repforge.app.data.db.HistoryTombstoneEntity
 import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.migration.LegacyWebViewMigrator
 import com.repforge.app.data.store.TrainPilotSettingsStore
-import com.repforge.shared.GpsRouteLedger193
 import com.repforge.shared.SetEditorRules212
 import com.repforge.shared.WorkoutStatsCalculator
 import kotlinx.coroutines.delay
@@ -826,6 +824,8 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
                 WearSyncRepository.refreshWatchHomeAsync(context)
                 _uiState.value = _uiState.value.copy(isFinishing = false)
                 onSaved()
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
             } catch (error: Exception) {
                 _uiState.value = _uiState.value.copy(isFinishing = false,
                     statusMessage = "Az edzés lezárása nem sikerült. Az adatok megmaradtak; próbáld újra. ${error.message.orEmpty()}")
@@ -833,40 +833,22 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    fun discardWorkout() {
+    fun discardWorkout(onDiscarded: () -> Unit) {
+        if (_uiState.value.isFinishing) return
         val current = ActiveWorkoutStore.current(context) ?: return
-        val workoutId = current.optString("workoutId")
-        viewModelScope.launch(Dispatchers.IO) {
-            if (current.optInt("ownershipProtocol193", 0) == 1) {
-                runCatching { GpsRouteLedger193.open(context.noBackupFilesDir).deleteWorkout(workoutId) }
-            }
-            database.workoutHistoryDao().upsertTombstone(
-                HistoryTombstoneEntity(
-                    primaryId = workoutId,
-                    workoutKey = workoutId,
-                    idsJson = JSONArray().put(workoutId).toString(),
-                    deletedAt = System.currentTimeMillis()
-                )
-            )
+        _uiState.value = _uiState.value.copy(isFinishing = true)
+        viewModelScope.launch {
             try {
-                com.repforge.app.NativeLegacyDraft.retire(database, current.optString("legacyDraftSha256"))
-            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
-            catch (error: Exception) {
-                withContext(Dispatchers.Main) { showStatus("A félbehagyott edzés archiválása nem sikerült. Próbáld újra az elvetést.") }
-                return@launch
-            }
-            withContext(Dispatchers.Main) {
-                ActiveWorkoutStore.clear(context)
-                try {
-                    val execDb = PhoneWorkoutExecution.store(context)
-                    val frame = execDb.snapshot()
-                    if (frame != null && frame.optString("workoutId") == workoutId) {
-                        execDb.discardExecution(workoutId, frame.optLong("generation"), frame.optLong("executionRevision"))
-                        IntervalTimerService.closeWorkout(workoutId, frame.optLong("generation"))
-                    }
-                } catch (_: Exception) {}
-                DistanceTrackingService.stop(context)
-                WearSyncRepository.publishWatchHomeSnapshot(context)
+                val closed = TrainPilotWorkoutFinalization(context, database).discardWorkout(current)
+                runCatching { WearSyncRepository.publishActiveWorkoutSnapshot(context, closed) }
+                WearSyncRepository.refreshWatchHomeAsync(context)
+                _uiState.value = _uiState.value.copy(isFinishing = false)
+                onDiscarded()
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                _uiState.value = _uiState.value.copy(isFinishing = false,
+                    statusMessage = "Az elvetés nem sikerült. Próbáld újra; az edzés nem indul újra. ${error.message.orEmpty()}")
             }
         }
     }
@@ -876,7 +858,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     fun openFinishModal() { _uiState.value = _uiState.value.copy(showFinishModal = true) }
     fun closeFinishModal() { _uiState.value = _uiState.value.copy(showFinishModal = false) }
     fun openDiscardModal() {
-        if (ActiveWorkoutStore.current(context)?.optBoolean("finalizationPending") == true) {
+        if (ActiveWorkoutStore.current(context)?.let { it.optBoolean("finalizationPending") && !it.optBoolean("discardPending") } == true) {
             _uiState.value = _uiState.value.copy(statusMessage = "Az edzés lezárása függőben maradt. Próbáld újra a befejezést.")
         } else _uiState.value = _uiState.value.copy(showDiscardModal = true)
     }

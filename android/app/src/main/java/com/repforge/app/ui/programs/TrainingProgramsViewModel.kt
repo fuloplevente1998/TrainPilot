@@ -17,7 +17,9 @@ import kotlinx.coroutines.withContext
 data class TrainingProgramsUiState(
     val activeProgramId: String = "home-basic",
     val programs: List<ProgramWithDays> = emptyList(),
-    val isPersonalPlannerOpen: Boolean = false
+    val isPersonalPlannerOpen: Boolean = false,
+    val language: String = "hu",
+    val writeFailed: Boolean = false
 )
 
 class TrainingProgramsViewModel(application: Application) : AndroidViewModel(application) {
@@ -38,6 +40,7 @@ class TrainingProgramsViewModel(application: Application) : AndroidViewModel(app
             val progs = database.programDao().getProgramsWithDays()
             _uiState.value = TrainingProgramsUiState(
                 activeProgramId = settings.activeProgramId,
+                language = settings.language,
                 programs = progs
             )
         }
@@ -45,11 +48,14 @@ class TrainingProgramsViewModel(application: Application) : AndroidViewModel(app
 
     fun activateProgram(programId: String) {
         viewModelScope.launch {
-            settingsStore.setActiveProgramId(programId)
-            _uiState.value = _uiState.value.copy(activeProgramId = programId)
-            withContext(Dispatchers.IO) {
-                WearSyncRepository.publishWatchHomeSnapshot(context)
-            }
+            try {
+                com.repforge.app.NativeDataReplacement.mutate(context) {
+                    settingsStore.setActiveProgramId(programId)
+                    _uiState.value = _uiState.value.copy(activeProgramId = programId, writeFailed = false)
+                    withContext(Dispatchers.IO) { WearSyncRepository.publishWatchHomeSnapshot(context) }
+                }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (_: Exception) { _uiState.value = _uiState.value.copy(writeFailed = true) }
         }
     }
 

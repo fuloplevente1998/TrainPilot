@@ -22,6 +22,13 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 
 ## Legutóbbi konkrét munka
 
+- Friss munkablokk: Phone discard a közös finalizer/mutex és metadata admission
+  alatt; tartós finalizationPending+discardPending, pause/stop, Room tombstone+draft
+  retirement tranzakció, ellenőrzött natív discard, csak utána closure/navigáció.
+  Hiba után explicit discard retry; finish nem mentheti az elvetésre váró edzést.
+  Bodyweight admission/hibakezelés; Settings/programváltás gate-elutasítás kezelve.
+  8 új unit-hibapróba + 1 valódi Compose discard-fault/retry tesztkód; nem futottak.
+
 - Legfrissebb alkalmazásforrás **0f51320**: a replacement mutex író-admissionnel
   védi a Wear parancsot, közös finisht, import/export/egyedi history save-et,
   DataStore set/resetet, naptári VM-módosítást és naplótörlést. Context-lease a
@@ -43,7 +50,7 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 - Phone UI kapu alapja **1d38edf**: külön native AndroidTest source set,
   meglévő native-android.yml phone-ui job, raw adb screencap checkpoint/ack és
   származtatottnak jelölt XML/manifest. Jelenleg4 instrumentációs próbakód.
-- **105 új unit + 4 instrumentációs tesztkód megírva, még nem futtatva.**
+- **113 új unit + 5 instrumentációs tesztkód megírva, még nem futtatva.**
   Nincs új zöld kapu/APK/screenshot. Utolsó teljes zöld forrás **dd4cc27**:
   unit Phone393/Wear167, Wear UI183, signed upgrade2. Bizonyíték: WORK_HANDOFF.md.
 - Main utóbbi 8a36502d változása csak AGENTS thinking-dokumentáció; main app baseline
@@ -51,7 +58,7 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 
 ## Következő feladatok – nem lezárt részek
 
-1. A még szabadon futó bodyweight/discard/egyéb írók admission és UI hibakezelése;
+1. A még szabadon futó egyéb írók admission és UI hibakezelése;
    cloud photo staging/transaction. A bekötött kapu nem minden szabad DAO és külön
    Health SQLite írás globális zárja. A megírt ZIP/Health tesztek még nem futottak.
 2. Interval nem-autoAdvance mód/globális preset teljes paritás; Coach per-gyakorlat

@@ -78,6 +78,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -362,7 +363,7 @@ fun ActiveWorkoutScreen(
                 // Elvetés gomb
                 Button(
                     onClick = { viewModel.openDiscardModal() },
-                    modifier = Modifier.height(48.dp),
+                    modifier = Modifier.height(48.dp).testTag("workout_discard"),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = colors.danger)
                 ) {
@@ -430,9 +431,9 @@ fun ActiveWorkoutScreen(
                 Button(
                     onClick = {
                         viewModel.closeDiscardModal()
-                        viewModel.discardWorkout()
-                        navController.popBackStack()
+                        viewModel.discardWorkout { navController.popBackStack() }
                     },
+                    modifier = Modifier.testTag("workout_confirm_discard"),
                     colors = ButtonDefaults.buttonColors(containerColor = colors.danger)
                 ) {
                     Text("Törlés", color = colors.dangerText, fontWeight = FontWeight.Bold)
@@ -457,7 +458,7 @@ fun ActiveWorkoutScreen(
     state.statusMessage?.let { message ->
         AlertDialog(onDismissRequest = { viewModel.clearStatusMessage() },
             title = { Text("Edzés állapota") }, text = { Text(message) },
-            confirmButton = { TextButton(onClick = { viewModel.clearStatusMessage() }) { Text("Rendben") } })
+            confirmButton = { TextButton(onClick = { viewModel.clearStatusMessage() }, modifier = Modifier.testTag("workout_status_dismiss")) { Text("Rendben") } })
     }
 }
 

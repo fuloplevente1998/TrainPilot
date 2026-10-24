@@ -66,6 +66,11 @@ fun TrainingProgramsScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        if (state.writeFailed) item {
+            Text(com.repforge.app.ui.text.nativeResources(androidx.compose.ui.platform.LocalContext.current, state.language)
+                .getString(com.repforge.app.R.string.metadata_write_failed), color = colors.danger)
+        }
+
         // 1. #37 Személyes Edzéstervező nyitó kártya (Personal Planner Banner)
         item {
             Card(

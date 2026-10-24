@@ -85,4 +85,5 @@
     <string name="replacement_resume">Művelet folytatása</string>
     <string name="replacement_json">Másik JSON-mentés választása</string>
     <string name="replacement_zip">Másik ZIP-mentés választása</string>
+    <string name="metadata_write_failed">A módosítást nem sikerült menteni. Próbáld újra az adatcsere befejezése után.</string>
 </resources>

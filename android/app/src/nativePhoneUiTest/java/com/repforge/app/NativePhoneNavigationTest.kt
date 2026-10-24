@@ -153,4 +153,35 @@ class NativePhoneNavigationTest {
         tab("home")
         assertTrue(snapshot()!!.optBoolean("workoutPaused"))
     }
+    @Test fun failedDiscardStaysInEditorAndExplicitRetryClosesTheSameWorkout() {
+        val quick = runBlocking { NativeWorkoutSession.startQuickWorkout(context, "plank", false) }
+        val originalId = quick.snapshot.getString("workoutId")
+        val db = TrainPilotDatabase.getInstance(context)
+        runBlocking(Dispatchers.IO) {
+            db.openHelper.writableDatabase.execSQL("""CREATE TRIGGER discard_full BEFORE INSERT ON history_tombstones
+                BEGIN SELECT RAISE(ABORT, 'isolated emulator discard fault'); END""")
+        }
+        try {
+            launch(); tab("training")
+            compose.onNodeWithTag("workout_discard").performClick()
+            compose.onNodeWithTag("workout_confirm_discard").performClick()
+            compose.waitUntil(10000) { compose.onAllNodesWithTag("workout_status_dismiss").fetchSemanticsNodes().isNotEmpty() }
+            assertEquals(originalId, snapshot()!!.getString("workoutId"))
+            assertTrue(snapshot()!!.getBoolean("discardPending"))
+            assertTrue(snapshot()!!.getBoolean("active"))
+            screenshot("discard_storage_failure")
+            compose.onNodeWithTag("workout_status_dismiss").performClick()
+            compose.onNodeWithTag("workout_discard").assertExists()
+        } finally {
+            runBlocking(Dispatchers.IO) { db.openHelper.writableDatabase.execSQL("DROP TRIGGER IF EXISTS discard_full") }
+        }
+        compose.onNodeWithTag("workout_discard").performClick()
+        compose.onNodeWithTag("workout_confirm_discard").performClick()
+        compose.waitUntil(10000) { snapshot()?.optBoolean("active") == false }
+        compose.onNodeWithTag("workout_discard").assertDoesNotExist()
+        assertTrue(runBlocking { db.workoutHistoryDao().isTombstoned(originalId, JSONObject.quote(originalId)) })
+        assertEquals(0, runBlocking { db.workoutHistoryDao().getWorkoutCount() })
+        screenshot("discard_completed")
+    }
+
 }

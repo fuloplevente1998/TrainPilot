@@ -63,47 +63,26 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun setTheme(theme: ThemePaletteOption) {
+    private fun writeSetting(operation: suspend () -> Unit) {
         if (_uiState.value.replacementBusy) return
         viewModelScope.launch {
-            settingsStore.setTheme(theme)
+            try { operation() }
+            catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (_: Exception) {
+                _uiState.value = _uiState.value.copy(statusMessage =
+                    com.repforge.app.ui.text.nativeResources(context, _uiState.value.settings.language)
+                        .getString(com.repforge.app.R.string.metadata_write_failed))
+            }
         }
     }
 
-    fun setLanguage(lang: String) {
-        if (_uiState.value.replacementBusy) return
-        viewModelScope.launch {
-            settingsStore.setLanguage(lang)
-        }
-    }
-
-    fun setTimerDefaults(workSec: Int, restSec: Int, rounds: Int, sound: Boolean, vibration: Boolean) {
-        if (_uiState.value.replacementBusy) return
-        viewModelScope.launch {
-            settingsStore.setTimerDefaults(workSec, restSec, rounds, sound, vibration)
-        }
-    }
-
-    fun setHapticSetRecorded227(enabled: Boolean) {
-        if (_uiState.value.replacementBusy) return
-        viewModelScope.launch {
-            settingsStore.setHapticSetRecorded227(enabled)
-        }
-    }
-
-    fun setHealthBackupConsent(consented: Boolean) {
-        if (_uiState.value.replacementBusy) return
-        viewModelScope.launch {
-            settingsStore.setHealthBackupConsent(consented)
-        }
-    }
-
-    fun setAutoWriteHc(enabled: Boolean) {
-        if (_uiState.value.replacementBusy) return
-        viewModelScope.launch {
-            settingsStore.setAutoWriteWorkoutToHealthConnect(enabled)
-        }
-    }
+    fun setTheme(theme: ThemePaletteOption) = writeSetting { settingsStore.setTheme(theme) }
+    fun setLanguage(lang: String) = writeSetting { settingsStore.setLanguage(lang) }
+    fun setTimerDefaults(workSec: Int, restSec: Int, rounds: Int, sound: Boolean, vibration: Boolean) =
+        writeSetting { settingsStore.setTimerDefaults(workSec, restSec, rounds, sound, vibration) }
+    fun setHapticSetRecorded227(enabled: Boolean) = writeSetting { settingsStore.setHapticSetRecorded227(enabled) }
+    fun setHealthBackupConsent(consented: Boolean) = writeSetting { settingsStore.setHealthBackupConsent(consented) }
+    fun setAutoWriteHc(enabled: Boolean) = writeSetting { settingsStore.setAutoWriteWorkoutToHealthConnect(enabled) }
 
     fun setRecoverEarlierBackups(checked: Boolean) {
         _uiState.value = _uiState.value.copy(recoverEarlierBackupsChecked = checked)

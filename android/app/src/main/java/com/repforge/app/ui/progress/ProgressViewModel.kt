@@ -45,7 +45,9 @@ data class ProgressUiState(
     val weightDiffKg: Double? = null,
     val weightRange: String = "30", // "7", "30", "90", "365", "all"
     val filteredWeights: List<BodyWeightEntryEntity> = emptyList(),
-    val progressPhotos: List<File> = emptyList()
+    val progressPhotos: List<File> = emptyList(),
+    val language: String = "hu",
+    val writeFailed: Boolean = false
 )
 
 class ProgressViewModel(application: Application) : AndroidViewModel(application) {
@@ -62,6 +64,8 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
 
     fun loadProgressData() {
         viewModelScope.launch {
+            val language = com.repforge.app.data.store.TrainPilotSettingsStore(context).current().language
+            _uiState.value = _uiState.value.copy(language = language)
             val workouts = database.workoutHistoryDao().getAllWorkoutsWithDetails()
             val exercises = database.exerciseLibraryDao().getAllExercises()
             val weights = database.bodyWeightDao().getAllWeights()
@@ -124,7 +128,7 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
         // 3. Testsúly statisztika
         val curW = weights.lastOrNull()?.kg
         val startW = weights.firstOrNull()?.kg
-        val diff = if (curW != null && startW != null) (curW - startW * 10.0).roundToInt() / 10.0 else null
+        val diff = if (curW != null && startW != null) ((curW - startW) * 10.0).roundToInt() / 10.0 else null
         val filtered = filterWeightsByRange(weights, _uiState.value.weightRange)
 
         // 4. Haladás-fotók kigyűjtése a lokális fájlokból
@@ -161,21 +165,24 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun clearWriteError() { _uiState.value = _uiState.value.copy(writeFailed = false) }
+
     fun addWeightEntry(kg: Double, dateIso: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            val id = UUID.randomUUID().toString()
-            val dayKey = if (dateIso.length >= 10) dateIso.substring(0, 10) else dateIso
-            database.bodyWeightDao().upsertWeight(
-                BodyWeightEntryEntity(
-                    id = id,
-                    date = dateIso,
-                    dayKey = dayKey,
-                    kg = kg,
-                    updatedAt = System.currentTimeMillis(),
-                    rawJson = "{\"id\":\"$id\",\"date\":\"$dateIso\",\"kg\":$kg}"
-                )
-            )
-            loadProgressData()
+            try {
+                require(kg.isFinite() && kg in 30.0..300.0)
+                val dayKey = LocalDate.parse(dateIso.take(10)).toString()
+                com.repforge.app.NativeDataReplacement.mutate(context) {
+                    val id = UUID.randomUUID().toString()
+                    database.bodyWeightDao().upsertWeight(BodyWeightEntryEntity(
+                        id = id, date = dateIso, dayKey = dayKey, kg = kg,
+                        updatedAt = System.currentTimeMillis(),
+                        rawJson = org.json.JSONObject().put("id", id).put("date", dateIso).put("kg", kg).toString()))
+                }
+                _uiState.value = _uiState.value.copy(writeFailed = false)
+                loadProgressData()
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (_: Exception) { _uiState.value = _uiState.value.copy(writeFailed = true) }
         }
     }
 

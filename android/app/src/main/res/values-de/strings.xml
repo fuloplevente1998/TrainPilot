@@ -85,4 +85,5 @@
     <string name="replacement_resume">Vorgang fortsetzen</string>
     <string name="replacement_json">Andere JSON-Sicherung wählen</string>
     <string name="replacement_zip">Andere ZIP-Sicherung wählen</string>
+    <string name="metadata_write_failed">Die Änderung konnte nicht gespeichert werden. Versuche es nach dem Datenaustausch erneut.</string>
 </resources>

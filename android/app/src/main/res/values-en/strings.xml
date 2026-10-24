@@ -85,4 +85,5 @@
     <string name="replacement_resume">Resume operation</string>
     <string name="replacement_json">Choose another JSON backup</string>
     <string name="replacement_zip">Choose another ZIP backup</string>
+    <string name="metadata_write_failed">The change could not be saved. Try again after data replacement finishes.</string>
 </resources>

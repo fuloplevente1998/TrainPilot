@@ -70,6 +70,11 @@ fun ProgressScreen(
     ) {
         item { Spacer(Modifier.height(8.dp)) }
 
+        if (state.writeFailed) item {
+            Text(com.repforge.app.ui.text.nativeResources(androidx.compose.ui.platform.LocalContext.current, state.language)
+                .getString(com.repforge.app.R.string.metadata_write_failed), color = colors.danger)
+        }
+
         // 1. #177 Izom-anatómia terheléstérkép
         item {
             Card(

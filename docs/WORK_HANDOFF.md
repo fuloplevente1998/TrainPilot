@@ -4,6 +4,24 @@ Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Friss munkablokk – Phone elvetés és UI-írások
+
+A telefonos elvetés a meglévő `TrainPilotWorkoutFinalization` közös mutexét és
+metadata admissiont használja. Tartós, megkülönböztetett discard-fence mellett
+megállítja a méréseket; tombstone és az azonos hash-ű legacy draft archiválása egy
+Room-tranzakció. A natív discard sikerét ellenőrzi, és csak ezután zár/publikál,
+illetve lép vissza a UI. Hiba/processzújraindítás után explicit elvetési retry;
+függő mentést nem lehet elvetni, függő elvetést nem lehet menteni.
+
+A testsúlyírás is admissiont kapott, a testsúlykülönbség zárójelhibája javítva.
+Settings/programválasztás kapuelutasításból kezelt, négy nyelvű UI-hiba lett.
+8 új unit-próbakód (valós Room/natív SQLite hibák, újranyitás, draft rollback,
+stale/tulajdonos/fence) és 1 Compose UI hiba+retry próbakód készült.
+**113 új unit + 5 instrumentációs tesztkód megírva, még nem futott.**
+Helyben diff és a négy erőforrás-XML szerkezeti ellenőrzése történt. Nincs új CI,
+APK vagy screenshot. Következő: intervallum/preset/nem-autoAdvance paritás, Coach,
+lokalizáció és teljes UI; utolsó zöld forrás `dd4cc27`. Élő adatos telepítés STOP.
+
 ## Legfrissebb forrás – háttérírások és ZIP-replay
 
 **`0f51320`**, `[skip ci]`: a meglévő replacement mutex írási admissiont kapott,

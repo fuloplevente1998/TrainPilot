@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.SystemClock
 import androidx.room.withTransaction
 import com.repforge.app.data.db.TrainPilotDatabase
+import com.repforge.app.data.db.HistoryTombstoneEntity
 import com.repforge.app.data.migration.LegacyWebViewMigrator
 import com.repforge.app.data.store.TrainPilotSettingsStore
 import com.repforge.shared.WorkoutOwnership193
@@ -24,6 +25,82 @@ internal class TrainPilotWorkoutFinalization(
     companion object { private val mutex = Mutex() }
 
     data class Saved(val history: JSONObject, val closedSnapshot: JSONObject?)
+
+    /** Confirmed phone discard shares the finish lock; never acknowledge before native close. */
+    suspend fun discardWorkout(input: JSONObject): JSONObject = withContext(NonCancellable) {
+        NativeDataReplacement.mutate(context) {
+            mutex.withLock {
+                val id = input.getString("workoutId").also { require(it.isNotBlank()) }
+                val frozen = withContext(Dispatchers.Main.immediate) {
+                    val current = requireNotNull(ActiveWorkoutStore.current(context))
+                    check(current.optBoolean("active") && current.optString("workoutId") == id &&
+                        current.optLong("generation") == input.optLong("generation") &&
+                        current.optString("timerOwner", "phone") == "phone" && !WorkoutOwnership193.pending(current)) {
+                        "Az edzés tulajdonosa vagy állapota megváltozott."
+                    }
+                    check(!current.optBoolean("finalizationPending") || current.optBoolean("discardPending")) {
+                        "A mentés alatt álló edzés nem vethető el."
+                    }
+                    val execution = PhoneWorkoutExecution.store(context)
+                    check(!execution.restoreBlocked()) { "Adat-visszaállítás van folyamatban." }
+                    val frame = execution.snapshot()
+                    check(frame == null || (frame.optString("workoutId") == id &&
+                        frame.optLong("generation") == current.optLong("generation"))) { "A natív edzés megváltozott." }
+                    check(!execution.commandsSuspended() || current.optBoolean("discardPending")) { "Az edzésvezérlés foglalt." }
+                    // The existing durable finish fence already blocks edits/resume/handoff. The
+                    // discriminator permits only explicit discard retry after a storage/process failure.
+                    val pending = JSONObject(current.toString()).put("finalizationPending", true)
+                        .put("discardPending", true).put("workoutPaused", true).put("restEndAt", 0L)
+                    ActiveWorkoutStore.saveFinalizing(context, pending)
+                    execution.suspendCommands(true)
+                    if (frame?.optBoolean("active") == true) {
+                        execution.setWorkoutPause(JSONObject(frame.toString()).put("workoutPaused", true)
+                            .put("pauseRevision", maxOf(System.currentTimeMillis(), frame.optLong("pauseRevision") + 1L)),
+                            SystemClock.elapsedRealtime(), IntervalTimerService.snapshot(context).optBoolean("running"))
+                    }
+                    IntervalTimerService.stopForOwnership(context, id)
+                    DistanceTrackingService.stop(context)
+                    pending
+                }
+                withContext(Dispatchers.IO) {
+                    database.withTransaction {
+                        check(database.workoutHistoryDao().getWorkoutWithDetails(id) == null) {
+                            "A már naplózott edzés nem vethető el aktív edzésként."
+                        }
+                        database.workoutHistoryDao().upsertTombstone(HistoryTombstoneEntity(
+                            primaryId = id, workoutKey = id, idsJson = JSONArray().put(id).toString(),
+                            deletedAt = System.currentTimeMillis()))
+                        NativeLegacyDraft.retire(database, frozen.optString("legacyDraftSha256"))
+                    }
+                }
+                val closed = withContext(Dispatchers.Main.immediate) {
+                    val execution = PhoneWorkoutExecution.store(context)
+                    val frame = execution.snapshot()
+                    if (frame != null) {
+                        check(frame.optString("workoutId") == id && frame.optLong("generation") == frozen.optLong("generation")) {
+                            "A natív edzés megváltozott."
+                        }
+                        check(execution.discardExecution(id, frame.getLong("generation"), frame.getLong("executionRevision"))) {
+                            "A natív elvetés nem sikerült. Próbáld újra."
+                        }
+                        IntervalTimerService.closeWorkout(id, frame.getLong("generation"))
+                    }
+                    check(ActiveWorkoutStore.current(context)?.let {
+                        it.optString("workoutId") == id && it.optBoolean("discardPending")
+                    } == true) { "Az elvetendő edzés megváltozott." }
+                    // Clear the command flag while the durable discard draft still permits retry.
+                    // The native frame is already inactive, so it cannot accept another recording.
+                    execution.suspendCommands(false)
+                    ActiveWorkoutStore.clear(context)
+                }
+                // Route cleanup is after durable deletion. Failure must not resurrect the workout.
+                withContext(Dispatchers.IO) {
+                    runCatching { com.repforge.shared.GpsRouteLedger193.open(context.noBackupFilesDir).deleteWorkout(id) }
+                }
+                closed
+            }
+        }
+    }
 
     suspend fun finishWorkout(input: JSONObject, fromWatch: Boolean = false): Saved =
         withContext(NonCancellable) {
@@ -80,6 +157,8 @@ internal class TrainPilotWorkoutFinalization(
     private fun freezeAndReconcile(input: JSONObject, fromWatch: Boolean): JSONObject {
         val id = input.getString("workoutId")
         var current = ActiveWorkoutStore.current(context)
+        check(!input.optBoolean("discardPending") && current?.takeIf { it.optString("workoutId") == id }
+            ?.optBoolean("discardPending") != true) { "Az elvetést kell befejezni; az edzés már nem menthető. Próbáld újra az elvetést." }
         val ownsDraft = current?.optBoolean("active") == true && current.optString("workoutId") == id
         check(!WorkoutOwnership193.pending(input) && (!ownsDraft || !WorkoutOwnership193.pending(current))) {
             "Előbb fejezd be az edzés átadását vagy visszavételét."
