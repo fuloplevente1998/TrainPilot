@@ -238,4 +238,18 @@
     <string name="health_daily_source_priority">Health Connect prioritás</string>
     <string name="health_daily_source_hint">A lépés-, távolság- és kalóriaadatok forrását befolyásolja. A váltás után a Frissítés gombbal kérhetsz új adatokat.</string>
     <string name="health_daily_source_partial">Részleges napi adat: a korábbi értékek újraolvasásra várnak.</string>
+    <string name="health_background_scheduled">Ütemezett háttérfrissítés.</string>
+    <string name="health_background_not_scheduled">Nincs ütemezett háttérfrissítés.</string>
+    <string name="health_background_connected">A BLE háttérkapcsolat fut.</string>
+    <string name="health_background_not_connected">Nincs aktív BLE háttérkapcsolat.</string>
+    <string name="health_background_error">A háttérszinkron beállítása sikertelen. Az előző beállítás megmaradt.</string>
+    <string name="health_background_ready">A szükséges feltételek rendben vannak; ez önmagában nem igazolja a futást.</string>
+    <string name="health_background_restore">Adat-visszaállítás folyamatban: a háttérszinkron nem kapcsolható be.</string>
+    <string name="health_background_unsupported">Ez a háttérfunkció nem támogatott a készüléken.</string>
+    <string name="health_background_read_permission">Előbb engedélyezd a Health Connect adatok olvasását a Frissítés gombbal.</string>
+    <string name="health_background_permission">A háttérbeli Health Connect-olvasáshoz külön engedély szükséges.</string>
+    <string name="health_background_watch">Előbb jegyezz meg egy kompatibilis RDFit órát.</string>
+    <string name="health_background_bluetooth_permission">Bluetooth-csatlakozási engedély szükséges.</string>
+    <string name="health_background_notification_permission">Értesítési engedély szükséges a BLE előtérszolgáltatáshoz.</string>
+    <string name="health_background_bluetooth_off">Kapcsold be a Bluetooth-t.</string>
 </resources>
