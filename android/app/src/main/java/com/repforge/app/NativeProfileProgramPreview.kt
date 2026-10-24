@@ -25,8 +25,12 @@ internal object NativeProfileProgramPreview {
     }
 
     private fun available(ex: ExerciseLibraryEntity, gear: Set<String>): Boolean {
-        if (ex.loadType == "bodyweight") return true
         val raw = JSONObject(ex.rawJson)
+        if (ex.loadType == "bodyweight") {
+            val equipment = raw.optString("equipment").lowercase()
+            return !("pad" in equipment || "támasz" in equipment) ||
+                "bench" in gear || "support" in gear
+        }
         val required = raw.optString("gear")
         if (required.isNotBlank()) return when (required) {
             "bodyweight" -> true
@@ -88,9 +92,25 @@ internal object NativeProfileProgramPreview {
                 if (reason.isNotBlank()) removed += Reduction(day.dayId, id, reason)
                 else filtered += id to ex!!
             }
-            // Preserve existing compound-first template ordering; never manufacture replacements.
-            val selected = filtered.take(count)
-            for ((id, _) in filtered.drop(count)) removed += Reduction(day.dayId, id, "time")
+            // Main #128 B day: compound order before isolation, push-up third.
+            // Level 2 may use decline push-up only when the user explicitly has a bench.
+            val finalRows = if (day.dayId == "B") {
+                val variation = catalogById["decline-pushup"]
+                val index = filtered.indexOfFirst { it.first == "pushup" }
+                if (source.program.id == "home-level2" && index >= 0 &&
+                    "pushup" !in excluded && "decline-pushup" !in excluded &&
+                    variation != null && available(variation, gear)) {
+                    filtered[index] = "decline-pushup" to variation
+                }
+                val order = listOf("bulgarian-split-squat", "barbell-row",
+                    "decline-pushup", "pushup", "db-pullover",
+                    "lateral-raise", "oh-triceps", "dead-bug")
+                filtered.sortedWith(compareBy<Pair<String, ExerciseLibraryEntity>> {
+                    order.indexOf(it.first).takeIf { index -> index >= 0 } ?: Int.MAX_VALUE
+                })
+            } else filtered
+            val selected = finalRows.take(count)
+            for ((id, _) in finalRows.drop(count)) removed += Reduction(day.dayId, id, "time")
             for ((id, exercise) in selected) {
                 val original = JSONObject(exercise.rawJson)
                 val compound = original.optBoolean("compound", false)
