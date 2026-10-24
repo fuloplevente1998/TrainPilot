@@ -290,6 +290,7 @@ fun ProgramCardItem(
                             }
                             Button(
                                 onClick = { onStartDay(day.dayId) },
+                                enabled = exCount > 0,
                                 shape = RoundedCornerShape(8.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                             ) {
