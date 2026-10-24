@@ -1,5 +1,5 @@
 > **Natív migráció aktuális részállapota (2026-10-24):** ág `feat/native-android-migration`,
-> alkalmazás- és tesztforrás `dbf808c5` (`[skip ci]`).
+> alkalmazás- és tesztforrás `d5222a32` (`[skip ci]`).
 > A main 106 gyakorlatos katalógusa immár külön natív könyvtárból
 > böngészhető: 100 tényleges videoId, 6 nem ellenőrzött YouTube-keresés;
 > részletek, kedvencek, szűrők és gyorsedzés video gomb. **248 új unit
