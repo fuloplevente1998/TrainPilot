@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -54,6 +55,24 @@ fun ProgressScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item { Spacer(Modifier.height(8.dp)) }
+        if (state.loading) item {
+            Text(when (state.language) {
+                "en" -> "Loading progress…"; "de" -> "Fortschritt wird geladen…"
+                "ro" -> "Se încarcă progresul…"; else -> "Fejlődés betöltése…"
+            }, color = colors.muted)
+        }
+        if (state.loadError) item {
+            Text(when (state.language) {
+                "en" -> "Could not load progress data."; "de" -> "Fortschrittsdaten konnten nicht geladen werden."
+                "ro" -> "Datele despre progres nu pot fi încărcate."
+                else -> "Nem sikerült betölteni a fejlődési adatokat."
+            }, color = colors.danger, modifier = Modifier.testTag("progress_error"))
+            androidx.compose.material3.TextButton(onClick = viewModel::loadProgressData) {
+                Text(when (state.language) {
+                    "en" -> "Retry"; "de" -> "Erneut versuchen"; "ro" -> "Reîncearcă"; else -> "Újrapróbálás"
+                })
+            }
+        }
 
         // 1. #177 Izom-anatómia terheléstérkép
         item {
@@ -113,16 +132,22 @@ fun ProgressScreen(
 
                     // Gyakorlat választó chip sor
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        items(state.exercises.take(8)) { ex ->
+                        items(state.exercises, key = { it.id }) { ex ->
                             val isSelected = ex.id == state.selectedExerciseId
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(if (isSelected) colors.accent else colors.card2)
                                     .clickable { viewModel.selectExercise(ex.id) }
+                                    .testTag("progress_exercise_${ex.id}")
                                     .padding(horizontal = 10.dp, vertical = 6.dp)
                             ) {
-                                Text(ex.nameHu, color = if (isSelected) colors.onAccent else colors.text, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                Text(when (state.language) {
+                                    "en" -> ex.nameEn; "de" -> ex.nameDe; "ro" -> ex.nameRo
+                                    else -> ex.nameHu
+                                }.ifBlank { ex.nameHu },
+                                    color = if (isSelected) colors.onAccent else colors.text,
+                                    fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
