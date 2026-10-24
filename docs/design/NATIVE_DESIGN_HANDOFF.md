@@ -279,3 +279,14 @@ sorozat/ismétlés/súly/pihenő értékekkel és tudatos mentés/elvetés műve
 A működés részletes elsőbbségi szabályai: [NATIVE_MOCKUP_REVIEW.md](NATIVE_MOCKUP_REVIEW.md).
 Teljes megvalósítási feladat: [NATIVE_FINAL_DELIVERY.md](../plans/NATIVE_FINAL_DELIVERY.md).
 Aktuális kód/tesztállapot: [WORK_HANDOFF.md](../WORK_HANDOFF.md).
+
+### D06 implementációs nyom – 2026-10-24
+
+`116a9ab` (a `feat/native-android-migration` ág `e3e79d3` commitjének
+ellenőrzött átvétele): Egészség és Fejlődés közös `weight_journal` útvonal,
+meglévő Room `body_weights`, dátumos hozzáadás, változatlan mérési dátummal
+szerkesztés és megerősített exact-ID törlés. Grafikon/időszak/min-max/kezdő/
+aktuális/változás megjelenítés; a providerből érkező testsúly külön adatforrás
+marad. A Repository/VM/Screen külön egység, 13 unit- és 2 telefonos UI-próbakód
+érkezett vele, de a `116a9ab` forráson ezek még nem futottak. Ez funkcionális
+bekötés, nem a végleges vizuális dizájn vagy teljes D06-elfogadás.

@@ -37,22 +37,29 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   kiválasztott napra irányul. Mind a 26 provider metric kulcs megjeleníthető,
   lokalizált HU/EN/DE/RO címkékkel. BLE csatorna a kanonikus HealthJournalStore
   azonosítót használja. Kód/próbák még nem futottak Androidon.
-- A `40122692736` futás AAPT resource-escape hibát jelzett az angol Home-stringekben.
-  A `\'`-javítás után a `40123033007` futás sikeresre vitte az angol
-  erőforrásfordítást és a telefonos/Wear debug APK-kat, majd
-  `NativeHomeScreenTest.kt:3` hibás `assertDoesNotExist` importján bukott el.
-  Ezt az importot eltávolítottuk; a meglévő `NativePhoneNavigationTest` ugyanezt
-  az assertiont import nélkül használja. Teszt- és signed-upgrade eredmény még nincs.
-  A TLS-ellenőrzés érintetlen.
+- Az új upstream `e3e79d3` kézi testsúlynaplója konfliktus nélkül került át
+  `116a9ab`-ként: közös Egészség/Fejlődés útvonal, dátumos add, stale-védett
+  edit, megerősített pontos törlés, 13 unit- és 2 UI-próbakód. Ezen az új SHA-n
+  még nincs CI-igazolás. Az upstream `7d6d8b8` dokumentációs checkpointját
+  áttekintettük; nincs további kódcommit.
+- A `40122692736` az angol Home-stringek AAPT escape-hibáján bukott el.
+  A javítást a `40123033007` erőforrás-fordítása igazolta; az a futás ezután a
+  hibás `assertDoesNotExist` importon állt meg. Az import eltávolítása után a
+  `40123422503` debug buildje, unit suite-ja és signed update csomag-/aláírás-
+  ellenőrzése sikeres lett; az emulátoros UI és telepítési upgrade kapuk még futnak.
+  A Windows TLS-ellenőrzés érintetlen.
 - Teljes A01–E20 leltár (81 megőrzendő funkció) és a négy ellenőrzött tervlap:
   `docs/design/NATIVE_DESIGN_HANDOFF.md` és `docs/design/mockups/`. A leltár
   követelmény, nem teljesítési bizonyíték; pontos útvonal/adatforrás/teszt
   megfeleltetés, signed upgrade és fizikai készülékpróba még nyitott.
 
-- A `git fetch origin --prune` után a migration upstream továbbra is `1e4783b`;
-  az előzőleg felülvizsgált upstream-készletben új commit nem jelent meg.
-- A következő lépés az importjavítás ellenőrzése, kizárólag a finalization ágra
-  commit/push, majd a natív Actions-kapu újrafuttatása az új SHA-n.
+- A `40123422503` a `378e3cd` forráson sikeresen buildelte a telefonos/Wear debug
+  APK-kat, lefuttatta az unit suite-ot és a signed update csomag-/aláíráskaput.
+  A phone/Wear emulátoros UI és adatmegőrzési upgrade jobok még futnak; ez a SHA
+  nem tartalmazza az új `116a9ab` testsúlynaplót.
+- Következő: várd meg a `40123422503` lezárását; pushold a `116a9ab`-ot és a
+  dokumentált upstream-syncet kizárólag finalizationra, majd indíts teljes
+  natív Actions-kaput az új pontos SHA-n.
 - `docs/design/NATIVE_DESIGN_HANDOFF.md` most a friss teljes funkcióleltárat és
   négy SHA-val ellenőrzött tervlapot tartalmazza. Ezek kifejezetten nem funkció-
   vagy tesztbizonyítékok; teljes ID-szintű lefedettség még nincs felmérve.

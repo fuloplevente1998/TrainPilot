@@ -1,11 +1,15 @@
 # Natív migráció – véglegesítési státusz
 
 Frissítve: **2026-10-24**. Munkaág: `feat/native-android-finalization`.
-A Home/Health batch és az AAPT-escape javítás debug buildje a
-`40123033007` futásban sikerült (`bb2fff0`); az AndroidTest Kotlin-fordítás
-utána elbukott, ezért a tesztcsomag még nem futott. A
+Az AAPT-escape javítást és tesztimport-korrekciót tartalmazó
+`40123422503` futásban (`378e3cd`) a telefonos/Wear debug build, a natív unit
+suite, a signed update build és a csomag/aláírás folytonosságának ellenőrzése
+sikerült. A telefonos Compose UI, Wear UI és régi kiadásról adatmegőrző upgrade
+emulátoros kapui még futnak. Ez a forrás nem tartalmazza az új testsúlynaplót.
+A
 `main` (`8a36502`, alkalmazásbaseline `7473b30`) érintetlen; az
-egyirányú forráság frissített HEAD-je `1e4783b`.
+egyirányú forráság frissített HEAD-je `7d6d8b8`; a benne lévő
+`e3e79d3` súlynapló-funkció átvétele `116a9ab`.
 A `36462aa`, `c941413`, `04dba76` és `a026f03` újratervezett képtáblákat, teljes
 main-funkcióleltárt és összevont natív elhelyezési tervet tartalmaz; az A01–E20
 lista **81 megőrzési követelmény**, nem kész funkció- vagy tesztállapot.
@@ -65,6 +69,13 @@ assertiont import nélkül használja. A tesztfordítás és minden ezt követő
 unit/UI, signed-upgrade és APK-artifact kapu még nincs igazolva. Mindkét hiba
 forráskódbeli volt; TLS-ellenőrzést nem lazítottunk.
 
+A [40123422503](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40123422503)
+futás `378e3cd` forrásán a phone/Wear debug build, natív unit suite, meglévő
+kulccsal készített update-ek és a csomag-/aláírás-folytonossági ellenőrzések
+sikeresek. A phone Compose UI, három Wear UI és két régi kiadásról natív adatra
+upgrade-emulátorkapu a legutóbbi ellenőrzéskor még futott. Ez a run nem tartalmazza
+az `116a9ab` súlynapló-bekötést; azon a commiton még teljes CI szükséges.
+
 | Main-funkció / natív terület | Státusz | Meglévő bizonyíték és fennmaradó rés |
 | --- | --- | --- |
 | Kezdőlap, ajánlott programnap és főoldali gyorselérések | **ELLENŐRIZENDŐ** | Az új kezdőlap az aktív/importált állapotot, a kanonikus `NativeCoachTargets` szerinti ajánlott napot, az indítási útvonalat és Programok/Naptár/Coach gyorselérést köti be; a Compose-próbakód megírva, de ezen a forráson nem futott. |
@@ -74,10 +85,10 @@ forráskódbeli volt; TLS-ellenőrzést nem lazítottunk.
 | Beltéri, GPS nélküli időmérés | **KÉSZ** | A `40384e7` kapu 20 célzott tesztet és a telefonos teljes unit-csomagot igazolta. Az új intervallummód ezzel nem tekinthető igazoltnak. |
 | Automatikus rögzítés és intervallumidőzítés | **ELLENŐRIZENDŐ** | Korábbi stopper/GPS record/undo viselkedés tesztelt; a `9ea2ddf` single-set módja és hordozható presetje új, még nem futtatott tesztekkel érkezett. |
 | Pihenő, egyedi beállítások, tartós mentés | **RÉSZBEN KÉSZ** | Skip/±15 mp és Room rollback tesztelve; a friss globális timer-default/preset és importált draft paritása nyitott. |
-| Health Connect, Samsung Health és egészségnapló | **ELLENŐRIZENDŐ** | Natív adapterek, foreground frissítés, 26 provider-metrikakulcs és havi/nap/csatorna Egészségnapló-kód jelen van (`b7a82ef`/`a0e7393`); a frissítési út a kiválasztott napot kéri, hiányzó napot nem helyettesít. Ezek és a tesztkód még nem futottak ezen a SHA-n. Nyers rekordok, pontos forrás/időbélyeg, részletes alvás, testsúly CRUD/előzmény, engedély-/háttérváltás és fizikai próba nyitott. |
+| Health Connect, Samsung Health és egészségnapló | **ELLENŐRIZENDŐ** | Natív adapterek, foreground frissítés, 26 provider-metrikakulcs és havi/nap/csatorna Egészségnapló-kód jelen van (`b7a82ef`/`a0e7393`); a frissítési út a kiválasztott napot kéri, hiányzó napot nem helyettesít. Ezek és a tesztkód még nem futottak ezen a SHA-n. Nyers provider-rekordok, pontos forrás/időbélyeg, részletes alvás, a kézi testsúlytól különálló provider-előzmény, engedély-/háttérváltás és fizikai próba nyitott. |
 | Telefon–Wear szinkron és óráról vezérelt edzés | **RÉSZBEN KÉSZ** | A natív ownership/command út és unit tesztjei léteznek; offline tulajdonosváltás, két eszközös adatkonfliktus és Watch7 próba még nyitott. |
 | Wear szenzorok, GPS, értesítés, komplikáció, Tile | **ELLENŐRIZENDŐ** | A natív Wear komponensek visszaállítva, a kerek UI 183/183 korábban zöld. Ez nem bizonyít valós szenzor-, GPS-, Tile- vagy értesítési működést. |
-| Naptár, fejlődési statisztika, edzésnapló | **RÉSZBEN KÉSZ** | Room naptár, Coach-adatok és paginált napló van; per-gyakorlat Coach és 32 main-referencia eset, 6 Room- és 1 hordozható-beállítási unit teszt kódja bekerült (`38e38df`), de az aktuális futás még nem igazolta. Timezone-paritás, teljes nézet és friss Coach-sorrendezés újratesztje is nyitott. |
+| Naptár, fejlődési statisztika, edzésnapló | **RÉSZBEN KÉSZ** | Room naptár, Coach-adatok és paginált napló van; `116a9ab` a Fejlődés/Health felől közös kézi súlynapló képernyőt, dátumos add/edit/megerősített exact-ID delete utat és adatírási védelmet köt be. 13 unit- és 2 UI-próbakód még nem futott ezen a commiton. Korábbi Coach-, Room- és main-referencia tesztek, timezone-paritás, teljes nézet és friss Coach-sorrendezés továbbra nyitott. |
 | Mentés, visszaállítás, Drive/felhőszinkron | **RÉSZBEN KÉSZ** | JSON/ZIP redo, Room import, draft és Drive merge guard implementálva; teljes fotó/Health roundtrip, minden crash-fázis és az utolsó tesztbatch nem igazolt. |
 | Témák, nyelvek, beállítások | **RÉSZBEN KÉSZ** | Compose paletta és több nyelvi erőforrás létezik; HU/EN/DE/RO teljes lefedettsége, nagy betűk és kisebb kijelzők integrált ellenőrzése nyitott. |
 | Telepített app frissítése és adatmegőrzés | **ELLENŐRIZENDŐ** | Azonos `com.repforge.app`, **2736** verziókód (az elfogadott **2735** után), meglévő kulcsos Actions release és két szintetikus upgrade a `dd4cc27`-en igazolt. A mostani SHA és élő adatos készülékfrissítés nincs igazolva; eltávolítás nélküli fizikai próba előtt tilos napi készülékre telepíteni. |
@@ -119,10 +130,9 @@ feltérképezve; a megőrzendő lista nem tekinthető kész lefedettségi méré
 
 ## Következő feladatok
 
-1. A `NativeHomeScreenTest` importjavítás diff/XML ellenőrzése, commit/push
-   kizárólag a `feat/native-android-finalization` ágra, majd a natív Actions-kapu
-   újrafuttatása pontosan ezen a SHA-n; build-, JVM-, Compose UI- és signed-upgrade
-   eredmény külön.
+1. A `40123422503` emulátoros kapuinak megvárása; a `116a9ab` súlynapló-
+   átvétel és a dokumentált migration HEAD `7d6d8b8` egyirányú syncjának pushja
+   után a teljes natív Actions-kapu indítása az új, pontos SHA-n.
 2. A következő CI-hibákat forrás-/környezet-/tesztelvárási ok szerint szétválasztani,
    és csak igazolt hibát javítani.
 3. Kritikus Compose telefonos indítás/folytatás/mentés/elvetés és az interval/
