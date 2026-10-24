@@ -20,6 +20,35 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   prototípus/fake Health-forrás tilos. Nyolcgombos menü helyett öt alsó fül elfogadva,
   jobb felső Settings; abból visszatérés nem pause, valódi editor-elhagyás igen.
 
+## Legújabb natív batch – 90 napos A/B előzményöröklés
+
+`93e5882d` `[skip ci]` kód: `NativeProfileHistory128`
+Room `getCoachExerciseCandidates` 32-es keyset
+oldalakon (max 20 oldal/gyakorlat), max négy
+bizonyított `{programId,key}` forrással,
+Coach közös `compatible` terhelés/egység/
+variáció szűréssel, 90 nap/tombstone/finished.
+Friss rossz/fájdalmas/hiányos adaton nincs
+régi kezdősúly fallback. A teljes, igazolt
+munkasúly/2-3 sorozat és felső ismétlés
+öröklődhet, de nincs automatikus emelés.
+`history128` az elfogadott új programba
+kerül, bizonyítékhash + elfogadáskori
+újraszámolás (stale preview tiltás).
+Portable JSON/ZIP/Drive import már a Room
+csere előtt validálja a max 4 különböző
+source identitást. A Planner aszinkron
+előzménytöltése UI-állapottal bekötve.
+
+**12 új JVM unit + 3 meglévő Phone UI-teszt
+aszinkron igazítás**. Összesen **313 unit
++34 Phone UI tesztkód, még nem futott**;
+18 statikus ellenőrzés PASS; Kotlin/Gradle,
+Room, emulátor, APK és Watch7 nincs igazolva.
+Következő: Coach 3 stabil alkalom utáni
+variáció / explicit upgrade preview, majd
+közös Android/Wear/upgrade CI. PR #238.
+
 ## Legújabb natív batch – személyes A/B tervező előnézet
 
 `559fd43e` `[skip ci]`: a Programok Személyes
