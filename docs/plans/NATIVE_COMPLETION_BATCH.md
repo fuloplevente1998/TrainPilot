@@ -178,3 +178,12 @@ fence hiba/cancel után nem oldódik félkész receipt mellett. Ez forward redo,
 minden tár korábbi állapotának atomi rollbackje. 7 új unit + 1 Phone UI próbakód;
 összesen88 új unit + 4 instrumentációs próba, még nem futtatva. Teljes roundtrip,
 crash-fázisok, Drive és beérkező Room-írások koordinálása még szükséges.
+
+
+## Room/portable settings/Health redo és backup roundtrip
+
+`851391c`: egy Room import-tranzakció, utána egy DataStore-edit; további hordozható
+beállítások/draft/terv és teljes tombstone-export; strukturális koordinátaszűrés;
+Health pending token rendezése redo előtt és fázis-checkpointok. Új7 unit-eset,
+batch összesen95 új unit + 4 Phone instrumentációs próba, nem futtatva. Drive,
+folyamatban lévő Room-írások és teljes ZIP/fotó/Health roundtrip még szükséges.

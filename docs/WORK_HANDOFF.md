@@ -4,6 +4,40 @@ Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Legfrissebb forrás – tranzakciós backup import és hordozható állapot
+
+**`851391c`**, `[skip ci]`: a migrátor Room-oldali importja egy tranzakció;
+a hordozható DataStore-beállítások csak sikeres Room-commit után, egyetlen editben
+frissülnek. SQL-hiba nem törölhet részlegesen naplót és nem írja át előbb a nyelvet.
+Ez két külön tár egymás utáni commitja, nem elosztott atomikus tranzakció; a helyi
+redo-receipt továbbra szükséges DataStore/Health/fotó fázishibánál.
+
+Backup roundtrip: időzítő/haptika/HC preferencia, súlytartomány, onboarding és
+aktivitásonkénti GPS-választás; a helyi cloudDevice/migration/runtime identitás nem
+importálódik másik eszközről. Draft/plannerSettings/plan/closed-workout dokumentumok
+exportálódnak; replaceAll esetén hiányzó draft/plan nem élhet tovább. Privát nyers
+WebView/GPS-trip archívum nem exportálódik. Új strukturális sanitizer koordináta
+mezőket kiszűr, mérési értéket és route-keyt megőriz; ismeretlen kódolt/egzotikus
+koordinátareprezentációk teljes privacy-auditja még külön szükséges.
+
+A backup az összes törlésjelölőt exportálja, nem csak az utolsó2000-et; bulk import
+előre beolvassa a teljes markerlistát, így a régi törlés sem támadhat fel, és nincs
+edzésenként újra teljes marker-lekérdezés. A Health-store félbeszakadt pending
+restore tokenjét redo előtt visszaállítja/lezárja, majd a kiválasztott payloadot
+újra alkalmazza. Manager-szintű teszt-only checkpointok a receipt/photo/data/
+Health/commit fázisoknál; nincs termékbeállításos hibainjektálás.
+
+5 új backup unit-próba (valódi SQLite triggeres rollback, portable settings/device
+identity, draft, 2101 tombstone, koordinátaszűrés) + 2 új recovery fault-próba
+(több receipt és Health fázis). **95 új unit + 4 instrumentációs próba megírva,
+nem futtatva.** Diff/forrásellenőrzés történt, nincs új CI/APK/screenshot;
+utolsó teljes zöld forrás továbbra `dd4cc27`.
+
+Következő: Google Drive merge/import ugyanebbe az adatcsere-folyamatba, már elindult
+background Room-írások tranzakciós versenyvédelme; teljes ZIP/fotó/draft/Health
+roundtrip és futtatott regresszió. Ezután interval/preset, Coach per-gyakorlat és
+a teljes elfogadott terv többi bekötése/UI. Saját adatos telepítés STOP.
+
 ## Legfrissebb kód – megszakadt helyi adatcsere explicit folytatása
 
 **`7296f0b`**, `[skip ci]`: a helyi JSON/ZIP import és erase tartós privát
