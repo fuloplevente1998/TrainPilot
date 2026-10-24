@@ -4,6 +4,45 @@ Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Teljes natív gyakorlatkönyvtár és eredeti videó-hivatkozások
+
+**dbf808c5** `[skip ci]` utolsó alkalmazás-/tesztforrás; kizárólag
+`feat/native-android-migration`. A végleges main `7473b30`
+(`www/app.js` blob `b5567576...`) adatalapjának tartalmát
+ellenőriztük: **106 beépített gyakorlat, ebből 100 konkrét YouTube
+videoId és 6 eredetileg is nem ellenőrzött keresési URL**.
+A meglévő `native-catalog-main-7473.json` 106 sorát/metadataját és a
+Room `exercise_library` táblát használjuk, nincs új hardcode gyakorlat,
+fiktív videó vagy JS/WebView-függőség.
+
+- Új natív `exercise_library` másodlagos útvonal, Edzésből külön
+  Gyakorlatkönyvtár gombbal; kereső, izomcsoportszűrő (HU/EN/DE/RO),
+  106+importált/saját sor, kedvencek, részletpanel, leírás,
+  alap sorozat/ismétlés és videóforrás feltüntetése.
+- `NativeExerciseDemo` kizárólag 11 karakteres YouTube ID-ból
+  kanonikus watch-hivatkozást enged; importált, hiányzó demo-metadatajú
+  **nem custom** beépített gyakorlat az eredeti azonos ID alapján
+  megkapja a hivatkozást, de egyedi override soha nem örököl
+  videót automatikusan. A 6 eredeti outdoor keresés külön
+  **nem ellenőrzött keresés** feliratot és keresési gombot kap.
+  Rossz/idegen URL nem nyitható.
+- A gyorsedzés gyakorlat-kiválasztó panelén is megjelenik a
+  bemutatóvideó gomb. Videó/YouTube keresés csak a felhasználó
+  kattintására, Android `ACTION_VIEW`-val **külső lejátszóban vagy
+  böngészőben**, nem beépített natív videólejátszóban indul;
+  hibás intent esetén látható hiba. A gomb nem indít edzést.
+- 7 új JVM unit +3 új Phone Compose UI-próba: 106/100/6 eredet,
+  validáció, importált/külön custom link, könyvtár/részlet és
+  keresési provenance, gyorsedzés panel; a főmenü route-tesztjei
+  kiegészítve. **Összesen 248 új unit +23 Phone UI tesztkód,
+  még nem futtatva**. Katalógus- és statikus útvonal/forrás-
+  ellenőrzés sikeres, Gradle/Android/YouTube playback **nincs igazolva**.
+
+Következő: egyedi gyakorlatok CRUD és programnap-szerkesztő,
+profil/funkcióparitás; ezek után közös natív CI/kapu és készülékes
+visszaellenőrzés. Main és kiadás változatlan. Élő adatos APK
+telepítés **STOP**.
+
 ## Natív gyakorlatkedvencek v144 – kódolási batch
 
 **4159a76** `[skip ci]` (utolsó appforrás), kizárólag a
