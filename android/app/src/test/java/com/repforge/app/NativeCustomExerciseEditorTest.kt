@@ -155,6 +155,17 @@ class NativeCustomExerciseEditorTest {
         }
     }
 
+    @Test fun staleEditorCannotOverwriteOrDeleteConcurrentlyChangedExercise() = runBlocking {
+        val id = NativeCustomExerciseEditor.save(context, db, null, draft(), "hu")
+        val opened = db.exerciseLibraryDao().getExerciseById(id)!!.rawJson
+        NativeCustomExerciseEditor.save(context, db, id, draft().copy(name = "Frissebb"), "hu")
+        assertThrows(IllegalStateException::class.java) { runBlocking {
+            NativeCustomExerciseEditor.save(context, db, id, draft().copy(name = "Elavult"), "hu", opened) } }
+        assertThrows(IllegalStateException::class.java) { runBlocking {
+            NativeCustomExerciseEditor.delete(context, db, id, opened) } }
+        assertEquals("Frissebb", db.exerciseLibraryDao().getExerciseById(id)!!.nameHu)
+    }
+
     @Test fun portableBackupKeepsEditedCustomExerciseAndVideo() = runBlocking {
         val id = NativeCustomExerciseEditor.save(context, db, null, draft(), "hu")
         val backup = LegacyWebViewMigrator(context, db, TrainPilotSettingsStore(context)).exportBackupJson(false)
