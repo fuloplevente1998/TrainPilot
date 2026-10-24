@@ -106,6 +106,18 @@ class NativeTrainingProfileTest {
         assertEquals(30, JSONObject(store.current().profileJson).getInt("age"))
     }
 
+    @Test fun malformedProfileBackupFailsBeforeAnyRoomProgramReplacement() = runBlocking {
+        val originalProgram = TrainPilotDatabase.defaultPrograms().first.first()
+        db.programDao().upsertProgram(originalProgram)
+        val malformed = JSONObject().put("settings", JSONObject().put("profile",
+            JSONObject().put("age", -1)))
+            .put("programs", JSONArray())
+        assertThrows(IllegalArgumentException::class.java) {
+            runBlocking { LegacyWebViewMigrator(context, db, store).importBackupJson(malformed, true) }
+        }
+        assertNotNull(db.programDao().getProgramWithDaysById(originalProgram.id))
+    }
+
     @Test fun restoreFenceRejectsProfileWrites() = runBlocking {
         context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE)
             .edit().putBoolean("blocked", true).commit()
