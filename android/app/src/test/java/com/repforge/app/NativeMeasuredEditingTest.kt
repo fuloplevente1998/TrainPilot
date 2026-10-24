@@ -305,4 +305,17 @@ class NativeMeasuredEditingTest {
         assertEquals("another-plank", rows.getJSONObject(2).getString("exerciseId"))
     }
 
+    @Test fun naturallyCompletedNonAdvancingTimerCanRestartAndLateOldTicksStayRetired() {
+        configureSingleSetInterval()
+        NativeWorkoutEditing.startIntervals(context, target()); advance(7)
+        val old = timer()
+        NativeWorkoutEditing.startIntervals(context, target())
+        assertNotEquals(old.getString("key"), timer().getString("key"))
+        assertFalse(store().checkpointTimer(old, android.os.SystemClock.elapsedRealtime()))
+        advance(7)
+        assertEquals("8", set().getString("reps")); assertFalse(set().getBoolean("done"))
+        assertFalse(set(index = 1).getBoolean("done"))
+        assertEquals(8000L, totals().workMs); assertEquals(6000L, totals().restMs)
+    }
+
 }
