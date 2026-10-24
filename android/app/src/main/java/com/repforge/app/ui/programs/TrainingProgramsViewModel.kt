@@ -4,6 +4,8 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.repforge.app.WearSyncRepository
+import com.repforge.app.NativeProgramEditor
+import com.repforge.app.data.db.ExerciseLibraryEntity
 import com.repforge.app.data.db.ProgramWithDays
 import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.store.TrainPilotSettingsStore
@@ -19,7 +21,12 @@ data class TrainingProgramsUiState(
     val programs: List<ProgramWithDays> = emptyList(),
     val isPersonalPlannerOpen: Boolean = false,
     val language: String = "hu",
-    val writeFailed: Boolean = false
+    val writeFailed: Boolean = false,
+    val exerciseChoices: List<ExerciseLibraryEntity> = emptyList(),
+    val editorSaving: Boolean = false,
+    val editorError: String? = null,
+    val savedProgramId: String? = null,
+    val deletedProgramId: String? = null
 )
 
 class TrainingProgramsViewModel(application: Application) : AndroidViewModel(application) {
@@ -36,13 +43,16 @@ class TrainingProgramsViewModel(application: Application) : AndroidViewModel(app
 
     fun loadPrograms() {
         viewModelScope.launch {
-            val settings = settingsStore.current()
-            val progs = database.programDao().getProgramsWithDays()
-            _uiState.value = TrainingProgramsUiState(
-                activeProgramId = settings.activeProgramId,
-                language = settings.language,
-                programs = progs
-            )
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    Triple(settingsStore.current(), database.programDao().getProgramsWithDays(),
+                        database.exerciseLibraryDao().getAllExercises())
+                }
+                _uiState.value = _uiState.value.copy(activeProgramId = result.first.activeProgramId,
+                    language = result.first.language, programs = result.second,
+                    exerciseChoices = result.third, writeFailed = false)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (_: Exception) { _uiState.value = _uiState.value.copy(writeFailed = true) }
         }
     }
 
@@ -57,6 +67,46 @@ class TrainingProgramsViewModel(application: Application) : AndroidViewModel(app
             } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
             catch (_: Exception) { _uiState.value = _uiState.value.copy(writeFailed = true) }
         }
+    }
+
+    fun saveProgram(opened: ProgramWithDays?, draft: NativeProgramEditor.Draft, language: String) {
+        if (_uiState.value.editorSaving) return
+        _uiState.value = _uiState.value.copy(editorSaving = true,
+            editorError = null, savedProgramId = null, deletedProgramId = null)
+        viewModelScope.launch {
+            try {
+                val saved = withContext(Dispatchers.IO) {
+                    NativeProgramEditor.save(context, database, opened, draft, language)
+                }
+                val all = withContext(Dispatchers.IO) { database.programDao().getProgramsWithDays() }
+                _uiState.value = _uiState.value.copy(programs = all, savedProgramId = saved)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (failure: Exception) {
+                _uiState.value = _uiState.value.copy(editorError = failure.message ?: "Program save failed")
+            } finally { _uiState.value = _uiState.value.copy(editorSaving = false) }
+        }
+    }
+
+    fun deleteProgram(opened: ProgramWithDays) {
+        if (_uiState.value.editorSaving) return
+        _uiState.value = _uiState.value.copy(editorSaving = true,
+            editorError = null, savedProgramId = null, deletedProgramId = null)
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    NativeProgramEditor.delete(context, database, opened, settingsStore)
+                }
+                val all = withContext(Dispatchers.IO) { database.programDao().getProgramsWithDays() }
+                _uiState.value = _uiState.value.copy(programs = all, deletedProgramId = opened.program.id)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (failure: Exception) {
+                _uiState.value = _uiState.value.copy(editorError = failure.message ?: "Program delete blocked")
+            } finally { _uiState.value = _uiState.value.copy(editorSaving = false) }
+        }
+    }
+
+    fun clearEditorOutcome() {
+        _uiState.value = _uiState.value.copy(editorError = null, savedProgramId = null, deletedProgramId = null)
     }
 
     fun openPersonalPlanner() {
