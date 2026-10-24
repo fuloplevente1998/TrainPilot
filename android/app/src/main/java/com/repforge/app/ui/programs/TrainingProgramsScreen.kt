@@ -33,6 +33,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,6 +62,15 @@ fun TrainingProgramsScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = LocalTrainPilotColors.current
+    var editorOpen by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf<ProgramWithDays?>(null) }
+    LaunchedEffect(state.savedProgramId, state.deletedProgramId) {
+        if (state.savedProgramId != null || state.deletedProgramId != null) {
+            editorOpen = false
+            editing = null
+            viewModel.clearEditorOutcome()
+        }
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -133,6 +143,16 @@ fun TrainingProgramsScreen(
             }
         }
 
+        item {
+            OutlinedButton(onClick = { editing = null; editorOpen = true; viewModel.clearEditorOutcome() },
+                enabled = !state.editorSaving, modifier = Modifier.fillMaxWidth().testTag("program_create")) {
+                Text(when (language) {
+                    "en" -> "Create program"; "de" -> "Programm erstellen"
+                    "ro" -> "Creează program"; else -> "Saját program létrehozása"
+                })
+            }
+        }
+
         // 2. Programkártyák listája
         items(state.programs, key = { it.program.id }) { programWithDays ->
             val isActive = programWithDays.program.id == state.activeProgramId
@@ -141,10 +161,18 @@ fun TrainingProgramsScreen(
                 isActive = isActive,
                 language = language,
                 onActivate = { viewModel.activateProgram(programWithDays.program.id) },
-                onStartDay = { dayId -> onStartProgramDay(programWithDays.program.id, dayId) }
+                onStartDay = { dayId -> onStartProgramDay(programWithDays.program.id, dayId) },
+                onEdit = { editing = programWithDays; editorOpen = true; viewModel.clearEditorOutcome() }
             )
         }
     }
+    if (editorOpen) ProgramEditorDialog(opened = editing, language = language,
+        exercises = state.exerciseChoices, saving = state.editorSaving, error = state.editorError,
+        onSave = { draft -> viewModel.saveProgram(editing, draft, language) },
+        onDelete = { editing?.let(viewModel::deleteProgram) },
+        onCancel = { if (!state.editorSaving) {
+            editorOpen = false; editing = null; viewModel.clearEditorOutcome()
+        } })
 }
 
 @Composable
@@ -153,7 +181,8 @@ fun ProgramCardItem(
     isActive: Boolean,
     language: String = "hu",
     onActivate: () -> Unit,
-    onStartDay: (String) -> Unit
+    onStartDay: (String) -> Unit,
+    onEdit: () -> Unit
 ) {
     val colors = LocalTrainPilotColors.current
     var expanded by remember { mutableStateOf(isActive) }
@@ -211,6 +240,15 @@ fun ProgramCardItem(
             Spacer(Modifier.height(8.dp))
             Text(name(prog.nameHu, prog.nameEn, prog.nameDe, prog.nameRo), color = colors.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Text(prog.description, color = colors.muted, fontSize = 12.sp)
+            OutlinedButton(onClick = onEdit, modifier = Modifier.fillMaxWidth()
+                .testTag("program_edit_${prog.id}")) {
+                Text(when (language) {
+                    "en" -> if (prog.builtin) "Copy and edit" else "Edit"
+                    "de" -> if (prog.builtin) "Kopie bearbeiten" else "Bearbeiten"
+                    "ro" -> if (prog.builtin) "Copiază și editează" else "Editează"
+                    else -> if (prog.builtin) "Másolat szerkesztése" else "Szerkesztés"
+                })
+            }
 
             Spacer(Modifier.height(12.dp))
             Row(
