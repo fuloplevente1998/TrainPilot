@@ -26,8 +26,8 @@ internal object NativeThemeTokens {
         return Color.White
     }
     fun resolve(settings: TrainPilotUserSettings): TrainPilotExtendedColors {
-        val accent = parseHex(settings.themeAccent, Color(0xFF4D8FBE))
-        val secondary = parseHex(settings.themeAccent2, Color(0xFF7CB4D6))
+        val accent = parseHex(settings.themeAccent, Color(0xFFF2BD45))
+        val secondary = parseHex(settings.themeAccent2, Color(0xFFFFD97D))
         val vivid = settings.themeFamily == "vivid"
         return TrainPilotExtendedColors(accent = accent, accent2 = secondary,
             onAccent = onFill(accent), onAccent2 = onFill(secondary),

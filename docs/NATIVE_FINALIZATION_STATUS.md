@@ -1,18 +1,19 @@
 # Natív migráció – véglegesítési státusz
 
 Frissítve: **2026-10-24**. Munkaág: `feat/native-android-finalization`,
-legutóbbi commit `8ead84a`. A `main` (`8a36502`) és a forráság
-(`feat/native-android-migration`, `033386e`) változatlan; egyikre sem történt
-írás. A `29ac3a2` és `ccc5c9a` alkalmazáskód-változásai már patch-egyezők
-(`572a10b`, `38e38df`); a friss `033386e` katalógus-/migrációs javítása
-`8ead84a` commitként egyirányúan átkerült. A `69bc1fd` és `910cdf4`
-dokumentációs checkpointok új alkalmazáskódot nem tartalmaznak. A migrációs ág
-eltérő, korábbi tesztváltozatait nem vettük át; az `ec2c65e` tesztjavításai
-megmaradtak. A `main` Capacitor/WebView felülete és
-Node/npm manifesztje nincs átemelve: a natív ágon a Compose felület a cél.
-Ez a forrás-/architektúra-csere nem bizonyít termékfunkció-paritást; az alábbi
-funkciók külön vannak értékelve. Az ág létrehozásakor rögzített összevetés:
-`main` 69 commit-tal előrébb, a migrációs ág 151 commit-tal előrébb állt.
+HEAD `a32c5f0`; a mostani alkalmazás-/teszt-/dokumentációs módosítások még
+munkafában vannak, nem buildeltek. A `main` (`8a36502`, alkalmazásbaseline
+`7473b30`) érintetlen; az egyirányú forráság frissített HEAD-je `04dba76`.
+A `36462aa`, `c941413` és `04dba76` újratervezett képtáblákat, teljes
+main-funkcióleltárt és összevont natív elhelyezési tervet tartalmaz; az A01–E20
+lista **81 megőrzési követelmény**, nem kész funkció- vagy tesztállapot.
+Az `033386e` katalógus/migráció tartalma a finalization ágon már megjelent
+`8ead84a`-ként. A pontos `git diff HEAD origin/feat/native-android-migration`
+felülvizsgálata után a finalization ág `87bb0ae`, `43598b2` és `ec2c65e`
+Wear-/tesztjavításait megőriztük; az upstream fájlverziók vak átvétele ezeket
+visszavonná. A legutóbbi új upstream commitok dokumentációs változások, az
+alkalmazáskód nem változott `033386e` óta. A `main` Capacitor/WebView felülete
+és Node/npm manifesztje nincs átemelve; a cél a natív Compose.
 
 ## Státuszjelölések és bizonyíték
 
@@ -36,14 +37,17 @@ push után a futás **cancelled** állapotba került, mielőtt az aláírt updat
 verziókapu befejeződött volna. Az új, katalógus-integrációt is tartalmazó
 `8ead84a` CI-futása:
 [40119749853](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40119749853)
-ellenőrzéskor **in progress**; az SDK-telepítés sikeres, a phone/Wear debug build
-futott, a unit suite még nem indult el. Az új katalógusteszt és a teljes
-aláírt/update/UI kapu ezért még nincs igazolva; nincs friss APK-pár vagy
-frissítési bizonyíték.
+**failure** lett. Az SDK-telepítés sikerült, de a telefonos Kotlin-fordítás
+`BackupRestoreManager.kt:542` sorban elbukott: a seedelő hívás egy nem elérhető
+`context` nevet használt. Ez forráskódhiba, nem Windows TLS/SDK környezeti hiba.
+A javítás `appContext`-re vált; az új UI- és palettabatch-szel együtt még nincs
+CI-vel igazolva. A teszt-, aláírt/update- és UI-kapuk, illetve az APK-pár továbbra
+nyitottak.
 Fizikai telefonos/Watch7-próba sem történt.
 
 | Main-funkció / natív terület | Státusz | Meglévő bizonyíték és fennmaradó rés |
 | --- | --- | --- |
+| Kezdőlap, ajánlott programnap és főoldali gyorselérések | **ELLENŐRIZENDŐ** | Az új kezdőlap az aktív/importált állapotot, a kanonikus `NativeCoachTargets` szerinti ajánlott napot, az indítási útvonalat és Programok/Naptár/Coach gyorselérést köti be; a Compose-próbakód megírva, de ezen a forráson nem futott. |
 | Edzéstervek, gyakorlatok, sorozatok, előzmény, RIR | **RÉSZBEN KÉSZ** | Natív terv-/sorozatmotor, Room, editor és lapozott napló létezik. `8ead84a` a rögzített main-katalógus 106 gyakorlatát/13 programját hiánypótló seedeléssel vezeti be; a test suite még nem futott ezen a forráson. Teljes editor-, Coach- és RIR-paritás továbbra nyitott. |
 | Aktív és gyors edzés | **RÉSZBEN KÉSZ** | Programnapi és quick/outdoor indítás, stabil sorozatazonosítók, natív editor és lezárás létezik. A draft/indítás/mentés/elvetés teljes Compose útja még nem kapott készülékes próbát. |
 | GPS-táv, útvonal, térkép | **RÉSZBEN KÉSZ** | `922b6b7`/`e164ef3` GPS-kötési és explicit stop-regressziói CI-ben zöldek; a valós helyengedély-, szenzor-, térkép- és útvonalviselkedés készüléken nyitott. |
@@ -85,26 +89,29 @@ nincs `package.json`/`package-lock.json`; `npm ci` nem alkalmazható. A workflow
 Node 22-es, csomagtelepítést nem igénylő Node-ellenőrzéseket futtat.
 
 A `docs/screenshots` képei a régi main alkalmazást mutatják, nem a natív app
-dizájnreferenciái. A négy, felhasználó által megadott natív tervlap most már
-verziókezelt formában a `docs/design/mockups/native-ui-board-1.png`–`-4.png`
-fájlokban van. Ezek 24 képernyő vizuális referenciái, nem működési bizonyítékok;
-a Compose-felület még nem lett hozzájuk igazítva.
+dizájnreferenciái. A felhasználó által jelzett frissített tervlapok a
+`docs/design/mockups/01-...png`–`04-...png` fájlokban vannak; az eredeti négy
+`native-ui-board-*` fájl is megmaradt. A 24 képernyő vizuális referenciáit most
+kezdtük Compose-kódra átvezetni; a képek önmagukban nem működési bizonyítékok.
+Az aktuális funkcióleltár a `docs/design/NATIVE_DESIGN_HANDOFF.md` A01–E20
+szakasza. A metrika-/funkció útvonalankénti tesztfedettség még nincs végig
+feltérképezve; a megőrzendő lista nem tekinthető kész lefedettségi mérésnek.
 
 ## Következő feladatok
 
-1. A `40119184559` aláírt-frissítési kapuját és a `40119749853` teljes futását
-   ellenőrizni; a signer/version folytonosságot, UI-kapukat és katalógusteszteket
-   csak a ténylegesen zöld eredmény után jelölni igazoltnak.
-2. A fennmaradó teszthibákat a környezet- és forráskódhibáktól különválasztani,
-   majd az érintett teszteket újrafuttatni.
+1. Statikus ellenőrzés után commit/push kizárólag a `feat/native-android-finalization`
+   ágra, majd a meglévő natív Actions-folyamat futtatása pontosan ezen a SHA-n;
+   a build-, JVM-, Compose UI- és signed-upgrade eredményt külön értékelni.
+2. A jelen batch CI-hibáit forrás-/környezet-/tesztelvárási ok szerint szétválasztani,
+   és csak igazolt hibát javítani; a szükséges kaput újrafuttatni.
 3. Kritikus Compose telefonos indítás/folytatás/mentés/elvetés és az interval/
    preset, Health-refresh, Coach-order utak integrációs UI-próbái.
-4. Teljes main-paritás: Coach/progression, napló/naptár/statisztika, lokális
-   mentés-visszaállítás, fotók/Health/Drive és HU/EN/DE/RO UX.
-5. A négy eltárolt natív tervlap alapján a Compose UI célzott igazítása,
-   először a közös grafit/arany theme és az alap navigáció/főoldal, a
-   felhasználói beállítások és mind a hat működési feltétel megőrzésével.
-6. Pontos azonos forrású, meglévő eredeti aláírókulcsos release gate; régi
-   telefonos/Wear release-ről adatot tartó szintetikus upgrade; végül külön
-   teszteszközön telefon + Watch7. Készülékes elfogadás és külön jóváhagyás
-   nélkül nincs main merge, release vagy élő adatos telepítés.
+4. Az A01–E20 mind a 81 funkciójára natív útvonal/adatforrás/teszt megfeleltetés:
+   különösen Coach/progression, napló/naptár/statisztika, testsúly/egészségnapló,
+   lokális mentés-visszaállítás, fotók/Health/Drive és HU/EN/DE/RO UX.
+5. A frissített 24 képernyős átadó alapján a Compose UI célzott igazítása;
+   a jelenlegi kezdőlap csak az első, még ellenőrzendő UI-batch.
+6. Azonos forrású, meglévő eredeti aláírókulcsos release gate; régi telefonos/
+   Wear release-ről adatot tartó szintetikus upgrade; végül külön teszteszközön
+   telefon + Watch7. Készülékes elfogadás és külön jóváhagyás nélkül nincs main
+   merge, release vagy élő adatos telepítés.

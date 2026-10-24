@@ -14,7 +14,8 @@ import org.json.JSONObject
 import java.time.*
 
 internal data class CoachTarget(val programId: String, val dayId: String, val title: String,
-    val schedule: CalendarScheduleEntity? = null, val upcoming: Boolean = false)
+    val schedule: CalendarScheduleEntity? = null, val upcoming: Boolean = false,
+    val programTitle: String = "")
 internal data class CoachUiState(val loading: Boolean = true, val error: Boolean = false, val language: String = "hu",
     val readiness: NativeCoachReadiness.Result? = null, val target: CoachTarget? = null,
     val refreshing: Boolean = false, val refreshFailed: Boolean = false,

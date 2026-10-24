@@ -46,6 +46,27 @@ az öt alsó füles alternatívát mutatják, AI-generált szemléltető látvá
 Nem alkalmazásképernyőfotók, nem UI-teszteredmények, nem funkcióígéretek.
 Szövegek, értékek, ikonok és példák nem tekinthetők kész termékspecifikációnak.
 
+### Frissített tervlapok – aktuális UI-referencia
+
+A felhasználó a `feat/native-android-migration` ágon lévő
+[`NATIVE_DESIGN_HANDOFF.md`](NATIVE_DESIGN_HANDOFF.md) dokumentumra és az ottani
+négy újratervezett táblára irányította a figyelmet. Ezek a `36462aa` upstream
+dokumentációs commitból változatlanul kerültek át; a commit alkalmazáskódot nem
+tartalmazott. A frissített táblák a jelenlegi Compose-elrendezési referenciák;
+az illusztratív szöveg, mintaadat és funkcióábrázolás nem írja felül a rögzített
+működési szabályokat.
+
+| Tervlap | Fájl |
+| --- | --- |
+| 1/4 – Kezdőlap és tervezés | [`mockups/01-main-pages-and-planning.png`](mockups/01-main-pages-and-planning.png) |
+| 2/4 – Edzés és mérés | [`mockups/02-workouts-and-measurement.png`](mockups/02-workouts-and-measurement.png) |
+| 3/4 – Napló, térkép és egészség | [`mockups/03-journal-maps-and-health.png`](mockups/03-journal-maps-and-health.png) |
+| 4/4 – Beállítások és szerkesztés | [`mockups/04-editing-and-settings.png`](mockups/04-editing-and-settings.png) |
+
+Az eredetileg megadott táblák `native-ui-board-1.png`–`-4.png` néven megmaradnak;
+az új, sorszámozott táblák helyettesítik őket a további UI-igazítás vizuális
+forrásaként. A képek manifestje a `mockups/MANIFEST.json` fájlban ellenőrizhető.
+
 1. Főoldalak és tervezés: Kezdőlap, Edzés, Programok, Naptár, Gyakorlatok,
    Gyakorlat részletei.
 2. Edzés és mérés: súlyzós edzés, egyoldali időmérés, kétoldali időmérés,
@@ -73,6 +94,12 @@ kerültek, változtatás nélkül:
 
 Funkcionális referencia továbbra az elfogadott main; a választott natív
 vizuális/navigációs irány ez a négy képtábla és az öt alsó fül.
+
+A teljes main-funkciókör és az összevont natív elérési helyek megőrzési
+követelményeit a [teljes dizájn- és funkcióátadó](NATIVE_DESIGN_HANDOFF.md)
+A01–E20 leltára rögzíti. Ez nem megvalósítási vagy tesztbizonyíték: a kód,
+adatforrás és ellenőrző teszt állapotát külön kell vezetni a
+`docs/NATIVE_FINALIZATION_STATUS.md` fájlban.
 
 
 ## Kötelező Compose-bekötési feltételek – felhasználói pontosítás (2026-10-24)

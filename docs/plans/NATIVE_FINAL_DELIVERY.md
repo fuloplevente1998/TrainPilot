@@ -5,7 +5,9 @@ a részletes batch és a dizájn hat működési feltétele vele együtt kötele
 
 ## Keretek
 
-- Csak `feat/native-android-migration`, `/workspace/TrainPilot-native-migration`.
+- Kizárólag `feat/native-android-finalization`; ez a `feat/native-android-migration`
+  ágból származik és azon folytatódik. A migration ág csak olvasható, egyirányú
+  upstream forrás: `feat/native-android-migration` → `feat/native-android-finalization`.
 - Main referencia `7473b30` / `5d27aa9`, nem merge-elhető/nem módosítható.
 - Verzió változatlan: `1.3.71-native-test` /2736, `com.repforge.app` mindkét eszközön.
 - Meglévő `com.repforge.app` Kotlin/motor/adatút újrahasználata; a szimulált
@@ -13,6 +15,9 @@ a részletes batch és a dizájn hat működési feltétele vele együtt kötele
 - A meglévő Coach/Calendar, ötfüles navigáció és globális Settings bekötését
   befejezni/ellenőrizni kell, nem új párhuzamos implementációt írni helyettük.
 - Az importált fájl/motorkód megléte nem teljes funkció vagy bevizsgálási bizonyíték.
+- A `docs/design/NATIVE_DESIGN_HANDOFF.md` A01–E20, 81 soros main-funkcióleltára
+  megőrzési követelmény, nem megvalósítási/tesztigazolás; a státuszt a
+  `docs/NATIVE_FINALIZATION_STATUS.md` szerint kell mérni.
 
 ## Teljes funkcionális befejezés – öt batch-terület
 

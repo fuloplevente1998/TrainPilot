@@ -47,8 +47,8 @@ data class TrainPilotExtendedColors(
 
 val LocalTrainPilotColors = staticCompositionLocalOf {
     TrainPilotExtendedColors(
-        accent = Color(0xFF4D8FBE),
-        accent2 = Color(0xFF7CB4D6)
+        accent = Color(0xFFF2BD45),
+        accent2 = Color(0xFFFFD97D)
     )
 }
 

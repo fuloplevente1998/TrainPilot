@@ -225,7 +225,7 @@ fun TrainPilotAppScaffold(
         bottomBar = {
             Column {
                 // Part of measured scaffold chrome, so the banner cannot cover list actions.
-                if (hasActiveWorkout && currentRoute != "active_workout") FloatingActiveWorkoutBanner(
+                if (hasActiveWorkout && currentRoute != "active_workout" && currentRoute != Screen.Home.route) FloatingActiveWorkoutBanner(
                     title = activeSnapshot?.optString("dayName", "Folyamatban lévő edzés") ?: "Edzés",
                     isPaused = isWorkoutPaused, timerOwner = timerOwner, language = settings.language,
                     enabled = !starting && !editorFinishing,
@@ -248,12 +248,20 @@ fun TrainPilotAppScaffold(
             ) {
                 composable(Screen.Home.route) {
                     HomeScreen(
-                        navController = navController,
-                        onStartWorkout = { dayId ->
-                            startWorkout(null, dayId)
+                        hasActiveWorkout = hasActiveWorkout,
+                        activeWorkoutTitle = activeSnapshot?.optString("dayName").orEmpty(),
+                        isWorkoutPaused = isWorkoutPaused,
+                        activeWorkoutOwner = timerOwner,
+                        onResumeActiveWorkout = { selectDestination("training") },
+                        onStartRecommendedWorkout = { programId, dayId, scheduleId ->
+                            startWorkout(programId, dayId, scheduleId)
                         },
-                        onCalendar = { selectDestination("calendar") }, onCoach = { selectDestination("coach") },
-                        onPrograms = { selectDestination("programs") }, language = settings.language, busy = navigationBlocked,
+                        onOpenTraining = { selectDestination("training") },
+                        onPrograms = { selectDestination("programs") },
+                        onCalendar = { selectDestination("calendar") },
+                        onCoach = { selectDestination("coach") },
+                        language = settings.language,
+                        busy = navigationBlocked,
                         onResumeDraft = {
                             if (!starting) {
                                 starting = true
@@ -267,9 +275,7 @@ fun TrainPilotAppScaffold(
                                 }
                             }
                         },
-                        onQuickWorkout = { outdoor ->
-                            selectDestination(if (hasActiveWorkout) "training" else if (outdoor) "quick_outdoor" else "quick_workout")
-                        }
+                        onQuickWorkout = { selectDestination(if (hasActiveWorkout) "training" else "quick_workout") }
                     )
                 }
                 composable(Screen.Training.route) {

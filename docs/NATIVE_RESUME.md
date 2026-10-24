@@ -6,8 +6,9 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 
 ## Hatókör és munkamód
 
-- Repo fuloplevente1998/TrainPilot; munkafa `/workspace/TrainPilot-native-migration`;
-  kizárólag `feat/native-android-migration`.
+- Repo fuloplevente1998/TrainPilot; aktív munkaág `feat/native-android-finalization`.
+  A `feat/native-android-migration` egyirányú, csak olvasható forráság; a `main`
+  szintén érintetlen referencia.
 - Teljes elfogadott feladat: `docs/plans/NATIVE_FINAL_DELIVERY.md` és batch terv.
   Teljes appfunkció/bekötés + 24 nézet + témák + HU/EN/DE/RO + tesztek + végső
   valódi emulátoros képek. Nem csak témázás; nincs új generált mockup.
@@ -19,8 +20,31 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 - Nem indítható subagent külön kérés nélkül. Meglévő Kotlin/kanonikus adatút az alap;
   prototípus/fake Health-forrás tilos. Nyolcgombos menü helyett öt alsó fül elfogadva,
   jobb felső Settings; abból visszatérés nem pause, valódi editor-elhagyás igen.
+- Az alábbi korábbi technikai checkpointok a migrációs ágon rögzített munkát írják le;
+  az aktuális ág/CI/UI állapothoz a `docs/WORK_HANDOFF.md` és
+  `docs/NATIVE_FINALIZATION_STATUS.md` a mérvadó.
 
 ## Legutóbbi konkrét munka
+
+- A finalization ág friss upstream-ellenőrzésekor a migrációs remote `04dba76` volt.
+  A `36462aa`/`c941413`/`04dba76` dokumentációja a NATIVE_DESIGN_HANDOFF.md
+  fájlban rögzíti a 81 darabos A01–E20 main-funkcióleltárt és az új összevont
+  elhelyezéseket. Ez megőrzési követelmény, nem készre jelentés; útvonal/adatforrás/
+  teszt állapot külön igazolandó. Az upstream új commitjaiban nem volt 033 utáni
+  alkalmazáskód; a finalization Wear/tesztjavításait nem írtuk felül.
+- Munkaág HEAD `a32c5f0`, munkafa nem üres és Androidon még nem futtatott. A
+  kezdőlap már a `NativeCoachTargets` kanonikus programnapját és schedule ID-jét
+  indítható kártyán köti be, megtartja az aktív/importált draft elsőbbségét és
+  a Programok/Naptár/Coach gyorselérést. Négy valódi egészségcsempe és Watch-adat
+  frissesség jelenik meg. Új UI-próbakód lefedi a target indítását és az üres
+  ajánlás utáni Edzés navigációt; még nem futott.
+
+- A `40119749853` továbbra is az utolsó CI-futás: a Kotlin fordítás egy `context`
+  hivatkozás miatt elbukott. A munkafában az `appContext`-javítás megvan, de a
+  CI/egységteszt/aláírt upgrade/API-APK futás nincs elindítva az aktuális forráson.
+- `docs/design/NATIVE_DESIGN_HANDOFF.md` most a friss teljes funkcióleltárat és
+  négy SHA-val ellenőrzött tervlapot tartalmazza. Ezek kifejezetten nem funkció-
+  vagy tesztbizonyítékok; teljes ID-szintű lefedettség még nincs felmérve.
 
 - Friss intervallumblokk: meglévő motor nem-autoAdvance módja csak egy aktuális
   sorozatot mér, pozitív munkaidőt megőriz, nem készít/nem léptet; auto mód megmarad.
@@ -35,7 +59,7 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   Bodyweight admission/hibakezelés; Settings/programváltás gate-elutasítás kezelve.
   8 új unit-hibapróba + 1 valódi Compose discard-fault/retry tesztkód; nem futottak.
 
-- Legfrissebb alkalmazásforrás **0f51320**: a replacement mutex író-admissionnel
+- Korábbi alkalmazásforrás-checkpoint **0f51320**: a replacement mutex író-admissionnel
   védi a Wear parancsot, közös finisht, import/export/egyedi history save-et,
   DataStore set/resetet, naptári VM-módosítást és naplótörlést. Context-lease a
   beágyazott saját callbackhez, epoch a lecserélt állapothoz tartozó várakozóhoz.

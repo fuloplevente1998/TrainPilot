@@ -69,7 +69,12 @@ képtáblát csatolt (1/4–4/4); változatlan példányaik a
 Ezek AI-generált látványtervek: elrendezés- és stílusreferenciák, nem működő
 képernyőfotók, teszteredmények vagy valódi felhasználói/egészségügyi adatok.
 A `docs/screenshots` képei a régi main appot mutatják, és nem a natív app
-dizájnreferenciái.
+dizájnreferenciái. A felhasználó a `feat/native-android-migration` ágon található
+frissített 24-képernyős tervlapokra is ráirányította a figyelmet; ezek változatlan
+másolata és átadója a `docs/design/mockups/01-main-pages-and-planning.png`–
+`04-editing-and-settings.png` és `docs/design/NATIVE_DESIGN_HANDOFF.md`.
+Jelenleg ezek a frissített táblák a natív UI elrendezési referenciái; a bennük
+látható adatok és mintafeliratok továbbra sem termékadatok vagy tesztbizonyítékok.
 
 ## Product Principles
 

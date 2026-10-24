@@ -4,42 +4,55 @@ Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
-## Friss mérföldkő – upstream katalógus és natív CI
+## Friss mérföldkő – teljes funkcióleltár és kezdőlap
 
-Munkaág `feat/native-android-finalization`, aktuális commit `8ead84a`. Friss
-`git fetch` után a forráság `033386e`; a `29ac3a2` és `ccc5c9a` kódja patch-
-egyezőként már megvolt (`572a10b`, `38e38df`), a `033386e` teljes main-katalógus
-és hiánypótló, nem felülíró adatbázis-seedelése pedig `8ead84a`-ként átkerült.
-A `69bc1fd`/`910cdf4` checkpoint csak dokumentációt módosít. A forráságban lévő
-régebbi MetadataGate/Discard tesztváltozatokat nem vettük át; az `ec2c65e`
-javításai maradnak. `main` és a forráság érintetlen.
+Munkaág `feat/native-android-finalization`, HEAD `a32c5f0`; a finalization remote
+ugyanezen a commiton áll. A munkafa most kód-/teszt-/dokumentáció-módosításokat
+tartalmaz. A legfrissebb upstream `feat/native-android-migration` ref `04dba76`;
+a `36462aa`, `c941413` és `04dba76` a négy újratervezett tervlapot, teljes
+main-funkcióleltárt és összevont natív elhelyezést rögzítő dokumentációs
+checkpointok. Az A01–E20, összesen 81 sor **megőrzési követelmény**, nem
+megvalósítási vagy teszteredmény. A leltár a `docs/design/NATIVE_DESIGN_HANDOFF.md`
+fájlban van; a négy SHA-ellenőrzött tervlap a `docs/design/mockups/` alatt.
+`main` és a migrációs ág íratlan maradt.
 
-`40118525270` (`43598b2`): a telefonos és Wear OS debug APK-k fordítása sikerült,
-de a telefonos unit suite 567 tesztjéből kettő elbukott. A metadata-gate teszt
-virtuális `withTimeout`-ot használt valós IO-dispatcher körül; a discard teszt
-0-s, már elavult execution revisionnel küldte a rekordot, amelyet helyesen
-elutasított a motor. A tesztek célzott javítása `ec2c65e`-n pusholva; a
-[40119184559](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40119184559)
-futásban a phone/Wear debug build és a telefonos unit suite sikeres lett, de az
-újabb push után megszakadt, ezért az aláírt update nem fejeződött be. A
-`8ead84a`-hoz indult
-[40119749853](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40119749853)
-futás ellenőrzéskor aktív; a debug build indult, a unit és signed/update kapuk
-még függők, ezért a katalógusintegráció teljes kapuja még nem igazolt.
+A `033386e` katalógus-/migrációs alkalmazáskód finalization commitként `8ead84a`-val
+megjelent. A legújabb migration fájl-összevetésben a 033 utáni upstream commitok
+nem tartalmaznak új alkalmazáskódot; a véglegesítési ág `87bb0ae`, `43598b2` és
+`ec2c65e` Wear- és tesztjavításait megtartottuk, nem cseréltük vissza az
+upstream eltérő fájlváltozataira.
 
-A `docs/screenshots` régi main-képei nem a natív felület tervei. A natív app
-vizuális rendszere külön lesz. A felhasználó négy natív UI-tervlapját
-verziókezeltük a `docs/design/mockups/native-ui-board-1.png`–`-4.png` útvonalakon;
-ezek a 24 képernyős grafit/arany irány vizuális forrásai, nem implementációs
-vagy tesztbizonyítékok. Következő: a futó CI-kapuk tényleges eredményének
-ellenőrzése, majd a közös theme és kezdőlap célzott igazítása. Fizikai telefonos
-és Watch7-próba továbbra is külön szükséges.
+Az új kezdőlap már dinamikus aktív/importált Folytatás-állapotot, a Coach által
+használt kanonikus célválasztásból származó programnap-ajánlást, tényleges indítási
+callbacket, Programok/Naptár/Coach gyorselérést, gyors edzést, valós Watch-frissítési
+időt és négy adatforrásból származó egészségcsempét kezel. Üres/error állapot,
+mentett paletta megőrzése és HU/EN/DE/RO feliratok is készültek. A célzott Compose-
+próbakód a folytatást, ajánlott nap indítását és hiányzó ajánlásnál az Edzés
+megnyitását ellenőrzi; **még egyik Android-próba sem futott**.
+
+A `40119749853` (`8ead84a`) futás **failure**: az API 36 SDK telepítése sikerült,
+de a Kotlin-fordítás a `BackupRestoreManager.kt:542` katalógus-seedelési hívásánál
+egy nem létező `context` miatt elbukott. Ez forráskódhiba, nem Windows TLS/SDK
+hiba; az aktuális munkafa a függvény paraméterét `appContext`-re javítja.
+Ezen a forráson még nincs új Actions-futás, build, unit/UI teszteredmény,
+aláírt frissítés vagy APK-pár.
+
+Következő: erőforrás-/diffellenőrzés, kód-review, majd `[skip ci]` kódolási commit,
+push kizárólag a finalization ágra, és az aktuális SHA-n a meglévő natív Actions
+kapu. A teljes A01–E20 útvonal/adatforrás/teszt-lefedettség és a fizikai
+telefonos/Watch7-próba továbbra nyitott.
+
+## Korábbi technikai checkpointok
+
+Az alábbi mérföldkövek a finalization ág korábbi, különálló munkablokkjainak
+forráshoz kötött naplói. Nem a jelenlegi branch/ref vagy következő lépés
+állapotjelentései; a fenti blokk az aktuális átadási pont.
 
 Az alábbi batch-leírások történeti, forráshoz kötött részletek; aktuális futás-,
 ág- és kapuállapotot ez a szakasz, illetve a [véglegesítési státusz](NATIVE_FINALIZATION_STATUS.md)
 tartalmazza.
 
-## Friss munkablokk – intervallummód és hordozható preset
+## Korábbi munkablokk – intervallummód és hordozható preset
 
 A meglévő PhoneWorkoutPlans/IntervalTimerService út támogatja az explicit
 `autoAdvance=false` módot: egy aktuális sorozat, nincs automatikus done/léptetés;
@@ -60,7 +73,7 @@ Diff és a négy XML kulcskészlete/resource-hivatkozások ellenőrizve; nincs �
 CI/APK/kép. Utolsó zöld továbbra `dd4cc27`. Következő: Coach provider/per-gyakorlat,
 további bekötések, teljes lokalizáció/UI, végül közös GitHub-kapu; élő telepítés STOP.
 
-## Friss munkablokk – Phone elvetés és UI-írások
+## Korábbi munkablokk – Phone elvetés és UI-írások
 
 A telefonos elvetés a meglévő `TrainPilotWorkoutFinalization` közös mutexét és
 metadata admissiont használja. Tartós, megkülönböztetett discard-fence mellett
@@ -78,7 +91,7 @@ Helyben diff és a négy erőforrás-XML szerkezeti ellenőrzése történt. Nin
 APK vagy screenshot. Következő: intervallum/preset/nem-autoAdvance paritás, Coach,
 lokalizáció és teljes UI; utolsó zöld forrás `dd4cc27`. Élő adatos telepítés STOP.
 
-## Legfrissebb forrás – háttérírások és ZIP-replay
+## Korábbi forrás-checkpoint – háttérírások és ZIP-replay
 
 **`0f51320`**, `[skip ci]`: a meglévő replacement mutex írási admissiont kapott,
 nem külön adatmotort. A korábban belépett metaadatíró végigfuthat; replacement
@@ -104,7 +117,7 @@ Következő: a még különálló írók és UI hibakezelés; interval/preset é
 per-gyakorlat funkciók a teljes tervből, majd teljes kritikus UI suite és a batch
 végén összevont CI. Main/verzió változatlan, saját adatos telepítés STOP.
 
-## Aktuális folytatás – Drive import és kontextus
+## Korábbi folytatás-checkpoint – Drive import és kontextus
 
 Rövid, új chatben/tömörítés után olvasandó állapot: [NATIVE_RESUME.md](NATIVE_RESUME.md).
 **369a4d0** `[skip ci]`: Drive merge hálózati szakasza után adatcsere-zár alatt
@@ -118,7 +131,7 @@ próba megírva/nem futtatva. Utolsó zöld forrás továbbra dd4cc27, nincs új
 A canonical check és az import közötti már belépett background Room-írások versenye,
 cloud fotó-staging, teljes ZIP/fotó/Health roundtrip és a terv többi része még nyitott.
 
-## Legfrissebb forrás – tranzakciós backup import és hordozható állapot
+## Korábbi forrás-checkpoint – tranzakciós backup import és hordozható állapot
 
 **`851391c`**, `[skip ci]`: a migrátor Room-oldali importja egy tranzakció;
 a hordozható DataStore-beállítások csak sikeres Room-commit után, egyetlen editben
@@ -213,7 +226,7 @@ Mainen csak az AGENTS.md thinking-szabály frissült felhasználói kérésre
 (`8a36502d`); main alkalmazáskód/kiadás/verzió változatlan. Natív munka továbbra
 külön ágon; élő adatokra telepítés és main merge nincs engedélyezve.
 
-## Legfrissebb forrás – telefonos Compose UI-kapu alapja
+## Korábbi forrás-checkpoint – telefonos Compose UI-kapu alapja
 
 **`1d38edf`**, `[skip ci]`: a meglévő `native-android.yml` új `phone-ui` jobja,
 izolált `-PnativePhoneUiTests` AndroidTest source set és manifest. A megőrzött

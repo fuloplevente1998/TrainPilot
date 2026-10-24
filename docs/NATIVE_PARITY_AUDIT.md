@@ -1,5 +1,12 @@
 # Natív migráció – funkcióegyezési ellenőrzés
 
+Ez a részletes, régebbi batch-ekből összeállított technikai audit történeti
+bizonyítékokat tartalmaz; nem a legutóbbi commit teljes körű státusza. Az aktuális
+funkciómegőrzési követelmény az `docs/design/NATIVE_DESIGN_HANDOFF.md` A01–E20
+(81 funkció), a mostani implementációs státusz pedig a
+`docs/NATIVE_FINALIZATION_STATUS.md`. A leltár önmagában egyik funkciót sem
+minősíti késznek.
+
 Állapot: 2026-10-24, `dd4cc27` importált draft-átvétel, `9da639d` gyors/kültéri indítás és GPS-választás, `40384e7` kézi measured/interval/időnapló, `922b6b7` CI / `e164ef3` GPS/pihenő/gyakorlatváltás, `b6e8158` stabil UI-célzás/alsó stopper, `9492755` editor/motor és `cab522a` indítás/lezárás alapján. A korábbi teljes technikai zöld alap `134adcd`. Ez forrásellenőrzés, nem készülékes elfogadás.
 Összehasonlítási alap: a készüléken elfogadott gyorsított 1.3.71 /2735,
 `v1.3.71-perf-20261022`, forrás `5d27aa9` (appkód: `715dc5d`).

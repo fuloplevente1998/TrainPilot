@@ -39,4 +39,16 @@ class NativeThemeTokensTest {
         assertEquals(Color.White, NativeThemeTokens.onFill(Color.Black))
         assertEquals(Color.Black, NativeThemeTokens.onFill(Color.White))
     }
+    @Test fun firstRunUsesThePinnedGoldPaletteAndKeepsExplicitSavedColors() {
+        val default = NativeThemeTokens.resolve(TrainPilotUserSettings())
+        assertEquals(Color(0xFFF2BD45), default.accent)
+        assertEquals(Color(0xFFFFD97D), default.accent2)
+
+        val saved = NativeThemeTokens.resolve(
+            TrainPilotUserSettings(themeKey = "classicBlue", themeAccent = "#4d8fbe",
+                themeAccent2 = "#7cb4d6", themeFamily = "basic")
+        )
+        assertEquals(Color(0xFF4D8FBE), saved.accent)
+        assertEquals(Color(0xFF7CB4D6), saved.accent2)
+    }
 }

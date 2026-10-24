@@ -30,7 +30,19 @@ internal class NativeCoachTargets(private val db: TrainPilotDatabase) {
             // The local date comes from the actual instant. Imported date fields/offset strings
             // cannot reclassify a previous-day UTC timestamp that belongs to today locally.
             val localDay = Instant.parse(row.startIso).atZone(zone).toLocalDate()
-            return CoachTarget(program.program.id, day.dayId, title(day.nameHu, day.nameEn, day.nameDe, day.nameRo), row, localDay != today)
+            return CoachTarget(
+                programId = program.program.id,
+                dayId = day.dayId,
+                title = title(day.nameHu, day.nameEn, day.nameDe, day.nameRo),
+                schedule = row,
+                upcoming = localDay != today,
+                programTitle = title(
+                    program.program.nameHu,
+                    program.program.nameEn,
+                    program.program.nameDe,
+                    program.program.nameRo
+                )
+            )
         }
         val program = programs.firstOrNull { it.program.id == activeProgramId } ?: return null
         val ordered = program.days.sortedBy { it.sortOrder }
@@ -45,6 +57,16 @@ internal class NativeCoachTargets(private val db: TrainPilotDatabase) {
         }
         val index = last?.let { row -> ordered.indexOfFirst { it.dayId == row.dayId } } ?: -1
         val day = ordered[(index + 1).coerceAtLeast(0) % ordered.size]
-        return CoachTarget(program.program.id, day.dayId, title(day.nameHu, day.nameEn, day.nameDe, day.nameRo))
+        return CoachTarget(
+            programId = program.program.id,
+            dayId = day.dayId,
+            title = title(day.nameHu, day.nameEn, day.nameDe, day.nameRo),
+            programTitle = title(
+                program.program.nameHu,
+                program.program.nameEn,
+                program.program.nameDe,
+                program.program.nameRo
+            )
+        )
     }
 }

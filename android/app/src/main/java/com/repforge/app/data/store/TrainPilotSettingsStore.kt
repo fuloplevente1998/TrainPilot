@@ -42,9 +42,9 @@ data class ThemePaletteOption(
 data class TrainPilotUserSettings(
     val language: String = "hu",
     val activeProgramId: String = "home-basic",
-    val themeKey: String = "classicBlue",
-    val themeAccent: String = "#4d8fbe",
-    val themeAccent2: String = "#7cb4d6",
+    val themeKey: String = "amberGold",
+    val themeAccent: String = "#f2bd45",
+    val themeAccent2: String = "#ffd97d",
     val themeFamily: String = "basic",
     val restSeconds: Int = 90,
     val workSeconds: Int = 30,
@@ -148,13 +148,15 @@ class TrainPilotSettingsStore(private val context: Context) {
     }
 
     val settingsFlow: Flow<TrainPilotUserSettings> = context.trainPilotDataStore.data.map { prefs ->
+        val defaultTheme = AVAILABLE_THEMES.first { it.key == "amberGold" }
+        val storedTheme = AVAILABLE_THEMES.firstOrNull { it.key == prefs[KEY_THEME_KEY] }
         TrainPilotUserSettings(
             language = prefs[KEY_LANGUAGE] ?: "hu",
             activeProgramId = prefs[KEY_ACTIVE_PROGRAM_ID] ?: "home-basic",
-            themeKey = prefs[KEY_THEME_KEY] ?: "classicBlue",
-            themeAccent = prefs[KEY_THEME_ACCENT] ?: "#4d8fbe",
-            themeAccent2 = prefs[KEY_THEME_ACCENT2] ?: "#7cb4d6",
-            themeFamily = prefs[KEY_THEME_FAMILY] ?: "basic",
+            themeKey = prefs[KEY_THEME_KEY] ?: defaultTheme.key,
+            themeAccent = prefs[KEY_THEME_ACCENT] ?: storedTheme?.accent ?: defaultTheme.accent,
+            themeAccent2 = prefs[KEY_THEME_ACCENT2] ?: storedTheme?.accent2 ?: defaultTheme.accent2,
+            themeFamily = prefs[KEY_THEME_FAMILY] ?: storedTheme?.family ?: defaultTheme.family,
             restSeconds = (prefs[KEY_REST_SECONDS] ?: 90).coerceIn(0, 3600),
             workSeconds = (prefs[KEY_WORK_SECONDS] ?: 30).coerceIn(1, 3600),
             rounds = (prefs[KEY_ROUNDS] ?: 1).coerceIn(1, 100),
