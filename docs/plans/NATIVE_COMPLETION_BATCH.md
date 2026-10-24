@@ -119,3 +119,12 @@ folytatás, natív pihenő skip/±15 mp, gyakorlatváltás megmaradó pihenővel
 pause/kilépés vs. discard/finish, külön Samsung/saját/Coach score, valódi friss
 Watch/BLE pulzus vagy hiányzóadat-állapot. Most csak dokumentálva, nem megvalósítva
 vagy újra bevizsgálva; a forrás és a 43 megírt tesztkód állapota változatlan.
+
+
+## Teljes témakatalógus – első javítás
+
+`787bc8d`: 26 main-paletta + 6 megőrzött natív extra; gyökérszintű legacy
+`themeAccent` kulcs migrációja, natív kulcs elsőbbség, export kulcsként;
+négy új, még nem futtatott teszt és rögzített main fixture. A batch összesen47
+próba, nincs új build/CI. Tématokenek, teljes Basic/Vivid stílus, kontraszt,
+régi natív extra kulcsok webes exportja és tényleges roundtrip/UI még nyitott.

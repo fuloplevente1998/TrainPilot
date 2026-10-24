@@ -4,6 +4,24 @@ Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Új alkalmazásforrás – témakatalógus és migráció első javítása
+
+**`787bc8d`**, `[skip ci]`: main `7473b30` végső palettái alapján 10 Basic +
+16 Vivid témakulcs/szín átvéve, a korábbi natív hat extra kulcs is megmarad
+(összesen 32 választható paletta). HU/EN/DE/RO témanevek. A migráció most már
+beolvassa a main gyökérszintű `themeAccent` témakulcsát is, `settings` objektum
+nélkül; natív `settings.themeKey` elsőbbség, hiányzó/ismeretlen nem írja át a
+választást. Exportban `themeAccent` kulcs, nem hex; natív kulcs külön is megmarad.
+Négy új `NativeThemeParityTest` megírva, befagyasztott main-paletta fixture-rel;
+a batch összesen **47 megírt, még nem futtatott próba**. Csak forrás/diff ellenőrzés,
+nincs új Gradle/UI/CI/APK; utolsó teljes zöld forrás `dd4cc27`.
+
+Még hátra: teljes tématoken/kontraszt és Basic/Vivid megjelenés, csoportos picker,
+összes termékoldal fix akcentusainak cseréje, valódi DataStore/restore/upgrade
+roundtrip és UI-tesztek több témával. A hat csak natív paletta webes visszaimport
+kompatibilitását is külön rendezni kell; nem állítunk teljes cross-runtime paritást.
+Ezután a teljes terv további moduljai. Main/Wear/verzió változatlan.
+
 ## Elfogadott teljes befejezési feladat (2026-10-24)
 
 A felhasználó jóváhagyta a [teljes feladatot és pontosításokat](plans/NATIVE_FINAL_DELIVERY.md).

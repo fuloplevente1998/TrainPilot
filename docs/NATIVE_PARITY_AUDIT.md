@@ -24,7 +24,7 @@ Külön azonosítójú párhuzamos tesztkiadás jelenleg nem áll rendelkezésre
 | Stopper / GPS teljesítés | `b6e8158`: az alsó sorozatstopper a natív frame-ben, explicit pozitív stop natív record/undo, kétoldali pozitív pár szükséges; nulla/reset/pause nem teljesítés. Nyugvó clock nem ír folyamatosan SQLite-t; ownership-retirement szüneteltet. `e164ef3`: GPS set/route kötés és tartós explicit pozitív stop a natív record/undo útján; implicit stop csak részadatot őriz. | 19 új célzott teszt mind zöld, a korábbi 459 unit-eset megmaradt. Az új 17 GPS-próba mind zöld, köztük SQL-hiba/retry, régi callback, engedély/rendszerhely, privát naplóútvonal és közös pause. `40384e7`: kézi measured OK/undo, közös megfigyelt időnapló és opcionális automatikus intervallum; 20 új próba zöld, a korábbi 505 eset megmaradt. Integrált telefonos UI, nem-autoAdvance mód és globális preset még hátra van. |
 | Pihenő / gyakorlatváltás | `e164ef3`: valódi skip/±15 mp stabil workout/generation/key célzással, tartós rest-only terv és hibánál rollback; gyakorlatváltás őrzi a pihenőt és a kiválasztást. | 10 új service-próba zöld, tényleges időelszámolás és ownership/frozen védelem. Integrált UI még külön szükséges. |
 | Időösszesítés | `40384e7`: megfigyelt stopper/GPS és interval munka/pihenő/szünet közös naplóban; kézi idő nem hamisít megfigyelt időt. Folytatás/undo/reset nem dupláz; folyamat/tulajdonos védett. Élő összesítés csak memóriában. | Új célzott tesztek és Room-GPS időnaplóállítások zöldek. Tényleges telefonos megjelenítés/készülékes mérés még külön igazolandó. |
-| Naptár / Coach | A `NavHost` nem tartalmaz külön naptár/Coach útvonalat. A Coach gomb a training útvonalra visz. | Eredeti funkciók átültetése és valós UI-próbája; programképernyő nem helyettesíti őket. |
+| Naptár / Coach | Új batchben `e05ff57`–`9b09af7`: Room naptár CRUD/bounded nézet, Coach valós helyi HealthJournalStore-adatokkal és célprogramnappal; önálló Calendar/Coach útvonal bekötve. `4f60bc0`: ötfüles navigáció, globális Settings és külön gyorsbelépések. Még nem bevizsgált forrás. | Per-gyakorlat tanácsok, teljes mockup, provider-frissítés, timezone-paritás és integrált UI-próba. Nem új screen-implementáció kell a meglévő helyett. |
 | Napló teljesítmény | Compose LazyColumn van, de az adatréteg minden edzést részletekkel figyel. A Wear mini-napló az összes részlet betöltése után vesz csak nyolcat. | Korlátozott lekérdezés/lapozás, teljes adathalmazra működő szűrés; 0/200/1500 minta. Nem állítunk igazolt natív gyorsulást. |
 | Health | Valós Samsung SDK adapter és explicit foreground frissítés helyreállítva; az onResume munka IO-n fut. Az eredeti felesleges preferenciavisszaírás-gyorsítás átvéve. | Tesztek, Samsung/HC készülékes engedély- és háttérváltási próba; hiányzó adat nem friss siker. |
 | Wear | Az eredeti teljes natív launcher/szolgáltatások/protokoll visszakötve; az alternatív távirányítós prototípus nem launcher. A main gyorsított kiadása nem módosított Wear/shared appkódot. | Kerek UI 183/183 sikeres. Watch7, valódi telefon–óra szinkron és offline átadás/visszavétel még készülékes kapu. |
@@ -37,11 +37,12 @@ aláírt szintetikus upgrade **2/2**, nincs hiba/kihagyás. Letöltött release 
 hash/csomag/verzió/signer ellenőrizve; a measured protokoll és az időnaplómezők a telefonos R8 DEX-ben is jelen vannak.
 [Gépi bizonylat](builds/2026-10-23-native-measured-intervals.json).
 
-**Új, még nem bevizsgált batch:** `e05ff57`/`3921c10`/`d134785` Naptár adatút/UI,
-ütemezett indítás és Coach számítási mag. 22 új tesztkód, még nem futtatva;
-fordítás/Room/Compose működés nincs igazolva. Coach-adapter és UI még hiányzik.
-A lentebbi teszteredmények a bevizsgált `dd4cc27` állapotra vonatkoznak.
-[Batch részletek](plans/NATIVE_COMPLETION_BATCH.md).
+**Aktuális nem bevizsgált batch:** Calendar/Coach bekötés, ötfüles UI és globális
+Settings (`4f60bc0`), teljes main témakatalógus és témamigráció első javítása
+(`787bc8d`). Összesen47 új megírt/nem futtatott próba. Teljes aktuális állapot az
+[átadó tetején](WORK_HANDOFF.md); végrehajtási szerződés:
+[NATIVE_FINAL_DELIVERY](plans/NATIVE_FINAL_DELIVERY.md). A történeti zöld kapuk
+nem igazolják az új UI-t/témákat. Utolsó teljes zöld forrás `dd4cc27`.
 
 ## Ellenőrzési sorrend
 
