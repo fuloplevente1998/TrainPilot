@@ -209,6 +209,39 @@ interface WorkoutHistoryDao {
     @Query("SELECT * FROM workout_history WHERE id = :id OR workoutKey = :id OR syncId = :id LIMIT 1")
     suspend fun getWorkoutWithDetails(id: String): WorkoutHistoryWithDetails?
 
+    /** Historical strength chart reads a single exercise in bounded pages; it never loads photos, routes or other sets. */
+    @Query("""
+        SELECT w.id AS workoutId, w.started AS started, w.startedEpochMs AS startedEpochMs,
+            s.rowId AS setRowId, s.weight AS weightKg, s.reps AS reps
+        FROM workout_history_sets s
+        JOIN workout_history w ON w.id = s.workoutHistoryId
+        WHERE s.exerciseId = :exerciseId AND s.done = 1 AND s.weight > 0
+          AND w.finishedEpochMs > w.startedEpochMs
+          AND (:beforeEpoch IS NULL OR w.startedEpochMs < :beforeEpoch
+            OR (w.startedEpochMs = :beforeEpoch AND w.id < :beforeWorkoutId)
+            OR (w.startedEpochMs = :beforeEpoch AND w.id = :beforeWorkoutId AND s.rowId < :beforeSetRowId))
+          AND NOT EXISTS (SELECT 1 FROM history_tombstones t
+            WHERE t.primaryId IN (w.id, w.syncId, w.workoutKey) OR t.workoutKey = w.workoutKey)
+        ORDER BY w.startedEpochMs DESC, w.id DESC, s.rowId DESC
+        LIMIT :limit
+    """)
+    suspend fun pageProgressExerciseSets(exerciseId: String, beforeEpoch: Long?, beforeWorkoutId: String,
+        beforeSetRowId: Long, limit: Int): List<ProgressSetSummary>
+
+    /** Completed sets for the last 30 days, grouped in SQLite rather than hydrating whole workouts. */
+    @Query("""
+        SELECT COALESCE(l.primaryMuscle, 'full') AS muscleKey, COUNT(*) AS setsCount
+        FROM workout_history_sets s
+        JOIN workout_history w ON w.id = s.workoutHistoryId
+        LEFT JOIN exercise_library l ON l.id = s.exerciseId
+        WHERE s.done = 1 AND w.startedEpochMs >= :fromEpoch AND w.startedEpochMs <= :toEpoch
+          AND w.finishedEpochMs > w.startedEpochMs
+          AND NOT EXISTS (SELECT 1 FROM history_tombstones t
+            WHERE t.primaryId IN (w.id, w.syncId, w.workoutKey) OR t.workoutKey = w.workoutKey)
+        GROUP BY COALESCE(l.primaryMuscle, 'full')
+    """)
+    suspend fun getProgressMuscleSummary(fromEpoch: Long, toEpoch: Long): List<ProgressMuscleSummary>
+
     @Query("SELECT COUNT(*) FROM workout_history")
     suspend fun getWorkoutCount(): Int
 
