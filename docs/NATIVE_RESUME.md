@@ -20,6 +20,23 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   prototípus/fake Health-forrás tilos. Nyolcgombos menü helyett öt alsó fül elfogadva,
   jobb felső Settings; abból visszatérés nem pause, valódi editor-elhagyás igen.
 
+## Legújabb natív batch – saját gyakorlat CRUD
+
+`a46a8bcd` `[skip ci]` appforrás: saját gyakorlat létrehozás,
+négy nyelvű szerkesztő és megerősített törlés a natív
+Gyakorlatkönyvtárban, a meglévő Room és kanonikus rawJson
+adatútján. 106 builtin nem módosítható. Egyedi stabil
+custom-UUID, validált típusok/sorozat/súly/YouTube watch,
+minden örökölt többi adatmező és másodlagos izomcsoport
+megőrzése; stale rawJson-CAS. Törléskor aktív session,
+napló- és programnapi hivatkozás tilt; kedvenc csak
+sikeres törléssel együtt távolítható el.
+**11 új unit +2 Phone UI kód, összesen 259 unit+25 Phone UI
+megírva, még nem futtatva.** Statikus szerkezeti check
+rendben, Gradle/emulátor/APK nem igazolt. Következő:
+programnap-szerkesztés, profil/progresszió, majd közös kapu.
+PR #238 frissítve.
+
 ## Legújabb natív batch – 106 gyakorlat és video
 
 `d5222a32` `[skip ci]`: a mainből pontosan átvett
