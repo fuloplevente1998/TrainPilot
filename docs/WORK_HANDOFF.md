@@ -4,6 +4,37 @@ Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Natív gyakorlatkedvencek v144 – kódolási batch
+
+**4159a76** `[skip ci]` (utolsó appforrás), kizárólag a
+`feat/native-android-migration` ágon. A main v144 `exerciseFavorites`
+tömbjét ellenőrzött ID-kkel a **meglévő Room kv_documents** tárolja,
+sémaemelés nélkül. A korábbi `legacy:exerciseFavorites` alias
+olvasható, de az új kanonikus mentés elsőbbséget élvez. Import/restore
+előtt szigorú típus-/ID-ellenőrzés, replaceAll régi alias törlés,
+migrációs `KNOWN_DB_KEYS` felvétel és a JSON/ZIP/Drive snapshotba
+azonos kulcsú roundtrip került. Visszaállítás és háttéradatcsere idején
+a kedvencek írása a meglévő `NativeDataReplacement` + Room tranzakció
+alatt történik; csak létező gyakorlat kedvenc státusza váltható.
+A Drive `mergeSync18` most konfliktuskezeléssel viszi tovább a
+kedvenceket, és felhőművelet előtt validálja a kiválasztott tömböt.
+
+A natív gyorsedzés/aktivitásválasztóban kedvenc csillag,
+kedvencek szűrő, elsőbbségi rendezés és perzisztens állapot,
+HU/EN/DE/RO akadálymentes szövegek. Csillagozás önmagában
+**nem indít edzést**. Ez a funkció a gyors választóban már
+bekötött; az önálló, teljes gyakorlatkönyvtár részletlapjai és a
+program-/gyakorlatszerkesztő **még hátravan**.
+
+**10 új JVM unit +1 natív Phone Compose UI-próbakód megírva;
+batch összesen 241 új unit +20 Phone UI, egyiket sem futtattuk.**
+Kódkapcsolatok és 13 statikus feltétel rendben; rövid izolált
+Kotlin szintaxisellenőrzés sikeres. Nincs új Android/Gradle/Compose
+futtatási vagy APK-igazolás. Utolsó teljes zöld `dd4cc27`.
+**Élő adatok fölé telepítés STOP.** Következő: teljes natív
+gyakorlatkönyvtár és saját gyakorlat szerkesztése, programszerkesztő,
+profil és további A–E eltérések.
+
 ## Health Connect/BLE háttérengedély és tényleges működési állapot
 
 **f90e7ef** `[skip ci]` alkalmazás-/tesztforrás, kizárólag
