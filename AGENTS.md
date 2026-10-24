@@ -94,6 +94,12 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 
 ## Megőrzendő termékdöntések
 
+- Natív UI-döntés (2026-10-24): a main megszokott nyolcgombos menüje és
+  képernyőelrendezése maradjon. Az importált öt alsó füles felület nem elfogadott
+  végleges redesign. A később kért 24 képernyős mockup csak vizuális alternatíva
+  áttekintésre, nem váltja felül a döntést és nem új funkcióspecifikáció.
+  Lásd `docs/design/NATIVE_MOCKUP_REVIEW.md`. Stabilitást/gyorsulást mérni kell.
+
 - Automatizálási UI-elv (2026-10-20): ugyanazon programnap új edzésének súlya és
   ismétlése a legutóbbi megfelelő mentett alkalomból töltődjön, külön másolásgomb
   nélkül. Teljesítettség/RIR/mérési adat nem öröklődik; draft és kézi módosítás védett.

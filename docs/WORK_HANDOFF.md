@@ -4,6 +4,30 @@ Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Legutóbbi kód és UI-döntés (2026-10-24, még nincs új tesztkapu)
+
+- Új alkalmazásforrás **`8fb3ff6`**, előzménye `9b09af7`: Coach bekötve valós
+  HealthJournalStore napokhoz és bounded 14 nap/3 edzéshez; szakaszalapú alvás,
+  forrásazonos, legalább 3 korábbi napos HRV-bázis, valós naptári/ciklikus célpont.
+  Coach screen/route, Health és Fejlődés elérés. Per-gyakorlat progressziós
+  tanácsok és teljes readiness modal vizuális egyezése még hiányzik.
+- Felhasználó kérésére nyolcgombos main-menü első natív szerkezete bekötve,
+  az ötfüles alsó navigáció levéve. Edzés és Programok külön oldal; aktív Edzés
+  ugyanabba a sessionbe tér vissza, menüből explicit elhagyás a meglévő VM pause
+  útján megy. A teljes main UI vizuális egyezése **nincs igazolva**; több oldal
+  importált Compose-layoutja még eltér, referencia szerinti rendezés szükséges.
+- Új 6 `NativeCoachSignalsTest` és 4 `NativeMainMenuTest`: a batchben összesen
+  **32 új megírt, még nem futtatott próba**. Nincs új fordítás/APK/CI-igazolás;
+  utolsó teljes zöld forrás továbbra `dd4cc27`. `[skip ci]` munkamód változatlan.
+- Ezután a felhasználó az ötfüles alternatíváról mockupot kért áttekintésre:
+  4 kép/24 nézet elkészült a chatben. **Ez nem redesign-jóváhagyás**.
+  [UI-döntés és képtáblák](design/NATIVE_MOCKUP_REVIEW.md). Átadáskor a képeket
+  külön kell mellékelni, ha a következő modellnek látványtervként szükségesek.
+- Következő kódolás: main vizuális egyezés, Coach hiányzó per-gyakorlat részei,
+  majd az ötpontos terv további pontjai/telefonos UI-tesztkód. Coach célpont SQL
+  startIso szöveges rendezésének timezone/offset-paritását külön ellenőrizni kell.
+  Saját adatokra telepítés továbbra STOP; nincs main merge vagy verzióemelés.
+
 ## Új kódolási batch – még nem bevizsgált forrás (2026-10-24)
 
 - Legfrissebb alkalmazásforrás **`d134785`**, előzményei `e05ff57`, `3921c10`.

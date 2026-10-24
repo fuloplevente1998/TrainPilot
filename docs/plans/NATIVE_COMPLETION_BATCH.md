@@ -79,3 +79,12 @@ Későbbi integrációs vizsgálat: szerkesztés vs. indulás verseny, naptár �
 mentéskor, felhőből lemondás visszaszinkronizálása, időzónák/DST, kis kijelző/nagy
 betű, programnevek lokalizációja és navigációs visszalépés. Naptári Google-szinkron
 régi takeLast(100) korlátját az 5. terület részeként külön rendezni kell.
+
+## Újabb batch-kiegészítés és vizuális review
+
+`9b09af7`/`8fb3ff6`: Coach helyi valódi adatút/UI bekötve, 6 signals- és 4
+menüteszt megírva. Aktuális nyitott részletek és 32 új, még nem futtatott próba
+az átadó tetején. Nyolcgombos menü az elfogadott végleges irány; az ötfüles
+alternatíva 24 képernyős mockupja csak review, nem új megvalósítási engedély.
+Coach további per-gyakorlat tanács/progresszió és teljes main vizuális egyezés,
+valamint az öt pont többi része továbbra nincs lezárva.
