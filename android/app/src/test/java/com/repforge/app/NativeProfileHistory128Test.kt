@@ -123,6 +123,13 @@ class NativeProfileHistory128Test {
         assertEquals(0, p.history128.getJSONObject("entries").length())
     }
 
+    @Test fun newerPainOrPartialSessionBlocksOlderOtherwiseValidLoad() = runBlocking {
+        workout("old-good", ageDays = 3, weight = 5.0)
+        workout("newer-pain", ageDays = 1, weight = 5.0, effort = "pain")
+        assertTrue(preview().prescriptions.getJSONObject(id).getBoolean("trial"))
+        assertEquals(0, preview().history128.getJSONObject("entries").length())
+    }
+
     @Test fun oldFutureAndTombstonedSourcesNeverInherit() = runBlocking {
         workout("stale", ageDays = 91)
         workout("future", ageDays = -1)
