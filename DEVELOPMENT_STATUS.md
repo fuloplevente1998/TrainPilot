@@ -1,12 +1,12 @@
 > **Natív migráció aktuális részállapota (2026-10-25):** ág `feat/native-android-migration`,
-> legutóbbi alkalmazás-/tesztforrás `93e5882d` (`[skip ci]`).
+> legutóbbi alkalmazás-/tesztforrás `cd696e7c` (`[skip ci]`).
 > A/B személyes terv: valódi 90 napos, max 4 konkrét, kompatibilis
 > edzéselőzmény-forrás; súly/sorozat csak teljes, érvényes
 > terhelésből öröklődik, fájdalom/hiány/stale tiltja. Coach
 > `history128` a kanonikus új Room-programban, bizonyítékhash
 > és mentéskori újraszámolás, portable import ellenőrzés.
 > **313 unit +34 Phone Compose UI-próba megírva, még nem futott.**
-> 18 statikus útvonalvizsgálat PASS, de nincs új zöld
+> 21 statikus útvonalvizsgálat PASS, de nincs új zöld
 > Kotlin/Gradle/emulátor/APK/Wear kapu vagy készülékes elfogadás.
 > Átadó: [WORK_HANDOFF.md](docs/WORK_HANDOFF.md),
 > draft [PR #238](https://github.com/fuloplevente1998/TrainPilot/pull/238).
