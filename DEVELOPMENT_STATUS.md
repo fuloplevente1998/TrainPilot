@@ -1,14 +1,15 @@
 > **Natív migráció aktuális részállapota (2026-10-24):** ág `feat/native-android-migration`,
-> alkalmazás-/tesztforrás `87f9ee10` (`[skip ci]`).
-> Natív program + programnap szerkesztés: saját program létrehozás/
-> szerkesztés/törlés, beépített program másolása, nap- és gyakorlatrendezés
-> valós Room/backup/Drive adatútvonalon. Stale mentés és hivatkozások védve,
-> programnapok többnyelvű/export metaadatai megőrizve.
-> **271 új unit és 28 Phone Compose UI-próba megírva, még nem futott.**
-> Nincs teljes zöld natív CI, telepíthető/tesztelt APK vagy készülékes jóváhagyás.
+> legutóbbi alkalmazás-/tesztforrás `cfdc6d05` (`[skip ci]`).
+> Main #128 edzésprofil: DataStore + JSON/ZIP/Drive megőrzés, natív
+> alapszerkesztő, ismeretlen profil/felszerelés/kizárások megtartása.
+> Progress: bounded 30 napos aggregátum és egygyakorlatos,
+> 256-os keyset-lapozás az egész napló és fotók beolvasása helyett;
+> összes gyakorlat elérhető. **286 új unit és 31 Phone Compose
+> UI-próba megírva, még nem futott.** Nincs friss teljes zöld
+> natív CI, új APK vagy készülékes jóváhagyás.
 > Aktuális átadó: [WORK_HANDOFF.md](docs/WORK_HANDOFF.md), [PR #238](https://github.com/fuloplevente1998/TrainPilot/pull/238).
-> Main, verzió, Wear release változatlan; élő adat fölé telepítés STOP.
-> Alább történeti állapotok következnek.
+> Main/verzió/Wear változatlan; telepítés STOP.
+> Alább korábbi történeti állapotok következnek.
 
 > **Aktuális átadás (2026-10-21):** #234 felhasználó által elfogadva és mainre egyesítve; **1.3.71 /2735** a legfrissebb stabil telefon/Wear kiadás. Részletes kapuk és APK-forrás: [WORK_HANDOFF.md](docs/WORK_HANDOFF.md), [kiadásjegyzék](docs/releases/INDEX.md). A lentebbi állapotok történetiek.
 
