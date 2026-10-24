@@ -53,7 +53,8 @@ done
   :shared:testDebugUnitTest
 
 cd "$ROOT"
-node --test scripts/ui-runner.test.cjs android/wear/ci/release-gates.test.cjs
+node --test scripts/ui-runner.test.cjs
+node --test android/wear/ci/release-gates.test.cjs
 
 if [[ -f package.json && -f package-lock.json ]]; then
   npm test

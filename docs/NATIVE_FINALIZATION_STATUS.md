@@ -5,7 +5,10 @@ Frissítve: **2026-10-24**. Munkaág: `feat/native-android-finalization`, a
 commitjából létrehozva és közzétéve. A `main` (`8a36502`) és a forráság
 változatlan; egyik sincs összeolvasztva a munkágba. A két ágat a Git-előzményből
 és a `docs/NATIVE_PARITY_AUDIT.md` fájlból olvastuk össze, a hivatkozott
-legacy-forrás visszaállítása nélkül. A frissítéskori összevetés: `main` 69
+legacy-forrás visszaállítása nélkül. A `main` Capacitor/WebView felülete és
+Node/npm manifesztje nincs átemelve: a natív ágon a Compose felület a cél.
+Ez a forrás-/architektúra-csere nem bizonyít termékfunkció-paritást; az alábbi
+funkciók külön vannak értékelve. A frissítéskori összevetés: `main` 69
 commit-tal előrébb, a migrációs ág 151 commit-tal előrébb állt.
 
 ## Státuszjelölések és bizonyíték
@@ -38,6 +41,7 @@ telefonos vagy Watch7-próba.
 | Mentés, visszaállítás, Drive/felhőszinkron | **RÉSZBEN KÉSZ** | JSON/ZIP redo, Room import, draft és Drive merge guard implementálva; teljes fotó/Health roundtrip, minden crash-fázis és az utolsó tesztbatch nem igazolt. |
 | Témák, nyelvek, beállítások | **RÉSZBEN KÉSZ** | Compose paletta és több nyelvi erőforrás létezik; HU/EN/DE/RO teljes lefedettsége, nagy betűk és kisebb kijelzők integrált ellenőrzése nyitott. |
 | Telepített app frissítése és adatmegőrzés | **ELLENŐRIZENDŐ** | Azonos `com.repforge.app`, **2736** verziókód (az elfogadott **2735** után), meglévő kulcsos Actions release és két szintetikus upgrade a `dd4cc27`-en igazolt. A mostani SHA és élő adatos készülékfrissítés nincs igazolva; eltávolítás nélküli fizikai próba előtt tilos napi készülékre telepíteni. |
+| Main Capacitor/WebView felületi megvalósítása | **HIÁNYZIK** | Szándékosan nincs visszaállítva a natív ágon; a Compose felület helyettesíti. Ez nem jelenti a main minden üzleti funkciójának natív paritását. |
 
 Részletes, korábbi forráshoz kötött bontás: [NATIVE_PARITY_AUDIT.md](NATIVE_PARITY_AUDIT.md),
 [aktuális átadás](WORK_HANDOFF.md), [folytatási terv](plans/NATIVE_FINAL_DELIVERY.md).

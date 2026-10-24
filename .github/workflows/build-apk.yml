@@ -9,6 +9,7 @@ on:
       - 'fix/**'
       # The native branch has no Capacitor/www tree; native-android.yml owns its gates.
       - '!feat/native-android-migration'
+      - '!feat/native-android-finalization'
     tags:
       - 'v*'
     paths-ignore:
@@ -29,6 +30,7 @@ concurrency:
 
 jobs:
   chromium-cache:
+    if: github.event_name != 'pull_request' || (github.head_ref != 'feat/native-android-migration' && github.head_ref != 'feat/native-android-finalization')
     name: Prepare Playwright Chromium cache
     runs-on: ubuntu-latest
     timeout-minutes: 8
@@ -59,6 +61,7 @@ jobs:
         run: npx --no-install playwright install chromium
 
   ui-tests:
+    if: github.event_name != 'pull_request' || (github.head_ref != 'feat/native-android-migration' && github.head_ref != 'feat/native-android-finalization')
     name: Chromium UI (${{ matrix.shard }}/6)
     needs: chromium-cache
     runs-on: ubuntu-latest
@@ -107,6 +110,7 @@ jobs:
           retention-days: 14
 
   release-gate:
+    if: github.event_name != 'pull_request' || (github.head_ref != 'feat/native-android-migration' && github.head_ref != 'feat/native-android-finalization')
     needs: ui-tests
     runs-on: ubuntu-latest
     timeout-minutes: 25

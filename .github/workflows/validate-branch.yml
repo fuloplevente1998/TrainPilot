@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     # Native debug/unit/signed-update/emulator gates run in native-android.yml.
-    branches-ignore: ['feat/native-android-migration']
+    branches-ignore: ['feat/native-android-migration', 'feat/native-android-finalization']
     paths-ignore:
       - 'android/wear/**'
       - 'docs/WEAR_OS.md'
@@ -21,6 +21,7 @@ concurrency:
 
 jobs:
   quick:
+    if: github.event_name != 'pull_request' || (github.head_ref != 'feat/native-android-migration' && github.head_ref != 'feat/native-android-finalization')
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
