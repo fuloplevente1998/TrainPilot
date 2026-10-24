@@ -241,15 +241,18 @@ fun HealthJournalTabContent(
                         val text = com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
                         Text(text.getString(com.repforge.app.R.string.health_daily_source_title), color = colors.text)
                         androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            items(listOf("auto", "priority")) { choice ->
+                            items(listOf("auto", "priority") + state.dailySourceOptions, key = { it }) { choice ->
                                 androidx.compose.material3.FilterChip(selected = state.dailySourcePreference == choice,
                                     enabled = !state.sourceSaving && !state.historyLoading,
                                     onClick = { onDailySource(choice) }, modifier = Modifier.testTag("health_daily_$choice"),
-                                    label = { Text(text.getString(if (choice == "auto") com.repforge.app.R.string.health_daily_source_auto
-                                        else com.repforge.app.R.string.health_daily_source_priority)) })
+                                    label = { Text(when (choice) {
+                                        "auto" -> text.getString(com.repforge.app.R.string.health_daily_source_auto)
+                                        "priority" -> text.getString(com.repforge.app.R.string.health_daily_source_priority)
+                                        else -> choice
+                                    }) })
                             }
                         }
-                        if (state.dailySourcePreference !in listOf("auto", "priority"))
+                        if (state.dailySourcePreference !in (listOf("auto", "priority") + state.dailySourceOptions))
                             Text(state.dailySourcePreference, color = colors.muted)
                         Text(text.getString(com.repforge.app.R.string.health_daily_source_hint), color = colors.muted)
                         if (state.sourceSaveFailed) Text(text.getString(com.repforge.app.R.string.metadata_write_failed), color = colors.danger)
