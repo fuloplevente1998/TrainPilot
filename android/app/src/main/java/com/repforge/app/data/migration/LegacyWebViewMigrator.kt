@@ -173,6 +173,16 @@ class LegacyWebViewMigrator(
             }
         }
 
+        // Imported #128 lineage is only advisory, but duplicate or malformed source
+        // identities must not reach the Coach after a backup/Drive restore.
+        data.optJSONArray("programs")?.let { programs ->
+            for (index in 0 until programs.length()) {
+                val program = programs.optJSONObject(index)
+                    ?: throw IllegalArgumentException("Invalid portable program")
+                com.repforge.app.NativeProfileHistory128.validatePortable(program)
+            }
+        }
+
         // Reject malformed favorites before the first Room write in this import.
         val incomingFavorites = if (data.has(NativeExerciseFavorites.KEY) && !data.isNull(NativeExerciseFavorites.KEY))
             NativeExerciseFavorites.decode(data.get(NativeExerciseFavorites.KEY)) else null
