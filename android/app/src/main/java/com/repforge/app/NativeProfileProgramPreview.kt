@@ -24,6 +24,21 @@ internal object NativeProfileProgramPreview {
         return (0 until rows.length()).mapNotNull { rows.optString(it).takeIf(String::isNotBlank) }.toSet()
     }
 
+    private fun avoidedMuscles(areas: Set<String>): Set<String> {
+        val muscles = setOf("chest", "back", "shoulders", "arms", "core", "legs")
+        return areas.map { raw ->
+            val normalized = raw.lowercase().replace('_', '-')
+            when {
+                normalized in muscles -> normalized
+                "shoulder" in normalized || "váll" in normalized -> "shoulders"
+                "knee" in normalized || "térd" in normalized -> "legs"
+                "elbow" in normalized || "könyök" in normalized -> "arms"
+                "lumbar" in normalized || "derék" in normalized -> "back"
+                else -> throw IllegalArgumentException("Unrecognized area: $raw")
+            }
+        }.toSet()
+    }
+
     private fun available(ex: ExerciseLibraryEntity, gear: Set<String>): Boolean {
         val raw = JSONObject(ex.rawJson)
         if (ex.loadType == "bodyweight") {
@@ -66,7 +81,8 @@ internal object NativeProfileProgramPreview {
         val minutes = profile.getInt("minutes")
         val gear = keys(profile, "gear")
         val excluded = keys(profile, "excluded")
-        val areas = keys(profile, "avoidAreas")
+        val areas = avoidedMuscles(keys(profile, "avoidAreas"))
+        val beginner = profile.optString("experience") == "beginner"
         val catalogById = catalog.associateBy { it.id }
         val count = (minutes / 6).coerceIn(1, 7)
         val higherSets = profile.optString("goal") == "muscle" &&
@@ -86,6 +102,7 @@ internal object NativeProfileProgramPreview {
                     ex == null -> "missing"
                     id in excluded -> "excluded"
                     ex.primaryMuscle in areas -> "avoid-area"
+                    beginner && !JSONObject(ex.rawJson).optBoolean("beginnerSafe", true) -> "experience"
                     !available(ex, gear) -> "equipment"
                     else -> ""
                 }
