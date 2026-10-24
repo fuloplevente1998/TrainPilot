@@ -22,7 +22,7 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 
 ## Legújabb natív batch – 90 napos A/B előzményöröklés
 
-`93e5882d` `[skip ci]` kód: `NativeProfileHistory128`
+`cd696e7c` `[skip ci]` kód: `NativeProfileHistory128`
 Room `getCoachExerciseCandidates` 32-es keyset
 oldalakon (max 20 oldal/gyakorlat), max négy
 bizonyított `{programId,key}` forrással,
@@ -43,7 +43,7 @@ előzménytöltése UI-állapottal bekötve.
 **12 új JVM unit + 3 meglévő Phone UI-teszt
 aszinkron igazítás**. Összesen **313 unit
 +34 Phone UI tesztkód, még nem futott**;
-18 statikus ellenőrzés PASS; Kotlin/Gradle,
+21 statikus ellenőrzés PASS; Kotlin/Gradle,
 Room, emulátor, APK és Watch7 nincs igazolva.
 Következő: Coach 3 stabil alkalom utáni
 variáció / explicit upgrade preview, majd
