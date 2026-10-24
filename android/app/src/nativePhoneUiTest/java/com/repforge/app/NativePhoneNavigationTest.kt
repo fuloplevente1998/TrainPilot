@@ -439,7 +439,8 @@ class NativePhoneNavigationTest {
     @Test fun bleBackgroundCannotClaimToStartWithoutARememberedWatch() {
         launch(); tab("health")
         compose.onNodeWithText("BLE Okosóra (#111)").performClick()
-        compose.onNodeWithTag("health_ble_background_switch").performScrollTo().assertIsOff()
+        compose.onNodeWithTag("health_ble_list").performScrollToNode(hasTestTag("health_ble_background_switch"))
+        compose.onNodeWithTag("health_ble_background_switch").assertIsOff()
         compose.onNodeWithTag("health_ble_background_switch").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("health_background_error").fetchSemanticsNodes().isNotEmpty() }
         assertFalse(HealthJournalStore.get(context).preferences().getBoolean("bleBackground"))
