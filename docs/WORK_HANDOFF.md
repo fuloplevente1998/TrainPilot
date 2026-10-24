@@ -4,6 +4,12 @@ Frissítve: **2026-10-23**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Folyamatban – importált draft előkészítése (2026-10-24)
+
+- Forrás **`b978936a6d5e8d5972e4fb3d9952c2986cdd9a87`**; [natív CI 40072179234](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40072179234) elindult, eredmény még nincs igazolva. Az előző teljes zöld kapu lent változatlan.
+- `NativeLegacyDraft.prepare`: tiszta, forrást nem módosító előellenőrzés. Megtartja a mért/done/RIR/útvonal adatokat és meglévő ID-kat; hiányzó set-ID determinisztikus, syncId nélkül az elfogadott legacy started-azonosító. Ellentmondó/dupla ID, hiányzó gyakorlat, hibás/jövőbeli idő, lezárt/törölt/finalizáló vagy egyeztetendő ownership elutasítva. Az aktív időszakasz savedAt-nál záródik, a jelölt szünetben marad; régi stopper/GPS/native execution meta nem lesz élő vezérlő. Az eredeti draft érintetlen.
+- **Ez előkészítő alap, nem kész draft-folytatás.** Nincs bekötve aktív sessionbe/UI-ba, nem töröl/ír adatot és nem indít mérést. 12 új Robolectric regressziós próba CI alatt. Következő: könyvtári metaadat és timer-config kiegészítés az eredeti mért adatok felülírása nélkül; Room history/tombstone/closed-workout fence; compare-and-adopt azonosított drafttal, tartós native frame és ActiveStore projekció, idempotens crash/retry; csak ezután UI Folytatás. Archívum megmarad; hibánál nincs törlés vagy sikerjelzés. Main/verzió/Wear termékforrás változatlan, saját adatokra telepítés STOP.
+
 ## Legfrissebb zöld kapu – natív gyors/kültéri indítás (2026-10-23)
 
 - **Bevizsgált CI-/APK-forrás `9da639d09653ce46cd1eed295b24664ca53bb3df`**, core `3eb8eb4`; [natív CI 40017855126](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40017855126) **teljes SUCCESS, 6/6 job**. Letöltött XML: telefon **373/373**, Wear **167/167**, mind az előző **525** unit-eset megmaradt, +**15** `NativeQuickWorkoutTest`. Kerek Wear **183/183**, azonos esetazonosítókkal; eredeti és október 22-i gyorsított 1.3.71-ről signed upgrade **2/2**, nulla hiba/kihagyás. Dokumentációs HEAD eltérhet a tesztelt APK forrásától.
