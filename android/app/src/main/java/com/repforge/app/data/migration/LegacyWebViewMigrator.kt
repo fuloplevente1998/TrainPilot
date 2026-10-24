@@ -734,15 +734,25 @@ class LegacyWebViewMigrator(
                 } catch (_: Exception) {
                     JSONObject()
                 }
-                pJson.put("id", p.id).put("name", p.nameHu).put("builtin", p.builtin)
+                pJson.put("id", p.id).put("name", p.nameHu)
+                    .put("hu", p.nameHu).put("en", p.nameEn)
+                    .put("de", p.nameDe).put("ro", p.nameRo)
+                    .put("description", p.description).put("builtin", p.builtin)
+                // Merge typed Room day rows onto their preserved raw day objects. Rebuilding
+                // from three fields used to silently drop translations and custom metadata.
+                val priorDays = pJson.optJSONArray("days")
+                val rawById = HashMap<String, JSONObject>()
+                for (index in 0 until (priorDays?.length() ?: 0)) {
+                    val raw = priorDays?.optJSONObject(index) ?: continue
+                    rawById[raw.optString("id")] = raw
+                }
                 val dArr = JSONArray()
                 for (d in pWithDays.days.sortedBy { it.sortOrder }) {
-                    dArr.put(
-                        JSONObject()
-                            .put("id", d.dayId)
-                            .put("name", d.nameHu)
-                            .put("exercises", JSONArray(d.exercisesJson))
-                    )
+                    val preserved = rawById[d.dayId]?.let { JSONObject(it.toString()) } ?: JSONObject()
+                    dArr.put(preserved.put("id", d.dayId).put("name", d.nameHu)
+                        .put("hu", d.nameHu).put("en", d.nameEn)
+                        .put("de", d.nameDe).put("ro", d.nameRo)
+                        .put("exercises", JSONArray(d.exercisesJson)))
                 }
                 pJson.put("days", dArr)
                 programsArray.put(pJson)
