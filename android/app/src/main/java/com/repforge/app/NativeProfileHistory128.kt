@@ -121,7 +121,8 @@ internal object NativeProfileHistory128 {
             var before: Long? = null
             var beforeId = ""
             var pageCount = 0
-            while (pageCount++ < MAX_PAGES && candidates.size < MAX_SOURCES) {
+            var unsafeLatest = false
+            while (pageCount++ < MAX_PAGES && candidates.size < MAX_SOURCES && !unsafeLatest) {
                 val rows = db.workoutHistoryDao().getCoachExerciseCandidates(id,
                     asOf.minus(Duration.ofDays(90)).toEpochMilli(), asOf.toEpochMilli(),
                     before, beforeId, PAGE)
@@ -129,7 +130,13 @@ internal object NativeProfileHistory128 {
                     if (row.programId !in allow ||
                         id !in allow.getValue(row.programId)[row.dayId].orEmpty()) continue
                     val accepted = evidence(row, id, rx.optString("loadType", lib.loadType),
-                        lib.repUnit, variation) ?: continue
+                        lib.repUnit, variation)
+                    if (accepted == null) {
+                        // If the most recent relevant workout is partial, painful or has
+                        // mismatched units, never fall back to an older convenient weight.
+                        if (candidates.isEmpty()) { unsafeLatest = true; break }
+                        continue
+                    }
                     if (keys.add(accepted.programId to accepted.key)) candidates += accepted
                     if (candidates.size >= MAX_SOURCES) break
                 }
@@ -137,7 +144,7 @@ internal object NativeProfileHistory128 {
                 before = rows.last().finishedEpochMs
                 beforeId = rows.last().id
             }
-            if (candidates.isEmpty()) continue
+            if (candidates.isEmpty() || unsafeLatest) continue
             val first = candidates.first()
             val basis = JSONObject()
                 .put("loadType", rx.optString("loadType", lib.loadType))
