@@ -4,6 +4,31 @@ Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Aktuális teljes-app munka – tématokenek után napló (2026-10-24)
+
+A felhasználó ismét megerősítette: **a teljes hátralévő natív app a feladat**,
+nem csak a témarendszer. A `NATIVE_FINAL_DELIVERY.md` minden funkcióterülete,
+meglévő blokk/adatút bekötése, 24 nézet és teszt/CI/screenshot kötelező marad.
+
+- **`a5538db`**: központi kontrasztos gombfelirat/akcentusszöveg tokenek,
+  Basic matte vs. Vivid kijelölés; csoportos tördelődő 32-palettás picker,
+  négy nyelv, radio semantics/testTag. Telefonos képernyők szétszórt fix
+  gombfeliratszíneinek cseréje; natív motor/Wear UI változatlan.
+- **`f105003`**: WearSyncRepository a Room `getWearMiniJournal` korlátozott
+  lekérdezését használja (8 szülő, kronologikus epoch + stabil ID rendezés),
+  nem az összes részletet tölti be a take(8) előtt. Új telefonos
+  `JournalWorkoutSummary` részlet/rawJson/GPS/fotó nélküli projekció és laplekérés.
+  **A telefonos JournalViewModel még a régi teljes részlet-flow-t használja**;
+  következő konkrét munka az új projekció/UI, lapozás, teljes adathalmazos
+  keresés/hónapszűrés és explicit részletbetöltés bekötése, helyes invalidációval.
+- 4 új kontraszt/paletta és 2 Room-regressziós tesztkód (0/200/1500, stabil
+  lapok, elemszámot nem változtató módosítás). Batch összesen **53 megírt,
+  még nem futtatott próba**. Csak diff/forrásellenőrzés; nincs új Gradle,
+  emulátor/CI/screenshot/APK. Utolsó teljes zöld forrás változatlan `dd4cc27`.
+- Teljes tématoken vizuális paritás, kontraszt/UI bizonyítás, korábbi natív
+  extra témák webes roundtripje és az öt terület maradéka még nyitott.
+  Verzió/main nem változott, nincs élő adatokra telepítési ajánlás.
+
 ## Új alkalmazásforrás – témakatalógus és migráció első javítása
 
 **`787bc8d`**, `[skip ci]`: main `7473b30` végső palettái alapján 10 Basic +

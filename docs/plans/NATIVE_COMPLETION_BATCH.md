@@ -128,3 +128,13 @@ vagy újra bevizsgálva; a forrás és a 43 megírt tesztkód állapota változa
 négy új, még nem futtatott teszt és rögzített main fixture. A batch összesen47
 próba, nincs új build/CI. Tématokenek, teljes Basic/Vivid stílus, kontraszt,
 régi natív extra kulcsok webes exportja és tényleges roundtrip/UI még nyitott.
+
+
+## Teljes-app folytatás – 2026-10-24
+
+A felhasználó megerősítette, hogy a témák csak részfeladat: a teljes öt területet
+és UI-bekötést be kell fejezni. `a5538db` token/picker és 4 tesztkód;
+`f105003` Wear mini-napló bounded Room-útja, telefonos összegző projekció és
+2 új regressziókód 0/200/1500 adatra. Batch összesen53 próba, még nem futtatva.
+Következő: a telefonos JournalViewModel/Screen leválasztása a teljes részlet-flow-ról,
+lapozás és globális szűrés. Ezután a teljes terv további funkciói/bekötései.
