@@ -20,6 +20,24 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   prototípus/fake Health-forrás tilos. Nyolcgombos menü helyett öt alsó fül elfogadva,
   jobb felső Settings; abból visszatérés nem pause, valódi editor-elhagyás igen.
 
+## Legújabb natív batch – program- és programnapszerkesztő
+
+`87f9ee10` `[skip ci]`: meglévő Room `programs` és
+`program_days` táblákhoz natív UI/szerkesztő bekötve:
+saját program CRUD, beépített program csak klónozható,
+napok és gyakorlatok felvétel/törlés/sorrend,
+katalógus alapú választó, HU/EN/DE/RO.
+Stale snapshot-CAS, aktív session és naptár/napló
+hivatkozásvédelem; üres nap nem indítható.
+A kanonikus JSON/ZIP/Drive mentésben a napok extra
+és fordítási mezői megmaradnak, explicit importlistáról
+törölt napok nem állnak vissza.
+**12 unit +3 Phone Compose UI-tesztkód: batch 271
+unit+28 UI még nem futtatva.** 15 statikus check PASS;
+nincs új Kotlin/Gradle/emulátor/APK igazolás.
+Következő: profil/progresszió maradék, majd összevont CI.
+PR #238 frissítendő.
+
 ## Legújabb natív batch – saját gyakorlat CRUD
 
 `a46a8bcd` `[skip ci]` appforrás: saját gyakorlat létrehozás,
