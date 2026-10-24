@@ -124,6 +124,7 @@ fun HealthDashboardScreen(
                 onChannel = viewModel::selectHistoryChannel,
                 onToday = viewModel::historyToday,
                 onOpenRecords = { detailType = it },
+                onDailySource = viewModel::setDailySourcePreference,
                 onRefresh = {
                     val permissions = HealthConnectRepository.READ_PERMS.map { "android.permission.health.$it" }.toTypedArray()
                     if (state.provider == "health_connect" && Build.VERSION.SDK_INT >= 34 &&
@@ -157,7 +158,8 @@ fun HealthJournalTabContent(
     onDay: (String) -> Unit,
     onChannel: (String) -> Unit,
     onToday: () -> Unit,
-    onOpenRecords: (String) -> Unit
+    onOpenRecords: (String) -> Unit,
+    onDailySource: (String) -> Unit
 ) {
     val colors = LocalTrainPilotColors.current
     LazyColumn(
@@ -235,6 +237,26 @@ fun HealthJournalTabContent(
                         color = colors.muted,
                         fontSize = 11.sp
                     )
+                    if (state.provider == com.repforge.app.HealthJournalStore.HC) {
+                        val text = com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
+                        Text(text.getString(com.repforge.app.R.string.health_daily_source_title), color = colors.text)
+                        androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(listOf("auto", "priority")) { choice ->
+                                androidx.compose.material3.FilterChip(selected = state.dailySourcePreference == choice,
+                                    enabled = !state.sourceSaving && !state.historyLoading,
+                                    onClick = { onDailySource(choice) }, modifier = Modifier.testTag("health_daily_$choice"),
+                                    label = { Text(text.getString(if (choice == "auto") com.repforge.app.R.string.health_daily_source_auto
+                                        else com.repforge.app.R.string.health_daily_source_priority)) })
+                            }
+                        }
+                        if (state.dailySourcePreference !in listOf("auto", "priority"))
+                            Text(state.dailySourcePreference, color = colors.muted)
+                        Text(text.getString(com.repforge.app.R.string.health_daily_source_hint), color = colors.muted)
+                        if (state.sourceSaveFailed) Text(text.getString(com.repforge.app.R.string.metadata_write_failed), color = colors.danger)
+                    }
+                    if (state.historyPartial) Text(com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
+                        .getString(com.repforge.app.R.string.health_daily_source_partial), color = colors.muted,
+                        modifier = Modifier.testTag("health_daily_partial"))
                 }
             }
         }

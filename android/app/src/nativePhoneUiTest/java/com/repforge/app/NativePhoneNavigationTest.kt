@@ -392,6 +392,20 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("health_records_error").assertDoesNotExist()
     }
 
+    @Test fun activitySourceSelectionPersistsAndMarksPreviousDailyValuesPartial() {
+        val store = HealthJournalStore.get(context)
+        val day = java.time.LocalDate.now().toString()
+        store.healthDay(day, JSONObject().put("weightKg", 72.3), store.generation())
+        launch(); tab("health")
+        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_daily_priority"))
+        compose.onNodeWithTag("health_daily_priority").performClick()
+        compose.waitUntil(15000) { store.preferences().optString("hcDailySource") == "priority" &&
+            compose.onAllNodesWithTag("health_daily_partial").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("health_daily_priority").assertIsSelected()
+        assertEquals(72.3, store.page(day, day, "journal", "", 0, 0, 1)
+            .getJSONArray("days").getJSONObject(0).getDouble("weightKg"), .0001)
+    }
+
     @Test fun earlierHealthDayCanBeSelectedAndDisplaysItsStoredWeight() {
         val day = java.time.YearMonth.now().minusMonths(1).atDay(1).toString()
         val health = HealthJournalStore.get(context)

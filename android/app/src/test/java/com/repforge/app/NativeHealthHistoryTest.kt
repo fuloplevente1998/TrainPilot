@@ -55,6 +55,26 @@ class NativeHealthHistoryTest {
         val page = NativeHealthHistory(store).load(NativeHealthQuery(LocalDate.parse("2026-10-01")))
         assertEquals(31, page.days.size); assertEquals(61.0, page.selected.getDouble("weightKg"), .0001)
     }
+    @Test fun activitySourceChangeKeepsStoredValuesPartialUntilAnExplicitFreshRead() {
+        put("2026-10-02", 72.3)
+        val before = store.generation()
+        store.setPreferences(JSONObject().put("hcDailySource", "priority"))
+        assertTrue(store.generation() > before)
+        val query = NativeHealthQuery(LocalDate.parse("2026-10-02"))
+        val previous = NativeHealthHistory(store).load(query).selected
+        assertTrue(previous.getBoolean("partial")); assertEquals(72.3, previous.getDouble("weightKg"), .0001)
+        assertEquals("priority", store.preferences().getString("hcDailySource"))
+        put("2026-10-02", 73.4)
+        val fresh = NativeHealthHistory(store).load(query).selected
+        assertFalse(fresh.optBoolean("partial")); assertEquals(73.4, fresh.getDouble("weightKg"), .0001)
+    }
+    @Test fun selectingTheCurrentActivitySourceDoesNotInvalidateFreshValues() {
+        put("2026-10-02", 72.3)
+        val before = store.generation()
+        store.setPreferences(JSONObject().put("hcDailySource", "auto"))
+        assertEquals(before, store.generation())
+        assertFalse(NativeHealthHistory(store).load(NativeHealthQuery(LocalDate.parse("2026-10-02"))).selected.optBoolean("partial"))
+    }
     @Test fun monthNavigationUsesCalendarBoundariesAndRejectsFutureAndUnknownChannels() {
         val q = NativeHealthQuery(LocalDate.parse("2026-03-31"))
         assertEquals(HealthJournalStore.BLE, q.copy(channel = HealthJournalStore.BLE).channel)

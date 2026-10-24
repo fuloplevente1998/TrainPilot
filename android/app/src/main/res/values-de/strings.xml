@@ -233,4 +233,9 @@
     <string name="health_sleep_asleep">Schlafzeit (aus Phasen)</string>
     <string name="health_sleep_duration">Erfasste Dauer</string>
     <string name="health_sleep_details">Schlafdetails</string>
+    <string name="health_daily_source_title">Quelle der Tagesaktivität</string>
+    <string name="health_daily_source_auto">Automatisch</string>
+    <string name="health_daily_source_priority">Health Connect-Priorität</string>
+    <string name="health_daily_source_hint">Beeinflusst die Quelle für Schritte, Entfernung und Kalorien. Lies nach einer Änderung über Aktualisieren neue Daten ein.</string>
+    <string name="health_daily_source_partial">Unvollständige Tagesdaten: frühere Werte müssen neu eingelesen werden.</string>
 </resources>

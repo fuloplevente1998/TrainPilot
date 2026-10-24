@@ -233,4 +233,9 @@
     <string name="health_sleep_asleep">Time asleep (from stages)</string>
     <string name="health_sleep_duration">Recorded duration</string>
     <string name="health_sleep_details">Sleep details</string>
+    <string name="health_daily_source_title">Daily activity source</string>
+    <string name="health_daily_source_auto">Automatic</string>
+    <string name="health_daily_source_priority">Health Connect priority</string>
+    <string name="health_daily_source_hint">Affects the source of steps, distance and calories. Use Refresh after changing this setting to read new data.</string>
+    <string name="health_daily_source_partial">Partial daily data: previous values are awaiting a fresh read.</string>
 </resources>

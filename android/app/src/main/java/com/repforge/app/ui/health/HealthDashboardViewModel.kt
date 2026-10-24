@@ -17,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.time.LocalDate
@@ -53,7 +54,10 @@ data class HealthDashboardUiState(
     val availableDays: List<String> = emptyList(),
     val historyChannel: String = "journal",
     val historyLoading: Boolean = false,
-    val historyError: Boolean = false
+    val historyError: Boolean = false,
+    val historyPartial: Boolean = false,
+    val sourceSaving: Boolean = false,
+    val sourceSaveFailed: Boolean = false
 )
 
 class HealthDashboardViewModel(application: Application) : AndroidViewModel(application) {
@@ -103,7 +107,7 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
         historyJob?.cancel()
         _uiState.value = _uiState.value.copy(historyLoading = true, historyError = false, metrics = emptyList(),
             selectedDay = query.day.toString(), historyMonth = query.month.toString(), historyChannel = query.channel,
-            availableDays = emptyList(), sleepSessionsSummaryText = "—")
+            availableDays = emptyList(), sleepSessionsSummaryText = "—", historyPartial = false)
         historyJob = viewModelScope.launch {
             try {
                 val loaded = withContext(Dispatchers.IO) {
@@ -120,6 +124,7 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                 val text = com.repforge.app.ui.text.nativeResources(context, language)
                 _uiState.value = _uiState.value.copy(language = language, historyLoading = false, historyError = false,
                     availableDays = page.days, metrics = NativeHealthMetrics.parse(context, page.selected, language),
+                    historyPartial = page.selected.optBoolean("partial"),
                     provider = prefs.optString("provider", HealthJournalStore.HC),
                     dailySourcePreference = prefs.optString("hcDailySource", "auto"),
                     logWatchSteps = prefs.optBoolean("logWatchSteps"), bleBackground = prefs.optBoolean("bleBackground"),
@@ -129,6 +134,23 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                     hcSupported = access[0], hcGranted = access[1], samsungInstalled = access[2], samsungAvailable = access[3])
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) { _uiState.value = _uiState.value.copy(historyLoading = false, historyError = true, metrics = emptyList()) }
+        }
+    }
+
+    fun setDailySourcePreference(value: String) {
+        if (value !in setOf("auto", "priority") || _uiState.value.sourceSaving) return
+        _uiState.update { it.copy(sourceSaving = true, sourceSaveFailed = false) }
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    com.repforge.app.NativeDataReplacement.mutate(context) {
+                        healthStore.setPreferences(JSONObject().put("hcDailySource", value))
+                    }
+                }
+                loadHealthDashboard() // Read stored values/dirty state; no implicit SDK or permission request.
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { _uiState.update { it.copy(sourceSaveFailed = true) } }
+            finally { _uiState.update { it.copy(sourceSaving = false) } }
         }
     }
 

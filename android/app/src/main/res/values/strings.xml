@@ -233,4 +233,9 @@
     <string name="health_sleep_asleep">Alvással töltött idő (fázisokból)</string>
     <string name="health_sleep_duration">Rögzített időtartam</string>
     <string name="health_sleep_details">Alvásrészletek</string>
+    <string name="health_daily_source_title">Napi aktivitás forrása</string>
+    <string name="health_daily_source_auto">Automatikus</string>
+    <string name="health_daily_source_priority">Health Connect prioritás</string>
+    <string name="health_daily_source_hint">A lépés-, távolság- és kalóriaadatok forrását befolyásolja. A váltás után a Frissítés gombbal kérhetsz új adatokat.</string>
+    <string name="health_daily_source_partial">Részleges napi adat: a korábbi értékek újraolvasásra várnak.</string>
 </resources>

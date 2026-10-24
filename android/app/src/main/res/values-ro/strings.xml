@@ -233,4 +233,9 @@
     <string name="health_sleep_asleep">Timp dormit (din faze)</string>
     <string name="health_sleep_duration">Durată înregistrată</string>
     <string name="health_sleep_details">Detalii despre somn</string>
+    <string name="health_daily_source_title">Sursa activității zilnice</string>
+    <string name="health_daily_source_auto">Automat</string>
+    <string name="health_daily_source_priority">Prioritate Health Connect</string>
+    <string name="health_daily_source_hint">Influențează sursa pașilor, distanței și caloriilor. Folosește Actualizare după schimbare pentru a citi date noi.</string>
+    <string name="health_daily_source_partial">Date zilnice parțiale: valorile anterioare așteaptă o citire nouă.</string>
 </resources>
