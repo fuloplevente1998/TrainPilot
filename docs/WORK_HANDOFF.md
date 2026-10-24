@@ -4,6 +4,51 @@ Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Aktuális befejezési batch – Napló, naptárszinkron, programnapi GPS
+
+Legújabb alkalmazásforrás **`0a3865c`**, előzményei `7d5ac83`, `b018e6c`,
+`1daf855`; minden köztes commit `[skip ci]`. A felhasználó rövid, lényegi
+kommunikációt kér; a teljes elfogadott terv alapján önállóan kell folytatni.
+
+- **Napló (`7d5ac83`)**: Jetpack Paging 3.3.6, 32-es kulcsalapú lapok, stabil
+  epoch/id sorrend. Üres keresésnél csak összegző oszlopok, nincs raw JSON vagy
+  sorozat/fotó/GPS reláció. Globális Unicode/ékezetfüggetlen keresés bounded
+  128-as könnyű szövegprojekciókon; dátum/hónap SQL-szűrés helyi éjféli határokkal.
+  Room tartalmi invalidáció, nem elemszám-cache; törölt/módosított sor frissít.
+- Telefonos JournalViewModel/Screen már az új adatúton: részlet csak egy edzés
+  megnyitására, reaktív törlés/módosítás, külön Gyakorlatok/Statisztikák/Forrás
+  fülek; privát fotó-előnézet és néző, útvonal elérés. Tombstone + naplótörlés
+  tranzakcióban, route-cleanup utána. Hiba/retry/loading/missing állapotok.
+  HU/EN/DE/RO erőforrások. A történeti gyakorlatnevek egyelőre HU/EN-ben vannak,
+  DE/RO esetén EN fallback; teljes katalógushoz kötött névparitás még szükséges.
+- Több Phone/Wear route-key külön szegmensként olvasható, nincs köztes vonal;
+  hiányzó rész jelölve. Fullscreen privát offline térkép piros X-szel, amely csak
+  a térképet zárja. Az összetett ledger és külön phone-track átfedéseinek
+  teljes deduplikáció/időrendi paritása továbbra külön integrációs ellenőrzés.
+  A lista mini-route thumbnailje és a forrás-fül részletes Health mutatói még hiányoznak.
+- **Naptárszinkron (`b018e6c`)**: `takeLast(100)` eltávolítva. Minden naptársor,
+  régi skipped/lemondás is műveletet kap. Stabil Google/determinisztikus ID;
+  meglévő DELETE404/410 és POST409→PUT viselkedés megmarad. Ez kód, nem végrehajtott
+  Google-fiókos szinkronpróba; ebben a körben külső adatírás nem történt.
+- **Programnapi GPS (`1daf855`)**: közös `startProgramWorkout` ad memóriabeli
+  Launch célt, a korábbi `startWorkout` API megmarad. A kezdő kültéri aktivitásnál
+  megjelenik a megjegyzett explicit GPS-választás; új sikeres saját sessionre
+  egyszeri intent, recovery/repeated/watch-won startnál nincs GPS vagy preferenciacsere.
+  Programváltozás stale választása publikálás előtt elutasítva; eredeti naptári
+  tranzakció megmarad. Későbbi gyakorlatra nem indít néma GPS-t; ott explicit mérés kell.
+  `0a3865c`: közös explicit nyelvű Resources helper, Activity context cseréje nélkül.
+- **20 új tesztkód**: 8 paging/search/Room-invalidáció/DST; 3 route merge;
+  3 naptári sync-terv (251 sor, régi lemondás, stabil ID); 6 program GPS/recovery.
+  A batch összesen **73 megírt, még nem futtatott próba**. Helyben csak diff és XML
+  struktúra/kulcsegyezés ellenőrzés. Nincs új Gradle/CI/emulátor/APK/screenshot;
+  utolsó teljes zöld alkalmazásforrás továbbra **`dd4cc27`**.
+
+Következő: teljes telefonos Compose UI-teszt/infrastruktúra megírása (a batch végén
+futtatva); teljes interval/preset és Coach per-gyakorlat bekötés; backend restore
+konkurenciavédelem + roundtrip, további UI/katalógus/lokalizáció/paritás és
+Health/Phone↔Wear ellenőrzés a teljes terv szerint. Valós napló/frame teljesítmény
+mérés emulátoron még nincs. Main/verzió változatlan, élő adatfrissítés továbbra STOP.
+
 ## Aktuális teljes-app munka – tématokenek után napló (2026-10-24)
 
 A felhasználó ismét megerősítette: **a teljes hátralévő natív app a feladat**,

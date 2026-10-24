@@ -25,7 +25,7 @@ Külön azonosítójú párhuzamos tesztkiadás jelenleg nem áll rendelkezésre
 | Pihenő / gyakorlatváltás | `e164ef3`: valódi skip/±15 mp stabil workout/generation/key célzással, tartós rest-only terv és hibánál rollback; gyakorlatváltás őrzi a pihenőt és a kiválasztást. | 10 új service-próba zöld, tényleges időelszámolás és ownership/frozen védelem. Integrált UI még külön szükséges. |
 | Időösszesítés | `40384e7`: megfigyelt stopper/GPS és interval munka/pihenő/szünet közös naplóban; kézi idő nem hamisít megfigyelt időt. Folytatás/undo/reset nem dupláz; folyamat/tulajdonos védett. Élő összesítés csak memóriában. | Új célzott tesztek és Room-GPS időnaplóállítások zöldek. Tényleges telefonos megjelenítés/készülékes mérés még külön igazolandó. |
 | Naptár / Coach | Új batchben `e05ff57`–`9b09af7`: Room naptár CRUD/bounded nézet, Coach valós helyi HealthJournalStore-adatokkal és célprogramnappal; önálló Calendar/Coach útvonal bekötve. `4f60bc0`: ötfüles navigáció, globális Settings és külön gyorsbelépések. Még nem bevizsgált forrás. | Per-gyakorlat tanácsok, teljes mockup, provider-frissítés, timezone-paritás és integrált UI-próba. Nem új screen-implementáció kell a meglévő helyett. |
-| Napló teljesítmény | Compose LazyColumn van, de az adatréteg minden edzést részletekkel figyel. A Wear mini-napló az összes részlet betöltése után vesz csak nyolcat. | Korlátozott lekérdezés/lapozás, teljes adathalmazra működő szűrés; 0/200/1500 minta. Nem állítunk igazolt natív gyorsulást. |
+| Napló teljesítmény | `f105003`: Wear legfeljebb8 szülő Room-ban; `7d5ac83`: telefon Paging, 32-es összegző lapok, reaktív explicit részlet, globális Unicode-keresés bounded szövegprojekciókon és SQL-hónaphatárok. Új tesztkód megírva, nem futtatva. | Tényleges 0/200/1500 minta emulátoros késleltetés/memória/frame mérés; integrált UI és adatváltozásos regresszió. Nem állítunk igazolt gyorsulást. |
 | Health | Valós Samsung SDK adapter és explicit foreground frissítés helyreállítva; az onResume munka IO-n fut. Az eredeti felesleges preferenciavisszaírás-gyorsítás átvéve. | Tesztek, Samsung/HC készülékes engedély- és háttérváltási próba; hiányzó adat nem friss siker. |
 | Wear | Az eredeti teljes natív launcher/szolgáltatások/protokoll visszakötve; az alternatív távirányítós prototípus nem launcher. A main gyorsított kiadása nem módosított Wear/shared appkódot. | Kerek UI 183/183 sikeres. Watch7, valódi telefon–óra szinkron és offline átadás/visszavétel még készülékes kapu. |
 | Nyelvek / UI | Számos Compose szöveg közvetlenül magyar; a privát aktív/napló térkép piros X-et használ. Watch→Phone folytatás vegyes útvonalszakaszainak UI-ja még vizsgálandó. | HU/EN/DE/RO, nagy betű/kis kijelző, elfogadott piros X, használható érintési célok. |
@@ -37,12 +37,12 @@ aláírt szintetikus upgrade **2/2**, nincs hiba/kihagyás. Letöltött release 
 hash/csomag/verzió/signer ellenőrizve; a measured protokoll és az időnaplómezők a telefonos R8 DEX-ben is jelen vannak.
 [Gépi bizonylat](builds/2026-10-23-native-measured-intervals.json).
 
-**Aktuális nem bevizsgált batch:** Calendar/Coach bekötés, ötfüles UI és globális
-Settings (`4f60bc0`), teljes main témakatalógus és témamigráció első javítása
-(`787bc8d`). Összesen47 új megírt/nem futtatott próba. Teljes aktuális állapot az
-[átadó tetején](WORK_HANDOFF.md); végrehajtási szerződés:
-[NATIVE_FINAL_DELIVERY](plans/NATIVE_FINAL_DELIVERY.md). A történeti zöld kapuk
-nem igazolják az új UI-t/témákat. Utolsó teljes zöld forrás `dd4cc27`.
+**Aktuális nem bevizsgált batch:** a legfrissebb `0a3865c` már a lapozott naplót,
+privát részlet/fotó/több route megjelenítést, teljes naptár sync-tervet és programnapi
+kezdeti GPS-választást is tartalmazza. 73 megírt/nem futtatott batch-próba.
+[Aktuális átadó](WORK_HANDOFF.md), [teljes terv](plans/NATIVE_FINAL_DELIVERY.md).
+A régebbi sorok történeti zöld bizonyítékok, nem az új UI igazolásai.
+Utolsó teljes zöld forrás `dd4cc27`; fizikai készülékes elfogadás külön szükséges.
 
 ## Ellenőrzési sorrend
 

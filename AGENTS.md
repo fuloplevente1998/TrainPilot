@@ -17,7 +17,9 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 
 ## A felhasználó munkamódja
 
-- Magyarul, röviden és érthetően kommunikálj. A „folyt”, „folytasd”, „csináld”
+- Magyarul, röviden és érthetően kommunikálj. A felhasználó kifejezetten kéri:
+  kevés lényegi visszajelzés, rövid célzott tool-output, cachelt/belinkelt források
+  használata; ne ismételd folyamatosan a tervet vagy a teljes korábbi kontextust. A „folyt”, „folytasd”, „csináld”
   a már egyeztetett feladat végrehajtását jelenti, nem újabb tervkérés.
 - Haladj önállóan a jóváhagyott keretben; rutinszerű, visszafordítható javításhoz
   ne kérj újra engedélyt. Hosszabb munka közben adj érdemi állapotjelzést.

@@ -138,3 +138,14 @@ A felhasználó megerősítette, hogy a témák csak részfeladat: a teljes öt 
 2 új regressziókód 0/200/1500 adatra. Batch összesen53 próba, még nem futtatva.
 Következő: a telefonos JournalViewModel/Screen leválasztása a teljes részlet-flow-ról,
 lapozás és globális szűrés. Ezután a teljes terv további funkciói/bekötései.
+
+
+## Napló és további funkcióbekötés – legújabb batch
+
+`7d5ac83`: tényleges telefonos Paging lista/globális Unicode-keresés/hónapszűrés,
+explicit reaktív részlet, fülek, privát fotó és több route-key megjelenítés;
+`b018e6c`: teljes naptár sync-terv levágás nélkül; `1daf855`: programnapi kezdő
+aktivitás explicit GPS-választása, új memóriabeli Launch, recovery védelem;
+`0a3865c`: közös explicit locale Resources. Új 20 próbakód, összesen73 nem futtatott
+batch-eset. Aktuális nyitott elemek az átadó tetején. Nincs új kapu/APK vagy
+külső Google-szinkron végrehajtás. A teljes feladat továbbra nincs lezárva.
