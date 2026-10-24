@@ -7,6 +7,10 @@ megvalósítási alapok; ne készüljön párhuzamos új implementáció létez�
 
 ## Munkasorrend
 
+Az elfogadott teljes átadási követelmény: [NATIVE_FINAL_DELIVERY.md](NATIVE_FINAL_DELIVERY.md).
+A korábbi állapotbekezdések történeti pillanatképek; az átadó teteje az aktuális.
+
+
 1. Telefonos teljes edzésfolyamat: meglévő Compose/editor/finalizer bekötésének
    rendezése; emulátoros UI-tesztek megírása indításra, draftra, stopper/GPS-re,
    visszavonásra, mentésre/elvetésre, megszakításra.

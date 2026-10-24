@@ -4,6 +4,15 @@ Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Elfogadott teljes befejezési feladat (2026-10-24)
+
+A felhasználó jóváhagyta a [teljes feladatot és pontosításokat](plans/NATIVE_FINAL_DELIVERY.md).
+Ez alapján dolgozunk: öt funkcióterület + 24 nézet + main teljes témakatalógus/
+migráció + HU/EN/DE/RO, utána közös CI és valódi emulátoros képernyőképek.
+Első konkrét munka: hiányzó main-paletták és témakulcs migrációja. Nincs main merge,
+verzióemelés vagy saját adatokra telepítési ajánlás. Az új Phone UI/screenshot
+kaput a meglévő natív workflow-ba kell megírni; fizikai Health/Wear próba külön.
+
 ## Új Compose-elfogadási feltételek – csak rögzítve (2026-10-24)
 
 A felhasználó hat pontosítást adott a mockup motorhoz kötéséhez:

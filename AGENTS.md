@@ -38,6 +38,11 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 
 ## Aktuális natív befejezési munkamód (2026-10-24)
 
+- Aktuális elfogadott teljes feladat: `docs/plans/NATIVE_FINAL_DELIVERY.md`.
+  Teljes 24 nézet/témakatalógus, öt funkcióterület, majd azonos forrású CI/APK
+  és valódi emulátoros screenshotok; új generált mockup nem készül.
+
+
 - Felhasználói sorrend: előbb az öt hátralévő terület kódja és tesztkódja,
   utána összevont funkcionális/UI ellenőrzés. Ne indíts minden részcommit után
   teljes APK/emulátorkaput. Köztes kódolási commit `[skip ci]`; végső kapu
