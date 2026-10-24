@@ -49,6 +49,18 @@ internal class TrainPilotWorkoutFinalization(
                         }
                     }
                 }
+                // Only remove the exact imported source after history is durable; native pending frame remains retryable.
+                val importedHash = history.optString("legacyDraftSha256")
+                if (importedHash.isNotEmpty()) withContext(Dispatchers.IO) {
+                    database.withTransaction {
+                        val original = database.keyValueDocumentDao().getDocument("draft")
+                        if (original != null && NativeLegacyDraft.hash(original.json) == importedHash) {
+                            database.keyValueDocumentDao().putDocument(com.repforge.app.data.db.KeyValueDocumentEntity(
+                                "legacyDraftArchive|" + importedHash, original.json, System.currentTimeMillis()))
+                            database.keyValueDocumentDao().deleteDocument("draft")
+                        }
+                    }
+                }
                 val closed = withContext(Dispatchers.Main.immediate) {
                     val execution = PhoneWorkoutExecution.store(context)
                     val frame = execution.snapshot()

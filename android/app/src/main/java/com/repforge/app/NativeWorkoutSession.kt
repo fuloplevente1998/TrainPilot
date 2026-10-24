@@ -1,6 +1,7 @@
 package com.repforge.app
 
 import android.content.Context
+import androidx.room.withTransaction
 import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.db.ExerciseLibraryEntity
 import com.repforge.app.data.store.TrainPilotUserSettings
@@ -150,6 +151,51 @@ internal object NativeWorkoutSession {
         }
         exercise.remove("actualRir")
         return exercise.put("sets", sets)
+    }
+
+    suspend fun resumeImportedDraft(context: Context,
+        database: TrainPilotDatabase = TrainPilotDatabase.getInstance(context)): JSONObject = startLock.withLock {
+        val app = context.applicationContext
+        withContext(Dispatchers.Main.immediate) { recoverActive(app) }?.let { return@withLock it }
+        val settings = TrainPilotSettingsStore(app).current()
+        withContext(NonCancellable + Dispatchers.IO) {
+            database.withTransaction {
+                val document = requireNotNull(database.keyValueDocumentDao().getDocument("draft")) { "Nincs félbehagyott edzés." }
+                val library = database.exerciseLibraryDao().getAllExercises().associateBy { it.id }
+                val frame = NativeLegacyDraft.prepare(document.json, library.keys, Instant.now())
+                val id = frame.getString("workoutId")
+                check(!database.workoutHistoryDao().isTombstoned(id, JSONObject.quote(id)) &&
+                    database.workoutHistoryDao().getWorkoutWithDetails(id) == null) { "Az edzés már mentett vagy törölt." }
+                val closed = database.keyValueDocumentDao().getDocument("wearClosedWorkouts")?.json.orEmpty()
+                check(!closed.contains(JSONObject.quote(id))) { "Az edzés már lezárt." }
+                val exercises = frame.getJSONArray("exercises")
+                for (e in 0 until exercises.length()) {
+                    val exercise = exercises.getJSONObject(e)
+                    val source = library.getValue(exercise.getString("id"))
+                    val defaults = JSONObject(source.rawJson).put("name", localized(settings.language,
+                        source.nameHu, source.nameEn, source.nameDe, source.nameRo))
+                        .put("loadType", source.loadType).put("repUnit", source.repUnit)
+                        .put("measurementType", source.measurementType).put("targetReps", source.defaultReps)
+                        .put("restSeconds162", settings.restSeconds).put("setRir229", source.setRir229)
+                    for (key in defaults.keys()) if (!exercise.has(key) && key != "sets") exercise.put(key, defaults.get(key))
+                }
+                if (!frame.has("timerConfig")) frame.put("timerConfig", JSONObject().put("work", settings.workSeconds)
+                    .put("rest", settings.restSeconds).put("rounds", settings.rounds)
+                    .put("sound", settings.soundEnabled).put("vibration", settings.vibrationEnabled))
+                frame.put("language", settings.language)
+                val hash = NativeLegacyDraft.hash(document.json)
+                frame.put("legacyDraftSha256", hash)
+                // Archive before publishing. Never remove the original during adoption: if either
+                // database fails, it remains available and a durable native frame wins on retry.
+                database.keyValueDocumentDao().putDocument(com.repforge.app.data.db.KeyValueDocumentEntity(
+                    "legacyDraftArchive|" + hash, document.json, System.currentTimeMillis()))
+                withContext(Dispatchers.Main.immediate) {
+                    val old = PhoneWorkoutExecution.store(app).snapshot()
+                    check(old == null || old.optString("workoutId") != id || old.optBoolean("active")) { "A natív edzés már lezárt." }
+                    installPrepared(app, frame)
+                }
+            }
+        }
     }
 
     internal fun installPrepared(context: Context, candidate: JSONObject): JSONObject {

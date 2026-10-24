@@ -8,6 +8,9 @@ import java.util.UUID
 
 /** Pure preflight only. This never publishes, deletes or resumes a legacy draft. */
 internal object NativeLegacyDraft {
+    fun hash(raw: String): String = java.security.MessageDigest.getInstance("SHA-256")
+        .digest(raw.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+
     fun prepare(raw: String, knownExercises: Set<String>, now: Instant): JSONObject {
         val document = JSONObject(raw)
         val source = document.getJSONObject("session")

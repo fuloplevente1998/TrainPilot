@@ -171,6 +171,19 @@ fun TrainPilotAppScaffold(
                         onStartWorkout = { dayId ->
                             startWorkout(null, dayId)
                         },
+                        onResumeDraft = {
+                            if (!starting) {
+                                starting = true
+                                scope.launch {
+                                    try {
+                                        NativeWorkoutSession.resumeImportedDraft(context)
+                                        navController.navigate("active_workout") { launchSingleTop = true }
+                                    } catch (cancelled: CancellationException) { throw cancelled }
+                                    catch (error: Exception) { snackbar.showSnackbar(error.message ?: "A félbehagyott edzés nem vehető át.") }
+                                    finally { starting = false }
+                                }
+                            }
+                        },
                         onQuickWorkout = { outdoor ->
                             if (hasActiveWorkout) navController.navigate("active_workout") { launchSingleTop = true }
                             else navController.navigate(if (outdoor) "quick_outdoor" else "quick_workout") { launchSingleTop = true }

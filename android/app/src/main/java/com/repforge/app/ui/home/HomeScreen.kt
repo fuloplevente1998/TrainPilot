@@ -48,7 +48,8 @@ fun HomeScreen(
     navController: NavController,
     viewModel: HomeViewModel = viewModel(),
     onStartWorkout: (String) -> Unit,
-    onQuickWorkout: (Boolean) -> Unit
+    onQuickWorkout: (Boolean) -> Unit,
+    onResumeDraft: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = LocalTrainPilotColors.current
@@ -61,6 +62,9 @@ fun HomeScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        Button(onClick = onResumeDraft, modifier = Modifier.fillMaxWidth()) {
+            Text("Félbehagyott edzés folytatása")
+        }
         // 1. Következő edzés ajánló kártya (Next Workout Hero Card)
         Card(
             modifier = Modifier.fillMaxWidth(),
