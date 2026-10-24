@@ -20,6 +20,19 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   prototípus/fake Health-forrás tilos. Nyolcgombos menü helyett öt alsó fül elfogadva,
   jobb felső Settings; abból visszatérés nem pause, valódi editor-elhagyás igen.
 
+## Legújabb natív kódbatch — HC/BLE háttérfeltételek
+
+`f90e7ef` `[skip ci]`: valós háttér-HC (olvasás/külön háttérengedély/
+U extension + JobScheduler) és RDFit BLE (mentett óra/Connect/notification/
+Bluetooth/FGS) feltételek, replacement/restore-fence, explicit permission
+request a kapcsoló után. A UI nem téveszti össze a mentett opt-int a futó
+szolgáltatással. Sikertelen mentés/start esetén előző beállítás vissza +
+látható hiba; négy nyelv 14 új string.
+10 új JVM unit+2 Phone Compose UI-próbakód. **Batch 231 unit+19 UI
+megírva, még nem futtatva.** Statikus forrás/resource-ellenőrzés megtörtént;
+nincs új CI/APK/fizikai igazolás. Következő: profil/program/kedvenc paritás,
+további A–E és közös tesztkapu. PR #238 követendő.
+
 ## Legfrissebb folytatás — HC egyedi eredet
 
 `031f0a60` `[skip ci]`: ténylegesen eltárolt HC-origin
