@@ -4,8 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import org.json.JSONArray
-import org.json.JSONObject
+import androidx.room.withTransaction
 
 @Database(
     entities = [
@@ -51,171 +50,23 @@ abstract class TrainPilotDatabase : RoomDatabase() {
             }
         }
 
-        suspend fun ensureBuiltinCatalogSeeded(db: TrainPilotDatabase) {
-            val existingExercises = db.exerciseLibraryDao().getAllExercises()
-            if (existingExercises.none { !it.custom }) {
-                db.exerciseLibraryDao().upsertExercises(defaultExercises())
-            }
-            val existingPrograms = db.programDao().getProgramsWithDays()
-            if (existingPrograms.none { it.program.builtin }) {
-                val (programs, days) = defaultPrograms()
-                db.programDao().upsertPrograms(programs)
-                db.programDao().upsertProgramDays(days)
-            }
-        }
-
-        fun defaultExercises(): List<ExerciseLibraryEntity> {
-            data class Seed(
-                val id: String,
-                val hu: String,
-                val en: String,
-                val de: String,
-                val ro: String,
-                val loadType: String,
-                val repUnit: String,
-                val measurementType: String,
-                val sets: Int,
-                val reps: String,
-                val weight: Double,
-                val rest: Int,
-                val primary: String,
-                val muscles: List<String>,
-                val video: String? = null
-            )
-
-            val seeds = listOf(
-                Seed("goblet-squat", "Goblet guggolás", "Goblet Squat", "Goblet Kniebeuge", "Genuflexiuni Goblet", "dumbbell", "ism.", "reps", 3, "10", 12.0, 90, "legs", listOf("legs", "core")),
-                Seed("db-floor-press", "Fekvenyomás talajon kézisúlyzóval", "Dumbbell Floor Press", "Kurzhantel-Bodenpressen", "Împins de pe podea cu gantere", "dumbbell", "ism.", "reps", 3, "10", 10.0, 90, "chest", listOf("chest", "arms", "shoulders")),
-                Seed("one-arm-db-row", "Egykezes döntött törzsű evezés", "One-Arm Dumbbell Row", "Einarmiges Kurzhantelrudern", "Ramat cu gantera pe o mână", "dumbbell", "ism.", "reps", 3, "10", 12.0, 90, "back", listOf("back", "arms")),
-                Seed("db-romanian-deadlift", "Román felhúzás kézisúlyzóval", "Dumbbell Romanian Deadlift", "Rumänisches Kreuzheben mit Kurzhanteln", "Îndreptări românești cu gantere", "dumbbell", "ism.", "reps", 3, "10", 12.0, 90, "legs", listOf("legs", "back")),
-                Seed("db-shoulder-press", "Vállból nyomás kézisúlyzóval", "Dumbbell Shoulder Press", "Kurzhantel-Schulterdrücken", "Împins deasupra capului cu gantere", "dumbbell", "ism.", "reps", 3, "10", 8.0, 90, "shoulders", listOf("shoulders", "arms")),
-                Seed("plank", "Plank tartás", "Plank Hold", "Unterarmstütz (Plank)", "Plank", "bodyweight", "mp", "time", 3, "45", 0.0, 60, "core", listOf("core")),
-                Seed("side-plank", "Oldalsó plank", "Side Plank", "Seitstütz", "Plank lateral", "bodyweight", "mp/oldal", "time", 3, "30", 0.0, 60, "core", listOf("core")),
-                Seed("push-up", "Fekvőtámasz", "Push-Up", "Liegestütz", "Flotări", "bodyweight", "ism.", "reps", 3, "12", 0.0, 75, "chest", listOf("chest", "arms", "shoulders", "core")),
-                Seed("split-squat", "Bolgár / kitöréses guggolás", "Split Squat", "Ausfallschritt-Kniebeuge", "Fandări statice", "dumbbell", "ism.", "reps", 3, "10", 8.0, 90, "legs", listOf("legs", "core")),
-                Seed("db-bicep-curl", "Bicepsz karhajlítás kézisúlyzóval", "Dumbbell Bicep Curl", "Kurzhantel-Bizepscurls", "Flexii biceps cu gantere", "dumbbell", "ism.", "reps", 3, "12", 8.0, 60, "arms", listOf("arms")),
-                Seed("db-tricep-extension", "Tricepsz nyújtás fej felett", "Overhead Tricep Extension", "Trizepsstrecken über Kopf", "Extensii triceps deasupra capului", "dumbbell", "ism.", "reps", 3, "12", 8.0, 60, "arms", listOf("arms")),
-                Seed("glute-bridge", "Csípőemelés talajon", "Glute Bridge", "Beckenheben", "Podul fesier", "bodyweight", "ism.", "reps", 3, "15", 0.0, 60, "legs", listOf("legs", "core")),
-                Seed("running", "Futás (szabadtéri)", "Outdoor Running", "Laufen im Freien", "Alergare în aer liber", "bodyweight", "km", "distance", 1, "5", 0.0, 60, "cardio", listOf("legs", "core")),
-                Seed("walking", "Gyaloglás / Séta", "Walking", "Gehen / Spazieren", "Mers pe jos", "bodyweight", "km", "distance", 1, "3", 0.0, 60, "cardio", listOf("legs")),
-                Seed("cycling", "Kerékpározás", "Cycling", "Radfahren", "Ciclism", "bodyweight", "km", "distance", 1, "10", 0.0, 60, "cardio", listOf("legs")),
-                Seed("hiking", "Túrázás", "Hiking", "Wandern", "Drumeție", "bodyweight", "km", "distance", 1, "5", 0.0, 60, "cardio", listOf("legs", "core"))
-            )
-
-            return seeds.map { s ->
-                val raw = JSONObject()
-                    .put("id", s.id)
-                    .put("hu", s.hu)
-                    .put("en", s.en)
-                    .put("de", s.de)
-                    .put("ro", s.ro)
-                    .put("loadType", s.loadType)
-                    .put("repUnit", s.repUnit)
-                    .put("measurementType", s.measurementType)
-                    .put("sets", s.sets)
-                    .put("reps", s.reps)
-                    .put("weight", s.weight)
-                    .put("restSeconds", s.rest)
-                    .put("primaryMuscle", s.primary)
-                    .put("muscles", JSONArray(s.muscles))
-                    .put("custom", false)
-                ExerciseLibraryEntity(
-                    id = s.id,
-                    nameHu = s.hu,
-                    nameEn = s.en,
-                    nameDe = s.de,
-                    nameRo = s.ro,
-                    loadType = s.loadType,
-                    repUnit = s.repUnit,
-                    measurementType = s.measurementType,
-                    defaultSets = s.sets,
-                    defaultReps = s.reps,
-                    defaultWeight = s.weight,
-                    defaultRestSeconds = s.rest,
-                    primaryMuscle = s.primary,
-                    muscleGroupsJson = JSONArray(s.muscles).toString(),
-                    notesHu = "",
-                    notesEn = "",
-                    notesDe = "",
-                    notesRo = "",
-                    videoUrl = s.video,
-                    videoProvider = null,
-                    custom = false,
-                    setRir229 = false,
-                    rawJson = raw.toString()
-                )
+        suspend fun ensureBuiltinCatalogSeeded(db: TrainPilotDatabase, context: Context) {
+            // Missing-only seeding preserves imported/customized rows, including old native IDs.
+            com.repforge.app.NativeDataReplacement.mutate(context) {
+                db.withTransaction {
+                    val knownExercises = db.exerciseLibraryDao().getExerciseIds().toSet()
+                    db.exerciseLibraryDao().insertMissingExercises(defaultExercises().filter { it.id !in knownExercises })
+                    val knownPrograms = db.programDao().getProgramIds().toSet()
+                    val (programs, days) = defaultPrograms()
+                    for (program in programs.filter { it.id !in knownPrograms }) {
+                        if (db.programDao().insertMissingProgram(program) != -1L)
+                            db.programDao().upsertProgramDays(days.filter { it.programId == program.id })
+                    }
+                }
             }
         }
 
-        fun defaultPrograms(): Pair<List<ProgramEntity>, List<ProgramDayEntity>> {
-            val dayAExercises = JSONArray()
-                .put("goblet-squat")
-                .put("db-floor-press")
-                .put("one-arm-db-row")
-                .put("plank")
-            val dayBExercises = JSONArray()
-                .put("db-romanian-deadlift")
-                .put("db-shoulder-press")
-                .put("split-squat")
-                .put("side-plank")
-
-            val homeBasicRaw = JSONObject()
-                .put("id", "home-basic")
-                .put("name", "Otthoni Alap Program")
-                .put("builtin", true)
-                .put("templateVersion", 2)
-                .put(
-                    "days",
-                    JSONArray()
-                        .put(JSONObject().put("id", "A").put("name", "Alap A").put("exercises", dayAExercises))
-                        .put(JSONObject().put("id", "B").put("name", "Alap B").put("exercises", dayBExercises))
-                )
-
-            val program = ProgramEntity(
-                id = "home-basic",
-                nameHu = "Otthoni Alap Program",
-                nameEn = "Home Basic Program",
-                nameDe = "Heim-Basisprogramm",
-                nameRo = "Program de bază acasă",
-                location = "Otthon",
-                level = "Kezdő / Középhaladó",
-                description = "Teljes testes otthoni edzésterv A/B napokkal.",
-                builtin = true,
-                generated = false,
-                sourceType = "template",
-                sourceTemplateId = "home-basic",
-                templateVersion = 2,
-                accentHex = "#4d8fbe",
-                sortOrder = 0,
-                updatedAt = System.currentTimeMillis(),
-                rawJson = homeBasicRaw.toString()
-            )
-
-            val days = listOf(
-                ProgramDayEntity(
-                    compositeId = "home-basic:A",
-                    programId = "home-basic",
-                    dayId = "A",
-                    nameHu = "Alap A",
-                    nameEn = "Basic A",
-                    nameDe = "Basis A",
-                    nameRo = "Bază A",
-                    sortOrder = 0,
-                    exercisesJson = dayAExercises.toString()
-                ),
-                ProgramDayEntity(
-                    compositeId = "home-basic:B",
-                    programId = "home-basic",
-                    dayId = "B",
-                    nameHu = "Alap B",
-                    nameEn = "Basic B",
-                    nameDe = "Basis B",
-                    nameRo = "Bază B",
-                    sortOrder = 1,
-                    exercisesJson = dayBExercises.toString()
-                )
-            )
-            return listOf(program) to days
-        }
+        fun defaultExercises(): List<ExerciseLibraryEntity> = NativeBuiltinCatalog.exercises
+        fun defaultPrograms(): Pair<List<ProgramEntity>, List<ProgramDayEntity>> = NativeBuiltinCatalog.programs
     }
 }

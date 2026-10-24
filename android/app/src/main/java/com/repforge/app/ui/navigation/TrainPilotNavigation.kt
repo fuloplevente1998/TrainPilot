@@ -280,7 +280,7 @@ fun TrainPilotAppScaffold(
                         onCalendar = { selectDestination("calendar") }, onCoach = { selectDestination("coach") })
                 }
                 composable("programs") {
-                    TrainingProgramsScreen(navController = navController,
+                    TrainingProgramsScreen(navController = navController, language = settings.language,
                         onStartProgramDay = { programId, dayId -> startWorkout(programId, dayId) })
                 }
                 composable("coach") {
