@@ -171,6 +171,8 @@ fun TrainingProgramsScreen(
         programs = state.programs,
         catalog = state.exerciseChoices,
         profileJson = state.trainingProfileJson,
+        previews = state.personalPreviews,
+        loading = state.personalLoading,
         language = language,
         saving = state.editorSaving,
         saveError = state.editorError,
