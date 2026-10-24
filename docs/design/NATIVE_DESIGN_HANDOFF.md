@@ -275,3 +275,13 @@ sorozat/ismétlés/súly/pihenő értékekkel és tudatos mentés/elvetés műve
 A működés részletes elsőbbségi szabályai: [NATIVE_MOCKUP_REVIEW.md](NATIVE_MOCKUP_REVIEW.md).
 Teljes megvalósítási feladat: [NATIVE_FINAL_DELIVERY.md](../plans/NATIVE_FINAL_DELIVERY.md).
 Aktuális kód/tesztállapot: [WORK_HANDOFF.md](../WORK_HANDOFF.md).
+
+### D06 implementációs nyom – 2026-10-24
+
+`e3e79d3`: Egészség és Fejlődés közös `weight_journal` útvonal, Room body_weights,
+dátumos hozzáadás, változatlan mérési dátummal szerkesztés, megerősített exact-ID
+törlés, grafikon/időszak/min-max/kezdő/aktuális/változás. WeightJournalScreen / VM /
+NativeWeightJournalRepository; 13 új unit +2 telefonos UI-próbakód, még nem futott.
+Ez funkcionális bekötés, nem a végleges vizuális dizájn vagy teljes D06-elfogadás.
+A providerből érkező történeti testsúly ugyanabban az Egészség menüben külön
+adatforrásként marad; kézi mérés szerkesztése nem írja át a provider mérését.

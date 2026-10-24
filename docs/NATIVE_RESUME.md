@@ -22,6 +22,16 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 
 ## Legutóbbi konkrét munka
 
+- Aktuális alkalmazásforrás **e3e79d3**: közös `weight_journal` Egészség/Fejlődés
+  felől, meglévő Room weights, dátumos add/edit/megerősített exact-ID delete.
+  Metadata→Room tx→eredetisor-egyezés, rawJson ismeretlen mezők megőrzése;
+  törölt/stale mérés nem éled újra a szerkesztőből. Sikerig nyitott panel/retry.
+  Testsúly külön VM, írás nem tölti újra az összes edzést. Meglévő weightRange
+  DataStore, 365 nap is; HU/EN/DE/RO. 13 unit+2 UI új kód, **batch201+12 nem futott**.
+  XML/21 kulcs/hivatkozás, SQLite exact-ID és diff ellenőrzés, nem Android-teszt.
+  Teljes Fejlődés/súlytörténet bounded betöltése és felhős súlytörlés replay még nyitott.
+  Következő: Health nyers oldalak/eredet/mérési idő/alvás, majd további leltár/közös CI.
+
 - Legfrissebb egészségblokk **edc8f52** + BLE-csatorna konstansjavítás: Egészségnapló hónap/nap/csatorna
   választás, max31 napos meglévő HealthJournalStore oldal, kiválasztott hiányzó nap
   nem helyettesül régebbi adattal. SDK-frissítés a kiválasztott napra; Coach továbbra
@@ -110,7 +120,7 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 - Phone UI kapu alapja **1d38edf**: külön native AndroidTest source set,
   meglévő native-android.yml phone-ui job, raw adb screencap checkpoint/ack és
   származtatottnak jelölt XML/manifest. Az akkori4 óta8 instrumentációs próbakódra bővült.
-- **188 új unit + 10 instrumentációs tesztkód megírva, még nem futtatva.**
+- **201 új unit + 12 instrumentációs tesztkód megírva, még nem futtatva.**
   Nincs új zöld kapu/APK/screenshot. Utolsó teljes zöld forrás **dd4cc27**:
   unit Phone393/Wear167, Wear UI183, signed upgrade2. Bizonyíték: WORK_HANDOFF.md.
 - Main utóbbi 8a36502d változása csak AGENTS thinking-dokumentáció; main app baseline

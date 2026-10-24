@@ -4,6 +4,32 @@ Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Legfrissebb alkalmazásforrás – közös kézi testsúlynapló
+
+**e3e79d3**, [skip ci]. Egészség és Fejlődés → ugyanaz a `weight_journal` útvonal,
+a meglévő Room body_weights táblával; nem új egészségadat-tár. Dátumos hozzáadás,
+súly szerkesztése változatlan mérési dátummal/azonosítóval, megerősített pontos-ID
+törlés (más aznapi mérés megmarad), grafikon/kezdő/aktuális/változás/min-max,
+7/30/90/365/mind tartomány a meglévő DataStore weightRange beállítással.
+HU/EN/DE/RO, globális fejléc/Settings és visszatérés meglévő navigációvédelmen át.
+
+Metadata admission előbb, utána Room tranzakció és teljes eredetisor-egyezés:
+nyitott szerkesztő nem írhatja felül a közben módosított vagy törölt mérést.
+Ismeretlen rawJson mezők megmaradnak; hiba esetén nincs mentett nyugta és nem
+záródik be a beviteli panel, explicit retry lehetséges. Testsúlyírás és
+megfigyelés külön VM/adatút: nem tölti újra az összes edzés relációját. A Fejlődés
+általános edzésbetöltése és a teljes súlylista megfigyelése még nem bounded;
+felhős súlytörlés késői replay-védelme nincs ebben a blokkban igazolva.
+
+13 új unit +2 Phone UI-próbakód: stale edit/delete, azonos napi törlés, validáció,
+restore fence, hibás JSON rollback, óra-visszaállás, tényleges backup-mapper
+roundtrip, dátumos CRUD és sikertelen mentés utáni retry. **Batch201 új unit+12
+instrumentációs tesztkód, még nem futott.** Helyben négy XML/21 kulcs/hivatkozás,
+pontos-ID SQLite-próba és diff ellenőrzés történt, nem Kotlin/Android futtatás.
+Nincs új CI/APK/képernyőkép; utolsó zöld továbbra dd4cc27, élő telepítés STOP.
+Következő: történeti Health nyers mérések/eredet/időbélyeg/alvásrészletek,
+teljes leltár további funkciói, majd a közös CI-kapu.
+
 ## Legfrissebb alkalmazásforrás – történeti egészségnapló
 
 **edc8f52**, [skip ci]. Egészség: hónaplapozás, napválasztás, napi összesítés/HC/
