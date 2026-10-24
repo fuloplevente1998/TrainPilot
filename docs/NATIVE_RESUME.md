@@ -22,6 +22,12 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 
 ## Legutóbbi konkrét munka
 
+- Legfrissebb appforrás **b55df92**: napi HC aktivitás Auto/Priority UI a meglévő
+  hcDailySource-policyval; metadata admission/mentési hiba, tárolt régi értékek
+  partial figyelmeztetése explicit provider-frissítésig. Egyedi origin-választó
+  még nyitott, korábbi érték megőrizve. HU/EN/DE/RO, 2 unit+1 UI új kód;
+  **batch219 új unit+16 UI nem futott**. XML/resource/diff rendben. PR #238 követi.
+
 - Aktuális appforrás **606b8c0**: Egészség egyedi mérés/alvás részletpanel a meglévő
   HealthJournalStore-ból, 25 rekord/SQL típus+eredet/nap/csatorna, idő+ID kurzor,
   max200 eredet, napi összesítés nélkül; régi Java/Kotlin page API megőrizve.
@@ -134,7 +140,7 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 - Phone UI kapu alapja **1d38edf**: külön native AndroidTest source set,
   meglévő native-android.yml phone-ui job, raw adb screencap checkpoint/ack és
   származtatottnak jelölt XML/manifest. Az akkori4 óta8 instrumentációs próbakódra bővült.
-- **217 új unit + 15 instrumentációs tesztkód megírva, még nem futtatva.**
+- **219 új unit + 16 instrumentációs tesztkód megírva, még nem futtatva.**
   Nincs új zöld kapu/APK/screenshot. Utolsó teljes zöld forrás **dd4cc27**:
   unit Phone393/Wear167, Wear UI183, signed upgrade2. Bizonyíték: WORK_HANDOFF.md.
 - Main utóbbi 8a36502d változása csak AGENTS thinking-dokumentáció; main app baseline

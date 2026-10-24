@@ -4,6 +4,19 @@ Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Napi aktivitás forrásmód – kis lezárt kódolási lépés
+
+**b55df92**, [skip ci]: Egészség HC forráskártyán Automatikus / Health Connect
+prioritás választó, a meglévő hcDailySource és valódi provider-policy használatával.
+Metadata admission, mentési állapot és kezelt hiba; nincs implicit SDK/engedélykérés.
+Módváltás után a tároló által dirty/partial állapotúnak jelölt korábbi napi értékek
+figyelmeztetést kapnak; explicit Frissítésig nem állítjuk, hogy az új móddal készültek.
+A már mentett egyedi origin érték olvashatóan megmarad, új egyedi origin-választó
+még nincs bekötve. HU/EN/DE/RO. 2 unit +1 UI új próbakód, még nem futott;
+**batch219 új unit+16 UI kód**, közös CI később. Helyben XML/resource/diff ellenőrzés.
+PR #238 és rövid folytatási pont frissítendő/ehhez igazítva; következő a többi
+Health preferencia/engedély, majd a teljes funkcióleltár nyitott pontjai.
+
 ## Követhető összállapot és legfrissebb egészségrészletek
 
 Draft [PR #238](https://github.com/fuloplevente1998/TrainPilot/pull/238) a teljes
