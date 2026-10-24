@@ -67,6 +67,10 @@ interface ExerciseLibraryDao {
     @Query("SELECT id FROM exercise_library")
     suspend fun getExerciseIds(): List<String>
 
+    /** Guard custom exercise removal without loading all old workout details. */
+    @Query("SELECT EXISTS(SELECT 1 FROM workout_history_exercises WHERE exerciseId = :id)")
+    suspend fun hasWorkoutHistoryReference(id: String): Boolean
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertMissingExercises(exercises: List<ExerciseLibraryEntity>): List<Long>
 
