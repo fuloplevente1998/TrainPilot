@@ -64,6 +64,9 @@ import androidx.navigation.compose.rememberNavController
 import com.repforge.app.ActiveWorkoutStore
 import com.repforge.app.NativeWorkoutSession
 import com.repforge.app.NativeWorkoutTarget
+import com.repforge.app.ui.coach.CoachScreen
+import com.repforge.app.ui.workout.ActiveWorkoutViewModel
+import com.repforge.app.ui.programs.TrainingLandingScreen
 import com.repforge.app.ui.calendar.CalendarScreen
 import com.repforge.app.ui.home.QuickWorkoutScreen
 import kotlinx.coroutines.CancellationException
@@ -86,14 +89,6 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
     data object Health : Screen("health", "Egészség", Icons.Default.DateRange)
 }
 
-val BottomNavItems = listOf(
-    Screen.Home,
-    Screen.Training,
-    Screen.Journal,
-    Screen.Progress,
-    Screen.Health
-)
-
 @Composable
 fun TrainPilotAppScaffold(
     settings: TrainPilotUserSettings,
@@ -107,12 +102,12 @@ fun TrainPilotAppScaffold(
     var starting by remember { mutableStateOf(false) }
     // Memory-only user start intent. Process recreation/navigation cannot silently start GPS.
     var launchGps by remember { mutableStateOf<NativeWorkoutTarget?>(null) }
-    val startWorkout: (String?, String) -> Unit = { programId, dayId ->
+    fun startWorkout(programId: String?, dayId: String, scheduleId: String? = null) {
         if (!starting) {
             starting = true
             scope.launch {
                 try {
-                    NativeWorkoutSession.startWorkout(context, programId, dayId)
+                    NativeWorkoutSession.startWorkout(context, programId, dayId, scheduleId)
                     navController.navigate("active_workout") { launchSingleTop = true }
                 } catch (cancelled: CancellationException) {
                     throw cancelled
@@ -133,6 +128,23 @@ fun TrainPilotAppScaffold(
     val isWorkoutPaused = activeSnapshot?.optBoolean("workoutPaused", false) == true
     val timerOwner = activeSnapshot?.optString("timerOwner", "phone").orEmpty()
 
+    val editor = if (currentRoute == "active_workout" && navBackStackEntry != null)
+        androidx.lifecycle.viewmodel.compose.viewModel<ActiveWorkoutViewModel>(viewModelStoreOwner = navBackStackEntry!!)
+        else null
+    fun selectPrimary(requested: String) {
+        val target = NativeMainMenu.destination(requested, hasActiveWorkout)
+        if (target == currentRoute) return
+        val navigate = {
+            navController.navigate(target) {
+                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+        if (editor != null) editor.leaveWorkout(activeWorkoutId, activeSnapshot?.optLong("generation") ?: 0L, navigate)
+        else navigate()
+    }
+
     LaunchedEffect(Unit) {
         ActiveWorkoutStore.current(context)
         onFirstFrameReady()
@@ -143,19 +155,9 @@ fun TrainPilotAppScaffold(
         containerColor = colors.bg,
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
-            if (currentRoute !in listOf("active_workout", "route_map")) {
-                TopNavigationBar(
-                    onCoachClick = { navController.navigate("training") },
-                    onCalendarClick = { navController.navigate("calendar") { launchSingleTop = true } },
-                    onSettingsClick = { navController.navigate("settings") }
-                )
-            }
-        },
-        bottomBar = {
-            if (currentRoute !in listOf("active_workout", "route_map")) {
-                BottomNavigationBar(navController = navController, currentRoute = currentRoute)
-            }
+            if (currentRoute != "route_map") NativeMainHeader(currentRoute, settings.language, ::selectPrimary)
         }
+
     ) { innerPadding ->
         Box(
             modifier = Modifier
@@ -193,28 +195,25 @@ fun TrainPilotAppScaffold(
                     )
                 }
                 composable(Screen.Training.route) {
-                    TrainingProgramsScreen(
-                        navController = navController,
-                        onStartProgramDay = { programId, dayId ->
-                            startWorkout(programId, dayId)
-                        }
-                    )
+                    TrainingLandingScreen(language = settings.language, activeProgramId = settings.activeProgramId,
+                        busy = starting, onStart = { programId, dayId -> startWorkout(programId, dayId) },
+                        onQuick = { outdoor -> navController.navigate(if (hasActiveWorkout) "active_workout" else if (outdoor) "quick_outdoor" else "quick_workout") { launchSingleTop = true } },
+                        onPrograms = { selectPrimary("programs") })
+                }
+                composable("programs") {
+                    TrainingProgramsScreen(navController = navController,
+                        onStartProgramDay = { programId, dayId -> startWorkout(programId, dayId) })
+                }
+                composable("coach") {
+                    CoachScreen(starting = starting,
+                        onStart = { programId, dayId, scheduleId -> startWorkout(programId, dayId, scheduleId) },
+                        onCalendar = { selectPrimary("calendar") }, onHealth = { selectPrimary("health") },
+                        onProgress = { navController.navigate("progress") { launchSingleTop = true } })
                 }
                 composable("calendar") {
-                    CalendarScreen(starting = starting, onJournal = { navController.navigate("journal") { launchSingleTop = true } },
-                        onStart = { row ->
-                            if (!starting) {
-                                starting = true
-                                scope.launch {
-                                    try {
-                                        NativeWorkoutSession.startWorkout(context, row.programId, row.dayId, scheduleId = row.id)
-                                        navController.navigate("active_workout") { launchSingleTop = true }
-                                    } catch (cancelled: CancellationException) { throw cancelled }
-                                    catch (error: Exception) { snackbar.showSnackbar(error.message ?: "A naptári edzés nem indítható.") }
-                                    finally { starting = false }
-                                }
-                            }
-                        })
+                    CalendarScreen(starting = starting,
+                        onJournal = { selectPrimary("journal") },
+                        onStart = { row -> startWorkout(row.programId, row.dayId, row.id) })
                 }
                 composable(Screen.Journal.route) {
                     JournalScreen(navController = navController)
@@ -272,101 +271,6 @@ fun TrainPilotAppScaffold(
                     onClick = { navController.navigate("active_workout") }
                 )
             }
-        }
-    }
-}
-
-@Composable
-fun TopNavigationBar(
-    onCoachClick: () -> Unit,
-    onCalendarClick: () -> Unit,
-    onSettingsClick: () -> Unit
-) {
-    val colors = LocalTrainPilotColors.current
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .height(56.dp)
-            .background(colors.bg)
-            .padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = "TRAINPILOT",
-            color = colors.accent,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp
-        )
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onCalendarClick) {
-                Icon(Icons.Default.DateRange, contentDescription = "Naptár", tint = colors.accent2)
-            }
-            IconButton(onClick = onCoachClick) {
-                Icon(
-                    imageVector = Icons.Default.Star,
-                    contentDescription = "Coach",
-                    tint = colors.accent2
-                )
-            }
-            IconButton(onClick = onSettingsClick) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = "Beállítások",
-                    tint = colors.muted
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun BottomNavigationBar(
-    navController: NavHostController,
-    currentRoute: String
-) {
-    val colors = LocalTrainPilotColors.current
-    NavigationBar(
-        modifier = Modifier.navigationBarsPadding(),
-        containerColor = colors.card,
-        contentColor = colors.text
-    ) {
-        BottomNavItems.forEach { screen ->
-            val selected = currentRoute == screen.route
-            NavigationBarItem(
-                icon = {
-                    Icon(
-                        imageVector = screen.icon,
-                        contentDescription = screen.title,
-                        tint = if (selected) colors.accent else colors.muted
-                    )
-                },
-                label = {
-                    Text(
-                        text = screen.title,
-                        color = if (selected) colors.accent else colors.muted,
-                        fontSize = 10.sp,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
-                    )
-                },
-                selected = selected,
-                onClick = {
-                    if (currentRoute != screen.route) {
-                        navController.navigate(screen.route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    indicatorColor = colors.card2
-                )
-            )
         }
     }
 }
