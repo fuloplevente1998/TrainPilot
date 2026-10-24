@@ -47,7 +47,12 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -73,6 +78,11 @@ fun SettingsScreen(
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val activity = context as? Activity
+    var profileOpen by remember { mutableStateOf(false) }
+    var openedProfileJson by remember { mutableStateOf("{}") }
+    LaunchedEffect(state.profileSavedSequence) {
+        if (state.profileSavedSequence > 0) profileOpen = false
+    }
 
     // SAF Launcherek (Export/Import)
     val exportJsonLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
@@ -109,6 +119,35 @@ fun SettingsScreen(
         }
 
         item { NativeThemePicker(state.settings, viewModel::setTheme) }
+        item {
+            Card(modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = colors.card)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(when (state.settings.language) {
+                        "en" -> "Training profile"; "de" -> "Trainingsprofil"
+                        "ro" -> "Profil de antrenament"; else -> "Edzésprofil"
+                    }, color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(when (state.settings.language) {
+                        "en" -> "Your saved training preferences; no body measurements are inferred."
+                        "de" -> "Deine Trainingsvorlieben; keine Körperwerte werden geschätzt."
+                        "ro" -> "Preferințe salvate; nu sunt deduse măsurători corporale."
+                        else -> "Mentett edzésadatok és célok; nem feltételezünk testsúlyt vagy magasságot."
+                    }, color = colors.muted, fontSize = 12.sp)
+                    OutlinedButton(onClick = {
+                        openedProfileJson = state.settings.profileJson
+                        viewModel.clearProfileError()
+                        profileOpen = true
+                    }, modifier = Modifier.fillMaxWidth().testTag("training_profile_open"),
+                        enabled = !state.profileSaving && !state.replacementBusy) {
+                        Text(when (state.settings.language) {
+                            "en" -> "Edit profile"; "de" -> "Profil bearbeiten"
+                            "ro" -> "Editează profilul"; else -> "Profil szerkesztése"
+                        })
+                    }
+                }
+            }
+        }
 
         // 2. Google Cloud Szinkron (Drive appDataFolder + Managed Naptár)
         item {
@@ -313,6 +352,18 @@ fun SettingsScreen(
 
         item { Spacer(Modifier.height(80.dp)) }
     }
+
+    if (profileOpen) TrainingProfileDialog(
+        profileJson = openedProfileJson, language = state.settings.language,
+        saving = state.profileSaving, failed = state.profileWriteFailed,
+        onSave = { fields -> viewModel.saveProfile(fields, openedProfileJson) },
+        onDismiss = {
+            if (!state.profileSaving) {
+                profileOpen = false
+                viewModel.clearProfileError()
+            }
+        }
+    )
 
     // Minden helyi adat törlése dialógus
     if (state.isEraseLocalDialogOpen) {
