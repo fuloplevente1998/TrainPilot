@@ -22,13 +22,22 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 
 ## Legutóbbi konkrét munka
 
+- Legfrissebb alkalmazásforrás **edc8f52**: Egészségnapló hónap/nap/csatorna
+  választás, max31 napos meglévő HealthJournalStore oldal, kiválasztott hiányzó nap
+  nem helyettesül régebbi adattal. SDK-frissítés a kiválasztott napra; Coach továbbra
+  mai napot kér. NativeHealthMetrics mind26 provider-kulcsot megjeleníti, négy nyelvű
+  címkékkel, véges szám/nincs-adat elkülönítéssel. 7 új unit+1 történeti testsúly UI
+  tesztkód megírva, nem futott. Kódolás/High jelzés elhangzott.
+  Nyers mérések kurzorlapozása, pontos eredet/mérési időbélyeg, alvásrészletek és
+  további egészség/testsúly szerkesztési paritás még hátra van; nem teljes készség.
+
 - Friss felhasználói dizájnszabály: teljes main-funkciókör megőrzendő kevesebb,
   összevont oldallal. NATIVE_DESIGN_HANDOFF.md A–E funkcióleltár/új elhelyezés
   táblázatokkal bővült. Kedvencek is main-funkció (v144), pótlandó a mockupból.
   Ez követelménylista; minden funkció tényleges natív útvonala/adatforrása/tesztje
   külön igazolandó. Nincs új kód/CI ebben a dokumentációs körben.
 
-- Legfrissebb alkalmazásforrás **033386e**: pontos mainből kinyert106 gyakorlat,
+- Korábbi katalógusforrás **033386e**: pontos mainből kinyert106 gyakorlat,
   13 beépített program, teljes név/leírás HU/EN/DE/RO. Adat-only Java resource,
   natív appban nincs JS/WebView futtatás. Hiányzó elemek pótlása, IGNORE+Room tx+
   metadata admission, meglévő egyedi/korábbi natív sorok és programnapok megőrzése.
@@ -101,7 +110,7 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 - Phone UI kapu alapja **1d38edf**: külön native AndroidTest source set,
   meglévő native-android.yml phone-ui job, raw adb screencap checkpoint/ack és
   származtatottnak jelölt XML/manifest. Az akkori4 óta8 instrumentációs próbakódra bővült.
-- **181 új unit + 9 instrumentációs tesztkód megírva, még nem futtatva.**
+- **188 új unit + 10 instrumentációs tesztkód megírva, még nem futtatva.**
   Nincs új zöld kapu/APK/screenshot. Utolsó teljes zöld forrás **dd4cc27**:
   unit Phone393/Wear167, Wear UI183, signed upgrade2. Bizonyíték: WORK_HANDOFF.md.
 - Main utóbbi 8a36502d változása csak AGENTS thinking-dokumentáció; main app baseline

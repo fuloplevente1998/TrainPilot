@@ -162,9 +162,10 @@ Forráscsoportok: `v215`, `v220/v221`, `v233/v235`, `progression-2`,
 
 A metrikákat kulcsonként is össze kell vetni a `health-journal-120`,
 `samsung-health-provider`, `health-details`, `cardio-daily`, `v240` és
-`samsung-energy-access-184` működésével és a natív adapterekkel. A jelenlegi
-natív20 definíció és a UI26-os felirata **ismert eltérés**, nem elfogadott teljes
-lefedettség; a végleges darabszám a valóban bekötött forrásból jön.
+`samsung-energy-access-184` működésével és a natív adapterekkel. Az edc8f52 forrásban a26 provider-kulcs megjelenítése és a havi/nap/csatorna
+választás már bekötve, de még nem futtatott ellenőrzés. A rekord- és alvásrészletek,
+eredetszűrés és teljes szerkesztési paritás külön szükséges. A darabszám
+önmagában továbbra nem igazolja a teljes egészségnaplót.
 
 ### E. Naptár, eszközök, mentések és általános beállítások
 

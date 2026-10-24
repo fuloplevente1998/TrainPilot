@@ -4,6 +4,26 @@ Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Legfrissebb alkalmazásforrás – történeti egészségnapló
+
+**edc8f52**, [skip ci]. Egészség: hónaplapozás, napválasztás, napi összesítés/HC/
+Samsung/legacy/BLE csatorna. Meglévő HealthJournalStore havi(max31 nap) adatút,
+hiányzó kiválasztott napnál nincs régi érték automatikus átemelése. Új kérés a régit
+cancelleli, betöltés alatt régi érték nem marad új dátummal. A provider-hozzáférési
+ellenőrzések IO-n futnak, adatbetöltés a meglévő replacement admission alatt.
+Kifejezett SDK-frissítés a kiválasztott napra kér adatot; a Coach readToday útja
+megmarad. Natív metrikalista most a provider mind26 kulcsát lefedi(hiányzó hat:
+pulzusmintaszám, zsír-/izom-/zsírmentes tömeg, testvíz, alváspontszám); négy nyelvű
+címkék, véges szám ellenőrzés, nulla/nincs-adat helyes megkülönböztetése. Az alvás
+összefoglaló naplózott szakaszszám, nem az első szakaszból kitalált teljes alvásidő.
+
+7 új unit és1 történeti testsúly-kiválasztási UI-próbakód. **Batch188 új unit+10
+Phone instrumentációs tesztkód, még nem futott.** Csak XML/kulcs/hivatkozás/diff és
+26 provider/display kulcshalmaz-egyezés ellenőrzése történt. Nincs új CI/APK/kép.
+Utolsó zöld dd4cc27; kódolás/High fázis. Következő: nyers méréslapozás/részletek,
+forrás-időbélyeg és eredetszűrés, alvásrészletek, testsúly edit/delete és a teljes
+main-funkcióleltár további nyitott tételei. A teljes egészségparitás még nem kész.
+
 ## Teljes funkcióleltár az új dizájnátadóban
 
 A felhasználó kéri, hogy a main összes funkciója megmaradjon, más elhelyezéssel és

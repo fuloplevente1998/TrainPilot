@@ -37,7 +37,7 @@ aláírt szintetikus upgrade **2/2**, nincs hiba/kihagyás. Letöltött release 
 hash/csomag/verzió/signer ellenőrizve; a measured protokoll és az időnaplómezők a telefonos R8 DEX-ben is jelen vannak.
 [Gépi bizonylat](builds/2026-10-23-native-measured-intervals.json).
 
-**Aktuális nem bevizsgált batch:** `033386e`, 181 új unit + 9 Phone
+**Aktuális nem bevizsgált batch:** `edc8f52`, 188 új unit + 10 Phone
 instrumentációs tesztkód megírva, még nem futtatva. Bounded/paging napló, fotó/több
 route, naptár sync/kezdeti GPS, témák, tartós replacement/redó és metadata guard,
 Phone discard/retry, lokális/globális interval preset és nem-auto mód, közös
@@ -68,3 +68,10 @@ historikus metrika-UI bekötése külön feladat. ProgressViewModel testsúlybev
 időszakszűrést és testsúlytörténetet tartalmaz; ez még nem friss futtatott igazolás.
 Következő: teljes main-metrikakészlet és historikus útvonal megfeleltetése, a hamis
 fix darabszám helyett tényleges lefedettség, részletoldalak/előzmények és tesztek.
+
+
+Egészség-folytatás **edc8f52**: a korábbi20/26 eltérés kódban rendezve, mind26
+provider-kulcsnak van lokalizált megjelenítése. Havi/nap/csatorna választás bekötve,
+régi adat nem helyettesíti a hiányzó kiválasztott napot. 7 új unit+1 UI tesztkód
+még nem futott; ez nem teljes egészségnapló-paritás. Nyers rekordok/részletek,
+eredet- és mérésidő-szűrés, alvásrészletek és minden testsúlyművelet még külön tétel.
