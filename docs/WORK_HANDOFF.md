@@ -6,7 +6,7 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
 ## 90 napos A/B edzéselőzmény és Coach-öröklés adatút
 
-**93e5882d** `[skip ci]` utolsó alkalmazás-/tesztforrás,
+**cd696e7c** `[skip ci]` utolsó alkalmazás-/tesztforrás,
 kizárólag `feat/native-android-migration`. Az előző A/B
 előnézetből hiányzó `history128` most a kanonikus
 Room `workout_history` adatból készül; nem párhuzamos
@@ -55,7 +55,7 @@ napló, nincs új migráció/séma.
   meglévő 3 Compose preview teszt
   aszinkronra igazítva. Összesen **313 új unit
   +34 Phone UI-tesztkód**, **még nem futtatva**.
-  18 statikus integrációs ellenőrzés PASS; nem
+  21 statikus integrációs ellenőrzés PASS; nem
   jelenti Kotlin/Room/Android/emulátor CI sikerét.
 
 **Nyitott:** három stabil, új programhoz tartozó alkalom
