@@ -450,6 +450,50 @@ class NativePhoneNavigationTest {
         compose.onNodeWithText("Nincs aktív BLE háttérkapcsolat.").assertExists()
     }
 
+    @Test fun customExerciseCanBeCreatedEditedAndDeletedWithoutStartingWorkout() {
+        launch(); tab("training")
+        compose.onNodeWithText("Gyakorlatkönyvtár").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("custom_exercise_create").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("custom_exercise_create").performClick()
+        compose.onNodeWithTag("custom_exercise_name").performTextInput("Saját UI próba")
+        compose.onNodeWithTag("custom_exercise_save").performClick()
+        val db = TrainPilotDatabase.getInstance(context)
+        compose.waitUntil(15000) { runBlocking(Dispatchers.IO) {
+            db.exerciseLibraryDao().getAllExercises().any { it.custom && it.nameHu == "Saját UI próba" }
+        } }
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("custom_exercise_edit").fetchSemanticsNodes().isNotEmpty() }
+        screenshot("custom_exercise_created")
+        compose.onNodeWithTag("custom_exercise_edit").performClick()
+        compose.onNodeWithTag("custom_exercise_name").performTextClearance()
+        compose.onNodeWithTag("custom_exercise_name").performTextInput("Saját UI javítva")
+        compose.onNodeWithTag("custom_exercise_save").performClick()
+        compose.waitUntil(15000) { runBlocking(Dispatchers.IO) {
+            db.exerciseLibraryDao().getAllExercises().any { it.custom && it.nameHu == "Saját UI javítva" }
+        } }
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("custom_exercise_edit").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("custom_exercise_edit").performClick()
+        compose.onNodeWithTag("custom_exercise_delete").performClick()
+        compose.onNodeWithTag("custom_exercise_confirm_delete").performClick()
+        compose.waitUntil(15000) { runBlocking(Dispatchers.IO) {
+            db.exerciseLibraryDao().getAllExercises().none { it.custom && it.nameHu == "Saját UI javítva" }
+        } }
+        assertFalse(ActiveWorkoutStore.current(context)?.optBoolean("active") == true)
+    }
+
+    @Test fun invalidCustomVideoCannotWriteOrReplaceCatalog() {
+        launch(); tab("training")
+        compose.onNodeWithText("Gyakorlatkönyvtár").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("custom_exercise_create").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("custom_exercise_create").performClick()
+        compose.onNodeWithTag("custom_exercise_name").performTextInput("Rossz videó")
+        compose.onNodeWithTag("custom_exercise_video").performTextInput("javascript:alert(1)")
+        compose.onNodeWithTag("custom_exercise_save").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("custom_exercise_error").fetchSemanticsNodes().isNotEmpty() }
+        assertEquals(106, runBlocking(Dispatchers.IO) {
+            TrainPilotDatabase.getInstance(context).exerciseLibraryDao().getAllExercises().size
+        })
+    }
+
     @Test fun fullNativeLibraryShows106EntriesAndOpensItsOriginalVideoCard() {
         launch(); tab("training")
         compose.onNodeWithText("Gyakorlatkönyvtár").performClick()
