@@ -2,13 +2,24 @@
 
 ## Felhasználói döntés
 
-A végleges natív felület a main megszokott nyolcgombos menüjét és képernyőelrendezését
-kövesse. A felhasználó ezt külön kiválasztotta. A natív technológia önmagában nem
-igazol azonos kinézetet, stabilitást vagy gyorsulást; ezek külön ellenőrzendők.
+A felhasználó a mockup megtekintése után **az öt alsó füles változatot
+választotta**. Ez felülírja a korábbi nyolcgombos main-menü választását.
+Vizuális irány: a bemutatott sötét/grafit/arany dizájn, a meglévő funkciók
+megőrzésével. Az öt fül: **Kezdőlap, Edzés, Napló, Fejlődés, Egészség**.
 
-Ezután a felhasználó kért egy áttekinthető mockupcsomagot az új natív dizájnról,
-hogy megnézhesse, tetszik-e az alternatíva. Ez **nem** az öt alsó füles dizájn
-megvalósítási jóváhagyása és nem írja felül a nyolcgombos döntést.
+**Beállítások:** jobb felső fogaskerék, minden főoldalon és az aktív edzés
+felületén elérhető, akadálymentes címkével és legalább 48dp érintési területtel.
+A fogaskerék a meglévő Beállítások oldalra vezet, amelyből vissza ugyanarra
+az oldalra/edzésre jutunk. Megnyitása önmagában nem félbehagyás vagy pause,
+nem indít új sessiont; a mérés tovább fut. Lezárás és folyamatban lévő védett
+művelet közben a meglévő zárolásokat meg kell tartani. Beágyazott dialógusra
+nem szükséges új fogaskereket zsúfolni.
+
+A Programok, Naptár, Coach és minden korábbi funkció elérését meg kell tartani
+az új hierarchiában; ezek pontos belépési pontjait implementáláskor és UI-próbán
+ellenőrizni kell. A döntés rögzítve, **a jelenlegi forrás még a nyolcgombos
+első szerkezetet tartalmazza**. Ez a dokumentációs módosítás nem UI-implementáció.
+A natív technológia önmagában nem igazol stabilitást vagy gyorsulást.
 
 ## Elkészült vizuális áttekintés
 
@@ -34,4 +45,5 @@ nyelvi változat nem szerepel ezen a 24 nézeten.
 
 A képek a beszélgetésben letölthetők; nem kerültek binárisként a repositoryba.
 Másik modellnek történő átadáskor a képeket külön is csatolni kell, ha a vizuális
-terv alapján kell dolgoznia. A jóváhagyott main felület továbbra a kanonikus alap.
+terv alapján kell dolgoznia. Funkcionális referencia továbbra az elfogadott main;
+a választott vizuális/navigációs irány az öt alsó füles mockup.

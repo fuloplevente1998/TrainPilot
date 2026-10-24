@@ -94,10 +94,14 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 
 ## Megőrzendő termékdöntések
 
-- Natív UI-döntés (2026-10-24): a main megszokott nyolcgombos menüje és
-  képernyőelrendezése maradjon. Az importált öt alsó füles felület nem elfogadott
-  végleges redesign. A később kért 24 képernyős mockup csak vizuális alternatíva
-  áttekintésre, nem váltja felül a döntést és nem új funkcióspecifikáció.
+- Frissített natív UI-döntés (2026-10-24): a mockup megtekintése után a
+  felhasználó az öt alsó füles változatot választotta: Kezdőlap, Edzés, Napló,
+  Fejlődés, Egészség. Ez felülírja a korábbi nyolcgombos menü választását.
+  A Beállítások jobb felső fogaskerékkel legyen minden főoldalról elérhető,
+  aktív edzésből is; visszalépés ugyanoda, session újraindítása nélkül.
+  A beállítások megnyitása nem edzésfélbehagyás, önmagában ne állítsa le/szüneteltesse
+  a mérést. Mentés/lezárás alatti mutáció- és navigációvédelmek megmaradnak.
+  A mockup a vizuális irány; illusztratív felirataiból ne találj ki új funkciót.
   Lásd `docs/design/NATIVE_MOCKUP_REVIEW.md`. Stabilitást/gyorsulást mérni kell.
 
 - Automatizálási UI-elv (2026-10-20): ugyanazon programnap új edzésének súlya és

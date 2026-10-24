@@ -84,7 +84,10 @@ régi takeLast(100) korlátját az 5. terület részeként külön rendezni kell
 
 `9b09af7`/`8fb3ff6`: Coach helyi valódi adatút/UI bekötve, 6 signals- és 4
 menüteszt megírva. Aktuális nyitott részletek és 32 új, még nem futtatott próba
-az átadó tetején. Nyolcgombos menü az elfogadott végleges irány; az ötfüles
-alternatíva 24 képernyős mockupja csak review, nem új megvalósítási engedély.
-Coach további per-gyakorlat tanács/progresszió és teljes main vizuális egyezés,
+az átadó tetején. A mockup áttekintése után a felhasználó az öt alsó füles
+változatot választotta, jobb felső globális Beállítások fogaskerékkel.
+Ez felülírja a korábbi nyolcgombos irányt; az új UI bekötése még hátra van.
+A Beállítások megnyitása ne szüneteltesse a mérést; védett lezárási műveletek
+zárolása megmarad. Részletek: `docs/design/NATIVE_MOCKUP_REVIEW.md`.
+Coach további per-gyakorlat tanács/progresszió és a választott dizájn megvalósítása,
 valamint az öt pont többi része továbbra nincs lezárva.

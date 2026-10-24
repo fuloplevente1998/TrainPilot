@@ -4,7 +4,20 @@ Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
-## Legutóbbi kód és UI-döntés (2026-10-24, még nincs új tesztkapu)
+## Legfrissebb felhasználói UI-döntés (2026-10-24)
+
+A mockup áttekintése után **az öt alsó füles változat elfogadva**:
+Kezdőlap, Edzés, Napló, Fejlődés, Egészség. A korábbi nyolcgombos döntés
+felülírva. Beállítások: jobb felső fogaskerék minden főoldalon/aktív edzésen;
+vissza ugyanoda, a megnyitás önmagában nem pause/félbehagyás vagy új session.
+Mentés/lezárás és védett műveletek zárolása megmarad.
+[Részletes vizuális döntés](design/NATIVE_MOCKUP_REVIEW.md).
+**Most csak dokumentálva; az alkalmazáskód továbbra `8fb3ff6`, nyolcgombos.**
+Következő UI-munka az elfogadott ötfüles navigáció és globális Beállítások
+bekötése a meglévő natív állapotkezelésbe, minden funkció elérésének megtartásával.
+Nincs új build/teszt/APK; utolsó teljes zöld forrás továbbra `dd4cc27`.
+
+## Előző kód és UI-döntés – az új döntés felülírja (2026-10-24, még nincs új tesztkapu)
 
 - Új alkalmazásforrás **`8fb3ff6`**, előzménye `9b09af7`: Coach bekötve valós
   HealthJournalStore napokhoz és bounded 14 nap/3 edzéshez; szakaszalapú alvás,
