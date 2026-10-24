@@ -105,3 +105,13 @@ restore-versenyvédelmet, amely a 4–5. pont része marad.
 10 menü/policy és 5 új settings-védelmi tesztkód; a batch összesen **43 megírt,
 még nem futtatott próba**. Nincs új build/UI/teszteredmény. A 24 mockup teljes
 vizuális megvalósítása, integrált Phone UI-kapu és az öt terület maradéka hátra van.
+
+
+## Hat rögzített Compose-elfogadási feltétel
+
+A `docs/design/NATIVE_MOCKUP_REVIEW.md` „Kötelező Compose-bekötési feltételek”
+része a további UI-kód és az 1–2./5. terület próbáinak része: draft/aktív
+folytatás, natív pihenő skip/±15 mp, gyakorlatváltás megmaradó pihenővel,
+pause/kilépés vs. discard/finish, külön Samsung/saját/Coach score, valódi friss
+Watch/BLE pulzus vagy hiányzóadat-állapot. Most csak dokumentálva, nem megvalósítva
+vagy újra bevizsgálva; a forrás és a 43 megírt tesztkód állapota változatlan.

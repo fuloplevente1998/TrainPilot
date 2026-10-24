@@ -4,6 +4,18 @@ Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Új Compose-elfogadási feltételek – csak rögzítve (2026-10-24)
+
+A felhasználó hat pontosítást adott a mockup motorhoz kötéséhez:
+[hat kötelező bekötési feltétel](design/NATIVE_MOCKUP_REVIEW.md#kötelező-compose-bekötési-feltételek--felhasználói-pontosítás-2026-10-24).
+Dinamikus draft/aktív folytatás; pihenő Skip/±15 mp; gyakorlatváltás megmaradó
+pihenővel; „Mentés vázlatként” = pause/kilépés és külön discard; Samsung/TrainPilot/
+korlátozott Coach score külön jelentése; friss valós pulzus vagy „— bpm”.
+**Ebben a körben csak dokumentáció**; alkalmazásforrás `4f60bc0`, utolsó teljes
+zöld forrás `dd4cc27`, 43 új batch-próba továbbra megírt/nem futtatott.
+A hat feltételt a további implementációban és az összevont UI-próbákban kell
+ellenőrizni; a történeti motorkapu nem igazolja az új kijelzést/adatbekötést.
+
 ## Legfrissebb alkalmazásforrás – öt fül és globális Beállítások (2026-10-24)
 
 - **`4f60bc0`** a migrációs ágon, `[skip ci]`. Öt alsó fül:

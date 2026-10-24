@@ -103,6 +103,11 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
   a mérést. Mentés/lezárás alatti mutáció- és navigációvédelmek megmaradnak.
   A mockup a vizuális irány; illusztratív felirataiból ne találj ki új funkciót.
   Lásd `docs/design/NATIVE_MOCKUP_REVIEW.md`. Stabilitást/gyorsulást mérni kell.
+- Compose-bekötéskor a fenti dizájndokumentum **hat kötelező feltétele** is
+  érvényes: dinamikus draft/aktív folytatás; natív pihenő skip/±15 mp;
+  gyakorlatváltás megmaradó pihenővel; „vázlatként mentés” = pause/kilépés és
+  külön discard; Samsung/saját/korlátozott Coach pontszámok külön jelentése;
+  csak valódi friss pulzus, forrás nélkül „— bpm”. Rögzítésük nem új tesztbizonyíték.
 
 - Automatizálási UI-elv (2026-10-20): ugyanazon programnap új edzésének súlya és
   ismétlése a legutóbbi megfelelő mentett alkalomból töltődjön, külön másolásgomb
