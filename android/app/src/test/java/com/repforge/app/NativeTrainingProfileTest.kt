@@ -60,6 +60,20 @@ class NativeTrainingProfileTest {
         assertTrue(edited.has("future128Metadata"))
     }
 
+    @Test fun editableGearAndExcludedItemsRoundTripWithoutChangingOtherProfileMetadata() = runBlocking {
+        val edited = NativeTrainingProfile.edit(original(), mapOf(
+            "gear" to "dumbbells, barbell, dumbbells",
+            "excluded" to "barbell-row, db-ohp", "avoidAreas" to "shoulders"))
+        assertEquals(listOf("dumbbells", "barbell"), edited.getJSONArray("gear").let {
+            rows -> (0 until rows.length()).map(rows::getString)
+        })
+        assertEquals(2, edited.getJSONArray("excluded").length())
+        assertEquals("preserve", edited.getJSONObject("future128Metadata").getString("approvedPreview"))
+        store.saveTrainingProfile(edited)
+        val saved = JSONObject(store.current().profileJson)
+        assertEquals("shoulders", saved.getJSONArray("avoidAreas").getString(0))
+    }
+
     @Test fun blankInputDoesNotInventPersonalMeasurements() {
         val result = NativeTrainingProfile.edit(original(), mapOf("weight" to "", "height" to ""))
         assertFalse(result.has("weight"))
