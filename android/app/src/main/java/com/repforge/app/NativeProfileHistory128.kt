@@ -7,6 +7,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.time.Instant
 import java.time.Duration
+import java.security.MessageDigest
 import kotlin.math.abs
 
 /**
@@ -46,6 +47,10 @@ internal object NativeProfileHistory128 {
             else null
         }.toMap()
     }
+
+    private fun digest(text: String): String =
+        MessageDigest.getInstance("SHA-256").digest(text.toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
 
     internal data class Evidence(val programId: String, val key: String, val load: Double,
         val sets: Int, val topReps: Int, val raw: String)
@@ -140,8 +145,12 @@ internal object NativeProfileHistory128 {
                 .put("sources", JSONArray().apply {
                     candidates.forEach { put(JSONObject().put("programId", it.programId).put("key", it.key)) }
                 })
-            val sameStatus = candidates.none { it.load != first.load }
-            if (first.sets in 2..3 && (lib.loadType == "bodyweight" || first.load > 0) && sameStatus) {
+            // The freshest compatible complete session determines the starting load.
+            // Older different weights are history, not a progression authorization.
+            basis.put("evidenceHash", digest(candidates.joinToString("|") {
+                "${it.programId}:${it.key}:${it.raw}"
+            }))
+            if (first.sets in 2..3 && (lib.loadType == "bodyweight" || first.load > 0)) {
                 if (lib.loadType != "bodyweight") {
                     rx.put("weight", first.load).put("trial", false)
                 }
