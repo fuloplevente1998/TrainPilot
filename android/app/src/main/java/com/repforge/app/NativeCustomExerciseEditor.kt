@@ -101,15 +101,20 @@ internal object NativeCustomExerciseEditor {
             true, existing?.setRir229 ?: false, raw.toString())
     }
 
-    suspend fun save(context: Context, db: TrainPilotDatabase, exerciseId: String?, draft: Draft, language: String): String =
+    suspend fun save(context: Context, db: TrainPilotDatabase, exerciseId: String?, draft: Draft, language: String,
+        expectedRawJson: String? = null): String =
         NativeDataReplacement.mutate(context) {
             db.withTransaction {
                 // Validate before any writes, including user-controlled multilingual fields.
                 val checked = validate(draft)
                 val id = exerciseId ?: "custom-${UUID.randomUUID()}"
                 val existing = db.exerciseLibraryDao().getExerciseById(id)
-                if (exerciseId != null) require(existing != null && existing.custom) { "Cannot change a built-in exercise" }
-                else check(existing == null) { "New ID already exists" }
+                if (exerciseId != null) {
+                    require(existing != null && existing.custom) { "Cannot change a built-in exercise" }
+                    if (expectedRawJson != null) check(existing.rawJson == expectedRawJson) {
+                        "Exercise has changed; reopen it before editing"
+                    }
+                } else check(existing == null) { "New ID already exists" }
                 db.exerciseLibraryDao().upsertExercise(update(existing, id, checked, language))
                 id
             }
@@ -124,7 +129,8 @@ internal object NativeCustomExerciseEditor {
         return false
     }
 
-    suspend fun delete(context: Context, db: TrainPilotDatabase, id: String) =
+    suspend fun delete(context: Context, db: TrainPilotDatabase, id: String,
+        expectedRawJson: String? = null) =
         NativeDataReplacement.mutate(context) {
             check(ActiveWorkoutStore.current(context)?.optBoolean("active") != true &&
                 PhoneWorkoutExecution.store(context).snapshot()?.optBoolean("active") != true) {
@@ -133,6 +139,9 @@ internal object NativeCustomExerciseEditor {
             db.withTransaction {
                 val exercise = db.exerciseLibraryDao().getExerciseById(id)
                 require(exercise?.custom == true) { "Only custom exercises can be deleted" }
+                if (expectedRawJson != null) check(exercise.rawJson == expectedRawJson) {
+                    "Exercise has changed; reopen it before deleting"
+                }
                 check(!db.exerciseLibraryDao().hasWorkoutHistoryReference(id)) { "Exercise is used in workout history" }
                 check(db.programDao().getProgramsWithDays().none { program ->
                     program.days.any { referencedInProgram(id, it.exercisesJson) }
