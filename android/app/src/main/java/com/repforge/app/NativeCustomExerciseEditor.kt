@@ -65,26 +65,37 @@ internal object NativeCustomExerciseEditor {
         names[language] = d.name
         notes[language] = d.note
         val canonicalName = names["hu"]!!.ifBlank { d.name }
+        // A single primary-muscle control must not erase imported secondary muscles.
+        val groups = LinkedHashSet<String>()
+        groups.add(d.muscle)
+        if (existing != null) {
+            val previous = runCatching { JSONArray(existing.muscleGroupsJson) }.getOrNull()
+            for (i in 0 until (previous?.length() ?: 0)) {
+                val group = previous?.optString(i).orEmpty()
+                if (group in muscleKeys) groups.add(group)
+            }
+        }
+        val muscles = JSONArray().apply { groups.forEach { put(it) } }
         raw.put("id", id).put("custom", true)
             .put("hu", names["hu"]).put("en", names["en"]).put("de", names["de"]).put("ro", names["ro"])
             .put("name", canonicalName)
             .put("notes", notes["hu"]).put("notesEn", notes["en"])
             .put("notesDe", notes["de"]).put("notesRo", notes["ro"])
-            .put("primaryMuscle", d.muscle).put("muscles", JSONArray().put(d.muscle))
+            .put("primaryMuscle", d.muscle).put("muscles", muscles)
             .put("measurementType", d.measurement).put("loadType", d.load)
             .put("repUnit", d.repUnit).put("sets", d.sets).put("reps", d.reps)
             .put("weight", d.weight).put("restSeconds", d.restSeconds)
         if (d.videoUrl.isBlank()) {
             raw.remove("videoUrl")
             raw.remove("provider")
-            raw.remove("demo") // avoid resurrecting an old video after explicit removal
+            if (existing?.videoUrl != null) raw.remove("demo") // explicit video removal; preserve unrelated legacy demo metadata
         } else {
             raw.put("videoUrl", d.videoUrl).put("provider", "youtube")
             raw.remove("demo")
         }
         return ExerciseLibraryEntity(id, names["hu"]!!, names["en"]!!, names["de"]!!, names["ro"]!!,
             d.load, d.repUnit, d.measurement, d.sets, d.reps, d.weight, d.restSeconds,
-            d.muscle, JSONArray().put(d.muscle).toString(),
+            d.muscle, muscles.toString(),
             notes["hu"]!!, notes["en"]!!, notes["de"]!!, notes["ro"]!!,
             d.videoUrl.ifBlank { null }, if (d.videoUrl.isBlank()) null else "youtube",
             true, existing?.setRir229 ?: false, raw.toString())
@@ -115,7 +126,8 @@ internal object NativeCustomExerciseEditor {
 
     suspend fun delete(context: Context, db: TrainPilotDatabase, id: String) =
         NativeDataReplacement.mutate(context) {
-            check(ActiveWorkoutStore.current(context)?.optBoolean("active") != true) {
+            check(ActiveWorkoutStore.current(context)?.optBoolean("active") != true &&
+                PhoneWorkoutExecution.store(context).snapshot()?.optBoolean("active") != true) {
                 "Finish the active workout before deleting exercises"
             }
             db.withTransaction {
