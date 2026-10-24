@@ -96,6 +96,17 @@ private fun key(value: String) = Normalizer.normalize(value, Normalizer.Form.NFD
 
 private val muscles = listOf("chest", "back", "shoulders", "arms", "core", "legs", "cardio")
 
+private fun muscleName(value: String, language: String): String {
+    val at = muscles.indexOf(value)
+    if (at < 0) return value
+    return when (language) {
+        "en" -> listOf("Chest", "Back", "Shoulders", "Arms", "Core", "Legs", "Cardio")[at]
+        "de" -> listOf("Brust", "Rücken", "Schultern", "Arme", "Rumpf", "Beine", "Ausdauer")[at]
+        "ro" -> listOf("Piept", "Spate", "Umeri", "Brațe", "Trunchi", "Picioare", "Cardio")[at]
+        else -> listOf("Mell", "Hát", "Váll", "Kar", "Törzs", "Láb", "Kardió")[at]
+    }
+}
+
 @Composable
 internal fun ExerciseLibraryScreen(language: String, model: ExerciseLibraryViewModel = viewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
@@ -139,7 +150,7 @@ internal fun ExerciseLibraryScreen(language: String, model: ExerciseLibraryViewM
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("exercise_library_detail"),
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(localized(selected, language), color = colors.text, fontWeight = FontWeight.Bold)
-                Text("${labels.muscle}: ${selected.primaryMuscle} • ${labels.sets}: ${selected.defaultSets} • ${labels.reps}: ${selected.defaultReps}",
+                Text("${labels.muscle}: ${muscleName(selected.primaryMuscle, language)} • ${labels.sets}: ${selected.defaultSets} • ${labels.reps}: ${selected.defaultReps}",
                     color = colors.muted)
                 Text(description(selected, language), color = colors.text)
                 TextButton(onClick = { model.toggleFavorite(selected.id) }, enabled = !state.saving,
@@ -181,7 +192,7 @@ internal fun ExerciseLibraryScreen(language: String, model: ExerciseLibraryViewM
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(selected = muscle.isEmpty(), onClick = { muscle = "" }, label = { Text(labels.all) })
                 for (part in muscles) FilterChip(selected = muscle == part, onClick = { muscle = part },
-                    label = { Text(part) }, modifier = Modifier.testTag("exercise_library_muscle_$part"))
+                    label = { Text(muscleName(part, language)) }, modifier = Modifier.testTag("exercise_library_muscle_$part"))
             }
             if (state.writeFailed) Text(labels.saveError, color = colors.danger,
                 modifier = Modifier.testTag("exercise_library_favorite_error"))
@@ -194,7 +205,7 @@ internal fun ExerciseLibraryScreen(language: String, model: ExerciseLibraryViewM
                             Column(Modifier.weight(1f).clickable { selectedId = ex.id; openingError = false }
                                 .padding(8.dp).testTag("exercise_library_row_${ex.id}")) {
                                 Text(localized(ex, language), color = colors.text)
-                                Text(ex.primaryMuscle, color = colors.muted)
+                                Text(muscleName(ex.primaryMuscle, language), color = colors.muted)
                             }
                             TextButton(onClick = { model.toggleFavorite(ex.id) }, enabled = !state.saving,
                                 modifier = Modifier.testTag("exercise_library_favorite_${ex.id}").semantics {
