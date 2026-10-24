@@ -20,6 +20,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 /** Shared foreground-only read through the existing Samsung/HC adapters, never a synthetic provider. */
 internal object NativeHealthRefresh {
     suspend fun readToday(context: Context, activity: Activity, requestSamsungPermission: Boolean = false): Result<JSONObject> =
+        readDay(context, activity, LocalDate.now(), requestSamsungPermission)
+
+    suspend fun readDay(context: Context, activity: Activity, day: LocalDate, requestSamsungPermission: Boolean = false): Result<JSONObject> =
         withContext(Dispatchers.Main.immediate) {
             val owner = activity as? LifecycleOwner
                 ?: return@withContext Result.failure(IllegalStateException("Foreground lifecycle required"))
@@ -38,11 +41,12 @@ internal object NativeHealthRefresh {
                         withTimeout(10000) { while (!foreground.get()) delay(50) }
                     }
                     guard()
-                    val today = LocalDate.now(); val zone = ZoneId.systemDefault()
-                    val start = today.atStartOfDay(zone).toInstant().toString()
-                    val end = today.plusDays(1).atStartOfDay(zone).toInstant().toString()
+                    require(day <= LocalDate.now()) { "Future health day" }
+                    val zone = ZoneId.systemDefault()
+                    val start = day.atStartOfDay(zone).toInstant().toString()
+                    val end = day.plusDays(1).atStartOfDay(zone).toInstant().toString()
                     if (provider == HealthJournalStore.SAMSUNG) {
-                        SamsungHealthRepository.readHealthDay(context, start, end, today.toString(), guard).getOrThrow()
+                        SamsungHealthRepository.readHealthDay(context, start, end, day.toString(), guard).getOrThrow()
                     } else {
                         check(Build.VERSION.SDK_INT >= 34) { "Health Connect requires Android 14" }
                         check(HealthConnectRepository.READ_PERMS.any {
