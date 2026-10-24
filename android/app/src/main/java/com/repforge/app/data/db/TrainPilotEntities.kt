@@ -334,3 +334,10 @@ data class JournalWorkoutSummary(val id: String, val startedEpochMs: Long, val p
 
 /** Transient search projection: small text only, no raw history/sets/photos/coordinates. */
 data class JournalSearchRow(@Embedded val summary: JournalWorkoutSummary, val searchText: String)
+
+/** Lightweight Progress aggregate; no historical raw JSON/photos or set relations. */
+data class ProgressMuscleSummary(val muscleKey: String, val setsCount: Int)
+
+/** Keyset-paged completed strength sets for a single exercise, independent of journal size. */
+data class ProgressSetSummary(val workoutId: String, val started: String,
+    val startedEpochMs: Long, val setRowId: Long, val weightKg: Double, val reps: String)
