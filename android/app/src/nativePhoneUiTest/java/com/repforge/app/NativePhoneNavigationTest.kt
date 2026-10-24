@@ -518,6 +518,10 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
         compose.onNodeWithTag("personal_planner_open").performClick()
         compose.onNodeWithTag("personal_preview").assertExists()
+        compose.waitUntil(15000) {
+            compose.onAllNodesWithTag("personal_preview_loading").fetchSemanticsNodes().isEmpty() &&
+                compose.onAllNodesWithTag("personal_preview_accept").fetchSemanticsNodes().isNotEmpty()
+        }
         compose.onNodeWithTag("personal_preview_accept").assertIsEnabled()
         screenshot("personal_ab_preview")
         assertEquals(baseline, runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() })
@@ -534,6 +538,10 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
         compose.onNodeWithTag("personal_planner_open").performClick()
+        compose.waitUntil(15000) {
+            compose.onAllNodesWithTag("personal_preview_loading").fetchSemanticsNodes().isEmpty() &&
+                compose.onAllNodesWithTag("personal_preview_accept").fetchSemanticsNodes().isNotEmpty()
+        }
         compose.onNodeWithTag("personal_preview_accept").performClick()
         compose.waitUntil(15000) { runBlocking(Dispatchers.IO) {
             settings.current().activeProgramId.startsWith("custom-program-")
@@ -558,6 +566,9 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
         compose.onNodeWithTag("personal_planner_open").performClick()
+        compose.waitUntil(15000) {
+            compose.onAllNodesWithTag("personal_preview_blocked").fetchSemanticsNodes().isNotEmpty()
+        }
         compose.onNodeWithTag("personal_preview_blocked").assertExists()
         compose.onNodeWithTag("personal_preview_accept").assertIsNotEnabled()
     }
