@@ -323,6 +323,7 @@ object WearSyncRepository {
                         }
                     }
                 }
+                }
             } catch (_: Exception) {
                 if (uri != null) {
                     try {
