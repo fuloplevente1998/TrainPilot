@@ -165,6 +165,11 @@ class NativeProgramEditorTest {
         val saved = JSONObject(persisted.program.rawJson)
         assertEquals("keep", saved.getString("legacyPriority"))
         assertEquals(55, saved.getJSONArray("days").getJSONObject(0).getInt("specialRestSeconds"))
+        val backup = LegacyWebViewMigrator(context, db, settings).exportBackupJson(false)
+        val portable = backup.getJSONArray("programs").getJSONObject(0).getJSONArray("days").getJSONObject(0)
+        assertEquals("Original English", portable.getString("en"))
+        assertEquals("Original Deutsch", portable.getString("de"))
+        assertEquals(55, portable.getInt("specialRestSeconds"))
     }
 
     @Test fun scheduledProgramCannotBeDeletedEvenWhenInactive() = runBlocking {
