@@ -1,8 +1,39 @@
 # TrainPilot – aktuális átadás
 
-Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **#235/#237 mainen, készüléken elfogadva, változatlan 1.3.71 /2735**. Latest: `v1.3.71-perf-20261022`, Wear párja `wear-v1.3.71-perf-20261022`; az október 21-i eredeti kiadás megmaradt. A natív migráció külön ágon folyamatban; #214 karbantartási issue marad. [Takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
+Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentációs HEAD-je `8a36502`; **#235/#237 mainen, készüléken elfogadva, változatlan 1.3.71 /2735**. Latest: `v1.3.71-perf-20261022`, Wear párja `wear-v1.3.71-perf-20261022`; az október 21-i eredeti kiadás megmaradt. A natív migráció külön ágon folyamatban; #214 karbantartási issue marad. [Takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
+
+## Legfrissebb forrás – Coach-adatút és terminális mérési állapotok
+
+**`29ac3a2`** / előzménye **`036a2cd`**, `[skip ci]`. A Coach és az Egészség
+ugyanazt a `NativeHealthRefresh` foreground életciklus-védett, tényleges Samsung/HC
+adapterhívását használja. Coachban közvetlen frissítő gomb és kezelt hibajelzés;
+nincs kitalált mérés vagy automatikus engedélykérés. A korábbi célválasztási blokk
+`NativeCoachTargets`-ba került: ISO-offsetek tényleges időrendje SQL julianday-jel,
+lokális ma/későbbi osztályozás, 32-es oldalak, cancelled/hiányzó programnap skip.
+A cloudDeviceId létrehozása is meglévő metadata admission alatt fut.
+
+A nem-auto interval természetes lejárata nyugdíjazza a saját tervét, megtartott
+időértékkel, így kézi OK és újraindítás lehetséges; régi tick kizárt. Elvetett
+inaktív frame unimported eseménye/receiptje továbbra is megmarad, de más workout
+visszaadása emiatt nem áll meg; ugyanaz a lezárt workout nem támasztható fel.
+Új 6 célválasztási + 4 Health lifecycle + 3 terminal/handoff unit-próbakód és
+1 Coach failure UI-próba. **Batch: 135 új unit + 7 instrumentációs tesztkód megírva,
+még nem futott.** Helyben csak diff/resource XML és két SQLite dátumfüggvényes
+feltétel ellenőrzése; ez nem Android/Room teszt, nincs új build/CI/APK/screenshot.
+Utolsó teljes zöld továbbra `dd4cc27`. Élő adatos telepítés STOP.
+
+**Copilot-ágellenőrzés (2026-10-24):** main `8a36502` változatlan; a
+`feat/native-android-finalization` `6a21fc1` a saját `036a2cd` commitunkból indult,
++2 commit/7 környezet- és CI/dokumentáció fájl, appkódváltoztatás nélkül. A saját
+`feat/native-android-migration` refet nem módosította. Mi továbbra is kizárólag a
+migration ágra írunk; a külön ág setup/build scriptjeit nem futtattuk/nem emeltük át.
+
+Következő: teljes per-gyakorlat Coach/progresszió a main végső felülírásai alapján
+(nem az első rf152/rf233 definíció alapján!), katalógus/nevek/HU-EN-DE-RO, további
+nyitott adatút/UI tesztek és teljes mockup. A provider-frissítés kódja sem SDK-val,
+sem készüléken nincs most bevizsgálva; ezek külön kapuk maradnak.
 
 ## Friss munkablokk – intervallummód és hordozható preset
 

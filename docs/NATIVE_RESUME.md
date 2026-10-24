@@ -22,20 +22,34 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 
 ## Legutóbbi konkrét munka
 
-- Friss intervallumblokk: meglévő motor nem-autoAdvance módja csak egy aktuális
+- Legfrissebb alkalmazásforrás **29ac3a2**. A természetesen lejárt nem-auto interval
+  terv nyugdíjazva: kézi OK/újraindítás és régi tick kizárása működési útba kötve;
+  inaktív elvetett frame régi receiptje megmarad, más workout returnjét nem blokkolja,
+  ugyanaz a lezárt workout nem támasztható fel. 3 új unit-próbakód, nem futott.
+- **036a2cd**: közös NativeHealthRefresh a már meglévő Samsung/HC adapterrel,
+  foreground-guard/observer cleanup és metadata admission. Coach közvetlen frissítő
+  gomb + kezelt hiba, új pontszám/adat nem kitalálva. NativeCoachTargets átveszi
+  a korábbi VM-blokkot; SQL julianday tényleges időrend, lokális nap osztályozás,
+  lapozott skip a cancelled/hiányzó nap/program felett. 10 unit + 1 UI-próbakód.
+- Copilot ágellenőrzés: feat/native-android-finalization **6a21fc1**, a saját
+  **036a2cd** forrásból +2 környezet/CI commit, 7 infrastruktúra/dokumentáció fájl;
+  appkód nem változott benne. Main **8a36502** (csak korábbi AGENTS dokumentáció).
+  Egyik idegen ágra sem írtunk, nem vettük át a Copilot környezet/build scriptjeit.
+
+- **9ea2ddf** intervallumblokk: meglévő motor nem-autoAdvance módja csak egy aktuális
   sorozatot mér, pozitív munkaidőt megőriz, nem készít/nem léptet; auto mód megmarad.
   Változatlan futó terv mellett edzéskonfig és explicit globális preset; main
   intervalPreset110 migráció/export és legacy draft interval110 megőrzése.
   24h/typed validáció; négy nyelvű opcionális panel, 9 unit + 1 UI-próbakód új.
 
-- Friss munkablokk: Phone discard a közös finalizer/mutex és metadata admission
+- **6af1d79**: Phone discard a közös finalizer/mutex és metadata admission
   alatt; tartós finalizationPending+discardPending, pause/stop, Room tombstone+draft
   retirement tranzakció, ellenőrzött natív discard, csak utána closure/navigáció.
   Hiba után explicit discard retry; finish nem mentheti az elvetésre váró edzést.
   Bodyweight admission/hibakezelés; Settings/programváltás gate-elutasítás kezelve.
   8 új unit-hibapróba + 1 valódi Compose discard-fault/retry tesztkód; nem futottak.
 
-- Legfrissebb alkalmazásforrás **0f51320**: a replacement mutex író-admissionnel
+- Korábbi metadata-forrás **0f51320**: a replacement mutex író-admissionnel
   védi a Wear parancsot, közös finisht, import/export/egyedi history save-et,
   DataStore set/resetet, naptári VM-módosítást és naplótörlést. Context-lease a
   beágyazott saját callbackhez, epoch a lecserélt állapothoz tartozó várakozóhoz.
@@ -56,7 +70,7 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 - Phone UI kapu alapja **1d38edf**: külön native AndroidTest source set,
   meglévő native-android.yml phone-ui job, raw adb screencap checkpoint/ack és
   származtatottnak jelölt XML/manifest. Jelenleg4 instrumentációs próbakód.
-- **122 új unit + 6 instrumentációs tesztkód megírva, még nem futtatva.**
+- **135 új unit + 7 instrumentációs tesztkód megírva, még nem futtatva.**
   Nincs új zöld kapu/APK/screenshot. Utolsó teljes zöld forrás **dd4cc27**:
   unit Phone393/Wear167, Wear UI183, signed upgrade2. Bizonyíték: WORK_HANDOFF.md.
 - Main utóbbi 8a36502d változása csak AGENTS thinking-dokumentáció; main app baseline
@@ -68,7 +82,8 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
    cloud photo staging/transaction. A bekötött kapu nem minden szabad DAO és külön
    Health SQLite írás globális zárja. A megírt ZIP/Health tesztek még nem futottak.
 2. Intervallum/preset új kód futtatott igazolása még nincs; Coach per-gyakorlat
-   javaslat/progresszió és provider-frissítés; katalógus/nevek/lokalizáció.
+   javaslat/progresszió; katalógus/nevek/lokalizáció. A közös provider-frissítés új
+   forrása/életciklustesztje még futtatandó; valós SDK/készülék nincs igazolva.
 3. Mockup teljes vizuális kidolgozás (előtte Medium jelzés): többek közt mini-route
    listathumbnail, részletes Health forrásadatok, program/gyakorlat szerkesztés/paritás.
 4. Kritikus Phone UI suite bővítése GPS/kétoldali/finish/discard/undo/retry/backup/
