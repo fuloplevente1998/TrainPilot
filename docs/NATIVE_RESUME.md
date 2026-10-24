@@ -20,6 +20,23 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   prototípus/fake Health-forrás tilos. Nyolcgombos menü helyett öt alsó fül elfogadva,
   jobb felső Settings; abból visszatérés nem pause, valódi editor-elhagyás igen.
 
+## Legújabb natív batch – 106 gyakorlat és video
+
+`dbf808c5` `[skip ci]`: a mainből pontosan átvett
+`native-catalog-main-7473.json` alapján 106 gyakorlat,
+**100 konkret YouTube videoId +6 nem ellenőrzött keresés**.
+Edzés → Gyakorlatkönyvtár új natív route (Room, négy nyelv,
+keresés/izomcsoport, kedvencek, leírás/sorozat/részletek,
+video-eredet); a gyorsedzés választóban is videó/keresés
+gomb. Csak whitelistelt YouTube link, felhasználói tap után
+külső ACTION_VIEW, nincs WebView vagy nem létező videó;
+régi beépített import videófallback, saját felülírás nem örököl
+ismeretlen linket. 7 unit +3 Phone UI-próbakód, navigációs
+teszt bővítve. **Batch 248 unit +23 UI kód, egy sem futott**;
+katalógus/statisztikus útvonal ellenőrzött, Android/CI/APK
+nincs. Következő saját gyakorlat CRUD, programnap-szerkesztő,
+profil, teljes kapu. PR #238 frissítve.
+
 ## Legújabb natív batch – v144 kedvencek
 
 `4159a76` `[skip ci]`: a main `exerciseFavorites` tömbje validáltan
