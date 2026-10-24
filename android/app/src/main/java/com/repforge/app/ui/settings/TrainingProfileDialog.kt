@@ -31,30 +31,37 @@ internal fun TrainingProfileDialog(
 ) {
     val source = remember(profileJson) { runCatching { JSONObject(profileJson) }.getOrDefault(JSONObject()) }
     val fields = listOf("age", "height", "weight", "minutes",
-        "goal", "experience", "activity", "location", "cadence", "split", "focus")
+        "goal", "experience", "activity", "location", "cadence", "split", "focus",
+        "gear", "excluded", "avoidAreas")
     val names = when (language) {
         "en" -> listOf("Age", "Height (cm)", "Weight (kg)", "Minutes per workout", "Goal",
-            "Experience", "Activity", "Location", "Schedule", "Split", "Focus")
+            "Experience", "Activity", "Location", "Schedule", "Split", "Focus",
+            "Equipment keys (comma-separated)", "Excluded exercise IDs", "Avoided muscle groups")
         "de" -> listOf("Alter", "Größe (cm)", "Gewicht (kg)", "Minuten je Training", "Ziel",
-            "Erfahrung", "Aktivität", "Ort", "Rhythmus", "Aufteilung", "Schwerpunkt")
+            "Erfahrung", "Aktivität", "Ort", "Rhythmus", "Aufteilung", "Schwerpunkt",
+            "Ausrüstung (durch Komma getrennt)", "Ausgeschlossene Übungen", "Zu vermeidende Muskelgruppen")
         "ro" -> listOf("Vârstă", "Înălțime (cm)", "Greutate (kg)", "Minute pe antrenament", "Obiectiv",
-            "Experiență", "Activitate", "Loc", "Ritm", "Împărțire", "Accent")
+            "Experiență", "Activitate", "Loc", "Ritm", "Împărțire", "Accent",
+            "Echipament (separat prin virgulă)", "Exerciții excluse", "Grupe musculare de evitat")
         else -> listOf("Életkor", "Magasság (cm)", "Testsúly (kg)", "Edzésidő (perc)", "Cél",
-            "Tapasztalat", "Aktivitás", "Helyszín", "Edzésritmus", "Felosztás", "Fókusz")
+            "Tapasztalat", "Aktivitás", "Helyszín", "Edzésritmus", "Felosztás", "Fókusz",
+            "Felszerelés (pl. dumbbells, barbell)", "Kizárt gyakorlat-azonosítók", "Kerülendő izomcsoportok")
     }
     val title = when (language) {
         "en" -> "Training profile"; "de" -> "Trainingsprofil"
         "ro" -> "Profil de antrenament"; else -> "Edzésprofil"
     }
     val emptyHint = when (language) {
-        "en" -> "Empty fields are not guessed. Existing equipment and exclusions stay unchanged."
-        "de" -> "Leere Felder werden nicht geschätzt. Ausrüstung und Ausschlüsse bleiben erhalten."
-        "ro" -> "Câmpurile goale nu sunt deduse. Echipamentul și excluderile rămân neschimbate."
-        else -> "Az üres mezőket nem találgatjuk. A felszerelés és kizárások adatai megmaradnak."
+        "en" -> "Empty fields are not guessed. Equipment and exclusions change only when you edit them."
+        "de" -> "Leere Felder werden nicht geschätzt. Ausrüstung und Ausschlüsse ändern sich nur durch deine Eingabe."
+        "ro" -> "Câmpurile goale nu sunt deduse. Echipamentul și excluderile se schimbă doar prin editare."
+        else -> "Az üres mezőket nem találgatjuk. A felszerelés és kizárások csak külön módosításkor változnak."
     }
     var values by remember(profileJson) {
         mutableStateOf(fields.associateWith { k ->
-            if (source.isNull(k)) "" else source.opt(k)?.toString().orEmpty()
+            if (source.isNull(k)) "" else source.optJSONArray(k)?.let { rows ->
+                (0 until rows.length()).joinToString(", ") { rows.optString(it) }
+            } ?: source.opt(k)?.toString().orEmpty()
         })
     }
     AlertDialog(
