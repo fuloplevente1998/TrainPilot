@@ -131,7 +131,8 @@ fun ProgressScreen(
                     Spacer(Modifier.height(12.dp))
 
                     // Gyakorlat választó chip sor
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.testTag("progress_exercise_choices")) {
                         items(state.exercises, key = { it.id }) { ex ->
                             val isSelected = ex.id == state.selectedExerciseId
                             Box(
