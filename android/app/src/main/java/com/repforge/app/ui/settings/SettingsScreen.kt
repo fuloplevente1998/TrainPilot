@@ -102,48 +102,7 @@ fun SettingsScreen(
             }, color = colors.muted)
         }
 
-        // 1. Téma- és Színpaletta választó (Élő színmintákkal)
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = colors.card),
-                border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Palette, contentDescription = null, tint = colors.accent, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Téma & Színpaletta", color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    }
-                    Spacer(Modifier.height(12.dp))
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(TrainPilotSettingsStore.AVAILABLE_THEMES) { themeOpt ->
-                            val isSel = state.settings.themeKey == themeOpt.key
-                            val cAccent = Color(android.graphics.Color.parseColor(themeOpt.accent))
-                            val cAccent2 = Color(android.graphics.Color.parseColor(themeOpt.accent2))
-                            Column(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(if (isSel) colors.card2 else Color.Transparent)
-                                    .border(1.dp, if (isSel) colors.accent else colors.line, RoundedCornerShape(10.dp))
-                                    .clickable { viewModel.setTheme(themeOpt) }
-                                    .padding(8.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Row {
-                                    Box(Modifier.size(16.dp).clip(CircleShape).background(cAccent))
-                                    Spacer(Modifier.width(4.dp))
-                                    Box(Modifier.size(16.dp).clip(CircleShape).background(cAccent2))
-                                }
-                                Spacer(Modifier.height(6.dp))
-                                Text(themeOpt.displayName(state.settings.language), color = if (isSel) colors.accent else colors.muted, fontSize = 10.sp, fontWeight = FontWeight.Medium)
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        item { NativeThemePicker(state.settings, viewModel::setTheme) }
 
         // 2. Google Cloud Szinkron (Drive appDataFolder + Managed Naptár)
         item {
@@ -156,7 +115,7 @@ fun SettingsScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.CloudSync, contentDescription = null, tint = colors.accent, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.CloudSync, contentDescription = null, tint = colors.accentText, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("Google Cloud Szinkron (#18)", color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
@@ -183,7 +142,7 @@ fun SettingsScreen(
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                             ) {
-                                Text("Drive szinkron", color = Color(0xFF0E1015), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text("Drive szinkron", color = colors.onAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                             Button(
                                 onClick = { activity?.let { viewModel.syncCalendarCloud(it) } },
@@ -205,7 +164,7 @@ fun SettingsScreen(
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                         ) {
-                            Text("Bejelentkezés Google-fiókkal", color = Color(0xFF0E1015), fontWeight = FontWeight.Bold)
+                            Text("Bejelentkezés Google-fiókkal", color = colors.onAccent, fontWeight = FontWeight.Bold)
                         }
                     }
                     if (gs.isBusy) {
@@ -326,7 +285,7 @@ fun SettingsScreen(
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = colors.card2)
                     ) {
-                        Icon(Icons.Default.Security, contentDescription = null, tint = colors.accent, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Security, contentDescription = null, tint = colors.accentText, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("Adatkezelési tájékoztató megtekintése", color = colors.text, fontSize = 12.sp)
                     }
@@ -388,7 +347,7 @@ fun SettingsScreen(
                     onClick = { viewModel.closePrivacyDialog() },
                     colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                 ) {
-                    Text("Értem", color = Color(0xFF0E1015), fontWeight = FontWeight.Bold)
+                    Text("Értem", color = colors.onAccent, fontWeight = FontWeight.Bold)
                 }
             },
             containerColor = colors.card
@@ -406,7 +365,7 @@ fun SettingsScreen(
                     onClick = { viewModel.clearStatusMessage() },
                     colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                 ) {
-                    Text("Rendben", color = Color(0xFF0E1015), fontWeight = FontWeight.Bold)
+                    Text("Rendben", color = colors.onAccent, fontWeight = FontWeight.Bold)
                 }
             },
             containerColor = colors.card

@@ -58,8 +58,8 @@ internal fun NativeBottomNavigation(route: String, settingsOrigin: String, langu
                 onClick = { onSelect(destination) }, modifier = Modifier.testTag("navigation_$destination"),
                 icon = { Icon(icon, contentDescription = null) },
                 label = { Text(labels[index], maxLines = 2, overflow = TextOverflow.Ellipsis) },
-                colors = NavigationBarItemDefaults.colors(selectedIconColor = colors.accent,
-                    selectedTextColor = colors.accent, indicatorColor = colors.accent.copy(alpha = .15f),
+                colors = NavigationBarItemDefaults.colors(selectedIconColor = colors.accentText,
+                    selectedTextColor = colors.accentText, indicatorColor = colors.selectedSurface,
                     unselectedIconColor = colors.muted, unselectedTextColor = colors.muted))
         }
     }

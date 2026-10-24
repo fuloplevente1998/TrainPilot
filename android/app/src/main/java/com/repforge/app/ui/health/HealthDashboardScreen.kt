@@ -301,9 +301,9 @@ fun BleDiscoveryTabContent(
                                 onClick = { bleRepo.startScan() },
                                 colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                             ) {
-                                Icon(Icons.Default.BluetoothSearching, contentDescription = null, tint = Color(0xFF0E1015))
+                                Icon(Icons.Default.BluetoothSearching, contentDescription = null, tint = colors.onAccent)
                                 Spacer(Modifier.width(4.dp))
-                                Text("Keresés (60 mp)", color = Color(0xFF0E1015), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text("Keresés (60 mp)", color = colors.onAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -313,7 +313,7 @@ fun BleDiscoveryTabContent(
                         LinearProgressIndicator(
                             progress = { ble.scanRemainingSeconds / 60f },
                             modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
-                            color = colors.accent,
+                            color = colors.accentText,
                             trackColor = colors.card2
                         )
                         Spacer(Modifier.height(4.dp))
@@ -364,7 +364,7 @@ fun BleDiscoveryTabContent(
                                 Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text("RDFit mérés (0xED)", color = colors.muted, fontSize = 10.sp)
                                     Spacer(Modifier.height(4.dp))
-                                    Text(if (ble.rdfitProbe.stepsCount != null) "${ble.rdfitProbe.stepsCount} lépés" else if (ble.rdfitProbe.batteryPercent != null) "${ble.rdfitProbe.batteryPercent}%" else "—", color = colors.accent, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                    Text(if (ble.rdfitProbe.stepsCount != null) "${ble.rdfitProbe.stepsCount} lépés" else if (ble.rdfitProbe.batteryPercent != null) "${ble.rdfitProbe.batteryPercent}%" else "—", color = colors.accentText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                                     if (ble.probeSupported && ble.state != "probing") {
                                         Spacer(Modifier.height(6.dp))
                                         OutlinedButton(onClick = { bleRepo.readRdfitData() }) {
@@ -381,7 +381,7 @@ fun BleDiscoveryTabContent(
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                             ) {
-                                Text("Óra megjegyzése", color = Color(0xFF0E1015), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text("Óra megjegyzése", color = colors.onAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                             if (ble.rememberedWatchPresent) {
                                 Button(
@@ -449,7 +449,7 @@ fun BleDiscoveryTabContent(
                         onClick = { bleRepo.connect(dev.id) },
                         colors = ButtonDefaults.buttonColors(containerColor = colors.card2)
                     ) {
-                        Text("Kapcsolódás", color = colors.accent, fontSize = 11.sp)
+                        Text("Kapcsolódás", color = colors.accentText, fontSize = 11.sp)
                     }
                 }
             }
@@ -479,7 +479,7 @@ fun ProviderChoiceChip(
     ) {
         Text(
             text = label,
-            color = if (isSelected) Color(0xFF0E1015) else colors.text,
+            color = if (isSelected) colors.onAccent else colors.text,
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold
         )

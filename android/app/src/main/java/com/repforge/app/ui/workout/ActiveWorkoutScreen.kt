@@ -190,7 +190,7 @@ fun ActiveWorkoutScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Undo, contentDescription = null, tint = colors.accent, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Undo, contentDescription = null, tint = colors.accentText, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = "${state.undoExerciseName} ${state.undoSetNumber}. szett rögzítve",
@@ -199,7 +199,7 @@ fun ActiveWorkoutScreen(
                         )
                     }
                     TextButton(onClick = { viewModel.undoLastSet() }) {
-                        Text("Visszavonás", color = colors.accent, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text("Visszavonás", color = colors.accentText, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
                 }
             }
@@ -355,9 +355,9 @@ fun ActiveWorkoutScreen(
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                 ) {
-                    Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF0E1015))
+                    Icon(Icons.Default.Check, contentDescription = null, tint = colors.onAccent)
                     Spacer(Modifier.width(6.dp))
-                    Text("Befejezés", color = Color(0xFF0E1015), fontWeight = FontWeight.Bold)
+                    Text("Befejezés", color = colors.onAccent, fontWeight = FontWeight.Bold)
                 }
                 // Elvetés gomb
                 Button(
@@ -520,7 +520,7 @@ fun ActiveWorkoutHeader(
                     }
                     if (state.isGpsActive) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.DirectionsRun, contentDescription = null, tint = colors.accent, modifier = Modifier.size(14.dp))
+                            Icon(Icons.Default.DirectionsRun, contentDescription = null, tint = colors.accentText, modifier = Modifier.size(14.dp))
                             Spacer(Modifier.width(3.dp))
                             Text("${(state.gpsDistanceMeters / 100.0).roundToInt() / 10.0} km", color = colors.text, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
@@ -578,7 +578,7 @@ fun ExerciseCardItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(exercise.name, color = colors.text, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                Text("${exercise.sets.count { it.isCompleted }}/${exercise.sets.size} kész", color = colors.accent, fontSize = 12.sp)
+                Text("${exercise.sets.count { it.isCompleted }}/${exercise.sets.size} kész", color = colors.accentText, fontSize = 12.sp)
             }
             Spacer(Modifier.height(10.dp))
 
@@ -628,7 +628,7 @@ fun ExerciseCardItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(onClick = onAddSet) {
-                    Text("+ Szett hozzáadása", color = colors.accent, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text("+ Szett hozzáadása", color = colors.accentText, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 }
                 TextButton(onClick = { onToggleRirMode(!exercise.setRirEnabled) }) {
                     Text(if (exercise.setRirEnabled) "RIR elrejtése" else "#229 RIR megadása", color = colors.muted, fontSize = 11.sp)
@@ -648,13 +648,13 @@ private fun DistanceMeasurementPanel(state: ActiveWorkoutUiState, exercise: Acti
     val seconds = if (live) state.gpsBaseSeconds + state.gpsElapsedSeconds else set.reps.toLongOrNull() ?: 0L
     Column(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
         Text("${"%.2f".format(meters / 1000.0)} km · ${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}",
-            color = colors.accent, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            color = colors.accentText, fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Text(if (set.isCompleted) "Mérés rögzítve" else if (live && !state.gpsHasFix) "GPS-jelre várunk" else if (live) "GPS-mérés folyamatban" else "Mérésre kész",
             color = colors.muted, fontSize = 12.sp)
         Button(onClick = { onToggle(if (live) state.gpsMeasurementId else null) }, enabled = !set.isCompleted && state.timerOwner == "phone" && !state.isPaused && !state.isFinishing,
             modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = colors.accent)) {
             Text(if (live && state.gpsBindingState == "explicitStopped") "Rögzítés újrapróbálása" else if (live) "Mérés befejezése" else "GPS-mérés indítása",
-                color = Color(0xFF0E1015))
+                color = colors.onAccent)
         }
         if (bound && state.gpsError.isNotEmpty()) Text(state.gpsError, color = colors.dangerText, fontSize = 12.sp)
         val route = exercise.sets.lastOrNull { it.gpsRouteKey.isNotBlank() }?.gpsRouteKey
@@ -749,10 +749,10 @@ private fun LowerSetStopwatch(
                 Column(Modifier.weight(1f)) {
                     if (bilateral) Text(if (side == "left") "Bal oldal" else "Jobb oldal", color = colors.muted, fontSize = 12.sp)
                     Text("${(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}",
-                        color = colors.accent, fontSize = 30.sp, fontWeight = FontWeight.Bold)
+                        color = colors.accentText, fontSize = 30.sp, fontWeight = FontWeight.Bold)
                     Button(onClick = { onToggle(side) }, enabled = enabled && (!state.stopwatchRunning || running),
                         modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = colors.accent)) {
-                        Text(if (running) "Leállítás" else "Indítás", color = Color(0xFF0E1015))
+                        Text(if (running) "Leállítás" else "Indítás", color = colors.onAccent)
                     }
                 }
             }
@@ -872,7 +872,7 @@ fun SetRowItem(
             colors = CheckboxDefaults.colors(
                 checkedColor = colors.accent,
                 uncheckedColor = colors.line,
-                checkmarkColor = Color(0xFF0E1015)
+                checkmarkColor = colors.onAccent
             )
         )
     }
@@ -891,7 +891,7 @@ fun RestTimerFloatingBar(
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(colors.card2)
-            .border(1.dp, colors.accent.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+            .border(1.dp, colors.emphasisBorder, RoundedCornerShape(14.dp))
             .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
@@ -899,7 +899,7 @@ fun RestTimerFloatingBar(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = "⏱ ${remainingSec / 60}:${(remainingSec % 60).toString().padStart(2, '0')}",
-                color = colors.accent,
+                color = colors.accentText,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -918,7 +918,7 @@ fun RestTimerFloatingBar(
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
             ) {
-                Text("Kihagyás", color = Color(0xFF0E1015), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text("Kihagyás", color = colors.onAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -969,7 +969,7 @@ fun FinishWorkoutDialog(
         },
         confirmButton = {
             TextButton(onClick = { onConfirm(null) }) {
-                Text("Kihagyás és mentés", color = colors.accent, fontWeight = FontWeight.Bold)
+                Text("Kihagyás és mentés", color = colors.accentText, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

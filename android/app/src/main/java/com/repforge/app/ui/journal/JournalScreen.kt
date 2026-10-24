@@ -220,7 +220,7 @@ fun JournalWorkoutCard(
                         .padding(10.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text("Elért személyes csúcsok (PR):", color = colors.accent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("Elért személyes csúcsok (PR):", color = colors.accentText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     prRecords.forEach { pr ->
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -267,7 +267,7 @@ fun JournalWorkoutCard(
                             shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = colors.card2)
                         ) {
-                            Icon(Icons.Default.DirectionsRun, contentDescription = null, tint = colors.accent, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.DirectionsRun, contentDescription = null, tint = colors.accentText, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(8.dp))
                             Text("↗ GPS-útvonal megtekintése", color = colors.text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         }

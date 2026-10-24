@@ -87,7 +87,7 @@ fun HomeScreen(
                 ) {
                     Text(
                         text = "KÖVETKEZŐ EDZÉS",
-                        color = colors.accent,
+                        color = colors.accentText,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
@@ -117,9 +117,9 @@ fun HomeScreen(
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                 ) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color(0xFF0E1015))
+                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = colors.onAccent)
                     Spacer(Modifier.width(8.dp))
-                    Text("Edzés indítása", color = Color(0xFF0E1015), fontWeight = FontWeight.Bold)
+                    Text("Edzés indítása", color = colors.onAccent, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -182,7 +182,7 @@ fun HomeScreen(
                     modifier = Modifier
                         .size(8.dp)
                         .clip(CircleShape)
-                        .background(if (state.watchConnected == true) Color(0xFF3CA87D) else colors.muted)
+                        .background(if (state.watchConnected == true) colors.success else colors.muted)
                 )
             }
         }
@@ -248,7 +248,7 @@ fun QuickActionButton(
         border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
     ) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = colors.accent, modifier = Modifier.size(24.dp))
+            Icon(icon, contentDescription = null, tint = colors.accentText, modifier = Modifier.size(24.dp))
             Spacer(Modifier.width(10.dp))
             Column {
                 Text(title, color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)

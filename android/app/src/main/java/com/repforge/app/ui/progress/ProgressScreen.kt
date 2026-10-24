@@ -137,7 +137,7 @@ fun ProgressScreen(
                                     .clickable { viewModel.selectExercise(ex.id) }
                                     .padding(horizontal = 10.dp, vertical = 6.dp)
                             ) {
-                                Text(ex.nameHu, color = if (isSelected) Color(0xFF0E1015) else colors.text, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                Text(ex.nameHu, color = if (isSelected) colors.onAccent else colors.text, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
@@ -180,14 +180,14 @@ fun ProgressScreen(
                     ) {
                         Column {
                             Text("Testsúly-napló", color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                            Text("${state.currentWeightKg ?: "—"} kg aktuális", color = colors.accent, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Text("${state.currentWeightKg ?: "—"} kg aktuális", color = colors.accentText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                         }
                         Button(
                             onClick = { showWeightDialog = true },
                             shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = colors.card2)
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = colors.accent, modifier = Modifier.size(14.dp))
+                            Icon(Icons.Default.Add, contentDescription = null, tint = colors.accentText, modifier = Modifier.size(14.dp))
                             Spacer(Modifier.width(4.dp))
                             Text("Új mérés", color = colors.text, fontSize = 11.sp)
                         }
@@ -207,7 +207,7 @@ fun ProgressScreen(
                                     .padding(vertical = 6.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(label, color = if (isSel) Color(0xFF0E1015) else colors.muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Text(label, color = if (isSel) colors.onAccent else colors.muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -264,7 +264,7 @@ fun ProgressScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                 ) {
-                    Text("Mentés", color = Color(0xFF0E1015), fontWeight = FontWeight.Bold)
+                    Text("Mentés", color = colors.onAccent, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -297,7 +297,7 @@ fun TrendCanvas(points: List<Double>) {
 
         drawPath(
             path = path,
-            color = colors.accent,
+            color = colors.accentText,
             style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
         )
         offsets.forEach { o ->

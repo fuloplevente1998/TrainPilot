@@ -346,7 +346,7 @@ fun FloatingActiveWorkoutBanner(
                 modifier = Modifier
                     .size(10.dp)
                     .clip(CircleShape)
-                    .background(if (isPaused) colors.accent else Color(0xFF3CA87D))
+                    .background(if (isPaused) colors.accent else colors.success)
             )
             Spacer(Modifier.width(10.dp))
             Column {
@@ -365,7 +365,7 @@ fun FloatingActiveWorkoutBanner(
         }
         Text(
             text = labels[3],
-            color = colors.accent,
+            color = colors.accentText,
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold
         )

@@ -74,7 +74,7 @@ fun TrainingProgramsScreen(
                     .clickable { viewModel.openPersonalPlanner() },
                 shape = RoundedCornerShape(18.dp),
                 colors = CardDefaults.cardColors(containerColor = colors.card2),
-                border = androidx.compose.foundation.BorderStroke(1.dp, colors.accent.copy(alpha = 0.4f))
+                border = androidx.compose.foundation.BorderStroke(1.dp, colors.emphasisBorder)
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
@@ -83,7 +83,7 @@ fun TrainingProgramsScreen(
                     Icon(
                         imageVector = Icons.Default.AutoAwesome,
                         contentDescription = null,
-                        tint = colors.accent,
+                        tint = colors.accentText,
                         modifier = Modifier.size(28.dp)
                     )
                     Spacer(Modifier.width(12.dp))
@@ -100,7 +100,7 @@ fun TrainingProgramsScreen(
                             fontSize = 12.sp
                         )
                     }
-                    Text("Megnyitás ›", color = colors.accent, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Megnyitás ›", color = colors.accentText, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -155,7 +155,7 @@ fun ProgramCardItem(
         colors = CardDefaults.cardColors(containerColor = colors.card),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
-            if (isActive) colors.accent else colors.line
+            if (isActive) colors.selectedBorder else colors.line
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -184,7 +184,7 @@ fun ProgramCardItem(
                     }
                 }
                 if (isActive) {
-                    Text("Aktív", color = colors.accent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("Aktív", color = colors.accentText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 } else {
                     OutlinedButton(
                         onClick = onActivate,
@@ -209,7 +209,7 @@ fun ProgramCardItem(
             ) {
                 Text(
                     text = "${programWithDays.days.size} edzésnap megtekintése",
-                    color = colors.accent,
+                    color = colors.accentText,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -242,9 +242,9 @@ fun ProgramCardItem(
                                 shape = RoundedCornerShape(8.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                             ) {
-                                Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color(0xFF0E1015))
+                                Icon(Icons.Default.PlayArrow, contentDescription = null, tint = colors.onAccent)
                                 Spacer(Modifier.width(4.dp))
-                                Text("Indítás", color = Color(0xFF0E1015), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text("Indítás", color = colors.onAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }

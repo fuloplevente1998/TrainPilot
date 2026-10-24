@@ -34,6 +34,12 @@ data class TrainPilotExtendedColors(
     val muted: Color = MutedColor,
     val accent: Color,
     val accent2: Color,
+    val onAccent: Color = NativeThemeTokens.onFill(accent),
+    val onAccent2: Color = NativeThemeTokens.onFill(accent2),
+    val accentText: Color = NativeThemeTokens.readableAccent(accent),
+    val selectedSurface: Color = Card2Color,
+    val selectedBorder: Color = LineColor,
+    val emphasisBorder: Color = LineColor,
     val danger: Color = DangerColor,
     val dangerText: Color = DangerTextColor,
     val success: Color = SuccessColor
@@ -102,30 +108,19 @@ fun TrainPilotTheme(
     settings: TrainPilotUserSettings,
     content: @Composable () -> Unit
 ) {
-    val accentParsed = runCatching { Color(android.graphics.Color.parseColor(settings.themeAccent)) }
-        .getOrDefault(Color(0xFF4D8FBE))
-    val accent2Parsed = runCatching { Color(android.graphics.Color.parseColor(settings.themeAccent2)) }
-        .getOrDefault(Color(0xFF7CB4D6))
-
+    val colors = androidx.compose.runtime.remember(settings.themeAccent, settings.themeAccent2, settings.themeFamily) {
+        NativeThemeTokens.resolve(settings)
+    }
     val colorScheme = darkColorScheme(
-        primary = accentParsed,
-        secondary = accent2Parsed,
-        background = BgColor,
-        surface = CardColor,
-        surfaceVariant = Card2Color,
-        onPrimary = Color(0xFF0E1015),
-        onSecondary = Color(0xFF0E1015),
-        onBackground = TextColor,
-        onSurface = TextColor,
-        outline = LineColor
+        primary = colors.accent, secondary = colors.accent2,
+        background = colors.bg, surface = colors.card, surfaceVariant = colors.card2,
+        onPrimary = colors.onAccent, onSecondary = colors.onAccent2,
+        primaryContainer = colors.selectedSurface, onPrimaryContainer = colors.text,
+        onBackground = colors.text, onSurface = colors.text, onSurfaceVariant = colors.muted,
+        outline = colors.line
     )
 
-    val extendedColors = TrainPilotExtendedColors(
-        accent = accentParsed,
-        accent2 = accent2Parsed
-    )
-
-    CompositionLocalProvider(LocalTrainPilotColors provides extendedColors) {
+    CompositionLocalProvider(LocalTrainPilotColors provides colors) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = TrainPilotTypography,
