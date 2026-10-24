@@ -505,6 +505,63 @@ class NativePhoneNavigationTest {
         compose.onNodeWithText("Nincs aktív BLE háttérkapcsolat.").assertExists()
     }
 
+    @Test fun personalPlannerIsReadOnlyUntilExplicitAcceptance() {
+        runBlocking(Dispatchers.IO) {
+            settings.saveTrainingProfile(JSONObject().put("minutes", 60)
+                .put("goal", "fitness").put("experience", "beginner")
+                .put("gear", org.json.JSONArray().put("dumbbells").put("barbell")))
+        }
+        val db = TrainPilotDatabase.getInstance(context)
+        val baseline = runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() }
+        launch(); tab("training")
+        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
+        compose.onNodeWithTag("personal_planner_open").performClick()
+        compose.onNodeWithTag("personal_preview").assertExists()
+        compose.onNodeWithTag("personal_preview_accept").assertIsEnabled()
+        screenshot("personal_ab_preview")
+        assertEquals(baseline, runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() })
+        assertEquals("home-basic", runBlocking(Dispatchers.IO) { settings.current().activeProgramId })
+    }
+
+    @Test fun personalPlannerAcceptanceCreatesNewProgramAndRetainsTrialWeights() {
+        runBlocking(Dispatchers.IO) {
+            settings.saveTrainingProfile(JSONObject().put("minutes", 45)
+                .put("goal", "fitness").put("experience", "beginner")
+                .put("gear", org.json.JSONArray().put("dumbbells").put("barbell")))
+        }
+        launch(); tab("training")
+        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
+        compose.onNodeWithTag("personal_planner_open").performClick()
+        compose.onNodeWithTag("personal_preview_accept").performClick()
+        compose.waitUntil(15000) { runBlocking(Dispatchers.IO) {
+            settings.current().activeProgramId.startsWith("custom-program-")
+        } }
+        val db = TrainPilotDatabase.getInstance(context)
+        val active = runBlocking(Dispatchers.IO) {
+            db.programDao().getProgramWithDaysById(settings.current().activeProgramId)!! }
+        assertEquals("profile-template", active.program.sourceType)
+        assertEquals(2, active.program.templateVersion)
+        val recipes = JSONObject(active.program.rawJson).getJSONObject("prescriptions")
+        assertTrue(recipes.keys().hasNext())
+        assertTrue(recipes.keys().asSequence().all {
+            val rx = recipes.getJSONObject(it)
+            rx.getInt("weight") == 0 && rx.getInt("rir") == 2
+        })
+        assertTrue(runBlocking(Dispatchers.IO) { db.programDao().getProgramWithDaysById("home-basic")!!.program.builtin })
+        assertFalse(ActiveWorkoutStore.current(context)?.optBoolean("active") == true)
+    }
+
+    @Test fun personalPlannerRequiresExplicitDurationAndEquipment() {
+        launch(); tab("training")
+        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
+        compose.onNodeWithTag("personal_planner_open").performClick()
+        compose.onNodeWithTag("personal_preview_blocked").assertExists()
+        compose.onNodeWithTag("personal_preview_accept").assertIsNotEnabled()
+    }
+
     @Test fun programEditorCreatesCustomPlanAndRenamesDayWithoutStartingWorkout() {
         launch(); tab("training")
         compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
