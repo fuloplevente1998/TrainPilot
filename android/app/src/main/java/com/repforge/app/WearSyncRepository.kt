@@ -467,7 +467,7 @@ object WearSyncRepository {
             val appContext = context.applicationContext
             val db = TrainPilotDatabase.getInstance(appContext)
             val settingsStore = TrainPilotSettingsStore(appContext)
-            TrainPilotDatabase.ensureBuiltinCatalogSeeded(db)
+            TrainPilotDatabase.ensureBuiltinCatalogSeeded(db, appContext)
 
             val settings = settingsStore.current()
             val allExercises = db.exerciseLibraryDao().getAllExercises().associateBy { it.id }

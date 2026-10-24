@@ -401,7 +401,7 @@ fun ActiveWorkoutScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column {
-                                Text(libEx.nameHu, color = colors.text, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                                Text(when (language) { "en" -> libEx.nameEn; "de" -> libEx.nameDe; "ro" -> libEx.nameRo; else -> libEx.nameHu }, color = colors.text, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                                 Text("${libEx.primaryMuscle} • ${libEx.loadType}", color = colors.muted, fontSize = 11.sp)
                             }
                             Icon(Icons.Default.Add, contentDescription = null, tint = colors.accent)

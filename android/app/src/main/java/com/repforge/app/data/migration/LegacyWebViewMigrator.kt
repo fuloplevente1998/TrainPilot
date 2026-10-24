@@ -88,7 +88,7 @@ class LegacyWebViewMigrator(
     suspend fun migrateIfNeeded() = withContext(Dispatchers.IO) {
         val currentSettings = settingsStore.current()
         if (currentSettings.migrationV1371Complete) {
-            TrainPilotDatabase.ensureBuiltinCatalogSeeded(database)
+            TrainPilotDatabase.ensureBuiltinCatalogSeeded(database, context)
             return@withContext
         }
 
@@ -110,7 +110,7 @@ class LegacyWebViewMigrator(
             importBackupJson(compositeRoot, replaceAll = false)
         }
 
-        TrainPilotDatabase.ensureBuiltinCatalogSeeded(database)
+        TrainPilotDatabase.ensureBuiltinCatalogSeeded(database, context)
         settingsStore.ensureCloudDeviceId()
         settingsStore.markMigrationComplete()
     }
@@ -202,30 +202,31 @@ class LegacyWebViewMigrator(
                     val ex = exercisesArr.optJSONObject(i) ?: continue
                     val id = ex.optString("id").trim()
                     if (id.isEmpty()) continue
-                    val muscles = ex.optJSONArray("muscles") ?: JSONArray()
+                    val builtin = if (!ex.optBoolean("custom")) com.repforge.app.data.db.NativeBuiltinCatalog.exercises.firstOrNull { it.id == id } else null
+                    val muscles = ex.optJSONArray("muscles") ?: builtin?.let { JSONArray(it.muscleGroupsJson) } ?: JSONArray()
                     entities.add(
                         ExerciseLibraryEntity(
                             id = id,
-                            nameHu = ex.optString("hu", ex.optString("name", id)),
-                            nameEn = ex.optString("en", ex.optString("name", id)),
-                            nameDe = ex.optString("de", ex.optString("en", id)),
-                            nameRo = ex.optString("ro", ex.optString("en", id)),
-                            loadType = ex.optString("loadType", "weight"),
-                            repUnit = ex.optString("repUnit", "ism."),
-                            measurementType = ex.optString("measurementType", "reps"),
-                            defaultSets = ex.optInt("sets", 3).coerceIn(1, 20),
-                            defaultReps = ex.optString("reps", "10"),
-                            defaultWeight = ex.optDouble("weight", 0.0).let { if (it.isFinite() && it >= 0.0) it else 0.0 },
+                            nameHu = ex.optString("hu", ex.optString("name", builtin?.nameHu ?: id)),
+                            nameEn = ex.optString("en", builtin?.nameEn ?: ex.optString("name", id)),
+                            nameDe = ex.optString("de").ifBlank { builtin?.nameDe ?: ex.optString("en", id) },
+                            nameRo = ex.optString("ro").ifBlank { builtin?.nameRo ?: ex.optString("en", id) },
+                            loadType = ex.optString("loadType", builtin?.loadType ?: "weight"),
+                            repUnit = ex.optString("repUnit", builtin?.repUnit ?: "ism."),
+                            measurementType = if (builtin?.measurementType == "distance") "distance" else ex.optString("measurementType", builtin?.measurementType ?: "reps"),
+                            defaultSets = ex.optInt("sets", builtin?.defaultSets ?: 3).coerceIn(1, 20),
+                            defaultReps = ex.optString("reps", builtin?.defaultReps ?: "10"),
+                            defaultWeight = ex.optDouble("weight", builtin?.defaultWeight ?: 0.0).let { if (it.isFinite() && it >= 0.0) it else 0.0 },
                             defaultRestSeconds = ex.optInt("restSeconds", 90).coerceIn(0, 3600),
                             primaryMuscle = ex.optString("primaryMuscle", if (muscles.length() > 0) muscles.optString(0, "full") else "full"),
                             muscleGroupsJson = muscles.toString(),
-                            notesHu = ex.optString("notes", ""),
-                            notesEn = ex.optString("notesEn", ex.optString("notes", "")),
-                            notesDe = ex.optString("notesDe", ""),
-                            notesRo = ex.optString("notesRo", ""),
-                            videoUrl = ex.optString("videoUrl").takeIf { it.isNotBlank() },
-                            videoProvider = ex.optString("provider").takeIf { it.isNotBlank() },
-                            custom = ex.optBoolean("custom", true),
+                            notesHu = ex.optString("notes", builtin?.notesHu ?: ""),
+                            notesEn = ex.optString("notesEn").ifBlank { builtin?.notesEn ?: ex.optString("notes", "") },
+                            notesDe = ex.optString("notesDe").ifBlank { builtin?.notesDe ?: "" },
+                            notesRo = ex.optString("notesRo").ifBlank { builtin?.notesRo ?: "" },
+                            videoUrl = ex.optString("videoUrl").takeIf { it.isNotBlank() } ?: builtin?.videoUrl,
+                            videoProvider = ex.optString("provider").takeIf { it.isNotBlank() } ?: builtin?.videoProvider,
+                            custom = ex.optBoolean("custom", builtin == null),
                             setRir229 = ex.optBoolean("setRir229", false),
                             rawJson = ex.toString()
                         )
@@ -245,13 +246,15 @@ class LegacyWebViewMigrator(
                     val pid = p.optString("id").trim()
                     if (pid.isEmpty()) continue
                     val name = p.optString("name", pid)
+                    val bundled = if (p.optBoolean("builtin", true)) com.repforge.app.data.db.NativeBuiltinCatalog.programs else null
+                    val builtin = bundled?.first?.firstOrNull { it.id == pid }
                     progEntities.add(
                         ProgramEntity(
                             id = pid,
                             nameHu = p.optString("hu", name),
-                            nameEn = p.optString("en", name),
-                            nameDe = p.optString("de", name),
-                            nameRo = p.optString("ro", name),
+                            nameEn = p.optString("en").ifBlank { builtin?.nameEn ?: name },
+                            nameDe = p.optString("de").ifBlank { builtin?.nameDe ?: name },
+                            nameRo = p.optString("ro").ifBlank { builtin?.nameRo ?: name },
                             location = p.optString("location", "Otthon"),
                             level = p.optString("level", "Kezdő"),
                             description = p.optString("description", ""),
@@ -272,15 +275,16 @@ class LegacyWebViewMigrator(
                             val d = daysArr.optJSONObject(dIdx) ?: continue
                             val did = d.optString("id", (dIdx + 1).toString())
                             val dName = d.optString("name", did)
+                            val builtinDay = bundled?.second?.firstOrNull { it.programId == pid && it.dayId == did }
                             dayEntities.add(
                                 ProgramDayEntity(
                                     compositeId = "$pid:$did",
                                     programId = pid,
                                     dayId = did,
                                     nameHu = d.optString("hu", dName),
-                                    nameEn = d.optString("en", dName),
-                                    nameDe = d.optString("de", dName),
-                                    nameRo = d.optString("ro", dName),
+                                    nameEn = d.optString("en").ifBlank { builtinDay?.nameEn ?: dName },
+                                    nameDe = d.optString("de").ifBlank { builtinDay?.nameDe ?: dName },
+                                    nameRo = d.optString("ro").ifBlank { builtinDay?.nameRo ?: dName },
                                     sortOrder = dIdx,
                                     exercisesJson = (d.optJSONArray("exercises") ?: JSONArray()).toString()
                                 )

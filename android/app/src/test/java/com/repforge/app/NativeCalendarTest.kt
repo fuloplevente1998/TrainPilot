@@ -51,7 +51,7 @@ class NativeCalendarTest {
         settings = TrainPilotSettingsStore(context)
         runBlocking {
             settings.resetAllSettingsForEraseLocal()
-            TrainPilotDatabase.ensureBuiltinCatalogSeeded(db)
+            TrainPilotDatabase.ensureBuiltinCatalogSeeded(db, context)
         }
     }
 

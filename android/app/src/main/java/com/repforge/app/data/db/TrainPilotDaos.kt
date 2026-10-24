@@ -21,6 +21,12 @@ interface ProgramDao {
     @Query("SELECT * FROM programs WHERE id = :programId LIMIT 1")
     suspend fun getProgramWithDaysById(programId: String): ProgramWithDays?
 
+    @Query("SELECT id FROM programs")
+    suspend fun getProgramIds(): List<String>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertMissingProgram(program: ProgramEntity): Long
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertPrograms(programs: List<ProgramEntity>)
 
@@ -57,6 +63,12 @@ interface ExerciseLibraryDao {
 
     @Query("SELECT * FROM exercise_library WHERE id = :id LIMIT 1")
     suspend fun getExerciseById(id: String): ExerciseLibraryEntity?
+
+    @Query("SELECT id FROM exercise_library")
+    suspend fun getExerciseIds(): List<String>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertMissingExercises(exercises: List<ExerciseLibraryEntity>): List<Long>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertExercises(exercises: List<ExerciseLibraryEntity>)

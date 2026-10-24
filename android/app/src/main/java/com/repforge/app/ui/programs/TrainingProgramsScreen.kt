@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,6 +55,7 @@ import org.json.JSONArray
 @Composable
 fun TrainingProgramsScreen(
     navController: NavController,
+    language: String = "hu",
     viewModel: TrainingProgramsViewModel = viewModel(),
     onStartProgramDay: (String, String) -> Unit
 ) {
@@ -63,6 +65,7 @@ fun TrainingProgramsScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
+            .testTag("program_list")
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -136,6 +139,7 @@ fun TrainingProgramsScreen(
             ProgramCardItem(
                 programWithDays = programWithDays,
                 isActive = isActive,
+                language = language,
                 onActivate = { viewModel.activateProgram(programWithDays.program.id) },
                 onStartDay = { dayId -> onStartProgramDay(programWithDays.program.id, dayId) }
             )
@@ -147,15 +151,19 @@ fun TrainingProgramsScreen(
 fun ProgramCardItem(
     programWithDays: ProgramWithDays,
     isActive: Boolean,
+    language: String = "hu",
     onActivate: () -> Unit,
     onStartDay: (String) -> Unit
 ) {
     val colors = LocalTrainPilotColors.current
     var expanded by remember { mutableStateOf(isActive) }
     val prog = programWithDays.program
+    fun name(hu: String, en: String, de: String, ro: String) = when (language) {
+        "en" -> en; "de" -> de; "ro" -> ro; else -> hu
+    }.ifBlank { hu }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("program_${prog.id}"),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = colors.card),
         border = androidx.compose.foundation.BorderStroke(
@@ -176,7 +184,7 @@ fun ProgramCardItem(
                             .background(colors.card2)
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
-                        Text(prog.location, color = colors.accent2, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text(com.repforge.app.data.db.NativeBuiltinCatalog.programMetadata(prog, "location", language), color = colors.accent2, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     }
                     Spacer(Modifier.width(6.dp))
                     Box(
@@ -185,7 +193,7 @@ fun ProgramCardItem(
                             .background(colors.card2)
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
-                        Text(prog.level, color = colors.muted, fontSize = 10.sp)
+                        Text(com.repforge.app.data.db.NativeBuiltinCatalog.programMetadata(prog, "level", language), color = colors.muted, fontSize = 10.sp)
                     }
                 }
                 if (isActive) {
@@ -201,7 +209,7 @@ fun ProgramCardItem(
                 }
             }
             Spacer(Modifier.height(8.dp))
-            Text(prog.nameHu, color = colors.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text(name(prog.nameHu, prog.nameEn, prog.nameDe, prog.nameRo), color = colors.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Text(prog.description, color = colors.muted, fontSize = 12.sp)
 
             Spacer(Modifier.height(12.dp))
@@ -239,7 +247,7 @@ fun ProgramCardItem(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column {
-                                Text(day.nameHu, color = colors.text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                                Text(name(day.nameHu, day.nameEn, day.nameDe, day.nameRo), color = colors.text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                                 Text("$exCount gyakorlat", color = colors.muted, fontSize = 11.sp)
                             }
                             Button(

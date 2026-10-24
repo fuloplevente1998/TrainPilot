@@ -51,7 +51,7 @@ class NativePhoneNavigationTest {
         runBlocking(Dispatchers.IO) {
             val db = TrainPilotDatabase.getInstance(context)
             db.clearAllTables()
-            TrainPilotDatabase.ensureBuiltinCatalogSeeded(db)
+            TrainPilotDatabase.ensureBuiltinCatalogSeeded(db, context)
             settings.resetAllSettingsForEraseLocal()
             settings.markMigrationComplete()
         }
@@ -239,6 +239,19 @@ class NativePhoneNavigationTest {
         assertEquals(original.getJSONArray("exercises").toString(), after.getJSONArray("exercises").toString())
         assertEquals(programs, runBlocking { db.programDao().getProgramsWithDays().map { it.program.rawJson } })
         assertEquals(0, runBlocking { db.workoutHistoryDao().getWorkoutCount() })
+    }
+
+    @Test fun fullBundledCatalogBootsAndTheLastBuiltinProgramIsReachableInEnglish() {
+        runBlocking { settings.setLanguage("en") }
+        val db = TrainPilotDatabase.getInstance(context)
+        assertEquals(106, runBlocking { db.exerciseLibraryDao().getExerciseIds().size })
+        assertEquals(13, runBlocking { db.programDao().getProgramIds().size })
+        launch()
+        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("program_gym-strength-abc"))
+        compose.onNodeWithTag("program_gym-strength-abc").assertIsDisplayed()
+        compose.onNodeWithText("Gym strength A/B/C").assertIsDisplayed()
+        screenshot("programs_full_catalog", "en")
     }
 
 }
