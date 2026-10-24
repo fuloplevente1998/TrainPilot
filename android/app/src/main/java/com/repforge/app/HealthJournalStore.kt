@@ -821,6 +821,7 @@ internal class HealthJournalStore(context: Context) :
     }
 
     @Throws(Exception::class)
+    @JvmOverloads
     fun page(
         from: String,
         to: String,
@@ -828,7 +829,9 @@ internal class HealthJournalStore(context: Context) :
         source: String,
         before: Long,
         beforeTime: Long,
-        limit: Int
+        limit: Int,
+        recordType: String = "",
+        includeSummaries: Boolean = true
     ): JSONObject {
         if (!validDay(from) || !validDay(to) || from > to) {
             throw IllegalArgumentException("Invalid health period")
@@ -836,6 +839,7 @@ internal class HealthJournalStore(context: Context) :
         if (channel.isNotEmpty() && channel !in listOf(HC, BLE, LEGACY, SAMSUNG, "journal")) {
             throw IllegalArgumentException("Invalid channel")
         }
+        require(recordType.length <= 80) { "Invalid health record type" }
         synchronized(LOCK) {
             val db = readableDatabase
             val boundedLimit = max(1, min(50, limit))
@@ -859,6 +863,10 @@ internal class HealthJournalStore(context: Context) :
                 where += " AND source=?"
                 args.add(source)
             }
+            if (recordType.isNotEmpty()) {
+                where += " AND type=?"
+                args.add(recordType)
+            }
             val rows = JSONArray()
             var next = 0L
             var nextTime = 0L
@@ -880,9 +888,18 @@ internal class HealthJournalStore(context: Context) :
                 }
             }
             val origins = JSONArray()
+            val originArgs = arrayListOf<String>()
+            var originWhere = ""
+            if (!includeSummaries) {
+                originWhere = " WHERE day>=? AND day<=?"
+                originArgs.add(from); originArgs.add(to)
+                if (channel == "journal") originWhere += " AND channel<>'ble_watch'"
+                else if (channel.isNotEmpty()) { originWhere += " AND channel=?"; originArgs.add(channel) }
+                if (recordType.isNotEmpty()) { originWhere += " AND type=?"; originArgs.add(recordType) }
+            }
             db.rawQuery(
-                "SELECT channel,source,MAX(row_id),json FROM records GROUP BY channel,source ORDER BY channel,source LIMIT 200",
-                null
+                "SELECT channel,source,MAX(row_id),json FROM records$originWhere GROUP BY channel,source ORDER BY channel,source LIMIT 200",
+                originArgs.toTypedArray()
             ).use { c ->
                 while (c.moveToNext()) {
                     origins.put(
@@ -894,71 +911,73 @@ internal class HealthJournalStore(context: Context) :
                 }
             }
             var summaries = JSONArray()
-            val dayArgs = ArrayList<String>(listOf(from, to))
-            var dayWhere = "day>=? AND day<=?"
-            if ("journal" == channel) {
-                dayWhere += " AND (channel='health_connect' AND source='@aggregate' OR channel='legacy' AND NOT EXISTS (SELECT 1 FROM days AS hc WHERE hc.day=days.day AND hc.channel='health_connect' AND hc.source='@aggregate'))"
-            } else if (channel.isNotEmpty()) {
-                dayWhere += " AND channel=?"
-                dayArgs.add(channel)
-            }
-            if (source.isNotEmpty()) {
-                dayWhere += " AND source=?"
-                dayArgs.add(source)
-            } else {
-                dayWhere += " AND (channel<>'health_connect' OR source='@aggregate')"
-            }
-            db.rawQuery(
-                "SELECT day,channel,source,json FROM days WHERE $dayWhere ORDER BY day DESC,channel,source LIMIT 31",
-                dayArgs.toTypedArray()
-            ).use { c ->
-                while (c.moveToNext()) {
-                    val d = JSONObject(c.getString(3))
-                    if (c.getString(1) == HC) {
-                        d.put("sleepSessions", sleepSessions(db, c.getString(0), if ("@aggregate" == c.getString(2)) "" else c.getString(2)))
-                    }
-                    db.rawQuery("SELECT day FROM dirty_days WHERE day=?", arrayOf(c.getString(0))).use { dirty ->
-                        if (dirty.moveToFirst()) d.put("partial", true)
-                    }
-                    d.put("channel", c.getString(1))
-                    d.put("source", c.getString(2))
-                    d.put("day", c.getString(0))
-                    summaries.put(d)
+            if (includeSummaries) {
+                val dayArgs = ArrayList<String>(listOf(from, to))
+                var dayWhere = "day>=? AND day<=?"
+                if ("journal" == channel) {
+                    dayWhere += " AND (channel='health_connect' AND source='@aggregate' OR channel='legacy' AND NOT EXISTS (SELECT 1 FROM days AS hc WHERE hc.day=days.day AND hc.channel='health_connect' AND hc.source='@aggregate'))"
+                } else if (channel.isNotEmpty()) {
+                    dayWhere += " AND channel=?"
+                    dayArgs.add(channel)
                 }
-            }
-            if ("journal" == channel) {
-                summaries = JSONArray()
-                val preferred = meta(db, "provider", HC)
+                if (source.isNotEmpty()) {
+                    dayWhere += " AND source=?"
+                    dayArgs.add(source)
+                } else {
+                    dayWhere += " AND (channel<>'health_connect' OR source='@aggregate')"
+                }
                 db.rawQuery(
-                    "SELECT DISTINCT day FROM days WHERE day>=? AND day<=? AND channel<>'ble_watch' ORDER BY day DESC LIMIT 31",
-                    arrayOf(from, to)
-                ).use { dates ->
-                    while (dates.moveToNext()) {
-                        val date = dates.getString(0)
-                        var hc: JSONObject? = null
-                        var samsung: JSONObject? = null
-                        var legacy: JSONObject? = null
-                        db.rawQuery("SELECT channel,source,json FROM days WHERE day=?", arrayOf(date)).use { c ->
-                            while (c.moveToNext()) {
-                                when {
-                                    c.getString(0) == HC && "@aggregate" == c.getString(1) -> hc = JSONObject(c.getString(2))
-                                    c.getString(0) == SAMSUNG && "@aggregate" == c.getString(1) -> samsung = JSONObject(c.getString(2))
-                                    c.getString(0) == LEGACY -> legacy = JSONObject(c.getString(2))
+                    "SELECT day,channel,source,json FROM days WHERE $dayWhere ORDER BY day DESC,channel,source LIMIT 31",
+                    dayArgs.toTypedArray()
+                ).use { c ->
+                    while (c.moveToNext()) {
+                        val d = JSONObject(c.getString(3))
+                        if (c.getString(1) == HC) {
+                            d.put("sleepSessions", sleepSessions(db, c.getString(0), if ("@aggregate" == c.getString(2)) "" else c.getString(2)))
+                        }
+                        db.rawQuery("SELECT day FROM dirty_days WHERE day=?", arrayOf(c.getString(0))).use { dirty ->
+                            if (dirty.moveToFirst()) d.put("partial", true)
+                        }
+                        d.put("channel", c.getString(1))
+                        d.put("source", c.getString(2))
+                        d.put("day", c.getString(0))
+                        summaries.put(d)
+                    }
+                }
+                if ("journal" == channel) {
+                    summaries = JSONArray()
+                    val preferred = meta(db, "provider", HC)
+                    db.rawQuery(
+                        "SELECT DISTINCT day FROM days WHERE day>=? AND day<=? AND channel<>'ble_watch' ORDER BY day DESC LIMIT 31",
+                        arrayOf(from, to)
+                    ).use { dates ->
+                        while (dates.moveToNext()) {
+                            val date = dates.getString(0)
+                            var hc: JSONObject? = null
+                            var samsung: JSONObject? = null
+                            var legacy: JSONObject? = null
+                            db.rawQuery("SELECT channel,source,json FROM days WHERE day=?", arrayOf(date)).use { c ->
+                                while (c.moveToNext()) {
+                                    when {
+                                        c.getString(0) == HC && "@aggregate" == c.getString(1) -> hc = JSONObject(c.getString(2))
+                                        c.getString(0) == SAMSUNG && "@aggregate" == c.getString(1) -> samsung = JSONObject(c.getString(2))
+                                        c.getString(0) == LEGACY -> legacy = JSONObject(c.getString(2))
+                                    }
                                 }
                             }
-                        }
-                        if (hc == null && legacy == null && (preferred != SAMSUNG || samsung == null)) continue
-                        if (hc != null) hc!!.put("sleepSessions", sleepSessions(db, date, ""))
-                        val selected = HealthProviderProjection.day(hc, samsung, legacy, preferred).put("day", date)
-                        if (!selected.has("source")) {
-                            selected.put("source", if (hc != null || samsung != null) "@aggregate" else "unknown")
-                        }
-                        db.rawQuery("SELECT day FROM dirty_days WHERE day=?", arrayOf(date)).use { dirty ->
-                            if (dirty.moveToFirst() && selected.optString("channel") == HC) {
-                                selected.put("partial", true)
+                            if (hc == null && legacy == null && (preferred != SAMSUNG || samsung == null)) continue
+                            if (hc != null) hc!!.put("sleepSessions", sleepSessions(db, date, ""))
+                            val selected = HealthProviderProjection.day(hc, samsung, legacy, preferred).put("day", date)
+                            if (!selected.has("source")) {
+                                selected.put("source", if (hc != null || samsung != null) "@aggregate" else "unknown")
                             }
+                            db.rawQuery("SELECT day FROM dirty_days WHERE day=?", arrayOf(date)).use { dirty ->
+                                if (dirty.moveToFirst() && selected.optString("channel") == HC) {
+                                    selected.put("partial", true)
+                                }
+                            }
+                            summaries.put(selected)
                         }
-                        summaries.put(selected)
                     }
                 }
             }
