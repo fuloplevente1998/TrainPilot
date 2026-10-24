@@ -6,7 +6,7 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
 ## Teljes natív gyakorlatkönyvtár és eredeti videó-hivatkozások
 
-**dbf808c5** `[skip ci]` utolsó alkalmazás-/tesztforrás; kizárólag
+**d5222a32** `[skip ci]` utolsó alkalmazás-/tesztforrás; kizárólag
 `feat/native-android-migration`. A végleges main `7473b30`
 (`www/app.js` blob `b5567576...`) adatalapjának tartalmát
 ellenőriztük: **106 beépített gyakorlat, ebből 100 konkrét YouTube
