@@ -4,6 +4,17 @@ Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Aktuális irány – előbb kód, utána összevont kapu (2026-10-24)
+
+Felhasználói kérés szerint az öt hátralévő terület kódját és tesztkódját előbb
+összeállítjuk a meglévő Kotlin-blokkok felhasználásával, utána teszteljük együtt.
+[Rögzített sorrend és forrásellenőrzés](plans/NATIVE_COMPLETION_BATCH.md).
+70 fájl történetileg importálva; nem minden blokk kész/bekötött funkció.
+Most nincs alkalmazáskód-változás vagy új teszteredmény. Következő: a meglevő
+források funkciónkénti bekötése/javítása és a telefonos Compose UI-kapu kódja;
+a teljes futtatást a batch végére időzítjük. Köztes commit `[skip ci]`.
+Utolsó zöld forrás továbbra `dd4cc27` lent; main/verzió változatlan.
+
 ## Legfrissebb zöld kapu – importált draft natív átvétele (2026-10-24)
 
 - **Bevizsgált CI-/APK-forrás `dd4cc273899fef9f631896e9fa0e223f2b6eb7fb`**; [natív CI 40072751592](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40072751592) **teljes SUCCESS, 6/6 job**. Letöltött XML: telefon **393/393**, Wear **167/167**; mind az előző **540** unit-eset megmaradt, +**20** új próba (12 preflight, 6 átvétel, 2 cleanup/finalization). Kerek Wear **183/183**, azonos esetazonosítókkal; eredeti és gyorsított 1.3.71-ről emulátoros signed upgrade **2/2**, nulla hiba/kihagyás. Dokumentációs HEAD eltérhet a tesztelt APK forrásától. A korábbi köztes futások leváltott/cancelled futások, nem zöld bizonylatok.

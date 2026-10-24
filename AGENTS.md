@@ -36,6 +36,17 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 - Ne küldj GitHub-kommentet vagy másoknak üzenetet külön kérés nélkül.
   A kért nyomonkövetéshez issue/PR leírását és állapotát frissítheted.
 
+## Aktuális natív befejezési munkamód (2026-10-24)
+
+- Felhasználói sorrend: előbb az öt hátralévő terület kódja és tesztkódja,
+  utána összevont funkcionális/UI ellenőrzés. Ne indíts minden részcommit után
+  teljes APK/emulátorkaput. Köztes kódolási commit `[skip ci]`; végső kapu
+  a meglévő natív workflow-val, rögzített alkalmazásforráson, GitHubon.
+- A meglévő Kotlin-blokkokból indulj ki: manifest/export és tényleges hívási út
+  ellenőrzése után javítás/bekötés. Prototípust és szimulált adatforrást ne
+  tekints kész termékfunkciónak. Részletes sorrend és forráshelyek:
+  `docs/plans/NATIVE_COMPLETION_BATCH.md`. Kész kód nem jelent zöld tesztet.
+
 ## Forrás és ellenőrzés
 
 - Issue megvalósítása előtt olvasd el a GitHub-jegy tényleges követelményeit.
