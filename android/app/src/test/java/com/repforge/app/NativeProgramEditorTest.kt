@@ -144,6 +144,40 @@ class NativeProgramEditorTest {
         assertNotNull(db.exerciseLibraryDao().getExerciseById("goblet-squat"))
     }
 
+    @Test fun legacyDayMetadataAndOtherLanguageNamesArePreservedOnEdit() = runBlocking {
+        val id = create()
+        val opened = db.programDao().getProgramWithDaysById(id)!!
+        val previous = opened.days.single()
+        val translated = previous.copy(nameEn = "Original English", nameDe = "Original Deutsch",
+            nameRo = "Original Română")
+        val original = JSONObject(opened.program.rawJson)
+        val rawDay = original.getJSONArray("days").getJSONObject(0)
+            .put("specialRestSeconds", 55)
+        original.put("legacyPriority", "keep").put("days", JSONArray().put(rawDay))
+        db.programDao().saveProgramWithDays(opened.program.copy(rawJson = original.toString()),
+            listOf(translated))
+        val latest = db.programDao().getProgramWithDaysById(id)!!
+        NativeProgramEditor.save(context, db, latest,
+            NativeProgramEditor.from(latest, "hu").copy(name = "Módosítva"), "hu")
+        val persisted = db.programDao().getProgramWithDaysById(id)!!
+        assertEquals("Original English", persisted.days.single().nameEn)
+        assertEquals("Original Deutsch", persisted.days.single().nameDe)
+        val saved = JSONObject(persisted.program.rawJson)
+        assertEquals("keep", saved.getString("legacyPriority"))
+        assertEquals(55, saved.getJSONArray("days").getJSONObject(0).getInt("specialRestSeconds"))
+    }
+
+    @Test fun scheduledProgramCannotBeDeletedEvenWhenInactive() = runBlocking {
+        val id = create()
+        val opened = db.programDao().getProgramWithDaysById(id)!!
+        db.calendarScheduleDao().upsertEntry(CalendarScheduleEntity("scheduled-plan-2", "event", "2026-11-01",
+            "2026-11-01T08:00:00Z", "2026-11-01T09:00:00Z", id, "Plan",
+            opened.days.first().dayId, "Day", "planned", 1, "{}"))
+        assertThrows(IllegalStateException::class.java) { runBlocking {
+            NativeProgramEditor.delete(context, db, opened, settings) } }
+        assertNotNull(db.programDao().getProgramWithDaysById(id))
+    }
+
     @Test fun replacementFenceRejectsProgramWrites() = runBlocking {
         context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE)
             .edit().putBoolean("blocked", true).commit()
