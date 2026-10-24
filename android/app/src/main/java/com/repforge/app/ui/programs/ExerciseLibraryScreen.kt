@@ -249,8 +249,8 @@ internal fun ExerciseLibraryScreen(language: String, model: ExerciseLibraryViewM
     if (editorOpen) {
         CustomExerciseDialog(exercise = editingExercise, language = language,
             saving = state.saving, error = state.editError,
-            onSave = { draft -> model.saveCustom(editingExercise?.id, draft, language) },
-            onDelete = { editingExercise?.id?.let(model::deleteCustom) },
+            onSave = { draft -> model.saveCustom(editingExercise?.id, draft, language, editingExercise?.rawJson) },
+            onDelete = { editingExercise?.let { model.deleteCustom(it.id, it.rawJson) } },
             onCancel = { if (!state.saving) { editorOpen = false; editingExercise = null; model.clearEditOutcome() } })
     }
 }
