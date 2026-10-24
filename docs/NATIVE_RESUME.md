@@ -20,6 +20,29 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   prototípus/fake Health-forrás tilos. Nyolcgombos menü helyett öt alsó fül elfogadva,
   jobb felső Settings; abból visszatérés nem pause, valódi editor-elhagyás igen.
 
+## Legújabb natív batch – főágbeli edzésprofil és Progress
+
+`cfdc6d05` `[skip ci]`. A main #128 `settings.profile`
+mezőjét natív DataStore + JSON/ZIP/Drive import/export
+úton megőrizzük. Edzésprofil szerkesztő HU/EN/DE/RO:
+fő scalar mezők, hiányzó testsúly/magasság nem
+kitalált; gear/excluded/avoidAreas/extra JSON megmarad.
+Restore-fence + stale-CAS, malformed profil még Room
+csere ELŐTT visszautasítva. A személyes A/B
+programgenerátor algoritmusát ez **még nem** pótolja.
+
+Progress: teljes `getAllWorkoutsWithDetails()`
+megszűnt; 30 napos Room izomterhelés-aggregátum
+és egy kiválasztott gyakorlat 1RM adatai
+256-os keyset-lapozással, tombstone-szűréssel,
+teljes 106+ gyakorlat chip, négy nyelv és load-error.
+**15 unit +3 Phone UI tesztkód**, összesen **286 unit
++31 Phone UI megírva, még nem futtatva**. 17 statikus
+bekötési check PASS; nincs Kotlin/Room build,
+emulátor/1500-as futás vagy APK-igazolás.
+PR #238 frissítve; tovább profilvezérelt generátor/
+Coach/progresszió, majd összevont natív CI.
+
 ## Legújabb natív batch – program- és programnapszerkesztő
 
 `87f9ee10` `[skip ci]`: meglévő Room `programs` és
