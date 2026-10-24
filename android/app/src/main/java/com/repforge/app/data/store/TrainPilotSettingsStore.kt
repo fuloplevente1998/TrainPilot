@@ -1,6 +1,7 @@
 package com.repforge.app.data.store
 
 import com.repforge.app.NativeDataReplacement
+import com.repforge.app.NativeTrainingProfile
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -57,6 +58,7 @@ data class TrainPilotUserSettings(
     val healthBackupConsent: Boolean = false,
     val autoWriteWorkoutToHealthConnect: Boolean = false,
     val onboarding128: String = "complete",
+    val profileJson: String = "{}",
     val weightRange: String = "30",
     val cloudDeviceId: String = "",
     val pendingFeedbackWorkoutId: String = "",
@@ -94,6 +96,7 @@ class TrainPilotSettingsStore(private val context: Context) {
         val KEY_HEALTH_BACKUP_CONSENT = booleanPreferencesKey("healthBackupConsent")
         val KEY_AUTO_WRITE_HC = booleanPreferencesKey("autoWriteWorkoutToHealthConnect")
         val KEY_ONBOARDING_128 = stringPreferencesKey("onboarding128")
+        val KEY_TRAINING_PROFILE = stringPreferencesKey("trainingProfile128")
         val KEY_WEIGHT_RANGE = stringPreferencesKey("weightRange")
         val KEY_CLOUD_DEVICE_ID = stringPreferencesKey("cloudDevice")
         val KEY_PENDING_FEEDBACK_ID = stringPreferencesKey("pendingFeedbackWorkoutId")
@@ -172,6 +175,7 @@ class TrainPilotSettingsStore(private val context: Context) {
             healthBackupConsent = prefs[KEY_HEALTH_BACKUP_CONSENT] ?: false,
             autoWriteWorkoutToHealthConnect = prefs[KEY_AUTO_WRITE_HC] ?: false,
             onboarding128 = prefs[KEY_ONBOARDING_128] ?: "complete",
+            profileJson = prefs[KEY_TRAINING_PROFILE] ?: "{}",
             weightRange = prefs[KEY_WEIGHT_RANGE] ?: "30",
             cloudDeviceId = prefs[KEY_CLOUD_DEVICE_ID] ?: "",
             pendingFeedbackWorkoutId = prefs[KEY_PENDING_FEEDBACK_ID] ?: "",
@@ -199,6 +203,14 @@ class TrainPilotSettingsStore(private val context: Context) {
         NativeDataReplacement.mutate(context) {
             if (language !in listOf("hu", "en", "de", "ro")) return@mutate
         context.trainPilotDataStore.edit { it[KEY_LANGUAGE] = language }
+        }
+    }
+
+    suspend fun saveTrainingProfile(profile: JSONObject) {
+        // Do not promote a blank/partial profile into inferred personal details.
+        val checked = NativeTrainingProfile.verified(profile)
+        NativeDataReplacement.mutate(context) {
+            context.trainPilotDataStore.edit { it[KEY_TRAINING_PROFILE] = checked.toString() }
         }
     }
 
@@ -327,6 +339,13 @@ class TrainPilotSettingsStore(private val context: Context) {
             if (source.has("autoWriteWorkoutToHealthConnect")) prefs[KEY_AUTO_WRITE_HC] = source.optBoolean("autoWriteWorkoutToHealthConnect")
             if (source.has("weightRange")) prefs[KEY_WEIGHT_RANGE] = source.optString("weightRange", "30")
             if (source.has("onboarding128")) prefs[KEY_ONBOARDING_128] = source.optString("onboarding128", "complete")
+            // Main #128 profile is a separate document under portable settings,
+            // not Google account identity. An explicit empty object clears it.
+            if (source.has("profile")) {
+                val profile = source.optJSONObject("profile")
+                    ?: throw IllegalArgumentException("Invalid training profile")
+                prefs[KEY_TRAINING_PROFILE] = NativeTrainingProfile.verified(profile).toString()
+            }
             source.optJSONObject("gpsStartChoices216")?.let { choices ->
                 val valid = JSONObject()
                 for (key in choices.keys()) if (com.repforge.app.NativeOutdoorStart.eligible(key, "distance", "km") && choices.opt(key) is Boolean)
