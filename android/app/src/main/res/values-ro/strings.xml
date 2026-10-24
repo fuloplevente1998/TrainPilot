@@ -1,11 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name">TrainPilot</string>
     <string name="nav_home">Acasă</string>
     <string name="nav_workout">Antrenament</string>
     <string name="nav_history">Istoric</string>
     <string name="nav_settings">Setări</string>
-
     <string name="active_workout_title">Antrenament Activ</string>
     <string name="start_workout">Începe Antrenamentul</string>
     <string name="quick_start">Start Rapid</string>
@@ -14,18 +13,65 @@
     <string name="cancel_confirm_title">Anulați Antrenamentul?</string>
     <string name="cancel_confirm_message">Sigur doriți să anulați antrenamentul activ? Progresul nesalvat va fi pierdut.</string>
     <string name="keep_training">Continuă Antrenamentul</string>
-
     <string name="rest_time">Timp de Pauză</string>
     <string name="skip_rest">Omite</string>
-
     <string name="pr_details_title">Detalii Record</string>
     <string name="pr_new_record">Nou Record Personal!</string>
     <string name="close">Închide</string>
-
     <string name="haptics_setting">Feedback Haptic</string>
     <string name="haptics_desc">Vibrație la apăsare și finalizarea seriilor</string>
-
     <string name="gps_indoor_mode">Mod Interior (GPS oprit)</string>
     <string name="gps_outdoor_mode">Urmărire Exterior</string>
     <string name="finish_cardio">Finalizează Cardio</string>
+    <string name="journal_search">Caută antrenamente sau exerciții</string>
+    <string name="journal_all_months">Toate lunile</string>
+    <string name="journal_previous_month">Luna precedentă</string>
+    <string name="journal_next_month">Luna următoare</string>
+    <string name="journal_empty">Nu ai antrenamente înregistrate</string>
+    <string name="journal_no_matches">Niciun antrenament potrivit</string>
+    <string name="journal_retry">Reîncearcă</string>
+    <string name="journal_error">Datele nu au putut fi încărcate. Reîncearcă.</string>
+    <string name="journal_operation_error">Operația a eșuat. Datele au fost păstrate.</string>
+    <string name="journal_details">Detalii antrenament</string>
+    <string name="journal_missing">Acest antrenament nu mai este disponibil.</string>
+    <string name="journal_minutes">%1$d min</string>
+    <string name="journal_sets">%1$d/%2$d serii</string>
+    <string name="journal_set">Serie</string>
+    <string name="journal_exercises">Exerciții</string>
+    <string name="journal_statistics">Statistici</string>
+    <string name="journal_source">Sursă</string>
+    <string name="journal_phone">Telefon</string>
+    <string name="journal_watch">Ceas</string>
+    <string name="journal_volume">Volum de antrenament</string>
+    <string name="journal_feedback">Feedback antrenament</string>
+    <string name="journal_no_data">Fără date</string>
+    <string name="journal_route">Traseu</string>
+    <string name="journal_route_error">Traseul nu este încă disponibil pe acest dispozitiv.</string>
+    <string name="journal_photos">Fotografii private de antrenament</string>
+    <string name="journal_photo_error">Fotografia nu este disponibilă pe acest dispozitiv.</string>
+    <string name="journal_calendar">Adaugă în calendar</string>
+    <string name="journal_delete">Șterge</string>
+    <string name="journal_delete_title">Șterge antrenamentul</string>
+    <string name="journal_delete_message">Ștergi acest antrenament? %1$s</string>
+    <string name="journal_cancel">Anulează</string>
+    <string name="journal_close">Închide</string>
+    <string name="journal_pr">Record personal</string>
+    <string name="journal_previous_record">Anterior: %1$s</string>
+    <string name="journal_reps">rep.</string>
+    <string name="journal_seconds">s</string>
+    <string name="journal_route_title">Traseu antrenament</string>
+    <string name="journal_route_points">Traseu offline · %1$d puncte GPS</string>
+    <string name="journal_partial_route">O parte a traseului nu a fost încă primită.</string>
+    <string name="journal_route_start">Start</string>
+    <string name="journal_route_finish">Sosire</string>
+    <string name="journal_route_path">Urmă</string>
+    <string name="journal_loading">Se încarcă</string>
+    <string name="journal_photo_before">Înainte</string>
+    <string name="journal_photo_after">După</string>
+    <string name="journal_effort_easy">Prea ușor</string>
+    <string name="journal_effort_light">Ușor</string>
+    <string name="journal_effort_good">Potrivit</string>
+    <string name="journal_effort_challenging">Solicitant</string>
+    <string name="journal_effort_hard">Greu</string>
+    <string name="journal_effort_pain">Durere</string>
 </resources>

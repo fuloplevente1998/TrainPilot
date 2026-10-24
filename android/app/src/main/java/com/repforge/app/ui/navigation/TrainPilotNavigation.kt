@@ -273,7 +273,7 @@ fun TrainPilotAppScaffold(
                         onStart = { row -> startWorkout(row.programId, row.dayId, row.id) })
                 }
                 composable(Screen.Journal.route) {
-                    JournalScreen(navController = navController)
+                    JournalScreen(navController = navController, language = settings.language)
                 }
                 composable(Screen.Progress.route) {
                     ProgressScreen(navController = navController)

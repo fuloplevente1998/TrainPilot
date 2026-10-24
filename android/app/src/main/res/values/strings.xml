@@ -1,11 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name">TrainPilot</string>
     <string name="nav_home">Főoldal</string>
     <string name="nav_workout">Edzés</string>
     <string name="nav_history">Napló</string>
     <string name="nav_settings">Beállítások</string>
-
     <string name="active_workout_title">Aktív Edzés</string>
     <string name="start_workout">Edzés Indítása</string>
     <string name="quick_start">Gyors Edzés Indítása</string>
@@ -14,18 +13,65 @@
     <string name="cancel_confirm_title">Edzés Megszakítása?</string>
     <string name="cancel_confirm_message">Biztosan meg akarod szakítani az aktív edzést? A nem mentett adatok elvesznek.</string>
     <string name="keep_training">Edzés Folytatása</string>
-
     <string name="rest_time">Pihenőidő</string>
     <string name="skip_rest">Kihagyás</string>
-
     <string name="pr_details_title">Rekord Részletei</string>
     <string name="pr_new_record">Új Egyéni Rekord!</string>
     <string name="close">Bezárás</string>
-
     <string name="haptics_setting">Haptikus Visszajelzés</string>
     <string name="haptics_desc">Rezgés gombok és sorozatok teljesítésekor</string>
-
     <string name="gps_indoor_mode">Beltéri Mód (GPS inaktív)</string>
     <string name="gps_outdoor_mode">Kültéri Követés</string>
     <string name="finish_cardio">Kardió/Intervallum Mérés Lezárása</string>
+    <string name="journal_search">Keresés edzésre vagy gyakorlatra</string>
+    <string name="journal_all_months">Összes hónap</string>
+    <string name="journal_previous_month">Előző hónap</string>
+    <string name="journal_next_month">Következő hónap</string>
+    <string name="journal_empty">Még nincs rögzített edzésed</string>
+    <string name="journal_no_matches">Nincs találat ezekkel a feltételekkel</string>
+    <string name="journal_retry">Újrapróbálás</string>
+    <string name="journal_error">Az adatokat nem sikerült betölteni. Próbáld újra.</string>
+    <string name="journal_operation_error">A művelet nem sikerült. Az adatok megmaradtak.</string>
+    <string name="journal_details">Edzés részletei</string>
+    <string name="journal_missing">Ez az edzés már nem érhető el.</string>
+    <string name="journal_minutes">%1$d perc</string>
+    <string name="journal_sets">%1$d/%2$d sorozat</string>
+    <string name="journal_set">Sorozat</string>
+    <string name="journal_exercises">Gyakorlatok</string>
+    <string name="journal_statistics">Statisztikák</string>
+    <string name="journal_source">Forrás</string>
+    <string name="journal_phone">Telefon</string>
+    <string name="journal_watch">Óra</string>
+    <string name="journal_volume">Edzésmennyiség</string>
+    <string name="journal_feedback">Edzésvisszajelzés</string>
+    <string name="journal_no_data">Nincs adat</string>
+    <string name="journal_route">Útvonal</string>
+    <string name="journal_route_error">Az útvonal még nem érhető el ezen a készüléken.</string>
+    <string name="journal_photos">Privát edzésfotók</string>
+    <string name="journal_photo_error">A fotó nem érhető el ezen a készüléken.</string>
+    <string name="journal_calendar">Naptárhoz adás</string>
+    <string name="journal_delete">Törlés</string>
+    <string name="journal_delete_title">Edzés törlése</string>
+    <string name="journal_delete_message">Biztosan törlöd ezt az edzést? %1$s</string>
+    <string name="journal_cancel">Mégse</string>
+    <string name="journal_close">Bezárás</string>
+    <string name="journal_pr">Személyes csúcs</string>
+    <string name="journal_previous_record">Előző: %1$s</string>
+    <string name="journal_reps">ism.</string>
+    <string name="journal_seconds">mp</string>
+    <string name="journal_route_title">Edzésútvonal</string>
+    <string name="journal_route_points">Offline útvonalnézet · %1$d GPS-pont</string>
+    <string name="journal_partial_route">Az útvonal egy része még nem érkezett meg.</string>
+    <string name="journal_route_start">Rajt</string>
+    <string name="journal_route_finish">Cél</string>
+    <string name="journal_route_path">Nyomvonal</string>
+    <string name="journal_loading">Betöltés</string>
+    <string name="journal_photo_before">Előtte</string>
+    <string name="journal_photo_after">Utána</string>
+    <string name="journal_effort_easy">Túl könnyű</string>
+    <string name="journal_effort_light">Könnyű</string>
+    <string name="journal_effort_good">Megfelelő</string>
+    <string name="journal_effort_challenging">Kihívást jelentő</string>
+    <string name="journal_effort_hard">Nehéz</string>
+    <string name="journal_effort_pain">Fájdalom</string>
 </resources>

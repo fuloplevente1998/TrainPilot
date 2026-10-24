@@ -107,6 +107,9 @@ dependencies {
     implementation "androidx.compose.material3:material3"
     implementation "androidx.compose.material:material-icons-extended"
 
+    implementation "androidx.paging:paging-runtime-ktx:3.3.6"
+    implementation "androidx.paging:paging-compose:3.3.6"
+
     // Room Database
     implementation "androidx.room:room-runtime:${rootProject.ext.androidxRoomVersion}"
     implementation "androidx.room:room-ktx:${rootProject.ext.androidxRoomVersion}"

@@ -1,11 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name">TrainPilot</string>
     <string name="nav_home">Home</string>
     <string name="nav_workout">Workout</string>
     <string name="nav_history">History</string>
     <string name="nav_settings">Settings</string>
-
     <string name="active_workout_title">Active Workout</string>
     <string name="start_workout">Start Workout</string>
     <string name="quick_start">Quick Start</string>
@@ -14,18 +13,65 @@
     <string name="cancel_confirm_title">Cancel Workout?</string>
     <string name="cancel_confirm_message">Are you sure you want to cancel the active workout? Unsaved progress will be discarded.</string>
     <string name="keep_training">Keep Training</string>
-
     <string name="rest_time">Rest Timer</string>
     <string name="skip_rest">Skip</string>
-
     <string name="pr_details_title">Personal Record Details</string>
     <string name="pr_new_record">New Personal Record!</string>
     <string name="close">Close</string>
-
     <string name="haptics_setting">Haptic Feedback</string>
     <string name="haptics_desc">Vibration on button taps and set completion</string>
-
     <string name="gps_indoor_mode">Indoor Mode (GPS disabled)</string>
     <string name="gps_outdoor_mode">Outdoor Tracking</string>
     <string name="finish_cardio">Finish Cardio/Interval</string>
+    <string name="journal_search">Search workouts or exercises</string>
+    <string name="journal_all_months">All months</string>
+    <string name="journal_previous_month">Previous month</string>
+    <string name="journal_next_month">Next month</string>
+    <string name="journal_empty">No workouts recorded yet</string>
+    <string name="journal_no_matches">No matching workouts</string>
+    <string name="journal_retry">Retry</string>
+    <string name="journal_error">Could not load data. Please retry.</string>
+    <string name="journal_operation_error">The operation failed. Your data was kept.</string>
+    <string name="journal_details">Workout details</string>
+    <string name="journal_missing">This workout is no longer available.</string>
+    <string name="journal_minutes">%1$d min</string>
+    <string name="journal_sets">%1$d/%2$d sets</string>
+    <string name="journal_set">Set</string>
+    <string name="journal_exercises">Exercises</string>
+    <string name="journal_statistics">Statistics</string>
+    <string name="journal_source">Source</string>
+    <string name="journal_phone">Phone</string>
+    <string name="journal_watch">Watch</string>
+    <string name="journal_volume">Training volume</string>
+    <string name="journal_feedback">Workout feedback</string>
+    <string name="journal_no_data">No data</string>
+    <string name="journal_route">Route</string>
+    <string name="journal_route_error">The route is not available on this device yet.</string>
+    <string name="journal_photos">Private workout photos</string>
+    <string name="journal_photo_error">Photo unavailable on this device.</string>
+    <string name="journal_calendar">Add to calendar</string>
+    <string name="journal_delete">Delete</string>
+    <string name="journal_delete_title">Delete workout</string>
+    <string name="journal_delete_message">Delete this workout? %1$s</string>
+    <string name="journal_cancel">Cancel</string>
+    <string name="journal_close">Close</string>
+    <string name="journal_pr">Personal record</string>
+    <string name="journal_previous_record">Previous: %1$s</string>
+    <string name="journal_reps">reps</string>
+    <string name="journal_seconds">s</string>
+    <string name="journal_route_title">Workout route</string>
+    <string name="journal_route_points">Offline route · %1$d GPS points</string>
+    <string name="journal_partial_route">Part of the route has not arrived yet.</string>
+    <string name="journal_route_start">Start</string>
+    <string name="journal_route_finish">Finish</string>
+    <string name="journal_route_path">Track</string>
+    <string name="journal_loading">Loading</string>
+    <string name="journal_photo_before">Before</string>
+    <string name="journal_photo_after">After</string>
+    <string name="journal_effort_easy">Too easy</string>
+    <string name="journal_effort_light">Light</string>
+    <string name="journal_effort_good">Good</string>
+    <string name="journal_effort_challenging">Challenging</string>
+    <string name="journal_effort_hard">Hard</string>
+    <string name="journal_effort_pain">Pain</string>
 </resources>

@@ -1,11 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name">TrainPilot</string>
     <string name="nav_home">Start</string>
     <string name="nav_workout">Training</string>
     <string name="nav_history">Verlauf</string>
     <string name="nav_settings">Optionen</string>
-
     <string name="active_workout_title">Aktives Training</string>
     <string name="start_workout">Training Starten</string>
     <string name="quick_start">Schnellstart</string>
@@ -14,18 +13,65 @@
     <string name="cancel_confirm_title">Training Abbrechen?</string>
     <string name="cancel_confirm_message">Möchten Sie das aktive Training wirklich abbrechen? Nicht gespeicherte Daten gehen verloren.</string>
     <string name="keep_training">Weiter Trainieren</string>
-
     <string name="rest_time">Pause</string>
     <string name="skip_rest">Überspringen</string>
-
     <string name="pr_details_title">Rekord-Details</string>
     <string name="pr_new_record">Neuer persönlicher Rekord!</string>
     <string name="close">Schließen</string>
-
     <string name="haptics_setting">Haptisches Feedback</string>
     <string name="haptics_desc">Vibration bei Tastendruck und beendeten Sätzen</string>
-
     <string name="gps_indoor_mode">Indoor-Modus (GPS deaktiviert)</string>
     <string name="gps_outdoor_mode">Outdoor-Tracking</string>
     <string name="finish_cardio">Kardio-Messung Beenden</string>
+    <string name="journal_search">Training oder Übung suchen</string>
+    <string name="journal_all_months">Alle Monate</string>
+    <string name="journal_previous_month">Vorheriger Monat</string>
+    <string name="journal_next_month">Nächster Monat</string>
+    <string name="journal_empty">Noch keine Trainings gespeichert</string>
+    <string name="journal_no_matches">Keine passenden Trainings</string>
+    <string name="journal_retry">Erneut versuchen</string>
+    <string name="journal_error">Daten konnten nicht geladen werden. Bitte erneut versuchen.</string>
+    <string name="journal_operation_error">Der Vorgang ist fehlgeschlagen. Deine Daten wurden erhalten.</string>
+    <string name="journal_details">Trainingsdetails</string>
+    <string name="journal_missing">Dieses Training ist nicht mehr verfügbar.</string>
+    <string name="journal_minutes">%1$d Min.</string>
+    <string name="journal_sets">%1$d/%2$d Sätze</string>
+    <string name="journal_set">Satz</string>
+    <string name="journal_exercises">Übungen</string>
+    <string name="journal_statistics">Statistik</string>
+    <string name="journal_source">Quelle</string>
+    <string name="journal_phone">Telefon</string>
+    <string name="journal_watch">Uhr</string>
+    <string name="journal_volume">Trainingsvolumen</string>
+    <string name="journal_feedback">Trainingsfeedback</string>
+    <string name="journal_no_data">Keine Daten</string>
+    <string name="journal_route">Route</string>
+    <string name="journal_route_error">Die Route ist auf diesem Gerät noch nicht verfügbar.</string>
+    <string name="journal_photos">Private Trainingsfotos</string>
+    <string name="journal_photo_error">Foto auf diesem Gerät nicht verfügbar.</string>
+    <string name="journal_calendar">Zum Kalender hinzufügen</string>
+    <string name="journal_delete">Löschen</string>
+    <string name="journal_delete_title">Training löschen</string>
+    <string name="journal_delete_message">Dieses Training löschen? %1$s</string>
+    <string name="journal_cancel">Abbrechen</string>
+    <string name="journal_close">Schließen</string>
+    <string name="journal_pr">Persönlicher Rekord</string>
+    <string name="journal_previous_record">Vorher: %1$s</string>
+    <string name="journal_reps">Wdh.</string>
+    <string name="journal_seconds">s</string>
+    <string name="journal_route_title">Trainingsroute</string>
+    <string name="journal_route_points">Offline-Route · %1$d GPS-Punkte</string>
+    <string name="journal_partial_route">Ein Teil der Route wurde noch nicht übertragen.</string>
+    <string name="journal_route_start">Start</string>
+    <string name="journal_route_finish">Ziel</string>
+    <string name="journal_route_path">Spur</string>
+    <string name="journal_loading">Wird geladen</string>
+    <string name="journal_photo_before">Vorher</string>
+    <string name="journal_photo_after">Nachher</string>
+    <string name="journal_effort_easy">Zu leicht</string>
+    <string name="journal_effort_light">Leicht</string>
+    <string name="journal_effort_good">Passend</string>
+    <string name="journal_effort_challenging">Anspruchsvoll</string>
+    <string name="journal_effort_hard">Schwer</string>
+    <string name="journal_effort_pain">Schmerz</string>
 </resources>

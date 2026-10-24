@@ -331,3 +331,6 @@ data class CalendarHistorySummary(val id: String, val started: String, val progr
 data class JournalWorkoutSummary(val id: String, val startedEpochMs: Long, val programName: String,
     val dayName: String, val durationSeconds: Int, val completedSetsCount: Int,
     val totalSetsCount: Int, val hasPr226: Boolean)
+
+/** Transient search projection: small text only, no raw history/sets/photos/coordinates. */
+data class JournalSearchRow(@Embedded val summary: JournalWorkoutSummary, val searchText: String)

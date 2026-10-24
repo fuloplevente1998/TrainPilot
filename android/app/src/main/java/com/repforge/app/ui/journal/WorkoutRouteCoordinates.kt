@@ -7,6 +7,18 @@ import org.json.JSONArray
 
 /** Shared private-file reader for active and saved workouts; loading/dismissing never controls GPS. */
 internal object WorkoutRouteCoordinates {
+    /** Each native segment stays separate: ownership gaps must never become straight lines. */
+    fun loadAll(context: Context, keys: List<String>): RouteCoordinatesUiModel? = merge(keys.distinct().map { load(context, it) })
+
+    internal fun merge(parts: List<RouteCoordinatesUiModel?>): RouteCoordinatesUiModel? {
+        val available = parts.filterNotNull().filter { it.segments.any { points -> points.isNotEmpty() } }.distinctBy { it.routeKey }
+        if (available.isEmpty()) return null
+        val segments = available.flatMap { it.segments }
+        return RouteCoordinatesUiModel(available.first().routeKey, segments, segments.sumOf { it.size },
+            available.sumOf { it.distanceMeters }, available.mapNotNull { it.accuracyMeters }.maxOrNull(),
+            parts.count { it == null || it.segments.none { points -> points.isNotEmpty() } })
+    }
+
     fun load(context: Context, key: String): RouteCoordinatesUiModel? {
         return try {
             if (key.startsWith("wear193:")) {

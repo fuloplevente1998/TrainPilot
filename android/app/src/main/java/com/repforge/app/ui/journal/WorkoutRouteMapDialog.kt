@@ -1,4 +1,6 @@
 package com.repforge.app.ui.journal
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
@@ -42,65 +44,32 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.tan
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WorkoutRouteMapDialog(
-    route: RouteCoordinatesUiModel,
-    onDismiss: () -> Unit
-) {
+fun WorkoutRouteMapDialog(route: RouteCoordinatesUiModel, onDismiss: () -> Unit, language: String = "hu") {
     val colors = LocalTrainPilotColors.current
-
-    BasicAlertDialog(
-        onDismissRequest = onDismiss,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(colors.card)
-            .border(1.dp, colors.line, RoundedCornerShape(20.dp))
-            .padding(16.dp)
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("GPS-útvonal", color = colors.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(colors.danger)) {
-                    Icon(Icons.Default.Close, contentDescription = "Bezárás", tint = colors.dangerText)
-                }
-            }
-            Spacer(Modifier.height(6.dp))
-            Text("Offline útvonalnézet • ${route.pointCount} pont", color = colors.muted, fontSize = 12.sp)
-            Spacer(Modifier.height(14.dp))
-
-            // Canvas útvonal rajzoló
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(Color(0xFF090B10))
-                    .border(1.dp, colors.line, RoundedCornerShape(14.dp))
-            ) {
-                if (route.segments.isEmpty() || route.segments.all { it.isEmpty() }) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Nincs kirajzolható koordináta", color = colors.muted, fontSize = 12.sp)
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val text = androidx.compose.runtime.remember(context, language) { journalResources(context, language) }
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+        androidx.compose.material3.Surface(Modifier.fillMaxSize(), color = colors.bg) {
+            Column(Modifier.fillMaxSize().systemBarsPadding().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(text.getString(com.repforge.app.R.string.journal_route_title), Modifier.weight(1f), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp)
+                        .testTag("route_close").clip(RoundedCornerShape(12.dp)).background(colors.danger)) {
+                        Icon(Icons.Default.Close, text.getString(com.repforge.app.R.string.journal_close), tint = colors.dangerText)
                     }
-                } else {
-                    MercatorRouteCanvas(segments = route.segments)
                 }
-            }
-
-            Spacer(Modifier.height(12.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                RouteLegendItem(color = Color(0xFF30DFF2), label = "Rajt")
-                RouteLegendItem(color = Color(0xFF3BE68A), label = "Nyomvonal")
-                RouteLegendItem(color = Color(0xFFFFB93D), label = "Cél")
+                Text(text.getString(com.repforge.app.R.string.journal_route_points, route.pointCount), color = colors.muted)
+                if (route.missingRouteParts > 0) Text(text.getString(com.repforge.app.R.string.journal_partial_route), color = colors.muted)
+                Box(Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(16.dp)).background(colors.card2)) {
+                    MercatorRouteCanvas(route.segments)
+                }
+                Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    RouteLegendItem(colors.accent2, text.getString(com.repforge.app.R.string.journal_route_start))
+                    RouteLegendItem(colors.success, text.getString(com.repforge.app.R.string.journal_route_path))
+                    RouteLegendItem(colors.accent, text.getString(com.repforge.app.R.string.journal_route_finish))
+                }
             }
         }
     }
@@ -108,8 +77,9 @@ fun WorkoutRouteMapDialog(
 
 @Composable
 fun MercatorRouteCanvas(segments: List<List<Pair<Double, Double>>>) {
+    val colors = LocalTrainPilotColors.current
     val allPoints = segments.flatten()
-    if (allPoints.size < 2) return
+    if (allPoints.isEmpty()) return
 
     Canvas(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         fun mercatorY(lat: Double): Double {
@@ -147,18 +117,18 @@ fun MercatorRouteCanvas(segments: List<List<Pair<Double, Double>>>) {
             }
             drawPath(
                 path = path,
-                color = Color(0xFF3BE68A),
+                color = colors.success,
                 style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
             )
         }
 
         // Rajt pont (#30DFF2)
         val startOffset = toCanvasOffset(allPoints.first())
-        drawCircle(color = Color(0xFF30DFF2), radius = 6.dp.toPx(), center = startOffset)
+        drawCircle(color = colors.accent2, radius = 6.dp.toPx(), center = startOffset)
 
         // Cél pont (#FFB93D)
         val finishOffset = toCanvasOffset(allPoints.last())
-        drawCircle(color = Color(0xFFFFB93D), radius = 6.dp.toPx(), center = finishOffset)
+        drawCircle(color = colors.accent, radius = 6.dp.toPx(), center = finishOffset)
     }
 }
 

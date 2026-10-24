@@ -122,6 +122,36 @@ interface WorkoutHistoryDao {
     @Query("SELECT id, startedEpochMs, programName, dayName, durationSeconds, completedSetsCount, totalSetsCount, hasPr226 FROM workout_history ORDER BY startedEpochMs DESC, id DESC LIMIT :limit OFFSET :offset")
     suspend fun getJournalSummaryPage(limit: Int, offset: Int): List<JournalWorkoutSummary>
 
+    @Query("""
+        SELECT w.id, w.startedEpochMs, w.programName, w.dayName, w.durationSeconds,
+            w.completedSetsCount, w.totalSetsCount, w.hasPr226,
+            w.programName || ' ' || w.dayName || ' ' || COALESCE((
+                SELECT group_concat(e.nameHu || ' ' || e.nameEn || ' ' ||
+                    COALESCE(l.nameDe, '') || ' ' || COALESCE(l.nameRo, ''), ' ')
+                FROM workout_history_exercises e LEFT JOIN exercise_library l ON l.id = e.exerciseId
+                WHERE e.workoutHistoryId = w.id), '') AS searchText
+        FROM workout_history w
+        WHERE w.startedEpochMs >= :fromEpoch AND w.startedEpochMs < :toEpoch
+            AND (:beforeEpoch IS NULL OR w.startedEpochMs < :beforeEpoch
+                OR (w.startedEpochMs = :beforeEpoch AND w.id < :beforeId))
+        ORDER BY w.startedEpochMs DESC, w.id DESC LIMIT :limit
+    """)
+    suspend fun scanJournal(fromEpoch: Long, toEpoch: Long, beforeEpoch: Long?, beforeId: String,
+        limit: Int): List<JournalSearchRow>
+
+    @Query("""
+        SELECT id, startedEpochMs, programName, dayName, durationSeconds, completedSetsCount, totalSetsCount, hasPr226
+        FROM workout_history WHERE startedEpochMs >= :fromEpoch AND startedEpochMs < :toEpoch
+            AND (:beforeEpoch IS NULL OR startedEpochMs < :beforeEpoch OR (startedEpochMs = :beforeEpoch AND id < :beforeId))
+        ORDER BY startedEpochMs DESC, id DESC LIMIT :limit
+    """)
+    suspend fun scanJournalSummaries(fromEpoch: Long, toEpoch: Long, beforeEpoch: Long?, beforeId: String,
+        limit: Int): List<JournalWorkoutSummary>
+
+    @Transaction
+    @Query("SELECT * FROM workout_history WHERE id = :id")
+    fun observeWorkoutDetails(id: String): Flow<WorkoutHistoryWithDetails?>
+
     @Transaction
     @Query("SELECT * FROM workout_history WHERE id = :id OR workoutKey = :id OR syncId = :id LIMIT 1")
     suspend fun getWorkoutWithDetails(id: String): WorkoutHistoryWithDetails?
