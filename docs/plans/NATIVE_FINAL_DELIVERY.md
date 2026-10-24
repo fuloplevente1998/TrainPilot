@@ -40,6 +40,14 @@ Az aktuális képek és konkrét képernyőleírások:
 [Native design handoff](../design/NATIVE_DESIGN_HANDOFF.md). A további végső
 átadás továbbra valódi emulátoros képeket igényel; a mockup nem tesztbizonyíték.
 
+## Funkciómegőrzés és további részletnézetek
+
+A 24 látványterv minimum áttekintés, nem felső korlát. Teljes egészségnapló,
+korábbi napok/mérések, testsúlyrögzítés és grafikonok, pulzusrészletek és a main
+minden további funkciója megőrzendő. Szükség szerint további aloldalak/dialógusok
+készülnek; hiányzó mockup nem törlési engedély. A main→natív lefedettségi mátrix
+külön ellenőrzési feltétel.
+
 ## Teljes Compose felület – 24 nézet
 
 A négy chatben átadott képtábla az elfogadott vizuális referencia; átadáskor

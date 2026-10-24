@@ -19,6 +19,25 @@ A képek generált látványtervek, a végső átadás futó emulátorból kész
   jön. A beépített katalógus jelenlegi forrása106 gyakorlat és13 program; az egyedi
   tartalom miatt a tényleges listák ennél nagyobbak lehetnek.
 
+## Funkciómegőrzés – a 24 kép nem képernyő- vagy funkciólimit
+
+Felhasználói pontosítás: az egészségnapló, testsúly, pulzus és a main többi
+meglévő funkciója a natív appban is megmarad. A mockup áttekintő főnézeteket
+mutat; az ott nem ábrázolt részletek nem törölhetők a termékből. A végleges
+képernyőlefedettség a szükséges aloldalakkal, fülekkel és dialógusokkal bővül.
+
+| Terület | A főnézeten túl is megőrzendő |
+| --- | --- |
+| Egészségnapló | Korábbi napok/időszakok, metrikák részletei, mért értékek, forrás és időbélyeg; teljes main-metrikakészlet |
+| Testsúly | Mentett mérések, kézi rögzítés, időszakszűrés, változás és grafikon; a szolgáltatói testsúly forrása elkülönül |
+| Pulzus | Napi átlag/nyugalmi/minimum/maximum és meglévő előzmények; valódi élő Watch/BLE adat külön állapot |
+| További egészségadatok | Alvás/HRV, energia, lépések, kalóriák, testösszetétel és minden egyéb, mainben elérhető adat; hiányzó engedély/mérés jelölve |
+| Kapcsolatok | Samsung Health/Health Connect, BLE és Wear meglévő beállításai és állapotai |
+| Egyéb main-funkciók | Program-/gyakorlatszerkesztés, napló/részletek/szűrők, fotók, backup, naptár és minden létező beállítás külön lefedettségi ellenőrzése |
+
+Átadás előtt main-funkció → natív útvonal → adatforrás → teszt megfeleltetés kell.
+A mockupon hiányzó funkció nem jelölhető késznek pusztán adatmodell vagy motor alapján.
+
 ## Négy tábla, 24 képernyő
 
 | Tábla | A hat képernyő |

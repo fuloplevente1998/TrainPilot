@@ -4,6 +4,17 @@ Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Felhasználói pontosítás – teljes funkciókör, nem csak24 mockup
+
+Az egészségnapló, testsúly, pulzus és a main összes további funkciója megőrzendő.
+A 24 kép csak főnézet; hiányzó történeti/részletes felületek nem eshetnek ki.
+Rögzítve a dizájnátadóban és a teljes tervben. Gyors forrásaudit: natív Health VM
+20 metrikát definiál és ma-adatot tölt, a UI26-os felirata jelenleg megtévesztő.
+Történeti HealthJournalStore adatút és Progress testsúlyrögzítés/történet létezik,
+azonban teljes UI-paritás/futtatás még nincs igazolva. Következő coding prioritás:
+main-funkció/metrika→natív útvonal/adatforrás/teszt megfeleltetés és a hiányzó
+historikus/részletes egészségfelületek bekötése.
+
 ## Legfrissebb forrás és frissített dizájnátadó
 
 Alkalmazásforrás **033386e**: main106 gyakorlat/13 program és négynyelvű

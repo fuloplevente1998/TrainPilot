@@ -56,3 +56,15 @@ integrált futtatás, fizikai készülékes elfogadás és a terv többi pontja 
 4. Többi főképernyő, funkcióegyezés, fordítások és teljesítmény.
 5. Élő adatokra csak külön teljes mentés és a releváns kapuk után; fizikai telefon
    és Galaxy Watch7 teszt. Nincs automatikus main merge vagy verzióemelés.
+
+## Egészségnapló és mockuplefedettség – 2026-10-24 pontosítás
+
+A felhasználó kifejezetten kéri a teljes egészségnapló/testsúly/pulzus és minden
+main-funkció megtartását. A 24 mockup csak főnézet, nem végleges funkciólista.
+Forrásellenőrzés: HealthDashboardViewModel jelenleg20 metrikadefiníciót és mai
+adatbetöltést tartalmaz, miközben a UI26 metrikát ír. Ez a felirat nem igazolt
+lefedettség. HealthJournalStore időszakos/lapozott adatút létezik, de a teljes
+historikus metrika-UI bekötése külön feladat. ProgressViewModel testsúlybevitelt,
+időszakszűrést és testsúlytörténetet tartalmaz; ez még nem friss futtatott igazolás.
+Következő: teljes main-metrikakészlet és historikus útvonal megfeleltetése, a hamis
+fix darabszám helyett tényleges lefedettség, részletoldalak/előzmények és tesztek.
