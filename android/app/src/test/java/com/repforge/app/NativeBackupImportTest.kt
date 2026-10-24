@@ -133,4 +133,15 @@ class NativeBackupImportTest {
         assertEquals(before, settings.current())
     }
 
+    @Test fun portableProgressionStepsKeepValidOverridesAcrossExportAndImport() = runBlocking {
+        val steps = JSONObject().put("per_hand", .5).put("total", 2.5).put("isolation", "0.5").put("invalid", -1).put("oversized", 99)
+        settings.importPortableSettings(JSONObject().put("settings", JSONObject().put("progressionSteps", steps)))
+        assertEquals(mapOf("per_hand" to .5, "total" to 2.5, "isolation" to .5), settings.current().progressionSteps)
+        val exported = importer.exportBackupJson(false)
+        settings.resetAllSettingsForEraseLocal()
+        assertTrue(settings.current().progressionSteps.isEmpty())
+        importer.importBackupJson(exported, true)
+        assertEquals(mapOf("per_hand" to .5, "total" to 2.5, "isolation" to .5), settings.current().progressionSteps)
+    }
+
 }

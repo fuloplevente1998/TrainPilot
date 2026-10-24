@@ -52,6 +52,7 @@ data class TrainPilotUserSettings(
     val soundEnabled: Boolean = true,
     val vibrationEnabled: Boolean = true,
     val intervalAutoAdvance: Boolean = true,
+    val progressionSteps: Map<String, Double> = emptyMap(),
     val hapticSetRecorded227: Boolean = true,
     val healthBackupConsent: Boolean = false,
     val autoWriteWorkoutToHealthConnect: Boolean = false,
@@ -86,6 +87,7 @@ class TrainPilotSettingsStore(private val context: Context) {
         val KEY_WORK_SECONDS = intPreferencesKey("workSeconds")
         val KEY_ROUNDS = intPreferencesKey("rounds")
         val KEY_INTERVAL_AUTO_ADVANCE = booleanPreferencesKey("intervalAutoAdvance")
+        val KEY_PROGRESSION_STEPS = stringPreferencesKey("progressionSteps")
         val KEY_SOUND_ENABLED = booleanPreferencesKey("soundEnabled")
         val KEY_VIBRATION_ENABLED = booleanPreferencesKey("vibrationEnabled")
         val KEY_HAPTIC_SET_RECORDED_227 = booleanPreferencesKey("hapticSetRecorded227")
@@ -157,6 +159,13 @@ class TrainPilotSettingsStore(private val context: Context) {
             workSeconds = (prefs[KEY_WORK_SECONDS] ?: 30).coerceIn(1, 3600),
             rounds = (prefs[KEY_ROUNDS] ?: 1).coerceIn(1, 100),
             intervalAutoAdvance = prefs[KEY_INTERVAL_AUTO_ADVANCE] ?: true,
+            progressionSteps = runCatching {
+                val json = JSONObject(prefs[KEY_PROGRESSION_STEPS] ?: "{}")
+                json.keys().asSequence().mapNotNull { key ->
+                    val n = json.optDouble(key, Double.NaN)
+                    if (n.isFinite() && n in .25..10.0) key to n else null
+                }.toMap()
+            }.getOrDefault(emptyMap()),
             soundEnabled = prefs[KEY_SOUND_ENABLED] ?: true,
             vibrationEnabled = prefs[KEY_VIBRATION_ENABLED] ?: true,
             hapticSetRecorded227 = prefs[KEY_HAPTIC_SET_RECORDED_227] ?: true,
@@ -304,6 +313,14 @@ class TrainPilotSettingsStore(private val context: Context) {
                 prefs[KEY_INTERVAL_AUTO_ADVANCE] = preset.getBoolean("autoAdvance")
             } else if (source.opt("intervalAutoAdvance") is Boolean) {
                 prefs[KEY_INTERVAL_AUTO_ADVANCE] = source.getBoolean("intervalAutoAdvance")
+            }
+            source.optJSONObject("progressionSteps")?.let { steps ->
+                val portable = JSONObject()
+                for (key in steps.keys()) {
+                    val n = steps.optDouble(key, Double.NaN)
+                    if (n.isFinite() && n in .25..10.0) portable.put(key, n)
+                }
+                prefs[KEY_PROGRESSION_STEPS] = portable.toString()
             }
             if (source.has("hapticSetRecorded227")) prefs[KEY_HAPTIC_SET_RECORDED_227] = source.optBoolean("hapticSetRecorded227", true)
             if (source.has("healthBackupConsent")) prefs[KEY_HEALTH_BACKUP_CONSENT] = source.optBoolean("healthBackupConsent")
