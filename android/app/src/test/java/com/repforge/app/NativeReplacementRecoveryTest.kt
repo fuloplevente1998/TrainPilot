@@ -99,6 +99,40 @@ class NativeReplacementRecoveryTest {
         assertEquals("de", settings.current().language)
         assertFalse(file.parentFile!!.exists()); assertFalse(NativeDataReplacement.blocked(context))
     }
+    @Test fun faultsAtPreparedImportedAndCommittedPhasesKeepAReplayableReceipt() = runTest {
+        for (phase in listOf("receipt-prepared", "data-imported", "receipt-committed")) {
+            journal.clear()
+            context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE).edit().clear().commit()
+            PhoneWorkoutExecution.store(context).setRestoreBlocked(false)
+            val file = stage()
+            val manager = BackupRestoreManager(context)
+            manager.restoreCheckpoint = { current -> if (current == phase) throw java.io.IOException("injected $phase") }
+            assertTrue(manager.resumeInterruptedReplacement().isFailure)
+            assertTrue(journal.exists()); assertTrue(NativeDataReplacement.blocked(context))
+            assertEquals(phase == "receipt-committed", journal.read().committed)
+            assertTrue(BackupRestoreManager(context).resumeInterruptedReplacement().isSuccess)
+            assertFalse(journal.exists()); assertFalse(file.parentFile!!.exists())
+        }
+    }
+    @Test fun stagedHealthRestoreCanRecoverAfterPreparationInstallationAndCommitFaults() = runTest {
+        for (phase in listOf("health-prepared", "health-installed", "room-settings-imported", "health-committed")) {
+            journal.clear()
+            context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE).edit().clear().commit()
+            PhoneWorkoutExecution.store(context).setRestoreBlocked(false)
+            val health = HealthJournalStore.get(context)
+            val file = stage()
+            val data = org.json.JSONObject(file.readText()).put("nativeHealthJournal", health.exportSnapshot())
+            file.writeText(data.toString())
+            journal.write(journal.read().copy(payloadSha256 = file.inputStream().use { ArchiveIO.hash(it) }))
+            val manager = BackupRestoreManager(context)
+            manager.restoreCheckpoint = { current -> if (current == phase) throw java.io.IOException("injected $phase") }
+            assertTrue(manager.resumeInterruptedReplacement().isFailure)
+            assertTrue(journal.exists()); assertTrue(NativeDataReplacement.blocked(context))
+            assertTrue(BackupRestoreManager(context).resumeInterruptedReplacement().isSuccess)
+            assertEquals("", health.pendingRestore())
+            assertFalse(journal.exists()); assertFalse(NativeDataReplacement.blocked(context))
+        }
+    }
     @Test fun missingReceiptFailsClosedAndRequiresAnExplicitNewBackupChoice() = runTest {
         context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE).edit().putBoolean("blocked", true).commit()
         assertTrue(BackupRestoreManager(context).resumeInterruptedReplacement().isFailure)

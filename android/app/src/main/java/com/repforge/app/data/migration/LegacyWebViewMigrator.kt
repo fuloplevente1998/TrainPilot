@@ -106,7 +106,7 @@ class LegacyWebViewMigrator(
         catch (failure: Exception) { archive.failWrite(stream); throw failure }
         if (extractedKeys.isNotEmpty()) {
             val compositeRoot = decodeSnapshot(extractedKeys)
-            database.withTransaction { importBackupJson(compositeRoot, replaceAll = false) }
+            importBackupJson(compositeRoot, replaceAll = false)
         }
 
         TrainPilotDatabase.ensureBuiltinCatalogSeeded(database)
@@ -159,261 +159,243 @@ class LegacyWebViewMigrator(
             rootInput
         }
 
-        data.optString("language").takeIf { it in listOf("hu", "en", "de", "ro") }?.let { settingsStore.setLanguage(it) }
-        // Preserve all original documents, even fields not yet projected by native screens.
-        // The immutable file archive holds the whole source; avoid duplicating full
-        // normalized history/catalog collections again in the key-value table.
-        val projected = setOf("history", "exercises", "programs", "weights", "scheduled", "legacyStorageRaw")
-        for (key in data.keys()) if (key !in projected) database.keyValueDocumentDao().putDocument(
-            KeyValueDocumentEntity(key = "legacy:$key", json = JSONObject().put("value", data.get(key)).toString(), updatedAt = System.currentTimeMillis())
-        )
-        // 1. Settings & Theme
-        val settingsObj = data.optJSONObject("settings")
-        if (settingsObj != null) {
-            val lang = settingsObj.optString("language", settingsObj.optString("lang", ""))
-            if (lang in listOf("hu", "en", "de", "ro")) settingsStore.setLanguage(lang)
-            if (settingsObj.has("restSeconds")) {
-                settingsStore.setTimerDefaults(
-                    workSeconds = settingsObj.optInt("workSeconds", 30),
-                    restSeconds = settingsObj.optInt("restSeconds", 90),
-                    rounds = settingsObj.optInt("rounds", 1),
-                    sound = settingsObj.optBoolean("sound", true),
-                    vibration = settingsObj.optBoolean("vibration", true)
-                )
-            }
-            if (settingsObj.has("hapticSetRecorded227")) {
-                settingsStore.setHapticSetRecorded227(settingsObj.optBoolean("hapticSetRecorded227", true))
-            }
-            if (settingsObj.has("healthBackupConsent")) {
-                settingsStore.setHealthBackupConsent(settingsObj.optBoolean("healthBackupConsent", false))
-            }
-        }
-        TrainPilotSettingsStore.importedTheme(data)?.let { settingsStore.setTheme(it) }
-        val activeProg = data.optString("activeProgramId", "")
-        if (activeProg.isNotBlank()) settingsStore.setActiveProgramId(activeProg)
-
-        // 2. Tombstones (phase3HistoryTombstones)
-        val tombstonesArr = data.optJSONArray("phase3HistoryTombstones")
-        if (tombstonesArr != null) {
-            if (replaceAll) database.workoutHistoryDao().deleteAllTombstones()
-            val list = ArrayList<HistoryTombstoneEntity>()
-            for (i in 0 until tombstonesArr.length()) {
-                val t = tombstonesArr.optJSONObject(i) ?: continue
-                val ids = t.optJSONArray("ids") ?: JSONArray()
-                val key = t.optString("key", "")
-                val primary = if (ids.length() > 0) ids.optString(0) else key
-                if (primary.isNotBlank()) {
-                    list.add(
-                        HistoryTombstoneEntity(
-                            primaryId = primary,
-                            workoutKey = key,
-                            idsJson = ids.toString(),
-                            deletedAt = t.optLong("deletedAt", System.currentTimeMillis())
-                        )
-                    )
-                }
-            }
-            database.workoutHistoryDao().upsertTombstones(list)
-        }
-
-        // 3. Exercises Catalog
-        val exercisesArr = data.optJSONArray("exercises")
-        if (exercisesArr != null) {
-            if (replaceAll) database.exerciseLibraryDao().deleteAllCustomExercises()
-            val entities = ArrayList<ExerciseLibraryEntity>()
-            for (i in 0 until exercisesArr.length()) {
-                val ex = exercisesArr.optJSONObject(i) ?: continue
-                val id = ex.optString("id").trim()
-                if (id.isEmpty()) continue
-                val muscles = ex.optJSONArray("muscles") ?: JSONArray()
-                entities.add(
-                    ExerciseLibraryEntity(
-                        id = id,
-                        nameHu = ex.optString("hu", ex.optString("name", id)),
-                        nameEn = ex.optString("en", ex.optString("name", id)),
-                        nameDe = ex.optString("de", ex.optString("en", id)),
-                        nameRo = ex.optString("ro", ex.optString("en", id)),
-                        loadType = ex.optString("loadType", "weight"),
-                        repUnit = ex.optString("repUnit", "ism."),
-                        measurementType = ex.optString("measurementType", "reps"),
-                        defaultSets = ex.optInt("sets", 3).coerceIn(1, 20),
-                        defaultReps = ex.optString("reps", "10"),
-                        defaultWeight = ex.optDouble("weight", 0.0).let { if (it.isFinite() && it >= 0.0) it else 0.0 },
-                        defaultRestSeconds = ex.optInt("restSeconds", 90).coerceIn(0, 3600),
-                        primaryMuscle = ex.optString("primaryMuscle", if (muscles.length() > 0) muscles.optString(0, "full") else "full"),
-                        muscleGroupsJson = muscles.toString(),
-                        notesHu = ex.optString("notes", ""),
-                        notesEn = ex.optString("notesEn", ex.optString("notes", "")),
-                        notesDe = ex.optString("notesDe", ""),
-                        notesRo = ex.optString("notesRo", ""),
-                        videoUrl = ex.optString("videoUrl").takeIf { it.isNotBlank() },
-                        videoProvider = ex.optString("provider").takeIf { it.isNotBlank() },
-                        custom = ex.optBoolean("custom", true),
-                        setRir229 = ex.optBoolean("setRir229", false),
-                        rawJson = ex.toString()
-                    )
-                )
-            }
-            database.exerciseLibraryDao().upsertExercises(entities)
-        }
-
-        // 4. Programs & Days
-        val programsArr = data.optJSONArray("programs")
-        if (programsArr != null) {
-            if (replaceAll) database.programDao().deleteAllPrograms()
-            val progEntities = ArrayList<ProgramEntity>()
-            val dayEntities = ArrayList<ProgramDayEntity>()
-            for (i in 0 until programsArr.length()) {
-                val p = programsArr.optJSONObject(i) ?: continue
-                val pid = p.optString("id").trim()
-                if (pid.isEmpty()) continue
-                val name = p.optString("name", pid)
-                progEntities.add(
-                    ProgramEntity(
-                        id = pid,
-                        nameHu = p.optString("hu", name),
-                        nameEn = p.optString("en", name),
-                        nameDe = p.optString("de", name),
-                        nameRo = p.optString("ro", name),
-                        location = p.optString("location", "Otthon"),
-                        level = p.optString("level", "Kezdő"),
-                        description = p.optString("description", ""),
-                        builtin = p.optBoolean("builtin", false),
-                        generated = p.optBoolean("generated", false),
-                        sourceType = p.optString("sourceType", "own"),
-                        sourceTemplateId = p.optString("sourceTemplateId").takeIf { it.isNotBlank() },
-                        templateVersion = p.optInt("templateVersion", 1),
-                        accentHex = p.optString("accent", "#4d8fbe"),
-                        sortOrder = i,
-                        updatedAt = p.optLong("updatedAt", System.currentTimeMillis()),
-                        rawJson = p.toString()
-                    )
-                )
-                val daysArr = p.optJSONArray("days")
-                if (daysArr != null) {
-                    for (dIdx in 0 until daysArr.length()) {
-                        val d = daysArr.optJSONObject(dIdx) ?: continue
-                        val did = d.optString("id", (dIdx + 1).toString())
-                        val dName = d.optString("name", did)
-                        dayEntities.add(
-                            ProgramDayEntity(
-                                compositeId = "$pid:$did",
-                                programId = pid,
-                                dayId = did,
-                                nameHu = d.optString("hu", dName),
-                                nameEn = d.optString("en", dName),
-                                nameDe = d.optString("de", dName),
-                                nameRo = d.optString("ro", dName),
-                                sortOrder = dIdx,
-                                exercisesJson = (d.optJSONArray("exercises") ?: JSONArray()).toString()
+        database.withTransaction {
+            // Preserve all original documents, even fields not yet projected by native screens.
+            // The immutable file archive holds the whole source; avoid duplicating full
+            // normalized history/catalog collections again in the key-value table.
+            val projected = setOf("history", "exercises", "programs", "weights", "scheduled", "legacyStorageRaw")
+            for (key in data.keys()) if (key !in projected) database.keyValueDocumentDao().putDocument(
+                KeyValueDocumentEntity(key = "legacy:$key", json = JSONObject().put("value", data.get(key)).toString(), updatedAt = System.currentTimeMillis())
+            )
+            // 2. Tombstones (phase3HistoryTombstones)
+            val tombstonesArr = data.optJSONArray("phase3HistoryTombstones")
+            if (tombstonesArr != null) {
+                if (replaceAll) database.workoutHistoryDao().deleteAllTombstones()
+                val list = ArrayList<HistoryTombstoneEntity>()
+                for (i in 0 until tombstonesArr.length()) {
+                    val t = tombstonesArr.optJSONObject(i) ?: continue
+                    val ids = t.optJSONArray("ids") ?: JSONArray()
+                    val key = t.optString("key", "")
+                    val primary = if (ids.length() > 0) ids.optString(0) else key
+                    if (primary.isNotBlank()) {
+                        list.add(
+                            HistoryTombstoneEntity(
+                                primaryId = primary,
+                                workoutKey = key,
+                                idsJson = ids.toString(),
+                                deletedAt = t.optLong("deletedAt", System.currentTimeMillis())
                             )
                         )
                     }
                 }
+                database.workoutHistoryDao().upsertTombstones(list)
             }
-            database.programDao().upsertPrograms(progEntities)
-            database.programDao().upsertProgramDays(dayEntities)
-        }
 
-        // 5. Workout History
-        val historyArr = data.optJSONArray("history")
-        if (historyArr != null) {
-            if (replaceAll) database.workoutHistoryDao().deleteAllWorkouts()
-            for (i in 0 until historyArr.length()) {
-                val h = historyArr.optJSONObject(i) ?: continue
-                saveWorkoutJsonToRoom(h)
-            }
-        }
-
-        // 6. Body Weights
-        val weightsArr = data.optJSONArray("weights")
-        if (weightsArr != null) {
-            if (replaceAll) database.bodyWeightDao().deleteAllWeights()
-            val weightEntities = ArrayList<BodyWeightEntryEntity>()
-            for (i in 0 until weightsArr.length()) {
-                val w = weightsArr.optJSONObject(i) ?: continue
-                val kg = w.optDouble("kg", Double.NaN)
-                val date = w.optString("date").trim()
-                if (!kg.isFinite() || kg <= 0.0 || date.isEmpty()) continue
-                val id = w.optString("id").takeIf { it.isNotBlank() } ?: LegacySyncIdentity18.legacyWeightId(w)
-                val dayKey = if (date.length >= 10) date.substring(0, 10) else date
-                val copyJson = JSONObject(w.toString()).put("id", id)
-                weightEntities.add(
-                    BodyWeightEntryEntity(
-                        id = id,
-                        date = date,
-                        dayKey = dayKey,
-                        kg = (kg * 10.0).roundToInt() / 10.0,
-                        updatedAt = w.optLong("updatedAt", System.currentTimeMillis()),
-                        rawJson = copyJson.toString()
+            // 3. Exercises Catalog
+            val exercisesArr = data.optJSONArray("exercises")
+            if (exercisesArr != null) {
+                if (replaceAll) database.exerciseLibraryDao().deleteAllCustomExercises()
+                val entities = ArrayList<ExerciseLibraryEntity>()
+                for (i in 0 until exercisesArr.length()) {
+                    val ex = exercisesArr.optJSONObject(i) ?: continue
+                    val id = ex.optString("id").trim()
+                    if (id.isEmpty()) continue
+                    val muscles = ex.optJSONArray("muscles") ?: JSONArray()
+                    entities.add(
+                        ExerciseLibraryEntity(
+                            id = id,
+                            nameHu = ex.optString("hu", ex.optString("name", id)),
+                            nameEn = ex.optString("en", ex.optString("name", id)),
+                            nameDe = ex.optString("de", ex.optString("en", id)),
+                            nameRo = ex.optString("ro", ex.optString("en", id)),
+                            loadType = ex.optString("loadType", "weight"),
+                            repUnit = ex.optString("repUnit", "ism."),
+                            measurementType = ex.optString("measurementType", "reps"),
+                            defaultSets = ex.optInt("sets", 3).coerceIn(1, 20),
+                            defaultReps = ex.optString("reps", "10"),
+                            defaultWeight = ex.optDouble("weight", 0.0).let { if (it.isFinite() && it >= 0.0) it else 0.0 },
+                            defaultRestSeconds = ex.optInt("restSeconds", 90).coerceIn(0, 3600),
+                            primaryMuscle = ex.optString("primaryMuscle", if (muscles.length() > 0) muscles.optString(0, "full") else "full"),
+                            muscleGroupsJson = muscles.toString(),
+                            notesHu = ex.optString("notes", ""),
+                            notesEn = ex.optString("notesEn", ex.optString("notes", "")),
+                            notesDe = ex.optString("notesDe", ""),
+                            notesRo = ex.optString("notesRo", ""),
+                            videoUrl = ex.optString("videoUrl").takeIf { it.isNotBlank() },
+                            videoProvider = ex.optString("provider").takeIf { it.isNotBlank() },
+                            custom = ex.optBoolean("custom", true),
+                            setRir229 = ex.optBoolean("setRir229", false),
+                            rawJson = ex.toString()
+                        )
                     )
-                )
-            }
-            database.bodyWeightDao().upsertWeights(weightEntities)
-        }
-
-        // 7. Scheduled Calendar Entries
-        val scheduledArr = data.optJSONArray("scheduled")
-        if (scheduledArr != null) {
-            if (replaceAll) database.calendarScheduleDao().deleteAllEntries()
-            val schedEntities = ArrayList<CalendarScheduleEntity>()
-            for (i in 0 until scheduledArr.length()) {
-                val s = scheduledArr.optJSONObject(i) ?: continue
-                val startIso = s.optString("start", s.optString("plannedStart", "")).trim()
-                val date = s.optString("date", if (startIso.length >= 10) startIso.substring(0, 10) else "").trim()
-                if (date.isEmpty()) continue
-                val id = s.optString("id", s.optString("scheduleId", "")).ifBlank {
-                    "legacy-schedule-" + UUID.nameUUIDFromBytes(s.toString().toByteArray(Charsets.UTF_8))
                 }
-                val programId = s.optString("programId", "")
-                val dayId = s.optString("dayId", s.optString("workout", ""))
-                val googleId = s.optString("googleEventId").takeIf { it.matches(Regex("rf[0-9a-f]{64}")) }
-                    ?: LegacySyncIdentity18.calendarEventId(id, date, programId, dayId)
-                schedEntities.add(
-                    CalendarScheduleEntity(
-                        id = id,
-                        googleEventId = googleId,
-                        date = date,
-                        startIso = startIso,
-                        endIso = s.optString("end", ""),
-                        programId = programId,
-                        programName = s.optString("programName", ""),
-                        dayId = dayId,
-                        dayName = s.optString("dayName", dayId),
-                        status = s.optString("status", "planned"),
-                        updatedAt = s.optLong("updatedAt", System.currentTimeMillis()),
-                        rawJson = s.toString()
-                    )
-                )
+                database.exerciseLibraryDao().upsertExercises(entities)
             }
-            database.calendarScheduleDao().upsertEntries(schedEntities)
-        }
 
-        // 8. Auxiliary JSON Documents (draft, plannerSettings, plan, wearClosedWorkouts, cloud*)
-        for (docKey in listOf("draft", "plannerSettings", "plan", "gpsTrip106", "wearClosedWorkouts", "cloudStatus", "cloudRetention105")) {
-            if (data.has(docKey) && !data.isNull(docKey)) {
-                database.keyValueDocumentDao().putDocument(
-                    KeyValueDocumentEntity(
-                        key = docKey,
-                        json = data.get(docKey).toString(),
-                        updatedAt = System.currentTimeMillis()
+            // 4. Programs & Days
+            val programsArr = data.optJSONArray("programs")
+            if (programsArr != null) {
+                if (replaceAll) database.programDao().deleteAllPrograms()
+                val progEntities = ArrayList<ProgramEntity>()
+                val dayEntities = ArrayList<ProgramDayEntity>()
+                for (i in 0 until programsArr.length()) {
+                    val p = programsArr.optJSONObject(i) ?: continue
+                    val pid = p.optString("id").trim()
+                    if (pid.isEmpty()) continue
+                    val name = p.optString("name", pid)
+                    progEntities.add(
+                        ProgramEntity(
+                            id = pid,
+                            nameHu = p.optString("hu", name),
+                            nameEn = p.optString("en", name),
+                            nameDe = p.optString("de", name),
+                            nameRo = p.optString("ro", name),
+                            location = p.optString("location", "Otthon"),
+                            level = p.optString("level", "Kezdő"),
+                            description = p.optString("description", ""),
+                            builtin = p.optBoolean("builtin", false),
+                            generated = p.optBoolean("generated", false),
+                            sourceType = p.optString("sourceType", "own"),
+                            sourceTemplateId = p.optString("sourceTemplateId").takeIf { it.isNotBlank() },
+                            templateVersion = p.optInt("templateVersion", 1),
+                            accentHex = p.optString("accent", "#4d8fbe"),
+                            sortOrder = i,
+                            updatedAt = p.optLong("updatedAt", System.currentTimeMillis()),
+                            rawJson = p.toString()
+                        )
                     )
-                )
+                    val daysArr = p.optJSONArray("days")
+                    if (daysArr != null) {
+                        for (dIdx in 0 until daysArr.length()) {
+                            val d = daysArr.optJSONObject(dIdx) ?: continue
+                            val did = d.optString("id", (dIdx + 1).toString())
+                            val dName = d.optString("name", did)
+                            dayEntities.add(
+                                ProgramDayEntity(
+                                    compositeId = "$pid:$did",
+                                    programId = pid,
+                                    dayId = did,
+                                    nameHu = d.optString("hu", dName),
+                                    nameEn = d.optString("en", dName),
+                                    nameDe = d.optString("de", dName),
+                                    nameRo = d.optString("ro", dName),
+                                    sortOrder = dIdx,
+                                    exercisesJson = (d.optJSONArray("exercises") ?: JSONArray()).toString()
+                                )
+                            )
+                        }
+                    }
+                }
+                database.programDao().upsertPrograms(progEntities)
+                database.programDao().upsertProgramDays(dayEntities)
+            }
+
+            // 5. Workout History
+            val historyArr = data.optJSONArray("history")
+            if (historyArr != null) {
+                if (replaceAll) database.workoutHistoryDao().deleteAllWorkouts()
+                val tombstones = database.workoutHistoryDao().getAllTombstones()
+                for (i in 0 until historyArr.length()) {
+                    val h = historyArr.optJSONObject(i) ?: continue
+                    saveWorkoutJsonToRoom(h, tombstones)
+                }
+            }
+
+            // 6. Body Weights
+            val weightsArr = data.optJSONArray("weights")
+            if (weightsArr != null) {
+                if (replaceAll) database.bodyWeightDao().deleteAllWeights()
+                val weightEntities = ArrayList<BodyWeightEntryEntity>()
+                for (i in 0 until weightsArr.length()) {
+                    val w = weightsArr.optJSONObject(i) ?: continue
+                    val kg = w.optDouble("kg", Double.NaN)
+                    val date = w.optString("date").trim()
+                    if (!kg.isFinite() || kg <= 0.0 || date.isEmpty()) continue
+                    val id = w.optString("id").takeIf { it.isNotBlank() } ?: LegacySyncIdentity18.legacyWeightId(w)
+                    val dayKey = if (date.length >= 10) date.substring(0, 10) else date
+                    val copyJson = JSONObject(w.toString()).put("id", id)
+                    weightEntities.add(
+                        BodyWeightEntryEntity(
+                            id = id,
+                            date = date,
+                            dayKey = dayKey,
+                            kg = (kg * 10.0).roundToInt() / 10.0,
+                            updatedAt = w.optLong("updatedAt", System.currentTimeMillis()),
+                            rawJson = copyJson.toString()
+                        )
+                    )
+                }
+                database.bodyWeightDao().upsertWeights(weightEntities)
+            }
+
+            // 7. Scheduled Calendar Entries
+            val scheduledArr = data.optJSONArray("scheduled")
+            if (scheduledArr != null) {
+                if (replaceAll) database.calendarScheduleDao().deleteAllEntries()
+                val schedEntities = ArrayList<CalendarScheduleEntity>()
+                for (i in 0 until scheduledArr.length()) {
+                    val s = scheduledArr.optJSONObject(i) ?: continue
+                    val startIso = s.optString("start", s.optString("plannedStart", "")).trim()
+                    val date = s.optString("date", if (startIso.length >= 10) startIso.substring(0, 10) else "").trim()
+                    if (date.isEmpty()) continue
+                    val id = s.optString("id", s.optString("scheduleId", "")).ifBlank {
+                        "legacy-schedule-" + UUID.nameUUIDFromBytes(s.toString().toByteArray(Charsets.UTF_8))
+                    }
+                    val programId = s.optString("programId", "")
+                    val dayId = s.optString("dayId", s.optString("workout", ""))
+                    val googleId = s.optString("googleEventId").takeIf { it.matches(Regex("rf[0-9a-f]{64}")) }
+                        ?: LegacySyncIdentity18.calendarEventId(id, date, programId, dayId)
+                    schedEntities.add(
+                        CalendarScheduleEntity(
+                            id = id,
+                            googleEventId = googleId,
+                            date = date,
+                            startIso = startIso,
+                            endIso = s.optString("end", ""),
+                            programId = programId,
+                            programName = s.optString("programName", ""),
+                            dayId = dayId,
+                            dayName = s.optString("dayName", dayId),
+                            status = s.optString("status", "planned"),
+                            updatedAt = s.optLong("updatedAt", System.currentTimeMillis()),
+                            rawJson = s.toString()
+                        )
+                    )
+                }
+                database.calendarScheduleDao().upsertEntries(schedEntities)
+            }
+
+            // 8. Auxiliary JSON Documents (draft, plannerSettings, plan, wearClosedWorkouts, cloud*)
+            for (docKey in listOf("draft", "plannerSettings", "plan", "gpsTrip106", "wearClosedWorkouts", "cloudStatus", "cloudRetention105")) {
+                if (replaceAll && docKey in setOf("draft", "plannerSettings", "plan") && (!data.has(docKey) || data.isNull(docKey))) {
+                    database.keyValueDocumentDao().deleteDocument(docKey)
+                } else if (data.has(docKey) && !data.isNull(docKey)) {
+                    database.keyValueDocumentDao().putDocument(
+                        KeyValueDocumentEntity(
+                            key = docKey,
+                            json = data.get(docKey).toString(),
+                            updatedAt = System.currentTimeMillis()
+                        )
+                    )
+                }
             }
         }
+        settingsStore.importPortableSettings(data)
     }
 
     /**
      * Parses a canonical workout history JSONObject and persists it with all exercises,
      * sets, RIRs (#229), GPS route keys (#163/#193), and photo references into Room.
      */
-    suspend fun saveWorkoutJsonToRoom(h: JSONObject) {
+    suspend fun saveWorkoutJsonToRoom(h: JSONObject) = saveWorkoutJsonToRoom(h, database.workoutHistoryDao().getAllTombstones())
+
+    private suspend fun saveWorkoutJsonToRoom(h: JSONObject, tombstones: List<HistoryTombstoneEntity>) {
         val started = h.optString("started", "").trim()
         if (started.isEmpty()) return
         val finished = h.optString("finished", started).trim()
         val id = h.optString("id").takeIf { it.isNotBlank() } ?: LegacySyncIdentity18.legacyHistoryId(h)
         val identities = setOf(id, h.optString("syncId"), h.optString("workoutId"), LegacySyncIdentity18.legacyHistoryId(h)) - ""
-        for (tombstone in database.workoutHistoryDao().getTombstones()) {
+        for (tombstone in tombstones) {
             val ids = JSONArray(tombstone.idsJson)
             if ((0 until ids.length()).any { ids.optString(it) in identities } ||
                 (tombstone.workoutKey.isNotBlank() && tombstone.workoutKey == h.optString("key"))) return
@@ -588,6 +570,12 @@ class LegacyWebViewMigrator(
         withContext(Dispatchers.IO) {
             val settings = settingsStore.current()
             val out = JSONObject()
+            // Explicit portable documents only: never export the private GPS trip/raw WebView archive.
+            for (key in listOf("draft", "plannerSettings", "plan", "wearClosedWorkouts")) {
+                database.keyValueDocumentDao().getDocument(key)?.let { doc ->
+                    out.put(key, org.json.JSONTokener(doc.json).nextValue())
+                }
+            }
 
             // History
             val historyArray = JSONArray()
@@ -741,7 +729,7 @@ class LegacyWebViewMigrator(
 
             // Tombstones
             val tombstonesArray = JSONArray()
-            for (t in database.workoutHistoryDao().getTombstones()) {
+            for (t in database.workoutHistoryDao().getAllTombstones()) {
                 tombstonesArray.put(
                     JSONObject()
                         .put("ids", JSONArray(t.idsJson))
@@ -767,12 +755,15 @@ class LegacyWebViewMigrator(
                     .put("hapticSetRecorded227", settings.hapticSetRecorded227)
                     .put("healthBackupConsent", settings.healthBackupConsent)
                     .put("onboarding128", settings.onboarding128)
+                    .put("autoWriteWorkoutToHealthConnect", settings.autoWriteWorkoutToHealthConnect)
+                    .put("weightRange", settings.weightRange)
+                    .put("gpsStartChoices216", JSONObject(settings.gpsStartChoices216 as Map<*, *>))
             )
 
             if (includeHealthJournal && healthSnapshot != null) {
                 out.put("nativeHealthJournal", healthSnapshot)
             }
 
-            out
+            NativeBackupPrivacy.sanitize(out)
         }
 }

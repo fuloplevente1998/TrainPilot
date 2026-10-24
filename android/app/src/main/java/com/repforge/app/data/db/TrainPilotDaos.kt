@@ -195,6 +195,9 @@ interface WorkoutHistoryDao {
     @Query("SELECT * FROM history_tombstones ORDER BY deletedAt DESC LIMIT 2000")
     suspend fun getTombstones(): List<HistoryTombstoneEntity>
 
+    @Query("SELECT * FROM history_tombstones ORDER BY deletedAt DESC")
+    suspend fun getAllTombstones(): List<HistoryTombstoneEntity>
+
     @Query("DELETE FROM history_tombstones")
     suspend fun deleteAllTombstones()
 

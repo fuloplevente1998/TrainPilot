@@ -51,6 +51,7 @@ class BackupRestoreManager(context: Context) {
     private val database = TrainPilotDatabase.getInstance(appContext)
     private val settingsStore = TrainPilotSettingsStore(appContext)
     private val migrator = LegacyWebViewMigrator(appContext, database, settingsStore)
+    internal var restoreCheckpoint: ((String) -> Unit)? = null
 
     private fun mkdir(f: File) {
         if (!f.isDirectory && !f.mkdirs()) throw IOException("Cannot create backup directory.")
@@ -201,9 +202,13 @@ class BackupRestoreManager(context: Context) {
                 ArchiveIO.verify(incoming, actual, expected, hashes.keys().asSequence().associateWith { hashes.getString(it) })
             }
             journal.write(durableEntry)
+            restoreCheckpoint?.invoke("receipt-prepared")
             if (entry.kind == "zip") installPhotosTransactionally(dir, data)
+            restoreCheckpoint?.invoke("photos-installed")
             applyValidatedRestoreData(data)
+            restoreCheckpoint?.invoke("data-imported")
             journal.write(durableEntry.copy(committed = true))
+            restoreCheckpoint?.invoke("receipt-committed")
         }
         removeRecursive(dir)
         journal.clear()
@@ -402,20 +407,26 @@ class BackupRestoreManager(context: Context) {
         val healthStore = HealthJournalStore.get(appContext)
         var healthToken: String? = null
 
-        if (healthJournal != null) {
+        val pendingHealthRestore = healthStore.pendingRestore()
+        if (healthJournal != null || pendingHealthRestore.isNotEmpty()) {
             HealthBackgroundService.stop(appContext)
             (appContext.getSystemService(Context.JOB_SCHEDULER_SERVICE) as? JobScheduler)?.cancel(HealthBackgroundJob.ID)
-            healthToken = healthStore.prepareRestore(healthJournal)
+            if (pendingHealthRestore.isNotEmpty()) healthStore.finishRestore(pendingHealthRestore, false)
+            if (healthJournal != null) healthToken = healthStore.prepareRestore(healthJournal)
+            restoreCheckpoint?.invoke("health-prepared")
         }
 
         try {
             if (healthToken != null) {
                 healthStore.installRestore(healthToken)
+                restoreCheckpoint?.invoke("health-installed")
             }
             migrator.importBackupJson(data, replaceAll = true)
             settingsStore.markMigrationComplete() // Never reimport the old WebView over an explicit restored backup.
+            restoreCheckpoint?.invoke("room-settings-imported")
             if (healthToken != null) {
                 healthStore.finishRestore(healthToken, true)
+                restoreCheckpoint?.invoke("health-committed")
             }
         } catch (e: Exception) {
             if (healthToken != null) {

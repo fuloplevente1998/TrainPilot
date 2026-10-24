@@ -241,6 +241,40 @@ class TrainPilotSettingsStore(private val context: Context) {
         }
     }
 
+    /** One atomic portable-settings update, invoked only after the Room import commits. */
+    internal suspend fun importPortableSettings(data: JSONObject) {
+        val source = data.optJSONObject("settings") ?: JSONObject()
+        val language = source.optString("language", source.optString("lang", data.optString("language")))
+        val theme = importedTheme(data)
+        context.trainPilotDataStore.edit { prefs ->
+            if (language in listOf("hu", "en", "de", "ro")) prefs[KEY_LANGUAGE] = language
+            if (data.optString("activeProgramId").isNotBlank()) prefs[KEY_ACTIVE_PROGRAM_ID] = data.getString("activeProgramId")
+            if (theme != null) {
+                prefs[KEY_THEME_KEY] = theme.key; prefs[KEY_THEME_ACCENT] = theme.accent
+                prefs[KEY_THEME_ACCENT2] = theme.accent2; prefs[KEY_THEME_FAMILY] = theme.family
+            }
+            if (source.has("restSeconds")) {
+                prefs[KEY_REST_SECONDS] = source.optInt("restSeconds", 90).coerceIn(0, 3600)
+                prefs[KEY_WORK_SECONDS] = source.optInt("workSeconds", 30).coerceIn(1, 3600)
+                prefs[KEY_ROUNDS] = source.optInt("rounds", 1).coerceIn(1, 100)
+                prefs[KEY_SOUND_ENABLED] = source.optBoolean("sound", true)
+                prefs[KEY_VIBRATION_ENABLED] = source.optBoolean("vibration", true)
+            }
+            if (source.has("hapticSetRecorded227")) prefs[KEY_HAPTIC_SET_RECORDED_227] = source.optBoolean("hapticSetRecorded227", true)
+            if (source.has("healthBackupConsent")) prefs[KEY_HEALTH_BACKUP_CONSENT] = source.optBoolean("healthBackupConsent")
+            if (source.has("autoWriteWorkoutToHealthConnect")) prefs[KEY_AUTO_WRITE_HC] = source.optBoolean("autoWriteWorkoutToHealthConnect")
+            if (source.has("weightRange")) prefs[KEY_WEIGHT_RANGE] = source.optString("weightRange", "30")
+            if (source.has("onboarding128")) prefs[KEY_ONBOARDING_128] = source.optString("onboarding128", "complete")
+            source.optJSONObject("gpsStartChoices216")?.let { choices ->
+                val valid = JSONObject()
+                for (key in choices.keys()) if (com.repforge.app.NativeOutdoorStart.eligible(key, "distance", "km") && choices.opt(key) is Boolean)
+                    valid.put(key, choices.getBoolean(key))
+                prefs[KEY_GPS_START_CHOICES_216] = valid.toString()
+            }
+            // Device identity and migration/runtime flags are local, never taken from a foreign backup.
+        }
+    }
+
     suspend fun resetAllSettingsForEraseLocal() {
         context.trainPilotDataStore.edit { prefs ->
             prefs.clear()
