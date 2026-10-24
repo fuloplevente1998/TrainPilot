@@ -4,6 +4,44 @@ Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Saját gyakorlatok natív létrehozása/szerkesztése/törlése
+
+**a46a8bcd** `[skip ci]` utolsó alkalmazáskód; csak a
+`feat/native-android-migration` ágon. `NativeCustomExerciseEditor`
+a már meglévő `exercise_library` Room-táblát és eredeti
+`rawJson` import/export formátumot használja; nincs új DB-séma,
+új adatszinkron-fork, és a 106 builtin érintetlen.
+
+- Új saját gyakorlat: különleges, ütközésmentes
+  `custom-UUID` azonosító, név/leírás, izomcsoport,
+  mérési/terhelési típus, egység, sorozat, ismétlés/idő,
+  súly, pihenő és opcionális konkrét YouTube watch URL.
+  HU/EN/DE/RO formcímkék. A kanonikus JSON minden
+  mentett typed mezővel együtt megy a meglévő backup/Drive útvonalra.
+- Szerkesztésnél a stabil ID, más nyelvi mezők,
+  ismeretlen legacy JSON kulcsok és importált másodlagos
+  izomcsoportok megmaradnak. Az eredetileg megnyitott
+  `rawJson` ellenőrzése nélkül a stale felület nem írhat
+  felül közben módosított sort.
+- Törlés csak `custom=true` rekordra, külön megerősítéssel,
+  `NativeDataReplacement.mutate` és Room tranzakcióban.
+  Aktív edzés, naplóban használt exerciseId, programnapi
+  referencia vagy időközben megváltozott rekord esetén
+  **nincs törlés**. Siker után ugyanabban a tranzakcióban
+  csak a törölt gyakorlat kedvencjelölése tűnik el.
+- 11 új JVM unit +2 Compose Phone UI-próba a CRUD,
+  hivatkozás-/stale/restore-védelem, videóvalidáció,
+  roundtrip és a felület ellenőrzésére. Összes megírt
+  új próbakód **259 unit +25 telefonos UI**; egyik sem futott.
+  16 statikus adatút/összekötési ellenőrzés PASS,
+  de Kotlin/Room/Compose fordítás, emulátor, felhasználói
+  APK továbbra **nem igazolt**.
+
+Következő kódolási rész: programnapok és programok
+teljes szerkesztése, majd profil/progresszió maradék.
+Main, release, verzió és Wear érintetlen; saját adatok
+fölé telepítés STOP. PR #238 naprakész állapottal követendő.
+
 ## Teljes natív gyakorlatkönyvtár és eredeti videó-hivatkozások
 
 **d5222a32** `[skip ci]` utolsó alkalmazás-/tesztforrás; kizárólag
