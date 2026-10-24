@@ -21,6 +21,7 @@ data class TrainingProgramsUiState(
     val programs: List<ProgramWithDays> = emptyList(),
     val isPersonalPlannerOpen: Boolean = false,
     val language: String = "hu",
+    val trainingProfileJson: String = "{}",
     val writeFailed: Boolean = false,
     val exerciseChoices: List<ExerciseLibraryEntity> = emptyList(),
     val editorSaving: Boolean = false,
@@ -49,7 +50,8 @@ class TrainingProgramsViewModel(application: Application) : AndroidViewModel(app
                         database.exerciseLibraryDao().getAllExercises())
                 }
                 _uiState.value = _uiState.value.copy(activeProgramId = result.first.activeProgramId,
-                    language = result.first.language, programs = result.second,
+                    language = result.first.language, trainingProfileJson = result.first.profileJson,
+                    programs = result.second,
                     exerciseChoices = result.third, writeFailed = false)
             } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
             catch (_: Exception) { _uiState.value = _uiState.value.copy(writeFailed = true) }
@@ -84,6 +86,36 @@ class TrainingProgramsViewModel(application: Application) : AndroidViewModel(app
             catch (failure: Exception) {
                 _uiState.value = _uiState.value.copy(editorError = failure.message ?: "Program save failed")
             } finally { _uiState.value = _uiState.value.copy(editorSaving = false) }
+        }
+    }
+
+    fun savePersonalProgram(preview: com.repforge.app.NativeProfileProgramPreview.Preview, language: String) {
+        if (_uiState.value.editorSaving || !_uiState.value.isPersonalPlannerOpen) return
+        _uiState.value = _uiState.value.copy(editorSaving = true,
+            editorError = null, savedProgramId = null, deletedProgramId = null)
+        viewModelScope.launch {
+            try {
+                val id = withContext(Dispatchers.IO) {
+                    com.repforge.app.NativeProgramEditor.save(context, database,
+                        preview.source, preview.draft, language,
+                        com.repforge.app.NativeProfileProgramPreview.metadata(preview))
+                }
+                // A new copy is published before making it active; failure to activate
+                // never mutates the template or the original active program.
+                withContext(Dispatchers.IO) { settingsStore.setActiveProgramId(id) }
+                val programs = withContext(Dispatchers.IO) { database.programDao().getProgramsWithDays() }
+                _uiState.value = _uiState.value.copy(programs = programs,
+                    activeProgramId = id, savedProgramId = id,
+                    isPersonalPlannerOpen = false)
+                try { withContext(Dispatchers.IO) { WearSyncRepository.publishWatchHomeSnapshot(context) } }
+                catch (_: Exception) { /* durable program + active choice remain canonical; Wear retries */ }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (failure: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    editorError = failure.message ?: "Personal program cannot be saved")
+            } finally {
+                _uiState.value = _uiState.value.copy(editorSaving = false)
+            }
         }
     }
 
