@@ -57,6 +57,7 @@ class NativeCustomExerciseEditorTest {
     @Test fun editingOneLanguagePreservesOtherNamesAndLegacyMetadata() {
         val base = NativeCustomExerciseEditor.update(null, "custom-example", draft(), "hu")
         val restored = base.copy(nameEn = "Own exercise",
+            muscleGroupsJson = JSONArray().put("arms").put("back").toString(),
             rawJson = JSONObject(base.rawJson).put("legacyExtra", "preserved").put("en", "Own exercise").toString())
         val edited = NativeCustomExerciseEditor.update(restored, "custom-example",
             draft().copy(name = "Eigener Name"), "de")
@@ -65,6 +66,8 @@ class NativeCustomExerciseEditorTest {
         assertEquals("Eigener Name", edited.nameDe)
         assertEquals("preserved", JSONObject(edited.rawJson).getString("legacyExtra"))
         assertEquals("Own exercise", JSONObject(edited.rawJson).getString("en"))
+        assertEquals(listOf("arms", "back"), (0 until JSONArray(edited.muscleGroupsJson).length())
+            .map { JSONArray(edited.muscleGroupsJson).getString(it) })
     }
 
     @Test fun missingVideoOnEditClearsOldDemoInsteadOfResurrectingIt() {
@@ -137,6 +140,19 @@ class NativeCustomExerciseEditorTest {
         assertThrows(IllegalStateException::class.java) { runBlocking {
             NativeCustomExerciseEditor.delete(context, db, id) } }
         assertNotNull(db.exerciseLibraryDao().getExerciseById(id))
+    }
+
+    @Test fun dataReplacementFenceBlocksCustomWritesWithoutPartialRows() = runBlocking {
+        context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE)
+            .edit().putBoolean("blocked", true).commit()
+        try {
+            assertThrows(IllegalStateException::class.java) { runBlocking {
+                NativeCustomExerciseEditor.save(context, db, null, draft(), "hu") } }
+            assertTrue(db.exerciseLibraryDao().getAllExercises().isEmpty())
+        } finally {
+            context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE)
+                .edit().clear().commit()
+        }
     }
 
     @Test fun portableBackupKeepsEditedCustomExerciseAndVideo() = runBlocking {
