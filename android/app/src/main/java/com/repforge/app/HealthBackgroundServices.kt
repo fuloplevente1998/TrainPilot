@@ -77,13 +77,14 @@ class HealthBackgroundService : Service() {
         }
 
         @JvmStatic
-        fun resume(context: Context) {
-            try {
-                if (configured(context) && HealthJournalStore.get(context).pendingRestore().isEmpty()) {
+        fun resume(context: Context): Boolean {
+            return try {
+                if (!configured(context) || HealthJournalStore.get(context).pendingRestore().isNotEmpty()) false
+                else {
                     ContextCompat.startForegroundService(context, Intent(context, HealthBackgroundService::class.java))
+                    true // Started/requested, not yet a verified BLE connection.
                 }
-            } catch (_: Exception) {
-            }
+            } catch (_: Exception) { false }
         }
 
         @JvmStatic
