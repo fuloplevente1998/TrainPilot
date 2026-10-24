@@ -20,6 +20,20 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   prototípus/fake Health-forrás tilos. Nyolcgombos menü helyett öt alsó fül elfogadva,
   jobb felső Settings; abból visszatérés nem pause, valódi editor-elhagyás igen.
 
+## Legújabb natív batch – v144 kedvencek
+
+`4159a76` `[skip ci]`: a main `exerciseFavorites` tömbje validáltan
+Room kv_documents-ben, migrációs key import, canonical
+JSON/ZIP/Drive roundtrip, restore/erase kizáró adatkötés,
+korábbi alias olvasás és replaceAll-tisztítás, Drive konfliktus-
+választás. A gyorsedzés gyakorlatválasztója kedvenc szűrőt/
+csillagozást kapott négy nyelvű akadálymentes felirattal; a
+csillagozás nem indít sessiont. **10 JVM unit +1 Phone UI kód:
+241 unit+20 UI megírva, még nem futott.** Teljes katalógus/
+részletoldal/egyedi gyakorlat és program/profil szerkesztése még
+nyitott. Statikus referenciák igazolva, Android CI/APK nincs.
+PR #238 naprakészen tartandó.
+
 ## Legújabb natív kódbatch — HC/BLE háttérfeltételek
 
 `f90e7ef` `[skip ci]`: valós háttér-HC (olvasás/külön háttérengedély/
