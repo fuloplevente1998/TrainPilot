@@ -30,6 +30,8 @@ internal fun CalendarScreen(starting: Boolean, onStart: (CalendarScheduleEntity)
     var editorOpen by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf<CalendarScheduleEntity?>(null) }
     val busy = state.busy || starting
+    val dayList = androidx.compose.foundation.lazy.rememberLazyListState()
+    LaunchedEffect(state.month) { dayList.scrollToItem((state.day.dayOfMonth - 3).coerceAtLeast(0)) }
     val plans = state.plans.filter { it.date == state.day.toString() }
     val history = state.history.filter { model.historyDay(it) == state.day }
     val completedIds = state.history.map { it.scheduleId }.filter { it.isNotBlank() }.toSet()
@@ -43,7 +45,7 @@ internal fun CalendarScreen(starting: Boolean, onStart: (CalendarScheduleEntity)
                         modifier = Modifier.padding(top = 12.dp))
                     TextButton(onClick = { model.changeMonth(1) }, enabled = !busy) { Text(words[2]) }
                 }
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                LazyRow(state = dayList, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     items((1..state.month.lengthOfMonth()).toList(), key = { it }) { number ->
                         val date = state.month.atDay(number)
                         if (date == state.day) Button(onClick = { model.selectDay(date) }, enabled = !busy,
