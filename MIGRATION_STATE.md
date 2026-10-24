@@ -1,6 +1,20 @@
 # TrainPilot – Natív Android-migráció forrás-visszaállítási állapota
 
-## Legfrissebb kapu – gyors/kültéri natív indítás (2026-10-23)
+## Legfrissebb kapu – importált draft natív átvétele (2026-10-24)
+
+**`dd4cc27` / [40072751592](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40072751592) teljes SUCCESS, 6/6 job**.
+Tartós, archivált draft-átvétel szünetben; mért adatok és stabil azonosítók megmaradnak.
+Home Folytatás gomb bekötve. Eredeti draft átvételkor érintetlen; lezárás/elvetés
+hash szerint azonosított archívumtakarítása, SQL-hiba/retry és újabb draft védelme.
+**Telefon 393/393 + Wear 167/167**, az előző 540 unit-eset mind megmaradt, +20.
+Kerek UI **183/183**, eredeti/gyorsított release-ről signed upgrade **2/2**, 0 hiba/kihagyás.
+APK-k eredeti signer/csomag/verzió/hash/épség és új draft R8 DEX ellenőrizve.
+[Teljes bizonylat](docs/builds/2026-10-24-native-legacy-draft.json).
+Main/verzió/Wear/shared termékkód változatlan. **Teljes app/saját adatokra telepítés STOP.**
+Következő: valódi telefonos Compose folytatás/mentés/elvetés kapu; további funkcióegyezés,
+backup/restore és fizikai Phone/Watch7 külön feladat.
+
+## Korábbi kapu – gyors/kültéri natív indítás (2026-10-23)
 
 **`9da639d` / [40017855126](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40017855126) teljes SUCCESS, 6/6 job**.
 Valódi könyvtárválasztó és programfüggetlen quick session; közös #228 előtöltés,

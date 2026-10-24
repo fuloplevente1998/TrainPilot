@@ -1,0 +1,232 @@
+{
+  "applicationSource": "dd4cc273899fef9f631896e9fa0e223f2b6eb7fb",
+  "workflowRun": 40072751592,
+  "unit": {
+    "app": {
+      "tests": 393,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "wear": {
+      "tests": 167,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "previousVerifiedUnitCases": 540,
+  "previousCaseIdentitiesPreserved": true,
+  "newRegressionTests": [
+    {
+      "class": "com.repforge.app.NativeLegacyDraftAdoptionTest",
+      "name": "adoptsPausedWithLibraryMetadataAndKeepsOriginalAndArchive"
+    },
+    {
+      "class": "com.repforge.app.NativeLegacyDraftAdoptionTest",
+      "name": "archiveWriteFailureLeavesDraftWithoutNativeExecution"
+    },
+    {
+      "class": "com.repforge.app.NativeLegacyDraftAdoptionTest",
+      "name": "closedWatchDocumentPreventsResurrection"
+    },
+    {
+      "class": "com.repforge.app.NativeLegacyDraftAdoptionTest",
+      "name": "nativeWriteFailureRollsBackArchiveAndLeavesOriginalForRetry"
+    },
+    {
+      "class": "com.repforge.app.NativeLegacyDraftAdoptionTest",
+      "name": "restoreFencePreventsAdoptionWithoutRemovingSource"
+    },
+    {
+      "class": "com.repforge.app.NativeLegacyDraftAdoptionTest",
+      "name": "retryKeepsSameGenerationAndSetIds"
+    },
+    {
+      "class": "com.repforge.app.NativeLegacyDraftTest",
+      "name": "closedDeletedCancelledOrFinalizingDraftIsRejected"
+    },
+    {
+      "class": "com.repforge.app.NativeLegacyDraftTest",
+      "name": "conflictingIdsAndDuplicateSetIdsAreRejected"
+    },
+    {
+      "class": "com.repforge.app.NativeLegacyDraftTest",
+      "name": "downtimeIsNotCountedAndNoOldClockBecomesLive"
+    },
+    {
+      "class": "com.repforge.app.NativeLegacyDraftTest",
+      "name": "existingSetIdentityIsPreserved"
+    },
+    {
+      "class": "com.repforge.app.NativeLegacyDraftTest",
+      "name": "futureOrReversedDatesAreRejected"
+    },
+    {
+      "class": "com.repforge.app.NativeLegacyDraftTest",
+      "name": "invalidActiveIntervalIsRejectedInsteadOfInventingElapsedTime"
+    },
+    {
+      "class": "com.repforge.app.NativeLegacyDraftTest",
+      "name": "missingLegacyIdentityUsesAcceptedStartedIdentity"
+    },
+    {
+      "class": "com.repforge.app.NativeLegacyDraftTest",
+      "name": "missingLibraryEntryCannotSilentlyDropARecordedExercise"
+    },
+    {
+      "class": "com.repforge.app.NativeLegacyDraftTest",
+      "name": "preflightLeavesTheOriginalByteIdenticalAndPreservesActualMeasurements"
+    },
+    {
+      "class": "com.repforge.app.NativeLegacyDraftTest",
+      "name": "repeatedPreflightKeepsWorkoutAndSynthesizedSetIdentityStable"
+    },
+    {
+      "class": "com.repforge.app.NativeLegacyDraftTest",
+      "name": "selectionIsClampedWithoutDiscardingTheRecordedRow"
+    },
+    {
+      "class": "com.repforge.app.NativeLegacyDraftTest",
+      "name": "watchOwnerOrOwnershipEpochRequiresReconciliation"
+    },
+    {
+      "class": "com.repforge.app.NativeWorkoutFinalizationTest",
+      "name": "importedDraftCleanupFailureKeepsNativeSessionRetryableAndArchiveIsRetained"
+    },
+    {
+      "class": "com.repforge.app.NativeWorkoutFinalizationTest",
+      "name": "newerImportedDraftIsNeverRemovedByOldWorkoutFinalization"
+    }
+  ],
+  "apks": {
+    "phone": {
+      "artifact": 12551814173,
+      "size": 3163509,
+      "sha256": "5d5c82faa70b27e68ecd2fd80c6e36684e9d26c494d74d49b0e23005906d150d",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/40072751592/artifacts/12551814173"
+    },
+    "wear": {
+      "artifact": 12552251982,
+      "size": 5109898,
+      "sha256": "57df1f4418bd1199b7236b1a3c58ac4e8e839b6b2f1de316619bb2afa98ac24d",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/40072751592/artifacts/12552251982"
+    }
+  },
+  "signerSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+  "package": "com.repforge.app",
+  "versionName": "1.3.71-native-test",
+  "versionCode": 2736,
+  "releaseDexContainsMeasuredProtocols": true,
+  "unitXmlArtifact": 12552615580,
+  "verificationArtifact": 12552461126,
+  "productSource": "dd4cc273899fef9f631896e9fa0e223f2b6eb7fb",
+  "androidSourceTree": "ec6e4440ff5609a44a8eba74dc38cff170db5498",
+  "branch": "feat/native-android-migration",
+  "conclusion": "success",
+  "workflowRunAttempt": 1,
+  "wearUi": {
+    "tests": 183,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "caseIdentitiesMatchPreviousGate": true,
+    "shards": [
+      {
+        "shard": 0,
+        "artifact": 12552421914,
+        "tests": 68,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "homeFocusedBeforeInstrumentation": true
+      },
+      {
+        "shard": 1,
+        "artifact": 12551794635,
+        "tests": 59,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "homeFocusedBeforeInstrumentation": true
+      },
+      {
+        "shard": 2,
+        "artifact": 12552018350,
+        "tests": 56,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "homeFocusedBeforeInstrumentation": true
+      }
+    ],
+    "derivedXml": "docs/builds/native-dd4cc27/wear-round-derived.xml"
+  },
+  "signedUpgrade": {
+    "verified": true,
+    "baselines": [
+      {
+        "tag": "v1.3.71",
+        "artifact": 12552186467,
+        "seedStatus": "ok",
+        "verifyStatus": "ok",
+        "uninstallOrClear": false
+      },
+      {
+        "tag": "v1.3.71-perf-20261022",
+        "artifact": 12552003073,
+        "seedStatus": "ok",
+        "verifyStatus": "ok",
+        "uninstallOrClear": false
+      }
+    ],
+    "derivedXml": "docs/builds/native-dd4cc27/signed-upgrade-derived.xml"
+  },
+  "previousFunctionalCheckpoint": "docs/builds/2026-10-23-native-quick-outdoor.json",
+  "liveInstallApproved": false,
+  "physicalPhoneWatch7Tested": false,
+  "fullFunctionalParityVerified": false,
+  "backupRestoreFullRoundTripVerified": false,
+  "changes": [
+    "legacy draft preflight preserves measurements and stable identities, rejects ambiguous or unsafe owner/date/closed states",
+    "Room transaction validates library, history aliases, tombstones and closed-watch state before native adoption",
+    "original draft remains intact on adoption, SHA256-bound archive precedes native publication",
+    "same canonical start lock and native recovery make repeated adoption resume the existing paused session",
+    "Home continuation button follows Room draft existence; no automatic GPS or stopwatch restart",
+    "after durable history save, exact-source retirement archives then deletes with retryable native finalization fence",
+    "newer different draft is never removed by finishing the old workout",
+    "explicit discard retires only matching imported source after durable tombstone",
+    "original Wear/shared product source, package, signer and versions unchanged"
+  ],
+  "remaining": [
+    "integrated real phone Compose draft continuation/save/discard UI test",
+    "extra post-publication crash, historical alias and discard end-to-end regression scenarios",
+    "general program-day initial GPS choice, manual interval mode and global presets",
+    "combined watch/phone route segment UI, native Calendar/Coach/catalog/locales and bounded journal performance",
+    "full backup/restore round trip, physical Phone/Watch7 and real two-device offline sync"
+  ],
+  "supersededRuns": [
+    {
+      "source": "b978936",
+      "run": 40072179234,
+      "conclusion": "cancelled",
+      "reason": "Intermediate draft implementation superseded before a complete validated gate; no green result claimed."
+    },
+    {
+      "source": "d26907e",
+      "run": 40072613908,
+      "conclusion": "cancelled",
+      "reason": "Intermediate draft implementation superseded before a complete validated gate; no green result claimed."
+    },
+    {
+      "source": "0cbc12a",
+      "run": 40072659788,
+      "conclusion": "cancelled",
+      "reason": "Intermediate draft implementation superseded before a complete validated gate; no green result claimed."
+    }
+  ],
+  "mainReference": "7473b30f387eda54186c1e31830304ca12bd104f",
+  "wearAndSharedProductSourceUnchangedFromPreviousCheckpoint": true,
+  "releaseDexContainsLegacyDraftProtocol": true,
+  "newPhoneComposeUiDeviceTested": false
+}
