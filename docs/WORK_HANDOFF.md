@@ -4,6 +4,24 @@ Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Új kódolási batch – még nem bevizsgált forrás (2026-10-24)
+
+- Legfrissebb alkalmazásforrás **`d134785`**, előzményei `e05ff57`, `3921c10`.
+  Mind a migrációs ágon, `[skip ci]` jelöléssel: a felhasználó előbb az öt terület
+  kódját kéri, utána összevont tesztelést. Új APK/fordítási/teszteredmény nincs;
+  az utolsó teljes zöld kapu továbbra **`dd4cc27`** lent.
+- Naptár: havi bounded Room-nézet, naplózott edzések, CRUD/áthelyezés/skip/restore,
+  szinkronizálható lemondás, CAS és aktív/teljesített védelem. A naptári indítás
+  scheduleId-val kapcsolódik a közös natív sessionhöz/lezáráshoz. UI/nav bekötve,
+  HU/EN/DE/RO feliratok; 11 megírt, még nem futtatott új teszt.
+- Coach: csak a tiszta readiness számítási mag portolva a main végső policyjéből,
+  külön Samsung/TrainPilot és frissesség/terhelési korlátozásokkal. 11 további
+  megírt, még nem futtatott teszt. **Coach adapter/adatbetöltés és UI/nav még nincs
+  bekötve**, a Coach gomb egyelőre trainingre visz; ez a következő konkrét lépés.
+- Részletek és további sorrend: [batch terv](plans/NATIVE_COMPLETION_BATCH.md).
+  Az öt terület nincs késznek jelölve. Verzió/Wear termékforrás változatlan,
+  nincs main merge/kiadás, saját adatokra telepítés továbbra STOP.
+
 ## Aktuális irány – előbb kód, utána összevont kapu (2026-10-24)
 
 Felhasználói kérés szerint az öt hátralévő terület kódját és tesztkódját előbb
@@ -21,7 +39,7 @@ Utolsó zöld forrás továbbra `dd4cc27` lent; main/verzió változatlan.
 - `resumeImportedDraft`: közös start-lock/recovery; Room-tranzakciós library/history ID+syncId+started/tombstone/closed-watch ellenőrzés, hiányzó megjelenítési/mérési meta és timer-config pótlása. Mért érték, done/RIR, útvonalhivatkozás és meglévő ID megmarad; hiányzó set-ID determinisztikus. SHA256-kötésű eredeti archívum, tartós natív frame, majd ActiveStore projekció. A draft átvételkor nem törlődik; az edzés szünetben áll helyre, nincs automatikus GPS/stopper. Ismételt indítás a már meglévő sessiont adja.
 - Home a Room draft-flow alapján mutatja a **Félbehagyott edzés folytatása** gombot; paused editorban külön tudatos folytatás kell. Mentéskor tartós napló után, még retryképes finalization-pending frame mellett csak a hash szerint egyező eredeti draft archiválható/törölhető; újabb eltérő draft védett. Elvetéskor tombstone után ugyanaz a `retire` tranzakció. SQL-hibák/retry és újabb draft védelme az új unit-próbákban zöld. A teljes telefonos UI-út ettől még külön ellenőrzendő.
 - [Gépi bizonylat és APK-hash](builds/2026-10-24-native-legacy-draft.json). Mindkét letöltött APK **com.repforge.app /1.3.71-native-test /2736**, eredeti signer/csomag/verzió/hash/ZIP-épség és új draft-protokoll a telefonos R8 DEX-ben ellenőrizve. [Phone signed ZIP](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40072751592/artifacts/12551814173), SHA256 `5d5c82faa70b27e68ecd2fd80c6e36684e9d26c494d74d49b0e23005906d150d`; [Wear signed ZIP](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40072751592/artifacts/12552251982), SHA256 `57df1f4418bd1199b7236b1a3c58ac4e8e839b6b2f1de316619bb2afa98ac24d`. Wear/upgrade XML jelölten származtatott nyers runneradatból, nem eredeti JUnit. Wear/shared termékforrás, main `7473b30` és verzió változatlan; nincs merge/kiadás.
-- **Teljes natív app és saját adatokra telepítés továbbra STOP. Következő fő lépés: integrált telefonos Compose Folytatás → mérés → mentés/elvetés UI-kapu**, post-publication crash és history-alias/discard végponttól végpontig regresszió. Utána programnapi kezdeti GPS-választás, további intervallummód/globális preset, Naptár/Coach/katalógus/nyelvek/nagy napló és közös watch/phone útvonalszakasz UI. Teljes backup/restore, valós Phone/Watch7 és kétkészülékes offline szinkron külön hiányzó kapu. A `NativeLegacyDraft` osztály régi „Pure preflight only” fejléce a `prepare` függvényre igaz; `retire` valódi tranzakciós takarítás (következő forrásmódosításnál pontosítandó).
+- **Teljes natív app és saját adatokra telepítés továbbra STOP. Következő fő lépés: integrált telefonos Compose Folytatás → mérés → mentés/elvetés UI-kapu**, post-publication crash és history-alias/discard végponttól végpontig regresszió. Utána programnapi kezdeti GPS-választás, további intervallummód/globális preset, Naptár/Coach/katalógus/nyelvek/nagy napló és közös watch/phone útvonalszakasz UI. Teljes backup/restore, valós Phone/Watch7 és kétkészülékes offline szinkron külön hiányzó kapu. A `NativeLegacyDraft` félrevezető régi fejlécét a későbbi kódolási batch már pontosította.
 
 ## Korábbi zöld kapu – natív gyors/kültéri indítás (2026-10-23)
 

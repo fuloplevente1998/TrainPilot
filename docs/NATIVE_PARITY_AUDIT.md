@@ -37,6 +37,12 @@ aláírt szintetikus upgrade **2/2**, nincs hiba/kihagyás. Letöltött release 
 hash/csomag/verzió/signer ellenőrizve; a measured protokoll és az időnaplómezők a telefonos R8 DEX-ben is jelen vannak.
 [Gépi bizonylat](builds/2026-10-23-native-measured-intervals.json).
 
+**Új, még nem bevizsgált batch:** `e05ff57`/`3921c10`/`d134785` Naptár adatút/UI,
+ütemezett indítás és Coach számítási mag. 22 új tesztkód, még nem futtatva;
+fordítás/Room/Compose működés nincs igazolva. Coach-adapter és UI még hiányzik.
+A lentebbi teszteredmények a bevizsgált `dd4cc27` állapotra vonatkoznak.
+[Batch részletek](plans/NATIVE_COMPLETION_BATCH.md).
+
 ## Ellenőrzési sorrend
 
 1. Fordítás és meglévő JVM tesztek; ugyanazon forrású, eredeti kulcsos APK-pár.

@@ -49,9 +49,33 @@ nem merge-elünk, és nem változtatunk verziót. Saját adatok fölé telepít�
   meglévő kód javítása/bekötése elsőbbséget élvez. Elfogadott main viselkedés
   ellenőrzése továbbra szükséges: a generált blokk önmagában nem funkcióegyezés.
 
-## Állapot
+## Állapot – kódolási batch, 2026-10-24
 
-A batch munkamód és forrásellenőrzés rögzítve. Az öt pont NINCS késznek jelölve.
-Az új telefonos UI tesztkészlet még nincs implementálva. Ebben az egyeztető
-körben alkalmazáskód nem változott, új build/teszt nem futott.
-Utolsó teljes zöld alkalmazásforrás: `dd4cc27`, bizonylata az átadóban.
+- `e05ff57`: Naptár repository a meglévő Room-entitás/DAO és Google-eseményazonosító
+  felhasználásával. Létrehozás/áthelyezés, stale-CAS, kihagyás/visszaállítás és
+  lemondási rekord; aktív/teljesített/historyhoz kötött alkalom védett. Naptári
+  indítás a natív sessionbe tartós scheduleId-t tesz, közvetlenül publikálás előtt
+  tranzakcióban újraellenőrzi az alkalmat. 11 új NativeCalendarTest tesztkód.
+- `3921c10`, `d134785`: Naptár útvonal és felső gyorsgomb, havi/dátum szerinti
+  felület, naplózott edzések, szerkesztő és törlési megerősítés; HU/EN/DE/RO
+  feliratszótár. Havi bounded Room-projekció, részletes sorozatok/fotók nélkül.
+- `d134785`: Coach tiszta számítási mag az elfogadott main végső rf245/tp184
+  szabályaiból (külön Samsung/TrainPilot, 36h frissesség, 14 nap/3 edzés,
+  easy +3/light +1/good 0/challenging -4/hard -8/pain -20; nincs kitalált alapscore).
+  11 új NativeCoachReadinessTest tesztkód. A valós adapter/adatbetöltés és a
+  Coach-képernyő/nav **még nincs bekötve**; a prototípus simulatív Health-managere
+  továbbra sem használható valós forrásként.
+- Összesen 22 új regressziós próba megírva, **még nem futtatva**. Most csak
+  forrás/hívási út és diff-ellenőrzés történt; nincs új Kotlin/Room/Compose
+  fordítási igazolás. A `[skip ci]` a felhasználó által kért batch munkamód része.
+- Utolsó teljes zöld alkalmazásforrás változatlanul `dd4cc27`, bizonylat az átadóban.
+
+Következő: Coach valós provider- és naplóadatút, célprogramnap, felület/navigáció
+bekötése a main policy alapján. A célpont kiválasztásánál a main tényleges
+rf233/rf235 felülírásait is ellenőrizni kell, nem csak a korábbi definíciót.
+Ezután további 2. pontok, bounded napló, backup/restore, Health/szinkron és a
+telefonos Compose UI-tesztkészlet/összevont kapu kódja. Az öt pont nincs kész.
+Későbbi integrációs vizsgálat: szerkesztés vs. indulás verseny, naptár állapotváltás
+mentéskor, felhőből lemondás visszaszinkronizálása, időzónák/DST, kis kijelző/nagy
+betű, programnevek lokalizációja és navigációs visszalépés. Naptári Google-szinkron
+régi takeLast(100) korlátját az 5. terület részeként külön rendezni kell.
