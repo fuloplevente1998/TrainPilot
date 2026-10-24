@@ -31,6 +31,8 @@ internal fun PersonalProgramPreviewDialog(
     programs: List<ProgramWithDays>,
     catalog: List<ExerciseLibraryEntity>,
     profileJson: String,
+    previews: Map<String, NativeProfileProgramPreview.Preview>,
+    loading: Boolean,
     language: String,
     saving: Boolean,
     saveError: String?,
@@ -41,11 +43,7 @@ internal fun PersonalProgramPreviewDialog(
     val recommended = if (profile.optString("experience") in setOf("intermediate", "advanced"))
         "home-level2" else "home-basic"
     var choice by remember { mutableStateOf(recommended) }
-    val template = programs.firstOrNull { it.program.id == choice && it.program.builtin }
-    val result = remember(template, profileJson, catalog, language) {
-        runCatching { template?.let { NativeProfileProgramPreview.preview(it, profileJson, catalog, language) } }
-    }
-    val preview = result.getOrNull()
+    val preview = previews[choice]
     val label = when (language) {
         "en" -> listOf("Personal A/B plan preview", "Basic", "Level 2", "Check your Training profile",
             "Set workout minutes and equipment first in Settings → Training profile. No exercise or weight is guessed.",
@@ -81,12 +79,26 @@ internal fun PersonalProgramPreviewDialog(
                             modifier = Modifier.testTag("personal_template_$id"))
                     }
                 }
-                if (preview == null) {
+                if (loading) {
+                    Text(when (language) {
+                        "en" -> "Checking workout history…"; "de" -> "Trainingsverlauf wird geprüft…"
+                        "ro" -> "Se verifică istoricul antrenamentelor…"
+                        else -> "Edzéselőzmények ellenőrzése…"
+                    }, modifier = Modifier.testTag("personal_preview_loading"))
+                } else if (preview == null) {
                     Text(label[3])
-                    Text(if (result.exceptionOrNull()?.message?.contains("No safe") == true)
-                        label[12] else label[4], modifier = Modifier.testTag("personal_preview_blocked"))
+                    Text(label[4], modifier = Modifier.testTag("personal_preview_blocked"))
                 } else {
                     Text("${label[6]}: ${preview.estimateMinutes} · ${label[5]}: ${preview.workSets}")
+                    val inherited = preview.history128.optJSONObject("entries")
+                    if (inherited != null && inherited.length() > 0) {
+                        Text(when (language) {
+                            "en" -> "History-backed loads: ${inherited.length()} exercises"
+                            "de" -> "Trainingshistorie: ${inherited.length()} Übungen"
+                            "ro" -> "Istoric compatibil: ${inherited.length()} exerciții"
+                            else -> "Kompatibilis edzéselőzmény: ${inherited.length()} gyakorlat"
+                        }, modifier = Modifier.testTag("personal_history_summary"))
+                    }
                     preview.draft.days.forEach { day ->
                         Text(day.name)
                         day.entries.forEach { entry ->
@@ -100,6 +112,14 @@ internal fun PersonalProgramPreviewDialog(
                             Text("• $name — ${recipe.getInt("sets")} × ${recipe.getString("reps")}")
                             if (recipe.optBoolean("trial"))
                                 Text(label[8], modifier = Modifier.testTag("personal_trial_$id"))
+                            else if (recipe.optDouble("weight") > 0) {
+                                Text(when (language) {
+                                    "en" -> "Last completed load: ${recipe.optDouble("weight")} kg (no automatic increase)"
+                                    "de" -> "Letztes Arbeitsgewicht: ${recipe.optDouble("weight")} kg (keine automatische Erhöhung)"
+                                    "ro" -> "Ultima greutate: ${recipe.optDouble("weight")} kg (fără creștere automată)"
+                                    else -> "Utolsó teljesített súly: ${recipe.optDouble("weight")} kg (nincs automatikus emelés)"
+                                }, modifier = Modifier.testTag("personal_inherited_$id"))
+                            }
                         }
                     }
                     if (preview.reductions.isNotEmpty()) {
@@ -113,7 +133,7 @@ internal fun PersonalProgramPreviewDialog(
             }
         },
         confirmButton = {
-            TextButton(enabled = preview != null && !saving,
+            TextButton(enabled = preview != null && !saving && !loading,
                 onClick = { preview?.let(onAccept) },
                 modifier = Modifier.testTag("personal_preview_accept")) { Text(label[9]) }
         },
