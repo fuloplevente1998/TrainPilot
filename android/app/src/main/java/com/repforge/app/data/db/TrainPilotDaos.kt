@@ -24,6 +24,18 @@ interface ProgramDao {
     @Query("SELECT id FROM programs")
     suspend fun getProgramIds(): List<String>
 
+    @Query("SELECT EXISTS(SELECT 1 FROM workout_history WHERE programId = :programId)")
+    suspend fun hasWorkoutHistory(programId: String): Boolean
+
+    @Query("SELECT EXISTS(SELECT 1 FROM calendar_entries WHERE programId = :programId)")
+    suspend fun hasScheduledEntries(programId: String): Boolean
+
+    @Query("SELECT EXISTS(SELECT 1 FROM workout_history WHERE programId = :programId AND dayId = :dayId)")
+    suspend fun hasDayHistory(programId: String, dayId: String): Boolean
+
+    @Query("SELECT EXISTS(SELECT 1 FROM calendar_entries WHERE programId = :programId AND dayId = :dayId)")
+    suspend fun hasDaySchedule(programId: String, dayId: String): Boolean
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertMissingProgram(program: ProgramEntity): Long
 
