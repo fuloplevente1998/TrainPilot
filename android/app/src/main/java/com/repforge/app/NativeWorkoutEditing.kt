@@ -272,9 +272,7 @@ internal object NativeWorkoutEditing {
     fun configureIntervals(context: Context, target: NativeWorkoutTarget, configuration: JSONObject): JSONObject {
         val frame = project(context)
         val resolved = target.resolve(frame)
-        val config = JSONObject()
-        for (field in listOf("work", "rest", "rounds")) config.put(field, PhoneWorkoutRecording.version(configuration, field))
-        config.put("sound", configuration.optBoolean("sound", true)).put("vibration", configuration.optBoolean("vibration", true))
+        val config = NativeIntervalPreset.normalized(configuration)
         frame.put("timerConfig", config).put("restSeconds", config.getInt("rest"))
         resolved.exercise.put("restSeconds162", config.getInt("rest"))
         // Validate even if automatic rest is currently disabled.

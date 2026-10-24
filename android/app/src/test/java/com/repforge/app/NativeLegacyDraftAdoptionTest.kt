@@ -104,4 +104,18 @@ class NativeLegacyDraftAdoptionTest {
         seed();db.keyValueDocumentDao().putDocument(KeyValueDocumentEntity("wearClosedWorkouts","[\"legacy-adopt\"]",1L))
         reject { resume() };assertNull(store().snapshot());assertNotNull(db.keyValueDocumentDao().getDocument("draft"))
     }
+    @Test fun importedWorkoutSpecificIntervalWinsOverGlobalPresetWithoutStartingATimer() = runTest {
+        settings.setTimerDefaults(60, 30, 5, true, false, true)
+        val source = JSONObject(raw())
+        source.getJSONObject("session").put("interval110", JSONObject().put("work", 7).put("rest", 2)
+            .put("rounds", 3).put("sound", false).put("vibration", true).put("autoAdvance", false))
+        db.keyValueDocumentDao().putDocument(KeyValueDocumentEntity("draft", source.toString(), 1L))
+        val saved = resume()
+        assertEquals(7, saved.getJSONObject("timerConfig").getInt("work"))
+        assertFalse(saved.getJSONObject("timerConfig").getBoolean("autoAdvance"))
+        assertTrue(saved.getBoolean("workoutPaused"))
+        assertEquals(60, settings.current().workSeconds)
+        assertFalse(saved.has("latestTimer162"))
+    }
+
 }

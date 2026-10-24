@@ -184,4 +184,24 @@ class NativePhoneNavigationTest {
         screenshot("discard_completed")
     }
 
+    @Test fun intervalConfigurationIsWorkoutScopedUntilGlobalDefaultIsExplicitlyChosen() {
+        runBlocking { NativeWorkoutSession.startQuickWorkout(context, "plank", false) }
+        launch(); tab("training")
+        compose.onNodeWithTag("interval_options").performScrollTo().performClick()
+        compose.onNodeWithTag("interval_auto_advance").performScrollTo().performClick()
+        compose.onNodeWithTag("interval_save").performScrollTo().performClick()
+        compose.waitUntil(10000) { snapshot()?.optJSONObject("timerConfig")?.optBoolean("autoAdvance", true) == false }
+        assertTrue(runBlocking { settings.current().intervalAutoAdvance })
+        assertFalse(snapshot()!!.has("latestTimer162"))
+        compose.onNodeWithTag("interval_global").performScrollTo().performClick()
+        compose.onNodeWithTag("interval_save").performScrollTo().performClick()
+        compose.waitUntil(10000) { runBlocking { !settings.current().intervalAutoAdvance } }
+        screenshot("interval_single_set_global_preset")
+        compose.onNodeWithTag("workout_discard").performClick()
+        compose.onNodeWithTag("workout_confirm_discard").performClick()
+        compose.waitUntil(10000) { snapshot()?.optBoolean("active") == false }
+        val next = runBlocking { NativeWorkoutSession.startQuickWorkout(context, "plank", false) }
+        assertFalse(next.snapshot.getJSONObject("timerConfig").getBoolean("autoAdvance"))
+    }
+
 }

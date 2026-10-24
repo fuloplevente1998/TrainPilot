@@ -86,4 +86,21 @@
     <string name="replacement_json">Andere JSON-Sicherung wählen</string>
     <string name="replacement_zip">Andere ZIP-Sicherung wählen</string>
     <string name="metadata_write_failed">Die Änderung konnte nicht gespeichert werden. Versuche es nach dem Datenaustausch erneut.</string>
+    <string name="interval_title">Intervalle und Pause</string>
+    <string name="interval_scope">Für dieses Training; ein laufendes Intervall bleibt unverändert.</string>
+    <string name="interval_work">Arbeit (s)</string>
+    <string name="interval_rest">Pause (s)</string>
+    <string name="interval_rounds">Runden</string>
+    <string name="interval_sound">Ton</string>
+    <string name="interval_vibration">Vibration</string>
+    <string name="interval_auto_advance">Sätze und Übungen automatisch weiterschalten</string>
+    <string name="interval_global">Auch als Standard für künftige Trainings verwenden</string>
+    <string name="interval_save">Einstellung speichern</string>
+    <string name="interval_round_status">Runde %1$d / %2$d. Die Trainingspause pausiert auch diesen Timer.</string>
+    <string name="interval_skip_rest">Pause überspringen</string>
+    <string name="interval_stop">Intervall stoppen</string>
+    <string name="interval_start">Intervall starten</string>
+    <string name="interval_auto_note">Schließt den Satz nach seinen Runden ab und schaltet weiter. Pausen zählen nicht zur Arbeitszeit.</string>
+    <string name="interval_manual_note">Misst nur den aktuellen Satz. Kein Weiterschalten oder Abschließen; danach die Zeit prüfen und bestätigen.</string>
+    <string name="interval_save_error">Nicht alle Intervalleinstellungen wurden gespeichert. Prüfe: Arbeit 1–3600 s, Pause 0–3600 s, Runden 1–100, höchstens 24 Stunden.</string>
 </resources>

@@ -4,6 +4,27 @@ Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Friss munkablokk – intervallummód és hordozható preset
+
+A meglévő PhoneWorkoutPlans/IntervalTimerService út támogatja az explicit
+`autoAdvance=false` módot: egy aktuális sorozat, nincs automatikus done/léptetés;
+a tényleges pozitív munkaidő stopnál vagy a körök végén megmarad, utána ellenőrizhető
+és a meglévő kézi OK/undo használható. Auto módban a preset minden sorba állított
+időalapú gyakorlatra azonos, a kézi sorozatok saját pihenőjét ez nem írja felül.
+
+A meglévő DataStore timer-defaultok globális móddal bővültek. Program/quick start
+azt veszi át, importált draft a saját interval110 beállítását tartja meg. Main
+intervalPreset110 migráció és export/roundtrip bekötve; régi natív módhiány a korábbi
+automatikus viselkedés marad, legacy preset explicit true hiányában nem automatikus.
+A négy nyelvű opcionális panelen külön globális checkbox van, futó tervet a következő
+indításra mentett konfig nem cserél le. Típus-/24h-validáció, 9 új unit + 1 új
+Compose UI-próbakód (lokális/globalis hatókör), még futtatás nélkül.
+
+**122 új unit + 6 instrumentációs tesztkód megírva, még nem futott.**
+Diff és a négy XML kulcskészlete/resource-hivatkozások ellenőrizve; nincs új build,
+CI/APK/kép. Utolsó zöld továbbra `dd4cc27`. Következő: Coach provider/per-gyakorlat,
+további bekötések, teljes lokalizáció/UI, végül közös GitHub-kapu; élő telepítés STOP.
+
 ## Friss munkablokk – Phone elvetés és UI-írások
 
 A telefonos elvetés a meglévő `TrainPilotWorkoutFinalization` közös mutexét és

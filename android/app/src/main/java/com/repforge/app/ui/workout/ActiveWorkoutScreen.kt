@@ -98,6 +98,7 @@ import com.repforge.app.ui.theme.LocalTrainPilotColors
 @Composable
 fun ActiveWorkoutScreen(
     navController: NavController,
+    language: String = "hu",
     launchGps: NativeWorkoutTarget? = null,
     onLaunchGpsConsumed: () -> Unit = {},
     viewModel: ActiveWorkoutViewModel = viewModel()
@@ -255,8 +256,9 @@ fun ActiveWorkoutScreen(
                             }
                             target(if (nextIndex >= 0) nextIndex else 0)?.let { renderedTarget ->
                                 val renderedInterval = NativeTimerTarget(renderedTarget.workoutId, renderedTarget.generation, state.timerKey)
-                                IntervalOptions(state, ex, intervalActive,
-                                    onSave = { work, rest, rounds, sound, vibration -> viewModel.configureIntervals(renderedTarget, work, rest, rounds, sound, vibration) },
+                                IntervalOptions(state, ex, intervalActive, language,
+                                    onSave = { work, rest, rounds, sound, vibration, advance, global ->
+                                        viewModel.configureIntervals(renderedTarget, work, rest, rounds, sound, vibration, advance, global) },
                                     onStart = { viewModel.startIntervals(renderedTarget) },
                                     onStop = { viewModel.stopIntervals(renderedInterval) },
                                     onSkip = { viewModel.skipRestTimer(renderedInterval) })
@@ -672,12 +674,15 @@ private fun IntervalOptions(
     state: ActiveWorkoutUiState,
     exercise: ActiveExerciseUiModel,
     active: Boolean,
-    onSave: (String, String, String, Boolean, Boolean) -> Unit,
+    language: String,
+    onSave: (String, String, String, Boolean, Boolean, Boolean, Boolean) -> Unit,
     onStart: () -> Unit,
     onStop: () -> Unit,
     onSkip: () -> Unit
 ) {
     val colors = LocalTrainPilotColors.current
+    val context = LocalContext.current
+    val text = remember(context, language) { com.repforge.app.ui.text.nativeResources(context, language) }
     val identity = "${state.workoutId}:${state.generation}:${exercise.sets.firstOrNull()?.setId}"
     var expanded by remember(identity) { mutableStateOf(false) }
     var work by remember(identity, state.intervalWork) { mutableStateOf(state.intervalWork.toString()) }
@@ -685,42 +690,62 @@ private fun IntervalOptions(
     var rounds by remember(identity, state.intervalRounds) { mutableStateOf(state.intervalRounds.toString()) }
     var sound by remember(identity, state.intervalSound) { mutableStateOf(state.intervalSound) }
     var vibration by remember(identity, state.intervalVibration) { mutableStateOf(state.intervalVibration) }
-    val editable = state.timerOwner == "phone" && !state.isFinishing && !state.isTransferPending
-    val singleTimed = exercise.isTimed && !exercise.isBilateral && exercise.measurementType != "distance"
+    var advance by remember(identity, state.intervalAutoAdvance) { mutableStateOf(state.intervalAutoAdvance) }
+    var global by remember(identity) { mutableStateOf(false) }
+    val singleTimed = exercise.isTimed && !exercise.isBilateral
+    val editable = state.timerOwner == "phone" && !state.isFinishing && !state.intervalSaving
     val saved = work == state.intervalWork.toString() && rest == state.intervalRest.toString() && rounds == state.intervalRounds.toString() &&
-        sound == state.intervalSound && vibration == state.intervalVibration
+        sound == state.intervalSound && vibration == state.intervalVibration && advance == state.intervalAutoAdvance
     Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-        TextButton(onClick = { expanded = !expanded }, modifier = Modifier.fillMaxWidth()) {
-            Text(if (active) "Intervallum · ${if (state.timerInterrupted) "megszakadt" else if (state.timerPhase == "work") "Munka" else "Pihenő"} ${measuredTime(state.timerRemainingSec.toLong())} ${if (expanded) "▴" else "▾"}"
-                else "Intervallumok és pihenő ${if (expanded) "▴" else "▾"}", color = colors.accent)
+        TextButton(onClick = { expanded = !expanded }, modifier = Modifier.fillMaxWidth().testTag("interval_options")) {
+            Text(text.getString(com.repforge.app.R.string.interval_title) +
+                (if (active) " · ${measuredTime(state.timerRemainingSec.toLong())}" else "") + (if (expanded) " ▴" else " ▾"), color = colors.accentText)
         }
         if (expanded) {
-            Text("Ehhez az edzéshez. A módosítás a következő indításra érvényes.", color = colors.muted, fontSize = 12.sp)
+            Text(text.getString(com.repforge.app.R.string.interval_scope), color = colors.muted, fontSize = 12.sp)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (singleTimed) OutlinedTextField(value = work, onValueChange = { work = it }, label = { Text("Munka (mp)") },
+                if (singleTimed) OutlinedTextField(value = work, onValueChange = { work = it }, label = { Text(text.getString(com.repforge.app.R.string.interval_work)) },
                     modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), enabled = editable)
-                OutlinedTextField(value = rest, onValueChange = { rest = it }, label = { Text("Pihenő (mp)") },
+                OutlinedTextField(value = rest, onValueChange = { rest = it }, label = { Text(text.getString(com.repforge.app.R.string.interval_rest)) },
                     modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), enabled = editable)
-                if (singleTimed) OutlinedTextField(value = rounds, onValueChange = { rounds = it }, label = { Text("Körök") },
+                if (singleTimed) OutlinedTextField(value = rounds, onValueChange = { rounds = it }, label = { Text(text.getString(com.repforge.app.R.string.interval_rounds)) },
                     modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), enabled = editable)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = sound, onCheckedChange = { sound = it }, enabled = editable); Text("Hang", color = colors.text, modifier = Modifier.weight(1f))
-                }
-                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = vibration, onCheckedChange = { vibration = it }, enabled = editable); Text("Rezgés", color = colors.text, modifier = Modifier.weight(1f))
-                }
+                Checkbox(checked = sound, onCheckedChange = { sound = it }, enabled = editable)
+                Text(text.getString(com.repforge.app.R.string.interval_sound), color = colors.text, modifier = Modifier.weight(1f))
+                Checkbox(checked = vibration, onCheckedChange = { vibration = it }, enabled = editable)
+                Text(text.getString(com.repforge.app.R.string.interval_vibration), color = colors.text, modifier = Modifier.weight(1f))
             }
-            TextButton(onClick = { onSave(work, rest, rounds, sound, vibration) }, enabled = editable && !saved) { Text("Beállítás mentése", color = colors.accent) }
+            if (singleTimed) Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = advance, onCheckedChange = { advance = it }, enabled = editable,
+                    modifier = Modifier.testTag("interval_auto_advance"))
+                Text(text.getString(com.repforge.app.R.string.interval_auto_advance), color = colors.text)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = global, onCheckedChange = { global = it }, enabled = editable,
+                    modifier = Modifier.testTag("interval_global"))
+                Text(text.getString(com.repforge.app.R.string.interval_global), color = colors.text)
+            }
+            TextButton(onClick = { onSave(work, rest, rounds, sound, vibration, advance, global) },
+                enabled = editable && (!saved || global), modifier = Modifier.testTag("interval_save")) {
+                Text(text.getString(com.repforge.app.R.string.interval_save), color = colors.accentText)
+            }
             if (active) {
-                Text("${state.timerRound}. kör / ${state.timerRounds}. A fejléc szünetgombja a mérést is szünetelteti.", color = colors.muted, fontSize = 12.sp)
-                if (state.timerPhase == "rest") TextButton(onClick = onSkip, enabled = editable && state.timerRunning && !state.isPaused) { Text("Pihenő kihagyása", color = colors.accent) }
-                Button(onClick = onStop, enabled = editable, modifier = Modifier.fillMaxWidth().height(48.dp)) { Text("Intervallum leállítása") }
+                Text(text.getString(com.repforge.app.R.string.interval_round_status, state.timerRound, state.timerRounds), color = colors.muted, fontSize = 12.sp)
+                if (state.timerPhase == "rest") TextButton(onClick = onSkip, enabled = editable && state.timerRunning && !state.isPaused) {
+                    Text(text.getString(com.repforge.app.R.string.interval_skip_rest), color = colors.accentText)
+                }
+                Button(onClick = onStop, enabled = editable, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                    Text(text.getString(com.repforge.app.R.string.interval_stop))
+                }
             } else if (singleTimed && exercise.sets.any { !it.isCompleted }) {
-                Text("Opcionális automatikus mérés: a körök végén elkészíti a sorozatot, majd a következőt méri. Pihenőt nem számít sorozatidőnek.", color = colors.muted, fontSize = 12.sp)
+                Text(text.getString(if (advance) com.repforge.app.R.string.interval_auto_note else com.repforge.app.R.string.interval_manual_note),
+                    color = colors.muted, fontSize = 12.sp)
                 Button(onClick = onStart, enabled = editable && saved && !state.isPaused && !state.stopwatchRunning && !state.isGpsActive,
-                    modifier = Modifier.fillMaxWidth().height(48.dp)) { Text("Automatikus intervallum indítása") }
+                    modifier = Modifier.fillMaxWidth().height(48.dp).testTag("interval_start")) {
+                    Text(text.getString(com.repforge.app.R.string.interval_start))
+                }
             }
         }
     }

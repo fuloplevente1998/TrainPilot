@@ -286,6 +286,7 @@ internal object PhoneWorkoutPlans {
     fun validateConfig(frame: JSONObject) {
         if (!frame.optBoolean("automaticEnabled")) return
         val c = frame.getJSONObject("timerConfig")
+        NativeIntervalPreset.normalized(c)
         integer(c, "work", 1, 3600)
         integer(c, "rest", 0, 3600)
         integer(c, "rounds", 1, 100)
@@ -354,11 +355,12 @@ internal object PhoneWorkoutPlans {
             throw IllegalArgumentException("backgroundGpsNotPrepared")
         }
         val config = frame.getJSONObject("timerConfig")
+        val advance = timed && config.optBoolean("autoAdvance", true)
         val rows = JSONArray()
         val steps = ArrayList<IntervalTimeline193.Step>()
         val key = "native|${frame.getLong("generation")}|${frame.getLong("executionRevision")}"
         if (timed) {
-            for (i in index until exercises.length()) {
+            timedRows@ for (i in index until exercises.length()) {
                 val e = exercises.getJSONObject(i)
                 if (!timedExercise(e)) break
                 if ("distance" == e.optString("measurementType")) {
@@ -368,12 +370,13 @@ internal object PhoneWorkoutPlans {
                 for (j in 0 until sets.length()) {
                     val set = sets.getJSONObject(j)
                     if (set.getBoolean("done")) continue
-                    val rowRest = if (frame.optInt("nativeEditorProjection") == 1 && e.has("restSeconds162")) integer(e, "restSeconds162", 0, 3600) else config.getInt("rest")
+                    val rowRest = config.getInt("rest")
                     val row = row(e, set, config.getInt("work"), rowRest, config.getInt("rounds"))
                     val base = if (set.optString("reps").isEmpty()) 0.0 else set.getString("reps").toDouble()
                     if (!base.isFinite() || base < 0.0) throw IllegalArgumentException("invalidTimedBaseline")
                     rows.put(row.put("baseSeconds", base))
                     steps.add(step(row))
+                    if (!advance) break@timedRows
                 }
             }
         } else {
@@ -381,7 +384,7 @@ internal object PhoneWorkoutPlans {
             rows.put(row)
             steps.add(step(row))
         }
-        IntervalTimeline(steps, timed, if (timed) rest else 0, !timed)
+        IntervalTimeline(steps, advance, if (timed) rest else 0, !timed)
         val plan = JSONObject()
             .put("key", key)
             .put("workoutId", frame.getString("workoutId"))
@@ -389,7 +392,7 @@ internal object PhoneWorkoutPlans {
             .put("generation", frame.getLong("generation"))
             .put("native", true)
             .put("steps", rows)
-            .put("autoAdvance", timed)
+            .put("autoAdvance", advance)
             .put("restOnly", !timed)
             .put("initialRest", if (timed) rest else 0)
             .put("elapsedMs", 0)

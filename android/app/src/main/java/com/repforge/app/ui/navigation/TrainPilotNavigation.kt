@@ -304,7 +304,7 @@ fun TrainPilotAppScaffold(
                     HealthDashboardScreen(navController = navController)
                 }
                 composable("active_workout") {
-                    ActiveWorkoutScreen(navController = navController, launchGps = launchGps,
+                    ActiveWorkoutScreen(navController = navController, language = settings.language, launchGps = launchGps,
                         onLaunchGpsConsumed = { launchGps = null })
                 }
                 for (outdoor in listOf(false, true)) {

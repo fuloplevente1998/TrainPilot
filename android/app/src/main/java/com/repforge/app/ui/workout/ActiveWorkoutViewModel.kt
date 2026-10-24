@@ -115,6 +115,8 @@ data class ActiveWorkoutUiState(
     val intervalRounds: Int = 1,
     val intervalSound: Boolean = true,
     val intervalVibration: Boolean = true,
+    val intervalAutoAdvance: Boolean = true,
+    val intervalSaving: Boolean = false,
     val measuredWorkSeconds: Long? = null,
     val measuredRestSeconds: Long? = null,
     val measuredPauseSeconds: Long? = null,
@@ -361,6 +363,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
             intervalRounds = config.optInt("rounds", 1),
             intervalSound = config.optBoolean("sound", true),
             intervalVibration = config.optBoolean("vibration", true),
+            intervalAutoAdvance = config.optBoolean("autoAdvance", true),
             gpsMeasurementId = snapshot.optJSONObject(NativeGpsMeasurement.FIELD)?.optString("id").orEmpty(),
             gpsBoundSetId = snapshot.optJSONObject(NativeGpsMeasurement.FIELD)?.optString("setId").orEmpty(),
             gpsBindingState = snapshot.optJSONObject(NativeGpsMeasurement.FIELD)?.optString("state").orEmpty(),
@@ -498,13 +501,26 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
         } catch (error: Exception) { showStatus(error.message ?: "A mért értékek nem rögzíthetők.") }
     }
 
-    fun configureIntervals(target: NativeWorkoutTarget, work: String, rest: String, rounds: String, sound: Boolean, vibration: Boolean) {
-        if (editableSnapshot() == null) return
-        try {
-            val config = JSONObject().put("work", work.toInt()).put("rest", rest.toInt()).put("rounds", rounds.toInt())
-                .put("sound", sound).put("vibration", vibration)
-            NativeWorkoutEditing.configureIntervals(context, target, config)
-        } catch (error: Exception) { showStatus("Érvényes intervallumot adj meg: munka 1–3600 mp, pihenő 0–3600 mp, körök 1–100.") }
+    fun configureIntervals(target: NativeWorkoutTarget, work: String, rest: String, rounds: String,
+        sound: Boolean, vibration: Boolean, autoAdvance: Boolean, saveGlobally: Boolean) {
+        if (editableSnapshot() == null || _uiState.value.intervalSaving) return
+        _uiState.value = _uiState.value.copy(intervalSaving = true)
+        viewModelScope.launch {
+            try {
+                com.repforge.app.NativeDataReplacement.mutate(context) {
+                    check(editableSnapshot() != null)
+                    val config = JSONObject().put("work", work.toInt()).put("rest", rest.toInt()).put("rounds", rounds.toInt())
+                        .put("sound", sound).put("vibration", vibration).put("autoAdvance", autoAdvance)
+                    NativeWorkoutEditing.configureIntervals(context, target, config)
+                    if (saveGlobally) settingsStore.setTimerDefaults(config.getInt("work"), config.getInt("rest"),
+                        config.getInt("rounds"), sound, vibration, autoAdvance)
+                }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (_: Exception) {
+                val language = ActiveWorkoutStore.current(context)?.optString("language", "hu") ?: "hu"
+                showStatus(com.repforge.app.ui.text.nativeResources(context, language).getString(com.repforge.app.R.string.interval_save_error))
+            } finally { _uiState.value = _uiState.value.copy(intervalSaving = false) }
+        }
     }
 
     fun startIntervals(target: NativeWorkoutTarget) {

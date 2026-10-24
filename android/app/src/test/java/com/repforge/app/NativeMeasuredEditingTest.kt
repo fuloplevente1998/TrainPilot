@@ -249,4 +249,60 @@ class NativeMeasuredEditingTest {
         NativeWorkoutEditing.startStopwatch(context, target(), "single"); advance(2)
         assertEquals(5000L, totals().workMs); assertEquals(2000L, totals().restMs); assertEquals(1000L, totals().pausedMs)
     }
+    private fun configureSingleSetInterval() {
+        NativeWorkoutEditing.configureIntervals(context, target(), JSONObject().put("work", 2).put("rest", 3)
+            .put("rounds", 2).put("autoAdvance", false).put("sound", false).put("vibration", false))
+    }
+    @Test fun nonAdvancingIntervalCreditsOnlyCurrentSetAndRequiresExplicitConfirmation() {
+        configureSingleSetInterval()
+        NativeWorkoutEditing.startIntervals(context, target())
+        assertFalse(timer().getBoolean("autoAdvance"))
+        assertEquals(1, timer().getJSONArray("steps").length())
+        advance(7)
+        assertEquals("complete", timer().getString("phase"))
+        assertEquals("4", set().getString("reps")); assertFalse(set().getBoolean("done"))
+        assertFalse(set(index = 1).getBoolean("done")); assertEquals("", set(index = 1).getString("reps"))
+        assertEquals(0, frame().getInt("currentExercise"))
+        assertEquals(4000L, totals().workMs); assertEquals(3000L, totals().restMs)
+        assertFalse(frame().has("lastRecord188"))
+        val saved = NativeWorkoutEditing.completeMeasuredSet(context, target())
+        assertTrue(set().getBoolean("done"))
+        NativeWorkoutEditing.undo(context, saved.getJSONObject("lastRecord188").getString("recordId"))
+        assertFalse(set().getBoolean("done")); assertEquals("4", set().getString("reps"))
+        assertEquals(4000L, totals().workMs)
+    }
+    @Test fun nonAdvancingExplicitStopThenRestartAddsOnlyNewObservedWork() {
+        configureSingleSetInterval()
+        NativeWorkoutEditing.startIntervals(context, target()); advance(1)
+        NativeWorkoutEditing.stopIntervals(context, timerTarget())
+        assertEquals("1", set().getString("reps")); assertFalse(set().getBoolean("done"))
+        NativeWorkoutEditing.startIntervals(context, target()); advance(7)
+        assertEquals("5", set().getString("reps")); assertFalse(set().getBoolean("done"))
+        assertFalse(set(index = 1).getBoolean("done"))
+        assertEquals(5000L, totals().workMs); assertEquals(3000L, totals().restMs)
+    }
+    @Test fun changingNextIntervalModeDoesNotChangeAnAlreadyInstalledAutomaticPlan() {
+        NativeWorkoutEditing.startIntervals(context, target()); advance(1)
+        val before = timer()
+        configureSingleSetInterval()
+        assertFalse(frame().getJSONObject("timerConfig").getBoolean("autoAdvance"))
+        assertTrue(timer().getBoolean("autoAdvance"))
+        assertEquals(before.getString("key"), timer().getString("key"))
+        advance(9)
+        assertTrue(set().getBoolean("done")); assertFalse(set(index = 1).getBoolean("done"))
+    }
+
+    @Test fun workoutIntervalPresetAppliesToAllQueuedTimedExercisesDespiteTheirManualRestDefaults() {
+        val source = frame()
+        val first = source.getJSONArray("exercises").getJSONObject(0).put("restSeconds162", 99)
+        val next = JSONObject(first.toString()).put("id", "another-plank").put("restSeconds162", 88)
+            .put("sets", org.json.JSONArray().put(JSONObject().put("setId", "another-set").put("done", false).put("reps", "")))
+        source.put("exercises", org.json.JSONArray().put(first).put(next))
+        val plan = PhoneWorkoutPlans.startTimed(source).getJSONObject("plan")
+        val rows = plan.getJSONArray("steps")
+        assertEquals(3, rows.length())
+        for (index in 0 until rows.length()) assertEquals(3, rows.getJSONObject(index).getInt("rest"))
+        assertEquals("another-plank", rows.getJSONObject(2).getString("exerciseId"))
+    }
+
 }

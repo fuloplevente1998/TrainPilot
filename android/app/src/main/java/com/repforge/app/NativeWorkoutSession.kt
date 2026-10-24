@@ -76,9 +76,7 @@ internal object NativeWorkoutSession {
                 .put("started", now).put("activeIntervals", JSONArray().put(JSONObject().put("start", now).put("end", JSONObject.NULL)))
                 .put("currentExercise", 0).put("timerOwner", "phone").put("workoutPaused", false)
                 .put("restEndAt", 0).put("restSeconds", settings.restSeconds).put("language", settings.language)
-                .put("automaticEnabled", true).put("timerConfig", JSONObject().put("work", settings.workSeconds)
-                    .put("rest", settings.restSeconds).put("rounds", settings.rounds)
-                    .put("sound", settings.soundEnabled).put("vibration", settings.vibrationEnabled))
+                .put("automaticEnabled", true).put("timerConfig", settings.timerConfiguration())
                 .put("exercises", exercises).put("originDevice", "phone")
                 .also { frame -> expectedSchedule?.let { frame.put("scheduleId", it.id) } }
         }
@@ -147,9 +145,7 @@ internal object NativeWorkoutSession {
             .put("activeIntervals", JSONArray().put(JSONObject().put("start", now).put("end", JSONObject.NULL)))
             .put("currentExercise", 0).put("timerOwner", "phone").put("originDevice", "phone").put("workoutPaused", false)
             .put("restEndAt", 0).put("restSeconds", settings.restSeconds).put("language", settings.language)
-            .put("automaticEnabled", true).put("timerConfig", JSONObject().put("work", settings.workSeconds)
-                .put("rest", settings.restSeconds).put("rounds", settings.rounds)
-                .put("sound", settings.soundEnabled).put("vibration", settings.vibrationEnabled))
+            .put("automaticEnabled", true).put("timerConfig", settings.timerConfiguration())
             .put("exercises", JSONArray().put(JSONObject(exercise.toString())))
     }
 
@@ -208,9 +204,9 @@ internal object NativeWorkoutSession {
                         .put("restSeconds162", settings.restSeconds).put("setRir229", source.setRir229)
                     for (key in defaults.keys()) if (!exercise.has(key) && key != "sets") exercise.put(key, defaults.get(key))
                 }
-                if (!frame.has("timerConfig")) frame.put("timerConfig", JSONObject().put("work", settings.workSeconds)
-                    .put("rest", settings.restSeconds).put("rounds", settings.rounds)
-                    .put("sound", settings.soundEnabled).put("vibration", settings.vibrationEnabled))
+                if (!frame.has("timerConfig")) frame.put("timerConfig", frame.optJSONObject("interval110")?.let {
+                    NativeIntervalPreset.normalized(it, defaultAutoAdvance = false)
+                } ?: settings.timerConfiguration())
                 if (!frame.has("restSeconds")) frame.put("restSeconds", settings.restSeconds)
                 frame.put("language", settings.language)
                 val hash = NativeLegacyDraft.hash(document.json)

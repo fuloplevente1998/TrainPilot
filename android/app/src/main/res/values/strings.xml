@@ -86,4 +86,21 @@
     <string name="replacement_json">Másik JSON-mentés választása</string>
     <string name="replacement_zip">Másik ZIP-mentés választása</string>
     <string name="metadata_write_failed">A módosítást nem sikerült menteni. Próbáld újra az adatcsere befejezése után.</string>
+    <string name="interval_title">Intervallumok és pihenő</string>
+    <string name="interval_scope">Ehhez az edzéshez; a már futó intervallum nem változik.</string>
+    <string name="interval_work">Munka (mp)</string>
+    <string name="interval_rest">Pihenő (mp)</string>
+    <string name="interval_rounds">Körök</string>
+    <string name="interval_sound">Hang</string>
+    <string name="interval_vibration">Rezgés</string>
+    <string name="interval_auto_advance">Automatikus sorozat- és gyakorlatléptetés</string>
+    <string name="interval_global">Legyen alapértelmezés a következő edzésekhez is</string>
+    <string name="interval_save">Beállítás mentése</string>
+    <string name="interval_round_status">%1$d. kör / %2$d. A fejléc szünetgombja a mérést is szünetelteti.</string>
+    <string name="interval_skip_rest">Pihenő kihagyása</string>
+    <string name="interval_stop">Intervallum leállítása</string>
+    <string name="interval_start">Intervallum indítása</string>
+    <string name="interval_auto_note">A körök végén elkészíti a sorozatot és továbblép. Pihenőt nem számít sorozatidőnek.</string>
+    <string name="interval_manual_note">Csak az aktuális sorozatot méri. Nem léptet és nem jelöli készre; az időt utána ellenőrizheted és rögzítheted.</string>
+    <string name="interval_save_error">Nem sikerült minden intervallumbeállítást menteni. Ellenőrizd: munka 1–3600 mp, pihenő 0–3600 mp, körök 1–100, legfeljebb 24 óra.</string>
 </resources>

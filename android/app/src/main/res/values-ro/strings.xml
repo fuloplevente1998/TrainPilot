@@ -86,4 +86,21 @@
     <string name="replacement_json">Alege altă copie JSON</string>
     <string name="replacement_zip">Alege altă copie ZIP</string>
     <string name="metadata_write_failed">Modificarea nu a putut fi salvată. Încearcă din nou după încheierea înlocuirii datelor.</string>
+    <string name="interval_title">Intervale și odihnă</string>
+    <string name="interval_scope">Pentru acest antrenament; intervalul deja pornit rămâne neschimbat.</string>
+    <string name="interval_work">Efort (s)</string>
+    <string name="interval_rest">Odihnă (s)</string>
+    <string name="interval_rounds">Runde</string>
+    <string name="interval_sound">Sunet</string>
+    <string name="interval_vibration">Vibrații</string>
+    <string name="interval_auto_advance">Avansează automat seriile și exercițiile</string>
+    <string name="interval_global">Folosește și ca setare implicită pentru antrenamentele viitoare</string>
+    <string name="interval_save">Salvează setările</string>
+    <string name="interval_round_status">Runda %1$d / %2$d. Pauza antrenamentului oprește temporar și acest cronometru.</string>
+    <string name="interval_skip_rest">Sari peste odihnă</string>
+    <string name="interval_stop">Oprește intervalul</string>
+    <string name="interval_start">Pornește intervalul</string>
+    <string name="interval_auto_note">Finalizează seria după rundele ei și avansează. Odihna nu intră în timpul de efort înregistrat.</string>
+    <string name="interval_manual_note">Măsoară doar seria curentă. Nu avansează și nu o finalizează; verifică și confirmă apoi timpul.</string>
+    <string name="interval_save_error">Unele setări de interval nu au fost salvate. Verifică: efort 1–3600 s, odihnă 0–3600 s, runde 1–100, maximum 24 de ore.</string>
 </resources>

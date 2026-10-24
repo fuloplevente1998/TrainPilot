@@ -86,4 +86,21 @@
     <string name="replacement_json">Choose another JSON backup</string>
     <string name="replacement_zip">Choose another ZIP backup</string>
     <string name="metadata_write_failed">The change could not be saved. Try again after data replacement finishes.</string>
+    <string name="interval_title">Intervals and rest</string>
+    <string name="interval_scope">For this workout; an interval already running stays unchanged.</string>
+    <string name="interval_work">Work (s)</string>
+    <string name="interval_rest">Rest (s)</string>
+    <string name="interval_rounds">Rounds</string>
+    <string name="interval_sound">Sound</string>
+    <string name="interval_vibration">Vibration</string>
+    <string name="interval_auto_advance">Automatically advance sets and exercises</string>
+    <string name="interval_global">Use as the default for future workouts too</string>
+    <string name="interval_save">Save configuration</string>
+    <string name="interval_round_status">Round %1$d / %2$d. The workout pause button pauses this timer too.</string>
+    <string name="interval_skip_rest">Skip rest</string>
+    <string name="interval_stop">Stop interval</string>
+    <string name="interval_start">Start interval</string>
+    <string name="interval_auto_note">Completes the set after its rounds and advances. Rest is excluded from the recorded work time.</string>
+    <string name="interval_manual_note">Measures only the current set. It does not advance or complete it; review and confirm the time afterwards.</string>
+    <string name="interval_save_error">Some interval settings could not be saved. Check: work 1–3600 s, rest 0–3600 s, rounds 1–100, at most 24 hours.</string>
 </resources>

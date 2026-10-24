@@ -51,6 +51,7 @@ data class TrainPilotUserSettings(
     val rounds: Int = 1,
     val soundEnabled: Boolean = true,
     val vibrationEnabled: Boolean = true,
+    val intervalAutoAdvance: Boolean = true,
     val hapticSetRecorded227: Boolean = true,
     val healthBackupConsent: Boolean = false,
     val autoWriteWorkoutToHealthConnect: Boolean = false,
@@ -62,6 +63,10 @@ data class TrainPilotUserSettings(
     val migrationV1371Complete: Boolean = false,
     val gpsStartChoices216: Map<String, Boolean> = emptyMap()
 ) {
+    fun timerConfiguration(): JSONObject = com.repforge.app.NativeIntervalPreset.normalized(JSONObject()
+        .put("work", workSeconds).put("rest", restSeconds).put("rounds", rounds)
+        .put("sound", soundEnabled).put("vibration", vibrationEnabled).put("autoAdvance", intervalAutoAdvance))
+
     fun themeJson(): JSONObject = JSONObject()
         .put("key", themeKey)
         .put("accent", themeAccent)
@@ -80,6 +85,7 @@ class TrainPilotSettingsStore(private val context: Context) {
         val KEY_REST_SECONDS = intPreferencesKey("restSeconds")
         val KEY_WORK_SECONDS = intPreferencesKey("workSeconds")
         val KEY_ROUNDS = intPreferencesKey("rounds")
+        val KEY_INTERVAL_AUTO_ADVANCE = booleanPreferencesKey("intervalAutoAdvance")
         val KEY_SOUND_ENABLED = booleanPreferencesKey("soundEnabled")
         val KEY_VIBRATION_ENABLED = booleanPreferencesKey("vibrationEnabled")
         val KEY_HAPTIC_SET_RECORDED_227 = booleanPreferencesKey("hapticSetRecorded227")
@@ -150,6 +156,7 @@ class TrainPilotSettingsStore(private val context: Context) {
             restSeconds = (prefs[KEY_REST_SECONDS] ?: 90).coerceIn(0, 3600),
             workSeconds = (prefs[KEY_WORK_SECONDS] ?: 30).coerceIn(1, 3600),
             rounds = (prefs[KEY_ROUNDS] ?: 1).coerceIn(1, 100),
+            intervalAutoAdvance = prefs[KEY_INTERVAL_AUTO_ADVANCE] ?: true,
             soundEnabled = prefs[KEY_SOUND_ENABLED] ?: true,
             vibrationEnabled = prefs[KEY_VIBRATION_ENABLED] ?: true,
             hapticSetRecorded227 = prefs[KEY_HAPTIC_SET_RECORDED_227] ?: true,
@@ -203,7 +210,10 @@ class TrainPilotSettingsStore(private val context: Context) {
         }
     }
 
-    suspend fun setTimerDefaults(workSeconds: Int, restSeconds: Int, rounds: Int, sound: Boolean, vibration: Boolean) {
+    suspend fun setTimerDefaults(workSeconds: Int, restSeconds: Int, rounds: Int, sound: Boolean, vibration: Boolean,
+        autoAdvance: Boolean? = null) {
+        com.repforge.app.NativeIntervalPreset.normalized(JSONObject().put("work", workSeconds).put("rest", restSeconds)
+            .put("rounds", rounds).put("sound", sound).put("vibration", vibration))
         NativeDataReplacement.mutate(context) {
             context.trainPilotDataStore.edit { prefs ->
             prefs[KEY_WORK_SECONDS] = workSeconds.coerceIn(1, 3600)
@@ -211,6 +221,7 @@ class TrainPilotSettingsStore(private val context: Context) {
             prefs[KEY_ROUNDS] = rounds.coerceIn(1, 100)
             prefs[KEY_SOUND_ENABLED] = sound
             prefs[KEY_VIBRATION_ENABLED] = vibration
+            if (autoAdvance != null) prefs[KEY_INTERVAL_AUTO_ADVANCE] = autoAdvance
         }
         }
     }
@@ -269,6 +280,9 @@ class TrainPilotSettingsStore(private val context: Context) {
         val source = data.optJSONObject("settings") ?: JSONObject()
         val language = source.optString("language", source.optString("lang", data.optString("language")))
         val theme = importedTheme(data)
+        val preset = source.optJSONObject("intervalPreset110")?.let {
+            com.repforge.app.NativeIntervalPreset.normalized(it, defaultAutoAdvance = false)
+        }
         context.trainPilotDataStore.edit { prefs ->
             if (language in listOf("hu", "en", "de", "ro")) prefs[KEY_LANGUAGE] = language
             if (data.optString("activeProgramId").isNotBlank()) prefs[KEY_ACTIVE_PROGRAM_ID] = data.getString("activeProgramId")
@@ -282,6 +296,14 @@ class TrainPilotSettingsStore(private val context: Context) {
                 prefs[KEY_ROUNDS] = source.optInt("rounds", 1).coerceIn(1, 100)
                 prefs[KEY_SOUND_ENABLED] = source.optBoolean("sound", true)
                 prefs[KEY_VIBRATION_ENABLED] = source.optBoolean("vibration", true)
+            }
+            if (preset != null) {
+                prefs[KEY_WORK_SECONDS] = preset.getInt("work"); prefs[KEY_REST_SECONDS] = preset.getInt("rest")
+                prefs[KEY_ROUNDS] = preset.getInt("rounds"); prefs[KEY_SOUND_ENABLED] = preset.getBoolean("sound")
+                prefs[KEY_VIBRATION_ENABLED] = preset.getBoolean("vibration")
+                prefs[KEY_INTERVAL_AUTO_ADVANCE] = preset.getBoolean("autoAdvance")
+            } else if (source.opt("intervalAutoAdvance") is Boolean) {
+                prefs[KEY_INTERVAL_AUTO_ADVANCE] = source.getBoolean("intervalAutoAdvance")
             }
             if (source.has("hapticSetRecorded227")) prefs[KEY_HAPTIC_SET_RECORDED_227] = source.optBoolean("hapticSetRecorded227", true)
             if (source.has("healthBackupConsent")) prefs[KEY_HEALTH_BACKUP_CONSENT] = source.optBoolean("healthBackupConsent")

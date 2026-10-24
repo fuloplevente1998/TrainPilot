@@ -565,8 +565,10 @@ internal class PhoneWorkoutExecutionStore(context: Context) :
                 )
             }
             if (frame.optInt("nativeEditorProjection") == 1 && !timer.optBoolean("restOnly") &&
-                (timer.optBoolean("stopped") || timer.optBoolean("interrupted"))) {
-                for (i in timer.optInt("completed") until rows.length()) {
+                (timer.optBoolean("stopped") || timer.optBoolean("interrupted") ||
+                    (!timer.optBoolean("autoAdvance") && timer.optString("phase") == "complete"))) {
+                val from = if (timer.optBoolean("autoAdvance")) timer.optInt("completed") else 0
+                for (i in from until rows.length()) {
                     val row = rows.getJSONObject(i); val part = parts.getJSONObject(i)
                     val set = findSet(frame, row) ?: throw IllegalArgumentException("timerTargetRemoved")
                     if (!set.optBoolean("done") && part.getLong("workMs") > 0L) {

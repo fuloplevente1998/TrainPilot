@@ -103,4 +103,34 @@ class NativeBackupImportTest {
         assertEquals(9, exported.getInt("unknown")); assertFalse(exported.getJSONObject("draft").has("coordinates"))
         assertEquals(0, exported.getJSONObject("draft").getJSONArray("points").getJSONObject(0).length())
     }
+    @Test fun legacyGlobalPresetOverridesFallbackFieldsAndRoundTripsIntoNewSessionConfiguration() = runBlocking {
+        val preset = JSONObject().put("work", 12).put("rest", 8).put("rounds", 3)
+            .put("sound", false).put("vibration", true).put("autoAdvance", false)
+        settings.importPortableSettings(JSONObject().put("settings", JSONObject().put("workSeconds", 99)
+            .put("restSeconds", 99).put("rounds", 99).put("intervalPreset110", preset)))
+        val original = settings.current()
+        assertEquals(12, original.workSeconds); assertEquals(8, original.restSeconds)
+        assertFalse(original.intervalAutoAdvance)
+        val exported = importer.exportBackupJson(false)
+        assertFalse(exported.getJSONObject("settings").getJSONObject("intervalPreset110").getBoolean("autoAdvance"))
+        settings.setTimerDefaults(5, 5, 1, true, false, true)
+        importer.importBackupJson(exported, true)
+        val restored = settings.current()
+        assertEquals(original.timerConfiguration().toString(), restored.timerConfiguration().toString())
+        val candidate = NativeWorkoutSession.quickCandidate(JSONObject().put("id", "plank"), restored)
+        assertEquals(12, candidate.getJSONObject("timerConfig").getInt("work"))
+        assertFalse(candidate.getJSONObject("timerConfig").getBoolean("autoAdvance"))
+    }
+    @Test fun malformedPresetCannotPartiallyOverwriteExistingPortableSettings() = runBlocking {
+        settings.setTimerDefaults(3, 4, 2, false, true, false)
+        val before = settings.current()
+        val invalid = JSONObject().put("work", 3600).put("rest", 3600).put("rounds", 100)
+        var rejected = false
+        try { settings.importPortableSettings(JSONObject().put("settings", JSONObject()
+            .put("language", "ro").put("intervalPreset110", invalid))) }
+        catch (_: IllegalArgumentException) { rejected = true }
+        assertTrue(rejected)
+        assertEquals(before, settings.current())
+    }
+
 }

@@ -22,6 +22,12 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 
 ## Legutóbbi konkrét munka
 
+- Friss intervallumblokk: meglévő motor nem-autoAdvance módja csak egy aktuális
+  sorozatot mér, pozitív munkaidőt megőriz, nem készít/nem léptet; auto mód megmarad.
+  Változatlan futó terv mellett edzéskonfig és explicit globális preset; main
+  intervalPreset110 migráció/export és legacy draft interval110 megőrzése.
+  24h/typed validáció; négy nyelvű opcionális panel, 9 unit + 1 UI-próbakód új.
+
 - Friss munkablokk: Phone discard a közös finalizer/mutex és metadata admission
   alatt; tartós finalizationPending+discardPending, pause/stop, Room tombstone+draft
   retirement tranzakció, ellenőrzött natív discard, csak utána closure/navigáció.
@@ -50,7 +56,7 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 - Phone UI kapu alapja **1d38edf**: külön native AndroidTest source set,
   meglévő native-android.yml phone-ui job, raw adb screencap checkpoint/ack és
   származtatottnak jelölt XML/manifest. Jelenleg4 instrumentációs próbakód.
-- **113 új unit + 5 instrumentációs tesztkód megírva, még nem futtatva.**
+- **122 új unit + 6 instrumentációs tesztkód megírva, még nem futtatva.**
   Nincs új zöld kapu/APK/screenshot. Utolsó teljes zöld forrás **dd4cc27**:
   unit Phone393/Wear167, Wear UI183, signed upgrade2. Bizonyíték: WORK_HANDOFF.md.
 - Main utóbbi 8a36502d változása csak AGENTS thinking-dokumentáció; main app baseline
@@ -61,7 +67,7 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 1. A még szabadon futó egyéb írók admission és UI hibakezelése;
    cloud photo staging/transaction. A bekötött kapu nem minden szabad DAO és külön
    Health SQLite írás globális zárja. A megírt ZIP/Health tesztek még nem futottak.
-2. Interval nem-autoAdvance mód/globális preset teljes paritás; Coach per-gyakorlat
+2. Intervallum/preset új kód futtatott igazolása még nincs; Coach per-gyakorlat
    javaslat/progresszió és provider-frissítés; katalógus/nevek/lokalizáció.
 3. Mockup teljes vizuális kidolgozás (előtte Medium jelzés): többek közt mini-route
    listathumbnail, részletes Health forrásadatok, program/gyakorlat szerkesztés/paritás.

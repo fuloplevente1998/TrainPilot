@@ -755,6 +755,8 @@ class LegacyWebViewMigrator(
                     .put("themeKey", settings.themeKey)
                     .put("restSeconds", settings.restSeconds)
                     .put("workSeconds", settings.workSeconds)
+                    .put("intervalAutoAdvance", settings.intervalAutoAdvance)
+                    .put("intervalPreset110", settings.timerConfiguration())
                     .put("rounds", settings.rounds)
                     .put("sound", settings.soundEnabled)
                     .put("vibration", settings.vibrationEnabled)
