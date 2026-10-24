@@ -102,6 +102,19 @@ class NativeExerciseFavoritesTest {
         assertEquals(emptyList<String>(), NativeExerciseFavorites.load(db))
     }
 
+    @Test fun driveMergeTreatsFavoritesAsAConflictAwarePortableSetting() {
+        val local = JSONObject().put("exerciseFavorites", JSONArray().put("running"))
+        val remote = JSONObject().put("exerciseFavorites", JSONArray().put("db-squat"))
+        val base = JSONObject().put("exerciseFavorites", JSONArray())
+        val sync = GoogleSyncRepository(context)
+        val keepLocal = sync.mergeSync18(local, listOf(remote), base, emptyList(), emptySet(), emptySet(), true)
+        val chooseRemote = sync.mergeSync18(local, listOf(remote), base, emptyList(), emptySet(), emptySet(), false)
+        assertEquals(listOf("running"), NativeExerciseFavorites.decode(keepLocal.getJSONArray("exerciseFavorites")))
+        assertEquals(listOf("db-squat"), NativeExerciseFavorites.decode(chooseRemote.getJSONArray("exerciseFavorites")))
+        val remoteMatchesBase = sync.mergeSync18(local, listOf(base), base, emptyList(), emptySet(), emptySet(), false)
+        assertEquals(listOf("running"), NativeExerciseFavorites.decode(remoteMatchesBase.getJSONArray("exerciseFavorites")))
+    }
+
     @Test fun blockedReplacementRejectsFavoriteEditWithoutWriting() = runBlocking {
         db.exerciseLibraryDao().upsertExercise(TrainPilotDatabase.defaultExercises().first { it.id == "running" })
         context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE).edit().putBoolean("blocked", true).commit()
@@ -109,7 +122,7 @@ class NativeExerciseFavoritesTest {
             assertThrows(IllegalStateException::class.java) {
                 runBlocking { NativeExerciseFavorites.toggle(context, db, "running") }
             }
-            assertEquals(null, db.keyValueDocumentDao().getDocument(NativeExerciseFavorites.KEY))
+            assertNull(db.keyValueDocumentDao().getDocument(NativeExerciseFavorites.KEY))
         } finally {
             context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE).edit().clear().commit()
         }
