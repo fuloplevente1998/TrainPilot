@@ -30,23 +30,28 @@ private fun formText(lang: String) = when (lang) {
         "Measurement", "Load type", "Unit", "Sets", "Repetitions / time",
         "Weight (kg)", "Rest (s)", "YouTube watch URL (optional)", "Save",
         "Cancel", "Delete", "Delete this custom exercise?", "References in programs or history block deletion.",
-        "Required fields or YouTube URL are invalid.")
+        "Required fields or YouTube URL are invalid.",
+        "Exercise changed elsewhere. Reopen it before retrying.", "Data restore in progress. Try again afterward.")
     "de" -> listOf("Neue Übung", "Übung bearbeiten", "Name", "Anleitung", "Muskelgruppe",
         "Messart", "Belastung", "Einheit", "Sätze", "Wiederholungen / Zeit",
         "Gewicht (kg)", "Pause (s)", "YouTube-Video-URL (optional)", "Speichern",
         "Abbrechen", "Löschen", "Eigene Übung löschen?", "Referenzen in Plänen oder Historie verhindern das Löschen.",
-        "Ungültige Pflichtfelder oder YouTube-URL.")
+        "Ungültige Pflichtfelder oder YouTube-URL.",
+        "Die Übung wurde anderswo geändert. Bitte erneut öffnen.", "Datenwiederherstellung läuft. Später erneut versuchen.")
     "ro" -> listOf("Exercițiu nou", "Editează exercițiul", "Nume", "Instrucțiuni", "Grupă musculară",
         "Măsurare", "Tip încărcare", "Unitate", "Serii", "Repetări / timp",
         "Greutate (kg)", "Pauză (s)", "URL videoclip YouTube (opțional)", "Salvează",
         "Anulează", "Șterge", "Ștergi acest exercițiu personalizat?", "Referințele din programe sau istoric împiedică ștergerea.",
-        "Date obligatorii sau adresă YouTube invalidă.")
+        "Date obligatorii sau adresă YouTube invalidă.",
+        "Exercițiul a fost modificat în altă parte. Redeschide-l.", "Restaurarea datelor este în curs. Încearcă mai târziu.")
     else -> listOf("Új gyakorlat", "Gyakorlat szerkesztése", "Név", "Leírás / végrehajtás",
         "Izomcsoport", "Mérés típusa", "Terhelés típusa", "Egység", "Sorozatok",
         "Ismétlés / idő", "Súly (kg)", "Pihenő (mp)", "YouTube-videó link (opcionális)",
         "Mentés", "Mégse", "Törlés", "Törlöd a saját gyakorlatot?",
         "Programban vagy naplóban használt gyakorlat nem törölhető.",
-        "Érvénytelen kötelező mező vagy YouTube-hivatkozás.")
+        "Érvénytelen kötelező mező vagy YouTube-hivatkozás.",
+        "A gyakorlat közben módosult. Nyisd meg újra a szerkesztéshez.",
+        "Adat-visszaállítás folyamatban. Próbáld meg később.")
 }
 
 @Composable
@@ -108,7 +113,16 @@ internal fun CustomExerciseDialog(
                 OutlinedTextField(draft.videoUrl, { draft = draft.copy(videoUrl = it) },
                     label = { Text(words[12]) }, singleLine = true,
                     modifier = Modifier.fillMaxWidth().testTag("custom_exercise_video"))
-                if (error != null) Text(words[18], modifier = Modifier.testTag("custom_exercise_error"))
+                if (error != null) {
+                    val message = when {
+                        error.contains("changed", ignoreCase = true) -> words[19]
+                        error.contains("history", ignoreCase = true) || error.contains("program", ignoreCase = true) ||
+                            error.contains("active workout", ignoreCase = true) -> words[17]
+                        error.contains("Adatcsere", ignoreCase = true) || error.contains("lecserődtek", ignoreCase = true) -> words[20]
+                        else -> words[18]
+                    }
+                    Text(message, modifier = Modifier.testTag("custom_exercise_error"))
+                }
                 if (exercise != null && deleteConfirm) {
                     Text(words[16]); Text(words[17])
                     TextButton(onClick = onDelete, enabled = !saving,
