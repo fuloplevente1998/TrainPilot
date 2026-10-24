@@ -70,7 +70,7 @@ internal fun QuickWorkoutScreen(outdoorOnly: Boolean, starting: Boolean,
         Text(if (outdoorOnly) text[1] else text[0], style = MaterialTheme.typography.titleLarge, color = colors.text)
         Text(text[2], color = colors.muted)
         OutlinedTextField(value = query, onValueChange = { query = it }, label = { Text(text[3]) },
-            modifier = Modifier.fillMaxWidth(), enabled = !starting, singleLine = true)
+            modifier = Modifier.fillMaxWidth().testTag("exercise_search"), enabled = !starting, singleLine = true)
         val favText = quickFavoriteWords(settings.language)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(selected = favoritesOnly, onClick = { favoritesOnly = !favoritesOnly },
