@@ -19,15 +19,15 @@ import org.json.JSONArray
 @Composable
 internal fun TrainingLandingScreen(language: String, activeProgramId: String, busy: Boolean,
     onStart: (String, String) -> Unit, onQuick: (Boolean) -> Unit, onPrograms: () -> Unit,
-    onCalendar: () -> Unit, onCoach: () -> Unit,
+    onCalendar: () -> Unit, onCoach: () -> Unit, onLibrary: () -> Unit,
     model: TrainingProgramsViewModel = viewModel()) {
     val state by model.uiState.collectAsStateWithLifecycle()
     val colors = LocalTrainPilotColors.current
     val labels = when(language) {
-        "en" -> listOf("Training", "Quick workout", "Choose exercise", "Outdoor workout", "Active program", "Programs", "Start workout", "No active program.", "exercises")
-        "de" -> listOf("Training", "Schnelltraining", "Übung wählen", "Training im Freien", "Aktives Programm", "Programme", "Training starten", "Kein aktives Programm.", "Übungen")
-        "ro" -> listOf("Antrenament", "Antrenament rapid", "Alege exercițiul", "Antrenament în aer liber", "Program activ", "Programe", "Începe antrenamentul", "Niciun program activ.", "exerciții")
-        else -> listOf("Edzés", "Gyors edzés", "Gyakorlat választása", "Szabadtéri edzés", "Aktív program", "Programok", "Edzés indítása", "Nincs aktív program.", "gyakorlat")
+        "en" -> listOf("Training", "Quick workout", "Choose exercise", "Outdoor workout", "Active program", "Programs", "Start workout", "No active program.", "exercises", "Exercise library")
+        "de" -> listOf("Training", "Schnelltraining", "Übung wählen", "Training im Freien", "Aktives Programm", "Programme", "Training starten", "Kein aktives Programm.", "Übungen", "Übungsbibliothek")
+        "ro" -> listOf("Antrenament", "Antrenament rapid", "Alege exercițiul", "Antrenament în aer liber", "Program activ", "Programe", "Începe antrenamentul", "Niciun program activ.", "exerciții", "Bibliotecă de exerciții")
+        else -> listOf("Edzés", "Gyors edzés", "Gyakorlat választása", "Szabadtéri edzés", "Aktív program", "Programok", "Edzés indítása", "Nincs aktív program.", "gyakorlat", "Gyakorlatkönyvtár")
     }
     fun name(hu: String, en: String, de: String, ro: String) = when(language) {
         "en" -> en; "de" -> de; "ro" -> ro; else -> hu
@@ -41,6 +41,7 @@ internal fun TrainingLandingScreen(language: String, activeProgramId: String, bu
                     Text(labels[1], color = colors.text)
                     Button(onClick = { onQuick(false) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(labels[2]) }
                     OutlinedButton(onClick = { onQuick(true) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(labels[3]) }
+                    OutlinedButton(onClick = onLibrary, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(labels[9]) }
                 }
             }
         }
