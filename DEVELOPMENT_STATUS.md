@@ -1,13 +1,13 @@
 > **Natív migráció aktuális részállapota (2026-10-24):** ág `feat/native-android-migration`,
-> alkalmazás- és tesztforrás `d5222a32` (`[skip ci]`).
-> A main 106 gyakorlatos katalógusa immár külön natív könyvtárból
-> böngészhető: 100 tényleges videoId, 6 nem ellenőrzött YouTube-keresés;
-> részletek, kedvencek, szűrők és gyorsedzés video gomb. **248 új unit
-> és 23 Phone Compose UI-próba megírva, még nem futott.**
-> Nincs új teljes zöld natív CI-kapu vagy élő adatra telepíthető APK.
+> utolsó alkalmazás-/tesztforrás `a46a8bcd` (`[skip ci]`).
+> Natív gyakorlatkönyvtár: 106 builtin, 100 forrás szerinti YouTube videoId,
+> 6 nem ellenőrzött keresés; saját gyakorlat CRUD, meglévő Room/backup/Drive
+> útvonalon, adat- és hivatkozásvédelemmel. **259 új unit +25 natív Phone
+> UI-próba megírva, még nem futtatva.** Nincs új zöld kapu,
+> telepíthető/tesztelt APK vagy készülékes jóváhagyás.
 > Aktuális átadó: [WORK_HANDOFF.md](docs/WORK_HANDOFF.md), [PR #238](https://github.com/fuloplevente1998/TrainPilot/pull/238).
-> Main, verzió, Wear release változatlan; telepítés STOP.
-> Alább korábbi történeti állapotok olvashatók.
+> Main, verzió, Wear release változatlan, élő adatok fölé telepítés STOP.
+> Alább történeti állapotok olvashatók.
 
 > **Aktuális átadás (2026-10-21):** #234 felhasználó által elfogadva és mainre egyesítve; **1.3.71 /2735** a legfrissebb stabil telefon/Wear kiadás. Részletes kapuk és APK-forrás: [WORK_HANDOFF.md](docs/WORK_HANDOFF.md), [kiadásjegyzék](docs/releases/INDEX.md). A lentebbi állapotok történetiek.
 
