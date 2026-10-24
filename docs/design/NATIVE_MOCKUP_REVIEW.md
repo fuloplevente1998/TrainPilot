@@ -1,5 +1,20 @@
 # Natív UI – döntés és látványterv-áttekintés (2026-10-24)
 
+<!--
+THESIS: A következő valódi edzéslépés és a folytatható session legyen a felület
+azonnali fókusza; a generikus, adatot nem hordozó dashboard nem.
+OWN-WORLD: Grafit háttér és rétegzett sötét kártyák, meleg arany az elsődleges
+műveletekhez/kijelöléshez, visszafogott szegélyek, Material 3 és kompakt 12–16dp
+sarkok; a felhasználó korábban mentett palettája továbbra is érvényes.
+STORY: A sportoló látja a valódi tervet vagy aktív edzést, majd biztosan folytat,
+indít, mér vagy naplóz; hiányzó szenzor-/egészségadat nem kap kitalált értéket.
+FIRST VIEWPORT: Ötfüles alsó navigáció, közös felső sáv fogaskerékkel; a kezdőlapon
+valós következő terv és elsődleges indítás/folytatás, utána mai adatok és gyors
+indítás. Terv nélkül tanító üres állapot jelenik meg.
+FORM: A felhasználó négy, 24 nézetes natív tervlapja (1/4–4/4) a kötelező
+vizuális irány; új, alternatív mockup nem készül.
+-->
+
 ## Felhasználói döntés
 
 A felhasználó a mockup megtekintése után **az öt alsó füles változatot
@@ -46,10 +61,18 @@ a 4/4 lapon nem létező e-mail/verzió mintafelirata eltávolítva. A javított
 az érvényes review-példányok. A ritka hibaállapotok, összes dialógus és minden
 nyelvi változat nem szerepel ezen a 24 nézeten.
 
-A képek a beszélgetésben letölthetők; nem kerültek binárisként a repositoryba.
-Másik modellnek történő átadáskor a képeket külön is csatolni kell, ha a vizuális
-terv alapján kell dolgoznia. Funkcionális referencia továbbra az elfogadott main;
-a választott vizuális/navigációs irány az öt alsó füles mockup.
+A felhasználó által megadott, javított képek a repositoryban is megőrzésre
+kerültek, változtatás nélkül:
+
+| Tervlap | Fájl |
+| --- | --- |
+| 1/4 – főoldalak és tervezés | [`mockups/native-ui-board-1.png`](mockups/native-ui-board-1.png) |
+| 2/4 – edzés és mérés | [`mockups/native-ui-board-2.png`](mockups/native-ui-board-2.png) |
+| 3/4 – napló, térkép, egészség | [`mockups/native-ui-board-3.png`](mockups/native-ui-board-3.png) |
+| 4/4 – szerkesztés és beállítások | [`mockups/native-ui-board-4.png`](mockups/native-ui-board-4.png) |
+
+Funkcionális referencia továbbra az elfogadott main; a választott natív
+vizuális/navigációs irány ez a négy képtábla és az öt alsó fül.
 
 
 ## Kötelező Compose-bekötési feltételek – felhasználói pontosítás (2026-10-24)

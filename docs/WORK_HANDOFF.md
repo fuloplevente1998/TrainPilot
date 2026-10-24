@@ -4,6 +4,41 @@ Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Friss mérföldkő – upstream katalógus és natív CI
+
+Munkaág `feat/native-android-finalization`, aktuális commit `8ead84a`. Friss
+`git fetch` után a forráság `033386e`; a `29ac3a2` és `ccc5c9a` kódja patch-
+egyezőként már megvolt (`572a10b`, `38e38df`), a `033386e` teljes main-katalógus
+és hiánypótló, nem felülíró adatbázis-seedelése pedig `8ead84a`-ként átkerült.
+A `69bc1fd`/`910cdf4` checkpoint csak dokumentációt módosít. A forráságban lévő
+régebbi MetadataGate/Discard tesztváltozatokat nem vettük át; az `ec2c65e`
+javításai maradnak. `main` és a forráság érintetlen.
+
+`40118525270` (`43598b2`): a telefonos és Wear OS debug APK-k fordítása sikerült,
+de a telefonos unit suite 567 tesztjéből kettő elbukott. A metadata-gate teszt
+virtuális `withTimeout`-ot használt valós IO-dispatcher körül; a discard teszt
+0-s, már elavult execution revisionnel küldte a rekordot, amelyet helyesen
+elutasított a motor. A tesztek célzott javítása `ec2c65e`-n pusholva; a
+[40119184559](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40119184559)
+futásban a phone/Wear debug build és a telefonos unit suite sikeres lett, de az
+újabb push után megszakadt, ezért az aláírt update nem fejeződött be. A
+`8ead84a`-hoz indult
+[40119749853](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40119749853)
+futás ellenőrzéskor aktív; a debug build indult, a unit és signed/update kapuk
+még függők, ezért a katalógusintegráció teljes kapuja még nem igazolt.
+
+A `docs/screenshots` régi main-képei nem a natív felület tervei. A natív app
+vizuális rendszere külön lesz. A felhasználó négy natív UI-tervlapját
+verziókezeltük a `docs/design/mockups/native-ui-board-1.png`–`-4.png` útvonalakon;
+ezek a 24 képernyős grafit/arany irány vizuális forrásai, nem implementációs
+vagy tesztbizonyítékok. Következő: a futó CI-kapuk tényleges eredményének
+ellenőrzése, majd a közös theme és kezdőlap célzott igazítása. Fizikai telefonos
+és Watch7-próba továbbra is külön szükséges.
+
+Az alábbi batch-leírások történeti, forráshoz kötött részletek; aktuális futás-,
+ág- és kapuállapotot ez a szakasz, illetve a [véglegesítési státusz](NATIVE_FINALIZATION_STATUS.md)
+tartalmazza.
+
 ## Friss munkablokk – intervallummód és hordozható preset
 
 A meglévő PhoneWorkoutPlans/IntervalTimerService út támogatja az explicit
@@ -374,9 +409,10 @@ utolsó teljes zöld forrás továbbra `dd4cc27`.
   **32 új megírt, még nem futtatott próba**. Nincs új fordítás/APK/CI-igazolás;
   utolsó teljes zöld forrás továbbra `dd4cc27`. `[skip ci]` munkamód változatlan.
 - Ezután a felhasználó az ötfüles alternatíváról mockupot kért áttekintésre:
-  4 kép/24 nézet elkészült a chatben. **Ez nem redesign-jóváhagyás**.
+  a négy kép/24 nézet jóváhagyott natív vizuális referencia. A fájlok
+  `design/mockups/native-ui-board-1.png`–`native-ui-board-4.png` alatt vannak.
   [UI-döntés és képtáblák](design/NATIVE_MOCKUP_REVIEW.md). Átadáskor a képeket
-  külön kell mellékelni, ha a következő modellnek látványtervként szükségesek.
+  nem szükséges újra csatolni; a repositoryban megőrzött példányokat használd.
 - Következő kódolás: main vizuális egyezés, Coach hiányzó per-gyakorlat részei,
   majd az ötpontos terv további pontjai/telefonos UI-tesztkód. Coach célpont SQL
   startIso szöveges rendezésének timezone/offset-paritását külön ellenőrizni kell.
