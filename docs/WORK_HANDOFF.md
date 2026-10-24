@@ -4,6 +4,28 @@ Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Legfrissebb forrás – telefonos Compose UI-kapu alapja
+
+**`1d38edf`**, `[skip ci]`: a meglévő `native-android.yml` új `phone-ui` jobja,
+izolált `-PnativePhoneUiTests` AndroidTest source set és manifest. A megőrzött
+hybrid AndroidTest forrás változatlan. Új Compose/UIAutomator teszt-APK, három
+integrált smoke-próba: öt fül + tervezési belépések; négy nyelv/téma + visszatérés;
+valódi alsó stopper → Settings → ugyanazon futó session, tényleges elhagyáskor pause.
+A Coach-hoz ready/loading/error szemantikai jelölő került a stabil várakozáshoz.
+
+`scripts/native/phone-ui-gate.py`: tesztcheckpoint kérés/nyugta, valódi előtéri
+app-fókusz ellenőrzése és **változatlan `adb exec-out screencap -p` PNG**.
+Manifestben forráscommit, két APK-hash, eszköz/API, téma/nyelv/fixture, képhash;
+nyers instrumentation/logcat + jelölten származtatott XML, hibás/kihagyott próbánál
+piros kapu. Ez megírt infrastruktúra, **nem tényleges screenshot vagy zöld UI-próba**.
+
+Még nem futtatva/fordítva: felhasználói sorrend szerint a teljes kódbatch után
+jön a közös CI. 73 új unit-próbakód + 3 új instrumentációs smoke-próba; a teljes
+kritikus Phone UI lefedés (GPS, kétoldali, mentés/discard/retry, backup/restore,
+0/200/1500 és további képernyők) még megírandó/bővítendő. A végleges dizájn/
+paritás és az öt terület hátralévő munkája változatlanul nyitott. Utolsó tényleges
+zöld forrás `dd4cc27`; nincs új APK/screenshot átadás vagy main merge.
+
 ## Kommunikáció/thinking megállapodás
 
 Kód/bekötés: felhasználó High; dizájnfázis előtt jelezni a Mediumhoz;

@@ -149,3 +149,12 @@ aktivitás explicit GPS-választása, új memóriabeli Launch, recovery védelem
 `0a3865c`: közös explicit locale Resources. Új 20 próbakód, összesen73 nem futtatott
 batch-eset. Aktuális nyitott elemek az átadó tetején. Nincs új kapu/APK vagy
 külső Google-szinkron végrehajtás. A teljes feladat továbbra nincs lezárva.
+
+
+## Phone UI és képernyőkép-infrastruktúra alap
+
+`1d38edf`: izolált native Phone AndroidTest source set, három valódi Compose
+smoke-próba és a meglévő workflow-ban új API35 Phone UI lane. Raw adb PNG-k
+checkpoint/ack protokollal, eredet/commit/hash/locale/téma manifesttel; hibás vagy
+kihagyott próba nem zöld. Ez még nem futott. A teljes célzott Phone UI-lefedés
+és az öt terület maradéka megírandó a végső közös CI előtt.
