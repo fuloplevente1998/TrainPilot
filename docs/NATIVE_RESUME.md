@@ -20,6 +20,38 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   prototípus/fake Health-forrás tilos. Nyolcgombos menü helyett öt alsó fül elfogadva,
   jobb felső Settings; abból visszatérés nem pause, valódi editor-elhagyás igen.
 
+## Legújabb natív batch – személyes A/B tervező előnézet
+
+`559fd43e` `[skip ci]`: a Programok Személyes
+Edzéstervező bannerje már valódi HU/EN/DE/RO
+előnézetet nyit. `NativeProfileProgramPreview`
+a main elfogadott `home-basic/home-level2`
+sablonjára és explicit edzésprofil perc/gear/
+excluded/avoidAreas mezőire épít. Felszerelés
+vagy edzésidő nélkül, illetve ismeretlen
+kerülendő testrész mellett nincs bizonytalan terv.
+Kezdő-szűrő, 20 perces rövidítés, B-összetett
+sorrend, csak pad mellett nehezebb fekvőtámasz;
+2-3 sorozat, 120/75 mp pihenő, 2 RIR,
+`trial:true` súlybeállítás — automatikus
+súlykitalálás nincs. Az előnézet nem módosít
+adatot. Elfogadáskor új kanonikus Room
+programpéldány `profileSnapshot/prescriptions/
+sourceTemplateId/templateVersion:2` mezőkkel,
+stale-CAS + restore fence és külön aktív
+programváltás; sablon érintetlen, Wear publikáció.
+Profil tömbök most szerkeszthetők.
+
+**15 új unit +3 Phone UI, összesen 301 unit
++34 Phone UI kód megírva, még nem futott.**
+20 statikus útvonalellenőrzés PASS, Android-
+fordítás/emulátor/valódi kép/APK nem igazolt.
+Következő: #128 90 napos `history128`
+előzményöröklés + Coach-jóváhagyási küszöbök,
+majd teljes CI. A mostani részparitást nem szabad
+teljes személyes generátornak nevezni.
+PR #238 frissítendő.
+
 ## Legújabb natív batch – főágbeli edzésprofil és Progress
 
 `cfdc6d05` `[skip ci]`. A main #128 `settings.profile`
