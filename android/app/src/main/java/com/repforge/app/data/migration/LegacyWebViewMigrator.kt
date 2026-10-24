@@ -163,6 +163,16 @@ class LegacyWebViewMigrator(
             rootInput
         }
 
+        // Validate profile *before* any Room mutation: DataStore is applied later,
+        // so a malformed portable profile must not leave partially imported tables.
+        data.optJSONObject("settings")?.let { settings ->
+            if (settings.has("profile")) {
+                val profile = settings.optJSONObject("profile")
+                    ?: throw IllegalArgumentException("Invalid training profile")
+                com.repforge.app.NativeTrainingProfile.verified(profile)
+            }
+        }
+
         // Reject malformed favorites before the first Room write in this import.
         val incomingFavorites = if (data.has(NativeExerciseFavorites.KEY) && !data.isNull(NativeExerciseFavorites.KEY))
             NativeExerciseFavorites.decode(data.get(NativeExerciseFavorites.KEY)) else null
