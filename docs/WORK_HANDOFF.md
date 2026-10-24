@@ -4,6 +4,39 @@ Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Legfrissebb kód – megszakadt helyi adatcsere explicit folytatása
+
+**`7296f0b`**, `[skip ci]`: a helyi JSON/ZIP import és erase tartós privát
+redo-receiptet ír (`noBackupFilesDir/native-data-replacement.json`). A választott
+JSON vagy ZIP-staging ellenőrzőösszeghez kötött; ZIP replay ismét ellenőrzi a
+manifestet és a fotóhash-eket. Receipt a módosítások előtt, committed jelölés a
+befejezés után; a committed replay már csak takarít. A félkész receipt megtartja
+mindkét adatcsere-fence-et hiba/cancel/processzhalál után is.
+
+Új startup recovery gate és Settings-helyreállító panel: tudatos „Művelet
+folytatása”, vagy másik ellenőrzött JSON/ZIP kiválasztása. Nincs automatikus
+unlock/törlés vagy új edzésindítás. Négy nyelvű erőforrások. A natív migration
+kész jelölése megmarad explicit restore után, hogy újraindítás ne hozza vissza a
+régi WebView tartalmat. Settings-mutációk/szinkrongombok helyi busy alatt tiltottak.
+
+**Fontos szemantika:** ez a korábban kiválasztott célállapot idempotens, explicit
+**előrefelé folytatása**, nem teljes előző állapotra visszagörgetés. Módosítás
+utáni hiba esetén az app a recovery kapu mögött marad a folytatásig vagy új mentésig.
+A megőrzött fotóeredetik replay során nem íródnak felül új fotóval.
+
+7 új unit-próbakód: receipt/commit/path-validáció, zár megtartása, tényleges
+meglévő importerrel JSON replay, sérült payload, cleanup-only commit és hiányzó
+receipt fail-closed. Új Phone UI cold-start recovery próbakód raw screenshot
+checkpointokkal. **Batch: 88 új unit + 4 Phone instrumentációs próba megírva,
+még nem futtatva.** Csak diff/XML-struktúra ellenőrzés; nincs új CI/APK/kép.
+Utolsó teljes zöld forrás továbbra `dd4cc27`.
+
+Következő backend munka: teljes JSON/ZIP/Health/DataStore/fotó roundtrip és minden
+crash-fázis tesztelhető hibainjektálása; Room tranzakciós import/Settings-kompenzáció
+vizsgálata; Google Drive import és már belépett background Room-írások
+konkurenciavédelme. Ezután a további interval/preset/Coach/paritás és teljes UI
+lefedés. A működés készüléken még nincs igazolva, élő adatokra telepítés STOP.
+
 ## Legfrissebb kód – helyi restore/erase konkurenciavédelem
 
 **`9c6f4a8`**, `[skip ci]`: a JSON/ZIP helyi visszaállítás és explicit erase

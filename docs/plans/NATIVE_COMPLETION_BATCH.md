@@ -168,3 +168,13 @@ aktív/ownership ellenőrzés, hiba/cancel felszabadítás és rollback-evidence
 nem futtatva. Félbeszakadt fence recovery-eljárása, teljes Room/DataStore/Health/
 fotó crash/roundtrip, Drive import és már elindult background Room-írások
 konkurenciája még nyitott. A guard nem teljes migrációs vagy adatbiztonsági igazolás.
+
+
+## Explicit forward recovery – új bekötés
+
+`7296f0b`: privát hash-kötött redo-receipt és staged JSON/ZIP, committed cleanup,
+startup/Settings recovery-felület, explicit folytatás vagy másik valid mentés;
+fence hiba/cancel után nem oldódik félkész receipt mellett. Ez forward redo, nem
+minden tár korábbi állapotának atomi rollbackje. 7 új unit + 1 Phone UI próbakód;
+összesen88 új unit + 4 instrumentációs próba, még nem futtatva. Teljes roundtrip,
+crash-fázisok, Drive és beérkező Room-írások koordinálása még szükséges.
