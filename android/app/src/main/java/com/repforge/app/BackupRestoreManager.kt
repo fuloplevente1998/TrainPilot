@@ -169,6 +169,16 @@ class BackupRestoreManager(context: Context) {
         catch (error: Exception) { Result.failure(error) }
     }
 
+    /** Reuse the same staged redo path for an already merged Drive payload, under its caller's lease. */
+    internal suspend fun installCloudMerge(data: JSONObject) {
+        check(NativeDataReplacement.blocked(appContext)) { "Cloud import requires the replacement lease" }
+        photoIds(data)
+        val token = UUID.randomUUID().toString()
+        val dir = transactionDir(token); mkdir(dir)
+        writeSynced(File(dir, "backup.json"), data.toString().toByteArray(StandardCharsets.UTF_8))
+        completeReplacement(NativeReplacementJournal.Entry("json", token, false))
+    }
+
     /** Explicit replay of the staged, already selected backup; never an automatic unlock. */
     suspend fun resumeInterruptedReplacement(): Result<Unit> = withContext(Dispatchers.IO) {
         try {

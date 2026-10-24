@@ -13,6 +13,7 @@ import com.google.android.gms.auth.api.identity.RevokeAccessRequest
 import com.google.android.gms.common.api.Scope
 import com.repforge.app.data.db.KeyValueDocumentEntity
 import com.repforge.app.data.db.TrainPilotDatabase
+import com.repforge.app.data.migration.NativeBackupPrivacy
 import com.repforge.app.data.migration.LegacyWebViewMigrator
 import com.repforge.app.data.store.TrainPilotSettingsStore
 import com.repforge.shared.GpsRoutePacket193
@@ -273,7 +274,7 @@ class GoogleSyncRepository(context: Context) {
                 }
             }
 
-            val merged = mergeSync18(
+            val merged = NativeBackupPrivacy.sanitize(mergeSync18(
                 local = localData,
                 remotes = remotes,
                 base = baseData,
@@ -281,7 +282,7 @@ class GoogleSyncRepository(context: Context) {
                 deletedHistoryIds = deletedIds,
                 deletedHistoryKeys = deletedKeys,
                 preferLocalOnConflict = preferPhoneOnConflict
-            )
+            ))
 
             // Sync Workout Photos (upload missing to Drive, download missing to local)
             _uiState.value = _uiState.value.copy(stageMessage = "Edzésfotók szinkronizálása…")
@@ -302,15 +303,17 @@ class GoogleSyncRepository(context: Context) {
                 writeSnapshotInternal(accessToken, owner, deviceId, envelope)
             }
 
-            migrator.importBackupJson(merged, replaceAll = true)
             val nowIso = Instant.now().toString()
-            database.keyValueDocumentDao().putDocument(
-                KeyValueDocumentEntity("cloudBase:$owner", merged.toString(), System.currentTimeMillis())
-            )
-            val statusObj = JSONObject().put("drive", nowIso)
-            database.keyValueDocumentDao().putDocument(
-                KeyValueDocumentEntity("cloudStatus", statusObj.toString(), System.currentTimeMillis())
-            )
+            NativeDataReplacement.exclusively(appContext) {
+                // Network work intentionally occurs without holding the workout-start fence.
+                // Revalidate the actual local content; a count-only comparison misses edits/deletions.
+                NativeCloudMergeGuard.requireUnchanged(localData, migrator.exportBackupJson(includeHealthJournal = false))
+                BackupRestoreManager(appContext).installCloudMerge(merged)
+                database.keyValueDocumentDao().putDocument(
+                    KeyValueDocumentEntity("cloudBase:$owner", merged.toString(), System.currentTimeMillis()))
+                database.keyValueDocumentDao().putDocument(
+                    KeyValueDocumentEntity("cloudStatus", JSONObject().put("drive", nowIso).toString(), System.currentTimeMillis()))
+            }
 
             if (recoverEarlier) {
                 _uiState.value = _uiState.value.copy(stageMessage = "Régi mentések karbantartása…")
