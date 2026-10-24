@@ -403,7 +403,7 @@ fun BleDiscoveryTabContent(
     val ble = state.bleState
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+        modifier = Modifier.fillMaxSize().testTag("health_ble_list").padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item { Spacer(Modifier.height(8.dp)) }
