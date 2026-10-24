@@ -22,6 +22,7 @@ class NativeMainMenuTest {
             assertEquals("training", NativeMainMenu.selected(route))
         for (route in listOf("calendar", "coach")) assertEquals("home", NativeMainMenu.selected(route))
         assertEquals("progress", NativeMainMenu.selected("progress"))
+        assertEquals("health", NativeMainMenu.selected("weight_journal"))
     }
     @Test fun settingsKeepsTheOriginTabIncludingActiveWorkoutAndNestedViews() {
         for (origin in NativeMainMenu.routes + listOf("active_workout", "calendar", "coach", "programs"))

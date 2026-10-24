@@ -1,25 +1,21 @@
 package com.repforge.app.ui.progress
-import java.util.UUID
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.repforge.app.WorkoutPhotoRepository
-import com.repforge.app.data.db.BodyWeightEntryEntity
 import com.repforge.app.data.db.ExerciseLibraryEntity
 import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.db.WorkoutHistoryWithDetails
-import com.repforge.shared.WorkoutStatsCalculator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.time.LocalDate
 import kotlin.math.max
-import kotlin.math.roundToInt
 
 data class MuscleLoadUiModel(
     val muscleKey: String,
@@ -40,14 +36,8 @@ data class ProgressUiState(
     val exercises: List<ExerciseLibraryEntity> = emptyList(),
     val selectedExerciseId: String = "goblet-squat",
     val exercise1RmTrend: List<Exercise1RmPointUiModel> = emptyList(),
-    val currentWeightKg: Double? = null,
-    val startWeightKg: Double? = null,
-    val weightDiffKg: Double? = null,
-    val weightRange: String = "30", // "7", "30", "90", "365", "all"
-    val filteredWeights: List<BodyWeightEntryEntity> = emptyList(),
     val progressPhotos: List<File> = emptyList(),
-    val language: String = "hu",
-    val writeFailed: Boolean = false
+    val language: String = "hu"
 )
 
 class ProgressViewModel(application: Application) : AndroidViewModel(application) {
@@ -65,19 +55,17 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
     fun loadProgressData() {
         viewModelScope.launch {
             val language = com.repforge.app.data.store.TrainPilotSettingsStore(context).current().language
-            _uiState.value = _uiState.value.copy(language = language)
+            _uiState.update { it.copy(language = language) }
             val workouts = database.workoutHistoryDao().getAllWorkoutsWithDetails()
             val exercises = database.exerciseLibraryDao().getAllExercises()
-            val weights = database.bodyWeightDao().getAllWeights()
 
-            calculateProgress(workouts, exercises, weights)
+            calculateProgress(workouts, exercises)
         }
     }
 
     private suspend fun calculateProgress(
         workouts: List<WorkoutHistoryWithDetails>,
-        exercises: List<ExerciseLibraryEntity>,
-        weights: List<BodyWeightEntryEntity>
+        exercises: List<ExerciseLibraryEntity>
     ) = withContext(Dispatchers.Default) {
         // 1. #177 Izomcsoport terhelés számítás (utolsó 30 nap edzései alapján)
         val cutoffEpoch = System.currentTimeMillis() - 30L * 86_400_000L
@@ -125,64 +113,25 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
         // 2. 1RM Fejlődési görbe az aktuálisan kiválasztott gyakorlatra
         val trend = calculate1RmTrend(workouts, _uiState.value.selectedExerciseId)
 
-        // 3. Testsúly statisztika
-        val curW = weights.lastOrNull()?.kg
-        val startW = weights.firstOrNull()?.kg
-        val diff = if (curW != null && startW != null) ((curW - startW) * 10.0).roundToInt() / 10.0 else null
-        val filtered = filterWeightsByRange(weights, _uiState.value.weightRange)
-
         // 4. Haladás-fotók kigyűjtése a lokális fájlokból
         val photoFiles = photoRepo.photoDir().listFiles { f -> f.extension == "jpg" }?.sortedByDescending { it.lastModified() } ?: emptyList()
 
-        _uiState.value = _uiState.value.copy(
+        _uiState.update { it.copy(
             muscleLoads = loadModels,
             exercises = exercises,
             exercise1RmTrend = trend,
-            currentWeightKg = curW,
-            startWeightKg = startW,
-            weightDiffKg = diff,
-            filteredWeights = filtered,
             progressPhotos = photoFiles
-        )
+        ) }
     }
 
     fun selectExercise(exerciseId: String) {
         viewModelScope.launch(Dispatchers.Default) {
             val workouts = database.workoutHistoryDao().getAllWorkoutsWithDetails()
             val trend = calculate1RmTrend(workouts, exerciseId)
-            _uiState.value = _uiState.value.copy(
+            _uiState.update { it.copy(
                 selectedExerciseId = exerciseId,
                 exercise1RmTrend = trend
-            )
-        }
-    }
-
-    fun setWeightRange(range: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val weights = database.bodyWeightDao().getAllWeights()
-            val filtered = filterWeightsByRange(weights, range)
-            _uiState.value = _uiState.value.copy(weightRange = range, filteredWeights = filtered)
-        }
-    }
-
-    fun clearWriteError() { _uiState.value = _uiState.value.copy(writeFailed = false) }
-
-    fun addWeightEntry(kg: Double, dateIso: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                require(kg.isFinite() && kg in 30.0..300.0)
-                val dayKey = LocalDate.parse(dateIso.take(10)).toString()
-                com.repforge.app.NativeDataReplacement.mutate(context) {
-                    val id = UUID.randomUUID().toString()
-                    database.bodyWeightDao().upsertWeight(BodyWeightEntryEntity(
-                        id = id, date = dateIso, dayKey = dayKey, kg = kg,
-                        updatedAt = System.currentTimeMillis(),
-                        rawJson = org.json.JSONObject().put("id", id).put("date", dateIso).put("kg", kg).toString()))
-                }
-                _uiState.value = _uiState.value.copy(writeFailed = false)
-                loadProgressData()
-            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
-            catch (_: Exception) { _uiState.value = _uiState.value.copy(writeFailed = true) }
+            ) }
         }
     }
 
@@ -213,10 +162,4 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
         return points
     }
 
-    private fun filterWeightsByRange(weights: List<BodyWeightEntryEntity>, range: String): List<BodyWeightEntryEntity> {
-        if (range == "all") return weights
-        val days = range.toLongOrNull() ?: 30L
-        val cutoff = LocalDate.now().minusDays(days).toString()
-        return weights.filter { it.dayKey >= cutoff }
-    }
 }

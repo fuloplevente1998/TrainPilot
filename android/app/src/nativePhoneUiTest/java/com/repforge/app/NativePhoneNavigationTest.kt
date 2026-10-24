@@ -254,6 +254,58 @@ class NativePhoneNavigationTest {
         screenshot("programs_full_catalog", "en")
     }
 
+    @Test fun weightJournalSupportsDatedAddEditAndConfirmedExactDeletion() {
+        launch(); tab("health")
+        compose.onNodeWithTag("health_weight_journal").performClick()
+        compose.onNodeWithTag("weight_journal_action").performClick()
+        compose.onNodeWithTag("weight_input").performTextReplacement("72,3")
+        compose.onNodeWithTag("weight_date").performTextReplacement("2026-10-20")
+        compose.onNodeWithTag("weight_save").performClick()
+        fun weights() = runBlocking(Dispatchers.IO) { TrainPilotDatabase.getInstance(context).bodyWeightDao().getAllWeights() }
+        compose.waitUntil(15000) { weights().size == 1 }
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("weight_input").fetchSemanticsNodes().isEmpty() }
+        val saved = weights().single()
+        assertEquals("2026-10-20", saved.dayKey); assertEquals(72.3, saved.kg, .0001)
+        compose.onNodeWithTag("weight_journal_list").performScrollToNode(hasTestTag("weight_edit_${saved.id}"))
+        compose.onNodeWithTag("weight_edit_${saved.id}").performClick()
+        compose.onNodeWithTag("weight_input").performTextReplacement("73,4")
+        compose.onNodeWithTag("weight_save").performClick()
+        compose.waitUntil(15000) { weights().single().kg == 73.4 }
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("weight_input").fetchSemanticsNodes().isEmpty() }
+        assertEquals(saved.id, weights().single().id); assertEquals(saved.date, weights().single().date)
+        screenshot("weight_journal_edited")
+        compose.onNodeWithTag("weight_delete_${saved.id}").performClick()
+        compose.onNodeWithText("Mégse").performClick()
+        assertEquals(1, weights().size)
+        compose.onNodeWithTag("weight_delete_${saved.id}").performClick()
+        compose.onNodeWithTag("weight_confirm_delete").performClick()
+        compose.waitUntil(15000) { weights().isEmpty() }
+        compose.onNodeWithText("Még nincs rögzített testsúly.").assertExists()
+        compose.onNodeWithTag("navigation_back").performClick()
+        compose.onNodeWithTag("health_weight_journal").assertExists()
+    }
+
+    @Test fun failedWeightSaveKeepsTheDialogAndInputForExplicitRetry() {
+        launch(); tab("health")
+        compose.onNodeWithTag("health_weight_journal").performClick()
+        compose.onNodeWithTag("weight_journal_action").performClick()
+        compose.onNodeWithTag("weight_input").performTextReplacement("74,5")
+        context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE).edit().putBoolean("blocked", true).commit()
+        try {
+            compose.onNodeWithTag("weight_save").performClick()
+            compose.waitUntil(15000) { compose.onAllNodesWithTag("weight_write_error").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithTag("weight_input").assertTextContains("74,5")
+            assertTrue(runBlocking(Dispatchers.IO) { TrainPilotDatabase.getInstance(context).bodyWeightDao().getAllWeights().isEmpty() })
+        } finally {
+            context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE).edit().putBoolean("blocked", false).commit()
+        }
+        compose.onNodeWithTag("weight_save").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("weight_input").fetchSemanticsNodes().isEmpty() }
+        assertEquals(74.5, runBlocking(Dispatchers.IO) {
+            TrainPilotDatabase.getInstance(context).bodyWeightDao().getAllWeights().single().kg
+        }, .0001)
+    }
+
     @Test fun earlierHealthDayCanBeSelectedAndDisplaysItsStoredWeight() {
         val day = java.time.YearMonth.now().minusMonths(1).atDay(1).toString()
         val health = HealthJournalStore.get(context)

@@ -261,11 +261,17 @@ interface WorkoutHistoryDao {
 
 @Dao
 interface BodyWeightDao {
-    @Query("SELECT * FROM body_weights ORDER BY date ASC")
+    @Query("SELECT * FROM body_weights ORDER BY date ASC, id ASC")
     fun observeAllWeights(): Flow<List<BodyWeightEntryEntity>>
 
     @Query("SELECT * FROM body_weights ORDER BY date ASC")
     suspend fun getAllWeights(): List<BodyWeightEntryEntity>
+
+    @Query("SELECT * FROM body_weights WHERE id = :id LIMIT 1")
+    suspend fun getWeightById(id: String): BodyWeightEntryEntity?
+
+    @Query("DELETE FROM body_weights WHERE id = :id")
+    suspend fun deleteWeightById(id: String): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertWeight(entry: BodyWeightEntryEntity)

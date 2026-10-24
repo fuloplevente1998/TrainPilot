@@ -179,4 +179,25 @@
     <string name="health_history_sleep">Gespeicherte Schlafabschnitte: %1$d</string>
     <string name="health_history_auto">Tagesübersicht</string>
     <string name="health_history_legacy">Bisheriges Journal</string>
+    <string name="weight_title">Gewichtsprotokoll</string>
+    <string name="weight_open">Gewichtsprotokoll öffnen</string>
+    <string name="weight_add">Messung hinzufügen</string>
+    <string name="weight_edit">Bearbeiten</string>
+    <string name="weight_delete">Löschen</string>
+    <string name="weight_save">Speichern</string>
+    <string name="weight_cancel">Abbrechen</string>
+    <string name="weight_kg">Körpergewicht (kg)</string>
+    <string name="weight_date">Datum (JJJJ-MM-TT)</string>
+    <string name="weight_invalid">Gib einen Wert zwischen 30 und 300 kg ein.</string>
+    <string name="weight_changed">Dieser Eintrag wurde geändert oder gelöscht. Schließe und öffne ihn erneut.</string>
+    <string name="weight_delete_question">Die Messung mit %2$s kg vom %1$s löschen?</string>
+    <string name="weight_current">Aktuell: %1$s</string>
+    <string name="weight_start_change">Anfang: %1$s kg · Änderung: %2$s kg</string>
+    <string name="weight_all">Alle</string>
+    <string name="weight_days">%1$d Tage</string>
+    <string name="weight_loading">Wird geladen…</string>
+    <string name="weight_empty">Noch keine Gewichtsmessungen.</string>
+    <string name="weight_chart_empty">Für das Diagramm sind mindestens zwei Messungen erforderlich.</string>
+    <string name="weight_read_failed">Das Gewichtsprotokoll konnte nicht geladen werden.</string>
+    <string name="weight_min_max">Minimum / Maximum: %1$s / %2$s kg</string>
 </resources>

@@ -179,4 +179,25 @@
     <string name="health_history_sleep">Naplózott alvásszakaszok: %1$d</string>
     <string name="health_history_auto">Napi összesítés</string>
     <string name="health_history_legacy">Korábbi napló</string>
+    <string name="weight_title">Testsúlynapló</string>
+    <string name="weight_open">Testsúlynapló megnyitása</string>
+    <string name="weight_add">Új mérés</string>
+    <string name="weight_edit">Szerkesztés</string>
+    <string name="weight_delete">Törlés</string>
+    <string name="weight_save">Mentés</string>
+    <string name="weight_cancel">Mégse</string>
+    <string name="weight_kg">Testsúly (kg)</string>
+    <string name="weight_date">Dátum (ÉÉÉÉ-HH-NN)</string>
+    <string name="weight_invalid">30 és 300 kg közötti értéket adj meg.</string>
+    <string name="weight_changed">A bejegyzés közben megváltozott vagy törlődött. Zárd be, majd nyisd meg újra.</string>
+    <string name="weight_delete_question">Törlöd a(z) %1$s napi, %2$s kg-os mérést?</string>
+    <string name="weight_current">Aktuális: %1$s</string>
+    <string name="weight_start_change">Kezdeti: %1$s kg · Változás: %2$s kg</string>
+    <string name="weight_all">Mind</string>
+    <string name="weight_days">%1$d nap</string>
+    <string name="weight_loading">Betöltés…</string>
+    <string name="weight_empty">Még nincs rögzített testsúly.</string>
+    <string name="weight_chart_empty">A grafikonhoz legalább két mérés szükséges.</string>
+    <string name="weight_read_failed">A testsúlynaplót nem sikerült betölteni.</string>
+    <string name="weight_min_max">Minimum / maximum: %1$s / %2$s kg</string>
 </resources>

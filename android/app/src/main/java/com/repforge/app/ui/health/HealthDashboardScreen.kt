@@ -68,6 +68,7 @@ import com.repforge.app.ui.theme.LocalTrainPilotColors
 @Composable
 fun HealthDashboardScreen(
     navController: NavController,
+    onWeightJournal: () -> Unit,
     viewModel: HealthDashboardViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -79,6 +80,10 @@ fun HealthDashboardScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize().background(colors.bg)) {
+        TextButton(onClick = onWeightJournal, modifier = Modifier.testTag("health_weight_journal")) {
+            Text(com.repforge.app.ui.text.nativeResources(context, state.language)
+                .getString(com.repforge.app.R.string.weight_open))
+        }
         state.statusMessage?.let { Text(it, color = colors.muted, modifier = Modifier.padding(12.dp)) }
         // Két fül: Egészségnapló vs #111 BLE Eszközkereső
         TabRow(
