@@ -70,6 +70,7 @@ import com.repforge.app.ui.progress.ProgressScreen
 import com.repforge.app.ui.journal.JournalScreen
 import com.repforge.app.ui.health.HealthDashboardScreen
 import com.repforge.app.ui.programs.TrainingProgramsScreen
+import com.repforge.app.ui.programs.ExerciseLibraryScreen
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
@@ -277,7 +278,11 @@ fun TrainPilotAppScaffold(
                         busy = navigationBlocked, onStart = { programId, dayId -> startWorkout(programId, dayId) },
                         onQuick = { outdoor -> selectDestination(if (hasActiveWorkout) "training" else if (outdoor) "quick_outdoor" else "quick_workout") },
                         onPrograms = { selectDestination("programs") },
-                        onCalendar = { selectDestination("calendar") }, onCoach = { selectDestination("coach") })
+                        onCalendar = { selectDestination("calendar") }, onCoach = { selectDestination("coach") },
+                        onLibrary = { selectDestination("exercise_library") })
+                }
+                composable("exercise_library") {
+                    ExerciseLibraryScreen(language = settings.language)
                 }
                 composable("programs") {
                     TrainingProgramsScreen(navController = navController, language = settings.language,
