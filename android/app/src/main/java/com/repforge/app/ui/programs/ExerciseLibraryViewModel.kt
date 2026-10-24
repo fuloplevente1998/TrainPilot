@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.repforge.app.NativeDataReplacement
 import com.repforge.app.NativeExerciseFavorites
+import com.repforge.app.NativeCustomExerciseEditor
 import com.repforge.app.data.db.ExerciseLibraryEntity
 import com.repforge.app.data.db.TrainPilotDatabase
 import kotlinx.coroutines.CancellationException
@@ -21,7 +22,10 @@ internal data class ExerciseLibraryState(
     val loading: Boolean = true,
     val saving: Boolean = false,
     val error: Boolean = false,
-    val writeFailed: Boolean = false
+    val writeFailed: Boolean = false,
+    val editError: String? = null,
+    val savedId: String? = null,
+    val deletedId: String? = null
 )
 
 internal class ExerciseLibraryViewModel(application: Application) : AndroidViewModel(application) {
@@ -46,6 +50,46 @@ internal class ExerciseLibraryViewModel(application: Application) : AndroidViewM
             catch (_: Exception) { _state.update { it.copy(error = true, loading = false) } }
         }
     }
+
+    fun saveCustom(id: String?, draft: NativeCustomExerciseEditor.Draft, language: String) {
+        if (_state.value.saving || _state.value.loading || _state.value.error) return
+        _state.update { it.copy(saving = true, editError = null, savedId = null, deletedId = null) }
+        viewModelScope.launch {
+            try {
+                val saved = withContext(Dispatchers.IO) {
+                    NativeCustomExerciseEditor.save(context, db, id, draft, language)
+                }
+                val data = withContext(Dispatchers.IO) {
+                    NativeDataReplacement.mutate(context) {
+                        db.exerciseLibraryDao().getAllExercises() to NativeExerciseFavorites.load(db).toSet()
+                    }
+                }
+                _state.update { it.copy(rows = data.first, favorites = data.second, savedId = saved) }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (failure: Exception) { _state.update { it.copy(editError = failure.message ?: "Save failed") } }
+            finally { _state.update { it.copy(saving = false) } }
+        }
+    }
+
+    fun deleteCustom(id: String) {
+        if (_state.value.saving || _state.value.loading || _state.value.error) return
+        _state.update { it.copy(saving = true, editError = null, savedId = null, deletedId = null) }
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) { NativeCustomExerciseEditor.delete(context, db, id) }
+                val data = withContext(Dispatchers.IO) {
+                    NativeDataReplacement.mutate(context) {
+                        db.exerciseLibraryDao().getAllExercises() to NativeExerciseFavorites.load(db).toSet()
+                    }
+                }
+                _state.update { it.copy(rows = data.first, favorites = data.second, deletedId = id) }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (failure: Exception) { _state.update { it.copy(editError = failure.message ?: "Delete blocked") } }
+            finally { _state.update { it.copy(saving = false) } }
+        }
+    }
+
+    fun clearEditOutcome() { _state.update { it.copy(savedId = null, deletedId = null, editError = null) } }
 
     fun toggleFavorite(id: String) {
         if (_state.value.saving || _state.value.loading || _state.value.error) return
