@@ -22,7 +22,21 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 
 ## Legutóbbi konkrét munka
 
-- Legfrissebb alkalmazásforrás **29ac3a2**. A természetesen lejárt nem-auto interval
+- Legfrissebb alkalmazásforrás **ccc5c9a**: NativeCoachExerciseAdvice + bounded
+  NativeCoachAdviceRepository és Coach-kártyák a végső main tp128/rf233 szabályokból.
+  90 nap / max4 kompatibilis előzmény, 32-es keyset oldalak, elfogadott history128
+  forráshivatkozás, 128-as distinct súlylapok; hiány/részleges/fájdalom/RIR/romló
+  trend/stabil növekedés/testsúlyos változat és readiness korlát. Tanács nem ír
+  aktív edzést/programot/draftot. ProgressionSteps hordozható DataStore + backup.
+  HU/EN/DE/RO erőforrások; 32 main-referencia unit-eset +6 Room +1 portable unit,
+  +1 read-only UI próbakód. Android/Kotlin tesztek nem futottak.
+- Referencia: `git show 7473b30:www/app.js`, blob **b5567576bed9a8f93608a6bf1ed8db1dee4723f4**.
+  A `/workspace/TrainPilot` checkout local-release-136, nem aktuális main; azt nem
+  módosítottuk. `scripts/native/coach-reference.cjs` pontos blobot ellenőrizve
+  32 szintetikus JS-helyzetet futtatott és reprodukálható fixture-t generált.
+  Ez nem Kotlin/Android teszteredmény. A 29ac3a2 az előző alkalmazásforrás.
+
+- Korábbi alkalmazásforrás **29ac3a2**. A természetesen lejárt nem-auto interval
   terv nyugdíjazva: kézi OK/újraindítás és régi tick kizárása működési útba kötve;
   inaktív elvetett frame régi receiptje megmarad, más workout returnjét nem blokkolja,
   ugyanaz a lezárt workout nem támasztható fel. 3 új unit-próbakód, nem futott.
@@ -69,8 +83,8 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   aktivitás GPS-választása; teljes main palettakatalógus + kontraszt/picker.
 - Phone UI kapu alapja **1d38edf**: külön native AndroidTest source set,
   meglévő native-android.yml phone-ui job, raw adb screencap checkpoint/ack és
-  származtatottnak jelölt XML/manifest. Jelenleg4 instrumentációs próbakód.
-- **135 új unit + 7 instrumentációs tesztkód megírva, még nem futtatva.**
+  származtatottnak jelölt XML/manifest. Az akkori4 óta8 instrumentációs próbakódra bővült.
+- **174 új unit + 8 instrumentációs tesztkód megírva, még nem futtatva.**
   Nincs új zöld kapu/APK/screenshot. Utolsó teljes zöld forrás **dd4cc27**:
   unit Phone393/Wear167, Wear UI183, signed upgrade2. Bizonyíték: WORK_HANDOFF.md.
 - Main utóbbi 8a36502d változása csak AGENTS thinking-dokumentáció; main app baseline
@@ -81,8 +95,8 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 1. A még szabadon futó egyéb írók admission és UI hibakezelése;
    cloud photo staging/transaction. A bekötött kapu nem minden szabad DAO és külön
    Health SQLite írás globális zárja. A megírt ZIP/Health tesztek még nem futottak.
-2. Intervallum/preset új kód futtatott igazolása még nincs; Coach per-gyakorlat
-   javaslat/progresszió; katalógus/nevek/lokalizáció. A közös provider-frissítés új
+2. Intervallum/preset/Coach új kód futtatott igazolása még nincs; teljes katalógus,
+   nevek és lokalizáció, program/testváltozat-előnézet további paritása. A közös provider-frissítés új
    forrása/életciklustesztje még futtatandó; valós SDK/készülék nincs igazolva.
 3. Mockup teljes vizuális kidolgozás (előtte Medium jelzés): többek közt mini-route
    listathumbnail, részletes Health forrásadatok, program/gyakorlat szerkesztés/paritás.

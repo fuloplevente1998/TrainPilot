@@ -78,6 +78,9 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 - A tényleges `package.json`/workflow a mérvadó. Ne állíts Vite/TypeScript buildet
   vagy sikeres tesztet egy külső átirat alapján. Ne adj hozzá második APK-workflow-t
   a meglévő, aláírt release gate-ek megkerülésére.
+- Referenciaforrást a jóváhagyott Git-refből és fájlhash alapján olvass
+  (`git show <commit>:<path>`). Egy másik munkafa könyvtárneve nem bizonyítja,
+  hogy az a main aktuális forrása; annak checkoutját ne változtasd meg ezért.
 - Először a hiba okát javítsd. Tesztelvárást csak elavult szerződés vagy igazolt
   teszthiba miatt változtass; működési regressziót ne rejts el tesztgyengítéssel.
 - Az eredményt mindig pontos commitra vonatkoztasd. A PR-merge tesztforrásnál

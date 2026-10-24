@@ -4,6 +4,38 @@ Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Legfrissebb alkalmazásforrás – gyakorlatonkénti Coach
+
+**`ccc5c9a`**, `[skip ci]`. A korábban hiányzó gyakorlatonkénti tanács a meglévő
+Coach képernyőhöz kapcsolódik, nem külön edzésmotor. A main végső tp140/tp128 és
+rf233 szabályai: csak kompatibilis, legfeljebb90 napos, max4 előzmény; a program
+által jóváhagyott history128 forrásokat külön ellenőrzi. Részleges edzés, fájdalom,
+RIR-cél, rossz/romló teljesítés, stabil felső cél, testsúlyos változat és Coach
+készenléti korlátozás elkülönül. UI csak javasol, nem módosít aktív/importált
+edzést vagy programot. A súlyértelmezés (kézenként/összesen) megmarad.
+
+A Room-szülők 32-es keyset lapokban, a megfigyelt súlylépcső 128-as distinct
+lapokban jön, nincs teljes napló-relációtöltés/cache. A meglévő DataStore/backup
+megtartja a progressionSteps felülírásokat. Coach-adatbetöltés ugyanazt a metadata
+admissiont használja, hiba esetén korábbi tanács/cél nem marad frissnek látszó adat.
+HU/EN/DE/RO új erőforrások. Terhelés/programváltozat tényleges alkalmazásának és
+programszerkesztőnek teljes paritása továbbra külön ellenőrizendő.
+
+Referencia kifejezetten `7473b30:www/app.js`, Git blob
+`b5567576bed9a8f93608a6bf1ed8db1dee4723f4`. A másik `/workspace/TrainPilot` munkafa
+`local-release-136` ágát nem módosítottuk/nem használtuk main-referenciaként.
+`scripts/native/coach-reference.cjs` a pontos blobot ellenőrzi, a tényleges végső
+JS-függvényekből 32 szintetikus referenciaesetet generált, ismétlésre azonos fixture-rel.
+Ez csak JS-referencia előállítás, nem Kotlin-paritás eredmény. Erre épül32 új
+paraméterezett Kotlin unit-eset, továbbá6 Room és1 portable-step unit, +1 Compose
+read-only/advice UI-próba; ezek még nem futottak.
+
+**Batch: 174 új unit + 8 Phone instrumentációs tesztkód megírva, még nem futtatva.**
+Helyben Node-szintaxis, fixture-reprodukálás, négy resource-XML kulcs/hivatkozás,
+diff és két SQLite-query szintaxis ellenőrzés. Nincs új Gradle/CI/APK/screenshot.
+Utolsó teljes zöld forrás `dd4cc27`. Következő: teljes katalógus/nevek/lokalizáció,
+további programszerkesztő/UI/adatút-paritás, majd közös GitHub-kapu. Élő telepítés STOP.
+
 ## Legfrissebb forrás – Coach-adatút és terminális mérési állapotok
 
 **`29ac3a2`** / előzménye **`036a2cd`**, `[skip ci]`. A Coach és az Egészség
