@@ -28,5 +28,10 @@ public class HealthBackgroundServiceTest {
   enable();controller=Robolectric.buildService(HealthBackgroundService.class).create();controller.get().onStartCommand(new Intent(context,HealthBackgroundService.class),0,1);controller.destroy();controller=null;
   assertTrue(store.preferences().getBoolean("bleBackground"));assertFalse(HealthBackgroundService.snapshot(context).getBoolean("running"));
  }
+ @Test public void backgroundStartWithoutSavedWatchOrOptInReturnsFailureWithoutChangingPreferences()throws Exception{
+  assertFalse(HealthBackgroundService.resume(context));
+  assertFalse(store.preferences().getBoolean("bleBackground"));
+  assertFalse(HealthBackgroundService.snapshot(context).optBoolean("running"));
+ }
  @Test public void bluetoothPermissionDoesNotGrantHealthConnectBackgroundAccess()throws Exception{assertTrue(HealthBackgroundService.permission(context));assertFalse(HealthBackgroundJob.supported(context));assertFalse(HealthBackgroundJob.permitted(context));}
 }
