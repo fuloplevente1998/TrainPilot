@@ -629,7 +629,8 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     fun leaveWorkout(workoutId: String, generation: Long, onLeft: () -> Unit) {
         val current = ActiveWorkoutStore.current(context)
         if (current?.optBoolean("active") != true) { onLeft(); return }
-        if (current.optString("workoutId") != workoutId || current.optLong("generation") != generation || _uiState.value.isFinishing) return
+        if (current.optString("workoutId") != workoutId || current.optLong("generation") != generation ||
+            _uiState.value.isFinishing || current.optBoolean("finalizationPending")) return
         if (current.optString("timerOwner") == "phone" && !current.optBoolean("workoutPaused") && !changeWorkoutPause(true)) return
         onLeft()
     }

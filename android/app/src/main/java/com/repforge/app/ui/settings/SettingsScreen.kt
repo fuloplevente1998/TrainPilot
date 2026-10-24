@@ -66,6 +66,7 @@ import com.repforge.app.ui.theme.LocalTrainPilotColors
 @Composable
 fun SettingsScreen(
     navController: NavController,
+    allowDataReplacement: Boolean = true,
     viewModel: SettingsViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -92,6 +93,14 @@ fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item { Spacer(Modifier.height(8.dp)) }
+        if (!allowDataReplacement) item {
+            Text(when (state.settings.language) {
+                "en" -> "Your workout keeps running. Finish or discard it before restoring or deleting data."
+                "de" -> "Dein Training läuft weiter. Beende oder verwirf es vor dem Wiederherstellen oder Löschen von Daten."
+                "ro" -> "Antrenamentul continuă. Încheie-l sau renunță la el înainte de restaurarea ori ștergerea datelor."
+                else -> "Az edzés tovább fut. Adatok visszaállítása vagy törlése előtt fejezd be vagy vesd el."
+            }, color = colors.muted)
+        }
 
         // 1. Téma- és Színpaletta választó (Élő színmintákkal)
         item {
@@ -226,7 +235,7 @@ fun SettingsScreen(
                             Spacer(Modifier.width(4.dp))
                             Text("JSON Mentés", fontSize = 10.sp)
                         }
-                        OutlinedButton(onClick = { importJsonLauncher.launch(arrayOf("application/json", "*/*")) }, modifier = Modifier.weight(1f)) {
+                        OutlinedButton(enabled = allowDataReplacement, onClick = { importJsonLauncher.launch(arrayOf("application/json", "*/*")) }, modifier = Modifier.weight(1f)) {
                             Icon(Icons.Default.FileDownload, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
                             Text("JSON Megnyitás", fontSize = 10.sp)
@@ -242,6 +251,7 @@ fun SettingsScreen(
                             Text("Teljes ZIP Mentés (Fotókkal)", color = colors.text, fontSize = 10.sp)
                         }
                         Button(
+                            enabled = allowDataReplacement,
                             onClick = { importZipLauncher.launch(arrayOf("application/zip", "application/x-zip-compressed", "*/*")) },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(containerColor = colors.card2)
@@ -322,6 +332,7 @@ fun SettingsScreen(
                     }
                     Spacer(Modifier.height(10.dp))
                     Button(
+                        enabled = allowDataReplacement,
                         onClick = { viewModel.openEraseLocalDialog() },
                         modifier = Modifier.fillMaxWidth().height(44.dp),
                         shape = RoundedCornerShape(10.dp),

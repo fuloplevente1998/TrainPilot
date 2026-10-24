@@ -1,8 +1,6 @@
 package com.repforge.app.ui.navigation
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,28 +10,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShowChart
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.SnackbarHost
@@ -63,6 +50,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.repforge.app.ActiveWorkoutStore
 import com.repforge.app.NativeWorkoutSession
+import com.repforge.app.PhoneWorkoutExecution
 import com.repforge.app.NativeWorkoutTarget
 import com.repforge.app.ui.coach.CoachScreen
 import com.repforge.app.ui.workout.ActiveWorkoutViewModel
@@ -71,6 +59,8 @@ import com.repforge.app.ui.calendar.CalendarScreen
 import com.repforge.app.ui.home.QuickWorkoutScreen
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.distinctUntilChanged
 import com.repforge.app.data.store.TrainPilotUserSettings
 import com.repforge.app.ui.home.HomeScreen
 import com.repforge.app.ui.workout.ActiveWorkoutScreen
@@ -108,7 +98,7 @@ fun TrainPilotAppScaffold(
             scope.launch {
                 try {
                     NativeWorkoutSession.startWorkout(context, programId, dayId, scheduleId)
-                    navController.navigate("active_workout") { launchSingleTop = true }
+                    navController.openCanonicalWorkout()
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (error: Exception) {
@@ -124,26 +114,75 @@ fun TrainPilotAppScaffold(
 
     val activeSnapshot by ActiveWorkoutStore.snapshotFlow.collectAsStateWithLifecycle()
     val hasActiveWorkout = activeSnapshot?.optBoolean("active", false) == true
-    val activeWorkoutId = activeSnapshot?.optString("workoutId").orEmpty()
     val isWorkoutPaused = activeSnapshot?.optBoolean("workoutPaused", false) == true
     val timerOwner = activeSnapshot?.optString("timerOwner", "phone").orEmpty()
 
-    val editor = if (currentRoute == "active_workout" && navBackStackEntry != null)
-        androidx.lifecycle.viewmodel.compose.viewModel<ActiveWorkoutViewModel>(viewModelStoreOwner = navBackStackEntry!!)
-        else null
-    fun selectPrimary(requested: String) {
-        val target = NativeMainMenu.destination(requested, hasActiveWorkout)
+    // Keep the editor's existing ViewModelStoreOwner when Settings is pushed above it.
+    // Its stopwatch collectors remain alive; returning does not create another editor/session.
+    val activeEntry = remember(navBackStackEntry) {
+        runCatching { navController.getBackStackEntry("active_workout") }.getOrNull()
+    }
+    val editor = activeEntry?.let {
+        androidx.lifecycle.viewmodel.compose.viewModel<ActiveWorkoutViewModel>(viewModelStoreOwner = it)
+    }
+    // Observe only the navigation guard, not the editor's 250ms stopwatch ticks.
+    val finishingFlow = remember(editor) { editor?.uiState?.map { it.isFinishing }?.distinctUntilChanged() }
+    val editorFinishing = finishingFlow?.collectAsStateWithLifecycle(initialValue = false)?.value == true
+    val settingsOrigin = if (currentRoute == "settings")
+        navController.previousBackStackEntry?.destination?.route ?: "home" else "home"
+    val navigationBlocked = starting || editorFinishing ||
+        activeSnapshot?.optBoolean("finalizationPending") == true
+
+    // Check again at click time: a background Wear finish can race with a rendered toolbar.
+    fun canNavigate(target: String): Boolean {
+        val current = ActiveWorkoutStore.current(context)
+        val execution = PhoneWorkoutExecution.store(context)
+        return NativeMainMenu.navigationAllowed(target, starting,
+            finishing = editor?.uiState?.value?.isFinishing == true,
+            finalizing = current?.optBoolean("finalizationPending") == true,
+            restoreBlocked = execution.restoreBlocked(), commandsSuspended = execution.commandsSuspended())
+    }
+    fun selectDestination(requested: String) {
+        val current = ActiveWorkoutStore.current(context)
+        val target = NativeMainMenu.destination(requested, current?.optBoolean("active") == true)
+        if (!canNavigate(target)) return
         if (target == currentRoute) return
         val navigate = {
-            navController.navigate(target) {
-                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                launchSingleTop = true
-                restoreState = true
+            when {
+                target == "active_workout" -> navController.openCanonicalWorkout()
+                target in NativeMainMenu.routes -> navController.navigate(target) {
+                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+                else -> navController.navigate(target) { launchSingleTop = true }
             }
         }
-        if (editor != null) editor.leaveWorkout(activeWorkoutId, activeSnapshot?.optLong("generation") ?: 0L, navigate)
-        else navigate()
+        if (NativeMainMenu.pausesWorkout(currentRoute, target, settingsOrigin) && editor != null) {
+            val current = ActiveWorkoutStore.current(context)
+            editor.leaveWorkout(current?.optString("workoutId").orEmpty(), current?.optLong("generation") ?: 0L, navigate)
+        } else navigate()
     }
+    fun goBack() {
+        val target = navController.previousBackStackEntry?.destination?.route ?: "home"
+        if (!canNavigate(target)) return
+        if (currentRoute == "active_workout" && editor != null) {
+            val current = ActiveWorkoutStore.current(context)
+            editor.leaveWorkout(current?.optString("workoutId").orEmpty(), current?.optLong("generation") ?: 0L) {
+                navController.popBackStack()
+            }
+        } else if (currentRoute == "settings" && target == "active_workout" &&
+            ActiveWorkoutStore.current(context)?.optBoolean("active") != true) {
+            // The watch may have completed the session while Settings was in front.
+            navController.navigate("home") {
+                popUpTo("home") { inclusive = false }
+                launchSingleTop = true
+            }
+        } else navController.popBackStack()
+    }
+    // The editor has its own BackHandler. Other screens must also respect a late finish fence.
+    BackHandler(enabled = currentRoute != "active_workout" &&
+        (currentRoute in NativeMainMenu.secondaryRoutes || navigationBlocked)) { goBack() }
 
     LaunchedEffect(Unit) {
         ActiveWorkoutStore.current(context)
@@ -155,7 +194,23 @@ fun TrainPilotAppScaffold(
         containerColor = colors.bg,
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
-            if (currentRoute != "route_map") NativeMainHeader(currentRoute, settings.language, ::selectPrimary)
+            NativeMainHeader(currentRoute, settings.language, enabled = !navigationBlocked,
+                onBack = if (currentRoute in NativeMainMenu.secondaryRoutes) ({ goBack() }) else null,
+                onSettings = { selectDestination("settings") },
+                backEnabled = !starting && !editorFinishing &&
+                    (activeSnapshot?.optBoolean("finalizationPending") != true || settingsOrigin == "active_workout"))
+        },
+        bottomBar = {
+            Column {
+                // Part of measured scaffold chrome, so the banner cannot cover list actions.
+                if (hasActiveWorkout && currentRoute != "active_workout") FloatingActiveWorkoutBanner(
+                    title = activeSnapshot?.optString("dayName", "Folyamatban lévő edzés") ?: "Edzés",
+                    isPaused = isWorkoutPaused, timerOwner = timerOwner, language = settings.language,
+                    enabled = !starting && !editorFinishing,
+                    onClick = { selectDestination("training") })
+                NativeBottomNavigation(currentRoute, settingsOrigin, settings.language,
+                    enabled = !navigationBlocked, onSelect = ::selectDestination)
+            }
         }
 
     ) { innerPadding ->
@@ -175,13 +230,15 @@ fun TrainPilotAppScaffold(
                         onStartWorkout = { dayId ->
                             startWorkout(null, dayId)
                         },
+                        onCalendar = { selectDestination("calendar") }, onCoach = { selectDestination("coach") },
+                        onPrograms = { selectDestination("programs") }, language = settings.language, busy = navigationBlocked,
                         onResumeDraft = {
                             if (!starting) {
                                 starting = true
                                 scope.launch {
                                     try {
                                         NativeWorkoutSession.resumeImportedDraft(context)
-                                        navController.navigate("active_workout") { launchSingleTop = true }
+                                        navController.openCanonicalWorkout()
                                     } catch (cancelled: CancellationException) { throw cancelled }
                                     catch (error: Exception) { snackbar.showSnackbar(error.message ?: "A félbehagyott edzés nem vehető át.") }
                                     finally { starting = false }
@@ -189,16 +246,16 @@ fun TrainPilotAppScaffold(
                             }
                         },
                         onQuickWorkout = { outdoor ->
-                            if (hasActiveWorkout) navController.navigate("active_workout") { launchSingleTop = true }
-                            else navController.navigate(if (outdoor) "quick_outdoor" else "quick_workout") { launchSingleTop = true }
+                            selectDestination(if (hasActiveWorkout) "training" else if (outdoor) "quick_outdoor" else "quick_workout")
                         }
                     )
                 }
                 composable(Screen.Training.route) {
                     TrainingLandingScreen(language = settings.language, activeProgramId = settings.activeProgramId,
-                        busy = starting, onStart = { programId, dayId -> startWorkout(programId, dayId) },
-                        onQuick = { outdoor -> navController.navigate(if (hasActiveWorkout) "active_workout" else if (outdoor) "quick_outdoor" else "quick_workout") { launchSingleTop = true } },
-                        onPrograms = { selectPrimary("programs") })
+                        busy = navigationBlocked, onStart = { programId, dayId -> startWorkout(programId, dayId) },
+                        onQuick = { outdoor -> selectDestination(if (hasActiveWorkout) "training" else if (outdoor) "quick_outdoor" else "quick_workout") },
+                        onPrograms = { selectDestination("programs") },
+                        onCalendar = { selectDestination("calendar") }, onCoach = { selectDestination("coach") })
                 }
                 composable("programs") {
                     TrainingProgramsScreen(navController = navController,
@@ -207,12 +264,12 @@ fun TrainPilotAppScaffold(
                 composable("coach") {
                     CoachScreen(starting = starting,
                         onStart = { programId, dayId, scheduleId -> startWorkout(programId, dayId, scheduleId) },
-                        onCalendar = { selectPrimary("calendar") }, onHealth = { selectPrimary("health") },
-                        onProgress = { navController.navigate("progress") { launchSingleTop = true } })
+                        onCalendar = { selectDestination("calendar") }, onHealth = { selectDestination("health") },
+                        onProgress = { selectDestination("progress") })
                 }
                 composable("calendar") {
                     CalendarScreen(starting = starting,
-                        onJournal = { selectPrimary("journal") },
+                        onJournal = { selectDestination("journal") },
                         onStart = { row -> startWorkout(row.programId, row.dayId, row.id) })
                 }
                 composable(Screen.Journal.route) {
@@ -251,25 +308,8 @@ fun TrainPilotAppScaffold(
                     }
                 }
                 composable("settings") {
-                    SettingsScreen(navController = navController)
+                    SettingsScreen(navController = navController, allowDataReplacement = !hasActiveWorkout)
                 }
-            }
-
-            // Floating Active Workout Banner (ha fut edzés, de nem az aktív edzés nézetben vagyunk)
-            AnimatedVisibility(
-                visible = hasActiveWorkout && currentRoute != "active_workout",
-                enter = slideInVertically(initialOffsetY = { it }),
-                exit = slideOutVertically(targetOffsetY = { it }),
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                FloatingActiveWorkoutBanner(
-                    title = activeSnapshot?.optString("dayName", "Folyamatban lévő edzés") ?: "Edzés",
-                    isPaused = isWorkoutPaused,
-                    timerOwner = timerOwner,
-                    onClick = { navController.navigate("active_workout") }
-                )
             }
         }
     }
@@ -280,15 +320,23 @@ fun FloatingActiveWorkoutBanner(
     title: String,
     isPaused: Boolean,
     timerOwner: String,
+    language: String,
+    enabled: Boolean,
     onClick: () -> Unit
 ) {
     val colors = LocalTrainPilotColors.current
+    val labels = when (language) {
+        "en" -> listOf("Paused", "Watch controls", "Phone controls", "Continue ›")
+        "de" -> listOf("Pausiert", "Uhr steuert", "Telefon steuert", "Fortsetzen ›")
+        "ro" -> listOf("În pauză", "Controlat de ceas", "Controlat de telefon", "Continuă ›")
+        else -> listOf("Szünetel", "Óra vezérli", "Telefon vezérli", "Folytatás ›")
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(colors.card2)
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
@@ -309,17 +357,27 @@ fun FloatingActiveWorkoutBanner(
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = if (isPaused) "Szünetel" else if (timerOwner == "watch") "Óra vezérli" else "Telefon vezérli",
+                    text = if (isPaused) labels[0] else if (timerOwner == "watch") labels[1] else labels[2],
                     color = colors.muted,
                     fontSize = 11.sp
                 )
             }
         }
         Text(
-            text = "Folytatás ›",
+            text = labels[3],
             color = colors.accent,
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold
         )
+    }
+}
+
+/** Reuse the actual editor entry before considering a restored tab state. */
+private fun NavHostController.openCanonicalWorkout() {
+    if (popBackStack("active_workout", inclusive = false)) return
+    navigate("active_workout") {
+        popUpTo(graph.findStartDestination().id) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
     }
 }

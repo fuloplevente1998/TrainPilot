@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.repforge.app.ui.navigation.NativePlanningShortcuts
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 import org.json.JSONArray
 
@@ -18,6 +19,7 @@ import org.json.JSONArray
 @Composable
 internal fun TrainingLandingScreen(language: String, activeProgramId: String, busy: Boolean,
     onStart: (String, String) -> Unit, onQuick: (Boolean) -> Unit, onPrograms: () -> Unit,
+    onCalendar: () -> Unit, onCoach: () -> Unit,
     model: TrainingProgramsViewModel = viewModel()) {
     val state by model.uiState.collectAsStateWithLifecycle()
     val colors = LocalTrainPilotColors.current
@@ -32,7 +34,7 @@ internal fun TrainingLandingScreen(language: String, activeProgramId: String, bu
     }.ifBlank { hu }
     val program = state.programs.firstOrNull { it.program.id == activeProgramId }
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { Text(labels[0], style = MaterialTheme.typography.headlineSmall, color = colors.text) }
+        item { NativePlanningShortcuts(language, !busy, onPrograms, onCalendar, onCoach) }
         item {
             Card(colors = CardDefaults.cardColors(containerColor = colors.card)) {
                 Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

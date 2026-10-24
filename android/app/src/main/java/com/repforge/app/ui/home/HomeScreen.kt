@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.repforge.app.ui.navigation.NativePlanningShortcuts
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 
 @Composable
@@ -49,7 +50,12 @@ fun HomeScreen(
     viewModel: HomeViewModel = viewModel(),
     onStartWorkout: (String) -> Unit,
     onQuickWorkout: (Boolean) -> Unit,
-    onResumeDraft: () -> Unit
+    onResumeDraft: () -> Unit,
+    onCalendar: () -> Unit,
+    onCoach: () -> Unit,
+    onPrograms: () -> Unit,
+    language: String,
+    busy: Boolean = false
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = LocalTrainPilotColors.current
@@ -62,9 +68,10 @@ fun HomeScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        if (state.hasImportedDraft) Button(onClick = onResumeDraft, modifier = Modifier.fillMaxWidth()) {
+        if (state.hasImportedDraft) Button(onClick = onResumeDraft, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
             Text("Félbehagyott edzés folytatása")
         }
+        NativePlanningShortcuts(language, !busy, onPrograms, onCalendar, onCoach)
         // 1. Következő edzés ajánló kártya (Next Workout Hero Card)
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -105,7 +112,7 @@ fun HomeScreen(
                 )
                 Spacer(Modifier.height(16.dp))
                 Button(
-                    onClick = { onStartWorkout(state.nextDayId) },
+                    onClick = { onStartWorkout(state.nextDayId) }, enabled = !busy,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = colors.accent)

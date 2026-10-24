@@ -5,6 +5,8 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.repforge.app.ActiveWorkoutStore
+import com.repforge.app.PhoneWorkoutExecution
 import com.repforge.app.BackupRestoreManager
 import com.repforge.app.GoogleAuthOutcome
 import com.repforge.app.GoogleSyncRepository
@@ -153,6 +155,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun onSafJsonImportCompleted(uri: Uri) {
+        if (!canReplaceData()) return
         viewModelScope.launch {
             val r = backupManager.importJsonBackupFromUri(uri)
             _uiState.value = _uiState.value.copy(
@@ -171,6 +174,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun onSafZipImportCompleted(uri: Uri) {
+        if (!canReplaceData()) return
         viewModelScope.launch {
             val r = backupManager.importZipArchiveFromUri(uri)
             _uiState.value = _uiState.value.copy(
@@ -179,9 +183,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun openEraseLocalDialog() { _uiState.value = _uiState.value.copy(isEraseLocalDialogOpen = true) }
+    fun openEraseLocalDialog() {
+        if (canReplaceData()) _uiState.value = _uiState.value.copy(isEraseLocalDialogOpen = true)
+    }
     fun closeEraseLocalDialog() { _uiState.value = _uiState.value.copy(isEraseLocalDialogOpen = false) }
     fun confirmEraseLocalData() {
+        if (!canReplaceData()) return
         viewModelScope.launch {
             val r = backupManager.eraseAllLocalData()
             _uiState.value = _uiState.value.copy(
@@ -189,6 +196,22 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 statusMessage = if (r.isSuccess) "Minden helyi adat törölve." else "Hiba: ${r.exceptionOrNull()?.message}"
             )
         }
+    }
+
+    // Recheck SAF callbacks as well: a watch may start a workout while the picker is open.
+    // This UI guard complements (does not replace) restore's transactional validation.
+    private fun canReplaceData(): Boolean {
+        val active = ActiveWorkoutStore.current(context)?.optBoolean("active") == true ||
+            PhoneWorkoutExecution.store(context).snapshot()?.optBoolean("active") == true
+        if (!active) return true
+        _uiState.value = _uiState.value.copy(isEraseLocalDialogOpen = false,
+            statusMessage = when (_uiState.value.settings.language) {
+                "en" -> "Finish or discard the active workout before restoring or deleting data."
+                "de" -> "Beende oder verwirf das aktive Training vor dem Wiederherstellen oder Löschen von Daten."
+                "ro" -> "Încheie sau abandonează antrenamentul activ înainte de restaurarea ori ștergerea datelor."
+                else -> "Az adatok visszaállítása vagy törlése előtt fejezd be vagy vesd el az aktív edzést."
+            })
+        return false
     }
 
     fun openPrivacyDialog() { _uiState.value = _uiState.value.copy(isPrivacyDialogOpen = true) }
