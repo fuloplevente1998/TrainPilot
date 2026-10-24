@@ -2,6 +2,7 @@ package com.repforge.app.ui.coach
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -78,6 +79,31 @@ internal fun CoachScreen(starting: Boolean, onStart: (String, String, String?) -
                     }
                 }
             }
+        }
+        itemsIndexed(state.exercises, key = { index, row -> "$index:${row.id}" }) { index, row ->
+            val advice = row.advice
+            Card(colors = CardDefaults.cardColors(containerColor = colors.card), modifier = Modifier.fillMaxWidth()
+                .testTag("coach_advice_$index")) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(row.name, color = colors.text, style = MaterialTheme.typography.titleMedium)
+                    Text(NativeCoachAdviceText.label(text, advice.action), color = if (advice.action == "pain") colors.dangerText else colors.accentText)
+                    Text(NativeCoachAdviceText.reason(text, advice.reason), color = colors.muted)
+                    Text(text.getString(com.repforge.app.R.string.coach_advice_history, advice.historyCount), color = colors.muted)
+                    if (advice.target.text.isNotBlank()) Text(text.getString(com.repforge.app.R.string.coach_advice_target, advice.target.text), color = colors.text)
+                    if (advice.action in setOf("increase", "reduce", "start") && advice.weight > 0)
+                        Text(text.getString(when (row.loadType) {
+                            "per_hand" -> com.repforge.app.R.string.coach_advice_weight_per_hand
+                            "total" -> com.repforge.app.R.string.coach_advice_weight_total
+                            else -> com.repforge.app.R.string.coach_advice_weight
+                        }, value(advice.weight)), color = colors.text)
+                    if (advice.action == "reps" && advice.nextReps.isNotEmpty()) Text(text.getString(com.repforge.app.R.string.coach_advice_reps,
+                        advice.nextReps.joinToString(" / ") { value(it) }), color = colors.text)
+                    if (advice.action == "variation") advice.variation?.let { Text(NativeCoachAdviceText.variation(text, it), color = colors.text) }
+                }
+            }
+        }
+        if (state.exercises.isNotEmpty()) item {
+            Text(text.getString(com.repforge.app.R.string.coach_advice_read_only), color = colors.muted)
         }
         item {
             if (state.refreshFailed) Text(text.getString(com.repforge.app.R.string.coach_refresh_failed), color = colors.dangerText,

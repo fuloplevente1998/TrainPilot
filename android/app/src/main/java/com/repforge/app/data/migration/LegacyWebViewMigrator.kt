@@ -756,6 +756,7 @@ class LegacyWebViewMigrator(
                     .put("restSeconds", settings.restSeconds)
                     .put("workSeconds", settings.workSeconds)
                     .put("intervalAutoAdvance", settings.intervalAutoAdvance)
+                    .put("progressionSteps", JSONObject(settings.progressionSteps as Map<*, *>))
                     .put("intervalPreset110", settings.timerConfiguration())
                     .put("rounds", settings.rounds)
                     .put("sound", settings.soundEnabled)

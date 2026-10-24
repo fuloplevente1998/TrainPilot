@@ -17,7 +17,8 @@ internal data class CoachTarget(val programId: String, val dayId: String, val ti
     val schedule: CalendarScheduleEntity? = null, val upcoming: Boolean = false)
 internal data class CoachUiState(val loading: Boolean = true, val error: Boolean = false, val language: String = "hu",
     val readiness: NativeCoachReadiness.Result? = null, val target: CoachTarget? = null,
-    val refreshing: Boolean = false, val refreshFailed: Boolean = false)
+    val refreshing: Boolean = false, val refreshFailed: Boolean = false,
+    val exercises: List<CoachExerciseAdvice> = emptyList())
 
 /** Reads canonical provider projections and a bounded history slice; never fabricates Health samples. */
 internal class CoachViewModel(application: Application) : AndroidViewModel(application) {
@@ -47,6 +48,7 @@ internal class CoachViewModel(application: Application) : AndroidViewModel(appli
             _state.value = _state.value.copy(loading = true, error = false)
             try {
                 _state.value = withContext(Dispatchers.IO) {
+                    com.repforge.app.NativeDataReplacement.mutate(app) {
                     val settings = TrainPilotSettingsStore(app).current()
                     val now = Instant.now(); val zone = ZoneId.systemDefault(); val today = now.atZone(zone).toLocalDate()
                     val page = HealthJournalStore.get(app).page(today.minusDays(14).toString(), today.toString(), "journal", "", 0, 0, 1)
@@ -55,12 +57,14 @@ internal class CoachViewModel(application: Application) : AndroidViewModel(appli
                     val signals = NativeCoachSignals.fromDays(days, today, zone)
                     val history = db.workoutHistoryDao().getCoachRecentHistory(now.minus(Duration.ofDays(14)).toEpochMilli(), now.toEpochMilli()).map { JSONObject(it) }
                     val target = NativeCoachTargets(db).select(settings.activeProgramId, settings.language, now, zone)
-                    CoachUiState(false, false, settings.language,
-                        NativeCoachReadiness.calculate(signals.recovery, signals.daily, history, now, zone), target,
-                        refreshing = _state.value.refreshing, refreshFailed = _state.value.refreshFailed)
+                    val readiness = NativeCoachReadiness.calculate(signals.recovery, signals.daily, history, now, zone)
+                    val advice = NativeCoachAdviceRepository(db).load(target, settings, readiness, now)
+                    CoachUiState(false, false, settings.language, readiness, target,
+                        refreshing = _state.value.refreshing, refreshFailed = _state.value.refreshFailed, exercises = advice)
+                    }
                 }
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (_: Exception) { _state.value = _state.value.copy(loading = false, error = true) }
+            catch (_: Exception) { _state.value = _state.value.copy(loading = false, error = true, readiness = null, target = null, exercises = emptyList()) }
         }
     }
 }

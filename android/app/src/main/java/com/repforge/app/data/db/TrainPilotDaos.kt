@@ -101,6 +101,31 @@ interface WorkoutHistoryDao {
     suspend fun getPrefillCandidates(exerciseId: String, loadType: String, repUnit: String,
         now: Long, limit: Int, offset: Int): List<WorkoutHistoryEntity>
 
+    @Query("""
+        SELECT DISTINCT w.* FROM workout_history w
+        INNER JOIN workout_history_exercises e ON e.workoutHistoryId = w.id
+        WHERE e.exerciseId = :exerciseId AND w.finishedEpochMs >= :fromEpoch AND w.finishedEpochMs <= :toEpoch
+          AND (:beforeEpoch IS NULL OR w.finishedEpochMs < :beforeEpoch OR
+            (w.finishedEpochMs = :beforeEpoch AND w.id < :beforeId))
+          AND NOT EXISTS (SELECT 1 FROM history_tombstones t
+            WHERE t.primaryId IN (w.id, w.syncId, w.workoutKey) OR t.workoutKey = w.workoutKey)
+        ORDER BY w.finishedEpochMs DESC, w.id DESC LIMIT :limit
+    """)
+    suspend fun getCoachExerciseCandidates(exerciseId: String, fromEpoch: Long, toEpoch: Long,
+        beforeEpoch: Long?, beforeId: String, limit: Int): List<WorkoutHistoryEntity>
+
+    @Query("""
+        SELECT DISTINCT ROUND(s.weight, 2) FROM workout_history_sets s
+        INNER JOIN workout_history_exercises e ON e.rowId = s.historyExerciseRowId
+        INNER JOIN workout_history w ON w.id = s.workoutHistoryId
+        WHERE s.exerciseId = :exerciseId AND e.loadType = :loadType AND s.done = 1 AND s.weight > 0
+          AND ROUND(s.weight, 2) > :after
+          AND NOT EXISTS (SELECT 1 FROM history_tombstones t
+            WHERE t.primaryId IN (w.id, w.syncId, w.workoutKey) OR t.workoutKey = w.workoutKey)
+        ORDER BY ROUND(s.weight, 2) LIMIT :limit
+    """)
+    suspend fun getCoachObservedWeights(exerciseId: String, loadType: String, after: Double, limit: Int): List<Double>
+
     @Transaction
     @Query("SELECT * FROM workout_history ORDER BY started DESC")
     fun observeAllWorkoutsWithDetails(): Flow<List<WorkoutHistoryWithDetails>>

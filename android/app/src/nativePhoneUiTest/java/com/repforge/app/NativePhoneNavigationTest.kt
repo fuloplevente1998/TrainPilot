@@ -223,4 +223,22 @@ class NativePhoneNavigationTest {
         }
     }
 
+    @Test fun coachShowsExerciseAdviceWithoutEditingAnExistingNativeWorkoutOrProgram() {
+        val quick = runBlocking { NativeWorkoutSession.startQuickWorkout(context, "plank", false) }
+        val original = JSONObject(quick.snapshot.toString())
+        val db = TrainPilotDatabase.getInstance(context)
+        val programs = runBlocking { db.programDao().getProgramsWithDays().map { it.program.rawJson } }
+        launch()
+        compose.onNodeWithTag("shortcut_coach").performScrollTo().performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("coach_ready").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("coach_advice_0").performScrollTo().assertIsDisplayed()
+        screenshot("coach_exercise_advice")
+        val after = snapshot()!!
+        assertEquals(original.getString("workoutId"), after.getString("workoutId"))
+        assertEquals(original.getLong("generation"), after.getLong("generation"))
+        assertEquals(original.getJSONArray("exercises").toString(), after.getJSONArray("exercises").toString())
+        assertEquals(programs, runBlocking { db.programDao().getProgramsWithDays().map { it.program.rawJson } })
+        assertEquals(0, runBlocking { db.workoutHistoryDao().getWorkoutCount() })
+    }
+
 }
