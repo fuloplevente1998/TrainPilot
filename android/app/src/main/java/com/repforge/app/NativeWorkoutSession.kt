@@ -182,6 +182,7 @@ internal object NativeWorkoutSession {
                 if (!frame.has("timerConfig")) frame.put("timerConfig", JSONObject().put("work", settings.workSeconds)
                     .put("rest", settings.restSeconds).put("rounds", settings.rounds)
                     .put("sound", settings.soundEnabled).put("vibration", settings.vibrationEnabled))
+                if (!frame.has("restSeconds")) frame.put("restSeconds", settings.restSeconds)
                 frame.put("language", settings.language)
                 val hash = NativeLegacyDraft.hash(document.json)
                 frame.put("legacyDraftSha256", hash)

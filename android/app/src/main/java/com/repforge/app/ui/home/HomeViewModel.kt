@@ -11,6 +11,7 @@ import com.repforge.app.data.db.ProgramWithDays
 import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.store.TrainPilotSettingsStore
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -39,6 +40,7 @@ data class HomeUiState(
     val todayMetrics: TodayMetricsUiModel = TodayMetricsUiModel(),
     val watchConnected: Boolean? = null,
     val watchBattery: Int? = null,
+    val hasImportedDraft: Boolean = false,
     val watchState: String = "—"
 )
 
@@ -52,6 +54,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         loadHomeData()
+        viewModelScope.launch {
+            database.keyValueDocumentDao().observeDocument("draft").collect { document ->
+                _uiState.value = _uiState.value.copy(hasImportedDraft = document != null)
+            }
+        }
     }
 
     fun loadHomeData() {
@@ -67,6 +74,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             val liveHealth = WearLiveHealthStore.current(context)
 
             _uiState.value = HomeUiState(
+                hasImportedDraft = _uiState.value.hasImportedDraft,
                 activeProgram = active,
                 nextDayName = nextDay?.nameHu ?: "Alap A",
                 nextDayId = nextDay?.dayId ?: "A",

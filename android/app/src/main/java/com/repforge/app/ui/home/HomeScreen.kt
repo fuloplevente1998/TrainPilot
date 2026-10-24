@@ -62,7 +62,7 @@ fun HomeScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Button(onClick = onResumeDraft, modifier = Modifier.fillMaxWidth()) {
+        if (state.hasImportedDraft) Button(onClick = onResumeDraft, modifier = Modifier.fillMaxWidth()) {
             Text("Félbehagyott edzés folytatása")
         }
         // 1. Következő edzés ajánló kártya (Next Workout Hero Card)

@@ -192,4 +192,29 @@ class NativeWorkoutFinalizationTest {
         assertTrue(failed)
         assertEquals(0, db.workoutHistoryDao().getWorkoutCount())
     }
+    @Test fun importedDraftCleanupFailureKeepsNativeSessionRetryableAndArchiveIsRetained() = runTest(dispatcher) {
+        val raw="{\"fixture\":\"imported-source\"}"
+        val input=prepare().put("legacyDraftSha256", NativeLegacyDraft.hash(raw))
+        ActiveWorkoutStore.saveOwned(context,input)
+        db.keyValueDocumentDao().putDocument(com.repforge.app.data.db.KeyValueDocumentEntity("draft",raw,1L))
+        db.openHelper.writableDatabase.execSQL("CREATE TRIGGER cleanup_full BEFORE DELETE ON kv_documents BEGIN SELECT RAISE(ABORT,'synthetic cleanup failure'); END")
+        var failed=false
+        try { TrainPilotWorkoutFinalization(context,db).finishWorkout(input) } catch (_: Exception) { failed=true }
+        assertTrue(failed);assertTrue(ActiveWorkoutStore.current(context)!!.getBoolean("active"))
+        assertNotNull(db.keyValueDocumentDao().getDocument("draft"))
+        db.openHelper.writableDatabase.execSQL("DROP TRIGGER cleanup_full")
+        TrainPilotWorkoutFinalization(context,db).finishWorkout(input)
+        assertNull(db.keyValueDocumentDao().getDocument("draft"))
+        assertEquals(raw,db.keyValueDocumentDao().getDocument("legacyDraftArchive|"+NativeLegacyDraft.hash(raw))!!.json)
+        assertEquals(1,db.workoutHistoryDao().getWorkoutCount())
+    }
+
+    @Test fun newerImportedDraftIsNeverRemovedByOldWorkoutFinalization() = runTest(dispatcher) {
+        val input=prepare().put("legacyDraftSha256", NativeLegacyDraft.hash("old-source"))
+        ActiveWorkoutStore.saveOwned(context,input)
+        val newer="{\"fixture\":\"newer-draft\"}"
+        db.keyValueDocumentDao().putDocument(com.repforge.app.data.db.KeyValueDocumentEntity("draft",newer,2L))
+        TrainPilotWorkoutFinalization(context,db).finishWorkout(input)
+        assertEquals(newer,db.keyValueDocumentDao().getDocument("draft")!!.json)
+    }
 }
