@@ -36,6 +36,16 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 - Ne küldj GitHub-kommentet vagy másoknak üzenetet külön kérés nélkül.
   A kért nyomonkövetéshez issue/PR leírását és állapotát frissítheted.
 
+## Felhasználói thinking-fázisok (2026-10-24)
+
+- Kódolás, funkciók és meglévő blokkok bekötése: a felhasználó **High** módot használ.
+- A vizuális dizájn/layout finomításának kezdete előtt röviden jelezd a fázisváltást,
+  hogy **Medium** módra válthasson. UI-teszt/infrastruktúra kódolása még kódolási fázis.
+- A végső CI-kapu hibájánál vagy komoly debugmunka előtt jelezz, hogy
+  **Extra High** módra válthasson. Közben a naplók/bizonyítékok feltárása folytatható.
+- Ezeket a felületi módokat a felhasználó állítja; ne állítsd, hogy önállóan átállítottad.
+  A jelzés nem új jóváhagyási kör, és nem változtatja meg az elfogadott feladatot.
+
 ## Forrás és ellenőrzés
 
 - Issue megvalósítása előtt olvasd el a GitHub-jegy tényleges követelményeit.
