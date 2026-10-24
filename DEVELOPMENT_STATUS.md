@@ -1,15 +1,17 @@
 > **Natív migráció aktuális részállapota (2026-10-24):** ág `feat/native-android-migration`,
-> legutóbbi alkalmazás-/tesztforrás `cfdc6d05` (`[skip ci]`).
-> Main #128 edzésprofil: DataStore + JSON/ZIP/Drive megőrzés, natív
-> alapszerkesztő, ismeretlen profil/felszerelés/kizárások megtartása.
-> Progress: bounded 30 napos aggregátum és egygyakorlatos,
-> 256-os keyset-lapozás az egész napló és fotók beolvasása helyett;
-> összes gyakorlat elérhető. **286 új unit és 31 Phone Compose
-> UI-próba megírva, még nem futott.** Nincs friss teljes zöld
-> natív CI, új APK vagy készülékes jóváhagyás.
-> Aktuális átadó: [WORK_HANDOFF.md](docs/WORK_HANDOFF.md), [PR #238](https://github.com/fuloplevente1998/TrainPilot/pull/238).
-> Main/verzió/Wear változatlan; telepítés STOP.
-> Alább korábbi történeti állapotok következnek.
+> legutóbbi alkalmazás-/tesztforrás `559fd43e` (`[skip ci]`).
+> A Személyes Edzéstervező már valódi, jóváhagyás előtti A/B
+> előnézetet ad, explicit perc/felszerelés/kizárások szűrőivel;
+> nincs kitalált kezdősúly. Elfogadáskor Room saját másolat,
+> profil- és sablon-meta, stale-CAS, explicit aktív váltás;
+> a main sablon/napló sértetlen. Teljes history128/Coach-
+> eredményöröklés még hátravan. **301 új unit és 34 Phone UI
+> próbakód megírva, még nem futott.** 20 statikus check PASS;
+> nincs új natív CI, APK vagy készülékes elfogadás.
+> Átadó: [WORK_HANDOFF.md](docs/WORK_HANDOFF.md),
+> draft [PR #238](https://github.com/fuloplevente1998/TrainPilot/pull/238).
+> Main/verzió/Wear változatlan, élő adatos telepítés STOP.
+> Alább történeti állapotok következnek.
 
 > **Aktuális átadás (2026-10-21):** #234 felhasználó által elfogadva és mainre egyesítve; **1.3.71 /2735** a legfrissebb stabil telefon/Wear kiadás. Részletes kapuk és APK-forrás: [WORK_HANDOFF.md](docs/WORK_HANDOFF.md), [kiadásjegyzék](docs/releases/INDEX.md). A lentebbi állapotok történetiek.
 
