@@ -284,6 +284,9 @@ class GoogleSyncRepository(context: Context) {
                 preferLocalOnConflict = preferPhoneOnConflict
             ))
 
+            // Validate portable v144 favorites before any Drive upload or local replacement.
+            NativeExerciseFavorites.decode(merged.opt(NativeExerciseFavorites.KEY))
+
             // Sync Workout Photos (upload missing to Drive, download missing to local)
             _uiState.value = _uiState.value.copy(stageMessage = "Edzésfotók szinkronizálása…")
             syncWorkoutPhotosWithDrive(accessToken, merged)
@@ -514,7 +517,7 @@ class GoogleSyncRepository(context: Context) {
                 preferLocalOnConflict
             )
         )
-        for (key in arrayOf("settings", "exercises", "plan", "programs", "activeProgramId", "plannerSettings")) {
+        for (key in arrayOf("settings", "exercises", "plan", "programs", "activeProgramId", "plannerSettings", "exerciseFavorites")) {
             var selected = local.opt(key)
             for (remote in remotes) {
                 val x = remote.opt(key) ?: continue
