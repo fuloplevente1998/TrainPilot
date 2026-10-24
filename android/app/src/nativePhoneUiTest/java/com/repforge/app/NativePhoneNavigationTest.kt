@@ -406,6 +406,27 @@ class NativePhoneNavigationTest {
             .getJSONArray("days").getJSONObject(0).getDouble("weightKg"), .0001)
     }
 
+    @Test fun realHealthConnectOriginIsSelectableAndOldAggregateNeedsRefresh() {
+        val store = HealthJournalStore.get(context)
+        val date = java.time.LocalDate.now()
+        val day = date.toString()
+        val at = date.atTime(8, 0).atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        store.importRecords(org.json.JSONArray().put(healthRecord("health-origin-steps", "StepsRecord",
+            "origin.alpha", HealthJournalStore.HC, at, at + 1000, JSONObject().put("count", 123))),
+            store.generation())
+        store.healthDay(day, JSONObject().put("source", "@aggregate").put("steps", 123), store.generation())
+        launch(); tab("health")
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("health_daily_origin.alpha").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_daily_origin.alpha"))
+        compose.onNodeWithTag("health_daily_origin.alpha").performClick()
+        compose.waitUntil(15000) { store.preferences().optString("hcDailySource") == "origin.alpha" &&
+            compose.onAllNodesWithTag("health_daily_partial").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("health_daily_origin.alpha").assertIsSelected()
+        assertEquals(123, store.page(day, day, "journal", "", 0, 0, 1)
+            .getJSONArray("days").getJSONObject(0).getInt("steps"))
+        screenshot("health_specific_origin")
+    }
+
     @Test fun earlierHealthDayCanBeSelectedAndDisplaysItsStoredWeight() {
         val day = java.time.YearMonth.now().minusMonths(1).atDay(1).toString()
         val health = HealthJournalStore.get(context)
