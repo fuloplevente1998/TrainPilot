@@ -17,6 +17,7 @@ import com.repforge.app.data.migration.LegacyWebViewMigrator
 import com.repforge.app.data.store.TrainPilotSettingsStore
 import com.repforge.shared.GpsRoutePacket193
 import com.repforge.shared.LegacySyncIdentity18
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -341,35 +342,20 @@ class GoogleSyncRepository(context: Context) {
         try {
             verifyAndFetchProfile(accessToken)
             val calendarId = ensureManagedCalendar(accessToken)
-            val entries = database.calendarScheduleDao().getAllEntries().takeLast(100)
+            val entries = database.calendarScheduleDao().getAllEntries()
             val base = "https://www.googleapis.com/calendar/v3/calendars/${enc(calendarId)}/events"
             var count = 0
-            for (entry in entries) {
-                val id = entry.googleEventId.takeIf { EVENT_ID_REGEX.matches(it) }
-                    ?: LegacySyncIdentity18.calendarEventId(entry.id, entry.date, entry.programId, entry.dayId)
-                if (entry.status == "skipped") {
-                    try {
-                        request(accessToken, "DELETE", "$base/$id", null)
-                    } catch (err: ApiError) {
-                        if (err.code != 404 && err.code != 410) throw err
-                    }
+            for (operation in NativeCalendarSyncPlan.operations(entries)) {
+                kotlinx.coroutines.currentCoroutineContext().ensureActive()
+                val id = operation.id
+                if (operation.delete) {
+                    try { request(accessToken, "DELETE", "$base/$id", null) }
+                    catch (err: ApiError) { if (err.code != 404 && err.code != 410) throw err }
                 } else {
-                    val startIso = entry.startIso.ifBlank { "${entry.date}T18:00:00Z" }
-                    val endIso = entry.endIso.ifBlank {
-                        runCatching { Instant.parse(startIso).plusSeconds(3600).toString() }
-                            .getOrDefault("${entry.date}T19:00:00Z")
-                    }
-                    val eventPayload = JSONObject()
-                        .put("id", id)
-                        .put("summary", "TrainPilot: ${entry.programName} – ${entry.dayName}".trim(' ', '–'))
-                        .put("description", "Státusz: ${entry.status}")
-                        .put("start", JSONObject().put("dateTime", startIso))
-                        .put("end", JSONObject().put("dateTime", endIso))
-                    try {
-                        request(accessToken, "POST", "$base?sendUpdates=none", eventPayload)
-                    } catch (err: ApiError) {
+                    try { request(accessToken, "POST", "$base?sendUpdates=none", operation.payload) }
+                    catch (err: ApiError) {
                         if (err.code != 409) throw err
-                        request(accessToken, "PUT", "$base/$id?sendUpdates=none", eventPayload)
+                        request(accessToken, "PUT", "$base/$id?sendUpdates=none", operation.payload)
                     }
                 }
                 count++
