@@ -19,6 +19,35 @@ internal object NativeProfileHistory128 {
     private const val MAX_PAGES = 20
     private const val MAX_SOURCES = 4
 
+    /** Main-compatible backup guard; legacy programs without history128 remain valid. */
+    fun validatePortable(program: JSONObject) {
+        if (!program.has("history128")) return
+        val history = program.optJSONObject("history128")
+            ?: throw IllegalArgumentException("Invalid history128")
+        val entries = history.optJSONObject("entries")
+            ?: throw IllegalArgumentException("Missing history128 entries")
+        require(entries.length() <= 200) { "Too many history128 entries" }
+        for (id in entries.keys()) {
+            require(id.isNotBlank() && id.length <= 200)
+            val basis = entries.optJSONObject(id)
+                ?: throw IllegalArgumentException("Invalid history128 exercise")
+            if (basis.has("metric")) require(basis.optString("metric") in setOf("time", "reps"))
+            val sources = basis.optJSONArray("sources")
+                ?: throw IllegalArgumentException("Missing history128 sources")
+            require(sources.length() <= MAX_SOURCES)
+            val unique = HashSet<Pair<String, String>>()
+            for (i in 0 until sources.length()) {
+                val row = sources.optJSONObject(i)
+                    ?: throw IllegalArgumentException("Invalid history128 source")
+                val pid = row.optString("programId")
+                val key = row.optString("key")
+                require(pid.isNotBlank() && key.isNotBlank() &&
+                    pid.length <= 200 && key.length <= 200 &&
+                    unique.add(pid to key)) { "Duplicate or invalid history128 source" }
+            }
+        }
+    }
+
     private fun metric(unit: String) =
         if (Regex("mp|sec|second", RegexOption.IGNORE_CASE).containsMatchIn(unit)) "time" else "reps"
 
