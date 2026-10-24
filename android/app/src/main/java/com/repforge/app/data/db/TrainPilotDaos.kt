@@ -73,6 +73,9 @@ interface ExerciseLibraryDao {
 
 @Dao
 interface WorkoutHistoryDao {
+    @Query("SELECT rawJson FROM workout_history WHERE (CASE WHEN finishedEpochMs > 0 THEN finishedEpochMs ELSE startedEpochMs END) BETWEEN :fromEpoch AND :toEpoch ORDER BY (CASE WHEN finishedEpochMs > 0 THEN finishedEpochMs ELSE startedEpochMs END) DESC, id LIMIT 3")
+    suspend fun getCoachRecentHistory(fromEpoch: Long, toEpoch: Long): List<String>
+
     @Query("SELECT EXISTS(SELECT 1 FROM workout_history WHERE scheduleId = :scheduleId)")
     suspend fun hasScheduleHistory(scheduleId: String): Boolean
 
@@ -205,6 +208,12 @@ interface CalendarScheduleDao {
 
     @Query("SELECT * FROM calendar_entries WHERE date >= :fromDate AND date <= :toDate ORDER BY startIso, id")
     fun observeEntriesInRange(fromDate: String, toDate: String): Flow<List<CalendarScheduleEntity>>
+
+    @Query("SELECT * FROM calendar_entries WHERE date >= :today AND status = 'planned' AND NOT EXISTS(SELECT 1 FROM workout_history h WHERE h.scheduleId = calendar_entries.id) ORDER BY startIso, id LIMIT :limit OFFSET :offset")
+    suspend fun getCoachUpcoming(today: String, limit: Int, offset: Int): List<CalendarScheduleEntity>
+
+    @Query("SELECT * FROM calendar_entries WHERE programId = :programId ORDER BY startIso DESC, id LIMIT :limit OFFSET :offset")
+    suspend fun getCoachCyclePlans(programId: String, limit: Int, offset: Int): List<CalendarScheduleEntity>
 
     @Query("SELECT * FROM calendar_entries ORDER BY startIso ASC")
     fun observeAllEntries(): Flow<List<CalendarScheduleEntity>>
