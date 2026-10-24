@@ -238,4 +238,18 @@
     <string name="health_daily_source_priority">Health Connect priority</string>
     <string name="health_daily_source_hint">Affects the source of steps, distance and calories. Use Refresh after changing this setting to read new data.</string>
     <string name="health_daily_source_partial">Partial daily data: previous values are awaiting a fresh read.</string>
+    <string name="health_background_scheduled">Background refresh scheduled.</string>
+    <string name="health_background_not_scheduled">No background refresh scheduled.</string>
+    <string name="health_background_connected">BLE background connection is running.</string>
+    <string name="health_background_not_connected">No active BLE background connection.</string>
+    <string name="health_background_error">Background sync could not be configured. The previous setting was kept.</string>
+    <string name="health_background_ready">Prerequisites are satisfied; this alone does not prove the job is running.</string>
+    <string name="health_background_restore">Data restore in progress: background sync cannot be enabled.</string>
+    <string name="health_background_unsupported">This background feature is not supported on this device.</string>
+    <string name="health_background_read_permission">Allow Health Connect reads using Refresh before enabling background sync.</string>
+    <string name="health_background_permission">Background Health Connect reads require a separate permission.</string>
+    <string name="health_background_watch">Remember a compatible RDFit watch first.</string>
+    <string name="health_background_bluetooth_permission">Bluetooth connection permission is required.</string>
+    <string name="health_background_notification_permission">Notification permission is required for the BLE foreground service.</string>
+    <string name="health_background_bluetooth_off">Turn on Bluetooth.</string>
 </resources>
