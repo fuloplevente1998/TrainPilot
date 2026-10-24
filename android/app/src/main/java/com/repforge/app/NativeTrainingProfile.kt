@@ -44,9 +44,13 @@ internal object NativeTrainingProfile {
     fun edit(original: JSONObject, fields: Map<String, String>): JSONObject {
         val updated = JSONObject(original.toString())
         for ((key, raw) in fields) {
-            require(key in numeric || key in simple)
+            require(key in numeric || key in simple || key in setOf("gear", "excluded", "avoidAreas"))
             val trimmed = raw.trim()
-            if (trimmed.isBlank()) updated.remove(key)
+            if (key in setOf("gear", "excluded", "avoidAreas")) {
+                val values = raw.split(',').map(String::trim).filter(String::isNotBlank)
+                require(values.size <= 100 && values.all { it.length <= 120 && it.none(Char::isISOControl) })
+                updated.put(key, org.json.JSONArray().apply { values.distinct().forEach { put(it) } })
+            } else if (trimmed.isBlank()) updated.remove(key)
             else if (key in numeric) {
                 val n = trimmed.replace(',', '.').toDoubleOrNull()
                     ?: throw IllegalArgumentException("Invalid number: $key")
