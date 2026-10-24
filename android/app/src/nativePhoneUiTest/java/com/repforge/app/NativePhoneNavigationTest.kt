@@ -427,6 +427,27 @@ class NativePhoneNavigationTest {
         screenshot("health_specific_origin")
     }
 
+    @Test fun healthBackgroundShowsSchedulingSeparatelyFromSavedOptIn() {
+        launch(); tab("health")
+        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_hc_background_switch"))
+        compose.onNodeWithTag("health_hc_background_switch").assertIsOff()
+        compose.onNodeWithTag("health_hc_background_status").assertExists()
+        compose.onNodeWithText("Nincs ütemezett háttérfrissítés.").assertExists()
+        assertFalse(HealthJournalStore.get(context).preferences().getBoolean("hcBackground"))
+    }
+
+    @Test fun bleBackgroundCannotClaimToStartWithoutARememberedWatch() {
+        launch(); tab("health")
+        compose.onNodeWithText("BLE Okosóra (#111)").performClick()
+        compose.onNodeWithTag("health_ble_background_switch").performScrollTo().assertIsOff()
+        compose.onNodeWithTag("health_ble_background_switch").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("health_background_error").fetchSemanticsNodes().isNotEmpty() }
+        assertFalse(HealthJournalStore.get(context).preferences().getBoolean("bleBackground"))
+        assertFalse(HealthJournalStore.get(context).preferences().getBoolean("logWatchSteps"))
+        compose.onNodeWithTag("health_ble_background_status").assertExists()
+        compose.onNodeWithText("Nincs aktív BLE háttérkapcsolat.").assertExists()
+    }
+
     @Test fun earlierHealthDayCanBeSelectedAndDisplaysItsStoredWeight() {
         val day = java.time.YearMonth.now().minusMonths(1).atDay(1).toString()
         val health = HealthJournalStore.get(context)
