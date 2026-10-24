@@ -20,23 +20,30 @@ import java.util.UUID
 internal object NativeWorkoutSession {
     private val startLock = Mutex()
 
-    suspend fun startWorkout(context: Context, requestedProgramId: String?, dayId: String): JSONObject = startLock.withLock {
+    suspend fun startWorkout(context: Context, requestedProgramId: String?, dayId: String, scheduleId: String? = null,
+        database: TrainPilotDatabase = TrainPilotDatabase.getInstance(context)): JSONObject = startLock.withLock {
         val app = context.applicationContext
         // Never replace an existing phone session or a watch-owned mirror on a repeated tap.
         withContext(Dispatchers.Main.immediate) { recoverActive(app) }?.let { return@withLock it }
-        val db = TrainPilotDatabase.getInstance(app)
+        val db = database
         val settings = TrainPilotSettingsStore(app).current()
+        var expectedSchedule: com.repforge.app.data.db.CalendarScheduleEntity? = null
         val candidate = withContext(Dispatchers.IO) {
-            // Imported drafts are preserved until the dedicated draft continuation path exists.
-            // Opening a new day must not silently overwrite one.
+            // New sessions must not overwrite an imported draft; Home exposes its explicit continuation.
             check(db.keyValueDocumentDao().getDocument("draft") == null) {
-                "A korábbi félbehagyott edzés megmaradt. A natív folytatása még fejlesztés alatt áll."
+                "A korábbi félbehagyott edzés megmaradt. Előbb folytasd vagy rendezd azt."
             }
             val programs = db.programDao().getProgramsWithDays()
             val program = if (requestedProgramId != null) programs.firstOrNull { it.program.id == requestedProgramId }
                 else programs.firstOrNull { it.program.id == settings.activeProgramId } ?: programs.firstOrNull()
             requireNotNull(program) { "Az edzésprogram nem található." }
             val day = requireNotNull(program.days.firstOrNull { it.dayId == dayId }) { "Az edzésnap nem található." }
+            expectedSchedule = scheduleId?.let {
+                val row = com.repforge.app.ui.calendar.NativeCalendarRepository.requireStart(
+                    db.calendarScheduleDao().getEntry(it), program.program.id, day.dayId)
+                check(!db.workoutHistoryDao().hasScheduleHistory(it)) { "Az alkalom már teljesített." }
+                row
+            }
             val library = db.exerciseLibraryDao().getAllExercises().associateBy { it.id }
             val raw = JSONObject(program.program.rawJson)
             val prescriptions = raw.optJSONObject("prescriptions") ?: JSONObject()
@@ -67,9 +74,16 @@ internal object NativeWorkoutSession {
                     .put("rest", settings.restSeconds).put("rounds", settings.rounds)
                     .put("sound", settings.soundEnabled).put("vibration", settings.vibrationEnabled))
                 .put("exercises", exercises).put("originDevice", "phone")
+                .also { frame -> expectedSchedule?.let { frame.put("scheduleId", it.id) } }
         }
-        withContext(NonCancellable + Dispatchers.Main.immediate) {
-            installPrepared(app, candidate)
+        withContext(NonCancellable + Dispatchers.IO) {
+            val schedule = expectedSchedule
+            if (schedule == null) withContext(Dispatchers.Main.immediate) { installPrepared(app, candidate) }
+            else db.withTransaction {
+                check(db.calendarScheduleDao().getEntry(schedule.id) == schedule &&
+                    !db.workoutHistoryDao().hasScheduleHistory(schedule.id)) { "A naptári alkalom időközben megváltozott." }
+                withContext(Dispatchers.Main.immediate) { installPrepared(app, candidate) }
+            }
         }
     }
 

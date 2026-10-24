@@ -322,3 +322,7 @@ data class ProgramWithDays(
     )
     val days: List<ProgramDayEntity>
 )
+
+/** Bounded calendar projection; never loads set/photo/route detail to show a date. */
+data class CalendarHistorySummary(val id: String, val started: String, val programName: String,
+    val dayName: String, val scheduleId: String)

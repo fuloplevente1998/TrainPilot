@@ -73,6 +73,12 @@ interface ExerciseLibraryDao {
 
 @Dao
 interface WorkoutHistoryDao {
+    @Query("SELECT EXISTS(SELECT 1 FROM workout_history WHERE scheduleId = :scheduleId)")
+    suspend fun hasScheduleHistory(scheduleId: String): Boolean
+
+    @Query("SELECT id, started, programName, dayName, scheduleId FROM workout_history WHERE startedEpochMs >= :fromEpoch AND startedEpochMs < :toEpoch ORDER BY startedEpochMs, id")
+    fun observeCalendarHistory(fromEpoch: Long, toEpoch: Long): Flow<List<CalendarHistorySummary>>
+
     @Query("SELECT EXISTS(SELECT 1 FROM workout_history WHERE id = :id OR syncId = :id OR started = :started)")
     suspend fun hasFinishedIdentity(id: String, started: String): Boolean
 
@@ -196,6 +202,9 @@ interface BodyWeightDao {
 interface CalendarScheduleDao {
     @Query("SELECT * FROM calendar_entries WHERE id = :scheduleId LIMIT 1")
     suspend fun getEntry(scheduleId: String): CalendarScheduleEntity?
+
+    @Query("SELECT * FROM calendar_entries WHERE date >= :fromDate AND date <= :toDate ORDER BY startIso, id")
+    fun observeEntriesInRange(fromDate: String, toDate: String): Flow<List<CalendarScheduleEntity>>
 
     @Query("SELECT * FROM calendar_entries ORDER BY startIso ASC")
     fun observeAllEntries(): Flow<List<CalendarScheduleEntity>>
