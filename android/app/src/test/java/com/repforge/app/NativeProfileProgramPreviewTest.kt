@@ -118,19 +118,38 @@ class NativeProfileProgramPreviewTest {
     }
 
     @Test fun bDayStartsWithCompoundAndPushupThirdWhenEquipmentExists() {
-        val result = preview(profile(90))
+        val result = preview(profile(90).put("experience", "intermediate"))
         val b = result.draft.days.single { it.id == "B" }
         assertEquals(listOf("bulgarian-split-squat", "barbell-row", "pushup"),
             b.entries.take(3).map(NativeProgramEditor::exerciseId))
     }
 
     @Test fun level2DeclineVariationRequiresExplicitBench() {
-        val withoutBench = preview(profile(90), "home-level2")
+        val withoutBench = preview(profile(90).put("experience", "intermediate"), "home-level2")
         val b = withoutBench.draft.days.single { it.id == "B" }
         assertTrue(b.entries.none { NativeProgramEditor.exerciseId(it) == "decline-pushup" })
-        val withBench = preview(profile(90, listOf("dumbbells", "barbell", "bench")), "home-level2")
+        val withBench = preview(profile(90, listOf("dumbbells", "barbell", "bench"))
+            .put("experience", "intermediate"), "home-level2")
         assertEquals("decline-pushup",
             NativeProgramEditor.exerciseId(withBench.draft.days.single { it.id == "B" }.entries[2]))
+    }
+
+    @Test fun beginnerNeverGetsExplicitlyUnsafeIntermediateExercises() {
+        val result = preview(profile(90))
+        val ids = result.draft.days.flatMap { day -> day.entries.map(NativeProgramEditor::exerciseId) }
+        assertFalse("bulgarian-split-squat" in ids)
+        assertFalse("barbell-row" in ids)
+        assertTrue(result.reductions.any { it.reason == "experience" })
+    }
+
+    @Test fun avoidedShoulderBlocksShoulderExercisesAndUnknownPainAreaFailsClosed() {
+        val p = profile(90).put("avoidAreas", JSONArray().put("left-shoulder"))
+        val result = preview(p)
+        val chosen = result.draft.days.flatMap { it.entries.map(NativeProgramEditor::exerciseId) }.toSet()
+        assertFalse("db-ohp" in chosen)
+        assertFalse("lateral-raise" in chosen)
+        val unknown = profile(90).put("avoidAreas", JSONArray().put("unrecognized-body-part"))
+        assertThrows(IllegalArgumentException::class.java) { preview(unknown) }
     }
 
     @Test fun rejectsUnknownOrUserProgramsAsProfileTemplate() {
