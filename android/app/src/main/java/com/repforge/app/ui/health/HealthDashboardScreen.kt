@@ -1,5 +1,6 @@
 package com.repforge.app.ui.health
 import android.app.Activity
+import android.Manifest
 import android.os.Build
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -68,6 +69,19 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 
+
+private fun backgroundReasonResource(reason: BackgroundBlock): Int = when (reason) {
+    BackgroundBlock.READY -> com.repforge.app.R.string.health_background_ready
+    BackgroundBlock.RESTORE -> com.repforge.app.R.string.health_background_restore
+    BackgroundBlock.UNSUPPORTED -> com.repforge.app.R.string.health_background_unsupported
+    BackgroundBlock.READ_PERMISSION -> com.repforge.app.R.string.health_background_read_permission
+    BackgroundBlock.BACKGROUND_PERMISSION -> com.repforge.app.R.string.health_background_permission
+    BackgroundBlock.WATCH_NOT_READY -> com.repforge.app.R.string.health_background_watch
+    BackgroundBlock.BLUETOOTH_PERMISSION -> com.repforge.app.R.string.health_background_bluetooth_permission
+    BackgroundBlock.NOTIFICATION_PERMISSION -> com.repforge.app.R.string.health_background_notification_permission
+    BackgroundBlock.BLUETOOTH_OFF -> com.repforge.app.R.string.health_background_bluetooth_off
+}
+
 @Composable
 fun HealthDashboardScreen(
     navController: NavController,
@@ -82,6 +96,13 @@ fun HealthDashboardScreen(
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         viewModel.refresh(activity)
     }
+    val backgroundPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) viewModel.toggleHcBackground(true) else viewModel.refreshBackgroundStatus()
+    }
+    val bleBackgroundPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
+        if (granted.isNotEmpty() && granted.values.all { it }) viewModel.toggleBleBackground(true)
+        else viewModel.refreshBackgroundStatus()
+    }
 
     Column(modifier = Modifier.fillMaxSize().background(colors.bg)) {
         TextButton(onClick = onWeightJournal, modifier = Modifier.testTag("health_weight_journal")) {
@@ -89,6 +110,11 @@ fun HealthDashboardScreen(
                 .getString(com.repforge.app.R.string.weight_open))
         }
         state.statusMessage?.let { Text(it, color = colors.muted, modifier = Modifier.padding(12.dp)) }
+        if (state.backgroundWriteFailed) Text(
+            com.repforge.app.ui.text.nativeResources(context, state.language)
+                .getString(com.repforge.app.R.string.health_background_error),
+            color = colors.dangerText, modifier = Modifier.testTag("health_background_error").padding(12.dp)
+        )
         // Két fül: Egészségnapló vs #111 BLE Eszközkereső
         TabRow(
             selectedTabIndex = if (state.activeTab == "journal") 0 else 1,
@@ -117,7 +143,11 @@ fun HealthDashboardScreen(
             HealthJournalTabContent(
                 state = state,
                 onSelectProvider = { viewModel.setProvider(it, activity) },
-                onToggleHcBackground = { viewModel.toggleHcBackground(it) },
+                onToggleHcBackground = { enable ->
+                    if (enable && state.hcBackgroundBlock == BackgroundBlock.BACKGROUND_PERMISSION)
+                        backgroundPermissionLauncher.launch(HealthConnectRepository.BACKGROUND_READ_PERMISSION)
+                    else viewModel.toggleHcBackground(enable)
+                },
                 onPreviousMonth = { viewModel.shiftHistoryMonth(-1) },
                 onNextMonth = { viewModel.shiftHistoryMonth(1) },
                 onDay = viewModel::selectHistoryDay,
@@ -137,7 +167,20 @@ fun HealthDashboardScreen(
             BleDiscoveryTabContent(
                 state = state,
                 bleRepo = viewModel.bleRepo,
-                onToggleBleBackground = { viewModel.toggleBleBackground(it) }
+                onToggleBleBackground = { enable ->
+                    if (enable && state.bleBackgroundBlock in setOf(BackgroundBlock.BLUETOOTH_PERMISSION, BackgroundBlock.NOTIFICATION_PERMISSION)) {
+                        val permissions = buildList {
+                            if (Build.VERSION.SDK_INT >= 31 &&
+                                ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED)
+                                add(Manifest.permission.BLUETOOTH_CONNECT)
+                            if (Build.VERSION.SDK_INT >= 33 &&
+                                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
+                                add(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                        if (permissions.isNotEmpty()) bleBackgroundPermissionLauncher.launch(permissions.toTypedArray())
+                        else viewModel.refreshBackgroundStatus()
+                    } else viewModel.toggleBleBackground(enable)
+                }
             )
         }
     }
@@ -327,10 +370,18 @@ fun HealthJournalTabContent(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Health Connect háttérszinkron", color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                        Text("Periodikus 15 perces háttérfrissítés Android 14+ rendszeren", color = colors.muted, fontSize = 11.sp)
+                        Text("Periodikus 15 perces háttérfrissítés (ha támogatott és engedélyezett)", color = colors.muted, fontSize = 11.sp)
+                        val text = com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
+                        Text(text.getString(backgroundReasonResource(state.hcBackgroundBlock)),
+                            color = if (state.hcBackgroundBlock == BackgroundBlock.READY) colors.muted else colors.dangerText,
+                            fontSize = 11.sp, modifier = Modifier.testTag("health_hc_background_status"))
+                        Text(text.getString(if (state.hcBackgroundScheduled && state.hcBackground) com.repforge.app.R.string.health_background_scheduled
+                            else com.repforge.app.R.string.health_background_not_scheduled), color = colors.muted, fontSize = 11.sp)
                     }
                     Switch(
                         checked = state.hcBackground,
+                        enabled = !state.backgroundSaving,
+                        modifier = Modifier.testTag("health_hc_background_switch"),
                         onCheckedChange = onToggleHcBackground,
                         colors = SwitchDefaults.colors(checkedThumbColor = colors.accent, checkedTrackColor = colors.card)
                     )
@@ -498,9 +549,17 @@ fun BleDiscoveryTabContent(
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Háttérbeli lépésszinkron (BLE)", color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                         Text("A kiválasztott RDFit óra lépésszámának 5 percenkénti frissítése", color = colors.muted, fontSize = 11.sp)
+                        val text = com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
+                        Text(text.getString(backgroundReasonResource(state.bleBackgroundBlock)),
+                            color = if (state.bleBackgroundBlock == BackgroundBlock.READY) colors.muted else colors.dangerText,
+                            fontSize = 11.sp, modifier = Modifier.testTag("health_ble_background_status"))
+                        Text(text.getString(if (state.bleBackgroundRunning && state.bleBackground) com.repforge.app.R.string.health_background_connected
+                            else com.repforge.app.R.string.health_background_not_connected), color = colors.muted, fontSize = 11.sp)
                     }
                     Switch(
                         checked = state.bleBackground,
+                        enabled = !state.backgroundSaving,
+                        modifier = Modifier.testTag("health_ble_background_switch"),
                         onCheckedChange = onToggleBleBackground,
                         colors = SwitchDefaults.colors(checkedThumbColor = colors.accent, checkedTrackColor = colors.card)
                     )
