@@ -6,6 +6,8 @@ import com.repforge.app.data.db.*
 import com.repforge.app.data.migration.LegacyWebViewMigrator
 import com.repforge.app.data.store.TrainPilotSettingsStore
 import com.repforge.app.ui.coach.NativeCoachAdviceRepository
+import com.repforge.app.ui.coach.NativeCoachExerciseAdvice
+import com.repforge.app.ui.coach.NativeCoachReadiness
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
@@ -173,6 +175,43 @@ class NativeProfileHistory128Test {
         val seen = NativeCoachAdviceRepository(db).recent(id, programId, lib, rx, raw, now)
         assertEquals(1, seen.size)
         assertEquals("approved", seen.single().first.getString("id"))
+    }
+
+    @Test fun threeInheritedStableTopSessionsOnlySuggestIncreaseNeverChangeSavedWeight() = runBlocking {
+        workout("approved-1", ageDays = 1, weight = 5.0,
+            reps = listOf("15", "15", "15"))
+        workout("approved-2", ageDays = 3, weight = 5.0,
+            reps = listOf("15", "15", "15"))
+        workout("approved-3", ageDays = 5, weight = 5.0,
+            reps = listOf("15", "15", "15"))
+        val p = preview()
+        store.saveTrainingProfile(profile())
+        val programId = NativeProgramEditor.save(context, db, p.source, p.draft, "hu",
+            NativeProfileProgramPreview.metadata(p))
+        val created = db.programDao().getProgramWithDaysById(programId)!!
+        val raw = JSONObject(created.program.rawJson)
+        val rx = raw.getJSONObject("prescriptions").getJSONObject(id)
+        val library = db.exerciseLibraryDao().getExerciseById(id)!!
+        val lib = JSONObject(library.rawJson).put("id", id)
+            .put("loadType", library.loadType).put("repUnit", library.repUnit)
+            .put("measurementType", library.measurementType)
+        val target = NativeCoachExerciseAdvice.target(lib, rx)
+        val history = NativeCoachAdviceRepository(db).recent(id, programId, lib, rx, raw, now)
+        assertEquals(3, history.size)
+        val events = history.map { NativeCoachExerciseAdvice.occurrence(it.first, it.second, target) }
+        val good = NativeCoachReadiness.Result(75.0, null, null, null, null,
+            null, null, null, null, 2, false)
+        val rec = NativeCoachExerciseAdvice.recommend(lib, rx, events, target, good, .5)
+        assertEquals("increase", rec.action)
+        assertEquals(5.5, rec.weight, .00001)
+        assertTrue(rec.autoApply)
+        val coach = NativeCoachExerciseAdvice.forCoach(rec, "good", good)
+        assertFalse(coach.autoApply)
+        // A proposed 5.5 kg is not silently written back to the new program.
+        assertEquals(5.0, JSONObject(db.programDao().getProgramWithDaysById(programId)!!.program.rawJson)
+            .getJSONObject("prescriptions").getJSONObject(id).getDouble("weight"), .00001)
+        val onlyTwo = NativeCoachExerciseAdvice.recommend(lib, rx, events.take(2), target, good, .5)
+        assertFalse(onlyTwo.autoApply)
     }
 
     @Test fun changedHistoryInvalidatesPreviewWithoutPublishingNewProgram() = runBlocking {
