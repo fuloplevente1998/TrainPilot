@@ -4,6 +4,71 @@ Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Személyes A/B tervező – valódi előnézet és jóváhagyás (részparitás)
+
+**559fd43e** `[skip ci]` utolsó alkalmazás-/tesztforrás,
+csak `feat/native-android-migration`. A Programok oldali
+`Személyes Edzéstervező` banner korábban csak
+`isPersonalPlannerOpen=true` flaget állított, UI nélkül.
+Most a meglévő Room `programs/program_days` és
+`NativeProgramEditor.save` szolgálja ki a tényleges, külön
+elfogadást igénylő A/B előnézetet.
+
+- `NativeProfileProgramPreview`: a főágban elfogadott
+  `home-basic` / `home-level2` sablon és aktuális
+  `settings.profile` alapján **csak olvasható** előnézet.
+  Nincs működés explicit `minutes` és `gear` nélkül;
+  ismeretlen kerülendő testrésznél nem találgat. Kezdőknél
+  nem kezdőbiztos gyakorlat szűrve; elérhetetlen felszerelés,
+  `excluded` és `avoidAreas` figyelembe véve; időhiány
+  miatt kihagyott mozgások külön okkóddal.
+- B-napi alap sorrend: összetett mozgások és harmadik
+  fekvőtámasz, 2. szinten `decline-pushup` csak kifejezetten
+  megadott pad mellett. Konzervatív **2** munkasorozat,
+  profil/perc/tapasztalat alapján alkalmas összetett
+  mozgásoknál **3**; 120/75 mp pihenő, 2 RIR.
+  Kitalált kezdősúly nincs: súlyzós recept `weight:0`,
+  `trial:true` + látható próbasorozat figyelmeztetés.
+- Az előnézet **nem módosít** Roomot, naplót vagy aktív
+  programot. Felhasználói elfogadáskor külön, stabil
+  `custom-program-UUID` másolat, kanonikus
+  `profileSnapshot`, `prescriptions`,
+  `templateVersion:2`, `sourceTemplateId` és
+  `sourceType:profile-template` mezőkkel. Az írás
+  restore-fence + Room-tranzakció és elavult
+  profil/sablon CAS mellett történik; csak sikeres új
+  példány után vált az aktív program és publikál Wearnek.
+  A DataStore aktívprogram-beállítás és a Room insert
+  nem egyetlen kereszt-tárolós tranzakció; aktiválási
+  hiba esetén a létrejött, de nem aktivált másolat
+  megmaradhat (követendő).
+- Beállítások → Edzésprofil alatt most a korábbi
+  `gear/excluded/avoidAreas` tömbök is explicit
+  szerkeszthetők, JSON- és Drive-mentési azonossággal.
+  Új `PersonalProgramPreviewDialog` HU/EN/DE/RO
+  szöveg, 2 sablon, gyakorlat-/sorozat-összegzés,
+  kihagyási ok, Mentés/Elvetés.
+- **14 új JVM unit +1 korábbi profil unit +3 Phone UI**
+  regressziós próbakód: hiányzó profilfeltétel,
+  felszerelés/kizárás/kezdő/testrész, 20 perces rövidítés,
+  B-sorrend, próbasúly, read-only előnézet, template
+  érintetlenség, stale elutasítás és elfogadás.
+  Összesen **301 új unit +34 Phone UI-tesztkód
+  megírva, egyik sem futott**. **20/20 célzott statikus
+  forrás- és útvonalellenőrzés PASS**; Kotlin/Gradle,
+  emulátor, valódi UI-kép és APK továbbra nem igazolt.
+
+**Nem teljes #128 algoritmikus paritás:** 90 napos
+kompatibilis edzéstörténet alapján kezdősúlyöröklés,
+`history128` 4 konkrét forrásreferenciája, fájdalom /
+readiness alapján javaslat és 3 stabil alkalom utáni,
+külön jóváhagyott Coach progresszió maradt.
+Továbbá profilkötött helyettesítések és testreszabott
+osztott programok finomítása. Ezek után összesített
+natív/Phone/Wear/upgrade CI, majd készülékes elfogadás.
+Main, verzió, Wear release változatlan;
+élő adatos telepítés STOP.
+
 ## Edzésprofil megőrzés és célzott Progress lekérdezések
 
 **cfdc6d05** `[skip ci]` utolsó alkalmazás-/tesztforrás, kizárólag
