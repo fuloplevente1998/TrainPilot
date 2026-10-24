@@ -214,4 +214,25 @@
     <string name="health_history_sleep">Sesiuni de somn salvate: %1$d</string>
     <string name="health_history_auto">Rezumat zilnic</string>
     <string name="health_history_legacy">Jurnal anterior</string>
+    <string name="weight_title">Jurnal de greutate</string>
+    <string name="weight_open">Deschide jurnalul de greutate</string>
+    <string name="weight_add">Adaugă măsurare</string>
+    <string name="weight_edit">Editează</string>
+    <string name="weight_delete">Șterge</string>
+    <string name="weight_save">Salvează</string>
+    <string name="weight_cancel">Anulează</string>
+    <string name="weight_kg">Greutate corporală (kg)</string>
+    <string name="weight_date">Data (AAAA-LL-ZZ)</string>
+    <string name="weight_invalid">Introdu o valoare între 30 și 300 kg.</string>
+    <string name="weight_changed">Această înregistrare a fost modificată sau ștearsă. Închide și redeschide.</string>
+    <string name="weight_delete_question">Ștergi măsurarea de %2$s kg din %1$s?</string>
+    <string name="weight_current">Actual: %1$s</string>
+    <string name="weight_start_change">Inițial: %1$s kg · Schimbare: %2$s kg</string>
+    <string name="weight_all">Toate</string>
+    <string name="weight_days">%1$d zile</string>
+    <string name="weight_loading">Se încarcă…</string>
+    <string name="weight_empty">Nu există încă măsurări de greutate.</string>
+    <string name="weight_chart_empty">Graficul necesită cel puțin două măsurări.</string>
+    <string name="weight_read_failed">Jurnalul de greutate nu a putut fi încărcat.</string>
+    <string name="weight_min_max">Minim / maxim: %1$s / %2$s kg</string>
 </resources>

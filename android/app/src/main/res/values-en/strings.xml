@@ -214,4 +214,25 @@
     <string name="health_history_sleep">Logged sleep sessions: %1$d</string>
     <string name="health_history_auto">Daily summary</string>
     <string name="health_history_legacy">Previous journal</string>
+    <string name="weight_title">Weight journal</string>
+    <string name="weight_open">Open weight journal</string>
+    <string name="weight_add">Add measurement</string>
+    <string name="weight_edit">Edit</string>
+    <string name="weight_delete">Delete</string>
+    <string name="weight_save">Save</string>
+    <string name="weight_cancel">Cancel</string>
+    <string name="weight_kg">Body weight (kg)</string>
+    <string name="weight_date">Date (YYYY-MM-DD)</string>
+    <string name="weight_invalid">Enter a value between 30 and 300 kg.</string>
+    <string name="weight_changed">This entry was changed or deleted. Close and reopen it.</string>
+    <string name="weight_delete_question">Delete the %2$s kg measurement from %1$s?</string>
+    <string name="weight_current">Current: %1$s</string>
+    <string name="weight_start_change">Starting: %1$s kg · Change: %2$s kg</string>
+    <string name="weight_all">All</string>
+    <string name="weight_days">%1$d days</string>
+    <string name="weight_loading">Loading…</string>
+    <string name="weight_empty">No weight measurements yet.</string>
+    <string name="weight_chart_empty">At least two measurements are needed for the chart.</string>
+    <string name="weight_read_failed">The weight journal could not be loaded.</string>
+    <string name="weight_min_max">Minimum / maximum: %1$s / %2$s kg</string>
 </resources>

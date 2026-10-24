@@ -304,10 +304,14 @@ fun TrainPilotAppScaffold(
                     JournalScreen(navController = navController, language = settings.language)
                 }
                 composable(Screen.Progress.route) {
-                    ProgressScreen(navController = navController)
+                    ProgressScreen(onWeightJournal = { selectDestination("weight_journal") })
                 }
                 composable(Screen.Health.route) {
-                    HealthDashboardScreen(navController = navController)
+                    HealthDashboardScreen(navController = navController,
+                        onWeightJournal = { selectDestination("weight_journal") })
+                }
+                composable("weight_journal") {
+                    com.repforge.app.ui.progress.WeightJournalScreen()
                 }
                 composable("active_workout") {
                     ActiveWorkoutScreen(navController = navController, language = settings.language, launchGps = launchGps,

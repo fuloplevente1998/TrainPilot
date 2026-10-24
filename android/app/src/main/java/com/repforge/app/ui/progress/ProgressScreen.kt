@@ -1,10 +1,7 @@
 package com.repforge.app.ui.progress
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.AlertDialog
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,25 +19,15 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -49,31 +36,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import com.repforge.app.ui.theme.LocalTrainPilotColors
-import java.time.LocalDate
 import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 fun ProgressScreen(
-    navController: NavController,
-    viewModel: ProgressViewModel = viewModel()
+    onWeightJournal: () -> Unit,
+    viewModel: ProgressViewModel = viewModel(),
+    weightViewModel: WeightJournalViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = LocalTrainPilotColors.current
-    var showWeightDialog by remember { mutableStateOf(false) }
+    val weights by weightViewModel.uiState.collectAsStateWithLifecycle()
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item { Spacer(Modifier.height(8.dp)) }
-
-        if (state.writeFailed) item {
-            Text(com.repforge.app.ui.text.nativeResources(androidx.compose.ui.platform.LocalContext.current, state.language)
-                .getString(com.repforge.app.R.string.metadata_write_failed), color = colors.danger)
-        }
 
         // 1. #177 Izom-anatómia terheléstérkép
         item {
@@ -169,115 +149,18 @@ fun ProgressScreen(
             }
         }
 
-        // 3. Testsúly-napló szekció (#215)
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = colors.card),
-                border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text("Testsúly-napló", color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                            Text("${state.currentWeightKg ?: "—"} kg aktuális", color = colors.accentText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                        }
-                        Button(
-                            onClick = { showWeightDialog = true },
-                            shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = colors.card2)
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = colors.accentText, modifier = Modifier.size(14.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text("Új mérés", color = colors.text, fontSize = 11.sp)
-                        }
-                    }
-                    Spacer(Modifier.height(10.dp))
-
-                    // Tartomány választó (7d / 30d / 90d / 1y / all)
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf("7" to "7 nap", "30" to "30 nap", "90" to "3 hó", "all" to "Mind").forEach { (key, label) ->
-                            val isSel = state.weightRange == key
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(if (isSel) colors.accent else colors.card2)
-                                    .clickable { viewModel.setWeightRange(key) }
-                                    .padding(vertical = 6.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(label, color = if (isSel) colors.onAccent else colors.muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(12.dp))
-
-                    // Testsúly görbe
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(110.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(colors.card2)
-                            .padding(10.dp)
-                    ) {
-                        if (state.filteredWeights.size < 2) {
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Text("Nincs elég súlymérés ebben az időszakban", color = colors.muted, fontSize = 11.sp)
-                            }
-                        } else {
-                            TrendCanvas(points = state.filteredWeights.map { it.kg })
-                        }
-                    }
-                }
-            }
+            WeightJournalOverview(weights, weightViewModel::setRange, onWeightJournal,
+                com.repforge.app.R.string.weight_open)
+        }
+        if (weights.writeFailed) item {
+            Text(com.repforge.app.ui.text.nativeResources(androidx.compose.ui.platform.LocalContext.current, weights.language)
+                .getString(com.repforge.app.R.string.metadata_write_failed), color = colors.danger)
         }
 
         item { Spacer(Modifier.height(80.dp)) }
     }
 
-    // Új súly bevitele dialógus
-    if (showWeightDialog) {
-        var weightText by remember { mutableStateOf(state.currentWeightKg?.toString() ?: "75.0") }
-        AlertDialog(
-            onDismissRequest = { showWeightDialog = false },
-            title = { Text("Új testsúly rögzítése", color = colors.text, fontWeight = FontWeight.Bold) },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = weightText,
-                        onValueChange = { weightText = it },
-                        label = { Text("Testsúly (kg)") },
-                        singleLine = true
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val kg = weightText.replace(',', '.').toDoubleOrNull()
-                        if (kg != null && kg in 30.0..300.0) {
-                            viewModel.addWeightEntry(kg, LocalDate.now().toString())
-                            showWeightDialog = false
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
-                ) {
-                    Text("Mentés", color = colors.onAccent, fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showWeightDialog = false }) { Text("Mégse", color = colors.text) }
-            },
-            containerColor = colors.card
-        )
-    }
 }
 
 @Composable

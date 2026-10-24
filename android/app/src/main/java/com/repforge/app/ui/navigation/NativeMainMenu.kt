@@ -3,11 +3,12 @@ package com.repforge.app.ui.navigation
 /** Accepted five-tab hierarchy; secondary destinations keep a primary parent. */
 internal object NativeMainMenu {
     val routes = listOf("home", "training", "journal", "progress", "health")
-    val secondaryRoutes = listOf("programs", "calendar", "coach", "quick_workout", "quick_outdoor", "active_workout", "settings")
+    val secondaryRoutes = listOf("programs", "calendar", "coach", "quick_workout", "quick_outdoor", "active_workout", "settings", "weight_journal")
 
     fun selected(route: String, settingsOrigin: String = "home"): String = when (route) {
         "active_workout", "quick_workout", "quick_outdoor", "programs" -> "training"
         "calendar", "coach" -> "home"
+        "weight_journal" -> "health"
         "settings" -> if (settingsOrigin == "settings") "home" else selected(settingsOrigin)
         else -> route.takeIf { it in routes } ?: "home"
     }
@@ -38,10 +39,10 @@ internal object NativeMainMenu {
     fun title(route: String, language: String): String {
         if (route in routes) return labels(language)[routes.indexOf(route)]
         val names = when (language) {
-            "en" -> listOf("Programs", "Calendar", "Coach", "Quick workout", "Outdoor workout", "Training", "Settings", "Back")
-            "de" -> listOf("Programme", "Kalender", "Coach", "Schnelltraining", "Training im Freien", "Training", "Einstellungen", "Zurück")
-            "ro" -> listOf("Programe", "Calendar", "Coach", "Antrenament rapid", "Antrenament în aer liber", "Antrenament", "Setări", "Înapoi")
-            else -> listOf("Programok", "Naptár", "Coach", "Gyors edzés", "Szabadtéri edzés", "Edzés", "Beállítások", "Vissza")
+            "en" -> listOf("Programs", "Calendar", "Coach", "Quick workout", "Outdoor workout", "Training", "Settings", "Weight journal", "Back")
+            "de" -> listOf("Programme", "Kalender", "Coach", "Schnelltraining", "Training im Freien", "Training", "Einstellungen", "Gewichtsprotokoll", "Zurück")
+            "ro" -> listOf("Programe", "Calendar", "Coach", "Antrenament rapid", "Antrenament în aer liber", "Antrenament", "Setări", "Jurnal de greutate", "Înapoi")
+            else -> listOf("Programok", "Naptár", "Coach", "Gyors edzés", "Szabadtéri edzés", "Edzés", "Beállítások", "Testsúlynapló", "Vissza")
         }
         return names[secondaryRoutes.indexOf(route).takeIf { it >= 0 } ?: names.lastIndex]
     }
