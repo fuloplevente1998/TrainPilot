@@ -450,6 +450,46 @@ class NativePhoneNavigationTest {
         compose.onNodeWithText("Nincs aktív BLE háttérkapcsolat.").assertExists()
     }
 
+    @Test fun programEditorCreatesCustomPlanAndRenamesDayWithoutStartingWorkout() {
+        launch(); tab("training")
+        compose.onNodeWithText("Programok").performClick()
+        compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("program_create"))
+        compose.onNodeWithTag("program_create").performClick()
+        compose.onNodeWithTag("program_editor_name").performTextInput("Saját időterv")
+        compose.onNodeWithTag("program_editor_day_name").performTextClearance()
+        compose.onNodeWithTag("program_editor_day_name").performTextInput("Kedd")
+        compose.onNodeWithTag("program_editor_save").performClick()
+        val db = TrainPilotDatabase.getInstance(context)
+        compose.waitUntil(15000) { runBlocking(Dispatchers.IO) {
+            db.programDao().getProgramsWithDays().any { it.program.nameHu == "Saját időterv" &&
+                it.days.singleOrNull()?.nameHu == "Kedd" }
+        } }
+        val custom = runBlocking(Dispatchers.IO) { db.programDao().getProgramsWithDays().first {
+            it.program.nameHu == "Saját időterv" } }
+        assertFalse(custom.program.builtin)
+        assertTrue(custom.program.id.startsWith("custom-program-"))
+        assertFalse(ActiveWorkoutStore.current(context)?.optBoolean("active") == true)
+    }
+
+    @Test fun builtinProgramEditorCreatesCloneWithoutChangingTemplate() {
+        val db = TrainPilotDatabase.getInstance(context)
+        val before = runBlocking(Dispatchers.IO) {
+            db.programDao().getProgramWithDaysById("home-basic")!! }
+        launch(); tab("training")
+        compose.onNodeWithText("Programok").performClick()
+        compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("program_home-basic"))
+        compose.onNodeWithTag("program_edit_home-basic").performClick()
+        compose.onNodeWithTag("program_editor_name").performTextClearance()
+        compose.onNodeWithTag("program_editor_name").performTextInput("Másolt terv")
+        compose.onNodeWithTag("program_editor_save").performClick()
+        compose.waitUntil(15000) { runBlocking(Dispatchers.IO) {
+            db.programDao().getProgramsWithDays().any { it.program.nameHu == "Másolt terv" && !it.program.builtin }
+        } }
+        assertEquals(before, runBlocking(Dispatchers.IO) {
+            db.programDao().getProgramWithDaysById("home-basic")!! })
+        assertFalse(ActiveWorkoutStore.current(context)?.optBoolean("active") == true)
+    }
+
     @Test fun customExerciseCanBeCreatedEditedAndDeletedWithoutStartingWorkout() {
         launch(); tab("training")
         compose.onNodeWithText("Gyakorlatkönyvtár").performClick()
