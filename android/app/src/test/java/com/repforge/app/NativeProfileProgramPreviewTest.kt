@@ -117,6 +117,22 @@ class NativeProfileProgramPreviewTest {
         }
     }
 
+    @Test fun bDayStartsWithCompoundAndPushupThirdWhenEquipmentExists() {
+        val result = preview(profile(90))
+        val b = result.draft.days.single { it.id == "B" }
+        assertEquals(listOf("bulgarian-split-squat", "barbell-row", "pushup"),
+            b.entries.take(3).map(NativeProgramEditor::exerciseId))
+    }
+
+    @Test fun level2DeclineVariationRequiresExplicitBench() {
+        val withoutBench = preview(profile(90), "home-level2")
+        val b = withoutBench.draft.days.single { it.id == "B" }
+        assertTrue(b.entries.none { NativeProgramEditor.exerciseId(it) == "decline-pushup" })
+        val withBench = preview(profile(90, listOf("dumbbells", "barbell", "bench")), "home-level2")
+        assertEquals("decline-pushup",
+            NativeProgramEditor.exerciseId(withBench.draft.days.single { it.id == "B" }.entries[2]))
+    }
+
     @Test fun rejectsUnknownOrUserProgramsAsProfileTemplate() {
         val (programs, days) = TrainPilotDatabase.defaultPrograms()
         val other = ProgramWithDays(programs.first { it.id == "gym-ab" },
