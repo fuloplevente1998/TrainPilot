@@ -45,7 +45,7 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   követelmény, nem teljesítési bizonyíték; pontos útvonal/adatforrás/teszt
   megfeleltetés, signed upgrade és fizikai készülékpróba még nyitott.
 
-- A `40119749853` továbbra is az utolsó CI-futás: a Kotlin fordítás egy `context`
+- A korábbi `40119749853` továbbra is az utolsó ismert CI-futás: a Kotlin fordítás egy `context`
   hivatkozás miatt elbukott. A munkafában az `appContext`-javítás megvan, de a
   CI/egységteszt/aláírt upgrade/API-APK futás nincs elindítva az aktuális forráson.
 - `docs/design/NATIVE_DESIGN_HANDOFF.md` most a friss teljes funkcióleltárat és

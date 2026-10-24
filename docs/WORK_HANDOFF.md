@@ -6,21 +6,25 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
 ## Friss mérföldkő – teljes funkcióleltár és kezdőlap
 
-Munkaág `feat/native-android-finalization`, HEAD `a32c5f0`; a finalization remote
-ugyanezen a commiton áll. A munkafa most kód-/teszt-/dokumentáció-módosításokat
-tartalmaz. A legfrissebb upstream `feat/native-android-migration` ref `04dba76`;
-a `36462aa`, `c941413` és `04dba76` a négy újratervezett tervlapot, teljes
-main-funkcióleltárt és összevont natív elhelyezést rögzítő dokumentációs
-checkpointok. Az A01–E20, összesen 81 sor **megőrzési követelmény**, nem
-megvalósítási vagy teszteredmény. A leltár a `docs/design/NATIVE_DESIGN_HANDOFF.md`
-fájlban van; a négy SHA-ellenőrzött tervlap a `docs/design/mockups/` alatt.
-`main` és a migrációs ág íratlan maradt.
+Munkaág `feat/native-android-finalization`, legutóbbi app-/tesztkód-commit
+`a0e7393`; a finalization remote utolsó ismert HEAD-je `a32c5f0`, az új helyi
+commitok pushja a mostani upstream-integráció és statikus ellenőrzés után
+következik. A frissített,
+csak olvasható `feat/native-android-migration` HEAD `1e4783b`. A
+`36462aa`/`c941413`/`04dba76`/`a026f03` dokumentációja a négy újratervezett
+tervlapot, teljes main-funkcióleltárt és összevont natív elhelyezést rögzíti.
+Az A01–E20, összesen 81 sor **megőrzési követelmény**, nem megvalósítási vagy
+teszteredmény. A leltár a `docs/design/NATIVE_DESIGN_HANDOFF.md` fájlban van;
+a négy SHA-ellenőrzött tervlap a `docs/design/mockups/` alatt. `main` és a
+migrációs ág íratlan maradt.
 
-A `033386e` katalógus-/migrációs alkalmazáskód finalization commitként `8ead84a`-val
-megjelent. A legújabb migration fájl-összevetésben a 033 utáni upstream commitok
-nem tartalmaznak új alkalmazáskódot; a véglegesítési ág `87bb0ae`, `43598b2` és
-`ec2c65e` Wear- és tesztjavításait megtartottuk, nem cseréltük vissza az
-upstream eltérő fájlváltozataira.
+A `033386e` katalógus-/migrációs kód finalization commitként `8ead84a`-val
+megjelent. A friss upstreamben a Coach Advice és az edzés-végrehajtási javítások
+érintett kódfája már egyezik; a health-history `edc8f52` és BLE-csatorna
+`1e4783b` módosítását ellenőrizve `b7a82ef`/`a0e7393` cherry-pickkel integráltuk.
+A pontos fájldiff alapján a finalization ág `87bb0ae`, `43598b2`, `ec2c65e`
+Wear-/tesztjavításait megőriztük; az upstream eltérő Wear-fájlverzióját nem
+vettük át.
 
 Az új kezdőlap már dinamikus aktív/importált Folytatás-állapotot, a Coach által
 használt kanonikus célválasztásból származó programnap-ajánlást, tényleges indítási
@@ -30,6 +34,12 @@ mentett paletta megőrzése és HU/EN/DE/RO feliratok is készültek. A célzott
 próbakód a folytatást, ajánlott nap indítását és hiányzó ajánlásnál az Edzés
 megnyitását ellenőrzi; **még egyik Android-próba sem futott**.
 
+A `b7a82ef`/`a0e7393` Egészségnapló-hónap/nap/csatorna útvonalat és 26 provider-
+metrika feliratát adja; a hiányzó nap nem kap korábbi adatot, a frissítés a
+kiválasztott napra irányul. A hozzá tartozó unit-/UI-próbakód még szintén nem
+futott. Nyers rekord-/alvásrészletek, mérési eredet/idő, testsúly szerkesztés és
+teljes D01–D14 paritás továbbra nyitott.
+
 A `40119749853` (`8ead84a`) futás **failure**: az API 36 SDK telepítése sikerült,
 de a Kotlin-fordítás a `BackupRestoreManager.kt:542` katalógus-seedelési hívásánál
 egy nem létező `context` miatt elbukott. Ez forráskódhiba, nem Windows TLS/SDK
@@ -37,10 +47,13 @@ hiba; az aktuális munkafa a függvény paraméterét `appContext`-re javítja.
 Ezen a forráson még nincs új Actions-futás, build, unit/UI teszteredmény,
 aláírt frissítés vagy APK-pár.
 
-Következő: erőforrás-/diffellenőrzés, kód-review, majd `[skip ci]` kódolási commit,
-push kizárólag a finalization ágra, és az aktuális SHA-n a meglévő natív Actions
-kapu. A teljes A01–E20 útvonal/adatforrás/teszt-lefedettség és a fizikai
-telefonos/Watch7-próba továbbra nyitott.
+Az utolsó ismert Actions-futás továbbra `40119749853` (`8ead84a`) failure a
+`BackupRestoreManager.kt:542` hibájával; az `appContext` javítás, Home- és
+Health-batch ezen túlmutató, még nem futtatott forrás. Következő: a friss
+dokumentáció ellenőrzése, statikus locale/XML/hash/diff kapu, dokumentációs
+checkpoint és push kizárólag a finalization ágra, majd a meglévő natív Actions
+kapu az aktuális SHA-n. A teljes A01–E20 útvonal/adatforrás/teszt-lefedettség,
+signed upgrade és fizikai telefonos/Watch7-próba nyitott.
 
 ## Korábbi technikai checkpointok
 
@@ -530,7 +543,7 @@ Utolsó zöld forrás továbbra `dd4cc27` lent; main/verzió változatlan.
 ## Korábbi teljes technikai kapu – 134adcd (2026-10-23)
 
 - **Élő appra telepítési STOP:** a felhasználó adatvédelmi aggálya jogos. A `134adcd` APK-pár technikai CI-bizonylat, nem az adatokat tartalmazó napi alkalmazás frissítésére átadott build. A teljes telefonos funkcióegyezés hiányzik. Előbb elkülönített emulátoron/teszteszközön működés- és migrációvizsgálat, mentés-visszaállítás ellenőrzése, majd csak a releváns kapuk után készülékes frissítési próba. Azonos csomagnévvel a tesztbuild az élő app közös adatterét használja; a régi tár megőrzése és a szintetikus upgrade-siker nem teljes adatbiztonsági garancia. A régi APK visszatelepítése önmagában nem visszaállítás. Ne kérj eltávolítást, adattörlést vagy downgrade-et. Külön alkalmazásazonosítójú párhuzamos tesztkiadás még nem készült; ilyet ne állíts elérhetőnek, és a végleges azonosítót ne változtasd meg.
-- **Kizárólag `feat/native-android-migration`; main merge/kiadás nem engedélyezett.** Munkafa: `/workspace/TrainPilot-native-migration`. Más/Codespaces munkafákat ne írj felül. Ellenőrizd a GitHub valódi HEAD-et; a dokumentációs commit nem új APK.
+- **Az akkori munka kizárólag `feat/native-android-migration` ágon folyt; main merge/kiadás nem volt engedélyezett.** Munkafa: `/workspace/TrainPilot-native-migration`. Más/Codespaces munkafákat ne írj felül. Ellenőrizd a GitHub valódi HEAD-et; a dokumentációs commit nem új APK.
 - **Bevizsgált APK-/alkalmazásforrás `134adcdb76480a9c26a22cc17df6ecc9a8561f0c`.** [CI 39937602813](https://github.com/fuloplevente1998/TrainPilot/actions/runs/39937602813) **teljes SUCCESS**. Telefon/Wear debug és eredeti kulcsos R8 release, csomagnév/verzió/tanúsítvány ellenőrzése sikeres. Letöltött XML: telefon **265/265**, Wear **167/167**, 0 failure/error/skipped.
 - **Kerek Wear UI 183/183**, 183 egyedi eset, 0 failure/error/skipped, API30 x86 emulátoron (68+59+56). Az eredeti fókuszvédelem helyes volt: a Wear setup wizard `EmulatorStatusActivity`-ja a teszt közben előtérbe ugrott. A tesztemulátorban letiltva, a forgatási teszt megvárja a tényleges fókuszt. Termék Wear fókuszműködés nincs megkerülve. Képek és logok az artifactokban.
 - **Valódi aláírt frissítés 2/2 sikeres:** az eredeti `v1.3.71` és a **gyorsított `v1.3.71-perf-20261022`** tényleges release APK-ról `adb install -r`, eltávolítás/adattörlés nélkül. A közös szintetikus fixture Unicode/nagy napló, törlés, program/nap, testsúly, naptár, nyelv/haptika, draft/ismeretlen kulcs, változatlan eredeti localStorage/mentéshash, GPS, fotó, régi health DB és idempotencia ellenőrzése mind sikeres. **Nem minden valós felhasználói adatváltozat garanciája.**

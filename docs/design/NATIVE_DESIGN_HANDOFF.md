@@ -162,9 +162,14 @@ Forráscsoportok: `v215`, `v220/v221`, `v233/v235`, `progression-2`,
 
 A metrikákat kulcsonként is össze kell vetni a `health-journal-120`,
 `samsung-health-provider`, `health-details`, `cardio-daily`, `v240` és
-`samsung-energy-access-184` működésével és a natív adapterekkel. A jelenlegi
-natív 20 definíció és a UI 26-os felirata **ismert eltérés**, nem elfogadott teljes
-lefedettség; a végleges darabszám a valóban bekötött forrásból jön.
+`samsung-energy-access-184` működésével és a natív adapterekkel. A
+`edc8f52`-ben megjelenik mind a 26 provider-metrikakulcs és a havi/nap/csatorna
+választás; ez a finalization ágra `b7a82ef`-ként, a BLE-azonosító javítása
+`a0e7393`-ként került át. A kiválasztott nap hiányzó értékét nem helyettesíti
+korábbi adattal. Ez a kódbeli bekötés még nem futtatott ellenőrzés. A nyers
+rekordok és alvásrészletek, pontos mérési idő/eredet, további forrásszűrés és
+teljes testsúlyszerkesztési paritás külön szükséges; a darabszám önmagában nem
+igazolja a teljes egészségnaplót.
 
 ### E. Naptár, eszközök, mentések és általános beállítások
 

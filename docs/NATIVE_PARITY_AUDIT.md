@@ -44,7 +44,18 @@ aláírt szintetikus upgrade **2/2**, nincs hiba/kihagyás. Letöltött release 
 hash/csomag/verzió/signer ellenőrizve; a measured protokoll és az időnaplómezők a telefonos R8 DEX-ben is jelen vannak.
 [Gépi bizonylat](builds/2026-10-23-native-measured-intervals.json).
 
-**Aktuális nem bevizsgált batch:** a legfrissebb `0a3865c` már a lapozott naplót,
+## Friss egészségnapló-kód – még nem igazolt
+
+Az upstream `edc8f52` dátum-, nap- és csatornaválasztást, kiválasztott napra
+irányított adatfrissítést és mind a 26 provider-metrikakulcs lokalizált
+megjelenítését vezette be; a finalization ágon `b7a82ef`, a kanonikus BLE
+csatornaazonosító javítása `a0e7393`. A kiválasztott nap hiányzó adata nem esik
+vissza korábbi mérésre. A kód és a kapcsolódó unit/UI próbák még nem futottak.
+Nyers rekord-/alvásrészlet, pontos eredet/időbélyeg, forrásonkénti szűrés,
+testsúly CRUD/előzmény és valós provider-engedélyezés külön nyitott tétel; ez a
+batch nem zárja le a D01–D14 teljes funkcióparitását.
+
+**Korábbi, akkor még nem bevizsgált batch (`0a3865c`):** a lapozott naplót,
 privát részlet/fotó/több route megjelenítést, teljes naptár sync-tervet és programnapi
 kezdeti GPS-választást is tartalmazza. 73 megírt/nem futtatott batch-próba.
 [Aktuális átadó](WORK_HANDOFF.md), [teljes terv](plans/NATIVE_FINAL_DELIVERY.md).

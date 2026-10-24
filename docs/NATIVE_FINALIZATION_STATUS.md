@@ -1,19 +1,24 @@
 # Natív migráció – véglegesítési státusz
 
 Frissítve: **2026-10-24**. Munkaág: `feat/native-android-finalization`,
-HEAD `a32c5f0`; a mostani alkalmazás-/teszt-/dokumentációs módosítások még
-munkafában vannak, nem buildeltek. A `main` (`8a36502`, alkalmazásbaseline
-`7473b30`) érintetlen; az egyirányú forráság frissített HEAD-je `04dba76`.
-A `36462aa`, `c941413` és `04dba76` újratervezett képtáblákat, teljes
+legutóbbi app-/tesztkód-commit `a0e7393`; a `dee1199` Home- és
+`b7a82ef`/`a0e7393` Health-kód/próbakód még nem buildelt. A
+`main` (`8a36502`, alkalmazásbaseline `7473b30`) érintetlen; az
+egyirányú forráság frissített HEAD-je `1e4783b`.
+A `36462aa`, `c941413`, `04dba76` és `a026f03` újratervezett képtáblákat, teljes
 main-funkcióleltárt és összevont natív elhelyezési tervet tartalmaz; az A01–E20
 lista **81 megőrzési követelmény**, nem kész funkció- vagy tesztállapot.
 Az `033386e` katalógus/migráció tartalma a finalization ágon már megjelent
-`8ead84a`-ként. A pontos `git diff HEAD origin/feat/native-android-migration`
-felülvizsgálata után a finalization ág `87bb0ae`, `43598b2` és `ec2c65e`
-Wear-/tesztjavításait megőriztük; az upstream fájlverziók vak átvétele ezeket
-visszavonná. A legutóbbi új upstream commitok dokumentációs változások, az
-alkalmazáskód nem változott `033386e` óta. A `main` Capacitor/WebView felülete
-és Node/npm manifesztje nincs átemelve; a cél a natív Compose.
+`8ead84a`-ként. A `edc8f52` 26 metrikakulcsos, dátum-/csatornaválasztós
+Egészségnaplója és az `1e4783b` BLE-csatorna javítása ellenőrzötten
+cherry-pickelve `b7a82ef`/`a0e7393` lett. A Coach-advice és a korábbi
+edzés-végrehajtási javítások kódja már egyezik; a `dee1199` hozzáadta a
+Coach-cél lokalizált programnevét a Kezdőlap ajánlásához. A pontos
+`git diff HEAD origin/feat/native-android-migration` felülvizsgálata után a
+finalization ág `87bb0ae`, `43598b2` és `ec2c65e` Wear-/tesztjavításait
+megőriztük; az upstream eltérő Wear-fájlverziójának vak átvétele ezeket
+visszavonná. A `main` Capacitor/WebView felülete és Node/npm manifesztje nincs
+átemelve; a cél a natív Compose.
 
 ## Státuszjelölések és bizonyíték
 
@@ -54,7 +59,7 @@ Fizikai telefonos/Watch7-próba sem történt.
 | Beltéri, GPS nélküli időmérés | **KÉSZ** | A `40384e7` kapu 20 célzott tesztet és a telefonos teljes unit-csomagot igazolta. Az új intervallummód ezzel nem tekinthető igazoltnak. |
 | Automatikus rögzítés és intervallumidőzítés | **ELLENŐRIZENDŐ** | Korábbi stopper/GPS record/undo viselkedés tesztelt; a `9ea2ddf` single-set módja és hordozható presetje új, még nem futtatott tesztekkel érkezett. |
 | Pihenő, egyedi beállítások, tartós mentés | **RÉSZBEN KÉSZ** | Skip/±15 mp és Room rollback tesztelve; a friss globális timer-default/preset és importált draft paritása nyitott. |
-| Health Connect és Samsung Health | **ELLENŐRIZENDŐ** | Natív adapterek és foreground frissítés jelen van; a `036a2cd` frissítése és az engedély-/háttérváltási út nincs újra CI-vel igazolva, fizikai Health-próba nincs. |
+| Health Connect, Samsung Health és egészségnapló | **ELLENŐRIZENDŐ** | Natív adapterek, foreground frissítés, 26 provider-metrikakulcs és havi/nap/csatorna Egészségnapló-kód jelen van (`b7a82ef`/`a0e7393`); a frissítési út a kiválasztott napot kéri, hiányzó napot nem helyettesít. Ezek és a tesztkód még nem futottak ezen a SHA-n. Nyers rekordok, pontos forrás/időbélyeg, részletes alvás, testsúly CRUD/előzmény, engedély-/háttérváltás és fizikai próba nyitott. |
 | Telefon–Wear szinkron és óráról vezérelt edzés | **RÉSZBEN KÉSZ** | A natív ownership/command út és unit tesztjei léteznek; offline tulajdonosváltás, két eszközös adatkonfliktus és Watch7 próba még nyitott. |
 | Wear szenzorok, GPS, értesítés, komplikáció, Tile | **ELLENŐRIZENDŐ** | A natív Wear komponensek visszaállítva, a kerek UI 183/183 korábban zöld. Ez nem bizonyít valós szenzor-, GPS-, Tile- vagy értesítési működést. |
 | Naptár, fejlődési statisztika, edzésnapló | **RÉSZBEN KÉSZ** | Room naptár, Coach-adatok és paginált napló van; per-gyakorlat Coach és 32 main-referencia eset, 6 Room- és 1 hordozható-beállítási unit teszt kódja bekerült (`38e38df`), de az aktuális futás még nem igazolta. Timezone-paritás, teljes nézet és friss Coach-sorrendezés újratesztje is nyitott. |
