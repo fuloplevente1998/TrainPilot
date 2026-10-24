@@ -16,7 +16,8 @@ internal object NativeProfileProgramPreview {
         val reductions: List<Reduction>,
         val estimateMinutes: Int,
         val workSets: Int,
-        val sourceProfileJson: String
+        val sourceProfileJson: String,
+        val history128: JSONObject = JSONObject()
     )
 
     private fun keys(json: JSONObject, name: String): Set<String> {
@@ -163,4 +164,5 @@ internal object NativeProfileProgramPreview {
         .put("prescriptions", JSONObject(preview.prescriptions.toString()))
         .put("templateVersion", 2)
         .put("sourceTemplateId", preview.source.program.id)
+        .also { if (preview.history128.has("entries")) it.put("history128", JSONObject(preview.history128.toString())) }
 }
