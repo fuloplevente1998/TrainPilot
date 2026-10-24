@@ -193,49 +193,49 @@ object WearSyncRepository {
                                 withContext(Dispatchers.Main) {
                                     WearCommandReceipts.complete(appContext, command, "error", uri)
                                 }
-                                return@mutate
-                            }
-                            val origin = PhoneGpsRoute193.startOrigin(command)
-                            if (origin.isNotEmpty()) {
-                                PhoneGpsRoute193.authorizeOwned(
-                                    appContext,
-                                    JSONObject(finalSnapshot.toString()).put("watchSourceNode193", origin)
-                                )
-                            }
-                            val finishedIso = command.optString("finishedAt").ifBlank { Instant.now().toString() }
-                            val historyObj = JSONObject(finalSnapshot.toString())
-                                .put("id", workoutId)
-                                .put("syncId", workoutId)
-                                .put("workoutId", workoutId)
-                                .put("finished", finishedIso)
-                                .put("originDevice", "watch")
+                            } else {
+                                val origin = PhoneGpsRoute193.startOrigin(command)
+                                if (origin.isNotEmpty()) {
+                                    PhoneGpsRoute193.authorizeOwned(
+                                        appContext,
+                                        JSONObject(finalSnapshot.toString()).put("watchSourceNode193", origin)
+                                    )
+                                }
+                                val finishedIso = command.optString("finishedAt").ifBlank { Instant.now().toString() }
+                                val historyObj = JSONObject(finalSnapshot.toString())
+                                    .put("id", workoutId)
+                                    .put("syncId", workoutId)
+                                    .put("workoutId", workoutId)
+                                    .put("finished", finishedIso)
+                                    .put("originDevice", "watch")
 
-                            // Attach any watch GPS route bindings (#193) to the matching sets
-                            attachWatchRouteBindings193(appContext, workoutId, historyObj)
+                                // Attach any watch GPS route bindings (#193) to the matching sets
+                                attachWatchRouteBindings193(appContext, workoutId, historyObj)
 
-                            // Attach watch Health Services summary if present
-                            val healthSummary = command.optJSONObject("healthSummary")
-                            if (healthSummary != null) {
-                                historyObj.put("wear", healthSummary)
+                                // Attach watch Health Services summary if present
+                                val healthSummary = command.optJSONObject("healthSummary")
+                                if (healthSummary != null) {
+                                    historyObj.put("wear", healthSummary)
+                                }
+
+                                val feedback = command.optJSONObject("feedback")
+                                if (feedback != null) historyObj.put("feedback", JSONObject(feedback.toString()).put("updatedAt", System.currentTimeMillis()))
+                                val saved = TrainPilotWorkoutFinalization(appContext, db).finishWorkout(historyObj, fromWatch = true)
+                                if (feedback != null) settingsStore.setPendingFeedback(null, null)
+                                else settingsStore.setPendingFeedback(workoutId, saved.history.optString("started", workoutId))
+                                withContext(Dispatchers.Main) {
+                                    saved.closedSnapshot?.let { publishActiveWorkoutSnapshot(appContext, it) }
+                                    // A saved receipt is possible only after native close and draft cleanup.
+                                    WearCommandReceipts.complete(appContext, command, "saved", uri)
+                                }
+
+                                val workoutResult = JSONObject()
+                                    .put("commandId", command.optString("commandId"))
+                                    .put("workoutId", workoutId)
+                                    .put("status", "saved")
+                                    .put("feedbackAnswered", feedback != null)
+                                publishWatchHomeSnapshot(appContext, workoutResult)
                             }
-
-                            val feedback = command.optJSONObject("feedback")
-                            if (feedback != null) historyObj.put("feedback", JSONObject(feedback.toString()).put("updatedAt", System.currentTimeMillis()))
-                            val saved = TrainPilotWorkoutFinalization(appContext, db).finishWorkout(historyObj, fromWatch = true)
-                            if (feedback != null) settingsStore.setPendingFeedback(null, null)
-                            else settingsStore.setPendingFeedback(workoutId, saved.history.optString("started", workoutId))
-                            withContext(Dispatchers.Main) {
-                                saved.closedSnapshot?.let { publishActiveWorkoutSnapshot(appContext, it) }
-                                // A saved receipt is possible only after native close and draft cleanup.
-                                WearCommandReceipts.complete(appContext, command, "saved", uri)
-                            }
-
-                            val workoutResult = JSONObject()
-                                .put("commandId", command.optString("commandId"))
-                                .put("workoutId", workoutId)
-                                .put("status", "saved")
-                                .put("feedbackAnswered", feedback != null)
-                            publishWatchHomeSnapshot(appContext, workoutResult)
                         }
 
                         "discardWorkout" -> {
