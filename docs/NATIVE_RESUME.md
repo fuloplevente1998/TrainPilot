@@ -22,6 +22,20 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 
 ## Legutóbbi konkrét munka
 
+- Aktuális appforrás **606b8c0**: Egészség egyedi mérés/alvás részletpanel a meglévő
+  HealthJournalStore-ból, 25 rekord/SQL típus+eredet/nap/csatorna, idő+ID kurzor,
+  max200 eredet, napi összesítés nélkül; régi Java/Kotlin page API megőrizve.
+  Saját source/channel/start/end/modified; HC ms+numerikus és Samsung ISO+név
+  alvásfázisok, 20-as minta/szakasz oldalak. Hiány nem helyettesül aggregátumból;
+  fázis alapú vs. rögzített idő külön. Generation/pendingRestore+metadata gate,
+  adatcsere után régi sor nélküli hiba és explicit újratöltés; HU/EN/DE/RO.
+  16 unit+3 UI új kód; **batch217 új unit+15 UI nem futott**. XML/diff és célzott
+  SQLite szűrés/63 azonos idejű kurzor ellenőrzés, nem Android/Kotlin próba.
+  Teljes ág követhető draft állapotlapja **PR #238**, részcommitok után frissítendő:
+  https://github.com/fuloplevente1998/TrainPilot/pull/238
+  Következő: teljes A–E leltár további program/profil/kedvenc/szerkesztő,
+  Health forráspreferencia/engedély, UI/lokalizáció/performance/backup nyitott pontjai.
+
 - Aktuális alkalmazásforrás **e3e79d3**: közös `weight_journal` Egészség/Fejlődés
   felől, meglévő Room weights, dátumos add/edit/megerősített exact-ID delete.
   Metadata→Room tx→eredetisor-egyezés, rawJson ismeretlen mezők megőrzése;
@@ -120,7 +134,7 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 - Phone UI kapu alapja **1d38edf**: külön native AndroidTest source set,
   meglévő native-android.yml phone-ui job, raw adb screencap checkpoint/ack és
   származtatottnak jelölt XML/manifest. Az akkori4 óta8 instrumentációs próbakódra bővült.
-- **201 új unit + 12 instrumentációs tesztkód megírva, még nem futtatva.**
+- **217 új unit + 15 instrumentációs tesztkód megírva, még nem futtatva.**
   Nincs új zöld kapu/APK/screenshot. Utolsó teljes zöld forrás **dd4cc27**:
   unit Phone393/Wear167, Wear UI183, signed upgrade2. Bizonyíték: WORK_HANDOFF.md.
 - Main utóbbi 8a36502d változása csak AGENTS thinking-dokumentáció; main app baseline

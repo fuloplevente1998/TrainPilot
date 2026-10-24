@@ -4,6 +4,42 @@ Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Követhető összállapot és legfrissebb egészségrészletek
+
+Draft [PR #238](https://github.com/fuloplevente1998/TrainPilot/pull/238) a teljes
+natív ág pipálható állapotlapja. A kód elkészülte, a futtatással igazolt állapot és
+az elfogadás külön lista; részcommitok után frissítendő. Nem merge-felhatalmazás.
+
+Alkalmazásforrás **606b8c0**, [skip ci]. Egészség → Egyedi egészségmérések / Alvásrészletek:
+a kiválasztott nap/csatorna meglévő HealthJournalStore rekordjai külön, csak olvasható
+panelben. 25 rekord/oldal, SQL típus- és eredetszűrés a LIMIT előtt, kétkulcsos
+idő+row_id kurzor, előző/következő. Forrásválasztók a kért nap/csatorna/típus adataiból
+(max200 eredet), nincs teljes egészségtörténet-betöltés vagy napi alvásösszesítés
+minden rekordlaphoz. A régi 7-paraméteres Kotlin/Java page API defaultjai megmaradnak.
+
+Minden rekord saját channel/source/start/end/forrásbeli módosítási időt mutat.
+Napi összesítésből nem készül kitalált egyedi mérés; egymást átfedő források nem
+adódnak össze. Skalár/vérnyomás és időbélyeges pulzus/sebességminták; szakasz/minta
+részletek 20-as oldalakban. Health Connect numerikus+milliszekundumos és Samsung
+nevesített+ISO alvásfázisok kezelve. Az SDK által tárolt alvásidő/fázis alapú idő
+külön feliratot kap, nem számolunk új összeadott éjszakát. Ismeretlen/hibás fázis
+ismeretlen marad. Panelbezárás a napot, mérési adatot és edzést nem módosítja.
+
+Metadata admission és Health generation/pendingRestore ellenőrzés: adatcsere után
+régi kurzor nem használható; hiba régi sorok nélkül jelenik meg, explicit újratöltés
+indít új böngészést. Azonos kérés újrapróbálása külön reload kulccsal is működő útba
+kötve. HU/EN/DE/RO 33 új szöveg; meglévő napi alvásszámláló felirata pontosítva.
+
+16 új unit +3 Phone UI-próbakód: 63 azonos idejű rekord lapozása, típus/eredet/nap/
+csatorna, generation/restore, aggregátumból nem gyártott sor, HC/Samsung/hibás fázis,
+mintaoldalak, forrásos UI, mindkét alvásforma és adatcsere utáni reload. **Összesen
+217 új unit +15 instrumentációs tesztkód megírva, még nem futott.** Helyben négy
+XML/hivatkozás/diff és célzott SQLite scope/kurzor-próba történt, nem Kotlin/Android
+futtatás. Nincs új APK/screenshot/CI; utolsó teljes zöld dd4cc27, élő telepítés STOP.
+További Health forráspreferencia/háttérengedély/lokalizáció és teljes A–E leltár,
+program/profil/egyedi gyakorlat/kedvencek/UI/performance/backup részletek még nyitottak;
+PR #238-ban külön láthatók. Ez a blokk nem teljes app- vagy Health-paritás elfogadása.
+
 ## Legfrissebb alkalmazásforrás – közös kézi testsúlynapló
 
 **e3e79d3**, [skip ci]. Egészség és Fejlődés → ugyanaz a `weight_journal` útvonal,

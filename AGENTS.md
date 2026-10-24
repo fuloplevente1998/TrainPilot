@@ -24,6 +24,9 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
   a már egyeztetett feladat végrehajtását jelenti, nem újabb tervkérés.
 - Haladj önállóan a jóváhagyott keretben; rutinszerű, visszafordítható javításhoz
   ne kérj újra engedélyt. Hosszabb munka közben adj érdemi állapotjelzést.
+- A natív ág követhető állapotlapja a draft [PR #238](https://github.com/fuloplevente1998/TrainPilot/pull/238).
+  Részcommitok és igazolt eredmények után frissítsd a leírás pipálható listáit;
+  megírt kód, futtatott ellenőrzés és hátralévő munka külön szerepeljen.
 - A felhasználó nem akar órákat várni helyi teljes tesztekre és APK-fordításra.
   **Teljes regresszió, Chromium/emulátor, Gradle és aláírt APK: GitHub Actions.**
   Helyben csak feltárás, szerkesztés, szintaxis/diff és indokolt célzott gyors teszt.

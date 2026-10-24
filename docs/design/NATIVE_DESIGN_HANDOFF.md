@@ -285,3 +285,12 @@ NativeWeightJournalRepository; 13 új unit +2 telefonos UI-próbakód, még nem 
 Ez funkcionális bekötés, nem a végleges vizuális dizájn vagy teljes D06-elfogadás.
 A providerből érkező történeti testsúly ugyanabban az Egészség menüben külön
 adatforrásként marad; kézi mérés szerkesztése nem írja át a provider mérését.
+
+### D03–D05 részletpanel implementációs nyom – 2026-10-24
+
+`606b8c0`: kiválasztott napi/csatornás egyedi mérések és külön alvás részletpanel,
+25 rekordos oldalak/eredetszűrés, saját forrás és mérési/módosítási idő; HC/Samsung
+fázisok és pulzus/sebességminták 20-as részletoldalakban. Dátum/összesítés nem
+módosul bezáráskor; aggregátumból nem gyártunk hiányzó mérést. Források nem adódnak
+össze. Visszaállítás utáni kurzor explicit reloadot kér. 16 unit+3 UI új próbakód,
+még nem futott; végleges dizájn/CI/készülékes Health-elfogadás nincs igazolva.
