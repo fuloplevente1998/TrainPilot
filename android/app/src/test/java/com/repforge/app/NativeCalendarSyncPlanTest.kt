@@ -27,8 +27,9 @@ class NativeCalendarSyncPlanTest {
     }
     @Test fun legacyMissingTimesKeepTheExistingOneHourFallback() {
         val operation = NativeCalendarSyncPlan.operations(listOf(entry(0).copy(startIso = "", endIso = ""))).single()
-        assertEquals("2026-10-24T18:00:00Z", operation.payload!!.getJSONObject("start").getString("dateTime"))
-        assertEquals("2026-10-24T19:00:00Z", operation.payload.getJSONObject("end").getString("dateTime"))
+        val payload = requireNotNull(operation.payload)
+        assertEquals("2026-10-24T18:00:00Z", payload.getJSONObject("start").getString("dateTime"))
+        assertEquals("2026-10-24T19:00:00Z", payload.getJSONObject("end").getString("dateTime"))
         assertTrue(NativeCalendarSyncPlan.operations(emptyList()).none())
     }
 }

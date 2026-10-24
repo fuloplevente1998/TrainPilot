@@ -49,6 +49,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.repforge.app.ActiveWorkoutStore
+import com.repforge.app.NativeProgramGpsChoice
 import com.repforge.app.NativeWorkoutSession
 import com.repforge.app.PhoneWorkoutExecution
 import com.repforge.app.NativeWorkoutTarget
@@ -92,23 +93,44 @@ fun TrainPilotAppScaffold(
     var starting by remember { mutableStateOf(false) }
     // Memory-only user start intent. Process recreation/navigation cannot silently start GPS.
     var launchGps by remember { mutableStateOf<NativeWorkoutTarget?>(null) }
-    fun startWorkout(programId: String?, dayId: String, scheduleId: String? = null) {
-        if (!starting) {
-            starting = true
-            scope.launch {
-                try {
-                    NativeWorkoutSession.startWorkout(context, programId, dayId, scheduleId)
-                    navController.openCanonicalWorkout()
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (error: Exception) {
-                    snackbar.showSnackbar(error.message ?: "Az edzést nem sikerült elindítani. Az adatok megmaradtak.")
-                } finally {
-                    starting = false
-                }
-            }
+    data class PendingProgram(val option: NativeProgramGpsChoice.Option, val dayId: String, val scheduleId: String?)
+    var pendingProgram by remember { mutableStateOf<PendingProgram?>(null) }
+    fun launchProgram(programId: String?, dayId: String, scheduleId: String?, option: NativeProgramGpsChoice.Option?, record: Boolean) {
+        starting = true
+        scope.launch {
+            try {
+                val launch = NativeWorkoutSession.startProgramWorkout(context, programId, dayId, scheduleId,
+                    option?.activityId, record)
+                launchGps = launch.gpsTarget
+                navController.openCanonicalWorkout()
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (error: Exception) { snackbar.showSnackbar(error.message ?: "Az edzést nem sikerült elindítani.") }
+            finally { starting = false }
         }
     }
+    fun startWorkout(programId: String?, dayId: String, scheduleId: String? = null) {
+        if (starting || pendingProgram != null) return
+        if (ActiveWorkoutStore.current(context)?.optBoolean("active") == true) {
+            launchProgram(programId, dayId, scheduleId, null, false)
+            return
+        }
+        starting = true
+        scope.launch {
+            try {
+                val option = NativeProgramGpsChoice.read(context, programId, dayId)
+                if (option != null) {
+                    pendingProgram = PendingProgram(option, dayId, scheduleId)
+                    starting = false
+                } else launchProgram(programId, dayId, scheduleId, null, false)
+            } catch (cancelled: CancellationException) { starting = false; throw cancelled }
+            catch (error: Exception) { starting = false; snackbar.showSnackbar(error.message ?: "Az edzés nem indítható.") }
+        }
+    }
+    pendingProgram?.let { pending -> ProgramGpsStartDialog(pending.option, settings.language,
+        onCancel = { pendingProgram = null }, onStart = { record ->
+            pendingProgram = null
+            launchProgram(pending.option.programId, pending.dayId, pending.scheduleId, pending.option, record)
+        }) }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Home.route
 

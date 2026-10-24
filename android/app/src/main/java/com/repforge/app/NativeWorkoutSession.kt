@@ -21,10 +21,16 @@ internal object NativeWorkoutSession {
     private val startLock = Mutex()
 
     suspend fun startWorkout(context: Context, requestedProgramId: String?, dayId: String, scheduleId: String? = null,
-        database: TrainPilotDatabase = TrainPilotDatabase.getInstance(context)): JSONObject = startLock.withLock {
+        database: TrainPilotDatabase = TrainPilotDatabase.getInstance(context)): JSONObject =
+        startProgramWorkout(context, requestedProgramId, dayId, scheduleId, database = database).snapshot
+
+    /** The initial GPS choice applies only to the starting activity, never to recovery or a later exercise. */
+    suspend fun startProgramWorkout(context: Context, requestedProgramId: String?, dayId: String, scheduleId: String? = null,
+        gpsActivityId: String? = null, recordRoute: Boolean = false,
+        database: TrainPilotDatabase = TrainPilotDatabase.getInstance(context)): Launch = startLock.withLock {
         val app = context.applicationContext
         // Never replace an existing phone session or a watch-owned mirror on a repeated tap.
-        withContext(Dispatchers.Main.immediate) { recoverActive(app) }?.let { return@withLock it }
+        withContext(Dispatchers.Main.immediate) { recoverActive(app) }?.let { return@withLock Launch(it) }
         val db = database
         val settings = TrainPilotSettingsStore(app).current()
         var expectedSchedule: com.repforge.app.data.db.CalendarScheduleEntity? = null
@@ -76,7 +82,13 @@ internal object NativeWorkoutSession {
                 .put("exercises", exercises).put("originDevice", "phone")
                 .also { frame -> expectedSchedule?.let { frame.put("scheduleId", it.id) } }
         }
-        withContext(NonCancellable + Dispatchers.IO) {
+        val first = candidate.getJSONArray("exercises").getJSONObject(0)
+        if (gpsActivityId != null) require(first.optString("id") == gpsActivityId &&
+            NativeOutdoorStart.eligible(gpsActivityId, first.optString("measurementType"), first.optString("repUnit"))) {
+            "Az edzés kezdő gyakorlata időközben megváltozott. Indítsd újra a kiválasztást."
+        }
+        require(!recordRoute || gpsActivityId != null) { "A GPS indításához kifejezett aktivitásválasztás szükséges." }
+        val saved = withContext(NonCancellable + Dispatchers.IO) {
             val schedule = expectedSchedule
             if (schedule == null) withContext(Dispatchers.Main.immediate) { installPrepared(app, candidate) }
             else db.withTransaction {
@@ -85,6 +97,9 @@ internal object NativeWorkoutSession {
                 withContext(Dispatchers.Main.immediate) { installPrepared(app, candidate) }
             }
         }
+        if (saved.optString("workoutId") != candidate.optString("workoutId")) return@withLock Launch(saved)
+        if (gpsActivityId != null) TrainPilotSettingsStore(app).setGpsStartChoice(gpsActivityId, recordRoute)
+        Launch(saved, if (recordRoute) NativeOutdoorStart.target(saved, gpsActivityId!!) else null)
     }
 
     /** Only an explicit successful new start returns a GPS intent. Never persisted/replayed on recovery. */
