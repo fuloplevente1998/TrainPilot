@@ -122,6 +122,48 @@ class NativePhoneNavigationTest {
             compose.onNodeWithTag("navigation_back").performClick()
         }
     }
+    @Test fun trainingProfilePersistsAfterSettingsReentryWithoutGuessingMeasurements() {
+        launch()
+        compose.onNodeWithTag("navigation_settings").performClick()
+        compose.onNodeWithTag("training_profile_open").performScrollTo().performClick()
+        compose.onNodeWithTag("profile_field_age").performTextReplacement("28")
+        compose.onNodeWithTag("profile_field_minutes").performTextReplacement("75")
+        compose.onNodeWithTag("profile_field_goal").performTextReplacement("fitness")
+        compose.onNodeWithTag("profile_save").performClick()
+        compose.waitUntil(15000) { runBlocking(Dispatchers.IO) {
+            JSONObject(settings.current().profileJson).optInt("age") == 28
+        } }
+        compose.waitUntil(15000) {
+            compose.onAllNodesWithTag("profile_save").fetchSemanticsNodes().isEmpty()
+        }
+        compose.onNodeWithTag("navigation_back").performClick()
+        compose.onNodeWithTag("navigation_settings").performClick()
+        compose.onNodeWithTag("training_profile_open").performScrollTo().performClick()
+        compose.onNodeWithTag("profile_field_age").assertTextContains("28")
+        compose.onNodeWithTag("profile_field_minutes").assertTextContains("75")
+        assertFalse(JSONObject(runBlocking(Dispatchers.IO) { settings.current().profileJson }).has("height"))
+        screenshot("training_profile_edited")
+    }
+
+    @Test fun invalidTrainingProfileDoesNotOverwriteStoredProfile() {
+        runBlocking(Dispatchers.IO) {
+            settings.saveTrainingProfile(JSONObject().put("age", 27)
+                .put("gear", org.json.JSONArray().put("dumbbell")))
+        }
+        launch()
+        compose.onNodeWithTag("navigation_settings").performClick()
+        compose.onNodeWithTag("training_profile_open").performScrollTo().performClick()
+        compose.onNodeWithTag("profile_field_weight").performTextReplacement("Infinity")
+        compose.onNodeWithTag("profile_save").performClick()
+        compose.waitUntil(15000) {
+            compose.onAllNodesWithTag("profile_write_error").fetchSemanticsNodes().isNotEmpty()
+        }
+        val stored = JSONObject(runBlocking(Dispatchers.IO) { settings.current().profileJson })
+        assertEquals(27, stored.getInt("age"))
+        assertEquals("dumbbell", stored.getJSONArray("gear").getString(0))
+        assertFalse(stored.has("weight"))
+    }
+
     @Test fun settingsThemeAndLanguageChangesReturnToTheirOrigin() {
         launch(); tab("journal")
         compose.onNodeWithTag("navigation_settings").performClick()
