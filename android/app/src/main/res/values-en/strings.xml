@@ -79,4 +79,10 @@
     <string name="program_gps_help">Your choice is remembered for this activity. Location permission and device location are required.</string>
     <string name="program_start_action">Start</string>
     <string name="program_start_cancel">Cancel</string>
+    <string name="replacement_title">Interrupted data replacement</string>
+    <string name="replacement_explanation">The previous operation did not finish. Resume it or select another valid backup. Workout starts remain blocked until recovery completes.</string>
+    <string name="replacement_error">Recovery failed. Local recovery files were retained.</string>
+    <string name="replacement_resume">Resume operation</string>
+    <string name="replacement_json">Choose another JSON backup</string>
+    <string name="replacement_zip">Choose another ZIP backup</string>
 </resources>

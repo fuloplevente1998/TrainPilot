@@ -88,6 +88,12 @@ fun SettingsScreen(
         uri?.let { viewModel.onSafZipImportCompleted(it) }
     }
 
+    if (state.needsRecovery) {
+        ReplacementRecoveryPanel(state.settings.language, state.replacementBusy, state.recoveryError,
+            viewModel::resumeReplacement, viewModel::onSafJsonImportCompleted, viewModel::onSafZipImportCompleted)
+        return
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)

@@ -79,4 +79,10 @@
     <string name="program_gps_help">A választást megjegyezzük ehhez az aktivitáshoz. Pontos helyengedély és bekapcsolt rendszerhely szükséges.</string>
     <string name="program_start_action">Indítás</string>
     <string name="program_start_cancel">Mégse</string>
+    <string name="replacement_title">Félbeszakadt adatcsere</string>
+    <string name="replacement_explanation">A korábbi művelet nem fejeződött be. Folytathatod a kiválasztott műveletet, vagy megadhatsz másik érvényes mentést. Az edzésindítás addig védetten tiltott.</string>
+    <string name="replacement_error">A helyreállítás nem sikerült. A helyi helyreállító fájlok megmaradtak.</string>
+    <string name="replacement_resume">Művelet folytatása</string>
+    <string name="replacement_json">Másik JSON-mentés választása</string>
+    <string name="replacement_zip">Másik ZIP-mentés választása</string>
 </resources>

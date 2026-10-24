@@ -79,4 +79,10 @@
     <string name="program_gps_help">Die Auswahl wird für diese Aktivität gespeichert. Standortberechtigung und Gerätestandort sind erforderlich.</string>
     <string name="program_start_action">Starten</string>
     <string name="program_start_cancel">Abbrechen</string>
+    <string name="replacement_title">Unterbrochener Datenaustausch</string>
+    <string name="replacement_explanation">Der vorherige Vorgang wurde nicht abgeschlossen. Setze ihn fort oder wähle eine andere gültige Sicherung. Trainingsstarts bleiben bis zum Abschluss gesperrt.</string>
+    <string name="replacement_error">Wiederherstellung fehlgeschlagen. Lokale Wiederherstellungsdateien bleiben erhalten.</string>
+    <string name="replacement_resume">Vorgang fortsetzen</string>
+    <string name="replacement_json">Andere JSON-Sicherung wählen</string>
+    <string name="replacement_zip">Andere ZIP-Sicherung wählen</string>
 </resources>

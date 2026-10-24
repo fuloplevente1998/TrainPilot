@@ -149,15 +149,64 @@ class BackupRestoreManager(context: Context) {
     }
 
     /** Imports a JSON backup from a user-selected SAF Uri with full health & route reconciliation. */
-    suspend fun importJsonBackupFromUri(uri: Uri): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun importJsonBackupFromUri(uri: Uri, recoverInterrupted: Boolean = false): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val rawBytes = readUriBytes(uri, JSON_LIMIT)
-            val data = JSONObject(String(rawBytes, StandardCharsets.UTF_8))
-            NativeDataReplacement.exclusively(appContext) { applyValidatedRestoreData(data) }
+            val bytes = readUriBytes(uri, JSON_LIMIT)
+            val parsed = JSONObject(String(bytes, StandardCharsets.UTF_8))
+            val data = if (parsed.optString("app") == "RepForgeSync") parsed.getJSONObject("data") else parsed
+            photoIds(data) // Validate the history/photo envelope before acquiring the destructive lease.
+            val operation: suspend () -> Unit = {
+                val token = UUID.randomUUID().toString()
+                val dir = transactionDir(token); mkdir(dir)
+                writeSynced(File(dir, "backup.json"), data.toString().toByteArray(StandardCharsets.UTF_8))
+                completeReplacement(NativeReplacementJournal.Entry("json", token, false))
+            }
+            if (recoverInterrupted) NativeDataReplacement.recover(appContext, operation)
+            else NativeDataReplacement.exclusively(appContext, operation)
             Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
+        } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+        catch (error: Exception) { Result.failure(error) }
+    }
+
+    /** Explicit replay of the staged, already selected backup; never an automatic unlock. */
+    suspend fun resumeInterruptedReplacement(): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val entry = NativeReplacementJournal(appContext).read()
+            NativeDataReplacement.recover(appContext) {
+                if (entry.kind == "erase") eraseLocalContents(entry) else completeReplacement(entry)
+            }
+            Result.success(Unit)
+        } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+        catch (error: Exception) { Result.failure(error) }
+    }
+
+    private suspend fun completeReplacement(entry: NativeReplacementJournal.Entry) {
+        val journal = NativeReplacementJournal(appContext)
+        val dir = transactionDir(requireNotNull(entry.token))
+        if (!entry.committed) {
+            val payload = File(dir, if (entry.kind == "zip") "incoming/manifest.json" else "backup.json")
+            val payloadHash = FileInputStream(payload).use { ArchiveIO.hash(it) }
+            check(entry.payloadSha256 == null || entry.payloadSha256 == payloadHash) { "A félbehagyott mentés sérült." }
+            val durableEntry = entry.copy(payloadSha256 = payloadHash)
+            val data = JSONObject(String(readLimited(File(dir, if (entry.kind == "zip") "incoming/backup.json" else "backup.json"), JSON_LIMIT), StandardCharsets.UTF_8))
+            photoIds(data)
+            if (entry.kind == "zip") {
+                // Recheck staged checksums during replay as well as on the original import.
+                val incoming = File(dir, "incoming")
+                val manifest = JSONObject(String(readLimited(File(incoming, "manifest.json"), JSON_LIMIT), StandardCharsets.UTF_8))
+                check(manifest.optString("format") == "TrainPilotArchive" && manifest.optInt("version") == 1)
+                val hashes = manifest.getJSONObject("sha256")
+                val expected = setOf("backup.json", "manifest.json") + photoIds(data).map { "photos/$it.jpg" }
+                val actual = incoming.walkTopDown().filter { it.isFile }.map { it.relativeTo(incoming).invariantSeparatorsPath }.toSet()
+                ArchiveIO.verify(incoming, actual, expected, hashes.keys().asSequence().associateWith { hashes.getString(it) })
+            }
+            journal.write(durableEntry)
+            if (entry.kind == "zip") installPhotosTransactionally(dir, data)
+            applyValidatedRestoreData(data)
+            journal.write(durableEntry.copy(committed = true))
         }
+        removeRecursive(dir)
+        journal.clear()
     }
 
     /** Exports a full ZIP archive (backup.json + photos/(image).jpg + manifest.json) and verifies SHA-256. */
@@ -242,7 +291,7 @@ class BackupRestoreManager(context: Context) {
     }
 
     /** Extracts, verifies, and atomically installs a full ZIP archive from a user-selected SAF Uri. */
-    suspend fun importZipArchiveFromUri(uri: Uri): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun importZipArchiveFromUri(uri: Uri, recoverInterrupted: Boolean = false): Result<Unit> = withContext(Dispatchers.IO) {
         val token = UUID.randomUUID().toString()
         val dir = transactionDir(token)
         try {
@@ -272,21 +321,13 @@ class BackupRestoreManager(context: Context) {
             }
             ArchiveIO.verify(incoming, names, expected, hashes)
 
-            NativeDataReplacement.exclusively(appContext) {
-                // Hold the fence across both installation and rollback, not just the Room import.
-                installPhotosTransactionally(dir, data)
-                try {
-                    applyValidatedRestoreData(data)
-                } catch (restoreErr: Exception) {
-                    rollbackDir(dir)
-                    throw restoreErr
-                }
-                removeRecursive(dir)
-            }
+            val operation: suspend () -> Unit = { completeReplacement(NativeReplacementJournal.Entry("zip", token, false)) }
+            if (recoverInterrupted) NativeDataReplacement.recover(appContext, operation)
+            else NativeDataReplacement.exclusively(appContext, operation)
             Result.success(Unit)
         } catch (e: Exception) {
             // Keep originals/journal if rollback itself failed; never erase recovery evidence.
-            if (!File(dir, "journal.json").isFile) {
+            if (!NativeReplacementJournal(appContext).exists() && !File(dir, "journal.json").isFile) {
                 try { removeRecursive(dir) } catch (_: Exception) { }
             }
             Result.failure(e)
@@ -302,7 +343,7 @@ class BackupRestoreManager(context: Context) {
                 val dest = File(photosDir(), "$id.jpg")
                 val src = File(dir, "incoming/photos/$id.jpg")
                 if (!src.isFile) throw IOException("Photo archive missing.")
-                if (dest.exists()) {
+                if (dest.exists() && !File(original, "$id.jpg").exists()) {
                     FileInputStream(dest).use { input ->
                         FileOutputStream(File(original, "$id.jpg")).use { out ->
                             ArchiveIO.copy(input, out, PHOTO_LIMIT.toLong())
@@ -372,6 +413,7 @@ class BackupRestoreManager(context: Context) {
                 healthStore.installRestore(healthToken)
             }
             migrator.importBackupJson(data, replaceAll = true)
+            settingsStore.markMigrationComplete() // Never reimport the old WebView over an explicit restored backup.
             if (healthToken != null) {
                 healthStore.finishRestore(healthToken, true)
             }
@@ -447,6 +489,17 @@ class BackupRestoreManager(context: Context) {
     suspend fun eraseAllLocalData(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             NativeDataReplacement.exclusively(appContext) {
+                eraseLocalContents(NativeReplacementJournal.Entry("erase", null, false))
+            }
+            Result.success(Unit)
+        } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+        catch (error: Exception) { Result.failure(error) }
+    }
+
+    private suspend fun eraseLocalContents(entry: NativeReplacementJournal.Entry) {
+        val journal = NativeReplacementJournal(appContext)
+        if (!entry.committed) {
+            journal.write(entry)
                 DistanceTrackingService.erase(appContext)
                 HealthBackgroundService.stop(appContext)
                 (appContext.getSystemService(Context.JOB_SCHEDULER_SERVICE) as? JobScheduler)?.cancel(HealthBackgroundJob.ID)
@@ -480,11 +533,9 @@ class BackupRestoreManager(context: Context) {
                     runCatching { ActiveWorkoutStore.clear(appContext) }
                 }
                 WearSyncRepository.publishWatchHomeSnapshot(appContext)
-            }
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
+            journal.write(entry.copy(committed = true))
         }
+        journal.clear()
     }
 
     private fun readUriBytes(uri: Uri, limit: Int): ByteArray {

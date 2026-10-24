@@ -45,6 +45,8 @@ class NativePhoneNavigationTest {
             context.deleteDatabase(PhoneWorkoutExecutionStore.DATABASE)
             ActiveWorkoutStore.clear(context)
         }
+        NativeReplacementJournal(context).clear()
+        context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE).edit().clear().commit()
         settings = TrainPilotSettingsStore(context)
         runBlocking(Dispatchers.IO) {
             val db = TrainPilotDatabase.getInstance(context)
@@ -84,6 +86,26 @@ class NativePhoneNavigationTest {
             Thread.sleep(100)
         }
         fail("Host did not capture raw adb screenshot: $name")
+    }
+    @Test fun coldStartRecoveryRequiresExplicitResumeBeforeOpeningTheApp() {
+        val token = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        val dir = java.io.File(context.noBackupFilesDir, "archive_transactions/$token").apply { mkdirs() }
+        java.io.File(dir, "backup.json").writeText("already committed; must not be imported again")
+        NativeReplacementJournal(context).write(NativeReplacementJournal.Entry("json", token, true, "a".repeat(64)))
+        instrumentation.runOnMainSync {
+            context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE).edit().putBoolean("blocked", true).commit()
+            PhoneWorkoutExecution.store(context).setRestoreBlocked(true)
+        }
+        scenario = ActivityScenario.launch(MainActivity::class.java)
+        compose.waitUntil(30000) { compose.onAllNodesWithTag("replacement_recovery").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("navigation_home").assertDoesNotExist()
+        screenshot("recovery")
+        compose.onNodeWithText("Művelet folytatása").performClick()
+        compose.waitUntil(30000) { compose.onAllNodesWithTag("navigation_home").fetchSemanticsNodes().isNotEmpty() }
+        assertFalse(NativeReplacementJournal(context).exists())
+        assertFalse(NativeDataReplacement.blocked(context))
+        assertFalse(dir.exists())
+        screenshot("recovered_home")
     }
     @Test fun fiveTabsAndSecondaryPlanningEntriesUseActualNativeScreens() {
         launch(); screenshot("home")

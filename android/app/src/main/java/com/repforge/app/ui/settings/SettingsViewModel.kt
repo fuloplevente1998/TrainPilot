@@ -27,6 +27,9 @@ data class SettingsUiState(
     val isEraseLocalDialogOpen: Boolean = false,
     val isPrivacyDialogOpen: Boolean = false,
     val recoverEarlierBackupsChecked: Boolean = false,
+    val replacementBusy: Boolean = false,
+    val needsRecovery: Boolean = false,
+    val recoveryError: Boolean = false,
     val statusMessage: String? = null
 )
 
@@ -61,36 +64,42 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun setTheme(theme: ThemePaletteOption) {
+        if (_uiState.value.replacementBusy) return
         viewModelScope.launch {
             settingsStore.setTheme(theme)
         }
     }
 
     fun setLanguage(lang: String) {
+        if (_uiState.value.replacementBusy) return
         viewModelScope.launch {
             settingsStore.setLanguage(lang)
         }
     }
 
     fun setTimerDefaults(workSec: Int, restSec: Int, rounds: Int, sound: Boolean, vibration: Boolean) {
+        if (_uiState.value.replacementBusy) return
         viewModelScope.launch {
             settingsStore.setTimerDefaults(workSec, restSec, rounds, sound, vibration)
         }
     }
 
     fun setHapticSetRecorded227(enabled: Boolean) {
+        if (_uiState.value.replacementBusy) return
         viewModelScope.launch {
             settingsStore.setHapticSetRecorded227(enabled)
         }
     }
 
     fun setHealthBackupConsent(consented: Boolean) {
+        if (_uiState.value.replacementBusy) return
         viewModelScope.launch {
             settingsStore.setHealthBackupConsent(consented)
         }
     }
 
     fun setAutoWriteHc(enabled: Boolean) {
+        if (_uiState.value.replacementBusy) return
         viewModelScope.launch {
             settingsStore.setAutoWriteWorkoutToHealthConnect(enabled)
         }
@@ -101,6 +110,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun syncDriveCloud(activity: Activity) {
+        if (_uiState.value.replacementBusy) return
         viewModelScope.launch {
             when (val auth = googleRepo.authorizeOperation(activity, "drive")) {
                 is GoogleAuthOutcome.Authorized -> {
@@ -120,6 +130,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun syncCalendarCloud(activity: Activity) {
+        if (_uiState.value.replacementBusy) return
         viewModelScope.launch {
             when (val auth = googleRepo.authorizeOperation(activity, "calendar")) {
                 is GoogleAuthOutcome.Authorized -> {
@@ -146,6 +157,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun onSafJsonExportCompleted(uri: Uri) {
+        if (_uiState.value.replacementBusy) return
         viewModelScope.launch {
             val r = backupManager.exportJsonBackupToUri(uri)
             _uiState.value = _uiState.value.copy(
@@ -156,15 +168,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun onSafJsonImportCompleted(uri: Uri) {
         if (!canReplaceData()) return
-        viewModelScope.launch {
-            val r = backupManager.importJsonBackupFromUri(uri)
-            _uiState.value = _uiState.value.copy(
-                statusMessage = if (r.isSuccess) "JSON visszaállítás sikeres!" else "Hiba: ${r.exceptionOrNull()?.message}"
-            )
-        }
+        runReplacement { backupManager.importJsonBackupFromUri(uri, recoverInterrupted = _uiState.value.needsRecovery) }
     }
 
     fun onSafZipExportCompleted(uri: Uri) {
+        if (_uiState.value.replacementBusy) return
         viewModelScope.launch {
             val r = backupManager.exportZipArchiveToUri(uri)
             _uiState.value = _uiState.value.copy(
@@ -175,12 +183,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun onSafZipImportCompleted(uri: Uri) {
         if (!canReplaceData()) return
-        viewModelScope.launch {
-            val r = backupManager.importZipArchiveFromUri(uri)
-            _uiState.value = _uiState.value.copy(
-                statusMessage = if (r.isSuccess) "ZIP archívum és fotók sikeresen visszaállítva!" else "Hiba: ${r.exceptionOrNull()?.message}"
-            )
-        }
+        runReplacement { backupManager.importZipArchiveFromUri(uri, recoverInterrupted = _uiState.value.needsRecovery) }
     }
 
     fun openEraseLocalDialog() {
@@ -189,18 +192,28 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun closeEraseLocalDialog() { _uiState.value = _uiState.value.copy(isEraseLocalDialogOpen = false) }
     fun confirmEraseLocalData() {
         if (!canReplaceData()) return
+        _uiState.value = _uiState.value.copy(isEraseLocalDialogOpen = false)
+        runReplacement { backupManager.eraseAllLocalData() }
+    }
+    fun resumeReplacement() { runReplacement { backupManager.resumeInterruptedReplacement() } }
+    private fun runReplacement(operation: suspend () -> Result<Unit>) {
+        if (_uiState.value.replacementBusy) return
+        _uiState.value = _uiState.value.copy(replacementBusy = true, recoveryError = false)
         viewModelScope.launch {
-            val r = backupManager.eraseAllLocalData()
-            _uiState.value = _uiState.value.copy(
-                isEraseLocalDialogOpen = false,
-                statusMessage = if (r.isSuccess) "Minden helyi adat törölve." else "Hiba: ${r.exceptionOrNull()?.message}"
-            )
+            try {
+                val result = operation()
+                _uiState.value = _uiState.value.copy(needsRecovery = com.repforge.app.NativeDataReplacement.blocked(context) ||
+                    com.repforge.app.NativeReplacementJournal(context).exists(), recoveryError = result.isFailure,
+                    statusMessage = result.exceptionOrNull()?.message)
+            } finally { _uiState.value = _uiState.value.copy(replacementBusy = false,
+                needsRecovery = com.repforge.app.NativeDataReplacement.blocked(context) || com.repforge.app.NativeReplacementJournal(context).exists()) }
         }
     }
 
     // Recheck SAF callbacks as well: a watch may start a workout while the picker is open.
     // This UI guard complements (does not replace) restore's transactional validation.
     private fun canReplaceData(): Boolean {
+        if (_uiState.value.replacementBusy) return false
         val active = ActiveWorkoutStore.current(context)?.optBoolean("active") == true ||
             PhoneWorkoutExecution.store(context).snapshot()?.optBoolean("active") == true
         if (!active) return true

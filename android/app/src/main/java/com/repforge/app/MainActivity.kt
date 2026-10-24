@@ -33,6 +33,9 @@ class MainActivity : ComponentActivity() {
     private lateinit var settingsStore: TrainPilotSettingsStore
     private lateinit var database: TrainPilotDatabase
     private lateinit var migrator: LegacyWebViewMigrator
+    private var recoveryNeeded by mutableStateOf(false)
+    private var recoveryBusy by mutableStateOf(false)
+    private var recoveryError by mutableStateOf(false)
     private var migrationReady by mutableStateOf(false)
     private var migrationFailure by mutableStateOf(false)
     private var migrationJob: Job? = null
@@ -46,6 +49,7 @@ class MainActivity : ComponentActivity() {
         database = TrainPilotDatabase.getInstance(this)
         migrator = LegacyWebViewMigrator(this, database, settingsStore)
 
+        recoveryNeeded = NativeDataReplacement.blocked(this) || NativeReplacementJournal(this).exists() || PhoneWorkoutExecution.store(this).restoreBlocked()
         startMigration()
 
         setContent {
@@ -53,7 +57,11 @@ class MainActivity : ComponentActivity() {
                 initialValue = com.repforge.app.data.store.TrainPilotUserSettings()
             )
             TrainPilotTheme(settings = settings) {
-                if (migrationReady) {
+                if (recoveryNeeded) {
+                    LaunchedEffect(Unit) { startupScreen.markNativeReady() }
+                    com.repforge.app.ui.settings.ReplacementRecoveryPanel(settings.language, recoveryBusy, recoveryError,
+                        onResume = { recoverReplacement() }, onJson = { recoverReplacement(it, false) }, onZip = { recoverReplacement(it, true) })
+                } else if (migrationReady) {
                     TrainPilotAppScaffold(settings = settings, onFirstFrameReady = { startupScreen.markNativeReady() })
                 } else {
                     LaunchedEffect(Unit) { startupScreen.markNativeReady() }
@@ -72,7 +80,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startMigration() {
-        if (migrationJob?.isActive == true || migrationReady) return
+        if (recoveryNeeded || migrationJob?.isActive == true || migrationReady) return
         migrationFailure = false
         migrationJob = lifecycleScope.launch {
             try {
@@ -85,6 +93,21 @@ class MainActivity : ComponentActivity() {
                 }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) { migrationFailure = true }
+        }
+    }
+
+    private fun recoverReplacement(uri: android.net.Uri? = null, zip: Boolean = false) {
+        if (recoveryBusy) return
+        recoveryBusy = true
+        lifecycleScope.launch {
+            try {
+                val manager = BackupRestoreManager(this@MainActivity)
+                val result = when { uri == null -> manager.resumeInterruptedReplacement()
+                    zip -> manager.importZipArchiveFromUri(uri, recoverInterrupted = true)
+                    else -> manager.importJsonBackupFromUri(uri, recoverInterrupted = true) }
+                recoveryError = result.isFailure
+                if (result.isSuccess) { recoveryNeeded = false; startMigration() }
+            } finally { recoveryBusy = false }
         }
     }
 

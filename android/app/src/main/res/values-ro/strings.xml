@@ -79,4 +79,10 @@
     <string name="program_gps_help">Alegerea este memorată pentru această activitate. Sunt necesare permisiunea și locația dispozitivului.</string>
     <string name="program_start_action">Începe</string>
     <string name="program_start_cancel">Anulează</string>
+    <string name="replacement_title">Înlocuire de date întreruptă</string>
+    <string name="replacement_explanation">Operația anterioară nu s-a încheiat. Continuă sau selectează altă copie validă. Pornirea antrenamentelor rămâne blocată până la finalizare.</string>
+    <string name="replacement_error">Recuperarea a eșuat. Fișierele locale au fost păstrate.</string>
+    <string name="replacement_resume">Continuă operația</string>
+    <string name="replacement_json">Alege altă copie JSON</string>
+    <string name="replacement_zip">Alege altă copie ZIP</string>
 </resources>
