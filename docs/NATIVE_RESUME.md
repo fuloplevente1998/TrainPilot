@@ -22,6 +22,12 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 
 ## Legutóbbi konkrét munka
 
+- Friss felhasználói dizájnszabály: teljes main-funkciókör megőrzendő kevesebb,
+  összevont oldallal. NATIVE_DESIGN_HANDOFF.md A–E funkcióleltár/új elhelyezés
+  táblázatokkal bővült. Kedvencek is main-funkció (v144), pótlandó a mockupból.
+  Ez követelménylista; minden funkció tényleges natív útvonala/adatforrása/tesztje
+  külön igazolandó. Nincs új kód/CI ebben a dokumentációs körben.
+
 - Legfrissebb alkalmazásforrás **033386e**: pontos mainből kinyert106 gyakorlat,
   13 beépített program, teljes név/leírás HU/EN/DE/RO. Adat-only Java resource,
   natív appban nincs JS/WebView futtatás. Hiányzó elemek pótlása, IGNORE+Room tx+

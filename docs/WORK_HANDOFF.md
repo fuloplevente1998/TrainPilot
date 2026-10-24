@@ -4,6 +4,17 @@ Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Teljes funkcióleltár az új dizájnátadóban
+
+A felhasználó kéri, hogy a main összes funkciója megmaradjon, más elhelyezéssel és
+kevesebb önálló oldallal is. NATIVE_DESIGN_HANDOFF.md részletes A01–A15, B01–B18,
+C01–C14, D01–D14 és E01–E20 funkció→új elérési hely leltárral bővült, pontos
+main-forrásreferenciával. Ez követelménylista, nem kész állapot. A kedvencek valóban
+main-funkciók, így a mockupból kimaradt vezérlőjük pótlandó. A metrikák kulcsonkénti
+és minden útvonal/teszt végső megfeleltetése továbbra hátra van; az ismert20/26
+natív egészségeltérés nincs elfedve. Öt fő fül, közös egészségnapló/testsúlyadat és
+összevont szerkesztő/mentési panelek az irány.
+
 ## Felhasználói pontosítás – teljes funkciókör, nem csak24 mockup
 
 Az egészségnapló, testsúly, pulzus és a main összes további funkciója megőrzendő.
