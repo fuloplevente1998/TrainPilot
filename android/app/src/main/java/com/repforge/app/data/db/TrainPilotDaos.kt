@@ -113,6 +113,15 @@ interface WorkoutHistoryDao {
     @Query("SELECT * FROM workout_history ORDER BY started DESC")
     suspend fun getAllWorkoutsWithDetails(): List<WorkoutHistoryWithDetails>
 
+    /** Parent LIMIT applies before Room loads relations: never load the full phone journal for Wear. */
+    @Transaction
+    @Query("SELECT * FROM workout_history ORDER BY startedEpochMs DESC, id DESC LIMIT 8")
+    suspend fun getWearMiniJournal(): List<WorkoutHistoryWithDetails>
+
+    /** List-only projection: no raw JSON, GPS coordinates, photos or set relations. */
+    @Query("SELECT id, startedEpochMs, programName, dayName, durationSeconds, completedSetsCount, totalSetsCount, hasPr226 FROM workout_history ORDER BY startedEpochMs DESC, id DESC LIMIT :limit OFFSET :offset")
+    suspend fun getJournalSummaryPage(limit: Int, offset: Int): List<JournalWorkoutSummary>
+
     @Transaction
     @Query("SELECT * FROM workout_history WHERE id = :id OR workoutKey = :id OR syncId = :id LIMIT 1")
     suspend fun getWorkoutWithDetails(id: String): WorkoutHistoryWithDetails?

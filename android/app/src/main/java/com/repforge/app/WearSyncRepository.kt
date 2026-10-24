@@ -594,7 +594,7 @@ object WearSyncRepository {
 
             // Recent workouts (Mini Journal max 8)
             val recentWorkoutsArray = JSONArray()
-            val recentHistory = db.workoutHistoryDao().getAllWorkoutsWithDetails().take(8)
+            val recentHistory = db.workoutHistoryDao().getWearMiniJournal()
             for (h in recentHistory) {
                 val exArr = JSONArray()
                 for (exWithSets in h.exercises.sortedBy { it.exercise.orderIndex }.take(14)) {
