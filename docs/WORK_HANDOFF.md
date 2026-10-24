@@ -4,6 +4,20 @@ Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Aktuális folytatás – Drive import és kontextus
+
+Rövid, új chatben/tömörítés után olvasandó állapot: [NATIVE_RESUME.md](NATIVE_RESUME.md).
+**369a4d0** `[skip ci]`: Drive merge hálózati szakasza után adatcsere-zár alatt
+újraellenőrzi a tényleges canonical helyi tartalmat, majd a meglévő staged redo
+útvonalat használja. Aktív edzés vagy közben módosult adat esetén nincs stale helyi
+import. A hálózat idejére nem tartja a zárat. A cloud merge a privát koordinátákat
+strukturálisan kiszűri feltöltés előtt. Ebben a körben külső Google-művelet nem futott.
+
+Új3 canonical-guard unit-próbakód; összesen98 új unit + 4 Phone instrumentációs
+próba megírva/nem futtatva. Utolsó zöld forrás továbbra dd4cc27, nincs új APK/kép.
+A canonical check és az import közötti már belépett background Room-írások versenye,
+cloud fotó-staging, teljes ZIP/fotó/Health roundtrip és a terv többi része még nyitott.
+
 ## Legfrissebb forrás – tranzakciós backup import és hordozható állapot
 
 **`851391c`**, `[skip ci]`: a migrátor Room-oldali importja egy tranzakció;

@@ -6,7 +6,8 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 
 ## Indulás – rövid kontextus
 
-1. Olvasd el ezt a fájlt, majd a `docs/WORK_HANDOFF.md` aktuális állapotát és
+1. Olvasd el ezt a fájlt; kontextustömörítés/új chat után a `docs/NATIVE_RESUME.md`
+   rövid folytatási pontot is, majd a `docs/WORK_HANDOFF.md` aktuális állapotát és
    következő lépéseit. Ne olvasd újra a teljes beszélgetést vagy a nagy naplókat.
 2. Ellenőrizd: `git status --short`, aktuális ág/HEAD, GitHub PR/issue és Actions
    állapota. A dokumentált állapot pillanatkép; ne találj ki későbbi eredményt.
