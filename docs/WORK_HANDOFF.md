@@ -4,6 +4,12 @@ Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Kommunikáció/thinking megállapodás
+
+Kód/bekötés: felhasználó High; dizájnfázis előtt jelezni a Mediumhoz;
+CI-hibánál/komoly debug előtt jelezni Extra Highhoz. Részletek az AGENTS.md-ben.
+Jelenleg kódolás és telefonos UI-teszt/CI-infrastruktúra írása zajlik, nem dizájnfinomítás.
+
 ## Aktuális befejezési batch – Napló, naptárszinkron, programnapi GPS
 
 Legújabb alkalmazásforrás **`0a3865c`**, előzményei `7d5ac83`, `b018e6c`,
