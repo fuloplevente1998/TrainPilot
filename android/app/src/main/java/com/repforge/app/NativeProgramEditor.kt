@@ -104,10 +104,27 @@ internal object NativeProgramEditor {
     }
 
     suspend fun save(context: Context, db: TrainPilotDatabase, opened: ProgramWithDays?,
-        draft: Draft, language: String): String = NativeDataReplacement.mutate(context) {
+        draft: Draft, language: String, personalMetadata: JSONObject? = null): String = NativeDataReplacement.mutate(context) {
         require(language in langs)
         assertNoActiveWorkout(context)
         val d = checked(draft)
+        if (personalMetadata != null) {
+            require(opened?.program?.builtin == true && opened.program.id in setOf("home-basic", "home-level2"))
+            require(personalMetadata.optInt("templateVersion") == 2 &&
+                personalMetadata.optString("sourceTemplateId") == opened.program.id)
+            val expected = NativeTrainingProfile.verified(
+                personalMetadata.getJSONObject("profileSnapshot"))
+            val current = com.repforge.app.data.store.TrainPilotSettingsStore(context).current().profileJson
+            check(JSONObject(current).toString() == expected.toString()) { "Training profile changed" }
+            val rx = personalMetadata.getJSONObject("prescriptions")
+            val selected = d.days.flatMap { day -> day.entries.map(::exerciseId) }.toSet()
+            require(rx.keys().asSequence().toSet() == selected) { "Prescription/exercise mismatch" }
+            for (key in selected) {
+                val item = rx.getJSONObject(key)
+                require(item.optInt("sets") in 2..3 && item.optInt("rir") == 2 &&
+                    item.optInt("rest") in 60..180 && item.optString("loadType").isNotBlank())
+            }
+        }
         db.withTransaction {
             val original = opened?.let { db.programDao().getProgramWithDaysById(it.program.id) }
             if (opened != null) assertUnchanged(opened, original)
@@ -168,15 +185,23 @@ internal object NativeProgramEditor {
                 .put("id", id).put("name", nameHu).put("hu", names.getValue("hu"))
                 .put("en", names.getValue("en")).put("de", names.getValue("de"))
                 .put("ro", names.getValue("ro")).put("description", d.description)
-                .put("builtin", false).put("generated", false).put("sourceType", "own")
+                .put("builtin", false).put("generated", personalMetadata != null)
+                .put("sourceType", if (personalMetadata == null) "own" else "profile-template")
                 .put("days", jsonDays).put("updatedAt", System.currentTimeMillis())
+            if (personalMetadata != null) {
+                raw.put("sourceTemplateId", opened!!.program.id).put("templateVersion", 2)
+                    .put("profileSnapshot", JSONObject(personalMetadata.getJSONObject("profileSnapshot").toString()))
+                    .put("prescriptions", JSONObject(personalMetadata.getJSONObject("prescriptions").toString()))
+            }
             // Generated plan references are kept only on existing edits; new clones own their data.
-            if (fork) raw.remove("sourceTemplateId")
+            if (fork && personalMetadata == null) raw.remove("sourceTemplateId")
             val entity = ProgramEntity(id, names.getValue("hu"), names.getValue("en"),
                 names.getValue("de"), names.getValue("ro"),
                 originalProgram?.location ?: "Otthon", originalProgram?.level ?: "Kezdő",
-                d.description, false, false, "own", if (fork) null else originalProgram?.sourceTemplateId,
-                originalProgram?.templateVersion ?: 1, originalProgram?.accentHex ?: "#4d8fbe",
+                d.description, false, personalMetadata != null,
+                if (personalMetadata == null) "own" else "profile-template",
+                if (personalMetadata != null) opened!!.program.id else if (fork) null else originalProgram?.sourceTemplateId,
+                if (personalMetadata != null) 2 else originalProgram?.templateVersion ?: 1, originalProgram?.accentHex ?: "#4d8fbe",
                 if (fork) db.programDao().getProgramIds().size else originalProgram!!.sortOrder,
                 System.currentTimeMillis(), raw.toString())
             db.programDao().saveProgramWithDays(entity, dayEntities)
