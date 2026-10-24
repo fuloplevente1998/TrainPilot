@@ -4,6 +4,34 @@ Frissítve: **2026-10-24**. A main legutóbb ellenőrzött HEAD-je `7473b30`; **
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Legfrissebb kód – helyi restore/erase konkurenciavédelem
+
+**`9c6f4a8`**, `[skip ci]`: a JSON/ZIP helyi visszaállítás és explicit erase
+közös kizáró zárat kapott. Main szálon ownership-journal → snapshot sorrendben
+ellenőrzi az aktív/paused/watch/native-only sessiont és a függő ownership-állapotot.
+Tartós publikációs jelző + meglévő natív restoreBlocked flag tiltja a natív
+indítást/recoveryt, háttérből snapshottelepítést és ownership receive-et.
+Párhuzamos második adatcsere elutasítva; normál hiba/cancel mellett NonCancellable
+felszabadítás. A sérült vagy processzhalálból megmaradt fence **nem törlődik némán**.
+ZIP rollback hibánál az eredeti fotók és journal megmaradnak a helyreállításhoz.
+
+8 új `NativeDataReplacementTest` megírva: phone/watch/paused/native-only védelem,
+IO-s publikáció és indítás tiltása, hiba/cancel cleanup, konkurens lease, tartós
+félbeszakadt fence és ownership-üzenet. **81 új unit + 3 instrumentációs tesztkód**
+a batchben; még nincs fordítás/futtatás/CI/APK. Utolsó zöld forrás `dd4cc27`.
+
+Fontos nyitott pontok: félbeszakadt tartós fence **explicit helyreállító UI/eljárása
+még hiányzik** (a jelenlegi védelem fail-closed); a globális Room/DataStore/Health/
+fotó restore teljes atomikussága és crash-fázisai, teljes mentés-visszaállítási
+roundtrip még igazolandó/javítandó. Google Drive merge/import még nincs a közös
+helyi lease alá bekötve; már belépett aszinkron parancsok összes Room-írásának
+versenyvizsgálata is hátra van. Nem állítunk teljes restore-adatbiztonságot.
+A következő backend lépés ezeket rendezni, majd az öt terület további bekötései.
+
+Mainen csak az AGENTS.md thinking-szabály frissült felhasználói kérésre
+(`8a36502d`); main alkalmazáskód/kiadás/verzió változatlan. Natív munka továbbra
+külön ágon; élő adatokra telepítés és main merge nincs engedélyezve.
+
 ## Legfrissebb forrás – telefonos Compose UI-kapu alapja
 
 **`1d38edf`**, `[skip ci]`: a meglévő `native-android.yml` új `phone-ui` jobja,

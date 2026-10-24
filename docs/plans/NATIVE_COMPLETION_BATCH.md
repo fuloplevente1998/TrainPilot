@@ -158,3 +158,13 @@ smoke-próba és a meglévő workflow-ban új API35 Phone UI lane. Raw adb PNG-k
 checkpoint/ack protokollal, eredet/commit/hash/locale/téma manifesttel; hibás vagy
 kihagyott próba nem zöld. Ez még nem futott. A teljes célzott Phone UI-lefedés
 és az öt terület maradéka megírandó a végső közös CI előtt.
+
+
+## Restore/erase konkurenciavédelem – első backend bekötés
+
+`9c6f4a8`: közös local-replacement lease, tartós publication/native fence,
+aktív/ownership ellenőrzés, hiba/cancel felszabadítás és rollback-evidence megőrzés.
+8 új unit-próbakód; összesen81 új unit + 3 Phone instrumentációs próba megírva,
+nem futtatva. Félbeszakadt fence recovery-eljárása, teljes Room/DataStore/Health/
+fotó crash/roundtrip, Drive import és már elindult background Room-írások
+konkurenciája még nyitott. A guard nem teljes migrációs vagy adatbiztonsági igazolás.
