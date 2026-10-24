@@ -22,7 +22,7 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 
 ## Legújabb natív batch – 106 gyakorlat és video
 
-`dbf808c5` `[skip ci]`: a mainből pontosan átvett
+`d5222a32` `[skip ci]`: a mainből pontosan átvett
 `native-catalog-main-7473.json` alapján 106 gyakorlat,
 **100 konkret YouTube videoId +6 nem ellenőrzött keresés**.
 Edzés → Gyakorlatkönyvtár új natív route (Room, négy nyelv,
