@@ -1,0 +1,129 @@
+package com.repforge.app
+
+import com.repforge.app.data.db.ExerciseLibraryEntity
+import com.repforge.app.data.db.ProgramWithDays
+import org.json.JSONArray
+import org.json.JSONObject
+
+/** Read-only #128 A/B preview. No invented weights, history evidence or automatic increases. */
+internal object NativeProfileProgramPreview {
+    data class Reduction(val dayId: String, val exerciseId: String, val reason: String)
+    data class Preview(
+        val source: ProgramWithDays,
+        val draft: NativeProgramEditor.Draft,
+        val prescriptions: JSONObject,
+        val profileSnapshot: JSONObject,
+        val reductions: List<Reduction>,
+        val estimateMinutes: Int,
+        val workSets: Int,
+        val sourceProfileJson: String
+    )
+
+    private fun keys(json: JSONObject, name: String): Set<String> {
+        val rows = json.optJSONArray(name) ?: return emptySet()
+        return (0 until rows.length()).mapNotNull { rows.optString(it).takeIf(String::isNotBlank) }.toSet()
+    }
+
+    private fun available(ex: ExerciseLibraryEntity, gear: Set<String>): Boolean {
+        if (ex.loadType == "bodyweight") return true
+        val raw = JSONObject(ex.rawJson)
+        val required = raw.optString("gear")
+        if (required.isNotBlank()) return when (required) {
+            "bodyweight" -> true
+            "dumbbells", "dumbbell" -> "dumbbells" in gear
+            "barbell" -> "barbell" in gear
+            "kettlebell" -> "kettlebell" in gear
+            "bands" -> "bands" in gear
+            else -> required in gear
+        }
+        val eq = raw.optString("equipment").lowercase()
+        return when {
+            "kézisúlyzó" in eq -> "dumbbells" in gear
+            "kétkezes rúd" in eq -> "barbell" in gear
+            "kettlebell" in eq -> "kettlebell" in gear
+            "gumiszalag" in eq -> "bands" in gear
+            "testsúly" in eq -> true
+            else -> false // Unknown equipment is never silently assumed available.
+        }
+    }
+
+    fun preview(source: ProgramWithDays, rawProfile: String,
+        catalog: List<ExerciseLibraryEntity>, language: String): Preview {
+        require(source.program.builtin && source.program.id in setOf("home-basic", "home-level2")) {
+            "Only an accepted A/B template can produce this preview"
+        }
+        val profile = NativeTrainingProfile.verified(JSONObject(rawProfile))
+        require(profile.has("minutes") && profile.optInt("minutes") in 5..300) {
+            "Set workout duration in Training profile first"
+        }
+        require(profile.optJSONArray("gear") != null) {
+            "Set available equipment in Training profile first"
+        }
+        val minutes = profile.getInt("minutes")
+        val gear = keys(profile, "gear")
+        val excluded = keys(profile, "excluded")
+        val areas = keys(profile, "avoidAreas")
+        val catalogById = catalog.associateBy { it.id }
+        val count = (minutes / 6).coerceIn(1, 7)
+        val higherSets = profile.optString("goal") == "muscle" &&
+            profile.optString("experience") in setOf("intermediate", "advanced") &&
+            minutes >= 60 && profile.optString("activity") !in setOf("physical", "heavy")
+        val repetitions = JSONObject()
+        val removed = ArrayList<Reduction>()
+        var totalSets = 0
+        val draftDays = source.days.sortedBy { it.sortOrder }.map { day ->
+            val ids = JSONArray(day.exercisesJson)
+            val filtered = ArrayList<Pair<String, ExerciseLibraryEntity>>()
+            for (index in 0 until ids.length()) {
+                val row = ids.get(index)
+                val id = if (row is JSONObject) row.optString("id") else row as? String ?: ""
+                val ex = catalogById[id]
+                val reason = when {
+                    ex == null -> "missing"
+                    id in excluded -> "excluded"
+                    ex.primaryMuscle in areas -> "avoid-area"
+                    !available(ex, gear) -> "equipment"
+                    else -> ""
+                }
+                if (reason.isNotBlank()) removed += Reduction(day.dayId, id, reason)
+                else filtered += id to ex!!
+            }
+            // Preserve existing compound-first template ordering; never manufacture replacements.
+            val selected = filtered.take(count)
+            for ((id, _) in filtered.drop(count)) removed += Reduction(day.dayId, id, "time")
+            for ((id, exercise) in selected) {
+                val original = JSONObject(exercise.rawJson)
+                val compound = original.optBoolean("compound", false)
+                val sets = if (higherSets && compound) 3 else 2
+                totalSets += sets
+                val bodyweight = exercise.loadType == "bodyweight"
+                repetitions.put(id, JSONObject()
+                    .put("sets", sets).put("reps", exercise.defaultReps)
+                    .put("weight", 0).put("trial", !bodyweight)
+                    .put("rest", if (compound) 120 else 75)
+                    .put("rir", 2).put("loadType", exercise.loadType))
+            }
+            NativeProgramEditor.DayDraft(day.dayId,
+                when (language) {
+                    "en" -> day.nameEn; "de" -> day.nameDe
+                    "ro" -> day.nameRo; else -> day.nameHu
+                }.ifBlank { day.nameHu }, selected.map { JSONObject.quote(it.first) })
+        }
+        require(draftDays.isNotEmpty() && draftDays.all { it.entries.isNotEmpty() }) {
+            "No safe A/B day for the selected equipment and exclusions"
+        }
+        val name = when (language) {
+            "en" -> source.program.nameEn; "de" -> source.program.nameDe
+            "ro" -> source.program.nameRo; else -> source.program.nameHu
+        }.ifBlank { source.program.nameHu }
+        return Preview(source,
+            NativeProgramEditor.Draft(name, source.program.description, draftDays),
+            repetitions, profile, removed, minutes, totalSets, rawProfile)
+    }
+
+    fun metadata(preview: Preview): JSONObject = JSONObject()
+        .put("profileSnapshot", JSONObject(preview.profileSnapshot.toString()))
+        .put("prescriptions", JSONObject(preview.prescriptions.toString()))
+        .put("templateVersion", 2)
+        .put("sourceTemplateId", preview.source.program.id)
+}
