@@ -165,7 +165,7 @@ internal object NativeWorkoutSession {
                 val frame = NativeLegacyDraft.prepare(document.json, library.keys, Instant.now())
                 val id = frame.getString("workoutId")
                 check(!database.workoutHistoryDao().isTombstoned(id, JSONObject.quote(id)) &&
-                    database.workoutHistoryDao().getWorkoutWithDetails(id) == null) { "Az edzés már mentett vagy törölt." }
+                    !database.workoutHistoryDao().hasFinishedIdentity(id, frame.getString("started"))) { "Az edzés már mentett vagy törölt." }
                 val closed = database.keyValueDocumentDao().getDocument("wearClosedWorkouts")?.json.orEmpty()
                 check(!closed.contains(JSONObject.quote(id))) { "Az edzés már lezárt." }
                 val exercises = frame.getJSONArray("exercises")

@@ -1,6 +1,7 @@
 package com.repforge.app
 
 import com.repforge.shared.WorkoutOwnership193
+import androidx.room.withTransaction
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.Instant
@@ -8,6 +9,18 @@ import java.util.UUID
 
 /** Pure preflight only. This never publishes, deletes or resumes a legacy draft. */
 internal object NativeLegacyDraft {
+    suspend fun retire(database: com.repforge.app.data.db.TrainPilotDatabase, expectedHash: String) {
+        if (expectedHash.isEmpty()) return
+        database.withTransaction {
+            val original = database.keyValueDocumentDao().getDocument("draft")
+            if (original != null && hash(original.json) == expectedHash) {
+                database.keyValueDocumentDao().putDocument(com.repforge.app.data.db.KeyValueDocumentEntity(
+                    "legacyDraftArchive|" + expectedHash, original.json, System.currentTimeMillis()))
+                database.keyValueDocumentDao().deleteDocument("draft")
+            }
+        }
+    }
+
     fun hash(raw: String): String = java.security.MessageDigest.getInstance("SHA-256")
         .digest(raw.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
 

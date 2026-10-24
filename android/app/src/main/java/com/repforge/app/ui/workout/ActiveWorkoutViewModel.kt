@@ -847,6 +847,13 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
                     deletedAt = System.currentTimeMillis()
                 )
             )
+            try {
+                com.repforge.app.NativeLegacyDraft.retire(database, current.optString("legacyDraftSha256"))
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (error: Exception) {
+                withContext(Dispatchers.Main) { showStatus("A félbehagyott edzés archiválása nem sikerült. Próbáld újra az elvetést.") }
+                return@launch
+            }
             withContext(Dispatchers.Main) {
                 ActiveWorkoutStore.clear(context)
                 try {

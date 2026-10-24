@@ -73,6 +73,9 @@ interface ExerciseLibraryDao {
 
 @Dao
 interface WorkoutHistoryDao {
+    @Query("SELECT EXISTS(SELECT 1 FROM workout_history WHERE id = :id OR syncId = :id OR started = :started)")
+    suspend fun hasFinishedIdentity(id: String, started: String): Boolean
+
     @Query("SELECT EXISTS(SELECT 1 FROM history_tombstones WHERE primaryId = :id OR workoutKey = :id OR instr(idsJson, :quotedId) > 0)")
     suspend fun isTombstoned(id: String, quotedId: String): Boolean
 
