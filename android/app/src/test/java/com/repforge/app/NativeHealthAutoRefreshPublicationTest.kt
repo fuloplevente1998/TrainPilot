@@ -33,13 +33,13 @@ class NativeHealthAutoRefreshPublicationTest {
             .edit().clear().commit()
     }
 
-    @Test fun optInUsesTheExistingExportedHealthJournalPreference() {
+    @Test fun optInUsesTheExistingHealthJournalPreferenceAndProjection() {
         val store = HealthJournalStore.get(context)
         val previouslyEnabled = store.preferences().optBoolean("autoOnOpen", false)
         try {
             store.setPreferences(org.json.JSONObject().put("autoOnOpen", true))
             assertTrue(store.preferences().optBoolean("autoOnOpen"))
-            assertTrue(store.exportSnapshot().getJSONObject("preferences").optBoolean("autoOnOpen"))
+            assertTrue(store.projection().getJSONObject("preferences").optBoolean("autoOnOpen"))
             store.setPreferences(org.json.JSONObject().put("autoOnOpen", false))
             assertFalse(store.preferences().optBoolean("autoOnOpen"))
         } finally {
