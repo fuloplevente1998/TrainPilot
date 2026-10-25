@@ -21,6 +21,17 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
 
 ## Legújabb alkalmazásforrás
 
+- **7d62ae3**: NativeCloudPhotoDeletion processz-szintű per-photo foglalás.
+  Rövid metadata+ownership→ActiveStore→canonical store lock alatt friss Room/
+  draft/native/mirror live-ref ellenőrzés és reservation, HTTP minden ilyen
+  lockon kívül. Futó fizikai hívás alatt restore/erase és azonos ref visszaírás
+  elutasítva; ordinary settings/új UUID-s edzés engedett. Native frame root
+  photos-only gyorsellenőrzés, nem set/GPS fanézés tickenként. Külső finally a
+  registration utáni cancellation esetén is takarít; server-timeout/cross-device
+  bizonytalanság nem lezárt. Shared photoRows history+draft/session: a ZIP/stage/
+  redo a draft képeit is viszi, aktív draft-ref legyőzi a history tombstone-t.
+  Room deletedAt normalizálás közös helperrel (0.0 is élő). +14 JVM-kód NEM FUTOTT.
+
 - **87b593b**: Google consent/network folytatás dataset-epoch ticketje. Backup/
   restore/erase után régi consent nem menthet profilt vagy calendar cache-t;
   rövid mutate lease-ben ticket+prefs commit, userinfo/Google HTTP kívül marad.
@@ -53,13 +64,13 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
 
 ## Bizonyíték és külső ágak
 
-- **Batch505 új JVM +48 Phone UI tesztkód NEM FUTOTT** (490+4+9+2 /42+6).
+- **Batch519 új JVM +48 Phone UI tesztkód NEM FUTOTT** (505+14 /42+6).
   Helyben csak lexical delimiter, diff, XML/kulcs/format/import/R-ref és pontos
   forrássorrend/kiemelési diff ellenőrzés volt. Nem Kotlin/Room/Compose/Google.
 - Migrációs ág utolsó teljes zöldje továbbra dd4cc27, Actions40072751592:
   Phone393/Wear167/WearUI183/signed upgrades2. Friss CI/APK/screenshot nincs.
 - Külső #240 feat/native-ui-localization82883ab és #241 test/native-localization-ui
-  ab25d84 kódja már bent, 4+6 most része a505+48-nak. Ágaikat nem írtuk, nem
+  ab25d84 kódja már bent, 4+6 most része a519+48-nak. Ágaikat nem írtuk, nem
   GitHub-merge történt; draftok nyitva maradnak az integrált próba/elfogadásig.
   Új külső HEAD-et az innen vett delta alapján nézz, ne integráld újra a régi diffet.
   Review: reviews/NATIVE_LOCALIZATION_INTEGRATION.md. Korábbi „nem integrált”/
@@ -69,12 +80,15 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
 
 ## Következő konkrét lépések
 
-1. Remote photo delete vs. közben induló explicit restore/új ref: ticket nem
-   vonja vissza a már futó HTTP-t. Nincs elosztott atomikusság; bizonytalan upload/
-   read-back orphan, cross-device/older-peer és valódi Google próba még nyitott.
+1. Lokális in-flight photo delete / új ref / restore admission kódban, de szerver-
+   timeout utáni bizonytalan befejezés, processdeath és cross-device/older-peer
+   továbbra nyitott. A foglalás nem tartós Drive-lock/elosztott atomikusság.
 2. Teljes A–E/UI/Health/main funkcióleltár és maradék dinamikus VM-/hibafeliratok;
    15 lokalizált képernyő nem minden funkció. Mai Home edzésszám teljes-napló-
-   countot kap, ajánlott nap jelenleg első nap: teljes Home/Coach-paritás ellenőrizendő.
+   countot kap, ajánlott nap jelenleg első nap. Következő kód: meglévő
+   ui/coach/NativeCoachTargets újrahasználata Home-ban, programId/dayId/scheduleId
+   végig vitele a nav-startnak (most csak dayId), helyi nap/DST epoch count és
+   tényleges adat-invalidation. Ezt még nem implementáltuk.
 3. Google-fiókos engedély/részleges grant/revoke/offline/rotation/processdeath,
    backup közbeni cancel, calendar cache és cél-scope valódi szolgáltatással még
    nem igazolt. Unit consent-intent nem OAuth- vagy UI-szolgáltatás-siker.

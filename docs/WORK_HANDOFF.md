@@ -4,6 +4,51 @@ Frissítve: **2026-10-25**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Felhős fotótörlés helyi admission és draftképek megőrzése – 2026-10-25
+
+**7d62ae3**, [skip ci]. Korábbi photo-delete epoch-check csak a HTTP indításának
+pillanatát védte; a már induló törlés alatt új ref vagy restore kerülhetett be.
+NativeCloudPhotoDeletion a friss Room scalar live-ID/Drive-alias, nested imported
+draft és public/native/ownership snapshot ellenőrzés után, a meglévő metadata
+lease és ownership→ActiveStore→canonical store monitorsorrend alatt regisztrál
+per-photo reservationt. Az összes production canonical write ugyanazt a
+PhoneWorkoutExecution singletonstore-t használja (PhoneWorkoutEngine.kt).
+
+A HTTP ezután e lockokon kívül fut. Amíg a fizikai szinkron hívás fut, explicit
+restore/recovery/erase gyorsan elutasítva, és ugyanazon ref nem köthető vissza
+sem Room import/save, sem canonical/public frame mentésben. Ordinary settings és
+más/új UUID-s workout elérhető; nincs restore/workout-start fence a hálózat alatt.
+Native frame guard csak root photos listát néz, nem set/GPS fát minden ticknél.
+Regisztrációt is körülvevő finally engedi el a reservationt: dispatcher-return
+cancellation sem szivárogtathatja. Transport error után látható hiba és újrapróba.
+
+Külön adatmegőrzési javítás: a stage/archive photoRows közös collectorába a
+history mellé a draft és draft.session fotói is bekerülnek. Aktív draft-ref
+ugyanazon ID history-tombstone-ja mellett élő: helyi kép nem kerül törlési tervbe,
+és verified ZIP incoming/manifest/hash/redo megőrzi. Nem gyűjtjük a könyvtári
+asseteket progress-fotónak. Importált deletedAt közös photoDeleted helperből:
+a numerikus0.0/false/null/blank nem hamis törlés a Room sorban sem.
+
+**14 új JVM-próbakód, NEM FUTOTT; batch519 JVM+48 Phone UI.** Élő Room/alias,
+zero marker, draft/native/mirror, in-flight restore tiltás+metadata elérhetőség,
+import/frame rebind rollback+új UUID start, fizikailag futó callback cancellation,
+network error/retry, malformed draft, stale ticket, aktív draft stage és valós
+ZIP redo bytes esetei. Régi stage-deletion próbák az új suspend callbackhoz
+igazítva, ugyanazok az elvárások. Helyben csak actual DAO SQLite17 eset PASS,
+lexical delimiter/import/diff, singleton/callsite és forrássorrend ellenőrzés;
+nem Kotlin/Room/Google/emulátor. Utolsó teljes zöld továbbra dd4cc27.
+
+Határ: processz-szintű foglalás, nem tartós szerverzár. Timeout/processdeath után
+szerveren bizonytalanul befejeződő kérés, cross-device/older-peer verseny és
+orphan upload/read-back további protokoll-/valódi Google-igazolás. Nem állítjuk,
+hogy minden elosztott törlési verseny lezárt. Nincs új CI/APK/screenshot.
+
+Felhasználó rákérdezett a módra: továbbra High kód/bekötés; Medium vizuális
+finomítás előtt, Extra High komoly végső CI-debug előtt jelzendő. Következő kód:
+Home count és ajánlott programnap a meglévő NativeCoachTargets-ből, teljes
+programId/dayId/scheduleId start, adat-invalidation, majd A–E/UI/Health leltár.
+Csak migrációs ág, változatlan verzió/package, main/élő install STOP.
+
 ## Lokalizációs integráció és Google consent tényleges bekötése – 2026-10-25
 
 **3b548ac**: draft #240 exact82883ab squash integrálva a migrációba, a külső ágra

@@ -37,10 +37,14 @@ aláírt szintetikus upgrade **2/2**, nincs hiba/kihagyás. Letöltött release 
 hash/csomag/verzió/signer ellenőrizve; a measured protokoll és az időnaplómezők a telefonos R8 DEX-ben is jelen vannak.
 [Gépi bizonylat](builds/2026-10-23-native-measured-intervals.json).
 
-**Aktuális nem bevizsgált batch:** `87b593b`, **505 új JVM +48 Phone UI**
+**Aktuális nem bevizsgált batch:** `7d62ae3`, **519 új JVM +48 Phone UI**
 tesztkód megírva, NEM FUTOTT. #24082883ab és #241ab25d84 squash integrálva,
 Home nevek/egységek javítva; mind a hat külön UI-próba valódi pickert kattint.
 [Integrációs review](reviews/NATIVE_LOCALIZATION_INTEGRATION.md).
+Helyi per-photo in-flight admission és draft-photo stage/archive/redo megőrzés
+kódban; +14 JVM-kód nem futott. Metadata/frame rebind és restore gyors tiltás,
+normál settings/új UUID workout elérhető, HTTP a lokális lockokon kívül. Valódi
+Google/cross-device és timeout/processdeath bizonytalan szerverbefejezés nyitott.
 Google egyetlen auth→consent→profil→régi sync-mag út bekötve, per-attempt result,
 cancel/rotation/process-recreation és restore/erase epoch-védelem kódban, nem
 valódi Google-fiókkal igazolva. Privát staging/ZIP-redo/post-acceptance publish,

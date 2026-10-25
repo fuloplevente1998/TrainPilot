@@ -166,6 +166,10 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
   Engedélyezett ismétlődő szinkronhoz ne legyen kötelező gombnyomás. Kapcsolódás,
   rendszerengedély, tényleges teljesítés és terhelési döntés továbbra is tudatos.
 
+- Fotóhivatkozás írásakor őrizd meg a NativeCloudPhotoDeletion admissiont:
+  Room import a metadata lease-ben, kanonikus/public snapshot a meglévő store-
+  monitor alatt ellenőriz. HTTP nem tarthatja a metadata/workout-start fence-et.
+  Időzítő-frame ellenőrzése csak a root fotósorokat nézze, ne teljes set/GPS fát.
 - Egy kanonikus edzés, stabil workout/set azonosítók, egy időzítő-tulajdonos.
   Átadás visszaigazolt és tartós; bizonytalan állapot szünetben marad. Kapcsolat
   visszatérése nem indíthat néma tulajdonosváltást vagy párhuzamos időzítőt.
