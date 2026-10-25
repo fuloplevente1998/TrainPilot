@@ -20,6 +20,17 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   prototípus/fake Health-forrás tilos. Nyolcgombos menü helyett öt alsó fül elfogadva,
   jobb felső Settings; abból visszatérés nem pause, valódi editor-elhagyás igen.
 
+## Legutóbbi review/javítás – 2026-10-25
+
+**7143cef**: da65f66 utáni célzott forrásreview. A nehezebb fekvőtámasz-csere
+közös eligibility-szűrést kapott; személyes elfogadás Room tx-n belül teljes
+kanonikus katalógus/profil/history128 újragenerálást és draft/recept/bizonyíték
+összevetést végez írás előtt. UI publikus/internal típusütközések javítva.
+4 új unit-kód; **batch317 unit+34 Phone UI még nem futott**. XML/resource/diff és
+mentés előtti forrássorrend ellenőrizve; nem build vagy készülékteszt.
+Következő változatlanul: három stabil alkalom utáni külön Coach variáció/upgrade
+előnézet és jóváhagyás, main-referencia alapján. PR #238 az állapotlap.
+
 ## Legújabb natív batch – 90 napos A/B előzményöröklés
 
 `cd696e7c` `[skip ci]` kód: `NativeProfileHistory128`

@@ -4,6 +4,31 @@ Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Gyors folytatási review és személyes előnézet újraellenőrzése – 2026-10-25
+
+**7143cef** app-/tesztforrás, [skip ci]. A da65f66 távoli állapot tiszta munkafába,
+fast-forwarddal átvéve; nem régebbi mainből indultunk. Célzott review: A/B tervező,
+history128 adatút/elfogadás, Progress lekérdezés, új háttér-policy és UI-típusok.
+Nem teljes audit és nem Android-futtatási igazolás.
+
+Javítások: a decline-pushup csere ugyanazt a kezdő/kerülendő testrész/felszerelés/
+kizárás szűrést kapja, mint az eredeti gyakorlat. Személyes terv elfogadásakor a
+Room-tranzakción BELÜL a kanonikus katalógusból/profilból újrageneráljuk az egész
+tervet és az esetleges history128-öröklést; a draft, receptek és bizonyíték eltérése
+az első programírás előtt megszakítja a mentést. Az eddigi, UI-JSON-ból épített
+lineage-újraszámítás önmagában nem védte a katalógusváltozást vagy módosított receptet.
+TrainingPrograms UI/VM/state internal; a publikus Health-state BackgroundBlock
+enumja publikus, így a belső típusok API-kitettsége rendezve.
+
+4 új unit-próbakód: cserevariáns kezdő/testrész megkerülése, katalógusváltozás,
+bizonyíték nélküli recept-módosítás és írás nélküli elutasítás. **Batch317 unit+34
+Phone UI kód megírva, még nem futott.** Négy nyelvi XML/egyedi kulcs/hivatkozás,
+revalidation-before-write forrássorrend és diff ellenőrzés rendben. Kotlin/Room/
+Compose build és készülékes eredmény nincs új. Következő: Coach három stabil alkalom
+utáni külön variáció/upgrade előnézet és jóváhagyás a main pontos szabályai alapján;
+majd további leltár/dizájn és közös CI. PR #238 frissítve; main/viselhető hotfixág,
+verzió és élő adatok változatlanok.
+
 ## 90 napos A/B edzéselőzmény és Coach-öröklés adatút
 
 **cd696e7c** `[skip ci]` utolsó alkalmazás-/tesztforrás,
