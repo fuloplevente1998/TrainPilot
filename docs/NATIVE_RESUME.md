@@ -20,6 +20,19 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   prototípus/fake Health-forrás tilos. Nyolcgombos menü helyett öt alsó fül elfogadva,
   jobb felső Settings; abból visszatérés nem pause, valódi editor-elhagyás igen.
 
+## Legfrissebb Coach variáció-bekötés – 2026-10-25
+
+**432727e**: meglévő Coach 3 stabil alkalmas ajánlóból read-only variáció-előnézet,
+profil/felszerelés/kizárás/kezdő/readiness/pain guard. Main tp128Rx recept, trial0,
+explicit mentéskori teljes újraszámolás/hash/Room tx + NativeProgramEditor clone.
+Saját/builtin program is új ID, parentProgramId/sourceType coach, változott
+history128 entry törlés; napló és aktív program nem változik. **Mentés új programként**,
+aktiválás külön Programok oldalon, a dialog ezt jelzi (main automatikus aktiválási
+viselkedésétől eltér). Level2 teljes programupgrade még nyitott.
+10 unit+1 UI új kód; **batch327 unit+35 UI még nem futott**. XML/resource/diff és
+recheck-before-clone statikus ellenőrzés; nincs új Android/CI/APK/screenshot.
+PR #238 frissítve. Wear #239 külön hotfix nincs itt átvéve, elfogadás utáni port nyitott.
+
 ## Legutóbbi review/javítás – 2026-10-25
 
 **7143cef**: da65f66 utáni célzott forrásreview. A nehezebb fekvőtámasz-csere

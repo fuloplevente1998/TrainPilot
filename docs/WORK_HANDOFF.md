@@ -4,6 +4,40 @@ Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Coach variáció: előnézet és külön programmásolat – 2026-10-25
+
+**432727e** alkalmazás-/tesztforrás, [skip ci]. Main `7473b30:www/app.js`
+`tp128VariationPreview/tp128Rx` (16837/16598) és a meglévő natív Coach-ajánló
+újrahasználva. Három kompatibilis stabil felső teljesítés, valós aktuális
+readiness/fájdalom és profil/felszerelés/kizárás/kezdő-feltételek után nyitható
+csak olvasható variáció-előnézet. Nem elérhető nehezebb fekvőtámasznál az eredeti
+szünetes változat; kerülendő testrész nem kerülhető meg; külső súlyhoz explicit
+súlyzó/rúd kell. Új recept trial/0 kg, új variáció/progressionLevel; nincs
+mérési készültség vagy tényleges RIR átmásolva.
+
+Mentéskor metadata admission + Room tranzakció alatt újraszámoljuk az ajánlót,
+readiness-t, profilt, katalógust, konkrét előzményt. SHA/draft/variáció eltérésnél
+nincs írás. A meglévő NativeProgramEditor.save új explicit clone ága biztosítja,
+hogy saját és builtin forrás is új azonosítóra menjen; szülő/coach metaadat és
+recept ugyanabban a tranzakcióban kerül be. A módosított gyakorlat history128
+referenciája törlődik; régi napló/sablon/aktív választás megmarad. Sztring és
+objektumos napbejegyzés is kezelve, variáció miatti duplikált gyakorlat tiltott.
+HU/EN/DE/RO dialog, hibánál megtartott előnézet, meglévő Wear publikáció.
+
+**UI-döntés/eltérés:** a gomb egyértelműen „Mentés új programként”; aktiválás a
+meglévő Programok művelettel külön történik. A webes main az elfogadással aktivál.
+Ezt a natív UI nyíltan jelzi; nem állítunk teljes aktiválási paritást vagy teljes
+Level2 upgrade/paritást. Globális, több gyakorlatra épülő Level2 előnézet és
+readiness/fájdalom/idő programátalakítás maradt; teljes funkció/UI/CI leltár is.
+
+10 új unit+1 Phone UI-kód: read-only/cancel, új saját programmásolat, 2 vs3 alkalom,
+fájdalom, profil/programváltozás, felszereléshiány, kizárás, restore és próbarecept.
+**Batch327 új unit +35 Phone UI, még nem futott.** XML/kulcs/resource/diff és
+újraellenőrzés→klónozás forrássorrend ellenőrzése rendben, nem Kotlin/Room/Compose
+futtatás. Nincs új natív APK/kép/zöld CI; utolsó zöld dd4cc27. PR #238 frissítve.
+A külön main-alapú Wear #239 engedélyjavítás nincs ebbe a migrációs ágba átvéve;
+készülékes elfogadása és későbbi natív átvezetése külön követendő.
+
 ## Gyors folytatási review és személyes előnézet újraellenőrzése – 2026-10-25
 
 **7143cef** app-/tesztforrás, [skip ci]. A da65f66 távoli állapot tiszta munkafába,
