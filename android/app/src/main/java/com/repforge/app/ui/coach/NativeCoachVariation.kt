@@ -6,6 +6,8 @@ import com.repforge.app.*
 import com.repforge.app.data.db.ProgramWithDays
 import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.store.TrainPilotSettingsStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import org.json.JSONTokener
@@ -20,8 +22,11 @@ internal class NativeCoachVariation(private val context: Context, private val db
 
     suspend fun preview(target: CoachTarget, exerciseId: String, now: Instant = Instant.now()): Preview =
         NativeDataReplacement.mutate(context) {
-            check(ActiveWorkoutStore.current(context)?.optBoolean("active") != true &&
-                PhoneWorkoutExecution.store(context).snapshot()?.optBoolean("active") != true)
+            val idle = withContext(Dispatchers.Main.immediate) {
+                ActiveWorkoutStore.current(context)?.optBoolean("active") != true &&
+                    PhoneWorkoutExecution.store(context).snapshot()?.optBoolean("active") != true
+            }
+            check(idle)
             val settings = TrainPilotSettingsStore(context).current()
             require(settings.activeProgramId == target.programId)
             val profile = NativeTrainingProfile.verified(JSONObject(settings.profileJson))
