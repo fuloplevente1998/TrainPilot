@@ -66,16 +66,18 @@ internal object NativeTrainingModeChange {
         return store.saveApprovedTrainingModes197(preview.expectedRaw, next(preview), preview.expectedActiveProgramId)
     }
 
-    fun undoValue(raw: String?, scope: String, programId: String?): JSONObject? {
+    data class UndoValue(val previous: JSONObject?)
+
+    fun undoValue(raw: String?, scope: String, programId: String?): UndoValue? {
         val key = if (scope == "global") "global" else "program:$programId"
         if (scope != "global" && (programId.isNullOrBlank() || programId.length >= 256)) return null
         val current = runCatching { raw?.let(::JSONObject) }.getOrNull() ?: return null
         val undo = current.optJSONObject("undo") ?: return null
         if (undo.optString("scope") != key || !undo.has("previous")) return null
         val previous = undo.opt("previous")
-        if (previous == JSONObject.NULL) return JSONObject().put("_native197Clear", true)
+        if (previous == JSONObject.NULL) return UndoValue(null)
         if (previous !is JSONObject) return null
-        return JSONObject(previous.toString()).apply { remove("undo") }
+        return UndoValue(JSONObject(previous.toString()).apply { remove("undo") })
     }
 
     suspend fun undo(store: TrainPilotSettingsStore, scope: String, programId: String?): Boolean {
@@ -83,7 +85,7 @@ internal object NativeTrainingModeChange {
         if (scope == "program" && programId != current.activeProgramId) return false
         val raw = current.trainingModes197Json
         val result = undoValue(raw, scope, programId) ?: return false
-        return store.saveApprovedTrainingModes197(raw, if (result.optBoolean("_native197Clear")) null else result,
+        return store.saveApprovedTrainingModes197(raw, result.previous,
             if (scope == "program") current.activeProgramId else null)
     }
 }
