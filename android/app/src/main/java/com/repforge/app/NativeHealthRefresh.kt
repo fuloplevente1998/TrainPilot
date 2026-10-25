@@ -22,6 +22,15 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /** Shared foreground-only read through the existing Samsung/HC adapters, never a synthetic provider. */
 internal object NativeHealthRefresh {
+    /** Exact local-day boundaries; the current day's query stops at now. */
+    internal fun dayWindow(day: LocalDate, zone: ZoneId, now: java.time.Instant): Pair<java.time.Instant, java.time.Instant> {
+        val start = day.atStartOfDay(zone).toInstant()
+        val midnight = day.plusDays(1).atStartOfDay(zone).toInstant()
+        val end = if (midnight.isAfter(now)) now else midnight
+        require(end.isAfter(start)) { "Health day has not started yet" }
+        return start to end
+    }
+
     private data class Prepared(
         val provider: String,
         val journalGeneration: Long,
@@ -117,15 +126,8 @@ internal object NativeHealthRefresh {
                 withTimeout(10_000) { while (!foreground.get()) delay(50) }
             }
             guard()
-            val start = day.atStartOfDay(prepared.zone).toInstant().toString()
-            // Health Connect rejects a future end instant. For today use the observation
-            // horizon, not tomorrow's midnight (also works for DST-short/long local days).
-            val endOfDay = day.plusDays(1).atStartOfDay(prepared.zone).toInstant()
-            val horizon = java.time.Instant.now()
-            val endInstant = if (endOfDay.isAfter(horizon)) horizon else endOfDay
-            check(endInstant.isAfter(java.time.Instant.parse(start))) {
-                "Health day has not started yet"
-            }
+            val (startInstant, endInstant) = dayWindow(day, prepared.zone, java.time.Instant.now())
+            val start = startInstant.toString()
             val end = endInstant.toString()
             val result = if (prepared.provider == HealthJournalStore.SAMSUNG) {
                 SamsungHealthRepository.readHealthDay(
