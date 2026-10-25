@@ -53,6 +53,10 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -95,6 +99,23 @@ fun HealthDashboardScreen(
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val activity = context as? Activity
+    val screenLifecycle = LocalLifecycleOwner.current
+    DisposableEffect(screenLifecycle, activity, viewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> viewModel.healthScreenVisible(activity)
+                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> viewModel.healthScreenHidden(activity)
+                else -> Unit
+            }
+        }
+        screenLifecycle.lifecycle.addObserver(observer)
+        if (screenLifecycle.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
+            viewModel.healthScreenVisible(activity)
+        onDispose {
+            screenLifecycle.lifecycle.removeObserver(observer)
+            viewModel.healthScreenHidden(activity)
+        }
+    }
     val strings = remember(context, state.language) { nativeResources(context, state.language) }
     var detailType by rememberSaveable(state.selectedDay, state.historyChannel) { mutableStateOf<String?>(null) }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
@@ -147,6 +168,7 @@ fun HealthDashboardScreen(
             HealthJournalTabContent(
                 state = state,
                 onSelectProvider = { viewModel.setProvider(it, activity) },
+                onAutoOnOpen = viewModel::setAutoOnOpen,
                 onToggleHcBackground = { enable ->
                     if (enable && state.hcBackgroundBlock == BackgroundBlock.BACKGROUND_PERMISSION)
                         backgroundPermissionLauncher.launch(HealthConnectRepository.BACKGROUND_READ_PERMISSION)
@@ -199,6 +221,7 @@ fun HealthJournalTabContent(
     state: HealthDashboardUiState,
     onSelectProvider: (String) -> Unit,
     onToggleHcBackground: (Boolean) -> Unit,
+    onAutoOnOpen: (Boolean) -> Unit = {},
     onRefresh: () -> Unit,
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
@@ -310,6 +333,49 @@ fun HealthJournalTabContent(
                         .getString(com.repforge.app.R.string.health_daily_source_partial), color = colors.muted,
                         modifier = Modifier.testTag("health_daily_partial"))
                 }
+            }
+        }
+
+        // Foreground auto-on-open is intentionally independent of Android background job permission.
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth().testTag("health_auto_refresh_card"),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = colors.card2)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(strings.getString(R.string.native_health_auto_refresh_title),
+                            color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text(strings.getString(R.string.native_health_auto_refresh_help),
+                            color = colors.muted, fontSize = 11.sp)
+                        if (state.autoOnOpenSaveFailed) Text(
+                            strings.getString(R.string.native_health_auto_refresh_save_error),
+                            color = colors.dangerText, fontSize = 11.sp,
+                            modifier = Modifier.testTag("health_auto_refresh_save_error")
+                        )
+                    }
+                    Switch(
+                        checked = state.autoOnOpen,
+                        enabled = !state.autoOnOpenSaving,
+                        onCheckedChange = onAutoOnOpen,
+                        modifier = Modifier.testTag("health_auto_refresh_switch"),
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = colors.accent,
+                            checkedTrackColor = colors.card
+                        )
+                    )
+                }
+                if (state.healthRefreshing) Text(
+                    strings.getString(R.string.native_health_auto_refresh_running),
+                    color = colors.muted, fontSize = 11.sp,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)
+                        .testTag("health_auto_refresh_running")
+                )
             }
         }
 
