@@ -8,6 +8,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.delay
@@ -100,11 +101,13 @@ fun ProgressScreen(
     }
     // Cheap date/zone check only; Room reloads only when the local date/zone
     // has actually changed. The short fallback handles missed OS broadcasts.
-    LaunchedEffect(viewModel) {
-        while (true) {
-            delay(NativeCardioCalendarRefresh.delayToCheck(
-                System.currentTimeMillis(), ZoneId.systemDefault()))
-            viewModel.onCardioCalendarTick()
+    LaunchedEffect(viewModel, lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (true) {
+                delay(NativeCardioCalendarRefresh.delayToCheck(
+                    System.currentTimeMillis(), ZoneId.systemDefault()))
+                viewModel.onCardioCalendarTick()
+            }
         }
     }
 
