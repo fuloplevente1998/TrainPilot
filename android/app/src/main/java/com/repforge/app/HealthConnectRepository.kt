@@ -125,6 +125,8 @@ object HealthConnectRepository {
 
     fun settingsIntent(): Intent = Intent("android.health.connect.action.HEALTH_CONNECT_SETTINGS")
 
+    private class ObsoleteReadPublication(cause: Throwable) : IllegalStateException("Health read publication invalidated", cause)
+
     class Access(
         context: Context,
         @JvmField val epoch: Long?,
@@ -138,9 +140,15 @@ object HealthConnectRepository {
 
         fun publishRead(writer: () -> Unit) {
             requireForeground()
-            readCommit {
-                requireForeground()
-                writer()
+            try {
+                readCommit {
+                    requireForeground()
+                    writer()
+                }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (failure: IllegalStateException) {
+                throw ObsoleteReadPublication(failure)
             }
         }
 
@@ -316,6 +324,8 @@ object HealthConnectRepository {
                     }
                 }
                 if (p.origin.isEmpty()) result else result.filter { src(it) == p.origin }
+            } catch (obsolete: ObsoleteReadPublication) {
+                throw obsolete
             } catch (e: Exception) {
                 warnings.put("$perm: ${p.message(e)}")
                 emptyList()
