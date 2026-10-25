@@ -87,10 +87,7 @@ jobs:
           profile: pixel_2
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
-          script: |
-            cd android
-            ./gradlew --no-daemon -PnativePhoneUiTests :app:connectedDebugAndroidTest \
-              -Pandroid.testInstrumentationRunnerArguments.class=com.repforge.app.NativeHealthAutoRefreshUiTest
+          script: "cd android && ./gradlew --no-daemon -PnativePhoneUiTests :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.repforge.app.NativeHealthAutoRefreshUiTest"
       - name: Save raw UI evidence
         uses: actions/upload-artifact@v4
         if: always()
