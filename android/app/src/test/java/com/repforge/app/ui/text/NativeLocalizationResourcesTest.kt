@@ -12,7 +12,7 @@ import javax.xml.parsers.DocumentBuilderFactory
  * JVM-only resource consistency test: it does not claim to exercise Android locale switching.
  * Run with :app:testDebugUnitTest when an Android SDK / Gradle runner is available.
  */
-class NativeUiStringResourcesTest {
+class NativeLocalizationResourcesTest {
     private val folders = listOf("values", "values-en", "values-de", "values-ro")
     private val placeholders = Regex("%(?:[1-9][0-9]*\\$)?[dsf]")
 
