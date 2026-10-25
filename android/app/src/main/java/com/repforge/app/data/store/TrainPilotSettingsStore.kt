@@ -306,15 +306,23 @@ class TrainPilotSettingsStore(private val context: Context) {
      * modifies a workout, program prescription, draft or journal.
      * The caller must separately enforce explicit confirmation and active-session guards.
      */
-    internal suspend fun saveApprovedTrainingModes197(expectedRaw: String?, approved: JSONObject?): Boolean {
+    internal suspend fun saveApprovedTrainingModes197(expectedRaw: String?, approved: JSONObject?,
+        expectedActiveProgramId: String? = null): Boolean {
         require(approved == null || NativeTrainingModes.validForWrite(approved)) {
             "Invalid approved training modes configuration"
         }
         val replacement = approved?.toString()
         return NativeDataReplacement.mutate(context) {
+            // Also protect paused sessions, ownership transfer and native execution
+            // that may not be visible to the currently displayed UI.
+            val activeUi = com.repforge.app.ActiveWorkoutStore.current(context)?.optBoolean("active") == true
+            val activeExecution = com.repforge.app.PhoneWorkoutExecution.store(context)
+                .snapshot()?.optBoolean("active") == true
+            check(!activeUi && !activeExecution) { "Finish the active workout before changing training modes" }
             var updated = false
             context.trainPilotDataStore.edit { prefs ->
-                if (prefs[KEY_TRAINING_MODES_197] == expectedRaw) {
+                if (prefs[KEY_TRAINING_MODES_197] == expectedRaw &&
+                    (expectedActiveProgramId == null || (prefs[KEY_ACTIVE_PROGRAM_ID] ?: "home-basic") == expectedActiveProgramId)) {
                     if (replacement == null) prefs.remove(KEY_TRAINING_MODES_197)
                     else prefs[KEY_TRAINING_MODES_197] = replacement
                     updated = true
