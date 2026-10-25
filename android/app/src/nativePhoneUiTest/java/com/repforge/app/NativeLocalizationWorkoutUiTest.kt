@@ -31,8 +31,8 @@ class NativeLocalizationWorkoutUiTest {
     }
     private fun snapshot(): JSONObject = requireNotNull(fixture.currentWorkout()) { "Active workout missing" }
     private fun waitForText(value: String) {
-        compose.waitUntil(15_000) { compose.onAllNodesWithText(value).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText(value).assertExists()
+        compose.waitUntil(15_000) { compose.onAllNodesWithText(value, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText(value, useUnmergedTree = true).assertExists()
     }
     private fun switchWhileInSettings(language: String, expectedLabel: String) {
         fixture.selectLanguage(language)
@@ -142,7 +142,7 @@ class NativeLocalizationWorkoutUiTest {
         assertFalse(exerciseSets(after).getJSONObject(0).optBoolean("done"))
         assertEquals(0.0, exerciseSets(after).getJSONObject(0).optDouble("distanceMeters", 0.0), 0.0)
         assertFalse("A locale change must not activate a GPS measurement",
-            after.optJSONObject(NativeGpsMeasurement.FIELD)?.optString("state") in listOf("running", "prepared", "explicitStopped"))
+            after.optJSONObject(NativeGpsMeasurement.FIELD)?.optString("state").orEmpty() in listOf("running", "prepared", "explicitStopped"))
         assertEquals(0, runBlocking(Dispatchers.IO) { fixture.database.workoutHistoryDao().getWorkoutCount() })
     }
 }
