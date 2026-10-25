@@ -54,10 +54,12 @@ class NativeMetadataGateTest {
     }
     @Test fun nestedImporterAndSettingsCallbacksShareTheSameAdmittedWriterWithoutDeadlock() = runTest {
         var count = 0
-        withTimeout(5000) {
-            NativeDataReplacement.mutate(context) {
-                NativeDataReplacement.mutate(context) { count++ }
-                withContext(Dispatchers.IO) { NativeDataReplacement.mutate(context) { count++ } }
+        withContext(Dispatchers.Default) {
+            withTimeout(5000) {
+                NativeDataReplacement.mutate(context) {
+                    NativeDataReplacement.mutate(context) { count++ }
+                    withContext(Dispatchers.IO) { NativeDataReplacement.mutate(context) { count++ } }
+                }
             }
         }
         assertEquals(2, count)
