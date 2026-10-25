@@ -54,7 +54,8 @@ internal object NativeHealthForegroundAdmission {
     }
 
     /** Room/restore/backup/ownership checks are legal on an SDK reader's IO thread. */
-    fun safeOffMain(context: Context): Boolean = try {
+    fun safeOffMain(context: Context): Boolean {
+        return try {
         if (!NativeHealthBackupGate.available() || NativeDataReplacement.blocked(context)) return false
         if (HealthJournalStore.get(context).pendingRestore().isNotEmpty()) return false
         val ownership = PhoneOwnership193.journal(context).read()
@@ -66,6 +67,7 @@ internal object NativeHealthForegroundAdmission {
         )
     } catch (_: Exception) {
         false
+        }
     }
 
     /** Outside ALL metadata locks; only the main-looper execution probe changes dispatcher. */
