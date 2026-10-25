@@ -165,7 +165,7 @@ class NativeWeightDeletionReplayTest {
         seed(weight()); delete(); val base = backup()
         assertEquals(0, merge(data(weight()), data(weight()), base, listOf(data(weight(null)))).getJSONArray("weights").length())
     }
-    @Test fun sameCountDeleteAndReaddStillInvalidatesTheCloudMetadataSnapshot() = runBlocking {
+    @Test fun sameCountDeleteAndReaddStillInvalidatesTheCloudMetadataSnapshot(): Unit = runBlocking {
         seed(weight()); val before = backup(); delete(); repository.add(73.0, "2026-10-25")
         assertEquals(1L, db.bodyWeightDao().getWeightJournalSummary().measurementCount)
         val after = backup()
