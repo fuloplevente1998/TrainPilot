@@ -79,16 +79,28 @@ class NativeHealthAutoRefreshUiTest {
         }
         assertTrue("Direct IO access must retain the canonical main-looper guard",
             forbiddenDirectIo is IllegalStateException)
+        var published = 0
         runBlocking(Dispatchers.IO) {
             NativeHealthForegroundAdmission.requireMainAdmission(context)
             assertTrue("Actual IO provider admission must be allowed when quiet",
                 NativeHealthForegroundAdmission.safeOffMain(context))
+            // This is the exact synchronous publication callback used by the real
+            // HC and Samsung SDK adapters, without fabricating an SDK measurement.
+            NativeHealthForegroundAdmission.publish(context, { }, { published++ })
         }
+        assertTrue("A quiet IO read must reach the guarded journal writer", published == 1)
         NativeHealthBackupGate.begin()
         try {
             assertFalse(runBlocking(Dispatchers.IO) {
                 NativeHealthForegroundAdmission.safeOffMain(context)
             })
+            val error = runBlocking(Dispatchers.IO) {
+                runCatching {
+                    NativeHealthForegroundAdmission.publish(context, { }, { published++ })
+                }.exceptionOrNull()
+            }
+            assertTrue("Backup must reject provider journal publication", error is IllegalStateException)
+            assertTrue(published == 1)
         } finally {
             NativeHealthBackupGate.end()
         }
@@ -99,6 +111,13 @@ class NativeHealthAutoRefreshUiTest {
             assertFalse(runBlocking(Dispatchers.IO) {
                 NativeHealthForegroundAdmission.safeOffMain(context)
             })
+            val error = runBlocking(Dispatchers.IO) {
+                runCatching {
+                    NativeHealthForegroundAdmission.publish(context, { }, { published++ })
+                }.exceptionOrNull()
+            }
+            assertTrue("Restore must reject the protected journal writer", error is IllegalStateException)
+            assertTrue(published == 1)
         } finally {
             prefs.edit().putBoolean("blocked", before).commit()
         }
@@ -119,6 +138,14 @@ class NativeHealthAutoRefreshUiTest {
                     runBlocking(Dispatchers.IO) {
                         NativeHealthForegroundAdmission.safeOffMain(context)
                     })
+                val error = runBlocking(Dispatchers.IO) {
+                    runCatching {
+                        NativeHealthForegroundAdmission.publish(context, { }, {
+                            throw AssertionError("Active workout must not publish")
+                        })
+                    }.exceptionOrNull()
+                }
+                assertTrue(error is IllegalStateException)
             }
         } finally {
             val editor = prefs.edit()
