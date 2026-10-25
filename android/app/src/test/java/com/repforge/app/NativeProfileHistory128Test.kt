@@ -50,7 +50,7 @@ class NativeProfileHistory128Test {
         val legacy = builtin.copy(id = old, builtin = false,
             rawJson = JSONObject(builtin.rawJson).put("id", old).put("builtin", false).toString())
         db.programDao().saveProgramWithDays(legacy, days.filter { it.programId == source }.map {
-            it.copy(id = "$old:${it.dayId}", programId = old)
+            it.copy(compositeId = "$old:${it.dayId}", programId = old)
         })
     }
     @After fun close() { db.close() }
@@ -246,7 +246,7 @@ class NativeProfileHistory128Test {
         }
         NativeProfileHistory128.validatePortable(saved)
         assertEquals(4, saved.getJSONObject("history128").getJSONObject("entries")
-            .getJSONObject(this.id).getJSONArray("sources").length())
+            .getJSONObject(this@NativeProfileHistory128Test.id).getJSONArray("sources").length())
         assertEquals(4, db.workoutHistoryDao().getWorkoutCount())
     }
 

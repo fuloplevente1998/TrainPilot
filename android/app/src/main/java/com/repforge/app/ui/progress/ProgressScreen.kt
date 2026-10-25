@@ -1,5 +1,18 @@
 package com.repforge.app.ui.progress
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
+import java.time.ZoneId
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -55,9 +68,52 @@ fun ProgressScreen(
     val weights by weightViewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val strings = remember(context, state.language) { nativeResources(context, state.language) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // A Room write is not required for a new day/week or an OS time-zone
+    // change. ON_RESUME also catches returning from a backgrounded app or
+    // another navigation destination without losing the selected activity.
+    DisposableEffect(context, lifecycleOwner, viewModel) {
+        val applicationContext = context.applicationContext
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(receivingContext: Context, intent: Intent) {
+                if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
+                    intent.action in setOf(Intent.ACTION_DATE_CHANGED,
+                        Intent.ACTION_TIME_CHANGED, Intent.ACTION_TIMEZONE_CHANGED)) {
+                    viewModel.onCardioSystemClockChanged()
+                }
+            }
+        }
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_DATE_CHANGED)
+            addAction(Intent.ACTION_TIME_CHANGED)
+            addAction(Intent.ACTION_TIMEZONE_CHANGED)
+        }
+        ContextCompat.registerReceiver(applicationContext, receiver, filter,
+            ContextCompat.RECEIVER_EXPORTED)
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) viewModel.onCardioScreenResumed()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            applicationContext.unregisterReceiver(receiver)
+        }
+    }
+    // Cheap date/zone check only; Room reloads only when the local date/zone
+    // has actually changed. The short fallback handles missed OS broadcasts.
+    LaunchedEffect(viewModel, lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (true) {
+                delay(NativeCardioCalendarRefresh.delayToCheck(
+                    System.currentTimeMillis(), ZoneId.systemDefault()))
+                viewModel.onCardioCalendarTick()
+            }
+        }
+    }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp).testTag("progress_list"),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item { Spacer(Modifier.height(8.dp)) }
@@ -170,6 +226,14 @@ fun ProgressScreen(
                     }
                 }
             }
+        }
+
+        item(key = "progress_cardio") {
+            NativeCardioProgressPanel(
+                state = state,
+                onSelectActivity = viewModel::selectCardioActivity,
+                onRetry = viewModel::retryCardio
+            )
         }
 
         item {

@@ -13,7 +13,7 @@ import org.junit.runners.Parameterized
 class NativePlannerTemplateParityTest(private val name: String, private val data: JSONObject) {
     companion object {
         @JvmStatic @Parameterized.Parameters(name = "{0}") fun cases(): List<Array<Any>> {
-            val input = requireNotNull(NativePlannerTemplateParityTest::class.java.getResourceAsStream("/native-planner-main-7473.json"))
+            val input = requireNotNull(NativePlannerTemplateParityTest::class.java.getResourceAsStream("/native-planner-cases-main-7473.json"))
             val root = JSONObject(input.bufferedReader().use { it.readText() })
             require(root.getJSONObject("source").getString("appBlob") == "b5567576bed9a8f93608a6bf1ed8db1dee4723f4")
             val cases = root.getJSONArray("cases")

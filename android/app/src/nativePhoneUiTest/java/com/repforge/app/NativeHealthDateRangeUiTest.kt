@@ -4,8 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.view.View
 import android.widget.DatePicker
-import androidx.compose.ui.test.assertDoesNotExist
-import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createEmptyComposeRule

@@ -1,7 +1,14 @@
 package com.repforge.app.ui.progress
 
+import androidx.room.InvalidationTracker
+import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.db.ProgressMuscleSummary
 import com.repforge.app.data.db.WorkoutHistoryDao
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlin.math.max
@@ -59,4 +66,22 @@ internal object NativeProgressQuery {
         } while (page.size == PAGE)
         return best.values.reversed()
     }
+
+    /**
+     * Room's *write invalidations*, not a distinct/count cache. Edits to existing rows
+     * (including parent raw distanceSource, deleted sets and library names) re-trigger
+     * reads even if the number of workouts/sets is unchanged.
+     */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    fun invalidations(db: TrainPilotDatabase) = callbackFlow<Unit> {
+        val observer = object : InvalidationTracker.Observer(
+            "workout_history", "workout_history_exercises", "workout_history_sets",
+            "history_tombstones", "exercise_library"
+        ) {
+            override fun onInvalidated(tables: Set<String>) { trySend(Unit) }
+        }
+        db.invalidationTracker.addObserver(observer)
+        trySend(Unit)
+        awaitClose { db.invalidationTracker.removeObserver(observer) }
+    }.conflate().flowOn(Dispatchers.IO)
 }

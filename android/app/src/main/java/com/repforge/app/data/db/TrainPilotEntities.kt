@@ -358,3 +358,39 @@ data class PersonalRecordSet226(val setRowId: Long, val exerciseId: String, val 
 /** Keyset-paged completed strength sets for a single exercise, independent of journal size. */
 data class ProgressSetSummary(val workoutId: String, val started: String,
     val startedEpochMs: Long, val setRowId: Long, val weightKg: Double, val reps: String)
+
+
+/**
+ * Scalar projection for the cardio feed: no history relations, photos, GPS coordinates,
+ * or duplicated parent raw JSON. The adapter resolves optional set source metadata separately.
+ * The DAO's keyset is (finishedEpochMs, workoutId, setRowId) in descending order.
+ */
+data class CardioSetProjection(
+    val workoutId: String,
+    val startedEpochMs: Long,
+    val finishedEpochMs: Long,
+    val startedIso: String,
+    val finishedIso: String,
+    val setId: String,
+    val setRowId: Long,
+    val setNumber: Int,
+    val exerciseOrderIndex: Int,
+    val exerciseId: String,
+    val exerciseNameHu: String,
+    val exerciseNameEn: String,
+    val exerciseNameDe: String,
+    val exerciseNameRo: String,
+    val measurementType: String,
+    val libraryMeasurementType: String?,
+    val isKnownLibraryExercise: Boolean,
+    val repUnit: String,
+    val done: Boolean,
+    val distanceMeters: Double?,
+    val reps: String,
+    val leftSeconds: Int?,
+    val rightSeconds: Int?,
+    val gpsRouteKey163: String?,
+    val gpsRouteKey193: String?,
+    val exerciseHasDistance: Boolean,
+    val exerciseHasPositiveDistance: Boolean
+)

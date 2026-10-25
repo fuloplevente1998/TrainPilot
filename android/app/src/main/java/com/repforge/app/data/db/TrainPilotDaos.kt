@@ -274,6 +274,67 @@ interface WorkoutHistoryDao {
     """)
     suspend fun getProgressMuscleSummary(fromEpoch: Long, toEpoch: Long): List<ProgressMuscleSummary>
 
+
+    /**
+     * All completed cardio candidates, not merely the latest N workout summaries.
+     * The physical cursor uses FINISHED time, identity and raw set row ID (not the
+     * strength chart's started-time cursor). No relation/raw-JSON hydration.
+     *
+     * Sibling flags deliberately include undone sets in this same exercise instance,
+     * even when those siblings live outside the page or are not themselves emitted.
+     * The adapter must advance using the last *raw* row even if its model rejects it.
+     */
+    @Query("""
+        SELECT w.id AS workoutId,
+            w.startedEpochMs, w.finishedEpochMs,
+            w.started AS startedIso, w.finished AS finishedIso,
+            s.setId, s.rowId AS setRowId, s.setNumber,
+            e.orderIndex AS exerciseOrderIndex, e.exerciseId,
+            CASE WHEN TRIM(e.nameHu) <> '' AND e.nameHu <> e.exerciseId
+                THEN e.nameHu ELSE COALESCE(NULLIF(l.nameHu, ''), e.nameHu) END AS exerciseNameHu,
+            CASE WHEN TRIM(e.nameEn) <> '' AND e.nameEn <> e.exerciseId
+                THEN e.nameEn ELSE COALESCE(NULLIF(l.nameEn, ''), e.nameEn) END AS exerciseNameEn,
+            COALESCE(l.nameDe, '') AS exerciseNameDe,
+            COALESCE(l.nameRo, '') AS exerciseNameRo,
+            e.measurementType, l.measurementType AS libraryMeasurementType,
+            (l.id IS NOT NULL) AS isKnownLibraryExercise,
+            e.repUnit, s.done, s.distanceMeters, s.reps,
+            s.leftSeconds, s.rightSeconds, s.gpsRouteKey163, s.gpsRouteKey193,
+            EXISTS (
+                SELECT 1 FROM workout_history_sets sibling
+                WHERE sibling.historyExerciseRowId = e.rowId
+                    AND sibling.distanceMeters >= 0
+                    AND sibling.distanceMeters < 1.0e308
+            ) AS exerciseHasDistance,
+            EXISTS (
+                SELECT 1 FROM workout_history_sets sibling
+                WHERE sibling.historyExerciseRowId = e.rowId
+                    AND sibling.distanceMeters > 0
+                    AND sibling.distanceMeters < 1.0e308
+            ) AS exerciseHasPositiveDistance
+        FROM workout_history_sets s
+        JOIN workout_history_exercises e ON e.rowId = s.historyExerciseRowId
+        JOIN workout_history w ON w.id = e.workoutHistoryId
+        LEFT JOIN exercise_library l ON l.id = e.exerciseId
+        WHERE s.done = 1
+            AND (:beforeFinished IS NULL OR w.finishedEpochMs < :beforeFinished
+                OR (w.finishedEpochMs = :beforeFinished AND w.id < :beforeWorkoutId)
+                OR (w.finishedEpochMs = :beforeFinished
+                    AND w.id = :beforeWorkoutId AND s.rowId < :beforeSetRowId))
+            AND NOT EXISTS (SELECT 1 FROM history_tombstones t
+                WHERE (t.primaryId <> '' AND t.primaryId IN (w.id, w.syncId, w.workoutKey))
+                    OR (t.workoutKey <> '' AND t.workoutKey = w.workoutKey))
+        ORDER BY w.finishedEpochMs DESC, w.id DESC, s.rowId DESC
+        LIMIT :limit
+    """)
+    suspend fun pageCardioSets(
+        beforeFinished: Long?, beforeWorkoutId: String, beforeSetRowId: Long, limit: Int
+    ): List<CardioSetProjection>
+
+    /** Optional legacy per-set source lives only in parent raw JSON; read once per parent. */
+    @Query("SELECT rawJson FROM workout_history WHERE id = :workoutId LIMIT 1")
+    suspend fun getCardioWorkoutRawJson(workoutId: String): String?
+
     @Query("SELECT COUNT(*) FROM workout_history")
     suspend fun getWorkoutCount(): Int
 

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cardio_progress_title">Cardio</string>
+    <string name="cardio_progress_description">Distanțe și timpi salvați</string>
+    <string name="cardio_progress_all">Toate activitățile</string>
+    <string name="cardio_progress_loading">Se încarcă datele cardio…</string>
+    <string name="cardio_progress_error">Datele cardio nu au putut fi încărcate.</string>
+    <string name="cardio_progress_retry">Reîncearcă</string>
+    <string name="cardio_progress_empty">Nu există încă rezultate cardio salvate pentru această activitate.</string>
+    <string name="cardio_progress_all_time">Total</string>
+    <string name="cardio_progress_current_week">Săptămâna aceasta</string>
+    <string name="cardio_progress_previous_week">Săptămâna trecută</string>
+    <string name="cardio_progress_eight_weeks">Distanță – ultimele 8 săptămâni</string>
+    <string name="cardio_progress_time_only">Doar timp: %1$s</string>
+    <string name="cardio_progress_records">Recorduri la aceeași distanță</string>
+    <string name="cardio_progress_no_records">Încă nu există recorduri de timp pentru distanțe măsurate.</string>
+    <string name="cardio_progress_record_distance">%1$d m • %2$d încercări</string>
+    <string name="cardio_progress_record_best">Cel mai bun: %1$s (%2$s)</string>
+    <string name="cardio_progress_record_second">Al doilea: %1$s (%2$s)</string>
+    <string name="cardio_progress_more">Arată încă %1$d recorduri</string>
+    <string name="cardio_progress_less">Arată mai puține recorduri</string>
+</resources>

@@ -9,7 +9,7 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
-import androidx.compose.ui.test.junit4.ComposeContentTestRule
+import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import com.repforge.app.data.db.TrainPilotDatabase
@@ -73,7 +73,7 @@ internal class NativeLocalizationEmulatorFixture {
     fun selectedLanguage(): String = runBlocking(Dispatchers.IO) { settings.current().language }
 
     /** Exercise the actual Settings UI/VM. Read DataStore only to await persisted completion. */
-    fun selectLanguageThroughUi(compose: ComposeContentTestRule, language: String) {
+    fun selectLanguageThroughUi(compose: ComposeTestRule, language: String) {
         require(language in listOf("hu", "en", "de", "ro"))
         val tag = "settings_language_$language"
         compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag(tag))
