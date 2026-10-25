@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cardio_progress_title">Kardió</string>
+    <string name="cardio_progress_description">Mentett táv- és időeredmények</string>
+    <string name="cardio_progress_all">Összes aktivitás</string>
+    <string name="cardio_progress_loading">Kardióadatok betöltése…</string>
+    <string name="cardio_progress_error">Nem sikerült betölteni a kardióadatokat.</string>
+    <string name="cardio_progress_retry">Újrapróbálás</string>
+    <string name="cardio_progress_empty">Ehhez az aktivitáshoz még nincs mentett kardióeredmény.</string>
+    <string name="cardio_progress_all_time">Összesen</string>
+    <string name="cardio_progress_current_week">Ezen a héten</string>
+    <string name="cardio_progress_previous_week">Előző héten</string>
+    <string name="cardio_progress_eight_weeks">Távolság – utolsó 8 hét</string>
+    <string name="cardio_progress_time_only">Csak időmérés: %1$s</string>
+    <string name="cardio_progress_records">Azonos távú rekordok</string>
+    <string name="cardio_progress_no_records">Még nincs mért távhoz tartozó időrekord.</string>
+    <string name="cardio_progress_record_distance">%1$d m • %2$d alkalom</string>
+    <string name="cardio_progress_record_best">Legjobb: %1$s (%2$s)</string>
+    <string name="cardio_progress_record_second">Második: %1$s (%2$s)</string>
+    <string name="cardio_progress_more">További %1$d rekord</string>
+    <string name="cardio_progress_less">Kevesebb rekord</string>
+</resources>
