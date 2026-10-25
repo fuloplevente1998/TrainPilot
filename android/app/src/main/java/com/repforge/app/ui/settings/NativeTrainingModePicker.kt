@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -16,6 +19,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,6 +32,9 @@ import androidx.compose.ui.unit.dp
 import com.repforge.app.R
 import com.repforge.app.data.store.NativeTrainingModeChange
 import com.repforge.app.data.store.NativeTrainingModes
+import com.repforge.app.ui.coach.NativeCoachAdviceText
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.repforge.app.ui.text.nativeResources
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 
@@ -47,7 +54,24 @@ internal fun NativeTrainingModePicker(
     }
     var style by remember(raw, scope, programId) { mutableStateOf(effective.trainingStyle) }
     var progression by remember(raw, scope, programId) { mutableStateOf(effective.progressionMode) }
-    var pending by remember(raw, scope, programId) { mutableStateOf<NativeTrainingModeChange.Preview?>(null) }
+    var pending by remember(raw, scope, programId, activeProgramId) {
+        mutableStateOf<NativeTrainingModeChange.Preview?>(null)
+    }
+    var comparison by remember { mutableStateOf<NativeTrainingModeComparison.Snapshot?>(null) }
+    var comparisonFailed by remember { mutableStateOf(false) }
+    LaunchedEffect(pending, raw, activeProgramId) {
+        val proposal = pending
+        comparison = null
+        comparisonFailed = false
+        if (proposal != null) {
+            try {
+                comparison = withContext(Dispatchers.IO) {
+                    NativeTrainingModeComparison.read(ctx, proposal)
+                }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (_: Exception) { comparisonFailed = true }
+        }
+    }
     var styleExpanded by remember { mutableStateOf(false) }
     var progressionExpanded by remember { mutableStateOf(false) }
     val undoAllowed = remember(raw, scope, programId) {
@@ -142,10 +166,65 @@ internal fun NativeTrainingModePicker(
                         styleLabel(preview.after.trainingStyle),
                         progressionLabel(preview.after.progressionMode)), color = colors.text)
                     Text(strings.getString(R.string.native_modes_no_rewrite), color = colors.muted)
+                    Text(strings.getString(R.string.native_modes_comparison_title),
+                        color = colors.text, fontWeight = FontWeight.Bold)
+                    when {
+                        comparisonFailed -> Text(strings.getString(R.string.native_modes_comparison_error),
+                            color = colors.dangerText)
+                        comparison == null -> Text(strings.getString(R.string.native_modes_comparison_loading),
+                            color = colors.muted)
+                        else -> {
+                            val available = comparison!!
+                            if (available.rows.isEmpty()) {
+                                Text(strings.getString(R.string.native_modes_comparison_empty),
+                                    color = colors.muted)
+                            } else {
+                                Text(strings.getString(R.string.native_modes_comparison_program, available.programName),
+                                    color = colors.text)
+                                Column(
+                                    modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp)
+                                        .verticalScroll(rememberScrollState()),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    for ((index, row) in available.rows.withIndex()) {
+                                        Column(
+                                            modifier = Modifier.fillMaxWidth()
+                                                .testTag("${tag}_comparison_$index"),
+                                            verticalArrangement = Arrangement.spacedBy(3.dp)
+                                        ) {
+                                            Text(strings.getString(R.string.native_modes_comparison_day, row.day),
+                                                color = colors.muted)
+                                            Text(row.exercise, color = colors.text,
+                                                fontWeight = FontWeight.Bold)
+                                            fun fmt(number: Number?) = number?.toString() ?: "—"
+                                            Text(strings.getString(R.string.native_modes_comparison_sets,
+                                                fmt(row.beforeSets), fmt(row.afterSets)), color = colors.text)
+                                            Text(strings.getString(R.string.native_modes_comparison_reps,
+                                                row.beforeReps, row.afterReps), color = colors.text)
+                                            Text(strings.getString(R.string.native_modes_comparison_weight,
+                                                fmt(row.beforeWeight), fmt(row.afterWeight)), color = colors.text)
+                                            row.restSeconds?.let { rest ->
+                                                Text(strings.getString(R.string.native_modes_comparison_rest, rest),
+                                                    color = colors.muted)
+                                            }
+                                            Text(strings.getString(R.string.native_modes_comparison_rir, row.rir),
+                                                color = colors.muted)
+                                            Text(strings.getString(R.string.native_modes_comparison_reason,
+                                                NativeCoachAdviceText.reason(strings, row.reason)),
+                                                color = colors.muted)
+                                        }
+                                    }
+                                }
+                            }
+                            Text(strings.getString(R.string.native_modes_comparison_notice),
+                                color = colors.muted)
+                        }
+                    }
                 }
             },
             confirmButton = {
-                Button(onClick = { pending = null; onApprove(preview) }, enabled = enabled,
+                Button(onClick = { pending = null; onApprove(preview) },
+                    enabled = enabled && comparison != null && !comparisonFailed,
                     modifier = Modifier.heightIn(min = 48.dp).testTag("${tag}_approve")) {
                     Text(strings.getString(R.string.native_modes_approve))
                 }
