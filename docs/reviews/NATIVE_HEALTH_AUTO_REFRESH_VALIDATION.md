@@ -38,3 +38,7 @@ The initial existing PR validation at `70c4f584` ran (GitHub Actions `4023327055
 * Quick validation stopped at `actions/setup-node` because the native migration branch lacks `package.json` and npm lockfile; the native migration does not own the main web/npm tree. No unrelated web toolchain was copied into this feature branch.
 
 The separate `NativeHealthBackupGate` now covers JSON/ZIP SAF import/export **and** native Drive backup/sync staging. `HealthJournalStore.healthDay` persists a first partial HC daily row without inventing absent metric values. `NativeHealthRefresh.dayWindow` clips today's future end and is tested across Budapest DST. A transient permission-dialog pause does not cancel explicit Samsung permission consent; STOP/dispose still invalidates stale publication.
+
+### Native compilation follow-up
+
+The second native PR run `40233832132` progressed past the FIR analyzer and reported two independent pre-existing Kotlin source errors: a stray brace in the Wear discard-command catch block (`WearSyncRepository.kt:247`), and a non-property constructor parameter reference in backup erase (`BackupRestoreManager.kt:590`). Both are repaired by minimal changes on the feature branch, without changing the Wear protocol, database schema, or package/version metadata. New build verification is required after these fixes.
