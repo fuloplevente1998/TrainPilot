@@ -292,6 +292,8 @@ fun ActiveWorkoutScreen(
                                     Text(state.modeReason, color = colors.text)
                                     Text(strings.getString(R.string.native_modes_coach_history,
                                         state.modeHistoryCount), color = colors.muted)
+                                    Text(strings.getString(R.string.native_modes_coach_sets,
+                                        state.modeWorkingSets), color = colors.muted)
                                     if (state.modeSuggestedWeight != null && state.modeBaselineWeight != null) {
                                         Text(strings.getString(R.string.native_modes_coach_weight,
                                             state.modeBaselineWeight.toString(),
