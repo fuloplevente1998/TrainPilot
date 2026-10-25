@@ -272,6 +272,43 @@ fun ActiveWorkoutScreen(
                             }
                         }
                     )
+                    if (!ex.isTimed && ex.measurementType !in setOf("distance", "time", "gps") &&
+                        ex.loadType != "bodyweight") {
+                        Card(modifier = Modifier.fillMaxWidth().testTag("training_mode_coach_panel"),
+                            colors = CardDefaults.cardColors(containerColor = colors.card)) {
+                            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(strings.getString(R.string.native_modes_title),
+                                    color = colors.text, fontWeight = FontWeight.Bold)
+                                OutlinedButton(onClick = { viewModel.previewTrainingModeWeight(ex.exerciseId) },
+                                    modifier = Modifier.fillMaxWidth().testTag("training_mode_coach_preview"),
+                                    enabled = !state.modeProposalLoading && !state.isFinishing &&
+                                        !state.isPaused && state.timerOwner == "phone") {
+                                    Text(strings.getString(R.string.native_modes_coach_open))
+                                }
+                                if (state.modeProposalForExercise == ex.exerciseId) {
+                                    Text(strings.getString(R.string.native_modes_coach_preview),
+                                        color = colors.muted)
+                                    Text(state.modeReason, color = colors.text)
+                                    Text(strings.getString(R.string.native_modes_coach_history,
+                                        state.modeHistoryCount), color = colors.muted)
+                                    if (state.modeSuggestedWeight != null && state.modeBaselineWeight != null) {
+                                        Text(strings.getString(R.string.native_modes_coach_weight,
+                                            state.modeBaselineWeight.toString(),
+                                            state.modeSuggestedWeight.toString()), color = colors.text)
+                                        Button(onClick = viewModel::reviewTrainingModeWeight,
+                                            modifier = Modifier.fillMaxWidth().testTag("training_mode_coach_review"),
+                                            enabled = !state.modeProposalLoading && !state.isPaused &&
+                                                state.timerOwner == "phone") {
+                                            Text(strings.getString(R.string.native_modes_coach_review))
+                                        }
+                                    } else {
+                                        Text(strings.getString(R.string.native_modes_coach_no_action),
+                                            color = colors.muted)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
                 // + Gyakorlat hozzáadása gomb
@@ -456,6 +493,27 @@ fun ActiveWorkoutScreen(
                 }
             },
             containerColor = colors.card
+        )
+    }
+
+    if (state.modeReviewOpen) {
+        AlertDialog(
+            onDismissRequest = viewModel::cancelTrainingModeReview,
+            title = { Text(strings.getString(R.string.native_modes_coach_confirm), color = colors.text) },
+            text = { Text(strings.getString(R.string.native_modes_no_rewrite), color = colors.muted) },
+            confirmButton = {
+                Button(onClick = viewModel::approveTrainingModeWeight,
+                    enabled = !state.modeProposalLoading,
+                    modifier = Modifier.testTag("training_mode_coach_approve")) {
+                    Text(strings.getString(R.string.native_modes_coach_apply))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::cancelTrainingModeReview,
+                    modifier = Modifier.testTag("training_mode_coach_cancel")) {
+                    Text(strings.getString(R.string.native_modes_coach_cancel))
+                }
+            }, containerColor = colors.card
         )
     }
 
