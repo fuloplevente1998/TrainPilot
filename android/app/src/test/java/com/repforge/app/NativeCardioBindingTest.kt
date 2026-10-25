@@ -174,6 +174,32 @@ class NativeCardioBindingTest {
         assertTrue(result.records.isEmpty())
     }
 
+    @Test fun newerIdPlaceholderDoesNotHideOlderHumanActivityName() = runBlocking {
+        val id = "custom-distance"
+        insert(2, exerciseId = id, meters = 4000.0, reps = "1200")
+        val newer = JournalTestFixtures.row(1).copy(
+            startedEpochMs = now - 61_000L, finishedEpochMs = now - 1_000L,
+            started = Instant.ofEpochMilli(now - 61_000L).toString(),
+            finished = Instant.ofEpochMilli(now - 1_000L).toString(), rawJson = "{}")
+        dao.insertWorkout(newer)
+        val parent = dao.insertExercise(WorkoutHistoryExerciseEntity(
+            workoutHistoryId = newer.id, exerciseId = id, nameHu = id, nameEn = id,
+            loadType = "bodyweight", repUnit = "mp", measurementType = "distance",
+            orderIndex = 0, actualRir = null, setRir229 = false))
+        dao.insertSets(listOf(WorkoutHistorySetEntity(
+            setId = "new-placeholder", workoutHistoryId = newer.id,
+            historyExerciseRowId = parent, exerciseId = id,
+            setNumber = 1, weight = null, reps = "900",
+            leftSeconds = null, rightSeconds = null, distanceMeters = 3000.0,
+            done = true, actualRir = null, gpsRouteKey163 = null, gpsRouteKey193 = null
+        )))
+        val model = NativeCardioProgressAdapter.load(dao, now, zone)
+        assertEquals(2, model.totalSetCount)
+        assertEquals("Guggolás", model.activities.single().nameHu)
+        assertEquals("Squat", model.activities.single().nameEn)
+        assertEquals(2, model.records.size)
+    }
+
     @Test fun activityFilterKeepsAllChoicesAndExplicitSelectedSource() = runBlocking {
         insert(1, exerciseId = "running", meters = 5000.0, reps = "900",
             rawJson = """{"exercises":[{"sets":[{"setId":"set-1","distanceSource":"gps"}]}]}""")
