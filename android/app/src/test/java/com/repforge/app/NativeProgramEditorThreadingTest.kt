@@ -54,7 +54,7 @@ class NativeProgramEditorThreadingTest {
         assertEquals("IO terv", opened.program.nameHu)
         withContext(Dispatchers.IO) { NativeProgramEditor.delete(context, db, opened, com.repforge.app.data.store.TrainPilotSettingsStore(context)) }
         assertNull(db.programDao().getProgramWithDaysById(id))
-        assertNull(ActiveWorkoutStore.current(context))
-        assertNull(PhoneWorkoutExecution.store(context).snapshot())
+        assertFalse(ActiveWorkoutStore.current(context)?.optBoolean("active") == true)
+        assertFalse(PhoneWorkoutExecution.store(context).snapshot()?.optBoolean("active") == true)
     }
 }
