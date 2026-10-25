@@ -1,7 +1,7 @@
 # Külön chatnek átadható feladat: main → natív funkcióleltár
 
-2026-10-25. **A felhasználó átadta külön chatnek.** Ág/PR/riport még nem
-érkezett vissza, az audit eredménye nem igazolt. A fő munkás közben a Kezdőlap napi
+2026-10-25. **Riport visszaérkezett draft #242-ben, exact9c3c264.** Csak az
+auditdokumentum változott; a jelentés forrásaudit, nem runtime/CI-eredmény. A fő munkás közben a Kezdőlap napi
 számláló/célprogramnap/start/invalidation bekötését folytatja a migrációs ágon.
 
 ## Másolható feladat
@@ -96,3 +96,8 @@ megírt dokumentum és ténylegesen végzett ellenőrzés. Implementációt ne k
 Utólagos migrációs delta: **e4920f4** javítja a Home mai számlálóját. A rögzített
 a5f562d bázist ne mozgasd; a saját jelentés végső deltaellenőrzésekor ezt a tételt
 már javítottnak jelöld. Célprogramnap/start/invalidation továbbra a fő munkásé.
+
+
+Átvétel: a teljes eredeti audit byte-pontosan a migrációs ágban, aktuális triage
+reviews/NATIVE_FEATURE_PARITY_TRIAGE.md. P1 programcélértékek b161126/97f18fd-ben
+kódban pótolva; a másik hat gap és futtatott elfogadás még nyitott.

@@ -68,10 +68,12 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
   kattintja; a fő UI-készlet nyelvváltási próbája is. Kód és futási eredmény külön:
   a négy unit +hat UI integrálása még nem zöld CI vagy készülékes elfogadás.
   Részletek: docs/reviews/NATIVE_LOCALIZATION_INTEGRATION.md.
-- A felhasználó külön chatnek átadta a következő részt:
-  docs/plans/NATIVE_FEATURE_PARITY_AUDIT_HANDOFF.md. Csak docs-audit a javasolt
-  test/native-feature-parity-audit ágon; ág/PR/eredmény még nem érkezett vissza.
-  A fő munkásnál marad Home/Coach/Naptár és a cloud/szinkron javítása.
+- A külön funkcióaudit visszaérkezett draft #242-ben: test/native-feature-parity-audit,
+  exact 9c3c264. Csak egy report változott, a migrációba byte-pontosan átemelve.
+  Rövid aktuális triage: docs/reviews/NATIVE_FEATURE_PARITY_TRIAGE.md; a hosszú
+  eredeti riportot csak konkrét forráshivatkozáshoz olvasd. Hét forrásszintű hiány,
+  ebből a programcélérték-szerkesztés b161126/97f18fd-ben kódban pótolva, nem
+  futtatott elfogadás. Külső ágra nem írtunk, PR-merge/lezárás nem történt.
 
 ## Felhasználói thinking-fázisok (2026-10-24)
 

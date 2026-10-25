@@ -37,13 +37,17 @@ aláírt szintetikus upgrade **2/2**, nincs hiba/kihagyás. Letöltött release 
 hash/csomag/verzió/signer ellenőrizve; a measured protokoll és az időnaplómezők a telefonos R8 DEX-ben is jelen vannak.
 [Gépi bizonylat](builds/2026-10-23-native-measured-intervals.json).
 
-**Aktuális nem bevizsgált batch:** `e4920f4`, **522 új JVM +48 Phone UI**
+**Aktuális nem bevizsgált batch:** `97f18fd`, **533 új JVM +48 Phone UI**
 tesztkód megírva, NEM FUTOTT. #24082883ab és #241ab25d84 squash integrálva,
 Home nevek/egységek javítva; mind a hat külön UI-próba valódi pickert kattint.
 [Integrációs review](reviews/NATIVE_LOCALIZATION_INTEGRATION.md).
+Külső #242 audit átemelve, hét source gap [triage](reviews/NATIVE_FEATURE_PARITY_TRIAGE.md).
+Program Rx P1 b161126/97f18fd-ben kódban pótolva, parent Save/global+inline
+prescriptions/clone/CAS/unit-context, +11 nem futott JVM és bővített UI-case.
+Hat auditgap és a többi A–E/platform/UX tétel továbbra nyitott; nem release-elfogadás.
 Home mai count helyi nap/DST epoch-tartományú scalar queryből, tombstone-kizárással
 és Health-read hibánál megőrzött értékkel; +3 nem futott JVM-kód. Ajánlott nap/start/
-invalidation még külön feladat. Külső funkcióaudit user által átadva, riport nincs.
+invalidation még külön feladat. Külső funkcióaudit visszaérkezett, a fenti triage követi.
 Helyi per-photo in-flight admission és draft-photo stage/archive/redo megőrzés
 kódban; +14 JVM-kód nem futott. Metadata/frame rebind és restore gyors tiltás,
 normál settings/új UUID workout elérhető, HTTP a lokális lockokon kívül. Valódi

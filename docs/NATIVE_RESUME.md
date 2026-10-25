@@ -21,6 +21,16 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
 
 ## Legújabb alkalmazásforrás
 
+- **b161126 /97f18fd**: #242 P1 program Rx editor bekötve: sets/reps/idő/weight/
+  rest/trial program-szinten, explicit delta a meglévő NativeProgramEditor.Draft-
+  ban. Csak parent Save ír, global prescriptions és meglévő inline explicit
+  mezők együtt frissülnek, opaque/RIR/variation/string ID megmarad. Builtin clone/
+  program CAS/active guard marad, katalógus unitváltozáskor stale save tiltott.
+  Form HU/EN/DE/RO17 új string, valódi settings-rest fallback. A közös actual
+  NativeWorkoutSession/start/prefill policy változatlan; grouped entries/parsed
+  Rx reuse mentéskor. +11 JVM-kód és meglévő app UI-eset invalid/cancel/save/
+  reopen/outerCancel bővítés NEM FUTOTT; nincs új UI-esetszám.
+
 - **e4920f4**: Home mai edzésszám helyi nap kezdete <= startedEpochMs < következő
   nap kezdete scalar Room queryből, nem teljes naplóból. Zone/DST23/25h és
   tombstone-kizárás; Health-read hiba sem nullázza a már ismert edzésszámot,
@@ -70,13 +80,13 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
 
 ## Bizonyíték és külső ágak
 
-- **Batch522 új JVM +48 Phone UI tesztkód NEM FUTOTT** (519+3 /42+6).
+- **Batch533 új JVM +48 Phone UI tesztkód NEM FUTOTT** (522+11 /42+6).
   Helyben csak lexical delimiter, diff, XML/kulcs/format/import/R-ref és pontos
   forrássorrend/kiemelési diff ellenőrzés volt. Nem Kotlin/Room/Compose/Google.
 - Migrációs ág utolsó teljes zöldje továbbra dd4cc27, Actions40072751592:
   Phone393/Wear167/WearUI183/signed upgrades2. Friss CI/APK/screenshot nincs.
 - Külső #240 feat/native-ui-localization82883ab és #241 test/native-localization-ui
-  ab25d84 kódja már bent, 4+6 most része a522+48-nak. Ágaikat nem írtuk, nem
+  ab25d84 kódja már bent, 4+6 most része a533+48-nak. Ágaikat nem írtuk, nem
   GitHub-merge történt; draftok nyitva maradnak az integrált próba/elfogadásig.
   Új külső HEAD-et az innen vett delta alapján nézz, ne integráld újra a régi diffet.
   Review: reviews/NATIVE_LOCALIZATION_INTEGRATION.md. Korábbi „nem integrált”/
@@ -84,24 +94,30 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
 - phone-ui-gate.py -e package com.repforge.app az új osztályokat is kiválasztja;
   nincs szükség új class-filter/workflow-ra. Más ág CI-ja nem a mi bizonyítékunk.
 
-- Külön chathez kész prompt: plans/NATIVE_FEATURE_PARITY_AUDIT_HANDOFF.md.
-  Docs-only main→native funkcióleltár, javasolt test/native-feature-parity-audit;
-  a felhasználó átadta, ág/PR/riport még nem érkezett vissza. Pinned bázis
-  a5f562d, main7473b30, csak saját riport írható.
+- Külső funkcióaudit #242/9c3c264 visszaérkezett: docs/reviews/
+  NATIVE_FEATURE_PARITY_AUDIT.md exact másolat, rövid aktuális állapot a
+  NATIVE_FEATURE_PARITY_TRIAGE.md-ben. Bázis a5f562d/main7473b30 +Home delta
+  ellenőrizve. Hét igazolt source gap, ebből Rx most kódban pótolva, hat nyitott.
+  Report nem runtime-teszt és nem minden feature teljes leltára; ne kezeld release-
+  elfogadásnak. Külső ágra nem írtunk, draft #242 nyitva, nincs GitHub-merge.
 
 ## Következő konkrét lépések
 
-1. Lokális in-flight photo delete / új ref / restore admission kódban, de szerver-
+1. Következő P1: naplózott edzés exact-ID/CAS szerkesztése (idő/gyakorlat/szett)
+   a meglévő Room/mapper úton, route/fotó/Health/unknown metadata megőrzéssel,
+   aktív UI/finish replay nélkül. Utána kapcsolódó workout HC-panel/refresh,
+   módválasztás/valódi progression, kardió, foreground auto és multi-day records.
+2. Lokális in-flight photo delete / új ref / restore admission kódban, de szerver-
    timeout utáni bizonytalan befejezés, processdeath és cross-device/older-peer
    továbbra nyitott. A foglalás nem tartós Drive-lock/elosztott atomikusság.
-2. Teljes A–E/UI/Health/main funkcióleltár és maradék dinamikus VM-/hibafeliratok;
+3. Teljes A–E/UI/Health/main funkcióleltár és maradék dinamikus VM-/hibafeliratok;
    15 lokalizált képernyő nem minden funkció. A mai Home edzésszám e4920f4-ben javítva; az ajánlott nap még első nap. Következő kód: meglévő
    ui/coach/NativeCoachTargets újrahasználata Home-ban, programId/dayId/scheduleId
    végig vitele a nav-startnak (most csak dayId), helyi nap/DST epoch count és
    tényleges adat-invalidation. Ezt még nem implementáltuk.
-3. Google-fiókos engedély/részleges grant/revoke/offline/rotation/processdeath,
+4. Google-fiókos engedély/részleges grant/revoke/offline/rotation/processdeath,
    backup közbeni cancel, calendar cache és cél-scope valódi szolgáltatással még
    nem igazolt. Unit consent-intent nem OAuth- vagy UI-szolgáltatás-siker.
-4. Batch végén közös GitHub JVM/Compose/Wear/R8/signer/upgrade kapu ugyanazon
+5. Batch végén közös GitHub JVM/Compose/Wear/R8/signer/upgrade kapu ugyanazon
    appforráson, majd valódi képek és fizikai telefon/Watch7. Ne jelöljünk késznek
    funkciót pusztán fájl/tesztkód miatt. Élő adatok fölé APK még nem adható.

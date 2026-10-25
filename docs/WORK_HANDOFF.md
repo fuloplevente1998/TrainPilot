@@ -4,6 +4,42 @@ Frissítve: **2026-10-25**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## PR242 audit átvéve, P1 programcélértékek bekötve – 2026-10-25
+
+Külső audit draft #242 **9c3c264**, csak egy dokumentum, pinned main7473b30 /
+nativea5f562d, Home e4920f4 delta figyelembe véve. Az eredeti riport byte/hash-
+pontosan átemelve reviews/NATIVE_FEATURE_PARITY_AUDIT.md-be; az aktuális rövid
+[triage](reviews/NATIVE_FEATURE_PARITY_TRIAGE.md) legyen a belépés, ne a hosszú
+permalinkes riport teljes újraolvasása. Hét hiány forrásszinten megerősítve:
+P1 journal edit és program Rx, P2 cardio, workout HC, modes/progression,
+Health foreground auto és arbitrary date range. Nem futtatott reprodukció.
+
+**b161126**: a program szerkesztőben per-exercise Célértékek popup, sets1..10,
+reps/idő1..40karakter, weight0..10000, rest30..300, tizedesvessző és explicit
+üres próbasúly a main loadType-jainál. 17 új resource négy nyelven. Program-
+szintű hatás minden occurrence-re egyértelmű; child Apply csak izolált drafthoz,
+parent Save az egyetlen commit. Inline override explicit mezői és global
+prescriptions együtt frissülnek, egyéb variation/RIR/unknown és string ID-k
+megmaradnak. Beépített terv klón, program/day CAS/active-workout guard marad.
+Katalógus loadType/repUnit/measurementType változáskor stale Save elutasítás a
+Room tx-ben. Valódi settings-rest fallback a VM-ből, nem tetszőleges UI-szám.
+A NativeWorkoutSession ugyanazt a global→inline adatot olvassa; tp228 prefill
+policy és aktív/mentett sorozatok nem változtak. **97f18fd** egyszeri entry-
+csoportosítás/parsed-Rx reuse, nincs teljes programparse minden szerkesztett sorhoz.
+
+11 új JVM-kód (5 validáció/precedence/opaque,5 Room atomic/cloning/roundtrip/
+unit-CAS és1 actual program start), meglévő valódi app UI-case invalid/child
+Cancel/parent Save/reopen/outer Cancel/no-write bővítve. **Batch533 JVM+48 Phone UI
+NEM FUTOTT**, nincs új UI-esetszám. Csak lexical/diff/import/XML/key/format/R-ref,
+main tp107/tp152 szabály/adatút/commit-sorrend ellenőrzés volt; nem Kotlin/Room/
+Compose/Google. Nincs új CI/APK/kép, teljes zöld továbbra dd4cc27/40072751592.
+
+Az auditból Rx kódban pótolva, futtatás/elfogadás hátra; hat további hiány nyitott,
+plusz a teljes A–E/24nézet/Health/Google/device kapu. Külső ágra nem írtunk,
+#242 draft nyitva, nem GitHub-merge. Következő P1 journal edit és kapcsolt HC-
+megőrzés/refresh; Home target/start/invalidation és többi nyitott tételek maradnak.
+Main/verzió/élő adatos telepítés STOP változatlan, továbbra High kód/bekötés.
+
 ## Kis Home-számláló javítás és külső audit átadva – 2026-10-25
 
 **e4920f4**, [skip ci]. A Home „Mai edzés” csempéje most helyi napkezdettől a
