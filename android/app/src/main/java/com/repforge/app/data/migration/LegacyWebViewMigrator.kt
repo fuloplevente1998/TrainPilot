@@ -526,7 +526,9 @@ class LegacyWebViewMigrator(
                 }
             }
         }
-        settingsStore.importPortableSettings(data)
+        // Training modes are part of portable settings; only a full replacement
+        // may clear a legacy backup without the mode key.
+        settingsStore.importPortableSettings(data, replaceTrainingModesOnMissing = replaceAll)
         }
     }
 
@@ -850,6 +852,13 @@ class LegacyWebViewMigrator(
                     .put("autoWriteWorkoutToHealthConnect", settings.autoWriteWorkoutToHealthConnect)
                     .put("weightRange", settings.weightRange)
                     .put("gpsStartChoices216", JSONObject(settings.gpsStartChoices216 as Map<*, *>))
+                    .apply {
+                        // Include the complete v1 object (revision, undo, opaque extensions),
+                        // but never synthesize an explicit mode for legacy installations.
+                        settings.trainingModes197Json?.let { raw ->
+                            runCatching { JSONObject(raw) }.getOrNull()?.let { put("trainingModes197", it) }
+                        }
+                    }
             )
 
             if (includeHealthJournal && healthSnapshot != null) {
