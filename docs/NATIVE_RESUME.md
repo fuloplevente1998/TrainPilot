@@ -21,6 +21,12 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
 
 ## Legújabb alkalmazásforrás
 
+- **e4920f4**: Home mai edzésszám helyi nap kezdete <= startedEpochMs < következő
+  nap kezdete scalar Room queryből, nem teljes naplóból. Zone/DST23/25h és
+  tombstone-kizárás; Health-read hiba sem nullázza a már ismert edzésszámot,
+  cancellation továbbmegy. +3 JVM-kód NEM FUTOTT; actual SQL boundary/DST/
+  tombstone/index check PASS, nem Kotlin/Room. Célnap/start/invalidation hátra.
+
 - **7d62ae3**: NativeCloudPhotoDeletion processz-szintű per-photo foglalás.
   Rövid metadata+ownership→ActiveStore→canonical store lock alatt friss Room/
   draft/native/mirror live-ref ellenőrzés és reservation, HTTP minden ilyen
@@ -64,13 +70,13 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
 
 ## Bizonyíték és külső ágak
 
-- **Batch519 új JVM +48 Phone UI tesztkód NEM FUTOTT** (505+14 /42+6).
+- **Batch522 új JVM +48 Phone UI tesztkód NEM FUTOTT** (519+3 /42+6).
   Helyben csak lexical delimiter, diff, XML/kulcs/format/import/R-ref és pontos
   forrássorrend/kiemelési diff ellenőrzés volt. Nem Kotlin/Room/Compose/Google.
 - Migrációs ág utolsó teljes zöldje továbbra dd4cc27, Actions40072751592:
   Phone393/Wear167/WearUI183/signed upgrades2. Friss CI/APK/screenshot nincs.
 - Külső #240 feat/native-ui-localization82883ab és #241 test/native-localization-ui
-  ab25d84 kódja már bent, 4+6 most része a519+48-nak. Ágaikat nem írtuk, nem
+  ab25d84 kódja már bent, 4+6 most része a522+48-nak. Ágaikat nem írtuk, nem
   GitHub-merge történt; draftok nyitva maradnak az integrált próba/elfogadásig.
   Új külső HEAD-et az innen vett delta alapján nézz, ne integráld újra a régi diffet.
   Review: reviews/NATIVE_LOCALIZATION_INTEGRATION.md. Korábbi „nem integrált”/
@@ -80,7 +86,8 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
 
 - Külön chathez kész prompt: plans/NATIVE_FEATURE_PARITY_AUDIT_HANDOFF.md.
   Docs-only main→native funkcióleltár, javasolt test/native-feature-parity-audit;
-  még nem indítottuk. Pinned bázis a5f562d, main7473b30, csak saját riport írható.
+  a felhasználó átadta, ág/PR/riport még nem érkezett vissza. Pinned bázis
+  a5f562d, main7473b30, csak saját riport írható.
 
 ## Következő konkrét lépések
 
@@ -88,8 +95,7 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
    timeout utáni bizonytalan befejezés, processdeath és cross-device/older-peer
    továbbra nyitott. A foglalás nem tartós Drive-lock/elosztott atomikusság.
 2. Teljes A–E/UI/Health/main funkcióleltár és maradék dinamikus VM-/hibafeliratok;
-   15 lokalizált képernyő nem minden funkció. Mai Home edzésszám teljes-napló-
-   countot kap, ajánlott nap jelenleg első nap. Következő kód: meglévő
+   15 lokalizált képernyő nem minden funkció. A mai Home edzésszám e4920f4-ben javítva; az ajánlott nap még első nap. Következő kód: meglévő
    ui/coach/NativeCoachTargets újrahasználata Home-ban, programId/dayId/scheduleId
    végig vitele a nav-startnak (most csak dayId), helyi nap/DST epoch count és
    tényleges adat-invalidation. Ezt még nem implementáltuk.

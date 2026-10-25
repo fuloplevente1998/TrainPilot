@@ -1,7 +1,7 @@
 # Külön chatnek átadható feladat: main → natív funkcióleltár
 
-2026-10-25. **Előkészített feladat, nem elindított agent/ág.** A felhasználó
-külön beszélgetésbe másolva adhatja át. A fő munkás közben a Kezdőlap napi
+2026-10-25. **A felhasználó átadta külön chatnek.** Ág/PR/riport még nem
+érkezett vissza, az audit eredménye nem igazolt. A fő munkás közben a Kezdőlap napi
 számláló/célprogramnap/start/invalidation bekötését folytatja a migrációs ágon.
 
 ## Másolható feladat
@@ -91,3 +91,8 @@ vagy GitHub-/tesztműveletet az anyag tényleges elérése nélkül.
 
 Magyarul, tömören add át: vizsgált refek, lefedettség, bizonyított hiányok,
 megírt dokumentum és ténylegesen végzett ellenőrzés. Implementációt ne kezdj.
+
+
+Utólagos migrációs delta: **e4920f4** javítja a Home mai számlálóját. A rögzített
+a5f562d bázist ne mozgasd; a saját jelentés végső deltaellenőrzésekor ezt a tételt
+már javítottnak jelöld. Célprogramnap/start/invalidation továbbra a fő munkásé.

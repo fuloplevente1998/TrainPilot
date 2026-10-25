@@ -37,10 +37,13 @@ aláírt szintetikus upgrade **2/2**, nincs hiba/kihagyás. Letöltött release 
 hash/csomag/verzió/signer ellenőrizve; a measured protokoll és az időnaplómezők a telefonos R8 DEX-ben is jelen vannak.
 [Gépi bizonylat](builds/2026-10-23-native-measured-intervals.json).
 
-**Aktuális nem bevizsgált batch:** `7d62ae3`, **519 új JVM +48 Phone UI**
+**Aktuális nem bevizsgált batch:** `e4920f4`, **522 új JVM +48 Phone UI**
 tesztkód megírva, NEM FUTOTT. #24082883ab és #241ab25d84 squash integrálva,
 Home nevek/egységek javítva; mind a hat külön UI-próba valódi pickert kattint.
 [Integrációs review](reviews/NATIVE_LOCALIZATION_INTEGRATION.md).
+Home mai count helyi nap/DST epoch-tartományú scalar queryből, tombstone-kizárással
+és Health-read hibánál megőrzött értékkel; +3 nem futott JVM-kód. Ajánlott nap/start/
+invalidation még külön feladat. Külső funkcióaudit user által átadva, riport nincs.
 Helyi per-photo in-flight admission és draft-photo stage/archive/redo megőrzés
 kódban; +14 JVM-kód nem futott. Metadata/frame rebind és restore gyors tiltás,
 normál settings/új UUID workout elérhető, HTTP a lokális lockokon kívül. Valódi

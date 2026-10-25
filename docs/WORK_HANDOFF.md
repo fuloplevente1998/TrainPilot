@@ -4,12 +4,27 @@ Frissítve: **2026-10-25**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
-Következő külön chatnek a **main→natív funkcióaudit** átadója előkészítve:
-[feladat és fájlhatárok](plans/NATIVE_FEATURE_PARITY_AUDIT_HANDOFF.md).
-Javasolt test/native-feature-parity-audit ág a5f562d-ből, csak egy új review-dokumentum;
-a fő munkás Home/Coach/Naptár/cloud/szinkron kódolása külön marad. A felhasználó
-még csak a kiosztható munkáról kérdezett: nincs elindított agent/ág/PR vagy audit-
-eredmény. Alkalmazásforrás/519+48 nem futott tesztkód és CI állapot változatlan.
+## Kis Home-számláló javítás és külső audit átadva – 2026-10-25
+
+**e4920f4**, [skip ci]. A Home „Mai edzés” csempéje most helyi napkezdettől a
+következő nap kezdetéig számol, half-open epoch-tartományú, indexed scalar Room
+COUNT-ból, history tombstone-kizárással. Nem teljes naplócount, nem fix24óra,
+nincs reláció-/fotó-/setbetöltés. Health-read hiba nem írja felül nullával a már
+ismert edzésszámot; cancellation nem nyelődik el. Célnap/azonosítók és automatikus
+adat-invalidation ebben a kis lépésben nem változott.
+
+Három új JVM-próbakód: lokális éjfél/UTC eltérés, DST23/25h és ismételt02:30,
+tombstone ID/sync/key. **Batch522 JVM+48 Phone UI NEM FUTOTT**. Actual DAO SQL
+SQLite boundary/DST/tombstone/index ellenőrzés és lexical/diff PASS; nem Kotlin/
+Room/Compose, nincs új CI/APK. Main/verzió változatlan, továbbra High-kódolás.
+
+A felhasználó a funkcióauditot **átadta a külön chatnek**. Ág/PR/riport még nem
+érkezett vissza, eredményt nem állítunk. [Feladat](plans/NATIVE_FEATURE_PARITY_AUDIT_HANDOFF.md):
+csak docs-audit, pinned a5f562d/main7473b30, javasolt test/native-feature-parity-audit.
+Ott a count-hiba még látszik a bázison; átadáskor az e4920f4 deltakód alapján
+javítottnak jelölhető. A fő munkásnál marad a Home/Coach/Naptár/cloud fejlesztés.
+Következő: meglévő NativeCoachTargets bekötése, programId/dayId/scheduleId start
+és tényleges invalidation. Nincs új külső vagy belső agent indítva általunk.
 
 ## Felhős fotótörlés helyi admission és draftképek megőrzése – 2026-10-25
 
