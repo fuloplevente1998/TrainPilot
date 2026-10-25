@@ -85,6 +85,14 @@ internal object NativeProfileProgramPreview {
         val areas = avoidedMuscles(keys(profile, "avoidAreas"))
         val beginner = profile.optString("experience") == "beginner"
         val catalogById = catalog.associateBy { it.id }
+        fun exclusionReason(id: String, ex: ExerciseLibraryEntity?): String = when {
+            ex == null -> "missing"
+            id in excluded -> "excluded"
+            ex.primaryMuscle in areas -> "avoid-area"
+            beginner && !JSONObject(ex.rawJson).optBoolean("beginnerSafe", true) -> "experience"
+            !available(ex, gear) -> "equipment"
+            else -> ""
+        }
         val count = (minutes / 6).coerceIn(1, 7)
         val higherSets = profile.optString("goal") == "muscle" &&
             profile.optString("experience") in setOf("intermediate", "advanced") &&
@@ -99,14 +107,7 @@ internal object NativeProfileProgramPreview {
                 val row = ids.get(index)
                 val id = if (row is JSONObject) row.optString("id") else row as? String ?: ""
                 val ex = catalogById[id]
-                val reason = when {
-                    ex == null -> "missing"
-                    id in excluded -> "excluded"
-                    ex.primaryMuscle in areas -> "avoid-area"
-                    beginner && !JSONObject(ex.rawJson).optBoolean("beginnerSafe", true) -> "experience"
-                    !available(ex, gear) -> "equipment"
-                    else -> ""
-                }
+                val reason = exclusionReason(id, ex)
                 if (reason.isNotBlank()) removed += Reduction(day.dayId, id, reason)
                 else filtered += id to ex!!
             }
@@ -117,7 +118,7 @@ internal object NativeProfileProgramPreview {
                 val index = filtered.indexOfFirst { it.first == "pushup" }
                 if (source.program.id == "home-level2" && index >= 0 &&
                     "pushup" !in excluded && "decline-pushup" !in excluded &&
-                    variation != null && available(variation, gear)) {
+                    variation != null && exclusionReason("decline-pushup", variation).isEmpty()) {
                     filtered[index] = "decline-pushup" to variation
                 }
                 val order = listOf("bulgarian-split-squat", "barbell-row",

@@ -14,7 +14,7 @@ import com.repforge.app.HealthConnectRepository
 import com.repforge.app.HealthJournalStore
 import com.repforge.app.NativeDataReplacement
 
-internal enum class BackgroundBlock {
+enum class BackgroundBlock {
     READY, RESTORE, UNSUPPORTED, READ_PERMISSION, BACKGROUND_PERMISSION,
     WATCH_NOT_READY, BLUETOOTH_PERMISSION, NOTIFICATION_PERMISSION, BLUETOOTH_OFF
 }

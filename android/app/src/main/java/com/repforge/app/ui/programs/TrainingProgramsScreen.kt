@@ -54,7 +54,7 @@ import com.repforge.app.ui.theme.LocalTrainPilotColors
 import org.json.JSONArray
 
 @Composable
-fun TrainingProgramsScreen(
+internal fun TrainingProgramsScreen(
     navController: NavController,
     language: String = "hu",
     viewModel: TrainingProgramsViewModel = viewModel(),

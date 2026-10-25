@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-data class TrainingProgramsUiState(
+internal data class TrainingProgramsUiState(
     val activeProgramId: String = "home-basic",
     val programs: List<ProgramWithDays> = emptyList(),
     val isPersonalPlannerOpen: Boolean = false,
@@ -32,7 +32,7 @@ data class TrainingProgramsUiState(
     val deletedProgramId: String? = null
 )
 
-class TrainingProgramsViewModel(application: Application) : AndroidViewModel(application) {
+internal class TrainingProgramsViewModel(application: Application) : AndroidViewModel(application) {
     private val context = application.applicationContext
     private val database = TrainPilotDatabase.getInstance(context)
     private val settingsStore = TrainPilotSettingsStore(context)

@@ -148,22 +148,27 @@ internal object NativeProgramEditor {
                         require(pid.isNotBlank() && identity.isNotBlank() && unique.add(pid to identity))
                     }
                 }
-                // An edited/removed source workout invalidates the saved preview.
-                // Reevaluate the same bounded time horizon, rather than trusting UI JSON.
-                val selectedPreview = NativeProfileProgramPreview.Preview(
-                    opened!!, d, rx, expected, emptyList(), expected.optInt("minutes"), 0,
-                    current, historical)
-                val fresh = NativeProfileHistory128.apply(db, selectedPreview,
-                    java.time.Instant.ofEpochMilli(asOf))
-                require(fresh.history128.toString() == historical.toString() &&
-                    fresh.prescriptions.toString() == rx.toString()) {
-                    "History changed; reopen personal preview"
-                }
+
             }
         }
         db.withTransaction {
             val original = opened?.let { db.programDao().getProgramWithDaysById(it.program.id) }
             if (opened != null) assertUnchanged(opened, original)
+            if (personalMetadata != null) {
+                // Rebuild from canonical catalog/profile inside the write transaction.
+                // UI JSON and a historical lineage hash do not prove current eligibility.
+                val base = NativeProfileProgramPreview.preview(original!!,
+                    personalMetadata.getJSONObject("profileSnapshot").toString(),
+                    db.exerciseLibraryDao().getAllExercises(), language)
+                val historical = personalMetadata.optJSONObject("history128")
+                val fresh = if (historical == null) base else NativeProfileHistory128.apply(db, base,
+                    java.time.Instant.ofEpochMilli(historical.getLong("asOf")))
+                require(fresh.draft == d && fresh.prescriptions.toString() ==
+                    personalMetadata.getJSONObject("prescriptions").toString() &&
+                    (historical == null || fresh.history128.toString() == historical.toString())) {
+                    "Personal preview changed; reopen preview"
+                }
+            }
             // Built-in templates must be cloned, never overwritten.
             val fork = opened == null || opened.program.builtin
             val id = if (fork) "custom-program-${UUID.randomUUID()}" else opened!!.program.id

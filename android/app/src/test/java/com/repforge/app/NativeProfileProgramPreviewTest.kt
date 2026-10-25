@@ -142,6 +142,66 @@ class NativeProfileProgramPreviewTest {
         assertTrue(result.reductions.any { it.reason == "experience" })
     }
 
+    @Test fun replacementVariationCannotBypassBeginnerEligibility() {
+        val catalog = exercises().map { ex -> if (ex.id == "decline-pushup")
+            ex.copy(rawJson = JSONObject(ex.rawJson).put("beginnerSafe", false).toString()) else ex }
+        val result = NativeProfileProgramPreview.preview(template("home-level2"),
+            profile(90, listOf("dumbbells", "barbell", "bench")).toString(), catalog, "hu")
+        val selected = result.draft.days.flatMap { it.entries.map(NativeProgramEditor::exerciseId) }
+        assertTrue("pushup" in selected)
+        assertFalse("decline-pushup" in selected)
+    }
+
+    @Test fun replacementVariationCannotBypassAvoidedMuscleFilter() {
+        val catalog = exercises().map { ex -> if (ex.id == "decline-pushup")
+            ex.copy(primaryMuscle = "legs") else ex }
+        val config = profile(90, listOf("dumbbells", "barbell", "bench"))
+            .put("experience", "intermediate").put("avoidAreas", JSONArray().put("legs"))
+        val result = NativeProfileProgramPreview.preview(template("home-level2"), config.toString(), catalog, "hu")
+        val selected = result.draft.days.flatMap { it.entries.map(NativeProgramEditor::exerciseId) }
+        assertTrue("pushup" in selected)
+        assertFalse("decline-pushup" in selected)
+    }
+
+    @Test fun catalogChangeAfterOpeningPreviewRejectsApprovalWithoutCreatingProgram() = runBlocking {
+        db.exerciseLibraryDao().insertMissingExercises(exercises())
+        val source = template()
+        db.programDao().saveProgramWithDays(source.program, source.days)
+        val config = profile(90)
+        store.saveTrainingProfile(config)
+        val opened = preview(config)
+        val chosen = opened.draft.days.first().entries.first().let(NativeProgramEditor::exerciseId)
+        val exercise = db.exerciseLibraryDao().getExerciseById(chosen)!!
+        db.exerciseLibraryDao().upsertExercise(exercise.copy(rawJson =
+            JSONObject(exercise.rawJson).put("beginnerSafe", false).toString()))
+        val before = db.programDao().getProgramIds()
+        var rejected = false
+        try { NativeProgramEditor.save(context, db, source, opened.draft, "hu", NativeProfileProgramPreview.metadata(opened)) }
+        catch (_: IllegalArgumentException) { rejected = true }
+        assertTrue(rejected)
+        assertEquals(before, db.programDao().getProgramIds())
+        assertEquals(source, db.programDao().getProgramWithDaysById(source.program.id))
+    }
+
+    @Test fun alteredPrescriptionWithoutCanonicalEvidenceCannotBeApproved() = runBlocking {
+        db.exerciseLibraryDao().insertMissingExercises(exercises())
+        val source = template()
+        db.programDao().saveProgramWithDays(source.program, source.days)
+        val config = profile(90)
+        store.saveTrainingProfile(config)
+        val opened = preview(config)
+        val metadata = NativeProfileProgramPreview.metadata(opened)
+        val prescriptions = metadata.getJSONObject("prescriptions")
+        val key = prescriptions.keys().asSequence().first { prescriptions.getJSONObject(it).optBoolean("trial") }
+        prescriptions.getJSONObject(key).put("weight", 50).put("trial", false)
+        val before = db.programDao().getProgramIds()
+        var rejected = false
+        try { NativeProgramEditor.save(context, db, source, opened.draft, "hu", metadata) }
+        catch (_: IllegalArgumentException) { rejected = true }
+        assertTrue(rejected)
+        assertEquals(before, db.programDao().getProgramIds())
+    }
+
     @Test fun avoidedShoulderBlocksShoulderExercisesAndUnknownPainAreaFailsClosed() {
         val p = profile(90).put("avoidAreas", JSONArray().put("left-shoulder"))
         val result = preview(p)
