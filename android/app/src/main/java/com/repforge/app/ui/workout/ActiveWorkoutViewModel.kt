@@ -164,6 +164,7 @@ data class ActiveWorkoutUiState(
     val statusMessage: String? = null,
     val isFinishing: Boolean = false,
     val modeProposalLoading: Boolean = false,
+    val explicitTrainingMode: Boolean = false,
     val modeProposalForExercise: String = "",
     val modeAction: String = "",
     val modeReason: String = "",
@@ -192,6 +193,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     private var timeClockPauseMs = 0L
     private var timeSummaryAt = 0L
     private var modeTicket: NativeTrainingModeProposal.Ticket? = null
+    private var modeSettingsRaw: String? = null
 
     init {
         viewModelScope.launch {
@@ -201,10 +203,24 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
             }
         }
         observeActiveWorkout()
+        observeTrainingModeSettings()
         observeIntervalTimer()
         observeGpsTracker()
         observeLiveHeartRate()
         loadExerciseLibrary()
+    }
+
+    private fun observeTrainingModeSettings() {
+        viewModelScope.launch {
+            settingsStore.settingsFlow.collect { settings ->
+                modeSettingsRaw = settings.trainingModes197Json
+                val frame = ActiveWorkoutStore.current(context)
+                _uiState.value = _uiState.value.copy(explicitTrainingMode =
+                    frame?.optBoolean("active") == true &&
+                        NativeTrainingModes.resolveSavedJson(modeSettingsRaw,
+                            frame.optString("programId")).explicitChoice)
+            }
+        }
     }
 
     private fun observeActiveWorkout() {
@@ -369,6 +385,8 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
         val selected = snapshot.optJSONArray("exercises")?.optJSONObject(currentExIdx)
         _uiState.value = _uiState.value.copy(
             workoutId = workoutId,
+            explicitTrainingMode = NativeTrainingModes.resolveSavedJson(
+                modeSettingsRaw, snapshot.optString("programId")).explicitChoice,
             generation = snapshot.optLong("generation"),
             title = title,
             dayName = dayName,
