@@ -27,6 +27,22 @@ internal object NativeTrainingModes {
         return choice
     }
 
+    /** Strict only for user-approved writes. Imports keep malformed raw data for safe fallback. */
+    fun validForWrite(config: JSONObject): Boolean {
+        val version = config.opt("schemaVersion") as? Number ?: return false
+        if (version.toDouble() != 1.0 || config.opt("explicitChoice") !is Boolean) return false
+        if (validChoice(config.opt("defaults")) == null) return false
+        if (config.has("byProgram")) {
+            val by = config.opt("byProgram") as? JSONObject ?: return false
+            for (programId in by.keys()) {
+                val override = by.opt(programId) as? JSONObject ?: return false
+                val chosen = override.opt("explicitChoice") as? Boolean ?: return false
+                if (chosen && validChoice(override) == null) return false
+            }
+        }
+        return true
+    }
+
     fun resolveSavedJson(json: String?, programId: String?): Effective {
         val obj = runCatching { json?.let(::JSONObject) }.getOrNull()
         return resolve(obj, programId)
