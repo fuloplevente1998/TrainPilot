@@ -4,6 +4,42 @@ Frissítve: **2026-10-25**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Edzéslezárási rekordvizsgálat teljesnapló-betöltés nélkül – 2026-10-25
+
+**320ea83**, [skip ci]. A TrainPilotWorkoutFinalization meglévő mentés/naptár
+Room-tranzakcióján belül a PersonalRecordCalculator226 már csak a mostani edzés
+érintett gyakorlataira kér kész sorozatokat. Lightweight PersonalRecordSet226,
+256-os rowId-keyset lapok, 128-as ID-chunk a SQLite bind-limithez; nincs rawJson,
+fotó/útvonal vagy teljes Room-reláció betöltése. Minden releváns történeti lapot
+bejár, nem csak a frisseket; memóriában gyakorlatonként öt maximum marad. Önálló
+hívás is read tx-t kap, finalizerből a meglévő tranzakciót használja újra.
+
+A listás kompatibilis adatbemenet és a streaming út közös akkumulátort/evaluatort
+használ; a mostani edzés rekorddöntő/formázó kódrésze byte-for-byte változatlan.
+Súly/e1RM (+.2 küszöb)/ismétlés/idő/kétoldali maximum/táv, done és saját ID/azonos
+started kizárás megmarad. Új explicit korrekció: a tombstone által már töröltnek
+jelölt, fizikailag még megmaradt sor nem nyomhatja el az új rekordot (a régi teljes
+relációs betöltés ezt nem szűrte). Nincs count-cache. A nyugta, natív event-reconcile,
+lezárás, draft-retirement, naptár és hiba utáni retry sorrendje nem változik;
+a finalizerben csak a rekordadat-bemenet két sora cserélődött.
+
+16 új célzott JVM-metódus +1 nagy naplós finalizer-integrációs metódus és +1 Phone
+UI-próbakód (1500 előzmény, órás finish/replay, egyetlen mentés és natív PR badge).
+Korábbi naptárhiba/rollback/retry teszt PR-előzménnyel és badge-asserttal bővült;
+a meglévő tesztek nem lettek eltávolítva. **Batch418 új unit+42 Phone UI kód még
+nem futott.** Az actual DAO SQL SQLite0/200/1500 próbája ellenőrizte a scoped
+fedést, <=256 lapot, oldest maximumot és a saját ID/start/tombstone/done kizárást.
+A rekord-evaluator változatlansága, célzott Kotlin delimiter és diff ellenőrzés
+megtörtént; ez nem Kotlin-fordítás/Room/Compose futtatás vagy valós sebességmérés.
+
+GitHub read-only ellenőrzéskor a legutóbbi natív workflow továbbra **40072751592 /
+dd4cc27 SUCCESS** volt; ez nem a batch igazolása. Nincs új CI/APK/képernyőkép.
+Következő: Drive-fotó staging/hibafázisok/konkurencia és súlytörlés késői felhő-
+replay védelme; maradó A–E/Health/UI/lokalizáció, majd közös teljes kapu és valódi
+Phone/Watch7/migrációs próba. Export/restore teljesadat-olvasása külön marad, nem
+lett tiltva vagy megcsonkítva. PR #238 frissítve; csak migrációs ág, main/verzió/
+élő adatok fölé telepítés STOP változatlan.
+
 ## Lapozott testsúlynapló és teljes adathalmazból számolt áttekintés – 2026-10-25
 
 **29ed6a4**, [skip ci]. A WeightJournalViewModel már nem observeAllWeights teljes

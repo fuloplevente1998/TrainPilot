@@ -20,6 +20,24 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   prototípus/fake Health-forrás tilos. Nyolcgombos menü helyett öt alsó fül elfogadva,
   jobb felső Settings; abból visszatérés nem pause, valódi editor-elhagyás igen.
 
+## Legújabb streaming PR-adatút – 2026-10-25
+
+**320ea83**: finalizer getAllWorkoutsWithDetails helyett érintett gyakorlatok
+kész szettjeinek könnyű projekciója; 256-os rowId-keyset, 128-as ID-chunk, minden
+releváns lap, nincs raw/fotó/route gráf. Csak öt maximum/gyakorlat marad memóriában.
+Közös régi-lista/stream akkumulátor, byte-pontos változatlan session evaluator;
+súly/e1RM+.2/ismétlés/idő/kétoldal/táv és self ID/start kizárás megmarad. Tombstone-
+sor most már nem számít előzménynek. Ugyanazon Room save/calendar tx, teljes
+natív reconcile/draft/nyugta/retry út marad, nem közvetlen naplóba írás.
+16 új JVM+1 finalizer-integrációs metódus, +1 UI; régi kalenderhiba/retry teszt
+PR-előzménnyel bővítve. **Batch418 unit+42 Phone UI megírva, még nem futott.**
+Actual DAO SQL SQLite0/200/1500 fedés/oldest max/scoped/self/start/tombstone/done
+és változatlan evaluator/delimiter/diff ellenőrizve; nem Kotlin/Room/Compose.
+Legutóbbi natív CI read-only ellenőrizve továbbra40072751592/dd4cc27 SUCCESS;
+friss batch CI/APK/screenshot nincs. Következő Drive-fotó staging/konkurencia és
+súlytörlés-replay; további A–E/UI/lokalizáció, közös kapu és készülékes elfogadás.
+PR #238 követi; main/package/verzió/élő telepítés STOP változatlan.
+
 ## Legújabb testsúlynapló-betöltés – 2026-10-25
 
 **29ed6a4**: observeAllWeights eltávolítva a felületi adatútból; Room Paging32,
