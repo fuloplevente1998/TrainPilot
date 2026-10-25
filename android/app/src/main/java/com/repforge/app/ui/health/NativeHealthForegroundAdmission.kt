@@ -8,6 +8,7 @@ import com.repforge.app.NativeHealthBackupGate
 import com.repforge.app.NativeDataReplacement
 import com.repforge.app.PhoneOwnership193
 import com.repforge.app.PhoneWorkoutExecution
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -71,5 +72,30 @@ internal object NativeHealthForegroundAdmission {
     suspend fun requireMainAdmission(context: Context) {
         val safe = withContext(Dispatchers.Main.immediate) { safeOnMain(context) }
         check(safe) { "Workout execution or restore blocks foreground Health refresh" }
+    }
+
+    /**
+     * Actual HC/Samsung synchronous provider publication callback.
+     *
+     * The IO caller briefly hops to Main *before* acquiring the metadata mutex.
+     * Once under the mutex, only the IO-safe ownership/restore checks are repeated,
+     * and the writer is a local journal write (never SDK IPC).
+     */
+    fun publish(context: Context, requireIdentity: () -> Unit, writer: () -> Unit) {
+        check(Looper.myLooper() != Looper.getMainLooper()) {
+            "Provider journal publication must run off the main thread"
+        }
+        runBlocking {
+            requireMainAdmission(context)
+            NativeDataReplacement.mutate(context) {
+                NativeHealthBackupGate.publish {
+                    check(safeOffMain(context)) {
+                        "Workout ownership, restore or backup blocks Health publication"
+                    }
+                    requireIdentity()
+                    writer()
+                }
+            }
+        }
     }
 }
