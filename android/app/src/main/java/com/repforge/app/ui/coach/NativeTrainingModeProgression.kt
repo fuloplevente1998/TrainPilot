@@ -49,10 +49,16 @@ internal object NativeTrainingModeProgression {
                 sets.coerceAtLeast(0), reps, rows.size, mode.progressionMode, mode.trainingStyle)
         if (lib.optString("measurementType") in setOf("distance", "time", "gps") ||
             lib.optString("repUnit").trim().lowercase() in setOf("km", "m", "mp", "sec", "second", "s") ||
-            target.kind != "reps") return result("hold", "non-strength-activity")
+            target.kind !in setOf("reps", "rir"))
+            return result("hold", "non-strength-activity")
+        val pureRirTarget = mode.progressionMode == "rir" && target.kind == "rir"
+        if (target.kind != "reps" && !pureRirTarget)
+            return result("hold", "non-strength-activity")
         val lo = target.min
         val hi = target.max
-        if (target.sets <= 0 || lo == null || hi == null || lo <= 0 || hi < lo) return result("hold", "invalid-target")
+        if (target.sets <= 0 || (!pureRirTarget &&
+                (lo == null || hi == null || lo <= 0 || hi < lo)))
+            return result("hold", "invalid-target")
         if (latest == null) return result("hold", "insufficient-history")
         fun hasPain(item: NativeCoachExerciseAdvice.Occurrence) =
             item.effort == "pain" || item.workout.optJSONObject("feedback")?.optString("rating") == "pain"
@@ -77,19 +83,22 @@ internal object NativeTrainingModeProgression {
         }
         when (mode.progressionMode) {
             "double" -> {
-                if (streak(3) { it.hitTop && it.reps.isNotEmpty() && it.reps.min() >= hi })
+                val low = lo ?: return result("hold", "invalid-target")
+                val high = hi ?: return result("hold", "invalid-target")
+                if (streak(3) { it.hitTop && it.reps.isNotEmpty() && it.reps.min() >= high })
                     return increase("double-stable-top")
                 if (latest.hitTop) return result("hold", "double-await-stability")
                 if (!safe(latest)) return result("hold", "uncertain-effort")
                 if (latest.reps.isEmpty()) return result("hold", "missing-repetitions")
-                val out = latest.reps.map { it.coerceIn(lo, hi) }.toMutableList()
+                val out = latest.reps.map { it.coerceIn(low, high) }.toMutableList()
                 val least = out.minOrNull() ?: return result("hold", "missing-repetitions")
-                if (least >= hi) return result("hold", "double-await-stability")
-                out[out.indexOf(least)] = (least + 1).coerceAtMost(hi)
+                if (least >= high) return result("hold", "double-await-stability")
+                out[out.indexOf(least)] = (least + 1).coerceAtMost(high)
                 return result("reps", "double-next-repetition", reps = out)
             }
             "linear" -> {
-                return if (streak(2) { it.reps.isNotEmpty() && it.reps.min() >= lo })
+                val low = lo ?: return result("hold", "invalid-target")
+                return if (streak(2) { it.reps.isNotEmpty() && it.reps.min() >= low })
                     increase("linear-stable-performance") else result("hold", "linear-await-stability")
             }
             "rir" -> {
@@ -101,7 +110,10 @@ internal object NativeTrainingModeProgression {
                 if (actual < rirLow) return result("hold", "rir-overexertion")
                 if (streak(2) {
                     val observed = observedRir(it.exercise)
-                    observed != null && observed > rirHigh + 1 && it.reps.isNotEmpty() && it.reps.min() >= lo
+                    observed != null && observed > rirHigh + 1 &&
+                        it.reps.isNotEmpty() && it.reps.all { reps ->
+                            reps > 0 && (lo == null || reps >= lo)
+                        }
                 }) return increase("rir-stable-reserve")
                 return result("hold", if (actual > rirHigh) "rir-await-stability" else "rir-on-target")
             }
