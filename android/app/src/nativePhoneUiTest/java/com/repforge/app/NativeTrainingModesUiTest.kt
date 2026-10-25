@@ -59,7 +59,11 @@ class NativeTrainingModesUiTest {
         select("training_modes_global_progression", "linear")
         compose.onNodeWithTag("training_modes_global_preview").performClick()
         assertNull(current().trainingModes197Json)
-        compose.onNodeWithTag("training_modes_global_approve").performClick()
+        compose.waitUntil(30_000) {
+            compose.onAllNodesWithTag("training_modes_global_approve").fetchSemanticsNodes()
+                .any { it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Disabled) == null }
+        }
+        compose.onNodeWithTag("training_modes_global_approve").assertIsEnabled().performClick()
         compose.waitUntil(15_000) { current().trainingModes197Json != null }
         assertEquals("global", NativeTrainingModes.resolveSavedJson(current().trainingModes197Json, "p").source)
         dismissSettingsStatus()
@@ -109,7 +113,11 @@ class NativeTrainingModesUiTest {
         select("training_modes_program_progression", "rir")
         compose.onNodeWithTag("training_modes_program_preview").performClick()
         assertEquals("global", NativeTrainingModes.resolveSavedJson(current().trainingModes197Json, programId).source)
-        compose.onNodeWithTag("training_modes_program_approve").performClick()
+        compose.waitUntil(30_000) {
+            compose.onAllNodesWithTag("training_modes_program_approve").fetchSemanticsNodes()
+                .any { it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Disabled) == null }
+        }
+        compose.onNodeWithTag("training_modes_program_approve").assertIsEnabled().performClick()
         compose.waitUntil(15_000) {
             NativeTrainingModes.resolveSavedJson(current().trainingModes197Json, programId).source == "program"
         }
@@ -124,7 +132,11 @@ class NativeTrainingModesUiTest {
         compose.onNodeWithText(buttonLabel).performClick()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("training_modes_program_inherit"))
         compose.onNodeWithTag("training_modes_program_inherit").performClick()
-        compose.onNodeWithTag("training_modes_program_approve").performClick()
+        compose.waitUntil(30_000) {
+            compose.onAllNodesWithTag("training_modes_program_approve").fetchSemanticsNodes()
+                .any { it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Disabled) == null }
+        }
+        compose.onNodeWithTag("training_modes_program_approve").assertIsEnabled().performClick()
         compose.waitUntil(15_000) {
             val raw = current().trainingModes197Json
             raw != null && JSONObject(raw).getJSONObject("byProgram")
