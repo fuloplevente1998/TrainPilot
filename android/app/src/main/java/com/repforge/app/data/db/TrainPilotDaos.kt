@@ -290,7 +290,10 @@ interface WorkoutHistoryDao {
             w.started AS startedIso, w.finished AS finishedIso,
             s.setId, s.rowId AS setRowId, s.setNumber,
             e.orderIndex AS exerciseOrderIndex, e.exerciseId,
-            e.nameHu AS exerciseNameHu, e.nameEn AS exerciseNameEn,
+            CASE WHEN TRIM(e.nameHu) <> '' AND e.nameHu <> e.exerciseId
+                THEN e.nameHu ELSE COALESCE(NULLIF(l.nameHu, ''), e.nameHu) END AS exerciseNameHu,
+            CASE WHEN TRIM(e.nameEn) <> '' AND e.nameEn <> e.exerciseId
+                THEN e.nameEn ELSE COALESCE(NULLIF(l.nameEn, ''), e.nameEn) END AS exerciseNameEn,
             COALESCE(l.nameDe, '') AS exerciseNameDe,
             COALESCE(l.nameRo, '') AS exerciseNameRo,
             e.measurementType, l.measurementType AS libraryMeasurementType,
