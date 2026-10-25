@@ -22,6 +22,27 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   prototípus/fake Health-forrás tilos. Nyolcgombos menü helyett öt alsó fül elfogadva,
   jobb felső Settings; abból visszatérés nem pause, valódi editor-elhagyás igen.
 
+## Legújabb cloud-photo staging és review – 2026-10-25
+
+**f81a1a4**: NativeCloudPhotoStage csak privát noBackup tempet ír hálózat alatt;
+MD5/név/mime/méret ellenőrzés, SHA/CAS a local fájlokra és incoming másolatokra.
+BackupRestoreManager existing ZIP receipt/manifest/originals/redo út viszi a cloud
+fotóinstall+törlést, nincs közvetlen pre-guard live fájlmódosítás. Remote delete
+csak local commit után; deletedAt+DriveID tartósan megmarad retryhoz, hiba látható,
+cloudStatus a végén, cancellation nem nyelődik el. Google getAllTombstones.
+20+7 új JVM-kód: **batch445 unit+42 UI még nem futott**; forrássorrend/hash/redo/
+delimiter/diff ellenőrizve, nem Kotlin/Room/Google. Utolsó zöld dd4cc27, új APK nincs.
+Remote snapshot/local commit nem atomikus; orphan/stale publish/late restore vs.
+remote delete/account-lifecycle verseny és teljes hálózati igazolás továbbra nyitott.
+Következő exact-ID súlytörlési marker: mainben nincs tartós weight tombstone,
+mergeWeightRows18 jelenleg feltámaszthat régi remote mérést. kv_documents +18-as
+identitás, portable/import elővalidálás és atomikus delete szükséges; még nem kódolt.
+#24059da34d review: két P2 maradék (Home/BLE felirat; Home nameHu). A user kiadta
+neki javításra, ne dolgozzunk rá a UI/resource fájlokra. Részletek a reviews/
+NATIVE_UI_LOCALIZATION_PR240_REVIEW.md-ben. Ott3 JVM csak megírva, nem integrált.
+Következő külön UI-tesztes átadó előkészítve a plans/ könyvtárban; nem elkezdett.
+Csak migrációs ág, main/verzió/élő adatok fölé telepítés változatlan STOP.
+
 ## Jóváhagyott párhuzamos részfeladat – 2026-10-25
 
 A felhasználó másik ChatGPT-beszélgetésnek adja a megmaradt HU/EN/DE/RO UI-

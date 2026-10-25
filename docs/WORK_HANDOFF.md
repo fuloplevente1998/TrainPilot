@@ -4,6 +4,52 @@ Frissítve: **2026-10-25**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Cloud-fotók privát stagingje és közös helyreállítás – 2026-10-25
+
+**f81a1a4**, [skip ci]. Korábbi hiba: GoogleSyncRepository a végső canonical
+CAS/adatcsere-lease előtt törölhetett vagy telepíthetett helyi fotót, és elnyelte
+az upload/download hibát. NativeCloudPhotoStage a hálózati fázisban csak privát
+noBackup staginget ír; meglévő helyi fájlt immutable másolatból ellenőriz/feltölt,
+hiányzó fotót csak név/mime/méret/Google MD5 ellenőrzéssel tölt le. Hiányzó kép
+nem válik hamis teljes sikernek. Közös deletedAt jelentés (0/false/null nem törlés),
+aktív azonos-ID referencia védi a képet; eltérő Drive-identitás fail-closed.
+
+A canonical metadata guard UTÁN, replacement lease alatt minden érintett helyi
+fájl eredeti SHA-ja/hiánya és a staged bájtok újraellenőrzöttek. Az existing
+BackupRestoreManager ZIP-manifest/SHA/receipt/originals/redo útját használja
+(cloudMerge + pontos cloudPhotoDeletes terv), nem új recovery rendszer. Törlés
+és új kép is a touched-journal része, IO-hibánál rollback, processzhiba után
+receiptből explicit offline replay. Másolt archívumbájtok a stage hash-ével is
+egyeznek. Sikeresen lezárt local install előtt remote delete nem engedett.
+
+Remote törlés csak local commit után, hálózat továbbra a replacement lease-en
+kívül. DeletedAt + driveFileId a tartós metadata/snapshot része marad, így hiba
+után következő sync újrapróbálja, a hibát nem nyeljük el. cloudStatus csak e lépés
+sikere után íródik, cancellation továbbterjed, a privát stage végül takarítódik.
+A Google Drive út is az összes history tombstone-t olvassa, nem csak2000-et.
+
+**20 új stage JVM +7 Room/fájl/redo hibafázis-próbakód: batch445 új unit+42 Phone
+UI még nem futott.** Csak delimiter/diff és forrássorrend/hash/redo-bekötési check
+volt, nem Kotlin-fordítás/Room/Google/valós fotópróba. Bináris fixture nem képi
+renderelés. Nincs új CI/APK/screenshot; utolsó zöld dd4cc27.
+
+Nyitott: távoli snapshot-publikálás és local commit nem elosztott atomikus tranzakció;
+CAS-hiba után árva upload/stale remote snapshot, remote delete vs. későbbi explicit
+restore/új referencia verseny, teljes operation/account lifecycle és Google hálózati
+igazolás további munka. Ne jelentsd a teljes cloud/konkurencia területet lezártnak.
+Következő: testsúlytörlés tartós replay-védelme; jelen mergeWeightRows18 visszahozhat
+remote sort, a main sem tartalmaz külön tartós súlytombstone-t. Meglévő kv_documents
+és LegacySyncIdentity18 felhasználásával kell bővíteni, exact-ID védelemmel,
+portable JSON/ZIP/Drive és import elővalidálással. UI/resource fájlok lefoglalva.
+
+#240: **59da34d** statikus review, 20 engedélyezett fájl, négy645/371 kulcsú XML
+rendben; két P2 maradék (Home/BLE suffix/fallback és Home nameHu választás),
+[review](reviews/NATIVE_UI_LOCALIZATION_PR240_REVIEW.md). A felhasználó a review/
+javítást már kiadta a másik beszélgetésnek; ott dolgozzon, mi nem írunk arra az ágra.
+Új3 JVM teszt ott nem futott és nem integrált, nem számít a445+42-be. Következő
+külön UI-tesztes feladat csak előkészítve: plans/NATIVE_LOCALIZATION_UI_TEST_HANDOFF.md.
+Main/verzió/élő telepítés STOP változatlan, PR #238 követi.
+
 ## Párhuzamos munkamegosztás – 2026-10-25
 
 Felhasználó jóváhagyta: külön ChatGPT-beszélgetés dolgozhat a telefonos UI

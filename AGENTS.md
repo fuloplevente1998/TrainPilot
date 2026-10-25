@@ -58,6 +58,11 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
   négy strings.xml fájlokat lehetőleg nem módosítja. Az eredmény külön draft
   PR/patch; közös review és integráció a migrációs ágon, main merge nélkül.
   Kód/tesztkód és futtatott eredmény megkülönböztetése továbbra kötelező.
+- A #240 review/javítás a külső agent feladata. Következő külön kiosztható
+  tesztrész előkészítve: `docs/plans/NATIVE_LOCALIZATION_UI_TEST_HANDOFF.md`,
+  új test/native-localization-ui ág csak a javított lokalizációs HEAD-ből.
+  Egyelőre előkészített következő feladat, nem igazoltan megkezdett munka;
+  az új UI-tesztek nem módosíthatnak production kódot vagy közös tesztfájlt.
 
 ## Felhasználói thinking-fázisok (2026-10-24)
 
