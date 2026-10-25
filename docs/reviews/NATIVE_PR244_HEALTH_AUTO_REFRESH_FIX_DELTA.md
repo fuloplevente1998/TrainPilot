@@ -37,3 +37,7 @@ Felülvizsgált branch-HEAD: `8c00b46dbee2a818fa5acf2de44899748a2817dd`.
 
 Nincs `main`/`feat/native-android-migration` írás, merge, issue-close, APK upgrade vagy fizikai Samsung/HC-siker állítás.
 A régi teljes migrációs CI közös 6+ hiba, a #246 integrátori összevezetése, és a WebView rf250Sync 30 napos/full/incremental sync paritás külön feladat. A célzott Health UI/JVM gate nem helyettesíti a canonical release gate-et.
+
+## GitHub mergeability az integrátor számára
+
+A zöld célzott Health CI után, 2026-10-25-én a GitHub PR #244 API **`mergeable=false`, `mergeable_state=dirty`** állapotot adott: a cél `feat/native-android-migration` HEAD ekkor `32a9dc8eade53935ea362a222ec2a1c5fd6f0bdd`. Ezt **külön integrációs konfliktusként** kezeljük; nem jelenti a Health célzott JVM/UI kapu hibáját. Az ágazatközi konfliktusfeloldás, különösen a #246-tal átfedő baseline/Wear/backup/fixture javítások egyeztetése a közös integrátor feladata. Ezen a külső #244 ágon nem történt target merge, rebase, force push vagy másik ág írása.
