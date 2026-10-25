@@ -78,6 +78,10 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
 - phone-ui-gate.py -e package com.repforge.app az új osztályokat is kiválasztja;
   nincs szükség új class-filter/workflow-ra. Más ág CI-ja nem a mi bizonyítékunk.
 
+- Külön chathez kész prompt: plans/NATIVE_FEATURE_PARITY_AUDIT_HANDOFF.md.
+  Docs-only main→native funkcióleltár, javasolt test/native-feature-parity-audit;
+  még nem indítottuk. Pinned bázis a5f562d, main7473b30, csak saját riport írható.
+
 ## Következő konkrét lépések
 
 1. Lokális in-flight photo delete / új ref / restore admission kódban, de szerver-

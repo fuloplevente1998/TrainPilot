@@ -4,6 +4,13 @@ Frissítve: **2026-10-25**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+Következő külön chatnek a **main→natív funkcióaudit** átadója előkészítve:
+[feladat és fájlhatárok](plans/NATIVE_FEATURE_PARITY_AUDIT_HANDOFF.md).
+Javasolt test/native-feature-parity-audit ág a5f562d-ből, csak egy új review-dokumentum;
+a fő munkás Home/Coach/Naptár/cloud/szinkron kódolása külön marad. A felhasználó
+még csak a kiosztható munkáról kérdezett: nincs elindított agent/ág/PR vagy audit-
+eredmény. Alkalmazásforrás/519+48 nem futott tesztkód és CI állapot változatlan.
+
 ## Felhős fotótörlés helyi admission és draftképek megőrzése – 2026-10-25
 
 **7d62ae3**, [skip ci]. Korábbi photo-delete epoch-check csak a HTTP indításának
