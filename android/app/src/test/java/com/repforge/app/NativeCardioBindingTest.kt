@@ -174,6 +174,19 @@ class NativeCardioBindingTest {
         assertTrue(result.records.isEmpty())
     }
 
+    @Test fun cancelledCardioLoadPropagatesWithoutReturningPartialStats() = runBlocking {
+        insert(1, meters = 2000.0)
+        val cancelled = kotlinx.coroutines.Job().apply { cancel() }
+        try {
+            kotlinx.coroutines.withContext(cancelled) {
+                NativeCardioProgressAdapter.load(dao, now, zone)
+            }
+            fail("Cancelled IO must not return partial cardio results")
+        } catch (_: kotlinx.coroutines.CancellationException) {
+            // Correct cancellation; it must never be presented as empty history.
+        }
+    }
+
     @Test fun undoneSiblingFlagAppliesAcrossSetsAndBadOrFutureFinishesAreRejected() = runBlocking {
         val lift = TrainPilotDatabase.defaultExercises().first { it.id == "goblet-squat" }
         db.exerciseLibraryDao().upsertExercise(lift)
