@@ -215,6 +215,7 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
         val state = _uiState.value
         if (state.sourceSaving || state.historyLoading || state.historyError ||
             (value != "auto" && value != "priority" && value !in state.dailySourceOptions)) return
+        invalidateRefresh()
         _uiState.update { it.copy(sourceSaving = true, sourceSaveFailed = false) }
         viewModelScope.launch {
             try {
@@ -241,10 +242,16 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                     }
                 }
                 _uiState.update { it.copy(provider = newProvider) }
-                loadHealthDashboard()
+                // Manual Samsung selection must retain its explicit permission dialog;
+                // do not let the implicit open/read win the single-operation gate.
                 if (newProvider == HealthJournalStore.SAMSUNG) refresh(activity, requestSamsungPermission = true)
+                loadHealthDashboard()
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (_: Exception) { _uiState.update { it.copy(statusMessage = "—") }; loadHealthDashboard() }
+            catch (_: Exception) {
+                val text = com.repforge.app.ui.text.nativeResources(context, _uiState.value.language)
+                _uiState.update { it.copy(statusMessage = text.getString(com.repforge.app.R.string.coach_refresh_failed)) }
+                loadHealthDashboard()
+            }
         }
     }
 
@@ -335,8 +342,10 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                 }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) {
-                if (trigger == NativeHealthAutoRefreshGate.Trigger.MANUAL && screenVisible)
-                    _uiState.update { it.copy(statusMessage = "—") }
+                if (trigger == NativeHealthAutoRefreshGate.Trigger.MANUAL && screenVisible) {
+                    val text = com.repforge.app.ui.text.nativeResources(context, _uiState.value.language)
+                    _uiState.update { it.copy(statusMessage = text.getString(com.repforge.app.R.string.coach_refresh_failed)) }
+                }
             } finally {
                 ticket?.let { refreshGate.finish(it) }
                 _uiState.update { it.copy(healthRefreshing = false) }
