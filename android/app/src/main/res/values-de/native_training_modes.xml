@@ -60,4 +60,17 @@
     <string name="native_modes_coach_cancel">Abbrechen</string>
     <string name="native_modes_coach_sets">Vorgeschlagene Arbeitssätze: %1$d (nur Vorschau)</string>
     <string name="native_modes_inherit">Globalen Modus übernehmen</string>
+    <string name="native_modes_comparison_title">Numerische Trainingsplan-Vorschau</string>
+    <string name="native_modes_comparison_empty">Keine Übungen für die Vorschau verfügbar.</string>
+    <string name="native_modes_comparison_error">Vorschau konnte nicht geprüft werden; Modus wird nicht gespeichert.</string>
+    <string name="native_modes_comparison_loading">Vorschau wird berechnet…</string>
+    <string name="native_modes_comparison_program">Programm: %1$s</string>
+    <string name="native_modes_comparison_day">Tag: %1$s</string>
+    <string name="native_modes_comparison_sets">Arbeitssätze: %1$s → %2$s</string>
+    <string name="native_modes_comparison_reps">Wiederholungen: %1$s → %2$s</string>
+    <string name="native_modes_comparison_weight">Gewicht: %1$s → %2$s</string>
+    <string name="native_modes_comparison_rest">Pause: %1$d Sek.</string>
+    <string name="native_modes_comparison_rir">Ziel-RIR: %1$s</string>
+    <string name="native_modes_comparison_reason">Begründung: %1$s</string>
+    <string name="native_modes_comparison_notice">Diese Werte sind unverbindliche Vorschläge; das Training bleibt unverändert.</string>
 </resources>
