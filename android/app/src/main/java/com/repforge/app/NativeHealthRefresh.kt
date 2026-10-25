@@ -3,7 +3,6 @@ package com.repforge.app
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
-import android.os.Looper
 import com.repforge.app.ui.health.NativeHealthForegroundAdmission
 import android.os.Build
 import androidx.lifecycle.Lifecycle
@@ -14,7 +13,6 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.json.JSONObject
@@ -119,21 +117,8 @@ internal object NativeHealthRefresh {
             // The existing SDK adapters publish synchronously. Bridge ONLY their short journal writes
             // into the suspending metadata lease; the SDK/permission calls remain outside all leases.
             val commitRead: ((() -> Unit) -> Unit) = { writer ->
-                // Provider publication is synchronously invoked on IO by both SDK adapters.
-                // Never block the Android main thread; dispatch the short main-only
-                // execution probe BEFORE acquiring the metadata mutex.
-                check(Looper.myLooper() != Looper.getMainLooper()) {
-                    "Provider journal publication must run off the main thread"
-                }
-                runBlocking {
-                    NativeHealthForegroundAdmission.requireMainAdmission(context)
-                    NativeDataReplacement.mutate(context) {
-                        NativeHealthBackupGate.publish {
-                            requireCommitIdentity()
-                            writer()
-                        }
-                    }
-                }
+                // The tested publisher checks main-only execution BEFORE the metadata lease.
+                NativeHealthForegroundAdmission.publish(context, requireCommitIdentity, writer)
             }
 
             if (prepared.provider == HealthJournalStore.SAMSUNG && requestSamsungPermission) {
