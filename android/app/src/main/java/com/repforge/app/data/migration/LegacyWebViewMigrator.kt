@@ -43,6 +43,95 @@ class LegacyWebViewMigrator(
     private val settingsStore: TrainPilotSettingsStore
 ) {
     companion object {
+        /** Canonical bounded single-workout export; retained objects keep unknown portable metadata. */
+        internal fun workoutJson(item: com.repforge.app.data.db.WorkoutHistoryWithDetails): JSONObject {
+            val raw = try {
+                JSONObject(item.workout.rawJson)
+            } catch (_: Exception) {
+                JSONObject()
+            }
+            raw.put("id", item.workout.id)
+            raw.put("key", item.workout.workoutKey)
+            raw.put("syncId", item.workout.syncId)
+            raw.put("started", item.workout.started)
+            raw.put("finished", item.workout.finished)
+            raw.put("programId", item.workout.programId)
+            raw.put("programName", item.workout.programName)
+            raw.put("dayId", item.workout.dayId)
+            raw.put("workout", item.workout.dayId)
+            raw.put("dayName", item.workout.dayName)
+            if (item.workout.effortFeedback != null || item.workout.feedbackSkipped || raw.has("feedback")) {
+                raw.put(
+                    "feedback",
+                    (raw.optJSONObject("feedback")?.let { JSONObject(it.toString()) } ?: JSONObject())
+                        .apply {
+                            if (item.workout.effortFeedback != null) put("effort", item.workout.effortFeedback) else remove("effort")
+                            if (item.workout.feedbackSkipped) put("skipped", true) else remove("skipped")
+                            put("updatedAt", item.workout.feedbackUpdatedAt)
+                        }
+                )
+            }
+            val originalExercises = raw.optJSONArray("exercises") ?: JSONArray()
+            val exArr = JSONArray()
+            for (exWithSets in item.exercises.sortedBy { it.exercise.orderIndex }) {
+                val ex = exWithSets.exercise
+                val originalExercise = originalExercises.optJSONObject(ex.orderIndex)?.takeIf { it.optString("id") == ex.exerciseId }
+                val exJson = (originalExercise?.let { JSONObject(it.toString()) } ?: JSONObject())
+                    .put("id", ex.exerciseId)
+                    .put("name", ex.nameHu)
+                    .put("hu", ex.nameHu)
+                    .put("en", ex.nameEn)
+                    .put("loadType", ex.loadType)
+                    .put("repUnit", ex.repUnit)
+                    .put("measurementType", ex.measurementType)
+                    .put("setRir229", ex.setRir229)
+                if (ex.actualRir != null) exJson.put("actualRir", ex.actualRir) else exJson.remove("actualRir")
+                val sArr = JSONArray()
+                val originalSets = originalExercise?.optJSONArray("sets") ?: JSONArray()
+                val setsById = (0 until originalSets.length()).mapNotNull { originalSets.optJSONObject(it) }
+                    .filter { it.optString("setId").isNotBlank() }.associateBy { it.optString("setId") }
+                for ((setIndex, s) in exWithSets.sets.sortedBy { it.setNumber }.withIndex()) {
+                    val originalSet = setsById[s.setId] ?: originalSets.optJSONObject(setIndex)?.takeIf { it.optString("setId").isBlank() }
+                    val sJson = (originalSet?.let { JSONObject(it.toString()) } ?: JSONObject())
+                        .put("set", s.setNumber)
+                        .put("setId", s.setId)
+                        .put("reps", s.reps)
+                        .put("weight", s.weight ?: 0.0)
+                        .put("done", s.done)
+                    if (s.leftSeconds != null && s.leftSeconds > 0) sJson.put("leftSeconds", s.leftSeconds) else sJson.remove("leftSeconds")
+                    if (s.rightSeconds != null && s.rightSeconds > 0) sJson.put("rightSeconds", s.rightSeconds) else sJson.remove("rightSeconds")
+                    if (s.distanceMeters != null) sJson.put("distanceMeters", s.distanceMeters) else sJson.remove("distanceMeters")
+                    if (s.actualRir != null) sJson.put("actualRir", s.actualRir) else sJson.remove("actualRir")
+                    if (s.gpsRouteKey163 != null) sJson.put("gpsRouteKey163", s.gpsRouteKey163) else sJson.remove("gpsRouteKey163")
+                    if (s.gpsRouteKey193 != null) sJson.put("gpsRouteKey193", s.gpsRouteKey193) else sJson.remove("gpsRouteKey193")
+                    sArr.put(sJson)
+                }
+                exJson.put("sets", sArr)
+                exArr.put(exJson)
+            }
+            raw.put("exercises", exArr)
+            if (item.photos.isNotEmpty() || raw.has("photos")) {
+                val originalPhotos = raw.optJSONArray("photos") ?: JSONArray()
+                val photosById = (0 until originalPhotos.length()).mapNotNull { originalPhotos.optJSONObject(it) }.associateBy { it.optString("id") }
+                val pArr = JSONArray()
+                for (p in item.photos) {
+                    val pJson = (photosById[p.id]?.let { JSONObject(it.toString()) } ?: JSONObject())
+                        .put("id", p.id)
+                        .put("label", p.label)
+                        .put("createdAt", p.createdAt)
+                        .put("updatedAt", p.updatedAt)
+                        .put("width", p.width)
+                        .put("height", p.height)
+                        .put("bytes", p.bytes)
+                    if (p.driveFileId != null) pJson.put("driveFileId", p.driveFileId) else pJson.remove("driveFileId")
+                    if (p.deletedAt != null) pJson.put("deletedAt", p.deletedAt) else pJson.remove("deletedAt")
+                    pArr.put(pJson)
+                }
+                raw.put("photos", pArr)
+            }
+            return raw
+        }
+
         internal fun decodeSnapshot(values: Map<String, String>): JSONObject {
             val root = JSONObject()
             val arrays = setOf("history", "weights", "scheduled", "exercises", "programs", "exerciseFavorites", "phase3HistoryTombstones", NativeWeightTombstones18.KEY)
@@ -643,81 +732,7 @@ class LegacyWebViewMigrator(
             // History
             val historyArray = JSONArray()
             for (item in database.workoutHistoryDao().getAllWorkoutsWithDetails()) {
-                val raw = try {
-                    JSONObject(item.workout.rawJson)
-                } catch (_: Exception) {
-                    JSONObject()
-                }
-                raw.put("id", item.workout.id)
-                raw.put("started", item.workout.started)
-                raw.put("finished", item.workout.finished)
-                raw.put("programId", item.workout.programId)
-                raw.put("programName", item.workout.programName)
-                raw.put("dayId", item.workout.dayId)
-                raw.put("workout", item.workout.dayId)
-                raw.put("dayName", item.workout.dayName)
-                if (item.workout.effortFeedback != null || item.workout.feedbackSkipped) {
-                    raw.put(
-                        "feedback",
-                        JSONObject()
-                            .apply {
-                                if (item.workout.effortFeedback != null) put("effort", item.workout.effortFeedback)
-                                if (item.workout.feedbackSkipped) put("skipped", true)
-                                put("updatedAt", item.workout.feedbackUpdatedAt)
-                            }
-                    )
-                }
-                val exArr = JSONArray()
-                for (exWithSets in item.exercises.sortedBy { it.exercise.orderIndex }) {
-                    val ex = exWithSets.exercise
-                    val exJson = JSONObject()
-                        .put("id", ex.exerciseId)
-                        .put("name", ex.nameHu)
-                        .put("hu", ex.nameHu)
-                        .put("en", ex.nameEn)
-                        .put("loadType", ex.loadType)
-                        .put("repUnit", ex.repUnit)
-                        .put("measurementType", ex.measurementType)
-                        .put("setRir229", ex.setRir229)
-                    if (ex.actualRir != null) exJson.put("actualRir", ex.actualRir)
-                    val sArr = JSONArray()
-                    for (s in exWithSets.sets.sortedBy { it.setNumber }) {
-                        val sJson = JSONObject()
-                            .put("set", s.setNumber)
-                            .put("setId", s.setId)
-                            .put("reps", s.reps)
-                            .put("weight", s.weight ?: 0.0)
-                            .put("done", s.done)
-                        if (s.leftSeconds != null && s.leftSeconds > 0) sJson.put("leftSeconds", s.leftSeconds)
-                        if (s.rightSeconds != null && s.rightSeconds > 0) sJson.put("rightSeconds", s.rightSeconds)
-                        if (s.distanceMeters != null) sJson.put("distanceMeters", s.distanceMeters)
-                        if (s.actualRir != null) sJson.put("actualRir", s.actualRir)
-                        if (s.gpsRouteKey163 != null) sJson.put("gpsRouteKey163", s.gpsRouteKey163)
-                        if (s.gpsRouteKey193 != null) sJson.put("gpsRouteKey193", s.gpsRouteKey193)
-                        sArr.put(sJson)
-                    }
-                    exJson.put("sets", sArr)
-                    exArr.put(exJson)
-                }
-                raw.put("exercises", exArr)
-                if (item.photos.isNotEmpty()) {
-                    val pArr = JSONArray()
-                    for (p in item.photos) {
-                        val pJson = JSONObject()
-                            .put("id", p.id)
-                            .put("label", p.label)
-                            .put("createdAt", p.createdAt)
-                            .put("updatedAt", p.updatedAt)
-                            .put("width", p.width)
-                            .put("height", p.height)
-                            .put("bytes", p.bytes)
-                        if (p.driveFileId != null) pJson.put("driveFileId", p.driveFileId)
-                        if (p.deletedAt != null) pJson.put("deletedAt", p.deletedAt)
-                        pArr.put(pJson)
-                    }
-                    raw.put("photos", pArr)
-                }
-                historyArray.put(raw)
+                historyArray.put(workoutJson(item))
             }
             out.put("history", historyArray)
 

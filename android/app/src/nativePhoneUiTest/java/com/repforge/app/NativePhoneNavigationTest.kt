@@ -286,6 +286,59 @@ class NativePhoneNavigationTest {
         }
     }
 
+    @Test fun journalEditorCancelInvalidSaveAndRealSavePreserveTheExistingWorkout() {
+        val db = TrainPilotDatabase.getInstance(context)
+        val end = java.time.Instant.now().minusSeconds(60)
+        runBlocking(Dispatchers.IO) {
+            com.repforge.app.data.migration.LegacyWebViewMigrator(context, db, settings).saveWorkoutJsonToRoom(
+                JSONObject().put("id", "journal-edit-ui").put("syncId", "journal-edit-sync").put("key", "journal-edit-key")
+                    .put("started", end.minusSeconds(60).toString()).put("finished", end.toString())
+                    .put("dayName", "Szerkeszthető edzés").put("future", "preserve")
+                    .put("exercises", org.json.JSONArray().put(JSONObject().put("id", "goblet-squat")
+                        .put("hu", "Serleg guggolás").put("loadType", "total").put("repUnit", "ism.")
+                        .put("sets", org.json.JSONArray().put(JSONObject().put("setId", "journal-edit-set")
+                            .put("reps", "8").put("weight", 10).put("done", true).put("futureSet", true))))))
+        }
+        fun stored() = runBlocking(Dispatchers.IO) { db.workoutHistoryDao().getWorkoutWithDetailsById("journal-edit-ui")!! }
+        val before = stored()
+        launch(); tab("journal")
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("journal_workout_journal-edit-ui").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("journal_workout_journal-edit-ui").performClick()
+        fun openEditor() {
+            compose.onNodeWithTag("journal_details_list").performScrollToNode(hasTestTag("journal_edit"))
+            compose.onNodeWithTag("journal_edit").performClick()
+            compose.waitUntil(15000) { compose.onAllNodesWithTag("journal_editor_save").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithTag("journal_editor_list").performScrollToNode(hasTestTag("journal_editor_weight_0_0"))
+        }
+        openEditor()
+        compose.onNodeWithTag("journal_editor_weight_0_0").performTextReplacement("12,5")
+        assertEquals(before, stored())
+        compose.onNodeWithTag("journal_editor_cancel").performClick()
+        assertEquals(before, stored())
+        openEditor()
+        compose.onNodeWithTag("journal_editor_list").performScrollToNode(hasTestTag("journal_editor_reps_0_0"))
+        compose.onNodeWithTag("journal_editor_reps_0_0").performTextReplacement("")
+        compose.onNodeWithTag("journal_editor_save").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("journal_editor_error").fetchSemanticsNodes().isNotEmpty() }
+        assertEquals(before, stored())
+        compose.onNodeWithTag("journal_editor_list").performScrollToNode(hasTestTag("journal_editor_weight_0_0"))
+        compose.onNodeWithTag("journal_editor_weight_0_0").performTextReplacement("12,5")
+        compose.onNodeWithTag("journal_editor_list").performScrollToNode(hasTestTag("journal_editor_reps_0_0"))
+        compose.onNodeWithTag("journal_editor_reps_0_0").performTextReplacement("10")
+        compose.onNodeWithTag("journal_editor_save").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("journal_editor_save").fetchSemanticsNodes().isEmpty() }
+        val saved = stored()
+        assertEquals("journal-edit-sync", saved.workout.syncId); assertEquals("journal-edit-key", saved.workout.workoutKey)
+        assertEquals(125.0, saved.workout.totalVolumeKg, 0.0)
+        assertEquals("journal-edit-set", saved.exercises.single().sets.single().setId)
+        assertEquals("preserve", JSONObject(saved.workout.rawJson).getString("future"))
+        assertTrue(JSONObject(saved.workout.rawJson).getJSONArray("exercises").getJSONObject(0).getJSONArray("sets")
+            .getJSONObject(0).getBoolean("futureSet"))
+        assertEquals(1, runBlocking(Dispatchers.IO) { db.workoutHistoryDao().getWorkoutCount() })
+        assertTrue(snapshot()?.optBoolean("active") != true)
+        screenshot("journal_edit_saved")
+    }
+
     @Test fun coachShowsExerciseAdviceWithoutEditingAnExistingNativeWorkoutOrProgram() {
         val quick = runBlocking { NativeWorkoutSession.startQuickWorkout(context, "plank", false) }
         val original = JSONObject(quick.snapshot.toString())

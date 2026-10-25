@@ -234,6 +234,10 @@ interface WorkoutHistoryDao {
     fun observeWorkoutDetails(id: String): Flow<WorkoutHistoryWithDetails?>
 
     @Transaction
+    @Query("SELECT * FROM workout_history WHERE id = :id")
+    suspend fun getWorkoutWithDetailsById(id: String): WorkoutHistoryWithDetails?
+
+    @Transaction
     @Query("SELECT * FROM workout_history WHERE id = :id OR workoutKey = :id OR syncId = :id LIMIT 1")
     suspend fun getWorkoutWithDetails(id: String): WorkoutHistoryWithDetails?
 

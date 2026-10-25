@@ -54,6 +54,7 @@ import java.util.Locale
 @Composable
 fun JournalScreen(navController: NavController, language: String = "hu", viewModel: JournalViewModel = viewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val editor by viewModel.editor.collectAsStateWithLifecycle()
     val workouts = viewModel.workouts.collectAsLazyPagingItems()
     val context = LocalContext.current
     val text = remember(context, language) { journalResources(context, language) }
@@ -93,6 +94,7 @@ fun JournalScreen(navController: NavController, language: String = "hu", viewMod
     }
     if (state.selectedWorkoutId != null) JournalDetailDialog(state, text, language, viewModel)
     state.activeRoute?.let { WorkoutRouteMapDialog(it, viewModel::closeRouteMap, language) }
+    editor?.let { JournalEditorDialog(it, language, viewModel::editDraft, viewModel::saveEditor, viewModel::cancelEditor) }
 }
 
 @Composable
@@ -144,7 +146,7 @@ private fun JournalDetailDialog(state: JournalUiState, text: Resources, language
                         TabRow(tab) { tabs.forEachIndexed { index, label ->
                             Tab(tab == index, onClick = { tab = index }, text = { Text(text.getString(label)) })
                         } }
-                        LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp),
+                        LazyColumn(Modifier.weight(1f).testTag("journal_details_list"), verticalArrangement = Arrangement.spacedBy(12.dp),
                             contentPadding = PaddingValues(vertical = 12.dp)) {
                             if (tab == 0) items(detail.exercises.sortedBy { it.exercise.orderIndex }, key = { it.exercise.rowId }) { exercise ->
                                 Card(colors = CardDefaults.cardColors(containerColor = colors.card)) {
@@ -184,6 +186,8 @@ private fun JournalDetailDialog(state: JournalUiState, text: Resources, language
                                     Text(text.getString(if (workout.originDevice == "watch") R.string.journal_watch else R.string.journal_phone))
                                     if (workout.wearMetricsJson != null) Text("TrainPilot Wear OS · Health Services")
                                     if (workout.health240Json != null) Text("Health Connect / Samsung Health")
+                                    if (runCatching { org.json.JSONObject(workout.rawJson).optBoolean("nativeHealthWindowStale") }.getOrDefault(false))
+                                        Text(text.getString(R.string.journal_edit_stale), color = colors.muted)
                                     if (workout.wearMetricsJson == null && workout.health240Json == null) Text(text.getString(R.string.journal_no_data), color = colors.muted)
                                 }
                             }
@@ -209,6 +213,8 @@ private fun JournalDetailDialog(state: JournalUiState, text: Resources, language
                                 }
                             }
                             item {
+                                OutlinedButton(onClick = model::openEditor, enabled = !state.deleting,
+                                    modifier = Modifier.fillMaxWidth().testTag("journal_edit")) { Text(text.getString(R.string.journal_edit_title)) }
                                 OutlinedButton(onClick = { runCatching { context.startActivity(model.createCalendarIntent(detail)) } }, modifier = Modifier.fillMaxWidth()) {
                                     Text(text.getString(R.string.journal_calendar))
                                 }

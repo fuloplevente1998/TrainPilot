@@ -7,6 +7,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.repforge.app.BackupRestoreManager
 import com.repforge.app.GpsRouteStore
+import com.repforge.app.NativeJournalEditor
+import com.repforge.app.data.db.ExerciseLibraryEntity
 import com.repforge.app.WearSyncRepository
 import com.repforge.app.data.db.HistoryTombstoneEntity
 import com.repforge.app.data.db.TrainPilotDatabase
@@ -52,6 +54,10 @@ data class JournalUiState(
     val deleting: Boolean = false, val operationFailed: Boolean = false
 )
 
+internal data class JournalEditState(val opened: NativeJournalEditor.Opened,
+    val draft: NativeJournalEditor.Draft, val catalog: List<ExerciseLibraryEntity>,
+    val saving: Boolean = false, val failed: Boolean = false)
+
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class, kotlinx.coroutines.FlowPreview::class)
 class JournalViewModel(application: Application) : AndroidViewModel(application) {
     private val context = application.applicationContext
@@ -65,6 +71,9 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     private var requestRevision = 0L
     private var routeRevision = 0L
     private val _uiState = MutableStateFlow(JournalUiState())
+    private var editRevision = 0L
+    private val _editor = MutableStateFlow<JournalEditState?>(null)
+    internal val editor: StateFlow<JournalEditState?> = _editor.asStateFlow()
     val uiState: StateFlow<JournalUiState> = _uiState.asStateFlow()
     val workouts = filters.debounce { if (it.query.isBlank()) 0L else 180L }.flatMapLatest { repository.pages(it) }.cachedIn(viewModelScope)
 
@@ -93,15 +102,61 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         filters.value = filters.value.copy(month = value, zone = java.time.ZoneId.systemDefault())
     }
     fun openDetails(id: String) {
+        if (_editor.value?.saving == true) return
+        cancelEditor()
         closeRouteMap()
         _uiState.update { it.copy(selectedWorkoutId = id, detail = null, detailLoading = true, detailError = false) }
         selected.value = DetailRequest(id, ++requestRevision)
     }
     fun closeDetails() {
-        if (_uiState.value.deleting) return
+        if (_uiState.value.deleting || _editor.value?.saving == true) return
+        cancelEditor()
         selected.value = null
         closeRouteMap()
         _uiState.update { it.copy(selectedWorkoutId = null, detail = null, detailLoading = false, detailError = false) }
+    }
+    internal fun openEditor() {
+        val detail = _uiState.value.detail ?: return
+        if (_uiState.value.deleting || _editor.value != null) return
+        val revision = ++editRevision
+        viewModelScope.launch {
+            try {
+                val state = withContext(Dispatchers.IO) {
+                    com.repforge.app.NativeDataReplacement.mutate(context) {
+                        database.withTransaction {
+                            val latest = database.workoutHistoryDao().getWorkoutWithDetailsById(detail.workout.id)
+                                ?: error("Workout no longer exists")
+                            JournalEditState(NativeJournalEditor.open(context, latest), NativeJournalEditor.from(latest),
+                                database.exerciseLibraryDao().getAllExercises())
+                        }
+                    }
+                }
+                if (revision == editRevision && _uiState.value.selectedWorkoutId == detail.workout.id) _editor.value = state
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (_: Exception) { if (revision == editRevision) _uiState.update { it.copy(operationFailed = true) } }
+        }
+    }
+    internal fun editDraft(draft: NativeJournalEditor.Draft) {
+        _editor.update { state -> state?.takeIf { !it.saving }?.copy(draft = draft, failed = false) ?: state }
+    }
+    internal fun cancelEditor() {
+        if (_editor.value?.saving == true) return
+        editRevision++
+        _editor.value = null
+    }
+    internal fun saveEditor(draft: NativeJournalEditor.Draft) {
+        val state = _editor.value ?: return
+        if (state.saving) return
+        _editor.value = state.copy(draft = draft, saving = true, failed = false)
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) { NativeJournalEditor.save(context, database, state.opened, draft) }
+                _editor.value = null
+                closeRouteMap()
+                runCatching { WearSyncRepository.publishWatchHomeSnapshot(context) }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (_: Exception) { _editor.update { it?.copy(saving = false, failed = true) } }
+        }
     }
     fun openRouteMap(keys: List<String>) {
         val request = ++routeRevision
