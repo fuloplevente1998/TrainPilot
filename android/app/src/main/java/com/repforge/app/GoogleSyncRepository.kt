@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.SharedPreferences
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
+import com.google.android.gms.auth.api.identity.ClearTokenRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.RevokeAccessRequest
 import com.google.android.gms.common.api.Scope
@@ -221,7 +222,8 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
      * 2. Selects current snapshot per device + optional archive snapshots when `recoverEarlier == true`.
      * 3. Merges `history`, `weights`, `scheduled`, `programs`, `exercises`, and `settings` using `tp18MergeSync`.
      * 4. Syncs workout photos (`trainpilot-photo-<id>.jpg`) with MD5 verification.
-     * 5. Uploads merged snapshot, verifies read-back, saves `cloudBase:<owner>`, and prunes old snapshots.
+     * 5. Accepts the local merge through the redo importer, then publishes/verifies the snapshot.
+     * 6. Records `cloudBase:<owner>` only after publication, deletes photos and prunes old snapshots.
      */
     suspend fun syncDriveCloud(
         accessToken: String,
@@ -298,30 +300,25 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
                 val mergedCanonical = LegacySyncIdentity18.canonical(merged)
                 val baseCanonical = baseData?.let { LegacySyncIdentity18.canonical(it) }
 
-                if (baseCanonical == null || mergedCanonical != baseCanonical || files.length() == 0) {
-                    _uiState.value = _uiState.value.copy(stageMessage = "Felhőmentés feltöltése és ellenőrzése…")
-                    val envelope = JSONObject()
-                        .put("app", "RepForgeSync")
-                        .put("schema", 1)
-                        .put("owner", owner)
-                        .put("device", deviceId)
-                        .put("data", merged)
-                    writeSnapshotInternal(accessToken, owner, deviceId, envelope)
+                val continuation = NativeCloudMergeGuard.installAndPublish(appContext, localData, merged, stagedPhotos, owner) { accepted ->
+                    if (baseCanonical == null || mergedCanonical != baseCanonical || files.length() == 0) {
+                        _uiState.update { it.copy(stageMessage = "Felhőmentés feltöltése és ellenőrzése…") }
+                        val envelope = JSONObject().put("app", "RepForgeSync").put("schema", 1)
+                            .put("owner", owner).put("device", deviceId).put("data", accepted)
+                        writeSnapshotInternal(accessToken, owner, deviceId, envelope)
+                    }
                 }
 
+                // Persistent deletedAt/Drive IDs make a failed delete retryable. Reject stale continuations.
+                val operationContext = currentCoroutineContext()
+                stagedPhotos.finishRemoteDeletes { id, driveId ->
+                    continuation.requireCurrent(appContext)
+                    operationContext.ensureActive()
+                    deleteDrivePhotoInternal(accessToken, id, driveId)
+                }
                 val nowIso = Instant.now().toString()
-                NativeDataReplacement.exclusively(appContext) {
-                    // Network work intentionally occurs without holding the workout-start fence.
-                    // Revalidate the actual local content; a count-only comparison misses edits/deletions.
-                    NativeCloudMergeGuard.requireUnchanged(localData, migrator.exportBackupJson(includeHealthJournal = false))
-                    BackupRestoreManager(appContext).installCloudMerge(merged, stagedPhotos)
-                    database.keyValueDocumentDao().putDocument(
-                        KeyValueDocumentEntity("cloudBase:$owner", merged.toString(), System.currentTimeMillis()))
-                }
-
-                // Deleted photo IDs remain in durable metadata if a network deletion fails; retry is idempotent.
-                stagedPhotos.finishRemoteDeletes { id, driveId -> deleteDrivePhotoInternal(accessToken, id, driveId) }
                 NativeDataReplacement.mutate(appContext) {
+                    continuation.requireCurrent(appContext)
                     database.keyValueDocumentDao().putDocument(
                         KeyValueDocumentEntity("cloudStatus", JSONObject().put("drive", nowIso).toString(), System.currentTimeMillis()))
                 }

@@ -21,6 +21,25 @@ internal object NativeDataReplacement {
         val active = AtomicBoolean(true)
         companion object Key : CoroutineContext.Key<Access>
     }
+
+    /** An async continuation may record its result only if no newer restore/erase has begun.
+     * The enclosing replacement increments the epoch once more on exit, before releasing admission.
+     * Ordinary metadata edits are allowed: cloudBase describes the published snapshot, not current UI.
+     */
+    internal class Continuation internal constructor(private val enteredEpoch: Long) {
+        fun requireCurrent(context: Context) {
+            check(replacementEpoch.get() == enteredEpoch + 1 && !blocked(context)) {
+                "Az adatok közben lecserélődtek. Indítsd újra a szinkronizálást."
+            }
+        }
+    }
+
+    internal suspend fun continuationAfterReplacement(): Continuation {
+        val access = currentCoroutineContext()[Access]
+        check(access != null && access.active.get() && access.replacement) { "Replacement lease required" }
+        return Continuation(replacementEpoch.get())
+    }
+
     /** Serialize admitted metadata writers with replacement, including callbacks already in progress. */
     internal suspend fun <T> mutate(context: Context, operation: suspend () -> T): T {
         val inherited = currentCoroutineContext()[Access]

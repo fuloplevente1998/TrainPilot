@@ -5,7 +5,11 @@ import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.migration.LegacyWebViewMigrator
 import com.repforge.app.data.store.TrainPilotSettingsStore
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -205,5 +209,129 @@ class NativeCloudPhotoRecoveryTest {
         assertEquals(1, NativeWeightTombstones18.load(db).size)
         importer.importBackupJson(stale, false)
         assertTrue(db.bodyWeightDao().getAllWeights().isEmpty())
+    }
+
+    @Test fun changedLocalMetadataCannotPublishARejectedCloudSnapshot() = runTest(dispatcher) {
+        val migrator = LegacyWebViewMigrator(context, db, settings)
+        val original = migrator.exportBackupJson(false)
+        photo(deleted).writeText("original")
+        var published = false
+        val data = payload()
+        prepared(data).use { stage ->
+            settings.setLanguage("ro")
+            reject { NativeCloudMergeGuard.installAndPublish(context, original, data, stage, "owner") { published = true } }
+        }
+        assertFalse(published); assertEquals("ro", settings.current().language)
+        assertEquals("original", photo(deleted).readText()); assertFalse(photo(active).exists())
+        assertNull(db.keyValueDocumentDao().getDocument("cloudBase:owner"))
+    }
+
+    @Test fun changedStagedPhotoCannotPublishEvenWhenCanonicalMetadataStillMatches() = runTest(dispatcher) {
+        val original = LegacyWebViewMigrator(context, db, settings).exportBackupJson(false)
+        var published = false
+        val data = payload()
+        prepared(data).use { stage ->
+            File(stage.photos, "$active.jpg").writeText("tampered")
+            reject { NativeCloudMergeGuard.installAndPublish(context, original, data, stage, "owner") { published = true } }
+        }
+        assertFalse(published); assertFalse(photo(active).exists())
+        assertNull(db.keyValueDocumentDao().getDocument("cloudBase:owner"))
+    }
+
+    @Test fun publisherSeesDurableAcceptedPhotosAndMetadataOutsideTheReplacementLease() = runTest(dispatcher) {
+        val original = LegacyWebViewMigrator(context, db, settings).exportBackupJson(false)
+        val data = payload()
+        prepared(data).use { stage ->
+            val continuation = NativeCloudMergeGuard.installAndPublish(context, original, data, stage, "owner") { accepted ->
+                assertFalse(NativeDataReplacement.blocked(context))
+                assertFalse(PhoneWorkoutExecution.store(context).restoreBlocked())
+                assertFalse(NativeReplacementJournal(context).exists())
+                assertNotNull(db.workoutHistoryDao().getWorkoutWithDetails("cloud-workout"))
+                assertArrayEquals(incoming, photo(active).readBytes())
+                assertEquals("en", accepted.getJSONObject("settings").getString("language"))
+                assertNull(db.keyValueDocumentDao().getDocument("cloudBase:owner"))
+                // A publisher does not own the immutable local/base payload.
+                accepted.getJSONObject("settings").put("language", "de")
+            }
+            continuation.requireCurrent(context)
+        }
+        val base = JSONObject(db.keyValueDocumentDao().getDocument("cloudBase:owner")!!.json)
+        assertEquals("en", base.getJSONObject("settings").getString("language"))
+        assertEquals("en", settings.current().language)
+    }
+
+    @Test fun failedPublicationKeepsAcceptedLocalDataAndPreviousBaseForTheNextSync() = runTest(dispatcher) {
+        val migrator = LegacyWebViewMigrator(context, db, settings)
+        val previous = "{\"history\":[]}"
+        db.keyValueDocumentDao().putDocument(com.repforge.app.data.db.KeyValueDocumentEntity("cloudBase:owner", previous, 1))
+        val original = migrator.exportBackupJson(false)
+        val data = payload()
+        prepared(data).use { stage -> reject {
+            NativeCloudMergeGuard.installAndPublish(context, original, data, stage, "owner") { throw IOException("offline") }
+        } }
+        assertNotNull(db.workoutHistoryDao().getWorkoutWithDetails("cloud-workout"))
+        assertArrayEquals(incoming, photo(active).readBytes())
+        assertEquals(previous, db.keyValueDocumentDao().getDocument("cloudBase:owner")!!.json)
+        assertNull(db.keyValueDocumentDao().getDocument("cloudStatus"))
+        assertFalse(NativeDataReplacement.blocked(context)); assertFalse(NativeReplacementJournal(context).exists())
+        // Retry starts from the actual accepted local data, not a lost in-memory outbox.
+        val retry = migrator.exportBackupJson(false)
+        val retryMerged = JSONObject(retry.toString())
+        var published = 0
+        prepared(retryMerged).use { stage ->
+            NativeCloudMergeGuard.installAndPublish(context, retry, retryMerged, stage, "owner") { published++ }
+        }
+        assertEquals(1, published)
+        assertEquals(1, db.workoutHistoryDao().getWorkoutCount())
+        assertNotEquals(previous, db.keyValueDocumentDao().getDocument("cloudBase:owner")!!.json)
+    }
+
+    @Test fun cancelledPublicationCannotMarkBaseOrStatusAsSuccessfullySynced() = runTest(dispatcher) {
+        val original = LegacyWebViewMigrator(context, db, settings).exportBackupJson(false)
+        val data = payload()
+        val entered = CompletableDeferred<Unit>()
+        prepared(data).use { stage ->
+            val job = launch {
+                NativeCloudMergeGuard.installAndPublish(context, original, data, stage, "owner") {
+                    entered.complete(Unit); awaitCancellation()
+                }
+            }
+            entered.await(); job.cancelAndJoin()
+            assertTrue(job.isCancelled)
+        }
+        assertNotNull(db.workoutHistoryDao().getWorkoutWithDetails("cloud-workout"))
+        assertNull(db.keyValueDocumentDao().getDocument("cloudBase:owner"))
+        assertNull(db.keyValueDocumentDao().getDocument("cloudStatus"))
+        assertFalse(NativeDataReplacement.blocked(context))
+    }
+
+    @Test fun laterExplicitRestorePreventsOldPublicationContinuationFromUpdatingTheNewDataset() = runTest(dispatcher) {
+        val original = LegacyWebViewMigrator(context, db, settings).exportBackupJson(false)
+        val data = payload()
+        prepared(data).use { stage -> reject {
+            NativeCloudMergeGuard.installAndPublish(context, original, data, stage, "owner") {
+                NativeDataReplacement.exclusively(context) {
+                    BackupRestoreManager(context).installCloudMerge(JSONObject().put("history", JSONArray())
+                        .put("settings", JSONObject().put("language", "ro")))
+                }
+            }
+        } }
+        assertEquals("ro", settings.current().language)
+        assertNull(db.workoutHistoryDao().getWorkoutWithDetails("cloud-workout"))
+        assertNull(db.keyValueDocumentDao().getDocument("cloudBase:owner"))
+        assertNull(db.keyValueDocumentDao().getDocument("cloudStatus"))
+    }
+
+    @Test fun ordinaryEditDuringPublicationRemainsLocalAndBaseStillDescribesThePublishedSnapshot() = runTest(dispatcher) {
+        val original = LegacyWebViewMigrator(context, db, settings).exportBackupJson(false)
+        val data = payload()
+        prepared(data).use { stage ->
+            NativeCloudMergeGuard.installAndPublish(context, original, data, stage, "owner") {
+                NativeDataReplacement.mutate(context) { settings.setLanguage("ro") }
+            }
+        }
+        assertEquals("ro", settings.current().language)
+        assertEquals("en", JSONObject(db.keyValueDocumentDao().getDocument("cloudBase:owner")!!.json)
+            .getJSONObject("settings").getString("language"))
     }
 }

@@ -121,4 +121,24 @@ class NativeDataReplacementTest {
             assertEquals(before, journal.read().toString())
         }
     }
+
+    @Test fun continuationCannotBeIssuedWithoutAnActiveReplacementLease() = runTest {
+        reject { NativeDataReplacement.continuationAfterReplacement() }
+        NativeDataReplacement.mutate(context) {
+            reject { NativeDataReplacement.continuationAfterReplacement() }
+        }
+    }
+
+    @Test fun continuationSurvivesOrdinaryEditsButNotTheNextRestoreOrErase() = runTest {
+        val continuation = NativeDataReplacement.exclusively(context) {
+            NativeDataReplacement.continuationAfterReplacement().also {
+                assertThrows(IllegalStateException::class.java) { it.requireCurrent(context) }
+            }
+        }
+        NativeDataReplacement.mutate(context) { continuation.requireCurrent(context) }
+        NativeDataReplacement.exclusively(context) {
+            assertThrows(IllegalStateException::class.java) { continuation.requireCurrent(context) }
+        }
+        assertThrows(IllegalStateException::class.java) { continuation.requireCurrent(context) }
+    }
 }
