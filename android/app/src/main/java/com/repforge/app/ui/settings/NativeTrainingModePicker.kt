@@ -226,7 +226,8 @@ internal fun NativeTrainingModePicker(
             },
             confirmButton = {
                 Button(onClick = { pending = null; onApprove(preview) },
-                    enabled = enabled && comparison != null && comparisonFor == preview && !comparisonFailed,
+                    enabled = enabled && comparison?.rows?.isNotEmpty() == true &&
+                        comparisonFor == preview && !comparisonFailed,
                     modifier = Modifier.heightIn(min = 48.dp).testTag("${tag}_approve")) {
                     Text(strings.getString(R.string.native_modes_approve))
                 }
