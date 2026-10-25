@@ -120,6 +120,12 @@ internal fun PersonalProgramPreviewDialog(
                                 modifier = Modifier.testTag("personal_retained_$id"))
                         }
                     }
+                    preview.history128.optJSONObject("practiced")?.let { practiced ->
+                        for (id in practiced.keys()) {
+                            Text(strings.getString(com.repforge.app.R.string.planner_practiced_exercise, exerciseName(id)),
+                                modifier = Modifier.testTag("personal_practiced_$id"))
+                        }
+                    }
                     preview.history128.optJSONArray("reductions")?.let { changes ->
                         for (i in 0 until changes.length()) {
                             val row = changes.getJSONObject(i)

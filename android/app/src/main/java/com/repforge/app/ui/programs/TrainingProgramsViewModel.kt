@@ -159,12 +159,12 @@ internal class TrainingProgramsViewModel(application: Application) : AndroidView
                         val previews = programs.filter { it.program.builtin &&
                             it.program.id in setOf("home-basic", "home-level2") }
                             .mapNotNull { source ->
-                                val base = runCatching {
-                                    com.repforge.app.NativeProfileProgramPreview.preview(
-                                        source, profile, exercises, _uiState.value.language)
-                                }.getOrNull() ?: return@mapNotNull null
-                                source.program.id to com.repforge.app.NativeProfileHistory128.apply(
-                                    database, base, at, activeProgramId = settings.activeProgramId)
+                                val preview = try {
+                                    com.repforge.app.NativeProfileHistory128.preview(
+                                        database, source, profile, _uiState.value.language, at,
+                                        activeProgramId = settings.activeProgramId)
+                                } catch (_: IllegalArgumentException) { null } ?: return@mapNotNull null
+                                source.program.id to preview
                             }.toMap()
                         Triple(profile, programs, exercises) to previews
                     }

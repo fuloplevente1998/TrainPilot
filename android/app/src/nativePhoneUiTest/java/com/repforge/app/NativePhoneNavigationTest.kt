@@ -620,6 +620,37 @@ class NativePhoneNavigationTest {
         assertEquals(active, runBlocking { settings.current().activeProgramId })
     }
 
+    @Test fun beginnerPlannerExplainsProvenExperienceWithoutActivatingOrInheritingUnrelatedLoad() {
+        val db = TrainPilotDatabase.getInstance(context)
+        runBlocking(Dispatchers.IO) {
+            settings.saveTrainingProfile(JSONObject().put("minutes", 90).put("experience", "beginner").put("goal", "fitness")
+                .put("gear", org.json.JSONArray(listOf("dumbbells", "barbell", "bench"))))
+            settings.setActiveProgramId("home-basic")
+            val end = java.time.Instant.now().minusSeconds(86400)
+            com.repforge.app.data.migration.LegacyWebViewMigrator(context, db, settings).saveWorkoutJsonToRoom(
+                JSONObject().put("id", "experience-proof").put("programId", "unrelated-workout").put("dayId", "custom")
+                    .put("started", end.minusSeconds(600).toString()).put("finished", end.toString())
+                    .put("exercises", org.json.JSONArray().put(JSONObject().put("id", "barbell-row")
+                        .put("loadType", "total").put("repUnit", "ism.").put("effort", "good")
+                        .put("sets", org.json.JSONArray((0..1).map { i -> JSONObject().put("setId", "experience-$i")
+                            .put("done", true).put("reps", "12").put("weight", 20) })))))
+        }
+        val baseline = runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() }
+        launch(); tab("training")
+        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
+        compose.onNodeWithTag("personal_planner_open").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("personal_preview_loading").fetchSemanticsNodes().isEmpty() &&
+            compose.onAllNodesWithTag("personal_preview_accept").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("personal_template_home-basic").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("personal_practiced_barbell-row").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("personal_practiced_barbell-row").performScrollTo().assertTextContains("automatikus terhelésemelés nélkül")
+        screenshot("personal_beginner_practiced")
+        compose.onNodeWithText("Mégse").performClick()
+        assertEquals(baseline, runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() })
+        assertEquals("home-basic", runBlocking { settings.current().activeProgramId })
+    }
+
     @Test fun personalPlannerAcceptanceCreatesNewProgramAndRetainsTrialWeights() {
         runBlocking(Dispatchers.IO) {
             settings.saveTrainingProfile(JSONObject().put("minutes", 45)

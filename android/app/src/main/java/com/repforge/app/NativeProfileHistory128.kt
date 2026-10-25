@@ -2,6 +2,8 @@ package com.repforge.app
 
 import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.db.WorkoutHistoryEntity
+import com.repforge.app.data.db.ProgramWithDays
+import com.repforge.app.data.db.ExerciseLibraryEntity
 import com.repforge.app.ui.coach.NativeCoachAdviceRepository
 import org.json.JSONArray
 import org.json.JSONObject
@@ -28,6 +30,19 @@ internal object NativeProfileHistory128 {
             ?: throw IllegalArgumentException("Missing history128 entries")
         require(entries.length() <= 200) { "Too many history128 entries" }
         NativeProfileDayHistory128.validate(history)
+        history.opt("practiced")?.let { value ->
+            val practiced = value as? JSONObject ?: throw IllegalArgumentException("Invalid practiced evidence")
+            require(practiced.length() <= 200)
+            for (id in practiced.keys()) {
+                require(id.isNotBlank() && id.length <= 200)
+                val proof = practiced.getJSONObject(id)
+                for (field in listOf("programId", "key")) {
+                    val identity = proof.opt(field) as? String ?: throw IllegalArgumentException("Invalid practiced identity")
+                    require(identity.isNotBlank() && identity.length <= 200)
+                }
+                require(Regex("[0-9a-f]{64}").matches(proof.optString("evidenceHash")))
+            }
+        }
         for (id in entries.keys()) {
             require(id.isNotBlank() && id.length <= 200)
             val basis = entries.optJSONObject(id)
@@ -142,12 +157,19 @@ internal object NativeProfileHistory128 {
     /** Keep the preview identity (asOf), but re-read through validationNow at acceptance. */
     suspend fun apply(db: TrainPilotDatabase, preview: NativeProfileProgramPreview.Preview,
         asOf: Instant, activeProgramId: String = preview.source.program.id,
+        validationNow: Instant = asOf): NativeProfileProgramPreview.Preview = NativeProfileHistory128.preview(db,
+            preview.source, preview.sourceProfileJson, preview.language, asOf, activeProgramId, validationNow)
+
+    /** Resolve eligibility before min-three/capacity checks, using current Room evidence only. */
+    suspend fun preview(db: TrainPilotDatabase, source: ProgramWithDays, rawProfile: String,
+        language: String, asOf: Instant, activeProgramId: String = source.program.id,
         validationNow: Instant = asOf): NativeProfileProgramPreview.Preview {
         require(activeProgramId.isNotBlank() && activeProgramId.length <= 200 && !validationNow.isBefore(asOf))
         val catalog = db.exerciseLibraryDao().getAllExercises()
-        val full = NativeProfileProgramPreview.preview(preview.source, preview.sourceProfileJson,
-            catalog, preview.language, deferHistoryLimits = true)
-        val allow = compatiblePrograms(db, preview.source.program.id)
+        val practiced = practiced(db, catalog, JSONObject(rawProfile), validationNow)
+        val full = NativeProfileProgramPreview.preview(source, rawProfile,
+            catalog, language, deferHistoryLimits = true, practicedIds = practiced.keys().asSequence().toSet())
+        val allow = compatiblePrograms(db, source.program.id)
         val prescriptions = JSONObject(full.prescriptions.toString())
         val entries = JSONObject()
         val visited = HashSet<String>()
@@ -209,6 +231,40 @@ internal object NativeProfileHistory128 {
             } else basis.put("status", "review")
             entries.put(id, basis)
         }
-        return NativeProfileDayHistory128.adapt(db, full, prescriptions, entries, activeProgramId, asOf, validationNow)
+        val result = NativeProfileDayHistory128.adapt(db, full, prescriptions, entries, activeProgramId, asOf, validationNow)
+        val selected = result.draft.days.flatMap { it.entries.map(NativeProgramEditor::exerciseId) }.toSet()
+        for (id in practiced.keys().asSequence().toList()) if (id !in selected) practiced.remove(id)
+        result.history128.put("practiced", practiced)
+        return result
+    }
+
+    /** main tp128PracticedIds permits any program; this exception never authorizes load inheritance. */
+    private suspend fun practiced(db: TrainPilotDatabase, catalog: List<ExerciseLibraryEntity>,
+        profile: JSONObject, now: Instant): JSONObject {
+        val proofs = JSONObject()
+        if (profile.optString("experience") != "beginner") return proofs
+        for (library in catalog) {
+            if (NativeProfileProgramPreview.variationRejection(library, profile) != "experience") continue
+            // The newest occurrence is decisive: no older success hides partial/pain/changed units.
+            val row = db.workoutHistoryDao().getCoachExerciseCandidates(library.id,
+                now.minus(Duration.ofDays(90)).toEpochMilli(), now.toEpochMilli(), null, "", 1).firstOrNull() ?: continue
+            val raw = runCatching { JSONObject(row.rawJson) }.getOrNull() ?: continue
+            if (row.startedEpochMs <= 0 || row.finishedEpochMs <= row.startedEpochMs ||
+                raw.optString("programId") != row.programId || row.programId.isBlank() || row.programId.length > 200) continue
+            val key = raw.optString("id")
+            if (key.isBlank() || key.length > 200 || raw.optJSONObject("feedback")?.optString("rating") == "pain" ||
+                raw.optJSONObject("feedback")?.optString("effort") == "pain") continue
+            val exercises = raw.optJSONArray("exercises") ?: continue
+            val matches = (0 until exercises.length()).mapNotNull { exercises.optJSONObject(it) }
+                .filter { it.optString("id") == library.id }
+            val ex = matches.singleOrNull() ?: continue
+            val lib = JSONObject(library.rawJson).put("id", library.id).put("loadType", library.loadType)
+                .put("repUnit", library.repUnit).put("custom", library.custom)
+            if (ex.optString("effort") == "pain" || !NativeProfileDayHistory128.complete(ex) ||
+                !NativeCoachAdviceRepository.compatible(ex, lib, JSONObject())) continue
+            proofs.put(library.id, JSONObject().put("programId", row.programId).put("key", key)
+                .put("evidenceHash", digest(row.toString())))
+        }
+        return proofs
     }
 }

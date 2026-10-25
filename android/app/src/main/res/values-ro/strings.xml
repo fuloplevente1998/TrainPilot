@@ -267,6 +267,7 @@
     <string name="planner_reason_time">Omis pentru timpul disponibil</string>
     <string name="planner_reason_missing">Exercițiu indisponibil</string>
     <string name="planner_retained_day">%1$s: ziua completă efectuată anterior se încadrează și este păstrată.</string>
+    <string name="planner_practiced_exercise">%1$s: păstrat pe baza efectuării verificate, fără creșterea automată a încărcării.</string>
     <string name="planner_day_reduction">%1$s: exerciții %2$d → %3$d, serii %4$d → %5$d. %6$s</string>
     <string name="planner_day_time_reason">Adaptat la timpul disponibil</string>
     <string name="planner_day_equipment_reason">Adaptat la echipament, excluderi sau modificări ale exercițiilor</string>

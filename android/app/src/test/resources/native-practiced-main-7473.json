@@ -1,0 +1,449 @@
+{
+  "ref": "7473b30:www/app.js",
+  "blob": "b5567576bed9a8f93608a6bf1ed8db1dee4723f4",
+  "asOf": "2026-10-25T00:00:00.000Z",
+  "cases": [
+    {
+      "name": "complete",
+      "workout": {
+        "id": "complete",
+        "programId": "unrelated-workout",
+        "dayId": "custom",
+        "started": "2026-10-23T23:50:00.000Z",
+        "finished": "2026-10-24T00:00:00.000Z",
+        "feedback": {},
+        "exercises": [
+          {
+            "id": "barbell-row",
+            "loadType": "total",
+            "repUnit": "ism.",
+            "custom": false,
+            "effort": "good",
+            "prescription": {
+              "variation": ""
+            },
+            "sets": [
+              {
+                "done": true,
+                "reps": "12",
+                "weight": 20
+              },
+              {
+                "done": true,
+                "reps": "12",
+                "weight": 20
+              }
+            ]
+          }
+        ]
+      },
+      "expected": true
+    },
+    {
+      "name": "partial",
+      "workout": {
+        "id": "partial",
+        "programId": "unrelated-workout",
+        "dayId": "custom",
+        "started": "2026-10-23T23:50:00.000Z",
+        "finished": "2026-10-24T00:00:00.000Z",
+        "feedback": {},
+        "exercises": [
+          {
+            "id": "barbell-row",
+            "loadType": "total",
+            "repUnit": "ism.",
+            "custom": false,
+            "effort": "good",
+            "prescription": {
+              "variation": ""
+            },
+            "sets": [
+              {
+                "done": false,
+                "reps": "12",
+                "weight": 20
+              },
+              {
+                "done": false,
+                "reps": "12",
+                "weight": 20
+              }
+            ]
+          }
+        ]
+      },
+      "expected": false
+    },
+    {
+      "name": "pain",
+      "workout": {
+        "id": "pain",
+        "programId": "unrelated-workout",
+        "dayId": "custom",
+        "started": "2026-10-23T23:50:00.000Z",
+        "finished": "2026-10-24T00:00:00.000Z",
+        "feedback": {},
+        "exercises": [
+          {
+            "id": "barbell-row",
+            "loadType": "total",
+            "repUnit": "ism.",
+            "custom": false,
+            "effort": "pain",
+            "prescription": {
+              "variation": ""
+            },
+            "sets": [
+              {
+                "done": true,
+                "reps": "12",
+                "weight": 20,
+                "effort": "pain"
+              },
+              {
+                "done": true,
+                "reps": "12",
+                "weight": 20,
+                "effort": "pain"
+              }
+            ]
+          }
+        ]
+      },
+      "expected": false
+    },
+    {
+      "name": "workout-pain",
+      "workout": {
+        "id": "workout-pain",
+        "programId": "unrelated-workout",
+        "dayId": "custom",
+        "started": "2026-10-23T23:50:00.000Z",
+        "finished": "2026-10-24T00:00:00.000Z",
+        "feedback": {
+          "rating": "pain"
+        },
+        "exercises": [
+          {
+            "id": "barbell-row",
+            "loadType": "total",
+            "repUnit": "ism.",
+            "custom": false,
+            "effort": "good",
+            "prescription": {
+              "variation": ""
+            },
+            "sets": [
+              {
+                "done": true,
+                "reps": "12",
+                "weight": 20
+              },
+              {
+                "done": true,
+                "reps": "12",
+                "weight": 20
+              }
+            ]
+          }
+        ]
+      },
+      "expected": false
+    },
+    {
+      "name": "other-units",
+      "workout": {
+        "id": "other-units",
+        "programId": "unrelated-workout",
+        "dayId": "custom",
+        "started": "2026-10-23T23:50:00.000Z",
+        "finished": "2026-10-24T00:00:00.000Z",
+        "feedback": {},
+        "exercises": [
+          {
+            "id": "barbell-row",
+            "loadType": "total",
+            "repUnit": "mp",
+            "custom": false,
+            "effort": "good",
+            "prescription": {
+              "variation": ""
+            },
+            "sets": [
+              {
+                "done": true,
+                "reps": "12",
+                "weight": 20,
+                "repUnit": "mp"
+              },
+              {
+                "done": true,
+                "reps": "12",
+                "weight": 20,
+                "repUnit": "mp"
+              }
+            ]
+          }
+        ]
+      },
+      "expected": false
+    },
+    {
+      "name": "other-load",
+      "workout": {
+        "id": "other-load",
+        "programId": "unrelated-workout",
+        "dayId": "custom",
+        "started": "2026-10-23T23:50:00.000Z",
+        "finished": "2026-10-24T00:00:00.000Z",
+        "feedback": {},
+        "exercises": [
+          {
+            "id": "barbell-row",
+            "loadType": "per_hand",
+            "repUnit": "ism.",
+            "custom": false,
+            "effort": "good",
+            "prescription": {
+              "variation": ""
+            },
+            "sets": [
+              {
+                "done": true,
+                "reps": "12",
+                "weight": 20,
+                "loadType": "per_hand"
+              },
+              {
+                "done": true,
+                "reps": "12",
+                "weight": 20,
+                "loadType": "per_hand"
+              }
+            ]
+          }
+        ]
+      },
+      "expected": false
+    },
+    {
+      "name": "other-variation",
+      "workout": {
+        "id": "other-variation",
+        "programId": "unrelated-workout",
+        "dayId": "custom",
+        "started": "2026-10-23T23:50:00.000Z",
+        "finished": "2026-10-24T00:00:00.000Z",
+        "feedback": {},
+        "exercises": [
+          {
+            "id": "barbell-row",
+            "loadType": "total",
+            "repUnit": "ism.",
+            "custom": false,
+            "effort": "good",
+            "prescription": {
+              "variation": "paused"
+            },
+            "sets": [
+              {
+                "done": true,
+                "reps": "12",
+                "weight": 20,
+                "variation": "paused"
+              },
+              {
+                "done": true,
+                "reps": "12",
+                "weight": 20,
+                "variation": "paused"
+              }
+            ]
+          }
+        ]
+      },
+      "expected": false
+    },
+    {
+      "name": "null-weight",
+      "workout": {
+        "id": "null-weight",
+        "programId": "unrelated-workout",
+        "dayId": "custom",
+        "started": "2026-10-23T23:50:00.000Z",
+        "finished": "2026-10-24T00:00:00.000Z",
+        "feedback": {},
+        "exercises": [
+          {
+            "id": "barbell-row",
+            "loadType": "total",
+            "repUnit": "ism.",
+            "custom": false,
+            "effort": "good",
+            "prescription": {
+              "variation": ""
+            },
+            "sets": [
+              {
+                "done": true,
+                "reps": "12",
+                "weight": null
+              },
+              {
+                "done": true,
+                "reps": "12",
+                "weight": null
+              }
+            ]
+          }
+        ]
+      },
+      "expected": false
+    },
+    {
+      "name": "empty-weight",
+      "workout": {
+        "id": "empty-weight",
+        "programId": "unrelated-workout",
+        "dayId": "custom",
+        "started": "2026-10-23T23:50:00.000Z",
+        "finished": "2026-10-24T00:00:00.000Z",
+        "feedback": {},
+        "exercises": [
+          {
+            "id": "barbell-row",
+            "loadType": "total",
+            "repUnit": "ism.",
+            "custom": false,
+            "effort": "good",
+            "prescription": {
+              "variation": ""
+            },
+            "sets": [
+              {
+                "done": true,
+                "reps": "12",
+                "weight": ""
+              },
+              {
+                "done": true,
+                "reps": "12",
+                "weight": ""
+              }
+            ]
+          }
+        ]
+      },
+      "expected": false
+    },
+    {
+      "name": "nonfinite-weight",
+      "workout": {
+        "id": "nonfinite-weight",
+        "programId": "unrelated-workout",
+        "dayId": "custom",
+        "started": "2026-10-23T23:50:00.000Z",
+        "finished": "2026-10-24T00:00:00.000Z",
+        "feedback": {},
+        "exercises": [
+          {
+            "id": "barbell-row",
+            "loadType": "total",
+            "repUnit": "ism.",
+            "custom": false,
+            "effort": "good",
+            "prescription": {
+              "variation": ""
+            },
+            "sets": [
+              {
+                "done": true,
+                "reps": "12",
+                "weight": "NaN"
+              },
+              {
+                "done": true,
+                "reps": "12",
+                "weight": "NaN"
+              }
+            ]
+          }
+        ]
+      },
+      "expected": false
+    },
+    {
+      "name": "old",
+      "workout": {
+        "id": "old",
+        "programId": "unrelated-workout",
+        "dayId": "custom",
+        "started": "2026-07-25T23:50:00.000Z",
+        "finished": "2026-07-26T00:00:00.000Z",
+        "feedback": {},
+        "exercises": [
+          {
+            "id": "barbell-row",
+            "loadType": "total",
+            "repUnit": "ism.",
+            "custom": false,
+            "effort": "good",
+            "prescription": {
+              "variation": ""
+            },
+            "sets": [
+              {
+                "done": true,
+                "reps": "12",
+                "weight": 20
+              },
+              {
+                "done": true,
+                "reps": "12",
+                "weight": 20
+              }
+            ]
+          }
+        ]
+      },
+      "expected": false
+    },
+    {
+      "name": "future",
+      "workout": {
+        "id": "future",
+        "programId": "unrelated-workout",
+        "dayId": "custom",
+        "started": "2026-10-25T23:50:00.000Z",
+        "finished": "2026-10-26T00:00:00.000Z",
+        "feedback": {},
+        "exercises": [
+          {
+            "id": "barbell-row",
+            "loadType": "total",
+            "repUnit": "ism.",
+            "custom": false,
+            "effort": "good",
+            "prescription": {
+              "variation": ""
+            },
+            "sets": [
+              {
+                "done": true,
+                "reps": "12",
+                "weight": 20
+              },
+              {
+                "done": true,
+                "reps": "12",
+                "weight": 20
+              }
+            ]
+          }
+        ]
+      },
+      "expected": false
+    }
+  ]
+}

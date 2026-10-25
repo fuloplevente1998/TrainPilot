@@ -267,6 +267,7 @@
     <string name="planner_reason_time">Omitted to fit the time budget</string>
     <string name="planner_reason_missing">Exercise unavailable</string>
     <string name="planner_retained_day">%1$s: the previously completed full day fits and is retained.</string>
+    <string name="planner_practiced_exercise">%1$s: retained based on verified completion, without an automatic load increase.</string>
     <string name="planner_day_reduction">%1$s: exercises %2$d → %3$d, sets %4$d → %5$d. %6$s</string>
     <string name="planner_day_time_reason">Adjusted to the time budget</string>
     <string name="planner_day_equipment_reason">Adjusted for equipment, exclusions or exercise changes</string>

@@ -157,11 +157,11 @@ internal object NativeProgramEditor {
             if (personalMetadata != null) {
                 // Rebuild from canonical catalog/profile inside the write transaction.
                 // UI JSON and a historical lineage hash do not prove current eligibility.
-                val base = NativeProfileProgramPreview.preview(original!!,
-                    personalMetadata.getJSONObject("profileSnapshot").toString(),
-                    db.exerciseLibraryDao().getAllExercises(), language)
                 val historical = personalMetadata.optJSONObject("history128")
-                val fresh = if (historical == null) base else NativeProfileHistory128.apply(db, base,
+                val profile = personalMetadata.getJSONObject("profileSnapshot").toString()
+                val fresh = if (historical == null) NativeProfileProgramPreview.preview(original!!,
+                    profile, db.exerciseLibraryDao().getAllExercises(), language)
+                else NativeProfileHistory128.preview(db, original!!, profile, language,
                     java.time.Instant.ofEpochMilli(historical.getLong("asOf")),
                     activeProgramId = com.repforge.app.data.store.TrainPilotSettingsStore(context).current().activeProgramId,
                     validationNow = java.time.Instant.now())

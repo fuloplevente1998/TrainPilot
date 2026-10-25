@@ -52,7 +52,8 @@ internal object NativeProfileProgramPreview {
     }
 
     fun preview(source: ProgramWithDays, rawProfile: String,
-        catalog: List<ExerciseLibraryEntity>, language: String, deferHistoryLimits: Boolean = false): Preview {
+        catalog: List<ExerciseLibraryEntity>, language: String, deferHistoryLimits: Boolean = false,
+        practicedIds: Set<String> = emptySet()): Preview {
         require(source.program.builtin && source.program.id in setOf("home-basic", "home-level2")) {
             "Only an accepted A/B template can produce this preview"
         }
@@ -73,7 +74,7 @@ internal object NativeProfileProgramPreview {
             ex == null -> "missing"
             id in excluded -> "excluded"
             NativePlannerPolicy.avoided(ex, areas) -> "avoid-area"
-            beginner && !NativePlannerPolicy.metadata(ex).optBoolean("beginnerSafe", true) -> "experience"
+            beginner && !NativePlannerPolicy.metadata(ex).optBoolean("beginnerSafe", true) && id !in practicedIds -> "experience"
             !available(ex, gear) -> "equipment"
             else -> ""
         }
