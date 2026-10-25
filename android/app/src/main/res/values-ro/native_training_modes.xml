@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_modes_title">Stil de antrenament și progresie</string>
+    <string name="native_modes_help">HIT este un stil; progresiile dublă, liniară și RIR sunt reguli distincte.</string>
+    <string name="native_modes_style">Stil de antrenament</string>
+    <string name="native_modes_style_normal">Normal</string>
+    <string name="native_modes_style_hit">Inspirat de HIT</string>
+    <string name="native_modes_progression">Regulă de progresie</string>
+    <string name="native_modes_progression_double">Dublă</string>
+    <string name="native_modes_progression_linear">Liniară</string>
+    <string name="native_modes_progression_rir">RIR / Coach</string>
+    <string name="native_modes_selected">Modul ales este activ</string>
+    <string name="native_modes_legacy">Modul Coach anterior neschimbat</string>
+    <string name="native_modes_notice">Doar previzualizare. Antrenamentele și programele nu se modifică automat.</string>
+    <string name="native_modes_preview">Previzualizare</string>
+    <string name="native_modes_undo">Anulează ultima modificare</string>
+    <string name="native_modes_confirm_title">Confirmă schimbarea modului</string>
+    <string name="native_modes_before">Înainte: %1$s / %2$s</string>
+    <string name="native_modes_after">Nou: %1$s / %2$s</string>
+    <string name="native_modes_no_rewrite">Se schimbă doar setările. Rețetele, istoricul și antrenamentul activ rămân neschimbate.</string>
+    <string name="native_modes_approve">Confirm</string>
+    <string name="native_modes_cancel">Renunță</string>
+    <string name="native_modes_error">Modul nu a putut fi salvat; starea antrenamentului sau setările s-au schimbat.</string>
+    <string name="native_modes_saved">Modul de antrenament a fost salvat.</string>
+    <string name="native_modes_reverted">Modul anterior a fost restaurat.</string>
+</resources>
