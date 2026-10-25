@@ -3,6 +3,7 @@ package com.repforge.app.ui.health
 import android.content.Context
 import com.repforge.app.ActiveWorkoutStore
 import com.repforge.app.HealthJournalStore
+import com.repforge.app.NativeHealthBackupGate
 import com.repforge.app.NativeDataReplacement
 import com.repforge.app.PhoneOwnership193
 import com.repforge.app.PhoneWorkoutExecution
@@ -27,7 +28,7 @@ internal object NativeHealthForegroundAdmission {
 
     fun safe(context: Context): Boolean {
         return try {
-        if (NativeDataReplacement.blocked(context)) return false
+        if (NativeHealthBackupGate.available().not() || NativeDataReplacement.blocked(context)) return false
         if (HealthJournalStore.get(context).pendingRestore().isNotEmpty()) return false
         val execution = PhoneWorkoutExecution.store(context)
         if (execution.commandsSuspended() || execution.restoreBlocked()) return false
