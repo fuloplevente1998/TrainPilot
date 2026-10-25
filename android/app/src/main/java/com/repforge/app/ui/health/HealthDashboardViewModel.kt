@@ -294,8 +294,19 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
         requestSamsungPermission: Boolean = false
     ) {
         if (!screenVisible || screenActivity?.get() !== activity ||
-            _uiState.value.activeTab != "journal" || providerJob?.isActive == true ||
+            _uiState.value.activeTab != "journal" ||
             (trigger == NativeHealthAutoRefreshGate.Trigger.AUTO && samsungPermissionPending)) return
+        val previous = providerJob
+        if (previous != null && !previous.isCompleted) {
+            // A canceled blocking SDK read can still be unwinding. Queue the new foreground
+            // event behind its completion; never overlap two reads or silently lose re-entry.
+            viewModelScope.launch {
+                previous.join()
+                if (screenVisible && screenActivity?.get() === activity)
+                    launchRefresh(activity, trigger, requestSamsungPermission)
+            }
+            return
+        }
         providerJob = viewModelScope.launch {
             var ticket: NativeHealthAutoRefreshGate.Ticket? = null
             try {
