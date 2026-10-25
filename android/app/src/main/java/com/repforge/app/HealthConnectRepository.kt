@@ -302,9 +302,11 @@ object HealthConnectRepository {
                 val result = records(p, m, type, time)
                 p.requireForeground()
                 if (p.epoch != null) {
+                    // Serializing provider rows is CPU work, not an admitted metadata write.
+                    val serialized = HealthConnectJournal.serialize(result, p.getContext().packageName)
                     p.publishRead {
                         HealthJournalStore.get(p.getContext()).reconcileRecords(
-                            HealthConnectJournal.serialize(result, p.getContext().packageName),
+                            serialized,
                             type.simpleName,
                             requireNotNull(time.startTime) { "Journal requires a start boundary" }.toEpochMilli(),
                             requireNotNull(time.endTime) { "Journal requires an end boundary" }.toEpochMilli(),
