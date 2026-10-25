@@ -71,6 +71,21 @@ class NativeTrainingModeChangeTest {
         }
     }
 
+    @Test fun explicitProgramInheritanceReturnsToGlobalWithoutDeletingOtherScopes() {
+        val initial = selected().put("revision", 2)
+        initial.getJSONObject("byProgram").put("p", JSONObject().put("explicitChoice", true)
+            .put("trainingStyle", "hit").put("progressionMode", "rir"))
+        val preview = NativeTrainingModeChange.prepareInherit(initial.toString(), "p", "p")
+        assertEquals("program", preview.before.source)
+        assertEquals("global", preview.after.source)
+        val next = NativeTrainingModeChange.next(preview)
+        assertFalse(next.getJSONObject("byProgram").getJSONObject("p").getBoolean("explicitChoice"))
+        assertEquals("global", NativeTrainingModes.resolve(next, "p").source)
+        assertEquals("global", NativeTrainingModes.resolve(next, "other").source)
+        assertNotNull(NativeTrainingModeChange.undoValue(next.toString(), "program", "p"))
+        assertTrue(NativeTrainingModes.validForWrite(next))
+    }
+
     @Test fun malformedUndoAndScopeAreNotApplied() {
         val raw = selected().put("undo", JSONObject().put("scope", "global").put("previous", "corrupt")).toString()
         assertNull(NativeTrainingModeChange.undoValue(raw, "global", null))
