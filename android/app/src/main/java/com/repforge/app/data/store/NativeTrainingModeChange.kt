@@ -12,7 +12,7 @@ internal object NativeTrainingModeChange {
     data class Preview(
         val scope: String, val programId: String?, val expectedRaw: String?,
         val expectedActiveProgramId: String, val before: NativeTrainingModes.Effective,
-        val after: NativeTrainingModes.Effective
+        val after: NativeTrainingModes.Effective, val inheritGlobal: Boolean = false
     ) {
         val key: String get() = if (scope == "global") "global" else "program:$programId"
     }
@@ -32,6 +32,19 @@ internal object NativeTrainingModeChange {
                 source = if (scope == "global") "global" else "program"))
     }
 
+    /** Explicitly stops overriding an active program; only then does global inheritance apply. */
+    fun prepareInherit(raw: String?, activeProgramId: String, programId: String): Preview {
+        require(programId.isNotBlank() && programId.length < 256 && programId == activeProgramId)
+        val base = runCatching { raw?.let(::JSONObject) }.getOrNull() ?: JSONObject()
+        val prospective = JSONObject(base.toString())
+        val overrides = prospective.optJSONObject("byProgram")?.let { JSONObject(it.toString()) } ?: JSONObject()
+        overrides.put(programId, JSONObject().put("explicitChoice", false))
+        prospective.put("byProgram", overrides)
+        return Preview("program", programId, raw, activeProgramId,
+            NativeTrainingModes.resolveSavedJson(raw, programId),
+            NativeTrainingModes.resolve(prospective, programId), inheritGlobal = true)
+    }
+
     fun next(preview: Preview, now: String = Instant.now().toString()): JSONObject {
         val previous = runCatching { preview.expectedRaw?.let(::JSONObject) }.getOrNull()
         val base = if (previous?.optInt("schemaVersion", -1) == 1)
@@ -47,10 +60,12 @@ internal object NativeTrainingModeChange {
         }
         val overrides = base.optJSONObject("byProgram")?.let { JSONObject(it.toString()) } ?: JSONObject()
         if (preview.scope == "program") {
-            overrides.put(requireNotNull(preview.programId), JSONObject()
-                .put("trainingStyle", preview.after.trainingStyle)
+            val override = if (preview.inheritGlobal)
+                JSONObject().put("explicitChoice", false).put("updatedAt", now)
+            else JSONObject().put("trainingStyle", preview.after.trainingStyle)
                 .put("progressionMode", preview.after.progressionMode)
-                .put("explicitChoice", true).put("updatedAt", now))
+                .put("explicitChoice", true).put("updatedAt", now)
+            overrides.put(requireNotNull(preview.programId), override)
         }
         val undoPrevious = previous?.let { JSONObject(it.toString()).apply { remove("undo") } }
         val rev = (base.opt("revision") as? Number)?.toLong()?.takeIf { it in 0..(Long.MAX_VALUE - 1) } ?: 0
