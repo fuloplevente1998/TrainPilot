@@ -135,9 +135,9 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
                 // Drive sync stages a snapshot/merge outside the replacement mutex.
                 // An unattended Health read must not race this cloud backup window.
                 if (op == GoogleSyncAction.DRIVE.key) NativeHealthBackupGate.begin()
-                refreshProfileState()
-                _uiState.update { it.copy(isBusy = true, activeOperation = op, stageMessage = stage, errorMessage = null) }
                 try {
+                    refreshProfileState()
+                    _uiState.update { it.copy(isBusy = true, activeOperation = op, stageMessage = stage, errorMessage = null) }
                     currentCoroutineContext().ensureActive()
                     val value = operation()
                     currentCoroutineContext().ensureActive()
