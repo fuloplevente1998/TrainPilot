@@ -26,24 +26,10 @@ internal object NativeTrainingModeChange {
         }
         val pid = if (scope == "global") null else programId
         val before = NativeTrainingModes.resolveSavedJson(raw, pid ?: activeProgramId)
-        val next = runCatching { raw?.let(::JSONObject) }.getOrNull()
-            ?.let { JSONObject(it.toString()) } ?: JSONObject()
-        val defaults = next.optJSONObject("defaults")?.let { JSONObject(it.toString()) }
-            ?: JSONObject().put("trainingStyle", "normal").put("progressionMode", "double")
-        if (scope == "global") {
-            defaults.put("trainingStyle", style).put("progressionMode", progression)
-            next.put("explicitChoice", true)
-        } else {
-            val overrides = next.optJSONObject("byProgram")?.let { JSONObject(it.toString()) }
-                ?: JSONObject()
-            overrides.put(requireNotNull(pid), JSONObject().put("trainingStyle", style)
-                .put("progressionMode", progression).put("explicitChoice", true))
-            next.put("byProgram", overrides)
-        }
-        next.put("schemaVersion", 1).put("defaults", defaults)
-        // Global edit must not claim to override a still-active program exception.
-        val after = NativeTrainingModes.resolve(next, pid ?: activeProgramId)
-        return Preview(scope, pid, raw, activeProgramId, before, after)
+        return Preview(scope, pid, raw, activeProgramId, before,
+            NativeTrainingModes.Effective(programId = pid, trainingStyle = style,
+                progressionMode = progression, explicitChoice = true,
+                source = if (scope == "global") "global" else "program"))
     }
 
     /** Explicitly stops overriding an active program; only then does global inheritance apply. */
