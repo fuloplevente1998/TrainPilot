@@ -10,6 +10,15 @@ import com.repforge.app.NativeMeasuredSet
 import com.repforge.app.NativeWorkoutTarget
 import com.repforge.app.NativeWorkoutEditing
 import com.repforge.app.NativeWorkoutStartValues
+import com.repforge.app.HealthJournalStore
+import com.repforge.app.data.store.NativeTrainingModes
+import com.repforge.app.ui.coach.CoachTarget
+import com.repforge.app.ui.coach.NativeCoachAdviceRepository
+import com.repforge.app.ui.coach.NativeCoachSignals
+import com.repforge.app.ui.coach.NativeCoachReadiness
+import com.repforge.app.ui.coach.NativeCoachAdviceText
+import com.repforge.app.ui.text.nativeResources
+import com.repforge.app.R
 import androidx.core.content.ContextCompat
 
 import android.app.Activity
@@ -49,6 +58,8 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.Instant
+import java.time.Duration
+import java.time.ZoneId
 import java.util.UUID
 import kotlin.math.max
 import kotlin.math.min
@@ -151,7 +162,16 @@ data class ActiveWorkoutUiState(
     val showExercisePicker: Boolean = false,
     val showOwnershipDialog: Boolean = false,
     val statusMessage: String? = null,
-    val isFinishing: Boolean = false
+    val isFinishing: Boolean = false,
+    val modeProposalLoading: Boolean = false,
+    val modeProposalForExercise: String = "",
+    val modeAction: String = "",
+    val modeReason: String = "",
+    val modeBaselineWeight: Double? = null,
+    val modeSuggestedWeight: Double? = null,
+    val modeHistoryCount: Int = 0,
+    val modeWorkingSets: Int = 0,
+    val modeReviewOpen: Boolean = false
 )
 
 class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(application) {
@@ -171,6 +191,7 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     private var timeClockMs = 0L
     private var timeClockPauseMs = 0L
     private var timeSummaryAt = 0L
+    private var modeTicket: NativeTrainingModeProposal.Ticket? = null
 
     init {
         viewModelScope.launch {
@@ -827,6 +848,126 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
     // =========================================================================
     // Befejezés & Elvetés
     // =========================================================================
+
+    private suspend fun modeCoachRow(frame: JSONObject): Pair<com.repforge.app.ui.coach.CoachExerciseAdvice, String?>? {
+        val settings = settingsStore.current()
+        val programId = frame.optString("programId")
+        val dayId = frame.optString("dayId").ifBlank { frame.optString("workout") }
+        if (programId.isBlank() || dayId.isBlank() ||
+            !NativeTrainingModes.resolveSavedJson(settings.trainingModes197Json, programId).explicitChoice) return null
+        val now = Instant.now()
+        val zone = ZoneId.systemDefault()
+        val date = now.atZone(zone).toLocalDate()
+        val page = HealthJournalStore.get(context).page(date.minusDays(14).toString(),
+            date.toString(), "journal", "", 0L, 0L, 1)
+        val days = page.optJSONArray("days")
+        val realDays = (0 until (days?.length() ?: 0)).mapNotNull { days?.optJSONObject(it) }
+        val signals = NativeCoachSignals.fromDays(realDays, date, zone)
+        val history = database.workoutHistoryDao().getCoachRecentHistory(
+            now.minus(Duration.ofDays(14)).toEpochMilli(), now.toEpochMilli()).map { JSONObject(it) }
+        val readiness = NativeCoachReadiness.calculate(signals.recovery, signals.daily, history, now, zone)
+        val rows = NativeCoachAdviceRepository(database).load(
+            CoachTarget(programId, dayId, frame.optString("dayName")), settings, readiness, now)
+        val selectedId = frame.optJSONArray("exercises")?.optJSONObject(frame.optInt("currentExercise"))?.optString("id")
+            ?: return null
+        return rows.singleOrNull { it.id == selectedId }?.let { it to settings.trainingModes197Json }
+    }
+
+    /** Preview never writes; the saved ticket is invalidated by any frame/owner/config/history change. */
+    fun previewTrainingModeWeight(exerciseId: String) {
+        if (_uiState.value.modeProposalLoading || _uiState.value.isFinishing) return
+        modeTicket = null
+        _uiState.value = _uiState.value.copy(modeProposalLoading = true,
+            modeProposalForExercise = "", modeReviewOpen = false)
+        viewModelScope.launch {
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    val frame = ActiveWorkoutStore.current(context)
+                        ?.takeIf { it.optBoolean("active") && it.optString("timerOwner") == "phone" }
+                        ?: return@withContext null
+                    if (frame.optJSONArray("exercises")?.optJSONObject(frame.optInt("currentExercise"))
+                            ?.optString("id") != exerciseId) return@withContext null
+                    val rowAndRaw = modeCoachRow(frame) ?: return@withContext null
+                    val row = rowAndRaw.first
+                    val proposal = row.modePreview ?: return@withContext null
+                    val fresh = ActiveWorkoutStore.current(context)
+                    if (fresh?.toString() != frame.toString()) return@withContext null
+                    val ticket = if (row.advice.action == "increase" &&
+                        proposal.proposedWeight > proposal.baselineWeight &&
+                        proposal.proposedWeight - proposal.baselineWeight <= 10.0) {
+                        NativeTrainingModeProposal.ticket(frame, exerciseId,
+                            proposal.proposedWeight, row.sourceFingerprint, rowAndRaw.second)
+                    } else null
+                    Triple(row, ticket, nativeResources(context, settingsStore.current().language))
+                }
+                if (result == null) {
+                    _uiState.value = _uiState.value.copy(statusMessage =
+                        nativeResources(context, settingsStore.current().language).getString(R.string.native_modes_coach_blocked))
+                } else {
+                    val (row, ticket, resources) = result
+                    modeTicket = ticket
+                    _uiState.value = _uiState.value.copy(
+                        modeProposalForExercise = exerciseId,
+                        modeAction = row.advice.action,
+                        modeReason = NativeCoachAdviceText.reason(resources, row.advice.reason),
+                        modeBaselineWeight = row.modePreview?.baselineWeight,
+                        modeSuggestedWeight = if (ticket != null) ticket.approvedWeight else null,
+                        modeHistoryCount = row.advice.historyCount,
+                        modeWorkingSets = row.modePreview?.workingSets ?: 0
+                    )
+                }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (_: Exception) {
+                _uiState.value = _uiState.value.copy(statusMessage =
+                    nativeResources(context, settingsStore.current().language).getString(R.string.native_modes_coach_blocked))
+            } finally { _uiState.value = _uiState.value.copy(modeProposalLoading = false) }
+        }
+    }
+
+    fun reviewTrainingModeWeight() {
+        if (modeTicket != null && !_uiState.value.modeProposalLoading)
+            _uiState.value = _uiState.value.copy(modeReviewOpen = true)
+    }
+    fun cancelTrainingModeReview() { _uiState.value = _uiState.value.copy(modeReviewOpen = false) }
+
+    fun approveTrainingModeWeight() {
+        val ticket = modeTicket ?: return
+        if (_uiState.value.modeProposalLoading || !_uiState.value.modeReviewOpen) return
+        modeTicket = null
+        _uiState.value = _uiState.value.copy(modeReviewOpen = false, modeProposalLoading = true)
+        viewModelScope.launch {
+            try {
+                val saved = withContext(Dispatchers.IO) {
+                    val frame = ActiveWorkoutStore.current(context) ?: return@withContext null
+                    if (!NativeTrainingModeProposal.permitted(frame, ticket) ||
+                        settingsStore.current().trainingModes197Json != ticket.settingsRaw) return@withContext null
+                    val computed = modeCoachRow(frame) ?: return@withContext null
+                    if (computed.second != ticket.settingsRaw ||
+                        computed.first.sourceFingerprint != ticket.sourceFingerprint ||
+                        computed.first.advice.action != "increase" ||
+                        computed.first.modePreview?.proposedWeight != ticket.approvedWeight) return@withContext null
+                    val current = ActiveWorkoutStore.current(context) ?: return@withContext null
+                    if (!NativeTrainingModeProposal.permitted(current, ticket)) return@withContext null
+                    val edited = NativeTrainingModeProposal.editedFrame(current, ticket)
+                    NativeWorkoutEditing.commitEdit(context, edited)
+                }
+                if (saved != null) {
+                    runCatching { WearSyncRepository.publishActiveWorkoutSnapshot(context, saved) }
+                    _uiState.value = _uiState.value.copy(statusMessage =
+                        nativeResources(context, settingsStore.current().language).getString(R.string.native_modes_coach_done))
+                } else {
+                    _uiState.value = _uiState.value.copy(statusMessage =
+                        nativeResources(context, settingsStore.current().language).getString(R.string.native_modes_coach_blocked))
+                }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (_: Exception) {
+                _uiState.value = _uiState.value.copy(statusMessage =
+                    nativeResources(context, settingsStore.current().language).getString(R.string.native_modes_coach_blocked))
+            } finally {
+                _uiState.value = _uiState.value.copy(modeProposalLoading = false, modeProposalForExercise = "")
+            }
+        }
+    }
 
     fun finishWorkout(effort: String?, onSaved: () -> Unit) {
         if (_uiState.value.isFinishing) return
