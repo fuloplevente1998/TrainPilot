@@ -411,4 +411,13 @@
     <string name="native_profile_16">Cannot save: invalid field or newer profile. Reopen and retry.</string>
     <string name="native_profile_17">Save</string>
     <string name="native_profile_18">Cancel</string>
+    <string name="native_progress_loading">Loading progress…</string>
+    <string name="native_progress_error">Could not load progress data.</string>
+    <string name="native_progress_retry">Retry</string>
+    <string name="native_progress_muscle_load">Muscle load (#177)</string>
+    <string name="native_progress_month_sets">Set distribution in the past 30 days</string>
+    <string name="native_progress_sets_count">%1$d sets</string>
+    <string name="native_progress_1rm_chart">1RM progress chart (Epley)</string>
+    <string name="native_progress_1rm_description">Estimated 1RM progression from workouts</string>
+    <string name="native_progress_no_history">Not enough history for this exercise</string>
 </resources>

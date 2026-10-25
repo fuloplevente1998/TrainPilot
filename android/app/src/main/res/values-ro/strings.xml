@@ -411,4 +411,13 @@
     <string name="native_profile_16">Salvare eșuată: câmp invalid sau profil modificat.</string>
     <string name="native_profile_17">Salvează</string>
     <string name="native_profile_18">Anulează</string>
+    <string name="native_progress_loading">Se încarcă progresul…</string>
+    <string name="native_progress_error">Datele despre progres nu pot fi încărcate.</string>
+    <string name="native_progress_retry">Reîncearcă</string>
+    <string name="native_progress_muscle_load">Încărcarea musculară (#177)</string>
+    <string name="native_progress_month_sets">Distribuția seriilor din ultimele 30 de zile</string>
+    <string name="native_progress_sets_count">%1$d serii</string>
+    <string name="native_progress_1rm_chart">Grafic progres 1RM (Epley)</string>
+    <string name="native_progress_1rm_description">Evoluția 1RM estimată din antrenamente</string>
+    <string name="native_progress_no_history">Nu există suficient istoric pentru acest exercițiu</string>
 </resources>

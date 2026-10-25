@@ -411,4 +411,13 @@
     <string name="native_profile_16">Nem menthető: hibás mező vagy közben módosult profil. Nyisd meg újra.</string>
     <string name="native_profile_17">Mentés</string>
     <string name="native_profile_18">Mégse</string>
+    <string name="native_progress_loading">Fejlődés betöltése…</string>
+    <string name="native_progress_error">Nem sikerült betölteni a fejlődési adatokat.</string>
+    <string name="native_progress_retry">Újrapróbálás</string>
+    <string name="native_progress_muscle_load">Izom-anatómia terhelés (#177)</string>
+    <string name="native_progress_month_sets">Elmúlt 30 nap sorozat-eloszlása</string>
+    <string name="native_progress_sets_count">%1$d szett</string>
+    <string name="native_progress_1rm_chart">1RM Fejlődési görbe (Epley)</string>
+    <string name="native_progress_1rm_description">Kalkulált 1RM fejlődés az edzések alapján</string>
+    <string name="native_progress_no_history">Nincs elég előzmény ehhez a gyakorlathoz</string>
 </resources>

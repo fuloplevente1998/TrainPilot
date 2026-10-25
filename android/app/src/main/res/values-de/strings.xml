@@ -411,4 +411,13 @@
     <string name="native_profile_16">Speichern fehlgeschlagen: ungültiges Feld oder neueres Profil.</string>
     <string name="native_profile_17">Speichern</string>
     <string name="native_profile_18">Abbrechen</string>
+    <string name="native_progress_loading">Fortschritt wird geladen…</string>
+    <string name="native_progress_error">Fortschrittsdaten konnten nicht geladen werden.</string>
+    <string name="native_progress_retry">Erneut versuchen</string>
+    <string name="native_progress_muscle_load">Muskelbelastung (#177)</string>
+    <string name="native_progress_month_sets">Satzverteilung der letzten 30 Tage</string>
+    <string name="native_progress_sets_count">%1$d Sätze</string>
+    <string name="native_progress_1rm_chart">1RM-Fortschritt (Epley)</string>
+    <string name="native_progress_1rm_description">Geschätzter 1RM-Verlauf aus den Trainings</string>
+    <string name="native_progress_no_history">Nicht genügend Verlauf für diese Übung</string>
 </resources>
