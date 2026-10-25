@@ -339,7 +339,10 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                             else -> false
                         }
                         Triple(
-                            NativeHealthAutoRefreshGate.Snapshot(provider, selected, healthStore.generation(), visibleGeneration),
+                            NativeHealthAutoRefreshGate.Snapshot(provider,
+                                if (trigger == NativeHealthAutoRefreshGate.Trigger.AUTO) LocalDate.now().toString()
+                                else selected,
+                                healthStore.generation(), visibleGeneration),
                             prefs.optBoolean("autoOnOpen", false), permitted && NativeHealthForegroundAdmission.safe(context)
                         )
                     }
