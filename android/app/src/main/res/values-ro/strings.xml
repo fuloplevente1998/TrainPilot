@@ -574,4 +574,22 @@
     <string name="native_program_editor_16">Zilele și programele folosite în jurnal sau calendar nu pot fi șterse.</string>
     <string name="native_program_editor_17">Modificările nu au fost salvate. Redeschide după o schimbare externă.</string>
     <string name="native_program_editor_18">Șablonul original rămâne neschimbat.</string>
+    <string name="native_preview_00">Previzualizare program A/B</string>
+    <string name="native_preview_01">De bază</string>
+    <string name="native_preview_02">Nivel 2</string>
+    <string name="native_preview_03">Verifică profilul</string>
+    <string name="native_preview_04">Completează minutele și echipamentul în Setări → Profil antrenament.</string>
+    <string name="native_preview_05">Serii</string>
+    <string name="native_preview_06">Minute estimate / buget</string>
+    <string name="native_preview_07">Modificări ale planului</string>
+    <string name="native_preview_08">Greutate: se stabilește printr-o serie de probă</string>
+    <string name="native_preview_09">Acceptă și activează</string>
+    <string name="native_preview_10">Anulează</string>
+    <string name="native_preview_11">Salvarea a eșuat. Verifică profilul și șablonul.</string>
+    <string name="native_preview_12">Niciun antrenament sigur pentru acest profil.</string>
+    <string name="native_preview_13">Se verifică istoricul antrenamentelor…</string>
+    <string name="native_preview_14">Istoric compatibil: %1$d exerciții</string>
+    <string name="native_preview_15">Ultima greutate: %1$s kg (fără creștere automată)</string>
+    <string name="native_preview_16">%1$s: %2$d</string>
+    <string name="native_preview_17">%1$s: %2$d / %3$d · %4$s: %5$d</string>
 </resources>

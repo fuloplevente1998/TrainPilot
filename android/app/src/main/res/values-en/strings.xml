@@ -574,4 +574,22 @@
     <string name="native_program_editor_16">Programs and days referenced by history or calendar cannot be removed.</string>
     <string name="native_program_editor_17">Could not save changes. Reopen if another edit was saved.</string>
     <string name="native_program_editor_18">The built-in template stays unchanged.</string>
+    <string name="native_preview_00">Personal A/B plan preview</string>
+    <string name="native_preview_01">Basic</string>
+    <string name="native_preview_02">Level 2</string>
+    <string name="native_preview_03">Check your Training profile</string>
+    <string name="native_preview_04">Set workout minutes and equipment first in Settings → Training profile. No exercise or weight is guessed.</string>
+    <string name="native_preview_05">Work sets</string>
+    <string name="native_preview_06">Estimated minutes / budget</string>
+    <string name="native_preview_07">Plan adjustments</string>
+    <string name="native_preview_08">Load: to be set with a trial set</string>
+    <string name="native_preview_09">Accept and activate</string>
+    <string name="native_preview_10">Cancel</string>
+    <string name="native_preview_11">Could not save. Check that your profile or template has not changed.</string>
+    <string name="native_preview_12">No safe workout for the selected profile.</string>
+    <string name="native_preview_13">Checking workout history…</string>
+    <string name="native_preview_14">History-backed loads: %1$d exercises</string>
+    <string name="native_preview_15">Last completed load: %1$s kg (no automatic increase)</string>
+    <string name="native_preview_16">%1$s: %2$d</string>
+    <string name="native_preview_17">%1$s: %2$d / %3$d · %4$s: %5$d</string>
 </resources>
