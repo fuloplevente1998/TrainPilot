@@ -119,7 +119,7 @@ fun HealthDashboardScreen(
             viewModel.healthScreenVisible(activity)
         onDispose {
             screenLifecycle.lifecycle.removeObserver(observer)
-            viewModel.healthScreenHidden(activity)
+            viewModel.healthScreenHidden(activity, force = true)
         }
     }
     val strings = remember(context, state.language) { nativeResources(context, state.language) }
