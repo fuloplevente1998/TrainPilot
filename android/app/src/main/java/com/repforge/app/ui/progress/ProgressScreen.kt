@@ -77,7 +77,8 @@ fun ProgressScreen(
         val applicationContext = context.applicationContext
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(receivingContext: Context, intent: Intent) {
-                if (intent.action in setOf(Intent.ACTION_DATE_CHANGED,
+                if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
+                    intent.action in setOf(Intent.ACTION_DATE_CHANGED,
                         Intent.ACTION_TIME_CHANGED, Intent.ACTION_TIMEZONE_CHANGED)) {
                     viewModel.onCardioSystemClockChanged()
                 }
