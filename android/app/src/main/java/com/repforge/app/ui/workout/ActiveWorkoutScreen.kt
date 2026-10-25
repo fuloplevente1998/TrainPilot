@@ -92,6 +92,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import com.repforge.app.WorkoutPhotoRepository
+import com.repforge.app.R
+import com.repforge.app.ui.text.nativeResources
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -107,6 +109,7 @@ fun ActiveWorkoutScreen(
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val activity = context as? Activity
+    val strings = remember(context, language) { nativeResources(context, language) }
     val photoRepo = remember { WorkoutPhotoRepository(context) }
     val renderedWorkoutId = state.workoutId
     val renderedGeneration = state.generation
@@ -144,7 +147,7 @@ fun ActiveWorkoutScreen(
         val target = pendingGpsPermission
         pendingGpsPermission = null
         if (result[Manifest.permission.ACCESS_FINE_LOCATION] == true && target != null) viewModel.toggleGpsTracking(target)
-        else viewModel.showStatus("A GPS-méréshez pontos helyengedély szükséges.")
+        else viewModel.showStatus(strings.getString(R.string.native_workout_gps_permission))
     }
     fun requestGps(target: NativeWorkoutTarget, measurementId: String?) {
         if (measurementId != null) { viewModel.toggleGpsTracking(target, measurementId); return }
@@ -195,13 +198,13 @@ fun ActiveWorkoutScreen(
                         Icon(Icons.Default.Undo, contentDescription = null, tint = colors.accentText, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            text = "${state.undoExerciseName} ${state.undoSetNumber}. szett rögzítve",
+                            text = strings.getString(R.string.native_workout_set_recorded, state.undoExerciseName, state.undoSetNumber),
                             color = colors.text,
                             fontSize = 12.sp
                         )
                     }
                     TextButton(onClick = { viewModel.undoLastSet() }) {
-                        Text("Visszavonás", color = colors.accentText, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text(strings.getString(R.string.native_workout_undo), color = colors.accentText, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
                 }
             }
@@ -212,10 +215,10 @@ fun ActiveWorkoutScreen(
             } }
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 TextButton(onClick = { navigationTargets.getOrNull(selectedIndex - 1)?.let(viewModel::selectExercise) },
-                    enabled = selectedIndex > 0 && state.timerOwner == "phone" && !state.isFinishing) { Text("Előző gyakorlat", color = colors.accent) }
+                    enabled = selectedIndex > 0 && state.timerOwner == "phone" && !state.isFinishing) { Text(strings.getString(R.string.native_workout_previous), color = colors.accent) }
                 Text("${if (state.exercises.isEmpty()) 0 else selectedIndex + 1} / ${state.exercises.size}", color = colors.muted, modifier = Modifier.padding(top = 14.dp))
                 TextButton(onClick = { navigationTargets.getOrNull(selectedIndex + 1)?.let(viewModel::selectExercise) },
-                    enabled = selectedIndex < state.exercises.lastIndex && state.timerOwner == "phone" && !state.isFinishing) { Text("Következő", color = colors.accent) }
+                    enabled = selectedIndex < state.exercises.lastIndex && state.timerOwner == "phone" && !state.isFinishing) { Text(strings.getString(R.string.native_workout_next), color = colors.accent) }
             }
 
             // 3. Gyakorlatok és Szettek listája
@@ -277,14 +280,14 @@ fun ActiveWorkoutScreen(
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null, tint = colors.accent)
                         Spacer(Modifier.width(8.dp))
-                        Text("+ Gyakorlat hozzáadása", color = colors.text, fontWeight = FontWeight.SemiBold)
+                        Text(strings.getString(R.string.native_workout_add_plus), color = colors.text, fontWeight = FontWeight.SemiBold)
                     }
                 }
 
                 // Csatolt fotók sora
                 if (state.attachedPhotos.isNotEmpty()) {
                     item {
-                        Text("Csatolt fotók", color = colors.muted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(strings.getString(R.string.native_workout_attached_photos), color = colors.muted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(6.dp))
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             items(state.attachedPhotos, key = { it.id }) { photo ->
@@ -299,7 +302,7 @@ fun ActiveWorkoutScreen(
                                         onClick = { viewModel.deletePhoto(photo.id) },
                                         modifier = Modifier.size(24.dp).align(Alignment.TopEnd)
                                     ) {
-                                        Icon(Icons.Default.Close, contentDescription = "Törlés", tint = colors.dangerText, modifier = Modifier.size(14.dp))
+                                        Icon(Icons.Default.Close, contentDescription = strings.getString(R.string.native_workout_delete), tint = colors.dangerText, modifier = Modifier.size(14.dp))
                                     }
                                 }
                             }
@@ -340,7 +343,7 @@ fun ActiveWorkoutScreen(
                     },
                     modifier = Modifier.size(48.dp).background(colors.card2, CircleShape)
                 ) {
-                    Icon(Icons.Default.CameraAlt, contentDescription = "Kamera", tint = colors.text)
+                    Icon(Icons.Default.CameraAlt, contentDescription = strings.getString(R.string.native_workout_camera), tint = colors.text)
                 }
                 // Galéria gomb
                 IconButton(
@@ -349,7 +352,7 @@ fun ActiveWorkoutScreen(
                     },
                     modifier = Modifier.size(48.dp).background(colors.card2, CircleShape)
                 ) {
-                    Icon(Icons.Default.Image, contentDescription = "Galéria", tint = colors.text)
+                    Icon(Icons.Default.Image, contentDescription = strings.getString(R.string.native_workout_gallery), tint = colors.text)
                 }
                 // Befejezés gomb
                 Button(
@@ -360,7 +363,7 @@ fun ActiveWorkoutScreen(
                 ) {
                     Icon(Icons.Default.Check, contentDescription = null, tint = colors.onAccent)
                     Spacer(Modifier.width(6.dp))
-                    Text("Befejezés", color = colors.onAccent, fontWeight = FontWeight.Bold)
+                    Text(strings.getString(R.string.native_workout_finish), color = colors.onAccent, fontWeight = FontWeight.Bold)
                 }
                 // Elvetés gomb
                 Button(
@@ -388,7 +391,7 @@ fun ActiveWorkoutScreen(
             containerColor = colors.card
         ) {
             Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                Text("Gyakorlat hozzáadása", color = colors.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(strings.getString(R.string.native_workout_add_exercise), color = colors.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(12.dp))
                 LazyColumn(modifier = Modifier.fillMaxWidth().height(400.dp)) {
                     items(state.availableLibraryExercises) { libEx ->
@@ -415,6 +418,7 @@ fun ActiveWorkoutScreen(
     // Befejezés & RPE visszajelzés dialógus
     if (state.showFinishModal) {
         FinishWorkoutDialog(
+            language = language,
             onDismiss = { viewModel.closeFinishModal() },
             onConfirm = { effort ->
                 viewModel.closeFinishModal()
@@ -427,8 +431,8 @@ fun ActiveWorkoutScreen(
     if (state.showDiscardModal) {
         AlertDialog(
             onDismissRequest = { viewModel.closeDiscardModal() },
-            title = { Text("Félbehagyott edzés", color = colors.text, fontWeight = FontWeight.Bold) },
-            text = { Text("Biztosan törlöd a megkezdett edzést? Az edzés adatai elvesznek.", color = colors.muted) },
+            title = { Text(strings.getString(R.string.native_workout_discard_title), color = colors.text, fontWeight = FontWeight.Bold) },
+            text = { Text(strings.getString(R.string.native_workout_discard_message), color = colors.muted) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -438,12 +442,12 @@ fun ActiveWorkoutScreen(
                     modifier = Modifier.testTag("workout_confirm_discard"),
                     colors = ButtonDefaults.buttonColors(containerColor = colors.danger)
                 ) {
-                    Text("Törlés", color = colors.dangerText, fontWeight = FontWeight.Bold)
+                    Text(strings.getString(R.string.native_workout_delete), color = colors.dangerText, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.closeDiscardModal() }) {
-                    Text("Mégse", color = colors.text)
+                    Text(strings.getString(R.string.native_workout_cancel), color = colors.text)
                 }
             },
             containerColor = colors.card
@@ -459,8 +463,8 @@ fun ActiveWorkoutScreen(
     }
     state.statusMessage?.let { message ->
         AlertDialog(onDismissRequest = { viewModel.clearStatusMessage() },
-            title = { Text("Edzés állapota") }, text = { Text(message) },
-            confirmButton = { TextButton(onClick = { viewModel.clearStatusMessage() }, modifier = Modifier.testTag("workout_status_dismiss")) { Text("Rendben") } })
+            title = { Text(strings.getString(R.string.native_workout_status)) }, text = { Text(message) },
+            confirmButton = { TextButton(onClick = { viewModel.clearStatusMessage() }, modifier = Modifier.testTag("workout_status_dismiss")) { Text(strings.getString(R.string.native_workout_ok)) } })
     }
 }
 
@@ -953,25 +957,28 @@ fun RestTimerFloatingBar(
 @Composable
 fun FinishWorkoutDialog(
     onDismiss: () -> Unit,
-    onConfirm: (String?) -> Unit
+    onConfirm: (String?) -> Unit,
+    language: String = "hu"
 ) {
     val colors = LocalTrainPilotColors.current
+    val context = LocalContext.current
+    val strings = remember(context, language) { nativeResources(context, language) }
     val choices = listOf(
-        "easy" to "Túl könnyű",
-        "light" to "Kicsit könnyű",
-        "good" to "Pont jó",
-        "challenging" to "Kicsit nehéz",
-        "hard" to "Túl nehéz"
+        "easy" to strings.getString(R.string.native_workout_feedback_easy),
+        "light" to strings.getString(R.string.native_workout_feedback_light),
+        "good" to strings.getString(R.string.native_workout_feedback_good),
+        "challenging" to strings.getString(R.string.native_workout_feedback_challenging),
+        "hard" to strings.getString(R.string.native_workout_feedback_hard)
     )
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("Milyen volt az edzés?", color = colors.text, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Text(strings.getString(R.string.native_workout_feedback_title), color = colors.text, fontWeight = FontWeight.Bold, fontSize = 18.sp)
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Válassz egy nehézségi fokozatot a Coach és a napló számára:", color = colors.muted, fontSize = 12.sp)
+                Text(strings.getString(R.string.native_workout_feedback_hint), color = colors.muted, fontSize = 12.sp)
                 Spacer(Modifier.height(4.dp))
                 choices.forEach { (key, label) ->
                     Button(
@@ -989,18 +996,18 @@ fun FinishWorkoutDialog(
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = colors.danger)
                 ) {
-                    Text("Fájdalom / Kellemetlenség", color = colors.dangerText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text(strings.getString(R.string.native_workout_feedback_pain), color = colors.dangerText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = { onConfirm(null) }) {
-                Text("Kihagyás és mentés", color = colors.accentText, fontWeight = FontWeight.Bold)
+                Text(strings.getString(R.string.native_workout_feedback_skip), color = colors.accentText, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Mégse", color = colors.muted)
+                Text(strings.getString(R.string.native_workout_cancel), color = colors.muted)
             }
         },
         containerColor = colors.card
