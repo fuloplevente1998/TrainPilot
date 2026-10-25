@@ -174,6 +174,23 @@ class NativeCardioBindingTest {
         assertTrue(result.records.isEmpty())
     }
 
+    @Test fun activityFilterKeepsAllChoicesAndExplicitSelectedSource() = runBlocking {
+        insert(1, exerciseId = "running", meters = 5000.0, reps = "900",
+            rawJson = """{"exercises":[{"sets":[{"setId":"set-1","distanceSource":"gps"}]}]}""")
+        insert(2, exerciseId = "cycling", meters = 2000.0, reps = "600",
+            rawJson = """{"exercises":[{"sets":[{"setId":"set-2","distanceSource":"wear"}]}]}""")
+        val running = NativeCardioProgressAdapter.load(dao, now, zone, "running")
+        assertEquals(1, running.totalSetCount)
+        assertEquals(5000.0, running.totalDistanceMeters, 0.0001)
+        assertEquals("gps", running.records.single().best.source)
+        assertEquals(setOf("running", "cycling"), running.activities.map { it.exerciseId }.toSet())
+        val cycling = NativeCardioProgressAdapter.load(dao, now, zone, "cycling")
+        assertEquals(1, cycling.totalSetCount)
+        assertEquals(2000.0, cycling.totalDistanceMeters, 0.0001)
+        assertEquals("wear", cycling.records.single().best.source)
+        assertEquals(setOf("running", "cycling"), cycling.activities.map { it.exerciseId }.toSet())
+    }
+
     @Test fun daoUsesLibraryTranslationWhenLegacySnapshotContainsOnlyExerciseId() = runBlocking {
         val library = TrainPilotDatabase.defaultExercises().first { it.id == "goblet-squat" }
         db.exerciseLibraryDao().upsertExercise(library)
