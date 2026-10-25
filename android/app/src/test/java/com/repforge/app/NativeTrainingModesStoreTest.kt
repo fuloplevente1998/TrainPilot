@@ -43,9 +43,9 @@ class NativeTrainingModesStoreTest {
         .put("byProgram", JSONObject().put("p", JSONObject()
             .put("explicitChoice", true).put("trainingStyle", "normal").put("progressionMode", "linear")
             .put("updatedAt", "2026-10-20T10:00:00Z")
-            .put("futureProgramExtension", JSONArrayWrapper.objectWith("keep", "program"))))
+            .put("futureProgramExtension", JSONObject().put("keep", "program"))))
         .put("undo", JSONObject().put("previous", JSONObject().put("opaque", "undo")))
-        .put("futureExtension", JSONArrayWrapper.objectWith("keep", "global"))
+        .put("futureExtension", JSONObject().put("keep", "global"))
 
     /** Equivalent nested objects remain opaque when storing, exporting and importing. */
     @Test fun fullPortableRoundTripPreservesModesRevisionUndoAndUnknownFields() = runBlocking {
@@ -67,7 +67,8 @@ class NativeTrainingModesStoreTest {
         assertNull(store.current().trainingModes197Json)
         migrator.importBackupJson(portable, replaceAll = true)
         val restored = JSONObject(store.current().trainingModes197Json!!)
-        assertEquals(onWire.toString(), restored.toString())
+        assertEquals(com.repforge.shared.LegacySyncIdentity18.canonical(onWire),
+            com.repforge.shared.LegacySyncIdentity18.canonical(restored))
         assertEquals("program", NativeTrainingModes.resolve(restored, "p").source)
     }
 
@@ -121,8 +122,4 @@ class NativeTrainingModesStoreTest {
         assertEquals(99, JSONObject(store.current().trainingModes197Json!!).getInt("schemaVersion"))
     }
 
-    /** Avoid implicit Java Map or JSONArray conversion that might change future JSON types. */
-    private object JSONArrayWrapper {
-        fun objectWith(key: String, value: String) = JSONObject().put(key, value)
-    }
 }
