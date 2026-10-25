@@ -579,7 +579,7 @@ class BackupRestoreManager(context: Context) {
                 database.exerciseLibraryDao().deleteAllCustomExercises()
                 database.programDao().deleteAllPrograms()
                 database.keyValueDocumentDao().deleteAllDocuments()
-                TrainPilotDatabase.ensureBuiltinCatalogSeeded(database, context)
+                TrainPilotDatabase.ensureBuiltinCatalogSeeded(database, appContext)
                 settingsStore.resetAllSettingsForEraseLocal()
 
                 removeRecursive(photosDir())
