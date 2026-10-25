@@ -107,7 +107,7 @@ class NativeLocalizationWorkoutUiTest {
         compose.onNodeWithTag("navigation_back").performClick()
         waitForText("Stoppuhr · Satz 1")
         compose.onNodeWithTag("interval_options").performScrollTo().performClick()
-        waitForText("Pause")
+        waitForText("Pause (s)")
         assertEquals(sets, exerciseSets(snapshot()).toString())
         assertEquals(owner, snapshot().optString("timerOwner"))
         assertFalse(snapshot().optJSONObject(NativeSetStopwatch.FIELD)?.let(NativeSetStopwatch::running) == true)
