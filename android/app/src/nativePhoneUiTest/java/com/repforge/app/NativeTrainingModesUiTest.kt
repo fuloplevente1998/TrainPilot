@@ -118,5 +118,18 @@ class NativeTrainingModesUiTest {
         }
         assertEquals(before, after)
         assertEquals("global", NativeTrainingModes.resolveSavedJson(current().trainingModes197Json, "other").source)
+        // Program inheritance requires a separate preview and confirmation.
+        val buttonLabel = nativeResources(fixture.context, current().language)
+            .getString(R.string.native_modes_approve)
+        compose.onNodeWithText(buttonLabel).performClick()
+        compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("training_modes_program_inherit"))
+        compose.onNodeWithTag("training_modes_program_inherit").performClick()
+        compose.onNodeWithTag("training_modes_program_approve").performClick()
+        compose.waitUntil(15_000) {
+            val raw = current().trainingModes197Json
+            raw != null && JSONObject(raw).getJSONObject("byProgram")
+                .getJSONObject(programId).getBoolean("explicitChoice") == false
+        }
+        assertEquals("global", NativeTrainingModes.resolveSavedJson(current().trainingModes197Json, programId).source)
     }
 }
