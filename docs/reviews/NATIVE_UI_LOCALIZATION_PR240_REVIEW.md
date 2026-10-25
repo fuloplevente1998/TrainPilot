@@ -4,6 +4,9 @@
 Bázis: 958907c; PR célága feat/native-android-migration, draft, merge nem történt.
 Az alábbiak forrás-/erőforrásellenőrzések, nem Android-fordítás vagy UI-futtatás.
 
+A felhasználó később jelezte, hogy javítva. Ez a riport továbbra a fenti
+59da34d pillanatkép első reviewja; a frissebb HEAD újraellenőrzése még hátra van.
+
 ## Megállapítások
 
 ### P2 – Hatókörön belüli egység- és fallbackfeliratok még magyarok

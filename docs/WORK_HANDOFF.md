@@ -4,6 +4,38 @@ Frissítve: **2026-10-25**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Tartós testsúlytörlés és késői cloud-replay védelem – 2026-10-25
+
+**567117a**, [skip ci]. Új opcionális portable `weightTombstones18` markerarray
+(version1/opaque mérés-ID/LegacySyncIdentity18 származtatott legacy-aliasok/deletedAt).
+Meglévő kv_documents sorokban tárolva, nincs új súlytár vagy DB-séma. Exact-row CAS
+után marker+delete egy Room tranzakció; marker- vagy delete-IO hibánál mindkettő
+rollback. Egy napon más ID-jú mérés megmarad, valóban új UUID azonos dátummal és
+értékkel is engedett. Legacy/id nélküli késői másolatot a normalizált eredeti
+18-as identitás fogja meg, nem nap-szintű törlés. Azonos ID újabb szerkesztése
+sem támasztja fel a törölt mérést. Markerek nem csonkolódnak (50k explicit cap).
+
+JSON/ZIP/Drive export/importban marker megmarad; malformed marker még első Room
+írás előtt tilt. Ordinary import union/purge, 256-os könnyű ID/date/kg keyset,
+meglévő teljes súlylista nélkül. Google merge local/current/base/archive marker-
+uniót készít konfliktuspreferenciától függetlenül, majd a régi sorok előtt szűr.
+Explicit felhasználói replaceAll régi, marker nélküli backupból szándékosan
+visszaállíthatja a mérést/üríti a markert; ordinary legacy import nem. Ez új natív
+replay-védelem, a mainben nem volt tartós weight tombstone; régi szoftverű peer
+nem értelmezi az új mezőt. Nem ígérünk régi peerre visszamenőleges működést.
+
+18 új JVM-metódus +1 közös cloud ZIP/receipt replay-próbakód. **Batch464 új unit
++42 Phone UI megírva, még nem futott**; #240 külön3 teszt nem integrált.
+Actual DAO SQLite1500 keyset/törlés közbeni fedés és marker-prefix izoláció,
+delimiter/import elővalidációs sorrend/diff ellenőrizve; nem Kotlin/Room/Drive.
+Új CI/APK/screenshot nincs, utolsó teljes zöld dd4cc27. Main/verzió változatlan.
+
+Következő: cloud snapshot-publikálás/local install közötti stale-publish és remote
+photo-delete/late restore verseny, operation/account lifecycle; teljes batch
+kód/funkció/Health/UI leltár, közös kapu és készülékes próba. #240 javítását a user
+visszajelezte, a friss HEAD külön review még hátra; az ottani munkát nem írjuk át.
+Nyelvváltási UI-tesztes következő külső prompt a plans/NATIVE_LOCALIZATION_UI_TEST_HANDOFF.md.
+
 ## Cloud-fotók privát stagingje és közös helyreállítás – 2026-10-25
 
 **f81a1a4**, [skip ci]. Korábbi hiba: GoogleSyncRepository a végső canonical

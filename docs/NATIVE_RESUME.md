@@ -22,6 +22,23 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   prototípus/fake Health-forrás tilos. Nyolcgombos menü helyett öt alsó fül elfogadva,
   jobb felső Settings; abból visszatérés nem pause, valódi editor-elhagyás igen.
 
+## Legújabb exact-ID súlytörlés-replay – 2026-10-25
+
+**567117a**: opcionális weightTombstones18, meglévő kv_documents per-ID marker,
+repo exact-CAS + marker/delete közös tx. Más ID/same-day és új UUID/same-value
+megmarad; stale same-ID/legacy/idless sor nem támad fel. Import előtt validált,
+JSON/ZIP/Drive portable, root merge local/remote/base/archive marker-uniója minden
+konfliktuspreferenciánál szűr. Existing rows purge könnyű256 keyset, nem teljeslista.
+Explicit old-backup replaceAll visszaállíthat, ordinary import nem törölhet markert.
+Mainben ilyen tartós marker nem volt, régi peer az új mezőt nem érti.
+18+1 új JVM-kód: **batch464 unit+42 UI nem futott** (#2403 külön tesztje nincs benne).
+SQLite1500 actual DAO/prefix-izoláció, delimiter/sorrend/diff rendben, nem Android-
+futtatás; nincs új CI/APK/kép. Utolsó zöld dd4cc27, csak migráció, main/verzió STOP.
+Következő cloud stale publish/remote-delete vs. late restore és account/operation
+lifecycle, további A–E/UI/Health leltár és közös kapu. #240user szerint javítva,
+friss HEAD review még nem történt; külső agent munkáját ne írjuk át. Következő
+UI-tesztes átadó a plans/NATIVE_LOCALIZATION_UI_TEST_HANDOFF.md-ben.
+
 ## Legújabb cloud-photo staging és review – 2026-10-25
 
 **f81a1a4**: NativeCloudPhotoStage csak privát noBackup tempet ír hálózat alatt;
