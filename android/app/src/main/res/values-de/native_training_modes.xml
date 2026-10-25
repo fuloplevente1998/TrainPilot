@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_modes_title">Trainingsstil und Progression</string>
+    <string name="native_modes_help">HIT ist ein Trainingsstil; doppelte, lineare und RIR-Progression sind getrennte Regeln.</string>
+    <string name="native_modes_style">Trainingsstil</string>
+    <string name="native_modes_style_normal">Normal</string>
+    <string name="native_modes_style_hit">HIT-inspiriert</string>
+    <string name="native_modes_progression">Progressionsregel</string>
+    <string name="native_modes_progression_double">Doppelte Progression</string>
+    <string name="native_modes_progression_linear">Linear</string>
+    <string name="native_modes_progression_rir">RIR / Coach</string>
+    <string name="native_modes_selected">Gewählter Modus aktiv</string>
+    <string name="native_modes_legacy">Bisheriger Coach-Modus unverändert</string>
+    <string name="native_modes_notice">Nur Vorschau. Training und Programm werden nicht automatisch geändert.</string>
+    <string name="native_modes_preview">Vorschau</string>
+    <string name="native_modes_undo">Rückgängig</string>
+    <string name="native_modes_confirm_title">Moduswechsel bestätigen</string>
+    <string name="native_modes_before">Vorher: %1$s / %2$s</string>
+    <string name="native_modes_after">Neu: %1$s / %2$s</string>
+    <string name="native_modes_no_rewrite">Nur Einstellungen ändern sich. Trainingsvorgaben, Verlauf und aktives Training bleiben unverändert.</string>
+    <string name="native_modes_approve">Bestätigen</string>
+    <string name="native_modes_cancel">Abbrechen</string>
+    <string name="native_modes_error">Moduswechsel fehlgeschlagen: Training oder Einstellungen geändert.</string>
+    <string name="native_modes_saved">Trainingsmodus gespeichert.</string>
+    <string name="native_modes_reverted">Vorheriger Modus wiederhergestellt.</string>
+</resources>
