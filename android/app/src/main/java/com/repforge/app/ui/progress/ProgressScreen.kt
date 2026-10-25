@@ -172,6 +172,14 @@ fun ProgressScreen(
             }
         }
 
+        item(key = "progress_cardio") {
+            NativeCardioProgressPanel(
+                state = state,
+                onSelectActivity = viewModel::selectCardioActivity,
+                onRetry = viewModel::retryCardio
+            )
+        }
+
         item {
             WeightJournalOverview(weights, weightViewModel::setRange, onWeightJournal,
                 com.repforge.app.R.string.weight_open, weightViewModel::retryReads)
