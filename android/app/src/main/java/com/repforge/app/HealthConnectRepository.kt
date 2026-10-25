@@ -698,6 +698,11 @@ object HealthConnectRepository {
             val time = filter(t)
             if (!p.anyReadAllowed()) throw SecurityException("Permission denied")
             val warnings = JSONArray()
+            // A revoked/partial grant is not a full replacement for existing daily metrics.
+            // HealthJournalStore merges missing fields from the previous aggregate when warned.
+            if (READ_PERMS.any { !p.allowed(it) }) {
+                warnings.put("Partial Health Connect read permission")
+            }
 
             val hrs = safe(p, m, HeartRateRecord::class.java, time, "READ_HEART_RATE", warnings)
             val resting = safe(p, m, RestingHeartRateRecord::class.java, time, "READ_RESTING_HEART_RATE", warnings)
