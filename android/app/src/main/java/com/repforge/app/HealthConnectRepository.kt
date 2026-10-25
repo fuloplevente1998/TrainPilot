@@ -326,6 +326,8 @@ object HealthConnectRepository {
                 if (p.origin.isEmpty()) result else result.filter { src(it) == p.origin }
             } catch (obsolete: ObsoleteReadPublication) {
                 throw obsolete
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
             } catch (e: Exception) {
                 warnings.put("$perm: ${p.message(e)}")
                 emptyList()
