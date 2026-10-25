@@ -9,7 +9,8 @@ import java.time.Duration
 import java.time.Instant
 
 internal data class CoachExerciseAdvice(val id: String, val name: String, val advice: NativeCoachExerciseAdvice.Advice,
-    val loadType: String = "", val modePreview: NativeTrainingModeProgression.Preview? = null)
+    val loadType: String = "", val modePreview: NativeTrainingModeProgression.Preview? = null,
+    val sourceFingerprint: String = "")
 
 /** Bounded canonical Room reads; no full-history relations/cache or second workout state. */
 internal class NativeCoachAdviceRepository(private val db: TrainPilotDatabase) {
@@ -60,7 +61,15 @@ internal class NativeCoachAdviceRepository(private val db: TrainPilotDatabase) {
             val name = when (settings.language) {
                 "en" -> library.nameEn; "de" -> library.nameDe; "ro" -> library.nameRo; else -> library.nameHu
             }.ifBlank { library.nameHu }
-            CoachExerciseAdvice(id, name, NativeCoachExerciseAdvice.forCoach(recommendation, lastEffort, readiness), load, preview)
+            CoachExerciseAdvice(id, name, NativeCoachExerciseAdvice.forCoach(recommendation, lastEffort, readiness),
+                load, preview, buildString {
+                    append(raw.toString()); append("\\u001f")
+                    append(rx.toString()); append("\\u001f")
+                    rows.forEach { (workout, exercise) ->
+                        append(workout.toString()); append("\\u001e"); append(exercise.toString()); append("\\u001f")
+                    }
+                    append(readiness.toString()); append("\\u001f"); append(settings.trainingModes197Json)
+                })
         }
     }
 
