@@ -483,7 +483,7 @@ fun BleDiscoveryTabContent(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(ble.deviceName.ifBlank { "Csatlakoztatott óra" }, color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text(ble.deviceName.ifBlank { strings.getString(R.string.native_health_ble_connected_watch) }, color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                             TextButton(onClick = { bleRepo.disconnect() }) {
                                 Text(strings.getString(R.string.native_health_ble_disconnect), color = colors.dangerText, fontSize = 11.sp)
                             }
@@ -509,7 +509,7 @@ fun BleDiscoveryTabContent(
                                 Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(strings.getString(R.string.native_health_ble_rd_fit), color = colors.muted, fontSize = 10.sp)
                                     Spacer(Modifier.height(4.dp))
-                                    Text(if (ble.rdfitProbe.stepsCount != null) "${ble.rdfitProbe.stepsCount} lépés" else if (ble.rdfitProbe.batteryPercent != null) "${ble.rdfitProbe.batteryPercent}%" else "—", color = colors.accentText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                    Text(if (ble.rdfitProbe.stepsCount != null) strings.getString(R.string.native_health_ble_steps_count, ble.rdfitProbe.stepsCount) else if (ble.rdfitProbe.batteryPercent != null) "${ble.rdfitProbe.batteryPercent}%" else "—", color = colors.accentText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                                     if (ble.probeSupported && ble.state != "probing") {
                                         Spacer(Modifier.height(6.dp))
                                         OutlinedButton(onClick = { bleRepo.readRdfitData() }) {
@@ -592,7 +592,7 @@ fun BleDiscoveryTabContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(dev.name.ifBlank { "Névtelen eszköz" }, color = colors.text, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text(dev.name.ifBlank { strings.getString(R.string.native_health_ble_unnamed_device) }, color = colors.text, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         Text(strings.getString(R.string.native_health_ble_rssi, dev.displayAddress, dev.rssi), color = colors.muted, fontSize = 11.sp)
                         if (dev.remembered) {
                             Text(strings.getString(R.string.native_health_ble_saved), color = colors.accent2, fontSize = 10.sp, fontWeight = FontWeight.Bold)

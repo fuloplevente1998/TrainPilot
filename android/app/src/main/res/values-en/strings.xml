@@ -648,4 +648,7 @@
     <string name="native_home_unit_steps">steps</string>
     <string name="native_home_unit_workouts">workouts</string>
     <string name="native_home_unit_readiness">readiness</string>
+    <string name="native_health_ble_connected_watch">Connected watch</string>
+    <string name="native_health_ble_steps_count">%1$d steps</string>
+    <string name="native_health_ble_unnamed_device">Unnamed device</string>
 </resources>

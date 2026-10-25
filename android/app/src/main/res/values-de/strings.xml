@@ -648,4 +648,7 @@
     <string name="native_home_unit_steps">Schritte</string>
     <string name="native_home_unit_workouts">Trainingseinheiten</string>
     <string name="native_home_unit_readiness">Trainingsbereitschaft</string>
+    <string name="native_health_ble_connected_watch">Verbundene Uhr</string>
+    <string name="native_health_ble_steps_count">%1$d Schritte</string>
+    <string name="native_health_ble_unnamed_device">Unbenanntes Gerät</string>
 </resources>
