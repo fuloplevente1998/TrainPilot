@@ -146,6 +146,10 @@ object SamsungHealthRepository {
             check(reader.granted.isNotEmpty()) { "Samsung Health olvasási engedély szükséges." }
             val result = reader.daily(range[0], range[1]).put("day", day)
             requireForegroundGuard()
+            // Permission probe is another SDK IPC, performed strictly outside metadata locks.
+            // A revoked or expanded grant invalidates the original read rather than publishing stale metrics.
+            val currentGrants = SamsungSdkReader.open(context) { requireForegroundGuard() }.granted
+            check(currentGrants == reader.granted) { "Samsung read permissions changed" }
             readCommit {
                 requireForegroundGuard()
                 journal.samsungDay(day, result, reader.journal, generation)
