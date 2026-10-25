@@ -57,7 +57,7 @@ fun ProgressScreen(
     val strings = remember(context, state.language) { nativeResources(context, state.language) }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp).testTag("progress_list"),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item { Spacer(Modifier.height(8.dp)) }
