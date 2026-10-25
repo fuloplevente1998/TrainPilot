@@ -392,4 +392,23 @@
     <string name="native_custom_exercise_18">Érvénytelen kötelező mező vagy YouTube-hivatkozás.</string>
     <string name="native_custom_exercise_19">A gyakorlat közben módosult. Nyisd meg újra a szerkesztéshez.</string>
     <string name="native_custom_exercise_20">Adat-visszaállítás folyamatban. Próbáld meg később.</string>
+    <string name="native_profile_00">Életkor</string>
+    <string name="native_profile_01">Magasság (cm)</string>
+    <string name="native_profile_02">Testsúly (kg)</string>
+    <string name="native_profile_03">Edzésidő (perc)</string>
+    <string name="native_profile_04">Cél</string>
+    <string name="native_profile_05">Tapasztalat</string>
+    <string name="native_profile_06">Aktivitás</string>
+    <string name="native_profile_07">Helyszín</string>
+    <string name="native_profile_08">Edzésritmus</string>
+    <string name="native_profile_09">Felosztás</string>
+    <string name="native_profile_10">Fókusz</string>
+    <string name="native_profile_11">Felszerelés (pl. dumbbells, barbell)</string>
+    <string name="native_profile_12">Kizárt gyakorlat-azonosítók</string>
+    <string name="native_profile_13">Kerülendő izomcsoportok</string>
+    <string name="native_profile_14">Edzésprofil</string>
+    <string name="native_profile_15">Az üres mezőket nem találgatjuk. A felszerelés és kizárások csak külön módosításkor változnak.</string>
+    <string name="native_profile_16">Nem menthető: hibás mező vagy közben módosult profil. Nyisd meg újra.</string>
+    <string name="native_profile_17">Mentés</string>
+    <string name="native_profile_18">Mégse</string>
 </resources>

@@ -19,6 +19,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import org.json.JSONObject
+import android.content.res.Resources
+import com.repforge.app.R
+import com.repforge.app.ui.text.nativeResources
+import androidx.compose.ui.platform.LocalContext
 
 /**
  * Edits only the scalar profile fields. Equipment, exclusion and focus arrays
@@ -33,30 +37,26 @@ internal fun TrainingProfileDialog(
     val fields = listOf("age", "height", "weight", "minutes",
         "goal", "experience", "activity", "location", "cadence", "split", "focus",
         "gear", "excluded", "avoidAreas")
-    val names = when (language) {
-        "en" -> listOf("Age", "Height (cm)", "Weight (kg)", "Minutes per workout", "Goal",
-            "Experience", "Activity", "Location", "Schedule", "Split", "Focus",
-            "Equipment keys (comma-separated)", "Excluded exercise IDs", "Avoided muscle groups")
-        "de" -> listOf("Alter", "Größe (cm)", "Gewicht (kg)", "Minuten je Training", "Ziel",
-            "Erfahrung", "Aktivität", "Ort", "Rhythmus", "Aufteilung", "Schwerpunkt",
-            "Ausrüstung (durch Komma getrennt)", "Ausgeschlossene Übungen", "Zu vermeidende Muskelgruppen")
-        "ro" -> listOf("Vârstă", "Înălțime (cm)", "Greutate (kg)", "Minute pe antrenament", "Obiectiv",
-            "Experiență", "Activitate", "Loc", "Ritm", "Împărțire", "Accent",
-            "Echipament (separat prin virgulă)", "Exerciții excluse", "Grupe musculare de evitat")
-        else -> listOf("Életkor", "Magasság (cm)", "Testsúly (kg)", "Edzésidő (perc)", "Cél",
-            "Tapasztalat", "Aktivitás", "Helyszín", "Edzésritmus", "Felosztás", "Fókusz",
-            "Felszerelés (pl. dumbbells, barbell)", "Kizárt gyakorlat-azonosítók", "Kerülendő izomcsoportok")
-    }
-    val title = when (language) {
-        "en" -> "Training profile"; "de" -> "Trainingsprofil"
-        "ro" -> "Profil de antrenament"; else -> "Edzésprofil"
-    }
-    val emptyHint = when (language) {
-        "en" -> "Empty fields are not guessed. Equipment and exclusions change only when you edit them."
-        "de" -> "Leere Felder werden nicht geschätzt. Ausrüstung und Ausschlüsse ändern sich nur durch deine Eingabe."
-        "ro" -> "Câmpurile goale nu sunt deduse. Echipamentul și excluderile se schimbă doar prin editare."
-        else -> "Az üres mezőket nem találgatjuk. A felszerelés és kizárások csak külön módosításkor változnak."
-    }
+    val context = LocalContext.current
+    val resources = remember(context, language) { nativeResources(context, language) }
+    val names = listOf(
+        resources.getString(R.string.native_profile_00),
+        resources.getString(R.string.native_profile_01),
+        resources.getString(R.string.native_profile_02),
+        resources.getString(R.string.native_profile_03),
+        resources.getString(R.string.native_profile_04),
+        resources.getString(R.string.native_profile_05),
+        resources.getString(R.string.native_profile_06),
+        resources.getString(R.string.native_profile_07),
+        resources.getString(R.string.native_profile_08),
+        resources.getString(R.string.native_profile_09),
+        resources.getString(R.string.native_profile_10),
+        resources.getString(R.string.native_profile_11),
+        resources.getString(R.string.native_profile_12),
+        resources.getString(R.string.native_profile_13)
+    )
+    val title = resources.getString(R.string.native_profile_14)
+    val emptyHint = resources.getString(R.string.native_profile_15)
     var values by remember(profileJson) {
         mutableStateOf(fields.associateWith { k ->
             if (source.isNull(k)) "" else source.optJSONArray(k)?.let { rows ->
@@ -77,27 +77,18 @@ internal fun TrainingProfileDialog(
                         modifier = Modifier.fillMaxWidth().testTag("profile_field_$key"),
                         label = { Text(names[i]) }, singleLine = true)
                 }
-                if (failed) Text(when (language) {
-                    "en" -> "Cannot save: invalid field or newer profile. Reopen and retry."
-                    "de" -> "Speichern fehlgeschlagen: ungültiges Feld oder neueres Profil."
-                    "ro" -> "Salvare eșuată: câmp invalid sau profil modificat."
-                    else -> "Nem menthető: hibás mező vagy közben módosult profil. Nyisd meg újra."
-                }, modifier = Modifier.testTag("profile_write_error"))
+                if (failed) Text(resources.getString(R.string.native_profile_16), modifier = Modifier.testTag("profile_write_error"))
             }
         },
         confirmButton = {
             TextButton(onClick = { onSave(values) }, enabled = !saving,
                 modifier = Modifier.testTag("profile_save")) {
-                Text(when (language) {
-                    "en" -> "Save"; "de" -> "Speichern"; "ro" -> "Salvează"; else -> "Mentés"
-                })
+                Text(resources.getString(R.string.native_profile_17))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss, enabled = !saving) {
-                Text(when (language) {
-                    "en" -> "Cancel"; "de" -> "Abbrechen"; "ro" -> "Anulează"; else -> "Mégse"
-                })
+                Text(resources.getString(R.string.native_profile_18))
             }
         }
     )
