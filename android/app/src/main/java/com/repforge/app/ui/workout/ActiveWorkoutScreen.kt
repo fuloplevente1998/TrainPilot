@@ -623,6 +623,7 @@ fun ExerciseCardItem(
                 key(set.setId) {
                 SetRowItem(
                     set = set,
+                    language = language,
                     isBilateral = exercise.isBilateral,
                     isDistance = isDistance,
                     onDistanceChange = { onEditSet(sIdx, "distanceKm", it) },
@@ -811,6 +812,7 @@ private fun LowerSetStopwatch(
 @Composable
 fun SetRowItem(
     set: ActiveSetUiModel,
+    language: String = "hu",
     isBilateral: Boolean,
     isDistance: Boolean = false,
     onDistanceChange: (String) -> Unit = {},
@@ -824,6 +826,8 @@ fun SetRowItem(
     onDelete: () -> Unit
 ) {
     val colors = LocalTrainPilotColors.current
+    val context = LocalContext.current
+    val strings = remember(context, language) { nativeResources(context, language) }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -858,7 +862,7 @@ fun SetRowItem(
                     value = if (set.leftSeconds > 0) set.leftSeconds.toString() else "",
                     onValueChange = onLeftChange,
                     enabled = !set.isCompleted,
-                    placeholder = { Text("B", fontSize = 10.sp, color = colors.muted) },
+                    placeholder = { Text(strings.getString(R.string.native_workout_left_initial), fontSize = 10.sp, color = colors.muted) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     colors = OutlinedTextFieldDefaults.colors(focusedTextColor = colors.text, unfocusedTextColor = colors.text),
@@ -869,7 +873,7 @@ fun SetRowItem(
                     value = if (set.rightSeconds > 0) set.rightSeconds.toString() else "",
                     onValueChange = onRightChange,
                     enabled = !set.isCompleted,
-                    placeholder = { Text("J", fontSize = 10.sp, color = colors.muted) },
+                    placeholder = { Text(strings.getString(R.string.native_workout_right_initial), fontSize = 10.sp, color = colors.muted) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     colors = OutlinedTextFieldDefaults.colors(focusedTextColor = colors.text, unfocusedTextColor = colors.text),

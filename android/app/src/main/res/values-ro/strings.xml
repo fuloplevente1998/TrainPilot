@@ -643,4 +643,6 @@
     <string name="native_custom_chip_load_total">Greutate totală</string>
     <string name="native_custom_chip_load_machine">Aparat</string>
     <string name="native_custom_chip_load_cable">Scripete</string>
+    <string name="native_workout_left_initial">S</string>
+    <string name="native_workout_right_initial">D</string>
 </resources>

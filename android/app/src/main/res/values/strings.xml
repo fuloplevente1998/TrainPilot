@@ -643,4 +643,6 @@
     <string name="native_custom_chip_load_total">Összesített súly</string>
     <string name="native_custom_chip_load_machine">Gép</string>
     <string name="native_custom_chip_load_cable">Csiga</string>
+    <string name="native_workout_left_initial">B</string>
+    <string name="native_workout_right_initial">J</string>
 </resources>

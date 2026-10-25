@@ -643,4 +643,6 @@
     <string name="native_custom_chip_load_total">Total load</string>
     <string name="native_custom_chip_load_machine">Machine</string>
     <string name="native_custom_chip_load_cable">Cable</string>
+    <string name="native_workout_left_initial">L</string>
+    <string name="native_workout_right_initial">R</string>
 </resources>
